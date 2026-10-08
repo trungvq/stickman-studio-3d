@@ -48,6 +48,7 @@ const SHOTS = [
   ['may-gan', 'demo=camera&t=1.6'],
   ['may-lia', 'demo=camera&t=2.6'],
   ['may-lui', 'demo=camera&t=3.7'],
+  ['bong-nguoi', 'demo=light&t=1&az=25&el=22&look=-6.3,1.9,-0.6&dist=10'],
   ['phong-ngay', 'demo=light&t=1&az=15&el=10&look=0,2.8,0&dist=21'],
   ['phong-chieu', 'demo=light&t=1&az=15&el=10&look=0,2.8,0&dist=21&time=evening'],
   ['phong-toi-1830', 'demo=light&t=1&az=15&el=10&look=0,2.8,0&dist=21&time=dusk'],

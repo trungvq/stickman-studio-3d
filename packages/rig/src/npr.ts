@@ -17,6 +17,8 @@ export const G = {
   uKeyWrap: { value: 0 },
   uKeyFill: { value: 0 },
   uKeySpread: { value: 0 },
+  /** Độ đậm bóng đổ đèn chính, 0–1: ánh dội trong phòng làm bóng không đen hẳn */
+  uKeyShade: { value: 1 },
   uRoomGain: { value: 1 },
   uShadowTint: { value: new THREE.Color(0.46, 0.5, 0.74) },
   uAmbient: { value: new THREE.Color(0.55, 0.68, 0.95) },
@@ -60,7 +62,7 @@ const POISSON = /* glsl */ `const vec2 PD[16] = vec2[](
 
 const COMMON = /* glsl */ `
 uniform vec3 uLightDir, uLightColor, uShadowTint, uAmbient;
-uniform float uKey, uKeyWrap, uKeyFill, uKeySpread, uRoomGain, uShadowTexel, uTime;
+uniform float uKey, uKeyWrap, uKeyFill, uKeySpread, uKeyShade, uRoomGain, uShadowTexel, uTime;
 uniform sampler2D uShadowMap;
 uniform mat4 uShadowMatrix;
 uniform vec4 uShadowInfo;
@@ -90,8 +92,8 @@ mat2 diskRot(){ float a = hash12(gl_FragCoord.xy) * 6.2832; float c = cos(a), s 
 bool outside(vec3 c){ return c.x < 0.0 || c.x > 1.0 || c.y < 0.0 || c.y > 1.0 || c.z > 1.0; }
 // Bóng đèn chính kiểu PCSS: tìm vật che, bóng loe theo khoảng cách vật che → mặt nhận, nên sát chân thì sắc, xa thì mềm.
 // Vật che trong vùng tìm: số mẫu, độ sâu trung bình zb và độ sâu vật che gần mặt nhận nhất zn
-float keyBlockers(vec3 c, mat2 R, out float zb, out float zn){
-  float bias = 0.02 / uShadowInfo.y, search = uShadowInfo.w * uShadowTexel, nb = 0.0;
+float keyBlockers(vec3 c, mat2 R, float search, out float zb, out float zn){
+  float bias = 0.02 / uShadowInfo.y, nb = 0.0;
   zb = 0.0;
   zn = 0.0;
   for (int i = 0; i < 16; i += 2) {
@@ -104,11 +106,13 @@ float keyBlockers(vec3 c, mat2 R, out float zb, out float zn){
 float keyShadow(vec3 wp, vec3 n, mat2 R){
   // mặt gần song song tia đèn (tường dưới đèn trần) đẩy ra xa hơn cho khỏi tự che trong vùng tìm vật che
   float side = 1.0 - abs(dot(n, uLightDir));
+  // mặt đứng dò hẹp: vùng dò rộng của sàn với tới người đứng sát tường, in bóng ma lên tường
+  float wide = mix(uShadowInfo.w, min(uShadowInfo.w, 10.0), smoothstep(0.6, 0.95, side)), search = wide * uShadowTexel;
   vec3 p = wp + n * (0.03 + 0.12 * side);
   vec3 c = (uShadowMatrix * vec4(p, 1.0)).xyz;
   if (outside(c)) return 1.0;
   float zb, zn;
-  if (keyBlockers(c, R, zb, zn) == 0.0) return 1.0;
+  if (keyBlockers(c, R, search, zb, zn) == 0.0) return 1.0;
   // mặt đứng dưới vật nhô (tủ treo): đèn tấm rải khắp trần rọi xiên từ giữa phòng, dò lại ở điểm lùi vào phòng theo khoảng
   // cách tới vật che — sát dưới vật vẫn tối, xa xuống thì sáng lại
   float loose = 1.0;
@@ -118,17 +122,21 @@ float keyShadow(vec3 wp, vec3 n, mat2 R){
   if (wv > 0.0) {
     // dời theo vật che sát mặt nhận nhất (mặt kệ), không theo đồ cao hơn bày trên nó
     c = (uShadowMatrix * vec4(p + n * (c.z - zn) * uShadowInfo.y * wv, 1.0)).xyz;
-    if (outside(c) || keyBlockers(c, R, zb, zn) == 0.0) return 1.0;
+    if (outside(c) || keyBlockers(c, R, search, zb, zn) == 0.0) return 1.0;
     // ánh xiên từ cả mảng trần: bóng xa vật che loe rộng hơn, không in sắc đáy từng món trên kệ
     loose = 1.0 + 3.0 * wv / uKeySpread;
   }
 #endif
-  float bias = 0.02 / uShadowInfo.y;
-  float pen = clamp((c.z - zb) * uShadowInfo.y * uShadowInfo.z * loose / uShadowInfo.x, 1.0, uShadowInfo.w * loose) * uShadowTexel;
+  float bias = 0.02 / uShadowInfo.y, dist = (c.z - zb) * uShadowInfo.y;
+  float pen = clamp(dist * uShadowInfo.z * loose / uShadowInfo.x, 1.0, wide * loose) * uShadowTexel;
+  // hai vòng đĩa lệch góc: 32 mẫu cho mép bóng rộng khỏi lấm tấm
+  mat2 R2 = R * mat2(0.27, 0.96, -0.96, 0.27);
   float s = 0.0;
-  for (int i = 0; i < 16; i++) s += (c.z - bias > texture2D(uShadowMap, c.xy + R * PD[i] * pen).r) ? 0.0 : 1.0;
-  // vùng che một phần co về hai đầu: mép bóng còn mềm, mảng rộng gần ngưỡng dải thì không lốm đốm
-  return smoothstep(0.2, 0.8, s / 16.0);
+  for (int i = 0; i < 16; i++) {
+    s += (c.z - bias > texture2D(uShadowMap, c.xy + R * PD[i] * pen).r) ? 0.0 : 1.0;
+    s += (c.z - bias > texture2D(uShadowMap, c.xy + R2 * PD[i] * pen * 0.6).r) ? 0.0 : 1.0;
+  }
+  return 1.0 - (1.0 - s / 32.0) * uKeyShade;
 }
 float sunShadow(vec3 wp, vec3 n, mat2 R){
   vec3 c = (uSunMatrix * vec4(wp + n * (0.02 + 0.05 * (1.0 - abs(dot(n, uSunDir)))), 1.0)).xyz;
@@ -164,14 +172,17 @@ float sunThrough(vec3 wp){
 vec3 nprShade(vec3 base, vec3 N, vec3 wp, float stipple, float scale, float soft){
   mat2 R = diskRot();
   float noise = vnoise(wp * scale) * 0.62 + vnoise(wp * scale * 2.7 + 11.0) * 0.38;
-  float light = 0.0;
+  float light = 0.0, shadowed = 1.0;
   #ifdef FLAT_KEY
   light = uKey;
   #else
   if (uKey > 0.0) {
     // trong nhà mặt quay khỏi đèn vẫn có ánh dội uKeyFill, chỉ bóng đổ mới về dải tối
     float lam = max(clamp((dot(N, uLightDir) + uKeyWrap) / (1.0 + uKeyWrap) * 1.15, 0.0, 1.0), uKeyFill);
-    if (lam > 0.0) light = lam * keyShadow(wp, N, R) * uKey;
+    if (lam > 0.0) {
+      light = lam * uKey;
+      shadowed = keyShadow(wp, N, R);
+    }
   }
   #endif
   float shade = light + (noise - 0.5) * stipple;
@@ -180,6 +191,8 @@ vec3 nprShade(vec3 base, vec3 N, vec3 wp, float stipple, float scale, float soft
   vec3 lit = base * uLightColor;
   vec3 c = mix(dark, mix(mid, lit, step(0.46, shade)), step(0.16, shade));
   c = mix(c, lit * 1.14, step(0.9, shade) * step(0.2, stipple));
+  // bóng đổ không chia dải: mép loe mềm liền, không thành mảng sắc
+  c = mix(dark, c, shadowed);
   c += uAmbient * base * (0.5 + 0.5 * N.y) * 0.16;
   c *= uRoomGain;
   if (uSun > 0.0) {
@@ -442,8 +455,11 @@ export interface CeilingLight {
   spread?: number;
   /** Độ sáng cả phòng (đèn trần và ánh dội), 0–1: hạ xuống khi đèn rọi sân khấu bật. Mặc định 1. */
   intensity?: number;
-  /** Độ loe bóng theo khoảng cách vật che → mặt nhận (cỡ mảng đèn / độ cao trần). Mặc định 0,12. */
+  /** Độ loe bóng theo khoảng cách vật che → mặt nhận (cỡ mảng đèn / độ cao trần): vật mảnh như người cách sàn xa thì
+   *  bóng nhạt, vật rộng như mặt bàn vẫn đậm ở giữa. Mặc định 0,08. */
   soft?: number;
+  /** Độ đậm bóng đổ chỗ bị che hết, 0–1: ánh dội trong phòng làm bóng không đen hẳn. Mặc định 0,4. */
+  shadow?: number;
 }
 
 /** Cửa sổ trên tường đứng: nắng xiên lọt qua ô kính thành một mảng sáng có bóng sắc. */
@@ -524,8 +540,9 @@ function applyLights() {
     G.uKeyFill.value = c.fill ?? 0.3;
     G.uKeySpread.value = c.spread ?? 0.6;
     G.uRoomGain.value = p.gain * (c.intensity ?? 1);
-    G.uShadowInfo.value.z = c.soft ?? 0.12;
-    G.uShadowInfo.value.w = 10;
+    G.uShadowInfo.value.z = c.soft ?? 0.08;
+    G.uShadowInfo.value.w = 48;
+    G.uKeyShade.value = c.shadow ?? 0.4;
     LIGHTING.keyClip = new THREE.Plane(new THREE.Vector3(0, -1, 0), -c.y * 0.01 - 0.03);
   } else {
     G.uLightDir.value.copy(sunDir);
@@ -536,6 +553,7 @@ function applyLights() {
     G.uRoomGain.value = 1;
     G.uShadowInfo.value.z = 0.015;
     G.uShadowInfo.value.w = 3;
+    G.uKeyShade.value = 1;
     LIGHTING.keyClip = null;
   }
   const lc = G.uLightColor.value;
