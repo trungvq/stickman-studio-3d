@@ -177,19 +177,30 @@ vec3 nprShade(vec3 base, vec3 N, vec3 wp, float stipple, float scale, float soft
 const VERT = /* glsl */ `
 varying vec3 vWorldPos;
 varying vec3 vNormal;
+#ifdef USE_MAP
+varying vec2 vUv;
+#endif
 void main(){
   vec4 wp = modelMatrix * vec4(position, 1.0);
   vWorldPos = wp.xyz;
   vNormal = normalize(mat3(modelMatrix) * normal);
+  #ifdef USE_MAP
+    vUv = uv;
+  #endif
   gl_Position = projectionMatrix * viewMatrix * wp;
 }
 `;
 
+// Ra màu nhân sẵn alpha (`premultipliedAlpha`): vật đục có `uOpacity` 1 là như cũ.
 const FRAG = /* glsl */ `
 uniform vec3 uColor;
-uniform float uStipple, uStippleScale, uEmissive, uSoft;
+uniform float uStipple, uStippleScale, uEmissive, uSoft, uOpacity, uGlow;
 varying vec3 vWorldPos;
 varying vec3 vNormal;
+#ifdef USE_MAP
+uniform sampler2D uMap;
+varying vec2 vUv;
+#endif
 ${COMMON}
 void main(){
   vec3 N = normalize(vNormal);
@@ -197,9 +208,28 @@ void main(){
     N = gl_FrontFacing ? N : -N;
   #endif
   vec3 base = uColor;
+  float a = uOpacity;
+  #ifdef USE_MAP
+    vec4 tex = texture2D(uMap, vUv);
+    #if defined(MAP_BLEND)
+      // texture nhân sẵn alpha: màu vẫn nhân sẵn qua mọi phép đổ sáng (đều tuyến tính theo base)
+      base *= tex.rgb;
+      a *= tex.a;
+    #elif defined(MAP_CUT)
+      if (tex.a < 0.5) discard;
+      base *= tex.rgb / tex.a;
+    #else
+      base *= tex.rgb;
+    #endif
+  #endif
   vec3 c = nprShade(base, N, vWorldPos, uStipple, uStippleScale, uSoft);
   c = mix(c, base * 1.08, uEmissive);
-  gl_FragColor = vec4(c, 1.0);
+  c = mix(c, base, uGlow);
+  #ifdef MAP_BLEND
+    gl_FragColor = vec4(c * uOpacity, a);
+  #else
+    gl_FragColor = vec4(c * a, a);
+  #endif
 }
 `;
 
@@ -214,28 +244,84 @@ export interface NprOptions {
   doubleSided?: boolean;
 }
 
+function shaded(defines: Record<string, string>, side: THREE.Side, own: Record<string, THREE.IUniform>) {
+  return new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, defines, side, premultipliedAlpha: true, uniforms: { ...G, ...own } });
+}
+
+const ownUniforms = (o: NprOptions & { opacity?: number; glow?: number }) => ({
+  uColor: { value: new THREE.Color(o.color ?? '#ffffff') },
+  uStipple: { value: o.stipple ?? 0.12 },
+  uStippleScale: { value: o.stippleScale ?? 2.2 },
+  uEmissive: { value: o.emissive ?? 0 },
+  uSoft: { value: o.soft ?? 0 },
+  uOpacity: { value: o.opacity ?? 1 },
+  uGlow: { value: o.glow ?? 0 },
+});
+
 /** Vật liệu toon: `color`, `stipple` độ loang, `stippleScale` cỡ vết, `soft` 1 là hai tông như bóng 2D của nhân vật; `doubleSided` vẽ cả mặt sau. */
 export function npr(o: NprOptions = {}): THREE.ShaderMaterial {
   const key = JSON.stringify(o);
   const hit = cache.get(key);
   if (hit) return hit;
-  const defines: Record<string, string> = o.doubleSided ? { DOUBLE_SIDED: '' } : {};
-  const m = new THREE.ShaderMaterial({
-    vertexShader: VERT,
-    fragmentShader: FRAG,
-    defines,
-    side: o.doubleSided ? THREE.DoubleSide : THREE.FrontSide,
-    uniforms: {
-      ...G,
-      uColor: { value: new THREE.Color(o.color ?? '#ffffff') },
-      uStipple: { value: o.stipple ?? 0.12 },
-      uStippleScale: { value: o.stippleScale ?? 2.2 },
-      uEmissive: { value: o.emissive ?? 0 },
-      uSoft: { value: o.soft ?? 0 },
-    },
-  });
+  const m = shaded(o.doubleSided ? { DOUBLE_SIDED: '' } : {}, o.doubleSided ? THREE.DoubleSide : THREE.FrontSide, ownUniforms(o));
   cache.set(key, m);
   return m;
+}
+
+/** Mặt có nội dung: texture nhận cùng dải sáng, bóng, bóng tiếp xúc như mọi mặt `npr`, hay tự sáng như màn hình. */
+export interface SurfaceOptions {
+  /** Texture màu, nhân với `color`. `canvasTexture` của package hay ảnh đã nạp xong. */
+  map?: THREE.Texture | null;
+  color?: THREE.ColorRepresentation;
+  /** 0 nhận đèn như mặt khác; 1 tự sáng đúng màu texture (màn hình, TV), đọc được cả trong phòng tối */
+  glow?: number;
+  /** `opaque` bỏ alpha; `cut` bỏ điểm alpha dưới 0,5 (nhãn cắt hình, vẫn ghi độ sâu); `blend` hoà theo alpha, không ghi độ sâu */
+  alpha?: 'opaque' | 'cut' | 'blend';
+  opacity?: number;
+  stipple?: number;
+  stippleScale?: number;
+  soft?: number;
+  /** Mặt vẽ: `back` cho mặt sau giấy dùng chung lưới với mặt trước */
+  side?: 'front' | 'back' | 'double';
+  /** Đẩy độ sâu về phía camera để decal nằm sát mặt khác không giành điểm ảnh với mặt ấy. Mặc định có khi có `map`. */
+  offset?: boolean;
+}
+
+/** Vật liệu mặt có nội dung (decal, màn hình, trang giấy). Không cache: mỗi texture một vật liệu, uniform chung `G` vẫn dùng chung. */
+export function surface(o: SurfaceOptions = {}): THREE.ShaderMaterial {
+  const alpha = o.alpha ?? 'opaque';
+  const defines: Record<string, string> = {};
+  if (o.map) defines.USE_MAP = '';
+  if (o.map && alpha === 'blend') defines.MAP_BLEND = '';
+  if (o.map && alpha === 'cut') defines.MAP_CUT = '';
+  if (o.side && o.side !== 'front') defines.DOUBLE_SIDED = '';
+  const side = o.side === 'back' ? THREE.BackSide : o.side === 'double' ? THREE.DoubleSide : THREE.FrontSide;
+  const m = shaded(defines, side, { ...ownUniforms({ stipple: 0.06, ...o }), uMap: { value: o.map ?? null } });
+  m.transparent = alpha === 'blend' || (o.opacity ?? 1) < 1;
+  m.depthWrite = alpha !== 'blend';
+  if (o.offset ?? !!o.map) {
+    m.polygonOffset = true;
+    m.polygonOffsetFactor = -1;
+    m.polygonOffsetUnits = -4;
+  }
+  return m;
+}
+
+/** Bản riêng của một vật liệu `npr`/`surface` (đổi `uOpacity`, `uColor` cho một vật mà không đụng vật khác); uniform chung `G` vẫn dùng chung. */
+export function unshare(m: THREE.ShaderMaterial): THREE.ShaderMaterial {
+  const own: Record<string, THREE.IUniform> = {};
+  for (const [k, u] of Object.entries(m.uniforms)) {
+    if (k in G) continue;
+    const v = u.value as { clone?: () => unknown; isTexture?: boolean } | null;
+    own[k] = { value: v && typeof v.clone === 'function' && !v.isTexture ? v.clone() : v };
+  }
+  const c = shaded({ ...(m.defines as Record<string, string>) }, m.side, own);
+  c.transparent = m.transparent;
+  c.depthWrite = m.depthWrite;
+  c.polygonOffset = m.polygonOffset;
+  c.polygonOffsetFactor = m.polygonOffsetFactor;
+  c.polygonOffsetUnits = m.polygonOffsetUnits;
+  return c;
 }
 
 /** Vỏ ngược cho nét viền dày của nhân vật: mặt sau đẩy ra theo pháp tuyến. */
