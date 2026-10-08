@@ -1,5 +1,8 @@
-export { G, hullMaterial, npr, PALETTES, setPalette, SKY_FRAG, SKY_VERT, skyDome, type NprOptions, type PaletteName } from './npr';
-export { AA, createPipeline, type AaMode, type Pipeline, type PipelineOptions } from './pipeline';
+export {
+  G, hullMaterial, MAX_LAMP_SHADOWS, MAX_LAMPS, npr, PALETTES, setLights, setPalette, SKY_FRAG, SKY_VERT, skyDome,
+  type CeilingLight, type Lamp, type LightRig, type NprOptions, type PaletteName, type WindowLight,
+} from './npr';
+export { AA, createPipeline, type AaMode, type Grade, type Pipeline, type PipelineOptions, type RenderOptions } from './pipeline';
 export {
   fromCharacter, put, R, stickman,
   type Arm, type CharacterJson, type Figure, type Leg, type Side, type StickmanOptions,

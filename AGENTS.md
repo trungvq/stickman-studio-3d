@@ -48,8 +48,12 @@ hai vật cùng tham số dùng chung một vật liệu.
 soạn thẳng ở không gian hiển thị, khớp mã màu của JSON nhân vật 2D.
 
 **Vật không đổ bóng** đánh dấu `userData.noShadow`; vỏ ngược (`BackSide`) của nét viền tự
-được bỏ khỏi lượt bóng. Hộp ống kính bóng (`createPipeline({ shadow })`) phải ôm hết vùng
-có bóng trong khung.
+được bỏ khỏi lượt bóng. Hộp ống kính bóng tự ôm vùng camera thấy trong hộp cảnh (hay
+`bounds` của bộ đèn); nhập tay `createPipeline({ shadow })` thì phải ôm hết vùng có bóng.
+
+**Đèn khai, không đặt tay vào `G`.** Giờ trong ngày bằng `setPalette`, bộ đèn phòng (đèn trần,
+cửa sổ, đèn cục bộ) bằng `setLights`; cả hai ghép vào `G`. Mọi lọc bóng, bóng tiếp xúc và
+nhiễu băng xoay theo toạ độ điểm ảnh hay `t`, không theo lần chạy.
 
 **`torso.ts` và `sculpt.ts` theo `@stickman/rig`** (commit ghi ở đầu file): bảng kiểu áo,
 kiểu tóc và cách dựng giữ nguyên để người 3D đọc đúng JSON nhân vật 2D. Sửa bảng kiểu bên
