@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 9,
+  "name": "walk",
+  "duration": 1.1,
+  "end": "wrap",
+  "gen": "walkCycle",
+  "authoredAt": "side",
+  "params": {
+    "hip": 21.2,
+    "knee": 28,
+    "stance": 0.6,
+    "arm": 9,
+    "lean": 1,
+    "crouch": 0,
+    "bounce": 0.85,
+    "dip": 1.2
+  },
+  "events": [
+    {
+      "name": "step",
+      "t": 0.173
+    },
+    {
+      "name": "step",
+      "t": 0.673
+    }
+  ]
+}

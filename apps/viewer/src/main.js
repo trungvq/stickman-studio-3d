@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { AA, createPipeline, G, npr, setPalette, skyDome, stickman } from '@stickman3d/rig';
+import { BOY, demo, GIRL } from './demos.js';
 
 const AA_LABEL = { off: 'Tắt', 'ss1.5': '1,5×', ss2: '2×' };
 const q = new URLSearchParams(location.search);
@@ -25,24 +26,13 @@ scene.add(sky);
 const ground = new THREE.Mesh(new THREE.CircleGeometry(6, 64).rotateX(-Math.PI / 2), npr({ color: '#d9d2c3', stipple: 0.06, stippleScale: 1.4, soft: 1 }));
 scene.add(ground);
 
-const animate = setupCast();
+const animate = setupDemo(q.get('demo')) ?? setupCast();
 const pipe = createPipeline(renderer, { shadow: { half: 5, center: new THREE.Vector3(0, 1.5, 0) } });
 
 /** Hai người que đứng nói chuyện: một áo sơ mi, một áo blouse váy xếp ly. Trả hàm hoạt cảnh theo `t`. */
 function setupCast() {
-  const boy = stickman({
-    rig: { stroke: 6, height: 1, shoulderHalf: 40, shoulderDrop: 20, hipHalf: 28 },
-    garment: { style: 'shirt' }, color: '#3aa89c', skin: '#f8e3c8', sleeveWidth: 8, trouserWidth: 9,
-    hair: { style: 'spiky', front: 40, nape: -22, ear: 10, sideburn: 16, part: 35, fringe: 13, volume: 0.1 },
-    hairColor: '#33333a', brows: 'worried',
-  });
-  const girl = stickman({
-    rig: { stroke: 6, height: 1, shoulderHalf: 40, shoulderDrop: 20, hipHalf: 22 },
-    garment: { style: 'blouse', hem: -18 }, color: '#7893ae', accent: '#544456',
-    skirt: { rise: 27, waist: 40, length: 52, flare: 30, pleats: 8 },
-    hair: { style: 'bob', front: 48, nape: -22, ear: 16, sideburn: 0, part: 35, fringe: 0, volume: 0.07, bang: 16, bangTo: -55, bangThick: 0.1, length: 0.91 },
-    hairColor: '#3b3038',
-  });
+  const boy = stickman({ ...BOY, face: { brow: 'worried' } });
+  const girl = stickman(GIRL);
   boy.root.position.set(-1.1, 0, 0);
   boy.root.rotation.y = 0.55;
   girl.root.position.set(1.1, 0, 0);
@@ -66,12 +56,23 @@ function setupCast() {
     }
     boy.head.rotation.y = 0.15 - talkG * 0.1;
     girl.head.rotation.y = -0.15 + talkA * 0.1;
-    // chớp mắt
-    for (const [who, off] of [[boy, 1.7], [girl, 0]]) {
-      const b = pulse(t + off, 4.3, 0, 0.16);
-      for (const e of who.eyes) e.scale.y = 1.15 * (1 - b * 0.9);
+    // chớp mắt, nhép miệng khi nói
+    for (const [who, off, talk] of [[boy, 1.7, talkA], [girl, 0, talkG]]) {
+      const shut = pulse(t + off, 4.3, 0, 0.16) > 0;
+      const mouth = talk > 0.05 ? MOUTHS[Math.floor(t / 0.13) % MOUTHS.length] : 'closed';
+      who.face.set({ ...who.face.state, eyes: shut ? 'shut' : 'open', mouth });
     }
   };
+}
+
+const MOUTHS = ['talkA', 'talkTeeth', 'talkB', 'talkTeeth', 'talkA', 'o'];
+
+/** Cảnh diễn hành động `?demo=`; không có cảnh ấy thì trả `undefined` */
+function setupDemo(name) {
+  const d = name && demo(name);
+  if (!d) return undefined;
+  scene.add(...d.objects);
+  return d.animate;
 }
 
 const state = { outline: true, pixel: false, time: 'day', paused: false, aa: devicePixelRatio >= 2 ? 'off' : 'ss2' };

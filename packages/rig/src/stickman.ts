@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { DEFAULT_FACE, faceRig, type FaceRig, type FaceShape, type FaceState } from './face';
 import { sculptSkirt, sculptTorso } from './garment';
 import { toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
@@ -16,7 +17,8 @@ const hull = hullMaterial(0.026, INK);
 /** `-1` bên phải người (−x khi người nhìn +z), `1` bên trái. */
 export type Side = -1 | 1;
 const SIDES = [-1, 1] as const;
-export interface Arm { shoulder: THREE.Group; elbow: THREE.Group }
+/** `wrist` treo ở đầu cẳng tay: chỗ gắn đồ cầm */
+export interface Arm { shoulder: THREE.Group; elbow: THREE.Group; wrist: THREE.Group }
 export interface Leg { hip: THREE.Group; knee: THREE.Group }
 /** Người que dựng xong: `root` ở sàn dưới hông, mặt nhìn +z; các khớp để hoạt cảnh xoay. */
 export interface Figure {
@@ -27,7 +29,9 @@ export interface Figure {
   head: THREE.Group;
   arms: Record<Side, Arm>;
   legs: Record<Side, Leg>;
-  eyes: THREE.Object3D[];
+  face: FaceRig;
+  /** Lệch nhịp chớp mắt của `act` giữa các người */
+  seed: number;
 }
 
 /** Khối tô màu có viền dày: mesh chính + vỏ ngược. */
@@ -71,52 +75,30 @@ function arm(parent: THREE.Object3D, side: Side, x: number, y: number): Arm {
   shoulder.add(limb(R.upperArm));
   const elbow = joint(shoulder, 0, -R.upperArm, 0);
   elbow.add(limb(R.foreArm));
-  return { shoulder, elbow };
+  const wrist = joint(elbow, 0, -R.foreArm, 0);
+  return { shoulder, elbow, wrist };
 }
 
-export type Brows = 'calm' | 'worried';
-
-function face(head: THREE.Object3D, { glasses, brows = 'calm' }: { glasses: boolean; brows?: Brows }) {
-  const eyeGeo = new THREE.SphereGeometry(0.066, 12, 8);
+/** Gọng kính quanh hai mắt ở cao độ `eyeY` (three, hệ đầu) */
+function glassesOn(head: THREE.Object3D, eyeY: number) {
   const r = R.head;
-  const on = (x: number, y: number, lift = 0) => new THREE.Vector3(x, y, Math.sqrt(Math.max(r * r - x * x - y * y, 0)) + lift);
+  const frame = npr({ color: '#24201e', stipple: 0 });
+  const bar = (a: THREE.Vector3, b: THREE.Vector3, t = 0.013) => {
+    const d = b.clone().sub(a);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(t, t, d.length(), 5), frame);
+    m.position.copy(a).add(b).multiplyScalar(0.5);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
+    head.add(m);
+  };
+  const z = r + 0.035;
   for (const s of SIDES) {
-    const e = new THREE.Mesh(eyeGeo, ink);
-    e.scale.set(1, 1.15, 0.45);
-    e.position.copy(on(s * 0.13, 0.08, 0.004));
-    e.lookAt(e.position.clone().multiplyScalar(2));
-    e.userData.eye = true;
-    head.add(e);
-    const b = new THREE.Mesh(new THREE.CapsuleGeometry(0.018, 0.13, 3, 6), ink);
-    b.position.copy(on(s * 0.14, 0.24, 0.0));
-    b.rotation.z = Math.PI / 2 + (brows === 'worried' ? -s * 0.22 : s * 0.06);
-    b.rotation.y = s * 0.2;
-    head.add(b);
+    const x0 = s * 0.035, x1 = s * 0.25, y0 = eyeY - 0.085, y1 = eyeY + 0.085;
+    const zf = (x: number) => Math.sqrt(Math.max(z * z - x * x, 0));
+    const c = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(([x, y]) => new THREE.Vector3(x, y, zf(x)));
+    for (let i = 0; i < 4; i++) bar(c[i], c[(i + 1) % 4]);
+    bar(new THREE.Vector3(x1, y1 - 0.02, zf(x1)), new THREE.Vector3(s * (r + 0.02), y1 - 0.03, 0.05));
   }
-  const mouth = new THREE.Mesh(new THREE.CapsuleGeometry(0.016, 0.13, 3, 6), npr({ color: '#4a2a22', stipple: 0 }));
-  mouth.position.copy(on(0, -0.18, 0.0));
-  mouth.rotation.z = Math.PI / 2;
-  mouth.rotation.x = -0.28;
-  head.add(mouth);
-  if (glasses) {
-    const frame = npr({ color: '#24201e', stipple: 0 });
-    const bar = (a: THREE.Vector3, b: THREE.Vector3, t = 0.013) => {
-      const d = b.clone().sub(a);
-      const m = new THREE.Mesh(new THREE.CylinderGeometry(t, t, d.length(), 5), frame);
-      m.position.copy(a).add(b).multiplyScalar(0.5);
-      m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
-      head.add(m);
-    };
-    const z = r + 0.035;
-    for (const s of SIDES) {
-      const x0 = s * 0.035, x1 = s * 0.25, y0 = 0.0, y1 = 0.17;
-      const zf = (x: number) => Math.sqrt(Math.max(z * z - x * x, 0));
-      const c = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(([x, y]) => new THREE.Vector3(x, y, zf(x)));
-      for (let i = 0; i < 4; i++) bar(c[i], c[(i + 1) % 4]);
-      bar(new THREE.Vector3(x1, y1 - 0.02, zf(x1)), new THREE.Vector3(s * (r + 0.02), y1 - 0.03, 0.05));
-    }
-    bar(new THREE.Vector3(-0.035, 0.12, z), new THREE.Vector3(0.035, 0.12, z));
-  }
+  bar(new THREE.Vector3(-0.035, eyeY + 0.035, z), new THREE.Vector3(0.035, eyeY + 0.035, z));
 }
 
 /** Tóc dựng khối của rig (`pieces.hair.sculpt` trong JSON nhân vật), lưới hệ sọ đơn vị phóng theo khối đầu. */
@@ -151,7 +133,11 @@ export interface StickmanOptions {
   hair?: Partial<Sculpt>;
   hairColor?: string;
   glasses?: boolean;
-  brows?: Brows;
+  /** `face` của JSON nhân vật: chỗ mắt, khoảng hai mắt, mắt → mồm */
+  faceShape?: Partial<FaceShape>;
+  /** Nét mặt lúc dựng; `act` đổi theo từng khung */
+  face?: Partial<FaceState>;
+  seed?: number;
   sleeveWidth?: number;
   trouserWidth?: number;
   /** Gập đùi ra trước để váy phủ theo đùi */
@@ -159,7 +145,7 @@ export interface StickmanOptions {
 }
 
 /** Một người que 3D theo JSON nhân vật của rig. */
-export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt, skirtColor = color, hair, hairColor = '#2a1c15', glasses = false, brows, sleeveWidth = 10, trouserWidth = 10, seated = false }: StickmanOptions): Figure {
+export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt, skirtColor = color, hair, hairColor = '#2a1c15', glasses = false, faceShape, face, seed = 0, sleeveWidth = 10, trouserWidth = 10, seated = false }: StickmanOptions): Figure {
   const root = new THREE.Group();
   const hips = joint(root, 0, R.thigh + R.shin + R.limb, 0);
   const spine = joint(hips, 0, 0.0, 0);
@@ -174,10 +160,13 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
   neckMesh.position.y = 0.05;
   neck.add(neckMesh);
   const head = joint(neck, 0, R.neck + R.head * 0.95, 0);
+  const skullScale = new THREE.Vector3(1, 1.04, 0.98);
   const skull = new THREE.SphereGeometry(R.head, 36, 24);
-  skull.scale(1, 1.04, 0.98);
+  skull.scale(skullScale.x, skullScale.y, skullScale.z);
   head.add(inked(skull, npr({ color: skin, stipple: 0.035, stippleScale: 4, soft: 1 }), 0.03));
-  face(head, { glasses, brows });
+  const faceR = faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face });
+  head.add(faceR.mesh);
+  if (glasses) glassesOn(head, (-(faceShape?.offsetY ?? 0) * R.head * skullScale.y) / 65);
   if (hair) sculptHair(head, hair, hairColor);
   const legs = { [-1]: leg(hips, -1, rig.hipHalf / 100), [1]: leg(hips, 1, rig.hipHalf / 100) } as Record<Side, Leg>;
   const sx = shoulderRoot(garment, rig) / 100, sy = (120 - rig.shoulderDrop) / 100;
@@ -191,15 +180,14 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
     for (const j of [arms[s].shoulder, arms[s].elbow]) j.children.forEach((m) => m.userData.limb && m.scale.set(sleeveWidth / 10, 1, sleeveWidth / 10));
     for (const j of [legs[s].hip, legs[s].knee]) j.children.forEach((m) => m.userData.limb && m.scale.set(trouserWidth / 10, 1, trouserWidth / 10));
   }
-  const eyes: THREE.Object3D[] = [];
-  head.traverse((o) => o.userData.eye && eyes.push(o));
-  return { root, hips, spine, neck, head, arms, legs, eyes };
+  return { root, hips, spine, neck, head, arms, legs, face: faceR, seed };
 }
 
 /** Các trường của JSON nhân vật mà người 3D đọc. Truyền object đã qua `parseCharacter` của @stickman/rig. */
 export interface CharacterJson {
   rig: Rig;
   palette: { garment: string; skin?: string; sleeveWidth?: number; trouserWidth?: number };
+  face?: Partial<FaceShape>;
   pieces: {
     torso: { garment?: Partial<Garment> };
     hem?: { skirt?: Skirt; color?: string };
@@ -213,7 +201,7 @@ export function fromCharacter(json: CharacterJson, opts: Partial<StickmanOptions
   return stickman({
     rig: json.rig, garment: pc.torso.garment, color: pal.garment, skin: pal.skin,
     skirt: pc.hem?.skirt, skirtColor: pc.hem?.color, hair: pc.hair?.sculpt, hairColor: pc.hair?.color,
-    sleeveWidth: pal.sleeveWidth, trouserWidth: pal.trouserWidth, ...opts,
+    sleeveWidth: pal.sleeveWidth, trouserWidth: pal.trouserWidth, faceShape: json.face, ...opts,
   });
 }
 
@@ -234,28 +222,4 @@ export function put(p: Figure, at: Vec3, yaw: number, sit = false) {
     }
     p.spine.rotation.x = 0.14;
   } else for (const s of SIDES) p.legs[s].hip.rotation.set(0, 0, s * 0.03);
-}
-
-const DOWN = new THREE.Vector3(0, -1, 0);
-/**
- * IK hai đoạn: cổ tay `side` tới điểm thế giới rig `target`; khuỷu chìa theo `hint` (hệ thân).
- * Khớp vai, khớp khuỷu là khớp cầu, đoạn chi rủ theo −y.
- */
-export function reach(p: Figure, side: Side, target: Vec3, hint: THREE.Vector3) {
-  const { shoulder, elbow } = p.arms[side];
-  p.root.updateMatrixWorld(true);
-  const t = shoulder.parent!.worldToLocal(toThree(target)), s = shoulder.position.clone();
-  const L1 = R.upperArm, L2 = R.foreArm;
-  const d = t.clone().sub(s), len = Math.min(d.length(), L1 + L2 - 1e-3), u = d.normalize();
-  const along = (L1 * L1 - L2 * L2 + len * len) / (2 * len), h = Math.sqrt(Math.max(0, L1 * L1 - along * along));
-  const hv = hint.clone().normalize().addScaledVector(u, -hint.clone().normalize().dot(u)).normalize();
-  const e = s.clone().addScaledVector(u, along).addScaledVector(hv, h), w = s.clone().addScaledVector(u, len);
-  shoulder.quaternion.setFromUnitVectors(DOWN, e.clone().sub(s).normalize());
-  elbow.quaternion.setFromUnitVectors(DOWN, w.sub(e).normalize().applyQuaternion(shoulder.quaternion.clone().invert()));
-}
-
-/** Hai cổ tay tới hai điểm thế giới rig; `hint` cho tay trái, tay phải lấy đối xứng qua mặt dọc thân. */
-export function hands(p: Figure, { right, left }: { right: Vec3; left: Vec3 }, hint: THREE.Vector3) {
-  reach(p, -1, right, new THREE.Vector3(-hint.x, hint.y, hint.z));
-  reach(p, 1, left, hint);
 }

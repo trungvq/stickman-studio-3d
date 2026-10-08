@@ -22,6 +22,11 @@ pnpm shots      # chụp app xem thử ra tmp/shots/
 | `look=x,y,z` | Điểm camera nhìn vào (three) |
 | `aa=off\|ss1.5\|ss2` | Siêu lấy mẫu |
 | `pixel`, `noink`, `nohud` | Chế độ pixel, tắt nét mực, ẩn HUD |
+| `demo=walk\|sit\|faces\|look` | Cảnh diễn hành động thay cho cảnh nói chuyện: đi theo `path`, ngồi đặt tay lên bàn và cúi chào, bảng nét mặt, quay đầu về ống kính |
+
+Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js`, `@stickman/rig` lấy mẫu
+bằng `sceneAt`, người 3D diễn theo bằng `act`. Hành động ở `apps/viewer/actions/` chép từ
+bộ chung của `@stickman/cli`.
 
 Phím: `O` nét mực, `P` pixel, `A` khử răng cưa, `T` đổi giờ, `H` ẩn HUD,
 `Space` dừng.
@@ -61,6 +66,22 @@ nguồn, chạy `pnpm dev` ở repo này cho tsup build lại:
 Đi đường `link:` thì alias `three` về bản của repo video trong `remotion.config.ts` (và
 `vite.config` nếu có), không thì symlink làm bundler tìm `three` ở repo này — hai bản
 `three` là vật liệu hỏng mà không báo lỗi. Chốt một mốc thì publish rồi pin lại version.
+
+## Diễn theo hành động 2D
+
+Package không đọc JSON hành động hay scene. Repo video lấy mẫu bằng `@stickman/rig` rồi
+đưa thẳng kết quả cho `act`:
+
+```ts
+const rt = resolveScene(scene, ACTIONS, ANIMALS, PROPS, castHeights(scene), castBodies(scene));
+// mỗi khung
+act(fig, sceneAt(rt, id, t, heights[id], bodies[id]), t);
+```
+
+`act` đặt người theo `world` (tâm hông, hướng, ngồi), đọc góc tay chân của hành động soạn
+ở `side` (`stand-3d`, `sit-3d`, `walk`, `bow-3d`…), đích cổ tay (`reach`, `world.hands`),
+góc thân, góc đầu và nét mặt (`mouth`, `brow`, `eyes`), tự chớp mắt theo `t`. Kênh tay chân
+soạn trên mặt khung 2D không được đọc: người đứng nghỉ ở kênh ấy.
 
 ## Phát hành một version
 

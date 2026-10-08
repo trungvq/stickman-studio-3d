@@ -26,6 +26,12 @@ const SHOTS = [
   ['chieu', 't=1.8&time=evening'],
   ['khong-net', 't=1.8&noink'],
   ['pixel', 't=1.8&pixel'],
+  ['di', 'demo=walk&t=1.2'],
+  ['di-nghieng', 'demo=walk&t=1.75&az=0&el=4&look=-0.4,1.8,0'],
+  ['ngoi', 'demo=sit&t=0.9&az=60&el=12&look=1.2,1.4,0&dist=12'],
+  ['ngoi-nghieng', 'demo=sit&t=1.3&az=0&el=6&look=1.3,1.6,0&dist=12'],
+  ['mat', 'demo=faces&t=0.9&az=0&el=3&look=0,3.1,0&dist=12'],
+  ['nhin', 'demo=look&t=1.2&az=0&el=4&look=0,3,0&dist=7'],
 ];
 
 const { values: o } = parseArgs({ options: { out: { type: 'string' }, vs: { type: 'string' }, only: { type: 'string' }, soft: { type: 'boolean' } } });

@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 13,
+  "name": "bow-3d",
+  "duration": 2.6,
+  "end": "wrap",
+  "authoredAt": "side",
+  "mask": ["armFar", "armNear", "legFar", "legNear", "torso", "head"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [3, 6, 0],
+        "armNear": [3, 6, 0],
+        "legFar": [0, 0],
+        "legNear": [0, 0],
+        "torso": 0,
+        "head": [0, 0, 0]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.08,
+      "pose": {
+        "armFar": [3, 6, 0],
+        "armNear": [3, 6, 0],
+        "legFar": [0, 0],
+        "legNear": [0, 0],
+        "torso": 0,
+        "head": [0, 0, 0]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.32,
+      "pose": {
+        "armFar": [10, 4, 0],
+        "armNear": [10, 4, 0],
+        "legFar": [0, 0],
+        "legNear": [0, 0],
+        "torso": 38,
+        "head": [0, 0, 8]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.62,
+      "pose": {
+        "armFar": [10, 4, 0],
+        "armNear": [10, 4, 0],
+        "legFar": [0, 0],
+        "legNear": [0, 0],
+        "torso": 38,
+        "head": [0, 0, 8]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.88,
+      "pose": {
+        "armFar": [3, 6, 0],
+        "armNear": [3, 6, 0],
+        "legFar": [0, 0],
+        "legNear": [0, 0],
+        "torso": 0,
+        "head": [0, 0, 0]
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": []
+}
