@@ -79,6 +79,7 @@ const SHOTS = [
   ['vo-ngoai-thap', 'demo=room&t=1&az=10&el=3&look=0,3.2,0&dist=28'],
   ['vo-cua-so', 'demo=room&t=1&az=70&el=4&look=-10,3.5,-0.5&dist=9'],
   ['vo-rem', 'demo=room&t=1&az=55&el=12&look=-8,2.5,-1&dist=16'],
+  ['vo-tu-treo', 'demo=room&t=1&az=10&el=4&look=-4.5,2.6,-8&dist=15'],
   ['decal', 'demo=decal&t=6&az=12&el=14&dist=12&look=0,2.4,-1.8'],
   ['decal-man-hinh', 'demo=decal&t=6&az=18&el=4&dist=3&look=0,2.12,-3.03'],
   ['decal-giay-nho', 'demo=decal&t=6&az=10&el=6&dist=1.1&look=0.55,2.55,-3'],

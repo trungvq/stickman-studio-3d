@@ -57,8 +57,7 @@ phút một tab, ~20–25 phút ở `--concurrency=4` chưa kể mã hoá. Chưa
 
 - Tóc afro có sọc dọc ở mặt trước; vạt áo người ngồi lún nhẹ vào ghế; `collide` báo đùi lún ghế khi
   ngồi (lọc đi).
-- Một phòng chỉ một cửa sổ có nắng; vật lồi khỏi tường quá ~8 px làm tối dải tường bên dưới; chưa tắt
-  được đèn trần riêng khỏi bảng màu; cửa chỉ mở vào trong.
+- Một phòng chỉ một cửa sổ có nắng; chưa tắt được đèn trần riêng khỏi bảng màu; cửa chỉ mở vào trong.
 - Đèn rọi mạnh để lại đốm sáng trên áo; màn hình phát sáng không chiếu ra phòng.
 - Vật đang `fade` vẫn giữ nét mực đậm; trang lịch đã lật biến mất.
 - Mốc `mouth`/`face` dùng mặt mặc định, `headTop` không tính tóc.

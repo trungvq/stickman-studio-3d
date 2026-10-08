@@ -279,8 +279,10 @@ setLights(office.lights({ lamps: [deskLamp], ceiling: { intensity: 1 } }));
 - **Cửa đi.** Cánh xoay quanh `pivot` ở bản lề, `set(open)` mỗi khung. Sau ô cửa là hành lang tối. `door.handle` là
   điểm tay nắm (rig) cho đích cổ tay; `door.sign.anchor` là tâm mặt biển trống cạnh cửa (+x dọc tường, +y lên, +z ra
   phòng, three) để gắn decal chữ, cỡ `width` × `height` px.
-- **Vật nhô khỏi tường.** Bóng đèn trần dò ở mặt tường cách tường 15 px; vật áp tường nhô sâu hơn 8 px mà đổ bóng thì
-  phủ bóng cả dải tường dưới nó. Bậu cửa sổ nhô 8, tay nắm cửa không đổ bóng; đồ áp tường của repo video cũng vậy.
+- **Vật nhô khỏi tường.** Đèn trần là tấm đèn rải khắp trần: tường dưới vật nhô (tủ treo, kệ) nhận ánh xiên từ giữa phòng,
+  bóng dưới vật dài cỡ bề nhô chia `ceiling.spread` (mặc định 0,6) rồi sáng lại; `spread: 0` là đèn rọi thẳng, cả dải tường
+  dưới vật tối. Chỉ vật liệu `npr({ spread: true })` nhận (mọi `Batch`: vỏ phòng, đồ khối); người que không, bóng cằm trên ngực
+  giữ nguyên.
 
 **Người nền ngồi.** `seatCrowd(seats, base)` dựng mỗi chỗ một người `lod: 'low'`, đặt ngồi (`at` là điểm mặt ngồi dưới
 hông như `put`, `yaw` độ), tay lên bàn (`hands: 'desk'`) hay lên đùi, đầu lệch nhẹ theo thứ tự chỗ, rồi `freeze` cả

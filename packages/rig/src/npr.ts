@@ -16,6 +16,7 @@ export const G = {
   uKey: { value: 1 },
   uKeyWrap: { value: 0 },
   uKeyFill: { value: 0 },
+  uKeySpread: { value: 0 },
   uRoomGain: { value: 1 },
   uShadowTint: { value: new THREE.Color(0.46, 0.5, 0.74) },
   uAmbient: { value: new THREE.Color(0.55, 0.68, 0.95) },
@@ -59,7 +60,7 @@ const POISSON = /* glsl */ `const vec2 PD[16] = vec2[](
 
 const COMMON = /* glsl */ `
 uniform vec3 uLightDir, uLightColor, uShadowTint, uAmbient;
-uniform float uKey, uKeyWrap, uKeyFill, uRoomGain, uShadowTexel, uTime;
+uniform float uKey, uKeyWrap, uKeyFill, uKeySpread, uRoomGain, uShadowTexel, uTime;
 uniform sampler2D uShadowMap;
 uniform mat4 uShadowMatrix;
 uniform vec4 uShadowInfo;
@@ -88,18 +89,42 @@ float vnoise(vec3 x){
 mat2 diskRot(){ float a = hash12(gl_FragCoord.xy) * 6.2832; float c = cos(a), s = sin(a); return mat2(c, s, -s, c); }
 bool outside(vec3 c){ return c.x < 0.0 || c.x > 1.0 || c.y < 0.0 || c.y > 1.0 || c.z > 1.0; }
 // Bóng đèn chính kiểu PCSS: tìm vật che, bóng loe theo khoảng cách vật che → mặt nhận, nên sát chân thì sắc, xa thì mềm.
-float keyShadow(vec3 wp, vec3 n, mat2 R){
-  // mặt gần song song tia đèn (tường dưới đèn trần) đẩy ra xa hơn cho khỏi tự che trong vùng tìm vật che
-  vec3 c = (uShadowMatrix * vec4(wp + n * (0.03 + 0.12 * (1.0 - abs(dot(n, uLightDir)))), 1.0)).xyz;
-  if (outside(c)) return 1.0;
-  float bias = 0.02 / uShadowInfo.y;
-  float search = uShadowInfo.w * uShadowTexel, zb = 0.0, nb = 0.0;
+// Vật che trong vùng tìm: số mẫu, độ sâu trung bình zb và độ sâu vật che gần mặt nhận nhất zn
+float keyBlockers(vec3 c, mat2 R, out float zb, out float zn){
+  float bias = 0.02 / uShadowInfo.y, search = uShadowInfo.w * uShadowTexel, nb = 0.0;
+  zb = 0.0;
+  zn = 0.0;
   for (int i = 0; i < 16; i += 2) {
     float d = texture2D(uShadowMap, c.xy + R * PD[i] * search).r;
-    if (d < c.z - bias) { zb += d; nb += 1.0; }
+    if (d < c.z - bias) { zb += d; nb += 1.0; zn = max(zn, d); }
   }
-  if (nb == 0.0) return 1.0;
-  float pen = clamp((c.z - zb / nb) * uShadowInfo.y * uShadowInfo.z / uShadowInfo.x, 1.0, uShadowInfo.w) * uShadowTexel;
+  if (nb > 0.0) zb /= nb;
+  return nb;
+}
+float keyShadow(vec3 wp, vec3 n, mat2 R){
+  // mặt gần song song tia đèn (tường dưới đèn trần) đẩy ra xa hơn cho khỏi tự che trong vùng tìm vật che
+  float side = 1.0 - abs(dot(n, uLightDir));
+  vec3 p = wp + n * (0.03 + 0.12 * side);
+  vec3 c = (uShadowMatrix * vec4(p, 1.0)).xyz;
+  if (outside(c)) return 1.0;
+  float zb, zn;
+  if (keyBlockers(c, R, zb, zn) == 0.0) return 1.0;
+  // mặt đứng dưới vật nhô (tủ treo): đèn tấm rải khắp trần rọi xiên từ giữa phòng, dò lại ở điểm lùi vào phòng theo khoảng
+  // cách tới vật che — sát dưới vật vẫn tối, xa xuống thì sáng lại
+  float loose = 1.0;
+#ifdef KEY_SPREAD
+  // tăng dần theo độ đứng của mặt: mặt cong không có ranh bật/tắt
+  float wv = uKeySpread * smoothstep(0.6, 0.95, side);
+  if (wv > 0.0) {
+    // dời theo vật che sát mặt nhận nhất (mặt kệ), không theo đồ cao hơn bày trên nó
+    c = (uShadowMatrix * vec4(p + n * (c.z - zn) * uShadowInfo.y * wv, 1.0)).xyz;
+    if (outside(c) || keyBlockers(c, R, zb, zn) == 0.0) return 1.0;
+    // ánh xiên từ cả mảng trần: bóng xa vật che loe rộng hơn, không in sắc đáy từng món trên kệ
+    loose = 1.0 + 3.0 * wv / uKeySpread;
+  }
+#endif
+  float bias = 0.02 / uShadowInfo.y;
+  float pen = clamp((c.z - zb) * uShadowInfo.y * uShadowInfo.z * loose / uShadowInfo.x, 1.0, uShadowInfo.w * loose) * uShadowTexel;
   float s = 0.0;
   for (int i = 0; i < 16; i++) s += (c.z - bias > texture2D(uShadowMap, c.xy + R * PD[i] * pen).r) ? 0.0 : 1.0;
   // vùng che một phần co về hai đầu: mép bóng còn mềm, mảng rộng gần ngưỡng dải thì không lốm đốm
@@ -242,6 +267,8 @@ export interface NprOptions {
   soft?: number;
   emissive?: number;
   doubleSided?: boolean;
+  /** Mặt đứng nhận ánh xiên của đèn tấm trần dưới vật nhô (`CeilingLight.spread`): vỏ phòng, đồ đạc (`Batch` bật sẵn); người tắt */
+  spread?: boolean;
 }
 
 function shaded(defines: Record<string, string>, side: THREE.Side, own: Record<string, THREE.IUniform>) {
@@ -263,7 +290,8 @@ export function npr(o: NprOptions = {}): THREE.ShaderMaterial {
   const key = JSON.stringify(o);
   const hit = cache.get(key);
   if (hit) return hit;
-  const m = shaded(o.doubleSided ? { DOUBLE_SIDED: '' } : {}, o.doubleSided ? THREE.DoubleSide : THREE.FrontSide, ownUniforms(o));
+  const defines: Record<string, string> = { ...(o.doubleSided ? { DOUBLE_SIDED: '' } : {}), ...(o.spread ? { KEY_SPREAD: '' } : {}) };
+  const m = shaded(defines, o.doubleSided ? THREE.DoubleSide : THREE.FrontSide, ownUniforms(o));
   cache.set(key, m);
   return m;
 }
@@ -403,6 +431,9 @@ export interface CeilingLight {
   wrap?: number;
   /** Ánh dội cho mặt quay khỏi đèn (trần, gầm), 0–1: 0,3 là dải giữa. Mặc định 0,3. */
   fill?: number;
+  /** Tấm đèn rải khắp trần: mặt đứng dưới vật nhô khỏi tường (tủ treo) nhận ánh xiên từ giữa phòng; bóng dưới vật dài cỡ bề nhô
+   *  chia `spread` rồi sáng lại. 0 là đèn rọi thẳng: cả dải tường dưới vật tối. Mặc định 0,6. */
+  spread?: number;
   /** Độ sáng cả phòng (đèn trần và ánh dội), 0–1: hạ xuống khi đèn rọi sân khấu bật. Mặc định 1. */
   intensity?: number;
   /** Độ loe bóng theo khoảng cách vật che → mặt nhận (cỡ mảng đèn / độ cao trần). Mặc định 0,12. */
@@ -485,6 +516,7 @@ function applyLights() {
     G.uLightColor.value.setRGB(...p.ceil);
     G.uKeyWrap.value = c.wrap ?? 1;
     G.uKeyFill.value = c.fill ?? 0.3;
+    G.uKeySpread.value = c.spread ?? 0.6;
     G.uRoomGain.value = p.gain * (c.intensity ?? 1);
     G.uShadowInfo.value.z = c.soft ?? 0.12;
     G.uShadowInfo.value.w = 10;
@@ -494,6 +526,7 @@ function applyLights() {
     G.uLightColor.value.setRGB(...p.light);
     G.uKeyWrap.value = 0;
     G.uKeyFill.value = 0;
+    G.uKeySpread.value = 0;
     G.uRoomGain.value = 1;
     G.uShadowInfo.value.z = 0.015;
     G.uShadowInfo.value.w = 3;

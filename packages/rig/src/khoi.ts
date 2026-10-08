@@ -83,7 +83,7 @@ export class Batch {
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
       geo.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
-      const m = new THREE.Mesh(geo, npr({ stipple: 0.08, stippleScale: 2.4, ...this.base, ...mat }));
+      const m = new THREE.Mesh(geo, npr({ stipple: 0.08, stippleScale: 2.4, spread: true, ...this.base, ...mat }));
       m.castShadow = shadow;
       m.receiveShadow = true;
       if (!shadow) m.userData.noShadow = true;

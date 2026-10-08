@@ -4,7 +4,7 @@ import { ACTIONS, BOY } from './demos.js';
 import { samples } from './demo-styles.js';
 
 // Phòng dựng bằng bộ dựng phòng (`?demo=room`): văn phòng có dải cửa sổ tường trái (rèm lá kéo xuống 30%), cửa sổ nhỏ tường sau, cửa ra
-// hành lang tường phải, đèn tấm trên trần, hai đảo bàn bốn chỗ có người nền đóng băng (JSON nhân vật mẫu qua `characterOptions`),
+// hành lang tường phải, tủ treo tường sau, đèn tấm trên trần, hai đảo bàn bốn chỗ có người nền đóng băng (JSON nhân vật mẫu qua `characterOptions`),
 // một người đi về phía cửa.
 
 const SEAT_Y = -87.5, TOP = 137;
@@ -54,6 +54,8 @@ export function roomDemo(q) {
   const a = island(-300, [-10, 170]), b = island(450, [-10, 170]);
   const fb = new Batch();
   addItem(fb, { at: { at: [0, 0, 0] }, parts: [...a.parts, ...b.parts,
+    // tủ treo tường sau nhô 70: tường dưới nó chỉ tối một dải ngắn sát đáy tủ
+    { v: box(-700, -200, -560, -400, 830, 900), tone: tone('#9c6a50', '#74472f') },
     // đèn bàn ở bàn trước bên trái đảo hai
     { v: box(510, 540, -TOP - 6, -TOP - 2, 140, 170), tone: METAL },
     { v: box(522, 528, -TOP - 170, -TOP - 6, 152, 158), tone: METAL },
