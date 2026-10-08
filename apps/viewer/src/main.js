@@ -4,6 +4,8 @@ import { AA, createStage, npr, PALETTES, setPalette, skyDome, stickman } from '@
 import { GRADES, lightDemo } from './demo-light.js';
 import { BOY, demo, GIRL } from './demos.js';
 import { holdDemo } from './demo-hold.js';
+import { roomDemo } from './demo-room.js';
+import { stagesDemo } from './demo-stages.js';
 import { createMarks } from './marks.js';
 
 const AA_LABEL = { off: 'Tắt', 'ss1.5': '1,5×', ss2: '2×' };
@@ -33,7 +35,7 @@ const shot = setupDemo(q.get('demo'));
 const animate = shot?.animate ?? setupCast();
 const stage = createStage({
   renderer, scene, camera, size: { w: host.clientWidth, h: host.clientHeight },
-  update: (t) => animate(t),
+  update: (t, st) => animate(t, st),
 });
 const marks = shot?.marks && createMarks(host, shot.marks, [scene]);
 
@@ -77,10 +79,10 @@ const MOUTHS = ['talkA', 'talkTeeth', 'talkB', 'talkTeeth', 'talkA', 'o'];
 
 /** Cảnh diễn hành động `?demo=`; không có cảnh ấy thì trả `undefined` */
 function setupDemo(name) {
-  const d = name === 'hold' ? holdDemo() : name === 'light' ? lightDemo(q) : name && demo(name);
-  if (name === 'light') ground.visible = false;
+  const d = name === 'hold' ? holdDemo() : name === 'light' ? lightDemo(q) : name === 'room' ? roomDemo(q) : name === 'stages' ? stagesDemo(host) : name && demo(name);
+  if (name === 'light' || name === 'room') ground.visible = false;
   if (!d) return undefined;
-  scene.add(...d.objects);
+  if (d.objects.length) scene.add(...d.objects);
   return d;
 }
 

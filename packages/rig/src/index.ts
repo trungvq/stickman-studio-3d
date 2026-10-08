@@ -1,7 +1,8 @@
 export {
-  G, hullMaterial, MAX_LAMP_SHADOWS, MAX_LAMPS, npr, PALETTES, setLights, setPalette, SKY_FRAG, SKY_VERT, skyDome,
+  G, hullMaterial, MAX_LAMP_SHADOWS, MAX_LAMPS, npr, PALETTES, SKY_FRAG, SKY_VERT, skyDome,
   type CeilingLight, type Lamp, type LightRig, type NprOptions, type PaletteName, type WindowLight,
 } from './npr';
+export { currentLights, setLights, setPalette, type LightState } from './lighting';
 export { AA, createPipeline, type AaMode, type Grade, type Pipeline, type PipelineOptions, type RenderOptions } from './pipeline';
 export {
   fromCharacter, put, R, stickman,
@@ -11,7 +12,8 @@ export {
   dress, hold, SOCKET_NAMES, torsoSocket, wear,
   type EquipState, type Gear, type HeadFit, type Held, type HoldOptions, type ItemBuild, type ItemContext, type ItemFactories, type ItemFactory, type SocketName, type Sockets,
 } from './attach';
-export { freeze } from './crowd';
+export { freeze, seatCrowd, type Seat } from './crowd';
+export { room, type DoorSpec, type Face, type FloorPattern, type PanelSpec, type Room, type RoomDoor, type RoomOptions, type RoomTones, type RoomWindow, type WallSide, type WindowSpec } from './room';
 export { BODY_PARTS, bodyCapsules, collide, colliders, type BodyPart, type Collider, type CollideOptions, type Contact } from './collide';
 export { act, type ActPose, type ActReach, type Acting, type ActWorld } from './act';
 export { DEFAULT_FACE, type BrowKind, type EyeKind, type FaceRig, type FaceShape, type FaceState, type MouthKind, type Wrinkle } from './face';

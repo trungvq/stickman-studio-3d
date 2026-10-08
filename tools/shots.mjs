@@ -69,6 +69,15 @@ const SHOTS = [
   ['ban', 'demo=desk&t=2&az=40&el=12&look=0,1.8,0&dist=17'],
   ['ban-nghieng', 'demo=desk&t=2&az=-30&el=15&look=0,1.8,0&dist=17'],
   ['dau-than', 'demo=heads&t=2&az=10&el=4&look=0,2.6,0&dist=13'],
+  ['vo-ngay', 'demo=room&t=1&az=20&el=22&look=0,2,0&dist=30'],
+  ['vo-1830', 'demo=room&t=1&az=20&el=22&look=0,2,0&dist=30&time=dusk'],
+  ['vo-dem', 'demo=room&t=1&az=20&el=22&look=0,2,0&dist=30&time=night'],
+  ['vo-goc-ngoai', 'demo=room&t=1&az=-50&el=30&look=0,1.5,0&dist=32'],
+  ['vo-tren', 'demo=room&t=1&az=0&el=75&look=0,0,0&dist=34'],
+  ['vo-cua-mo', 'demo=room&t=1.5&door=0.5&az=-70&el=3&look=10,2.8,3&dist=12'],
+  ['hai-san-khau', 'demo=stages'],
+  ['vo-ngoai-thap', 'demo=room&t=1&az=10&el=3&look=0,3.2,0&dist=28'],
+  ['vo-cua-so', 'demo=room&t=1&az=70&el=4&look=-10,3.5,-0.5&dist=9'],
 ];
 
 const { values: o } = parseArgs({ options: { out: { type: 'string' }, vs: { type: 'string' }, only: { type: 'string' }, soft: { type: 'boolean' } } });

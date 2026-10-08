@@ -149,6 +149,8 @@ export interface Pipeline {
   setSize(w: number, h: number, o?: { aa?: AaMode; pixel?: boolean }): void;
   /** Một khung: bản đồ bóng của mọi đèn, cảnh, nét mực và bóng tiếp xúc, hậu kỳ. Đèn (`setPalette`, `setLights`) phải đã đặt cho khung này. */
   render(scene: THREE.Scene, camera: THREE.PerspectiveCamera, o?: RenderOptions): void;
+  /** Huỷ render target, texture độ sâu và vật liệu của pipeline; renderer và cảnh không đụng tới */
+  dispose(): void;
 }
 
 const BIAS = new THREE.Matrix4().set(0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 1);
@@ -404,6 +406,15 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       quad.material = gradeMat;
       renderer.setRenderTarget(null);
       renderer.render(postScene, postCam);
+    },
+
+    dispose() {
+      for (const rt of [keyRT, sunRT, ...spotRT, mainRT, inkRT]) {
+        rt.depthTexture?.dispose();
+        rt.dispose();
+      }
+      for (const m of [plainDepth, keyDepth, sunDepth, postMat, gradeMat]) m.dispose();
+      quad.geometry.dispose();
     },
   };
 }

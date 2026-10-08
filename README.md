@@ -28,6 +28,9 @@ pnpm bench      # đo ms/khung ở 1920×1080
 | `noreport` | Ẩn bảng va chạm của `demo=hold` |
 | `demo=camera` | Ống kính `scene.lens` và mốc `camera[]` của scene: máy đẩy vào người đang đi, lia theo, lùi ra. Nhãn và bong bóng 2D bám đỉnh đầu, mồm qua `screenOf` (chấm đỏ là đúng điểm mốc); góc máy xoay tay tắt |
 | `demo=light` | Phòng thử đèn: đèn trần, nắng qua cửa sổ, bàn có đèn bàn, hai người que (`apps/viewer/src/demo-light.js`) |
+| `demo=room` | Bộ dựng phòng: văn phòng có dải cửa sổ, cửa sổ nhỏ, cửa ra hành lang có biển, đèn tấm trên trần, hai đảo bàn người nền đóng băng, một người đi về phía cửa; cửa mở dần từ giây 2,5 (`apps/viewer/src/demo-room.js`) |
+| `door=0..1` | Với `demo=room`: độ mở cửa cố định |
+| `demo=stages` | Hai sân khấu cùng trang (phòng ngày, phòng đêm) vẽ xen kẽ, so từng điểm ảnh với lần vẽ đầu; nhãn đỏ là đèn của sân khấu này lọt sang sân khấu kia |
 | `spot`, `lamp=0\|1` | Với `demo=light`: bật đèn rọi sân khấu (bật trong 0,3 s, quét từ người đứng sang người ngồi ở giây 1–2,5, phòng tối bớt); bật/tắt đèn bàn (mặc định bật khi không phải `day`, `evening`) |
 | `grade=flashback\|dim\|vhs` | Hậu kỳ toàn khung: hồi tưởng (nhoè, giảm bão hoà), tối nền, băng tua ngược |
 
@@ -109,9 +112,10 @@ stage.dispose();
 - **Camera.** `lens` cố định cho cả cảnh hay đổi theo khung (`draw(t, { lens })`). `crop` là kết quả `cameraAt(rt, t)`
   của `@stickman/rig` — nội suy và easing của mốc `camera[]` nằm ở đó, package không chép lại. Khung hình khác tỉ lệ
   sân khấu thì khung cắt nới quanh cùng tâm. Không có `lens` thì camera để tự do (app xem thử xoay tay).
-- **`G` theo sân khấu.** Uniform chung `G` là của sân khấu dựng, `relight` hay vẽ gần nhất; sân khấu khác vẽ thì
-  lấy lại `G` của nó. Hai `<Sequence>` chồng nhau, một ngày một chiều, vẽ đúng bảng màu và bản đồ bóng của từng cái.
-  Đổi `G` của một sân khấu thì đổi trong `light` hay `stage.relight(fn)`.
+- **Đèn theo sân khấu.** Uniform chung `G`, giờ trong ngày và bộ đèn (`setPalette`, `setLights`) là của sân khấu
+  dựng, `relight` hay vẽ gần nhất; sân khấu khác vẽ thì lấy lại của nó. Hai `<Sequence>` chồng nhau, một ngày một
+  đêm, vẽ đúng bảng màu, bộ đèn và bản đồ bóng của từng cái, kể cả khi `update` gọi `setLights` mỗi khung
+  (`demo=stages` kiểm điều này). Đổi đèn ngoài `update` thì đổi trong `light` hay `stage.relight(fn)`.
 - **Ảnh tĩnh.** `stage.still(t, view, canvas?)` vẽ rồi chép sang canvas 2D: khung chia đôi (hai sân khấu nửa khung
   hay một sân khấu hai lần `still`), nền làm tối (`filter: brightness(…)` trên canvas ảnh), năm ảnh nhanh (một sân
   khấu, năm `still`, rồi `dispose`). Cần texture thì `new THREE.CanvasTexture(stage.still(t))`.
@@ -121,7 +125,8 @@ stage.dispose();
   sân khấu (vẽ vào SVG `viewBox` của `cameraAt`); `scale` px khung cho một đơn vị rig ở độ sâu ấy; `behind`,
   `inFrame`; `occluded` khi truyền `{ occluders: [stage.scene] }`. Điểm thế giới rig là `Vec3`, điểm three là `Vector3`.
 - **Renderer.** Không truyền `renderer` thì sân khấu tự dựng trên canvas mới (`stage.canvas`), `pixelRatio` 1,
-  `preserveDrawingBuffer`, và `dispose` bỏ luôn context. Truyền `renderer` có sẵn thì sân khấu không huỷ nó.
+  `preserveDrawingBuffer`, và `dispose` bỏ luôn context. Truyền `renderer` có sẵn thì sân khấu không huỷ nó, chỉ huỷ
+  render target và vật liệu của pipeline (`pipeline.dispose()`).
   `stage.gpu` là tên GPU WebGL — có `SwiftShader` là Chromium đang vẽ phần mềm.
 
 ## Dùng trong Remotion
@@ -231,9 +236,58 @@ pipe.render(scene, camera, { t, grade: { desaturate: 0.65, blur: 0.45 } });
 
 Không có `ceiling` là ngoài trời: mặt trời của bảng màu là đèn chính. Nắng qua cửa chỉ sáng
 chỗ tia lọt qua ô kính và có bản đồ bóng riêng; tường chứa cửa và vật ngoài phòng không che.
-Tối đa `MAX_LAMPS` đèn cục bộ, `MAX_LAMP_SHADOWS` đèn rọi đầu có bóng; `angle` từ 80 trở lên
+Đổi giờ và đèn bằng `setPalette`, `setLights` của package (không đặt tay vào `G`): sân khấu giữ cặp giờ/bộ đèn
+của nó, nên vẽ xen kẽ nhiều sân khấu vẫn đúng đèn. Tối đa `MAX_LAMPS` đèn cục bộ, `MAX_LAMP_SHADOWS` đèn rọi đầu có bóng; `angle` từ 80 trở lên
 là đèn điểm, không bóng. Chao đèn bọc bóng đèn phải `userData.noShadow`. Bóng tiếp xúc (SSAO)
 dò từ độ sâu ở lượt hậu kỳ, chỉnh bằng `ao` của bộ đèn.
+
+## Bộ dựng phòng
+
+`room(opts)` dựng vỏ phòng hộp từ số đo: sàn, trần, bốn tường dày `wall`, ốp chân tường, nét mực ở mép tường và góc
+tường, ô cửa sổ, cửa đi, đèn tấm trên trần. Toạ độ rig, sàn ở y 0. Phòng, đồ đạc và chỗ ngồi của tập phim vẫn ở repo
+video; package chỉ cho vỏ và đèn.
+
+```ts
+const office = room({
+  x: [-1100, 1100], z: [-800, 900], height: 780, wall: 20,
+  tones: { wall: '#b4b8bb', floor: '#74787c', ceiling: '#c9ccce', skirting: '#4b4f53' },
+  floor: { grout: '#5f6367', size: 160 },                       // hay { planks: '#6e4430', width: 60, along: 'z' }
+  windows: [{ wall: 'left', u: 850, width: 1200, height: 380, sill: 250, panes: [5, 2] }],
+  doors: [{ wall: 'right', u: 1200, hinge: 'left', sign: true }],
+  panels: { grid: [4, 4], size: [300, 80] },                  // hay { at: [[x, z], …] }, false là trần trơn
+});
+stage.scene.add(office.group);
+// mỗi khung, trong `update` của sân khấu:
+office.cull(stage.camera);                                    // giấu tường, trần mà camera đứng phía ngoài
+office.doors[0].set(open(t));                                 // 0–1, cánh mở vào phòng tới ~95°
+setLights(office.lights({ lamps: [deskLamp], ceiling: { intensity: 1 } }));
+```
+
+- **Hệ tường.** Mỗi tường có hệ như món áp tường: `u` dọc tường tính từ mép trái (đứng trong phòng nhìn vào tường), `y`
+  xuống, −z vào phòng. `office.wallPlace(side, u, y)` trả `Place3` để dựng đồ áp tường bằng `addItem`; thêm mesh vào
+  `office.faces[side]` thì nó giấu cùng tường.
+- **Giấu tường.** `cull(camera)` giấu tường, trần, sàn có camera ở phía ngoài mặt trong: camera đặt ngoài phòng nhìn
+  xuyên vào được, mặt cắt (đỉnh tường, đầu tường, mép sàn) tô màu `cut`. Tường bị giấu thì không đổ bóng.
+- **Cửa sổ.** Khung, song, nẹp, bậu; sau kính là trời và phố (`view: 'city' | 'sky'`) vẽ theo tia từ mắt nên nhìn xiên
+  vẫn đúng thị sai, không vật nào thò ra ngoài tường. Trời theo giờ trong ngày của `setPalette`; trời tối thì cửa sổ nhà
+  bên kia sáng đèn. Cửa nắng (`sun: true`, mặc định cửa rộng nhất) là mục `window` của bộ đèn: nắng chỉ vào khi bảng
+  màu có nắng. Bộ đèn chỉ có một cửa nắng.
+- **Đèn trần.** Tấm đèn sáng theo đèn trần đang đặt: bảng màu tắt đèn trần (`night`) thì tấm tối. `lights()` trả
+  `ceiling` ở mặt trần (`opts.ceiling` rồi `ceiling` của lời gọi đè lên), cửa nắng, `bounds` của phòng.
+- **Cửa đi.** Cánh xoay quanh `pivot` ở bản lề, `set(open)` mỗi khung. Sau ô cửa là hành lang tối. `door.handle` là
+  điểm tay nắm (rig) cho đích cổ tay; `door.sign.anchor` là tâm mặt biển trống cạnh cửa (+x dọc tường, +y lên, +z ra
+  phòng, three) để gắn decal chữ, cỡ `width` × `height` px.
+- **Vật nhô khỏi tường.** Bóng đèn trần dò ở mặt tường cách tường 15 px; vật áp tường nhô sâu hơn 8 px mà đổ bóng thì
+  phủ bóng cả dải tường dưới nó. Bậu cửa sổ nhô 8, tay nắm cửa không đổ bóng; đồ áp tường của repo video cũng vậy.
+
+**Người nền ngồi.** `seatCrowd(seats, base)` dựng mỗi chỗ một người `lod: 'low'`, đặt ngồi (`at` là điểm mặt ngồi dưới
+hông như `put`, `yaw` độ), tay lên bàn (`hands: 'desk'`) hay lên đùi, đầu lệch nhẹ theo thứ tự chỗ, rồi `freeze` cả
+đám thành một nhóm. Chỗ nào cần dáng của hành động thì truyền `acting: sceneAt(rt, id, 0, …)`.
+
+```ts
+const crowd = seatCrowd(OFFICE_SEATS.map((s) => ({ at: s.hip, yaw: s.yaw })), (i) => ({ ...COLLEAGUE, color: COATS[i % COATS.length] }));
+stage.scene.add(crowd);
+```
 
 ## Diễn theo hành động 2D
 
