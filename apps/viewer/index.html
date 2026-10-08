@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Người que 3D · xem thử</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #cfe6f4; font-family: system-ui, sans-serif; }
+    #scene { position: absolute; inset: 0; }
+    #hud { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: flex; gap: 6px; padding: 10px; border-radius: 14px;
+      background: rgba(255, 255, 255, 0.86); box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+    #hud.hide { display: none; }
+    #hud button { white-space: nowrap; font: inherit; font-size: 14px; color: #222; background: #f1f1f1; border: 0; border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+    #hud button.on { background: #2f6fd6; color: #fff; }
+    #hud .meter { align-self: center; font-size: 13px; color: #555; min-width: 92px; font-variant-numeric: tabular-nums; }
+    #hud .sep { width: 1px; background: rgba(0,0,0,.15); margin: 2px 4px; }
+  </style>
+</head>
+<body>
+  <div id="scene"></div>
+  <div id="hud">
+    <button id="b-day">Ngày</button><button id="b-eve">Chiều</button>
+    <span class="sep"></span>
+    <button id="b-ink">Nét mực · O</button><button id="b-pixel">Pixel · P</button><button id="b-pause">Dừng · Space</button>
+    <span class="sep"></span>
+    <button id="b-aa"></button><span id="gpu" class="meter"></span>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

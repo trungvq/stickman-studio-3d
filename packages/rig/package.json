@@ -1,0 +1,36 @@
+{
+  "name": "@stickman3d/rig",
+  "version": "0.1.0",
+  "description": "Người que 3D, đồ khối và pipeline vẽ nét mực trên three.js",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "prepack": "tsup"
+  },
+  "peerDependencies": {
+    "three": ">=0.186.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "three": "0.186.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "registry": "https://gitlab.com/api/v4/projects/<PROJECT_ID>/packages/npm/"
+  }
+}
