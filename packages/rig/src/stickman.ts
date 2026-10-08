@@ -307,6 +307,8 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
     });
     for (const j of [spine, neck, head]) mergeStatic(j);
   }
+  // người có nét riêng theo hình 2D: không vẽ nét gấp pháp tuyến; đồ cầm gắn sau thì vẫn có
+  root.traverse((o) => (o.userData.noCrease = true));
   const sockets = buildSockets({ root, spine, head, arms }, fit, (R.limb * sleeveWidth) / 10, rig);
   const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod };
   if (equip) dress(fig, equip);

@@ -11,9 +11,10 @@ const AO_KERNEL = Array.from({ length: AO_N }, (_, i) => {
   return `vec3(${(Math.cos(a) * r * s).toFixed(4)}, ${(Math.sin(a) * r * s).toFixed(4)}, ${(z * s).toFixed(4)})`;
 }).join(', ');
 
-// Nét mực: Laplacian của 1/độ sâu — chỗ độ sâu gãy (mép, nếp gấp) thì tối đi. Bóng tiếp xúc từ độ sâu, hạt giấy, tối góc.
+// Nét mực: Laplacian của 1/độ sâu — chỗ độ sâu gãy (mép, nếp gấp) thì tối đi; cạnh gấp (pháp tuyến gãy, độ sâu liền) cũng
+// tối. Bóng tiếp xúc từ độ sâu, hạt giấy, tối góc.
 const POST_FRAG = /* glsl */ `
-uniform sampler2D tColor, tDepth;
+uniform sampler2D tColor, tDepth, tNormal;
 uniform vec2 uRes;
 uniform float uNear, uFar, uOutline, uThick, uPixel, uAo, uAoRadius;
 uniform mat4 uProj, uProjInv;
@@ -61,7 +62,21 @@ void main(){
     col *= mix(vec3(1.0), uShadowTint * 0.8, clamp(o, 0.0, 1.0) * 0.75);
   }
   float lap = (4.0 * w0 - wl - wr - wu - wd) / w0;
-  float edge = smoothstep(0.0025, 0.01, lap) * uOutline;
+  float crease = 0.0;
+  vec4 n0 = texture2D(tNormal, vUv);
+  if (n0.a > 0.75) {
+    vec3 a = n0.xyz * 2.0 - 1.0;
+    vec2 off[4] = vec2[](vec2(-px.x, 0.0), vec2(px.x, 0.0), vec2(0.0, px.y), vec2(0.0, -px.y));
+    float wn[4] = float[](wl, wr, wu, wd);
+    for (int i = 0; i < 4; i++) {
+      vec4 nb = texture2D(tNormal, vUv + off[i]);
+      // độ sâu gãy là mép bóng dáng, Laplacian đã vẽ: chỉ xét cạnh gấp trên cùng một mặt liền
+      if (nb.a > 0.75 && abs(wn[i] - w0) < w0 * 0.01) crease = max(crease, 1.0 - dot(a, nb.xyz * 2.0 - 1.0));
+    }
+  }
+  // nét gấp dày theo điểm ảnh: đồ nhỏ ở xa nhạt dần cho khỏi đen kịt
+  crease = smoothstep(0.25, 0.45, crease) * mix(1.0, 0.35, smoothstep(8.0, 25.0, 1.0 / w0));
+  float edge = max(smoothstep(0.0025, 0.01, lap), crease) * uOutline;
   col = mix(col, col * vec3(0.2, 0.18, 0.26), edge * 0.92);
   vec2 fc = vUv * uRes;
   if (uPixel > 0.5) col = floor(col * 14.0 + 0.5 + bayer4(fc) - 0.5) / 14.0;
@@ -223,8 +238,9 @@ function fitOrtho(cam: THREE.OrthographicCamera, dir: THREE.Vector3, region: THR
 
 /**
  * Pipeline vẽ trên một `WebGLRenderer`: bản đồ bóng cho đèn chính (trực giao), nắng qua cửa sổ (trực giao, cắt ở mặt tường)
- * và tối đa `MAX_LAMP_SHADOWS` đèn rọi (phối cảnh); cảnh vào render target có độ sâu; lượt hậu kỳ dò nét mực và bóng tiếp xúc
- * từ độ sâu; lượt cuối chấm hậu kỳ toàn khung. Vật `userData.noShadow` và vỏ ngược (`BackSide`) không đổ bóng.
+ * và tối đa `MAX_LAMP_SHADOWS` đèn rọi (phối cảnh); cảnh vào render target có độ sâu, pháp tuyến vào một lượt riêng; lượt hậu kỳ
+ * dò nét mực (mép độ sâu, cạnh gấp pháp tuyến) và bóng tiếp xúc; lượt cuối chấm hậu kỳ toàn khung. Vật `userData.noShadow` và
+ * vỏ ngược (`BackSide`) không đổ bóng; vật `userData.noCrease` (người que) không có nét cạnh gấp.
  */
 export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSize = 2048 }: PipelineOptions = {}): Pipeline {
   renderer.localClippingEnabled = true;
@@ -244,6 +260,24 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
 
   const mainRT = new THREE.WebGLRenderTarget(4, 4, { depthTexture: new THREE.DepthTexture(4, 4) });
   const inkRT = new THREE.WebGLRenderTarget(4, 4);
+  const normalRT = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType });
+  // pháp tuyến hệ nhìn, mặt sau lật lại; a: 1 có nét gấp, 0,5 vật `noCrease`, 0 không có vật
+  const normalMat = (a: number) => new THREE.ShaderMaterial({
+    side: THREE.DoubleSide,
+    vertexShader: /* glsl */ `varying vec3 vN; void main(){ vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: /* glsl */ `varying vec3 vN; void main(){ vec3 n = normalize(gl_FrontFacing ? vN : -vN); gl_FragColor = vec4(n * 0.5 + 0.5, ${a.toFixed(1)}); }`,
+  });
+  // decal giữ độ lệch sâu của vật liệu gốc, không thì giành điểm ảnh với mặt dưới nó thành nét lấm chấm
+  const normalMats = new Map<string, THREE.ShaderMaterial>();
+  const normalFor = (m: THREE.Mesh, src: THREE.Material) => {
+    const a = m.userData.noCrease ? 0.5 : 1, key = src.polygonOffset ? `${a} ${src.polygonOffsetFactor} ${src.polygonOffsetUnits}` : `${a}`;
+    let mat = normalMats.get(key);
+    if (!mat) {
+      normalMats.set(key, (mat = normalMat(a)));
+      if (src.polygonOffset) Object.assign(mat, { polygonOffset: true, polygonOffsetFactor: src.polygonOffsetFactor, polygonOffsetUnits: src.polygonOffsetUnits });
+    }
+    return mat;
+  };
   const postMat = new THREE.ShaderMaterial({
     vertexShader: POST_VERT,
     fragmentShader: POST_FRAG,
@@ -252,6 +286,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
     uniforms: {
       tColor: { value: mainRT.texture },
       tDepth: { value: mainRT.depthTexture },
+      tNormal: { value: normalRT.texture },
       uRes: { value: new THREE.Vector2() },
       uNear: { value: 0 },
       uFar: { value: 0 },
@@ -302,8 +337,9 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       const rw = Math.max(1, Math.round(w * k)), rh = Math.max(1, Math.round(h * k));
       mainRT.setSize(rw, rh);
       inkRT.setSize(rw, rh);
+      normalRT.setSize(rw, rh);
       const filt = pixel ? THREE.NearestFilter : THREE.LinearFilter;
-      for (const t of [mainRT.texture, inkRT.texture]) {
+      for (const t of [mainRT.texture, inkRT.texture, normalRT.texture]) {
         t.minFilter = t.magFilter = filt;
         t.needsUpdate = true;
       }
@@ -392,6 +428,27 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       pu.uAo.value = LIGHTING.ao.strength;
       pu.uAoRadius.value = LIGHTING.ao.radius;
       pu.uOutline.value = outline ? 1 : 0;
+      if (outline) {
+        // vỏ nét ngược không phải mặt thật, vật không ghi độ sâu (kính, lớp nét mặt) không có trong độ sâu: bỏ khỏi lượt pháp tuyến
+        const shells: THREE.Object3D[] = [], swapped: [THREE.Mesh, THREE.Material | THREE.Material[]][] = [];
+        scene.traverse((o) => {
+          const m = o as THREE.Mesh;
+          if (!m.isMesh || !m.visible || Array.isArray(m.material)) return;
+          if (m.material.side === THREE.BackSide || !m.material.depthWrite) shells.push(m);
+          else swapped.push([m, m.material]), (m.material = normalFor(m, m.material));
+        });
+        for (const o of shells) o.visible = false;
+        const bg = scene.background, clear = renderer.getClearColor(new THREE.Color()), alpha = renderer.getClearAlpha();
+        scene.background = null;
+        renderer.setClearColor(0x000000, 0);
+        renderer.setRenderTarget(normalRT);
+        renderer.clear();
+        renderer.render(scene, camera);
+        renderer.setClearColor(clear, alpha);
+        scene.background = bg;
+        for (const o of shells) o.visible = true;
+        for (const [m, mat] of swapped) m.material = mat;
+      }
       renderer.setRenderTarget(mainRT);
       renderer.render(scene, camera);
       quad.material = postMat;
@@ -410,11 +467,11 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
     },
 
     dispose() {
-      for (const rt of [keyRT, sunRT, ...spotRT, mainRT, inkRT]) {
+      for (const rt of [keyRT, sunRT, ...spotRT, mainRT, inkRT, normalRT]) {
         rt.depthTexture?.dispose();
         rt.dispose();
       }
-      for (const m of [plainDepth, keyDepth, sunDepth, postMat, gradeMat]) m.dispose();
+      for (const m of [plainDepth, keyDepth, sunDepth, ...normalMats.values(), postMat, gradeMat]) m.dispose();
       quad.geometry.dispose();
     },
   };

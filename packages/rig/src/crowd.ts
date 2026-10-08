@@ -17,7 +17,7 @@ function materialKey(m: THREE.Material) {
  */
 export function freeze(figures: Figure | readonly Figure[]): THREE.Group {
   const list: readonly Figure[] = 'root' in figures ? [figures] : figures;
-  const buckets = new Map<string, { mat: THREE.Material; geos: THREE.BufferGeometry[]; shadow: boolean; noShadow: boolean; order: number }>();
+  const buckets = new Map<string, { mat: THREE.Material; geos: THREE.BufferGeometry[]; shadow: boolean; noShadow: boolean; noCrease: boolean; order: number }>();
   for (const f of list) {
     f.root.updateWorldMatrix(true, true);
     f.root.traverseVisible((o) => {
@@ -33,10 +33,11 @@ export function freeze(figures: Figure | readonly Figure[]): THREE.Group {
       g.applyMatrix4(m.matrixWorld);
       const key = materialKey(m.material);
       let b = buckets.get(key);
-      if (!b) buckets.set(key, (b = { mat: m.material, geos: [], shadow: false, noShadow: true, order: m.renderOrder }));
+      if (!b) buckets.set(key, (b = { mat: m.material, geos: [], shadow: false, noShadow: true, noCrease: true, order: m.renderOrder }));
       b.geos.push(g);
       b.shadow ||= m.castShadow;
       b.noShadow &&= !!m.userData.noShadow;
+      b.noCrease &&= !!m.userData.noCrease;
     });
   }
   const out = new THREE.Group();
@@ -45,6 +46,7 @@ export function freeze(figures: Figure | readonly Figure[]): THREE.Group {
     mesh.castShadow = b.shadow;
     mesh.renderOrder = b.order;
     if (b.noShadow) mesh.userData.noShadow = true;
+    if (b.noCrease) mesh.userData.noCrease = true;
     out.add(mesh);
   }
   return out;

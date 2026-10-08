@@ -495,6 +495,8 @@ export function room(o: RoomOptions): Room {
     { g: faces.ceiling, p: toThree([0, -h, 0]), n: new THREE.Vector3(0, -1, 0) },
     ...WALLS.map((s) => ({ g: faces[s], p: toThree(onWall(s, 0, 0)), n: inward(s) })),
   ];
+  // vỏ phòng có nét riêng (`ink`); đồ thêm vào sau vẫn có nét gấp
+  group.traverse((m) => (m.userData.noCrease = true));
   const eye = new THREE.Vector3();
   const bounds = { min: [x0 - d, -h - d, z0 - d] as Vec3, max: [x1 + d, d, z1 + d] as Vec3 };
 
