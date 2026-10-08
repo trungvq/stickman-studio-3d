@@ -78,6 +78,19 @@ const SHOTS = [
   ['hai-san-khau', 'demo=stages'],
   ['vo-ngoai-thap', 'demo=room&t=1&az=10&el=3&look=0,3.2,0&dist=28'],
   ['vo-cua-so', 'demo=room&t=1&az=70&el=4&look=-10,3.5,-0.5&dist=9'],
+  ['decal', 'demo=decal&t=6&az=12&el=14&dist=12&look=0,2.4,-1.8'],
+  ['decal-man-hinh', 'demo=decal&t=6&az=18&el=4&dist=3&look=0,2.12,-3.03'],
+  ['decal-giay-nho', 'demo=decal&t=6&az=10&el=6&dist=1.1&look=0.55,2.55,-3'],
+  ['decal-dong-ho', 'demo=decal&t=2.4&az=10&el=5&dist=3&look=-3.3,4.7,-5.2'],
+  ['decal-lich', 'demo=decal&t=3.25&az=-10&el=14&dist=2&look=1.18,1.75,-2.62'],
+  ['decal-the-nguc', 'demo=decal&t=6&az=-25&el=4&dist=1.5&look=3.2,2.7,-1.1'],
+  ['decal-to-bay', 'demo=decal&t=3.6&az=12&el=14&dist=12&look=0,2.4,-1.8'],
+  ['decal-to-dap', 'demo=decal&t=4.55&az=-35&el=35&dist=3&look=-1,1.45,-2.55'],
+  ['decal-toi', 'demo=decal&t=3.5&az=12&el=14&dist=12&look=0,2.4,-1.8&time=dim&spot'],
+  ['decal-dem-man-hinh', 'demo=decal&t=6&az=18&el=4&dist=3&look=0,2.12,-3.03&time=night'],
+  ['canh-sat', 'demo=police&t=1.8&az=0&el=22&dist=16&look=0.6,1.8,-4'],
+  ['canh-sat-dung', 'demo=police&t=5&az=12&el=18&dist=12&look=0.6,2.2,-4.5'],
+  ['canh-sat-bang-ten', 'demo=police&t=5&az=-20&el=45&dist=3&look=2.8,1.45,-1.6'],
 ];
 
 const { values: o } = parseArgs({ options: { out: { type: 'string' }, vs: { type: 'string' }, only: { type: 'string' }, soft: { type: 'boolean' } } });

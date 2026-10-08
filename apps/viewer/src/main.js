@@ -6,6 +6,7 @@ import { BOY, demo, GIRL } from './demos.js';
 import { holdDemo } from './demo-hold.js';
 import { roomDemo } from './demo-room.js';
 import { stagesDemo } from './demo-stages.js';
+import { decalDemo, policeDemo } from './demo-decal.js';
 import { createMarks } from './marks.js';
 
 const AA_LABEL = { off: 'Tắt', 'ss1.5': '1,5×', ss2: '2×' };
@@ -32,6 +33,8 @@ const ground = new THREE.Mesh(new THREE.CircleGeometry(6, 64).rotateX(-Math.PI /
 scene.add(ground);
 
 const shot = setupDemo(q.get('demo'));
+// phông, ảnh của decal nạp xong trước khung đầu
+await shot?.ready?.();
 const animate = shot?.animate ?? setupCast();
 const stage = createStage({
   renderer, scene, camera, size: { w: host.clientWidth, h: host.clientHeight },
@@ -79,8 +82,9 @@ const MOUTHS = ['talkA', 'talkTeeth', 'talkB', 'talkTeeth', 'talkA', 'o'];
 
 /** Cảnh diễn hành động `?demo=`; không có cảnh ấy thì trả `undefined` */
 function setupDemo(name) {
-  const d = name === 'hold' ? holdDemo() : name === 'light' ? lightDemo(q) : name === 'room' ? roomDemo(q) : name === 'stages' ? stagesDemo(host) : name && demo(name);
-  if (name === 'light' || name === 'room') ground.visible = false;
+  const own = { hold: holdDemo, light: lightDemo, room: roomDemo, stages: () => stagesDemo(host), decal: decalDemo, police: policeDemo };
+  const d = own[name] ? own[name](q) : name && demo(name);
+  if (['light', 'room', 'decal', 'police'].includes(name)) ground.visible = false;
   if (!d) return undefined;
   if (d.objects.length) scene.add(...d.objects);
   return d;

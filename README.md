@@ -32,6 +32,8 @@ pnpm bench      # đo ms/khung ở 1920×1080
 | `door=0..1` | Với `demo=room`: độ mở cửa cố định |
 | `demo=stages` | Hai sân khấu cùng trang (phòng ngày, phòng đêm) vẽ xen kẽ, so từng điểm ảnh với lần vẽ đầu; nhãn đỏ là đèn của sân khấu này lọt sang sân khấu kia |
 | `spot`, `lamp=0\|1` | Với `demo=light`: bật đèn rọi sân khấu (bật trong 0,3 s, quét từ người đứng sang người ngồi ở giây 1–2,5, phòng tối bớt); bật/tắt đèn bàn (mặc định bật khi không phải `day`, `evening`) |
+| `demo=decal` | Chữ trên vật và món chạy theo `t` (`apps/viewer/src/demo-decal.js`): màn hình gõ mail, giấy nhớ đếm 「正」 tới nét 8, đồng hồ tường tua 15:00 → 8:30 rồi chạy tiếp, lịch bàn lật 9/28 → 10/3, thẻ 「研修中」 trên ngực, tờ 「資料」 mờ hiện, bay xuống bàn và rung khi chạm. Thêm `spot`: phòng tối bớt, đèn rọi quét từ người đứng sang người ngồi, màn hình vẫn đọc được |
+| `demo=police` | Ẩn dụ cảnh sát phân luồng giữa lối đi văn phòng: người đội mũ cảnh sát (`wear`), ba tờ 「仕事」 bay dọc lối, hai tờ rẽ phải xuống chồng giấy trên bàn ハル, tờ thứ ba dừng giữa lối; băng tên 「ハル」「ノダ」 trên mặt bàn |
 | `grade=flashback\|dim\|vhs` | Hậu kỳ toàn khung: hồi tưởng (nhoè, giảm bão hoà), tối nền, băng tua ngược |
 
 Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js` (`demo=hold` ở `demo-hold.js`, kèm đồ mẫu chung), `@stickman/rig` lấy mẫu
@@ -346,6 +348,100 @@ collide({ haru: fig1, aya: fig2 }, cols, { people: true });
 Món khối `Item` và `Box3` là khối lồi, bắt cả nét nằm lọt trong vật; `Object3D` (như đầu ra của `Batch`) là lưới tam
 giác, chỉ bắt nét cắt qua mặt. Người ngồi thì đùi lún nửa nét vào mặt ghế (hông 2D là tâm nét): lọc chỗ chạm ấy ở
 phía gọi.
+
+## Chữ trên vật, món chạy theo `t`
+
+Chữ **nằm trên vật** trong cảnh (màn hình, giấy nhớ, băng tên, thẻ ngực, tờ giấy đang cầm, lịch, TV) là decal 3D: có
+phối cảnh, bị người đứng trước che, nhận đèn và bóng như mặt khác. Chữ dán lên khung hình (thẻ giờ, bong bóng, mũi tên)
+vẽ 2D đè lên canvas ở repo video, bám người bằng `screenOf`.
+
+```ts
+const mail = canvasTexture(1536, 900, (ctx, t) => {
+  drawWindow(ctx);
+  typeText(ctx, MAIL, typed(t), { x: 150, y: 410, maxWidth: 1230, lineHeight: 70, font: '400 48px "Noto Sans JP"', cursor: t });
+}, { key: (t) => [typed(t), Math.floor(t * 2) % 2] });   // chỉ vẽ lại khi số chữ hay con trỏ đổi
+const mon = monitor({ screen: mail });                     // màn tự sáng: đọc được cả trong phòng tối
+mon.face.add(sheet(note, 46, 21, { bend: 0.8, bendAxis: 'y' }));     // giấy nhớ trên mặt kính, khung three
+room.add(placeOn(decal(nameTape, 50, 15), { at: [240, -143, 138], normal: [0, -1, 0], up: [0, 0, 1] })); // nằm trên bàn
+wearDecal(fig, badge, 30, 11, { card: { thick: 0.8 } });   // thẻ cứng trên `sockets.chest`
+// mỗi khung, trong `update(t)` của sân khấu:
+mail.update(t);
+```
+
+- **Vật liệu.** `surface({ map, glow, alpha, opacity, side })` đổ cùng dải sáng, bóng của đèn trần, nắng, đèn rọi như
+  `npr`. `glow: 1` là màn hình, TV: đúng màu texture bất kể đèn. `alpha`: `opaque` (mặc định), `cut` (nhãn cắt hình,
+  vẫn có nét mực), `blend` (hoà, không ghi độ sâu). Có `map` thì độ sâu tự đẩy về phía camera cho decal nằm sát mặt mà
+  không giành điểm ảnh; nhấc thêm 0,3 px (`lift`) là đủ.
+- **Đặt.** `decal(nội dung, w, h, { bend })` tấm mặt nhìn +z (không đổ bóng); `sheet(...)` tờ giấy rời hai mặt, có
+  bóng; `placeOn(vật, { at, normal, up, lift, spin })` đặt lên mặt trong toạ độ rig; `wearDecal` trên ngực áo. Cỡ tính
+  px rig, chỗ đặt trong khung three (socket, `mon.face`) tính đơn vị three. `bend` là độ cong ở mép (px).
+- **Texture theo `t`.** `canvasTexture(w, h, draw, { key })`: `draw(ctx, t)` vẽ đồng bộ, chỉ đọc `t` và dữ liệu đã nạp.
+  `update(t)` vẽ lại khi `key(t)` đổi (mặc định mỗi `t` mới), `invalidate()` khi dữ liệu ngoài `t` đổi. Texture có
+  mipmap và lọc dị hướng 16, nên chữ nhìn xiên vẫn rõ. **Cỡ canvas** ≈ bề ngang mặt ấy trên khung ở cảnh cận nhất × hệ
+  siêu lấy mẫu: màn hình chiếm nửa khung 1080p ở `ss2` cần ~1920 px ngang; thẻ ngực cận ngực ~400 px.
+- **Vẽ 2D.** `typeText(ctx, text, chars, o)` chữ đang gõ (xuống dòng theo ký tự như bản gõ xong, con trỏ nhấp nháy theo
+  `cursor: t`); `strokes(ctx, lines, n)` nét viết tay theo thứ tự, `n` số thực là nét đang kẻ dở (「正」, gạch, khoanh);
+  `wrapText`.
+
+**Nạp trước khung đầu.** Không có gì được chờ giữa khung: phông, ảnh, SVG nạp xong rồi mới dựng sân khấu, trong cùng
+`loadAssets` đã giữ `delayRender` (xem [Dùng trong Remotion](#dùng-trong-remotion)):
+
+```ts
+async function loadAssets(scene) {
+  const missing = await loadFonts(['700 48px "Noto Sans JP"', '400 48px "Noto Sans JP"'], allTextOf(scene));
+  if (missing.length) throw new Error(`thiếu phông: ${missing}`);   // canvas sẽ vẽ phông dự phòng mà không báo
+  const images = await loadImages({ logo: staticFile('logo.svg'), slide1: staticFile('t04/slide1.png') });
+  return { images };                                                 // `draw` gọi ctx.drawImage(images.logo, …) đồng bộ
+}
+```
+
+Phông web tiếng Nhật (`@remotion/google-fonts`, `@font-face`) chia mảng theo `unicode-range`: `document.fonts.load` chỉ
+nạp mảng chứa chữ trong đối số thứ hai, nên `loadFonts` phải nhận **đúng mọi chữ sẽ vẽ** của cảnh. Phông có sẵn trên máy
+không cần nạp. `loadImage` nhận URL, data URL hay chuỗi `<svg …>`.
+
+**Món chạy theo `t`** (gốc ở chỗ dựa, mặt trước +z; đặt bằng `group.position.copy(toThree(at))`, `rotation.y`):
+
+```ts
+const clock = wallClock({ r: 44, numbers: true, second: true });   // gốc ở tâm sau vỏ, áp tường
+clock.set(keyed([{ t: 0.8, v: 15 }, { t: 3.8, v: 8.5, ease: 'inOut' }], t));  // tua ngược 15:00 → 8:30
+const cal = deskCalendar({ pages: 8, draw: (ctx, page, w, h) => drawDay(ctx, DAYS[page], w, h) });
+cal.set(keyed([{ t: 1.5, v: 0 }, { t: 5, v: 5, ease: 'inOut' }], t));  // 2,4: trang 2 đang lật qua gáy được 40%
+const mon = monitor({ screen: mail, w: 150, h: 88 });               // `mon.face` để gắn giấy nhớ, cửa sổ chat
+```
+
+Lịch giảm `page` là lật ngược; trang chỉ vẽ lại khi lên mặt. Kim đồng hồ là khối có bóng, mặt số là texture tĩnh.
+
+**Chuyển động.** Mọi hàm chỉ theo `t`, không giữ trạng thái — tua tới, tua lui, nhảy cảnh đều đúng:
+
+```ts
+const keys = [
+  { t: 0, at: [0, -430, 940] },
+  { t: 1.7, at: [90, -270, 470] },                          // đi cong qua mốc (Catmull-Rom)
+  { t: 2.9, at: [328, -145, 205], pitch: -90, ease: 'out' }, // rẽ phải, chậm dần, nằm ngửa trên bàn
+];
+const p = along(keys, t, { face: true });                   // `face`: quay theo chiều bay
+p.roll += flutter(t, { amp: 20 });                          // phấp phới khi bay
+p.pitch += wobble(t, 2.9, { amp: 5 });                      // rung tắt dần khi chạm
+place(paper, p);                                            // dời theo toThree, quay yaw như `put`, rồi pitch, roll
+appear(paper, t, { in: 0, dur: 0.3, mode: 'pop' });         // `pop`, `scale`, `fade`, `cut`; `out` để tắt
+```
+
+Hai mốc liền cùng `at` là dừng (tờ việc dừng giữa lối). Góc mốc bỏ trống là tư thế gốc (`yaw` 90, `pitch`, `roll` 0) và
+đổi dần sang mốc kế; với `face`, `yaw` của mốc là hướng đúng ở mốc ấy, giữa hai mốc lệch dần khỏi chiều bay. `keyed(mốc, t)` nội suy số hay mảng (giờ đồng hồ, độ sáng đèn,
+đích đèn rọi). `fade` đổi vật liệu `npr`/`surface` của vật sang bản riêng (`unshare`) ở lần gọi đầu; vỏ nét viền của
+người tắt khi mờ quá nửa. `bounce` cho nảy, `ease(tên, u)` cho dốc.
+
+**Đèn rọi ⑦** là một đèn của `setLights` đổi theo `t`:
+
+```ts
+const on = keyed([{ t: 0.2, v: 0 }, { t: 0.5, v: 1 }], t);
+setLights({
+  ceiling: { y: -700, intensity: 1 - 0.55 * on },          // phòng tối bớt khi đèn rọi bật
+  lamps: [{ at: [0, -690, -100], angle: 13, penumbra: 0.15, color: '#fff1c4', intensity: 1.2 * on, range: 1100,
+    target: keyed([{ t: 1.5, v: [330, -250, 120] }, { t: 3, v: [-30, -220, 150], ease: 'inOut' }], t) }], // quét người này sang người kia
+  bounds,
+});
+```
 
 ## Phát hành một version
 

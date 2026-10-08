@@ -1,6 +1,6 @@
 export {
-  G, hullMaterial, MAX_LAMP_SHADOWS, MAX_LAMPS, npr, PALETTES, SKY_FRAG, SKY_VERT, skyDome,
-  type CeilingLight, type Lamp, type LightRig, type NprOptions, type PaletteName, type WindowLight,
+  G, hullMaterial, MAX_LAMP_SHADOWS, MAX_LAMPS, npr, PALETTES, SKY_FRAG, SKY_VERT, skyDome, surface, unshare,
+  type CeilingLight, type Lamp, type LightRig, type NprOptions, type PaletteName, type SurfaceOptions, type WindowLight,
 } from './npr';
 export { currentLights, setLights, setPalette, type LightState } from './lighting';
 export { AA, createPipeline, type AaMode, type Grade, type Pipeline, type PipelineOptions, type RenderOptions } from './pipeline';
@@ -28,3 +28,15 @@ export {
 export { aimCamera, HOME, lensCamera, STAGE, viewRect, type Crop, type Lens, type StageFrame } from './lens';
 export { createStage, type FrameView, type Stage, type StageOptions } from './stage';
 export { landmark, LANDMARKS, screenOf, type Landmark, type ScreenOptions, type ScreenPoint, type ScreenView } from './screen';
+export {
+  canvasTexture, decal, loadFonts, loadImage, loadImages, placeOn, sheet, strokes, typeText, wearDecal, wrapText,
+  type CanvasSurface, type CanvasTextureOptions, type PlaceOnOptions, type QuadOptions, type SheetOptions, type StrokeOptions, type TypeTextOptions, type WearDecalOptions,
+} from './decal';
+export {
+  deskCalendar, monitor, wallClock,
+  type DeskCalendar, type DeskCalendarOptions, type Monitor, type MonitorOptions, type WallClock, type WallClockOptions,
+} from './parts';
+export {
+  along, appear, bounce, ease, flutter, keyed, place, presence, wobble,
+  type AlongOptions, type AppearOptions, type Ease, type Key, type PathKey, type PathPose,
+} from './motion';
