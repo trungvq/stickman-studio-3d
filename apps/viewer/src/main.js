@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { AA, createStage, G, npr, setPalette, skyDome, stickman } from '@stickman3d/rig';
+import { AA, createStage, npr, PALETTES, setPalette, skyDome, stickman } from '@stickman3d/rig';
+import { GRADES, lightDemo } from './demo-light.js';
 import { BOY, demo, GIRL } from './demos.js';
 import { holdDemo } from './demo-hold.js';
 import { createMarks } from './marks.js';
@@ -32,7 +33,6 @@ const shot = setupDemo(q.get('demo'));
 const animate = shot?.animate ?? setupCast();
 const stage = createStage({
   renderer, scene, camera, size: { w: host.clientWidth, h: host.clientHeight },
-  pipeline: { shadow: { half: 5, center: new THREE.Vector3(0, 1.5, 0) } },
   update: (t) => animate(t),
 });
 const marks = shot?.marks && createMarks(host, shot.marks, [scene]);
@@ -77,7 +77,8 @@ const MOUTHS = ['talkA', 'talkTeeth', 'talkB', 'talkTeeth', 'talkA', 'o'];
 
 /** Cảnh diễn hành động `?demo=`; không có cảnh ấy thì trả `undefined` */
 function setupDemo(name) {
-  const d = name === 'hold' ? holdDemo() : name && demo(name);
+  const d = name === 'hold' ? holdDemo() : name === 'light' ? lightDemo(q) : name && demo(name);
+  if (name === 'light') ground.visible = false;
   if (!d) return undefined;
   scene.add(...d.objects);
   return d;
@@ -88,8 +89,6 @@ const state = { outline: true, pixel: false, time: 'day', paused: false, aa: dev
 function palette(name) {
   state.time = name;
   setPalette(name, { scene, sky });
-  // cảnh không có cây đèn nào
-  G.uLamp.value = 0;
 }
 
 function resize() {
@@ -150,7 +149,7 @@ function frame() {
 
 /** Một khung ở giây `t`: cảnh có ống kính riêng thì camera theo `view(t)`, không thì theo góc máy xoay tay */
 function drawAt(t) {
-  stage.draw(t, { ...shot?.view?.(t), render: { outline: state.outline } });
+  stage.draw(t, { ...shot?.view?.(t), render: { outline: state.outline, t, grade: GRADES[q.get('grade')] } });
   marks?.(stage);
 }
 // tools/bench.mjs vẽ từng khung đồng bộ qua đây
@@ -195,7 +194,7 @@ function bindHud() {
   sync();
 }
 
-palette(q.get('time') === 'evening' ? 'evening' : 'day');
+palette(q.get('time') in PALETTES ? q.get('time') : 'day');
 if (q.get('aa') in AA) state.aa = q.get('aa');
 if (q.has('pixel')) state.pixel = true;
 if (q.has('noink')) state.outline = false;

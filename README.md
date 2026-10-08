@@ -18,7 +18,7 @@ pnpm bench      # đo ms/khung ở 1920×1080
 | | |
 |---|---|
 | `t=4.6` | Đứng ở giây 4,6, dừng thời gian |
-| `time=evening` | Chiều tối (mặc định ngày) |
+| `time=evening\|dusk\|night\|dim` | Giờ trong ngày (mặc định `day`): chiều nắng xiên, 18:30 trời đã tối đèn tầng còn bật, đêm tắt đèn trần, phòng họp tối 17:30 |
 | `az=20&el=8&dist=14` | Góc máy: phương vị (0 là chính diện), độ cao (độ), khoảng cách |
 | `look=x,y,z` | Điểm camera nhìn vào (three) |
 | `aa=off\|ss1.5\|ss2` | Siêu lấy mẫu |
@@ -27,6 +27,9 @@ pnpm bench      # đo ms/khung ở 1920×1080
 | `demo=hold` | Cầm đồ và đội đồ: một người đi bưng khay hai tay, đeo thẻ ngực; một cô thấp hơn cầm cốc, đội mũ cảnh sát; một người đeo kính râm, đội mũ, cầm tờ giấy; một hàng người nền `lod: 'low'` đóng băng ngồi bàn, người thứ tư ngồi lấn vào bàn. Góc trên trái là bảng va chạm của khung và số mesh, tam giác theo LOD |
 | `noreport` | Ẩn bảng va chạm của `demo=hold` |
 | `demo=camera` | Ống kính `scene.lens` và mốc `camera[]` của scene: máy đẩy vào người đang đi, lia theo, lùi ra. Nhãn và bong bóng 2D bám đỉnh đầu, mồm qua `screenOf` (chấm đỏ là đúng điểm mốc); góc máy xoay tay tắt |
+| `demo=light` | Phòng thử đèn: đèn trần, nắng qua cửa sổ, bàn có đèn bàn, hai người que (`apps/viewer/src/demo-light.js`) |
+| `spot`, `lamp=0\|1` | Với `demo=light`: bật đèn rọi sân khấu (bật trong 0,3 s, quét từ người đứng sang người ngồi ở giây 1–2,5, phòng tối bớt); bật/tắt đèn bàn (mặc định bật khi không phải `day`, `evening`) |
+| `grade=flashback\|dim\|vhs` | Hậu kỳ toàn khung: hồi tưởng (nhoè, giảm bão hoà), tối nền, băng tua ngược |
 
 Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js` (`demo=hold` ở `demo-hold.js`, kèm đồ mẫu chung), `@stickman/rig` lấy mẫu
 bằng `sceneAt`, người 3D diễn theo bằng `act`. Cảnh có ống kính riêng (`SHOTS` trong `demos.js`) thì
@@ -197,6 +200,27 @@ pnpm bench --scene walk --aa ss2 --gl vulkan,angle --frames 200 --total 41000
 Mở app xem thử ở 1920×1080, vẽ từng khung đồng bộ rồi đọc một pixel để chờ GPU xong. `chụp` là
 `Page.captureScreenshot` JPEG như Remotion chụp mỗi khung. Bảng cuối ước số phút cho `--total` khung: chỉ phần vẽ
 3D, và vẽ cộng chụp trên một tab — các tab của `--concurrency` chia nhau phần chụp, GPU thì dùng chung.
+## Đèn trong nhà
+
+Đèn lấy từ hai chỗ: giờ trong ngày `setPalette(name)` (màu nắng, đèn trần, bóng, trời) và bộ đèn
+của phòng `setLights(rig)` (toạ độ rig). Phòng khai một lần; đèn chạy theo `t` thì gọi lại
+`setLights` mỗi khung trước `render`:
+
+```ts
+setLights({
+  ceiling: { y: -780 },                                    // đèn trần: bóng mềm, gần như rơi thẳng xuống
+  window: { at: [-800, -450, 0], normal: [1, 0, 0], width: 500, height: 360, bars: [2, 2] },
+  lamps: [{ at: [660, -322, 186], target: [600, -137, 140], angle: 34, color: '#ffc77a', intensity: 1.5, range: 320 }],
+  bounds: { min: [-820, -800, -700], max: [820, 20, 620] }, // hộp phòng: hộp bóng tự tính không ra ngoài
+});
+pipe.render(scene, camera, { t, grade: { desaturate: 0.65, blur: 0.45 } });
+```
+
+Không có `ceiling` là ngoài trời: mặt trời của bảng màu là đèn chính. Nắng qua cửa chỉ sáng
+chỗ tia lọt qua ô kính và có bản đồ bóng riêng; tường chứa cửa và vật ngoài phòng không che.
+Tối đa `MAX_LAMPS` đèn cục bộ, `MAX_LAMP_SHADOWS` đèn rọi đầu có bóng; `angle` từ 80 trở lên
+là đèn điểm, không bóng. Chao đèn bọc bóng đèn phải `userData.noShadow`. Bóng tiếp xúc (SSAO)
+dò từ độ sâu ở lượt hậu kỳ, chỉnh bằng `ao` của bộ đèn.
 
 ## Diễn theo hành động 2D
 
