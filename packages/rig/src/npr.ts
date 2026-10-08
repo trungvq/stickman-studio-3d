@@ -165,11 +165,15 @@ vec3 nprShade(vec3 base, vec3 N, vec3 wp, float stipple, float scale, float soft
   mat2 R = diskRot();
   float noise = vnoise(wp * scale) * 0.62 + vnoise(wp * scale * 2.7 + 11.0) * 0.38;
   float light = 0.0;
+  #ifdef FLAT_KEY
+  light = uKey;
+  #else
   if (uKey > 0.0) {
     // trong nhà mặt quay khỏi đèn vẫn có ánh dội uKeyFill, chỉ bóng đổ mới về dải tối
     float lam = max(clamp((dot(N, uLightDir) + uKeyWrap) / (1.0 + uKeyWrap) * 1.15, 0.0, 1.0), uKeyFill);
     if (lam > 0.0) light = lam * keyShadow(wp, N, R) * uKey;
   }
+  #endif
   float shade = light + (noise - 0.5) * stipple;
   vec3 mid = base * mix(uShadowTint, vec3(1.0), mix(0.66, 0.8, soft));
   vec3 dark = mix(base * uShadowTint, mid, soft * uKey);
@@ -269,6 +273,8 @@ export interface NprOptions {
   doubleSided?: boolean;
   /** Mặt đứng nhận ánh xiên của đèn tấm trần dưới vật nhô (`CeilingLight.spread`): vỏ phòng, đồ đạc (`Batch` bật sẵn); người tắt */
   spread?: boolean;
+  /** Không nhận dải tối và bóng đổ của đèn chính, chỉ sáng đều theo cường độ đèn: da mặt người */
+  flat?: boolean;
 }
 
 function shaded(defines: Record<string, string>, side: THREE.Side, own: Record<string, THREE.IUniform>) {
@@ -290,7 +296,7 @@ export function npr(o: NprOptions = {}): THREE.ShaderMaterial {
   const key = JSON.stringify(o);
   const hit = cache.get(key);
   if (hit) return hit;
-  const defines: Record<string, string> = { ...(o.doubleSided ? { DOUBLE_SIDED: '' } : {}), ...(o.spread ? { KEY_SPREAD: '' } : {}) };
+  const defines: Record<string, string> = { ...(o.doubleSided ? { DOUBLE_SIDED: '' } : {}), ...(o.spread ? { KEY_SPREAD: '' } : {}), ...(o.flat ? { FLAT_KEY: '' } : {}) };
   const m = shaded(defines, o.doubleSided ? THREE.DoubleSide : THREE.FrontSide, ownUniforms(o));
   cache.set(key, m);
   return m;

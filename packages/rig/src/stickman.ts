@@ -178,7 +178,7 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
   const skullScale = new THREE.Vector3(1, 1.04, 0.98);
   const skull = new THREE.SphereGeometry(R.head, ...q.skull);
   skull.scale(skullScale.x, skullScale.y, skullScale.z);
-  head.add(inked(skull, npr({ color: skin, stipple: 0.035, stippleScale: 4, soft: 1 }), 0.03));
+  head.add(inked(skull, npr({ color: skin, stipple: 0.035, stippleScale: 4, soft: 1, flat: true }), 0.03));
   const faceR = lod === 'low' ? stillFace(skullScale, faceShape, face) : faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face });
   head.add(faceR.mesh);
   if (glasses) {
