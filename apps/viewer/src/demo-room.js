@@ -1,9 +1,11 @@
-import { parseScene, resolveScene, sceneAt } from '@stickman/rig';
-import { act, addItem, Batch, box, room, seatCrowd, setLights, stickman } from '@stickman3d/rig';
-import { ACTIONS, BOY, GIRL } from './demos.js';
+import { parseCharacter, parseScene, resolveScene, sceneAt } from '@stickman/rig';
+import { act, addItem, Batch, box, characterOptions, room, seatCrowd, setLights, stickman } from '@stickman3d/rig';
+import { ACTIONS, BOY } from './demos.js';
+import { samples } from './demo-styles.js';
 
 // Phòng dựng bằng bộ dựng phòng (`?demo=room`): văn phòng có dải cửa sổ tường trái, cửa sổ nhỏ tường sau, cửa ra
-// hành lang tường phải, đèn tấm trên trần, hai đảo bàn bốn chỗ có người nền đóng băng, một người đi về phía cửa.
+// hành lang tường phải, đèn tấm trên trần, hai đảo bàn bốn chỗ có người nền đóng băng (JSON nhân vật mẫu qua `characterOptions`),
+// một người đi về phía cửa.
 
 const SEAT_Y = -87.5, TOP = 137;
 const tone = (top, lit = top) => ({ top, lit });
@@ -34,6 +36,8 @@ function island(x, zs) {
 }
 
 const COATS = ['#4a4e55', '#5b6680', '#33363c', '#8a5a44', '#7893ae', '#3f55a0'];
+/** JSON nhân vật mẫu cho người nền, như repo video đọc từ `characters/` */
+const CAST = samples().filter((_, i) => i % 3 === 0).map(({ json }) => parseCharacter(json).data);
 
 /** `q`: `time` giờ trong ngày (đèn bàn bật khi không phải ngày, chiều), `door=0..1` độ mở cửa cố định thay cho mở theo `t`. */
 export function roomDemo(q) {
@@ -61,7 +65,7 @@ export function roomDemo(q) {
 
   // chỗ trống: một ở đảo một cho người đi ngang, một ở đảo hai cạnh đèn bàn
   const seats = [...a.seats, ...b.seats].filter((_, i) => i !== 1 && i !== 6);
-  const crowd = seatCrowd(seats, (i) => ({ ...(i % 2 ? GIRL : BOY), color: COATS[i % COATS.length] }));
+  const crowd = seatCrowd(seats, (i) => characterOptions(CAST[i % CAST.length], { color: COATS[i % COATS.length] }));
 
   const LENS = { eye: [0, -200, -1400], yaw: 0, pitch: 0, f: 800, cx: 0, cy: 0 };
   const sc = parseScene({

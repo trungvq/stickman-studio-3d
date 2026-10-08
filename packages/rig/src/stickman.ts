@@ -285,16 +285,19 @@ export interface CharacterJson {
   items?: Gear['specs'];
 }
 
-/** Người que từ JSON nhân vật của rig; `opts` đè lên số đọc từ JSON. */
-export function fromCharacter(json: CharacterJson, opts: Partial<StickmanOptions> = {}): Figure {
+/** Tham số `stickman` đọc từ JSON nhân vật của rig (cho `seatCrowd`, hay đè thêm trước khi dựng); `opts` đè lên số đọc từ JSON. */
+export function characterOptions(json: CharacterJson, opts: Partial<StickmanOptions> = {}): StickmanOptions {
   const pal = json.palette, pc = json.pieces;
-  return stickman({
+  return {
     rig: json.rig, garment: pc.torso.garment, color: pal.garment, skin: pal.skin,
     skirt: pc.hem?.skirt, skirtColor: pc.hem?.color, hair: pc.hair?.sculpt, hairColor: pc.hair?.color,
     sleeveWidth: pal.sleeveWidth, trouserWidth: pal.trouserWidth, faceShape: json.face, itemSpecs: json.items,
     glasses: pc.faceAcc?.src === 'sculpt' && pc.faceAcc.glasses, glassesColor: pc.faceAcc?.color, ...opts,
-  });
+  };
 }
+
+/** Người que từ JSON nhân vật của rig; `opts` đè lên số đọc từ JSON. */
+export const fromCharacter = (json: CharacterJson, opts: Partial<StickmanOptions> = {}): Figure => stickman(characterOptions(json, opts));
 
 const deg = Math.PI / 180;
 

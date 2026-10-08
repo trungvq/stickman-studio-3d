@@ -28,7 +28,7 @@ pnpm bench      # đo ms/khung ở 1920×1080
 | `noreport` | Ẩn bảng va chạm của `demo=hold` |
 | `demo=camera` | Ống kính `scene.lens` và mốc `camera[]` của scene: máy đẩy vào người đang đi, lia theo, lùi ra. Nhãn và bong bóng 2D bám đỉnh đầu, mồm qua `screenOf` (chấm đỏ là đúng điểm mốc); góc máy xoay tay tắt |
 | `demo=light` | Phòng thử đèn: đèn trần, nắng qua cửa sổ, bàn có đèn bàn, hai người que (`apps/viewer/src/demo-light.js`) |
-| `demo=room` | Bộ dựng phòng: văn phòng có dải cửa sổ, cửa sổ nhỏ, cửa ra hành lang có biển, đèn tấm trên trần, hai đảo bàn người nền đóng băng, một người đi về phía cửa; cửa mở dần từ giây 2,5 (`apps/viewer/src/demo-room.js`) |
+| `demo=room` | Bộ dựng phòng: văn phòng có dải cửa sổ, cửa sổ nhỏ, cửa ra hành lang có biển, đèn tấm trên trần, hai đảo bàn người nền đóng băng (JSON nhân vật mẫu qua `characterOptions`), một người đi về phía cửa; cửa mở dần từ giây 2,5 (`apps/viewer/src/demo-room.js`) |
 | `door=0..1` | Với `demo=room`: độ mở cửa cố định |
 | `demo=stages` | Hai sân khấu cùng trang (phòng ngày, phòng đêm) vẽ xen kẽ, so từng điểm ảnh với lần vẽ đầu; nhãn đỏ là đèn của sân khấu này lọt sang sân khấu kia |
 | `spot`, `lamp=0\|1` | Với `demo=light`: bật đèn rọi sân khấu (bật trong 0,3 s, quét từ người đứng sang người ngồi ở giây 1–2,5, phòng tối bớt); bật/tắt đèn bàn (mặc định bật khi không phải `day`, `evening`) |
@@ -289,6 +289,8 @@ hông như `put`, `yaw` độ), tay lên bàn (`hands: 'desk'`) hay lên đùi, 
 ```ts
 const crowd = seatCrowd(OFFICE_SEATS.map((s) => ({ at: s.hip, yaw: s.yaw })), (i) => ({ ...COLLEAGUE, color: COATS[i % COATS.length] }));
 stage.scene.add(crowd);
+// người nền là nhân vật của repo video: `characterOptions` đọc JSON nhân vật (đã qua `parseCharacter`) như `fromCharacter`
+seatCrowd(seats, (i) => characterOptions(CHARACTERS[seats[i].character], { color: COATS[i % COATS.length] }));
 ```
 
 ## Diễn theo hành động 2D
