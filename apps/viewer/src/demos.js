@@ -1,5 +1,6 @@
 import { parseAction, parseScene, resolveScene, sceneAt } from '@stickman/rig';
 import { act, addItem, Batch, box, stickman } from '@stickman3d/rig';
+import { styles } from './demo-styles.js';
 
 // Cảnh diễn hành động (`?demo=`): scene JSON dựng tại chỗ, @stickman/rig lấy mẫu từng khung bằng `sceneAt`,
 // người 3D diễn theo bằng `act`. Hành động là bản chép từ bộ chung của @stickman/cli (`actions/`).
@@ -73,6 +74,7 @@ function furniture() {
 
 /** Dựng cảnh `name`; trả nhóm cần thêm vào scene và hàm diễn theo `t`, hay `null` nếu không có cảnh ấy. */
 export function demo(name) {
+  if (name === 'styles') return styles(new URLSearchParams(location.search));
   const make = DEMOS[name];
   if (!make) return null;
   const members = make();
