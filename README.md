@@ -28,7 +28,7 @@ pnpm bench      # đo ms/khung ở 1920×1080
 | `noreport` | Ẩn bảng va chạm của `demo=hold` |
 | `demo=camera` | Ống kính `scene.lens` và mốc `camera[]` của scene: máy đẩy vào người đang đi, lia theo, lùi ra. Nhãn và bong bóng 2D bám đỉnh đầu, mồm qua `screenOf` (chấm đỏ là đúng điểm mốc); góc máy xoay tay tắt |
 | `demo=light` | Phòng thử đèn: đèn trần, nắng qua cửa sổ, bàn có đèn bàn, hai người que (`apps/viewer/src/demo-light.js`) |
-| `demo=room` | Bộ dựng phòng: văn phòng có dải cửa sổ, cửa sổ nhỏ, cửa ra hành lang có biển, đèn tấm trên trần, hai đảo bàn người nền đóng băng (JSON nhân vật mẫu qua `characterOptions`), một người đi về phía cửa; cửa mở dần từ giây 2,5 (`apps/viewer/src/demo-room.js`) |
+| `demo=room` | Bộ dựng phòng: văn phòng có dải cửa sổ (rèm lá kéo xuống 30%), cửa sổ nhỏ, cửa ra hành lang có biển, đèn tấm trên trần, hai đảo bàn người nền đóng băng (JSON nhân vật mẫu qua `characterOptions`), một người đi về phía cửa; cửa mở dần từ giây 2,5 (`apps/viewer/src/demo-room.js`) |
 | `door=0..1` | Với `demo=room`: độ mở cửa cố định |
 | `demo=stages` | Hai sân khấu cùng trang (phòng ngày, phòng đêm) vẽ xen kẽ, so từng điểm ảnh với lần vẽ đầu; nhãn đỏ là đèn của sân khấu này lọt sang sân khấu kia |
 | `spot`, `lamp=0\|1` | Với `demo=light`: bật đèn rọi sân khấu (bật trong 0,3 s, quét từ người đứng sang người ngồi ở giây 1–2,5, phòng tối bớt); bật/tắt đèn bàn (mặc định bật khi không phải `day`, `evening`) |
@@ -272,7 +272,7 @@ setLights(office.lights({ lamps: [deskLamp], ceiling: { intensity: 1 } }));
   xuyên vào được, mặt cắt (đỉnh tường, đầu tường, mép sàn) tô màu `cut`. Tường bị giấu thì không đổ bóng.
 - **Cửa sổ.** Khung, song, nẹp, bậu; sau kính là trời và phố (`view: 'city' | 'sky'`) vẽ theo tia từ mắt nên nhìn xiên
   vẫn đúng thị sai, không vật nào thò ra ngoài tường. Trời theo giờ trong ngày của `setPalette`; trời tối thì cửa sổ nhà
-  bên kia sáng đèn. Cửa nắng (`sun: true`, mặc định cửa rộng nhất) là mục `window` của bộ đèn: nắng chỉ vào khi bảng
+  bên kia sáng đèn. `blind` (0–1) kéo rèm lá xuống từ đỉnh ô cửa; nắng chỉ lọt phần còn hở. Cửa nắng (`sun: true`, mặc định cửa rộng nhất) là mục `window` của bộ đèn: nắng chỉ vào khi bảng
   màu có nắng. Bộ đèn chỉ có một cửa nắng.
 - **Đèn trần.** Tấm đèn sáng theo đèn trần đang đặt: bảng màu tắt đèn trần (`night`) thì tấm tối. `lights()` trả
   `ceiling` ở mặt trần (`opts.ceiling` rồi `ceiling` của lời gọi đè lên), cửa nắng, `bounds` của phòng.

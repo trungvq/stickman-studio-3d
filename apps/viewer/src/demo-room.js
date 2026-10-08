@@ -3,7 +3,7 @@ import { act, addItem, Batch, box, characterOptions, room, seatCrowd, setLights,
 import { ACTIONS, BOY } from './demos.js';
 import { samples } from './demo-styles.js';
 
-// Phòng dựng bằng bộ dựng phòng (`?demo=room`): văn phòng có dải cửa sổ tường trái, cửa sổ nhỏ tường sau, cửa ra
+// Phòng dựng bằng bộ dựng phòng (`?demo=room`): văn phòng có dải cửa sổ tường trái (rèm lá kéo xuống 30%), cửa sổ nhỏ tường sau, cửa ra
 // hành lang tường phải, đèn tấm trên trần, hai đảo bàn bốn chỗ có người nền đóng băng (JSON nhân vật mẫu qua `characterOptions`),
 // một người đi về phía cửa.
 
@@ -45,7 +45,7 @@ export function roomDemo(q) {
     x: [-1100, 1100], z: [-800, 900], height: 780,
     floor: { grout: '#5f6367', size: 160 },
     windows: [
-      { wall: 'left', u: 850, width: 1200, height: 380, sill: 250, panes: [5, 2] },
+      { wall: 'left', u: 850, width: 1200, height: 380, sill: 250, panes: [5, 2], blind: 0.3 },
       { wall: 'back', u: 1750, width: 420, height: 300, sill: 300 },
     ],
     doors: [{ wall: 'right', u: 1200, hinge: 'left', sign: true }],

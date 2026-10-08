@@ -24,6 +24,8 @@ export interface RoomTones {
   skirting?: string | false;
   /** Nẹp, khung cửa sổ, bậu cửa */
   trim?: string;
+  /** Ray và thanh đáy rèm lá */
+  blind?: string;
 }
 
 /** Vân sàn: ron gạch vuông cạnh `size` hay ván dài, bề ngang `width`, chạy dọc `along`. */
@@ -51,6 +53,8 @@ export interface WindowSpec {
   azimuth?: number;
   /** Hạt giống của dãy nhà ngoài phố */
   seed?: number;
+  /** Rèm lá kéo xuống từ đỉnh ô cửa, phần chiều cao 0–1 (nắng chỉ lọt phần còn hở). Mặc định 0. */
+  blind?: number;
 }
 
 export interface DoorSpec {
@@ -384,6 +388,17 @@ export function room(o: RoomOptions): Room {
         box(a - 14, c + 14, yb - 2, yb + 6, -8, gz),
       ];
       for (const v of [...sash, ...casing]) addPart(tb, { v, tone: trim }, at0);
+      // rèm lá: thanh ray ở đỉnh, lá nghiêng cách nhau ~11 px, thanh đáy; nằm trong bề dày tường trước kính
+      const bl = Math.min(1, Math.max(0, w.blind ?? 0)), yo = yt + w.height * bl;
+      if (bl > 0) {
+        const n = Math.max(1, Math.round((w.height * bl) / 11));
+        addPart(tb, { v: box(a, c, yt, yt + 8, 1, 5), tone: flat(tones.blind ?? '#c9cdd1') }, at0);
+        for (let i = 0; i < n; i++) {
+          const y = yt + 8 + ((yo - yt - 8) * (i + 0.5)) / n;
+          addPart(tb, { v: [[a, y + 3, 2], [c, y + 3, 2], [c, y + 3, 6], [a, y + 3, 6], [a, y - 4, 3], [c, y - 4, 3], [c, y - 4, 7], [a, y - 4, 7]], tone: flat('#eef0f1') }, at0);
+        }
+        addPart(tb, { v: box(a, c, yo - 2, yo + 5, 2, 6), tone: flat(tones.blind ?? '#c9cdd1') }, at0);
+      }
       const place = wallPlace(s, w.u, (yt + yb) / 2);
       const P = (u: number, y: number, z: number) => toThree(place3(at0, [u, y, z]));
       const view = portal([P(a, yb, gz), P(c, yb, gz), P(c, yt, gz), P(a, yt, gz)], {
@@ -394,8 +409,8 @@ export function room(o: RoomOptions): Room {
       windows.push({
         spec: w, place,
         light: {
-          at: place3(at0, [w.u, (yt + yb) / 2, gz]), normal: place3({ at: [0, 0, 0], yaw: YAW[s] }, [0, 0, -1]),
-          width: w.width, height: w.height, bars: [cols, rows], frame: bw, depth: gz + 2, azimuth: w.azimuth,
+          at: place3(at0, [w.u, (yo + yb) / 2, gz]), normal: place3({ at: [0, 0, 0], yaw: YAW[s] }, [0, 0, -1]),
+          width: w.width, height: yb - yo, bars: [cols, bl > 0 ? 1 : rows], frame: bw, depth: gz + 2, azimuth: w.azimuth,
         },
       });
     }
