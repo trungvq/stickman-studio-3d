@@ -113,10 +113,10 @@ function sculptHair(head: THREE.Object3D, sculpt: Partial<Sculpt>, color: string
     g.children[0].userData.hair = tris === mesh.shell ? 'shell' : tris === mesh.spikes ? 'spikes' : 'hang';
     head.add(g);
   }
+  // co điểm trước khi dựng ống: LOD thấp dựng lại ống từ `parameters.path`, co hình học sau đó thì nét bay khỏi đầu
   for (const l of mesh.lines) {
-    const geo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(l.map((p) => new THREE.Vector3(...p))), l.length * 2, 0.012 / R.head, 5);
-    geo.scale(R.head, R.head * 1.04, R.head * 0.98);
-    head.add(new THREE.Mesh(geo, ink));
+    const pts = l.map(([x, y, z]) => new THREE.Vector3(x * R.head, y * R.head * 1.04, z * R.head * 0.98));
+    head.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), l.length * 2, 0.012, 5), ink));
   }
 }
 
