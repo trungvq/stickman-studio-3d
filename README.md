@@ -80,7 +80,7 @@ của phòng `setLights(rig)` (toạ độ rig). Phòng khai một lần; đèn 
 setLights({
   ceiling: { y: -780 },                                    // đèn trần: bóng mềm, gần như rơi thẳng xuống
   window: { at: [-800, -450, 0], normal: [1, 0, 0], width: 500, height: 360, bars: [2, 2] },
-  lamps: [{ at: [660, -322, 186], target: [600, -137, 140], angle: 34, color: '#ffc77a', intensity: 1.5 }],
+  lamps: [{ at: [660, -322, 186], target: [600, -137, 140], angle: 34, color: '#ffc77a', intensity: 1.5, range: 320 }],
   bounds: { min: [-820, -800, -700], max: [820, 20, 620] }, // hộp phòng: hộp bóng tự tính không ra ngoài
 });
 pipe.render(scene, camera, { t, grade: { desaturate: 0.65, blur: 0.45 } });

@@ -103,9 +103,9 @@ export function lightDemo(q) {
       const lamps = [], on = spot ? smooth(0, 0.3, t) : 0;
       if (spot) {
         const u = smooth(1, 2.5, t);
-        lamps.push({ at: [0, -770, -350], target: lerp([-650, -230, 60], [470, -200, 150], u), angle: 12, penumbra: 0.12, color: '#fff1c4', intensity: 1.6 * on, range: 1600 });
+        lamps.push({ at: [0, -770, -100], target: lerp([-650, -230, 60], [470, -200, 150], u), angle: 12, penumbra: 0.12, color: '#fff1c4', intensity: 1.6 * on, range: 1100 });
       }
-      lamps.push({ at: [660, -322, 186], target: [600, -137, 140], angle: 34, penumbra: 0.3, color: '#ffc77a', intensity: lampOn ? 1.5 : 0, range: 650 });
+      lamps.push({ at: [660, -322, 186], target: [600, -137, 140], angle: 34, penumbra: 0.3, color: '#ffc77a', intensity: lampOn ? 1.5 : 0, range: 320 });
       setLights({
         // đèn rọi bật thì phòng tối bớt
         ceiling: { y: -ROOM.h, intensity: 1 - 0.4 * on },

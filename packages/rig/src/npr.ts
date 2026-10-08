@@ -102,7 +102,8 @@ float keyShadow(vec3 wp, vec3 n, mat2 R){
   float pen = clamp((c.z - zb / nb) * uShadowInfo.y * uShadowInfo.z / uShadowInfo.x, 1.0, uShadowInfo.w) * uShadowTexel;
   float s = 0.0;
   for (int i = 0; i < 16; i++) s += (c.z - bias > texture2D(uShadowMap, c.xy + R * PD[i] * pen).r) ? 0.0 : 1.0;
-  return s / 16.0;
+  // vùng che một phần co về hai đầu: mép bóng còn mềm, mảng rộng gần ngưỡng dải thì không lốm đốm
+  return smoothstep(0.2, 0.8, s / 16.0);
 }
 float sunShadow(vec3 wp, vec3 n, mat2 R){
   vec3 c = (uSunMatrix * vec4(wp + n * (0.02 + 0.05 * (1.0 - abs(dot(n, uSunDir)))), 1.0)).xyz;
@@ -163,11 +164,11 @@ vec3 nprShade(vec3 base, vec3 N, vec3 wp, float stipple, float scale, float soft
     float r = length(d);
     vec3 l = d / r;
     vec4 cn = uLampCone[i];
-    float k = max(dot(N, l), 0.0) * smoothstep(cn.x, cn.y, dot(-l, uLampDir[i])) * (1.0 - smoothstep(cn.z * 0.3, cn.z, r));
+    float k = max(dot(N, l), 0.0) * smoothstep(cn.x, cn.y, dot(-l, uLampDir[i])) * (1.0 - smoothstep(cn.z * 0.7, cn.z, r));
     if (k <= 0.0) continue;
     if (cn.w > 0.5) k *= spotShadowIn(uSpotMap1, uSpotMatrix[1], uSpotInfo[1], wp, N, R);
     else if (cn.w > -0.5) k *= spotShadowIn(uSpotMap0, uSpotMatrix[0], uSpotInfo[0], wp, N, R);
-    c += base * uLampColor[i] * step(0.16, k + (noise - 0.5) * 0.12) * (0.4 + 0.45 * step(0.5, k));
+    c += base * uLampColor[i] * (0.4 * smoothstep(0.14, 0.18, k) + 0.45 * smoothstep(0.48, 0.52, k));
   }
   return c;
 }
@@ -355,7 +356,7 @@ export interface Lamp {
   color?: THREE.ColorRepresentation;
   /** 0 là tắt */
   intensity?: number;
-  /** Tầm sáng (px). Mặc định 900. */
+  /** Tầm sáng (px): mờ dần từ 70% tầm, tắt hẳn ở `range`. Mặc định 900. */
   range?: number;
   /** Có bản đồ bóng (đèn rọi, chỉ `MAX_LAMP_SHADOWS` đèn đầu được). Mặc định có. */
   shadow?: boolean;
