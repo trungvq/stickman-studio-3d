@@ -13,4 +13,6 @@ export {
   addItem, addLathe, addPart, bar, Batch, box, place3, slab, toThree, U,
   type Item, type LatheSpec, type Mark, type Part, type Place3, type Tone, type Vec3,
 } from './khoi';
-export { lensCamera, STAGE, viewRect, type Crop, type Lens } from './lens';
+export { aimCamera, HOME, lensCamera, STAGE, viewRect, type Crop, type Lens, type StageFrame } from './lens';
+export { createStage, type FrameView, type Stage, type StageOptions } from './stage';
+export { landmark, LANDMARKS, screenOf, type Landmark, type ScreenOptions, type ScreenPoint, type ScreenView } from './screen';

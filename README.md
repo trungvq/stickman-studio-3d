@@ -8,6 +8,7 @@ pnpm install
 pnpm dev        # tsup --watch cho rig, vite cho app xem thử
 pnpm typecheck
 pnpm shots      # chụp app xem thử ra tmp/shots/
+pnpm bench      # đo ms/khung ở 1920×1080
 ```
 
 ## Xem thử
@@ -23,9 +24,11 @@ pnpm shots      # chụp app xem thử ra tmp/shots/
 | `aa=off\|ss1.5\|ss2` | Siêu lấy mẫu |
 | `pixel`, `noink`, `nohud` | Chế độ pixel, tắt nét mực, ẩn HUD |
 | `demo=walk\|sit\|faces\|look` | Cảnh diễn hành động thay cho cảnh nói chuyện: đi theo `path`, ngồi đặt tay lên bàn và cúi chào, bảng nét mặt, quay đầu về ống kính |
+| `demo=camera` | Ống kính `scene.lens` và mốc `camera[]` của scene: máy đẩy vào người đang đi, lia theo, lùi ra. Nhãn và bong bóng 2D bám đỉnh đầu, mồm qua `screenOf` (chấm đỏ là đúng điểm mốc); góc máy xoay tay tắt |
 
 Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js`, `@stickman/rig` lấy mẫu
-bằng `sceneAt`, người 3D diễn theo bằng `act`. Hành động ở `apps/viewer/actions/` chép từ
+bằng `sceneAt`, người 3D diễn theo bằng `act`. Cảnh có ống kính riêng (`SHOTS` trong `demos.js`) thì
+camera theo `cameraAt`. Hành động ở `apps/viewer/actions/` chép từ
 bộ chung của `@stickman/cli`.
 
 Phím: `O` nét mực, `P` pixel, `A` khử răng cưa, `T` đổi giờ, `H` ẩn HUD,
@@ -66,6 +69,132 @@ nguồn, chạy `pnpm dev` ở repo này cho tsup build lại:
 Đi đường `link:` thì alias `three` về bản của repo video trong `remotion.config.ts` (và
 `vite.config` nếu có), không thì symlink làm bundler tìm `three` ở repo này — hai bản
 `three` là vật liệu hỏng mà không báo lỗi. Chốt một mốc thì publish rồi pin lại version.
+
+## Sân khấu
+
+`createStage` dựng một lần scene, camera và pipeline; mỗi khung `draw(t, view)` đặt camera theo ống kính và khung
+cắt, gọi `update(t)` rồi vẽ **đồng bộ**. Không đọc đồng hồ: cùng `t`, cùng `view` là cùng ảnh.
+
+```ts
+const stage = createStage({
+  size: { w: 1920, h: 1080 }, aa: 'ss2',
+  lens: scene.lens,                                  // `scene.lens` của rig: eye, yaw, pitch, f, cx, cy
+  light: () => setPalette('day'),                    // uniform chung G của riêng sân khấu này
+  update: (t, st) => { pose(t); room.cull(st.camera); },
+});
+stage.scene.add(room.group, ...people.map((p) => p.root));
+stage.draw(t, { crop: cameraAt(rt, t) });            // khung cắt 2D của rig, nội suy cut/linear/ease bên rig
+const p = screenOf(stage, haru, 'mouth');            // px khung, toạ độ sân khấu, độ sâu, cỡ, có trong khung không
+stage.dispose();
+```
+
+- **Camera.** `lens` cố định cho cả cảnh hay đổi theo khung (`draw(t, { lens })`). `crop` là kết quả `cameraAt(rt, t)`
+  của `@stickman/rig` — nội suy và easing của mốc `camera[]` nằm ở đó, package không chép lại. Khung hình khác tỉ lệ
+  sân khấu thì khung cắt nới quanh cùng tâm. Không có `lens` thì camera để tự do (app xem thử xoay tay).
+- **`G` theo sân khấu.** Uniform chung `G` là của sân khấu dựng, `relight` hay vẽ gần nhất; sân khấu khác vẽ thì
+  lấy lại `G` của nó. Hai `<Sequence>` chồng nhau, một ngày một chiều, vẽ đúng bảng màu và bản đồ bóng của từng cái.
+  Đổi `G` của một sân khấu thì đổi trong `light` hay `stage.relight(fn)`.
+- **Ảnh tĩnh.** `stage.still(t, view, canvas?)` vẽ rồi chép sang canvas 2D: khung chia đôi (hai sân khấu nửa khung
+  hay một sân khấu hai lần `still`), nền làm tối (`filter: brightness(…)` trên canvas ảnh), năm ảnh nhanh (một sân
+  khấu, năm `still`, rồi `dispose`). Cần texture thì `new THREE.CanvasTexture(stage.still(t))`.
+- **Bám người.** `screenOf(stage, figure, mốc)` hay `screenOf(stage, điểm)` gọi sau `draw`/`pose` của đúng khung ấy.
+  Mốc: `root`, `hip`, `chest`, `collar`, `head`, `headTop`, `face`, `mouth`, `wristR/L`, `footR/L`, và
+  `wristNear/Far`, `footNear/Far` chọn bên gần ống kính như `anchorAt` 2D. Trả `x`, `y` px khung; `stage` toạ độ
+  sân khấu (vẽ vào SVG `viewBox` của `cameraAt`); `scale` px khung cho một đơn vị rig ở độ sâu ấy; `behind`,
+  `inFrame`; `occluded` khi truyền `{ occluders: [stage.scene] }`. Điểm thế giới rig là `Vec3`, điểm three là `Vector3`.
+- **Renderer.** Không truyền `renderer` thì sân khấu tự dựng trên canvas mới (`stage.canvas`), `pixelRatio` 1,
+  `preserveDrawingBuffer`, và `dispose` bỏ luôn context. Truyền `renderer` có sẵn thì sân khấu không huỷ nó.
+  `stage.gpu` là tên GPU WebGL — có `SwiftShader` là Chromium đang vẽ phần mềm.
+
+## Dùng trong Remotion
+
+Repo video giữ một component mỏng. Mỗi lần mount là **một canvas mới**: context đã `dispose` không dựng lại được
+trên canvas cũ, và `StrictMode` chạy effect hai lần.
+
+```tsx
+export const Scene3D = ({ scene }: { scene: SceneData }) => {
+  const frame = useCurrentFrame();
+  const { fps, width, height } = useVideoConfig();
+  const host = useRef<HTMLDivElement>(null);
+  const tag = useRef<HTMLDivElement>(null);
+  const world = useRef<{ stage: Stage; room: Room } | null>(null);
+  const [wait] = useState(() => delayRender('cảnh 3D'));
+  const rt = useMemo(() => resolveScene(scene, ACTIONS, ANIMALS, PROPS, castHeights(scene), castBodies(scene)), [scene]);
+
+  const draw = (t: number) => {
+    const w = world.current;
+    if (!w) return;
+    w.stage.draw(t, { crop: cameraAt(rt, t) });
+    const p = screenOf(w.stage, w.room.people.haru, 'headTop');
+    tag.current!.style.transform = `translate(${p.x}px, ${p.y}px)`;
+    tag.current!.style.visibility = p.inFrame ? 'visible' : 'hidden';
+  };
+
+  useLayoutEffect(() => {
+    let dead = false;
+    // phông, ảnh decal: nạp xong mới dựng, vẽ khung hiện tại rồi mới nhả Remotion
+    loadAssets(scene).then((assets) => {
+      if (dead) return;
+      const room = buildRoom(scene, rt, assets);
+      const stage = createStage({
+        size: { w: width, h: height }, aa: 'ss2', lens: scene.lens,
+        light: () => setPalette('day'),
+        update: (t, st) => room.pose(t, st.camera),
+      });
+      if (/SwiftShader/.test(stage.gpu)) throw new Error(`không có GPU: ${stage.gpu}`);
+      stage.scene.add(room.group);
+      host.current!.prepend(stage.canvas);
+      world.current = { stage, room };
+      draw(frame / fps);
+      continueRender(wait);
+    });
+    return () => {
+      dead = true;
+      world.current?.stage.dispose();
+      world.current?.stage.canvas.remove();
+      world.current = null;
+    };
+  }, [scene, width, height]);
+
+  useLayoutEffect(() => draw(frame / fps), [frame, fps]);
+
+  return <AbsoluteFill ref={host}><div ref={tag} className="tag">12:00 社食</div></AbsoluteFill>;
+};
+```
+
+Chữ 2D bám người ghi thẳng vào `style` qua ref trong cùng `useLayoutEffect` với `draw`: Remotion chụp sau
+layout effect nên chữ và ảnh 3D cùng một khung, không qua state.
+
+**Context WebGL.** Mỗi `Scene3D` đang mount là một context, `dispose` khi unmount. Chromium giữ tối đa 16 context
+mỗi trang, quá thì context cũ nhất mất và cảnh ấy ra trống; mỗi tab của `--concurrency` là một trang riêng nên giới
+hạn tính theo tab. Số cảnh 3D cùng mount (các `<Sequence>` chồng nhau cộng `premountFor`) phải dưới 16 — một tập
+thường chỉ hai, ba. Quên `dispose` thì sau vài chục lần mount Chromium báo `Too many active WebGL contexts`. Mỗi lần
+mount dựng lại shader của context mới, vài chục ms một cảnh.
+
+**Renderer OpenGL của Chromium.** Đặt trong `remotion.config.ts` của repo video:
+
+```ts
+// GPU thật qua ANGLE trên Vulkan; không có Vulkan thì tạo context lỗi ngay chứ không âm thầm vẽ phần mềm
+Config.setChromiumOpenGlRenderer('vulkan');
+Config.setConcurrency(4);
+```
+
+Hay `--gl=vulkan` trên dòng lệnh. `angle` cũng chạy GPU (chrome-headless-shell của Remotion chọn Vulkan làm
+backend) nhưng rơi về SwiftShader khi không có GPU mà không báo. `swangle` (mặc định của Lambda) và `swiftshader`
+là vẽ phần mềm, chậm ~100 lần. `egl`, `angle-egl` không tạo được context với chrome-headless-shell của Remotion
+trên máy dựng. Kiểm bằng `pnpm bench --gl vulkan,angle,swangle` với `CHROME=` trỏ vào
+`node_modules/.remotion/chrome-headless-shell/…/chrome-headless-shell` của repo video.
+
+## Đo thời gian render
+
+```bash
+pnpm bench                                   # cast, walk, camera × off, ss1.5, ss2; GPU qua Vulkan
+pnpm bench --scene walk --aa ss2 --gl vulkan,angle --frames 200 --total 41000
+```
+
+Mở app xem thử ở 1920×1080, vẽ từng khung đồng bộ rồi đọc một pixel để chờ GPU xong. `chụp` là
+`Page.captureScreenshot` JPEG như Remotion chụp mỗi khung. Bảng cuối ước số phút cho `--total` khung: chỉ phần vẽ
+3D, và vẽ cộng chụp trên một tab — các tab của `--concurrency` chia nhau phần chụp, GPU thì dùng chung.
 
 ## Diễn theo hành động 2D
 

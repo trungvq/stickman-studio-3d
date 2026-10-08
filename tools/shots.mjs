@@ -32,6 +32,10 @@ const SHOTS = [
   ['ngoi-nghieng', 'demo=sit&t=1.3&az=0&el=6&look=1.3,1.6,0&dist=12'],
   ['mat', 'demo=faces&t=0.9&az=0&el=3&look=0,3.1,0&dist=12'],
   ['nhin', 'demo=look&t=1.2&az=0&el=4&look=0,3,0&dist=7'],
+  ['may-nha', 'demo=camera&t=0.4'],
+  ['may-gan', 'demo=camera&t=1.6'],
+  ['may-lia', 'demo=camera&t=2.6'],
+  ['may-lui', 'demo=camera&t=3.7'],
 ];
 
 const { values: o } = parseArgs({ options: { out: { type: 'string' }, vs: { type: 'string' }, only: { type: 'string' }, soft: { type: 'boolean' } } });
