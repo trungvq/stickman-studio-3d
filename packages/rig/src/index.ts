@@ -2,8 +2,14 @@ export { G, hullMaterial, npr, PALETTES, setPalette, SKY_FRAG, SKY_VERT, skyDome
 export { AA, createPipeline, type AaMode, type Pipeline, type PipelineOptions } from './pipeline';
 export {
   fromCharacter, put, R, stickman,
-  type Arm, type CharacterJson, type Figure, type Leg, type Side, type StickmanOptions,
+  type Arm, type CharacterJson, type Figure, type Leg, type Lod, type Side, type StickmanOptions,
 } from './stickman';
+export {
+  dress, hold, SOCKET_NAMES, torsoSocket, wear,
+  type EquipState, type Gear, type HeadFit, type Held, type HoldOptions, type ItemBuild, type ItemContext, type ItemFactories, type ItemFactory, type SocketName, type Sockets,
+} from './attach';
+export { freeze } from './crowd';
+export { BODY_PARTS, bodyCapsules, collide, colliders, type BodyPart, type Collider, type CollideOptions, type Contact } from './collide';
 export { act, type ActPose, type ActReach, type Acting, type ActWorld } from './act';
 export { DEFAULT_FACE, type BrowKind, type EyeKind, type FaceRig, type FaceShape, type FaceState, type MouthKind } from './face';
 export { sculptSkirt, sculptTorso } from './garment';

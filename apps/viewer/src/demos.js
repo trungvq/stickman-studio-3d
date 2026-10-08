@@ -18,7 +18,7 @@ export const GIRL = {
   hairColor: '#3b3038',
 };
 
-const ACTIONS = Object.fromEntries(
+export const ACTIONS = Object.fromEntries(
   Object.entries(import.meta.glob('../actions/*.json', { eager: true, import: 'default' })).map(([f, j]) => {
     const r = parseAction(j);
     if (!r.success) throw new Error(`${f}: ${r.error.message}`);

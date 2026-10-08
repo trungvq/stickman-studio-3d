@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { buildSockets, dress, headFit, newGear, type EquipState, type Gear, type ItemFactories, type Sockets } from './attach';
 import { DEFAULT_FACE, faceRig, type FaceRig, type FaceShape, type FaceState } from './face';
 import { sculptSkirt, sculptTorso } from './garment';
 import { toThree, type Vec3 } from './khoi';
@@ -32,7 +33,21 @@ export interface Figure {
   face: FaceRig;
   /** Lệch nhịp chớp mắt của `act` giữa các người */
   seed: number;
+  /** Chỗ gắn đồ: cổ tay, đầu, ngực (`attach.ts`) */
+  sockets: Sockets;
+  /** Đồ gọi tên của người và thứ đang mặc; `dress` đổi */
+  gear: Gear;
+  lod: Lod;
 }
+
+/** `low`: người nền rẻ — ít mặt lưới, gộp khối tĩnh theo vật liệu, nét mặt đứng yên dùng chung texture, không chớp mắt */
+export type Lod = 'full' | 'low';
+interface Quality { skull: [number, number]; limb: [number, number]; neck: number }
+const QUALITY: Record<Lod, Quality> = {
+  full: { skull: [36, 24], limb: [4, 10], neck: 10 },
+  low: { skull: [16, 11], limb: [2, 6], neck: 6 },
+};
+let q = QUALITY.full;
 
 /** Khối tô màu có viền dày: mesh chính + vỏ ngược. */
 function inked(geo: THREE.BufferGeometry, mat: THREE.Material, w?: number) {
@@ -48,7 +63,7 @@ function inked(geo: THREE.BufferGeometry, mat: THREE.Material, w?: number) {
 
 /** Đoạn chi: nét đen tròn đầu, mọc từ gốc khớp theo −y. */
 function limb(len: number, r = R.limb) {
-  const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 4, 10), ink);
+  const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, ...q.limb), ink);
   m.position.y = -len / 2;
   m.userData.limb = true;
   return m;
@@ -56,6 +71,7 @@ function limb(len: number, r = R.limb) {
 
 function joint(parent: THREE.Object3D, x: number, y: number, z: number) {
   const j = new THREE.Group();
+  j.userData.joint = true;
   j.position.set(x, y, z);
   parent.add(j);
   return j;
@@ -114,7 +130,9 @@ function sculptHair(head: THREE.Object3D, sculpt: Partial<Sculpt>, color: string
     geo = mergeVertices(geo);
     geo.computeVertexNormals();
     geo.scale(R.head, R.head * 1.04, R.head * 0.98);
-    head.add(inked(geo, mat, 0.022));
+    const g = inked(geo, mat, 0.022);
+    g.children[0].userData.hair = tris === mesh.shell ? 'shell' : tris === mesh.spikes ? 'spikes' : 'hang';
+    head.add(g);
   }
 }
 
@@ -142,29 +160,39 @@ export interface StickmanOptions {
   trouserWidth?: number;
   /** Gập đùi ra trước để váy phủ theo đùi */
   seated?: boolean;
+  lod?: Lod;
+  /** Hàm dựng vật theo tên (`items` của JSON nhân vật); `dress` gắn vào socket */
+  items?: ItemFactories;
+  /** `items` của JSON nhân vật: cấu hình từng socket, chuyển nguyên cho hàm dựng */
+  itemSpecs?: Gear['specs'];
+  /** Đồ mặc lúc dựng, như `dress` */
+  equip?: EquipState;
 }
 
 /** Một người que 3D theo JSON nhân vật của rig. */
-export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt, skirtColor = color, hair, hairColor = '#2a1c15', glasses = false, faceShape, face, seed = 0, sleeveWidth = 10, trouserWidth = 10, seated = false }: StickmanOptions): Figure {
+export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt, skirtColor = color, hair, hairColor = '#2a1c15', glasses = false, faceShape, face, seed = 0, sleeveWidth = 10, trouserWidth = 10, seated = false, lod = 'full', items, itemSpecs, equip }: StickmanOptions): Figure {
+  q = QUALITY[lod];
   const root = new THREE.Group();
   const hips = joint(root, 0, R.thigh + R.shin + R.limb, 0);
   const spine = joint(hips, 0, 0.0, 0);
   sculptTorso(spine, { garment, rig, color, accent, ink: INK });
+  // khối thân áo là mảnh đầu tiên: `collide` lấy hộp thân từ nó
+  spine.children[0].userData.torso = true;
   if (skirt) {
     const dir: Vec3 = seated ? [0, 0.08, 1] : [0, 1, 0];
     const thighs = SIDES.map((s) => ({ hip: [s * rig.hipHalf, 0, 0] as Vec3, dir }));
     sculptSkirt(spine, { skirt, rig, color: skirtColor, ink: INK, thighs, legW: trouserWidth });
   }
   const neck = joint(spine, 0, R.torso, 0);
-  const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.2, 10), npr({ color: skin, stipple: 0 }));
+  const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.2, q.neck), npr({ color: skin, stipple: 0 }));
   neckMesh.position.y = 0.05;
   neck.add(neckMesh);
   const head = joint(neck, 0, R.neck + R.head * 0.95, 0);
   const skullScale = new THREE.Vector3(1, 1.04, 0.98);
-  const skull = new THREE.SphereGeometry(R.head, 36, 24);
+  const skull = new THREE.SphereGeometry(R.head, ...q.skull);
   skull.scale(skullScale.x, skullScale.y, skullScale.z);
   head.add(inked(skull, npr({ color: skin, stipple: 0.035, stippleScale: 4, soft: 1 }), 0.03));
-  const faceR = faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face });
+  const faceR = lod === 'low' ? stillFace(skullScale, faceShape, face) : faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face });
   head.add(faceR.mesh);
   if (glasses) glassesOn(head, (-(faceShape?.offsetY ?? 0) * R.head * skullScale.y) / 65);
   if (hair) sculptHair(head, hair, hairColor);
@@ -180,8 +208,74 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
     for (const j of [arms[s].shoulder, arms[s].elbow]) j.children.forEach((m) => m.userData.limb && m.scale.set(sleeveWidth / 10, 1, sleeveWidth / 10));
     for (const j of [legs[s].hip, legs[s].knee]) j.children.forEach((m) => m.userData.limb && m.scale.set(trouserWidth / 10, 1, trouserWidth / 10));
   }
-  return { root, hips, spine, neck, head, arms, legs, face: faceR, seed };
+  const shell = head.children.flatMap((g) => g.children.filter((m) => m.userData.hair === 'shell').map((m) => ((m as THREE.Mesh).geometry.attributes.position.array)));
+  const fit = headFit(skullScale.clone().multiplyScalar(R.head), shell, faceShape?.offsetY ?? 0);
+  if (lod === 'low') {
+    spine.traverse((o) => {
+      const g = (o as THREE.Mesh).geometry as THREE.TubeGeometry | undefined;
+      if (g?.type !== 'TubeGeometry') return;
+      const p = g.parameters;
+      (o as THREE.Mesh).geometry = new THREE.TubeGeometry(p.path, Math.max(4, Math.ceil(p.tubularSegments / 4)), p.radius, 4, p.closed);
+    });
+    for (const j of [spine, neck, head]) mergeStatic(j);
+  }
+  const sockets = buildSockets({ root, spine, head, arms }, fit, (R.limb * sleeveWidth) / 10, rig);
+  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod };
+  if (equip) dress(fig, equip);
+  return fig;
 }
+
+const stillFaces = new Map<string, FaceRig>();
+/** Nét mặt dùng chung cho người nền: một texture cho mọi người cùng dáng mặt, `set` không đổi gì */
+function stillFace(scale: THREE.Vector3, shape?: Partial<FaceShape>, state?: Partial<FaceState>): FaceRig {
+  const s = { ...DEFAULT_FACE, ...state }, key = JSON.stringify([shape, s]);
+  let f = stillFaces.get(key);
+  if (!f) stillFaces.set(key, (f = faceRig(R.head, scale, shape, s)));
+  const mesh = new THREE.Mesh(f.mesh.geometry, f.mesh.material);
+  mesh.userData.noShadow = true;
+  mesh.renderOrder = f.mesh.renderOrder;
+  return { mesh, state: s, set() {} };
+}
+
+/** Gộp mọi khối tĩnh dưới khớp `j` (không qua khớp con, trừ nét chi và nét mặt) thành một mesh mỗi vật liệu */
+function mergeStatic(j: THREE.Object3D) {
+  j.updateMatrixWorld(true);
+  const inv = j.matrixWorld.clone().invert();
+  const groups = new Map<string, THREE.Mesh[]>();
+  const keyOf = (m: THREE.Material) => {
+    const u = (m as THREE.ShaderMaterial).uniforms;
+    return m.side === THREE.BackSide && u?.uW ? `hull ${u.uW.value} ${u.uColor.value.getHex()}` : m.uuid;
+  };
+  const walk = (o: THREE.Object3D) => {
+    for (const c of o.children) {
+      const m = c as THREE.Mesh;
+      if (m.isMesh && !m.userData.limb && m.renderOrder === 0 && !Array.isArray(m.material)) {
+        const k = keyOf(m.material), list = groups.get(k) ?? [];
+        list.push(m);
+        groups.set(k, list);
+      } else if (!m.isMesh && c.children.length && Object.keys(c.userData).length === 0 && !isJoint(c)) walk(c);
+    }
+  };
+  walk(j);
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    const mat = list[0].material as THREE.Material;
+    const geos = list.map((m) => {
+      const g = new THREE.BufferGeometry();
+      const src = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry;
+      g.setAttribute('position', src.attributes.position.clone());
+      g.setAttribute('normal', src.attributes.normal.clone());
+      return g.applyMatrix4(inv.clone().multiply(m.matrixWorld));
+    });
+    const merged = new THREE.Mesh(mergeGeometries(geos), mat);
+    merged.castShadow = list.some((m) => m.castShadow);
+    if (list.some((m) => m.userData.torso)) merged.userData.torso = true;
+    if (list.every((m) => m.userData.noShadow)) merged.userData.noShadow = true;
+    for (const m of list) m.removeFromParent();
+    j.add(merged);
+  }
+}
+const isJoint = (o: THREE.Object3D) => !!o.userData.joint;
 
 /** Các trường của JSON nhân vật mà người 3D đọc. Truyền object đã qua `parseCharacter` của @stickman/rig. */
 export interface CharacterJson {
@@ -193,6 +287,8 @@ export interface CharacterJson {
     hem?: { skirt?: Skirt; color?: string };
     hair?: { sculpt?: Partial<Sculpt>; color?: string };
   };
+  /** Vật gọi tên: socket → cấu hình; `opts.items` cấp hàm dựng 3D theo cùng tên */
+  items?: Gear['specs'];
 }
 
 /** Người que từ JSON nhân vật của rig; `opts` đè lên số đọc từ JSON. */
@@ -201,7 +297,7 @@ export function fromCharacter(json: CharacterJson, opts: Partial<StickmanOptions
   return stickman({
     rig: json.rig, garment: pc.torso.garment, color: pal.garment, skin: pal.skin,
     skirt: pc.hem?.skirt, skirtColor: pc.hem?.color, hair: pc.hair?.sculpt, hairColor: pc.hair?.color,
-    sleeveWidth: pal.sleeveWidth, trouserWidth: pal.trouserWidth, faceShape: json.face, ...opts,
+    sleeveWidth: pal.sleeveWidth, trouserWidth: pal.trouserWidth, faceShape: json.face, itemSpecs: json.items, ...opts,
   });
 }
 

@@ -32,6 +32,18 @@ const SHOTS = [
   ['ngoi-nghieng', 'demo=sit&t=1.3&az=0&el=6&look=1.3,1.6,0&dist=12'],
   ['mat', 'demo=faces&t=0.9&az=0&el=3&look=0,3.1,0&dist=12'],
   ['nhin', 'demo=look&t=1.2&az=0&el=4&look=0,3,0&dist=7'],
+  ['cam', 'demo=hold&t=2&az=10&el=12&dist=19&look=0,1.8,0.5'],
+  ['cam-khay', 'demo=hold&t=2&az=65&el=22&dist=6&look=-0.3,2.4,1.5'],
+  ['cam-khay-gan', 'demo=hold&t=2&az=90&el=30&dist=4&look=-0.1,2.3,1.5'],
+  ['cam-coc', 'demo=hold&t=2&az=-20&el=12&dist=3.5&look=-4.4,2.15,0.1'],
+  ['cam-coc-nghieng', 'demo=hold&t=2&az=-90&el=5&dist=3.5&look=-4.4,2.15,0.1'],
+  ['cam-giay', 'demo=hold&t=2&az=20&el=8&dist=6&look=4.3,2.2,-0.2'],
+  ['cam-mu-truoc', 'demo=hold&t=2&az=0&el=5&dist=5&look=-4.3,3.25,-0.2'],
+  ['cam-mu-nghieng', 'demo=hold&t=2&az=90&el=5&dist=5&look=-4.3,3.25,-0.2'],
+  ['cam-mu-sau', 'demo=hold&t=2&az=180&el=10&dist=5&look=-4.3,3.25,-0.2'],
+  ['cam-mu-tren', 'demo=hold&t=2&az=30&el=60&dist=5&look=-4.3,3.1,-0.2'],
+  ['cam-kinh', 'demo=hold&t=2&az=-25&el=5&dist=6&look=4.3,3.4,-0.2'],
+  ['cam-nen', 'demo=hold&t=0&az=0&el=20&dist=11&look=0.8,2,-3.3'],
 ];
 
 const { values: o } = parseArgs({ options: { out: { type: 'string' }, vs: { type: 'string' }, only: { type: 'string' }, soft: { type: 'boolean' } } });

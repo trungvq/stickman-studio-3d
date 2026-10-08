@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { AA, createPipeline, G, npr, setPalette, skyDome, stickman } from '@stickman3d/rig';
 import { BOY, demo, GIRL } from './demos.js';
+import { holdDemo } from './demo-hold.js';
 
 const AA_LABEL = { off: 'Tắt', 'ss1.5': '1,5×', ss2: '2×' };
 const q = new URLSearchParams(location.search);
@@ -69,7 +70,7 @@ const MOUTHS = ['talkA', 'talkTeeth', 'talkB', 'talkTeeth', 'talkA', 'o'];
 
 /** Cảnh diễn hành động `?demo=`; không có cảnh ấy thì trả `undefined` */
 function setupDemo(name) {
-  const d = name && demo(name);
+  const d = name === 'hold' ? holdDemo() : name && demo(name);
   if (!d) return undefined;
   scene.add(...d.objects);
   return d.animate;
