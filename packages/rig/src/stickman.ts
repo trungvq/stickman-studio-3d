@@ -4,14 +4,13 @@ import { buildSockets, dress, headFit, newGear, type EquipState, type Gear, type
 import { DEFAULT_FACE, faceRig, type FaceRig, type FaceShape, type FaceState } from './face';
 import { sculptSkirt, sculptTorso } from './garment';
 import { glassesMesh, type Glasses } from './glasses';
-import { toThree, type Vec3 } from './khoi';
+import { INK, toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
 import { sculptMesh, type Sculpt } from './sculpt';
 import { shoulderRoot, type Garment, type Rig, type Skirt } from './torso';
 
 // Tỉ lệ lấy từ RIG của @stickman/rig, chia 100: người cao ~4,3 đơn vị, đầu to bằng gần một phần ba.
 export const R = { torso: 1.2, neck: 0.08, head: 0.64, upperArm: 0.62, foreArm: 0.58, thigh: 0.78, shin: 0.92, limb: 0.042 };
-const INK = '#1b1918';
 
 const ink = npr({ color: INK, stipple: 0 });
 const hull = hullMaterial(0.026, INK);

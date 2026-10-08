@@ -432,7 +432,7 @@ export function room(o: RoomOptions): Room {
       for (const v of [box(...xs(free - 7, free + 7), ly - 24, ly + 22, -2, 0), box(...xs(free - 3, free + 3), ly - 6, ly + 2, -9, -2), box(...xs(free - 44, free + 3), ly - 6, ly + 1, -14, -8)])
         addPart(hb, { v, tone: steel }, { at: [0, 0, 0] });
       const pivot = new THREE.Group();
-      pivot.add(lb.build(), hb.build({ shadow: false }));
+      pivot.add(lb.build({ ink: 0 }), hb.build({ shadow: false, ink: 0 }));
       pivot.position.copy(P(sd > 0 ? a : c, 0, -2));
       const base = -YAW[s];
       const door: RoomDoor = {
@@ -483,7 +483,7 @@ export function room(o: RoomOptions): Room {
   }
 
   for (const f of Object.keys(batches) as Face[]) {
-    const built = [batches[f].build(), ...(f in trims ? [trims[f as WallSide].build()] : [])];
+    const built = [batches[f].build({ ink: 0 }), ...(f in trims ? [trims[f as WallSide].build({ ink: 0 })] : [])];
     for (const g of built) {
       g.traverse((m) => (m.userData.static = true));
       faces[f].add(g);

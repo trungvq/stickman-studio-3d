@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { npr, type NprOptions } from './npr';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { hullMaterial, npr, type NprOptions } from './npr';
 
 // Đồ khối của rig dựng thành mesh three. `box`, `bar`, `slab` theo @stickman/fx (packages/fx/src/solid.tsx),
 // `place3` theo @stickman/rig (packages/rig/src/lens.ts). docs/10-lop-ve-code.md#đồ-khối của @stickman/rig.
@@ -53,10 +54,45 @@ const UP: Vec3 = [0, -1, 0];
 type BatchMat = string | NprOptions;
 interface Bucket { mat: NprOptions; pos: number[]; nrm: number[] }
 
+export const INK = '#1b1918';
+/** Bề dày vỏ viền đồ khối (three): mảnh hơn vỏ viền người */
+export const ITEM_INK = 0.018;
+const hulls = new Map<number, THREE.ShaderMaterial>();
+
+/** Vỏ viền: gộp đỉnh trùng chỗ, pháp tuyến là tổng các hướng mặt khác nhau quanh đỉnh để góc hộp phình đều, không hở mép. */
+function shell(pos: number[], w: number) {
+  let geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo = mergeVertices(geo);
+  const p = geo.attributes.position, idx = geo.index!, dirs: THREE.Vector3[][] = Array.from({ length: p.count }, () => []);
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  for (let i = 0; i < idx.count; i += 3) {
+    const t = [idx.getX(i), idx.getX(i + 1), idx.getX(i + 2)];
+    a.fromBufferAttribute(p, t[0]);
+    b.fromBufferAttribute(p, t[1]).sub(a);
+    c.fromBufferAttribute(p, t[2]).sub(a);
+    const n = b.cross(c);
+    if (n.lengthSq() < 1e-14) continue;
+    n.normalize();
+    for (const v of t) if (!dirs[v].some((m) => m.dot(n) > 0.999)) dirs[v].push(n.clone());
+  }
+  const nrm = new Float32Array(p.count * 3);
+  dirs.forEach((l, i) => {
+    const s = l.reduce((acc, m) => acc.add(m), new THREE.Vector3()).normalize();
+    nrm.set([s.x, s.y, s.z], i * 3);
+  });
+  geo.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
+  let mat = hulls.get(w);
+  if (!mat) hulls.set(w, (mat = hullMaterial(w, INK)));
+  return new THREE.Mesh(geo, mat);
+}
+
 /** Gom tam giác theo vật liệu: cả cảnh tĩnh chỉ còn vài chục lượt vẽ. */
 export class Batch {
   base: NprOptions;
   groups = new Map<string, Bucket>();
+  /** Tam giác có vỏ viền (khối, không gồm vân) */
+  hull: number[] = [];
   constructor(base: NprOptions = {}) {
     this.base = base;
   }
@@ -67,17 +103,22 @@ export class Batch {
     if (!g) this.groups.set(key, (g = { mat: o, pos: [], nrm: [] }));
     return g;
   }
-  /** Tam giác phẳng: các đỉnh liền nhau ba một, chung pháp tuyến `n`. */
-  flat(mat: BatchMat, pts: THREE.Vector3[], n: THREE.Vector3) {
+  /** Tam giác phẳng: các đỉnh liền nhau ba một, chung pháp tuyến `n`. `ink` false: không vào vỏ viền (vân, hạt). */
+  flat(mat: BatchMat, pts: THREE.Vector3[], n: THREE.Vector3, ink = true) {
     const g = this.bucket(mat);
-    for (const p of pts) g.pos.push(p.x, p.y, p.z), g.nrm.push(n.x, n.y, n.z);
+    for (const p of pts) {
+      g.pos.push(p.x, p.y, p.z), g.nrm.push(n.x, n.y, n.z);
+      if (ink) this.hull.push(p.x, p.y, p.z);
+    }
   }
-  geometry(mat: BatchMat, geo: THREE.BufferGeometry) {
+  geometry(mat: BatchMat, geo: THREE.BufferGeometry, ink = true) {
     const g = this.bucket(mat), src = geo.index ? geo.toNonIndexed() : geo;
     const p = src.attributes.position.array, n = src.attributes.normal.array;
     for (let i = 0; i < p.length; i++) g.pos.push(p[i]), g.nrm.push(n[i]);
+    if (ink) for (let i = 0; i < p.length; i++) this.hull.push(p[i]);
   }
-  build({ shadow = true } = {}) {
+  /** `ink`: bề dày vỏ viền (three), 0 là không viền — vỏ phòng có nét riêng. */
+  build({ shadow = true, ink = ITEM_INK } = {}) {
     const out = new THREE.Group();
     for (const { mat, pos, nrm } of this.groups.values()) {
       const geo = new THREE.BufferGeometry();
@@ -89,6 +130,7 @@ export class Batch {
       if (!shadow) m.userData.noShadow = true;
       out.add(m);
     }
+    if (ink > 0 && this.hull.length) out.add(shell(this.hull, ink));
     return out;
   }
 }
@@ -122,7 +164,7 @@ function strips(batch: Batch, mat: BatchMat, lines: THREE.Vector3[][], n: THREE.
       if (e.lengthSq() < 1e-12) continue;
       const s = new THREE.Vector3().crossVectors(n, e).normalize().multiplyScalar(width / 2);
       const q = [a.clone().sub(s), b.clone().sub(s), b.clone().add(s), a.clone().add(s)];
-      batch.flat(mat, [q[0], q[1], q[2], q[0], q[2], q[3]], n);
+      batch.flat(mat, [q[0], q[1], q[2], q[0], q[2], q[3]], n, false);
     }
 }
 
@@ -181,7 +223,7 @@ export function addLathe(batch: Batch, spec: LatheSpec, at: Place3, k = 3) {
       const s = new THREE.Vector3().crossVectors(n, Math.abs(n.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0)).normalize();
       const s2 = new THREE.Vector3().crossVectors(n, s);
       const rim = Array.from({ length: 9 }, (_, i) => c.clone().addScaledVector(s, r * Math.cos((i * Math.PI) / 4)).addScaledVector(s2, r * Math.sin((i * Math.PI) / 4)));
-      for (let i = 0; i < 8; i++) batch.flat(b.color, [c, rim[i], rim[i + 1]], n);
+      for (let i = 0; i < 8; i++) batch.flat(b.color, [c, rim[i], rim[i + 1]], n, false);
     }
 }
 
