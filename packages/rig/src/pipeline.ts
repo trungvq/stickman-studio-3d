@@ -319,6 +319,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       const hidden: THREE.Object3D[] = [];
       const box = LIGHTING.bounds ? null : new THREE.Box3();
       scene.traverse((o) => {
+        o.userData.bend?.();
         const mesh = (o as THREE.Mesh).isMesh ? (o as THREE.Mesh) : null;
         const hull = mesh && (mesh.material as THREE.Material).side === THREE.BackSide;
         if ((o.userData.noShadow || hull) && o.visible) hidden.push(o);

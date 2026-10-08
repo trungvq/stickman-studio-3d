@@ -23,6 +23,7 @@ export function freeze(figures: Figure | readonly Figure[]): THREE.Group {
     f.root.traverseVisible((o) => {
       const m = o as THREE.Mesh;
       if (!m.isMesh || Array.isArray(m.material)) return;
+      m.userData.bend?.();
       const src = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry;
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', src.attributes.position.clone());

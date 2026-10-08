@@ -138,8 +138,8 @@ export function bodyCapsules(fig: Figure, parts: readonly BodyPart[] = BODY_PART
   const seg = (j: THREE.Object3D, part: BodyPart, side: Side) => {
     const m = j.children.find((c) => c.userData.limb) as THREE.Mesh | undefined;
     if (!m) return;
-    const a = j.getWorldPosition(new THREE.Vector3()), b = j.localToWorld(new THREE.Vector3(0, m.position.y * 2, 0));
-    out.push({ part, side, a, b, r: R.limb * m.scale.x * k });
+    const a = j.getWorldPosition(new THREE.Vector3()), b = j.localToWorld(new THREE.Vector3(0, -m.userData.len, 0));
+    out.push({ part, side, a, b, r: m.userData.r * k });
   };
   for (const s of [-1, 1] as const) {
     if (want.has('upperArm')) seg(fig.arms[s].shoulder, 'upperArm', s);

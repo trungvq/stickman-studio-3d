@@ -43,10 +43,11 @@ export interface Figure {
 
 /** `low`: người nền rẻ — ít mặt lưới, gộp khối tĩnh theo vật liệu, nét mặt đứng yên dùng chung texture, không chớp mắt */
 export type Lod = 'full' | 'low';
-interface Quality { skull: [number, number]; limb: [number, number]; neck: number }
+/** `limb`: vòng mỗi đầu tròn, cạnh quanh ống, đoạn dọc ống */
+interface Quality { skull: [number, number]; limb: [number, number, number]; neck: number }
 const QUALITY: Record<Lod, Quality> = {
-  full: { skull: [36, 24], limb: [4, 10], neck: 10 },
-  low: { skull: [16, 11], limb: [2, 6], neck: 6 },
+  full: { skull: [36, 24], limb: [4, 10, 12], neck: 10 },
+  low: { skull: [16, 11], limb: [2, 6, 5], neck: 6 },
 };
 let q = QUALITY.full;
 
@@ -62,12 +63,102 @@ function inked(geo: THREE.BufferGeometry, mat: THREE.Material, w?: number) {
   return g;
 }
 
-/** Đoạn chi: nét đen tròn đầu, mọc từ gốc khớp theo −y. */
-function limb(len: number, r = R.limb) {
-  const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, ...q.limb), ink);
-  m.position.y = -len / 2;
+/** Ống tròn đầu theo một đoạn Bézier bậc ba, lưới cố định; `fillTube` uốn lại. */
+function tube() {
+  const [cap, m, n] = q.limb, rings = 2 * cap + n + 1;
+  const geo = new THREE.BufferGeometry();
+  for (const name of ['position', 'normal']) geo.setAttribute(name, new THREE.BufferAttribute(new Float32Array(rings * m * 3), 3).setUsage(THREE.DynamicDrawUsage));
+  const idx: number[] = [];
+  for (let i = 0; i < rings - 1; i++) {
+    for (let j = 0; j < m; j++) {
+      const a = i * m + j, b = i * m + ((j + 1) % m);
+      idx.push(a, b, a + m, b, b + m, a + m);
+    }
+  }
+  geo.setIndex(idx);
+  return geo;
+}
+
+const bez = (c: THREE.Vector3[], u: number, out: THREE.Vector3) => {
+  const v = 1 - u;
+  return out.copy(c[0]).multiplyScalar(v * v * v).addScaledVector(c[1], 3 * v * v * u).addScaledVector(c[2], 3 * v * u * u).addScaledVector(c[3], u * u * u);
+};
+const bezTangent = (c: THREE.Vector3[], u: number, out: THREE.Vector3) => {
+  const v = 1 - u;
+  out.subVectors(c[1], c[0]).multiplyScalar(3 * v * v).addScaledVector(_d.subVectors(c[2], c[1]), 6 * v * u).addScaledVector(_d.subVectors(c[3], c[2]), 3 * u * u);
+  if (out.lengthSq() < 1e-12) out.subVectors(c[3], c[0]);
+  if (out.lengthSq() < 1e-12) out.set(0, -1, 0);
+  return out.normalize();
+};
+const _d = new THREE.Vector3(), _c = new THREE.Vector3(), _t = new THREE.Vector3(), _n = new THREE.Vector3(), _b = new THREE.Vector3(), _r = new THREE.Vector3();
+
+function fillTube(geo: THREE.BufferGeometry, c: THREE.Vector3[], r: number) {
+  const [cap, m, n] = q.limb;
+  const pos = geo.attributes.position as THREE.BufferAttribute, nor = geo.attributes.normal as THREE.BufferAttribute;
+  let k = 0;
+  const ring = (center: THREE.Vector3, along: number, rad: number, lean: number) => {
+    for (let j = 0; j < m; j++, k++) {
+      const a = (j / m) * Math.PI * 2;
+      _r.copy(_n).multiplyScalar(Math.cos(a)).addScaledVector(_b, Math.sin(a));
+      pos.setXYZ(k, center.x + _r.x * rad, center.y + _r.y * rad, center.z + _r.z * rad);
+      _r.multiplyScalar(lean).addScaledVector(_t, along);
+      nor.setXYZ(k, _r.x, _r.y, _r.z);
+    }
+  };
+  bezTangent(c, 0, _t);
+  _n.set(Math.abs(_t.x) < 0.9 ? 1 : 0, 0, Math.abs(_t.x) < 0.9 ? 0 : 1).addScaledVector(_t, -(Math.abs(_t.x) < 0.9 ? _t.x : _t.z)).normalize();
+  _b.crossVectors(_t, _n);
+  for (let i = 0; i < cap; i++) {
+    const f = (i / cap) * (Math.PI / 2);
+    ring(_c.copy(c[0]).addScaledVector(_t, -r * Math.cos(f)), -Math.cos(f), r * Math.sin(f), Math.sin(f));
+  }
+  for (let i = 0; i <= n; i++) {
+    bezTangent(c, i / n, _t);
+    // khung chuyển song song: pháp tuyến không xoắn theo đường cong
+    _n.addScaledVector(_t, -_n.dot(_t)).normalize();
+    _b.crossVectors(_t, _n);
+    ring(bez(c, i / n, _c), 0, r, 1);
+  }
+  for (let i = cap - 1; i >= 0; i--) {
+    const f = (i / cap) * (Math.PI / 2);
+    ring(_c.copy(c[3]).addScaledVector(_t, r * Math.cos(f)), Math.cos(f), r * Math.sin(f), Math.sin(f));
+  }
+  pos.needsUpdate = nor.needsUpdate = true;
+  geo.computeBoundingSphere();
+  geo.computeBoundingBox();
+}
+
+/** Đoạn chi: nét đen tròn đầu, mọc từ gốc khớp theo −y; `bendLimb` uốn theo khớp. */
+function limb(len: number) {
+  const m = new THREE.Mesh(tube(), ink);
   m.userData.limb = true;
+  m.userData.len = len;
+  m.userData.r = R.limb;
   return m;
+}
+
+const ONE = new THREE.Vector3(1, 1, 1);
+/**
+ * Uốn hai đoạn chi như `limbCurves` của rig 2D: hai đoạn Bézier bậc ba qua gốc, khớp giữa, đầu chi; tiếp tuyến ở khớp
+ * giữa song song gốc → đầu chi, `k` là `limbCurve`. Đặt vào `userData.bend` của hai đoạn; pipeline gọi trước mỗi lượt vẽ.
+ */
+function bendLimb(upper: THREE.Mesh, mid: THREE.Object3D, lower: THREE.Mesh, k: number) {
+  let key = '';
+  const P0 = new THREE.Vector3(), P1 = new THREE.Vector3(), P2 = new THREE.Vector3(), inv = new THREE.Matrix4();
+  const bend = () => {
+    P1.copy(mid.position);
+    P2.set(0, -lower.userData.len, 0).applyQuaternion(mid.quaternion).add(P1);
+    const now = [P1.x, P1.y, P1.z, P2.x, P2.y, P2.z, upper.userData.r, lower.userData.r].join();
+    if (now === key) return;
+    key = now;
+    const f = k / 6;
+    const T0 = P1.clone().multiplyScalar(f), T1 = P2.clone().multiplyScalar(f), T2 = P2.clone().sub(P1).multiplyScalar(f);
+    fillTube(upper.geometry, [P0, T0, P1.clone().sub(T1), P1], upper.userData.r);
+    inv.compose(mid.position, mid.quaternion, ONE).invert();
+    fillTube(lower.geometry, [P1.clone(), P1.clone().add(T1), P2.clone().sub(T2), P2].map((p) => p.applyMatrix4(inv)), lower.userData.r);
+  };
+  upper.userData.bend = lower.userData.bend = bend;
+  bend();
 }
 
 function joint(parent: THREE.Object3D, x: number, y: number, z: number) {
@@ -147,6 +238,8 @@ export interface StickmanOptions {
   trouserWidth?: number;
   /** Gập đùi ra trước để váy phủ theo đùi */
   seated?: boolean;
+  /** `palette.limbCurve` của JSON nhân vật: độ cong nét chi `0..1`, `0` là hai đoạn thẳng gãy ở khuỷu, gối */
+  limbCurve?: number;
   lod?: Lod;
   /** Hàm dựng vật theo tên (`items` của JSON nhân vật); `dress` gắn vào socket */
   items?: ItemFactories;
@@ -157,7 +250,7 @@ export interface StickmanOptions {
 }
 
 /** Một người que 3D theo JSON nhân vật của rig. */
-export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt, skirtColor = color, hair, hairColor = '#2a1c15', glasses = false, glassesColor, faceShape, face, seed = 0, sleeveWidth = 10, trouserWidth = 10, seated = false, lod = 'full', items, itemSpecs, equip }: StickmanOptions): Figure {
+export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt, skirtColor = color, hair, hairColor = '#2a1c15', glasses = false, glassesColor, faceShape, face, seed = 0, sleeveWidth = 10, trouserWidth = 10, seated = false, limbCurve = 1, lod = 'full', items, itemSpecs, equip }: StickmanOptions): Figure {
   q = QUALITY[lod];
   const root = new THREE.Group();
   const hips = joint(root, 0, R.thigh + R.shin + R.limb, 0);
@@ -197,9 +290,12 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
   root.traverse((o) => {
     if ((o as THREE.Mesh).isMesh && !o.userData.noShadow) o.castShadow = true;
   });
+  const seg = (j: THREE.Object3D) => j.children.find((m) => m.userData.limb) as THREE.Mesh;
   for (const s of SIDES) {
-    for (const j of [arms[s].shoulder, arms[s].elbow]) j.children.forEach((m) => m.userData.limb && m.scale.set(sleeveWidth / 10, 1, sleeveWidth / 10));
-    for (const j of [legs[s].hip, legs[s].knee]) j.children.forEach((m) => m.userData.limb && m.scale.set(trouserWidth / 10, 1, trouserWidth / 10));
+    for (const [a, b, w] of [[arms[s].shoulder, arms[s].elbow, sleeveWidth], [legs[s].hip, legs[s].knee, trouserWidth]] as const) {
+      seg(a).userData.r = seg(b).userData.r = (R.limb * w) / 10;
+      bendLimb(seg(a), b, seg(b), limbCurve);
+    }
   }
   const shell = head.children.flatMap((g) => g.children.filter((m) => m.userData.hair === 'shell').map((m) => ((m as THREE.Mesh).geometry.attributes.position.array)));
   const fit = headFit(skullScale.clone().multiplyScalar(R.head), shell, faceShape?.offsetY ?? 0);
@@ -273,7 +369,7 @@ const isJoint = (o: THREE.Object3D) => !!o.userData.joint;
 /** Các trường của JSON nhân vật mà người 3D đọc. Truyền object đã qua `parseCharacter` của @stickman/rig. */
 export interface CharacterJson {
   rig: Rig;
-  palette: { garment: string; skin?: string; sleeveWidth?: number; trouserWidth?: number };
+  palette: { garment: string; skin?: string; sleeveWidth?: number; trouserWidth?: number; limbCurve?: number };
   face?: Partial<FaceShape>;
   pieces: {
     torso: { garment?: Partial<Garment> };
@@ -291,7 +387,7 @@ export function characterOptions(json: CharacterJson, opts: Partial<StickmanOpti
   return {
     rig: json.rig, garment: pc.torso.garment, color: pal.garment, skin: pal.skin,
     skirt: pc.hem?.skirt, skirtColor: pc.hem?.color, hair: pc.hair?.sculpt, hairColor: pc.hair?.color,
-    sleeveWidth: pal.sleeveWidth, trouserWidth: pal.trouserWidth, faceShape: json.face, itemSpecs: json.items,
+    sleeveWidth: pal.sleeveWidth, trouserWidth: pal.trouserWidth, limbCurve: pal.limbCurve, faceShape: json.face, itemSpecs: json.items,
     glasses: pc.faceAcc?.src === 'sculpt' && pc.faceAcc.glasses, glassesColor: pc.faceAcc?.color, ...opts,
   };
 }

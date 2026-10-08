@@ -53,7 +53,7 @@ const num = (v: number | undefined) => (Number.isFinite(v) ? (v as number) : 0);
 
 /** Đoạn chi dài `len · st`: dời khớp con và kéo nét */
 function segment(j: THREE.Group, child: THREE.Group | undefined, len: number, st: number) {
-  for (const m of j.children) if (m.userData.limb) (m.scale.y = st), (m.position.y = (-len * st) / 2);
+  for (const m of j.children) if (m.userData.limb) m.userData.len = len * st;
   if (child) child.position.y = -len * st;
 }
 
