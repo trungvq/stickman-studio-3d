@@ -56,6 +56,15 @@ const SHOTS = [
   ['phong-den-roi', 'demo=light&t=3&az=15&el=10&look=0,2.8,0&dist=21&time=dim&spot'],
   ['hoi-tuong', 'demo=light&t=1&az=15&el=10&look=0,2.8,0&dist=21&grade=flashback'],
   ['tua-bang', 't=1.8&grade=vhs'],
+  ['vo-ngay', 'demo=room&t=1&az=20&el=22&look=0,2,0&dist=30'],
+  ['vo-1830', 'demo=room&t=1&az=20&el=22&look=0,2,0&dist=30&time=dusk'],
+  ['vo-dem', 'demo=room&t=1&az=20&el=22&look=0,2,0&dist=30&time=night'],
+  ['vo-goc-ngoai', 'demo=room&t=1&az=-50&el=30&look=0,1.5,0&dist=32'],
+  ['vo-tren', 'demo=room&t=1&az=0&el=75&look=0,0,0&dist=34'],
+  ['vo-cua-mo', 'demo=room&t=1.5&door=0.5&az=-70&el=3&look=10,2.8,3&dist=12'],
+  ['hai-san-khau', 'demo=stages'],
+  ['vo-ngoai-thap', 'demo=room&t=1&az=10&el=3&look=0,3.2,0&dist=28'],
+  ['vo-cua-so', 'demo=room&t=1&az=70&el=4&look=-10,3.5,-0.5&dist=9'],
 ];
 
 const { values: o } = parseArgs({ options: { out: { type: 'string' }, vs: { type: 'string' }, only: { type: 'string' }, soft: { type: 'boolean' } } });

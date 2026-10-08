@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { aimCamera, HOME, type Crop, type Lens } from './lens';
+import { captureLights, restoreLights, type LightState } from './lighting';
 import { G } from './npr';
 import { createPipeline, type AaMode, type Pipeline, type PipelineOptions } from './pipeline';
 
@@ -38,9 +39,9 @@ function gpuName(renderer: THREE.WebGLRenderer) {
   return String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
 }
 
-/** `G` lúc nạp package: sân khấu mới bắt đầu từ đây, không thừa đèn của sân khấu dựng trước nó */
-const BASE = capture();
-/** Sân khấu đang giữ `G`; `save` chép `G` về sân khấu ấy trước khi sân khấu khác lấy */
+/** `G` và đèn lúc nạp package: sân khấu mới bắt đầu từ đây, không thừa đèn của sân khấu dựng trước nó */
+const BASE = capture(), BASE_LIGHTS = captureLights();
+/** Sân khấu đang giữ `G`; `save` chép `G` và đèn về sân khấu ấy trước khi sân khấu khác lấy */
 let active: { save(): void } | null = null;
 
 export interface StageOptions {
@@ -99,8 +100,9 @@ export interface Stage {
 
 /**
  * Sân khấu: scene, camera và pipeline dựng một lần; mỗi khung `draw(t, view)` đặt camera theo ống kính và khung cắt,
- * gọi `update(t)` rồi vẽ đồng bộ. Uniform chung `G` là của sân khấu dựng, `relight` hay vẽ gần nhất: nhiều sân khấu
- * cùng trang (các `<Sequence>` chồng nhau) mỗi cái vẽ với đèn, bảng màu và bản đồ bóng của chính nó.
+ * gọi `update(t)` rồi vẽ đồng bộ. Uniform chung `G`, giờ trong ngày và bộ đèn (`setPalette`, `setLights`) là của sân khấu
+ * dựng, `relight` hay vẽ gần nhất: nhiều sân khấu cùng trang (các `<Sequence>` chồng nhau) mỗi cái vẽ với đèn, bảng màu
+ * và bản đồ bóng của chính nó, kể cả khi `update` đặt lại một trong hai mỗi khung.
  */
 export function createStage(o: StageOptions): Stage {
   const own = !o.renderer;
@@ -115,18 +117,25 @@ export function createStage(o: StageOptions): Stage {
   const camera = o.camera ?? new THREE.PerspectiveCamera(30, o.size.w / o.size.h, 0.3, 150);
   active?.save();
   restore(BASE);
+  restoreLights(BASE_LIGHTS);
   const pipeline = createPipeline(renderer, o.pipeline);
   let size = { ...o.size }, aa = o.aa, pixel = o.pixel;
   let lens = o.lens, crop: Crop = HOME, rect: ReturnType<typeof aimCamera> | undefined;
-  let snap: Record<string, unknown> = {};
+  let snap: Record<string, unknown> = {}, lights: LightState = BASE_LIGHTS;
   let dead = false;
-  const token = { save: () => void (snap = capture(snap)) };
+  const token = {
+    save: () => {
+      snap = capture(snap);
+      lights = captureLights();
+    },
+  };
 
   const activate = () => {
     if (dead) throw new Error('stage đã dispose');
     if (active === token) return;
     active?.save();
     restore(snap);
+    restoreLights(lights);
     active = token;
   };
 
@@ -183,7 +192,7 @@ export function createStage(o: StageOptions): Stage {
       if (dead) return;
       dead = true;
       if (active === token) active = null;
-      (pipeline as Pipeline & { dispose?: () => void }).dispose?.();
+      pipeline.dispose();
       if (own) {
         renderer.dispose();
         renderer.forceContextLoss();

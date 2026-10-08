@@ -1,12 +1,10 @@
-import { addItem, Batch, box, G, put, setLights, stickman } from '@stickman3d/rig';
+import { addItem, Batch, box, put, room, setLights, stickman } from '@stickman3d/rig';
 import { BOY, GIRL } from './demos.js';
 
-// Phòng thử đèn (`?demo=light`): hộp phòng ba vách, cửa sổ tường trái, hai đèn trần, bàn có đèn bàn sát tường phải.
+// Phòng thử đèn (`?demo=light`): vỏ phòng của bộ dựng phòng, cửa sổ tường trái, hai đèn trần, bàn có đèn bàn sát tường phải.
 // Toạ độ rig (px, y xuống, z sâu vào cảnh); sàn y 0, trần y −780.
 
-const ROOM = { x0: -800, x1: 800, z0: -700, z1: 600, h: 780, wall: 20 };
-const WIN = { z: 0, y: -450, w: 500, h: 360 };
-const DESK = { x0: 540, x1: 760, z0: 30, z1: 270, top: 137 };
+const ROOM = { x0: -800, x1: 800, z0: -700, z1: 600, h: 780 };
 
 /** Hậu kỳ toàn khung theo `grade=` */
 export const GRADES = {
@@ -16,28 +14,9 @@ export const GRADES = {
 };
 
 const tone = (top, lit = top) => ({ top, lit });
-const WALL = tone('#b4b8bb'), CEIL = tone('#c9ccce'), FLOOR = tone('#74787c');
 const WOOD = tone('#8d5b43', '#6e4430'), METAL = tone('#2e2e30'), CHAIR = tone('#3a3d41');
-const FRAME = tone('#e3e6e9', '#d3d7db'), SHELF = tone('#5a4a3e', '#4a3c32'), BOOKS = [tone('#4fb3d4'), tone('#f2b233'), tone('#c46a3e')];
-
-function shell() {
-  const { x0, x1, z0, z1, h, wall: d } = ROOM;
-  const wy0 = WIN.y - WIN.h / 2, wy1 = WIN.y + WIN.h / 2, wz0 = WIN.z - WIN.w / 2, wz1 = WIN.z + WIN.w / 2;
-  return [
-    { v: box(x0, x1, 0, d, z0, z1), tone: FLOOR },
-    { v: box(x0, x1, -h - d, -h, z0, z1), tone: CEIL },
-    { v: box(x0, x1, -h, 0, z1, z1 + d), tone: WALL },
-    { v: box(x1, x1 + d, -h, 0, z0, z1 + d), tone: WALL },
-    // tường trái chừa lỗ cửa sổ
-    { v: box(x0 - d, x0, wy1, 0, z0, z1 + d), tone: WALL },
-    { v: box(x0 - d, x0, -h, wy0, z0, z1 + d), tone: WALL },
-    { v: box(x0 - d, x0, wy0, wy1, z0, wz0), tone: WALL },
-    { v: box(x0 - d, x0, wy0, wy1, wz1, z1 + d), tone: WALL },
-    { v: box(x0 - d, x0, wy0, wy1, WIN.z - 3, WIN.z + 3), tone: FRAME },
-    { v: box(x0 - d, x0, WIN.y - 3, WIN.y + 3, wz0, wz1), tone: FRAME },
-    { v: box(x0 - d, x0 + 8, wy1, wy1 + 8, wz0 - 10, wz1 + 10), tone: FRAME },
-  ];
-}
+const SHELF = tone('#5a4a3e', '#4a3c32'), BOOKS = [tone('#4fb3d4'), tone('#f2b233'), tone('#c46a3e')];
+const DESK = { x0: 540, x1: 760, z0: 30, z1: 270, top: 137 };
 
 function furniture() {
   const { x0, x1, z0, z1, top } = DESK;
@@ -61,21 +40,23 @@ function furniture() {
   ];
 }
 
-/** Chao đèn bàn và tấm đèn trần: không đổ bóng (chao bọc bóng đèn). */
-function fixtures() {
+/** Chao đèn bàn: không đổ bóng (chao bọc bóng đèn). */
+function shade() {
   const b = new Batch();
   addItem(b, { at: { at: [0, 0, 0] }, parts: [{ v: box(632, 688, -350, -318, 160, 212), tone: tone('#2f5d50', '#264c42') }] });
-  for (const x of [-300, 300]) addItem(b, { at: { at: [0, 0, 0] }, parts: [{ v: box(x - 130, x + 130, -780, -774, -140, 140), tone: { top: '#fbfaf4', lit: '#fbfaf4', glow: true } }] });
   return b.build({ shadow: false });
 }
 
 /** `q`: `spot` bật đèn rọi sân khấu quét từ người đứng sang người ngồi, `lamp=0|1` đèn bàn (mặc định bật khi không phải ngày, chiều). */
 export function lightDemo(q) {
+  const { x0, x1, z0, z1, h } = ROOM;
+  const shell = room({
+    x: [x0, x1], z: [z0, z1], height: h, tones: { skirting: false },
+    windows: [{ wall: 'left', u: -z0, width: 500, height: 360, sill: 270, panes: [2, 2], view: 'sky' }],
+    panels: { at: [[-300, 0], [300, 0]], size: [260, 280] },
+  });
   const b = new Batch();
-  addItem(b, { at: { at: [0, 0, 0] }, parts: [...shell(), ...furniture()] });
-  const room = b.build();
-  const fx = fixtures();
-  const panels = fx.children.filter((m) => m.material.uniforms.uEmissive.value > 0);
+  addItem(b, { at: { at: [0, 0, 0] }, parts: furniture() });
 
   const boy = stickman({ ...BOY, face: { brow: 'worried' } });
   const girl = stickman({ ...GIRL, seated: true });
@@ -98,22 +79,17 @@ export function lightDemo(q) {
   };
 
   return {
-    objects: [room, fx, boy.root, girl.root],
-    animate(t) {
+    objects: [shell.group, b.build(), shade(), boy.root, girl.root],
+    animate(t, stage) {
+      if (stage) shell.cull(stage.camera);
       const lamps = [], on = spot ? smooth(0, 0.3, t) : 0;
       if (spot) {
         const u = smooth(1, 2.5, t);
         lamps.push({ at: [0, -770, -100], target: lerp([-650, -230, 60], [470, -200, 150], u), angle: 12, penumbra: 0.12, color: '#fff1c4', intensity: 1.6 * on, range: 1100 });
       }
       lamps.push({ at: [660, -322, 186], target: [600, -137, 140], angle: 34, penumbra: 0.3, color: '#ffc77a', intensity: lampOn ? 1.5 : 0, range: 320 });
-      setLights({
-        // đèn rọi bật thì phòng tối bớt
-        ceiling: { y: -ROOM.h, intensity: 1 - 0.4 * on },
-        window: { at: [ROOM.x0, WIN.y, WIN.z], normal: [1, 0, 0], width: WIN.w, height: WIN.h, bars: [2, 2] },
-        lamps,
-        bounds: { min: [ROOM.x0 - ROOM.wall, -ROOM.h - ROOM.wall, ROOM.z0], max: [ROOM.x1 + ROOM.wall, ROOM.wall, ROOM.z1 + ROOM.wall] },
-      });
-      for (const m of panels) m.material.uniforms.uEmissive.value = G.uKey.value;
+      // đèn rọi bật thì phòng tối bớt
+      setLights(shell.lights({ ceiling: { intensity: 1 - 0.4 * on }, lamps }));
       boy.spine.rotation.x = Math.sin(t * 1.6) * 0.012;
       girl.head.rotation.x = 0.12 + Math.sin(t * 1.3) * 0.02;
     },
