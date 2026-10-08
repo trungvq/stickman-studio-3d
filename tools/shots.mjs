@@ -32,6 +32,14 @@ const SHOTS = [
   ['ngoi-nghieng', 'demo=sit&t=1.3&az=0&el=6&look=1.3,1.6,0&dist=12'],
   ['mat', 'demo=faces&t=0.9&az=0&el=3&look=0,3.1,0&dist=12'],
   ['nhin', 'demo=look&t=1.2&az=0&el=4&look=0,3,0&dist=7'],
+  ['phong-ngay', 'demo=light&t=1&az=15&el=10&look=0,2.8,0&dist=21'],
+  ['phong-chieu', 'demo=light&t=1&az=15&el=10&look=0,2.8,0&dist=21&time=evening'],
+  ['phong-toi-1830', 'demo=light&t=1&az=15&el=10&look=0,2.8,0&dist=21&time=dusk'],
+  ['phong-dem-den-ban', 'demo=light&t=1&az=-35&el=14&look=5,1.6,-1.5&dist=9&time=night'],
+  ['den-roi-bat', 'demo=light&t=0.6&az=15&el=10&look=0,2.8,0&dist=21&time=dim&spot'],
+  ['phong-den-roi', 'demo=light&t=3&az=15&el=10&look=0,2.8,0&dist=21&time=dim&spot'],
+  ['hoi-tuong', 'demo=light&t=1&az=15&el=10&look=0,2.8,0&dist=21&grade=flashback'],
+  ['tua-bang', 't=1.8&grade=vhs'],
 ];
 
 const { values: o } = parseArgs({ options: { out: { type: 'string' }, vs: { type: 'string' }, only: { type: 'string' }, soft: { type: 'boolean' } } });

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { AA, createPipeline, G, npr, setPalette, skyDome, stickman } from '@stickman3d/rig';
+import { AA, createPipeline, npr, PALETTES, setPalette, skyDome, stickman } from '@stickman3d/rig';
+import { GRADES, lightDemo } from './demo-light.js';
 import { BOY, demo, GIRL } from './demos.js';
 
 const AA_LABEL = { off: 'Tắt', 'ss1.5': '1,5×', ss2: '2×' };
@@ -27,7 +28,7 @@ const ground = new THREE.Mesh(new THREE.CircleGeometry(6, 64).rotateX(-Math.PI /
 scene.add(ground);
 
 const animate = setupDemo(q.get('demo')) ?? setupCast();
-const pipe = createPipeline(renderer, { shadow: { half: 5, center: new THREE.Vector3(0, 1.5, 0) } });
+const pipe = createPipeline(renderer);
 
 /** Hai người que đứng nói chuyện: một áo sơ mi, một áo blouse váy xếp ly. Trả hàm hoạt cảnh theo `t`. */
 function setupCast() {
@@ -69,7 +70,8 @@ const MOUTHS = ['talkA', 'talkTeeth', 'talkB', 'talkTeeth', 'talkA', 'o'];
 
 /** Cảnh diễn hành động `?demo=`; không có cảnh ấy thì trả `undefined` */
 function setupDemo(name) {
-  const d = name && demo(name);
+  const d = name === 'light' ? lightDemo(q) : name && demo(name);
+  if (name === 'light') ground.visible = false;
   if (!d) return undefined;
   scene.add(...d.objects);
   return d.animate;
@@ -80,8 +82,6 @@ const state = { outline: true, pixel: false, time: 'day', paused: false, aa: dev
 function palette(name) {
   state.time = name;
   setPalette(name, { scene, sky });
-  // cảnh không có cây đèn nào
-  G.uLamp.value = 0;
 }
 
 function resize() {
@@ -137,7 +137,7 @@ function frame() {
   if (!state.paused) t += dt;
   controls.update();
   animate(t);
-  pipe.render(scene, camera, { outline: state.outline });
+  pipe.render(scene, camera, { outline: state.outline, t, grade: GRADES[q.get('grade')] });
   gpu.end();
   window.__frames++;
   requestAnimationFrame(frame);
@@ -181,7 +181,7 @@ function bindHud() {
   sync();
 }
 
-palette(q.get('time') === 'evening' ? 'evening' : 'day');
+palette(q.get('time') in PALETTES ? q.get('time') : 'day');
 if (q.get('aa') in AA) state.aa = q.get('aa');
 if (q.has('pixel')) state.pixel = true;
 if (q.has('noink')) state.outline = false;
