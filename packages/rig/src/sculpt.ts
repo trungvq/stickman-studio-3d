@@ -29,6 +29,11 @@ function onSkull(lon: number, lat: number, lift = 0): Vec3 {
   return [c * Math.sin(lon * D), Math.sin(lat * D) * (1 + lift), c * Math.cos(lon * D)];
 }
 
+/** Đuôi ngựa và búi: số đỉnh mỗi vòng, số đoạn */
+const KNOT_RING = 14;
+const PONY_SEG = 24;
+const BUN_SEG = 12;
+
 /** Lưới vỏ tóc: số cột kinh độ quanh sọ, số hàng từ chân tóc lên đỉnh */
 const NT = 120;
 const NJ = 20;
@@ -591,11 +596,100 @@ function spikeRings(
 
 /** Làm tròn đối xứng quanh 0 như `toFixed(1)`, nhanh hơn nhiều */
 
-/** Lưới tóc trong hệ sọ đơn vị (y lên, z ra trước mặt), đầu thẳng: `shell` vỏ và vách chân tóc, `spikes` lọn gai, `hang` mặt rủ. Mỗi phần là dãy tam giác. */
+/** Nét trên mặt vỏ như `buildSculpt`: đường ngôi, nét cắt, các cung chải, đường cong và khe búp xoăn; mẩu ngắn hơn một phần tư bị bỏ */
+function hairLines(s: Sculpt, lines: Vec3[][]) {
+  const def = SCULPT_STYLES[s.style];
+  const rim = def.rim ?? 0.3;
+  const trace = (pts: (Vec3 | undefined)[]) => {
+    const least = Math.max(2, Math.ceil(pts.length / 4));
+    let run: Vec3[] = [];
+    const flush = () => {
+      if (run.length >= least) lines.push(run);
+      run = [];
+    };
+    for (const q of pts) if (q) run.push(q); else flush();
+    flush();
+  };
+  const onShell = (lon: number, lat: number) => {
+    const low = rootLat(s, lon);
+    const j = ((lat - low) / (90 - low)) * NJ;
+    return onSkull(lon, lat, shellLift(s, lon, lat, rowEase(j), rim * s.volume));
+  };
+  const lift = ([x, y, z]: Vec3) => onShell(Math.atan2(x, z) / D, Math.asin(y) / D);
+  const side = Math.sign(s.part || 1);
+  const from = hairline(s, s.part) - 2;
+  const [n, c] = partPlane(s);
+  const r0 = Math.sqrt(1 - c * c);
+  const vert: Vec3 = [0, 1, 0];
+  const ahead: Vec3 = [-n[2] * side, 0, Math.abs(n[0])];
+  if (def.crease && !def.fringe) {
+    const a0 = Math.asin(Math.sin(from * D) / r0) / D;
+    trace(Array.from({ length: 17 }, (_, k) => {
+      const a = (a0 + ((100 - a0) * k) / 16) * D;
+      return lift(n.map((v, d) => v * c + r0 * (ahead[d] * Math.cos(a) + vert[d] * Math.sin(a))) as Vec3);
+    }));
+  } else if (!def.jag && !def.fringe && !def.crease && !def.crown && !def.pony && !def.bun)
+    trace(Array.from({ length: 9 }, (_, k) => onShell(s.part - side * 3 * (k / 8), from + ((62 - from) * k) / 8)));
+  if (def.cut) {
+    const [at, , , rise = 12] = def.cut;
+    const lon = s.part - side * (at + 1);
+    const low = hairline(s, lon);
+    trace(Array.from({ length: 9 }, (_, k) => {
+      const v = k / 8;
+      return onShell(lon - side * 7 * (1 - (1 - v) ** 2), low + 1 + rise * v);
+    }));
+  }
+  const margin = def.crease?.[1] ?? 0;
+  for (const [root, direction, arc, sweep] of def.strokes ?? [])
+    trace(Array.from({ length: 49 }, (_, k) => {
+      const v = k / 48;
+      const b = Math.asin(c) - direction * (arc * D * v);
+      const a = (root + sweep * v * v) * D;
+      const p = n.map((value, d) => value * Math.sin(b) + Math.cos(b) * (ahead[d] * Math.cos(a) + vert[d] * Math.sin(a))) as Vec3;
+      const lon = Math.atan2(p[0], p[2]) / D;
+      const lat = Math.asin(p[1]) / D;
+      const inside = (c - dot(n, p)) * direction > margin;
+      return lat > rootLat(s, lon) + 4 && inside ? lift(p) : undefined;
+    }));
+  for (const curve of def.curves ?? []) {
+    const control = curve.map(([u, lat]) => onSkull(s.part - side * u, lat));
+    trace(Array.from({ length: 49 }, (_, k) => {
+      const v = k / 48;
+      let row = control;
+      while (row.length > 1) row = row.slice(1).map((p, i) => p.map((a, d) => row[i][d] * (1 - v) + a * v) as Vec3);
+      const r = Math.hypot(...row[0]);
+      const p = row[0].map((a) => a / r) as Vec3;
+      const lon = Math.atan2(p[0], p[2]) / D;
+      return Math.asin(p[1]) / D >= rootLat(s, lon) ? lift(p) : undefined;
+    }));
+  }
+  if (def.curls && def.curlArc) {
+    const [r, , count] = def.curls;
+    const [at, a0, a1] = def.curlArc;
+    const rho = at * r * D;
+    for (const cc of curlCenters(count)) {
+      const e = Math.atan2(cc[0], cc[2]);
+      const east: Vec3 = [Math.cos(e), 0, -Math.sin(e)];
+      const north = cross(cc, east);
+      trace(Array.from({ length: 13 }, (_, k) => {
+        const a = (a0 + ((a1 - a0) * k) / 12) * D;
+        const p = cc.map((v, d) => v * Math.cos(rho) + (east[d] * Math.cos(a) + north[d] * Math.sin(a)) * Math.sin(rho)) as Vec3;
+        const lon = Math.atan2(p[0], p[2]) / D;
+        return Math.asin(p[1]) / D >= rootLat(s, lon) + 3 ? lift(p) : undefined;
+      }));
+    }
+  }
+}
+
+/**
+ * Lưới tóc trong hệ sọ đơn vị (y lên, z ra trước mặt), đầu thẳng: `shell` vỏ và vách chân tóc, `spikes` lọn gai,
+ * đuôi ngựa và búi, `hang` mặt rủ, mỗi phần là dãy tam giác; `lines` nét trên mặt vỏ (ngôi, nét chải, khe búp xoăn).
+ */
 export interface SculptMesh {
   shell: Vec3[][];
   spikes: Vec3[][];
   hang: Vec3[][];
+  lines: Vec3[][];
 }
 
 export function sculptMesh(raw: Partial<Sculpt>): SculptMesh {
@@ -606,7 +700,7 @@ export function sculptMesh(raw: Partial<Sculpt>): SculptMesh {
   const hangFrom = def.hangFrom ?? SCULPT_HANG_FROM;
   const g: Vec3 = [0, -1, 0];
   const up = -1;
-  const out: SculptMesh = { shell: [], spikes: [], hang: [] };
+  const out: SculptMesh = { shell: [], spikes: [], hang: [], lines: [] };
   /** Tam giác quay mặt ra xa `ref` (mặc định tâm sọ): viền vỏ ngược và bóng cần pháp tuyến ra ngoài */
   const tri = (to: Vec3[][], t: Vec3[], ref: Vec3 = [0, 0, 0]) => {
     const [a, b, c] = t;
@@ -717,6 +811,66 @@ export function sculptMesh(raw: Partial<Sculpt>): SculptMesh {
       }
       const E = A && !B ? A : B && !A ? B : undefined;
       if (E) for (let k = 0; k < NK; k++) quad(out.hang, [E.inner[k], E.outer[k], E.outer[k + 1], E.inner[k + 1]]);
+    }
+  }
+
+  hairLines(s, out.lines);
+
+  if (def.pony || def.bun) {
+    const n = onSkull(180, s.tie);
+    const east: Vec3 = [1, 0, 0];
+    const unit = (v: Vec3, alt: Vec3) => {
+      const k = Math.hypot(...v);
+      return k > 1e-3 ? (v.map((a) => a / k) as Vec3) : alt;
+    };
+    const rings: Vec3[][] = [];
+    const ring = (c: Vec3, u: Vec3, w: Vec3, r: number, flat = 1) =>
+      rings.push(Array.from({ length: KNOT_RING }, (_, i) => {
+        const a = (i / KNOT_RING) * 2 * Math.PI;
+        return c.map((v, d) => v + (u[d] * Math.cos(a) + w[d] * Math.sin(a) * flat) * r) as Vec3;
+      }));
+    if (def.pony) {
+      const [width, arch, flat] = def.pony;
+      const anchor = onSkull(180, s.tie, 0);
+      const at = (a: number, b: number): Vec3 => anchor.map((v, d) => v + n[d] * arch * a + g[d] * s.tail * b) as Vec3;
+      const P = [anchor, at(1, 0), at(1.1, 0.45), at(0.8, 1)];
+      const b = unit(cross(n, g), east);
+      const radius = (v: number) => width * (0.3 + 0.7 * step(0, 0.3, v)) * (1 - v ** 3);
+      // trục lọt vào trong đầu thì đẩy ra theo bán kính như softplus: đuôi ôm gáy chứ không xuyên sọ
+      const centers = Array.from({ length: PONY_SEG + 1 }, (_, k) => {
+        const v = k / PONY_SEG;
+        const c = P[0].map((_, d) => (1 - v) ** 3 * P[0][d] + 3 * (1 - v) ** 2 * v * P[1][d] + 3 * (1 - v) * v * v * P[2][d] + v ** 3 * P[3][d]) as Vec3;
+        const len = Math.hypot(...c);
+        const clear = 1 + s.volume + radius(v) * 0.9;
+        const soft = clear + 0.05 * Math.log1p(Math.exp((len - clear) / 0.05));
+        const k0 = 1 + (soft / len - 1) * step(0.04, 0.2, v);
+        return c.map((a) => a * k0) as Vec3;
+      });
+      centers.forEach((c, k) => {
+        const tan = centers[Math.min(k + 1, PONY_SEG)].map((a, d) => a - centers[Math.max(k - 1, 0)][d]) as Vec3;
+        ring(c, b, unit(cross(b, tan), n), radius(k / PONY_SEG), flat);
+      });
+    } else {
+      const [radius, squash] = def.bun!;
+      const h = radius * squash;
+      const anchor = onSkull(180, s.tie, s.volume + h * 0.35);
+      const b = unit(cross(n, east), east);
+      const m = cross(n, b);
+      for (let k = 0; k <= BUN_SEG; k++) {
+        const u = -1 + (2 * k) / BUN_SEG;
+        ring(anchor.map((v, d) => v + n[d] * u * h) as Vec3, b, m, radius * Math.sqrt(Math.max(0, 1 - u * u)));
+      }
+    }
+    for (let k = 0; k + 1 < rings.length; k++) {
+      const c = mid([...rings[k], ...rings[k + 1]]);
+      for (let r = 0; r < KNOT_RING; r++) {
+        const r1 = (r + 1) % KNOT_RING;
+        quad(out.spikes, [rings[k][r], rings[k][r1], rings[k + 1][r1], rings[k + 1][r]], c);
+      }
+    }
+    for (const end of [rings[0], rings[rings.length - 1]]) {
+      const c = mid(end);
+      for (let r = 0; r < KNOT_RING; r++) tri(out.spikes, [c, end[r], end[(r + 1) % KNOT_RING]], mid(rings[Math.floor(rings.length / 2)]));
     }
   }
   return out;

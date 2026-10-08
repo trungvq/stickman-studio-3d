@@ -1,5 +1,7 @@
 import { cameraAt, parseAction, parseScene, resolveScene, sceneAt } from '@stickman/rig';
 import { act, addItem, Batch, box, stickman } from '@stickman3d/rig';
+import { actDemos } from './demo-acts.js';
+import { mouths, styles } from './demo-styles.js';
 
 // Cảnh diễn hành động (`?demo=`): scene JSON dựng tại chỗ, @stickman/rig lấy mẫu từng khung bằng `sceneAt`,
 // người 3D diễn theo bằng `act`. Hành động là bản chép từ bộ chung của @stickman/cli (`actions/`).
@@ -79,6 +81,7 @@ const SHOTS = {
     marks: [{ id: 'di', at: 'headTop', text: 'Đang đi' }, { id: 'nhin', at: 'mouth', text: 'Chào!', bubble: true }],
   },
 };
+const ACTS = actDemos({ member, track, clip, BOY, GIRL });
 
 /** Bàn và ghế đẩu cho cảnh ngồi: mặt bàn cao hơn hông ngồi ~51 như `arms-on-table-3d` giả định */
 function furniture() {
@@ -98,7 +101,9 @@ function furniture() {
  * `SHOTS` trả thêm `view(t)` (ống kính và khung cắt cho `stage.draw`) và `marks`.
  */
 export function demo(name) {
-  const make = DEMOS[name];
+  if (name === 'styles') return styles(new URLSearchParams(location.search));
+  if (name === 'mouths') return mouths();
+  const make = DEMOS[name] ?? ACTS[name]?.cast;
   if (!make) return null;
   const members = make();
   const shot = SHOTS[name];
@@ -108,7 +113,7 @@ export function demo(name) {
   const heights = Object.fromEntries(members.map((m) => [m.id, 1]));
   const rt = resolveScene(scene.data, ACTIONS, {}, {}, heights, bodies);
   const people = members.map((m) => ({ id: m.id, fig: stickman(m.opts) }));
-  const props = name === 'sit' ? [furniture()] : [];
+  const props = name === 'sit' ? [furniture()] : (ACTS[name]?.props?.() ?? []);
   const figOf = Object.fromEntries(people.map((p) => [p.id, p.fig]));
   return {
     objects: [...people.map((p) => p.fig.root), ...props],

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 14,
+  "name": "slump-sigh",
+  "duration": 0.8,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "keys": [
+    { "t": 0, "pose": { "torso": 9, "head": [null, null, 0] }, "ease": "smooth" },
+    { "t": 1, "pose": { "torso": 14, "head": [null, null, 10] }, "ease": "linear" }
+  ],
+  "note": "Thở dài, người xệ xuống: thân từ thế `lean-in` (9°) cúi thêm tới 14°, đầu gục 10° rồi giữ. Chậm (0,8 s). Đặt ở track nhịp, scene thay bằng `lean-in` blend ~0,6 để ngẩng lại."
+}

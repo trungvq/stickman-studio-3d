@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 13,
+  "name": "perch-desk-3d",
+  "duration": 1,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": [
+    "armFar",
+    "armNear",
+    "legFar",
+    "legNear",
+    "torso"
+  ],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "legFar": [
+          46,
+          -22
+        ],
+        "legNear": [
+          54,
+          -54
+        ],
+        "torso": 3
+      },
+      "reach": {
+        "armFar": {
+          "at": [
+            -6,
+            4,
+            50
+          ],
+          "elbow": [
+            -1,
+            0.3,
+            0.4
+          ]
+        },
+        "armNear": {
+          "at": [
+            -6,
+            4,
+            50
+          ],
+          "elbow": [
+            -1,
+            0.3,
+            0.4
+          ]
+        }
+      },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "Ngồi ghé mép bàn, quay lưng vào bàn: người ngồi (`world.sit`) với `at` ở mép mặt bàn cao `137`; chân gần đứng thẳng xuống sàn, chân xa duỗi ra trước, hai tay chống mép bàn hai bên hông `[−6, 4, 50]`. Bàn khác cao thì bàn chân lơ lửng hay lún sàn."
+}

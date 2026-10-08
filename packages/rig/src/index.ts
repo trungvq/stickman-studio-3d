@@ -14,7 +14,8 @@ export {
 export { freeze } from './crowd';
 export { BODY_PARTS, bodyCapsules, collide, colliders, type BodyPart, type Collider, type CollideOptions, type Contact } from './collide';
 export { act, type ActPose, type ActReach, type Acting, type ActWorld } from './act';
-export { DEFAULT_FACE, type BrowKind, type EyeKind, type FaceRig, type FaceShape, type FaceState, type MouthKind } from './face';
+export { DEFAULT_FACE, type BrowKind, type EyeKind, type FaceRig, type FaceShape, type FaceState, type MouthKind, type Wrinkle } from './face';
+export { GLASSES_DEFAULT, glassesLines, glassesMesh, type Glasses } from './glasses';
 export { sculptSkirt, sculptTorso } from './garment';
 export { GARMENT_STYLES, torsoMesh, type Garment, type Rig, type Skirt, type TorsoMesh } from './torso';
 export { SCULPT_STYLES, sculptMesh, type Sculpt, type SculptMesh } from './sculpt';

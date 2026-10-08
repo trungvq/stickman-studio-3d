@@ -35,6 +35,19 @@ Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js` (`demo=hol
 bằng `sceneAt`, người 3D diễn theo bằng `act`. Cảnh có ống kính riêng (`SHOTS` trong `demos.js`) thì
 camera theo `cameraAt`. Hành động ở `apps/viewer/actions/` chép từ
 bộ chung của `@stickman/cli`.
+| `demo=acts\|desk\|heads` | Hành động soạn ở `side`, mỗi người một trạm, bắt đầu ở giây 0,3 rồi giữ: đứng (`eshaku-3d`, `show-paper-3d`, `point-3d`, `stop-palm-3d` + `point-lane-3d`, `raise-laptop-3d`), ngồi ở bàn (`type-3d`, `phone-lift-3d`, `pick-paper-3d`, `head-down-3d`, `perch-desk-3d`), chỉ đầu và thân (`lean-in`, `slump-sigh`, `glance-*`, `look-down-small`, `look-up-head`, `nod-once`, `talk-tilt-back`) |
+| `demo=styles` | Bộ sưu tập kiểu: người thứ `i` đội mẫu tóc thứ `i` của `SCULPT_PRESETS` (cuối hàng là đầu trọc), mặc kiểu áo thứ `i % 12` của `GARMENT_STYLES`, rải kính, nếp nhăn, váy xếp ly và váy trơn |
+| `turn=110` | Với `demo=styles`: xoay từng người tại chỗ (độ, mặc định 14) để xem nghiêng, sau lưng |
+| `cast=/@fs/…/a.json,…` | Với `demo=styles`: dựng các JSON nhân vật này thay cho người mẫu để soi; file phải nằm trong cây repo (vd. chép vào `tmp/`) |
+| `demo=mouths` | Bảng nét mặt: đủ 19 khẩu hình của `Mouth.tsx` trên ba bậc, kèm đủ kiểu mắt và mày |
+
+Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js` và `demo-acts.js`,
+`@stickman/rig` lấy mẫu bằng `sceneAt`, người 3D diễn theo bằng `act`. Bộ sưu tập kiểu và bảng
+nét mặt ở `demo-styles.js`, JSON nhân vật mẫu qua `parseCharacter` rồi `fromCharacter`. Hành động
+ở `apps/viewer/actions/` chép từ bộ chung của `@stickman/cli`, trừ các file `-3d` soạn ở đây
+(`eshaku-3d`, `phone-lift-3d`, `pick-paper-3d`, `show-paper-3d`, `point-3d`, `stop-palm-3d`,
+`point-lane-3d`, `raise-laptop-3d`, `perch-desk-3d`, `head-down-3d`) — chép sang repo video hay bộ
+chung khi dùng. Đích cổ tay của hành động ngồi giả định bàn cao 137, ghế 87,5 như `arms-on-table-3d`.
 
 Phím: `O` nét mực, `P` pixel, `A` khử răng cưa, `T` đổi giờ, `H` ẩn HUD,
 `Space` dừng.

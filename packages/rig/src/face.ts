@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// Nét mặt theo @stickman/rig (packages/rig/src/Mouth.tsx, Eyes.tsx, Brow.tsx, 73e04b9): khẩu hình, kiểu mắt, kiểu
+// Nét mặt theo @stickman/rig (packages/rig/src/Mouth.tsx, Eyes.tsx, Brow.tsx, Wrinkle.tsx, 2b05c7a): khẩu hình, kiểu mắt, kiểu
 // mày và số đo giữ nguyên, vẽ bằng path SVG lên canvas rồi dán lên mặt trước của sọ theo phép chiếu thẳng — điểm
 // lệch `x` px khỏi giữa mặt nằm ở kinh độ `asin(x / nửa rộng đầu)`, như nét mặt của đầu tóc dựng khối bên rig.
 // Sửa bên rig thì chép lại.
@@ -12,8 +12,10 @@ export type BrowKind = 'neutral' | 'flat' | 'lifted' | 'furrowed' | 'angry' | 's
 export type EyeKind = 'open' | 'shut' | 'wide' | 'squint' | 'happy' | 'squeezed' | 'droopy' | 'wink';
 /** Nét mặt một khung: `FaceState` của @stickman/rig */
 export interface FaceState { mouth: MouthKind; brow: BrowKind; eyes: EyeKind }
+/** `face.wrinkle` của JSON nhân vật */
+export interface Wrinkle { kind: 'none' | 'light' | 'deep'; color: string; width: number; dy: number }
 /** `face` của JSON nhân vật, px của đầu cao 130 */
-export interface FaceShape { offsetY: number; eyeGap: number; mouthGap: number }
+export interface FaceShape { offsetY: number; eyeGap: number; mouthGap: number; wrinkle?: Wrinkle }
 
 export const DEFAULT_FACE: FaceState = { mouth: 'closed', brow: 'neutral', eyes: 'open' };
 const SHAPE: FaceShape = { offsetY: 0, eyeGap: 26, mouthGap: 34 };
@@ -27,8 +29,8 @@ const MOUTH_INK = '#3a2620';
 const CAVITY = '#7a2b22';
 const TOOTH = '#f7f2e6';
 const TONGUE = '#d0675a';
-/** Vùng mặt trên canvas, px đầu quanh tâm đầu: đủ cho mày `raised` tới khẩu hình `wryOpen` */
-const BOX = { x0: -48, y0: -46, w: 96, h: 104 };
+/** Vùng mặt trên canvas, px đầu quanh tâm đầu: đủ cho nếp trán `deep` tới khẩu hình `wryOpen` */
+const BOX = { x0: -48, y0: -54, w: 96, h: 112 };
 const TEXEL = 8;
 
 type Ctx = CanvasRenderingContext2D;
@@ -229,6 +231,24 @@ function brows(g: Ctx, kind: BrowKind, cx: number, cy: number, gap: number) {
   }
 }
 
+/** Nếp nhăn dưới mắt, mày, mồm: nếp trán, chân chim, `deep` thêm túi mắt và pháp lệnh */
+function wrinkles(g: Ctx, w: Wrinkle | undefined, cx: number, cy: number, gap: number, mouthCy: number) {
+  if (!w || w.kind === 'none') return;
+  const deep = w.kind === 'deep';
+  const y = cy + w.dy, eye = gap / 2 + 7;
+  const line = (d: string) => stroke(g, d, w.color, 2.6);
+  for (const b of deep ? [-32, -46] : [-38]) line(`M ${cx - 34 * w.width} ${y + b + 3} Q ${cx} ${y + b - 4} ${cx + 34 * w.width} ${y + b + 3}`);
+  for (const s of [-1, 1]) {
+    for (const a of deep ? [-6, 18, 42] : [12, 38]) {
+      const r = (a * Math.PI) / 180;
+      line(`M ${cx + s * eye} ${y + 2} L ${cx + s * (eye + 8.5 * Math.cos(r))} ${y + 2 + 8.5 * Math.sin(r)}`);
+    }
+    if (!deep) continue;
+    line(`M ${cx + s * (gap / 2 - 8)} ${y + 9} Q ${cx + (s * gap) / 2} ${y + 15} ${cx + s * (gap / 2 + 8)} ${y + 9}`);
+    line(`M ${cx + s * 7} ${y + 16} Q ${cx + s * 23} ${(y + mouthCy) / 2} ${cx + s * 20} ${mouthCy + 6}`);
+  }
+}
+
 /** Nét mặt dán trên sọ: `mesh` treo vào nhóm đầu, `set` vẽ lại canvas khi nét mặt đổi. */
 export interface FaceRig {
   mesh: THREE.Mesh;
@@ -258,6 +278,7 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
     g.setTransform(TEXEL, 0, 0, TEXEL, -BOX.x0 * TEXEL, -BOX.y0 * TEXEL);
     g.lineCap = 'round';
     g.lineJoin = 'round';
+    wrinkles(g, sh.wrinkle, 0, sh.offsetY, sh.eyeGap, sh.offsetY + sh.mouthGap);
     mouth(g, s.mouth, 0, sh.offsetY + sh.mouthGap);
     eyes(g, s.eyes, 0, sh.offsetY, sh.eyeGap);
     brows(g, s.brow, 0, sh.offsetY, sh.eyeGap);

@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 13,
+  "name": "eshaku-3d",
+  "duration": 1,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": [
+    "armFar",
+    "armNear",
+    "torso",
+    "head"
+  ],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [
+          3,
+          6,
+          0
+        ],
+        "armNear": [
+          3,
+          6,
+          0
+        ],
+        "torso": 0,
+        "head": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.3,
+      "pose": {
+        "armFar": [
+          7,
+          5,
+          0
+        ],
+        "armNear": [
+          7,
+          5,
+          0
+        ],
+        "torso": 16,
+        "head": [
+          0,
+          0,
+          8
+        ]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.6,
+      "pose": {
+        "armFar": [
+          7,
+          5,
+          0
+        ],
+        "armNear": [
+          7,
+          5,
+          0
+        ],
+        "torso": 16,
+        "head": [
+          0,
+          0,
+          8
+        ]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [
+          3,
+          6,
+          0
+        ],
+        "armNear": [
+          3,
+          6,
+          0
+        ],
+        "torso": 0,
+        "head": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "会釈 — cúi chào nhẹ một lần rồi đứng thẳng: thân 16°, đầu gật thêm 8°, tay dọc thân nhích ra trước. Chồng lên `stand-3d` ở track sau; ngồi thì chồng lên `sit-3d` nhưng tay sẽ theo hành động này."
+}

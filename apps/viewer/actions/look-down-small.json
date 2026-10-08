@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 11,
+  "name": "look-down-small",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["head"],
+  "keys": [{"t": 0, "pose": {"head": [0, -4, 14]}, "ease": "linear"}],
+  "events": [],
+  "note": "Chú ý chuyển xuống trước mặt: cúi nhẹ, quay ít, không nghiêng đầu. Buông trước động tác uống để khớp vị trí cốc và miệng."
+}

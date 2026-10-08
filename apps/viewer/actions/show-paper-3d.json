@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 13,
+  "name": "show-paper-3d",
+  "duration": 0.8,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": [
+    "armFar",
+    "armNear"
+  ],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [
+          3,
+          8,
+          0
+        ],
+        "armNear": [
+          3,
+          8,
+          0
+        ]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": {
+        "armFar": {
+          "at": [
+            92,
+            -108,
+            22
+          ],
+          "elbow": [
+            -0.2,
+            1,
+            0.8
+          ]
+        },
+        "armNear": {
+          "at": [
+            92,
+            -108,
+            22
+          ],
+          "elbow": [
+            -0.2,
+            1,
+            0.8
+          ]
+        }
+      },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "Giơ tờ giấy bằng hai tay ra trước ngực cho người đối diện xem: hai cổ tay `[92, −108, 22]`, cách nhau một bề tờ A4. Đứng hay ngồi đều được; giấy gắn giữa hai cổ tay."
+}
