@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 10,
+  "name": "look-up-head",
+  "duration": 1.6,
+  "end": "hold",
+  "mask": ["head"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "head": [3, 10, -32]
+      },
+      "ease": "linear"
+    }
+  ],
+  "note": "Ngửa đầu nhìn lên như look-up nhưng không đụng nét mặt — mặt do track face quyết."
+}

@@ -81,3 +81,32 @@ export function styles(q) {
   });
   return { objects: [group], animate() {} };
 }
+
+const MOUTHS = ['closed', 'parted', 'talkTeeth', 'talkA', 'talkB', 'talkO', 'talkSadA', 'talkSadB', 'talkAngryA', 'talkAngryB', 'smile', 'frown', 'pain', 'o', 'wide', 'grit', 'grin', 'wry', 'wryOpen'];
+const EYES = ['open', 'shut', 'wide', 'squint', 'happy', 'squeezed', 'droopy', 'wink'];
+const BROWS = ['neutral', 'flat', 'lifted', 'furrowed', 'angry', 'sad', 'raised', 'worried', 'skeptical'];
+
+/**
+ * Bảng nét mặt (`?demo=mouths`): mỗi khẩu hình của Mouth.tsx một người, ba hàng trên ba bậc, trái sang phải rồi lên
+ * trên theo thứ tự `MOUTHS`; người thứ `i` mang kiểu mắt `i % 8` và kiểu mày `i % 9` để đủ mọi kiểu của Eyes.tsx, Brow.tsx.
+ */
+export function mouths() {
+  const group = new THREE.Group();
+  const riser = npr({ color: '#cfc6b4', stipple: 0.05, stippleScale: 1.4, soft: 1 });
+  let i = 0;
+  [7, 6, 6].forEach((n, r) => {
+    if (r) {
+      const step = new THREE.Mesh(new THREE.BoxGeometry(n * SPACING + 0.6, 1.5 * r, 1.4), riser);
+      step.position.set(0, 0.75 * r - 0.004, -1.5 * r);
+      group.add(step);
+    }
+    for (let k = 0; k < n; k++, i++) {
+      const json = { name: `mat-${i}`, palette: { garment: COLORS[i % COLORS.length], skin: '#f8e3c8' }, pieces: { torso: { src: 'sculpt', garment: { style: 'shirt' } }, hair: { src: 'sculpt', color: HAIRS[i % HAIRS.length], sculpt: SCULPT_PRESETS.short.sculpt } } };
+      const f = figureOf(json, i);
+      f.root.position.set(slotX(k, n), 1.5 * r, -1.5 * r);
+      f.face.set({ mouth: MOUTHS[i], eyes: EYES[i % EYES.length], brow: BROWS[i % BROWS.length] });
+      group.add(f.root);
+    }
+  });
+  return { objects: [group], animate() {} };
+}

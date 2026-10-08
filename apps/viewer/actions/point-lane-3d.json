@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 13,
+  "name": "point-lane-3d",
+  "duration": 1,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": [
+    "armFar",
+    "head"
+  ],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [
+          3,
+          8,
+          0
+        ],
+        "head": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.45,
+      "pose": {
+        "head": [
+          0,
+          10,
+          0
+        ]
+      },
+      "reach": {
+        "armFar": {
+          "at": [
+            110,
+            -110,
+            50
+          ],
+          "elbow": [
+            0,
+            0.6,
+            1
+          ]
+        }
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "head": [
+          0,
+          38,
+          2
+        ]
+      },
+      "reach": {
+        "armFar": {
+          "at": [
+            32,
+            -112,
+            150
+          ],
+          "elbow": [
+            -0.6,
+            0.8,
+            0
+          ]
+        }
+      },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "Cảnh sát giao thông chỉ sang làn bên: tay xa đưa ra trước rồi quét ngang sang phía tay ấy `[32, −112, 150]`, đầu quay theo 38°. Ghép với `stop-palm-3d` ở track khác: một tay chặn, một tay chỉ đường."
+}

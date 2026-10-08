@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 13,
+  "name": "head-down-3d",
+  "duration": 1.2,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": [
+    "torso",
+    "head"
+  ],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "torso": 0,
+        "head": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "torso": 6,
+        "head": [
+          0,
+          0,
+          26
+        ]
+      },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "Cúi đầu im lặng (cả phòng họp cúi mặt): đầu gật xuống 26°, thân cúi 6°, chậm rồi giữ. Đứng hay ngồi đều được; đi với mắt `droopy` hay `shut`."
+}

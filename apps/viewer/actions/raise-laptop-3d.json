@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 13,
+  "name": "raise-laptop-3d",
+  "duration": 0.9,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": [
+    "armFar",
+    "armNear",
+    "torso"
+  ],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [
+          3,
+          8,
+          0
+        ],
+        "armNear": [
+          3,
+          8,
+          0
+        ],
+        "torso": 0
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "torso": -3
+      },
+      "reach": {
+        "armFar": {
+          "at": [
+            90,
+            -104,
+            42
+          ],
+          "elbow": [
+            -0.3,
+            1,
+            0.7
+          ]
+        },
+        "armNear": {
+          "at": [
+            90,
+            -104,
+            42
+          ],
+          "elbow": [
+            -0.3,
+            1,
+            0.7
+          ]
+        }
+      },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "Giơ laptop mở bằng hai tay lên trước ngực, màn hình quay ra ngoài: hai cổ tay `[90, −104, 42]` ôm hai mép máy, thân ngả lùi 3°. Laptop gắn giữa hai cổ tay."
+}

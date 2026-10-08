@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 11,
+  "name": "glance-left",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": [
+    "head"
+  ],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "head": [
+          -5,
+          -30,
+          4
+        ]
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": []
+}

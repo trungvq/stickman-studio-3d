@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "name": "lean-in",
+  "description": "Nghiêng người tới nhẹ (thân 9°, đầu cúi theo) rồi giữ: người đứng sát bên chuyện trò với người ngồi. Nhẹ hơn `lean-over` (16°) cho đầu khỏi chạm đầu người kia.",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "keys": [
+    { "t": 0, "pose": { "torso": 0, "head": [0, 0, 0] }, "ease": "linear" },
+    { "t": 1, "pose": { "torso": 9, "head": [-3, 0, 9] }, "ease": "linear" }
+  ],
+  "events": []
+}

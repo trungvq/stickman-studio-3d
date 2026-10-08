@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 13,
+  "name": "pick-paper-3d",
+  "duration": 1.2,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": [
+    "armNear"
+  ],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armNear": [
+          11,
+          42,
+          0
+        ]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.35,
+      "pose": {},
+      "reach": {
+        "armNear": {
+          "at": [
+            98,
+            -57,
+            18
+          ],
+          "elbow": [
+            -0.3,
+            0.3,
+            1
+          ]
+        }
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.45,
+      "pose": {},
+      "reach": {
+        "armNear": {
+          "at": [
+            98,
+            -57,
+            18
+          ],
+          "elbow": [
+            -0.3,
+            0.3,
+            1
+          ]
+        }
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": {
+        "armNear": {
+          "at": [
+            58,
+            -98,
+            16
+          ]
+        }
+      },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "Cầm tờ giấy trên bàn lên đọc, tay gần: với xuống mặt bàn `[98, −57, 18]` rồi đưa lên trước ngực `[58, −98, 16]` và giữ. Chồng lên `sit-3d`; tờ giấy gắn vào cổ tay gần."
+}
