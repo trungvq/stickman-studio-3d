@@ -32,6 +32,19 @@ const SHOTS = [
   ['ngoi-nghieng', 'demo=sit&t=1.3&az=0&el=6&look=1.3,1.6,0&dist=12'],
   ['mat', 'demo=faces&t=0.9&az=0&el=3&look=0,3.1,0&dist=12'],
   ['nhin', 'demo=look&t=1.2&az=0&el=4&look=0,3,0&dist=7'],
+  ['kieu-1', 'demo=styles&az=0&el=4&look=-11.6,2.5,0&dist=12'],
+  ['kieu-2', 'demo=styles&az=0&el=4&look=-2.9,2.5,0&dist=12'],
+  ['kieu-3', 'demo=styles&az=0&el=4&look=5.1,2.8,0&dist=12.5'],
+  ['kieu-4', 'demo=styles&az=0&el=4&look=12.3,2.5,0&dist=12'],
+  ['kieu-nghieng', 'demo=styles&turn=110&az=0&el=6&look=5.8,3.4,0&dist=9'],
+  ['kieu-sau', 'demo=styles&turn=200&az=0&el=8&look=9.4,3.2,0&dist=11'],
+  ['mieng', 'demo=mouths&az=0&el=8&look=0,4.6,-1.5&dist=15'],
+  ['hanh-dong', 'demo=acts&t=2&az=20&el=8&look=0,2.2,0&dist=17'],
+  ['hanh-dong-nghieng', 'demo=acts&t=2&az=-25&el=14&look=0,2.2,0&dist=17'],
+  ['chao', 'demo=acts&t=0.75&az=-20&el=5&look=-4.8,2.5,0&dist=7.5'],
+  ['ban', 'demo=desk&t=2&az=40&el=12&look=0,1.8,0&dist=17'],
+  ['ban-nghieng', 'demo=desk&t=2&az=-30&el=15&look=0,1.8,0&dist=17'],
+  ['dau-than', 'demo=heads&t=2&az=10&el=4&look=0,2.6,0&dist=13'],
 ];
 
 const { values: o } = parseArgs({ options: { out: { type: 'string' }, vs: { type: 'string' }, only: { type: 'string' }, soft: { type: 'boolean' } } });
