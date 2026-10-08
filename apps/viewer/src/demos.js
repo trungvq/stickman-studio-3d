@@ -1,4 +1,4 @@
-import { parseAction, parseScene, resolveScene, sceneAt } from '@stickman/rig';
+import { cameraAt, parseAction, parseScene, resolveScene, sceneAt } from '@stickman/rig';
 import { act, addItem, Batch, box, stickman } from '@stickman3d/rig';
 
 // Cảnh diễn hành động (`?demo=`): scene JSON dựng tại chỗ, @stickman/rig lấy mẫu từng khung bằng `sceneAt`,
@@ -52,10 +52,32 @@ const DEMOS = {
     ['face-calm', 'face-delighted', 'face-sad', 'face-angry', 'face-surprised', 'face-shocked'].map((f, i) =>
       member(`m${i}`, i % 2 ? GIRL : BOY, { at: [-375 + i * 150, 0, 0], yaw: 90 },
         [track(clip('stand-3d')), track(clip(f)), ...(i === 3 ? [track(clip('talk-lips', 0.2))] : [])], i)),
+  camera: () => [
+    member('di', BOY, { path: [{ t: 0, at: [-280, 0, 110], yaw: 17 }, { t: 4, at: [240, 0, -50], yaw: 17 }] },
+      [track(clip('walk'), clip('stand-3d', 3.75, { blend: 0.3 })), track(clip('face-calm'))], 0),
+    member('nhin', GIRL, { at: [420, 0, 240], yaw: 150 }, [track(clip('stand-3d')), track(clip('face-smug')), track(clip('talk-lips', 0.3))], 1),
+  ],
   look: () => [
     member('thang', BOY, { at: [-110, 0, 0], yaw: 45 }, [track(clip('stand-3d')), track(clip('face-calm'))], 0),
     member('nhin', BOY, { at: [110, 0, 0], yaw: 45 }, [track(clip('stand-3d')), track(clip('face-calm')), track(clip('look-camera')), track(clip('talk-tilt', 0.5))], 1),
   ],
+};
+
+/**
+ * Cảnh có ống kính và khung cắt riêng (`lens`, `camera[]` của scene): app đặt camera theo `cameraAt` thay cho góc máy
+ * xoay tay. `marks` là chữ 2D bám mốc trên người qua `screenOf`.
+ */
+const SHOTS = {
+  camera: {
+    lens: { eye: [0, -330, -1500], yaw: 0, pitch: 3, f: 1270, cx: 0, cy: 0 },
+    camera: [
+      { t: 0, x: 0, y: 0, zoom: 1 },
+      { t: 1.2, x: -100, y: -70, zoom: 1.9, move: 'ease' },
+      { t: 2.8, x: 70, y: -70, zoom: 1.9, move: 'linear' },
+      { t: 4.2, x: 0, y: 0, zoom: 1, move: 'ease' },
+    ],
+    marks: [{ id: 'di', at: 'headTop', text: 'Đang đi' }, { id: 'nhin', at: 'mouth', text: 'Chào!', bubble: true }],
+  },
 };
 
 /** Bàn và ghế đẩu cho cảnh ngồi: mặt bàn cao hơn hông ngồi ~51 như `arms-on-table-3d` giả định */
@@ -71,22 +93,31 @@ function furniture() {
   return b.build();
 }
 
-/** Dựng cảnh `name`; trả nhóm cần thêm vào scene và hàm diễn theo `t`, hay `null` nếu không có cảnh ấy. */
+/**
+ * Dựng cảnh `name`; trả nhóm cần thêm vào scene và hàm diễn theo `t`, hay `null` nếu không có cảnh ấy. Cảnh trong
+ * `SHOTS` trả thêm `view(t)` (ống kính và khung cắt cho `stage.draw`) và `marks`.
+ */
 export function demo(name) {
   const make = DEMOS[name];
   if (!make) return null;
   const members = make();
-  const scene = parseScene({ name: `demo-${name}`, lens: LENS, cast: members.map((m) => m.cast) });
+  const shot = SHOTS[name];
+  const scene = parseScene({ name: `demo-${name}`, lens: shot?.lens ?? LENS, camera: shot?.camera ?? [], cast: members.map((m) => m.cast) });
   if (!scene.success) throw new Error(scene.error.message);
   const bodies = Object.fromEntries(members.map((m) => [m.id, { legHalf: 4.5, hipHalf: m.opts.rig.hipHalf }]));
   const heights = Object.fromEntries(members.map((m) => [m.id, 1]));
   const rt = resolveScene(scene.data, ACTIONS, {}, {}, heights, bodies);
   const people = members.map((m) => ({ id: m.id, fig: stickman(m.opts) }));
   const props = name === 'sit' ? [furniture()] : [];
+  const figOf = Object.fromEntries(people.map((p) => [p.id, p.fig]));
   return {
     objects: [...people.map((p) => p.fig.root), ...props],
     animate(t) {
       for (const p of people) act(p.fig, sceneAt(rt, p.id, t, 1, bodies[p.id]), t);
     },
+    ...(shot && {
+      view: (t) => ({ lens: shot.lens, crop: cameraAt(rt, t) }),
+      marks: shot.marks.map((m) => ({ ...m, fig: figOf[m.id] })),
+    }),
   };
 }

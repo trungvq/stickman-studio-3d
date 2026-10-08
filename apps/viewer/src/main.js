@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { AA, createPipeline, G, npr, setPalette, skyDome, stickman } from '@stickman3d/rig';
+import { AA, createStage, G, npr, setPalette, skyDome, stickman } from '@stickman3d/rig';
 import { BOY, demo, GIRL } from './demos.js';
 import { holdDemo } from './demo-hold.js';
+import { createMarks } from './marks.js';
 
 const AA_LABEL = { off: 'Tắt', 'ss1.5': '1,5×', ss2: '2×' };
 const q = new URLSearchParams(location.search);
@@ -27,8 +28,14 @@ scene.add(sky);
 const ground = new THREE.Mesh(new THREE.CircleGeometry(6, 64).rotateX(-Math.PI / 2), npr({ color: '#d9d2c3', stipple: 0.06, stippleScale: 1.4, soft: 1 }));
 scene.add(ground);
 
-const animate = setupDemo(q.get('demo')) ?? setupCast();
-const pipe = createPipeline(renderer, { shadow: { half: 5, center: new THREE.Vector3(0, 1.5, 0) } });
+const shot = setupDemo(q.get('demo'));
+const animate = shot?.animate ?? setupCast();
+const stage = createStage({
+  renderer, scene, camera, size: { w: host.clientWidth, h: host.clientHeight },
+  pipeline: { shadow: { half: 5, center: new THREE.Vector3(0, 1.5, 0) } },
+  update: (t) => animate(t),
+});
+const marks = shot?.marks && createMarks(host, shot.marks, [scene]);
 
 /** Hai người que đứng nói chuyện: một áo sơ mi, một áo blouse váy xếp ly. Trả hàm hoạt cảnh theo `t`. */
 function setupCast() {
@@ -73,7 +80,7 @@ function setupDemo(name) {
   const d = name === 'hold' ? holdDemo() : name && demo(name);
   if (!d) return undefined;
   scene.add(...d.objects);
-  return d.animate;
+  return d;
 }
 
 const state = { outline: true, pixel: false, time: 'day', paused: false, aa: devicePixelRatio >= 2 ? 'off' : 'ss2' };
@@ -87,9 +94,7 @@ function palette(name) {
 
 function resize() {
   const w = host.clientWidth, h = host.clientHeight;
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-  pipe.setSize(w, h, { aa: state.aa, pixel: state.pixel });
+  stage.setSize(w, h, { aa: state.aa, pixel: state.pixel });
 }
 new ResizeObserver(resize).observe(host);
 
@@ -137,12 +142,20 @@ function frame() {
   last = now;
   if (!state.paused) t += dt;
   controls.update();
-  animate(t);
-  pipe.render(scene, camera, { outline: state.outline });
+  drawAt(t);
   gpu.end();
   window.__frames++;
   requestAnimationFrame(frame);
 }
+
+/** Một khung ở giây `t`: cảnh có ống kính riêng thì camera theo `view(t)`, không thì theo góc máy xoay tay */
+function drawAt(t) {
+  stage.draw(t, { ...shot?.view?.(t), render: { outline: state.outline } });
+  marks?.(stage);
+}
+// tools/bench.mjs vẽ từng khung đồng bộ qua đây
+window.__drawAt = drawAt;
+window.__stage = stage;
 
 function bindHud() {
   const btn = (id, on) => document.getElementById(id).classList.toggle('on', on);
@@ -187,6 +200,7 @@ if (q.get('aa') in AA) state.aa = q.get('aa');
 if (q.has('pixel')) state.pixel = true;
 if (q.has('noink')) state.outline = false;
 if (q.has('nohud')) document.getElementById('hud').classList.add('hide');
+if (shot?.view) controls.enabled = false;
 if (q.has('look')) controls.target.set(...q.get('look').split(',').map(Number));
 if (q.has('az')) view.theta = (Number(q.get('az')) * Math.PI) / 180;
 if (q.has('el')) view.phi = Math.PI / 2 - (Number(q.get('el')) * Math.PI) / 180;

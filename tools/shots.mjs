@@ -44,6 +44,10 @@ const SHOTS = [
   ['cam-mu-tren', 'demo=hold&t=2&az=30&el=60&dist=5&look=-4.3,3.1,-0.2'],
   ['cam-kinh', 'demo=hold&t=2&az=-25&el=5&dist=6&look=4.3,3.4,-0.2'],
   ['cam-nen', 'demo=hold&t=0&az=0&el=20&dist=11&look=0.8,2,-3.3'],
+  ['may-nha', 'demo=camera&t=0.4'],
+  ['may-gan', 'demo=camera&t=1.6'],
+  ['may-lia', 'demo=camera&t=2.6'],
+  ['may-lui', 'demo=camera&t=3.7'],
 ];
 
 const { values: o } = parseArgs({ options: { out: { type: 'string' }, vs: { type: 'string' }, only: { type: 'string' }, soft: { type: 'boolean' } } });
