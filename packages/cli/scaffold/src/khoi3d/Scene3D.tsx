@@ -71,13 +71,22 @@ export const Scene3D = ({ scene, set, t, still, extra }: Scene3DProps) => {
           }),
         ),
       );
-      const actors: { id: string; fig: Figure }[] = cast
+      // váy dựng theo dáng lúc tạo hình (ngồi thì vạt phủ đùi): người vừa đi vừa ngồi có hai bản, mỗi khung hiện bản đúng dáng
+      const actors: { id: string; stand?: Figure; sit?: Figure }[] = cast
         .filter((c) => !frozen(c))
         .map((c, i) => {
           const w = c.world!;
-          const seated = !!(w.sit || w.path?.some((k) => k.sit));
-          return { id: c.id, fig: fromCharacter(character(c), { seated, seed: i + 1 }) };
+          const keys = w.path ?? [];
+          const sits = !!w.sit || keys.some((k) => k.sit);
+          const stands = !w.sit && (!w.path || keys.some((k) => !k.sit));
+          const fig = (seated: boolean) => fromCharacter(character(c), { seated, seed: i + 1 });
+          return {
+            id: c.id,
+            ...(stands && { stand: fig(false) }),
+            ...(sits && { sit: fig(true) }),
+          };
         });
+      const figs = actors.flatMap((a) => [a.stand, a.sit].filter((f): f is Figure => !!f));
       const x = extra?.();
       if (x) s.group.add(x.group);
       const stage = createStage({
@@ -86,7 +95,12 @@ export const Scene3D = ({ scene, set, t, still, extra }: Scene3DProps) => {
         lens: scene.lens,
         light: () => setPalette(s.palette),
         update: (t, st) => {
-          for (const a of actors) act(a.fig, acting(a.id, t), t);
+          for (const a of actors) {
+            const ac = acting(a.id, t);
+            const on = (ac.world?.seated ? a.sit : a.stand) ?? a.stand ?? a.sit!;
+            for (const f of [a.stand, a.sit]) if (f) f.root.visible = f === on;
+            act(on, ac, t);
+          }
           s.room.cull(st.camera);
           s.update?.(t);
           x?.update?.(t);
@@ -96,7 +110,7 @@ export const Scene3D = ({ scene, set, t, still, extra }: Scene3DProps) => {
       if (/SwiftShader/.test(stage.gpu)) throw new Error(`không có GPU: ${stage.gpu}`);
       // ngoài vỏ phòng (camera trên đỉnh tường) là nền giấy như cảnh 2D
       stage.scene.background = new THREE.Color(PAPER);
-      stage.scene.add(s.group, ...actors.map((a) => a.fig.root));
+      stage.scene.add(s.group, ...figs.map((f) => f.root));
       host.current!.prepend(stage.canvas);
       world.current = { stage, set: s };
       draw(t);

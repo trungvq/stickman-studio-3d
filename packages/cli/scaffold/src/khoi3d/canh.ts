@@ -21,3 +21,9 @@ const day = () => plainRoom();
 export const CANH_3D: Record<string, Canh3D> = {
   "vi-du-3d": { set: day },
 };
+
+/** Composition thử bối cảnh: lấy người, ống kính và khung cắt của cảnh `scene`, đổi bối cảnh. Giây cảnh theo khung. */
+export type Thu3D = Canh3D & { scene: string };
+
+/** Id composition → bối cảnh thử; nằm trong thư mục `khoi3d` của sidebar Studio. */
+export const THU_3D: Record<string, Thu3D> = {};

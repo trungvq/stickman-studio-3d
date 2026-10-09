@@ -1,11 +1,13 @@
 import { FRAMES, SceneSchema, parseScene, resolveScene, type SceneData } from "@stickman3d/sketch";
 import type { ReactElement } from "react";
-import { Composition, Folder } from "remotion";
+import { Composition, Folder, useCurrentFrame, useVideoConfig } from "remotion";
 import { z } from "zod";
 import pkg from "../package.json";
 import { ACTIONS, ANIMALS, EPISODES, PROPS, SCENES } from "./data";
 import { Episode, episodeVideo, sceneFrame, sceneSeconds } from "./Episode";
 import { EpisodeSchema, episodeThumbnails, parseEpisode } from "./episode";
+import { THU_3D } from "./khoi3d/canh";
+import { Scene3D } from "./khoi3d/Scene3D";
 import { Scene } from "./Scene";
 import { episodeFrames, layoutShots } from "./shots";
 import { Thumbnail } from "./Thumbnail";
@@ -38,12 +40,21 @@ const inFolders = (comps: ReactElement<{ id: string }>[]) => {
   );
 };
 
+/** Composition thử bối cảnh `THU_3D[id]`; `--props='{"frames":1200}'` kéo dài để đo thời gian render */
+const Thu3D = ({ id }: { id: string; frames?: number }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const { scene, ...c } = THU_3D[id];
+  return <Scene3D scene={SCENES[scene]} {...c} t={frame / fps} />;
+};
+
 /**
  * Một composition cho mỗi file trong `scenes/`, và một cho mỗi file trong `episodes/` —
  * thêm file là có thêm composition. Cảnh là đơn vị dựng, tập là đơn vị xem. Tập có
  * `thumbnail` thì thêm `<tập>-thumb` một khung, hay `<tập>-thumb-<khoá>` cho mỗi biến thể:
  * `pnpm thumbnails` chụp hết trong một lượt bundle. Sidebar Studio gom theo
- * `stickman.folders` của `package.json` — docs/03-scene.md#remotion.
+ * `stickman.folders` của `package.json` — docs/03-scene.md#remotion. Bối cảnh thử `THU_3D`
+ * (`khoi3d/canh.ts`) nằm riêng trong thư mục `khoi3d`.
  */
 export const Root = () => (
   <>
@@ -100,5 +111,23 @@ export const Root = () => (
         )),
       ),
     ])}
+    {Object.keys(THU_3D).length > 0 && (
+      <Folder name="khoi3d">
+        {Object.entries(THU_3D).map(([id, { scene }]) => (
+          <Composition
+            key={id}
+            id={id}
+            component={Thu3D}
+            fps={FPS}
+            {...size(SCENES[scene])}
+            durationInFrames={frames(SCENES[scene])}
+            defaultProps={{ id }}
+            calculateMetadata={({ props }) => ({
+              durationInFrames: props.frames ?? frames(SCENES[scene]),
+            })}
+          />
+        ))}
+      </Folder>
+    )}
   </>
 );
