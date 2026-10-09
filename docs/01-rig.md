@@ -449,6 +449,8 @@ hai, hoặc không có cái nào, là lỗi schema.
 | `events[]` | Mốc `{ name, t }` đặt tên cho một pha va chạm; không ghi khớp nào — xem [Mốc sự kiện](#mốc-sự-kiện) |
 | `keys[].layer` | Lớp vẽ cẳng tay kể từ mốc này, đè lên lớp thừa hưởng từ pose được gọi tên: `{ "armFar": "back" \| "mid" \| "front", "armNear": ... }`. **Không nội suy**; mốc sau không khai thì giữ nguyên. Chỉ ăn ở kênh nằm trong `mask`. [02 — Trang phục](02-trang-phuc.md#cẳng-tay-đổi-lớp-được-cánh-tay-trên-xa-thì-không) |
 | `note` | Ghi chú cách dùng cho người soạn cảnh, tiếng Việt. Rig không đọc; studio giữ nguyên khi xuất |
+| `authoredAt` | `"side"`: góc tay chân soạn ở nhìn nghiêng, người 3D đọc như trong mặt phẳng dọc của thân — [Người 3D](#người-3d) |
+| `snap` | `true`: chuyển động cố ý giật (giật mình, đập bàn) — `check` không đo giật ở kênh hành động ghi lúc nó chạy — [Hành động giật có chủ ý](#hành-động-giật-có-chủ-ý) |
 
 **Ghép nhiều hành động là việc của scene, không phải của file.** `actionPose()`
 chỉ trả các khớp hành động ghi; `composePose(nền, ...)` đè theo `mask`, không
@@ -600,6 +602,21 @@ là `idle` ngắn — ngoại lệ vài cặp, không phải mặc định.
 Thuật toán hoà nhiều track, clip rỗng và chỗ nối chồng nhau nằm ở
 [03 — Chỗ nối](03-scene.md#chỗ-nối).
 
+### Hành động giật có chủ ý
+
+Chuyển động trên hình phải liền: `check` đo từng khớp mỗi khung và kêu chỗ nhảy vọt
+([03](03-scene.md#giật-trên-hình)). Chỗ **cố ý** giật — giật mình, đập bàn, khựng lại — khai
+`"snap": true` ở file hành động: mọi clip của nó được miễn đo ở kênh nó ghi, suốt lúc chạy, kể cả
+đoạn hoà vào và ra. Chỉ một lần đặt cố ý thì khai `snap` ở clip ([03](03-scene.md#hình-dạng-json)).
+
+`check` soi luôn chính file hành động (cảnh báo, `actionSnapProblems`; file khai `snap` thì thôi):
+
+- **`end: "wrap"` mà mốc cuối ở `t: 1` lệch mốc đầu** từ `20°`: mỗi lượt lặp nhảy về mốc đầu trong
+  một khung. Trạng thái giữ thì `end: "hold"`; nhịp lặp thì mốc cuối bằng mốc đầu.
+- **Hai mốc liền nhau cách dưới `0,04 s`** (ở `duration` của file) mà góc đổi từ `20°` và nhanh hơn
+  hẳn (gấp bốn) hai đoạn kề: cắt cứng giấu trong file. Chuỗi mốc dày cùng nhanh — cú vung soạn
+  bằng nhiều mốc — không kêu.
+
 ### Điệu bộ khi nói
 
 Hành động khi nói của bộ chung đều **giơ một lần rồi giữ**: `end: "hold"`, mốc `t: 0` gần tư
@@ -639,8 +656,10 @@ cho gật và lắc qua lại): 15 → 85% quãng mất ~`0,24 s`. Scene đè b�
   thì clip nhịp đã nhả, và ngược lại.
 - **Người ngồi** dùng `talk-beat-seated` thay `talk-beat`. Thân ngả quanh hông, chân ở nhánh
   riêng nên bàn chân đứng yên. **Người 3D:** `torso` là góc cúi trong mặt phẳng dọc, nên thân
-  `−4` của `talk-hand` là ngả lùi; các hành động này không khai `authoredAt`, tay vẽ trên mặt
-  khung như người 2D. Nghiêng đầu của người 3D vẫn xoay trên mặt khung, nên không bù được cái
+  `−4` của `talk-hand` là ngả lùi; các hành động tay này không khai `authoredAt`, nên trên người
+  3D là lỗi của `check` — repo video soạn bản `-3d` ở `side` cho điệu bộ nó dùng
+  ([03](03-scene.md#hành-động-cho-người-3d)); `talk-beat*`, `talk-sway`, `talk-tilt*`, `talk-nod`
+  chỉ ghi thân và đầu nên dùng thẳng được. Nghiêng đầu của người 3D vẫn xoay trên mặt khung, nên không bù được cái
   cúi — nhìn chính diện nó thành ngoẹo cổ. Người 3D ngồi dùng `talk-beat-seated-3d`: bù bằng
   gật, cùng trục với cái cúi, đúng ở mọi góc quay khi tóc dựng khối; tóc ảnh hay kiểu tóc phẳng
   thì gật chỉ dời nét mặt, đầu đi theo thân như `talk-beat`.
@@ -1214,9 +1233,11 @@ trôi ngang của người đi theo `path` tích phân trên nó ([03](03-scene.
 - **Kênh nâng và kênh giữ 2D.** Kênh tay chân mà hành động `authoredAt: "side"` ghi mang cờ
   `pose.lift`: góc đọc như soạn ở `side` — tiến theo hướng mặt, lên theo trục đứng, cùng phía
   với gốc chi. Chi gần là chi phải khi mặt hướng sang phải khung (không lật), chi trái khi lật.
-  Kênh không có cờ vẽ đúng như rig 2D (góc trên mặt khung, từ gốc chi đã chiếu); khối của nó cho
-  việc xếp lớp nằm trên mặt phẳng song song khung qua gốc chi. Hành động cũ không khai gì: người 2D
-  và kênh 2D của người 3D ra đúng hình cũ. `torso` của người 3D luôn là góc cúi trong mặt phẳng
+  Kênh không có cờ: người que SVG (`figure3d`) vẽ đúng như rig 2D (góc trên mặt khung, từ gốc chi
+  đã chiếu; khối của nó cho việc xếp lớp nằm trên mặt phẳng song song khung qua gốc chi), còn sân
+  khấu three (`act`) vẽ ở dáng nghỉ ([Khớp người 3D vẽ ra](#khớp-người-3d-vẽ-ra)). Hai đường khác
+  nhau ở đây, nên người 3D diễn hành động 2D ở kênh tay chân là lỗi của `check`
+  ([03](03-scene.md#hành-động-cho-người-3d)). `torso` của người 3D luôn là góc cúi trong mặt phẳng
   dọc của thân.
 - **Thân áo, váy dựng khối chiếu thật.** `fig3.torsoLens` là ống kính đặt trong hệ thân (x ngang,
   y dọc trục thân xuống, z hướng mặt; gốc ở hông, đơn vị rig), đã tính góc cúi `torso`, soi gương khi
@@ -1252,6 +1273,27 @@ trôi ngang của người đi theo `path` tích phân trên nó ([03](03-scene.
   thật của bàn chân, cổ tay. Gốc vẽ trùng gốc thật nên cả chuỗi là hình chiếu thật; gốc dự phòng sát
   mặt phẳng ống kính thì khớp giữa theo phép đồng dạng đưa gốc chiếu thật về gốc vẽ. Bàn chân đứng
   trên sàn, cổ tay nằm trên mặt bàn dù ống kính cúi cao.
+
+### Khớp người 3D vẽ ra
+
+Sân khấu three đặt người que bằng `act` (`packages/rig/src/act.ts`); `actJoints(nhân vật, scenePose)`
+của lõi (`core/act3.ts`) trả đúng các khớp ấy trong toạ độ thế giới rig, không cần `three` — `check`
+đo giật tay chân trên chúng ([03](03-scene.md#giật-trên-hình)). Hai bên dùng chung:
+
+- **Khung xương** `BONES3` (đơn vị three, tức rig chia 100), gốc vai và gốc chân `roots3(áo, rig)`,
+  tay choãi `SPLAY3`, tâm đầu `HEAD3` — `stickman.ts` dựng người que từ chúng.
+- **Luật đọc góc** `actAngles`: kênh nâng đọc góc soạn ở `side`, kênh không có cờ về dáng nghỉ (tay
+  buông `[0, 0]`, chân thẳng, ngồi thì đùi `[90, −90]`).
+- **IK** `actReach`: đích hệ thân rồi đích thế giới, hoà trên vị trí cổ tay, hướng khuỷu kéo theo
+  phần đích, giải hai đoạn bằng `twoBone3`.
+
+Phần còn lại — chuỗi biến hình gốc → hông → thân → vai → khuỷu → cổ tay, thứ tự góc Euler của từng
+khớp — `actJoints` tính lại bằng ma trận; `act3.test.ts` dựng người que three thật và giữ hai bên
+trùng nhau tới `1e-6` ở mọi kiểu tư thế (kênh nâng lẫn không, đích hệ thân, đích thế giới, ngồi, lật).
+Đổi khớp hay thứ tự quay ở `act`/`stickman.ts` thì đổi cùng `actJoints`, test đỏ là lệch.
+
+`figure3d` là hình học của người que SVG, không phải của three: hai đường trùng nhau ở kênh nâng
+(trừ tay choãi và độ nhấc hông nửa bề dày chi), khác nhau ở kênh không có cờ.
 
 ### Mặt người 3D
 

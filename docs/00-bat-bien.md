@@ -348,6 +348,16 @@ không đo bằng mắt, và đo một lần ở bộ chung thì mọi tập sau
 chọn một góc rìu duy nhất cho cả chu kỳ — không góc nào đúng cả lúc giơ lẫn lúc
 bổ. Ảnh đồ cầm để đầu xa ở **mép dưới**; vẽ lưỡi ở mép trên là cầm ngược.
 
+**Người 3D chỉ đọc tay chân soạn ở `side`.** Sân khấu three vẽ kênh tay chân không có cờ nâng ở
+dáng nghỉ, và cờ không hoà được: hoà giữa hành động `side` với hành động 2D, với clip rỗng hay với
+tư thế nền là tay chân nhảy một khung giữa đoạn hoà — `check` báo lỗi hành động 2D, báo giật cho
+phần còn lại. Xem [03](03-scene.md#hành-động-cho-người-3d).
+
+**Đo giật trên đúng hình vẽ ra.** `actJoints` của lõi và `act` của three dùng chung khung xương,
+luật đọc góc và IK (`core/act3.ts`); đổi một bên mà không đổi bên kia thì `check` đo một hình khác
+hình lên phim — `act3.test.ts` giữ chúng trùng. Chỗ cố ý giật khai `snap`, đừng nới ngưỡng cả repo.
+Xem [01](01-rig.md#khớp-người-3d-vẽ-ra).
+
 ## Scene
 
 **Người khai `cast[].world` bỏ hết số 2D của mình.** `x`, `y`, `scale`, `view`, `headView`,

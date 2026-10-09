@@ -98,6 +98,7 @@ Nhân vật nền không tốn gì: một mục `cast` với một clip `idle` l
 | `mask` | **Thu hẹp** `mask` của file hành động, cho riêng lần đặt này. Nới rộng là lỗi schema — kênh file không ghi thì không có số nào để lấy |
 | `equip` | Đổi đồ ngay ở `start` của clip: `{ "handFar": "axe" }`, `null` là để trống socket. **Công tắc**, giữ nguyên qua clip sau như mọi `equip` khác — xem [Đổi đồ](#đổi-đồ) |
 | `blend` | τ tính bằng giây, đè `blendDuration()`. `0` là cắt cứng |
+| `snap` | Cố ý giật (cắt cứng, giật mình) ở riêng lần đặt này, như `snap` của file hành động: `check` không đo giật ở kênh clip ghi suốt lúc nó chạy, kể cả đoạn hoà vào và ra — xem [Giật trên hình](#giật-trên-hình) |
 
 **Clip chạy từ `start` của nó tới `start` của clip sau trên cùng track**, hoặc tới
 hết scene. Không có trường độ dài, và cũng không có `loop`: `start` là **nguồn sự
@@ -977,7 +978,11 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
 ```
 
 - **Tay phải / trái theo giải phẫu**, không theo gần / xa: tay phải là tay gần khi người không lật.
-  `elbow` là hướng khuỷu trong thế giới, bỏ trống là `REACH_ELBOW` của hệ thân.
+  `elbow` là hướng khuỷu trong thế giới, bỏ trống là `REACH_ELBOW` của hệ thân. Đoạn giữa hai mốc
+  dùng `elbow` của mốc nào khai nó, nên một đoạn có, đoạn kề không là khuỷu đổi hướng ngay ở mốc
+  chung — khai cùng `elbow` cho cả chuỗi mốc của một động tác.
+- `snap: true` trên một mốc: đoạn từ mốc trước của tay ấy tới mốc này cố ý nhanh (chộp, giật tay),
+  `check` không đo giật tay ở đoạn ấy — [Giật trên hình](#giật-trên-hình).
 - Mỗi tay nội suy riêng giữa hai mốc gần nhất **có nhắc tay ấy**, êm (`smoothstep`); `null` là phần
   đích `0`, nên đi từ mốc có đích sang mốc `null` là tay nhả dần về góc. Trước mốc đầu và sau mốc
   cuối giữ nguyên.
@@ -1037,6 +1042,23 @@ khi bước (`40°` trong `~0,27 s`, nhìn thẳng ống kính `~2` khung): đó
 mặt ống kính. Người đi thẳng về ống kính bị đẩy lệch `FRONT_MIN` nên đi chéo, rồi lái lại khi tia
 nhìn đã lệch đủ.
 
+### Hành động cho người 3D
+
+Người 3D đọc góc tay chân **chỉ** ở kênh mang cờ nâng — kênh của hành động soạn ở `side`
+(`authoredAt: "side"`), và chân của người đi theo `path`. Sân khấu three (`act`) vẽ kênh không
+có cờ ở dáng nghỉ: tay buông, chân thẳng, ngồi thì đùi ngang ([01](01-rig.md#khớp-người-3d-vẽ-ra)).
+Cờ không hoà được: đoạn hoà giữa kênh có cờ và kênh không có lật cờ ở giữa đoạn, tay chân nhảy
+từ góc đang hoà về dáng nghỉ trong một khung.
+
+- **Hành động 2D ghi tay chân trên người 3D là lỗi** (`sceneSideProblems`, mức lỗi của `check`):
+  mỗi người, mỗi clip một dòng, kèm bản `-3d` có sẵn nếu có. Không kêu khi clip thu `mask` về
+  kênh không phải tay chân, kênh chân của người đi theo `path`, hay kênh tay mà mọi mốc đặt bằng
+  đích cổ tay. Sửa bằng bản soạn ở `side` cùng góc, hay đặt cổ tay bằng `world.hands`.
+- **Nhả về tư thế nền cũng lật cờ.** Clip rỗng nhả track về `cast[].base`, mà tư thế nền không
+  mang cờ; track chưa có clip ở giây đầu cũng vậy. Người 3D đứng yên thì để `stand-3d` (ngồi thì
+  `sit-3d`) ở track thân từ giây `0` và thay clip rỗng bằng nó. Lỗi này không có dòng tĩnh — cú
+  giật đo được trên hình kêu ở [Giật trên hình](#giật-trên-hình) kèm lý do cờ `lift`.
+
 ### `check` cho người 3D
 
 `sceneSlideProblems` đo trên mặt sàn thế giới, cửa sổ `0,4 s`: bàn chân chịu lực dịch quá nửa
@@ -1058,6 +1080,49 @@ Rig không đẩy người 3D ra khỏi đồ khối hay khỏi người khác: 
 đè lên. `check` đo mỗi phần người với mỗi mảnh đồ và với phần người của người khác, lấn quá `2` đơn vị
 thế giới (`stickman.clash.tol`) thì kêu, mỗi cặp một dòng; lấn có chủ ý thì khai `touch` trên món —
 [10](10-lop-ve-code.md#người-lồng-vào-đồ).
+
+## Giật trên hình
+
+`check` (và `snaps` của `scene_probe`) lấy mẫu mỗi cảnh không đóng băng theo fps bản chốt, tính khớp
+**đúng như hình vẽ ra** — người 3D qua `actJoints` (cùng khung xương, luật đọc góc và IK với `act`)
+chiếu qua `scene.lens`, người 2D qua `joints2` (cùng phép tính với các mốc khớp của `anchorAt`) — rồi
+đổi ra pixel video theo khung cắt `cameraAt` của từng khung. Khớp đo: gối, bàn chân, khuỷu, cổ tay
+hai bên và tâm đầu; người 3D theo bên giải phẫu nên người quay qua chính diện không đổi tên khớp.
+
+Một khung bị bắt khi một khớp nhảy vượt **nền** quá `px` và quá `k` lần nền. Nền là trung vị dịch
+chuyển mỗi khung của chính khớp ấy trong ±2 khung, tính cả khung đang xét: cú vung nhanh mà đều hay cú
+hoà êm thì các khung quanh đó cũng nhanh, nền lớn theo, không bị bắt; cú nhảy một hai khung thì nền vẫn
+là phần chậm quanh nó. Các khung bị bắt sát nhau gộp một dòng, báo ở khớp nhảy nhiều nhất:
+
+```
+scenes/canh-05.json: `lan` giây 1.48: cổ tay trái nhảy 85 px trong một khung (nền 11.6 px; cả cổ tay phải) — cờ `lift` của tay gần, tay xa lật giữa đoạn hoà track trống → `cower` (track `tay`): …
+```
+
+Lý do đọc từ timeline của người ấy: cờ `lift` lật (kèm đoạn hoà gây ra), thân quay qua chính diện
+(gần ↔ xa đổi chỗ, góc lắc đầu đổi phía), clip vào không hoà hay hoà quá ngắn, `wrap` vòng lại, đoạn
+mốc quá nhanh, phần đích cổ tay đổi đột ngột, đích `world.hands` dời vọt hay đổi hướng khuỷu ở một
+mốc, khuỷu của IK bật khi tay duỗi sát hết tầm hay hướng khuỷu gần trùng trục tay, cả người dời chỗ.
+Dòng nào không có lý do thì đọc danh sách clip đang chạy kèm theo.
+
+Không đo: khớp ra ngoài khung, người khuất (`fade` — người 3D dưới `0,5` là tắt, người 2D về `0`),
+điểm sau mặt phẳng ống kính, bước lật hay đổi góc nhìn của người 2D (rời rạc có chủ ý), cặp khung vắt
+qua chỗ cắt — mốc camera `cut`, đầu và cuối shot —, quãng cảnh không lên hình, và chỗ khai **cố ý
+giật**. Cảnh có shot trong `episodes/` dùng thì `check` chỉ đo quãng `[from, to]` của các shot ấy;
+hai shot liền nhau nối tiếp cùng một cảnh gộp lại, không có chỗ cắt giữa chúng. Cảnh không shot nào
+dùng, và `scene_probe` / `validate` (không biết tập), thì đo cả cảnh. Cố ý giật khai ở:
+
+- hành động `snap: true` ([01](01-rig.md#hành-động-giật-có-chủ-ý)) hay clip `snap: true`: kênh clip
+  ghi, suốt lúc nó chạy, kể cả đoạn hoà vào và đoạn hoà ra sang clip sau;
+- mốc `world.hands[].snap`: tay ấy, đoạn từ mốc trước tới mốc này.
+
+Ngưỡng ở `package.json` của repo video, trường thiếu lấy mặc định; `false` là không đo:
+
+```json
+"stickman": { "snap": { "px": 12, "k": 2, "fps": 60 } }
+```
+
+Mức cảnh báo, như người lồng vào đồ: hình vẫn ra, chỉ nhìn mới thấy. Cảnh khớp `stickman.frozen`
+không đo; `--scene` chỉ đo cảnh khớp.
 
 ## Nhóm
 

@@ -40,7 +40,7 @@ Dựng và soi repo video: [05 — Dựng một repo video](05-repo-video.md).
 | `list` | `kind` (`characters`/`actions`/`scenes`/`props`/`animals`/`pieces`) | Tên file + `name`; hành động kèm `mask`; PNG kèm kích thước và mục danh mục (đã gộp hai lớp); file hỏng kèm lỗi. `characters`, `actions`, `animals` và `pieces` kèm `layer` (`workspace` / `common`), cùng tên thì chỉ thấy bản workspace. |
 
 | `read` | `kind`, `file` | Bản đã parse, đủ mặc định. |
-| `validate` | `data` \| `file`, `kind` | Kiểm object inline hoặc file có sẵn (kể cả file lớp chung); `kind` bỏ trống thì tự nhận theo nội dung và trả về trong kết quả. Bản đã parse hoặc danh sách lỗi có `path`. Scene chạy luôn `resolveScene` để bắt lỗi chéo. Kèm `warnings` cho thứ **hợp lệ mà vẫn ra hình thiếu**: hành động có công tắc `equip` một chiều, khuỷu gập ngược khi giơ tay hay mốc ghi kênh ngoài `mask`; scene có hai track cùng ghi một socket, người 3D trượt trên sàn hay không tới mốc dừng của `path`, khoá góc chính diện đẩy thân người 3D. |
+| `validate` | `data` \| `file`, `kind` | Kiểm object inline hoặc file có sẵn (kể cả file lớp chung); `kind` bỏ trống thì tự nhận theo nội dung và trả về trong kết quả. Bản đã parse hoặc danh sách lỗi có `path`. Scene chạy luôn `resolveScene` để bắt lỗi chéo. Kèm `warnings` cho thứ **hợp lệ mà vẫn ra hình thiếu**: hành động có công tắc `equip` một chiều, khuỷu gập ngược khi giơ tay hay mốc ghi kênh ngoài `mask`; scene có hai track cùng ghi một socket, người 3D trượt trên sàn hay không tới mốc dừng của `path`, khoá góc chính diện đẩy thân người 3D, tay chân giật trên hình (cùng dòng và ngưỡng với `check`); hành động tự giật (`wrap` nhảy ở đường nối vòng, mốc sát nhau đổi góc vọt). Scene kèm `errors` cho thứ `check` coi là lỗi: người 3D diễn hành động 2D ở kênh tay chân. |
 | `write` | `kind`, `file`, `data`, `overwrite?` | Ghi bản đã parse; không đè khi thiếu `overwrite`. |
 | `patch` | `kind`, `file`, `patch` | Deep-merge rồi parse rồi ghi; `null` xoá khoá, mảng thay cả mảng. Vá một nhân vật, hành động hay con vật của lớp chung là tạo bản đè trong thư mục cùng tên của workspace (`from` cho biết nguồn). |
 
@@ -166,7 +166,11 @@ không có tool riêng.
   Cảnh có `lens` và người 3D kèm `clashes`: mỗi mốc hỏi, các chỗ phần người lồng vào đồ khối hay vào
   người khác sâu quá ngưỡng của `check`, sâu trước —
   `{ "0.5": [{ "who": "haru.head", "with": "hoc (mảnh 0)", "depth": 33 }] }`
-  ([10](10-lop-ve-code.md#người-lồng-vào-đồ)).
+  ([10](10-lop-ve-code.md#người-lồng-vào-đồ)). `world.joints` là khớp của người que SVG
+  (`figure3d`); khớp sân khấu three vẽ ra là `actJoints` ([01](01-rig.md#khớp-người-3d-vẽ-ra)).
+- **`scene_probe`** kèm `snaps` khi cảnh có chỗ tay chân giật trên hình: cả cảnh, không theo mốc hỏi
+  (hỏi riêng một người bằng `cast` thì chỉ người ấy), cùng dòng báo và ngưỡng (`stickman.snap`) với
+  `check` ([03](03-scene.md#giật-trên-hình)).
 - **`describe_rig`** có `world3d`: trục thế giới, `yaw`, `theta` và bảng nấc `viewOfTheta`,
   `FRONT_MIN`, `scene.lens` khác `camera[]`, `cast[].world`, `authoredAt`, `reach` và `REACH_ELBOW`,
   `world.hands`, và bộ hành động 3D lấy từ chính các file `authoredAt: "side"` trong hai lớp.
