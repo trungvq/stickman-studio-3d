@@ -1,3 +1,5 @@
+import type { BROWS, EYES, MOUTHS } from "./face";
+
 /** [góc khớp cha, góc khớp con tương đối] */
 export type Limb = [number, number];
 
@@ -89,32 +91,11 @@ export interface IdleParams {
 
 export type Pt = [number, number];
 
-export type MouthKind =
-  | "closed"
-  | "parted"
-  | "talkTeeth"
-  | "talkA"
-  | "talkB"
-  | "talkO"
-  | "talkSadA"
-  | "talkSadB"
-  | "talkAngryA"
-  | "talkAngryB"
-  | "smile"
-  | "frown"
-  | "pain"
-  | "o"
-  | "wide"
-  | "grit"
-  | "grin"
-  | "wry"
-  | "wryOpen";
+export type MouthKind = keyof typeof MOUTHS;
 
-export type BrowKind =
-  "neutral" | "flat" | "lifted" | "furrowed" | "angry" | "sad" | "raised" | "worried" | "skeptical";
+export type BrowKind = keyof typeof BROWS;
 
-export type EyeKind =
-  "open" | "shut" | "wide" | "squint" | "happy" | "squeezed" | "droopy" | "wink";
+export type EyeKind = keyof typeof EYES;
 
 /** Nét mặt tại một thời điểm; rời khỏi `Pose` vì không nội suy được */
 export interface FaceState {

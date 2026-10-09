@@ -8,6 +8,7 @@ export * from "./beard";
 export * from "./blend";
 export * from "./chinViews";
 export * from "./constants";
+export * from "./face";
 export * from "./figure3d";
 export * from "./garments";
 export * from "./garmentViews";

@@ -74,10 +74,10 @@ import {
   type ViewTune,
   type World,
   wornPiece,
+  EYE_R,
+  mouthExtent,
 } from "@stickman3d/rig/core";
 import { PARTS } from "./Parts";
-import { EYE_R } from "./Eyes";
-import { mouthExtent } from "./Mouth";
 
 /** Một nhóm treo: `translate(x, y) rotate(deg)`, `deg` là **độ SVG** (ngược dấu góc rig). */
 export interface Frame {

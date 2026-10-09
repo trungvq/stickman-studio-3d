@@ -1,13 +1,7 @@
 import { z } from "zod";
 import { POSE_LAYERS, POSE_NAMES, POSES } from "./poses";
-import {
-  ARM_LAYERS,
-  BROW_KINDS,
-  DEFAULT_FACE,
-  DEFAULT_LAYERS,
-  EYE_KINDS,
-  MOUTH_KINDS,
-} from "./constants";
+import { ARM_LAYERS, DEFAULT_FACE, DEFAULT_LAYERS } from "./constants";
+import { BROW_KINDS, EYE_KINDS, MOUTH_KINDS } from "./face";
 import type {
   Arm,
   ArmLayers,

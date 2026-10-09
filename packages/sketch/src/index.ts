@@ -1,12 +1,12 @@
 export * from "@stickman3d/rig/core";
 export * from "./anchor";
 export * from "./quality";
-export { Mouth, mouthExtent } from "./Mouth";
+export { Mouth } from "./Mouth";
 export { Brow } from "./Brow";
 export { Eyes } from "./Eyes";
 export { Head } from "./Head";
 export { Moustache, MOUSTACHE_KINDS } from "./Moustache";
-export { Wrinkle, WRINKLE_KINDS } from "./Wrinkle";
+export { Wrinkle } from "./Wrinkle";
 export { SculptHair } from "./sculpt";
 export { SculptGlasses } from "./glasses";
 export { SculptBeard } from "./beard";

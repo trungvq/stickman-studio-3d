@@ -67,7 +67,7 @@ camera theo `cameraAt`. Hành động là bộ chung `apps/studio/public/actions
 | `demo=styles` | Bộ sưu tập kiểu: người thứ `i` đội mẫu tóc thứ `i` của `SCULPT_PRESETS` (cuối hàng là đầu trọc), mặc kiểu áo thứ `i % 12` của `GARMENT_STYLES`, rải kính, nếp nhăn, váy xếp ly và váy trơn |
 | `turn=110` | Với `demo=styles`: xoay từng người tại chỗ (độ, mặc định 14) để xem nghiêng, sau lưng |
 | `cast=/@fs/…/a.json,…` | Với `demo=styles`: dựng các JSON nhân vật này thay cho người mẫu để soi; file phải nằm trong cây repo (vd. chép vào `tmp/`) |
-| `demo=mouths` | Bảng nét mặt: đủ 19 khẩu hình của `Mouth.tsx` trên ba bậc, kèm đủ kiểu mắt và mày |
+| `demo=mouths` | Bảng nét mặt: đủ khẩu hình của `MOUTHS` (`core/face.ts`) trên ba bậc, kèm đủ kiểu mắt và mày |
 
 Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js` và `demo-acts.js`,
 lõi lấy mẫu bằng `sceneAt`, người 3D diễn theo bằng `act`. Bộ sưu tập kiểu và bảng

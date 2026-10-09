@@ -760,6 +760,12 @@ và mặt; chỉ thay các kênh tạo nhịp thở.
 
 ## Khẩu hình và mắt
 
+Hình của khẩu hình, mắt, mày và nếp nhăn nằm ở một bảng của lõi, `core/face.ts`: mỗi kiểu là một
+danh sách nét theo nghĩa SVG (`path`, `line`, `ellipse`, `rect`, nhóm, vùng cắt `clip`). Người SVG
+dựng chúng thành phần tử, người 3D vẽ chúng lên canvas dán trên sọ — hai bên luôn cùng hình. Thêm một
+kiểu là thêm một dòng vào `MOUTHS` / `EYES` / `BROWS`; tên kiểu và `MOUTH_KINDS` / `EYE_KINDS` /
+`BROW_KINDS` lấy từ khoá của bảng.
+
 Không cần viseme thật. Cảm xúc chọn một **bộ** khẩu hình, mỗi bộ có đủ năm vai: nghỉ, răng
 cắn, há vừa, há to, tròn. Khi nói, miệng xoay chủ yếu giữa răng cắn và há vừa, há to ở tiếng
 nhấn, tròn ở nguyên âm tròn môi, khép khi nghỉ từ 0,2 s.
@@ -823,8 +829,8 @@ Nghỉ của bộ giận là cung trễ `frown`, không phải `grit`: nghiến 
 
 Răng luôn là **một dải trắng liền**, không kẻ từng chiếc — kẻ ô ở cỡ này thành hàm răng nhe.
 
-`mouthExtent(kind)` trả mép trên / dưới của mỗi khẩu hình so với tâm miệng —
-đây là số mà ria mép bám vào.
+`mouthExtent(kind)` trả mép trên / dưới của mỗi khẩu hình so với tâm miệng (`extent` của nó trong
+`MOUTHS`) — đây là số mà ria mép bám vào.
 
 Mắt là hai chấm, đổi kiểu chứ không có tham số:
 

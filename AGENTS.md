@@ -9,7 +9,7 @@ chúng ở repo của từng video, repo đó nhập bộ `@stickman3d/*` như d
 
 | | |
 |---|---|
-| `packages/rig/src/core/` | Lõi rig, không React, không `three`: hằng số và tư thế, chu kỳ đi, schema zod của nhân vật / hành động / cảnh / đạo cụ / động vật, `resolveScene` và `sceneAt`, IK, timewarp, ống kính scene, hình học thân áo, tóc, kính, râu, váy, đầu, sổ bộ phận `PARTS`. Ra cửa `@stickman3d/rig/core` và cửa chính của `@stickman3d/rig`. |
+| `packages/rig/src/core/` | Lõi rig, không React, không `three`: hằng số và tư thế, chu kỳ đi, schema zod của nhân vật / hành động / cảnh / đạo cụ / động vật, `resolveScene` và `sceneAt`, IK, timewarp, ống kính scene, hình học thân áo, tóc, kính, râu, váy, đầu, nét mặt (`face.ts`), sổ bộ phận `PARTS`. Ra cửa `@stickman3d/rig/core` và cửa chính của `@stickman3d/rig`. |
 | `packages/rig/src/*.ts` | `@stickman3d/rig` phần 3D — vật liệu NPR và giờ trong ngày (`npr.ts`), pipeline vẽ (`pipeline.ts`), người que và đặt người (`stickman.ts`), diễn theo tư thế của `sceneAt` (`act.ts`), nét mặt (`face.ts`), thân áo và váy (`garment.ts`, `torso.ts`), tóc (`sculpt.ts`), kính (`glasses.ts`), đồ khối (`khoi.ts`), vỏ phòng, cửa sổ, cửa đi và đèn tấm (`room.ts`), ống kính scene (`lens.ts`), chỗ gắn đồ, cầm đồ và đồ gọi tên (`attach.ts`), người nền đóng băng (`crowd.ts`), kiểm va chạm (`collide.ts`), chữ và hình trên mặt vật (`decal.ts`), món chạy theo `t` — đồng hồ, lịch, màn hình (`parts.ts`), vật bay theo đường, hiện/tắt (`motion.ts`). tsup ra `dist` hai cửa, `three` và `zod` để external. |
 | `packages/sketch/` | `@stickman3d/sketch` — người que vẽ SVG bằng React: `<Character>`, `<Prop>`, `<Animal>`, mảnh và bộ phận vẽ code, bảng mốc mảnh `figureAnchors` (`anchor.ts`). Xuất lại cả lõi, nên code 2D chỉ cần import một gói. |
 | `packages/fx/` | `@stickman3d/fx` — hiệu ứng SVG theo `t` cho `scene.fx[]` và `<SceneWorld>` vẽ cả cảnh 2D. [docs/09](docs/09-hieu-ung.md), [docs/10](docs/10-lop-ve-code.md). |
@@ -89,8 +89,12 @@ nhìn +z local; bên `-1` là tay/chân phải.
 **`act` nhận `ScenePose` của `sceneAt`.** Chỉ kênh tay chân soạn ở `side` (`pose.lift`) được đọc;
 góc `0` thẳng xuống, dương ra trước, chi gần là bên phải người khi không lật. Hông lấy thẳng từ
 `world.hip` nên độ dài chi 3D phải khớp `RIG` của lõi (đùi, ống chân, hông ±`hipHalf`), lệch là
-chân trượt khi đi theo `path`. `face.ts` vẽ nét mặt lên canvas theo hình của `Mouth.tsx`,
-`Eyes.tsx`, `Brow.tsx`, `Wrinkle.tsx` ở sketch — sửa hình nét mặt bên sketch thì sửa cả `face.ts`.
+chân trượt khi đi theo `path`.
+
+**Nét mặt chỉ có một bảng: `core/face.ts`** — khẩu hình, mắt, mày, nếp nhăn là danh sách nét theo
+nghĩa SVG (`MOUTHS`, `EYES`, `BROWS`, `wrinkleMarks`). `<Mouth>`, `<Eyes>`, `<Brow>`, `<Wrinkle>` của
+sketch dựng chúng thành SVG, `face.ts` của người 3D vẽ chúng lên canvas dán trên sọ. Thêm một kiểu là
+thêm một dòng vào bảng; `MouthKind` / `EyeKind` / `BrowKind` và `*_KINDS` lấy từ khoá của bảng.
 
 **Uniform chung `G`** (nắng, bóng, đèn, bản đồ bóng) là một object cho mọi vật liệu `npr`. Giờ trong
 ngày bằng `setPalette`, bộ đèn phòng (đèn trần, cửa sổ, đèn cục bộ) bằng `setLights`; cả hai ghép

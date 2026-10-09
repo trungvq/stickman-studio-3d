@@ -139,7 +139,7 @@ người xem cho khấc trùng `A.face.mouthCx` / `A.face.mouthCy`, phần sát 
 `face.mouthGap` / `face.offsetY` thì râu đi theo, đừng dời râu bằng `dx` / `dy`,
 `beardPaths` bỏ qua chúng. Râu dựng khối luôn vẽ ở lớp `under`, dưới mắt, mày, ria và mồm;
 `layer` bị bỏ qua. Khấc mở theo khẩu hình qua tham số `mouth` của `figureAnchors`; thêm khẩu
-hình mới thì khai đúng mép trên / dưới của nó ở `mouthExtent`, không thì râu đè lên mồm. Khẩu hình nào
+hình mới thì khai đúng mép trên / dưới của nó ở `extent` trong `MOUTHS` (`core/face.ts`), không thì râu đè lên mồm. Khẩu hình nào
 cũng có viền mực, không thì chìm trên râu kín (`cover`). Xem
 [02](02-trang-phuc.md#râu-dựng-khối).
 

@@ -1,14 +1,4 @@
-import type {
-  ArmLayer,
-  ArmLayers,
-  BrowKind,
-  EyeKind,
-  FaceState,
-  HeadPose,
-  MouthKind,
-  Stretch,
-  Views,
-} from "./types";
+import type { ArmLayer, ArmLayers, FaceState, HeadPose, Stretch, Views } from "./types";
 
 /** Bảng hằng số ở docs/02-rig.md */
 export const RIG = {
@@ -56,51 +46,6 @@ export const D = Math.PI / 180;
 export const NEUTRAL_HEAD: HeadPose = [0, 0, 0];
 /** Chi dài chuẩn: mặc định của kênh `stretch`, và là giá trị nền khi hành động không ghi nó */
 export const NEUTRAL_STRETCH: Stretch = [1, 1, 1, 1, 1, 1, 1, 1];
-
-export const MOUTH_KINDS = [
-  "closed",
-  "parted",
-  "talkTeeth",
-  "talkA",
-  "talkB",
-  "talkO",
-  "talkSadA",
-  "talkSadB",
-  "talkAngryA",
-  "talkAngryB",
-  "smile",
-  "frown",
-  "pain",
-  "grit",
-  "grin",
-  "wry",
-  "wryOpen",
-  "o",
-  "wide",
-] as const satisfies readonly MouthKind[];
-
-export const BROW_KINDS = [
-  "neutral",
-  "flat",
-  "lifted",
-  "furrowed",
-  "angry",
-  "sad",
-  "raised",
-  "worried",
-  "skeptical",
-] as const satisfies readonly BrowKind[];
-
-export const EYE_KINDS = [
-  "open",
-  "shut",
-  "wide",
-  "squint",
-  "happy",
-  "squeezed",
-  "droopy",
-  "wink",
-] as const satisfies readonly EyeKind[];
 
 export const DEFAULT_FACE: FaceState = { mouth: "closed", brow: "neutral", eyes: "open" };
 
