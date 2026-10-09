@@ -258,8 +258,8 @@ bụng, cốc kê sâu vào mặt thì miệng cốc che nửa mặt. Chỗ ph�
 - dựng đúng khối mà `<SceneWorld>` xếp lớp — khối từng phần người (`fig3.solids`, như
   `solidFigure`) và khối đồ của các lớp bật cho cảnh (`itemSolids` của `solids(ctx)`);
 - chỉ đo cặp mà `solidOrder` không tách được (bóng trên khung chồng nhau, không mặt nào của khối này
-  để cả khối kia ở ngoài), và cặp phần người của hai người khác nhau. Hai phần cùng một người không đo:
-  chúng xuyên nhau ở khớp là bình thường;
+  để cả khối kia ở ngoài), và cặp phần người của hai người khác nhau. Hai phần cùng một người thì chỉ
+  đo tay với thân ([Tay xuyên thân](#tay-xuyên-thân)): chúng xuyên nhau ở khớp là bình thường;
 - độ lấn là quãng ngắn nhất phải đẩy phần người ra cho hai khối lồi rời nhau (độ chồm nhỏ nhất trên
   pháp tuyến mặt của hai khối và tích từng cặp cạnh — đúng, không lấy mẫu hướng), đơn vị thế giới.
   Chạm (đùi trên mặt ngồi, cẳng tay trên mặt bàn) là `0`;
@@ -295,9 +295,67 @@ cốc vẫn vẽ đè lên mặt đúng như lúc chưa khai.
 mặt nửa bề dày tay, khuỷu cao hơn cổ tay, cẳng tay nằm trên mặt bàn. Đích tự viết đặt sát người hay
 thấp hơn mặt là cẳng tay dốc xuyên mép bàn. Dời ghế hay bàn thì gọi lại `handsOn`.
 
-Tự đo trong code: `sceneClashes(rt, t, { characterOf, codeLayers, tol })` của `@stickman3d/fx` cho một
-khung của cảnh, `solidClashes(lens, items, people, { tol, view })` cho khối đã dựng, `penetration(a, b)`
-cho hai khối lồi. Chúng chỉ để kiểm — đường vẽ không gọi.
+Tự đo trong code: `sceneClashes(rt, t, { characterOf, codeLayers, tol, self })` của `@stickman3d/fx`
+cho một khung của cảnh (cả tay xuyên thân), `solidClashes(lens, items, people, { tol, view })` cho khối
+đã dựng, `armPierce(character, pose, { tol })` của lõi cho tay với thân ở một tư thế, `penetration(a, b)`
+cho hai khối lồi.
+Chúng chỉ để kiểm — đường vẽ không gọi.
+
+## Tay xuyên thân
+
+Người 3D vẽ tay đúng theo đích cổ tay và khuỷu, không tránh thân mình: đích cổ tay đặt sát quá trước
+ngực (cốc cầm sát người), với chéo qua người tới đồ nằm phía tay kia, hay buông tay từ một đích ở phía
+bên kia người là cẳng tay hay cánh tay xuyên qua thân. `stickman check` đo đoạn tay (`armNear`,
+`armFar`, `forearmNear`, `forearmFar`) với thân áo của chính người ấy, cùng các giây lấy mẫu với
+[Người lồng vào đồ](#người-lồng-vào-đồ), bằng `armPierce` của lõi:
+
+- tay và thân đúng như three vẽ, không theo khối người của `<SceneWorld>`: tay là khớp `actJoints`
+  (cùng khung xương, cùng IK với `act`), thân là khối tròn xoay dẹt của `torsoMesh` — nửa rộng theo
+  `profile` của áo, tiết diện ngang ellipse dẹt `TORSO_DEPTH`, dựng theo trục hông → cổ. Khối hộp của
+  `solidBody` vuông góc và đặt tay theo đường vẽ 2D, đo trên nó thì tay chắp trước bụng cũng thành
+  xuyên thân;
+- bỏ `30%` cánh tay phía vai (khớp vai nằm trong thân ở mọi tư thế) và `20%` cẳng tay phía cổ tay
+  (tay đặt lên ngực, chống hông chỉ chạm ở cổ tay) — `PIERCE_TRIM`; lõi tay lấy nửa bán kính tay
+  (`PIERCE_CORE`), nên tay áp sát mặt áo không tính;
+- ngưỡng riêng, mặc định `4` (`PIERCE_TOL`): tay khoanh, ôm ngực đã lấn vài đơn vị, còn tay xuyên thật
+  lấn hàng chục. Đổi bằng `"stickman": { "clash": { "self": 6 } }`, `false` là không đo;
+- bỏ người có thân ngoài khung camera, và người đã mờ hẳn.
+
+```
+scenes/pantry.json: tay xuyên thân — haru.forearmNear lấn vào haru.torso 17.6 ở giây 0.75 · giây 0.69–0.88
+```
+
+Cách sửa: cổ tay cầm đồ trước ngực đưa ra trước đủ xa (thân người 3D dày, cổ tay cách trục thân dưới
+khoảng `50` là cẳng tay chạm ngực); đồ nằm phía tay kia thì quay người về phía đồ thay vì với chéo; buông
+tay từ một đích xa thì thêm một mốc kéo cổ tay về trước người rồi mới buông (`null`); khuỷu khép vào
+sườn thì đẩy ra bằng `elbow`.
+
+## Đồ lồng vào đồ
+
+Đồ khối cũng không đẩy nhau ra: cốc đặt thẳng xuống mặt quầy trong khi khay nhỏ giọt của máy cao hơn
+mặt quầy là đáy cốc chìm trong khay; phóng to một món mà không giãn chỗ là nó lồng vào món bên cạnh.
+`stickman check` đo từng cặp món của các lớp bật cho cảnh (`solids(ctx)`), cùng các giây lấy mẫu:
+
+- độ lấn là quãng ngắn nhất phải đẩy cho hai khối lấn sâu nhất của hai món rời nhau, như người lồng
+  vào đồ;
+- phần thể tích: ước bằng lưới điểm trong từng khối, phần thể tích của **món nhỏ hơn** nằm trong món
+  kia;
+- kêu khi **cả hai** vượt ngưỡng: lấn quá `stickman.clash.tol` và phần thể tích quá
+  `stickman.clash.items` (mặc định `0,1`, `false` là không đo). Đồ đặt lên mặt món khác lấn `0`; tờ giấy
+  mỏng lún chút vào mặt bàn thì phần thể tích lớn mà độ lấn nhỏ, không kêu;
+- bỏ hai món cùng chỗ đặt, cùng hướng, cùng cỡ — một vật dựng thành nhiều món (thân cốc và quai) — và
+  cặp có cả hai bóng ngoài khung camera;
+- món đứng yên chỉ đo một lần cho cả cảnh; món dựng lại theo `t` đo lại ở mỗi giây lấy mẫu.
+
+```
+scenes/pantry.json: đồ lồng vào đồ — mayPha (mảnh 10) ↔ cocVoi (mảnh 2) lấn 13.0, 48% thể tích cocVoi ở giây 0.00 · giây 0.00–13.50
+```
+
+**Lồng có chủ ý thì khai tên món kia trong `touch`** của một trong hai món: bút trong ống bút là
+`touch: ["ong-but"]` trên món bút. Tên món là `name` mà lớp đặt cho món.
+
+Tự đo trong code: `sceneItemClashes(rt, t, { codeLayers, tol, ratio })` cho một khung của cảnh,
+`solidItemClashes(lens, items, { tol, ratio, view })` cho các món đã dựng.
 
 ## Vẽ sai thứ tự
 

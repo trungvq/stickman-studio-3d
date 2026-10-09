@@ -82,6 +82,11 @@ const CUE_STILL = 1;
 const CLASH_EVERY = 0.25;
 const CLASH_MOVE = 4;
 const CLASH_TOL = 2;
+/**
+ * Đồ lồng vào đồ: lấn quá `stickman.clash.tol` **và** phần thể tích món nhỏ nằm trong món kia quá
+ * `stickman.clash.items` (mặc định `ITEM_RATIO`; `false` là không đo) mới kêu
+ */
+const ITEM_RATIO = 0.1;
 
 /** Công cụ ngoài mà repo video cần; không cái nào được `init` cài hộ — docs/07 */
 const TOOLS = [
@@ -1367,6 +1372,13 @@ export async function reseatWorkspace({ dir = ".", before, dryRun = false } = {}
 /** Ngưỡng lấn của workspace: `stickman.clash.tol` trong `package.json`, mặc định `CLASH_TOL` */
 export const clashTol = (dir = ".") => readPkg(resolve(dir))?.stickman?.clash?.tol ?? CLASH_TOL;
 
+/** Ngưỡng tay xuyên thân mình: `stickman.clash.self`, mặc định `PIERCE_TOL` của lõi, `false` là tắt */
+export const selfTol = (dir = ".") =>
+  readPkg(resolve(dir))?.stickman?.clash?.self ?? rig.PIERCE_TOL;
+
+/** Ngưỡng phần thể tích của đồ lồng vào đồ: `stickman.clash.items`, mặc định `ITEM_RATIO`, `false` là tắt */
+export const itemRatio = (dir = ".") => readPkg(resolve(dir))?.stickman?.clash?.items ?? ITEM_RATIO;
+
 /**
  * Quãng giây cảnh mà các shot của `episodes/` đưa lên hình, theo id cảnh: `[from, to]` mỗi shot, hai
  * shot liền nhau nối tiếp cùng một cảnh thì gộp — không có chỗ cắt giữa chúng. Cảnh không shot nào
@@ -1533,23 +1545,46 @@ function tally(times, at, line) {
  */
 export function sceneClashProblems(
   rt,
-  { characterOf, codeLayers, tol = CLASH_TOL, every = CLASH_EVERY, samples },
+  { characterOf, codeLayers, tol = CLASH_TOL, self = rig.PIERCE_TOL, every = CLASH_EVERY, samples },
 ) {
   const { times, built } = samples ?? sceneSamples(rt, { characterOf, every });
   // `sceneClashes` sắp sâu trước: mỗi cặp (phần người, món) lấy mảnh lấn sâu nhất của khung. Món
   // gộp theo `name`: lớp ẩn bớt món thì chỉ số trong mảng `solids` dời giữa chừng
   const at = (t) =>
-    FX.sceneClashes(rt, t, { characterOf, codeLayers, tol, people: built.get(t) }).map((c) => ({
-      ...c,
-      key: c.other
-        ? `${c.id}.${c.part}|${c.other.id}.${c.other.part}`
-        : `${c.id}.${c.part}|${c.name ?? `#${c.item}`}`,
-    }));
-  return tally(
-    times,
-    at,
-    (c) => `người lồng vào đồ — ${c.id}.${c.part} ↔ ${clashWith(c)} lấn ${c.depth.toFixed(1)}`,
+    FX.sceneClashes(rt, t, { characterOf, codeLayers, tol, self, people: built.get(t) }).map(
+      (c) => ({
+        ...c,
+        key: c.other
+          ? `${c.id}.${c.part}|${c.other.id}.${c.other.part}`
+          : `${c.id}.${c.part}|${c.name ?? `#${c.item}`}`,
+      }),
+    );
+  return tally(times, at, (c) =>
+    c.other?.id === c.id
+      ? `tay xuyên thân — ${c.id}.${c.part} lấn vào ${c.id}.torso ${c.depth.toFixed(1)}`
+      : `người lồng vào đồ — ${c.id}.${c.part} ↔ ${clashWith(c)} lấn ${c.depth.toFixed(1)}`,
   );
+}
+
+/**
+ * Món đồ lồng vào món khác, mỗi cặp món một dòng: chỗ lấn sâu nhất, phần thể tích của món nhỏ nằm
+ * trong món kia, các quãng giây liền nhau. Món đứng yên chỉ đo một lần. docs/10-lop-ve-code.md#đồ-lồng-vào-đồ
+ */
+export function sceneItemClashProblems(
+  rt,
+  { characterOf, codeLayers, tol = CLASH_TOL, ratio = ITEM_RATIO, every = CLASH_EVERY, samples },
+) {
+  const { times } = samples ?? sceneSamples(rt, { characterOf, every });
+  const label = (name, k) => name ?? `món #${k}`;
+  const at = (t) =>
+    FX.sceneItemClashes(rt, t, { codeLayers, tol, ratio }).map((c) => {
+      const [a, b] = [label(c.name, c.item), label(c.otherName, c.other)];
+      return { ...c, a, b, key: [a, b].sort().join("|") };
+    });
+  return tally(times, at, (c) => {
+    const small = c.small === "item" ? c.a : c.b;
+    return `đồ lồng vào đồ — ${c.a} (mảnh ${c.piece}) ↔ ${c.b} (mảnh ${c.otherPiece}) lấn ${c.depth.toFixed(1)}, ${Math.round(c.ratio * 100)}% thể tích ${small}`;
+  });
 }
 
 /**
@@ -1864,12 +1899,24 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
     runtimes.set(name, rt);
     return rt;
   };
-  // Người 3D lồng vào đồ khối (rig không đẩy người ra, chặt mảnh đồ qua người rồi vẽ đè lên) và đồ
-  // với người xếp vẽ ngược độ sâu — chỉ nhìn hình mới thấy. Cảnh khớp `stickman.frozen` thì không đo.
-  // docs/10-lop-ve-code.md#người-lồng-vào-đồ, docs/10-lop-ve-code.md#vẽ-sai-thứ-tự
+  // Người 3D lồng vào đồ khối (rig không đẩy người ra, chặt mảnh đồ qua người rồi vẽ đè lên), tay
+  // xuyên thân mình, đồ lồng vào đồ, và đồ với người xếp vẽ ngược độ sâu — chỉ nhìn hình mới thấy.
+  // Cảnh khớp `stickman.frozen` thì không đo. docs/10-lop-ve-code.md#người-lồng-vào-đồ,
+  // docs/10-lop-ve-code.md#tay-xuyên-thân, docs/10-lop-ve-code.md#đồ-lồng-vào-đồ,
+  // docs/10-lop-ve-code.md#vẽ-sai-thứ-tự
   const tol = clashTol(root);
+  const ratio = itemRatio(root);
+  const self = selfTol(root);
   if (typeof tol !== "number" || !(tol >= 0))
     bad(`package.json: stickman.clash.tol phải là số không âm, đang là ${JSON.stringify(tol)}`);
+  else if (self !== false && (typeof self !== "number" || !(self >= 0)))
+    bad(
+      `package.json: stickman.clash.self phải là số không âm hay false, đang là ${JSON.stringify(self)}`,
+    );
+  else if (ratio !== false && (typeof ratio !== "number" || !(ratio >= 0 && ratio < 1)))
+    bad(
+      `package.json: stickman.clash.items phải là số trong [0, 1) hay false, đang là ${JSON.stringify(ratio)}`,
+    );
   else
     for (const [name, data] of Object.entries(scenesByName)) {
       if (!data.lens || !data.cast.some((m) => m.world) || frozen.test(name) || !inFocus(name))
@@ -1884,8 +1931,11 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
       try {
         const samples = sceneSamples(rt, { characterOf });
         for (const problem of [
-          ...sceneClashProblems(rt, { characterOf, codeLayers, tol, samples }),
+          ...sceneClashProblems(rt, { characterOf, codeLayers, tol, self, samples }),
           ...sceneOverdrawProblems(rt, { characterOf, codeLayers, tol, samples }),
+          ...(ratio === false
+            ? []
+            : sceneItemClashProblems(rt, { characterOf, codeLayers, tol, ratio, samples })),
         ])
           warn(`scenes/${name}.json: ${problem}`);
       } catch (e) {

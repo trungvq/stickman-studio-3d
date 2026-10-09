@@ -1079,7 +1079,9 @@ biết hướng khai không được giữ.
 Rig không đẩy người 3D ra khỏi đồ khối hay khỏi người khác: lồng vào là đồ bị chặt qua người rồi vẽ
 đè lên. `check` đo mỗi phần người với mỗi mảnh đồ và với phần người của người khác, lấn quá `2` đơn vị
 thế giới (`stickman.clash.tol`) thì kêu, mỗi cặp một dòng; lấn có chủ ý thì khai `touch` trên món —
-[10](10-lop-ve-code.md#người-lồng-vào-đồ).
+[10](10-lop-ve-code.md#người-lồng-vào-đồ). Tay cũng không tránh thân mình: đích cổ tay sát ngực, với
+chéo qua người hay buông tay từ đích phía bên kia là tay xuyên thân, `check` đo riêng —
+[10](10-lop-ve-code.md#tay-xuyên-thân).
 
 ## Giật trên hình
 
