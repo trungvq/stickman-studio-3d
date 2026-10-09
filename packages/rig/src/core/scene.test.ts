@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import lookCameraJson from "../../../apps/studio/public/actions/look-camera.json";
-import talkBeatJson from "../../../apps/studio/public/actions/talk-beat.json";
-import talkTiltJson from "../../../apps/studio/public/actions/talk-tilt.json";
-import { parseAction, type ActionData } from "./action";
-import { defaultAnimal, type AnimalData } from "./animals";
-import { computeFigure } from "./geometry";
-import { defaultProp, type PropData } from "./props";
-import { defaultCharacter } from "./schema";
+import lookCameraJson from "../../../../apps/studio/public/actions/look-camera.json";
+import talkBeatJson from "../../../../apps/studio/public/actions/talk-beat.json";
+import talkTiltJson from "../../../../apps/studio/public/actions/talk-tilt.json";
+import { parseAction, type ActionData } from "./index";
+import { defaultAnimal, type AnimalData } from "./index";
+import { computeFigure } from "./index";
+import { defaultProp, type PropData } from "./index";
+import { defaultCharacter } from "./index";
 import {
   SCENE_Z,
   animalAt,
@@ -19,7 +19,7 @@ import {
   sceneZProblems,
   type SceneData,
   type SceneRuntime,
-} from "./scene";
+} from "./index";
 
 /** Cảnh thô qua zod; JSON sai là hỏng ngay trong test chứ không lặng lẽ lấy mặc định */
 function parsed(json: unknown): SceneData {

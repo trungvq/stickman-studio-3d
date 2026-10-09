@@ -197,3 +197,12 @@ export const UPPER_OF: Partial<Record<(typeof BODY_PARTS)[number], (typeof BODY_
   shinFar: "legFar",
   shinNear: "legNear",
 };
+
+/** Gốc treo người: `feet` là bàn chân thấp hơn chạm `groundY`, `hip` là hông đặt ngay tại `groundY` — người ngồi trên lưng thú. */
+export type Root = "feet" | "hip";
+
+/**
+ * Độ mịn của hình dựng khối. `draft` làm tròn góc đầu để tóc trúng cache khi phát thời gian thực;
+ * `final` chiếu đúng góc từng khung, chỉ cho bản render để đăng — xem docs/02-trang-phuc.md
+ */
+export type RigQuality = "draft" | "final";

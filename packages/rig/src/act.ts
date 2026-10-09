@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { BrowKind, EyeKind, MouthKind } from './face';
+import type { BrowKind, EyeKind, MouthKind } from './core/types';
 import { toThree, type Vec3 } from './khoi';
 import { R, type Figure, type Side } from './stickman';
 

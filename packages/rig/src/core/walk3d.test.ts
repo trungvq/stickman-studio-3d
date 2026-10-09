@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { parseAction, type ActionData } from "./action";
-import { D } from "./constants";
-import { body3, dirOf, feet3 } from "./figure3d";
-import { feet } from "./geometry";
-import { defaultCharacter } from "./schema";
+import { parseAction, type ActionData } from "./index";
+import { D } from "./index";
+import { body3, dirOf, feet3 } from "./index";
+import { feet } from "./index";
+import { defaultCharacter } from "./index";
 import {
   actionStride,
   parseScene,
@@ -15,8 +15,8 @@ import {
   sceneSlideProblems,
   worldFacingAt,
   type SceneRuntime,
-} from "./scene";
-import { nextBearing, standing } from "./travel";
+} from "./index";
+import { nextBearing, standing } from "./index";
 
 const c = defaultCharacter();
 const dims = body3(c);

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { addPart, Batch, box, place3, toThree, U, type Mark, type Part, type Place3, type Tone, type Vec3 } from './khoi';
+import { place3, type Place3 } from './core/lens';
+import { addPart, Batch, box, toThree, U, type Mark, type Part, type Tone, type Vec3 } from './khoi';
 import { currentLights } from './lighting';
 import { G, npr, PALETTES, type CeilingLight, type Lamp, type LightRig, type WindowLight } from './npr';
 

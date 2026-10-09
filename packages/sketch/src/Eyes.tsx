@@ -1,5 +1,4 @@
-import { SIDE_EYE_OVAL } from "./constants";
-import type { EyeKind } from "./types";
+import { type EyeKind, SIDE_EYE_OVAL } from "@stickman3d/rig/core";
 
 const INK = "#22201d";
 const WHITE = "#f7f2e6";

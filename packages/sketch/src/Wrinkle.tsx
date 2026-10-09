@@ -1,5 +1,4 @@
-import type { CharacterData } from "./schema";
-import type { WrinkleKind } from "./types";
+import type { CharacterData, WrinkleKind } from "@stickman3d/rig/core";
 
 type Face = CharacterData["face"];
 

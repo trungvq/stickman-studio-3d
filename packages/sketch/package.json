@@ -1,10 +1,9 @@
 {
   "name": "@stickman3d/sketch",
   "version": "1.4.0",
-  "description": "Hình học, tư thế và <Character> SVG cho người que",
+  "description": "Người que vẽ SVG bằng React: <Character>, <Prop>, <Animal> trên lõi của @stickman3d/rig",
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
   "files": [
     "dist"
   ],
@@ -27,7 +26,7 @@
     "react": "^19.0.0"
   },
   "dependencies": {
-    "zod": "^4.1.13"
+    "@stickman3d/rig": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^19.2.7",

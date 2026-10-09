@@ -1,9 +1,9 @@
-import { cameraAt, parseAction, parseScene, resolveScene, sceneAt } from '@stickman3d/sketch';
+import { cameraAt, parseAction, parseScene, resolveScene, sceneAt } from '@stickman3d/rig';
 import { act, addItem, Batch, box, stickman } from '@stickman3d/rig';
 import { actDemos } from './demo-acts.js';
 import { mouths, styles } from './demo-styles.js';
 
-// Cảnh diễn hành động (`?demo=`): scene JSON dựng tại chỗ, @stickman3d/sketch lấy mẫu từng khung bằng `sceneAt`,
+// Cảnh diễn hành động (`?demo=`): scene JSON dựng tại chỗ, @stickman3d/rig lấy mẫu từng khung bằng `sceneAt`,
 // người 3D diễn theo bằng `act`. Hành động là bản chép từ bộ chung của @stickman3d/cli (`actions/`).
 
 export const BOY = {

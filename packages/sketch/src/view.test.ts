@@ -2,34 +2,41 @@ import { describe, expect, it } from "vitest";
 
 import { anchorAt, bodyArtView, figureAnchors, frameLocal } from "./anchor";
 import {
+  castCharacter,
+  CharacterSchema,
+  clampViews,
+  computeFigure,
+  defaultCharacter,
   FRONT,
+  hairstyleArt,
+  HAIRSTYLES,
+  HEAD_SHAPES,
+  headHalfWidth,
+  isAway,
+  migrateCharacter,
+  parseScene,
+  type Pose,
+  POSES,
   QUARTER,
   REAR_EYE,
   REAR_MOUTH_INSET,
+  resolveScene,
+  restYaw,
+  SCENE_VERSION,
+  sceneAt,
+  type SceneData,
+  type SceneRuntime,
   SIDE_EYE,
   SIDE_HIP,
   SIDE_MOUTH_INSET,
   SIDE_SHOULDER,
   SIDE_TORSO,
-} from "./constants";
-import { computeFigure } from "./geometry";
-import { HEAD_SHAPES, headHalfWidth } from "./Head";
+  type View,
+  viewArt,
+  VIEWS,
+  type Views,
+} from "@stickman3d/rig/core";
 import { PARTS } from "./Parts";
-import { HAIRSTYLES } from "./hairstyles";
-import { restYaw } from "./torso";
-import { hairstyleArt, viewArt } from "./views";
-import { POSES } from "./poses";
-import { CharacterSchema, defaultCharacter, migrateCharacter } from "./schema";
-import {
-  SCENE_VERSION,
-  castCharacter,
-  parseScene,
-  resolveScene,
-  sceneAt,
-  type SceneData,
-  type SceneRuntime,
-} from "./scene";
-import { VIEWS, clampViews, isAway, type Pose, type View, type Views } from "./types";
 
 const C = defaultCharacter();
 const poses = Object.entries(POSES) as [string, Pose][];

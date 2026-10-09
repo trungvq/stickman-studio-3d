@@ -217,7 +217,13 @@ function baselineRef(ref) {
   git("worktree", "add", "--detach", dir, sha);
   const run = (cmd, a) => execFileSync(cmd, a, { cwd: dir, stdio: "inherit" });
   run("pnpm", ["install", "--frozen-lockfile"]);
-  for (const p of ["@stickman3d/sketch", "@stickman3d/fx", "@stickman3d/render", "@stickman3d/cli"])
+  for (const p of [
+    "@stickman3d/rig",
+    "@stickman3d/sketch",
+    "@stickman3d/fx",
+    "@stickman3d/render",
+    "@stickman3d/cli",
+  ])
     run("pnpm", ["--filter", p, "build"]);
   writeFileSync(stamp, `${sha}\n`);
   return { lib, label };
@@ -267,7 +273,7 @@ async function main() {
   const tag = flag("base", "v0.51.0");
   const out = resolve(STUDIO, flag("out", "tmp/so-svg"));
   if (!has("no-build")) {
-    for (const p of ["@stickman3d/sketch", "@stickman3d/fx"])
+    for (const p of ["@stickman3d/rig", "@stickman3d/sketch", "@stickman3d/fx"])
       execFileSync("pnpm", ["--filter", p, "build"], { cwd: STUDIO, stdio: "ignore" });
   }
   const base = join(out, "goc");

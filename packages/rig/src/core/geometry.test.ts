@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import sitRearJson from "../../../apps/studio/public/actions/sit-rear.json";
+import sitRearJson from "../../../../apps/studio/public/actions/sit-rear.json";
 import {
   ACTION_VERSION,
   actionDelta,
@@ -14,13 +14,13 @@ import {
   stretchOver,
   stretchOwns,
   type ActionData,
-} from "./action";
-import { blendDuration, blendPose } from "./blend";
-import { D, NEUTRAL_STRETCH, RIG } from "./constants";
-import { computeFigure, feet, limbCurves, limbPath, pathOf, tip } from "./geometry";
-import { POSES } from "./poses";
-import { defaultCharacter } from "./schema";
-import { stretchJson, stretchSegs, type Pose, type Pt, type Stretch } from "./types";
+} from "./index";
+import { blendDuration, blendPose } from "./index";
+import { D, NEUTRAL_STRETCH, RIG } from "./index";
+import { computeFigure, feet, limbCurves, limbPath, pathOf, tip } from "./index";
+import { POSES } from "./index";
+import { defaultCharacter } from "./index";
+import { stretchJson, stretchSegs, type Pose, type Pt, type Stretch } from "./index";
 
 const C = defaultCharacter();
 const KS = [0.25, 0.5, 1];

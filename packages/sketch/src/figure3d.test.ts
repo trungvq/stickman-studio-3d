@@ -1,14 +1,27 @@
 import { describe, expect, it } from "vitest";
 
 import { figureAnchors } from "./anchor";
-import { D, QUARTER, SCENE_CANVAS } from "./constants";
-import { FRONT_MIN, HEAD_LOOK, dirOf, facing, figure3d, limbHalf, type World } from "./figure3d";
-import { lengths } from "./geometry";
-import { orbit, project, type Lens, type V3 } from "./lens";
-import { POSES } from "./poses";
-import { defaultCharacter } from "./schema";
-import { torsoPaths } from "./torso";
-import type { Pose } from "./types";
+import {
+  D,
+  defaultCharacter,
+  dirOf,
+  facing,
+  figure3d,
+  FRONT_MIN,
+  HEAD_LOOK,
+  lengths,
+  type Lens,
+  limbHalf,
+  orbit,
+  type Pose,
+  POSES,
+  project,
+  QUARTER,
+  SCENE_CANVAS,
+  torsoPaths,
+  type V3,
+  type World,
+} from "@stickman3d/rig/core";
 
 const c = defaultCharacter();
 const lens = orbit({ target: [0, -120, 0], dist: 750, yaw: 45 * D, pitch: 16 * D, f: 800 });

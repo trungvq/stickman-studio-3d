@@ -1,23 +1,17 @@
 import * as THREE from 'three';
+import { DEFAULT_FACE } from './core/constants';
+import type { BrowKind, EyeKind, FaceState, MouthKind } from './core/types';
 
-// Nét mặt theo @stickman3d/sketch (packages/rig/src/Mouth.tsx, Eyes.tsx, Brow.tsx, Wrinkle.tsx, 2b05c7a): khẩu hình, kiểu mắt, kiểu
-// mày và số đo giữ nguyên, vẽ bằng path SVG lên canvas rồi dán lên mặt trước của sọ theo phép chiếu thẳng — điểm
-// lệch `x` px khỏi giữa mặt nằm ở kinh độ `asin(x / nửa rộng đầu)`, như nét mặt của đầu tóc dựng khối bên rig.
-// Sửa bên rig thì chép lại.
+// Nét mặt theo `Mouth.tsx`, `Eyes.tsx`, `Brow.tsx`, `Wrinkle.tsx` của @stickman3d/sketch: khẩu hình, kiểu mắt, kiểu mày
+// và số đo giữ nguyên, vẽ bằng path SVG lên canvas rồi dán lên mặt trước của sọ theo phép chiếu thẳng — điểm lệch
+// `x` px khỏi giữa mặt nằm ở kinh độ `asin(x / nửa rộng đầu)`, như nét mặt của đầu tóc dựng khối bên sketch. Sửa
+// hình bên sketch thì chép lại.
 
-export type MouthKind =
-  | 'closed' | 'parted' | 'talkTeeth' | 'talkA' | 'talkB' | 'talkO' | 'talkSadA' | 'talkSadB' | 'talkAngryA'
-  | 'talkAngryB' | 'smile' | 'frown' | 'pain' | 'o' | 'wide' | 'grit' | 'grin' | 'wry' | 'wryOpen';
-export type BrowKind = 'neutral' | 'flat' | 'lifted' | 'furrowed' | 'angry' | 'sad' | 'raised' | 'worried' | 'skeptical';
-export type EyeKind = 'open' | 'shut' | 'wide' | 'squint' | 'happy' | 'squeezed' | 'droopy' | 'wink';
-/** Nét mặt một khung: `FaceState` của @stickman3d/sketch */
-export interface FaceState { mouth: MouthKind; brow: BrowKind; eyes: EyeKind }
 /** `face.wrinkle` của JSON nhân vật */
 export interface Wrinkle { kind: 'none' | 'light' | 'deep'; color: string; width: number; dy: number }
 /** `face` của JSON nhân vật, px của đầu cao 130 */
 export interface FaceShape { offsetY: number; eyeGap: number; mouthGap: number; wrinkle?: Wrinkle }
 
-export const DEFAULT_FACE: FaceState = { mouth: 'closed', brow: 'neutral', eyes: 'open' };
 const SHAPE: FaceShape = { offsetY: 0, eyeGap: 26, mouthGap: 34 };
 
 const HEAD_R = 65;

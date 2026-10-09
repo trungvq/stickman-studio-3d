@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { parseAction, type ActionData } from "./action";
+import {
+  type ActionData,
+  defaultCharacter,
+  feet,
+  legShare,
+  parseAction,
+  parseScene,
+  type Pose,
+  POSES,
+  resolveScene,
+} from "@stickman3d/rig/core";
 import { hipHoldShift, placeAnchor } from "./anchor";
-import { feet } from "./geometry";
-import { POSES } from "./poses";
-import { defaultCharacter } from "./schema";
-import { legShare, parseScene, resolveScene } from "./scene";
-import type { Pose } from "./types";
 
 const action = (json: unknown): ActionData => {
   const r = parseAction(json);

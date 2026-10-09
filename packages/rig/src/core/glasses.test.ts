@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { GLASSES_PRESETS, glassesPaths, glassesPresetOf } from "./glasses";
-import { onSkull, turnPoint } from "./sphere";
+import { GLASSES_PRESETS, glassesPaths, glassesPresetOf } from "./index";
+import { onSkull, turnPoint } from "./index";
 
 const R = 65;
 const EYE: [number, number] = [11.5, 0];

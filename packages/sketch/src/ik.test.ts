@@ -4,33 +4,41 @@ import armsJson from "../../../apps/studio/public/actions/arms-on-table-3d.json"
 import typeJson from "../../../apps/studio/public/actions/type-3d.json";
 
 import {
-  actionMask,
-  actionPose,
-  composePose,
-  parseAction,
   ACTION_VERSION,
   type ActionData,
-} from "./action";
-import { anchorAt, figureAnchors } from "./anchor";
-import { blendPose } from "./blend";
-import { D } from "./constants";
-import {
+  actionMask,
+  actionPose,
+  blendPose,
   body3,
+  composePose,
+  computeFigure,
+  D,
+  defaultCharacter,
+  dot3,
   facing,
   figure3d,
   handsOn,
+  lengths,
   limbHalf,
+  orbit,
+  parseAction,
+  parseScene,
+  type Pose,
+  POSES,
+  project,
+  REACH_ELBOW,
+  reachAngles,
   reachToWorld,
-  worldToReach,
+  resolveScene,
+  sceneAt,
+  type SceneRuntime,
+  solveTwoBone,
+  sub3,
+  type V3,
   type World,
-} from "./figure3d";
-import { computeFigure, lengths } from "./geometry";
-import { reachAngles, REACH_ELBOW, solveTwoBone } from "./ik";
-import { dot3, orbit, project, sub3, type V3 } from "./lens";
-import { POSES } from "./poses";
-import { defaultCharacter } from "./schema";
-import { parseScene, resolveScene, sceneAt, type SceneRuntime } from "./scene";
-import type { Pose } from "./types";
+  worldToReach,
+} from "@stickman3d/rig/core";
+import { anchorAt, figureAnchors } from "./anchor";
 
 const c = defaultCharacter();
 const len = lengths(c.rig.height);

@@ -27,7 +27,7 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },
   {
-    files: ["packages/rig/src/**/*.ts"],
+    files: ["packages/rig/src/*.ts"],
     rules: { "@typescript-eslint/no-unused-expressions": "off" },
   },
   prettier,

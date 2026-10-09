@@ -1,3 +1,4 @@
+export * from './core';
 export {
   G, hullMaterial, MAX_LAMP_SHADOWS, MAX_LAMPS, npr, PALETTES, SKY_FRAG, SKY_VERT, skyDome, surface, unshare,
   type CeilingLight, type Lamp, type LightRig, type NprOptions, type PaletteName, type SurfaceOptions, type WindowLight,
@@ -16,16 +17,16 @@ export { freeze, seatCrowd, type Seat } from './crowd';
 export { room, type DoorSpec, type Face, type FloorPattern, type PanelSpec, type Room, type RoomDoor, type RoomOptions, type RoomTones, type RoomWindow, type WallSide, type WindowSpec } from './room';
 export { BODY_PARTS, bodyCapsules, collide, colliders, type BodyPart, type Collider, type CollideOptions, type Contact } from './collide';
 export { act, type ActPose, type ActReach, type Acting, type ActWorld } from './act';
-export { DEFAULT_FACE, type BrowKind, type EyeKind, type FaceRig, type FaceShape, type FaceState, type MouthKind, type Wrinkle } from './face';
-export { GLASSES_DEFAULT, glassesLines, glassesMesh, type Glasses } from './glasses';
+export { type FaceRig, type FaceShape, type Wrinkle } from './face';
+export { GLASSES_DEFAULT, glassesLines, glassesMesh } from './glasses';
 export { sculptSkirt, sculptTorso } from './garment';
-export { GARMENT_STYLES, torsoMesh, type Garment, type Rig, type Skirt, type TorsoMesh } from './torso';
-export { SCULPT_STYLES, sculptMesh, type Sculpt, type SculptMesh } from './sculpt';
+export { torsoMesh, type Rig, type TorsoMesh } from './torso';
+export { sculptMesh, type SculptMesh } from './sculpt';
 export {
-  addItem, addLathe, addPart, bar, Batch, box, place3, slab, toThree, U,
-  type Item, type LatheSpec, type Mark, type Part, type Place3, type Tone, type Vec3,
+  addItem, addLathe, addPart, bar, Batch, box, slab, toThree, U,
+  type Item, type LatheSpec, type Mark, type Part, type Tone, type Vec3,
 } from './khoi';
-export { aimCamera, HOME, lensCamera, STAGE, viewRect, type Crop, type Lens, type StageFrame } from './lens';
+export { aimCamera, HOME, lensCamera, STAGE, viewRect, type Crop, type StageFrame } from './lens';
 export { createStage, type FrameView, type Stage, type StageOptions } from './stage';
 export { landmark, LANDMARKS, screenOf, type Landmark, type ScreenOptions, type ScreenPoint, type ScreenView } from './screen';
 export {

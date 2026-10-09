@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { toThree, type Vec3 } from './khoi';
+import type { Lens as SceneLens } from './core/lens';
+import { toThree } from './khoi';
 
 const deg = Math.PI / 180;
 
@@ -7,7 +8,8 @@ const deg = Math.PI / 180;
  * Ống kính của scene rig (`scene.lens`): mắt ở toạ độ thế giới rig, `yaw`/`pitch` độ, tiêu cự `f` px trên khung sân khấu,
  * `cx`/`cy` điểm khung của trục nhìn (bỏ trống là giữa khung).
  */
-export interface Lens { eye: Vec3; yaw: number; pitch: number; f: number; cx?: number; cy?: number }
+/** `Lens` của lõi, tâm ảnh bỏ trống được */
+export type Lens = Omit<SceneLens, 'cx' | 'cy'> & Partial<Pick<SceneLens, 'cx' | 'cy'>>;
 /** Khung sân khấu (`rt.frame` của rig, `FRAMES.wide` là 1280×720): đơn vị toạ độ scene, không phải pixel. */
 export interface StageFrame { w: number; h: number }
 /**

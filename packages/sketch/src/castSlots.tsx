@@ -1,8 +1,13 @@
 import type { ReactNode } from "react";
 import { Animal, type AnimalProps } from "./Animal";
 import type { Slots } from "./Character";
-import { animalAt, type AnimalMember, type SceneRuntime, type ScenePose } from "./scene";
-import type { PieceUrls } from "./schema";
+import {
+  animalAt,
+  type AnimalMember,
+  type PieceUrls,
+  type ScenePose,
+  type SceneRuntime,
+} from "@stickman3d/rig/core";
 
 /**
  * Dựng khe vẽ của `<Character>` từ một `sceneAt`: con vật đang cưỡi vào `mount` và

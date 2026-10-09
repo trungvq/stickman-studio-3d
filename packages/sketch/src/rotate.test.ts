@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import { anchorAt } from "./anchor";
-import { defaultAnimal } from "./animals";
-import { defaultProp, type PropData } from "./props";
-import { migrateScene, parseScene, resolveScene, sceneAt, type SceneRuntime } from "./scene";
+import {
+  defaultAnimal,
+  defaultProp,
+  migrateScene,
+  parseScene,
+  type PropData,
+  resolveScene,
+  sceneAt,
+  type SceneRuntime,
+} from "@stickman3d/rig/core";
 
 const GROUND = 260;
 const PROPS: Record<string, PropData> = { xe: { ...defaultProp(), seat: { x: 0, y: -120 } } };

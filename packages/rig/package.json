@@ -1,7 +1,7 @@
 {
   "name": "@stickman3d/rig",
   "version": "0.1.0",
-  "description": "Người que 3D, đồ khối và pipeline vẽ nét mực trên three.js",
+  "description": "Người que 3D trên three.js và lõi rig: JSON nhân vật, hành động, cảnh, sceneAt",
   "license": "MIT",
   "type": "module",
   "files": [
@@ -13,13 +13,18 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "default": "./dist/core/index.js"
     }
   },
   "scripts": {
     "dev": "tsup --watch",
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "prepack": "tsup"
+    "prepack": "tsup",
+    "test": "vitest run"
   },
   "peerDependencies": {
     "three": ">=0.186.0"
@@ -28,9 +33,18 @@
     "@types/three": "^0.186.0",
     "three": "0.186.0",
     "tsup": "^8.5.1",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.0"
   },
   "publishConfig": {
     "registry": "https://gitlab.com/api/v4/projects/87383859/packages/npm/"
+  },
+  "dependencies": {
+    "zod": "^4.1.13"
+  },
+  "peerDependenciesMeta": {
+    "three": {
+      "optional": true
+    }
   }
 }

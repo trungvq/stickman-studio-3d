@@ -1,13 +1,17 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildSockets, dress, headFit, newGear, type EquipState, type Gear, type ItemFactories, type Sockets } from './attach';
-import { DEFAULT_FACE, faceRig, type FaceRig, type FaceShape, type FaceState } from './face';
+import { DEFAULT_FACE } from './core/constants';
+import type { FaceState } from './core/types';
+import { faceRig, type FaceRig, type FaceShape } from './face';
 import { sculptSkirt, sculptTorso } from './garment';
-import { glassesMesh, type Glasses } from './glasses';
+import { glassesMesh } from './glasses';
 import { INK, toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
-import { sculptMesh, type Sculpt } from './sculpt';
-import { shoulderRoot, type Garment, type Rig, type Skirt } from './torso';
+import { sculptMesh } from './sculpt';
+import type { Garment, Glasses, Sculpt, Skirt } from './core/schema';
+import { garmentShoulder } from './core/torso';
+import type { Rig } from './torso';
 
 // Tỉ lệ lấy từ RIG của @stickman3d/sketch, chia 100: người cao ~4,3 đơn vị, đầu to bằng gần một phần ba.
 export const R = { torso: 1.2, neck: 0.08, head: 0.64, upperArm: 0.62, foreArm: 0.58, thigh: 0.78, shin: 0.92, limb: 0.042 };
@@ -282,7 +286,7 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
   }
   if (hair) sculptHair(head, hair, hairColor);
   const legs = { [-1]: leg(hips, -1, rig.hipHalf / 100), [1]: leg(hips, 1, rig.hipHalf / 100) } as Record<Side, Leg>;
-  const sx = shoulderRoot(garment, rig) / 100, sy = (120 - rig.shoulderDrop) / 100;
+  const sx = garmentShoulder(garment, rig) / 100, sy = (120 - rig.shoulderDrop) / 100;
   const arms = { [-1]: arm(spine, -1, sx, sy), [1]: arm(spine, 1, sx, sy) } as Record<Side, Arm>;
   // tay chân rủ hơi choãi như hình 2D
   for (const s of SIDES) arms[s].shoulder.rotation.z = s * 0.2;

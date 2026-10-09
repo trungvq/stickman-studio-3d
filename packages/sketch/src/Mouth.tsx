@@ -1,5 +1,5 @@
 import { useId } from "react";
-import type { MouthKind } from "./types";
+import type { MouthKind } from "@stickman3d/rig/core";
 
 const INK = "#3a2620";
 const CAVITY = "#7a2b22";

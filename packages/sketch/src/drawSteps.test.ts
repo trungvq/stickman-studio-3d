@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { figureAnchors } from "./anchor";
 import { drawSteps, partGroups } from "./Character";
-import { POSES } from "./poses";
-import { defaultCharacter } from "./schema";
-import type { ArmLayers, BodyPart, View } from "./types";
+import {
+  type ArmLayers,
+  type BodyPart,
+  defaultCharacter,
+  POSES,
+  type View,
+} from "@stickman3d/rig/core";
 
 type Item = { kind: "solid"; n: number } | { kind: "part"; id: string; part: BodyPart };
 const P = (id: string, part: BodyPart): Item => ({ kind: "part", id, part });

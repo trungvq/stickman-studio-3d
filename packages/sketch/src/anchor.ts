@@ -1,70 +1,82 @@
 import {
+  type AnimalAnchorName,
+  animalAnchorOf,
+  animalAt,
+  beardPaths,
+  type BeardPaths,
+  body3,
   BROW_ABOVE,
+  castCharacter,
+  type CharacterData,
+  clampViews,
+  computeAnimalFigure,
+  computeFigure,
   D,
-  FACE_GAP_MIN,
+  defaultCharacter,
+  type Equip,
+  equipCharacter,
   FACE_EYE_MIN,
+  FACE_GAP_MIN,
   FACE_PITCH,
   FACE_REAL_FROM,
   FACE_REAL_SPAN,
   FACE_YAW,
-  QUARTER,
-  HAIR_BACK_H,
-  NECK_BOX,
-  REAR_EYE,
-  REAR_MOUTH_INSET,
-  RIG,
-  SIDE_EYE,
-  SIDE_EYE_OVAL,
-  SIDE_CHIN_INSET,
-  SIDE_MOUTH_INSET,
-  SIDE_TORSO,
-} from "./constants";
-import { computeFigure, type Figure } from "./geometry";
-import { body3, figure3d, figureOf3, flatPose, type Figure3, type World } from "./figure3d";
-import { PARTS } from "./Parts";
-import { animalAt, castCharacter, sceneAt, type SceneRuntime } from "./scene";
-import type { AnimalAnchorName } from "./animals";
-import { animalAnchorOf, computeAnimalFigure } from "./animalGeometry";
-import { POSES } from "./poses";
-import { PROP_BODY } from "./props";
-import {
-  PIECE_KEYS,
-  defaultCharacter,
-  equipCharacter,
-  piecePart,
-  wornPiece,
-  type CharacterData,
-  type Equip,
-  type PieceKey,
-  type ViewTune,
-} from "./schema";
-import {
-  clampViews,
-  isFrontal,
-  isProfile,
-  type MouthKind,
-  type Pose,
-  type Pt,
-  type View,
-  type Views,
-} from "./types";
-import { headHalfWidth } from "./Head";
-import { EYE_R } from "./Eyes";
-import { VIEW_FRAME, hairstyleArt, isViewSocket, viewArt } from "./views";
-import {
   facePoint,
   faceYaw,
+  type Figure,
+  type Figure3,
+  figure3d,
+  figureOf3,
+  flatPose,
+  HAIR_BACK_H,
+  hairstyleArt,
+  headHalfWidth,
   headTurn,
+  type HeadTurn,
+  isFrontal,
+  isProfile,
+  isViewSocket,
   latOf,
   lonOf,
+  type MouthKind,
+  NECK_BOX,
   nodImage,
   onSkull,
+  PIECE_KEYS,
+  type PieceKey,
+  piecePart,
+  type Pose,
+  POSES,
+  PROP_BODY,
+  type Pt,
+  QUARTER,
+  REAR_EYE,
+  REAR_MOUTH_INSET,
+  restYaw,
+  RIG,
+  type Root,
+  sceneAt,
+  type SceneRuntime,
+  SIDE_CHIN_INSET,
+  SIDE_EYE,
+  SIDE_EYE_OVAL,
+  SIDE_MOUTH_INSET,
+  SIDE_TORSO,
+  skirtPaths,
+  type SkirtPaths,
+  torsoPaths,
+  torsoYaw,
   turnPoint,
-  type HeadTurn,
-} from "./sphere";
-import { restYaw, torsoPaths, torsoYaw } from "./torso";
-import { beardPaths, type BeardPaths } from "./beard";
-import { skirtPaths, type SkirtPaths } from "./skirt";
+  type View,
+  VIEW_FRAME,
+  viewArt,
+  type Views,
+  type ViewTune,
+  type World,
+  wornPiece,
+} from "@stickman3d/rig/core";
+import { PARTS } from "./Parts";
+import { EYE_R } from "./Eyes";
 import { mouthExtent } from "./Mouth";
 
 /** Một nhóm treo: `translate(x, y) rotate(deg)`, `deg` là **độ SVG** (ngược dấu góc rig). */
@@ -802,9 +814,6 @@ export function placeAnchor(
     spot,
   );
 }
-
-/** Gốc treo người: `feet` là bàn chân thấp hơn chạm `groundY`, `hip` là hông đặt ngay tại `groundY` — người ngồi trên lưng thú. */
-export type Root = "feet" | "hip";
 
 /** Chỗ đứng mà `<Character>` nhận; `sceneAt` trả sẵn cả bốn trường. */
 export type Spot = {

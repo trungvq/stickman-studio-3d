@@ -1,7 +1,5 @@
-import { mix } from "./geometry";
+import { type CharacterData, mix, type MoustacheKind, type MouthKind } from "@stickman3d/rig/core";
 import { mouthExtent } from "./Mouth";
-import type { CharacterData } from "./schema";
-import type { MoustacheKind, MouthKind } from "./types";
 
 type Face = CharacterData["face"];
 

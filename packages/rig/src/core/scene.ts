@@ -30,7 +30,7 @@ import {
   type ActionData,
   type Channel,
 } from "./action";
-import type { Root } from "./anchor";
+import type { Root } from "./types";
 import {
   ANIMAL_ANCHOR_NAMES,
   ANIMAL_CHANNELS,

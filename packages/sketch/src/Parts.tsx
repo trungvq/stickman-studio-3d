@@ -1,60 +1,33 @@
 import type { ReactNode } from "react";
-import { GARMENTS, GARMENT_BOX, type GarmentShape } from "./garments";
-import { HAIRSTYLES } from "./hairstyles";
-import { HEADWEAR } from "./headwear";
-import { ACCESSORIES } from "./accessories";
+import {
+  ACCESSORIES,
+  D,
+  DEFAULT_VIEW,
+  definePartsBuiltin,
+  GARMENT_BOX,
+  GARMENTS,
+  type GarmentShape,
+  HAIRSTYLES,
+  HEADWEAR,
+  isProfile,
+  isViewSocket,
+  mix,
+  type PartDef as CorePartDef,
+  PARTS as CORE_PARTS,
+  SIDE_EYE_OVAL,
+  SIDE_GLASSES_ARM,
+  TORSO_DEPTH,
+  type TracedDef,
+  type View,
+  VIEW_FRAME,
+  viewArt,
+  type ViewArt,
+} from "@stickman3d/rig/core";
 import { HANDHELD } from "./handheld";
-import type { TracedDef } from "./traced";
 import { PROP_ART } from "./prop-art";
 import { TREES } from "./trees";
-import { D, SIDE_EYE_OVAL, SIDE_GLASSES_ARM, TORSO_DEPTH } from "./constants";
-import { mix } from "./geometry";
-import { PIECE_KEYS, type PieceCatalog, type PieceConfig, type PieceKey } from "./schema";
-import { DEFAULT_VIEW, isProfile, type View } from "./types";
-import { VIEW_FRAME, isViewSocket, viewArt, type ViewArt } from "./views";
 
-/** Chỗ cắm được bộ phận: socket nhân vật, hoặc thân đạo cụ (`prop`) */
-export type PartSocket = PieceKey | "prop";
-
-/** Hộp mà bộ phận vẽ vào — đúng hộp mảnh ảnh sẽ chiếm, gốc ở góc trên trái */
-export interface PartBox {
-  w: number;
-  h: number;
-  color: string;
-  accent: string;
-  line: string;
-  stroke: number;
-  /** Góc quay của khối thân, độ (`torsoYaw`): chỉ mảnh treo trên thân nhận */
-  yaw?: number;
-}
-
-export interface PartDef {
-  label: string;
-  sockets: readonly PartSocket[];
-  /** Tỉ lệ khung của hộp; thay cho `aspect` đo từ ảnh */
-  aspect: number;
-  /** Số căn gợi ý lúc chọn; studio ghi vào JSON rồi người dùng chỉnh tiếp */
-  preset?: {
-    dx?: number;
-    scale?: number;
-    dy?: number;
-    widthScale?: number;
-    rotate?: number;
-    clip?: boolean;
-    clipGrow?: number;
-    hideLegs?: boolean;
-    layer?: "front" | "under";
-  };
-  draw: (b: PartBox) => ReactNode;
-  /** Hình ở góc `side` vẽ trong chính hộp chính diện, mặt nhìn về `+x` */
-  drawSide?: (b: PartBox) => ReactNode;
-  /** Chỉ hình bao ngoài, bỏ chi tiết: thân áo và mái tóc nhìn từ sau khi không có hình `back` riêng */
-  outline?: (b: PartBox) => ReactNode;
-  /** Thân đạo cụ: lớp vẽ **sau** người ngồi (ruột xe, vách xa); `draw` là vách gần, có lỗ cho người lộ ra */
-  drawBehind?: (b: PartBox) => ReactNode;
-  /** Thân đạo cụ: hông người ngồi, tỉ lệ hộp (`0..1`), `propSeat` đổi ra hệ đạo cụ */
-  seat?: { x: number; y: number };
-}
+export type PartDef = CorePartDef<ReactNode>;
 
 /** Cạp bóp theo nửa rộng khối thân ở góc `yaw` — nghiêng thì thân chỉ sâu `TORSO_DEPTH` lần bề ngang */
 const flaredSkirt: PartDef["draw"] = ({ w, h, color, line, stroke, yaw = 0 }) => {
@@ -243,7 +216,7 @@ const hairstyleParts = (): Record<string, PartDef> =>
  * Bộ phận vẽ bằng code, cắm vào socket qua `src: "part"`. Viết thẳng `draw` thì chỉ
  * 3–5 hình cơ bản; dài hơn thì là áo vẽ lại, path để ở `garments.ts` — docs/02-trang-phuc.md
  */
-export const PARTS: Record<string, PartDef> = {
+const BUILTIN_PARTS: Record<string, PartDef> = {
   ...hairstyleParts(),
   ...tracedParts(HEADWEAR),
   ...tracedParts(ACCESSORIES),
@@ -643,38 +616,10 @@ export const PARTS: Record<string, PartDef> = {
   ...garmentParts(),
 };
 
-const BUILTIN = new Set(Object.keys(PARTS));
-let repoParts: string[] = [];
+definePartsBuiltin(BUILTIN_PARTS);
 
-/**
- * Đặt bộ phận vẽ code của repo video (`CODE_PARTS` ở entry `stickman.parts`), thay cả bộ đăng
- * ký lần trước. Trùng tên bộ phận của rig thì báo lỗi: hình `side` / `back` trong `views.ts`
- * tra theo tên, đè lên là góc nghiêng vẽ hình của bộ phận khác — docs/02-trang-phuc.md
- */
-export function registerParts(parts: Record<string, PartDef> | undefined) {
-  const entries = Object.entries(parts ?? {});
-  for (const [name, def] of entries) {
-    if (BUILTIN.has(name))
-      throw new Error(`bộ phận "${name}" đã có trong rig — đổi tên, hay xoá khỏi CODE_PARTS`);
-    const bad = partProblem(def);
-    if (bad) throw new Error(`bộ phận "${name}": ${bad}`);
-  }
-  for (const n of repoParts) delete PARTS[n];
-  Object.assign(PARTS, Object.fromEntries(entries));
-  repoParts = entries.map(([n]) => n);
-  return repoParts;
-}
-
-function partProblem(def: PartDef) {
-  if (!def || typeof def !== "object") return "không phải object";
-  if (typeof def.label !== "string") return "thiếu `label`";
-  if (!Array.isArray(def.sockets) || !def.sockets.length) return "thiếu `sockets`";
-  const odd = def.sockets.find((s) => s !== "prop" && !PIECE_KEYS.includes(s as PieceKey));
-  if (odd) return `socket lạ "${odd}"`;
-  if (!(def.aspect > 0)) return "`aspect` phải là số dương";
-  if (typeof def.draw !== "function") return "thiếu `draw`";
-  return null;
-}
+/** Bộ phận theo tên, hình vẽ là React */
+export const PARTS = CORE_PARTS as Record<string, PartDef>;
 
 /** Lớp sau của thân đạo cụ, cùng cách suy `accent` như `Part`. */
 export function PartBehind({
@@ -696,16 +641,6 @@ export function PartBehind({
 }) {
   return <>{draw({ w, h, color, accent: accent ?? mix(color, "#000000", 0.3), line, stroke })}</>;
 }
-
-/** Tên các bộ phận cắm được vào socket `k`. */
-export const partsFor = (k: PartSocket) =>
-  Object.keys(PARTS).filter((n) => PARTS[n].sockets.includes(k));
-
-/** Cấu hình lúc cắm bộ phận `name`: mục `parts` của danh mục đè lên `preset` của nó. */
-export const partConfig = (name: string, catalog?: PieceCatalog): PieceConfig => ({
-  ...PARTS[name]?.preset,
-  ...catalog?.parts[name],
-});
 
 /** Vẽ một bộ phận vào hộp; `accent` bỏ trống thì lấy màu chính tối đi. */
 export function Part({

@@ -1,7 +1,5 @@
 import { useId, type ReactNode } from "react";
-import { SHADOW } from "./constants";
-import { propBox, type PropData } from "./props";
-import { rgb01 } from "./geometry";
+import { propBox, type PropData, rgb01, SHADOW } from "@stickman3d/rig/core";
 import { Part, PartBehind, PARTS } from "./Parts";
 
 export interface PropProps {

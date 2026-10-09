@@ -1,22 +1,29 @@
 import { useId, type ReactNode } from "react";
 import {
   ANIMAL_PIECE_KEYS,
-  DEFAULT_ANIMAL_FACE,
-  animalLegs,
-  animalPieceFile,
-  partColor,
   type AnimalData,
   type AnimalFace,
+  type AnimalFigure,
   type AnimalLeg,
+  animalLegs,
+  animalPieceFile,
   type AnimalPieceKey,
   type AnimalPose,
-} from "./animals";
-import { rootDrop, type Root } from "./anchor";
-import { WING_ELBOW, computeAnimalFigure, isFar, type AnimalFigure } from "./animalGeometry";
-import { SHADOW } from "./constants";
-import { pathOf, rgb01 } from "./geometry";
-import type { PieceUrls } from "./schema";
-import type { EyeKind, MouthKind, Pt } from "./types";
+  computeAnimalFigure,
+  DEFAULT_ANIMAL_FACE,
+  type EyeKind,
+  isFar,
+  type MouthKind,
+  partColor,
+  pathOf,
+  type PieceUrls,
+  type Pt,
+  rgb01,
+  type Root,
+  SHADOW,
+  WING_ELBOW,
+} from "@stickman3d/rig/core";
+import { rootDrop } from "./anchor";
 
 export interface AnimalProps {
   animal: AnimalData;

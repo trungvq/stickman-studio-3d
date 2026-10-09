@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { SHADE_GAIN, SHADE_RIM } from "./constants";
-import { litTransform, shadeBands } from "./shade";
+import { SHADE_GAIN, SHADE_RIM } from "./index";
+import { litTransform, shadeBands } from "./index";
 
 /** Nửa rộng đầu ở cỡ chuẩn */
 const HW = 65;

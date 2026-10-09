@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { BEARD_PRESETS, beardPaths, beardPresetOf, type BeardFit } from "./beard";
+import {
+  type Beard,
+  BEARD_PRESETS,
+  BEARD_TIPS,
+  type BeardFit,
+  beardPaths,
+  beardPresetOf,
+  BeardSchema,
+  latOf,
+  parseCharacter,
+} from "@stickman3d/rig/core";
 import { MOUSTACHE_KINDS } from "./Moustache";
-import { BEARD_TIPS, BeardSchema, parseCharacter, type Beard } from "./schema";
-import { latOf } from "./sphere";
 
 const R = 65;
 const MOUTH = latOf(34, R);

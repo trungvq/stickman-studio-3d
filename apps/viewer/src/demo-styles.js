@@ -1,4 +1,4 @@
-import { GLASSES_PRESETS, parseCharacter, SCULPT_PRESETS } from '@stickman3d/sketch';
+import { GLASSES_PRESETS, parseCharacter, SCULPT_PRESETS } from '@stickman3d/rig';
 import * as THREE from 'three';
 import { fromCharacter, GARMENT_STYLES, npr } from '@stickman3d/rig';
 

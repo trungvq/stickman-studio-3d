@@ -1,4 +1,4 @@
-import { parseCharacter, parseScene, resolveScene, sceneAt } from '@stickman3d/sketch';
+import { parseCharacter, parseScene, resolveScene, sceneAt } from '@stickman3d/rig';
 import { act, addItem, Batch, box, characterOptions, room, seatCrowd, setLights, stickman } from '@stickman3d/rig';
 import { ACTIONS, BOY } from './demos.js';
 import { samples } from './demo-styles.js';

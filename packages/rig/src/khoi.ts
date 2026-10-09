@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { place3, type Place3 } from './core/lens';
 import { hullMaterial, npr, type NprOptions } from './npr';
 
 // Đồ khối của rig dựng thành mesh three. `box`, `bar`, `slab` theo @stickman3d/fx (packages/fx/src/solid.tsx),
-// `place3` theo @stickman3d/sketch (packages/rig/src/lens.ts). docs/10-lop-ve-code.md#đồ-khối của @stickman3d/sketch.
+// docs/10-lop-ve-code.md#đồ-khối.
 //
 // Thế giới rig: x phải, y xuống, z sâu vào cảnh, người cao ~430. Sang three đảo cả y lẫn z (một phép quay,
 // không phải soi gương, nên chiều quấn tam giác giữ nguyên) và chia 100.
@@ -13,7 +14,6 @@ import { hullMaterial, npr, type NprOptions } from './npr';
 // chia cỡ món trên khung, mặc định 3) — chỉ dùng cho bề ngang vân.
 
 export type Vec3 = [number, number, number];
-export interface Place3 { at: Vec3; yaw?: number; s?: number }
 /** Tông một khối: mặt ngửa `top`, mặt khác `lit`; `glow` là tự sáng. */
 export interface Tone { top: string; lit: string; side?: string; glow?: boolean }
 /** Vân trên mặt pháp tuyến `n`: mỗi đường `d` là một dải bề ngang `w` (× `k`). */
@@ -32,11 +32,6 @@ export interface Item { parts?: Part[]; lathes?: { spec: LatheSpec; at: Place3; 
 
 export const U = 0.01;
 export const toThree = ([x, y, z]: Vec3) => new THREE.Vector3(x * U, -y * U, -z * U);
-
-export function place3({ at, yaw = 0, s = 1 }: Place3, p: Vec3): Vec3 {
-  const c = Math.cos(yaw), n = Math.sin(yaw);
-  return [at[0] + s * (p[0] * c + p[2] * n), at[1] + s * p[1], at[2] + s * (-p[0] * n + p[2] * c)];
-}
 
 export const box = (x0: number, x1: number, y0: number, y1: number, z0: number, z1: number): Vec3[] => [
   [x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1],

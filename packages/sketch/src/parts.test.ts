@@ -1,9 +1,16 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import { figureAnchors } from "./anchor";
-import { PARTS, partConfig, partsFor, registerParts, type PartDef } from "./Parts";
-import { POSES } from "./poses";
-import { defaultCharacter, mergePieceCatalogs, parsePieceCatalog } from "./schema";
+import { PARTS, type PartDef } from "./Parts";
+import {
+  defaultCharacter,
+  mergePieceCatalogs,
+  parsePieceCatalog,
+  partConfig,
+  partsFor,
+  POSES,
+  registerParts,
+} from "@stickman3d/rig/core";
 
 const hat: PartDef = {
   label: "Mũ thử",

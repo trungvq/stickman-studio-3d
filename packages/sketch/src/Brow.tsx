@@ -1,5 +1,4 @@
-import { BROW_ABOVE } from "./constants";
-import type { BrowKind } from "./types";
+import { BROW_ABOVE, type BrowKind } from "@stickman3d/rig/core";
 
 const INK = "#22201d";
 

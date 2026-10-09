@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import type { PartBox, PartDef } from "./Parts";
+import type { PartDef } from "./Parts";
+import type { PartBox } from "@stickman3d/rig/core";
 
 function tree(
   label: string,

@@ -2,7 +2,11 @@ import * as THREE from 'three';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { hullMaterial, npr } from './npr';
-import { skirtCover, skirtFall, SKIRT_EASE, TORSO_DEPTH, torsoMesh, type Garment, type MarkFill, type Rig, type Skirt } from './torso';
+import { SKIRT_EASE, TORSO_DEPTH } from './core/constants';
+import type { Garment, Skirt } from './core/schema';
+import { skirtCover, skirtFall } from './core/skirt';
+import type { MarkFill } from './core/torso';
+import { torsoMesh, type Rig } from './torso';
 
 // Dựng thân áo và váy của rig thành mesh. Rig đo bằng px trong hệ nhóm thân (gốc ở hông, y xuống);
 // ở đây 100 px là 1 đơn vị, y lên.

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { ConvexHull } from 'three/addons/math/ConvexHull.js';
-import { place3, toThree, type Item, type Place3, type Vec3 } from './khoi';
+import { place3, type Place3 } from './core/lens';
+import { toThree, type Item, type Vec3 } from './khoi';
 import { R, type Figure, type Side } from './stickman';
 
 // Kiểm người xuyên đồ ở tư thế hiện tại: người là các viên nang (chi, thân, đầu), đồ là khối lồi (hộp, món khối)

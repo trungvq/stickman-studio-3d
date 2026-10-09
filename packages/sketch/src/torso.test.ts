@@ -1,12 +1,26 @@
 import { describe, expect, it } from "vitest";
 
-import { D, REAR_YAW, SIDE_HIP, SIDE_SHOULDER, TORSO_DEPTH } from "./constants";
+import {
+  type CharacterData,
+  CharacterSchema,
+  computeFigure,
+  D,
+  type Garment,
+  GARMENT_STYLE_NAMES,
+  garmentOf,
+  limbSpread,
+  POSES,
+  REAR_YAW,
+  restYaw,
+  shoulderRoot,
+  SIDE_HIP,
+  SIDE_SHOULDER,
+  TORSO_DEPTH,
+  torsoPaths,
+  torsoYaw,
+  type View,
+} from "@stickman3d/rig/core";
 import { figureAnchors } from "./anchor";
-import { computeFigure } from "./geometry";
-import { POSES } from "./poses";
-import { CharacterSchema, GARMENT_STYLE_NAMES, type CharacterData, type Garment } from "./schema";
-import { garmentOf, limbSpread, restYaw, shoulderRoot, torsoPaths, torsoYaw } from "./torso";
-import type { View } from "./types";
 
 const C = CharacterSchema.parse({});
 const dressed = (garment: Partial<Garment> = {}): CharacterData =>

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { D } from "./constants";
-import { SculptSchema, type Sculpt } from "./schema";
-import { SCULPT_PRESETS, chain, hairline, sculptPaths, sculptPresetOf, weld } from "./sculpt";
-import type { Vec3 } from "./sphere";
+import { D } from "./index";
+import { SculptSchema, type Sculpt } from "./index";
+import { SCULPT_PRESETS, chain, hairline, sculptPaths, sculptPresetOf, weld } from "./index";
+import type { Vec3 } from "./index";
 
 const R = 65;
 const points = (d: string) =>

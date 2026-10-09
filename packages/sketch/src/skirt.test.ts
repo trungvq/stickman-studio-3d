@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { SKIRT_REACH } from "./constants";
+import {
+  type CharacterData,
+  CharacterSchema,
+  POSES,
+  type Skirt,
+  SKIRT_REACH,
+  type View,
+} from "@stickman3d/rig/core";
 import { figureAnchors } from "./anchor";
-import { POSES } from "./poses";
-import { CharacterSchema, type CharacterData, type Skirt } from "./schema";
-import type { View } from "./types";
 
 const skirted = (skirt: Partial<Skirt> = {}): CharacterData =>
   CharacterSchema.parse({

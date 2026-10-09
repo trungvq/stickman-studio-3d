@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { RIG } from "./constants";
 import { StretchPieceSchema } from "./schema";
-import { PARTS } from "./Parts";
+import { PARTS } from "./parts";
 
 /** Bump khi đổi hình dạng JSON đạo cụ; `migrateProp` phải có nhánh tương ứng. */
 export const PROP_VERSION = 2;

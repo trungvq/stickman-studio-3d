@@ -1,13 +1,48 @@
 import { useContext, useId, type ReactNode } from "react";
 import {
+  type ArmLayer,
+  type ArmLayers,
   BACK_NAPE,
+  type BodyPart,
+  type BrowKind,
+  type CharacterData,
   DEFAULT_LAYERS,
+  DEFAULT_VIEW,
+  type Equip,
+  equipCharacter,
+  type EyeKind,
+  glassesPaths,
+  hairstyleArt,
+  headHalfWidth,
+  headPath,
+  hull,
+  isFrontal,
+  isProfile,
+  latOf,
+  limbPath,
+  litTransform,
+  lonOf,
+  type MouthKind,
+  PIECE_KEYS,
+  pieceFile,
+  type PieceKey,
+  piecePart,
+  type PieceUrls,
+  type Pose,
+  type Pt,
   REAR_FACE_SIZE,
   REAR_HAIRLINE,
   REAR_TEMPLE,
+  rgb01,
   RIG,
+  type Root,
+  sculptPaths,
   SHADOW,
-} from "./constants";
+  torsoPaths,
+  type View,
+  viewArt,
+  type World,
+} from "@stickman3d/rig/core";
 import {
   HEAD_KEYS,
   bodyArtView,
@@ -19,48 +54,20 @@ import {
   type Box,
   type FigureAnchors,
   type Frame,
-  type Root,
 } from "./anchor";
-import { limbPath, rgb01 } from "./geometry";
 import { Moustache } from "./Moustache";
 import { Wrinkle } from "./Wrinkle";
 import { Brow } from "./Brow";
 import { Eyes } from "./Eyes";
-import { Head, headHalfWidth, headPath } from "./Head";
-import { litTransform } from "./shade";
+import { Head } from "./Head";
 import { Mouth } from "./Mouth";
 import { RigQualityContext } from "./quality";
-import { SculptHair, sculptPaths } from "./sculpt";
-import { SculptGlasses, glassesPaths } from "./glasses";
+import { SculptHair } from "./sculpt";
+import { SculptGlasses } from "./glasses";
 import { SculptBeard } from "./beard";
-import { SculptTorso, torsoPaths } from "./torso";
-import type { World } from "./figure3d";
-import { SculptSkirt, hull } from "./skirt";
-import { latOf, lonOf } from "./sphere";
+import { SculptTorso } from "./torso";
+import { SculptSkirt } from "./skirt";
 import { Part, PARTS } from "./Parts";
-import {
-  PIECE_KEYS,
-  equipCharacter,
-  pieceFile,
-  piecePart,
-  type CharacterData,
-  type Equip,
-  type PieceKey,
-  type PieceUrls,
-} from "./schema";
-import type {
-  ArmLayer,
-  ArmLayers,
-  BodyPart,
-  BrowKind,
-  EyeKind,
-  MouthKind,
-  Pose,
-  Pt,
-  View,
-} from "./types";
-import { DEFAULT_VIEW, isFrontal, isProfile } from "./types";
-import { hairstyleArt, viewArt } from "./views";
 
 export interface CharacterProps {
   /** Hình dáng nền; `equip` quyết định socket nào lấy mảnh của vật nào */
