@@ -1,5 +1,13 @@
 import { FRAMES, resolveScene, type FrameName } from "@stickman3d/sketch";
-import { Audio, Loop, Sequence, useCurrentFrame, useVideoConfig } from "remotion";
+import { useMemo } from "react";
+import {
+  Audio,
+  Loop,
+  Sequence,
+  getRemotionEnvironment,
+  useCurrentFrame,
+  useVideoConfig,
+} from "remotion";
 import { useAudioDurations } from "./audio";
 import { ACTIONS, ANIMALS, AUDIO, PROPS, SCENES } from "./data";
 import type { CueData, EpisodeData, ShotData } from "./episode";
@@ -34,6 +42,19 @@ export const episodeVideo = (ep: EpisodeData, id: string) => {
     );
   return FRAMES[[...names][0] ?? "wide"].video;
 };
+
+/**
+ * Studio chỉ dựng vào cây những shot và cue cách đầu đọc không quá ngần này giây. Mỗi `<Sequence>`
+ * trên cây tốn một lượt render **mỗi khung** dù đang ngoài tầm (nó đọc frame qua context), và ở
+ * React dev của Studio mỗi lượt kèm `console.createTask`: tập 137 shot xem chỉ ~8 khung/giây.
+ * Đổi lại timeline Studio chỉ hiện các shot quanh đầu đọc; tua bằng thước thời gian vẫn tới mọi khung.
+ * Lúc render thì dựng đủ cả cây như cũ, để tiếng và hình không khác bản đã đăng.
+ */
+const NEAR = 3;
+
+/** Khoảng `[from, to)` (khung) có chạm cửa sổ quanh `frame` không; `to` không biết thì coi như kéo tới cuối */
+const near = (frame: number, pad: number, from: number, to?: number) =>
+  from - pad <= frame && (to === undefined || frame < to + pad);
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
@@ -80,6 +101,8 @@ const Cues = ({
   lang?: string;
 }) => {
   const durations = useAudioDurations(AUDIO);
+  const frame = useCurrentFrame();
+  const all = getRemotionEnvironment().isRendering;
   // `"@mốc"` là mốc của cảnh shot đang chiếu; cue ở tầng tập không có cảnh nào để tra
   const marks = shot?.scene ? SCENES[shot.scene]?.marks : undefined;
   return cues.map((c, i) => {
@@ -96,6 +119,8 @@ const Cues = ({
     const at = shot && marks ? cueStart(c, shot, marks) : c.at;
     if (typeof at !== "number")
       throw new Error(`cue ${c.file}: \`at\` là \`${at}\` mà không có cảnh nào để tra mốc`);
+    if (!all && !near(frame, NEAR * fps, at * fps, seconds ? (at + seconds) * fps : undefined))
+      return null;
     return (
       <Sequence
         key={`${c.file}-${i}`}
@@ -123,14 +148,21 @@ export const Episode = ({
   fps: number;
   /** Ngôn ngữ lồng tiếng — `--props='{"lang":"en"}'`; bỏ trống là tiếng gốc */
   lang?: string;
-}) => (
-  <>
-    {[...layoutShots(episode, fps, sceneSeconds)].reverse().map((l) => (
-      <Shot key={l.shot.id} laid={l} fps={fps} lang={lang} />
-    ))}
-    <Cues cues={episode.audio} fps={fps} lang={lang} />
-  </>
-);
+}) => {
+  const frame = useCurrentFrame();
+  const all = getRemotionEnvironment().isRendering;
+  const laid = useMemo(() => [...layoutShots(episode, fps, sceneSeconds)].reverse(), [episode, fps]);
+  return (
+    <>
+      {laid
+        .filter((l) => all || near(frame, NEAR * fps, l.mountFrom, l.from + l.frames))
+        .map((l) => (
+          <Shot key={l.shot.id} laid={l} fps={fps} lang={lang} />
+        ))}
+      <Cues cues={episode.audio} fps={fps} lang={lang} />
+    </>
+  );
+};
 
 const Shot = ({ laid, fps, lang }: { laid: LaidShot; fps: number; lang?: string }) => {
   const scene = laid.shot.scene ? SCENES[laid.shot.scene] : undefined;

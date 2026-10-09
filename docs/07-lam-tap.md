@@ -143,6 +143,13 @@ cộng giây rồi mới đổi là trôi frame.
 chạy sau lưng mà không đè lên hình đang chiếu; shot trước hết thì nó lộ ra, đang giữa
 đà. Xếp xuôi rồi mount sớm là shot sau che mất shot trước đúng `overlap` giây.
 
+**Studio chỉ dựng shot và cue quanh đầu đọc** (`NEAR` giây hai bên). `<Sequence>` ngoài
+tầm không vẽ con, nhưng vẫn render lại **mỗi khung** vì nó đọc frame qua context, và ở
+React dev của Studio mỗi lượt kèm `console.createTask`: tập 137 shot xem chỉ ~8 khung/giây
+dù cảnh đang chiếu vẽ một mình được 40. Đổi lại timeline Studio chỉ liệt kê shot gần đầu
+đọc; tua bằng thước thời gian vẫn tới mọi khung. Lúc render thì dựng đủ cả cây, để mốc
+tiếng không phụ thuộc chỗ tab render bắt đầu.
+
 **Slow-mo là hai đồng hồ, và chúng phải đọc chung một bảng.** `warpTable(slow)` dựng
 bảng một lần rồi cả hai chiều tra nó: `sceneTime` (giây màn hình → giây cảnh) cho lúc
 vẽ, `screenTime` (giây cảnh → giây màn hình) cho lúc đo độ dài shot. Bảng ấy nằm
