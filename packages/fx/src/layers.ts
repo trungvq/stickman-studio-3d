@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { type CameraShot, type Lens, SCENE_Z } from "@stickman3d/sketch";
+import type { CameraShot, Lens } from "@stickman3d/sketch";
 import type { FxAnchor } from "./anchor";
 import type { SolidItem } from "./solid";
 
@@ -70,18 +70,3 @@ export interface CodeLayer {
 /** Cảnh nào bật một lớp: `Set` hay mảng tên cảnh, cùng nghĩa */
 export const layerCovers = (layer: Pick<CodeLayer, "scenes">, name: string): boolean =>
   layer.scenes instanceof Set ? layer.scenes.has(name) : layer.scenes.includes(name);
-
-/**
- * Nấc `z` của các chỗ móc `back` / `front` mà cảnh `name` bật — đúng số `SceneWorld` xếp lên trục
- * chung. `sceneZProblems` của rig nhận để biết lớp code nào kẹp giữa hai lượt của `zParts`.
- */
-export const layerZs = (
-  layers: readonly Pick<CodeLayer, "scenes" | "z" | "back" | "front">[],
-  name: string,
-): number[] =>
-  layers
-    .filter((l) => layerCovers(l, name))
-    .flatMap((l) => [
-      ...(l.back ? [l.z?.back ?? SCENE_Z.fxBack] : []),
-      ...(l.front ? [l.z?.front ?? SCENE_Z.fxFront] : []),
-    ]);

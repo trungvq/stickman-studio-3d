@@ -16,7 +16,6 @@ import {
   resolveScene,
   sceneAt,
   sceneOrder,
-  sceneZProblems,
   type SceneData,
   type SceneRuntime,
 } from "./index";
@@ -365,57 +364,6 @@ describe("nhóm: chỗ khai sai", () => {
         animals: [{ id: "b", animal: "ngua", group: "g" }],
       }),
     ).toThrow("`a` đang giữ nó nên nó đi theo người ấy — bỏ `group`");
-  });
-});
-
-describe("sceneZProblems: tách người mà không kẹp gì", () => {
-  const warn = (json: unknown) => sceneZProblems(parsed(json));
-
-  it("kêu khi không mục nào cùng tầng nằm giữa hai băng", () => {
-    const out = warn({
-      cast: [{ id: "a", zParts: { head: 10 } }],
-      props: [{ id: "p", prop: "xe" }],
-    });
-    expect(out).toHaveLength(1);
-    expect(out[0]).toContain("`a`: `zParts` tách người ở z 0…10");
-  });
-
-  it("im khi có đạo cụ nằm hẳn giữa hai băng", () => {
-    expect(
-      warn({
-        cast: [{ id: "a", zParts: { head: 10 } }],
-        props: [{ id: "p", prop: "xe", z: 5 }],
-      }),
-    ).toEqual([]);
-  });
-
-  it("mục đúng bằng một đầu băng không tính là kẹp", () => {
-    expect(
-      warn({
-        cast: [{ id: "a", zParts: { head: 10 } }, { id: "b" }, { id: "c", z: 10 }],
-      }),
-    ).toHaveLength(1);
-  });
-
-  it("lớp vẽ code nằm giữa hai băng thì im — chỉ với người ngoài nhóm", () => {
-    const scene = { cast: [{ id: "a", zParts: { armNear: 20 } }] };
-    expect(sceneZProblems(parsed(scene), [10])).toEqual([]);
-    expect(sceneZProblems(parsed(scene), [-100, 20])).toHaveLength(1);
-    const grouped = {
-      groups: [{ id: "g" }],
-      cast: [{ id: "a", group: "g", zParts: { armNear: 20 } }],
-    };
-    expect(sceneZProblems(parsed(grouped), [10])).toHaveLength(1);
-  });
-
-  it("người trong nhóm chỉ kể thành viên cùng nhóm", () => {
-    const scene = (gr?: string) => ({
-      groups: [{ id: "g" }],
-      cast: [{ id: "a", group: "g", zParts: { head: 10 } }],
-      props: [{ id: "p", prop: "xe", z: 5, ...(gr ? { group: gr } : {}) }],
-    });
-    expect(warn(scene("g"))).toEqual([]);
-    expect(warn(scene())).toHaveLength(1);
   });
 });
 

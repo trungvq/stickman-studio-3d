@@ -109,7 +109,7 @@ Mảnh là **ảnh mực hai màu**: nét đen, ruột trắng, màu thật nằ
   \`src/lop.tsx\`, bộ phận code ở \`src/parts.tsx\`, context cho lớp vẽ cần dữ liệu app Remotion ở
   \`src/scene-wrap.tsx\` (ba file này của repo, \`upgrade\` không đụng), tool riêng ở file mới trong
   \`tools/\`. Sửa chung (lỗi, tuỳ chọn mới) thì làm ở repo studio.
-- Rig đổi độ dài chân thì \`upgrade\` và \`check\` nhắc: chạy \`stickman reseat --dry-run\` rồi
+- Rig đổi độ dài chân thì \`upgrade\` nhắc: chạy \`stickman reseat --dry-run\` rồi
   \`stickman reseat\` — nó dời \`y\` người ngồi 2D cho hông về chỗ cũ (\`pnpm exec stickman docs 05\`).
   Hành động ngồi ghế đặt tên \`sit\` hay \`sit-…\`: \`reseat\` nhận ra người ngồi bằng tên ấy.
 `;

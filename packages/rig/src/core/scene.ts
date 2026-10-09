@@ -106,7 +106,6 @@ import {
   type BodyPart,
   type FaceState,
   type Pose,
-  type Pt,
   type View,
 } from "./types";
 
@@ -156,7 +155,7 @@ const BgLayerSchema = z.object({
   /**
    * Nấc xếp lớp **giữa các lớp nền**; nhỏ là ở sau. Bỏ trống là `SCENE_Z.bg` cộng thứ tự
    * mảng. Nền chưa vào trục chung của `sceneOrder` nên số lớn hơn băng nền không đưa được
-   * lớp ấy ra trước người — `sceneZProblems` kêu. docs/03-scene.md#trục-z
+   * lớp ấy ra trước người. docs/03-scene.md#trục-z
    */
   z: z.number().optional(),
   /**
@@ -521,7 +520,7 @@ const AnimalCastSchema = z.object({
   /**
    * Nấc xếp lớp toàn cục; nhỏ là ở sau, có thì `layer` không còn nghĩa. Mặc định
    * `SCENE_Z.animalBack` / `animalFront`. Con vật có chủ vẽ ở `slots` của người ấy nên
-   * **bỏ qua** `z` — `sceneZProblems` kêu. docs/03-scene.md#trục-z
+   * **bỏ qua** `z`. docs/03-scene.md#trục-z
    */
   z: z.number().optional(),
   /**
@@ -2242,91 +2241,17 @@ export function sceneOrder(rt: SceneRuntime): SceneLayer[] {
   ]);
 }
 
-/**
- * Mốc `flip` không đổi hướng: trước mốc đầu là chưa lật, nên `[{ t: 2, v: false }]` là
- * nhìn phải suốt cảnh — thường là người viết tưởng mốc đầu là hướng mở màn. docs/03-scene.md#quay-hướng
- */
-export function sceneFlipProblems(scene: SceneData): string[] {
-  const bad: string[] = [];
-  for (const m of [...scene.cast, ...scene.animals]) {
-    if (!Array.isArray(m.flip)) continue;
-    let v = false;
-    for (const k of m.flip) {
-      if (k.v === v)
-        bad.push(
-          `\`${m.id}\`: mốc \`flip\` t: ${k.t} không đổi hướng — trước nó đã là \`${v}\` (trước mốc đầu là chưa lật)`,
-        );
-      v = k.v;
-    }
-  }
-  return bad;
-}
-
-/** Cửa sổ đo trượt chân (giây); chân trụ dịch quá nửa quãng thân đi trong cửa sổ là trượt */
+/** Cửa sổ đo trượt chân (giây); chân chịu lực dịch quá nửa quãng hông đi trong cửa sổ là trượt */
 const SLIDE_WINDOW = 0.4;
-/** Hai bàn chân dịch trong hệ người chưa tới ngần này (px một cửa sổ) thì không ai đang sải */
-const SLIDE_STRIDE_MIN = 20;
-/** Trượt dưới ngần này (px một cửa sổ) thì mắt không thấy, kể cả thân đứng yên */
+/** Trượt dưới ngần này (đơn vị rig một cửa sổ) thì mắt không thấy, kể cả thân đứng yên */
 const SLIDE_MIN = 8;
-/** Nướng dẫn vào trước cửa sổ (giây) cho tập chân trụ ổn định — nửa chu kỳ đi là đủ */
-const SLIDE_LEAD = 0.5;
 
 /**
- * Chân trụ trượt trên nền: `path` không khớp sải chân, hay người nhìn ngược chiều đi. Chân
- * trụ chọn bằng đúng luật của `bakeFeetTravel` — nướng lại bảng trên bàn chân **đã ra màn
- * hình**: cảnh khớp thì bảng đứng yên, bảng dịch bao nhiêu là chân trụ trượt bấy nhiêu. Dịch
- * cùng chiều và hơn cả thân là đi giật lùi (moonwalk). Trôi tự suy không bao giờ trượt — đây
- * là cái giá của `path`. docs/03-scene.md#đường-đi-soạn-tay
+ * Người 3D trượt trên sàn hay không tới mốc dừng của `path`; chỉ đo người có `world` ở cảnh có
+ * `lens`. docs/03-scene.md#check-cho-người-3d
  */
 export function sceneSlideProblems(rt: SceneRuntime): string[] {
-  const bad: string[] = [];
-  for (const m of rt.cast) {
-    if (m.world && rt.lens) {
-      bad.push(...worldSlideProblems(rt, m));
-      continue;
-    }
-    if (m.mount || m.sit) continue;
-    const h = rt.heights[m.id] ?? 1;
-    const rootX = (t: number) => sceneAt(rt, m.id, t, h).x;
-    for (let t0 = 0; t0 + SLIDE_WINDOW <= rt.duration; t0 += SLIDE_WINDOW) {
-      const t1 = t0 + SLIDE_WINDOW;
-      const lead = Math.min(SLIDE_LEAD, t0);
-      const from = t0 - lead;
-      if (m.flip.some((k) => k.t > from && k.t <= t1)) continue;
-      const dir = flipOf(m.flip, t0) ? -1 : 1;
-      // Quy về khung người nhìn `+x` vì luật "ngừng tiến" của `bakeFeetTravel` chỉ biết chiều
-      // ấy; x đã ra màn hình, y giữ trong hệ người để `standing` biết chân nào chạm đất
-      const screenFeet = (t: number): Pt[] => {
-        const s = sceneAt(rt, m.id, from + t, h);
-        return feet(s.pose, h).map((p) => [dir * s.x + s.scale * p[0], p[1]]);
-      };
-      const localX = (t: number) => {
-        const s = sceneAt(rt, m.id, t, h);
-        return feet(s.pose, h).map((p) => s.scale * p[0]);
-      };
-      let stride = 0;
-      let prev = localX(t0);
-      for (let q = 1; q <= 4; q++) {
-        const cur = localX(t0 + (SLIDE_WINDOW * q) / 4);
-        stride += cur.reduce((acc, x, i) => acc + Math.abs(x - prev[i]), 0);
-        prev = cur;
-      }
-      if (stride < SLIDE_STRIDE_MIN) continue;
-      const tb = bakeFeetTravel(screenFeet, lead + SLIDE_WINDOW);
-      const R = rootX(t1) - rootX(t0);
-      const F = -dir * (tb.xs[tb.xs.length - 1] - travelAt(tb, lead));
-      if (Math.abs(F) <= 0.5 * Math.abs(R) + SLIDE_MIN) continue;
-      const why =
-        Math.sign(F) === Math.sign(R) && Math.abs(F) > Math.abs(R)
-          ? "đi giật lùi (moonwalk), hướng nhìn ngược chiều đi"
-          : "tốc độ `path` không khớp sải chân (`speed` / `cycle`)";
-      bad.push(
-        `\`${m.id}\` giây ${t0.toFixed(2)}–${t1.toFixed(2)}: chân trụ trượt ${Math.round(F)} px trong khi thân đi ${Math.round(R)} px — ${why}`,
-      );
-      break;
-    }
-  }
-  return bad;
+  return rt.lens ? rt.cast.flatMap((m) => (m.world ? worldSlideProblems(rt, m) : [])) : [];
 }
 
 /** Mốc dừng trượt khỏi `at` quá ngần này (đơn vị rig) là người không tới được chỗ khai */
@@ -2335,7 +2260,7 @@ const ARRIVE_MAX = 20;
 const STALL_MIN = 0.25;
 
 /**
- * `sceneSlideProblems` cho người 3D, đo trên mặt sàn thế giới: chân chịu lực (luật của
+ * Trượt của một người 3D, đo trên mặt sàn thế giới: chân chịu lực (luật của
  * `bakeFeetTravel`) dịch trong cửa sổ `SLIDE_WINDOW` quá nửa quãng hông đi cộng `SLIDE_MIN` (đơn
  * vị rig, quy ra thế giới bằng `s`) là trượt. Đoạn có mốc ngồi là hông nội suy, không đo. Kèm hai
  * lỗi của `path`: mốc dừng (đứng yên sau nó, ngồi sau nó, hay mốc cuối) mà hông không tới, và clip
@@ -2508,63 +2433,6 @@ export function worldFacingAt(
   const pose = poseAt(m, time, walk && clockOf(walk));
   const at = worldAt(rt.lens, m.world, time, pose, height, dims.legHalf, walk);
   return { said: keyAt(keysOf(m.world), time).yaw, yaw: at.yaw, raw: at.raw };
-}
-
-/**
- * Chỗ khai `z` không đổi hình: `zParts` không kẹp thứ gì, và chỗ trục không với tới — con vật
- * có người cưỡi hay xách vẽ ở `slots` của người ấy (hình học của rig, không phải một nấc xếp
- * lớp), lớp nền chỉ sắp với các lớp nền khác, nên `z` ở đó bị bỏ qua lặng lẽ. `stickman check` và `validate` của MCP kêu.
- * `layerZ`: nấc `back` / `front` của các lớp vẽ code bật ở cảnh (`layerZs` của @stickman3d/fx) — chăn ở lớp code cũng kẹp được
- * người ngoài nhóm, JSON không thấy nó.
- */
-export function sceneZProblems(scene: SceneData, layerZ: readonly number[] = []): string[] {
-  const bg = scene.bg.flatMap((b, i) =>
-    b.z !== undefined && b.z >= SCENE_Z.fxBack
-      ? [
-          `nền ${i} (${b.file}): \`z\` ${b.z} ra khỏi băng nền — nền chưa vào trục chung nên nó chỉ sắp giữa các lớp nền, không ra trước người được`,
-        ]
-      : [],
-  );
-  const hosted = new Map<string, string>();
-  for (const m of scene.cast) {
-    if (m.mount) hosted.set(m.mount.on, `\`${m.id}\` đang cưỡi`);
-    for (const c of m.carry) hosted.set(c.animal, `\`${m.id}\` đang xách`);
-  }
-  // Tách người mà không thứ gì cùng tầng nằm giữa các lượt vẽ thì hình y như không tách
-  const split = scene.cast.flatMap((m) => {
-    if (!m.zParts) return [];
-    const zs = castBands(m).map((b) => b.z);
-    const [lo, hi] = [Math.min(...zs), Math.max(...zs)];
-    const between = [
-      ...scene.props.filter((p) => !p.follow && p.group === m.group).map(propZ),
-      ...scene.animals.filter((q) => q.group === m.group).map(animalZ),
-      ...scene.cast
-        .filter((q) => q.id !== m.id && q.group === m.group)
-        .flatMap((q) => castBands(q).map((b) => b.z)),
-      ...(m.group
-        ? []
-        : [
-            ...scene.groups.map((g) => g.z ?? SCENE_Z.cast),
-            ...scene.fx.flatMap((f) => (typeof f.z === "number" ? [f.z] : [])),
-            ...layerZ,
-          ]),
-    ].some((z) => z > lo && z < hi);
-    return between
-      ? []
-      : [
-          `\`${m.id}\`: \`zParts\` tách người ở z ${lo}…${hi} nhưng không mục nào cùng tầng có \`z\` nằm giữa hai số ấy — đặt \`z\` của thứ bị kẹp vào giữa`,
-        ];
-  });
-  return [
-    ...bg,
-    ...split,
-    ...scene.animals.flatMap((a) => {
-      const by = hosted.get(a.id);
-      return a.z !== undefined && by
-        ? [`động vật ${a.id}: ${by} nó nên nó vẽ trong người ấy — \`z\` không có tác dụng`]
-        : [];
-    }),
-  ];
 }
 
 type PathKey = Required<PathKey0>;

@@ -93,12 +93,10 @@ thư viện chuẩn.
 pnpm exec stickman check
 ```
 
-`check` bắt: version pin lệch rig đang cài, chân của rig lệch `legs` mà cảnh dựng cho
-([Đổi độ dài chân](#đổi-độ-dài-chân)), JSON hỏng theo zod của rig, socket
-trỏ tới mảnh không có ở cả hai lớp, tham chiếu chéo hỏng (cảnh trỏ vào nhân vật /
-hành động / đạo cụ / nền không có; shot trỏ vào cảnh hay cue trỏ vào file tiếng không
-có), PNG thiếu kênh alpha, mảnh nằm ngoài `catalog.json`, file trong `pieces/` /
-`actions/` **giống hệt** bản chung của studio — thừa, xoá được —
+`check` bắt: version pin lệch rig đang cài, JSON hỏng theo zod của rig, tham chiếu chéo
+hỏng (cảnh trỏ vào nhân vật / hành động / đạo cụ / động vật / nền không có, `fx` trỏ vào
+mảnh không có; shot trỏ vào cảnh hay cue trỏ vào file tiếng không có), file trong
+`actions/` / `animals/` / `characters/` **giống hệt** bản chung của studio — thừa, xoá được —
 và **công cụ ngoài thiếu trên `PATH`**: `rsvg-convert`, `ffmpeg`, `ffprobe`,
 `magick`. Không cái nào là dependency npm; `check` là cửa kiểm tra chúng.
 
@@ -113,8 +111,7 @@ pnpm exec stickman check --scene t03-s01-cd-haru   # regex trên id cảnh: ^t03
 
 MCP: `check({ scene })`. Cảnh khớp được soi đủ như lượt toàn bộ (tham chiếu, trượt chân, khoá
 góc, người lồng vào đồ, vẽ sai thứ tự…); cảnh không khớp chỉ được parse cho tham chiếu chéo.
-In cảnh báo của cảnh khớp và **mọi lỗi** ở bất kỳ đâu; tập, tiếng, `retime`, mảnh và catalog,
-file chưa commit, công cụ ngoài thì bỏ qua — chúng chỉ có ở lượt toàn bộ, chạy trước khi
+In cảnh báo của cảnh khớp và **mọi lỗi** ở bất kỳ đâu; tập, tiếng, `retime`, file chưa commit, công cụ ngoài thì bỏ qua — chúng chỉ có ở lượt toàn bộ, chạy trước khi
 commit hay sau khi nâng rig. Regex không khớp cảnh nào là lỗi.
 
 ### Những thứ `check` soi mà không lệnh nào khác soi
@@ -129,13 +126,11 @@ Các kiểm tra sau bắt lỗi hợp lệ theo schema nhưng làm thiếu hình
 | **Hai track cùng ghi một socket** | `sceneEquipProblems` của rig: track sau đè track trước, nên cái gỡ mũ ở track trước bị track sau cầm đồ đè lại |
 | **Khuỷu gập ngược khi giơ tay** | `armFoldProblems` của rig: mốc có `\|vai\| > 120` mà khuỷu ngược dấu vai — cẳng tay bung ra ngoài thay vì cuộn về đầu — [00](00-bat-bien.md#dấu-góc-và-hình-học) |
 | **Mốc ghi kênh ngoài `mask`** | `maskProblems` của rig: giá trị bị bỏ im lặng — nụ cười khai ở `face` mà `mask` thiếu `face` thì không bao giờ hiện |
-| **Chân trụ trượt trên `path`** | `sceneSlideProblems` của rig: chân trụ đang sải mà dịch quá nửa quãng thân đi trong `0,4 s`; cùng chiều và hơn cả thân là đi giật lùi, người nhìn ngược chiều đi — [03](03-scene.md#đường-đi-soạn-tay) |
 | **Người 3D trượt, không tới mốc dừng** | `sceneSlideProblems` đo trên mặt sàn thế giới cho người có `world`: bàn chân chịu lực dịch quá nửa quãng hông đi trong `0,4 s`, mốc dừng của `path` mà hông cách quá `20` đơn vị rig, clip có sải chân chạy khi `path` đã đứng yên — [03](03-scene.md#check-cho-người-3d) |
 | **Khoá góc chính diện đẩy thân** | `sceneFacingProblems` của rig: người 3D khai hướng gần ống kính hơn `FRONT_MIN`, mỗi quãng một dòng kèm hướng khai và hướng sau khi đẩy — [03](03-scene.md#check-cho-người-3d) |
 | **Người 3D lồng vào đồ** | `sceneClashProblems` của cli (`solidClashes` của fx): phần người lấn vào khối đồ của lớp vẽ code hay vào người khác quá `2` đơn vị thế giới (`stickman.clash.tol`), mỗi cặp một dòng kèm giây sâu nhất và các quãng giây; món khai `touch` thì bỏ phần người ấy — [10](10-lop-ve-code.md#người-lồng-vào-đồ) |
 | **Vẽ sai thứ tự** | `sceneOverdrawProblems` của cli (`solidOverdraws` của fx): mảnh đồ khối vẽ đè lên phần người dù nằm sau nó, hay phần người vẽ đè lên mảnh đồ đứng trước, quá `stickman.clash.tol`, mỗi cặp một dòng; lỗi của rig — [10](10-lop-ve-code.md#vẽ-sai-thứ-tự) |
 | **Mốc khai mà không ai neo** | Chỉ khi khai `stickman.marks.unused: "warn"`: mốc trong `marks` không chỗ nào trong JSON viết `"@tên"`. Mặc định tắt, vì lớp vẽ code đọc mốc qua `ctx.marks` mà `check` không thấy — [03](03-scene.md#mốc-có-tên) |
-| **Mốc `flip` không đổi hướng** | `sceneFlipProblems` của rig: trước mốc đầu là chưa lật, mốc lặp lại trạng thái trước nó là số chết |
 
 ### Tập đã đóng
 
@@ -252,7 +247,7 @@ lần sau bỏ qua im lặng, mẫu đổi thật mới hỏi lại.
 Người 2D treo ở bàn chân thấp nhất: `y` là đường đất, hông cao hơn nó đúng chiều cao chân
 của tư thế. Rig đổi `thigh` / `shin` thì người đứng vẫn trên đất mà cao lên, còn người ngồi
 ghế vẽ tay thì hông nhô khỏi mặt ghế. `stickman.json` ghi chân mà cảnh của repo dựng cho
-(`legs`; trống là đùi `82` / cẳng `78`). Lệch với rig đang cài thì `upgrade` và `check` nhắc,
+(`legs`; trống là đùi `82` / cẳng `78`). Lệch với rig đang cài thì `upgrade` nhắc,
 và một lệnh đặt lại:
 
 ```bash

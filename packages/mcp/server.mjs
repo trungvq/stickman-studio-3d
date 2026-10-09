@@ -692,11 +692,6 @@ server.registerTool(
       // Hợp lệ mà vẫn ra hình thiếu: đây là chỗ duy nhất chúng kêu — docs/03-scene.md
       const warnings = [
         ...rig.sceneEquipProblems(r.data, actions),
-        // Lớp vẽ code kẹp được người giữa hai lượt `zParts`; cli cũ chưa có thì kiểm như trước
-        ...(cli.sceneZWarnings
-          ? cli.sceneZWarnings(r.data, await R.loadLayers(WS).catch(() => []))
-          : rig.sceneZProblems(r.data)),
-        ...rig.sceneFlipProblems(r.data),
         ...rig.sceneSlideProblems(rt),
         ...rig.sceneFacingProblems(rt),
       ];

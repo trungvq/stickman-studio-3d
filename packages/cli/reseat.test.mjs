@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import * as rig from "@stickman3d/sketch";
-import { COMMON, checkWorkspace, planReseat, reseatWorkspace } from "./lib.mjs";
+import { COMMON, planReseat, reseatWorkspace } from "./lib.mjs";
 
 const D = Math.PI / 180;
 const { thigh: THIGH, shin: SHIN } = rig.RIG;
@@ -249,9 +249,8 @@ describe("stickman reseat", () => {
     assert.equal(s.props[0].x, 30);
   });
 
-  it("chạy lại không dời thêm; `--dry-run` không ghi gì; `check` nhắc khi chân lệch", async () => {
+  it("chạy lại không dời thêm; `--dry-run` không ghi gì", async () => {
     const dir = workspace();
-    assert.ok((await checkWorkspace({ dir })).problems.some((p) => /reseat/.test(p.msg)));
     const dry = await reseatWorkspace({ dir, dryRun: true });
     assert.ok(dry.changes.length > 0);
     assert.equal(read(dir, "scenes/ngoi.json").cast[0].y, 280);
@@ -262,7 +261,6 @@ describe("stickman reseat", () => {
     const again = await reseatWorkspace({ dir });
     assert.equal(again.changes.length, 0);
     assert.equal(readFileSync(join(dir, "scenes/ngoi.json"), "utf8"), once);
-    assert.ok(!(await checkWorkspace({ dir })).problems.some((p) => /reseat/.test(p.msg)));
   });
 
   it("`--before`: hành động ngồi riêng vừa chỉnh lấy đời trước ở commit ấy", async () => {

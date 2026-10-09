@@ -27,9 +27,9 @@ const USAGE = `stickman <lệnh> [thư mục]
   upgrade       chép lại app Remotion và file agent theo bộ đang cài, trộn số version
                 vào package.json. File sửa tay thì hỏi.
   docs [tên]    in spec rig của version đang cài; không có tên thì in mục lục
-  check         soi workspace: JSON hỏng, mảnh thiếu, PNG không alpha, công cụ ngoài;
+  check         soi workspace: JSON hỏng, file trỏ tới không có, người 3D trượt, công cụ ngoài;
                 --scene <regex> chỉ soi cảnh có id khớp (cảnh báo của chúng + mọi lỗi),
-                bỏ tập, tiếng, mảnh, git — nhanh, dùng sau khi sửa một cảnh
+                bỏ tập, tiếng, git — nhanh, dùng sau khi sửa một cảnh
   retime        đo lại tiếng rồi ghi số vào cue khai \`after\` và mốc khai ở \`shot.marks\`;
                 --mark <cảnh>:<tên>=<giây> đặt tay một mốc
   reseat        rig đổi độ dài chân: dời \`y\` của người ngồi 2D để hông ở đúng chỗ cũ, người

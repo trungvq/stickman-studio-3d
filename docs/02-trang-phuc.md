@@ -1448,7 +1448,7 @@ export const CODE_PARTS: Record<string, PartDef> = {
 | `stickman studio` | gói entry cho trình duyệt ở `/parts.mjs`, mỗi lần tải trang — sửa file rồi F5. Gói hỏng thì dải đỏ trên đầu trang kể lỗi |
 | `stickman-render` / `stickman-video` / MCP | gói bằng esbuild như lớp vẽ code ([10](10-lop-ve-code.md)), gói lại khi file đổi |
 | App Remotion | `src/index.ts` gọi `registerParts` trước `registerRoot` |
-| `stickman check` | gói thử, và báo nhân vật hay đạo cụ trỏ tới bộ phận không có |
+| `stickman check` | gói thử |
 
 Luật:
 

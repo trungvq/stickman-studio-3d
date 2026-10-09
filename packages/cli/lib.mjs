@@ -535,8 +535,6 @@ const listJson = (d) =>
   existsSync(d) ? readdirSync(d).filter((f) => /\.json$/.test(f) && !SKIP(f)) : [];
 const issues = (err) =>
   err.issues.map((i) => `${i.path.join(".") || "(gốc)"}: ${i.message}`).join("; ");
-// IHDR: rộng ở byte 16, cao ở 20, kiểu màu ở 25 — bit 4 của kiểu màu là có alpha
-const pngAlpha = (buf) => (buf[25] & 4) !== 0;
 
 /** Có chạy được lệnh này không — quét PATH chứ không spawn, để `check` khỏi tốn tiến trình */
 const onPath = (cmd) =>
@@ -549,18 +547,6 @@ const onPath = (cmd) =>
       return false;
     }
   });
-
-const listPngs = (d, sub = "") => {
-  const at = join(d, sub);
-  if (!existsSync(at)) return [];
-  return readdirSync(at, { withFileTypes: true }).flatMap((e) =>
-    e.isDirectory()
-      ? listPngs(d, join(sub, e.name))
-      : /\.png$/i.test(e.name)
-        ? [join(sub, e.name)]
-        : [],
-  );
-};
 
 /** File git đang theo dõi, đường dẫn tương đối `root`; `null` là không phải repo git */
 function gitTracked(root) {
@@ -1393,10 +1379,6 @@ const clashWith = (c) =>
  * Chỗ người 3D lồng vào đồ ở giây `t`, sâu trước: `{ who, with, depth }`. `scene_probe` trả nó cho
  * cảnh có `lens`. docs/10-lop-ve-code.md#người-lồng-vào-đồ
  */
-/** `sceneZProblems` kể cả nấc `z` của lớp vẽ code bật ở cảnh — `check` và `validate` của MCP dùng chung */
-export const sceneZWarnings = (data, codeLayers = []) =>
-  rig.sceneZProblems(data, FX.layerZs(codeLayers, data.name));
-
 export const clashesAt = (rt, t, { characterOf, codeLayers, tol = CLASH_TOL }) =>
   FX.sceneClashes(rt, t, { characterOf, codeLayers, tol }).map((c) => ({
     who: `${c.id}.${c.part}`,
@@ -1523,11 +1505,11 @@ export function sceneOverdrawProblems(
 }
 
 /**
- * Soi một workspace: version đã đóng dấu so với rig đang cài, JSON hỏng, mảnh thiếu file,
- * PNG không có alpha, mảnh không có trong danh mục.
+ * Soi một workspace: version đã đóng dấu so với rig đang cài, JSON hỏng, tham chiếu chéo trỏ
+ * vào file không có, người 3D trượt hay lồng vào đồ, tiếng tràn chỗ.
  *
  * `scene` (regex trên id cảnh) chỉ soi sâu cảnh khớp: cảnh báo của chúng và lỗi ở bất kỳ đâu;
- * tập, tiếng, mảnh, git và công cụ ngoài bỏ qua — docs/05-repo-video.md#soi-một-cảnh
+ * tập, tiếng, git và công cụ ngoài bỏ qua — docs/05-repo-video.md#soi-một-cảnh
  */
 export async function checkWorkspace({ dir = ".", scene } = {}) {
   const root = resolve(dir);
@@ -1570,10 +1552,6 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
     warn(
       `stickman.json ghi @stickman3d/rig@${stamp.versions?.rig} nhưng đang cài ${installed} — chạy \`stickman upgrade\``,
     );
-  if (stamp && !sameLegs(legsOf(stamp), legsNow()))
-    warn(
-      `cảnh dựng cho chân ${legsLabel(legsOf(stamp))}, rig đang cài ${legsLabel(legsNow())} — người ngồi 2D nhô khỏi ghế: chạy \`stickman reseat\``,
-    );
   if (stamp && !stamp.files)
     warn("stickman.json chưa có bảng băm — `stickman upgrade` sẽ hỏi lại từng file một lượt đầu");
 
@@ -1598,8 +1576,6 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
   }
 
   const scenesByName = {};
-  /** Cảnh chờ `sceneZProblems`: [file, owner, data] */
-  const zScenes = [];
   const assets = [];
   const inLayers = (dirs, file) => dirs.some((d) => existsSync(join(d, file)));
   // `animals` trước `scenes`: trôi ngang của con vật nướng từ chính JSON của nó
@@ -1641,11 +1617,7 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
         for (const problem of rig.armFoldProblems(r.data)) warn(`actions/${f}: ${problem}`);
         for (const problem of rig.maskProblems(r.data)) warn(`actions/${f}: ${problem}`);
       }
-      // Chân duỗi gần hết khi đứng: hình đứng vẫn đúng, chỉ sải chân bị cắt cụt — docs/08
-      if (kind === "animals") {
-        animalsByName[f] = r.data;
-        for (const problem of rig.animalProblems(r.data)) warn(`animals/${f}: ${problem}`);
-      }
+      if (kind === "animals") animalsByName[f] = r.data;
       if (kind === "scenes") {
         for (const c of r.data.cast) {
           if (c.character && !inLayers(charactersLayers, c.character))
@@ -1688,14 +1660,13 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
             Object.fromEntries(props),
             ...castBodies(r.data, charactersByName),
           );
-          // Chân trụ trượt trên `path`: hợp lệ, chỉ nhìn là thấy — docs/03-scene.md#đường-đi-soạn-tay
+          // Người 3D trượt trên sàn: hợp lệ, chỉ nhìn là thấy — docs/03-scene.md#check-cho-người-3d
           for (const problem of rig.sceneSlideProblems(rt)) warn(`scenes/${f}: ${problem}`);
           // Khoá góc chính diện đẩy thân người 3D: hướng khai không được giữ — docs/03-scene.md#người-3d
           for (const problem of rig.sceneFacingProblems(rt)) warn(`scenes/${f}: ${problem}`);
         } catch (e) {
           bad(`scenes/${f}: ${e.message}`);
         }
-        for (const problem of rig.sceneFlipProblems(r.data)) warn(`scenes/${f}: ${problem}`);
         for (const file of rig.sceneImages(r.data)) {
           assets.push(join("assets/bg", file));
           if (!existsSync(join(root, "assets/bg", file)))
@@ -1703,8 +1674,6 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
         }
         for (const problem of rig.sceneEquipProblems(r.data, actionsByName))
           warn(`scenes/${f}: ${problem}`);
-        // `z` khai ở chỗ trục không với tới: kiểm sau khi nạp lớp vẽ code, vì lớp code cũng kẹp được người
-        zScenes.push([f, owner, r.data]);
         // Mốc có tên: tham chiếu tới mốc không có đã kêu ở `resolveScene`; mốc khai mà JSON không
         // neo chỉ báo khi bật `stickman.marks.unused`. docs/03-scene.md#mốc-có-tên
         if (unusedMarks === "warn") {
@@ -1775,14 +1744,6 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
     owner = null;
     counts.layers = codeLayers.length;
   }
-
-  // `z` khai ở chỗ trục không với tới: im lặng bị bỏ qua — docs/03-scene.md#trục-z. Lớp code
-  // (chăn ở `z: { front: 10 }`) là thứ kẹp giữa hai lượt `zParts` mà JSON không thấy
-  for (const [f, o, data] of zScenes) {
-    owner = o;
-    for (const problem of sceneZWarnings(data, codeLayers)) warn(`scenes/${f}: ${problem}`);
-  }
-  owner = null;
 
   // Thư mục sidebar Remotion: regex hỏng hay tên thư mục có ký tự lạ thì `Root.tsx` ném —
   // docs/03-scene.md#remotion
@@ -2019,71 +1980,13 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
       `${ch.file}: ${ch.path} đang ${ch.from ?? "trống"} mà tiếng đo ra ${ch.to} (${ch.why}) — chạy \`stickman retime\``,
     );
 
-  for (const [f, c] of characters) {
-    for (const file of rig.characterFiles(c))
-      if (!inLayers(piecesLayers, file)) bad(`characters/${f}: trỏ tới pieces/${file} không có`);
-    // Tên lạ thì `<Character>` bỏ trống socket, không có gì báo
-    for (const part of new Set(rig.characterSockets(c).map(rig.piecePart)))
-      if (part && !rig.PARTS[part]) bad(`characters/${f}: trỏ tới bộ phận "${part}" không có`);
+  for (const [f, c] of characters)
     for (const [name, e] of Object.entries(c.outfits))
       for (const problem of rig.equipProblems(c, e))
         bad(`characters/${f}: bộ đồ ${name} ${problem}`);
-  }
-  for (const [f, p] of props) {
-    const file = rig.pieceFile(p.body);
-    if (file && !inLayers(piecesLayers, file))
-      bad(`props/${f}: thân trỏ tới pieces/${file} không có`);
-    if (p.body.src === "part" && p.body.part && !rig.PARTS[p.body.part])
-      bad(`props/${f}: thân trỏ tới bộ phận "${p.body.part}" không có`);
-  }
-
-  const pngs = listPngs(piecesDir);
-  counts.pieces = pngs.length;
-  const catalogPath = join(piecesDir, rig.PIECE_CATALOG_FILE);
-  let listed = new Set();
-  if (!existsSync(catalogPath)) {
-    if (pngs.length)
-      warn("không có pieces/catalog.json — studio chỉ thấy bộ chung, không thấy mảnh nào ở đây");
-  } else {
-    const r = rig.parsePieceCatalog(readJson(catalogPath));
-    if (!r.success) bad(`pieces/catalog.json: ${issues(r.error)}`);
-    else {
-      listed = new Set(r.data.pieces.map((p) => p.file));
-      // Mục trỏ tới mảnh chỉ có ở bộ chung là hợp lệ: đè config mà không chép ảnh
-      for (const p of r.data.pieces) {
-        if (!inLayers(piecesLayers, p.file)) bad(`catalog: ${p.file} không có file`);
-        else if (!p.file.startsWith(`${p.socket}/`))
-          warn(
-            `catalog: ${p.file} khai socket ${p.socket} nhưng nằm thư mục khác — studio lọc theo thư mục`,
-          );
-      }
-      for (const n of Object.keys(r.data.parts))
-        if (!rig.PARTS[n]) bad(`catalog: parts.${n} không phải bộ phận nào`);
-      const commonCatalog = join(COMMON.pieces, rig.PIECE_CATALOG_FILE);
-      const shared = existsSync(commonCatalog)
-        ? new Map(
-            (rig.parsePieceCatalog(readJson(commonCatalog)).data?.pieces ?? []).map((p) => [
-              p.file,
-              JSON.stringify(p),
-            ]),
-          )
-        : new Map();
-      const same = r.data.pieces.filter((p) => shared.get(p.file) === JSON.stringify(p));
-      if (same.length)
-        warn(
-          `catalog: ${same.length} mục giống hệt bộ chung của studio, xoá được — ${same.map((p) => p.file).join(", ")}`,
-        );
-    }
-  }
-  for (const f of pngs) {
-    const buf = readFileSync(join(piecesDir, f));
-    if (!pngAlpha(buf)) bad(`pieces/${f}: PNG không có kênh alpha — nền sẽ hiện ra trong preview`);
-    if (!listed.has(f)) warn(`pieces/${f}: không có trong catalog.json, studio không thấy`);
-  }
 
   // Chép y nguyên từ bộ chung (workspace dựng trước khi có hai lớp) thì thừa; khác nội dung là cố ý đè
   for (const [kind, files, local, common] of [
-    ["pieces", pngs, piecesDir, COMMON.pieces],
     ["actions", listJson(join(root, "actions")), join(root, "actions"), COMMON.actions],
     ["animals", listJson(join(root, "animals")), join(root, "animals"), COMMON.animals],
     ["characters", listJson(join(root, "characters")), join(root, "characters"), COMMON.characters],
@@ -2099,7 +2002,6 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
       );
   }
   counts.common =
-    listPngs(COMMON.pieces).length +
     listJson(COMMON.actions).length +
     listJson(COMMON.animals).length +
     listJson(COMMON.characters).length;
@@ -2113,8 +2015,6 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
       ...[...Object.keys(kinds), "episodes"].flatMap((k) =>
         listJson(join(root, k)).map((f) => join(k, f)),
       ),
-      ...pngs.map((f) => join("pieces", f)),
-      join("pieces", rig.PIECE_CATALOG_FILE),
       ...assets,
     ];
     // File `.gitignore` loại là cố ý để ngoài git (vd. audio gen ra), không kêu

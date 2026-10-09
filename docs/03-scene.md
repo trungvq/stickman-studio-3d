@@ -247,12 +247,8 @@ trượt (`walk` mặc định ~`278 px` một chu kỳ ở `scale = 1`, `scene_
 Không có `path` thì mọi thứ như cũ.
 
 Tốc độ đi đo được ở bộ mẫu là **`252` đơn vị một giây**; viết một quãng đường
-không ăn với thời gian dành cho nó là trượt chân, và nó lộ ngay cả ở dải ảnh.
-`sceneSlideProblems` đo hộ: lấy chân thấp nhất làm chân trụ, cửa sổ `0,4 s`, chân
-trụ đang sải mà dịch trên màn hình quá nửa quãng thân đi là trượt; dịch cùng chiều
-và hơn cả thân là đi giật lùi — người nhìn ngược chiều `path`. `check` và `validate`
-kêu; người đứng `idle` trên `path` không sải nên không kêu. Người 3D đo trên mặt sàn thế giới, xem
-[`check` cho người 3D](#check-cho-người-3d).
+không ăn với thời gian dành cho nó là trượt chân, và nó lộ ngay cả ở dải ảnh. `check` chỉ đo
+người 3D, trên mặt sàn thế giới — xem [`check` cho người 3D](#check-cho-người-3d).
 
 **Người giậm chân tại chỗ cũng có thể cần `path`.** Một mốc duy nhất khoá chỗ
 đứng và tắt trôi tự suy. `scale` phải theo phối cảnh của nền.
@@ -284,8 +280,7 @@ thật đọc từ scene JSON sau khi dựng xong**, đừng bịa trước rồ
 Nó là **công tắc**, lấy mẫu bậc thang như `layer` và `equip`: không nội suy, không
 hoà, `blend` không đụng tới nó. **Trước mốc đầu là chưa lật** (`false`) — ví dụ
 trên là nhìn phải, tới giây `2.4` quay sang trái. Muốn mở màn đã lật thì khai mốc
-ở giây `0`. Mốc không đổi hướng so với trạng thái trước nó là số chết,
-`sceneFlipProblems` kêu.
+ở giây `0`. Mốc không đổi hướng so với trạng thái trước nó là số chết.
 
 Cú quay gọn trong **một frame** và không có cách nào khác: rig không xoay liên
 tục, chỉ có năm nấc rời rạc ([01 — Góc nhìn](01-rig.md#góc-nhìn)). Cho nó đọc
@@ -625,7 +620,7 @@ vẽ code.
 **Nền chưa vào trục chung của `sceneOrder`** — cả chồng nền vẫn là **bước trước** đạo cụ,
 người và `fx`, nên `z` của lớp nền chỉ sắp các lớp nền với nhau. Một lớp nền không chen ra
 trước người được; khai `z` ra khỏi băng nền (từ `SCENE_Z.fxBack` trở lên) là im lặng không
-có gì đổi và `stickman check` kêu. Muốn một tấm ở trước người thì đó là đạo cụ hoặc `fx`.
+có gì đổi. Muốn một tấm ở trước người thì đó là đạo cụ hoặc `fx`.
 
 **`parallax` là hệ số trôi theo camera** — lý do đáng giá để có nhiều lớp nền. `1` (mặc
 định) là dán vào sân khấu: lia máy thì lớp ấy chạy qua khung đúng như đạo cụ và người. `0`
@@ -871,7 +866,7 @@ im lặng không có gì đổi:
 
 - Con vật có người cưỡi hay xách vẽ ở `slots` của `<Character>` (`mount` kẹp giữa chân
   xa và chân gần, `carry` trong khung cổ tay theo `layer` của chính mảnh tay ấy) — hình
-  học của rig, không phải một nấc xếp lớp. `stickman check` kêu, xem `sceneZProblems`
+  học của rig, không phải một nấc xếp lớp
 - Chỗ cắt giữa `part: "back"` và `part: "front"` của một đạo cụ có người ngồi là
   `propSeat` cắt hình, không phải một nấc `z`. Chen vào giữa hai nửa ấy chỉ có người `sit`
 - Hai chữ "layer" nằm ngoài trục này: `front`/`under` của mảnh (trong một người) và
@@ -921,9 +916,9 @@ khác `z` mới đảo được thứ tự — khai `head` thấp hơn `torso` l
 - Người ngồi quay lưng trên ghế (`sit-rear`, thân `rear` — [Góc nhìn](#góc-nhìn)): `legFar` /
   `legNear` ở `z` thấp hơn ghế, phần còn lại cao hơn, thì chân nằm sau đệm ghế.
 - Không đi cùng `mount` hay `sit` — hai thứ ấy đã chen con vật và đạo cụ vào giữa các lớp của
-  người; lỗi lúc nạp. Tách mà không mục nào cùng tầng nằm giữa các lượt là số chết,
-  `sceneZProblems` kêu. Nấc `back` / `front` của lớp vẽ code bật ở cảnh cũng tính là kẹp
-  (chăn ở `z: { front: 10 }`), với người ngoài nhóm.
+  người; lỗi lúc nạp. Tách mà không mục nào cùng tầng nằm giữa các lượt là số chết. Nấc
+  `back` / `front` của lớp vẽ code bật ở cảnh cũng tính là kẹp (chăn ở `z: { front: 10 }`), với
+  người ngoài nhóm.
 
 `anchorAt`, `fx` bám người, `fade` và `place` / `spin` của lớp vẽ code không đổi: mọi lượt vẽ
 cùng một `sceneAt`.

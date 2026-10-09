@@ -273,7 +273,8 @@ giữ đà bằng chính cái chân vừa nhấc — tức là kéo lùi.
 
 Chân với không tới đất, hoặc *vừa đủ* tới đất, đều không nổ ở đâu cả — hình chỉ
 sai. `legStretch(b, front)` trả phần chiều dài chân đã dùng hết khi đứng yên,
-`maxStride(b)` trả sải chân lớn nhất còn với tới. Cột Động vật của studio in cả hai.
+`maxStride(b)` trả sải chân lớn nhất còn với tới. Cột Động vật của studio in cả hai và
+danh sách của `animalProblems`.
 
 `animalProblems` kêu khi chân **với không tới đất**, và khi sải chân còn lại
 **dưới `0.25`** — lúc ấy dáng đi thành giậm chân tại chỗ. Chữa bằng cách kéo dài

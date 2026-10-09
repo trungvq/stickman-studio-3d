@@ -426,7 +426,7 @@ bảng `SCENE_Z`, dựng lại đúng thứ tự cứng vốn có — **`layer` 
 nó ánh xạ hai kiểu**: đứng rời thì ra băng toàn cục, `follow` thì ra hai giá trị cục
 bộ `∓1` quanh chủ. **Trục dừng ở tầng sân khấu**: con vật có chủ (vẽ ở `slots`) và
 chỗ cắt hai nửa `part` của đạo cụ có người ngồi không nhận `z`, khai ở đó là im lặng
-không có gì đổi — `sceneZProblems` kêu chỗ thứ nhất. **`fx[].z` và `z: { back, front }`
+không có gì đổi. **`fx[].z` và `z: { back, front }`
 của lớp vẽ code xen vào cùng trục ấy**, bỏ trống là băng `fx` của `layer`; hoà thì lớp
 code, rồi `fx`, rồi dàn diễn. Nền chưa vào trục — băng `bg` là chỗ `bgOrder` xếp các
 lớp nền với nhau. Xem [03](03-scene.md#trục-z).
@@ -454,7 +454,7 @@ quay (`1` là dán vào sân khấu, `0` là đứng im trên màn hình); nhớ
 hay tự cộng phần trôi ở chỗ vẽ là mỗi đường render ra một khung khác. **Số ô của `bg[].repeat`
 cũng suy từ hộp camera, và chỉ suy ở `bgTiles`** — đường render nào tự nhân ô ra hai bên là
 tự tách khỏi hai đường kia; `tiles` chỉ là chặn trên, không phải số ô người dùng đếm. Cả chồng nền là bước trước `sceneOrder` nên `z` của lớp nền chỉ sắp các lớp nền với
-nhau — khai ra khỏi băng nền là im lặng không có gì đổi, `sceneZProblems` kêu. Mảng rỗng
+nhau — khai ra khỏi băng nền là im lặng không có gì đổi. Mảng rỗng
 thì chỗ vẽ kẻ vạch đường đất, nên **điều kiện ấy là mảng rỗng, không phải thiếu trường**.
 
 **Quay giữa cảnh là `cast[].flip` khai chuỗi mốc `[{ t, v }]`** — công tắc bậc
@@ -529,8 +529,8 @@ không thấp hơn quãng hở giữa hai lần chạm đất, vì dáng đi ở
 không chân nào chạm đất thì `bakeFeetTravel` giữ đà bằng chân vừa nhấc, tức kéo lùi.
 
 **Chân duỗi hết khi đứng là hỏng, dù hình đứng vẫn đúng.** `legStretch` trên `0.97`
-là hết chỗ doãng, sải chân bị cắt cụt và bàn chân trượt. `animalProblems` là chỗ kêu; cột
-Động vật của studio in sẵn số ấy.
+là hết chỗ doãng, sải chân bị cắt cụt và bàn chân trượt. `animalProblems` là chỗ kêu, ở cột
+Động vật của studio.
 
 **Chân cổ chìm dưới thùng thân, khối đầu nổi lên trên; chân gần của con bốn chân nổi
 trên thân nhưng chìm dưới đầu và cánh gần.** Con hai chân vẽ cả hai chân dưới thân
@@ -549,7 +549,7 @@ mốc): gốc là khớp hông, chỗ đứng hạ đúng `rig.hipY`, không bó
 `cast[].mount` và `cast[].carry[]`.** Con vật có chủ vẽ **trong** `<Character>` qua
 `slots` (`mount` chen giữa chi xa và chân gần, `handNear`/`handFar` trong khung cổ tay)
 và **không có lớp riêng** trong `sceneOrder` — vẽ nó rời nữa là hai con; `animals[].z`
-ở đó bị bỏ qua, `stickman check` kêu. Ba đường render
+ở đó bị bỏ qua. Ba đường render
 dựng khe bằng `castSlots`, đừng tự đặt `<Animal>`. Người cưỡi treo ở hông: `sceneAt`
 trả `root: "hip"`, và `anchorIn` phải nhận cùng `root` ấy — quên là mọi mốc trên người
 cưỡi lệch đúng một chiều dài chân.
