@@ -18,7 +18,7 @@ import {
 } from "@stickman3d/rig";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { AbsoluteFill, continueRender, delayRender, useVideoConfig } from "remotion";
+import { continueRender, delayRender, useVideoConfig } from "remotion";
 import { ACTIONS, ANIMALS, CHARACTERS, castBodies, castHeights, PROPS } from "../data";
 import type { Canh3D } from "./canh";
 import { crowd, type Set3D } from "./set";
@@ -130,5 +130,6 @@ export const Scene3D = ({ scene, set, t, still, extra }: Scene3DProps) => {
 
   useLayoutEffect(() => void draw(t), [t]);
 
-  return <AbsoluteFill ref={host} />;
+  // `<div>` trần, không `<AbsoluteFill>`: trong Studio nó nhận `children = ""` khi đọc xong mã nguồn và React xoá canvas gắn tay
+  return <div ref={host} style={{ position: "absolute", inset: 0 }} />;
 };
