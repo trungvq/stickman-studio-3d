@@ -288,6 +288,8 @@ export interface NprOptions {
   spread?: boolean;
   /** Không nhận dải tối và bóng đổ của đèn chính, chỉ sáng đều theo cường độ đèn: da mặt người */
   flat?: boolean;
+  /** Nét bóng dáng dày bao nhiêu (three) — hậu kỳ dò từ mặt nạ vật thay vỏ ngược, cho khối hở nằm sát khối khác như tóc */
+  ink?: number;
 }
 
 function shaded(defines: Record<string, string>, side: THREE.Side, own: Record<string, THREE.IUniform>) {
@@ -311,6 +313,7 @@ export function npr(o: NprOptions = {}): THREE.ShaderMaterial {
   if (hit) return hit;
   const defines: Record<string, string> = { ...(o.doubleSided ? { DOUBLE_SIDED: '' } : {}), ...(o.spread ? { KEY_SPREAD: '' } : {}), ...(o.flat ? { FLAT_KEY: '' } : {}) };
   const m = shaded(defines, o.doubleSided ? THREE.DoubleSide : THREE.FrontSide, ownUniforms(o));
+  if (o.ink) m.userData.ink = o.ink;
   cache.set(key, m);
   return m;
 }
@@ -368,6 +371,7 @@ export function unshare(m: THREE.ShaderMaterial): THREE.ShaderMaterial {
   c.polygonOffset = m.polygonOffset;
   c.polygonOffsetFactor = m.polygonOffsetFactor;
   c.polygonOffsetUnits = m.polygonOffsetUnits;
+  c.userData = { ...m.userData };
   return c;
 }
 

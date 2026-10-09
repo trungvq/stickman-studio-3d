@@ -193,7 +193,8 @@ function arm(parent: THREE.Object3D, side: Side, x: number, y: number): Arm {
 /** Tóc dựng khối của rig (`pieces.hair.sculpt` trong JSON nhân vật), lưới hệ sọ đơn vị phóng theo khối đầu. */
 function sculptHair(head: THREE.Object3D, sculpt: Partial<Sculpt>, color: string) {
   const mesh = sculptMesh(sculpt);
-  const mat = npr({ color, stipple: 0.05, stippleScale: 5, soft: 0.6, doubleSided: true });
+  // vỏ ngược đánh nhau độ sâu với sọ ngay dưới và bị vỏ tóc che ở lọn nằm sát: nét bóng dáng vẽ ở hậu kỳ
+  const mat = npr({ color, stipple: 0.05, stippleScale: 5, soft: 0.6, doubleSided: true, ink: 0.022 });
   for (const tris of [mesh.shell, mesh.spikes, mesh.hang]) {
     if (!tris.length) continue;
     const pos = new Float32Array(tris.length * 9);
@@ -203,9 +204,10 @@ function sculptHair(head: THREE.Object3D, sculpt: Partial<Sculpt>, color: string
     geo = mergeVertices(geo);
     geo.computeVertexNormals();
     geo.scale(R.head, R.head * 1.04, R.head * 0.98);
-    const g = inked(geo, mat, 0.022);
-    g.children[0].userData.hair = tris === mesh.shell ? 'shell' : tris === mesh.spikes ? 'spikes' : 'hang';
-    head.add(g);
+    const g = new THREE.Group(), m = new THREE.Mesh(geo, mat);
+    m.castShadow = true;
+    m.userData.hair = tris === mesh.shell ? 'shell' : tris === mesh.spikes ? 'spikes' : 'hang';
+    head.add(g.add(m));
   }
   // co điểm trước khi dựng ống: LOD thấp dựng lại ống từ `parameters.path`, co hình học sau đó thì nét bay khỏi đầu
   for (const l of mesh.lines) {
