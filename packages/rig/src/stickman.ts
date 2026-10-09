@@ -47,10 +47,10 @@ export interface Figure {
 /** `low`: người nền rẻ — ít mặt lưới, gộp khối tĩnh theo vật liệu, nét mặt đứng yên dùng chung texture, không chớp mắt */
 export type Lod = 'full' | 'low';
 /** `limb`: vòng mỗi đầu tròn, cạnh quanh ống, đoạn dọc ống */
-interface Quality { skull: [number, number]; limb: [number, number, number]; neck: number }
+interface Quality { skull: [number, number]; limb: [number, number, number] }
 const QUALITY: Record<Lod, Quality> = {
-  full: { skull: [36, 24], limb: [4, 10, 12], neck: 10 },
-  low: { skull: [16, 11], limb: [2, 6, 5], neck: 6 },
+  full: { skull: [36, 24], limb: [4, 10, 12] },
+  low: { skull: [16, 11], limb: [2, 6, 5] },
 };
 let q = QUALITY.full;
 
@@ -267,11 +267,9 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
     sculptSkirt(spine, { skirt, rig, color: skirtColor, ink: INK, thighs, legW: trouserWidth });
   }
   const neck = joint(spine, 0, R.torso, 0);
-  const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.2, q.neck), npr({ color: skin, stipple: 0 }));
-  neckMesh.position.y = 0.05;
-  neck.add(neckMesh);
-  const head = joint(neck, 0, R.neck + R.head * 0.95, 0);
   const skullScale = new THREE.Vector3(1, 1.04, 0.98);
+  // đáy sọ trên mép cổ áo (khớp cổ của lõi + `rise` 6 của áo phông): cằm chìm vào khối áo là mất viền
+  const head = joint(neck, 0, R.neck + 0.09 + R.head * skullScale.y, 0);
   const skull = new THREE.SphereGeometry(R.head, ...q.skull);
   skull.scale(skullScale.x, skullScale.y, skullScale.z);
   head.add(inked(skull, npr({ color: skin, stipple: 0.035, stippleScale: 4, soft: 1, flat: true }), 0.03));
