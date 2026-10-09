@@ -629,6 +629,166 @@ export function solidClashes(
   return out.sort((a, b) => b.depth - a.depth);
 }
 
+/** Một chỗ món đồ lồng vào món khác ở một khung */
+export interface ItemClash {
+  /** Hai món (chỉ số trong `items`) và khối lấn sâu nhất của mỗi món */
+  item: number;
+  piece: number;
+  other: number;
+  otherPiece: number;
+  /** Quãng ngắn nhất phải đẩy cho hai khối sâu nhất rời nhau, đơn vị thế giới */
+  depth: number;
+  /** Phần thể tích của món nhỏ hơn (`small`: `item` hay `other`) nằm trong món kia, 0–1 */
+  ratio: number;
+  small: "item" | "other";
+}
+/** Số điểm lấy mẫu mỗi chiều trong hộp bao của một khối khi ước thể tích lồng nhau */
+const VOL_STEPS = 6;
+/** Khoảng chiếu của khối lồi lên từng pháp tuyến mặt: điểm trong khối khi nằm trong mọi khoảng */
+const slabs = new WeakMap<Convex, number[]>();
+function inside(c: Convex, p: V3) {
+  let r = slabs.get(c);
+  if (!r) {
+    r = c.n.flatMap((n) => {
+      const d = c.v.map((q) => dot3(n, q));
+      return [Math.min(...d), Math.max(...d)];
+    });
+    slabs.set(c, r);
+  }
+  for (let i = 0; i < c.n.length; i++) {
+    const d = dot3(c.n[i], p);
+    if (d < r[2 * i] - 1e-6 || d > r[2 * i + 1] + 1e-6) return false;
+  }
+  return true;
+}
+const convexOfS = (s: Solid) => {
+  let c = convexes.get(s);
+  if (!c) convexes.set(s, (c = convexOf(s)));
+  return c;
+};
+const aabbOfS = (s: Solid) => {
+  let b = aabbs.get(s);
+  if (!b) aabbs.set(s, (b = aabb(s.v)));
+  return b;
+};
+/** Thể tích (ước bằng lưới điểm) của món `A`, và phần thể tích ấy nằm trong món `B` */
+function volumeIn(A: Solid[], B: Solid[]) {
+  let [all, inB] = [0, 0];
+  const bs = B.map((s) => ({ b: aabbOfS(s), c: convexOfS(s) }));
+  for (const s of A) {
+    const b = aabbOfS(s);
+    const c = convexOfS(s);
+    const step = [0, 1, 2].map((k) => (b[k + 3] - b[k]) / VOL_STEPS);
+    const cell = step[0] * step[1] * step[2];
+    if (!(cell > 0)) continue;
+    for (let i = 0; i < VOL_STEPS; i++)
+      for (let j = 0; j < VOL_STEPS; j++)
+        for (let k = 0; k < VOL_STEPS; k++) {
+          const p: V3 = [
+            b[0] + (i + 0.5) * step[0],
+            b[1] + (j + 0.5) * step[1],
+            b[2] + (k + 0.5) * step[2],
+          ];
+          if (!inside(c, p)) continue;
+          all += cell;
+          if (
+            bs.some(
+              ({ b: q, c: d }) => p.every((x, m) => x >= q[m] && x <= q[m + 3]) && inside(d, p),
+            )
+          )
+            inB += cell;
+        }
+  }
+  return { all, inB };
+}
+/** Hai món là một vật dựng thành nhiều món (thân cốc và quai): cùng chỗ đặt, cùng hướng, cùng cỡ */
+const samePlace = (a: SolidItem, b: SolidItem) =>
+  a.at.at.every((x, k) => Math.abs(x - b.at.at[k]) < 1e-6) &&
+  (a.at.yaw ?? 0) === (b.at.yaw ?? 0) &&
+  (a.at.s ?? 1) === (b.at.s ?? 1);
+/** Món này khai cho món kia lồng vào (`touch` có tên món kia) */
+const nests = (a: SolidItem, b: SolidItem) =>
+  !!b.name && (a.touch ?? []).some((t) => (typeof t === "string" ? t : t.part) === b.name);
+/** Kết quả đo của một cặp món đã `bake`: món đứng yên qua nhiều khung thì chỉ đo một lần */
+const itemPairs = new WeakMap<
+  Baked,
+  WeakMap<Baked, { key: string; hit?: Omit<ItemClash, "item" | "other"> }>
+>();
+
+/**
+ * Món đồ lồng vào món khác: báo khi khối lấn sâu nhất sâu hơn `tol` **và** phần thể tích của món nhỏ hơn
+ * nằm trong món kia vượt `ratio` (cốc lún nửa thân vào khay máy pha; đồ đặt lên mặt bàn, tờ giấy mỏng
+ * nằm trên bàn thì không). Bỏ hai món cùng chỗ đặt (một vật dựng thành nhiều món), cặp mà một món khai
+ * tên món kia trong `touch` (bút trong ống bút), và cặp có cả hai bóng ngoài `view`. Không gọi lúc vẽ:
+ * chỉ để kiểm. docs/10-lop-ve-code.md#đồ-lồng-vào-đồ
+ */
+export function solidItemClashes(
+  lens: Lens,
+  items: SolidItem[],
+  {
+    tol = 0,
+    ratio = 0.1,
+    view,
+  }: { tol?: number; ratio?: number; view?: { x: number; y: number; w: number; h: number } } = {},
+): ItemClash[] {
+  const frame: Solid["box"] | undefined = view && [
+    view.x,
+    view.y,
+    view.x + view.w,
+    view.y + view.h,
+  ];
+  const lk = lensKey(lens);
+  const list = [...new Set(items)].map((it) => {
+    const b = bake(it, lens, lk);
+    const box = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+    for (const s of b.ss) {
+      const q = aabbOfS(s);
+      for (let k = 0; k < 3; k++) {
+        box[k] = Math.min(box[k], q[k]);
+        box[k + 3] = Math.max(box[k + 3], q[k + 3]);
+      }
+    }
+    return { it, k: items.indexOf(it), b, box };
+  });
+  const out: ItemClash[] = [];
+  const key = `${tol}|${ratio}`;
+  for (let i = 0; i < list.length; i++)
+    for (let j = i + 1; j < list.length; j++) {
+      const [A, B] = [list[i], list[j]];
+      if (boxOverlap(A.box, B.box) <= tol) continue;
+      if (samePlace(A.it, B.it) || nests(A.it, B.it) || nests(B.it, A.it)) continue;
+      if (frame && !overlap(A.b.box, frame) && !overlap(B.b.box, frame)) continue;
+      let m = itemPairs.get(A.b);
+      if (!m) itemPairs.set(A.b, (m = new WeakMap()));
+      let r = m.get(B.b);
+      if (!r || r.key !== key) {
+        r = { key };
+        let best = { depth: tol, piece: -1, otherPiece: -1 };
+        for (const a of A.b.ss)
+          for (const b of B.b.ss) {
+            if (boxOverlap(aabbOfS(a), aabbOfS(b)) <= best.depth) continue;
+            const d = penetration(convexOfS(a), convexOfS(b));
+            if (d > best.depth)
+              best = {
+                depth: d,
+                piece: A.it.parts.indexOf(a.part),
+                otherPiece: B.it.parts.indexOf(b.part),
+              };
+          }
+        if (best.piece >= 0) {
+          const [va, vb] = [volumeIn(A.b.ss, B.b.ss), volumeIn(B.b.ss, A.b.ss)];
+          const small = va.all <= vb.all ? "item" : "other";
+          const v = small === "item" ? va : vb;
+          const part = v.all > 0 ? v.inB / v.all : 0;
+          if (part > ratio) r.hit = { ...best, ratio: part, small };
+        }
+        m.set(B.b, r);
+      }
+      if (r.hit) out.push({ ...r.hit, item: A.k, other: B.k });
+    }
+  return out.sort((a, b) => b.depth - a.depth);
+}
+
 /** Một chỗ thứ tự vẽ ngược độ sâu ở một khung: mảnh đồ và phần người chồng nhau trên khung mà cái vẽ sau ở xa ống kính hơn */
 export interface SolidOverdraw {
   id: string;

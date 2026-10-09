@@ -14,6 +14,9 @@ import {
   propAt,
   sceneAt,
   sceneOrder,
+  project,
+  armPierce,
+  PIERCE_TOL,
   type AnimalMember,
   type CameraShot,
   type CastMember,
@@ -30,7 +33,9 @@ import { SceneFx } from "./SceneFx";
 import type { SolidItem } from "./solid";
 import {
   solidClashes,
+  solidItemClashes,
   solidOverdraws,
+  type ItemClash,
   type SolidClash,
   type SolidOverdraw,
   type SolidPerson,
@@ -126,6 +131,32 @@ export function sceneBodies(
 }
 
 /**
+ * Đoạn tay người 3D xuyên thân áo của chính người ấy ở giây `t` (`armPierce`: tay và thân đúng như three
+ * vẽ), mỗi chỗ một `SolidClash` có `other` là thân cùng người. Chỉ người có tên trong `ids`
+ */
+function selfClashes(
+  rt: SceneRuntime,
+  t: number,
+  ids: ReadonlySet<string>,
+  characterOf: SceneWorldProps["characterOf"],
+  tol: number,
+): SolidClash[] {
+  return rt.cast.flatMap((m) => {
+    const raw = ids.has(m.id) && m.world ? characterOf(m) : undefined;
+    if (!raw) return [];
+    const c = castCharacter(m, raw.character);
+    const sp = sceneAt(rt, m.id, t, c.rig.height, body3(c));
+    if ((sp.opacity ?? 1) <= 0) return [];
+    return armPierce(c, sp, { tol }).map((h) => ({
+      id: m.id,
+      part: h.part,
+      other: { id: m.id, part: "torso" as const },
+      depth: h.depth,
+    }));
+  });
+}
+
+/**
  * Chỗ người 3D lồng vào đồ khối hay vào người khác ở giây `t`, dựng đúng các khối mà `<SceneWorld>`
  * vẽ (`solidClashes`). Bỏ phần người ngoài khung camera trừ khi `all`. Cảnh không có `lens` thì rỗng.
  * Chỉ để kiểm: `check`, `scene_probe`. docs/10-lop-ve-code.md#người-lồng-vào-đồ
@@ -140,9 +171,12 @@ export function sceneClashes(
     tol = 0,
     all = false,
     people: built,
+    self = PIERCE_TOL,
   }: Pick<SceneWorldProps, "characterOf" | "codeLayers" | "url"> & {
     tol?: number;
     all?: boolean;
+    /** Ngưỡng tay xuyên thân mình (`armPierce`), `false` là không đo */
+    self?: number | false;
     /** `sceneBodies` của chính giây ấy, khỏi dựng lại */
     people?: SolidPerson[];
   },
@@ -157,10 +191,61 @@ export function sceneClashes(
   const ctx: LayerCtx = { name: rt.name, t, cam, marks: rt.marks, url, lens, anchor };
   const on = codeLayers.filter((l) => layerCovers(l, rt.name));
   const furniture = on.flatMap((l) => l.solids?.(ctx) ?? []);
-  return solidClashes(lens, furniture, built ?? sceneBodies(rt, t, { characterOf }), {
-    tol,
-    view: all ? undefined : cam.view,
-  }).map((c) => (c.item === undefined ? c : { ...c, name: furniture[c.item].name }));
+  const people = built ?? sceneBodies(rt, t, { characterOf });
+  const view = all ? undefined : cam.view;
+  const frame = view && [view.x, view.y, view.x + view.w, view.y + view.h];
+  // tay xuyên thân mình: chỉ người có thân trong khung
+  const inView = (p: SolidPerson) =>
+    !frame ||
+    p.solids.some((x) => {
+      const q = x.v.map((v) => project(lens, v));
+      return (
+        Math.max(...q.map((v) => v[0])) >= frame[0] &&
+        Math.min(...q.map((v) => v[0])) <= frame[2] &&
+        Math.max(...q.map((v) => v[1])) >= frame[1] &&
+        Math.min(...q.map((v) => v[1])) <= frame[3]
+      );
+    });
+  return [
+    ...solidClashes(lens, furniture, people, { tol, view }),
+    ...(self === false
+      ? []
+      : selfClashes(rt, t, new Set(people.filter(inView).map((p) => p.id)), characterOf, self)),
+  ]
+    .sort((a, b) => b.depth - a.depth)
+    .map((c) => (c.item === undefined ? c : { ...c, name: furniture[c.item].name }));
+}
+
+/**
+ * Chỗ món đồ lồng vào món khác ở giây `t` (`solidItemClashes`), trên đúng các món mà lớp vẽ code dựng
+ * ở giây ấy. Bỏ cặp ngoài khung camera trừ khi `all`. Cảnh không có `lens` thì rỗng. Chỉ để kiểm:
+ * `check`. docs/10-lop-ve-code.md#đồ-lồng-vào-đồ
+ */
+export function sceneItemClashes(
+  rt: SceneRuntime,
+  t: number,
+  {
+    codeLayers = [],
+    url = () => undefined,
+    tol = 0,
+    ratio,
+    all = false,
+  }: Pick<SceneWorldProps, "codeLayers" | "url"> & { tol?: number; ratio?: number; all?: boolean },
+): (ItemClash & { name?: string; otherName?: string })[] {
+  const lens = rt.lens;
+  if (!lens) return [];
+  const cam = cameraAt(rt, t);
+  const ctx: LayerCtx = { name: rt.name, t, cam, marks: rt.marks, url, lens, anchor: () => null };
+  const furniture = codeLayers
+    .filter((l) => layerCovers(l, rt.name))
+    .flatMap((l) => l.solids?.(ctx) ?? []);
+  return solidItemClashes(lens, furniture, { tol, ratio, view: all ? undefined : cam.view }).map(
+    (c) => ({
+      ...c,
+      name: furniture[c.item].name,
+      otherName: furniture[c.other].name,
+    }),
+  );
 }
 
 /**

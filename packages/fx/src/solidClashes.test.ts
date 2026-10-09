@@ -13,7 +13,7 @@ import {
   type V3,
 } from "@stickman3d/sketch";
 import { bar, box, penetration, type SolidItem } from "./solid";
-import { solidClashes } from "./solidOrder";
+import { solidClashes, solidItemClashes } from "./solidOrder";
 import { solidBody } from "./SolidWorld";
 
 const TONE = { top: "#a00", lit: "#0a0", side: "#00a" };
@@ -226,5 +226,64 @@ describe("solidClashes: người 3D lồng vào đồ khối", () => {
       expect(h.other?.id).toBe("b");
     }
     expect(solidClashes(lens, [], [person, moved(400)], { tol: 2 })).toEqual([]);
+  });
+});
+
+describe("solidItemClashes: đồ lồng vào đồ", () => {
+  const lens = orbit({ target: [0, -100, 0], dist: 800, yaw: 30 * D, pitch: 12 * D, f: 800 });
+  // khay mỏng cao 4…14 trên mặt quầy y 0, cốc hộp 20 × 20 cao 20
+  // khay đặt lệch tâm (chỗ đặt khác cốc, không phải một vật hai món)
+  const tray: SolidItem = {
+    name: "khay",
+    at: { at: [5, 0, 0] },
+    parts: [{ v: box(-45, 35, -14, -4, -20, 20), tone: TONE }],
+  };
+  const cup = (y: number, name = "coc", at: V3 = [0, y, 0]): SolidItem => ({
+    name,
+    at: { at },
+    parts: [{ v: box(-10, 10, -20, 0, -10, 10), tone: TONE }],
+  });
+
+  it("cốc đặt thẳng xuống quầy, lún nửa thân vào khay: báo độ lấn và phần thể tích của cốc", () => {
+    const [hit] = solidItemClashes(lens, [tray, cup(0)], { tol: 2 });
+    expect(hit).toMatchObject({ item: 0, other: 1, small: "other" });
+    // đẩy cốc lên khỏi đáy khay: 14
+    expect(hit.depth).toBeCloseTo(14, 1);
+    expect(hit.ratio).toBeGreaterThan(0.4);
+    expect(hit.ratio).toBeLessThan(0.6);
+  });
+
+  it("cốc đứng trên mặt khay: không báo", () => {
+    expect(solidItemClashes(lens, [tray, cup(-14)], { tol: 2 })).toEqual([]);
+  });
+
+  it("tờ giấy mỏng lún chút vào mặt bàn: phần thể tích lớn mà độ lấn nhỏ, không báo", () => {
+    const desk: SolidItem = {
+      name: "ban",
+      at: { at: [0, 0, 0] },
+      parts: [{ v: box(-80, 80, -76, -70, -40, 40), tone: TONE }],
+    };
+    const sheet: SolidItem = {
+      name: "giay",
+      at: { at: [3, 0, 0] },
+      parts: [{ v: box(-15, 15, -76.4, -75.6, -10, 10), tone: TONE }],
+    };
+    expect(solidItemClashes(lens, [desk, sheet], { tol: 2 })).toEqual([]);
+  });
+
+  it("một vật dựng thành hai món cùng chỗ đặt, hay món khai `touch` tên món kia: không báo", () => {
+    const handle: SolidItem = {
+      name: "quai",
+      at: { at: [0, 0, 0] },
+      parts: [{ v: box(5, 14, -16, -4, -2, 2), tone: TONE }],
+    };
+    expect(solidItemClashes(lens, [cup(0, "coc", [0, 0, 0]), handle], { tol: 2 })).toEqual([]);
+    expect(solidItemClashes(lens, [{ ...tray, touch: ["coc"] }, cup(0)], { tol: 2 })).toEqual([]);
+  });
+
+  it("chỉ chạm sâu quá `tol` mà phần thể tích dưới `ratio`: không báo", () => {
+    // cốc lún 3 vào khay: độ lấn 3 > 2 nhưng chỉ 15% thân cốc
+    expect(solidItemClashes(lens, [tray, cup(-11)], { tol: 2, ratio: 0.2 })).toEqual([]);
+    expect(solidItemClashes(lens, [tray, cup(-11)], { tol: 2, ratio: 0.1 })).toHaveLength(1);
   });
 });
