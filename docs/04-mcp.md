@@ -40,7 +40,7 @@ Dựng và soi repo video: [05 — Dựng một repo video](05-repo-video.md).
 | `list` | `kind` (`characters`/`actions`/`scenes`/`props`/`animals`/`pieces`) | Tên file + `name`; hành động kèm `mask`; PNG kèm kích thước và mục danh mục (đã gộp hai lớp); file hỏng kèm lỗi. `characters`, `actions`, `animals` và `pieces` kèm `layer` (`workspace` / `common`), cùng tên thì chỉ thấy bản workspace. |
 
 | `read` | `kind`, `file` | Bản đã parse, đủ mặc định. |
-| `validate` | `data` \| `file`, `kind` | Kiểm object inline hoặc file có sẵn (kể cả file lớp chung); `kind` bỏ trống thì tự nhận theo nội dung và trả về trong kết quả. Bản đã parse hoặc danh sách lỗi có `path`. Scene chạy luôn `resolveScene` để bắt lỗi chéo. Kèm `warnings` cho thứ **hợp lệ mà vẫn ra hình thiếu**: hành động có công tắc `equip` một chiều, khuỷu gập ngược khi giơ tay hay mốc ghi kênh ngoài `mask`; scene có hai track cùng ghi một socket, người 3D trượt trên sàn hay không tới mốc dừng của `path`, khoá góc chính diện đẩy thân người 3D, tay chân giật trên hình (cùng dòng và ngưỡng với `check`); hành động tự giật (`wrap` nhảy ở đường nối vòng, mốc sát nhau đổi góc vọt). Scene kèm `errors` cho thứ `check` coi là lỗi: người 3D diễn hành động 2D ở kênh tay chân. |
+| `validate` | `data` \| `file`, `kind` | Kiểm object inline hoặc file có sẵn (kể cả file lớp chung); `kind` bỏ trống thì tự nhận theo nội dung và trả về trong kết quả. Bản đã parse hoặc danh sách lỗi có `path`. Scene chạy luôn `resolveScene` để bắt lỗi chéo. Kèm `warnings` cho thứ **hợp lệ mà vẫn ra hình thiếu**: hành động có công tắc `equip` một chiều, khuỷu gập ngược khi giơ tay hay mốc ghi kênh ngoài `mask`; scene có hai track cùng ghi một socket, người 3D trượt trên sàn hay không tới mốc dừng của `path`, thân người 3D quay gắt, tay chân giật trên hình (cùng dòng và ngưỡng với `check`); hành động tự giật (`wrap` nhảy ở đường nối vòng, mốc sát nhau đổi góc vọt). Scene kèm `errors` cho thứ `check` coi là lỗi: người 3D diễn hành động 2D ở kênh tay chân. |
 | `write` | `kind`, `file`, `data`, `overwrite?` | Ghi bản đã parse; không đè khi thiếu `overwrite`. |
 | `patch` | `kind`, `file`, `patch` | Deep-merge rồi parse rồi ghi; `null` xoá khoá, mảng thay cả mảng. Vá một nhân vật, hành động hay con vật của lớp chung là tạo bản đè trong thư mục cùng tên của workspace (`from` cho biết nguồn). |
 
@@ -52,7 +52,7 @@ Dựng và soi repo video: [05 — Dựng một repo video](05-repo-video.md).
 | `piece_prompt` | `socket`, `styles?`, `cols?`, `rows?`, `extra?` | Prompt tiếng Anh cho một lượt gen sheet. |
 | `add_piece` | `file`, `socket`, `name`, `description?`, `config?`, `as?` | Chép PNG vào `pieces/<socket>/` rồi ghi mục vào `catalog.json` của workspace; `file` trùng tên một mảnh chung là đè nó. |
 | `scene_events` | `scene`, `name?`, `cast?` | Mốc `events[]` của mọi hành động trong cảnh, đã đổi ra **giây scene** và sắp theo thời gian (`phase` và `cycle` của clip tính sẵn, clip lặp thì sự kiện lặp). Chỗ hỏi "lưỡi rìu chạm gỗ ở giây nào" — xem [03](03-scene.md#hỏi-sự-kiện). |
-| `scene_probe` | `scene`, `t` (số, `"@mốc"`, hoặc mảng), `cast?`, `anchors?` | Kèm `camera` tại từng mốc (`x`, `y`, `zoom`, `view`) — hiệu ứng bám đúng người vẫn có thể nằm ngoài khung. `x` đã cộng trôi, `flip`, `view` và `headView` đã lấy mẫu tại `t`, `rotate` (xoay cả người), pose, lớp, nét mặt, toạ độ vai/khuỷu/cổ tay/bàn chân và khối đầu; đạo cụ thì trục bánh và góc đã quay; động vật thì hông, vai, yên, gáy, mõm, chóp cánh, bàn chân, mỏ/mắt, `root` (`hip` là đang bay hay bị xách) và `host` (ai đang cưỡi / xách). `anchors` hỏi thêm mốc bất kỳ — khớp hoặc socket mảnh — mỗi mốc trả `{x, y, deg, w, h}`. Mọi số đi qua `anchorAt` của rig nên **cùng hệ với chỗ vẽ** (sân khấu của cảnh): bàn chân thấp hơn nằm đúng `groundY`, cắm thẳng vào hiệu ứng bên Remotion. Người 3D kèm `world`: khớp trong thế giới, hướng trước và sau khoá góc chính diện, đích tay — xem [Người 3D](#người-3d). |
+| `scene_probe` | `scene`, `t` (số, `"@mốc"`, hoặc mảng), `cast?`, `anchors?` | Kèm `camera` tại từng mốc (`x`, `y`, `zoom`, `view`) — hiệu ứng bám đúng người vẫn có thể nằm ngoài khung. `x` đã cộng trôi, `flip`, `view` và `headView` đã lấy mẫu tại `t`, `rotate` (xoay cả người), pose, lớp, nét mặt, toạ độ vai/khuỷu/cổ tay/bàn chân và khối đầu; đạo cụ thì trục bánh và góc đã quay; động vật thì hông, vai, yên, gáy, mõm, chóp cánh, bàn chân, mỏ/mắt, `root` (`hip` là đang bay hay bị xách) và `host` (ai đang cưỡi / xách). `anchors` hỏi thêm mốc bất kỳ — khớp hoặc socket mảnh — mỗi mốc trả `{x, y, deg, w, h}`. Mọi số đi qua `anchorAt` của rig nên **cùng hệ với chỗ vẽ** (sân khấu của cảnh): bàn chân thấp hơn nằm đúng `groundY`, cắm thẳng vào hiệu ứng bên Remotion. Người 3D kèm `world`: khớp trong thế giới, hướng khai và hướng vẽ, đích tay — xem [Người 3D](#người-3d). |
 
 Chỗ nào nhận `character` / `action` / `scene` thì nhận **tên file trong
 workspace hoặc object inline** chưa ghi — vòng lặp gen → nhìn → sửa không cần
@@ -151,7 +151,7 @@ không có tool riêng.
 
   ```jsonc
   "world": {
-    "yaw": 86.9, "yawSaid": 67, "theta": 20, "thetaRaw": 0, "locked": true,
+    "yaw": 112, "yawSaid": 112, "theta": 45,
     "flip": true, "near": "left", "seated": true, "floor": 0, "s": 1,
     "joints": { "hip": [300, 96, 700], "kneeNear": [...], "footNear": [...], "shoulderNear": [...],
                 "elbowNear": [...], "wristNear": [...], "neck": [...], "head": [...], … },
@@ -159,9 +159,10 @@ không có tool riêng.
   }
   ```
 
-  `yaw` là hướng thật sau khoá (độ, cùng vòng với `yawSaid`), `yawSaid` là yaw khai (nội suy
-  `path`), `yawHeading` có khi người đi — hướng theo `path` trước khoá. `thetaRaw` dưới `FRONT_MIN`
-  là `locked`. `near` là tay / chân gần ống kính theo giải phẫu (`*Near` của `joints` là chi ấy);
+  `yaw` là hướng vẽ (độ, cùng vòng với `yawSaid`), `yawSaid` là yaw khai (nội suy `path`),
+  `yawHeading` có khi người đi mà thân nhắm khác yaw khai — hướng theo `path`, trước giới hạn tốc
+  quay. Người đứng yên thì `yaw` là đúng `yawSaid` ở mọi góc, kể cả nhìn thẳng ống kính (`theta` 0).
+  `near` là tay / chân gần ống kính theo giải phẫu (`*Near` của `joints` là chi ấy);
   `hands` là đích thế giới đang áp (`w` là phần đích), đích hệ thân của hành động nằm ở `pose.reach`.
   Cảnh có `lens` và người 3D kèm `clashes`: mỗi mốc hỏi, các chỗ phần người lồng vào đồ khối hay vào
   người khác sâu quá ngưỡng của `check`, sâu trước —
@@ -172,11 +173,11 @@ không có tool riêng.
   (hỏi riêng một người bằng `cast` thì chỉ người ấy), cùng dòng báo và ngưỡng (`stickman.snap`) với
   `check` ([03](03-scene.md#giật-trên-hình)).
 - **`describe_rig`** có `world3d`: trục thế giới, `yaw`, `theta` và bảng nấc `viewOfTheta`,
-  `FRONT_MIN`, `scene.lens` khác `camera[]`, `cast[].world`, `authoredAt`, `reach` và `REACH_ELBOW`,
+  `scene.lens` khác `camera[]`, `cast[].world`, `authoredAt`, `reach` và `REACH_ELBOW`,
   `world.hands`, và bộ hành động 3D lấy từ chính các file `authoredAt: "side"` trong hai lớp.
 - **`render_action` / `render_character` với `yaw`** vẽ người 3D đứng một mình giữa sân khấu
   trống: một cảnh tối thiểu (`solo3d` / `soloStage` của `@stickman3d/fx`, ống kính cúi `pitch`, mặc định `16`)
-  rồi `sceneAt`, nên cờ nâng, đích tay hệ thân và khoá góc chính diện đi đúng đường của scene.
+  rồi `sceneAt`, nên cờ nâng và đích tay hệ thân đi đúng đường của scene.
   `view`, `headView`, `flip` bị bỏ qua — chúng suy từ `theta`, nhãn ô ghi `theta`. Ô `{ action, t }`
   diễn hành động ấy; tên trong `POSES` và delta pose không có cờ nâng nên vẽ kênh 2D, treo từ hông của
   người đứng, không ghế — tư thế ngồi hay ngồi xổm soi bằng hành động. Hai đùi gập quá

@@ -63,16 +63,7 @@ import {
 } from "./blend";
 import { D, FRAMES, RIG, type FrameName, type FrameSpec } from "./constants";
 import { feet, type Legs } from "./geometry";
-import {
-  BODY3,
-  dirOf,
-  facing,
-  feet3,
-  FRONT_MIN,
-  viewOfTheta,
-  type Body3,
-  type World,
-} from "./figure3d";
+import { BODY3, dirOf, facing, feet3, viewOfTheta, type Body3, type World } from "./figure3d";
 import { project, scaleAt, type Lens, type V3 } from "./lens";
 import { POSES, POSE_NAMES } from "./poses";
 import { propSeat, type PropData } from "./props";
@@ -314,8 +305,8 @@ const HandKeySchema = z.object({
 /**
  * Người đặt trong thế giới 3D của `scene.lens`: chỗ đứng, cỡ, góc nhìn, lật đều suy từ đây mỗi
  * khung — `x`, `y`, `scale`, `view`, `headView`, `flip`, `zParts` của người ấy không còn
- * nghĩa. Tay chân chiếu thật (kênh soạn ở `side`), thân không bao giờ quay thẳng vào ống kính
- * (`FRONT_MIN`). Tĩnh thì khai `at` / `yaw` / `sit`, đi thì `path`. docs/03-scene.md#người-3d
+ * nghĩa. Tay chân chiếu thật (kênh soạn ở `side`), `yaw` khai là hướng vẽ ở mọi góc. Tĩnh thì
+ * khai `at` / `yaw` / `sit`, đi thì `path`. docs/03-scene.md#người-3d
  */
 const WorldSchema = z
   .object({
@@ -2398,7 +2389,7 @@ const TURN_BACK_SPAN = 1.5;
 /**
  * Người 3D mà thân quay gắt: quay nhanh hơn `TURN_JERK` độ/giây, hay quay đi `TURN_BACK`° rồi quay
  * lại quá nửa trong `TURN_BACK_SPAN` giây. Đo trên hướng thân thế giới `sceneAt(…).world.yaw` từng
- * khung, nên bắt cả cú quay do rig tự lái (hông trượt quá mốc dừng, khoá góc chính diện đổi phía)
+ * khung, nên bắt cả cú quay do rig tự lái (hông trượt quá mốc dừng, hướng thân lái theo `path`)
  * chứ không chỉ mốc `yaw` khai. Mỗi cú một dòng. docs/03-scene.md#check-cho-người-3d
  */
 export function sceneTurnProblems(rt: SceneRuntime): string[] {
@@ -2424,7 +2415,7 @@ export function sceneTurnProblems(rt: SceneRuntime): string[] {
       const span =
         jerk.from === jerk.to ? `giây ${sec(jerk.from)}` : `giây ${sec(jerk.from)}–${sec(jerk.to)}`;
       bad.push(
-        `\`${m.id}\` ${span}: thân quay ${Math.round(jerk.rate)}°/s (ngưỡng ${TURN_JERK}°/s) — mốc \`yaw\` đổi gấp, khoá góc chính diện đổi phía, hay hướng thân lái về chỗ hông chưa tới; giãn mốc \`yaw\` ra, hay cho clip đi kết thúc đúng lúc tới mốc dừng`,
+        `\`${m.id}\` ${span}: thân quay ${Math.round(jerk.rate)}°/s (ngưỡng ${TURN_JERK}°/s) — mốc \`yaw\` đổi gấp, hay hướng thân lái về chỗ hông chưa tới; giãn mốc \`yaw\` ra, hay cho clip đi kết thúc đúng lúc tới mốc dừng`,
       );
       jerk = undefined;
     };
@@ -2475,7 +2466,7 @@ export function sceneTurnProblems(rt: SceneRuntime): string[] {
       let from = k0;
       while (from < kb && Math.abs(ys[from + 1] - ys[k0]) < 2) from++;
       bad.push(
-        `\`${m.id}\` giây ${sec(ts[from])}–${sec(ts[back])}: thân quay ${Math.round(Math.abs(out))}° rồi quay lại trong ${sec(ts[back] - ts[from])} s — thường là hông trượt quá mốc dừng \`path\` (clip đi kết thúc trễ) hay khoá góc chính diện đổi phía; dời \`start\` của clip sau clip đi, hay đổi hướng người, ống kính`,
+        `\`${m.id}\` giây ${sec(ts[from])}–${sec(ts[back])}: thân quay ${Math.round(Math.abs(out))}° rồi quay lại trong ${sec(ts[back] - ts[from])} s — thường là hông trượt quá mốc dừng \`path\` (clip đi kết thúc trễ) hay hướng thân lái về chỗ hông chưa tới; dời \`start\` của clip sau clip đi, hay giãn mốc \`path\` ra`,
       );
       while (i < peaks.length && peaks[i] < back) i++;
     }
@@ -2483,61 +2474,10 @@ export function sceneTurnProblems(rt: SceneRuntime): string[] {
   return bad;
 }
 
-/** Bước lấy mẫu (giây) khi dò quãng khoá góc chính diện đẩy thân */
-const LOCK_STEP = 1 / 30;
-
 /**
- * Người 3D mà khoá góc chính diện (`FRONT_MIN`) đang đẩy thân: hướng khai không được giữ. Mỗi
- * quãng liền một dòng — người, giây, yaw khai và góc lệch ống kính `θ` của nó, yaw sau khi đẩy —
- * lấy ở khung bị đẩy nhiều nhất. Cảnh báo, không phải lỗi: rig tự đẩy để không khung nào nhìn
- * thẳng vào ống kính. docs/03-scene.md#người-3d
- */
-export function sceneFacingProblems(rt: SceneRuntime): string[] {
-  const lens = rt.lens;
-  if (!lens) return [];
-  const bad: string[] = [];
-  const n = Math.max(1, Math.round(rt.duration / LOCK_STEP));
-  const deg = (r: number) => Math.round((((r / D) % 360) + 360) % 360);
-  for (const m of rt.cast) {
-    if (!m.world) continue;
-    const h = rt.heights[m.id] ?? 1;
-    const dims = rt.bodies[m.id] ?? BODY3;
-    // người đi thì hướng trước khoá là hướng đi theo `path`, không còn là `yaw` của mốc
-    const said = m.world.path ? "yaw theo `path`" : "yaw khai";
-    let run: { from: number; to: number; raw: number; yaw: number; eff: number } | undefined;
-    const flush = () => {
-      if (!run) return;
-      const span =
-        run.from === run.to
-          ? `giây ${run.from.toFixed(2)}`
-          : `giây ${run.from.toFixed(2)}–${run.to.toFixed(2)}`;
-      bad.push(
-        `\`${m.id}\` ${span}: khoá góc chính diện đẩy thân — ${said} ${deg(run.yaw * D)}° (lệch ống kính ${Math.round(run.raw)}°) thành ${deg(run.eff)}° (lệch ${FRONT_MIN}°)`,
-      );
-      run = undefined;
-    };
-    for (let k = 0; k <= n; k++) {
-      const t = (k * rt.duration) / n;
-      const walk = walkerOf(rt, m, h, dims.hipHalf);
-      const pose = poseAt(m, t, walk && clockOf(walk));
-      const at = worldAt(lens, m.world, t, pose, h, dims.legHalf, walk);
-      if (at.raw >= FRONT_MIN) {
-        flush();
-        continue;
-      }
-      if (!run) run = { from: t, to: t, raw: at.raw, yaw: at.yaw, eff: at.world.yaw };
-      run.to = t;
-      if (at.raw < run.raw) Object.assign(run, { raw: at.raw, yaw: at.yaw, eff: at.world.yaw });
-    }
-    flush();
-  }
-  return bad;
-}
-
-/**
- * Hướng của người 3D tại `time`, độ: `said` là yaw khai (nội suy `path`), `yaw` là hướng trước khoá
- * góc chính diện (người đi: hướng theo `path`), `raw` là `theta` trước khoá. Người không có `world`
- * thì `undefined`. Hướng sau khoá là `sceneAt(…).world.yaw`.
+ * Hướng của người 3D tại `time`, độ: `said` là yaw khai (nội suy `path`), `yaw` là hướng thân nhắm
+ * tới (người đi: hướng theo `path`, trước giới hạn tốc quay). Người không có `world` thì
+ * `undefined`. Hướng vẽ là `sceneAt(…).world.yaw`.
  */
 export function worldFacingAt(
   rt: SceneRuntime,
@@ -2545,13 +2485,13 @@ export function worldFacingAt(
   time: number,
   height = 1,
   dims: Body3 = rt.bodies[id] ?? BODY3,
-): { said: number; yaw: number; raw: number } | undefined {
+): { said: number; yaw: number } | undefined {
   const m = member(rt, id);
   if (!m.world || !rt.lens) return;
   const walk = walkerOf(rt, m, height, dims.hipHalf);
   const pose = poseAt(m, time, walk && clockOf(walk));
   const at = worldAt(rt.lens, m.world, time, pose, height, dims.legHalf, walk);
-  return { said: keyAt(keysOf(m.world), time).yaw, yaw: at.yaw, raw: at.raw };
+  return { said: keyAt(keysOf(m.world), time).yaw, yaw: at.yaw };
 }
 
 type PathKey = Required<PathKey0>;
@@ -2599,7 +2539,7 @@ interface Walker {
   step: number;
   x: number[];
   z: number[];
-  /** Yaw sau khoá (phía đẩy giữ nguyên suốt quãng bị khoá) và yaw trước khoá */
+  /** Yaw vẽ (đã giới hạn tốc quay) và yaw thân nhắm tới */
   yaw: number[];
   yaw0: number[];
   /** Lật của bước ấy, và số lần đã lật tính tới nó — tra bậc thang, không nội suy */
@@ -2622,7 +2562,7 @@ const STEER_BACK = [60, 120] as const;
 const RATE_TAU = 0.15;
 /**
  * Thân người đang bước quay nhanh nhất ngần này (độ mỗi giây): cú quay trải qua cả một pha trụ nên
- * hông xoay quanh bàn chân trụ không văng ra, và khoá góc chính diện đổi phía trong `40 / TURN_WALK` giây
+ * hông xoay quanh bàn chân trụ không văng ra
  */
 const TURN_WALK = 150;
 /** Như `TURN_WALK` khi không bước — quay tại chỗ, ngồi: chỉ chặn cú nhảy một khung */
@@ -2718,7 +2658,6 @@ function bakeWalker(
   let steer = 0;
   let yawKey = keys[0].yaw;
   let yaw = yawKey;
-  let keep: number | undefined;
   let lift = RIG.thigh + RIG.shin;
   let prevP = keyAt(keys, 0).xz;
   let prevO: [number, number][] = [];
@@ -2766,16 +2705,13 @@ function bakeWalker(
     r += (rT - r) * ease;
     steer += (sT - steer) * ease;
     out.clock.push(k ? out.clock[k - 1] + r * step : 0);
-    // Giữ phía đẩy suốt quãng bị khoá: người đi gần tia nhìn không lật thân qua lại 40°
     const hip: V3 = [H[0], key.y - w.s * lift, H[1]];
-    const locked = facing(lens, hip, (yawKey + steer) * D, keep);
-    keep = locked.raw < FRONT_MIN ? (locked.flip ? -1 : 1) : undefined;
     const turn = (c ? TURN_WALK : TURN_STAND) * step;
-    const dy = wrap180(locked.yaw / D - yaw);
+    const dy = wrap180(yawKey + steer - yaw);
     yaw += k ? Math.max(-turn, Math.min(turn, dy)) : dy;
     out.yaw.push(yaw);
     out.yaw0.push(yawKey + steer);
-    const f = facing(lens, hip, yaw * D, undefined, false);
+    const f = facing(lens, hip, yaw * D);
     // Lật là chân gần đổi sang chân kia: `poseAt` đổi kênh để mỗi bàn chân vẫn là chính nó
     const turned = k > 0 && f.flip !== out.flip[k - 1];
     out.flip.push(f.flip);
@@ -2831,8 +2767,7 @@ function bakeWalker(
 /**
  * Người 3D tại `time`: tâm hông thế giới — ngồi thì nâng khỏi mặt ngồi nửa bề dày đùi, đứng thì
  * bàn chân thấp nhất chạm sàn —, rồi hướng thật so với ống kính. Đứng yên (`at`) thì đặt thẳng;
- * đi theo `path` thì điểm sàn và yaw tra bảng `walk` đã nướng. Trả kèm yaw khai (độ) và góc
- * `theta` trước khoá góc chính diện.
+ * đi theo `path` thì điểm sàn và yaw tra bảng `walk` đã nướng. Trả kèm hướng thân nhắm tới (độ).
  */
 function worldAt(
   lens: Lens,
@@ -2842,7 +2777,7 @@ function worldAt(
   height: number,
   legHalf: number,
   walk?: Walker,
-): { world: World; yaw: number; raw: number } {
+): { world: World; yaw: number } {
   const keys = keysOf(w);
   const { a, b, u, sit } = legOf(keys, time);
   const stand = Math.max(...feet(pose, height, RIG, true).map((f) => f[1]));
@@ -2858,13 +2793,12 @@ function worldAt(
     y = b ? ya + (b.at[1] - w.s * liftAt(b) - ya) * u : ya;
   }
   const hip: V3 = [xz[0], y, xz[1]];
-  const pre = facing(lens, hip, yaw * D);
   const f = walk
     ? {
-        ...facing(lens, hip, sampleAt(walk.yaw, walk.step, time) * D, undefined, false),
+        ...facing(lens, hip, sampleAt(walk.yaw, walk.step, time) * D),
         flip: walk.flip[stepIndex(walk, time)],
       }
-    : pre;
+    : facing(lens, hip, yaw * D);
   return {
     world: {
       lens,
@@ -2877,7 +2811,6 @@ function worldAt(
       ...(sit && { seated: true }),
     },
     yaw,
-    raw: pre.raw,
   };
 }
 

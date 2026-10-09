@@ -109,8 +109,8 @@ tập mất cả phút. Sửa xong một cảnh thì chỉ soi cảnh ấy:
 pnpm exec stickman check --scene t03-s01-cd-haru   # regex trên id cảnh: ^t03-s01 lấy cả nhóm
 ```
 
-MCP: `check({ scene })`. Cảnh khớp được soi đủ như lượt toàn bộ (tham chiếu, trượt chân, khoá
-góc, hành động 2D trên người 3D, người lồng vào đồ, vẽ sai thứ tự, giật trên hình…); cảnh không khớp chỉ được parse cho tham chiếu chéo.
+MCP: `check({ scene })`. Cảnh khớp được soi đủ như lượt toàn bộ (tham chiếu, trượt chân, thân
+quay gắt, hành động 2D trên người 3D, người lồng vào đồ, giật trên hình…); cảnh không khớp chỉ được parse cho tham chiếu chéo.
 In cảnh báo của cảnh khớp và **mọi lỗi** ở bất kỳ đâu; tập, tiếng, `retime`, file chưa commit, công cụ ngoài thì bỏ qua — chúng chỉ có ở lượt toàn bộ, chạy trước khi
 commit hay sau khi nâng rig. Regex không khớp cảnh nào là lỗi.
 
@@ -127,11 +127,9 @@ Các kiểm tra sau bắt lỗi hợp lệ theo schema nhưng làm thiếu hình
 | **Khuỷu gập ngược khi giơ tay** | `armFoldProblems` của rig: mốc có `\|vai\| > 120` mà khuỷu ngược dấu vai — cẳng tay bung ra ngoài thay vì cuộn về đầu — [00](00-bat-bien.md#dấu-góc-và-hình-học) |
 | **Mốc ghi kênh ngoài `mask`** | `maskProblems` của rig: giá trị bị bỏ im lặng — nụ cười khai ở `face` mà `mask` thiếu `face` thì không bao giờ hiện |
 | **Người 3D trượt, không tới mốc dừng** | `sceneSlideProblems` đo trên mặt sàn thế giới cho người có `world`: bàn chân chịu lực dịch quá nửa quãng hông đi trong `0,4 s`, mốc dừng của `path` mà hông cách quá `20` đơn vị rig, clip có sải chân chạy khi `path` đã đứng yên — [03](03-scene.md#check-cho-người-3d) |
-| **Khoá góc chính diện đẩy thân** | `sceneFacingProblems` của rig: người 3D khai hướng gần ống kính hơn `FRONT_MIN`, mỗi quãng một dòng kèm hướng khai và hướng sau khi đẩy — [03](03-scene.md#check-cho-người-3d) |
 | **Người 3D lồng vào đồ** | `sceneClashProblems` của cli (`solidClashes` của fx): phần người lấn vào khối đồ của lớp vẽ code hay vào người khác quá `2` đơn vị thế giới (`stickman.clash.tol`), mỗi cặp một dòng kèm giây sâu nhất và các quãng giây; món khai `touch` thì bỏ phần người ấy — [10](10-lop-ve-code.md#người-lồng-vào-đồ) |
 | **Tay xuyên thân** | `sceneClashProblems` của cli (`armPierce` của lõi, tay và thân đúng như three vẽ): cánh tay, cẳng tay (bỏ quãng sát vai và sát cổ tay) lấn vào thân áo của chính người ấy quá `4` (`stickman.clash.self`, `false` là tắt) — [10](10-lop-ve-code.md#tay-xuyên-thân) |
 | **Đồ lồng vào đồ** | `sceneItemClashProblems` của cli (`solidItemClashes` của fx): hai món của lớp vẽ code lấn nhau quá `stickman.clash.tol` **và** phần thể tích món nhỏ nằm trong món kia quá `0,1` (`stickman.clash.items`, `false` là tắt), mỗi cặp một dòng; món khai tên món kia trong `touch` thì bỏ — [10](10-lop-ve-code.md#đồ-lồng-vào-đồ) |
-| **Vẽ sai thứ tự** | `sceneOverdrawProblems` của cli (`solidOverdraws` của fx): mảnh đồ khối vẽ đè lên phần người dù nằm sau nó, hay phần người vẽ đè lên mảnh đồ đứng trước, quá `stickman.clash.tol`, mỗi cặp một dòng; lỗi của rig — [10](10-lop-ve-code.md#vẽ-sai-thứ-tự) |
 | **Người 3D diễn hành động 2D** | `sceneSideProblems` của rig, **mức lỗi**: người có `world` mà clip ghi kênh tay chân của hành động không soạn ở `side` — sân khấu three vẽ kênh ấy ở dáng nghỉ, hoà với hành động `side` là giật một khung. Mỗi người, mỗi clip một dòng kèm bản `-3d` có sẵn — [03](03-scene.md#hành-động-cho-người-3d) |
 | **Tay chân giật trên hình** | `sceneSnapProblems` của rig: lấy mẫu theo fps bản chốt, khớp đúng như hình vẽ ra (`actJoints` cho người 3D, `joints2` cho người 2D) qua khung cắt camera, khung nào một khớp nhảy vượt nền chuyển động quanh nó quá ngưỡng (`stickman.snap`) thì kêu, kèm lý do đọc từ timeline; chỗ khai `snap` thì bỏ — [03](03-scene.md#giật-trên-hình) |
 | **Hành động tự giật** | `actionSnapProblems` của rig: `wrap` mà mốc cuối ở `t: 1` lệch mốc đầu, hay hai mốc sát nhau đổi góc lớn hơn hẳn hai đoạn kề; file khai `snap` thì bỏ — [01](01-rig.md#hành-động-giật-có-chủ-ý) |

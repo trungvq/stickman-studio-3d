@@ -1262,12 +1262,10 @@ trôi ngang của người đi theo `path` tích phân trên nó ([03](03-scene.
   chiếu, nằm trên vành vai của thân áo chiếu thật. Ở mọi góc cúi tới 60° hai gốc vai và hai gốc chân
   nằm trong viền thân áo dựng khối. Gốc sát mặt phẳng ống kính (độ sâu không quá nửa độ sâu tâm)
   chiếu ra vô cực, nên lấy nửa trục nằm ngang `∓ nửa rộng · cos theta`.
-- **Không có góc chính diện tuyệt đối.** `theta` không bao giờ dưới `FRONT_MIN` (20°): khai hướng
-  gần hơn thì `facing` đẩy thân ra đúng ngưỡng, về phía đang lệch (thẳng 0° thì sang phải khung).
-  Dưới ngưỡng ấy đùi người ngồi chĩa thẳng vào ống kính, chiếu ra chỉ còn hai cái gối nhú; rig
-  không ăn gian gì cho chi chĩa vào ống kính. Quay lưng thẳng (`theta` 180) không khoá: đùi chĩa
-  ra xa nằm sau thân. `facing` trả cả `raw` (góc trước khoá); `sceneFacingProblems` dùng nó để
-  `check` kêu khi khoá đang đẩy ([03](03-scene.md#check-cho-người-3d)).
+- **Quay được mọi góc.** `facing` chỉ đo: `theta`, mặt sang trái hay phải khung (`flip`), `yaw`
+  giữ nguyên — `yaw` khai là hướng vẽ, kể cả nhìn thẳng ống kính (`theta` 0) hay quay lưng thẳng
+  (`theta` 180). Người SVG 2.5D không ăn gian gì cho chi chĩa thẳng vào ống kính: đùi người ngồi
+  quay về ống kính chiếu ra chỉ còn hai cái gối nhú. Người 3D của three vẽ đúng ở mọi góc.
 - **Ngồi đúng.** Người ngồi có hông cao hơn mặt ngồi đúng nửa bề dày đùi (`limbHalf(c).leg`): mông
   và mặt dưới đùi nằm trên mặt ngồi, không xuyên ghế. Khối thân đáy nằm ngang ở mặt ngồi dù thân
   cúi, chỉ vành vai nghiêng theo.

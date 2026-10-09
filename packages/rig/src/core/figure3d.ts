@@ -20,13 +20,6 @@ import { shoulderRoot } from "./torso";
 import type { BodyPart, Pose, Pt, Reach, View } from "./types";
 
 /**
- * Góc lệch tối thiểu (độ) giữa hướng mặt của thân và hướng về ống kính, đo trong mặt sàn: không
- * có góc chính diện tuyệt đối. Khai hướng gần hơn thì rig đẩy thân ra đúng ngưỡng, về phía đang
- * lệch. Quay lưng thẳng không bị khoá. docs/01-rig.md#người-3d
- */
-export const FRONT_MIN = 20;
-
-/**
  * Khối sọ của người 3D nhận bấy nhiêu phần góc ống kính nhìn xuống đầu: nhận đủ thì ở ống kính cao
  * nét mặt dồn xuống cằm như đang cúi gằm. Thân vẫn chiếu đủ. docs/01-rig.md#người-3d
  */
@@ -34,8 +27,8 @@ export const HEAD_LOOK = 0.5;
 
 /**
  * Người đặt trong thế giới 3D (`cast[].world` + `scene.lens`), đã suy cho một khung: `hip` là
- * tâm hông trong thế giới, `yaw` radian như `Place3` (0 là mặt hướng +x, π/2 là −z), đã qua khoá
- * góc chính diện. `sceneAt` trả sẵn.
+ * tâm hông trong thế giới, `yaw` radian như `Place3` (0 là mặt hướng +x, π/2 là −z). `sceneAt`
+ * trả sẵn.
  */
 export interface World {
   lens: Lens;
@@ -67,27 +60,18 @@ export interface Body3 {
 export const BODY3: Body3 = { legHalf: 4.5, hipHalf: 22 };
 
 /**
- * Hướng thật của người so với ống kính: góc `theta`, mặt sang trái hay phải khung, và `yaw` sau
- * khoá góc chính diện (`FRONT_MIN`); `raw` là góc trước khoá. Đo theo tia nhìn tới chính người
- * ấy, không theo trục ống kính. `keep` (`±1`) giữ phía đẩy của khung trước khi đang bị khoá;
- * `lock: false` chỉ đo, không đẩy.
+ * Hướng thật của người so với ống kính: góc `theta` và mặt sang trái hay phải khung (`flip`); `yaw`
+ * giữ nguyên. Đo theo tia nhìn tới chính người ấy, không theo trục ống kính.
  */
-export function facing(lens: Lens, at: V3, yaw: number, keep?: number, lock = true) {
+export function facing(lens: Lens, at: V3, yaw: number) {
   const to: V3 = [lens.eye[0] - at[0], 0, lens.eye[2] - at[2]];
   const l = Math.hypot(to[0], to[2]) || 1;
   const toCam: V3 = [to[0] / l, 0, to[2] / l];
   // phải của khung khi nhìn dọc tia từ mắt tới người
   const right: V3 = [-toCam[2], 0, toCam[0]];
   const F = dirOf(yaw);
-  const raw = Math.acos(Math.max(-1, Math.min(1, dot3(F, toCam)))) / D;
-  const side = raw < FRONT_MIN && keep ? keep : dot3(F, right) < 0 ? -1 : 1;
-  let eff = yaw;
-  if (lock && raw < FRONT_MIN) {
-    const m = FRONT_MIN * D;
-    const G = add3(scale3(toCam, Math.cos(m)), scale3(right, side * Math.sin(m)));
-    eff = Math.atan2(-G[2], G[0]);
-  }
-  return { theta: lock ? Math.max(raw, FRONT_MIN) : raw, raw, flip: side < 0, yaw: eff };
+  const theta = Math.acos(Math.max(-1, Math.min(1, dot3(F, toCam)))) / D;
+  return { theta, flip: dot3(F, right) < 0, yaw };
 }
 
 /** Nấc góc nhìn gần nhất cho phần còn vẽ theo nấc (mảnh ảnh, nét mặt); `quarter` nghỉ quanh 10° */

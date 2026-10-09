@@ -470,11 +470,9 @@ function world3Notes() {
     lens: "`scene.lens` { eye [x,y,z], yaw, pitch, f, cx, cy } là ống kính 3D: yaw độ quanh trục đứng (0 nhìn theo +z), pitch dương là cúi, f tiêu cự, (cx, cy) điểm khung của trục nhìn. Không phải `camera[]`: camera là khung cắt 2D đặt SAU phép chiếu, zoom ở đó là phóng ảnh, không phải dolly.",
     world:
       "`cast[].world` đặt một người vào thế giới của `scene.lens`: đúng một trong `at` (tĩnh, kèm `yaw`, `sit`) hoặc `path` [{t, at, yaw, sit, ease}] (đi: chỗ người phải ở theo thời gian, chân tự đuổi theo). Đứng thì `at` là điểm sàn dưới hông, ngồi (`sit`) là điểm trên mặt ngồi dưới khớp hông. `s` đơn vị thế giới cho một đơn vị rig (mặc định 1), `floor` y sàn dưới chân người ngồi (có thì bàn chân chạm sàn có bóng), `hands` đích cổ tay thế giới theo thời gian. Có `world` thì `x`, `y`, `scale`, `view`, `headView`, `flip`, `z`, `zParts` của người ấy không còn nghĩa — rig suy từ phép chiếu; người 3D xếp lớp chung với `solids` của lớp vẽ code theo hình học.",
-    yaw: "`world.yaw` / `path[].yaw` độ quanh trục đứng: 0 mặt hướng +x, 90 hướng −z, 180 hướng −x — ống kính yaw 0 đặt ở z âm nhìn theo +z thì 90 là quay mặt về ống kính, 0 là đi sang phải khung.",
+    yaw: "`world.yaw` / `path[].yaw` độ quanh trục đứng: 0 mặt hướng +x, 90 hướng −z, 180 hướng −x — ống kính yaw 0 đặt ở z âm nhìn theo +z thì 90 là quay mặt về ống kính, 0 là đi sang phải khung. Yaw khai là hướng vẽ ở mọi góc, kể cả nhìn thẳng ống kính.",
     theta:
       "`theta` là góc thật giữa hướng mặt và tia nhìn từ người tới ống kính, 0–180, đo trong mặt sàn. Thân áo, váy dựng khối chiếu thật qua ống kính (co dọc theo góc cúi); cổ, đầu, gốc vai, gốc chân ở chỗ chiếu thật; khối sọ nhận HEAD_LOOK phần góc ống kính nhìn xuống. Mảnh ảnh và nét mặt lấy nấc gần nhất theo `viewBands`.",
-    frontMin: rig.FRONT_MIN,
-    frontMinNote: `Không có góc chính diện tuyệt đối: theta dưới ${rig.FRONT_MIN}° thì rig đẩy thân ra đúng ${rig.FRONT_MIN}° về phía đang lệch (thẳng 0° thì sang phải khung); quay lưng thẳng (180) không khoá. scene_probe trả yaw sau khoá, yaw khai và thetaRaw; validate / check kêu khi khoá đang đẩy.`,
     viewBands: thetaBands(),
     authoredAt:
       'Hành động `authoredAt: "side"` cho kênh tay chân nó ghi cờ nâng (`pose.lift`): góc đọc như soạn ở `side` — tiến theo hướng mặt, lên theo trục đứng. Kênh không cờ (POSES, hành động 2D) vẽ như rig 2D trên mặt khung. `torso` của người 3D luôn là góc cúi trong mặt phẳng dọc của thân. Người đi theo `path` đọc chân như soạn ở `side` dù hành động không khai.',
@@ -582,7 +580,7 @@ server.registerTool(
         "Khung hình là scene.frame: wide (1280×720, ra video 1920×1080) mặc định, tall (405×720, ra 1080×1920) cho short. Gốc ở giữa, đất ở y=260, hai khung cùng cao nên người to y hệt — khung dọc chỉ hẹp bề ngang: x ngoài ±640 (wide) hay ±202 (tall) là ra khỏi khung. Một chu kỳ walk mặc định trôi ~293 px, tức gần hết bề ngang khung dọc. Mọi shot của một tập phải cùng khung.",
         "Nhân vật: rig.height chỉ kéo dọc. Trang phục là part (src: part) hoặc PNG có alpha (src: image, file trong pieces/); không có SVG.",
         "Cách đo rẻ nhất: nhồi N tư thế ứng viên vào N mốc của một action inline rồi render_action / scene_probe — một lần gọi vừa có số vừa có hình.",
-        'Người 3D (cảnh có `scene.lens`, người có `cast[].world`): quy ước trục, yaw, theta, khoá góc chính diện, đích tay và bộ hành động ở `world3d`; mẫu cảnh ở schema(scenes).example3d. Góc khớp trong hành động vẫn theo các luật trên, đọc như soạn ở `side` khi hành động khai `authoredAt: "side"`.',
+        'Người 3D (cảnh có `scene.lens`, người có `cast[].world`): quy ước trục, yaw, theta, đích tay và bộ hành động ở `world3d`; mẫu cảnh ở schema(scenes).example3d. Góc khớp trong hành động vẫn theo các luật trên, đọc như soạn ở `side` khi hành động khai `authoredAt: "side"`.',
         "Cần biết một mảnh hay một khớp nằm ở đâu trên khung thì hỏi scene_probe với `anchors`, đừng suy công thức và đừng render hai lượt rồi diff: nó trả tâm, góc và cỡ hộp trong đúng hệ toạ độ chỗ vẽ.",
       ],
     });
@@ -705,7 +703,6 @@ server.registerTool(
       const warnings = [
         ...rig.sceneEquipProblems(r.data, actions),
         ...rig.sceneSlideProblems(rt),
-        ...rig.sceneFacingProblems(rt),
         ...rig.sceneTurnProblems(rt),
         ...sceneSnapLines(rt),
       ];
@@ -1074,7 +1071,7 @@ server.registerTool(
   "scene_probe",
   {
     description:
-      "Số liệu một scene tại các mốc giây, đọc bằng anchorAt của rig nên đúng hệ toạ độ chỗ vẽ (y xuống, đất ở y của chân): chỗ đứng x (đã cộng trôi ngang), tư thế, lớp tay, nét mặt, toạ độ vai / khuỷu / cổ tay / bàn chân và khối đầu của từng người; đạo cụ thì chỗ đứng, trục bánh và góc bánh đã quay; động vật thì chỗ đứng, hông, vai, yên (saddle), gáy, mõm, bàn chân — con đang bị cưỡi hay xách trả kèm host. `anchors` hỏi thêm mốc bất kỳ — khớp hoặc socket mảnh — mỗi mốc trả {x, y, deg, w, h}: tâm hộp, góc SVG và cỡ hộp đã nhân scale, cắm thẳng vào translate/rotate của một <g> anh em với <Character>. Dùng để tính điểm gặp, đặt tay lên càng xe, bám hiệu ứng vào người thay vì đoán. Người 3D (cast[].world) kèm `world`: khớp hông/gối/bàn chân/vai/khuỷu/cổ tay/cổ/đầu trong toạ độ thế giới, yaw sau khoá góc chính diện, yawSaid, theta, thetaRaw, locked, seated, near (tay gần là tay phải hay trái), hands (đích thế giới đang áp). Cảnh có lens và người 3D kèm `clashes`: mỗi mốc giây, các chỗ phần người lồng vào đồ khối hay vào người khác sâu quá ngưỡng của check (stickman.clash.tol, mặc định 2) ({who, with, depth}) — rig không đẩy người ra khỏi đồ. `snaps`: các cú tay chân giật trên hình của cả cảnh (có `cast` thì của người ấy), cùng dòng báo và ngưỡng (stickman.snap) với check; cố ý giật thì khai `snap: true` ở hành động, ở clip hay ở mốc world.hands.",
+      "Số liệu một scene tại các mốc giây, đọc bằng anchorAt của rig nên đúng hệ toạ độ chỗ vẽ (y xuống, đất ở y của chân): chỗ đứng x (đã cộng trôi ngang), tư thế, lớp tay, nét mặt, toạ độ vai / khuỷu / cổ tay / bàn chân và khối đầu của từng người; đạo cụ thì chỗ đứng, trục bánh và góc bánh đã quay; động vật thì chỗ đứng, hông, vai, yên (saddle), gáy, mõm, bàn chân — con đang bị cưỡi hay xách trả kèm host. `anchors` hỏi thêm mốc bất kỳ — khớp hoặc socket mảnh — mỗi mốc trả {x, y, deg, w, h}: tâm hộp, góc SVG và cỡ hộp đã nhân scale, cắm thẳng vào translate/rotate của một <g> anh em với <Character>. Dùng để tính điểm gặp, đặt tay lên càng xe, bám hiệu ứng vào người thay vì đoán. Người 3D (cast[].world) kèm `world`: khớp hông/gối/bàn chân/vai/khuỷu/cổ tay/cổ/đầu trong toạ độ thế giới, yaw vẽ, yawSaid, yawHeading (người đi: hướng nhắm theo path), theta, seated, near (tay gần là tay phải hay trái), hands (đích thế giới đang áp). Cảnh có lens và người 3D kèm `clashes`: mỗi mốc giây, các chỗ phần người lồng vào đồ khối hay vào người khác sâu quá ngưỡng của check (stickman.clash.tol, mặc định 2) ({who, with, depth}) — rig không đẩy người ra khỏi đồ. `snaps`: các cú tay chân giật trên hình của cả cảnh (có `cast` thì của người ấy), cùng dòng báo và ngưỡng (stickman.snap) với check; cố ý giật thì khai `snap: true` ở hành động, ở clip hay ở mốc world.hands.",
     inputSchema: {
       scene: Spec,
       t: z
@@ -1293,7 +1290,7 @@ const JOINTS3 = [
   "head",
 ];
 
-/** Người 3D trong thế giới: khớp, hướng trước / sau khoá góc chính diện, đích tay — docs/03-scene.md#người-3d */
+/** Người 3D trong thế giới: khớp, hướng khai / nhắm tới / vẽ, đích tay — docs/03-scene.md#người-3d */
 function world3(rt, id, time, c, at, fa) {
   const w = at.world;
   const said = rig.worldFacingAt?.(rt, id, time, c.rig.height, rig.body3(c));
@@ -1310,7 +1307,6 @@ function world3(rt, id, time, c, at, fa) {
     ...(said ? { yawSaid: r1(said.said) } : {}),
     ...(heading ? { yawHeading: r1(near0(said.yaw)) } : {}),
     theta: r1(w.theta),
-    ...(said ? { thetaRaw: r1(said.raw), locked: said.raw < rig.FRONT_MIN } : {}),
     flip: w.flip,
     near,
     seated: !!w.seated,
@@ -1528,7 +1524,7 @@ server.registerTool(
   "check",
   {
     description:
-      "Soi workspace: version đã pin so với @stickman3d/sketch đang cài, JSON hỏng, socket trỏ tới mảnh không có, PNG thiếu alpha, mảnh không có trong danh mục, lớp vẽ code gói được không và `scenes` của nó có trỏ đúng tên cảnh, và công cụ ngoài (rsvg-convert / ffmpeg / ffprobe / magick) thiếu trên PATH. Soi cả workspace chậm: sửa xong một cảnh thì truyền `scene` — chỉ soi cảnh khớp (cảnh báo của chúng, người lồng vào đồ, vẽ sai thứ tự, kèm mọi lỗi), bỏ tập, tiếng, mảnh, git.",
+      "Soi workspace: version đã pin so với @stickman3d/sketch đang cài, JSON hỏng, socket trỏ tới mảnh không có, PNG thiếu alpha, mảnh không có trong danh mục, lớp vẽ code gói được không và `scenes` của nó có trỏ đúng tên cảnh, và công cụ ngoài (rsvg-convert / ffmpeg / ffprobe / magick) thiếu trên PATH. Soi cả workspace chậm: sửa xong một cảnh thì truyền `scene` — chỉ soi cảnh khớp (cảnh báo của chúng, người lồng vào đồ, kèm mọi lỗi), bỏ tập, tiếng, mảnh, git.",
     inputSchema: {
       scene: z
         .string()

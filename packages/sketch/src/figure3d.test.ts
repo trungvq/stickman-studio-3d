@@ -7,7 +7,6 @@ import {
   dirOf,
   facing,
   figure3d,
-  FRONT_MIN,
   HEAD_LOOK,
   lengths,
   type Lens,
@@ -42,12 +41,13 @@ const worldAt = (yaw: number, hip: V3): World => {
 const seated = (yaw: number) => worldAt(yaw, [0, SEAT - limbHalf(c).leg, 0]);
 
 describe("người 3D", () => {
-  it("không có góc chính diện tuyệt đối: thân quay thẳng vào ống kính bị đẩy ra FRONT_MIN", () => {
+  it("facing chỉ đo: thân quay thẳng vào ống kính giữ đúng yaw khai, theta 0", () => {
     const toCam = Math.atan2(-(lens.eye[2] - 0), lens.eye[0] - 0);
     const f = facing(lens, [0, 0, 0], toCam);
-    expect(f.theta).toBeCloseTo(FRONT_MIN, 6);
-    expect(f.flip).toBe(false);
-    // quay lưng thẳng không khoá
+    expect(f.yaw).toBe(toCam);
+    expect(f.theta).toBeCloseTo(0, 4);
+    expect(facing(lens, [0, 0, 0], toCam + 5 * D).flip).toBe(true);
+    expect(facing(lens, [0, 0, 0], toCam - 5 * D).flip).toBe(false);
     expect(facing(lens, [0, 0, 0], toCam + Math.PI).theta).toBeCloseTo(180, 6);
   });
 

@@ -109,8 +109,8 @@ khấu cũng nới theo cùng luật. Chỉ mốc dưới không âm là sàn c�
 
 Hành động `authoredAt: "side"` (ô **Soạn ở góc nghiêng cho người 3D** ở cột Hành động) đổi sân
 khấu sang **người 3D giữa sân khấu trống**, đúng đường của `stickman-render --yaw` và
-`render_action` với `yaw`: `soloStage` / `<SoloWorld>` của `@stickman3d/fx`, nên cờ nâng, đích tay,
-khoá góc chính diện và ghế khối của người ngồi (hai đùi gập quá `SOLO_SIT_THIGH`) giống hệt. Người
+`render_action` với `yaw`: `soloStage` / `<SoloWorld>` của `@stickman3d/fx`, nên cờ nâng, đích tay
+và ghế khối của người ngồi (hai đùi gập quá `SOLO_SIT_THIGH`) giống hệt. Người
 ngồi được nâng cả cụm cho bàn chân thấp nhất chạm đường đất; vòng trên sàn quanh chỗ đứng có vạch
 chỉ hướng `+x` (yaw `0`). Hành động không khai `authoredAt` vẫn vẽ 2D như cũ.
 

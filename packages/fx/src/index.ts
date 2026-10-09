@@ -17,13 +17,7 @@ export { Typewriter, typewriterKeys } from "./Typewriter";
 export { DayNight } from "./DayNight";
 export { SceneFx } from "./SceneFx";
 export type { SceneFxProps } from "./SceneFx";
-export {
-  SceneWorld,
-  sceneBodies,
-  sceneClashes,
-  sceneItemClashes,
-  sceneOverdraws,
-} from "./SceneWorld";
+export { SceneWorld, sceneBodies, sceneClashes, sceneItemClashes } from "./SceneWorld";
 export type { SceneWorldProps } from "./SceneWorld";
 export * from "./layers";
 export * from "./solid";

@@ -357,26 +357,6 @@ scenes/pantry.json: đồ lồng vào đồ — mayPha (mảnh 10) ↔ cocVoi (m
 Tự đo trong code: `sceneItemClashes(rt, t, { codeLayers, tol, ratio })` cho một khung của cảnh,
 `solidItemClashes(lens, items, { tol, ratio, view })` cho các món đã dựng.
 
-## Vẽ sai thứ tự
-
-`stickman check` soi thêm chính thứ tự `solidOrder` vừa xếp, cho mỗi cảnh và mỗi giây mẫu như
-[Người lồng vào đồ](#người-lồng-vào-đồ), cùng ngưỡng `stickman.clash.tol`: lấy tâm và các đỉnh co
-về tâm của từng phần người, điểm nào nằm trong một mặt nhìn thấy của mảnh đồ trên khung thì so độ sâu
-của mặt ấy với điểm dọc tia nhìn. Mảnh vẽ sau phần người mà nằm sau nó, hay mảnh vẽ trước mà nằm
-trước nó, quá ngưỡng thì kêu — hình là mặt sàn cắt cụt chân, hay người vẽ đè lên quầy đứng trước.
-Bỏ cặp lồng nhau sâu hơn ngưỡng (đã báo ở mục trên), phần người khai bằng chuỗi trong `touch` của món, và điểm
-ngoài khung camera. Mỗi cặp (phần người, món, chiều đè) một dòng:
-
-```
-scenes/coffee.json: vẽ sai thứ tự — bucSan (mảnh 0) đè lên b.shinNear dù nằm sau 46.2 ở giây 3.50 · giây 3.50, 3.75
-scenes/quay.json: vẽ sai thứ tự — b.legNear đè lên quay (mảnh 0) dù nằm sau 12.4 ở giây 1.00 · giây 0.75–1.25
-```
-
-Dòng này là lỗi của rig, không phải của cảnh: chụp đúng khung ấy và báo về rig. Tự đo trong code:
-`sceneOverdraws(rt, t, { characterOf, codeLayers, tol })` của `@stickman3d/fx` cho một khung của cảnh,
-`solidOverdraws(lens, items, people, { tol, view, order })` cho khối đã dựng. Chúng chỉ để kiểm —
-đường vẽ không gọi.
-
 ## Soi bằng ảnh
 
 `render_scene` với `stage: true` (và `stickman-render --scene --stage`) vẽ lớp;

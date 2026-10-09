@@ -34,10 +34,8 @@ import type { SolidItem } from "./solid";
 import {
   solidClashes,
   solidItemClashes,
-  solidOverdraws,
   type ItemClash,
   type SolidClash,
-  type SolidOverdraw,
   type SolidPerson,
 } from "./solidOrder";
 import { SolidWorld, solidBody, solidFigure } from "./SolidWorld";
@@ -246,44 +244,6 @@ export function sceneItemClashes(
       otherName: furniture[c.other].name,
     }),
   );
-}
-
-/**
- * Chỗ đồ khối và người 3D xếp vẽ ngược độ sâu ở giây `t` (`solidOverdraws`), dựng đúng khối và đúng
- * thứ tự mà `<SceneWorld>` vẽ. Bỏ phần ngoài khung camera trừ khi `all`. Cảnh không có `lens` thì
- * rỗng. Chỉ để kiểm: `check`. docs/10-lop-ve-code.md#vẽ-sai-thứ-tự
- */
-export function sceneOverdraws(
-  rt: SceneRuntime,
-  t: number,
-  {
-    characterOf,
-    codeLayers = [],
-    url = () => undefined,
-    tol = 0,
-    all = false,
-  }: Pick<SceneWorldProps, "characterOf" | "codeLayers" | "url"> & { tol?: number; all?: boolean },
-): (SolidOverdraw & { name?: string })[] {
-  const lens = rt.lens;
-  if (!lens || !rt.cast.some((m) => m.world)) return [];
-  const cam = cameraAt(rt, t);
-  const anchor = sceneAnchor(rt, (m) => {
-    const c = characterOf(m);
-    return c && castCharacter(m, c.character);
-  });
-  const ctx: LayerCtx = { name: rt.name, t, cam, marks: rt.marks, url, lens, anchor };
-  const on = codeLayers.filter((l) => layerCovers(l, rt.name));
-  const wrap = (m: CastMember) => {
-    const c = characterOf(m);
-    return c && { ...c, character: castCharacter(m, c.character) };
-  };
-  const { furniture, people } = sceneSolids(rt, t, ctx, on, wrap, () => ({}), solidFigure);
-  return solidOverdraws(
-    lens,
-    furniture,
-    people.map((p) => p.f),
-    { tol, view: all ? undefined : cam.view },
-  ).map((o) => ({ ...o, name: furniture[o.item].name }));
 }
 
 /**

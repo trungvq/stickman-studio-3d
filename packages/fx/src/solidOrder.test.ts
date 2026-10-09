@@ -26,7 +26,7 @@ import { solidFigure } from "./SolidWorld";
 const c = defaultCharacter();
 const lens = orbit({ target: [0, -120, 0], dist: 750, yaw: 0, pitch: 7 * D, f: 800 });
 const hip: V3 = [0, -90, 0];
-// chính diện lệch, khoá ở FRONT_MIN
+// lệch chính diện 20°
 const f = facing(lens, hip, Math.atan2(-lens.eye[2], lens.eye[0]) + 20 * D);
 const world = { lens, hip, yaw: f.yaw, s: 1, flip: f.flip, theta: f.theta, floor: 0 };
 

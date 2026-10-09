@@ -66,8 +66,7 @@ vừa làm gì.
   \`stage: true\` — mỗi ô là cả khung, có nền, đã đi qua camera.
 - Sửa xong một cảnh thì \`check\` đúng cảnh ấy: MCP \`check({ scene: "<ten>" })\` hay
   \`pnpm exec stickman check --scene <ten>\` (regex trên id cảnh) — vài giây, bắt người
-  lồng vào đồ, vẽ sai thứ tự, chân trượt, hành động 2D trên người 3D, tay chân giật trên
-  hình. \`check\` cả workspace chậm, để dành trước khi commit hay sau khi nâng rig.
+  lồng vào đồ, chân trượt, hành động 2D trên người 3D, tay chân giật trên hình. \`check\` cả workspace chậm, để dành trước khi commit hay sau khi nâng rig.
 - Người 3D (\`cast[].world\`) chỉ diễn hành động soạn ở \`side\` ở kênh tay chân
   (\`stand-3d\`, \`sit-3d\`, bản \`-3d\` của repo), cả ở track thân từ giây 0 thay cho clip
   rỗng. Chỗ cố ý giật (giật mình, đập bàn) khai \`"snap": true\` ở hành động, ở clip hay ở

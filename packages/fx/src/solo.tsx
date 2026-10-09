@@ -90,8 +90,8 @@ const SEATS = 32;
 
 /**
  * Người 3D một mình giữa sân khấu trống, dựng sẵn một lần cho mọi `time`: một cảnh tối thiểu
- * (`scene.lens` cúi `pitch` độ, `cast[].world` ở gốc quay `yaw`) rồi hỏi `sceneAt`, nên cờ nâng, đích
- * tay và khoá góc chính diện đi đúng đường của scene. Hai đùi gập quá `SOLO_SIT_THIGH` thì người ngồi
+ * (`scene.lens` cúi `pitch` độ, `cast[].world` ở gốc quay `yaw`) rồi hỏi `sceneAt`, nên cờ nâng và
+ * đích tay đi đúng đường của scene. Hai đùi gập quá `SOLO_SIT_THIGH` thì người ngồi
  * (`world.sit`) trên `soloChair` cao vừa để bàn chân chạm sàn. docs/04-mcp.md#người-3d
  */
 export function soloStage({ character, yaw, pitch = 16, action }: SoloSpec) {
@@ -141,8 +141,7 @@ export function soloStage({ character, yaw, pitch = 16, action }: SoloSpec) {
       const drop = Math.max(...feet(s.pose, h).map((q) => q[1]));
       const top: V3 = [0, body.legHalf - drop, 0];
       s = sceneAt(runtime({ at: top, yaw, sit: true, floor: 0 }), "a", time, h, body);
-      // Ghế theo hướng đã qua khoá góc chính diện, không theo `yaw` khai
-      furniture = [soloChair(top, s.world!.yaw / D, -top[1], h)];
+      furniture = [soloChair(top, yaw, -top[1], h)];
     }
     const world = s.world!;
     return {

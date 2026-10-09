@@ -11,7 +11,6 @@ import {
   resolveScene,
   sceneAt,
   sceneEvents,
-  sceneFacingProblems,
   sceneTurnProblems,
   sceneSlideProblems,
   worldFacingAt,
@@ -283,7 +282,7 @@ describe("người 3D đi theo `path`: chân trụ đứng yên trên sàn", () 
     expect(walking).toHaveLength(1);
   });
 
-  it("đi cong và quay một vòng ba phần tư — qua khoá chính diện và qua quay lưng — không trượt", () => {
+  it("đi cong và quay một vòng ba phần tư — qua chính diện và qua quay lưng — không trượt", () => {
     const path = arc(0, 900, 220, -90, 180, 4.5);
     const rt = scene([walker(path)], 4.5);
     const { worst, phases } = stanceSlip(rt, "a");
@@ -437,22 +436,6 @@ describe("sceneSlideProblems cho người 3D đo trên sàn thế giới", () =>
   });
 });
 
-describe("sceneFacingProblems", () => {
-  it("khoá góc chính diện đẩy thân: một dòng cho cả quãng, kèm hướng khai và hướng sau khi đẩy", () => {
-    // mắt ở gốc, người ở +z: hướng về ống kính là −z, tức yaw 90
-    const rt = scene(
-      [
-        { id: "a", tracks: [], world: { at: [0, 0, 900], yaw: 95 } },
-        { id: "b", tracks: [], world: { at: [0, 0, 900], yaw: 60 } },
-      ],
-      2,
-    );
-    expect(sceneFacingProblems(rt)).toStrictEqual([
-      "`a` giây 0.00–2.00: khoá góc chính diện đẩy thân — yaw khai 95° (lệch ống kính 5°) thành 110° (lệch 20°)",
-    ]);
-  });
-});
-
 describe("sceneTurnProblems", () => {
   const stand = (yaws: [number, number][]) =>
     scene(
@@ -491,7 +474,7 @@ describe("sceneTurnProblems", () => {
     expect(out[0]).toMatch(/^`a` giây 0\.5\d–1\.\d\d: thân quay 30° rồi quay lại/);
   });
 
-  it("quay chậm một chiều thì không kêu; quay qua chính diện thì khoá đổi phía là cú giật", () => {
+  it("quay chậm một chiều thì không kêu, kể cả khi quay qua chính diện", () => {
     // ống kính ở gốc, người ở +z: yaw 90 là nhìn thẳng ống kính
     const away = stand([
       [0, 0],
@@ -504,8 +487,7 @@ describe("sceneTurnProblems", () => {
         [2, 120],
       ]),
     );
-    expect(across).toHaveLength(1);
-    expect(across[0]).toMatch(/thân quay 720°\/s/);
+    expect(across).toStrictEqual([]);
   });
 
   it("hông trượt quá mốc dừng thì thân không quay lại nhìn chỗ sau lưng", () => {
@@ -541,11 +523,12 @@ describe("sceneTurnProblems", () => {
 });
 
 describe("worldFacingAt", () => {
-  it("trả yaw khai, theta trước khoá; hướng sau khoá nằm ở sceneAt", () => {
+  it("trả yaw khai và hướng nhắm tới; sceneAt vẽ đúng yaw khai, kể cả nhìn thẳng ống kính", () => {
+    // mắt ở gốc, người ở +z: hướng về ống kính là −z, tức yaw 90
     const rt = scene(
       [
         { id: "a", tracks: [], world: { at: [0, 0, 900], yaw: 95 } },
-        { id: "b", tracks: [], world: { at: [0, 0, 900], yaw: 60 } },
+        { id: "b", tracks: [], world: { at: [0, 0, 900], yaw: 90 } },
         { id: "c", tracks: [] },
       ],
       2,
@@ -553,9 +536,12 @@ describe("worldFacingAt", () => {
     const a = worldFacingAt(rt, "a", 1, h, dims)!;
     expect(a.said).toBe(95);
     expect(a.yaw).toBe(95);
-    expect(a.raw).toBeCloseTo(5, 6);
-    expect(sceneAt(rt, "a", 1, h, dims).world!.yaw / D).toBeCloseTo(110, 6);
-    expect(worldFacingAt(rt, "b", 1, h, dims)!.raw).toBeCloseTo(30, 6);
+    const wa = sceneAt(rt, "a", 1, h, dims).world!;
+    expect(wa.yaw / D).toBeCloseTo(95, 6);
+    expect(wa.theta).toBeCloseTo(5, 6);
+    const wb = sceneAt(rt, "b", 1, h, dims).world!;
+    expect(wb.yaw / D).toBeCloseTo(90, 6);
+    expect(wb.theta).toBeCloseTo(0, 4);
     expect(worldFacingAt(rt, "c", 1, h, dims)).toBeUndefined();
   });
 });

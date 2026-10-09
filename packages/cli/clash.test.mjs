@@ -105,7 +105,6 @@ function workspace(stickman = {}) {
 }
 
 const clashes = (r) => r.problems.filter((p) => p.msg.includes("người lồng vào đồ"));
-const overdraws = (r) => r.problems.filter((p) => p.msg.includes("vẽ sai thứ tự"));
 
 describe("check: người 3D lồng vào đồ", () => {
   it("báo cẳng tay xuyên mặt bàn; tay đặt bằng `handsOn` và cảnh đóng băng thì im", async () => {
@@ -125,9 +124,8 @@ describe("check: người 3D lồng vào đồ", () => {
     assert.deepEqual(clashes(await checkWorkspace({ dir: workspace({ clash: { tol: 50 } }) })), []);
   });
 
-  it("người ngồi bàn, ghế xếp đúng độ sâu: không báo vẽ sai thứ tự, kể cả cảnh tay xuyên bàn", async () => {
+  it("người ngồi bàn: đo được người 3D với đồ khối, kể cả cảnh tay xuyên bàn", async () => {
     const r = await checkWorkspace({ dir: workspace() });
-    assert.deepEqual(overdraws(r), [], JSON.stringify(r.problems, null, 2));
     assert.ok(!r.problems.some((p) => p.msg.includes("không đo được")));
   });
 

@@ -1588,27 +1588,6 @@ export function sceneItemClashProblems(
 }
 
 /**
- * Đồ khối và người 3D xếp vẽ ngược độ sâu (mảnh đồ ở sau mà đè lên người, hay người đè lên mảnh đồ
- * đứng trước), mỗi cặp một dòng. docs/10-lop-ve-code.md#vẽ-sai-thứ-tự
- */
-export function sceneOverdrawProblems(
-  rt,
-  { characterOf, codeLayers, tol = CLASH_TOL, every = CLASH_EVERY, samples },
-) {
-  const { times } = samples ?? sceneSamples(rt, { characterOf, every });
-  const at = (t) =>
-    FX.sceneOverdraws(rt, t, { characterOf, codeLayers, tol }).map((o) => ({
-      ...o,
-      key: `${o.id}.${o.part}|${o.name ?? `#${o.item}`}|${o.over}`,
-    }));
-  return tally(times, at, (o) => {
-    const [who, item] = [`${o.id}.${o.part}`, `${o.name ?? `món #${o.item}`} (mảnh ${o.piece})`];
-    const [top, under] = o.over ? [item, who] : [who, item];
-    return `vẽ sai thứ tự — ${top} đè lên ${under} dù nằm sau ${o.depth.toFixed(1)}`;
-  });
-}
-
-/**
  * Soi một workspace: version đã đóng dấu so với rig đang cài, JSON hỏng, tham chiếu chéo trỏ
  * vào file không có, người 3D diễn hành động 2D, trượt hay lồng vào đồ, tay chân giật trên hình,
  * tiếng tràn chỗ.
@@ -1769,8 +1748,6 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
           );
           // Người 3D trượt trên sàn: hợp lệ, chỉ nhìn là thấy — docs/03-scene.md#check-cho-người-3d
           for (const problem of rig.sceneSlideProblems(rt)) warn(`scenes/${f}: ${problem}`);
-          // Khoá góc chính diện đẩy thân người 3D: hướng khai không được giữ — docs/03-scene.md#người-3d
-          for (const problem of rig.sceneFacingProblems(rt)) warn(`scenes/${f}: ${problem}`);
           for (const problem of rig.sceneTurnProblems(rt)) warn(`scenes/${f}: ${problem}`);
           // Người 3D diễn hành động 2D ở kênh tay chân — docs/03-scene.md#hành-động-cho-người-3d
           for (const problem of rig.sceneSideProblems(rt, actionsByName))
@@ -1901,10 +1878,9 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
     return rt;
   };
   // Người 3D lồng vào đồ khối (rig không đẩy người ra, chặt mảnh đồ qua người rồi vẽ đè lên), tay
-  // xuyên thân mình, đồ lồng vào đồ, và đồ với người xếp vẽ ngược độ sâu — chỉ nhìn hình mới thấy.
-  // Cảnh khớp `stickman.frozen` thì không đo. docs/10-lop-ve-code.md#người-lồng-vào-đồ,
-  // docs/10-lop-ve-code.md#tay-xuyên-thân, docs/10-lop-ve-code.md#đồ-lồng-vào-đồ,
-  // docs/10-lop-ve-code.md#vẽ-sai-thứ-tự
+  // xuyên thân mình và đồ lồng vào đồ — chỉ nhìn hình mới thấy. Cảnh khớp `stickman.frozen` thì
+  // không đo. docs/10-lop-ve-code.md#người-lồng-vào-đồ, docs/10-lop-ve-code.md#tay-xuyên-thân,
+  // docs/10-lop-ve-code.md#đồ-lồng-vào-đồ
   const tol = clashTol(root);
   const ratio = itemRatio(root);
   const self = selfTol(root);
@@ -1933,7 +1909,6 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
         const samples = sceneSamples(rt, { characterOf });
         for (const problem of [
           ...sceneClashProblems(rt, { characterOf, codeLayers, tol, self, samples }),
-          ...sceneOverdrawProblems(rt, { characterOf, codeLayers, tol, samples }),
           ...(ratio === false
             ? []
             : sceneItemClashProblems(rt, { characterOf, codeLayers, tol, ratio, samples })),

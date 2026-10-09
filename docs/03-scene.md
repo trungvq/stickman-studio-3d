@@ -949,7 +949,7 @@ chiếu, zoom ở đó là phóng ảnh, không phải dolly.
 `headView`, gốc `hip`, và `world` cho `<Character>`; **`x`, `y`, `scale`, `view`, `headView`,
 `flip`, `zParts` của người ấy không còn nghĩa**. Tay chân, thân áo và váy dựng khối chiếu thật;
 cổ, tâm đầu ở chỗ chiếu thật, khối sọ nhận một phần góc ống kính nhìn xuống (`HEAD_LOOK`)
-([01](01-rig.md#người-3d)); thân không quay thẳng vào ống kính (`FRONT_MIN`). Chỗ vẽ người 3D truyền `body3(nhân vật)` làm tham
+([01](01-rig.md#người-3d)); `yaw` khai là hướng vẽ ở mọi góc, kể cả nhìn thẳng ống kính. Chỗ vẽ người 3D truyền `body3(nhân vật)` làm tham
 số thứ năm của `sceneAt` (nửa bề dày đùi cho người ngồi, nửa khoảng hai gốc chân cho trôi ngang).
 
 Người 3D không vào `sceneOrder` và không qua `place` của lớp vẽ code: `<SceneWorld>` vẽ họ chung một lượt với đồ khối của lớp vẽ code
@@ -1017,9 +1017,8 @@ qua cả một pha trụ thì phần hông văng ra và văng về bù nhau. Ng�
   dừng thì chỗ cần tới ở sau lưng, người không quay lại để bù vài bước. `yaw` của mốc là hướng khi
   đứng, quay tại chỗ và ngồi.
 - **Mốc giữa đường là đích mềm.** Góc gấp của `path` thành đường cong (nhìn trước `0,35 s`, quay
-  tối đa `150°/s`), khoá góc chính diện đẩy người đi gần tia nhìn ra chéo: hông có thể cách mốc giữa
-  đường vài chục đơn vị (`thu-khoi-z`: tới `~40`) rồi bám lại. Chỉ mốc dừng và mốc ngồi là chỗ phải
-  tới — muốn người đi qua đúng một điểm thì đặt mốc dày quanh đó và cho góc rẽ đủ thời gian.
+  tối đa `150°/s`): hông có thể cách mốc giữa đường vài chục đơn vị (`thu-khoi-z`: tới `~40`) rồi
+  bám lại. Chỉ mốc dừng và mốc ngồi là chỗ phải tới — muốn người đi qua đúng một điểm thì đặt mốc dày quanh đó và cho góc rẽ đủ thời gian.
 - **Không clip nào có sải chân mà `path` vẫn dời** thì hông trượt theo `path` — `check` kêu. Clip
   có sải chân chạy mà `path` đứng yên thì chân đứng sững giữa bước.
 - **Đoạn có mốc ngồi** (mốc trước hay mốc sau `sit`) thì hông nội suy từ chỗ đang đứng tới mốc, cao
@@ -1037,12 +1036,6 @@ Nên soạn theo:
 **Lật qua chính diện hay quay lưng đổi chân gần.** Chân gần (`ln`) là chân phía ống kính; thân quay
 qua `theta` 0 hay 180 thì chân gần là chân kia, nên từ lúc ấy `sceneAt` đổi chỗ các kênh gần ↔ xa
 (`ln`/`lf`, `an`/`af`, `stretch`, cờ nâng) để mỗi chi vẫn là chính nó — lật lần nữa thì đổi lại.
-
-**Khoá góc chính diện ở người đang đi** giữ nguyên phía đẩy suốt quãng bị khoá — đi gần tia nhìn
-không lật thân qua lại 40° —, ra khỏi quãng ở phía kia thì thân quay qua chính diện với tốc độ quay
-khi bước (`40°` trong `~0,27 s`, nhìn thẳng ống kính `~2` khung): đó là cái giá của một cú rẽ qua
-mặt ống kính. Người đi thẳng về ống kính bị đẩy lệch `FRONT_MIN` nên đi chéo, rồi lái lại khi tia
-nhìn đã lệch đủ.
 
 ### Hành động cho người 3D
 
@@ -1068,21 +1061,10 @@ quãng hông đi cộng `8 · s` đơn vị là trượt (`path` dời người 
 đứng yên ở `world.at`). Đoạn có mốc ngồi không đo. Kèm hai lỗi của `path`: mốc dừng mà hông cách
 `at` quá `20 · s`, và clip có sải chân chạy khi `path` đã đứng yên quá `0,25 s`.
 
-`sceneFacingProblems` kêu khi khoá góc chính diện đẩy thân, mỗi quãng liền một dòng, lấy ở khung bị
-đẩy nhiều nhất:
-
-```
-`haru` giây 0.00–4.00: khoá góc chính diện đẩy thân — yaw khai 67° (lệch ống kính 0°) thành 87° (lệch 20°)
-```
-
-Người đi thì số đầu là hướng đi theo `path`. Cảnh báo, không phải lỗi: rig vẫn đẩy, dòng ấy chỉ để
-biết hướng khai không được giữ.
-
 `sceneTurnProblems` đo hướng thân thế giới từng khung (`1/60 s`) và kêu hai kiểu thân quay gắt:
 quay nhanh hơn `300°/s` (mỗi quãng một dòng), và quay đi từ `20°` rồi quay lại quá nửa cú ấy trong
-`1,5 s`. Nó đo hướng rig thật sự vẽ, nên bắt cả cú quay rig tự sinh mà JSON không khai: khoá góc
-chính diện đổi phía khi người quay qua tia nhìn, hướng lái theo `path`, mốc `yaw` đổi trong một
-khung:
+`1,5 s`. Nó đo hướng rig thật sự vẽ, nên bắt cả cú quay rig tự sinh mà JSON không khai: hông trượt
+quá mốc dừng, hướng lái theo `path`, mốc `yaw` đổi trong một khung:
 
 ```
 `haru` giây 1.93–2.00: thân quay 720°/s (ngưỡng 300°/s) — …
