@@ -23,6 +23,7 @@ export * from "./idle";
 export * from "./ik";
 export * from "./lens";
 export * from "./parts";
+export * from "./pierce";
 export * from "./poses";
 export * from "./props";
 export * from "./scene";

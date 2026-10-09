@@ -1292,6 +1292,11 @@ khớp — `actJoints` tính lại bằng ma trận; `act3.test.ts` dựng ngư�
 trùng nhau tới `1e-6` ở mọi kiểu tư thế (kênh nâng lẫn không, đích hệ thân, đích thế giới, ngồi, lật).
 Đổi khớp hay thứ tự quay ở `act`/`stickman.ts` thì đổi cùng `actJoints`, test đỏ là lệch.
 
+`armPierce(nhân vật, scenePose)` (`core/pierce.ts`) đo tay xuyên thân áo trên các khớp ấy: thân là
+khối tròn xoay dẹt của `torsoMesh` dựng lại không cần `three` — nửa rộng theo `profile` của áo, tiết
+diện ngang ellipse dẹt `TORSO_DEPTH`, gắn ở hông theo trục hông → cổ, cả người nhân `world.s`
+([10](10-lop-ve-code.md#tay-xuyên-thân)). Đổi cách `torsoMesh` dựng thân thì đổi cùng `armPierce`.
+
 `figure3d` là hình học của người que SVG, không phải của three: hai đường trùng nhau ở kênh nâng
 (trừ tay choãi và độ nhấc hông nửa bề dày chi), khác nhau ở kênh không có cờ.
 
