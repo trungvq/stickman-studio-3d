@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 9,
+  "name": "chop",
+  "duration": 1.4,
+  "end": "wrap",
+  "mask": ["armFar", "armNear", "legFar", "legNear", "torso", "head", "face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [196, 22, 0],
+        "armNear": [180, 37, 40],
+        "legFar": [2, 0],
+        "legNear": [-2, 0],
+        "torso": -8,
+        "head": [0, 0, -10]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "back",
+        "armNear": "front"
+      },
+      "face": {
+        "mouth": "closed",
+        "brow": "angry",
+        "eyes": "open"
+      }
+    },
+    {
+      "t": 0.254,
+      "pose": {
+        "armFar": [205, 22, 0],
+        "armNear": [190, 37, 40],
+        "legFar": [2, 0],
+        "legNear": [-2, 0],
+        "torso": -10,
+        "head": [0, 0, -12]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.32,
+      "pose": {
+        "armFar": [155, 12, 4],
+        "armNear": [118, 19, 17],
+        "legFar": [17, -24],
+        "legNear": [12, -30],
+        "torso": 8,
+        "head": [-4, 0, -2]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.375,
+      "pose": {
+        "armFar": [127, 11, 0],
+        "armNear": [98, 15, 20],
+        "legFar": [34, -46],
+        "legNear": [24, -60],
+        "torso": 34,
+        "head": [-12, 0, 20]
+      },
+      "ease": "spring",
+      "face": {
+        "mouth": "grit",
+        "eyes": "squint"
+      }
+    },
+    {
+      "t": 0.62,
+      "pose": {
+        "armFar": [86, 25, 0],
+        "armNear": [76, 20, 14],
+        "legFar": [31, -42],
+        "legNear": [22, -56],
+        "torso": 31,
+        "head": [-10, 0, 18]
+      },
+      "ease": "linear",
+      "face": {
+        "mouth": "closed",
+        "eyes": "open"
+      }
+    },
+    {
+      "t": 0.788,
+      "pose": {
+        "armFar": [127, 19, 0],
+        "armNear": [105, 17, 10],
+        "legFar": [16, -22],
+        "legNear": [11, -26],
+        "torso": 18,
+        "head": [-6, 0, 10]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.892,
+      "pose": {
+        "armFar": [152, 25, 0],
+        "armNear": [140, 13, 16],
+        "legFar": [7, -10],
+        "legNear": [3, -12],
+        "torso": 4,
+        "head": [-2, 0, 2]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.997,
+      "pose": {
+        "armFar": [196, 22, 0],
+        "armNear": [180, 37, 22],
+        "legFar": [2, 0],
+        "legNear": [-2, 0],
+        "torso": -8,
+        "head": [0, 0, -10]
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [
+    {
+      "name": "hit",
+      "t": 0.445
+    }
+  ]
+}

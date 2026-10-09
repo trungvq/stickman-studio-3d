@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 5,
+  "name": "author",
+  "rig": {
+    "stroke": 6,
+    "height": 1,
+    "shoulderHalf": 40,
+    "shoulderDrop": 20,
+    "hipHalf": 22
+  },
+  "head": {
+    "shape": "round",
+    "scaleX": 1,
+    "scaleY": 1,
+    "dx": 0,
+    "dy": 0,
+    "follow": 0.1,
+    "followBack": -0.2
+  },
+  "palette": {
+    "line": "#1a1a1a",
+    "skin": "#f0d9b8",
+    "garment": "#142f52",
+    "sleeve": "#1a1a1a",
+    "trouser": "#1a1a1a",
+    "sleeveWidth": 10,
+    "trouserWidth": 10,
+    "clad": false,
+    "limbCurve": 1,
+    "shade": 0.3
+  },
+  "face": {
+    "offsetY": 0,
+    "eyeGap": 26,
+    "turn": 12,
+    "mouthGap": 34,
+    "moustache": {
+      "kind": "none",
+      "color": "#3a2620",
+      "width": 1,
+      "dx": 0,
+      "dy": 0,
+      "follow": true
+    },
+    "wrinkle": {
+      "kind": "none",
+      "color": "#9c8367",
+      "width": 1,
+      "dy": 0
+    }
+  },
+  "sleeveFit": {
+    "hideUpperArm": false,
+    "syncFar": true
+  },
+  "pieces": {
+    "torso": {
+      "src": "part",
+      "part": "hoodie",
+      "color": "#ff5b24",
+      "dx": 0,
+      "dy": -24,
+      "scale": 1.42,
+      "widthScale": 0.87,
+      "aspect": 1,
+      "rotate": 0
+    },
+    "sleeveNear": {
+      "src": "none",
+      "part": "sleeve",
+      "color": "#55606e",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1.05,
+      "widthScale": 1,
+      "aspect": 1,
+      "rotate": 0
+    },
+    "sleeveFar": {
+      "src": "none",
+      "part": "sleeve",
+      "color": "#55606e",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1.05,
+      "widthScale": 1,
+      "aspect": 1,
+      "rotate": 0
+    },
+    "neck": {
+      "src": "none",
+      "part": "khanco",
+      "color": "#48525f",
+      "dx": 0,
+      "dy": -4,
+      "scale": 0.9,
+      "widthScale": 1,
+      "aspect": 1,
+      "rotate": 0
+    },
+    "hairBack": {
+      "src": "none",
+      "color": "#2a1c15",
+      "dx": -0.4,
+      "dy": -32.4,
+      "scale": 1.122,
+      "widthScale": 1,
+      "aspect": 1.0833333333333333,
+      "rotate": 0
+    },
+    "hair": {
+      "src": "part",
+      "part": "hair-spiky",
+      "color": "#2b2320",
+      "dx": -3.427104722792608,
+      "dy": -7.213552361396308,
+      "scale": 1.0225872689938398,
+      "widthScale": 1,
+      "aspect": 1,
+      "rotate": 0,
+      "clip": false,
+      "clipGrow": 1.12
+    },
+    "crown": {
+      "src": "none",
+      "dx": -25,
+      "dy": -20,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 0.95,
+      "rotate": 0
+    },
+    "headAcc": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 0.95,
+      "rotate": 0
+    },
+    "faceAcc": {
+      "src": "part",
+      "part": "kinhcn",
+      "color": "#1a1a1a",
+      "dx": 0,
+      "dy": 49,
+      "scale": 0.233,
+      "widthScale": 1,
+      "aspect": 1,
+      "rotate": 0
+    },
+    "chin": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 0.62,
+      "rotate": 0,
+      "layer": "front"
+    },
+    "hem": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 1,
+      "rotate": 0,
+      "hideLegs": true,
+      "layer": "front"
+    },
+    "handNear": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 1,
+      "rotate": 0,
+      "layer": "front"
+    },
+    "handFar": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 1,
+      "rotate": 0,
+      "layer": "front"
+    }
+  },
+  "items": {
+    "glove": {
+      "handFar": {
+        "src": "part",
+        "part": "glove",
+        "color": "#ffffff",
+        "dx": 0,
+        "dy": 0,
+        "scale": 1.05,
+        "widthScale": 1,
+        "aspect": 0.4067796610169492,
+        "rotate": 0,
+        "clip": false,
+        "clipGrow": 1.12,
+        "hideLegs": true,
+        "layer": "front"
+      }
+    },
+    "helmet": {
+      "handFar": {
+        "src": "part",
+        "part": "helmet",
+        "color": "#ffd452",
+        "dx": 0,
+        "dy": 0,
+        "scale": 1,
+        "widthScale": 1,
+        "aspect": 1.5555555555555556,
+        "rotate": 0,
+        "clip": false,
+        "clipGrow": 1.12,
+        "hideLegs": true,
+        "layer": "front"
+      }
+    },
+    "remote": {
+      "handFar": {
+        "src": "part",
+        "part": "remote",
+        "color": "#4a5462",
+        "dx": 0,
+        "dy": 0,
+        "scale": 0.58,
+        "widthScale": 1,
+        "aspect": 0.3333333333333333,
+        "rotate": 180,
+        "clip": false,
+        "clipGrow": 1.12,
+        "hideLegs": true,
+        "layer": "front"
+      }
+    }
+  },
+  "outfits": {}
+}

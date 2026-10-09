@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="360" viewBox="0 0 300 360">
+<title>Áo len cổ tròn: thân, bo cổ và bo gấu dệt gân — thay pieces/torso/torso-04.png</title>
+<g fill="#ffffff" stroke="#1a1a1a" stroke-width="9" stroke-linejoin="round" stroke-linecap="round">
+  <path id="body" d="M 120 3
+    C 145 4, 170 8, 195 13
+    C 205 21, 222 30, 238 36
+    C 252 45, 261 58, 263 89
+    C 261 110, 250 145, 249 185
+    C 251 210, 254 232, 249 261
+    C 247 272, 226 281, 195 287
+    C 175 290, 130 292, 108 288
+    C 93 287, 78 281, 65 273
+    C 55 270, 50 258, 51 244
+    C 51 227, 55 205, 55 185
+    C 55 165, 52 150, 45 131
+    C 41 116, 37 101, 36 87
+    C 38 63, 47 44, 66 36
+    C 85 27, 102 13, 120 3 Z"/>
+  <path id="rib-neck-inner" fill="none" stroke-width="7" d="M 117 13
+    C 122 24, 132 32, 143 36
+    C 152 40, 161 42, 171 43
+    C 179 43, 186 42, 192 39
+    C 198 35, 201 30, 202 21"/>
+  <path id="rib-neck-outer" fill="none" stroke-width="7" d="M 117 13
+    C 113 25, 105 30, 101 31
+    C 103 36, 112 40, 120 46
+    C 130 53, 140 58, 151 61
+    C 162 64, 173 65, 183 63
+    C 195 62, 212 50, 216 33"/>
+  <path id="rib-neck-ticks" fill="none" stroke-width="5" d="M 126 27 L 120 46
+    M 140 35 L 136 55
+    M 157 41 L 155 62
+    M 175 43 L 176 64
+    M 192 39 L 196 59"/>
+  <path id="rib-hem" fill="none" stroke-width="7" d="M 50 242
+    C 90 256, 110 260, 150 260
+    C 190 261, 215 254, 248 237"/>
+  <path id="rib-hem-ticks" fill="none" stroke-width="5" d="M 67 249 L 67 277
+    M 83 253 L 83 282
+    M 100 256 L 100 287
+    M 116 259 L 116 289
+    M 133 260 L 133 290
+    M 150 260 L 150 291
+    M 167 259 L 167 290
+    M 184 258 L 184 288
+    M 200 255 L 200 285
+    M 214 251 L 214 281
+    M 228 247 L 228 276"/>
+</g>
+</svg>

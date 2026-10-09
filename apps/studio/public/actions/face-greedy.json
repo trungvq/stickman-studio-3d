@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 10,
+  "name": "face-greedy",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "squint",
+        "brow": "skeptical",
+        "mouth": "grin"
+      }
+    }
+  ],
+  "note": "Tham: mắt nheo, mày lệch, cười toe. Đeo kính râm thì như `face-smug`."
+}

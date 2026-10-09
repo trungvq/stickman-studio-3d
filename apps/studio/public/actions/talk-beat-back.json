@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 14,
+  "name": "talk-beat-back",
+  "duration": 0.45,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "torso": 0,
+        "head": [null, null, 0]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "torso": -4,
+        "head": [null, null, 2]
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Gương của `talk-beat`: ngả 4° về −x, gật nhẹ 2°. Chỉ ghi thân và góc gật; đặt ở track nhịp riêng, scene buông bằng clip rỗng blend ~0,4."
+}

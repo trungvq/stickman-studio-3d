@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 9,
+  "name": "sit",
+  "duration": 3.4,
+  "end": "wrap",
+  "mask": ["armFar", "armNear", "legFar", "legNear", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [14, -48, 0],
+        "armNear": [-14, 48, 0],
+        "legFar": [70, -70],
+        "legNear": [70, -70],
+        "torso": 3
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armFar": [16, -50, 0],
+        "armNear": [-16, 50, 0],
+        "legFar": [70, -70],
+        "legNear": [70, -70],
+        "torso": 4
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [14, -48, 0],
+        "armNear": [-14, 48, 0],
+        "legFar": [70, -70],
+        "legNear": [70, -70],
+        "torso": 3
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": []
+}

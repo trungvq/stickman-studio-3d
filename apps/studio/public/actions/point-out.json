@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 10,
+  "name": "point-out",
+  "duration": 0.8,
+  "end": "hold",
+  "mask": ["armNear"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armNear": [110, 0, 0]
+      },
+      "ease": "linear",
+      "layer": {
+        "armNear": "front"
+      }
+    }
+  ],
+  "note": "Chỉ ra xa về phía `+x`: tay gần duỗi thẳng chếch lên qua trước ngực, lớp `front`. `point` đưa tay ngang bụng nên đọc ra chọc vào người đứng cạnh. Vai giữ dưới 120° với khuỷu 0 để khỏi phạm `armFoldProblems`."
+}

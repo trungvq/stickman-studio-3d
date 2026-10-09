@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320">
+<title>Bob chạm vai — over</title>
+<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
+<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 51 302 C 53 255 53 203 54 164 C 53 98 87 54 156 53 C 226 51 263 99 264 166 Q 265 242 272 302 Q 250 315 224 304 Q 238 244 238 148.99 Q 237 120.96 209 85.82 C 178 92.28 134 96.12 87 107.97 Q 77 225 96 304 Q 72 314 51 302 Z"/>
+<path d="M 209 85.82 Q 217 81.5 213 65" fill="none"/>
+</g>
+</svg>

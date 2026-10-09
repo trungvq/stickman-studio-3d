@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 10,
+  "name": "carry-dipper",
+  "duration": 1,
+  "end": "hold",
+  "mask": ["armFar", "armNear", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [30, -20, -8],
+        "armNear": [-26, 22, 0],
+        "torso": 2
+      },
+      "layer": {
+        "armFar": "mid"
+      },
+      "ease": "linear"
+    }
+  ],
+  "note": "Cầm gáo (`part:dipper`) ở tay xa trước người, tay gần buông."
+}

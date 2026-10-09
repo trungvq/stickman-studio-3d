@@ -1,0 +1,59 @@
+Generate one image, 1536x1024, with a genuinely transparent background — a real
+alpha channel in the saved PNG. Do NOT paint a grey-and-white checkerboard into
+the picture: a checkerboard is how a viewer *displays* transparency, it must
+never appear as actual pixels. No background gradient, no drop shadow.
+
+A 3x3 grid of 9 separate TORSO GARMENT pieces (the body of a shirt / jacket)
+for a 2D cartoon stick-figure rig. The rig is a stick figure with a big round
+head; the garment piece is pasted over the torso and the arms and legs are
+drawn as thick black lines coming out from behind it. See the attached
+reference render: the left figure is a finished character, the right figure
+shows the pink box the piece must fill.
+
+Style — match the attached reference exactly:
+- Flat vector cartoon, thick uniform black outline with rounded ends, the
+  same line weight as the stick-figure limbs in the reference.
+- EXACTLY TWO COLOURS: black #000000 for the outline and for every interior
+  line (collar, buttons, seams, pockets), and one single dark tone #2b2320 for
+  the whole garment fill. No gradient, no shading, no highlights, no texture,
+  no fabric folds, no pattern, no logo, no third colour. The fill is bleached
+  to white afterwards and recoloured per character, so draw the SHAPE of the
+  garment, not its colour. A part that must stay dark whatever colour the
+  garment is (a tie, a dark band, a zip) is painted flat black #000000 — black
+  survives the recolour, any other tone does not.
+- The piece is ONLY the cloth on the torso: from the collar at the top to the
+  hem at the bottom. NO head, no neck, no skin, no arms, no hands, no legs.
+- NO SLEEVES AND NO ARMHOLES. The silhouette is one smooth closed shape,
+  like a bean or a sack: a rounded shoulder on each side flows in one
+  continuous curve down the side of the body to the hip. Do not cut a
+  sleeve, a cap sleeve, or a scooped armhole into the edge; do not show skin
+  at the sides. The arm lines are drawn separately and come out from behind
+  the piece.
+- NO SKIN ANYWHERE. Close every collar, keep necklines high, put a shirt or
+  undershirt in the opening of a jacket. Skin cannot be painted here: every
+  filled area gets recoloured with the garment, so a bare chest would end up
+  the colour of the shirt. Pick styles that cover the whole torso.
+- The piece must be ONE SOLID, FULLY OPAQUE SHAPE. No transparent holes or
+  gaps anywhere inside its outline; transparency exists only OUTSIDE the
+  outline.
+- Front view, perfectly symmetric unless the style itself is asymmetric.
+- Proportions: every piece is a tall rounded-rectangle shape, about 1.6 times
+  as tall as it is wide, shoulders at the very top, hips at the very bottom.
+  Keep the SAME height in every cell — the width may differ a little (a loose
+  jacket is wider than a fitted tee) but the collar-to-hem height must not.
+- Every piece centred in its cell with clear margin; nothing touches the
+  sheet edges; no grid lines, no labels, no captions.
+
+The 9 garments are plain, everyday modern clothes, in this order (left to
+right, top to bottom):
+
+1. Plain crew-neck T-shirt.
+2. Polo shirt: small collar, two buttons at the neck.
+3. Buttoned dress shirt: collar, one row of buttons down the front.
+4. Crew-neck sweater / pullover, ribbed hem band.
+5. Hoodie: kangaroo pocket, drawstrings, hood folded flat behind the collar.
+6. Zip-up jacket, zipped closed, small stand collar.
+7. Suit jacket / blazer, buttoned, over a shirt and tie showing in the
+   opening.
+8. Denim jacket, buttoned, two chest pockets.
+9. Plain dark sweatshirt, no print.

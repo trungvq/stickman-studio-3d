@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 10,
+  "name": "face-kind",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "open",
+        "brow": "neutral",
+        "mouth": "smile"
+      }
+    }
+  ],
+  "note": "Hiền: mỉm cười, mày thẳng. Nhẹ hơn `face-relieved` và `face-delighted`."
+}

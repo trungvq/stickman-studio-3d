@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="360" viewBox="0 0 300 360">
+<title>Áo polo: một chấm cúc, đường xẻ chữ L mảnh, hai vạt cổ nét mỏng</title>
+<g fill="#ffffff" stroke="#1a1a1a" stroke-width="9" stroke-linejoin="round" stroke-linecap="round">
+  <path id="body" d="M 101 31
+    C 62 34, 38 60, 36 98
+    C 35 128, 52 158, 54 192
+    C 55 222, 46 244, 49 266
+    C 54 286, 105 294, 150 293
+    C 192 293, 248 280, 253 262
+    C 256 240, 248 218, 249 192
+    C 250 160, 262 128, 263 98
+    C 261 64, 246 42, 212 34
+    Q 165 -4, 113 12 Z"/>
+  <path id="opening" d="M 168 64 L 170 125 L 194 125" fill="none" stroke-width="4.05"/>
+  <path id="button-1" d="M 177 96 C 177 93.239 179.239 91 182 91 C 184.761 91 187 93.239 187 96 C 187 98.761 184.761 101 182 101 C 179.239 101 177 98.761 177 96 Z" fill="#1a1a1a" stroke="none"/>
+  <path id="collar-near" d="M 113 12 L 101 31 L 136 82 L 178 60 Z" stroke-width="5.04"/>
+  <path id="collar-far" d="M 206 29 L 229 74 L 185 63 Z" stroke-width="5.04"/>
+</g>
+</svg>

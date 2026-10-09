@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { hullMaterial, npr, type NprOptions } from './npr';
 
-// Đồ khối của rig dựng thành mesh three. `box`, `bar`, `slab` theo @stickman/fx (packages/fx/src/solid.tsx),
-// `place3` theo @stickman/rig (packages/rig/src/lens.ts). docs/10-lop-ve-code.md#đồ-khối của @stickman/rig.
+// Đồ khối của rig dựng thành mesh three. `box`, `bar`, `slab` theo @stickman3d/fx (packages/fx/src/solid.tsx),
+// `place3` theo @stickman3d/sketch (packages/rig/src/lens.ts). docs/10-lop-ve-code.md#đồ-khối của @stickman3d/sketch.
 //
 // Thế giới rig: x phải, y xuống, z sâu vào cảnh, người cao ~430. Sang three đảo cả y lẫn z (một phép quay,
 // không phải soi gương, nên chiều quấn tam giác giữ nguyên) và chia 100.

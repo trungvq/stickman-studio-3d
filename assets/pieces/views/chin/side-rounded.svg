@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 520">
+<title>Quai nón tròn liền mảng</title>
+<g id="guide" fill="none" stroke="#ccc"><circle cx="160" cy="160" r="100"/></g>
+<path d="M 150 146 C 152 174 168 208 194 228 C 209 237 225 236 238 230 C 246 246 241 268 224 278 C 204 290 179 279 162 258 C 143 234 138 194 150 146 Z" fill="#fff" stroke="#000" stroke-width="4.95" stroke-linejoin="round"/>
+</svg>

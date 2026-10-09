@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="360" viewBox="0 0 300 360">
+<title>Áo nỉ: thân, vòng bo cổ và bo gấu — thay pieces/torso/torso-09.png</title>
+<g fill="#ffffff" stroke="#1a1a1a" stroke-width="9" stroke-linejoin="round" stroke-linecap="round">
+  <path id="body" d="M 122 3
+    C 147 4, 172 7, 195 11
+    C 207 21, 221 30, 234 37
+    C 244 41, 252 47, 258 55
+    C 261 60, 264 71, 265 85
+    C 264 110, 252 150, 248 184
+    C 249 210, 253 235, 252 265
+    C 250 281, 232 288, 205 292
+    C 180 299, 118 301, 95 294
+    C 80 291, 68 286, 57 280
+    C 47 270, 47 232, 52 209
+    C 52 190, 50 168, 47 152
+    C 40 130, 34 108, 34 85
+    C 36 62, 46 45, 66 37
+    C 85 27, 103 14, 122 3 Z"/>
+  <path id="neck-hole" fill="none" stroke-width="7" d="M 113 11 C 124 24, 136 32, 155 34
+    C 172 35, 186 31, 194 18"/>
+  <path id="collar-band" fill="none" stroke-width="7" d="M 98 19 C 112 37, 130 47, 155 50
+    C 180 54, 198 47, 208 28"/>
+  <path id="hem" fill="none" stroke-width="7" d="M 48 246 C 75 263, 100 268, 150 270
+    C 196 270, 230 261, 252 246"/>
+</g>
+</svg>

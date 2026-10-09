@@ -8,19 +8,19 @@ nhân vật, phòng hay cảnh của tập phim nào** — chúng ở repo của
 
 | | |
 |---|---|
-| `packages/rig/` | `@stickman3d/rig` — vật liệu NPR và giờ trong ngày (`npr.ts`), pipeline vẽ (`pipeline.ts`), người que và đặt người (`stickman.ts`), diễn theo tư thế đã lấy mẫu của `@stickman/rig` (`act.ts`), nét mặt (`face.ts`), thân áo và váy (`garment.ts`, `torso.ts`), tóc (`sculpt.ts`), kính (`glasses.ts`), đồ khối (`khoi.ts`), vỏ phòng, cửa sổ, cửa đi và đèn tấm (`room.ts`), ống kính scene (`lens.ts`), chỗ gắn đồ, cầm đồ và đồ gọi tên (`attach.ts`), người nền đóng băng (`crowd.ts`), kiểm va chạm (`collide.ts`), chữ và hình trên mặt vật (`decal.ts`), món chạy theo `t` — đồng hồ, lịch, màn hình (`parts.ts`), vật bay theo đường, hiện/tắt (`motion.ts`). tsup ra `dist` (ESM + `.d.ts`), `three` để external. |
-| `apps/viewer/` | App xem thử: hai người que mẫu đứng nói chuyện trên sàn phẳng, xoay camera quanh họ; `demo=` là cảnh diễn hành động lấy mẫu bằng `@stickman/rig` (devDependency của app, không phải của package). Tham số URL ở [README](README.md#xem-thử). Đừng thêm nhân vật, phòng hay cảnh của tập phim nào vào đây. |
+| `packages/rig/` | `@stickman3d/rig` — vật liệu NPR và giờ trong ngày (`npr.ts`), pipeline vẽ (`pipeline.ts`), người que và đặt người (`stickman.ts`), diễn theo tư thế đã lấy mẫu của `@stickman3d/sketch` (`act.ts`), nét mặt (`face.ts`), thân áo và váy (`garment.ts`, `torso.ts`), tóc (`sculpt.ts`), kính (`glasses.ts`), đồ khối (`khoi.ts`), vỏ phòng, cửa sổ, cửa đi và đèn tấm (`room.ts`), ống kính scene (`lens.ts`), chỗ gắn đồ, cầm đồ và đồ gọi tên (`attach.ts`), người nền đóng băng (`crowd.ts`), kiểm va chạm (`collide.ts`), chữ và hình trên mặt vật (`decal.ts`), món chạy theo `t` — đồng hồ, lịch, màn hình (`parts.ts`), vật bay theo đường, hiện/tắt (`motion.ts`). tsup ra `dist` (ESM + `.d.ts`), `three` để external. |
+| `apps/viewer/` | App xem thử: hai người que mẫu đứng nói chuyện trên sàn phẳng, xoay camera quanh họ; `demo=` là cảnh diễn hành động lấy mẫu bằng `@stickman3d/sketch` (devDependency của app, không phải của package). Tham số URL ở [README](README.md#xem-thử). Đừng thêm nhân vật, phòng hay cảnh của tập phim nào vào đây. |
 | `tools/shots.mjs` | Chụp app xem thử ra PNG cho chủ dự án so bằng mắt — [README](README.md#chụp-ảnh-để-so). |
 | `README.md` | Chạy, chụp, vòng `link:` với repo video, phát hành. |
 
 ## Biên giới với repo video
 
-Repo video giữ nhân vật (JSON của `@stickman/rig`), phòng, cảnh và app Remotion; nhập
+Repo video giữ nhân vật (JSON của `@stickman3d/sketch`), phòng, cảnh và app Remotion; nhập
 `@stickman3d/rig`. Chiều ngược lại không tồn tại — package không biết tên tập phim nào,
 không có nhánh riêng cho một nhân vật hay một phòng nào.
 
 Package **chỉ là thư viện**: không có CLI, không phát scaffold. Repo video vẫn do
-`@stickman/cli` quản lý (`init`, `upgrade`, `check`).
+`@stickman3d/cli` quản lý (`init`, `upgrade`, `check`).
 
 **Đừng ngại breaking change.** Video đang làm thì đã pin version. Nhưng đổi tỉ lệ người
 (`R`), hệ toạ độ hay cách đặt người thì **nói rõ trong commit** — mọi cảnh đã căn sẽ lệch.
@@ -55,15 +55,15 @@ soạn thẳng ở không gian hiển thị, khớp mã màu của JSON nhân v�
 cửa sổ, đèn cục bộ) bằng `setLights`; cả hai ghép vào `G`. Mọi lọc bóng, bóng tiếp xúc và
 nhiễu băng xoay theo toạ độ điểm ảnh hay `t`, không theo lần chạy.
 
-**`torso.ts`, `sculpt.ts` và `glasses.ts` theo `@stickman/rig`** (commit ghi ở đầu file): bảng kiểu áo,
+**`torso.ts`, `sculpt.ts` và `glasses.ts` theo `@stickman3d/sketch`** (commit ghi ở đầu file): bảng kiểu áo,
 kiểu tóc, số đo kính và cách dựng giữ nguyên để người 3D đọc đúng JSON nhân vật 2D. Sửa bảng kiểu bên
 rig thì chép lại và cập nhật commit ở đầu file.
 
-**`fromCharacter` nhận JSON đã qua `parseCharacter` của `@stickman/rig`** — package không
+**`fromCharacter` nhận JSON đã qua `parseCharacter` của `@stickman3d/sketch`** — package không
 tự parse hay migrate JSON nhân vật.
 
 **`act` nhận `ScenePose` của `sceneAt`** — package không đọc JSON hành động hay scene, không
-import `@stickman/rig`; kiểu đầu vào khai theo cấu trúc trong `act.ts`. Chỉ kênh tay chân soạn
+import `@stickman3d/sketch`; kiểu đầu vào khai theo cấu trúc trong `act.ts`. Chỉ kênh tay chân soạn
 ở `side` (`pose.lift`) được đọc; góc `0` thẳng xuống, dương ra trước, chi gần là bên phải người
 khi không lật. Hông lấy thẳng từ `world.hip` nên độ dài chi phải khớp rig 2D (đùi 78, ống chân
 92, hông ±`hipHalf`), lệch là chân trượt khi đi theo `path`. `face.ts` chép hình nét mặt từ

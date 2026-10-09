@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 2,
+  "name": "wagon",
+  "line": "#1a1a1a",
+  "body": {
+    "src": "part",
+    "part": "thung",
+    "color": "#8fa3b8",
+    "dx": -60,
+    "dy": 0,
+    "scale": 1,
+    "widthScale": 0.85,
+    "aspect": 1,
+    "rotate": 0
+  },
+  "wheel": {
+    "fill": "#ffffff",
+    "spokes": 6,
+    "stroke": 12
+  },
+  "rear": {
+    "r": 36
+  },
+  "front": {
+    "x": 130,
+    "r": 36
+  }
+}

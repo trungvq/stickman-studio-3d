@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+<title>Mũ quân đội nhìn nghiêng</title>
+<g id="guide" fill="none" stroke="#9ac" stroke-width="1"><circle cx="160" cy="160" r="100"/></g>
+<g fill="white" stroke="black" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 61 128 L 67 65 Q 161 47 243 72 L 250 117 L 304 128 Q 314 143 289 146 L 239 136 L 62 139 Z" fill="white" stroke-width="9"/>
+<path d="M 68 83 Q 156 71 243 86 M 63 117 Q 158 103 248 119" fill="none" stroke-width="5.85"/>
+</g>
+</svg>

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 10,
+  "name": "animal-look-down",
+  "duration": 0.7,
+  "end": "hold",
+  "actor": "animal",
+  "mask": ["neck", "head", "face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "neck": -30,
+        "head": -6
+      },
+      "ease": "linear",
+      "face": {
+        "mouth": "closed",
+        "eyes": "open"
+      }
+    }
+  ],
+  "note": "Cúi cổ nhìn xuống, ngậm mỏ. Đặt `animal-talk` lên trên để nói trong thế này."
+}

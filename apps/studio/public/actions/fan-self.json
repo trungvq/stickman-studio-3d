@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 9,
+  "name": "fan-self",
+  "duration": 1.6,
+  "end": "wrap",
+  "mask": ["armNear", "head", "face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armNear": [-22, -136, -5],
+        "head": [3, 0, 0]
+      },
+      "ease": "linear",
+      "layer": {
+        "armNear": "front"
+      },
+      "face": {
+        "mouth": "smile",
+        "brow": "neutral",
+        "eyes": "open"
+      }
+    },
+    {
+      "t": 0.15,
+      "pose": {
+        "armNear": [-21.2, -141, -3],
+        "head": [3.2, 0, 0]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armNear": [-18, -160, 5],
+        "head": [4, 0, 0]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.65,
+      "pose": {
+        "armNear": [-18.8, -155, 3],
+        "head": [3.8, 0, 0]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armNear": [-22, -136, -5],
+        "head": [3, 0, 0]
+      },
+      "ease": "linear"
+    }
+  ],
+  "note": "Phe phẩy quạt cho mát. Đi với mảnh `part:fan`."
+}

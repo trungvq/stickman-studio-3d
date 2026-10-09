@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" role="img" aria-labelledby="title desc">
+  <title id="title">Máy tính bỏ túi cầm tay</title>
+  <desc id="desc">Mảnh hand: điểm cầm ở (300,300), màn hình ở đầu xa (mép dưới ảnh) nên khi cổ tay bù góc, máy dựng đứng với màn hình ở trên. Ảnh màu sẵn, không khai color.</desc>
+  <g stroke="#1a1a1a" stroke-width="8" stroke-linejoin="round">
+    <rect x="236" y="186" width="128" height="250" rx="16" fill="#5a6270"/>
+    <rect x="254" y="368" width="92" height="46" rx="6" fill="#d9e9c3"/>
+    <path d="M264 402h60" fill="none" stroke="#3b4a30" stroke-width="5" stroke-linecap="round"/>
+    <g stroke-width="4">
+      <rect x="254" y="204" width="20" height="20" rx="4" fill="#eef0f2"/><rect x="282" y="204" width="20" height="20" rx="4" fill="#eef0f2"/><rect x="310" y="204" width="20" height="20" rx="4" fill="#eef0f2"/><rect x="338" y="204" width="8" height="20" rx="3" fill="#e08a3c"/>
+      <rect x="254" y="234" width="20" height="20" rx="4" fill="#eef0f2"/><rect x="282" y="234" width="20" height="20" rx="4" fill="#eef0f2"/><rect x="310" y="234" width="20" height="20" rx="4" fill="#eef0f2"/><rect x="338" y="234" width="8" height="20" rx="3" fill="#e08a3c"/>
+      <rect x="254" y="264" width="20" height="20" rx="4" fill="#eef0f2"/><rect x="282" y="264" width="20" height="20" rx="4" fill="#eef0f2"/><rect x="310" y="264" width="20" height="20" rx="4" fill="#eef0f2"/><rect x="338" y="264" width="8" height="20" rx="3" fill="#e08a3c"/>
+      <rect x="254" y="294" width="20" height="20" rx="4" fill="#eef0f2"/><rect x="282" y="294" width="20" height="20" rx="4" fill="#eef0f2"/><rect x="310" y="294" width="20" height="20" rx="4" fill="#eef0f2"/><rect x="338" y="294" width="8" height="20" rx="3" fill="#e08a3c"/>
+      <rect x="254" y="324" width="48" height="20" rx="4" fill="#eef0f2"/><rect x="310" y="324" width="20" height="20" rx="4" fill="#eef0f2"/><rect x="338" y="324" width="8" height="20" rx="3" fill="#d0463a"/>
+    </g>
+  </g>
+</svg>

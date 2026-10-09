@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 9,
+  "name": "grin",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "mouth": "grin",
+        "brow": "raised",
+        "eyes": "happy"
+      }
+    }
+  ],
+  "note": "Cười toe, hở răng. Khác `smile` là cười mỉm — đừng dùng lẫn."
+}

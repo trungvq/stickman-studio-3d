@@ -1,0 +1,43 @@
+{
+  "name": "@stickman3d/fx",
+  "version": "1.4.0",
+  "description": "Hiệu ứng SVG thuần theo thời gian cho scene người que: hào quang, nước mắt, vật rời tay, lá bay, chữ, iris",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepack": "tsup"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "dependencies": {
+    "@stickman3d/sketch": "workspace:*",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "react": "^19.2.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://gitlab.com/api/v4/projects/87383859/packages/npm/"
+  }
+}

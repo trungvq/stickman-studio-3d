@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 190">
+<title>Phiến hộ tâm nhìn nghiêng</title>
+<g id="guide" fill="none" stroke="#9ac" stroke-width="1"><path d="M 75 20 L 75 140"/></g>
+<g fill="white" stroke="black" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 87 14 L 102 41 L 111 51 L 121 76 Q 118 92 111 97 L 99 87 L 95 54 L 91 42 L 76 17 Z" fill="white" stroke-width="6"/>
+<path d="M 102 53 L 109 80 L 113 84" fill="none" stroke-width="3.9"/>
+</g>
+</svg>

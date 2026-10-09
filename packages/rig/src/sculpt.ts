@@ -1,4 +1,4 @@
-// Tóc dựng khối theo @stickman/rig (packages/rig/src/sculpt.tsx, 2b05c7a): bảng kiểu và các hàm dựng vỏ,
+// Tóc dựng khối theo @stickman3d/sketch (packages/rig/src/sculpt.tsx, 2b05c7a): bảng kiểu và các hàm dựng vỏ,
 // chân tóc, mái lệch, lọn gai giữ nguyên; `sculptMesh` ở cuối dựng như `buildSculpt` nhưng giữ lưới 3D
 // thay vì chiếu ra path SVG. Sửa bảng kiểu bên rig thì chép lại.
 

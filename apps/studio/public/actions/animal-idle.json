@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 10,
+  "name": "animal-idle",
+  "duration": 2.4,
+  "end": "wrap",
+  "gen": "animalIdle",
+  "params": {
+    "breath": 1.5,
+    "nod": 3,
+    "swish": 6,
+    "wing": 3
+  },
+  "note": "Đứng thở: thân phập phồng, cổ gật nhẹ, đuôi và cánh nhích. Chỗ dựa cho mọi cảnh thú đứng, kể cả chim đậu."
+}

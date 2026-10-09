@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 10,
+  "name": "thank-clasp",
+  "duration": 0.58,
+  "end": "wrap",
+  "mask": ["armNear", "armFar", "torso", "head"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armNear": [-13.36, 123.87, 0],
+        "armFar": [13.36, -123.87, 0],
+        "torso": 5,
+        "head": [0, 0, 3]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      }
+    },
+    {
+      "t": 0.45,
+      "pose": {
+        "armNear": [-13.36, 123.87, 0],
+        "armFar": [13.36, -123.87, 0],
+        "torso": 30,
+        "head": [0, 0, 14]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      }
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armNear": [-13.36, 123.87, 0],
+        "armFar": [13.36, -123.87, 0],
+        "torso": 5,
+        "head": [0, 0, 3]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      }
+    }
+  ],
+  "note": "Chắp tay trước ngực cúi đầu cảm ơn, lặp: thân gập 30° rồi thẳng lại, hai tay lớp `front`."
+}

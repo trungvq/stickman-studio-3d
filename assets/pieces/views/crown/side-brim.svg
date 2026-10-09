@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+<title>Mũ vành rộng nhìn nghiêng</title>
+<g id="guide" fill="none" stroke="#9ac" stroke-width="1"><circle cx="160" cy="160" r="100"/></g>
+<g fill="white" stroke="black" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 36 129 L 79 114 L 92 51 Q 137 35 161 54 Q 184 37 221 55 L 238 114 L 295 137 Q 274 163 225 146 Q 119 134 58 152 Q 26 151 36 129 Z" fill="white" stroke-width="9"/>
+<path d="M 81 105 Q 161 121 235 106 M 79 117 Q 166 132 238 118" fill="none" stroke-width="5.85"/>
+</g>
+</svg>

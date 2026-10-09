@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 9,
+  "name": "look-up",
+  "duration": 1.6,
+  "end": "hold",
+  "mask": ["head", "face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "head": [3, 10, -32]
+      },
+      "ease": "linear",
+      "face": {
+        "mouth": "frown",
+        "brow": "sad",
+        "eyes": "open"
+      }
+    }
+  ],
+  "events": []
+}

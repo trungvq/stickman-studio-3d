@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 10,
+  "name": "face-pain",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "open",
+        "brow": "furrowed",
+        "mouth": "pain"
+      }
+    }
+  ],
+  "note": "Đau: cau mày, mồm méo. Nén đau nhăn mặt là `face-wince`."
+}

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 14,
+  "name": "talk-hands",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["armNear", "armFar", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armNear": [-10, -20, 0],
+        "armFar": [10, 20, 0],
+        "torso": 0
+      },
+      "ease": "smooth",
+      "layer": {
+        "armNear": "front",
+        "armFar": "mid"
+      }
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armNear": [-24, -80, 0],
+        "armFar": [26, 80, 0],
+        "torso": 2
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Xoè hai tay ngửa hai bên ngang bụng, thân ngả 2°: câu nhấn, câu hỏi. Dấu ngược nhau theo quy ước, gần âm xa dương; tay xa lớp `mid` (trên thân áo, dưới tay gần). Giơ một lần rồi giữ; scene buông bằng clip rỗng blend ~0,4."
+}

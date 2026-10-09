@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 2,
+  "name": "push-cart",
+  "duration": 5,
+  "cast": [
+    {
+      "id": "a",
+      "character": "ink.json",
+      "x": -900,
+      "tracks": [
+        {
+          "name": "legs",
+          "clips": [
+            {
+              "action": "walk",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "name": "arms",
+          "clips": [
+            {
+              "action": "push",
+              "start": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "props": [
+    {
+      "id": "cart",
+      "prop": "oxcart.json",
+      "follow": "a",
+      "x": 330
+    },
+    {
+      "id": "cart-back",
+      "prop": "wagon.json",
+      "x": 420,
+      "layer": "back"
+    }
+  ]
+}

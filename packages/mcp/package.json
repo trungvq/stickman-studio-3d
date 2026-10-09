@@ -1,0 +1,28 @@
+{
+  "name": "@stickman3d/mcp",
+  "version": "1.4.0",
+  "description": "MCP server để agent dựng nhân vật, hành động, scene người que rồi soi bằng ảnh",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "server.mjs",
+    "pieces.mjs"
+  ],
+  "bin": {
+    "stickman-mcp": "./server.mjs"
+  },
+  "scripts": {
+    "typecheck": "echo skip",
+    "build": "echo skip"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@stickman3d/cli": "workspace:*",
+    "@stickman3d/render": "workspace:*",
+    "@stickman3d/sketch": "workspace:*",
+    "zod": "^4.1.13"
+  },
+  "publishConfig": {
+    "registry": "https://gitlab.com/api/v4/projects/87383859/packages/npm/"
+  }
+}

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 190">
+  <title>Ngực trần nhìn nghiêng</title>
+  <g id="art" stroke="#1a1a1a" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 66 17 C 58 20, 50 26, 48 38 C 45 54, 50 70, 52 88 C 53 104, 49 118, 51 130 C 53 138, 62 141, 74 141 C 86 141, 98 139, 101 131 C 103 120, 100 106, 100 92 C 100 80, 105 70, 106 58 C 107 44, 102 32, 94 26 C 90 23, 87 20, 85 17 C 79 19, 72 19, 66 17 Z" fill="#5b6fa8" stroke-width="6"/>
+  <path d="M 82 60 C 89 66, 99 65, 105 59" fill="none" stroke-width="5.33"/>
+  <path d="M 94.4 114 C 94.4 113.1, 95.1 112.4, 96 112.4 C 96.9 112.4, 97.6 113.1, 97.6 114 C 97.6 114.9, 96.9 115.6, 96 115.6 C 95.1 115.6, 94.4 114.9, 94.4 114 Z" fill="#1a1a1a" stroke-width="4.67"/>
+  </g>
+  <g id="guide" fill="none" stroke="#e0218a" stroke-width="1" opacity="0.4">
+    <path d="M 75 140 L 75 20 L 75 12 M 67 40 L 83 40"/>
+    <circle cx="75" cy="140" r="3"/><circle cx="75" cy="12" r="3"/><circle cx="67" cy="40" r="3"/><circle cx="83" cy="40" r="3"/>
+  </g>
+</svg>

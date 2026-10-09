@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="360" viewBox="0 0 300 360">
+<title>Áo hoodie: thân, gấu, túi, mũ và hai dây rút — thay pieces/torso/torso-05.png</title>
+<g fill="#ffffff" stroke="#1a1a1a" stroke-width="9" stroke-linejoin="round" stroke-linecap="round">
+  <path id="body" d="M 78 53
+    C 52 62, 35 80, 36 111
+    C 36 140, 55 158, 55 191
+    C 56 218, 49 244, 49 261
+    L 50 279 C 56 318, 241 320, 252 277
+    L 252 254 C 247 220, 247 187, 251 165
+    C 256 139, 267 113, 262 90
+    C 259 71, 246 59, 223 52 Z"/>
+  <path id="pocket" stroke-width="6" d="M 96 276 L 93 250
+    Q 116 232, 126 198
+    Q 173 200, 217 193
+    Q 223 224, 241 239 L 237 269
+    M 95 260 Q 125 247, 136 199
+    M 209 195 Q 217 233, 240 248"/>
+  <path id="hem" d="M 49 261 C 77 291, 218 291, 252 261" fill="none"/>
+  <path id="hood" d="M 66 56 Q 68 39, 80 31
+    Q 84 5, 107 5 C 135 3, 189 9, 204 18
+    Q 218 26, 219 43 Q 231 56, 214 72
+    Q 192 85, 166 79 C 127 77, 89 49, 78 54 Z
+    M 176 78 C 168 56, 119 42, 106 21
+    C 95 10, 161 18, 180 23
+    C 211 30, 200 47, 176 78"/>
+  <path id="drawstring-near" stroke-width="6" d="M 151 134 Q 153 110, 148 76
+    Q 145 66, 155 70 Q 160 103, 159 134
+    M 147 133 L 164 133 L 164 152 L 148 152 Z"/>
+  <path id="drawstring-far" stroke-width="6" d="M 202 129 L 197 74
+    Q 195 64, 205 69 L 211 128
+    M 200 129 L 215 128 L 216 148 L 200 150 Z"/>
+</g>
+</svg>

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "name": "tree-ancient",
+  "line": "#28382b",
+  "body": {
+    "src": "part",
+    "part": "tree-ancient",
+    "color": "#527b51",
+    "accent": "#8c694e",
+    "dx": 0,
+    "dy": 0,
+    "scale": 3.2,
+    "widthScale": 1,
+    "aspect": 1,
+    "rotate": 0
+  },
+  "wheel": {
+    "fill": "#ffffff",
+    "spokes": 8,
+    "stroke": 5
+  }
+}

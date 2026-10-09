@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
+<title>Búi cao — back</title>
+<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
+<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 190 38 C 190 22 176 8 160 8 C 144 8 130 22 130 38 C 130 54 144 68 160 68 C 176 68 190 54 190 38 Z"/>
+<path d="M 56 161.22 C 52 100 96 54 160 54 C 224 54 268 100 264 161.22 Q 262 190.56 240 206.44 Q 200 215 160 215 Q 120 215 80 206.44 Q 58 190.56 56 161.22 Z"/>
+<path d="M 144 26 C 150 16 170 16 176 26" fill="none"/>
+<path d="M 96 132 C 108 104 126 84 144 74" fill="none"/>
+<path d="M 224 132 C 212 104 194 84 176 74" fill="none"/>
+</g>
+</svg>

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 9,
+  "name": "smile",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["head", "face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "mouth": "smile",
+        "brow": "neutral",
+        "eyes": "open"
+      }
+    }
+  ],
+  "note": "Mỉm cười. `mask` phải có `face`, thiếu là nét mặt đứng im."
+}

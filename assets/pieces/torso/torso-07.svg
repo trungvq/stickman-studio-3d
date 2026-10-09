@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="360" viewBox="0 0 300 360">
+<title>Áo vest: cà vạt mảnh, hai ve trơn nét mỏng, hai chấm cúc</title>
+<g fill="#ffffff" stroke="#1a1a1a" stroke-width="9" stroke-linejoin="round" stroke-linecap="round">
+  <path id="body" d="M 109 8 Q 150 2, 189 12 Q 199 13, 205 25
+    C 224 39, 254 48, 264 70 C 277 103, 256 143, 254 181
+    Q 251 227, 262 275 C 250 293, 211 305, 192 302
+    Q 181 299, 177 286 C 170 315, 63 310, 39 277
+    Q 38 273, 40 265 C 52 220, 56 183, 46 150
+    C 35 117, 25 87, 38 64 Q 49 44, 92 26 Z"/>
+  <path id="tie" d="M 153 32 L 179 29 L 175 47 L 194 121 L 184 146 L 167 124 L 162 48 Z" fill="#1a1a1a" stroke="none"/>
+  <path id="opening" d="M 186 172 Q 177 188 177 204 Q 176 250 179 286" fill="none" stroke-width="4.05"/>
+  <path id="button-1" d="M 187 206 C 187 203.239 189.239 201 192 201 C 194.761 201 197 203.239 197 206 C 197 208.761 194.761 211 192 211 C 189.239 211 187 208.761 187 206 Z" fill="#1a1a1a" stroke="none"/>
+  <path id="button-2" d="M 187 252 C 187 249.239 189.239 247 192 247 C 194.761 247 197 249.239 197 252 C 197 254.761 194.761 257 192 257 C 189.239 257 187 254.761 187 252 Z" fill="#1a1a1a" stroke="none"/>
+  <path id="lapel-near" d="M 110 12 Q 150 80 186 172 Q 140 132 104 84 Q 95 50 110 12 Z" stroke-width="5.04"/>
+  <path id="lapel-far" d="M 202 21 Q 203 100 186 172 Q 226 128 242 76 Q 226 42 202 21 Z" stroke-width="5.04"/>
+</g>
+</svg>

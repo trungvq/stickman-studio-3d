@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 190">
+  <title>Áo khoác kéo khoá nhìn từ sau</title>
+  <g id="art" stroke="#1a1a1a" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 57 12 C 66 8, 84 8, 93 12 C 101 18, 112 22, 119 27 C 125 32, 127 40, 126 50 C 125 62, 120 80, 119 94 C 119 108, 121 119, 121 130 C 120 139, 111 143, 98 147 C 88 150, 62 150, 52 147 C 39 143, 30 139, 29 130 C 29 119, 31 108, 31 94 C 30 80, 25 62, 24 50 C 23 40, 25 32, 31 27 C 38 22, 49 18, 57 12 Z" fill="#5b6fa8" stroke-width="6"/>
+  <path d="M 29 128 C 44 142, 106 142, 121 128" fill="none" stroke-width="4.68"/>
+  <path d="M 56 3 C 66 0, 84 0, 94 3 L 97 20 C 86 26, 64 26, 53 20 Z" fill="#5b6fa8" stroke-width="4.68"/>
+  </g>
+  <g id="guide" fill="none" stroke="#e0218a" stroke-width="1" opacity="0.4">
+    <path d="M 75 140 L 75 20 L 75 12 M 35 40 L 115 40"/>
+    <circle cx="75" cy="140" r="3"/><circle cx="75" cy="12" r="3"/><circle cx="35" cy="40" r="3"/><circle cx="115" cy="40" r="3"/>
+  </g>
+</svg>

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 9,
+  "name": "hips",
+  "duration": 0.8,
+  "end": "hold",
+  "mask": ["armFar", "armNear"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [36, -96, 0],
+        "armNear": [-36, 96, 0]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front"
+      }
+    }
+  ],
+  "events": []
+}

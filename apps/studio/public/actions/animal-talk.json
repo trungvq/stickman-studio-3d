@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 10,
+  "name": "animal-talk",
+  "duration": 0.32,
+  "end": "wrap",
+  "actor": "animal",
+  "mask": ["head", "face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "head": 5
+      },
+      "ease": "linear",
+      "face": {
+        "mouth": "talkA"
+      }
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "head": -3
+      },
+      "ease": "linear",
+      "face": {
+        "mouth": "talkB"
+      }
+    }
+  ],
+  "note": "Mỏ nhấp hai nhịp, đầu gật theo. Đặt lên track trên dáng đi hay dáng bay; chỉ ghi `head` và `face` nên cánh, chân là của track dưới."
+}

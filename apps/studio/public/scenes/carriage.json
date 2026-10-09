@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 7,
+  "name": "carriage",
+  "duration": 5,
+  "cast": [
+    {
+      "id": "passenger",
+      "character": "ink.json",
+      "sit": {
+        "in": "cart"
+      }
+    }
+  ],
+  "animals": [
+    {
+      "id": "horse",
+      "animal": "horse.json",
+      "x": -200,
+      "clips": [
+        {
+          "action": "animal-walk",
+          "start": 0
+        }
+      ]
+    }
+  ],
+  "props": [
+    {
+      "id": "cart",
+      "prop": "carriage.json",
+      "follow": "horse",
+      "x": -400
+    }
+  ]
+}

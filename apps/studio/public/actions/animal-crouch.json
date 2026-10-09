@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 10,
+  "name": "animal-crouch",
+  "duration": 0.6,
+  "end": "hold",
+  "actor": "animal",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "spine": 0,
+        "neck": 0,
+        "legHindNear": [4, -6],
+        "legHindFar": [-4, 6]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "spine": -8,
+        "neck": -18,
+        "legHindNear": [55, -110],
+        "legHindFar": [50, -105]
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [
+    {
+      "name": "knelt",
+      "t": 1
+    }
+  ],
+  "note": "Khuỵu chân sau hạ mình cho người trèo lên lưng; xong ở sự kiện `knelt`."
+}

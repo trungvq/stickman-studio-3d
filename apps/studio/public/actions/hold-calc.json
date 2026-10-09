@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 10,
+  "name": "hold-calc",
+  "duration": 0.8,
+  "end": "hold",
+  "mask": ["armNear", "armFar", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armNear": [-28, 118, -88],
+        "armFar": [36, -96, 0],
+        "torso": 2
+      },
+      "layer": {
+        "armNear": "front",
+        "armFar": "back"
+      }
+    }
+  ],
+  "note": "Giữ máy tính ở tay gần trước bụng, tay xa chống hông."
+}

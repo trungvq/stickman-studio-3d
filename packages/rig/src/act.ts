@@ -3,7 +3,7 @@ import type { BrowKind, EyeKind, MouthKind } from './face';
 import { toThree, type Vec3 } from './khoi';
 import { R, type Figure, type Side } from './stickman';
 
-// Diễn theo tư thế đã lấy mẫu của @stickman/rig (`sceneAt`, docs/01-rig.md#người-3d): package không đọc JSON hành
+// Diễn theo tư thế đã lấy mẫu của @stickman3d/sketch (`sceneAt`, docs/01-rig.md#người-3d): package không đọc JSON hành
 // động hay scene. Chỉ kênh tay chân soạn ở `side` (`pose.lift`) và đích cổ tay được đọc — góc trong mặt phẳng dọc
 // thân, `0` thẳng xuống, dương ra trước, khớp con tương đối khớp cha. Kênh tay chân soạn trên mặt khung 2D thì
 // người đứng nghỉ (ngồi thì đùi ngang).
@@ -11,7 +11,7 @@ import { R, type Figure, type Side } from './stickman';
 /** Đích cổ tay: hệ thân `[tiến, y xuống, ra ngoài]` đơn vị rig trong `pose.reach`, toạ độ thế giới rig trong `world.hands` */
 export interface ActReach { at: readonly number[]; elbow?: readonly number[]; w: number }
 type Limb = 'af' | 'an' | 'lf' | 'ln';
-/** `Pose` của @stickman/rig; góc độ, `head` là `[nghiêng, lắc, gật]` */
+/** `Pose` của @stickman3d/sketch; góc độ, `head` là `[nghiêng, lắc, gật]` */
 export interface ActPose {
   af: readonly number[];
   an: readonly number[];
@@ -24,7 +24,7 @@ export interface ActPose {
   lift?: Partial<Record<Limb, boolean>>;
   reach?: Partial<Record<'af' | 'an', ActReach>>;
 }
-/** `World` của @stickman/rig: tâm hông thế giới rig, `yaw` radian (0 mặt về +x, π/2 về −z), `flip` là mặt sang trái khung */
+/** `World` của @stickman3d/sketch: tâm hông thế giới rig, `yaw` radian (0 mặt về +x, π/2 về −z), `flip` là mặt sang trái khung */
 export interface ActWorld {
   hip: readonly number[];
   yaw: number;
@@ -33,7 +33,7 @@ export interface ActWorld {
   seated?: boolean;
   hands?: { near?: ActReach; far?: ActReach };
 }
-/** `ScenePose` của @stickman/rig — `sceneAt(rt, id, t, height, body3(c))` truyền thẳng vào được */
+/** `ScenePose` của @stickman3d/sketch — `sceneAt(rt, id, t, height, body3(c))` truyền thẳng vào được */
 export interface Acting {
   pose: ActPose;
   world?: ActWorld;
@@ -44,7 +44,7 @@ export interface Acting {
 
 const D = Math.PI / 180;
 const DOWN = new THREE.Vector3(0, -1, 0);
-/** `REACH_ELBOW` của @stickman/rig: khuỷu xuống, lùi, ra ngoài */
+/** `REACH_ELBOW` của @stickman3d/sketch: khuỷu xuống, lùi, ra ngoài */
 const REACH_ELBOW: Vec3 = [-0.4, 1, 0.5];
 /** Tay choãi khỏi thân áo một chút; đích cổ tay thì không */
 const SPLAY = 0.08;
@@ -57,7 +57,7 @@ function segment(j: THREE.Group, child: THREE.Group | undefined, len: number, st
   if (child) child.position.y = -len * st;
 }
 
-/** IK hai đoạn của @stickman/rig (`solveTwoBone`): khớp giữa trong mặt phẳng qua trục gốc → đích và `pole` */
+/** IK hai đoạn của @stickman3d/sketch (`solveTwoBone`): khớp giữa trong mặt phẳng qua trục gốc → đích và `pole` */
 function twoBone(S: THREE.Vector3, T: THREE.Vector3, l1: number, l2: number, pole: THREE.Vector3) {
   const d = T.clone().sub(S), dist = d.length();
   const n = dist > 1e-9 ? d.divideScalar(dist) : new THREE.Vector3(0, -1, 0);

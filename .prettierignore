@@ -1,0 +1,9 @@
+node_modules
+dist
+fixtures
+pnpm-lock.yaml
+*.md
+packages/rig/src
+apps/viewer
+tools/shots.mjs
+tools/bench.mjs

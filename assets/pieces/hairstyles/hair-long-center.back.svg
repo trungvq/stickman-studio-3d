@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
+<title>Dài rẽ ngôi giữa — back</title>
+<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
+<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 160 50 C 98 50 54 100 56 162 C 56 200 48 254 34 296 C 24 322 16 346 22 358 Q 50 372 90 362 Q 130 372 160 364 Q 190 372 230 362 Q 270 372 298 358 C 304 346 296 322 286 296 C 272 254 264 200 264 162 C 266 100 222 50 160 50 Z"/>
+<path d="M 96 224 C 88 274 90 326 100 356" fill="none"/>
+<path d="M 224 224 C 232 274 230 326 220 356" fill="none"/>
+<path d="M 52 286 C 44 316 40 342 48 358" fill="none"/>
+</g>
+</svg>

@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 9,
+  "name": "oh-no-hold",
+  "duration": 0.9,
+  "end": "hold",
+  "mask": ["armFar", "armNear", "torso", "head", "face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [140, 8, 0],
+        "armNear": [-140, -8, 0],
+        "torso": -6,
+        "head": [0, 0, -12]
+      },
+      "ease": "spring",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      },
+      "face": {
+        "mouth": "wide",
+        "brow": "raised",
+        "eyes": "wide"
+      }
+    },
+    {
+      "t": 0.35,
+      "pose": {
+        "armFar": [158, 34, 0],
+        "armNear": [-173, -31, 0],
+        "torso": -3,
+        "head": [0, 0, -4]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [156, 39, -4],
+        "armNear": [-168, -37, 0],
+        "torso": -2,
+        "head": [0, 0, -2]
+      },
+      "ease": "linear"
+    }
+  ]
+}

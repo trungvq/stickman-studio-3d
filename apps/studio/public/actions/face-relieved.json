@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 10,
+  "name": "face-relieved",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "happy",
+        "brow": "neutral",
+        "mouth": "smile"
+      }
+    }
+  ],
+  "note": "Nhẹ nhõm: mắt cười, mày thẳng, mỉm cười."
+}

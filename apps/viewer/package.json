@@ -12,7 +12,7 @@
     "three": "0.186.0"
   },
   "devDependencies": {
-    "@stickman/rig": "1.3.1",
+    "@stickman3d/sketch": "workspace:*",
     "react": "^19.3.0",
     "vite": "^8.3.3"
   }

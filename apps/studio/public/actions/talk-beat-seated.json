@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 14,
+  "name": "talk-beat-seated",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "torso": 0,
+        "head": [0, null, 0]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "torso": 8,
+        "head": [-7, null, 1]
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Cú nhịp thân của người ngồi 2D: ngả 8°, đầu nghiêng bù ngược 7° nên gần thẳng đứng. Người 3D ngồi dùng talk-beat-seated-3d — nghiêng ở người 3D là ngoẹo cổ trên mặt khung, không bù được cái cúi. Không ghi lắc — hướng nhìn để track khác. Đặt ở track nhịp riêng, scene buông bằng clip rỗng blend ~0,4."
+}

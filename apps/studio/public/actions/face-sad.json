@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 10,
+  "name": "face-sad",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "open",
+        "brow": "sad",
+        "mouth": "frown"
+      }
+    }
+  ],
+  "note": "Buồn, bối rối: mày cụp, mồm trễ."
+}

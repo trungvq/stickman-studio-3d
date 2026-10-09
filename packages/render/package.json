@@ -1,0 +1,35 @@
+{
+  "name": "@stickman3d/render",
+  "version": "1.4.0",
+  "description": "Vẽ nhân vật người que ra PNG bằng @stickman3d/sketch, không cần trình duyệt",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "cli.mjs",
+    "layers.mjs",
+    "lib.mjs",
+    "video.mjs"
+  ],
+  "bin": {
+    "stickman-render": "./cli.mjs",
+    "stickman-video": "./video.mjs"
+  },
+  "scripts": {
+    "typecheck": "echo skip",
+    "build": "echo skip"
+  },
+  "dependencies": {
+    "@stickman3d/fx": "workspace:*",
+    "@stickman3d/sketch": "workspace:*",
+    "esbuild": "^0.28.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "exports": {
+    ".": "./lib.mjs",
+    "./layers": "./layers.mjs"
+  },
+  "publishConfig": {
+    "registry": "https://gitlab.com/api/v4/projects/87383859/packages/npm/"
+  }
+}

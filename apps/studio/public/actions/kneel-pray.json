@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 9,
+  "name": "kneel-pray",
+  "duration": 2.6,
+  "end": "wrap",
+  "mask": ["armFar", "armNear", "legFar", "legNear", "torso", "head", "face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [4.5, -134, 0],
+        "armNear": [-4.5, 134, 0],
+        "legFar": [-8, -82],
+        "legNear": [-18, -72],
+        "torso": 10,
+        "head": [0, 0, 7]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      },
+      "face": {
+        "mouth": "frown",
+        "brow": "sad",
+        "eyes": "open"
+      }
+    },
+    {
+      "t": 0.34,
+      "pose": {
+        "armFar": [5.8, -134, 0],
+        "armNear": [-5.8, 134, 0],
+        "legFar": [-8, -82],
+        "legNear": [-18, -72],
+        "torso": 11.7,
+        "head": [0, 0, 8.3]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.58,
+      "pose": {
+        "armFar": [5, -134, 0],
+        "armNear": [-5, 134, 0],
+        "legFar": [-8, -82],
+        "legNear": [-18, -72],
+        "torso": 10.5,
+        "head": [0, 0, 7.4]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.8,
+      "pose": {
+        "armFar": [3.4, -134, 0],
+        "armNear": [-3.4, 134, 0],
+        "legFar": [-8, -82],
+        "legNear": [-18, -72],
+        "torso": 8.6,
+        "head": [0, 0, 6]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [4.5, -134, 0],
+        "armNear": [-4.5, 134, 0],
+        "legFar": [-8, -82],
+        "legNear": [-18, -72],
+        "torso": 10,
+        "head": [0, 0, 7]
+      },
+      "ease": "linear"
+    }
+  ]
+}

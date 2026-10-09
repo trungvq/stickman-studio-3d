@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320">
+<title>Bob ngang cằm — over</title>
+<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
+<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 54 251 C 49 224 53 195 54 164 C 53 98 87 54 156 53 C 226 51 263 99 264 166 Q 265 218 270 251 Q 251 264 224 255 Q 240 215.49 238 148.99 Q 237 120.96 209 85.82 C 178 92.28 134 96.12 87 107.97 Q 74 182.98 95 255 Q 70 262 54 251 Z"/>
+<path d="M 209 85.82 Q 217 81.5 213 65" fill="none"/>
+</g>
+</svg>

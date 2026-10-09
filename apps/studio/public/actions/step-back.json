@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 10,
+  "name": "step-back",
+  "duration": 0.9,
+  "end": "hold",
+  "mask": ["legNear", "legFar", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "legFar": [2, 0],
+        "legNear": [-2, 0],
+        "torso": -3
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.14,
+      "pose": {
+        "legFar": [9, 0],
+        "legNear": [-9, -55],
+        "torso": -5
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.28,
+      "pose": {
+        "legFar": [16, 0],
+        "legNear": [-16, 0],
+        "torso": -4
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "legFar": [0, -60],
+        "legNear": [0, 0],
+        "torso": -5
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.72,
+      "pose": {
+        "legFar": [-16, 0],
+        "legNear": [16, 0],
+        "torso": -4
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.86,
+      "pose": {
+        "legFar": [-7, 0],
+        "legNear": [7, -55],
+        "torso": -3
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "legFar": [2, 0],
+        "legNear": [-2, 0],
+        "torso": -2
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [
+    {
+      "name": "step",
+      "t": 0.28
+    },
+    {
+      "name": "step",
+      "t": 0.72
+    },
+    {
+      "name": "step",
+      "t": 1
+    }
+  ],
+  "note": "Giật mình lùi hai bước rưỡi, mặt vẫn nhìn về `+x`. Hành động không trôi ngang; quãng lùi là `path` của scene. Chân trụ quay hông đúng bằng quãng thân lùi nên bàn chân đứng yên: một pha trụ lùi `L · (sin hông cuối − sin hông đầu)` với `L = 160 · scale`, ba pha là 0,20 L, 0,55 L và 0,31 L (tổng 1,06 L). Mốc `path` chia đúng ba quãng ấy ở ba sự kiện `step`. Chân vung gập gối để cao hơn chân trụ; kết đúng chân `idle`."
+}

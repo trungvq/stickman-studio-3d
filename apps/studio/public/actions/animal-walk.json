@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 9,
+  "name": "animal-walk",
+  "duration": 0.96,
+  "end": "wrap",
+  "gen": "animalWalk",
+  "params": {
+    "stride": 0.7,
+    "lift": 0.2,
+    "duty": 0.62,
+    "bob": 0.03,
+    "sway": 1.5,
+    "nod": 4,
+    "swish": 5
+  },
+  "events": []
+}

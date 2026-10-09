@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "pieces": [],
+  "parts": {
+    "hair-f-15": {
+      "dx": 0,
+      "dy": -26,
+      "scale": 0.9,
+      "widthScale": 1,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-f-16": {
+      "dx": 0,
+      "dy": -26,
+      "scale": 0.9,
+      "widthScale": 1.1,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-f-17": {
+      "dx": 0,
+      "dy": -31,
+      "scale": 0.9,
+      "widthScale": 1.1,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-f-18": {
+      "dx": -5,
+      "dy": -34,
+      "scale": 0.9,
+      "widthScale": 1.1,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-m-01": {
+      "dx": -2,
+      "dy": -34,
+      "scale": 0.9,
+      "widthScale": 1.1,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-m-02": {
+      "dx": 0,
+      "dy": -34,
+      "scale": 0.9,
+      "widthScale": 1.1,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-m-04": {
+      "dx": -1,
+      "dy": -37,
+      "scale": 0.9,
+      "widthScale": 1.1,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-m-06": {
+      "dx": 0,
+      "dy": -35,
+      "scale": 0.96,
+      "widthScale": 1.1,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-m-10": {
+      "dx": -1,
+      "dy": -32,
+      "scale": 0.9,
+      "widthScale": 1,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-m-11": {
+      "dx": 0,
+      "dy": -31,
+      "scale": 0.9,
+      "widthScale": 1.06,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-m-12": {
+      "dx": 0,
+      "dy": -34,
+      "scale": 0.9,
+      "widthScale": 1.06,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-m-13": {
+      "dx": 0,
+      "dy": -35,
+      "scale": 0.9,
+      "widthScale": 1.08,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-m-15": {
+      "dx": 0,
+      "dy": -26,
+      "scale": 0.9,
+      "widthScale": 1.1,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-m-16": {
+      "dx": 0,
+      "dy": -30,
+      "scale": 0.9,
+      "widthScale": 1.14,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-m-17": {
+      "dx": 0,
+      "dy": -32,
+      "scale": 0.9,
+      "widthScale": 1.06,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-m-18": {
+      "dx": 0,
+      "dy": -33,
+      "scale": 0.9,
+      "widthScale": 1.12,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-m-19": {
+      "dx": 0,
+      "dy": -39,
+      "scale": 1.6,
+      "widthScale": 1.04,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    },
+    "hair-m-03": {
+      "dx": 1.2,
+      "dy": -31.8,
+      "scale": 0.9740000000000001,
+      "widthScale": 1,
+      "clip": false,
+      "clipGrow": 1.12,
+      "rotate": 0
+    }
+  }
+}

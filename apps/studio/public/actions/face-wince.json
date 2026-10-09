@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 10,
+  "name": "face-wince",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "squint",
+        "brow": "furrowed",
+        "mouth": "pain"
+      }
+    }
+  ],
+  "note": "Nhăn nhó: cau mày, mắt nheo, mồm méo."
+}

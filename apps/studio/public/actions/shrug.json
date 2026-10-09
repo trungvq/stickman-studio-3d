@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 9,
+  "name": "shrug",
+  "duration": 1.12,
+  "end": "hold",
+  "mask": ["armFar", "armNear"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [30, 75, 0],
+        "armNear": [-30, -75, 0]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.6429,
+      "pose": {
+        "armFar": [30, 75, 0],
+        "armNear": [-30, -75, 0]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": "idle",
+      "ease": "linear"
+    }
+  ],
+  "events": []
+}

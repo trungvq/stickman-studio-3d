@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 9,
+  "name": "press-button",
+  "duration": 0.26,
+  "end": "hold",
+  "mask": ["armFar"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [100, 12, 0]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front"
+      }
+    },
+    {
+      "t": 0.45,
+      "pose": {
+        "armFar": [103, 6, 14]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [100, 12, 0]
+      },
+      "ease": "linear"
+    }
+  ],
+  "note": "Cả cẳng tay gằn xuống một nhịp và cổ tay hất cái điều khiển lên 14°: ngón cái không vẽ được ở cỡ này nên cú bấm phải đọc ra từ cổ tay. Mốc cuối về đúng tư thế mốc đầu nên nối tiếp nhau không giật. Đi với mảnh `part:remote`."
+}

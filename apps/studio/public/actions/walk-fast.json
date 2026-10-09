@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 9,
+  "name": "walk-fast",
+  "duration": 0.72,
+  "end": "wrap",
+  "gen": "walkCycle",
+  "params": {
+    "hip": 32,
+    "knee": 75,
+    "stance": 0.55,
+    "arm": 32,
+    "elbow": 35,
+    "lean": 4,
+    "dip": 1.5
+  },
+  "events": [
+    {
+      "name": "step",
+      "t": 0.226
+    },
+    {
+      "name": "step",
+      "t": 0.726
+    }
+  ]
+}

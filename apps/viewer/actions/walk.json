@@ -6,23 +6,23 @@
   "gen": "walkCycle",
   "authoredAt": "side",
   "params": {
-    "hip": 21.2,
-    "knee": 28,
+    "hip": 28,
+    "knee": 68,
     "stance": 0.6,
-    "arm": 9,
+    "arm": 25,
+    "elbow": 24,
     "lean": 1,
     "crouch": 0,
-    "bounce": 0.85,
-    "dip": 1.2
+    "dip": 1
   },
   "events": [
     {
       "name": "step",
-      "t": 0.173
+      "t": 0.211
     },
     {
       "name": "step",
-      "t": 0.673
+      "t": 0.711
     }
   ]
 }

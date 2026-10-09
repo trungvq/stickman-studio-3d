@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 7,
+  "name": "ride-horse",
+  "duration": 5,
+  "cast": [
+    {
+      "id": "woodcutter",
+      "character": "woodcutter.json",
+      "mount": {
+        "on": "horse"
+      },
+      "carry": [
+        {
+          "animal": "chicken",
+          "socket": "handNear",
+          "anchor": "hip",
+          "rotate": 180,
+          "dy": 10
+        }
+      ]
+    },
+    {
+      "id": "ink",
+      "character": "ink.json",
+      "x": 340,
+      "flip": true,
+      "tracks": [
+        {
+          "clips": [
+            {
+              "action": "wave",
+              "start": 1.0
+            },
+            {
+              "start": 3.0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "animals": [
+    {
+      "id": "horse",
+      "animal": "horse.json",
+      "x": -760,
+      "clips": [
+        {
+          "action": "animal-walk",
+          "start": 0
+        },
+        {
+          "start": 3.6
+        }
+      ]
+    },
+    {
+      "id": "chicken",
+      "animal": "chicken.json",
+      "scale": 0.42
+    },
+    {
+      "id": "elephant",
+      "animal": "elephant.json",
+      "x": 680,
+      "flip": true,
+      "scale": 0.7,
+      "layer": "back"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="640" viewBox="0 0 400 640" role="img" aria-labelledby="title desc">
+  <title id="title">Tạp dề chủ quán (mảnh hem, ảnh mực)</title>
+  <desc id="desc">Mảnh hem hai màu: nét đen, ruột trắng, màu thật ở pieces.hem.color. Yếm ngực ở mép trên, dây quàng cổ thò lên mép trên, dây lưng buộc nơ bên phải, thân tạp dề xoè tới gấu, túi đựng bút. Nhãn tên đen bệt.</desc>
+  <g stroke="#000000" stroke-width="10" stroke-linejoin="round" stroke-linecap="round" fill="#ffffff">
+    <path d="M138 0V28M262 0V28" fill="none"/>
+    <path d="M118 28H282V236H118Z"/>
+    <path d="M60 236H340L372 620Q200 640 28 620Z"/>
+    <path d="M92 236 24 216 44 262Z M340 236 384 214 366 262Z"/>
+    <path d="M60 236H340" fill="none"/>
+    <path d="M150 350H250V440Q200 452 150 440Z"/>
+    <path d="M205 300V352" fill="none" stroke-width="8"/>
+    <path d="M150 118H250V152H150Z" fill="#000000"/>
+    <path d="M143 60H257" fill="none" stroke-width="6"/>
+  </g>
+</svg>

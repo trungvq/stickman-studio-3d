@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="180" viewBox="0 0 220 180" role="img" aria-labelledby="title desc">
+  <title id="title">Chồng tiền vàng</title>
+  <desc id="desc">Đạo cụ màu phẳng, nền trong suốt. Các nhóm có tên để tách lớp khi dựng.</desc>
+  <g stroke-linecap="round" stroke-linejoin="round"><g id="coins" stroke="#8d7139" stroke-width="4">
+<path d="M33 97v39c0 17 104 17 104 0V97" fill="#d3a442"/>
+<path d="M33 110c0 17 104 17 104 0M33 123c0 17 104 17 104 0" fill="none"/>
+<ellipse cx="85" cy="97" rx="52" ry="16" fill="#f5d879"/>
+<path d="m78 92 18 0 0 9-18 0Z" fill="#b38e46" stroke-width="2"/>
+<ellipse cx="159" cy="137" rx="39" ry="18" fill="#e7bd54" transform="rotate(-13 159 137)"/>
+<path d="m150 134 16-3 2 10-16 3Z" fill="#b38e46" stroke-width="2"/>
+</g></g>
+</svg>

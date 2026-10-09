@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 300">
+<title>Váy nhìn nghiêng</title>
+<g id="guide" fill="none" stroke="#9ac" stroke-width="1"><path d="M 75 100 L 75 256"/></g>
+<g fill="white" stroke="black" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 51 98 Q 75 102.4 101 98 C 111 138.4 120 181 128 242.2 Q 77 250.6 25 241 C 36 179.8 45 134.2 51 98 Z" fill="white" stroke-width="6"/>
+<path d="M 52 106 Q 77 109 102 106 M 94 119.8 Q 101 178.6 110 231.4 M 29 229 Q 79 238 124 230.8" fill="none" stroke-width="3.9"/>
+</g>
+</svg>

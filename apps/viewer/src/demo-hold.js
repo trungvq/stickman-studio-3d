@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { parseAction, parseScene, resolveScene, sceneAt } from '@stickman/rig';
+import { parseAction, parseScene, resolveScene, sceneAt } from '@stickman3d/sketch';
 import { act, addItem, addLathe, Batch, box, collide, colliders, dress, freeze, npr, stickman } from '@stickman3d/rig';
 import { ACTIONS, BOY, GIRL } from './demos.js';
 

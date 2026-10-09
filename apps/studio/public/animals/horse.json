@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 4,
+  "name": "horse",
+  "legs": 4,
+  "rig": {
+    "stroke": 6,
+    "body": 190,
+    "pitch": 2,
+    "hipY": 150,
+    "spread": 16,
+    "hindAt": 0.13
+  },
+  "body": {
+    "depth": 108,
+    "back": 0.54,
+    "rump": 1,
+    "chest": 1,
+    "rear": 48,
+    "front": 56
+  },
+  "legFront": {
+    "upper": 84,
+    "lower": 84,
+    "knee": "forward"
+  },
+  "legHind": {
+    "upper": 78,
+    "lower": 83,
+    "knee": "back"
+  },
+  "neck": {
+    "len": 140,
+    "pitch": 59,
+    "base": 72,
+    "tip": 44
+  },
+  "head": {
+    "kind": "muzzle",
+    "len": 100,
+    "depth": 58,
+    "pitch": -102,
+    "eye": 6
+  },
+  "parts": {
+    "ear": {
+      "len": 38,
+      "width": 20,
+      "kind": "perk",
+      "at": 0.06,
+      "dx": 0.28,
+      "pitch": 126
+    },
+    "trunk": {
+      "len": 0,
+      "width": 30
+    },
+    "tusk": {
+      "len": 0,
+      "width": 12
+    },
+    "horn": {
+      "len": 0,
+      "width": 12
+    },
+    "crest": {
+      "len": 0,
+      "width": 26
+    },
+    "mane": {
+      "len": 24,
+      "width": 0,
+      "color": "#3a2a1c",
+      "kind": "ridge"
+    },
+    "wing": {
+      "len": 0,
+      "width": 60,
+      "kind": "folded",
+      "at": 0.8,
+      "dx": 0.2,
+      "pitch": 10
+    },
+    "tail": {
+      "len": 135,
+      "width": 42,
+      "color": "#3a2a1c",
+      "kind": "tuft",
+      "pitch": -66
+    }
+  },
+  "pieces": {
+    "body": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "rotate": 0
+    },
+    "neck": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "rotate": 0
+    },
+    "head": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "rotate": 0
+    },
+    "ear": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "rotate": 0
+    },
+    "wing": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "rotate": 0
+    },
+    "tail": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "rotate": 0
+    }
+  },
+  "markings": {
+    "kind": "none",
+    "color": "#1a1a1a"
+  },
+  "saddle": {
+    "at": 0.55
+  },
+  "palette": {
+    "line": "#1a1a1a",
+    "coat": "#a65020",
+    "leg": "#1a1a1a",
+    "legWidth": 12,
+    "horn": "#e6dcc4",
+    "hair": "#3a2a1c"
+  }
+}

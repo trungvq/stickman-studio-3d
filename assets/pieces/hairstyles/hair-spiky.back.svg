@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
+<title>Rối gai — back</title>
+<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
+<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 62 171.08 Q 48 158 35 145 Q 54 124 70 122 Q 60 109 54 91 Q 81 81 96 86 Q 93 71 95 52 Q 124 54 135 65 Q 139 50 149 34 Q 174 49 179 64 Q 189 52 205 42 Q 221 66 219 82 Q 233 75 252 74 Q 256 102 247 116 Q 263 116 280 123 Q 272 150 258 158 Q 258 187.36 244 196.48 Q 200 203 160 203 Q 120 203 76 196.48 Q 62 187.36 62 171.08 Z"/>
+<path d="M 128 92 Q 140 76 146 62" fill="none"/>
+<path d="M 196 92 Q 186 76 182 62" fill="none"/>
+</g>
+</svg>

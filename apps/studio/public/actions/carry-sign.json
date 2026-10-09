@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 10,
+  "name": "carry-sign",
+  "duration": 1,
+  "end": "hold",
+  "mask": ["armFar", "armNear", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armNear": [190, 0, -186],
+        "armFar": [-20, 40, 0],
+        "torso": 4
+      },
+      "layer": {
+        "armNear": "front"
+      },
+      "ease": "linear"
+    }
+  ],
+  "note": "Vác biển giơ cao bằng tay gần: tay duỗi thẳng lên, hơi ngả sau đầu để cọc chạy dọc gáy chứ không cắt ngang mặt; cổ tay = thân − vai − khuỷu để biển dựng đứng. Tay xa buông ra sau."
+}

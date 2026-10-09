@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
+<title>Ngang vai, mái bằng — side</title>
+<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
+<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 64 200.00 C 50 164.00 56 126.00 78 96.00 C 98 68.00 128 50.00 160 50.00 C 202 48.00 236 65.35 254 74.45 C 262 77.95 266 81.45 264 83.55 C 244 84.95 224 84.32 204 99.27 C 182 128.00 166 158.00 160 190.00 C 156 210.00 154 226.00 152 240.00 C 148 260 148 270 142 274 C 124 292 92 306 68 296 C 54 288 50 274 54 256 C 58 236 74 224 64 200 Z"/>
+<path d="M 234 72.35 Q 242 77.25 242 83.55" fill="none"/>
+<path d="M 72 230.4 C 66 254.4 68 276.8 80 286.4" fill="none"/>
+</g>
+</svg>

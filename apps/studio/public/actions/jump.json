@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 9,
+  "name": "jump",
+  "duration": 0.9,
+  "end": "hold",
+  "mask": ["armFar", "armNear", "legFar", "legNear", "torso", "head", "face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [26, -36, -8],
+        "armNear": [50, 28, -48],
+        "legFar": [14, -20],
+        "legNear": [-10, -16],
+        "torso": 6,
+        "head": [-7, 16, 0]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      },
+      "face": {
+        "mouth": "grit",
+        "brow": "angry",
+        "eyes": "squint"
+      }
+    },
+    {
+      "t": 0.24,
+      "pose": {
+        "armFar": [20, -30, -8],
+        "armNear": [40, 30, -45],
+        "legFar": [18, -70],
+        "legNear": [-14, -62],
+        "torso": 18,
+        "head": [-5, 14, 0]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.46,
+      "pose": {
+        "armFar": [-26, -44, -8],
+        "armNear": [-20, 60, 40],
+        "legFar": [10, -2],
+        "legNear": [-16, -4],
+        "torso": -2,
+        "head": [-9, 18, 0]
+      },
+      "ease": "spring"
+    },
+    {
+      "t": 0.66,
+      "pose": {
+        "armFar": [10, -34, -8],
+        "armNear": [10, 50, -20],
+        "legFar": [16, -74],
+        "legNear": [-12, -66],
+        "torso": 16,
+        "head": [-5, 14, 0]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [26, -36, -8],
+        "armNear": [50, 28, -48],
+        "legFar": [14, -20],
+        "legNear": [-10, -16],
+        "torso": 6,
+        "head": [-7, 16, 0]
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [
+    {
+      "name": "nhay",
+      "t": 0.46
+    },
+    {
+      "name": "cham",
+      "t": 0.66
+    }
+  ]
+}

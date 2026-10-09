@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "name": "meet",
+  "duration": 5,
+  "cast": [
+    {
+      "id": "a",
+      "character": "ink.json",
+      "x": -700,
+      "tracks": [
+        {
+          "name": "legs",
+          "clips": [
+            {
+              "action": "walk",
+              "start": 0,
+              "cycle": 0.9
+            },
+            {
+              "start": 2.6
+            }
+          ]
+        },
+        {
+          "name": "arms",
+          "clips": [
+            {
+              "action": "wave",
+              "start": 0.9,
+              "cycle": 0.9
+            },
+            {
+              "start": 2.0
+            },
+            {
+              "action": "handshake",
+              "start": 3.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "character": "code.json",
+      "x": 711,
+      "flip": true,
+      "tracks": [
+        {
+          "name": "legs",
+          "clips": [
+            {
+              "action": "walk",
+              "start": 0,
+              "cycle": 0.9,
+              "phase": 0.5
+            },
+            {
+              "start": 2.6
+            }
+          ]
+        },
+        {
+          "name": "arms",
+          "clips": [
+            {
+              "action": "wave",
+              "start": 1.2,
+              "cycle": 0.9
+            },
+            {
+              "start": 2.3
+            },
+            {
+              "action": "handshake",
+              "start": 3.0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
+<title>Hói — back</title>
+<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
+<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 58 150 C 100 180.81 220 180.81 262 150 Q 266 166.94 258 180.81 C 238 194.68 200 203 160 203 C 120 203 82 194.68 62 180.81 Q 54 166.94 58 150 Z"/>
+<path d="M 116 183.58 C 117 189.13 118 193.29 120 197.45" fill="none"/>
+<path d="M 160 186.35 C 160 190.52 160 194.68 160 198.84" fill="none"/>
+<path d="M 204 183.58 C 203 189.13 202 193.29 200 197.45" fill="none"/>
+</g>
+</svg>

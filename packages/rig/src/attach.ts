@@ -4,7 +4,7 @@ import { R, type Figure, type Side } from './stickman';
 // Chỗ gắn đồ trên người que: cổ tay, đỉnh đầu, ngang mắt, ngực áo. Đồ cầm bám cổ tay sau `act` mà không cần
 // gọi thêm gì: nhóm bám tự đặt lại mỗi lần three cập nhật ma trận (lúc render, hay `root.updateMatrixWorld()`).
 
-/** Socket theo tên của @stickman/rig (`PIECE_KEYS`), cộng `chest` chỉ có ở 3D */
+/** Socket theo tên của @stickman3d/sketch (`PIECE_KEYS`), cộng `chest` chỉ có ở 3D */
 export type SocketName = 'handNear' | 'handFar' | 'crown' | 'headAcc' | 'faceAcc' | 'chest';
 export const SOCKET_NAMES: readonly SocketName[] = ['handNear', 'handFar', 'crown', 'headAcc', 'faceAcc', 'chest'];
 
@@ -229,7 +229,7 @@ export interface ItemContext {
 /** Bảng tên vật → hàm dựng, do repo video cấp; package không chứa đồ của tập phim nào */
 export type ItemFactory = (ctx: ItemContext) => THREE.Object3D | ItemBuild;
 export type ItemFactories = Record<string, ItemFactory>;
-/** Socket → tên vật (`equipMap` của @stickman/rig): `null`, `"base"` hay thiếu khoá là để trống */
+/** Socket → tên vật (`equipMap` của @stickman3d/sketch): `null`, `"base"` hay thiếu khoá là để trống */
 export type EquipState = Partial<Record<string, string | null | undefined>>;
 
 interface Worn { name: string; side?: Side; release(): void }
@@ -244,7 +244,7 @@ export interface Gear {
 export const newGear = (items: ItemFactories = {}, specs: Gear['specs'] = {}): Gear => ({ items, specs, worn: new Map(), built: new Map() });
 
 /**
- * Mặc đồ theo `equip` (socket → tên vật, như `equipMap(nhânVật, sceneAt(...).equip)` của @stickman/rig). `flip` của
+ * Mặc đồ theo `equip` (socket → tên vật, như `equipMap(nhânVật, sceneAt(...).equip)` của @stickman3d/sketch). `flip` của
  * `world` chọn tay: `handNear` là tay phải khi không lật, như `act`. Vật dựng một lần bằng bảng `items` của người
  * rồi giữ lại; tên không có trong bảng thì socket để trống. Gọi mỗi khung được, không đổi gì thì không làm gì.
  */

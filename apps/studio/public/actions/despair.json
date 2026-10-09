@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 9,
+  "name": "despair",
+  "duration": 3.2,
+  "end": "wrap",
+  "mask": ["armFar", "armNear", "torso", "head", "face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [11, -8, 0],
+        "armNear": [-11, 8, 0],
+        "torso": 16,
+        "head": [7, 20, 21]
+      },
+      "ease": "linear",
+      "face": {
+        "mouth": "frown",
+        "brow": "sad",
+        "eyes": "squint"
+      }
+    },
+    {
+      "t": 0.24,
+      "pose": {
+        "armFar": [12, -9, 0],
+        "armNear": [-12, 9, 0],
+        "torso": 17,
+        "head": [-7, -20, 23]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armFar": [11, -8, 0],
+        "armNear": [-11, 8, 0],
+        "torso": 15,
+        "head": [6, 18, 20]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.76,
+      "pose": {
+        "armFar": [12, -9, 0],
+        "armNear": [-12, 9, 0],
+        "torso": 17,
+        "head": [-6, -18, 23]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [11, -8, 0],
+        "armNear": [-11, 8, 0],
+        "torso": 16,
+        "head": [7, 20, 21]
+      },
+      "ease": "linear"
+    }
+  ]
+}

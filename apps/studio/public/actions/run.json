@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 9,
+  "name": "run",
+  "duration": 0.45,
+  "end": "wrap",
+  "gen": "walkCycle",
+  "params": {
+    "hip": 40,
+    "knee": 90,
+    "stance": 0.5,
+    "arm": 40,
+    "elbow": 75,
+    "lean": 9,
+    "crouch": 0,
+    "dip": 2.5
+  },
+  "events": []
+}

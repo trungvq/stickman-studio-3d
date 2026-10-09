@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 10,
+  "name": "water",
+  "duration": 4,
+  "end": "hold",
+  "mask": ["armFar", "armNear", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [52, -20, -29],
+        "armNear": [-26, 22, 0],
+        "torso": 3
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "mid"
+      }
+    },
+    {
+      "t": 0.1,
+      "pose": {
+        "armFar": [65, -25, -35],
+        "armNear": [-26, 22, 0],
+        "torso": 5
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "mid"
+      }
+    },
+    {
+      "t": 0.2,
+      "pose": {
+        "armFar": [70, -30, -56],
+        "armNear": [-26, 22, 0],
+        "torso": 6
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "mid"
+      }
+    },
+    {
+      "t": 0.55,
+      "pose": {
+        "armFar": [70, -30, -66],
+        "armNear": [-26, 22, 0],
+        "torso": 6
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "mid"
+      }
+    },
+    {
+      "t": 0.65,
+      "pose": {
+        "armFar": [70, -30, -66],
+        "armNear": [-26, 22, 0],
+        "torso": 6
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "mid"
+      }
+    },
+    {
+      "t": 0.75,
+      "pose": {
+        "armFar": [65, -25, -35],
+        "armNear": [-26, 22, 0],
+        "torso": 5
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "mid"
+      }
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [30, -20, -8],
+        "armNear": [-26, 22, 0],
+        "torso": 2
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "mid"
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "pour",
+      "t": 0.2
+    },
+    {
+      "name": "pour-end",
+      "t": 0.65
+    }
+  ],
+  "note": "Tưới: nghiêng gáo ở tay xa, nước chảy từ `pour` tới `pour-end`, rồi về thế `carry-dipper`. Dòng nước là lớp vẽ code bám `anchorAt` của `handFar` giữa hai sự kiện."
+}

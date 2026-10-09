@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 10,
+  "name": "face-smug",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "squint",
+        "brow": "skeptical",
+        "mouth": "smile"
+      }
+    }
+  ],
+  "note": "Đắc ý: mắt nheo, mày lệch, mỉm cười. Nhân vật đeo kính râm thì mày lệch đọc ra lệch mặt — chép sang lớp trên với `brow: neutral`."
+}

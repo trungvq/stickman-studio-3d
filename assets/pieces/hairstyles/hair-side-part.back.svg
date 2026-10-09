@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
+<title>Rẽ ngôi lệch ôm đầu — back</title>
+<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
+<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 60 160 C 60 100 100 58 160 58 C 220 58 260 100 260 160 Q 258 188 244 204 Q 200 196 160 198 Q 120 196 76 204 Q 62 188 60 160 Z"/>
+</g>
+</svg>

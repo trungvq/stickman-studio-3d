@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 10,
+  "name": "face-shy",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "happy",
+        "brow": "worried",
+        "mouth": "smile"
+      }
+    }
+  ],
+  "note": "Ngượng: mắt cười, mày chau, mỉm cười."
+}

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+<title>Biển gỗ trơn cầm ở cọc: điểm nắm (300,300), chân cọc bằng (300,480), bảng dọc 300×250 ở trên</title>
+<g stroke-linecap="round" stroke-linejoin="round">
+  <g id="post" stroke="#5b4630" stroke-width="6">
+    <path d="M285 255 L315 255 L315 480 L285 480 Z" fill="#8c6a3f"/>
+    <path d="M292 266 L292 468" fill="none" stroke="#a5825a" stroke-width="4"/>
+  </g>
+  <g id="board" stroke="#5b4630" stroke-width="7">
+    <path d="M152 14 Q300 4 448 14 L452 256 Q300 268 148 256 Z" fill="#c9a265"/>
+    <path d="M166 28 Q300 20 434 28 L437 242 Q300 252 163 242 Z" fill="none" stroke="#a8814b" stroke-width="4"/>
+    <path d="M186 60 L414 56 M184 100 L416 96 M186 140 L418 136 M188 180 L416 176 M186 220 L412 216" fill="none" stroke="#b58f55" stroke-width="2.5"/>
+  </g>
+  <g fill="#5b4630" stroke="none">
+    <circle cx="168" cy="30" r="6"/><circle cx="432" cy="30" r="6"/><circle cx="168" cy="240" r="6"/><circle cx="432" cy="240" r="6"/>
+  </g>
+</g>
+</svg>

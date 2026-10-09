@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
+<title>Dài thẳng, mái bằng — side</title>
+<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
+<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 64 200.00 C 50 164.00 56 126.00 78 96.00 C 98 68.00 128 50.00 160 50.00 C 202 48.00 236 65.35 254 74.45 C 262 77.95 266 81.45 264 83.55 C 244 84.95 224 84.32 204 99.27 C 182 128.00 166 158.00 160 190.00 C 156 210.00 154 226.00 152 240.00 C 146 272 148 310 140 348 C 118 366 82 374 62 360 C 48 336 46 304 50 274 C 54 246 76 230 64 200 Z"/>
+<path d="M 234 72.35 Q 242 77.25 242 83.55" fill="none"/>
+<path d="M 70 236 C 64 279.2 62 323.84 76 349.76" fill="none"/>
+<path d="M 114 261.92 C 110 296.48 110 329.6 116 349.76" fill="none"/>
+</g>
+</svg>

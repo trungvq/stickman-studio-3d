@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { npr } from './npr';
 
-// Kính dựng khối theo @stickman/rig (packages/rig/src/glasses.tsx, 2b05c7a): mắt kính, cầu và càng dựng quanh hai
+// Kính dựng khối theo @stickman3d/sketch (packages/rig/src/glasses.tsx, 2b05c7a): mắt kính, cầu và càng dựng quanh hai
 // mắt trên sọ đơn vị với cùng số đo, giữ ở 3D thay vì chiếu ra path SVG. Sửa bên rig thì chép lại.
 
 type Vec3 = [number, number, number];
-/** `GlassesSchema` của @stickman/rig; số đo theo bán kính sọ */
+/** `GlassesSchema` của @stickman3d/sketch; số đo theo bán kính sọ */
 export interface Glasses { shape: 'round' | 'rect'; tint: boolean; size: number; spread: number; rise: number; stand: number; thick: number }
 
 export const GLASSES_DEFAULT: Glasses = { shape: 'round', tint: false, size: 0.19, spread: 0.03, rise: 0, stand: 0.12, thick: 0.34 };

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 10,
+  "name": "look-down",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["head"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "head": [0, 0, 12]
+      }
+    }
+  ],
+  "note": "Cúi nhìn vật trong tay: gật 12°. Chỉ ghi `head`."
+}

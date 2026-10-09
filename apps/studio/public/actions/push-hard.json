@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 9,
+  "name": "push-hard",
+  "duration": 0.15,
+  "end": "hold",
+  "mask": ["armFar", "armNear"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [48, 12, 0],
+        "armNear": [52, 8, 0]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [78, 2, 0],
+        "armNear": [82, 0, 0]
+      },
+      "ease": "linear"
+    }
+  ],
+  "note": "Từ thế `push` duỗi thẳng hai tay ra trước trong 0,15 s rồi giữ. Nối sau `push`, buông là nhả track."
+}

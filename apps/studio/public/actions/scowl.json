@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 9,
+  "name": "scowl",
+  "duration": 1.6,
+  "end": "hold",
+  "mask": ["head", "face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "head": [0, 0, 0]
+      },
+      "ease": "linear",
+      "face": {
+        "mouth": "frown",
+        "brow": "angry",
+        "eyes": "open"
+      }
+    }
+  ]
+}

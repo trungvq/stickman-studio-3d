@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
+<title>Buộc thấp — side</title>
+<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
+<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 66 186 Q 80 193 82 212 C 78 248 58 284 60 322 Q 43 316 34 304 C 28 267 44 221 66 186 Z"/>
+<path d="M 67 201.00 C 53 163.00 59 118.00 85 91.00 C 125 49.00 203 48.00 246 75.50 Q 230 80.75 203 101.90 Q 179 123.00 167 143.00 Q 149 130.00 139 148.00 Q 126 174.00 98 206.00 Q 83 217.00 67 201.00 Z"/>
+</g>
+</svg>

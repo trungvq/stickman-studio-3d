@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 9,
+  "name": "strain",
+  "duration": 1.8,
+  "end": "wrap",
+  "mask": ["armFar", "armNear", "torso", "head", "face", "legFar", "legNear"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [95, -35, 0],
+        "armNear": [-95, 35, 0],
+        "torso": 6,
+        "head": [0, 0, 2],
+        "legFar": [17, -12],
+        "legNear": [-17, -12]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      },
+      "face": {
+        "mouth": "grit",
+        "brow": "furrowed",
+        "eyes": "open"
+      }
+    },
+    {
+      "t": 0.18,
+      "pose": {
+        "armFar": [152, 30, 0],
+        "armNear": [-152, -30, 0],
+        "torso": -10,
+        "head": [0, 0, -5],
+        "legFar": [16, -5],
+        "legNear": [-16, -5]
+      },
+      "ease": "spring",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      },
+      "face": {
+        "mouth": "grit",
+        "brow": "furrowed",
+        "eyes": "squint"
+      }
+    },
+    {
+      "t": 0.3,
+      "pose": {
+        "armFar": [146, 26, 0],
+        "armNear": [-146, -26, 0],
+        "torso": -8,
+        "head": [0, 0, -4],
+        "legFar": [16, -6],
+        "legNear": [-16, -6]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      }
+    },
+    {
+      "t": 0.4,
+      "pose": {
+        "armFar": [151, 31, 0],
+        "armNear": [-151, -31, 0],
+        "torso": -10,
+        "head": [0, 0, -5],
+        "legFar": [16, -5],
+        "legNear": [-16, -5]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      }
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armFar": [145, 25, 0],
+        "armNear": [-145, -25, 0],
+        "torso": -7,
+        "head": [0, 0, -3],
+        "legFar": [16, -6],
+        "legNear": [-16, -6]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      }
+    },
+    {
+      "t": 0.6,
+      "pose": {
+        "armFar": [151, 31, 0],
+        "armNear": [-151, -31, 0],
+        "torso": -10,
+        "head": [0, 0, -5],
+        "legFar": [16, -5],
+        "legNear": [-16, -5]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      }
+    },
+    {
+      "t": 0.7,
+      "pose": {
+        "armFar": [146, 26, 0],
+        "armNear": [-146, -26, 0],
+        "torso": -8,
+        "head": [0, 0, -4],
+        "legFar": [16, -6],
+        "legNear": [-16, -6]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      }
+    },
+    {
+      "t": 0.82,
+      "pose": {
+        "armFar": [151, 31, 0],
+        "armNear": [-151, -31, 0],
+        "torso": -10,
+        "head": [0, 0, -5],
+        "legFar": [16, -5],
+        "legNear": [-16, -5]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      },
+      "face": {
+        "mouth": "grit",
+        "brow": "furrowed",
+        "eyes": "squint"
+      }
+    },
+    {
+      "t": 0.92,
+      "pose": {
+        "armFar": [110, -34, 0],
+        "armNear": [-110, 34, 0],
+        "torso": 3,
+        "head": [0, 0, 1],
+        "legFar": [17, -10],
+        "legNear": [-17, -10]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      },
+      "face": {
+        "mouth": "grit",
+        "brow": "furrowed",
+        "eyes": "open"
+      }
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [95, -35, 0],
+        "armNear": [-95, 35, 0],
+        "torso": 6,
+        "head": [0, 0, 2],
+        "legFar": [17, -12],
+        "legNear": [-17, -12]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      },
+      "face": {
+        "mouth": "grit",
+        "brow": "furrowed",
+        "eyes": "open"
+      }
+    }
+  ]
+}

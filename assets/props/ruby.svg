@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="190" viewBox="0 0 200 190" role="img" aria-labelledby="title desc">
+  <title id="title">Hồng ngọc đa giác tròn</title>
+  <desc id="desc">Đạo cụ màu phẳng, nền trong suốt. Các nhóm có tên để tách lớp khi dựng.</desc>
+  <g stroke-linecap="round" stroke-linejoin="round"><g id="gem"><g stroke="#874c53" stroke-width="4">
+<path d="M100 25 137 33 170 62 180 104 160 142 123 165 78 159 38 130 22 92 43 52Z" fill="#be6672"/>
+<path d="m100 25-15 38-42-11m42 11 48 3 4-33m-4 33 16 44 31-6m-31 6-29 27 3 28m-3-28-51-8 9 30m-9-30-18-36-29-1m29 1 34-30" fill="none"/>
+<path d="m85 63 48 3 16 44-29 27-51-8-18-36Z" fill="#df9292"/>
+<path d="m69 83-7 12 8 17" fill="none" stroke="#f9ceba" stroke-width="5"/>
+</g></g></g>
+</svg>

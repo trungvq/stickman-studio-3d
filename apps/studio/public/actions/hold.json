@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 9,
+  "name": "hold",
+  "duration": 0.7,
+  "end": "hold",
+  "mask": ["armFar", "armNear"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [22, -124, 0],
+        "armNear": [-22, 124, 0]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front"
+      }
+    }
+  ],
+  "events": []
+}

@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 6,
+  "name": "Phoenix",
+  "legs": 2,
+  "rig": {
+    "stroke": 4,
+    "body": 100,
+    "pitch": 18,
+    "hipY": 88,
+    "spread": 9,
+    "hindAt": 0.4
+  },
+  "body": {
+    "depth": 100,
+    "back": 0.5,
+    "rump": 0.7,
+    "chest": 0.9,
+    "rear": 32,
+    "front": 29
+  },
+  "legFront": {
+    "upper": 40,
+    "lower": 42,
+    "knee": "back"
+  },
+  "legHind": {
+    "upper": 57,
+    "lower": 54,
+    "knee": "back"
+  },
+  "neck": {
+    "len": 78,
+    "pitch": 56,
+    "base": 48,
+    "tip": 28
+  },
+  "head": {
+    "kind": "beak",
+    "len": 58,
+    "depth": 43,
+    "pitch": -70,
+    "eye": 4
+  },
+  "parts": {
+    "ear": {
+      "len": 0,
+      "width": 0,
+      "kind": "none",
+      "at": 0.1,
+      "dx": 0.28,
+      "pitch": 120
+    },
+    "trunk": {
+      "len": 0,
+      "width": 0
+    },
+    "tusk": {
+      "len": 0,
+      "width": 0
+    },
+    "horn": {
+      "len": 0,
+      "width": 0
+    },
+    "crest": {
+      "len": 62,
+      "width": 22,
+      "color": "#f5b832",
+      "kind": "plume"
+    },
+    "mane": {
+      "len": 0,
+      "width": 0,
+      "kind": "ridge"
+    },
+    "wing": {
+      "len": 208,
+      "width": 82,
+      "color": "#bc3030",
+      "accent": "#ffc449",
+      "at": 0.76,
+      "dx": 0.18,
+      "pitch": -8,
+      "fold": 12
+    },
+    "tail": {
+      "len": 285,
+      "width": 100,
+      "color": "#b72c32",
+      "accent": "#f9ba35",
+      "kind": "ribbon",
+      "pitch": 5
+    }
+  },
+  "pieces": {
+    "body": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "rotate": 0
+    },
+    "neck": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "rotate": 0
+    },
+    "head": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "rotate": 0
+    },
+    "ear": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "rotate": 0
+    },
+    "wing": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "rotate": 0
+    },
+    "tail": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "rotate": 0
+    }
+  },
+  "markings": {
+    "kind": "none",
+    "color": "#1a1a1a"
+  },
+  "saddle": {
+    "at": 0.5
+  },
+  "palette": {
+    "line": "#292022",
+    "coat": "#d84632",
+    "belly": "#ffcf62",
+    "head": "#d84632",
+    "leg": "#d79930",
+    "legWidth": 5,
+    "horn": "#f2b236",
+    "hair": "#b72c32"
+  }
+}

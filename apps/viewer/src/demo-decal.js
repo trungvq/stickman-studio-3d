@@ -1,4 +1,3 @@
-import * as THREE from 'three';
 import {
   addItem, along, appear, Batch, bounce, box, canvasTexture, decal, deskCalendar, flutter, keyed, loadFonts, monitor, place,
   placeOn, put, setLights, sheet, stickman, strokes, toThree, typeText, wallClock, wear, wearDecal, wobble,

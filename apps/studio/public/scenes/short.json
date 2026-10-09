@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 15,
+  "name": "short",
+  "frame": "tall",
+  "duration": 4,
+  "cast": [
+    {
+      "id": "ink",
+      "character": "ink.json",
+      "x": -40,
+      "tracks": [
+        {
+          "name": "than",
+          "clips": [
+            {
+              "action": "idle",
+              "start": 0
+            },
+            {
+              "action": "wave",
+              "start": 1.2,
+              "cycle": 0.9,
+              "blend": 0.25
+            },
+            {
+              "start": 3.0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+Generate one image, 1536x1024, with a genuinely transparent background — a real
+alpha channel in the saved PNG. Do NOT paint a grey-and-white checkerboard into
+the picture: a checkerboard is how a viewer *displays* transparency, it must
+never appear as actual pixels. No background gradient, no drop shadow.
+
+A 3x3 grid of 9 separate hairstyle pieces for a 2D cartoon stick-figure rig.
+
+Style — match the attached reference sheet exactly:
+- Flat vector cartoon, thick uniform black outline with rounded ends, hair as
+  one solid shape with a few interior strand lines.
+- EXACTLY TWO COLOURS: black #000000 for the outline and for every interior
+  strand line, and one single dark tone #2b2320 for the hair fill. No white
+  lines, no grey, no highlights, no gradient, no shading, no third colour.
+- Each piece is ONLY the hair seen from the front, a cap to be laid on top of a
+  separately drawn head: no face, no eyes, no ears, no neck, no shoulders, no
+  skin, no head outline. The lower inner edge is an open arc where the face
+  shows through.
+- Front view, symmetric, except where the style itself is a side part.
+- Every piece centred in its cell with clear margin; nothing touches the sheet
+  edges; no grid lines, no labels, no captions.
+- Keep relative sizes honest between cells: a balding style must be a visibly
+  smaller, thinner shape than a full one. Do not blow every piece up to fill
+  its cell.
+
+The 9 styles are plain everyday men's cuts, deliberately SIMPLER than the
+reference sheet, in this order (left to right, top to bottom):
+
+1. Buzz cut: a very short even cap, smooth low arc across the forehead, no spikes.
+2. Military high-and-tight flat top: flat top edge with softly rounded corners,
+   very short sides tapering down past the temples. It must still read as hair,
+   not as a plain rectangle.
+3. Crew cut with a short straight blunt fringe.
+4. Neat short side part: one clean parting line on one side, hair combed flat.
+5. Quiff swept up and back off the forehead: extra volume at the front,
+   forehead fully open.
+6. Slightly receding hairline: M-shaped hairline, thin at both temples, still
+   full on top.
+7. Heavy balding horseshoe: one continuous thin band of hair running low around
+   both temples and the back of the skull, the whole crown empty and open. The
+   two sides must be joined by the band, not two loose floating tufts.
+8. Comb-over: sparse hair combed sideways across a balding crown, drawn as a
+   thin flat shape with a few BLACK strand lines on it.
+9. Plain short round cut with one small cowlick at the front.

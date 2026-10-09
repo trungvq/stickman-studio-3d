@@ -1,4 +1,4 @@
-// Thân áo dựng khối theo @stickman/rig (packages/rig/src/torso.tsx, 2b05c7a): bảng kiểu áo, mặt cắt dọc
+// Thân áo dựng khối theo @stickman3d/sketch (packages/rig/src/torso.tsx, 2b05c7a): bảng kiểu áo, mặt cắt dọc
 // `profile` và cách đặt đặc điểm, cổ bẻ, viền gân, mũ trùm lên mặt khối giữ nguyên; `torsoMesh` ở cuối
 // dựng như `buildTorso` nhưng giữ khối, nét và tấm ở 3D thay vì chiếu ra path SVG. Sửa bên rig thì chép lại.
 

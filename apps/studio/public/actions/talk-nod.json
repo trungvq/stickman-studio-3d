@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 14,
+  "name": "talk-nod",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["head"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "head": [null, null, 0]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.4,
+      "pose": {
+        "head": [null, null, 5]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "head": [null, null, 2]
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Một cú gật xuống 5° rồi về 2° và giữ, khi nói thẳng vào ống kính. Chỉ ghi góc gật — chồng lên `look-camera` vẫn nhìn ống kính. Gật trả lời \"vâng\" là `nod`. Scene buông bằng clip rỗng blend ~0,4."
+}

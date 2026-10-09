@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 10,
+  "name": "talk-angry-lips",
+  "duration": 0.9,
+  "end": "wrap",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "mouth": "talkAngryA"
+      }
+    },
+    {
+      "t": 0.14,
+      "pose": {},
+      "face": {
+        "mouth": "grit"
+      }
+    },
+    {
+      "t": 0.28,
+      "pose": {},
+      "face": {
+        "mouth": "talkAngryB"
+      }
+    },
+    {
+      "t": 0.43,
+      "pose": {},
+      "face": {
+        "mouth": "grit"
+      }
+    },
+    {
+      "t": 0.56,
+      "pose": {},
+      "face": {
+        "mouth": "talkAngryA"
+      }
+    },
+    {
+      "t": 0.7,
+      "pose": {},
+      "face": {
+        "mouth": "o"
+      }
+    },
+    {
+      "t": 0.83,
+      "pose": {},
+      "face": {
+        "mouth": "grit"
+      }
+    }
+  ],
+  "note": "Nhép miệng lúc mắng: nhịp như `talk-lips`, bộ giận — `talkAngryA` há vừa, `grit` răng cắn, `talkAngryB` há to. Chỉ ghi `mouth`, đặt trên `face-angry`; câu dứt thì clip rỗng trả về `frown` của lớp cảm xúc."
+}

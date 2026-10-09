@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 9,
+  "name": "bow-low",
+  "duration": 2.6,
+  "end": "wrap",
+  "mask": ["armFar", "armNear", "legFar", "legNear", "torso", "head", "face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [4.5, -134, 0],
+        "armNear": [-4.5, 134, 0],
+        "legFar": [9, -14],
+        "legNear": [-7, 12],
+        "torso": 24,
+        "head": [0, 0, 10]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      },
+      "face": {
+        "mouth": "talkA",
+        "brow": "raised",
+        "eyes": "squint"
+      }
+    },
+    {
+      "t": 0.34,
+      "pose": {
+        "armFar": [5.8, -136, 0],
+        "armNear": [-5.8, 136, 0],
+        "legFar": [9, -14],
+        "legNear": [-7, 12],
+        "torso": 26.5,
+        "head": [0, 0, 12]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.58,
+      "pose": {
+        "armFar": [5, -135, 0],
+        "armNear": [-5, 135, 0],
+        "legFar": [9, -14],
+        "legNear": [-7, 12],
+        "torso": 25,
+        "head": [0, 0, 10.6]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.8,
+      "pose": {
+        "armFar": [3.4, -132, 0],
+        "armNear": [-3.4, 132, 0],
+        "legFar": [9, -14],
+        "legNear": [-7, 12],
+        "torso": 22.6,
+        "head": [0, 0, 8.6]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [4.5, -134, 0],
+        "armNear": [-4.5, 134, 0],
+        "legFar": [9, -14],
+        "legNear": [-7, 12],
+        "torso": 24,
+        "head": [0, 0, 10]
+      },
+      "ease": "linear"
+    }
+  ]
+}

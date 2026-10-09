@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 10,
+  "name": "scoop-water",
+  "duration": 2.5,
+  "end": "hold",
+  "mask": ["armFar", "armNear", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [30, -20, -8],
+        "armNear": [-26, 22, 0],
+        "torso": 2
+      },
+      "layer": {
+        "armFar": "mid"
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.35,
+      "pose": {
+        "armFar": [34.36, -64.81, 44.44],
+        "armNear": [-26, 22, 0],
+        "torso": 32
+      },
+      "layer": {
+        "armFar": "mid"
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.55,
+      "pose": {
+        "armFar": [34.36, -64.81, 44.44],
+        "armNear": [-26, 22, 0],
+        "torso": 32
+      },
+      "layer": {
+        "armFar": "mid"
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [30, -20, -8],
+        "armNear": [-26, 22, 0],
+        "torso": 2
+      },
+      "layer": {
+        "armFar": "mid"
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [
+    {
+      "name": "fill",
+      "t": 0.55
+    }
+  ],
+  "note": "Cúi múc nước bằng gáo ở tay xa, đầy gáo ở sự kiện `fill`, rồi về thế `carry-dipper`."
+}

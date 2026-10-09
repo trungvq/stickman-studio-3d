@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 9,
+  "name": "cheer",
+  "duration": 1.4,
+  "end": "hold",
+  "mask": ["armNear", "torso", "head", "face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armNear": [-8, 6, 0],
+        "torso": 0,
+        "head": [0, 0, 0]
+      },
+      "ease": "linear",
+      "layer": {
+        "armNear": "front"
+      },
+      "face": {
+        "mouth": "grin",
+        "brow": "raised",
+        "eyes": "happy"
+      }
+    },
+    {
+      "t": 0.25,
+      "pose": {
+        "armNear": [-25, -45, 0],
+        "torso": 2,
+        "head": [0, 0, 3]
+      },
+      "ease": "linear",
+      "layer": {
+        "armNear": "front"
+      }
+    },
+    {
+      "t": 0.45,
+      "pose": {
+        "armNear": [-60, -128, 0],
+        "torso": -5,
+        "head": [0, 0, -6]
+      },
+      "ease": "spring",
+      "layer": {
+        "armNear": "front"
+      }
+    },
+    {
+      "t": 0.6,
+      "pose": {
+        "armNear": [-48, -105, 0],
+        "torso": -3,
+        "head": [0, 0, -4]
+      },
+      "ease": "linear",
+      "layer": {
+        "armNear": "front"
+      }
+    },
+    {
+      "t": 0.75,
+      "pose": {
+        "armNear": [-60, -128, 0],
+        "torso": -5,
+        "head": [0, 0, -6]
+      },
+      "ease": "linear",
+      "layer": {
+        "armNear": "front"
+      }
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armNear": [-60, -128, 0],
+        "torso": -5,
+        "head": [0, 0, -6]
+      },
+      "ease": "linear",
+      "layer": {
+        "armNear": "front"
+      },
+      "face": {
+        "mouth": "grin",
+        "brow": "raised",
+        "eyes": "happy"
+      }
+    }
+  ]
+}

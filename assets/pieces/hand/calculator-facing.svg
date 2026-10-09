@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600" role="img" aria-labelledby="title desc">
+  <title id="title">Máy tính bỏ túi — góc nghiêng, mặt quay về người cầm</title>
+  <desc id="desc">Bản lật gương của calculator-oblique-held.svg: thấy bề dày cạnh TRÁI và đáy, nên mặt phím/màn hình quay về phía +x — phía mặt người anh (face.turn +x). Điểm cầm (300,300); item may-tinh-huong nghiêng thêm rotate −25 (dấu rig) để đỉnh máy chếch về mặt. Ảnh màu sẵn.</desc>
+  <g transform="translate(300 300) scale(-1 1) matrix(.92 .2 -.32 .70 0 0) translate(-300 -300)" stroke="#1a1a1a" stroke-width="8" stroke-linejoin="round">
+    <path d="M364 202 L380 222 V444 Q380 456 364 456 H252 L236 436 Z" fill="#353c48"/>
+    <path d="M236 420 H364 L380 440 Q380 456 364 456 H252 Q236 456 236 440 Z" fill="#454e5c"/>
+    <rect x="236" y="186" width="128" height="250" rx="16" fill="#788391"/>
+    <path d="M364 205 L380 222 M364 420 L380 440" fill="none" stroke-width="5"/>
+    <rect x="251" y="203" width="98" height="49" rx="6" fill="#303b3f" stroke-width="5"/>
+    <rect x="257" y="209" width="86" height="35" rx="3" fill="#d9e9c3" stroke="none"/>
+    <path d="M328 216 h8 v20 h-8 z" fill="none" stroke="#3b4a30" stroke-width="4"/>
+    <g stroke-width="4">
+      <rect x="251" y="268" width="20" height="21" rx="4" fill="#eef0f2"/>
+      <rect x="276" y="268" width="20" height="21" rx="4" fill="#eef0f2"/>
+      <rect x="301" y="268" width="20" height="21" rx="4" fill="#eef0f2"/>
+      <rect x="326" y="268" width="20" height="21" rx="4" fill="#e08a3c"/>
+      <rect x="251" y="298" width="20" height="21" rx="4" fill="#eef0f2"/>
+      <rect x="276" y="298" width="20" height="21" rx="4" fill="#eef0f2"/>
+      <rect x="301" y="298" width="20" height="21" rx="4" fill="#eef0f2"/>
+      <rect x="326" y="298" width="20" height="21" rx="4" fill="#e08a3c"/>
+      <rect x="251" y="328" width="20" height="21" rx="4" fill="#eef0f2"/>
+      <rect x="276" y="328" width="20" height="21" rx="4" fill="#eef0f2"/>
+      <rect x="301" y="328" width="20" height="21" rx="4" fill="#eef0f2"/>
+      <rect x="326" y="328" width="20" height="21" rx="4" fill="#e08a3c"/>
+      <rect x="251" y="358" width="20" height="21" rx="4" fill="#eef0f2"/>
+      <rect x="276" y="358" width="20" height="21" rx="4" fill="#eef0f2"/>
+      <rect x="301" y="358" width="20" height="21" rx="4" fill="#eef0f2"/>
+      <rect x="326" y="358" width="20" height="21" rx="4" fill="#e08a3c"/>
+      <rect x="251" y="388" width="20" height="21" rx="4" fill="#eef0f2"/>
+      <rect x="276" y="388" width="20" height="21" rx="4" fill="#eef0f2"/>
+      <rect x="301" y="388" width="20" height="21" rx="4" fill="#eef0f2"/>
+      <rect x="326" y="388" width="20" height="21" rx="4" fill="#d0463a"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,241 @@
+{
+  "schemaVersion": 5,
+  "name": "woodcutter",
+  "rig": {
+    "stroke": 6,
+    "height": 1,
+    "shoulderHalf": 40,
+    "shoulderDrop": 20,
+    "hipHalf": 22
+  },
+  "head": {
+    "shape": "round",
+    "scaleX": 1,
+    "scaleY": 1,
+    "dx": 0,
+    "dy": 0,
+    "follow": 0.1,
+    "followBack": -0.2
+  },
+  "palette": {
+    "line": "#1a1a1a",
+    "skin": "#f0d9b8",
+    "garment": "#5b6ea8",
+    "sleeve": "#1a1a1a",
+    "trouser": "#1a1a1a",
+    "sleeveWidth": 10,
+    "trouserWidth": 10,
+    "clad": false,
+    "limbCurve": 1,
+    "shade": 0.3
+  },
+  "face": {
+    "offsetY": 0,
+    "eyeGap": 26,
+    "turn": 12,
+    "mouthGap": 34,
+    "moustache": {
+      "kind": "none",
+      "color": "#3a2620",
+      "width": 1,
+      "dx": 0,
+      "dy": 0,
+      "follow": true
+    },
+    "wrinkle": {
+      "kind": "none",
+      "color": "#9c8367",
+      "width": 1,
+      "dy": 0
+    }
+  },
+  "sleeveFit": {
+    "hideUpperArm": false,
+    "syncFar": true
+  },
+  "pieces": {
+    "torso": {
+      "src": "part",
+      "part": "tunic-02",
+      "dx": 0,
+      "dy": -20,
+      "scale": 1.5,
+      "widthScale": 1.05,
+      "aspect": 0.8333333333333334,
+      "rotate": 0
+    },
+    "sleeveNear": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 0.45,
+      "rotate": 0
+    },
+    "sleeveFar": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 0.45,
+      "rotate": 0
+    },
+    "neck": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 1,
+      "rotate": 0
+    },
+    "hairBack": {
+      "src": "none",
+      "color": "#4a3226",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 1.0833333333333333,
+      "rotate": 0
+    },
+    "hair": {
+      "src": "part",
+      "part": "hair-long-blunt",
+      "color": "#4a3226",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 1,
+      "rotate": 0,
+      "clip": false,
+      "clipGrow": 1.12
+    },
+    "crown": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 0.4,
+      "widthScale": 1,
+      "aspect": 2.624413145539906,
+      "rotate": 0
+    },
+    "headAcc": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 0.95,
+      "rotate": 0
+    },
+    "faceAcc": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 0.95,
+      "rotate": 0
+    },
+    "chin": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 0.62,
+      "rotate": 0,
+      "layer": "front"
+    },
+    "hem": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 0.62,
+      "rotate": 0,
+      "hideLegs": true,
+      "layer": "front"
+    },
+    "handNear": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 1,
+      "rotate": 0,
+      "layer": "front"
+    },
+    "handFar": {
+      "src": "none",
+      "dx": 0,
+      "dy": 0,
+      "scale": 1,
+      "widthScale": 1,
+      "aspect": 1,
+      "rotate": 0,
+      "layer": "front"
+    }
+  },
+  "items": {
+    "axe": {
+      "handNear": {
+        "src": "part",
+        "part": "axe",
+        "color": "#8a6a3d",
+        "dx": 0,
+        "dy": 0,
+        "scale": 2.4,
+        "widthScale": 1,
+        "aspect": 1,
+        "rotate": -90,
+        "clip": false,
+        "clipGrow": 1.12,
+        "hideLegs": true,
+        "layer": "front"
+      }
+    },
+    "hat": {
+      "crown": {
+        "src": "part",
+        "part": "crown-03",
+        "dx": 0,
+        "dy": -85,
+        "scale": 1.1,
+        "widthScale": 1,
+        "aspect": 1,
+        "rotate": 0,
+        "clip": false,
+        "clipGrow": 1.12,
+        "hideLegs": true,
+        "layer": "front"
+      },
+      "handFar": {
+        "src": "part",
+        "part": "crown-03",
+        "dx": 0,
+        "dy": 0,
+        "scale": 0.7,
+        "widthScale": 1,
+        "aspect": 1,
+        "rotate": 0,
+        "clip": false,
+        "clipGrow": 1.12,
+        "hideLegs": true,
+        "layer": "front"
+      }
+    }
+  },
+  "outfits": {
+    "woods": {
+      "handNear": "axe",
+      "crown": "hat"
+    }
+  }
+}

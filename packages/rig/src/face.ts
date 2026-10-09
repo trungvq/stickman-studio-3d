@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-// Nét mặt theo @stickman/rig (packages/rig/src/Mouth.tsx, Eyes.tsx, Brow.tsx, Wrinkle.tsx, 2b05c7a): khẩu hình, kiểu mắt, kiểu
+// Nét mặt theo @stickman3d/sketch (packages/rig/src/Mouth.tsx, Eyes.tsx, Brow.tsx, Wrinkle.tsx, 2b05c7a): khẩu hình, kiểu mắt, kiểu
 // mày và số đo giữ nguyên, vẽ bằng path SVG lên canvas rồi dán lên mặt trước của sọ theo phép chiếu thẳng — điểm
 // lệch `x` px khỏi giữa mặt nằm ở kinh độ `asin(x / nửa rộng đầu)`, như nét mặt của đầu tóc dựng khối bên rig.
 // Sửa bên rig thì chép lại.
@@ -10,7 +10,7 @@ export type MouthKind =
   | 'talkAngryB' | 'smile' | 'frown' | 'pain' | 'o' | 'wide' | 'grit' | 'grin' | 'wry' | 'wryOpen';
 export type BrowKind = 'neutral' | 'flat' | 'lifted' | 'furrowed' | 'angry' | 'sad' | 'raised' | 'worried' | 'skeptical';
 export type EyeKind = 'open' | 'shut' | 'wide' | 'squint' | 'happy' | 'squeezed' | 'droopy' | 'wink';
-/** Nét mặt một khung: `FaceState` của @stickman/rig */
+/** Nét mặt một khung: `FaceState` của @stickman3d/sketch */
 export interface FaceState { mouth: MouthKind; brow: BrowKind; eyes: EyeKind }
 /** `face.wrinkle` của JSON nhân vật */
 export interface Wrinkle { kind: 'none' | 'light' | 'deep'; color: string; width: number; dy: number }

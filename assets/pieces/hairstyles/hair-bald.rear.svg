@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
+<title>Hói — rear</title>
+<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
+<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 60 152 C 100 170 150 178 188 180 Q 200 182 199 192 Q 196 202 184 204 C 150 210 122 220 102 224 Q 80 226 69 214 C 61 202 57 186 58 170 Q 58 160 60 152 Z"/>
+<path d="M 90 196 C 91 202 92 208 94 214" fill="none"/>
+<path d="M 134 200 C 134 204 134 208 134 212" fill="none"/>
+</g>
+</svg>

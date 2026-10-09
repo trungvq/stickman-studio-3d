@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+<title>Nón lá nhìn nghiêng</title>
+<g id="guide" fill="none" stroke="#9ac" stroke-width="1"><circle cx="160" cy="160" r="100"/></g>
+<g fill="white" stroke="black" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 155 12 Q 220 65 311 126 Q 177 156 10 128 Q 99 66 155 12 Z" fill="white" stroke-width="9"/>
+<path d="M 155 12 Q 166 64 203 143 M 16 127 Q 165 143 303 126" fill="none" stroke-width="5.85"/>
+</g>
+</svg>

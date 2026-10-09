@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 10,
+  "name": "tap-calc",
+  "duration": 0.7,
+  "end": "wrap",
+  "mask": ["armNear", "armFar", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armNear": [-28, 118, -88],
+        "armFar": [40, -128, 0],
+        "torso": 2
+      },
+      "ease": "linear",
+      "layer": {
+        "armNear": "front",
+        "armFar": "front"
+      }
+    },
+    {
+      "t": 0.22,
+      "pose": {
+        "armNear": [-28, 118, -88],
+        "armFar": [44, -140, 0],
+        "torso": 2
+      },
+      "ease": "spring"
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armNear": [-28, 118, -88],
+        "armFar": [40, -126, 0],
+        "torso": 2
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.72,
+      "pose": {
+        "armNear": [-28, 118, -88],
+        "armFar": [46, -142, 0],
+        "torso": 2
+      },
+      "ease": "spring"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armNear": [-28, 118, -88],
+        "armFar": [40, -128, 0],
+        "torso": 2
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "tap",
+      "t": 0.22
+    },
+    {
+      "name": "tap",
+      "t": 0.72
+    }
+  ],
+  "note": "Bấm máy tính bỏ túi: máy ở tay gần, cổ tay = thân − vai − khuỷu để máy dựng đứng; tay xa chọc hai nhát mỗi vòng (sự kiện `tap`). Không ghi `head` — cúi nhìn là `look-down`."
+}

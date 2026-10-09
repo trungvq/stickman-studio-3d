@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 190">
+  <title>Áo giao lĩnh nhìn nghiêng</title>
+  <g id="art" stroke="#1a1a1a" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 60 10 C 50 14, 42 24, 39 38 C 35 58, 36 84, 36 104 C 36 118, 33 128, 32 138 L 120 138 C 119 124, 115 112, 116 98 C 118 74, 117 50, 109 36 C 105 28, 98 21, 92 14 C 84 18, 68 16, 60 10 Z" fill="#5b6fa8" stroke-width="6"/>
+  <path d="M 56 58 C 58 88, 66 114, 78 136 M 94 100 C 96 114, 102 128, 108 136" fill="none" stroke-width="6"/>
+  <path d="M 58 7 C 66 14, 80 17, 93 12 C 100 32, 107 52, 115 68 L 109 78 C 101 60, 93 42, 85 28 C 75 28, 63 23, 54 15 Z" fill="#5b6fa8" stroke-width="6"/>
+  </g>
+  <g id="guide" fill="none" stroke="#e0218a" stroke-width="1" opacity="0.4">
+    <path d="M 75 140 L 75 20 L 75 12 M 67 40 L 83 40"/>
+    <circle cx="75" cy="140" r="3"/><circle cx="75" cy="12" r="3"/><circle cx="67" cy="40" r="3"/><circle cx="83" cy="40" r="3"/>
+  </g>
+</svg>

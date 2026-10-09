@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 10,
+  "name": "animal-peck-low",
+  "duration": 0.48,
+  "end": "wrap",
+  "actor": "animal",
+  "mask": ["neck", "head", "face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "neck": -10,
+        "head": 0
+      },
+      "ease": "linear",
+      "face": {
+        "mouth": "o",
+        "eyes": "open"
+      }
+    },
+    {
+      "t": 0.35,
+      "pose": {
+        "neck": -78,
+        "head": -14
+      },
+      "ease": "linear",
+      "face": {
+        "mouth": "wide"
+      }
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "neck": -78,
+        "head": -14
+      },
+      "ease": "linear",
+      "face": {
+        "mouth": "closed"
+      }
+    },
+    {
+      "t": 0.8,
+      "pose": {
+        "neck": -12,
+        "head": 4
+      },
+      "ease": "linear",
+      "face": {
+        "mouth": "closed"
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "peck",
+      "t": 0.42
+    }
+  ],
+  "note": "Như `animal-peck` nhưng chúi sâu tới sát đất."
+}

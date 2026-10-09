@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
+<title>Vuốt ngược — back</title>
+<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
+<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 60 160 C 58 96 100 54 160 52 C 220 54 262 96 260 160 Q 260 181.5 244 192.88 Q 200 196.68 160 203 Q 120 196.68 76 192.88 Q 60 181.5 60 160 Z"/>
+<path d="M 98 112 C 110 150 128 176.44 148 192.88" fill="none"/>
+<path d="M 160 82 C 158 130 160 170.12 160 195.41" fill="none"/>
+<path d="M 222 112 C 210 150 192 176.44 172 192.88" fill="none"/>
+</g>
+</svg>

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 14,
+  "name": "talk-chest",
+  "duration": 0.45,
+  "end": "hold",
+  "mask": ["armNear", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armNear": [-8, 10, 0],
+        "torso": 0
+      },
+      "ease": "smooth",
+      "layer": {
+        "armNear": "front"
+      }
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armNear": [14, 128, 0],
+        "torso": -3
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Bàn tay gần đặt lên ngực khi nói về mình (tôi, của tôi), thân ngả lùi 3°. Giơ một lần rồi giữ; scene buông bằng clip rỗng blend ~0,4."
+}

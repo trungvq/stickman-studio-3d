@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 9,
+  "name": "animal-call",
+  "duration": 4.4,
+  "end": "hold",
+  "gen": "animalWalk",
+  "params": {
+    "stride": 0,
+    "lift": 0,
+    "duty": 1,
+    "bob": 0,
+    "sway": 0,
+    "nod": 30,
+    "swish": 0
+  },
+  "events": [
+    {
+      "name": "call",
+      "t": 0
+    }
+  ],
+  "note": "Con vật ngửa cổ kêu một tiếng rồi giữ. Event `call` ở mốc 0 để scene neo tiếng động vào."
+}

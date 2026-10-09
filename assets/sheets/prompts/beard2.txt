@@ -1,0 +1,81 @@
+Generate one image, 1536x1024, with a genuinely transparent background — a real
+alpha channel in the saved PNG. Do NOT paint a grey-and-white checkerboard into
+the picture: a checkerboard is how a viewer *displays* transparency, it must
+never appear as actual pixels. No background gradient, no drop shadow.
+
+A 2x2 grid of 4 separate BEARD pieces for a 2D cartoon stick-figure rig. The rig
+is a stick figure with a big ROUND head — a plain circle. The piece is pasted on
+the lower part of that circle, on top of everything else on the head; the eyes,
+brows and mouth are drawn underneath by code and must stay visible. See the
+attached reference render for the line weight and the head it has to fit.
+
+Style — match the attached reference exactly:
+- Flat vector cartoon, thick uniform black outline with rounded ends, the beard
+  as one solid shape with a few interior strand lines.
+- EXACTLY TWO COLOURS: black #000000 for the outline and for every interior
+  strand line, and one single dark tone #2b2320 for the hair fill. No white
+  lines, no grey, no highlights, no gradient, no shading, no third colour.
+  A white beard is made later by recolouring this one file — draw the SHAPE of
+  a white beard, not the colour.
+- Each piece is ONLY the beard hair. NO head, no face, no eyes, no nose, no
+  lips, no teeth, no ears, no neck, no skin, no hair on top of the head.
+- The two chin pieces (1 and 2) have NO moustache: the strip above the upper lip
+  stays empty. The two jaw beards (3 and 4) DO include the moustache, joined to
+  the rest so the hair makes one closed ring around the mouth.
+
+Viewing angle — this is a CHEATED FRONT VIEW, not a three-quarter view. Do not
+rotate the piece in space and do not add perspective:
+- The silhouette stays frontal and symmetric. Both sides are the same width;
+  nothing on the far side is foreshortened, narrowed or hidden.
+- The CENTRE LINE is shifted to the viewer's RIGHT by about a tenth of the
+  piece's width — the tip of a pointed beard, the middle parting of the strands,
+  the centre of the mouth gap. It is the shifted centre line that makes the
+  character read as facing right.
+- All four pieces are turned the same way. Never mirror one of them; facing the
+  other direction is done later by flipping the whole character.
+
+Fitting the round head — the part that matters most:
+- THE OUTER EDGE IS A CIRCULAR ARC. Every piece is drawn as if traced along the
+  rim of one and the same circle, the head. The outline where the beard meets
+  the face is a smooth round curve of that circle's curvature — no square jaw,
+  no straight chin line, no pointed corners, no wide horseshoe or U shape, no
+  cheeks jutting out past the circle.
+- THE TOP ENDS STOP AT THE SAME HEIGHT in all four cells, at the widest point of
+  that circle. A long beard hangs further down, but where the piece meets the
+  face must not move between cells.
+- LEAVE A WIDE OPEN MOUTH GAP. The character talks and the mouth is drawn under
+  this piece and is animated, so every cell has a large clear opening where the
+  mouth goes: at least a third of the head circle's width across and a third of
+  its height tall, sitting a little below the middle of the face. The widest
+  mouth shape must fit inside that hole with room to spare — err on the side of
+  too big. On pieces 3 and 4 the moustache sits high, right under the nose, and
+  the hair under the lower lip sits low, so the ring of hair frames the hole
+  without ever crowding it. No strand crosses the opening.
+- Do NOT fill the lower half of the head solid. A solid mass across the cheeks
+  reads as a robber's mask: the cheeks stay open, the hair is a band hugging the
+  rim of the circle.
+- Every piece centred in its cell with clear margin; nothing touches the sheet
+  edges; no grid lines, no labels, no captions.
+- Keep relative sizes honest between cells: the short tuft is a visibly smaller,
+  thinner shape than the full beard. Do not blow every piece up to fill its cell.
+
+The 4 beards, in this order (left to right, top to bottom):
+
+1. Short chin tuft — an old man's little beard. A small rounded clump of hair on
+   the chin only, just under the lower lip, slightly tapered at the bottom.
+   Nothing on the jaw, nothing on the cheeks, no moustache.
+2. Long pointed sage's beard — the beard of a Vietnamese ông tiên / ông bụt. The
+   same chin clump drawn out downward into one long tapering wisp, about twice
+   the height of the head, narrow, with a gentle wave and a soft point at the
+   end. It hangs from the chin only; the jaw and cheeks stay bare.
+3. Light beard, a ring around the mouth only. A narrow band of hair that closes
+   in a ring: a moustache high under the nose, running down past both corners of
+   the mouth, around under the lower lip and the chin, and back up — one
+   continuous shape with a wide hole in the middle where the mouth goes. The
+   lower edge follows the circle of the head. The jaw sides and the cheeks stay
+   bare.
+4. Full jaw beard: the ring of piece 3 plus hair along both sides of the jaw.
+   The same closed ring around the mouth, thicker, extended up along both sides
+   of the jaw to the widest point of the head circle, and hanging a little below
+   the chin. The outer edge is still the arc of that same circle; the cheeks
+   above the band stay bare and the mouth hole stays just as wide open.

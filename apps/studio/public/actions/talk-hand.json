@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 14,
+  "name": "talk-hand",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["armNear", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armNear": [-10, -20, 0],
+        "torso": 0
+      },
+      "ease": "smooth",
+      "layer": {
+        "armNear": "front"
+      }
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armNear": [-24, -78, 0],
+        "torso": -4
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Tay gần chìa ngửa ra phía −x, thân ngả 4° về phía bàn tay, tay và thân cùng khởi cùng tới. Khuỷu ÂM cho cẳng tay bẻ ra ngoài; dương là cẳng tay quét ngang ngực thành khoanh tay. Giơ một lần rồi giữ; scene buông bằng clip rỗng blend ~0,4."
+}

@@ -1,0 +1,72 @@
+Generate one image, 1536x1024, with a genuinely transparent background — a real
+alpha channel in the saved PNG. Do NOT paint a grey-and-white checkerboard into
+the picture: a checkerboard is how a viewer *displays* transparency, it must
+never appear as actual pixels. No background gradient, no drop shadow.
+
+A 3x3 grid of 9 separate HEADWEAR pieces (hats, helmets, a head scarf) for a 2D
+cartoon stick-figure rig. The rig is a stick figure with a big round head; the
+piece is pasted on top of the head, over the hair, and the hair sticks out from
+under it. See the attached reference render: the left figure is a finished
+character, the right figure shows the pink box the piece must fill.
+
+Style — match the attached reference exactly:
+- Flat vector cartoon, thick uniform black outline with rounded ends, the same
+  line weight as the stick-figure limbs in the reference.
+- EXACTLY TWO COLOURS: black #000000 for the outline and for every interior
+  line, and one single dark tone #2b2320 for the whole fill. No gradient, no
+  shading, no highlights, no texture, no weave, no pattern, no logo, no brand,
+  no third colour. The fill is bleached to white afterwards and recoloured per
+  character, so draw the SHAPE of the hat, not its colour. A part that must
+  stay dark whatever colour the hat is (a band, a peak, a visor, a badge) is
+  painted flat black #000000 — black survives the recolour, any other tone
+  does not.
+- The piece is ONLY the headwear. NO head, no face, no ears, no hair, no neck,
+  no shoulders, no skin. Nothing is worn under it.
+- Each piece must be ONE SOLID, FULLY OPAQUE SHAPE. No transparent holes or
+  gaps anywhere inside its outline; transparency exists only OUTSIDE the
+  outline. The head shows around the piece, never through it.
+- THE HAT IS TURNED TO THE VIEWER'S RIGHT, and every piece is turned the same
+  way. The character it goes on is looking to the viewer's right; a peak drawn
+  head-on is a foreshortened blob and a cap stops reading as a cap. So:
+  - The dome — the part that wraps the skull — stays frontal and symmetric, so
+    it fits a round head.
+  - The FRONT of the hat — peak, bill, brim front, badge, knot, tie — points to
+    the viewer's RIGHT and is seen from the side, its full shape visible. The
+    back of the hat is on the left.
+  - All nine pieces face the same way. Never mirror one of them; facing the
+    other direction is done later by flipping the whole character.
+  - Tilt is left-right only. Do not draw the hat from above or from below.
+- THE HEAD OPENING IS THE SAME IN ALL NINE CELLS. Every piece is drawn as if
+  it sits on the same round head: the inner curve where the piece meets the
+  skull is the same width in every cell, and its lowest point is at the same
+  height in every cell. A brim may be much wider than that opening and a crown
+  much taller, but the opening itself must not change size or move.
+- The bottom edge is where the piece stops against the head. Close it with a
+  clean line — no ragged edge, no hair, no fade.
+- Every piece centred in its cell with clear margin; nothing touches the sheet
+  edges; no grid lines, no labels, no captions.
+- Keep relative sizes honest between cells: a wide-brim hat is a visibly wider
+  shape than a scrub cap. Do not blow every piece up to fill its cell.
+
+The 9 pieces, in this order (left to right, top to bottom):
+
+1. Baseball cap. Rounded crown with a button on top; the bill sticks out to the
+   right, seen from the side, its whole curved shape visible.
+2. Wide-brim sun hat. Low rounded crown, a flat brim far wider than the head,
+   a plain band where crown meets brim.
+3. Vietnamese conical leaf hat (nón lá). A wide cone, one chin strap band
+   across the inside of the cone. Do not draw the strap hanging below.
+4. Pith helmet (mũ cối). Dome crown with a narrow all-round brim, a band at
+   the base of the dome.
+5. Police peaked cap. Flat-topped crown, a black band with a badge on it, and
+   a stiff black peak jutting out to the right.
+6. Motorbike helmet, open face. One smooth shell covering the top and sides of
+   the head down past the ears, a black visor across the front, chin strap
+   clipped short at the sides.
+7. Surgical scrub cap. Soft round cloth cap gathered at the edge, a tie band
+   across the front. Plain.
+8. Army field cap. Flat soft crown, a short stiff peak jutting out to the
+   right, plain, no insignia.
+9. Head scarf, knotted ON ONE SIDE. A cloth wrapped over the top of the head,
+   the knot and two short loose ends sitting at the LEFT of the picture, above
+   the ear, so the knot is at the back of a head looking right.

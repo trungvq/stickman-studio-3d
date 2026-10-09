@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 10,
+  "name": "squat-count",
+  "duration": 0.4,
+  "end": "wrap",
+  "mask": ["armFar", "armNear", "torso", "head", "legNear", "legFar"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [40, -55, 0],
+        "armNear": [72, 12, 0],
+        "legFar": [44, -88],
+        "legNear": [40, -88],
+        "torso": 42,
+        "head": [-8, 0, 18]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      }
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armFar": [40, -55, 0],
+        "armNear": [56, 26, 0],
+        "legFar": [44, -88],
+        "legNear": [40, -88],
+        "torso": 42,
+        "head": [-8, 0, 18]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front",
+        "armNear": "front"
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "tick",
+      "t": 0
+    }
+  ],
+  "note": "Ngồi xổm đếm: tay gần gẩy từng món dưới đất, mỗi lượt một sự kiện `tick`."
+}

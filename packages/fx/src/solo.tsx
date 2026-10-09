@@ -1,0 +1,207 @@
+import {
+  body3,
+  D,
+  feet,
+  parseScene,
+  project,
+  resolveScene,
+  RIG,
+  SCENE_VERSION,
+  sceneAt,
+  type ActionData,
+  type ArmLayers,
+  type CharacterData,
+  type CharacterProps,
+  type EquipStep,
+  type FaceState,
+  type Pose,
+  type SceneRuntime,
+  type V3,
+  type View,
+  type World,
+} from "@stickman3d/sketch";
+import { bar, box, type SolidItem } from "./solid";
+import { solidFigure, SolidWorld } from "./SolidWorld";
+
+/** Ống kính của `solo3d`: tiêu cự và tầm mắt như cảnh thử 3D, nhìn vào hông từ trước mặt */
+export const SOLO_LENS = { f: 800, dist: 1100, target: [0, -110, 0] as V3 };
+/** Đùi gập quá bấy nhiêu độ ở cả hai chân thì `solo3d` coi người đang ngồi */
+export const SOLO_SIT_THIGH = 50;
+const CHAIR_TONE = { top: "#d6cdbb", lit: "#e4dccc", side: "#b9ae99" };
+
+/**
+ * Ghế chuẩn dưới người ngồi của `solo3d`, toạ độ vật: gốc là điểm trên mặt ngồi dưới khớp hông, `+x`
+ * hướng mặt. Mặt ngồi từ sau hông tới gần gối, tựa lưng sau hông, bốn chân xuống sàn (`y = drop`).
+ */
+export function soloChair(at: V3, yawDeg: number, drop: number, h: number): SolidItem {
+  const back = -28 * h;
+  const front = (RIG.thigh - 16) * h;
+  const half = 26 * h;
+  const t = 6 * h;
+  const leg = 2.5 * h;
+  const post = (x: number, z: number) => ({
+    v: bar([x, drop, z], [x, t, z], leg),
+    tone: CHAIR_TONE,
+  });
+  const ix = 4 * h;
+  return {
+    at: { at, yaw: yawDeg * D },
+    parts: [
+      { v: box(back, front, 0, t, -half, half), tone: CHAIR_TONE },
+      { v: box(back - t, back, -80 * h, 0, -half, half), tone: CHAIR_TONE },
+      post(back + ix, -half + ix),
+      post(back + ix, half - ix),
+      post(front - ix, -half + ix),
+      post(front - ix, half - ix),
+    ],
+  };
+}
+
+/** Một khung của người 3D đứng một mình: các trường `<Character>` cần, kèm chỗ đặt trên khung ống kính */
+export interface Solo {
+  pose: Pose;
+  layers: ArmLayers;
+  face: Pick<FaceState, "mouth" | "brow" | "eyes">;
+  equip: EquipStep[];
+  view: View;
+  headView: View;
+  flip: boolean;
+  world: World;
+  /** Chỗ đặt người trên khung ống kính, như `sceneAt` trả */
+  spot: { x: number; groundY: number; scale: number; root: "hip" | "feet" };
+  /** Điểm sàn dưới hông trên khung ống kính */
+  floor: [number, number];
+  /** Ghế chuẩn khi người đang ngồi */
+  furniture?: SolidItem[];
+}
+
+export interface SoloSpec {
+  character: CharacterData;
+  /** Hướng mặt, độ quanh trục đứng: 0 = `+x` phải khung, 90 = `−z` về ống kính */
+  yaw: number;
+  /** Góc cúi ống kính, độ */
+  pitch?: number;
+  /** Mảng thì mỗi hành động một track, chồng lên nhau theo thứ tự như trong cảnh */
+  action?: ActionData | ActionData[];
+}
+
+/** Giữ không quá bấy nhiêu cảnh ngồi đã giải: hành động gập chân dần thì mỗi khung một độ cao ghế */
+const SEATS = 32;
+
+/**
+ * Người 3D một mình giữa sân khấu trống, dựng sẵn một lần cho mọi `time`: một cảnh tối thiểu
+ * (`scene.lens` cúi `pitch` độ, `cast[].world` ở gốc quay `yaw`) rồi hỏi `sceneAt`, nên cờ nâng, đích
+ * tay và khoá góc chính diện đi đúng đường của scene. Hai đùi gập quá `SOLO_SIT_THIGH` thì người ngồi
+ * (`world.sit`) trên `soloChair` cao vừa để bàn chân chạm sàn. docs/04-mcp.md#người-3d
+ */
+export function soloStage({ character, yaw, pitch = 16, action }: SoloSpec) {
+  const p = pitch * D;
+  const { f, dist, target } = SOLO_LENS;
+  const eye: V3 = [target[0], target[1] - dist * Math.sin(p), target[2] - dist * Math.cos(p)];
+  const h = character.rig.height;
+  const body = body3(character);
+  const acts = action ? [action].flat() : [];
+  const runtimes = new Map<string, SceneRuntime>();
+  const runtime = (world: { at: V3; yaw: number; sit?: boolean; floor?: number }) => {
+    const key = JSON.stringify(world);
+    const hit = runtimes.get(key);
+    if (hit) return hit;
+    const scene = parseScene({
+      schemaVersion: SCENE_VERSION,
+      name: "solo3d",
+      lens: { eye, yaw: 0, pitch, f },
+      cast: [
+        {
+          id: "a",
+          world,
+          tracks: acts.map((a, i) => ({
+            clips: [{ action: `a${i}`, start: 0, cycle: a.duration }],
+          })),
+        },
+      ],
+    });
+    if (!scene.success) throw new Error(`solo3d: ${scene.error.message}`);
+    const rt = resolveScene(
+      scene.data,
+      Object.fromEntries(acts.map((a, i) => [`a${i}`, a])),
+      {},
+      {},
+      { a: h },
+      { a: body },
+    );
+    if (runtimes.size > SEATS) runtimes.clear();
+    runtimes.set(key, rt);
+    return rt;
+  };
+  return (time: number): Solo => {
+    let s = sceneAt(runtime({ at: [0, 0, 0], yaw }), "a", time, h, body);
+    let furniture: SolidItem[] | undefined;
+    if (acts.length && Math.min(s.pose.lf[0], s.pose.ln[0]) > SOLO_SIT_THIGH) {
+      // Hông trên mặt ngồi cách đúng nửa nét chân; bàn chân thấp hơn chạm sàn
+      const drop = Math.max(...feet(s.pose, h).map((q) => q[1]));
+      const top: V3 = [0, body.legHalf - drop, 0];
+      s = sceneAt(runtime({ at: top, yaw, sit: true, floor: 0 }), "a", time, h, body);
+      // Ghế theo hướng đã qua khoá góc chính diện, không theo `yaw` khai
+      furniture = [soloChair(top, s.world!.yaw / D, -top[1], h)];
+    }
+    const world = s.world!;
+    return {
+      pose: s.pose,
+      layers: s.layers,
+      face: { mouth: s.mouth, brow: s.brow, eyes: s.eyes },
+      equip: s.equip,
+      view: s.view,
+      headView: s.headView,
+      flip: s.flip,
+      world,
+      spot: { x: s.x, groundY: s.groundY, scale: s.scale, root: s.root },
+      floor: project(world.lens, [world.hip[0], 0, world.hip[2]]),
+      ...(furniture && { furniture }),
+    };
+  };
+}
+
+/** Một khung của `soloStage`; `pose` có thì thay tư thế (2D, không cờ nâng), hông, sàn và ghế vẫn theo hành động */
+export function solo3d({ time = 0, pose, ...spec }: SoloSpec & { time?: number; pose?: Pose }) {
+  const s = soloStage(spec)(time);
+  return pose ? { ...s, pose } : s;
+}
+
+/**
+ * Vẽ một khung của `soloStage` qua `<SolidWorld>`, người và ghế xếp lớp chung như cảnh: cả cụm dời
+ * và phóng để sàn dưới hông về `(x, groundY)` cỡ 1. `body` là props `<Character>` của người, chưa đặt chỗ.
+ */
+export function SoloWorld({
+  solo,
+  body,
+  x = 0,
+  groundY,
+}: {
+  solo: Solo;
+  body: CharacterProps;
+  x?: number;
+  groundY: number;
+}) {
+  const fig = solidFigure("solo", { ...body, world: solo.world, ...solo.spot });
+  const k = solo.spot.scale;
+  return (
+    <g
+      transform={`translate(${x} ${groundY}) scale(${1 / k}) translate(${-solo.floor[0]} ${-solo.floor[1]})`}
+    >
+      {fig && <SolidWorld lens={solo.world.lens} furniture={solo.furniture ?? []} people={[fig]} />}
+    </g>
+  );
+}
+
+/** Điểm trên khung ống kính của `solo` ra điểm của khung đã vẽ bằng `<SoloWorld x groundY>`, và ngược lại */
+export const soloToStage = (solo: Solo, x: number, groundY: number, [u, v]: [number, number]) =>
+  [x + (u - solo.floor[0]) / solo.spot.scale, groundY + (v - solo.floor[1]) / solo.spot.scale] as [
+    number,
+    number,
+  ];
+
+export const stageToSolo = (solo: Solo, x: number, groundY: number, [u, v]: [number, number]) =>
+  [solo.floor[0] + (u - x) * solo.spot.scale, solo.floor[1] + (v - groundY) * solo.spot.scale] as [
+    number,
+    number,
+  ];

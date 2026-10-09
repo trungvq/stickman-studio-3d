@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 190">
+  <title>Áo vest nhìn nghiêng</title>
+  <g id="art" stroke="#1a1a1a" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 60 8 C 51 12, 42 22, 39 36 C 35 54, 36 80, 38 100 C 39 118, 35 134, 36 146 C 40 156, 58 160, 78 160 C 92 160, 99 158, 103 152 C 109 157, 117 153, 120 146 C 116 128, 114 110, 115 90 C 117 66, 116 48, 108 34 C 104 26, 97 20, 92 13 C 84 17, 68 15, 60 8 Z" fill="#5b6fa8" stroke-width="6"/>
+  <path d="M 94 22 L 104 27 L 103 36 L 111 60 L 106 88 L 97 62 L 98 38 L 92 30 Z" fill="#1a1a1a" stroke="none"/>
+  <path d="M 105 94 C 102 112, 102 134, 103 152" fill="none" stroke-width="2.7"/>
+  <path d="M 106.5 106 C 106.5 104.619 107.619 103.5 109 103.5 C 110.381 103.5 111.5 104.619 111.5 106 C 111.5 107.381 110.381 108.5 109 108.5 C 107.619 108.5 106.5 107.381 106.5 106 Z" fill="#1a1a1a" stroke="none"/>
+  <path d="M 106.5 132 C 106.5 130.619 107.619 129.5 109 129.5 C 110.381 129.5 111.5 130.619 111.5 132 C 111.5 133.381 110.381 134.5 109 134.5 C 107.619 134.5 106.5 133.381 106.5 132 Z" fill="#1a1a1a" stroke="none"/>
+  <path d="M 59 6 C 66 13, 80 16, 93 12 L 100 47 C 100 64, 101 80, 105 94 C 91 80, 79 60, 69 38 C 63 30, 57 22, 54 16 Z" fill="#5b6fa8" stroke-width="3.36"/>
+  </g>
+  <g id="guide" fill="none" stroke="#e0218a" stroke-width="1" opacity="0.4">
+    <path d="M 75 140 L 75 20 L 75 12 M 67 40 L 83 40"/>
+    <circle cx="75" cy="140" r="3"/><circle cx="75" cy="12" r="3"/><circle cx="67" cy="40" r="3"/><circle cx="83" cy="40" r="3"/>
+  </g>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
+<title>Ngang vai, mái bằng — back</title>
+<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
+<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 160 50 C 98 50 54 100 56 162 C 56 195 42 218 24 240 C 12 256 14 276 30 284 C 38 292 50 290 58 284 C 72 294 92 292 104 284 C 120 292 142 292 160 288 C 178 292 200 292 216 284 C 228 292 248 294 262 284 C 270 290 282 292 290 284 C 306 276 308 256 296 240 C 278 218 264 195 264 162 C 266 100 222 50 160 50 Z"/>
+<path d="M 100 200 C 92 240 96 268 104 280" fill="none"/>
+<path d="M 220 200 C 228 240 224 268 216 280" fill="none"/>
+</g>
+</svg>

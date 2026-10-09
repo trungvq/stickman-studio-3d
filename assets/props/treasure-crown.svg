@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="240" viewBox="0 0 300 240" role="img" aria-labelledby="title desc">
+  <title id="title">Vương miện vàng đính ngọc</title>
+  <desc id="desc">Đạo cụ màu phẳng, nền trong suốt. Các nhóm có tên để tách lớp khi dựng.</desc>
+  <g stroke-linecap="round" stroke-linejoin="round"><g id="crown"><g stroke="#8d7139" stroke-width="4">
+<path d="M44 76 94 116 151 40 202 113 255 73 232 193Q144 222 62 193Z" fill="#e7bd54"/>
+<path d="m44 76 29 96 20-56m109-3 20 54 33-94M151 40v108" fill="none" stroke="#bd9039" stroke-width="5"/>
+<path d="M60 168Q150 192 236 166L232 193Q144 222 62 193Z" fill="#f5d879"/>
+<path d="M69 190Q150 213 225 190" fill="none" stroke="#bd9039" stroke-width="3"/>
+<path d="m150 106 17 23-17 25-17-25Z" fill="#be6672" stroke="#874c53"/>
+<ellipse cx="92" cy="181" rx="7" ry="9" fill="#77a382"/>
+<ellipse cx="150" cy="188" rx="9" ry="10" fill="#be6672"/>
+<ellipse cx="207" cy="180" rx="7" ry="9" fill="#7c98ba"/>
+<circle cx="43" cy="73" r="10" fill="#f5d879"/>
+<circle cx="151" cy="37" r="11" fill="#f5d879"/>
+<circle cx="256" cy="71" r="10" fill="#f5d879"/>
+</g></g></g>
+</svg>

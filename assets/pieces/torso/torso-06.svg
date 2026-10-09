@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="360" viewBox="0 0 300 360">
+<title>Áo khoác kéo khoá: thân, gấu, hai túi xẻ, dây khoá, con trượt và cổ đứng — thay pieces/torso/torso-06.png</title>
+<g fill="#ffffff" stroke="#1a1a1a" stroke-width="9" stroke-linejoin="round" stroke-linecap="round">
+  <path id="body" d="M 126 4
+    C 143 3, 160 5, 177 8
+    C 190 10, 200 14, 206 23
+    L 210 40
+    C 220 45, 232 50, 242 55
+    C 250 60, 258 68, 262 92
+    C 262 120, 252 150, 250 196
+    C 252 220, 252 245, 253 270
+    C 252 285, 232 293, 203 299
+    C 180 303, 140 305, 116 302
+    C 100 300, 85 296, 70 290
+    C 58 284, 51 265, 51 245
+    C 54 225, 56 205, 55 189
+    C 54 175, 50 158, 45 142
+    C 41 127, 38 112, 38 96
+    C 39 78, 47 62, 60 55
+    C 73 48, 87 40, 101 34
+    C 104 22, 106 10, 126 4 Z"/>
+  <path id="hem" fill="none" stroke-width="6" d="M 56 259 C 80 273, 105 279, 150 281
+    C 195 284, 228 273, 250 257"/>
+  <path id="pocket-near" stroke-width="6" d="M 108 191 L 122 191 L 101 253 L 87 253 Z"/>
+  <path id="pocket-far" stroke-width="6" d="M 227 185 L 238 186 L 250 247 L 239 246 Z"/>
+  <path id="zip-tape" fill="none" stroke-width="6" d="M 176 96 C 177 130, 179 170, 178 220
+    C 177 260, 176 285, 175 301
+    M 188 96 C 189 130, 191 170, 190 220
+    C 190 260, 188 285, 188 301"/>
+  <path id="zip-teeth" fill="none" stroke-width="3.5" d="M 176 103 L 189 103
+    M 176 112.5 L 189 112.5
+    M 176 120.5 L 189 120.5
+    M 176 130.5 L 189 130.5
+    M 176 141 L 189 141
+    M 176 151 L 189 151
+    M 176 161 L 189 161
+    M 176 170 L 189 170
+    M 176 181 L 189 181
+    M 176 191 L 189 191
+    M 176 201 L 189 201
+    M 176 210 L 189 210
+    M 176 219 L 189 219
+    M 176 227 L 189 227
+    M 176 235 L 189 235
+    M 176 244 L 189 244
+    M 176 252.5 L 189 252.5
+    M 176 262 L 189 262
+    M 176 270.5 L 189 270.5
+    M 176 279 L 189 279
+    M 176 287 L 189 287
+    M 176 294 L 189 294"/>
+  <path id="zip-slider" stroke-width="6" d="M 172 45 C 171 60, 170 78, 170 94
+    L 191 94 C 191 78, 188 60, 184 45 Z
+    M 171 65 L 187 65"/>
+  <ellipse id="zip-eye" cx="180" cy="84.5" rx="1.5" ry="2" fill="#1a1a1a" stroke-width="3"/>
+  <path id="collar-top" fill="none" stroke-width="7" d="M 118 11 C 123 19, 137 24, 152 30
+    C 163 35, 171 38, 177 42
+    M 197 22 C 196 30, 186 35, 179 43"/>
+  <path id="collar-base" fill="none" stroke-width="7" d="M 102 35 C 112 44, 130 53, 148 60
+    C 158 63, 166 65, 171 66
+    M 211 41 C 208 47, 202 54, 190 64"/>
+</g>
+</svg>

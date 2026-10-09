@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "name": "tree-small",
+  "line": "#28382b",
+  "body": {
+    "src": "part",
+    "part": "tree-small",
+    "color": "#8caf5c",
+    "accent": "#a1774b",
+    "dx": 0,
+    "dy": 0,
+    "scale": 1,
+    "widthScale": 1,
+    "aspect": 1,
+    "rotate": 0
+  },
+  "wheel": {
+    "fill": "#ffffff",
+    "spokes": 8,
+    "stroke": 5
+  }
+}

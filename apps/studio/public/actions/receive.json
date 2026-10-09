@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 9,
+  "name": "receive",
+  "duration": 1.6,
+  "end": "hold",
+  "mask": ["armFar", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [8, -6, 0],
+        "torso": 0
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "back"
+      }
+    },
+    {
+      "t": 0.3,
+      "pose": {
+        "armFar": [80, 10, 0],
+        "torso": 2
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front"
+      }
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armFar": [95, 20, 0],
+        "torso": 3
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front"
+      }
+    },
+    {
+      "t": 0.62,
+      "pose": {
+        "armFar": [95, 20, -113],
+        "torso": 3
+      },
+      "ease": "spring",
+      "layer": {
+        "armFar": "front"
+      }
+    },
+    {
+      "t": 0.78,
+      "pose": {
+        "armFar": [72, -10, -60],
+        "torso": 1
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "front"
+      }
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [8, -6, 0],
+        "torso": 0
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "back"
+      }
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 10,
+  "name": "hoe-soil",
+  "duration": 0.8,
+  "end": "wrap",
+  "mask": ["armNear", "armFar", "torso", "head", "legNear", "legFar"],
+  "keys": [
+    {
+      "t": 0.02,
+      "pose": {
+        "armFar": [38.2, 159.8, 0],
+        "armNear": [5.6, 140.3, -37.9],
+        "legFar": [24.8, -46.5],
+        "legNear": [20.5, -46.5],
+        "torso": 45,
+        "head": [-10, 0, 16]
+      },
+      "ease": "linear",
+      "layer": {
+        "armFar": "mid",
+        "armNear": "front"
+      }
+    },
+    {
+      "t": 0.22,
+      "pose": {
+        "armFar": [90, 102, 0],
+        "armNear": [57, 91, -12],
+        "legFar": [24.8, -46.5],
+        "legNear": [20.5, -46.5],
+        "torso": 45,
+        "head": [-10, 0, 16]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.47,
+      "pose": {
+        "armFar": [134, 37, 0],
+        "armNear": [85, 58, 9],
+        "legFar": [24.8, -46.5],
+        "legNear": [20.5, -46.5],
+        "torso": 45,
+        "head": [-10, 0, 16]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.63,
+      "pose": {
+        "armFar": [106, 27, 0],
+        "armNear": [75, 64, -28],
+        "legFar": [24.8, -46.5],
+        "legNear": [20.5, -46.5],
+        "torso": 45,
+        "head": [-10, 0, 16]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.8,
+      "pose": {
+        "armFar": [75.15, 50, 0],
+        "armNear": [39, 98.72, -32.5],
+        "legFar": [24.8, -46.5],
+        "legNear": [20.5, -46.5],
+        "torso": 45,
+        "head": [-10, 0, 16]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.91,
+      "pose": {
+        "armFar": [54.27, 95, 0],
+        "armNear": [20.13, 122.21, -35.55],
+        "legFar": [24.8, -46.5],
+        "legNear": [20.5, -46.5],
+        "torso": 45,
+        "head": [-10, 0, 16]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [38.2, 159.8, 0],
+        "armNear": [5.6, 140.3, -37.9],
+        "legFar": [24.8, -46.5],
+        "legNear": [20.5, -46.5],
+        "torso": 45,
+        "head": [-10, 0, 16]
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [
+    {
+      "name": "soil-hit",
+      "t": 0.65
+    }
+  ],
+  "note": "Cuốc đất tại chỗ, lặp: khom 45°, gối khuỵu, giơ cuốc qua đầu rồi bổ xuống; lưỡi chạm đất ở sự kiện `soil-hit`. Đi với `part:hoe` ở tay gần."
+}

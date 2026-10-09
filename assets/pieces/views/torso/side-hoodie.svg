@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 190">
+  <title>Hoodie nhìn nghiêng</title>
+  <g id="art" stroke="#1a1a1a" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M 58 26 C 48 30, 41 38, 39 50 C 35 66, 37 86, 38 104 C 39 118, 36 128, 37 138 C 39 152, 55 157, 72 158 C 90 159, 108 156, 113 140 C 115 130, 112 116, 114 100 C 116 80, 117 56, 110 40 C 106 32, 99 27, 92 24 Z" fill="#5b6fa8" stroke-width="6"/>
+  <path d="M 37 130 C 53 145, 96 146, 114 128" fill="none" stroke-width="6"/>
+  <path d="M 114 98 C 104 101, 95 102, 86 102 Q 83 118, 73 126 L 74 140 M 74 130 Q 86 123, 90 102" fill="none" stroke-width="4.02"/>
+  <path d="M 70 2 C 55 -1, 40 5, 36 20 C 33 33, 43 41, 58 39 C 75 37, 92 33, 102 22 C 100 11, 87 4, 70 2 Z" fill="#5b6fa8" stroke-width="6"/>
+  <path d="M 49 11 C 45 22, 52 30, 64 29 C 77 28, 89 24, 97 17" fill="none" stroke-width="4.02"/>
+  <path d="M 97 26 Q 100 45, 99 62 M 95 62 L 103 62 L 103 72 L 95 72 Z" fill="#5b6fa8" stroke-width="4.02"/>
+  </g>
+  <g id="guide" fill="none" stroke="#e0218a" stroke-width="1" opacity="0.4">
+    <path d="M 75 140 L 75 20 L 75 12 M 67 40 L 83 40"/>
+    <circle cx="75" cy="140" r="3"/><circle cx="75" cy="12" r="3"/><circle cx="67" cy="40" r="3"/><circle cx="83" cy="40" r="3"/>
+  </g>
+</svg>

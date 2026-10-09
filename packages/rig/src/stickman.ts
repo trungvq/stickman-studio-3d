@@ -9,7 +9,7 @@ import { hullMaterial, npr } from './npr';
 import { sculptMesh, type Sculpt } from './sculpt';
 import { shoulderRoot, type Garment, type Rig, type Skirt } from './torso';
 
-// Tỉ lệ lấy từ RIG của @stickman/rig, chia 100: người cao ~4,3 đơn vị, đầu to bằng gần một phần ba.
+// Tỉ lệ lấy từ RIG của @stickman3d/sketch, chia 100: người cao ~4,3 đơn vị, đầu to bằng gần một phần ba.
 export const R = { torso: 1.2, neck: 0.08, head: 0.64, upperArm: 0.62, foreArm: 0.58, thigh: 0.78, shin: 0.92, limb: 0.042 };
 
 const ink = npr({ color: INK, stipple: 0 });
@@ -367,7 +367,7 @@ function mergeStatic(j: THREE.Object3D) {
 }
 const isJoint = (o: THREE.Object3D) => !!o.userData.joint;
 
-/** Các trường của JSON nhân vật mà người 3D đọc. Truyền object đã qua `parseCharacter` của @stickman/rig. */
+/** Các trường của JSON nhân vật mà người 3D đọc. Truyền object đã qua `parseCharacter` của @stickman3d/sketch. */
 export interface CharacterJson {
   rig: Rig;
   palette: { garment: string; skin?: string; sleeveWidth?: number; trouserWidth?: number; limbCurve?: number };

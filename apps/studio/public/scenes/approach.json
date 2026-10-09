@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 5,
+  "name": "approach",
+  "duration": 4,
+  "camera": [
+    {
+      "t": 0,
+      "zoom": 1
+    },
+    {
+      "t": 3.4,
+      "x": 60,
+      "y": 40,
+      "zoom": 1.8
+    },
+    {
+      "t": 4,
+      "x": 60,
+      "y": 20,
+      "zoom": 1.5,
+      "move": "ease"
+    }
+  ],
+  "cast": [
+    {
+      "id": "a",
+      "character": "ink.json",
+      "x": -1010,
+      "y": 260,
+      "tracks": [
+        {
+          "name": "legs",
+          "clips": [
+            {
+              "action": "walk",
+              "start": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "b",
+      "character": "code.json",
+      "flip": true,
+      "path": [
+        {
+          "t": 0,
+          "x": 520,
+          "y": 60,
+          "scale": 0.45
+        },
+        {
+          "t": 3.3,
+          "x": 60,
+          "y": 260,
+          "scale": 1
+        }
+      ],
+      "tracks": [
+        {
+          "name": "legs",
+          "clips": [
+            {
+              "action": "walk",
+              "start": 0
+            },
+            {
+              "start": 3.3
+            }
+          ]
+        },
+        {
+          "name": "arms",
+          "clips": [
+            {
+              "action": "wave",
+              "start": 3.4
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

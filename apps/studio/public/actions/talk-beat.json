@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 14,
+  "name": "talk-beat",
+  "duration": 0.45,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "torso": 0,
+        "head": [null, null, 0]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "torso": 4,
+        "head": [null, null, 2]
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Cú nhịp thân khi đứng: ngả 4° về +x, gật nhẹ 2°, đầu đi theo thân. Chỉ ghi thân và góc gật — nghiêng, lắc để track khác. Đặt ở track nhịp riêng, trên track tay thì thân của cú này thắng; scene buông bằng clip rỗng blend ~0,4."
+}

@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 10,
+  "name": "plant-sign",
+  "duration": 0.7,
+  "end": "hold",
+  "mask": ["armFar", "armNear", "torso", "legNear", "legFar", "head"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [-25, -30, 0],
+        "armNear": [165, 10, -181],
+        "torso": -6,
+        "legFar": [2, 0],
+        "legNear": [-2, 0],
+        "head": [0, 0, -6]
+      },
+      "layer": {
+        "armNear": "front"
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.35,
+      "pose": {
+        "armFar": [-25, -30, 0],
+        "armNear": [168, 12, -188],
+        "torso": -8,
+        "legFar": [2, 0],
+        "legNear": [-2, 0],
+        "head": [0, 0, -8]
+      },
+      "layer": {
+        "armNear": "front"
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.6,
+      "pose": {
+        "armFar": [-20, 60, 0],
+        "armNear": [86, -31.5, -0.5],
+        "torso": 54,
+        "legFar": [28, -60],
+        "legNear": [24, -64],
+        "head": [-14, 0, 8]
+      },
+      "layer": {
+        "armNear": "front"
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [-20, 60, 0],
+        "armNear": [84, -30, -2],
+        "torso": 52,
+        "legFar": [27, -57],
+        "legNear": [23, -61],
+        "head": [-12, 0, 6]
+      },
+      "layer": {
+        "armNear": "front"
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [
+    {
+      "name": "plant",
+      "t": 0.6
+    }
+  ],
+  "note": "Cắm biển xuống trước mặt bằng tay gần: giơ cao, giữ một nhịp rồi bổ xuống, gối khuỵu sâu, thân đổ 54°; mũi cọc chạm đất ở sự kiện `plant`. Sau mốc ấy gỡ biển khỏi tay và vẽ biển đứng trên sân đúng chỗ `anchorAt` của `handNear` ngay trước sự kiện."
+}

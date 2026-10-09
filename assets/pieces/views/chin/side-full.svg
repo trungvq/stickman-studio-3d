@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 520">
+<title>Quai nón</title>
+<g id="guide" fill="none" stroke="#ccc"><circle cx="160" cy="160" r="100"/></g>
+<path d="M 150 142 L 170 140 C 173 168 178 188 192 198 C 204 204 218 200 230 194 C 240 190 250 194 256 204 C 244 204 230 199 218 200 C 213 210 215 224 225 230 C 236 230 246 232 249 236 C 254 240 250 262 236 276 C 224 288 204 288 188 280 C 166 268 150 244 144 214 C 141 190 144 164 150 142 Z" fill="#fff" stroke="#000" stroke-width="4.95" stroke-linejoin="round"/>
+</svg>
