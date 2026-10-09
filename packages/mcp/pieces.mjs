@@ -1,5 +1,5 @@
 // Số đo hộp mảnh và bộ sinh prompt gen ảnh. Hộp tính từ hằng số rig; công thức đặt hộp
-// nằm ở `packages/rig/src/Character.tsx`, bảng đối chiếu ở docs/01-rig.md#mốc-đặt-mảnh.
+// nằm ở `packages/sketch/src/Character.tsx`, bảng đối chiếu ở docs/01-rig.md#mốc-đặt-mảnh.
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { SOURCES } from "@stickman3d/cli";

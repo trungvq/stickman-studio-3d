@@ -1347,7 +1347,7 @@ Xoay từng mảnh quanh tâm, không dịch ngang để tạo độ xoè. Dùng
 
 ## Bộ phận vẽ bằng code
 
-Một thư viện nhỏ trong `packages/rig/src/Parts.tsx`. Dùng cho nhân vật phụ ghép
+Một thư viện nhỏ trong `packages/sketch/src/Parts.tsx`. Dùng cho nhân vật phụ ghép
 nhanh — `common` + bảng màu + vài tên bộ phận — và cho lúc chưa gen ảnh. Có hai
 loại mục: **3–5 hình cơ bản tham số hoá** viết thẳng trong `draw`, và **mảnh vẽ lại từ ảnh**: áo lấy path từ `garments.ts`, [kiểu tóc](#kiểu-tóc) từ `hairstyles.ts`, mũ và râu từ `headwear.ts`, đồ cầm tay từ `handheld.tsx`, tà, đồ đeo cổ và nốt ruồi từ `accessories.ts`. Đạo cụ màu lấy SVG nguồn ở
 `assets/props/` vào `prop-art.tsx`; cây vẽ bằng hình khối và đường cong trong
@@ -1446,7 +1446,7 @@ Luật:
 
 ### Áo vẽ lại từ mảnh ảnh
 
-Path để trong `packages/rig/src/garments.ts`, `PARTS` chỉ bọc lại. Mỗi áo là một
+Path để trong `packages/rig/src/core/garments.ts`, `PARTS` chỉ bọc lại. Mỗi áo là một
 mục `GARMENTS`: `label`, `preset`, và `shapes` — danh sách `{ d, k, fill }`.
 
 - `d` viết trong khung `box` của mảnh, mặc định `GARMENT_BOX` (300×360); `bare` dùng 540×720. Khung bằng cỡ PNG tham chiếu, toạ độ

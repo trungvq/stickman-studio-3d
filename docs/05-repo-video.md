@@ -184,7 +184,7 @@ thành của repo video.
 ## Nâng lên bộ rig mới
 
 ```bash
-pnpm add @stickman3d/sketch@… @stickman3d/fx@… @stickman3d/render@… @stickman3d/mcp@… @stickman3d/cli@…
+pnpm add @stickman3d/rig@… @stickman3d/sketch@… @stickman3d/fx@… @stickman3d/render@… @stickman3d/mcp@… @stickman3d/cli@…
 pnpm exec stickman upgrade --dry-run    # xem sẽ đè cái gì
 pnpm exec stickman upgrade
 ```

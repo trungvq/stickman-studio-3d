@@ -273,7 +273,7 @@ trước.
 
 ### Mốc đặt mảnh
 
-Số dưới đây là hằng số trong `packages/rig`; bên tiêu thụ đọc từ đó chứ không
+Số dưới đây là hằng số trong `packages/rig/src/core`; bên tiêu thụ đọc từ đó chứ không
 chép lại. Bảng này để đối chiếu khi sửa hằng số. Công thức thật nằm ở
 `figureAnchors` (`anchor.ts`) — **một bảng duy nhất**, `<Character>` vẽ bằng nó và
 `anchorAt` đọc lại nó, xem [03 — Hỏi mốc trên người](03-scene.md#hỏi-mốc-trên-người).

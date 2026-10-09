@@ -1,7 +1,7 @@
 # Sổ tay rig người que
 
-Spec của `@stickman3d/sketch` và của studio. Repo video chỉ tiêu thụ những gì mô tả
-ở đây, không viết lại.
+Spec của lõi rig (`@stickman3d/rig`), người que vẽ SVG (`@stickman3d/sketch`) và studio. Repo
+video chỉ tiêu thụ những gì mô tả ở đây, không viết lại.
 
 | | |
 |---|---|

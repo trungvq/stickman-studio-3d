@@ -3,8 +3,14 @@ import { useState } from "react";
 import * as jsxRuntime from "react/jsx-runtime";
 import * as rig from "@stickman3d/sketch";
 
-/** Gói mà `/parts.mjs` lấy của trang thay vì gói riêng — khớp `bundlePartsForBrowser` bên render */
-const SHARED = { react: React, "react/jsx-runtime": jsxRuntime, "@stickman3d/sketch": rig };
+/** Gói mà `/parts.mjs` lấy của trang thay vì gói riêng — khớp `bundlePartsForBrowser` bên render; sketch xuất lại cả lõi */
+const SHARED = {
+  react: React,
+  "react/jsx-runtime": jsxRuntime,
+  "@stickman3d/sketch": rig,
+  "@stickman3d/rig": rig,
+  "@stickman3d/rig/core": rig,
+};
 
 /**
  * `CODE_PARTS` của repo mà `stickman studio` đang phục vụ, đăng ký vào `PARTS` trước lần vẽ

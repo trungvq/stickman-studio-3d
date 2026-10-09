@@ -1551,11 +1551,11 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
 
   const stamp = readStickman(root);
   const installed =
-    pkgVersionOnDisk("@stickman3d/sketch", root) ?? pkgVersion("@stickman3d/rig", root);
+    pkgVersionOnDisk("@stickman3d/rig", root) ?? pkgVersion("@stickman3d/rig", root);
   if (!stamp) warn("không có stickman.json — workspace này chưa qua `stickman init`");
   else if (installed && stamp.versions?.rig !== installed)
     warn(
-      `stickman.json ghi @stickman3d/sketch@${stamp.versions?.rig} nhưng đang cài ${installed} — chạy \`stickman upgrade\``,
+      `stickman.json ghi @stickman3d/rig@${stamp.versions?.rig} nhưng đang cài ${installed} — chạy \`stickman upgrade\``,
     );
   if (stamp && !sameLegs(legsOf(stamp), legsNow()))
     warn(

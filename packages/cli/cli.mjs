@@ -55,7 +55,7 @@ const list = (label, files) =>
 if (cmd === "init") {
   const r = initWorkspace({ dir, force: flag("force"), name: value("name") });
   console.log(`Workspace: ${r.dir}`);
-  console.log(`Rig: @stickman3d/sketch@${r.versions.rig} — spec đọc bằng \`stickman docs\`.`);
+  console.log(`Rig: @stickman3d/rig@${r.versions.rig} — spec đọc bằng \`stickman docs\`.`);
   console.log(list("Đã ghi", r.wrote));
   if (r.skipped.length) console.log(`Bỏ qua ${r.skipped.length} file đã có (dùng --force để đè).`);
   console.log("\nTiếp: pnpm install, rồi `pnpm exec stickman check`. Đọc stickman.md.");
@@ -82,7 +82,7 @@ if (cmd === "init") {
     rl?.close();
     if (r.aborted) console.log("Đã dừng, chưa file nào bị đụng.");
     else {
-      console.log(`${r.dir}\n@stickman3d/sketch ${r.from?.rig ?? "?"} → ${r.versions.rig}`);
+      console.log(`${r.dir}\n@stickman3d/rig ${r.from?.rig ?? "?"} → ${r.versions.rig}`);
       const wrote = dryRun ? r.plan.map((x) => `${x.file} (${x.why})`) : r.wrote;
       if (wrote.length) console.log(list(dryRun ? "Sẽ ghi" : "Đã ghi", wrote));
       if (r.pkg.length) console.log(`package.json: ${r.pkg.join(", ")}`);

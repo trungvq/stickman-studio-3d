@@ -1,10 +1,10 @@
-import { cameraAt, parseAction, parseScene, resolveScene, sceneAt } from '@stickman3d/rig';
-import { act, addItem, Batch, box, stickman } from '@stickman3d/rig';
+import { act, addItem, Batch, box, cameraAt, parseAction, parseScene, resolveScene, sceneAt, stickman } from '@stickman3d/rig';
 import { actDemos } from './demo-acts.js';
 import { mouths, styles } from './demo-styles.js';
 
 // Cảnh diễn hành động (`?demo=`): scene JSON dựng tại chỗ, @stickman3d/rig lấy mẫu từng khung bằng `sceneAt`,
-// người 3D diễn theo bằng `act`. Hành động là bản chép từ bộ chung của @stickman3d/cli (`actions/`).
+// người 3D diễn theo bằng `act`. Hành động là bộ chung của studio (`apps/studio/public/actions/`), cộng `actions/` của app
+// cho hành động chỉ dùng ở đây; trùng tên thì bản của app đè.
 
 export const BOY = {
   rig: { stroke: 6, height: 1, shoulderHalf: 40, shoulderDrop: 20, hipHalf: 28 },
@@ -21,7 +21,10 @@ export const GIRL = {
 };
 
 export const ACTIONS = Object.fromEntries(
-  Object.entries(import.meta.glob('../actions/*.json', { eager: true, import: 'default' })).map(([f, j]) => {
+  Object.entries({
+    ...import.meta.glob(['../../studio/public/actions/*.json', '!**/index.json'], { eager: true, import: 'default' }),
+    ...import.meta.glob('../actions/*.json', { eager: true, import: 'default' }),
+  }).map(([f, j]) => {
     const r = parseAction(j);
     if (!r.success) throw new Error(`${f}: ${r.error.message}`);
     return [f.match(/([^/]+)\.json$/)[1], r.data];

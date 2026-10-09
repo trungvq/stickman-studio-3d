@@ -6,7 +6,7 @@ Cách dùng bộ rig ở repo này. File này do \`stickman upgrade\` sinh lại
 version đang cài — **đừng sửa tay**, luật riêng của tập viết ở \`AGENTS.md\`.
 
 Repo một tập phim người que: nhân vật, hành động, cảnh và mảnh ảnh của **tập
-này**. Rig là \`@stickman3d/sketch@${rigVersion}\` đã pin — đừng sửa gì trong
+này**. Rig là \`@stickman3d/rig@${rigVersion}\` đã pin — đừng sửa gì trong
 \`node_modules/@stickman3d/\`.
 
 ## Bố cục
@@ -28,7 +28,7 @@ này**. Rig là \`@stickman3d/sketch@${rigVersion}\` đã pin — đừng sửa 
 
 ## Spec rig ở đâu
 
-**Không nằm trong repo này.** Nó đi theo \`@stickman3d/sketch@${rigVersion}\` đã pin,
+**Không nằm trong repo này.** Nó đi theo \`@stickman3d/rig@${rigVersion}\` đã pin,
 nên không có bản chép nào để cũ đi. Đọc bằng MCP tool \`docs\`: gọi trống để lấy
 mục lục, \`docs({ file: "02" })\` để lấy một file. Không có MCP thì
 \`pnpm exec stickman docs 02\`.
@@ -139,7 +139,7 @@ export const claude = () => "@AGENTS.md\n";
 export const readme = ({ name, rigVersion }) => `# ${name}
 
 Repo một tập phim người que. Nhân vật, hành động, cảnh và mảnh ảnh nằm ở đây;
-rig và studio nằm ở \`@stickman3d/sketch\` (pin \`${rigVersion}\`).
+rig và studio nằm ở bộ \`@stickman3d\` (pin \`${rigVersion}\`).
 
 ## Cài
 
@@ -152,7 +152,7 @@ npx get-pnpm 11
 pnpm --version
 \`\`\`
 
-Năm \`@stickman3d/*\` nằm ở package registry GitLab, không phải npmjs; \`.npmrc\`
+Sáu \`@stickman3d/*\` nằm ở package registry GitLab, không phải npmjs; \`.npmrc\`
 của repo đã trỏ sẵn. Xin maintainer token \`stickman-team-read\`, rồi khai một
 lần ở cấp user:
 
@@ -225,7 +225,7 @@ pnpm video --scene scenes/<ten>.json --out tmp/<ten>.mp4
 \`\`\`
 `;
 
-/** Registry của năm @stickman3d/* — repo video cài từ đây chứ không phải npmjs */
+/** Registry của sáu @stickman3d/* — repo video cài từ đây chứ không phải npmjs */
 export const REGISTRY = "https://gitlab.com/api/v4/projects/87383859/packages/npm/";
 
 /** Chỉ dòng registry: pnpm 11 bỏ qua credential đặt trong .npmrc của repo */
@@ -305,7 +305,8 @@ export const packageJson = ({ name, versions }) =>
         "@stickman3d/fx": versions.fx,
         "@stickman3d/mcp": versions.mcp,
         "@stickman3d/render": versions.render,
-        "@stickman3d/sketch": versions.rig,
+        "@stickman3d/rig": versions.rig,
+        "@stickman3d/sketch": versions.sketch,
         react: "^19.2.0",
         "react-dom": "^19.2.0",
         remotion: REMOTION,

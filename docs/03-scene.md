@@ -1,7 +1,7 @@
 # 03 — Scene
 
 Ghép nhiều hành động theo thời gian. `SceneSchema`, `resolveScene()` và `sceneAt()`
-nằm ở `packages/rig/src/scene.ts`.
+nằm ở `packages/rig/src/core/scene.ts`.
 
 ## Nguyên tắc timeline
 

@@ -1,15 +1,39 @@
 # stickman-studio-3d
 
-Người que 3D trên three.js — `@stickman3d/rig` và app xem thử. Quy tắc của repo ở
-[AGENTS.md](AGENTS.md).
+Người que trên three.js và mọi thứ một repo video cần để dựng tập: rig, studio chỉnh nhân vật,
+CLI và render. Không chứa nhân vật, phòng hay cảnh của tập phim nào. Quy tắc của repo ở
+[AGENTS.md](AGENTS.md), spec rig ở [docs/](docs/README.md).
+
+| Gói | |
+|---|---|
+| `@stickman3d/rig` | Người que 3D, đồ khối, pipeline vẽ nét mực, và lõi rig: JSON nhân vật / hành động / cảnh, `resolveScene`, `sceneAt`, chu kỳ đi. `@stickman3d/rig/core` là riêng phần lõi, không nạp `three` |
+| `@stickman3d/sketch` | Người que vẽ SVG bằng React (`<Character>`, `<Prop>`, `<Animal>`), xuất lại cả lõi |
+| `@stickman3d/fx` | Hiệu ứng SVG theo `t` và `<SceneWorld>` vẽ cả cảnh 2D |
+| `@stickman3d/render` | `stickman-render` (PNG), `stickman-video` (mp4 xem thử) |
+| `@stickman3d/mcp` | MCP server stdio cho agent |
+| `@stickman3d/cli` | `stickman init / upgrade / check / reseat / studio / docs` cho repo video |
+
+## Cài
+
+Cần Node.js `22.13+` (khuyến nghị bản LTS), Git và pnpm 11. Máy đã có Node nhưng chưa có pnpm
+thì cài bằng [bộ cài chính thức](https://pnpm.io/installation#using-npm) qua npm:
+
+```bash
+npx get-pnpm 11
+```
+
+Mở terminal mới hoặc nạp lại file shell theo dòng bộ cài in ra, rồi:
 
 ```bash
 pnpm install
-pnpm dev        # tsup --watch cho rig, vite cho app xem thử
-pnpm typecheck
+pnpm dev        # tsup --watch cho rig, sketch, fx; vite cho app xem thử và studio
+pnpm typecheck && pnpm lint && pnpm format:check && pnpm test
 pnpm shots      # chụp app xem thử ra tmp/shots/
 pnpm bench      # đo ms/khung ở 1920×1080
 ```
+
+Bắt đầu một tập phim mới thì xem [QUICKSTART.md](QUICKSTART.md); repo video sau khi đã đứng
+thì xem [docs/05](docs/05-repo-video.md).
 
 ## Xem thử
 
@@ -36,10 +60,9 @@ pnpm bench      # đo ms/khung ở 1920×1080
 | `demo=police` | Ẩn dụ cảnh sát phân luồng giữa lối đi văn phòng: người đội mũ cảnh sát (`wear`), ba tờ 「仕事」 bay dọc lối, hai tờ rẽ phải xuống chồng giấy trên bàn ハル, tờ thứ ba dừng giữa lối; băng tên 「ハル」「ノダ」 trên mặt bàn |
 | `grade=flashback\|dim\|vhs` | Hậu kỳ toàn khung: hồi tưởng (nhoè, giảm bão hoà), tối nền, băng tua ngược |
 
-Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js` (`demo=hold` ở `demo-hold.js`, kèm đồ mẫu chung), `@stickman/rig` lấy mẫu
+Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js` (`demo=hold` ở `demo-hold.js`, kèm đồ mẫu chung), lõi lấy mẫu
 bằng `sceneAt`, người 3D diễn theo bằng `act`. Cảnh có ống kính riêng (`SHOTS` trong `demos.js`) thì
-camera theo `cameraAt`. Hành động ở `apps/viewer/actions/` chép từ
-bộ chung của `@stickman/cli`.
+camera theo `cameraAt`. Hành động là bộ chung `apps/studio/public/actions/` cộng `apps/viewer/actions/`.
 | `demo=acts\|desk\|heads` | Hành động soạn ở `side`, mỗi người một trạm, bắt đầu ở giây 0,3 rồi giữ: đứng (`eshaku-3d`, `show-paper-3d`, `point-3d`, `stop-palm-3d` + `point-lane-3d`, `raise-laptop-3d`), ngồi ở bàn (`type-3d`, `phone-lift-3d`, `pick-paper-3d`, `head-down-3d`, `perch-desk-3d`), chỉ đầu và thân (`lean-in`, `slump-sigh`, `glance-*`, `look-down-small`, `look-up-head`, `nod-once`, `talk-tilt-back`) |
 | `demo=styles` | Bộ sưu tập kiểu: người thứ `i` đội mẫu tóc thứ `i` của `SCULPT_PRESETS` (cuối hàng là đầu trọc), mặc kiểu áo thứ `i % 12` của `GARMENT_STYLES`, rải kính, nếp nhăn, váy xếp ly và váy trơn |
 | `turn=110` | Với `demo=styles`: xoay từng người tại chỗ (độ, mặc định 14) để xem nghiêng, sau lưng |
@@ -47,15 +70,26 @@ bộ chung của `@stickman/cli`.
 | `demo=mouths` | Bảng nét mặt: đủ 19 khẩu hình của `Mouth.tsx` trên ba bậc, kèm đủ kiểu mắt và mày |
 
 Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js` và `demo-acts.js`,
-`@stickman/rig` lấy mẫu bằng `sceneAt`, người 3D diễn theo bằng `act`. Bộ sưu tập kiểu và bảng
+lõi lấy mẫu bằng `sceneAt`, người 3D diễn theo bằng `act`. Bộ sưu tập kiểu và bảng
 nét mặt ở `demo-styles.js`, JSON nhân vật mẫu qua `parseCharacter` rồi `fromCharacter`. Hành động
-ở `apps/viewer/actions/` chép từ bộ chung của `@stickman/cli`, trừ các file `-3d` soạn ở đây
+ở `apps/viewer/actions/` chỉ dùng ở app này, chưa vào bộ chung `apps/studio/public/actions/`
 (`eshaku-3d`, `phone-lift-3d`, `pick-paper-3d`, `show-paper-3d`, `point-3d`, `stop-palm-3d`,
-`point-lane-3d`, `raise-laptop-3d`, `perch-desk-3d`, `head-down-3d`) — chép sang repo video hay bộ
-chung khi dùng. Đích cổ tay của hành động ngồi giả định bàn cao 137, ghế 87,5 như `arms-on-table-3d`.
+`point-lane-3d`, `raise-laptop-3d`, `perch-desk-3d`, `head-down-3d`, các hành động chỉ đầu và thân) — dời sang bộ chung khi repo video cần. Đích cổ tay của hành động ngồi giả định bàn cao 137, ghế 87,5 như `arms-on-table-3d`.
 
 Phím: `O` nét mực, `P` pixel, `A` khử răng cưa, `T` đổi giờ, `H` ẩn HUD,
 `Space` dừng.
+
+## Studio chỉnh nhân vật
+
+`apps/studio` (`pnpm --filter @stickman3d/studio dev`). Làm việc trên một thư mục bất kỳ có
+`characters/`, `actions/`, `pieces/`, mở qua File System Access API (Chromium, Edge). Trình
+duyệt không hỗ trợ thì dùng xuất/nạp gói `.zip`. Tham số URL, bố cục và cách chụp ở
+[README của nó](apps/studio/README.md).
+
+Căn mặc định của một kiểu tóc, mũ, áo cho **mọi** repo video: mở chính `apps/studio/public`
+làm thư mục, căn mảnh rồi bấm nút dấu trang trên ô mảnh — studio ghi vào
+`apps/studio/public/pieces/catalog.json`, lớp chung đi theo package, có hiệu lực ở repo video
+sau lần phát hành kế. Mở thư mục repo video thì chỉ repo đó nhận.
 
 ## Chụp ảnh để so
 
@@ -75,23 +109,24 @@ rồi đưa thư mục `sau-vs-truoc` cho chủ dự án xem.
 
 ## Dùng ở repo video
 
-Repo video pin một version đã phát hành:
+Repo video pin cùng một version cho cả sáu gói `@stickman3d/*` (`stickman init` ghi sẵn,
+`stickman upgrade` nâng), cộng `three` nếu dựng cảnh 3D.
+
+Trong lúc vừa sửa rig vừa dựng tập thì **đừng đi qua registry** — trỏ `link:` sang cây nguồn,
+chạy `pnpm dev` ở repo này cho tsup build lại:
 
 ```jsonc
-"@stickman3d/rig": "0.1.0",
-"three": "0.186.0"
+"@stickman3d/rig": "link:../../stickman-studio-3d/packages/rig",
+"@stickman3d/sketch": "link:../../stickman-studio-3d/packages/sketch"
+// fx, render, mcp, cli cũng vậy
 ```
 
-Trong lúc vừa sửa rig vừa dựng tập thì **đừng đi qua registry** — trỏ `link:` sang cây
-nguồn, chạy `pnpm dev` ở repo này cho tsup build lại:
-
-```jsonc
-"@stickman3d/rig": "link:../../stickman-studio-3d/packages/rig"
-```
-
-Đi đường `link:` thì alias `three` về bản của repo video trong `remotion.config.ts` (và
-`vite.config` nếu có), không thì symlink làm bundler tìm `three` ở repo này — hai bản
-`three` là vật liệu hỏng mà không báo lỗi. Chốt một mốc thì publish rồi pin lại version.
+Đi đường `link:` thì symlink làm bundler tìm `three`, `react` và `zod` ở repo này: hai bản
+`three` là vật liệu hỏng, hai bản `react` là hook hỏng, mà không báo lỗi. Repo video alias cả
+ba về bản của nó — `three` trong `tools/webpack.mjs`, `react` / `zod` trong khối alias để sẵn
+(comment) của `remotion.config.ts`. `link:` cả `@stickman3d/cli` thì `template/` và `docs/`
+không có trong cây nguồn nên `COMMON`, `SOURCES.docs` và `remotion.config.ts` đều rơi về cây
+nguồn của repo này. Chốt một mốc thì publish rồi pin lại version.
 
 ## Sân khấu
 
@@ -112,7 +147,7 @@ stage.dispose();
 ```
 
 - **Camera.** `lens` cố định cho cả cảnh hay đổi theo khung (`draw(t, { lens })`). `crop` là kết quả `cameraAt(rt, t)`
-  của `@stickman/rig` — nội suy và easing của mốc `camera[]` nằm ở đó, package không chép lại. Khung hình khác tỉ lệ
+  của lõi — nội suy và easing của mốc `camera[]` nằm ở đó, package không chép lại. Khung hình khác tỉ lệ
   sân khấu thì khung cắt nới quanh cùng tâm. Không có `lens` thì camera để tự do (app xem thử xoay tay).
 - **Đèn theo sân khấu.** Uniform chung `G`, giờ trong ngày và bộ đèn (`setPalette`, `setLights`) là của sân khấu
   dựng, `relight` hay vẽ gần nhất; sân khấu khác vẽ thì lấy lại của nó. Hai `<Sequence>` chồng nhau, một ngày một
@@ -297,8 +332,8 @@ seatCrowd(seats, (i) => characterOptions(CHARACTERS[seats[i].character], { color
 
 ## Diễn theo hành động 2D
 
-Package không đọc JSON hành động hay scene. Repo video lấy mẫu bằng `@stickman/rig` rồi
-đưa thẳng kết quả cho `act`:
+Repo video lấy mẫu cảnh bằng lõi của chính package (`resolveScene`, `sceneAt`) rồi đưa thẳng kết quả
+cho `act`:
 
 ```ts
 const rt = resolveScene(scene, ACTIONS, ANIMALS, PROPS, castHeights(scene), castBodies(scene));
@@ -330,7 +365,7 @@ wear(fig, 'crown', cap); wear(fig, 'chest', badge);
 ```ts
 const fig = fromCharacter(json, { items: { cup: (ctx) => ({ object: mug(), hold: { follow: 'level' } }), cap: policeCap } });
 // mỗi khung, sau act:
-dress(fig, equipMap(json, sp.equip), sp.world?.flip);    // equipMap của @stickman/rig; handNear là tay act gọi là tay gần
+dress(fig, equipMap(json, sp.equip), sp.world?.flip);    // equipMap của lõi; handNear là tay act gọi là tay gần
 ```
 
 Đồ cầm bám tay **tự cập nhật** khi three tính ma trận (lúc render, hay `fig.root.updateMatrixWorld()`), nên thứ tự
@@ -447,16 +482,86 @@ setLights({
 });
 ```
 
-## Phát hành một version
+## Registry
 
-Registry là GitLab package registry, endpoint cấp project (scope `@stickman3d` không trùng
-namespace gốc `trungvq`). Trước lần phát hành đầu: tạo project GitLab cho repo này, thay
-`<PROJECT_ID>` trong `.npmrc` và `publishConfig` của `packages/rig/package.json`, rồi đặt
-token một lần:
+Sáu gói `@stickman3d/*` nằm ở **package registry của GitLab**, không phải npmjs: project
+`trungvq/stickman-studio-3d`, id `87383859`. Endpoint **cấp project** — cấp instance đòi scope
+trùng namespace gốc, mà scope là `@stickman3d` còn namespace là `trungvq`.
+
+Người phát hành đặt token có `read_package_registry` và `write_package_registry` một lần:
 
 ```bash
-pnpm config set "//gitlab.com/api/v4/projects/<PROJECT_ID>/packages/npm/:_authToken" <PAT scope api>
+pnpm config set "//gitlab.com/api/v4/projects/87383859/packages/npm/:_authToken" <PAT scope api>
 ```
 
-Mỗi lần phát hành: bump `version` trong `packages/rig/package.json`, `pnpm release`.
-GitLab từ chối version đã có — luôn bump trước.
+### Token đọc dùng chung cho team
+
+Có thể tạo **một project deploy token dùng chung**, chỉ cấp scope `read_package_registry`.
+Token này không gắn với tài khoản cá nhân và đủ quyền để `pnpm dlx` / `pnpm install`; nó không
+thể publish package.
+
+Người quản lý project tạo một lần ở GitLab: **Settings → Repository → Deploy tokens**, đặt ngày
+hết hạn, chỉ chọn `read_package_registry`, rồi lưu token vào kho bí mật chung của team. Xem
+[GitLab — Deploy tokens](https://docs.gitlab.com/user/project/deploy_tokens/). GitLab chỉ hiện
+giá trị token ngay lúc tạo. Cách mỗi máy khai nó nằm ở [QUICKSTART](QUICKSTART.md#2-khai-registry).
+
+```bash
+echo '{"name":"stickman-team-read","scopes":["read_package_registry"],"expires_at":"<YYYY-MM-DD>"}' \
+  | glab api -X POST projects/87383859/deploy_tokens --input - -H 'Content-Type: application/json' \
+  | jq -r .token
+```
+
+Token dùng chung vẫn là một bí mật: không gửi vào chat công khai, không commit và nên xoay khi có
+người rời team hoặc nghi bị lộ. Cần thu hồi riêng từng người hoặc audit theo cá nhân thì cấp token
+riêng thay vì dùng chung.
+
+**GitLab đẩy tiếp sang npmjs.org những gói nó không có.** Tắt được chuyện ấy chỉ ở cấp group hoặc
+instance, mà `trungvq` là namespace cá nhân nên không tắt được. Gói đã publish thì không sao —
+thiếu token là `401` đàng hoàng. Nguy là **tên chưa từng publish**: GitLab không có nên đẩy thẳng
+sang npmjs, nơi scope `@stickman3d` đang vô chủ. Nên gõ sai tên gói, hay thêm package mới mà quên
+publish, sẽ không ra lỗi rõ ràng. Commit `pnpm-lock.yaml` để canh — lockfile ghi URL tarball đã
+phân giải, rơi nguồn là lộ ra trong diff.
+
+## Phát hành một version
+
+Cả sáu gói cùng một số version. Sau khi sửa và kiểm:
+
+```bash
+# bump "version" trong packages/{rig,sketch,fx,render,mcp,cli}/package.json rồi
+pnpm release                            # = pnpm build && pnpm -r publish --no-git-checks
+```
+
+`@stickman3d/cli` nướng bảng version vào `versions.json` lúc `prepack`, và chính bảng ấy quyết
+định `init` pin số nào; `docs/` cũng đi trong `cli`. Bump lệch một gói là repo video mới pin bản
+cũ hay đọc spec bản cũ.
+
+Bản pre-release (`2.1.0-alpha.N`) phát bằng `pnpm build && pnpm -r publish --tag alpha
+--no-git-checks` để nhãn `latest` không chuyển sang bản thử — `pnpm release` không có `--tag`.
+Gắn tag `v<version>` cho commit `chore(release)` để so hình (`so-svg --base`) và chia đôi tìm
+lỗi có mốc.
+
+**GitLab từ chối publish trùng version và không có toggle nào tắt.** Mỗi lần đẩy là một số mới.
+Đổi hằng số hình học, tỉ lệ người (`R`), hệ toạ độ hay cách đặt người thì nói rõ trong commit —
+mọi JSON nhân vật và cảnh đã căn sẽ lệch.
+
+## Bộ so SVG
+
+Cổng trước khi gộp thay đổi đụng hình 2D: mọi scene của repo video và bộ mẫu, ở t = 0, giữa,
+cuối và từng `marks`, dựng bằng bản gốc và bằng cây nguồn, chuẩn hoá số (0.01), `useId`, data
+URI rồi so chuỗi. Khung đỏ được so tiếp bằng PNG (`rsvg-convert`, `magick compare -metric AE`);
+AE 0 là khác vô hại. Lớp vẽ code và bộ phận vẽ code của repo video nạp qua chính bản đang dựng,
+nên repo video phải import `@stickman3d/*`.
+
+```bash
+node tools/so-svg.mjs --repo ../youtube-video/jp-psychology --base v2.0.0
+node tools/so-svg.mjs --repo ../youtube-video/jp-psychology --base-ref <commit>
+# --only <regex trên "kenh-<cảnh>" / "mau-<cảnh>">  --out tmp/so-svg  --no-png  --no-build
+```
+
+`--base <tag>` cài bản phát hành từ registry vào thư mục tạm. `--base-ref` dựng bên gốc từ một
+commit trên máy: worktree tạm `$TMPDIR/stickman-so-svg-ref-<sha>` (cài, build rig, sketch, fx một
+lần rồi dùng lại; gỡ bằng `git worktree remove --force`). Dùng nó khi đổi có chủ đích làm cả bộ đỏ
+so với bản phát hành, để mỗi bước sau vẫn có một mốc so xanh.
+
+Báo cáo ở `tmp/so-svg/bao-cao.txt`; SVG hai bên ở `goc/` và `moi/`. Mã thoát 1 khi có khung khác
+PNG. Hình 3D thì so bằng `pnpm shots --vs` ([Chụp ảnh để so](#chụp-ảnh-để-so)).
