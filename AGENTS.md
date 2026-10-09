@@ -20,7 +20,7 @@ chúng ở repo của từng video, repo đó nhập bộ `@stickman3d/*` như d
 | `apps/studio/` | Studio chỉnh nhân vật; tham số URL, bố cục và cách chụp ở [README của nó](apps/studio/README.md). `public/` là bộ mẫu chung (nhân vật, hành động, mảnh). |
 | `docs/` | Spec rig, nguồn sự thật cho hành vi của lõi và người que SVG. Đọc file liên quan **trước** khi sửa; bắt đầu ở [docs/README.md](docs/README.md), bẫy theo vùng ở [docs/00](docs/00-bat-bien.md). |
 | `assets/` | Sheet ảnh gốc của bộ mẫu trang phục (`sheets/`), SVG nguồn của đồ vật (`props/`) và mảnh vẽ lại (`pieces/`). |
-| `tools/` | `shots.mjs` chụp app xem thử, `bench.mjs` đo ms/khung, `so-svg.mjs` so SVG mọi cảnh 2D — [README](README.md). |
+| `tools/` | `shots.mjs` chụp app xem thử, `bench.mjs` đo ms/khung — [README](README.md). |
 | `README.md` | Cài, chụp, vòng `link:` với repo video, registry, phát hành. `QUICKSTART.md` là các bước dựng một repo video. |
 
 ## Biên giới với repo video
@@ -59,8 +59,7 @@ cho tóc), và soi bằng `pnpm shots` khi chủ dự án cho phép.
 
 **2D phẳng và 2.5D giữ để render tập cũ và overlay.** Người 2D phẳng (mảnh PNG, bộ phận vẽ code) và
 2.5D (`sculptPaths`, `torsoPaths`, `glassesPaths`, `beardPaths`, `skirtPaths`) không bắt buộc theo mẫu
-mới. Gặp trường hay kiểu chúng chưa biết thì bỏ qua, không ném lỗi; sửa lõi thì bộ so SVG
-(`tools/so-svg.mjs`) phải giữ chúng không đổi.
+mới. Gặp trường hay kiểu chúng chưa biết thì bỏ qua, không ném lỗi.
 
 ## Bất biến
 
@@ -149,5 +148,5 @@ pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build
 **`pnpm shots` chỉ chạy khi chủ dự án cho phép** — nó chậm. Đụng tới hình 3D (`packages/rig/src/*.ts`,
 hình học ở `core/`, `apps/viewer`) thì hỏi trước; được phép thì chụp cả bản trước thay đổi, ghép bằng
 `--vs`, `--only` các khung liên quan khi sửa một vùng hẹp, rồi **mở tờ gộp `tmp/shots/<tên>.png` và
-thật sự nhìn** — typecheck đúng không có nghĩa là hình đúng. Đụng tới hình 2D thì chạy bộ so SVG (`tools/so-svg.mjs`) và chụp studio ở hai bề ngang
-`390x844`, `1400x900`.
+thật sự nhìn** — typecheck đúng không có nghĩa là hình đúng. Đụng tới giao diện studio thì chụp
+nó ở hai bề ngang `390x844`, `1400x900`.
