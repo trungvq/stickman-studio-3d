@@ -110,7 +110,7 @@ import {
 } from "./types";
 
 /** Bump khi đổi hình dạng JSON scene; `migrateScene` phải có nhánh tương ứng. */
-export const SCENE_VERSION = 23;
+export const SCENE_VERSION = 24;
 
 /** `"@ten"` hay `"@ten+0.4"` / `"@ten-1"`: một mốc có tên trong `scene.marks` cộng phần lệch giây */
 export const MARK_REF = /^@([A-Za-z0-9_-]+)(?:\s*([+-])\s*(\d+(?:\.\d+)?))?$/;
@@ -218,6 +218,13 @@ const ClipSchema = z.object({
     .describe(
       `Giây hoà từ tư thế đang có sang clip này; 0 là cắt cứng; bỏ trống thì tự suy từ độ lệch tư thế, trong [${BLEND_MIN}, ${BLEND_MAX}]`,
     ),
+  /** Như `snap` của hành động, cho riêng lần đặt này. docs/03-scene.md#giật-trên-hình */
+  snap: z
+    .boolean()
+    .optional()
+    .describe(
+      "Cố ý giật (cắt cứng, giật mình): `check` không đo giật ở kênh clip ghi suốt lúc nó chạy, kể cả đoạn hoà vào và ra",
+    ),
 });
 
 const TrackSchema = z.object({
@@ -300,6 +307,8 @@ const HandKeySchema = z.object({
   t: time(),
   right: HandSchema.nullable().optional(),
   left: HandSchema.nullable().optional(),
+  /** Đoạn từ mốc trước tới mốc này cố ý nhanh (chộp, giật tay): `check` không đo giật tay ở đoạn ấy */
+  snap: z.boolean().optional(),
 });
 
 /**
@@ -733,6 +742,7 @@ export function migrateScene(json: unknown): unknown {
   // v20 → v21 `stretch` của `cast[].base` nhận thêm tám số từng đoạn; bốn số cũ vẫn hợp lệ
   // v21 → v22 thêm `cast[].rotate`; thiếu là `0`, tức đứng thẳng
   // v22 → v23 thêm `scene.lens` và `cast[].world` (cả `world.hands`); thiếu là người 2D như cũ
+  // v23 → v24 thêm `clips[].snap` và `world.hands[].snap`; thiếu là không cố ý giật
   o.schemaVersion = SCENE_VERSION;
   return o;
 }
@@ -750,6 +760,8 @@ interface Clip {
   mask?: Channel[];
   equip?: Equip;
   tau: number;
+  /** Cố ý giật: clip khai `snap` hay hành động của nó khai `snap` */
+  snap?: boolean;
   /** Người 3D đi theo `path`: quãng một lượt (đơn vị rig, `height = 1`) của clip có sải chân; pha chạy theo đồng hồ của người ấy */
   stride?: number;
 }
@@ -1106,6 +1118,7 @@ function resolveTrack(
       mask: r.mask,
       equip: r.equip,
       tau: r.blend ?? 0,
+      ...((r.snap || action?.snap) && { snap: true }),
     };
     tr.clips.push(c);
     // τ là chỗ nối giữa thứ track đã ghi và clip này; ở giây 0 chưa có chỗ nối nào

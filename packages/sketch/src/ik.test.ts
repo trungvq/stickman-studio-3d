@@ -210,8 +210,8 @@ describe("hành động có đích cổ tay", () => {
     ],
   });
 
-  it("đời 14; `mask` suy ra gồm kênh tay mà mốc chỉ ghi bằng đích", () => {
-    expect(ACTION_VERSION).toBe(14);
+  it("đời 15; `mask` suy ra gồm kênh tay mà mốc chỉ ghi bằng đích", () => {
+    expect(ACTION_VERSION).toBe(15);
     expect(actionMask(typing)).toEqual(["armNear", "torso"]);
   });
 

@@ -64,7 +64,7 @@ import {
 } from "./animalGait";
 
 /** Bump khi đổi hình dạng JSON hành động; `migrateAction` phải có nhánh tương ứng. */
-export const ACTION_VERSION = 14;
+export const ACTION_VERSION = 15;
 
 /** Kênh khớp: thứ có số trong `Pose`; `stretch` là hệ số dài chi, không phải góc */
 export const JOINT_CHANNELS = [
@@ -408,6 +408,11 @@ export const ActionSchema = z
      * docs/01-rig.md#người-3d
      */
     authoredAt: z.enum(["side"]).optional(),
+    /**
+     * Cố ý giật (giật mình, đập bàn): `check` không đo giật tay chân ở kênh hành động này ghi suốt lúc
+     * clip của nó chạy, kể cả đoạn hoà vào và ra. docs/03-scene.md#giật-trên-hình
+     */
+    snap: z.boolean().optional(),
     keys: z.array(KeySchema).min(1).optional(),
     /** Pha va chạm, đặt tên; `sceneEvents` đổi ra giây scene. docs/01-rig.md */
     events: z.array(EventSchema).default([]),
@@ -497,6 +502,7 @@ export function migrateAction(json: unknown): unknown {
   // v11 → v12 `stretch` nhận thêm tám số từng đoạn; bốn số cũ vẫn hợp lệ, không phải đổi
   // v12 → v13 thêm `keys[].reach`; thiếu là tay theo góc như cũ
   // v13 → v14 thêm `ease: "smooth"` và thành phần `null` của `head`; file cũ không dùng, không phải viết gì
+  // v14 → v15 thêm `snap`; thiếu là chuyển động không cố ý giật, `check` đo như mọi hành động
   // v4 → v5 tay thành ba số; file cũ cầm đồ thẳng trục cẳng tay, tức cổ tay 0
   if (from < 5)
     for (const k of (o.keys ?? []) as Record<string, unknown>[]) {
