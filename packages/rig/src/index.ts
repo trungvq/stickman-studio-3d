@@ -6,7 +6,7 @@ export {
 export { currentLights, setLights, setPalette, type LightState } from './lighting';
 export { AA, createPipeline, type AaMode, type Grade, type Pipeline, type PipelineOptions, type RenderOptions } from './pipeline';
 export {
-  characterOptions, fromCharacter, put, R, stickman,
+  characterOptions, fitSkirt, fromCharacter, put, R, stickman,
   type Arm, type CharacterJson, type Figure, type Leg, type Lod, type Side, type StickmanOptions,
 } from './stickman';
 export {
@@ -19,7 +19,7 @@ export { BODY_PARTS, bodyCapsules, collide, colliders, type BodyPart, type Colli
 export { act, type ActPose, type ActReach, type Acting, type ActWorld } from './act';
 export { type FaceRig, type FaceShape, type Wrinkle } from './face';
 export { GLASSES_DEFAULT, glassesLines, glassesMesh } from './glasses';
-export { sculptSkirt, sculptTorso } from './garment';
+export { sculptSkirt, sculptTorso, type SkirtOptions } from './garment';
 export { torsoMesh, type Rig, type TorsoMesh } from './torso';
 export { sculptMesh, type SculptMesh } from './sculpt';
 export {

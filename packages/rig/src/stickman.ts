@@ -4,7 +4,7 @@ import { buildSockets, dress, headFit, newGear, type EquipState, type Gear, type
 import { DEFAULT_FACE } from './core/constants';
 import type { FaceState } from './core/types';
 import { faceRig, type FaceRig, type FaceShape } from './face';
-import { sculptSkirt, sculptTorso } from './garment';
+import { sculptSkirt, sculptTorso, type SkirtOptions } from './garment';
 import { glassesMesh } from './glasses';
 import { INK, toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
@@ -42,6 +42,8 @@ export interface Figure {
   /** Đồ gọi tên của người và thứ đang mặc; `dress` đổi */
   gear: Gear;
   lod: Lod;
+  /** Váy dựng khối: `act` gọi `fitSkirt` dựng lại theo đùi khi đùi đổi hướng trong hệ thân */
+  skirt?: { opts: Omit<SkirtOptions, 'thighs'>; group: THREE.Group; key: string };
 }
 
 /** `low`: người nền rẻ — ít mặt lưới, gộp khối tĩnh theo vật liệu, nét mặt đứng yên dùng chung texture, không chớp mắt */
@@ -241,7 +243,7 @@ export interface StickmanOptions {
   seed?: number;
   sleeveWidth?: number;
   trouserWidth?: number;
-  /** Gập đùi ra trước để váy phủ theo đùi */
+  /** Dáng váy lúc dựng, trước lần `act` đầu: đùi gập ra trước */
   seated?: boolean;
   /** `palette.limbCurve` của JSON nhân vật: độ cong nét chi `0..1`, `0` là hai đoạn thẳng gãy ở khuỷu, gối */
   limbCurve?: number;
@@ -263,10 +265,12 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
   sculptTorso(spine, { garment, rig, color, accent, ink: INK });
   // khối thân áo là mảnh đầu tiên: `collide` lấy hộp thân từ nó
   spine.children[0].userData.torso = true;
+  let skirtRig: Figure['skirt'];
   if (skirt) {
     const dir: Vec3 = seated ? [0, 0.08, 1] : [0, 1, 0];
     const thighs = SIDES.map((s) => ({ hip: [s * rig.hipHalf, 0, 0] as Vec3, dir }));
-    sculptSkirt(spine, { skirt, rig, color: skirtColor, ink: INK, thighs, legW: trouserWidth });
+    const opts = { skirt, rig, color: skirtColor, ink: INK, legW: trouserWidth };
+    skirtRig = { opts, group: sculptSkirt(spine, { ...opts, thighs }), key: '' };
   }
   const neck = joint(spine, 0, R.torso, 0);
   const skullScale = new THREE.Vector3(1, 1.04, 0.98);
@@ -315,9 +319,35 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
   // người có nét riêng theo hình 2D: không vẽ nét gấp pháp tuyến; đồ cầm gắn sau thì vẫn có
   root.traverse((o) => (o.userData.noCrease = true));
   const sockets = buildSockets({ root, spine, head, arms }, fit, (R.limb * sleeveWidth) / 10, rig);
-  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod };
+  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig };
   if (equip) dress(fig, equip);
   return fig;
+}
+
+const toSpine = new THREE.Matrix4(), thighAt = new THREE.Vector3(), thighDir = new THREE.Vector3();
+/**
+ * Dựng lại váy của `p` theo đùi lúc này, đo trong hệ thân (khớp thân và khớp hông cùng con của `hips`): thân nghiêng
+ * hay đùi đổi góc thì vạt váy vẫn ôm mặt trên đùi. Cần ma trận local đã cập nhật; đùi không đổi thì không dựng lại.
+ */
+export function fitSkirt(p: Figure) {
+  const sk = p.skirt;
+  if (!sk) return;
+  toSpine.copy(p.spine.matrix).invert();
+  // three → hệ thân của váy: px, y xuống
+  const flipY = (v: THREE.Vector3, k: number): Vec3 => [v.x * k, -v.y * k, v.z * k];
+  const thighs = SIDES.map((s) => {
+    const m = toSpine.clone().multiply(p.legs[s].hip.matrix);
+    return { hip: flipY(thighAt.setFromMatrixPosition(m), 100), dir: flipY(thighDir.set(0, -1, 0).transformDirection(m), 1) };
+  });
+  const key = thighs.map(({ hip, dir }) => [...hip.map((v) => Math.round(v * 10)), ...dir.map((v) => Math.round(v * 1000))].join(',')).join(';');
+  if (key === sk.key) return;
+  sk.key = key;
+  const parent = sk.group.parent!;
+  sk.group.removeFromParent();
+  sk.group.traverse((o) => (o as THREE.Mesh).geometry?.dispose());
+  sk.group = sculptSkirt(parent, { ...sk.opts, thighs });
+  sk.group.traverse((o) => (o.userData.noCrease = true));
+  sk.group.updateMatrixWorld(true);
 }
 
 const stillFaces = new Map<string, FaceRig>();

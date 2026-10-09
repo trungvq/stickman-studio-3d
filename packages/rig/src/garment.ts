@@ -117,12 +117,17 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
   }
 }
 
+export interface SkirtOptions { skirt: Skirt; rig: Rig; color: string; ink: string; thighs: { hip: Vec3; dir: Vec3 }[]; legW: number }
+
 /**
  * Váy dựng khối của rig (`pieces.hem.skirt`): bao lồi của vành cạp, vành gấu và hai ống đùi tới tầm váy
- * phủ, như hình bao `buildSkirt` vẽ ở 2D. `thighs` là hướng đùi trong hệ thân (px, y xuống), `legW` bề
- * ngang nét chân.
+ * phủ, như hình bao `buildSkirt` vẽ ở 2D. `thighs` là hông và hướng đùi trong hệ thân (px, y xuống), `legW`
+ * bề ngang nét chân. Mọi khối nằm trong một nhóm `userData.skirt` gắn vào `spine`; `fitSkirt` dựng lại nó theo đùi.
  */
-export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thighs, legW }: { skirt: Skirt; rig: Rig; color: string; ink: string; thighs: { hip: Vec3; dir: Vec3 }[]; legW: number }) {
+export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thighs, legW }: SkirtOptions): THREE.Group {
+  const group = new THREE.Group();
+  group.userData.skirt = true;
+  spine.add(group);
   const inset = rig.stroke / 2;
   const h = rig.height;
   const angles = thighs.map(({ dir }) => Math.acos(Math.max(-1, Math.min(1, dir[1]))));
@@ -144,7 +149,8 @@ export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thi
   thighs.forEach(({ hip, dir }, i) => {
     const reach = skirtCover(skirt, h, angles[i], 78 * h);
     const d = new THREE.Vector3(...dir).normalize();
-    const side = new THREE.Vector3(1, 0, 0);
+    // ngang của ống đùi vuông góc với đùi: đùi dạng ra (`dang`) thì vòng ống vẫn tròn
+    const side = new THREE.Vector3(1, 0, 0).addScaledVector(d, -d.x).normalize();
     const up = new THREE.Vector3().crossVectors(d, side).normalize();
     for (let j = 0; j < 16; j++) {
       const a = (2 * Math.PI * j) / 16;
@@ -161,10 +167,10 @@ export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thi
   geo.computeVertexNormals();
   const m = new THREE.Mesh(geo, npr({ color, stipple: 0.05, soft: 1 }));
   m.castShadow = true;
-  spine.add(m);
+  group.add(m);
   const hl = new THREE.Mesh(geo, hullMaterial(0.026, ink));
   hl.userData.noShadow = true;
-  spine.add(hl);
+  group.add(hl);
   // nếp: đường thẳng trên mặt nón cụt, chỉ khi váy buông
   const n = Math.round(skirt.pleats);
   const inkMat = npr({ color: ink, stipple: 0 });
@@ -174,6 +180,7 @@ export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thi
       const out = ([x, y, z]: Vec3): Vec3 => [x * 1.02, y, z * 1.02];
       const a = out(ring(0.3, yW + (yH - yW) * 0.3, p));
       const b = out(ring(0.9, yW + (yH - yW) * 0.9, p));
-      spine.add(tube([a, b], (0.45 * rig.stroke * U) / 2, inkMat));
+      group.add(tube([a, b], (0.45 * rig.stroke * U) / 2, inkMat));
     }
+  return group;
 }

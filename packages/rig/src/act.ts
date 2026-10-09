@@ -3,7 +3,7 @@ import { actAngles, actReach, SPLAY3, type ActFrame } from './core/act3';
 import type { V3 } from './core/lens';
 import type { BrowKind, EyeKind, MouthKind } from './core/types';
 import { toThree, type Vec3 } from './khoi';
-import { R, type Figure, type Side } from './stickman';
+import { fitSkirt, R, type Figure, type Side } from './stickman';
 
 // Diễn theo tư thế đã lấy mẫu của @stickman3d/sketch (`sceneAt`, docs/01-rig.md#người-3d): package không đọc JSON hành
 // động hay scene. Luật đọc góc (`actAngles`) và IK (`actReach`) ở lõi, `actJoints` của lõi tính lại đúng các khớp này
@@ -136,6 +136,7 @@ export function act(p: Figure, sp: Acting, t?: number) {
     segment(elbow, wrist, R.foreArm, st[side === near ? 3 : 1] ?? 1);
   }
   p.root.updateMatrixWorld(true);
+  fitSkirt(p);
   reachArm(p, near, P.reach?.an, W?.hands?.near);
   reachArm(p, -near as Side, P.reach?.af, W?.hands?.far);
 
