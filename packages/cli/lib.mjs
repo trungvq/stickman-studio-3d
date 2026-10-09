@@ -1367,6 +1367,75 @@ export async function reseatWorkspace({ dir = ".", before, dryRun = false } = {}
 /** Ngưỡng lấn của workspace: `stickman.clash.tol` trong `package.json`, mặc định `CLASH_TOL` */
 export const clashTol = (dir = ".") => readPkg(resolve(dir))?.stickman?.clash?.tol ?? CLASH_TOL;
 
+/**
+ * Quãng giây cảnh mà các shot của `episodes/` đưa lên hình, theo id cảnh: `[from, to]` mỗi shot, hai
+ * shot liền nhau nối tiếp cùng một cảnh thì gộp — không có chỗ cắt giữa chúng. Cảnh không shot nào
+ * dùng thì không có mục. docs/03-scene.md#giật-trên-hình
+ */
+function shotSpans(root, scenesByName, sceneRuntime) {
+  const out = new Map();
+  for (const f of listJson(join(root, "episodes"))) {
+    let ep;
+    try {
+      ep = readJson(join(root, "episodes", f));
+    } catch {
+      continue;
+    }
+    let last = null;
+    for (const shot of ep.shots ?? []) {
+      const rt = shot.scene && sceneRuntime(shot.scene);
+      if (!rt) {
+        last = null;
+        continue;
+      }
+      let from;
+      let to;
+      try {
+        const marks = scenesByName[shot.scene]?.marks ?? {};
+        from = shot.from === undefined ? 0 : rig.markTime(shot.from, marks, "from");
+        to =
+          shot.to !== undefined
+            ? rig.markTime(shot.to, marks, "to")
+            : shot.duration !== undefined
+              ? from + rig.sceneTime(shot.duration, rig.warpTable(shot.slow ?? []))
+              : rt.duration;
+      } catch {
+        last = null;
+        continue;
+      }
+      const list = out.get(shot.scene) ?? [];
+      if (last && last.scene === shot.scene && Math.abs(last.span[1] - from) < RETIME_EPS)
+        last.span[1] = to;
+      else {
+        const span = [from, Math.min(to, rt.duration)];
+        list.push(span);
+        last = { scene: shot.scene, span };
+      }
+      out.set(shot.scene, list);
+    }
+  }
+  return out;
+}
+
+/**
+ * Ngưỡng đo giật trên hình: `stickman.snap` trong `package.json` — `{ px, k, fps }`, trường thiếu lấy
+ * `SNAP_PX` / `SNAP_K` / `SNAP_FPS` của rig; `false` là không đo. Sai kiểu thì trả `{ error }`.
+ * docs/03-scene.md#giật-trên-hình
+ */
+export function snapOptions(dir = ".") {
+  const raw = readPkg(resolve(dir))?.stickman?.snap;
+  if (raw === false) return { off: true };
+  const out = { px: rig.SNAP_PX, k: rig.SNAP_K, fps: rig.SNAP_FPS };
+  if (raw === undefined) return out;
+  const bad = `package.json: stickman.snap phải là false hay { px, k, fps } số dương, đang là ${JSON.stringify(raw)}`;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { error: bad };
+  for (const [key, v] of Object.entries(raw)) {
+    if (!(key in out) || typeof v !== "number" || !(v > 0)) return { error: bad };
+    out[key] = v;
+  }
+  return out;
+}
+
 /** Báo mốc khai mà JSON không neo: `stickman.marks.unused` trong `package.json`, `"off"` (mặc định) hay
  *  `"warn"` — lớp vẽ code đọc mốc qua `ctx.marks`, `check` không thấy. docs/03-scene.md#mốc-có-tên */
 export const marksUnused = (dir = ".") => readPkg(resolve(dir))?.stickman?.marks?.unused ?? "off";
@@ -1506,7 +1575,8 @@ export function sceneOverdrawProblems(
 
 /**
  * Soi một workspace: version đã đóng dấu so với rig đang cài, JSON hỏng, tham chiếu chéo trỏ
- * vào file không có, người 3D trượt hay lồng vào đồ, tiếng tràn chỗ.
+ * vào file không có, người 3D diễn hành động 2D, trượt hay lồng vào đồ, tay chân giật trên hình,
+ * tiếng tràn chỗ.
  *
  * `scene` (regex trên id cảnh) chỉ soi sâu cảnh khớp: cảnh báo của chúng và lỗi ở bất kỳ đâu;
  * tập, tiếng, git và công cụ ngoài bỏ qua — docs/05-repo-video.md#soi-một-cảnh
@@ -1616,6 +1686,8 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
         // Khuỷu gập ngược khi giơ tay, mốc ghi kênh ngoài `mask`: schema không biết, hình chỉ sai — docs/00
         for (const problem of rig.armFoldProblems(r.data)) warn(`actions/${f}: ${problem}`);
         for (const problem of rig.maskProblems(r.data)) warn(`actions/${f}: ${problem}`);
+        // Cắt cứng giấu trong file, đường nối vòng `wrap` nhảy — docs/03-scene.md#giật-trên-hình
+        for (const problem of rig.actionSnapProblems(r.data)) warn(`actions/${f}: ${problem}`);
       }
       if (kind === "animals") animalsByName[f] = r.data;
       if (kind === "scenes") {
@@ -1664,6 +1736,9 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
           for (const problem of rig.sceneSlideProblems(rt)) warn(`scenes/${f}: ${problem}`);
           // Khoá góc chính diện đẩy thân người 3D: hướng khai không được giữ — docs/03-scene.md#người-3d
           for (const problem of rig.sceneFacingProblems(rt)) warn(`scenes/${f}: ${problem}`);
+          // Người 3D diễn hành động 2D ở kênh tay chân — docs/03-scene.md#hành-động-cho-người-3d
+          for (const problem of rig.sceneSideProblems(rt, actionsByName))
+            bad(`scenes/${f}: ${problem}`);
         } catch (e) {
           bad(`scenes/${f}: ${e.message}`);
         }
@@ -1817,6 +1892,30 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
         warn(`scenes/${name}.json: không đo được người 3D với đồ khối — ${e.message}`);
       }
     }
+  owner = null;
+
+  // Tay chân giật trên hình, đo đúng như hình vẽ ra; cảnh khớp `stickman.frozen` thì không đo.
+  // docs/03-scene.md#giật-trên-hình
+  const snap = snapOptions(root);
+  if (snap.error) bad(snap.error);
+  else if (!snap.off) {
+    const spans = shotSpans(root, scenesByName, sceneRuntime);
+    for (const name of Object.keys(scenesByName)) {
+      if (frozen.test(name) || !inFocus(name)) continue;
+      const rt = sceneRuntime(name);
+      if (!rt) continue;
+      owner = name;
+      const characterOf = (m) =>
+        m.character ? charactersByName[m.character] : rig.defaultCharacter();
+      try {
+        const opts = { characterOf, ...snap, spans: spans.get(name) };
+        for (const problem of rig.sceneSnapProblems(rt, opts))
+          warn(`scenes/${name}.json: ${problem}`);
+      } catch (e) {
+        warn(`scenes/${name}.json: không đo được giật trên hình — ${e.message}`);
+      }
+    }
+  }
   owner = null;
 
   if (focus) {
