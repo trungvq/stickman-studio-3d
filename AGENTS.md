@@ -47,6 +47,21 @@ chạy được như một app tĩnh rời.
 tỉ lệ người (`R`), hệ toạ độ hay cách đặt người thì **nói rõ trong commit** — mọi JSON nhân vật
 và cảnh đã căn sẽ lệch. Cả sáu gói cùng một số version: [README](README.md#phát-hành-một-version).
 
+## 3D là lối chính
+
+**Bảng kiểu ở lõi là nguồn duy nhất**: áo (`GARMENT_STYLES`, `core/torso.ts`), tóc (`SCULPT_STYLES`,
+`core/sculpt.ts`), kính (`glassesFrame`, `GLASSES_PRESETS`, `core/glasses.ts`), nét mặt (`core/face.ts`).
+Người 3D dựng thẳng từ chúng, không giữ bảng riêng.
+
+**Chi tiết mới bắt buộc có ở 3D.** Thêm một kiểu, một trường của bảng kiểu hay một bộ phận thì người
+3D phải dựng nó — `sculptMesh`, `torsoMesh`, `glassesMesh` đọc đủ mọi trường (`sculpt.test.ts` kiểm
+cho tóc), và soi bằng `pnpm shots`.
+
+**2D phẳng và 2.5D giữ để render tập cũ và overlay.** Người 2D phẳng (mảnh PNG, bộ phận vẽ code) và
+2.5D (`sculptPaths`, `torsoPaths`, `glassesPaths`, `beardPaths`, `skirtPaths`) không bắt buộc theo mẫu
+mới. Gặp trường hay kiểu chúng chưa biết thì bỏ qua, không ném lỗi; sửa lõi thì bộ so SVG
+(`tools/so-svg.mjs`) phải giữ chúng không đổi.
+
 ## Bất biến
 
 **Công thức rig chỉ có một chỗ: `packages/rig/src/core`.** Người 3D, người SVG, studio, render và
