@@ -225,6 +225,18 @@ const loadAnimal = (spec) => {
 const loadScene = (s) =>
   R.loadScene(s, LAYERS.actions, LAYERS.animals, LAYERS.props, LAYERS.characters);
 
+/** Tay chân giật trên hình của cả cảnh (hay của một người), cùng phép đo và ngưỡng với `check` (`stickman.snap`) */
+function sceneSnapLines(rt, character, cast) {
+  const opts = cli.snapOptions?.(WS);
+  if (!opts || opts.off || opts.error || !rig.sceneSnaps) return [];
+  const characterOf = (m) => {
+    if (cast && m.id !== cast) return undefined;
+    const file = m.character ?? character;
+    return file ? loadSpec("characters", file) : rig.defaultCharacter();
+  };
+  return rig.sceneSnaps(rt, { characterOf, ...opts }).map(rig.snapLine);
+}
+
 /** Mọi hành động qua các lớp, bỏ qua file hỏng (báo riêng ở `list`) */
 function allActions() {
   const out = {};
@@ -694,11 +706,15 @@ server.registerTool(
         ...rig.sceneEquipProblems(r.data, actions),
         ...rig.sceneSlideProblems(rt),
         ...rig.sceneFacingProblems(rt),
+        ...sceneSnapLines(rt),
       ];
+      // `check` coi là lỗi: người 3D diễn hành động 2D ở kênh tay chân
+      const errors = rig.sceneSideProblems?.(rt, allActions()) ?? [];
       return text({
         ok: true,
         kind,
         duration: rt.duration,
+        ...(errors.length ? { errors } : {}),
         ...(warnings.length ? { warnings } : {}),
         data: r.data,
       });
@@ -708,6 +724,7 @@ server.registerTool(
         ...rig.equipSwitchProblems(r.data),
         ...rig.armFoldProblems(r.data),
         ...rig.maskProblems(r.data),
+        ...(rig.actionSnapProblems?.(r.data) ?? []),
       ];
       return text({ ok: true, kind, ...(warnings.length ? { warnings } : {}), data: r.data });
     }
@@ -1056,7 +1073,7 @@ server.registerTool(
   "scene_probe",
   {
     description:
-      "Số liệu một scene tại các mốc giây, đọc bằng anchorAt của rig nên đúng hệ toạ độ chỗ vẽ (y xuống, đất ở y của chân): chỗ đứng x (đã cộng trôi ngang), tư thế, lớp tay, nét mặt, toạ độ vai / khuỷu / cổ tay / bàn chân và khối đầu của từng người; đạo cụ thì chỗ đứng, trục bánh và góc bánh đã quay; động vật thì chỗ đứng, hông, vai, yên (saddle), gáy, mõm, bàn chân — con đang bị cưỡi hay xách trả kèm host. `anchors` hỏi thêm mốc bất kỳ — khớp hoặc socket mảnh — mỗi mốc trả {x, y, deg, w, h}: tâm hộp, góc SVG và cỡ hộp đã nhân scale, cắm thẳng vào translate/rotate của một <g> anh em với <Character>. Dùng để tính điểm gặp, đặt tay lên càng xe, bám hiệu ứng vào người thay vì đoán. Người 3D (cast[].world) kèm `world`: khớp hông/gối/bàn chân/vai/khuỷu/cổ tay/cổ/đầu trong toạ độ thế giới, yaw sau khoá góc chính diện, yawSaid, theta, thetaRaw, locked, seated, near (tay gần là tay phải hay trái), hands (đích thế giới đang áp). Cảnh có lens và người 3D kèm `clashes`: mỗi mốc giây, các chỗ phần người lồng vào đồ khối hay vào người khác sâu quá ngưỡng của check (stickman.clash.tol, mặc định 2) ({who, with, depth}) — rig không đẩy người ra khỏi đồ.",
+      "Số liệu một scene tại các mốc giây, đọc bằng anchorAt của rig nên đúng hệ toạ độ chỗ vẽ (y xuống, đất ở y của chân): chỗ đứng x (đã cộng trôi ngang), tư thế, lớp tay, nét mặt, toạ độ vai / khuỷu / cổ tay / bàn chân và khối đầu của từng người; đạo cụ thì chỗ đứng, trục bánh và góc bánh đã quay; động vật thì chỗ đứng, hông, vai, yên (saddle), gáy, mõm, bàn chân — con đang bị cưỡi hay xách trả kèm host. `anchors` hỏi thêm mốc bất kỳ — khớp hoặc socket mảnh — mỗi mốc trả {x, y, deg, w, h}: tâm hộp, góc SVG và cỡ hộp đã nhân scale, cắm thẳng vào translate/rotate của một <g> anh em với <Character>. Dùng để tính điểm gặp, đặt tay lên càng xe, bám hiệu ứng vào người thay vì đoán. Người 3D (cast[].world) kèm `world`: khớp hông/gối/bàn chân/vai/khuỷu/cổ tay/cổ/đầu trong toạ độ thế giới, yaw sau khoá góc chính diện, yawSaid, theta, thetaRaw, locked, seated, near (tay gần là tay phải hay trái), hands (đích thế giới đang áp). Cảnh có lens và người 3D kèm `clashes`: mỗi mốc giây, các chỗ phần người lồng vào đồ khối hay vào người khác sâu quá ngưỡng của check (stickman.clash.tol, mặc định 2) ({who, with, depth}) — rig không đẩy người ra khỏi đồ. `snaps`: các cú tay chân giật trên hình của cả cảnh (có `cast` thì của người ấy), cùng dòng báo và ngưỡng (stickman.snap) với check; cố ý giật thì khai `snap: true` ở hành động, ở clip hay ở mốc world.hands.",
     inputSchema: {
       scene: Spec,
       t: z
@@ -1244,7 +1261,15 @@ server.registerTool(
         ]),
       );
     }
-    return text({ duration: rt.duration, camera, rows, ...(clashes ? { clashes } : {}) });
+    // Tay chân giật trên hình, cả cảnh — cùng phép đo với `check`
+    const snaps = sceneSnapLines(rt, character, cast);
+    return text({
+      duration: rt.duration,
+      camera,
+      rows,
+      ...(clashes ? { clashes } : {}),
+      ...(snaps.length ? { snaps } : {}),
+    });
   }),
 );
 
