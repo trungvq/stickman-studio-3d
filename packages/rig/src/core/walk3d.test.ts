@@ -12,6 +12,7 @@ import {
   sceneAt,
   sceneEvents,
   sceneFacingProblems,
+  sceneTurnProblems,
   sceneSlideProblems,
   worldFacingAt,
   type SceneRuntime,
@@ -449,6 +450,93 @@ describe("sceneFacingProblems", () => {
     expect(sceneFacingProblems(rt)).toStrictEqual([
       "`a` giây 0.00–2.00: khoá góc chính diện đẩy thân — yaw khai 95° (lệch ống kính 5°) thành 110° (lệch 20°)",
     ]);
+  });
+});
+
+describe("sceneTurnProblems", () => {
+  const stand = (yaws: [number, number][]) =>
+    scene(
+      [
+        {
+          id: "a",
+          tracks: [],
+          world: { path: yaws.map(([t, yaw]) => ({ t, at: [0, 0, 900], yaw })) },
+        },
+      ],
+      2,
+    );
+
+  it("quay nhanh quá ngưỡng là một dòng cho cả quãng", () => {
+    const out = sceneTurnProblems(
+      stand([
+        [0, 0],
+        [1, 0],
+        [1.05, 90],
+      ]),
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatch(/^`a` giây 1\.0\d–1\.1\d: thân quay 720°\/s/);
+  });
+
+  it("quay đi rồi quay lại trong chốc lát", () => {
+    const out = sceneTurnProblems(
+      stand([
+        [0, 0],
+        [0.5, 0],
+        [0.9, 30],
+        [1.3, 0],
+      ]),
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatch(/^`a` giây 0\.5\d–1\.\d\d: thân quay 30° rồi quay lại/);
+  });
+
+  it("quay chậm một chiều thì không kêu; quay qua chính diện thì khoá đổi phía là cú giật", () => {
+    // ống kính ở gốc, người ở +z: yaw 90 là nhìn thẳng ống kính
+    const away = stand([
+      [0, 0],
+      [2, -120],
+    ]);
+    expect(sceneTurnProblems(away)).toStrictEqual([]);
+    const across = sceneTurnProblems(
+      stand([
+        [0, 0],
+        [2, 120],
+      ]),
+    );
+    expect(across).toHaveLength(1);
+    expect(across[0]).toMatch(/thân quay 720°\/s/);
+  });
+
+  it("hông trượt quá mốc dừng thì thân không quay lại nhìn chỗ sau lưng", () => {
+    // clip đi còn chạy 0,4 s sau mốc dừng: chân đưa hông vượt mốc, chỗ cần nhìn tới ở sau lưng
+    const rt = scene(
+      [
+        {
+          id: "a",
+          tracks: [
+            {
+              clips: [
+                { action: "walk", start: 0 },
+                { action: "idle", start: 1.4, blend: 0.3 },
+              ],
+            },
+          ],
+          world: {
+            path: [
+              { t: 0, at: [-200, 0, 900], yaw: 0 },
+              { t: 1, at: [0, 0, 900], yaw: 0, ease: true },
+            ],
+          },
+        },
+      ],
+      3,
+    );
+    let worst = 0;
+    for (let t = 1; t <= 3; t += 1 / 60)
+      worst = Math.max(worst, Math.abs(sceneAt(rt, "a", t, h, dims).world!.yaw / D));
+    expect(worst).toBeLessThan(10);
+    expect(sceneTurnProblems(rt)).toStrictEqual([]);
   });
 });
 

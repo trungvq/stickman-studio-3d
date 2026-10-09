@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 16,
+  "name": "arms-out-3d",
+  "duration": 0.8,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": ["armFar", "armNear"],
+  "keys": [
+    { "t": 0, "pose": { "armFar": [3, 8, 0], "armNear": [3, 8, 0] }, "ease": "smooth" },
+    { "t": 1, "pose": { "armFar": [0, 0, 0, 90], "armNear": [0, 0, 0, 90] }, "ease": "smooth" }
+  ],
+  "events": [],
+  "note": "Dang hai tay ngang vai (dang 90°) rồi giữ."
+}

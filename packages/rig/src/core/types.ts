@@ -3,8 +3,14 @@ import type { BROWS, EYES, MOUTHS } from "./face";
 /** [góc khớp cha, góc khớp con tương đối] */
 export type Limb = [number, number];
 
-/** [vai, khuỷu, cổ tay] — cổ tay chỉ xoay đồ cầm tay, rig không vẽ bàn tay */
-export type Arm = [number, number, number];
+/** [hông, gối, dang] — dang chỉ người 3D đọc, docs/01-rig.md#dang-và-nghiêng-ngang */
+export type LegAngles = [number, number] | [number, number, number];
+
+/**
+ * [vai, khuỷu, cổ tay, dang] — cổ tay chỉ xoay đồ cầm tay, rig không vẽ bàn tay; dang chỉ người 3D
+ * đọc, docs/01-rig.md#dang-và-nghiêng-ngang
+ */
+export type Arm = [number, number, number] | [number, number, number, number];
 
 /** [nghiêng, lắc, gật] — độ; lắc và gật là dịch nét mặt, xem docs/01-rig.md */
 export type HeadPose = [number, number, number];
@@ -52,9 +58,11 @@ export type ReachMap = Partial<Record<(typeof REACH_CHANNELS)[number], Reach>>;
 export interface Pose {
   af: Arm;
   an: Arm;
-  lf: Limb;
-  ln: Limb;
+  lf: LegAngles;
+  ln: LegAngles;
   torso: number;
+  /** Thân nghiêng sang ngang, độ; chỉ người 3D đọc, đi cùng kênh `torso`. docs/01-rig.md#dang-và-nghiêng-ngang */
+  lean?: number;
   head: HeadPose;
   stretch: Stretch;
   /** Chỉ người 3D đọc; hành động `authoredAt: "side"` ghi. docs/01-rig.md#người-3d */

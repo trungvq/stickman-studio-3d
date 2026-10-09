@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 16,
+  "name": "step-side-3d",
+  "duration": 1.8,
+  "end": "wrap",
+  "authoredAt": "side",
+  "mask": ["legFar", "legNear", "torso", "stretch"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "legFar": [0, 0],
+        "legNear": [0, 0],
+        "torso": 0,
+        "stretch": [1, 1, 1, 1]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.12,
+      "pose": {
+        "legFar": [0, 0],
+        "legNear": [4, -34, 18],
+        "torso": [0, 4],
+        "stretch": [1, 1, 1, 1]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.25,
+      "pose": {
+        "legFar": [0, 0],
+        "legNear": [0, 0, 16],
+        "torso": 0,
+        "stretch": [1, 1, 1, 1.0403]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.37,
+      "pose": {
+        "legFar": [0, 0],
+        "legNear": [4, -34, 6],
+        "torso": [0, 4],
+        "stretch": [1, 1, 1, 1]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "legFar": [0, 0],
+        "legNear": [0, 0],
+        "torso": 0,
+        "stretch": [1, 1, 1, 1]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.62,
+      "pose": {
+        "legFar": [4, -34, 18],
+        "legNear": [0, 0],
+        "torso": [0, -4],
+        "stretch": [1, 1, 1, 1]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.75,
+      "pose": {
+        "legFar": [0, 0, 16],
+        "legNear": [0, 0],
+        "torso": 0,
+        "stretch": [1, 1, 1.0403, 1]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.87,
+      "pose": {
+        "legFar": [4, -34, 6],
+        "legNear": [0, 0],
+        "torso": [0, -4],
+        "stretch": [1, 1, 1, 1]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "legFar": [0, 0],
+        "legNear": [0, 0],
+        "torso": 0,
+        "stretch": [1, 1, 1, 1]
+      },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "Bước ngang tại chỗ của người 3D: chân gần nhấc, dang 16° chạm sàn rồi thu về, rồi tới chân xa; lúc nhấc thân nghiêng 4° về chân trụ. Chân dang chạm sàn nhờ vươn 1/cos 16° ≈ 1.0403. Không ghi tay, đầu — chồng track khác lên."
+}

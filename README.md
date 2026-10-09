@@ -63,7 +63,7 @@ thì xem [docs/05](docs/05-repo-video.md).
 Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js` (`demo=hold` ở `demo-hold.js`, kèm đồ mẫu chung), lõi lấy mẫu
 bằng `sceneAt`, người 3D diễn theo bằng `act`. Cảnh có ống kính riêng (`SHOTS` trong `demos.js`) thì
 camera theo `cameraAt`. Hành động là bộ chung `apps/studio/public/actions/` cộng `apps/viewer/actions/`.
-| `demo=acts\|desk\|heads` | Hành động soạn ở `side`, mỗi người một trạm, bắt đầu ở giây 0,3 rồi giữ: đứng (`eshaku-3d`, `show-paper-3d`, `point-3d`, `stop-palm-3d` + `point-lane-3d`, `raise-laptop-3d`), ngồi ở bàn (`type-3d`, `phone-lift-3d`, `pick-paper-3d`, `head-down-3d`, `perch-desk-3d`), chỉ đầu và thân (`lean-in`, `slump-sigh`, `glance-*`, `look-down-small`, `look-up-head`, `nod-once`, `talk-tilt-back`) |
+| `demo=acts\|desk\|heads\|side` | Hành động soạn ở `side`, mỗi người một trạm, bắt đầu ở giây 0,3 rồi giữ: đứng (`eshaku-3d`, `show-paper-3d`, `point-3d`, `stop-palm-3d` + `point-lane-3d`, `raise-laptop-3d`), ngồi ở bàn (`type-3d`, `phone-lift-3d`, `pick-paper-3d`, `head-down-3d`, `perch-desk-3d`), chỉ đầu và thân (`lean-in`, `slump-sigh`, `glance-*`, `look-down-small`, `look-up-head`, `nod-once`, `talk-tilt-back`), dang và nghiêng ngang (`step-side-3d` lặp, `arms-out-3d`, `hand-up-side-3d`, `lean-side-3d`, `stance-wide-3d`) |
 | `demo=styles` | Bộ sưu tập kiểu: người thứ `i` đội mẫu tóc thứ `i` của `SCULPT_PRESETS` (cuối hàng là đầu trọc), mặc kiểu áo thứ `i % 12` của `GARMENT_STYLES`, rải kính, nếp nhăn, váy xếp ly và váy trơn |
 | `turn=110` | Với `demo=styles`: xoay từng người tại chỗ (độ, mặc định 14) để xem nghiêng, sau lưng |
 | `cast=/@fs/…/a.json,…` | Với `demo=styles`: dựng các JSON nhân vật này thay cho người mẫu để soi; file phải nằm trong cây repo (vd. chép vào `tmp/`) |
@@ -74,7 +74,7 @@ lõi lấy mẫu bằng `sceneAt`, người 3D diễn theo bằng `act`. Bộ s�
 nét mặt ở `demo-styles.js`, JSON nhân vật mẫu qua `parseCharacter` rồi `fromCharacter`. Hành động
 ở `apps/viewer/actions/` chỉ dùng ở app này, chưa vào bộ chung `apps/studio/public/actions/`
 (`eshaku-3d`, `phone-lift-3d`, `pick-paper-3d`, `show-paper-3d`, `point-3d`, `stop-palm-3d`,
-`point-lane-3d`, `raise-laptop-3d`, `perch-desk-3d`, `head-down-3d`, các hành động chỉ đầu và thân) — dời sang bộ chung khi repo video cần. Đích cổ tay của hành động ngồi giả định bàn cao 137, ghế 87,5 như `arms-on-table-3d`.
+`point-lane-3d`, `raise-laptop-3d`, `perch-desk-3d`, `head-down-3d`, `arms-out-3d`, `hand-up-side-3d`, `lean-side-3d`, `stance-wide-3d`, các hành động chỉ đầu và thân) — dời sang bộ chung khi repo video cần. Đích cổ tay của hành động ngồi giả định bàn cao 137, ghế 87,5 như `arms-on-table-3d`.
 
 Phím: `O` nét mực, `P` pixel, `A` khử răng cưa, `T` đổi giờ, `H` ẩn HUD,
 `Space` dừng.
@@ -538,31 +538,8 @@ cũ hay đọc spec bản cũ.
 
 Bản pre-release (`2.1.0-alpha.N`) phát bằng `pnpm build && pnpm -r publish --tag alpha
 --no-git-checks` để nhãn `latest` không chuyển sang bản thử — `pnpm release` không có `--tag`.
-Gắn tag `v<version>` cho commit `chore(release)` để so hình (`so-svg --base`) và chia đôi tìm
-lỗi có mốc.
+Gắn tag `v<version>` cho commit `chore(release)` để chia đôi tìm lỗi có mốc.
 
 **GitLab từ chối publish trùng version và không có toggle nào tắt.** Mỗi lần đẩy là một số mới.
 Đổi hằng số hình học, tỉ lệ người (`R`), hệ toạ độ hay cách đặt người thì nói rõ trong commit —
 mọi JSON nhân vật và cảnh đã căn sẽ lệch.
-
-## Bộ so SVG
-
-Cổng trước khi gộp thay đổi đụng hình 2D: mọi scene của repo video và bộ mẫu, ở t = 0, giữa,
-cuối và từng `marks`, dựng bằng bản gốc và bằng cây nguồn, chuẩn hoá số (0.01), `useId`, data
-URI rồi so chuỗi. Khung đỏ được so tiếp bằng PNG (`rsvg-convert`, `magick compare -metric AE`);
-AE 0 là khác vô hại. Lớp vẽ code và bộ phận vẽ code của repo video nạp qua chính bản đang dựng,
-nên repo video phải import `@stickman3d/*`.
-
-```bash
-node tools/so-svg.mjs --repo ../youtube-video/jp-psychology --base v2.0.0
-node tools/so-svg.mjs --repo ../youtube-video/jp-psychology --base-ref <commit>
-# --only <regex trên "kenh-<cảnh>" / "mau-<cảnh>">  --out tmp/so-svg  --no-png  --no-build
-```
-
-`--base <tag>` cài bản phát hành từ registry vào thư mục tạm. `--base-ref` dựng bên gốc từ một
-commit trên máy: worktree tạm `$TMPDIR/stickman-so-svg-ref-<sha>` (cài, build rig, sketch, fx một
-lần rồi dùng lại; gỡ bằng `git worktree remove --force`). Dùng nó khi đổi có chủ đích làm cả bộ đỏ
-so với bản phát hành, để mỗi bước sau vẫn có một mốc so xanh.
-
-Báo cáo ở `tmp/so-svg/bao-cao.txt`; SVG hai bên ở `goc/` và `moi/`. Mã thoát 1 khi có khung khác
-PNG. Hình 3D thì so bằng `pnpm shots --vs` ([Chụp ảnh để so](#chụp-ảnh-để-so)).

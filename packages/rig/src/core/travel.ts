@@ -71,12 +71,16 @@ export function bakeFeetTravel(feetAt: (t: number) => Pt[], duration: number): T
   return { step, xs };
 }
 
-/** Trôi ngang của một chu kỳ tư thế người; `feet` là hai bàn chân so với tâm hông, `legs` đổi độ dài chân. */
+/**
+ * Trôi ngang của một chu kỳ tư thế người; `feet` là hai bàn chân so với tâm hông, `legs` đổi độ dài chân,
+ * `spread` đo bàn chân như người 3D dựng (chân nâng dang ra thì lên theo `cos` góc dang).
+ */
 export const bakeTravel = (
   poseAt: (t: number) => Pose,
   duration: number,
   legs?: Legs,
-): TravelTable => bakeFeetTravel((t) => feet(poseAt(t), 1, legs), duration);
+  spread = false,
+): TravelTable => bakeFeetTravel((t) => feet(poseAt(t), 1, legs, spread), duration);
 
 /** Tra bảng tại `t` giây, nội suy thẳng; ngoài bảng thì kẹp ở hai đầu. */
 export function travelAt(tb: TravelTable, t: number): number {

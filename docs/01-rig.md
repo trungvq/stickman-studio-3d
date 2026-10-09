@@ -109,10 +109,12 @@ Góc tính bằng độ, trong hệ toạ độ **cục bộ của nhân vật**
 - Dương = xoay về phía `+x` (phía trước, khi chưa lật)
 - Khớp con (khuỷu, gối) đo **tương đối** so với khớp cha
 - Chân là hai số `[hông, gối]`; **tay là ba số `[vai, khuỷu, cổ tay]`**
+- Chân có thể thêm số thứ ba, tay số thứ tư: **góc dang** sang ngang, chỉ người 3D đọc —
+  [Dang và nghiêng ngang](#dang-và-nghiêng-ngang)
 
 **Cổ tay chỉ xoay đồ cầm tay.** Rig không vẽ bàn tay, nên với nhân vật tay không
 nó là số chết; nó tồn tại vì đồ cầm phải xoay được so với cẳng tay — xem
-[Đồ cầm tay](#đồ-cầm-tay). Chân không có số thứ ba vì rig cũng không vẽ bàn chân.
+[Đồ cầm tay](#đồ-cầm-tay). Chân không có số cổ chân vì rig cũng không vẽ bàn chân.
 
 **`torso` và `head[nghiêng]` đi theo chiều `rotate()` của SVG, ngược với mọi góc
 khác.** **Tay** nằm *trong* nhóm xoay theo `torso`, nên góc thấy trên màn hình
@@ -441,7 +443,7 @@ hai, hoặc không có cái nào, là lỗi schema.
 | `end` | Lấy mẫu qua mốc cuối: `wrap` nội suy vòng về mốc đầu, `hold` giữ nguyên mốc cuối. Đây là ngữ nghĩa **lấy mẫu**, không phải chuyện phát lại — sampler bắt buộc phải biết |
 | `mask` | Kênh mà hành động này ghi: bảy khớp `armFar / armNear / legFar / legNear / torso / head / stretch` và `face` (nét mặt, không có góc). Bỏ trống thì suy ra từ các mốc |
 | `keys[].t` | **Tỉ lệ chu kỳ, không phải giây.** Tăng dần trong `[0, 1]` |
-| `keys[].pose` | Tên một pose trong thư viện, hoặc object chỉ đè vài khớp. Tay ba số `[vai, khuỷu, cổ tay]`, chân hai số `[hông, gối]`, `head` ba số (số nào `null` là không ghi góc ấy — [Đầu và nét mặt](#đầu-và-nét-mặt)), `torso` một số, `stretch` bốn hoặc tám số — [Vươn chi](#vươn-chi) |
+| `keys[].pose` | Tên một pose trong thư viện, hoặc object chỉ đè vài khớp. Tay ba số `[vai, khuỷu, cổ tay]`, chân hai số `[hông, gối]`, `head` ba số (số nào `null` là không ghi góc ấy — [Đầu và nét mặt](#đầu-và-nét-mặt)), `torso` một số, `stretch` bốn hoặc tám số — [Vươn chi](#vươn-chi). Tay thêm được số dang thứ tư, chân số dang thứ ba, `torso` thành `[cúi, nghiêng]` — [Dang và nghiêng ngang](#dang-và-nghiêng-ngang) |
 | `keys[].reach` | Đích cổ tay hệ thân cho `armNear` / `armFar`: `{ "at": [tiến, y, ra ngoài], "elbow"?: [...] }`. Người 3D giải IK hai đoạn; người 2D vẽ góc dự phòng — [Đích bàn tay](#đích-bàn-tay) |
 | `keys[].ease` | Áp cho đoạn **từ mốc này tới mốc sau**: `linear` đều, `smooth` chậm vào chậm ra (`smoothstep`, cùng đường với đoạn hoà, không vọt qua mốc sau), `spring` vọt qua rồi nảy về |
 | `keys[].face` | Nét mặt kể từ mốc này: `{ "mouth": …, "brow": …, "eyes": … }`, khai trường nào thì ghi trường đó. **Không nội suy**, và chỉ ăn khi `face` nằm trong `mask` — xem [Đầu và nét mặt](#đầu-và-nét-mặt) |
@@ -1238,7 +1240,7 @@ trôi ngang của người đi theo `path` tích phân trên nó ([03](03-scene.
   khấu three (`act`) vẽ ở dáng nghỉ ([Khớp người 3D vẽ ra](#khớp-người-3d-vẽ-ra)). Hai đường khác
   nhau ở đây, nên người 3D diễn hành động 2D ở kênh tay chân là lỗi của `check`
   ([03](03-scene.md#hành-động-cho-người-3d)). `torso` của người 3D luôn là góc cúi trong mặt phẳng
-  dọc của thân.
+  dọc của thân; nghiêng sang ngang là số thứ hai của nó ([Dang và nghiêng ngang](#dang-và-nghiêng-ngang)).
 - **Thân áo, váy dựng khối chiếu thật.** `fig3.torsoLens` là ống kính đặt trong hệ thân (x ngang,
   y dọc trục thân xuống, z hướng mặt; gốc ở hông, đơn vị rig), đã tính góc cúi `torso`, soi gương khi
   người lật và xoay theo khung thân (trục hông → cổ đã chiếu). `torsoPaths` / `skirtPaths` nhận nó
@@ -1274,6 +1276,32 @@ trôi ngang của người đi theo `path` tích phân trên nó ([03](03-scene.
   mặt phẳng ống kính thì khớp giữa theo phép đồng dạng đưa gốc chiếu thật về gốc vẽ. Bàn chân đứng
   trên sàn, cổ tay nằm trên mặt bàn dù ống kính cúi cao.
 
+### Dang và nghiêng ngang
+
+Ba góc chỉ người 3D đọc, cho chuyển động ra ngoài mặt phẳng dọc của thân — giơ tay sang ngang, bước
+ngang, nghiêng người:
+
+| Ghi ở | Góc | Quay |
+|---|---|---|
+| Tay `[vai, khuỷu, cổ tay, dang]` | `dang` | Cả tay quanh trục tiến qua vai; dương ra ngoài phía chính tay ấy, `90` là tay ngang vai, `180` là thẳng lên |
+| Chân `[hông, gối, dang]` | `dang` | Cả chân quanh trục tiến qua gốc chân; dương ra ngoài |
+| `torso: [cúi, nghiêng]` | `nghiêng` | Thân (cùng cổ, đầu, hai tay) quanh trục tiến qua hông, trước cái cúi; dương về phía tay xa — cùng chiều với `head[nghiêng]` dương |
+
+- **Số dang tuỳ chọn, thiếu là `0`.** Tay ba số và bốn số, chân hai số và ba số, `torso` một số và
+  hai số nội suy chung được (`mixAngles`). Lớp trên ghi `torso` một số là thân thẳng ngang, không
+  giữ nghiêng của lớp dưới (`composePose`); nghiêng đi trong `Pose.lean`.
+- **Dang chỉ đọc ở kênh nâng** (`actAngles`), như góc tay chân: soạn trong hành động
+  `authoredAt: "side"`. Nghiêng thân không cần cờ, như `torso`.
+- **Dang quay sau cái gập.** Ở `act` vai và hông là Euler `ZXY` (dang · gập), nên tay đã gập `90`
+  ra trước thì dang chỉ xoay nó quanh chính nó; khuỷu, gối gập trong mặt phẳng đã dang. Tay vừa ra
+  trước vừa sang ngang, hay cẳng tay dựng lên khi tay dang, dùng [đích bàn tay](#đích-bàn-tay).
+- **Chân dang thì bàn chân lên.** Chiều cao bàn chân của chân nâng nhân `cos(dang)`; hông người 3D
+  đặt theo bàn chân thấp nhất có tính dang (`feet(…, spread)`), nên dang cả hai chân là hông hạ
+  xuống. Dang một chân mà muốn nó vẫn chạm sàn thì vươn chân ấy `1 / cos(dang)`. Mẫu `step-side-3d`
+  bước ngang tại chỗ theo cách ấy. Quãng trôi của hành động `side` (`actionStride`) cũng đo bàn chân có tính dang: chân
+  đang bước dang ra cao lên nên không bị nhận là chân trụ.
+- Người que SVG của người 3D (`figure3d`) dựng cùng ba góc; rig 2D phẳng không đọc chúng.
+
 ### Khớp người 3D vẽ ra
 
 Sân khấu three đặt người que bằng `act` (`packages/rig/src/act.ts`); `actJoints(nhân vật, scenePose)`
@@ -1282,14 +1310,15 @@ của lõi (`core/act3.ts`) trả đúng các khớp ấy trong toạ độ th�
 
 - **Khung xương** `BONES3` (đơn vị three, tức rig chia 100), gốc vai và gốc chân `roots3(áo, rig)`,
   tay choãi `SPLAY3`, tâm đầu `HEAD3` — `stickman.ts` dựng người que từ chúng.
-- **Luật đọc góc** `actAngles`: kênh nâng đọc góc soạn ở `side`, kênh không có cờ về dáng nghỉ (tay
-  buông `[0, 0]`, chân thẳng, ngồi thì đùi `[90, −90]`).
+- **Luật đọc góc** `actAngles`: kênh nâng đọc góc soạn ở `side` và số dang, kênh không có cờ về dáng
+  nghỉ (tay buông `[0, 0]`, chân thẳng, ngồi thì đùi `[90, −90]`, không dang).
 - **IK** `actReach`: đích hệ thân rồi đích thế giới, hoà trên vị trí cổ tay, hướng khuỷu kéo theo
   phần đích, giải hai đoạn bằng `twoBone3`.
 
 Phần còn lại — chuỗi biến hình gốc → hông → thân → vai → khuỷu → cổ tay, thứ tự góc Euler của từng
 khớp — `actJoints` tính lại bằng ma trận; `act3.test.ts` dựng người que three thật và giữ hai bên
-trùng nhau tới `1e-6` ở mọi kiểu tư thế (kênh nâng lẫn không, đích hệ thân, đích thế giới, ngồi, lật).
+trùng nhau tới `1e-6` ở mọi kiểu tư thế (kênh nâng lẫn không, dang, nghiêng thân, đích hệ thân, đích
+thế giới, ngồi, lật).
 Đổi khớp hay thứ tự quay ở `act`/`stickman.ts` thì đổi cùng `actJoints`, test đỏ là lệch.
 
 `figure3d` là hình học của người que SVG, không phải của three: hai đường trùng nhau ở kênh nâng
@@ -1361,6 +1390,7 @@ Bộ chung soạn ở `side` (`authoredAt: "side"`) cho người 3D:
 | `arms-on-table-3d` | Đặt tay lên bàn: đích cổ tay hệ thân `[100, −56, 22]`, thân cúi `5`. Bàn khác cao thì scene đặt `world.hands` |
 | `type-3d` | Gõ phím, chồng lên `sit-3d`: cổ tay trên bàn phím `[95, −60…−65, ~12]`, hai tay so le, thân cúi `8` |
 | `bow-3d` | お辞儀: thân cúi `38°` trong mặt phẳng dọc, tay dọc thân, giữ rồi đứng lên; một lượt `2,6 s`, lặp được |
+| `step-side-3d` | Bước ngang tại chỗ: chân gần nhấc, dang `16°` chạm sàn (vươn `1 / cos 16°`) rồi thu về, tới chân xa; thân nghiêng `4°` về chân trụ lúc nhấc; một lượt `1,8 s`, lặp được. Chỉ ghi chân, thân, vươn |
 
 Studio soạn hành động `authoredAt: "side"` trên người 3D quay được, kéo đích cổ tay ngay trên sân
 khấu.

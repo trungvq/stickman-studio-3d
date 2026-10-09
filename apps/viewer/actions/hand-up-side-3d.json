@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 16,
+  "name": "hand-up-side-3d",
+  "duration": 0.8,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": ["armNear"],
+  "keys": [
+    { "t": 0, "pose": { "armNear": [3, 8, 0] }, "ease": "smooth" },
+    { "t": 1, "pose": { "armNear": [0, 15, 0, 150] }, "ease": "smooth" }
+  ],
+  "events": [],
+  "note": "Giơ tay gần sang ngang lên cao (dang 150°, khuỷu chùng 15°) rồi giữ."
+}

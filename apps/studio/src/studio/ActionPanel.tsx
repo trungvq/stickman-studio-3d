@@ -32,6 +32,7 @@ import {
   poseDelta,
   stretchJson,
   stretchSegs,
+  torsoBend,
   POSES,
   keyFace,
   REACH_ELBOW,
@@ -89,13 +90,13 @@ interface ActionPanelProps {
   exportJson: () => string;
 }
 
-/** Tên từng số của một kênh; `torso` chỉ có một góc nên không cần tên, `stretch` là hệ số dài chi */
+/** Tên từng số của một kênh; `stretch` là hệ số dài chi */
 const JOINTS: Record<JointChannel, string[]> = {
-  armFar: ["vai", "khuỷu", "cổ tay"],
-  armNear: ["vai", "khuỷu", "cổ tay"],
-  legFar: ["hông", "gối"],
-  legNear: ["hông", "gối"],
-  torso: [],
+  armFar: ["vai", "khuỷu", "cổ tay", "dang"],
+  armNear: ["vai", "khuỷu", "cổ tay", "dang"],
+  legFar: ["hông", "gối", "dang"],
+  legNear: ["hông", "gối", "dang"],
+  torso: ["cúi", "nghiêng"],
   head: ["nghiêng", "lắc", "gật"],
   stretch: [
     "tay xa trên",
@@ -116,6 +117,15 @@ const REACH_AXES: { label: string; min: number; max: number }[] = [
   { label: "ra ngoài", min: -60, max: 140 },
 ];
 const ELBOW_AXES = ["khuỷu tiến", "khuỷu xuống", "khuỷu ra"];
+
+/** Số chỉ người 3D đọc (dang tay chân, nghiêng thân): chỉ hiện ở hành động `authoredAt: "side"` */
+const SOLID_ONLY: Partial<Record<JointChannel, number>> = {
+  armFar: 3,
+  armNear: 3,
+  legFar: 2,
+  legNear: 2,
+  torso: 1,
+};
 
 /** Quá `90°` thì mặt đã ra khỏi khối đầu; vai tới `±270°` để chọn được chiều quét qua đầu */
 function range(c: JointChannel, j: number | null): [number, number] {
@@ -238,17 +248,26 @@ export function ActionPanel(p: ActionPanelProps) {
   const delta = key ? keyDelta(key) : {};
   // Mốc ghi khớp nào thì chỉnh khớp đó; mặt nạ của hành động cắt bớt lần nữa
   const mask = actionMask(a);
+  const solid = a.authoredAt === "side";
   const rows: [JointChannel, number | null][] = key
     ? JOINT_CHANNELS.filter((c) => mask.includes(c) && delta[c] !== undefined).flatMap<
         [JointChannel, number | null]
       >((c) =>
-        c === "torso" ? [[c, null]] : JOINTS[c].map((_, j): [JointChannel, number] => [c, j]),
+        c === "torso" && !solid
+          ? [[c, null]]
+          : JOINTS[c]
+              .map((_, j): [JointChannel, number] => [c, j])
+              .filter(([, j]) => solid || j !== SOLID_ONLY[c]),
       )
     : [];
 
   const angle = (c: JointChannel, j: number | null) =>
     c === "torso"
-      ? (delta.torso ?? 0)
+      ? j === 1
+        ? typeof delta.torso === "object"
+          ? delta.torso[1]
+          : 0
+        : torsoBend(delta.torso ?? 0)
       : c === "stretch"
         ? delta.stretch
           ? stretchSegs(delta.stretch)[j ?? 0]
@@ -330,14 +349,20 @@ export function ActionPanel(p: ActionPanelProps) {
   const setAngle = (c: JointChannel, j: number | null, v: number) =>
     live((d) => {
       const pose = spreadKeyPose(d, d.keys![sel]);
-      if (c === "torso") pose.torso = v;
-      else if (c === "stretch") {
+      if (c === "torso") {
+        const cur = pose.torso ?? 0;
+        const [bend, lean] =
+          j === 1 ? [torsoBend(cur), v] : [v, typeof cur === "object" ? cur[1] : 0];
+        pose.torso = lean ? [bend, lean] : bend;
+      } else if (c === "stretch") {
         const cur = stretchSegs(pose.stretch ?? poseDelta(POSES.idle).stretch);
         cur[j ?? 0] = v;
         pose.stretch = stretchJson(cur);
       } else {
         const cur = [...(pose[c] ?? poseDelta(POSES.idle)[c])];
         cur[j ?? 0] = v;
+        // Dang `0` thì bỏ số ấy, file giữ dạng ngắn
+        if (j === SOLID_ONLY[c] && !v) cur.length = j;
         Object.assign(pose, { [c]: cur });
       }
     });
@@ -351,7 +376,6 @@ export function ActionPanel(p: ActionPanelProps) {
       pose.head = cur;
     });
 
-  const solid = a.authoredAt === "side";
   const reachArms = solid && key ? REACH_ARMS.filter((c) => mask.includes(c)) : [];
   const setReachAxis = (ch: ReachArm, i: number, v: number) =>
     live((d) => {

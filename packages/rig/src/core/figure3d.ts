@@ -315,6 +315,17 @@ function limb3(
   return { pts: pin(root2, w3.map(toLocal)), w3 };
 }
 
+/**
+ * Chuỗi soạn ở `side` (`[tiến, y]`, gốc ở đầu chuỗi) ra hệ thân `[tiến, y, phải]` ở bề ngang `lat` của
+ * gốc, dang ra ngoài phía `lat` một góc `deg` quanh trục tiến qua gốc — như vai và hông của `act`
+ */
+const spreadOut = (pts: Pt[], lat: number, deg: number): V3[] => {
+  const [, y0] = pts[0];
+  const c = Math.cos(deg * D);
+  const out = Math.sign(lat) * Math.sin(deg * D);
+  return pts.map(([x, y]) => [x, y0 + (y - y0) * c, lat + (y - y0) * out]);
+};
+
 /** Hai chân `[gần, xa]`: chân gần là chân phải khi không lật; gốc vẽ là gốc hông thật đã chiếu */
 function legs3(fr: Frame3, w: World, P: Pose, height: number, hipHalf: number): [Chain3, Chain3] {
   const len = lengths(height);
@@ -329,7 +340,9 @@ function legs3(fr: Frame3, w: World, P: Pose, height: number, hipHalf: number): 
       ch,
       rootAt(fr, w, w.hip, fr.world([0, 0, -side * nearR * hipHalf])) ?? [side * hipHalf * cosT, 0],
       () =>
-        chain2([0, 0], P[ch], l1, l2).map(([x, y]) => fr.world([x, y, -side * nearR * hipHalf])),
+        spreadOut(chain2([0, 0], P[ch], l1, l2), -side * nearR * hipHalf, P[ch][2] ?? 0).map(
+          fr.world,
+        ),
       l1,
       l2,
     );
@@ -362,10 +375,17 @@ export function figure3d(c: CharacterData, P: Pose, w: World): Figure3 {
   const { F, R, world, screen, k, local } = fr;
   const nearR = w.flip ? -1 : 1;
   const lam = (P.torso || 0) * D;
+  // nghiêng ngang về phía tay xa quanh trục tiến qua hông, trước cái cúi — như `spine` của `act`
+  const farR = -nearR;
+  const cps = Math.cos((P.lean || 0) * D);
+  const sps = Math.sin((P.lean || 0) * D);
   const shY = -len.torso + rig.shoulderDrop;
   const hip = w.hip;
-  const torsoPt = ([f, y, r]: V3): V3 =>
-    world([f * Math.cos(lam) - y * Math.sin(lam), f * Math.sin(lam) + y * Math.cos(lam), r]);
+  const torsoPt = ([f, y0, r0]: V3): V3 => {
+    const y = y0 * cps + farR * r0 * sps;
+    const r = r0 * cps - farR * y0 * sps;
+    return world([f * Math.cos(lam) - y * Math.sin(lam), f * Math.sin(lam) + y * Math.cos(lam), r]);
+  };
 
   const neck = torsoPt([0, -(len.torso + len.neck), 0]);
   const v = local(neck);
@@ -389,10 +409,8 @@ export function figure3d(c: CharacterData, P: Pose, w: World): Figure3 {
   const sN2 = shAt(nearR * shHalf, -shHalf * cosT);
   const sF2 = shAt(-nearR * shHalf, shHalf * cosT);
 
-  const armBody = (a: readonly number[], l1: number, l2: number, lat: number): V3[] => {
-    const [s, e, f] = chain2([0, shY], a, l1, l2);
-    return [s, e, f].map(([x, y]) => torsoPt([x, y, lat]));
-  };
+  const armBody = (a: readonly number[], l1: number, l2: number, lat: number): V3[] =>
+    spreadOut(chain2([0, shY], a, l1, l2), lat, a[3] ?? 0).map(torsoPt);
   const [LN, LF] = legs3(fr, w, P, rig.height, rig.hipHalf);
   // đích hệ thân `[tiến, y, ra ngoài]` của một tay ra thế giới; `ra ngoài` theo phía của chính tay ấy
   const ik =
@@ -444,7 +462,8 @@ export function figure3d(c: CharacterData, P: Pose, w: World): Figure3 {
   const dirIn = (v: V3): V3 => {
     const f = dot3(v, F);
     const r = dot3(v, R);
-    return [-r, -f * sl + v[1] * cl, f * cl + v[1] * sl];
+    const y = -f * sl + v[1] * cl;
+    return [-(r * cps + farR * y * sps), y * cps - farR * r * sps, f * cl + v[1] * sl];
   };
   const lv = w.lens;
   const [cy, sy, cp, sp] = [

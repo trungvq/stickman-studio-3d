@@ -58,8 +58,8 @@ describe('actJoints', () => {
         const hands = r() < 0.3 ? { far: { at: [ang(300), -150 + ang(60), ang(300)] as number[], ...(r() < 0.5 && { elbow: [0, 1, -1] }), w: r() } } : undefined;
         const sp: Acting = {
           pose: {
-            af: [ang(), ang(), 0], an: [ang(), ang(), 0], lf: [ang(90), ang(90)], ln: [ang(90), ang(90)],
-            torso: ang(30), head: [ang(20), ang(40), ang(20)],
+            af: [ang(), ang(), 0, ang(90)], an: [ang(), ang(), 0, ang(90)], lf: [ang(90), ang(90), ang(40)], ln: [ang(90), ang(90), ang(40)],
+            torso: ang(30), lean: ang(30), head: [ang(20), ang(40), ang(20)],
             stretch: Array.from({ length: 8 }, () => 0.8 + r() * 0.4),
             lift, ...(reach && { reach }),
           },

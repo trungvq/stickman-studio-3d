@@ -1,7 +1,8 @@
 import { addItem, Batch, box } from '@stickman3d/rig';
 
-// Cảnh thử hành động soạn ở `side` (`?demo=acts`, `?demo=desk`, `?demo=heads`): mỗi người một trạm trên một hàng,
-// hành động bắt đầu ở giây 0,3 và giữ. `acts` đứng, `desk` ngồi ở bàn, `heads` là các hành động chỉ ghi đầu và thân.
+// Cảnh thử hành động soạn ở `side` (`?demo=acts`, `?demo=desk`, `?demo=heads`, `?demo=side`): mỗi người một trạm trên một
+// hàng, hành động bắt đầu ở giây 0,3 và giữ. `acts` đứng, `desk` ngồi ở bàn, `heads` là các hành động chỉ ghi đầu và thân,
+// `side` là dang tay chân và nghiêng thân.
 
 const GAP = 240;
 const at = (i, n) => (i - (n - 1) / 2) * GAP;
@@ -59,6 +60,18 @@ export function actDemos({ member, track, clip, BOY, GIRL }) {
         for (let i = 0; i < 4; i++) desk(b, at(i, 5), at(i, 5) - 60);
         desk(b, at(4, 5), undefined);
         return [b.build()];
+      },
+    },
+    side: {
+      cast: () => {
+        const n = 5;
+        return [
+          stand(0, n, 90, ['step-side-3d']),
+          stand(1, n, 90, ['arms-out-3d'], GIRL),
+          stand(2, n, 90, ['hand-up-side-3d']),
+          stand(3, n, 90, ['lean-side-3d'], GIRL),
+          stand(4, n, 90, ['stance-wide-3d']),
+        ];
       },
     },
     heads: {

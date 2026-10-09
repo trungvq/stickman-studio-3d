@@ -47,6 +47,7 @@ export interface PoseIn {
   lf: readonly number[];
   ln: readonly number[];
   torso: number;
+  lean?: number;
   head: readonly number[];
   stretch: readonly number[];
   lift?: Partial<Record<Limb3, boolean>>;
@@ -56,16 +57,18 @@ export interface PoseIn {
 const num = (v: number | undefined) => (Number.isFinite(v) ? (v as number) : 0);
 
 /**
- * Góc `[gốc, giữa]` (độ) người 3D vẽ cho một kênh tay chân: kênh nâng (`pose.lift`) đọc góc soạn ở
- * `side`, kênh giữ 2D về dáng nghỉ — tay buông, chân thẳng, người ngồi thì đùi ngang.
+ * Góc `[gốc, giữa, dang]` (độ) người 3D vẽ cho một kênh tay chân: kênh nâng (`pose.lift`) đọc góc soạn
+ * ở `side` và số dang (số thứ tư của tay, thứ ba của chân), kênh giữ 2D về dáng nghỉ — tay buông, chân
+ * thẳng, người ngồi thì đùi ngang.
  */
 export function actAngles(
   P: Pick<PoseIn, Limb3 | "lift">,
   ch: Limb3,
   seated: boolean,
-): [number, number] {
-  if (P.lift?.[ch]) return [num(P[ch][0]), num(P[ch][1])];
-  return ch[0] === "l" && seated ? [90, -90] : [0, 0];
+): [number, number, number] {
+  const v = P[ch];
+  if (P.lift?.[ch]) return [num(v[0]), num(v[1]), num(v[ch[0] === "a" ? 3 : 2])];
+  return ch[0] === "l" && seated ? [90, -90, 0] : [0, 0, 0];
 }
 
 const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -222,17 +225,19 @@ export function actJoints(
 
   for (const side of [near, -near]) {
     const isNear = side === near;
-    const [a, b] = actAngles(P, isNear ? "ln" : "lf", seated);
+    const [a, b, sp] = actAngles(P, isNear ? "ln" : "lf", seated);
     const hipJ = at(hips, Rr, [side * roots.hip, 0, 0]);
-    const Rh = mm(Rr, rx(-a * D));
+    // Euler 'ZXY' của three: Rz · Rx · Ry, quay quanh y bằng 0
+    const Rh = mm(Rr, mm(rz(side * sp * D), rx(-a * D)));
     const knee = at(hipJ, Rh, [0, -B.thigh * (st[isNear ? 6 : 4] ?? 1), 0]);
     const Rk = mm(Rh, rx(-b * D));
     out[`knee${tag(side)}` as ActJoint] = knee;
     out[`foot${tag(side)}` as ActJoint] = at(knee, Rk, [0, -B.shin * (st[isNear ? 7 : 5] ?? 1), 0]);
   }
 
-  const Rs = mm(Rr, rx(num(P.torso) * D));
   const m = flip ? -1 : 1;
+  // Euler 'XYZ' của three: Rx · Ry · Rz
+  const Rs = mm(Rr, mm(rx(num(P.torso) * D), rz(-m * num(P.lean) * D)));
   const [tilt, turn, nod] = P.head;
   // Euler 'YXZ' của three: Ry · Rx · Rz
   const Rn = mm(mm(Rs, ry(m * num(turn) * D)), mm(rx(num(nod) * D), rz(-m * num(tilt) * D)));
@@ -244,10 +249,9 @@ export function actJoints(
   for (const side of [near, -near]) {
     const isNear = side === near;
     const ch = isNear ? "an" : "af";
-    const [a, b] = actAngles(P, ch, false);
+    const [a, b, sp] = actAngles(P, ch, false);
     const sh = at(hips, Rs, [side * roots.shoulder[0], roots.shoulder[1], 0]);
-    // Euler 'ZXY' của three: Rz · Rx · Ry, quay quanh y bằng 0
-    const Rsh = mm(Rs, mm(rz(side * SPLAY3), rx(-a * D)));
+    const Rsh = mm(Rs, mm(rz(side * (SPLAY3 + sp * D)), rx(-a * D)));
     const l1 = B.upperArm * (st[isNear ? 2 : 0] ?? 1);
     const l2 = B.foreArm * (st[isNear ? 3 : 1] ?? 1);
     const el = at(sh, Rsh, [0, -l1, 0]);

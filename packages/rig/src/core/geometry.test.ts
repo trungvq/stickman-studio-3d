@@ -293,7 +293,7 @@ describe("kênh `stretch` trong JSON hành động", () => {
   });
 
   it("bốn hoặc tám số dương; năm số, số âm hay 0 là lỗi", () => {
-    expect(ACTION_VERSION).toBe(15);
+    expect(ACTION_VERSION).toBe(16);
     expect(parseAction(withStretch([1, 1, 1, 1])).success).toBe(true);
     expect(parseAction(withStretch(SIT_LEGS)).success).toBe(true);
     expect(parseAction(withStretch([1, 1, 1, 1, 1])).success).toBe(false);
@@ -386,8 +386,8 @@ describe('`ease: "smooth"`', () => {
   it("đi theo smoothstep: chậm ở hai đầu, qua giữa đúng nửa, không vọt qua mốc sau", () => {
     expect(actionDelta(a, 0.25).torso).toBeCloseTo(10 * 0.15625, 10);
     expect(actionDelta(a, 0.5).torso).toBeCloseTo(5, 10);
-    expect(actionDelta(a, 0.05).torso!).toBeLessThan(0.1);
-    const s = Array.from({ length: 101 }, (_, i) => actionDelta(a, i / 100).torso!);
+    expect(actionDelta(a, 0.05).torso as number).toBeLessThan(0.1);
+    const s = Array.from({ length: 101 }, (_, i) => actionDelta(a, i / 100).torso as number);
     s.forEach((v, i) => i && expect(v).toBeGreaterThanOrEqual(s[i - 1]));
     expect(Math.max(...s)).toBe(10);
   });

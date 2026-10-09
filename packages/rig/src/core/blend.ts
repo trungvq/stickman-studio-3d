@@ -1,5 +1,5 @@
 import { ARM_LAYERS, DEFAULT_LAYERS } from "./constants";
-import { ARM_CHANNELS, headOver, mixReach, smoothstep, stretchOver } from "./action";
+import { ARM_CHANNELS, headOver, mixAngles, mixReach, smoothstep, stretchOver } from "./action";
 import type { AnimalPose } from "./animals";
 import {
   LIFT_CHANNELS,
@@ -17,16 +17,19 @@ const BLEND_RATE = 400;
 export const BLEND_MIN = 0.12;
 export const BLEND_MAX = 0.4;
 
-/** Kênh mang một dãy số; tay và `head` ba số, chân hai, `stretch` tám hệ số */
+/** Kênh mang một dãy số; tay ba hay bốn số, chân hai hay ba, `head` ba, `stretch` tám hệ số */
 const VECTORS = ["af", "an", "lf", "ln", "head", "stretch"] as const;
 
-/** Đi qua từng kênh của hai bên, bên nào không ghi thì lấy `base`; `stretch` xét theo từng chi, `head` theo từng góc. */
+/**
+ * Đi qua từng kênh của hai bên, bên nào không ghi thì lấy `base`; `stretch` xét theo từng chi, `head`
+ * theo từng góc, `torso` là `[cúi, nghiêng]`.
+ */
 function eachChannel(
   base: Pose,
   from: Partial<Pose>,
   to: Partial<Pose>,
   vec: (k: (typeof VECTORS)[number], a: readonly number[], b: readonly number[]) => void,
-  torso: (a: number, b: number) => void,
+  torso: (a: readonly number[], b: readonly number[]) => void,
 ) {
   for (const k of VECTORS) {
     if (!from[k] && !to[k]) continue;
@@ -34,8 +37,9 @@ function eachChannel(
     else if (k === "head") vec(k, headOver(base.head, from), headOver(base.head, to));
     else vec(k, from[k] ?? base[k], to[k] ?? base[k]);
   }
-  if (from.torso !== undefined || to.torso !== undefined)
-    torso(from.torso ?? base.torso, to.torso ?? base.torso);
+  const bent = (p: Partial<Pose>) =>
+    p.torso !== undefined ? [p.torso, p.lean ?? 0] : [base.torso, base.lean ?? 0];
+  if (from.torso !== undefined || to.torso !== undefined) torso(bent(from), bent(to));
 }
 
 /**
@@ -57,8 +61,8 @@ export function blendPose(
     base,
     from,
     to,
-    (k, a, b) => Object.assign(o, { [k]: a.map((v, i) => v + (b[i] - v) * w) }),
-    (a, b) => (o.torso = a + (b - a) * w),
+    (k, a, b) => Object.assign(o, { [k]: mixAngles(a, b, w) }),
+    (a, b) => ([o.torso, o.lean] = mixAngles(a, b, w) as number[]),
   );
   // Cờ nâng không hoà được: nửa đầu đoạn hoà theo bên cũ, nửa sau theo bên mới
   // Bên đang thắng ghi kênh nào thì cờ của kênh ấy theo bên đó, kể cả khi bên đó không nâng
@@ -88,11 +92,14 @@ export function blendDuration(base: Pose, from: Partial<Pose>, to: Partial<Pose>
     base,
     from,
     to,
-    (_k, a, b) => (d = Math.max(d, ...a.map((v, i) => Math.abs(b[i] - v)))),
-    (a, b) => (d = Math.max(d, Math.abs(b - a))),
+    (_k, a, b) => (d = Math.max(d, ...gap(a, b))),
+    (a, b) => (d = Math.max(d, ...gap(a, b))),
   );
   return Math.min(BLEND_MAX, Math.max(BLEND_MIN, d / BLEND_RATE));
 }
+
+const gap = (a: readonly number[], b: readonly number[]) =>
+  (mixAngles(a, b, 1) as number[]).map((v, i) => Math.abs(v - (a[i] ?? 0)));
 
 const rank = (l: ArmLayer) => ARM_LAYERS.indexOf(l);
 

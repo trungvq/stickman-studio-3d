@@ -11,6 +11,7 @@ import {
   JOINT_CHANNELS,
   keyDelta,
   reachAngles,
+  torsoBend,
   REACH_ELBOW,
   reachToWorld,
   scale3,
@@ -160,7 +161,7 @@ export function clearKeyReach(d: ActionData, k: ActionKey, ch: ReachArm) {
   const r = k.reach?.[ch];
   if (!r) return;
   const pose = spreadKeyPose(d, k);
-  pose[ch] = reachAngles(r, pose.torso);
+  pose[ch] = reachAngles(r, pose.torso === undefined ? undefined : torsoBend(pose.torso));
   const rest = { ...k.reach };
   delete rest[ch];
   k.reach = Object.keys(rest).length ? rest : undefined;

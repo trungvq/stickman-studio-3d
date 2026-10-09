@@ -59,16 +59,18 @@ export type Legs = { thigh: number; shin: number };
 
 /**
  * Hai bàn chân `[xa, gần]` so với tâm hông, bỏ bề ngang hông vì nó là hằng số. `legs` đổi độ
- * dài chân — `stickman reseat` đo hông của cảnh dựng cho chân đời trước.
+ * dài chân — `stickman reseat` đo hông của cảnh dựng cho chân đời trước. `spread` là của người 3D:
+ * chân nâng dang ra thì bàn chân lên theo `cos` góc dang, như `act` dựng.
  */
-export function feet(P: Pose, height: number, legs: Legs = RIG): [Pt, Pt] {
+export function feet(P: Pose, height: number, legs: Legs = RIG, spread = false): [Pt, Pt] {
   const thigh = legs.thigh * height;
   const shin = legs.shin * height;
   const s = P.stretch;
-  return [
-    chain([0, 0], P.lf, thigh * s[4], shin * s[5])[2],
-    chain([0, 0], P.ln, thigh * s[6], shin * s[7])[2],
-  ];
+  const foot = (ch: "lf" | "ln", l1: number, l2: number): Pt => {
+    const [x, y] = chain([0, 0], P[ch], l1, l2)[2];
+    return spread && P.lift?.[ch] ? [x, y * Math.cos((P[ch][2] ?? 0) * D)] : [x, y];
+  };
+  return [foot("lf", thigh * s[4], shin * s[5]), foot("ln", thigh * s[6], shin * s[7])];
 }
 
 /**

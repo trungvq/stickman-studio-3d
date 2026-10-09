@@ -12,13 +12,15 @@ import { R, type Figure, type Side } from './stickman';
 /** Đích cổ tay: hệ thân `[tiến, y xuống, ra ngoài]` đơn vị rig trong `pose.reach`, toạ độ thế giới rig trong `world.hands` */
 export interface ActReach { at: readonly number[]; elbow?: readonly number[]; w: number }
 type Limb = 'af' | 'an' | 'lf' | 'ln';
-/** `Pose` của @stickman3d/sketch; góc độ, `head` là `[nghiêng, lắc, gật]` */
+/** `Pose` của @stickman3d/sketch; góc độ, tay `[vai, khuỷu, cổ tay, dang]`, chân `[hông, gối, dang]`, `head` là `[nghiêng, lắc, gật]` */
 export interface ActPose {
   af: readonly number[];
   an: readonly number[];
   lf: readonly number[];
   ln: readonly number[];
   torso: number;
+  /** Nghiêng thân sang ngang, độ; dương như nghiêng đầu, về phía tay xa */
+  lean?: number;
   head: readonly number[];
   /** `[tay xa ×2, tay gần ×2, chân xa ×2, chân gần ×2]` */
   stretch: readonly number[];
@@ -111,15 +113,15 @@ export function act(p: Figure, sp: Acting, t?: number) {
   for (const side of [near, -near as Side]) {
     const isNear = side === near;
     const { hip, knee } = p.legs[side];
-    const [a, b] = actAngles(P, isNear ? 'ln' : 'lf', seated);
-    hip.rotation.set(-a * D, 0, 0);
+    const [a, b, sp] = actAngles(P, isNear ? 'ln' : 'lf', seated);
+    hip.rotation.set(-a * D, 0, side * sp * D, 'ZXY');
     knee.rotation.set(-b * D, 0, 0);
     segment(hip, knee, R.thigh, st[isNear ? 6 : 4] ?? 1);
     segment(knee, undefined, R.shin, st[isNear ? 7 : 5] ?? 1);
   }
 
-  p.spine.rotation.set(num(P.torso) * D, 0, 0);
   const m = flip ? -1 : 1;
+  p.spine.rotation.set(num(P.torso) * D, 0, -m * num(P.lean) * D);
   const [tilt, turn, nod] = P.head;
   // lắc dương là quay mặt xa ống kính (về bên trái người khi không lật), nghiêng dương đưa đỉnh đầu về phía ấy
   p.neck.rotation.set(num(nod) * D, m * num(turn) * D, -m * num(tilt) * D, 'YXZ');
@@ -127,8 +129,8 @@ export function act(p: Figure, sp: Acting, t?: number) {
   for (const side of [near, -near as Side]) {
     const ch = side === near ? 'an' : 'af';
     const { shoulder, elbow, wrist } = p.arms[side];
-    const [a, b] = actAngles(P, ch, false);
-    shoulder.rotation.set(-a * D, 0, side * SPLAY3, 'ZXY');
+    const [a, b, sp] = actAngles(P, ch, false);
+    shoulder.rotation.set(-a * D, 0, side * (SPLAY3 + sp * D), 'ZXY');
     elbow.rotation.set(-b * D, 0, 0);
     segment(shoulder, elbow, R.upperArm, st[side === near ? 2 : 0] ?? 1);
     segment(elbow, wrist, R.foreArm, st[side === near ? 3 : 1] ?? 1);

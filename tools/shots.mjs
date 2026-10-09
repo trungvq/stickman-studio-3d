@@ -70,6 +70,7 @@ const SHOTS = [
   ['ban', 'demo=desk&t=2&az=40&el=12&look=0,1.8,0&dist=17'],
   ['ban-nghieng', 'demo=desk&t=2&az=-30&el=15&look=0,1.8,0&dist=17'],
   ['dau-than', 'demo=heads&t=2&az=10&el=4&look=0,2.6,0&dist=13'],
+  ['ngang', 'demo=side&t=2&az=0&el=8&look=0,2.2,0&dist=15'],
   ['vo-ngay', 'demo=room&t=1&az=20&el=22&look=0,2,0&dist=30'],
   ['vo-1830', 'demo=room&t=1&az=20&el=22&look=0,2,0&dist=30&time=dusk'],
   ['vo-dem', 'demo=room&t=1&az=20&el=22&look=0,2,0&dist=30&time=night'],

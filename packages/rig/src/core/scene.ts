@@ -110,7 +110,7 @@ import {
 } from "./types";
 
 /** Bump khi đổi hình dạng JSON scene; `migrateScene` phải có nhánh tương ứng. */
-export const SCENE_VERSION = 24;
+export const SCENE_VERSION = 25;
 
 /** `"@ten"` hay `"@ten+0.4"` / `"@ten-1"`: một mốc có tên trong `scene.marks` cộng phần lệch giây */
 export const MARK_REF = /^@([A-Za-z0-9_-]+)(?:\s*([+-])\s*(\d+(?:\.\d+)?))?$/;
@@ -743,6 +743,7 @@ export function migrateScene(json: unknown): unknown {
   // v21 → v22 thêm `cast[].rotate`; thiếu là `0`, tức đứng thẳng
   // v22 → v23 thêm `scene.lens` và `cast[].world` (cả `world.hands`); thiếu là người 2D như cũ
   // v23 → v24 thêm `clips[].snap` và `world.hands[].snap`; thiếu là không cố ý giật
+  // v24 → v25 `cast[].base` nhận số dang của tay chân và `torso: [cúi, nghiêng]`; dạng cũ vẫn hợp lệ
   o.schemaVersion = SCENE_VERSION;
   return o;
 }
@@ -1399,7 +1400,16 @@ type PathKey0 = Unmarked<z.infer<typeof PathKeySchema>>;
  * `legs` đo trên độ dài chân khác rig đang cài (`stickman reseat`).
  */
 export function actionStride(a: ActionData, base: Pose = POSES.idle, legs?: Legs): number {
-  const tb = bakeTravel((t) => composePose(base, actionPose(a, t)), 1, legs);
+  // hành động soạn ở `side` thì chân của nó là chân nâng: bàn chân đang bước dang ra cao lên như người 3D dựng
+  const side = a.authoredAt === "side";
+  const lift = { lf: true, ln: true };
+  const tb = bakeTravel(
+    (t) =>
+      side ? { ...composePose(base, actionPose(a, t)), lift } : composePose(base, actionPose(a, t)),
+    1,
+    legs,
+    side,
+  );
   return tb.xs[tb.xs.length - 1];
 }
 
@@ -2302,7 +2312,7 @@ function worldSlideProblems(rt: SceneRuntime, m: CastMember): string[] {
     const ft = feet3(sp.pose, wd, h, dims.hipHalf);
     const F = dirOf(wd.yaw);
     const fwd = ft.map((p) => ((p[0] - wd.hip[0]) * F[0] + (p[2] - wd.hip[2]) * F[2]) / (unit * h));
-    const ys = feet(sp.pose, h).map((p) => p[1] / h);
+    const ys = feet(sp.pose, h, RIG, true).map((p) => p[1] / h);
     const sitting = legOf(keys, t).sit;
     if (!prev || sitting) bearing = standing(ys);
     else {
@@ -2372,6 +2382,102 @@ function worldSlideProblems(rt: SceneRuntime, m: CastMember): string[] {
           `\`${m.id}\` giây ${still.toFixed(2)}–${t.toFixed(2)}: clip có sải chân (\`${c?.file ?? "walk"}\`) còn chạy mà \`path\` đứng yên — chân đứng sững giữa bước; cho clip ấy kết thúc (sang \`idle\`) lúc tới mốc`,
         );
       still = -1;
+    }
+  }
+  return bad;
+}
+
+/** Bước lấy mẫu (giây) khi dò thân quay: một khung ở 60 fps */
+const TURN_STEP = 1 / 60;
+/** Thân quay nhanh hơn ngần này (độ mỗi giây) là giật */
+const TURN_JERK = 300;
+/** Thân quay đi ít nhất ngần này độ rồi quay lại quá nửa cú ấy trong `TURN_BACK_SPAN` giây là cú vặn qua lại */
+const TURN_BACK = 20;
+const TURN_BACK_SPAN = 1.5;
+
+/**
+ * Người 3D mà thân quay gắt: quay nhanh hơn `TURN_JERK` độ/giây, hay quay đi `TURN_BACK`° rồi quay
+ * lại quá nửa trong `TURN_BACK_SPAN` giây. Đo trên hướng thân thế giới `sceneAt(…).world.yaw` từng
+ * khung, nên bắt cả cú quay do rig tự lái (hông trượt quá mốc dừng, khoá góc chính diện đổi phía)
+ * chứ không chỉ mốc `yaw` khai. Mỗi cú một dòng. docs/03-scene.md#check-cho-người-3d
+ */
+export function sceneTurnProblems(rt: SceneRuntime): string[] {
+  if (!rt.lens) return [];
+  const bad: string[] = [];
+  const n = Math.max(1, Math.round(rt.duration / TURN_STEP));
+  for (const m of rt.cast) {
+    if (!m.world) continue;
+    const h = rt.heights[m.id] ?? 1;
+    const ts: number[] = [];
+    const ys: number[] = [];
+    for (let k = 0; k <= n; k++) {
+      const t = (k * rt.duration) / n;
+      const y = sceneAt(rt, m.id, t, h).world!.yaw / D;
+      ts.push(t);
+      ys.push(k ? ys[k - 1] + wrap180(y - ys[k - 1]) : y);
+    }
+    const sec = (t: number) => t.toFixed(2);
+    // quay giật: các khung liền nhau vượt tốc, một dòng một quãng
+    let jerk: { from: number; to: number; rate: number } | undefined;
+    const flushJerk = () => {
+      if (!jerk) return;
+      const span =
+        jerk.from === jerk.to ? `giây ${sec(jerk.from)}` : `giây ${sec(jerk.from)}–${sec(jerk.to)}`;
+      bad.push(
+        `\`${m.id}\` ${span}: thân quay ${Math.round(jerk.rate)}°/s (ngưỡng ${TURN_JERK}°/s) — mốc \`yaw\` đổi gấp, khoá góc chính diện đổi phía, hay hướng thân lái về chỗ hông chưa tới; giãn mốc \`yaw\` ra, hay cho clip đi kết thúc đúng lúc tới mốc dừng`,
+      );
+      jerk = undefined;
+    };
+    for (let k = 1; k <= n; k++) {
+      const rate = Math.abs(ys[k] - ys[k - 1]) / (ts[k] - ts[k - 1]);
+      if (rate <= TURN_JERK) {
+        flushJerk();
+        continue;
+      }
+      jerk ??= { from: ts[k - 1], to: ts[k], rate };
+      jerk.to = ts[k];
+      jerk.rate = Math.max(jerk.rate, rate);
+    }
+    flushJerk();
+    // quay đi rồi quay lại: đỉnh của hướng thân với hai chân dốc ngược chiều
+    const peaks: number[] = [0];
+    for (let k = 1; k < n; k++) {
+      const a = ys[k] - ys[k - 1];
+      const b = ys[k + 1] - ys[k];
+      if (a * b < 0 || (a !== 0 && b === 0)) peaks.push(k);
+    }
+    peaks.push(n);
+    let i = 0;
+    while (i + 2 < peaks.length) {
+      // gộp các đỉnh nhỏ: tìm đỉnh xa nhất trong khung thời gian tính từ đỉnh `i`
+      const k0 = peaks[i];
+      let best = -1;
+      for (let j = i + 1; j < peaks.length && ts[peaks[j]] - ts[k0] <= TURN_BACK_SPAN; j++)
+        if (best < 0 || Math.abs(ys[peaks[j]] - ys[k0]) > Math.abs(ys[peaks[best]] - ys[k0]))
+          best = j;
+      const out = best < 0 ? 0 : ys[peaks[best]] - ys[k0];
+      if (best < 0 || Math.abs(out) < TURN_BACK) {
+        i++;
+        continue;
+      }
+      const kb = peaks[best];
+      let back = -1;
+      for (let k = kb; k <= n && ts[k] - ts[k0] <= TURN_BACK_SPAN; k++)
+        if ((ys[kb] - ys[k]) * Math.sign(out) >= Math.abs(out) / 2) {
+          back = k;
+          break;
+        }
+      if (back < 0) {
+        i = best;
+        continue;
+      }
+      // mốc đầu là lúc thân rời hướng ở đỉnh trước, không phải chính đỉnh ấy
+      let from = k0;
+      while (from < kb && Math.abs(ys[from + 1] - ys[k0]) < 2) from++;
+      bad.push(
+        `\`${m.id}\` giây ${sec(ts[from])}–${sec(ts[back])}: thân quay ${Math.round(Math.abs(out))}° rồi quay lại trong ${sec(ts[back] - ts[from])} s — thường là hông trượt quá mốc dừng \`path\` (clip đi kết thúc trễ) hay khoá góc chính diện đổi phía; dời \`start\` của clip sau clip đi, hay đổi hướng người, ống kính`,
+      );
+      while (i < peaks.length && peaks[i] < back) i++;
     }
   }
   return bad;
@@ -2510,6 +2616,8 @@ const STEER_AHEAD = 0.35;
 /** Đi chậm hơn ngần này (đơn vị rig mỗi giây), hay cách chỗ nhìn tới gần hơn ngần này (đơn vị rig), thì hướng thân nhạt dần về `yaw` khai */
 const STEER_SPEED = 60;
 const STEER_NEAR = 30;
+/** Chỗ nhìn tới lệch hướng khai quá số độ đầu thì lái nhạt dần, tới số sau thì thôi lái: nó đã ở sau lưng */
+const STEER_BACK = [60, 120] as const;
 /** Hằng thời gian (giây) của nhịp chân và hướng thân — đổi nhịp đột ngột ở mốc path thành êm */
 const RATE_TAU = 0.15;
 /**
@@ -2647,7 +2755,12 @@ function bakeWalker(
       );
       // clip đi lùi thì lưng quay về chỗ tới
       const head = Math.atan2(-to[1], to[0]) / D + (vNat < 0 ? 180 : 0);
-      if (!leg.sit) sT = wrap180(head - yawKey) * fade;
+      // chỗ tới đã ở sau lưng (hông trượt quá mốc dừng): không quay người lại để bù vài bước
+      const off = wrap180(head - yawKey);
+      const behind = smoothstep(
+        Math.min(1, Math.max(0, (STEER_BACK[1] - Math.abs(off)) / (STEER_BACK[1] - STEER_BACK[0]))),
+      );
+      if (!leg.sit) sT = off * fade * behind;
     }
     const ease = k ? Math.min(1, step / RATE_TAU) : 1;
     r += (rT - r) * ease;
@@ -2673,7 +2786,7 @@ function bakeWalker(
       prevF = [prevF[1], prevF[0]];
     }
     const pose = poseAt(m, t, clock);
-    const ys = feet(pose, height).map((q) => q[1]);
+    const ys = feet(pose, height, RIG, true).map((q) => q[1]);
     lift = Math.max(...ys);
     out.lift.push(lift);
     hip[1] = key.y - w.s * lift;
@@ -2732,7 +2845,7 @@ function worldAt(
 ): { world: World; yaw: number; raw: number } {
   const keys = keysOf(w);
   const { a, b, u, sit } = legOf(keys, time);
-  const stand = Math.max(...feet(pose, height).map((f) => f[1]));
+  const stand = Math.max(...feet(pose, height, RIG, true).map((f) => f[1]));
   const key = keyAt(keys, time);
   const xz = walk ? [sampleAt(walk.x, walk.step, time), sampleAt(walk.z, walk.step, time)] : key.xz;
   const yaw = walk ? sampleAt(walk.yaw0, walk.step, time) : key.yaw;

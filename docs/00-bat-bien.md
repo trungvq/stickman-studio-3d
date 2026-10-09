@@ -33,8 +33,8 @@ nửa riêng là mất tiếp tuyến chung ở khuỷu, đường cong gãy gó
 định `1`; hạ về `0` thì chi trở lại hai đoạn thẳng. Xem
 [01](01-rig.md#vẽ-chi).
 
-**`stretch` là một kênh riêng, không phải số thứ tư của tuple tay.** `armNear` /
-`armFar` vẫn đúng ba số `[vai, khuỷu, cổ tay]`; hệ số dài chi nằm ở
+**`stretch` là một kênh riêng, không phải số trong tuple tay.** Số thứ tư của
+`armNear` / `armFar` là góc dang của người 3D, không phải hệ số; hệ số dài chi nằm ở
 `pose.stretch`: bốn số `[tay xa, tay gần, chân xa, chân gần]`, mỗi số nhân **cả
 hai đoạn** của chi ấy, hoặc tám số từng đoạn, hai số một chi, đoạn gốc trước;
 mặc định `1`. Bên trong rig (`Pose.stretch`, `F.stretch`) luôn là tám số —
@@ -342,8 +342,8 @@ clip lặp thì sự kiện lặp), MCP là `scene_events`. Số ấy đo bằng
 bàn tay xuống thấp nhất, pha bàn chân nhận lực theo đúng luật `bakeTravel` — chứ
 không đo bằng mắt, và đo một lần ở bộ chung thì mọi tập sau khỏi đo lại.
 
-**Cách nắm thuộc nhân vật, cổ tay thuộc hành động.** Tay là ba số
-`[vai, khuỷu, cổ tay]`; cổ tay chỉ xoay đồ cầm tay (rig không vẽ bàn tay), còn
+**Cách nắm thuộc nhân vật, cổ tay thuộc hành động.** Tay là
+`[vai, khuỷu, cổ tay]` (cộng số dang của người 3D); cổ tay chỉ xoay đồ cầm tay (rig không vẽ bàn tay), còn
 `pieces.hand*.rotate` là thế nắm cố định. Gộp hai thứ vào một là `chop` phải
 chọn một góc rìu duy nhất cho cả chu kỳ — không góc nào đúng cả lúc giơ lẫn lúc
 bổ. Ảnh đồ cầm để đầu xa ở **mép dưới**; vẽ lưỡi ở mép trên là cầm ngược.
@@ -352,6 +352,12 @@ bổ. Ảnh đồ cầm để đầu xa ở **mép dưới**; vẽ lưỡi ở m
 dáng nghỉ, và cờ không hoà được: hoà giữa hành động `side` với hành động 2D, với clip rỗng hay với
 tư thế nền là tay chân nhảy một khung giữa đoạn hoà — `check` báo lỗi hành động 2D, báo giật cho
 phần còn lại. Xem [03](03-scene.md#hành-động-cho-người-3d).
+
+**Đọc tuple tay chân theo chỉ số, đừng theo độ dài.** Tay ba hay bốn số, chân hai hay ba, `torso`
+một số hay `[cúi, nghiêng]` — số dang và nghiêng là của người 3D, thiếu là `0`. Nội suy hai mốc
+khác độ dài bằng `mixAngles`, góc cúi của `torso` trong JSON lấy bằng `torsoBend`; `a.map((v, i) =>
+… b[i])` ra `NaN`. Chân dang không chạm sàn nếu không vươn `1 / cos(dang)`.
+[01](01-rig.md#dang-và-nghiêng-ngang)
 
 **Đo giật trên đúng hình vẽ ra.** `actJoints` của lõi và `act` của three dùng chung khung xương,
 luật đọc góc và IK (`core/act3.ts`); đổi một bên mà không đổi bên kia thì `check` đo một hình khác

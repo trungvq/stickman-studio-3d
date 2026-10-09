@@ -3,12 +3,10 @@ import { POSE_LAYERS, POSE_NAMES, POSES } from "./poses";
 import { ARM_LAYERS, DEFAULT_FACE, DEFAULT_LAYERS } from "./constants";
 import { BROW_KINDS, EYE_KINDS, MOUTH_KINDS } from "./face";
 import type {
-  Arm,
   ArmLayers,
   FaceState,
   HeadPose,
   IdleParams,
-  Limb,
   Pose,
   Stretch,
   StretchJson,
@@ -64,7 +62,7 @@ import {
 } from "./animalGait";
 
 /** Bump khi đổi hình dạng JSON hành động; `migrateAction` phải có nhánh tương ứng. */
-export const ACTION_VERSION = 15;
+export const ACTION_VERSION = 16;
 
 /** Kênh khớp: thứ có số trong `Pose`; `stretch` là hệ số dài chi, không phải góc */
 export const JOINT_CHANNELS = [
@@ -106,8 +104,17 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
 };
 
 const limb = z.tuple([z.number(), z.number()]);
-/** Tay có ba số vì cổ tay xoay được đồ cầm; chân chỉ hai — rig không vẽ bàn chân */
-const arm = z.tuple([z.number(), z.number(), z.number()]);
+/**
+ * Chân `[hông, gối, dang]`, tay `[vai, khuỷu, cổ tay, dang]`: cổ tay xoay đồ cầm, rig không vẽ bàn
+ * chân; số dang tuỳ chọn, chỉ người 3D đọc. docs/01-rig.md#dang-và-nghiêng-ngang
+ */
+const leg = z.union([limb, z.tuple([z.number(), z.number(), z.number()])]);
+const arm = z.union([
+  z.tuple([z.number(), z.number(), z.number()]),
+  z.tuple([z.number(), z.number(), z.number(), z.number()]),
+]);
+/** Thân `cúi` hay `[cúi, nghiêng ngang]`; nghiêng chỉ người 3D đọc */
+const torso = z.union([z.number(), z.tuple([z.number(), z.number()])]);
 /** `null` là thành phần hành động không ghi: track dưới giữ nguyên góc ấy. docs/01-rig.md#đầu-và-nét-mặt */
 const headPart = z.number().nullable();
 const headAngles = z.tuple([headPart, headPart, headPart]);
@@ -128,9 +135,9 @@ const stretch = z.union([
 export const PoseDeltaSchema = z.strictObject({
   armFar: arm.optional(),
   armNear: arm.optional(),
-  legFar: limb.optional(),
-  legNear: limb.optional(),
-  torso: z.number().optional(),
+  legFar: leg.optional(),
+  legNear: leg.optional(),
+  torso: torso.optional(),
   head: headAngles.optional(),
   stretch: stretch.optional(),
 });
@@ -168,10 +175,14 @@ export const poseDelta = (p: Pose): Required<PoseDelta> => ({
   armNear: p.an,
   legFar: p.lf,
   legNear: p.ln,
-  torso: p.torso,
+  torso: p.lean ? [p.torso, p.lean] : p.torso,
   head: p.head,
   stretch: stretchJson(p.stretch),
 });
+
+/** Góc cúi của kênh `torso` trong JSON, bỏ nghiêng ngang */
+export const torsoBend = (v: number | readonly number[]): number =>
+  typeof v === "number" ? v : (v[0] ?? 0);
 
 const toDelta = poseDelta;
 
@@ -182,7 +193,10 @@ export const deltaPose = (d: PoseDelta): Partial<Pose> => {
   if (d.armNear) o.an = d.armNear;
   if (d.legFar) o.lf = d.legFar;
   if (d.legNear) o.ln = d.legNear;
-  if (d.torso !== undefined) o.torso = d.torso;
+  if (d.torso !== undefined) {
+    o.torso = torsoBend(d.torso);
+    o.lean = typeof d.torso === "number" ? 0 : d.torso[1];
+  }
   if (d.head) o.head = d.head.map((v) => v ?? NaN) as HeadPose;
   if (d.stretch) o.stretch = stretchSegs(d.stretch);
   return o;
@@ -503,6 +517,7 @@ export function migrateAction(json: unknown): unknown {
   // v12 → v13 thêm `keys[].reach`; thiếu là tay theo góc như cũ
   // v13 → v14 thêm `ease: "smooth"` và thành phần `null` của `head`; file cũ không dùng, không phải viết gì
   // v14 → v15 thêm `snap`; thiếu là chuyển động không cố ý giật, `check` đo như mọi hành động
+  // v15 → v16 thêm số dang của tay chân và `torso: [cúi, nghiêng]`; thiếu là `0`, không phải viết gì
   // v4 → v5 tay thành ba số; file cũ cầm đồ thẳng trục cẳng tay, tức cổ tay 0
   if (from < 5)
     for (const k of (o.keys ?? []) as Record<string, unknown>[]) {
@@ -616,12 +631,21 @@ const EASES: Record<ActionKey["ease"], (u: number) => number> = {
   smooth: smoothstep,
 };
 
-type Angles = number | Limb | Arm | HeadPose | Stretch;
+type Angles = number | readonly number[];
 
-const mix = (a: Angles, b: Angles, f: number): Angles =>
-  typeof a === "number" || typeof b === "number"
-    ? (a as number) + ((b as number) - (a as number)) * f
-    : (a.map((v, i) => v + ((b as number[])[i] - v) * f) as Limb | Arm | HeadPose | Stretch);
+/** Số và dãy nội suy chung được: số là dãy một phần tử, phần thiếu (dang, nghiêng ngang) là `0` */
+export function mixAngles(a: number, b: number, f: number): number;
+export function mixAngles(a: Angles, b: Angles, f: number): Angles;
+export function mixAngles(a: Angles, b: Angles, f: number): Angles {
+  if (typeof a === "number" && typeof b === "number") return a + (b - a) * f;
+  const x = typeof a === "number" ? [a] : a;
+  const y = typeof b === "number" ? [b] : b;
+  return Array.from({ length: Math.max(x.length, y.length) }, (_, i) => {
+    const p = x[i] ?? 0;
+    return p + ((y[i] ?? 0) - p) * f;
+  });
+}
+const mix = mixAngles;
 
 /** Pha `[0, 1]` để lấy mẫu: `wrap` vòng lại, `hold` kẹp ở mốc cuối thay vì nhảy về mốc đầu. */
 export const phaseOf = (a: ActionData, t: number): number =>
@@ -877,8 +901,10 @@ export function actionDelta(a: ActionData, t: number): PoseDelta {
         if (c === "stretch" && x) return stretchSegs(x as StretchJson);
         const r = (c === "armFar" || c === "armNear") && k.reach?.[c];
         // Mốc chỉ khai đích tay thì góc cúi thân lấy từ các mốc khác của kênh `torso` tại pha ấy
-        const lean = () =>
-          d.torso ?? (sampleChannel(a, (q) => keyDelta(q).torso, k.t) as number | undefined);
+        const lean = () => {
+          const v = d.torso ?? sampleChannel(a, (q) => keyDelta(q).torso, k.t);
+          return v === undefined ? undefined : torsoBend(v);
+        };
         return (x ?? (r ? reachAngles(r, lean()) : undefined)) as Angles | undefined;
       },
       u,
@@ -1033,6 +1059,8 @@ export function headOver(base: HeadPose, p: Partial<Pose>): HeadPose {
 export const composePose = (base: Pose, ...parts: Partial<Pose>[]): Pose =>
   parts.reduce<Pose>((o, p) => {
     const out = { ...o, ...p, stretch: stretchOver(o.stretch, p), head: headOver(o.head, p) };
+    // Nghiêng ngang đi cùng kênh `torso`: lớp trên ghi thân mà không nghiêng là thân thẳng
+    if (p.torso !== undefined) out.lean = p.lean ?? 0;
     // Kênh `p` ghi mà không mang cờ nâng là giữ 2D, dù lớp dưới đã nâng
     if (o.lift || p.lift) {
       const lift: Lift = { ...o.lift };

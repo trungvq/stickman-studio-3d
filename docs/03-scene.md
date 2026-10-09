@@ -1013,7 +1013,9 @@ qua cả một pha trụ thì phần hông văng ra và văng về bù nhau. Ng�
   bước) theo chính đồng hồ ấy.
 - **Thân nhìn về chỗ sẽ tới.** Đang bước thì hướng thân là hướng từ hông tới chỗ `path` sẽ ở sau
   `0,35 s` (clip đi lùi thì lưng quay về đó); chậm lại hay tới sát thì nhạt dần về `yaw` của mốc.
-  `yaw` của mốc là hướng khi đứng, quay tại chỗ và ngồi.
+  Chỗ ấy lệch `yaw` của mốc quá `60°` thì cũng nhạt dần, tới `120°` thì thôi lái: hông trượt quá mốc
+  dừng thì chỗ cần tới ở sau lưng, người không quay lại để bù vài bước. `yaw` của mốc là hướng khi
+  đứng, quay tại chỗ và ngồi.
 - **Mốc giữa đường là đích mềm.** Góc gấp của `path` thành đường cong (nhìn trước `0,35 s`, quay
   tối đa `150°/s`), khoá góc chính diện đẩy người đi gần tia nhìn ra chéo: hông có thể cách mốc giữa
   đường vài chục đơn vị (`thu-khoi-z`: tới `~40`) rồi bám lại. Chỉ mốc dừng và mốc ngồi là chỗ phải
@@ -1075,6 +1077,17 @@ quãng hông đi cộng `8 · s` đơn vị là trượt (`path` dời người 
 
 Người đi thì số đầu là hướng đi theo `path`. Cảnh báo, không phải lỗi: rig vẫn đẩy, dòng ấy chỉ để
 biết hướng khai không được giữ.
+
+`sceneTurnProblems` đo hướng thân thế giới từng khung (`1/60 s`) và kêu hai kiểu thân quay gắt:
+quay nhanh hơn `300°/s` (mỗi quãng một dòng), và quay đi từ `20°` rồi quay lại quá nửa cú ấy trong
+`1,5 s`. Nó đo hướng rig thật sự vẽ, nên bắt cả cú quay rig tự sinh mà JSON không khai: khoá góc
+chính diện đổi phía khi người quay qua tia nhìn, hướng lái theo `path`, mốc `yaw` đổi trong một
+khung:
+
+```
+`haru` giây 1.93–2.00: thân quay 720°/s (ngưỡng 300°/s) — …
+`haru` giây 1.83–2.10: thân quay 48° rồi quay lại trong 0.27 s — …
+```
 
 Rig không đẩy người 3D ra khỏi đồ khối hay khỏi người khác: lồng vào là đồ bị chặt qua người rồi vẽ
 đè lên. `check` đo mỗi phần người với mỗi mảnh đồ và với phần người của người khác, lấn quá `2` đơn vị
