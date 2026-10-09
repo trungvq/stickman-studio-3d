@@ -13,6 +13,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  copyFileSync,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -172,6 +173,7 @@ function baseline(tag) {
       join(dir, "package.json"),
       JSON.stringify({ name: "so-svg-base", private: true }),
     );
+    copyFileSync(join(STUDIO, ".npmrc"), join(dir, ".npmrc"));
     const r = spawnSync(
       "pnpm",
       [
