@@ -209,6 +209,7 @@ const SEED_ONLY = new Set([
   "src/lop.tsx",
   "src/parts.tsx",
   "src/scene-wrap.tsx",
+  "src/khoi3d/canh.ts",
 ]);
 
 /**
@@ -248,6 +249,7 @@ export function initWorkspace({ dir = ".", force = false, name } = {}) {
   for (const d of GITKEEP_DIRS) write(join(root, d, ".gitkeep"), "", opt, log);
   for (const d of SEED_DIRS) copyTree(join(SOURCES.sample, d), join(root, d), opt, log);
   write(join(root, "pieces", rig.PIECE_CATALOG_FILE), T.emptyCatalog(), opt, log);
+  write(join(root, "scenes", "vi-du-3d.json"), T.scene3d(rig.SCENE_VERSION), opt, log);
   for (const f of managedFiles({ rigVersion: v.rig, project }))
     write(join(root, f.rel), f.body, { ...managed, track: !f.seed }, log);
   write(join(root, "package.json"), T.packageJson({ name: project, versions: v }), opt, log);
@@ -477,6 +479,17 @@ function pkgUpgrade(root, v) {
     if (!(name in deps) || deps[name] === want) continue;
     changes.push(`${name} ${deps[name]} → ${want}`);
     deps[name] = want;
+  }
+
+  // App Remotion vừa chép lại import `three` (`src/khoi3d/`): repo chưa có thì thêm
+  for (const [field, name, want] of [
+    ["dependencies", "three", T.THREE],
+    ["devDependencies", "@types/three", `^${T.THREE}`],
+  ]) {
+    const list = (pkg[field] ??= {});
+    if (name in list) continue;
+    changes.push(`${name} (chưa có) → ${want}`);
+    list[name] = want;
   }
 
   // Tool mới vừa chép vào `tools/` cần script để chạy; script repo đã có thì giữ nguyên, trừ khi

@@ -35,7 +35,13 @@ const serveUrl = await bundle({
   entryPoint: resolve("src/index.ts"),
   webpackOverride,
 });
-const composition = await selectComposition({ serveUrl, id });
+// cảnh 3D (`src/khoi3d/`) vẽ bằng GPU qua Vulkan như `remotion.config.ts`; API renderer không đọc file ấy
+const chromiumOptions = { gl: "vulkan" };
+// biến `REMOTION_*` của shell (`REMOTION_FLAT`, `REMOTION_QUALITY`) vào trang như `remotion still`
+const envVariables = Object.fromEntries(
+  Object.entries(process.env).filter(([k]) => k.startsWith("REMOTION_")),
+);
+const composition = await selectComposition({ serveUrl, id, chromiumOptions, envVariables });
 
 // Lệch một khung ở cuối thì `renderStill` ném, và cả lượt bundle 20–30 giây đi tong. Cắt
 // phần ngoài tầm rồi báo, còn những khung xin đúng vẫn ra ảnh.
@@ -53,6 +59,14 @@ if (!inside.length) {
 
 for (const frame of inside) {
   const output = resolve(outDir, `${id}-${String(frame).padStart(5, "0")}.png`);
-  await renderStill({ serveUrl, composition, frame, output, imageFormat: "png" });
+  await renderStill({
+    serveUrl,
+    composition,
+    frame,
+    output,
+    imageFormat: "png",
+    chromiumOptions,
+    envVariables,
+  });
   console.log(output);
 }

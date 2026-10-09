@@ -110,7 +110,7 @@ rồi đưa thư mục `sau-vs-truoc` cho chủ dự án xem.
 ## Dùng ở repo video
 
 Repo video pin cùng một version cho cả sáu gói `@stickman3d/*` (`stickman init` ghi sẵn,
-`stickman upgrade` nâng), cộng `three` nếu dựng cảnh 3D.
+`stickman upgrade` nâng), cùng `three` (`init` ghi sẵn, `upgrade` thêm khi thiếu).
 
 Trong lúc vừa sửa rig vừa dựng tập thì **đừng đi qua registry** — trỏ `link:` sang cây nguồn,
 chạy `pnpm dev` ở repo này cho tsup build lại:
@@ -168,7 +168,8 @@ stage.dispose();
 
 ## Dùng trong Remotion
 
-Repo video giữ một component mỏng. Mỗi lần mount là **một canvas mới**: context đã `dispose` không dựng lại được
+`stickman init` phát sẵn bản đủ ở `src/khoi3d/` của repo video (sân khấu, lớp chữ 2D đè lên, phòng trơn) —
+[docs/05](docs/05-repo-video.md). Phần dưới là khung của nó. Mỗi lần mount là **một canvas mới**: context đã `dispose` không dựng lại được
 trên canvas cũ, và `StrictMode` chạy effect hai lần.
 
 ```tsx

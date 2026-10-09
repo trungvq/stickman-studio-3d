@@ -27,6 +27,9 @@ import {
   propUrl,
 } from "./data";
 import { useImagesReady } from "./images";
+import { CANH_3D } from "./khoi3d/canh";
+import { Overlay3D } from "./khoi3d/Overlay3D";
+import { Scene3D } from "./khoi3d/Scene3D";
 import { CODE_LAYERS } from "./lop";
 import { SceneWrap } from "./scene-wrap";
 
@@ -98,6 +101,25 @@ export const Scene = ({
   const cam = cameraAt(rt, t);
   // Chỉ `pnpm render:final` chiếu tóc dựng khối đúng góc từng khung; còn lại dùng bản cache — docs/02
   const quality = process.env.REMOTION_QUALITY === "final" ? "final" : "draft";
+  // Cảnh dựng bằng @stickman3d/rig (`khoi3d/canh.ts`): sân khấu three ở dưới, chữ 2D của lớp code đè lên.
+  // `REMOTION_FLAT=1` vẽ bản người que 2D để so
+  const c3 = process.env.REMOTION_FLAT ? undefined : CANH_3D[scene.name];
+  if (c3)
+    return (
+      <AbsoluteFill style={{ background: PAPER }}>
+        <Scene3D scene={scene} t={t} {...c3} />
+        <svg
+          width={width}
+          height={height}
+          viewBox={cam.viewBox}
+          style={{ position: "absolute", inset: 0 }}
+        >
+          <SceneWrap rt={rt} t={t}>
+            <Overlay3D rt={rt} t={t} cam={cam} url={pieceUrl} codeLayers={codeLayers} />
+          </SceneWrap>
+        </svg>
+      </AbsoluteFill>
+    );
   return (
     <AbsoluteFill style={{ background: PAPER }}>
       <svg width={width} height={height} viewBox={cam.viewBox}>

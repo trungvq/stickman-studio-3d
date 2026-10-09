@@ -260,6 +260,9 @@ export const REMOTION = "4.0.518";
 /** Remotion pin zod đúng một số; lệch là mỗi lượt render in một khối "Version mismatch" */
 export const ZOD = "4.4.3";
 
+/** `three` của người 3D (`src/khoi3d/`); `@stickman3d/rig` để nó làm peer, cả app phải chung một bản */
+export const THREE = "0.186.0";
+
 /** Version pin đúng số, không `^`: repo video sống ngắn và docs đã chép theo version này */
 export const packageJson = ({ name, versions }) =>
   JSON.stringify(
@@ -310,11 +313,13 @@ export const packageJson = ({ name, versions }) =>
         react: "^19.2.0",
         "react-dom": "^19.2.0",
         remotion: REMOTION,
+        three: THREE,
         zod: ZOD,
       },
       devDependencies: {
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.0",
+        "@types/three": `^${THREE}`,
         typescript: "^5.9.3",
       },
     },
@@ -333,3 +338,42 @@ export const emptyCatalog = () => JSON.stringify({ schemaVersion: 1, pieces: [] 
 /** `files` là băm của những file studio phát, để `upgrade` biết file nào bị sửa tay */
 export const stickmanJson = ({ versions, at, files = {}, legs }) =>
   JSON.stringify({ schemaVersion: 3, versions, legs, initializedAt: at, files }, null, 2) + "\n";
+
+/**
+ * Cảnh 3D mẫu của `init`: hai người đứng nói trong phòng trơn — `src/khoi3d/canh.ts` nối tên cảnh với
+ * `plainRoom`. Không đi theo `upgrade`: cảnh là của repo.
+ */
+export const scene3d = (schemaVersion) =>
+  JSON.stringify(
+    {
+      schemaVersion,
+      name: "vi-du-3d",
+      frame: "wide",
+      duration: 4,
+      camera: [{ t: 0, x: 0, y: 0, zoom: 1 }],
+      cast: [
+        {
+          id: "lan",
+          character: "common-blue-blouse-skirt.json",
+          tracks: [
+            { name: "than", clips: [{ action: "stand-3d", start: 0 }] },
+            { name: "mat", clips: [{ action: "face-kind", start: 0 }] },
+            { name: "moi", clips: [{ action: "talk-lips", start: 0.3 }] },
+          ],
+          world: { at: [-150, 0, 300], yaw: 50 },
+        },
+        {
+          id: "mai",
+          character: "common-taupe-blazer-skirt.json",
+          tracks: [
+            { name: "than", clips: [{ action: "stand-3d", start: 0 }] },
+            { name: "mat", clips: [{ action: "face-calm", start: 0 }] },
+          ],
+          world: { at: [150, 0, 300], yaw: 130 },
+        },
+      ],
+      lens: { eye: [0, -330, -700], yaw: 0, pitch: 8, f: 1100, cx: 0, cy: 0 },
+    },
+    null,
+    2,
+  ) + "\n";

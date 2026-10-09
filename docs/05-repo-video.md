@@ -24,14 +24,19 @@ khai sẵn server, và `package.json` pin **đúng số version**, không `^`.
 
 Cùng với đó là **app Remotion**: `src/` (`index.ts`, `Root.tsx`, `Scene.tsx`,
 `data.ts`, `images.ts`, tầng tập `episode.ts` / `shots.ts` / `Episode.tsx`, và
-`Thumbnail.tsx`; cùng ba file của repo `lop.tsx`, `parts.tsx`, `scene-wrap.tsx`), `tools/` (`still.mjs`, `thumbnails.mjs`, `srt.mjs`, `tts.py`,
+`Thumbnail.tsx`; cảnh 3D ở `khoi3d/` — `Scene3D.tsx` sân khấu three, `Overlay3D.tsx` lớp chữ 2D đè
+lên, `set.ts` kiểu bối cảnh và phòng trơn `plainRoom`; cùng bốn file của repo `lop.tsx`, `parts.tsx`,
+`scene-wrap.tsx`, `khoi3d/canh.ts`), `tools/` (`still.mjs`, `thumbnails.mjs`, `srt.mjs`, `tts.py`,
 `tts-blocks.py` cùng `len-giong.py`, `lipsync.mjs` cùng `words.py`, `sfx.py`, `sfx-el.py`,
 `sfx-loop.py`, `cut-torso.py`, `webpack.mjs` — [07](07-lam-tap.md#công-cụ-trong-tools)),
 `remotion.config.ts`, `tsconfig.json`, `pnpm-workspace.yaml`, và `package.json` có sẵn
 `pnpm remotion` / `render` / `still` / `frames` / `thumbnails` / `srt` / `tts` /
 `tts-blocks` / `lipsync` / `sfx` / `sfx-el` / `sfx-loop` / `cut-torso` (`pnpm studio` là
 character studio). Bảng riêng của tập cho các tool ấy — `sfx/*.json`, bản lời có tag —
-không có mẫu nào: tool đọc thấy thiếu thì báo cú pháp. Mỗi file trong `scenes/` là một composition, mỗi file trong
+không có mẫu nào: tool đọc thấy thiếu thì báo cú pháp. `package.json` pin cả `three`; `scenes/vi-du-3d.json`
+là cảnh 3D mẫu, `khoi3d/canh.ts` nối tên nó với `plainRoom` — `Scene.tsx` gặp cảnh có trong `CANH_3D` thì vẽ
+người 3D thay người que 2D (`REMOTION_FLAT=1` vẽ bản 2D để so). Render cảnh 3D cần GPU qua Vulkan:
+`remotion.config.ts`, `tools/still.mjs` và `tools/thumbnails.mjs` đặt sẵn `gl: "vulkan"`. Mỗi file trong `scenes/` là một composition, mỗi file trong
 `episodes/` cũng vậy; chi tiết và các bẫy ở [03](03-scene.md#remotion) và
 [07](07-lam-tap.md#bảng-thời-gian-của-cả-tập).
 
@@ -193,21 +198,22 @@ pnpm exec stickman upgrade
 `remotion.config.ts` / `tsconfig.json` và `tools/`, `stickman.md` / `.npmrc` /
 `.mcp.json` / `pnpm-workspace.yaml`, rồi trộn số version của bộ `@stickman3d` vào
 `package.json` (giữ nguyên dependency khác; gói `@stickman3d/*` mà `package.json` chưa có
-thì thêm vào, vì app Remotion vừa chép lại đã import nó). Script cũng vậy: script đã có
+thì thêm vào, vì app Remotion vừa chép lại đã import nó; `three` và `@types/three` cũng vậy). Script cũng vậy: script đã có
 giữ nguyên, script của tool mới chép vào thì thêm.
 
 **`characters/`, `actions/`, `scenes/`, `episodes/`, `props/`, `animals/`, `pieces/`, `sfx/` không bao giờ bị đụng** — đó
 là nội dung của tập phim. Mảnh, hành động, con vật và nhân vật chung mới thì tự có
 theo package (xem [Hai lớp](#hai-lớp)), không cần chép; spec rig cũng vậy.
 `AGENTS.md` / `README.md` / `CLAUDE.md` / `.gitignore` và `src/lop.tsx` / `src/parts.tsx` /
-`src/scene-wrap.tsx` cũng không: `init` phát chúng một lần làm nền, từ đó là của repo video
-(`SEED_ONLY` trong `lib.mjs`), `stickman.json` không giữ băm của chúng. Thiếu thì `upgrade`
-dựng lại bản mẫu — app Remotion `import` cả ba.
+`src/scene-wrap.tsx` / `src/khoi3d/canh.ts` cũng không: `init` phát chúng một lần làm nền, từ đó là
+của repo video (`SEED_ONLY` trong `lib.mjs`), `stickman.json` không giữ băm của chúng. Thiếu thì
+`upgrade` dựng lại bản mẫu — app Remotion `import` cả bốn.
 
 **Đừng sửa file app Remotion và tool do studio phát.** Sửa rồi thì mỗi lần mẫu đổi là một lần
 trộn tay. Thứ của repo có chỗ riêng: lớp vẽ code ở `src/lop.tsx`, bộ phận vẽ bằng code ở
 `src/parts.tsx`, context cho lớp vẽ code cần dữ liệu của app Remotion ở `src/scene-wrap.tsx`
-(`<SceneWrap rt t>` bọc `<SceneWorld>` trong `Scene.tsx`), tool riêng ở file mới trong
+(`<SceneWrap rt t>` bọc `<SceneWorld>` trong `Scene.tsx`), phòng 3D và cảnh 3D ở `src/khoi3d/canh.ts`
+(phòng riêng là hàm trả `Set3D`, để ở file mới cạnh nó), tool riêng ở file mới trong
 `tools/`. Máy có `/tmp` là tmpfs thì khai `"stickman": { "tmpdir": "~/.cache/remotion-tmp" }`
 trong `package.json`: `tools/webpack.mjs` đưa thư mục tạm của mọi lượt bundle ra đó. Sửa
 được việc chung (lỗi, tuỳ chọn mới của tool) thì đưa về `packages/cli/scaffold` của studio.

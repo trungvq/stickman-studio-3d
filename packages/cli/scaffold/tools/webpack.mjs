@@ -30,6 +30,13 @@ export const webpackOverride = (c) => ({
   ...c,
   resolve: {
     ...c.resolve,
-    alias: { ...c.resolve?.alias, "@stickman-common": commonDir() },
+    alias: {
+      ...c.resolve?.alias,
+      "@stickman-common": commonDir(),
+      // `@stickman3d/rig` đi `link:` thì symlink làm webpack tìm three ở repo kia: hai bản three là vật liệu hỏng mà không báo.
+      // Alias từng lối vào, không alias cả thư mục: alias thư mục bỏ qua `exports` của three nên `three/addons/*` không phân giải.
+      three$: join(process.cwd(), "node_modules/three/build/three.module.js"),
+      "three/addons": join(process.cwd(), "node_modules/three/examples/jsm"),
+    },
   },
 });
