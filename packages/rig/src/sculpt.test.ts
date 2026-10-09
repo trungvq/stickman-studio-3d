@@ -23,3 +23,14 @@ describe('sculptMesh', () => {
       });
   }
 });
+
+describe('tóc anime', () => {
+  const s = SCULPT_PRESETS.anime.sculpt;
+  /** Điểm thấp nhất của lọn trước mặt, `y` của sọ đơn vị */
+  const low = (sculpt: Partial<Sculpt>) => Math.min(...sculptMesh(sculpt).spikes.flat().filter(([x, , z]) => z > 0.6 && Math.abs(x) < 0.4).map(([, y]) => y));
+  it('lọn mái rủ đè xuống trán dưới chân tóc, dài theo `spike`', () => {
+    expect(low(s)).toBeLessThan(Math.sin((s.front * Math.PI) / 180) - 0.2);
+    expect(low({ ...s, spike: 1.3 })).toBeLessThan(low(s));
+    expect(sculptMesh({ ...s, spike: 0 }).spikes).toEqual([]);
+  });
+});

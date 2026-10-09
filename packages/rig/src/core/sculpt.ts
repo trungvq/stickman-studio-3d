@@ -93,6 +93,20 @@ export type Spike = [
   width: number,
 ];
 
+/**
+ * Lọn dẹt ôm sọ: kinh độ, vĩ độ chân; dài (độ cung trên sọ, nhân `spike`); hướng đi trên mặt sọ như `Spike`; ngọn
+ * hất khỏi vỏ bấy nhiêu lần bán kính; nửa bề rộng chân; hướng đi xoay thêm bấy nhiêu độ tới ngọn
+ */
+export type Lock = [
+  lon: number,
+  lat: number,
+  length: number,
+  heading: number,
+  lift: number,
+  width: number,
+  turn: number,
+];
+
 /** Nếp chải: vị trí dọc ngôi, phía mái (`1` dài, `−1` ngắn), cung ôm vòm và độ vuốt ra sau. */
 type Stroke = [root: number, side: number, arc: number, sweep: number];
 
@@ -100,6 +114,8 @@ interface SculptStyleDef {
   spikes: Spike[];
   /** Lọn vuốt: như gai, nhưng kinh độ và hướng ngả đo từ ngôi về phía mái. */
   swept?: Spike[];
+  /** Lọn dẹt ôm sọ, tô chung lưới với lọn gai */
+  locks?: Lock[];
   /** Độ nhô của điểm điều khiển lọn vuốt, phần chiều dài lọn; mặc định 0.55. */
   sweptArch?: number;
   /** Nếp cong Bézier trên vỏ, bốn điểm [độ kinh từ ngôi về phía mái, vĩ độ]. */
@@ -415,6 +431,47 @@ export const SCULPT_STYLES: Record<SculptStyle, SculptStyleDef> = {
       [80, 14, 1.3],
     ],
   },
+  anime: {
+    // Lọn dẹt chảy từ đỉnh: mái rủ so le, sườn và gáy hai lớp lọn chồng, lọn đỉnh nằm sát chảy ra trước
+    spikes: [],
+    fringe: "flat",
+    puff: [[180, 20, 55, 0.08]],
+    locks: [
+      [-40, 80, 56, 188, 0.03, 0.24, 18],
+      [-14, 82, 62, 180, 0.04, 0.26, -8],
+      [12, 80, 58, 174, 0.03, 0.25, -16],
+      [36, 76, 50, 166, 0.05, 0.22, -20],
+      [-2, 70, 44, 186, 0.04, 0.15, 10],
+      [26, 68, 40, 170, 0.04, 0.14, -12],
+      [58, 68, 42, 158, 0.1, 0.2, -16],
+      [-62, 70, 46, 196, 0.1, 0.2, 18],
+      [80, 70, 70, 176, 0.08, 0.22, -8],
+      [-80, 70, 70, 184, 0.08, 0.22, 8],
+      [100, 64, 66, 182, 0.12, 0.22, 6],
+      [-100, 64, 66, 178, 0.12, 0.22, -6],
+      [118, 56, 56, 198, 0.2, 0.2, 14],
+      [-118, 56, 56, 162, 0.2, 0.2, -14],
+      [180, 78, 90, 180, 0.03, 0.17, 0],
+      [164, 78, 88, 186, 0.03, 0.17, 6],
+      [-164, 78, 88, 174, 0.03, 0.17, -6],
+      [148, 76, 84, 192, 0.04, 0.17, 8],
+      [-148, 76, 84, 168, 0.04, 0.17, -8],
+      [132, 72, 78, 198, 0.05, 0.17, 10],
+      [-132, 72, 78, 162, 0.05, 0.17, -10],
+      [172, 62, 68, 182, 0.03, 0.14, 4],
+      [-172, 62, 68, 178, 0.03, 0.14, -4],
+      [156, 62, 64, 190, 0.03, 0.14, 6],
+      [-156, 62, 64, 170, 0.03, 0.14, -6],
+      [140, 60, 58, 196, 0.04, 0.14, 8],
+      [-140, 60, 58, 164, 0.04, 0.14, -8],
+      [168, 80, 62, 18, 0.02, 0.2, 10],
+      [-168, 80, 62, 342, 0.02, 0.2, -10],
+      [150, 78, 64, 50, 0.02, 0.2, 14],
+      [-150, 78, 64, 310, 0.02, 0.2, -14],
+      [180, 82, 66, 0, 0.02, 0.2, 0],
+      [172, 72, 40, 15, 0.34, 0.12, 35],
+    ],
+  },
 };
 
 const FEMALE = {
@@ -553,6 +610,19 @@ export const SCULPT_PRESETS = {
   center: {
     label: "Ngôi giữa dài",
     sculpt: { style: "center", part: 0, front: 57, fringe: 50, volume: 0.12, length: 1.55 },
+  },
+  anime: {
+    label: "Anime lởm chởm",
+    sculpt: {
+      style: "anime",
+      front: 46,
+      ear: 10,
+      sideburn: 8,
+      nape: -14,
+      part: 0,
+      fringe: 0,
+      volume: 0.16,
+    },
   },
 } as const satisfies Record<string, { label: string; sculpt: Partial<Sculpt> }>;
 
@@ -725,6 +795,60 @@ export function spikeRings(
     );
   }
   rings.push([tip]);
+  return rings;
+}
+
+/** Lọn dẹt: số đoạn từ chân tới mũi */
+const LOCK_SEG = 12;
+
+/**
+ * Lọn dẹt đi theo cung lớn trên sọ từ chân, hướng xoay dần `turn` độ; trục nằm trên vỏ (kinh độ, vĩ
+ * độ ngoài chân tóc thì trên da) rồi hất lên `lift` theo bình phương chiều dài. Tiết diện dẹt theo
+ * pháp tuyến sọ, rộng giữ đầy tới gần ngọn rồi thon nhọn. Ra các vòng tiết diện như `spikeRings`.
+ */
+export function lockRings(
+  s: Sculpt,
+  [lon, lat, length, heading, lift, width, turn]: Lock,
+): Vec3[][] {
+  const len = length * s.spike;
+  const rim = (SCULPT_STYLES[s.style].rim ?? 0.3) * s.volume;
+  const shell = (p: Vec3) => {
+    const lo = Math.atan2(p[0], p[2]) / D;
+    const la = Math.asin(Math.max(-1, Math.min(1, p[1]))) / D;
+    const low = rootLat(s, lo);
+    if (la < low) return rim * step(low - 6, low, la);
+    return shellLift(s, lo, la, rowEase(((la - low) / (90 - low)) * NJ), rim);
+  };
+  let p = onSkull(lon, lat);
+  const east: Vec3 = [Math.cos(lon * D), 0, -Math.sin(lon * D)];
+  const north = cross(p, east);
+  let t = north.map((v, d) => v * Math.cos(heading * D) + east[d] * Math.sin(heading * D)) as Vec3;
+  const ds = (len * D) / LOCK_SEG;
+  const rings: Vec3[][] = [];
+  for (let m = 0; m <= LOCK_SEG; m++) {
+    const v = m / LOCK_SEG;
+    const r = width * Math.cos((Math.PI / 2) * v ** 1.6) ** 0.8;
+    const thick = r * 0.3;
+    // Chân chìm dưới mặt vỏ để vòng đầu không lòi ra
+    const up = 1 + shell(p) + thick * 0.5 + lift * v * v - thick * 1.5 * (1 - step(0, 0.35, v));
+    const side = cross(t, p);
+    if (m === LOCK_SEG) rings.push([p.map((a) => a * up) as Vec3]);
+    else
+      rings.push(
+        Array.from({ length: RING }, (_, i) => {
+          const a = (i / RING) * 2 * Math.PI;
+          const [u, w] = [Math.cos(a) * r, Math.sin(a) * thick];
+          return p.map((x, d) => x * (up + w) + side[d] * u) as Vec3;
+        }),
+      );
+    // Bước trên cung lớn theo `t`, rồi xoay `t` quanh pháp tuyến mới
+    const q = p.map((x, d) => x * Math.cos(ds) + t[d] * Math.sin(ds)) as Vec3;
+    t = t.map((x, d) => x * Math.cos(ds) - p[d] * Math.sin(ds)) as Vec3;
+    p = q;
+    const k = ((turn * D) / LOCK_SEG) * -1;
+    const b = cross(p, t);
+    t = t.map((x, d) => x * Math.cos(k) + b[d] * Math.sin(k)) as Vec3;
+  }
   return rings;
 }
 

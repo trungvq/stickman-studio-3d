@@ -9,7 +9,7 @@ import { mouths, styles } from './demo-styles.js';
 export const BOY = {
   rig: { stroke: 6, height: 1, shoulderHalf: 40, shoulderDrop: 20, hipHalf: 28 },
   garment: { style: 'shirt' }, color: '#3aa89c', skin: '#f8e3c8', sleeveWidth: 8, trouserWidth: 9,
-  hair: { style: 'spiky', front: 40, nape: -22, ear: 10, sideburn: 16, part: 35, fringe: 13, volume: 0.1 },
+  hair: { style: 'anime', front: 46, nape: -14, ear: 10, sideburn: 8, part: 0, fringe: 0, volume: 0.16 },
   hairColor: '#33333a',
 };
 export const GIRL = {

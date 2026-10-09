@@ -204,8 +204,8 @@ ba. `hairline` và `sculptPaths` ở `sculpt.tsx`.
 | `bangTo` | −50 | Kinh độ chỗ mái lệch rủ sâu nhất |
 | `bangThick` | 0.1 | Bề dày mép mái lệch, lần bán kính sọ |
 | `length` | 0 | Đuôi tóc dưới tâm đầu bấy nhiêu lần bán kính, đo theo trọng lực; `0` là tóc không rủ |
-| `style` | `plain` | Kiểu: `plain` vỏ trơn, `neat` chải gọn có rãnh ngôi và nét chải, `spiky` mọc gai và mái răng cưa, `round` mái bằng khối tròn phồng, `center` ngôi giữa mái rẽ hai bên, `bob` đuôi cụp, `shoulder` ngang vai gợn sóng, `slick` trán cao vuốt ngược, `curly` xoăn búp, `bald` hói đỉnh chỉ còn vành tóc, `pony` đuôi ngựa, `bun` búi, `messy` ngắn xù mái răng cưa đuôi so le, `afro` xoăn bồng ôm cả đầu, `buzz` đầu đinh sát da, `crop` tròn ngắn có lọn xoáy, `quiff` mái dựng vuốt ngược; hình của kiểu ở bảng `SCULPT_STYLES` |
-| `spike` | 1 | Hệ số nhân chiều dài gai và lọn vuốt của kiểu; `0` tắt cả hai |
+| `style` | `plain` | Kiểu: `plain` vỏ trơn, `neat` chải gọn có rãnh ngôi và nét chải, `spiky` mọc gai và mái răng cưa, `round` mái bằng khối tròn phồng, `center` ngôi giữa mái rẽ hai bên, `bob` đuôi cụp, `shoulder` ngang vai gợn sóng, `slick` trán cao vuốt ngược, `curly` xoăn búp, `bald` hói đỉnh chỉ còn vành tóc, `pony` đuôi ngựa, `bun` búi, `messy` ngắn xù mái răng cưa đuôi so le, `afro` xoăn bồng ôm cả đầu, `buzz` đầu đinh sát da, `crop` tròn ngắn có lọn xoáy, `quiff` mái dựng vuốt ngược, `anime` lọn dẹt nhọn chảy từ xoáy; hình của kiểu ở bảng `SCULPT_STYLES` |
+| `spike` | 1 | Hệ số nhân chiều dài gai, lọn vuốt và lọn dẹt của kiểu; `0` tắt cả ba |
 | `crownSide` / `crownBack` | 22 / 32 | Kiểu hói: vĩ độ mép trên vành tóc ở hai bên, sau gáy |
 | `crownFrom` / `crownEase` | 80 / 12 | Kiểu hói: kinh độ mũi trước của vành, và số độ kinh từ mũi tới chỗ vành mở hết bề cao |
 | `tie` | 55 | Đuôi ngựa, búi: vĩ độ chỗ buộc sau gáy (kinh độ 180) |
@@ -215,7 +215,7 @@ Mặc định là tóc ngắn rẽ ngôi lệch của nam. `SCULPT_PRESETS` là 
 (tóc nam ngắn), `buzz` (đầu đinh, `style: "buzz"`), `crop` (tròn ngắn, `style: "crop"`), `quiff` (mái dựng vuốt ngược, `style: "quiff"`), `spiky` (rối gai, `style: "spiky"`), `neat` (rẽ ngôi chải gọn,
 `style: "neat"`), `slick` (vuốt ngược, `style: "slick"`), `curly` (xoăn búp, `style: "curly"`), `afro` (xoăn bồng, `style: "afro"`), `bald` (hói đỉnh, `style: "bald"`), `baldLight` (hói nhẹ), `baldFront` (hói trán), `ponyHigh` (đuôi ngựa buộc cao, `style: "pony"`), `ponyLow` (đuôi ngựa buộc thấp), `bun` (búi cao, `style: "bun"`), `messy` (ngắn xù, `style: "messy"`, `length` 1.05), `round` (mái bằng tròn, `style: "round"`), `bang` (mái lệch), `bob`
 (ngang cằm, `style: "bob"`, `length` 0.91), `shoulder`
-(ngang vai mái lệch, `style: "shoulder"`, `length` 1.35), `center` (ngôi giữa dài, `style: "center"`); áp mẫu là
+(ngang vai mái lệch, `style: "shoulder"`, `length` 1.35), `center` (ngôi giữa dài, `style: "center"`), `anime` (anime lởm chởm, `style: "anime"`); áp mẫu là
 thay cả `sculpt`. Studio chọn mẫu ở lưới ô Tóc, mỗi
 mẫu một ô có thumb như kiểu tóc; `sculptPresetOf` cho biết bộ số đang đúng bằng mẫu nào.
 
@@ -424,6 +424,28 @@ sát tai. Kiểu gai không vẽ đường ngôi.
 
 Thêm kiểu mới là thêm một mục vào `SCULPT_STYLE_NAMES` và `SCULPT_STYLES`, rồi soi bằng
 dải ảnh ở đủ góc; chỉnh số bằng mắt cho khớp chính diện của kiểu tóc muốn thay.
+
+#### Tóc anime
+
+Kiểu `anime` là vỏ trơn phủ bởi **lọn dẹt** (`locks` của bảng kiểu), dáng tóc nam anime ở
+sheet `assets/sheets/hair-m.webp`. Mỗi lọn ghi kinh độ, vĩ độ chân, chiều dài (độ cung trên
+sọ, nhân `spike`), hướng đi trên mặt sọ như lọn gai, độ hất ngọn khỏi vỏ (lần bán kính,
+tăng theo bình phương chiều dài), nửa bề rộng chân và số độ hướng đi xoay thêm tới ngọn.
+
+- Trục lọn đi theo cung lớn trên sọ, nằm sát mặt vỏ; qua khỏi chân tóc thì nằm trên da,
+  nên mái là lọn rủ đè lên trán chứ không phải chân tóc hạ xuống. Chân chìm dưới vỏ.
+- Tiết diện dẹt theo pháp tuyến sọ, dày `0.3` bề rộng; bề rộng giữ gần đủ tới hai phần ba
+  rồi thon nhọn. Mép lọn có nét nhờ độ sâu gãy và cạnh gấp ở hậu kỳ.
+- Chân lọn chìm dưới vỏ rồi trồi lên dần trong 35% chiều dài đầu: trồi gắt thì chân lọn
+  thành gờ sắc, nhiều chân gần nhau thành một vòng gờ quanh đỉnh.
+- Bảng `anime`: năm lọn mái lớn và hai lọn mái nhỏ chèn giữa, mũi so le trên mày; sườn hai
+  lớp lọn chồng, lớp dưới hất ra (`lift` tới 0.2); gáy hai lớp lọn hẹp mọc từ gần đỉnh chảy
+  xuống, nằm sát vỏ, mũi dừng ngay trên mép vỏ gáy (mép gáy phẳng, lọn không thò quá),
+  lớp dưới ngắn hơn chèn giữa cho mũi so le; lọn đỉnh nằm sát vỏ chảy ra trước; một sợi
+  vểnh. Một `puff` sau gáy cho đầu tròn ra sau. Mẫu `anime` có `front` 46, `ear` 10,
+  `sideburn` 8, `nape` −14, `part` 0 (`puff` đo từ ngôi), `fringe` 0, `volume` 0.16. Đổi
+  `nape` thì chiều dài lọn gáy phải đổi theo.
+- Lọn dẹt chỉ có ở người 3D; `sculptPaths` vẽ kiểu này là vỏ trơn.
 
 #### Tóc rủ
 

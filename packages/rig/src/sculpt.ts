@@ -1,7 +1,7 @@
 import { D, SCULPT_DEPTH, SCULPT_FLARE, SCULPT_HANG_FROM, SCULPT_TEMPLE, SCULPT_TUCK } from './core/constants';
 import { SculptSchema, type Sculpt } from './core/schema';
 import {
-  bangAt, BUN_SEG, cross, CROWN_EASE, crownLat, curlCenters, dot, fromPart, hairline, HANG_EASE, hash, KNOT_RING, NJ, NK, NT, partPlane, PONY_SEG, RING, rootLat, rowEase, SCULPT_STYLES, shellLift, spikeRings, step,
+  bangAt, BUN_SEG, cross, CROWN_EASE, crownLat, curlCenters, dot, fromPart, hairline, HANG_EASE, hash, KNOT_RING, lockRings, NJ, NK, NT, partPlane, PONY_SEG, RING, rootLat, rowEase, SCULPT_STYLES, shellLift, spikeRings, step,
   type Spike,
 } from './core/sculpt';
 import { onSkull, type Vec3 } from './core/sphere';
@@ -158,6 +158,20 @@ export function sculptMesh(raw: Partial<Sculpt>): SculptMesh {
     if (def.crown) quad(out.shell, [A.top, A.shell[NJ], B.shell[NJ], B.top]);
   }
 
+  /** Ống từ các vòng tiết diện, phần tử cuối là mũi: nắp chân, thân, chóp */
+  const tube = (rings: Vec3[][]) => {
+    const tip = rings[rings.length - 1][0];
+    for (let r = 1; r + 1 < RING; r++) tri(out.spikes, [rings[0][0], rings[0][r], rings[0][r + 1]], tip);
+    for (let m = 0; m + 1 < rings.length; m++) {
+      const c = mid(rings[m]);
+      for (let r = 0; r < RING; r++) {
+        const [a, b] = [rings[m][r], rings[m][(r + 1) % RING]];
+        const next = rings[m + 1];
+        if (next.length === 1) tri(out.spikes, [a, b, next[0]], c);
+        else quad(out.spikes, [a, b, next[(r + 1) % RING], next[r]], c);
+      }
+    }
+  };
   if (s.spike > 0)
     for (const [k, base, arch] of [
       ...def.spikes.map((k) => [k, s.volume, 0.55] as const),
@@ -172,20 +186,8 @@ export function sculptMesh(raw: Partial<Sculpt>): SculptMesh {
           def.sweptArch ?? 0.55,
         ] as const;
       }),
-    ]) {
-      const rings = spikeRings(s, k, base, arch);
-      const tip = rings[rings.length - 1][0];
-      for (let r = 1; r + 1 < RING; r++) tri(out.spikes, [rings[0][0], rings[0][r], rings[0][r + 1]], tip);
-      for (let m = 0; m + 1 < rings.length; m++) {
-        const c = mid(rings[m]);
-        for (let r = 0; r < RING; r++) {
-          const [a, b] = [rings[m][r], rings[m][(r + 1) % RING]];
-          const next = rings[m + 1];
-          if (next.length === 1) tri(out.spikes, [a, b, next[0]], c);
-          else quad(out.spikes, [a, b, next[(r + 1) % RING], next[r]], c);
-        }
-      }
-    }
+    ]) tube(spikeRings(s, k, base, arch));
+  if (s.spike > 0) for (const k of def.locks ?? []) tube(lockRings(s, k));
 
   if (hanging) {
     const fwd: Vec3 = [0, 0, 1];

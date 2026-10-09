@@ -66,6 +66,7 @@ export const SCULPT_STYLE_NAMES = [
   "buzz",
   "crop",
   "quiff",
+  "anime",
 ] as const;
 
 export const SculptSchema = z.object({
@@ -74,7 +75,7 @@ export const SculptSchema = z.object({
    * `round` mái bằng; `center` ngôi giữa; `bob` đuôi cụp; `shoulder` ngang vai gợn sóng; `slick` vuốt ngược;
    * `curly` xoăn búp; `bald` hói đỉnh, chỉ còn vành tóc hai bên và sau gáy; `pony` đuôi ngựa; `bun`
    * búi; `messy` ngắn xù, đuôi so le; `afro` xoăn bồng ôm cả đầu; `buzz` đầu đinh sát da; `crop` tròn ngắn mái bằng có lọn xoáy;
-   * `quiff` mái dựng cao vuốt ngược
+   * `quiff` mái dựng cao vuốt ngược; `anime` lọn dẹt nhọn chảy từ xoáy, mái rủ, mai và gáy hất ra
    */
   style: z.enum(SCULPT_STYLE_NAMES).default("plain"),
   /** Vĩ độ chân tóc giữa trán */
