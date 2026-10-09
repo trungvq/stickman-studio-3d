@@ -1,5 +1,6 @@
 export * from "./accessories";
 export * from "./accessoryViews";
+export * from "./act3";
 export * from "./action";
 export * from "./animalGait";
 export * from "./animalGeometry";

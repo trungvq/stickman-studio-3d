@@ -10,11 +10,11 @@ import { INK, toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
 import type { Garment, Glasses, Sculpt, Skirt } from './core/schema';
-import { garmentShoulder } from './core/torso';
+import { BONES3, HEAD3, roots3 } from './core/act3';
 import type { Rig } from './torso';
 
 // Tỉ lệ lấy từ RIG của @stickman3d/sketch, chia 100: người cao ~4,3 đơn vị, đầu to bằng gần một phần ba.
-export const R = { torso: 1.2, neck: 0.08, head: 0.64, upperArm: 0.62, foreArm: 0.58, thigh: 0.78, shin: 0.92, limb: 0.042 };
+export const R = BONES3;
 
 const ink = npr({ color: INK, stipple: 0 });
 const hull = hullMaterial(0.026, INK);
@@ -271,7 +271,7 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
   const neck = joint(spine, 0, R.torso, 0);
   const skullScale = new THREE.Vector3(1, 1.04, 0.98);
   // đáy sọ trên mép cổ áo (khớp cổ của lõi + `rise` 6 của áo phông): cằm chìm vào khối áo là mất viền
-  const head = joint(neck, 0, R.neck + 0.09 + R.head * skullScale.y, 0);
+  const head = joint(neck, 0, HEAD3, 0);
   const skull = new THREE.SphereGeometry(R.head, ...q.skull);
   skull.scale(skullScale.x, skullScale.y, skullScale.z);
   head.add(inked(skull, npr({ color: skin, stipple: 0.035, stippleScale: 4, soft: 1, flat: true }), 0.03));
@@ -285,8 +285,9 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
     head.add(g);
   }
   if (hair) sculptHair(head, hair, hairColor);
-  const legs = { [-1]: leg(hips, -1, rig.hipHalf / 100), [1]: leg(hips, 1, rig.hipHalf / 100) } as Record<Side, Leg>;
-  const sx = garmentShoulder(garment, rig) / 100, sy = (120 - rig.shoulderDrop) / 100;
+  const at = roots3(garment, rig);
+  const legs = { [-1]: leg(hips, -1, at.hip), [1]: leg(hips, 1, at.hip) } as Record<Side, Leg>;
+  const [sx, sy] = at.shoulder;
   const arms = { [-1]: arm(spine, -1, sx, sy), [1]: arm(spine, 1, sx, sy) } as Record<Side, Arm>;
   // tay chân rủ hơi choãi như hình 2D
   for (const s of SIDES) arms[s].shoulder.rotation.z = s * 0.2;

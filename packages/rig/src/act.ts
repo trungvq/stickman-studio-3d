@@ -1,12 +1,13 @@
 import * as THREE from 'three';
+import { actAngles, actReach, SPLAY3, type ActFrame } from './core/act3';
+import type { V3 } from './core/lens';
 import type { BrowKind, EyeKind, MouthKind } from './core/types';
 import { toThree, type Vec3 } from './khoi';
 import { R, type Figure, type Side } from './stickman';
 
 // Diễn theo tư thế đã lấy mẫu của @stickman3d/sketch (`sceneAt`, docs/01-rig.md#người-3d): package không đọc JSON hành
-// động hay scene. Chỉ kênh tay chân soạn ở `side` (`pose.lift`) và đích cổ tay được đọc — góc trong mặt phẳng dọc
-// thân, `0` thẳng xuống, dương ra trước, khớp con tương đối khớp cha. Kênh tay chân soạn trên mặt khung 2D thì
-// người đứng nghỉ (ngồi thì đùi ngang).
+// động hay scene. Luật đọc góc (`actAngles`) và IK (`actReach`) ở lõi, `actJoints` của lõi tính lại đúng các khớp này
+// cho `check` — đổi khung xương ở đây thì đổi cùng `core/act3.ts`.
 
 /** Đích cổ tay: hệ thân `[tiến, y xuống, ra ngoài]` đơn vị rig trong `pose.reach`, toạ độ thế giới rig trong `world.hands` */
 export interface ActReach { at: readonly number[]; elbow?: readonly number[]; w: number }
@@ -44,10 +45,6 @@ export interface Acting {
 
 const D = Math.PI / 180;
 const DOWN = new THREE.Vector3(0, -1, 0);
-/** `REACH_ELBOW` của @stickman3d/sketch: khuỷu xuống, lùi, ra ngoài */
-const REACH_ELBOW: Vec3 = [-0.4, 1, 0.5];
-/** Tay choãi khỏi thân áo một chút; đích cổ tay thì không */
-const SPLAY = 0.08;
 
 const num = (v: number | undefined) => (Number.isFinite(v) ? (v as number) : 0);
 
@@ -57,21 +54,6 @@ function segment(j: THREE.Group, child: THREE.Group | undefined, len: number, st
   if (child) child.position.y = -len * st;
 }
 
-/** IK hai đoạn của @stickman3d/sketch (`solveTwoBone`): khớp giữa trong mặt phẳng qua trục gốc → đích và `pole` */
-function twoBone(S: THREE.Vector3, T: THREE.Vector3, l1: number, l2: number, pole: THREE.Vector3) {
-  const d = T.clone().sub(S), dist = d.length();
-  const n = dist > 1e-9 ? d.divideScalar(dist) : new THREE.Vector3(0, -1, 0);
-  const across = (v: THREE.Vector3) => v.clone().addScaledVector(n, -v.dot(n));
-  let u = across(pole);
-  if (u.lengthSq() < 1e-18) u = across(DOWN);
-  if (u.lengthSq() < 1e-18) u = across(new THREE.Vector3(1, 0, 0));
-  u.normalize();
-  const reach = Math.min(Math.max(dist, Math.abs(l1 - l2)), l1 + l2);
-  const a = (l1 * l1 - l2 * l2 + reach * reach) / (2 * reach || 1);
-  const h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
-  return [S.clone().addScaledVector(n, a).addScaledVector(u, h), S.clone().addScaledVector(n, reach)];
-}
-
 /** Xoay `j` cho đoạn rủ −y của nó chĩa từ `from` tới `to` (thế giới) */
 function aim(j: THREE.Object3D, from: THREE.Vector3, to: THREE.Vector3) {
   const q = j.parent!.getWorldQuaternion(new THREE.Quaternion()).invert();
@@ -79,29 +61,23 @@ function aim(j: THREE.Object3D, from: THREE.Vector3, to: THREE.Vector3) {
   j.updateMatrixWorld(true);
 }
 
-/** Tay `side` với tới đích hệ thân `rb` (gốc là tâm hông 2D, tức `root`) rồi đích thế giới `rw`, hoà trên vị trí cổ tay theo `w` như rig */
+const v3 = (v: THREE.Vector3): V3 => [v.x, v.y, v.z];
+
+/** Tay `side` với tới đích hệ thân `rb` rồi đích thế giới `rw` (`actReach` của lõi) */
 function reachArm(p: Figure, side: Side, rb: ActReach | undefined, rw: ActReach | undefined) {
   if (!(rb && rb.w > 0) && !(rw && rw.w > 0)) return;
   const { shoulder, elbow, wrist } = p.arms[side];
   const S = shoulder.getWorldPosition(new THREE.Vector3());
-  const E = elbow.getWorldPosition(new THREE.Vector3());
-  let T = wrist.getWorldPosition(new THREE.Vector3());
   const hq = p.root.getWorldQuaternion(new THREE.Quaternion());
-  const body = ([f, y, o]: readonly number[]) => new THREE.Vector3(side * o, -y, f);
-  const axis = T.clone().sub(S).normalize();
-  const bend = E.clone().sub(S).addScaledVector(axis, -E.clone().sub(S).dot(axis));
-  let pole = bend.lengthSq() > 1e-10 ? bend.normalize() : body(REACH_ELBOW).applyQuaternion(hq).normalize();
-  const toward = (r: ActReach | undefined, target: () => THREE.Vector3, el: THREE.Vector3) => {
-    if (!r || !(r.w > 0)) return;
-    const k = Math.min(1, r.w);
-    T = T.clone().lerp(target(), k);
-    pole = pole.multiplyScalar(1 - k).addScaledVector(el.normalize(), k);
+  const frame: ActFrame = {
+    point: (v) => v3(p.root.localToWorld(new THREE.Vector3(...v))),
+    dir: (v) => v3(new THREE.Vector3(...v).applyQuaternion(hq)),
   };
-  toward(rb, () => p.root.localToWorld(body(rb!.at).multiplyScalar(0.01)), body(rb?.elbow ?? REACH_ELBOW).applyQuaternion(hq));
-  toward(rw, () => toThree(rw!.at as Vec3), rw?.elbow ? new THREE.Vector3(rw.elbow[0], -rw.elbow[1], -rw.elbow[2]) : body(REACH_ELBOW).applyQuaternion(hq));
   const k = p.root.scale.x;
-  const l1 = elbow.position.length() * k, l2 = wrist.position.length() * k;
-  const [e, w] = twoBone(S, T, l1, l2, pole);
+  const chain = [S, elbow.getWorldPosition(new THREE.Vector3()), wrist.getWorldPosition(new THREE.Vector3())].map(v3) as [V3, V3, V3];
+  const ik = actReach(frame, side, chain, elbow.position.length() * k, wrist.position.length() * k, rb, rw);
+  if (!ik) return;
+  const [e, w] = ik.map((q) => new THREE.Vector3(...q));
   aim(shoulder, S, e);
   aim(elbow, e, w);
 }
@@ -131,14 +107,13 @@ export function act(p: Figure, sp: Acting, t?: number) {
     p.hips.position.set(0, seated ? 0 : R.limb, 0);
   }
   const st = P.stretch;
-  const angles = (ch: Limb, rest: readonly number[]) => (P.lift?.[ch] ? P[ch] : rest);
 
   for (const side of [near, -near as Side]) {
     const isNear = side === near;
     const { hip, knee } = p.legs[side];
-    const [a, b] = angles(isNear ? 'ln' : 'lf', seated ? [90, -90] : [0, 0]);
-    hip.rotation.set(-num(a) * D, 0, 0);
-    knee.rotation.set(-num(b) * D, 0, 0);
+    const [a, b] = actAngles(P, isNear ? 'ln' : 'lf', seated);
+    hip.rotation.set(-a * D, 0, 0);
+    knee.rotation.set(-b * D, 0, 0);
     segment(hip, knee, R.thigh, st[isNear ? 6 : 4] ?? 1);
     segment(knee, undefined, R.shin, st[isNear ? 7 : 5] ?? 1);
   }
@@ -152,9 +127,9 @@ export function act(p: Figure, sp: Acting, t?: number) {
   for (const side of [near, -near as Side]) {
     const ch = side === near ? 'an' : 'af';
     const { shoulder, elbow, wrist } = p.arms[side];
-    const [a, b] = angles(ch, [0, 0]);
-    shoulder.rotation.set(-num(a) * D, 0, side * SPLAY, 'ZXY');
-    elbow.rotation.set(-num(b) * D, 0, 0);
+    const [a, b] = actAngles(P, ch, false);
+    shoulder.rotation.set(-a * D, 0, side * SPLAY3, 'ZXY');
+    elbow.rotation.set(-b * D, 0, 0);
     segment(shoulder, elbow, R.upperArm, st[side === near ? 2 : 0] ?? 1);
     segment(elbow, wrist, R.foreArm, st[side === near ? 3 : 1] ?? 1);
   }
