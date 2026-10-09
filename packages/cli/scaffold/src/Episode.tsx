@@ -151,7 +151,10 @@ export const Episode = ({
 }) => {
   const frame = useCurrentFrame();
   const all = getRemotionEnvironment().isRendering;
-  const laid = useMemo(() => [...layoutShots(episode, fps, sceneSeconds)].reverse(), [episode, fps]);
+  const laid = useMemo(
+    () => [...layoutShots(episode, fps, sceneSeconds)].reverse(),
+    [episode, fps],
+  );
   return (
     <>
       {laid
