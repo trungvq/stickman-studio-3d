@@ -55,7 +55,7 @@ Người 3D dựng thẳng từ chúng, không giữ bảng riêng.
 
 **Chi tiết mới bắt buộc có ở 3D.** Thêm một kiểu, một trường của bảng kiểu hay một bộ phận thì người
 3D phải dựng nó — `sculptMesh`, `torsoMesh`, `glassesMesh` đọc đủ mọi trường (`sculpt.test.ts` kiểm
-cho tóc), và soi bằng `pnpm shots`.
+cho tóc), và soi bằng `pnpm shots` khi chủ dự án cho phép.
 
 **2D phẳng và 2.5D giữ để render tập cũ và overlay.** Người 2D phẳng (mảnh PNG, bộ phận vẽ code) và
 2.5D (`sculptPaths`, `torsoPaths`, `glassesPaths`, `beardPaths`, `skirtPaths`) không bắt buộc theo mẫu
@@ -140,9 +140,11 @@ nhập tay `createPipeline({ shadow })` thì phải ôm hết vùng có bóng.
 ## Kiểm tra trước khi bảo là xong
 
 ```bash
-pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build && pnpm shots
+pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build
 ```
 
-Rồi **mở tờ gộp `tmp/shots/<tên>.png` và thật sự nhìn** — typecheck đúng không có nghĩa là hình
-đúng. Đụng tới hình 3D thì chụp cả bản trước thay đổi và ghép bằng `--vs`; đụng tới hình 2D thì chạy
-bộ so SVG (`tools/so-svg.mjs`) và chụp studio ở hai bề ngang `390x844`, `1400x900`.
+**`pnpm shots` chỉ chạy khi chủ dự án cho phép** — nó chậm. Đụng tới hình 3D (`packages/rig/src/*.ts`,
+hình học ở `core/`, `apps/viewer`) thì hỏi trước; được phép thì chụp cả bản trước thay đổi, ghép bằng
+`--vs`, `--only` các khung liên quan khi sửa một vùng hẹp, rồi **mở tờ gộp `tmp/shots/<tên>.png` và
+thật sự nhìn** — typecheck đúng không có nghĩa là hình đúng. Đụng tới hình 2D thì chạy bộ so SVG (`tools/so-svg.mjs`) và chụp studio ở hai bề ngang
+`390x844`, `1400x900`.
