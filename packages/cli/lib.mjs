@@ -1736,6 +1736,7 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
           for (const problem of rig.sceneSlideProblems(rt)) warn(`scenes/${f}: ${problem}`);
           // Khoá góc chính diện đẩy thân người 3D: hướng khai không được giữ — docs/03-scene.md#người-3d
           for (const problem of rig.sceneFacingProblems(rt)) warn(`scenes/${f}: ${problem}`);
+          for (const problem of rig.sceneTurnProblems(rt)) warn(`scenes/${f}: ${problem}`);
           // Người 3D diễn hành động 2D ở kênh tay chân — docs/03-scene.md#hành-động-cho-người-3d
           for (const problem of rig.sceneSideProblems(rt, actionsByName))
             bad(`scenes/${f}: ${problem}`);

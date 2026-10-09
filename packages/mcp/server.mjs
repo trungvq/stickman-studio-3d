@@ -706,6 +706,7 @@ server.registerTool(
         ...rig.sceneEquipProblems(r.data, actions),
         ...rig.sceneSlideProblems(rt),
         ...rig.sceneFacingProblems(rt),
+        ...rig.sceneTurnProblems(rt),
         ...sceneSnapLines(rt),
       ];
       // `check` coi là lỗi: người 3D diễn hành động 2D ở kênh tay chân
