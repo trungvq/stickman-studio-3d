@@ -167,7 +167,9 @@ không có tool riêng.
   Cảnh có `lens` và người 3D kèm `clashes`: mỗi mốc hỏi, các chỗ phần người lồng vào đồ khối hay vào
   người khác sâu quá ngưỡng của `check`, sâu trước —
   `{ "0.5": [{ "who": "haru.head", "with": "hoc (mảnh 0)", "depth": 33 }] }`
-  ([10](10-lop-ve-code.md#người-lồng-vào-đồ)). `world.joints` là khớp của người que SVG
+  ([10](10-lop-ve-code.md#người-lồng-vào-đồ)). Đó là đường khối lớp vẽ code: `scene_probe` không dựng
+  cảnh three của `stickman.world`, cảnh đo trên cảnh three thì soi bằng tool `check`
+  ([10](10-lop-ve-code.md#đo-trên-cảnh-three)). `world.joints` là khớp của người que SVG
   (`figure3d`); khớp sân khấu three vẽ ra là `actJoints` ([01](01-rig.md#khớp-người-3d-vẽ-ra)).
 - **`scene_probe`** kèm `snaps` khi cảnh có chỗ tay chân giật trên hình: cả cảnh, không theo mốc hỏi
   (hỏi riêng một người bằng `cast` thì chỉ người ấy), cùng dòng báo và ngưỡng (`stickman.snap`) với

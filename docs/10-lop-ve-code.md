@@ -253,7 +253,40 @@ Rig không đẩy người ra khỏi đồ và lúc vẽ không báo gì khi kh�
 lên người: cẳng tay chìm dưới mặt bàn thì mép bàn cắt ngang tay, ghế kê sát quá thì mép bàn đâm vào
 bụng, cốc kê sâu vào mặt thì miệng cốc che nửa mặt. Chỗ phải sửa là chỗ đặt người, đồ hay đích tay.
 
-`stickman check` đo cho mỗi cảnh có `lens` và người `world` (trừ cảnh khớp `stickman.frozen`):
+`stickman check` đo cho mỗi cảnh có `lens` và người `world` (trừ cảnh khớp `stickman.frozen`), bằng
+một trong hai đường:
+
+| Cảnh | Người đo với | Bộ phận gọi là |
+|---|---|---|
+| mặc định | khối đồ của `solids(ctx)` — [Khối lớp vẽ code](#khối-lớp-vẽ-code) | `a.forearmNear`, `a.head`… (`BODY_PARTS` của fx) |
+| repo khai `stickman.world` và `worldOf` trả cảnh | mọi vật của chính cảnh three mà repo vẽ — [Đo trên cảnh three](#đo-trên-cảnh-three) | `a.foreArmR`, `a.head`… (`BODY_PARTS` của rig, `R`/`L` là tay chân phải/trái) |
+
+Cảnh đi đường cảnh three thì không đo `solids(ctx)` với người, nên một món không báo hai lần.
+Người với người, [tay xuyên thân](#tay-xuyên-thân) và [đồ lồng vào đồ](#đồ-lồng-vào-đồ) ở mọi cảnh
+vẫn đo bằng khối của `<SceneWorld>`.
+
+Chung cho hai đường:
+
+- lấy mẫu mỗi `0,25 s` giây cảnh, chia đôi quãng nào có đỉnh khối người dời quá `4` đơn vị cho tới
+  một khung `1/30 s`, nên tay quét qua mép bàn trong vài khung vẫn bị bắt;
+- lấn quá ngưỡng mới kêu: mặc định `2` đơn vị thế giới, khai `"stickman": { "clash": { "tol": 3 } }`
+  trong `package.json` để đổi;
+- bỏ chỗ nằm ngoài khung camera lúc ấy, mỗi đường xét theo cách của nó (dưới). Bị rèm hay vật khác
+  che thì vẫn báo — `check` không biết khung còn gì đè lên;
+- mỗi cặp (phần người, món) một dòng cảnh báo, sâu nhất trước: chỗ lấn sâu nhất, ở giây nào, và các
+  quãng giây liền nhau đang lấn. Đặt `name` cho món: tên trong dòng báo là tên ấy.
+
+**Lấn có chủ ý thì khai `touch` trên món** — món lớp vẽ code, hay vật three ([dưới](#đo-trên-cảnh-three)).
+Chuỗi là lấn bao nhiêu cũng không báo; `{ part, max }` nâng ngưỡng của phần ấy với món ấy lên `max`
+đơn vị thế giới (không dưới `tol`), lấn sâu hơn vẫn báo — dùng khi phần người phải tựa sát món (đùi
+trên mặt ngồi, lưng vào trụ tựa) mà lún sâu là hình lộ. Hai mục cùng khớp một phần thì lấy ngưỡng lớn
+hơn. `touch` chỉ đổi báo cáo, không đổi cách vẽ: miệng cốc vẫn vẽ đè lên mặt đúng như lúc chưa khai.
+
+**Tay đặt lên bàn thì lấy đích từ `handsOn`** ([03](03-scene.md#đích-bàn-tay-thế-giới)): cổ tay cao hơn
+mặt nửa bề dày tay, khuỷu cao hơn cổ tay, cẳng tay nằm trên mặt bàn. Đích tự viết đặt sát người hay
+thấp hơn mặt là cẳng tay dốc xuyên mép bàn. Dời ghế hay bàn thì gọi lại `handsOn`.
+
+### Khối lớp vẽ code
 
 - dựng đúng khối mà `<SceneWorld>` xếp lớp — khối từng phần người (`fig3.solids`, như
   `solidFigure`) và khối đồ của các lớp bật cho cảnh (`itemSolids` của `solids(ctx)`);
@@ -263,17 +296,11 @@ bụng, cốc kê sâu vào mặt thì miệng cốc che nửa mặt. Chỗ ph�
 - độ lấn là quãng ngắn nhất phải đẩy phần người ra cho hai khối lồi rời nhau (độ chồm nhỏ nhất trên
   pháp tuyến mặt của hai khối và tích từng cặp cạnh — đúng, không lấy mẫu hướng), đơn vị thế giới.
   Chạm (đùi trên mặt ngồi, cẳng tay trên mặt bàn) là `0`;
-- lấy mẫu mỗi `0,25 s` giây cảnh, chia đôi quãng nào có đỉnh khối người dời quá `4` đơn vị cho tới
-  một khung `1/30 s`, nên tay quét qua mép bàn trong vài khung vẫn bị bắt;
-- bỏ phần người có bóng nằm ngoài khung camera lúc ấy, và người đã mờ hẳn. Bị rèm hay vật khác che
-  thì vẫn báo — `check` không biết khung còn gì đè lên;
-- lấn quá ngưỡng mới kêu: mặc định `2`, khai `"stickman": { "clash": { "tol": 3 } }` trong
-  `package.json` để đổi.
+- bỏ phần người có bóng nằm ngoài khung camera, và người đã mờ hẳn.
 
-Mỗi cặp (phần người, món) — hay (phần người, phần người của người kia) — một dòng cảnh báo, sâu nhất
-trước: chỗ lấn sâu nhất, mảnh nào (chỉ số khối trong `parts` của món), ở giây nào, và các quãng giây
-liền nhau đang lấn. Món gộp theo `name`; món không có `name` thì gọi `món #k` theo thứ tự trong các
-mảng `solids` của mọi lớp bật cho cảnh — lớp ẩn bớt món giữa cảnh là `k` dời, nên đặt `name` cho món.
+Dòng báo kèm mảnh (chỉ số khối trong `parts` của món). Món gộp theo `name`; món không có `name` thì
+gọi `món #k` theo thứ tự trong các mảng `solids` của mọi lớp bật cho cảnh — lớp ẩn bớt món giữa cảnh
+là `k` dời.
 
 ```
 scenes/quan.json: người lồng vào đồ — a.head ↔ coc (mảnh 0) lấn 33.0 ở giây 0.00 · giây 0.00–2.75
@@ -281,25 +308,101 @@ scenes/quan.json: người lồng vào đồ — b.forearmFar ↔ ban (mảnh 0)
 scenes/hop.json: người lồng vào đồ — a.head ↔ b.head lấn 40.7 ở giây 3.78 · giây 2.19–4.09
 ```
 
-`scene_probe` của MCP trả cùng phép đo ở từng mốc hỏi (`clashes`).
+`touch` của món: tên phần người (`head`, `torso`, `forearmNear`…) cho mọi người, hay `id.phần` cho
+một người. Cốc kề miệng là `touch: ["a.head"]`, loa cầm sát mặt là `touch: ["head"]`, đùi tựa mặt
+ngồi là `{ "part": "a.legNear", "max": 6 }`.
 
-**Lấn có chủ ý thì khai `touch` trên món**: tên phần người (`BODY_PARTS`: `head`, `torso`,
-`forearmNear`…) cho mọi người, hay `id.phần` cho một người. Cốc kề miệng là `touch: ["a.head"]`,
-loa cầm sát mặt là `touch: ["head"]`. Chuỗi là lấn bao nhiêu cũng không báo; `{ "part": "a.legNear",
-"max": 6 }` nâng ngưỡng của phần ấy với món ấy lên `max` (không dưới `tol`), lấn sâu hơn vẫn báo —
-dùng khi phần người phải tựa sát món (đùi trên mặt ngồi, lưng vào trụ tựa) mà lún sâu là hình lộ.
-Hai mục cùng khớp một phần thì lấy ngưỡng lớn hơn. `touch` chỉ đổi báo cáo, không đổi cách vẽ: miệng
-cốc vẫn vẽ đè lên mặt đúng như lúc chưa khai.
-
-**Tay đặt lên bàn thì lấy đích từ `handsOn`** ([03](03-scene.md#đích-bàn-tay-thế-giới)): cổ tay cao hơn
-mặt nửa bề dày tay, khuỷu cao hơn cổ tay, cẳng tay nằm trên mặt bàn. Đích tự viết đặt sát người hay
-thấp hơn mặt là cẳng tay dốc xuyên mép bàn. Dời ghế hay bàn thì gọi lại `handsOn`.
+`scene_probe` của MCP trả phép đo của đường này ở từng mốc hỏi (`clashes`), kể cả cảnh repo có
+`stickman.world` — nó không dựng cảnh three.
 
 Tự đo trong code: `sceneClashes(rt, t, { characterOf, codeLayers, tol, self })` của `@stickman3d/fx`
 cho một khung của cảnh (cả tay xuyên thân), `solidClashes(lens, items, people, { tol, view })` cho khối
 đã dựng, `armPierce(character, pose, { tol })` của lõi cho tay với thân ở một tư thế, `penetration(a, b)`
 cho hai khối lồi.
 Chúng chỉ để kiểm — đường vẽ không gọi.
+
+### Đo trên cảnh three
+
+Đồ repo dựng thẳng bằng three (đồ cầm tay, đồ bám cổ tay, đồ chạy theo `t`) không đi qua
+`solids(ctx)`, nên đường khối lớp vẽ code không thấy chúng. Repo khai module dựng cảnh three trong
+`package.json`:
+
+```json
+"stickman": { "world": "src/khoi3d/world.ts" }
+```
+
+```ts
+export function worldOf(
+  sceneName: string,
+  ctx: { id; scene; runtime; characters; actions; animals; props; heights; bodies },
+): { root: THREE.Object3D; pose(t: number): Record<string, Figure> } | null;
+```
+
+`sceneName` là `scene.name`, như `scenes` của lớp vẽ code. `worldOf` chỉ được gọi cho cảnh `check`
+đo người lồng vào đồ (có `lens`, có người `world`, không khớp `stickman.frozen`, khớp `--scene`); trả
+`null` thì cảnh ấy đi đường khối lớp vẽ code. `ctx` là dữ liệu `check` đã nạp và parse — module chạy
+trong Node, không qua webpack, nên đọc dữ liệu từ đây chứ không qua `require.context` của `data.ts`:
+
+| Trường | |
+|---|---|
+| `id` | tên file cảnh trong `scenes/`, không đuôi |
+| `scene` | JSON cảnh đã qua `parseScene` |
+| `runtime` | `resolveScene` của cảnh — đưa thẳng vào `sceneAt` |
+| `characters`, `actions`, `animals` | JSON đã parse theo tên file, cả hai lớp ([05](05-repo-video.md#hai-lớp)) |
+| `props` | đạo cụ của repo theo tên file |
+| `heights`, `bodies` | `rig.height` và `body3` của từng người trong `cast`, theo `id` — tham số thứ tư, thứ năm của `sceneAt` |
+
+- `root` chứa mọi người và mọi vật lên hình của cảnh, như sân khấu vẽ nó.
+- `pose(t)` làm đúng những gì vẽ một khung làm — diễn người bằng `act`, `dress`, đặt đồ chạy theo
+  `t`, ẩn hiện vật — rồi trả người theo `id` của `cast`. Không render, không gọi `room.cull`: tường
+  giấu theo camera vẫn là tường. Người có `root` ẩn thì không đo.
+- Không có `document` hay WebGL: decal và nét mặt vẽ lên canvas rỗng của rig (hình khối đủ, không có
+  chữ), không tạo `WebGLRenderer` trong `worldOf`.
+- `check` gói module bằng esbuild như lớp vẽ code. `three`, `zod` và `@stickman3d/*` để ngoài: bản
+  repo đã cài, `three` và `zod` là bản mà rig ấy nạp — một bản `three` thì `collide` mới nhận đúng vật.
+  `remotion`, `@remotion/*`, `react` và `react-dom` thành vỏ rỗng, nên module import chung file với
+  component Remotion vẫn chạy; file `.css` thành rỗng. Tên file chỉ khác đuôi thì `.ts` được chọn
+  trước `.tsx`.
+- Gói hỏng hay module không xuất `worldOf` là lỗi. `worldOf` ném hay trả sai dạng thì cảnh báo ở cảnh
+  ấy, cảnh đi đường khối lớp vẽ code.
+
+Mỗi giây lấy mẫu, `check` gọi `pose(t)` rồi đo `collide(people, colliders(root))` của rig: người là
+các viên nang theo khung xương, vật là mọi thứ khác dưới `root`.
+
+- Món dựng qua `Batch` (`addPart`, `addLathe`, `addItem`) đo theo khối lồi từng món — nhóm `build` ra
+  mang chúng ở `userData.colliders` — nên bắt cả nét nằm trọn trong vật. Lưới khác đo theo tam giác,
+  chỉ bắt nét cắt qua mặt.
+- Tự bỏ: lưới `userData.noCollide` (decal, nét mặt, trời, nét mực và cảnh sau ô cửa của `room`), lưới
+  của chính người (`userData.body`), vỏ nét (`BackSide`), nhánh ẩn (`visible` false ở nó hay ở nhóm
+  cha), vật mờ quá nửa (`uOpacity` dưới `0,5`, như `appear`). Thứ lên hình mà không phải vật thể (nón
+  ánh đèn rọi, quầng sáng) thì repo đặt `userData.noCollide`; `noShadow` chỉ cho lượt bóng, `collide`
+  không đọc.
+- Người nền đã `freeze` là vật cản như đồ. Người không có trong `pose(t)` thì không đo, lưới của họ
+  cũng không là vật cản.
+- Tên vật trong dòng báo là `name` của món (`Item.name`), không thì `name` của nút gần nhất từ lưới lên
+  `root`, không nữa thì `vat` — đặt `name` cho món và nhóm đồ thêm.
+- Ống chân dừng ở mút nét: bàn chân đặt trên sàn không báo, chân lún dưới sàn thì báo sàn. Hông là
+  tâm nét, nên người ngồi lún nửa nét đùi vào mặt ghế: khai `touch` cho đùi ở ghế.
+- Chỗ có điểm lấn sâu nhất nằm ngoài khung camera thì bỏ.
+
+```
+scenes/s66.json: người lồng vào đồ — a.foreArmR ↔ so lấn 28.0 ở giây 1.25 · giây 1.00–1.50
+```
+
+`touch` trên vật three là `userData.touch` của vật hay của nhóm bất kỳ bên trên nó (cộng dồn từ nhóm
+cha xuống), hay `touch` của món `Item`. Mỗi mục là `'[<người>.]<bộ phận>[R|L]'` hay `{ part, max }`,
+`max` đơn vị thế giới:
+
+- `<bộ phận>` là `head`, `torso`, `upperArm`, `foreArm`, `thigh`, `shin`; thiếu `R`/`L` là cả hai bên;
+- `<người>` là `id` trong `cast` (khoá của `pose(t)`), thiếu là mọi người; `self` là người đang mang
+  vật — vật nằm dưới `root` của người ấy (cầm, đội, gắn trên thân);
+- `hold` tự khai cẳng tay cầm (`hand: 'both'` là cả hai), `wear` khai đầu (`crown`, `face`) hay thân
+  (`chest`), `wearDecal` khai thân.
+
+```ts
+coc.userData.touch = ["self.head"];               // cốc cầm kề miệng người cầm
+ghe.userData.touch = [{ part: "thigh", max: 6 }]; // đùi tựa mặt ghế, lún sâu hơn 6 vẫn báo
+```
 
 ## Tay xuyên thân
 

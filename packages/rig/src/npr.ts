@@ -428,7 +428,7 @@ export const PALETTES = {
 } satisfies Record<string, Palette>;
 export type PaletteName = keyof typeof PALETTES;
 
-/** Vòm trời: cầu lật trong, luôn nằm ở mặt phẳng xa, không đổ bóng. */
+/** Vòm trời: cầu lật trong, luôn nằm ở mặt phẳng xa, không đổ bóng, `collide` không đo. */
 export function skyDome(radius = 120): THREE.Mesh<THREE.SphereGeometry, THREE.ShaderMaterial> {
   const sky = new THREE.Mesh(
     new THREE.SphereGeometry(radius, 32, 16),
@@ -441,6 +441,7 @@ export function skyDome(radius = 120): THREE.Mesh<THREE.SphereGeometry, THREE.Sh
     }),
   );
   sky.userData.noShadow = true;
+  sky.userData.noCollide = true;
   return sky;
 }
 

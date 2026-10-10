@@ -15,7 +15,7 @@ export {
 } from './attach';
 export { freeze, seatCrowd, type Seat } from './crowd';
 export { room, type DoorSpec, type Face, type FloorPattern, type PanelSpec, type Room, type RoomDoor, type RoomOptions, type RoomTones, type RoomWindow, type WallSide, type WindowSpec } from './room';
-export { BODY_PARTS, bodyCapsules, collide, colliders, type BodyPart, type Collider, type CollideOptions, type Contact } from './collide';
+export { BODY_PARTS, bodyCapsules, collide, colliders, type BodyPart, type Collider, type CollideOptions, type Contact, type Touch } from './collide';
 export { act, type ActPose, type ActReach, type Acting, type ActWorld } from './act';
 export { type FaceRig, type FaceShape, type Wrinkle } from './face';
 export { GLASSES_DEFAULT, glassesLines, glassesMesh } from './glasses';
@@ -24,7 +24,7 @@ export { torsoMesh, type Rig, type TorsoMesh } from './torso';
 export { sculptMesh, type SculptMesh } from './sculpt';
 export {
   addItem, addLathe, addPart, bar, Batch, box, slab, toThree, U,
-  type Item, type LatheSpec, type Mark, type Part, type Tone, type Vec3,
+  type BatchSolid, type Item, type LatheSpec, type Mark, type Part, type SolidTag, type Tone, type Vec3,
 } from './khoi';
 export { aimCamera, HOME, lensCamera, STAGE, viewRect, type Crop, type StageFrame } from './lens';
 export { createStage, type FrameView, type Stage, type StageOptions } from './stage';

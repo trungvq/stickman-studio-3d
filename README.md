@@ -380,17 +380,33 @@ Người nền: `stickman({ lod: 'low' })` ít mặt lưới, gộp khối tĩnh
 (18 mesh, ~27k tam giác so với 26 mesh, ~36k của người đầy đủ, áo sơ mi tóc gai). Người không diễn thì đặt dáng một
 lần rồi `freeze([...])`: cả đám thành một mesh mỗi vật liệu — năm người ngồi bàn còn 21 mesh thay vì 90.
 
-Va chạm thay cho `stickman check`, gọi ở từng `t` đã lấy mẫu sau `act`:
+Va chạm người với vật ở tư thế hiện tại, gọi sau `act`. `stickman check` gọi chính nó trên cảnh three mà repo video
+khai ở `stickman.world` ([docs/10](docs/10-lop-ve-code.md#đo-trên-cảnh-three)):
 
 ```ts
-const cols = [...colliders(tableItem, 'bàn'), ...colliders(new THREE.Box3(...), 'tủ'), ...colliders(batchGroup, 'phòng')];
+const cols = [...colliders(tableItem, 'bàn'), ...colliders(new THREE.Box3(...), 'tủ'), ...colliders(scene)];
 collide({ haru: fig1, aya: fig2 }, cols, { people: true });
 // [{ who: 'haru', part: 'thigh', side: -1, collider: 'bàn', depth: 0.06, at: Vector3 }] — depth ×100 là px rig
 ```
 
-Món khối `Item` và `Box3` là khối lồi, bắt cả nét nằm lọt trong vật; `Object3D` (như đầu ra của `Batch`) là lưới tam
-giác, chỉ bắt nét cắt qua mặt. Người ngồi thì đùi lún nửa nét vào mặt ghế (hông 2D là tâm nét): lọc chỗ chạm ấy ở
-phía gọi.
+Món khối `Item` (tên là `name` truyền vào hay `Item.name`, kèm `Item.touch`), `Box3` và `{ points }` là khối lồi, bắt cả
+nét nằm lọt trong vật. `Object3D` lấy cả nhánh: nhóm có `userData.colliders` — mảng `{ name?, touch?, points }`, `points`
+là x, y, z liền nhau trong hệ của nhóm — cho khối lồi từng món (áp `matrixWorld`); `Batch.build` tự ghi nó từ `addPart`,
+`addLathe`, `addItem` (`tag`/`Item` mang `name`, `touch`). Lưới khác là tam giác — chỉ bắt nét cắt qua mặt; `Batch` có tam
+giác thêm thẳng bằng `flat`, `geometry` thì đo cả tam giác của nhóm. Tam giác và khối thế giới giữ lại tới khi `matrixWorld`
+hay hình của lưới đổi: đo cả cảnh mỗi `t` chỉ tính lại vật đã dời.
+
+Bỏ lưới `userData.noCollide` (decal, nét mặt, trời, vỏ nét, nét mực và cảnh sau ô cửa của phòng, lưới `Batch` mà khối lồi
+đã phủ hết), lưới của chính người (`userData.body`; người đã `freeze` là vật cản), vỏ `BackSide`, nhánh ẩn (`visible` false ở nó
+hay ở cha) và vật mờ quá nửa (`uOpacity < 0.5`). `noShadow` chỉ cho lượt bóng, `collide` không đọc. Tên vật cản là `name`
+của món, không thì của nút có tên gần nhất từ lưới lên (dưới gốc nhánh), rồi `name` truyền vào, rồi tên gốc nhánh, rồi `vat`. Nang ống chân dừng ở
+mút nét: bàn chân đặt trên sàn không lún.
+
+Lấn có chủ ý thì khai `userData.touch` trên vật hay nhóm cha (cộng dồn xuống), hay `touch` của `Item`, cùng nghĩa `touch`
+của món lớp vẽ code. Mỗi mục là `'[<người>.]<bộ phận>[R|L]'` hay `{ part, max }`: `'shin'`, `'haru.foreArmR'` (người là
+khoá truyền cho `collide`, `R`/`L` là tay chân phải/trái), `'self.head'` là người có `root` chứa vật (đang cầm, đang đội);
+chuỗi là không báo, `{ part, max }` cho lún tới `max` px rig. `hold` tự khai cẳng tay cầm, `wear` đầu hay thân,
+`wearDecal` thân. Người ngồi thì đùi lún nửa nét vào mặt ghế (hông 2D là tâm nét): khai `touch` cho đùi trên ghế.
 
 ## Chữ trên vật, món chạy theo `t`
 

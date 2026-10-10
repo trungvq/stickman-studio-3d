@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Figure } from './stickman';
 import { toThree, U, type Vec3 } from './khoi';
+import { newCanvas } from './canvas';
 import { npr, surface, type SurfaceOptions } from './npr';
 
 // Chữ và hình nằm trên vật trong cảnh: texture vẽ đồng bộ theo `t` trên canvas 2D, dán lên mặt phẳng (hay hơi cong)
@@ -25,15 +26,6 @@ export interface CanvasTextureOptions {
   anisotropy?: number;
 }
 
-const newCanvas = (w: number, h: number) => {
-  if (typeof document !== 'undefined') {
-    const c = document.createElement('canvas');
-    c.width = w;
-    c.height = h;
-    return c;
-  }
-  return new OffscreenCanvas(w, h);
-};
 const keyOf = (k: unknown) => (k !== null && typeof k === 'object' ? JSON.stringify(k) : k);
 
 /**
@@ -132,11 +124,13 @@ function quadGeometry(w: number, h: number, o: QuadOptions) {
 
 /**
  * Tấm decal `w`×`h` px trong mặt phẳng xy của khung nó, mặt nhìn +z, tâm ở gốc. Nhận vật liệu, texture hay
- * `canvasTexture`. Decal sát mặt khác không đổ bóng (`userData.noShadow`); tấm đứng riêng thì xoá cờ ấy.
+ * `canvasTexture`. Decal sát mặt khác không đổ bóng (`userData.noShadow`); tấm đứng riêng thì xoá cờ ấy. `collide` không
+ * đo decal (`userData.noCollide`).
  */
 export function decal(content: THREE.Material | THREE.Texture | CanvasSurface, w: number, h: number, o: QuadOptions = {}): THREE.Mesh {
   const m = new THREE.Mesh(quadGeometry(w, h, o), asMaterial(content, o.material));
   m.userData.noShadow = true;
+  m.userData.noCollide = true;
   return m;
 }
 
@@ -210,6 +204,7 @@ export function wearDecal(fig: Figure, content: THREE.Material | THREE.Texture |
     card.position.z = (thick / 2) * U;
     g.add(card);
   }
+  g.userData.touch = ['self.torso'];
   fig.sockets.chest.add(g);
   return g;
 }

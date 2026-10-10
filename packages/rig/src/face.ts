@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { newCanvas, path2D } from './canvas';
 import { DEFAULT_FACE } from './core/constants';
 import { browMarks, eyeMarks, mouthMark, wrinkleMarks, type FaceInk, type FaceMark, type WrinkleSpec } from './core/face';
 import type { FaceState } from './core/types';
@@ -21,8 +22,8 @@ const TEXEL = 8;
 type Ctx = CanvasRenderingContext2D;
 
 function shape(m: FaceMark): Path2D {
-  if ('path' in m) return new Path2D(m.path);
-  const p = new Path2D();
+  if ('path' in m) return path2D(m.path);
+  const p = path2D();
   if ('line' in m) { p.moveTo(m.line[0], m.line[1]); p.lineTo(m.line[2], m.line[3]); }
   else if ('ellipse' in m) p.ellipse(m.ellipse[0], m.ellipse[1], m.ellipse[2], m.ellipse[3], 0, 0, Math.PI * 2);
   else if ('rect' in m) p.rect(...m.rect);
@@ -33,7 +34,7 @@ function shape(m: FaceMark): Path2D {
 function paint(g: Ctx, marks: FaceMark[], up: FaceInk = {}) {
   let clip: Path2D | undefined;
   for (const m of marks) {
-    if ('clip' in m) { clip = new Path2D(m.clip); continue; }
+    if ('clip' in m) { clip = path2D(m.clip); continue; }
     const ink: FaceInk = {
       fill: m.fill ?? up.fill, stroke: m.stroke ?? up.stroke, strokeWidth: m.strokeWidth ?? up.strokeWidth,
       strokeLinecap: m.strokeLinecap ?? up.strokeLinecap, strokeLinejoin: m.strokeLinejoin ?? up.strokeLinejoin,
@@ -69,15 +70,14 @@ export interface FaceRig {
  */
 export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShape> = {}, state: FaceState = DEFAULT_FACE): FaceRig {
   const sh = { ...SHAPE, ...shape };
-  const canvas = document.createElement('canvas');
-  canvas.width = BOX.w * TEXEL;
-  canvas.height = BOX.h * TEXEL;
-  const g = canvas.getContext('2d')!;
-  const tex = new THREE.CanvasTexture(canvas);
+  const canvas = newCanvas(BOX.w * TEXEL, BOX.h * TEXEL);
+  const g = canvas.getContext('2d') as Ctx;
+  const tex = new THREE.CanvasTexture(canvas as HTMLCanvasElement);
   tex.anisotropy = 8;
   const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   const mesh = new THREE.Mesh(faceCap(r * 1.004, scale), mat);
   mesh.userData.noShadow = true;
+  mesh.userData.noCollide = true;
   mesh.renderOrder = 1;
   const draw = (s: FaceState) => {
     g.setTransform(1, 0, 0, 1, 0, 0);

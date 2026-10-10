@@ -253,6 +253,7 @@ function portal(corners: THREE.Vector3[], o: { O: THREE.Vector3; U: THREE.Vector
   };
   const mesh = new THREE.Mesh(geo, new THREE.ShaderMaterial({ vertexShader: PORTAL_VERT, fragmentShader: PORTAL_FRAG, uniforms: u, side: THREE.DoubleSide }));
   mesh.userData.noShadow = true;
+  mesh.userData.noCollide = true;
   if (!o.door)
     // trời và phố theo giờ trong ngày của sân khấu đang vẽ
     mesh.onBeforeRender = () => {
@@ -293,6 +294,7 @@ function inkBar(a: Vec3, b: Vec3, w: number) {
   m.position.copy(A).add(B).multiplyScalar(0.5);
   m.lookAt(B);
   m.userData.noShadow = true;
+  m.userData.noCollide = true;
   return m;
 }
 

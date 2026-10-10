@@ -15,7 +15,7 @@ video chỉ tiêu thụ những gì mô tả ở đây, không viết lại.
 | [07 — Làm một tập](07-lam-tap.md) | Tầng trên `SceneSchema`: `episodes/*.json`, lời dẫn, phụ đề, tiếng động, render bản chốt |
 | [08 — Rig động vật](08-dong-vat.md) | Động vật bốn chân và hai chân: bộ xương, dáng đi dựng từ bàn chân, cánh và bay, mỏ và mắt, hành động mốc, ghép bộ phận |
 | [09 — Hiệu ứng](09-hieu-ung.md) | `@stickman3d/fx`: `scene.fx[]`, mười ba loại hiệu ứng thuần theo `t`, ba lớp chèn, bám người qua `anchorAt` |
-| [10 — Lớp vẽ code](10-lop-ve-code.md) | Bối cảnh vẽ bằng code, rung máy, đẩy chỗ đứng: `stickman.layers` của repo video, năm chỗ móc |
+| [10 — Lớp vẽ code](10-lop-ve-code.md) | Bối cảnh vẽ bằng code, rung máy, đẩy chỗ đứng: `stickman.layers` của repo video, năm chỗ móc; `check` đo người lồng vào đồ, trên khối lớp vẽ code hay cảnh three của `stickman.world` |
 
 **Nội dung** của một tập phim — kịch bản, nhân vật, cảnh — nằm trong repo video.
 Bộ tài liệu này chỉ chứa spec, bất biến và quy trình dùng chung; không chứa nhật

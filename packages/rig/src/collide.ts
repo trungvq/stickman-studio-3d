@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { ConvexHull } from 'three/addons/math/ConvexHull.js';
 import { place3, type Place3 } from './core/lens';
-import { toThree, type Item, type Vec3 } from './khoi';
+import { lathePoints, toThree, U, type BatchSolid, type Item, type Vec3 } from './khoi';
 import { R, type Figure, type Side } from './stickman';
 
 // Kiểm người xuyên đồ ở tư thế hiện tại: người là các viên nang (chi, thân, đầu), đồ là khối lồi (hộp, món khối)
@@ -10,12 +10,23 @@ import { R, type Figure, type Side } from './stickman';
 export type BodyPart = 'head' | 'torso' | 'upperArm' | 'foreArm' | 'thigh' | 'shin';
 export const BODY_PARTS: readonly BodyPart[] = ['head', 'torso', 'upperArm', 'foreArm', 'thigh', 'shin'];
 
+/**
+ * Phần người được phép lấn vào vật: `'<bộ phận>[R|L]'` của mọi người, `'<người>.<bộ phận>[R|L]'` của một người (tên như
+ * khoá của `figures` truyền cho `collide`), `'self.…'` là người đang cầm, đang đội vật. Chuỗi là lấn bao nhiêu cũng không
+ * báo; `{ part, max }` cho lấn tới `max` đơn vị thế giới rig (px, như `touch` của món lớp vẽ code), sâu hơn vẫn báo.
+ */
+export type Touch = string | { part: string; max: number };
+
 /** Một vật cản: khối lồi (`planes`, mặt phẳng pháp tuyến ra ngoài) hay lưới tam giác (`tris`, 9 số mỗi tam giác), toạ độ thế giới three */
 export interface Collider {
   name: string;
   box: THREE.Box3;
   planes?: THREE.Plane[];
   tris?: Float32Array;
+  /** `userData.touch` của vật và các nhóm cha, `touch` của món */
+  touch?: readonly Touch[];
+  /** `root` của người mang vật (cầm, đội, gắn trên người): `self` trong `touch` */
+  owner?: THREE.Object3D;
 }
 
 /** Một chỗ xuyên: `depth` là độ lún của nét vào vật (đơn vị three, ×100 ra px rig), `at` điểm sâu nhất trên trục nét */
@@ -40,20 +51,28 @@ type ColliderSource = THREE.Box3 | THREE.Object3D | Item | { points: readonly (T
 
 const isItem = (s: unknown): s is Item => !!s && typeof s === 'object' && 'at' in s && ('parts' in s || 'lathes' in s);
 
-/** Khối lồi bao các điểm (three); `null` khi điểm dẹt không thành khối */
+/** Khối lồi bao các điểm (three); điểm nằm trên một mặt phẳng thì nong dày 0,2 px; `null` khi điểm thẳng hàng */
 function convex(name: string, pts: THREE.Vector3[]): Collider | null {
-  try {
-    const hull = new ConvexHull().setFromPoints(pts);
-    const planes = hull.faces.map((f) => new THREE.Plane(f.normal.clone(), -f.constant));
-    if (planes.length < 4) return null;
-    return { name, box: new THREE.Box3().setFromPoints(pts), planes };
-  } catch {
-    return null;
+  const hull = (ps: THREE.Vector3[]) => {
+    try {
+      const h = new ConvexHull().setFromPoints(ps);
+      const planes = h.faces.map((f) => new THREE.Plane(f.normal.clone(), -f.constant));
+      return planes.length < 4 ? null : planes;
+    } catch {
+      return null;
+    }
+  };
+  let planes = hull(pts);
+  if (!planes && pts.length >= 3) {
+    const n = new THREE.Vector3();
+    for (let i = 2; i < pts.length && n.lengthSq() < 1e-12; i++) n.crossVectors(pts[1].clone().sub(pts[0]), pts[i].clone().sub(pts[0]));
+    if (n.lengthSq() >= 1e-12) {
+      n.setLength(0.001);
+      planes = hull(pts.flatMap((p) => [p.clone().add(n), p.clone().sub(n)]));
+    }
   }
+  return planes ? { name, box: new THREE.Box3().setFromPoints(pts), planes } : null;
 }
-
-const ring = (y: number, r: number, sx: number, sz: number, n = 12): Vec3[] =>
-  Array.from({ length: n }, (_, i) => [r * Math.cos((i / n) * Math.PI * 2) * sx, y, r * Math.sin((i / n) * Math.PI * 2) * sz]);
 
 /** Khối lồi của một món khối: mỗi khối tám đỉnh và mỗi khối tròn xoay một khối */
 function itemColliders(item: Item, name: string): Collider[] {
@@ -64,49 +83,118 @@ function itemColliders(item: Item, name: string): Collider[] {
     if (c) out.push(c);
   });
   item.lathes?.forEach(({ spec, at }) => {
-    const t = spec.tilt ?? 0, ct = Math.cos(t), st = Math.sin(t);
-    const pts = spec.rings.flatMap(([y, r]) => ring(y, Math.max(r, 0.01), spec.sx ?? 1, spec.sz ?? 1)).map(([x, y, z]): Vec3 => [x * ct - y * st, x * st + y * ct, z]);
-    const c = convex(name, pts.map(P(at)));
+    const c = convex(name, lathePoints(spec, at));
     if (c) out.push(c);
   });
+  if (item.touch?.length) for (const c of out) c.touch = item.touch;
   return out;
 }
 
-/** Tam giác thế giới của mọi mesh dưới `o`, trừ vỏ nét ngược và vật `noShadow` */
-function meshCollider(o: THREE.Object3D, name: string): Collider | null {
-  o.updateWorldMatrix(true, true);
-  const tris: number[] = [];
-  const v = new THREE.Vector3();
-  o.traverse((c) => {
-    const m = c as THREE.Mesh;
-    if (!m.isMesh || m.userData.noShadow || (m.material as THREE.Material).side === THREE.BackSide) return;
-    const pos = m.geometry.attributes.position, idx = m.geometry.index;
-    const n = idx ? idx.count : pos.count;
-    for (let i = 0; i < n; i++) {
-      v.fromBufferAttribute(pos, idx ? idx.getX(i) : i).applyMatrix4(m.matrixWorld);
-      tris.push(v.x, v.y, v.z);
-    }
+const opacity = (o: THREE.Object3D) => ((o as THREE.Mesh).material as THREE.ShaderMaterial | undefined)?.uniforms?.uOpacity?.value ?? 1;
+/** Mờ quá nửa như `appear` (mất bóng, mất viền); nhóm khối thì xét các lưới của nó */
+const faded = (o: THREE.Object3D) =>
+  (o as THREE.Mesh).isMesh ? opacity(o) < 0.5 : o.children.some((c) => (c as THREE.Mesh).isMesh && opacity(c) < 0.5);
+
+/** Lưới không đo bằng tam giác: `noCollide`, lưới của chính người (`body`), vỏ nét ngược, vật đã mờ */
+const skipMesh = (m: THREE.Mesh) =>
+  !!m.userData.noCollide || !!m.userData.body || (m.material as THREE.Material).side === THREE.BackSide || faded(m);
+
+type Attr = THREE.BufferAttribute | THREE.InterleavedBufferAttribute;
+const version = (a: Attr | null) => (a ? ((a as THREE.InterleavedBufferAttribute).data ?? (a as THREE.BufferAttribute)).version : -1);
+/** Tam giác thế giới của từng lưới, giữ lại tới khi lưới dời hay hình đổi: đo cả cảnh mỗi mẫu `t` chỉ tính lại vật động */
+const trisMemo = new WeakMap<THREE.Mesh, { pos: Attr; idx: Attr | null; ver: number; iver: number; m: THREE.Matrix4; tris: Float32Array; box: THREE.Box3 }>();
+
+/** Tam giác thế giới của một lưới */
+function meshTris(m: THREE.Mesh, name: string): Collider | null {
+  const pos = m.geometry?.attributes.position as Attr | undefined, idx = m.geometry?.index ?? null;
+  if (!pos) return null;
+  const hit = trisMemo.get(m);
+  if (hit && hit.pos === pos && hit.idx === idx && hit.ver === version(pos) && hit.iver === version(idx) && hit.m.equals(m.matrixWorld))
+    return { name, tris: hit.tris, box: hit.box };
+  const n = idx ? idx.count : pos.count;
+  if (n < 3) return null;
+  const arr = new Float32Array(n * 3), v = new THREE.Vector3();
+  for (let i = 0; i < n; i++) {
+    v.fromBufferAttribute(pos, idx ? idx.getX(i) : i).applyMatrix4(m.matrixWorld);
+    arr[i * 3] = v.x, arr[i * 3 + 1] = v.y, arr[i * 3 + 2] = v.z;
+  }
+  const box = new THREE.Box3().setFromArray(arr);
+  trisMemo.set(m, { pos, idx, ver: version(pos), iver: version(idx), m: m.matrixWorld.clone(), tris: arr, box });
+  return { name, tris: arr, box };
+}
+
+/** Khối lồi thế giới của các món một nhóm `Batch`, giữ lại tới khi nhóm dời hay đổi `userData.colliders` */
+const hullMemo = new WeakMap<THREE.Object3D, { solids: BatchSolid[]; m: THREE.Matrix4; hulls: (Collider | null)[] }>();
+
+function batchHulls(o: THREE.Object3D, solids: BatchSolid[]): (Collider | null)[] {
+  const hit = hullMemo.get(o);
+  if (hit && hit.solids === solids && hit.m.equals(o.matrixWorld)) return hit.hulls;
+  const hulls = solids.map((s) => {
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i + 2 < s.points.length; i += 3) pts.push(new THREE.Vector3(s.points[i], s.points[i + 1], s.points[i + 2]).applyMatrix4(o.matrixWorld));
+    return convex(s.name ?? '', pts);
   });
-  if (!tris.length) return null;
-  const arr = new Float32Array(tris);
-  return { name, tris: arr, box: new THREE.Box3().setFromArray(arr) };
+  hullMemo.set(o, { solids, m: o.matrixWorld.clone(), hulls });
+  return hulls;
+}
+
+/** Chạm có chủ ý và người mang vật mà nhánh dưới `o` thừa hưởng */
+function inherit(o: THREE.Object3D, touch: readonly Touch[], owner?: THREE.Object3D): [readonly Touch[], THREE.Object3D | undefined] {
+  const t = o.userData.touch as Touch[] | undefined;
+  return [t?.length ? [...touch, ...t] : touch, o.userData.figure ? o : owner];
+}
+
+/**
+ * Vật cản của cả nhánh `src`: nhóm có `userData.colliders` (đầu ra của `Batch`) cho khối lồi từng món, lưới còn lại cho tam
+ * giác. Bỏ nhánh ẩn (`visible` false, xét cả cha), lưới `noCollide`, lưới của người, vỏ nét, vật đã mờ. Tên mỗi vật cản là
+ * `name` của món, không thì `name` của nút gần nhất từ lưới lên `src`, không nữa thì `name` truyền vào.
+ */
+function objectColliders(src: THREE.Object3D, name?: string): Collider[] {
+  src.updateWorldMatrix(true, true);
+  const up: THREE.Object3D[] = [];
+  for (let o = src.parent; o; o = o.parent) up.unshift(o);
+  if (up.some((o) => !o.visible)) return [];
+  let touch: readonly Touch[] = [], owner: THREE.Object3D | undefined;
+  for (const o of up) [touch, owner] = inherit(o, touch, owner);
+  const out: Collider[] = [];
+  const tag = (c: Collider | null, t: readonly Touch[], who?: THREE.Object3D) => {
+    if (!c) return;
+    if (t.length) c.touch = t;
+    if (who) c.owner = who;
+    out.push(c);
+  };
+  const walk = (o: THREE.Object3D, label: string, touch: readonly Touch[], owner?: THREE.Object3D) => {
+    if (!o.visible) return;
+    [touch, owner] = inherit(o, touch, owner);
+    const solids = o.userData.colliders as BatchSolid[] | undefined;
+    if (solids?.length && !faded(o))
+      batchHulls(o, solids).forEach((h, i) => {
+        const s = solids[i];
+        if (h) tag({ ...h, name: s.name || label }, s.touch?.length ? [...touch, ...s.touch] : touch, owner);
+      });
+    const m = o as THREE.Mesh;
+    if (m.isMesh && !skipMesh(m)) tag(meshTris(m, label), touch, owner);
+    for (const c of o.children) walk(c, c.name || label, touch, owner);
+  };
+  walk(src, name ?? (src.name || 'vat'), touch, owner);
+  return out;
 }
 
 /**
  * Vật cản từ: `Box3` (thế giới three), món khối `Item` của `khoi` (từng khối lồi, chính xác), `{ points }` (bao lồi),
- * hay `Object3D` (mọi tam giác; dùng cho lưới đã gộp như đầu ra của `Batch`, chỉ bắt được nét cắt qua mặt).
+ * hay `Object3D` (cả nhánh: món dựng qua `Batch` là khối lồi từng món, lưới khác là tam giác — chỉ bắt nét cắt qua mặt).
  */
-export function colliders(src: ColliderSource | readonly ColliderSource[], name = 'vat'): Collider[] {
-  if (Array.isArray(src)) return src.flatMap((s, i) => colliders(s, `${name}${i}`));
+export function colliders(src: ColliderSource | readonly ColliderSource[], name?: string): Collider[] {
+  if (Array.isArray(src)) return src.flatMap((s, i) => colliders(s, s instanceof THREE.Object3D && name === undefined ? undefined : `${name ?? 'vat'}${i}`));
   if (src instanceof THREE.Box3) {
     const { min: a, max: b } = src;
     const pts = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => new THREE.Vector3(i & 1 ? b.x : a.x, i & 2 ? b.y : a.y, i & 4 ? b.z : a.z));
-    return [convex(name, pts)].filter((c): c is Collider => !!c);
+    return [convex(name ?? 'vat', pts)].filter((c): c is Collider => !!c);
   }
-  if (src instanceof THREE.Object3D) return [meshCollider(src, name)].filter((c): c is Collider => !!c);
-  if (isItem(src)) return itemColliders(src, name);
+  if (src instanceof THREE.Object3D) return objectColliders(src, name);
+  if (isItem(src)) return itemColliders(src, name ?? src.name ?? 'vat');
   const pts = (src as { points: readonly (THREE.Vector3 | Vec3)[] }).points.map((p) => (p instanceof THREE.Vector3 ? p.clone() : new THREE.Vector3(...p)));
-  return [convex(name, pts)].filter((c): c is Collider => !!c);
+  return [convex(name ?? 'vat', pts)].filter((c): c is Collider => !!c);
 }
 
 interface Capsule { part: BodyPart; side?: Side; a: THREE.Vector3; b: THREE.Vector3; r: number }
@@ -120,7 +208,7 @@ function torsoBox(fig: Figure) {
     const tagged = fig.spine.children.filter((c) => c.userData.torso);
     for (const c of tagged.length ? tagged : fig.spine.children) {
       const m = c as THREE.Mesh;
-      if (!m.isMesh || m.userData.noShadow || m.userData.limb) continue;
+      if (!m.isMesh || (m.material as THREE.Material).side === THREE.BackSide || m.userData.limb) continue;
       m.geometry.computeBoundingBox();
       const b = m.geometry.boundingBox!.clone().applyMatrix4(m.matrix), s = b.getSize(new THREE.Vector3());
       if (s.x * s.y * s.z > vol) (vol = s.x * s.y * s.z), (best = b);
@@ -130,7 +218,10 @@ function torsoBox(fig: Figure) {
   return d.box;
 }
 
-/** Các viên nang của người ở tư thế hiện tại, thế giới three */
+/**
+ * Các viên nang của người ở tư thế hiện tại, thế giới three. Nang ống chân dừng ở mút nét (bàn chân đặt trên sàn ở đó),
+ * không trùm nửa cầu đầu nét: đứng hay ngồi đặt chân xuống mặt nào cũng không lún.
+ */
 export function bodyCapsules(fig: Figure, parts: readonly BodyPart[] = BODY_PARTS): Capsule[] {
   fig.root.updateWorldMatrix(true, true);
   const k = fig.root.getWorldScale(new THREE.Vector3()).x;
@@ -139,8 +230,9 @@ export function bodyCapsules(fig: Figure, parts: readonly BodyPart[] = BODY_PART
   const seg = (j: THREE.Object3D, part: BodyPart, side: Side) => {
     const m = j.children.find((c) => c.userData.limb) as THREE.Mesh | undefined;
     if (!m) return;
-    const a = j.getWorldPosition(new THREE.Vector3()), b = j.localToWorld(new THREE.Vector3(0, -m.userData.len, 0));
-    out.push({ part, side, a, b, r: m.userData.r * k });
+    const a = j.getWorldPosition(new THREE.Vector3()), b = j.localToWorld(new THREE.Vector3(0, -m.userData.len, 0)), r = m.userData.r * k;
+    if (part === 'shin') b.addScaledVector(a.clone().sub(b).normalize(), Math.min(r, a.distanceTo(b)));
+    out.push({ part, side, a, b, r });
   };
   for (const s of [-1, 1] as const) {
     if (want.has('upperArm')) seg(fig.arms[s].shoulder, 'upperArm', s);
@@ -248,21 +340,52 @@ function capsuleCollider(c: Capsule, col: Collider): [number, THREE.Vector3] | n
   return best;
 }
 
+const PART_RE = new RegExp(`^(${BODY_PARTS.join('|')})([RL])?$`, 'i');
+interface TouchRule { who?: string; part: BodyPart; side?: Side; max: number }
+
+/** Mục `touch` → luật; tên bộ phận không phân biệt hoa thường, mục không hiểu thì bỏ qua */
+function touchRule(t: Touch): TouchRule | null {
+  const s = typeof t === 'string' ? t : t.part, i = s.lastIndexOf('.');
+  const m = PART_RE.exec(s.slice(i + 1));
+  if (!m) return null;
+  const part = BODY_PARTS.find((p) => p.toLowerCase() === m[1].toLowerCase())!;
+  const side = m[2] ? (m[2] === 'R' || m[2] === 'r' ? -1 : 1) : undefined;
+  return { who: i < 0 ? undefined : s.slice(0, i), part, side, max: typeof t === 'string' ? Infinity : t.max * U };
+}
+
+/** Lún tối đa (three) mà `touch` của vật cho phép bộ phận ấy; `self` là người mang vật */
+function allowance(rules: readonly TouchRule[], who: string, c: Capsule, self?: string) {
+  let lim = 0;
+  for (const r of rules)
+    if (r.part === c.part && (r.side === undefined || r.side === c.side) && (r.who === undefined || (r.who === 'self' ? self : r.who) === who)) lim = Math.max(lim, r.max);
+  return lim;
+}
+
 /**
  * Chỗ người xuyên vật cản ở tư thế hiện tại: bộ phận nào, vật nào, lún bao sâu. Mỗi cặp (người, bộ phận, bên,
- * vật) một dòng, lấy chỗ sâu nhất. `figures` là mảng hay map tên → người; `people` thêm cặp người với người.
+ * vật) một dòng, lấy chỗ sâu nhất. `figures` là mảng hay map tên → người; `people` thêm cặp người với người. Bộ phận
+ * vật khai trong `touch` thì lún tới mức khai không báo.
  */
 export function collide(figures: readonly Figure[] | Record<string, Figure>, cols: readonly Collider[], o: CollideOptions = {}): Contact[] {
   const slack = o.slack ?? 0.01;
   const entries = Array.isArray(figures) ? figures.map((f, i) => [String(i), f] as const) : Object.entries(figures);
   const bodies = entries.map(([who, f]) => ({ who, caps: bodyCapsules(f, o.parts) }));
+  const whoOf = new Map(entries.map(([who, f]) => [f.root as THREE.Object3D, who]));
   const found = new Map<string, Contact>();
-  const add = (who: string, c: Capsule, collider: string, h: [number, THREE.Vector3] | null) => {
-    if (!h || h[0] <= slack) return;
+  const add = (who: string, c: Capsule, collider: string, h: [number, THREE.Vector3] | null, lim = 0) => {
+    if (!h || h[0] <= Math.max(slack, lim)) return;
     const key = `${who}|${c.part}|${c.side ?? ''}|${collider}`, cur = found.get(key);
     if (!cur || h[0] > cur.depth) found.set(key, { who, part: c.part, side: c.side, collider, depth: h[0], at: h[1] });
   };
-  for (const { who, caps } of bodies) for (const c of caps) for (const col of cols) add(who, c, col.name, capsuleCollider(c, col));
+  for (const col of cols) {
+    const rules = (col.touch ?? []).map(touchRule).filter((r): r is TouchRule => !!r);
+    const self = col.owner && whoOf.get(col.owner);
+    for (const { who, caps } of bodies)
+      for (const c of caps) {
+        const lim = rules.length ? allowance(rules, who, c, self) : 0;
+        if (lim < Infinity) add(who, c, col.name, capsuleCollider(c, col), lim);
+      }
+  }
   if (o.people)
     for (let i = 0; i < bodies.length; i++)
       for (let j = i + 1; j < bodies.length; j++)
