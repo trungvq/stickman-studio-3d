@@ -168,14 +168,38 @@ void main(){
   float lap = (4.0 * w0 - wl - wr - wu - wd) / w0;
   float crease = 0.0;
   vec4 n0 = texture2D(tNormal, vUv);
+  vec3 a = n0.xyz * 2.0 - 1.0;
+  vec2 off[4] = vec2[](vec2(-px.x, 0.0), vec2(px.x, 0.0), vec2(0.0, px.y), vec2(0.0, -px.y));
+  float wn[4] = float[](wl, wr, wu, wd);
+  vec4 nbs[4];
+  for (int i = 0; i < 4; i++) nbs[i] = texture2D(tNormal, vUv + off[i]);
+  // lưới người (a 0,3) nhìn sượt: Laplacian bắt cạnh tam giác thành vụn dọc viền. Mặt cong dốc đổi rồi giữ là gấp lưới, bỏ; bậc (dốc
+  // vọt rồi về, lọn tóc chồng nhau) và mặt phẳng giữ. Bước nguyên: uThick lẻ nửa điểm ảnh thì ±1, ±2 bước làm tròn lệch, giả ra bậc
+  ivec2 p = ivec2(gl_FragCoord.xy), hi = textureSize(tDepth, 0) - 1, k = ivec2(max(1, int(uThick + 0.5)), 0);
+  #define N(o) texelFetch(tNormal, clamp(p + (o), ivec2(0), hi), 0)
+  #define ON(o, c) (abs(N(o).a - 0.3) < 0.05 && dot(a, N(o).xyz * 2.0 - 1.0) > c)
+  if (abs(n0.a - 0.3) < 0.05 && ON(-k, 0.95) && ON(k, 0.95) && ON(-k.yx, 0.95) && ON(k.yx, 0.95)) {
+    #define W(o) invz(texelFetch(tDepth, clamp(p + (o), ivec2(0), hi), 0).r)
+    vec2 m2 = vec2(W(-2 * k), W(-2 * k.yx)), m1 = vec2(W(-k), W(-k.yx)), p1 = vec2(W(k), W(k.yx)), p2 = vec2(W(2 * k), W(2 * k.yx));
+    #undef W
+    // độ đổi dốc ở điểm trước, ở đây, ở điểm sau; "về" phải qua ngưỡng nét, điểm thứ hai ra khỏi mặt thì phía ấy không tính
+    vec2 c0 = w0 - 2.0 * m1 + m2, c1 = m1 + p1 - 2.0 * w0, c2 = w0 - 2.0 * p1 + p2;
+    vec2 m = max(0.5 * abs(c1), vec2(0.0025 * w0));
+    bvec2 on0 = bvec2(ON(-2 * k, 0.9), ON(-2 * k.yx, 0.9)), on2 = bvec2(ON(2 * k, 0.9), ON(2 * k.yx, 0.9));
+    bvec2 back0 = bvec2(on0.x && c0.x * c1.x < 0.0 && abs(c0.x) > m.x, on0.y && c0.y * c1.y < 0.0 && abs(c0.y) > m.y);
+    bvec2 back2 = bvec2(on2.x && c2.x * c1.x < 0.0 && abs(c2.x) > m.x, on2.y && c2.y * c1.y < 0.0 && abs(c2.y) > m.y);
+    // mặt phẳng: pháp tuyến y hệt nhau
+    #define BEND(o) (1.0 - dot(a, N(o).xyz * 2.0 - 1.0))
+    float bend = max(max(BEND(-k), BEND(k)), max(BEND(-k.yx), BEND(k.yx)));
+    #undef BEND
+    if (bend > 2e-5 && !any(back0) && !any(back2)) lap = 0.0;
+  }
+  #undef ON
+  #undef N
   if (n0.a > 0.75) {
-    vec3 a = n0.xyz * 2.0 - 1.0;
-    vec2 off[4] = vec2[](vec2(-px.x, 0.0), vec2(px.x, 0.0), vec2(0.0, px.y), vec2(0.0, -px.y));
-    float wn[4] = float[](wl, wr, wu, wd);
     for (int i = 0; i < 4; i++) {
-      vec4 nb = texture2D(tNormal, vUv + off[i]);
       // độ sâu gãy là mép bóng dáng, Laplacian đã vẽ: chỉ xét cạnh gấp trên cùng một mặt liền
-      if (nb.a > 0.75 && abs(wn[i] - w0) < w0 * 0.01) crease = max(crease, 1.0 - dot(a, nb.xyz * 2.0 - 1.0));
+      if (nbs[i].a > 0.75 && abs(wn[i] - w0) < w0 * 0.01) crease = max(crease, 1.0 - dot(a, nbs[i].xyz * 2.0 - 1.0));
     }
   }
   // nét gấp dày theo điểm ảnh: đồ nhỏ ở xa nhạt dần cho khỏi đen kịt
@@ -374,7 +398,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
   const inkTable = Array.from({ length: MAX_INK }, () => new THREE.Vector2());
   const maskRT = new THREE.WebGLRenderTarget(4, 4, { format: THREE.RedFormat, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false });
   let rw = 4, rh = 4;
-  // pháp tuyến hệ nhìn, mặt sau lật lại; a: 1 có nét gấp, 0,5 vật `noCrease`, 0 không có vật. Đích thứ hai: mã vật có nét bóng dáng
+  // pháp tuyến hệ nhìn, mặt sau lật lại; a: 1 có nét gấp, 0,5 vật `noCrease`, 0,3 lưới người (`body`), 0 không có vật. Đích thứ hai: mã vật có nét bóng dáng
   const normalMat = (a: number, id: number) => new THREE.ShaderMaterial({
     side: THREE.DoubleSide,
     vertexShader: /* glsl */ `varying vec3 vN; void main(){ vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
@@ -384,7 +408,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
   // decal giữ độ lệch sâu của vật liệu gốc, không thì giành điểm ảnh với mặt dưới nó thành nét lấm chấm
   const normalMats = new Map<string, THREE.ShaderMaterial>();
   const normalFor = (m: THREE.Mesh, src: THREE.Material, id: number) => {
-    const a = m.userData.noCrease ? 0.5 : 1, key = `${a} ${id}` + (src.polygonOffset ? ` ${src.polygonOffsetFactor} ${src.polygonOffsetUnits}` : '');
+    const a = m.userData.body ? 0.3 : m.userData.noCrease ? 0.5 : 1, key = `${a} ${id}` + (src.polygonOffset ? ` ${src.polygonOffsetFactor} ${src.polygonOffsetUnits}` : '');
     let mat = normalMats.get(key);
     if (!mat) {
       normalMats.set(key, (mat = normalMat(a, id)));
