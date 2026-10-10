@@ -12,7 +12,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { createRequire } from "node:module";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -224,6 +224,26 @@ const loadAnimal = (spec) => {
 
 const loadScene = (s) =>
   R.loadScene(s, LAYERS.actions, LAYERS.animals, LAYERS.props, LAYERS.characters);
+
+/**
+ * Cảnh three `stickman.world` của repo cho một cảnh, để `scene_probe` đo người lồng vào vật như `check`:
+ * `{ world, rel }` (`world` `null` là cảnh đi đường `solids(ctx)`) hay `{ warn }`. Module nạp qua `loadWorld`, gói lại
+ * khi file nguồn đổi; `worldOf` dựng lại mỗi lượt gọi vì cảnh, nhân vật hay hành động có thể vừa sửa.
+ */
+async function probeWorld(id, scene, runtime) {
+  if (!R.loadWorld || !cli.worldScene) return { world: null };
+  let rel = "stickman.world";
+  try {
+    const entry = R.worldEntry(WS);
+    if (!entry) return { world: null };
+    rel = relative(WS, entry);
+    const world = await R.loadWorld(WS);
+    const on = cli.worldScene(world, { id, scene, runtime, ...cli.worldData(WS) }, rel);
+    return on?.error ? { warn: on.error } : { world: on, rel };
+  } catch (e) {
+    return { warn: `${rel}: ${e.message}` };
+  }
+}
 
 /** Tay chân giật trên hình của cả cảnh (hay của một người), cùng phép đo và ngưỡng với `check` (`stickman.snap`) */
 function sceneSnapLines(rt, character, cast) {
@@ -1071,7 +1091,7 @@ server.registerTool(
   "scene_probe",
   {
     description:
-      "Số liệu một scene tại các mốc giây, đọc bằng anchorAt của rig nên đúng hệ toạ độ chỗ vẽ (y xuống, đất ở y của chân): chỗ đứng x (đã cộng trôi ngang), tư thế, lớp tay, nét mặt, toạ độ vai / khuỷu / cổ tay / bàn chân và khối đầu của từng người; đạo cụ thì chỗ đứng, trục bánh và góc bánh đã quay; động vật thì chỗ đứng, hông, vai, yên (saddle), gáy, mõm, bàn chân — con đang bị cưỡi hay xách trả kèm host. `anchors` hỏi thêm mốc bất kỳ — khớp hoặc socket mảnh — mỗi mốc trả {x, y, deg, w, h}: tâm hộp, góc SVG và cỡ hộp đã nhân scale, cắm thẳng vào translate/rotate của một <g> anh em với <Character>. Dùng để tính điểm gặp, đặt tay lên càng xe, bám hiệu ứng vào người thay vì đoán. Người 3D (cast[].world) kèm `world`: khớp hông/gối/bàn chân/vai/khuỷu/cổ tay/cổ/đầu trong toạ độ thế giới, yaw vẽ, yawSaid, yawHeading (người đi: hướng nhắm theo path), theta, seated, near (tay gần là tay phải hay trái), hands (đích thế giới đang áp). Cảnh có lens và người 3D kèm `clashes`: mỗi mốc giây, các chỗ phần người lồng vào đồ khối hay vào người khác sâu quá ngưỡng của check (stickman.clash.tol, mặc định 2) ({who, with, depth}) — rig không đẩy người ra khỏi đồ. `snaps`: các cú tay chân giật trên hình của cả cảnh (có `cast` thì của người ấy), cùng dòng báo và ngưỡng (stickman.snap) với check; cố ý giật thì khai `snap: true` ở hành động, ở clip hay ở mốc world.hands.",
+      "Số liệu một scene tại các mốc giây, đọc bằng anchorAt của rig nên đúng hệ toạ độ chỗ vẽ (y xuống, đất ở y của chân): chỗ đứng x (đã cộng trôi ngang), tư thế, lớp tay, nét mặt, toạ độ vai / khuỷu / cổ tay / bàn chân và khối đầu của từng người; đạo cụ thì chỗ đứng, trục bánh và góc bánh đã quay; động vật thì chỗ đứng, hông, vai, yên (saddle), gáy, mõm, bàn chân — con đang bị cưỡi hay xách trả kèm host. `anchors` hỏi thêm mốc bất kỳ — khớp hoặc socket mảnh — mỗi mốc trả {x, y, deg, w, h}: tâm hộp, góc SVG và cỡ hộp đã nhân scale, cắm thẳng vào translate/rotate của một <g> anh em với <Character>. Dùng để tính điểm gặp, đặt tay lên càng xe, bám hiệu ứng vào người thay vì đoán. Người 3D (cast[].world) kèm `world`: khớp hông/gối/bàn chân/vai/khuỷu/cổ tay/cổ/đầu trong toạ độ thế giới, yaw vẽ, yawSaid, yawHeading (người đi: hướng nhắm theo path), theta, seated, near (tay gần là tay phải hay trái), hands (đích thế giới đang áp). Cảnh có lens và người 3D kèm `clashes`: mỗi mốc giây, các chỗ phần người lồng vào đồ khối hay vào người khác sâu quá ngưỡng của check (stickman.clash.tol, mặc định 2) ({who, with, depth}) — rig không đẩy người ra khỏi đồ. Repo khai stickman.world và worldOf trả cảnh thì đồ là mọi vật của cảnh three ấy, đúng như check (who theo cú pháp touch: `a.foreArmR`); cảnh three hỏng thì `warnings` kể lỗi và mốc ấy đo bằng khối lớp vẽ code. `snaps`: các cú tay chân giật trên hình của cả cảnh (có `cast` thì của người ấy), cùng dòng báo và ngưỡng (stickman.snap) với check; cố ý giật thì khai `snap: true` ở hành động, ở clip hay ở mốc world.hands.",
     inputSchema: {
       scene: Spec,
       t: z
@@ -1244,19 +1264,28 @@ server.registerTool(
         ];
       }),
     );
-    // Người 3D lồng vào đồ khối hay vào người khác — cùng phép đo với `check`
+    // Người 3D lồng vào đồ khối, vào vật của cảnh three hay vào người khác — cùng phép đo với `check`
     let clashes;
+    const warnings = new Set();
     if (rt.lens && rt.cast.some((m) => m.world) && cli.clashesAt) {
       const codeLayers = await R.loadLayers(WS);
       const characterOf = (m) => {
         const file = m.character ?? character;
         return { character: file ? loadSpec("characters", file) : rig.defaultCharacter() };
       };
+      const id = typeof scene === "string" ? basename(scene).replace(/\.json$/, "") : s.name;
+      const { world, warn, rel } = await probeWorld(id, s, rt);
+      if (warn) warnings.add(`${warn}; đo bằng khối lớp vẽ code`);
+      const onWorld = ({ error, unknown }) => {
+        if (error) warnings.add(`${rel}: ${error}`);
+        for (const [entry, thing] of unknown ?? [])
+          warnings.add(
+            `\`touch\` "${entry}" của vật ${thing} không phải phần người nào — bỏ qua (docs/10-lop-ve-code.md#đo-trên-cảnh-three)`,
+          );
+      };
+      const opts = { characterOf, codeLayers, tol: cli.clashTol(WS), self: cli.selfTol?.(WS) };
       clashes = Object.fromEntries(
-        times.map((time) => [
-          time,
-          cli.clashesAt(rt, time, { characterOf, codeLayers, tol: cli.clashTol(WS) }),
-        ]),
+        times.map((time) => [time, cli.clashesAt(rt, time, { ...opts, world, onWorld })]),
       );
     }
     // Tay chân giật trên hình, cả cảnh — cùng phép đo với `check`
@@ -1266,6 +1295,7 @@ server.registerTool(
       camera,
       rows,
       ...(clashes ? { clashes } : {}),
+      ...(warnings.size ? { warnings: [...warnings] } : {}),
       ...(snaps.length ? { snaps } : {}),
     });
   }),

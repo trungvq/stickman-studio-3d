@@ -5,7 +5,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import * as rig from "@stickman3d/sketch";
-import { checkWorkspace } from "./lib.mjs";
+import { loadLayers, loadWorld } from "@stickman3d/render";
+import { checkWorkspace, clashesAt, worldData, worldScene } from "./lib.mjs";
 
 const TOP = -150;
 const SEAT = -94.5;
@@ -219,6 +220,13 @@ export const CODE_LAYERS = [
 ];
 `;
 
+const stand = (name, ids = ["a"]) => ({
+  name,
+  duration: 2,
+  lens: LENS,
+  cast: ids.map((id) => ({ id, world: { at: [X, 0, 0], yaw: 0 } })),
+});
+
 function worldspace() {
   const dir = mkdtempSync(join(tmpdir(), "stickman-world-"));
   for (const d of ["scenes", "actions", "characters", "pieces", "src", "node_modules/@stickman3d"])
@@ -235,12 +243,6 @@ function worldspace() {
   writeFileSync(join(dir, "src/world.ts"), WORLD);
   writeFileSync(join(dir, "src/Ghi.tsx"), GHI);
   writeFileSync(join(dir, "src/lop.ts"), HOP);
-  const stand = (name, ids = ["a"]) => ({
-    name,
-    duration: 2,
-    lens: LENS,
-    cast: ids.map((id) => ({ id, world: { at: [X, 0, 0], yaw: 0 } })),
-  });
   json("scenes/cam.json", stand("cam"));
   json("scenes/le.json", stand("le"));
   json("scenes/bay.json", stand("bay"));
@@ -303,5 +305,49 @@ describe("check: người lồng vào vật trên cảnh three (`stickman.world`
       msgs.some((m) => / — a\.foreArmR ↔ so lấn .* giây 0\.50–0\.75$/.test(m)),
       JSON.stringify(msgs, null, 2),
     );
+  });
+
+  it("`clashesAt` của `scene_probe` đo trên cảnh three như check, gọi giây theo thứ tự nào cũng vậy", async () => {
+    const dir = worldspace();
+    const world = await loadWorld(dir);
+    const data = worldData(dir);
+    const characterOf = () => ({ character: rig.defaultCharacter() });
+    const codeLayers = await loadLayers(dir);
+    const probe = (name) => {
+      const scene = rig.parseScene(stand(name, name === "hong" ? ["a", "b"] : ["a"])).data;
+      const runtime = rig.resolveScene(scene, {});
+      const on = worldScene(world, { id: name, scene, runtime, ...data }, "src/world.ts");
+      const notes = [];
+      const at = (t) =>
+        clashesAt(runtime, t, {
+          characterOf,
+          codeLayers,
+          world: on,
+          onWorld: (n) => notes.push(n),
+        });
+      return { on, at, notes };
+    };
+    const cam = probe("cam");
+    const order = [1.5, 0.75, 0.25];
+    const back = Object.fromEntries(order.map((t) => [t, cam.at(t)]));
+    const fwd = Object.fromEntries([...order].reverse().map((t) => [t, cam.at(t)]));
+    assert.deepEqual(back, fwd);
+    assert.deepEqual(
+      back[0.75].map((c) => [c.who, c.with]),
+      [["a.foreArmR", "so"]],
+    );
+    assert.ok(back[0.75][0].depth > 2);
+    assert.deepEqual(back[0.25], []);
+    assert.deepEqual(back[1.5], []);
+    assert.ok(cam.notes.every((n) => !n.error));
+    assert.deepEqual([...new Set(cam.notes.flatMap((n) => [...n.unknown.keys()]))], ["a.tay"]);
+    // `worldOf` trả `null`: đường cũ; `pose` ném: báo lỗi, giây ấy đo bằng khối của `<SceneWorld>`
+    const le = probe("le");
+    assert.equal(le.on, null);
+    assert.ok([0, 0.5, 1].some((t) => le.at(t).some((c) => c.with === "hop (mảnh 0)")));
+    const hong = probe("hong");
+    const late = hong.at(1.5);
+    assert.match(hong.notes[0].error, /^cảnh three ném lỗi ở giây 1\.50 — hỏng; /);
+    assert.ok(late.some((c) => /^a\.\w+$/.test(c.who) && /^b\.\w+$/.test(c.with)));
   });
 });
