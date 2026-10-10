@@ -71,7 +71,7 @@ export const SCULPT_STYLE_NAMES = [
 
 export const SculptSchema = z.object({
   /**
-   * `plain` vỏ trơn; `neat` rẽ rãnh ngôi và có nét chải; `spiky` mọc gai theo bảng của kiểu;
+   * `plain` vỏ trơn; `neat` rẽ rãnh ngôi, lọn dẹt chải sang mái; `spiky` mọc gai theo bảng của kiểu;
    * `round` mái bằng; `center` ngôi giữa; `bob` đuôi cụp; `shoulder` ngang vai gợn sóng; `slick` vuốt ngược;
    * `curly` xoăn búp; `bald` hói đỉnh, chỉ còn vành tóc hai bên và sau gáy; `pony` đuôi ngựa; `bun`
    * búi; `messy` ngắn xù, đuôi so le; `afro` xoăn bồng ôm cả đầu; `buzz` đầu đinh sát da; `crop` tròn ngắn mái bằng có lọn xoáy;

@@ -34,3 +34,17 @@ describe('tóc anime', () => {
     expect(sculptMesh({ ...s, spike: 0 }).spikes).toEqual([]);
   });
 });
+
+describe('lọn dẹt', () => {
+  it('đổi dấu `part` thì lọn lật gương', () => {
+    for (const k of ['neat', 'quiff'] as const) {
+      const s = SCULPT_PRESETS[k].sculpt;
+      const mirror = sculptMesh({ ...s, part: -s.part }).spikes.flat();
+      const far = sculptMesh(s)
+        .spikes.flat()
+        .filter((_, i) => i % 7 === 0)
+        .map(([x, y, z]) => Math.min(...mirror.map(([u, v, w]) => Math.hypot(x + u, y - v, z - w))));
+      expect(Math.max(...far)).toBeLessThan(1e-9);
+    }
+  });
+});

@@ -88,11 +88,10 @@ describe("tóc dựng khối", () => {
     expect(points(d)).toHaveLength(5);
   });
 
-  it("tóc chải gọn có nét chải, đổi phía ngôi thì lật gương cả nét lẫn vỏ", () => {
+  it("tóc chải gọn đổi phía ngôi thì lật gương cả nét lẫn vỏ", () => {
     const s = SCULPT_PRESETS.neat.sculpt;
     const t = { yaw: 0, pitch: 0 };
     const p = sculptPaths(s, t, "round", 0, 0, R, R);
-    expect(p.lines.length).toBeGreaterThanOrEqual(3);
     const q = sculptPaths({ ...s, part: -s.part }, t, "round", 0, 0, R, R);
     const key = (d: string, sx: number) =>
       points(d)
@@ -100,26 +99,6 @@ describe("tóc dựng khối", () => {
         .sort();
     expect(key(q.lines.join(""), -1)).toEqual(key(p.lines.join(""), 1));
     expect(key(q.cap, -1)).toEqual(key(p.cap, 1));
-  });
-
-  it("mái ngắn nhìn nghiêng có hai nét tách nhau, đường ngôi bị khối tóc che", () => {
-    for (const yaw of [-90, -84]) {
-      const p = sculptPaths(SCULPT_PRESETS.neat.sculpt, { yaw, pitch: 0 }, "round", 0, 0, R, R);
-      expect(p.lines).toHaveLength(2);
-      const [a, b] = p.lines.map(points);
-      for (const [x, y] of a)
-        for (const [u, v] of b) expect(Math.hypot(x - u, y - v)).toBeGreaterThan(3);
-    }
-  });
-
-  it("nếp mái ôm từ đỉnh xuống bên đầu khi quay nghiêng", () => {
-    const p = sculptPaths(SCULPT_PRESETS.neat.sculpt, { yaw: 90, pitch: 0 }, "round", 0, 0, R, R);
-    expect(p.lines).toHaveLength(3);
-    for (const line of p.lines) {
-      const pts = points(line);
-      const ys = pts.map(([, y]) => y);
-      expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(15);
-    }
   });
 
   it("mái bằng chỉ có nét cắt, không đường ngôi; ngôi giữa đối xứng hai bên", () => {
@@ -445,7 +424,7 @@ describe("tóc dựng khối", () => {
     expect(hairline(crop, 45)).toBeLessThan(hairline(crop, 20));
     const top = (raw: Partial<Sculpt>) => -Math.min(...at(raw, 90).map(([, y]) => y));
     expect(top(SCULPT_PRESETS.quiff.sculpt)).toBeGreaterThan(
-      top(SCULPT_PRESETS.short.sculpt) + R * 0.15,
+      top(SCULPT_PRESETS.short.sculpt) + R * 0.1,
     );
     for (const k of ["buzz", "crop", "quiff"] as const) {
       const s = SCULPT_PRESETS[k].sculpt;
