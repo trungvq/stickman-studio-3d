@@ -34,6 +34,7 @@ export {
   canvasTexture, decal, loadFonts, loadImage, loadImages, placeOn, sheet, strokes, typeText, wearDecal, wrapText,
   type CanvasSurface, type CanvasTextureOptions, type PlaceOnOptions, type QuadOptions, type SheetOptions, type StrokeOptions, type TypeTextOptions, type WearDecalOptions,
 } from './decal';
+export { newCanvas, path2D } from './canvas';
 export {
   deskCalendar, monitor, wallClock,
   type DeskCalendar, type DeskCalendarOptions, type Monitor, type MonitorOptions, type WallClock, type WallClockOptions,

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { collide, colliders } from './collide';
+import { collide, colliders, type Touch } from './collide';
 import { defaultCharacter } from './core/schema';
 import { canvasTexture, decal, typeText, wearDecal } from './decal';
 import { hold } from './attach';
@@ -135,6 +135,53 @@ describe('touch', () => {
     expect(fore('a')).toEqual([]);
     // người kia đứng trùng chỗ: cẳng tay của họ vẫn bị báo
     expect(fore('b')).toHaveLength(1);
+  });
+});
+
+describe('khoảng cách tới khối lồi', () => {
+  const f = person();
+  f.root.updateMatrixWorld(true);
+  const head = f.head.getWorldPosition(new THREE.Vector3()), r = R.head;
+  const heads = (min: THREE.Vector3) => collide({ a: f }, colliders(new THREE.Box3(min, min.clone().addScalar(1))), { parts: ['head'] });
+  /** Hộp cạnh 1 nằm ngoài góc (hay cạnh) chéo `n` của đầu, cách tâm đầu `d` */
+  const corner = (d: number) => heads(head.clone().addScaledVector(new THREE.Vector3(1, 1, 1).normalize(), d));
+  const edge = (d: number) => heads(head.clone().addScaledVector(new THREE.Vector3(1, 1, 0).normalize(), d).setZ(head.z - 0.5));
+
+  it('đầu chéo ngoài góc, ngoài cạnh hộp mà không chạm thì không báo; chạm thì lún đúng bán kính trừ khoảng cách', () => {
+    expect(corner(1.2 * r)).toEqual([]);
+    expect(edge(1.2 * r)).toEqual([]);
+    expect(corner(0.7 * r)[0].depth).toBeCloseTo(0.3 * r, 4);
+    expect(edge(0.7 * r)[0].depth).toBeCloseTo(0.3 * r, 4);
+  });
+
+  // tấm mỏng 2 px vuông góc với cẳng tay phải, nửa cạnh 15 px, tâm lệch khỏi trục cẳng tay `off`
+  const slab = (off: number) => {
+    const e = f.arms[-1].elbow.getWorldPosition(new THREE.Vector3()), w = f.arms[-1].wrist.getWorldPosition(new THREE.Vector3());
+    const d = w.clone().sub(e).normalize(), u = new THREE.Vector3(1, 0, 0).cross(d).normalize(), v = d.clone().cross(u);
+    const c = e.add(w).multiplyScalar(0.5).addScaledVector(u, off), points: THREE.Vector3[] = [];
+    for (const a of [-0.01, 0.01]) for (const b of [-0.15, 0.15]) for (const k of [-0.15, 0.15]) points.push(c.clone().addScaledVector(d, a).addScaledVector(u, b).addScaledVector(v, k));
+    return colliders({ points }, 'so');
+  };
+  const fore = (cols: ReturnType<typeof colliders>, o: Parameters<typeof collide>[2] = {}) =>
+    collide({ a: f }, cols, { parts: ['foreArm'], ...o }).filter((c) => c.side === -1);
+
+  it('trục xuyên qua đồ mỏng: lún là quãng phải dời cẳng tay ra khỏi tấm, giữa tấm sâu hơn sát mép', () => {
+    const k = f.arms[-1].elbow.children.find((c) => c.userData.limb)!.userData.r * f.root.getWorldScale(new THREE.Vector3()).x;
+    expect(fore(slab(0))[0].depth).toBeCloseTo(k + 0.15, 4);
+    expect(fore(slab(0.12))[0].depth).toBeCloseTo(k + 0.03, 4);
+  });
+
+  it('touch nhận tên phần người của lớp vẽ code: gần / xa theo mắt, không có mắt thì cả hai bên; tên lạ thì gọi `unknown`', () => {
+    const touched = (touch: Touch[]) => slab(0).map((c) => ({ ...c, touch }));
+    const right = new THREE.Vector3(-10, 1, 0), left: [number, number, number] = [10, 1, 0];
+    expect(fore(touched(['forearmNear']), { eye: right })).toEqual([]);
+    expect(fore(touched(['forearmNear']), { eye: left })).toHaveLength(1);
+    expect(fore(touched(['a.forearmFar']), { eye: left })).toEqual([]);
+    expect(fore(touched(['forearmNear']))).toEqual([]);
+    expect(fore(touched(['armNear']))).toHaveLength(1);
+    const bad: string[] = [];
+    expect(fore(touched(['tay', { part: 'a.chan', max: 3 }]), { unknown: (e) => bad.push(e) })).toHaveLength(1);
+    expect(bad).toEqual(['tay', 'a.chan']);
   });
 });
 
