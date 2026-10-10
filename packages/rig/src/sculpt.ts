@@ -9,7 +9,7 @@ import { onSkull, type Vec3 } from './core/sphere';
 // Tóc dựng khối từ bảng kiểu và các hàm dựng vỏ, chân tóc, mái lệch, lọn gai của lõi: như `sculptPaths` nhưng
 // giữ lưới 3D thay vì chiếu ra path SVG.
 
-/** Nét trên mặt vỏ như `buildSculpt`: đường ngôi, nét cắt, đường cong và khe búp xoăn; lọn dẹt có khối nên không vẽ nét; mẩu ngắn hơn một phần tư bị bỏ */
+/** Nét trên mặt vỏ như `buildSculpt`: đường ngôi, nét cắt và khe búp xoăn; lọn dẹt có khối nên không vẽ nét; mẩu ngắn hơn một phần tư bị bỏ */
 function hairLines(s: Sculpt, lines: Vec3[][]) {
   const def = SCULPT_STYLES[s.style];
   const rim = def.rim ?? 0.3;
@@ -52,18 +52,6 @@ function hairLines(s: Sculpt, lines: Vec3[][]) {
       return onShell(lon - side * 7 * (1 - (1 - v) ** 2), low + 1 + rise * v);
     }));
   }
-  for (const curve of def.curves ?? []) {
-    const control = curve.map(([u, lat]) => onSkull(s.part - side * u, lat));
-    trace(Array.from({ length: 49 }, (_, k) => {
-      const v = k / 48;
-      let row = control;
-      while (row.length > 1) row = row.slice(1).map((p, i) => p.map((a, d) => row[i][d] * (1 - v) + a * v) as Vec3);
-      const r = Math.hypot(...row[0]);
-      const p = row[0].map((a) => a / r) as Vec3;
-      const lon = Math.atan2(p[0], p[2]) / D;
-      return Math.asin(p[1]) / D >= rootLat(s, lon) ? lift(p) : undefined;
-    }));
-  }
   if (def.curls && def.curlArc) {
     const [r, , count] = def.curls;
     const [at, a0, a1] = def.curlArc;
@@ -84,7 +72,7 @@ function hairLines(s: Sculpt, lines: Vec3[][]) {
 
 /**
  * Lưới tóc trong hệ sọ đơn vị (y lên, z ra trước mặt), đầu thẳng: `shell` vỏ và vách chân tóc, `spikes` lọn gai,
- * đuôi ngựa và búi, `hang` mặt rủ, mỗi phần là dãy tam giác; `lines` nét trên mặt vỏ (ngôi, nét chải, khe búp xoăn).
+ * đuôi ngựa và búi, `hang` mặt rủ, mỗi phần là dãy tam giác; `lines` nét trên mặt vỏ (ngôi, nét cắt, khe búp xoăn).
  */
 export interface SculptMesh {
   shell: Vec3[][];

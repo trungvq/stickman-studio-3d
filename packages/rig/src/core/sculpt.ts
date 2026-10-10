@@ -119,8 +119,6 @@ interface SculptStyleDef {
   locks?: Lock[];
   /** Độ nhô của điểm điều khiển lọn vuốt, phần chiều dài lọn; mặc định 0.55. */
   sweptArch?: number;
-  /** Nếp cong Bézier trên vỏ, bốn điểm [độ kinh từ ngôi về phía mái, vĩ độ]. */
-  curves?: [number, number][][];
   /**
    * Nếp ngôi: vỏ lõm còn `1 − depth` phần dọc mặt phẳng ngôi, nửa bề rộng `width` (lần bán kính);
    * mặt phẳng ngôi xa dần giữa đầu về sau theo `lean`. Có nếp thì hai bên ngôi là hai khối và
@@ -249,53 +247,24 @@ export const SCULPT_STYLES: Record<SculptStyle, SculptStyleDef> = {
     fringe: "sweep",
     reach: 95,
     partRise: 0,
+    rim: 0.3,
+    ease: 0.7,
     puff: [
-      [0, 63, 30, 0.26],
-      [-65, 55, 32, 0.12],
+      [25, 80, 45, 0.12],
+      [-85, 62, 35, 0.06],
     ],
-    rim: 0.55,
     sweptArch: 0.12,
     swept: [
-      [55, 68, 0.45, 75, 95, 0.22],
-      [70, 58, 0.6, 100, 90, 0.24],
+      [45, 80, 0.4, 20, 94, 0.2],
+      [68, 72, 0.4, 35, 92, 0.19],
     ],
-    curves: [
-      [
-        [50, 55],
-        [63, 53],
-        [80, 48],
-        [100, 43],
-      ],
-      [
-        [110, 50],
-        [120, 54],
-        [140, 54],
-        [155, 45],
-      ],
-      [
-        [-50, 50],
-        [-60, 54],
-        [-80, 54],
-        [-95, 45],
-      ],
-      [
-        [210, 50],
-        [200, 30],
-        [205, 10],
-        [210, -14],
-      ],
-      [
-        [165, 25],
-        [165, 10],
-        [177, -5],
-        [195, -14],
-      ],
-      [
-        [255, 25],
-        [255, 10],
-        [243, -5],
-        [225, -14],
-      ],
+    locks: [
+      [-20, 70, 42, 350, 0, 0.17, -10, 0.4, 0.6],
+      [5, 70, 46, 0, 0, 0.18, 0, 0.4, 0.6],
+      [30, 68, 46, 10, 0, 0.18, 8, 0.4, 0.6],
+      [55, 66, 46, 22, 0, 0.18, 14, 0.4, 0.6],
+      [100, 56, 30, 80, 0, 0.13, 6, 0.4, 0.6],
+      [-48, 58, 30, 280, 0, 0.13, -6, 0.4, 0.6],
     ],
   },
   curly: {
@@ -1054,7 +1023,7 @@ export interface SculptPaths {
   head: (grow: number) => string;
   /** Phần mặt rủ phía sau tâm đầu: vẽ sau cả thân */
   under: string;
-  /** Nét trong: đường ngôi, nét cắt, nét chải `curves` và khe búp xoăn */
+  /** Nét trong: đường ngôi, nét cắt và khe búp xoăn */
   lines: string[];
   /** Phần đuôi ngựa, búi nằm trước vỏ: vẽ trên cả tóc, có nét riêng */
   knot: string;
@@ -1193,7 +1162,7 @@ function buildSculpt(
   /** Vách có mọi đỉnh sau mặt phẳng giữa mà chiếu vào lòng viền đầu thì sọ che */
   const hidden = (q: Vec3[]) => q.every(([x, y, z]) => z < 0 && x * x + y * y < 1);
   /** Vỏ và gai: sau mặt phẳng giữa thì sọ che theo đúng viền đầu; loại cả ô thì hở khe ở viền */
-  const tracked = !!(def.crease || def.curves || def.curlArc);
+  const tracked = !!(def.crease || def.curlArc);
   const fan = fanOf;
   /** Ô bốn đỉnh không xoắn thì cắt nguyên ô; xoắn thì quạt quanh tâm, lật ngôi vẫn đối xứng gương */
   const split = (q: Vec3[], flat: Vec3[]) =>
@@ -1612,22 +1581,6 @@ function buildSculpt(
       Array.from({ length: 9 }, (_, k) => {
         const v = k / 8;
         return onShell(lon - side * 7 * (1 - (1 - v) ** 2), low + 1 + rise * v);
-      }),
-    );
-  }
-  for (const curve of def.curves ?? []) {
-    const control = curve.map(([u, lat]) => onSkull(s.part - side * u, lat));
-    trace(
-      Array.from({ length: 49 }, (_, k) => {
-        const v = k / 48;
-        let row = control;
-        while (row.length > 1)
-          row = row.slice(1).map((p, i) => p.map((a, d) => row[i][d] * (1 - v) + a * v) as Vec3);
-        const r = Math.hypot(...row[0]);
-        const p = row[0].map((a) => a / r) as Vec3;
-        const lon = Math.atan2(p[0], p[2]) / D;
-        const lat = Math.asin(p[1]) / D;
-        return lat >= rootLat(s, lon) ? lift(p) : undefined;
       }),
     );
   }

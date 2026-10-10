@@ -310,20 +310,27 @@ nét bị bỏ. Ngôi mẫu đặt gần giữa (`part` 20) để khối bên ng
 
 #### Tóc vuốt ngược
 
-Kiểu `slick` để trán cao, khối phồng tập trung phía trước rồi hạ về gáy. Mẫu có
-`front` 58, `part` −30, `fringe` 10, `ear` 20, `sideburn` 8, `volume` 0.1;
-`bang` và `length` bằng 0. Bảng `SCULPT_STYLES.slick` giữ hình của kiểu:
+Kiểu `slick` để trán cao, tóc chải ngược ra sau thành một khối liền. Mẫu có `front` 58,
+`part` −30, `fringe` 10, `ear` 20, `sideburn` 8, `volume` 0.1; `bang` và `length` bằng 0. Bảng
+`SCULPT_STYLES.slick` giữ hình của kiểu:
 
-- Hai `puff` tạo khối lệch; mép mái quét trong `reach` 95°, `rim` 0.55.
-  `partRise` bằng 0 để chân tóc không nhô tại ngôi; mặc định của trường là 4°.
-- `swept` là lọn vuốt có lưới riêng, dùng tiết diện của lọn gai. Chân chìm dưới
-  đúng mặt vỏ có `puff`; kinh độ đo từ ngôi theo `fromPart`, hướng ngả cũng lật
-  theo dấu `part`. `sweptArch` 0.12 đặt điểm điều khiển gần chân để lọn nằm sát
-  vỏ; số này là phần chiều dài lọn, mặc định 0.55 như gai. `spike` nhân chiều
-  dài cả gai và lọn vuốt. Lưới đi qua cùng phép cắt trước/sau và tô chung vỏ.
-- `curves` là nếp chải Bézier bậc ba: bốn điểm `[u, lat]`, `u` đo từ ngôi về
-  phía mái. Nội suy trong không gian sọ, chuẩn hoá về cầu rồi nâng lên mặt vỏ.
-  Nét theo đầu và bị chính khối tóc che; phần dưới chân tóc không vẽ.
+- Mép mái quét trong `reach` 95°, `rim` 0.3. `partRise` bằng 0 để chân tóc không nhô tại ngôi;
+  mặc định của trường là 4°.
+- Vỏ dày dần trong 70% số hàng từ chân tóc (`ease` 0.7): nhìn nghiêng mặt trước ngả theo sọ
+  thành đường cong ra sau, không dựng vách ở chân tóc. Một `puff` ở vĩ độ 80 bên mái cho đỉnh
+  phồng, một `puff` thấp sau thái dương bên ngôi.
+- Bốn lọn dẹt (`locks`) mọc cao hơn chân tóc trán 12–14°, chải ngược qua đỉnh, ngọn dừng
+  ngay sau xoáy; lọn bên mái ngả dần về phía mái. Hai lọn mảnh trên thái dương chải ngang ra
+  sau, ngọn bắt đầu chìm trước kinh độ ±90 nên nhìn từ sau chỉ gợn nhẹ trên viền đầu. Mọi lọn
+  trồi trong 40% chiều dài đầu và chìm ngọn vào vỏ trong 60% cuối; sau gáy là vỏ trơn.
+- Chân lọn đặt xa góc mái bên thái dương: vỏ ở đó còn mỏng mà mép mái `sweep` gặp chân tóc bên
+  tai thành mấu, lọn nằm trên góc ấy phóng mấu thành cục.
+- `swept` là hai lọn vuốt trên đỉnh bên mái, ngả về phía sau; lưới riêng dùng tiết diện của lọn
+  gai, chân chìm dưới đúng mặt vỏ có `puff`. Kinh độ đo từ ngôi theo `fromPart`, hướng ngả cũng
+  lật theo dấu `part`. `sweptArch` 0.12 đặt điểm điều khiển gần chân để lọn nằm sát vỏ; số này
+  là phần chiều dài lọn, mặc định 0.55 như gai. `spike` nhân chiều dài cả gai, lọn vuốt và lọn
+  dẹt. Lưới đi qua cùng phép cắt trước/sau và tô chung vỏ.
+- Ở 2.5D, `slick` là vỏ và hai lọn vuốt, không lọn dẹt và không nét ngôi.
 
 #### Tóc xoăn
 
@@ -446,8 +453,8 @@ Như lọn vuốt, đổi dấu `part` là lật gương cả lọn.
   sợi vểnh. Gáy không có lọn: sau đầu là một khối liền. Một `puff` sau gáy cho đầu tròn ra
   sau. Mẫu `anime` có `front` 46, `ear` 10, `sideburn` 8, `nape` −14, `part` 0 (`puff` và lọn
   đo từ ngôi), `fringe` 0, `volume` 0.16.
-- Lọn dẹt chỉ có ở người 3D; `sculptPaths` bỏ qua `locks`, nên `anime`, `neat`, `crop` và
-  `quiff` ở 2.5D là vỏ (và đường ngôi) không có lọn.
+- Lọn dẹt chỉ có ở người 3D; `sculptPaths` bỏ qua `locks`, nên `anime`, `neat`, `crop`,
+  `quiff` và `slick` ở 2.5D là vỏ (và đường ngôi) không có lọn dẹt.
 
 #### Tóc rủ
 
