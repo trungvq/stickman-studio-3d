@@ -156,6 +156,9 @@ stage.dispose();
 - **Ảnh tĩnh.** `stage.still(t, view, canvas?)` vẽ rồi chép sang canvas 2D: khung chia đôi (hai sân khấu nửa khung
   hay một sân khấu hai lần `still`), nền làm tối (`filter: brightness(…)` trên canvas ảnh), năm ảnh nhanh (một sân
   khấu, năm `still`, rồi `dispose`). Cần texture thì `new THREE.CanvasTexture(stage.still(t))`.
+- **Chân dung.** `portrait(character, { frame: 'head' | 'bust', yaw, face })` chụp đầu (và vai) một nhân vật ra canvas
+  nền trong suốt, khung tự ôm, không cần cảnh — [docs/01](docs/01-rig.md#chân-dung). Repo video dùng
+  `<ChanDung>` ở `src/khoi3d/ChanDung.tsx`.
 - **Bám người.** `screenOf(stage, figure, mốc)` hay `screenOf(stage, điểm)` gọi sau `draw`/`pose` của đúng khung ấy.
   Mốc: `root`, `hip`, `chest`, `collar`, `head`, `headTop`, `face`, `mouth`, `wristR/L`, `footR/L`, và
   `wristNear/Far`, `footNear/Far` chọn bên gần ống kính như `anchorAt` 2D. Trả `x`, `y` px khung; `stage` toạ độ

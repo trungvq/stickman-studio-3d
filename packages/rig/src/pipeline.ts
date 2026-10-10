@@ -119,7 +119,7 @@ void main(){
 const POST_FRAG = /* glsl */ `
 uniform sampler2D tColor, tDepth, tNormal, tInk;
 uniform vec2 uRes;
-uniform float uNear, uFar, uOutline, uThick, uPixel, uAo, uAoRadius, uSil;
+uniform float uNear, uFar, uOutline, uThick, uPixel, uPaper, uAo, uAoRadius, uSil;
 uniform vec3 uInkColor;
 uniform mat4 uProj, uProjInv;
 uniform vec3 uShadowTint;
@@ -185,9 +185,9 @@ void main(){
   if (uSil > 0.5) col = mix(col, uInkColor, texelFetch(tInk, ivec2(gl_FragCoord.xy), 0).r);
   vec2 fc = vUv * uRes;
   if (uPixel > 0.5) col = floor(col * 14.0 + 0.5 + bayer4(fc) - 0.5) / 14.0;
-  else col *= 0.975 + 0.05 * h12(floor(gl_FragCoord.xy));
+  else if (uPaper > 0.5) col *= 0.975 + 0.05 * h12(floor(gl_FragCoord.xy));
   float v = length(vUv - 0.5) * 1.35;
-  col *= mix(1.0, 0.86, smoothstep(0.45, 1.05, v));
+  if (uPaper > 0.5) col *= mix(1.0, 0.86, smoothstep(0.45, 1.05, v));
   gl_FragColor = vec4(col, 1.0);
 }`;
 
@@ -262,6 +262,8 @@ export interface RenderOptions {
   /** Giây của khung: nhiễu băng chạy theo nó */
   t?: number;
   grade?: Grade;
+  /** Hạt giấy và tối góc; tắt thì màu mỗi điểm ảnh chỉ còn theo cảnh, tách nền được (`portrait`) */
+  paper?: boolean;
 }
 
 export interface Pipeline {
@@ -408,6 +410,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       uOutline: { value: 1 },
       uThick: { value: 1 },
       uPixel: { value: 0 },
+      uPaper: { value: 1 },
       uAo: { value: 1 },
       uAoRadius: { value: 0.35 },
       uProj: { value: new THREE.Matrix4() },
@@ -498,7 +501,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       gradeMat.uniforms.uRes.value.set(Math.round(w * dpr), Math.round(h * dpr));
     },
 
-    render(scene, camera, { outline = true, t = 0, grade = {} } = {}) {
+    render(scene, camera, { outline = true, t = 0, grade = {}, paper = true } = {}) {
       scene.updateMatrixWorld();
       camera.updateMatrixWorld();
       const hidden: THREE.Object3D[] = [];
@@ -577,6 +580,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       pu.uAo.value = LIGHTING.ao.strength;
       pu.uAoRadius.value = LIGHTING.ao.radius;
       pu.uOutline.value = outline ? 1 : 0;
+      pu.uPaper.value = paper ? 1 : 0;
       // vỏ nét ngược không phải mặt thật, vật không ghi độ sâu (kính, lớp nét mặt) không có trong độ sâu: bỏ khỏi lượt pháp tuyến
       const shells: THREE.Object3D[] = [], swapped: [THREE.Mesh, THREE.Material | THREE.Material[]][] = [];
       const slots = new Map<THREE.Material, number>(), f = (camera.projectionMatrix.elements[5] * rh) / 2;

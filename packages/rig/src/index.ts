@@ -28,6 +28,7 @@ export {
 } from './khoi';
 export { aimCamera, HOME, lensCamera, STAGE, viewRect, type Crop, type StageFrame } from './lens';
 export { createStage, type FrameView, type Stage, type StageOptions } from './stage';
+export { BUST_CUT, portrait, type PortraitOptions } from './portrait';
 export { landmark, LANDMARKS, screenOf, type Landmark, type ScreenOptions, type ScreenPoint, type ScreenView } from './screen';
 export {
   canvasTexture, decal, loadFonts, loadImage, loadImages, placeOn, sheet, strokes, typeText, wearDecal, wrapText,
