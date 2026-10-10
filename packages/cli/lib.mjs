@@ -1465,14 +1465,71 @@ const clashWith = (c) =>
 
 /**
  * Chỗ người 3D lồng vào đồ ở giây `t`, sâu trước: `{ who, with, depth }`. `scene_probe` trả nó cho
- * cảnh có `lens`. docs/10-lop-ve-code.md#người-lồng-vào-đồ
+ * cảnh có `lens`. Có `world` (`worldScene`) thì người đo với mọi vật của cảnh three thay cho
+ * `solids(ctx)`, như `check`; cảnh three ném lỗi thì `onWorld({ error })` và giây ấy đo bằng khối lớp
+ * vẽ code, mục `touch` lạ thì `onWorld({ unknown })`. docs/10-lop-ve-code.md#người-lồng-vào-đồ
  */
-export const clashesAt = (rt, t, { characterOf, codeLayers, tol = CLASH_TOL }) =>
-  FX.sceneClashes(rt, t, { characterOf, codeLayers, tol }).map((c) => ({
-    who: `${c.id}.${c.part}`,
-    with: clashWith(c),
-    depth: +c.depth.toFixed(1),
-  }));
+export function clashesAt(
+  rt,
+  t,
+  { characterOf, codeLayers, tol = CLASH_TOL, self = rig.PIERCE_TOL, world, onWorld },
+) {
+  let hits = null;
+  if (world) {
+    const unknown = new Map();
+    try {
+      hits = worldAt(rt, t, { world, tol, unknown: (e, name) => unknown.set(e, name) }).hits;
+      dropNamed(unknown, world.scene.root);
+      onWorld?.({ unknown });
+    } catch (e) {
+      onWorld?.({
+        error: `cảnh three ném lỗi ở giây ${t.toFixed(2)} — ${e.message}; giây ấy đo bằng khối lớp vẽ code`,
+      });
+    }
+  }
+  return [
+    ...FX.sceneClashes(rt, t, { characterOf, codeLayers: hits ? [] : codeLayers, tol, self }).map(
+      (c) => ({ who: `${c.id}.${c.part}`, with: clashWith(c), depth: c.depth }),
+    ),
+    ...(hits ?? []).map((c) => ({ who: c.who, with: c.name, depth: c.depth })),
+  ]
+    .sort((a, b) => b.depth - a.depth)
+    .map((c) => ({ ...c, depth: +c.depth.toFixed(1) }));
+}
+
+/** Dữ liệu `ctx` của `worldOf` chung mọi cảnh: nhân vật, hành động, động vật qua hai lớp, đạo cụ của repo */
+export const worldData = (dir = ".") => {
+  const root = resolve(dir);
+  return {
+    characters: loadCharacters([join(root, "characters"), COMMON.characters]),
+    actions: loadActions([join(root, "actions"), COMMON.actions]),
+    animals: loadAnimals([join(root, "animals"), COMMON.animals]),
+    props: loadByFile([join(root, "props")], rig.parseProp),
+  };
+};
+
+/**
+ * Cảnh three `worldOf(scene.name, ctx)` của một cảnh, sẵn để đo: `{ ...world, scene }` với `world` của
+ * `loadWorld`. `null` là cảnh ấy đi đường `solids(ctx)`, `{ error }` là dựng hỏng (`rel` là entry trong
+ * dòng báo). `data` là `{ id, scene, runtime, characters, actions, animals, props }`, `heights` và
+ * `bodies` suy ở đây — docs/10-lop-ve-code.md#đo-trên-cảnh-three
+ */
+export function worldScene(world, data, rel) {
+  const { scene } = data;
+  const [heights, bodies] = castBodies(scene, data.characters);
+  let w;
+  try {
+    w = world.worldOf(scene.name, { ...data, heights, bodies });
+  } catch (e) {
+    return { error: `${rel}: worldOf("${scene.name}") ném lỗi — ${e.message}` };
+  }
+  if (w === null || w === undefined) return null;
+  if (!w.root?.isObject3D || typeof w.pose !== "function")
+    return {
+      error: `${rel}: worldOf("${scene.name}") phải trả \`{ root: Object3D, pose(t) }\` hay null`,
+    };
+  return { ...world, scene: w };
+}
 
 /**
  * Các giây cảnh để đo người 3D: mỗi `every` giây, chia đôi quãng nào có đỉnh khối người dời quá
@@ -1638,12 +1695,16 @@ function worldSamples(rt, times, { world, tol }) {
     split(times[i - 1], m0, times[i], m1);
     m0 = m1;
   }
-  // `touch` gọi tên vật khác (đồ lồng vào đồ của lớp vẽ code) không phải tên lạ
-  world.scene.root.traverse((o) => {
+  dropNamed(unknown, world.scene.root);
+  return { times: out, at, unknown, error };
+}
+
+/** `touch` gọi tên vật khác (đồ lồng vào đồ của lớp vẽ code) không phải tên lạ */
+function dropNamed(unknown, root) {
+  root.traverse((o) => {
     unknown.delete(o.name);
     for (const c of o.userData.colliders ?? []) unknown.delete(c.name);
   });
-  return { times: out, at, unknown, error };
 }
 
 /**
@@ -1997,38 +2058,6 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
     }
   }
 
-  /**
-   * Cảnh three `worldOf(scene.name, ctx)` của một file trong `scenes/`: `null` là cảnh ấy đi đường
-   * `solids(ctx)`, `{ error }` là dựng hỏng. `ctx` là dữ liệu `check` đã nạp và resolve, cùng khoá như
-   * `data.ts` của app Remotion — docs/10-lop-ve-code.md#người-lồng-vào-đồ
-   */
-  const worldScene = ({ worldOf }, name, data, runtime) => {
-    const [heights, bodies] = castBodies(data, charactersByName);
-    const ctx = {
-      id: name,
-      scene: data,
-      runtime,
-      characters: charactersByName,
-      actions: actionsByName,
-      animals: animalsByName,
-      props: Object.fromEntries(props),
-      heights,
-      bodies,
-    };
-    let w;
-    try {
-      w = worldOf(data.name, ctx);
-    } catch (e) {
-      return { error: `${worldRel}: worldOf("${data.name}") ném lỗi — ${e.message}` };
-    }
-    if (w === null || w === undefined) return null;
-    if (!w.root?.isObject3D || typeof w.pose !== "function")
-      return {
-        error: `${worldRel}: worldOf("${data.name}") phải trả \`{ root: Object3D, pose(t) }\` hay null`,
-      };
-    return w;
-  };
-
   const haveFfprobe = onPath("ffprobe");
   const runtimes = new Map();
   /** Runtime của một file trong `scenes/`; `null` là chưa dựng nổi — lỗi đã kêu ở trên */
@@ -2080,7 +2109,22 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
         const character = m.character ? charactersByName[m.character] : rig.defaultCharacter();
         return character && { character };
       };
-      const scene = world && worldScene(world, name, data, rt);
+      // `ctx` là dữ liệu `check` đã nạp và resolve, cùng khoá như `data.ts` của app Remotion
+      const scene =
+        world &&
+        worldScene(
+          world,
+          {
+            id: name,
+            scene: data,
+            runtime: rt,
+            characters: charactersByName,
+            actions: actionsByName,
+            animals: animalsByName,
+            props: Object.fromEntries(props),
+          },
+          worldRel,
+        );
       if (scene?.error) warn(`scenes/${name}.json: ${scene.error}`);
       const onWorld = ({ error, unknown }) => {
         if (error) warn(`scenes/${name}.json: ${worldRel}: ${error}`);
@@ -2094,7 +2138,7 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
       };
       try {
         const samples = sceneSamples(rt, { characterOf });
-        const on = scene && !scene.error ? { ...world, scene } : undefined;
+        const on = scene && !scene.error ? scene : undefined;
         for (const problem of [
           ...sceneClashProblems(rt, {
             characterOf,
