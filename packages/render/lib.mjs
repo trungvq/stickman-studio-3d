@@ -15,7 +15,9 @@ export {
   layersEntry,
   loadLayers,
   loadParts,
+  loadWorld,
   partsEntry,
+  worldEntry,
 } from "./layers.mjs";
 
 // 1x1 PNG xám, rig tự kéo giãn ra đúng hộp của mảnh

@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import * as rig from "@stickman3d/sketch";
 import { checkWorkspace } from "./lib.mjs";
@@ -144,5 +145,115 @@ describe("check: người 3D lồng vào đồ", () => {
       none.problems.map((p) => p.level),
       ["lỗi"],
     );
+  });
+});
+
+const RIG = resolve(dirname(fileURLToPath(import.meta.url)), "../rig");
+
+// Cảnh three của repo: sổ kẹp ngang cẳng tay phải giây 0,5–1, cốc ôm cẳng tay trái cả cảnh nhưng
+// khai `touch`. Cảnh khác trả `null`
+const WORLD = `
+import * as THREE from "three";
+import { act, addItem, Batch, box, castCharacter, defaultCharacter, fromCharacter, sceneAt } from "@stickman3d/rig";
+import { Ghi } from "./Ghi";
+
+const cube = (name: string, touch?: string[]) => {
+  const b = new Batch();
+  addItem(b, { name, touch, at: { at: [0, 0, 0] }, parts: [{ v: box(-3, 3, -3, 3, -3, 3), tone: { top: "#888", lit: "#888" } }] });
+  return b.build();
+};
+
+export function worldOf(name: string, rt: any) {
+  if (name !== "cam") return null;
+  const root = new THREE.Group();
+  const figs: Record<string, any> = {};
+  for (const m of rt.runtime.cast) {
+    const f = fromCharacter(castCharacter(m, m.character ? rt.characters[m.character] : defaultCharacter()));
+    root.add(f.root);
+    figs[m.id] = f;
+  }
+  const so = cube("so");
+  const coc = cube("coc", ["a.foreArmL"]);
+  root.add(so, coc);
+  const mid = (arm: any) => {
+    const e = arm.elbow.getWorldPosition(new THREE.Vector3());
+    return e.add(arm.wrist.getWorldPosition(new THREE.Vector3())).multiplyScalar(0.5);
+  };
+  return {
+    root,
+    pose(t: number) {
+      for (const [id, f] of Object.entries(figs)) act(f, sceneAt(rt.runtime, id, t, rt.heights[id], rt.bodies[id]), t);
+      root.updateMatrixWorld(true);
+      so.position.copy(mid(figs.a.arms[-1]));
+      so.visible = t >= 0.5 && t <= 1 && Ghi !== undefined;
+      coc.position.copy(mid(figs.a.arms[1]));
+      return figs;
+    },
+  };
+}
+`;
+// Component Remotion nằm chung file với thứ cảnh three cần
+const GHI = `
+import { AbsoluteFill, useCurrentFrame } from "remotion";
+import { memo } from "react";
+export const Ghi = memo(() => <AbsoluteFill>{useCurrentFrame()}</AbsoluteFill>);
+`;
+// Hộp lớp vẽ code ngang ngực: cảnh có cảnh three thì không đo nó nữa
+const HOP = `
+import { box } from "@stickman3d/fx";
+const TONE = { top: "#a00", lit: "#0a0", side: "#00a" };
+export const CODE_LAYERS = [
+  {
+    name: "hop",
+    scenes: ["cam", "le"],
+    solids: () => [{ name: "hop", at: { at: [${X}, 0, 0] }, parts: [{ v: box(-40, 40, -300, -260, -40, 40), tone: TONE }] }],
+  },
+];
+`;
+
+function worldspace() {
+  const dir = mkdtempSync(join(tmpdir(), "stickman-world-"));
+  for (const d of ["scenes", "actions", "characters", "pieces", "src", "node_modules/@stickman3d"])
+    mkdirSync(join(dir, d), { recursive: true });
+  // như repo video đã cài rig và three
+  symlinkSync(RIG, join(dir, "node_modules/@stickman3d/rig"), "dir");
+  symlinkSync(
+    realpathSync(join(RIG, "node_modules/three")),
+    join(dir, "node_modules/three"),
+    "dir",
+  );
+  const json = (rel, v) => writeFileSync(join(dir, rel), `${JSON.stringify(v, null, 2)}\n`);
+  json("package.json", { name: "thu", stickman: { layers: "src/lop.ts", world: "src/world.ts" } });
+  writeFileSync(join(dir, "src/world.ts"), WORLD);
+  writeFileSync(join(dir, "src/Ghi.tsx"), GHI);
+  writeFileSync(join(dir, "src/lop.ts"), HOP);
+  const stand = (name) => ({
+    name,
+    duration: 2,
+    lens: LENS,
+    cast: [{ id: "a", world: { at: [X, 0, 0], yaw: 0 } }],
+  });
+  json("scenes/cam.json", stand("cam"));
+  json("scenes/le.json", stand("le"));
+  return dir;
+}
+
+describe("check: người lồng vào vật trên cảnh three (`stickman.world`)", () => {
+  it("báo món xuyên cẳng tay đúng người, bộ phận, món, quãng giây; món khai `touch` và hộp lớp vẽ code thì im; cảnh `null` đi đường cũ", async () => {
+    const t0 = performance.now();
+    const r = await checkWorkspace({ dir: worldspace() });
+    const ms = performance.now() - t0;
+    assert.ok(ms < 30000, `check mất ${ms} ms`);
+    const got = clashes(r).map((p) => p.msg);
+    const cam = got.filter((m) => m.startsWith("scenes/cam.json"));
+    assert.equal(cam.length, 1, JSON.stringify(r.problems, null, 2));
+    assert.match(
+      cam[0],
+      /^scenes\/cam\.json: người lồng vào đồ — a\.foreArmR ↔ so lấn \d+\.\d ở giây \d\.\d\d · giây 0\.50–1\.00$/,
+    );
+    const le = got.filter((m) => m.startsWith("scenes/le.json"));
+    assert.ok(le.length > 0, JSON.stringify(r.problems, null, 2));
+    for (const m of le) assert.match(m, /↔ hop \(mảnh 0\)/);
+    assert.ok(!r.problems.some((p) => p.level === "lỗi"), JSON.stringify(r.problems, null, 2));
   });
 });

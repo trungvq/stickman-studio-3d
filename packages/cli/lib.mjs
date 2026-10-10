@@ -15,7 +15,14 @@ import { basename, delimiter, dirname, join, relative, resolve } from "node:path
 import { fileURLToPath } from "node:url";
 import * as rig from "@stickman3d/sketch";
 import * as FX from "@stickman3d/fx";
-import { layersEntry, loadLayers, loadParts, partsEntry } from "@stickman3d/render";
+import {
+  layersEntry,
+  loadLayers,
+  loadParts,
+  loadWorld,
+  partsEntry,
+  worldEntry,
+} from "@stickman3d/render";
 import * as T from "./templates.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -1539,30 +1546,78 @@ function tally(times, at, line) {
     });
 }
 
+const shown = (o) => {
+  for (; o; o = o.parent) if (!o.visible) return false;
+  return true;
+};
+
+/**
+ * Chỗ người lồng vào vật trên cảnh three của repo video ở giây `t`: `pose(t)` rồi `collide` mọi người
+ * đang hiện với mọi vật dưới `root`. Bỏ chỗ có điểm lấn sâu nhất ngoài khung camera; `depth` ra px rig,
+ * `who` là `người.bộ phận[R|L]` như `touch`. docs/10-lop-ve-code.md#người-lồng-vào-đồ
+ */
+function worldClashes(rt, t, { world, tol }) {
+  const { scene, collide, colliders, U } = world;
+  const posed = scene.pose(t) ?? {};
+  const figures = Object.fromEntries(
+    Object.entries(posed).filter(([, f]) => f?.root && shown(f.root)),
+  );
+  scene.root.updateMatrixWorld(true);
+  const view = rt.lens && rig.cameraAt(rt, t).view;
+  const inView = ({ at }) => {
+    if (!view) return true;
+    const [x, y] = rig.project(rt.lens, [at.x / U, -at.y / U, -at.z / U]);
+    return x >= view.x && x <= view.x + view.w && y >= view.y && y <= view.y + view.h;
+  };
+  return collide(figures, colliders(scene.root), { slack: tol * U })
+    .filter(inView)
+    .map((c) => {
+      const who = `${c.who}.${c.part}${c.side ? (c.side < 0 ? "R" : "L") : ""}`;
+      return { who, name: c.collider, depth: c.depth / U, key: `${who}|${c.collider}` };
+    });
+}
+
 /**
  * Người 3D lồng vào đồ khối hay vào người khác, mỗi cặp một dòng: chỗ lấn sâu nhất và các quãng
- * giây liền nhau. docs/10-lop-ve-code.md#người-lồng-vào-đồ
+ * giây liền nhau. Có `world` (cảnh three của repo video, `{ scene, collide, colliders, U }`) thì đồ
+ * là mọi vật của cảnh ấy, không còn là `solids(ctx)` của lớp vẽ code. docs/10-lop-ve-code.md#người-lồng-vào-đồ
  */
 export function sceneClashProblems(
   rt,
-  { characterOf, codeLayers, tol = CLASH_TOL, self = rig.PIERCE_TOL, every = CLASH_EVERY, samples },
+  {
+    characterOf,
+    codeLayers,
+    tol = CLASH_TOL,
+    self = rig.PIERCE_TOL,
+    every = CLASH_EVERY,
+    samples,
+    world,
+  },
 ) {
   const { times, built } = samples ?? sceneSamples(rt, { characterOf, every });
   // `sceneClashes` sắp sâu trước: mỗi cặp (phần người, món) lấy mảnh lấn sâu nhất của khung. Món
   // gộp theo `name`: lớp ẩn bớt món thì chỉ số trong mảng `solids` dời giữa chừng
-  const at = (t) =>
-    FX.sceneClashes(rt, t, { characterOf, codeLayers, tol, self, people: built.get(t) }).map(
-      (c) => ({
-        ...c,
-        key: c.other
-          ? `${c.id}.${c.part}|${c.other.id}.${c.other.part}`
-          : `${c.id}.${c.part}|${c.name ?? `#${c.item}`}`,
-      }),
-    );
+  const at = (t) => [
+    ...FX.sceneClashes(rt, t, {
+      characterOf,
+      codeLayers: world ? [] : codeLayers,
+      tol,
+      self,
+      people: built.get(t),
+    }).map((c) => ({
+      ...c,
+      key: c.other
+        ? `${c.id}.${c.part}|${c.other.id}.${c.other.part}`
+        : `${c.id}.${c.part}|${c.name ?? `#${c.item}`}`,
+    })),
+    ...(world ? worldClashes(rt, t, { world, tol }) : []),
+  ];
   return tally(times, at, (c) =>
-    c.other?.id === c.id
-      ? `tay xuyên thân — ${c.id}.${c.part} lấn vào ${c.id}.torso ${c.depth.toFixed(1)}`
-      : `người lồng vào đồ — ${c.id}.${c.part} ↔ ${clashWith(c)} lấn ${c.depth.toFixed(1)}`,
+    c.who
+      ? `người lồng vào đồ — ${c.who} ↔ ${c.name} lấn ${c.depth.toFixed(1)}`
+      : c.other?.id === c.id
+        ? `tay xuyên thân — ${c.id}.${c.part} lấn vào ${c.id}.torso ${c.depth.toFixed(1)}`
+        : `người lồng vào đồ — ${c.id}.${c.part} ↔ ${clashWith(c)} lấn ${c.depth.toFixed(1)}`,
   );
 }
 
@@ -1833,6 +1888,19 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
     counts.layers = codeLayers.length;
   }
 
+  // Cảnh three của repo video: người lồng vào vật đo trên chính nó — docs/10-lop-ve-code.md#người-lồng-vào-đồ
+  let world = null;
+  let worldRel = null;
+  try {
+    const we = worldEntry(root);
+    if (we) {
+      worldRel = relative(root, we);
+      world = await loadWorld(root);
+    }
+  } catch (e) {
+    bad(worldRel ? `${worldRel}: ${e.message}` : e.message);
+  }
+
   // Thư mục sidebar Remotion: regex hỏng hay tên thư mục có ký tự lạ thì `Root.tsx` ném —
   // docs/03-scene.md#remotion
   const folders = readPkg(root)?.stickman?.folders;
@@ -1854,6 +1922,38 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
         );
     }
   }
+
+  /**
+   * Cảnh three `worldOf(scene.name, ctx)` của một file trong `scenes/`: `null` là cảnh ấy đi đường
+   * `solids(ctx)`, `{ error }` là dựng hỏng. `ctx` là dữ liệu `check` đã nạp và resolve, cùng khoá như
+   * `data.ts` của app Remotion — docs/10-lop-ve-code.md#người-lồng-vào-đồ
+   */
+  const worldScene = ({ worldOf }, name, data, runtime) => {
+    const [heights, bodies] = castBodies(data, charactersByName);
+    const ctx = {
+      id: name,
+      scene: data,
+      runtime,
+      characters: charactersByName,
+      actions: actionsByName,
+      animals: animalsByName,
+      props: Object.fromEntries(props),
+      heights,
+      bodies,
+    };
+    let w;
+    try {
+      w = worldOf(data.name, ctx);
+    } catch (e) {
+      return { error: `${worldRel}: worldOf("${data.name}") ném lỗi — ${e.message}` };
+    }
+    if (w === null || w === undefined) return null;
+    if (!w.root?.isObject3D || typeof w.pose !== "function")
+      return {
+        error: `${worldRel}: worldOf("${data.name}") phải trả \`{ root: Object3D, pose(t) }\` hay null`,
+      };
+    return w;
+  };
 
   const haveFfprobe = onPath("ffprobe");
   const runtimes = new Map();
@@ -1905,10 +2005,13 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
         const character = m.character ? charactersByName[m.character] : rig.defaultCharacter();
         return character && { character };
       };
+      const scene = world && worldScene(world, name, data, rt);
+      if (scene?.error) warn(`scenes/${name}.json: ${scene.error}`);
       try {
         const samples = sceneSamples(rt, { characterOf });
+        const on = scene && !scene.error ? { ...world, scene } : undefined;
         for (const problem of [
-          ...sceneClashProblems(rt, { characterOf, codeLayers, tol, self, samples }),
+          ...sceneClashProblems(rt, { characterOf, codeLayers, tol, self, samples, world: on }),
           ...(ratio === false
             ? []
             : sceneItemClashProblems(rt, { characterOf, codeLayers, tol, ratio, samples })),
