@@ -268,7 +268,9 @@ vẫn đo bằng khối của `<SceneWorld>`.
 Chung cho hai đường:
 
 - lấy mẫu mỗi `0,25 s` giây cảnh, chia đôi quãng nào có đỉnh khối người dời quá `4` đơn vị cho tới
-  một khung `1/30 s`, nên tay quét qua mép bàn trong vài khung vẫn bị bắt;
+  một khung `1/30 s`, nên tay quét qua mép bàn trong vài khung vẫn bị bắt. Đường cảnh three chia thêm
+  quãng nào có vật dời quá `4` đơn vị (góc khung bao của cùng một vật three), nên đồ bay qua người giữa
+  hai mẫu cũng bị bắt;
 - lấn quá ngưỡng mới kêu: mặc định `2` đơn vị thế giới, khai `"stickman": { "clash": { "tol": 3 } }`
   trong `package.json` để đổi;
 - bỏ chỗ nằm ngoài khung camera lúc ấy, mỗi đường xét theo cách của nó (dưới). Bị rèm hay vật khác
@@ -363,8 +365,12 @@ trong Node, không qua webpack, nên đọc dữ liệu từ đây chứ không 
   `remotion`, `@remotion/*`, `react` và `react-dom` thành vỏ rỗng, nên module import chung file với
   component Remotion vẫn chạy; file `.css` thành rỗng. Tên file chỉ khác đuôi thì `.ts` được chọn
   trước `.tsx`.
+- Code canvas riêng của repo dựng bằng `newCanvas(w, h)` và `path2D(d)` của rig thì chạy được trong
+  Node; `check` cũng đặt `Path2D` rỗng vào `globalThis` khi Node không có, nên `new Path2D(…)` không ném.
 - Gói hỏng hay module không xuất `worldOf` là lỗi. `worldOf` ném hay trả sai dạng thì cảnh báo ở cảnh
-  ấy, cảnh đi đường khối lớp vẽ code.
+  ấy, cảnh đi đường khối lớp vẽ code. `pose(t)` hay phép đo ném ở giây nào thì cảnh báo một dòng
+  (`cảnh three ném lỗi ở giây …`) và cảnh thôi đo trên cảnh three từ giây ấy; người với người, tay
+  xuyên thân và đồ lồng vào đồ của cảnh vẫn đo.
 
 Mỗi giây lấy mẫu, `check` gọi `pose(t)` rồi đo `collide(people, colliders(root))` của rig: người là
 các viên nang theo khung xương, vật là mọi thứ khác dưới `root`.
@@ -372,6 +378,11 @@ các viên nang theo khung xương, vật là mọi thứ khác dưới `root`.
 - Món dựng qua `Batch` (`addPart`, `addLathe`, `addItem`) đo theo khối lồi từng món — nhóm `build` ra
   mang chúng ở `userData.colliders` — nên bắt cả nét nằm trọn trong vật. Lưới khác đo theo tam giác,
   chỉ bắt nét cắt qua mặt.
+- Độ lấn vào khối lồi là quãng ngắn nhất phải dời phần người cho rời khối, như đường khối lớp vẽ code:
+  trục nét ngoài khối thì nửa bề dày nét trừ khoảng cách thật từ trục tới khối (sát cạnh, sát góc vẫn
+  đúng); trục cắt khối thì nửa bề dày cộng quãng ngắn nhất phải dời trục ra khỏi khối — tay xuyên giữa
+  tờ giấy, cuốn sổ mỏng lấn tới mép gần nhất, sâu hơn tay chạm mép. Lưới tam giác: nét cắt qua mặt thì
+  nửa bề dày cộng khoảng cách từ mặt tới mút nét gần hơn.
 - Tự bỏ: lưới `userData.noCollide` (decal, nét mặt, trời, nét mực và cảnh sau ô cửa của `room`), lưới
   của chính người (`userData.body`), vỏ nét (`BackSide`), nhánh ẩn (`visible` false ở nó hay ở nhóm
   cha), vật mờ quá nửa (`uOpacity` dưới `0,5`, như `appear`). Thứ lên hình mà không phải vật thể (nón
@@ -393,11 +404,20 @@ scenes/s66.json: người lồng vào đồ — a.foreArmR ↔ so lấn 28.0 ở
 cha xuống), hay `touch` của món `Item`. Mỗi mục là `'[<người>.]<bộ phận>[R|L]'` hay `{ part, max }`,
 `max` đơn vị thế giới:
 
-- `<bộ phận>` là `head`, `torso`, `upperArm`, `foreArm`, `thigh`, `shin`; thiếu `R`/`L` là cả hai bên;
+- `<bộ phận>` là `head`, `torso`, `upperArm`, `foreArm`, `thigh`, `shin`; thiếu `R`/`L` là cả hai bên.
+  Tên phần người của lớp vẽ code cũng được: `armNear`/`armFar` là `upperArm`, `forearmNear`/`forearmFar`
+  là `foreArm`, `legNear`/`legFar` là `thigh`, `shinNear`/`shinFar` là `shin`, `lap` là hai đùi; bên gần
+  là bên có gốc chân gần mắt của `scene.lens` hơn ở giây ấy, như `flip` của lõi;
 - `<người>` là `id` trong `cast` (khoá của `pose(t)`), thiếu là mọi người; `self` là người đang mang
   vật — vật nằm dưới `root` của người ấy (cầm, đội, gắn trên thân);
 - `hold` tự khai cẳng tay cầm (`hand: 'both'` là cả hai), `wear` khai đầu (`crown`, `face`) hay thân
-  (`chest`), `wearDecal` khai thân.
+  (`chest`), `wearDecal` khai thân;
+- mục không phải phần người, cũng không phải tên vật nào dưới `root` (tên vật cho
+  [đồ lồng vào đồ](#đồ-lồng-vào-đồ)), thì bỏ qua và `check` cảnh báo một lần cho mỗi mục:
+
+```
+scenes/s20.json: `touch` "a.tay" của vật coc không phải phần người nào — bỏ qua (docs/10-lop-ve-code.md#đo-trên-cảnh-three)
+```
 
 ```ts
 coc.userData.touch = ["self.head"];               // cốc cầm kề miệng người cầm

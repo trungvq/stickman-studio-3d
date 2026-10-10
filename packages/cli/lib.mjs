@@ -1554,33 +1554,104 @@ const shown = (o) => {
 /**
  * Chỗ người lồng vào vật trên cảnh three của repo video ở giây `t`: `pose(t)` rồi `collide` mọi người
  * đang hiện với mọi vật dưới `root`. Bỏ chỗ có điểm lấn sâu nhất ngoài khung camera; `depth` ra px rig,
- * `who` là `người.bộ phận[R|L]` như `touch`. docs/10-lop-ve-code.md#người-lồng-vào-đồ
+ * `who` là `người.bộ phận[R|L]` như `touch`. Trả kèm khung bao từng vật (`boxes`, theo vật three sinh
+ * ra nó). docs/10-lop-ve-code.md#đo-trên-cảnh-three
  */
-function worldClashes(rt, t, { world, tol }) {
+function worldAt(rt, t, { world, tol, unknown }) {
   const { scene, collide, colliders, U } = world;
   const posed = scene.pose(t) ?? {};
   const figures = Object.fromEntries(
     Object.entries(posed).filter(([, f]) => f?.root && shown(f.root)),
   );
   scene.root.updateMatrixWorld(true);
+  const cols = colliders(scene.root);
+  const boxes = new Map();
+  for (const c of cols) {
+    if (!c.from) continue;
+    const b = boxes.get(c.from);
+    if (b) b.union(c.box);
+    else boxes.set(c.from, c.box.clone());
+  }
   const view = rt.lens && rig.cameraAt(rt, t).view;
   const inView = ({ at }) => {
     if (!view) return true;
     const [x, y] = rig.project(rt.lens, [at.x / U, -at.y / U, -at.z / U]);
     return x >= view.x && x <= view.x + view.w && y >= view.y && y <= view.y + view.h;
   };
-  return collide(figures, colliders(scene.root), { slack: tol * U })
+  const eye = rt.lens && [rt.lens.eye[0] * U, -rt.lens.eye[1] * U, -rt.lens.eye[2] * U];
+  const hits = collide(figures, cols, { slack: tol * U, eye, unknown })
     .filter(inView)
     .map((c) => {
       const who = `${c.who}.${c.part}${c.side ? (c.side < 0 ? "R" : "L") : ""}`;
       return { who, name: c.collider, depth: c.depth / U, key: `${who}|${c.collider}` };
     });
+  return { hits, boxes };
+}
+
+/** Vật dời xa nhất giữa hai mẫu, đơn vị thế giới: góc khung bao của cùng một vật; vật hiện hay ẩn thì không tính */
+function worldMoved(a, b, U) {
+  let m = 0;
+  for (const [o, p] of a) {
+    const q = b.get(o);
+    if (q) m = Math.max(m, p.min.distanceTo(q.min), p.max.distanceTo(q.max));
+  }
+  return m / U;
+}
+
+/**
+ * Đo trên cảnh three ở các giây `times`, chia đôi thêm quãng nào có vật dời quá `CLASH_MOVE` (tới một
+ * khung `1/30 s`) — đồ bay qua người giữa hai mẫu vẫn bị bắt. `pose(t)` hay `collide` ném thì dừng đo
+ * cảnh three của cảnh, ghi lỗi vào `error`. Trả các giây đã đo và chỗ lấn của từng giây
+ */
+function worldSamples(rt, times, { world, tol }) {
+  const at = new Map();
+  const unknown = new Map();
+  let error = null;
+  const measure = (t) => {
+    if (error) return null;
+    try {
+      const m = worldAt(rt, t, { world, tol, unknown: (e, name) => unknown.set(e, name) });
+      at.set(t, m.hits);
+      return m;
+    } catch (e) {
+      error = `cảnh three ném lỗi ở giây ${t.toFixed(2)} — ${e.message}; bỏ đo người lồng vào vật của cảnh three`;
+      return null;
+    }
+  };
+  const out = [times[0]];
+  const split = (t0, m0, t1, m1) => {
+    if (
+      m0 &&
+      m1 &&
+      t1 - t0 > 1 / 30 + 1e-9 &&
+      worldMoved(m0.boxes, m1.boxes, world.U) > CLASH_MOVE
+    ) {
+      const tm = (t0 + t1) / 2;
+      const mm = measure(tm);
+      split(t0, m0, tm, mm);
+      split(tm, mm, t1, m1);
+    } else out.push(t1);
+  };
+  let m0 = measure(times[0]);
+  for (let i = 1; i < times.length; i++) {
+    const m1 = measure(times[i]);
+    split(times[i - 1], m0, times[i], m1);
+    m0 = m1;
+  }
+  // `touch` gọi tên vật khác (đồ lồng vào đồ của lớp vẽ code) không phải tên lạ
+  world.scene.root.traverse((o) => {
+    unknown.delete(o.name);
+    for (const c of o.userData.colliders ?? []) unknown.delete(c.name);
+  });
+  return { times: out, at, unknown, error };
 }
 
 /**
  * Người 3D lồng vào đồ khối hay vào người khác, mỗi cặp một dòng: chỗ lấn sâu nhất và các quãng
  * giây liền nhau. Có `world` (cảnh three của repo video, `{ scene, collide, colliders, U }`) thì đồ
- * là mọi vật của cảnh ấy, không còn là `solids(ctx)` của lớp vẽ code. docs/10-lop-ve-code.md#người-lồng-vào-đồ
+ * là mọi vật của cảnh ấy, không còn là `solids(ctx)` của lớp vẽ code; cảnh three ném lỗi thì
+ * `onWorld({ error })`, mục `touch` không phải phần người hay tên vật nào thì `onWorld({ unknown })`
+ * (tên mục → tên vật). docs/10-lop-ve-code.md#người-lồng-vào-đồ
  */
 export function sceneClashProblems(
   rt,
@@ -1592,9 +1663,12 @@ export function sceneClashProblems(
     every = CLASH_EVERY,
     samples,
     world,
+    onWorld,
   },
 ) {
-  const { times, built } = samples ?? sceneSamples(rt, { characterOf, every });
+  const { times: base, built } = samples ?? sceneSamples(rt, { characterOf, every });
+  const w = world && worldSamples(rt, base, { world, tol });
+  if (w) onWorld?.({ error: w.error, unknown: w.unknown });
   // `sceneClashes` sắp sâu trước: mỗi cặp (phần người, món) lấy mảnh lấn sâu nhất của khung. Món
   // gộp theo `name`: lớp ẩn bớt món thì chỉ số trong mảng `solids` dời giữa chừng
   const at = (t) => [
@@ -1610,9 +1684,9 @@ export function sceneClashProblems(
         ? `${c.id}.${c.part}|${c.other.id}.${c.other.part}`
         : `${c.id}.${c.part}|${c.name ?? `#${c.item}`}`,
     })),
-    ...(world ? worldClashes(rt, t, { world, tol }) : []),
+    ...(w?.at.get(t) ?? []),
   ];
-  return tally(times, at, (c) =>
+  return tally(w ? w.times : base, at, (c) =>
     c.who
       ? `người lồng vào đồ — ${c.who} ↔ ${c.name} lấn ${c.depth.toFixed(1)}`
       : c.other?.id === c.id
@@ -1994,7 +2068,8 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
     bad(
       `package.json: stickman.clash.items phải là số trong [0, 1) hay false, đang là ${JSON.stringify(ratio)}`,
     );
-  else
+  else {
+    const touchSeen = new Set();
     for (const [name, data] of Object.entries(scenesByName)) {
       if (!data.lens || !data.cast.some((m) => m.world) || frozen.test(name) || !inFocus(name))
         continue;
@@ -2007,11 +2082,29 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
       };
       const scene = world && worldScene(world, name, data, rt);
       if (scene?.error) warn(`scenes/${name}.json: ${scene.error}`);
+      const onWorld = ({ error, unknown }) => {
+        if (error) warn(`scenes/${name}.json: ${worldRel}: ${error}`);
+        for (const [entry, thing] of unknown) {
+          if (touchSeen.has(entry)) continue;
+          touchSeen.add(entry);
+          warn(
+            `scenes/${name}.json: \`touch\` "${entry}" của vật ${thing} không phải phần người nào — bỏ qua (docs/10-lop-ve-code.md#đo-trên-cảnh-three)`,
+          );
+        }
+      };
       try {
         const samples = sceneSamples(rt, { characterOf });
         const on = scene && !scene.error ? { ...world, scene } : undefined;
         for (const problem of [
-          ...sceneClashProblems(rt, { characterOf, codeLayers, tol, self, samples, world: on }),
+          ...sceneClashProblems(rt, {
+            characterOf,
+            codeLayers,
+            tol,
+            self,
+            samples,
+            world: on,
+            onWorld,
+          }),
           ...(ratio === false
             ? []
             : sceneItemClashProblems(rt, { characterOf, codeLayers, tol, ratio, samples })),
@@ -2021,6 +2114,7 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
         warn(`scenes/${name}.json: không đo được người 3D với đồ khối — ${e.message}`);
       }
     }
+  }
   owner = null;
 
   // Tay chân giật trên hình, đo đúng như hình vẽ ra; cảnh khớp `stickman.frozen` thì không đo.

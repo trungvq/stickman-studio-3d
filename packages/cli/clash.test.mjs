@@ -151,7 +151,8 @@ describe("check: người 3D lồng vào đồ", () => {
 const RIG = resolve(dirname(fileURLToPath(import.meta.url)), "../rig");
 
 // Cảnh three của repo: sổ kẹp ngang cẳng tay phải giây 0,5–1, cốc ôm cẳng tay trái cả cảnh nhưng
-// khai `touch`. Cảnh khác trả `null`
+// khai `touch` (kèm tên vật và một tên lạ). `Path2D` như code canvas của repo. Cảnh `bay`: túi bay ngang qua đầu trong quãng giữa hai
+// mẫu 0,25 s. Cảnh `hong`: `pose` ném từ giây 1. Cảnh khác trả `null`
 const WORLD = `
 import * as THREE from "three";
 import { act, addItem, Batch, box, castCharacter, defaultCharacter, fromCharacter, sceneAt } from "@stickman3d/rig";
@@ -164,7 +165,7 @@ const cube = (name: string, touch?: string[]) => {
 };
 
 export function worldOf(name: string, rt: any) {
-  if (name !== "cam") return null;
+  if (!["cam", "bay", "hong"].includes(name)) return null;
   const root = new THREE.Group();
   const figs: Record<string, any> = {};
   for (const m of rt.runtime.cast) {
@@ -173,8 +174,9 @@ export function worldOf(name: string, rt: any) {
     figs[m.id] = f;
   }
   const so = cube("so");
-  const coc = cube("coc", ["a.foreArmL"]);
-  root.add(so, coc);
+  const coc = cube("coc", ["a.foreArmL", "so", "a.tay"]);
+  const tui = cube("tui");
+  root.add(so, coc, tui);
   const mid = (arm: any) => {
     const e = arm.elbow.getWorldPosition(new THREE.Vector3());
     return e.add(arm.wrist.getWorldPosition(new THREE.Vector3())).multiplyScalar(0.5);
@@ -182,11 +184,17 @@ export function worldOf(name: string, rt: any) {
   return {
     root,
     pose(t: number) {
+      if (name === "hong" && t >= 1) throw new Error("hỏng");
+      new Path2D("M0 0").lineTo(1, 1);
       for (const [id, f] of Object.entries(figs)) act(f, sceneAt(rt.runtime, id, t, rt.heights[id], rt.bodies[id]), t);
       root.updateMatrixWorld(true);
       so.position.copy(mid(figs.a.arms[-1]));
-      so.visible = t >= 0.5 && t <= 1 && Ghi !== undefined;
+      so.visible = name !== "bay" && t >= 0.5 && t <= 1 && Ghi !== undefined;
       coc.position.copy(mid(figs.a.arms[1]));
+      const u = Math.min(1, Math.max(0, (t - 0.3) / 0.15));
+      tui.position.copy(figs.a.head.getWorldPosition(new THREE.Vector3()));
+      tui.position.x += (2 * u - 1) * 20;
+      tui.visible = name === "bay";
       return figs;
     },
   };
@@ -227,14 +235,16 @@ function worldspace() {
   writeFileSync(join(dir, "src/world.ts"), WORLD);
   writeFileSync(join(dir, "src/Ghi.tsx"), GHI);
   writeFileSync(join(dir, "src/lop.ts"), HOP);
-  const stand = (name) => ({
+  const stand = (name, ids = ["a"]) => ({
     name,
     duration: 2,
     lens: LENS,
-    cast: [{ id: "a", world: { at: [X, 0, 0], yaw: 0 } }],
+    cast: ids.map((id) => ({ id, world: { at: [X, 0, 0], yaw: 0 } })),
   });
   json("scenes/cam.json", stand("cam"));
   json("scenes/le.json", stand("le"));
+  json("scenes/bay.json", stand("bay"));
+  json("scenes/hong.json", stand("hong", ["a", "b"]));
   return dir;
 }
 
@@ -247,6 +257,7 @@ describe("check: người lồng vào vật trên cảnh three (`stickman.world`
     const got = clashes(r).map((p) => p.msg);
     const cam = got.filter((m) => m.startsWith("scenes/cam.json"));
     assert.equal(cam.length, 1, JSON.stringify(r.problems, null, 2));
+    assert.ok(!r.problems.some((p) => p.msg.includes("ném lỗi") && p.msg.startsWith("scenes/cam")));
     assert.match(
       cam[0],
       /^scenes\/cam\.json: người lồng vào đồ — a\.foreArmR ↔ so lấn \d+\.\d ở giây \d\.\d\d · giây 0\.50–1\.00$/,
@@ -255,5 +266,42 @@ describe("check: người lồng vào vật trên cảnh three (`stickman.world`
     assert.ok(le.length > 0, JSON.stringify(r.problems, null, 2));
     for (const m of le) assert.match(m, /↔ hop \(mảnh 0\)/);
     assert.ok(!r.problems.some((p) => p.level === "lỗi"), JSON.stringify(r.problems, null, 2));
+    // `touch` lạ báo một lần cho cả check; tên vật trong `touch` không báo
+    const lạ = r.problems.filter((p) => p.msg.includes("`touch`"));
+    assert.deepEqual(
+      lạ.map((p) => p.msg.replace(/^scenes\/\w+\.json: /, "")),
+      [
+        '`touch` "a.tay" của vật coc không phải phần người nào — bỏ qua (docs/10-lop-ve-code.md#đo-trên-cảnh-three)',
+      ],
+    );
+  });
+
+  it("chia nhỏ mẫu khi vật dời nhanh: túi bay qua đầu giữa hai mẫu vẫn bị bắt", async () => {
+    const r = await checkWorkspace({ dir: worldspace(), scene: "^bay$" });
+    const got = clashes(r).map((p) => p.msg);
+    assert.equal(got.length, 1, JSON.stringify(r.problems, null, 2));
+    assert.match(
+      got[0],
+      /^scenes\/bay\.json: người lồng vào đồ — a\.head ↔ tui lấn \d+\.\d ở giây 0\.3\d · /,
+    );
+  });
+
+  it("`pose` ném thì cảnh báo một dòng, phép đo khác của cảnh vẫn chạy", async () => {
+    const r = await checkWorkspace({ dir: worldspace(), scene: "^hong$" });
+    const msgs = r.problems.map((p) => p.msg);
+    const err = msgs.filter((m) => m.includes("ném lỗi"));
+    assert.deepEqual(err, [
+      "scenes/hong.json: src/world.ts: cảnh three ném lỗi ở giây 1.00 — hỏng; bỏ đo người lồng vào vật của cảnh three",
+    ]);
+    assert.ok(!msgs.some((m) => m.includes("không đo được")), JSON.stringify(msgs, null, 2));
+    // người với người vẫn đo bằng khối của `<SceneWorld>`, sổ trước giây 1 vẫn báo
+    assert.ok(
+      msgs.some((m) => / — a\.\w+ ↔ b\.\w+ lấn /.test(m)),
+      JSON.stringify(msgs, null, 2),
+    );
+    assert.ok(
+      msgs.some((m) => / — a\.foreArmR ↔ so lấn .* giây 0\.50–0\.75$/.test(m)),
+      JSON.stringify(msgs, null, 2),
+    );
   });
 });
