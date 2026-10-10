@@ -137,6 +137,14 @@ front: ({ t, marks, cam }) => (
 `bubbleScale(t, open, shut)` và `popScale(t, at)` là hai đường cong ấy dạng số, cho
 thứ tự vẽ riêng mà vẫn mở / tan cùng nhịp.
 
+Đầu thật của nhân vật trong bong bóng hay trên slide giải thích là `<ChanDung>` của app Remotion
+(`src/khoi3d/ChanDung.tsx`): chân dung người 3D chụp lúc chạy, nền trong suốt
+([01](01-rig.md#chân-dung)).
+
+```tsx
+<Pop t={t} at={marks["ke"]}><ChanDung character="haru.json" x={0} y={0} r={60} round shot={{ frame: "bust", yaw: 20 }} /></Pop>
+```
+
 ## Tiếng theo hình: mốc tính từ JSON
 
 Hiệu ứng không phát tiếng; tầng tập neo tiếng vào mốc do chính gói này tính từ JSON,

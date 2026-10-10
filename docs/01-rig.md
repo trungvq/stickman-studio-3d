@@ -1354,6 +1354,29 @@ khối quay đúng `theta` cộng `lắc`, nét mặt chạy theo một đườn
 
 Đầu tóc ảnh hay kiểu tóc phẳng của người 3D vẫn theo nấc như người 2D.
 
+### Chân dung
+
+`portrait(character, o)` của `@stickman3d/rig` chụp người 3D ra canvas cho lớp 2D: đầu trong bong bóng,
+icon trên slide giải thích, mặt dán lên đồ (`canvasTexture` / `decal`). Nó dựng một người riêng từ JSON đã
+qua `parseCharacter` trên sân khấu trống, không cần cảnh hay ống kính của cảnh.
+
+- **Khung tự ôm.** `frame: "head"` ôm mọi đỉnh lưới của nhóm đầu (sọ, tóc, kính, đồ đội) cộng lề `pad`
+  (mặc định `0,08` phần cao). `"bust"` thêm thân áo từ cổ xuống `BUST_CUT` (`0,55`) chiều cao thân tính
+  từ hông; mép dưới nằm đúng ở mặt cắt, không lề, phần nới cho đủ tỉ lệ `w`×`h` dồn xuống dưới.
+- **Góc.** `yaw` độ, `0` nhìn thẳng ống kính, dương là mặt nhìn sang phải khung; `pitch` nâng ống kính.
+  Ống kính đặt xa (15 đơn vị three, góc nhìn hẹp) nên gần như không méo phối cảnh.
+- **Nét mặt và dáng.** `face` đặt khẩu hình, mắt, mày; `acting` là một khung của `sceneAt`, mang cả dáng
+  đầu, thân và nét mặt (khi ấy `face` bị bỏ qua). Không chớp mắt.
+- **Nền trong suốt** (`background: null`, mặc định): chụp hai lần trên nền đen và nền trắng với
+  `render({ paper: false })` — tắt hạt giấy và tối góc để màu mỗi điểm ảnh chỉ trộn tuyến tính với nền —
+  rồi lấy alpha từ hiệu hai lần: mép nét mực mềm theo alpha, đặt lên nền màu nào cũng sạch.
+  `background: "#…"` là chụp một lần trên nền màu ấy.
+- **Cache.** Cùng nhân vật và tham số thì trả cùng một canvas, nên chỉ đọc hay chép nó, không vẽ đè lên.
+  Mỗi ảnh mở rồi đóng một context WebGL; chụp nhiều thì truyền `renderer` dùng chung.
+
+App Remotion của repo video có sẵn `useChanDung` / `<ChanDung>` ở `src/khoi3d/ChanDung.tsx`
+([05](05-repo-video.md#init-sinh-ra-gì)) bọc hàm này kèm `delayRender`.
+
 ### Đích bàn tay
 
 Tay của người 3D đặt được bằng **đích cổ tay** thay cho góc: rig giải IK hai đoạn (`solveTwoBone`)

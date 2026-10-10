@@ -94,21 +94,22 @@ export type Spike = [
 ];
 
 /**
- * Lọn dẹt ôm sọ: kinh độ, vĩ độ chân; dài (độ cung trên sọ, nhân `spike`); hướng đi trên mặt sọ như `Spike`; ngọn
- * hất khỏi vỏ bấy nhiêu lần bán kính; nửa bề rộng chân; hướng đi xoay thêm bấy nhiêu độ tới ngọn
+ * Lọn dẹt ôm sọ, đo từ ngôi như lọn vuốt: độ kinh từ ngôi về phía mái, vĩ độ chân; dài (độ cung trên sọ, nhân
+ * `spike`); hướng đi trên mặt sọ (`0` lên đỉnh, `90` về phía mái, `180` xuống chân tóc); ngọn hất khỏi vỏ bấy nhiêu
+ * lần bán kính; nửa bề rộng chân; hướng đi xoay thêm bấy nhiêu độ tới ngọn; chân chìm trồi lên hết vỏ trong bấy nhiêu
+ * phần chiều dài đầu, mặc định 0.35; ngọn chìm lại dưới vỏ trong bấy nhiêu phần chiều dài cuối, mặc định 0
  */
 export type Lock = [
-  lon: number,
+  u: number,
   lat: number,
   length: number,
   heading: number,
   lift: number,
   width: number,
   turn: number,
+  rise?: number,
+  sink?: number,
 ];
-
-/** Nếp chải: vị trí dọc ngôi, phía mái (`1` dài, `−1` ngắn), cung ôm vòm và độ vuốt ra sau. */
-type Stroke = [root: number, side: number, arc: number, sweep: number];
 
 interface SculptStyleDef {
   spikes: Spike[];
@@ -118,8 +119,6 @@ interface SculptStyleDef {
   locks?: Lock[];
   /** Độ nhô của điểm điều khiển lọn vuốt, phần chiều dài lọn; mặc định 0.55. */
   sweptArch?: number;
-  /** Nếp cong Bézier trên vỏ, bốn điểm [độ kinh từ ngôi về phía mái, vĩ độ]. */
-  curves?: [number, number][][];
   /**
    * Nếp ngôi: vỏ lõm còn `1 − depth` phần dọc mặt phẳng ngôi, nửa bề rộng `width` (lần bán kính);
    * mặt phẳng ngôi xa dần giữa đầu về sau theo `lean`. Có nếp thì hai bên ngôi là hai khối và
@@ -133,7 +132,6 @@ interface SculptStyleDef {
    * lật theo dấu `part`) và vĩ độ `lat`; bán kính góc (độ); cao (lần bán kính)
    */
   puff?: [u: number, lat: number, radius: number, lift: number][];
-  strokes?: Stroke[];
   /** Răng cưa mái: tâm, nửa bề rộng mỗi lọn (độ kinh) và độ sâu, nhân `fringe` */
   jag?: [center: number, halfWidth: number, depth: number][];
   /**
@@ -149,6 +147,8 @@ interface SculptStyleDef {
   cut?: [u: number, depth: number, width: number, rise?: number];
   /** Bề dày vỏ ở chân tóc, phần của `volume`; mặc định 0.3 */
   rim?: number;
+  /** Vỏ dày dần từ chân tóc tới đủ `volume` trong bấy nhiêu phần số hàng; mặc định 0.25. Dài thì mép trán vát ra sau */
+  ease?: number;
   /** Đuôi tóc rủ xoè ra khỏi trục dọc bấy nhiêu lần bán kính; mặc định `SCULPT_FLARE` */
   flare?: number;
   /** Đuôi chia lọn: rộng theo độ kinh, độ ngắn giữa lọn; `rounded` cho mép tròn */
@@ -193,12 +193,13 @@ export const SCULPT_STYLES: Record<SculptStyle, SculptStyleDef> = {
       [45, 62, 40, 0.2],
       [-40, 50, 30, 0.1],
     ],
-    strokes: [
-      [48, 1, 83, 12],
-      [60, 1, 83, 12],
-      [72, 1, 83, 12],
-      [82, -1, 50, 8],
-      [112, -1, 50, 8],
+    locks: [
+      [2, 46, 48, 84, 0, 0.17, 10, 0.35, 0.35],
+      [2, 56, 58, 70, 0, 0.17, 12, 0.35, 0.35],
+      [2, 66, 66, 60, 0, 0.17, 12, 0.35, 0.35],
+      [2, 76, 72, 52, 0, 0.16, 10, 0.35, 0.35],
+      [-2, 52, 46, 270, 0, 0.15, -10, 0.35, 0.35],
+      [-2, 66, 52, 265, 0, 0.15, -10, 0.35, 0.35],
     ],
   },
   round: {
@@ -246,53 +247,24 @@ export const SCULPT_STYLES: Record<SculptStyle, SculptStyleDef> = {
     fringe: "sweep",
     reach: 95,
     partRise: 0,
+    rim: 0.3,
+    ease: 0.7,
     puff: [
-      [0, 63, 30, 0.26],
-      [-65, 55, 32, 0.12],
+      [25, 80, 45, 0.12],
+      [-85, 62, 35, 0.06],
     ],
-    rim: 0.55,
     sweptArch: 0.12,
     swept: [
-      [55, 68, 0.45, 75, 95, 0.22],
-      [70, 58, 0.6, 100, 90, 0.24],
+      [45, 80, 0.4, 20, 94, 0.2],
+      [68, 72, 0.4, 35, 92, 0.19],
     ],
-    curves: [
-      [
-        [50, 55],
-        [63, 53],
-        [80, 48],
-        [100, 43],
-      ],
-      [
-        [110, 50],
-        [120, 54],
-        [140, 54],
-        [155, 45],
-      ],
-      [
-        [-50, 50],
-        [-60, 54],
-        [-80, 54],
-        [-95, 45],
-      ],
-      [
-        [210, 50],
-        [200, 30],
-        [205, 10],
-        [210, -14],
-      ],
-      [
-        [165, 25],
-        [165, 10],
-        [177, -5],
-        [195, -14],
-      ],
-      [
-        [255, 25],
-        [255, 10],
-        [243, -5],
-        [225, -14],
-      ],
+    locks: [
+      [-20, 70, 42, 350, 0, 0.17, -10, 0.4, 0.6],
+      [5, 70, 46, 0, 0, 0.18, 0, 0.4, 0.6],
+      [30, 68, 46, 10, 0, 0.18, 8, 0.4, 0.6],
+      [55, 66, 46, 22, 0, 0.18, 14, 0.4, 0.6],
+      [100, 56, 30, 80, 0, 0.13, 6, 0.4, 0.6],
+      [-48, 58, 30, 280, 0, 0.13, -6, 0.4, 0.6],
     ],
   },
   curly: {
@@ -331,50 +303,31 @@ export const SCULPT_STYLES: Record<SculptStyle, SculptStyleDef> = {
       [0, 75, 55, 0.05],
       [-35, 68, 35, 0.07],
     ],
-    curves: [
-      [
-        [12, 38],
-        [9, 50],
-        [14, 60],
-        [26, 62],
-      ],
+    locks: [
+      [-12, 88, 54, 180, 0, 0.18, -14],
+      [14, 88, 38, 186, 0, 0.19, 8],
+      [38, 84, 36, 194, 0, 0.19, 8],
+      [-38, 84, 38, 168, 0, 0.19, -8],
+      [64, 78, 34, 196, 0, 0.2, 6],
+      [-64, 78, 34, 164, 0, 0.2, -6],
+      [94, 76, 50, 186, 0, 0.2, 4, 0.35, 0.35],
+      [-94, 76, 50, 174, 0, 0.2, -4, 0.35, 0.35],
     ],
   },
   quiff: {
     spikes: [],
     fringe: "flat",
     rim: 0.3,
-    sweptArch: 0.3,
-    swept: [[14, 78, 0.28, 165, 75, 0.26]],
+    ease: 0.7,
     puff: [
-      [10, 74, 42, 0.3],
-      [0, 85, 60, 0.08],
+      [10, 80, 46, 0.1],
+      [0, 85, 60, 0.02],
     ],
-    curves: [
-      [
-        [-30, 58],
-        [-16, 70],
-        [14, 75],
-        [44, 71],
-      ],
-      [
-        [4, 58],
-        [16, 68],
-        [40, 72],
-        [70, 67],
-      ],
-      [
-        [34, 56],
-        [46, 64],
-        [66, 67],
-        [94, 60],
-      ],
-      [
-        [-58, 52],
-        [-64, 64],
-        [-84, 68],
-        [-112, 62],
-      ],
+    locks: [
+      [-40, 48, 72, 20, 0.02, 0.17, 24, 0.25, 0.6],
+      [-14, 48, 76, 22, 0.02, 0.18, 24, 0.25, 0.6],
+      [12, 48, 76, 26, 0.02, 0.18, 22, 0.25, 0.6],
+      [38, 48, 72, 30, 0.02, 0.17, 20, 0.25, 0.6],
     ],
   },
   pony: { spikes: [], pony: [0.3, 0.4, 0.75] },
@@ -437,39 +390,26 @@ export const SCULPT_STYLES: Record<SculptStyle, SculptStyleDef> = {
     fringe: "flat",
     puff: [[180, 20, 55, 0.08]],
     locks: [
-      [-40, 80, 56, 188, 0.03, 0.24, 18],
-      [-14, 82, 62, 180, 0.04, 0.26, -8],
-      [12, 80, 58, 174, 0.03, 0.25, -16],
-      [36, 76, 50, 166, 0.05, 0.22, -20],
-      [-2, 70, 44, 186, 0.04, 0.15, 10],
-      [26, 68, 40, 170, 0.04, 0.14, -12],
-      [58, 68, 42, 158, 0.1, 0.2, -16],
-      [-62, 70, 46, 196, 0.1, 0.2, 18],
-      [80, 70, 70, 176, 0.08, 0.22, -8],
+      [40, 80, 56, 172, 0.03, 0.24, -18],
+      [14, 82, 62, 180, 0.04, 0.26, 8],
+      [-12, 80, 58, 186, 0.03, 0.25, 16],
+      [-36, 76, 50, 194, 0.05, 0.22, 20],
+      [2, 70, 44, 174, 0.04, 0.15, -10],
+      [-26, 68, 40, 190, 0.04, 0.14, 12],
+      [-58, 68, 42, 202, 0.1, 0.2, 16],
+      [62, 70, 46, 164, 0.1, 0.2, -18],
       [-80, 70, 70, 184, 0.08, 0.22, 8],
-      [100, 64, 66, 182, 0.12, 0.22, 6],
+      [80, 70, 70, 176, 0.08, 0.22, -8],
       [-100, 64, 66, 178, 0.12, 0.22, -6],
-      [118, 56, 56, 198, 0.2, 0.2, 14],
+      [100, 64, 66, 182, 0.12, 0.22, 6],
       [-118, 56, 56, 162, 0.2, 0.2, -14],
-      [180, 78, 90, 180, 0.03, 0.17, 0],
-      [164, 78, 88, 186, 0.03, 0.17, 6],
-      [-164, 78, 88, 174, 0.03, 0.17, -6],
-      [148, 76, 84, 192, 0.04, 0.17, 8],
-      [-148, 76, 84, 168, 0.04, 0.17, -8],
-      [132, 72, 78, 198, 0.05, 0.17, 10],
-      [-132, 72, 78, 162, 0.05, 0.17, -10],
-      [172, 62, 68, 182, 0.03, 0.14, 4],
-      [-172, 62, 68, 178, 0.03, 0.14, -4],
-      [156, 62, 64, 190, 0.03, 0.14, 6],
-      [-156, 62, 64, 170, 0.03, 0.14, -6],
-      [140, 60, 58, 196, 0.04, 0.14, 8],
-      [-140, 60, 58, 164, 0.04, 0.14, -8],
-      [168, 80, 62, 18, 0.02, 0.2, 10],
+      [118, 56, 56, 198, 0.2, 0.2, 14],
       [-168, 80, 62, 342, 0.02, 0.2, -10],
-      [150, 78, 64, 50, 0.02, 0.2, 14],
+      [168, 80, 62, 18, 0.02, 0.2, 10],
       [-150, 78, 64, 310, 0.02, 0.2, -14],
-      [180, 82, 66, 0, 0.02, 0.2, 0],
-      [172, 72, 40, 15, 0.34, 0.12, 35],
+      [150, 78, 64, 50, 0.02, 0.2, 14],
+      [-180, 82, 66, 0, 0.02, 0.2, 0],
+      [-172, 72, 40, 345, 0.34, 0.12, -35],
     ],
   },
 };
@@ -500,7 +440,7 @@ export const SCULPT_PRESETS = {
     sculpt: {
       style: "quiff",
       part: -20,
-      front: 56,
+      front: 40,
       fringe: 0,
       ear: 18,
       sideburn: -10,
@@ -673,8 +613,9 @@ export function rootLat(s: Sculpt, lon: number) {
   return drop > 0 ? Math.min(h, s.front - s.bang * drop) : h;
 }
 
-/** Hàng `j` của vỏ đã phồng đủ chưa: `0` ở chân tóc, `1` từ một phần tư số hàng */
-export const rowEase = (j: number) => step(0, NJ / 4, j);
+/** Hàng `j` của vỏ kiểu `style` đã phồng đủ chưa: `0` ở chân tóc, `1` từ `ease` phần số hàng (mặc định một phần tư) */
+export const rowEase = (j: number, style: SculptStyle) =>
+  step(0, NJ * (SCULPT_STYLES[style].ease ?? 0.25), j);
 
 /** Vành hói phồng đủ khi cách cả mép dưới lẫn mép trên bấy nhiêu độ */
 export const CROWN_EASE = 10;
@@ -808,8 +749,12 @@ const LOCK_SEG = 12;
  */
 export function lockRings(
   s: Sculpt,
-  [lon, lat, length, heading, lift, width, turn]: Lock,
+  [u, lat, length, toward, lift, width, twist, rise = 0.35, sink = 0]: Lock,
 ): Vec3[][] {
+  const flip = Math.sign(s.part || 1);
+  const lon = s.part - flip * u;
+  const heading = -flip * toward;
+  const turn = -flip * twist;
   const len = length * s.spike;
   const rim = (SCULPT_STYLES[s.style].rim ?? 0.3) * s.volume;
   const shell = (p: Vec3) => {
@@ -817,7 +762,7 @@ export function lockRings(
     const la = Math.asin(Math.max(-1, Math.min(1, p[1]))) / D;
     const low = rootLat(s, lo);
     if (la < low) return rim * step(low - 6, low, la);
-    return shellLift(s, lo, la, rowEase(((la - low) / (90 - low)) * NJ), rim);
+    return shellLift(s, lo, la, rowEase(((la - low) / (90 - low)) * NJ, s.style), rim);
   };
   let p = onSkull(lon, lat);
   const east: Vec3 = [Math.cos(lon * D), 0, -Math.sin(lon * D)];
@@ -830,7 +775,13 @@ export function lockRings(
     const r = width * Math.cos((Math.PI / 2) * v ** 1.6) ** 0.8;
     const thick = r * 0.3;
     // Chân chìm dưới mặt vỏ để vòng đầu không lòi ra
-    const up = 1 + shell(p) + thick * 0.5 + lift * v * v - thick * 1.5 * (1 - step(0, 0.35, v));
+    const up =
+      1 +
+      shell(p) +
+      thick * 0.5 +
+      lift * v * v -
+      thick * 1.5 * (1 - step(0, rise, v)) -
+      (sink > 0 ? width * 0.45 * step(1 - sink, 1, v) : 0);
     const side = cross(t, p);
     if (m === LOCK_SEG) rings.push([p.map((a) => a * up) as Vec3]);
     else
@@ -1072,7 +1023,7 @@ export interface SculptPaths {
   head: (grow: number) => string;
   /** Phần mặt rủ phía sau tâm đầu: vẽ sau cả thân */
   under: string;
-  /** Nét trong: đường ngôi và nét chải */
+  /** Nét trong: đường ngôi, nét cắt và khe búp xoăn */
   lines: string[];
   /** Phần đuôi ngựa, búi nằm trước vỏ: vẽ trên cả tóc, có nét riêng */
   knot: string;
@@ -1171,7 +1122,9 @@ function buildSculpt(
       const base = Math.max(rim * s.volume, s.bangThick * thick) * (1 - w) + s.volume * w;
       const high = crownLat(s, lon, low);
       const ease = (lat: number, j: number) =>
-        def.crown ? step(0, CROWN_EASE, lat - low) * step(0, CROWN_EASE, high - lat) : rowEase(j);
+        def.crown
+          ? step(0, CROWN_EASE, lat - low) * step(0, CROWN_EASE, high - lat)
+          : rowEase(j, s.style);
       const shell: Vec3[] = [];
       for (let j = 0; j <= NJ; j++) {
         const lat = low + ((high - low) * j) / NJ;
@@ -1209,7 +1162,7 @@ function buildSculpt(
   /** Vách có mọi đỉnh sau mặt phẳng giữa mà chiếu vào lòng viền đầu thì sọ che */
   const hidden = (q: Vec3[]) => q.every(([x, y, z]) => z < 0 && x * x + y * y < 1);
   /** Vỏ và gai: sau mặt phẳng giữa thì sọ che theo đúng viền đầu; loại cả ô thì hở khe ở viền */
-  const tracked = !!(def.crease || def.strokes || def.curves || def.curlArc);
+  const tracked = !!(def.crease || def.curlArc);
   const fan = fanOf;
   /** Ô bốn đỉnh không xoắn thì cắt nguyên ô; xoắn thì quạt quanh tâm, lật ngôi vẫn đối xứng gương */
   const split = (q: Vec3[], flat: Vec3[]) =>
@@ -1310,7 +1263,7 @@ function buildSculpt(
         const j = ((lat - low) / (90 - low)) * NJ;
         return [
           [lon, lat, len, -side * heading, bend, width] as Spike,
-          shellLift(s, lon, lat, rowEase(j), rim * s.volume),
+          shellLift(s, lon, lat, rowEase(j, s.style), rim * s.volume),
           def.sweptArch ?? 0.55,
         ] as const;
       }),
@@ -1591,7 +1544,7 @@ function buildSculpt(
   const onShell = (lon: number, lat: number) => {
     const low = rootLat(s, lon);
     const j = ((lat - low) / (90 - low)) * NJ;
-    return on(lon, lat, shellLift(s, lon, lat, rowEase(j), rim * s.volume));
+    return on(lon, lat, shellLift(s, lon, lat, rowEase(j, s.style), rim * s.volume));
   };
   /** Điểm trên sọ đơn vị ra điểm trên mặt vỏ */
   const lift = ([x, y, z]: Vec3) => onShell(Math.atan2(x, z) / D, Math.asin(y) / D);
@@ -1628,40 +1581,6 @@ function buildSculpt(
       Array.from({ length: 9 }, (_, k) => {
         const v = k / 8;
         return onShell(lon - side * 7 * (1 - (1 - v) ** 2), low + 1 + rise * v);
-      }),
-    );
-  }
-  // Các cung cùng họ đi ngang qua ngôi rồi ôm vòm; vị trí dọc ngôi giữ thứ tự các nếp.
-  const margin = def.crease?.[1] ?? 0;
-  for (const [root, direction, arc, sweep] of def.strokes ?? [])
-    trace(
-      Array.from({ length: 49 }, (_, k) => {
-        const v = k / 48;
-        const b = Math.asin(c) - direction * (arc * D * v);
-        const a = (root + sweep * v * v) * D;
-        const p = n.map(
-          (value, d) =>
-            value * Math.sin(b) + Math.cos(b) * (ahead[d] * Math.cos(a) + vert[d] * Math.sin(a)),
-        ) as Vec3;
-        const lon = Math.atan2(p[0], p[2]) / D;
-        const lat = Math.asin(p[1]) / D;
-        const inside = (c - dot(n, p)) * direction > margin;
-        return lat > rootLat(s, lon) + 4 && inside ? lift(p) : undefined;
-      }),
-    );
-  for (const curve of def.curves ?? []) {
-    const control = curve.map(([u, lat]) => onSkull(s.part - side * u, lat));
-    trace(
-      Array.from({ length: 49 }, (_, k) => {
-        const v = k / 48;
-        let row = control;
-        while (row.length > 1)
-          row = row.slice(1).map((p, i) => p.map((a, d) => row[i][d] * (1 - v) + a * v) as Vec3);
-        const r = Math.hypot(...row[0]);
-        const p = row[0].map((a) => a / r) as Vec3;
-        const lon = Math.atan2(p[0], p[2]) / D;
-        const lat = Math.asin(p[1]) / D;
-        return lat >= rootLat(s, lon) ? lift(p) : undefined;
       }),
     );
   }

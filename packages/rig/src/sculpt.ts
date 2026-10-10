@@ -9,7 +9,7 @@ import { onSkull, type Vec3 } from './core/sphere';
 // Tóc dựng khối từ bảng kiểu và các hàm dựng vỏ, chân tóc, mái lệch, lọn gai của lõi: như `sculptPaths` nhưng
 // giữ lưới 3D thay vì chiếu ra path SVG.
 
-/** Nét trên mặt vỏ như `buildSculpt`: đường ngôi, nét cắt, các cung chải, đường cong và khe búp xoăn; mẩu ngắn hơn một phần tư bị bỏ */
+/** Nét trên mặt vỏ như `buildSculpt`: đường ngôi, nét cắt và khe búp xoăn; lọn dẹt có khối nên không vẽ nét; mẩu ngắn hơn một phần tư bị bỏ */
 function hairLines(s: Sculpt, lines: Vec3[][]) {
   const def = SCULPT_STYLES[s.style];
   const rim = def.rim ?? 0.3;
@@ -26,7 +26,7 @@ function hairLines(s: Sculpt, lines: Vec3[][]) {
   const onShell = (lon: number, lat: number) => {
     const low = rootLat(s, lon);
     const j = ((lat - low) / (90 - low)) * NJ;
-    return onSkull(lon, lat, shellLift(s, lon, lat, rowEase(j), rim * s.volume));
+    return onSkull(lon, lat, shellLift(s, lon, lat, rowEase(j, s.style), rim * s.volume));
   };
   const lift = ([x, y, z]: Vec3) => onShell(Math.atan2(x, z) / D, Math.asin(y) / D);
   const side = Math.sign(s.part || 1);
@@ -52,30 +52,6 @@ function hairLines(s: Sculpt, lines: Vec3[][]) {
       return onShell(lon - side * 7 * (1 - (1 - v) ** 2), low + 1 + rise * v);
     }));
   }
-  const margin = def.crease?.[1] ?? 0;
-  for (const [root, direction, arc, sweep] of def.strokes ?? [])
-    trace(Array.from({ length: 49 }, (_, k) => {
-      const v = k / 48;
-      const b = Math.asin(c) - direction * (arc * D * v);
-      const a = (root + sweep * v * v) * D;
-      const p = n.map((value, d) => value * Math.sin(b) + Math.cos(b) * (ahead[d] * Math.cos(a) + vert[d] * Math.sin(a))) as Vec3;
-      const lon = Math.atan2(p[0], p[2]) / D;
-      const lat = Math.asin(p[1]) / D;
-      const inside = (c - dot(n, p)) * direction > margin;
-      return lat > rootLat(s, lon) + 4 && inside ? lift(p) : undefined;
-    }));
-  for (const curve of def.curves ?? []) {
-    const control = curve.map(([u, lat]) => onSkull(s.part - side * u, lat));
-    trace(Array.from({ length: 49 }, (_, k) => {
-      const v = k / 48;
-      let row = control;
-      while (row.length > 1) row = row.slice(1).map((p, i) => p.map((a, d) => row[i][d] * (1 - v) + a * v) as Vec3);
-      const r = Math.hypot(...row[0]);
-      const p = row[0].map((a) => a / r) as Vec3;
-      const lon = Math.atan2(p[0], p[2]) / D;
-      return Math.asin(p[1]) / D >= rootLat(s, lon) ? lift(p) : undefined;
-    }));
-  }
   if (def.curls && def.curlArc) {
     const [r, , count] = def.curls;
     const [at, a0, a1] = def.curlArc;
@@ -96,7 +72,7 @@ function hairLines(s: Sculpt, lines: Vec3[][]) {
 
 /**
  * Lưới tóc trong hệ sọ đơn vị (y lên, z ra trước mặt), đầu thẳng: `shell` vỏ và vách chân tóc, `spikes` lọn gai,
- * đuôi ngựa và búi, `hang` mặt rủ, mỗi phần là dãy tam giác; `lines` nét trên mặt vỏ (ngôi, nét chải, khe búp xoăn).
+ * đuôi ngựa và búi, `hang` mặt rủ, mỗi phần là dãy tam giác; `lines` nét trên mặt vỏ (ngôi, nét cắt, khe búp xoăn).
  */
 export interface SculptMesh {
   shell: Vec3[][];
@@ -140,7 +116,7 @@ export function sculptMesh(raw: Partial<Sculpt>): SculptMesh {
     const base = Math.max(rim * s.volume, s.bangThick * thick) * (1 - w) + s.volume * w;
     const high = crownLat(s, lon, low);
     const rowE = (lat: number, j: number) =>
-      def.crown ? step(0, CROWN_EASE, lat - low) * step(0, CROWN_EASE, high - lat) : rowEase(j);
+      def.crown ? step(0, CROWN_EASE, lat - low) * step(0, CROWN_EASE, high - lat) : rowEase(j, s.style);
     const shell: Vec3[] = [];
     for (let j = 0; j <= NJ; j++) {
       const lat = low + ((high - low) * j) / NJ;
@@ -182,7 +158,7 @@ export function sculptMesh(raw: Partial<Sculpt>): SculptMesh {
         const j = ((lat - low) / (90 - low)) * NJ;
         return [
           [lon, lat, len, -side * heading, bend, width] as Spike,
-          shellLift(s, lon, lat, rowEase(j), rim * s.volume),
+          shellLift(s, lon, lat, rowEase(j, s.style), rim * s.volume),
           def.sweptArch ?? 0.55,
         ] as const;
       }),
