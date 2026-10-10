@@ -239,14 +239,22 @@ const sharedWithRepo = (root) => ({
   },
 });
 
+/** `Path2D` rỗng cho code canvas của cảnh three trong Node: vẽ lên canvas rỗng của rig cũng không ra gì */
+class BlankPath2D {
+  constructor() {
+    return new Proxy(this, { get: (t, k) => (k in t ? t[k] : () => undefined) });
+  }
+}
+
 /**
  * Cảnh three của repo video, hay `null` nếu repo không khai `stickman.world`: `{ worldOf, collide,
- * colliders, U }` — `worldOf` của entry, ba thứ sau của chính bản rig mà entry nạp. Hợp đồng ở
- * docs/10-lop-ve-code.md#người-lồng-vào-đồ
+ * colliders, U }` — `worldOf` của entry, ba thứ sau của chính bản rig mà entry nạp. Đặt `Path2D`
+ * rỗng vào `globalThis` khi Node không có. Hợp đồng ở docs/10-lop-ve-code.md#đo-trên-cảnh-three
  */
 export async function loadWorld(root = process.cwd()) {
   const entry = worldEntry(root);
   if (!entry) return null;
+  globalThis.Path2D ??= BlankPath2D;
   const mod = await loadEntry(root, entry, "world", "cảnh three", {
     plugins: [hollowReact, sharedWithRepo(root)],
     stdin: `export * as world from ${JSON.stringify(entry)};
