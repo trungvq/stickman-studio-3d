@@ -394,7 +394,13 @@ nét nằm lọt trong vật. `Object3D` lấy cả nhánh: nhóm có `userData.
 là x, y, z liền nhau trong hệ của nhóm — cho khối lồi từng món (áp `matrixWorld`); `Batch.build` tự ghi nó từ `addPart`,
 `addLathe`, `addItem` (`tag`/`Item` mang `name`, `touch`). Lưới khác là tam giác — chỉ bắt nét cắt qua mặt; `Batch` có tam
 giác thêm thẳng bằng `flat`, `geometry` thì đo cả tam giác của nhóm. Tam giác và khối thế giới giữ lại tới khi `matrixWorld`
-hay hình của lưới đổi: đo cả cảnh mỗi `t` chỉ tính lại vật đã dời.
+hay hình của lưới đổi: đo cả cảnh mỗi `t` chỉ tính lại vật đã dời. Mỗi vật cản mang `from` — vật three sinh ra nó — để so
+hai lần đo.
+
+Độ lún vào khối lồi là quãng ngắn nhất phải dời viên nang cho rời khối, đúng chứ không lấy mẫu: trục nang ngoài khối thì
+bán kính trừ khoảng cách thật từ trục tới khối (gần cạnh, gần góc cũng đúng), trục cắt khối thì bán kính cộng quãng ngắn
+nhất phải dời trục ra khỏi khối — tay xuyên giữa cuốn sổ mỏng lún tới mép sổ, sâu hơn tay chạm mép. Lưới tam giác: nét cắt
+qua mặt thì bán kính cộng khoảng cách từ mặt tới mút nét gần hơn.
 
 Bỏ lưới `userData.noCollide` (decal, nét mặt, trời, vỏ nét, nét mực và cảnh sau ô cửa của phòng, lưới `Batch` mà khối lồi
 đã phủ hết), lưới của chính người (`userData.body`; người đã `freeze` là vật cản), vỏ `BackSide`, nhánh ẩn (`visible` false ở nó
@@ -405,8 +411,10 @@ mút nét: bàn chân đặt trên sàn không lún.
 Lấn có chủ ý thì khai `userData.touch` trên vật hay nhóm cha (cộng dồn xuống), hay `touch` của `Item`, cùng nghĩa `touch`
 của món lớp vẽ code. Mỗi mục là `'[<người>.]<bộ phận>[R|L]'` hay `{ part, max }`: `'shin'`, `'haru.foreArmR'` (người là
 khoá truyền cho `collide`, `R`/`L` là tay chân phải/trái), `'self.head'` là người có `root` chứa vật (đang cầm, đang đội);
-chuỗi là không báo, `{ part, max }` cho lún tới `max` px rig. `hold` tự khai cẳng tay cầm, `wear` đầu hay thân,
-`wearDecal` thân. Người ngồi thì đùi lún nửa nét vào mặt ghế (hông 2D là tâm nét): khai `touch` cho đùi trên ghế.
+chuỗi là không báo, `{ part, max }` cho lún tới `max` px rig. Tên phần người của lớp vẽ code cũng được (`'forearmNear'`,
+`'haru.legFar'`, `'lap'` là hai đùi): gần / xa theo `collide(…, { eye })` — mắt ống kính, toạ độ three; bên có gốc chân gần
+mắt hơn là bên gần, như `flip` của lõi —, không có `eye` thì cả hai bên. Mục không hiểu thì bỏ qua và gọi
+`collide(…, { unknown(entry, collider) })`. `hold` tự khai cẳng tay cầm, `wear` đầu hay thân, `wearDecal` thân. Người ngồi thì đùi lún nửa nét vào mặt ghế (hông 2D là tâm nét): khai `touch` cho đùi trên ghế.
 
 ## Chữ trên vật, món chạy theo `t`
 
@@ -441,6 +449,8 @@ mail.update(t);
 - **Vẽ 2D.** `typeText(ctx, text, chars, o)` chữ đang gõ (xuống dòng theo ký tự như bản gõ xong, con trỏ nhấp nháy theo
   `cursor: t`); `strokes(ctx, lines, n)` nét viết tay theo thứ tự, `n` số thực là nét đang kẻ dở (「正」, gạch, khoanh);
   `wrapText`.
+- **Canvas riêng.** `newCanvas(w, h)` là `<canvas>`, `OffscreenCanvas` hay — Node trần — canvas rỗng vẽ gì cũng bỏ
+  qua; `path2D(d)` là `Path2D` hay đường rỗng. Code canvas dựng bằng hai hàm này chạy được cả trong `stickman check`.
 
 **Nạp trước khung đầu.** Không có gì được chờ giữa khung: phông, ảnh, SVG nạp xong rồi mới dựng sân khấu, trong cùng
 `loadAssets` đã giữ `delayRender` (xem [Dùng trong Remotion](#dùng-trong-remotion)):
