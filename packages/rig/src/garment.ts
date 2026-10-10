@@ -93,10 +93,9 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
   spine.add(h);
 
   for (const f of t.fills) {
-    const tri = THREE.ShapeUtils.triangulateShape(f.sp.map(([x, y]) => new THREE.Vector2(x, y)), []);
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(f.pts.flatMap((p) => v3(p).toArray()), 3));
-    g.setIndex(tri.flat());
+    g.setIndex(f.tris);
     g.computeVertexNormals();
     spine.add(new THREE.Mesh(g, npr({ color: colorOf(f.fill, pal), stipple: 0.04, soft: 1, doubleSided: true })));
   }

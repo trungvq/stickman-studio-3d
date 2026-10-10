@@ -1,3 +1,4 @@
+import { ShapeUtils, Vector2 } from 'three';
 import { D, TORSO_DEPTH } from './core/constants';
 import type { Garment } from './core/schema';
 import {
@@ -17,12 +18,15 @@ export interface TorsoMesh {
   profile: P2[];
   /** Nét trên mặt khối, `k` lần nét thân */
   lines: { pts: Vec3[]; k: number }[];
-  /** Mảng tô trên mặt khối: polygon ở toạ độ mặt `(kinh độ, y)` để tam giác hoá, và điểm 3D tương ứng */
-  fills: { sp: P2[]; pts: Vec3[]; fill: MarkFill }[];
+  /** Mảng tô trên mặt khối: điểm 3D và chỉ số tam giác, cạnh không dài quá `FILL_EDGE` px */
+  fills: { pts: Vec3[]; tris: number[]; fill: MarkFill }[];
   dots: { p: Vec3; k: number }[];
   /** Tấm nổi khối (cổ bẻ, viền gân, mũ trùm): lưới cột × hàng, hàng `rims` có nét viền */
   sheets: { grid: Vec3[][]; rims: number[]; color: MarkFill; line: number }[];
 }
+
+/** Cạnh tam giác của mảng tô dài nhất bấy nhiêu px: dài hơn thì dây cung cắt xuyên mặt cong của khối */
+const FILL_EDGE = 5;
 
 export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig): TorsoMesh {
   const g = garmentOf(raw);
@@ -85,6 +89,50 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig): TorsoMes
     return out;
   };
 
+  /** Tam giác hoá polygon ở toạ độ mặt rồi chẻ đôi cạnh dài (cạnh chung chẻ một lần cho cả hai bên, không hở) */
+  const fillMesh = (poly: SP[]) => {
+    const sp = poly.slice(0, -1);
+    const pts = sp.map((p) => onTorso(p, 0.3));
+    let tris = ShapeUtils.triangulateShape(sp.map(([x, y]) => new Vector2(x, y)), []);
+    for (let pass = 0; pass < 12; pass++) {
+      const mids = new Map<string, number>();
+      const mid = (i: number, j: number) => {
+        const key = i < j ? `${i} ${j}` : `${j} ${i}`;
+        let m = mids.get(key);
+        if (m === undefined) {
+          const [p, q] = [pts[i], pts[j]];
+          m = Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]) > FILL_EDGE ? sp.length : -1;
+          if (m >= 0) {
+            sp.push([(sp[i][0] + sp[j][0]) / 2, (sp[i][1] + sp[j][1]) / 2]);
+            pts.push(onTorso(sp[m], 0.3));
+          }
+          mids.set(key, m);
+        }
+        return m;
+      };
+      const next: number[][] = [];
+      for (const v of tris) {
+        const m = [0, 1, 2].map((k) => mid(v[k], v[(k + 1) % 3]));
+        const at = (k: number) => k % 3;
+        const cut = m.filter((x) => x >= 0).length;
+        if (cut === 0) next.push(v);
+        else if (cut === 3) next.push([v[0], m[0], m[2]], [m[0], v[1], m[1]], [m[2], m[1], v[2]], [m[0], m[1], m[2]]);
+        else if (cut === 1) {
+          const k = m.findIndex((x) => x >= 0);
+          next.push([v[k], m[k], v[at(k + 2)]], [m[k], v[at(k + 1)], v[at(k + 2)]]);
+        } else {
+          const k = m.findIndex((x) => x < 0);
+          const [a, b] = [m[at(k + 1)], m[at(k + 2)]];
+          next.push([a, v[at(k + 2)], b], [v[k], v[at(k + 1)], a], [v[k], a, b]);
+        }
+      }
+      const done = next.length === tris.length;
+      tris = next;
+      if (done) break;
+    }
+    return { pts, tris: tris.flat() };
+  };
+
   const out: TorsoMesh = { profile: pr.pts, lines: [], fills: [], dots: [], sheets: [] };
   for (const m of def.marks(surf)) {
     if (m.dot) {
@@ -92,7 +140,7 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig): TorsoMes
       continue;
     }
     const pts = dense(m.pts, m.closed || !!m.fill);
-    if (m.fill) out.fills.push({ sp: pts, pts: pts.map((p) => onTorso(p, 0.3)), fill: m.fill });
+    if (m.fill) out.fills.push({ ...fillMesh(pts), fill: m.fill });
     if (m.k > 0) out.lines.push({ pts: pts.map((p) => onTorso(p)), k: m.k });
   }
 
