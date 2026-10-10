@@ -382,7 +382,8 @@ khác cao mà không đặt `world.hands` thì cổ tay lơ lửng hay chìm và
 
 **Rig không đẩy người 3D ra khỏi đồ khối.** Phần người lồng vào mảnh đồ thì mảnh bị chặt qua tâm
 phần người và nửa trước vẽ đè lên: tay xuyên mép bàn, mép bàn đâm vào bụng. Lúc vẽ không gì báo,
-`stickman check` thì báo; tay lên bàn thì đặt bằng `handsOn`, lấn có chủ ý thì khai `touch` trên món.
+`stickman check` thì báo; tay lên bàn thì đặt bằng `handsOn`, lấn có chủ ý thì khai `touch` trên món
+hay vật three. Đồ repo dựng thẳng bằng three chỉ được đo khi repo khai `stickman.world`.
 [10](10-lop-ve-code.md#người-lồng-vào-đồ)
 
 **Chỗ vẽ hay đo người 3D gọi `sceneAt(rt, id, t, height, body3(nhân vật))`.** Trôi ngang của người

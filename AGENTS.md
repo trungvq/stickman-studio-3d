@@ -10,7 +10,7 @@ chúng ở repo của từng video, repo đó nhập bộ `@stickman3d/*` như d
 | | |
 |---|---|
 | `packages/rig/src/core/` | Lõi rig, không React, không `three`: hằng số và tư thế, chu kỳ đi, schema zod của nhân vật / hành động / cảnh / đạo cụ / động vật, `resolveScene` và `sceneAt`, IK, timewarp, ống kính scene, hình học thân áo, tóc, kính, râu, váy, đầu, nét mặt (`face.ts`), khung xương và khớp người 3D mà three vẽ ra (`act3.ts`), đo giật trên hình (`snap.ts`), sổ bộ phận `PARTS`. Ra cửa `@stickman3d/rig/core` và cửa chính của `@stickman3d/rig`. |
-| `packages/rig/src/*.ts` | `@stickman3d/rig` phần 3D — vật liệu NPR và giờ trong ngày (`npr.ts`), pipeline vẽ (`pipeline.ts`), người que và đặt người (`stickman.ts`), diễn theo tư thế của `sceneAt` (`act.ts`), nét mặt (`face.ts`), thân áo và váy (`garment.ts`, `torso.ts`), tóc (`sculpt.ts`), kính (`glasses.ts`), đồ khối (`khoi.ts`), vỏ phòng, cửa sổ, cửa đi và đèn tấm (`room.ts`), ống kính scene (`lens.ts`), chỗ gắn đồ, cầm đồ và đồ gọi tên (`attach.ts`), người nền đóng băng (`crowd.ts`), kiểm va chạm (`collide.ts`), chữ và hình trên mặt vật (`decal.ts`), món chạy theo `t` — đồng hồ, lịch, màn hình (`parts.ts`), vật bay theo đường, hiện/tắt (`motion.ts`). tsup ra `dist` hai cửa, `three` và `zod` để external. |
+| `packages/rig/src/*.ts` | `@stickman3d/rig` phần 3D — vật liệu NPR và giờ trong ngày (`npr.ts`), pipeline vẽ (`pipeline.ts`), người que và đặt người (`stickman.ts`), diễn theo tư thế của `sceneAt` (`act.ts`), nét mặt (`face.ts`), thân áo và váy (`garment.ts`, `torso.ts`), tóc (`sculpt.ts`), kính (`glasses.ts`), đồ khối (`khoi.ts`), vỏ phòng, cửa sổ, cửa đi và đèn tấm (`room.ts`), ống kính scene (`lens.ts`), chỗ gắn đồ, cầm đồ và đồ gọi tên (`attach.ts`), người nền đóng băng (`crowd.ts`), kiểm va chạm (`collide.ts`), chữ và hình trên mặt vật (`decal.ts`), canvas 2D cho texture vẽ bằng code, chạy cả trong Node trần (`canvas.ts`), món chạy theo `t` — đồng hồ, lịch, màn hình (`parts.ts`), vật bay theo đường, hiện/tắt (`motion.ts`). tsup ra `dist` hai cửa, `three` và `zod` để external. |
 | `packages/sketch/` | `@stickman3d/sketch` — người que vẽ SVG bằng React: `<Character>`, `<Prop>`, `<Animal>`, mảnh và bộ phận vẽ code, bảng mốc mảnh `figureAnchors` (`anchor.ts`). Xuất lại cả lõi, nên code 2D chỉ cần import một gói. |
 | `packages/fx/` | `@stickman3d/fx` — hiệu ứng SVG theo `t` cho `scene.fx[]` và `<SceneWorld>` vẽ cả cảnh 2D. [docs/09](docs/09-hieu-ung.md), [docs/10](docs/10-lop-ve-code.md). |
 | `packages/render/` | `@stickman3d/render` — bin `stickman-render` (PNG), `stickman-video` (mp4 xem thử). Cần `rsvg-convert`, mp4 cần thêm `ffmpeg`. |
@@ -122,7 +122,8 @@ liệu. Mọi lọc bóng, bóng tiếp xúc và nhiễu băng xoay theo toạ �
 ở không gian hiển thị, khớp mã màu của JSON nhân vật.
 
 **Vật không đổ bóng** đánh dấu `userData.noShadow`; vỏ ngược (`BackSide`) của nét viền tự được bỏ
-khỏi lượt bóng. Hộp ống kính bóng tự ôm vùng camera thấy trong hộp cảnh (hay `bounds` của bộ đèn);
+khỏi lượt bóng. `collide` không đọc `noShadow`: thứ không phải vật thể (decal, nét mặt, nón ánh đèn) đánh
+dấu `userData.noCollide`. Hộp ống kính bóng tự ôm vùng camera thấy trong hộp cảnh (hay `bounds` của bộ đèn);
 nhập tay `createPipeline({ shadow })` thì phải ôm hết vùng có bóng.
 
 ## Quy ước

@@ -127,13 +127,56 @@ Các kiểm tra sau bắt lỗi hợp lệ theo schema nhưng làm thiếu hình
 | **Khuỷu gập ngược khi giơ tay** | `armFoldProblems` của rig: mốc có `\|vai\| > 120` mà khuỷu ngược dấu vai — cẳng tay bung ra ngoài thay vì cuộn về đầu — [00](00-bat-bien.md#dấu-góc-và-hình-học) |
 | **Mốc ghi kênh ngoài `mask`** | `maskProblems` của rig: giá trị bị bỏ im lặng — nụ cười khai ở `face` mà `mask` thiếu `face` thì không bao giờ hiện |
 | **Người 3D trượt, không tới mốc dừng** | `sceneSlideProblems` đo trên mặt sàn thế giới cho người có `world`: bàn chân chịu lực dịch quá nửa quãng hông đi trong `0,4 s`, mốc dừng của `path` mà hông cách quá `20` đơn vị rig, clip có sải chân chạy khi `path` đã đứng yên — [03](03-scene.md#check-cho-người-3d) |
-| **Người 3D lồng vào đồ** | `sceneClashProblems` của cli (`solidClashes` của fx): phần người lấn vào khối đồ của lớp vẽ code hay vào người khác quá `2` đơn vị thế giới (`stickman.clash.tol`), mỗi cặp một dòng kèm giây sâu nhất và các quãng giây; món khai `touch` thì bỏ phần người ấy — [10](10-lop-ve-code.md#người-lồng-vào-đồ) |
+| **Người 3D lồng vào đồ** | `sceneClashProblems` của cli: phần người lấn quá `2` đơn vị thế giới (`stickman.clash.tol`) vào khối đồ của lớp vẽ code (`solidClashes` của fx) hay vào người khác. Repo khai [`stickman.world`](#cảnh-three-cho-check) thì phần người đo với mọi vật của chính cảnh three ấy bằng `collide` của rig, thay cho khối đồ của lớp vẽ code. Mỗi cặp một dòng kèm giây sâu nhất và các quãng giây; món hay vật khai `touch` thì bỏ phần người ấy — [10](10-lop-ve-code.md#người-lồng-vào-đồ) |
 | **Tay xuyên thân** | `sceneClashProblems` của cli (`armPierce` của lõi, tay và thân đúng như three vẽ): cánh tay, cẳng tay (bỏ quãng sát vai và sát cổ tay) lấn vào thân áo của chính người ấy quá `4` (`stickman.clash.self`, `false` là tắt) — [10](10-lop-ve-code.md#tay-xuyên-thân) |
 | **Đồ lồng vào đồ** | `sceneItemClashProblems` của cli (`solidItemClashes` của fx): hai món của lớp vẽ code lấn nhau quá `stickman.clash.tol` **và** phần thể tích món nhỏ nằm trong món kia quá `0,1` (`stickman.clash.items`, `false` là tắt), mỗi cặp một dòng; món khai tên món kia trong `touch` thì bỏ — [10](10-lop-ve-code.md#đồ-lồng-vào-đồ) |
 | **Người 3D diễn hành động 2D** | `sceneSideProblems` của rig, **mức lỗi**: người có `world` mà clip ghi kênh tay chân của hành động không soạn ở `side` — sân khấu three vẽ kênh ấy ở dáng nghỉ, hoà với hành động `side` là giật một khung. Mỗi người, mỗi clip một dòng kèm bản `-3d` có sẵn — [03](03-scene.md#hành-động-cho-người-3d) |
 | **Tay chân giật trên hình** | `sceneSnapProblems` của rig: lấy mẫu theo fps bản chốt, khớp đúng như hình vẽ ra (`actJoints` cho người 3D, `joints2` cho người 2D) qua khung cắt camera, khung nào một khớp nhảy vượt nền chuyển động quanh nó quá ngưỡng (`stickman.snap`) thì kêu, kèm lý do đọc từ timeline; chỗ khai `snap` thì bỏ — [03](03-scene.md#giật-trên-hình) |
 | **Hành động tự giật** | `actionSnapProblems` của rig: `wrap` mà mốc cuối ở `t: 1` lệch mốc đầu, hay hai mốc sát nhau đổi góc lớn hơn hẳn hai đoạn kề; file khai `snap` thì bỏ — [01](01-rig.md#hành-động-giật-có-chủ-ý) |
 | **Mốc khai mà không ai neo** | Chỉ khi khai `stickman.marks.unused: "warn"`: mốc trong `marks` không chỗ nào trong JSON viết `"@tên"`. Mặc định tắt, vì lớp vẽ code đọc mốc qua `ctx.marks` mà `check` không thấy — [03](03-scene.md#mốc-có-tên) |
+
+### Cảnh three cho `check`
+
+Đồ repo dựng thẳng bằng three (đồ cầm tay, đồ bám cổ tay, đồ chạy theo `t`) không nằm trong
+`solids(ctx)` của lớp vẽ code, nên `check` chỉ đo được người lồng vào chúng khi repo đưa cảnh three
+cho nó. Khai module dựng cảnh trong `package.json`:
+
+```json
+"stickman": { "layers": "src/lop.tsx", "parts": "src/parts.tsx", "world": "src/khoi3d/world.ts" }
+```
+
+Module xuất `worldOf(sceneName, ctx)`: cảnh có bối cảnh three thì trả `{ root, pose(t) }`, cảnh khác
+trả `null` và đi đường khối lớp vẽ code.
+
+```ts
+import * as THREE from "three";
+import { act, castCharacter, defaultCharacter, fromCharacter, sceneAt } from "@stickman3d/rig";
+import { SETS } from "./set"; // bối cảnh three của repo: phòng, bàn, đồ cầm
+
+export function worldOf(sceneName: string, ctx: any) {
+  const set = SETS[sceneName];
+  if (!set) return null;
+  const root = set.build();
+  const figs = Object.fromEntries(
+    ctx.runtime.cast.map((m) => [m.id, fromCharacter(castCharacter(m, ctx.characters[m.character] ?? defaultCharacter()))]),
+  );
+  for (const f of Object.values(figs)) root.add(f.root);
+  return {
+    root,
+    pose(t: number) {
+      for (const [id, f] of Object.entries(figs))
+        act(f, sceneAt(ctx.runtime, id, t, ctx.heights[id], ctx.bodies[id]), t);
+      set.update(t, figs); // đồ chạy theo `t`, đồ cầm — đúng như một khung vẽ
+      return figs;
+    },
+  };
+}
+```
+
+Code dựng cảnh tách khỏi phần WebGL (renderer, pipeline) để sân khấu Remotion và `worldOf` dùng chung
+một bản: `worldOf` chạy trong Node, không trình duyệt, không webpack. Hợp đồng đủ — trường của `ctx`,
+cách gói, vật nào tự bỏ khi đo, `noCollide`, `touch` trên vật three — ở
+[10](10-lop-ve-code.md#đo-trên-cảnh-three).
 
 ### Tập đã đóng
 
