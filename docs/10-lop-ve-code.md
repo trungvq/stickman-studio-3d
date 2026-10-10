@@ -314,8 +314,8 @@ scenes/hop.json: người lồng vào đồ — a.head ↔ b.head lấn 40.7 ở
 một người. Cốc kề miệng là `touch: ["a.head"]`, loa cầm sát mặt là `touch: ["head"]`, đùi tựa mặt
 ngồi là `{ "part": "a.legNear", "max": 6 }`.
 
-`scene_probe` của MCP trả phép đo của đường này ở từng mốc hỏi (`clashes`), kể cả cảnh repo có
-`stickman.world` — nó không dựng cảnh three.
+`scene_probe` của MCP trả cùng phép đo ở từng mốc hỏi (`clashes`), đi đúng đường của `check` cho
+cảnh ấy — [Đo trên cảnh three](#đo-trên-cảnh-three) khi `worldOf` trả cảnh.
 
 Tự đo trong code: `sceneClashes(rt, t, { characterOf, codeLayers, tol, self })` của `@stickman3d/fx`
 cho một khung của cảnh (cả tay xuyên thân), `solidClashes(lens, items, people, { tol, view })` cho khối
@@ -341,13 +341,14 @@ export function worldOf(
 ```
 
 `sceneName` là `scene.name`, như `scenes` của lớp vẽ code. `worldOf` chỉ được gọi cho cảnh `check`
-đo người lồng vào đồ (có `lens`, có người `world`, không khớp `stickman.frozen`, khớp `--scene`); trả
-`null` thì cảnh ấy đi đường khối lớp vẽ code. `ctx` là dữ liệu `check` đã nạp và parse — module chạy
-trong Node, không qua webpack, nên đọc dữ liệu từ đây chứ không qua `require.context` của `data.ts`:
+đo người lồng vào đồ (có `lens`, có người `world`, không khớp `stickman.frozen`, khớp `--scene`), và
+cho cảnh `scene_probe` hỏi (có `lens`, có người `world`); trả `null` thì cảnh ấy đi đường khối lớp vẽ
+code. `ctx` là dữ liệu đã nạp và parse — module chạy trong Node, không qua webpack, nên đọc dữ liệu từ
+đây chứ không qua `require.context` của `data.ts`:
 
 | Trường | |
 |---|---|
-| `id` | tên file cảnh trong `scenes/`, không đuôi |
+| `id` | tên file cảnh trong `scenes/`, không đuôi; cảnh inline chưa ghi của `scene_probe` thì là `scene.name` |
 | `scene` | JSON cảnh đã qua `parseScene` |
 | `runtime` | `resolveScene` của cảnh — đưa thẳng vào `sceneAt` |
 | `characters`, `actions`, `animals` | JSON đã parse theo tên file, cả hai lớp ([05](05-repo-video.md#hai-lớp)) |
@@ -371,6 +372,10 @@ trong Node, không qua webpack, nên đọc dữ liệu từ đây chứ không 
   ấy, cảnh đi đường khối lớp vẽ code. `pose(t)` hay phép đo ném ở giây nào thì cảnh báo một dòng
   (`cảnh three ném lỗi ở giây …`) và cảnh thôi đo trên cảnh three từ giây ấy; người với người, tay
   xuyên thân và đồ lồng vào đồ của cảnh vẫn đo.
+- `scene_probe` gói module như `check` và gói lại khi file nguồn đổi; mỗi lượt hỏi nó gọi `worldOf`
+  lại, rồi `pose(t)` theo đúng thứ tự mốc hỏi — `pose(t)` đặt lại đủ mọi thứ của khung, không dựa vào
+  giây gọi trước. Gói hỏng hay `worldOf` hỏng thì cả cảnh, `pose(t)` ném thì riêng giây ấy, đo bằng
+  khối lớp vẽ code, kết quả kèm lỗi ở `warnings`.
 
 Mỗi giây lấy mẫu, `check` gọi `pose(t)` rồi đo `collide(people, colliders(root))` của rig: người là
 các viên nang theo khung xương, vật là mọi thứ khác dưới `root`.
