@@ -317,11 +317,18 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
     for (const j of [spine, neck, head]) mergeStatic(j);
   }
   // người có nét riêng theo hình 2D: không vẽ nét gấp pháp tuyến; đồ cầm gắn sau thì vẫn có
-  root.traverse((o) => (o.userData.noCrease = true));
+  root.traverse(bodyMark);
+  root.userData.figure = true;
   const sockets = buildSockets({ root, spine, head, arms }, fit, (R.limb * sleeveWidth) / 10, rig);
   const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig };
   if (equip) dress(fig, equip);
   return fig;
+}
+
+/** Lưới của chính người: không nét gấp, `collide` đo người bằng nang nên bỏ lưới `userData.body`; đồ gắn sau không mang cờ này */
+function bodyMark(o: THREE.Object3D) {
+  o.userData.noCrease = true;
+  if ((o as THREE.Mesh).isMesh) o.userData.body = true;
 }
 
 const toSpine = new THREE.Matrix4(), thighAt = new THREE.Vector3(), thighDir = new THREE.Vector3();
@@ -346,7 +353,7 @@ export function fitSkirt(p: Figure) {
   sk.group.removeFromParent();
   sk.group.traverse((o) => (o as THREE.Mesh).geometry?.dispose());
   sk.group = sculptSkirt(parent, { ...sk.opts, thighs });
-  sk.group.traverse((o) => (o.userData.noCrease = true));
+  sk.group.traverse(bodyMark);
   sk.group.updateMatrixWorld(true);
 }
 
@@ -358,6 +365,7 @@ function stillFace(scale: THREE.Vector3, shape?: Partial<FaceShape>, state?: Par
   if (!f) stillFaces.set(key, (f = faceRig(R.head, scale, shape, s)));
   const mesh = new THREE.Mesh(f.mesh.geometry, f.mesh.material);
   mesh.userData.noShadow = true;
+  mesh.userData.noCollide = true;
   mesh.renderOrder = f.mesh.renderOrder;
   return { mesh, state: s, set() {} };
 }

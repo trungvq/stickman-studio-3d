@@ -88,12 +88,16 @@ function gripped(object: THREE.Object3D, o: HoldOptions) {
   return g;
 }
 
+const forearm = (s: Side) => `self.foreArm${s < 0 ? 'R' : 'L'}`;
+
 /**
  * Cầm `object` bằng một tay hay hai tay. Vật dựng ở gốc khung cầm (xem `HoldOptions`), cỡ theo người cao 4,3; nó
- * nằm trong `root` nên to nhỏ theo `root.scale`. Tự bám theo tư thế mỗi khung, `release()` gỡ ra.
+ * nằm trong `root` nên to nhỏ theo `root.scale`. Tự bám theo tư thế mỗi khung, `release()` gỡ ra. Nhóm cầm khai
+ * `userData.touch` cẳng tay cầm của người cầm: `collide` không báo cẳng tay ấy lún vào vật.
  */
 export function hold(fig: Figure, object: THREE.Object3D, o: HoldOptions): Held {
   const grip = gripped(object, o);
+  grip.userData.touch = o.hand === 'both' ? [forearm(-1), forearm(1)] : [forearm(o.hand)];
   const held: Held = { object, span: 0, release: () => carrier.removeFromParent() };
   let carrier: THREE.Object3D;
   if (o.hand !== 'both' && (o.follow ?? 'wrist') === 'wrist') {
@@ -127,10 +131,15 @@ export function hold(fig: Figure, object: THREE.Object3D, o: HoldOptions): Held 
   return held;
 }
 
-/** Gắn `object` vào khung đầu hay ngực (`crown`, `face`, `chest`); vật dựng ở gốc khung, theo đầu và thân. */
+/**
+ * Gắn `object` vào khung đầu hay ngực (`crown`, `face`, `chest`); vật dựng ở gốc khung, theo đầu và thân. Nhóm gắn khai
+ * `userData.touch` đầu (hay thân) của người đội: `collide` không báo đầu lún vào mũ.
+ */
 export function wear(fig: Figure, slot: 'crown' | 'face' | 'chest', object: THREE.Object3D) {
-  fig.sockets[slot].add(object);
-  return () => object.removeFromParent();
+  const g = new THREE.Group();
+  g.userData.touch = [slot === 'chest' ? 'self.torso' : 'self.head'];
+  fig.sockets[slot].add(g.add(object));
+  return () => g.removeFromParent();
 }
 
 /** Khung trên mặt áo ở điểm `x`, `y` của hệ nhóm thân (three, y lên từ hông): +z là pháp tuyến ra ngoài, y lên. */

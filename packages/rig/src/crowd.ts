@@ -13,11 +13,12 @@ function materialKey(m: THREE.Material) {
 /**
  * Đóng băng người nền ở tư thế hiện tại thành vài mesh tĩnh, một mesh mỗi vật liệu cho cả đám: cả hàng người ngồi
  * bàn chỉ còn chục lượt vẽ. Toạ độ thế giới — thêm nhóm trả về vào cùng chỗ với `root` của người (thường là `scene`)
- * và đừng thêm các `root` ấy nữa. Đồ đang cầm, đang đội gộp luôn; nét mặt và chớp mắt đứng yên.
+ * và đừng thêm các `root` ấy nữa. Đồ đang cầm, đang đội gộp luôn; nét mặt và chớp mắt đứng yên. Lưới gộp không còn là
+ * người (`userData.body`): `collide` đo nó như vật cản.
  */
 export function freeze(figures: Figure | readonly Figure[]): THREE.Group {
   const list: readonly Figure[] = 'root' in figures ? [figures] : figures;
-  const buckets = new Map<string, { mat: THREE.Material; geos: THREE.BufferGeometry[]; shadow: boolean; noShadow: boolean; noCrease: boolean; order: number }>();
+  const buckets = new Map<string, { mat: THREE.Material; geos: THREE.BufferGeometry[]; shadow: boolean; noShadow: boolean; noCrease: boolean; noCollide: boolean; order: number }>();
   for (const f of list) {
     f.root.updateWorldMatrix(true, true);
     f.root.traverseVisible((o) => {
@@ -33,11 +34,12 @@ export function freeze(figures: Figure | readonly Figure[]): THREE.Group {
       g.applyMatrix4(m.matrixWorld);
       const key = materialKey(m.material);
       let b = buckets.get(key);
-      if (!b) buckets.set(key, (b = { mat: m.material, geos: [], shadow: false, noShadow: true, noCrease: true, order: m.renderOrder }));
+      if (!b) buckets.set(key, (b = { mat: m.material, geos: [], shadow: false, noShadow: true, noCrease: true, noCollide: true, order: m.renderOrder }));
       b.geos.push(g);
       b.shadow ||= m.castShadow;
       b.noShadow &&= !!m.userData.noShadow;
       b.noCrease &&= !!m.userData.noCrease;
+      b.noCollide &&= !!m.userData.noCollide;
     });
   }
   const out = new THREE.Group();
@@ -47,6 +49,7 @@ export function freeze(figures: Figure | readonly Figure[]): THREE.Group {
     mesh.renderOrder = b.order;
     if (b.noShadow) mesh.userData.noShadow = true;
     if (b.noCrease) mesh.userData.noCrease = true;
+    if (b.noCollide) mesh.userData.noCollide = true;
     out.add(mesh);
   }
   return out;

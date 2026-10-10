@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { place3, type Place3 } from './core/lens';
+import type { Touch } from './collide';
 import { hullMaterial, npr, type NprOptions } from './npr';
 
 // Đồ khối của rig dựng thành mesh three. `box`, `bar`, `slab` theo @stickman3d/fx (packages/fx/src/solid.tsx),
@@ -11,7 +12,7 @@ import { hullMaterial, npr, type NprOptions } from './npr';
 //
 // Một món là `{ parts, lathes, at, k }`: `parts` khối lồi tám đỉnh toạ độ món, `lathes` các khối tròn xoay
 // `{ spec, at }` tự mang chỗ đặt, `at` là `Place3`, `k` bề dày nét của món tính bằng đơn vị rig (cùng nghĩa `sw`
-// chia cỡ món trên khung, mặc định 3) — chỉ dùng cho bề ngang vân.
+// chia cỡ món trên khung, mặc định 3) — chỉ dùng cho bề ngang vân. `name`, `touch` cho `collide` như món của lớp vẽ code.
 
 export type Vec3 = [number, number, number];
 /** Tông một khối: mặt ngửa `top`, mặt khác `lit`; `glow` là tự sáng. */
@@ -28,7 +29,11 @@ export interface LatheSpec {
   top?: { color: string; w?: number; d: Vec3[][] }[];
   beads?: { color: string; w: number; d: [x: number, z: number][] }[];
 }
-export interface Item { parts?: Part[]; lathes?: { spec: LatheSpec; at: Place3; k?: number }[]; at: Place3; k?: number }
+export interface Item { parts?: Part[]; lathes?: { spec: LatheSpec; at: Place3; k?: number }[]; at: Place3; k?: number; name?: string; touch?: Touch[] }
+/** Tên và chạm có chủ ý của khối lồi một mảnh trong `Batch` */
+export interface SolidTag { name?: string; touch?: Touch[] }
+/** Khối lồi một mảnh đã thêm vào `Batch`: `points` x, y, z liền nhau, toạ độ three của nhóm `build` ra */
+export interface BatchSolid extends SolidTag { points: number[] }
 
 export const U = 0.01;
 export const toThree = ([x, y, z]: Vec3) => new THREE.Vector3(x * U, -y * U, -z * U);
@@ -79,15 +84,24 @@ function shell(pos: number[], w: number) {
   geo.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
   let mat = hulls.get(w);
   if (!mat) hulls.set(w, (mat = hullMaterial(w, INK)));
-  return new THREE.Mesh(geo, mat);
+  const m = new THREE.Mesh(geo, mat);
+  m.userData.noCollide = true;
+  return m;
 }
 
-/** Gom tam giác theo vật liệu: cả cảnh tĩnh chỉ còn vài chục lượt vẽ. */
+/**
+ * Gom tam giác theo vật liệu: cả cảnh tĩnh chỉ còn vài chục lượt vẽ. Mảnh thêm bằng `addPart`, `addLathe`, `addItem` giữ khối
+ * lồi của nó: nhóm `build` ra mang `userData.colliders` để `collide` đo từng món theo khối thay vì theo tam giác đã gộp.
+ */
 export class Batch {
   base: NprOptions;
   groups = new Map<string, Bucket>();
   /** Tam giác có vỏ viền (khối, không gồm vân) */
   hull: number[] = [];
+  solids: BatchSolid[] = [];
+  /** Có tam giác thêm thẳng bằng `flat`, `geometry`, không khối lồi nào bao: `collide` đo cả tam giác của nhóm */
+  loose = false;
+  private covering = 0;
   constructor(base: NprOptions = {}) {
     this.base = base;
   }
@@ -98,8 +112,15 @@ export class Batch {
     if (!g) this.groups.set(key, (g = { mat: o, pos: [], nrm: [] }));
     return g;
   }
+  /** Khối lồi `points` (three) cho `collide`; tam giác `draw` thêm vào thuộc về nó */
+  solid(points: readonly THREE.Vector3[], tag: SolidTag, draw: () => void) {
+    this.solids.push({ ...tag, points: points.flatMap((p) => [p.x, p.y, p.z]) });
+    this.covering++;
+    try { draw(); } finally { this.covering--; }
+  }
   /** Tam giác phẳng: các đỉnh liền nhau ba một, chung pháp tuyến `n`. `ink` false: không vào vỏ viền (vân, hạt). */
   flat(mat: BatchMat, pts: THREE.Vector3[], n: THREE.Vector3, ink = true) {
+    if (!this.covering) this.loose = true;
     const g = this.bucket(mat);
     for (const p of pts) {
       g.pos.push(p.x, p.y, p.z), g.nrm.push(n.x, n.y, n.z);
@@ -107,6 +128,7 @@ export class Batch {
     }
   }
   geometry(mat: BatchMat, geo: THREE.BufferGeometry, ink = true) {
+    if (!this.covering) this.loose = true;
     const g = this.bucket(mat), src = geo.index ? geo.toNonIndexed() : geo;
     const p = src.attributes.position.array, n = src.attributes.normal.array;
     for (let i = 0; i < p.length; i++) g.pos.push(p[i]), g.nrm.push(n[i]);
@@ -115,6 +137,7 @@ export class Batch {
   /** `ink`: bề dày vỏ viền (three), 0 là không viền — vỏ phòng có nét riêng. */
   build({ shadow = true, ink = ITEM_INK } = {}) {
     const out = new THREE.Group();
+    const hulled = this.solids.length > 0 && !this.loose;
     for (const { mat, pos, nrm } of this.groups.values()) {
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
@@ -123,9 +146,11 @@ export class Batch {
       m.castShadow = shadow;
       m.receiveShadow = true;
       if (!shadow) m.userData.noShadow = true;
+      if (hulled) m.userData.noCollide = true;
       out.add(m);
     }
     if (ink > 0 && this.hull.length) out.add(shell(this.hull, ink));
+    if (this.solids.length) out.userData.colliders = this.solids.map((s) => ({ ...s, points: [...s.points] }));
     return out;
   }
 }
@@ -163,18 +188,32 @@ function strips(batch: Batch, mat: BatchMat, lines: THREE.Vector3[][], n: THREE.
     }
 }
 
-export function addPart(batch: Batch, part: Part, at: Place3, k = 3) {
+export function addPart(batch: Batch, part: Part, at: Place3, k = 3, tag: SolidTag = {}) {
   const P = placer(at), v = part.v.map(P), c = mean(v);
-  for (const f of FACES) {
-    const q = f.map((i) => v[i]);
-    const n = newell(q);
-    if (n.lengthSq() < 1e-14) continue;
-    n.normalize();
-    if (n.dot(mean(q).sub(c)) < 0) q.reverse(), n.negate();
-    batch.flat(toneMat(part.tone, faceColor(part.tone, n)), [q[0], q[1], q[2], q[0], q[2], q[3]], n);
-  }
-  const T = turner(at);
-  for (const m of part.marks ?? []) strips(batch, m.color, m.d.map((l) => l.map(P)), T(m.n), (m.w ?? 0.5) * k * U * (at.s ?? 1));
+  batch.solid(v, tag, () => {
+    for (const f of FACES) {
+      const q = f.map((i) => v[i]);
+      const n = newell(q);
+      if (n.lengthSq() < 1e-14) continue;
+      n.normalize();
+      if (n.dot(mean(q).sub(c)) < 0) q.reverse(), n.negate();
+      batch.flat(toneMat(part.tone, faceColor(part.tone, n)), [q[0], q[1], q[2], q[0], q[2], q[3]], n);
+    }
+    const T = turner(at);
+    for (const m of part.marks ?? []) strips(batch, m.color, m.d.map((l) => l.map(P)), T(m.n), (m.w ?? 0.5) * k * U * (at.s ?? 1));
+  });
+}
+
+const ring = (y: number, r: number, sx: number, sz: number, n = 12): Vec3[] =>
+  Array.from({ length: n }, (_, i) => [r * Math.cos((i / n) * Math.PI * 2) * sx, y, r * Math.sin((i / n) * Math.PI * 2) * sz]);
+
+/** Điểm bao khối tròn xoay (three): mười hai điểm mỗi vòng `rings`, kéo `sx`/`sz`, nghiêng `tilt`, đặt bằng `place3` */
+export function lathePoints(spec: LatheSpec, at: Place3): THREE.Vector3[] {
+  const t = spec.tilt ?? 0, ct = Math.cos(t), st = Math.sin(t);
+  return spec.rings
+    .flatMap(([y, r]) => ring(y, Math.max(r, 0.01), spec.sx ?? 1, spec.sz ?? 1))
+    .map(([x, y, z]): Vec3 => [x * ct - y * st, x * st + y * ct, z])
+    .map(placer(at));
 }
 
 /**
@@ -182,7 +221,11 @@ export function addPart(batch: Batch, part: Part, at: Place3, k = 3) {
  * `LatheGeometry`: mỗi đai một khúc, cộng nắp đáy và nắp đỉnh. Hệ lathe của three (trục y lên) sang hệ món bằng phép quay
  * (x, y, z) → (x, −y, −z), rồi kéo `sx`/`sz`, nghiêng `tilt` quanh trục z món, đặt bằng `place3`.
  */
-export function addLathe(batch: Batch, spec: LatheSpec, at: Place3, k = 3) {
+export function addLathe(batch: Batch, spec: LatheSpec, at: Place3, k = 3, tag: SolidTag = {}) {
+  batch.solid(lathePoints(spec, at), tag, () => lathe(batch, spec, at, k));
+}
+
+function lathe(batch: Batch, spec: LatheSpec, at: Place3, k: number) {
   const { rings, sx = 1, sz = 1, tilt = 0 } = spec;
   const tones = Array.isArray(spec.tone) ? spec.tone : rings.slice(1).map(() => spec.tone as Tone);
   const ct = Math.cos(tilt), st = Math.sin(tilt);
@@ -223,7 +266,7 @@ export function addLathe(batch: Batch, spec: LatheSpec, at: Place3, k = 3) {
 }
 
 export function addItem(batch: Batch, item: Item) {
-  const k = item.k ?? 3;
-  for (const p of item.parts ?? []) addPart(batch, p, item.at, k);
-  for (const l of item.lathes ?? []) addLathe(batch, l.spec, l.at, l.k ?? k);
+  const k = item.k ?? 3, tag: SolidTag = { name: item.name, touch: item.touch };
+  for (const p of item.parts ?? []) addPart(batch, p, item.at, k, tag);
+  for (const l of item.lathes ?? []) addLathe(batch, l.spec, l.at, l.k ?? k, tag);
 }
