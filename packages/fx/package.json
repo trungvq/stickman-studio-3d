@@ -1,6 +1,6 @@
 {
   "name": "@stickman3d/fx",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "description": "Hiệu ứng SVG thuần theo thời gian cho scene người que: hào quang, nước mắt, vật rời tay, lá bay, chữ, iris",
   "license": "MIT",
   "type": "module",
