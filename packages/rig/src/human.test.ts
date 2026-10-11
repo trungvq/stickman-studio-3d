@@ -7,7 +7,7 @@ import { body3 } from './core/figure3d';
 import { parseAction } from './core/action';
 import { parseScene, resolveScene, sceneAt } from './core/scene';
 import { defaultCharacter, SculptSchema, SkirtSchema } from './core/schema';
-import { HAND } from './human';
+import { HAND, handScale, openLength } from './human';
 import { fromCharacter, R, type CharacterJson, type Figure } from './stickman';
 
 // Người 3D mặc đồ (`palette.clad`, `head.form: "human"`): dựng trong Node trần như người que
@@ -125,6 +125,21 @@ describe('người 3D mặc đồ', () => {
     expect(ears(shortHair)).toBe(2);
     expect(ears(bob)).toBe(0);
     expect(shortHair.head.position.y).toBeCloseTo(make().head.position.y, 12);
+  });
+
+  it('bàn tay xoè to theo cổ tay, dài không quá nửa cẳng tay hơn chút: chi to mà ngắn thì găng tròn lại', () => {
+    const k = handScale(((11 + 6) / 200) * 0.8);
+    expect(openLength(k, 0.58)).toBe(k);
+    const big = handScale(((19 + 6) / 200) * 0.8);
+    expect(big).toBeGreaterThan(2);
+    expect(openLength(big, 0.58 * 0.65)).toBeLessThan(big * 0.6);
+    const f = dressed((c) => {
+      c.rig.height = 0.65;
+      c.palette.sleeveWidth = 19;
+    });
+    act(f, stand(), 0);
+    const hand = bounds(f.hands![-1].open), fore = f.arms[-1].wrist.position.length();
+    expect(hand.max.y - hand.min.y).toBeLessThan(fore * 0.7);
   });
 
   it('váy: lỗ ống đùi theo bề dày chân mặc đồ', () => {

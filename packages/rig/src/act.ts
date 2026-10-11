@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { actAngles, actReach, SPLAY3, type ActFrame } from './core/act3';
+import { actAngles, actReach, type ActFrame } from './core/act3';
 import type { V3 } from './core/lens';
 import type { BrowKind, EyeKind, MouthKind } from './core/types';
 import { toThree, type Vec3 } from './khoi';
@@ -130,7 +130,7 @@ export function act(p: Figure, sp: Acting, t?: number) {
     const ch = side === near ? 'an' : 'af';
     const { shoulder, elbow, wrist } = p.arms[side];
     const [a, b, sp] = actAngles(P, ch, false);
-    shoulder.rotation.set(-a * D, 0, side * (SPLAY3 + sp * D), 'ZXY');
+    shoulder.rotation.set(-a * D, 0, side * (p.splay + sp * D), 'ZXY');
     elbow.rotation.set(-b * D, 0, 0);
     segment(shoulder, elbow, B.upperArm, st[side === near ? 2 : 0] ?? 1);
     segment(elbow, wrist, B.foreArm, st[side === near ? 3 : 1] ?? 1);

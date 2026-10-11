@@ -13,7 +13,7 @@ import type { Garment, Glasses, Sculpt, Skirt } from './core/schema';
 import { BONES3, bones3, CLAD_TAPER, cladArm, head3, roots3, type Bones3 } from './core/act3';
 import { chibiShape } from './core/face';
 import { humanHair, humanSkull } from './core/humanHead';
-import { Ankle, earGroup, HAND, handGeometry, handScale, humanHeadGeometry, neckGeometry, pelvisGeometry, shoeCapsule, shoeGeometry } from './human';
+import { Ankle, earGroup, HAND, handGeometry, handScale, humanHeadGeometry, openLength, neckGeometry, pelvisGeometry, shoeCapsule, shoeGeometry } from './human';
 import { torsoMesh, type Rig } from './torso';
 
 // Tỉ lệ lấy từ RIG của @stickman3d/sketch, chia 100: người cao ~4,3 đơn vị, đầu to bằng gần một phần ba. Độ dài đoạn của
@@ -32,8 +32,8 @@ const SIDES = [-1, 1] as const;
 export interface Arm { shoulder: THREE.Group; elbow: THREE.Group; wrist: THREE.Group }
 /** `ankle` chỉ có ở người `clad`: giày treo ở đó */
 export interface Leg { hip: THREE.Group; knee: THREE.Group; ankle?: THREE.Group }
-/** Bàn tay của người `clad`, con của cổ tay: hai dáng, `grip` của attach.ts bật dáng nắm khi cầm đồ */
-export interface Hand { open: THREE.Group; fist: THREE.Group; scale: number }
+/** Bàn tay của người `clad`, con của cổ tay: hai dáng, `grip` của attach.ts bật dáng nắm khi cầm đồ; `long` là cỡ dọc của dáng xoè */
+export interface Hand { open: THREE.Group; fist: THREE.Group; scale: number; long: number }
 /** Người que dựng xong: `root` ở sàn dưới hông, mặt nhìn +z; các khớp để hoạt cảnh xoay. */
 export interface Figure {
   root: THREE.Group;
@@ -57,6 +57,8 @@ export interface Figure {
   hands?: Record<Side, Hand>;
   /** Khung xương theo `rig.height` (`bones3` của lõi): `act` đặt đoạn chi bằng nó */
   bones: Bones3;
+  /** Tay choãi, radian (`roots3`) */
+  splay: number;
 }
 
 /** `low`: người nền rẻ — ít mặt lưới, gộp khối tĩnh theo vật liệu, nét mặt đứng yên dùng chung texture, không chớp mắt */
@@ -388,14 +390,14 @@ export function stickman(o: StickmanOptions): Figure {
     for (const s of SIDES) {
       cladLimb(seg(arms[s].shoulder), seg(arms[s].elbow), [B.upperArm, B.foreArm], [CLAD_TAPER.arm[0] * (1 + bicep), CLAD_TAPER.arm[1], CLAD_TAPER.arm[2]], tone(sleeveColor), limbSkin, sleeveLength, true);
       cladLimb(seg(legs[s].hip), seg(legs[s].knee), [B.thigh, B.shin], CLAD_TAPER.leg, tone(trouserColor), limbSkin, trouserLength, false);
-      const k = handScale(limbR(sleeveWidth) * 0.8);
+      const k = handScale(limbR(sleeveWidth) * 0.8), long = openLength(k, B.foreArm);
       const pose = (fist: boolean) => {
-        const g = inked(handGeometry(s, fist, k), limbSkin, 0.016);
+        const g = inked(handGeometry(s, fist, k, long), limbSkin, 0.016);
         g.visible = !fist;
         arms[s].wrist.add(g);
         return g;
       };
-      hands[s] = { open: pose(false), fist: pose(true), scale: k };
+      hands[s] = { open: pose(false), fist: pose(true), scale: k, long };
       const ankle = new Ankle(root);
       ankle.position.y = -B.shin;
       legs[s].knee.add(ankle);
@@ -431,7 +433,7 @@ export function stickman(o: StickmanOptions): Figure {
   root.traverse(bodyMark);
   root.userData.figure = true;
   const sockets = buildSockets({ root, spine, head, arms }, fit, hands ? HAND.grip * hands[-1].scale : (R.limb * sleeveWidth) / 10, rig);
-  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig, bones: B, ...(hands && { hands }) };
+  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig, bones: B, splay: at.splay, ...(hands && { hands }) };
   if (equip) dress(fig, equip);
   return fig;
 }

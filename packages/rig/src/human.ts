@@ -113,11 +113,17 @@ const finger = (r: number, len: number) => new THREE.CapsuleGeometry(r, Math.max
 /** Cỡ bàn tay theo bán kính cổ tay `rw`: nhân vào `HAND` và `handGeometry` */
 export const handScale = (rw: number) => Math.max(1, rw / 0.048);
 
+/** Bàn tay xoè cỡ `1` dài chừng này; xoè không dài quá `OPEN_REACH` cẳng tay */
+const OPEN_LEN = 0.21;
+const OPEN_REACH = 0.55;
+/** Cỡ dọc của bàn tay xoè cỡ `k` trên cẳng tay dài `foreArm`: chi to mà ngắn thì găng tròn lại, không dài tới gối */
+export const openLength = (k: number, foreArm: number) => Math.min(k, Math.max(1, (OPEN_REACH * foreArm) / OPEN_LEN));
+
 /**
  * Bàn tay bên `side` trong khung cổ tay (−y dọc cẳng tay ra ngoài, lòng bàn tay quay về phía thân, ngón cái về +z):
- * xoè là găng dẹt có ngón cái tách, nắm là khối tròn có ngón cái vắt ngang trước. Cỡ `handScale`.
+ * xoè là găng dẹt có ngón cái tách, nắm là khối tròn có ngón cái vắt ngang trước. Cỡ `handScale`, xoè dài `long` (`openLength`).
  */
-export function handGeometry(side: -1 | 1, fist: boolean, k: number) {
+export function handGeometry(side: -1 | 1, fist: boolean, k: number, long = k) {
   const palm = -side;
   const parts: THREE.BufferGeometry[] = [];
   if (!fist) {
@@ -128,7 +134,8 @@ export function handGeometry(side: -1 | 1, fist: boolean, k: number) {
     parts.push(place(finger(0.022, 0.075), new THREE.Vector3(palm * 0.006, -0.05, 0.05), new THREE.Vector3(palm * 0.55, -0.6, 0.25)));
   }
   const g = smooth(mergeGeometries(parts.map((p) => p.toNonIndexed())));
-  return k === 1 ? g : g.scale(k, k, k);
+  const ky = fist ? k : long;
+  return k === 1 && ky === 1 ? g : g.scale(k, ky, k);
 }
 
 /**

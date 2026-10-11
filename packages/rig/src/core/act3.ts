@@ -30,8 +30,11 @@ export type Bones3 = ReturnType<typeof bones3>;
 /** Khung xương ở `height = 1` */
 export const BONES3: Readonly<Bones3> = bones3();
 
-/** Tay choãi khỏi thân áo, radian quanh trục tiến; đích cổ tay thì không */
+/** Tay choãi khỏi thân áo, radian quanh trục tiến; đích cổ tay thì không. Người mặc đồ tay to: `roots3` */
 export const SPLAY3 = 0.08;
+
+/** Người mặc đồ choãi ít nhất chừng này lần góc mà gốc ống tay chắn trên cánh tay: tay to, ngắn không lẹm vào sườn áo */
+const SPLAY_CLAD = 0.5;
 
 /** Đáy sọ trên mép cổ áo: tâm khối đầu cao hơn khớp cổ ngần này, đơn vị three; chỉ đoạn cổ nhân `height` */
 export const head3 = (B: Bones3) => B.neck + 0.09 + B.head * 1.04;
@@ -52,9 +55,9 @@ export const cladArm = (sleeveWidth: number, stroke: number) =>
   ((sleeveWidth + stroke) / 2) * CLAD_TAPER.arm[0];
 
 /**
- * Gốc vai `[ngang, cao trên hông]` và nửa khoảng hai gốc chân của người 3D, đơn vị three. `arm` (px, `cladArm`) có thì
- * gốc vai ở `garmentSocket`: nắp ống tay ôm góc vai áo, `bicep` nở nó ra ngoài sườn áo; không thì trên viền thân ở
- * độ cao `shoulderDrop`
+ * Gốc vai `[ngang, cao trên hông]`, nửa khoảng hai gốc chân của người 3D, đơn vị three, và góc tay choãi. `arm` (px,
+ * `cladArm`) có thì gốc vai ở `garmentSocket`: nắp ống tay ôm góc vai áo, `bicep` nở nó ra ngoài sườn áo; không thì trên
+ * viền thân ở độ cao `shoulderDrop`
  */
 export const roots3 = (
   garment: Partial<Garment> | undefined,
@@ -71,6 +74,9 @@ export const roots3 = (
           (RIG.torso * rig.height - rig.shoulderDrop) / 100,
         ]) as readonly [number, number],
     hip: rig.hipHalf / 100,
+    splay: arm
+      ? Math.max(SPLAY3, SPLAY_CLAD * Math.asin(Math.min(1, arm / (RIG.upperArm * rig.height))))
+      : SPLAY3,
   };
 };
 
@@ -302,7 +308,7 @@ export function actJoints(
     const ch = isNear ? "an" : "af";
     const [a, b, sp] = actAngles(P, ch, false);
     const sh = at(hips, Rs, [side * roots.shoulder[0], roots.shoulder[1], 0]);
-    const Rsh = mm(Rs, mm(rz(side * (SPLAY3 + sp * D)), rx(-a * D)));
+    const Rsh = mm(Rs, mm(rz(side * (roots.splay + sp * D)), rx(-a * D)));
     const l1 = B.upperArm * (st[isNear ? 2 : 0] ?? 1);
     const l2 = B.foreArm * (st[isNear ? 3 : 1] ?? 1);
     const el = at(sh, Rsh, [0, -l1, 0]);

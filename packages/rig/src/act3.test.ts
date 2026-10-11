@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { act, type Acting } from './act';
-import { actJoints, cladArm, roots3, type ActJoint } from './core/act3';
+import { actJoints, cladArm, roots3, SPLAY3, type ActJoint } from './core/act3';
 import { defaultCharacter } from './core/schema';
 import { garmentOf, profile } from './core/torso';
 import type { Figure } from './stickman';
@@ -98,6 +98,16 @@ describe('actJoints', () => {
       // cao hơn khớp vai người que
       expect(h, style).toBeGreaterThan(roots3(g, c.rig).shoulder[1] * 100);
     }
+  });
+
+  it('tay mặc đồ to mà ngắn choãi thêm cho khỏi lẹm sườn áo; tay cỡ thường và người que giữ `SPLAY3`', () => {
+    const c = defaultCharacter();
+    const g = { style: 'tshirt' as const };
+    expect(roots3(g, c.rig).splay).toBe(SPLAY3);
+    expect(roots3(g, c.rig, cladArm(11, 6)).splay).toBe(SPLAY3);
+    const chibi = roots3(g, { ...c.rig, height: 0.65 }, cladArm(19, 6)).splay;
+    expect(chibi).toBeGreaterThan(SPLAY3 * 2);
+    expect(roots3(g, c.rig, cladArm(19, 6)).splay).toBeLessThan(chibi);
   });
 
   it('kênh 2D của người 3D về dáng nghỉ: góc soạn trên mặt khung không đổi khớp', () => {

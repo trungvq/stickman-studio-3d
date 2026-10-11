@@ -1307,7 +1307,7 @@ của lõi (`core/act3.ts`) trả đúng các khớp ấy trong toạ độ th�
 đo giật tay chân trên chúng ([03](03-scene.md#giật-trên-hình)). Hai bên dùng chung:
 
 - **Khung xương** `bones3(rig.height)` (đơn vị three, tức rig chia 100), gốc vai và gốc chân
-  `roots3(áo, rig, cladArm)`, tay choãi `SPLAY3`, tâm đầu `head3(khung)` — `stickman.ts` dựng người que từ
+  `roots3(áo, rig, cladArm)` cùng góc tay choãi của nó, tâm đầu `head3(khung)` — `stickman.ts` dựng người que từ
   chúng, `Figure.bones` giữ khung của người ấy. `BONES3` là khung ở `height = 1`.
 - **Luật đọc góc** `actAngles`: kênh nâng đọc góc soạn ở `side` và số dang, kênh không có cờ về dáng
   nghỉ (tay buông `[0, 0]`, chân thẳng, ngồi thì đùi `[90, −90]`, không dang).
@@ -1440,13 +1440,18 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   với người que (`shoulderDrop` không dùng) — `act` và `actJoints` cùng đọc `roots3` nên vẫn trùng.
   `bicep` nhân gốc ống tay `1 + bicep` và nở vòng ấy từ đúng điểm tiếp xúc vát vai: vai và bắp tay lồi
   ra ngoài sườn áo mà viền vẫn liền, khớp vai thấp xuống theo.
+- **Tay choãi theo bề dày tay.** Tay buông choãi khỏi thân `SPLAY3` (`0,08` rad) quanh trục tiến; người
+  mặc đồ choãi ít nhất `0,5` lần góc `asin(cladArm / cánh tay)` (`roots3`), nên tay to mà ngắn không lẹm
+  vào sườn áo. Tay cỡ `11` ở `height = 1` vẫn `0,08`.
 - **Chi thon và phủ màu.** Ống chi thon theo bán kính (`CLAD_TAPER`): vai `1,12` → khuỷu `0,88` → cổ
   tay `0,74` — bắp tay to hơn cẳng tay như đùi với ống chân —, hông `1,06` → gối `0,94` → cổ chân
   `0,8`. Phủ hết thì ống tô màu áo, quần; phủ một phần thì ống da và một ống phủ to hơn `1,1` lần từ
   gốc chi, mép nở `1,12` lần. Ống phủ hết tay có cổ tay áo ở `0,84..1` cẳng tay. Độ cong chi vẫn là
   `palette.limbCurve`.
 - **Bàn tay hai dáng.** Xoè là găng có ngón cái tách, nắm là khối tròn ngón cái vắt ngang; lòng bàn
-  tay quay về phía thân, ngón cái ra trước, cỡ theo bán kính cổ tay (`handScale`). Cổ tay không xoay,
+  tay quay về phía thân, ngón cái ra trước, cỡ theo bán kính cổ tay (`handScale`). Găng xoè dài không
+  quá `0,55` cẳng tay (`openLength`): chi to mà ngắn thì găng tròn lại thay vì thõng tới gối, bề ngang
+  vẫn theo cổ tay; nắm tay giữ tròn theo `handScale`. Cổ tay không xoay,
   như người que. `hold` nắm tay cầm tới lúc `release()` (`grip` đổi dáng), và khung `hand` của đồ
   cầm ở **tâm nắm** (`HAND.grip`), không ở mút nét: đồ căn cho người que lùi vào lòng bàn tay vài px.
 - **Giày ở cổ chân, hông không đổi.** `Leg.ankle` treo ở mút ống chân; đế giày nằm đúng mặt sàn ở

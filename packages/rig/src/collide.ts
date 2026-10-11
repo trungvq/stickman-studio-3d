@@ -266,8 +266,8 @@ export function bodyCapsules(fig: Figure, parts: readonly BodyPart[] = BODY_PART
     if (want.has('shin')) seg(fig.legs[s].knee, 'shin', s);
     const h = fig.hands?.[s];
     if (h && want.has('hand')) {
-      const [y0, y1, r] = HAND.cap[h.fist.visible ? 'fist' : 'open'], w = fig.arms[s].wrist;
-      out.push({ part: 'hand', side: s, a: w.localToWorld(new THREE.Vector3(0, y0 * h.scale, 0)), b: w.localToWorld(new THREE.Vector3(0, y1 * h.scale, 0)), r: r * h.scale * k });
+      const fist = h.fist.visible, [y0, y1, r] = HAND.cap[fist ? 'fist' : 'open'], w = fig.arms[s].wrist, ky = fist ? h.scale : h.long;
+      out.push({ part: 'hand', side: s, a: w.localToWorld(new THREE.Vector3(0, y0 * ky, 0)), b: w.localToWorld(new THREE.Vector3(0, y1 * ky, 0)), r: r * h.scale * k });
     }
     const ankle = fig.legs[s].ankle;
     if (ankle && want.has('foot')) {
