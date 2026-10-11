@@ -8,12 +8,12 @@ import { SAMPLE_ITEMS } from './demo-hold.js';
 const STICK = new URLSearchParams(location.search).has('stick');
 
 /** JSON nhân vật mẫu; `palette` và `head` đè lên phần chung */
-function character(name, { palette, garment, hair, hairColor, skirt, glasses, hipHalf = 26 }) {
+function character(name, { palette, garment, hair, hairColor, skirt, glasses, hipHalf = 30 }) {
   const json = {
     name,
-    rig: { stroke: 6, height: 1, shoulderHalf: 40, shoulderDrop: 20, hipHalf },
+    rig: { stroke: 6, height: 1, shoulderHalf: 46, shoulderDrop: 20, hipHalf },
     head: { form: 'human' },
-    palette: { skin: '#f8e3c8', line: '#1c1c1e', sleeveWidth: 11, trouserWidth: 13, clad: true, ...palette },
+    palette: { skin: '#f8e3c8', line: '#1c1c1e', sleeveWidth: 19, trouserWidth: 22, clad: true, ...palette },
     pieces: {
       torso: { src: 'sculpt', garment },
       hair: { src: 'sculpt', color: hairColor, sculpt: SCULPT_PRESETS[hair].sculpt },
@@ -45,8 +45,8 @@ const models = () => ({
   }),
   /** Nữ blouse tay lỡ, váy xếp ly, chân trần, giày đỏ nâu */
   GIRL: character('vay', {
-    palette: { garment: '#7893ae', sleeve: '#7893ae', sleeveLength: 0.45, trouserLength: 0, shoe: '#7a3b2e', trouserWidth: 12 },
-    garment: { style: 'blouse', hem: -18 }, hair: 'bob', hairColor: '#3b3038', hipHalf: 22,
+    palette: { garment: '#7893ae', sleeve: '#7893ae', sleeveLength: 0.45, trouserLength: 0, shoe: '#7a3b2e', trouserWidth: 20 },
+    garment: { style: 'blouse', hem: -18 }, hair: 'bob', hairColor: '#3b3038', hipHalf: 26,
     skirt: { color: '#3a3f4a', shape: { rise: 27, waist: 40, length: 52, flare: 30, pleats: 8 } },
   }),
   /** Nam len cổ tròn, đeo kính, tóc gọn */
@@ -56,8 +56,8 @@ const models = () => ({
   }),
   /** Nữ tóc đuôi ngựa, áo len, quần dài */
   PONY: character('duoi-ngua', {
-    palette: { garment: '#e0b23a', sleeve: '#e0b23a', trouser: '#34466e', trouserWidth: 12 },
-    garment: { style: 'sweater', hem: -10 }, hair: 'ponyLow', hairColor: '#3b2a22', hipHalf: 22,
+    palette: { garment: '#e0b23a', sleeve: '#e0b23a', trouser: '#34466e', trouserWidth: 20 },
+    garment: { style: 'sweater', hem: -10 }, hair: 'ponyLow', hairColor: '#3b2a22', hipHalf: 26,
   }),
 });
 
@@ -73,7 +73,7 @@ const own = () => ({
     { t: 1, pose: { armNear: [35, 95, 0, 10] }, ease: 'linear' },
   ], { authoredAt: 'side' }),
   'hold-mug': keyAction('hold-mug', ['armNear'], [{ t: 0, pose: {}, reach: { armNear: { at: [38, -62, 14], elbow: [-0.4, 1, 0.4] } }, ease: 'linear' }], { authoredAt: 'side' }),
-  'chin-rest-3d': keyAction('chin-rest-3d', ['armNear'], [{ t: 0, pose: {}, reach: { armNear: { at: [34, -205, 6], elbow: [0.3, 1, 0.1] } }, ease: 'linear' }], { authoredAt: 'side' }),
+  'chin-rest-3d': keyAction('chin-rest-3d', ['armNear'], [{ t: 0, pose: {}, reach: { armNear: { at: [45, -131, 6], elbow: [0.3, 1, 0.1] } }, ease: 'linear' }], { authoredAt: 'side' }),
   'face-wry': keyAction('face-wry', ['face'], [{ t: 0, pose: {}, face: { mouth: 'wryOpen', brow: 'skeptical', eyes: 'open' }, ease: 'linear' }]),
 });
 
@@ -81,15 +81,19 @@ const LENS = { eye: [0, -200, -1400], yaw: 0, pitch: 0, f: 800, cx: 0, cy: 0 };
 const clip = (action, start = 0, extra = {}) => ({ action, start, ...extra });
 const track = (...clips) => ({ clips });
 
-/** Bàn và ghế đẩu: mặt bàn cao hơn hông ngồi ~51 như `arms-on-table-3d` */
-function desk(x0, stool) {
+/** Mặt ghế đẩu cao bằng gối người `height = 1` */
+const SEAT = 87.5;
+
+/** Bàn và ghế đẩu ở chiều sâu `z` cho người cao `h` (`rig.height`): ghế cao bằng gối, mặt bàn cao hơn hông ngồi ~51·h như `arms-on-table-3d` */
+function desk(x0, stool, z, h) {
   const b = new Batch();
   const wood = { top: '#c9a679', lit: '#a98559' }, metal = { top: '#77736e', lit: '#5f5b57' };
-  addItem(b, { at: { at: [0, 0, 0] }, parts: [
-    { v: box(x0, x0 + 90, -143, -137, -66, 66), tone: wood },
-    ...[[x0 + 5, -60], [x0 + 85, -60], [x0 + 5, 60], [x0 + 85, 60]].map(([x, z]) => ({ v: box(x - 3, x + 3, -137, 0, z - 3, z + 3), tone: metal })),
-    { v: box(stool - 30, stool + 30, -87.5, -80, -30, 30), tone: wood },
-    { v: box(stool - 3, stool + 3, -80, 0, -3, 3), tone: metal },
+  const top = SEAT * h + 55 * h, seat = SEAT * h;
+  addItem(b, { at: { at: [0, 0, z] }, parts: [
+    { v: box(x0, x0 + 90, -top, -top + 6, -66, 66), tone: wood },
+    ...[[x0 + 5, -60], [x0 + 85, -60], [x0 + 5, 60], [x0 + 85, 60]].map(([x, z]) => ({ v: box(x - 3, x + 3, -top + 6, 0, z - 3, z + 3), tone: metal })),
+    { v: box(stool - 30, stool + 30, -seat, -seat + 7.5, -30, 30), tone: wood },
+    { v: box(stool - 3, stool + 3, -seat + 7.5, 0, -3, 3), tone: metal },
   ] });
   return b.build();
 }
@@ -100,11 +104,11 @@ const SCENES = {
     cast: [
       { id: 'noi', c: LONG, world: { at: [-330, 0, 0], yaw: 60 }, tracks: [track(clip('stand-3d')), track(clip('talk-raise-3d', 0.3)), track(clip('face-delighted')), track(clip('talk-lips', 0.4))] },
       { id: 'di', c: SHORT, world: { path: [{ t: 0, at: [-300, 0, 220], yaw: 10 }, { t: 4, at: [260, 0, 160], yaw: 10 }] }, tracks: [track(clip('walk')), track(clip('face-calm'))] },
-      { id: 'ngoi', c: GIRL, world: { at: [-20, -87.5, -150], yaw: 0, sit: true, floor: 0 }, tracks: [track(clip('sit-3d')), track(clip('arms-on-table-3d')), track(clip('chin-rest-3d', 0.3)), track(clip('face-sad'))] },
+      { id: 'ngoi', c: GIRL, world: { at: [-20, -SEAT * GIRL.rig.height, -150], yaw: 0, sit: true, floor: 0 }, tracks: [track(clip('sit-3d')), track(clip('arms-on-table-3d')), track(clip('chin-rest-3d', 0.3)), track(clip('face-sad'))] },
       { id: 'coc', c: GLASSES, world: { at: [330, 0, -40], yaw: 120 }, tracks: [track(clip('stand-3d')), track(clip('hold-mug')), track(clip('face-calm'))], equip: { handNear: 'mug' } },
       { id: 'nu-di', c: GIRL, world: { path: [{ t: 0, at: [380, 0, -330], yaw: 170 }, { t: 4, at: [-200, 0, -330], yaw: 170 }] }, tracks: [track(clip('walk')), track(clip('face-calm'))] },
     ],
-    props: [desk(40, -20)],
+    props: [desk(40 * GIRL.rig.height, -20, -150, GIRL.rig.height)],
   }),
   // hàng đứng nhìn ống kính: soi các góc
   'human-row': ({ LONG, SHORT, GIRL, GLASSES, PONY }) => ({
@@ -126,7 +130,7 @@ export function humanDemo(name) {
   const scene = parseScene({ name: `demo-${name}`, lens: LENS, cast: cast.map((m) => ({ id: m.id, character: `${m.id}.json`, world: m.world, tracks: m.tracks })) });
   if (!scene.success) throw new Error(scene.error.message);
   const bodies = Object.fromEntries(cast.map((m) => [m.id, body3(m.c)]));
-  const heights = Object.fromEntries(cast.map((m) => [m.id, 1]));
+  const heights = Object.fromEntries(cast.map((m) => [m.id, m.c.rig.height]));
   const rt = resolveScene(scene.data, { ...ACTIONS, ...own() }, {}, {}, heights, bodies);
   const people = cast.map((m, i) => ({
     ...m,
@@ -136,7 +140,7 @@ export function humanDemo(name) {
     objects: [...people.map((p) => p.fig.root), ...props],
     animate(t) {
       for (const p of people) {
-        const sp = sceneAt(rt, p.id, t, 1, bodies[p.id]);
+        const sp = sceneAt(rt, p.id, t, heights[p.id], bodies[p.id]);
         act(p.fig, sp, t);
         if (p.equip) dress(p.fig, p.equip, !!sp.world?.flip);
       }

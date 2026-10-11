@@ -1416,7 +1416,7 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
 | `palette.trouserLength` | `1` | Phần chân phủ màu quần tính từ hông; `0` là chân trần dưới váy |
 | `palette.shoe` | `#2b2623` | Màu giày |
 | `palette.bicep` | `0` | Gốc cánh tay to thêm bấy nhiêu phần: vai, bắp tay lồi khỏi sườn áo; nam vạm vỡ quanh `0,7` |
-| `palette.sleeveWidth` / `trouserWidth` | `10` | Bán kính chi `(w + rig.stroke) / 2` px — đúng `limbHalf` của lõi; quanh `11` / `13` là vừa |
+| `palette.sleeveWidth` / `trouserWidth` | `10` | Bán kính chi `(w + rig.stroke) / 2` px — đúng `limbHalf` của lõi; quanh `11` / `13` là vừa, chibi quanh `19` / `22` |
 
 - **Đầu `human` là đầu chibi nặn từ mặt cầu.** `humanSkull` (`core/humanHead.ts`) nhận một điểm
   của sọ đơn vị (y lên, z ra trước mặt) và trả điểm trên đầu: nửa trên giữ nguyên, nửa dưới nở
@@ -1463,6 +1463,11 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
 - **Va chạm** có thêm `hand` và `foot` (`handR`, `footL`… trong `touch`): nang bàn tay theo dáng
   đang hiện, nang giày đáy đúng mặt đế; nang đầu `human` kéo xuống ôm má. Đồ cầm khai `touch` cả cẳng
   tay lẫn bàn tay cầm.
+- **Chi to** (bộ mẫu `sleeveWidth` `19`, `trouserWidth` `22`) đi cùng thân bè: nới `shoulderHalf` /
+  `hipHalf` (bộ mẫu `46` / `30`, nữ `26`) hay `ease` của áo. Muốn chibi thì hạ `rig.height`: đầu không co
+  nên `0,85` là đầu ~`1/3` chiều cao, `0,65` là ~`1/2,5`; thân áo, váy ngắn lại theo `height`. Đích tay hệ thân nhân `height`
+  mà đầu thì không, nên hành động chạm mặt (chống cằm) soạn riêng cho người chibi; ghế cao bằng gối là
+  `87,5 · height`.
 - **Giá.** Người mặc đồ đầy đủ khoảng `57` lưới, người que `23`; người nền nên `lod: "low"` và
   `freeze`.
 

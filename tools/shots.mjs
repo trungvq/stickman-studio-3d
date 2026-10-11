@@ -107,7 +107,7 @@ const SHOTS = [
   ['nguoi-mat', 'demo=human-faces&t=1&az=0&el=3&look=0,3.45,0&dist=10'],
   ['nguoi-mat-34', 'demo=human-faces&t=1&az=35&el=3&look=0,3.45,0&dist=10'],
   ['nguoi-mat-nghieng', 'demo=human-faces&t=1&az=75&el=3&look=0,3.45,0&dist=10'],
-  ['nguoi-noi', 'demo=human&t=2&az=50&el=5&look=-3.3,2.5,0&dist=6.5'],
+  ['nguoi-noi', 'demo=human&t=2&az=20&el=5&look=-3.3,2.6,0&dist=6.5'],
   ['nguoi-di', 'demo=human&t=1.2&az=-15&el=5&look=-1.3,1.8,-2&dist=7'],
   ['nguoi-ngoi', 'demo=human&t=2&az=70&el=8&look=-0.2,1.9,1.5&dist=5.5'],
   ['nguoi-ngoi-nghieng', 'demo=human&t=2&az=0&el=6&look=-0.2,1.6,1.5&dist=6'],
