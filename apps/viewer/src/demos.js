@@ -6,19 +6,24 @@ import { mouths, styles } from './demo-styles.js';
 // người 3D diễn theo bằng `act`. Hành động là bộ chung của studio (`apps/studio/public/actions/`), cộng `actions/` của app
 // cho hành động chỉ dùng ở đây; trùng tên thì bản của app đè.
 
-export const BOY = {
+const HUMAN = new URLSearchParams(location.search).has('human');
+/** `?human`: mọi cảnh mẫu dựng người mặc đồ — tay chân màu, bàn tay, giày, đầu `human` */
+const dressed = (o, extra) => (HUMAN ? { ...o, clad: true, headForm: 'human', sleeveColor: o.color, sleeveWidth: 11, trouserWidth: 13, ...extra } : o);
+export const BOY = dressed({
   rig: { stroke: 6, height: 1, shoulderHalf: 40, shoulderDrop: 20, hipHalf: 28 },
   garment: { style: 'shirt' }, color: '#3aa89c', skin: '#f8e3c8', sleeveWidth: 8, trouserWidth: 9,
   hair: { style: 'anime', front: 46, nape: -14, ear: 10, sideburn: 8, part: 0, fringe: 0, volume: 0.16 },
   hairColor: '#33333a',
-};
-export const GIRL = {
+}, { trouserColor: '#3b4252' });
+export const GIRL = dressed({
   rig: { stroke: 6, height: 1, shoulderHalf: 40, shoulderDrop: 20, hipHalf: 22 },
   garment: { style: 'blouse', hem: -18 }, color: '#7893ae', accent: '#544456',
   skirt: { rise: 27, waist: 40, length: 52, flare: 30, pleats: 8 },
   hair: { style: 'bob', front: 48, nape: -22, ear: 16, sideburn: 0, part: 35, fringe: 0, volume: 0.07, bang: 16, bangTo: -55, bangThick: 0.1, length: 0.91 },
   hairColor: '#3b3038',
-};
+}, { sleeveLength: 0.45, trouserLength: 0, trouserWidth: 12, shoeColor: '#7a3b2e' });
+/** Nửa bề dày chân cho `sceneAt` như `body3` của lõi: người mặc đồ gồm viền */
+export const legHalf = (o) => (o.clad ? (o.trouserWidth + o.rig.stroke) / 2 : 4.5);
 
 export const ACTIONS = Object.fromEntries(
   Object.entries({
@@ -112,7 +117,7 @@ export function demo(name) {
   const shot = SHOTS[name];
   const scene = parseScene({ name: `demo-${name}`, lens: shot?.lens ?? LENS, camera: shot?.camera ?? [], cast: members.map((m) => m.cast) });
   if (!scene.success) throw new Error(scene.error.message);
-  const bodies = Object.fromEntries(members.map((m) => [m.id, { legHalf: 4.5, hipHalf: m.opts.rig.hipHalf }]));
+  const bodies = Object.fromEntries(members.map((m) => [m.id, { legHalf: legHalf(m.opts), hipHalf: m.opts.rig.hipHalf }]));
   const heights = Object.fromEntries(members.map((m) => [m.id, 1]));
   const rt = resolveScene(scene.data, ACTIONS, {}, {}, heights, bodies);
   const people = members.map((m) => ({ id: m.id, fig: stickman(m.opts) }));

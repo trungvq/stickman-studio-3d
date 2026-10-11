@@ -1,7 +1,8 @@
-// Chụp app xem thử ra PNG cho chủ dự án so bằng mắt: `pnpm shots [--out tên] [--vs tên] [--only a,b] [--soft]`.
+// Chụp app xem thử ra PNG cho chủ dự án so bằng mắt: `pnpm shots [--out tên] [--vs tên] [--only a,b] [--q x=1] [--soft]`.
 // Ảnh vào tmp/shots/<tên>/, tên mặc định là commit hiện tại (thêm `-dirty` khi cây có thay đổi), kèm một tờ gộp
 // tmp/shots/<tên>.png. `--vs` ghép từng ảnh cạnh ảnh cùng tên của lượt chụp kia vào tmp/shots/<tên>-vs-<kia>/.
-// `--soft` vẽ bằng SwiftShader thay GPU — chậm, chỉ dùng khi máy không có GPU.
+// `--q` nối thêm tham số URL vào mọi khung (`--q stick`: người mặc đồ vẽ lại thành người que). `--soft` vẽ bằng SwiftShader
+// thay GPU — chậm, chỉ dùng khi máy không có GPU.
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -95,9 +96,39 @@ const SHOTS = [
   ['canh-sat', 'demo=police&t=1.8&az=0&el=22&dist=16&look=0.6,1.8,-4'],
   ['canh-sat-dung', 'demo=police&t=5&az=12&el=18&dist=12&look=0.6,2.2,-4.5'],
   ['canh-sat-bang-ten', 'demo=police&t=5&az=-20&el=45&dist=3&look=2.8,1.45,-1.6'],
+  ['nguoi-canh', 'demo=human&t=2&az=10&el=12&dist=22&look=0,1.8,0'],
+  ['nguoi-dung', 'demo=human-row&t=1&az=0&el=4&look=0,2.3,0&dist=17'],
+  ['nguoi-34', 'demo=human-row&t=1&az=40&el=6&look=0,2.3,0&dist=17'],
+  ['nguoi-nghieng', 'demo=human-row&t=1&az=90&el=5&look=0,2.3,0&dist=17'],
+  ['nguoi-sau', 'demo=human-row&t=1&az=180&el=8&look=0,2.3,0&dist=17'],
+  ['nguoi-chan', 'demo=human-row&t=1&az=30&el=10&look=-0.75,0.4,0&dist=5'],
+  ['nguoi-mat', 'demo=human-faces&t=1&az=0&el=3&look=0,3.45,0&dist=10'],
+  ['nguoi-mat-34', 'demo=human-faces&t=1&az=35&el=3&look=0,3.45,0&dist=10'],
+  ['nguoi-mat-nghieng', 'demo=human-faces&t=1&az=75&el=3&look=0,3.45,0&dist=10'],
+  ['nguoi-noi', 'demo=human&t=2&az=50&el=5&look=-3.3,2.5,0&dist=6.5'],
+  ['nguoi-di', 'demo=human&t=1.2&az=-15&el=5&look=-1.3,1.8,-2&dist=7'],
+  ['nguoi-ngoi', 'demo=human&t=2&az=70&el=8&look=-0.2,1.9,1.5&dist=5.5'],
+  ['nguoi-ngoi-nghieng', 'demo=human&t=2&az=0&el=6&look=-0.2,1.6,1.5&dist=6'],
+  ['nguoi-coc', 'demo=human&t=2&az=-20&el=8&look=3.3,2.3,0.4&dist=4.5'],
+  ['nguoi-nu-di', 'demo=human&t=1.4&az=10&el=5&look=1.8,1.9,3.3&dist=7'],
+  ['nguoi-hanh-dong', 'demo=acts&human&t=2&az=20&el=8&look=0,2.2,0&dist=17'],
+  ['nguoi-ngang', 'demo=side&human&t=2&az=0&el=8&look=0,2.2,0&dist=15'],
+  ['nguoi-ban', 'demo=desk&human&t=2&az=40&el=12&look=0,1.8,0&dist=17'],
+  ['nguoi-ban-nghieng', 'demo=desk&human&t=2&az=-30&el=15&look=0,1.8,0&dist=17'],
+  ['nguoi-cam', 'demo=hold&human&t=2&az=10&el=12&dist=19&look=0,1.8,0.5'],
+  ['nguoi-cam-khay', 'demo=hold&human&t=2&az=65&el=22&dist=6&look=-0.3,2.4,1.5'],
+  ['nguoi-cam-coc', 'demo=hold&human&t=2&az=-20&el=12&dist=3.5&look=-4.4,2.15,0.1'],
+  ['kieu-nguoi-1', 'demo=styles&human&az=0&el=4&look=-11.6,2.5,0&dist=12'],
+  ['kieu-nguoi-2', 'demo=styles&human&az=0&el=4&look=-2.9,2.5,0&dist=12'],
+  ['kieu-nguoi-3', 'demo=styles&human&az=0&el=4&look=5.1,2.8,0&dist=12.5'],
+  ['kieu-nguoi-4', 'demo=styles&human&az=0&el=4&look=12.3,2.5,0&dist=12'],
+  ['kieu-nguoi-nghieng', 'demo=styles&human&turn=100&az=0&el=6&look=-5,3.2,0&dist=12'],
+  ['kieu-nguoi-nghieng-2', 'demo=styles&human&turn=100&az=0&el=6&look=6,3.2,0&dist=12'],
+  ['kieu-nguoi-sau', 'demo=styles&human&turn=200&az=0&el=8&look=-5,3.2,0&dist=12'],
+  ['kieu-nguoi-sau-2', 'demo=styles&human&turn=200&az=0&el=8&look=6,3.2,0&dist=12'],
 ];
 
-const { values: o } = parseArgs({ options: { out: { type: 'string' }, vs: { type: 'string' }, only: { type: 'string' }, soft: { type: 'boolean' } } });
+const { values: o } = parseArgs({ options: { out: { type: 'string' }, vs: { type: 'string' }, only: { type: 'string' }, soft: { type: 'boolean' }, q: { type: 'string' } } });
 const git = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8' }).trim();
 const name = o.out ?? (() => {
   try {
@@ -125,7 +156,7 @@ try {
   await page.setViewport({ ...SIZE, deviceScaleFactor: 1 });
   page.on('pageerror', (e) => console.error('lỗi trang:', e.message));
   for (const [n, q] of shots) {
-    await page.goto(`${url}?${BASE}&${q}`, { waitUntil: 'load' });
+    await page.goto(`${url}?${BASE}&${q}${o.q ? `&${o.q}` : ''}`, { waitUntil: 'load' });
     // vài khung cho OrbitControls về chỗ
     await page.waitForFunction(() => window.__frames >= 4, { timeout: 60000 });
     const file = join(dir, `${n}.png`);

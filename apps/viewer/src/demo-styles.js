@@ -5,12 +5,14 @@ import { fromCharacter, GARMENT_STYLES, npr } from '@stickman3d/rig';
 // Bộ sưu tập kiểu (`?demo=styles`): một hàng người mẫu, người thứ `i` đội mẫu tóc thứ `i` của SCULPT_PRESETS (cuối
 // cùng là đầu trọc) và mặc kiểu áo thứ `i` của GARMENT_STYLES, rải kính, nếp nhăn và váy. JSON nhân vật dựng tại chỗ
 // rồi qua `parseCharacter` như ở repo video. `?turn=độ` xoay từng người tại chỗ, `?cast=url,…` dựng JSON nhân vật bất kỳ thay cho người mẫu để soi.
+// `?human` cho cả hàng mặc đồ: `palette.clad`, `head.form: "human"`, tay áo màu áo.
 
 const SPACING = 1.45;
 const COLORS = ['#3aa89c', '#c8663a', '#34466e', '#9a5fa8', '#e0b23a', '#5a9a4a', '#7a2e2e', '#9aa7c7', '#2f4a3e', '#b9854a', '#a9cde6', '#5f7a8c'];
 const HAIRS = ['#33333a', '#2a1c15', '#5b3a26', '#8a8e92', '#3b3038'];
 const SKIRT_PLEATED = { rise: 27, waist: 40, length: 52, flare: 30, pleats: 8 };
 const SKIRT_PLAIN = { rise: 27, waist: 40, length: 60, flare: 22, pleats: 0 };
+const HUMAN = new URLSearchParams(location.search).has('human');
 const LONG = ['bang', 'bob', 'shoulder', 'center', 'ponyHigh', 'ponyLow', 'bun'];
 
 /** Kính và nếp nhăn rải theo mẫu tóc */
@@ -35,7 +37,10 @@ export function samples() {
     const json = {
       name: `${h}-${style}`,
       rig: { stroke: 6, height: 1, shoulderHalf: 40, shoulderDrop: 20, hipHalf: long ? 22 : 26 },
-      palette: { garment: COLORS[i % COLORS.length], skin: '#f8e3c8', line: '#1c1c1e', sleeveWidth: 8, trouserWidth: 9 },
+      palette: { garment: COLORS[i % COLORS.length], skin: '#f8e3c8', line: '#1c1c1e', sleeveWidth: 8, trouserWidth: 9, ...(HUMAN && {
+        clad: true, sleeve: COLORS[i % COLORS.length], sleeveWidth: 11, trouserWidth: 13, trouser: '#3b4252', ...(long && { trouserLength: 0 }),
+      }) },
+      ...(HUMAN && { head: { form: 'human' } }),
       face: extra.wrinkle ? { wrinkle: { kind: extra.wrinkle } } : {},
       pieces: {
         torso: { src: 'sculpt', garment: { style, ...(long ? { hem: -18 } : {}) } },

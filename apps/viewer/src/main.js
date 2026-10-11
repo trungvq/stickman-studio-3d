@@ -7,6 +7,7 @@ import { holdDemo } from './demo-hold.js';
 import { roomDemo } from './demo-room.js';
 import { stagesDemo } from './demo-stages.js';
 import { decalDemo, policeDemo } from './demo-decal.js';
+import { humanDemo } from './demo-human.js';
 import { createMarks } from './marks.js';
 
 const AA_LABEL = { off: 'Tắt', 'ss1.5': '1,5×', ss2: '2×' };
@@ -83,6 +84,7 @@ const MOUTHS = ['talkA', 'talkTeeth', 'talkB', 'talkTeeth', 'talkA', 'o'];
 /** Cảnh diễn hành động `?demo=`; không có cảnh ấy thì trả `undefined` */
 function setupDemo(name) {
   const own = { hold: holdDemo, light: lightDemo, room: roomDemo, stages: () => stagesDemo(host), decal: decalDemo, police: policeDemo };
+  for (const k of ['human', 'human-row', 'human-faces']) own[k] = () => humanDemo(k);
   const d = own[name] ? own[name](q) : name && demo(name);
   if (['light', 'room', 'decal', 'police'].includes(name)) ground.visible = false;
   if (!d) return undefined;

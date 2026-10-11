@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { parseAction, parseScene, resolveScene, sceneAt } from '@stickman3d/rig';
 import { act, addItem, addLathe, Batch, box, collide, colliders, dress, freeze, npr, stickman } from '@stickman3d/rig';
-import { ACTIONS, BOY, GIRL } from './demos.js';
+import { ACTIONS, BOY, GIRL, legHalf } from './demos.js';
 
 // `?demo=hold`: người cầm đồ, đội đồ và người nền rẻ. Đồ ở đây là đồ mẫu chung của app xem thử (khay, cốc, giấy, mũ,
 // kính râm, thẻ ngực); đồ của tập phim do repo video tự dựng và đưa vào `items`.
@@ -175,7 +175,7 @@ function reportBox() {
   return el;
 }
 
-const PART = { head: 'đầu', torso: 'thân', upperArm: 'cánh tay', foreArm: 'cẳng tay', thigh: 'đùi', shin: 'ống chân' };
+const PART = { head: 'đầu', torso: 'thân', upperArm: 'cánh tay', foreArm: 'cẳng tay', thigh: 'đùi', shin: 'ống chân', hand: 'bàn tay', foot: 'bàn chân' };
 const sideName = (s) => (s === -1 ? ' phải' : s === 1 ? ' trái' : '');
 
 export function holdDemo() {
@@ -196,7 +196,7 @@ export function holdDemo() {
   ];
   const scene = parseScene({ name: 'demo-hold', lens: LENS, cast: members.map((m) => ({ id: m.id, character: `${m.id}.json`, world: m.world, tracks: m.tracks })) });
   if (!scene.success) throw new Error(scene.error.message);
-  const bodies = Object.fromEntries(members.map((m) => [m.id, { legHalf: 4.5, hipHalf: m.opts.rig.hipHalf }]));
+  const bodies = Object.fromEntries(members.map((m) => [m.id, { legHalf: legHalf(m.opts), hipHalf: m.opts.rig.hipHalf }]));
   // cô cầm cốc thấp hơn: đồ cầm, đồ đội to nhỏ theo `root.scale`
   const heights = Object.fromEntries(members.map((m) => [m.id, m.id === 'coc' ? 0.88 : 1]));
   const rt = resolveScene(scene.data, HOLD_ACTIONS, {}, {}, heights, bodies);

@@ -68,6 +68,9 @@ camera theo `cameraAt`. Hành động là bộ chung `apps/studio/public/actions
 | `turn=110` | Với `demo=styles`: xoay từng người tại chỗ (độ, mặc định 14) để xem nghiêng, sau lưng |
 | `cast=/@fs/…/a.json,…` | Với `demo=styles`: dựng các JSON nhân vật này thay cho người mẫu để soi; file phải nằm trong cây repo (vd. chép vào `tmp/`) |
 | `demo=mouths` | Bảng nét mặt: đủ khẩu hình của `MOUTHS` (`core/face.ts`) trên ba bậc, kèm đủ kiểu mắt và mày |
+| `demo=human\|human-row\|human-faces` | Người 3D mặc đồ (`palette.clad`, `head.form: "human"`, `apps/viewer/src/demo-human.js`): cảnh diễn (nói giơ tay, đi bộ, ngồi bàn chống cằm, cầm cốc, nữ váy đi), hàng đứng nhìn ống kính, cận mặt bốn nét |
+| `human` | Với cảnh của `demos.js`, `demo=hold` và `demo=styles`: dựng người mặc đồ thay người que |
+| `stick` | Với `demo=human*`: cùng cảnh, bỏ hai cờ — người que như cũ |
 
 Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js` và `demo-acts.js`,
 lõi lấy mẫu bằng `sceneAt`, người 3D diễn theo bằng `act`. Bộ sưu tập kiểu và bảng
@@ -98,6 +101,7 @@ pnpm shots                      # tmp/shots/<commit>[-dirty]/ và tờ gộp tmp
 pnpm shots --out truoc          # đặt tên lượt chụp
 pnpm shots --out sau --vs truoc # ghép từng ảnh cạnh ảnh cùng tên: tmp/shots/sau-vs-truoc/
 pnpm shots --only can-nguoi,chieu
+pnpm shots --only nguoi-dung,nguoi-mat --q stick --out que   # nối thêm tham số URL vào mọi khung
 ```
 
 Bộ khung cố định ở `SHOTS` trong `tools/shots.mjs`. Ảnh chụp bằng Chromium headless trên
