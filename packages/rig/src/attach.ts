@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { R, type Figure, type Side } from './stickman';
+import { RIG } from './core/constants';
 
 // Chỗ gắn đồ trên người que: cổ tay, đỉnh đầu, ngang mắt, ngực áo. Đồ cầm bám cổ tay sau `act` mà không cần
 // gọi thêm gì: nhóm bám tự đặt lại mỗi lần three cập nhật ma trận (lúc render, hay `root.updateMatrixWorld()`).
@@ -219,7 +220,7 @@ export function headFit(skull: THREE.Vector3, hairShell: ArrayLike<number>[], ey
 }
 
 /** Dựng các khung gắn đồ của người vừa dựng; `stickman` gọi */
-export function buildSockets(fig: Pick<Figure, 'root' | 'spine' | 'head' | 'arms'>, head: HeadFit, limbR: number, rig: { shoulderHalf: number; shoulderDrop: number }): Sockets {
+export function buildSockets(fig: Pick<Figure, 'root' | 'spine' | 'head' | 'arms'>, head: HeadFit, limbR: number, rig: { height: number; shoulderHalf: number; shoulderDrop: number }): Sockets {
   const hand = {} as Record<Side, THREE.Group>;
   for (const s of [-1, 1] as const) {
     const g = new THREE.Group();
@@ -236,7 +237,7 @@ export function buildSockets(fig: Pick<Figure, 'root' | 'spine' | 'head' | 'arms
   fig.head.add(face);
   fig.root.updateMatrixWorld(true);
   // túi ngực trái: giữa vai và cổ, dưới vai một khoảng bằng chừng ba nét tay
-  const chest = torsoSocket(fig as Figure, (rig.shoulderHalf / 100) * 0.45, (120 - rig.shoulderDrop) / 100 - 0.26);
+  const chest = torsoSocket(fig as Figure, (rig.shoulderHalf / 100) * 0.45, (RIG.torso * rig.height - rig.shoulderDrop) / 100 - 0.26);
   return { hand, crown, face, chest, head };
 }
 

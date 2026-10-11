@@ -48,7 +48,8 @@ vứt (`maskProblems` kêu); và kéo dài chi của nhân vật đã hạ `pale
 `0` thì đoạn thẳng dài ra đọc thành sai tỉ lệ chứ không thành tay vươn. Xem
 [01](01-rig.md#vươn-chi).
 
-**`Chiều cao` chỉ kéo dọc.** `rig.height` nhân vào sáu đoạn cổ/thân/tay/chân và
+**`Chiều cao` chỉ kéo dọc.** `rig.height` nhân vào sáu đoạn cổ/thân/tay/chân — của
+người 3D cũng vậy (`bones3`), vì hông 3D lấy từ `world.hip` đặt theo chân đã nhân — và
 vào `boxH` của mảnh ảnh; bề ngang thân, bề ngang hộp ảnh, độ dày nét và đầu giữ
 nguyên. Nhân cả vào bề ngang là mỗi lần chỉnh cao lại phải căn lại thân áo.
 

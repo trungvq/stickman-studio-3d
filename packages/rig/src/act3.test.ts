@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { act, type Acting } from './act';
-import { actJoints, BONES3, cladArm, roots3, type ActJoint } from './core/act3';
+import { actJoints, cladArm, roots3, type ActJoint } from './core/act3';
 import { defaultCharacter } from './core/schema';
 import { garmentOf, profile } from './core/torso';
 import type { Figure } from './stickman';
@@ -33,7 +33,7 @@ function drawn(p: Figure, sp: Acting): Record<ActJoint, [number, number, number]
     const t = side === -1 ? 'R' : 'L';
     const st = sp.pose.stretch[side === near ? 7 : 5] ?? 1;
     out[`knee${t}`] = w(p.legs[side].knee);
-    out[`foot${t}`] = w(p.legs[side].knee, new THREE.Vector3(0, -BONES3.shin * st, 0));
+    out[`foot${t}`] = w(p.legs[side].knee, new THREE.Vector3(0, -p.bones.shin * st, 0));
     out[`shoulder${t}`] = w(p.arms[side].shoulder);
     out[`elbow${t}`] = w(p.arms[side].elbow);
     out[`wrist${t}`] = w(p.arms[side].wrist);
@@ -45,13 +45,15 @@ function drawn(p: Figure, sp: Acting): Record<ActJoint, [number, number, number]
 }
 
 describe('actJoints', () => {
-  it('trùng khớp người que three mà `act` đặt, ở mọi kiểu tư thế, cả người mặc đồ', async () => {
+  it('trùng khớp người que three mà `act` đặt, ở mọi kiểu tư thế, cả người mặc đồ và người lùn', async () => {
     const { fromCharacter } = await import('./stickman');
     const r = rng(7);
     const ang = (k = 120) => (r() * 2 - 1) * k;
-    for (const [seated, clad] of [[false, false], [true, false], [false, true]]) {
+    const cases: [boolean, boolean, number][] = [[false, false, 1], [true, false, 1], [false, true, 1], [false, false, 0.65], [true, true, 0.65]];
+    for (const [seated, clad, height] of cases) {
       const c = defaultCharacter();
       c.palette.clad = clad;
+      c.rig.height = height;
       const json = c as unknown as Parameters<typeof fromCharacter>[0];
       const p = fromCharacter(json, { seated });
       for (let i = 0; i < 40; i++) {
@@ -72,7 +74,7 @@ describe('actJoints', () => {
         const want = drawn(p, sp);
         const got = actJoints(c, sp)!;
         for (const k of Object.keys(want) as ActJoint[])
-          for (let j = 0; j < 3; j++) expect(got[k][j], `${k}[${j}] ca ${i}${seated ? ' ngồi' : ''}${clad ? ' mặc đồ' : ''}`).toBeCloseTo(want[k][j], 6);
+          for (let j = 0; j < 3; j++) expect(got[k][j], `${k}[${j}] ca ${i}${seated ? ' ngồi' : ''}${clad ? ' mặc đồ' : ''} cao ${height}`).toBeCloseTo(want[k][j], 6);
       }
     }
   });

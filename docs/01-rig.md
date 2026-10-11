@@ -1306,17 +1306,34 @@ Sân khấu three đặt người que bằng `act` (`packages/rig/src/act.ts`); 
 của lõi (`core/act3.ts`) trả đúng các khớp ấy trong toạ độ thế giới rig, không cần `three` — `check`
 đo giật tay chân trên chúng ([03](03-scene.md#giật-trên-hình)). Hai bên dùng chung:
 
-- **Khung xương** `BONES3` (đơn vị three, tức rig chia 100), gốc vai và gốc chân `roots3(áo, rig, cladArm)`,
-  tay choãi `SPLAY3`, tâm đầu `HEAD3` — `stickman.ts` dựng người que từ chúng.
+- **Khung xương** `bones3(rig.height)` (đơn vị three, tức rig chia 100), gốc vai và gốc chân
+  `roots3(áo, rig, cladArm)`, tay choãi `SPLAY3`, tâm đầu `head3(khung)` — `stickman.ts` dựng người que từ
+  chúng, `Figure.bones` giữ khung của người ấy. `BONES3` là khung ở `height = 1`.
 - **Luật đọc góc** `actAngles`: kênh nâng đọc góc soạn ở `side` và số dang, kênh không có cờ về dáng
   nghỉ (tay buông `[0, 0]`, chân thẳng, ngồi thì đùi `[90, −90]`, không dang).
 - **IK** `actReach`: đích hệ thân rồi đích thế giới, hoà trên vị trí cổ tay, hướng khuỷu kéo theo
   phần đích, giải hai đoạn bằng `twoBone3`.
 
+| Đoạn | three | Nhân `rig.height` |
+|---|---:|---|
+| `torso` (hông → khớp cổ) | `1,2` | có |
+| `neck` | `0,08` | có |
+| `upperArm` / `foreArm` | `0,62` / `0,58` | có |
+| `thigh` / `shin` | `0,78` / `0,92` | có |
+| `head` (bán kính sọ) | `0,64` | không |
+| `limb` (nửa bề dày nét người que) | `0,042` | không |
+| Khớp cổ → tâm đầu `head3` | `neck + 0,09 + head · 1,04` | chỉ phần `neck` |
+
+**Sáu đoạn là `lengths(height)` của lõi chia 100.** Hông người 3D lấy thẳng `world.hip`, mà `sceneAt`
+đặt hông cho bàn chân thấp nhất chạm sàn bằng `feet(pose, height)` — chân 3D phải dài đúng chừng ấy,
+lệch là chân lún, lơ lửng hay trượt khi đi theo `path`. Gốc vai người que ở `torso · height −
+shoulderDrop`, thân áo dựng khối (`profile`), váy và đích tay hệ thân (`actReach` như `reachToWorld`)
+cũng đọc `height`; đầu, khoảng đáy sọ → đỉnh cổ và bề dày chi giữ nguyên.
+
 Phần còn lại — chuỗi biến hình gốc → hông → thân → vai → khuỷu → cổ tay, thứ tự góc Euler của từng
 khớp — `actJoints` tính lại bằng ma trận; `act3.test.ts` dựng người que three thật và giữ hai bên
 trùng nhau tới `1e-6` ở mọi kiểu tư thế (kênh nâng lẫn không, dang, nghiêng thân, đích hệ thân, đích
-thế giới, ngồi, lật).
+thế giới, ngồi, lật, `height` khác `1`).
 Đổi khớp hay thứ tự quay ở `act`/`stickman.ts` thì đổi cùng `actJoints`, test đỏ là lệch.
 
 `armPierce(nhân vật, scenePose)` (`core/pierce.ts`) đo tay xuyên thân áo trên các khớp ấy: thân là
@@ -1406,7 +1423,7 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   ngang về phía đáy (`jaw`) thành má phính và quai hàm tròn, kéo dài (`drop`) vừa đủ cho cằm chạm cổ
   áo, vạt đáy thành cằm chữ U rộng (`flat`), hơi dời ra trước (`chin`) và thu gáy (`nape`); không có
   mũi. Mọi số nhân bình phương độ sâu dưới
-  xích đạo nên viền đầu không gãy ở chỗ nối. Tâm đầu và `HEAD3` không đổi: khớp của `actJoints`, mốc
+  xích đạo nên viền đầu không gãy ở chỗ nối. Tâm đầu và `head3` không đổi: khớp của `actJoints`, mốc
   2D và đồ đội giữ nguyên.
 - **Nét mặt chibi nằm trên mặt nặn.** Lưới nét mặt đi qua cùng `humanSkull` nên mồm, nếp nhăn theo
   má ở mọi góc quay. `CHIBI` (`core/face.ts`) cộng vào `face` của JSON nhân vật: mắt hạ `10`, hai mắt
@@ -1433,7 +1450,7 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   như người que. `hold` nắm tay cầm tới lúc `release()` (`grip` đổi dáng), và khung `hand` của đồ
   cầm ở **tâm nắm** (`HAND.grip`), không ở mút nét: đồ căn cho người que lùi vào lòng bàn tay vài px.
 - **Giày ở cổ chân, hông không đổi.** `Leg.ankle` treo ở mút ống chân; đế giày nằm đúng mặt sàn ở
-  chỗ mút nét người que chạm sàn, độ cao hông vẫn `R.thigh + R.shin + R.limb`. Cổ chân tự xoay mỗi
+  chỗ mút nét người que chạm sàn, độ cao hông vẫn `thigh + shin + limb` của khung xương. Cổ chân tự xoay mỗi
   lần three tính ma trận: bàn chân nằm ngang trong hệ người khi ống chân lệch khỏi phương đứng dưới
   `0,5` rad, quá thì nghiêng theo phần dư (quỳ, đá chân).
 - **Khối hông** là bao lồi của vành thân áo thu vào và hai khối cầu quanh gốc đùi, trong nhóm thân,

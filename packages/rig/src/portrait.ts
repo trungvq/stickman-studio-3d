@@ -5,7 +5,7 @@ import { setLights, setPalette } from './lighting';
 import type { PaletteName } from './npr';
 import type { AaMode } from './pipeline';
 import { createStage } from './stage';
-import { fromCharacter, R, type CharacterJson, type StickmanOptions } from './stickman';
+import { fromCharacter, type CharacterJson, type StickmanOptions } from './stickman';
 
 // Ảnh chân dung người 3D cho lớp 2D (đầu trong bong bóng, icon trên slide, mặt dán lên đồ): dựng một người riêng trên sân
 // khấu trống, ống kính tự ôm đầu (và vai), chụp ra canvas. Chụp lúc chạy từ JSON nhân vật: sửa nhân vật thì ảnh đi theo.
@@ -79,7 +79,7 @@ function shoot(character: CharacterJson, o: PortraitOptions): HTMLCanvasElement 
   meshPoints(fig.head, (p) => push(p));
   let floor: number | undefined;
   if (frame === 'bust') {
-    const cut = R.torso * BUST_CUT, toSpine = fig.spine.matrixWorld.clone().invert();
+    const cut = fig.bones.torso * BUST_CUT, toSpine = fig.spine.matrixWorld.clone().invert();
     floor = Infinity;
     meshPoints(fig.spine.children[0], (p) => {
       v.copy(p).applyMatrix4(toSpine);

@@ -3,7 +3,7 @@ import { actAngles, actReach, SPLAY3, type ActFrame } from './core/act3';
 import type { V3 } from './core/lens';
 import type { BrowKind, EyeKind, MouthKind } from './core/types';
 import { toThree, type Vec3 } from './khoi';
-import { fitSkirt, R, type Figure, type Side } from './stickman';
+import { fitSkirt, type Figure, type Side } from './stickman';
 
 // Diễn theo tư thế đã lấy mẫu của @stickman3d/sketch (`sceneAt`, docs/01-rig.md#người-3d): package không đọc JSON hành
 // động hay scene. Luật đọc góc (`actAngles`) và IK (`actReach`) ở lõi, `actJoints` của lõi tính lại đúng các khớp này
@@ -77,7 +77,7 @@ function reachArm(p: Figure, side: Side, rb: ActReach | undefined, rw: ActReach 
   };
   const k = p.root.scale.x;
   const chain = [S, elbow.getWorldPosition(new THREE.Vector3()), wrist.getWorldPosition(new THREE.Vector3())].map(v3) as [V3, V3, V3];
-  const ik = actReach(frame, side, chain, elbow.position.length() * k, wrist.position.length() * k, rb, rw);
+  const ik = actReach(frame, side, chain, elbow.position.length() * k, wrist.position.length() * k, rb, rw, p.bones.height);
   if (!ik) return;
   const [e, w] = ik.map((q) => new THREE.Vector3(...q));
   aim(shoulder, S, e);
@@ -106,9 +106,9 @@ export function act(p: Figure, sp: Acting, t?: number) {
     p.root.rotation.set(0, Math.PI / 2 - W.yaw, 0);
     p.root.scale.setScalar(W.s);
     // hông 2D là tâm nét: người đứng nhấc lên nửa bề dày chi cho bàn chân nằm trên sàn
-    p.hips.position.set(0, seated ? 0 : R.limb, 0);
+    p.hips.position.set(0, seated ? 0 : p.bones.limb, 0);
   }
-  const st = P.stretch;
+  const st = P.stretch, B = p.bones;
 
   for (const side of [near, -near as Side]) {
     const isNear = side === near;
@@ -116,8 +116,8 @@ export function act(p: Figure, sp: Acting, t?: number) {
     const [a, b, sp] = actAngles(P, isNear ? 'ln' : 'lf', seated);
     hip.rotation.set(-a * D, 0, side * sp * D, 'ZXY');
     knee.rotation.set(-b * D, 0, 0);
-    segment(hip, knee, R.thigh, st[isNear ? 6 : 4] ?? 1);
-    segment(knee, ankle, R.shin, st[isNear ? 7 : 5] ?? 1);
+    segment(hip, knee, B.thigh, st[isNear ? 6 : 4] ?? 1);
+    segment(knee, ankle, B.shin, st[isNear ? 7 : 5] ?? 1);
   }
 
   const m = flip ? -1 : 1;
@@ -132,8 +132,8 @@ export function act(p: Figure, sp: Acting, t?: number) {
     const [a, b, sp] = actAngles(P, ch, false);
     shoulder.rotation.set(-a * D, 0, side * (SPLAY3 + sp * D), 'ZXY');
     elbow.rotation.set(-b * D, 0, 0);
-    segment(shoulder, elbow, R.upperArm, st[side === near ? 2 : 0] ?? 1);
-    segment(elbow, wrist, R.foreArm, st[side === near ? 3 : 1] ?? 1);
+    segment(shoulder, elbow, B.upperArm, st[side === near ? 2 : 0] ?? 1);
+    segment(elbow, wrist, B.foreArm, st[side === near ? 3 : 1] ?? 1);
   }
   p.root.updateMatrixWorld(true);
   fitSkirt(p);

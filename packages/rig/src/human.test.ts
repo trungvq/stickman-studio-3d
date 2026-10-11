@@ -3,6 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { act, type Acting } from './act';
 import { hold } from './attach';
 import { bodyCapsules, collide, colliders } from './collide';
+import { body3 } from './core/figure3d';
+import { parseAction } from './core/action';
+import { parseScene, resolveScene, sceneAt } from './core/scene';
 import { defaultCharacter, SculptSchema, SkirtSchema } from './core/schema';
 import { HAND } from './human';
 import { fromCharacter, R, type CharacterJson, type Figure } from './stickman';
@@ -127,5 +130,40 @@ describe('người 3D mặc đồ', () => {
   it('váy: lỗ ống đùi theo bề dày chân mặc đồ', () => {
     const f = dressed((c) => (c.pieces.hem = { ...c.pieces.hem, src: 'sculpt', skirt: SkirtSchema.parse({}) }), { skirt: SkirtSchema.parse({}) });
     expect(f.skirt!.opts.legW).toBe(13 + 6);
+  });
+  it('người lùn (`rig.height` 0,65) theo `sceneAt`: đế giày trên sàn khi đứng và đi, đùi nằm trên mặt ghế khi ngồi', () => {
+    const c = defaultCharacter();
+    Object.assign(c.palette, { clad: true, sleeveWidth: 19, trouserWidth: 22 });
+    c.rig.height = 0.65;
+    const f = fromCharacter(c as unknown as CharacterJson);
+    const action = (json: unknown) => {
+      const r = parseAction(json);
+      if (!r.success) throw new Error(r.error.message);
+      return r.data;
+    };
+    const actions = {
+      walk: action({ name: 'walk', duration: 1.1, end: 'wrap', gen: 'walkCycle', authoredAt: 'side', params: { hip: 28, knee: 68, stance: 0.6, arm: 25, elbow: 24, lean: 1, crouch: 0, dip: 1 } }),
+      still: action({ name: 'still', duration: 1, end: 'hold', keys: [{ t: 0, pose: {} }] }),
+    };
+    const scene = parseScene({
+      name: 'lun',
+      lens: { eye: [0, -200, -1400], yaw: 0, pitch: 0, f: 800, cx: 0, cy: 0 },
+      cast: [
+        { id: 'di', character: 'di.json', world: { path: [{ t: 0, at: [-300, 0, 0], yaw: 0 }, { t: 3, at: [200, 0, 0], yaw: 0 }] }, tracks: [{ clips: [{ action: 'walk', start: 0 }] }] },
+        { id: 'ngoi', character: 'ngoi.json', world: { at: [0, -87.5, 200], yaw: 0, sit: true, floor: 0 }, tracks: [{ clips: [{ action: 'still', start: 0 }] }] },
+      ],
+    });
+    if (!scene.success) throw new Error(scene.error.message);
+    const dims = body3(c);
+    const rt = resolveScene(scene.data, actions, {}, {}, { di: 0.65, ngoi: 0.65 }, { di: dims, ngoi: dims });
+    for (const t of [0.4, 0.9, 1.3, 2.1]) {
+      act(f, sceneAt(rt, 'di', t, 0.65, dims), t);
+      const sole = Math.min(...([-1, 1] as const).map((s) => bounds(f.legs[s].ankle!).min.y));
+      expect(sole, `t=${t}`).toBeCloseTo(0, 2);
+    }
+    const seat = fromCharacter(c as unknown as CharacterJson, { seated: true });
+    act(seat, sceneAt(rt, 'ngoi', 0.5, 0.65, dims), 0.5);
+    const thigh = bodyCapsules(seat, ['thigh']);
+    for (const cap of thigh) expect(Math.min(cap.a.y, cap.b.y) - cap.r).toBeCloseTo(0.875, 2);
   });
 });

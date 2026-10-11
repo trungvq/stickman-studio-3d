@@ -1,4 +1,4 @@
-import { actJoints, BONES3, type ActJoint } from "./act3";
+import { actJoints, bones3, type ActJoint } from "./act3";
 import {
   actionKind,
   actionMask,
@@ -344,12 +344,11 @@ function sample(c: CharacterData, sp: ScenePose): Sample {
         ? Math.max(P.reach?.an?.w ?? 0, w.hands?.near?.w ?? 0)
         : Math.max(P.reach?.af?.w ?? 0, w.hands?.far?.w ?? 0),
     ) as [number, number];
+    const B = bones3(c.rig.height);
     const straight = SIDES.map((t) => {
       const k = t === near ? 2 : 0;
       const tip =
-        (BONES3.upperArm * (P.stretch[k] ?? 1) + BONES3.foreArm * (P.stretch[k + 1] ?? 1)) *
-        100 *
-        w.s;
+        (B.upperArm * (P.stretch[k] ?? 1) + B.foreArm * (P.stretch[k + 1] ?? 1)) * 100 * w.s;
       const [a, b] = [J[`shoulder${t}`], J[`wrist${t}`]];
       return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) / tip;
     }) as [number, number];

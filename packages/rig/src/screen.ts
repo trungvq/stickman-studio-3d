@@ -24,7 +24,7 @@ const eye = new THREE.Vector3();
 export function landmark(p: Figure, name: Landmark, camera?: THREE.Camera, out = new THREE.Vector3()): THREE.Vector3 {
   const at = (o: THREE.Object3D, x = 0, y = 0, z = 0) => o.localToWorld(out.set(x, y, z));
   const wrist = (s: Side) => at(p.arms[s].wrist).clone();
-  const foot = (s: Side) => at(p.legs[s].knee, 0, -R.shin, 0).clone();
+  const foot = (s: Side) => at(p.legs[s].knee, 0, -p.bones.shin, 0).clone();
   const pick = (f: (s: Side) => THREE.Vector3, near: boolean) => {
     const a = f(-1), b = f(1);
     if (camera) camera.getWorldPosition(eye);
@@ -34,7 +34,7 @@ export function landmark(p: Figure, name: Landmark, camera?: THREE.Camera, out =
   switch (name) {
     case 'root': return at(p.root);
     case 'hip': return at(p.hips);
-    case 'chest': return at(p.spine, 0, R.torso * 0.72, 0);
+    case 'chest': return at(p.spine, 0, p.bones.torso * 0.72, 0);
     case 'collar': return at(p.neck);
     case 'head': return at(p.head);
     case 'headTop': return at(p.head, 0, R.head * 1.04, 0);

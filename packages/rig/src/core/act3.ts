@@ -1,29 +1,42 @@
-import { D } from "./constants";
+import { D, RIG } from "./constants";
+import { lengths } from "./geometry";
 import { REACH_ELBOW } from "./ik";
 import type { V3 } from "./lens";
 import type { CharacterData, Garment } from "./schema";
 import { garmentShoulder, garmentSocket, type Rig } from "./torso";
 
 /**
- * Khung xương của người 3D (`stickman.ts`), đơn vị three: đơn vị rig chia 100. `act` và `actJoints`
- * đọc cùng bảng này — `act3.test.ts` giữ hai bên trùng nhau. docs/01-rig.md#khớp-người-3d-vẽ-ra
+ * Khung xương của người 3D (`stickman.ts`) ở `rig.height`, đơn vị three: thân, cổ, tay, chân là `lengths(height)` của lõi
+ * chia 100 — `world.hip` của `sceneAt` đặt hông theo chính chúng, lệch là chân trượt hay lơ lửng. Đầu, bề dày nét chi không
+ * nhân. `act` và `actJoints` đọc cùng bảng này — `act3.test.ts` giữ hai bên trùng nhau. docs/01-rig.md#khớp-người-3d-vẽ-ra
  */
-export const BONES3 = {
-  torso: 1.2,
-  neck: 0.08,
-  head: 0.64,
-  upperArm: 0.62,
-  foreArm: 0.58,
-  thigh: 0.78,
-  shin: 0.92,
-  limb: 0.042,
-} as const;
+export function bones3(height = 1) {
+  const L = lengths(height);
+  return {
+    height,
+    torso: L.torso / 100,
+    neck: L.neck / 100,
+    head: 0.64,
+    upperArm: L.upperArm / 100,
+    foreArm: L.foreArm / 100,
+    thigh: L.thigh / 100,
+    shin: L.shin / 100,
+    limb: 0.042,
+  };
+}
+
+export type Bones3 = ReturnType<typeof bones3>;
+
+/** Khung xương ở `height = 1` */
+export const BONES3: Readonly<Bones3> = bones3();
 
 /** Tay choãi khỏi thân áo, radian quanh trục tiến; đích cổ tay thì không */
 export const SPLAY3 = 0.08;
 
-/** Đáy sọ trên mép cổ áo: tâm khối đầu cao hơn khớp cổ ngần này, đơn vị three */
-export const HEAD3 = BONES3.neck + 0.09 + BONES3.head * 1.04;
+/** Đáy sọ trên mép cổ áo: tâm khối đầu cao hơn khớp cổ ngần này, đơn vị three; chỉ đoạn cổ nhân `height` */
+export const head3 = (B: Bones3) => B.neck + 0.09 + B.head * 1.04;
+
+export const HEAD3 = head3(BONES3);
 
 /**
  * Bán kính chi người 3D mặc đồ (`palette.clad`) ở gốc, khớp giữa, ngọn, nhân bán kính chi: bắp tay to hơn cẳng tay
@@ -53,10 +66,10 @@ export const roots3 = (
   return {
     shoulder: (sock
       ? [sock[0] / 100, -sock[1] / 100]
-      : [garmentShoulder(garment, rig) / 100, (120 - rig.shoulderDrop) / 100]) as readonly [
-      number,
-      number,
-    ],
+      : [
+          garmentShoulder(garment, rig) / 100,
+          (RIG.torso * rig.height - rig.shoulderDrop) / 100,
+        ]) as readonly [number, number],
     hip: rig.hipHalf / 100,
   };
 };
@@ -136,7 +149,8 @@ export interface ActFrame {
 /**
  * Tay bên `side` (`-1` tay phải) với tới đích hệ thân `rb` rồi đích thế giới rig `rw`, hoà trên vị trí
  * cổ tay theo `w`: `S`, `E`, `T` là vai, khuỷu, cổ tay của chuỗi góc trong three. Trả khuỷu và cổ tay
- * mới, không có đích thì `undefined`. `act` và `actJoints` cùng gọi.
+ * mới, không có đích thì `undefined`. Đích hệ thân soạn ở `height = 1`, nhân `height` như `reachToWorld`. `act` và
+ * `actJoints` cùng gọi.
  */
 export function actReach(
   frame: ActFrame,
@@ -146,6 +160,7 @@ export function actReach(
   l2: number,
   rb: ReachIn | undefined,
   rw: ReachIn | undefined,
+  height = 1,
 ): [V3, V3] | undefined {
   if (!(rb && rb.w > 0) && !(rw && rw.w > 0)) return undefined;
   const body = ([f, y, o]: readonly number[]): V3 => [side * o, -y, f];
@@ -159,7 +174,11 @@ export function actReach(
     T = add(T, mul(sub(target(), T), k));
     pole = add(mul(pole, 1 - k), mul(unit(el), k));
   };
-  toward(rb, () => frame.point(mul(body(rb!.at), 0.01)), frame.dir(body(rb?.elbow ?? REACH_ELBOW)));
+  toward(
+    rb,
+    () => frame.point(mul(body(rb!.at), 0.01 * height)),
+    frame.dir(body(rb?.elbow ?? REACH_ELBOW)),
+  );
   toward(
     rw,
     () => [rw!.at[0] * 0.01, -rw!.at[1] * 0.01, -rw!.at[2] * 0.01],
@@ -227,7 +246,7 @@ export interface ActInput {
 }
 
 /**
- * Khớp của người 3D đúng như `act` đặt người que three: cùng khung xương (`BONES3`, `roots3`), cùng
+ * Khớp của người 3D đúng như `act` đặt người que three: cùng khung xương (`bones3`, `roots3`), cùng
  * luật đọc góc (`actAngles`) và cùng IK (`actReach`), trả trong toạ độ thế giới rig. Không có `world`
  * thì không có gì. `check` đo giật tay chân trên các khớp này. docs/01-rig.md#khớp-người-3d-vẽ-ra
  */
@@ -238,7 +257,7 @@ export function actJoints(
   const W = sp.world;
   if (!W) return undefined;
   const P = sp.pose;
-  const B = BONES3;
+  const B = bones3(c.rig.height);
   const pal = c.palette;
   const arm = pal.clad ? cladArm(pal.sleeveWidth, c.rig.stroke) : undefined;
   const roots = roots3(c.pieces.torso.garment, c.rig, arm, pal.bicep);
@@ -275,7 +294,7 @@ export function actJoints(
   const Rn = mm(mm(Rs, ry(m * num(turn) * D)), mm(rx(num(nod) * D), rz(-m * num(tilt) * D)));
   const neck = at(hips, Rs, [0, B.torso, 0]);
   out.neck = neck;
-  out.head = at(neck, Rn, [0, HEAD3, 0]);
+  out.head = at(neck, Rn, [0, head3(B), 0]);
 
   const frame: ActFrame = { point: (v) => at(root, Rr, v), dir: (v) => mv(Rr, v) };
   for (const side of [near, -near]) {
@@ -296,6 +315,7 @@ export function actJoints(
       l2 * s,
       P.reach?.[ch],
       isNear ? W.hands?.near : W.hands?.far,
+      B.height,
     );
     out[`shoulder${tag(side)}` as ActJoint] = sh;
     out[`elbow${tag(side)}` as ActJoint] = ik ? ik[0] : el;

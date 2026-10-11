@@ -10,13 +10,14 @@ import { INK, toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
 import type { Garment, Glasses, Sculpt, Skirt } from './core/schema';
-import { BONES3, CLAD_TAPER, cladArm, HEAD3, roots3 } from './core/act3';
+import { BONES3, bones3, CLAD_TAPER, cladArm, head3, roots3, type Bones3 } from './core/act3';
 import { chibiShape } from './core/face';
 import { humanHair, humanSkull } from './core/humanHead';
 import { Ankle, earGroup, HAND, handGeometry, handScale, humanHeadGeometry, neckGeometry, pelvisGeometry, shoeCapsule, shoeGeometry } from './human';
 import { torsoMesh, type Rig } from './torso';
 
-// Tỉ lệ lấy từ RIG của @stickman3d/sketch, chia 100: người cao ~4,3 đơn vị, đầu to bằng gần một phần ba.
+// Tỉ lệ lấy từ RIG của @stickman3d/sketch, chia 100: người cao ~4,3 đơn vị, đầu to bằng gần một phần ba. Độ dài đoạn của
+// một người theo `rig.height` ở `Figure.bones`; `R` chỉ đúng ở `height = 1`, đầu và bề dày nét thì đúng mọi người.
 export const R = BONES3;
 
 const ink = npr({ color: INK, stipple: 0 });
@@ -54,6 +55,8 @@ export interface Figure {
   skirt?: { opts: Omit<SkirtOptions, 'thighs'>; group: THREE.Group; key: string };
   /** Bàn tay của người `clad` */
   hands?: Record<Side, Hand>;
+  /** Khung xương theo `rig.height` (`bones3` của lõi): `act` đặt đoạn chi bằng nó */
+  bones: Bones3;
 }
 
 /** `low`: người nền rẻ — ít mặt lưới, gộp khối tĩnh theo vật liệu, nét mặt đứng yên dùng chung texture, không chớp mắt */
@@ -209,20 +212,20 @@ function joint(parent: THREE.Object3D, x: number, y: number, z: number) {
 }
 
 /** Chân hai đoạn: `hip` quay đùi, `knee` gập ống. */
-function leg(parent: THREE.Object3D, side: Side, hipHalf: number): Leg {
+function leg(parent: THREE.Object3D, side: Side, hipHalf: number, B: Bones3): Leg {
   const hip = joint(parent, side * hipHalf, 0, 0);
-  hip.add(limb(R.thigh));
-  const knee = joint(hip, 0, -R.thigh, 0);
-  knee.add(limb(R.shin));
+  hip.add(limb(B.thigh));
+  const knee = joint(hip, 0, -B.thigh, 0);
+  knee.add(limb(B.shin));
   return { hip, knee };
 }
 
-function arm(parent: THREE.Object3D, side: Side, x: number, y: number): Arm {
+function arm(parent: THREE.Object3D, side: Side, x: number, y: number, B: Bones3): Arm {
   const shoulder = joint(parent, side * x, y, 0);
-  shoulder.add(limb(R.upperArm));
-  const elbow = joint(shoulder, 0, -R.upperArm, 0);
-  elbow.add(limb(R.foreArm));
-  const wrist = joint(elbow, 0, -R.foreArm, 0);
+  shoulder.add(limb(B.upperArm));
+  const elbow = joint(shoulder, 0, -B.upperArm, 0);
+  elbow.add(limb(B.foreArm));
+  const wrist = joint(elbow, 0, -B.foreArm, 0);
   return { shoulder, elbow, wrist };
 }
 
@@ -318,8 +321,9 @@ export function stickman(o: StickmanOptions): Figure {
   // người `clad`: nửa bề dày chi như `limbHalf` của lõi (gồm viền), nên người ngồi nằm đúng trên mặt ghế
   const limbR = (w: number) => (clad ? (w + rig.stroke) / 200 : (R.limb * w) / 10);
   q = QUALITY[lod];
+  const B = bones3(rig.height);
   const root = new THREE.Group();
-  const hips = joint(root, 0, R.thigh + R.shin + R.limb, 0);
+  const hips = joint(root, 0, B.thigh + B.shin + B.limb, 0);
   const spine = joint(hips, 0, 0.0, 0);
   sculptTorso(spine, { garment, rig, color, accent, ink: INK });
   // khối thân áo là mảnh đầu tiên: `collide` lấy hộp thân từ nó
@@ -331,10 +335,10 @@ export function stickman(o: StickmanOptions): Figure {
     const opts = { skirt, rig, color: skirtColor, ink: INK, legW: clad ? trouserWidth + rig.stroke : trouserWidth };
     skirtRig = { opts, group: sculptSkirt(spine, { ...opts, thighs }), key: '' };
   }
-  const neck = joint(spine, 0, R.torso, 0);
+  const neck = joint(spine, 0, B.torso, 0);
   const skullScale = new THREE.Vector3(1, 1.04, 0.98);
   // đáy sọ trên mép cổ áo (khớp cổ của lõi + `rise` 6 của áo phông): cằm chìm vào khối áo là mất viền
-  const head = joint(neck, 0, HEAD3, 0);
+  const head = joint(neck, 0, head3(B), 0);
   if (human) head.userData.human = true;
   // kính và mốc đầu đọc chỗ mắt đã dời của nét mặt chibi
   const eyes = { eyeGap: 26, offsetY: 0, mouthGap: 34, ...faceShape };
@@ -361,13 +365,13 @@ export function stickman(o: StickmanOptions): Figure {
       const ear = earGroup(s, R.head, skullScale, skinMat, hull, ink);
       if (!hairCovers(head, ear.position)) head.add(ear);
     }
-    neck.add(inked(neckGeometry(HEAD3 - R.head * 0.5, 0.135), skinMat, 0.022));
+    neck.add(inked(neckGeometry(head3(B) - R.head * 0.5, 0.135), skinMat, 0.022));
   }
   const bicep = o.bicep ?? 0;
   const at = roots3(garment, rig, clad ? cladArm(sleeveWidth, rig.stroke) : undefined, bicep);
-  const legs = { [-1]: leg(hips, -1, at.hip), [1]: leg(hips, 1, at.hip) } as Record<Side, Leg>;
+  const legs = { [-1]: leg(hips, -1, at.hip, B), [1]: leg(hips, 1, at.hip, B) } as Record<Side, Leg>;
   const [sx, sy] = at.shoulder;
-  const arms = { [-1]: arm(spine, -1, sx, sy), [1]: arm(spine, 1, sx, sy) } as Record<Side, Arm>;
+  const arms = { [-1]: arm(spine, -1, sx, sy, B), [1]: arm(spine, 1, sx, sy, B) } as Record<Side, Arm>;
   // tay chân rủ hơi choãi như hình 2D
   for (const s of SIDES) arms[s].shoulder.rotation.z = s * 0.2;
   root.traverse((o) => {
@@ -382,8 +386,8 @@ export function stickman(o: StickmanOptions): Figure {
     pelvis(spine, garment, rig, at.hip, limbR(trouserWidth) * 1.1, tone(skirt ? skirtColor : trouserColor));
     hands = {} as Record<Side, Hand>;
     for (const s of SIDES) {
-      cladLimb(seg(arms[s].shoulder), seg(arms[s].elbow), [R.upperArm, R.foreArm], [CLAD_TAPER.arm[0] * (1 + bicep), CLAD_TAPER.arm[1], CLAD_TAPER.arm[2]], tone(sleeveColor), limbSkin, sleeveLength, true);
-      cladLimb(seg(legs[s].hip), seg(legs[s].knee), [R.thigh, R.shin], CLAD_TAPER.leg, tone(trouserColor), limbSkin, trouserLength, false);
+      cladLimb(seg(arms[s].shoulder), seg(arms[s].elbow), [B.upperArm, B.foreArm], [CLAD_TAPER.arm[0] * (1 + bicep), CLAD_TAPER.arm[1], CLAD_TAPER.arm[2]], tone(sleeveColor), limbSkin, sleeveLength, true);
+      cladLimb(seg(legs[s].hip), seg(legs[s].knee), [B.thigh, B.shin], CLAD_TAPER.leg, tone(trouserColor), limbSkin, trouserLength, false);
       const k = handScale(limbR(sleeveWidth) * 0.8);
       const pose = (fist: boolean) => {
         const g = inked(handGeometry(s, fist, k), limbSkin, 0.016);
@@ -393,7 +397,7 @@ export function stickman(o: StickmanOptions): Figure {
       };
       hands[s] = { open: pose(false), fist: pose(true), scale: k };
       const ankle = new Ankle(root);
-      ankle.position.y = -R.shin;
+      ankle.position.y = -B.shin;
       legs[s].knee.add(ankle);
       const ra = limbR(trouserWidth) * 0.8;
       ankle.add(inked(shoeGeometry(R.limb, ra), tone(shoeColor), 0.02));
@@ -427,7 +431,7 @@ export function stickman(o: StickmanOptions): Figure {
   root.traverse(bodyMark);
   root.userData.figure = true;
   const sockets = buildSockets({ root, spine, head, arms }, fit, hands ? HAND.grip * hands[-1].scale : (R.limb * sleeveWidth) / 10, rig);
-  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig, ...(hands && { hands }) };
+  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig, bones: B, ...(hands && { hands }) };
   if (equip) dress(fig, equip);
   return fig;
 }
