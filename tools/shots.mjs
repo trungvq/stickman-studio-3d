@@ -101,6 +101,8 @@ const SHOTS = [
   ['nguoi-34', 'demo=human-row&t=1&az=40&el=6&look=0,2.3,0&dist=17'],
   ['nguoi-nghieng', 'demo=human-row&t=1&az=90&el=5&look=0,2.3,0&dist=17'],
   ['nguoi-sau', 'demo=human-row&t=1&az=180&el=8&look=0,2.3,0&dist=17'],
+  ['nguoi-vai', 'demo=human-row&t=1&az=0&el=4&look=-1.5,2.6,0&dist=6'],
+  ['nguoi-vai-34', 'demo=human-row&t=1&az=35&el=12&look=-1.5,2.6,0&dist=6'],
   ['nguoi-chan', 'demo=human-row&t=1&az=30&el=10&look=-0.75,0.4,0&dist=5'],
   ['nguoi-mat', 'demo=human-faces&t=1&az=0&el=3&look=0,3.45,0&dist=10'],
   ['nguoi-mat-34', 'demo=human-faces&t=1&az=35&el=3&look=0,3.45,0&dist=10'],

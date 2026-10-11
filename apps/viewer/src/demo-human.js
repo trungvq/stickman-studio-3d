@@ -35,12 +35,12 @@ function character(name, { palette, garment, hair, hairColor, skirt, glasses, hi
 const models = () => ({
   /** Nam sơ mi dài tay, quần âu */
   LONG: character('dai-tay', {
-    palette: { garment: '#3aa89c', sleeve: '#3aa89c', trouser: '#3b4252', shoe: '#3a2a20' },
+    palette: { garment: '#3aa89c', sleeve: '#3aa89c', trouser: '#3b4252', shoe: '#3a2a20', bicep: 0.7 },
     garment: { style: 'shirt' }, hair: 'short', hairColor: '#2a1c15',
   }),
   /** Nam áo phông ngắn tay, quần bò */
   SHORT: character('ngan-tay', {
-    palette: { garment: '#c8663a', sleeve: '#c8663a', sleeveLength: 0.24, trouser: '#41587a' },
+    palette: { garment: '#c8663a', sleeve: '#c8663a', sleeveLength: 0.24, trouser: '#41587a', bicep: 0.7 },
     garment: { style: 'tshirt' }, hair: 'anime', hairColor: '#33333a',
   }),
   /** Nữ blouse tay lỡ, váy xếp ly, chân trần, giày đỏ nâu */
@@ -51,7 +51,7 @@ const models = () => ({
   }),
   /** Nam len cổ tròn, đeo kính, tóc gọn */
   GLASSES: character('kinh', {
-    palette: { garment: '#9a5fa8', sleeve: '#9a5fa8', trouser: '#2f3a33' },
+    palette: { garment: '#9a5fa8', sleeve: '#9a5fa8', trouser: '#2f3a33', bicep: 0.7 },
     garment: { style: 'sweater' }, hair: 'neat', hairColor: '#5b3a26', glasses: 'round',
   }),
   /** Nữ tóc đuôi ngựa, áo len, quần dài */
