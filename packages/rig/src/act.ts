@@ -112,12 +112,12 @@ export function act(p: Figure, sp: Acting, t?: number) {
 
   for (const side of [near, -near as Side]) {
     const isNear = side === near;
-    const { hip, knee } = p.legs[side];
+    const { hip, knee, ankle } = p.legs[side];
     const [a, b, sp] = actAngles(P, isNear ? 'ln' : 'lf', seated);
     hip.rotation.set(-a * D, 0, side * sp * D, 'ZXY');
     knee.rotation.set(-b * D, 0, 0);
     segment(hip, knee, R.thigh, st[isNear ? 6 : 4] ?? 1);
-    segment(knee, undefined, R.shin, st[isNear ? 7 : 5] ?? 1);
+    segment(knee, ankle, R.shin, st[isNear ? 7 : 5] ?? 1);
   }
 
   const m = flip ? -1 : 1;

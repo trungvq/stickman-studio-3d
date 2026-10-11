@@ -2,13 +2,15 @@ import * as THREE from 'three';
 import { ConvexHull } from 'three/addons/math/ConvexHull.js';
 import { place3, type Place3 } from './core/lens';
 import { lathePoints, toThree, U, type BatchSolid, type Item, type Vec3 } from './khoi';
+import { HAND } from './human';
 import { R, type Figure, type Side } from './stickman';
 
 // Kiểm người xuyên đồ ở tư thế hiện tại: người là các viên nang (chi, thân, đầu), đồ là khối lồi (hộp, món khối)
 // hay lưới tam giác. Thuần: không đổi gì trên người hay đồ, gọi được ở từng `t` đã lấy mẫu sau `act`.
 
-export type BodyPart = 'head' | 'torso' | 'upperArm' | 'foreArm' | 'thigh' | 'shin';
-export const BODY_PARTS: readonly BodyPart[] = ['head', 'torso', 'upperArm', 'foreArm', 'thigh', 'shin'];
+/** `hand`, `foot` chỉ người `clad` có: bàn tay đang hiện (xoè hay nắm) và giày */
+export type BodyPart = 'head' | 'torso' | 'upperArm' | 'foreArm' | 'thigh' | 'shin' | 'hand' | 'foot';
+export const BODY_PARTS: readonly BodyPart[] = ['head', 'torso', 'upperArm', 'foreArm', 'thigh', 'shin', 'hand', 'foot'];
 
 /**
  * Phần người được phép lấn vào vật: `'<bộ phận>[R|L]'` của mọi người, `'<người>.<bộ phận>[R|L]'` của một người (tên như
@@ -262,6 +264,17 @@ export function bodyCapsules(fig: Figure, parts: readonly BodyPart[] = BODY_PART
     if (want.has('foreArm')) seg(fig.arms[s].elbow, 'foreArm', s);
     if (want.has('thigh')) seg(fig.legs[s].hip, 'thigh', s);
     if (want.has('shin')) seg(fig.legs[s].knee, 'shin', s);
+    const h = fig.hands?.[s];
+    if (h && want.has('hand')) {
+      const [y0, y1, r] = HAND.cap[h.fist.visible ? 'fist' : 'open'], w = fig.arms[s].wrist;
+      out.push({ part: 'hand', side: s, a: w.localToWorld(new THREE.Vector3(0, y0 * h.scale, 0)), b: w.localToWorld(new THREE.Vector3(0, y1 * h.scale, 0)), r: r * h.scale * k });
+    }
+    const ankle = fig.legs[s].ankle;
+    if (ankle && want.has('foot')) {
+      // đáy nang đúng mặt đế: đứng trên sàn không lún
+      const [z0, z1, y, r] = ankle.userData.shoe as [number, number, number, number];
+      out.push({ part: 'foot', side: s, a: ankle.localToWorld(new THREE.Vector3(0, y, z0)), b: ankle.localToWorld(new THREE.Vector3(0, y, z1)), r: r * k });
+    }
   }
   if (want.has('head')) {
     const c = fig.head.getWorldPosition(new THREE.Vector3());

@@ -7,10 +7,10 @@ export { currentLights, setLights, setPalette, type LightState } from './lightin
 export { AA, createPipeline, type AaMode, type Grade, type Pipeline, type PipelineOptions, type RenderOptions } from './pipeline';
 export {
   characterOptions, fitSkirt, fromCharacter, put, R, stickman,
-  type Arm, type CharacterJson, type Figure, type Leg, type Lod, type Side, type StickmanOptions,
+  type Arm, type CharacterJson, type Figure, type Hand, type Leg, type Lod, type Side, type StickmanOptions,
 } from './stickman';
 export {
-  dress, hold, SOCKET_NAMES, torsoSocket, wear,
+  dress, grip, hold, SOCKET_NAMES, torsoSocket, wear,
   type EquipState, type Gear, type HeadFit, type Held, type HoldOptions, type ItemBuild, type ItemContext, type ItemFactories, type ItemFactory, type SocketName, type Sockets,
 } from './attach';
 export { freeze, seatCrowd, type Seat } from './crowd';

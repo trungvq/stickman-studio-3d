@@ -23,7 +23,8 @@ export interface HeadFit {
 }
 
 /**
- * Khung gắn đồ. `hand[side]` treo ở đầu cẳng tay: −y dọc cẳng tay ra ngoài, gốc ở mút nét tay. `crown` ở đỉnh đầu
+ * Khung gắn đồ. `hand[side]` treo ở đầu cẳng tay: −y dọc cẳng tay ra ngoài, gốc ở mút nét tay — người `clad` thì ở tâm
+ * nắm của bàn tay. `crown` ở đỉnh đầu
  * kể cả tóc, `face` ở mặt trước sọ ngang mắt, `chest` trên mặt áo, +z là pháp tuyến ra ngoài, y lên.
  */
 export interface Sockets {
@@ -89,20 +90,38 @@ function gripped(object: THREE.Object3D, o: HoldOptions) {
 }
 
 const forearm = (s: Side) => `self.foreArm${s < 0 ? 'R' : 'L'}`;
+const palm = (s: Side) => `self.hand${s < 0 ? 'R' : 'L'}`;
+
+/** Bàn tay người `clad` nắm (`true`) hay xoè; người que không có bàn tay thì không làm gì */
+export function grip(fig: Figure, side: Side, fist: boolean) {
+  const h = fig.hands?.[side];
+  if (!h) return;
+  h.fist.visible = fist;
+  h.open.visible = !fist;
+}
 
 /**
  * Cầm `object` bằng một tay hay hai tay. Vật dựng ở gốc khung cầm (xem `HoldOptions`), cỡ theo người cao 4,3; nó
  * nằm trong `root` nên to nhỏ theo `root.scale`. Tự bám theo tư thế mỗi khung, `release()` gỡ ra. Nhóm cầm khai
- * `userData.touch` cẳng tay cầm của người cầm: `collide` không báo cẳng tay ấy lún vào vật.
+ * `userData.touch` cẳng tay và bàn tay cầm của người cầm: `collide` không báo chúng lún vào vật. Người `clad` nắm tay
+ * cầm lại tới khi `release()`.
  */
 export function hold(fig: Figure, object: THREE.Object3D, o: HoldOptions): Held {
-  const grip = gripped(object, o);
-  grip.userData.touch = o.hand === 'both' ? [forearm(-1), forearm(1)] : [forearm(o.hand)];
-  const held: Held = { object, span: 0, release: () => carrier.removeFromParent() };
+  const holder = gripped(object, o);
+  const sides: Side[] = o.hand === 'both' ? [-1, 1] : [o.hand];
+  holder.userData.touch = sides.flatMap((s) => [forearm(s), palm(s)]);
+  for (const s of sides) grip(fig, s, true);
+  const held: Held = {
+    object, span: 0,
+    release: () => {
+      carrier.removeFromParent();
+      for (const s of sides) grip(fig, s, false);
+    },
+  };
   let carrier: THREE.Object3D;
   if (o.hand !== 'both' && (o.follow ?? 'wrist') === 'wrist') {
-    carrier = grip;
-    fig.sockets.hand[o.hand].add(grip);
+    carrier = holder;
+    fig.sockets.hand[o.hand].add(holder);
     return held;
   }
   const a = new THREE.Vector3(), b = new THREE.Vector3(), x = new THREE.Vector3(), y = new THREE.Vector3(), z = new THREE.Vector3();
@@ -126,7 +145,7 @@ export function hold(fig: Figure, object: THREE.Object3D, o: HoldOptions): Held 
     g.position.addVectors(a, b).multiplyScalar(0.5);
     g.quaternion.setFromRotationMatrix(m.makeBasis(x, y, z));
   });
-  carrier.add(grip);
+  carrier.add(holder);
   fig.root.add(carrier);
   return held;
 }

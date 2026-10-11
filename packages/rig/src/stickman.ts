@@ -12,7 +12,7 @@ import { sculptMesh } from './sculpt';
 import type { Garment, Glasses, Sculpt, Skirt } from './core/schema';
 import { BONES3, HEAD3, roots3 } from './core/act3';
 import { humanHair, humanSkull, noseY } from './core/humanHead';
-import { earGroup, humanHeadGeometry, neckGeometry } from './human';
+import { Ankle, earGroup, HAND, handGeometry, handScale, humanHeadGeometry, neckGeometry, shoeCapsule, shoeGeometry } from './human';
 import type { Rig } from './torso';
 
 // Tỉ lệ lấy từ RIG của @stickman3d/sketch, chia 100: người cao ~4,3 đơn vị, đầu to bằng gần một phần ba.
@@ -20,13 +20,18 @@ export const R = BONES3;
 
 const ink = npr({ color: INK, stipple: 0 });
 const hull = hullMaterial(0.026, INK);
+/** Vỏ viền chi của người `clad`: mỏng hơn thân để chỗ tay lấn vào thân áo không thành vệt đen */
+const limbHull = hullMaterial(0.018, INK);
 
 /** `-1` bên phải người (−x khi người nhìn +z), `1` bên trái. */
 export type Side = -1 | 1;
 const SIDES = [-1, 1] as const;
 /** `wrist` treo ở đầu cẳng tay: chỗ gắn đồ cầm */
 export interface Arm { shoulder: THREE.Group; elbow: THREE.Group; wrist: THREE.Group }
-export interface Leg { hip: THREE.Group; knee: THREE.Group }
+/** `ankle` chỉ có ở người `clad`: giày treo ở đó */
+export interface Leg { hip: THREE.Group; knee: THREE.Group; ankle?: THREE.Group }
+/** Bàn tay của người `clad`, con của cổ tay: hai dáng, `grip` của attach.ts bật dáng nắm khi cầm đồ */
+export interface Hand { open: THREE.Group; fist: THREE.Group; scale: number }
 /** Người que dựng xong: `root` ở sàn dưới hông, mặt nhìn +z; các khớp để hoạt cảnh xoay. */
 export interface Figure {
   root: THREE.Group;
@@ -46,6 +51,8 @@ export interface Figure {
   lod: Lod;
   /** Váy dựng khối: `act` gọi `fitSkirt` dựng lại theo đùi khi đùi đổi hướng trong hệ thân */
   skirt?: { opts: Omit<SkirtOptions, 'thighs'>; group: THREE.Group; key: string };
+  /** Bàn tay của người `clad` */
+  hands?: Record<Side, Hand>;
 }
 
 /** `low`: người nền rẻ — ít mặt lưới, gộp khối tĩnh theo vật liệu, nét mặt đứng yên dùng chung texture, không chớp mắt */
@@ -101,7 +108,12 @@ const bezTangent = (c: THREE.Vector3[], u: number, out: THREE.Vector3) => {
 };
 const _d = new THREE.Vector3(), _c = new THREE.Vector3(), _t = new THREE.Vector3(), _n = new THREE.Vector3(), _b = new THREE.Vector3(), _r = new THREE.Vector3();
 
-function fillTube(geo: THREE.BufferGeometry, c: THREE.Vector3[], r: number) {
+const _e = new THREE.Vector3();
+/**
+ * Dựng ống theo đường cong `c`: cả đoạn, hay phần `u0..u1` (ống tay áo, cổ tay áo), bán kính `r0` → `r1`; mút cuối nở
+ * `rim` lần, hai mút tròn dẹt theo `flat0`, `flat1` (`1` là nửa cầu).
+ */
+function fillTube(geo: THREE.BufferGeometry, c: THREE.Vector3[], r0: number, r1 = r0, u0 = 0, u1 = 1, rim = 1, flat0 = 1, flat1 = 1) {
   const [cap, m, n] = geo.userData.limb as Quality['limb'];
   const pos = geo.attributes.position as THREE.BufferAttribute, nor = geo.attributes.normal as THREE.BufferAttribute;
   let k = 0;
@@ -114,23 +126,25 @@ function fillTube(geo: THREE.BufferGeometry, c: THREE.Vector3[], r: number) {
       nor.setXYZ(k, _r.x, _r.y, _r.z);
     }
   };
-  bezTangent(c, 0, _t);
+  bezTangent(c, u0, _t);
   _n.set(Math.abs(_t.x) < 0.9 ? 1 : 0, 0, Math.abs(_t.x) < 0.9 ? 0 : 1).addScaledVector(_t, -(Math.abs(_t.x) < 0.9 ? _t.x : _t.z)).normalize();
   _b.crossVectors(_t, _n);
   for (let i = 0; i < cap; i++) {
     const f = (i / cap) * (Math.PI / 2);
-    ring(_c.copy(c[0]).addScaledVector(_t, -r * Math.cos(f)), -Math.cos(f), r * Math.sin(f), Math.sin(f));
+    ring(_c.copy(u0 === 0 ? c[0] : bez(c, u0, _e)).addScaledVector(_t, -r0 * flat0 * Math.cos(f)), -Math.cos(f), r0 * Math.sin(f), Math.sin(f));
   }
   for (let i = 0; i <= n; i++) {
-    bezTangent(c, i / n, _t);
+    const u = u0 + ((u1 - u0) * i) / n;
+    bezTangent(c, u, _t);
     // khung chuyển song song: pháp tuyến không xoắn theo đường cong
     _n.addScaledVector(_t, -_n.dot(_t)).normalize();
     _b.crossVectors(_t, _n);
-    ring(bez(c, i / n, _c), 0, r, 1);
+    ring(bez(c, u, _c), 0, (r0 + ((r1 - r0) * i) / n) * (i === n ? rim : 1), 1);
   }
+  const re = r1 * rim;
   for (let i = cap - 1; i >= 0; i--) {
     const f = (i / cap) * (Math.PI / 2);
-    ring(_c.copy(c[3]).addScaledVector(_t, r * Math.cos(f)), Math.cos(f), r * Math.sin(f), Math.sin(f));
+    ring(_c.copy(u1 === 1 ? c[3] : bez(c, u1, _e)).addScaledVector(_t, re * flat1 * Math.cos(f)), Math.cos(f), re * Math.sin(f), Math.sin(f));
   }
   pos.needsUpdate = nor.needsUpdate = true;
   geo.computeBoundingSphere();
@@ -147,6 +161,13 @@ function limb(len: number) {
 }
 
 const ONE = new THREE.Vector3(1, 1, 1);
+
+/** Ống của một đoạn chi theo đường cong `c`; `userData.taper` nhân bán kính hai mút */
+function tubes(m: THREE.Mesh, c: THREE.Vector3[]) {
+  const r = m.userData.r as number, taper = m.userData.taper as [number, number] | undefined;
+  if (!taper) return fillTube(m.geometry, c, r);
+  fillTube(m.geometry, c, r * taper[0], r * taper[1]);
+}
 /**
  * Uốn hai đoạn chi như `limbCurves` của rig 2D: hai đoạn Bézier bậc ba qua gốc, khớp giữa, đầu chi; tiếp tuyến ở khớp
  * giữa song song gốc → đầu chi, `k` là `limbCurve`. Đặt vào `userData.bend` của hai đoạn; pipeline gọi trước mỗi lượt vẽ.
@@ -162,9 +183,9 @@ function bendLimb(upper: THREE.Mesh, mid: THREE.Object3D, lower: THREE.Mesh, k: 
     key = now;
     const f = k / 6;
     const T0 = P1.clone().multiplyScalar(f), T1 = P2.clone().multiplyScalar(f), T2 = P2.clone().sub(P1).multiplyScalar(f);
-    fillTube(upper.geometry, [P0, T0, P1.clone().sub(T1), P1], upper.userData.r);
+    tubes(upper, [P0, T0, P1.clone().sub(T1), P1]);
     inv.compose(mid.position, mid.quaternion, ONE).invert();
-    fillTube(lower.geometry, [P1.clone(), P1.clone().add(T1), P2.clone().sub(T2), P2].map((p) => p.applyMatrix4(inv)), lower.userData.r);
+    tubes(lower, [P1.clone(), P1.clone().add(T1), P2.clone().sub(T2), P2].map((p) => p.applyMatrix4(inv)));
   };
   upper.userData.bend = lower.userData.bend = bend;
   bend();
@@ -266,6 +287,12 @@ export interface StickmanOptions {
   itemSpecs?: Gear['specs'];
   /** Đồ mặc lúc dựng, như `dress` */
   equip?: EquipState;
+  /** `palette.clad`: tay chân là ống màu có viền, bàn tay, giày. docs/01-rig.md#người-3d-mặc-đồ */
+  clad?: boolean;
+  /** `palette.sleeve`, `palette.trouser`, `palette.shoe` */
+  sleeveColor?: string;
+  trouserColor?: string;
+  shoeColor?: string;
   /** `head.form` */
   headForm?: 'sphere' | 'human';
 }
@@ -273,7 +300,9 @@ export interface StickmanOptions {
 /** Một người que 3D theo JSON nhân vật của rig. */
 export function stickman(o: StickmanOptions): Figure {
   const { rig, skin = '#f0d9b8', garment, color, accent, skirt, skirtColor = color, hair, hairColor = '#2a1c15', glasses = false, glassesColor, faceShape, face, seed = 0, sleeveWidth = 10, trouserWidth = 10, seated = false, limbCurve = 1, lod = 'full', items, itemSpecs, equip } = o;
-  const human = o.headForm === 'human';
+  const clad = !!o.clad, human = o.headForm === 'human';
+  // người `clad`: nửa bề dày chi như `limbHalf` của lõi (gồm viền), nên người ngồi nằm đúng trên mặt ghế
+  const limbR = (w: number) => (clad ? (w + rig.stroke) / 200 : (R.limb * w) / 10);
   q = QUALITY[lod];
   const root = new THREE.Group();
   const hips = joint(root, 0, R.thigh + R.shin + R.limb, 0);
@@ -329,9 +358,35 @@ export function stickman(o: StickmanOptions): Figure {
     if ((o as THREE.Mesh).isMesh && !o.userData.noShadow) o.castShadow = true;
   });
   const seg = (j: THREE.Object3D) => j.children.find((m) => m.userData.limb) as THREE.Mesh;
+  let hands: Figure['hands'];
+  if (clad) {
+    const tone = (c: string) => npr({ color: c, stipple: 0.05, stippleScale: 3, soft: 1 });
+    const limbSkin = skinMat;
+    const { sleeveColor = '#1a1a1a', trouserColor = '#1a1a1a', shoeColor = '#2b2623' } = o;
+    hands = {} as Record<Side, Hand>;
+    for (const s of SIDES) {
+      cladLimb(seg(arms[s].shoulder), seg(arms[s].elbow), [1, 0.92, 0.8], tone(sleeveColor));
+      cladLimb(seg(legs[s].hip), seg(legs[s].knee), [1.06, 0.94, 0.8], tone(trouserColor));
+      const k = handScale(limbR(sleeveWidth) * 0.8);
+      const pose = (fist: boolean) => {
+        const g = inked(handGeometry(s, fist, k), limbSkin, 0.016);
+        g.visible = !fist;
+        arms[s].wrist.add(g);
+        return g;
+      };
+      hands[s] = { open: pose(false), fist: pose(true), scale: k };
+      const ankle = new Ankle(root);
+      ankle.position.y = -R.shin;
+      legs[s].knee.add(ankle);
+      const ra = limbR(trouserWidth) * 0.8;
+      ankle.add(inked(shoeGeometry(R.limb, ra), tone(shoeColor), 0.02));
+      ankle.userData.shoe = shoeCapsule(R.limb, ra);
+      legs[s].ankle = ankle;
+    }
+  }
   for (const s of SIDES) {
     for (const [a, b, w] of [[arms[s].shoulder, arms[s].elbow, sleeveWidth], [legs[s].hip, legs[s].knee, trouserWidth]] as const) {
-      seg(a).userData.r = seg(b).userData.r = (R.limb * w) / 10;
+      seg(a).userData.r = seg(b).userData.r = limbR(w);
       bendLimb(seg(a), b, seg(b), limbCurve);
     }
   }
@@ -354,10 +409,25 @@ export function stickman(o: StickmanOptions): Figure {
   // người có nét riêng theo hình 2D: không vẽ nét gấp pháp tuyến; đồ cầm gắn sau thì vẫn có
   root.traverse(bodyMark);
   root.userData.figure = true;
-  const sockets = buildSockets({ root, spine, head, arms }, fit, (R.limb * sleeveWidth) / 10, rig);
-  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig };
+  const sockets = buildSockets({ root, spine, head, arms }, fit, hands ? HAND.grip * hands[-1].scale : (R.limb * sleeveWidth) / 10, rig);
+  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig, ...(hands && { hands }) };
   if (equip) dress(fig, equip);
   return fig;
+}
+
+/**
+ * Đoạn chi `upper` → `lower` của người `clad`: ống tô `mat` có vỏ viền, thon theo `taper` (bán kính ở gốc, khớp giữa,
+ * ngọn, nhân `userData.r`).
+ */
+function cladLimb(upper: THREE.Mesh, lower: THREE.Mesh, taper: [number, number, number], mat: THREE.Material) {
+  upper.userData.taper = [taper[0], taper[1]];
+  lower.userData.taper = [taper[1], taper[2]];
+  for (const m of [upper, lower]) {
+    m.material = mat;
+    const h = new THREE.Mesh(m.geometry, limbHull);
+    h.userData.noShadow = true;
+    m.add(h);
+  }
 }
 
 /** Tóc phủ lên chỗ tai `at` (hệ nhóm đầu): tia từ ngoài vào tâm tai chạm vỏ tóc hay tóc rủ */
@@ -462,7 +532,10 @@ const isJoint = (o: THREE.Object3D) => !!o.userData.joint;
 /** Các trường của JSON nhân vật mà người 3D đọc. Truyền object đã qua `parseCharacter` của @stickman3d/sketch. */
 export interface CharacterJson {
   rig: Rig;
-  palette: { garment: string; skin?: string; sleeveWidth?: number; trouserWidth?: number; limbCurve?: number };
+  palette: {
+    garment: string; skin?: string; sleeveWidth?: number; trouserWidth?: number; limbCurve?: number;
+    clad?: boolean; sleeve?: string; trouser?: string; shoe?: string;
+  };
   head?: { form?: 'sphere' | 'human' };
   face?: Partial<FaceShape>;
   pieces: {
@@ -482,7 +555,8 @@ export function characterOptions(json: CharacterJson, opts: Partial<StickmanOpti
     rig: json.rig, garment: pc.torso.garment, color: pal.garment, skin: pal.skin,
     skirt: pc.hem?.skirt, skirtColor: pc.hem?.color, hair: pc.hair?.sculpt, hairColor: pc.hair?.color,
     sleeveWidth: pal.sleeveWidth, trouserWidth: pal.trouserWidth, limbCurve: pal.limbCurve, faceShape: json.face, itemSpecs: json.items,
-    glasses: pc.faceAcc?.src === 'sculpt' && pc.faceAcc.glasses, glassesColor: pc.faceAcc?.color, headForm: json.head?.form, ...opts,
+    glasses: pc.faceAcc?.src === 'sculpt' && pc.faceAcc.glasses, glassesColor: pc.faceAcc?.color,
+    clad: pal.clad, sleeveColor: pal.sleeve, trouserColor: pal.trouser, shoeColor: pal.shoe, headForm: json.head?.form, ...opts,
   };
 }
 

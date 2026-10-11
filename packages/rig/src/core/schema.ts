@@ -330,6 +330,8 @@ export const CharacterSchema = z.object({
       sleeveWidth: z.number().default(10),
       trouserWidth: z.number().default(10),
       clad: z.boolean().default(false),
+      /** Màu giày của người 3D `clad` */
+      shoe: z.string().default("#2b2623"),
       /** Độ cong nét chi `0..1`; `0` là hai đoạn thẳng gãy ở khuỷu, gối. docs/01-rig.md#vẽ-chi */
       limbCurve: z.number().min(0).max(1).default(1),
       /** Đậm của bóng khối trên đầu, thân áo, tà áo; `0` tắt. docs/01-rig.md#bóng-khối */

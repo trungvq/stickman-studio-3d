@@ -61,11 +61,12 @@ describe("đầu human", () => {
 });
 
 describe("schema", () => {
-  it("dáng đầu có mặc định: không khai là người que như cũ", () => {
+  it("trường của người 3D mặc đồ có mặc định: không khai là người que như cũ", () => {
     const r = parseCharacter({});
     expect(r.success).toBe(true);
     if (!r.success) return;
     expect(r.data.head.form).toBe("sphere");
     expect(r.data.palette.clad).toBe(false);
+    expect(r.data.palette.shoe).toMatch(/^#/);
   });
 });
