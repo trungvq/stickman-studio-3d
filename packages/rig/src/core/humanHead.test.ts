@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { HUMAN_HEAD, humanEar, humanHair, humanSkull, noseY } from "./humanHead";
+import { chibiShape, CHIBI, eyeShine } from "./face";
+import { humanEar, humanHair, humanSkull } from "./humanHead";
 import { parseCharacter } from "./schema";
 
 const unit = (x: number, y: number, z: number): [number, number, number] => {
@@ -8,7 +9,7 @@ const unit = (x: number, y: number, z: number): [number, number, number] => {
 };
 
 describe("đầu human", () => {
-  it("nửa trên ngoài sống mũi trùng mặt cầu: tóc và kính dựng khối khỏi làm lại", () => {
+  it("nửa trên trùng mặt cầu: tóc và kính dựng khối khỏi làm lại", () => {
     for (const p of [unit(1, 0.3, 0.2), unit(0, 1, 0), unit(-0.4, 0.05, -0.9), unit(0.2, 0.6, 0.7)])
       humanSkull(p).forEach((v, i) => expect(v).toBeCloseTo(p[i], 12));
   });
@@ -25,23 +26,20 @@ describe("đầu human", () => {
     }
   });
 
-  it("nửa dưới thon vào quai hàm, dài hơn cầu, cằm ra trước, gáy thu vào", () => {
+  it("chibi: má phồng ngang miệng, cằm chữ U rộng vừa chạm cổ áo, gáy thu vào", () => {
+    const cheek = humanSkull(unit(Math.sqrt(0.75), -0.5, 0));
+    expect(cheek[0]).toBeGreaterThan(Math.sqrt(0.75) * 1.05);
+    // cằm thấp hơn đáy cầu một chút: cao hơn thì lộ khúc cổ trên cổ áo
     const chin = humanSkull([0, -1, 0]);
-    expect(chin[1]).toBeLessThan(-1.05);
-    expect(chin[2]).toBeGreaterThan(0.1);
-    const jaw = humanSkull(unit(1, -1, 0));
-    expect(jaw[0]).toBeLessThan(Math.SQRT1_2 * 0.95);
+    expect(chin[1]).toBeGreaterThan(-1.06);
+    expect(chin[1]).toBeLessThan(-1.01);
+    expect(chin[2]).toBeLessThan(0.15);
+    // đáy cằm phẳng: cách giữa cằm một phần tư bề ngang mà gần như cùng cao độ
+    const side = humanSkull(unit(0.31, -0.95, 0));
+    expect(side[0]).toBeGreaterThan(0.2);
+    expect(side[1] - chin[1]).toBeLessThan(0.05);
     const nape = humanSkull(unit(0, -1, -1));
     expect(nape[2]).toBeGreaterThan(-Math.SQRT1_2 * 0.8);
-  });
-
-  it("gờ mũi nhô ở đúng cao độ chóp mũi, không lan ra má", () => {
-    const y = noseY(0, 34);
-    const tip = humanSkull(unit(0, y, Math.sqrt(1 - y * y)), y);
-    const plain = Math.sqrt(1 - y * y);
-    expect(tip[2] - plain).toBeGreaterThan(HUMAN_HEAD.nose.h * 0.8);
-    const cheek = unit(0.5, y, Math.sqrt(1 - 0.25 - y * y));
-    expect(humanSkull(cheek, y)[2]).toBeCloseTo(humanSkull(cheek, 5)[2], 6);
   });
 
   it("tóc dời theo sọ bên dưới, giữ bề dày", () => {
@@ -57,6 +55,27 @@ describe("đầu human", () => {
     expect(r[0]).toBeCloseTo(-l[0], 12);
     expect(r[0]).toBeLessThan(-0.9);
     expect(r[2]).toBeLessThan(0);
+  });
+});
+
+describe("nét mặt chibi", () => {
+  it("dời mắt xuống, giãn hai mắt, mồm gần mắt; giữ trường khác", () => {
+    const s = chibiShape({ offsetY: 2, eyeGap: 26, mouthGap: 34, turn: 12 });
+    expect(s).toEqual({
+      offsetY: 2 + CHIBI.shift.offsetY,
+      eyeGap: 26 + CHIBI.shift.eyeGap,
+      mouthGap: 34 + CHIBI.shift.mouthGap,
+      turn: 12,
+    });
+  });
+
+  it("đốm sáng chỉ trên con ngươi đang mở, theo bên `only`", () => {
+    const n = (m: ReturnType<typeof eyeShine>) => ("group" in m ? m.group.length : 0);
+    expect(n(eyeShine("open", 0, 0, 40))).toBe(2);
+    expect(n(eyeShine("open", 0, 0, 40, { only: -1 }))).toBe(1);
+    expect(n(eyeShine("wink", 0, 0, 40))).toBe(1);
+    expect(n(eyeShine("wink", 0, 0, 40, { only: -1 }))).toBe(0);
+    expect(n(eyeShine("happy", 0, 0, 40))).toBe(0);
   });
 });
 

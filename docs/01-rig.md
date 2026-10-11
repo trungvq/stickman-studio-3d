@@ -1391,7 +1391,7 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
 
 | Trường | Mặc định | Người 3D |
 |---|---|---|
-| `head.form` | `"sphere"` | `"human"`: quai hàm, cằm, cổ, tai, gờ mũi |
+| `head.form` | `"sphere"` | `"human"`: đầu chibi — má phính, cằm chữ U, cổ, tai, mắt to có đốm sáng, má hồng |
 | `palette.clad` | `false` | Tay chân là ống màu có vỏ viền, bàn tay, giày, khối hông |
 | `palette.sleeve` | `#1a1a1a` | Màu tay áo |
 | `palette.sleeveLength` | `1` | Phần tay phủ màu tay áo tính từ vai, `0..1`; phần còn lại màu da. `1` có cổ tay áo, quanh `0,25` là áo ngắn tay |
@@ -1400,14 +1400,19 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
 | `palette.shoe` | `#2b2623` | Màu giày |
 | `palette.sleeveWidth` / `trouserWidth` | `10` | Bán kính chi `(w + rig.stroke) / 2` px — đúng `limbHalf` của lõi; quanh `11` / `13` là vừa |
 
-- **Đầu `human` nặn từ mặt cầu.** `humanSkull` (`core/humanHead.ts`) nhận một điểm của sọ đơn vị
-  (y lên, z ra trước mặt) và trả điểm trên đầu: nửa trên giữ nguyên, nửa dưới bóp vào quai hàm
-  (`jaw`), phồng má ngang miệng (`cheek`), kéo dài (`drop`), vạt đáy cằm (`flat`), dời ra trước
-  (`chin`) và thu gáy (`nape`); mọi số nhân bình phương độ sâu dưới xích đạo nên viền đầu không gãy
-  ở chỗ nối. Tâm đầu và `HEAD3` không đổi: khớp của `actJoints`, mốc 2D và đồ đội giữ nguyên.
-- **Nét mặt nằm trên mặt nặn.** Lưới nét mặt đi qua cùng `humanSkull` nên mồm, nếp nhăn theo quai
-  hàm ở mọi góc quay. Gờ mũi ở cao độ `noseY(offsetY, mouthGap)` — quá nửa đường mắt → mồm —, kèm
-  nét chân mũi `noseMark` (`core/face.ts`) vẽ trên canvas nét mặt; 2D không vẽ nét ấy.
+- **Đầu `human` là đầu chibi nặn từ mặt cầu.** `humanSkull` (`core/humanHead.ts`) nhận một điểm
+  của sọ đơn vị (y lên, z ra trước mặt) và trả điểm trên đầu: nửa trên giữ nguyên, nửa dưới nở
+  ngang về phía đáy (`jaw`) thành má phính và quai hàm tròn, kéo dài (`drop`) vừa đủ cho cằm chạm cổ
+  áo, vạt đáy thành cằm chữ U rộng (`flat`), hơi dời ra trước (`chin`) và thu gáy (`nape`); không có
+  mũi. Mọi số nhân bình phương độ sâu dưới
+  xích đạo nên viền đầu không gãy ở chỗ nối. Tâm đầu và `HEAD3` không đổi: khớp của `actJoints`, mốc
+  2D và đồ đội giữ nguyên.
+- **Nét mặt chibi nằm trên mặt nặn.** Lưới nét mặt đi qua cùng `humanSkull` nên mồm, nếp nhăn theo
+  má ở mọi góc quay. `CHIBI` (`core/face.ts`) cộng vào `face` của JSON nhân vật: mắt hạ `10`, hai mắt
+  giãn thêm `18`, mồm gần mắt `10` px (`chibiShape`) — kính và `headFit` đọc chỗ mắt đã dời. Mỗi mắt
+  phóng `1,45` lần quanh tâm của nó, bóp ngang `0,75` thành bầu dục đứng, con ngươi đang mở có đốm
+  sáng (`eyeShine`); mồm thu `0,8`, mày nhấc `3` px, má hồng `blushMarks` dưới hai mắt. 2D không vẽ
+  các nét ấy.
 - **Tóc dựng khối dời theo sọ.** Mỗi đỉnh tóc dời đúng bằng điểm sọ bên dưới nó (`humanHair`): tóc
   giữ bề dày, gáy thu thì tóc gáy thu theo, tóc rủ không xuyên quai hàm. Kính và `headFit` đọc nửa
   trên nên như đầu cầu. Tai ẩn khi tóc phủ chỗ tai (tia từ ngoài vào tâm tai chạm vỏ tóc hay tóc rủ).
@@ -1426,7 +1431,7 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
 - **Khối hông** là bao lồi của vành thân áo thu vào và hai khối cầu quanh gốc đùi, trong nhóm thân,
   màu quần — màu váy khi có váy. Váy dựng khối khoét lỗ đùi theo bề dày chân mặc đồ.
 - **Va chạm** có thêm `hand` và `foot` (`handR`, `footL`… trong `touch`): nang bàn tay theo dáng
-  đang hiện, nang giày đáy đúng mặt đế; nang đầu `human` kéo xuống cằm. Đồ cầm khai `touch` cả cẳng
+  đang hiện, nang giày đáy đúng mặt đế; nang đầu `human` kéo xuống ôm má. Đồ cầm khai `touch` cả cẳng
   tay lẫn bàn tay cầm.
 - **Giá.** Người mặc đồ đầy đủ khoảng `57` lưới, người que `23`; người nền nên `lod: "low"` và
   `freeze`.

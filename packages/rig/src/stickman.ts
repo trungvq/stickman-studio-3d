@@ -11,7 +11,8 @@ import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
 import type { Garment, Glasses, Sculpt, Skirt } from './core/schema';
 import { BONES3, HEAD3, roots3 } from './core/act3';
-import { humanHair, humanSkull, noseY } from './core/humanHead';
+import { chibiShape } from './core/face';
+import { humanHair, humanSkull } from './core/humanHead';
 import { Ankle, earGroup, HAND, handGeometry, handScale, humanHeadGeometry, neckGeometry, pelvisGeometry, shoeCapsule, shoeGeometry } from './human';
 import { torsoMesh, type Rig } from './torso';
 
@@ -226,13 +227,13 @@ function arm(parent: THREE.Object3D, side: Side, x: number, y: number): Arm {
 }
 
 /**
- * Tóc dựng khối của rig (`pieces.hair.sculpt` trong JSON nhân vật), lưới hệ sọ đơn vị phóng theo khối đầu. `nose` có
- * thì đầu là `human`: tóc dời theo sọ (`humanHair`).
+ * Tóc dựng khối của rig (`pieces.hair.sculpt` trong JSON nhân vật), lưới hệ sọ đơn vị phóng theo khối đầu. Đầu `human`:
+ * tóc dời theo sọ (`humanHair`).
  */
-function sculptHair(head: THREE.Object3D, sculpt: Partial<Sculpt>, color: string, nose?: number) {
+function sculptHair(head: THREE.Object3D, sculpt: Partial<Sculpt>, color: string, human: boolean) {
   const mesh = sculptMesh(sculpt);
-  if (nose !== undefined) {
-    const bend = (p: number[]) => humanHair(p as Vec3, nose);
+  if (human) {
+    const bend = (p: number[]) => humanHair(p as Vec3);
     for (const tris of [mesh.shell, mesh.spikes, mesh.hang]) tris.forEach((t, i) => (tris[i] = t.map(bend) as typeof t));
     mesh.lines.forEach((l, i) => (mesh.lines[i] = l.map(bend) as typeof l));
   }
@@ -333,9 +334,11 @@ export function stickman(o: StickmanOptions): Figure {
   // đáy sọ trên mép cổ áo (khớp cổ của lõi + `rise` 6 của áo phông): cằm chìm vào khối áo là mất viền
   const head = joint(neck, 0, HEAD3, 0);
   if (human) head.userData.human = true;
-  const nose = noseY(faceShape?.offsetY, faceShape?.mouthGap);
+  // kính và mốc đầu đọc chỗ mắt đã dời của nét mặt chibi
+  const eyes = { eyeGap: 26, offsetY: 0, mouthGap: 34, ...faceShape };
+  if (human) Object.assign(eyes, chibiShape(eyes));
   let skull: THREE.BufferGeometry;
-  if (human) skull = humanHeadGeometry(R.head, q.skull, skullScale, nose);
+  if (human) skull = humanHeadGeometry(R.head, q.skull, skullScale);
   else {
     skull = new THREE.SphereGeometry(R.head, ...q.skull);
     skull.scale(skullScale.x, skullScale.y, skullScale.z);
@@ -345,13 +348,12 @@ export function stickman(o: StickmanOptions): Figure {
   const faceR = lod === 'low' ? stillFace(skullScale, faceShape, face, human) : faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face }, human);
   head.add(faceR.mesh);
   if (glasses) {
-    const sh = { eyeGap: 26, offsetY: 0, ...faceShape };
     const asin = (v: number) => (Math.asin(Math.max(-1, Math.min(1, v / 65))) * 180) / Math.PI;
-    const g = glassesMesh(glasses === true ? {} : glasses, { eye: [asin(sh.eyeGap / 2), -asin(sh.offsetY)], color: glassesColor ?? color, line: INK, stroke: rig.stroke });
+    const g = glassesMesh(glasses === true ? {} : glasses, { eye: [asin(eyes.eyeGap / 2), -asin(eyes.offsetY)], color: glassesColor ?? color, line: INK, stroke: rig.stroke });
     g.scale.copy(skullScale).multiplyScalar(R.head);
     head.add(g);
   }
-  if (hair) sculptHair(head, hair, hairColor, human ? nose : undefined);
+  if (hair) sculptHair(head, hair, hairColor, human);
   if (human) {
     for (const s of SIDES) {
       const ear = earGroup(s, R.head, skullScale, skinMat, hull, ink);
@@ -403,11 +405,11 @@ export function stickman(o: StickmanOptions): Figure {
     }
   }
   const shell = head.children.flatMap((g) => g.children.filter((m) => m.userData.hair === 'shell').map((m) => ((m as THREE.Mesh).geometry.attributes.position.array)));
-  const fit = headFit(skullScale.clone().multiplyScalar(R.head), shell, faceShape?.offsetY ?? 0);
+  const fit = headFit(skullScale.clone().multiplyScalar(R.head), shell, eyes.offsetY);
   if (human) {
     // mặt trước ngang mắt trên đầu `human`: mắt thấp hơn tâm sọ thì đã vào phần nặn
     const ue = Math.max(-1, Math.min(1, fit.eye / (R.head * skullScale.y)));
-    fit.front = humanSkull([0, ue, Math.sqrt(1 - ue * ue)], nose)[2] * R.head * skullScale.z;
+    fit.front = humanSkull([0, ue, Math.sqrt(1 - ue * ue)])[2] * R.head * skullScale.z;
   }
   if (lod === 'low') {
     spine.traverse((o) => {

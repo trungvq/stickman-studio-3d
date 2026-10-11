@@ -278,8 +278,8 @@ export function bodyCapsules(fig: Figure, parts: readonly BodyPart[] = BODY_PART
   }
   if (want.has('head')) {
     const c = fig.head.getWorldPosition(new THREE.Vector3());
-    // đầu `human`: cằm thấp và nhô hơn mặt cầu
-    const b = fig.head.userData.human ? fig.head.localToWorld(new THREE.Vector3(0, -0.12 * R.head, 0.06 * R.head)) : c.clone();
+    // đầu `human`: má và quai hàm chibi nở ra ngoài mặt cầu ở nửa dưới
+    const b = fig.head.userData.human ? fig.head.localToWorld(new THREE.Vector3(0, -0.2 * R.head, 0.03 * R.head)) : c.clone();
     out.push({ part: 'head', a: c, b, r: R.head * k });
   }
   if (want.has('torso')) {

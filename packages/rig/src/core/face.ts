@@ -477,16 +477,61 @@ export function wrinkleMarks(
 }
 
 /**
- * Chân mũi của đầu `human` (`HUMAN_HEAD.nose`): cung ngắn dưới chóp mũi ở `(cx, cy)`, đọc ra mũi ở chính
- * diện và ¾ khi gờ mũi chưa lộ trên viền. Người 3D vẽ, 2D không vẽ.
+ * Nét mặt chibi của đầu `human` trên người 3D: mắt hạ `offsetY`, giãn `eyeGap`, mồm gần mắt `mouthGap` (cộng vào
+ * `face` của JSON nhân vật); nét mắt phóng `eye` quanh tâm mắt và bóp ngang `squash` thành bầu dục đứng, mồm phóng
+ * `mouth`, mày nhấc `brow` px. 2D không đọc. docs/01-rig.md#người-3d-mặc-đồ
  */
-export function noseMark(cx: number, cy: number): FaceMark {
+export const CHIBI = {
+  shift: { offsetY: 10, eyeGap: 18, mouthGap: -10 },
+  eye: 1.45,
+  squash: 0.75,
+  mouth: 0.8,
+  brow: 3,
+} as const;
+
+/** `face` của JSON nhân vật dời theo `CHIBI.shift` */
+export function chibiShape<T extends { offsetY: number; eyeGap: number; mouthGap: number }>(
+  s: T,
+): T {
+  const d = CHIBI.shift;
   return {
-    path: `M ${cx - 5} ${cy + 1} Q ${cx - 1} ${cy + 4.5} ${cx + 4} ${cy + 1.5}`,
-    fill: "none",
-    stroke: MOUTH_INK,
-    strokeWidth: 2.6,
-    strokeLinecap: "round",
+    ...s,
+    offsetY: s.offsetY + d.offsetY,
+    eyeGap: s.eyeGap + d.eyeGap,
+    mouthGap: s.mouthGap + d.mouthGap,
+  };
+}
+
+/** Bán kính con ngươi theo `EYE_R` của kiểu mắt có đốm sáng; `wink` chỉ bên `+1` còn mở */
+const SHINE: Partial<Record<EyeKind, number>> = { open: 1, wide: 0.85, wink: 1 };
+
+/** Đốm sáng trên con ngươi của mắt chibi, cùng tâm, `only` và `squash` như `eyeMarks`; kiểu mắt nhắm thì rỗng */
+export function eyeShine(
+  kind: EyeKind,
+  cx: number,
+  cy: number,
+  gap: number,
+  o: FaceSides = {},
+): FaceMark {
+  const p = (SHINE[kind] ?? 0) * R;
+  const squash = o.squash ?? 1;
+  const sides = p ? sidesOf(o.only).filter((s) => kind !== "wink" || s === 1) : [];
+  return {
+    fill: WHITE,
+    group: sides.map((s) => {
+      const x = cx + (s * gap) / 2;
+      return {
+        ellipse: [x - 0.3 * p * squash, cy - 0.42 * p, 0.36 * p * squash, 0.36 * p] as Quad,
+      };
+    }),
+  };
+}
+
+/** Má hồng dưới hai mắt, chếch ra ngoài */
+export function blushMarks(cx: number, cy: number, gap: number): FaceMark {
+  return {
+    fill: "rgba(236, 112, 112, 0.42)",
+    group: sidesOf().map((s) => ({ ellipse: [cx + s * (gap / 2 + 7), cy + 15, 8, 4.5] as Quad })),
   };
 }
 

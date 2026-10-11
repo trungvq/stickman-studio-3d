@@ -60,10 +60,10 @@ function smooth(g: THREE.BufferGeometry) {
 }
 
 /** Khối sọ `human`: mặt cầu bán kính `r` qua `humanSkull` rồi phóng `scale` như sọ cầu */
-export function humanHeadGeometry(r: number, segs: [number, number], scale: THREE.Vector3, nose: number) {
+export function humanHeadGeometry(r: number, segs: [number, number], scale: THREE.Vector3) {
   const g = new THREE.SphereGeometry(1, ...segs), p = g.attributes.position;
   for (let i = 0; i < p.count; i++) {
-    const [x, y, z] = humanSkull([p.getX(i), p.getY(i), p.getZ(i)], nose);
+    const [x, y, z] = humanSkull([p.getX(i), p.getY(i), p.getZ(i)]);
     p.setXYZ(i, x * r * scale.x, y * r * scale.y, z * r * scale.z);
   }
   return smooth(g);
