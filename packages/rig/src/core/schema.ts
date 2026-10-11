@@ -316,6 +316,8 @@ export const CharacterSchema = z.object({
       follow: z.number().default(HEAD_FOLLOW),
       /** Như trên cho lớp sau đầu: `hairBack` và lớp `under` của kiểu tóc; nó nằm sau trục lắc nên muốn nhúc nhích thì kéo âm */
       followBack: z.number().default(HAIR_BACK_FOLLOW),
+      /** Dáng khối đầu của người 3D: `human` có quai hàm, cằm, tai, mũi; 2D không đọc. docs/01-rig.md#người-3d-mặc-đồ */
+      form: z.enum(["sphere", "human"]).default("sphere"),
     })
     .prefault({}),
   palette: z

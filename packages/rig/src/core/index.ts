@@ -18,6 +18,7 @@ export * from "./glasses";
 export * from "./hairMigration";
 export * from "./hairstyles";
 export * from "./head";
+export * from "./humanHead";
 export * from "./headwear";
 export * from "./idle";
 export * from "./ik";

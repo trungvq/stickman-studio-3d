@@ -265,7 +265,9 @@ export function bodyCapsules(fig: Figure, parts: readonly BodyPart[] = BODY_PART
   }
   if (want.has('head')) {
     const c = fig.head.getWorldPosition(new THREE.Vector3());
-    out.push({ part: 'head', a: c, b: c.clone(), r: R.head * k });
+    // đầu `human`: cằm thấp và nhô hơn mặt cầu
+    const b = fig.head.userData.human ? fig.head.localToWorld(new THREE.Vector3(0, -0.12 * R.head, 0.06 * R.head)) : c.clone();
+    out.push({ part: 'head', a: c, b, r: R.head * k });
   }
   if (want.has('torso')) {
     const b = torsoBox(fig);

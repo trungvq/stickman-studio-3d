@@ -476,6 +476,20 @@ export function wrinkleMarks(
   };
 }
 
+/**
+ * Chân mũi của đầu `human` (`HUMAN_HEAD.nose`): cung ngắn dưới chóp mũi ở `(cx, cy)`, đọc ra mũi ở chính
+ * diện và ¾ khi gờ mũi chưa lộ trên viền. Người 3D vẽ, 2D không vẽ.
+ */
+export function noseMark(cx: number, cy: number): FaceMark {
+  return {
+    path: `M ${cx - 5} ${cy + 1} Q ${cx - 1} ${cy + 4.5} ${cx + 4} ${cy + 1.5}`,
+    fill: "none",
+    stroke: MOUTH_INK,
+    strokeWidth: 2.6,
+    strokeLinecap: "round",
+  };
+}
+
 export const MOUTH_KINDS = Object.keys(MOUTHS) as [MouthKind, ...MouthKind[]];
 export const EYE_KINDS = Object.keys(EYES) as [EyeKind, ...EyeKind[]];
 export const BROW_KINDS = Object.keys(BROWS) as [BrowKind, ...BrowKind[]];

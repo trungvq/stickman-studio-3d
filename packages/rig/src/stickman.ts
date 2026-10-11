@@ -11,6 +11,8 @@ import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
 import type { Garment, Glasses, Sculpt, Skirt } from './core/schema';
 import { BONES3, HEAD3, roots3 } from './core/act3';
+import { humanHair, humanSkull, noseY } from './core/humanHead';
+import { earGroup, humanHeadGeometry, neckGeometry } from './human';
 import type { Rig } from './torso';
 
 // Tỉ lệ lấy từ RIG của @stickman3d/sketch, chia 100: người cao ~4,3 đơn vị, đầu to bằng gần một phần ba.
@@ -194,9 +196,17 @@ function arm(parent: THREE.Object3D, side: Side, x: number, y: number): Arm {
   return { shoulder, elbow, wrist };
 }
 
-/** Tóc dựng khối của rig (`pieces.hair.sculpt` trong JSON nhân vật), lưới hệ sọ đơn vị phóng theo khối đầu. */
-function sculptHair(head: THREE.Object3D, sculpt: Partial<Sculpt>, color: string) {
+/**
+ * Tóc dựng khối của rig (`pieces.hair.sculpt` trong JSON nhân vật), lưới hệ sọ đơn vị phóng theo khối đầu. `nose` có
+ * thì đầu là `human`: tóc dời theo sọ (`humanHair`).
+ */
+function sculptHair(head: THREE.Object3D, sculpt: Partial<Sculpt>, color: string, nose?: number) {
   const mesh = sculptMesh(sculpt);
+  if (nose !== undefined) {
+    const bend = (p: number[]) => humanHair(p as Vec3, nose);
+    for (const tris of [mesh.shell, mesh.spikes, mesh.hang]) tris.forEach((t, i) => (tris[i] = t.map(bend) as typeof t));
+    mesh.lines.forEach((l, i) => (mesh.lines[i] = l.map(bend) as typeof l));
+  }
   // vỏ ngược đánh nhau độ sâu với sọ ngay dưới và bị vỏ tóc che ở lọn nằm sát: nét bóng dáng vẽ ở hậu kỳ
   const mat = npr({ color, stipple: 0.05, stippleScale: 5, soft: 0.6, doubleSided: true, ink: 0.022 });
   for (const tris of [mesh.shell, mesh.spikes, mesh.hang]) {
@@ -256,10 +266,14 @@ export interface StickmanOptions {
   itemSpecs?: Gear['specs'];
   /** Đồ mặc lúc dựng, như `dress` */
   equip?: EquipState;
+  /** `head.form` */
+  headForm?: 'sphere' | 'human';
 }
 
 /** Một người que 3D theo JSON nhân vật của rig. */
-export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt, skirtColor = color, hair, hairColor = '#2a1c15', glasses = false, glassesColor, faceShape, face, seed = 0, sleeveWidth = 10, trouserWidth = 10, seated = false, limbCurve = 1, lod = 'full', items, itemSpecs, equip }: StickmanOptions): Figure {
+export function stickman(o: StickmanOptions): Figure {
+  const { rig, skin = '#f0d9b8', garment, color, accent, skirt, skirtColor = color, hair, hairColor = '#2a1c15', glasses = false, glassesColor, faceShape, face, seed = 0, sleeveWidth = 10, trouserWidth = 10, seated = false, limbCurve = 1, lod = 'full', items, itemSpecs, equip } = o;
+  const human = o.headForm === 'human';
   q = QUALITY[lod];
   const root = new THREE.Group();
   const hips = joint(root, 0, R.thigh + R.shin + R.limb, 0);
@@ -278,10 +292,17 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
   const skullScale = new THREE.Vector3(1, 1.04, 0.98);
   // đáy sọ trên mép cổ áo (khớp cổ của lõi + `rise` 6 của áo phông): cằm chìm vào khối áo là mất viền
   const head = joint(neck, 0, HEAD3, 0);
-  const skull = new THREE.SphereGeometry(R.head, ...q.skull);
-  skull.scale(skullScale.x, skullScale.y, skullScale.z);
-  head.add(inked(skull, npr({ color: skin, stipple: 0.035, stippleScale: 4, soft: 1, flat: true }), 0.03));
-  const faceR = lod === 'low' ? stillFace(skullScale, faceShape, face) : faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face });
+  if (human) head.userData.human = true;
+  const nose = noseY(faceShape?.offsetY, faceShape?.mouthGap);
+  let skull: THREE.BufferGeometry;
+  if (human) skull = humanHeadGeometry(R.head, q.skull, skullScale, nose);
+  else {
+    skull = new THREE.SphereGeometry(R.head, ...q.skull);
+    skull.scale(skullScale.x, skullScale.y, skullScale.z);
+  }
+  const skinMat = npr({ color: skin, stipple: 0.035, stippleScale: 4, soft: 1, flat: true });
+  head.add(inked(skull, skinMat, 0.03));
+  const faceR = lod === 'low' ? stillFace(skullScale, faceShape, face, human) : faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face }, human);
   head.add(faceR.mesh);
   if (glasses) {
     const sh = { eyeGap: 26, offsetY: 0, ...faceShape };
@@ -290,7 +311,14 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
     g.scale.copy(skullScale).multiplyScalar(R.head);
     head.add(g);
   }
-  if (hair) sculptHair(head, hair, hairColor);
+  if (hair) sculptHair(head, hair, hairColor, human ? nose : undefined);
+  if (human) {
+    for (const s of SIDES) {
+      const ear = earGroup(s, R.head, skullScale, skinMat, hull, ink);
+      if (!hairCovers(head, ear.position)) head.add(ear);
+    }
+    neck.add(inked(neckGeometry(HEAD3 - R.head * 0.5, 0.135), skinMat, 0.022));
+  }
   const at = roots3(garment, rig);
   const legs = { [-1]: leg(hips, -1, at.hip), [1]: leg(hips, 1, at.hip) } as Record<Side, Leg>;
   const [sx, sy] = at.shoulder;
@@ -309,6 +337,11 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
   }
   const shell = head.children.flatMap((g) => g.children.filter((m) => m.userData.hair === 'shell').map((m) => ((m as THREE.Mesh).geometry.attributes.position.array)));
   const fit = headFit(skullScale.clone().multiplyScalar(R.head), shell, faceShape?.offsetY ?? 0);
+  if (human) {
+    // mặt trước ngang mắt trên đầu `human`: mắt thấp hơn tâm sọ thì đã vào phần nặn
+    const ue = Math.max(-1, Math.min(1, fit.eye / (R.head * skullScale.y)));
+    fit.front = humanSkull([0, ue, Math.sqrt(1 - ue * ue)], nose)[2] * R.head * skullScale.z;
+  }
   if (lod === 'low') {
     spine.traverse((o) => {
       const g = (o as THREE.Mesh).geometry as THREE.TubeGeometry | undefined;
@@ -325,6 +358,20 @@ export function stickman({ rig, skin = '#f0d9b8', garment, color, accent, skirt,
   const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig };
   if (equip) dress(fig, equip);
   return fig;
+}
+
+/** Tóc phủ lên chỗ tai `at` (hệ nhóm đầu): tia từ ngoài vào tâm tai chạm vỏ tóc hay tóc rủ */
+function hairCovers(head: THREE.Object3D, at: THREE.Vector3) {
+  const out = at.clone().setY(0).normalize();
+  const ray = new THREE.Raycaster(at.clone().addScaledVector(out, 0.5), out.clone().negate(), 0, 0.5);
+  const probe = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+  let hit = false;
+  head.traverse((o) => {
+    if (hit || !o.userData.hair) return;
+    probe.geometry = (o as THREE.Mesh).geometry;
+    hit = ray.intersectObject(probe).length > 0;
+  });
+  return hit;
 }
 
 /** Lưới của chính người: không nét gấp, `collide` đo người bằng nang nên bỏ lưới `userData.body`; đồ gắn sau không mang cờ này */
@@ -361,10 +408,10 @@ export function fitSkirt(p: Figure) {
 
 const stillFaces = new Map<string, FaceRig>();
 /** Nét mặt dùng chung cho người nền: một texture cho mọi người cùng dáng mặt, `set` không đổi gì */
-function stillFace(scale: THREE.Vector3, shape?: Partial<FaceShape>, state?: Partial<FaceState>): FaceRig {
-  const s = { ...DEFAULT_FACE, ...state }, key = JSON.stringify([shape, s]);
+function stillFace(scale: THREE.Vector3, shape?: Partial<FaceShape>, state?: Partial<FaceState>, human = false): FaceRig {
+  const s = { ...DEFAULT_FACE, ...state }, key = JSON.stringify([shape, s, human]);
   let f = stillFaces.get(key);
-  if (!f) stillFaces.set(key, (f = faceRig(R.head, scale, shape, s)));
+  if (!f) stillFaces.set(key, (f = faceRig(R.head, scale, shape, s, human)));
   const mesh = new THREE.Mesh(f.mesh.geometry, f.mesh.material);
   mesh.userData.noShadow = true;
   mesh.userData.noCollide = true;
@@ -416,6 +463,7 @@ const isJoint = (o: THREE.Object3D) => !!o.userData.joint;
 export interface CharacterJson {
   rig: Rig;
   palette: { garment: string; skin?: string; sleeveWidth?: number; trouserWidth?: number; limbCurve?: number };
+  head?: { form?: 'sphere' | 'human' };
   face?: Partial<FaceShape>;
   pieces: {
     torso: { garment?: Partial<Garment> };
@@ -434,7 +482,7 @@ export function characterOptions(json: CharacterJson, opts: Partial<StickmanOpti
     rig: json.rig, garment: pc.torso.garment, color: pal.garment, skin: pal.skin,
     skirt: pc.hem?.skirt, skirtColor: pc.hem?.color, hair: pc.hair?.sculpt, hairColor: pc.hair?.color,
     sleeveWidth: pal.sleeveWidth, trouserWidth: pal.trouserWidth, limbCurve: pal.limbCurve, faceShape: json.face, itemSpecs: json.items,
-    glasses: pc.faceAcc?.src === 'sculpt' && pc.faceAcc.glasses, glassesColor: pc.faceAcc?.color, ...opts,
+    glasses: pc.faceAcc?.src === 'sculpt' && pc.faceAcc.glasses, glassesColor: pc.faceAcc?.color, headForm: json.head?.form, ...opts,
   };
 }
 
