@@ -10,7 +10,7 @@ import { INK, toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
 import type { Garment, Glasses, Sculpt, Skirt } from './core/schema';
-import { BONES3, HEAD3, roots3 } from './core/act3';
+import { BONES3, CLAD_TAPER, cladArm, HEAD3, roots3 } from './core/act3';
 import { chibiShape } from './core/face';
 import { humanHair, humanSkull } from './core/humanHead';
 import { Ankle, earGroup, HAND, handGeometry, handScale, humanHeadGeometry, neckGeometry, pelvisGeometry, shoeCapsule, shoeGeometry } from './human';
@@ -302,6 +302,8 @@ export interface StickmanOptions {
   sleeveColor?: string;
   trouserColor?: string;
   shoeColor?: string;
+  /** `palette.bicep`: gốc cánh tay to thêm bấy nhiêu phần */
+  bicep?: number;
   /** `palette.sleeveLength`, `palette.trouserLength`: phần chi phủ màu áo, quần từ gốc chi */
   sleeveLength?: number;
   trouserLength?: number;
@@ -361,7 +363,8 @@ export function stickman(o: StickmanOptions): Figure {
     }
     neck.add(inked(neckGeometry(HEAD3 - R.head * 0.5, 0.135), skinMat, 0.022));
   }
-  const at = roots3(garment, rig);
+  const bicep = o.bicep ?? 0;
+  const at = roots3(garment, rig, clad ? cladArm(sleeveWidth, rig.stroke) : undefined, bicep);
   const legs = { [-1]: leg(hips, -1, at.hip), [1]: leg(hips, 1, at.hip) } as Record<Side, Leg>;
   const [sx, sy] = at.shoulder;
   const arms = { [-1]: arm(spine, -1, sx, sy), [1]: arm(spine, 1, sx, sy) } as Record<Side, Arm>;
@@ -379,8 +382,8 @@ export function stickman(o: StickmanOptions): Figure {
     pelvis(spine, garment, rig, at.hip, limbR(trouserWidth) * 1.1, tone(skirt ? skirtColor : trouserColor));
     hands = {} as Record<Side, Hand>;
     for (const s of SIDES) {
-      cladLimb(seg(arms[s].shoulder), seg(arms[s].elbow), [R.upperArm, R.foreArm], [1, 0.92, 0.8], tone(sleeveColor), limbSkin, sleeveLength, true);
-      cladLimb(seg(legs[s].hip), seg(legs[s].knee), [R.thigh, R.shin], [1.06, 0.94, 0.8], tone(trouserColor), limbSkin, trouserLength, false);
+      cladLimb(seg(arms[s].shoulder), seg(arms[s].elbow), [R.upperArm, R.foreArm], [CLAD_TAPER.arm[0] * (1 + bicep), CLAD_TAPER.arm[1], CLAD_TAPER.arm[2]], tone(sleeveColor), limbSkin, sleeveLength, true);
+      cladLimb(seg(legs[s].hip), seg(legs[s].knee), [R.thigh, R.shin], CLAD_TAPER.leg, tone(trouserColor), limbSkin, trouserLength, false);
       const k = handScale(limbR(sleeveWidth) * 0.8);
       const pose = (fist: boolean) => {
         const g = inked(handGeometry(s, fist, k), limbSkin, 0.016);
@@ -433,7 +436,7 @@ export function stickman(o: StickmanOptions): Figure {
  * Đoạn chi `upper` → `lower` của người `clad` (dài `L1`, `L2`): ống tô màu có vỏ viền, thon theo `taper` (bán kính ở gốc,
  * khớp giữa, ngọn, nhân `userData.r`). `f` phần chi từ gốc phủ `cover`, còn lại `skin`; phủ hết thì `cuff` thêm cổ tay áo.
  */
-function cladLimb(upper: THREE.Mesh, lower: THREE.Mesh, [L1, L2]: [number, number], taper: [number, number, number], cover: THREE.Material, skin: THREE.Material, f: number, cuff: boolean) {
+function cladLimb(upper: THREE.Mesh, lower: THREE.Mesh, [L1, L2]: [number, number], taper: readonly [number, number, number], cover: THREE.Material, skin: THREE.Material, f: number, cuff: boolean) {
   upper.userData.taper = [taper[0], taper[1]];
   lower.userData.taper = [taper[1], taper[2]];
   const full = f >= 0.999;
@@ -573,7 +576,7 @@ export interface CharacterJson {
   rig: Rig;
   palette: {
     garment: string; skin?: string; sleeveWidth?: number; trouserWidth?: number; limbCurve?: number;
-    clad?: boolean; sleeve?: string; trouser?: string; shoe?: string; sleeveLength?: number; trouserLength?: number;
+    clad?: boolean; sleeve?: string; trouser?: string; shoe?: string; sleeveLength?: number; trouserLength?: number; bicep?: number;
   };
   head?: { form?: 'sphere' | 'human' };
   face?: Partial<FaceShape>;
@@ -595,7 +598,7 @@ export function characterOptions(json: CharacterJson, opts: Partial<StickmanOpti
     skirt: pc.hem?.skirt, skirtColor: pc.hem?.color, hair: pc.hair?.sculpt, hairColor: pc.hair?.color,
     sleeveWidth: pal.sleeveWidth, trouserWidth: pal.trouserWidth, limbCurve: pal.limbCurve, faceShape: json.face, itemSpecs: json.items,
     glasses: pc.faceAcc?.src === 'sculpt' && pc.faceAcc.glasses, glassesColor: pc.faceAcc?.color,
-    clad: pal.clad, sleeveColor: pal.sleeve, trouserColor: pal.trouser, shoeColor: pal.shoe, sleeveLength: pal.sleeveLength,
+    clad: pal.clad, sleeveColor: pal.sleeve, trouserColor: pal.trouser, shoeColor: pal.shoe, sleeveLength: pal.sleeveLength, bicep: pal.bicep,
     trouserLength: pal.trouserLength, headForm: json.head?.form, ...opts,
   };
 }

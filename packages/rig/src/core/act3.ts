@@ -2,7 +2,7 @@ import { D } from "./constants";
 import { REACH_ELBOW } from "./ik";
 import type { V3 } from "./lens";
 import type { CharacterData, Garment } from "./schema";
-import { garmentShoulder, type Rig } from "./torso";
+import { garmentShoulder, garmentSocket, type Rig } from "./torso";
 
 /**
  * Khung xương của người 3D (`stickman.ts`), đơn vị three: đơn vị rig chia 100. `act` và `actJoints`
@@ -25,11 +25,41 @@ export const SPLAY3 = 0.08;
 /** Đáy sọ trên mép cổ áo: tâm khối đầu cao hơn khớp cổ ngần này, đơn vị three */
 export const HEAD3 = BONES3.neck + 0.09 + BONES3.head * 1.04;
 
-/** Gốc vai `[ngang, cao trên hông]` và nửa khoảng hai gốc chân của người 3D, đơn vị three */
-export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig) => ({
-  shoulder: [garmentShoulder(garment, rig) / 100, (120 - rig.shoulderDrop) / 100] as const,
-  hip: rig.hipHalf / 100,
-});
+/**
+ * Bán kính chi người 3D mặc đồ (`palette.clad`) ở gốc, khớp giữa, ngọn, nhân bán kính chi: bắp tay to hơn cẳng tay
+ * như đùi với ống chân
+ */
+export const CLAD_TAPER = {
+  arm: [1.12, 0.88, 0.74],
+  leg: [1.06, 0.94, 0.8],
+} as const;
+
+/** Bán kính gốc ống cánh tay của người mặc đồ, px: `limbHalf` của lõi nhân `CLAD_TAPER` */
+export const cladArm = (sleeveWidth: number, stroke: number) =>
+  ((sleeveWidth + stroke) / 2) * CLAD_TAPER.arm[0];
+
+/**
+ * Gốc vai `[ngang, cao trên hông]` và nửa khoảng hai gốc chân của người 3D, đơn vị three. `arm` (px, `cladArm`) có thì
+ * gốc vai ở `garmentSocket`: nắp ống tay ôm góc vai áo, `bicep` nở nó ra ngoài sườn áo; không thì trên viền thân ở
+ * độ cao `shoulderDrop`
+ */
+export const roots3 = (
+  garment: Partial<Garment> | undefined,
+  rig: Rig,
+  arm?: number,
+  bicep = 0,
+) => {
+  const sock = arm ? garmentSocket(garment, rig, arm, arm * (1 + bicep)) : undefined;
+  return {
+    shoulder: (sock
+      ? [sock[0] / 100, -sock[1] / 100]
+      : [garmentShoulder(garment, rig) / 100, (120 - rig.shoulderDrop) / 100]) as readonly [
+      number,
+      number,
+    ],
+    hip: rig.hipHalf / 100,
+  };
+};
 
 export type Limb3 = "af" | "an" | "lf" | "ln";
 
@@ -202,14 +232,16 @@ export interface ActInput {
  * thì không có gì. `check` đo giật tay chân trên các khớp này. docs/01-rig.md#khớp-người-3d-vẽ-ra
  */
 export function actJoints(
-  c: Pick<CharacterData, "rig" | "pieces">,
+  c: Pick<CharacterData, "rig" | "pieces" | "palette">,
   sp: ActInput,
 ): Record<ActJoint, V3> | undefined {
   const W = sp.world;
   if (!W) return undefined;
   const P = sp.pose;
   const B = BONES3;
-  const roots = roots3(c.pieces.torso.garment, c.rig);
+  const pal = c.palette;
+  const arm = pal.clad ? cladArm(pal.sleeveWidth, c.rig.stroke) : undefined;
+  const roots = roots3(c.pieces.torso.garment, c.rig, arm, pal.bicep);
   const flip = !!W.flip;
   const near = flip ? 1 : -1;
   const seated = !!W.seated;

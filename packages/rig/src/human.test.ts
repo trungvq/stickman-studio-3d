@@ -44,6 +44,18 @@ function bounds(o: THREE.Object3D) {
 }
 
 describe('người 3D mặc đồ', () => {
+  it('`bicep` làm vai và bắp tay lồi ra ngoài sườn áo', () => {
+    const arm = (bicep: number) => {
+      const f = dressed((c) => (c.palette.bicep = bicep));
+      act(f, stand());
+      const upper = f.arms[1].shoulder.children.find((m) => m.userData.limb) as THREE.Mesh;
+      upper.userData.bend();
+      return { f, box: bounds(upper) };
+    };
+    const [plain, big] = [arm(0), arm(0.7)];
+    expect(big.box.max.x - plain.box.max.x).toBeGreaterThan(0.03);
+  });
+
   it('không khai thì là người que: không bàn tay, cổ chân, tai, khối hông', () => {
     const f = make();
     expect(f.hands).toBeUndefined();

@@ -200,7 +200,7 @@ const TEE: Dims = {
   neck: 20,
   neckFront: 7,
   neckBack: 0,
-  slope: 0.6,
+  slope: 0.4,
   round: 16,
   hemRound: 8,
 };
@@ -289,7 +289,7 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
       neck: 20,
       neckFront: 7,
       neckBack: 0,
-      slope: 0.6,
+      slope: 0.4,
       round: 16,
       hemRound: 8,
     },
@@ -397,7 +397,7 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
   },
   hoodie: {
     label: "Hoodie dựng khối",
-    dims: { ...TEE, hem: 5.5, slope: 0.7, neckFront: 8, neckBack: 8 },
+    dims: { ...TEE, hem: 5.5, slope: 0.5, neckFront: 8, neckBack: 8 },
     neckline: "v",
     hood: {
       drop: [
@@ -735,6 +735,39 @@ export function garmentShoulder(raw: Partial<Garment> | undefined, rig: Rig) {
 }
 
 export const shoulderRoot = (c: CharacterData) => garmentShoulder(c.pieces.torso.garment, c.rig);
+
+/**
+ * Tâm gốc ống cánh tay ở góc vai của mặt khối 3D (mặt cắt lùi nửa nét như `torsoMesh`), `[x, y]` px của nhóm thân, y
+ * xuống. Vòng tròn bán kính `r` nội tiếp góc, tiếp xúc vát vai và sườn áo; `grow` lớn hơn `r` thì vòng ấy nở từ đúng
+ * điểm tiếp xúc vát vai, lồi ra ngoài sườn áo. Nắp ống tay bán kính `grow` ở đây thì viền vai đi liền vào tay
+ */
+export function garmentSocket(
+  raw: Partial<Garment> | undefined,
+  rig: Rig,
+  r: number,
+  grow = r,
+): P2 {
+  const pr = profile(garmentOf(raw), rig, rig.stroke / 2);
+  // vát vai: khớp cổ → đầu cung bo; sườn: cuối cung bo (`B`) xuôi vài điểm, đã thắt eo
+  const [P0, A, B, S] = [pr.pts[0], pr.pts[1], pr.pts[13], pr.pts[17]];
+  const unit = (x: number, y: number): P2 => {
+    const l = Math.hypot(x, y) || 1;
+    return [x / l, y / l];
+  };
+  const u1 = unit(P0[0] - A[0], P0[1] - A[1]);
+  const u2 = unit(S[0] - B[0], S[1] - B[1]);
+  // góc vai: giao của hai đường
+  const den = u1[0] * u2[1] - u1[1] * u2[0];
+  const t = ((B[0] - A[0]) * u2[1] - (B[1] - A[1]) * u2[0]) / (den || 1e-9);
+  const X: P2 = [A[0] + u1[0] * t, A[1] + u1[1] * t];
+  const b = unit(u1[0] + u2[0], u1[1] + u2[1]);
+  const sin = Math.abs(u1[0] * b[1] - u1[1] * b[0]) || 1;
+  const C: P2 = [X[0] + (b[0] * r) / sin, X[1] + (b[1] * r) / sin];
+  // pháp tuyến vát vai hướng vào tâm: tâm trượt theo nó, điểm tiếp xúc giữ nguyên
+  const side = Math.sign(u1[0] * b[1] - u1[1] * b[0]);
+  const n: P2 = [-u1[1] * side, u1[0] * side];
+  return [C[0] + n[0] * (grow - r), C[1] + n[1] * (grow - r)];
+}
 
 /**
  * Nửa khoảng cách chiếu của hai gốc chi trên một vành nửa rộng `half`: hai điểm kinh độ `±90`

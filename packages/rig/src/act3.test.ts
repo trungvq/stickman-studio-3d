@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { act, type Acting } from './act';
-import { actJoints, BONES3, type ActJoint } from './core/act3';
+import { actJoints, BONES3, cladArm, roots3, type ActJoint } from './core/act3';
 import { defaultCharacter } from './core/schema';
+import { garmentOf, profile } from './core/torso';
 import type { Figure } from './stickman';
 
 // Người que three cần canvas cho nét mặt: một canvas giả đủ để dựng hình, không vẽ gì
@@ -44,13 +45,14 @@ function drawn(p: Figure, sp: Acting): Record<ActJoint, [number, number, number]
 }
 
 describe('actJoints', () => {
-  it('trùng khớp người que three mà `act` đặt, ở mọi kiểu tư thế', async () => {
+  it('trùng khớp người que three mà `act` đặt, ở mọi kiểu tư thế, cả người mặc đồ', async () => {
     const { fromCharacter } = await import('./stickman');
-    const c = defaultCharacter();
-    const json = c as unknown as Parameters<typeof fromCharacter>[0];
     const r = rng(7);
     const ang = (k = 120) => (r() * 2 - 1) * k;
-    for (const seated of [false, true]) {
+    for (const [seated, clad] of [[false, false], [true, false], [false, true]]) {
+      const c = defaultCharacter();
+      c.palette.clad = clad;
+      const json = c as unknown as Parameters<typeof fromCharacter>[0];
       const p = fromCharacter(json, { seated });
       for (let i = 0; i < 40; i++) {
         const lift = { af: r() < 0.6, an: r() < 0.6, lf: r() < 0.6, ln: r() < 0.6 };
@@ -70,8 +72,29 @@ describe('actJoints', () => {
         const want = drawn(p, sp);
         const got = actJoints(c, sp)!;
         for (const k of Object.keys(want) as ActJoint[])
-          for (let j = 0; j < 3; j++) expect(got[k][j], `${k}[${j}] ca ${i}${seated ? ' ngồi' : ''}`).toBeCloseTo(want[k][j], 6);
+          for (let j = 0; j < 3; j++) expect(got[k][j], `${k}[${j}] ca ${i}${seated ? ' ngồi' : ''}${clad ? ' mặc đồ' : ''}`).toBeCloseTo(want[k][j], 6);
       }
+    }
+  });
+
+  it('người mặc đồ: gốc vai là tâm vòng tròn bán kính ống tay tiếp xúc vát vai và sườn áo; `bicep` nở nó ra ngoài sườn', () => {
+    const c = defaultCharacter();
+    for (const style of ['tshirt', 'shirt', 'suit', 'hoodie'] as const) {
+      const g = { style };
+      const arm = cladArm(c.palette.sleeveWidth, c.rig.stroke);
+      const [x, h] = roots3(g, c.rig, arm).shoulder.map((v) => v * 100);
+      const [xb, hb] = roots3(g, c.rig, arm, 0.7).shoulder.map((v) => v * 100);
+      const pts = profile(garmentOf(g), c.rig, c.rig.stroke / 2).pts;
+      // khoảng cách từ tâm (x, −h) tới đường qua hai điểm
+      const dist = (a: number[], b: number[]) => Math.abs((b[0] - a[0]) * (a[1] + h) - (a[0] - x) * (b[1] - a[1])) / Math.hypot(b[0] - a[0], b[1] - a[1]);
+      expect(dist(pts[0], pts[1]), style).toBeCloseTo(arm, 6);
+      expect(dist(pts[13], pts[17]), style).toBeCloseTo(arm, 6);
+      // vòng to vẫn tiếp xúc vát vai, mép ngoài vượt sườn áo
+      const distB = (a: number[], b: number[]) => Math.abs((b[0] - a[0]) * (a[1] + hb) - (a[0] - xb) * (b[1] - a[1])) / Math.hypot(b[0] - a[0], b[1] - a[1]);
+      expect(distB(pts[0], pts[1]), style).toBeCloseTo(arm * 1.7, 6);
+      expect(xb + arm * 1.7, style).toBeGreaterThan(x + arm + 3);
+      // cao hơn khớp vai người que
+      expect(h, style).toBeGreaterThan(roots3(g, c.rig).shoulder[1] * 100);
     }
   });
 
