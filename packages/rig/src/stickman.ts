@@ -81,6 +81,8 @@ function tube() {
     }
   }
   geo.setIndex(idx);
+  // lưới dựng theo chất lượng của người lúc dựng; `q` đổi theo người dựng sau
+  geo.userData.limb = q.limb;
   return geo;
 }
 
@@ -98,7 +100,7 @@ const bezTangent = (c: THREE.Vector3[], u: number, out: THREE.Vector3) => {
 const _d = new THREE.Vector3(), _c = new THREE.Vector3(), _t = new THREE.Vector3(), _n = new THREE.Vector3(), _b = new THREE.Vector3(), _r = new THREE.Vector3();
 
 function fillTube(geo: THREE.BufferGeometry, c: THREE.Vector3[], r: number) {
-  const [cap, m, n] = q.limb;
+  const [cap, m, n] = geo.userData.limb as Quality['limb'];
   const pos = geo.attributes.position as THREE.BufferAttribute, nor = geo.attributes.normal as THREE.BufferAttribute;
   let k = 0;
   const ring = (center: THREE.Vector3, along: number, rad: number, lean: number) => {
