@@ -125,9 +125,9 @@ viền thật mà không gì báo. Cổ và đầu của người 3D không nằ
 `A.joints.collar`, `A.frames.head`, đừng tự cộng độ dài. Xem [01](01-rig.md#người-3d).
 
 **Người 3D mặc đồ treo đồ cầm ở tâm nắm, không ở mút nét.** `palette.clad` dời khung `hand` vào
-lòng bàn tay (`HAND.grip`) và `hold` tự nắm tay; đồ căn `offset` cho người que lùi vào vài px. Bề dày
-chi của nó là `limbHalf` của lõi nên `sceneAt` phải nhận `body3(nhân vật)` — truyền `legHalf` cứng là
-người ngồi lún hay lơ lửng trên ghế. Xem [01](01-rig.md#người-3d-mặc-đồ).
+lòng bàn tay (`HAND.grip`) và `hold` tự nắm tay; đồ căn `offset` cho người que lùi vào vài px. Nó ngồi
+trên gốc đùi `cladThigh`, không trên `limbHalf`, nên `sceneAt` phải nhận `body3(nhân vật)` — truyền
+`legHalf` cứng là người ngồi lún hay lơ lửng trên ghế. Xem [01](01-rig.md#người-3d-mặc-đồ).
 
 **Mặt người 3D có tóc dựng khối không theo `views.head`.** Nấc ấy chỉ còn chọn mảnh vẽ theo nấc;
 nét mặt quay liên tục theo `theta` và mỗi mắt có thể đã tắt. Tự vẽ hay tự đặt thứ gì lên mặt thì đọc

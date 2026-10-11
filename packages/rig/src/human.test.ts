@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { act, type Acting } from './act';
 import { hold } from './attach';
 import { bodyCapsules, collide, colliders } from './collide';
+import { cladThigh } from './core/act3';
 import { body3 } from './core/figure3d';
 import { parseAction } from './core/action';
 import { parseScene, resolveScene, sceneAt } from './core/scene';
@@ -142,11 +143,36 @@ describe('người 3D mặc đồ', () => {
     expect(hand.max.y - hand.min.y).toBeLessThan(fore * 0.7);
   });
 
-  it('váy: lỗ ống đùi theo bề dày chân mặc đồ', () => {
-    const f = dressed((c) => (c.pieces.hem = { ...c.pieces.hem, src: 'sculpt', skirt: SkirtSchema.parse({}) }), { skirt: SkirtSchema.parse({}) });
-    expect(f.skirt!.opts.legW).toBe(13 + 6);
+  it('khối hông có mông mà không lồi qua thân áo trên gấu; hai gốc đùi gần chạm nhau ở đáy quần', () => {
+    for (const style of ['tshirt', 'shirt', 'sweater'] as const) {
+      const f = dressed((c) => {
+        Object.assign(c.rig, { shoulderHalf: 46, hipHalf: 18 });
+        Object.assign(c.palette, { sleeveWidth: 19, trouserWidth: 22, bicep: 0.7 });
+        c.pieces.torso = { ...c.pieces.torso, src: 'sculpt', garment: { style } as never };
+      });
+      const torso = f.spine.children[0] as THREE.Mesh;
+      const pelvis = f.spine.children.find((o) => o.userData.pelvis)!.children[0] as THREE.Mesh;
+      torso.geometry.computeBoundingBox();
+      pelvis.geometry.computeBoundingBox();
+      const hem = torso.geometry.boundingBox!.min.y;
+      expect(pelvis.geometry.boundingBox!.min.z, style).toBeLessThan(-0.18);
+      f.root.updateWorldMatrix(true, true);
+      const ray = new THREE.Raycaster();
+      for (let y = hem + 0.005; y < hem + 0.2; y += 0.01)
+        for (let x = -0.34; x <= 0.34; x += 0.02)
+          for (const dir of [1, -1]) {
+            ray.set(f.spine.localToWorld(new THREE.Vector3(x, y, -dir)), new THREE.Vector3(0, 0, dir).transformDirection(f.spine.matrixWorld));
+            const hit = ray.intersectObjects([torso, pelvis], false)[0];
+            if (hit) expect(hit.object, `${style} ${x.toFixed(2)},${y.toFixed(3)}`).toBe(torso);
+          }
+    }
+    expect(18 - cladThigh(22, 6, 18)).toBeCloseTo(1, 6);
   });
-  it('người lùn (`rig.height` 0,65) theo `sceneAt`: đế giày trên sàn khi đứng và đi, đùi nằm trên mặt ghế khi ngồi', () => {
+  it('váy: lỗ ống đùi theo gốc đùi mặc đồ', () => {
+    const f = dressed((c) => (c.pieces.hem = { ...c.pieces.hem, src: 'sculpt', skirt: SkirtSchema.parse({}) }), { skirt: SkirtSchema.parse({}) });
+    expect(f.skirt!.opts.legW).toBe(2 * cladThigh(13, 6, defaultCharacter().rig.hipHalf));
+  });
+  it('người lùn (`rig.height` 0,65) theo `sceneAt`: đế giày trên sàn khi đứng và đi, gốc đùi nằm trên mặt ghế khi ngồi', () => {
     const c = defaultCharacter();
     Object.assign(c.palette, { clad: true, sleeveWidth: 19, trouserWidth: 22 });
     c.rig.height = 0.65;
@@ -179,6 +205,6 @@ describe('người 3D mặc đồ', () => {
     const seat = fromCharacter(c as unknown as CharacterJson, { seated: true });
     act(seat, sceneAt(rt, 'ngoi', 0.5, 0.65, dims), 0.5);
     const thigh = bodyCapsules(seat, ['thigh']);
-    for (const cap of thigh) expect(Math.min(cap.a.y, cap.b.y) - cap.r).toBeCloseTo(0.875, 2);
+    for (const cap of thigh) expect(cap.a.y - dims.legHalf / 100).toBeCloseTo(0.875, 2);
   });
 });

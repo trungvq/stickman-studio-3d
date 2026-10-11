@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { act, type Acting } from './act';
-import { actJoints, cladArm, roots3, SPLAY3, type ActJoint } from './core/act3';
+import { actJoints, CLAD_GAP, CLAD_TAPER, cladArm, cladProfile, cladThigh, roots3, SPLAY3, type ActJoint } from './core/act3';
+import { TORSO_DEPTH } from './core/constants';
 import { defaultCharacter } from './core/schema';
 import { garmentOf, profile } from './core/torso';
 import type { Figure } from './stickman';
@@ -100,14 +101,21 @@ describe('actJoints', () => {
     }
   });
 
-  it('tay mặc đồ to mà ngắn choãi thêm cho khỏi lẹm sườn áo; tay cỡ thường và người que giữ `SPLAY3`', () => {
+  it('tay mặc đồ buông thẳng `SPLAY3` ngoài sườn áo đã thu: khuỷu cách sườn một `CLAD_GAP`, thân không dày hơn ở vai', () => {
     const c = defaultCharacter();
     const g = { style: 'tshirt' as const };
     expect(roots3(g, c.rig).splay).toBe(SPLAY3);
-    expect(roots3(g, c.rig, cladArm(11, 6)).splay).toBe(SPLAY3);
-    const chibi = roots3(g, { ...c.rig, height: 0.65 }, cladArm(19, 6)).splay;
-    expect(chibi).toBeGreaterThan(SPLAY3 * 2);
-    expect(roots3(g, c.rig, cladArm(19, 6)).splay).toBeLessThan(chibi);
+    for (const [w, bicep, height] of [[11, 0, 1], [19, 0.7, 1], [19, 0, 0.65]] as const) {
+      const rig = { ...c.rig, height }, arm = cladArm(w, 6);
+      const r = roots3(g, rig, arm, bicep, cladThigh(22, 6, rig.hipHalf));
+      const elbow = r.shoulder[0] * 100 + 62 * height * Math.sin(r.splay) - (arm * CLAD_TAPER.arm[1]) / CLAD_TAPER.arm[0];
+      expect(elbow - r.room!.side, `${w} ${bicep} ${height}`).toBeCloseTo(CLAD_GAP, 6);
+      const { pts: side, depth } = cladProfile(profile(garmentOf(g), rig, rig.stroke / 2).pts, r.room!);
+      for (const [a, y] of side) if (y > r.room!.at[1] + r.room!.cap) expect(a).toBeLessThanOrEqual(r.room!.side + 1e-9);
+      expect(Math.max(...depth)).toBeCloseTo(TORSO_DEPTH * r.room!.side, 6);
+      expect(r.room!.side).toBeGreaterThanOrEqual(rig.hipHalf + cladThigh(22, 6, rig.hipHalf));
+      if (r.room!.side > rig.hipHalf + cladThigh(22, 6, rig.hipHalf)) expect(r.splay).toBeCloseTo(SPLAY3, 9);
+    }
   });
 
   it('kênh 2D của người 3D về dáng nghỉ: góc soạn trên mặt khung không đổi khớp', () => {

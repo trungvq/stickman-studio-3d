@@ -13,6 +13,7 @@ import {
   type LocalLens,
   type V3,
 } from "./lens";
+import { cladThigh } from "./act3";
 import { bendOf, REACH_ELBOW, solveTwoBone } from "./ik";
 import type { CharacterData } from "./schema";
 import { hull, skirtCover, skirtFall, skirtOf } from "./skirt";
@@ -89,9 +90,11 @@ export const limbHalf = (c: CharacterData) => {
   return { leg: (c.palette.trouserWidth + out) / 2, arm: (c.palette.sleeveWidth + out) / 2 };
 };
 
-/** Số đo thân của một nhân vật cho `sceneAt` */
+/** Số đo thân của một nhân vật cho `sceneAt`: người mặc đồ ngồi trên gốc đùi `cladThigh` */
 export const body3 = (c: CharacterData): Body3 => ({
-  legHalf: limbHalf(c).leg,
+  legHalf: c.palette.clad
+    ? cladThigh(c.palette.trouserWidth, c.rig.stroke, c.rig.hipHalf)
+    : limbHalf(c).leg,
   hipHalf: c.rig.hipHalf,
 });
 

@@ -1,4 +1,5 @@
 import { ShapeUtils, Vector2 } from 'three';
+import { cladProfile, type ArmRoom } from './core/act3';
 import { D, TORSO_DEPTH } from './core/constants';
 import type { Garment } from './core/schema';
 import {
@@ -9,13 +10,15 @@ import {
 // Thân áo dựng khối từ bảng kiểu và mặt cắt `profile` của lõi: như `torsoPaths` nhưng giữ khối, nét và tấm ở 3D
 // thay vì chiếu ra path SVG.
 
-export type { Rig };
+export type { ArmRoom, Rig };
 type Vec3 = [number, number, number];
 
 /** Thân áo dựng khối ở 3D, hệ nhóm thân của rig (px, gốc ở hông, `y` xuống, `z` ra trước ngực). */
 export interface TorsoMesh {
-  /** Mặt cắt dọc `[nửa rộng, y]` từ mép trên xuống gấu; tiết diện ngang là ellipse dẹt `TORSO_DEPTH` */
+  /** Mặt cắt dọc `[nửa rộng, y]` từ mép trên xuống gấu; tiết diện ngang là ellipse nửa rộng ấy, nửa sâu `depth` cùng hàng */
   profile: P2[];
+  /** Nửa bề sâu từng hàng của `profile`: `TORSO_DEPTH` lần nửa rộng, người mặc đồ theo `cladProfile` */
+  depth: number[];
   /** Nét trên mặt khối, `k` lần nét thân */
   lines: { pts: Vec3[]; k: number }[];
   /** Mảng tô trên mặt khối: điểm 3D và chỉ số tam giác, cạnh không dài quá `FILL_EDGE` px */
@@ -28,11 +31,14 @@ export interface TorsoMesh {
 /** Cạnh tam giác của mảng tô dài nhất bấy nhiêu px: dài hơn thì dây cung cắt xuyên mặt cong của khối */
 const FILL_EDGE = 5;
 
-export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig): TorsoMesh {
+export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: ArmRoom): TorsoMesh {
   const g = garmentOf(raw);
   const def = GARMENT_STYLES[g.style];
   const pr = profile(g, rig, rig.stroke / 2);
-  const aAt = (y: number) => lerpAt(pr.pts, y, 1, 0);
+  const { pts, depth } = arm ? cladProfile(pr.pts, arm) : { pts: pr.pts, depth: pr.pts.map(([a]) => TORSO_DEPTH * a) };
+  const aAt = (y: number) => lerpAt(pts, y, 1, 0);
+  const deep: P2[] = pts.map(([, y], i) => [depth[i], y]);
+  const dAt = (y: number) => lerpAt(deep, y, 1, 0);
   const yOf = (a: number) => lerpAt(pr.upper, a, 0, 1);
   const at = (x: number, y: number, back = false): SP => {
     const lon = Math.asin(Math.max(-1, Math.min(1, x / Math.max(aAt(y), 1e-6)))) / D;
@@ -64,9 +70,11 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig): TorsoMes
     t: (tt) => pr.yS * (1 - tt),
   };
   const solid = ([lon, y]: SP): [Vec3, Vec3] => {
-    const a = aAt(y);
-    const p: Vec3 = [a * Math.sin(lon * D), y, TORSO_DEPTH * a * Math.cos(lon * D)];
-    const n: Vec3 = [p[0], (-a * (aAt(y + 4) - aAt(y - 4))) / 8, p[2] / TORSO_DEPTH ** 2];
+    const a = Math.max(aAt(y), 1e-6), d = Math.max(dAt(y), 1e-6), s = Math.sin(lon * D), c = Math.cos(lon * D);
+    const p: Vec3 = [a * s, y, d * c];
+    const da = (aAt(y + 4) - aAt(y - 4)) / 8, dd = (dAt(y + 4) - dAt(y - 4)) / 8;
+    // pháp tuyến của ellipse nửa rộng a(y), nửa sâu d(y): gradient của x²/a² + z²/d²
+    const n: Vec3 = [s / a, -(s * s * da) / a - (c * c * dd) / d, c / d];
     const l = Math.hypot(...n) || 1;
     return [p, n.map((v) => v / l) as Vec3];
   };
@@ -133,7 +141,7 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig): TorsoMes
     return { pts, tris: tris.flat() };
   };
 
-  const out: TorsoMesh = { profile: pr.pts, lines: [], fills: [], dots: [], sheets: [] };
+  const out: TorsoMesh = { profile: pts, depth, lines: [], fills: [], dots: [], sheets: [] };
   for (const m of def.marks(surf)) {
     if (m.dot) {
       out.dots.push({ p: onTorso(m.pts[0], 0), k: m.k });

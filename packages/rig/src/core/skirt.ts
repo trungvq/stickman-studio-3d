@@ -2,6 +2,7 @@ import { D, SKIRT_EASE, SKIRT_FALL, SKIRT_REACH, TORSO_DEPTH, TORSO_TILT } from 
 import { SkirtSchema, type CharacterData, type Skirt } from "./schema";
 import { turnPoint, type Vec3 } from "./sphere";
 import { localProject, type LocalLens } from "./lens";
+import { cladThigh } from "./act3";
 import type { Figure } from "./geometry";
 import type { Pt } from "./types";
 
@@ -78,7 +79,9 @@ export function skirtPaths(
   real?: { torsoLens: LocalLens; thighs: [number, number][] },
 ) {
   const g = skirtOf(c.pieces.hem.skirt);
-  const legW = c.palette.trouserWidth + (c.palette.clad ? stroke : 0);
+  const legW = c.palette.clad
+    ? 2 * cladThigh(c.palette.trouserWidth, stroke, c.rig.hipHalf)
+    : c.palette.trouserWidth;
   const thighs = [thighOf(fig.legN, torso), thighOf(fig.legF, torso)];
   const r3 = real && {
     lens: real.torsoLens,

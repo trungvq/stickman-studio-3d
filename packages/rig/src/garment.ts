@@ -6,7 +6,7 @@ import { SKIRT_EASE, TORSO_DEPTH } from './core/constants';
 import type { Garment, Skirt } from './core/schema';
 import { skirtCover, skirtFall } from './core/skirt';
 import type { MarkFill } from './core/torso';
-import { torsoMesh, type Rig } from './torso';
+import { torsoMesh, type ArmRoom, type Rig } from './torso';
 
 // Dựng thân áo và váy của rig thành mesh. Rig đo bằng px trong hệ nhóm thân (gốc ở hông, y xuống);
 // ở đây 100 px là 1 đơn vị, y lên.
@@ -30,18 +30,19 @@ function tube(pts: Vec3[], r: number, mat: THREE.Material, closed = false) {
   return m;
 }
 
-/** Khối thân: tiết diện ellipse dẹt `TORSO_DEPTH` theo mặt cắt dọc, bịt hai đầu. */
-function bodyGeometry(profile: [number, number][]) {
+/** Khối thân: tiết diện ellipse nửa rộng `profile`, nửa sâu `depth` từng hàng, bịt hai đầu. */
+function bodyGeometry(profile: [number, number][], depth: number[]) {
   const N = 48;
   const pos: number[] = [];
   const idx: number[] = [];
   const [yTop, yBot] = [profile[0][1], profile[profile.length - 1][1]];
   pos.push(0, -yTop * U, 0);
-  for (const [a, y] of profile)
+  profile.forEach(([a, y], r) => {
     for (let i = 0; i < N; i++) {
       const p = (2 * Math.PI * i) / N;
-      pos.push(a * Math.sin(p) * U, -y * U, TORSO_DEPTH * a * Math.cos(p) * U);
+      pos.push(a * Math.sin(p) * U, -y * U, depth[r] * Math.cos(p) * U);
     }
+  });
   const bot = pos.length / 3;
   pos.push(0, -yBot * U, 0);
   const at = (r: number, i: number) => 1 + r * N + (i % N);
@@ -76,15 +77,15 @@ function sheetGeometry(grid: Vec3[][]) {
   return g;
 }
 
-/** Thân áo dựng khối của rig (`pieces.torso.garment`), gắn vào nhóm thân `spine`. */
-export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink }: { garment?: Partial<Garment>; rig: Rig } & Palette) {
-  const t = torsoMesh(garment, rig);
+/** Thân áo dựng khối của rig (`pieces.torso.garment`), gắn vào nhóm thân `spine`; trả mặt cắt và bề sâu đã dựng. */
+export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, arm }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom } & Palette) {
+  const t = torsoMesh(garment, rig, arm);
   const pal = { color, accent, ink };
   const matOf = (fill: MarkFill, soft = 1) => npr({ color: colorOf(fill, pal), stipple: 0.05, stippleScale: 3, soft });
   const inkMat = npr({ color: ink, stipple: 0 });
   const lineR = (k: number) => (k * rig.stroke * U) / 2;
 
-  const body = bodyGeometry(t.profile);
+  const body = bodyGeometry(t.profile, t.depth);
   const m = new THREE.Mesh(body, matOf('color'));
   m.castShadow = true;
   spine.add(m);
@@ -114,6 +115,7 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
     spine.add(sm);
     for (const r of s.rims) spine.add(tube(s.grid.map((col) => col[r]), lineR(s.line), inkMat));
   }
+  return { profile: t.profile, depth: t.depth };
 }
 
 export interface SkirtOptions { skirt: Skirt; rig: Rig; color: string; ink: string; thighs: { hip: Vec3; dir: Vec3 }[]; legW: number }
