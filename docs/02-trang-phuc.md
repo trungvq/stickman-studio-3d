@@ -40,7 +40,7 @@ Tay áo và quần cơ bản không cần mảnh ảnh: tô màu và tăng độ
 | Tà áo / váy | `pelvis` | ✔ | Áo thụng, váy dài — xem dưới. Váy ngắn dùng [váy dựng khối](#váy-dựng-khối), không cần ảnh |
 | Tay áo (phần cẳng) | đoạn tay | ✘ | Tô màu + tăng độ dày |
 | Quần | đoạn chân | ✘ | Tô màu + tăng độ dày |
-| Bàn chân | cuối chân | ✘ | Chấm màu, hoặc bỏ hẳn nếu chân đất |
+| Bàn chân | cuối chân | ✘ | Chấm màu, hoặc bỏ hẳn nếu chân đất. Người 3D `clad` có giày màu `palette.shoe` — [01](01-rig.md#người-3d-mặc-đồ) |
 | Vật cầm tay | `handNear/handFar` | ✔ | Công cụ, gậy — tâm ở bàn tay, cùng lớp với cẳng tay; `layer: "under"` thì sau cả người, [01](01-rig.md#mốc-đặt-mảnh) |
 | Vật vác vai | `back` | ✘ | **Chưa dựng** — có trong bảng điểm neo của [01](01-rig.md#socket) nhưng không có khoá trong `PIECE_KEYS`. Đồ vác hiện phải cắm vào `handNear/handFar` |
 
@@ -976,6 +976,10 @@ về số của kiểu. Trên sân khấu thân áo chọn được nhưng khôn
 **Quần** — không cần mảnh riêng. Tô màu hai đoạn chân là xong. Quần xắn ống và
 chân đất thì cả nửa dưới nhân vật là hai đoạn thẳng đổi màu ở giữa bắp chân,
 không tốn mảnh ảnh nào.
+
+Người 3D tô quần, tay áo bằng `palette.clad`: `trouserLength` / `sleeveLength` là phần chi phủ màu
+tính từ gốc, phần còn lại màu da; quần áo che hông là khối hông cùng màu quần
+([01](01-rig.md#người-3d-mặc-đồ)).
 
 **Váy ngắn xòe nhẹ** là [váy dựng khối](#váy-dựng-khối) ở socket `hem`. Bộ phận
 `skirt-flared` (`src: "part"`) là hình vẽ tay cùng dáng, một hình cho mọi nấc với cạp bóp

@@ -21,7 +21,7 @@ Gốc toạ độ đặt ở **chậu hông** (pelvis). Trục y hướng xuốn
 | Vai tụt | 20 | `rig.shoulderDrop`, khớp vai nằm dưới đỉnh thân bấy nhiêu |
 | Nửa rộng hông | 22 | `rig.hipHalf` |
 | Độ dày nét | 6 | Viền đầu, viền chi khi bật `clad` |
-| Độ dày chi | 10 | Mặc định đen, nét trần (`clad` tắt) |
+| Độ dày chi | 10 | Mặc định đen, nét trần (`clad` tắt); người 3D `clad` xem [Người 3D mặc đồ](#người-3d-mặc-đồ) |
 
 **`Chiều cao` nhân vào các đoạn dọc, không nhân vào bề ngang.** Sáu đoạn `cổ`,
 `thân`, `cánh tay trên`, `cẳng tay`, `đùi`, `cẳng chân` nhân với `rig.height`
@@ -1376,6 +1376,60 @@ qua `parseCharacter` trên sân khấu trống, không cần cảnh hay ống k�
 
 App Remotion của repo video có sẵn `useChanDung` / `<ChanDung>` ở `src/khoi3d/ChanDung.tsx`
 ([05](05-repo-video.md#init-sinh-ra-gì)) bọc hàm này kèm `delayRender`.
+
+### Người 3D mặc đồ
+
+Hai cờ độc lập của JSON nhân vật đổi người que three thành người hoạt hình đầu to đọc ra người thật:
+`head.form: "human"` cho dáng đầu, `palette.clad: true` cho tay chân có màu, bàn tay, giày và khối
+hông. Không khai thì người 3D là người que, từng điểm ảnh. 2D và 2.5D không đọc trường nào dưới đây
+ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-chi)).
+
+```json
+"head": { "form": "human" },
+"palette": { "clad": true, "sleeve": "#3aa89c", "trouser": "#3b4252", "sleeveWidth": 11, "trouserWidth": 13 }
+```
+
+| Trường | Mặc định | Người 3D |
+|---|---|---|
+| `head.form` | `"sphere"` | `"human"`: quai hàm, cằm, cổ, tai, gờ mũi |
+| `palette.clad` | `false` | Tay chân là ống màu có vỏ viền, bàn tay, giày, khối hông |
+| `palette.sleeve` | `#1a1a1a` | Màu tay áo |
+| `palette.sleeveLength` | `1` | Phần tay phủ màu tay áo tính từ vai, `0..1`; phần còn lại màu da. `1` có cổ tay áo, quanh `0,25` là áo ngắn tay |
+| `palette.trouser` | `#1a1a1a` | Màu quần, dưới váy là màu tất |
+| `palette.trouserLength` | `1` | Phần chân phủ màu quần tính từ hông; `0` là chân trần dưới váy |
+| `palette.shoe` | `#2b2623` | Màu giày |
+| `palette.sleeveWidth` / `trouserWidth` | `10` | Bán kính chi `(w + rig.stroke) / 2` px — đúng `limbHalf` của lõi; quanh `11` / `13` là vừa |
+
+- **Đầu `human` nặn từ mặt cầu.** `humanSkull` (`core/humanHead.ts`) nhận một điểm của sọ đơn vị
+  (y lên, z ra trước mặt) và trả điểm trên đầu: nửa trên giữ nguyên, nửa dưới bóp vào quai hàm
+  (`jaw`), phồng má ngang miệng (`cheek`), kéo dài (`drop`), vạt đáy cằm (`flat`), dời ra trước
+  (`chin`) và thu gáy (`nape`); mọi số nhân bình phương độ sâu dưới xích đạo nên viền đầu không gãy
+  ở chỗ nối. Tâm đầu và `HEAD3` không đổi: khớp của `actJoints`, mốc 2D và đồ đội giữ nguyên.
+- **Nét mặt nằm trên mặt nặn.** Lưới nét mặt đi qua cùng `humanSkull` nên mồm, nếp nhăn theo quai
+  hàm ở mọi góc quay. Gờ mũi ở cao độ `noseY(offsetY, mouthGap)` — quá nửa đường mắt → mồm —, kèm
+  nét chân mũi `noseMark` (`core/face.ts`) vẽ trên canvas nét mặt; 2D không vẽ nét ấy.
+- **Tóc dựng khối dời theo sọ.** Mỗi đỉnh tóc dời đúng bằng điểm sọ bên dưới nó (`humanHair`): tóc
+  giữ bề dày, gáy thu thì tóc gáy thu theo, tóc rủ không xuyên quai hàm. Kính và `headFit` đọc nửa
+  trên nên như đầu cầu. Tai ẩn khi tóc phủ chỗ tai (tia từ ngoài vào tâm tai chạm vỏ tóc hay tóc rủ).
+- **Chi thon và phủ màu.** Ống chi thon theo bán kính: vai `1` → khuỷu `0,92` → cổ tay `0,8`, hông
+  `1,06` → gối `0,94` → cổ chân `0,8`. Phủ hết thì ống tô màu áo, quần; phủ một phần thì ống da và một
+  ống phủ to hơn `1,1` lần từ gốc chi, mép nở `1,12` lần. Ống phủ hết tay có cổ tay áo ở `0,84..1`
+  cẳng tay. Độ cong chi vẫn là `palette.limbCurve`.
+- **Bàn tay hai dáng.** Xoè là găng có ngón cái tách, nắm là khối tròn ngón cái vắt ngang; lòng bàn
+  tay quay về phía thân, ngón cái ra trước, cỡ theo bán kính cổ tay (`handScale`). Cổ tay không xoay,
+  như người que. `hold` nắm tay cầm tới lúc `release()` (`grip` đổi dáng), và khung `hand` của đồ
+  cầm ở **tâm nắm** (`HAND.grip`), không ở mút nét: đồ căn cho người que lùi vào lòng bàn tay vài px.
+- **Giày ở cổ chân, hông không đổi.** `Leg.ankle` treo ở mút ống chân; đế giày nằm đúng mặt sàn ở
+  chỗ mút nét người que chạm sàn, độ cao hông vẫn `R.thigh + R.shin + R.limb`. Cổ chân tự xoay mỗi
+  lần three tính ma trận: bàn chân nằm ngang trong hệ người khi ống chân lệch khỏi phương đứng dưới
+  `0,5` rad, quá thì nghiêng theo phần dư (quỳ, đá chân).
+- **Khối hông** là bao lồi của vành thân áo thu vào và hai khối cầu quanh gốc đùi, trong nhóm thân,
+  màu quần — màu váy khi có váy. Váy dựng khối khoét lỗ đùi theo bề dày chân mặc đồ.
+- **Va chạm** có thêm `hand` và `foot` (`handR`, `footL`… trong `touch`): nang bàn tay theo dáng
+  đang hiện, nang giày đáy đúng mặt đế; nang đầu `human` kéo xuống cằm. Đồ cầm khai `touch` cả cẳng
+  tay lẫn bàn tay cầm.
+- **Giá.** Người mặc đồ đầy đủ khoảng `57` lưới, người que `23`; người nền nên `lod: "low"` và
+  `freeze`.
 
 ### Đích bàn tay
 
