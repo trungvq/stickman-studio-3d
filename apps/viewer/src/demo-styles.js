@@ -36,7 +36,7 @@ export function samples() {
     const extra = EXTRA[h] ?? {};
     const json = {
       name: `${h}-${style}`,
-      rig: { stroke: 6, height: 1, shoulderHalf: 40, shoulderDrop: 20, hipHalf: long ? 22 : 26 },
+      rig: { stroke: 6, height: 1, shoulderHalf: 40, shoulderDrop: 20, hipHalf: HUMAN ? 13 : long ? 22 : 26 },
       palette: { garment: COLORS[i % COLORS.length], skin: '#f8e3c8', line: '#1c1c1e', sleeveWidth: 8, trouserWidth: 9, ...(HUMAN && {
         clad: true, sleeve: COLORS[i % COLORS.length], sleeveWidth: 11, trouserWidth: 13, trouser: '#3b4252', ...(long && { trouserLength: 0 }),
       }) },
@@ -45,7 +45,7 @@ export function samples() {
       pieces: {
         torso: { src: 'sculpt', garment: { style, ...(long ? { hem: -18 } : {}) } },
         hair: h === 'none' ? { src: 'none' } : { src: 'sculpt', color: HAIRS[i % HAIRS.length], sculpt: SCULPT_PRESETS[h].sculpt },
-        ...(long ? { hem: { src: 'sculpt', color: '#3a3f4a', skirt: i % 2 ? SKIRT_PLAIN : SKIRT_PLEATED } } : {}),
+        ...(long ? { hem: { src: 'sculpt', color: '#3a3f4a', skirt: { ...(i % 2 ? SKIRT_PLAIN : SKIRT_PLEATED), ...(HUMAN && { waist: 28, flare: 20 }) } } } : {}),
         ...(extra.glasses ? { faceAcc: { src: 'sculpt', color: extra.glasses === 'sun' ? '#2b2f36' : '#3a2a22', glasses: GLASSES_PRESETS[extra.glasses].glasses } } : {}),
       },
     };

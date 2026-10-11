@@ -8,7 +8,7 @@ import { SAMPLE_ITEMS } from './demo-hold.js';
 const STICK = new URLSearchParams(location.search).has('stick');
 
 /** JSON nhân vật mẫu; `palette` và `head` đè lên phần chung */
-function character(name, { palette, garment, hair, hairColor, skirt, glasses, hipHalf = 30 }) {
+function character(name, { palette, garment, hair, hairColor, skirt, glasses, hipHalf = 14 }) {
   const json = {
     name,
     rig: { stroke: 6, height: 1, shoulderHalf: 46, shoulderDrop: 20, hipHalf },
@@ -35,29 +35,29 @@ function character(name, { palette, garment, hair, hairColor, skirt, glasses, hi
 const models = () => ({
   /** Nam sơ mi dài tay, quần âu */
   LONG: character('dai-tay', {
-    palette: { garment: '#3aa89c', sleeve: '#3aa89c', trouser: '#3b4252', shoe: '#3a2a20', bicep: 0.7 },
+    palette: { garment: '#3aa89c', sleeve: '#3aa89c', trouser: '#3b4252', shoe: '#3a2a20', bicep: 0.35 },
     garment: { style: 'shirt' }, hair: 'short', hairColor: '#2a1c15',
   }),
   /** Nam áo phông ngắn tay, quần bò */
   SHORT: character('ngan-tay', {
-    palette: { garment: '#c8663a', sleeve: '#c8663a', sleeveLength: 0.24, trouser: '#41587a', bicep: 0.7 },
+    palette: { garment: '#c8663a', sleeve: '#c8663a', sleeveLength: 0.24, trouser: '#41587a', bicep: 0.35 },
     garment: { style: 'tshirt' }, hair: 'anime', hairColor: '#33333a',
   }),
   /** Nữ blouse tay lỡ, váy xếp ly, chân trần, giày đỏ nâu */
   GIRL: character('vay', {
     palette: { garment: '#7893ae', sleeve: '#7893ae', sleeveLength: 0.45, trouserLength: 0, shoe: '#7a3b2e', trouserWidth: 20 },
-    garment: { style: 'blouse', hem: -18 }, hair: 'bob', hairColor: '#3b3038', hipHalf: 26,
-    skirt: { color: '#3a3f4a', shape: { rise: 27, waist: 40, length: 52, flare: 30, pleats: 8 } },
+    garment: { style: 'blouse', hem: -18 }, hair: 'bob', hairColor: '#3b3038', hipHalf: 15,
+    skirt: { color: '#3a3f4a', shape: { rise: 27, waist: 31, length: 52, flare: 22, pleats: 8 } },
   }),
   /** Nam len cổ tròn, đeo kính, tóc gọn */
   GLASSES: character('kinh', {
-    palette: { garment: '#9a5fa8', sleeve: '#9a5fa8', trouser: '#2f3a33', bicep: 0.7 },
+    palette: { garment: '#9a5fa8', sleeve: '#9a5fa8', trouser: '#2f3a33', bicep: 0.35 },
     garment: { style: 'sweater' }, hair: 'neat', hairColor: '#5b3a26', glasses: 'round',
   }),
   /** Nữ tóc đuôi ngựa, áo len, quần dài */
   PONY: character('duoi-ngua', {
     palette: { garment: '#e0b23a', sleeve: '#e0b23a', trouser: '#34466e', trouserWidth: 20 },
-    garment: { style: 'sweater', hem: -10 }, hair: 'ponyLow', hairColor: '#3b2a22', hipHalf: 26,
+    garment: { style: 'sweater', hem: -10 }, hair: 'ponyLow', hairColor: '#3b2a22', hipHalf: 15,
   }),
 });
 
