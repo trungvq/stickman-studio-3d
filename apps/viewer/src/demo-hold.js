@@ -188,7 +188,7 @@ export function holdDemo() {
     { id: 'khay', opts: { ...BOY, items: SAMPLE_ITEMS },
       world: { path: [{ t: 0, at: [-250, 0, -150], yaw: 0 }, { t: 4.5, at: [200, 0, -150], yaw: 0 }] },
       tracks: [track(clip('walk'), clip('stand-3d', 4.3, { blend: 0.3 })), track(clip('carry-tray')), track(clip('face-calm'))], equip: { handNear: 'tray', chest: 'badge' } },
-    { id: 'coc', opts: { ...GIRL, items: SAMPLE_ITEMS }, world: { at: [-430, 0, 20], yaw: 90 },
+    { id: 'coc', opts: { ...GIRL, rig: { ...GIRL.rig, height: 0.88 }, items: SAMPLE_ITEMS }, world: { at: [-430, 0, 20], yaw: 90 },
       tracks: [track(clip('stand-3d')), track(clip('hold-mug')), track(clip('face-calm'))], equip: { crown: 'cap', handNear: 'mug' } },
     { id: 'giay', opts: { ...BOY, hairColor: '#5a3a26', items: SAMPLE_ITEMS }, world: { at: [430, 0, 20], yaw: 110 },
       tracks: [track(clip('stand-3d')), track(clip('face-smug'))], equip: { crown: 'cap', faceAcc: 'sunglasses', handFar: 'paper' } },
@@ -197,8 +197,8 @@ export function holdDemo() {
   const scene = parseScene({ name: 'demo-hold', lens: LENS, cast: members.map((m) => ({ id: m.id, character: `${m.id}.json`, world: m.world, tracks: m.tracks })) });
   if (!scene.success) throw new Error(scene.error.message);
   const bodies = Object.fromEntries(members.map((m) => [m.id, { legHalf: legHalf(m.opts), hipHalf: m.opts.rig.hipHalf }]));
-  // cô cầm cốc thấp hơn: đồ cầm, đồ đội to nhỏ theo `root.scale`
-  const heights = Object.fromEntries(members.map((m) => [m.id, m.id === 'coc' ? 0.88 : 1]));
+  // cô cầm cốc thấp hơn (`rig.height`): `sceneAt` đặt hông theo đúng chân ấy
+  const heights = Object.fromEntries(members.map((m) => [m.id, m.opts.rig.height]));
   const rt = resolveScene(scene.data, HOLD_ACTIONS, {}, {}, heights, bodies);
   const people = members.map((m) => ({ id: m.id, equip: m.equip, fig: stickman(m.opts) }));
   const room = furniture();
