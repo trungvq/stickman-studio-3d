@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { act, type Acting } from './act';
 import { hold } from './attach';
 import { bodyCapsules, collide, colliders } from './collide';
-import { defaultCharacter, SculptSchema } from './core/schema';
+import { defaultCharacter, SculptSchema, SkirtSchema } from './core/schema';
 import { HAND } from './human';
 import { fromCharacter, R, type CharacterJson, type Figure } from './stickman';
 
@@ -110,5 +110,10 @@ describe('người 3D mặc đồ', () => {
     expect(ears(shortHair)).toBe(2);
     expect(ears(bob)).toBe(0);
     expect(shortHair.head.position.y).toBeCloseTo(make().head.position.y, 12);
+  });
+
+  it('váy: lỗ ống đùi theo bề dày chân mặc đồ', () => {
+    const f = dressed((c) => (c.pieces.hem = { ...c.pieces.hem, src: 'sculpt', skirt: SkirtSchema.parse({}) }), { skirt: SkirtSchema.parse({}) });
+    expect(f.skirt!.opts.legW).toBe(13 + 6);
   });
 });

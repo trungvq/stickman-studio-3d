@@ -1,9 +1,11 @@
 import * as THREE from 'three';
+import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { TORSO_DEPTH } from './core/constants';
 import { HUMAN_HEAD, humanEar, humanSkull } from './core/humanHead';
 
-// Khối của người 3D mặc đồ (`palette.clad`) và đầu `head.form: "human"`: đầu có quai hàm, tai, cổ; bàn tay, giày. Chỉ
-// hình học; `stickman.ts` gắn vào khớp và tô màu. docs/01-rig.md#người-3d-mặc-đồ
+// Khối của người 3D mặc đồ (`palette.clad`) và đầu `head.form: "human"`: đầu có quai hàm, tai, cổ; bàn tay, giày, khối
+// hông. Chỉ hình học; `stickman.ts` gắn vào khớp và tô màu. docs/01-rig.md#người-3d-mặc-đồ
 
 /** Bàn tay trong khung cổ tay (three): `grip` tâm nắm — chỗ treo đồ cầm, `cap` nang va chạm `[y đầu, y cuối, bán kính]` */
 export const HAND = {
@@ -150,4 +152,32 @@ export function shoeGeometry(sole: number, ra: number) {
 export function shoeCapsule(sole: number, ra: number): [number, number, number, number] {
   const r = (SHOE.top * ra + sole) / 2;
   return [SHOE.heel * ra + r, SHOE.toe * ra - r, r - sole, r];
+}
+
+/**
+ * Khối hông nối thân áo với hai đùi, hệ nhóm thân (three, y lên từ hông): bao lồi của vành thân áo thu vào ở `ringY` và
+ * hai khối cầu bán kính `r` quanh gốc chân `±hip`. `profile` là mặt cắt thân áo của lõi (`[nửa rộng, y xuống]`, px).
+ */
+export function pelvisGeometry(profile: [number, number][], hip: number, r: number) {
+  const bottom = profile[profile.length - 1][1];
+  const yRing = Math.min(-15, bottom - 3);
+  let a = profile[0][0];
+  for (let i = 1; i < profile.length; i++) {
+    const [a0, y0] = profile[i - 1], [a1, y1] = profile[i];
+    if (y0 <= yRing && yRing <= y1) a = y1 === y0 ? a1 : a0 + ((a1 - a0) * (yRing - y0)) / (y1 - y0);
+  }
+  const pts: THREE.Vector3[] = [];
+  const A = (a * 0.94) / 100;
+  for (let i = 0; i < 32; i++) {
+    const t = (2 * Math.PI * i) / 32;
+    pts.push(new THREE.Vector3(A * Math.sin(t), -yRing / 100, TORSO_DEPTH * A * Math.cos(t)));
+  }
+  for (const s of [-1, 1])
+    for (let i = 0; i <= 6; i++)
+      for (let j = 0; j < 12; j++) {
+        const th = (Math.PI * i) / 6, ph = (2 * Math.PI * j) / 12;
+        pts.push(new THREE.Vector3(s * hip + r * Math.sin(th) * Math.cos(ph), r * Math.cos(th), r * Math.sin(th) * Math.sin(ph)));
+      }
+  const g = new ConvexGeometry(pts);
+  return smooth(g);
 }

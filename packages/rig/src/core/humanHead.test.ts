@@ -67,6 +67,8 @@ describe("schema", () => {
     if (!r.success) return;
     expect(r.data.head.form).toBe("sphere");
     expect(r.data.palette.clad).toBe(false);
+    expect(r.data.palette.sleeveLength).toBe(1);
+    expect(r.data.palette.trouserLength).toBe(1);
     expect(r.data.palette.shoe).toMatch(/^#/);
   });
 });
