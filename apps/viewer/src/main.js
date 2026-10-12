@@ -92,7 +92,7 @@ function setupDemo(name) {
   return d;
 }
 
-const state = { outline: true, pixel: false, time: 'day', paused: false, aa: devicePixelRatio >= 2 ? 'off' : 'ss2' };
+const state = { outline: true, shade: 'paint', pixel: false, time: 'day', paused: false, aa: devicePixelRatio >= 2 ? 'off' : 'ss2' };
 
 function palette(name) {
   state.time = name;
@@ -157,7 +157,7 @@ function frame() {
 
 /** Một khung ở giây `t`: cảnh có ống kính riêng thì camera theo `view(t)`, không thì theo góc máy xoay tay */
 function drawAt(t) {
-  stage.draw(t, { ...shot?.view?.(t), render: { outline: state.outline, t, grade: GRADES[q.get('grade')] } });
+  stage.draw(t, { ...shot?.view?.(t), render: { outline: state.outline, shade: state.shade, t, grade: GRADES[q.get('grade')] } });
   marks?.(stage);
 }
 // tools/bench.mjs vẽ từng khung đồng bộ qua đây
@@ -168,6 +168,8 @@ function bindHud() {
   const btn = (id, on) => document.getElementById(id).classList.toggle('on', on);
   const sync = () => {
     btn('b-ink', state.outline);
+    btn('b-cel', state.shade === 'cel');
+    btn('b-manga', state.shade === 'manga');
     btn('b-pixel', state.pixel);
     btn('b-day', state.time === 'day');
     btn('b-eve', state.time === 'evening');
@@ -177,6 +179,8 @@ function bindHud() {
   };
   const act = {
     ink: () => (state.outline = !state.outline),
+    cel: () => (state.shade = state.shade === 'cel' ? 'paint' : 'cel'),
+    manga: () => (state.shade = state.shade === 'manga' ? 'paint' : 'manga'),
     pixel: () => ((state.pixel = !state.pixel), resize()),
     day: () => palette('day'),
     eve: () => palette('evening'),
@@ -193,7 +197,7 @@ function bindHud() {
       sync();
     });
   addEventListener('keydown', (e) => {
-    const k = { KeyO: 'ink', KeyP: 'pixel', Space: 'pause', KeyA: 'aa' }[e.code];
+    const k = { KeyO: 'ink', KeyC: 'cel', KeyM: 'manga', KeyP: 'pixel', Space: 'pause', KeyA: 'aa' }[e.code];
     if (k) act[k]();
     if (e.code === 'KeyT') palette(state.time === 'day' ? 'evening' : 'day');
     if (e.code === 'KeyH') document.getElementById('hud').classList.toggle('hide');
@@ -206,6 +210,7 @@ palette(q.get('time') in PALETTES ? q.get('time') : 'day');
 if (q.get('aa') in AA) state.aa = q.get('aa');
 if (q.has('pixel')) state.pixel = true;
 if (q.has('noink')) state.outline = false;
+if (['cel', 'manga'].includes(q.get('shade'))) state.shade = q.get('shade');
 if (q.has('nohud')) document.getElementById('hud').classList.add('hide');
 if (shot?.view) controls.enabled = false;
 if (q.has('look')) controls.target.set(...q.get('look').split(',').map(Number));

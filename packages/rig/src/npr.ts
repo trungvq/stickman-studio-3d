@@ -52,6 +52,11 @@ export const G = {
   /** x near, y far, z texel uv */
   uSpotInfo: { value: Array.from({ length: MAX_LAMP_SHADOWS }, () => new THREE.Vector3(0.1, 10, 1 / 1024)) },
   uTime: { value: 0 },
+  /** Kiểu vẽ của `render({ shade })`: 0 `paint`, 1 `cel` (nét một màu `uCelInk` đứt quãng, không vỏ ngược), 2 `manga` */
+  uShade: { value: 0 },
+  /** Cỡ ô lưới chấm của kiểu `manga`, điểm ảnh render */
+  uDot: { value: 6 },
+  uCelInk: { value: new THREE.Color('#1e2326') },
 };
 
 const POISSON = /* glsl */ `const vec2 PD[16] = vec2[](
@@ -60,9 +65,24 @@ const POISSON = /* glsl */ `const vec2 PD[16] = vec2[](
   vec2(0.4432, -0.9751), vec2(0.5374, -0.4737), vec2(-0.2650, -0.4189), vec2(0.7920, 0.1909),
   vec2(-0.2419, 0.9971), vec2(-0.8141, 0.9144), vec2(0.1998, 0.7864), vec2(0.1438, -0.1410));`;
 
+/** Nhiễu thế giới và mặt nạ đứt nét của kiểu `cel`: `inkKeep(p)` 0 ở chỗ nét đứt, `p` là toạ độ lưới nhân tỉ lệ vật. */
+export const NOISE = /* glsl */ `
+float hash13(vec3 p){ p = fract(p*0.1031); p += dot(p, p.zyx+31.32); return fract((p.x+p.y)*p.z); }
+float vnoise(vec3 x){
+  vec3 i = floor(x), f = fract(x); f = f*f*(3.0-2.0*f);
+  return mix(
+    mix(mix(hash13(i), hash13(i+vec3(1,0,0)), f.x), mix(hash13(i+vec3(0,1,0)), hash13(i+vec3(1,1,0)), f.x), f.y),
+    mix(mix(hash13(i+vec3(0,0,1)), hash13(i+vec3(1,0,1)), f.x), mix(hash13(i+vec3(0,1,1)), hash13(i+vec3(1,1,1)), f.x), f.y),
+    f.z);
+}
+float inkKeep(vec3 p){ return smoothstep(0.26, 0.3, vnoise(p * 3.0)); }
+`;
+/** Toạ độ lưới nhân tỉ lệ vật (vertex shader): mặt nạ đứt nét bám theo vật khi nó đi, cỡ vết như nhau giữa các vật. */
+export const SCALED_POSITION = /* glsl */ `position * vec3(length(modelMatrix[0].xyz), length(modelMatrix[1].xyz), length(modelMatrix[2].xyz))`;
+
 const COMMON = /* glsl */ `
 uniform vec3 uLightDir, uLightColor, uShadowTint, uAmbient;
-uniform float uKey, uKeyWrap, uKeyFill, uKeySpread, uKeyShade, uRoomGain, uShadowTexel, uTime;
+uniform float uKey, uKeyWrap, uKeyFill, uKeySpread, uKeyShade, uRoomGain, uShadowTexel, uTime, uShade, uDot;
 uniform sampler2D uShadowMap;
 uniform mat4 uShadowMatrix;
 uniform vec4 uShadowInfo;
@@ -77,15 +97,36 @@ uniform vec4 uLampCone[${MAX_LAMPS}];
 uniform sampler2D uSpotMap0, uSpotMap1;
 uniform mat4 uSpotMatrix[${MAX_LAMP_SHADOWS}];
 uniform vec3 uSpotInfo[${MAX_LAMP_SHADOWS}];
+#define CEL (abs(uShade - 1.0) < 0.5)
+#define MANGA (uShade > 1.5)
 ${POISSON}
-float hash13(vec3 p){ p = fract(p*0.1031); p += dot(p, p.zyx+31.32); return fract((p.x+p.y)*p.z); }
+${NOISE}
 float hash12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
-float vnoise(vec3 x){
-  vec3 i = floor(x), f = fract(x); f = f*f*(3.0-2.0*f);
-  return mix(
-    mix(mix(hash13(i), hash13(i+vec3(1,0,0)), f.x), mix(hash13(i+vec3(0,1,0)), hash13(i+vec3(1,1,0)), f.x), f.y),
-    mix(mix(hash13(i+vec3(0,0,1)), hash13(i+vec3(1,0,1)), f.x), mix(hash13(i+vec3(0,1,1)), hash13(i+vec3(1,1,1)), f.x), f.y),
-    f.z);
+vec3 rgb2hsv(vec3 c){
+  vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+  vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+  vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+  float d = q.x - min(q.w, q.y), e = 1.0e-10;
+  return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+vec3 hsv2rgb(vec3 c){ vec3 p = abs(fract(c.xxx + vec3(1.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0); return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y); }
+// Kiểu cel: hai tông, tông tối là tông sáng giảm nửa độ sáng HSV và lệch sắc một chút; bóng đổ cắt gắt như ranh tông.
+vec3 celShade(vec3 base, float light, float shadowed){
+  vec3 lit = base * uLightColor, h = rgb2hsv(lit);
+  vec3 dark = hsv2rgb(vec3(fract(h.x - 0.02), h.y, h.z * 0.5));
+  // shadowed đã pha ánh dội uKeyShade: cắt trên độ che thật rồi pha lại
+  float raw = uKeyShade > 0.0 ? 1.0 - (1.0 - shadowed) / uKeyShade : 1.0;
+  float k = smoothstep(0.32, 0.4, light) * (1.0 - (1.0 - smoothstep(0.35, 0.65, raw)) * uKeyShade);
+  return mix(dark, lit, k);
+}
+// Lưới chấm xoay 45° theo màn hình, ô uDot điểm ảnh: độ phủ c dưới nửa là chấm, trên nửa là lỗ ở góc ô.
+float screentone(float c){
+  if (c < 0.002) return 0.0;
+  if (c > 0.998) return 1.0;
+  vec2 q = mat2(0.7071, -0.7071, 0.7071, 0.7071) * gl_FragCoord.xy / uDot;
+  float aa = 0.7 / uDot;
+  if (c < 0.5) return 1.0 - smoothstep(-aa, aa, length(fract(q) - 0.5) - sqrt(c / 3.14159));
+  return smoothstep(-aa, aa, length(fract(q + 0.5) - 0.5) - sqrt((1.0 - c) / 3.14159));
 }
 // Đĩa Poisson xoay theo điểm ảnh: cùng khung là cùng ảnh, không đổi theo lần chạy.
 mat2 diskRot(){ float a = hash12(gl_FragCoord.xy) * 6.2832; float c = cos(a), s = sin(a); return mat2(c, s, -s, c); }
@@ -172,13 +213,15 @@ float sunThrough(vec3 wp){
 vec3 nprShade(vec3 base, vec3 N, vec3 wp, float stipple, float scale, float soft){
   mat2 R = diskRot();
   float noise = vnoise(wp * scale) * 0.62 + vnoise(wp * scale * 2.7 + 11.0) * 0.38;
-  float light = 0.0, shadowed = 1.0;
+  float light = 0.0, shadowed = 1.0, facing = 0.0;
   #ifdef FLAT_KEY
-  light = uKey;
+  light = facing = uKey;
   #else
   if (uKey > 0.0) {
+    float ndl = clamp((dot(N, uLightDir) + uKeyWrap) / (1.0 + uKeyWrap) * 1.15, 0.0, 1.0);
+    facing = ndl * uKey;
     // trong nhà mặt quay khỏi đèn vẫn có ánh dội uKeyFill, chỉ bóng đổ mới về dải tối
-    float lam = max(clamp((dot(N, uLightDir) + uKeyWrap) / (1.0 + uKeyWrap) * 1.15, 0.0, 1.0), uKeyFill);
+    float lam = max(ndl, uKeyFill);
     if (lam > 0.0) {
       light = lam * uKey;
       shadowed = keyShadow(wp, N, R);
@@ -193,12 +236,24 @@ vec3 nprShade(vec3 base, vec3 N, vec3 wp, float stipple, float scale, float soft
   c = mix(c, lit * 1.14, step(0.9, shade) * step(0.2, stipple));
   // bóng đổ không chia dải: mép loe mềm liền, không thành mảng sắc
   c = mix(dark, c, shadowed);
+  if (CEL) c = celShade(base, light, shadowed);
+  float cover = 0.0;
+  if (MANGA) {
+    // màu phẳng; mặt quay khỏi đèn (cả trần) và bóng đổ là độ phủ chấm, không tối màu nền, nên trần không đen kịt
+    float occ = uKeyShade > 0.0 ? (1.0 - shadowed) / uKeyShade : 0.0;
+    // đèn tấm rộng (uKeyWrap) rọi xiên vào mặt đứng: đầu che thân từ trên không thành chấm, bóng trên sàn và gầm bàn vẫn có
+    float side = mix(1.0, smoothstep(0.35, 0.8, abs(dot(N, uLightDir))), min(uKeyWrap, 1.0));
+    cover = max((1.0 - smoothstep(0.2, 0.26, facing)) * 0.3, (0.3 * smoothstep(0.25, 0.4, occ) + 0.3 * smoothstep(0.75, 0.95, occ)) * side);
+    c = base * uLightColor;
+  }
   c += uAmbient * base * (0.5 + 0.5 * N.y) * 0.16;
   c *= uRoomGain;
+  float bright = 0.0;
   if (uSun > 0.0) {
     float sl = clamp(dot(N, uSunDir) * 1.3, 0.0, 1.0) * sunThrough(wp) * uSun;
     if (sl > 0.0 && uSunInfo.z > 0.5) sl *= sunShadow(wp, N, R);
-    c = mix(c, max(c, base * uSunColor), step(0.35, sl + (noise - 0.5) * 0.2));
+    bright = step(0.35, sl + (noise - 0.5) * 0.2 * step(uShade, 0.5));
+    c = mix(c, max(c, base * uSunColor), bright);
   }
   for (int i = 0; i < ${MAX_LAMPS}; i++) {
     if (float(i) >= uLampCount) break;
@@ -211,6 +266,12 @@ vec3 nprShade(vec3 base, vec3 N, vec3 wp, float stipple, float scale, float soft
     if (cn.w > 0.5) k *= spotShadowIn(uSpotMap1, uSpotMatrix[1], uSpotInfo[1], wp, N, R);
     else if (cn.w > -0.5) k *= spotShadowIn(uSpotMap0, uSpotMatrix[0], uSpotInfo[0], wp, N, R);
     c += base * uLampColor[i] * (0.4 * smoothstep(0.14, 0.18, k) + 0.45 * smoothstep(0.48, 0.52, k));
+    bright = max(bright, smoothstep(0.14, 0.18, k) * step(0.05, max(uLampColor[i].r, max(uLampColor[i].g, uLampColor[i].b))));
+  }
+  if (MANGA) {
+    // chấm là tông tối cùng sắc của chính màu ấy; đèn cục bộ và nắng xoá chấm
+    vec3 h = rgb2hsv(c);
+    c = mix(c, hsv2rgb(vec3(h.x, min(1.0, h.y * 1.15), h.z * 0.5)), screentone(cover * (1.0 - bright)));
   }
   return c;
 }
@@ -381,7 +442,7 @@ export function unshare(m: THREE.ShaderMaterial): THREE.ShaderMaterial {
 export function hullMaterial(width = 0.03, color: THREE.ColorRepresentation = '#1a1716', push = 0): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     side: THREE.BackSide,
-    uniforms: { uW: { value: width }, uPush: { value: push }, uColor: { value: new THREE.Color(color) } },
+    uniforms: { uW: { value: width }, uPush: { value: push }, uColor: { value: new THREE.Color(color) }, uShade: G.uShade },
     // `push` lùi vỏ ra xa máy dọc tia nhìn (chỗ trên hình giữ nguyên): vỏ không lòi qua mặt lõm của chính vật trong khoảng ấy
     vertexShader: /* glsl */ `
       uniform float uW, uPush;
@@ -391,7 +452,8 @@ export function hullMaterial(width = 0.03, color: THREE.ColorRepresentation = '#
         vec3 p = wp.xyz + n * uW;
         gl_Position = projectionMatrix * viewMatrix * vec4(p + normalize(p - cameraPosition) * uPush, 1.0);
       }`,
-    fragmentShader: /* glsl */ `uniform vec3 uColor; void main(){ gl_FragColor = vec4(uColor, 1.0); }`,
+    // kiểu cel chỉ có nét hậu kỳ
+    fragmentShader: /* glsl */ `uniform vec3 uColor; uniform float uShade; void main(){ if (abs(uShade - 1.0) < 0.5) discard; gl_FragColor = vec4(uColor, 1.0); }`,
   });
 }
 

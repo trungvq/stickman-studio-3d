@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { INK } from './khoi';
-import { G, LIGHTING, MAX_LAMP_SHADOWS } from './npr';
+import { G, LIGHTING, MAX_LAMP_SHADOWS, NOISE, SCALED_POSITION } from './npr';
 
 const POST_VERT = /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
 
@@ -125,14 +125,15 @@ void main(){
 // Nét mực: Laplacian của 1/độ sâu — chỗ độ sâu gãy (mép, nếp gấp) thì tối đi; cạnh gấp (pháp tuyến gãy, độ sâu liền) cũng
 // tối. Bóng tiếp xúc từ độ sâu, hạt giấy, tối góc.
 const POST_FRAG = /* glsl */ `
-uniform sampler2D tColor, tDepth, tNormal, tInk;
+uniform sampler2D tColor, tDepth, tNormal, tInk, tId;
 uniform vec2 uRes;
-uniform float uNear, uFar, uOutline, uThick, uPixel, uPaper, uAo, uAoRadius, uSil;
-uniform vec3 uInkColor;
+uniform float uNear, uFar, uOutline, uThick, uPixel, uPaper, uAo, uAoRadius, uSil, uShade;
+uniform vec3 uInkColor, uCelInk;
 uniform mat4 uProj, uProjInv;
 uniform vec3 uShadowTint;
 varying vec2 vUv;
 const vec3 AOK[${AO_N}] = vec3[](${AO_KERNEL});
+const ivec2 CEL_DIRS[8] = ivec2[](ivec2(1, 0), ivec2(-1, 0), ivec2(0, 1), ivec2(0, -1), ivec2(1, 1), ivec2(-1, 1), ivec2(1, -1), ivec2(-1, -1));
 float invz(float d){ float z = d * 2.0 - 1.0; return (uFar + uNear - z * (uFar - uNear)) / (2.0 * uNear * uFar); }
 float h12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
 float bayer2(vec2 a){ a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
@@ -171,7 +172,7 @@ void main(){
   float wd = invz(texture2D(tDepth, vUv - vec2(0.0, px.y)).r);
   vec4 n0 = texture2D(tNormal, vUv);
   // lưới người (a 0,3) không nhận: cằm sát cổ áo, tay sát thân thành vệt lem; bóng đổ của đèn đã đủ
-  if (uAo > 0.0 && d0 < 0.99999 && abs(n0.a - 0.3) > 0.05) {
+  if (uAo > 0.0 && uShade < 0.5 && d0 < 0.99999 && abs(n0.a - 0.3) > 0.05) {
     float o = smoothstep(0.08, 0.55, ssao(vUv)) * uAo;
     col *= mix(vec3(1.0), uShadowTint * 0.8, clamp(o, 0.0, 1.0) * 0.75);
   }
@@ -214,13 +215,37 @@ void main(){
   // nét gấp dày theo điểm ảnh: đồ nhỏ ở xa nhạt dần cho khỏi đen kịt
   crease = smoothstep(0.25, 0.45, crease) * mix(1.0, 0.35, smoothstep(8.0, 25.0, 1.0 / w0));
   float edge = max(smoothstep(0.0025, 0.01, lap), crease) * uOutline;
-  col = mix(col, col * vec3(0.2, 0.18, 0.26), edge * 0.92);
+  if (uShade > 0.5) {
+    // kiểu cel: nét một màu, đứt theo mặt nạ của vật ở phía gần (Laplacian chỉ dương ở phía ấy). Bề dày nằm ngoài vật gần như
+    // vỏ ngược — đi từ điểm này ra tám hướng, gặp chỗ độ sâu nhảy về gần là đang trong nét của vật ấy — nên ngón tay không bị lấp.
+    // Kiểu manga: nét liền; dày ở bóng dáng trên nền xa, mảnh khi vật nằm sát mặt sau nó (kính trên mặt, tay trên thân)
+    float manga = step(1.5, uShade);
+    float ink = edge * max(texelFetch(tId, p, 0).g, manga), r = uThick * mix(2.4, 3.2, manga) * uOutline;
+    for (int d = 0; d < 8; d++) {
+      ivec2 dir = ivec2(CEL_DIRS[d]);
+      float wp = w0;
+      for (int j = 1; j <= 12; j++) {
+        float dist = length(vec2(dir * j));
+        if (dist > r + 0.5) break;
+        ivec2 q = clamp(p + dir * j, ivec2(0), hi);
+        float wq = invz(texelFetch(tDepth, q, 0).r);
+        float jump = (wq - wp) / wq;
+        if (jump > 0.003) {
+          float rj = mix(r, mix(uThick * 1.2, r, smoothstep(0.02, 0.08, jump)), manga);
+          ink = max(ink, smoothstep(0.003, 0.008, jump) * clamp(rj + 0.5 - dist, 0.0, 1.0) * max(texelFetch(tId, q, 0).g, manga));
+          break;
+        }
+        wp = wq;
+      }
+    }
+    col = mix(col, mix(uCelInk, uInkColor, manga), ink);
+  } else col = mix(col, col * vec3(0.2, 0.18, 0.26), edge * 0.92);
   if (uSil > 0.5) col = mix(col, uInkColor, texelFetch(tInk, ivec2(gl_FragCoord.xy), 0).r);
   vec2 fc = vUv * uRes;
   if (uPixel > 0.5) col = floor(col * 14.0 + 0.5 + bayer4(fc) - 0.5) / 14.0;
-  else if (uPaper > 0.5) col *= 0.975 + 0.05 * h12(floor(gl_FragCoord.xy));
+  else if (uPaper > 0.5 && uShade < 0.5) col *= 0.975 + 0.05 * h12(floor(gl_FragCoord.xy));
   float v = length(vUv - 0.5) * 1.35;
-  if (uPaper > 0.5) col *= mix(1.0, 0.86, smoothstep(0.45, 1.05, v));
+  if (uPaper > 0.5 && uShade < 0.5) col *= mix(1.0, 0.86, smoothstep(0.45, 1.05, v));
   gl_FragColor = vec4(col, 1.0);
 }`;
 
@@ -297,7 +322,18 @@ export interface RenderOptions {
   grade?: Grade;
   /** Hạt giấy và tối góc; tắt thì màu mỗi điểm ảnh chỉ còn theo cảnh, tách nền được (`portrait`) */
   paper?: boolean;
+  /** Kiểu vẽ, mặc định `paint` */
+  shade?: Shade;
 }
+
+/**
+ * `paint`: ba dải sáng loang vết cọ, bóng tiếp xúc, hạt giấy. `cel`: hai tông phẳng (tông tối giảm nửa độ sáng HSV), bóng đổ
+ * cắt gắt, chỉ nét hậu kỳ (không vỏ ngược, không nét bóng dáng `ink`) một màu đứt quãng theo nhiễu bám vật, không bóng tiếp
+ * xúc, không hạt giấy. `manga`: màu gốc phẳng, mặt quay khỏi đèn và bóng đổ là lưới chấm xoay 45° (ô 6 px ở khung 1080 dòng)
+ * tông tối cùng sắc, bóng càng đậm chấm càng dày; nét liền đen dày, vỏ ngược giữ; không bóng tiếp xúc, không hạt giấy.
+ */
+export type Shade = 'paint' | 'cel' | 'manga';
+const SHADES: Record<Shade, number> = { paint: 0, cel: 1, manga: 2 };
 
 export interface Pipeline {
   /** Cỡ khung CSS px; `pixel` vẽ ở ~360 px cạnh ngắn rồi phóng lên, bỏ `aa`. */
@@ -407,13 +443,13 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
   const jfaRT = [0, 1].map(() => new THREE.WebGLRenderTarget(4, 4, { type: THREE.FloatType, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false }));
   const inkTable = Array.from({ length: MAX_INK }, () => new THREE.Vector2());
   const maskRT = new THREE.WebGLRenderTarget(4, 4, { format: THREE.RedFormat, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false });
-  let rw = 4, rh = 4;
-  // pháp tuyến hệ nhìn, mặt sau lật lại; a: 1 có nét gấp, 0,5 vật `noCrease`, 0,3 lưới người (`body`), 0 không có vật. Đích thứ hai: mã vật có nét bóng dáng
+  let rw = 4, rh = 4, dot = 6;
+  // pháp tuyến hệ nhìn, mặt sau lật lại; a: 1 có nét gấp, 0,5 vật `noCrease`, 0,3 lưới người (`body`), 0 không có vật. Đích thứ hai: mã vật có nét bóng dáng, mặt nạ đứt nét của kiểu cel
   const normalMat = (a: number, id: number) => new THREE.ShaderMaterial({
     side: THREE.DoubleSide,
-    vertexShader: /* glsl */ `varying vec3 vN; void main(){ vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: /* glsl */ `layout(location = 1) out highp vec4 gInk; varying vec3 vN;
-      void main(){ vec3 n = normalize(gl_FrontFacing ? vN : -vN); gl_FragColor = vec4(n * 0.5 + 0.5, ${a.toFixed(1)}); gInk = vec4(${id}.0, 0.0, 0.0, 1.0); }`,
+    vertexShader: /* glsl */ `varying vec3 vN, vL; void main(){ vN = normalize(normalMatrix * normal); vL = ${SCALED_POSITION}; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: /* glsl */ `layout(location = 1) out highp vec4 gInk; varying vec3 vN, vL; ${NOISE}
+      void main(){ vec3 n = normalize(gl_FrontFacing ? vN : -vN); gl_FragColor = vec4(n * 0.5 + 0.5, ${a.toFixed(1)}); gInk = vec4(${id}.0, inkKeep(vL), 0.0, 1.0); }`,
   });
   // decal giữ độ lệch sâu của vật liệu gốc, không thì giành điểm ảnh với mặt dưới nó thành nét lấm chấm
   const normalMats = new Map<string, THREE.ShaderMaterial>();
@@ -436,6 +472,9 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       tDepth: { value: mainRT.depthTexture },
       tNormal: { value: normalRT.texture },
       tInk: { value: maskRT.texture },
+      tId: { value: normalRT.textures[1] },
+      uShade: G.uShade,
+      uCelInk: G.uCelInk,
       uSil: { value: 0 },
       uInkColor: { value: new THREE.Color(INK) },
       uRes: { value: new THREE.Vector2() },
@@ -533,10 +572,15 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       jfaMat.uniforms.uRes.value.set(rw, rh);
       postMat.uniforms.uThick.value = pixel ? 1 : Math.max(1, dpr * ss * 1.25);
       postMat.uniforms.uPixel.value = pixel ? 1 : 0;
+      // ô chấm manga 6 px ở khung 1080 dòng, theo tỉ lệ ở độ phân giải khác
+      dot = Math.max(3, (rh / Math.max(1, h)) * Math.min(w, h) / 180);
       gradeMat.uniforms.uRes.value.set(Math.round(w * dpr), Math.round(h * dpr));
     },
 
-    render(scene, camera, { outline = true, t = 0, grade = {}, paper = true } = {}) {
+    render(scene, camera, { outline = true, t = 0, grade = {}, paper = true, shade = 'paint' } = {}) {
+      const cel = shade === 'cel';
+      G.uShade.value = SHADES[shade];
+      G.uDot.value = dot;
       scene.updateMatrixWorld();
       camera.updateMatrixWorld();
       const hidden: THREE.Object3D[] = [];
@@ -647,6 +691,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
         swapped.push([m, m.material]);
         m.material = normalFor(m, m.material, id);
       });
+      if (cel) inks = 0;
       if (outline || inks) {
         for (const o of shells) o.visible = false;
         const bg = scene.background, clear = renderer.getClearColor(new THREE.Color()), alpha = renderer.getClearAlpha();
@@ -665,7 +710,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       // khung điểm ảnh ôm từng vật có nét và bán kính nét, gộp khung chồng nhau: các lượt loang chỉ vẽ trong đó
       reach = Math.min(reach, 256);
       const screen = new THREE.Box2(new THREE.Vector2(0, 0), new THREE.Vector2(rw, rh));
-      let rects = whole ? [screen] : boxes.map((r) => r.expandByScalar(reach + 3).intersect(screen)).filter((r) => !r.isEmpty());
+      let rects = !inks ? [] : whole ? [screen] : boxes.map((r) => r.expandByScalar(reach + 3).intersect(screen)).filter((r) => !r.isEmpty());
       for (let merged = true; merged; ) {
         merged = false;
         for (let i = 0; i < rects.length && !merged; i++)

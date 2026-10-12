@@ -4,7 +4,7 @@ export {
   type CeilingLight, type Lamp, type LightRig, type NprOptions, type PaletteName, type SurfaceOptions, type WindowLight,
 } from './npr';
 export { currentLights, setLights, setPalette, type LightState } from './lighting';
-export { AA, createPipeline, type AaMode, type Grade, type Pipeline, type PipelineOptions, type RenderOptions } from './pipeline';
+export { AA, createPipeline, type AaMode, type Grade, type Pipeline, type PipelineOptions, type RenderOptions, type Shade } from './pipeline';
 export {
   characterOptions, fitSkirt, fromCharacter, put, R, stickman,
   type Arm, type CharacterJson, type Figure, type Hand, type Leg, type Lod, type Side, type StickmanOptions,
