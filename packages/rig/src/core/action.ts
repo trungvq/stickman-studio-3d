@@ -17,11 +17,13 @@ import {
   REACH_CHANNELS,
   stretchJson,
   stretchSegs,
+  type HandMap,
   type Lift,
   type Reach,
   type ReachMap,
 } from "./types";
 import { REACH_ELBOW, reachAngles } from "./ik";
+import { HAND_POSE_KINDS, handVec, mixHand, type HandKey, type HandPose } from "./hand";
 import {
   BASE_ITEM,
   EquipSchema,
@@ -62,7 +64,7 @@ import {
 } from "./animalGait";
 
 /** Bump khi đổi hình dạng JSON hành động; `migrateAction` phải có nhánh tương ứng. */
-export const ACTION_VERSION = 17;
+export const ACTION_VERSION = 18;
 
 /** Kênh khớp: thứ có số trong `Pose`; `stretch` là hệ số dài chi, không phải góc */
 export const JOINT_CHANNELS = [
@@ -76,8 +78,11 @@ export const JOINT_CHANNELS = [
 ] as const;
 export type JointChannel = (typeof JOINT_CHANNELS)[number];
 
-/** Kênh mà `mask` gọi tên: sáu khớp cộng `face` — nét mặt đổi được mà không đụng góc đầu */
-export const CHANNELS = [...JOINT_CHANNELS, "face"] as const;
+/**
+ * Kênh mà `mask` gọi tên: sáu khớp cộng `face` — nét mặt đổi được mà không đụng góc đầu — và `hand`: bàn tay của
+ * người 3D (xoay cẳng tay, gập cổ tay, ngón), đổi được mà không đụng góc tay
+ */
+export const CHANNELS = [...JOINT_CHANNELS, "face", "hand"] as const;
 export type Channel = (typeof CHANNELS)[number];
 
 /** Bộ sinh chưa cái nào chạm tới đầu, nên mặc định chúng không ghi kênh `head` */
@@ -101,17 +106,19 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
   head: "đầu",
   stretch: "vươn",
   face: "mặt",
+  hand: "bàn tay",
 };
 
 const limb = z.tuple([z.number(), z.number()]);
 /**
- * Chân `[hông, gối, dang]`, tay `[vai, khuỷu, cổ tay, dang]`: cổ tay xoay đồ cầm, rig không vẽ bàn
- * chân; số dang tuỳ chọn, chỉ người 3D đọc. docs/01-rig.md#dang-và-nghiêng-ngang
+ * Chân `[hông, gối, dang]`, tay `[vai, khuỷu, cổ tay, dang, xoắn vai]`: cổ tay xoay đồ cầm, rig không vẽ
+ * bàn chân; số dang và xoắn vai tuỳ chọn, chỉ người 3D đọc. docs/01-rig.md#dang-và-nghiêng-ngang
  */
 const leg = z.union([limb, z.tuple([z.number(), z.number(), z.number()])]);
 const arm = z.union([
   z.tuple([z.number(), z.number(), z.number()]),
   z.tuple([z.number(), z.number(), z.number(), z.number()]),
+  z.tuple([z.number(), z.number(), z.number(), z.number(), z.number()]),
 ]);
 /** Thân `cúi` hay `[cúi, nghiêng ngang]`; nghiêng chỉ người 3D đọc */
 const torso = z.union([z.number(), z.tuple([z.number(), z.number()])]);
@@ -218,6 +225,21 @@ const FaceSchema = z.object({
 });
 
 /**
+ * Bàn tay của một kênh tay kể từ mốc này: tên dáng (`HAND_POSE_KINDS`), hay `{ pose, w, turn, bend }` — dáng hoà từ dáng
+ * nghỉ theo `w`, bỏ trống `pose` là dáng nghỉ; xoay cẳng tay `turn` (dương sấp) và gập cổ tay `bend` (dương về lòng tay)
+ * trong `±90`. Nội suy như góc. docs/01-rig.md#bàn-tay
+ */
+const HandKeySchema = z.union([
+  z.enum(HAND_POSE_KINDS),
+  z.strictObject({
+    pose: z.enum(HAND_POSE_KINDS).optional(),
+    w: z.number().min(0).max(1).optional(),
+    turn: z.number().min(-90).max(90).optional(),
+    bend: z.number().min(-90).max(90).optional(),
+  }),
+]);
+
+/**
  * Một mốc sự kiện: pha mà *việc* xảy ra — lưỡi rìu chạm gỗ, bàn chân chạm đất. Không ghi
  * khớp nào, chỉ đặt tên cho một con số mà trước đây mỗi repo video phải tự đo lại.
  */
@@ -252,6 +274,10 @@ const KeySchema = z.object({
   layer: LayerSchema.optional(),
   /** Đổi nét mặt kể từ mốc này; không nội suy, chỉ ăn khi `face` nằm trong mặt nạ */
   face: FaceSchema.optional(),
+  /** Bàn tay người 3D theo kênh tay, nội suy; chỉ ăn khi `hand` nằm trong mặt nạ */
+  hand: z
+    .object({ armFar: HandKeySchema.optional(), armNear: HandKeySchema.optional() })
+    .optional(),
   /** Đổi đồ kể từ mốc này; công tắc, không nội suy và không đi qua mặt nạ. docs/01-rig.md */
   equip: EquipSchema.optional(),
 });
@@ -481,10 +507,10 @@ export const ActionSchema = z
             "mốc của động vật ghi góc theo `ANIMAL_JOINT_CHANNELS`, không gọi tên pose người",
           path: ["keys", i, "pose"],
         });
-      if (k.layer || k.equip || k.reach)
+      if (k.layer || k.equip || k.reach || k.hand)
         ctx.addIssue({
           code: "custom",
-          message: "động vật không có lớp cẳng tay, đích cổ tay hay đồ mang theo",
+          message: "động vật không có lớp cẳng tay, đích cổ tay, bàn tay hay đồ mang theo",
           path: ["keys", i],
         });
     });
@@ -521,6 +547,7 @@ export function migrateAction(json: unknown): unknown {
   // v14 → v15 thêm `snap`; thiếu là chuyển động không cố ý giật, `check` đo như mọi hành động
   // v15 → v16 thêm số dang của tay chân và `torso: [cúi, nghiêng]`; thiếu là `0`, không phải viết gì
   // v16 → v17 thêm `keys[].face.blush`; thiếu là má không ửng thêm, không phải viết gì
+  // v17 → v18 thêm số xoắn vai của tay, `keys[].hand` và kênh `hand`; thiếu là `0` và bàn tay thả lỏng, không phải viết gì
   // v4 → v5 tay thành ba số; file cũ cầm đồ thẳng trục cẳng tay, tức cổ tay 0
   if (from < 5)
     for (const k of (o.keys ?? []) as Record<string, unknown>[]) {
@@ -594,6 +621,11 @@ export const keyLayer = (k: ActionKey): Partial<ArmLayers> =>
 /** Nét mặt mà một mốc ghi; pose trong thư viện không mang nét mặt nào. */
 export const keyFace = (k: ActionKey): Partial<FaceState> => k.face ?? {};
 
+/** Bàn tay mà một mốc ghi theo kênh tay; pose trong thư viện không mang bàn tay nào. */
+export const keyHand = (
+  k: ActionKey,
+): Partial<Record<(typeof ARM_CHANNELS)[number], HandPose | HandKey>> => k.hand ?? {};
+
 /** Đồ mà một mốc đổi; pose trong thư viện không đụng tới mảnh nào. */
 export const keyEquip = (k: ActionKey): Equip | undefined => k.equip;
 
@@ -610,6 +642,7 @@ export function actionMask(a: ActionData): Channel[] {
   }
   // Mốc đổi nét mặt ghi vào `face`, không đụng góc đầu: hành động nhép miệng không cần khai `mask`
   if (a.keys.some((k) => Object.keys(keyFace(k)).length)) seen.add("face");
+  if (a.keys.some((k) => Object.keys(keyHand(k)).length)) seen.add("hand");
   return CHANNELS.filter((c) => seen.has(c));
 }
 
@@ -749,6 +782,30 @@ export function actionFace(a: ActionData, t: number): Partial<FaceState> {
   return o;
 }
 
+/**
+ * Bàn tay mà hành động ghi tại pha `t` theo kênh tay (số theo `HAND_DOF`), kênh `hand`: mỗi mốc ra số của nó (`handVec`)
+ * rồi nội suy như góc, theo `ease`. Ngoài mặt nạ thì bỏ trống.
+ */
+export function actionHand(a: ActionData, t: number): HandMap {
+  if (!a.keys || actionKind(a) === "animal" || !actionMask(a).includes("hand")) return {};
+  const u = phaseOf(a, t);
+  const o: HandMap = {};
+  for (const ch of REACH_CHANNELS) {
+    const c = REACH_OF[ch];
+    const v = sampleWith<readonly number[]>(
+      a,
+      (k) => {
+        const h = keyHand(k)[c];
+        return h === undefined ? undefined : handVec(h);
+      },
+      u,
+      mixHand,
+    );
+    if (v) o[ch] = v;
+  }
+  return o;
+}
+
 /** Mỏ và mắt mà hành động của động vật ghi tại pha `t`; kênh `face`, ngoài mặt nạ thì bỏ trống. */
 export function animalActionFace(a: ActionData, t: number): Partial<AnimalFace> {
   if (!a.keys || !animalActionMask(a).includes("face")) return {};
@@ -855,6 +912,7 @@ export function maskProblems(a: ActionData): string[] {
     if (typeof k.pose !== "string")
       for (const c of Object.keys(k.pose) as MaskChannel[]) note(c, k.t);
     if (Object.keys(keyFace(k)).length) note("face", k.t);
+    if (Object.keys(keyHand(k)).length) note("hand", k.t);
     for (const c of Object.keys(k.layer ?? {}) as Channel[]) note(c, k.t);
     for (const c of Object.keys(k.reach ?? {}) as Channel[]) note(c, k.t);
   }
@@ -981,6 +1039,8 @@ export function actionPose(a: ActionData, t: number): Partial<Pose> {
   const p = deltaPose(actionDelta(a, t));
   const reach = actionReach(a, t);
   if (Object.keys(reach).length) p.reach = reach;
+  const hand = actionHand(a, t);
+  if (Object.keys(hand).length) p.hand = hand;
   return p;
 }
 
@@ -1087,6 +1147,8 @@ export const composePose = (base: Pose, ...parts: Partial<Pose>[]): Pose =>
       if (Object.keys(reach).length) out.reach = reach;
       else delete out.reach;
     }
+    // Bàn tay đè theo từng kênh tay: track chỉ ghi tay gần không xoá bàn tay xa của track dưới
+    if (o.hand || p.hand) out.hand = { ...o.hand, ...p.hand };
     return out;
   }, base);
 

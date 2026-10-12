@@ -1,7 +1,17 @@
 import { D, RIG, TORSO_DEPTH } from "./constants";
 import { lengths } from "./geometry";
+import { HAND_REST, handGrip, wristTurn } from "./hand";
 import { REACH_ELBOW } from "./ik";
-import type { V3 } from "./lens";
+import {
+  fromColumns,
+  matMul as mm,
+  matVec as mv,
+  rotX as rx,
+  rotY as ry,
+  rotZ as rz,
+  type M3,
+  type V3,
+} from "./lens";
 import { limbWidths, type CharacterData, type Garment, type Skirt } from "./schema";
 import { profileAt, skirtSide, wornSkirt } from "./skirtShape";
 import { garmentOf, garmentShoulder, garmentSocket, profile, type P2, type Rig } from "./torso";
@@ -115,10 +125,10 @@ export function cladProfile(pts: readonly P2[], room: ArmRoom): { pts: P2[]; dep
 }
 
 /** Bàn tay xoè cỡ `1` dài chừng này, đơn vị three; xoè không dài quá `OPEN_REACH` cẳng tay */
-const OPEN_LEN = 0.21;
+const OPEN_LEN = 0.19;
 const OPEN_REACH = 0.55;
 
-/** Cỡ bàn tay người mặc đồ theo bán kính cổ tay `rw` (three): nhân vào `HAND` và `handGeometry` */
+/** Cỡ bàn tay người mặc đồ theo bán kính cổ tay `rw` (three): nhân vào bề ngang `HAND_BONES` (`handFrames`, `handRig`) */
 export const handScale = (rw: number) => Math.max(1, rw / 0.048);
 
 /** Cỡ dọc của bàn tay xoè cỡ `k` trên cẳng tay dài `foreArm` (three): chi to mà ngắn thì găng tròn lại, không dài tới gối */
@@ -257,6 +267,7 @@ export interface PoseIn {
   stretch: readonly number[];
   lift?: Partial<Record<Limb3, boolean>>;
   reach?: Partial<Record<"af" | "an", ReachIn>>;
+  hand?: Partial<Record<"af" | "an", readonly number[]>>;
 }
 
 const num = (v: number | undefined) => (Number.isFinite(v) ? (v as number) : 0);
@@ -276,18 +287,39 @@ export function actAngles(
   return ch[0] === "l" && seated ? [90, -90, 0] : [0, 0, 0];
 }
 
+/**
+ * Xoắn vai và lệch cổ tay (độ) người 3D vẽ cho một kênh tay: số thứ năm và thứ ba của tuple ở kênh nâng; kênh giữ 2D
+ * ở dáng nghỉ nên là `0`. Xoắn vai dương là xoay ngoài: khuỷu gập ra trước thì cẳng tay quay ra phía chính tay ấy
+ */
+export function actTwist(P: Pick<PoseIn, "af" | "an" | "lift">, ch: "af" | "an"): [number, number] {
+  const v = P[ch];
+  return P.lift?.[ch] ? [num(v[4]), num(v[2])] : [0, 0];
+}
+
+/** Bàn tay của một kênh tay (`HAND_DOF`): `pose.hand`, không ghi là `HAND_REST`; không cần cờ nâng */
+export const actHand = (P: Pick<PoseIn, "hand">, ch: "af" | "an"): readonly number[] =>
+  P.hand?.[ch] ?? HAND_REST;
+
 const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const add = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 const mul = (a: V3, k: number): V3 => [a[0] * k, a[1] * k, a[2] * k];
 const dot = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const len = (a: V3) => Math.hypot(a[0], a[1], a[2]);
 const unit = (a: V3): V3 => mul(a, 1 / (len(a) || 1));
+const cross = (a: V3, b: V3): V3 => [
+  a[1] * b[2] - a[2] * b[1],
+  a[2] * b[0] - a[0] * b[2],
+  a[0] * b[1] - a[1] * b[0],
+];
 
 /** Hệ three, y lên: khớp giữa khi rủ thẳng, phương dự phòng của IK */
 const DOWN3: V3 = [0, -1, 0];
 
-/** IK hai đoạn trong hệ three: khớp giữa trong mặt phẳng qua trục gốc → đích và `pole`, về phía `pole` */
-export function twoBone3(S: V3, T: V3, l1: number, l2: number, pole: V3): [V3, V3] {
+/**
+ * IK hai đoạn trong hệ three: khớp giữa trong mặt phẳng qua trục gốc → đích và `pole`, về phía `pole`. Trả khớp giữa,
+ * đầu chi và trục bản lề `n × u` (pháp tuyến mặt phẳng gập, `u` là phía khớp giữa): xác định cả khi chi duỗi thẳng
+ */
+export function twoBone3(S: V3, T: V3, l1: number, l2: number, pole: V3): [V3, V3, V3] {
   const d = sub(T, S);
   const dist = len(d);
   const n = dist > 1e-9 ? mul(d, 1 / dist) : DOWN3;
@@ -299,7 +331,20 @@ export function twoBone3(S: V3, T: V3, l1: number, l2: number, pole: V3): [V3, V
   const reach = Math.min(Math.max(dist, Math.abs(l1 - l2)), l1 + l2);
   const a = (l1 * l1 - l2 * l2 + reach * reach) / (2 * reach || 1);
   const h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
-  return [add(add(S, mul(n, a)), mul(u, h)), add(S, mul(n, reach))];
+  return [add(add(S, mul(n, a)), mul(u, h)), add(S, mul(n, reach)), unit(cross(n, u))];
+}
+
+/**
+ * Hướng cánh tay trên (thế giới) của chuỗi IK vai `S` → khuỷu `E` → cổ tay `W` với trục bản lề `X`: cột là trục x
+ * (bản lề), y (từ khuỷu về vai), z; và góc gập khuỷu `b` (radian, quanh x như `rx(−b)` của khuỷu). Khuỷu là bản lề
+ * thuần nên cẳng tay và bàn tay không xoay giật theo đường ngắn nhất
+ */
+export function armFrame(S: V3, E: V3, W: V3, X: V3): { R: M3; b: number } {
+  const Y = unit(sub(S, E));
+  const x = unit(sub(X, mul(Y, dot(X, Y))));
+  const Z = cross(x, Y);
+  const f = unit(sub(W, E));
+  return { R: fromColumns(x, Y, Z), b: Math.atan2(dot(f, Z), -dot(f, Y)) };
 }
 
 /** Hệ thân của một người 3D trong three: điểm và hướng hệ thân (đã đổi trục, chưa nhân 0,01) ra thế giới */
@@ -310,9 +355,10 @@ export interface ActFrame {
 
 /**
  * Tay bên `side` (`-1` tay phải) với tới đích hệ thân `rb` rồi đích thế giới rig `rw`, hoà trên vị trí
- * cổ tay theo `w`: `S`, `E`, `T` là vai, khuỷu, cổ tay của chuỗi góc trong three. Trả khuỷu và cổ tay
- * mới, không có đích thì `undefined`. Đích hệ thân soạn ở `height = 1`, nhân `height` như `reachToWorld`. `act` và
- * `actJoints` cùng gọi.
+ * cổ tay theo `w`: `S`, `E`, `T` là vai, khuỷu, cổ tay của chuỗi góc trong three, `hinge` trục bản lề khuỷu của chuỗi
+ * ấy (cột x của vai). Trả khuỷu, cổ tay và trục bản lề mới, không có đích thì `undefined`. Chuỗi góc duỗi thẳng thì
+ * phía khuỷu suy từ `hinge`, nên ở phần đích nhỏ bản lề IK trùng bản lề góc: cẳng tay không xoay giật lúc đích bắt
+ * đầu kéo. Đích hệ thân soạn ở `height = 1`, nhân `height` như `reachToWorld`. `act` và `actJoints` cùng gọi.
  */
 export function actReach(
   frame: ActFrame,
@@ -323,13 +369,20 @@ export function actReach(
   rb: ReachIn | undefined,
   rw: ReachIn | undefined,
   height = 1,
-): [V3, V3] | undefined {
+  hinge?: V3,
+): [V3, V3, V3] | undefined {
   if (!(rb && rb.w > 0) && !(rw && rw.w > 0)) return undefined;
   const body = ([f, y, o]: readonly number[]): V3 => [side * o, -y, f];
   let T = T0;
   const axis = unit(sub(T, S));
   const bend = sub(sub(E, S), mul(axis, dot(sub(E, S), axis)));
-  let pole = dot(bend, bend) > 1e-10 ? unit(bend) : unit(frame.dir(body(REACH_ELBOW)));
+  const straight: V3 = hinge ? cross(hinge, axis) : [0, 0, 0];
+  let pole =
+    dot(bend, bend) > 1e-10
+      ? unit(bend)
+      : dot(straight, straight) > 1e-10
+        ? unit(straight)
+        : unit(frame.dir(body(REACH_ELBOW)));
   const toward = (r: typeof rb, target: () => V3, el: V3) => {
     if (!r || !(r.w > 0)) return;
     const k = Math.min(1, r.w);
@@ -349,35 +402,6 @@ export function actReach(
   return twoBone3(S, T, l1, l2, pole);
 }
 
-type M3 = [number, number, number, number, number, number, number, number, number];
-const rx = (a: number): M3 => {
-  const c = Math.cos(a);
-  const s = Math.sin(a);
-  return [1, 0, 0, 0, c, -s, 0, s, c];
-};
-const ry = (a: number): M3 => {
-  const c = Math.cos(a);
-  const s = Math.sin(a);
-  return [c, 0, s, 0, 1, 0, -s, 0, c];
-};
-const rz = (a: number): M3 => {
-  const c = Math.cos(a);
-  const s = Math.sin(a);
-  return [c, -s, 0, s, c, 0, 0, 0, 1];
-};
-const mm = (a: M3, b: M3): M3 => {
-  const o = new Array(9).fill(0) as M3;
-  for (let i = 0; i < 3; i++)
-    for (let j = 0; j < 3; j++)
-      o[i * 3 + j] = a[i * 3] * b[j] + a[i * 3 + 1] * b[3 + j] + a[i * 3 + 2] * b[6 + j];
-  return o;
-};
-const mv = (m: M3, v: V3): V3 => [
-  m[0] * v[0] + m[1] * v[1] + m[2] * v[2],
-  m[3] * v[0] + m[4] * v[1] + m[5] * v[2],
-  m[6] * v[0] + m[7] * v[1] + m[8] * v[2],
-];
-
 /** Khớp người 3D vẽ ra, theo bên giải phẫu: `R` bên phải người, `L` bên trái */
 export type ActJoint =
   | "hip"
@@ -391,6 +415,8 @@ export type ActJoint =
   | "elbowL"
   | "wristR"
   | "wristL"
+  | "handR"
+  | "handL"
   | "neck"
   | "head";
 
@@ -409,8 +435,9 @@ export interface ActInput {
 
 /**
  * Khớp của người 3D đúng như `act` đặt người que three: cùng khung xương (`bones3`, `roots3`), cùng
- * luật đọc góc (`actAngles`) và cùng IK (`actReach`), trả trong toạ độ thế giới rig. Không có `world`
- * thì không có gì. `check` đo giật tay chân trên các khớp này. docs/01-rig.md#khớp-người-3d-vẽ-ra
+ * luật đọc góc (`actAngles`, `actTwist`, `actHand`) và cùng IK (`actReach`, `armFrame`), trả trong toạ độ thế giới
+ * rig; `hand` là chỗ treo đồ cầm (`handGrip`, người que ở mút nét). Không có `world` thì không có gì. `check` đo giật
+ * tay chân trên các khớp này. docs/01-rig.md#khớp-người-3d-vẽ-ra
  */
 export function actJoints(
   c: Pick<CharacterData, "rig" | "pieces" | "palette" | "head">,
@@ -465,16 +492,20 @@ export function actJoints(
   out.head = at(neck, Rn, [0, head3(B, c.head.form === "human"), 0]);
 
   const frame: ActFrame = { point: (v) => at(root, Rr, v), dir: (v) => mv(Rr, v) };
+  const hand = pal.clad && cladHand(w.sleeve, c.rig.stroke, B.foreArm * 100);
   for (const side of [near, -near]) {
     const isNear = side === near;
     const ch = isNear ? "an" : "af";
     const [a, b, sp] = actAngles(P, ch, false);
+    const [twist, dev] = actTwist(P, ch);
     const sh = at(hips, Rs, [side * roots.shoulder[0], roots.shoulder[1], 0]);
-    const Rsh = mm(Rs, mm(rz(side * (roots.splay + sp * D)), rx(-a * D)));
+    // Euler 'ZXY' của vai: dang · gập · xoắn quanh chính cánh tay
+    const Rsh = mm(Rs, mm(mm(rz(side * (roots.splay + sp * D)), rx(-a * D)), ry(side * twist * D)));
     const l1 = B.upperArm * (st[isNear ? 2 : 0] ?? 1);
     const l2 = B.foreArm * (st[isNear ? 3 : 1] ?? 1);
     const el = at(sh, Rsh, [0, -l1, 0]);
-    const wr = at(el, mm(Rsh, rx(-b * D)), [0, -l2, 0]);
+    let Re = mm(Rsh, rx(-b * D));
+    let wr = at(el, Re, [0, -l2, 0]);
     const ik = actReach(
       frame,
       side,
@@ -484,10 +515,23 @@ export function actJoints(
       P.reach?.[ch],
       isNear ? W.hands?.near : W.hands?.far,
       B.height,
+      mv(Rsh, [1, 0, 0]),
     );
+    let elbow = el;
+    if (ik) {
+      const f = armFrame(sh, ik[0], ik[1], ik[2]);
+      [elbow, wr] = ik;
+      Re = mm(f.R, rx(-f.b));
+    }
+    const [pron, flex] = actHand(P, ch);
+    const Rw = mm(Re, wristTurn(pron, flex, dev, side));
+    const grip: V3 = hand
+      ? handGrip(side, hand.k, hand.long)
+      : [0, -(BONES3.limb * w.sleeve) / 10, 0];
     out[`shoulder${tag(side)}` as ActJoint] = sh;
-    out[`elbow${tag(side)}` as ActJoint] = ik ? ik[0] : el;
-    out[`wrist${tag(side)}` as ActJoint] = ik ? ik[1] : wr;
+    out[`elbow${tag(side)}` as ActJoint] = elbow;
+    out[`wrist${tag(side)}` as ActJoint] = wr;
+    out[`hand${tag(side)}` as ActJoint] = at(wr, Rw, grip);
   }
   out.hip = hips;
   const rigOf = (p: V3): V3 => [p[0] * 100, -p[1] * 100, -p[2] * 100];

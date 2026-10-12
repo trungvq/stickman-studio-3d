@@ -1,9 +1,10 @@
 import * as THREE from 'three';
-import { actAngles, actReach, type ActFrame } from './core/act3';
+import { actAngles, actHand, actReach, actTwist, armFrame, type ActFrame } from './core/act3';
 import type { V3 } from './core/lens';
 import type { BrowKind, EyeKind, MouthKind } from './core/types';
 import { toThree, type Vec3 } from './khoi';
 import { fitSkirt, type Figure, type Side } from './stickman';
+import { poseHand } from './human';
 
 // Diễn theo tư thế đã lấy mẫu của @stickman3d/sketch (`sceneAt`, docs/01-rig.md#người-3d): package không đọc JSON hành
 // động hay scene. Luật đọc góc (`actAngles`) và IK (`actReach`) ở lõi, `actJoints` của lõi tính lại đúng các khớp này
@@ -12,7 +13,7 @@ import { fitSkirt, type Figure, type Side } from './stickman';
 /** Đích cổ tay: hệ thân `[tiến, y xuống, ra ngoài]` đơn vị rig trong `pose.reach`, toạ độ thế giới rig trong `world.hands` */
 export interface ActReach { at: readonly number[]; elbow?: readonly number[]; w: number }
 type Limb = 'af' | 'an' | 'lf' | 'ln';
-/** `Pose` của @stickman3d/sketch; góc độ, tay `[vai, khuỷu, cổ tay, dang]`, chân `[hông, gối, dang]`, `head` là `[nghiêng, lắc, gật]` */
+/** `Pose` của @stickman3d/sketch; góc độ, tay `[vai, khuỷu, cổ tay, dang, xoắn vai]`, chân `[hông, gối, dang]`, `head` là `[nghiêng, lắc, gật]` */
 export interface ActPose {
   af: readonly number[];
   an: readonly number[];
@@ -26,6 +27,8 @@ export interface ActPose {
   stretch: readonly number[];
   lift?: Partial<Record<Limb, boolean>>;
   reach?: Partial<Record<'af' | 'an', ActReach>>;
+  /** Bàn tay theo `HAND_DOF` của lõi: xoay cẳng tay, gập cổ tay, góc ngón */
+  hand?: Partial<Record<'af' | 'an', readonly number[]>>;
 }
 /** `World` của @stickman3d/sketch: tâm hông thế giới rig, `yaw` radian (0 mặt về +x, π/2 về −z), `flip` là mặt sang trái khung */
 export interface ActWorld {
@@ -48,7 +51,6 @@ export interface Acting {
 }
 
 const D = Math.PI / 180;
-const DOWN = new THREE.Vector3(0, -1, 0);
 
 const num = (v: number | undefined) => (Number.isFinite(v) ? (v as number) : 0);
 
@@ -58,14 +60,8 @@ function segment(j: THREE.Group, child: THREE.Group | undefined, len: number, st
   if (child) child.position.y = -len * st;
 }
 
-/** Xoay `j` cho đoạn rủ −y của nó chĩa từ `from` tới `to` (thế giới) */
-function aim(j: THREE.Object3D, from: THREE.Vector3, to: THREE.Vector3) {
-  const q = j.parent!.getWorldQuaternion(new THREE.Quaternion()).invert();
-  j.quaternion.setFromUnitVectors(DOWN, to.clone().sub(from).normalize().applyQuaternion(q));
-  j.updateMatrixWorld(true);
-}
-
 const v3 = (v: THREE.Vector3): V3 => [v.x, v.y, v.z];
+const _m = new THREE.Matrix4(), _q = new THREE.Quaternion();
 
 /** Tay `side` với tới đích hệ thân `rb` rồi đích thế giới `rw` (`actReach` của lõi) */
 function reachArm(p: Figure, side: Side, rb: ActReach | undefined, rw: ActReach | undefined) {
@@ -79,11 +75,15 @@ function reachArm(p: Figure, side: Side, rb: ActReach | undefined, rw: ActReach 
   };
   const k = p.root.scale.x;
   const chain = [S, elbow.getWorldPosition(new THREE.Vector3()), wrist.getWorldPosition(new THREE.Vector3())].map(v3) as [V3, V3, V3];
-  const ik = actReach(frame, side, chain, elbow.position.length() * k, wrist.position.length() * k, rb, rw, p.bones.height);
+  const hinge = v3(new THREE.Vector3(1, 0, 0).applyQuaternion(shoulder.getWorldQuaternion(new THREE.Quaternion())));
+  const ik = actReach(frame, side, chain, elbow.position.length() * k, wrist.position.length() * k, rb, rw, p.bones.height, hinge);
   if (!ik) return;
-  const [e, w] = ik.map((q) => new THREE.Vector3(...q));
-  aim(shoulder, S, e);
-  aim(elbow, e, w);
+  // vai quay theo khung bản lề của IK, khuỷu chỉ gập: cẳng tay và bàn tay không lật giữa hai khung
+  const { R, b } = armFrame(v3(S), ik[0], ik[1], ik[2]);
+  _m.set(R[0], R[1], R[2], 0, R[3], R[4], R[5], 0, R[6], R[7], R[8], 0, 0, 0, 0, 1);
+  shoulder.quaternion.copy(shoulder.parent!.getWorldQuaternion(_q).invert().multiply(new THREE.Quaternion().setFromRotationMatrix(_m)));
+  elbow.rotation.set(-b, 0, 0);
+  shoulder.updateMatrixWorld(true);
 }
 
 const fract = (x: number) => x - Math.floor(x);
@@ -132,8 +132,13 @@ export function act(p: Figure, sp: Acting, t?: number) {
     const ch = side === near ? 'an' : 'af';
     const { shoulder, elbow, wrist } = p.arms[side];
     const [a, b, sp] = actAngles(P, ch, false);
-    shoulder.rotation.set(-a * D, 0, side * (p.splay + sp * D), 'ZXY');
+    const [twist, dev] = actTwist(P, ch);
+    const hand = actHand(P, ch);
+    shoulder.rotation.set(-a * D, side * twist * D, side * (p.splay + sp * D), 'ZXY');
     elbow.rotation.set(-b * D, 0, 0);
+    // khung bàn tay `wristTurn` của lõi: xoay quanh cẳng tay, gập, lệch
+    wrist.rotation.set(-dev * D, -side * hand[0] * D, -side * hand[1] * D, 'YZX');
+    if (p.hands) poseHand(p.hands[side], hand);
     segment(shoulder, elbow, B.upperArm, st[side === near ? 2 : 0] ?? 1);
     segment(elbow, wrist, B.foreArm, st[side === near ? 3 : 1] ?? 1);
   }

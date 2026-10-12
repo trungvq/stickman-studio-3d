@@ -116,8 +116,7 @@ const HOLD = action({
 });
 
 describe("kênh `blush` của hành động", () => {
-  it("đời 17; nội suy giữa hai mốc, kiểu nét vẫn bậc thang", () => {
-    expect(ACTION_VERSION).toBe(17);
+  it("nội suy giữa hai mốc, kiểu nét vẫn bậc thang", () => {
     expect(FLUSH.schemaVersion).toBe(ACTION_VERSION);
     expect(actionFace(FLUSH, 0).blush).toBe(0);
     expect(actionFace(FLUSH, 0.5).blush).toBeCloseTo(0.4, 6);

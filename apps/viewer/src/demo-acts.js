@@ -1,8 +1,10 @@
-import { addItem, Batch, box } from '@stickman3d/rig';
+import { addItem, Batch, box, HAND_POSE_KINDS as HAND_POSES } from '@stickman3d/rig';
 
-// Cảnh thử hành động soạn ở `side` (`?demo=acts`, `?demo=desk`, `?demo=heads`, `?demo=side`): mỗi người một trạm trên một
-// hàng, hành động bắt đầu ở giây 0,3 và giữ. `acts` đứng, `desk` ngồi ở bàn, `heads` là các hành động chỉ ghi đầu và thân,
-// `side` là dang tay chân và nghiêng thân.
+// Cảnh thử hành động soạn ở `side` (`?demo=acts`, `?demo=desk`, `?demo=heads`, `?demo=side`, `?demo=hands`,
+// `?demo=gestures`): mỗi người một trạm trên một hàng, hành động bắt đầu ở giây 0,3 và giữ. `acts` đứng, `desk` ngồi ở bàn,
+// `heads` là các hành động chỉ ghi đầu và thân, `side` là dang tay chân và nghiêng thân, `hands` là bảng dáng tay, `gestures`
+// là vẫy tay (xoắn vai), nhún vai ngửa tay, gõ phím úp tay (`arms-on-table-3d` úp bàn tay), chỉ tay — hai cảnh cuối luôn
+// là người mặc đồ.
 
 const GAP = 240;
 const at = (i, n) => (i - (n - 1) / 2) * GAP;
@@ -23,8 +25,47 @@ function desk(b, x0, stool) {
   ] });
 }
 
+/** Đưa tay gần ra trước ngang ngực rồi giữ dáng tay `pose`: một trạm của bảng dáng tay */
+const handShow = (pose) => ({
+  name: `hand-${pose}`, duration: 0.8, end: 'hold', authoredAt: 'side', mask: ['armNear', 'hand'],
+  keys: [
+    { t: 0, pose: { armNear: [3, 8, 0] }, hand: { armNear: {} }, ease: 'smooth' },
+    { t: 1, pose: { armNear: [40, 70, 0, 10] }, hand: { armNear: pose } },
+  ],
+});
+
+/** Hành động chỉ người mặc đồ: vẫy tay bằng xoắn vai, nhún vai ngửa tay, úp tay gõ phím, chỉ tay */
+const GESTURES = {
+  'wave-3d': {
+    name: 'wave-3d', duration: 1.2, end: 'wrap', authoredAt: 'side', mask: ['armNear', 'hand'],
+    note: 'Vẫy tay: cánh tay trên ngang vai (dang 80 cộng tay choãi), xoay ngoài 90 dựng cẳng tay, khuỷu lắc 40 ↔ 75 nên cẳng tay ngả ra ngoài đầu qua lại; lòng tay ra trước.',
+    keys: [
+      { t: 0, pose: { armNear: [0, 58, 0, 80, 90] }, hand: { armNear: { pose: 'open', bend: -10 } }, ease: 'smooth' },
+      { t: 0.25, pose: { armNear: [0, 40, 0, 80, 90] }, hand: { armNear: { pose: 'open', bend: -20 } }, ease: 'smooth' },
+      { t: 0.75, pose: { armNear: [0, 75, 0, 80, 90] }, hand: { armNear: { pose: 'open', bend: 0 } }, ease: 'smooth' },
+      { t: 1, pose: { armNear: [0, 58, 0, 80, 90] }, hand: { armNear: { pose: 'open', bend: -10 } } },
+    ],
+  },
+  'shrug-palms-3d': {
+    name: 'shrug-palms-3d', duration: 0.6, end: 'hold', authoredAt: 'side', mask: ['armNear', 'armFar', 'hand'],
+    note: 'Nhún vai ngửa tay: cẳng tay ra trước, dang 25, ngửa hẳn (turn −90).',
+    keys: [
+      { t: 0, pose: { armNear: [3, 8, 0], armFar: [3, 8, 0] }, hand: { armNear: {}, armFar: {} }, ease: 'smooth' },
+      { t: 1, pose: { armNear: [10, 80, 0, 25], armFar: [10, 80, 0, 25] }, hand: { armNear: { pose: 'open', w: 0.7, turn: -90, bend: -10 }, armFar: { pose: 'open', w: 0.7, turn: -90, bend: -10 } } },
+    ],
+  },
+  'point-out-3d': {
+    name: 'point-out-3d', duration: 0.5, end: 'hold', authoredAt: 'side', mask: ['armNear', 'hand'],
+    note: 'Chỉ sang ngang chếch ra trước: tay gần gần duỗi, hơi dưới vai, ngón trỏ theo trục cẳng tay, ngón cái lên.',
+    keys: [
+      { t: 0, pose: { armNear: [3, 8, 0] }, hand: { armNear: {} }, ease: 'smooth' },
+      { t: 1, pose: { armNear: [40, 5, 0, 75] }, hand: { armNear: { pose: 'point', bend: -5 } } },
+    ],
+  },
+};
+
 /** Cảnh của các hành động; `h` là bộ dựng của demos.js */
-export function actDemos({ member, track, clip, BOY, GIRL }) {
+export function actDemos({ member, track, clip, BOY, GIRL, CLAD }) {
   const stand = (i, n, yaw, actions, opts = BOY) =>
     member(`s${i}`, opts, { at: [at(i, n), 0, 0], yaw }, [track(clip('stand-3d')), ...actions.map((a) => track(clip(a, START))), track(clip('face-calm'))], i);
   /** Ngồi ghế đẩu nhìn +x, bàn trước mặt */
@@ -73,6 +114,30 @@ export function actDemos({ member, track, clip, BOY, GIRL }) {
           stand(4, n, 90, ['stance-wide-3d']),
         ];
       },
+    },
+    hands: {
+      cast: () => HAND_POSES.map((p, i) =>
+        member(`p${i}`, i % 2 ? CLAD.GIRL : CLAD.BOY, { at: [at(i, HAND_POSES.length) * 0.6, 0, 0], yaw: 60 },
+          [track(clip('stand-3d')), track(clip(`hand-${p}`, START)), track(clip('face-calm'))], i)),
+      actions: () => Object.fromEntries(HAND_POSES.map((p) => [`hand-${p}`, handShow(p)])),
+    },
+    gestures: {
+      cast: () => {
+        const n = 4;
+        return [
+          stand(0, n, 85, ['wave-3d'], CLAD.BOY),
+          stand(1, n, 60, ['shrug-palms-3d'], CLAD.GIRL),
+          member('g2', CLAD.BOY, { at: [at(2, n) - 60, -87.5, 0], yaw: 0, sit: true, floor: 0 },
+            [track(clip('sit-3d')), track(clip('arms-on-table-3d', 0)), track(clip('type-3d', START)), track(clip('face-calm'))], 2),
+          stand(3, n, 85, ['point-out-3d'], CLAD.GIRL),
+        ];
+      },
+      props: () => {
+        const b = new Batch();
+        desk(b, at(2, 4), at(2, 4) - 60);
+        return [b.build()];
+      },
+      actions: () => GESTURES,
     },
     heads: {
       cast: () => {

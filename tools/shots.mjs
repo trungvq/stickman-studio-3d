@@ -130,6 +130,20 @@ const SHOTS = [
   ['kieu-nguoi-nghieng-2', 'demo=styles&human&turn=100&az=0&el=6&look=6,3.2,0&dist=12'],
   ['kieu-nguoi-sau', 'demo=styles&human&turn=200&az=0&el=8&look=-5,3.2,0&dist=12'],
   ['kieu-nguoi-sau-2', 'demo=styles&human&turn=200&az=0&el=8&look=6,3.2,0&dist=12'],
+  ['ban-tay', 'demo=hands&t=1.4&az=-20&el=6&look=0,2.6,0&dist=9'],
+  ['ban-tay-gan-1', 'demo=hands&t=1.4&az=-35&el=8&look=-1.2,2.7,0.4&dist=4.5'],
+  ['ban-tay-gan-2', 'demo=hands&t=1.4&az=-35&el=8&look=1.7,2.7,0.4&dist=4.5'],
+  ['tay-xoe', 'demo=hands&t=1.4&az=-35&el=10&look=-2.03,2.63,1.1&dist=1.1'],
+  ['tay-cam', 'demo=hands&t=1.4&az=-35&el=10&look=-0.59,2.63,1.1&dist=1.1'],
+  ['tay-chi', 'demo=hands&t=1.4&az=-35&el=10&look=0.85,2.63,1.1&dist=1.1'],
+  ['tay-dam', 'demo=hands&t=1.4&az=-35&el=10&look=2.29,2.63,1.1&dist=1.1'],
+  ['tay-dam-truoc', 'demo=hands&t=1.4&az=40&el=15&look=2.29,2.63,1.1&dist=1.1'],
+  ['tay-cam-truoc', 'demo=hands&t=1.4&az=40&el=15&look=-0.59,2.63,1.1&dist=1.1'],
+  ['cu-chi', 'demo=gestures&t=1.4&az=20&el=8&look=0,2.4,0&dist=14'],
+  ['vay-tay', 'demo=gestures&t=1.25&az=-15&el=6&look=-4,3.2,0&dist=5'],
+  ['ngua-tay', 'demo=gestures&t=1.4&az=-25&el=20&look=-1.2,2.5,0.4&dist=5'],
+  ['go-phim-up-tay', 'demo=gestures&t=1.4&az=-40&el=30&look=1.6,1.6,0.2&dist=4'],
+  ['chi-tay', 'demo=gestures&t=1.4&az=-30&el=8&look=4,2.9,0.6&dist=4.5'],
 ];
 
 const { values: o } = parseArgs({ options: { out: { type: 'string' }, vs: { type: 'string' }, only: { type: 'string' }, soft: { type: 'boolean' }, q: { type: 'string' } } });

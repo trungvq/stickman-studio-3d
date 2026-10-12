@@ -1,16 +1,12 @@
 import * as THREE from 'three';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
-import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { HUMAN_HEAD, humanEar, humanSkull } from './core/humanHead';
+import { fingerVec, HAND_POSES, HAND_REST, type HandPose } from './core/hand';
+import { handSkin, skinHand, smoothNormals, type HandSkin } from './core/handMesh';
 
 // Khối của người 3D mặc đồ (`palette.clad`) và đầu `head.form: "human"`: đầu có quai hàm, tai, cổ; bàn tay, giày, khối
 // hông. Chỉ hình học; `stickman.ts` gắn vào khớp và tô màu. docs/01-rig.md#người-3d-mặc-đồ
-
-/** Bàn tay trong khung cổ tay (three): `grip` tâm nắm — chỗ treo đồ cầm, `cap` nang va chạm `[y đầu, y cuối, bán kính]` */
-export const HAND = {
-  grip: 0.085,
-  cap: { open: [-0.05, -0.17, 0.05], fist: [-0.04, -0.12, 0.058] } as Record<'open' | 'fist', [number, number, number]>,
-};
 
 /** Giày trong khung cổ chân (y lên, z mũi giày), đo bằng bán kính cổ chân: gót, mũi, nửa rộng, cao trên cổ chân */
 export const SHOE = { heel: -1.25, toe: 3.3, half: 1.22, top: 1.15 };
@@ -103,31 +99,54 @@ export function neckGeometry(top: number, radius: number) {
   return smooth(g);
 }
 
-const place = (g: THREE.BufferGeometry, from: THREE.Vector3, dir: THREE.Vector3) =>
-  g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir.normalize())).translate(from.x, from.y, from.z);
-
-/** Ống mọc từ gốc chĩa theo −y, dài `len`, bán kính `r` */
-const finger = (r: number, len: number) => new THREE.CapsuleGeometry(r, Math.max(0.001, len - 2 * r), 3, 8).translate(0, -len / 2, 0);
-
 export { handScale, openLength } from './core/act3';
 
 /**
- * Bàn tay bên `side` trong khung cổ tay (−y dọc cẳng tay ra ngoài, lòng bàn tay quay về phía thân, ngón cái về +z):
- * xoè là găng dẹt có ngón cái tách, nắm là khối tròn có ngón cái vắt ngang trước. Cỡ `handScale`, xoè dài `long` (`openLength`).
+ * Bàn tay của người `clad` bên `side`: một lưới kín liền (`handSkin` của lõi) buộc vào các đốt của `handFrames`, da dời
+ * trên CPU mỗi khi số bàn tay đổi — một lượt vẽ, vỏ viền dùng chung đỉnh nên chỉ có nét ở mép ngoài. Cỡ `scale`
+ * (`handScale`), cỡ dọc `long`.
  */
-export function handGeometry(side: -1 | 1, fist: boolean, k: number, long = k) {
-  const palm = -side;
-  const parts: THREE.BufferGeometry[] = [];
-  if (!fist) {
-    parts.push(new THREE.CapsuleGeometry(0.06, 0.09, 4, 12).scale(0.5, 1, 1).translate(0, -0.105, 0));
-    parts.push(place(finger(0.021, 0.085), new THREE.Vector3(palm * 0.012, -0.045, 0.04), new THREE.Vector3(palm * 0.25, -0.75, 0.55)));
-  } else {
-    parts.push(new THREE.SphereGeometry(1, 14, 10).scale(0.052, 0.068, 0.064).translate(0, -HAND.grip, 0.004));
-    parts.push(place(finger(0.022, 0.075), new THREE.Vector3(palm * 0.006, -0.05, 0.05), new THREE.Vector3(palm * 0.55, -0.6, 0.25)));
-  }
-  const g = smooth(mergeGeometries(parts.map((p) => p.toNonIndexed())));
-  const ky = fist ? k : long;
-  return k === 1 && ky === 1 ? g : g.scale(k, ky, k);
+export interface Hand {
+  side: -1 | 1;
+  scale: number;
+  long: number;
+  geo: THREE.BufferGeometry;
+  skin: HandSkin;
+  /** Số bàn tay (`HAND_DOF`) `act` đặt lần gần nhất */
+  acted: readonly number[];
+  /** Dáng giữ khi đang cầm đồ (`grip` của attach.ts): đè góc ngón của hành động, giữ xoay và gập cổ tay */
+  held?: HandPose;
+  /** Góc ngón đang vẽ */
+  shown: number[];
+}
+
+/** Dựng bàn tay bên `side` cỡ `k`, cỡ dọc `long`, ở dáng nghỉ; `low` là lưới thưa cho người nền */
+export function handRig(side: -1 | 1, k: number, long: number, low = false): Hand {
+  const skin = handSkin(side, k, long, low), n = skin.pos.length / 3;
+  const geo = new THREE.BufferGeometry();
+  for (const name of ['position', 'normal']) geo.setAttribute(name, new THREE.BufferAttribute(new Float32Array(n * 3), 3).setUsage(THREE.DynamicDrawUsage));
+  geo.setIndex(new THREE.BufferAttribute(skin.index, 1));
+  // cầu và hộp bao cố định ôm mọi dáng (pipeline đọc hộp cho bóng và nét bóng dáng): không tính lại mỗi lần dời đỉnh
+  geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, -0.1 * long, 0), 0.14 * Math.max(k, long) + 0.02);
+  geo.boundingBox = geo.boundingSphere.getBoundingBox(new THREE.Box3());
+  const h: Hand = { side, scale: k, long, geo, skin, acted: HAND_REST, shown: [] };
+  poseHand(h);
+  return h;
+}
+
+/**
+ * Đặt bàn tay theo số `v` (`HAND_DOF`; bỏ trống là giữ số đặt lần trước); đang cầm đồ thì góc ngón theo dáng `held`. Xoay
+ * và gập cổ tay là việc của khớp cổ tay (`act`), ở đây chỉ uốn da theo đốt. Số không đổi thì không làm gì.
+ */
+export function poseHand(h: Hand, v?: readonly number[]) {
+  if (v) h.acted = v;
+  const want = h.held ? [0, 0, ...fingerVec(HAND_POSES[h.held])] : h.acted;
+  if (h.shown.length && h.shown.every((x, i) => Math.abs(x - want[i + 2]) < 1e-3)) return;
+  h.shown = want.slice(2);
+  const P = h.geo.attributes.position as THREE.BufferAttribute, N = h.geo.attributes.normal as THREE.BufferAttribute;
+  skinHand(h.skin, want, P.array as Float32Array);
+  smoothNormals(P.array as Float32Array, h.skin.index, N.array as Float32Array);
+  P.needsUpdate = N.needsUpdate = true;
 }
 
 /**

@@ -20,6 +20,7 @@ import {
   animalDeltaPose,
   equipSockets,
   actionFace,
+  actionHand,
   actionLayers,
   actionPose,
   composeFace,
@@ -101,7 +102,7 @@ import {
 } from "./types";
 
 /** Bump khi đổi hình dạng JSON scene; `migrateScene` phải có nhánh tương ứng. */
-export const SCENE_VERSION = 25;
+export const SCENE_VERSION = 26;
 
 /** `"@ten"` hay `"@ten+0.4"` / `"@ten-1"`: một mốc có tên trong `scene.marks` cộng phần lệch giây */
 export const MARK_REF = /^@([A-Za-z0-9_-]+)(?:\s*([+-])\s*(\d+(?:\.\d+)?))?$/;
@@ -735,6 +736,7 @@ export function migrateScene(json: unknown): unknown {
   // v22 → v23 thêm `scene.lens` và `cast[].world` (cả `world.hands`); thiếu là người 2D như cũ
   // v23 → v24 thêm `clips[].snap` và `world.hands[].snap`; thiếu là không cố ý giật
   // v24 → v25 `cast[].base` nhận số dang của tay chân và `torso: [cúi, nghiêng]`; dạng cũ vẫn hợp lệ
+  // v25 → v26 `cast[].base` nhận số xoắn vai, `clips[].mask` nhận kênh `hand`; dạng cũ vẫn hợp lệ
   o.schemaVersion = SCENE_VERSION;
   return o;
 }
@@ -969,6 +971,10 @@ function clipPose(c: Clip, time: number, clock?: Clock): Partial<Pose> {
   const reach = actionReach(c.action, phaseAt(c, time, clock));
   for (const k of REACH_CHANNELS) if (!p[k]) delete reach[k];
   if (Object.keys(reach).length) p.reach = reach;
+  if (inMask(c, "hand")) {
+    const hand = actionHand(c.action, phaseAt(c, time, clock));
+    if (Object.keys(hand).length) p.hand = hand;
+  }
   return p;
 }
 
@@ -2883,6 +2889,7 @@ function swapSides(p: Pose): Pose {
   const st = p.stretch;
   const l = p.lift;
   const r = p.reach;
+  const h = p.hand;
   return {
     ...p,
     an: p.af,
@@ -2892,6 +2899,7 @@ function swapSides(p: Pose): Pose {
     stretch: [st[2], st[3], st[0], st[1], st[6], st[7], st[4], st[5]],
     ...(l && { lift: { ...l, an: l.af, af: l.an, ln: l.lf, lf: l.ln } }),
     ...(r && { reach: { ...(r.af && { an: r.af }), ...(r.an && { af: r.an }) } }),
+    ...(h && { hand: { ...(h.af && { an: h.af }), ...(h.an && { af: h.an }) } }),
   };
 }
 

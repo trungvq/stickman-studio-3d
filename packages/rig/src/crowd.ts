@@ -7,7 +7,7 @@ import { put, stickman, type Figure, type StickmanOptions } from './stickman';
 /** Vỏ nét cùng bề dày và màu gộp được dù là hai vật liệu khác nhau */
 function materialKey(m: THREE.Material) {
   const u = (m as THREE.ShaderMaterial).uniforms;
-  return m.side === THREE.BackSide && u?.uW ? `hull ${u.uW.value} ${u.uColor.value.getHex()}` : m.uuid;
+  return m.side === THREE.BackSide && u?.uW ? `hull ${u.uW.value} ${u.uPush?.value ?? 0} ${u.uColor.value.getHex()}` : m.uuid;
 }
 
 /**

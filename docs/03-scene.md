@@ -256,7 +256,9 @@ người 3D, trên mặt sàn thế giới — xem [`check` cho người 3D](#ch
 
 `layers` và `face` chạy cùng cấu trúc nhưng khác phép hoà: lớp cẳng tay lấy lớp
 **trước nhất** của hai bên suốt chỗ nối, kiểu nét mặt đổi ở giữa. Cả hai không nội suy
-được — xem `blend.ts`. Riêng má ửng (`blush`) là số nên hoà thẳng suốt chỗ nối.
+được — xem `blend.ts`. Riêng má ửng (`blush`) là số nên hoà thẳng suốt chỗ nối. Bàn tay người 3D
+(`pose.hand`, kênh `hand`) đi cùng tư thế: hoà trên góc khớp suốt chỗ nối, bên không ghi lấy bàn tay
+của track dưới — [01](01-rig.md#bàn-tay).
 
 ### Liên tục `x` giữa các cảnh
 
@@ -1035,7 +1037,7 @@ Nên soạn theo:
 
 **Lật qua chính diện hay quay lưng đổi chân gần.** Chân gần (`ln`) là chân phía ống kính; thân quay
 qua `theta` 0 hay 180 thì chân gần là chân kia, nên từ lúc ấy `sceneAt` đổi chỗ các kênh gần ↔ xa
-(`ln`/`lf`, `an`/`af`, `stretch`, cờ nâng) để mỗi chi vẫn là chính nó — lật lần nữa thì đổi lại.
+(`ln`/`lf`, `an`/`af`, `stretch`, cờ nâng, đích tay, bàn tay) để mỗi chi vẫn là chính nó — lật lần nữa thì đổi lại.
 
 ### Hành động cho người 3D
 
@@ -1049,6 +1051,9 @@ từ góc đang hoà về dáng nghỉ trong một khung.
   mỗi người, mỗi clip một dòng, kèm bản `-3d` có sẵn nếu có. Không kêu khi clip thu `mask` về
   kênh không phải tay chân, kênh chân của người đi theo `path`, hay kênh tay mà mọi mốc đặt bằng
   đích cổ tay. Sửa bằng bản soạn ở `side` cùng góc, hay đặt cổ tay bằng `world.hands`.
+- **Bàn tay không cần cờ.** Kênh `hand` (dáng, xoay và gập cổ tay — [01](01-rig.md#bàn-tay)) ăn ở mọi
+  hành động, kể cả hành động không soạn ở `side`, nên một track chỉ ghi `hand` úp hay ngửa bàn tay trên
+  track tay bất kỳ. Xoắn vai và lệch cổ tay nằm trong tuple tay nên theo cờ như góc tay.
 - **Nhả về tư thế nền cũng lật cờ.** Clip rỗng nhả track về `cast[].base`, mà tư thế nền không
   mang cờ; track chưa có clip ở giây đầu cũng vậy. Người 3D đứng yên thì để `stand-3d` (ngồi thì
   `sit-3d`) ở track thân từ giây `0` và thay clip rỗng bằng nó. Lỗi này không có dòng tĩnh — cú
@@ -1084,7 +1089,9 @@ chéo qua người hay buông tay từ đích phía bên kia là tay xuyên thâ
 **đúng như hình vẽ ra** — người 3D qua `actJoints` (cùng khung xương, luật đọc góc và IK với `act`)
 chiếu qua `scene.lens`, người 2D qua `joints2` (cùng phép tính với các mốc khớp của `anchorAt`) — rồi
 đổi ra pixel video theo khung cắt `cameraAt` của từng khung. Khớp đo: gối, bàn chân, khuỷu, cổ tay
-hai bên và tâm đầu; người 3D theo bên giải phẫu nên người quay qua chính diện không đổi tên khớp.
+hai bên và tâm đầu, người 3D thêm tâm nắm hai bàn tay (`handR` / `handL`, quay theo xoay và gập cổ tay —
+bàn tay lật trong một khung là giật); người 3D theo bên giải phẫu nên người quay qua chính diện không đổi
+tên khớp.
 
 Một khung bị bắt khi một khớp nhảy vượt **nền** quá `px` và quá `k` lần nền. Nền là trung vị dịch
 chuyển mỗi khung của chính khớp ấy trong ±2 khung, tính cả khung đang xét: cú vung nhanh mà đều hay cú

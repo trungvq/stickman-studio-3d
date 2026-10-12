@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { R, type Figure, type Side } from './stickman';
 import { RIG } from './core/constants';
+import type { HandPose } from './core/hand';
+import type { Vec3 } from './khoi';
+import { poseHand } from './human';
 
 // Chỗ gắn đồ trên người que: cổ tay, đỉnh đầu, ngang mắt, ngực áo. Đồ cầm bám cổ tay sau `act` mà không cần
 // gọi thêm gì: nhóm bám tự đặt lại mỗi lần three cập nhật ma trận (lúc render, hay `root.updateMatrixWorld()`).
@@ -24,8 +27,8 @@ export interface HeadFit {
 }
 
 /**
- * Khung gắn đồ. `hand[side]` treo ở đầu cẳng tay: −y dọc cẳng tay ra ngoài, gốc ở mút nét tay — người `clad` thì ở tâm
- * nắm của bàn tay. `crown` ở đỉnh đầu
+ * Khung gắn đồ. `hand[side]` treo ở cổ tay và xoay theo nó: −y dọc bàn tay ra ngoài, gốc ở mút nét tay — người `clad` thì
+ * ở tâm nắm của dáng `grip` (`handGrip`). `crown` ở đỉnh đầu
  * kể cả tóc, `face` ở mặt trước sọ ngang mắt, `chest` trên mặt áo, +z là pháp tuyến ra ngoài, y lên.
  */
 export interface Sockets {
@@ -48,6 +51,8 @@ export interface HoldOptions {
   offset?: readonly [number, number, number];
   /** Xoay vật trong khung cầm, độ, thứ tự XYZ */
   rotate?: readonly [number, number, number];
+  /** Dáng bàn tay cầm của người `clad`, mặc định `grip` */
+  pose?: HandPose;
 }
 
 export interface Held {
@@ -93,30 +98,33 @@ function gripped(object: THREE.Object3D, o: HoldOptions) {
 const forearm = (s: Side) => `self.foreArm${s < 0 ? 'R' : 'L'}`;
 const palm = (s: Side) => `self.hand${s < 0 ? 'R' : 'L'}`;
 
-/** Bàn tay người `clad` nắm (`true`) hay xoè; người que không có bàn tay thì không làm gì */
-export function grip(fig: Figure, side: Side, fist: boolean) {
+/**
+ * Bàn tay người `clad` giữ dáng `pose` (thường là `grip`) đè góc ngón của hành động, `undefined` là trả về dáng hành động
+ * đặt; người que không có bàn tay thì không làm gì
+ */
+export function grip(fig: Figure, side: Side, pose: HandPose | undefined) {
   const h = fig.hands?.[side];
   if (!h) return;
-  h.fist.visible = fist;
-  h.open.visible = !fist;
+  h.held = pose;
+  poseHand(h);
 }
 
 /**
  * Cầm `object` bằng một tay hay hai tay. Vật dựng ở gốc khung cầm (xem `HoldOptions`), cỡ theo người cao 4,3; nó
  * nằm trong `root` nên to nhỏ theo `root.scale`. Tự bám theo tư thế mỗi khung, `release()` gỡ ra. Nhóm cầm khai
- * `userData.touch` cẳng tay và bàn tay cầm của người cầm: `collide` không báo chúng lún vào vật. Người `clad` nắm tay
- * cầm lại tới khi `release()`.
+ * `userData.touch` cẳng tay và bàn tay cầm của người cầm: `collide` không báo chúng lún vào vật. Người `clad` giữ dáng `pose`
+ * (mặc định `grip`) ở ngón tới khi `release()`.
  */
 export function hold(fig: Figure, object: THREE.Object3D, o: HoldOptions): Held {
   const holder = gripped(object, o);
   const sides: Side[] = o.hand === 'both' ? [-1, 1] : [o.hand];
   holder.userData.touch = sides.flatMap((s) => [forearm(s), palm(s)]);
-  for (const s of sides) grip(fig, s, true);
+  for (const s of sides) grip(fig, s, o.pose ?? 'grip');
   const held: Held = {
     object, span: 0,
     release: () => {
       carrier.removeFromParent();
-      for (const s of sides) grip(fig, s, false);
+      for (const s of sides) grip(fig, s, undefined);
     },
   };
   let carrier: THREE.Object3D;
@@ -219,12 +227,12 @@ export function headFit(skull: THREE.Vector3, hairShell: ArrayLike<number>[], ey
   };
 }
 
-/** Dựng các khung gắn đồ của người vừa dựng; `stickman` gọi */
-export function buildSockets(fig: Pick<Figure, 'root' | 'spine' | 'head' | 'arms'>, head: HeadFit, limbR: number, rig: { height: number; shoulderHalf: number; shoulderDrop: number }): Sockets {
+/** Dựng các khung gắn đồ của người vừa dựng; `grip` là chỗ treo đồ cầm trong khung cổ tay. `stickman` gọi */
+export function buildSockets(fig: Pick<Figure, 'root' | 'spine' | 'head' | 'arms'>, head: HeadFit, grip: (s: Side) => Vec3, rig: { height: number; shoulderHalf: number; shoulderDrop: number }): Sockets {
   const hand = {} as Record<Side, THREE.Group>;
   for (const s of [-1, 1] as const) {
     const g = new THREE.Group();
-    g.position.y = -limbR;
+    g.position.set(...grip(s));
     g.name = s < 0 ? 'handRight' : 'handLeft';
     fig.arms[s].wrist.add(g);
     hand[s] = g;

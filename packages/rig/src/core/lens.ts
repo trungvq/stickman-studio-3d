@@ -25,6 +25,48 @@ export const cross3 = (a: V3, b: V3): V3 => [
   a[0] * b[1] - a[1] * b[0],
 ];
 
+/** Ma trận quay 3×3 theo hàng; `rotX` / `rotY` / `rotZ` cùng chiều với `Euler` của three */
+export type M3 = [number, number, number, number, number, number, number, number, number];
+export const rotX = (a: number): M3 => {
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  return [1, 0, 0, 0, c, -s, 0, s, c];
+};
+export const rotY = (a: number): M3 => {
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  return [c, 0, s, 0, 1, 0, -s, 0, c];
+};
+export const rotZ = (a: number): M3 => {
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  return [c, -s, 0, s, c, 0, 0, 0, 1];
+};
+export const matMul = (a: M3, b: M3): M3 => {
+  const o = new Array(9).fill(0) as M3;
+  for (let i = 0; i < 3; i++)
+    for (let j = 0; j < 3; j++)
+      o[i * 3 + j] = a[i * 3] * b[j] + a[i * 3 + 1] * b[3 + j] + a[i * 3 + 2] * b[6 + j];
+  return o;
+};
+export const matVec = (m: M3, v: V3): V3 => [
+  m[0] * v[0] + m[1] * v[1] + m[2] * v[2],
+  m[3] * v[0] + m[4] * v[1] + m[5] * v[2],
+  m[6] * v[0] + m[7] * v[1] + m[8] * v[2],
+];
+/** Ma trận có ba cột `x`, `y`, `z` */
+export const fromColumns = (x: V3, y: V3, z: V3): M3 => [
+  x[0],
+  y[0],
+  z[0],
+  x[1],
+  y[1],
+  z[1],
+  x[2],
+  y[2],
+  z[2],
+];
+
 const fwd = (yaw: number, pitch: number): V3 => [
   Math.sin(yaw) * Math.cos(pitch),
   Math.sin(pitch),

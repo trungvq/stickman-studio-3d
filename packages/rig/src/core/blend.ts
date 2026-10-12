@@ -1,5 +1,6 @@
 import { ARM_LAYERS, DEFAULT_LAYERS } from "./constants";
 import { ARM_CHANNELS, headOver, mixAngles, mixReach, smoothstep, stretchOver } from "./action";
+import { HAND_REST, mixHand } from "./hand";
 import type { AnimalPose } from "./animals";
 import {
   LIFT_CHANNELS,
@@ -7,6 +8,7 @@ import {
   type ArmLayer,
   type ArmLayers,
   type FaceState,
+  type HandMap,
   type Lift,
   type Pose,
   type ReachMap,
@@ -40,6 +42,22 @@ function eachChannel(
   const bent = (p: Partial<Pose>) =>
     p.torso !== undefined ? [p.torso, p.lean ?? 0] : [base.torso, base.lean ?? 0];
   if (from.torso !== undefined || to.torso !== undefined) torso(bent(from), bent(to));
+}
+
+/** Bàn tay hai bên theo từng kênh tay: bên không ghi lấy của `base`, `base` không có thì `HAND_REST` */
+function eachHand(
+  base: Pose,
+  from: Partial<Pose>,
+  to: Partial<Pose>,
+  vec: (k: keyof HandMap, a: readonly number[], b: readonly number[]) => void,
+) {
+  for (const k of REACH_CHANNELS) {
+    const a = from.hand?.[k];
+    const b = to.hand?.[k];
+    if (!a && !b) continue;
+    const under = base.hand?.[k] ?? HAND_REST;
+    vec(k, a ?? under, b ?? under);
+  }
 }
 
 /**
@@ -82,6 +100,10 @@ export function blendPose(
     }
     if (Object.keys(reach).length) o.reach = reach;
   }
+  // Bàn tay hoà trên góc khớp, cả xoay cẳng tay và gập cổ tay: dáng tay đổi dần, không nhảy
+  const hand: HandMap = {};
+  eachHand(base, from, to, (k, a, b) => (hand[k] = mixHand(a, b, w)));
+  if (Object.keys(hand).length) o.hand = hand;
   return o;
 }
 
@@ -95,6 +117,7 @@ export function blendDuration(base: Pose, from: Partial<Pose>, to: Partial<Pose>
     (_k, a, b) => (d = Math.max(d, ...gap(a, b))),
     (a, b) => (d = Math.max(d, ...gap(a, b))),
   );
+  eachHand(base, from, to, (_k, a, b) => (d = Math.max(d, ...gap(a, b))));
   return Math.min(BLEND_MAX, Math.max(BLEND_MIN, d / BLEND_RATE));
 }
 

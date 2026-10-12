@@ -14,7 +14,8 @@ import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, type Bo
 import { blushLevel, chibiShape } from './core/face';
 import { wornSkirt } from './core/skirtShape';
 import { humanHair, humanSkull } from './core/humanHead';
-import { Ankle, earGroup, HAND, handGeometry, humanHeadGeometry, neckGeometry, pelvisGeometry, shoeCapsule, shoeGeometry } from './human';
+import { Ankle, earGroup, handRig, humanHeadGeometry, neckGeometry, pelvisGeometry, shoeCapsule, shoeGeometry, type Hand } from './human';
+import { handGrip } from './core/hand';
 import type { Rig } from './torso';
 
 // Tỉ lệ lấy từ RIG của @stickman3d/sketch, chia 100: người cao ~4,3 đơn vị, đầu to bằng gần một phần ba. Độ dài đoạn của
@@ -30,16 +31,17 @@ const limbHull = hullMaterial(0.018, INK);
  * chìm sau thân áo. Thân áo và tay áo cùng màu là cùng vật liệu nên vai liền không có đường may
  */
 const LIMB_SIL = 0.018;
+/** Vỏ viền bàn tay lùi sau mặt bấy nhiêu (three, nhân cỡ bàn tay): hơn bề dày ngón, kém khoảng bàn tay tới vật sau nó */
+const HAND_INK_PUSH = 0.03;
 
 /** `-1` bên phải người (−x khi người nhìn +z), `1` bên trái. */
 export type Side = -1 | 1;
 const SIDES = [-1, 1] as const;
-/** `wrist` treo ở đầu cẳng tay: chỗ gắn đồ cầm */
+/** `wrist` treo ở đầu cẳng tay, xoay theo bàn tay (xoay cẳng tay, gập, lệch cổ tay): chỗ gắn bàn tay và đồ cầm */
 export interface Arm { shoulder: THREE.Group; elbow: THREE.Group; wrist: THREE.Group }
 /** `ankle` chỉ có ở người `clad`: giày treo ở đó */
 export interface Leg { hip: THREE.Group; knee: THREE.Group; ankle?: THREE.Group }
-/** Bàn tay của người `clad`, con của cổ tay: hai dáng, `grip` của attach.ts bật dáng nắm khi cầm đồ; `long` là cỡ dọc của dáng xoè */
-export interface Hand { open: THREE.Group; fist: THREE.Group; scale: number; long: number }
+export type { Hand };
 /** Người que dựng xong: `root` ở sàn dưới hông, mặt nhìn +z; các khớp để hoạt cảnh xoay. */
 export interface Figure {
   root: THREE.Group;
@@ -78,12 +80,12 @@ const QUALITY: Record<Lod, Quality> = {
 let q = QUALITY.full;
 
 /** Khối tô màu có viền dày: mesh chính + vỏ ngược. */
-function inked(geo: THREE.BufferGeometry, mat: THREE.Material, w?: number) {
+function inked(geo: THREE.BufferGeometry, mat: THREE.Material, w?: number, push = 0) {
   const g = new THREE.Group();
   const m = new THREE.Mesh(geo, mat);
   m.castShadow = true;
   g.add(m);
-  const h = new THREE.Mesh(geo, w ? hullMaterial(w, INK) : hull);
+  const h = new THREE.Mesh(geo, w ? hullMaterial(w, INK, push) : hull);
   h.userData.noShadow = true;
   g.add(h);
   return g;
@@ -396,7 +398,8 @@ export function stickman(o: StickmanOptions): Figure {
   let hands: Figure['hands'];
   if (clad) {
     const tone = (c: string) => npr({ color: c, stipple: 0.05, stippleScale: 3, soft: 1, ink: LIMB_SIL });
-    const limbSkin = npr({ ...skin3, ink: LIMB_SIL });
+    // vẽ cả mặt sau: ngón cái lấn vào ngón khác lúc nắm thì nhìn qua chỗ lấn thấy da, không thấy vỏ viền đen bên trong
+    const limbSkin = npr({ ...skin3, ink: LIMB_SIL, doubleSided: true });
     const { sleeveColor = '#1a1a1a', trouserColor = '#1a1a1a', shoeColor = '#2b2623', sleeveLength = 1, trouserLength = 1 } = o;
     const thigh = thighR / 100;
     pelvis(spine, body, at.hip, thigh, tone(skirt ? skirtColor : trouserColor));
@@ -406,13 +409,11 @@ export function stickman(o: StickmanOptions): Figure {
       cladLimb(seg(arms[s].shoulder), seg(arms[s].elbow), [B.upperArm, B.foreArm], [CLAD_TAPER.arm[0] * (1 + bicep), CLAD_TAPER.arm[1], CLAD_TAPER.arm[2]], tone(sleeveColor), limbSkin, sleeveLength, true);
       cladLimb(seg(legs[s].hip), seg(legs[s].knee), [B.thigh, B.shin], legTaper, tone(trouserColor), limbSkin, trouserLength, false);
       const { k, long } = cladHand(sleeveWidth, rig.stroke, B.foreArm * 100);
-      const pose = (fist: boolean) => {
-        const g = inked(handGeometry(s, fist, k, long), limbSkin, 0.016);
-        g.visible = !fist;
-        arms[s].wrist.add(g);
-        return g;
-      };
-      hands[s] = { open: pose(false), fist: pose(true), scale: k, long };
+      hands[s] = handRig(s, k, long, lod === 'low');
+      // vỏ lùi sau mặt `HAND_INK_PUSH` dọc tia nhìn: không lòi qua kẽ ngón khép, ngón cái vắt trước nắm tay
+      const g = inked(hands[s].geo, limbSkin, 0.014, HAND_INK_PUSH * hands[s].scale);
+      g.userData.hand = s;
+      arms[s].wrist.add(g);
       const ankle = new Ankle(root);
       ankle.position.y = -B.shin;
       legs[s].knee.add(ankle);
@@ -447,7 +448,8 @@ export function stickman(o: StickmanOptions): Figure {
   // người có nét riêng theo hình 2D: không vẽ nét gấp pháp tuyến; đồ cầm gắn sau thì vẫn có
   root.traverse(bodyMark);
   root.userData.figure = true;
-  const sockets = buildSockets({ root, spine, head, arms }, fit, hands ? HAND.grip * hands[-1].scale : (R.limb * sleeveWidth) / 10, rig);
+  const grip = (s: Side): Vec3 => (hands ? handGrip(s, hands[s].scale, hands[s].long) : [0, -(R.limb * sleeveWidth) / 10, 0]);
+  const sockets = buildSockets({ root, spine, head, arms }, fit, grip, rig);
   const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig, bones: B, splay: at.splay, ...(hands && { hands }) };
   if (equip) dress(fig, equip);
   return fig;
@@ -566,7 +568,7 @@ function mergeStatic(j: THREE.Object3D) {
   const groups = new Map<string, THREE.Mesh[]>();
   const keyOf = (m: THREE.Material) => {
     const u = (m as THREE.ShaderMaterial).uniforms;
-    return m.side === THREE.BackSide && u?.uW ? `hull ${u.uW.value} ${u.uColor.value.getHex()}` : m.uuid;
+    return m.side === THREE.BackSide && u?.uW ? `hull ${u.uW.value} ${u.uPush?.value ?? 0} ${u.uColor.value.getHex()}` : m.uuid;
   };
   const walk = (o: THREE.Object3D) => {
     for (const c of o.children) {

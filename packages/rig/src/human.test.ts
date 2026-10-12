@@ -8,8 +8,11 @@ import { body3 } from './core/figure3d';
 import { parseAction } from './core/action';
 import { parseScene, resolveScene, sceneAt } from './core/scene';
 import { defaultCharacter, SculptSchema, SkirtSchema } from './core/schema';
-import { HAND, handScale, openLength } from './human';
+import { handScale, openLength } from './human';
+import { handCapsules, handGrip, HAND_POSES, HAND_REST } from './core/hand';
 import { fromCharacter, R, type CharacterJson, type Figure } from './stickman';
+import sitJson from '../../../apps/studio/public/actions/sit-3d.json';
+import tableJson from '../../../apps/studio/public/actions/arms-on-table-3d.json';
 
 // Người 3D mặc đồ (`palette.clad`, `head.form: "human"`): dựng trong Node trần như người que
 
@@ -95,18 +98,73 @@ describe('người 3D mặc đồ', () => {
     expect(thigh.userData.r).toBeCloseTo((13 + 6) / 200, 12);
   });
 
-  it('cầm đồ thì nắm tay, buông thì xoè; đồ treo ở tâm nắm và bàn tay cầm được lấn vào đồ', () => {
+  it('cầm đồ thì giữ dáng `grip`, buông thì về dáng hành động; đồ treo ở tâm nắm và bàn tay cầm được lấn vào đồ', () => {
     const f = dressed();
     const h = f.hands![-1];
-    expect(f.sockets.hand[-1].position.y).toBeCloseTo(-HAND.grip * h.scale, 12);
+    expect(f.sockets.hand[-1].position.toArray()).toEqual(handGrip(-1, h.scale, h.long));
     const cup = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.12));
     const held = hold(f, cup, { hand: -1 });
-    expect([h.fist.visible, h.open.visible]).toEqual([true, false]);
+    expect(h.held).toBe('grip');
     act(f, stand(), 0);
+    expect(h.shown).toEqual([...HAND_POSES.grip.thumb, ...HAND_POSES.grip.index, ...HAND_POSES.grip.fingers, 0]);
     const hits = collide([f], colliders(cup)).filter((c) => c.part === 'hand' || c.part === 'foreArm');
     expect(hits).toEqual([]);
     held.release();
-    expect([h.fist.visible, h.open.visible]).toEqual([false, true]);
+    expect(h.held).toBeUndefined();
+    expect(h.shown).toEqual(HAND_REST.slice(2));
+  });
+
+  it('tâm nắm nằm giữa lòng bàn tay và các ngón của dáng `grip`, xoay theo cổ tay', () => {
+    const f = dressed();
+    const h = f.hands![-1];
+    act(f, { ...stand(), pose: { ...stand().pose, hand: { an: [60, -20, ...HAND_POSES.grip.thumb, ...HAND_POSES.grip.index, ...HAND_POSES.grip.fingers, 0] } } }, 0);
+    const w = f.arms[-1].wrist, sock = f.sockets.hand[-1].getWorldPosition(new THREE.Vector3());
+    const g = new THREE.Vector3(...handGrip(-1, h.scale, h.long)).applyMatrix4(w.matrixWorld);
+    expect(sock.distanceTo(g)).toBeLessThan(1e-9);
+    // các ngón ôm quanh tâm nắm: mỗi nang ngón cách tâm nắm chừng bán kính một cán cầm
+    const caps = handCapsules([0, 0, ...HAND_POSES.grip.thumb, ...HAND_POSES.grip.index, ...HAND_POSES.grip.fingers, 0], -1, h.scale, h.long);
+    const near = (a: number[], b: number[], c: number[]) => new THREE.Line3(new THREE.Vector3(...a), new THREE.Vector3(...b)).closestPointToPoint(new THREE.Vector3(...c), true, new THREE.Vector3()).distanceTo(new THREE.Vector3(...c));
+    const at = handGrip(-1, h.scale, h.long);
+    for (const [a, b] of caps.slice(1)) expect(near(a, b, at)).toBeLessThan(0.06 * h.scale);
+  });
+
+  it('nang va chạm bàn tay đi theo khung xương bàn tay: trỏ duỗi thì với xa, nắm thì gọn; cầm đồ thì theo dáng `grip`', () => {
+    const f = dressed();
+    const far = () => {
+      const w = f.arms[-1].wrist.getWorldPosition(new THREE.Vector3());
+      return Math.max(...bodyCapsules(f, ['hand']).filter((c) => c.side === -1).flatMap((c) => [c.a.distanceTo(w), c.b.distanceTo(w)]));
+    };
+    const at = (hand: number[]) => act(f, { ...stand(), pose: { ...stand().pose, hand: { an: hand } } }, 0);
+    at([0, 0, ...HAND_POSES.point.thumb, ...HAND_POSES.point.index, ...HAND_POSES.point.fingers, 0]);
+    const point = far();
+    at([0, 0, ...HAND_POSES.fist.thumb, ...HAND_POSES.fist.index, ...HAND_POSES.fist.fingers, 0]);
+    const fist = far();
+    expect(point).toBeGreaterThan(fist + 0.05 * f.hands![-1].scale);
+    at([0, 0, ...HAND_POSES.point.thumb, ...HAND_POSES.point.index, ...HAND_POSES.point.fingers, 0]);
+    const held = hold(f, new THREE.Group(), { hand: -1 });
+    f.root.updateMatrixWorld(true);
+    expect(far()).toBeLessThan(point - 0.03);
+    held.release();
+    expect(far()).toBeCloseTo(point, 9);
+  });
+
+  it('`arms-on-table-3d` của bộ mẫu: bàn tay úp nằm trên mặt bàn chuẩn, không lún, cả người nền `lod: low`', () => {
+    const actions = { 'sit-3d': parseAction(sitJson).data!, table: parseAction(tableJson).data! };
+    for (const lod of ['full', 'low'] as const) {
+      // bề dày chi mặc định của người mặc đồ, như người nền của `demo=hold`
+      const f = make((c) => ((c.palette.clad = true), (c.head.form = 'human')), { lod, seated: true });
+      const dims = { legHalf: cladThigh(17, 6), hipHalf: defaultCharacter().rig.hipHalf };
+      const sc = parseScene({ name: 'x', lens: { eye: [0, -200, -1400], yaw: 0, pitch: 0, f: 800, cx: 0, cy: 0 }, cast: [{ id: 'a', character: 'a.json', world: { at: [0, -87.5, 350], yaw: 90, sit: true, floor: 0 }, tracks: [{ clips: [{ action: 'sit-3d', start: 0 }] }, { clips: [{ action: 'table', start: 0 }] }] }] });
+      const rt = resolveScene(sc.data!, actions, {}, {}, { a: 1 }, { a: dims });
+      act(f, sceneAt(rt, 'a', 0, 1, dims), 0);
+      // mặt bàn cao 143 như cảnh `demo=hold`: 700 × 6 × 130 dưới hai bàn tay
+      const top = new THREE.Mesh(new THREE.BoxGeometry(7, 0.06, 1.3));
+      top.position.set(0, 1.4, -2.25);
+      top.updateMatrixWorld(true);
+      expect(collide([f], colliders(top, 'bàn')), lod).toEqual([]);
+      const low = Math.min(...bodyCapsules(f, ['hand']).map((c) => Math.min(c.a.y, c.b.y) - c.r));
+      expect(low - 1.43, lod).toBeLessThan(0.04);
+    }
   });
 
   it('va chạm gọi tên bàn tay và bàn chân', () => {
@@ -139,7 +197,7 @@ describe('người 3D mặc đồ', () => {
       c.palette.sleeveWidth = 19;
     });
     act(f, stand(), 0);
-    const hand = bounds(f.hands![-1].open), fore = f.arms[-1].wrist.position.length();
+    const hand = bounds(f.arms[-1].wrist.children.find((g) => g.userData.hand)!), fore = f.arms[-1].wrist.position.length();
     expect(hand.max.y - hand.min.y).toBeLessThan(fore * 0.7);
   });
 

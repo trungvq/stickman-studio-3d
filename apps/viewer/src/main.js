@@ -211,7 +211,11 @@ if (shot?.view) controls.enabled = false;
 if (q.has('look')) controls.target.set(...q.get('look').split(',').map(Number));
 if (q.has('az')) view.theta = (Number(q.get('az')) * Math.PI) / 180;
 if (q.has('el')) view.phi = Math.PI / 2 - (Number(q.get('el')) * Math.PI) / 180;
-if (q.has('dist')) view.radius = Number(q.get('dist'));
+if (q.has('dist')) {
+  view.radius = Number(q.get('dist'));
+  // khung cận bàn tay: cho máy lại gần hơn giới hạn kéo tay
+  controls.minDistance = Math.min(controls.minDistance, view.radius);
+}
 camera.position.setFromSpherical(view).add(controls.target);
 if (q.has('t')) {
   t = Number(q.get('t'));

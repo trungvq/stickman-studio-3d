@@ -179,7 +179,9 @@ không có tool riêng.
   `check` ([03](03-scene.md#giật-trên-hình)).
 - **`describe_rig`** có `world3d`: trục thế giới, `yaw`, `theta` và bảng nấc `viewOfTheta`,
   `scene.lens` khác `camera[]`, `cast[].world`, `authoredAt`, `reach` và `REACH_ELBOW`,
-  `world.hands`, và bộ hành động 3D lấy từ chính các file `authoredAt: "side"` trong hai lớp.
+  `twist` (xoắn vai, lệch cổ tay), `hand` (kênh bàn tay, dáng `HAND_POSES` — tên dáng ở `handPoses`),
+  `world.hands`, và bộ hành động 3D lấy từ chính các file `authoredAt: "side"` trong hai lớp. Vẽ của MCP
+  là người SVG nên không thấy ngón; xoắn vai thì thấy.
 - **`render_action` / `render_character` với `yaw`** vẽ người 3D đứng một mình giữa sân khấu
   trống: một cảnh tối thiểu (`solo3d` / `soloStage` của `@stickman3d/fx`, ống kính cúi `pitch`, mặc định `16`)
   rồi `sceneAt`, nên cờ nâng và đích tay hệ thân đi đúng đường của scene.

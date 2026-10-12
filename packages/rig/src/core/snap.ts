@@ -181,6 +181,8 @@ const JOINT_LABEL: Record<string, string> = {
   elbowL: "khuỷu trái",
   wristR: "cổ tay phải",
   wristL: "cổ tay trái",
+  handR: "bàn tay phải",
+  handL: "bàn tay trái",
   kneeN: "gối gần",
   kneeF: "gối xa",
   footN: "bàn chân gần",
@@ -200,6 +202,8 @@ const J3: ActJoint[] = [
   "elbowL",
   "wristR",
   "wristL",
+  "handR",
+  "handL",
   "head",
 ];
 const J2: Joint2[] = [

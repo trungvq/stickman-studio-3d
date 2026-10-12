@@ -7,10 +7,13 @@ export type Limb = [number, number];
 export type LegAngles = [number, number] | [number, number, number];
 
 /**
- * [vai, khuỷu, cổ tay, dang] — cổ tay chỉ xoay đồ cầm tay, rig không vẽ bàn tay; dang chỉ người 3D
- * đọc, docs/01-rig.md#dang-và-nghiêng-ngang
+ * [vai, khuỷu, cổ tay, dang, xoắn vai] — cổ tay xoay đồ cầm tay, ở người 3D là lệch bàn tay trong mặt phẳng
+ * khuỷu; dang và xoắn vai chỉ người 3D đọc, docs/01-rig.md#dang-và-nghiêng-ngang, docs/01-rig.md#xoắn-tay
  */
-export type Arm = [number, number, number] | [number, number, number, number];
+export type Arm =
+  | [number, number, number]
+  | [number, number, number, number]
+  | [number, number, number, number, number];
 
 /** [nghiêng, lắc, gật] — độ; lắc và gật là dịch nét mặt, xem docs/01-rig.md */
 export type HeadPose = [number, number, number];
@@ -69,7 +72,12 @@ export interface Pose {
   lift?: Lift;
   /** Đích cổ tay hệ thân; chỉ người 3D đọc, người 2D vẽ góc dự phòng của kênh tay */
   reach?: ReachMap;
+  /** Bàn tay theo `HAND_DOF`: xoay cẳng tay, gập cổ tay, góc ngón; chỉ người 3D mặc đồ đọc. docs/01-rig.md#bàn-tay */
+  hand?: HandMap;
 }
+
+/** Bàn tay của hai kênh tay, số theo `HAND_DOF`; kênh không có là `HAND_REST` */
+export type HandMap = Partial<Record<(typeof REACH_CHANNELS)[number], readonly number[]>>;
 
 export interface WalkParams {
   /** Nửa tầm vung đùi; đùi giữ lệch ra trước của clip đi */

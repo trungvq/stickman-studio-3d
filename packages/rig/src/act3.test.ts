@@ -38,6 +38,7 @@ function drawn(p: Figure, sp: Acting): Record<ActJoint, [number, number, number]
     out[`shoulder${t}`] = w(p.arms[side].shoulder);
     out[`elbow${t}`] = w(p.arms[side].elbow);
     out[`wrist${t}`] = w(p.arms[side].wrist);
+    out[`hand${t}`] = w(p.sockets.hand[side]);
   }
   out.hip = w(p.hips);
   out.neck = w(p.neck);
@@ -62,12 +63,13 @@ describe('actJoints', () => {
         const lift = { af: r() < 0.6, an: r() < 0.6, lf: r() < 0.6, ln: r() < 0.6 };
         const reach = r() < 0.4 ? { an: { at: [ang(80), ang(80), ang(40)] as number[], w: r() } } : undefined;
         const hands = r() < 0.3 ? { far: { at: [ang(300), -150 + ang(60), ang(300)] as number[], ...(r() < 0.5 && { elbow: [0, 1, -1] }), w: r() } } : undefined;
+        const hand = () => [ang(90), ang(80), ...Array.from({ length: 9 }, () => ang(90))];
         const sp: Acting = {
           pose: {
-            af: [ang(), ang(), 0, ang(90)], an: [ang(), ang(), 0, ang(90)], lf: [ang(90), ang(90), ang(40)], ln: [ang(90), ang(90), ang(40)],
+            af: [ang(), ang(), ang(40), ang(90), ang(90)], an: [ang(), ang(), ang(40), ang(90), ang(90)], lf: [ang(90), ang(90), ang(40)], ln: [ang(90), ang(90), ang(40)],
             torso: ang(30), lean: ang(30), head: [ang(20), ang(40), ang(20)],
             stretch: Array.from({ length: 8 }, () => 0.8 + r() * 0.4),
-            lift, ...(reach && { reach }),
+            lift, ...(reach && { reach }), ...(r() < 0.7 && { hand: { an: hand(), ...(r() < 0.5 && { af: hand() }) } }),
           },
           world: { hip: [ang(400), -200 + ang(40), ang(400)], yaw: ang(Math.PI), s: 0.8 + r() * 0.5, flip: r() < 0.5, seated, ...(hands && { hands }) },
           mouth: 'closed', brow: 'neutral', eyes: 'open',
@@ -147,5 +149,105 @@ describe('actJoints', () => {
     const lifted = actJoints(c, { pose: { ...base, an: [-150, -40, 0], lift: { an: true } }, world })!;
     expect(raised.wristR).toEqual(rest.wristR);
     expect(Math.hypot(...lifted.wristR.map((v, i) => v - rest.wristR[i]))).toBeGreaterThan(50);
+  });
+
+  const still = (): Acting => ({
+    pose: { af: [0, 0, 0], an: [0, 0, 0], lf: [0, 0], ln: [0, 0], torso: 0, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { af: true, an: true } },
+    // người nhìn +z của three: hệ người trùng hệ thế giới
+    world: { hip: [0, -170, 0], yaw: Math.PI / 2, s: 1, flip: false },
+    mouth: 'closed', brow: 'neutral', eyes: 'open',
+  });
+  const up = (p: Figure, side: -1 | 1, axis: THREE.Vector3) => axis.clone().applyQuaternion(p.arms[side].wrist.getWorldQuaternion(new THREE.Quaternion()));
+
+  it('xoắn vai: tay dang ngang, khuỷu gập `90`, xoay ngoài `90` là cẳng tay dựng đứng (vẫy tay), cả hai bên', async () => {
+    const { fromCharacter } = await import('./stickman');
+    const c = defaultCharacter();
+    const p = fromCharacter(c as unknown as Parameters<typeof fromCharacter>[0]);
+    const sp = still();
+    sp.pose = { ...sp.pose, an: [0, 90, 0, 90, 90], af: [0, 90, 0, 90, 90] };
+    act(p, sp);
+    const J = actJoints(c, sp)!;
+    for (const t of ['R', 'L'] as const) {
+      // rig: y xuống — cổ tay cao hơn khuỷu gần trọn cẳng tay (tay choãi `SPLAY3` nghiêng nó chút), cùng chỗ ngang và sâu
+      expect(J[`elbow${t}`][1] - J[`wrist${t}`][1]).toBeGreaterThan(58 * Math.cos(SPLAY3) - 1e-6);
+      expect(Math.hypot(J[`elbow${t}`][0] - J[`wrist${t}`][0], J[`elbow${t}`][2] - J[`wrist${t}`][2])).toBeLessThan(58 * Math.sin(SPLAY3) + 1e-6);
+      // không xoắn thì cẳng tay chĩa ra trước
+      const flat = actJoints(c, { ...sp, pose: { ...sp.pose, an: [0, 90, 0, 90], af: [0, 90, 0, 90] } })!;
+      expect(Math.abs(flat[`elbow${t}`][1] - flat[`wrist${t}`][1])).toBeLessThan(58 * Math.sin(SPLAY3) + 1e-6);
+    }
+  });
+
+  it('xoay cẳng tay: cẳng tay chĩa ra trước, `turn` 90 là lòng tay úp, −90 là ngửa; gập cổ tay đưa bàn tay về phía lòng tay', async () => {
+    const { fromCharacter } = await import('./stickman');
+    const c = defaultCharacter();
+    c.palette.clad = true;
+    const p = fromCharacter(c as unknown as Parameters<typeof fromCharacter>[0]);
+    for (const side of [-1, 1] as const) {
+      const ch = side === -1 ? 'an' : 'af';
+      const palm = new THREE.Vector3(-side, 0, 0);
+      const at = (turn: number, bend = 0) => {
+        const sp = still();
+        sp.pose = { ...sp.pose, [ch]: [0, 90, 0], hand: { [ch]: [turn, bend, 0, 0, 0, 0, 0, 0, 0, 0, 0] } };
+        act(p, sp);
+        return p;
+      };
+      // tay choãi (`roots3`) nghiêng lòng tay chút
+      const k = Math.cos(p.splay) - 1e-9;
+      expect(up(at(0), side, palm).x * -side).toBeGreaterThan(k);
+      expect(up(at(90), side, palm).y).toBeLessThan(-k);
+      expect(up(at(-90), side, palm).y).toBeGreaterThan(k);
+      // úp tay rồi gập cổ tay: bàn tay chúc xuống
+      expect(up(at(90, 60), side, new THREE.Vector3(0, -1, 0)).y).toBeLessThan(-0.8);
+    }
+  });
+
+  it('IK quét đích qua trước mặt, lên đỉnh đầu, ra sau lưng: bàn tay không lật giữa hai khung, khuỷu là bản lề', async () => {
+    const { fromCharacter } = await import('./stickman');
+    const c = defaultCharacter();
+    c.palette.clad = true;
+    const p = fromCharacter(c as unknown as Parameters<typeof fromCharacter>[0]);
+    const q = new THREE.Quaternion();
+    for (const side of [-1, 1] as const) {
+      const ch = side === -1 ? 'an' : 'af';
+      let prev: THREE.Quaternion | undefined;
+      let worst = 0;
+      // đích hệ thân `[tiến, y, ra ngoài]`: vòng từ trước bụng lên qua đỉnh đầu ra sau gáy rồi sang ngang
+      for (let i = 0; i <= 240; i++) {
+        const u = i / 240, a = u * 1.6 * Math.PI;
+        const at = [70 * Math.cos(a) + 10, -90 - 120 * Math.sin(a) * (1 - 0.4 * u), 30 + 40 * u];
+        const sp = still();
+        sp.pose = { ...sp.pose, reach: { [ch]: { at, w: 1 } } };
+        act(p, sp);
+        p.arms[side].wrist.getWorldQuaternion(q);
+        if (prev) worst = Math.max(worst, prev.angleTo(q));
+        prev = q.clone();
+        // khuỷu chỉ gập quanh trục x của nó
+        const e = p.arms[side].elbow.quaternion;
+        expect(Math.hypot(e.y, e.z)).toBeLessThan(1e-9);
+        const J = actJoints(c, sp)!;
+        const t = side === -1 ? 'R' : 'L';
+        const D3 = drawn(p, sp);
+        for (const k of [`elbow${t}`, `wrist${t}`, `hand${t}`] as ActJoint[])
+          for (let j = 0; j < 3; j++) expect(J[k][j]).toBeCloseTo(D3[k][j], 6);
+      }
+      // mỗi bước đích dời chừng 2 đơn vị rig: bàn tay xoay không quá vài độ
+      expect(worst / D).toBeLessThan(8);
+    }
+  });
+
+  it('đích bắt đầu kéo từ chuỗi góc, kể cả tay buông thẳng: bản lề khuỷu IK trùng bản lề góc, bàn tay không xoay quanh cẳng tay', async () => {
+    const { fromCharacter } = await import('./stickman');
+    const c = defaultCharacter();
+    const p = fromCharacter(c as unknown as Parameters<typeof fromCharacter>[0]);
+    const x = new THREE.Vector3(1, 0, 0);
+    for (const an of [[0, 0, 0], [30, 40, 0, 20, 30]]) {
+      const sp = still();
+      sp.pose = { ...sp.pose, an };
+      act(p, sp);
+      const x0 = up(p, -1, x);
+      act(p, { ...sp, pose: { ...sp.pose, reach: { an: { at: [100, -60, 20], w: 1e-5 } } } });
+      // tay duỗi hẳn thì IK gập khuỷu nhanh theo đích (căn bậc hai), nhưng chỉ quanh bản lề cũ
+      expect(x0.angleTo(up(p, -1, x)) / D, JSON.stringify(an)).toBeLessThan(0.05);
+    }
   });
 });

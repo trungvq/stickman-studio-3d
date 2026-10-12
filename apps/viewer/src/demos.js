@@ -8,26 +8,31 @@ import { mouths, styles } from './demo-styles.js';
 
 const HUMAN = new URLSearchParams(location.search).has('human');
 /** `?human`: mọi cảnh mẫu dựng người mặc đồ — tay chân màu, bàn tay, giày, đầu `human`; bề dày chi mặc định của người `clad` */
-function dressed(o, extra) {
-  if (!HUMAN) return o;
+function dressed(o, extra, always = false) {
+  if (!HUMAN && !always) return o;
   const out = { ...o, clad: true, headForm: 'human', sleeveColor: o.color, ...extra };
   delete out.sleeveWidth;
   delete out.trouserWidth;
   return out;
 }
-export const BOY = dressed({
+const BOY0 = {
   rig: { stroke: 6, height: 1, shoulderHalf: 40, shoulderDrop: 20, hipHalf: 28 },
   garment: { style: 'shirt' }, color: '#3aa89c', skin: '#f8e3c8', sleeveWidth: 8, trouserWidth: 9,
   hair: { style: 'anime', front: 46, nape: -14, ear: 10, sideburn: 8, part: 0, fringe: 0, volume: 0.16 },
   hairColor: '#33333a',
-}, { trouserColor: '#3b4252' });
-export const GIRL = dressed({
+};
+const GIRL0 = {
   rig: { stroke: 6, height: 1, shoulderHalf: 40, shoulderDrop: 20, hipHalf: 22 },
   garment: { style: 'blouse', hem: -18 }, color: '#7893ae', accent: '#544456',
   skirt: { rise: 27, waist: 40, length: 52, flare: 12, pleats: 8 },
   hair: { style: 'bob', front: 48, nape: -22, ear: 16, sideburn: 0, part: 35, fringe: 0, volume: 0.07, bang: 16, bangTo: -55, bangThick: 0.1, length: 0.91 },
   hairColor: '#3b3038',
-}, { sleeveLength: 0.45, trouserLength: 0, shoeColor: '#7a3b2e' });
+};
+const BOY_EXTRA = { trouserColor: '#3b4252' }, GIRL_EXTRA = { sleeveLength: 0.45, trouserLength: 0, shoeColor: '#7a3b2e' };
+export const BOY = dressed(BOY0, BOY_EXTRA);
+export const GIRL = dressed(GIRL0, GIRL_EXTRA);
+/** Hai người mẫu luôn mặc đồ, cho cảnh chỉ người mặc đồ mới có: bàn tay */
+const CLAD = { BOY: dressed(BOY0, BOY_EXTRA, true), GIRL: dressed(GIRL0, { ...GIRL_EXTRA, sleeveLength: 1 }, true) };
 /** Nửa bề dày chân cho `sceneAt` như `body3` của lõi: người mặc đồ ngồi trên gốc đùi `cladThigh` */
 export const legHalf = (o) => (o.clad ? cladThigh(limbWidths(o).trouser, o.rig.stroke) : 4.5);
 
@@ -95,7 +100,7 @@ const SHOTS = {
     marks: [{ id: 'di', at: 'headTop', text: 'Đang đi' }, { id: 'nhin', at: 'mouth', text: 'Chào!', bubble: true }],
   },
 };
-const ACTS = actDemos({ member, track, clip, BOY, GIRL });
+const ACTS = actDemos({ member, track, clip, BOY, GIRL, CLAD });
 
 /** Bàn và ghế đẩu cho cảnh ngồi: mặt bàn cao hơn hông ngồi ~51 như `arms-on-table-3d` giả định */
 function furniture() {
@@ -125,7 +130,12 @@ export function demo(name) {
   if (!scene.success) throw new Error(scene.error.message);
   const bodies = Object.fromEntries(members.map((m) => [m.id, { legHalf: legHalf(m.opts), hipHalf: m.opts.rig.hipHalf }]));
   const heights = Object.fromEntries(members.map((m) => [m.id, 1]));
-  const rt = resolveScene(scene.data, ACTIONS, {}, {}, heights, bodies);
+  const extra = Object.fromEntries(Object.entries(ACTS[name]?.actions?.() ?? {}).map(([k, j]) => {
+    const r = parseAction(j);
+    if (!r.success) throw new Error(`${k}: ${r.error.message}`);
+    return [k, r.data];
+  }));
+  const rt = resolveScene(scene.data, { ...ACTIONS, ...extra }, {}, {}, heights, bodies);
   const people = members.map((m) => ({ id: m.id, fig: stickman(m.opts) }));
   const props = name === 'sit' ? [furniture()] : (ACTS[name]?.props?.() ?? []);
   const figOf = Object.fromEntries(people.map((p) => [p.id, p.fig]));

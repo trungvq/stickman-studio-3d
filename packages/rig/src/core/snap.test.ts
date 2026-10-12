@@ -170,7 +170,7 @@ describe("sceneSnaps", () => {
     expect(s.id).toBe("a");
     expect(s.t).toBeGreaterThan(1);
     expect(s.t).toBeLessThan(1.35);
-    expect(s.joint).toMatch(/^(wrist|elbow)/);
+    expect(s.joint).toMatch(/^(hand|wrist|elbow)/);
     expect(s.causes.join("\n")).toMatch(/cờ `lift` của tay gần, tay xa lật giữa đoạn hoà/);
   });
 

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { ConvexHull } from 'three/addons/math/ConvexHull.js';
 import { place3, type Place3 } from './core/lens';
 import { lathePoints, toThree, U, type BatchSolid, type Item, type Vec3 } from './khoi';
-import { HAND } from './human';
+import { fingerVec, HAND_POSES, handCapsules } from './core/hand';
 import { R, type Figure, type Side } from './stickman';
 
 // Kiểm người xuyên đồ ở tư thế hiện tại: người là các viên nang (chi, thân, đầu), đồ là khối lồi (hộp, món khối)
@@ -266,8 +266,10 @@ export function bodyCapsules(fig: Figure, parts: readonly BodyPart[] = BODY_PART
     if (want.has('shin')) seg(fig.legs[s].knee, 'shin', s);
     const h = fig.hands?.[s];
     if (h && want.has('hand')) {
-      const fist = h.fist.visible, [y0, y1, r] = HAND.cap[fist ? 'fist' : 'open'], w = fig.arms[s].wrist, ky = fist ? h.scale : h.long;
-      out.push({ part: 'hand', side: s, a: w.localToWorld(new THREE.Vector3(0, y0 * ky, 0)), b: w.localToWorld(new THREE.Vector3(0, y1 * ky, 0)), r: r * h.scale * k });
+      // nang theo dáng đang vẽ: lòng bàn tay và từng ngón
+      const w = fig.arms[s].wrist, v = h.held ? [0, 0, ...fingerVec(HAND_POSES[h.held])] : h.acted;
+      for (const [a, b, r] of handCapsules(v, s, h.scale, h.long))
+        out.push({ part: 'hand', side: s, a: w.localToWorld(new THREE.Vector3(...a)), b: w.localToWorld(new THREE.Vector3(...b)), r: r * k });
     }
     const ankle = fig.legs[s].ankle;
     if (ankle && want.has('foot')) {

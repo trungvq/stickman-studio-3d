@@ -376,16 +376,18 @@ export function unshare(m: THREE.ShaderMaterial): THREE.ShaderMaterial {
 }
 
 /** Vỏ ngược cho nét viền dày của nhân vật: mặt sau đẩy ra theo pháp tuyến. */
-export function hullMaterial(width = 0.03, color: THREE.ColorRepresentation = '#1a1716'): THREE.ShaderMaterial {
+export function hullMaterial(width = 0.03, color: THREE.ColorRepresentation = '#1a1716', push = 0): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     side: THREE.BackSide,
-    uniforms: { uW: { value: width }, uColor: { value: new THREE.Color(color) } },
+    uniforms: { uW: { value: width }, uPush: { value: push }, uColor: { value: new THREE.Color(color) } },
+    // `push` lùi vỏ ra xa máy dọc tia nhìn (chỗ trên hình giữ nguyên): vỏ không lòi qua mặt lõm của chính vật trong khoảng ấy
     vertexShader: /* glsl */ `
-      uniform float uW;
+      uniform float uW, uPush;
       void main(){
         vec4 wp = modelMatrix * vec4(position, 1.0);
         vec3 n = normalize(mat3(modelMatrix) * normal);
-        gl_Position = projectionMatrix * viewMatrix * vec4(wp.xyz + n * uW, 1.0);
+        vec3 p = wp.xyz + n * uW;
+        gl_Position = projectionMatrix * viewMatrix * vec4(p + normalize(p - cameraPosition) * uPush, 1.0);
       }`,
     fragmentShader: /* glsl */ `uniform vec3 uColor; void main(){ gl_FragColor = vec4(uColor, 1.0); }`,
   });

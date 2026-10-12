@@ -35,6 +35,9 @@ import {
   torsoBend,
   POSES,
   keyFace,
+  keyHand,
+  HAND_POSE_KINDS,
+  HAND_POSE_LABELS,
   REACH_ELBOW,
   type ActionData,
   type ActionKey,
@@ -44,6 +47,8 @@ import {
   type JointChannel,
   type EquipMap,
   type FaceState,
+  type HandKey,
+  type HandPose,
   type PieceKey,
   type PoseDelta,
 } from "@stickman3d/sketch";
@@ -92,8 +97,8 @@ interface ActionPanelProps {
 
 /** Tên từng số của một kênh; `stretch` là hệ số dài chi */
 const JOINTS: Record<JointChannel, string[]> = {
-  armFar: ["vai", "khuỷu", "cổ tay", "dang"],
-  armNear: ["vai", "khuỷu", "cổ tay", "dang"],
+  armFar: ["vai", "khuỷu", "cổ tay", "dang", "xoắn vai"],
+  armNear: ["vai", "khuỷu", "cổ tay", "dang", "xoắn vai"],
   legFar: ["hông", "gối", "dang"],
   legNear: ["hông", "gối", "dang"],
   torso: ["cúi", "nghiêng"],
@@ -118,8 +123,11 @@ const REACH_AXES: { label: string; min: number; max: number }[] = [
 ];
 const ELBOW_AXES = ["khuỷu tiến", "khuỷu xuống", "khuỷu ra"];
 
-/** Số chỉ người 3D đọc (dang tay chân, nghiêng thân): chỉ hiện ở hành động `authoredAt: "side"` */
-const SOLID_ONLY: Partial<Record<JointChannel, number>> = {
+/**
+ * Số đầu tiên chỉ người 3D đọc (dang, xoắn vai, nghiêng thân), các số sau nó cũng thế: chỉ hiện ở hành động
+ * `authoredAt: "side"`
+ */
+const SOLID_FROM: Partial<Record<JointChannel, number>> = {
   armFar: 3,
   armNear: 3,
   legFar: 2,
@@ -257,7 +265,7 @@ export function ActionPanel(p: ActionPanelProps) {
           ? [[c, null]]
           : JOINTS[c]
               .map((_, j): [JointChannel, number] => [c, j])
-              .filter(([, j]) => solid || j !== SOLID_ONLY[c]),
+              .filter(([, j]) => solid || j < (SOLID_FROM[c] ?? Infinity)),
       )
     : [];
 
@@ -280,8 +288,8 @@ export function ActionPanel(p: ActionPanelProps) {
       if (on) cur.add(c);
       else cur.delete(c);
       d.mask = CHANNELS.filter((x) => cur.has(x));
-      // Bật thêm khớp thì mốc nào chưa ghi khớp đó lấy tạm tư thế đứng; `face` không có góc
-      if (on && c !== "face")
+      // Bật thêm khớp thì mốc nào chưa ghi khớp đó lấy tạm tư thế đứng; `face`, `hand` không có góc
+      if (on && c !== "face" && c !== "hand")
         for (const k of d.keys ?? [])
           if (typeof k.pose !== "string" && (k.pose as PoseDelta)[c] === undefined)
             Object.assign(k.pose, { [c]: poseDelta(POSES.idle)[c] });
@@ -322,6 +330,19 @@ export function ActionPanel(p: ActionPanelProps) {
       k.face = Object.keys(face).length ? face : undefined;
     });
 
+  const handOf = (c: (typeof ARM_CHANNELS)[number]): HandKey | undefined => {
+    const h = keyHand(key!)[c];
+    return typeof h === "string" ? { pose: h } : h;
+  };
+  const setHand = (c: (typeof ARM_CHANNELS)[number], v: HandKey | undefined) =>
+    live((d) => {
+      const k = d.keys![sel];
+      const hand = { ...k.hand, [c]: v };
+      if (v === undefined) delete hand[c];
+      else if (Object.keys(v).length === 1 && v.pose) hand[c] = v.pose;
+      k.hand = Object.keys(hand).length ? hand : undefined;
+    });
+
   /**
    * Studio chỉ soạn dạng map socket → vật; bộ đồ thì trải ra thành map ngay, để một file
    * hành động không bao giờ có hai hình dạng cho cùng một chuyện.
@@ -359,10 +380,12 @@ export function ActionPanel(p: ActionPanelProps) {
         cur[j ?? 0] = v;
         pose.stretch = stretchJson(cur);
       } else {
-        const cur = [...(pose[c] ?? poseDelta(POSES.idle)[c])];
+        const cur: (number | null)[] = [...(pose[c] ?? poseDelta(POSES.idle)[c])];
+        while (cur.length < (j ?? 0)) cur.push(0);
         cur[j ?? 0] = v;
-        // Dang `0` thì bỏ số ấy, file giữ dạng ngắn
-        if (j === SOLID_ONLY[c] && !v) cur.length = j;
+        // Số chỉ người 3D đọc mà bằng `0` ở cuối thì bỏ, file giữ dạng ngắn
+        const from = SOLID_FROM[c] ?? cur.length;
+        while (cur.length > from && !cur[cur.length - 1]) cur.length--;
         Object.assign(pose, { [c]: cur });
       }
     });
@@ -594,6 +617,75 @@ export function ActionPanel(p: ActionPanelProps) {
                 )}
               </div>
             </div>
+          )}
+          {mask.includes("hand") &&
+            ARM_CHANNELS.map((c) => {
+              const h = handOf(c);
+              const patch = (o: Partial<HandKey>) => {
+                const v: HandKey = { ...h, ...o };
+                for (const f of ["w", "turn", "bend"] as const) if (v[f] === undefined) delete v[f];
+                setHand(c, v);
+              };
+              return (
+                <div key={c} className="mb-2.5 rounded border p-2 pb-0">
+                  <CheckRow
+                    label={`Bàn tay ${CHANNEL_LABELS[c]}: ghi ở mốc này`}
+                    checked={!!h}
+                    onChange={(v) => setHand(c, v ? {} : undefined)}
+                  />
+                  {h && (
+                    <>
+                      <Select
+                        value={h.pose ?? ""}
+                        onValueChange={(v) => patch({ pose: v as HandPose })}
+                      >
+                        <SelectTrigger className="mb-2.5 w-full">
+                          <SelectValue placeholder="dáng nghỉ — chọn dáng…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {HAND_POSE_KINDS.map((k) => (
+                            <SelectItem key={k} value={k}>
+                              {HAND_POSE_LABELS[k]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {h.pose && (
+                        <SliderRow
+                          label="Phần dáng"
+                          value={h.w ?? 1}
+                          min={0}
+                          max={1}
+                          step={0.05}
+                          onChange={(v) => patch({ w: v === 1 ? undefined : v })}
+                        />
+                      )}
+                      <SliderRow
+                        label="Xoay cẳng tay (dương úp)"
+                        value={h.turn ?? 0}
+                        min={-90}
+                        max={90}
+                        step={1}
+                        onChange={(v) => patch({ turn: v || undefined })}
+                      />
+                      <SliderRow
+                        label="Gập cổ tay (dương về lòng tay)"
+                        value={h.bend ?? 0}
+                        min={-90}
+                        max={90}
+                        step={1}
+                        onChange={(v) => patch({ bend: v || undefined })}
+                      />
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          {mask.includes("hand") && (
+            <Hint>
+              Bàn tay chỉ người 3D mặc đồ vẽ; sân khấu 2D không đổi. Chưa chọn dáng là dáng nghỉ;
+              phần dáng hoà từ dáng nghỉ. Dáng và hai góc cổ tay nội suy giữa các mốc như góc khớp.
+            </Hint>
           )}
           {touched.map((k) => (
             <KeepSelect

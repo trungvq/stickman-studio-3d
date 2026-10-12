@@ -125,7 +125,9 @@ viền thật mà không gì báo. Cổ và đầu của người 3D không nằ
 `A.joints.collar`, `A.frames.head`, đừng tự cộng độ dài. Xem [01](01-rig.md#người-3d).
 
 **Người 3D mặc đồ treo đồ cầm ở tâm nắm, không ở mút nét.** `palette.clad` dời khung `hand` vào
-lòng bàn tay (`HAND.grip`) và `hold` tự nắm tay; đồ căn `offset` cho người que lùi vào vài px. Nó ngồi
+giữa lòng bàn tay và các ngón của dáng `grip` (`handGrip`, lệch về phía lòng tay) và `hold` giữ dáng `grip` ở
+ngón; đồ căn `offset` cho người que lùi vào vài px. Khung `hand` quay theo cổ tay — xoay cẳng tay, gập và lệch
+cổ tay quay cả đồ cầm. Nó ngồi
 trên gốc đùi `cladThigh`, không trên `limbHalf`, nên `sceneAt` phải nhận `body3(nhân vật)` — truyền
 `legHalf` cứng là người ngồi lún hay lơ lửng trên ghế. Xem [01](01-rig.md#người-3d-mặc-đồ).
 
@@ -350,8 +352,8 @@ bàn tay xuống thấp nhất, pha bàn chân nhận lực theo đúng luật `
 không đo bằng mắt, và đo một lần ở bộ chung thì mọi tập sau khỏi đo lại.
 
 **Cách nắm thuộc nhân vật, cổ tay thuộc hành động.** Tay là
-`[vai, khuỷu, cổ tay]` (cộng số dang của người 3D); cổ tay chỉ xoay đồ cầm tay (rig không vẽ bàn tay), còn
-`pieces.hand*.rotate` là thế nắm cố định. Gộp hai thứ vào một là `chop` phải
+`[vai, khuỷu, cổ tay]` (cộng số dang và xoắn vai của người 3D); cổ tay xoay đồ cầm tay (rig 2D không vẽ bàn
+tay, người 3D lệch bàn tay theo nó), còn `pieces.hand*.rotate` là thế nắm cố định. Gộp hai thứ vào một là `chop` phải
 chọn một góc rìu duy nhất cho cả chu kỳ — không góc nào đúng cả lúc giơ lẫn lúc
 bổ. Ảnh đồ cầm để đầu xa ở **mép dưới**; vẽ lưỡi ở mép trên là cầm ngược.
 
@@ -360,15 +362,28 @@ dáng nghỉ, và cờ không hoà được: hoà giữa hành động `side` v�
 tư thế nền là tay chân nhảy một khung giữa đoạn hoà — `check` báo lỗi hành động 2D, báo giật cho
 phần còn lại. Xem [03](03-scene.md#hành-động-cho-người-3d).
 
-**Đọc tuple tay chân theo chỉ số, đừng theo độ dài.** Tay ba hay bốn số, chân hai hay ba, `torso`
-một số hay `[cúi, nghiêng]` — số dang và nghiêng là của người 3D, thiếu là `0`. Nội suy hai mốc
+**Đọc tuple tay chân theo chỉ số, đừng theo độ dài.** Tay ba, bốn hay năm số, chân hai hay ba, `torso`
+một số hay `[cúi, nghiêng]` — số dang, xoắn vai và nghiêng là của người 3D, thiếu là `0`. Nội suy hai mốc
 khác độ dài bằng `mixAngles`, góc cúi của `torso` trong JSON lấy bằng `torsoBend`; `a.map((v, i) =>
 … b[i])` ra `NaN`. Chân dang không chạm sàn nếu không vươn `1 / cos(dang)`.
 [01](01-rig.md#dang-và-nghiêng-ngang)
 
+**Dáng tay là góc khớp, một bảng: `HAND_POSES` (`core/hand.ts`).** Bốn dáng soạn được (`open`, `grip`, `point`,
+`fist`), dáng nghỉ `HAND_RELAXED` ngoài bảng — mốc bỏ trống `pose` là nó. Bàn tay năm ngón của người 3D mặc đồ là một mặt da liền
+buộc vào các đốt, da dời theo góc; hoà dáng là hoà góc (`HandVec`), không đổi lưới, nên không có dáng nào bật tắt.
+Đổi khung xương hay `HAND_BIND` thì lưới dựng lại theo — đừng ghép thêm khối rời vào bàn tay, mối nối là nét viền
+bên trong.
+Bàn tay ở kênh `hand` của `mask`, tách khỏi kênh tay: mốc ghi `keys[].hand` mà `mask` thiếu `hand` là bị bỏ
+im lặng (`maskProblems` kêu), và clip thu `mask` mà bỏ `hand` thì bàn tay về dáng nghỉ. Đang cầm đồ thì ngón
+theo dáng `grip`, hành động chỉ còn xoay và gập cổ tay. Xem [01](01-rig.md#bàn-tay).
+
+**Khuỷu IK là bản lề.** Tay theo đích quay vai theo trục bản lề của `twoBone3` (`armFrame`), khuỷu chỉ gập —
+đừng quay đoạn chi theo phép quay ngắn nhất từ phương rủ (`setFromUnitVectors`): cẳng tay và bàn tay lật nửa
+vòng khi cánh tay qua đỉnh đầu, và lệch với `actJoints`. Xem [01](01-rig.md#đích-bàn-tay).
+
 **Đo giật trên đúng hình vẽ ra.** `actJoints` của lõi và `act` của three dùng chung khung xương,
-luật đọc góc và IK (`core/act3.ts`); đổi một bên mà không đổi bên kia thì `check` đo một hình khác
-hình lên phim — `act3.test.ts` giữ chúng trùng. Chỗ cố ý giật khai `snap`, đừng nới ngưỡng cả repo.
+luật đọc góc và IK (`core/act3.ts`), cả xoắn vai, ba góc cổ tay và tâm nắm (`hand*`); đổi một bên mà không
+đổi bên kia thì `check` đo một hình khác hình lên phim — `act3.test.ts` giữ chúng trùng. Chỗ cố ý giật khai `snap`, đừng nới ngưỡng cả repo.
 Xem [01](01-rig.md#khớp-người-3d-vẽ-ra).
 
 ## Scene

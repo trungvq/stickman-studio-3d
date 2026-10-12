@@ -308,12 +308,32 @@ function limb3(
  * Chuỗi soạn ở `side` (`[tiến, y]`, gốc ở đầu chuỗi) ra hệ thân `[tiến, y, phải]` ở bề ngang `lat` của
  * gốc, dang ra ngoài phía `lat` một góc `deg` quanh trục tiến qua gốc — như vai và hông của `act`
  */
-const spreadOut = (pts: Pt[], lat: number, deg: number): V3[] => {
+const spreadOut = (pts: (Pt | V3)[], lat: number, deg: number): V3[] => {
   const [, y0] = pts[0];
   const c = Math.cos(deg * D);
   const out = Math.sign(lat) * Math.sin(deg * D);
-  return pts.map(([x, y]) => [x, y0 + (y - y0) * c, lat + (y - y0) * out]);
+  return pts.map(([x, y, z = 0]) => [x, y0 + (y - y0) * c - z * out, lat + (y - y0) * out + z * c]);
 };
+
+/**
+ * Xoắn vai `deg` của một tay (`[vai, khuỷu]` đã dựng bằng `chain2`): cẳng tay quay quanh trục cánh tay trên, dương ra
+ * phía `out` (dấu của bên tay ấy) như `act` của three. Trả ba điểm `[tiến, y, ngang tương đối]`
+ */
+function twisted(pts: Pt[], deg: number, out: number): V3[] {
+  const [r, e, w] = pts.map(([x, y]): V3 => [x, y, 0]);
+  if (!deg) return [r, e, w];
+  const u = sub3(e, r);
+  const n = Math.hypot(...u) || 1;
+  const k = scale3(u, 1 / n);
+  const v = sub3(w, e);
+  const th = -out * deg * D;
+  const kv: V3 = [k[1] * v[2] - k[2] * v[1], k[2] * v[0] - k[0] * v[2], k[0] * v[1] - k[1] * v[0]];
+  const f = add3(
+    add3(scale3(v, Math.cos(th)), scale3(kv, Math.sin(th))),
+    scale3(k, dot3(k, v) * (1 - Math.cos(th))),
+  );
+  return [r, e, add3(e, f)];
+}
 
 /** Hai chân `[gần, xa]`: chân gần là chân phải khi không lật; gốc vẽ là gốc hông thật đã chiếu */
 function legs3(fr: Frame3, w: World, P: Pose, height: number, hipHalf: number): [Chain3, Chain3] {
@@ -399,7 +419,9 @@ export function figure3d(c: CharacterData, P: Pose, w: World): Figure3 {
   const sF2 = shAt(-nearR * shHalf, shHalf * cosT);
 
   const armBody = (a: readonly number[], l1: number, l2: number, lat: number): V3[] =>
-    spreadOut(chain2([0, shY], a, l1, l2), lat, a[3] ?? 0).map(torsoPt);
+    spreadOut(twisted(chain2([0, shY], a, l1, l2), a[4] ?? 0, Math.sign(lat)), lat, a[3] ?? 0).map(
+      torsoPt,
+    );
   const [LN, LF] = legs3(fr, w, P, rig.height, rig.hipHalf);
   // đích hệ thân `[tiến, y, ra ngoài]` của một tay ra thế giới; `ra ngoài` theo phía của chính tay ấy
   const ik =

@@ -75,6 +75,27 @@ describe("dang tay chân và nghiêng thân của người 3D", () => {
       expect(joints3(P).footNear[1] - hip[1]).toBeCloseTo(leg * Math.cos(30 * D), 6);
     });
 
+    it(`xoắn vai: tay dang ngang, khuỷu gập 90, xoay ngoài 90 là cẳng tay dựng lên — three và người SVG cùng chiều (${w.flip ? "lật" : "không lật"})`, () => {
+      const P = { ...stand, an: [0, 90, 0, 90, 90] } as Pose;
+      const [el, wr] = w.flip ? ["elbowL", "wristL"] : ["elbowR", "wristR"];
+      const J = joints(P);
+      expect(J[el as "elbowR"][1] - J[wr as "wristR"][1]).toBeGreaterThan(50);
+      const J3 = joints3(P);
+      expect(J3.elbowNear[1] - J3.wristNear[1]).toBeGreaterThan(50);
+      // khuỷu dưới 90 thì cẳng tay ngả ra ngoài, xa đầu: lắc khuỷu là vẫy qua lại
+      const out = { ...stand, an: [0, 60, 0, 90, 90] } as Pose;
+      const Jo = joints(out);
+      expect(
+        near * (lateral(Jo[wr as "wristR"], w) - lateral(Jo[el as "elbowR"], w)),
+      ).toBeGreaterThan(20);
+      expect(
+        near * (lateral(joints3(out).wristNear, w) - lateral(joints3(out).elbowNear, w)),
+      ).toBeGreaterThan(20);
+      // xoay trong: cẳng tay chúc xuống
+      const down = { ...stand, an: [0, 90, 0, 90, -90] } as Pose;
+      expect(joints3(down).wristNear[1] - joints3(down).elbowNear[1]).toBeGreaterThan(50);
+    });
+
     it(`dang của kênh giữ 2D không đổi khớp người 3D (${w.flip ? "lật" : "không lật"})`, () => {
       const P = { ...stand, an: [0, 0, 0, 60], lift: { ...LIFT, an: false } } as Pose;
       expect(joints(P)).toEqual(joints({ ...stand, lift: P.lift }));

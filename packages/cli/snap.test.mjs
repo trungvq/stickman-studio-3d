@@ -100,7 +100,7 @@ describe("check: hành động 2D trên người 3D và giật trên hình", () 
     assert.equal(jolt[0].level, "cảnh báo");
     assert.match(
       jolt[0].msg,
-      /^scenes\/loi\.json: `a` giây 1\.\d\d: (cổ tay|khuỷu) (phải|trái) nhảy \d+ px/,
+      /^scenes\/loi\.json: `a` giây 1\.\d\d: (bàn tay|cổ tay|khuỷu) (phải|trái) nhảy \d+ px/,
     );
     assert.match(
       jolt[0].msg,
