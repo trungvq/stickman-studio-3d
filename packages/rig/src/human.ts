@@ -109,14 +109,7 @@ const place = (g: THREE.BufferGeometry, from: THREE.Vector3, dir: THREE.Vector3)
 /** Ống mọc từ gốc chĩa theo −y, dài `len`, bán kính `r` */
 const finger = (r: number, len: number) => new THREE.CapsuleGeometry(r, Math.max(0.001, len - 2 * r), 3, 8).translate(0, -len / 2, 0);
 
-/** Cỡ bàn tay theo bán kính cổ tay `rw`: nhân vào `HAND` và `handGeometry` */
-export const handScale = (rw: number) => Math.max(1, rw / 0.048);
-
-/** Bàn tay xoè cỡ `1` dài chừng này; xoè không dài quá `OPEN_REACH` cẳng tay */
-const OPEN_LEN = 0.21;
-const OPEN_REACH = 0.55;
-/** Cỡ dọc của bàn tay xoè cỡ `k` trên cẳng tay dài `foreArm`: chi to mà ngắn thì găng tròn lại, không dài tới gối */
-export const openLength = (k: number, foreArm: number) => Math.min(k, Math.max(1, (OPEN_REACH * foreArm) / OPEN_LEN));
+export { handScale, openLength } from './core/act3';
 
 /**
  * Bàn tay bên `side` trong khung cổ tay (−y dọc cẳng tay ra ngoài, lòng bàn tay quay về phía thân, ngón cái về +z):

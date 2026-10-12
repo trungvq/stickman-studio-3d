@@ -10,10 +10,11 @@ import { INK, toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
 import { limbWidths, type Garment, type Glasses, type Sculpt, type Skirt } from './core/schema';
-import { BONES3, bones3, CLAD_TAPER, cladArm, cladThigh, head3, roots3, type Bones3 } from './core/act3';
+import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, type Bones3 } from './core/act3';
 import { chibiShape } from './core/face';
+import { wornSkirt } from './core/skirtShape';
 import { humanHair, humanSkull } from './core/humanHead';
-import { Ankle, earGroup, HAND, handGeometry, handScale, humanHeadGeometry, openLength, neckGeometry, pelvisGeometry, shoeCapsule, shoeGeometry } from './human';
+import { Ankle, earGroup, HAND, handGeometry, humanHeadGeometry, neckGeometry, pelvisGeometry, shoeCapsule, shoeGeometry } from './human';
 import type { Rig } from './torso';
 
 // Tỉ lệ lấy từ RIG của @stickman3d/sketch, chia 100: người cao ~4,3 đơn vị, đầu to bằng gần một phần ba. Độ dài đoạn của
@@ -338,7 +339,7 @@ export function stickman(o: StickmanOptions): Figure {
   const spine = joint(hips, 0, 0.0, 0);
   const bicep = o.bicep ?? 0;
   const thighR = clad ? cladThigh(trouserWidth, rig.stroke) : 0;
-  const at = roots3(garment, rig, clad ? cladArm(sleeveWidth, rig.stroke) : undefined, bicep, thighR);
+  const at = roots3(garment, rig, { clad, sleeve: sleeveWidth, trouser: trouserWidth, bicep, skirt });
   const [sx, sy] = at.shoulder;
   const body = sculptTorso(spine, { garment, rig, color, accent, ink: INK, arm: at.room, ...(clad && { sil: LIMB_SIL }), ...(clad && skirt && { tuck: -skirt.rise * rig.height }) });
   // khối thân áo là mảnh đầu tiên: `collide` lấy hộp thân từ nó
@@ -347,7 +348,7 @@ export function stickman(o: StickmanOptions): Figure {
   if (skirt) {
     const dir: Vec3 = seated ? [0, 0.08, 1] : [0, 1, 0];
     const thighs = SIDES.map((s) => ({ hip: [s * rig.hipHalf, 0, 0] as Vec3, dir }));
-    const opts = { skirt, rig, color: skirtColor, ink: INK, legW: clad ? 2 * thighR : trouserWidth, ...(clad && { body }) };
+    const opts = { skirt, rig, color: skirtColor, ink: INK, legW: clad ? 2 * thighR : trouserWidth, ...(clad && { body, knee: (thighR * CLAD_TAPER.leg[1]) / CLAD_TAPER.leg[0] }) };
     skirtRig = { opts, group: sculptSkirt(spine, { ...opts, thighs }), key: '' };
   }
   const neck = joint(spine, 0, B.torso, 0);
@@ -404,7 +405,7 @@ export function stickman(o: StickmanOptions): Figure {
     for (const s of SIDES) {
       cladLimb(seg(arms[s].shoulder), seg(arms[s].elbow), [B.upperArm, B.foreArm], [CLAD_TAPER.arm[0] * (1 + bicep), CLAD_TAPER.arm[1], CLAD_TAPER.arm[2]], tone(sleeveColor), limbSkin, sleeveLength, true);
       cladLimb(seg(legs[s].hip), seg(legs[s].knee), [B.thigh, B.shin], legTaper, tone(trouserColor), limbSkin, trouserLength, false);
-      const k = handScale(limbR(sleeveWidth) * 0.8), long = openLength(k, B.foreArm);
+      const { k, long } = cladHand(sleeveWidth, rig.stroke, B.foreArm * 100);
       const pose = (fist: boolean) => {
         const g = inked(handGeometry(s, fist, k, long), limbSkin, 0.016);
         g.visible = !fist;
@@ -608,7 +609,7 @@ export interface CharacterJson {
   face?: Partial<FaceShape>;
   pieces: {
     torso: { garment?: Partial<Garment> };
-    hem?: { skirt?: Skirt; color?: string };
+    hem?: { src?: string; skirt?: Partial<Skirt>; color?: string };
     hair?: { sculpt?: Partial<Sculpt>; color?: string };
     faceAcc?: { src: string; glasses?: Partial<Glasses>; color?: string };
   };
@@ -621,7 +622,7 @@ export function characterOptions(json: CharacterJson, opts: Partial<StickmanOpti
   const pal = json.palette, pc = json.pieces;
   return {
     rig: json.rig, garment: pc.torso.garment, color: pal.garment, skin: pal.skin,
-    skirt: pc.hem?.skirt, skirtColor: pc.hem?.color, hair: pc.hair?.sculpt, hairColor: pc.hair?.color,
+    skirt: wornSkirt(pc.hem), skirtColor: pc.hem?.color, hair: pc.hair?.sculpt, hairColor: pc.hair?.color,
     sleeveWidth: pal.sleeveWidth, trouserWidth: pal.trouserWidth, limbCurve: pal.limbCurve, faceShape: json.face, itemSpecs: json.items,
     glasses: pc.faceAcc?.src === 'sculpt' && pc.faceAcc.glasses, glassesColor: pc.faceAcc?.color,
     clad: pal.clad, sleeveColor: pal.sleeve, trouserColor: pal.trouser, shoeColor: pal.shoe, sleeveLength: pal.sleeveLength, bicep: pal.bicep,

@@ -94,7 +94,7 @@ export const TORSO_DEPTH = 0.78;
 export const TORSO_TILT = 0.25;
 /** Váy dựng khối: vải trùm đùi rộng hơn nửa nét chân bấy nhiêu px */
 export const SKIRT_EASE = 4;
-/** Váy dựng khối: phủ dọc đùi không quá bấy nhiêu phần đùi, để gối luôn lộ */
+/** Váy dựng khối: vạt váy ngắn phủ dọc đùi không quá bấy nhiêu phần đùi, váy tới gối thì tới gối (`skirtCover`) */
 export const SKIRT_REACH = 0.7;
 /** Váy dựng khối: đùi càng ngang thì gấu ở mút đùi rủ xuống thêm bấy nhiêu lần `flare` */
 export const SKIRT_FALL = 0.5;

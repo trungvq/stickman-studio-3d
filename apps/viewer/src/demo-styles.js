@@ -3,15 +3,19 @@ import * as THREE from 'three';
 import { fromCharacter, GARMENT_STYLES, npr } from '@stickman3d/rig';
 
 // Bộ sưu tập kiểu (`?demo=styles`): một hàng người mẫu, người thứ `i` đội mẫu tóc thứ `i` của SCULPT_PRESETS (cuối
-// cùng là đầu trọc) và mặc kiểu áo thứ `i` của GARMENT_STYLES, rải kính, nếp nhăn và váy. JSON nhân vật dựng tại chỗ
+// cùng là đầu trọc) và mặc kiểu áo thứ `i` của GARMENT_STYLES, rải kính, nếp nhăn và ba dáng váy. JSON nhân vật dựng tại chỗ
 // rồi qua `parseCharacter` như ở repo video. `?turn=độ` xoay từng người tại chỗ, `?cast=url,…` dựng JSON nhân vật bất kỳ thay cho người mẫu để soi.
 // `?human` cho cả hàng mặc đồ: `palette.clad`, `head.form: "human"`, tay áo màu áo.
 
 const SPACING = 1.45;
 const COLORS = ['#3aa89c', '#c8663a', '#34466e', '#9a5fa8', '#e0b23a', '#5a9a4a', '#7a2e2e', '#9aa7c7', '#2f4a3e', '#b9854a', '#a9cde6', '#5f7a8c'];
 const HAIRS = ['#33333a', '#2a1c15', '#5b3a26', '#8a8e92', '#3b3038'];
-const SKIRT_PLEATED = { rise: 27, waist: 40, length: 52, flare: 30, pleats: 8 };
-const SKIRT_PLAIN = { rise: 27, waist: 40, length: 60, flare: 22, pleats: 0 };
+/** Váy chữ A xếp ly, váy thẳng ngang gối, váy bút chì: rải lần lượt cho người tóc dài */
+const SKIRTS = [
+  { rise: 27, waist: 40, length: 52, flare: 12, pleats: 8 },
+  { rise: 27, waist: 40, length: 100, flare: 0, pleats: 0 },
+  { rise: 27, waist: 40, length: 100, flare: -8, pleats: 0 },
+];
 const HUMAN = new URLSearchParams(location.search).has('human');
 const LONG = ['bang', 'bob', 'shoulder', 'center', 'ponyHigh', 'ponyLow', 'bun'];
 
@@ -45,7 +49,7 @@ export function samples() {
       pieces: {
         torso: { src: 'sculpt', garment: { style, ...(long ? { hem: -18 } : {}) } },
         hair: h === 'none' ? { src: 'none' } : { src: 'sculpt', color: HAIRS[i % HAIRS.length], sculpt: SCULPT_PRESETS[h].sculpt },
-        ...(long ? { hem: { src: 'sculpt', color: '#3a3f4a', skirt: i % 2 ? SKIRT_PLAIN : SKIRT_PLEATED } } : {}),
+        ...(long ? { hem: { src: 'sculpt', color: '#3a3f4a', skirt: SKIRTS[i % SKIRTS.length] } } : {}),
         ...(extra.glasses ? { faceAcc: { src: 'sculpt', color: extra.glasses === 'sun' ? '#2b2f36' : '#3a2a22', glasses: GLASSES_PRESETS[extra.glasses].glasses } } : {}),
       },
     };

@@ -24,7 +24,7 @@ export const BOY = dressed({
 export const GIRL = dressed({
   rig: { stroke: 6, height: 1, shoulderHalf: 40, shoulderDrop: 20, hipHalf: 22 },
   garment: { style: 'blouse', hem: -18 }, color: '#7893ae', accent: '#544456',
-  skirt: { rise: 27, waist: 40, length: 52, flare: 30, pleats: 8 },
+  skirt: { rise: 27, waist: 40, length: 52, flare: 12, pleats: 8 },
   hair: { style: 'bob', front: 48, nape: -22, ear: 16, sideburn: 0, part: 35, fringe: 0, volume: 0.07, bang: 16, bangTo: -55, bangThick: 0.1, length: 0.91 },
   hairColor: '#3b3038',
 }, { sleeveLength: 0.45, trouserLength: 0, shoeColor: '#7a3b2e' });

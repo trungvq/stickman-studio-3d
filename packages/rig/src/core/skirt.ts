@@ -1,10 +1,11 @@
-import { D, SKIRT_EASE, SKIRT_FALL, SKIRT_REACH, TORSO_DEPTH, TORSO_TILT } from "./constants";
-import { limbWidths, SkirtSchema, type CharacterData, type Skirt } from "./schema";
+import { D, SKIRT_EASE, TORSO_DEPTH, TORSO_TILT } from "./constants";
+import { limbWidths, type CharacterData, type Skirt } from "./schema";
 import { turnPoint, type Vec3 } from "./sphere";
 import { localProject, type LocalLens } from "./lens";
 import { cladThigh } from "./act3";
 import type { Figure } from "./geometry";
 import type { Pt } from "./types";
+import { skirtCover, skirtFall, skirtOf, skirtSpread } from "./skirtShape";
 
 type P2 = [number, number];
 
@@ -18,9 +19,6 @@ export interface SkirtPaths {
 }
 
 const f = (n: number) => String(Math.round(n * 10) / 10);
-
-/** Bộ số đã đủ: trường bỏ trống lấy mặc định */
-export const skirtOf = (raw: Partial<Skirt> | undefined): Skirt => SkirtSchema.parse(raw ?? {});
 
 /** Bao lồi theo chiều kim đồng hồ trên màn hình (`y` xuống) */
 export function hull(pts: P2[]): P2[] {
@@ -39,20 +37,6 @@ export function hull(pts: P2[]): P2[] {
   return [...half(s), ...half([...s].reverse())];
 }
 
-/**
- * Váy phủ dọc một đùi bấy nhiêu đơn vị rig: tới chỗ gấu buông thẳng chạm, không quá `length` và không
- * quá `SKIRT_REACH` chiều dài đùi `lt`; `angle` là góc đùi so với trục thân, radian
- */
-export function skirtCover(g: Skirt, height: number, angle: number, lt: number) {
-  const len = g.length * height;
-  const stand = Math.max(0, len - g.rise * height);
-  return Math.min(stand / Math.max(Math.cos(angle), 0.05), len, lt * SKIRT_REACH);
-}
-
-/** Gấu rủ khỏi mút đùi bấy nhiêu khi đùi lệch trục thân trung bình `mean` radian */
-export const skirtFall = (g: Skirt, mean: number) =>
-  g.flare * (1 - Math.max(0, Math.cos(mean))) * SKIRT_FALL;
-
 const cache = new Map<string, SkirtPaths>();
 const CACHE_SIZE = 64;
 
@@ -66,8 +50,8 @@ const thighOf = (leg: Pt[], torso: number): [P2, P2] => {
 
 /**
  * Váy dựng khối quay `yaw` độ, ra toạ độ nhóm thân (gốc ở hông). Khối là hình nón cụt tiết diện
- * ellipse như thân áo; gấu rủ theo góc đùi, và hình bao gồm cả hai đùi tới `SKIRT_REACH` để chân
- * không xuyên qua váy khi sải hay ngồi. Người 3D chiếu qua ống kính thật trong hệ thân và lấy góc đùi
+ * ellipse như thân áo; gấu rủ theo góc đùi, và hình bao gồm cả hai đùi tới tầm váy phủ (`skirtCover`) để
+ * chân không xuyên qua váy khi sải hay ngồi. Người 3D chiếu qua ống kính thật trong hệ thân và lấy góc đùi
  * thật (`thighs`), không lấy góc trên khung. docs/02-trang-phuc.md#váy-dựng-khối
  */
 export function skirtPaths(
@@ -91,6 +75,7 @@ export function skirtPaths(
     g,
     yaw,
     c.rig.height,
+    c.rig.hipHalf,
     stroke,
     legW,
     thighs.flat(2).map(Math.round),
@@ -98,7 +83,7 @@ export function skirtPaths(
   ]);
   let p = cache.get(key);
   if (!p) {
-    p = buildSkirt(g, c.rig.height, thighs, legW, yaw, stroke, r3);
+    p = buildSkirt(g, c.rig.height, c.rig.hipHalf, thighs, legW, yaw, stroke, r3);
     if (cache.size >= CACHE_SIZE) cache.delete(cache.keys().next().value!);
     cache.set(key, p);
   }
@@ -108,6 +93,7 @@ export function skirtPaths(
 function buildSkirt(
   g: Skirt,
   height: number,
+  hipHalf: number,
   thighs: [P2, P2][],
   legW: number,
   yaw: number,
@@ -139,7 +125,8 @@ function buildSkirt(
   const yH = yW + len * hang;
   // Gấu là vành cạp nở đều `flare` ra mọi phía, nên nhìn nghiêng váy xoè bằng nhìn thẳng
   const aW = Math.max(1, g.waist - inset);
-  const spread = g.flare * hang;
+  const r = Math.max(1, legW / 2 + SKIRT_EASE - inset);
+  const spread = skirtSpread(g, hang, aW, TORSO_DEPTH * aW, hipHalf + r, r);
   const ring = (u: number, y: number, phi: number) =>
     view([(aW + spread * u) * Math.sin(phi), y, (TORSO_DEPTH * aW + spread * u) * Math.cos(phi)]);
   const N = 72;
@@ -151,8 +138,7 @@ function buildSkirt(
       pts.push([x, y]);
     }
   }
-  // Đùi: váy phủ dọc đùi tới chỗ gấu đứng thẳng chạm, nhưng không quá `length` và không quá `SKIRT_REACH` đùi
-  const r = Math.max(1, legW / 2 + SKIRT_EASE - inset);
+  // Đùi: váy phủ dọc đùi tới chỗ gấu đứng thẳng chạm (`skirtCover`)
   thighs.forEach(([h, k], i) => {
     const l = Math.hypot(k[0] - h[0], k[1] - h[1]) || 1;
     const cover = (lt: number) => skirtCover(g, height, angles[i], lt);

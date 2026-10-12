@@ -16,7 +16,8 @@ import {
 import { cladThigh } from "./act3";
 import { bendOf, REACH_ELBOW, solveTwoBone } from "./ik";
 import { limbWidths, type CharacterData } from "./schema";
-import { hull, skirtCover, skirtFall, skirtOf } from "./skirt";
+import { hull } from "./skirt";
+import { skirtCover, skirtFall, skirtOf } from "./skirtShape";
 import { shoulderRoot } from "./torso";
 import type { BodyPart, Pose, Pt, Reach, View } from "./types";
 

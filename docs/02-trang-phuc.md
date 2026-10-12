@@ -1019,18 +1019,23 @@ khớp khối thân ở mọi nấc, kể cả `quarter` có `cast[].turn` lớn
 | `rise` | 27 | Cạp cao hơn hông bấy nhiêu px, nhân `rig.height` |
 | `waist` | 40 | Nửa rộng cạp |
 | `length` | 52 | Gấu thấp hơn cạp bấy nhiêu px khi đùi buông thẳng, nhân `rig.height` |
-| `flare` | 30 | Gấu rộng hơn cạp bấy nhiêu px mỗi bên |
+| `flare` | 12 | Gấu rộng hơn cạp bấy nhiêu px mỗi bên; âm là gấu hẹp hơn cạp |
 | `pleats` | 8 | Số nếp chia đều quanh khối; `0` là trơn |
 
 - **Gấu rủ theo đùi.** Gọi `α` là trung bình góc hai đùi so với trục thân; gấu thấp hơn
-  cạp `length · max(0, cos α)` và xoè `flare · max(0, cos α)`. Đứng, đi bộ (hai đùi ngược
+  cạp `length · max(0, cos α)` và xoè `flare · max(0, cos α)`. Vành gấu không hẹp hơn ống đùi ở mút
+  phần váy phủ: nửa rộng gấu không dưới `hipHalf` cộng bán kính ống ấy, nửa sâu không dưới bán kính ấy
+  (`skirtSpread`), nên `flare` âm không cho chân xuyên ra gấu. Đứng, đi bộ (hai đùi ngược
   dấu) là váy buông đủ; ngồi đùi ngang thì vành gấu co về sát cạp, không rủ xuống ghế. Người 3D
   lấy góc đùi thật so với trục thân, không lấy góc trên khung: người ngồi quay mặt vào ống kính có
   đùi chiếu ra ngắn mà váy vẫn nằm trên lòng.
 - **Đùi nằm trong váy.** Mỗi đùi là một ống nửa rộng nửa nét chân cộng `SKIRT_EASE`, từ
   hông dọc đùi tới chỗ gấu buông thẳng chạm (`(length − rise) / cos` góc đùi), không quá
-  `length` và không quá `SKIRT_REACH` chiều dài đùi đang vẽ để gối luôn lộ. Ở mút ống gấu
-  rủ khỏi đùi thêm `SKIRT_FALL · flare · (1 − max(0, cos α))`. Sải chân thì váy giãn theo
+  `length` và không quá tầm vạt `lt · (SKIRT_REACH + (1 − SKIRT_REACH) · min(1, (length − rise) / lt))`
+  với `lt` chiều dài đùi đang vẽ (`skirtCover`): đứng thẳng ống luôn tới gấu, váy ngắn ngồi vẫn lộ
+  gối, váy tới gối thì phủ tới gối, không bao giờ quá gối. Người 3D mặc đồ có ống thon như đùi, gốc
+  `cladThigh`, gối theo `CLAD_TAPER`. Ở mút ống gấu rủ khỏi đùi thêm
+  `SKIRT_FALL · max(0, flare) · (1 − max(0, cos α))`. Sải chân thì váy giãn theo
   đùi trước và đùi sau, chân không xuyên ra hai bên; ngồi thì váy phủ lên lòng tới quá nửa
   đùi. Người 3D đo tầm phủ trên đùi thật rồi đổi ra phần ấy của đùi đã chiếu.
 - **Nếp** là đoạn thẳng trên mặt nón từ `0.3` tới `0.9` quãng cạp–gấu, ở kinh độ giữa hai
@@ -1047,15 +1052,32 @@ khớp khối thân ở mọi nấc, kể cả `quarter` có `cast[].turn` lớn
 - `skirtPaths` nhớ 64 kết quả theo bộ số, góc quay, đùi làm tròn tới px, `rig.height`, nét, và
   với người 3D thêm ống kính trong hệ thân cùng góc, độ dài đùi thật làm tròn.
 - Cắm được vào vật (`items`), đổi bằng `equip` như mọi `hem`.
+- **Tay buông nằm ngoài váy.** Người 3D đứng nghỉ choãi tay thêm tới khi cẳng tay và bàn tay cách hình bao
+  váy một `CLAD_GAP` (`roots3`, [01](01-rig.md#người-3d-mặc-đồ)); `flare` lớn là tay xoè như chim cánh cụt.
+  `actJoints` đọc cùng váy nên `check` đo đúng khớp vẽ ra.
+- `pieces.hem` không phải `src: "sculpt"` thì người 3D không mặc váy dựng khối, kể cả khi còn sót `skirt`.
+
+Dáng hay dùng, `rig.height = 1` (đùi `78`, cạp mặc định `rise` `27`):
+
+| Dáng | `skirt` | Ghi chú |
+|---|---|---|
+| Chữ A ngắn xếp ly | `{}` | Mặc định: gấu `25` dưới hông, xoè `12` |
+| Thẳng ngang gối | `{ "length": 100, "flare": 0, "pleats": 0 }` | Gấu `73` dưới hông, ngay trên gối; `length` `105` là đúng gối |
+| Bút chì | `{ "length": 100, "flare": -8, "pleats": 0 }` | Thon từ hông về gấu; người mặc đồ đùi to thì gấu dừng ở bề ngang hai đùi |
+
+Gấu của váy thẳng hay bút chì không hẹp hơn hai đùi, nên với người mặc đồ đùi đầy cả hai đều phình ở
+hông rồi thon về gấu theo ống đùi. `flare` âm quá mức ấy không đổi gì thêm.
 
 | Hằng số | Giá trị | Nghĩa |
 |---|---:|---|
 | `SKIRT_EASE` | 4 | Ống phủ đùi rộng hơn nửa nét chân bấy nhiêu px |
-| `SKIRT_REACH` | 0.7 | Váy phủ dọc đùi không quá bấy nhiêu phần đùi |
+| `SKIRT_REACH` | 0.7 | Vạt váy ngắn phủ dọc đùi không quá bấy nhiêu phần đùi; gấu đứng thẳng càng thấp thì vạt càng tới gần gối |
 | `SKIRT_FALL` | 0.5 | Đùi càng ngang, gấu ở mút đùi rủ thêm bấy nhiêu lần `flare` |
 
-Không mô phỏng vải: lòng váy lúc ngồi là bao lồi nên mép dưới thẳng từ mông tới mút đùi,
-và đùi chĩa lên quá ngang thì váy chỉ còn ôm hông. Studio chọn ở ô Tà áo (ô Váy dựng khối
+Không mô phỏng vải: khối váy là **một bao lồi**, nên không có dáng lõm — váy đuôi cá, váy tầng, eo
+thắt giữa vạt đều không dựng được; hai chân sải rộng thì váy giãn thành một khối căng giữa hai đùi chứ
+không xếp nếp. Lòng váy lúc ngồi mép dưới thẳng từ mông tới mút đùi, và đùi chĩa lên quá ngang thì váy
+chỉ còn ôm hông. Váy dài quá gối lúc ngồi chỉ phủ lòng tới gối: phần vải rủ từ gối xuống không dựng. Studio chọn ở ô Tà áo (ô Váy dựng khối
 đầu lưới đặt `src: "sculpt"`, `layer: "under"`); thẻ khi ấy
 chỉ còn màu váy, một thanh cho mỗi số và ô Vẽ dưới thân áo.
 

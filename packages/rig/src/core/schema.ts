@@ -233,8 +233,8 @@ export const SkirtSchema = z.object({
   waist: z.number().default(40),
   /** Gấu thấp hơn cạp bấy nhiêu khi đùi buông thẳng, nhân `rig.height` */
   length: z.number().default(52),
-  /** Gấu rộng hơn cạp bấy nhiêu mỗi bên */
-  flare: z.number().default(30),
+  /** Gấu rộng hơn cạp bấy nhiêu mỗi bên; âm là gấu hẹp hơn cạp (váy bút chì), không hẹp hơn hai đùi */
+  flare: z.number().default(12),
   /** Số nếp quanh khối; `0` là trơn */
   pleats: z.number().default(8),
 });

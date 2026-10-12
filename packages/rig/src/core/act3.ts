@@ -1,9 +1,10 @@
-import { D, RIG } from "./constants";
+import { D, RIG, TORSO_DEPTH } from "./constants";
 import { lengths } from "./geometry";
 import { REACH_ELBOW } from "./ik";
 import type { V3 } from "./lens";
-import { limbWidths, type CharacterData, type Garment } from "./schema";
-import { garmentShoulder, garmentSocket, type P2, type Rig } from "./torso";
+import { limbWidths, type CharacterData, type Garment, type Skirt } from "./schema";
+import { profileAt, skirtSide, wornSkirt } from "./skirtShape";
+import { garmentOf, garmentShoulder, garmentSocket, profile, type P2, type Rig } from "./torso";
 
 /**
  * Khung xương của người 3D (`stickman.ts`) ở `rig.height`, đơn vị three: thân, cổ, tay, chân là `lengths(height)` của lõi
@@ -113,53 +114,125 @@ export function cladProfile(pts: readonly P2[], room: ArmRoom): { pts: P2[]; dep
   return { pts: out, depth: out.map(([a, y]) => CLAD_DEPTH * Math.min(a, armSide(room, y))) };
 }
 
+/** Bàn tay xoè cỡ `1` dài chừng này, đơn vị three; xoè không dài quá `OPEN_REACH` cẳng tay */
+const OPEN_LEN = 0.21;
+const OPEN_REACH = 0.55;
+
+/** Cỡ bàn tay người mặc đồ theo bán kính cổ tay `rw` (three): nhân vào `HAND` và `handGeometry` */
+export const handScale = (rw: number) => Math.max(1, rw / 0.048);
+
+/** Cỡ dọc của bàn tay xoè cỡ `k` trên cẳng tay dài `foreArm` (three): chi to mà ngắn thì găng tròn lại, không dài tới gối */
+export const openLength = (k: number, foreArm: number) =>
+  Math.min(k, Math.max(1, (OPEN_REACH * foreArm) / OPEN_LEN));
+
+/** Bàn tay của người mặc đồ tay bề dày `sleeve`: cỡ `k`, cỡ dọc khi xoè `long` và độ dài khi xoè, px */
+export function cladHand(sleeve: number, stroke: number, foreArm: number) {
+  const k = handScale(((sleeve + stroke) / 200) * 0.8);
+  const long = openLength(k, foreArm / 100);
+  return { k, long, length: OPEN_LEN * long * 100 };
+}
+
+/** Người 3D mà `roots3` đặt tay: `palette.clad`, bề dày tay chân (`limbWidths`), `palette.bicep`, váy dựng khối đang mặc */
+export interface Build3 {
+  clad?: boolean;
+  sleeve: number;
+  trouser: number;
+  bicep?: number;
+  skirt?: Skirt;
+}
+
+/** Góc choãi nhỏ nhất từ `SPLAY3` mà `fits` nhận, chia đôi tới `1.2` radian */
+function widen(fits: (splay: number) => boolean) {
+  if (fits(SPLAY3)) return SPLAY3;
+  let [lo, hi] = [SPLAY3, 1.2];
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) hi = mid;
+    else lo = mid;
+  }
+  return hi;
+}
+
 /**
- * Gốc vai `[ngang, cao trên hông]`, nửa khoảng hai gốc chân của người 3D, đơn vị three, và góc tay choãi. `arm` (px,
- * `cladArm`) có thì gốc vai ở `garmentSocket`: nắp ống tay ôm góc vai áo, `bicep` nở nó ra ngoài sườn áo; tay buông choãi
- * `SPLAY3` như người que, dưới nách sườn áo lùi tới cách mép trong khuỷu một `CLAD_GAP` (`room`). Ngang hông, mép trong
- * cẳng tay cách mép ngoài gốc đùi `thigh` ít nhất một `CLAD_GAP`: hông rộng hơn thì tay choãi thêm. Không thì gốc vai trên
- * viền thân ở độ cao `shoulderDrop`
+ * Cẳng tay và bàn tay buông (dài thêm `hand` px sau cổ tay) nằm ngoài hình bao `side` của váy: mép trong cách mặt váy
+ * một `CLAD_GAP` từ ngang khuỷu tới đầu bàn tay. Hai bên đều gãy khúc nên chỉ đo ở các chỗ gãy
  */
-export const roots3 = (
-  garment: Partial<Garment> | undefined,
-  rig: Rig,
-  arm?: number,
-  bicep = 0,
-  thigh = 0,
-) => {
+function clearsSkirt(
+  room: Omit<ArmRoom, "side">,
+  hand: number,
+  side: { at: (y: number) => number; ys: number[] },
+) {
+  const c = Math.cos(room.splay);
+  const [y0, yR, y1] = [
+    room.len[0],
+    room.len[0] + room.len[1],
+    room.len[0] + room.len[1] + hand,
+  ].map((t) => room.at[1] + t * c);
+  return [y0, yR, y1, ...side.ys.filter((y) => y > y0 && y < y1)].every(
+    (y) => armInner(room, y) >= side.at(y),
+  );
+}
+
+/**
+ * Gốc vai `[ngang, cao trên hông]`, nửa khoảng hai gốc chân của người 3D, đơn vị three, và góc tay choãi. Người mặc đồ
+ * (`b.clad`): gốc vai ở `garmentSocket`, nắp ống tay `cladArm` ôm góc vai áo, `bicep` nở nó ra ngoài sườn áo; tay buông
+ * choãi `SPLAY3` như người que, dưới nách sườn áo lùi tới cách mép trong khuỷu một `CLAD_GAP` (`room`). Ngang hông, mép
+ * trong cẳng tay cách mép ngoài gốc đùi `cladThigh` ít nhất một `CLAD_GAP`: hông rộng hơn thì tay choãi thêm. Người que:
+ * gốc vai trên viền thân ở độ cao `shoulderDrop`. Mặc váy dựng khối thì tay choãi thêm tới khi cẳng tay và bàn tay nằm
+ * ngoài váy đứng thẳng (`skirtSide`)
+ */
+export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Build3) => {
   const hip = rig.hipHalf / 100;
-  if (!arm)
+  const skirt = b?.skirt;
+  const h = rig.height;
+  const inset = rig.stroke / 2;
+  const len = [RIG.upperArm * h, RIG.foreArm * h] as const;
+  if (!b?.clad) {
+    const at = [garmentShoulder(garment, rig), -(RIG.torso * h - rig.shoulderDrop)] as const;
+    const shoulder = [at[0] / 100, -at[1] / 100] as readonly [number, number];
+    if (!skirt) return { shoulder, hip, splay: SPLAY3 };
+    // nét tay người que bán kính `BONES3.limb` nhân bề dày, đầu nét tròn
+    const limb = BONES3.limb * 10 * b.sleeve;
+    const aW = Math.max(1, skirt.waist - inset);
+    const leg = b.trouser / 2;
+    const side = skirtSide(skirt, h, aW, TORSO_DEPTH * aW, rig.hipHalf, leg, leg, inset);
+    const r = [limb, limb, limb] as const;
     return {
-      shoulder: [
-        garmentShoulder(garment, rig) / 100,
-        (RIG.torso * rig.height - rig.shoulderDrop) / 100,
-      ] as readonly [number, number],
+      shoulder,
       hip,
-      splay: SPLAY3,
+      splay: widen((splay) => clearsSkirt({ at, cap: limb, splay, r, len }, limb, side)),
     };
-  const cap = arm * (1 + bicep);
+  }
+  const arm = cladArm(b.sleeve, rig.stroke);
+  const thigh = cladThigh(b.trouser, rig.stroke);
+  const cap = arm * (1 + (b.bicep ?? 0));
   const at = garmentSocket(garment, rig, arm, cap);
-  const len = [RIG.upperArm * rig.height, RIG.foreArm * rig.height] as const;
   const k = arm / CLAD_TAPER.arm[0];
   const r = [cap, k * CLAD_TAPER.arm[1], k * CLAD_TAPER.arm[2]] as const;
   const hipEdge = rig.hipHalf + thigh;
-  const fits = (splay: number) => armInner({ at, cap, splay, r, len }, 0) >= hipEdge;
-  let splay = SPLAY3;
-  if (!fits(splay)) {
-    let [lo, hi] = [SPLAY3, 1.2];
-    for (let i = 0; i < 40; i++) {
-      const mid = (lo + hi) / 2;
-      if (fits(mid)) hi = mid;
-      else lo = mid;
-    }
-    splay = hi;
-  }
-  const side = armInner({ at, cap, splay, r, len }, at[1] + len[0] * Math.cos(splay));
+  const hand = cladHand(b.sleeve, rig.stroke, len[1]).length;
+  const torso = skirt && profile(garmentOf(garment, true), rig, inset).pts;
+  const yW = skirt ? -skirt.rise * h : 0;
+  const knee = (thigh * CLAD_TAPER.leg[1]) / CLAD_TAPER.leg[0];
+  const roomAt = (splay: number): ArmRoom => {
+    const room = { at, cap, splay, r, len };
+    return { ...room, side: armInner(room, at[1] + len[0] * Math.cos(splay)) };
+  };
+  const fits = (splay: number) => {
+    const room = roomAt(splay);
+    if (armInner(room, 0) < hipEdge) return false;
+    if (!skirt || !torso) return true;
+    // cạp liền mặt thân áo đã lùi theo tay; nửa px cạp 3D nhô ra nằm trong `CLAD_GAP`
+    const { pts, depth } = cladProfile(torso, room);
+    const [aW, dW] = profileAt(pts, depth, yW);
+    return clearsSkirt(room, hand, skirtSide(skirt, h, aW, dW, rig.hipHalf, thigh, knee, inset));
+  };
+  const room = roomAt(widen(fits));
   return {
     shoulder: [at[0] / 100, -at[1] / 100] as readonly [number, number],
     hip,
-    splay,
-    room: { at, cap, splay, r, len, side } satisfies ArmRoom,
+    splay: room.splay,
+    room,
   };
 };
 
@@ -349,14 +422,13 @@ export function actJoints(
   const B = bones3(c.rig.height);
   const pal = c.palette;
   const w = limbWidths(pal);
-  const arm = pal.clad ? cladArm(w.sleeve, c.rig.stroke) : undefined;
-  const roots = roots3(
-    c.pieces.torso.garment,
-    c.rig,
-    arm,
-    pal.bicep,
-    cladThigh(w.trouser, c.rig.stroke),
-  );
+  const roots = roots3(c.pieces.torso.garment, c.rig, {
+    clad: pal.clad,
+    sleeve: w.sleeve,
+    trouser: w.trouser,
+    bicep: pal.bicep,
+    skirt: wornSkirt(c.pieces.hem),
+  });
   const flip = !!W.flip;
   const near = flip ? 1 : -1;
   const seated = !!W.seated;

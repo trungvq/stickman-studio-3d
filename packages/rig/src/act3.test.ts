@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { act, type Acting } from './act';
 import { actJoints, armInner, armSide, CLAD_DEPTH, CLAD_GAP, cladArm, cladProfile, cladThigh, roots3, SPLAY3, type ActJoint } from './core/act3';
-import { defaultCharacter, limbWidths } from './core/schema';
+import { D } from './core/constants';
+import { defaultCharacter, limbWidths, SkirtSchema } from './core/schema';
 import { garmentOf, profile } from './core/torso';
 import type { Figure } from './stickman';
 
@@ -45,15 +46,16 @@ function drawn(p: Figure, sp: Acting): Record<ActJoint, [number, number, number]
 }
 
 describe('actJoints', () => {
-  it('trùng khớp người que three mà `act` đặt, ở mọi kiểu tư thế, cả người mặc đồ và người lùn', async () => {
+  it('trùng khớp người que three mà `act` đặt, ở mọi kiểu tư thế, cả người mặc đồ, người lùn và người mặc váy', async () => {
     const { fromCharacter } = await import('./stickman');
     const r = rng(7);
     const ang = (k = 120) => (r() * 2 - 1) * k;
-    const cases: [boolean, boolean, number][] = [[false, false, 1], [true, false, 1], [false, true, 1], [false, false, 0.65], [true, true, 0.65]];
-    for (const [seated, clad, height] of cases) {
+    const cases: [boolean, boolean, number, number?][] = [[false, false, 1], [true, false, 1], [false, true, 1], [false, false, 0.65], [true, true, 0.65], [false, false, 1, 30], [false, true, 1, 12], [true, true, 0.65, 30]];
+    for (const [seated, clad, height, flare] of cases) {
       const c = defaultCharacter();
       c.palette.clad = clad;
       c.rig.height = height;
+      if (flare !== undefined) c.pieces.hem = { ...c.pieces.hem, src: 'sculpt', skirt: SkirtSchema.parse({ flare }) };
       const json = c as unknown as Parameters<typeof fromCharacter>[0];
       const p = fromCharacter(json, { seated });
       for (let i = 0; i < 40; i++) {
@@ -83,9 +85,10 @@ describe('actJoints', () => {
     const c = defaultCharacter();
     for (const style of ['tshirt', 'shirt', 'suit', 'hoodie'] as const) {
       const g = { style };
-      const arm = cladArm(limbWidths({ clad: true }).sleeve, c.rig.stroke);
-      const [x, h] = roots3(g, c.rig, arm).shoulder.map((v) => v * 100);
-      const [xb, hb] = roots3(g, c.rig, arm, 0.7).shoulder.map((v) => v * 100);
+      const { sleeve, trouser } = limbWidths({ clad: true });
+      const arm = cladArm(sleeve, c.rig.stroke);
+      const [x, h] = roots3(g, c.rig, { clad: true, sleeve, trouser }).shoulder.map((v) => v * 100);
+      const [xb, hb] = roots3(g, c.rig, { clad: true, sleeve, trouser, bicep: 0.7 }).shoulder.map((v) => v * 100);
       const pts = profile(garmentOf(g, true), c.rig, c.rig.stroke / 2).pts;
       // khoảng cách từ tâm (x, −h) tới đường qua hai điểm
       const dist = (a: number[], b: number[]) => Math.abs((b[0] - a[0]) * (a[1] + h) - (a[0] - x) * (b[1] - a[1])) / Math.hypot(b[0] - a[0], b[1] - a[1]);
@@ -105,8 +108,8 @@ describe('actJoints', () => {
     const g = { style: 'tshirt' as const };
     expect(roots3(g, c.rig).splay).toBe(SPLAY3);
     for (const [w, bicep, height, hipHalf] of [[11, 0, 1, 22], [19, 0.7, 1, 22], [19, 0, 0.65, 22], [15, 0, 1, 30]] as const) {
-      const rig = { ...c.rig, height, hipHalf }, arm = cladArm(w, 6), thigh = cladThigh(17, 6);
-      const r = roots3(g, rig, arm, bicep, thigh), room = r.room!;
+      const rig = { ...c.rig, height, hipHalf }, thigh = cladThigh(17, 6);
+      const r = roots3(g, rig, { clad: true, sleeve: w, trouser: 17, bicep }), room = r.room!;
       const elbow = room.at[0] + 62 * height * Math.sin(r.splay) - room.r[1] / Math.cos(r.splay);
       expect(elbow - room.side, `${w} ${bicep} ${height}`).toBeCloseTo(CLAD_GAP, 6);
       expect(armInner(room, 0)).toBeGreaterThanOrEqual(hipHalf + thigh - 1e-6);
@@ -117,6 +120,21 @@ describe('actJoints', () => {
         if (y > room.at[1] + room.cap) expect(a).toBeLessThanOrEqual(armSide(room, y) + 1e-9);
         if (y < room.at[1] + room.len[0] * Math.cos(r.splay)) expect(depth[i]).toBeLessThanOrEqual(CLAD_DEPTH * room.side + 1e-9);
       });
+    }
+  });
+
+  it('mặc váy: tay choãi vừa đủ cho cẳng tay và bàn tay ra ngoài váy, váy xoè hơn thì choãi hơn', () => {
+    const c = defaultCharacter();
+    const g = { style: 'blouse' as const, hem: -18 };
+    for (const clad of [false, true]) {
+      const w = limbWidths({ clad });
+      const at = (flare?: number) => roots3(g, c.rig, { clad, ...w, ...(flare !== undefined && { skirt: SkirtSchema.parse({ flare }) }) }).splay;
+      const bare = at();
+      expect(at(-8), `${clad}`).toBeGreaterThanOrEqual(bare);
+      expect(at(12), `${clad}`).toBeGreaterThan(bare);
+      expect(at(30), `${clad}`).toBeGreaterThan(at(12));
+      // chữ A mặc định không choãi quá 13 độ
+      expect(at(12) / D, `${clad}`).toBeLessThan(13);
     }
   });
 
