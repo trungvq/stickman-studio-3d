@@ -16,7 +16,7 @@ const AO_KERNEL = Array.from({ length: AO_N }, (_, i) => {
 // tới mầm gói một số, mã·1024 + bán kính px, độ sâu vật, độ đậm); `uInk[mã]` = (bề dày three, khe vật liệu); chỉ dò trong
 // các khung điểm ảnh (gồm cả hai mép) ôm vật có nét và bán kính nét. Cùng vật
 // liệu (lọn cắm vào vỏ tóc) thì nét nhạt dần theo khe sâu ở mép; vật khác thì nét chỉ dừng ở chỗ nó nằm hẳn trước.
-const MAX_INK = 32, MAX_RECTS = 8;
+const MAX_INK = 128, MAX_RECTS = 8;
 const INK_GLSL = /* glsl */ `
 uniform vec2 uInk[${MAX_INK}];
 ivec2 inkClamp(ivec2 q, vec4 r){ return clamp(q, ivec2(r.xy), ivec2(r.zw)); }
@@ -161,13 +161,14 @@ void main(){
   float wr = invz(texture2D(tDepth, vUv + vec2(px.x, 0.0)).r);
   float wu = invz(texture2D(tDepth, vUv + vec2(0.0, px.y)).r);
   float wd = invz(texture2D(tDepth, vUv - vec2(0.0, px.y)).r);
-  if (uAo > 0.0 && d0 < 0.99999) {
+  vec4 n0 = texture2D(tNormal, vUv);
+  // lưới người (a 0,3) không nhận: cằm sát cổ áo, tay sát thân thành vệt lem; bóng đổ của đèn đã đủ
+  if (uAo > 0.0 && d0 < 0.99999 && abs(n0.a - 0.3) > 0.05) {
     float o = smoothstep(0.08, 0.55, ssao(vUv)) * uAo;
     col *= mix(vec3(1.0), uShadowTint * 0.8, clamp(o, 0.0, 1.0) * 0.75);
   }
   float lap = (4.0 * w0 - wl - wr - wu - wd) / w0;
   float crease = 0.0;
-  vec4 n0 = texture2D(tNormal, vUv);
   vec3 a = n0.xyz * 2.0 - 1.0;
   vec2 off[4] = vec2[](vec2(-px.x, 0.0), vec2(px.x, 0.0), vec2(0.0, px.y), vec2(0.0, -px.y));
   float wn[4] = float[](wl, wr, wu, wd);
@@ -372,7 +373,8 @@ function fitOrtho(cam: THREE.OrthographicCamera, dir: THREE.Vector3, region: THR
  * và tối đa `MAX_LAMP_SHADOWS` đèn rọi (phối cảnh); cảnh vào render target có độ sâu, pháp tuyến vào một lượt riêng; lượt hậu kỳ
  * dò nét mực (mép độ sâu, cạnh gấp pháp tuyến) và bóng tiếp xúc; lượt cuối chấm hậu kỳ toàn khung. Vật `userData.noShadow` và
  * vỏ ngược (`BackSide`) không đổ bóng; vật `userData.noCrease` (người que) không có nét cạnh gấp; vật liệu `userData.ink` (`npr({ ink })`)
- * có nét bóng dáng dò ở hậu kỳ, cả khi tắt `outline` như vỏ ngược.
+ * có nét bóng dáng dò ở hậu kỳ, cả khi tắt `outline` như vỏ ngược; các mesh cùng `userData.inkChain` và cùng vật liệu chung một
+ * mã vật, chỗ nối không có nét.
  */
 export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSize = 2048 }: PipelineOptions = {}): Pipeline {
   renderer.localClippingEnabled = true;
@@ -610,15 +612,19 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       const slots = new Map<THREE.Material, number>(), f = (camera.projectionMatrix.elements[5] * rh) / 2;
       const boxes: THREE.Box2[] = [];
       let inks = 0, reach = 0, whole = false;
+      const chains = new Map<string, number>();
       scene.traverse((o) => {
         const m = o as THREE.Mesh;
         if (!m.isMesh || !m.visible || Array.isArray(m.material)) return;
         if (m.material.side === THREE.BackSide || !m.material.depthWrite) return void shells.push(m);
         const w: number = m.material.userData.ink ?? 0;
         let id = 0;
-        if (w > 0 && inks < MAX_INK - 1) {
+        const chain = m.userData.inkChain === undefined ? '' : `${m.userData.inkChain} ${m.material.uuid}`;
+        if (w > 0 && (chains.has(chain) || inks < MAX_INK - 1)) {
           if (!slots.has(m.material)) slots.set(m.material, slots.size + 1);
-          inkTable[(id = ++inks)].set(w, slots.get(m.material)!);
+          id = chains.get(chain) ?? ++inks;
+          inkTable[id].set(w, slots.get(m.material)!);
+          if (chain) chains.set(chain, id);
           if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
           const r = new THREE.Box2();
           boxes.push(r);

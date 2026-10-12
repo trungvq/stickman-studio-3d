@@ -8,7 +8,7 @@ import type { V3 } from "./lens";
 export const HUMAN_HEAD = {
   /** Bề ngang nở ra về phía đáy, phần: má phính, quai hàm tròn */
   jaw: 0.3,
-  /** Đáy kéo xuống, phần: cằm chạm cổ áo */
+  /** Đáy kéo xuống, phần */
   drop: 0.14,
   /** Đáy cằm vạt phẳng, phần: cằm chữ U rộng thay vì nhọn */
   flat: 0.1,

@@ -79,9 +79,10 @@ function sheetGeometry(grid: Vec3[][]) {
 
 /**
  * Thân áo dựng khối của rig (`pieces.torso.garment`), gắn vào nhóm thân `spine`; trả mặt cắt và bề sâu đã dựng. `tuck` (px, y
- * xuống) là cạp váy liền mặt thân: nét, chấm, mảng tô dưới đó nằm trong váy nên không dựng, khỏi lòi qua cạp.
+ * xuống) là cạp váy liền mặt thân: nét, chấm, mảng tô dưới đó nằm trong váy nên không dựng, khỏi lòi qua cạp. `sil`: thân
+ * áo có thêm nét bóng dáng hậu kỳ bề dày ấy (`npr({ ink })`).
  */
-export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, arm, tuck = Infinity }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom; tuck?: number } & Palette) {
+export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, arm, tuck = Infinity, sil }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom; tuck?: number; sil?: number } & Palette) {
   const t = torsoMesh(garment, rig, arm);
   const pal = { color, accent, ink };
   const matOf = (fill: MarkFill, soft = 1) => npr({ color: colorOf(fill, pal), stipple: 0.05, stippleScale: 3, soft });
@@ -89,7 +90,7 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
   const lineR = (k: number) => (k * rig.stroke * U) / 2;
 
   const body = bodyGeometry(t.profile, t.depth);
-  const m = new THREE.Mesh(body, matOf('color'));
+  const m = new THREE.Mesh(body, sil ? npr({ color, stipple: 0.05, stippleScale: 3, soft: 1, ink: sil }) : matOf('color'));
   m.castShadow = true;
   spine.add(m);
   const h = new THREE.Mesh(body, hullMaterial(0.026, ink));

@@ -1309,7 +1309,7 @@ của lõi (`core/act3.ts`) trả đúng các khớp ấy trong toạ độ th�
 đo giật tay chân trên chúng ([03](03-scene.md#giật-trên-hình)). Hai bên dùng chung:
 
 - **Khung xương** `bones3(rig.height)` (đơn vị three, tức rig chia 100), gốc vai và gốc chân
-  `roots3(áo, rig, cladArm, bicep, cladThigh)` cùng góc tay choãi của nó, tâm đầu `head3(khung)` — `stickman.ts` dựng người que từ
+  `roots3(áo, rig, cladArm, bicep, cladThigh)` cùng góc tay choãi của nó, tâm đầu `head3(khung, human)` — `stickman.ts` dựng người que từ
   chúng, `Figure.bones` giữ khung của người ấy. `BONES3` là khung ở `height = 1`.
 - **Luật đọc góc** `actAngles`: kênh nâng đọc góc soạn ở `side` và số dang, kênh không có cờ về dáng
   nghỉ (tay buông `[0, 0]`, chân thẳng, ngồi thì đùi `[90, −90]`, không dang).
@@ -1324,7 +1324,7 @@ của lõi (`core/act3.ts`) trả đúng các khớp ấy trong toạ độ th�
 | `thigh` / `shin` | `0,78` / `0,92` | có |
 | `head` (bán kính sọ) | `0,64` | không |
 | `limb` (nửa bề dày nét người que) | `0,042` | không |
-| Khớp cổ → tâm đầu `head3` | `neck + 0,09 + head · 1,04` | chỉ phần `neck` |
+| Khớp cổ → tâm đầu `head3` | `neck + 0,09 + head · 1,04`, đầu `human` thêm `HUMAN_NECK` `0,1` | chỉ phần `neck` |
 
 **Sáu đoạn là `lengths(height)` của lõi chia 100.** Hông người 3D lấy thẳng `world.hip`, mà `sceneAt`
 đặt hông cho bàn chân thấp nhất chạm sàn bằng `feet(pose, height)` — chân 3D phải dài đúng chừng ấy,
@@ -1422,11 +1422,11 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
 
 - **Đầu `human` là đầu chibi nặn từ mặt cầu.** `humanSkull` (`core/humanHead.ts`) nhận một điểm
   của sọ đơn vị (y lên, z ra trước mặt) và trả điểm trên đầu: nửa trên giữ nguyên, nửa dưới nở
-  ngang về phía đáy (`jaw`) thành má phính và quai hàm tròn, kéo dài (`drop`) vừa đủ cho cằm chạm cổ
-  áo, vạt đáy thành cằm chữ U rộng (`flat`), hơi dời ra trước (`chin`) và thu gáy (`nape`); không có
-  mũi. Mọi số nhân bình phương độ sâu dưới
-  xích đạo nên viền đầu không gãy ở chỗ nối. Tâm đầu và `head3` không đổi: khớp của `actJoints`, mốc
-  2D và đồ đội giữ nguyên.
+  ngang về phía đáy (`jaw`) thành má phính và quai hàm tròn, kéo dài (`drop`), vạt đáy thành cằm chữ U
+  rộng (`flat`), hơi dời ra trước (`chin`) và thu gáy (`nape`); không có mũi. Mọi số nhân bình phương
+  độ sâu dưới xích đạo nên viền đầu không gãy ở chỗ nối. Đầu ngồi cao hơn đầu cầu `HUMAN_NECK`
+  (`head3`, `actJoints` cùng đọc): một đoạn cổ da lộ ra giữa cằm và cổ áo. Vỏ viền dưới cằm chìm sau
+  cổ và cổ áo nên sọ có thêm nét bóng dáng dò ở hậu kỳ (`npr({ ink })`).
 - **Nét mặt chibi nằm trên mặt nặn.** Lưới nét mặt đi qua cùng `humanSkull` nên mồm, nếp nhăn theo
   má ở mọi góc quay. `CHIBI` (`core/face.ts`) cộng vào `face` của JSON nhân vật: mắt hạ `10`, hai mắt
   giãn thêm `18`, mồm gần mắt `10` px (`chibiShape`) — kính và `headFit` đọc chỗ mắt đã dời. Mỗi mắt
@@ -1476,6 +1476,12 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   bán kính đùi dưới gấu, khối hông lùi hẳn vào trong thân áo: mông chỉ phồng ra dưới gấu, không lồi qua
   lưng áo. Váy dựng khối khoét lỗ đùi theo gốc đùi (`2 · cladThigh`); cạp liền mặt thân áo ở độ cao cạp, cả
   bề ngang lẫn bề sâu, thay `skirt.waist`: thân đi xuống váy không gờ.
+- **Nét tay chân trên thân.** Tay buông cách sườn áo `CLAD_GAP`, cẳng tay vắt trước bụng: vỏ viền chìm sau
+  thân áo. Thân áo, khối hông, ống tay chân, bàn tay và giày có thêm nét bóng dáng dò ở hậu kỳ (`LIMB_SIL`,
+  `npr({ ink })`). Thân áo và tay áo cùng màu là cùng vật liệu nên nét chỉ hiện ở chỗ tay nằm hẳn trước thân,
+  vai liền không có đường may; các đoạn của một chi chung một mã vật (`userData.inkChain`), khuỷu và gối
+  không có nét. Người mặc đồ chiếm chừng hai chục mã vật, `MAX_INK` (`128`) của pipeline đủ cho năm, sáu
+  người; quá thì người sau chỉ còn vỏ viền.
 - **Va chạm** có thêm `hand` và `foot` (`handR`, `footL`… trong `touch`): nang bàn tay theo dáng
   đang hiện, nang giày đáy đúng mặt đế; nang đầu `human` kéo xuống ôm má. Đồ cầm khai `touch` cả cẳng
   tay lẫn bàn tay cầm.

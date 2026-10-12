@@ -24,6 +24,11 @@ const ink = npr({ color: INK, stipple: 0 });
 const hull = hullMaterial(0.026, INK);
 /** Vỏ viền chi của người `clad`: mỏng hơn thân để chỗ tay lấn vào thân áo không thành vệt đen */
 const limbHull = hullMaterial(0.018, INK);
+/**
+ * Nét bóng dáng hậu kỳ của thân áo, khối hông, tay chân người `clad`: vỏ ngược của tay buông sát sườn hay vắt trước bụng
+ * chìm sau thân áo. Thân áo và tay áo cùng màu là cùng vật liệu nên vai liền không có đường may
+ */
+const LIMB_SIL = 0.018;
 
 /** `-1` bên phải người (−x khi người nhìn +z), `1` bên trái. */
 export type Side = -1 | 1;
@@ -335,7 +340,7 @@ export function stickman(o: StickmanOptions): Figure {
   const thighR = clad ? cladThigh(trouserWidth, rig.stroke) : 0;
   const at = roots3(garment, rig, clad ? cladArm(sleeveWidth, rig.stroke) : undefined, bicep, thighR);
   const [sx, sy] = at.shoulder;
-  const body = sculptTorso(spine, { garment, rig, color, accent, ink: INK, arm: at.room, ...(clad && skirt && { tuck: -skirt.rise * rig.height }) });
+  const body = sculptTorso(spine, { garment, rig, color, accent, ink: INK, arm: at.room, ...(clad && { sil: LIMB_SIL }), ...(clad && skirt && { tuck: -skirt.rise * rig.height }) });
   // khối thân áo là mảnh đầu tiên: `collide` lấy hộp thân từ nó
   spine.children[0].userData.torso = true;
   let skirtRig: Figure['skirt'];
@@ -347,8 +352,8 @@ export function stickman(o: StickmanOptions): Figure {
   }
   const neck = joint(spine, 0, B.torso, 0);
   const skullScale = new THREE.Vector3(1, 1.04, 0.98);
-  // đáy sọ trên mép cổ áo (khớp cổ của lõi + `rise` 6 của áo phông): cằm chìm vào khối áo là mất viền
-  const head = joint(neck, 0, head3(B), 0);
+  // đáy sọ trên mép cổ áo (khớp cổ của lõi + `rise` 6 của áo phông)
+  const head = joint(neck, 0, head3(B, human), 0);
   if (human) head.userData.human = true;
   // kính và mốc đầu đọc chỗ mắt đã dời của nét mặt chibi
   const eyes = { eyeGap: 26, offsetY: 0, mouthGap: 34, ...faceShape };
@@ -359,8 +364,10 @@ export function stickman(o: StickmanOptions): Figure {
     skull = new THREE.SphereGeometry(R.head, ...q.skull);
     skull.scale(skullScale.x, skullScale.y, skullScale.z);
   }
-  const skinMat = npr({ color: skin, stipple: 0.035, stippleScale: 4, soft: 1, flat: true });
-  head.add(inked(skull, skinMat, 0.03));
+  const skin3 = { color: skin, stipple: 0.035, stippleScale: 4, soft: 1, flat: true };
+  const skinMat = npr(skin3);
+  // vỏ ngược dưới cằm `human` chìm sau cổ và cổ áo: nét bóng dáng vẽ thêm ở hậu kỳ
+  head.add(inked(skull, human ? npr({ ...skin3, ink: 0.03 }) : skinMat, 0.03));
   const faceR = lod === 'low' ? stillFace(skullScale, faceShape, face, human) : faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face }, human);
   head.add(faceR.mesh);
   if (glasses) {
@@ -375,7 +382,7 @@ export function stickman(o: StickmanOptions): Figure {
       const ear = earGroup(s, R.head, skullScale, skinMat, hull, ink);
       if (!hairCovers(head, ear.position)) head.add(ear);
     }
-    neck.add(inked(neckGeometry(head3(B) - R.head * 0.5, 0.135), skinMat, 0.022));
+    neck.add(inked(neckGeometry(head3(B, true) - R.head * 0.5, 0.135), skinMat, 0.022));
   }
   const legs = { [-1]: leg(hips, -1, at.hip, B), [1]: leg(hips, 1, at.hip, B) } as Record<Side, Leg>;
   const arms = { [-1]: arm(spine, -1, sx, sy, B), [1]: arm(spine, 1, sx, sy, B) } as Record<Side, Arm>;
@@ -387,8 +394,8 @@ export function stickman(o: StickmanOptions): Figure {
   const seg = (j: THREE.Object3D) => j.children.find((m) => m.userData.limb) as THREE.Mesh;
   let hands: Figure['hands'];
   if (clad) {
-    const tone = (c: string) => npr({ color: c, stipple: 0.05, stippleScale: 3, soft: 1 });
-    const limbSkin = skinMat;
+    const tone = (c: string) => npr({ color: c, stipple: 0.05, stippleScale: 3, soft: 1, ink: LIMB_SIL });
+    const limbSkin = npr({ ...skin3, ink: LIMB_SIL });
     const { sleeveColor = '#1a1a1a', trouserColor = '#1a1a1a', shoeColor = '#2b2623', sleeveLength = 1, trouserLength = 1 } = o;
     const thigh = thighR / 100;
     pelvis(spine, body, at.hip, thigh, tone(skirt ? skirtColor : trouserColor));
@@ -455,7 +462,10 @@ function cladLimb(upper: THREE.Mesh, lower: THREE.Mesh, [L1, L2]: [number, numbe
   if (!cuff) upper.userData.root = 0.35;
   lower.userData.taper = [taper[1], taper[2]];
   const full = f >= 0.999;
+  // khuỷu, gối: hai ống chồng mút lên nhau, nét bóng dáng hậu kỳ coi cả chi là một vật
+  const chain = upper.id;
   for (const m of [upper, lower]) {
+    m.userData.inkChain = chain;
     m.material = full ? cover : skin;
     const h = new THREE.Mesh(m.geometry, limbHull);
     h.userData.noShadow = true;
@@ -464,6 +474,7 @@ function cladLimb(upper: THREE.Mesh, lower: THREE.Mesh, [L1, L2]: [number, numbe
   const add = (m: THREE.Mesh, u0: number, u1: number, rim: number, flat: number) => {
     const geo = tube(), c = new THREE.Mesh(geo, cover), h = new THREE.Mesh(geo, limbHull);
     c.castShadow = true;
+    c.userData.inkChain = chain;
     h.userData.noShadow = true;
     m.parent!.add(c.add(h));
     (m.userData.covers ??= []).push({ geo, u0, u1, k: 1.1, rim, flat } satisfies Cover);

@@ -49,7 +49,7 @@ const unit = (a: V3): V3 => {
  * đoạn lấn quá `tol`, sâu trước. docs/10-lop-ve-code.md#tay-xuyên-thân
  */
 export function armPierce(
-  c: Pick<CharacterData, "rig" | "pieces" | "palette">,
+  c: Pick<CharacterData, "rig" | "pieces" | "palette" | "head">,
   sp: ActInput,
   { tol = 0 }: { tol?: number } = {},
 ): ArmPierce[] {

@@ -132,6 +132,11 @@ ba về bản của nó — `three` trong `tools/webpack.mjs`, `react` / `zod` t
 không có trong cây nguồn nên `COMMON`, `SOURCES.docs` và `remotion.config.ts` đều rơi về cây
 nguồn của repo này. Chốt một mốc thì publish rồi pin lại version.
 
+`pnpm build` xoá `dist` rồi ghi lại; Remotion Studio của repo video đang mở mà biên dịch đúng lúc ấy thì
+cache webpack giữ bản `dist` dở, mở lại vẫn báo `export '…' was not found` cho mọi thứ xuất lại từ
+`@stickman3d/*` dù `dist` đủ. Xoá `node_modules/.cache/webpack/remotion-development-*` của repo video
+rồi mở lại.
+
 ## Sân khấu
 
 `createStage` dựng một lần scene, camera và pipeline; mỗi khung `draw(t, view)` đặt camera theo ống kính và khung
@@ -284,7 +289,7 @@ chỗ tia lọt qua ô kính và có bản đồ bóng riêng; tường chứa c
 Đổi giờ và đèn bằng `setPalette`, `setLights` của package (không đặt tay vào `G`): sân khấu giữ cặp giờ/bộ đèn
 của nó, nên vẽ xen kẽ nhiều sân khấu vẫn đúng đèn. Tối đa `MAX_LAMPS` đèn cục bộ, `MAX_LAMP_SHADOWS` đèn rọi đầu có bóng; `angle` từ 80 trở lên
 là đèn điểm, không bóng. Chao đèn bọc bóng đèn phải `userData.noShadow`. Bóng tiếp xúc (SSAO)
-dò từ độ sâu ở lượt hậu kỳ, chỉnh bằng `ao` của bộ đèn.
+dò từ độ sâu ở lượt hậu kỳ, chỉnh bằng `ao` của bộ đèn; lưới người (`userData.body`) không nhận nó.
 
 ## Bộ dựng phòng
 

@@ -161,7 +161,7 @@ export function shoeCapsule(sole: number, ra: number): [number, number, number, 
 }
 
 /** Mông trong khối hông, theo bán kính gốc đùi: tâm lùi sau `back`, thấp hơn khớp hông `drop`, bán kính `r` */
-const BUTT = { back: 0.7, drop: 0.4, r: 1 };
+const BUTT = { back: 0.4, drop: 0.4, r: 0.9 };
 
 /**
  * Khối hông nối thân áo với hai đùi, hệ nhóm thân (three, y lên từ hông): bao lồi của vành thân áo thu vào ở `ringY`, hai

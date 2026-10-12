@@ -36,10 +36,15 @@ export const SPLAY3 = 0.08;
 /** Khe giữa sườn áo và cánh tay buông của người mặc đồ, px */
 export const CLAD_GAP = 2;
 
-/** Đáy sọ trên mép cổ áo: tâm khối đầu cao hơn khớp cổ ngần này, đơn vị three; chỉ đoạn cổ nhân `height` */
-export const head3 = (B: Bones3) => B.neck + 0.09 + B.head * 1.04;
+/** Cổ lộ ra giữa cằm và cổ áo của đầu `human`, đơn vị three */
+export const HUMAN_NECK = 0.1;
 
-export const HEAD3 = head3(BONES3);
+/**
+ * Đáy sọ trên mép cổ áo: tâm khối đầu cao hơn khớp cổ ngần này, đơn vị three; đầu `human` cao thêm `HUMAN_NECK`. Chỉ
+ * đoạn cổ nhân `height`
+ */
+export const head3 = (B: Bones3, human = false) =>
+  B.neck + 0.09 + (human ? HUMAN_NECK : 0) + B.head * 1.04;
 
 /**
  * Bán kính chi người 3D mặc đồ (`palette.clad`) ở gốc, khớp giữa, ngọn, nhân bán kính chi: bắp tay to hơn cẳng tay
@@ -335,7 +340,7 @@ export interface ActInput {
  * thì không có gì. `check` đo giật tay chân trên các khớp này. docs/01-rig.md#khớp-người-3d-vẽ-ra
  */
 export function actJoints(
-  c: Pick<CharacterData, "rig" | "pieces" | "palette">,
+  c: Pick<CharacterData, "rig" | "pieces" | "palette" | "head">,
   sp: ActInput,
 ): Record<ActJoint, V3> | undefined {
   const W = sp.world;
@@ -385,7 +390,7 @@ export function actJoints(
   const Rn = mm(mm(Rs, ry(m * num(turn) * D)), mm(rx(num(nod) * D), rz(-m * num(tilt) * D)));
   const neck = at(hips, Rs, [0, B.torso, 0]);
   out.neck = neck;
-  out.head = at(neck, Rn, [0, head3(B), 0]);
+  out.head = at(neck, Rn, [0, head3(B, c.head.form === "human"), 0]);
 
   const frame: ActFrame = { point: (v) => at(root, Rr, v), dir: (v) => mv(Rr, v) };
   for (const side of [near, -near]) {
