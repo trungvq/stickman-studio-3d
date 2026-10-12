@@ -69,7 +69,7 @@ camera theo `cameraAt`. Hành động là bộ chung `apps/studio/public/actions
 | `turn=110` | Với `demo=styles`: xoay từng người tại chỗ (độ, mặc định 14) để xem nghiêng, sau lưng |
 | `cast=/@fs/…/a.json,…` | Với `demo=styles`: dựng các JSON nhân vật này thay cho người mẫu để soi; file phải nằm trong cây repo (vd. chép vào `tmp/`) |
 | `demo=mouths` | Bảng nét mặt: đủ khẩu hình của `MOUTHS` (`core/face.ts`) trên ba bậc, kèm đủ kiểu mắt và mày |
-| `demo=human\|human-row\|human-faces` | Người 3D mặc đồ (`palette.clad`, `head.form: "human"`, `apps/viewer/src/demo-human.js`): cảnh diễn (nói giơ tay, đi bộ, ngồi bàn chống cằm, cầm cốc, nữ váy đi), hàng đứng nhìn ống kính, cận mặt bốn nét |
+| `demo=human\|human-row\|human-faces\|human-bench` | Người 3D mặc đồ (`palette.clad`, `head.form: "human"`, `apps/viewer/src/demo-human.js`): cảnh diễn (nói giơ tay, đi bộ, ngồi bàn chống cằm, cầm cốc, nữ váy đi), hàng đứng nhìn ống kính, cận mặt bốn nét, hai người ngồi ghế băng (nam sơ mi cầm cốc, nữ áo len váy chân trần tay úp gối) |
 | `human` | Với cảnh của `demos.js`, `demo=hold` và `demo=styles`: dựng người mặc đồ thay người que |
 | `stick` | Với `demo=human*`: cùng cảnh, bỏ hai cờ — người que như cũ |
 

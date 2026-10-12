@@ -64,6 +64,12 @@ const models = () => ({
     face: { blush: 0.6 },
     garment: { style: 'sweater', hem: -10 }, hair: 'ponyLow', hairColor: '#3b2a22',
   }),
+  /** Nữ áo len, váy, chân trần cùng màu da với tay */
+  KNIT: character('len-vay', {
+    palette: { garment: '#d8692f', sleeve: '#d8692f', trouserLength: 0, shoe: '#4a2c20', trouserWidth: 17 },
+    garment: { style: 'sweater' }, hair: 'bob', hairColor: '#3b2a22',
+    skirt: { color: '#4a3530', shape: {} },
+  }),
 });
 
 const keyAction = (name, mask, keys, extra = {}) => {
@@ -79,6 +85,8 @@ const own = () => ({
   ], { authoredAt: 'side' }),
   'hold-mug': keyAction('hold-mug', ['armNear'], [{ t: 0, pose: {}, reach: { armNear: { at: [38, -62, 14], elbow: [-0.4, 1, 0.4] } }, ease: 'linear' }], { authoredAt: 'side' }),
   'chin-rest-3d': keyAction('chin-rest-3d', ['armNear'], [{ t: 0, pose: {}, reach: { armNear: { at: [45, -141, 6], elbow: [0.3, 1, 0.1] } }, ease: 'linear' }], { authoredAt: 'side' }),
+  // hai bàn tay úp trên gối người ngồi
+  'hands-knees-3d': keyAction('hands-knees-3d', ['armNear', 'armFar'], [{ t: 0, pose: {}, reach: { armNear: { at: [64, -20, 16], elbow: [0, 1, 0.6] }, armFar: { at: [64, -20, 16], elbow: [0, 1, 0.6] } }, ease: 'linear' }], { authoredAt: 'side' }),
   'face-wry': keyAction('face-wry', ['face'], [{ t: 0, pose: {}, face: { mouth: 'wryOpen', brow: 'skeptical', eyes: 'open' }, ease: 'linear' }]),
 });
 
@@ -115,6 +123,14 @@ const SCENES = {
     ],
     props: [desk(40 * GIRL.rig.height, -20, -150, GIRL.rig.height)],
   }),
+  // ghế băng: nam sơ mi cầm cốc, nữ áo len váy chân trần tay úp gối — vạt áo, váy, tay trên đùi khi ngồi
+  'human-bench': ({ LONG, KNIT }) => ({
+    cast: [
+      { id: 'b0', c: KNIT, world: { at: [-80, -SEAT, 0], yaw: 90, sit: true, floor: 0 }, tracks: [track(clip('sit-3d')), track(clip('hands-knees-3d')), track(clip('face-calm'))] },
+      { id: 'b1', c: LONG, world: { at: [80, -SEAT, 0], yaw: 90, sit: true, floor: 0 }, tracks: [track(clip('sit-3d')), track(clip('hold-mug')), track(clip('face-calm'))], equip: { handNear: 'mug' } },
+    ],
+    props: [bench(0, 0, 320)],
+  }),
   // hàng đứng nhìn ống kính: soi các góc
   'human-row': ({ LONG, SHORT, GIRL, GLASSES, PONY }) => ({
     cast: [LONG, SHORT, GIRL, GLASSES, PONY].map((c, i) => ({ id: `r${i}`, c, world: { at: [(i - 2) * 150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('face-calm'))] })),
@@ -126,6 +142,18 @@ const SCENES = {
     })),
   }),
 };
+
+/** Ghế băng dài `w` ngang trục x, tựa ở +z, mặt ngồi cao bằng gối người `height = 1`, giữa ở `x`, `z` */
+function bench(x, z, w) {
+  const b = new Batch();
+  const seat = { top: '#4f6f80', lit: '#3d5866' }, metal = { top: '#8a9299', lit: '#6b7278' };
+  addItem(b, { at: { at: [0, 0, z] }, parts: [
+    { v: box(x - w / 2, x + w / 2, -SEAT, -SEAT + 8, -42, 44), tone: seat },
+    { v: box(x - w / 2, x + w / 2, -SEAT - 90, -SEAT - 20, 40, 46), tone: seat },
+    ...[x - w / 2 + 20, x + w / 2 - 20].flatMap((lx) => [{ v: box(lx - 3, lx + 3, -SEAT + 8, 0, -3, 3), tone: metal }, { v: box(lx - 3, lx + 3, -SEAT - 20, -SEAT, 41, 44), tone: metal }]),
+  ] });
+  return b.build();
+}
 
 /** Dựng cảnh `name` của người 3D mặc đồ; không có thì `null` */
 export function humanDemo(name) {

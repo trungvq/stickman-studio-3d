@@ -148,7 +148,7 @@ function buildSkirt(
     const [ux, uy] = [(k[0] - h[0]) / l, (k[1] - h[1]) / l];
     const end: P2 = [h[0] + ux * reach, h[1] + uy * reach];
     // Ở mút đùi gấu rủ khỏi đùi bằng phần xoè mà gấu buông không dùng tới
-    const fall = skirtFall(g, mean);
+    const fall = skirtFall(g, mean, real ? cover(lt) / lt : reach / l);
     for (let j = 0; j < 16; j++) {
       const a = (2 * Math.PI * j) / 16;
       const [ca, sa] = [Math.cos(a), Math.sin(a)];

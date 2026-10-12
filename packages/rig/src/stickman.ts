@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildSockets, dress, headFit, newGear, type EquipState, type Gear, type ItemFactories, type Sockets } from './attach';
-import { DEFAULT_FACE } from './core/constants';
+import { D, DEFAULT_FACE } from './core/constants';
 import type { FaceState } from './core/types';
 import { faceRig, type FaceRig, type FaceShape } from './face';
 import { sculptSkirt, sculptTorso, type SkirtOptions } from './garment';
@@ -61,6 +61,8 @@ export interface Figure {
   lod: Lod;
   /** Váy dựng khối: `act` gọi `fitSkirt` dựng lại theo đùi khi đùi đổi hướng trong hệ thân */
   skirt?: { opts: Omit<SkirtOptions, 'thighs'>; group: THREE.Group; key: string };
+  /** Vạt áo người ngồi: `act` gọi `fitSkirt` gập lại theo đùi khi đùi đổi hướng trong hệ thân */
+  lap?: { refold: (dir: [number, number]) => void; key: string };
   /** Bàn tay của người `clad` */
   hands?: Record<Side, Hand>;
   /** Khung xương theo `rig.height` (`bones3` của lõi): `act` đặt đoạn chi bằng nó */
@@ -343,7 +345,15 @@ export function stickman(o: StickmanOptions): Figure {
   const thighR = clad ? cladThigh(trouserWidth, rig.stroke) : 0;
   const at = roots3(garment, rig, { clad, sleeve: sleeveWidth, trouser: trouserWidth, bicep, skirt });
   const [sx, sy] = at.shoulder;
-  const body = sculptTorso(spine, { garment, rig, color, accent, ink: INK, arm: at.room, ...(clad && { sil: LIMB_SIL }), ...(clad && skirt && { tuck: -skirt.rise * rig.height }) });
+  // người ngồi: vạt áo dưới hông nằm trên đùi, không buông xuyên đùi xuống ghế; mặc váy thì thân áo dừng ở cạp
+  // mặt ghế dưới hông `legHalf` của `body3`; vạt nằm trên chỗ cao nhất của mặt đùi gồm cả vỏ viền: gối gập vuông thì đùi
+  // cong vồng lên theo `bendLimb` (điểm điều khiển thứ hai nhô `limbCurve / 6` ống chân) trong khi ống thon dần về gối
+  const seatAt = (clad ? thighR : trouserWidth / 2) - 0.5;
+  const [r0, r1] = clad ? [thighR + 1.8, CLAD_TAPER.leg[1] * limbR(trouserWidth) * 100 + 1.8] : [limbR(trouserWidth) * 100 + 2.6, limbR(trouserWidth) * 100 + 2.6];
+  const thighTop = Math.max(...Array.from({ length: 11 }, (_, i) => i / 10).map((t) => 3 * t * t * (1 - t) * (B.shin * 100 * limbCurve) / 6 + r0 + (r1 - r0) * t));
+  // gập sẵn hơi chếch lên cho người nền `lod: 'low'` (gộp lưới, không gập lại): thân ngả trước vài độ thì vạt vẫn trên đùi
+  const lap = seated ? (skirt ? { seat: -skirt.rise * rig.height } : { seat: seatAt, fold: { top: -(thighTop + 1), dir: [-0.1, 1] as [number, number] } }) : undefined;
+  const body = sculptTorso(spine, { garment, rig, color, accent, ink: INK, arm: at.room, lap, ...(clad && { sil: LIMB_SIL }), ...(clad && skirt && { tuck: -skirt.rise * rig.height }) });
   // khối thân áo là mảnh đầu tiên: `collide` lấy hộp thân từ nó
   spine.children[0].userData.torso = true;
   let skirtRig: Figure['skirt'];
@@ -400,6 +410,8 @@ export function stickman(o: StickmanOptions): Figure {
     const tone = (c: string) => npr({ color: c, stipple: 0.05, stippleScale: 3, soft: 1, ink: LIMB_SIL });
     // vẽ cả mặt sau: ngón cái lấn vào ngón khác lúc nắm thì nhìn qua chỗ lấn thấy da, không thấy vỏ viền đen bên trong
     const limbSkin = npr({ ...skin3, ink: LIMB_SIL, doubleSided: true });
+    // chân trần là vật khác bàn tay: tay đặt lên đùi vẫn có nét
+    const legSkin = npr({ ...skin3, ink: LIMB_SIL, doubleSided: true, group: 'leg' });
     const { sleeveColor = '#1a1a1a', trouserColor = '#1a1a1a', shoeColor = '#2b2623', sleeveLength = 1, trouserLength = 1 } = o;
     const thigh = thighR / 100;
     pelvis(spine, body, at.hip, thigh, tone(skirt ? skirtColor : trouserColor));
@@ -407,7 +419,7 @@ export function stickman(o: StickmanOptions): Figure {
     hands = {} as Record<Side, Hand>;
     for (const s of SIDES) {
       cladLimb(seg(arms[s].shoulder), seg(arms[s].elbow), [B.upperArm, B.foreArm], [CLAD_TAPER.arm[0] * (1 + bicep), CLAD_TAPER.arm[1], CLAD_TAPER.arm[2]], tone(sleeveColor), limbSkin, sleeveLength, true);
-      cladLimb(seg(legs[s].hip), seg(legs[s].knee), [B.thigh, B.shin], legTaper, tone(trouserColor), limbSkin, trouserLength, false);
+      cladLimb(seg(legs[s].hip), seg(legs[s].knee), [B.thigh, B.shin], legTaper, tone(trouserColor), legSkin, trouserLength, false);
       const { k, long } = cladHand(sleeveWidth, rig.stroke, B.foreArm * 100);
       hands[s] = handRig(s, k, long, lod === 'low');
       // vỏ lùi sau mặt `HAND_INK_PUSH` dọc tia nhìn: không lòi qua kẽ ngón khép, ngón cái vắt trước nắm tay
@@ -450,7 +462,7 @@ export function stickman(o: StickmanOptions): Figure {
   root.userData.figure = true;
   const grip = (s: Side): Vec3 => (hands ? handGrip(s, hands[s].scale, hands[s].long) : [0, -(R.limb * sleeveWidth) / 10, 0]);
   const sockets = buildSockets({ root, spine, head, arms }, fit, grip, rig);
-  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig, bones: B, splay: at.splay, ...(hands && { hands }) };
+  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig, bones: B, splay: at.splay, ...(hands && { hands }), ...(body.refold && lod !== 'low' && { lap: { refold: body.refold, key: '' } }) };
   if (equip) dress(fig, equip);
   return fig;
 }
@@ -523,12 +535,13 @@ function bodyMark(o: THREE.Object3D) {
 
 const toSpine = new THREE.Matrix4(), thighAt = new THREE.Vector3(), thighDir = new THREE.Vector3();
 /**
- * Dựng lại váy của `p` theo đùi lúc này, đo trong hệ thân (khớp thân và khớp hông cùng con của `hips`): thân nghiêng
- * hay đùi đổi góc thì vạt váy vẫn ôm mặt trên đùi. Cần ma trận local đã cập nhật; đùi không đổi thì không dựng lại.
+ * Dựng lại váy và gập lại vạt áo người ngồi của `p` theo đùi lúc này, đo trong hệ thân (khớp thân và khớp hông cùng con của
+ * `hips`): thân nghiêng hay đùi đổi góc thì vạt váy, vạt áo vẫn ôm mặt trên đùi. Cần ma trận local đã cập nhật; đùi không đổi
+ * thì không dựng lại.
  */
 export function fitSkirt(p: Figure) {
   const sk = p.skirt;
-  if (!sk) return;
+  if (!sk && !p.lap) return;
   toSpine.copy(p.spine.matrix).invert();
   // three → hệ thân của váy: px, y xuống
   const flipY = (v: THREE.Vector3, k: number): Vec3 => [v.x * k, -v.y * k, v.z * k];
@@ -536,6 +549,15 @@ export function fitSkirt(p: Figure) {
     const m = toSpine.clone().multiply(p.legs[s].hip.matrix);
     return { hip: flipY(thighAt.setFromMatrixPosition(m), 100), dir: flipY(thighDir.set(0, -1, 0).transformDirection(m), 1) };
   });
+  if (p.lap) {
+    // vạt áo: hướng đùi trung bình trong mặt dọc của thân, làm tròn nửa độ
+    const a = Math.round((2 * Math.atan2(thighs[0].dir[2] + thighs[1].dir[2], thighs[0].dir[1] + thighs[1].dir[1])) / D) / 2;
+    if (`${a}` !== p.lap.key) {
+      p.lap.key = `${a}`;
+      p.lap.refold([Math.cos(a * D), Math.sin(a * D)]);
+    }
+  }
+  if (!sk) return;
   const key = thighs.map(({ hip, dir }) => [...hip.map((v) => Math.round(v * 10)), ...dir.map((v) => Math.round(v * 1000))].join(',')).join(';');
   if (key === sk.key) return;
   sk.key = key;

@@ -5,7 +5,7 @@ import { hullMaterial, npr } from './npr';
 import { RIG, TORSO_DEPTH } from './core/constants';
 import type { Garment, Skirt } from './core/schema';
 import { profileAt, skirtCover, skirtFall, skirtSpread, skirtTube } from './core/skirtShape';
-import type { MarkFill } from './core/torso';
+import { lapFold, type Lap, type MarkFill } from './core/torso';
 import { torsoMesh, type ArmRoom, type Rig } from './torso';
 
 // Dựng thân áo và váy của rig thành mesh. Rig đo bằng px trong hệ nhóm thân (gốc ở hông, y xuống);
@@ -23,15 +23,21 @@ function colorOf(fill: MarkFill, { color, accent, ink }: Palette): string {
   return fill;
 }
 
-function tube(pts: Vec3[], r: number, mat: THREE.Material, closed = false) {
+function tubeMesh(pts: Vec3[], r: number, mat: THREE.Material, closed = false) {
   const curve = new THREE.CatmullRomCurve3(pts.map(v3), closed);
   const m = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.max(4, pts.length * 2), r, 5, closed), mat);
   m.castShadow = true;
   return m;
 }
 
-/** Khối thân: tiết diện ellipse nửa rộng `profile`, nửa sâu `depth` từng hàng, bịt hai đầu. */
-function bodyGeometry(profile: [number, number][], depth: number[]) {
+/** Khối thân: tiết diện ellipse nửa rộng `profile`, nửa sâu `depth` từng hàng, bịt hai đầu; `cut` thêm một hàng ở độ cao ấy. */
+function bodyGeometry(profile: [number, number][], depth: number[], cut?: number) {
+  const i = cut === undefined ? -1 : profile.findIndex(([, y]) => y > cut);
+  if (i > 0 && profile[i - 1][1] < cut!) {
+    const u = (cut! - profile[i - 1][1]) / (profile[i][1] - profile[i - 1][1]);
+    profile = [...profile.slice(0, i), [profile[i - 1][0] + (profile[i][0] - profile[i - 1][0]) * u, cut!], ...profile.slice(i)];
+    depth = [...depth.slice(0, i), depth[i - 1] + (depth[i] - depth[i - 1]) * u, ...depth.slice(i)];
+  }
   const N = 48;
   const pos: number[] = [];
   const idx: number[] = [];
@@ -80,22 +86,26 @@ function sheetGeometry(grid: Vec3[][]) {
 /**
  * Thân áo dựng khối của rig (`pieces.torso.garment`), gắn vào nhóm thân `spine`; trả mặt cắt và bề sâu đã dựng. `tuck` (px, y
  * xuống) là cạp váy liền mặt thân: nét, chấm, mảng tô dưới đó nằm trong váy nên không dựng, khỏi lòi qua cạp. `sil`: thân
- * áo có thêm nét bóng dáng hậu kỳ bề dày ấy (`npr({ ink })`).
+ * áo có thêm nét bóng dáng hậu kỳ bề dày ấy (`npr({ ink })`). `lap`: người ngồi, vạt dưới hông gập lên đùi (`lapFold`); có
+ * `lap.fold` thì trả thêm `refold` gập lại theo hướng đùi mới.
  */
-export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, arm, tuck = Infinity, sil }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom; tuck?: number; sil?: number } & Palette) {
+export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, arm, tuck = Infinity, sil, lap }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom; tuck?: number; sil?: number; lap?: Lap } & Palette) {
   const t = torsoMesh(garment, rig, arm);
   const pal = { color, accent, ink };
   const matOf = (fill: MarkFill, soft = 1) => npr({ color: colorOf(fill, pal), stipple: 0.05, stippleScale: 3, soft });
   const inkMat = npr({ color: ink, stipple: 0 });
   const lineR = (k: number) => (k * rig.stroke * U) / 2;
+  const geos = new Set<THREE.BufferGeometry>();
+  const add = (m: THREE.Mesh) => (geos.add(m.geometry), spine.add(m));
+  const tube = (pts: Vec3[], r: number, mat: THREE.Material, closed = false) => add(tubeMesh(pts, r, mat, closed));
 
-  const body = bodyGeometry(t.profile, t.depth);
+  const body = bodyGeometry(t.profile, t.depth, lap?.fold?.top);
   const m = new THREE.Mesh(body, sil ? npr({ color, stipple: 0.05, stippleScale: 3, soft: 1, ink: sil }) : matOf('color'));
   m.castShadow = true;
-  spine.add(m);
+  add(m);
   const h = new THREE.Mesh(body, hullMaterial(0.026, ink));
   h.userData.noShadow = true;
-  spine.add(h);
+  add(h);
 
   const shown = (p: Vec3) => p[1] < tuck;
   for (const f of t.fills) {
@@ -104,12 +114,12 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
     g.setAttribute('position', new THREE.Float32BufferAttribute(f.pts.flatMap((p) => v3(p).toArray()), 3));
     g.setIndex(f.tris);
     g.computeVertexNormals();
-    spine.add(new THREE.Mesh(g, npr({ color: colorOf(f.fill, pal), stipple: 0.04, soft: 1, doubleSided: true })));
+    add(new THREE.Mesh(g, npr({ color: colorOf(f.fill, pal), stipple: 0.04, soft: 1, doubleSided: true })));
   }
   for (const l of t.lines) {
     const closed = l.pts.length > 40 && v3(l.pts[0]).distanceTo(v3(l.pts[l.pts.length - 1])) < 0.02;
     if (l.pts.every(shown)) {
-      spine.add(tube(closed ? l.pts.slice(0, -1) : l.pts, lineR(l.k), inkMat, closed));
+      tube(closed ? l.pts.slice(0, -1) : l.pts, lineR(l.k), inkMat, closed);
       continue;
     }
     // nét chui vào váy: giữ từng khúc còn trên cạp
@@ -117,26 +127,56 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
     for (const p of l.pts) {
       if (shown(p)) run.push(p);
       else {
-        if (run.length > 1) spine.add(tube(run, lineR(l.k), inkMat));
+        if (run.length > 1) tube(run, lineR(l.k), inkMat);
         run = [];
       }
     }
-    if (run.length > 1) spine.add(tube(run, lineR(l.k), inkMat));
+    if (run.length > 1) tube(run, lineR(l.k), inkMat);
   }
   for (const d of t.dots) {
     if (!shown(d.p)) continue;
-    const s = new THREE.Mesh(new THREE.SphereGeometry(lineR(d.k), 10, 8), inkMat);
-    s.position.copy(v3(d.p));
-    spine.add(s);
+    const c = v3(d.p);
+    add(new THREE.Mesh(new THREE.SphereGeometry(lineR(d.k), 10, 8).translate(c.x, c.y, c.z), inkMat));
   }
   for (const s of t.sheets) {
     if (!s.grid.some((col) => col.some(shown))) continue;
     const sm = new THREE.Mesh(sheetGeometry(s.grid), npr({ color: colorOf(s.color, pal), stipple: 0.04, soft: 1, doubleSided: true }));
     sm.castShadow = true;
-    spine.add(sm);
-    for (const r of s.rims) spine.add(tube(s.grid.map((col) => col[r]), lineR(s.line), inkMat));
+    add(sm);
+    for (const r of s.rims) tube(s.grid.map((col) => col[r]), lineR(s.line), inkMat);
   }
-  return { profile: t.profile, depth: t.depth };
+  const out = { profile: t.profile, depth: t.depth, refold: undefined as ((dir: [number, number]) => void) | undefined };
+  if (!lap) return out;
+  // gập từ hình đứng giữ sẵn, đơn vị three
+  // mỗi lưới: đỉnh đứng, chỗ thấp nhất và nhô trước nhất (px); lưới nằm hẳn trên chỗ gập thì gập lại không đổi gì
+  const src = [...geos].map((g) => {
+    const a = Float32Array.from(g.attributes.position.array);
+    let [low, front] = [-Infinity, -Infinity];
+    for (let i = 0; i < a.length; i += 3) [low, front] = [Math.max(low, -a[i + 1] / U), Math.max(front, a[i + 2] / U)];
+    return { g, a, low, front, bent: true };
+  });
+  const apply = (l: Lap) => {
+    const f = lapFold(t.profile, t.depth, l);
+    const fold = l.fold, slope = fold ? Math.min(0, fold.dir[0] / Math.max(fold.dir[1], 0.1)) : 0;
+    for (const o of src) {
+      const still = fold ? o.low < fold.top + Math.max(0, o.front) * slope - 12 : o.low <= l.seat;
+      if (still && !o.bent) continue;
+      o.bent = !still;
+      const { g, a } = o, pos = g.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const [x, y, z] = f([a[3 * i] / U, -a[3 * i + 1] / U, a[3 * i + 2] / U]);
+        pos.setXYZ(i, x * U, -y * U, z * U);
+      }
+      pos.needsUpdate = true;
+      g.computeVertexNormals();
+      g.computeBoundingBox();
+      g.computeBoundingSphere();
+    }
+  };
+  apply(lap);
+  const top = lap.fold?.top;
+  if (top !== undefined) out.refold = (dir) => apply({ ...lap, fold: { top, dir } });
+  return out;
 }
 
 /**
@@ -180,9 +220,9 @@ export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thi
     pts.push(ring(0, yW, p));
     if (hang > 0.05) pts.push(ring(1, yH, p));
   }
-  const fall = skirtFall(skirt, mean);
   thighs.forEach(({ hip, dir }, i) => {
     const reach = covers[i], [ra, rb] = tubes[i];
+    const fall = skirtFall(skirt, mean, reach / lt);
     const d = new THREE.Vector3(...dir).normalize();
     // ngang của ống đùi vuông góc với đùi: đùi dạng ra (`dang`) thì vòng ống vẫn tròn
     const side = new THREE.Vector3(1, 0, 0).addScaledVector(d, -d.x).normalize();
@@ -216,7 +256,7 @@ export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thi
       const out = ([x, y, z]: Vec3): Vec3 => [x * 1.02, y, z * 1.02];
       const a = out(ring(0.3, yW + (yH - yW) * 0.3, p));
       const b = out(ring(0.9, yW + (yH - yW) * 0.9, p));
-      group.add(tube([a, b], (0.45 * rig.stroke * U) / 2, inkMat));
+      group.add(tubeMesh([a, b], (0.45 * rig.stroke * U) / 2, inkMat));
     }
   return group;
 }

@@ -578,8 +578,9 @@ export function figure3d(c: CharacterData, P: Pose, w: World): Figure3 {
     };
     const th = [LN, LF].map(({ w3: [a, b] }) => {
       const [deg, lt] = thighAt([a, b]);
-      const end = add3(a, scale3(sub3(b, a), skirtCover(g, rig.height, deg * D, lt) / (lt || 1)));
-      return { a: deg * D, root: body(a), end: body(end) };
+      const reach = skirtCover(g, rig.height, deg * D, lt) / (lt || 1);
+      const end = add3(a, scale3(sub3(b, a), reach));
+      return { a: deg * D, reach, root: body(a), end: body(end) };
     });
     const rr = half.leg + SKIRT_EASE;
     const f1 = Math.max(...th.map((t) => t.end[0])) + rr;
@@ -587,7 +588,8 @@ export function figure3d(c: CharacterData, P: Pose, w: World): Figure3 {
     const yB = Math.min(...th.flatMap((t) => [t.root[1], t.end[1]])) + half.leg;
     const yT = Math.min(...th.map((t) => t.end[1])) - rr;
     if (!(f1 - dp > rr && yB - yW > 2 && yB - yT > 2)) return undefined;
-    const yE = Math.max(...th.map((t) => t.end[1])) + rr + skirtFall(g, (th[0].a + th[1].a) / 2);
+    const yE =
+      Math.max(...th.map((t) => t.end[1] + skirtFall(g, (th[0].a + th[1].a) / 2, t.reach))) + rr;
     const m = rig.stroke;
     const L = rig.hipHalf + rr;
     const prism = (pr: [number, number][], l: number) =>

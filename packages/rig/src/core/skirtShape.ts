@@ -22,9 +22,15 @@ export function skirtCover(g: Skirt, height: number, angle: number, lt: number) 
   return Math.min(stand / Math.max(Math.cos(angle), 0.05), len, cap);
 }
 
-/** Gấu rủ khỏi mút đùi bấy nhiêu khi đùi lệch trục thân trung bình `mean` radian; `flare` âm không kéo gấu lên */
-export const skirtFall = (g: Skirt, mean: number) =>
-  Math.max(0, g.flare) * (1 - Math.max(0, Math.cos(mean))) * SKIRT_FALL;
+/**
+ * Gấu rủ khỏi mút đùi bấy nhiêu khi đùi lệch trục thân trung bình `mean` radian và váy phủ `reach` phần đùi: vạt chưa quá
+ * `SKIRT_REACH` đùi thì nằm trên đùi, không rủ xuống mặt ghế; tới gối thì rủ đủ. `flare` âm không kéo gấu lên
+ */
+export const skirtFall = (g: Skirt, mean: number, reach = 1) =>
+  Math.max(0, g.flare) *
+  (1 - Math.max(0, Math.cos(mean))) *
+  SKIRT_FALL *
+  Math.min(1, Math.max(0, (reach - SKIRT_REACH) / (1 - SKIRT_REACH)));
 
 /**
  * Bán kính ống váy trùm đùi ở hông và ở mút phần phủ `cover` của đùi dài `lt`: đùi nửa rộng `r0` ở hông, `r1` ở gối, nở

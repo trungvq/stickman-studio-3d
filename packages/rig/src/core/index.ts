@@ -59,11 +59,13 @@ export {
   GARMENT_STYLES,
   garmentOf,
   garmentShoulder,
+  lapFold,
   limbSpread,
   restYaw,
   shoulderRoot,
   torsoPaths,
   torsoYaw,
+  type Lap,
   type MarkFill,
   type TorsoPaths,
 } from "./torso";

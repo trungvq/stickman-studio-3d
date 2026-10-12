@@ -290,6 +290,8 @@ export interface NprOptions {
   flat?: boolean;
   /** Nét bóng dáng dày bao nhiêu (three) — hậu kỳ dò từ mặt nạ vật thay vỏ ngược, cho khối hở nằm sát khối khác như tóc */
   ink?: number;
+  /** Cùng tham số khác `group` là hai vật liệu: nét bóng dáng hậu kỳ coi là hai vật, có nét chỗ chồng nhau */
+  group?: string;
 }
 
 function shaded(defines: Record<string, string>, side: THREE.Side, own: Record<string, THREE.IUniform>) {

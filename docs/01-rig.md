@@ -1597,7 +1597,7 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   thân áo. Thân áo, khối hông, ống tay chân, bàn tay và giày có thêm nét bóng dáng dò ở hậu kỳ (`LIMB_SIL`,
   `npr({ ink })`). Thân áo và tay áo cùng màu là cùng vật liệu nên nét chỉ hiện ở chỗ tay nằm hẳn trước thân,
   vai liền không có đường may; các đoạn của một chi chung một mã vật (`userData.inkChain`), khuỷu và gối
-  không có nét. Người mặc đồ chiếm chừng hai chục mã vật, `MAX_INK` (`128`) của pipeline đủ cho năm, sáu
+  không có nét. Da chân trần là vật liệu riêng (`npr({ group })`), khác da tay: bàn tay đặt lên đùi trần vẫn có nét. Người mặc đồ chiếm chừng hai chục mã vật, `MAX_INK` (`128`) của pipeline đủ cho năm, sáu
   người; quá thì người sau chỉ còn vỏ viền.
 - **Va chạm** có thêm `hand` và `foot` (`handR`, `footL`… trong `touch`): bảy nang bàn tay (`handCapsules`:
   hai ở hai mép lòng bàn tay, bán kính bằng nửa dày chứ không bằng nửa rộng, cộng một nang mỗi ngón) theo dáng đang vẽ, nang giày đáy đúng mặt đế; nang đầu `human` kéo xuống ôm má. Đồ cầm khai `touch` cả cẳng

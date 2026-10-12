@@ -7,7 +7,8 @@ import { cladThigh, HUMAN_NECK } from './core/act3';
 import { body3 } from './core/figure3d';
 import { parseAction } from './core/action';
 import { parseScene, resolveScene, sceneAt } from './core/scene';
-import { defaultCharacter, SculptSchema, SkirtSchema } from './core/schema';
+import { defaultCharacter, GarmentSchema, SculptSchema, SkirtSchema } from './core/schema';
+import { GARMENT_STYLES } from './core/torso';
 import { handScale, openLength } from './human';
 import { handCapsules, handGrip, HAND_POSES, HAND_REST } from './core/hand';
 import { fromCharacter, R, type CharacterJson, type Figure } from './stickman';
@@ -225,6 +226,66 @@ describe('người 3D mặc đồ', () => {
           }
     }
   });
+  it('người ngồi: vạt áo nằm trên đùi, không xuống dưới mặt ghế, cả khi thân ngả trước; váy không lún xuống ghế', () => {
+    const lean = parseAction({ name: 'lean', duration: 1, end: 'hold', authoredAt: 'side', mask: ['torso'], keys: [{ t: 0, pose: { torso: 15 } }] }).data!;
+    const actions = { 'sit-3d': parseAction(sitJson).data!, lean };
+    for (const clad of [true, false])
+      for (const style of [...Object.keys(GARMENT_STYLES), 'skirt']) {
+        const c = defaultCharacter();
+        if (clad) Object.assign(c.palette, { clad: true, sleeveWidth: 13, trouserWidth: 15 });
+        c.pieces.torso = { ...c.pieces.torso, src: 'sculpt', garment: GarmentSchema.parse({ style: style === 'skirt' ? 'sweater' : style }) };
+        const skirt = style === 'skirt' ? SkirtSchema.parse({}) : undefined;
+        if (skirt) c.pieces.hem = { ...c.pieces.hem, src: 'sculpt', skirt };
+        const f = fromCharacter(c as unknown as CharacterJson, { seated: true, skirt });
+        const dims = body3(c);
+        for (const torso of [false, true]) {
+          const tracks = [{ clips: [{ action: 'sit-3d', start: 0 }] }, ...(torso ? [{ clips: [{ action: 'lean', start: 0 }] }] : [])];
+          const sc = parseScene({ name: 'x', lens: { eye: [0, -200, -1400], yaw: 0, pitch: 0, f: 800, cx: 0, cy: 0 }, cast: [{ id: 'a', character: 'a.json', world: { at: [0, -87.5, 0], yaw: 0, sit: true, floor: 0 }, tracks }] });
+          const rt = resolveScene(sc.data!, actions, {}, {}, { a: 1 }, { a: dims });
+          act(f, sceneAt(rt, 'a', 1, 1, dims), 1);
+          f.root.updateMatrixWorld(true);
+          const name = `${clad ? 'mặc đồ' : 'người que'} ${style}${torso ? ' ngả 15°' : ''}`;
+          const thighs = bodyCapsules(f, ['thigh']);
+          const r = clad ? dims.legHalf / 100 : thighs[0].r;
+          const v = new THREE.Vector3(), seg = new THREE.Line3();
+          let low = Infinity, deep = 0;
+          for (const o of [...f.spine.children, ...(f.skirt ? [f.skirt.group.children[0]] : [])]) {
+            const m = o as THREE.Mesh;
+            if (!m.isMesh || m.userData.pelvis || (m.material as THREE.Material).side === THREE.BackSide) continue;
+            const pos = m.geometry.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+              v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld);
+              low = Math.min(low, v.y);
+              // gốc đùi nằm trong khối hông: chỉ đo từ một phần năm đùi ra; váy trùm đùi thì đo ở bài váy
+              if (o.parent === f.spine) for (const t of thighs) {
+                const k = seg.set(t.a, t.b).closestPointToPointParameter(v, true);
+                if (k > 0.2) deep = Math.max(deep, r - seg.at(k, new THREE.Vector3()).distanceTo(v));
+              }
+            }
+          }
+          expect(low, name).toBeGreaterThan(0.875 - 0.015);
+          // nét gấu gập ở mép vạt chạm mặt đùi dưới nửa px
+          expect(deep * 100, name).toBeLessThan(0.6);
+        }
+      }
+  });
+
+  it('chân trần khác vật liệu với bàn tay: tay đặt lên đùi vẫn có nét', () => {
+    const f = dressed((c) => (c.palette.trouserLength = 0));
+    const skinOf = (o: THREE.Object3D) => {
+      let mat: THREE.Material | undefined;
+      o.traverse((m) => {
+        const mesh = m as THREE.Mesh;
+        if (!mat && mesh.isMesh && !m.userData.joint && (mesh.material as THREE.Material).side !== THREE.BackSide && (mesh.material as THREE.Material).userData.ink) mat = mesh.material as THREE.Material;
+      });
+      return mat;
+    };
+    const hand = skinOf(f.arms[-1].wrist.children.find((g) => g.userData.hand)!);
+    const shin = (f.legs[-1].knee.children.find((m) => m.userData.limb) as THREE.Mesh).children.map((m) => (m as THREE.Mesh).material as THREE.Material);
+    expect(hand).toBeDefined();
+    expect(shin).not.toContain(hand);
+  });
+
   it('váy: lỗ ống đùi theo gốc đùi mặc đồ', () => {
     const f = dressed((c) => (c.pieces.hem = { ...c.pieces.hem, src: 'sculpt', skirt: SkirtSchema.parse({}) }), { skirt: SkirtSchema.parse({}) });
     expect(f.skirt!.opts.legW).toBe(2 * cladThigh(13, 6));

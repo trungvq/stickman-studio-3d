@@ -966,6 +966,16 @@ Không có chỏm vai: tay áo là mảnh riêng bám que tay.
   thân; thân không quay theo lắc đầu nên người 2D dáng không đổi thì mọi khung dùng lại. Ống kính
   của người 3D làm tròn mắt tới `0.5` đơn vị, các trục tới `0.001` (lệch dưới nửa px khung 1920);
   người thở hay đi đổi nó gần mỗi khung nên dựng lại, chừng 3 ms một thân.
+- **Vạt áo người 3D ngồi** (`seated`, `lapFold` của lõi). Gấu thấp hơn hông thì khối thân không buông thẳng
+  xuyên đùi xuống ghế. Chỗ gập cao hơn hông bằng chỗ cao nhất của mặt đùi khi gối gập vuông — đùi cong vồng
+  theo `bendLimb` (điểm điều khiển thứ hai nhô `limbCurve / 6` ống chân) và thon dần về gối — gồm vỏ viền,
+  cộng 1 px. Dưới chỗ gập, nửa trước nằm ngang trên đùi: vành xa chỗ gập bao nhiêu thì nửa sâu thêm bấy
+  nhiêu dọc đùi, không hẹp lại ở góc bo của gấu, nên các vành lồng nhau thành vạt nửa ellipse mép trơn.
+  Nửa sau, hai sườn và tâm nắp gấu buông tới mặt ghế (`legHalf` dưới hông) rồi dừng; kinh độ trước ±`0.3`
+  (`cos`) chuyển dần từ buông sang gập. Nửa trước không thấp hơn đường qua chỗ gập theo hướng đùi: thân ngả
+  trước thì bụng dừng trên đùi. Nét, chấm, mảng giữ khoảng nổi khỏi mặt khối. Hướng đùi là hướng đùi trung
+  bình trong mặt dọc của thân; `act` gập lại khi nó đổi quá nửa độ, người nền `lod: 'low'` gập sẵn chếch
+  lên `0.1` một lần. Người ngồi mặc váy dựng khối thì thân áo dưới cạp dồn lên cạp, khuất trong váy.
 - Thân áo dựng khối cắm được vào vật (`items`), đổi bằng `equip` như mọi thân áo.
 
 Studio chọn kiểu ở lưới ô Thân áo, mỗi kiểu một ô có thumb; thẻ Thân áo khi ấy chỉ còn
@@ -1035,7 +1045,8 @@ khớp khối thân ở mọi nấc, kể cả `quarter` có `cast[].turn` lớn
   với `lt` chiều dài đùi đang vẽ (`skirtCover`): đứng thẳng ống luôn tới gấu, váy ngắn ngồi vẫn lộ
   gối, váy tới gối thì phủ tới gối, không bao giờ quá gối. Người 3D mặc đồ có ống thon như đùi, gốc
   `cladThigh`, gối theo `CLAD_TAPER`. Ở mút ống gấu rủ khỏi đùi thêm
-  `SKIRT_FALL · max(0, flare) · (1 − max(0, cos α))`. Sải chân thì váy giãn theo
+  `SKIRT_FALL · max(0, flare) · (1 − max(0, cos α)) · k`, `k` từ `0` khi vạt phủ không quá `SKIRT_REACH`
+  đùi lên `1` khi tới gối (`skirtFall`): váy ngắn ngồi nằm trên đùi, không rủ xuống mặt ghế. Sải chân thì váy giãn theo
   đùi trước và đùi sau, chân không xuyên ra hai bên; ngồi thì váy phủ lên lòng tới quá nửa
   đùi. Người 3D đo tầm phủ trên đùi thật rồi đổi ra phần ấy của đùi đã chiếu.
 - **Nếp** là đoạn thẳng trên mặt nón từ `0.3` tới `0.9` quãng cạp–gấu, ở kinh độ giữa hai
@@ -1072,7 +1083,7 @@ hông rồi thon về gấu theo ống đùi. `flare` âm quá mức ấy không
 |---|---:|---|
 | `SKIRT_EASE` | 4 | Ống phủ đùi rộng hơn nửa nét chân bấy nhiêu px |
 | `SKIRT_REACH` | 0.7 | Vạt váy ngắn phủ dọc đùi không quá bấy nhiêu phần đùi; gấu đứng thẳng càng thấp thì vạt càng tới gần gối |
-| `SKIRT_FALL` | 0.5 | Đùi càng ngang, gấu ở mút đùi rủ thêm bấy nhiêu lần `flare` |
+| `SKIRT_FALL` | 0.5 | Đùi càng ngang, gấu ở mút đùi rủ thêm bấy nhiêu lần `flare`, váy càng gần gối càng rủ đủ |
 
 Không mô phỏng vải: khối váy là **một bao lồi**, nên không có dáng lõm — váy đuôi cá, váy tầng, eo
 thắt giữa vạt đều không dựng được; hai chân sải rộng thì váy giãn thành một khối căng giữa hai đùi chứ

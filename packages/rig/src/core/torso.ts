@@ -718,6 +718,70 @@ export function profile(g: Dims, rig: Rig, inset: number) {
   };
 }
 
+/** Vạt áo của người ngồi (`lapFold`), px hệ thân, y xuống: mặt ghế; `fold` là chỗ gập và hướng đùi `[y, z]` */
+export interface Lap {
+  seat: number;
+  fold?: { top: number; dir: P2 };
+}
+
+/**
+ * Thân áo người ngồi (`profile` / `depth` của khối, hệ thân px, y xuống, z ra trước ngực): dưới `fold.top`, nửa trước gập
+ * theo đùi — vành xa chỗ gập bao nhiêu thì nửa sâu thêm bấy nhiêu dọc đùi, các vành lồng nhau thành vạt nửa ellipse, mép
+ * trơn — còn nửa sau và hai sườn buông tới `seat`; nửa trước không thấp
+ * hơn đường qua chỗ gập theo hướng đùi, nên thân ngả trước thì bụng dừng trên đùi. Không có `fold` thì mọi điểm dưới `seat`
+ * chỉ dồn lên `seat`. Điểm nổi khỏi mặt khối (nét, mảng) giữ khoảng nổi ấy.
+ */
+export function lapFold(pr: readonly P2[], depth: readonly number[], { seat, fold }: Lap) {
+  /** Hàng đầu tiên của `pr` không cao hơn `y` */
+  const row = (y: number) => {
+    let [lo, hi] = [0, pr.length];
+    while (lo < hi) {
+      const m = (lo + hi) >> 1;
+      if (pr[m][1] < y) lo = m + 1;
+      else hi = m;
+    }
+    return lo;
+  };
+  const at = (y: number, i = row(y)): P2 => {
+    if (i <= 0) return [pr[0][0], depth[0]];
+    if (i >= pr.length) return [pr[pr.length - 1][0], depth[depth.length - 1]];
+    const u = (y - pr[i - 1][1]) / (pr[i][1] - pr[i - 1][1] || 1);
+    return [lerp(pr[i - 1][0], pr[i][0], u), lerp(depth[i - 1], depth[i], u)];
+  };
+  if (!fold) return ([x, y, z]: Vec3): Vec3 => [x, Math.min(y, seat), z];
+  const { top } = fold;
+  const dt = at(top)[1];
+  const l = Math.hypot(...fold.dir) || 1;
+  const [dy, dz] = [fold.dir[0] / l, fold.dir[1] / l];
+  const slope = dz > 0.1 ? dy / dz : 0;
+  // vạt không hẹp lại dọc đùi: góc bo của gấu hẹp dần mà vạt dài thêm thì các vành cắt nhau, dải lật úp lòi vỏ viền
+  const wide: number[] = [];
+  pr.forEach(([pa, py], i) => wide.push(Math.max(wide[i - 1] ?? 0, py > top ? pa : 0)));
+  return ([x, y, z]: Vec3): Vec3 => {
+    const h = y - top;
+    if (h <= 0 && (z <= 0 || y < top + z * slope - 12)) return [x, y, z];
+    const i = row(y);
+    const [a, d] = at(y, i);
+    const rho = Math.hypot(x / Math.max(a, 1e-6), z / Math.max(d, 1e-6));
+    // tâm nắp gấu buông tới ghế: nắp chéo dưới vạt, không nằm sát mặt vạt mà giành độ sâu với nó
+    if (rho < 1e-6) return [x, Math.min(y, seat), z];
+    const [s, c] = [x / (a * rho), z / (d * rho)];
+    // nổi khỏi mặt khối dọc tia từ trục: nửa trước gập thì khoảng nổi chĩa lên
+    const e = (rho - 1) * Math.hypot(a * s, d * c);
+    const k = Math.min(1, Math.max(0, c / 0.3));
+    const w = k * k * (3 - 2 * k);
+    const [x1, y1, z1] =
+      h > 0
+        ? [
+            lerp(x, x * (Math.max(a, wide[i - 1] ?? 0) / a), w),
+            lerp(Math.min(y, seat), top + h * c * dy - e * dz, w),
+            lerp(z, (dt + h * dz) * c + e * dy, w),
+          ]
+        : [x, y, z];
+    return [x1, lerp(y1, Math.min(y1, top + z1 * slope - Math.max(0, e)), w), z1];
+  };
+}
+
 export const lerpAt = (pts: P2[], v: number, from: 0 | 1, to: 0 | 1) => {
   if (v <= pts[0][from]) return pts[0][to];
   for (let i = 1; i < pts.length; i++)
