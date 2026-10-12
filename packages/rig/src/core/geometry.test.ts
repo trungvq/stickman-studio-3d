@@ -293,7 +293,7 @@ describe("kênh `stretch` trong JSON hành động", () => {
   });
 
   it("bốn hoặc tám số dương; năm số, số âm hay 0 là lỗi", () => {
-    expect(ACTION_VERSION).toBe(16);
+    expect(ACTION_VERSION).toBe(17);
     expect(parseAction(withStretch([1, 1, 1, 1])).success).toBe(true);
     expect(parseAction(withStretch(SIT_LEGS)).success).toBe(true);
     expect(parseAction(withStretch([1, 1, 1, 1, 1])).success).toBe(false);

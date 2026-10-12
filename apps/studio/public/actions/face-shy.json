@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 10,
+  "schemaVersion": 17,
   "name": "face-shy",
   "duration": 0.6,
   "end": "hold",
@@ -11,9 +11,17 @@
       "face": {
         "eyes": "happy",
         "brow": "worried",
-        "mouth": "smile"
+        "mouth": "smile",
+        "blush": 0
+      }
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "face": {
+        "blush": 0.6
       }
     }
   ],
-  "note": "Ngượng: mắt cười, mày chau, mỉm cười."
+  "note": "Ngượng: mắt cười, mày chau, mỉm cười, má ửng dần."
 }

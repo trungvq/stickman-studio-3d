@@ -446,7 +446,7 @@ hai, hoặc không có cái nào, là lỗi schema.
 | `keys[].pose` | Tên một pose trong thư viện, hoặc object chỉ đè vài khớp. Tay ba số `[vai, khuỷu, cổ tay]`, chân hai số `[hông, gối]`, `head` ba số (số nào `null` là không ghi góc ấy — [Đầu và nét mặt](#đầu-và-nét-mặt)), `torso` một số, `stretch` bốn hoặc tám số — [Vươn chi](#vươn-chi). Tay thêm được số dang thứ tư, chân số dang thứ ba, `torso` thành `[cúi, nghiêng]` — [Dang và nghiêng ngang](#dang-và-nghiêng-ngang) |
 | `keys[].reach` | Đích cổ tay hệ thân cho `armNear` / `armFar`: `{ "at": [tiến, y, ra ngoài], "elbow"?: [...] }`. Người 3D giải IK hai đoạn; người 2D vẽ góc dự phòng — [Đích bàn tay](#đích-bàn-tay) |
 | `keys[].ease` | Áp cho đoạn **từ mốc này tới mốc sau**: `linear` đều, `smooth` chậm vào chậm ra (`smoothstep`, cùng đường với đoạn hoà, không vọt qua mốc sau), `spring` vọt qua rồi nảy về |
-| `keys[].face` | Nét mặt kể từ mốc này: `{ "mouth": …, "brow": …, "eyes": … }`, khai trường nào thì ghi trường đó. **Không nội suy**, và chỉ ăn khi `face` nằm trong `mask` — xem [Đầu và nét mặt](#đầu-và-nét-mặt) |
+| `keys[].face` | Nét mặt kể từ mốc này: `{ "mouth": …, "brow": …, "eyes": …, "blush": … }`, khai trường nào thì ghi trường đó. Ba kiểu nét **không nội suy**, `blush` (`0..1`) nội suy như góc — [Má ửng](#má-ửng); chỉ ăn khi `face` nằm trong `mask` — xem [Đầu và nét mặt](#đầu-và-nét-mặt) |
 | `keys[].equip` | Đổi đồ kể từ mốc này: `{ "crown": "hat", "handFar": null }`. **Công tắc**, không nội suy, không hoà và **không đi qua `mask`** — xem [Đổi đồ giữa chừng](#đổi-đồ-giữa-chừng) |
 | `events[]` | Mốc `{ name, t }` đặt tên cho một pha va chạm; không ghi khớp nào — xem [Mốc sự kiện](#mốc-sự-kiện) |
 | `keys[].layer` | Lớp vẽ cẳng tay kể từ mốc này, đè lên lớp thừa hưởng từ pose được gọi tên: `{ "armFar": "back" \| "mid" \| "front", "armNear": ... }`. **Không nội suy**; mốc sau không khai thì giữ nguyên. Chỉ ăn ở kênh nằm trong `mask`. [02 — Trang phục](02-trang-phuc.md#cẳng-tay-đổi-lớp-được-cánh-tay-trên-xa-thì-không) |
@@ -522,7 +522,9 @@ xem [Góc nhìn](#góc-nhìn).
 phải góc đầu. Hành động chỉ đổi mặt tự thêm `face` vào `mask` và không đụng
 `head`, nên nhép miệng chồng lên một hành động đang gật đầu là giữ nguyên cái
 gật. `composeFace` đè theo từng trường; không khai thì dùng `DEFAULT_FACE`. Trong
-đoạn hoà, `blendFace` đổi ở giữa đoạn.
+đoạn hoà, `blendFace` đổi kiểu nét ở giữa đoạn. Riêng `blush` là số: nội suy giữa
+hai mốc gần nhất có ghi nó (theo `ease` như góc), hoà thẳng suốt đoạn hoà (bên không
+ghi là `0`), và track không ghi `blush` thì không xoá má của track dưới.
 
 `mask: ["head"]` chiếm góc đầu mà không đụng nét mặt; `mask: ["face"]` thì ngược
 lại; `clips[].mask` ở scene thu hẹp được từng kênh một. Nhả track mặt sau khi clip
@@ -940,6 +942,26 @@ Nếp trán nằm **dưới** mảnh `hair` và `crown` — có mái hay có mũ
 chủ ý. Nhân vật già thì dùng nó cùng tóc râu bạc (`pieces.*.color`), đừng gen
 nếp nhăn vào mảnh ảnh: mảnh ảnh không co theo khẩu hình và không đi theo lắc
 gật.
+
+### Má ửng
+
+Hai vệt bầu dục dưới hai mắt, chếch ra ngoài (`blushMarks`), vẽ trên canvas nét mặt của người 3D ở
+mọi dáng đầu; 2D không vẽ. Mức ửng là `face.blush` của nhân vật (`0..1`, mặc định `0` — tắt) cộng
+`blush` của nét mặt lúc ấy (`keys[].face.blush` qua `sceneAt`), kẹp ở `1`:
+
+| Trường | Mặc định | Nghĩa |
+|---|---|---|
+| `face.blush` | `0` | Má ửng nền của nhân vật; người không ửng sẵn để `0` |
+| `keys[].face.blush` | không ghi | Má ửng thêm của hành động, nội suy giữa các mốc: ngượng đỏ mặt dần là hai mốc `0` → `0,6` |
+
+- **Màu suy từ da** (`blushColor`): `palette.skin` ngả `BLUSH.mix` (`0,6`) về đỏ ấm `BLUSH.flush`, độ
+  đục `BLUSH.alpha · mức` (`0,55` ở mức `1`). Da sáng sẫm xuống thành hồng cam, da sẫm sáng lên thành
+  đỏ gạch — cùng một độ ửng đọc ra trên mọi màu da, không thành vết bẩn hồng. Đừng đặt màu má riêng.
+- **Vẽ lại theo nấc.** `blushLevel` làm tròn mức về `1 / BLUSH.steps` (`1/32`); `FaceRig.set` chỉ vẽ lại
+  canvas khi kiểu nét hay nấc ửng đổi, nên má ửng dần không vẽ lại mỗi khung. Người nền (`lod: "low"`)
+  dùng chung texture theo dáng mặt, nét, nấc ửng và màu da.
+
+`face-shy` của bộ mẫu ửng từ `0` lên `0,6` trong `0,6` s.
 
 ### Tóc
 
@@ -1384,7 +1406,7 @@ qua `parseCharacter` trên sân khấu trống, không cần cảnh hay ống k�
   từ hông; mép dưới nằm đúng ở mặt cắt, không lề, phần nới cho đủ tỉ lệ `w`×`h` dồn xuống dưới.
 - **Góc.** `yaw` độ, `0` nhìn thẳng ống kính, dương là mặt nhìn sang phải khung; `pitch` nâng ống kính.
   Ống kính đặt xa (15 đơn vị three, góc nhìn hẹp) nên gần như không méo phối cảnh.
-- **Nét mặt và dáng.** `face` đặt khẩu hình, mắt, mày; `acting` là một khung của `sceneAt`, mang cả dáng
+- **Nét mặt và dáng.** `face` đặt khẩu hình, mắt, mày, má ửng thêm; `acting` là một khung của `sceneAt`, mang cả dáng
   đầu, thân và nét mặt (khi ấy `face` bị bỏ qua). Không chớp mắt.
 - **Nền trong suốt** (`background: null`, mặc định): chụp hai lần trên nền đen và nền trắng với
   `render({ paper: false })` — tắt hạt giấy và tối góc để màu mỗi điểm ảnh chỉ trộn tuyến tính với nền —
@@ -1431,8 +1453,8 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   má ở mọi góc quay. `CHIBI` (`core/face.ts`) cộng vào `face` của JSON nhân vật: mắt hạ `10`, hai mắt
   giãn thêm `18`, mồm gần mắt `10` px (`chibiShape`) — kính và `headFit` đọc chỗ mắt đã dời. Mỗi mắt
   phóng `1,45` lần quanh tâm của nó, bóp ngang `0,75` thành bầu dục đứng, con ngươi đang mở có đốm
-  sáng (`eyeShine`); mồm thu `0,8`, mày nhấc `3` px, má hồng `blushMarks` dưới hai mắt. 2D không vẽ
-  các nét ấy.
+  sáng (`eyeShine`); mồm thu `0,8`, mày nhấc `3` px. 2D không vẽ các nét ấy. Má ửng theo `face.blush`
+  của nhân vật, không theo dáng đầu — [Má ửng](#má-ửng).
 - **Tóc dựng khối dời theo sọ.** Mỗi đỉnh tóc dời đúng bằng điểm sọ bên dưới nó (`humanHair`): tóc
   giữ bề dày, gáy thu thì tóc gáy thu theo, tóc rủ không xuyên quai hàm. Kính và `headFit` đọc nửa
   trên nên như đầu cầu. Tai ẩn khi tóc phủ chỗ tai (tia từ ngoài vào tâm tai chạm vỏ tóc hay tóc rủ).

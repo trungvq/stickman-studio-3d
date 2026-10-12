@@ -527,11 +527,43 @@ export function eyeShine(
   };
 }
 
-/** Má hồng dưới hai mắt, chếch ra ngoài */
-export function blushMarks(cx: number, cy: number, gap: number): FaceMark {
+/** Đỏ ấm mà màu má ngả về, phần ngả `BLUSH.mix`; độ đục ở mức ửng `1` là `BLUSH.alpha` */
+export const BLUSH = { flush: [214, 52, 52], mix: 0.6, alpha: 0.55, steps: 32 } as const;
+
+const SKIN_RGB = [240, 217, 184];
+
+/** `#rgb` / `#rrggbb` ra ba kênh `0..255`; mã khác lấy màu da mặc định */
+function hexRgb(hex: string): number[] {
+  const h = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim())?.[1];
+  if (!h) return SKIN_RGB;
+  const full = h.length === 3 ? [...h].map((c) => c + c).join("") : h;
+  return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+}
+
+const clamp01 = (v: number) => Math.min(1, Math.max(0, Number.isFinite(v) ? v : 0));
+
+/**
+ * Màu má ửng trên da `skin` ở mức `k` `0..1`: da ngả về `BLUSH.flush` — da sáng sẫm xuống thành hồng
+ * cam, da sẫm sáng lên thành đỏ gạch — độ đục theo `k`. docs/01-rig.md#má-ửng
+ */
+export function blushColor(skin: string, k: number): string {
+  const m = BLUSH.mix;
+  const [r, g, b] = hexRgb(skin).map((v, i) => Math.round(v * (1 - m) + BLUSH.flush[i] * m));
+  return `rgba(${r}, ${g}, ${b}, ${+(BLUSH.alpha * clamp01(k)).toFixed(3)})`;
+}
+
+/** Mức ửng vẽ ra: `face.blush` của nhân vật cộng `blush` của nét mặt, kẹp `0..1`, làm tròn `1 / BLUSH.steps` */
+export const blushLevel = (base = 0, add = 0) =>
+  Math.round(clamp01(base + add) * BLUSH.steps) / BLUSH.steps;
+
+/** Má ửng dưới hai mắt, chếch ra ngoài, màu `blushColor(skin, k)`; `k` `0` thì rỗng */
+export function blushMarks(cx: number, cy: number, gap: number, skin: string, k: number): FaceMark {
   return {
-    fill: "rgba(236, 112, 112, 0.42)",
-    group: sidesOf().map((s) => ({ ellipse: [cx + s * (gap / 2 + 7), cy + 15, 8, 4.5] as Quad })),
+    fill: blushColor(skin, k),
+    group:
+      k > 0
+        ? sidesOf().map((s) => ({ ellipse: [cx + s * (gap / 2 + 7), cy + 15, 8, 4.5] as Quad }))
+        : [],
   };
 }
 

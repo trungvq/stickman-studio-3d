@@ -62,7 +62,7 @@ import {
 } from "./animalGait";
 
 /** Bump khi đổi hình dạng JSON hành động; `migrateAction` phải có nhánh tương ứng. */
-export const ACTION_VERSION = 16;
+export const ACTION_VERSION = 17;
 
 /** Kênh khớp: thứ có số trong `Pose`; `stretch` là hệ số dài chi, không phải góc */
 export const JOINT_CHANNELS = [
@@ -208,11 +208,13 @@ const LayerSchema = z.object({
   armNear: z.enum(ARM_LAYERS).optional(),
 });
 
-/** Nét mặt kể từ mốc này; đi cùng kênh `head`, không nội suy */
+/** Nét mặt kể từ mốc này, kênh `face`: kiểu nét không nội suy, `blush` nội suy như góc */
 const FaceSchema = z.object({
   mouth: z.enum(MOUTH_KINDS).optional(),
   brow: z.enum(BROW_KINDS).optional(),
   eyes: z.enum(EYE_KINDS).optional(),
+  /** Má ửng `0..1` cộng vào `face.blush` của nhân vật, kẹp ở `1` */
+  blush: z.number().min(0).max(1).optional(),
 });
 
 /**
@@ -518,6 +520,7 @@ export function migrateAction(json: unknown): unknown {
   // v13 → v14 thêm `ease: "smooth"` và thành phần `null` của `head`; file cũ không dùng, không phải viết gì
   // v14 → v15 thêm `snap`; thiếu là chuyển động không cố ý giật, `check` đo như mọi hành động
   // v15 → v16 thêm số dang của tay chân và `torso: [cúi, nghiêng]`; thiếu là `0`, không phải viết gì
+  // v16 → v17 thêm `keys[].face.blush`; thiếu là má không ửng thêm, không phải viết gì
   // v4 → v5 tay thành ba số; file cũ cầm đồ thẳng trục cẳng tay, tức cổ tay 0
   if (from < 5)
     for (const k of (o.keys ?? []) as Record<string, unknown>[]) {
@@ -727,7 +730,7 @@ export function actionLayers(a: ActionData, t: number): Partial<ArmLayers> {
 export const composeLayers = (...parts: Partial<ArmLayers>[]): ArmLayers =>
   Object.assign({}, DEFAULT_LAYERS, ...parts) as ArmLayers;
 
-/** Nét mặt mà hành động ghi tại pha `t`; kênh `face`, ngoài mặt nạ thì bỏ trống. */
+/** Nét mặt mà hành động ghi tại pha `t`; kênh `face`, ngoài mặt nạ thì bỏ trống. Kiểu nét bậc thang, `blush` nội suy. */
 export function actionFace(a: ActionData, t: number): Partial<FaceState> {
   if (!a.keys || !actionMask(a).includes("face")) return {};
   const u = phaseOf(a, t);
@@ -736,6 +739,13 @@ export function actionFace(a: ActionData, t: number): Partial<FaceState> {
     const v = sampleStep(a, (k) => keyFace(k)[f], u);
     if (v !== undefined) Object.assign(o, { [f]: v });
   }
+  const blush = sampleWith(
+    a,
+    (k) => keyFace(k).blush,
+    u,
+    (x, y, f) => x + (y - x) * f,
+  );
+  if (blush !== undefined) o.blush = blush;
   return o;
 }
 

@@ -18,7 +18,8 @@ import {
 import { Smile } from "lucide-react";
 import { useState } from "react";
 
-export type FaceValue = Partial<FaceState>;
+/** Kiểu nét mặt chọn trong lưới; `blush` là số, soạn bằng thanh trượt riêng */
+export type FaceValue = Partial<Pick<FaceState, "mouth" | "brow" | "eyes">>;
 type FaceField = keyof FaceValue;
 
 export const MOUTH_LABELS: Record<MouthKind, string> = {

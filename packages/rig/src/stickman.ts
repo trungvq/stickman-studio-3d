@@ -11,7 +11,7 @@ import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
 import { limbWidths, type Garment, type Glasses, type Sculpt, type Skirt } from './core/schema';
 import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, type Bones3 } from './core/act3';
-import { chibiShape } from './core/face';
+import { blushLevel, chibiShape } from './core/face';
 import { wornSkirt } from './core/skirtShape';
 import { humanHair, humanSkull } from './core/humanHead';
 import { Ankle, earGroup, HAND, handGeometry, humanHeadGeometry, neckGeometry, pelvisGeometry, shoeCapsule, shoeGeometry } from './human';
@@ -369,7 +369,7 @@ export function stickman(o: StickmanOptions): Figure {
   const skinMat = npr(skin3);
   // vỏ ngược dưới cằm `human` chìm sau cổ và cổ áo: nét bóng dáng vẽ thêm ở hậu kỳ
   head.add(inked(skull, human ? npr({ ...skin3, ink: 0.03 }) : skinMat, 0.03));
-  const faceR = lod === 'low' ? stillFace(skullScale, faceShape, face, human) : faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face }, human);
+  const faceR = lod === 'low' ? stillFace(skullScale, faceShape, face, human, skin) : faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face }, human, skin);
   head.add(faceR.mesh);
   if (glasses) {
     const asin = (v: number) => (Math.asin(Math.max(-1, Math.min(1, v / 65))) * 180) / Math.PI;
@@ -546,11 +546,12 @@ export function fitSkirt(p: Figure) {
 }
 
 const stillFaces = new Map<string, FaceRig>();
-/** Nét mặt dùng chung cho người nền: một texture cho mọi người cùng dáng mặt, `set` không đổi gì */
-function stillFace(scale: THREE.Vector3, shape?: Partial<FaceShape>, state?: Partial<FaceState>, human = false): FaceRig {
-  const s = { ...DEFAULT_FACE, ...state }, key = JSON.stringify([shape, s, human]);
+/** Nét mặt dùng chung cho người nền: một texture cho mọi người cùng dáng mặt, nét, mức ửng và màu da; `set` không đổi gì */
+function stillFace(scale: THREE.Vector3, shape: Partial<FaceShape> = {}, state?: Partial<FaceState>, human = false, skin?: string): FaceRig {
+  const s = { ...DEFAULT_FACE, ...state }, { blush, ...rest } = shape, lv = blushLevel(blush, s.blush);
+  const key = JSON.stringify([rest, s.mouth, s.brow, s.eyes, lv, human, skin]);
   let f = stillFaces.get(key);
-  if (!f) stillFaces.set(key, (f = faceRig(R.head, scale, shape, s, human)));
+  if (!f) stillFaces.set(key, (f = faceRig(R.head, scale, { ...rest, blush: lv }, { ...s, blush: 0 }, human, skin)));
   const mesh = new THREE.Mesh(f.mesh.geometry, f.mesh.material);
   mesh.userData.noShadow = true;
   mesh.userData.noCollide = true;

@@ -125,15 +125,21 @@ export function blendLayers(
 }
 
 /**
- * Nét mặt không nội suy được: đổi ở giữa đoạn hoà.
- * Khẩu hình đọc ra là tức thì, nên đổi sớm hay muộn nửa đoạn đều không ai thấy sai.
+ * Kiểu nét mặt không nội suy được: đổi ở giữa đoạn hoà. Khẩu hình đọc ra là tức thì, nên đổi
+ * sớm hay muộn nửa đoạn đều không ai thấy sai. `blush` hoà thẳng suốt đoạn, bên không ghi là `0`.
  */
 export function blendFace(
   from: Partial<FaceState>,
   to: Partial<FaceState>,
   f: number,
 ): Partial<FaceState> {
-  return f < 0.5 ? from : to;
+  const o = { ...(f < 0.5 ? from : to) };
+  if (from.blush === undefined && to.blush === undefined) delete o.blush;
+  else {
+    const a = from.blush ?? 0;
+    o.blush = a + ((to.blush ?? 0) - a) * f;
+  }
+  return o;
 }
 
 /** Kênh động vật hoà được: thân, cổ, đầu một số; đuôi, cánh hai số. Chân thì không — xem `blendAnimalPose`. */

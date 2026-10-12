@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { newCanvas, path2D } from './canvas';
 import { DEFAULT_FACE } from './core/constants';
-import { blushMarks, browMarks, CHIBI, chibiShape, eyeMarks, eyeShine, mouthMark, wrinkleMarks, type FaceInk, type FaceMark, type WrinkleSpec } from './core/face';
+import { blushLevel, blushMarks, browMarks, CHIBI, chibiShape, eyeMarks, eyeShine, mouthMark, wrinkleMarks, type FaceInk, type FaceMark, type WrinkleSpec } from './core/face';
 import { humanSkull } from './core/humanHead';
 import type { FaceState } from './core/types';
 
@@ -10,8 +10,8 @@ import type { FaceState } from './core/types';
 
 /** `face.wrinkle` của JSON nhân vật */
 export type Wrinkle = WrinkleSpec;
-/** `face` của JSON nhân vật, px của đầu cao 130 */
-export interface FaceShape { offsetY: number; eyeGap: number; mouthGap: number; wrinkle?: Wrinkle }
+/** `face` của JSON nhân vật, px của đầu cao 130; `blush` là má ửng nền `0..1` */
+export interface FaceShape { offsetY: number; eyeGap: number; mouthGap: number; wrinkle?: Wrinkle; blush?: number }
 
 const SHAPE: FaceShape = { offsetY: 0, eyeGap: 26, mouthGap: 34 };
 
@@ -68,7 +68,7 @@ function paint(g: Ctx, marks: FaceMark[], up: FaceInk = {}) {
   }
 }
 
-/** Nét mặt dán trên sọ: `mesh` treo vào nhóm đầu, `set` vẽ lại canvas khi nét mặt đổi. */
+/** Nét mặt dán trên sọ: `mesh` treo vào nhóm đầu, `set` vẽ lại canvas khi kiểu nét hay mức ửng (`blushLevel`) đổi. */
 export interface FaceRig {
   mesh: THREE.Mesh;
   state: FaceState;
@@ -78,9 +78,9 @@ export interface FaceRig {
 /**
  * Lớp nét mặt cho sọ bán kính `r` (three), cùng tỉ lệ `scale` với khối sọ. Mặt hướng +z, `y` lên; px đầu đổi ra
  * three theo `r / 65`. Lưới dời lên khỏi mặt sọ một chút để khỏi lẫn độ sâu. `human`: dán trên đầu `humanSkull`, nét
- * mặt chibi (`CHIBI`): mắt to có đốm sáng, má hồng.
+ * mặt chibi (`CHIBI`): mắt to có đốm sáng. Má ửng `shape.blush` cộng `state.blush`, màu suy từ da `skin`.
  */
-export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShape> = {}, state: FaceState = DEFAULT_FACE, human = false): FaceRig {
+export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShape> = {}, state: FaceState = DEFAULT_FACE, human = false, skin = '#f0d9b8'): FaceRig {
   const sh = human ? chibiShape({ ...SHAPE, ...shape }) : { ...SHAPE, ...shape };
   const canvas = newCanvas(BOX.w * TEXEL, BOX.h * TEXEL);
   const g = canvas.getContext('2d') as Ctx;
@@ -91,6 +91,7 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
   mesh.userData.noShadow = true;
   mesh.userData.noCollide = true;
   mesh.renderOrder = 1;
+  const level = (s: FaceState) => blushLevel(sh.blush, s.blush);
   const draw = (s: FaceState) => {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, canvas.width, canvas.height);
@@ -98,8 +99,8 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
     const mouthCy = sh.offsetY + sh.mouthGap;
     const wrinkle = sh.wrinkle && wrinkleMarks(sh.wrinkle, 0, sh.offsetY, sh.eyeGap, mouthCy);
     if (wrinkle) paint(g, [wrinkle]);
+    paint(g, [blushMarks(0, sh.offsetY, sh.eyeGap, skin, level(s))]);
     if (human) {
-      paint(g, [blushMarks(0, sh.offsetY, sh.eyeGap)]);
       paintAt(g, [mouthMark(s.mouth, 0, mouthCy)], CHIBI.mouth, 0, mouthCy);
       for (const side of [-1, 1] as const) {
         const o = { only: side, squash: CHIBI.squash };
@@ -113,7 +114,7 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
     mesh,
     state,
     set(s) {
-      if (s.mouth === rig.state.mouth && s.brow === rig.state.brow && s.eyes === rig.state.eyes) return;
+      if (s.mouth === rig.state.mouth && s.brow === rig.state.brow && s.eyes === rig.state.eyes && level(s) === level(rig.state)) return;
       rig.state = { ...s };
       draw(rig.state);
     },

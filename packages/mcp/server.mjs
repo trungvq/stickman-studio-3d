@@ -351,6 +351,12 @@ const FaceSpec = z
     mouth: z.enum(rig.MOUTH_KINDS).optional(),
     brow: z.enum(rig.BROW_KINDS).optional(),
     eyes: z.enum(rig.EYE_KINDS).optional(),
+    blush: z
+      .number()
+      .min(0)
+      .max(1)
+      .optional()
+      .describe("Má ửng thêm 0..1 cộng vào face.blush của nhân vật; chỉ người 3D vẽ"),
   })
   .optional();
 const ViewSpec = z
@@ -572,6 +578,8 @@ server.registerTool(
       wrinkleKinds: rig.WRINKLE_KINDS,
       wrinkleNote:
         "face.wrinkle (kind none|light|deep, color, width, dy) là dấu hiệu tuổi tác vẽ bằng code: nếp trán, chân chim, thêm túi mắt và pháp lệnh ở deep. Nó bám tâm mặt nên đi theo lắc/gật, và bị mảnh tóc hay mũ che phần trán. Nhân vật già thì dùng nó cùng tóc râu màu bạc, đừng gen nếp nhăn vào mảnh ảnh.",
+      blushNote:
+        "face.blush (0..1, mặc định 0) của nhân vật là má ửng của người 3D, màu suy từ palette.skin nên đọc được trên da sáng lẫn da sẫm; 2D không vẽ. keys[].face.blush (0..1) của hành động cộng thêm vào nó (kẹp ở 1) và nội suy giữa các mốc như góc, không bậc thang như mouth/brow/eyes — ngượng đỏ mặt dần là hai mốc blush 0 → 0.6, mask phải có face.",
       mouth: rig.MOUTH_KINDS,
       brow: rig.BROW_KINDS,
       eyes: rig.EYE_KINDS,
@@ -1156,7 +1164,7 @@ server.registerTool(
           root: at.root,
           pose: at.pose,
           layers: at.layers,
-          face: { mouth: at.mouth, brow: at.brow, eyes: at.eyes },
+          face: { mouth: at.mouth, brow: at.brow, eyes: at.eyes, blush: at.blush },
           shoulderFar: pt("shoulderFar"),
           shoulderNear: pt("shoulderNear"),
           elbowFar: pt("elbowFar"),

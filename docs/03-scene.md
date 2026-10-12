@@ -255,8 +255,8 @@ người 3D, trên mặt sàn thế giới — xem [`check` cho người 3D](#ch
 đứng và tắt trôi tự suy. `scale` phải theo phối cảnh của nền.
 
 `layers` và `face` chạy cùng cấu trúc nhưng khác phép hoà: lớp cẳng tay lấy lớp
-**trước nhất** của hai bên suốt chỗ nối, nét mặt đổi ở giữa. Cả hai không nội suy
-được — xem `blend.ts`.
+**trước nhất** của hai bên suốt chỗ nối, kiểu nét mặt đổi ở giữa. Cả hai không nội suy
+được — xem `blend.ts`. Riêng má ửng (`blush`) là số nên hoà thẳng suốt chỗ nối.
 
 ### Liên tục `x` giữa các cảnh
 

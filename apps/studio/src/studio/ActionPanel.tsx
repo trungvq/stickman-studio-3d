@@ -576,6 +576,23 @@ export function ActionPanel(p: ActionPanelProps) {
                 blank={{ mouth: "theo mốc trước", brow: "theo mốc trước", eyes: "theo mốc trước" }}
                 onChange={(f, k) => setFace(f, k)}
               />
+              <div className="mt-2">
+                <CheckRow
+                  label="Má ửng: ghi ở mốc này"
+                  checked={keyFace(key).blush !== undefined}
+                  onChange={(v) => setFace("blush", v ? 0 : undefined)}
+                />
+                {keyFace(key).blush !== undefined && (
+                  <SliderRow
+                    label="Má ửng thêm"
+                    value={keyFace(key).blush ?? 0}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    onChange={(v) => setFace("blush", v)}
+                  />
+                )}
+              </div>
             </div>
           )}
           {touched.map((k) => (

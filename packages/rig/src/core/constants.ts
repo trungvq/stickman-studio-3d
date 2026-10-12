@@ -47,7 +47,7 @@ export const NEUTRAL_HEAD: HeadPose = [0, 0, 0];
 /** Chi dài chuẩn: mặc định của kênh `stretch`, và là giá trị nền khi hành động không ghi nó */
 export const NEUTRAL_STRETCH: Stretch = [1, 1, 1, 1, 1, 1, 1, 1];
 
-export const DEFAULT_FACE: FaceState = { mouth: "closed", brow: "neutral", eyes: "open" };
+export const DEFAULT_FACE: FaceState = { mouth: "closed", brow: "neutral", eyes: "open", blush: 0 };
 
 /**
  * Tóc phẳng không quay theo đầu, nên lắc và gật chỉ dịch nét mặt bấy nhiêu lần nửa trục đầu.

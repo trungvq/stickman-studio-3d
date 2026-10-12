@@ -353,6 +353,8 @@ export const CharacterSchema = z.object({
       eyeGap: z.number().default(26),
       turn: z.number().default(12),
       mouthGap: z.number().default(34),
+      /** Má ửng `0..1` của người 3D, màu suy từ `palette.skin` (`blushColor`); `0` tắt, 2D không vẽ */
+      blush: z.number().min(0).max(1).default(0),
       moustache: z
         .object({
           kind: z

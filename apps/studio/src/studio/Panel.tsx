@@ -1130,6 +1130,14 @@ export function Panel(p: PanelProps) {
                 onChange={(v) => mutate((d) => (d.face.mouthGap = v))}
               />
               <SliderRow
+                label="Má ửng (3D)"
+                value={face.blush}
+                min={0}
+                max={1}
+                step={0.05}
+                onChange={(v) => mutate((d) => (d.face.blush = v))}
+              />
+              <SliderRow
                 label="Tóc trôi"
                 value={Math.round(c.head.follow * 100)}
                 min={-50}

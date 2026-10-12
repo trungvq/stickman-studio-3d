@@ -186,7 +186,8 @@ nghiêng hay gáy thì đổi `headView`, và ở đầu `side` thì `lắc` **h
 nét mặt đã ghim ở mép trước. Khẩu hình, lông mày và kiểu
 mắt là kênh `face` riêng trong `mask`,
 khai ở `keys[].face`, lấy mẫu kiểu bậc thang như `layer`, không nội suy — đổi nét
-mặt không đụng góc đầu của hành động đang chạy. Xem [01](01-rig.md).
+mặt không đụng góc đầu của hành động đang chạy. Riêng `keys[].face.blush` là số, nội suy
+như góc và cộng vào `face.blush` của nhân vật. Xem [01](01-rig.md).
 
 **Nhấp nhô và trôi ngang khi đi suy từ bàn chân, không dời hông riêng.** Mỗi frame tính y
 của cả hai bàn chân, lấy chân thấp hơn, dịch `root` cho chân đó chạm ground line.

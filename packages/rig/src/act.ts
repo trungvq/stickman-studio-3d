@@ -43,6 +43,8 @@ export interface Acting {
   mouth: MouthKind;
   brow: BrowKind;
   eyes: EyeKind;
+  /** Má ửng thêm `0..1`, cộng vào `face.blush` của nhân vật */
+  blush?: number;
 }
 
 const D = Math.PI / 180;
@@ -141,5 +143,5 @@ export function act(p: Figure, sp: Acting, t?: number) {
   reachArm(p, -near as Side, P.reach?.af, W?.hands?.far);
 
   const blink = t !== undefined && sp.eyes === 'open' && blinking(t, p.seed);
-  p.face.set({ mouth: sp.mouth, brow: sp.brow, eyes: blink ? 'shut' : sp.eyes });
+  p.face.set({ mouth: sp.mouth, brow: sp.brow, eyes: blink ? 'shut' : sp.eyes, blush: sp.blush });
 }

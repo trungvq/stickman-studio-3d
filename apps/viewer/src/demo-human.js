@@ -8,12 +8,13 @@ import { SAMPLE_ITEMS } from './demo-hold.js';
 const STICK = new URLSearchParams(location.search).has('stick');
 
 /** JSON nhân vật mẫu: số đo để trống lấy mặc định của schema, `rig` và `palette` đè lên */
-function character(name, { rig, palette, garment, hair, hairColor, skirt, glasses }) {
+function character(name, { rig, palette, face, garment, hair, hairColor, skirt, glasses }) {
   const json = {
     name,
     ...(rig && { rig }),
     head: { form: 'human' },
     palette: { skin: '#f8e3c8', line: '#1c1c1e', clad: true, ...palette },
+    ...(face && { face }),
     pieces: {
       torso: { src: 'sculpt', garment },
       hair: { src: 'sculpt', color: hairColor, sculpt: SCULPT_PRESETS[hair].sculpt },
@@ -43,9 +44,10 @@ const models = () => ({
     palette: { garment: '#c8663a', sleeve: '#c8663a', sleeveLength: 0.24, trouser: '#41587a' },
     garment: { style: 'tshirt' }, hair: 'anime', hairColor: '#33333a',
   }),
-  /** Nữ blouse tay lỡ, váy xếp ly, chân trần, giày đỏ nâu; dáng quả lê: đùi đầy, hông rộng hơn vai */
+  /** Nữ blouse tay lỡ, váy xếp ly, chân trần, giày đỏ nâu, má ửng; dáng quả lê: đùi đầy, hông rộng hơn vai */
   GIRL: character('vay', {
     palette: { garment: '#7893ae', sleeve: '#7893ae', sleeveLength: 0.45, trouserLength: 0, shoe: '#7a3b2e', trouserWidth: 21 },
+    face: { blush: 0.5 },
     garment: { style: 'blouse', hem: -18 }, hair: 'bob', hairColor: '#3b3038',
     skirt: { color: '#3a3f4a', shape: {} },
   }),
@@ -55,10 +57,11 @@ const models = () => ({
     palette: { garment: '#9a5fa8', sleeve: '#9a5fa8', trouser: '#2f3a33', sleeveWidth: 19, trouserWidth: 22, bicep: 0.35 },
     garment: { style: 'sweater' }, hair: 'neat', hairColor: '#5b3a26', glasses: 'round',
   }),
-  /** Nữ tóc đuôi ngựa, áo len, quần dài; mảnh: thấp hơn, vai và hông hẹp, tay chân thon */
+  /** Nữ tóc đuôi ngựa, áo len, quần dài, da nâu, má ửng; mảnh: thấp hơn, vai và hông hẹp, tay chân thon */
   PONY: character('duoi-ngua', {
     rig: { height: 0.94, shoulderHalf: 34, hipHalf: 18 },
-    palette: { garment: '#e0b23a', sleeve: '#e0b23a', trouser: '#34466e', sleeveWidth: 12, trouserWidth: 14 },
+    palette: { skin: '#9a6648', garment: '#e0b23a', sleeve: '#e0b23a', trouser: '#34466e', sleeveWidth: 12, trouserWidth: 14 },
+    face: { blush: 0.6 },
     garment: { style: 'sweater', hem: -10 }, hair: 'ponyLow', hairColor: '#3b2a22',
   }),
 });
@@ -116,9 +119,9 @@ const SCENES = {
   'human-row': ({ LONG, SHORT, GIRL, GLASSES, PONY }) => ({
     cast: [LONG, SHORT, GIRL, GLASSES, PONY].map((c, i) => ({ id: `r${i}`, c, world: { at: [(i - 2) * 150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('face-calm'))] })),
   }),
-  // cận mặt: cười, buồn, nói, méo há
+  // cận mặt: ngượng đỏ mặt dần (`blush` của hành động), buồn, nói, méo há
   'human-faces': ({ LONG, GIRL, GLASSES, PONY }) => ({
-    cast: [[LONG, 'face-delighted'], [GIRL, 'face-sad'], [GLASSES, 'talk-lips'], [PONY, 'face-wry']].map(([c, f], i) => ({
+    cast: [[LONG, 'face-shy'], [GIRL, 'face-sad'], [GLASSES, 'talk-lips'], [PONY, 'face-wry']].map(([c, f], i) => ({
       id: `m${i}`, c, world: { at: [(i - 1.5) * 150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip(f, f === 'talk-lips' ? 0.2 : 0))],
     })),
   }),

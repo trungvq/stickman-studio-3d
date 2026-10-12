@@ -105,11 +105,13 @@ export type BrowKind = keyof typeof BROWS;
 
 export type EyeKind = keyof typeof EYES;
 
-/** Nét mặt tại một thời điểm; rời khỏi `Pose` vì không nội suy được */
+/** Nét mặt tại một thời điểm; rời khỏi `Pose`: kiểu nét không nội suy được */
 export interface FaceState {
   mouth: MouthKind;
   brow: BrowKind;
   eyes: EyeKind;
+  /** Má ửng `0..1` cộng thêm vào `face.blush` của nhân vật; nội suy giữa các mốc, bỏ trống là `0` */
+  blush?: number;
 }
 
 export type MoustacheKind =
