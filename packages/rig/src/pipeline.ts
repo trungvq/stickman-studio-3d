@@ -15,7 +15,8 @@ const AO_KERNEL = Array.from({ length: AO_N }, (_, i) => {
 // Nét bóng dáng của vật liệu `userData.ink`: mầm là điểm ngay ngoài mép vật, loang bằng jump flood. Mầm `s` = (độ lệch
 // tới mầm gói một số, mã·1024 + bán kính px, độ sâu vật, độ đậm); `uInk[mã]` = (bề dày three, khe vật liệu); chỉ dò trong
 // các khung điểm ảnh (gồm cả hai mép) ôm vật có nét và bán kính nét. Cùng vật
-// liệu (lọn cắm vào vỏ tóc) thì nét nhạt dần theo khe sâu ở mép; vật khác thì nét chỉ dừng ở chỗ nó nằm hẳn trước.
+// liệu (tay áo cắm vào thân áo cùng màu) thì có nét ở mép nhìn sượt hay khe sâu, chỗ cắm vào nhau không; vật khác thì nét chỉ
+// dừng ở chỗ nó nằm hẳn trước.
 const MAX_INK = 128, MAX_RECTS = 8;
 const INK_GLSL = /* glsl */ `
 uniform vec2 uInk[${MAX_INK}];
@@ -34,7 +35,7 @@ float inkReach(vec4 s){ return s.y - floor(s.y / 1024.0) * 1024.0 - length(inkOf
 
 // uStep 0 gieo mầm; còn lại một bước loang, mỗi điểm giữ mầm phủ xa nhất trong chín điểm cách `uStep`.
 const JFA_FRAG = /* glsl */ `
-uniform highp sampler2D tPrev, tId, tZ;
+uniform highp sampler2D tPrev, tId, tZ, tN;
 uniform vec2 uRes;
 uniform float uNear, uFar, uStep;
 uniform vec4 uRect;
@@ -59,12 +60,19 @@ void main(){
       gl_FragColor = best;
       return;
     }
+    // mép vật kề nhìn sượt là bóng dáng thật của nó, có nét cả khi sát mặt sau; chỗ cắm vào nhau (vai liền) quay ra máy, không nét
+    float face = 1.0;
     for (int i = 1; i < 9; i += 2) {
       ivec2 q = inkClamp(p + ivec2(i % 3 - 1, i / 3 - 1), uRect);
-      if (texelFetch(tId, q, 0).r == idb) ze = max(ze, linz(texelFetch(tZ, q, 0).r));
+      if (texelFetch(tId, q, 0).r == idb) {
+        ze = max(ze, linz(texelFetch(tZ, q, 0).r));
+        vec2 c = (vec2(q) + 0.5) / uRes * 2.0 - 1.0;
+        vec3 v = normalize(vec3((c.x + uProj[2][0]) / uProj[0][0], (c.y + uProj[2][1]) / uProj[1][1], -1.0));
+        face = min(face, max(0.0, -dot(texelFetch(tN, q, 0).xyz * 2.0 - 1.0, v)));
+      }
     }
     vec2 k = uInk[int(idb)];
-    float edge = uInk[int(idp)].y != k.y ? 1.0 : ze > 0.0 ? smoothstep(0.1 * k.x, 0.6 * k.x, zp - ze) : 0.0;
+    float edge = uInk[int(idp)].y != k.y ? 1.0 : ze > 0.0 ? max(smoothstep(0.1 * k.x, 0.6 * k.x, zp - ze), 1.0 - smoothstep(0.3, 0.55, face)) : 0.0;
     best = vec4(inkPack(vec2(0.0)), idb * 1024.0 + min(k.x * uProj[1][1] * uRes.y * 0.5 / zb, 1000.0), zb, edge);
     if (best.w <= 0.0 || inkGate(idp, zp, best) <= 0.0) best.z = -1.0;
     gl_FragColor = best;
@@ -453,6 +461,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       tPrev: { value: null },
       tId: { value: normalRT.textures[1] },
       tZ: { value: normalRT.depthTexture },
+      tN: { value: normalRT.textures[0] },
       uRes: { value: new THREE.Vector2() },
       uNear: { value: 0 },
       uFar: { value: 0 },
