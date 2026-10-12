@@ -200,7 +200,8 @@ const TEE: Dims = {
   neck: 20,
   neckFront: 7,
   neckBack: 0,
-  slope: 0.4,
+  slope: 0.6,
+  cladSlope: 0.4,
   round: 16,
   hemRound: 8,
 };
@@ -245,6 +246,7 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
       neckFront: 0,
       neckBack: 0,
       slope: 0.85,
+      cladSlope: 0.85,
       round: 12,
       hemRound: 10,
     },
@@ -289,7 +291,8 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
       neck: 20,
       neckFront: 7,
       neckBack: 0,
-      slope: 0.4,
+      slope: 0.6,
+      cladSlope: 0.4,
       round: 16,
       hemRound: 8,
     },
@@ -397,7 +400,7 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
   },
   hoodie: {
     label: "Hoodie dựng khối",
-    dims: { ...TEE, hem: 5.5, slope: 0.5, neckFront: 8, neckBack: 8 },
+    dims: { ...TEE, hem: 5.5, slope: 0.7, cladSlope: 0.5, neckFront: 8, neckBack: 8 },
     neckline: "v",
     hood: {
       drop: [
@@ -628,11 +631,12 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
   },
 };
 
-/** Bộ số đã đủ: trường bỏ trống lấy số của kiểu */
-export function garmentOf(raw: Partial<Garment> | undefined): Garment & Dims {
+/** Bộ số đã đủ: trường bỏ trống lấy số của kiểu; `clad` (`palette.clad`) thì `slope` là `cladSlope` */
+export function garmentOf(raw: Partial<Garment> | undefined, clad = false): Garment & Dims {
   const g = GarmentSchema.parse(raw ?? {});
   const dims = { ...GARMENT_STYLES[g.style].dims };
   for (const k of Object.keys(dims) as (keyof Dims)[]) if (g[k] !== undefined) dims[k] = g[k];
+  if (clad) dims.slope = dims.cladSlope;
   return { ...g, ...dims };
 }
 
@@ -729,17 +733,19 @@ export const lerpAt = (pts: P2[], v: number, from: 0 | 1, to: 0 | 1) => {
  * Nửa rộng vành vai nơi đặt gốc tay: tâm nét viền ở độ cao khớp vai — bề ngang áo lùi vào nửa nét,
  * để tay mọc ra đúng từ viền thân
  */
-export function garmentShoulder(raw: Partial<Garment> | undefined, rig: Rig) {
-  const pr = profile(garmentOf(raw), rig, 0);
+export function garmentShoulder(raw: Partial<Garment> | undefined, rig: Rig, clad = false) {
+  const pr = profile(garmentOf(raw, clad), rig, 0);
   return Math.max(0, lerpAt(pr.pts, pr.yS, 1, 0) - rig.stroke / 2);
 }
 
-export const shoulderRoot = (c: CharacterData) => garmentShoulder(c.pieces.torso.garment, c.rig);
+export const shoulderRoot = (c: CharacterData) =>
+  garmentShoulder(c.pieces.torso.garment, c.rig, c.palette.clad);
 
 /**
  * Tâm gốc ống cánh tay ở góc vai của mặt khối 3D (mặt cắt lùi nửa nét như `torsoMesh`), `[x, y]` px của nhóm thân, y
  * xuống. Vòng tròn bán kính `r` nội tiếp góc, tiếp xúc vát vai và sườn áo; `grow` lớn hơn `r` thì vòng ấy nở từ đúng
- * điểm tiếp xúc vát vai, lồi ra ngoài sườn áo. Nắp ống tay bán kính `grow` ở đây thì viền vai đi liền vào tay
+ * điểm tiếp xúc vát vai, lồi ra ngoài sườn áo. Nắp ống tay bán kính `grow` ở đây thì viền vai đi liền vào tay. Chỉ người
+ * `clad` có ống tay: vát vai là `cladSlope`
  */
 export function garmentSocket(
   raw: Partial<Garment> | undefined,
@@ -747,7 +753,7 @@ export function garmentSocket(
   r: number,
   grow = r,
 ): P2 {
-  const pr = profile(garmentOf(raw), rig, rig.stroke / 2);
+  const pr = profile(garmentOf(raw, true), rig, rig.stroke / 2);
   // vát vai: khớp cổ → đầu cung bo; sườn: cuối cung bo (`B`) xuôi vài điểm, đã thắt eo
   const [P0, A, B, S] = [pr.pts[0], pr.pts[1], pr.pts[13], pr.pts[17]];
   const unit = (x: number, y: number): P2 => {
@@ -839,6 +845,7 @@ export function torsoPaths(
   const raw = c.pieces.torso.garment;
   const key = JSON.stringify([
     raw,
+    c.palette.clad,
     yaw,
     rig.height,
     rig.shoulderHalf,
@@ -858,7 +865,7 @@ export function torsoPaths(
 
 function buildTorso(c: CharacterData, yaw: number, stroke: number, lens?: LocalLens): TorsoPaths {
   const { rig } = c;
-  const g = garmentOf(c.pieces.torso.garment);
+  const g = garmentOf(c.pieces.torso.garment, c.palette.clad);
   const def = GARMENT_STYLES[g.style];
   const inset = stroke / 2;
   const pr = profile(g, rig, inset);

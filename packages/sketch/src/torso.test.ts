@@ -7,6 +7,7 @@ import {
   D,
   type Garment,
   GARMENT_STYLE_NAMES,
+  GARMENT_STYLES,
   garmentOf,
   limbSpread,
   POSES,
@@ -19,6 +20,9 @@ import {
   torsoPaths,
   torsoYaw,
   type View,
+  defaultCharacter,
+  limbWidths,
+  LIMB_WIDTH,
 } from "@stickman3d/rig/core";
 import { figureAnchors } from "./anchor";
 
@@ -301,5 +305,23 @@ describe("thân áo dựng khối", () => {
     expect(garmentOf({ style: "bare" }).neckFront).toBe(0);
     expect(garmentOf({ style: "tshirt", neckFront: 3 }).neckFront).toBe(3);
     expect(garmentOf(undefined).style).toBe("tshirt");
+  });
+
+  it("bề dày tay chân bỏ trống theo `clad`, khai thì giữ", () => {
+    expect(limbWidths({})).toEqual({ sleeve: LIMB_WIDTH.stick, trouser: LIMB_WIDTH.stick });
+    expect(limbWidths({ clad: true })).toEqual(LIMB_WIDTH.clad);
+    expect(limbWidths({ clad: true, sleeveWidth: 8 }).sleeve).toBe(8);
+    expect(limbWidths(defaultCharacter().palette).sleeve).toBe(LIMB_WIDTH.stick);
+  });
+
+  it("vát vai: người que đọc `slope`, nhân vật `clad` đọc `cladSlope`", () => {
+    for (const style of GARMENT_STYLE_NAMES) {
+      const d = GARMENT_STYLES[style].dims;
+      expect(garmentOf({ style }).slope, style).toBe(d.slope);
+      expect(garmentOf({ style }, true).slope, style).toBe(d.cladSlope);
+    }
+    expect(garmentOf({}).slope).toBeGreaterThan(garmentOf({}, true).slope);
+    expect(garmentOf({ cladSlope: 0.3 }, true).slope).toBe(0.3);
+    expect(garmentOf({ slope: 0.3 }, true).slope).toBe(garmentOf({}, true).slope);
   });
 });

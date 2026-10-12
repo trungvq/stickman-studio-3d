@@ -31,8 +31,9 @@ export interface TorsoMesh {
 /** Cạnh tam giác của mảng tô dài nhất bấy nhiêu px: dài hơn thì dây cung cắt xuyên mặt cong của khối */
 const FILL_EDGE = 5;
 
+/** `arm` có là người `clad`: vát vai `cladSlope`, sườn áo lùi theo `cladProfile` */
 export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: ArmRoom): TorsoMesh {
-  const g = garmentOf(raw);
+  const g = garmentOf(raw, !!arm);
   const def = GARMENT_STYLES[g.style];
   const pr = profile(g, rig, rig.stroke / 2);
   const { pts, depth } = arm ? cladProfile(pr.pts, arm) : { pts: pr.pts, depth: pr.pts.map(([a]) => TORSO_DEPTH * a) };

@@ -1,8 +1,8 @@
-import { D, RIG, TORSO_DEPTH } from "./constants";
+import { D, RIG } from "./constants";
 import { lengths } from "./geometry";
 import { REACH_ELBOW } from "./ik";
 import type { V3 } from "./lens";
-import type { CharacterData, Garment } from "./schema";
+import { limbWidths, type CharacterData, type Garment } from "./schema";
 import { garmentShoulder, garmentSocket, type P2, type Rig } from "./torso";
 
 /**
@@ -33,11 +33,8 @@ export const BONES3: Readonly<Bones3> = bones3();
 /** Tay choãi khỏi thân áo, radian quanh trục tiến; đích cổ tay thì không. Người mặc đồ tay to: `roots3` */
 export const SPLAY3 = 0.08;
 
-/** Khe giữa sườn áo và cánh tay buông, giữa hai gốc đùi của người mặc đồ, px */
+/** Khe giữa sườn áo và cánh tay buông của người mặc đồ, px */
 export const CLAD_GAP = 2;
-
-/** Gốc đùi người mặc đồ nở tối đa bấy nhiêu lần bán kính ống quần */
-const THIGH_MAX = 1.6;
 
 /** Đáy sọ trên mép cổ áo: tâm khối đầu cao hơn khớp cổ ngần này, đơn vị three; chỉ đoạn cổ nhân `height` */
 export const head3 = (B: Bones3) => B.neck + 0.09 + B.head * 1.04;
@@ -50,50 +47,73 @@ export const HEAD3 = head3(BONES3);
  */
 export const CLAD_TAPER = {
   arm: [1.12, 0.88, 0.74],
-  leg: [1.06, 0.94, 0.8],
+  leg: [1.35, 0.9, 0.74],
 } as const;
 
 /** Bán kính gốc ống cánh tay của người mặc đồ, px: `limbHalf` của lõi nhân `CLAD_TAPER` */
 export const cladArm = (sleeveWidth: number, stroke: number) =>
   ((sleeveWidth + stroke) / 2) * CLAD_TAPER.arm[0];
 
-/**
- * Bán kính gốc đùi của người mặc đồ, px: nở tới cách đường giữa nửa `CLAD_GAP` (không quá `THIGH_MAX` lần ống quần), nên
- * hai đùi gần chạm nhau ở đáy quần và khe giữa hai chân mở thành chữ V
- */
-export const cladThigh = (trouserWidth: number, stroke: number, hipHalf: number) => {
-  const r = (trouserWidth + stroke) / 2;
-  return Math.min(THIGH_MAX * r, Math.max(r * CLAD_TAPER.leg[0], hipHalf - CLAD_GAP / 2));
-};
+/** Bán kính gốc đùi của người mặc đồ, px: `limbHalf` của lõi nhân `CLAD_TAPER`, như `cladArm` */
+export const cladThigh = (trouserWidth: number, stroke: number) =>
+  ((trouserWidth + stroke) / 2) * CLAD_TAPER.leg[0];
+
+/** Nửa bề sâu thân người mặc đồ, nhân nửa rộng: dày hơn `TORSO_DEPTH` của người que */
+export const CLAD_DEPTH = 0.95;
 
 /**
- * Chỗ của tay trên thân người mặc đồ, px của nhóm thân (y xuống): tâm gốc vai `at`, bán kính nắp vai `cap`, nửa rộng
- * `side` mà sườn áo lùi về dưới nách
+ * Tay buông của người mặc đồ, px của nhóm thân (y xuống): tâm gốc vai `at`, bán kính nắp vai `cap`, góc choãi `splay`
+ * (rad), bán kính ống ở vai, khuỷu, cổ tay `r`, độ dài hai đoạn `len`; `side` là nửa rộng sườn áo dưới nách (`armSide` ở
+ * khuỷu)
  */
 export interface ArmRoom {
   at: readonly [number, number];
   cap: number;
+  splay: number;
+  r: readonly [number, number, number];
+  len: readonly [number, number];
   side: number;
 }
 
+/** Mép trong cánh tay buông ở độ cao `y` trừ một `CLAD_GAP`, px; trên vai là `-Infinity` */
+export function armInner(room: Omit<ArmRoom, "side">, y: number) {
+  const { at, splay, r, len } = room;
+  const c = Math.cos(splay);
+  const t = (y - at[1]) / c;
+  if (t < 0) return -Infinity;
+  const rr =
+    t < len[0]
+      ? r[0] + ((r[1] - r[0]) * t) / len[0]
+      : t < len[0] + len[1]
+        ? r[1] + ((r[2] - r[1]) * (t - len[0])) / len[1]
+        : r[2];
+  return at[0] + t * Math.sin(splay) - rr / c - CLAD_GAP;
+}
+
+/** Nửa rộng tối đa của thân người mặc đồ ở `y`: `side` tới ngang khuỷu, dưới đó nở theo mép trong cẳng tay */
+export const armSide = (room: ArmRoom, y: number) => Math.max(room.side, armInner(room, y));
+
 /**
- * Mặt cắt thân áo của người mặc đồ: dưới tâm gốc vai sườn áo lùi về `room.side`, chuyển êm trong bán kính nắp vai — tay
- * buông theo `roots3` nằm ngoài thân, không lấn vào. `depth` là nửa bề sâu từng hàng: `TORSO_DEPTH` lần nửa rộng nhưng
- * không quá `TORSO_DEPTH · room.side`, nên vai rộng mà mỏng, ngực và lưng phẳng một mạch, nhìn ngang không gù
+ * Mặt cắt thân áo của người mặc đồ: dưới tâm gốc vai sườn áo lùi về `armSide`, chuyển êm trong bán kính nắp vai — tay
+ * buông theo `roots3` nằm ngoài thân, không lấn vào; dưới khuỷu thân được nở theo tay nên hông rộng thành dáng quả lê.
+ * `depth` là nửa bề sâu từng hàng: `CLAD_DEPTH` lần nửa rộng nhưng không quá `CLAD_DEPTH · armSide`, nên vai rộng mà
+ * mỏng, ngực và lưng phẳng một mạch, nhìn ngang không gù
  */
 export function cladProfile(pts: readonly P2[], room: ArmRoom): { pts: P2[]; depth: number[] } {
   const out = pts.map(([a, y]): P2 => {
     const u = Math.max(0, Math.min(1, (y - room.at[1]) / room.cap));
-    return [a > room.side ? a + (room.side - a) * u * u * (3 - 2 * u) : a, y];
+    const lim = armSide(room, y);
+    return [a > lim ? a + (lim - a) * u * u * (3 - 2 * u) : a, y];
   });
-  return { pts: out, depth: out.map(([a]) => TORSO_DEPTH * Math.min(a, room.side)) };
+  return { pts: out, depth: out.map(([a, y]) => CLAD_DEPTH * Math.min(a, armSide(room, y))) };
 }
 
 /**
  * Gốc vai `[ngang, cao trên hông]`, nửa khoảng hai gốc chân của người 3D, đơn vị three, và góc tay choãi. `arm` (px,
  * `cladArm`) có thì gốc vai ở `garmentSocket`: nắp ống tay ôm góc vai áo, `bicep` nở nó ra ngoài sườn áo; tay buông choãi
- * `SPLAY3` như người que, dưới nách sườn áo lùi tới cách mép trong khuỷu một `CLAD_GAP` (`room`). Sườn ấy không hẹp hơn mép
- * ngoài gốc đùi `thigh`: hông rộng hơn thì tay choãi thêm cho khuỷu vẫn cách sườn một `CLAD_GAP`. Không thì gốc vai trên viền thân ở độ cao `shoulderDrop`
+ * `SPLAY3` như người que, dưới nách sườn áo lùi tới cách mép trong khuỷu một `CLAD_GAP` (`room`). Ngang hông, mép trong
+ * cẳng tay cách mép ngoài gốc đùi `thigh` ít nhất một `CLAD_GAP`: hông rộng hơn thì tay choãi thêm. Không thì gốc vai trên
+ * viền thân ở độ cao `shoulderDrop`
  */
 export const roots3 = (
   garment: Partial<Garment> | undefined,
@@ -114,15 +134,27 @@ export const roots3 = (
     };
   const cap = arm * (1 + bicep);
   const at = garmentSocket(garment, rig, arm, cap);
-  const L = RIG.upperArm * rig.height;
-  const elbow = (arm * CLAD_TAPER.arm[1]) / CLAD_TAPER.arm[0];
-  const side = Math.max(at[0] + L * Math.sin(SPLAY3) - elbow - CLAD_GAP, rig.hipHalf + thigh);
-  const reach = (side + CLAD_GAP + elbow - at[0]) / L;
+  const len = [RIG.upperArm * rig.height, RIG.foreArm * rig.height] as const;
+  const k = arm / CLAD_TAPER.arm[0];
+  const r = [cap, k * CLAD_TAPER.arm[1], k * CLAD_TAPER.arm[2]] as const;
+  const hipEdge = rig.hipHalf + thigh;
+  const fits = (splay: number) => armInner({ at, cap, splay, r, len }, 0) >= hipEdge;
+  let splay = SPLAY3;
+  if (!fits(splay)) {
+    let [lo, hi] = [SPLAY3, 1.2];
+    for (let i = 0; i < 40; i++) {
+      const mid = (lo + hi) / 2;
+      if (fits(mid)) hi = mid;
+      else lo = mid;
+    }
+    splay = hi;
+  }
+  const side = armInner({ at, cap, splay, r, len }, at[1] + len[0] * Math.cos(splay));
   return {
     shoulder: [at[0] / 100, -at[1] / 100] as readonly [number, number],
     hip,
-    splay: Math.max(SPLAY3, Math.asin(Math.min(1, reach))),
-    room: { at, cap, side } satisfies ArmRoom,
+    splay,
+    room: { at, cap, splay, r, len, side } satisfies ArmRoom,
   };
 };
 
@@ -311,13 +343,14 @@ export function actJoints(
   const P = sp.pose;
   const B = bones3(c.rig.height);
   const pal = c.palette;
-  const arm = pal.clad ? cladArm(pal.sleeveWidth, c.rig.stroke) : undefined;
+  const w = limbWidths(pal);
+  const arm = pal.clad ? cladArm(w.sleeve, c.rig.stroke) : undefined;
   const roots = roots3(
     c.pieces.torso.garment,
     c.rig,
     arm,
     pal.bicep,
-    cladThigh(pal.trouserWidth, c.rig.stroke, c.rig.hipHalf),
+    cladThigh(w.trouser, c.rig.stroke),
   );
   const flip = !!W.flip;
   const near = flip ? 1 : -1;

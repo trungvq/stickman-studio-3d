@@ -9,7 +9,7 @@ import { glassesMesh } from './glasses';
 import { INK, toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
-import type { Garment, Glasses, Sculpt, Skirt } from './core/schema';
+import { limbWidths, type Garment, type Glasses, type Sculpt, type Skirt } from './core/schema';
 import { BONES3, bones3, CLAD_TAPER, cladArm, cladThigh, head3, roots3, type Bones3 } from './core/act3';
 import { chibiShape } from './core/face';
 import { humanHair, humanSkull } from './core/humanHead';
@@ -321,8 +321,9 @@ export interface StickmanOptions {
 
 /** Một người que 3D theo JSON nhân vật của rig. */
 export function stickman(o: StickmanOptions): Figure {
-  const { rig, skin = '#f0d9b8', garment, color, accent, skirt, skirtColor = color, hair, hairColor = '#2a1c15', glasses = false, glassesColor, faceShape, face, seed = 0, sleeveWidth = 10, trouserWidth = 10, seated = false, limbCurve = 1, lod = 'full', items, itemSpecs, equip } = o;
+  const { rig, skin = '#f0d9b8', garment, color, accent, skirt, skirtColor = color, hair, hairColor = '#2a1c15', glasses = false, glassesColor, faceShape, face, seed = 0, seated = false, limbCurve = 1, lod = 'full', items, itemSpecs, equip } = o;
   const clad = !!o.clad, human = o.headForm === 'human';
+  const { sleeve: sleeveWidth, trouser: trouserWidth } = limbWidths(o);
   // người `clad`: nửa bề dày chi như `limbHalf` của lõi (gồm viền), nên người ngồi nằm đúng trên mặt ghế
   const limbR = (w: number) => (clad ? (w + rig.stroke) / 200 : (R.limb * w) / 10);
   q = QUALITY[lod];
@@ -331,17 +332,17 @@ export function stickman(o: StickmanOptions): Figure {
   const hips = joint(root, 0, B.thigh + B.shin + B.limb, 0);
   const spine = joint(hips, 0, 0.0, 0);
   const bicep = o.bicep ?? 0;
-  const thighR = clad ? cladThigh(trouserWidth, rig.stroke, rig.hipHalf) : 0;
+  const thighR = clad ? cladThigh(trouserWidth, rig.stroke) : 0;
   const at = roots3(garment, rig, clad ? cladArm(sleeveWidth, rig.stroke) : undefined, bicep, thighR);
   const [sx, sy] = at.shoulder;
-  const body = sculptTorso(spine, { garment, rig, color, accent, ink: INK, arm: at.room });
+  const body = sculptTorso(spine, { garment, rig, color, accent, ink: INK, arm: at.room, ...(clad && skirt && { tuck: -skirt.rise * rig.height }) });
   // khối thân áo là mảnh đầu tiên: `collide` lấy hộp thân từ nó
   spine.children[0].userData.torso = true;
   let skirtRig: Figure['skirt'];
   if (skirt) {
     const dir: Vec3 = seated ? [0, 0.08, 1] : [0, 1, 0];
     const thighs = SIDES.map((s) => ({ hip: [s * rig.hipHalf, 0, 0] as Vec3, dir }));
-    const opts = { skirt, rig, color: skirtColor, ink: INK, legW: clad ? 2 * thighR : trouserWidth };
+    const opts = { skirt, rig, color: skirtColor, ink: INK, legW: clad ? 2 * thighR : trouserWidth, ...(clad && { body }) };
     skirtRig = { opts, group: sculptSkirt(spine, { ...opts, thighs }), key: '' };
   }
   const neck = joint(spine, 0, B.torso, 0);

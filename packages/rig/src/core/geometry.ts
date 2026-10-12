@@ -1,5 +1,5 @@
 import { D, RIG, SIDE_HIP, SIDE_SHOULDER } from "./constants";
-import type { CharacterData } from "./schema";
+import { limbWidths, type CharacterData } from "./schema";
 import { limbSpread, restYaw, shoulderRoot, torsoYaw } from "./torso";
 import { DEFAULT_VIEW, type Pose, type Pt, type Stretch, type View } from "./types";
 
@@ -86,7 +86,7 @@ export function computeFigure(c: CharacterData, P: Pose, view: View = DEFAULT_VI
   const s = P.stretch;
 
   const side = view === "side";
-  const armOuter = palette.sleeveWidth + (clad ? wLine : 0);
+  const armOuter = limbWidths(palette).sleeve + (clad ? wLine : 0);
   const cap = armOuter / 2;
   const solid = c.pieces.torso.src === "sculpt";
   const yaw = torsoYaw(view, restYaw(c));

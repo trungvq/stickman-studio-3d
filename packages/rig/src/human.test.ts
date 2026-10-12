@@ -166,11 +166,10 @@ describe('người 3D mặc đồ', () => {
             if (hit) expect(hit.object, `${style} ${x.toFixed(2)},${y.toFixed(3)}`).toBe(torso);
           }
     }
-    expect(18 - cladThigh(22, 6, 18)).toBeCloseTo(1, 6);
   });
   it('váy: lỗ ống đùi theo gốc đùi mặc đồ', () => {
     const f = dressed((c) => (c.pieces.hem = { ...c.pieces.hem, src: 'sculpt', skirt: SkirtSchema.parse({}) }), { skirt: SkirtSchema.parse({}) });
-    expect(f.skirt!.opts.legW).toBe(2 * cladThigh(13, 6, defaultCharacter().rig.hipHalf));
+    expect(f.skirt!.opts.legW).toBe(2 * cladThigh(13, 6));
   });
   it('người lùn (`rig.height` 0,65) theo `sceneAt`: đế giày trên sàn khi đứng và đi, gốc đùi nằm trên mặt ghế khi ngồi', () => {
     const c = defaultCharacter();

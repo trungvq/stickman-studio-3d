@@ -1,6 +1,6 @@
 import { actJoints, BONES3, type ActInput, type ActJoint } from "./act3";
 import { TORSO_DEPTH } from "./constants";
-import type { CharacterData } from "./schema";
+import { limbWidths, type CharacterData } from "./schema";
 import { garmentOf, lerpAt, profile } from "./torso";
 import type { V3 } from "./lens";
 
@@ -57,7 +57,7 @@ export function armPierce(
   const W = sp.world;
   if (!j || !W) return [];
   const s = W.s;
-  const pr = profile(garmentOf(c.pieces.torso.garment), c.rig, c.rig.stroke / 2);
+  const pr = profile(garmentOf(c.pieces.torso.garment, c.palette.clad), c.rig, c.rig.stroke / 2);
   const [yTop, yBot] = [pr.pts[0][1], pr.pts[pr.pts.length - 1][1]];
   // hệ thân: trục lên từ hông tới cổ, trục ngang qua hai vai; tiết diện đối xứng nên chiều tiến tuỳ dấu
   const hip = j.hip;
@@ -69,7 +69,7 @@ export function armPierce(
     up[2] * side[0] - up[0] * side[2],
     up[0] * side[1] - up[1] * side[0],
   ];
-  const r = ((BONES3.limb * 100 * (c.palette?.sleeveWidth ?? 10)) / 10) * s * PIERCE_CORE;
+  const r = ((BONES3.limb * 100 * limbWidths(c.palette).sleeve) / 10) * s * PIERCE_CORE;
   /** Lõi tay ở `p` vào trong mặt áo bao nhiêu (âm là còn cách) */
   const depthAt = (p: V3) => {
     const d = sub(p, hip);

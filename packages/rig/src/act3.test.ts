@@ -1,9 +1,8 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { act, type Acting } from './act';
-import { actJoints, CLAD_GAP, CLAD_TAPER, cladArm, cladProfile, cladThigh, roots3, SPLAY3, type ActJoint } from './core/act3';
-import { TORSO_DEPTH } from './core/constants';
-import { defaultCharacter } from './core/schema';
+import { actJoints, armInner, armSide, CLAD_DEPTH, CLAD_GAP, cladArm, cladProfile, cladThigh, roots3, SPLAY3, type ActJoint } from './core/act3';
+import { defaultCharacter, limbWidths } from './core/schema';
 import { garmentOf, profile } from './core/torso';
 import type { Figure } from './stickman';
 
@@ -84,10 +83,10 @@ describe('actJoints', () => {
     const c = defaultCharacter();
     for (const style of ['tshirt', 'shirt', 'suit', 'hoodie'] as const) {
       const g = { style };
-      const arm = cladArm(c.palette.sleeveWidth, c.rig.stroke);
+      const arm = cladArm(limbWidths({ clad: true }).sleeve, c.rig.stroke);
       const [x, h] = roots3(g, c.rig, arm).shoulder.map((v) => v * 100);
       const [xb, hb] = roots3(g, c.rig, arm, 0.7).shoulder.map((v) => v * 100);
-      const pts = profile(garmentOf(g), c.rig, c.rig.stroke / 2).pts;
+      const pts = profile(garmentOf(g, true), c.rig, c.rig.stroke / 2).pts;
       // khoảng cách từ tâm (x, −h) tới đường qua hai điểm
       const dist = (a: number[], b: number[]) => Math.abs((b[0] - a[0]) * (a[1] + h) - (a[0] - x) * (b[1] - a[1])) / Math.hypot(b[0] - a[0], b[1] - a[1]);
       expect(dist(pts[0], pts[1]), style).toBeCloseTo(arm, 6);
@@ -101,20 +100,23 @@ describe('actJoints', () => {
     }
   });
 
-  it('tay mặc đồ buông thẳng `SPLAY3` ngoài sườn áo đã thu: khuỷu cách sườn một `CLAD_GAP`, thân không dày hơn ở vai', () => {
+  it('tay mặc đồ buông `SPLAY3` ngoài sườn áo: khuỷu cách sườn một `CLAD_GAP`, ngang hông cẳng tay ngoài gốc đùi, thân không dày hơn ở vai', () => {
     const c = defaultCharacter();
     const g = { style: 'tshirt' as const };
     expect(roots3(g, c.rig).splay).toBe(SPLAY3);
-    for (const [w, bicep, height] of [[11, 0, 1], [19, 0.7, 1], [19, 0, 0.65]] as const) {
-      const rig = { ...c.rig, height }, arm = cladArm(w, 6);
-      const r = roots3(g, rig, arm, bicep, cladThigh(22, 6, rig.hipHalf));
-      const elbow = r.shoulder[0] * 100 + 62 * height * Math.sin(r.splay) - (arm * CLAD_TAPER.arm[1]) / CLAD_TAPER.arm[0];
-      expect(elbow - r.room!.side, `${w} ${bicep} ${height}`).toBeCloseTo(CLAD_GAP, 6);
-      const { pts: side, depth } = cladProfile(profile(garmentOf(g), rig, rig.stroke / 2).pts, r.room!);
-      for (const [a, y] of side) if (y > r.room!.at[1] + r.room!.cap) expect(a).toBeLessThanOrEqual(r.room!.side + 1e-9);
-      expect(Math.max(...depth)).toBeCloseTo(TORSO_DEPTH * r.room!.side, 6);
-      expect(r.room!.side).toBeGreaterThanOrEqual(rig.hipHalf + cladThigh(22, 6, rig.hipHalf));
-      if (r.room!.side > rig.hipHalf + cladThigh(22, 6, rig.hipHalf)) expect(r.splay).toBeCloseTo(SPLAY3, 9);
+    for (const [w, bicep, height, hipHalf] of [[11, 0, 1, 22], [19, 0.7, 1, 22], [19, 0, 0.65, 22], [15, 0, 1, 30]] as const) {
+      const rig = { ...c.rig, height, hipHalf }, arm = cladArm(w, 6), thigh = cladThigh(17, 6);
+      const r = roots3(g, rig, arm, bicep, thigh), room = r.room!;
+      const elbow = room.at[0] + 62 * height * Math.sin(r.splay) - room.r[1] / Math.cos(r.splay);
+      expect(elbow - room.side, `${w} ${bicep} ${height}`).toBeCloseTo(CLAD_GAP, 6);
+      expect(armInner(room, 0)).toBeGreaterThanOrEqual(hipHalf + thigh - 1e-6);
+      if (armInner({ ...room, splay: SPLAY3 }, 0) >= hipHalf + thigh) expect(r.splay).toBe(SPLAY3);
+      else expect(armInner(room, 0)).toBeCloseTo(hipHalf + thigh, 4);
+      const { pts: side, depth } = cladProfile(profile(garmentOf(g, true), rig, rig.stroke / 2).pts, room);
+      side.forEach(([a, y], i) => {
+        if (y > room.at[1] + room.cap) expect(a).toBeLessThanOrEqual(armSide(room, y) + 1e-9);
+        if (y < room.at[1] + room.len[0] * Math.cos(r.splay)) expect(depth[i]).toBeLessThanOrEqual(CLAD_DEPTH * room.side + 1e-9);
+      });
     }
   });
 

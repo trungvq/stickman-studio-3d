@@ -42,6 +42,7 @@ import {
   type View,
   viewArt,
   type World,
+  limbWidths,
 } from "@stickman3d/rig/core";
 import {
   HEAD_KEYS,
@@ -609,7 +610,11 @@ export function Character({
   const leg = (far: boolean) => {
     const [up, low] = [on(far ? "legFar" : "legNear"), on(far ? "shinFar" : "shinNear")];
     if (!up && !low) return null;
-    const ink = { pts: far ? F.legF : F.legN, color: palette.trouser, w: palette.trouserWidth };
+    const ink = {
+      pts: far ? F.legF : F.legN,
+      color: palette.trouser,
+      w: limbWidths(palette).trouser,
+    };
     return limb(up && low ? ink : { ...ink, seg: up ? 0 : 1 });
   };
   const hideUpper = c.sleeveFit.hideUpperArm;
@@ -617,7 +622,7 @@ export function Character({
   const arm = (far: boolean, fore: boolean) => {
     const k: PieceKey = far ? "sleeveFar" : "sleeveNear";
     const pts = far ? F.armF : F.armN;
-    const ink = { color: palette.sleeve, w: palette.sleeveWidth };
+    const ink = { color: palette.sleeve, w: limbWidths(palette).sleeve };
     if (fore) {
       const hand: PieceKey = far ? "handFar" : "handNear";
       const held = slots[hand];

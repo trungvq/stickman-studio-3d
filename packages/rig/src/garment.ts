@@ -77,8 +77,11 @@ function sheetGeometry(grid: Vec3[][]) {
   return g;
 }
 
-/** Thân áo dựng khối của rig (`pieces.torso.garment`), gắn vào nhóm thân `spine`; trả mặt cắt và bề sâu đã dựng. */
-export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, arm }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom } & Palette) {
+/**
+ * Thân áo dựng khối của rig (`pieces.torso.garment`), gắn vào nhóm thân `spine`; trả mặt cắt và bề sâu đã dựng. `tuck` (px, y
+ * xuống) là cạp váy liền mặt thân: nét, chấm, mảng tô dưới đó nằm trong váy nên không dựng, khỏi lòi qua cạp.
+ */
+export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, arm, tuck = Infinity }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom; tuck?: number } & Palette) {
   const t = torsoMesh(garment, rig, arm);
   const pal = { color, accent, ink };
   const matOf = (fill: MarkFill, soft = 1) => npr({ color: colorOf(fill, pal), stipple: 0.05, stippleScale: 3, soft });
@@ -93,7 +96,9 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
   h.userData.noShadow = true;
   spine.add(h);
 
+  const shown = (p: Vec3) => p[1] < tuck;
   for (const f of t.fills) {
+    if (!f.pts.some(shown)) continue;
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(f.pts.flatMap((p) => v3(p).toArray()), 3));
     g.setIndex(f.tris);
@@ -102,14 +107,29 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
   }
   for (const l of t.lines) {
     const closed = l.pts.length > 40 && v3(l.pts[0]).distanceTo(v3(l.pts[l.pts.length - 1])) < 0.02;
-    spine.add(tube(closed ? l.pts.slice(0, -1) : l.pts, lineR(l.k), inkMat, closed));
+    if (l.pts.every(shown)) {
+      spine.add(tube(closed ? l.pts.slice(0, -1) : l.pts, lineR(l.k), inkMat, closed));
+      continue;
+    }
+    // nét chui vào váy: giữ từng khúc còn trên cạp
+    let run: Vec3[] = [];
+    for (const p of l.pts) {
+      if (shown(p)) run.push(p);
+      else {
+        if (run.length > 1) spine.add(tube(run, lineR(l.k), inkMat));
+        run = [];
+      }
+    }
+    if (run.length > 1) spine.add(tube(run, lineR(l.k), inkMat));
   }
   for (const d of t.dots) {
+    if (!shown(d.p)) continue;
     const s = new THREE.Mesh(new THREE.SphereGeometry(lineR(d.k), 10, 8), inkMat);
     s.position.copy(v3(d.p));
     spine.add(s);
   }
   for (const s of t.sheets) {
+    if (!s.grid.some((col) => col.some(shown))) continue;
     const sm = new THREE.Mesh(sheetGeometry(s.grid), npr({ color: colorOf(s.color, pal), stipple: 0.04, soft: 1, doubleSided: true }));
     sm.castShadow = true;
     spine.add(sm);
@@ -118,14 +138,15 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
   return { profile: t.profile, depth: t.depth };
 }
 
-export interface SkirtOptions { skirt: Skirt; rig: Rig; color: string; ink: string; thighs: { hip: Vec3; dir: Vec3 }[]; legW: number }
+/** `body`: mặt cắt và bề sâu thân áo đã dựng (`sculptTorso`), có thì cạp liền mặt thân ở độ cao cạp thay `skirt.waist` */
+export interface SkirtOptions { skirt: Skirt; rig: Rig; color: string; ink: string; thighs: { hip: Vec3; dir: Vec3 }[]; legW: number; body?: { profile: [number, number][]; depth: number[] } }
 
 /**
  * Váy dựng khối của rig (`pieces.hem.skirt`): bao lồi của vành cạp, vành gấu và hai ống đùi tới tầm váy
  * phủ, như hình bao `buildSkirt` vẽ ở 2D. `thighs` là hông và hướng đùi trong hệ thân (px, y xuống), `legW`
  * bề ngang nét chân. Mọi khối nằm trong một nhóm `userData.skirt` gắn vào `spine`; `fitSkirt` dựng lại nó theo đùi.
  */
-export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thighs, legW }: SkirtOptions): THREE.Group {
+export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thighs, legW, body }: SkirtOptions): THREE.Group {
   const group = new THREE.Group();
   group.userData.skirt = true;
   spine.add(group);
@@ -136,9 +157,18 @@ export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thi
   const hang = Math.max(0, Math.cos(mean));
   const yW = -skirt.rise * h;
   const yH = yW + skirt.length * h * hang;
-  const aW = Math.max(1, skirt.waist - inset);
+  let aW = Math.max(1, skirt.waist - inset), dW = TORSO_DEPTH * aW;
+  if (body) {
+    const i = Math.max(1, body.profile.findIndex(([, y]) => y >= yW));
+    const [[a0, y0], [a1, y1]] = [body.profile[i - 1], body.profile[i] ?? body.profile[i - 1]];
+    const u = y1 === y0 ? 0 : Math.max(0, Math.min(1, (yW - y0) / (y1 - y0)));
+    const d0 = body.depth[i - 1], d1 = body.depth[i] ?? d0;
+    // cạp liền mặt thân áo, nhô nửa px cho khỏi đánh nhau độ sâu: không gờ ở chỗ nối
+    aW = a0 + (a1 - a0) * u + 0.5;
+    dW = d0 + (d1 - d0) * u + 0.5;
+  }
   const spread = skirt.flare * hang;
-  const ring = (u: number, y: number, p: number): Vec3 => [(aW + spread * u) * Math.sin(p), y, (TORSO_DEPTH * aW + spread * u) * Math.cos(p)];
+  const ring = (u: number, y: number, p: number): Vec3 => [(aW + spread * u) * Math.sin(p), y, (dW + spread * u) * Math.cos(p)];
   const pts: Vec3[] = [];
   for (let i = 0; i < 48; i++) {
     const p = (2 * Math.PI * i) / 48;

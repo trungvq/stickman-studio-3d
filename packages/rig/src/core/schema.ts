@@ -217,6 +217,8 @@ export const GarmentSchema = z.object({
   neckBack: z.number().optional(),
   /** Vát vai hạ bấy nhiêu px mỗi px ra ngang */
   slope: z.number().optional(),
+  /** Như `slope` cho nhân vật `palette.clad`: vai thoải hơn để tay to buông thẳng */
+  cladSlope: z.number().optional(),
   /** Bán kính bo góc giữa vát vai và thân */
   round: z.number().optional(),
   /** Bán kính bo góc gấu */
@@ -327,8 +329,9 @@ export const CharacterSchema = z.object({
       garment: z.string().default("#5b6ea8"),
       sleeve: z.string().default("#1a1a1a"),
       trouser: z.string().default("#1a1a1a"),
-      sleeveWidth: z.number().default(10),
-      trouserWidth: z.number().default(10),
+      /** Bề dày tay, chân; bỏ trống thì theo `clad`: `limbWidths` */
+      sleeveWidth: z.number().optional(),
+      trouserWidth: z.number().optional(),
       clad: z.boolean().default(false),
       /** Phần tay phủ màu `sleeve` từ vai, `0..1`; người 3D `clad` đọc, phần còn lại màu da */
       sleeveLength: z.number().min(0).max(1).default(1),
@@ -635,6 +638,15 @@ export function migrateCharacter(json: unknown): unknown {
   o.schemaVersion = CHARACTER_VERSION;
   return o;
 }
+
+/** Bề dày tay, chân mặc định: nét que `10`, người `clad` dày như tay áo, ống quần */
+export const LIMB_WIDTH = { stick: 10, clad: { sleeve: 15, trouser: 17 } } as const;
+
+/** Bề dày tay, chân của `palette`: trường bỏ trống lấy `LIMB_WIDTH` theo `clad` */
+export const limbWidths = (p: { clad?: boolean; sleeveWidth?: number; trouserWidth?: number }) => ({
+  sleeve: p.sleeveWidth ?? (p.clad ? LIMB_WIDTH.clad.sleeve : LIMB_WIDTH.stick),
+  trouser: p.trouserWidth ?? (p.clad ? LIMB_WIDTH.clad.trouser : LIMB_WIDTH.stick),
+});
 
 export const defaultCharacter = (): CharacterData => CharacterSchema.parse({});
 

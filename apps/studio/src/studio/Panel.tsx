@@ -59,6 +59,7 @@ import {
   SculptSchema,
   type WrinkleKind,
   WRINKLE_KINDS,
+  limbWidths,
 } from "@stickman3d/sketch";
 import { BookmarkCheck, FolderOpen, Images, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -156,7 +157,7 @@ const BEARD_TIP_LABELS: Record<BeardTip, string> = {
   fork: "chẻ đôi",
 };
 
-/** Tầm kéo của từng số thân áo dựng khối, px; `fit` theo phần trăm */
+/** Tầm kéo của từng số thân áo dựng khối, px; `fit` theo phần trăm. Vát vai là `cladSlope` khi bật `palette.clad` */
 type GarmentNum = Exclude<keyof Garment, "style">;
 const GARMENT_ROWS: { key: GarmentNum; label: string; min: number; max: number; pct?: true }[] = [
   { key: "ease", label: "Rộng thêm", min: -5, max: 20 },
@@ -168,6 +169,7 @@ const GARMENT_ROWS: { key: GarmentNum; label: string; min: number; max: number; 
   { key: "neckFront", label: "Cổ trước", min: -10, max: 90 },
   { key: "neckBack", label: "Cổ sau", min: -10, max: 30 },
   { key: "slope", label: "Vát vai", min: 30, max: 150, pct: true },
+  { key: "cladSlope", label: "Vát vai", min: 30, max: 150, pct: true },
   { key: "round", label: "Bo vai", min: 0, max: 30 },
   { key: "hemRound", label: "Bo gấu", min: 0, max: 20 },
 ];
@@ -808,7 +810,9 @@ export function Panel(p: PanelProps) {
               "torso",
               solidTorso ? (
                 <>
-                  {GARMENT_ROWS.map(({ key, label, min, max, pct }) => (
+                  {GARMENT_ROWS.filter(
+                    ({ key }) => key !== (palette.clad ? "slope" : "cladSlope"),
+                  ).map(({ key, label, min, max, pct }) => (
                     <SliderRow
                       key={key}
                       label={label}
@@ -1058,14 +1062,14 @@ export function Panel(p: PanelProps) {
               />
               <SliderRow
                 label="Dày tay"
-                value={palette.sleeveWidth}
+                value={limbWidths(palette).sleeve}
                 min={4}
                 max={40}
                 onChange={(v) => mutate((d) => (d.palette.sleeveWidth = v))}
               />
               <SliderRow
                 label="Dày chân"
-                value={palette.trouserWidth}
+                value={limbWidths(palette).trouser}
                 min={4}
                 max={40}
                 onChange={(v) => mutate((d) => (d.palette.trouserWidth = v))}

@@ -801,7 +801,8 @@ góc, eo co nhẹ, tay mọc ra từ viền thân. Góc quay là nấc của th�
 | `neck` | 15 | 20 | 20 | 20 | 20 | 20 | 20 | 19 | Nửa rộng miệng cổ áo, chỗ viền cổ chạm mặt vát hai bên |
 | `neckFront` | 0 | 7 | 10 | 9 | 12 | 76 | 8 | 8 | Viền cổ trước thấp hơn chỗ chạm hai bên bấy nhiêu px trên mặt khối; âm là cao hơn |
 | `neckBack` | 0 | 0 | 0 | 0 | 0 | 0 | 8 | 0 | Như `neckFront`, phía sau |
-| `slope` | 0.85 | 0.4 | 0.4 | 0.4 | 0.4 | 0.4 | 0.5 | 0.4 | Vát vai hạ bấy nhiêu px mỗi px ra ngang |
+| `slope` | 0.85 | 0.6 | 0.6 | 0.6 | 0.6 | 0.6 | 0.7 | 0.6 | Vát vai hạ bấy nhiêu px mỗi px ra ngang |
+| `cladSlope` | 0.85 | 0.4 | 0.4 | 0.4 | 0.4 | 0.4 | 0.5 | 0.4 | Như `slope` cho nhân vật `palette.clad`, cả 2D lẫn 3D: vai thoải để tay to buông thẳng |
 | `round` | 12 | 16 | 16 | 16 | 16 | 16 | 16 | 16 | Bán kính bo góc giữa vát vai và thân |
 | `hemRound` | 10 | 8 | 8 | 8 | 8 | 8 | 8 | 8 | Bán kính bo góc gấu |
 

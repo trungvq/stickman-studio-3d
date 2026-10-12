@@ -21,7 +21,7 @@ Gốc toạ độ đặt ở **chậu hông** (pelvis). Trục y hướng xuốn
 | Vai tụt | 20 | `rig.shoulderDrop`, khớp vai nằm dưới đỉnh thân bấy nhiêu |
 | Nửa rộng hông | 22 | `rig.hipHalf` |
 | Độ dày nét | 6 | Viền đầu, viền chi khi bật `clad` |
-| Độ dày chi | 10 | Mặc định đen, nét trần (`clad` tắt); người 3D `clad` xem [Người 3D mặc đồ](#người-3d-mặc-đồ) |
+| Độ dày chi | 10 | Mặc định đen, nét trần (`clad` tắt); bật `clad` thì tay `15`, chân `17` (`LIMB_WIDTH`), người 3D xem [Người 3D mặc đồ](#người-3d-mặc-đồ) |
 
 **`Chiều cao` nhân vào các đoạn dọc, không nhân vào bề ngang.** Sáu đoạn `cổ`,
 `thân`, `cánh tay trên`, `cẳng tay`, `đùi`, `cẳng chân` nhân với `rig.height`
@@ -998,7 +998,8 @@ Mặc định chi là một nét đặc dày `10`; viền mảnh và đầu dày
 
 Cờ `clad` (mặc định **tắt**) thì chi vẽ hai lượt — viền màu nét dày `w + nét`,
 rồi ruột dày `w` — để thành tay áo hoặc ống quần. Mặc định chi là nét trần đen
-`#1a1a1a` dày `10`, màu da chỉ hiện ở mặt.
+`#1a1a1a` dày `10`, màu da chỉ hiện ở mặt. `sleeveWidth`, `trouserWidth` bỏ trống thì
+`limbWidths` lấy theo cờ: `10` khi tắt, tay `15` chân `17` khi bật.
 
 `palette.limbCurve` (`0..1`, mặc định `1`) uốn chi thành nét kiểu rubber hose.
 `0` là hai đoạn thẳng gãy ở khuỷu / gối, cho nhân vật muốn nét gãy góc. Đường cong là Catmull-Rom đều qua ba
@@ -1404,7 +1405,7 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
 
 ```json
 "head": { "form": "human" },
-"palette": { "clad": true, "sleeve": "#3aa89c", "trouser": "#3b4252", "sleeveWidth": 11, "trouserWidth": 13 }
+"palette": { "clad": true, "sleeve": "#3aa89c", "trouser": "#3b4252" }
 ```
 
 | Trường | Mặc định | Người 3D |
@@ -1417,7 +1418,7 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
 | `palette.trouserLength` | `1` | Phần chân phủ màu quần tính từ hông; `0` là chân trần dưới váy |
 | `palette.shoe` | `#2b2623` | Màu giày |
 | `palette.bicep` | `0` | Gốc cánh tay to thêm bấy nhiêu phần: vai, bắp tay lồi khỏi sườn áo; nam quanh `0,35`, `0,7` là vạm vỡ |
-| `palette.sleeveWidth` / `trouserWidth` | `10` | Bán kính chi `(w + rig.stroke) / 2` px — đúng `limbHalf` của lõi; quanh `11` / `13` là vừa, chibi quanh `19` / `22` |
+| `palette.sleeveWidth` / `trouserWidth` | `15` / `17` | Bán kính chi `(w + rig.stroke) / 2` px — đúng `limbHalf` của lõi; bỏ trống lấy `LIMB_WIDTH.clad` (`limbWidths`), vạm vỡ quanh `19` / `22` |
 
 - **Đầu `human` là đầu chibi nặn từ mặt cầu.** `humanSkull` (`core/humanHead.ts`) nhận một điểm
   của sọ đơn vị (y lên, z ra trước mặt) và trả điểm trên đầu: nửa trên giữ nguyên, nửa dưới nở
@@ -1436,27 +1437,29 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   giữ bề dày, gáy thu thì tóc gáy thu theo, tóc rủ không xuyên quai hàm. Kính và `headFit` đọc nửa
   trên nên như đầu cầu. Tai ẩn khi tóc phủ chỗ tai (tia từ ngoài vào tâm tai chạm vỏ tóc hay tóc rủ).
 - **Vai liền tay.** Khớp vai của người mặc đồ ở `garmentSocket` (`core/torso.ts`): tâm vòng tròn bán
-  kính gốc ống cánh tay (`cladArm`) nội tiếp góc giữa vát vai và sườn áo của mặt khối. Nắp ống tay
+  kính gốc ống cánh tay (`cladArm`) nội tiếp góc giữa vát vai và sườn áo của mặt khối; vát vai là
+  `cladSlope` của kiểu áo, thoải hơn `slope` của người que ([docs/02](02-trang-phuc.md)). Nắp ống tay
   tiếp xúc cả hai, viền vai đi liền xuống mép ngoài cánh tay, không khấc. Khớp cao hơn và lùi vào so
   với người que (`shoulderDrop` không dùng) — `act` và `actJoints` cùng đọc `roots3` nên vẫn trùng.
   `bicep` nhân gốc ống tay `1 + bicep` và nở vòng ấy từ đúng điểm tiếp xúc vát vai: vai và bắp tay lồi
   ra ngoài sườn áo mà viền vẫn liền, khớp vai thấp xuống theo.
 - **Thân áo nhường chỗ cho tay.** Bề ngang vai của người mặc đồ là thân cộng hai cánh tay, như khớp vai
   người thật nằm ngoài lồng ngực: dưới tâm gốc vai, sườn áo lùi tới cách mép trong khuỷu tay buông một
-  `CLAD_GAP` (`2` px), chuyển êm trong bán kính nắp vai (`cladProfile`), nhưng không hẹp hơn mép ngoài gốc
-  đùi `hipHalf + cladThigh`. `roots3` trả chỗ ấy ở
-  `room`; thân áo, nét, khuy, khối hông và va chạm dựng theo mặt cắt đã lùi. Góc vai giữ nguyên nên nắp
-  tay vẫn ôm góc vai. Chỉ bề ngang lùi: nửa bề sâu từng hàng là `TORSO_DEPTH` lần nửa rộng nhưng không quá
-  `TORSO_DEPTH · side`, nên vai rộng mà mỏng, ngực và lưng phẳng một mạch, nhìn ngang không gù.
+  `CLAD_GAP` (`2` px), chuyển êm trong bán kính nắp vai (`cladProfile`); dưới khuỷu sườn áo được nở theo
+  mép trong cẳng tay (`armSide`, `armInner`), nên áo suông hay hông rộng thành dáng quả lê mà không lấn
+  vào tay. `roots3` trả chỗ ấy ở `room`; thân áo, nét, khuy, khối hông và va chạm dựng theo mặt cắt đã lùi.
+  Góc vai giữ nguyên nên nắp tay vẫn ôm góc vai. Nửa bề sâu từng hàng là `CLAD_DEPTH` (`0,95`) lần nửa
+  rộng — dày hơn `TORSO_DEPTH` của người que — nhưng không quá `CLAD_DEPTH · armSide`, nên vai rộng mà
+  mỏng, ngực và lưng phẳng một mạch, nhìn ngang không gù.
 - **Tay buông thẳng.** Tay buông choãi khỏi thân `SPLAY3` (`0,08` rad) quanh trục tiến, người mặc đồ cũng
-  thế: thân nhường chỗ chứ tay không xoè. Chỉ khi hông rộng giữ sườn áo ngoài mức ấy thì tay choãi thêm
-  cho khuỷu vẫn cách sườn `CLAD_GAP` (`roots3`).
+  thế: thân nhường chỗ chứ tay không xoè. Ngang hông, mép trong cẳng tay phải cách mép ngoài gốc đùi
+  `hipHalf + cladThigh` một `CLAD_GAP`; hông hay đùi to hơn mức ấy thì tay choãi thêm (`roots3`).
 - **Chi thon và phủ màu.** Ống chi thon theo bán kính (`CLAD_TAPER`): vai `1,12` → khuỷu `0,88` → cổ
-  tay `0,74` — bắp tay to hơn cẳng tay như đùi với ống chân —, hông `1,06` → gối `0,94` → cổ chân
-  `0,8`. Phủ hết thì ống tô màu áo, quần; phủ một phần thì ống da và một ống phủ to hơn `1,1` lần từ
-  gốc chi, mép nở `1,12` lần. Gốc đùi nở tới cách đường giữa nửa `CLAD_GAP`, không quá `1,6` lần ống quần
-  (`cladThigh`): hai đùi gần chạm nhau ở đáy quần, thon dần xuống gối nên khe giữa hai chân mở thành
-  chữ V. Ống phủ hết tay có cổ tay áo ở `0,84..1` cẳng tay. Độ cong chi vẫn là
+  tay `0,74` — bắp tay to hơn cẳng tay —, hông `1,35` → gối `0,9` → cổ chân
+  `0,74`. Phủ hết thì ống tô màu áo, quần; phủ một phần thì ống da và một ống phủ to hơn `1,1` lần từ
+  gốc chi, mép nở `1,12` lần. Gốc đùi là bán kính ống quần nhân `1,35` (`cladThigh`), tâm ở `±hipHalf`:
+  `hipHalf` lớn hơn gốc đùi thì hai chân tách nhau, nhỏ hơn thì hai đùi lấn vào nhau. Ống phủ hết tay có
+  cổ tay áo ở `0,84..1` cẳng tay. Độ cong chi vẫn là
   `palette.limbCurve`.
 - **Bàn tay hai dáng.** Xoè là găng có ngón cái tách, nắm là khối tròn ngón cái vắt ngang; lòng bàn
   tay quay về phía thân, ngón cái ra trước, cỡ theo bán kính cổ tay (`handScale`). Găng xoè dài không
@@ -1471,14 +1474,16 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
 - **Khối hông** là bao lồi của vành thân áo thu vào, hai khối cầu cỡ gốc đùi quanh khớp hông và hai khối
   cầu mông lùi sau, thấp hơn khớp hông (`BUTT`), trong nhóm thân, màu quần — màu váy khi có váy. Tới nửa
   bán kính đùi dưới gấu, khối hông lùi hẳn vào trong thân áo: mông chỉ phồng ra dưới gấu, không lồi qua
-  lưng áo. Váy dựng khối khoét lỗ đùi theo gốc đùi (`2 · cladThigh`).
+  lưng áo. Váy dựng khối khoét lỗ đùi theo gốc đùi (`2 · cladThigh`); cạp liền mặt thân áo ở độ cao cạp, cả
+  bề ngang lẫn bề sâu, thay `skirt.waist`: thân đi xuống váy không gờ.
 - **Va chạm** có thêm `hand` và `foot` (`handR`, `footL`… trong `touch`): nang bàn tay theo dáng
   đang hiện, nang giày đáy đúng mặt đế; nang đầu `human` kéo xuống ôm má. Đồ cầm khai `touch` cả cẳng
   tay lẫn bàn tay cầm.
-- **Chi to** (bộ mẫu `sleeveWidth` `19`, `trouserWidth` `22`) đi cùng vai rộng: nới `shoulderHalf` (bộ
-  mẫu `46`) hay `ease` của áo. `hipHalf` giữ quanh bán kính ống quần (bộ mẫu `14`, nữ `15`): rộng hơn thì
-  gốc đùi chạm trần `1,6` lần và khe chữ V hở ra, hông lại đẩy sườn áo và tay ra ngoài. Váy giữ cạp quanh
-  nửa rộng thân (bộ mẫu `waist` `31`, `flare` `22`): cạp rộng hơn thì vạt váy trùm lên tay buông. Muốn chibi thì hạ `rig.height`: đầu không co
+- **Chi to** (vạm vỡ `sleeveWidth` `19`, `trouserWidth` `22`) đi cùng vai rộng: nới `shoulderHalf` (vạm vỡ
+  `46`) hay `ease` của áo. Tay càng to thì gốc vai càng lùi vào góc vai áo, còn mép ngoài gốc đùi
+  (`hipHalf + cladThigh`) giữ sườn áo: hông rộng so với vai thì tay choãi thêm, hẹp thì thân thành cột
+  dưới vai. Dáng quả lê là đùi đầy (`trouserWidth` lớn, mẫu nữ `21`) chứ không nới `hipHalf`: nới hông là
+  hai chân dạng xa nhau. Váy cạp rộng hơn nửa rộng thân thì vạt váy trùm lên tay buông. Muốn chibi thì hạ `rig.height`: đầu không co
   nên `0,85` là đầu ~`1/3` chiều cao, `0,65` là ~`1/2,5`; thân áo, váy ngắn lại theo `height`. Đích tay hệ thân nhân `height`
   mà đầu thì không, nên hành động chạm mặt (chống cằm) soạn riêng cho người chibi; ghế cao bằng gối là
   `87,5 · height`.

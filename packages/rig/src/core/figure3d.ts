@@ -15,7 +15,7 @@ import {
 } from "./lens";
 import { cladThigh } from "./act3";
 import { bendOf, REACH_ELBOW, solveTwoBone } from "./ik";
-import type { CharacterData } from "./schema";
+import { limbWidths, type CharacterData } from "./schema";
 import { hull, skirtCover, skirtFall, skirtOf } from "./skirt";
 import { shoulderRoot } from "./torso";
 import type { BodyPart, Pose, Pt, Reach, View } from "./types";
@@ -87,13 +87,14 @@ export function viewOfTheta(theta: number): View {
 /** Bề dày nửa của nét chân, nét tay (đã gồm viền khi `clad`) */
 export const limbHalf = (c: CharacterData) => {
   const out = c.palette.clad ? c.rig.stroke : 0;
-  return { leg: (c.palette.trouserWidth + out) / 2, arm: (c.palette.sleeveWidth + out) / 2 };
+  const w = limbWidths(c.palette);
+  return { leg: (w.trouser + out) / 2, arm: (w.sleeve + out) / 2 };
 };
 
 /** Số đo thân của một nhân vật cho `sceneAt`: người mặc đồ ngồi trên gốc đùi `cladThigh` */
 export const body3 = (c: CharacterData): Body3 => ({
   legHalf: c.palette.clad
-    ? cladThigh(c.palette.trouserWidth, c.rig.stroke, c.rig.hipHalf)
+    ? cladThigh(limbWidths(c.palette).trouser, c.rig.stroke)
     : limbHalf(c).leg,
   hipHalf: c.rig.hipHalf,
 });
