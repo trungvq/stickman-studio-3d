@@ -7,13 +7,13 @@ import { SAMPLE_ITEMS } from './demo-hold.js';
 
 const STICK = new URLSearchParams(location.search).has('stick');
 
-/** JSON nhân vật mẫu; `palette` và `head` đè lên phần chung */
-function character(name, { palette, garment, hair, hairColor, skirt, glasses, hipHalf = 14 }) {
+/** JSON nhân vật mẫu: số đo để trống lấy mặc định của schema, `rig` và `palette` đè lên */
+function character(name, { rig, palette, garment, hair, hairColor, skirt, glasses }) {
   const json = {
     name,
-    rig: { stroke: 6, height: 1, shoulderHalf: 46, shoulderDrop: 20, hipHalf },
+    ...(rig && { rig }),
     head: { form: 'human' },
-    palette: { skin: '#f8e3c8', line: '#1c1c1e', sleeveWidth: 19, trouserWidth: 22, clad: true, ...palette },
+    palette: { skin: '#f8e3c8', line: '#1c1c1e', clad: true, ...palette },
     pieces: {
       torso: { src: 'sculpt', garment },
       hair: { src: 'sculpt', color: hairColor, sculpt: SCULPT_PRESETS[hair].sculpt },
@@ -31,33 +31,35 @@ function character(name, { palette, garment, hair, hairColor, skirt, glasses, hi
   return r.data;
 }
 
-/** Năm người mẫu; dựng lúc gọi cảnh, không lúc nạp app */
+/** Năm người mẫu, dựng lúc gọi cảnh; hai người đầu số đo mặc định, ba người sau chỉnh dáng */
 const models = () => ({
   /** Nam sơ mi dài tay, quần âu */
   LONG: character('dai-tay', {
-    palette: { garment: '#3aa89c', sleeve: '#3aa89c', trouser: '#3b4252', shoe: '#3a2a20', bicep: 0.35 },
+    palette: { garment: '#3aa89c', sleeve: '#3aa89c', trouser: '#3b4252', shoe: '#3a2a20' },
     garment: { style: 'shirt' }, hair: 'short', hairColor: '#2a1c15',
   }),
   /** Nam áo phông ngắn tay, quần bò */
   SHORT: character('ngan-tay', {
-    palette: { garment: '#c8663a', sleeve: '#c8663a', sleeveLength: 0.24, trouser: '#41587a', bicep: 0.35 },
+    palette: { garment: '#c8663a', sleeve: '#c8663a', sleeveLength: 0.24, trouser: '#41587a' },
     garment: { style: 'tshirt' }, hair: 'anime', hairColor: '#33333a',
   }),
-  /** Nữ blouse tay lỡ, váy xếp ly, chân trần, giày đỏ nâu */
+  /** Nữ blouse tay lỡ, váy xếp ly, chân trần, giày đỏ nâu; dáng quả lê: đùi đầy, hông rộng hơn vai */
   GIRL: character('vay', {
-    palette: { garment: '#7893ae', sleeve: '#7893ae', sleeveLength: 0.45, trouserLength: 0, shoe: '#7a3b2e', trouserWidth: 20 },
-    garment: { style: 'blouse', hem: -18 }, hair: 'bob', hairColor: '#3b3038', hipHalf: 15,
-    skirt: { color: '#3a3f4a', shape: { rise: 27, waist: 31, length: 52, flare: 22, pleats: 8 } },
+    palette: { garment: '#7893ae', sleeve: '#7893ae', sleeveLength: 0.45, trouserLength: 0, shoe: '#7a3b2e', trouserWidth: 21 },
+    garment: { style: 'blouse', hem: -18 }, hair: 'bob', hairColor: '#3b3038',
+    skirt: { color: '#3a3f4a', shape: {} },
   }),
-  /** Nam len cổ tròn, đeo kính, tóc gọn */
+  /** Nam len cổ tròn, đeo kính, tóc gọn; vạm vỡ: vai rộng, tay chân to, bắp tay nở */
   GLASSES: character('kinh', {
-    palette: { garment: '#9a5fa8', sleeve: '#9a5fa8', trouser: '#2f3a33', bicep: 0.35 },
+    rig: { shoulderHalf: 46 },
+    palette: { garment: '#9a5fa8', sleeve: '#9a5fa8', trouser: '#2f3a33', sleeveWidth: 19, trouserWidth: 22, bicep: 0.35 },
     garment: { style: 'sweater' }, hair: 'neat', hairColor: '#5b3a26', glasses: 'round',
   }),
-  /** Nữ tóc đuôi ngựa, áo len, quần dài */
+  /** Nữ tóc đuôi ngựa, áo len, quần dài; mảnh: thấp hơn, vai và hông hẹp, tay chân thon */
   PONY: character('duoi-ngua', {
-    palette: { garment: '#e0b23a', sleeve: '#e0b23a', trouser: '#34466e', trouserWidth: 20 },
-    garment: { style: 'sweater', hem: -10 }, hair: 'ponyLow', hairColor: '#3b2a22', hipHalf: 15,
+    rig: { height: 0.94, shoulderHalf: 34, hipHalf: 18 },
+    palette: { garment: '#e0b23a', sleeve: '#e0b23a', trouser: '#34466e', sleeveWidth: 12, trouserWidth: 14 },
+    garment: { style: 'sweater', hem: -10 }, hair: 'ponyLow', hairColor: '#3b2a22',
   }),
 });
 
