@@ -79,7 +79,7 @@ Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js` và `demo-
 lõi lấy mẫu bằng `sceneAt`, người 3D diễn theo bằng `act`. Bộ sưu tập kiểu và bảng
 nét mặt ở `demo-styles.js`, JSON nhân vật mẫu qua `parseCharacter` rồi `fromCharacter`. Hành động
 ở `apps/viewer/actions/` chỉ dùng ở app này, chưa vào bộ chung `apps/studio/public/actions/`
-(`eshaku-3d`, `phone-lift-3d`, `pick-paper-3d`, `show-paper-3d`, `point-3d`, `stop-palm-3d`,
+(`phone-lift-3d`, `pick-paper-3d`, `show-paper-3d`, `point-3d`, `stop-palm-3d`,
 `point-lane-3d`, `raise-laptop-3d`, `perch-desk-3d`, `head-down-3d`, `arms-out-3d`, `hand-up-side-3d`, `lean-side-3d`, `stance-wide-3d`, các hành động chỉ đầu và thân) — dời sang bộ chung khi repo video cần. Đích cổ tay của hành động ngồi giả định bàn cao 137, ghế 87,5 như `arms-on-table-3d`.
 
 Phím: `O` nét mực, `P` pixel, `A` khử răng cưa, `T` đổi giờ, `H` ẩn HUD,

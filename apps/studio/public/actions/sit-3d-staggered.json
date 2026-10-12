@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 12,
+  "name": "sit-3d-staggered",
+  "duration": 3.4,
+  "end": "wrap",
+  "authoredAt": "side",
+  "mask": ["armFar", "armNear", "legFar", "legNear", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [11, 42, 0],
+        "armNear": [11, 42, 0],
+        "legFar": [84, -112],
+        "legNear": [90, -74],
+        "torso": 3
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armFar": [12, 42, 0],
+        "armNear": [12, 42, 0],
+        "legFar": [84, -112],
+        "legNear": [90, -74],
+        "torso": 4
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Như sit-3d nhưng hai chân so le để nhìn ngang và 3/4 vẫn thấy hai chân (như sit-side của người 2D): chân gần đưa bàn chân ra trước, chân xa gập cẳng ra sau dưới ghế. Rig chưa cho tách gối sang hai bên."
+}

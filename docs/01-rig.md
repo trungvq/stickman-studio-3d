@@ -1660,6 +1660,10 @@ Bộ chung soạn ở `side` (`authoredAt: "side"`) cho người 3D:
 | `type-3d` | Gõ phím, chồng lên `sit-3d`: cổ tay trên bàn phím `[95, −60…−65, ~12]`, hai tay so le, thân cúi `8` |
 | `bow-3d` | お辞儀: thân cúi `38°` trong mặt phẳng dọc, tay dọc thân, giữ rồi đứng lên; một lượt `2,6 s`, lặp được |
 | `step-side-3d` | Bước ngang tại chỗ: chân gần nhấc, dang `16°` chạm sàn (vươn `1 / cos 16°`) rồi thu về, tới chân xa; thân nghiêng `4°` về chân trụ lúc nhấc; một lượt `1,8 s`, lặp được. Chỉ ghi chân, thân, vươn |
+| `sit-3d-staggered` | Như `sit-3d` nhưng hai chân so le: chân gần đưa bàn chân ra trước, chân xa gập cẳng ra sau dưới ghế — nhìn ngang và 3/4 vẫn thấy hai chân |
+| `eshaku-3d` | 会釈: thân cúi `16°`, đầu gật thêm `8°`, tay dọc thân nhích ra trước, giữ rồi đứng thẳng; chồng lên `stand-3d` |
+| `talk-forward-3d` | Tay gần đưa ra trước về phía người đối thoại, bàn tay mở dần và ngửa (`turn` `0 → −55`); giơ một lần rồi giữ, scene buông bằng clip rỗng |
+| `cower-3d` | Co rúm: hai tay gập lên trước ngực, bàn tay xoè úp ra ngoài (`turn` `50`, `bend` `−25`). Chỉ ghi hai tay |
 
 Studio soạn hành động `authoredAt: "side"` trên người 3D quay được, kéo đích cổ tay ngay trên sân
 khấu.
