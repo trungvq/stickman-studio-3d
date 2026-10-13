@@ -70,6 +70,32 @@ const models = () => ({
     garment: { style: 'sweater' }, hair: 'bob', hairColor: '#3b2a22',
     skirt: { color: '#4a3530', shape: {} },
   }),
+  /** Nữ áo cổ chéo thân trên cổ lót kem, đai cao bản rộng có dây, khoá và nút hộp sau lưng, cổ sau hạ; váy thẳng dài thay vạt dưới */
+  KIMONO: character('co-cheo-nu', {
+    rig: { shoulderHalf: 36, hipHalf: 22 },
+    palette: { garment: '#2b3a67', sleeve: '#2b3a67', sleeveWidth: 17, trouser: '#2b3a67', shoe: '#fff8ec', trouserWidth: 17 },
+    garment: { style: 'wrap', hem: -36, neckBack: 8, wrap: { band: 5, under: 3, underColor: '#fff8ec', obi: { color: '#efe4cf', y: 56, width: 34, cord: 3, cordColor: '#d9573b', clasp: 7, claspColor: '#d9573b', knot: 'taiko' } } },
+    hair: 'bun', hairColor: '#2e2420',
+    skirt: { color: '#2b3a67', shape: { rise: 46, length: 190, flare: 4, pleats: 0 } },
+  }),
+  /** Nam áo cổ chéo tới đùi, viền cổ khác màu, đai thấp bản hẹp nút dẹt lệch bên; ống chân cùng màu vải */
+  ROBE: character('co-cheo-nam', {
+    palette: { garment: '#efe4cf', sleeve: '#efe4cf', sleeveWidth: 17, trouser: '#efe4cf', shoe: '#9c5a3c' },
+    garment: { style: 'wrap', hem: 40, wrap: { band: 6, bandColor: '#2b3a67', obi: { color: '#9c5a3c', y: 14, width: 14, lift: 3, knot: 'kai' } } },
+    hair: 'short', hairColor: '#2a1c15',
+  }),
+  /** Áo làm việc cổ chéo tới hông, không đai, quần cùng màu */
+  WORK: character('co-cheo-lam', {
+    rig: { height: 0.95, shoulderHalf: 36, hipHalf: 21 },
+    palette: { garment: '#e39a9a', sleeve: '#e39a9a', trouser: '#e39a9a', shoe: '#5e3f2c' },
+    garment: { style: 'wrap', hem: 6 }, hair: 'curly', hairColor: '#3b2a22',
+  }),
+  /** Áo bếp cổ chéo tới hông cùng màu cổ, tay xắn tới khuỷu, quần nâu */
+  CHEF: character('co-cheo-bep', {
+    rig: { height: 1.08, shoulderHalf: 44 },
+    palette: { garment: '#f3ebdd', sleeve: '#f3ebdd', sleeveLength: 0.5, trouser: '#5e3f2c', shoe: '#2a2420', sleeveWidth: 18, trouserWidth: 19 },
+    garment: { style: 'wrap', hem: 8 }, hair: 'buzz', hairColor: '#4a4440',
+  }),
 });
 
 const keyAction = (name, mask, keys, extra = {}) => {
@@ -87,6 +113,9 @@ const own = () => ({
   'chin-rest-3d': keyAction('chin-rest-3d', ['armNear'], [{ t: 0, pose: {}, reach: { armNear: { at: [45, -141, 6], elbow: [0.3, 1, 0.1] } }, ease: 'linear' }], { authoredAt: 'side' }),
   // hai bàn tay úp trên gối người ngồi
   'hands-knees-3d': keyAction('hands-knees-3d', ['armNear', 'armFar'], [{ t: 0, pose: {}, reach: { armNear: { at: [64, -20, 16], elbow: [0, 1, 0.6] }, armFar: { at: [64, -20, 16], elbow: [0, 1, 0.6] } }, ease: 'linear' }], { authoredAt: 'side' }),
+  // ngồi quỳ trên gót: đùi ngang ra trước, ống chân gập hẳn ra sau dưới đùi
+  'seiza-3d': keyAction('seiza-3d', ['legNear', 'legFar', 'torso'], [{ t: 0, pose: { legNear: [90, -172], legFar: [90, -172], torso: 2 }, ease: 'linear' }], { authoredAt: 'side' }),
+  'hands-lap-3d': keyAction('hands-lap-3d', ['armNear', 'armFar'], [{ t: 0, pose: {}, reach: { armNear: { at: [44, -16, 12], elbow: [0, 1, 0.6] }, armFar: { at: [44, -16, 12], elbow: [0, 1, 0.6] } }, ease: 'linear' }], { authoredAt: 'side' }),
   'face-wry': keyAction('face-wry', ['face'], [{ t: 0, pose: {}, face: { mouth: 'wryOpen', brow: 'skeptical', eyes: 'open' }, ease: 'linear' }]),
 });
 
@@ -96,6 +125,8 @@ const track = (...clips) => ({ clips });
 
 /** Mặt ghế đẩu cao bằng gối người `height = 1` */
 const SEAT = 87.5;
+/** Ngồi quỳ trên gót: hông cao hơn sàn bấy nhiêu */
+const SEIZA = 30;
 
 /** Bàn và ghế đẩu ở chiều sâu `z` cho người cao `h` (`rig.height`): ghế cao bằng gối, mặt bàn cao hơn hông ngồi ~51·h như `arms-on-table-3d` */
 function desk(x0, stool, z, h) {
@@ -135,6 +166,23 @@ const SCENES = {
   'human-row': ({ LONG, SHORT, GIRL, GLASSES, PONY }) => ({
     cast: [LONG, SHORT, GIRL, GLASSES, PONY].map((c, i) => ({ id: `r${i}`, c, world: { at: [(i - 2) * 150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('face-calm'))] })),
   }),
+  // áo cổ chéo: hàng đứng nhìn ống kính
+  'human-wrap': ({ KIMONO, ROBE, WORK, CHEF }) => ({
+    cast: [KIMONO, ROBE, WORK, CHEF].map((c, i) => ({ id: `w${i}`, c, world: { at: [(i - 1.5) * 150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('face-calm'))] })),
+  }),
+  // áo cổ chéo: cúi chào 38° và 16°, ngồi ghế, ngồi quỳ trên gót; phía sau hai người đi
+  'human-wrap-act': ({ KIMONO, ROBE, WORK, CHEF }) => ({
+    cast: [
+      { id: 'a0', c: KIMONO, world: { at: [-300, 0, 0], yaw: 90 }, tracks: [track(clip('bow-3d')), track(clip('face-calm'))] },
+      { id: 'a1', c: WORK, world: { at: [-150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('eshaku-3d', 0.2)), track(clip('face-calm'))] },
+      { id: 'a2', c: CHEF, world: { at: [0, 0, 0], yaw: 90 }, tracks: [track(clip('bow-3d')), track(clip('face-calm'))] },
+      { id: 'a3', c: ROBE, world: { at: [150, -SEAT, 0], yaw: 90, sit: true, floor: 0 }, tracks: [track(clip('sit-3d')), track(clip('hands-knees-3d')), track(clip('face-calm'))] },
+      { id: 'a4', c: ROBE, world: { at: [320, -SEIZA, 0], yaw: 90, sit: true, floor: 0 }, tracks: [track(clip('seiza-3d')), track(clip('hands-lap-3d')), track(clip('face-calm'))] },
+      { id: 'a5', c: ROBE, world: { path: [{ t: 0, at: [-200, 0, -300], yaw: 10 }, { t: 4, at: [300, 0, -300], yaw: 10 }] }, tracks: [track(clip('walk')), track(clip('face-calm'))] },
+      { id: 'a6', c: WORK, world: { path: [{ t: 0, at: [-400, 0, -300], yaw: 10 }, { t: 4, at: [100, 0, -300], yaw: 10 }] }, tracks: [track(clip('walk')), track(clip('face-calm'))] },
+    ],
+    props: [stool(150, 0)],
+  }),
   // cận mặt: ngượng đỏ mặt dần (`blush` của hành động), buồn, nói, méo há
   'human-faces': ({ LONG, GIRL, GLASSES, PONY }) => ({
     cast: [[LONG, 'face-shy'], [GIRL, 'face-sad'], [GLASSES, 'talk-lips'], [PONY, 'face-wry']].map(([c, f], i) => ({
@@ -142,6 +190,16 @@ const SCENES = {
     })),
   }),
 };
+
+/** Ghế đẩu tròn cao `SEAT` ở `x`, `z` */
+function stool(x, z) {
+  const b = new Batch();
+  addItem(b, { at: { at: [0, 0, z] }, parts: [
+    { v: box(x - 30, x + 30, -SEAT, -SEAT + 7.5, -30, 30), tone: { top: '#c9a679', lit: '#a98559' } },
+    { v: box(x - 3, x + 3, -SEAT + 7.5, 0, -3, 3), tone: { top: '#77736e', lit: '#5f5b57' } },
+  ] });
+  return b.build();
+}
 
 /** Ghế băng dài `w` ngang trục x, tựa ở +z, mặt ngồi cao bằng gối người `height = 1`, giữa ở `x`, `z` */
 function bench(x, z, w) {

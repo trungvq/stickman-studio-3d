@@ -933,6 +933,7 @@ chúng đi theo:
 | `suit` vest cà vạt | V sâu, ve áo nổi khối | Cà vạt màu nét dài quá đáy cổ, cắt theo chữ V như luồn dưới vạt; nẹp, hai cúc, hai vạt bo ở gấu; sau lưng là dải cổ |
 | `hoodie` | V, mũ trùm nổi khối | Dây rút mọc từ mép mũ, túi trước, bo gấu 12 px |
 | `blouse` cổ lá sen | U, lá sen nổi khối | Lá sen ba cánh màu kem cố định `#f6efe4`, nơ màu nhấn, đường eo, nếp vạt quanh khối |
+| `wrap` cổ chéo | Chéo vạt trái đè vạt phải, dải cổ nổi khối | Cổ lót, đai, dây buộc, khoá và nút đai — [Áo cổ chéo](#áo-cổ-chéo), chỉ người 3D |
 
 Bốn kiểu áo nữ dùng cùng khối thân và bộ chỉnh:
 
@@ -992,7 +993,7 @@ Không có chỏm vai: tay áo là mảnh riêng bám que tay.
   theo kinh độ, nên nửa thấy được là dải `lonC ± 90°`: polygon cắt ở hai mép ấy, phần cắt
   nằm đúng trên viền bóng. Ruột tô không nét; viền của mảng là nét riêng đi tới viền bóng
   và không chạy dọc chỗ cắt. Màu tô là màu áo, màu nét, màu nhấn (`torso.accent`, bỏ trống
-  là màu áo tối đi `0.3`) hay một mã màu cố định.
+  là màu áo tối đi `0.3`), màu da (`skin`, chỉ người 3D) hay một mã màu cố định.
 - **Cổ bẻ nổi khối** (`collar` của kiểu) là hai tấm lưới, không phải đặc điểm dán. Chân
   cổ dựng từ viền cổ lên `stand` px ở nửa sau, thấp dần theo `|sin|` về `0` ở giữa ngực.
   Lá cổ gập từ đỉnh chân cổ xuống mép ngoài: quanh lưng rộng `band` px trên mặt khối, hai
@@ -1094,6 +1095,92 @@ Không có chỏm vai: tay áo là mảnh riêng bám que tay.
 Studio chọn kiểu ở lưới ô Thân áo, mỗi kiểu một ô có thumb; thẻ Thân áo khi ấy chỉ còn
 màu áo và một thanh cho mỗi số — thanh ghi đè số của kiểu vào `garment`, nút đặt lại đưa
 về số của kiểu. Trên sân khấu thân áo chọn được nhưng không có tay nắm để kéo.
+
+### Áo cổ chéo
+
+`style: "wrap"` là thân áo vạt chéo — kimono, yukata, áo làm việc, áo bếp — một kiểu, nhiều bộ số.
+Số khác áo phông: `ease: 10`, `fit: 0.85`, `waist: 2`, `hem: 5`, `neck: 18`, `neckFront: 30`,
+`hemRound: 6`. Cổ chéo, dải cổ và đai khai ở `garment.wrap`. Chỉ người 3D dựng chúng (`wrapParts`
+của lõi, `torsoMesh`); người 2D và 2.5D vẽ thân trơn.
+
+```json
+"torso": { "src": "sculpt", "garment": { "style": "wrap", "hem": -36, "neckBack": 8,
+  "wrap": { "band": 5, "under": 3, "underColor": "#fff8ec",
+    "obi": { "color": "#efe4cf", "y": 56, "width": 34, "cord": 3, "cordColor": "#d9573b", "clasp": 7, "knot": "taiko" } } } }
+```
+
+- **Vạt trái người mặc đè vạt phải (右前)**, cố định, không có số đảo: mặc ngược là cách mặc cho
+  người chết. Mép vạt trên đi từ bên cổ phía `+x` (vai trái người mặc; bên `−1` là tay phải) chéo
+  qua giữa ngực, thấp hơn chỗ viền cổ chạm mặt vát `neckFront` px, đi tiếp sang `−x` tới `−overlap`
+  rồi bẻ thẳng xuống gấu trong khoảng `WRAP_BEND` px. Nhìn chính diện, mép ấy là nét dài của chữ
+  "y": từ bên phải khung xuống bên trái. Vạt dưới đối xứng qua trục, chỉ lộ phía trên chỗ giao —
+  nét ngắn của chữ "y". `human.test.ts` khoá chiều này.
+- **Độ dài** là `hem` như mọi thân áo: `-36` dừng trên cạp váy dựng khối có `rise` `46` (đai che
+  chỗ nối), `5` tới hông, `40` tới giữa đùi. Mép vạt trên chạy tiếp tới gấu.
+- **Dải cổ** (衿) là tấm lưới nổi khối dọc mép vạt trên từ gấu lên bên cổ, vòng sau gáy, xuống mép
+  vạt dưới tới chỗ nó lọt dưới vạt trên. Phía trước rộng `band` px vuông góc với mép vạt trên hình
+  phẳng; sát bên cổ, chỗ khối hẹp hơn, điểm trượt xuống mặt vát tới chỗ đủ rộng; sau gáy là viền
+  cổ nở rộng như viền cổ gân. Nổi `WRAP_LIFT` `2.4` px ở mép vạt, `1.4` px ở mép ngoài; nét viền
+  `0.6` lần nét thân ở hai mép. **Cổ lót** (半衿) rộng `under` px nằm phía trong dải cổ, nổi `1.6`
+  px, nét ở mép trong. Sau gáy viền cổ hạ `neckBack` px (衣紋, cổ sau hạ khỏi gáy).
+- **Da trong miệng cổ** là tấm lưới màu da nhân vật nổi `1` px, từ mép vạt lên tới mép trên khối:
+  phía trước là chữ V, quanh gáy là dải trên viền cổ. Hàng lưới dày (`33` hàng): mặt cắt dọc gãy
+  khúc ở mép mặt vát, hàng thưa thì dây cung chui xuống dưới mặt khối và nét bóng dáng của thân lòi
+  qua thành vệt.
+- **Đai** (帯) là khối vòng kín ôm thân, tâm cao hơn hông `y · rig.height`, bản rộng
+  `width · rig.height`. Tiết diện ngang là ellipse nửa rộng, nửa sâu lớn nhất của khối trong bản
+  đai cộng `lift` (đai là trụ, không theo eo lõm), tiết diện dọc là chữ nhật bo góc từ `2` px trong
+  mặt khối ra `lift` px ngoài. Đai che chỗ nối thân áo với váy: khối kín còn một phần trên cạp váy thì
+  giữ nguyên, không cắt theo cạp như nét và mảng.
+- **Dây buộc đai** (帯締め) là vòng tiết diện tròn đường kính `cord` quanh giữa bản đai, tâm nổi
+  khỏi mặt đai `0.2 · cord`. **Khoá đai** (帯留) là khối dẹt trên dây giữa bụng, rộng `clasp`, cao
+  `max(1.4 · cord, 0.64 · clasp)`, dày `max(2, 0.35 · clasp)`.
+- **Nút sau lưng** là khối dẹt bo cạnh: mặt trong theo mặt ngoài của đai, mặt ngoài phẳng; khối
+  cứng gắn thân, không rủ, không lắc. `A` là nửa rộng mặt ngoài đai:
+
+  | `knot` | Khối |
+  |---|---|
+  | `none` | Không có |
+  | `taiko` | お太鼓: rộng `1.6 · A`, từ trên mép đai `4` px xuống `12 · rig.height` px dưới hông (không cao hơn mép dưới đai `8` px), bo góc `7`; dày `3.5` px ở mép trên tới `6.5` px ở mép dưới |
+  | `kai` | 貝の口: `0.72 · A` × `1.05` bản đai, chếch `−14°`, dày `4`; bỏ trống `knotX` thì lệch `0.3 · A` về `+x` |
+  | `bunko` | 文庫: hai cánh `0.6 · A` × `1.15` bản đai chếch `±10°`, dày `6`, cách tâm `0.3 · A`; nút giữa `0.18 · A` × `0.8` bản, dày `9` |
+
+- Khối kín (đai, dây, khoá, nút) có vỏ viền như khối thân; người mặc đồ thêm nét bóng dáng hậu kỳ.
+  Người ngồi: dải cổ, đai và vạt gập theo đùi cùng khối thân (`lapFold`).
+- Tay áo là ống `palette.sleeve*` của người mặc đồ: `sleeveWidth` lớn cho ống to đều thon về cổ
+  tay, không loe, và bàn tay to theo bề dày ống.
+
+| Trường của `wrap` | Mặc định | Nghĩa |
+|---|---:|---|
+| `overlap` | 22 | Mép vạt trên chạy xuống gấu lệch sang bên phải người mặc nhiều nhất bấy nhiêu px |
+| `band` | 6 | Dải cổ rộng bấy nhiêu px; `0` là không có |
+| `bandColor` | màu áo | Màu dải cổ |
+| `under` | 0 | Cổ lót lộ một dải bấy nhiêu px phía trong dải cổ; `0` là không có |
+| `underColor` | `#f6efe4` | Màu cổ lót |
+| `obi` | | Đai; bỏ trống là không đai |
+
+| Trường của `wrap.obi` | Mặc định | Nghĩa |
+|---|---:|---|
+| `color` | `torso.accent` | Màu đai; `accent` bỏ trống là màu áo tối đi `0.3` |
+| `y` | 52 | Tâm đai cao hơn hông bấy nhiêu px, nhân `rig.height` |
+| `width` | 30 | Bản rộng, nhân `rig.height` |
+| `lift` | 4 | Đai nổi khỏi thân áo bấy nhiêu px |
+| `cord` | 0 | Dây buộc đai dày bấy nhiêu px; `0` là không có |
+| `cordColor` | màu đai | |
+| `clasp` | 0 | Khoá đai rộng bấy nhiêu px; `0` là không có |
+| `claspColor` | màu dây | |
+| `knot` | `none` | Nút sau lưng: `none`, `taiko`, `kai`, `bunko` |
+| `knotColor` | màu đai | |
+| `knotX` | 0 | Tâm nút lệch khỏi giữa lưng bấy nhiêu px về `+x` (bên trái người mặc); `kai` bỏ trống thì `0.3 · A` |
+
+Bộ số hay dùng, `rig.height = 1`:
+
+| Áo | `garment` | Ghi chú |
+|---|---|---|
+| Kimono thân trên | `{ "style": "wrap", "hem": -36, "neckBack": 8, "wrap": { "band": 5, "under": 3, "obi": { "y": 56, "width": 34, "cord": 3, "clasp": 7, "knot": "taiko" } } }` | Phối váy dựng khối `rise` `46`; đai cao, bản rộng |
+| Áo làm việc tới hông | `{ "style": "wrap" }` | Không đai, quần cùng màu |
+| Áo bếp tới hông | `{ "style": "wrap", "hem": 8 }` | Cổ cùng màu; tay xắn: `palette.sleeveLength` `0.5` |
+| Yukata ngồi tới đùi | `{ "style": "wrap", "hem": 40, "wrap": { "bandColor": "…", "obi": { "y": 14, "width": 14, "lift": 3, "knot": "kai" } } }` | Đai thấp bản hẹp; ống chân cùng màu vải: `palette.trouser` |
 
 ## Quần thì không, váy thì có
 

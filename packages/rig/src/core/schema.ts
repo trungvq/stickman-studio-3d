@@ -259,10 +259,52 @@ export const GARMENT_STYLE_NAMES = [
   "cardigan",
   "bowShirt",
   "squareNeck",
+  "wrap",
 ] as const;
 
+export const OBI_KNOTS = ["none", "taiko", "kai", "bunko"] as const;
+
+/** Đai ngang thân áo cổ chéo. docs/02-trang-phuc.md#áo-cổ-chéo */
+export const ObiSchema = z.object({
+  /** Bỏ trống là màu nhấn `torso.accent` */
+  color: z.string().optional(),
+  /** Tâm đai cao hơn hông bấy nhiêu px, nhân `rig.height` */
+  y: z.number().default(52),
+  /** Bản rộng, nhân `rig.height` */
+  width: z.number().default(30),
+  /** Đai nổi khỏi thân áo bấy nhiêu px */
+  lift: z.number().default(4),
+  /** Dây buộc đai quanh giữa bản đai dày bấy nhiêu px; `0` là không có */
+  cord: z.number().default(0),
+  /** Bỏ trống là màu đai */
+  cordColor: z.string().optional(),
+  /** Khoá đai trên dây trước bụng rộng bấy nhiêu px; `0` là không có */
+  clasp: z.number().default(0),
+  claspColor: z.string().optional(),
+  /** Nút sau lưng: `taiko` khối hộp dẹt, `kai` nút dẹt nhỏ chếch lệch một bên, `bunko` nơ hai cánh */
+  knot: z.enum(OBI_KNOTS).default("none"),
+  knotColor: z.string().optional(),
+  /** Tâm nút lệch khỏi giữa lưng bấy nhiêu px về `+x` (bên trái người mặc); bỏ trống là `0`, `kai` thì lệch sẵn */
+  knotX: z.number().optional(),
+});
+
+/** Cổ chéo, dải cổ và đai của kiểu `wrap`. docs/02-trang-phuc.md#áo-cổ-chéo */
+export const WrapSchema = z.object({
+  /** Mép vạt trên chạy xuống gấu lệch sang bên phải người mặc nhiều nhất bấy nhiêu px */
+  overlap: z.number().default(22),
+  /** Dải cổ rộng bấy nhiêu px dọc mép vạt và quanh gáy */
+  band: z.number().default(6),
+  /** Bỏ trống là màu áo */
+  bandColor: z.string().optional(),
+  /** Cổ lót lộ một dải bấy nhiêu px phía trong dải cổ; `0` là không có */
+  under: z.number().default(0),
+  underColor: z.string().default("#f6efe4"),
+  /** Bỏ trống là không đai */
+  obi: ObiSchema.optional(),
+});
+
 export const GarmentSchema = z.object({
-  /** Kiểu áo trong `GARMENT_STYLES`: `bare` ngực trần, `tshirt` áo phông cổ tròn, `shirt` sơ mi, `polo`, `sweater` áo len, `suit` vest, `hoodie`, `blouse` cổ lá sen */
+  /** Kiểu áo trong `GARMENT_STYLES`: `bare` ngực trần, `tshirt` áo phông cổ tròn, `shirt` sơ mi, `polo`, `sweater` áo len, `suit` vest, `hoodie`, `blouse` cổ lá sen, `wrap` cổ chéo */
   style: z.enum(GARMENT_STYLE_NAMES).default("tshirt"),
   /** Vải rộng hơn thân bấy nhiêu, mỗi bên */
   ease: z.number().optional(),
@@ -287,6 +329,8 @@ export const GarmentSchema = z.object({
   round: z.number().optional(),
   /** Bán kính bo góc gấu */
   hemRound: z.number().optional(),
+  /** Kiểu `wrap`: cổ chéo, dải cổ, đai; kiểu khác bỏ qua */
+  wrap: WrapSchema.optional(),
 });
 
 /** Váy dựng khối: nón cụt treo ở hông, chiếu theo góc của thân. docs/02-trang-phuc.md#váy-dựng-khối */
@@ -546,6 +590,9 @@ export type Hat = z.infer<typeof HatSchema>;
 export type Pin = z.infer<typeof PinSchema>;
 export type BeardTip = (typeof BEARD_TIPS)[number];
 export type Garment = z.infer<typeof GarmentSchema>;
+export type Wrap = z.infer<typeof WrapSchema>;
+export type Obi = z.infer<typeof ObiSchema>;
+export type ObiKnot = (typeof OBI_KNOTS)[number];
 export type Skirt = z.infer<typeof SkirtSchema>;
 export type GarmentStyle = (typeof GARMENT_STYLE_NAMES)[number];
 export type GlassesShape = (typeof GLASSES_SHAPES)[number];

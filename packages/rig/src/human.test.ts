@@ -350,3 +350,26 @@ describe('người 3D mặc đồ', () => {
     for (const cap of thigh) expect(cap.a.y - dims.legHalf / 100).toBeCloseTo(0.875, 2);
   });
 });
+
+describe('áo cổ chéo', () => {
+  it('vạt trái người mặc đè vạt phải (右前): mép vạt trên xuống gấu ở phía tay phải', () => {
+    for (const hem of [-36, 5, 40]) {
+      const f = dressed((c) => {
+        c.pieces.torso = { ...c.pieces.torso, src: 'sculpt', garment: GarmentSchema.parse({ style: 'wrap', hem, wrap: { band: 6, bandColor: '#123456' } }) };
+      });
+      f.root.updateMatrixWorld(true);
+      const band = f.spine.children.find((o) => {
+        const m = o as THREE.Mesh;
+        return m.isMesh && (m.material as THREE.ShaderMaterial).uniforms?.uColor?.value.getHexString() === '123456';
+      }) as THREE.Mesh;
+      const pos = band.geometry.attributes.position;
+      let low = 0;
+      for (let i = 0; i < pos.count; i++) if (pos.getY(i) < pos.getY(low)) low = i;
+      const right = f.arms[-1].shoulder.position.x;
+      // bên `-1` là tay phải: đầu dưới mép vạt trên cùng phía với nó, ở mặt trước
+      expect(right).toBeLessThan(0);
+      expect(Math.sign(pos.getX(low)), `${hem}`).toBe(Math.sign(right));
+      expect(pos.getZ(low)).toBeGreaterThan(0);
+    }
+  });
+});

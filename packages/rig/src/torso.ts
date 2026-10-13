@@ -6,6 +6,8 @@ import {
   COLLAR_LEAN, COLLAR_LINE, curve, GARMENT_STYLES, garmentOf, lerp, lerpAt, lipOf, profile, RIB_FRONT, spline,
   type MarkFill, type P2, type Rig, type SP, type Surface,
 } from './core/torso';
+import { WrapSchema } from './core/schema';
+import { wrapParts } from './core/wrap';
 
 // Thân áo dựng khối từ bảng kiểu và mặt cắt `profile` của lõi: như `torsoPaths` nhưng giữ khối, nét và tấm ở 3D
 // thay vì chiếu ra path SVG.
@@ -24,8 +26,10 @@ export interface TorsoMesh {
   /** Mảng tô trên mặt khối: điểm 3D và chỉ số tam giác, cạnh không dài quá `FILL_EDGE` px */
   fills: { pts: Vec3[]; tris: number[]; fill: MarkFill }[];
   dots: { p: Vec3; k: number }[];
-  /** Tấm nổi khối (cổ bẻ, viền gân, mũ trùm): lưới cột × hàng, hàng `rims` có nét viền */
+  /** Tấm nổi khối (cổ bẻ, viền gân, mũ trùm, dải cổ chéo): lưới cột × hàng, hàng `rims` có nét viền */
   sheets: { grid: Vec3[][]; rims: number[]; color: MarkFill; line: number }[];
+  /** Khối kín (đai, dây buộc, khoá, nút đai): tam giác quấn ra ngoài trong hệ thân `y` xuống */
+  solids: { pts: Vec3[]; tris: number[]; color: MarkFill }[];
 }
 
 /** Cạnh tam giác của mảng tô dài nhất bấy nhiêu px: dài hơn thì dây cung cắt xuyên mặt cong của khối */
@@ -142,7 +146,7 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     return { pts, tris: tris.flat() };
   };
 
-  const out: TorsoMesh = { profile: pts, depth, lines: [], fills: [], dots: [], sheets: [] };
+  const out: TorsoMesh = { profile: pts, depth, lines: [], fills: [], dots: [], sheets: [], solids: [] };
   for (const m of def.marks(surf)) {
     if (m.dot) {
       out.dots.push({ p: onTorso(m.pts[0], 0), k: m.k });
@@ -213,6 +217,12 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
       "color",
       hood.line,
     );
+  }
+
+  if (def.wrap) {
+    const w = wrapParts({ s: surf, depth: dAt, raise: (sp, lift) => raise(sp, lift, 0, 0), height: rig.height }, WrapSchema.parse(g.wrap ?? {}));
+    out.sheets.push(...w.sheets);
+    out.solids.push(...w.solids);
   }
 
   const spec = def.collar?.(surf);

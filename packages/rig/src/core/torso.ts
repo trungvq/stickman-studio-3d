@@ -5,14 +5,14 @@ import { chain, weld } from "./sculpt";
 import { lonOf, turnPoint, type Vec3 } from "./sphere";
 import type { View } from "./types";
 
-export type Dims = Required<Omit<Garment, "style">>;
+export type Dims = Required<Omit<Garment, "style" | "wrap">>;
 export type P2 = [number, number];
 
 /** Điểm trên mặt khối: kinh độ, độ (`0` giữa ngực, dương về `+x`, `180` giữa lưng), và `y` của nhóm thân */
 export type SP = [lon: number, y: number];
 
-/** Màu tô của mảng: màu áo, màu nét, màu nhấn (`accent` của mảnh, bỏ trống là màu áo tối đi) hay một mã màu cố định */
-export type MarkFill = "color" | "line" | "accent" | `#${string}`;
+/** Màu tô của mảng: màu áo, màu nét, màu nhấn (`accent` của mảnh, bỏ trống là màu áo tối đi), màu da (chỉ người 3D) hay một mã màu cố định */
+export type MarkFill = "color" | "line" | "accent" | "skin" | `#${string}`;
 
 /**
  * Một đặc điểm trên mặt khối. `pts` không `fill` là nét, `closed` thì khép vòng; có `fill` là mảng
@@ -106,6 +106,8 @@ interface GarmentStyleDef {
   collar?: (s: Surface) => Collar;
   rib?: Rib;
   hood?: Hood;
+  /** Cổ chéo `garment.wrap`: dải cổ, đai, nút đai — chỉ người 3D dựng (`wrapParts`) */
+  wrap?: boolean;
 }
 
 /** Nét trên mặt khối chỉ vẽ ở chỗ quay ra người xem ít nhất bấy nhiêu, không dồn sát viền bóng */
@@ -628,6 +630,13 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
         fill: COLLAR_CREAM,
       };
     },
+  },
+  wrap: {
+    label: "Áo cổ chéo dựng khối",
+    dims: { ...TEE, ease: 10, fit: 0.85, waist: 2, hem: 5, neck: 18, neckFront: 30, hemRound: 6 },
+    neckline: "v",
+    marks: () => [],
+    wrap: true,
   },
 };
 

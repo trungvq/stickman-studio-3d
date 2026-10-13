@@ -14,10 +14,11 @@ const U = 0.01;
 type Vec3 = [number, number, number];
 const v3 = ([x, y, z]: Vec3) => new THREE.Vector3(x * U, -y * U, z * U);
 
-interface Palette { color: string; accent?: string; ink: string }
+interface Palette { color: string; accent?: string; ink: string; skin?: string }
 
-function colorOf(fill: MarkFill, { color, accent, ink }: Palette): string {
+function colorOf(fill: MarkFill, { color, accent, ink, skin }: Palette): string {
   if (fill === 'color') return color;
+  if (fill === 'skin') return skin ?? '#f0d9b8';
   if (fill === 'line') return ink;
   if (fill === 'accent') return accent ?? new THREE.Color(color).multiplyScalar(0.7).getStyle();
   return fill;
@@ -89,9 +90,9 @@ function sheetGeometry(grid: Vec3[][]) {
  * áo có thêm nét bóng dáng hậu kỳ bề dày ấy (`npr({ ink })`). `lap`: người ngồi, vạt dưới hông gập lên đùi (`lapFold`); có
  * `lap.fold` thì trả thêm `refold` gập lại theo hướng đùi mới.
  */
-export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, arm, tuck = Infinity, sil, lap }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom; tuck?: number; sil?: number; lap?: Lap } & Palette) {
+export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, skin, arm, tuck = Infinity, sil, lap }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom; tuck?: number; sil?: number; lap?: Lap } & Palette) {
   const t = torsoMesh(garment, rig, arm);
-  const pal = { color, accent, ink };
+  const pal = { color, accent, ink, skin };
   const matOf = (fill: MarkFill, soft = 1) => npr({ color: colorOf(fill, pal), stipple: 0.05, stippleScale: 3, soft });
   const inkMat = npr({ color: ink, stipple: 0 });
   const lineR = (k: number) => (k * rig.stroke * U) / 2;
@@ -144,6 +145,23 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
     sm.castShadow = true;
     add(sm);
     for (const r of s.rims) tube(s.grid.map((col) => col[r]), lineR(s.line), inkMat);
+  }
+  for (const s of t.solids) {
+    if (!s.pts.some(shown)) continue;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(s.pts.flatMap((p) => v3(p).toArray()), 3));
+    // lật y khi đổi đơn vị làm ngược chiều quấn
+    const idx = [...s.tris];
+    for (let i = 0; i < idx.length; i += 3) [idx[i + 1], idx[i + 2]] = [idx[i + 2], idx[i + 1]];
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    const c = colorOf(s.color, pal);
+    const sm = new THREE.Mesh(g, sil ? npr({ color: c, stipple: 0.05, stippleScale: 3, soft: 1, ink: sil }) : matOf(s.color));
+    sm.castShadow = true;
+    add(sm);
+    const hl = new THREE.Mesh(g, hullMaterial(0.02, ink));
+    hl.userData.noShadow = true;
+    add(hl);
   }
   const out = { profile: t.profile, depth: t.depth, refold: undefined as ((dir: [number, number]) => void) | undefined };
   if (!lap) return out;

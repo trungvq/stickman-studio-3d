@@ -72,7 +72,7 @@ camera theo `cameraAt`. Hành động là bộ chung `apps/studio/public/actions
 | `demo=headgear` | Đầu và đồ đội của người 3D mặc đồ: búi cao, búi thấp lệch có trâm, búi thấp to, ngôi lệch mái rủ có lọn vểnh, vuốt ngược hói chữ M, đầu đinh đội mũ trụ thấp, hói nhẹ mai hai màu (`apps/viewer/src/demo-headgear.js`); `turn=` xoay từng người tại chỗ (mặc định 0), `bow=` cúi thân bấy nhiêu độ |
 | `cast=/@fs/…/a.json,…` | Với `demo=styles`: dựng các JSON nhân vật này thay cho người mẫu để soi; file phải nằm trong cây repo (vd. chép vào `tmp/`) |
 | `demo=mouths` | Bảng nét mặt: đủ khẩu hình của `MOUTHS` (`core/face.ts`) trên ba bậc, kèm đủ kiểu mắt và mày |
-| `demo=human\|human-row\|human-faces\|human-bench` | Người 3D mặc đồ (`palette.clad`, `head.form: "human"`, `apps/viewer/src/demo-human.js`): cảnh diễn (nói giơ tay, đi bộ, ngồi bàn chống cằm, cầm cốc, nữ váy đi), hàng đứng nhìn ống kính, cận mặt bốn nét, hai người ngồi ghế băng (nam sơ mi cầm cốc, nữ áo len váy chân trần tay úp gối) |
+| `demo=human\|human-row\|human-faces\|human-bench\|human-wrap\|human-wrap-act` | Người 3D mặc đồ (`palette.clad`, `head.form: "human"`, `apps/viewer/src/demo-human.js`): cảnh diễn (nói giơ tay, đi bộ, ngồi bàn chống cằm, cầm cốc, nữ váy đi), hàng đứng nhìn ống kính, cận mặt bốn nét, hai người ngồi ghế băng (nam sơ mi cầm cốc, nữ áo len váy chân trần tay úp gối), hàng bốn áo cổ chéo (nữ thân trên đai cao nút hộp phối váy dài, nam tới đùi đai thấp nút dẹt, áo làm việc tới hông, áo bếp tay xắn) và các áo ấy cúi chào, ngồi ghế, ngồi quỳ trên gót |
 | `human` | Với cảnh của `demos.js`, `demo=hold` và `demo=styles`: dựng người mặc đồ thay người que |
 | `stick` | Với `demo=human*`: cùng cảnh, bỏ hai cờ — người que như cũ |
 
