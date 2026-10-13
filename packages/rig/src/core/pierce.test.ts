@@ -9,7 +9,14 @@ describe("armPierce: tay người 3D xuyên thân áo của chính người ấy
   /** Người mặc đồ (`palette.clad`): sườn áo lùi nhường chỗ cho tay (`cladProfile`) */
   const clad = (() => {
     const d = defaultCharacter();
-    return { ...d, palette: { ...d.palette, clad: true }, pieces: { ...d.pieces, torso: { ...d.pieces.torso, src: "sculpt" as const, garment: { style: "shirt" as const } } } };
+    return {
+      ...d,
+      palette: { ...d.palette, clad: true },
+      pieces: {
+        ...d.pieces,
+        torso: { ...d.pieces.torso, src: "sculpt" as const, garment: { style: "shirt" as const } },
+      },
+    };
   })();
   /** Người đứng ở gốc nhìn +x (bên phải là −z), tay phải với tới `right` (bỏ trống là tay buông) */
   const at = (right?: [number, number, number], c = plain) => {
@@ -42,7 +49,13 @@ describe("armPierce: tay người 3D xuyên thân áo của chính người ấy
   });
 
   it("người mặc đồ bụng phệ tay buông choãi: không báo", () => {
-    const belly = { ...clad, pieces: { ...clad.pieces, torso: { ...clad.pieces.torso, garment: { style: "polo" as const, belly: 24 } } } };
+    const belly = {
+      ...clad,
+      pieces: {
+        ...clad.pieces,
+        torso: { ...clad.pieces.torso, garment: { style: "polo" as const, belly: 24 } },
+      },
+    };
     expect(at(undefined, belly)).toEqual([]);
   });
 

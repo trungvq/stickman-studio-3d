@@ -834,11 +834,15 @@ export function equipPieces(c: CharacterData, e?: Equip): CharacterData["pieces"
 
 /** Nhân vật với `pieces` đã mặc xong; mọi chỗ vẽ và mọi công thức hình học đi qua bản này. */
 /** `palette` của nhân vật cộng phần thân áo đang mặc đè lên (`pieces.torso.palette`): tay áo, quần, giày người 3D vẽ */
-export const wornPalette = <P extends object>(c: { palette: P; pieces: { torso: { palette?: Partial<P> } } }): P => {
+export const wornPalette = <P extends object>(c: {
+  palette: P;
+  pieces: { torso: { palette?: Partial<P> } };
+}): P => {
   const o = c.pieces.torso.palette;
   if (!o) return c.palette;
   const out = { ...c.palette };
-  for (const [k, v] of Object.entries(o)) if (v !== undefined) (out as Record<string, unknown>)[k] = v;
+  for (const [k, v] of Object.entries(o))
+    if (v !== undefined) (out as Record<string, unknown>)[k] = v;
   return out;
 };
 

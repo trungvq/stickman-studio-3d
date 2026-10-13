@@ -6,10 +6,20 @@ describe("wornPalette: tay áo, quần, giày đi theo thân áo đang mặc", (
     const d = defaultCharacter();
     const r = parseCharacter({
       ...d,
-      palette: { ...d.palette, clad: true, sleeve: "#c98a86", sleeveLength: 0.3, trouser: "#efe4cf" },
+      palette: {
+        ...d.palette,
+        clad: true,
+        sleeve: "#c98a86",
+        sleeveLength: 0.3,
+        trouser: "#efe4cf",
+      },
       items: {
         yukata: {
-          torso: { src: "sculpt", garment: { style: "wrap" }, palette: { sleeve: "#efe4cf", sleeveLength: 1, sleeveFlare: 12, trouser: "#efe4cf" } },
+          torso: {
+            src: "sculpt",
+            garment: { style: "wrap" },
+            palette: { sleeve: "#efe4cf", sleeveLength: 1, sleeveFlare: 12, trouser: "#efe4cf" },
+          },
         },
       },
     });
