@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { hullMaterial, npr } from './npr';
-import { RIG, TORSO_DEPTH } from './core/constants';
+import { APRON_LIFT, RIG, SKIRT_EASE, TORSO_DEPTH } from './core/constants';
+import { apronBow, apronOf, drape, drapeAt, hemHang, hemReach, sectionFront, wrapHemEdge, wrapHemOf } from './core/hem';
 import type { Garment, Skirt } from './core/schema';
 import { profileAt, skirtCover, skirtFall, skirtSpread, skirtTube } from './core/skirtShape';
 import { lapFold, type Lap, type MarkFill } from './core/torso';
@@ -199,9 +200,11 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
 
 /**
  * `body`: mặt cắt và bề sâu thân áo đã dựng (`sculptTorso`), có thì cạp liền mặt thân ở độ cao cạp thay `skirt.waist`. `legW`
- * bề ngang chân ở gốc đùi, `knee` nửa bề ngang ở gối (bỏ trống là `legW / 2`)
+ * bề ngang chân ở gốc đùi, `knee` nửa bề ngang ở gối (bỏ trống là `legW / 2`); vạt treo hông đọc bán kính ống chân thật ở gốc
+ * đùi, gối, cổ chân `legR`. `seat`: đỉnh khối hông
+ * (three, hệ thân) mà vạt treo hông phải trùm; `curve`: `palette.limbCurve`
  */
-export interface SkirtOptions { skirt: Skirt; rig: Rig; color: string; ink: string; thighs: { hip: Vec3; dir: Vec3 }[]; legW: number; knee?: number; body?: { profile: [number, number][]; depth: number[] } }
+export interface SkirtOptions { skirt: Skirt; rig: Rig; color: string; ink: string; thighs: { hip: Vec3; dir: Vec3 }[]; legW: number; knee?: number; legR?: readonly [number, number, number]; body?: { profile: [number, number][]; depth: number[] }; seat?: ArrayLike<number>; curve?: number }
 
 /**
  * Váy dựng khối của rig (`pieces.hem.skirt`): bao lồi của vành cạp, vành gấu và hai ống đùi tới tầm váy
@@ -275,6 +278,250 @@ export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thi
       const a = out(ring(0.3, yW + (yH - yW) * 0.3, p));
       const b = out(ring(0.9, yW + (yH - yW) * 0.9, p));
       group.add(tubeMesh([a, b], (0.45 * rig.stroke * U) / 2, inkMat));
+    }
+  return group;
+}
+
+/** Lưới tấm tạp dề: số cột ngang, số hàng dọc */
+export const APRON_GRID = [15, 28] as const;
+
+/** Chân trong hệ hông (px, y xuống): khớp hông, gối, cổ chân */
+export interface HemLeg { hip: Vec3; knee: Vec3; foot: Vec3 }
+/** Dáng của người mà vạt treo hông bám: `spine` là ma trận nhóm thân trong nhóm hông (three), `legs` hai chân */
+export interface HemPose { spine: THREE.Matrix4; legs: HemLeg[] }
+
+const sub3 = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const len3 = (a: Vec3) => Math.hypot(a[0], a[1], a[2]);
+const mix3 = (a: Vec3, b: Vec3, u: number): Vec3 => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u];
+
+/** Vòng `n` điểm bán kính `r` quanh trục `d` ở tâm `c` (px) */
+function ringAround(c: Vec3, d: Vec3, r: number, n: number): Vec3[] {
+  const dir = new THREE.Vector3(...d).normalize();
+  const side = new THREE.Vector3(1, 0, 0).addScaledVector(dir, -dir.x).normalize();
+  const up = new THREE.Vector3().crossVectors(dir, side).normalize();
+  return Array.from({ length: n }, (_, j) => {
+    const a = (2 * Math.PI * j) / n, ca = Math.cos(a) * r, sa = Math.sin(a) * r;
+    return [c[0] + side.x * ca + up.x * sa, c[1] + side.y * ca + up.y * sa, c[2] + side.z * ca + up.z * sa] as Vec3;
+  });
+}
+
+/**
+ * Điểm bao của vạt treo hông trong hệ hông (px, y xuống): vành cạp và thân áo dưới cạp, khối hông (theo nhóm thân), hai
+ * ống chân tới tầm vạt phủ (`hemReach`). `lift` nở mọi khối thêm bấy nhiêu px. Trả cả cạp (hệ thân) và hàm đổi hệ thân → hệ hông
+ */
+function hipHull(o: Omit<SkirtOptions, 'thighs'>, pose: HemPose, lift: number) {
+  const { skirt: g, rig, body, legW } = o;
+  const h = rig.height, inset = rig.stroke / 2;
+  const yW = -g.rise * h;
+  let [aW, dW] = [Math.max(1, g.waist - inset), TORSO_DEPTH * Math.max(1, g.waist - inset)];
+  if (body) {
+    const [a, d] = profileAt(body.profile, body.depth, yW);
+    [aW, dW] = [a + 0.5, d + 0.5];
+  }
+  const tmp = new THREE.Vector3();
+  const toHip = ([x, y, z]: Vec3): Vec3 => {
+    tmp.set(x * U, -y * U, z * U).applyMatrix4(pose.spine);
+    return [tmp.x / U, -tmp.y / U, tmp.z / U];
+  };
+  const pts: Vec3[] = [];
+  const ellipse = (a: number, d: number, y: number, n: number) => {
+    for (let i = 0; i < n; i++) {
+      const p = (2 * Math.PI * i) / n;
+      pts.push(toHip([(a + lift) * Math.sin(p), y, (d + lift) * Math.cos(p)]));
+    }
+  };
+  ellipse(aW, dW, yW, 48);
+  if (body)
+    for (let i = 0; i < body.profile.length; i++) {
+      const [a, y] = body.profile[i];
+      if (y > yW) ellipse(a + 0.5, body.depth[i] + 0.5, y, 48);
+    }
+  if (o.seat)
+    for (let i = 0; i < o.seat.length; i += 3) {
+      const p: Vec3 = [o.seat[i] / U, -o.seat[i + 1] / U, o.seat[i + 2] / U];
+      const k = 1 + (lift + 0.5) / (Math.hypot(p[0], p[2]) || 1);
+      pts.push(toHip([p[0] * k, p[1], p[2] * k]));
+    }
+  const lt = RIG.thigh * h, ls = RIG.shin * h;
+  const [r0, r1, r2] = o.legR ?? [legW / 2, legW / 2, legW / 2];
+  const ease = SKIRT_EASE + lift;
+  let hang = 0;
+  // chi cong theo `bendLimb` của người 3D: đoạn Bézier, điểm điều khiển nhô `limbCurve / 6` đoạn kia
+  const f = (o.curve ?? 1) / 6;
+  const bez = (c: Vec3[], u: number): Vec3 => {
+    const v = 1 - u, w = [v * v * v, 3 * v * v * u, 3 * v * u * u, u * u * u];
+    return [0, 1, 2].map((k) => c.reduce((s, p, i) => s + p[k] * w[i], 0)) as Vec3;
+  };
+  const add = (a: Vec3, b: Vec3, k = 1): Vec3 => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k];
+  const tube = (c: Vec3[], u1: number, ra: number, rb: number) => {
+    const n = 6;
+    for (let i = 0; i <= n; i++) {
+      const u = (u1 * i) / n;
+      const d = sub3(bez(c, Math.min(1, u + 0.01)), bez(c, Math.max(0, u - 0.01)));
+      pts.push(...ringAround(bez(c, u), d, ra + (rb - ra) * u + ease, 16));
+    }
+    return bez(c, u1);
+  };
+  const ends = pose.legs.map(({ hip, knee, foot }) => {
+    const td = sub3(knee, hip), sd = sub3(foot, knee), P2 = sub3(foot, hip);
+    const angle = Math.acos(Math.max(-1, Math.min(1, td[1] / (len3(td) || 1))));
+    const [cT, cS] = hemReach(g, h, angle, lt, ls);
+    hang += hemHang(angle) / pose.legs.length;
+    const thigh = [hip, add(hip, td, f), sub3(knee, P2.map((v) => v * f) as Vec3), knee];
+    const shin = [knee, add(knee, P2, f), sub3(foot, sd.map((v) => v * f) as Vec3), foot];
+    const e1 = tube(thigh, Math.min(1, cT / (len3(td) || 1)), r0, r1);
+    if (cS <= 0.5) {
+      // vạt dừng ở gối: trùm cả đầu gối tròn
+      if (cT >= len3(td) - 0.5) pts.push(...ringAround(add(knee, td, (r1 + 1) / (len3(td) || 1)), td, 0.55 * r1 + ease, 16));
+      return e1;
+    }
+    return tube(shin, Math.min(1, cS / (len3(sd) || 1)), r1, r2);
+  });
+  return { pts, ends, hang, aW, dW, yW, toHip };
+}
+
+/** Khối lồi qua `pts` (px hệ hông) và tam giác của nó ở px để cắt */
+function hullOf(pts: Vec3[]) {
+  let geo: THREE.BufferGeometry = new ConvexGeometry(pts.map(v3));
+  const flat = geo.attributes.position.array as Float32Array;
+  const tris = Float32Array.from(flat, (v, i) => (i % 3 === 1 ? -v : v) / U);
+  geo.deleteAttribute('normal');
+  geo.deleteAttribute('uv');
+  geo = mergeVertices(geo);
+  geo.computeVertexNormals();
+  return { geo, tris };
+}
+
+/** Mặt cắt của khối (tam giác `tris`, px) theo mặt phẳng `x`: các điểm `[tiến, y xuống]` */
+function sliceX(tris: Float32Array, x: number): [number, number][] {
+  const out: [number, number][] = [];
+  for (let i = 0; i < tris.length; i += 9)
+    for (let e = 0; e < 3; e++) {
+      const a = i + 3 * e, b = i + 3 * ((e + 1) % 3);
+      const [xa, xb] = [tris[a], tris[b]];
+      if ((xa - x) * (xb - x) > 0 || xa === xb) continue;
+      const u = (x - xa) / (xb - xa);
+      out.push([tris[a + 2] + (tris[b + 2] - tris[a + 2]) * u, tris[a + 1] + (tris[b + 1] - tris[a + 1]) * u]);
+    }
+  return out;
+}
+
+/**
+ * Vạt treo hông (`skirt.style` `wrap` hay `apron`), gắn vào nhóm hông `hips` theo dáng `pose`: cạp theo thân, phần dưới buông
+ * theo chân nên cúi chào không văng. `wrap`: bao lồi cạp, thân áo dưới cạp, khối hông, hai ống chân tới gấu và vành gấu, có
+ * nét mép vạt trên (`wrapHemEdge`). `apron`: tấm phía trước, mỗi cột buông từ dây cạp qua mặt người (`drape`). Mọi khối
+ * nằm trong một nhóm `userData.skirt`; `fitSkirt` dựng lại nó theo dáng mới
+ */
+export function sculptHipHem(hips: THREE.Object3D, o: Omit<SkirtOptions, 'thighs'>, pose: HemPose): THREE.Group {
+  const group = new THREE.Group();
+  group.userData.skirt = true;
+  hips.add(group);
+  const { skirt: g, rig, color, ink } = o;
+  const inkMat = npr({ color: ink, stipple: 0 });
+  const lineR = (k: number) => (k * rig.stroke * U) / 2;
+  if (g.style === 'apron') {
+    const lift = APRON_LIFT;
+    const hh = hipHull(o, pose, lift);
+    const { tris } = hullOf(hh.pts);
+    const a = apronOf(g);
+    const wa = hh.aW + lift, da = hh.dW + lift;
+    const W = Math.min(a.width, 0.97 * wa);
+    const L = g.length * rig.height;
+    const [NC, NR] = APRON_GRID;
+    const grid: Vec3[][] = [];
+    for (let i = 0; i < NC; i++) {
+      const x = -W + (2 * W * i) / (NC - 1);
+      const top = hh.toHip([x, hh.yW, da * Math.sqrt(Math.max(0, 1 - (x / wa) ** 2))]);
+      const path = drape([top[2], top[1]], sliceX(tris, top[0]));
+      // phần rủ tự do dưới chỗ vải rời người chỉ có khi chân buông: ngồi, quỳ thì tấm dừng ở gối
+      const lay = path.reduce((s, p, k) => (k ? s + Math.hypot(p[0] - path[k - 1][0], p[1] - path[k - 1][1]) : 0), 0);
+      const Lc = Math.min(L, lay + Math.max(0, L - lay) * hh.hang);
+      grid.push(Array.from({ length: NR }, (_, j) => {
+        const [z, y] = drapeAt(path, (Lc * j) / (NR - 1));
+        return [top[0], y, z] as Vec3;
+      }));
+    }
+    const sm = new THREE.Mesh(sheetGeometry(grid), npr({ color, stipple: 0.04, soft: 1, doubleSided: true }));
+    sm.castShadow = true;
+    group.add(sm);
+    for (const line of [grid[0], grid[NC - 1], grid.map((c) => c[NR - 1])]) group.add(tubeMesh(line, lineR(1), inkMat));
+    return group;
+  }
+  const hh = hipHull(o, pose, 0);
+  if (hh.hang > 0.05) {
+    const c = mix3(hh.ends[0], hh.ends[1], 0.5);
+    const k = hh.hang;
+    for (let i = 0; i < 48; i++) {
+      const p = (2 * Math.PI * i) / 48;
+      hh.pts.push([c[0] + Math.max(1, (hh.aW + g.flare) * k) * Math.sin(p), c[1], c[2] + Math.max(1, (hh.dW + g.flare) * k) * Math.cos(p)]);
+    }
+  }
+  const { geo, tris } = hullOf(hh.pts);
+  const m = new THREE.Mesh(geo, npr({ color, stipple: 0.05, soft: 1 }));
+  m.castShadow = true;
+  group.add(m);
+  const hl = new THREE.Mesh(geo, hullMaterial(0.026, ink));
+  hl.userData.noShadow = true;
+  group.add(hl);
+  // mép vạt trên: từ cạp xuống gấu trên mặt trước của khối
+  const w = wrapHemEdge.bind(null, wrapHemOf(g));
+  const x0 = w(0);
+  const top = hh.toHip([x0, hh.yW, hh.dW * Math.sqrt(Math.max(0, 1 - (x0 / hh.aW) ** 2))]);
+  const bottom = Math.max(...hh.pts.map((p) => p[1]));
+  const edge: Vec3[] = [];
+  const N = 40;
+  for (let j = 0; j <= N; j++) {
+    const v = j / N, x = w(v), y = top[1] + (bottom - top[1]) * v;
+    const z = sectionFront(sliceX(tris, x), y);
+    if (z !== undefined) edge.push([x, y, z + 0.6]);
+  }
+  if (edge.length > 1) group.add(tubeMesh(edge, lineR(0.7), inkMat));
+  return group;
+}
+
+/** Dây cạp và nơ sau lưng của tạp dề, gắn vào nhóm thân `spine`: cạp ở độ cao `skirt.rise`, nơ giữa lưng */
+export function apronTie(spine: THREE.Object3D, o: Omit<SkirtOptions, 'thighs'>) {
+  const { skirt: g, rig, body, ink } = o;
+  const a = apronOf(g);
+  const color = a.tieColor ?? o.color;
+  const group = new THREE.Group();
+  spine.add(group);
+  const h = rig.height, inset = rig.stroke / 2;
+  const yW = -g.rise * h;
+  let [aW, dW] = [Math.max(1, g.waist - inset), TORSO_DEPTH * Math.max(1, g.waist - inset)];
+  if (body) {
+    const [aa, d] = profileAt(body.profile, body.depth, yW);
+    [aW, dW] = [aa + 0.5, d + 0.5];
+  }
+  const lift = APRON_LIFT + 0.5;
+  const mat = npr({ color, stipple: 0.04, soft: 1 });
+  const inked = (geo: THREE.BufferGeometry) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.castShadow = true;
+    const hl = new THREE.Mesh(geo, hullMaterial(0.018, ink));
+    hl.userData.noShadow = true;
+    group.add(m, hl);
+  };
+  if (a.band > 0) {
+    const pts: Vec3[] = [];
+    const r = a.band / 2;
+    for (let i = 0; i < 64; i++) {
+      const p = (2 * Math.PI * i) / 64;
+      pts.push([(aW + lift) * Math.sin(p), yW, (dW + lift) * Math.cos(p)]);
+    }
+    const curve = new THREE.CatmullRomCurve3(pts.map(v3), true);
+    // bản dẹt: dây ôm thân, cao hơn dày
+    const geo = new THREE.TubeGeometry(curve, 96, r * U, 8, true);
+    inked(geo);
+  }
+  if (a.bow > 0)
+    for (const b of apronBow([0, yW, -(dW + lift + a.band / 2)], a.bow)) {
+      const geo = new THREE.SphereGeometry(1, 16, 12);
+      geo.scale(b.r[0] * U, b.r[1] * U, b.r[2] * U);
+      geo.rotateZ((-b.roll * Math.PI) / 180);
+      const c = v3(b.c);
+      geo.translate(c.x, c.y, c.z);
+      inked(geo);
     }
   return group;
 }

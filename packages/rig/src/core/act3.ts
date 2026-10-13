@@ -193,14 +193,15 @@ function clearsSkirt(
  */
 export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Build3) => {
   const hip = rig.hipHalf / 100;
-  const skirt = b?.skirt;
+  // tạp dề là tấm phía trước, tay buông hai bên không chạm
+  const skirt = b?.skirt?.style === "apron" ? undefined : b?.skirt;
   const h = rig.height;
   const inset = rig.stroke / 2;
   const len = [RIG.upperArm * h, RIG.foreArm * h] as const;
   if (!b?.clad) {
     const at = [garmentShoulder(garment, rig), -(RIG.torso * h - rig.shoulderDrop)] as const;
     const shoulder = [at[0] / 100, -at[1] / 100] as readonly [number, number];
-    if (!skirt) return { shoulder, hip, splay: SPLAY3 };
+    if (!skirt || !b) return { shoulder, hip, splay: SPLAY3 };
     // nét tay người que bán kính `BONES3.limb` nhân bề dày, đầu nét tròn
     const limb = BONES3.limb * 10 * b.sleeve;
     const aW = Math.max(1, skirt.waist - inset);

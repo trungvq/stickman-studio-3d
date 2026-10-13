@@ -599,8 +599,9 @@ export function figureAnchors(
   const squashed = (sl: Slot): Slot =>
     squash === 1 ? sl : { ...sl, box: { ...sl.box, y: sl.box.y * squash, h: sl.box.h * squash } };
 
+  // tạp dề chỉ người 3D dựng
   const skirt =
-    pieces.hem.src === "sculpt"
+    pieces.hem.src === "sculpt" && pieces.hem.skirt?.style !== "apron"
       ? skirtPaths(c, F, pose.torso || 0, bodyYaw, rig.stroke, f3)
       : undefined;
 

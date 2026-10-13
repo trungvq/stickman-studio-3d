@@ -53,6 +53,7 @@ export {
 export * from "./shade";
 export * from "./skirt";
 export * from "./skirtShape";
+export * from "./hem";
 export * from "./snap";
 export * from "./sphere";
 export * from "./timewarp";

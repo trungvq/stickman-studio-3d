@@ -1231,6 +1231,7 @@ khớp khối thân ở mọi nấc, kể cả `quarter` có `cast[].turn` lớn
 | `length` | 52 | Gấu thấp hơn cạp bấy nhiêu px khi đùi buông thẳng, nhân `rig.height` |
 | `flare` | 12 | Gấu rộng hơn cạp bấy nhiêu px mỗi bên; âm là gấu hẹp hơn cạp |
 | `pleats` | 8 | Số nếp chia đều quanh khối; `0` là trơn |
+| `style` | `cone` | `cone` là khối mô tả ở đây; `wrap` là [vạt dài quấn](#vạt-dài-quấn), `apron` là [tạp dề](#tạp-dề) — hai kiểu treo ở hông, chỉ người 3D dựng |
 
 - **Gấu rủ theo đùi.** Gọi `α` là trung bình góc hai đùi so với trục thân; gấu thấp hơn
   cạp `length · max(0, cos α)` và xoè `flare · max(0, cos α)`. Vành gấu không hẹp hơn ống đùi ở mút
@@ -1291,6 +1292,83 @@ không xếp nếp. Lòng váy lúc ngồi mép dưới thẳng từ mông tới
 chỉ còn ôm hông. Váy dài quá gối lúc ngồi chỉ phủ lòng tới gối: phần vải rủ từ gối xuống không dựng. Studio chọn ở ô Tà áo (ô Váy dựng khối
 đầu lưới đặt `src: "sculpt"`, `layer: "under"`); thẻ khi ấy
 chỉ còn màu váy, một thanh cho mỗi số và ô Vẽ dưới thân áo.
+
+### Vạt dài quấn
+
+`skirt.style: "wrap"`: vạt thẳng không nếp từ hông xuống bắp chân hay mắt cá, quấn kín vòng, mép vạt trên chạy dọc
+phía trước — phần dưới của kimono, yukata. Khác khối `cone`, vạt **treo ở nhóm hông**, không ở nhóm thân: cạp và phần
+thân áo dưới cạp nghiêng theo thân, còn từ hông xuống vạt buông theo hai chân, nên cúi chào `30°`, `45°` vạt vẫn rủ
+thẳng, không văng ra sau theo thân.
+
+```json
+"hem": { "src": "sculpt", "color": "#2B3A67", "layer": "under",
+         "skirt": { "style": "wrap", "length": 192, "flare": -4, "pleats": 0, "wrap": { "overlap": 22 } } }
+```
+
+Khối là bao lồi của vành cạp (`rise`, liền mặt thân áo như `cone`), các vành thân áo dưới cạp và khối hông (theo thân),
+hai ống chân cong đúng như chân người 3D vẽ (`palette.limbCurve`) từ hông tới tầm vạt phủ, và vành gấu nửa rộng
+`waist + flare` ở giữa hai mút ống chân. `length` vẫn tính từ cạp: đứng thẳng gấu ở `length − rise` dưới hông; tầm ấy
+đo dọc chân (`hemReach`), nên khi bước gấu đi theo hai cổ chân và chân không xuyên ra vạt. `pleats` bị bỏ qua.
+
+| Trường `skirt.wrap` | Mặc định | Nghĩa |
+|---|---:|---|
+| `overlap` | 22 | Mép vạt trên ở cạp lệch sang bên phải người mặc (`−x` hệ thân) bấy nhiêu px — để bằng `overlap` cổ chéo của thân áo thì mép vạt nối liền mép áo |
+| `slant` | 6 | Tới gấu mép lệch thêm bấy nhiêu px về bên phải người mặc |
+
+- **Vạt trái đè vạt phải (右前).** Mép vạt trên luôn ở bên phải người mặc: nhìn chính diện nó nằm bên trái khung. Nét
+  mép nằm trên mặt trước của khối, từ cạp tới gấu (`wrapHemEdge`).
+- **Ống chân chỉ phủ khi chân buông.** Đùi lệch phương đứng dưới `HEM_HANG[0]` (`35°`) thì vạt phủ đủ tầm, quá
+  `HEM_HANG[1]` (`70°`) thì chỉ phủ đùi tới hết đầu gối (`hemHang`): ngồi ghế, quỳ 正座 vạt dừng ở gối, ống chân là ống
+  quần — đặt `palette.trouser` cùng màu vải thì đọc như vạt rủ. Không dựng phần vải rủ từ gối xuống lúc ngồi. Vành gấu
+  co theo cùng tỉ lệ.
+- Tay buông choãi tới khi nằm ngoài vạt đứng thẳng, như `cone` (`skirtSide`, [01](01-rig.md#người-3d-mặc-đồ)).
+- 2D và 2.5D vẽ kiểu này như khối `cone` cùng số.
+
+Dáng hay dùng, người mặc đồ, `rig.height = 1`, `rise` `27`:
+
+| Dáng | `skirt` |
+|---|---|
+| Kimono tới mắt cá, gấu ôm | `{ "style": "wrap", "length": 192, "flare": -4, "pleats": 0 }` |
+| Yukata tới bắp chân | `{ "style": "wrap", "length": 150, "flare": 0, "pleats": 0 }` |
+
+**Đi sải ngắn.** `walk` mặc định sải `28°` làm vạt dài căng thành khối nêm giữa hai cổ chân; người mặc vạt dài đi bằng
+một hành động `walkCycle` riêng sải ngắn, chu kỳ `1` s:
+
+```json
+{ "gen": "walkCycle", "duration": 1, "end": "wrap", "authoredAt": "side",
+  "params": { "hip": 14, "knee": 40, "stance": 0.65, "arm": 10, "elbow": 18, "lean": 1, "crouch": 0, "dip": 0.5 } }
+```
+
+Quãng một chu kỳ đổi theo `hip`, `knee`, `stance` — đo bằng `actionStride` rồi viết `path` theo nó
+([01](01-rig.md#chu-kỳ-đi)).
+
+### Tạp dề
+
+`skirt.style: "apron"`: tấm phẳng phía trước từ dây cạp xuống, mặc ngoài quần, dây cạp quanh eo và nơ buộc sau lưng.
+
+```json
+"hem": { "src": "sculpt", "color": "#F3EBDD",
+         "skirt": { "style": "apron", "length": 100, "apron": { "tieColor": "#D9573B" } } }
+```
+
+Mỗi cột của tấm là một đường vải buông từ dây cạp phủ qua mặt người (`drape`): cắt dọc khối gồm thân áo dưới cạp,
+khối hông và hai ống chân (như [vạt dài quấn](#vạt-dài-quấn), nở thêm `APRON_LIFT` `3` px), vải đi từ dây cạp vòng
+phía trước tới chỗ rời người rồi rủ thẳng. Đứng, cúi chào thì tấm rủ thẳng từ dây cạp trước hai đùi; bước thì gối trước
+đẩy tấm ra; ngồi thì tấm nằm trên đùi và dừng ở gối — phần rủ tự do dưới chỗ rời người nhân `hemHang` của góc đùi.
+`length` là chiều dài tấm đo dọc vải; mép dưới thẳng khi đứng.
+
+| Trường `skirt.apron` | Mặc định | Nghĩa |
+|---|---:|---|
+| `width` | 38 | Nửa rộng tấm, không quá nửa rộng cạp |
+| `band` | 5 | Dây cạp dày bấy nhiêu px, vòng quanh cạp ở `rise`; `0` là không có |
+| `tieColor` | màu tấm | Màu dây cạp và nơ |
+| `bow` | 13 | Mỗi cánh nơ sau lưng dài bấy nhiêu px: hai cánh, nút, hai đuôi ngắn chĩa xuống (`apronBow`), khối cứng không rủ; `0` là không nơ |
+
+- Thân áo, khối hông, vạt áo người ngồi dựng như không có váy: thân áo không dừng ở cạp, khối hông màu quần.
+- Tay không choãi vì tạp dề.
+- `rise`, `waist` như `cone`; `flare`, `pleats` bị bỏ qua.
+- 2D và 2.5D không vẽ tạp dề.
+- Tạp dề và vạt dài quấn cùng socket `hem`: một người không mặc cả hai.
 
 ## Tư thế không đứng thẳng
 

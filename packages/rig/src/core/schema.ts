@@ -333,8 +333,32 @@ export const GarmentSchema = z.object({
   wrap: WrapSchema.optional(),
 });
 
+export const SKIRT_STYLES = ["cone", "wrap", "apron"] as const;
+
+/** Vạt dài quấn (`skirt.style: "wrap"`). docs/02-trang-phuc.md#vạt-dài-quấn */
+export const WrapHemSchema = z.object({
+  /** Mép vạt trên ở cạp lệch sang bên phải người mặc bấy nhiêu px */
+  overlap: z.number().default(22),
+  /** Tới gấu mép vạt lệch thêm bấy nhiêu px về bên phải người mặc */
+  slant: z.number().default(6),
+});
+
+/** Tạp dề (`skirt.style: "apron"`). docs/02-trang-phuc.md#tạp-dề */
+export const ApronSchema = z.object({
+  /** Nửa rộng tấm */
+  width: z.number().default(38),
+  /** Dây cạp dày bấy nhiêu px; `0` là không có */
+  band: z.number().default(5),
+  /** Màu dây cạp và nơ; bỏ trống là màu tấm */
+  tieColor: z.string().optional(),
+  /** Mỗi cánh nơ sau lưng dài bấy nhiêu px; `0` là không có nơ */
+  bow: z.number().default(13),
+});
+
 /** Váy dựng khối: nón cụt treo ở hông, chiếu theo góc của thân. docs/02-trang-phuc.md#váy-dựng-khối */
 export const SkirtSchema = z.object({
+  /** Bỏ trống là `cone` nón cụt trong nhóm thân; `wrap` vạt dài quấn và `apron` tạp dề treo ở hông, chỉ người 3D dựng */
+  style: z.enum(SKIRT_STYLES).optional(),
   /** Cạp cao hơn hông bấy nhiêu, nhân `rig.height` */
   rise: z.number().default(27),
   /** Nửa rộng cạp */
@@ -345,6 +369,10 @@ export const SkirtSchema = z.object({
   flare: z.number().default(12),
   /** Số nếp quanh khối; `0` là trơn */
   pleats: z.number().default(8),
+  /** Kiểu `wrap`: mép vạt trên; kiểu khác bỏ qua */
+  wrap: WrapHemSchema.optional(),
+  /** Kiểu `apron`: tấm, dây cạp, nơ; kiểu khác bỏ qua */
+  apron: ApronSchema.optional(),
 });
 
 /** Thân đạo cụ dùng lại đúng hình dạng này — docs/06-dao-cu.md */
@@ -594,6 +622,9 @@ export type Wrap = z.infer<typeof WrapSchema>;
 export type Obi = z.infer<typeof ObiSchema>;
 export type ObiKnot = (typeof OBI_KNOTS)[number];
 export type Skirt = z.infer<typeof SkirtSchema>;
+export type SkirtStyle = (typeof SKIRT_STYLES)[number];
+export type WrapHem = z.infer<typeof WrapHemSchema>;
+export type Apron = z.infer<typeof ApronSchema>;
 export type GarmentStyle = (typeof GARMENT_STYLE_NAMES)[number];
 export type GlassesShape = (typeof GLASSES_SHAPES)[number];
 export type SculptStyle = (typeof SCULPT_STYLE_NAMES)[number];

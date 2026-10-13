@@ -174,10 +174,15 @@ const GARMENT_ROWS: { key: GarmentNum; label: string; min: number; max: number; 
   { key: "hemRound", label: "Bo gấu", min: 0, max: 20 },
 ];
 
-const SKIRT_ROWS: { key: keyof Skirt; label: string; min: number; max: number }[] = [
+const SKIRT_ROWS: {
+  key: Exclude<keyof Skirt, "style" | "wrap" | "apron">;
+  label: string;
+  min: number;
+  max: number;
+}[] = [
   { key: "rise", label: "Cạp cao", min: 0, max: 60 },
   { key: "waist", label: "Cạp rộng", min: 20, max: 60 },
-  { key: "length", label: "Dài", min: 20, max: 160 },
+  { key: "length", label: "Dài", min: 20, max: 220 },
   { key: "flare", label: "Xoè", min: -20, max: 60 },
   { key: "pleats", label: "Nếp", min: 0, max: 16 },
 ];
