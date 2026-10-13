@@ -6,7 +6,7 @@ import { lonOf, turnPoint, type Vec3 } from "./sphere";
 import type { View } from "./types";
 
 export type Dims = Required<
-  Omit<Garment, "style" | "wrap" | "prints" | "badge" | "collarUp" | "belly">
+  Omit<Garment, "style" | "wrap" | "prints" | "badge" | "collarUp" | "belly" | "bellySide">
 >;
 export type P2 = [number, number];
 
@@ -122,7 +122,7 @@ export const COLLAR_LEAN = 0.35;
 export const RIB_FRONT = 0.3;
 /** Đỉnh khối hẹp hơn miệng cổ áo bấy nhiêu lần, để viền cổ nằm hẳn trên mặt vát */
 const NECK_TOP = 0.8;
-/** Bụng phệ: đỉnh bụng cao hơn hông bấy nhiêu phần thân, nhạt theo hình chuông rộng bấy nhiêu phần thân; ra hai bên bấy nhiêu lần ra trước */
+/** Bụng phệ: đỉnh bụng cao hơn hông bấy nhiêu phần thân, nhạt theo hình chuông rộng bấy nhiêu phần thân; ra hai bên bấy nhiêu lần ra trước khi `garment.bellySide` bỏ trống */
 export const BELLY = { at: 0.3, spread: 0.3, side: 0.45 } as const;
 
 /** Phần của `belly` ở độ cao `y` (hệ thân, px): `1` ở đỉnh bụng */
@@ -685,7 +685,7 @@ export type Rig = Pick<
  * Mặt cắt dọc của khối: nửa rộng `a` theo `y` (toạ độ nhóm thân, gốc ở hông), từ khớp cổ vát xuống
  * vành vai, bo góc, thon và thắt eo xuống gấu, bo góc gấu; `belly` nở hai bên quanh bụng
  */
-export function profile(g: Dims & { belly?: number }, rig: Rig, inset: number) {
+export function profile(g: Dims & { belly?: number; bellySide?: number }, rig: Rig, inset: number) {
   const torso = RIG.torso * rig.height;
   const yC = -(torso + RIG.neck * rig.height) - g.rise;
   const yS = -torso + rig.shoulderDrop;
@@ -721,7 +721,8 @@ export function profile(g: Dims & { belly?: number }, rig: Rig, inset: number) {
   // Eo: dưới vành vai co vào theo một vòm, sâu nhất giữa vành vai và gấu
   for (const p of pts)
     if (p[1] > yR) p[0] -= g.waist * Math.sin((Math.PI * (p[1] - yR)) / (yH - yR));
-  if (g.belly) for (const p of pts) p[0] += BELLY.side * g.belly * bellyAt(p[1], rig.height);
+  if (g.belly)
+    for (const p of pts) p[0] += (g.bellySide ?? BELLY.side) * g.belly * bellyAt(p[1], rig.height);
   // Nhánh trên, từ khớp cổ tới chỗ rộng nhất: nửa rộng tăng dần, tra ngược được ra `y`
   let apex = 0;
   for (let i = 1; i < 14; i++) if (pts[i][0] > pts[apex][0]) apex = i;

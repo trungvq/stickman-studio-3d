@@ -1616,8 +1616,8 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
 - **Tay buông thẳng.** Tay buông choãi khỏi thân `SPLAY3` (`0,08` rad) quanh trục tiến, người mặc đồ cũng
   thế: thân nhường chỗ chứ tay không xoè. Ngang hông, mép trong cẳng tay phải cách mép ngoài gốc đùi
   `hipHalf + cladThigh` một `CLAD_GAP`; hông hay đùi to hơn mức ấy thì tay choãi thêm (`roots3`). Thân bụng phệ
-  ([02](02-trang-phuc.md#bụng-phệ)) thì tay choãi tới khi mép trong cách mặt cắt có bụng một `CLAD_GAP` ở mọi độ cao
-  dưới nắp vai. Mặc
+  ([02](02-trang-phuc.md#bụng-phệ)) thì tay choãi thêm tới khi mép trong cách sườn áo không bụng đã lùi theo tay, cộng
+  phần bụng nở hai bên (`bellySide`), một `CLAD_GAP` ở mọi độ cao dưới nắp vai. Mặc
   [váy dựng khối](02-trang-phuc.md#váy-dựng-khối) thì từ ngang khuỷu tới đầu bàn tay xoè (`cladHand`; người
   que tới đầu nét tay), mép trong tay cũng cách hình bao váy đứng thẳng nhìn chính diện (`skirtSide`) một
   `CLAD_GAP`: váy xoè hơn thì tay choãi hơn — người mặc đồ với `flare` `12` choãi chừng `12°`, `30` thì

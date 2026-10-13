@@ -71,11 +71,30 @@ describe('thân bụng phệ', () => {
     expect(lerpAt(fat, yS, 1, 0) - lerpAt(plain, yS, 1, 0)).toBeLessThan(0.5);
   });
 
-  it('tay buông choãi ra ngoài bụng: sườn áo không bị tay cắt mất bụng', () => {
-    const r = roots3({ style: 'polo', belly: 24 }, rig, build);
-    const pts = profile(g(24), rig, rig.stroke / 2).pts;
-    for (const [a, y] of pts) if (y > r.room!.at[1] + r.room!.cap) expect(armSide(r.room!, y)).toBeGreaterThanOrEqual(a - 1e-6);
-    expect(r.splay).toBeGreaterThan(roots3({ style: 'polo' }, rig, build).splay);
+  it('`bellySide` 0: mặt cắt dọc như không bụng, bụng chỉ nhô ra trước', () => {
+    expect(profile(garmentOf({ style: 'polo', belly: 24, bellySide: 0 }, true), rig, 3).pts).toEqual(profile(g(), rig, 3).pts);
+    const t = torsoMesh({ style: 'polo', belly: 24, bellySide: 0 }, rig);
+    const i = t.profile.findIndex(([, y]) => y > -0.3 * 120);
+    expect(t.front[i] - t.depth[i]).toBeCloseTo(24 * bellyAt(t.profile[i][1], 1), 6);
+  });
+
+  it('tay buông choãi vừa đủ tránh phần bụng nở hai bên, không tránh cả thân áo chưa lùi', () => {
+    const plain = roots3({ style: 'polo' }, rig, build);
+    const fat = roots3({ style: 'polo', belly: 24 }, rig, build);
+    const flat = profile(g(), rig, rig.stroke / 2).pts;
+    // sườn áo không bụng đã lùi theo tay, cộng phần bụng ra hai bên: tay không cắt mất bụng. Bụng nhích gốc vai
+    // (`garmentSocket`) dưới nửa px nên so với tay của người không bụng thì nới nửa px
+    for (const [a, y] of flat)
+      if (y > fat.room!.at[1] + fat.room!.cap)
+        expect(armSide(fat.room!, y)).toBeGreaterThanOrEqual(
+          Math.min(a, armSide(plain.room!, y)) + 0.45 * 24 * bellyAt(y, rig.height) - 0.5,
+        );
+    expect(fat.splay).toBeGreaterThan(plain.splay);
+    // bụng nở ra hai bên ít thì tay choãi ít; chỉ nhô ra trước thì tay buông như không bụng
+    const slim = roots3({ style: 'polo', belly: 24, bellySide: 0.15 }, rig, build);
+    expect(slim.splay).toBeGreaterThan(plain.splay);
+    expect(slim.splay).toBeLessThan(fat.splay);
+    expect(roots3({ style: 'polo', belly: 24, bellySide: 0 }, rig, build).splay).toBe(plain.splay);
   });
 
   it('đai trên bụng phệ ôm thân: mép trên, mép dưới không hở ra khỏi bụng', () => {

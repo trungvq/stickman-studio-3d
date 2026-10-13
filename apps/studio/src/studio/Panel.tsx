@@ -160,7 +160,7 @@ const BEARD_TIP_LABELS: Record<BeardTip, string> = {
 /** Tầm kéo của từng số thân áo dựng khối, px; `fit` theo phần trăm. Vát vai là `cladSlope` khi bật `palette.clad` */
 type GarmentNum = Exclude<
   keyof Garment,
-  "style" | "wrap" | "prints" | "badge" | "collarUp" | "belly"
+  "style" | "wrap" | "prints" | "badge" | "collarUp" | "belly" | "bellySide"
 >;
 const GARMENT_ROWS: { key: GarmentNum; label: string; min: number; max: number; pct?: true }[] = [
   { key: "ease", label: "Rộng thêm", min: -5, max: 20 },

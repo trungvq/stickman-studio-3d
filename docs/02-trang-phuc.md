@@ -1217,17 +1217,23 @@ nổi khối (`shirt`, `polo`, `bowShirt`, `suit`, `blazer`, `blouse`), chỉ ng
 `garment.belly` (px, mặc định `0`) làm khối thân rộng nhất ở bụng — dáng quả lê của người bụng phệ:
 
 ```json
-"garment": { "style": "polo", "collarUp": 1, "belly": 22 }
+"garment": { "style": "polo", "collarUp": 1, "belly": 22, "bellySide": 0.15 }
 ```
 
 - Phần nhô theo độ cao là hình chuông `bellyAt`: đỉnh `1` cao hơn hông `BELLY.at` (`0.3`) thân, rộng `BELLY.spread`
-  (`0.3`) thân, nhân `rig.height`; vai, ngực gần như không đổi. Mặt cắt dọc nở ra hai bên `BELLY.side` (`0.45`) lần
-  `belly` — 2D, 2.5D cũng thấy bề ngang này —, người 3D còn nhô ra trước đủ `belly`: tiết diện ngang là nửa ellipse
-  trước sâu hơn nửa sau, hai nửa liền mạch ở hai sườn, nên bụng tròn mượt, lưng giữ phẳng.
+  (`0.3`) thân, nhân `rig.height`; vai, ngực gần như không đổi. Mặt cắt dọc nở ra hai bên `garment.bellySide` lần
+  `belly` (bỏ trống là `BELLY.side`, `0.45`) — 2D, 2.5D cũng thấy bề ngang này —, người 3D còn nhô ra trước đủ `belly`:
+  tiết diện ngang là nửa ellipse trước sâu hơn nửa sau, hai nửa liền mạch ở hai sườn, nên bụng tròn mượt, lưng giữ phẳng.
+- **Bụng ra trước là chính**: `bellySide` nhỏ (`0.1..0.2`) giữ bụng nhô to mà sườn áo gần như thẳng, tay buông choãi
+  ít; `0` là chỉ nhô ra trước, tay buông như người không bụng. Nhìn chính diện thì `bellySide` nhỏ đọc ra người gầy hơn —
+  bụng to đọc ở góc nghiêng `quarter`, `side`.
 - Thân áo có `front` (nửa sâu nửa trước) cạnh `depth`; khối thân, nét, mảng, cổ bẻ, cổ chéo đặt trên mặt ấy, vạt áo
   người ngồi gập theo nó (`lapFold`).
-- **Tay buông choãi ra ngoài bụng**: `roots3` choãi tay tới khi mép trong tay cách mặt cắt có bụng một `CLAD_GAP`, nên
-  sườn áo không bị tay cắt mất bụng ([01](01-rig.md#người-3d-mặc-đồ)).
+- **Tay buông choãi ra ngoài bụng**: `roots3` choãi tay tới khi mép trong tay cách sườn áo không bụng (đã lùi theo tay)
+  cộng phần bụng nở hai bên một `CLAD_GAP`, nên sườn áo không bị tay cắt mất bụng ([01](01-rig.md#người-3d-mặc-đồ)).
+  Tay tránh phần bụng chứ không tránh cả thân áo chưa lùi: `polo` `belly` `24` người mặc đồ mặc định choãi chừng `15°`
+  (người không bụng `6°`), `bellySide` `0.15` chừng `9°`.
+  Góc choãi là của cả tay; cẳng tay ôm theo bụng là việc của hành động (gập khuỷu vài độ ở dáng đứng).
 - **Đai trên bụng phệ** ([áo cổ chéo](#áo-cổ-chéo)) không còn là trụ ở chỗ rộng nhất mà ôm bao lồi của thân trong bản
   đai, riêng bề ngang, nửa sâu trước, nửa sâu sau: mép trên mép dưới của đai không hở khỏi bụng, đai dưới bụng nghiêng
   theo bụng.

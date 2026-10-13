@@ -14,7 +14,16 @@ import {
 } from "./lens";
 import { limbWidths, wornPalette, type CharacterData, type Garment, type Skirt } from "./schema";
 import { profileAt, skirtSide, wornSkirt } from "./skirtShape";
-import { garmentOf, garmentShoulder, garmentSocket, profile, type P2, type Rig } from "./torso";
+import {
+  BELLY,
+  bellyAt,
+  garmentOf,
+  garmentShoulder,
+  garmentSocket,
+  profile,
+  type P2,
+  type Rig,
+} from "./torso";
 
 /**
  * Khung xương của người 3D (`stickman.ts`) ở `rig.height`, đơn vị three: thân, cổ, tay, chân là `lengths(height)` của lõi
@@ -245,8 +254,6 @@ export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Buil
       : [cap, k * CLAD_TAPER.arm[1], k * CLAD_TAPER.arm[2]]
   ) as readonly [number, number, number];
   const g = garmentOf(garment, true);
-  // bụng phệ không bị tay cắt: tay buông choãi tới khi mép trong cách bụng một `CLAD_GAP`
-  const belly = g.belly ? profile(g, rig, inset).pts.filter(([, y]) => y > at[1] + cap) : [];
   const hipEdge = rig.hipHalf + thigh;
   const hand = cladHand(b.sleeve, rig.stroke, len[1]).length;
   const torso = skirt && profile(g, rig, inset).pts;
@@ -259,14 +266,24 @@ export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Buil
   const fits = (splay: number) => {
     const room = roomAt(splay);
     if (armInner(room, 0) < hipEdge) return false;
-    if (belly.some(([a, y]) => armSide(room, y) < a)) return false;
     if (!skirt || !torso) return true;
     // cạp liền mặt thân áo đã lùi theo tay; nửa px cạp 3D nhô ra nằm trong `CLAD_GAP`
     const { pts, depth } = cladProfile(torso, room);
     const [aW, dW] = profileAt(pts, depth, yW);
     return clearsSkirt(room, hand, skirtSide(skirt, h, aW, dW, rig.hipHalf, thigh, knee, inset));
   };
-  const room = roomAt(widen(fits));
+  let splay = widen(fits);
+  // bụng phệ không bị tay cắt: sườn áo không bụng đã lùi theo tay ở góc `splay`, tay choãi thêm tới khi mép trong
+  // cách sườn ấy cộng phần bụng nở hai bên một `CLAD_GAP` — tay tránh phần bụng chứ không tránh cả thân áo chưa lùi
+  const side = g.belly ? (g.bellySide ?? BELLY.side) * g.belly : 0;
+  if (side > 0) {
+    const flat = roomAt(splay);
+    const belly = profile({ ...g, belly: 0 }, rig, inset)
+      .pts.filter(([, y]) => y > at[1] + cap)
+      .map(([a, y]): P2 => [Math.min(a, armSide(flat, y)) + side * bellyAt(y, h), y]);
+    splay = widen((s) => fits(s) && belly.every(([a, y]) => armSide(roomAt(s), y) >= a));
+  }
+  const room = roomAt(splay);
   return {
     shoulder: [at[0] / 100, -at[1] / 100] as readonly [number, number],
     hip,

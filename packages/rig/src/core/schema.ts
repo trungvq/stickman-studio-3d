@@ -446,6 +446,8 @@ export const GarmentSchema = z.object({
   collarUp: z.number().min(0).max(1).optional(),
   /** Bụng phệ: thân nhô ra trước nhiều nhất bấy nhiêu px ở bụng, ra hai bên ít hơn; chỉ người 3D nhô ra trước. docs/02-trang-phuc.md#bụng-phệ */
   belly: z.number().min(0).optional(),
+  /** Bụng phệ ra hai bên bấy nhiêu lần `belly`; bỏ trống là `BELLY.side` (`0.45`), `0` là chỉ nhô ra trước. docs/02-trang-phuc.md#bụng-phệ */
+  bellySide: z.number().min(0).optional(),
 });
 
 /**
