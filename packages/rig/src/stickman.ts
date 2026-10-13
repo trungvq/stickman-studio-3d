@@ -695,7 +695,7 @@ export interface CharacterJson {
   head?: { form?: 'sphere' | 'human' };
   face?: Partial<FaceShape>;
   pieces: {
-    torso: { garment?: Partial<Garment> };
+    torso: { garment?: Partial<Garment>; accent?: string };
     hem?: { src?: string; skirt?: Partial<Skirt>; color?: string };
     hair?: { sculpt?: Partial<Sculpt>; color?: string; accent?: string };
     crown?: { src: string; hat?: Partial<Hat>; color?: string };
@@ -710,7 +710,7 @@ export interface CharacterJson {
 export function characterOptions(json: CharacterJson, opts: Partial<StickmanOptions> = {}): StickmanOptions {
   const pal = json.palette, pc = json.pieces;
   return {
-    rig: json.rig, garment: pc.torso.garment, color: pal.garment, skin: pal.skin,
+    rig: json.rig, garment: pc.torso.garment, color: pal.garment, accent: pc.torso.accent, skin: pal.skin,
     skirt: wornSkirt(pc.hem), skirtColor: pc.hem?.color, hair: pc.hair?.sculpt, hairColor: pc.hair?.color, hairAccent: pc.hair?.accent,
     sleeveWidth: pal.sleeveWidth, trouserWidth: pal.trouserWidth, limbCurve: pal.limbCurve, faceShape: json.face, itemSpecs: json.items,
     glasses: pc.faceAcc?.src === 'sculpt' && pc.faceAcc.glasses, glassesColor: pc.faceAcc?.color,
