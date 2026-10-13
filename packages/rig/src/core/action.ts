@@ -17,6 +17,7 @@ import {
   REACH_CHANNELS,
   stretchJson,
   stretchSegs,
+  type AimMap,
   type HandMap,
   type Lift,
   type Reach,
@@ -24,6 +25,16 @@ import {
 } from "./types";
 import { REACH_ELBOW, reachAngles } from "./ik";
 import { HAND_POSE_KINDS, handVec, mixHand, type HandKey, type HandPose } from "./hand";
+import {
+  aimDir,
+  AimDirSchema,
+  BODY_MARKS,
+  HAND_POINTS,
+  mixTerms,
+  type Aim,
+  type ReachTerm,
+} from "./bodyMark";
+import { reachEstimate } from "./act3";
 import {
   BASE_ITEM,
   EquipSchema,
@@ -64,7 +75,7 @@ import {
 } from "./animalGait";
 
 /** Bump khi đổi hình dạng JSON hành động; `migrateAction` phải có nhánh tương ứng. */
-export const ACTION_VERSION = 18;
+export const ACTION_VERSION = 19;
 
 /** Kênh khớp: thứ có số trong `Pose`; `stretch` là hệ số dài chi, không phải góc */
 export const JOINT_CHANNELS = [
@@ -227,7 +238,8 @@ const FaceSchema = z.object({
 /**
  * Bàn tay của một kênh tay kể từ mốc này: tên dáng (`HAND_POSE_KINDS`), hay `{ pose, w, turn, bend }` — dáng hoà từ dáng
  * nghỉ theo `w`, bỏ trống `pose` là dáng nghỉ; xoay cẳng tay `turn` (dương sấp) và gập cổ tay `bend` (dương về lòng tay)
- * trong `±90`. Nội suy như góc. docs/01-rig.md#bàn-tay
+ * trong `±90`. Nội suy như góc. `palm` / `fingers` khai lòng tay, ngón quay về đâu: người 3D tự giải xoay và gập cổ tay,
+ * `turn` bị bỏ qua, `bend` khai kèm thì giữ cố định. docs/01-rig.md#bàn-tay, docs/01-rig.md#hướng-lòng-tay-theo-ý
  */
 const HandKeySchema = z.union([
   z.enum(HAND_POSE_KINDS),
@@ -236,6 +248,8 @@ const HandKeySchema = z.union([
     w: z.number().min(0).max(1).optional(),
     turn: z.number().min(-90).max(90).optional(),
     bend: z.number().min(-90).max(90).optional(),
+    palm: AimDirSchema.optional(),
+    fingers: AimDirSchema.optional(),
   }),
 ]);
 
@@ -253,10 +267,43 @@ export type ActionEvent = z.infer<typeof EventSchema>;
 const v3 = z.tuple([z.number(), z.number(), z.number()]);
 
 /**
- * Đích cổ tay hệ thân: `at` `[tiến, y, ra ngoài]` đơn vị rig ở `height = 1`, gốc tâm hông, `y` xuống
- * là dương, `ra ngoài` dương về phía chính tay ấy; `elbow` hướng khuỷu cùng hệ. docs/01-rig.md#đích-bàn-tay
+ * Đích bàn tay: toạ độ `at` hệ thân `[tiến, y, ra ngoài]` đơn vị rig ở `height = 1`, gốc tâm hông, `y` xuống là dương,
+ * `ra ngoài` dương về phía chính tay ấy — hay mốc thân `to` (`BODY_MARKS`) trên chính người ấy, `side` chọn bên mốc,
+ * `offset` dời khỏi mốc theo khung phần người mang mốc (rig, không nhân `height`). `point` là điểm bàn tay đặt vào đích:
+ * thiếu là cổ tay với `at`, giữa lòng tay với `to`. `elbow` hướng khuỷu hệ thân. docs/01-rig.md#đích-bàn-tay,
+ * docs/01-rig.md#đích-theo-mốc
  */
-export const ReachSchema = z.object({ at: v3, elbow: v3.optional() });
+export const ReachSchema = z
+  .object({
+    at: v3.optional(),
+    to: z.enum(BODY_MARKS).optional(),
+    side: z.enum(["same", "other"]).optional(),
+    offset: v3.optional(),
+    point: z.enum(HAND_POINTS).optional(),
+    elbow: v3.optional(),
+  })
+  .refine((r) => !!r.at !== !!r.to, {
+    message: "đích bàn tay cần đúng một trong `at` (toạ độ hệ thân) hay `to` (mốc thân)",
+  })
+  .refine((r) => !!r.to || (r.side === undefined && r.offset === undefined), {
+    message: "`side`, `offset` chỉ đi với `to`",
+  });
+
+export type ReachJson = z.infer<typeof ReachSchema>;
+
+/** Số hạng của một đích JSON: toạ độ thô với điểm khác cổ tay, hay mốc thân; toạ độ cổ tay thì không có */
+export const reachTerm = (r: ReachJson): ReachTerm | undefined =>
+  r.to
+    ? {
+        k: 1,
+        to: r.to,
+        ...(r.side && { side: r.side }),
+        ...(r.offset && { offset: [...r.offset] as [number, number, number] }),
+        ...(r.point && { point: r.point }),
+      }
+    : r.point && r.point !== "wrist"
+      ? { k: 1, at: [...r.at!] as [number, number, number], point: r.point }
+      : undefined;
 
 const KeySchema = z.object({
   /** Tỉ lệ chu kỳ, không phải giây */
@@ -548,6 +595,7 @@ export function migrateAction(json: unknown): unknown {
   // v15 → v16 thêm số dang của tay chân và `torso: [cúi, nghiêng]`; thiếu là `0`, không phải viết gì
   // v16 → v17 thêm `keys[].face.blush`; thiếu là má không ửng thêm, không phải viết gì
   // v17 → v18 thêm số xoắn vai của tay, `keys[].hand` và kênh `hand`; thiếu là `0` và bàn tay thả lỏng, không phải viết gì
+  // v18 → v19 `keys[].reach` nhận mốc thân (`to`) và điểm bàn tay (`point`), `keys[].hand` nhận `palm` / `fingers`, sáu dáng tay mới; file cũ không dùng, không phải viết gì
   // v4 → v5 tay thành ba số; file cũ cầm đồ thẳng trục cẳng tay, tức cổ tay 0
   if (from < 5)
     for (const k of (o.keys ?? []) as Record<string, unknown>[]) {
@@ -973,7 +1021,8 @@ export function actionDelta(a: ActionData, t: number): PoseDelta {
           const v = d.torso ?? sampleChannel(a, (q) => keyDelta(q).torso, k.t);
           return v === undefined ? undefined : torsoBend(v);
         };
-        return (x ?? (r ? reachAngles(r, lean()) : undefined)) as Angles | undefined;
+        if (x !== undefined || !r) return x as Angles | undefined;
+        return reachAngles({ at: reachEstimate(r, lean()), elbow: r.elbow }, lean());
       },
       u,
     );
@@ -984,9 +1033,21 @@ export function actionDelta(a: ActionData, t: number): PoseDelta {
 
 const REACH_OF = { af: "armFar", an: "armNear" } as const;
 
-type ReachSample = { w: number; at: Reach["at"]; elbow: NonNullable<Reach["elbow"]> };
+type ReachSample = {
+  w: number;
+  at: Reach["at"];
+  elbow: NonNullable<Reach["elbow"]>;
+  terms?: ReachTerm[];
+};
 
-/** Hoà hai đích: phần `w` nội suy thẳng; bên không có đích (`w` 0) mượn chỗ của bên kia */
+/** Số hạng của một đích: đích chỉ có toạ độ cổ tay là một số hạng thô */
+const termsOf = (r: Pick<Reach, "at" | "terms">): ReachTerm[] =>
+  r.terms ?? [{ k: 1, at: [...r.at] as [number, number, number] }];
+
+/**
+ * Hoà hai đích: phần `w` nội suy thẳng; bên không có đích (`w` 0) mượn chỗ của bên kia. Có số hạng (mốc thân, điểm bàn
+ * tay) thì hoà trên số hạng (`mixTerms`): người 3D giải từng số hạng rồi cộng theo phần, cổ tay đi liền
+ */
 export function mixReach<T extends Reach | ReachSample>(
   a: T | undefined,
   b: T | undefined,
@@ -1004,6 +1065,7 @@ export function mixReach<T extends Reach | ReachSample>(
     w,
     at: lerp(p.at, q.at),
     elbow: lerp(p.elbow ?? REACH_ELBOW, q.elbow ?? REACH_ELBOW),
+    ...((p.terms || q.terms) && { terms: mixTerms(termsOf(p), termsOf(q), f) }),
   };
 }
 
@@ -1023,7 +1085,15 @@ export function actionReach(a: ActionData, t: number): ReachMap {
       a,
       (k) => {
         const r = k.reach?.[c];
-        if (r) return { w: 1, at: r.at, elbow: r.elbow ?? REACH_ELBOW };
+        if (r) {
+          const term = reachTerm(r);
+          return {
+            w: 1,
+            at: reachEstimate(r),
+            elbow: r.elbow ?? REACH_ELBOW,
+            ...(term && { terms: [term] }),
+          };
+        }
         return keyDelta(k)[c] ? { w: 0, at: [0, 0, 0], elbow: REACH_ELBOW } : undefined;
       },
       u,
@@ -1041,7 +1111,76 @@ export function actionPose(a: ActionData, t: number): Partial<Pose> {
   if (Object.keys(reach).length) p.reach = reach;
   const hand = actionHand(a, t);
   if (Object.keys(hand).length) p.hand = hand;
+  const aim = actionAim(a, t);
+  if (Object.keys(aim).length) p.aim = aim;
   return p;
+}
+
+/** Bàn tay theo ý định của số bàn tay thô: một số hạng `raw` (xoay, gập cổ tay) */
+export const rawAim = (v: readonly number[]): Aim => ({
+  terms: [{ k: 1, raw: [v[0] ?? 0, v[1] ?? 0] }],
+});
+
+/** Hoà hai bàn tay theo ý định trên số hạng: người 3D giải từng ý định rồi cộng góc theo phần */
+export const mixAim = (a: Aim, b: Aim, f: number): Aim => ({
+  terms: mixTerms(a.terms, b.terms, f),
+});
+
+/** Bàn tay theo ý định của một mốc: `palm` / `fingers` là một số hạng ý định, không thì xoay và gập thô */
+export function keyAim(h: HandPose | HandKey): Aim {
+  if (typeof h === "string") return rawAim([0, 0]);
+  if (!h.palm && !h.fingers) return rawAim([h.turn ?? 0, h.bend ?? 0]);
+  return {
+    terms: [
+      {
+        k: 1,
+        ...(h.palm && { palm: aimDir(h.palm) }),
+        ...(h.fingers && { fingers: aimDir(h.fingers) }),
+        ...(h.bend !== undefined && { bend: h.bend }),
+      },
+    ],
+  };
+}
+
+/**
+ * Lòng tay theo ý định mà hành động ghi tại pha `t`, theo kênh tay: chỉ kênh có mốc khai `palm` / `fingers`; mốc khác của
+ * kênh ấy là số hạng thô, nên đi từ mốc thô sang mốc ý định là cổ tay xoay dần. Ngoài mặt nạ thì bỏ trống.
+ */
+export function actionAim(a: ActionData, t: number): AimMap {
+  if (!a.keys || actionKind(a) === "animal" || !actionMask(a).includes("hand")) return {};
+  const u = phaseOf(a, t);
+  const o: AimMap = {};
+  for (const ch of REACH_CHANNELS) {
+    const c = REACH_OF[ch];
+    const keyed = a.keys.some((k) => {
+      const h = keyHand(k)[c];
+      return typeof h === "object" && !!(h.palm || h.fingers);
+    });
+    if (!keyed) continue;
+    const v = sampleWith<Aim>(
+      a,
+      (k) => {
+        const h = keyHand(k)[c];
+        return h === undefined ? undefined : keyAim(h);
+      },
+      u,
+      mixAim,
+    );
+    if (v) o[ch] = v;
+  }
+  return o;
+}
+
+/** Mốc bàn tay khai cả `turn` lẫn `palm` / `fingers`: `turn` bị bỏ qua — `validate` và `check` kêu */
+export function aimProblems(a: ActionData): string[] {
+  const out: string[] = [];
+  for (const k of a.keys ?? [])
+    for (const [c, h] of Object.entries(keyHand(k)))
+      if (typeof h === "object" && (h.palm || h.fingers) && h.turn !== undefined)
+        out.push(
+          `\`keys[t: ${k.t}].hand.${c}\` khai cả \`turn\` lẫn \`${h.palm ? "palm" : "fingers"}\`: rig tự giải xoay cẳng tay theo hướng đã khai, \`turn\` bị bỏ qua — xoá \`turn\` (docs/01-rig.md#hướng-lòng-tay-theo-ý)`,
+        );
+  return out;
 }
 
 /** Tên kênh JSON → khoá `AnimalPose`; chiều ngược của `animalPoseDelta`. */
@@ -1149,6 +1288,16 @@ export const composePose = (base: Pose, ...parts: Partial<Pose>[]): Pose =>
     }
     // Bàn tay đè theo từng kênh tay: track chỉ ghi tay gần không xoá bàn tay xa của track dưới
     if (o.hand || p.hand) out.hand = { ...o.hand, ...p.hand };
+    // Lòng tay theo ý định đi theo bàn tay: lớp trên ghi bàn tay thô là xoá ý định của lớp dưới
+    if (o.aim || p.aim) {
+      const aim: AimMap = {};
+      for (const k of REACH_CHANNELS) {
+        const a = p.hand?.[k] ? p.aim?.[k] : o.aim?.[k];
+        if (a) aim[k] = a;
+      }
+      if (Object.keys(aim).length) out.aim = aim;
+      else delete out.aim;
+    }
     return out;
   }, base);
 

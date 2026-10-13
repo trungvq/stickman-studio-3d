@@ -1,4 +1,13 @@
-import { actHand, actJoints, actPalms, type ActInput, type ActPalm } from "./act3";
+import {
+  actAim,
+  actHand,
+  actJoints,
+  actPalms,
+  AIM_BEND,
+  needsSolve,
+  type ActInput,
+  type ActPalm,
+} from "./act3";
 import { actionMask } from "./action";
 import { body3 } from "./figure3d";
 import { depthAt, project, type V3 } from "./lens";
@@ -327,7 +336,7 @@ export function palmLine(s: PalmIssue): string {
   const turn = `\`turn\` lúc ấy ${Math.round(s.turn)}`;
   const fix =
     s.fix.angle <= (s.rule === "rest" ? PALM_DOWN : PALM_HANG) / 2
-      ? `${turn}, khoảng ${s.fix.turn} thì lòng tay ${want} (lệch ${Math.round(s.fix.angle)}°) — sửa \`turn\` ở \`keys[].hand\``
+      ? `${turn}, khoảng ${s.fix.turn} thì lòng tay ${want} (lệch ${Math.round(s.fix.angle)}°) — sửa \`turn\` ở \`keys[].hand\`, hay khai \`palm\` để rig tự giải`
       : `${turn}, xoay cẳng tay một mình không đủ (tốt nhất ${s.fix.turn}, còn lệch ${Math.round(s.fix.angle)}°)`;
   const elbow =
     s.rule === "rest" && s.ik
@@ -344,3 +353,135 @@ export function palmLine(s: PalmIssue): string {
 /** `scenePalms` ra dòng báo. docs/03-scene.md#lòng-bàn-tay */
 export const scenePalmProblems = (rt: SceneRuntime, o: PalmOptions): string[] =>
   scenePalms(rt, o).map(palmLine);
+
+/** Đích theo mốc còn cách điểm bàn tay quá ngần này (rig, nhân `world.s`) thì `check` báo */
+export const AIM_GAP = 6;
+/** Lòng tay khai theo ý định còn lệch quá ngần này độ thì báo */
+export const AIM_ANGLE = 25;
+/** Ngón khai theo ý định còn lệch quá ngần này độ thì báo: hướng ngón là phụ, khuỷu và giới hạn cổ tay quyết phần còn lại */
+export const AIM_FINGERS = 40;
+
+/** Một quãng bàn tay không đạt cái đã khai: `reach` đích theo mốc không với tới, `palm` / `fingers` hướng không xoay tới */
+export interface AimIssue {
+  id: string;
+  hand: PalmHand;
+  rule: "reach" | "palm" | "fingers";
+  /** Giây lệch nhiều nhất và độ lệch: khe (rig) với `reach`, góc (độ) với `palm`, `fingers` */
+  t: number;
+  amount: number;
+  /** Mốc và điểm bàn tay của đích (`reach`) */
+  to?: string;
+  point?: string;
+  runs: [number, number][];
+  clips: string[];
+}
+
+/**
+ * Bàn tay người 3D không đạt đích theo mốc hay hướng lòng tay đã khai, đo trên đúng phép giải của `act` (`actAim`): lấy
+ * mẫu mỗi `every` giây, báo quãng từ `hold` giây trở lên mà điểm bàn tay còn cách mốc quá `gap` (phần đích đủ `1`), lòng
+ * tay lệch hướng đã khai quá `angle` độ, hay ngón quá `fingers` độ. docs/03-scene.md#bàn-tay-theo-ý-định
+ */
+export function sceneAims(
+  rt: SceneRuntime,
+  o: Pick<PalmOptions, "characterOf" | "hold" | "every"> & {
+    gap?: number;
+    angle?: number;
+    fingers?: number;
+  },
+): AimIssue[] {
+  const every = o.every ?? PALM_EVERY;
+  const hold = o.hold ?? PALM_HOLD;
+  const gap = o.gap ?? AIM_GAP;
+  const angle = o.angle ?? AIM_ANGLE;
+  const fingers = o.fingers ?? AIM_FINGERS;
+  const n = Math.floor(rt.duration / every + 1e-6);
+  const people = rt.cast.flatMap((m) => {
+    const base = m.world ? o.characterOf(m) : undefined;
+    if (!base) return [];
+    const c = castCharacter(m, base);
+    return [{ m, c, b: body3(c) }];
+  });
+  type Run = { issue: AimIssue; from: number; to: number; last: number };
+  const open = new Map<string, Run>();
+  const done: AimIssue[] = [];
+  const close = (k: string) => {
+    const r = open.get(k)!;
+    open.delete(k);
+    if (r.to - r.from + every >= hold - 1e-9) {
+      const prev = done.find((d) => `${d.id}|${d.hand}|${d.rule}` === k);
+      if (prev) {
+        prev.runs.push([r.from, r.to]);
+        if (r.issue.amount > prev.amount) Object.assign(prev, { ...r.issue, runs: prev.runs });
+      } else done.push({ ...r.issue, runs: [[r.from, r.to]] });
+    }
+  };
+  for (let i = 0; i <= n; i++) {
+    const t = +(i * every).toFixed(4);
+    const seen = new Set<string>();
+    for (const { m, c, b } of people) {
+      const sp = sceneAt(rt, m.id, t, c.rig.height, b);
+      if (!sp.world || !(sp.opacity > 0.5) || !needsSolve(sp)) continue;
+      const res = actAim(c, sp);
+      if (!res) continue;
+      for (const hand of ["R", "L"] as const) {
+        const r = res.report[hand];
+        const hits: Omit<AimIssue, "runs" | "clips">[] = [];
+        if (r.reach && r.reach.gap > gap * sp.world.s)
+          hits.push({
+            id: m.id,
+            hand,
+            rule: "reach",
+            t,
+            amount: r.reach.gap,
+            to: r.reach.to,
+            point: r.reach.point,
+          });
+        if (r.palm !== undefined && r.palm > angle)
+          hits.push({ id: m.id, hand, rule: "palm", t, amount: r.palm });
+        if (r.fingers !== undefined && r.fingers > fingers)
+          hits.push({ id: m.id, hand, rule: "fingers", t, amount: r.fingers });
+        for (const h of hits) {
+          const k = `${h.id}|${h.hand}|${h.rule}`;
+          seen.add(k);
+          const run = open.get(k);
+          if (run && run.last === i - 1) {
+            run.to = t;
+            run.last = i;
+            if (h.amount > run.issue.amount) run.issue = { ...h, runs: [], clips: handClips(m, t) };
+          } else {
+            if (run) close(k);
+            open.set(k, {
+              issue: { ...h, runs: [], clips: handClips(m, t) },
+              from: t,
+              to: t,
+              last: i,
+            });
+          }
+        }
+      }
+    }
+    for (const k of [...open.keys()]) if (!seen.has(k)) close(k);
+  }
+  for (const k of [...open.keys()]) close(k);
+  return done.sort((a, b) => b.amount - a.amount);
+}
+
+/** Dòng báo của một quãng bàn tay không đạt cái đã khai, như `check` in */
+export function aimLine(s: AimIssue): string {
+  const runs = s.runs
+    .slice(0, 4)
+    .map(([a, b]) => (a === b ? sec(a) : `${sec(a)}–${sec(b)}`))
+    .join(", ");
+  const more = s.runs.length > 4 ? `, +${s.runs.length - 4} quãng` : "";
+  const who = `\`${s.id}\` ${PALM_HAND_LABELS[s.hand]}`;
+  const clips = s.clips.length ? `. Clip đang chạy: ${s.clips.join(", ")}` : "";
+  const head =
+    s.rule === "reach"
+      ? `bàn tay không tới mốc — ${who}: ${s.point === "wrist" ? "cổ tay" : `\`${s.point}\``} còn cách \`${s.to}\` ${s.amount.toFixed(1)} ở giây ${sec(s.t)} · giây ${runs}${more}. Tay không với tới: dời người hay đổi \`offset\`, nới \`stretch\`, hay chọn mốc gần hơn`
+      : `${s.rule === "palm" ? "lòng tay" : "ngón tay"} không quay được về hướng đã khai — ${who}: còn lệch ${Math.round(s.amount)}° ở giây ${sec(s.t)} · giây ${runs}${more}. Ngoài tầm xoay cẳng tay ±90 và gập cổ tay ±${AIM_BEND}: đổi \`elbow\` (khung cẳng tay quay theo hướng khuỷu) hay hướng đã khai`;
+  return `${head}${clips} (docs/01-rig.md#hướng-lòng-tay-theo-ý)`;
+}
+
+/** `sceneAims` ra dòng báo. docs/03-scene.md#bàn-tay-theo-ý-định */
+export const sceneAimProblems = (rt: SceneRuntime, o: Parameters<typeof sceneAims>[1]): string[] =>
+  sceneAims(rt, o).map(aimLine);

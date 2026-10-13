@@ -11,11 +11,11 @@ import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
 import { equipCharacter, limbWidths, wornPalette, type CharacterData, type Drape, type Equip, type PieceKey, type Garment, type Glasses, type Hat, type Pin, type Sculpt, type Shades, type Skirt } from './core/schema';
 import { hatFit, hatMesh, insideHat, pinMesh } from './core/hat';
-import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, SLEEVE_EASE, sleeveGrow, type Bones3 } from './core/act3';
+import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, SLEEVE_EASE, sleeveGrow, type ActCharacter, type Bones3 } from './core/act3';
 import { blushLevel, chibiShape } from './core/face';
 import { wornSkirt } from './core/skirtShape';
 import { hangsFromHip, matchWrap } from './core/hem';
-import { humanHair, humanSkull } from './core/humanHead';
+import { humanHair, humanSkull, SKULL3 } from './core/humanHead';
 import { Ankle, earGroup, handRig, humanHeadGeometry, neckGeometry, pelvisGeometry, shoeCapsule, shoeGeometry, type Hand } from './human';
 import { handGrip } from './core/hand';
 import type { Rig } from './torso';
@@ -71,6 +71,8 @@ export interface Figure {
   bones: Bones3;
   /** Tay choãi, radian (`roots3`) */
   splay: number;
+  /** Số đo nhân vật cho `resolveActing` của lõi: `act` giải đích theo mốc thân và lòng tay theo ý định trên chính người này */
+  body: ActCharacter;
 }
 
 /** `low`: người nền rẻ — ít mặt lưới, gộp khối tĩnh theo vật liệu, nét mặt đứng yên dùng chung texture, không chớp mắt */
@@ -398,6 +400,17 @@ export interface StickmanOptions {
   headForm?: 'sphere' | 'human';
 }
 
+/** Phần JSON nhân vật mà `resolveActing` đọc, dựng lại từ tham số của `stickman` */
+function actCharacter(o: StickmanOptions): ActCharacter {
+  return {
+    rig: o.rig,
+    head: { form: o.headForm ?? 'sphere' },
+    face: o.faceShape,
+    palette: { clad: !!o.clad, sleeveWidth: o.sleeveWidth, trouserWidth: o.trouserWidth, bicep: o.bicep ?? 0, sleeveFlare: o.sleeveFlare ?? 0, sleeveLength: o.sleeveLength ?? 1 },
+    pieces: { torso: { garment: o.garment }, ...(o.skirt && { hem: { src: 'sculpt', skirt: o.skirt } }) },
+  } as unknown as ActCharacter;
+}
+
 /** Một người que 3D theo JSON nhân vật của rig. */
 export function stickman(o: StickmanOptions): Figure {
   const { rig, skin = '#f0d9b8', garment, color, accent, skirt, skirtColor = color, hair, hairColor = '#2a1c15', glasses = false, glassesColor, faceShape, face, seed = 0, seated = false, limbCurve = 1, lod = 'full', items, itemSpecs, equip } = o;
@@ -447,7 +460,7 @@ export function stickman(o: StickmanOptions): Figure {
     } else skirtRig = { opts, group: sculptSkirt(spine, { ...opts, thighs }), key: '' };
   }
   const neck = joint(spine, 0, B.torso, 0);
-  const skullScale = new THREE.Vector3(1, 1.04, 0.98);
+  const skullScale = new THREE.Vector3(...SKULL3);
   // đáy sọ trên mép cổ áo (khớp cổ của lõi + `rise` 6 của áo phông)
   const head = joint(neck, 0, head3(B, human), 0);
   if (human) head.userData.human = true;
@@ -551,7 +564,7 @@ export function stickman(o: StickmanOptions): Figure {
   root.userData.figure = true;
   const grip = (s: Side): Vec3 => (hands ? handGrip(s, hands[s].scale, hands[s].long) : [0, -(R.limb * sleeveWidth) / 10, 0]);
   const sockets = buildSockets({ root, spine, head, arms }, fit, grip, rig);
-  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig, bones: B, splay: at.splay, ...(hands && { hands }), ...(body.refold && lod !== 'low' && { lap: { refold: body.refold, key: '' } }) };
+  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig, bones: B, splay: at.splay, body: actCharacter(o), ...(hands && { hands }), ...(body.refold && lod !== 'low' && { lap: { refold: body.refold, key: '' } }) };
   if (equip) dress(fig, equip);
   return fig;
 }

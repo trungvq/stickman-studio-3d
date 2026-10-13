@@ -8,6 +8,7 @@ import { roomDemo } from './demo-room.js';
 import { stagesDemo } from './demo-stages.js';
 import { decalDemo, policeDemo } from './demo-decal.js';
 import { humanDemo } from './demo-human.js';
+import { handAimDemo } from './demo-hand-aim.js';
 import { createMarks } from './marks.js';
 
 const AA_LABEL = { off: 'Tắt', 'ss1.5': '1,5×', ss2: '2×' };
@@ -83,7 +84,7 @@ const MOUTHS = ['talkA', 'talkTeeth', 'talkB', 'talkTeeth', 'talkA', 'o'];
 
 /** Cảnh diễn hành động `?demo=`; không có cảnh ấy thì trả `undefined` */
 function setupDemo(name) {
-  const own = { hold: holdDemo, light: lightDemo, room: roomDemo, stages: () => stagesDemo(host), decal: decalDemo, police: policeDemo };
+  const own = { hold: holdDemo, light: lightDemo, room: roomDemo, stages: () => stagesDemo(host), decal: decalDemo, police: policeDemo, 'hand-aim': handAimDemo };
   for (const k of ['human', 'human-row', 'human-faces', 'human-bench', 'human-wrap', 'human-wrap-act', 'human-coat', 'human-coat-act', 'human-extra', 'human-extra-act', 'human-extra-move', 'human-extra-equip']) own[k] = () => humanDemo(k);
   const d = own[name] ? own[name](q) : name && demo(name);
   if (['light', 'room', 'decal', 'police'].includes(name)) ground.visible = false;
@@ -214,6 +215,8 @@ if (['cel', 'manga'].includes(q.get('shade'))) state.shade = q.get('shade');
 if (q.has('nohud')) document.getElementById('hud').classList.add('hide');
 if (shot?.view) controls.enabled = false;
 if (q.has('look')) controls.target.set(...q.get('look').split(',').map(Number));
+// `focus=<người>:<khớp>`: máy nhìn vào khớp ấy ở giây `t` (cảnh có `focus`, như `hand-aim`)
+if (q.has('focus') && shot?.focus) controls.target.copy(shot.focus(...q.get('focus').split(':'), Number(q.get('t') ?? 0)));
 if (q.has('az')) view.theta = (Number(q.get('az')) * Math.PI) / 180;
 if (q.has('el')) view.phi = Math.PI / 2 - (Number(q.get('el')) * Math.PI) / 180;
 if (q.has('dist')) {

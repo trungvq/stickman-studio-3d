@@ -11,6 +11,7 @@ import {
   JOINT_CHANNELS,
   keyDelta,
   reachAngles,
+  reachEstimate,
   torsoBend,
   REACH_ELBOW,
   reachToWorld,
@@ -94,7 +95,7 @@ export function soloGround(
   return groundY - Math.max(0, low - groundY);
 }
 
-/** Đích cổ tay của tay `ch` ở mốc `key`: đích đã ghi, hoặc cổ tay đang vẽ nếu mốc ghi góc */
+/** Đích cổ tay của tay `ch` ở mốc `key`: đích toạ độ đã ghi, hoặc cổ tay đang vẽ nếu mốc ghi góc hay đích theo mốc thân */
 export function keyTarget(
   character: CharacterData,
   equip: Equip | undefined,
@@ -103,7 +104,8 @@ export function keyTarget(
   ch: ReachArm,
 ): V3 {
   const r = key.reach?.[ch];
-  if (r) return reachToWorld(solo.world, ch, r.at, character.rig.height);
+  if (r?.at && (!r.point || r.point === "wrist"))
+    return reachToWorld(solo.world, ch, r.at, character.rig.height);
   const j = soloJoints(character, equip, solo);
   return ch === "armNear" ? j.wristNear : j.wristFar;
 }
@@ -150,10 +152,14 @@ export function spreadKeyPose(d: ActionData, k: ActionKey): PoseDelta {
   return k.pose as PoseDelta;
 }
 
-/** Tay `ch` của mốc theo đích `at`, giữ hướng khuỷu đã ghi; góc của kênh ấy bỏ đi để chỉ còn một nguồn */
+/**
+ * Tay `ch` của mốc theo đích cổ tay `at`, giữ hướng khuỷu đã ghi; góc của kênh ấy bỏ đi để chỉ còn một nguồn. Đích theo
+ * mốc thân thành toạ độ cổ tay
+ */
 export function setKeyReach(d: ActionData, k: ActionKey, ch: ReachArm, at: V3) {
   delete spreadKeyPose(d, k)[ch];
-  k.reach = { ...k.reach, [ch]: { ...k.reach?.[ch], at } };
+  const elbow = k.reach?.[ch]?.elbow;
+  k.reach = { ...k.reach, [ch]: { at, ...(elbow && { elbow }) } };
 }
 
 /** Bỏ đích của tay `ch`: kênh về góc dự phòng của chính đích ấy (`reachAngles`), tay không nhảy ở người 2D */
@@ -161,7 +167,8 @@ export function clearKeyReach(d: ActionData, k: ActionKey, ch: ReachArm) {
   const r = k.reach?.[ch];
   if (!r) return;
   const pose = spreadKeyPose(d, k);
-  pose[ch] = reachAngles(r, pose.torso === undefined ? undefined : torsoBend(pose.torso));
+  const lean = pose.torso === undefined ? undefined : torsoBend(pose.torso);
+  pose[ch] = reachAngles({ at: reachEstimate(r, lean), elbow: r.elbow }, lean);
   const rest = { ...k.reach };
   delete rest[ch];
   k.reach = Object.keys(rest).length ? rest : undefined;
@@ -175,12 +182,22 @@ export function reachAt(a: ActionData, t: number, pose: PoseDelta): ActionKey["r
   const out: NonNullable<ActionKey["reach"]> = {};
   for (const [k, r] of Object.entries(actionReach(a, t))) {
     if (!r || r.w < 1) continue;
+    // đích theo mốc thân chỉ chép được khi cả đoạn cùng một mốc; hoà hai mốc thì mốc mới theo góc
+    const term = r.terms?.length === 1 ? r.terms[0] : undefined;
+    if (r.terms && !term?.to) continue;
     const ch: ReachArm = k === "an" ? "armNear" : "armFar";
     delete pose[ch];
     const elbow = r.elbow ?? REACH_ELBOW;
     const bent = elbow.some((v, i) => Math.abs(v - REACH_ELBOW[i]) > 1e-9);
     out[ch] = {
-      at: r.at.map(round1) as V3,
+      ...(term?.to
+        ? {
+            to: term.to,
+            ...(term.side && { side: term.side }),
+            ...(term.offset && { offset: term.offset.map(round1) as V3 }),
+            ...(term.point && { point: term.point }),
+          }
+        : { at: r.at.map(round1) as V3 }),
       ...(bent && { elbow: elbow.map((v) => Math.round(v * 100) / 100) as V3 }),
     };
   }

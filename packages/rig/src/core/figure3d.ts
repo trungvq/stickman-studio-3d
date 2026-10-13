@@ -13,7 +13,7 @@ import {
   type LocalLens,
   type V3,
 } from "./lens";
-import { cladThigh } from "./act3";
+import { cladThigh, resolveActing } from "./act3";
 import { bendOf, REACH_ELBOW, solveTwoBone } from "./ik";
 import { limbWidths, type CharacterData } from "./schema";
 import { hull } from "./skirt";
@@ -373,7 +373,9 @@ export function feet3(P: Pose, w: World, height: number, hipHalf: number): [V3, 
  * Thân áo, váy dựng khối chiếu qua `torsoLens`; gốc chân, gốc vai, cổ và tâm đầu là điểm thật đã
  * chiếu. docs/01-rig.md#người-3d
  */
-export function figure3d(c: CharacterData, P: Pose, w: World): Figure3 {
+export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
+  // đích theo mốc thân, lòng tay theo ý định quy về số như người 3D của three
+  const { pose: P, world: w } = resolveActing(c, { pose: P0, world: w0 });
   const { rig } = c;
   const len = lengths(rig.height);
   const st = P.stretch;

@@ -20,7 +20,11 @@ import {
   animalDeltaPose,
   equipSockets,
   actionFace,
+  actionAim,
   actionHand,
+  keyAim,
+  mixAim,
+  reachTerm,
   actionLayers,
   actionPose,
   composeFace,
@@ -32,6 +36,7 @@ import {
   type Channel,
 } from "./action";
 import type { Root } from "./types";
+import { AimDirSchema, BODY_MARKS, HAND_POINTS, type Aim } from "./bodyMark";
 import {
   ANIMAL_ANCHOR_NAMES,
   ANIMAL_CHANNELS,
@@ -102,7 +107,7 @@ import {
 } from "./types";
 
 /** Bump khi đổi hình dạng JSON scene; `migrateScene` phải có nhánh tương ứng. */
-export const SCENE_VERSION = 26;
+export const SCENE_VERSION = 27;
 
 /** `"@ten"` hay `"@ten+0.4"` / `"@ten-1"`: một mốc có tên trong `scene.marks` cộng phần lệch giây */
 export const MARK_REF = /^@([A-Za-z0-9_-]+)(?:\s*([+-])\s*(\d+(?:\.\d+)?))?$/;
@@ -287,8 +292,30 @@ const WorldKeySchema = z.object({
   ease: z.boolean().default(false),
 });
 
-/** Đích một cổ tay trong thế giới: `at` toạ độ thế giới, `elbow` hướng khuỷu (bỏ trống là mặc định hệ thân) */
-const HandSchema = z.object({ at: V3Schema, elbow: V3Schema.optional() });
+/**
+ * Đích một bàn tay trong thế giới: `at` toạ độ thế giới, hay mốc thân `to` trên chính người ấy (`side`, `offset` như đích
+ * của hành động); `point` là điểm bàn tay đặt vào đích (thiếu là cổ tay với `at`, lòng tay với `to`); `elbow` hướng khuỷu
+ * (bỏ trống là mặc định hệ thân). `palm` / `fingers` / `bend` khai lòng tay theo ý định, đè bàn tay của hành động theo
+ * phần đích. docs/03-scene.md#đích-bàn-tay-thế-giới
+ */
+const HandSchema = z
+  .object({
+    at: V3Schema.optional(),
+    to: z.enum(BODY_MARKS).optional(),
+    side: z.enum(["same", "other"]).optional(),
+    offset: V3Schema.optional(),
+    point: z.enum(HAND_POINTS).optional(),
+    elbow: V3Schema.optional(),
+    palm: AimDirSchema.optional(),
+    fingers: AimDirSchema.optional(),
+    bend: z.number().min(-90).max(90).optional(),
+  })
+  .refine((h) => !!h.at !== !!h.to, {
+    message: "đích bàn tay cần đúng một trong `at` (toạ độ thế giới) hay `to` (mốc thân)",
+  })
+  .refine((h) => !!h.to || (h.side === undefined && h.offset === undefined), {
+    message: "`side`, `offset` chỉ đi với `to`",
+  });
 
 /**
  * Mốc đích cổ tay thế giới: tay phải, tay trái của người (giải phẫu, không theo gần / xa), `null` là
@@ -737,6 +764,7 @@ export function migrateScene(json: unknown): unknown {
   // v23 → v24 thêm `clips[].snap` và `world.hands[].snap`; thiếu là không cố ý giật
   // v24 → v25 `cast[].base` nhận số dang của tay chân và `torso: [cúi, nghiêng]`; dạng cũ vẫn hợp lệ
   // v25 → v26 `cast[].base` nhận số xoắn vai, `clips[].mask` nhận kênh `hand`; dạng cũ vẫn hợp lệ
+  // v26 → v27 `world.hands[]` nhận mốc thân (`to`), điểm bàn tay (`point`) và lòng tay theo ý định (`palm`, `fingers`); dạng cũ vẫn hợp lệ
   o.schemaVersion = SCENE_VERSION;
   return o;
 }
@@ -974,6 +1002,8 @@ function clipPose(c: Clip, time: number, clock?: Clock): Partial<Pose> {
   if (inMask(c, "hand")) {
     const hand = actionHand(c.action, phaseAt(c, time, clock));
     if (Object.keys(hand).length) p.hand = hand;
+    const aim = actionAim(c.action, phaseAt(c, time, clock));
+    if (Object.keys(aim).length) p.aim = aim;
   }
   return p;
 }
@@ -2832,16 +2862,35 @@ function handAt(keys: HandKey[], side: "right" | "left", time: number): Reach | 
   const b = time > a.t ? ks[i + 1] : undefined;
   const ra = a[side];
   const f = b ? smoothstep((time - a.t) / (b.t - a.t)) : 0;
-  const one = (h: typeof ra) => h && { w: 1, at: h.at, elbow: h.elbow };
-  if (!b) return one(ra) ?? undefined;
+  const one = (h: typeof ra): Reach | undefined => {
+    if (!h) return undefined;
+    const term = reachTerm({ ...h, ...(h.to && { at: undefined }) });
+    // lòng tay theo ý định của mốc; mốc không khai giữ bàn tay của hành động
+    const aim: Aim | undefined =
+      h.palm || h.fingers ? keyAim({ palm: h.palm, fingers: h.fingers, bend: h.bend }) : undefined;
+    return {
+      w: 1,
+      at: (h.at ?? [0, 0, 0]) as [number, number, number],
+      ...(h.elbow && { elbow: h.elbow }),
+      ...(term && { terms: [term] }),
+      ...(aim && { aim }),
+    };
+  };
+  const keep: Aim = { terms: [{ k: 1, keep: true }] };
+  const withAim = (r: Reach | undefined, pa?: Reach, pb?: Reach): Reach | undefined => {
+    if (!r || !(pa?.aim || pb?.aim)) return r;
+    return { ...r, aim: mixAim(pa?.aim ?? keep, pb?.aim ?? keep, f) };
+  };
+  if (!b) return one(ra);
   const rb = b[side];
-  const pa = one(ra) ?? undefined;
-  const pb = one(rb) ?? undefined;
+  const pa = one(ra);
+  const pb = one(rb);
   // hai mốc cùng có đích mà một bên không khai hướng khuỷu: giữ hướng của bên kia, không nội suy
   if (pa && pb && !!pa.elbow !== !!pb.elbow) pa.elbow = pb.elbow = pa.elbow ?? pb.elbow;
   const r = mixReach(pa, pb, f);
   if (!r) return;
-  return pa?.elbow || pb?.elbow ? r : { w: r.w, at: r.at };
+  const out = pa?.elbow || pb?.elbow ? r : { w: r.w, at: r.at, ...(r.terms && { terms: r.terms }) };
+  return withAim(out, pa, pb);
 }
 
 /** Gắn đích cổ tay thế giới vào chỗ đặt: tay phải là tay gần khi không lật */
@@ -2890,6 +2939,7 @@ function swapSides(p: Pose): Pose {
   const l = p.lift;
   const r = p.reach;
   const h = p.hand;
+  const a = p.aim;
   return {
     ...p,
     an: p.af,
@@ -2900,6 +2950,7 @@ function swapSides(p: Pose): Pose {
     ...(l && { lift: { ...l, an: l.af, af: l.an, ln: l.lf, lf: l.ln } }),
     ...(r && { reach: { ...(r.af && { an: r.af }), ...(r.an && { af: r.an }) } }),
     ...(h && { hand: { ...(h.af && { an: h.af }), ...(h.an && { af: h.an }) } }),
+    ...(a && { aim: { ...(a.af && { an: a.af }), ...(a.an && { af: a.an }) } }),
   };
 }
 

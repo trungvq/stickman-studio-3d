@@ -55,3 +55,24 @@ export function humanEar(side: -1 | 1): V3 {
   const x = Math.sqrt(Math.max(0, 1 - y * y - z * z));
   return humanSkull([side * x, y, z]);
 }
+
+/** Bán kính đầu theo px của nét mặt (`core/face.ts`): px nét mặt đổi ra sọ bán kính `r` theo `r / FACE_R` */
+export const FACE_R = 65;
+
+/** Khối sọ người 3D bóp theo ba trục, nhân bán kính `BONES3.head`: lưới sọ, nét mặt, tai và mốc trên đầu cùng đọc */
+export const SKULL3: V3 = [1, 1.04, 0.98];
+
+/**
+ * Điểm px `(px, py)` của nét mặt (x ngang, y xuống, quanh tâm đầu) trên mặt trước sọ bán kính `r`, trước khi bóp `SKULL3`:
+ * phép chiếu thẳng lên mặt cầu, đầu `human` đi tiếp qua `humanSkull`. Lưới nét mặt của người 3D dựng bằng chính nó
+ */
+export function faceSurface(px: number, py: number, r: number, human: boolean): V3 {
+  const k = r / FACE_R;
+  let x = px * k;
+  let y = -py * k;
+  const d = Math.hypot(x, y);
+  const lim = r * 0.995;
+  if (d > lim) [x, y] = [(x * lim) / d, (y * lim) / d];
+  const z = Math.sqrt(Math.max(r * r - x * x - y * y, 0));
+  return human ? (humanSkull([x / r, y / r, z / r]).map((v) => v * r) as V3) : [x, y, z];
+}

@@ -502,12 +502,12 @@ function world3Notes() {
     viewBands: thetaBands(),
     authoredAt:
       'Hành động `authoredAt: "side"` cho kênh tay chân nó ghi cờ nâng (`pose.lift`): góc đọc như soạn ở `side` — tiến theo hướng mặt, lên theo trục đứng. Kênh không cờ (POSES, hành động 2D) vẽ như rig 2D trên mặt khung. `torso` của người 3D luôn là góc cúi trong mặt phẳng dọc của thân. Người đi theo `path` đọc chân như soạn ở `side` dù hành động không khai.',
-    reach: `keys[].reach.armNear / armFar = { at: [tiến, y, ra ngoài], elbow? }: đích cổ tay hệ thân, gốc tâm hông, đơn vị rig ở height 1 (rig nhân height), y xuống dương, "ra ngoài" dương về phía chính tay ấy — một bộ số cho hai tay đối xứng. Hệ thân không nghiêng theo torso. elbow là hướng khuỷu cùng hệ, mặc định REACH_ELBOW ${JSON.stringify(rig.REACH_ELBOW)}. Rig giải IK hai đoạn từ vai thật; xa quá tầm thì tay duỗi về phía đích. Đích hoà trên vị trí (cổ tay đi đường thẳng). Người 2D không đọc đích, kênh nhận góc dự phòng.`,
+    reach: `keys[].reach.armNear / armFar = { at: [tiến, y, ra ngoài], elbow?, point? } hay { to, side?, offset?, point?, elbow? }. \`at\`: đích cổ tay hệ thân, gốc tâm hông, đơn vị rig ở height 1 (rig nhân height), y xuống dương, "ra ngoài" dương về phía chính tay ấy — một bộ số cho hai tay đối xứng; hệ thân không nghiêng theo torso. \`to\`: mốc thân trên chính người ấy (${rig.BODY_MARKS.join(", ")}), tính mỗi khung theo đúng đầu, thân, bụng, chiều cao của nhân vật và tư thế lúc ấy (cúi, ngồi, quỳ) — dùng nó cho mọi chỗ chạm người (che miệng, áp tai, vỗ tay, chắp tay sau, tay lên đùi) thay cho số đoán; \`side: "other"\` lấy bên kia (tai, mắt, má, vai, hông, đùi, gối); \`offset\` [tiến, y, ra ngoài] rig (không nhân height) theo khung phần người mang mốc (đầu cho mốc trên đầu, thân cho ngực/bụng/lưng/hông/vai/gáy, hướng mặt cho đùi, gối, tay kia). Mốc other* là bàn tay kia (cổ tay, giữa lòng tay, giữa mu tay, tâm nắm): tay ấy giải trước. \`point\` là điểm bàn tay đặt vào đích (wrist, palm, back, grip, tip; thiếu là wrist với at, palm với to). elbow là hướng khuỷu hệ thân, mặc định REACH_ELBOW ${JSON.stringify(rig.REACH_ELBOW)}. Rig giải IK hai đoạn từ vai thật; xa quá tầm thì tay duỗi về phía đích. Đích hoà trên vị trí (cổ tay đi đường thẳng), hoà toạ độ với mốc cũng vậy. Người 2D không đọc đích, kênh nhận góc dự phòng. docs/01-rig.md#đích-theo-mốc`,
     twist:
       'Tay của hành động `authoredAt: "side"` nhận thêm số thứ năm `[vai, khuỷu, cổ tay, dang, xoắn vai]`: xoắn cánh tay quanh chính nó, dương là xoay ngoài — khuỷu gập ra trước thì cẳng tay quay ra phía chính tay ấy. Vẫy tay là `[0, 90, 0, 90, 90]` (dang ngang, khuỷu 90, xoay ngoài 90: cẳng tay dựng đứng); vẫy qua lại bằng lắc khuỷu (dưới 90 ngả ra ngoài đầu), không bằng lắc xoắn vai (lắc ra trước, ra sau). Số thứ ba (cổ tay) ở người 3D là lệch bàn tay trong mặt phẳng khuỷu, ra phía ngón cái khi dương. Tay theo đích (IK) không đọc xoắn vai: hướng khuỷu quyết định mặt phẳng gập. docs/01-rig.md#xoắn-tay',
-    hand: `keys[].hand.armNear / armFar (kênh mask "hand"): tên dáng (${rig.HAND_POSE_KINDS.join(", ")}) hay { pose, w, turn, bend } — dáng hoà từ dáng nghỉ (ngón cong nhẹ, bàn tay không ai đặt dáng) theo w (0..1), bỏ trống pose (hay {}) là dáng nghỉ, turn xoay cẳng tay (−90..90, dương sấp: cẳng tay chĩa ra trước thì lòng tay úp, âm ngửa), bend gập cổ tay (−90..90, dương về phía lòng tay). Không soạn từng ngón. Nội suy góc khớp giữa các mốc theo ease và hoà dần giữa hai clip; track không ghi một bên thì giữ bàn tay bên ấy của track dưới. Chỉ người 3D mặc đồ (palette.clad) vẽ ngón; turn, bend xoay cả đồ cầm ở mọi người 3D. Người đang cầm đồ (equip ở handNear/handFar) giữ dáng grip ở ngón. docs/01-rig.md#bàn-tay`,
+    hand: `keys[].hand.armNear / armFar (kênh mask "hand"): tên dáng (${rig.HAND_POSE_KINDS.join(", ")}) hay { pose, w, turn, bend, palm, fingers } — dáng hoà từ dáng nghỉ (ngón cong nhẹ, bàn tay không ai đặt dáng) theo w (0..1), bỏ trống pose (hay {}) là dáng nghỉ, turn xoay cẳng tay (−90..90, dương sấp: cẳng tay chĩa ra trước thì lòng tay úp, âm ngửa), bend gập cổ tay (−90..90, dương về phía lòng tay). Dáng: cup khum (che miệng, che tai), pinch kẹp vật nhỏ bằng đầu ngón (chén), clasp nắm quanh cổ tay tay kia, flat duỗi phẳng chịu lực (tay vịn, mặt bàn), hook móc (quai túi, cán vali), edge kẹp cạnh vật dẹt — ngón cái mặt trước, các ngón mặt sau (điện thoại ngang hai tay). ĐỪNG đoán turn: khai palm (lòng tay quay về) và fingers (ngón chĩa về) bằng tên hệ thân (${rig.PALM_DIR_NAMES.join(", ")}; in là về đường giữa thân, out ra phía tay ấy), vectơ [tiến, y, ra ngoài], hay { toward: mốc thân, side?, offset? } — rig tự giải xoay, gập, lệch cổ tay (và xoay khuỷu quanh trục vai → cổ tay khi có fingers), kẹp trong giới hạn khớp; có palm thì turn bị bỏ qua, bend khai kèm thì giữ cố định; không đạt thì check và scene_probe (world.palms.*.aim) báo độ lệch. Không soạn từng ngón. Nội suy góc khớp giữa các mốc theo ease và hoà dần giữa hai clip; track không ghi một bên thì giữ bàn tay bên ấy của track dưới. Chỉ người 3D mặc đồ (palette.clad) vẽ ngón; turn, bend xoay cả đồ cầm ở mọi người 3D. Người đang cầm đồ (equip ở handNear/handFar) giữ dáng grip ở ngón. docs/01-rig.md#bàn-tay`,
     hands:
-      "`cast[].world.hands` [{t, right: {at, elbow?} | null, left: …}]: đích cổ tay THẾ GIỚI theo tay phải / trái giải phẫu (tay phải là tay gần khi không lật), đè đích hệ thân và góc tay của mọi hành động; `null` thả tay về góc của hành động. Tay đặt lên mặt bàn thì tính bằng `handsOn` của rig — docs/03-scene.md#đích-bàn-tay-thế-giới.",
+      '`cast[].world.hands` [{t, right: {at | to, side?, offset?, point?, elbow?, palm?, fingers?, bend?} | null, left: …}]: đích bàn tay THẾ GIỚI theo tay phải / trái giải phẫu (tay phải là tay gần khi không lật), đè đích hệ thân và góc tay của mọi hành động; `null` thả tay về góc của hành động. `at` toạ độ thế giới, hay `to` mốc thân của chính người ấy như keys[].reach; `point: "palm"` đặt giữa lòng tay (không phải cổ tay) vào điểm ấy — tay lên tay vịn, mặt bàn; `palm`/`fingers` như keys[].hand, đè bàn tay của hành động theo phần đích. Tay đặt lên mặt bàn thì tính bằng `handsOn` của rig — docs/03-scene.md#đích-bàn-tay-thế-giới.',
     actions,
     actionsNote:
       'Bộ hành động 3D (`authoredAt: "side"`): đứng thở, đi, ngồi (ghép với `world.sit`), tay trên bàn, gõ phím chồng lên ngồi, cúi chào — đích hệ thân và bàn chuẩn ở docs/01-rig.md#bộ-hành-động-3d. Soi một người 3D không cần cảnh: render_action / render_character với `yaw` (và `pitch`).',
@@ -568,6 +568,8 @@ server.registerTool(
       poseLayers: rig.POSE_LAYERS,
       channels: rig.CHANNEL_LABELS,
       handPoses: rig.HAND_POSE_LABELS,
+      bodyMarks: rig.BODY_MARK_LABELS,
+      palmDirs: rig.PALM_DIRS,
       defaultLayers: rig.DEFAULT_LAYERS,
       armLayers: rig.ARM_LAYER_LABELS,
       generators: gens,
@@ -754,6 +756,7 @@ server.registerTool(
         ...rig.equipSwitchProblems(r.data),
         ...rig.armFoldProblems(r.data),
         ...rig.maskProblems(r.data),
+        ...(rig.aimProblems?.(r.data) ?? []),
         ...(rig.actionSnapProblems?.(r.data) ?? []),
       ];
       return text({ ok: true, kind, ...(warnings.length ? { warnings } : {}), data: r.data });
@@ -1103,7 +1106,7 @@ server.registerTool(
   "scene_probe",
   {
     description:
-      "Số liệu một scene tại các mốc giây, đọc bằng anchorAt của rig nên đúng hệ toạ độ chỗ vẽ (y xuống, đất ở y của chân): chỗ đứng x (đã cộng trôi ngang), tư thế, lớp tay, nét mặt, toạ độ vai / khuỷu / cổ tay / bàn chân và khối đầu của từng người; đạo cụ thì chỗ đứng, trục bánh và góc bánh đã quay; động vật thì chỗ đứng, hông, vai, yên (saddle), gáy, mõm, bàn chân — con đang bị cưỡi hay xách trả kèm host. `anchors` hỏi thêm mốc bất kỳ — khớp hoặc socket mảnh — mỗi mốc trả {x, y, deg, w, h}: tâm hộp, góc SVG và cỡ hộp đã nhân scale, cắm thẳng vào translate/rotate của một <g> anh em với <Character>. Dùng để tính điểm gặp, đặt tay lên càng xe, bám hiệu ứng vào người thay vì đoán. Người 3D (cast[].world) kèm `world`: khớp hông/gối/bàn chân/vai/khuỷu/cổ tay/cổ/đầu trong toạ độ thế giới, yaw vẽ, yawSaid, yawHeading (người đi: hướng nhắm theo path), theta, seated, near (tay gần là tay phải hay trái), hands (đích thế giới đang áp), palms (người mặc đồ: lòng bàn tay phải/trái quay về đâu — úp/ngửa/vào thân/ra ngoài/ra trước/ra sau —, down: góc lệch khỏi úp, pháp tuyến lòng tay, hướng ngón, tâm; có stickman.world thì kèm on/gap: vật có mặt ngang dưới bàn tay và khe tới nó) — đặt tay lên mặt hay đổi turn/elbow xong thì đọc palms, đừng phán bằng mắt. Cảnh có lens và người 3D kèm `clashes`: mỗi mốc giây, các chỗ phần người lồng vào đồ khối hay vào người khác sâu quá ngưỡng của check (stickman.clash.tol, mặc định 2) ({who, with, depth}) — rig không đẩy người ra khỏi đồ. Repo khai stickman.world và worldOf trả cảnh thì đồ là mọi vật của cảnh three ấy, đúng như check (who theo cú pháp touch: `a.foreArmR`); cảnh three hỏng thì `warnings` kể lỗi và mốc ấy đo bằng khối lớp vẽ code. `snaps`: các cú tay chân giật trên hình của cả cảnh (có `cast` thì của người ấy), cùng dòng báo và ngưỡng (stickman.snap) với check; cố ý giật thì khai `snap: true` ở hành động, ở clip hay ở mốc world.hands.",
+      "Số liệu một scene tại các mốc giây, đọc bằng anchorAt của rig nên đúng hệ toạ độ chỗ vẽ (y xuống, đất ở y của chân): chỗ đứng x (đã cộng trôi ngang), tư thế, lớp tay, nét mặt, toạ độ vai / khuỷu / cổ tay / bàn chân và khối đầu của từng người; đạo cụ thì chỗ đứng, trục bánh và góc bánh đã quay; động vật thì chỗ đứng, hông, vai, yên (saddle), gáy, mõm, bàn chân — con đang bị cưỡi hay xách trả kèm host. `anchors` hỏi thêm mốc bất kỳ — khớp hoặc socket mảnh — mỗi mốc trả {x, y, deg, w, h}: tâm hộp, góc SVG và cỡ hộp đã nhân scale, cắm thẳng vào translate/rotate của một <g> anh em với <Character>. Dùng để tính điểm gặp, đặt tay lên càng xe, bám hiệu ứng vào người thay vì đoán. Người 3D (cast[].world) kèm `world`: khớp hông/gối/bàn chân/vai/khuỷu/cổ tay/cổ/đầu trong toạ độ thế giới, yaw vẽ, yawSaid, yawHeading (người đi: hướng nhắm theo path), theta, seated, near (tay gần là tay phải hay trái), hands (đích thế giới đang áp), palms (người mặc đồ: lòng bàn tay phải/trái quay về đâu — úp/ngửa/vào thân/ra ngoài/ra trước/ra sau —, down: góc lệch khỏi úp, pháp tuyến lòng tay, hướng ngón, tâm; có stickman.world thì kèm on/gap: vật có mặt ngang dưới bàn tay và khe tới nó; tay khai đích theo mốc thân hay palm/fingers thì kèm aim: reach {to, point, gap — khe rig từ điểm bàn tay tới mốc}, palmOff / fingersOff — độ lệch còn lại so với hướng đã khai) — đặt tay lên mặt hay đổi turn/elbow xong thì đọc palms, đừng phán bằng mắt. Cảnh có lens và người 3D kèm `clashes`: mỗi mốc giây, các chỗ phần người lồng vào đồ khối hay vào người khác sâu quá ngưỡng của check (stickman.clash.tol, mặc định 2) ({who, with, depth}) — rig không đẩy người ra khỏi đồ. Repo khai stickman.world và worldOf trả cảnh thì đồ là mọi vật của cảnh three ấy, đúng như check (who theo cú pháp touch: `a.foreArmR`); cảnh three hỏng thì `warnings` kể lỗi và mốc ấy đo bằng khối lớp vẽ code. `snaps`: các cú tay chân giật trên hình của cả cảnh (có `cast` thì của người ấy), cùng dòng báo và ngưỡng (stickman.snap) với check; cố ý giật thì khai `snap: true` ở hành động, ở clip hay ở mốc world.hands.",
     inputSchema: {
       scene: Spec,
       t: z
@@ -1395,7 +1398,23 @@ function palms3(c, at) {
   const P = rig.actPalms?.(c, at);
   if (!P) return {};
   const r2 = (n) => +n.toFixed(2);
-  const one = (p) => {
+  // đích theo mốc thân, lòng tay theo ý định: khe tới mốc và góc lệch còn lại — docs/01-rig.md#đích-theo-mốc
+  const aim = rig.needsSolve?.(at) ? rig.actAim(c, at)?.report : undefined;
+  const aimOf = (k) => {
+    const a = aim?.[k];
+    if (!a || !(a.reach || a.palm !== undefined || a.fingers !== undefined)) return {};
+    return {
+      aim: {
+        ...(a.reach
+          ? { reach: { to: a.reach.to, point: a.reach.point, gap: +a.reach.gap.toFixed(1) } }
+          : {}),
+        ...(a.palm !== undefined ? { palmOff: Math.round(a.palm) } : {}),
+        ...(a.fingers !== undefined ? { fingersOff: Math.round(a.fingers) } : {}),
+        ...(a.cycle ? { cycle: true } : {}),
+      },
+    };
+  };
+  const one = (p, k) => {
     const f = rig.palmFace(p);
     const o = {
       faces: rig.PALM_FACES[f.face],
@@ -1403,11 +1422,12 @@ function palms3(c, at) {
       palm: p.palm.map(r2),
       finger: p.finger.map(r2),
       at: v3(p.at),
+      ...aimOf(k),
     };
     palmSkin.set(o, p.skin);
     return o;
   };
-  return { palms: { right: one(P.R), left: one(P.L) } };
+  return { palms: { right: one(P.R, "R"), left: one(P.L, "L") } };
 }
 
 server.registerTool(

@@ -1365,7 +1365,8 @@ Ba góc quay tay của người 3D quanh chính nó, cho vẫy tay, ngửa tay, 
   cẳng tay ra trước với `turn` `−90`.
 - **`turn` đo từ chính khung cẳng tay**, mà tay theo đích thì khung ấy quay theo hướng khuỷu: cẳng tay đặt trên bàn
   với hướng khuỷu ra ngoài đã úp quá nửa lòng tay ở `turn` `0`, `arms-on-table-3d` chỉ cần `20`. Một `turn` đúng với
-  hướng khuỷu này là sai với hướng khuỷu khác, nên đổi `turn` hay `elbow` xong thì đọc hướng lòng tay bằng số —
+  hướng khuỷu này là sai với hướng khuỷu khác, nên đừng đoán `turn`: khai `palm` để rig tự giải
+  ([Hướng lòng tay theo ý](#hướng-lòng-tay-theo-ý)), còn `turn` thô thì đổi xong đọc hướng lòng tay bằng số —
   [Hướng lòng bàn tay](#hướng-lòng-bàn-tay).
 - Người que SVG của người 3D (`figure3d`) dựng xoắn vai; rig 2D phẳng không đọc nó.
 
@@ -1379,9 +1380,15 @@ Người 3D mặc đồ (`palette.clad`) có bàn tay năm ngón tròn mập ki�
 | Dáng | Ngón |
 |---|---|
 | `open` | Xoè phẳng |
-| `grip` | Cầm: ôm quanh cán tròn (cốc, điện thoại); dáng của tay đang cầm đồ |
+| `grip` | Cầm: ôm quanh cán tròn (cốc, quai); dáng của tay đang cầm đồ |
 | `point` | Chỉ tay: trỏ duỗi, còn lại nắm |
 | `fist` | Nắm đấm, ngón cái vắt ngang trước các ngón |
+| `cup` | Khum: ngón gần thẳng, khép, chỉ cong nhẹ ở đầu, ngón cái sát cạnh — che miệng, che tai, áp điện thoại vào tai |
+| `pinch` | Kẹp vật nhỏ bằng đầu ngón cái và ngón trỏ, ba ngón còn lại cuộn đỡ dưới — chén sake, viên kẹo |
+| `clasp` | Nắm quanh vật to cỡ cổ tay: cổ tay, cẳng tay tay kia (chắp tay sau lưng) |
+| `flat` | Duỗi thẳng, ngón khép, hơi ưỡn: đặt phẳng chịu lực lên tay vịn, mặt bàn, đùi |
+| `hook` | Móc: gốc ngón gần thẳng, đốt ngọn gập hẳn — quai túi, cán vali |
+| `edge` | Kẹp cạnh vật dẹt: ngón cái mặt trước, các ngón duỗi đỡ mặt sau — điện thoại ngang hai tay |
 
 **Dáng nghỉ không nằm trong bảng**: ngón cong nhẹ, ngón cái khép sát cạnh ngón trỏ — bàn tay không ai đặt dáng, và
 gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` (`{}`). Thêm một dáng là thêm một dòng vào
@@ -1393,17 +1400,22 @@ gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` 
   gập thêm về phía ngón út): xoè thì toả nhẹ, nắm thì ngón út cuộn sâu nhất. Mọi
   ngón gập về phía lòng tay; ngón cái dạng ra phía trước bàn tay rồi đối về lòng tay, nên đối nhiều thì gập
   là vắt ngang lòng tay.
-- **Mốc** (`keys[].hand.armNear` / `armFar`) là tên dáng, hay `{ pose, w, turn, bend }`: dáng hoà từ dáng nghỉ
-  theo `w` (`0..1`, mặc định `1`); `turn`, `bend` là hai góc thô của cổ tay ([Xoắn tay](#xoắn-tay)). `handVec` đổi
-  một mốc ra số.
+- **Mốc** (`keys[].hand.armNear` / `armFar`) là tên dáng, hay `{ pose, w, turn, bend, palm, fingers }`: dáng hoà từ dáng
+  nghỉ theo `w` (`0..1`, mặc định `1`); `turn`, `bend` là hai góc thô của cổ tay ([Xoắn tay](#xoắn-tay)); `palm`, `fingers`
+  là hướng theo ý định, rig giải ra góc ([Hướng lòng tay theo ý](#hướng-lòng-tay-theo-ý)). `handVec` đổi một mốc ra số.
 - **Hoà là hoà góc khớp.** Giữa hai mốc số nội suy theo `ease` như góc tay; giữa hai clip `blendPose` hoà
   trên chính các số ấy suốt đoạn hoà — dáng tay đổi dần, không nhảy, không dựng lại hình học. Track ghi bàn
   tay một bên không xoá bàn tay bên kia của track dưới (`composePose`); bên không ai ghi là `HAND_REST` (dáng
   nghỉ, cổ tay thẳng). Kênh `hand` tách khỏi kênh tay: một track chỉ ghi `hand` ngửa hay úp bàn tay trên
   một track tay khác.
 - **Cầm đồ.** `hold` (và `dress` vào `handNear` / `handFar`) đặt `held` của bàn tay — dáng `grip`, hay
-  `HoldOptions.pose` (một trong bốn dáng) — đè góc ngón của hành động, giữ xoay và gập cổ tay. Đồ bật ở một khung (`equip` là công
-  tắc), nên muốn tay khép dần thì cho hành động đưa bàn tay về `grip` trước mốc `equip`.
+  `HoldOptions.pose` (một dáng của bảng, kể cả `pinch`, `edge`, `hook`) — đè góc ngón của hành động, giữ xoay và gập cổ tay.
+  Đồ ngồi ở **tâm nắm của dáng đang giữ** (`HAND_GRIPS`): chỗ treo vẫn là tâm nắm của `grip` (`handGrip`), dáng khác dời đồ
+  đi `gripShift` trong khung bàn tay — chén ngồi trên vòng ngón cái, ngón trỏ của `pinch`, điện thoại ngang ngồi giữa ngón cái
+  và các ngón của `edge`. Đồ căn cho `grip` không đổi chỗ. Đồ bật ở một khung (`equip` là công tắc), nên muốn tay khép dần
+  thì cho hành động đưa bàn tay về dáng cầm trước mốc `equip`.
+- **Tâm nắm theo góc ngón** (`handGripOf`): hoà `HAND_GRIPS` theo độ gần của chín góc ngón với từng dáng, nên đúng bảng khi
+  đúng dáng và đổi liền khi dáng hoà — `point: "grip"` của đích bàn tay đọc nó ([Đích theo mốc](#đích-theo-mốc)).
 - **Một mặt da liền.** `handSkin` dựng một lưới kín từ hợp trơn (smooth-min) các khối của khung xương ở dáng gốc
   `HAND_BIND` (ngón duỗi, ngón cái dạng, các ngón xoè rộng cho khỏi dính nhau), đa giác hoá bằng surface nets, kéo về
   mặt và làm trơn — lòng bàn tay chảy liền vào năm ngón, các ngón mọc ra từ cùng mặt, không có vỏ riêng nên không
@@ -1449,9 +1461,9 @@ tay ấy — và góc lệch khỏi úp (`down`, độ).
   ([04](04-mcp.md#người-3d)): tay đặt trên mặt ngang phải `úp` (`down` dưới `45`), `on` và `gap` cho biết
   vật dưới bàn tay và khe từ điểm thấp nhất của bàn tay tới nó; tay buông thì lòng tay quay vào đùi —
   đứng thẳng là `vào thân`, cúi chào với bàn tay trước đùi là `ra sau`.
-- **Sửa bằng hướng khuỷu trước, `turn` sau.** Tay đặt bằng đích (`reach`, `world.hands`) thì khung `turn`
-  quay theo hướng khuỷu: khai `elbow` ra ngoài như `arms-on-table-3d` (`[-0.3, 0.3, 1]`) rồi chỉnh `turn`
-  (dương là sấp, lòng tay úp thêm khi cẳng tay chĩa ra trước).
+- **Sửa bằng `palm`, không bằng `turn`.** Khai `palm: "down"` ở `keys[].hand` (hay ở `world.hands`) là lòng tay úp ở mọi
+  hướng khuỷu ([Hướng lòng tay theo ý](#hướng-lòng-tay-theo-ý)). Còn giữ `turn` thô thì sửa hướng khuỷu trước: khai `elbow`
+  ra ngoài như `arms-on-table-3d` (`[-0.3, 0.3, 1]`) rồi chỉnh `turn` (dương là sấp, lòng tay úp thêm khi cẳng tay chĩa ra trước).
 - `check` kêu bàn tay đặt trên mặt ngang mà không úp và tay buông mà lòng tay không quay vào đùi, kèm `turn` gợi ý —
   [03](03-scene.md#lòng-bàn-tay).
 
@@ -1670,7 +1682,8 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   dưới vai. Dáng quả lê là đùi đầy (`trouserWidth` lớn, mẫu nữ `21`) chứ không nới `hipHalf`: nới hông là
   hai chân dạng xa nhau. Muốn chibi thì hạ `rig.height`: đầu không co
   nên `0,85` là đầu ~`1/3` chiều cao, `0,65` là ~`1/2,5`; thân áo, váy ngắn lại theo `height`. Đích tay hệ thân nhân `height`
-  mà đầu thì không, nên hành động chạm mặt (chống cằm) soạn riêng cho người chibi; ghế cao bằng gối là
+  mà đầu thì không, nên hành động chạm người (che miệng, chống cằm, áp tai) đặt tay bằng mốc thân, không bằng toạ độ
+  ([Đích theo mốc](#đích-theo-mốc)); ghế cao bằng gối là
   `87,5 · height`.
 - **Giá.** Người mặc đồ đầy đủ khoảng `53` lưới, người que `23`; người nền nên `lod: "low"` và
   `freeze`.
@@ -1684,7 +1697,8 @@ thẳng về phía nó, không kéo dài. Hai nguồn đích, nguồn sau đè n
 
 - **Hành động** — `keys[].reach.armNear` / `armFar`, hệ thân: gốc tâm hông, `at` `[tiến, y, ra
   ngoài]` đơn vị rig ở `height = 1` (rig nhân `height`), `y` xuống là dương, **`ra ngoài` dương về
-  phía chính tay ấy** — một bộ số cho hai tay đối xứng, đổi tay gần ↔ xa khi lật không đổi nghĩa.
+  phía chính tay ấy** — một bộ số cho hai tay đối xứng, đổi tay gần ↔ xa khi lật không đổi nghĩa. Chạm
+  người thì khai mốc thân `to` thay cho `at` ([Đích theo mốc](#đích-theo-mốc)).
   Hệ thân không nghiêng theo `torso`: cúi thân không dời tay khỏi bàn. `elbow` cùng hệ, bỏ trống là
   `REACH_ELBOW` `[-0,4, 1, 0,5]` (xuống, lùi, ra ngoài).
 - **Scene** — `cast[].world.hands`, toạ độ thế giới, theo tay phải / trái
@@ -1709,6 +1723,82 @@ Người 2D không đọc đích. Mốc có đích mà không ghi góc kênh ấ
 (`reachAngles`): IK trong mặt phẳng dọc với số đo mặc định, bỏ thành phần ngang, đo trong khung thân
 của `torso` tại pha của mốc ấy (mốc không ghi `torso` thì lấy mẫu từ các mốc khác) — studio và dải ảnh 2D vẫn thấy tay về phía đích.
 
+### Đích theo mốc
+
+Đích toạ độ chỉ đúng với người đã đo nó: `[52, −148, 44]` tới mồm người cao `0,95` thì rơi vào cằm người chibi, má người
+đầu to. Chỗ chạm người khai bằng **mốc thân** — rig tính mốc mỗi khung trên chính khung xương, đầu, thân áo, bụng,
+chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ngồi, quỳ, lắc đầu):
+
+```jsonc
+"reach": {
+  "armNear": { "to": "mouth", "offset": [3, 0, 0] },                       // lòng tay áp mồm, nhích ra trước 3
+  "armFar":  { "to": "otherWrist", "point": "grip", "elbow": [-0.6, 0.6, 1] } // tâm nắm ôm cổ tay tay kia
+}
+```
+
+| Trường | Nghĩa |
+|---|---|
+| `to` | Mốc thân (`BODY_MARKS`), thay cho `at`; đúng một trong hai |
+| `side` | `"same"` (mặc định) bên cùng phía tay đang với, `"other"` bên kia — mốc có hai bên: `cheek`, `eye`, `ear`, `shoulder`, `hip`, `thigh`, `knee` |
+| `offset` | Dời khỏi mốc `[tiến, y, ra ngoài]`, đơn vị rig nhân `world.s`, **không** nhân `height`; theo khung phần người mang mốc, `ra ngoài` dương về phía chính tay ấy |
+| `point` | Điểm bàn tay đặt vào đích: `wrist`, `palm` (giữa mặt lòng tay), `back` (giữa mu tay), `grip` (tâm nắm của dáng đang vẽ, `handGripOf`), `tip` (đầu ngón giữa). Thiếu là `wrist` với `at`, `palm` với `to`. Đi được cả với `at` |
+| `elbow` | Hướng khuỷu hệ thân như đích toạ độ |
+
+| Mốc | Chỗ | Khung của `offset` |
+|---|---|---|
+| `mouth`, `eye`, `cheek`, `forehead` | Trên mặt nặn của đầu (`faceSurface`, `chibiShape` của đầu `human`, `face` của nhân vật) | Đầu |
+| `chin`, `crown`, `backHead` | Dưới cằm, đỉnh sọ, sau gáy đầu (`humanSkull`; chưa tính bề dày tóc) | Đầu |
+| `ear` | Mặt ngoài tai (`humanEar`); tóc phủ tai thì cộng `offset` ra ngoài | Đầu |
+| `nape`, `shoulder` | Gáy cổ; đỉnh nắp vai (`roots3`) | Thân |
+| `chest`, `belly`, `back`, `hip` | Mặt áo giữa ngực, đỉnh bụng (gồm bụng phệ), giữa lưng ngang thắt lưng, sườn ngang hông — `profile` của áo, người mặc đồ theo `cladProfile` | Thân (đã cúi, nghiêng) |
+| `thigh`, `knee` | Giữa mặt đùi, mặt gối, phía trên-trước của đùi theo dáng chân | Hướng mặt nằm ngang |
+| `otherWrist`, `otherPalm`, `otherBack`, `otherGrip` | Cổ tay, giữa lòng tay, giữa mu tay, tâm nắm của **tay kia** đúng như nó vẽ | Hướng mặt nằm ngang |
+
+- **Giải mỗi khung, trên người ấy** (`resolveActing`, `core/act3.ts`): mốc tính trên thân, cổ, đầu đã đặt rồi mới tới tay;
+  điểm bàn tay phụ thuộc hướng bàn tay mà hướng bàn tay phụ thuộc cổ tay, nên rig lặp vài vòng tới khi cổ tay đứng yên. Kết quả
+  là đích cổ tay số (hệ thân, thế giới) và `turn` / `bend` số — `act` của three, `actJoints`, `actPalms`, `figure3d` cùng đọc
+  một phép giải, `act3.test.ts` giữ chúng trùng. Người que three dựng từ `stickman(o)` mang số đo ấy ở `Figure.body`.
+- **Tay bám vào tay kia giải sau tay kia**, dù đó là tay gần hay xa. Hai tay cùng bám nhau thì tay gần giải trước trên chỗ chưa
+  giải của tay xa — `scene_probe` báo `cycle`. Vỗ tay: một tay tới mốc thân, tay kia `to: "otherPalm"`, cả hai `palm: "in"` —
+  lòng áp lòng, không xuyên.
+- **Hoà mốc với toạ độ, mốc với mốc là hoà trên vị trí đã giải**: đích lấy mẫu mang các số hạng (`Reach.terms`), giữa hai mốc
+  cổ tay là tổng có trọng số của từng số hạng đã giải, nên đi liền từ toạ độ thô sang mốc, từ mốc này sang mốc kia, kể cả lúc
+  `blendPose` hoà hai clip. `Reach.at` khi ấy là chỗ ước lượng trên người mẫu (`reachEstimate`) cho người 2D và góc dự phòng.
+- **Với không tới thì nói ra.** Tay duỗi về phía mốc như đích toạ độ; `check` báo mốc còn cách điểm bàn tay quá `AIM_GAP` (`6`)
+  ([03](03-scene.md#bàn-tay-theo-ý-định)), `scene_probe` trả khe ở `world.palms.*.aim`. Ở `stretch` 1 trán, đỉnh đầu, má bên
+  kia của người chibi và đùi lúc đứng thẳng ngoài tầm.
+- `bodyMarkAt(nhân vật, scenePose, { to, side, offset }, "R" | "L")` trả chỗ của một mốc (thế giới rig) — cùng điểm đích nhắm tới.
+- **Đồ cầm chưa là mốc.** Rig không biết hình của đồ repo video dựng; tay thứ hai đặt lên đồ tay kia đang cầm thì nhắm
+  `otherGrip` cộng `offset` theo cỡ đồ.
+
+### Hướng lòng tay theo ý
+
+`turn` là góc thô trong khung cẳng tay, đổi nghĩa theo hướng khuỷu. Khai **ý định** thay cho nó:
+
+```jsonc
+"hand": {
+  "armNear": { "pose": "cup", "palm": { "toward": "mouth" }, "fingers": [0, -0.6, -1] },
+  "armFar":  { "pose": "flat", "palm": "down", "bend": 10 }
+}
+```
+
+| Trường | Nhận |
+|---|---|
+| `palm` | Lòng tay quay về: tên hệ thân (`PALM_DIRS`: `down`, `up`, `forward`, `back`, `in` — về đường giữa thân —, `out` — ra phía chính tay ấy), vectơ hệ thân `[tiến, y, ra ngoài]`, hay `{ toward, side?, offset? }` — quay về một mốc thân |
+| `fingers` | Ngón chĩa về, cùng ba dạng; phụ cho `palm` |
+| `bend` | Khai kèm thì giữ cố định, rig chỉ giải phần còn lại |
+
+- **Rig giải mỗi khung** (`aimWrist`): lòng tay chỉ phụ thuộc xoay và gập cổ tay (lệch cổ tay không đổi pháp tuyến lòng tay)
+  nên hai góc ấy giải đúng; ngón lấy thêm lệch cổ tay (số thứ ba của tay, kênh nâng, `±AIM_DEV` `30`) và, khi tay theo đích,
+  xoay khuỷu quanh trục vai → cổ tay tới `±AIM_SWIVEL` (`90`), ưu tiên gần hướng khuỷu đã khai. Kẹp trong `turn` `−90..90`,
+  `bend` `±AIM_BEND` (`75`); ngoài tầm thì lấy chỗ gần nhất trong hộp giới hạn.
+- **`palm` / `fingers` thắng `turn`.** Mốc khai cả hai thì `turn` bị bỏ qua — `validate` và `check` kêu (`aimProblems`).
+- **Hoà là hoà góc đã giải.** Mốc thô sang mốc ý định: từng số hạng giải riêng rồi cộng góc theo phần, nên cổ tay xoay dần,
+  không lật nửa vòng (góc nằm trong `±90`, nội suy thẳng). `world.hands` nhận cùng `palm`, `fingers`, `bend`, đè bàn tay của
+  hành động theo phần đích; mốc `world.hands` không khai thì giữ bàn tay của hành động.
+- **Không đạt thì nói ra**: lòng tay còn lệch quá `AIM_ANGLE` (`25°`), ngón quá `AIM_FINGERS` (`40°`) quá `0,3 s` là `check`
+  báo; `scene_probe` trả `palmOff`, `fingersOff`.
+
 ### Bộ hành động 3D
 
 Bộ chung soạn ở `side` (`authoredAt: "side"`) cho người 3D:
@@ -1726,6 +1816,10 @@ Bộ chung soạn ở `side` (`authoredAt: "side"`) cho người 3D:
 | `eshaku-3d` | 会釈: thân cúi `16°`, đầu gật thêm `8°`, tay dọc thân nhích ra trước, giữ rồi đứng thẳng; chồng lên `stand-3d` |
 | `talk-forward-3d` | Tay gần đưa ra trước về phía người đối thoại, bàn tay mở dần và ngửa (`turn` `0 → −55`); giơ một lần rồi giữ, scene buông bằng clip rỗng |
 | `cower-3d` | Co rúm: hai tay gập lên trước ngực, bàn tay xoè úp ra ngoài (`turn` `50`, `bend` `−25`). Chỉ ghi hai tay |
+| `cover-mouth-3d` | Che miệng: tay gần từ trước bụng lên, khuỷu ra ngoài, bàn tay `cup` (ngón gần thẳng, khép) áp ngang qua mồm, mu tay ra trước, ngón nằm ngang sang má kia; giữ. Chỉ ghi tay gần, chồng lên đứng, ngồi, quỳ |
+| `phone-ear-3d` | Áp điện thoại vào tai: tâm nắm (`point: "grip"`) sát mặt ngoài tai, lòng tay `in` áp vào đầu, ngón dựng lên, dáng `cup`; giữ. Chỉ ghi tay gần; đồ cầm ở `handNear` nằm chéo lòng bàn tay — dựng dọc bàn tay rồi `hold.rotate` `[−35, 0, 0]` (đầu mic về phía ngón cái, tức ra trước) và dời về cổ tay, thì máy chạy từ tai xuống phía mồm |
+| `clap-3d` | Vỗ tay lặp: tay gần trước ngực, tay xa áp `otherPalm`, hai lòng tay `in` đối nhau, dáng `flat`; sự kiện `clap` lúc chạm, `snap` |
+| `hands-behind-3d` | Chắp tay sau lưng: tay gần mu tay áp lưng, tay xa `clasp` nắm cổ tay tay gần (`otherWrist`, `point: "grip"`) |
 
 Studio soạn hành động `authoredAt: "side"` trên người 3D quay được, kéo đích cổ tay ngay trên sân
 khấu.

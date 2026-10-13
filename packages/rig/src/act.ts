@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { actAngles, actHand, actReach, actTwist, armFrame, type ActFrame } from './core/act3';
+import { actAngles, actHand, actReach, actTwist, armFrame, needsSolve, plainActing, resolveActing, type ActFrame } from './core/act3';
+import type { Aim, ReachTerm } from './core/bodyMark';
 import type { V3 } from './core/lens';
 import type { BrowKind, EyeKind, MouthKind } from './core/types';
 import { toThree, type Vec3 } from './khoi';
@@ -10,8 +11,11 @@ import { poseHand } from './human';
 // động hay scene. Luật đọc góc (`actAngles`) và IK (`actReach`) ở lõi, `actJoints` của lõi tính lại đúng các khớp này
 // cho `check` — đổi khung xương ở đây thì đổi cùng `core/act3.ts`.
 
-/** Đích cổ tay: hệ thân `[tiến, y xuống, ra ngoài]` đơn vị rig trong `pose.reach`, toạ độ thế giới rig trong `world.hands` */
-export interface ActReach { at: readonly number[]; elbow?: readonly number[]; w: number }
+/**
+ * Đích cổ tay: hệ thân `[tiến, y xuống, ra ngoài]` đơn vị rig trong `pose.reach`, toạ độ thế giới rig trong `world.hands`;
+ * `terms` (mốc thân, điểm bàn tay) và `aim` (lòng tay theo ý định, ở `world.hands`) `act` giải trên chính người ấy
+ */
+export interface ActReach { at: readonly number[]; elbow?: readonly number[]; w: number; terms?: readonly ReachTerm[]; aim?: Aim }
 type Limb = 'af' | 'an' | 'lf' | 'ln';
 /** `Pose` của @stickman3d/sketch; góc độ, tay `[vai, khuỷu, cổ tay, dang, xoắn vai]`, chân `[hông, gối, dang]`, `head` là `[nghiêng, lắc, gật]` */
 export interface ActPose {
@@ -29,6 +33,8 @@ export interface ActPose {
   reach?: Partial<Record<'af' | 'an', ActReach>>;
   /** Bàn tay theo `HAND_DOF` của lõi: xoay cẳng tay, gập cổ tay, góc ngón */
   hand?: Partial<Record<'af' | 'an', readonly number[]>>;
+  /** Lòng tay theo ý định: `act` giải ra xoay và gập cổ tay */
+  aim?: Partial<Record<'af' | 'an', Aim>>;
 }
 /** `World` của @stickman3d/sketch: tâm hông thế giới rig, `yaw` radian (0 mặt về +x, π/2 về −z), `flip` là mặt sang trái khung */
 export interface ActWorld {
@@ -98,7 +104,9 @@ function blinking(t: number, seed: number) {
  * Đặt người theo một khung của `sceneAt`: chỗ đứng và hướng (`world`), góc tay chân thân đầu, đích cổ tay, nét
  * mặt. `t` (giây) bật chớp mắt khi mắt đang `open`. Chi gần là bên phải người khi không lật.
  */
-export function act(p: Figure, sp: Acting, t?: number) {
+export function act(p: Figure, sp0: Acting, t?: number) {
+  // đích theo mốc thân, lòng tay theo ý định: quy về số trên chính người này, như `actJoints` của lõi
+  const sp = needsSolve(sp0) ? (sp0.world ? resolveActing(p.body, sp0) : plainActing(sp0)) : sp0;
   const { pose: P, world: W } = sp;
   const flip = !!W?.flip;
   const near: Side = flip ? 1 : -1;

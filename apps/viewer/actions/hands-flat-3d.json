@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 19,
+  "name": "hands-flat-3d",
+  "duration": 1,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": ["hand"],
+  "keys": [{ "t": 0, "pose": {}, "hand": { "armNear": "flat", "armFar": "flat" }, "ease": "linear" }],
+  "events": []
+}

@@ -403,7 +403,7 @@ export function ActionPanel(p: ActionPanelProps) {
   const setReachAxis = (ch: ReachArm, i: number, v: number) =>
     live((d) => {
       const r = d.keys![sel].reach![ch]!;
-      r.at = r.at.map((x, j) => (j === i ? v : x)) as typeof r.at;
+      if (r.at) r.at = r.at.map((x, j) => (j === i ? v : x)) as typeof r.at;
     });
   const setElbow = (ch: ReachArm, i: number | null, v: number) =>
     live((d) => {
@@ -425,17 +425,26 @@ export function ActionPanel(p: ActionPanelProps) {
         <Label className="mb-2 block text-sm">Đích cổ tay {CHANNEL_LABELS[ch]}</Label>
         {r ? (
           <>
-            {REACH_AXES.map((x, i) => (
-              <SliderRow
-                key={x.label}
-                label={x.label}
-                value={r.at[i]}
-                min={x.min}
-                max={x.max}
-                step={0.5}
-                onChange={(v) => setReachAxis(ch, i, v)}
-              />
-            ))}
+            {r.at ? (
+              REACH_AXES.map((x, i) => (
+                <SliderRow
+                  key={x.label}
+                  label={x.label}
+                  value={r.at![i]}
+                  min={x.min}
+                  max={x.max}
+                  step={0.5}
+                  onChange={(v) => setReachAxis(ch, i, v)}
+                />
+              ))
+            ) : (
+              <p className="text-muted-foreground mb-2 text-xs">
+                Theo mốc thân <code>{r.to}</code>
+                {r.side === "other" ? " bên kia" : ""}
+                {r.offset ? ` dời [${r.offset.join(", ")}]` : ""} — kéo trên sân khấu là đổi sang
+                toạ độ
+              </p>
+            )}
             <CheckRow
               label="Hướng khuỷu riêng"
               checked={!!r.elbow}

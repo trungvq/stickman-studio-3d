@@ -125,8 +125,8 @@ viền thật mà không gì báo. Cổ và đầu của người 3D không nằ
 `A.joints.collar`, `A.frames.head`, đừng tự cộng độ dài. Xem [01](01-rig.md#người-3d).
 
 **Người 3D mặc đồ treo đồ cầm ở tâm nắm, không ở mút nét.** `palette.clad` dời khung `hand` vào
-giữa lòng bàn tay và các ngón của dáng `grip` (`handGrip`, lệch về phía lòng tay) và `hold` giữ dáng `grip` ở
-ngón; đồ căn `offset` cho người que lùi vào vài px. Khung `hand` quay theo cổ tay — xoay cẳng tay, gập và lệch
+giữa lòng bàn tay và các ngón của dáng `grip` (`handGrip`, lệch về phía lòng tay) và `hold` giữ dáng `grip` (hay
+`HoldOptions.pose`, đồ dời tới tâm nắm của dáng ấy — `gripShift`) ở ngón; đồ căn `offset` cho người que lùi vào vài px. Khung `hand` quay theo cổ tay — xoay cẳng tay, gập và lệch
 cổ tay quay cả đồ cầm. Nó ngồi
 trên gốc đùi `cladThigh`, không trên `limbHalf`, nên `sceneAt` phải nhận `body3(nhân vật)` — truyền
 `legHalf` cứng là người ngồi lún hay lơ lửng trên ghế. Xem [01](01-rig.md#người-3d-mặc-đồ).
@@ -375,7 +375,14 @@ buộc vào các đốt, da dời theo góc; hoà dáng là hoà góc (`HandVec`
 bên trong.
 Bàn tay ở kênh `hand` của `mask`, tách khỏi kênh tay: mốc ghi `keys[].hand` mà `mask` thiếu `hand` là bị bỏ
 im lặng (`maskProblems` kêu), và clip thu `mask` mà bỏ `hand` thì bàn tay về dáng nghỉ. Đang cầm đồ thì ngón
-theo dáng `grip`, hành động chỉ còn xoay và gập cổ tay. Xem [01](01-rig.md#bàn-tay).
+theo dáng cầm, hành động chỉ còn xoay và gập cổ tay; đồ ngồi ở tâm nắm của dáng ấy (`HAND_GRIPS`), chỗ treo vẫn là tâm
+nắm của `grip`. Xem [01](01-rig.md#bàn-tay).
+
+**Chạm người thì khai mốc thân, lòng tay thì khai ý định.** Đích toạ độ hệ thân và `turn` thô chỉ đúng với nhân vật, dáng
+thân và hướng khuỷu lúc đo: đổi người chibi, bụng phệ, cúi hay ngồi là tay rơi khỏi mồm, lòng tay quay sai mà không gì báo.
+`reach.to` (mốc thân), `point`, `palm` / `fingers` thì rig giải mỗi khung trên chính người ấy (`resolveActing`) — `act`, `actJoints`,
+`actPalms`, `figure3d` cùng một phép giải; ai tự dựng người three thì đi qua `act` (nó đọc `Figure.body`), đừng đặt khớp tay
+bằng tay. `palm` thắng `turn`. Với không tới, xoay không tới thì `check` báo. Xem [01](01-rig.md#đích-theo-mốc).
 
 **Khuỷu IK là bản lề.** Tay theo đích quay vai theo trục bản lề của `twoBone3` (`armFrame`), khuỷu chỉ gập —
 đừng quay đoạn chi theo phép quay ngắn nhất từ phương rủ (`setFromUnitVectors`): cẳng tay và bàn tay lật nửa

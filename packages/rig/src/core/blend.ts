@@ -1,11 +1,21 @@
 import { ARM_LAYERS, DEFAULT_LAYERS } from "./constants";
-import { ARM_CHANNELS, headOver, mixAngles, mixReach, smoothstep, stretchOver } from "./action";
+import {
+  ARM_CHANNELS,
+  headOver,
+  mixAim,
+  mixAngles,
+  mixReach,
+  rawAim,
+  smoothstep,
+  stretchOver,
+} from "./action";
 import { HAND_REST, mixHand } from "./hand";
 import type { AnimalPose } from "./animals";
 import {
   LIFT_CHANNELS,
   REACH_CHANNELS,
   type ArmLayer,
+  type AimMap,
   type ArmLayers,
   type FaceState,
   type HandMap,
@@ -104,6 +114,20 @@ export function blendPose(
   const hand: HandMap = {};
   eachHand(base, from, to, (k, a, b) => (hand[k] = mixHand(a, b, w)));
   if (Object.keys(hand).length) o.hand = hand;
+  // Lòng tay theo ý định hoà trên số hạng: bên thô là một số hạng xoay, gập cổ tay của chính nó
+  if (base.aim || from.aim || to.aim) {
+    const aim: AimMap = {};
+    for (const k of REACH_CHANNELS) {
+      if (!from.hand?.[k] && !to.hand?.[k]) continue;
+      const side = (p: Partial<Pose>) => {
+        const q = p.hand?.[k] ? p : base;
+        return q.aim?.[k] ?? rawAim(q.hand?.[k] ?? HAND_REST);
+      };
+      const has = (p: Partial<Pose>) => !!(p.hand?.[k] ? p : base).aim?.[k];
+      if (has(from) || has(to)) aim[k] = mixAim(side(from), side(to), w);
+    }
+    if (Object.keys(aim).length) o.aim = aim;
+  }
   return o;
 }
 

@@ -94,6 +94,45 @@ describe('actJoints', () => {
     }
   });
 
+  it('đích theo mốc thân và lòng tay theo ý định: `act` giải trên chính người ấy trùng `actJoints`, cả hai tay bám nhau', async () => {
+    const { fromCharacter } = await import('./stickman');
+    const r = rng(11);
+    const ang = (k = 60) => (r() * 2 - 1) * k;
+    const MARKS = ['mouth', 'chin', 'ear', 'eye', 'chest', 'belly', 'back', 'hip', 'thigh', 'shoulder', 'nape', 'crown'] as const;
+    const DIRS = ['down', 'up', 'in', 'out', 'forward', 'back'] as const;
+    for (const [height, belly, seated] of [[1, 0, false], [0.94, 24, true], [0.8, 0, false]] as const) {
+      const c = defaultCharacter();
+      c.palette.clad = true;
+      c.head.form = 'human';
+      c.rig.height = height;
+      if (belly) c.pieces.torso = { ...c.pieces.torso, src: 'sculpt', garment: { ...c.pieces.torso.garment, style: 'polo', belly } } as typeof c.pieces.torso;
+      const p = fromCharacter(c as unknown as Parameters<typeof fromCharacter>[0], { seated });
+      for (let i = 0; i < 20; i++) {
+        const to = MARKS[Math.floor(r() * MARKS.length)];
+        const term = { k: 1, to, ...(r() < 0.3 && { side: 'other' as const }), offset: [ang(10), ang(10), ang(10)] as [number, number, number], ...(r() < 0.5 && { point: 'palm' as const }) };
+        const other = { k: 1, to: (r() < 0.5 ? 'otherPalm' : 'otherWrist') as 'otherPalm' | 'otherWrist', point: 'grip' as const };
+        const aim = () => ({ terms: [{ k: 0.4, raw: [ang(), ang()] as [number, number] }, { k: 0.6, palm: { v: [...({ down: [0, 1, 0], up: [0, -1, 0], in: [0, 0, -1], out: [0, 0, 1], forward: [1, 0, 0], back: [-1, 0, 0] } as const)[DIRS[Math.floor(r() * 6)]]] as [number, number, number] }, ...(r() < 0.5 && { fingers: { to } }) }] });
+        const sp: Acting = {
+          pose: {
+            af: [ang(), ang(), ang(20)], an: [ang(), ang(), ang(20)], lf: seated ? [90, -90] : [0, 0], ln: seated ? [90, -90] : [0, 0],
+            torso: ang(25), head: [ang(15), ang(30), ang(15)], stretch: [1, 1, 1, 1, 1, 1, 1, 1],
+            lift: { af: true, an: true, lf: true, ln: true },
+            reach: { an: { at: [0, 0, 0], w: 0.5 + r() * 0.5, terms: [term] }, af: { at: [0, 0, 0], w: 1, terms: [other] } },
+            hand: { an: [0, 0, 10, 30, 10, 12, 16, 22, 18, 24, 0], af: [0, 0, 55, 55, 15, 20, 45, 35, 70, 70, 0] },
+            aim: { an: aim(), af: aim() },
+          },
+          world: { hip: [ang(300), -150, ang(300)], yaw: ang(Math.PI), s: 0.8 + r() * 0.4, flip: r() < 0.5, seated },
+          mouth: 'closed', brow: 'neutral', eyes: 'open',
+        };
+        act(p, sp);
+        const want = drawn(p, sp);
+        const got = actJoints(c, sp)!;
+        for (const k of Object.keys(want) as ActJoint[])
+          for (let j = 0; j < 3; j++) expect(got[k][j], `${k}[${j}] ca ${i} cao ${height}`).toBeCloseTo(want[k][j], 6);
+      }
+    }
+  });
+
   it('người mặc đồ: gốc vai là tâm vòng tròn bán kính ống tay tiếp xúc vát vai và sườn áo; `bicep` nở nó ra ngoài sườn', () => {
     const c = defaultCharacter();
     for (const style of ['tshirt', 'shirt', 'suit', 'hoodie'] as const) {

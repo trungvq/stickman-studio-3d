@@ -975,7 +975,9 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
 "hands": [
   { "t": 0, "right": { "at": [-124, -154, -32] }, "left": { "at": [-124, -154, 32] } },
   { "t": 2.5, "right": { "at": [-110, -154, -20], "elbow": [0, 1, -1] } },
-  { "t": 3.2, "right": null }                                  // thả: tay phải về góc của hành động
+  { "t": 3.2, "right": null },                                 // thả: tay phải về góc của hành động
+  { "t": 4, "left": { "at": [-82, -112, 20], "point": "palm", "palm": "down" } }, // lòng tay úp trên tay vịn
+  { "t": 6, "left": { "to": "mouth", "palm": { "toward": "mouth" } } }        // mốc thân của chính người ấy
 ]
 ```
 
@@ -983,6 +985,10 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
   `elbow` là hướng khuỷu trong thế giới, bỏ trống là `REACH_ELBOW` của hệ thân. Đoạn giữa hai mốc
   dùng `elbow` của mốc nào khai nó, nên một đoạn có, đoạn kề không là khuỷu đổi hướng ngay ở mốc
   chung — khai cùng `elbow` cho cả chuỗi mốc của một động tác.
+- **Đích là điểm bàn tay, không chỉ cổ tay.** `point` (`wrist`, `palm`, `back`, `grip`, `tip`; thiếu là cổ tay với `at`) đặt
+  điểm ấy của bàn tay vào `at` — tay lên tay vịn, mặt bàn thì `point: "palm"` ở mặt trên. `to` / `side` / `offset` thay `at`
+  bằng mốc thân của chính người ấy ([01](01-rig.md#đích-theo-mốc)). `palm`, `fingers`, `bend` khai lòng tay theo ý định
+  ([01](01-rig.md#hướng-lòng-tay-theo-ý)), đè bàn tay của hành động theo phần đích; mốc không khai giữ bàn tay của hành động.
 - `snap: true` trên một mốc: đoạn từ mốc trước của tay ấy tới mốc này cố ý nhanh (chộp, giật tay),
   `check` không đo giật tay ở đoạn ấy — [Giật trên hình](#giật-trên-hình).
 - Mỗi tay nội suy riêng giữa hai mốc gần nhất **có nhắc tay ấy**, êm (`smoothstep`); `null` là phần
@@ -1167,6 +1173,21 @@ Ngưỡng ở `package.json` của repo video (độ, độ, giây), trường t
 
 Mức cảnh báo. Cảnh khớp `stickman.frozen` không đo; `--scene` chỉ đo cảnh khớp.
 
+## Bàn tay theo ý định
+
+Đích theo mốc thân và lòng tay khai theo ý định ([01](01-rig.md#đích-theo-mốc),
+[01](01-rig.md#hướng-lòng-tay-theo-ý)) rig giải mỗi khung, mà với không tới thì tay chỉ duỗi về phía mốc, cổ tay kẹp ở giới
+hạn khớp — hình vẫn ra. `check` đo trên đúng phép giải của `act` (`actAim`, `sceneAims`), lấy mẫu mỗi `0,1 s` người 3D có
+khai mốc hay ý định, và kêu quãng từ `stickman.palm.hold` (`0,3 s`):
+
+- **Bàn tay không tới mốc**: phần đích đủ `1` mà điểm bàn tay (`point`) còn cách mốc quá `AIM_GAP` (`6` đơn vị rig nhân
+  `world.s`) — dời người, đổi `offset`, nới `stretch` hay chọn mốc gần hơn.
+- **Lòng tay không quay được về hướng đã khai**: còn lệch quá `AIM_ANGLE` (`25°`); ngón quá `AIM_FINGERS` (`40°`) — đổi
+  `elbow` (khung cẳng tay quay theo hướng khuỷu) hay hướng đã khai.
+
+Mốc bàn tay khai cả `turn` lẫn `palm` thì `check` và `validate` kêu ở file hành động: `turn` bị bỏ qua. Mức cảnh báo; tắt
+cùng `stickman.palm: false`.
+
 ## Nhóm
 
 Một cụm người và đồ đặt chung — bàn làm việc với hai người ngồi, bàn họp với bốn ghế — khai
@@ -1240,6 +1261,9 @@ một lần rồi gọi `anchorIn(fa, tên, chỗ_đứng)`.
 
 Từ MCP thì `scene_probe` với `anchors: ["handFar", "mouth"]` — nó gọi thẳng vào
 đây, không tự tính.
+
+**Mốc thân cho bàn tay người 3D là bảng khác**: `bodyMarkAt(nhân_vật, scenePose, { to, side, offset }, "R" | "L")` trả điểm
+thế giới mà đích `to` của tay ấy nhắm tới, tính trên khối 3D của người ([01](01-rig.md#đích-theo-mốc)).
 
 **Mốc trên con vật là `animalAnchorAt(rt, id, tên, t, người_xách?)`**, cùng hình dạng
 trả về. Tên trong `ANIMAL_ANCHOR_NAMES`: `root`, `hip`, `shoulder`, `saddle` (chỗ

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { newCanvas, path2D } from './canvas';
 import { DEFAULT_FACE } from './core/constants';
 import { blushLevel, blushMarks, browMarks, CHIBI, chibiShape, eyeMarks, eyeShine, mouthMark, wrinkleMarks, type FaceInk, type FaceMark, type WrinkleSpec } from './core/face';
-import { humanSkull } from './core/humanHead';
+import { faceSurface } from './core/humanHead';
 import type { FaceState } from './core/types';
 
 // Nét mặt của `core/face.ts` vẽ lên canvas rồi dán lên mặt trước của sọ theo phép chiếu thẳng — điểm lệch `x` px khỏi
@@ -15,7 +15,6 @@ export interface FaceShape { offsetY: number; eyeGap: number; mouthGap: number; 
 
 const SHAPE: FaceShape = { offsetY: 0, eyeGap: 26, mouthGap: 34 };
 
-const HEAD_R = 65;
 /** Vùng mặt trên canvas, px đầu quanh tâm đầu: đủ cho nếp trán `deep` tới khẩu hình `wryOpen` */
 const BOX = { x0: -48, y0: -54, w: 96, h: 112 };
 const TEXEL = 8;
@@ -77,7 +76,7 @@ export interface FaceRig {
 
 /**
  * Lớp nét mặt cho sọ bán kính `r` (three), cùng tỉ lệ `scale` với khối sọ. Mặt hướng +z, `y` lên; px đầu đổi ra
- * three theo `r / 65`. Lưới dời lên khỏi mặt sọ một chút để khỏi lẫn độ sâu. `human`: dán trên đầu `humanSkull`, nét
+ * three theo `r / FACE_R`. Lưới dời lên khỏi mặt sọ một chút để khỏi lẫn độ sâu. `human`: dán trên đầu `humanSkull`, nét
  * mặt chibi (`CHIBI`): mắt to có đốm sáng. Má ửng `shape.blush` cộng `state.blush`, màu suy từ da `skin`.
  */
 export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShape> = {}, state: FaceState = DEFAULT_FACE, human = false, skin = '#f0d9b8'): FaceRig {
@@ -128,16 +127,11 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
  * thì điểm mặt cầu ấy đi tiếp qua `humanSkull`, nét mặt nằm trên má và cằm như da.
  */
 function faceCap(r: number, scale: THREE.Vector3, human: boolean) {
-  const N = 40, k = r / HEAD_R;
+  const N = 40;
   const pos: number[] = [], uv: number[] = [], idx: number[] = [];
   for (let j = 0; j <= N; j++)
     for (let i = 0; i <= N; i++) {
-      const px = BOX.x0 + (BOX.w * i) / N, py = BOX.y0 + (BOX.h * j) / N;
-      let x = px * k, y = -py * k;
-      const d = Math.hypot(x, y), lim = r * 0.995;
-      if (d > lim) [x, y] = [(x * lim) / d, (y * lim) / d];
-      let z = Math.sqrt(Math.max(r * r - x * x - y * y, 0));
-      if (human) [x, y, z] = humanSkull([x / r, y / r, z / r]).map((v) => v * r);
+      const [x, y, z] = faceSurface(BOX.x0 + (BOX.w * i) / N, BOX.y0 + (BOX.h * j) / N, r, human);
       pos.push(x * scale.x, y * scale.y, z * scale.z);
       uv.push(i / N, 1 - j / N);
     }

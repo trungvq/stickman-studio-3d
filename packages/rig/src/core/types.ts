@@ -1,4 +1,5 @@
 import type { BROWS, EYES, MOUTHS } from "./face";
+import type { Aim, ReachTerm } from "./bodyMark";
 
 /** [góc khớp cha, góc khớp con tương đối] */
 export type Limb = [number, number];
@@ -52,6 +53,13 @@ export interface Reach {
   at: [number, number, number];
   elbow?: [number, number, number];
   w: number;
+  /**
+   * Đích theo mốc hay theo điểm khác cổ tay (`ReachTerm`): người 3D giải thành cổ tay mỗi khung (`resolveActing`), `at`
+   * khi ấy chỉ là chỗ ước lượng cho người 2D. docs/01-rig.md#đích-theo-mốc
+   */
+  terms?: ReachTerm[];
+  /** Lòng tay theo ý định của `world.hands`: đè bàn tay của hành động theo phần `w` */
+  aim?: Aim;
 }
 
 /** Hai kênh tay nhận đích cổ tay */
@@ -74,7 +82,15 @@ export interface Pose {
   reach?: ReachMap;
   /** Bàn tay theo `HAND_DOF`: xoay cẳng tay, gập cổ tay, góc ngón; chỉ người 3D mặc đồ đọc. docs/01-rig.md#bàn-tay */
   hand?: HandMap;
+  /**
+   * Lòng tay, ngón theo ý định (`palm`, `fingers` của `keys[].hand`): người 3D giải ra xoay và gập cổ tay, đè hai số đầu
+   * của `hand` ở kênh ấy. docs/01-rig.md#hướng-lòng-tay-theo-ý
+   */
+  aim?: AimMap;
 }
+
+/** Bàn tay theo ý định của hai kênh tay */
+export type AimMap = Partial<Record<(typeof REACH_CHANNELS)[number], Aim>>;
 
 /** Bàn tay của hai kênh tay, số theo `HAND_DOF`; kênh không có là `HAND_REST` */
 export type HandMap = Partial<Record<(typeof REACH_CHANNELS)[number], readonly number[]>>;

@@ -10,6 +10,7 @@ import {
   composePose,
   fingerVec,
   HAND_DOF,
+  HAND_GRIPS,
   HAND_BIND,
   HAND_BONES,
   HAND_PIECES,
@@ -54,9 +55,21 @@ const vec = (p: keyof typeof HAND_POSES | "rest") => [
 ];
 
 describe("bảng dáng tay", () => {
-  it("đúng bốn dáng soạn được, mỗi dáng đủ chín góc ngón, có nhãn; dáng nghỉ ngoài bảng; `HAND_DOF` là xoay, gập cổ tay rồi chín góc ngón", () => {
+  it("mười dáng soạn được, mỗi dáng đủ chín góc ngón, có nhãn và tâm nắm; dáng nghỉ ngoài bảng; `HAND_DOF` là xoay, gập cổ tay rồi chín góc ngón", () => {
     expect(HAND_POSE_KINDS).toEqual(Object.keys(HAND_POSES));
-    expect([...HAND_POSE_KINDS].sort()).toEqual(["fist", "grip", "open", "point"]);
+    expect([...HAND_POSE_KINDS].sort()).toEqual([
+      "clasp",
+      "cup",
+      "edge",
+      "fist",
+      "flat",
+      "grip",
+      "hook",
+      "open",
+      "pinch",
+      "point",
+    ]);
+    expect(Object.keys(HAND_GRIPS).sort()).toEqual([...HAND_POSE_KINDS, "rest"].sort());
     for (const k of HAND_POSE_KINDS) {
       expect(fingerVec(HAND_POSES[k]).length).toBe(9);
       expect(fingerVec(HAND_POSES[k]).every(Number.isFinite)).toBe(true);
@@ -130,7 +143,7 @@ const WAVE = {
 describe("kênh `hand` của hành động", () => {
   it(`đời ${ACTION_VERSION}: nội suy góc khớp giữa hai mốc theo \`ease\``, () => {
     const a = action(WAVE);
-    expect(ACTION_VERSION).toBe(18);
+    expect(ACTION_VERSION).toBe(19);
     const mid = actionHand(a, 0.3).an!;
     const f = smoothstep(0.3);
     const want = vec("rest").map((v, i) => v + ((i === 0 ? 80 : vec("fist")[i]) - v) * f);
@@ -153,7 +166,7 @@ describe("kênh `hand` của hành động", () => {
     expect(parseAction(k({ bend: -100 })).success).toBe(false);
     expect(parseAction(k({ pose: "wave" })).success).toBe(false);
     // dáng nghỉ không soạn được: bỏ trống `pose`; không có góc ngón thô
-    for (const v of ["relaxed", "pinch", "thumbsUp"]) {
+    for (const v of ["relaxed", "pinchy", "thumbsUp"]) {
       expect(parseAction(k({ pose: v })).success).toBe(false);
       expect(parseAction({ keys: [{ t: 0, pose: {}, hand: { armNear: v } }] }).success).toBe(false);
     }

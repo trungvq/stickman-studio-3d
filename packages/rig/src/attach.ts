@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { R, type Figure, type Side } from './stickman';
 import { RIG } from './core/constants';
-import type { HandPose } from './core/hand';
+import { gripShift, type HandPose } from './core/hand';
 import type { Vec3 } from './khoi';
 import { poseHand } from './human';
 
@@ -80,10 +80,17 @@ class Follow extends THREE.Group {
   }
 }
 
-const handTip = (fig: Figure, side: Side, out: THREE.Vector3) => {
+/** Tâm nắm của tay `side` trong hệ người: chỗ treo đồ (`handGrip`) dời theo dáng đang giữ (`gripShift`) */
+const handTip = (fig: Figure, side: Side, out: THREE.Vector3, pose?: HandPose) => {
   const s = fig.sockets.hand[side];
   s.updateWorldMatrix(true, false);
-  return fig.root.worldToLocal(s.getWorldPosition(out));
+  return fig.root.worldToLocal(s.localToWorld(out.set(...shiftOf(fig, side, pose))));
+};
+
+/** Đồ cầm dời khỏi chỗ treo bấy nhiêu khi tay người `clad` giữ dáng `pose`; người que không có bàn tay thì không dời */
+const shiftOf = (fig: Figure, side: Side, pose?: HandPose): [number, number, number] => {
+  const h = fig.hands?.[side];
+  return h && pose ? gripShift(pose, side, h.scale, h.long) : [0, 0, 0];
 };
 
 /** Vật trong nhóm dời/xoay theo `offset`, `rotate`; trả nhóm ấy */
@@ -128,9 +135,13 @@ export function hold(fig: Figure, object: THREE.Object3D, o: HoldOptions): Held 
     },
   };
   let carrier: THREE.Object3D;
+  const pose = o.pose ?? 'grip';
   if (o.hand !== 'both' && (o.follow ?? 'wrist') === 'wrist') {
-    carrier = holder;
-    fig.sockets.hand[o.hand].add(holder);
+    // đồ ngồi ở tâm nắm của dáng đang giữ: dời trong khung chỗ treo
+    carrier = new THREE.Group();
+    carrier.position.set(...shiftOf(fig, o.hand, pose));
+    carrier.add(holder);
+    fig.sockets.hand[o.hand].add(carrier);
     return held;
   }
   const a = new THREE.Vector3(), b = new THREE.Vector3(), x = new THREE.Vector3(), y = new THREE.Vector3(), z = new THREE.Vector3();
@@ -138,12 +149,12 @@ export function hold(fig: Figure, object: THREE.Object3D, o: HoldOptions): Held 
   const side = o.hand;
   carrier = new Follow((g) => {
     if (side !== 'both') {
-      g.position.copy(handTip(fig, side, a));
+      g.position.copy(handTip(fig, side, a, pose));
       g.quaternion.identity();
       return;
     }
-    handTip(fig, -1, a);
-    handTip(fig, 1, b);
+    handTip(fig, -1, a, pose);
+    handTip(fig, 1, b, pose);
     held.span = a.distanceTo(b);
     x.subVectors(b, a);
     if (o.follow !== 'tilt') x.y = 0;

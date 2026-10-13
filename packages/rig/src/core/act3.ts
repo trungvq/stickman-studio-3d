@@ -1,6 +1,16 @@
 import { D, RIG, TORSO_DEPTH } from "./constants";
+import { chibiShape } from "./face";
 import { lengths } from "./geometry";
-import { HAND_BONES, HAND_REST, handFrames, handGrip, wristTurn, type HandPiece } from "./hand";
+import {
+  HAND_BONES,
+  HAND_REST,
+  handFrames,
+  handGrip,
+  handPoint,
+  wristTurn,
+  type HandPiece,
+} from "./hand";
+import { faceSurface, HUMAN_HEAD, humanEar, humanSkull, SKULL3 } from "./humanHead";
 import { REACH_ELBOW } from "./ik";
 import {
   fromColumns,
@@ -12,7 +22,22 @@ import {
   type M3,
   type V3,
 } from "./lens";
-import { limbWidths, wornPalette, type CharacterData, type Garment, type Skirt } from "./schema";
+import {
+  isOtherHand,
+  type Aim,
+  type AimDir,
+  type HandPoint,
+  type BodyMark,
+  type ReachTerm,
+} from "./bodyMark";
+import {
+  defaultCharacter,
+  limbWidths,
+  wornPalette,
+  type CharacterData,
+  type Garment,
+  type Skirt,
+} from "./schema";
 import { profileAt, skirtSide, wornSkirt } from "./skirtShape";
 import {
   BELLY,
@@ -294,12 +319,17 @@ export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Buil
 
 export type Limb3 = "af" | "an" | "lf" | "ln";
 
-/** Đích cổ tay như `Reach` của lõi, nhận cả mảng chỉ đọc */
+/** Đích cổ tay như `Reach` của lõi, nhận cả mảng chỉ đọc; `terms` và `aim` (ở `world.hands`) giải bằng `resolveActing` */
 export interface ReachIn {
   at: readonly number[];
   elbow?: readonly number[];
   w: number;
+  terms?: readonly ReachTerm[];
+  aim?: Aim;
 }
+
+/** Đích thế giới hai tay của `world.hands`, theo gần / xa */
+export type ActHands = { near?: ReachIn; far?: ReachIn };
 
 /** Phần `Pose` mà người 3D đọc */
 export interface PoseIn {
@@ -314,6 +344,7 @@ export interface PoseIn {
   lift?: Partial<Record<Limb3, boolean>>;
   reach?: Partial<Record<"af" | "an", ReachIn>>;
   hand?: Partial<Record<"af" | "an", readonly number[]>>;
+  aim?: Partial<Record<"af" | "an", Aim>>;
 }
 
 const num = (v: number | undefined) => (Number.isFinite(v) ? (v as number) : 0);
@@ -475,7 +506,7 @@ export interface ActInput {
     s: number;
     flip: boolean;
     seated?: boolean;
-    hands?: { near?: ReachIn; far?: ReachIn };
+    hands?: ActHands;
   };
 }
 
@@ -488,20 +519,26 @@ interface Wrist3 {
   v: readonly number[];
 }
 
-/** Khớp three (chưa đổi sang rig), khung bàn tay hai bên và hướng hông `Rr` của một người 3D */
-function pose3(c: Pick<CharacterData, "rig" | "pieces" | "palette" | "head">, sp: ActInput) {
+/** Phần JSON nhân vật mà người 3D đọc cho khớp, bàn tay và mốc thân (`face` cho mốc trên mặt) */
+export type ActCharacter = Pick<CharacterData, "rig" | "pieces" | "palette" | "head"> & {
+  face?: Partial<Pick<CharacterData["face"], "offsetY" | "eyeGap" | "mouthGap">>;
+};
+
+/** Thân người 3D ở một tư thế, chưa có tay: khớp chân, thân, cổ, đầu, khung từng phần, mọi số đo tay cần (three) */
+function trunk3(c: ActCharacter, sp: ActInput) {
   const W = sp.world;
   if (!W) return undefined;
   const P = sp.pose;
   const B = bones3(c.rig.height);
   const pal = wornPalette(c);
   const w = limbWidths(pal);
+  const skirt = wornSkirt(c.pieces.hem);
   const roots = roots3(c.pieces.torso.garment, c.rig, {
     clad: pal.clad,
     sleeve: w.sleeve,
     trouser: w.trouser,
     bicep: pal.bicep,
-    skirt: wornSkirt(c.pieces.hem),
+    skirt,
     flare: pal.sleeveFlare,
     sleeveLength: pal.sleeveLength,
   });
@@ -516,17 +553,18 @@ function pose3(c: Pick<CharacterData, "rig" | "pieces" | "palette" | "head">, sp
   const at = (o: V3, R: M3, local: V3): V3 => add(o, mul(mv(R, local), s));
   const hips = at(root, Rr, [0, seated ? 0 : B.limb, 0]);
   const out = {} as Record<ActJoint, V3>;
-  const wrists: Partial<Record<"R" | "L", Wrist3>> = {};
+  const hipJ = {} as Record<"R" | "L", V3>;
   const tag = (side: number) => (side === -1 ? "R" : "L");
 
   for (const side of [near, -near]) {
     const isNear = side === near;
     const [a, b, sp] = actAngles(P, isNear ? "ln" : "lf", seated);
-    const hipJ = at(hips, Rr, [side * roots.hip, 0, 0]);
+    const hj = at(hips, Rr, [side * roots.hip, 0, 0]);
     // Euler 'ZXY' của three: Rz · Rx · Ry, quay quanh y bằng 0
     const Rh = mm(Rr, mm(rz(side * sp * D), rx(-a * D)));
-    const knee = at(hipJ, Rh, [0, -B.thigh * (st[isNear ? 6 : 4] ?? 1), 0]);
+    const knee = at(hj, Rh, [0, -B.thigh * (st[isNear ? 6 : 4] ?? 1), 0]);
     const Rk = mm(Rh, rx(-b * D));
+    hipJ[tag(side)] = hj;
     out[`knee${tag(side)}` as ActJoint] = knee;
     out[`foot${tag(side)}` as ActJoint] = at(knee, Rk, [0, -B.shin * (st[isNear ? 7 : 5] ?? 1), 0]);
   }
@@ -540,53 +578,718 @@ function pose3(c: Pick<CharacterData, "rig" | "pieces" | "palette" | "head">, sp
   const neck = at(hips, Rs, [0, B.torso, 0]);
   out.neck = neck;
   out.head = at(neck, Rn, [0, head3(B, c.head.form === "human"), 0]);
+  out.hip = hips;
 
   const frame: ActFrame = { point: (v) => at(root, Rr, v), dir: (v) => mv(Rr, v) };
   const hand = pal.clad && cladHand(w.sleeve, c.rig.stroke, B.foreArm * 100);
-  for (const side of [near, -near]) {
-    const isNear = side === near;
-    const ch = isNear ? "an" : "af";
-    const [a, b, sp] = actAngles(P, ch, false);
-    const [twist, dev] = actTwist(P, ch);
-    const sh = at(hips, Rs, [side * roots.shoulder[0], roots.shoulder[1], 0]);
-    // Euler 'ZXY' của vai: dang · gập · xoắn quanh chính cánh tay
-    const Rsh = mm(Rs, mm(mm(rz(side * (roots.splay + sp * D)), rx(-a * D)), ry(side * twist * D)));
-    const l1 = B.upperArm * (st[isNear ? 2 : 0] ?? 1);
-    const l2 = B.foreArm * (st[isNear ? 3 : 1] ?? 1);
-    const el = at(sh, Rsh, [0, -l1, 0]);
-    let Re = mm(Rsh, rx(-b * D));
-    let wr = at(el, Re, [0, -l2, 0]);
-    const ik = actReach(
-      frame,
-      side,
-      [sh, el, wr],
-      l1 * s,
-      l2 * s,
-      P.reach?.[ch],
-      isNear ? W.hands?.near : W.hands?.far,
-      B.height,
-      mv(Rsh, [1, 0, 0]),
-    );
-    let elbow = el;
-    if (ik) {
-      const f = armFrame(sh, ik[0], ik[1], ik[2]);
-      [elbow, wr] = ik;
-      Re = mm(f.R, rx(-f.b));
-    }
-    const [pron, flex] = actHand(P, ch);
-    const Rw = mm(Re, wristTurn(pron, flex, dev, side));
-    const grip: V3 = hand
-      ? handGrip(side, hand.k, hand.long)
-      : [0, -(BONES3.limb * w.sleeve) / 10, 0];
-    out[`shoulder${tag(side)}` as ActJoint] = sh;
-    out[`elbow${tag(side)}` as ActJoint] = elbow;
-    out[`wrist${tag(side)}` as ActJoint] = wr;
-    out[`hand${tag(side)}` as ActJoint] = at(wr, Rw, grip);
-    if (hand)
-      wrists[tag(side)] = { at: wr, R: Rw, k: hand.k * s, long: hand.long * s, v: actHand(P, ch) };
+  return {
+    c,
+    P,
+    W,
+    B,
+    w,
+    pal,
+    skirt,
+    roots,
+    near,
+    s,
+    root,
+    Rr,
+    Rs,
+    Rn,
+    hips,
+    hipJ,
+    out,
+    at,
+    frame,
+    hand,
+    tag,
+  };
+}
+
+type Trunk3 = NonNullable<ReturnType<typeof trunk3>>;
+
+/** Tay bên `side` của thân `T` ở tư thế `P` với đích thế giới `hands`: vai, khuỷu, cổ tay, khung bàn tay */
+function arm3(T: Trunk3, P: PoseIn, hands: ActHands | undefined, side: number) {
+  const { B, roots, near, s, at, frame } = T;
+  const st = P.stretch;
+  const isNear = side === near;
+  const ch = isNear ? "an" : "af";
+  const [a, b, sp] = actAngles(P, ch, false);
+  const [twist, dev] = actTwist(P, ch);
+  const sh = at(T.hips, T.Rs, [side * roots.shoulder[0], roots.shoulder[1], 0]);
+  // Euler 'ZXY' của vai: dang · gập · xoắn quanh chính cánh tay
+  const Rsh = mm(T.Rs, mm(mm(rz(side * (roots.splay + sp * D)), rx(-a * D)), ry(side * twist * D)));
+  const l1 = B.upperArm * (st[isNear ? 2 : 0] ?? 1);
+  const l2 = B.foreArm * (st[isNear ? 3 : 1] ?? 1);
+  const el = at(sh, Rsh, [0, -l1, 0]);
+  let Re = mm(Rsh, rx(-b * D));
+  let wr = at(el, Re, [0, -l2, 0]);
+  const ik = actReach(
+    frame,
+    side,
+    [sh, el, wr],
+    l1 * s,
+    l2 * s,
+    P.reach?.[ch],
+    isNear ? hands?.near : hands?.far,
+    B.height,
+    mv(Rsh, [1, 0, 0]),
+  );
+  let elbow = el;
+  if (ik) {
+    const f = armFrame(sh, ik[0], ik[1], ik[2]);
+    [elbow, wr] = ik;
+    Re = mm(f.R, rx(-f.b));
   }
-  out.hip = hips;
-  return { joints: out, wrists: hand ? (wrists as Record<"R" | "L", Wrist3>) : undefined, Rr, Rs };
+  const v = actHand(P, ch);
+  const Rw = mm(Re, wristTurn(v[0], v[1], dev, side));
+  const grip: V3 = T.hand
+    ? handGrip(side, T.hand.k, T.hand.long)
+    : [0, -(BONES3.limb * T.w.sleeve) / 10, 0];
+  return { ch, sh, elbow, wr, Re, Rw, dev, grip, v };
+}
+
+/** Khớp three (chưa đổi sang rig), khung bàn tay hai bên và hướng hông `Rr` của một người 3D; đích theo mốc đã giải */
+function pose3(c: ActCharacter, sp0: ActInput) {
+  const T0 = trunk3(c, sp0);
+  if (!T0) return undefined;
+  const sp = solveActing(T0, sp0).input;
+  const T = sp === sp0 ? T0 : { ...T0, P: sp.pose, W: sp.world! };
+  const out = T.out;
+  const wrists: Partial<Record<"R" | "L", Wrist3>> = {};
+  for (const side of [T.near, -T.near]) {
+    const A = arm3(T, sp.pose, sp.world?.hands, side);
+    const tag = T.tag(side);
+    out[`shoulder${tag}` as ActJoint] = A.sh;
+    out[`elbow${tag}` as ActJoint] = A.elbow;
+    out[`wrist${tag}` as ActJoint] = A.wr;
+    out[`hand${tag}` as ActJoint] = T.at(A.wr, A.Rw, A.grip);
+    if (T.hand)
+      wrists[tag] = { at: A.wr, R: A.Rw, k: T.hand.k * T.s, long: T.hand.long * T.s, v: A.v };
+  }
+  return {
+    joints: out,
+    wrists: T.hand ? (wrists as Record<"R" | "L", Wrist3>) : undefined,
+    Rr: T.Rr,
+    Rs: T.Rs,
+  };
+}
+
+/** Lặp giải đích theo điểm bàn tay và hướng lòng tay: chỗ bàn tay và hướng cổ tay phụ thuộc nhau, hội tụ trong vài vòng */
+const AIM_ITER = 8;
+/** Giới hạn gập cổ tay khi rig tự giải lòng tay (độ); xoay cẳng tay giữ `−90..90` như JSON */
+export const AIM_BEND = 75;
+/** Giới hạn lệch cổ tay (số thứ ba của tay) khi rig tự giải hướng ngón, độ */
+export const AIM_DEV = 30;
+
+const ZERO3: V3 = [0, 0, 0];
+const tr = (R: M3): M3 => [R[0], R[3], R[6], R[1], R[4], R[7], R[2], R[5], R[8]];
+const ang = (a: V3, b: V3) =>
+  (Math.acos(Math.max(-1, Math.min(1, dot(unit(a), unit(b))))) * 180) / Math.PI;
+
+/** Bàn tay một bên đang ở đâu: cổ tay, khung `Rw`, cỡ (đã nhân `world.s`), số bàn tay — mốc `other…` đọc nó */
+interface HandState {
+  at: V3;
+  R: M3;
+  k: number;
+  long: number;
+  v: readonly number[];
+  side: number;
+  stick?: V3;
+}
+
+/** Điểm `point` của bàn tay đang ở `h`, three */
+function handAt(h: HandState, point: HandPoint): V3 {
+  if (point === "wrist") return h.at;
+  if (h.stick) return add(h.at, mv(h.R, h.stick));
+  return add(h.at, mv(h.R, handPoint(point, h.v, h.side, h.k, h.long)));
+}
+
+/** Số đo đầu, thân, đùi cho mốc; tính một lần mỗi thân */
+function markShape(T: Trunk3) {
+  const { c, B } = T;
+  const human = c.head.form === "human";
+  const f0 = { offsetY: 0, eyeGap: 26, mouthGap: 34, ...c.face };
+  const face = human ? chibiShape({ ...f0 }) : f0;
+  const r = B.head;
+  const sk = (p: V3): V3 => [p[0] * SKULL3[0], p[1] * SKULL3[1], p[2] * SKULL3[2]];
+  const onFace = (px: number, py: number) => sk(faceSurface(px, py, r, human));
+  const onSkull = (u: V3) => sk(mul(human ? humanSkull(unit(u)) : unit(u), r));
+  const g = garmentOf(c.pieces.torso.garment, !!T.pal.clad);
+  let { pts } = profile(g, c.rig, c.rig.stroke / 2);
+  let depth = pts.map(([a]) => TORSO_DEPTH * a);
+  if (T.pal.clad && T.roots.room) ({ pts, depth } = cladProfile(pts, T.roots.room));
+  const h = c.rig.height;
+  const across = (y: number) => profileAt(pts, depth, y);
+  const front = (y: number) => across(y)[1] + (g.belly ?? 0) * bellyAt(y, h);
+  // nửa bề dày gốc đùi như `body3` của `figure3d.ts`
+  const leg = (T.pal.clad ? cladThigh(T.w.trouser, c.rig.stroke) : T.w.trouser / 2) / 100;
+  return { human, face, r, onFace, onSkull, across, front, h, leg };
+}
+
+const shapes = new WeakMap<object, ReturnType<typeof markShape>>();
+
+/**
+ * Mốc `to` trên người thân `T` (three) cho tay bên `hand`, bên mốc `sel`; `offset` `[tiến, y, ra ngoài]` (rig, nhân
+ * `world.s`) theo khung phần người mang mốc, `ra ngoài` dương về phía chính tay ấy. Mốc trên tay kia đọc `other`
+ */
+function markAt(
+  T: Trunk3,
+  ref: { to: BodyMark; side?: "same" | "other"; offset?: readonly number[] },
+  hand: number,
+  other: HandState | undefined,
+): V3 {
+  let S = shapes.get(T.c);
+  if (!S) shapes.set(T.c, (S = markShape(T)));
+  const sd = ref.side === "other" ? -hand : hand;
+  const { s, at, B } = T;
+  const H = T.out.head;
+  const torsoLen = RIG.torso * S.h;
+  const px = (x: number, y: number, z: number): V3 => [x / 100, -y / 100, z / 100];
+  let p: V3;
+  let R: M3 = T.Rr;
+  switch (ref.to) {
+    case "mouth":
+      p = at(H, T.Rn, S.onFace(0, S.face.offsetY + S.face.mouthGap));
+      R = T.Rn;
+      break;
+    case "eye":
+      p = at(H, T.Rn, S.onFace((sd * S.face.eyeGap) / 2, S.face.offsetY));
+      R = T.Rn;
+      break;
+    case "cheek":
+      p = at(
+        H,
+        T.Rn,
+        S.onFace(sd * (S.face.eyeGap / 2 + 6), S.face.offsetY + S.face.mouthGap * 0.55),
+      );
+      R = T.Rn;
+      break;
+    case "forehead":
+      p = at(H, T.Rn, S.onFace(0, S.face.offsetY - 32));
+      R = T.Rn;
+      break;
+    case "chin":
+      p = at(H, T.Rn, S.onSkull([0, -0.8, 0.6]));
+      R = T.Rn;
+      break;
+    case "crown":
+      p = at(H, T.Rn, S.onSkull([0, 1, 0]));
+      R = T.Rn;
+      break;
+    case "backHead":
+      p = at(H, T.Rn, S.onSkull([0, 0.1, -1]));
+      R = T.Rn;
+      break;
+    case "ear": {
+      const E = HUMAN_HEAD.ear;
+      const e = S.human ? humanEar(sd as -1 | 1) : unit([sd, E.y, E.z]);
+      const out = S.human ? E.out * 1.35 : 0;
+      p = at(H, T.Rn, [
+        (e[0] + sd * out) * S.r * SKULL3[0],
+        e[1] * S.r * SKULL3[1],
+        e[2] * S.r * SKULL3[2],
+      ]);
+      R = T.Rn;
+      break;
+    }
+    case "nape":
+      p = at(T.out.neck, T.Rs, [0, B.neck * 0.5, -0.14]);
+      R = T.Rs;
+      break;
+    case "shoulder": {
+      const cap = T.roots.room ? T.roots.room.cap / 100 : (BONES3.limb * T.w.sleeve) / 10;
+      p = at(T.hips, T.Rs, [sd * T.roots.shoulder[0], T.roots.shoulder[1] + cap, 0]);
+      R = T.Rs;
+      break;
+    }
+    case "chest": {
+      const y = -0.7 * torsoLen;
+      p = at(T.hips, T.Rs, px(0, y, S.front(y)));
+      R = T.Rs;
+      break;
+    }
+    case "belly": {
+      const y = -BELLY.at * torsoLen;
+      p = at(T.hips, T.Rs, px(0, y, S.front(y)));
+      R = T.Rs;
+      break;
+    }
+    case "back": {
+      const y = -0.3 * torsoLen;
+      p = at(T.hips, T.Rs, px(0, y, -S.across(y)[1]));
+      R = T.Rs;
+      break;
+    }
+    case "hip": {
+      const y = -0.12 * torsoLen;
+      p = at(T.hips, T.Rs, px(sd * S.across(y)[0], y, 0));
+      R = T.Rs;
+      break;
+    }
+    case "thigh":
+    case "knee": {
+      const t = T.tag(sd);
+      const a = T.hipJ[t];
+      const b = T.out[`knee${t}` as ActJoint];
+      const d = unit(sub(b, a));
+      const n0 = add([0, 1, 0], mv(T.Rr, [0, 0, 1]));
+      const n = unit(sub(n0, mul(d, dot(n0, d))));
+      const clad = !!T.pal.clad;
+      const [u, k] = ref.to === "thigh" ? [0.5, clad ? 0.83 : 1] : [1, clad ? 0.9 / 1.35 : 1];
+      p = add(add(a, mul(sub(b, a), u)), mul(n, S.leg * k * s));
+      break;
+    }
+    default: {
+      const pt = {
+        otherWrist: "wrist",
+        otherPalm: "palm",
+        otherBack: "back",
+        otherGrip: "grip",
+      } as const;
+      p = other ? handAt(other, pt[ref.to as keyof typeof pt]) : T.out.hip;
+    }
+  }
+  const o = ref.offset;
+  return o ? add(p, mul(mv(R, [hand * o[2], -o[1], o[0]]), 0.01 * s)) : p;
+}
+
+/** Hướng hệ thân `[tiến, y, ra ngoài]` của tay bên `hand` ra three */
+const bodyDir = (T: Trunk3, hand: number, [f, y, o]: readonly number[]): V3 =>
+  unit(mv(T.Rr, [hand * o, -y, f]));
+
+/**
+ * Xoay cẳng tay `turn`, gập cổ tay `bend` và lệch cổ tay `dev` (độ) cho khung cẳng tay `Re` của tay bên `side`: lòng tay
+ * quay về `palm`, ngón chĩa về `fingers` (three). Lòng tay chỉ phụ thuộc xoay và gập (khung bàn tay: lòng tay `−side · x`
+ * không đổi theo lệch), nên giải đúng hai góc ấy rồi lấy lệch cho ngón; `dev` thiếu là lệch cố định ở số ấy. `bend` khai
+ * thì giữ. Ngoài giới hạn (`−90..90`, `±AIM_BEND`, `±AIM_DEV`) thì tinh chỉnh trong hộp giới hạn. Trả cả góc lệch còn lại
+ */
+export function aimWrist(
+  Re: M3,
+  side: number,
+  palm: V3 | undefined,
+  fingers: V3 | undefined,
+  o: { bend?: number; dev?: number; fixedDev?: number; fast?: boolean } = {},
+): { turn: number; bend: number; dev: number; palmErr?: number; fingerErr?: number } {
+  const Ri = tr(Re);
+  const dp = palm && mv(Ri, unit(palm));
+  const df = fingers && mv(Ri, unit(fingers));
+  const freeDev = o.fixedDev === undefined;
+  const R = (t: number, b: number, d: number) => wristTurn(t, b, d, side);
+  const n = (t: number, b: number) => mv(R(t, b, 0), [-side, 0, 0]);
+  const fi = (t: number, b: number, d: number) => mv(R(t, b, d), [0, -1, 0]);
+  const clampT = (t: number) => Math.max(-90, Math.min(90, t));
+  const clampB = (b: number) =>
+    o.bend !== undefined ? o.bend : Math.max(-AIM_BEND, Math.min(AIM_BEND, b));
+  const clampD = (d: number) =>
+    freeDev ? Math.max(-AIM_DEV, Math.min(AIM_DEV, d)) : (o.fixedDev as number);
+  /** Lệch cổ tay tốt nhất cho ngón ở xoay, gập đã chọn */
+  const bestDev = (t: number, b: number) => {
+    if (!df || !freeDev) return clampD(o.dev ?? 0);
+    const M = R(t, b, 0);
+    const c1 = dot(mv(M, [0, 1, 0]), df);
+    const c2 = dot(mv(M, [0, 0, 1]), df);
+    return clampD((Math.atan2(c2, -c1) * 180) / Math.PI);
+  };
+  const cost = (t: number, b: number, d: number) =>
+    (dp ? 1 - dot(n(t, b), dp) : 0) +
+    (df ? (dp ? 0.6 : 1) * (1 - dot(fi(t, b, d), df)) : 0) +
+    1e-4 * (b / 90) ** 2;
+  let best: [number, number, number] = [0, clampB(0), clampD(o.dev ?? 0)];
+  if (dp) {
+    const b = o.bend ?? (Math.asin(Math.max(-1, Math.min(1, dp[1]))) * 180) / Math.PI;
+    const t = (Math.atan2(-dp[2], -side * dp[0]) * 180) / Math.PI;
+    best = [clampT(t), clampB(b), 0];
+    best[2] = bestDev(best[0], best[1]);
+  } else if (df) {
+    let c = Infinity;
+    for (let t = -90; t <= 90; t += 15)
+      for (let b = -AIM_BEND; b <= AIM_BEND; b += 15) {
+        const bb = clampB(b);
+        const d = bestDev(t, bb);
+        const v = cost(t, bb, d);
+        if (v < c - 1e-12) [c, best] = [v, [t, bb, d]];
+        if (o.bend !== undefined) break;
+      }
+  }
+  if ((dp || df) && !o.fast) {
+    // tinh chỉnh trong hộp giới hạn: đúng cả khi lời giải đúng nằm ngoài giới hạn
+    let c = cost(...best);
+    for (let step = 8; step > 0.02; step /= 2)
+      for (let moved = true; moved;) {
+        moved = false;
+        for (const [i, dx] of [
+          [0, step],
+          [0, -step],
+          [1, step],
+          [1, -step],
+          [2, step],
+          [2, -step],
+        ]) {
+          const q: [number, number, number] = [...best];
+          q[i] += dx;
+          q[0] = clampT(q[0]);
+          q[1] = clampB(q[1]);
+          q[2] = clampD(q[2]);
+          const v = cost(...q);
+          if (v < c - 1e-12) [c, best, moved] = [v, q, true];
+        }
+      }
+  }
+  const [t, b, d] = best;
+  return {
+    turn: t,
+    bend: b,
+    dev: d,
+    ...(dp && { palmErr: ang(n(t, b), dp) }),
+    ...(df && { fingerErr: ang(fi(t, b, d), df) }),
+  };
+}
+
+/** Một tay đã giải: đích đã quy về số, số bàn tay, và độ lệch còn lại so với cái đã khai */
+export interface AimReport {
+  /** Mốc của đích (`at` là toạ độ thô với điểm khác cổ tay) và khe từ điểm bàn tay tới đích, rig; chỉ khi phần đích đủ `1` */
+  reach?: { to: BodyMark | "at"; point: HandPoint; gap: number };
+  /** Góc lệch còn lại của lòng tay, của ngón so với hướng đã khai, độ */
+  palm?: number;
+  fingers?: number;
+  /** Hai tay cùng bám vào tay kia: tay giải trước dùng chỗ chưa giải của tay kia */
+  cycle?: boolean;
+}
+
+const hasTerms = (r: ReachIn | undefined) => !!(r && r.w > 0 && r.terms?.length);
+const usesOther = (r: ReachIn | undefined, a: Aim | undefined) =>
+  !!(
+    (r && r.w > 0 && r.terms?.some((t) => isOtherHand(t.to))) ||
+    a?.terms.some((t) => isOtherHand(t.palm?.to) || isOtherHand(t.fingers?.to))
+  );
+
+/** Có gì phải giải: đích có số hạng, bàn tay theo ý định */
+export function needsSolve(sp: ActInput): boolean {
+  const P = sp.pose;
+  const h = sp.world?.hands;
+  return !!(
+    hasTerms(P.reach?.af) ||
+    hasTerms(P.reach?.an) ||
+    P.aim?.af ||
+    P.aim?.an ||
+    hasTerms(h?.near) ||
+    hasTerms(h?.far) ||
+    h?.near?.aim ||
+    h?.far?.aim
+  );
+}
+
+/** Bỏ phần theo mốc và ý định, giữ số ước lượng: cho chỗ không giải được (không có `world`, không biết nhân vật) */
+export function plainActing<T extends ActInput>(sp: T): T {
+  if (!needsSolve(sp)) return sp;
+  const strip = (r: ReachIn | undefined) =>
+    r && ({ at: r.at, ...(r.elbow && { elbow: r.elbow }), w: r.w } as ReachIn);
+  const P = sp.pose;
+  const reach = P.reach && { af: strip(P.reach.af), an: strip(P.reach.an) };
+  const h0 = sp.world?.hands;
+  // đích thế giới theo mốc không có chỗ ước lượng: bỏ
+  const marked = (r: ReachIn | undefined) => (r?.terms?.some((t) => t.to) ? undefined : r);
+  const h = h0 && { near: marked(h0.near), far: marked(h0.far) };
+  return {
+    ...sp,
+    pose: { ...P, ...(reach && { reach }), aim: undefined },
+    ...(sp.world && {
+      world: { ...sp.world, ...(h && { hands: { near: strip(h.near), far: strip(h.far) } }) },
+    }),
+  };
+}
+
+/** Khuỷu được xoay quanh trục vai → cổ tay tới ngần này độ khi hành động khai hướng ngón, để ngón theo được hướng ấy */
+export const AIM_SWIVEL = 90;
+const SWIVEL_STEP = 15;
+/** Giá mỗi độ xoay khuỷu khỏi hướng đã khai, quy ra độ lệch của lòng tay */
+const SWIVEL_COST = 0.08;
+
+/** Quay `v` quanh trục đơn vị `u` một góc `a` (radian) */
+const spin = (v: V3, u: V3, a: number): V3 => {
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  return add(add(mul(v, c), mul(cross(u, v), s)), mul(u, dot(u, v) * (1 - c)));
+};
+
+function solveActing(
+  T: Trunk3,
+  sp: ActInput,
+): { input: ActInput; report: Record<"R" | "L", AimReport> } {
+  const report = { R: {}, L: {} } as Record<"R" | "L", AimReport>;
+  if (!needsSolve(sp)) return { input: sp, report };
+  const P0 = sp.pose;
+  const W0 = sp.world!;
+  let P: PoseIn = { ...P0, reach: { ...P0.reach }, hand: { ...P0.hand }, aim: undefined };
+  const hands: ActHands = { ...W0.hands };
+  const { near, s } = T;
+  const k = T.hand ? T.hand.k * s : 1;
+  const long = T.hand ? T.hand.long * s : 1;
+  const state = (A: ReturnType<typeof arm3>, side: number): HandState => ({
+    at: A.wr,
+    R: A.Rw,
+    k,
+    long,
+    v: A.v,
+    side,
+    ...(!T.hand && { stick: mul(A.grip, s) }),
+  });
+  const sides = [near, -near];
+  const dep = (side: number) => {
+    const rw = side === near ? W0.hands?.near : W0.hands?.far;
+    const ch = side === near ? "an" : "af";
+    return usesOther(P0.reach?.[ch], P0.aim?.[ch]) || usesOther(rw, rw?.aim);
+  };
+  // tay bám vào tay kia giải sau tay kia
+  if (dep(near) && !dep(-near)) sides.reverse();
+  const cycle = dep(near) && dep(-near);
+  const done: Partial<Record<number, HandState>> = {};
+  const fromRig = (p: readonly number[]): V3 => [p[0] * 0.01, -p[1] * 0.01, -p[2] * 0.01];
+  for (const side of sides) {
+    const ch = side === near ? "an" : "af";
+    const wk = side === near ? "near" : "far";
+    const rb = P0.reach?.[ch];
+    const rw = W0.hands?.[wk];
+    const aimB = P0.aim?.[ch];
+    const aimW = rw && rw.w > 0 ? rw.aim : undefined;
+    if (!hasTerms(rb) && !hasTerms(rw) && !aimB && !aimW) continue;
+    const other = done[-side] ?? state(arm3(T, P, hands, side * -1), -side);
+    const rep: AimReport = cycle ? { cycle: true } : {};
+    const raw = actHand(P0, ch);
+    const fingersV = raw.slice(2);
+    const body = (v: readonly number[]): V3 => [side * v[2], -v[1], v[0]];
+    /** Điểm đích (three) của một số hạng và điểm bàn tay đặt vào đó */
+    const goal = (t: ReachTerm, world: boolean): [V3, HandPoint] => [
+      t.to
+        ? markAt(T, { to: t.to, side: t.side, offset: t.offset }, side, other)
+        : world
+          ? fromRig(t.at!)
+          : T.frame.point(mul(body(t.at!), 0.01 * T.B.height)),
+      t.point ?? (t.to ? "palm" : "wrist"),
+    ];
+    /** Cổ tay (three) đưa các điểm bàn tay vào đích khi khung bàn tay là `R`, góc ngón `v` */
+    const wristFor = (terms: readonly ReachTerm[], world: boolean, R: M3, v: readonly number[]) => {
+      let acc: V3 = ZERO3;
+      let sum = 0;
+      for (const t of terms) {
+        const [p, pt] = goal(t, world);
+        const h: HandState = {
+          at: ZERO3,
+          R,
+          k,
+          long,
+          v,
+          side,
+          ...(!T.hand && { stick: [0, (-(BONES3.limb * T.w.sleeve) / 10) * s, 0] as V3 }),
+        };
+        acc = add(acc, mul(sub(p, handAt(h, pt)), t.k));
+        sum += t.k;
+      }
+      return mul(acc, 1 / (sum || 1));
+    };
+    const toBody = (p: V3): [number, number, number] => {
+      const v = mul(mv(tr(T.Rr), sub(p, T.root)), 1 / (s * 0.01 * T.B.height));
+      return [v[2], -v[1], side * v[0]];
+    };
+    const dirOf = (d: AimDir | undefined, h: HandState, from: HandPoint) =>
+      d &&
+      (d.to
+        ? sub(markAt(T, { to: d.to, side: d.side, offset: d.offset }, side, other), handAt(h, from))
+        : bodyDir(T, side, d.v!));
+    // lệch cổ tay chỉ đọc ở kênh nâng: kênh giữ 2D thì rig không lấy nó cho ngón
+    const lifted = !!P0.lift?.[ch];
+    const dev0 = lifted ? num(P0[ch][2]) : 0;
+    /** Xoay, gập, lệch cổ tay của các số hạng ý định cộng theo phần; `fast` bỏ bước tinh chỉnh (thử hướng khuỷu) */
+    const solveAim = (
+      aim: Aim,
+      base: [number, number, number],
+      A: ReturnType<typeof arm3>,
+      h: HandState,
+      fast = false,
+    ) => {
+      const out: [number, number, number] = [0, 0, 0];
+      let cost = 0;
+      const err = { palm: 0, fingers: 0, wp: 0, wf: 0 };
+      for (const a of aim.terms) {
+        if (a.raw || a.keep || (!a.palm && !a.fingers)) {
+          const r = a.raw ? [a.raw[0], a.raw[1], base[2]] : base;
+          for (let i = 0; i < 3; i++) out[i] += a.k * r[i];
+          continue;
+        }
+        const sol = aimWrist(A.Re, side, dirOf(a.palm, h, "palm"), dirOf(a.fingers, h, "wrist"), {
+          bend: a.bend,
+          dev: base[2],
+          ...(!lifted && { fixedDev: 0 }),
+          fast,
+        });
+        out[0] += a.k * sol.turn;
+        out[1] += a.k * sol.bend;
+        out[2] += a.k * sol.dev;
+        cost += a.k * ((sol.palmErr ?? 0) + 0.6 * (sol.fingerErr ?? 0));
+        if (sol.palmErr !== undefined)
+          [err.palm, err.wp] = [err.palm + a.k * sol.palmErr, err.wp + a.k];
+        if (sol.fingerErr !== undefined)
+          [err.fingers, err.wf] = [err.fingers + a.k * sol.fingerErr, err.wf + a.k];
+      }
+      return {
+        tbd: out,
+        cost,
+        palm: err.wp > 0.5 ? err.palm / err.wp : undefined,
+        fingers: err.wf > 0.5 ? err.fingers / err.wf : undefined,
+      };
+    };
+    // nguồn đích đang lái tay: đích thế giới đè đích hệ thân
+    const drive = rw && rw.w > 0 ? "world" : rb && rb.w > 0 ? "body" : undefined;
+    const elbow0: V3 | undefined =
+      drive === "world"
+        ? rw!.elbow
+          ? ([rw!.elbow[0], -rw!.elbow[1], -rw!.elbow[2]] as V3)
+          : T.frame.dir(body(REACH_ELBOW))
+        : drive === "body"
+          ? T.frame.dir(body(rb!.elbow ?? REACH_ELBOW))
+          : undefined;
+    // hướng ngón khai trong ý định: khuỷu được xoay quanh trục vai → cổ tay để ngón theo kịp
+    const wantsFingers =
+      !!elbow0 && [aimB, aimW].some((a) => a?.terms.some((t) => t.fingers && t.k > 0.01));
+    let tbd: [number, number, number] = [raw[0] ?? 0, raw[1] ?? 0, dev0];
+    let elbow = elbow0;
+    /** Đặt đích, hướng khuỷu, bàn tay và lệch cổ tay vào tư thế đang giải */
+    const place = (R: M3, q: readonly number[], el: V3 | undefined) => {
+      const v = [q[0], q[1], ...fingersV];
+      if (hasTerms(rb)) {
+        const at = toBody(wristFor(rb!.terms!, false, R, v));
+        const e = drive === "body" && el ? toBodyDir(T, side, el) : rb!.elbow;
+        P = { ...P, reach: { ...P.reach, [ch]: { at, ...(e && { elbow: e }), w: rb!.w } } };
+      } else if (drive === "body" && el && wantsFingers)
+        P = { ...P, reach: { ...P.reach, [ch]: { ...rb!, elbow: toBodyDir(T, side, el) } } };
+      if (rw) {
+        const g = hasTerms(rw) ? wristFor(rw.terms!, true, R, v) : fromRig(rw.at);
+        const e =
+          drive === "world" && el && (wantsFingers || rw.elbow)
+            ? [el[0], -el[1], -el[2]]
+            : rw.elbow;
+        hands[wk] = { at: [g[0] * 100, -g[1] * 100, -g[2] * 100], ...(e && { elbow: e }), w: rw.w };
+      }
+      const arm = [...P[ch]];
+      if (lifted) arm[2] = q[2];
+      P = { ...P, [ch]: arm, hand: { ...P.hand, [ch]: v } };
+    };
+    const handR = (A: ReturnType<typeof arm3>, q: readonly number[]) =>
+      mm(A.Re, wristTurn(q[0], q[1], q[2], side));
+    let A = arm3(T, P, hands, side);
+    let last: V3 | undefined;
+    for (let i = 0; i < AIM_ITER; i++) {
+      const R = handR(A, tbd);
+      if (wantsFingers && elbow0) {
+        // thử xoay khuỷu quanh trục vai → đích: chọn góc cho ngón lệch ít nhất, ưu tiên gần hướng khuỷu đã khai
+        place(R, tbd, elbow0);
+        const S = arm3(T, P, hands, side).sh;
+        const goalW =
+          drive === "world"
+            ? fromRig(hands[wk]!.at)
+            : T.frame.point(mul(body(P.reach![ch]!.at), 0.01 * T.B.height));
+        const u = unit(sub(goalW, S));
+        const tryAt = (a: number) => {
+          const el = spin(elbow0, u, a * D);
+          place(R, tbd, el);
+          const B = arm3(T, P, hands, side);
+          const h = state(B, side);
+          let cost = SWIVEL_COST * Math.abs(a);
+          for (const aim of [aimB, aimW]) if (aim) cost += solveAim(aim, tbd, B, h, true).cost;
+          return { cost, a, el };
+        };
+        let best = tryAt(0);
+        for (let a = -AIM_SWIVEL; a <= AIM_SWIVEL; a += SWIVEL_STEP) {
+          const c = tryAt(a);
+          if (c.cost < best.cost - 1e-9) best = c;
+        }
+        for (let step = SWIVEL_STEP / 2; step >= 1; step /= 2)
+          for (const a of [best.a - step, best.a + step])
+            if (Math.abs(a) <= AIM_SWIVEL) {
+              const c = tryAt(a);
+              if (c.cost < best.cost - 1e-9) best = c;
+            }
+        elbow = best.el;
+      }
+      place(R, tbd, elbow);
+      A = arm3(T, P, hands, side);
+      const h = state(A, side);
+      let nb: [number, number, number] = [raw[0] ?? 0, raw[1] ?? 0, dev0];
+      if (aimB) {
+        const r = solveAim(aimB, nb, A, h);
+        nb = r.tbd;
+        [rep.palm, rep.fingers] = [r.palm, r.fingers];
+      }
+      if (aimW) {
+        const r = solveAim(aimW, nb, A, h);
+        const ww = Math.min(1, rw!.w);
+        nb = nb.map((x, j) => x + (r.tbd[j] - x) * ww) as [number, number, number];
+        if (ww >= 0.999) [rep.palm, rep.fingers] = [r.palm, r.fingers];
+      }
+      tbd = nb;
+      const moved = last ? len(sub(A.wr, last)) : Infinity;
+      last = A.wr;
+      if (moved < 1e-5 && i > 0) break;
+    }
+    place(handR(A, tbd), tbd, elbow);
+    A = arm3(T, P, hands, side);
+    const h = state(A, side);
+    const full =
+      rw && rw.w >= 0.999 && hasTerms(rw)
+        ? rw
+        : rb && rb.w >= 0.999 && hasTerms(rb) && !(rw && rw.w > 0)
+          ? rb
+          : undefined;
+    if (full) {
+      const main = full.terms!.reduce((a, b) => (b.k > a.k ? b : a));
+      const [want, pt] = goal(main, full === rw);
+      rep.reach = {
+        to: main.to ?? "at",
+        point: pt,
+        gap: (len(sub(handAt(h, pt), want)) * 100) / s,
+      };
+    }
+    report[T.tag(side)] = rep;
+    done[side] = h;
+  }
+  return {
+    input: {
+      pose: { ...P, aim: undefined },
+      world: { ...W0, ...(W0.hands && { hands }) },
+    },
+    report,
+  };
+}
+
+/** Hướng three ra hệ thân `[tiến, y, ra ngoài]` của tay bên `side` */
+const toBodyDir = (T: Trunk3, side: number, d: V3): [number, number, number] => {
+  const v = mv(tr(T.Rr), d);
+  return [v[2], -v[1], side * v[0]];
+};
+
+/**
+ * Đích theo mốc (`Reach.terms`) và bàn tay theo ý định (`Pose.aim`, `aim` của `world.hands`) của một người 3D quy về số
+ * mà `act` và `actJoints` đọc: đích cổ tay hệ thân, thế giới và `turn` / `bend` của bàn tay. Mốc tính trên đúng nhân vật
+ * `c` ở tư thế ấy; tay bám vào tay kia giải sau tay kia. Không có gì phải giải thì trả nguyên `sp`.
+ * docs/01-rig.md#đích-theo-mốc
+ */
+export function resolveActing<T extends ActInput>(c: ActCharacter, sp: T): T {
+  if (!needsSolve(sp)) return sp;
+  const T0 = trunk3(c, sp);
+  if (!T0) return plainActing(sp);
+  const r = solveActing(T0, sp).input;
+  return { ...sp, pose: r.pose, world: r.world } as T;
+}
+
+/** Như `resolveActing`, kèm độ lệch còn lại từng tay (`AimReport`): `check`, `scene_probe` đọc */
+export function actAim(
+  c: ActCharacter,
+  sp: ActInput,
+): { input: ActInput; report: Record<"R" | "L", AimReport> } | undefined {
+  const T0 = trunk3(c, sp);
+  return T0 && solveActing(T0, sp);
 }
 
 const rigOf = (p: V3): V3 => [p[0] * 100, -p[1] * 100, -p[2] * 100];
@@ -664,4 +1367,73 @@ export function actPalms(
     };
   }
   return out;
+}
+
+/** Người mẫu cho `reachEstimate`: người mặc đồ đầu `human` số đo mặc định */
+let sample: ActCharacter | undefined;
+
+/**
+ * Cổ tay hệ thân `[tiến, y, ra ngoài]` (rig, `height = 1`) ước lượng cho một đích JSON trên người mẫu đứng thẳng, thân cúi
+ * `torso`: `at` của mẫu đích theo mốc (`Reach.at`), góc dự phòng của người 2D (`reachAngles`). Người 3D không đọc số này
+ */
+export function reachEstimate(
+  r: {
+    at?: readonly number[];
+    to?: BodyMark;
+    side?: "same" | "other";
+    offset?: readonly number[];
+    point?: HandPoint;
+  },
+  torso = 0,
+): [number, number, number] {
+  if (r.at && (!r.point || r.point === "wrist")) return [r.at[0], r.at[1], r.at[2]];
+  if (!sample) {
+    const c = defaultCharacter();
+    c.palette.clad = true;
+    c.head.form = "human";
+    sample = c;
+  }
+  const z3 = [0, 0, 0];
+  const T = trunk3(sample, {
+    pose: { af: z3, an: z3, lf: z3, ln: z3, torso, head: z3, stretch: [1, 1, 1, 1, 1, 1, 1, 1] },
+    world: { hip: z3, yaw: Math.PI / 2, s: 1, flip: false },
+  })!;
+  const side = -1;
+  const k = T.hand ? T.hand.k : 1;
+  const long = T.hand ? T.hand.long : 1;
+  const p = r.to
+    ? markAt(T, { to: r.to, side: r.side, offset: r.offset }, side, undefined)
+    : T.frame.point(mul([side * r.at![2], -r.at![1], r.at![0]], 0.01));
+  // bàn tay dựng đứng, lòng tay vào thân: điểm khác cổ tay lùi về cổ tay dọc trục ấy
+  const pt = handPoint(r.point ?? (r.to ? "palm" : "wrist"), HAND_REST, side, k, long);
+  const w = sub(p, pt);
+  return [w[2] * 100, -w[1] * 100, side * w[0] * 100];
+}
+
+/**
+ * Chỗ của mốc thân `to` (toạ độ thế giới rig) trên người `c` ở khung `sp`, cho tay bên `hand` (`R` / `L`): đúng điểm mà
+ * đích theo mốc nhắm tới, gồm `offset`. Mốc trên tay kia đọc tay kia như đang vẽ. docs/01-rig.md#đích-theo-mốc
+ */
+export function bodyMarkAt(
+  c: ActCharacter,
+  sp: ActInput,
+  ref: { to: BodyMark; side?: "same" | "other"; offset?: readonly number[] },
+  hand: "R" | "L" = "R",
+): V3 | undefined {
+  const T = trunk3(c, sp);
+  if (!T) return undefined;
+  const side = hand === "R" ? -1 : 1;
+  const r = solveActing(T, sp).input;
+  const T2 = { ...T, P: r.pose, W: r.world! };
+  const A = arm3(T2, r.pose, r.world?.hands, -side);
+  const other: HandState = {
+    at: A.wr,
+    R: A.Rw,
+    k: T.hand ? T.hand.k * T.s : 1,
+    long: T.hand ? T.hand.long * T.s : 1,
+    v: A.v,
+    side: -side,
+    ...(!T.hand && { stick: mul(A.grip, T.s) }),
+  };
+  return rigOf(markAt(T, ref, side, other));
 }

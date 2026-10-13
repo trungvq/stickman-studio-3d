@@ -1,4 +1,5 @@
 import { add3, matMul, matVec, rotX, rotY, rotZ, type M3, type V3 } from "./lens";
+import type { AimDirJson } from "./bodyMark";
 
 /**
  * Bàn tay của người 3D mặc đồ: lòng bàn tay và năm ngón — ngón cái, trỏ, giữa, áp út, út — mỗi ngón hai đốt trên khớp;
@@ -32,6 +33,12 @@ export const HAND_POSES = {
   grip: { thumb: [55, 65, 10, 15], index: [45, 80], fingers: [50, 80], spread: 0 },
   point: { thumb: [45, 70, 25, 30], index: [0, 0], fingers: [90, 100], spread: 0 },
   fist: { thumb: [20, 85, 25, 30], index: [90, 85], fingers: [90, 85], spread: 0 },
+  cup: { thumb: [12, 18, 4, 6], index: [4, 6], fingers: [6, 8], spread: 1 },
+  pinch: { thumb: [55, 55, 15, 20], index: [45, 35], fingers: [70, 70], spread: 0 },
+  clasp: { thumb: [62, 55, 18, 22], index: [52, 62], fingers: [58, 66], spread: 0 },
+  flat: { thumb: [16, 4, 0, 0], index: [-4, -2], fingers: [-4, -2], spread: 1 },
+  hook: { thumb: [12, 20, 6, 10], index: [28, 96], fingers: [32, 100], spread: 0 },
+  edge: { thumb: [66, 45, 0, 5], index: [10, 6], fingers: [12, 8], spread: 1 },
 } as const satisfies Record<string, Fingers>;
 
 export type HandPose = keyof typeof HAND_POSES;
@@ -42,6 +49,31 @@ export const HAND_POSE_LABELS: Record<HandPose, string> = {
   grip: "cầm",
   point: "chỉ tay",
   fist: "nắm đấm",
+  cup: "khum",
+  pinch: "kẹp",
+  clasp: "nắm cổ tay",
+  flat: "đặt phẳng",
+  hook: "móc",
+  edge: "kẹp cạnh",
+};
+
+/**
+ * Tâm nắm của từng dáng trong khung bàn tay cỡ `1`, như `HAND_BONES.grip` (x về phía lòng tay, y dọc bàn tay, z về phía
+ * ngón cái): chỗ đồ cầm ngồi khi tay giữ dáng ấy. `grip` là chỗ treo đồ (`handGrip`); dáng khác dời đồ từ đó
+ * (`gripShift`). `rest` là dáng nghỉ
+ */
+export const HAND_GRIPS: Record<HandPose | "rest", V3> = {
+  rest: [0.035, -0.11, 0.01],
+  open: [0.03, -0.13, 0.01],
+  grip: [0.04, -0.088, 0],
+  point: [0.036, -0.09, 0.004],
+  fist: [0.03, -0.085, 0],
+  cup: [0.036, -0.11, 0.01],
+  pinch: [0.07, -0.106, 0.072],
+  clasp: [0.046, -0.105, 0.008],
+  flat: [0.03, -0.12, 0],
+  hook: [0.036, -0.124, 0],
+  edge: [0.045, -0.1, 0.035],
 };
 
 /**
@@ -69,12 +101,17 @@ export const fingerVec = (f: Fingers): number[] => [...f.thumb, ...f.index, ...f
 /** Bàn tay không ai ghi: cẳng tay trung tính (lòng tay quay vào thân), cổ tay thẳng, ngón thả lỏng */
 export const HAND_REST: HandVec = [0, 0, ...fingerVec(HAND_RELAXED)];
 
-/** Một mốc bàn tay trong JSON: tên dáng, hay dáng `pose` (bỏ trống là dáng nghỉ) với phần `w`, xoay và gập cổ tay */
+/**
+ * Một mốc bàn tay trong JSON: tên dáng, hay dáng `pose` (bỏ trống là dáng nghỉ) với phần `w`, xoay và gập cổ tay; hay
+ * hướng lòng tay (`palm`) và ngón (`fingers`) theo ý định — rig giải ra xoay và gập, `turn` khi ấy bị bỏ qua
+ */
 export interface HandKey {
   pose?: HandPose;
   w?: number;
   turn?: number;
   bend?: number;
+  palm?: AimDirJson;
+  fingers?: AimDirJson;
 }
 
 export const mixHand = (a: HandVec, b: HandVec, f: number): number[] =>
@@ -195,6 +232,55 @@ export const handGrip = (side: number, k = 1, long = k): V3 => {
   const [x, y, z] = HAND_BONES.grip;
   return [-side * x * k, y * long, z * k];
 };
+
+/** Độ rộng (độ, trên chín góc ngón) của phép hoà tâm nắm theo dáng gần nhất: dáng soạn đúng gần như trùng bảng */
+const GRIP_SPREAD = 12;
+
+/**
+ * Tâm nắm của bàn tay bên `side` theo góc ngón đang vẽ (`v`, `HAND_DOF`), khung bàn tay: hoà `HAND_GRIPS` theo độ gần của
+ * góc ngón với từng dáng (min mềm), nên đổi dần khi dáng hoà, đúng bảng khi đúng dáng
+ */
+export function handGripOf(v: HandVec, side: number, k = 1, long = k): V3 {
+  const f = v.slice(2);
+  let sum = 0;
+  const acc: V3 = [0, 0, 0];
+  for (const [name, g] of Object.entries(HAND_GRIPS) as [HandPose | "rest", V3][]) {
+    const ref = fingerVec(name === "rest" ? HAND_RELAXED : HAND_POSES[name]);
+    const d2 = ref.reduce((a, r, i) => a + (r - (f[i] ?? 0)) ** 2, 0);
+    const w = Math.exp(-d2 / GRIP_SPREAD ** 2);
+    sum += w;
+    for (let i = 0; i < 3; i++) acc[i] += g[i] * w;
+  }
+  const [x, y, z] = sum > 1e-12 ? acc.map((a) => a / sum) : HAND_BONES.grip;
+  return [-side * x * k, y * long, z * k];
+}
+
+/** Đồ cầm dời bấy nhiêu khỏi chỗ treo (`handGrip`) khi tay giữ dáng `pose`, khung bàn tay */
+export const gripShift = (pose: HandPose, side: number, k = 1, long = k): V3 => {
+  const [x, y, z] = HAND_GRIPS[pose].map((g, i) => g - HAND_BONES.grip[i]);
+  return [-side * x * k, y * long, z * k];
+};
+
+/**
+ * Điểm `point` của bàn tay bên `side` cỡ `k`, cỡ dọc `long` ở góc ngón `v`, trong khung bàn tay: cổ tay (gốc), giữa lòng
+ * tay và giữa mu tay (trên mặt da lòng bàn tay), tâm nắm (`handGripOf`), đầu ngón giữa
+ */
+export function handPoint(
+  point: "wrist" | "palm" | "back" | "grip" | "tip",
+  v: HandVec,
+  side: number,
+  k = 1,
+  long = k,
+): V3 {
+  if (point === "wrist") return [0, 0, 0];
+  if (point === "grip") return handGripOf(v, side, k, long);
+  const mid = (-HAND_BONES.palm.len * long) / 2;
+  const thick = HAND_BONES.palm.half[0] * k;
+  if (point === "palm") return [-side * thick, mid, 0];
+  if (point === "back") return [side * thick, mid, 0];
+  const f = handFrames(v, side, k, long).middle1;
+  return add3(f.o, matVec(f.R, [0, -f.len, 0]));
+}
 
 /**
  * Khung bàn tay trong khung cổ tay theo xoay cẳng tay `turn`, gập cổ tay `bend` (của `HandVec`) và lệch cổ tay `dev` (số

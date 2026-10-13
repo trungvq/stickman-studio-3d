@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 19,
+  "name": "phone-landscape-3d",
+  "duration": 1,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": ["armNear", "armFar", "hand"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "reach": {
+        "armNear": { "to": "chest", "offset": [48, -36, 12], "point": "grip", "elbow": [-0.3, 1, 0.8] },
+        "armFar": { "to": "otherGrip", "offset": [0, 0, 26], "point": "grip", "elbow": [-0.3, 1, 0.8] }
+      },
+      "hand": {
+        "armNear": { "pose": "edge", "palm": "in", "fingers": "up" },
+        "armFar": { "pose": "edge", "palm": "in", "fingers": "up" }
+      },
+      "ease": "smooth"
+    }
+  ],
+  "events": []
+}

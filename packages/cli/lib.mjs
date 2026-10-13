@@ -1992,6 +1992,7 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
         // Khuỷu gập ngược khi giơ tay, mốc ghi kênh ngoài `mask`: schema không biết, hình chỉ sai — docs/00
         for (const problem of rig.armFoldProblems(r.data)) warn(`actions/${f}: ${problem}`);
         for (const problem of rig.maskProblems(r.data)) warn(`actions/${f}: ${problem}`);
+        for (const problem of rig.aimProblems?.(r.data) ?? []) warn(`actions/${f}: ${problem}`);
         // Cắt cứng giấu trong file, đường nối vòng `wrap` nhảy — docs/03-scene.md#giật-trên-hình
         for (const problem of rig.actionSnapProblems(r.data)) warn(`actions/${f}: ${problem}`);
       }
@@ -2273,6 +2274,16 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
           warn(`scenes/${name}.json: ${problem}`);
       } catch (e) {
         warn(`scenes/${name}.json: không đo được lòng bàn tay — ${e.message}`);
+      }
+      // Đích theo mốc thân, lòng tay theo ý định không đạt — docs/03-scene.md#bàn-tay-theo-ý-định
+      try {
+        for (const problem of rig.sceneAimProblems?.(rt, {
+          hold: palm.hold,
+          characterOf: (m) => characterOf(m)?.character,
+        }) ?? [])
+          warn(`scenes/${name}.json: ${problem}`);
+      } catch (e) {
+        warn(`scenes/${name}.json: không đo được đích theo mốc — ${e.message}`);
       }
     }
   }
