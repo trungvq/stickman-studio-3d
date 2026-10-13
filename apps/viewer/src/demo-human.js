@@ -1,4 +1,5 @@
-import { act, addItem, Batch, body3, box, dress, fromCharacter, GLASSES_PRESETS, parseAction, parseCharacter, parseScene, resolveScene, sceneAt, SCULPT_PRESETS } from '@stickman3d/rig';
+import * as THREE from 'three';
+import { act, addItem, Batch, body3, box, dress, fromCharacter, wardrobe, GLASSES_PRESETS, parseAction, parseCharacter, parseScene, resolveScene, sceneAt, SCULPT_PRESETS } from '@stickman3d/rig';
 import { ACTIONS } from './demos.js';
 import { SAMPLE_ITEMS } from './demo-hold.js';
 
@@ -8,7 +9,7 @@ import { SAMPLE_ITEMS } from './demo-hold.js';
 const STICK = new URLSearchParams(location.search).has('stick');
 
 /** JSON nhân vật mẫu: số đo để trống lấy mặc định của schema, `rig` và `palette` đè lên */
-function character(name, { rig, palette, face, garment, accent, hair, hairColor, skirt, glasses }) {
+function character(name, { rig, palette, face, garment, accent, hair, hairColor, skirt, glasses, neck, items }) {
   const json = {
     name,
     ...(rig && { rig }),
@@ -20,7 +21,9 @@ function character(name, { rig, palette, face, garment, accent, hair, hairColor,
       hair: { src: 'sculpt', color: hairColor, sculpt: SCULPT_PRESETS[hair].sculpt },
       ...(skirt ? { hem: { src: 'sculpt', color: skirt.color, skirt: skirt.shape } } : {}),
       ...(glasses ? { faceAcc: { src: 'sculpt', color: '#3a2a22', glasses: GLASSES_PRESETS[glasses].glasses } } : {}),
+      ...(neck ? { neck: { src: 'sculpt', ...neck } } : {}),
     },
+    ...(items && { items }),
   };
   if (STICK) {
     delete json.head;
@@ -144,6 +147,53 @@ const models = () => ({
     garment: { style: 'wrap', hem: 6, wrap: { band: 7, bandColor: '#7a2e3a', letters: { left: '楓荘' } }, badge: { wakaba: true, text: 'よし江' } },
     hair: 'curly', hairColor: '#3b2a22',
   }),
+  /** Nam bụng phệ, polo đỏ thẫm cổ dựng ngắn tay, quần kem */
+  POLO: character('polo-bung', {
+    rig: { shoulderHalf: 44, hipHalf: 24 },
+    palette: { garment: '#d7263d', sleeve: '#d7263d', sleeveLength: 0.28, trouser: '#efe4cf', shoe: '#3a2a20', sleeveWidth: 17, trouserWidth: 21 },
+    garment: { style: 'polo', collarUp: 1, belly: 22 }, hair: 'slick', hairColor: '#2a1c15',
+    neck: { shades: {} },
+  }),
+  /** Nam yukata kem tay loe tới cổ tay, viền cổ chàm, đai thấp nút dẹt, vạt dài tới bắp chân */
+  YUKATA: character('yukata-loe', {
+    palette: { garment: '#efe4cf', sleeve: '#efe4cf', sleeveFlare: 12, trouser: '#efe4cf', shoe: '#9c5a3c' },
+    garment: { style: 'wrap', hem: 5, wrap: { band: 6, bandColor: '#2b3a67', obi: { color: '#2b3a67', y: 30, width: 16, lift: 3, knot: 'kai' } } },
+    hair: 'short', hairColor: '#2a1c15',
+    skirt: { color: '#efe4cf', shape: { style: 'wrap', length: 150, flare: 0, pleats: 0 } },
+  }),
+  /** Áo bếp cổ chéo kem, tay xắn, khăn chàm vắt vai trái */
+  CHEF_TOWEL: character('khan-chef', {
+    rig: { height: 1.08, shoulderHalf: 44 },
+    palette: { garment: '#f3ebdd', sleeve: '#f3ebdd', sleeveLength: 0.5, trouser: '#5e3f2c', shoe: '#2a2420', sleeveWidth: 18, trouserWidth: 19 },
+    garment: { style: 'wrap', hem: 8 }, hair: 'buzz', hairColor: '#4a4440',
+    neck: { color: '#2b3a67', drape: { side: 'left', width: 16, front: 90, back: 70 } },
+  }),
+  /** Nam yukata chàm tay loe, khăn tắm kem vắt vai phải */
+  BATH: character('khan-tam', {
+    palette: { garment: '#2b3a67', sleeve: '#2b3a67', sleeveFlare: 10, trouser: '#2b3a67', shoe: '#9c5a3c' },
+    garment: { style: 'wrap', hem: 5, wrap: { band: 6, bandColor: '#1e2a4a', obi: { color: '#efe4cf', y: 30, width: 16, lift: 3, knot: 'kai' } } },
+    hair: 'baldLight', hairColor: '#6a5a50',
+    skirt: { color: '#2b3a67', shape: { style: 'wrap', length: 150, flare: 0, pleats: 0 } },
+    neck: { color: '#efe4cf', drape: { side: 'right', width: 22, front: 100, back: 80, thick: 3.5 } },
+  }),
+  /** Nam yukata kem tới đùi (bản ngồi), đồ thay: vạt dài bản đứng, polo đỏ thẫm cổ dựng bụng phệ, kính gài nẹp */
+  WARDROBE: character('tu-do', {
+    palette: { garment: '#efe4cf', sleeve: '#efe4cf', sleeveFlare: 10, trouser: '#efe4cf', shoe: '#9c5a3c' },
+    garment: { style: 'wrap', hem: 40, wrap: { band: 6, bandColor: '#2b3a67', obi: { color: '#2b3a67', y: 30, width: 16, lift: 3, knot: 'kai' } } },
+    hair: 'short', hairColor: '#2a1c15',
+    items: {
+      stand: { hem: { src: 'sculpt', color: '#efe4cf', skirt: { style: 'wrap', length: 150, flare: 0, pleats: 0 } } },
+      polo: { torso: { src: 'sculpt', color: '#d7263d', garment: { style: 'polo', collarUp: 1, belly: 18 } } },
+      shades: { neck: { src: 'sculpt', shades: {} } },
+    },
+  }),
+  /** Nam áo cổ chéo tới đùi trên bụng phệ, đai thấp dưới bụng */
+  ROBE_BELLY: character('co-cheo-bung', {
+    rig: { shoulderHalf: 42, hipHalf: 24 },
+    palette: { garment: '#efe4cf', sleeve: '#efe4cf', sleeveWidth: 17, trouser: '#efe4cf', shoe: '#9c5a3c', trouserWidth: 20 },
+    garment: { style: 'wrap', hem: 40, belly: 22, wrap: { band: 6, bandColor: '#2b3a67', obi: { color: '#9c5a3c', y: 14, width: 14, lift: 3, knot: 'kai' } } },
+    hair: 'baldLight', hairColor: '#5a4a40',
+  }),
 });
 
 const keyAction = (name, mask, keys, extra = {}) => {
@@ -167,6 +217,12 @@ const own = () => ({
   // cúi chào sâu 45°, hai tay giơ thẳng ra trước
   'bow45-3d': keyAction('bow45-3d', ['torso'], [{ t: 0, pose: { torso: 45 }, ease: 'linear' }], { authoredAt: 'side' }),
   'reach-3d': keyAction('reach-3d', ['armNear', 'armFar'], [{ t: 0, pose: { armNear: [84, 6, 0], armFar: [84, 6, 0] }, ease: 'linear' }], { authoredAt: 'side' }),
+  // giơ tay gần ra trước ngang ngực, bàn tay xoè
+  'reach-out-3d': keyAction('reach-out-3d', ['armNear'], [{ t: 0, pose: {}, reach: { armNear: { at: [78, -92, 8], elbow: [0, 1, 0.5] } }, hand: { armNear: 'open' }, ease: 'linear' }], { authoredAt: 'side', schemaVersion: 18 }),
+  // chắp hai tay trước bụng
+  'hands-front-3d': keyAction('hands-front-3d', ['armNear', 'armFar'], [{ t: 0, pose: {}, reach: { armNear: { at: [34, -50, -6], elbow: [-0.2, 1, 0.5] }, armFar: { at: [36, -46, -9], elbow: [-0.2, 1, 0.5] } }, ease: 'linear' }], { authoredAt: 'side', schemaVersion: 18 }),
+  // khoanh tay trước ngực: hai cẳng tay chéo ngang, khuỷu chĩa ra ngoài
+  'arms-fold-3d': keyAction('arms-fold-3d', ['armNear', 'armFar'], [{ t: 0, pose: {}, reach: { armNear: { at: [66, -84, -24], elbow: [0, 0.6, 1] }, armFar: { at: [58, -76, -26], elbow: [0, 0.6, 1] } }, hand: { armNear: 'fist', armFar: 'fist' }, ease: 'linear' }], { authoredAt: 'side', schemaVersion: 18 }),
   'face-wry': keyAction('face-wry', ['face'], [{ t: 0, pose: {}, face: { mouth: 'wryOpen', brow: 'skeptical', eyes: 'open' }, ease: 'linear' }]),
 });
 
@@ -234,6 +290,39 @@ const SCENES = {
     ],
     props: [stool(150, 0)],
   }),
+  // đồ thêm: polo cổ dựng trên bụng phệ, yukata tay loe, cổ chéo đai trên bụng phệ, áo bếp khăn vắt vai, yukata khăn tắm — hàng đứng nhìn ống kính
+  'human-extra': ({ POLO, YUKATA, ROBE_BELLY, CHEF_TOWEL, BATH }) => ({
+    cast: [POLO, YUKATA, ROBE_BELLY, CHEF_TOWEL, BATH].map((c, i) => ({ id: `e${i}`, c, world: { at: i === 4 ? [-300, 0, 250] : [(i - 1) * 150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('face-calm'))] })),
+  }),
+  // đồ thêm diễn: polo ngồi ghế; yukata giơ tay, chắp tay, cầm cốc; cổ chéo bụng phệ và áo bếp khoanh tay
+  'human-extra-act': ({ POLO, YUKATA, ROBE_BELLY, CHEF_TOWEL }) => ({
+    cast: [
+      { id: 'x0', c: POLO, world: { at: [-300, -SEAT, 0], yaw: 90, sit: true, floor: 0 }, tracks: [track(clip('sit-3d')), track(clip('hands-knees-3d')), track(clip('face-calm'))] },
+      { id: 'x1', c: YUKATA, world: { at: [-150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('reach-out-3d')), track(clip('face-calm'))] },
+      { id: 'x2', c: YUKATA, world: { at: [0, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('hands-front-3d')), track(clip('face-calm'))] },
+      { id: 'x3', c: YUKATA, world: { at: [150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('hold-mug')), track(clip('face-calm'))], equip: { handNear: 'mug' } },
+      { id: 'x4', c: ROBE_BELLY, world: { at: [300, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('arms-fold-3d')), track(clip('face-calm'))] },
+      { id: 'x7', c: CHEF_TOWEL, world: { at: [450, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('arms-fold-3d')), track(clip('face-calm'))] },
+    ],
+    props: [stool(-300, 0)],
+  }),
+  // đồ thêm đi và cúi: polo, yukata khăn tắm đi sang phải; áo bếp khăn vắt vai, yukata tay loe cúi chào
+  'human-extra-move': ({ POLO, YUKATA, CHEF_TOWEL, BATH }) => ({
+    cast: [
+      { id: 'm0', c: POLO, world: { path: [{ t: 0, at: [-450, 0, 0], yaw: 0 }, { t: 4, at: [50, 0, 0], yaw: 0 }] }, tracks: [track(clip('walk')), track(clip('face-calm'))] },
+      { id: 'm1', c: BATH, world: { path: [{ t: 0, at: [-250, 0, 250], yaw: 0 }, { t: 4, at: [250, 0, 250], yaw: 0 }] }, tracks: [track(clip('walk')), track(clip('face-calm'))] },
+      { id: 'm2', c: CHEF_TOWEL, world: { at: [250, 0, 0], yaw: 90 }, tracks: [track(clip('bow-3d')), track(clip('face-calm'))] },
+      { id: 'm3', c: YUKATA, world: { at: [500, 0, 0], yaw: 90 }, tracks: [track(clip('bow-3d')), track(clip('face-calm'))] },
+    ],
+  }),
+  // đổi đồ theo `equip`: yukata bản đứng (`cast[].equip`), bản ngồi (mảnh nền), và người thay polo, gài kính ở giây 1
+  'human-extra-equip': ({ WARDROBE }) => ({
+    cast: [
+      { id: 'q0', c: WARDROBE, world: { at: [-150, 0, 0], yaw: 90 }, equip: { hem: 'stand' }, tracks: [track(clip('stand-3d')), track(clip('face-calm'))] },
+      { id: 'q1', c: WARDROBE, world: { at: [0, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('face-calm'))] },
+      { id: 'q2', c: WARDROBE, world: { at: [150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('face-calm', 0), clip('face-calm', 1, { equip: { torso: 'polo', neck: 'shades' } }))] },
+    ],
+  }),
   // cận mặt: ngượng đỏ mặt dần (`blush` của hành động), buồn, nói, méo há
   // áo khoác vạt mở và thẻ tên: hàng đứng nhìn ống kính
   'human-coat': ({ HAPPI, HAPPI_B, HAORI, SHIRT_TAG, WRAP_TAG }) => ({
@@ -286,22 +375,28 @@ export function humanDemo(name) {
   const make = SCENES[name];
   if (!make) return null;
   const { cast, props = [] } = make(models());
-  const scene = parseScene({ name: `demo-${name}`, lens: LENS, cast: cast.map((m) => ({ id: m.id, character: `${m.id}.json`, world: m.world, tracks: m.tracks })) });
+  const scene = parseScene({ name: `demo-${name}`, lens: LENS, cast: cast.map((m) => ({ id: m.id, character: `${m.id}.json`, world: m.world, tracks: m.tracks, ...(m.equip && { equip: m.equip }) })) });
   if (!scene.success) throw new Error(scene.error.message);
   const bodies = Object.fromEntries(cast.map((m) => [m.id, body3(m.c)]));
   const heights = Object.fromEntries(cast.map((m) => [m.id, m.c.rig.height]));
   const rt = resolveScene(scene.data, { ...ACTIONS, ...own() }, {}, {}, heights, bodies);
+  // mỗi người một tủ đồ (`wardrobe`): đổi mảnh dựng khối theo `equip` là hiện bản khác
+  const group = new THREE.Group();
   const people = cast.map((m, i) => ({
     ...m,
-    fig: fromCharacter(m.c, { seed: i, items: SAMPLE_ITEMS, seated: !!m.world.sit, skirt: m.c.pieces.hem?.src === 'sculpt' ? m.c.pieces.hem.skirt : undefined }),
+    w: wardrobe(m.c, (worn, seated) => fromCharacter(worn, { seed: i, items: SAMPLE_ITEMS, seated, skirt: worn.pieces.hem?.src === 'sculpt' ? worn.pieces.hem.skirt : undefined })),
   }));
+  for (const p of people) group.add(p.w.get(sceneAt(rt, p.id, 0, heights[p.id], bodies[p.id]).equip, !!p.world.sit).fig.root);
   return {
-    objects: [...people.map((p) => p.fig.root), ...props],
+    objects: [group, ...props],
     animate(t) {
       for (const p of people) {
         const sp = sceneAt(rt, p.id, t, heights[p.id], bodies[p.id]);
-        act(p.fig, sp, t);
-        if (p.equip) dress(p.fig, p.equip, !!sp.world?.flip);
+        const { fig, fresh } = p.w.get(sp.equip, !!p.world.sit);
+        if (fresh) group.add(fig.root);
+        for (const f of p.w.figures.values()) f.root.visible = f === fig;
+        act(fig, sp, t);
+        if (p.equip) dress(fig, p.equip, !!sp.world?.flip);
       }
     },
   };

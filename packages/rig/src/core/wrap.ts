@@ -16,10 +16,13 @@ export const OPEN_FILL_LIFT = 0.6;
 /** Cổ tròn của áo trong dưới vạt mở: giữa ngực thấp hơn chỗ viền cổ chạm mặt vát bấy nhiêu px */
 export const OPEN_CREW = 4;
 
-/** Khối thân mà cổ chéo bám: mặt khối, nửa sâu theo `y`, điểm nổi `lift` px theo pháp tuyến */
+/** Khối thân mà cổ chéo bám: mặt khối, nửa sâu nửa sau và nửa trước theo `y`, điểm nổi `lift` px theo pháp tuyến */
 export interface WrapBody {
   s: Surface;
   depth: (y: number) => number;
+  front?: (y: number) => number;
+  /** Thân bụng phệ: đai ôm bao lồi của thân trong bản đai thay cho trụ */
+  belly?: boolean;
   raise: (sp: SP, lift: number) => Vec3;
   /** `rig.height` */
   height: number;
@@ -202,6 +205,36 @@ export function plaque(
     });
   });
   return capped(rings);
+}
+
+/**
+ * Cỡ đai theo hàng `[y, nửa rộng, nửa sâu trước, nửa sâu sau]` của thân trong bản đai: trụ ở chỗ lớn nhất của từng số;
+ * `hull` thì mỗi số là bao lồi trên của nó theo `y` — đai căng qua bụng, không hở mép trên mép dưới
+ */
+function taut(rows: [number, number, number, number][], hull = false) {
+  const top = [1, 2, 3].map((k) => Math.max(1, ...rows.map((r) => r[k])));
+  if (!hull || rows.length < 2) return () => top;
+  const chains = [1, 2, 3].map((k) => {
+    const h: [number, number][] = [];
+    for (const r of rows) {
+      const p: [number, number] = [r[0], r[k]];
+      while (h.length > 1) {
+        const [o, q] = [h[h.length - 2], h[h.length - 1]];
+        if ((q[0] - o[0]) * (p[1] - o[1]) - (q[1] - o[1]) * (p[0] - o[0]) < 0) break;
+        h.pop();
+      }
+      h.push(p);
+    }
+    return h;
+  });
+  return (y: number) =>
+    chains.map((h) => {
+      if (y <= h[0][0]) return h[0][1];
+      for (let i = 1; i < h.length; i++)
+        if (y <= h[i][0])
+          return lerp(h[i - 1][1], h[i][1], (y - h[i - 1][0]) / (h[i][0] - h[i - 1][0] || 1));
+      return h[h.length - 1][1];
+    });
 }
 
 /** Mép vạt `e` trên hình phẳng: điểm cách mép `d` px về phía thân vạt; `under` là vạt dưới, cắt ở mép vạt trên */
@@ -406,14 +439,17 @@ export function wrapParts(b: WrapBody, w: Wrap): WrapParts {
   const yc = -o.y * h;
   const half = (o.width * h) / 2;
   const [y0, y1] = [yc - half, yc + half];
-  let [A, Dp] = [1, 1];
-  for (let y = y0; y <= Math.min(y1, s.yH); y += 1)
-    [A, Dp] = [Math.max(A, s.a(y)), Math.max(Dp, b.depth(y))];
-  const ring = (u: number, off: number, y: number): Vec3 => [
-    (A + off) * Math.sin(u * D),
-    y,
-    (Dp + off) * Math.cos(u * D),
-  ];
+  const ahead = b.front ?? b.depth;
+  const rows: [number, number, number, number][] = [];
+  for (let y = y0; y <= Math.min(y1, s.yH); y += 1) rows.push([y, s.a(y), ahead(y), b.depth(y)]);
+  /** Nửa rộng, nửa sâu trước, nửa sâu sau của đai ở `y`: trụ ở chỗ rộng nhất, thân bụng phệ thì bao lồi của thân */
+  const size = taut(rows, b.belly);
+  const ring = (u: number, off: number, y: number): Vec3 => {
+    const [A, F, B] = size(y);
+    const c = Math.cos(u * D);
+    return [(A + off) * Math.sin(u * D), y, ((c > 0 ? F : B) + off) * c];
+  };
+  const A = size(yc)[0];
   const NU = 96;
   /** Vòng kín quanh thân; áo khoác vạt mở thì chỉ cung giữa hai mép vạt, bịt hai đầu */
   const torus = (section: [number, number][], color: MarkFill) => {
@@ -443,9 +479,13 @@ export function wrapParts(b: WrapBody, w: Wrap): WrapParts {
       ]).slice(0, -1),
       (o.cordColor ?? obiColor) as MarkFill,
     );
-  /** Nửa sâu mặt ngoài đai (cộng `off`) ở `x` */
-  const outer = (off: number) => (x: number) =>
-    (Dp + off) * Math.sqrt(Math.max(0, 1 - (x / (A + off)) ** 2));
+  /** Nửa sâu mặt ngoài đai (cộng `off`) ở `x`, ngang tâm đai, phía trước hay phía sau */
+  const outer =
+    (off: number, back = false) =>
+    (x: number) => {
+      const [, F, B] = size(yc);
+      return ((back ? B : F) + off) * Math.sqrt(Math.max(0, 1 - (x / (A + off)) ** 2));
+    };
   if (o.clasp > 0) {
     const t = Math.max(2, o.clasp * 0.35);
     out.solids.push({
@@ -466,7 +506,7 @@ export function wrapParts(b: WrapBody, w: Wrap): WrapParts {
   // nút sau lưng nằm dưới áo khoác
   if (E) return out;
   const knotColor = (o.knotColor ?? obiColor) as MarkFill;
-  const back = (x: number) => outer(L)(x) - 1;
+  const back = (x: number) => outer(L, true)(x) - 1;
   const knot = (...a: Parameters<typeof plaque>) =>
     out.solids.push({ ...plaque(...a), color: knotColor });
   if (o.knot === "taiko") {

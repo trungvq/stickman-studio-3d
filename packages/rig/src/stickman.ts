@@ -9,9 +9,9 @@ import { glassesMesh } from './glasses';
 import { INK, toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
-import { limbWidths, type Garment, type Glasses, type Hat, type Pin, type Sculpt, type Skirt } from './core/schema';
+import { equipCharacter, limbWidths, type CharacterData, type Drape, type Equip, type PieceKey, type Garment, type Glasses, type Hat, type Pin, type Sculpt, type Shades, type Skirt } from './core/schema';
 import { hatFit, hatMesh, insideHat, pinMesh } from './core/hat';
-import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, type Bones3 } from './core/act3';
+import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, SLEEVE_EASE, sleeveGrow, type Bones3 } from './core/act3';
 import { blushLevel, chibiShape } from './core/face';
 import { wornSkirt } from './core/skirtShape';
 import { hangsFromHip, matchWrap } from './core/hem';
@@ -129,9 +129,9 @@ const _d = new THREE.Vector3(), _c = new THREE.Vector3(), _t = new THREE.Vector3
 const _e = new THREE.Vector3();
 /**
  * Dựng ống theo đường cong `c`: cả đoạn, hay phần `u0..u1` (ống tay áo, cổ tay áo), bán kính `r0` → `r1`; mút cuối nở
- * `rim` lần, hai mút tròn dẹt theo `flat0`, `flat1` (`1` là nửa cầu).
+ * `rim` lần, hai mút tròn dẹt theo `flat0`, `flat1` (`1` là nửa cầu); `open` thì mút cuối hở (miệng tay áo loe).
  */
-function fillTube(geo: THREE.BufferGeometry, c: THREE.Vector3[], r0: number, r1 = r0, u0 = 0, u1 = 1, rim = 1, flat0 = 1, flat1 = 1) {
+function fillTube(geo: THREE.BufferGeometry, c: THREE.Vector3[], r0: number, r1 = r0, u0 = 0, u1 = 1, rim = 1, flat0 = 1, flat1 = 1, open = false) {
   const [cap, m, n] = geo.userData.limb as Quality['limb'];
   const pos = geo.attributes.position as THREE.BufferAttribute, nor = geo.attributes.normal as THREE.BufferAttribute;
   let k = 0;
@@ -161,7 +161,7 @@ function fillTube(geo: THREE.BufferGeometry, c: THREE.Vector3[], r0: number, r1 
   }
   const re = r1 * rim;
   for (let i = cap - 1; i >= 0; i--) {
-    const f = (i / cap) * (Math.PI / 2);
+    const f = open ? Math.PI / 2 : (i / cap) * (Math.PI / 2);
     ring(_c.copy(u1 === 1 ? c[3] : bez(c, u1, _e)).addScaledVector(_t, re * flat1 * Math.cos(f)), Math.cos(f), re * Math.sin(f), Math.sin(f));
   }
   pos.needsUpdate = nor.needsUpdate = true;
@@ -180,8 +180,11 @@ function limb(len: number) {
 
 const ONE = new THREE.Vector3(1, 1, 1);
 
-/** Ống phủ trên đoạn chi của người `clad`: phần `u0..u1`, to hơn ống chi `k` lần, mút cuối nở `rim`, dẹt `flat` */
-interface Cover { geo: THREE.BufferGeometry; u0: number; u1: number; k: number; rim: number; flat: number }
+/**
+ * Ống phủ trên đoạn chi của người `clad`: phần `u0..u1`, to hơn ống chi `k` lần cộng `grow` (three, ở `u0`, `u1`), mút cuối
+ * nở `rim`, dẹt `flat`; `open` thì mút cuối hở. `disk` là đĩa lót miệng tay áo loe thay cho ống, lùi vào trong miệng bấy nhiêu
+ */
+interface Cover { geo: THREE.BufferGeometry; u0: number; u1: number; k: number; rim: number; flat: number; grow?: [number, number]; open?: boolean; disk?: number }
 
 /**
  * Ống của một đoạn chi theo đường cong `c`: ống chính (`userData.taper` nhân bán kính hai mút, `userData.root` độ tròn mút
@@ -193,8 +196,12 @@ function tubes(m: THREE.Mesh, c: THREE.Vector3[]) {
   const [a, b] = [r * taper[0], r * taper[1]], root = (m.userData.root as number | undefined) ?? 1;
   fillTube(m.geometry, c, a, b, 0, 1, 1, root);
   for (const v of (m.userData.covers ?? []) as Cover[]) {
-    const ra = (a + (b - a) * v.u0) * v.k, rb = (a + (b - a) * v.u1) * v.k;
-    fillTube(v.geo, c, ra, rb, v.u0, v.u1, v.rim, v.u0 > 0 ? v.flat : root, v.u1 < 1 ? v.flat : 1);
+    const [g0, g1] = v.grow ?? [0, 0];
+    const ra = (a + (b - a) * v.u0) * v.k + g0, rb = (a + (b - a) * v.u1) * v.k + g1;
+    if (v.disk !== undefined) {
+      const u = Math.max(v.u0, v.u1 - v.disk / m.userData.len);
+      fillTube(v.geo, c, rb * 0.97, rb * 0.97, u, u, 1, 0, 0);
+    } else fillTube(v.geo, c, ra, rb, v.u0, v.u1, v.rim, v.u0 > 0 ? v.flat : root, v.u1 < 1 ? v.flat : 1, v.open);
   }
 }
 /**
@@ -348,6 +355,10 @@ export interface StickmanOptions {
   pin?: Partial<Pin>;
   pinColor?: string;
   pinBead?: string;
+  /** `pieces.neck.drape`: khăn vắt vai, màu `drapeColor` (bỏ trống là màu áo); `pieces.neck.shades`: kính gài nẹp */
+  drape?: Partial<Drape>;
+  drapeColor?: string;
+  shades?: Partial<Shades>;
   /** `pieces.faceAcc.glasses`; `true` là kính tròn mặc định */
   glasses?: boolean | Partial<Glasses>;
   /** `pieces.faceAcc.color`, bỏ trống là màu áo */
@@ -380,6 +391,8 @@ export interface StickmanOptions {
   bicep?: number;
   /** `palette.sleeveLength`, `palette.trouserLength`: phần chi phủ màu áo, quần từ gốc chi */
   sleeveLength?: number;
+  /** `palette.sleeveFlare`: tay áo loe, miệng tay rộng hơn cổ tay bấy nhiêu px */
+  sleeveFlare?: number;
   trouserLength?: number;
   /** `head.form` */
   headForm?: 'sphere' | 'human';
@@ -399,7 +412,7 @@ export function stickman(o: StickmanOptions): Figure {
   const spine = joint(hips, 0, 0.0, 0);
   const bicep = o.bicep ?? 0;
   const thighR = clad ? cladThigh(trouserWidth, rig.stroke) : 0;
-  const at = roots3(garment, rig, { clad, sleeve: sleeveWidth, trouser: trouserWidth, bicep, skirt });
+  const at = roots3(garment, rig, { clad, sleeve: sleeveWidth, trouser: trouserWidth, bicep, skirt, flare: o.sleeveFlare, sleeveLength: o.sleeveLength });
   const [sx, sy] = at.shoulder;
   // người ngồi: vạt áo dưới hông nằm trên đùi, không buông xuyên đùi xuống ghế; mặc váy thì thân áo dừng ở cạp
   // mặt ghế dưới hông `legHalf` của `body3`; vạt nằm trên chỗ cao nhất của mặt đùi gồm cả vỏ viền: gối gập vuông thì đùi
@@ -411,7 +424,7 @@ export function stickman(o: StickmanOptions): Figure {
   // tạp dề mặc ngoài quần: thân áo, vạt áo người ngồi và khối hông như không có váy
   const dressed = skirt?.style === 'apron' ? undefined : skirt;
   const lap = seated ? (dressed ? { seat: -dressed.rise * rig.height } : { seat: seatAt, fold: { top: -(thighTop + 1), dir: [-0.1, 1] as [number, number] } }) : undefined;
-  const body = sculptTorso(spine, { garment, rig, color, accent, skin, ink: INK, arm: at.room, lap, ...(clad && { sil: LIMB_SIL }), ...(clad && dressed && { tuck: -dressed.rise * rig.height }) });
+  const body = sculptTorso(spine, { garment, rig, color, accent, skin, ink: INK, arm: at.room, lap, ...((o.drape || o.shades) && { neck: { drape: o.drape, shades: o.shades, color: o.drapeColor ?? color } }), ...(clad && { sil: LIMB_SIL }), ...(clad && dressed && { tuck: -dressed.rise * rig.height }) });
   // khối thân áo là mảnh đầu tiên: `collide` lấy hộp thân từ nó
   spine.children[0].userData.torso = true;
   spine.children[0].userData.inkGap = Math.max(...body.depth) / 100;
@@ -484,13 +497,15 @@ export function stickman(o: StickmanOptions): Figure {
     const limbSkin = npr({ ...skin3, ink: LIMB_SIL, doubleSided: true });
     // chân trần là vật khác bàn tay: tay đặt lên đùi vẫn có nét
     const legSkin = npr({ ...skin3, ink: LIMB_SIL, doubleSided: true, group: 'leg' });
-    const { sleeveColor = '#1a1a1a', trouserColor = '#1a1a1a', shoeColor = '#2b2623', sleeveLength = 1, trouserLength = 1 } = o;
+    const { sleeveColor = '#1a1a1a', trouserColor = '#1a1a1a', shoeColor = '#2b2623', sleeveLength = 1, trouserLength = 1, sleeveFlare = 0 } = o;
+    // tay áo loe: ống phủ hở miệng nhìn được lòng trong, đĩa lót tối hơn lùi trong miệng
+    const flare = sleeveFlare > 0 && { cover: npr({ color: sleeveColor, stipple: 0.05, stippleScale: 3, soft: 1, ink: LIMB_SIL, doubleSided: true }), lining: npr({ color: new THREE.Color(sleeveColor).multiplyScalar(0.45).getStyle(), stipple: 0, soft: 1, ink: LIMB_SIL }), grow: sleeveFlare / 100 };
     const thigh = thighR / 100;
     pelvis(spine, body, at.hip, thigh, tone(dressed ? skirtColor : trouserColor));
     const legTaper = [thigh / limbR(trouserWidth), CLAD_TAPER.leg[1], CLAD_TAPER.leg[2]] as const;
     hands = {} as Record<Side, Hand>;
     for (const s of SIDES) {
-      cladLimb(seg(arms[s].shoulder), seg(arms[s].elbow), [B.upperArm, B.foreArm], [CLAD_TAPER.arm[0] * (1 + bicep), CLAD_TAPER.arm[1], CLAD_TAPER.arm[2]], tone(sleeveColor), limbSkin, sleeveLength, true);
+      cladLimb(seg(arms[s].shoulder), seg(arms[s].elbow), [B.upperArm, B.foreArm], [CLAD_TAPER.arm[0] * (1 + bicep), CLAD_TAPER.arm[1], CLAD_TAPER.arm[2]], tone(sleeveColor), limbSkin, sleeveLength, true, flare || undefined);
       cladLimb(seg(legs[s].hip), seg(legs[s].knee), [B.thigh, B.shin], legTaper, tone(trouserColor), legSkin, trouserLength, false);
       const { k, long } = cladHand(sleeveWidth, rig.stroke, B.foreArm * 100);
       hands[s] = handRig(s, k, long, lod === 'low');
@@ -544,13 +559,15 @@ export function stickman(o: StickmanOptions): Figure {
 /**
  * Đoạn chi `upper` → `lower` của người `clad` (dài `L1`, `L2`): ống tô màu có vỏ viền, thon theo `taper` (bán kính ở gốc,
  * khớp giữa, ngọn, nhân `userData.r`). `f` phần chi từ gốc phủ `cover`, còn lại `skin`; phủ hết thì `cuff` thêm cổ tay áo.
+ * `flare`: tay áo loe — ống phủ `flare.cover` rộng dần thêm tới `flare.grow` ở miệng, miệng hở có đĩa lót `flare.lining`, tay
+ * trong là da.
  */
-function cladLimb(upper: THREE.Mesh, lower: THREE.Mesh, [L1, L2]: [number, number], taper: readonly [number, number, number], cover: THREE.Material, skin: THREE.Material, f: number, cuff: boolean) {
+function cladLimb(upper: THREE.Mesh, lower: THREE.Mesh, [L1, L2]: [number, number], taper: readonly [number, number, number], cover: THREE.Material, skin: THREE.Material, f: number, cuff: boolean, flare?: { cover: THREE.Material; lining: THREE.Material; grow: number }) {
   upper.userData.taper = [taper[0], taper[1]];
   // gốc đùi to nằm trong khối hông: mút tròn đủ cỡ thì chĩa ra sau xuyên váy khi ngồi
   if (!cuff) upper.userData.root = 0.35;
   lower.userData.taper = [taper[1], taper[2]];
-  const full = f >= 0.999;
+  const full = f >= 0.999 && !flare;
   // khuỷu, gối: hai ống chồng mút lên nhau, nét bóng dáng hậu kỳ coi cả chi là một vật
   const chain = upper.id;
   for (const m of [upper, lower]) {
@@ -560,16 +577,29 @@ function cladLimb(upper: THREE.Mesh, lower: THREE.Mesh, [L1, L2]: [number, numbe
     h.userData.noShadow = true;
     m.add(h);
   }
-  const add = (m: THREE.Mesh, u0: number, u1: number, rim: number, flat: number) => {
-    const geo = tube(), c = new THREE.Mesh(geo, cover), h = new THREE.Mesh(geo, limbHull);
+  const add = (m: THREE.Mesh, u0: number, u1: number, rim: number, flat: number, more: Partial<Cover> = {}, mat = cover, hull = true) => {
+    const geo = tube(), c = new THREE.Mesh(geo, mat);
     c.castShadow = true;
-    c.userData.inkChain = chain;
-    h.userData.noShadow = true;
-    m.parent!.add(c.add(h));
-    (m.userData.covers ??= []).push({ geo, u0, u1, k: 1.1, rim, flat } satisfies Cover);
+    c.userData.inkChain = more.disk === undefined ? chain : -chain;
+    if (hull) {
+      const h = new THREE.Mesh(geo, limbHull);
+      h.userData.noShadow = true;
+      c.add(h);
+    }
+    m.parent!.add(c);
+    (m.userData.covers ??= []).push({ geo, u0, u1, k: 1.1, rim, flat, ...more } satisfies Cover);
   };
   const d = f * (L1 + L2);
-  if (full) {
+  if (flare) {
+    // bán kính cộng thêm ở khoảng `s` dọc tay từ vai, cùng công thức `roots3` đặt tay
+    const g = (s: number) => sleeveGrow(flare.grow, f, [L1, L2], s);
+    const k = SLEEVE_EASE;
+    const end = d < L1 ? upper : lower;
+    const uEnd = d < L1 ? d / L1 : Math.min(1, (d - L1) / L2);
+    add(upper, 0, Math.min(1, d / L1), 1, 1, { k, grow: [0, g(Math.min(d, L1))], open: d < L1 }, flare.cover);
+    if (d >= L1) add(lower, 0, uEnd, 1, 1, { k, grow: [g(L1), g(d)], open: true }, flare.cover);
+    add(end, 0, uEnd, 1, 0, { k, grow: [0, g(d)], disk: 0.02 }, flare.lining, false);
+  } else if (full) {
     if (cuff) add(lower, 0.84, 1, 1, 0.3);
   } else if (d > 0.02) {
     if (d < L1 - 0.03) add(upper, 0, d / L1, 1.12, 0.3);
@@ -725,18 +755,19 @@ const isJoint = (o: THREE.Object3D) => !!o.userData.joint;
 export interface CharacterJson {
   rig: Rig;
   palette: {
-    garment: string; skin?: string; sleeveWidth?: number; trouserWidth?: number; limbCurve?: number;
+    garment: string; skin?: string; sleeveWidth?: number; trouserWidth?: number; limbCurve?: number; sleeveFlare?: number;
     clad?: boolean; sleeve?: string; trouser?: string; shoe?: string; sleeveLength?: number; trouserLength?: number; bicep?: number;
   };
   head?: { form?: 'sphere' | 'human' };
   face?: Partial<FaceShape>;
   pieces: {
-    torso: { garment?: Partial<Garment>; accent?: string };
+    torso: { garment?: Partial<Garment>; accent?: string; color?: string };
     hem?: { src?: string; skirt?: Partial<Skirt>; color?: string };
     hair?: { sculpt?: Partial<Sculpt>; color?: string; accent?: string };
     crown?: { src: string; hat?: Partial<Hat>; color?: string };
     headAcc?: { src: string; pin?: Partial<Pin>; color?: string; accent?: string };
     faceAcc?: { src: string; glasses?: Partial<Glasses>; color?: string };
+    neck?: { src?: string; drape?: Partial<Drape>; shades?: Partial<Shades>; color?: string };
   };
   /** Vật gọi tên: socket → cấu hình; `opts.items` cấp hàm dựng 3D theo cùng tên */
   items?: Gear['specs'];
@@ -746,19 +777,44 @@ export interface CharacterJson {
 export function characterOptions(json: CharacterJson, opts: Partial<StickmanOptions> = {}): StickmanOptions {
   const pal = json.palette, pc = json.pieces;
   return {
-    rig: json.rig, garment: pc.torso.garment, color: pal.garment, accent: pc.torso.accent, skin: pal.skin,
+    rig: json.rig, garment: pc.torso.garment, color: pc.torso.color ?? pal.garment, accent: pc.torso.accent, skin: pal.skin,
     skirt: wornSkirt(pc.hem), skirtColor: pc.hem?.color, hair: pc.hair?.sculpt, hairColor: pc.hair?.color, hairAccent: pc.hair?.accent,
     sleeveWidth: pal.sleeveWidth, trouserWidth: pal.trouserWidth, limbCurve: pal.limbCurve, faceShape: json.face, itemSpecs: json.items,
     glasses: pc.faceAcc?.src === 'sculpt' && pc.faceAcc.glasses, glassesColor: pc.faceAcc?.color,
     ...(pc.crown?.src === 'sculpt' && { hat: pc.crown.hat ?? {}, hatColor: pc.crown.color }),
     ...(pc.headAcc?.src === 'sculpt' && { pin: pc.headAcc.pin ?? {}, pinColor: pc.headAcc.color, pinBead: pc.headAcc.accent }),
-    clad: pal.clad, sleeveColor: pal.sleeve, trouserColor: pal.trouser, shoeColor: pal.shoe, sleeveLength: pal.sleeveLength, bicep: pal.bicep,
+    ...(pc.neck?.src === 'sculpt' && { drape: pc.neck.drape, shades: pc.neck.shades, drapeColor: pc.neck.color }),
+    clad: pal.clad, sleeveColor: pal.sleeve, trouserColor: pal.trouser, shoeColor: pal.shoe, sleeveLength: pal.sleeveLength, sleeveFlare: pal.sleeveFlare, bicep: pal.bicep,
     trouserLength: pal.trouserLength, headForm: json.head?.form, ...opts,
   };
 }
 
 /** Người que từ JSON nhân vật của rig; `opts` đè lên số đọc từ JSON. */
 export const fromCharacter = (json: CharacterJson, opts: Partial<StickmanOptions> = {}): Figure => stickman(characterOptions(json, opts));
+
+/** Socket mà người 3D dựng hình từ đó (`characterOptions`): đổi vật ở đây là phải dựng lại người */
+export const BUILT_SOCKETS = ['torso', 'hem', 'hair', 'crown', 'headAcc', 'faceAcc', 'neck'] as const satisfies readonly PieceKey[];
+
+/**
+ * Người 3D của một vai theo đồ đang mặc (`items`, `equip`; docs/01-rig.md#đồ-thay-được-items-và-equip): `get` mặc `equip`
+ * vào JSON nhân vật (`equipCharacter`) rồi dựng bằng `make`, một bản cho mỗi bộ mảnh ở `BUILT_SOCKETS` và mỗi dáng
+ * đứng / ngồi, dựng lần đầu cần tới rồi giữ. `fresh` là bản vừa dựng: chỗ gọi thêm `fig.root` vào cảnh. Đồ cầm tay, đồ
+ * gắn socket three (`dress`) không làm dựng lại.
+ */
+export function wardrobe(c: CharacterData, make: (worn: CharacterData, seated: boolean) => Figure) {
+  const figures = new Map<string, Figure>();
+  return {
+    figures,
+    get(equip: Equip | undefined, seated = false) {
+      const worn = equipCharacter(c, equip);
+      const key = JSON.stringify([seated, BUILT_SOCKETS.map((k) => worn.pieces[k])]);
+      let fig = figures.get(key);
+      const fresh = !fig;
+      if (!fig) figures.set(key, (fig = make(worn, seated)));
+      return { fig, fresh };
+    },
+  };
+}
 
 const deg = Math.PI / 180;
 

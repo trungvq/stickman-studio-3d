@@ -919,7 +919,8 @@ góc, eo co nhẹ, tay mọc ra từ viền thân. Góc quay là nấc của th�
 | `round` | 12 | 16 | 16 | 16 | 16 | 16 | 16 | 16 | Bán kính bo góc giữa vát vai và thân |
 | `hemRound` | 10 | 8 | 8 | 8 | 8 | 8 | 8 | 8 | Bán kính bo góc gấu |
 
-Trường bỏ trống lấy số của kiểu ở bảng `GARMENT_STYLES`; `garmentOf` trả bộ số đã đủ.
+Trường bỏ trống lấy số của kiểu ở bảng `GARMENT_STYLES`; `garmentOf` trả bộ số đã đủ. `collarUp` ([cổ dựng](#cổ-dựng)) và `belly`
+([bụng phệ](#bụng-phệ)) không thuộc bảng kiểu: bỏ trống là `0` ở mọi kiểu.
 Kiểu mang cả những đặc điểm không có số, đặt theo số đo đã đủ nên đè `neck`, `hem`… thì
 chúng đi theo:
 
@@ -1147,8 +1148,9 @@ của lõi, `torsoMesh`); người 2D và 2.5D vẽ thân trơn.
 
 - Khối kín (đai, dây, khoá, nút) có vỏ viền như khối thân; người mặc đồ thêm nét bóng dáng hậu kỳ.
   Người ngồi: dải cổ, đai và vạt gập theo đùi cùng khối thân (`lapFold`).
-- Tay áo là ống `palette.sleeve*` của người mặc đồ: `sleeveWidth` lớn cho ống to đều thon về cổ
-  tay, không loe, và bàn tay to theo bề dày ống.
+- Tay áo là ống `palette.sleeve*` của người mặc đồ. Tay áo rộng dần về cổ tay của kimono, yukata là
+  `palette.sleeveFlare` ([01](01-rig.md#người-3d-mặc-đồ)): ống tay áo phủ ngoài tay, miệng mở, bàn tay giữ cỡ
+  theo `sleeveWidth`. `sleeveWidth` lớn thì cả tay lẫn bàn tay to theo. Không có vạt tay rủ (袂).
 
 | Trường của `wrap` | Mặc định | Nghĩa |
 |---|---:|---|
@@ -1183,6 +1185,95 @@ Bộ số hay dùng, `rig.height = 1`:
 | Áo làm việc tới hông | `{ "style": "wrap" }` | Không đai, quần cùng màu |
 | Áo bếp tới hông | `{ "style": "wrap", "hem": 8 }` | Cổ cùng màu; tay xắn: `palette.sleeveLength` `0.5` |
 | Yukata ngồi tới đùi | `{ "style": "wrap", "hem": 40, "wrap": { "bandColor": "…", "obi": { "y": 14, "width": 14, "lift": 3, "knot": "kai" } } }` | Đai thấp bản hẹp; ống chân cùng màu vải: `palette.trouser` |
+| Yukata đứng | `{ "style": "wrap", "hem": 5, "wrap": { "bandColor": "…", "obi": { "y": 30, "width": 16, "lift": 3, "knot": "kai" } } }` | Phối [vạt dài quấn](#vạt-dài-quấn) `rise` `27`: đai che chỗ nối; tay loe `palette.sleeveFlare` `12` |
+
+### Cổ dựng
+
+`garment.collarUp` (`0..1`, mặc định `0`) dựng lá cổ bẻ lên ôm gáy — polo, sơ mi dựng cổ. Có ở mọi kiểu có cổ bẻ
+nổi khối (`shirt`, `polo`, `bowShirt`, `suit`, `blazer`, `blouse`), chỉ người 3D dựng; 2D, 2.5D vẽ cổ gập.
+
+```json
+"garment": { "style": "polo", "collarUp": 1 }
+```
+
+- Lá cổ quay quanh nếp gập (đỉnh chân cổ): mỗi điểm giữ khoảng cách tới nếp gập, hướng đi từ hướng gập xuống sang
+  hướng dựng phần `collarUp`. Hướng dựng là thẳng lên, chếch ra ngoài theo pháp tuyến ngang của mặt khối ở chân cổ
+  `COLLAR_POP_FLARE[0]` (`0.25`) lần ở sau gáy, tới `[1]` (`1.5`) lần ở giữa ngực: sau gáy là vành đứng ôm cổ, hai mũi
+  cổ trước ngực xoè ra hai bên cằm thay vì đâm lên.
+- `0` là lá cổ gập đúng như không khai. Lá cổ dựng cao bằng chân cổ cộng bề rộng lá cổ; tóc dài rủ gáy có thể lấn vào.
+
+### Bụng phệ
+
+`garment.belly` (px, mặc định `0`) làm khối thân rộng nhất ở bụng — dáng quả lê của người bụng phệ:
+
+```json
+"garment": { "style": "polo", "collarUp": 1, "belly": 22 }
+```
+
+- Phần nhô theo độ cao là hình chuông `bellyAt`: đỉnh `1` cao hơn hông `BELLY.at` (`0.3`) thân, rộng `BELLY.spread`
+  (`0.3`) thân, nhân `rig.height`; vai, ngực gần như không đổi. Mặt cắt dọc nở ra hai bên `BELLY.side` (`0.45`) lần
+  `belly` — 2D, 2.5D cũng thấy bề ngang này —, người 3D còn nhô ra trước đủ `belly`: tiết diện ngang là nửa ellipse
+  trước sâu hơn nửa sau, hai nửa liền mạch ở hai sườn, nên bụng tròn mượt, lưng giữ phẳng.
+- Thân áo có `front` (nửa sâu nửa trước) cạnh `depth`; khối thân, nét, mảng, cổ bẻ, cổ chéo đặt trên mặt ấy, vạt áo
+  người ngồi gập theo nó (`lapFold`).
+- **Tay buông choãi ra ngoài bụng**: `roots3` choãi tay tới khi mép trong tay cách mặt cắt có bụng một `CLAD_GAP`, nên
+  sườn áo không bị tay cắt mất bụng ([01](01-rig.md#người-3d-mặc-đồ)).
+- **Đai trên bụng phệ** ([áo cổ chéo](#áo-cổ-chéo)) không còn là trụ ở chỗ rộng nhất mà ôm bao lồi của thân trong bản
+  đai, riêng bề ngang, nửa sâu trước, nửa sâu sau: mép trên mép dưới của đai không hở khỏi bụng, đai dưới bụng nghiêng
+  theo bụng.
+- Khối hông, váy, vạt dài, tạp dề đọc nửa sau (`depth`) như cũ: phối bụng phệ với quần là đủ; váy, vạt dài dưới bụng thì
+  gấu áo nhô ra trước cạp.
+- Đặt cùng `belly` cho mọi thân áo của một người (`items` thay áo): bụng là số của thân áo, không của `rig`.
+
+## Khăn vắt vai và kính gài nẹp
+
+Socket `neck` với `src: "sculpt"` là đồ dựng khối bám thân áo của người 3D, cắm được qua `items` như mọi socket; 2D và
+2.5D không vẽ gì. Một mảnh có thể mang cả hai.
+
+### Khăn vắt vai
+
+`neck.drape`: dải vải phẳng vắt qua một vai, buông trước ngực và sau lưng; màu `neck.color` (bỏ trống là màu áo).
+
+```json
+"neck": { "src": "sculpt", "color": "#2B3A67", "drape": { "side": "left", "width": 16, "front": 90, "back": 70 } }
+```
+
+| Trường | Mặc định | Nghĩa |
+|---|---:|---|
+| `side` | `left` | Vai trái người mặc (`+x` hệ thân) hay `right` |
+| `width` | 16 | Bản rộng, px |
+| `front` / `back` | 70 / 60 | Dài phía trước, phía sau tính từ đỉnh vai, px dọc khăn, nhân `rig.height` |
+| `thick` | 2.5 | Dày, px |
+| `at` | 0.5 | Tâm khăn trên vai: `0` sát cổ áo, `1` ở gốc tay |
+
+- Khối cứng trong nhóm thân, không rủ, không lắc: cúi chào thì khăn theo thân. Mỗi lát dọc của khăn (mặt phẳng cách
+  trục một `x`) là bao của thân áo và nắp vai (`garmentSocket`, bán kính gốc ống tay) nở `DRAPE_GAP` (`1.5` px), nhìn từ
+  một tâm trong thân ngang gốc vai; dưới tâm ấy vải rủ thẳng — xuống tới đâu cũng không lùi vào gần thân hơn chỗ nhô
+  nhất phía trên, nên khăn buông thẳng qua ngực, qua bụng phệ. Hai mút cắt vuông, có vỏ viền như đai.
+- Tay buông nằm ngoài khăn. Tay khoanh, cánh tay đưa ra trước ở phía có khăn phải cách ngực hơn `DRAPE_GAP + thick`
+  (chừng 4 px), không thì lấn vào khăn: hành động khoanh tay cho người vắt khăn soạn cẳng tay xa ngực hơn thường.
+- Người ngồi: phần khăn dưới chỗ gập gập theo đùi cùng thân áo.
+
+### Kính gài nẹp
+
+`neck.shades`: kính râm treo ở nẹp áo bằng một gọng — hai mắt kính, cầu kính và gọng gài lên đáy cổ áo, dán trên mặt
+thân. Mắt kính màu `lens`, cầu và gọng màu mực, mỗi phần một khối dẹt có vỏ viền.
+
+```json
+"neck": { "src": "sculpt", "shades": { "side": "left" } }
+```
+
+| Trường | Mặc định | Nghĩa |
+|---|---:|---|
+| `shape` | `rect` | `rect` chữ nhật bo góc, `round` tròn |
+| `size` | 7 | Nửa chiều cao mắt kính, px |
+| `y` | 6 | Bản lề gọng thấp hơn đáy cổ áo (`neckFront` dưới chỗ viền cổ chạm mặt vát) bấy nhiêu px |
+| `side` | `left` | Gọng gài ở bên trái người mặc (`+x`) hay `right`; mắt kính bên kia trễ xuống |
+| `tilt` | 14 | Nghiêng, độ |
+| `lens` | `#2a2b33` | Màu mắt kính |
+
+Kính đeo trên mặt và kính gài nẹp là hai vật khác socket: đổi giữa chừng bằng `equip` (`{ "faceAcc": "kinh-ram", "neck":
+null }`).
 
 ### Áo khoác vạt mở
 

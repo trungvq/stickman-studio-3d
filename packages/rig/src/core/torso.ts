@@ -5,7 +5,9 @@ import { chain, weld } from "./sculpt";
 import { lonOf, turnPoint, type Vec3 } from "./sphere";
 import type { View } from "./types";
 
-export type Dims = Required<Omit<Garment, "style" | "wrap" | "prints" | "badge">>;
+export type Dims = Required<
+  Omit<Garment, "style" | "wrap" | "prints" | "badge" | "collarUp" | "belly">
+>;
 export type P2 = [number, number];
 
 /** Điểm trên mặt khối: kinh độ, độ (`0` giữa ngực, dương về `+x`, `180` giữa lưng), và `y` của nhóm thân */
@@ -120,6 +122,12 @@ export const COLLAR_LEAN = 0.35;
 export const RIB_FRONT = 0.3;
 /** Đỉnh khối hẹp hơn miệng cổ áo bấy nhiêu lần, để viền cổ nằm hẳn trên mặt vát */
 const NECK_TOP = 0.8;
+/** Bụng phệ: đỉnh bụng cao hơn hông bấy nhiêu phần thân, nhạt theo hình chuông rộng bấy nhiêu phần thân; ra hai bên bấy nhiêu lần ra trước */
+export const BELLY = { at: 0.3, spread: 0.3, side: 0.45 } as const;
+
+/** Phần của `belly` ở độ cao `y` (hệ thân, px): `1` ở đỉnh bụng */
+export const bellyAt = (y: number, height: number) =>
+  Math.exp(-(((y + BELLY.at * RIG.torso * height) / (BELLY.spread * RIG.torso * height)) ** 2));
 
 export const lerp = (a: number, b: number, u: number) => a + (b - a) * u;
 
@@ -675,9 +683,9 @@ export type Rig = Pick<
 
 /**
  * Mặt cắt dọc của khối: nửa rộng `a` theo `y` (toạ độ nhóm thân, gốc ở hông), từ khớp cổ vát xuống
- * vành vai, bo góc, thon và thắt eo xuống gấu, bo góc gấu
+ * vành vai, bo góc, thon và thắt eo xuống gấu, bo góc gấu; `belly` nở hai bên quanh bụng
  */
-export function profile(g: Dims, rig: Rig, inset: number) {
+export function profile(g: Dims & { belly?: number }, rig: Rig, inset: number) {
   const torso = RIG.torso * rig.height;
   const yC = -(torso + RIG.neck * rig.height) - g.rise;
   const yS = -torso + rig.shoulderDrop;
@@ -713,6 +721,7 @@ export function profile(g: Dims, rig: Rig, inset: number) {
   // Eo: dưới vành vai co vào theo một vòm, sâu nhất giữa vành vai và gấu
   for (const p of pts)
     if (p[1] > yR) p[0] -= g.waist * Math.sin((Math.PI * (p[1] - yR)) / (yH - yR));
+  if (g.belly) for (const p of pts) p[0] += BELLY.side * g.belly * bellyAt(p[1], rig.height);
   // Nhánh trên, từ khớp cổ tới chỗ rộng nhất: nửa rộng tăng dần, tra ngược được ra `y`
   let apex = 0;
   for (let i = 1; i < 14; i++) if (pts[i][0] > pts[apex][0]) apex = i;
@@ -740,7 +749,12 @@ export interface Lap {
  * hơn đường qua chỗ gập theo hướng đùi, nên thân ngả trước thì bụng dừng trên đùi. Không có `fold` thì mọi điểm dưới `seat`
  * chỉ dồn lên `seat`. Điểm nổi khỏi mặt khối (nét, mảng) giữ khoảng nổi ấy.
  */
-export function lapFold(pr: readonly P2[], depth: readonly number[], { seat, fold }: Lap) {
+export function lapFold(
+  pr: readonly P2[],
+  depth: readonly number[],
+  { seat, fold }: Lap,
+  front: readonly number[] = depth,
+) {
   /** Hàng đầu tiên của `pr` không cao hơn `y` */
   const row = (y: number) => {
     let [lo, hi] = [0, pr.length];
@@ -751,15 +765,15 @@ export function lapFold(pr: readonly P2[], depth: readonly number[], { seat, fol
     }
     return lo;
   };
-  const at = (y: number, i = row(y)): P2 => {
-    if (i <= 0) return [pr[0][0], depth[0]];
-    if (i >= pr.length) return [pr[pr.length - 1][0], depth[depth.length - 1]];
+  const at = (y: number, i = row(y), dep = depth): P2 => {
+    if (i <= 0) return [pr[0][0], dep[0]];
+    if (i >= pr.length) return [pr[pr.length - 1][0], dep[dep.length - 1]];
     const u = (y - pr[i - 1][1]) / (pr[i][1] - pr[i - 1][1] || 1);
-    return [lerp(pr[i - 1][0], pr[i][0], u), lerp(depth[i - 1], depth[i], u)];
+    return [lerp(pr[i - 1][0], pr[i][0], u), lerp(dep[i - 1], dep[i], u)];
   };
   if (!fold) return ([x, y, z]: Vec3): Vec3 => [x, Math.min(y, seat), z];
   const { top } = fold;
-  const dt = at(top)[1];
+  const dt = at(top, undefined, front)[1];
   const l = Math.hypot(...fold.dir) || 1;
   const [dy, dz] = [fold.dir[0] / l, fold.dir[1] / l];
   const slope = dz > 0.1 ? dy / dz : 0;
@@ -770,7 +784,7 @@ export function lapFold(pr: readonly P2[], depth: readonly number[], { seat, fol
     const h = y - top;
     if (h <= 0 && (z <= 0 || y < top + z * slope - 12)) return [x, y, z];
     const i = row(y);
-    const [a, d] = at(y, i);
+    const [a, d] = at(y, i, z > 0 ? front : depth);
     const rho = Math.hypot(x / Math.max(a, 1e-6), z / Math.max(d, 1e-6));
     // tâm nắp gấu buông tới ghế: nắp chéo dưới vạt, không nằm sát mặt vạt mà giành độ sâu với nó
     if (rho < 1e-6) return [x, Math.min(y, seat), z];

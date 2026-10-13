@@ -12,9 +12,11 @@ import {
   setPalette,
   type CastMember,
   type CharacterJson,
-  type Figure,
+  type Equip,
   type SceneData,
   type Stage,
+  equipCharacter,
+  wardrobe,
 } from "@stickman3d/rig";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
@@ -26,12 +28,13 @@ import { crowd, type Set3D } from "./set";
 /**
  * Cảnh 3D: bối cảnh `set` dựng một lần trên sân khấu của @stickman3d/rig, camera theo `scene.lens` và khung cắt
  * `cameraAt` của scene, mỗi khung vẽ đồng bộ ở giây cảnh `t` trước khi Remotion chụp. Người diễn đặt dáng theo `sceneAt`
- * mỗi khung; người nền (`still`, mặc định là người ngồi) đóng băng ở dáng giây 0 thành một nhóm.
+ * mỗi khung; người nền (`still`, mặc định là người ngồi) đóng băng ở dáng giây 0 thành một nhóm. Người mặc đồ theo
+ * `cast[].equip` và `keys[].equip` (`wardrobe`): mỗi bộ mảnh dựng khối và mỗi dáng đứng / ngồi một bản, dựng lần đầu cần tới.
  */
 export type Scene3DProps = Canh3D & { scene: SceneData; t: number };
 
-const character = (c: CastMember) =>
-  castCharacter(c, CHARACTERS[c.character!]) as unknown as CharacterJson;
+const character = (c: CastMember, equip?: Equip) =>
+  equipCharacter(castCharacter(c, CHARACTERS[c.character!]), equip) as unknown as CharacterJson;
 
 export const Scene3D = ({ scene, set, t, still, extra }: Scene3DProps) => {
   const { width, height } = useVideoConfig();
@@ -62,31 +65,29 @@ export const Scene3D = ({ scene, set, t, still, extra }: Scene3DProps) => {
         crowd(
           cast.filter(frozen).map((c) => {
             const w = c.world!;
+            const ac = acting(c.id, 0);
             return {
               at: w.at as [number, number, number],
               yaw: w.yaw ?? 0,
-              character: character(c),
-              acting: acting(c.id, 0),
+              character: character(c, ac.equip),
+              acting: ac,
             };
           }),
         ),
       );
-      // váy dựng theo dáng lúc tạo hình (ngồi thì vạt phủ đùi): người vừa đi vừa ngồi có hai bản, mỗi khung hiện bản đúng dáng
-      const actors: { id: string; stand?: Figure; sit?: Figure }[] = cast
+      // váy dựng theo dáng lúc tạo hình (ngồi thì vạt phủ đùi), thân áo theo đồ đang mặc: mỗi người một tủ đồ, mỗi khung
+      // hiện bản đúng dáng và đúng bộ; bản mở màn dựng sẵn, bản khác dựng lần đầu cần tới
+      const actors = cast
         .filter((c) => !frozen(c))
         .map((c, i) => {
-          const w = c.world!;
-          const keys = w.path ?? [];
-          const sits = !!w.sit || keys.some((k) => k.sit);
-          const stands = !w.sit && (!w.path || keys.some((k) => !k.sit));
-          const fig = (seated: boolean) => fromCharacter(character(c), { seated, seed: i + 1 });
-          return {
-            id: c.id,
-            ...(stands && { stand: fig(false) }),
-            ...(sits && { sit: fig(true) }),
-          };
+          const w = wardrobe(castCharacter(c, CHARACTERS[c.character!]), (worn, seated) =>
+            fromCharacter(worn as unknown as CharacterJson, { seated, seed: i + 1 }),
+          );
+          const ac = acting(c.id, 0);
+          w.get(ac.equip, !!ac.world?.seated);
+          return { id: c.id, w };
         });
-      const figs = actors.flatMap((a) => [a.stand, a.sit].filter((f): f is Figure => !!f));
+      const figs = actors.flatMap((a) => [...a.w.figures.values()]);
       const x = extra?.();
       if (x) s.group.add(x.group);
       const stage = createStage({
@@ -97,9 +98,10 @@ export const Scene3D = ({ scene, set, t, still, extra }: Scene3DProps) => {
         update: (t, st) => {
           for (const a of actors) {
             const ac = acting(a.id, t);
-            const on = (ac.world?.seated ? a.sit : a.stand) ?? a.stand ?? a.sit!;
-            for (const f of [a.stand, a.sit]) if (f) f.root.visible = f === on;
-            act(on, ac, t);
+            const { fig, fresh } = a.w.get(ac.equip, !!ac.world?.seated);
+            if (fresh) st.scene.add(fig.root);
+            for (const f of a.w.figures.values()) f.root.visible = f === fig;
+            act(fig, ac, t);
           }
           s.room.cull(st.camera);
           s.update?.(t);

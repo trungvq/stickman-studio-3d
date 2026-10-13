@@ -379,6 +379,37 @@ export const BadgeSchema = z.object({
   wakaba: z.boolean().default(false),
 });
 
+/** Khăn vắt vai của người 3D (`pieces.neck.drape`): dải phẳng vắt qua một vai, khối cứng bám thân. docs/02-trang-phuc.md#khăn-vắt-vai */
+export const DrapeSchema = z.object({
+  /** Vai vắt khăn: `left` vai trái người mặc (`+x` hệ thân), `right` vai phải */
+  side: z.enum(["left", "right"]).default("left"),
+  /** Bản rộng, px */
+  width: z.number().default(16),
+  /** Dài phía trước ngực, phía sau lưng tính từ đỉnh vai, px dọc khăn, nhân `rig.height` */
+  front: z.number().default(70),
+  back: z.number().default(60),
+  /** Dày, px */
+  thick: z.number().default(2.5),
+  /** Tâm khăn trên vai: `0` sát cổ áo, `1` ở gốc tay */
+  at: z.number().min(0).max(1).default(0.5),
+});
+
+/** Kính râm gài nẹp áo của người 3D (`pieces.neck.shades`): treo dưới đáy cổ áo bằng một gọng. docs/02-trang-phuc.md#kính-gài-nẹp */
+export const ShadesSchema = z.object({
+  /** `rect` mắt chữ nhật bo góc, `round` mắt tròn */
+  shape: z.enum(["rect", "round"]).default("rect"),
+  /** Nửa chiều cao mắt kính, px */
+  size: z.number().default(7),
+  /** Mép trên mắt kính thấp hơn đáy cổ áo bấy nhiêu px */
+  y: z.number().default(6),
+  /** Gọng gài ở bên `left` (`+x` hệ thân, trái người mặc) hay `right`; kính nghiêng xuống phía kia */
+  side: z.enum(["left", "right"]).default("left"),
+  /** Nghiêng, độ */
+  tilt: z.number().default(14),
+  /** Màu mắt kính; gọng và nét màu mực */
+  lens: z.string().default("#2a2b33"),
+});
+
 export const GarmentSchema = z.object({
   /** Kiểu áo trong `GARMENT_STYLES`: `bare` ngực trần, `tshirt` áo phông cổ tròn, `shirt` sơ mi, `polo`, `sweater` áo len, `suit` vest, `hoodie`, `blouse` cổ lá sen, `wrap` cổ chéo */
   style: z.enum(GARMENT_STYLE_NAMES).default("tshirt"),
@@ -411,6 +442,10 @@ export const GarmentSchema = z.object({
   prints: z.array(PrintSchema).optional(),
   /** Thẻ tên dán ngực, chỉ người 3D */
   badge: BadgeSchema.optional(),
+  /** Lá cổ bẻ dựng lên ôm gáy, `0..1`: `0` gập xuống, `1` dựng hẳn; chỉ người 3D. docs/02-trang-phuc.md#cổ-dựng */
+  collarUp: z.number().min(0).max(1).optional(),
+  /** Bụng phệ: thân nhô ra trước nhiều nhất bấy nhiêu px ở bụng, ra hai bên ít hơn; chỉ người 3D nhô ra trước. docs/02-trang-phuc.md#bụng-phệ */
+  belly: z.number().min(0).optional(),
 });
 
 export const SKIRT_STYLES = ["cone", "wrap", "apron"] as const;
@@ -485,6 +520,8 @@ export const SocketPieceSchema = piece.extend({
   beard: BeardSchema.optional(),
   hat: HatSchema.optional(),
   pin: PinSchema.optional(),
+  drape: DrapeSchema.optional(),
+  shades: ShadesSchema.optional(),
   garment: GarmentSchema.optional(),
   skirt: SkirtSchema.optional(),
   clip: z.boolean().default(false),
@@ -549,6 +586,8 @@ export const CharacterSchema = z.object({
       trouser: z.string().default("#1a1a1a"),
       /** Bề dày tay, chân; bỏ trống thì theo `clad`: `limbWidths` */
       sleeveWidth: z.number().optional(),
+      /** Tay áo người 3D `clad` loe: miệng tay rộng hơn cổ tay bấy nhiêu px (bán kính), rộng dần từ vai; bàn tay giữ cỡ theo `sleeveWidth`. docs/01-rig.md#người-3d-mặc-đồ */
+      sleeveFlare: z.number().min(0).default(0),
       trouserWidth: z.number().optional(),
       clad: z.boolean().default(false),
       /** Phần tay phủ màu `sleeve` từ vai, `0..1`; người 3D `clad` đọc, phần còn lại màu da */
@@ -623,7 +662,14 @@ export const CharacterSchema = z.object({
         .prefault({ scale: 1.1, aspect: 0.55 }),
       sleeveNear: piece.prefault({ aspect: 0.45 }),
       sleeveFar: piece.prefault({ aspect: 0.45 }),
-      neck: piece.prefault({ aspect: 1 }),
+      /** Khăn quàng, cà vạt, yếm; `sculpt` là khăn vắt vai (`drape`) và kính gài nẹp (`shades`) của người 3D */
+      neck: piece
+        .extend({
+          src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
+          drape: DrapeSchema.optional(),
+          shades: ShadesSchema.optional(),
+        })
+        .prefault({ aspect: 1 }),
       hairBack: piece.prefault({ aspect: 0.62 }),
       hair: piece
         .extend({
@@ -696,6 +742,8 @@ export type Glasses = z.infer<typeof GlassesSchema>;
 export type Beard = z.infer<typeof BeardSchema>;
 export type Hat = z.infer<typeof HatSchema>;
 export type Pin = z.infer<typeof PinSchema>;
+export type Drape = z.infer<typeof DrapeSchema>;
+export type Shades = z.infer<typeof ShadesSchema>;
 export type BeardTip = (typeof BEARD_TIPS)[number];
 export type Garment = z.infer<typeof GarmentSchema>;
 export type Wrap = z.infer<typeof WrapSchema>;

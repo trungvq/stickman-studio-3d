@@ -149,7 +149,20 @@ export interface Build3 {
   trouser: number;
   bicep?: number;
   skirt?: Skirt;
+  /** `palette.sleeveFlare`, `palette.sleeveLength`: tay áo loe phủ ngoài tay */
+  flare?: number;
+  sleeveLength?: number;
 }
+
+/** Ống tay áo loe rộng hơn ống tay bấy nhiêu lần trước khi cộng phần loe */
+export const SLEEVE_EASE = 1.1;
+
+/**
+ * Tay áo loe (`palette.sleeveFlare`) phủ `f` phần tay từ vai, hai đoạn dài `len`: bán kính cộng thêm ngoài
+ * `SLEEVE_EASE` lần ống tay ở khoảng `s` px dọc tay tính từ vai — tăng đều từ `0` ở vai tới `flare` ở miệng tay
+ */
+export const sleeveGrow = (flare: number, f: number, len: readonly [number, number], s: number) =>
+  (flare * Math.min(s, f * (len[0] + len[1]))) / Math.max(1e-6, f * (len[0] + len[1]));
 
 /** Góc choãi nhỏ nhất từ `SPLAY3` mà `fits` nhận, chia đôi tới `1.2` radian */
 function widen(fits: (splay: number) => boolean) {
@@ -219,10 +232,24 @@ export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Buil
   const cap = arm * (1 + (b.bicep ?? 0));
   const at = garmentSocket(garment, rig, arm, cap);
   const k = arm / CLAD_TAPER.arm[0];
-  const r = [cap, k * CLAD_TAPER.arm[1], k * CLAD_TAPER.arm[2]] as const;
+  const flare = b.flare ?? 0;
+  const f = b.sleeveLength ?? 1;
+  // tay áo loe nằm ngoài tay: mép trong tay buông là mép trong ống tay áo, tới miệng tay
+  const r = (
+    flare > 0
+      ? [
+          cap,
+          k * CLAD_TAPER.arm[1] * SLEEVE_EASE + sleeveGrow(flare, f, len, len[0]),
+          k * CLAD_TAPER.arm[2] * SLEEVE_EASE + sleeveGrow(flare, f, len, len[0] + len[1]),
+        ]
+      : [cap, k * CLAD_TAPER.arm[1], k * CLAD_TAPER.arm[2]]
+  ) as readonly [number, number, number];
+  const g = garmentOf(garment, true);
+  // bụng phệ không bị tay cắt: tay buông choãi tới khi mép trong cách bụng một `CLAD_GAP`
+  const belly = g.belly ? profile(g, rig, inset).pts.filter(([, y]) => y > at[1] + cap) : [];
   const hipEdge = rig.hipHalf + thigh;
   const hand = cladHand(b.sleeve, rig.stroke, len[1]).length;
-  const torso = skirt && profile(garmentOf(garment, true), rig, inset).pts;
+  const torso = skirt && profile(g, rig, inset).pts;
   const yW = skirt ? -skirt.rise * h : 0;
   const knee = (thigh * CLAD_TAPER.leg[1]) / CLAD_TAPER.leg[0];
   const roomAt = (splay: number): ArmRoom => {
@@ -232,6 +259,7 @@ export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Buil
   const fits = (splay: number) => {
     const room = roomAt(splay);
     if (armInner(room, 0) < hipEdge) return false;
+    if (belly.some(([a, y]) => armSide(room, y) < a)) return false;
     if (!skirt || !torso) return true;
     // cạp liền mặt thân áo đã lùi theo tay; nửa px cạp 3D nhô ra nằm trong `CLAD_GAP`
     const { pts, depth } = cladProfile(torso, room);
@@ -456,6 +484,8 @@ export function actJoints(
     trouser: w.trouser,
     bicep: pal.bicep,
     skirt: wornSkirt(c.pieces.hem),
+    flare: pal.sleeveFlare,
+    sleeveLength: pal.sleeveLength,
   });
   const flip = !!W.flip;
   const near = flip ? 1 : -1;

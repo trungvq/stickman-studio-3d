@@ -3,10 +3,11 @@ import { cladProfile, type ArmRoom } from './core/act3';
 import { D, TORSO_DEPTH } from './core/constants';
 import type { Garment } from './core/schema';
 import {
-  COLLAR_LEAN, COLLAR_LINE, curve, GARMENT_STYLES, garmentOf, lerp, lerpAt, lipOf, profile, RIB_FRONT, spline,
+  bellyAt, COLLAR_LEAN, COLLAR_LINE, curve, GARMENT_STYLES, garmentOf, lerp, lerpAt, lipOf, profile, RIB_FRONT, spline,
   type MarkFill, type P2, type Rig, type SP, type Surface,
 } from './core/torso';
-import { WrapSchema } from './core/schema';
+import { WrapSchema, type Drape, type Shades } from './core/schema';
+import { drapeSolid, shadesSolids } from './core/drape';
 import { wrapParts, type WrapBody } from './core/wrap';
 import { printParts, type PrintPart } from './core/print';
 
@@ -22,6 +23,8 @@ export interface TorsoMesh {
   profile: P2[];
   /** Nửa bề sâu từng hàng của `profile`: `TORSO_DEPTH` lần nửa rộng, người mặc đồ theo `cladProfile` */
   depth: number[];
+  /** Nửa bề sâu nửa trước từng hàng: `depth` cộng bụng phệ (`garment.belly`) */
+  front: number[];
   /** Nét trên mặt khối, `k` lần nét thân */
   lines: { pts: Vec3[]; k: number }[];
   /** Mảng tô trên mặt khối: điểm 3D và chỉ số tam giác, cạnh không dài quá `FILL_EDGE` px */
@@ -38,15 +41,24 @@ export interface TorsoMesh {
 /** Cạnh tam giác của mảng tô dài nhất bấy nhiêu px: dài hơn thì dây cung cắt xuyên mặt cong của khối */
 const FILL_EDGE = 5;
 
-/** `arm` có là người `clad`: vát vai `cladSlope`, sườn áo lùi theo `cladProfile` */
-export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: ArmRoom): TorsoMesh {
+/** Đồ dựng khối ở socket `neck` bám thân áo: khăn vắt vai màu `color`, kính gài nẹp */
+export interface NeckWear { drape?: Partial<Drape>; shades?: Partial<Shades>; color: string }
+
+/**
+ * `arm` có là người `clad`: vát vai `cladSlope`, sườn áo lùi theo `cladProfile`. `neck`: khăn vắt vai, kính gài nẹp
+ * (`pieces.neck`), khối kín đè lên thân và nắp vai
+ */
+export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: ArmRoom, neck?: NeckWear): TorsoMesh {
   const g = garmentOf(raw, !!arm);
   const def = GARMENT_STYLES[g.style];
   const pr = profile(g, rig, rig.stroke / 2);
   const { pts, depth } = arm ? cladProfile(pr.pts, arm) : { pts: pr.pts, depth: pr.pts.map(([a]) => TORSO_DEPTH * a) };
   const aAt = (y: number) => lerpAt(pts, y, 1, 0);
+  const front = pts.map(([, y], i) => depth[i] + (g.belly ?? 0) * bellyAt(y, rig.height));
   const deep: P2[] = pts.map(([, y], i) => [depth[i], y]);
+  const ahead: P2[] = pts.map(([, y], i) => [front[i], y]);
   const dAt = (y: number) => lerpAt(deep, y, 1, 0);
+  const fAt = (y: number) => lerpAt(ahead, y, 1, 0);
   const yOf = (a: number) => lerpAt(pr.upper, a, 0, 1);
   const at = (x: number, y: number, back = false): SP => {
     const lon = Math.asin(Math.max(-1, Math.min(1, x / Math.max(aAt(y), 1e-6)))) / D;
@@ -78,10 +90,11 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     t: (tt) => pr.yS * (1 - tt),
   };
   const solid = ([lon, y]: SP): [Vec3, Vec3] => {
-    const a = Math.max(aAt(y), 1e-6), d = Math.max(dAt(y), 1e-6), s = Math.sin(lon * D), c = Math.cos(lon * D);
+    const s = Math.sin(lon * D), c = Math.cos(lon * D), half = c > 0 ? fAt : dAt;
+    const a = Math.max(aAt(y), 1e-6), d = Math.max(half(y), 1e-6);
     const p: Vec3 = [a * s, y, d * c];
-    const da = (aAt(y + 4) - aAt(y - 4)) / 8, dd = (dAt(y + 4) - dAt(y - 4)) / 8;
-    // pháp tuyến của ellipse nửa rộng a(y), nửa sâu d(y): gradient của x²/a² + z²/d²
+    const da = (aAt(y + 4) - aAt(y - 4)) / 8, dd = (half(y + 4) - half(y - 4)) / 8;
+    // pháp tuyến của ellipse nửa rộng a(y), nửa sâu d(y) (nửa trước, nửa sau riêng): gradient của x²/a² + z²/d²
     const n: Vec3 = [s / a, -(s * s * da) / a - (c * c * dd) / d, c / d];
     const l = Math.hypot(...n) || 1;
     return [p, n.map((v) => v / l) as Vec3];
@@ -149,7 +162,7 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     return { pts, tris: tris.flat() };
   };
 
-  const out: TorsoMesh = { profile: pts, depth, lines: [], fills: [], dots: [], sheets: [], solids: [], prints: [] };
+  const out: TorsoMesh = { profile: pts, depth, front, lines: [], fills: [], dots: [], sheets: [], solids: [], prints: [] };
   for (const m of def.marks(surf)) {
     if (m.dot) {
       out.dots.push({ p: onTorso(m.pts[0], 0), k: m.k });
@@ -222,7 +235,7 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     );
   }
 
-  const body: WrapBody = { s: surf, depth: dAt, raise: (sp, lift) => raise(sp, lift, 0, 0), height: rig.height };
+  const body: WrapBody = { s: surf, depth: dAt, front: fAt, raise: (sp, lift) => raise(sp, lift, 0, 0), height: rig.height, belly: !!g.belly };
   if (def.wrap) {
     const w = wrapParts(body, WrapSchema.parse(g.wrap ?? {}));
     out.sheets.push(...w.sheets);
@@ -230,6 +243,12 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     out.prints.push(...w.prints);
   }
   out.prints.push(...printParts(body, g));
+
+  if (neck?.drape) {
+    const d = drapeSolid({ s: surf, depth: dAt, front: fAt, height: rig.height, ...(arm && { shoulder: { at: arm.at, r: arm.cap } }) }, neck.drape);
+    if (d) out.solids.push({ ...d, color: neck.color as MarkFill });
+  }
+  if (neck?.shades) out.solids.push(...shadesSolids({ s: surf, raise: (sp, lift) => raise(sp, lift, 0, 0) }, neck.shades));
 
   const spec = def.collar?.(surf);
   if (spec) {
@@ -265,6 +284,7 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
       return [l + 360 * Math.round((phi - l) / 360), y];
     };
     const [liftFold, liftEdge] = spec.lift;
+    const up = g.collarUp ?? 0;
     const stand: Vec3[][] = [];
     const leaf: Vec3[][] = [];
     for (let i = 0; i <= NU; i++) {
@@ -273,16 +293,42 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
       const inner = surf.neck(phi);
       const o = outer(phi);
       stand.push([0, 1].map((w) => raise(inner, liftFold * w, h * w)));
-      leaf.push(
-        curve(NV, (v) =>
-          raise([lerp(inner[0], o[0], v), lerp(inner[1], o[1], v)], lerp(liftFold, liftEdge + tipLift(phi), v), h * (1 - v) ** 2),
-        ),
+      const down = curve(NV, (v) =>
+        raise([lerp(inner[0], o[0], v), lerp(inner[1], o[1], v)], lerp(liftFold, liftEdge + tipLift(phi), v), h * (1 - v) ** 2),
       );
+      leaf.push(up > 0 ? popUp(down, solid(inner)[1], phi, up) : down);
     }
     sheet(stand, [], spec.fill ?? "color", COLLAR_LINE);
     sheet(leaf, [0, NV], spec.fill ?? "color", COLLAR_LINE);
   }
   return out;
+}
+
+/**
+ * Lá cổ dựng hẳn lên chếch ra ngoài theo pháp tuyến ngang của mặt khối ở chân cổ: bấy nhiêu phần ở sau gáy, tới phần thứ
+ * hai ở giữa ngực — hai mũi cổ xoè ra hai bên cằm thay vì đâm lên
+ */
+export const COLLAR_POP_FLARE = [0.25, 1.5] as const;
+
+/**
+ * Lá cổ gập `down` (hàng `0` ở nếp gập) dựng lên phần `w` quanh nếp gập, ở góc `phi` quanh trục cổ: mỗi điểm giữ khoảng
+ * cách tới nếp gập, hướng từ hướng gập xuống sang hướng dựng — lên trên, chếch ra ngoài theo pháp tuyến `n` của mặt khối
+ */
+function popUp(down: Vec3[], n: Vec3, phi: number, w: number): Vec3[] {
+  const F = down[0];
+  const l = Math.hypot(n[0], n[2]) || 1;
+  const c = Math.max(0, Math.cos(phi * D));
+  const out = lerp(COLLAR_POP_FLARE[0], COLLAR_POP_FLARE[1], c * c * (3 - 2 * c));
+  const rise: Vec3 = [(n[0] / l) * out, -1, (n[2] / l) * out];
+  const k = Math.hypot(...rise);
+  return down.map((p, j) => {
+    if (!j) return p;
+    const d = [p[0] - F[0], p[1] - F[1], p[2] - F[2]];
+    const len = Math.hypot(...d);
+    const dir = [0, 1, 2].map((i) => lerp(d[i] / (len || 1), rise[i] / k, w));
+    const m = len / (Math.hypot(...dir) || 1);
+    return [F[0] + dir[0] * m, F[1] + dir[1] * m, F[2] + dir[2] * m];
+  });
 }
 
 /** Váy dựng khối (`SkirtSchema` của rig): nón cụt tiết diện ellipse treo ở hông */

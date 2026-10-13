@@ -268,7 +268,7 @@ trước.
 | `headAcc` | Đỉnh đầu, trên mũ | Phụ kiện đầu: sừng, tai, vòng hoa — `pieces.headAcc`, bám sọ, **không** trôi theo mặt; người 3D có [trâm cài búi](02-trang-phuc.md#trâm-cài-búi) |
 | `faceAcc` | Ngang mắt | Phụ kiện mặt: kính, sẹo, mặt nạ — `pieces.faceAcc`, trôi **đúng bằng** nét mặt |
 | `chin` | Cằm | Râu — `pieces.chin`: ảnh, bộ phận trong `PARTS`, hay [râu dựng khối](02-trang-phuc.md#râu-dựng-khối); `layer` chọn trên hay dưới nét mặt, râu dựng khối luôn dưới |
-| `neck` | Khớp cổ | Khăn quàng, cà vạt, yếm — có `khanco` vẽ code |
+| `neck` | Khớp cổ | Khăn quàng, cà vạt, yếm — có `khanco` vẽ code; người 3D có [khăn vắt vai và kính gài nẹp](02-trang-phuc.md#khăn-vắt-vai-và-kính-gài-nẹp) |
 | `torso` | Thân | Thân áo; có các mẫu áo trong `PARTS` |
 | `pelvis` | Hông | Tà áo, váy — `pieces.hem`, có `skirt` / `ta` vẽ code, hay [váy dựng khối](02-trang-phuc.md#váy-dựng-khối); `layer` chọn trên hay dưới thân áo |
 | `handNear/handFar` | Bàn tay | Đồ cầm tay: công cụ, gậy, bó đồ — `pieces.handNear/handFar` |
@@ -379,6 +379,16 @@ Ba chỗ ghi `equip`, đọc theo thứ tự: `cast[].equip` lúc mở màn (xem
 [03 — Đổi đồ](03-scene.md#đổi-đồ)), rồi `keys[].equip` của từng hành động (xem
 [Đổi đồ giữa chừng](#đổi-đồ-giữa-chừng)). Hành động **không biết ai diễn**, nên
 tên vật trong nó là một giao kèo: mọi nhân vật đóng vai ấy phải có vật cùng tên.
+
+**Người 3D mặc đồ bằng `wardrobe`.** Người three dựng hình từ `pieces` một lần, nên đổi đồ là dựng người khác:
+`wardrobe(nhânVật, make)` giữ một bản cho mỗi bộ mảnh ở các socket người 3D dựng hình (`BUILT_SOCKETS`: `torso`,
+`hem`, `hair`, `crown`, `headAcc`, `faceAcc`, `neck`) và mỗi dáng đứng / ngồi; `get(sceneAt(...).equip, ngồi)` mặc
+`equip` vào JSON (`equipCharacter`), trả bản đúng bộ và báo `fresh` khi vừa dựng để chỗ gọi thêm vào cảnh. `Scene3D` của
+repo video dựng bản mở màn trước, bản khác lần đầu cần tới, mỗi khung chỉ hiện một bản: `cast[].equip` (yukata đứng hay
+ngồi, có hay không lọn tóc) và `keys[].equip` giữa cảnh (thay áo, tháo kính gài nẹp) đều đổi được ở 3D. Bản mới dựng
+diễn tiếp từ cùng `sceneAt`, không mang trạng thái của bản cũ. Đổi vật ở `handNear` / `handFar` không dựng lại người:
+đồ cầm của người 3D là vật three gắn bằng `dress` (`items` hàm dựng), không phải mảnh. Thân áo 3D lấy màu `pieces.torso.color` (bỏ trống là
+`palette.garment`) nên vật thay áo đổi được màu thân; màu, độ dài, độ loe tay áo và quần là `palette`, không đổi theo vật.
 
 ## Thư viện tư thế
 
@@ -1530,6 +1540,7 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
 | `palette.shoe` | `#2b2623` | Màu giày |
 | `palette.bicep` | `0` | Gốc cánh tay to thêm bấy nhiêu phần: vai, bắp tay lồi khỏi sườn áo; nam quanh `0,35`, `0,7` là vạm vỡ |
 | `palette.sleeveWidth` / `trouserWidth` | `15` / `17` | Bán kính chi `(w + rig.stroke) / 2` px — đúng `limbHalf` của lõi; bỏ trống lấy `LIMB_WIDTH.clad` (`limbWidths`), vạm vỡ quanh `19` / `22` |
+| `palette.sleeveFlare` | `0` | Tay áo loe: miệng tay áo rộng hơn cổ tay bấy nhiêu px (bán kính); bàn tay giữ cỡ theo `sleeveWidth` |
 
 - **Đầu `human` là đầu chibi nặn từ mặt cầu.** `humanSkull` (`core/humanHead.ts`) nhận một điểm
   của sọ đơn vị (y lên, z ra trước mặt) và trả điểm trên đầu: nửa trên giữ nguyên, nửa dưới nở
@@ -1566,7 +1577,9 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   mỏng, ngực và lưng phẳng một mạch, nhìn ngang không gù.
 - **Tay buông thẳng.** Tay buông choãi khỏi thân `SPLAY3` (`0,08` rad) quanh trục tiến, người mặc đồ cũng
   thế: thân nhường chỗ chứ tay không xoè. Ngang hông, mép trong cẳng tay phải cách mép ngoài gốc đùi
-  `hipHalf + cladThigh` một `CLAD_GAP`; hông hay đùi to hơn mức ấy thì tay choãi thêm (`roots3`). Mặc
+  `hipHalf + cladThigh` một `CLAD_GAP`; hông hay đùi to hơn mức ấy thì tay choãi thêm (`roots3`). Thân bụng phệ
+  ([02](02-trang-phuc.md#bụng-phệ)) thì tay choãi tới khi mép trong cách mặt cắt có bụng một `CLAD_GAP` ở mọi độ cao
+  dưới nắp vai. Mặc
   [váy dựng khối](02-trang-phuc.md#váy-dựng-khối) thì từ ngang khuỷu tới đầu bàn tay xoè (`cladHand`; người
   que tới đầu nét tay), mép trong tay cũng cách hình bao váy đứng thẳng nhìn chính diện (`skirtSide`) một
   `CLAD_GAP`: váy xoè hơn thì tay choãi hơn — người mặc đồ với `flare` `12` choãi chừng `12°`, `30` thì
@@ -1579,6 +1592,12 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   `hipHalf` lớn hơn gốc đùi thì hai chân tách nhau, nhỏ hơn thì hai đùi lấn vào nhau. Ống phủ hết tay có
   cổ tay áo ở `0,84..1` cẳng tay. Độ cong chi vẫn là
   `palette.limbCurve`.
+- **Tay áo loe** (`sleeveFlare` > 0; kimono, yukata). Tay là ống da, áo là ống phủ ngoài từ vai tới `sleeveLength`:
+  bán kính `SLEEVE_EASE` (`1,1`) lần ống tay cộng phần loe tăng đều theo chiều dài tay từ `0` ở vai tới `sleeveFlare` ở
+  miệng (`sleeveGrow`). Miệng hở: ống vẽ cả mặt trong, đĩa lót tối hơn màu tay áo (`0,45` lần) lùi trong miệng chừng
+  2 px, cổ tay và bàn tay chui ra từ giữa; không có cổ tay áo. Bàn tay theo `sleeveWidth`, không theo bề ngang tay áo.
+  `roots3` đặt tay bằng bán kính ống tay áo ở khuỷu, miệng tay: tay áo rộng thì sườn áo lùi và tay choãi theo, như tay
+  to. Va chạm (`collide`) vẫn là ống tay, không đo tay áo; không có vạt tay rủ (袂).
 - **Bàn tay có khớp.** Một mặt da liền năm ngón trên khung xương lòng bàn tay và năm ngón; dáng tay là góc khớp —
   [Bàn tay](#bàn-tay). Lòng bàn tay quay về phía thân, ngón cái ra trước, cỡ
   theo bán kính cổ tay (`handScale`). Bàn tay xoè dài không quá `0,55` cẳng tay (`openLength`): chi to mà

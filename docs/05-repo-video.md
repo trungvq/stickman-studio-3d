@@ -24,7 +24,8 @@ khai sẵn server, và `package.json` pin **đúng số version**, không `^`.
 
 Cùng với đó là **app Remotion**: `src/` (`index.ts`, `Root.tsx`, `Scene.tsx`,
 `data.ts`, `images.ts`, tầng tập `episode.ts` / `shots.ts` / `Episode.tsx`, và
-`Thumbnail.tsx`; cảnh 3D ở `khoi3d/` — `Scene3D.tsx` sân khấu three, `Overlay3D.tsx` lớp chữ 2D đè
+`Thumbnail.tsx`; cảnh 3D ở `khoi3d/` — `Scene3D.tsx` sân khấu three (người diễn mặc đồ theo `equip` qua
+[`wardrobe`](01-rig.md#đồ-thay-được-items-và-equip)), `Overlay3D.tsx` lớp chữ 2D đè
 lên, `set.ts` kiểu bối cảnh và phòng trơn `plainRoom`, `ChanDung.tsx` chân dung người 3D cho lớp 2D; cùng bốn file của repo `lop.tsx`, `parts.tsx`,
 `scene-wrap.tsx`, `khoi3d/canh.ts`), `tools/` (`still.mjs`, `thumbnails.mjs`, `srt.mjs`, `tts.py`,
 `tts-blocks.py` cùng `len-giong.py`, `lipsync.mjs` cùng `words.py`, `sfx.py`, `sfx-el.py`,
