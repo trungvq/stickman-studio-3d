@@ -1184,8 +1184,18 @@ Bộ số hay dùng, `rig.height = 1`:
 | Kimono thân trên | `{ "style": "wrap", "hem": -36, "neckBack": 8, "wrap": { "band": 5, "under": 3, "obi": { "y": 56, "width": 34, "cord": 3, "clasp": 7, "knot": "taiko" } } }` | Phối váy dựng khối `rise` `46`; đai cao, bản rộng |
 | Áo làm việc tới hông | `{ "style": "wrap" }` | Không đai, quần cùng màu |
 | Áo bếp tới hông | `{ "style": "wrap", "hem": 8 }` | Cổ cùng màu; tay xắn: `palette.sleeveLength` `0.5` |
-| Yukata ngồi tới đùi | `{ "style": "wrap", "hem": 40, "wrap": { "bandColor": "…", "obi": { "y": 14, "width": 14, "lift": 3, "knot": "kai" } } }` | Đai thấp bản hẹp; ống chân cùng màu vải: `palette.trouser` |
+| Yukata ngồi tới đùi | `{ "style": "wrap", "hem": 40, "wrap": { "bandColor": "…", "obi": { "y": 14, "width": 14, "lift": 3, "knot": "kai" } } }` | Đai thấp bản hẹp; ống chân cùng màu vải: `palette.trouser` (yukata là vật thay áo thì khai ở `torso.palette`, xem dưới) |
 | Yukata đứng | `{ "style": "wrap", "hem": 5, "wrap": { "bandColor": "…", "obi": { "y": 30, "width": 16, "lift": 3, "knot": "kai" } } }` | Phối [vạt dài quấn](#vạt-dài-quấn) `rise` `27`: đai che chỗ nối; tay loe `palette.sleeveFlare` `12` |
+
+Khách đổi đồ Tây sang yukata của quán là vật thay `torso` (và `hem`) trong `items`; tay áo dài loe, ống chân cùng màu
+vải là của bộ yukata nên khai ở `palette` của thân áo ấy, đè `palette` nhân vật khi đang mặc
+([01](01-rig.md#đồ-thay-được-items-và-equip)):
+
+```json
+"yukata-ngoi": { "torso": { "src": "sculpt", "color": "#EFE4CF",
+  "garment": { "style": "wrap", "hem": 40, "wrap": { "bandColor": "#2B3A67", "obi": { "color": "#9C5A3C", "y": 14, "width": 14, "lift": 3, "knot": "kai" } } },
+  "palette": { "sleeve": "#EFE4CF", "sleeveLength": 1, "sleeveFlare": 12, "trouser": "#EFE4CF", "trouserLength": 1 } } }
+```
 
 ### Cổ dựng
 

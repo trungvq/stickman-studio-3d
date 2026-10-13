@@ -9,7 +9,7 @@ import { glassesMesh } from './glasses';
 import { INK, toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
-import { equipCharacter, limbWidths, type CharacterData, type Drape, type Equip, type PieceKey, type Garment, type Glasses, type Hat, type Pin, type Sculpt, type Shades, type Skirt } from './core/schema';
+import { equipCharacter, limbWidths, wornPalette, type CharacterData, type Drape, type Equip, type PieceKey, type Garment, type Glasses, type Hat, type Pin, type Sculpt, type Shades, type Skirt } from './core/schema';
 import { hatFit, hatMesh, insideHat, pinMesh } from './core/hat';
 import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, SLEEVE_EASE, sleeveGrow, type Bones3 } from './core/act3';
 import { blushLevel, chibiShape } from './core/face';
@@ -761,7 +761,11 @@ export interface CharacterJson {
   head?: { form?: 'sphere' | 'human' };
   face?: Partial<FaceShape>;
   pieces: {
-    torso: { garment?: Partial<Garment>; accent?: string; color?: string };
+    torso: {
+      garment?: Partial<Garment>; accent?: string; color?: string;
+      /** Tay áo, quần, giày đi theo thân áo này, đè `palette` (`wornPalette`) */
+      palette?: { sleeve?: string; sleeveLength?: number; sleeveFlare?: number; trouser?: string; trouserLength?: number; shoe?: string };
+    };
     hem?: { src?: string; skirt?: Partial<Skirt>; color?: string };
     hair?: { sculpt?: Partial<Sculpt>; color?: string; accent?: string };
     crown?: { src: string; hat?: Partial<Hat>; color?: string };
@@ -775,7 +779,7 @@ export interface CharacterJson {
 
 /** Tham số `stickman` đọc từ JSON nhân vật của rig (cho `seatCrowd`, hay đè thêm trước khi dựng); `opts` đè lên số đọc từ JSON. */
 export function characterOptions(json: CharacterJson, opts: Partial<StickmanOptions> = {}): StickmanOptions {
-  const pal = json.palette, pc = json.pieces;
+  const pal = wornPalette(json), pc = json.pieces;
   return {
     rig: json.rig, garment: pc.torso.garment, color: pc.torso.color ?? pal.garment, accent: pc.torso.accent, skin: pal.skin,
     skirt: wornSkirt(pc.hem), skirtColor: pc.hem?.color, hair: pc.hair?.sculpt, hairColor: pc.hair?.color, hairAccent: pc.hair?.accent,

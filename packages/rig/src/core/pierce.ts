@@ -1,7 +1,8 @@
-import { actJoints, BONES3, type ActInput, type ActJoint } from "./act3";
+import { actJoints, BONES3, cladProfile, roots3, type ActInput, type ActJoint } from "./act3";
 import { TORSO_DEPTH } from "./constants";
-import { limbWidths, type CharacterData } from "./schema";
-import { garmentOf, lerpAt, profile } from "./torso";
+import { limbWidths, wornPalette, type CharacterData } from "./schema";
+import { profileAt, wornSkirt } from "./skirtShape";
+import { garmentOf, profile } from "./torso";
 import type { V3 } from "./lens";
 
 /** Đoạn tay của người 3D: cánh tay, cẳng tay, bên gần hay xa ống kính như `BODY_PARTS` */
@@ -45,7 +46,8 @@ const unit = (a: V3): V3 => {
  * Đoạn tay người 3D xuyên vào thân áo của chính người ấy ở tư thế `sp`, đúng như three vẽ: tay là khớp
  * của `actJoints` (cùng khung xương, cùng IK), thân là khối tròn xoay dẹt của `torsoMesh` — nửa rộng
  * theo `profile` của áo, tiết diện ngang ellipse dẹt `TORSO_DEPTH`, gắn ở hông, dựng theo trục hông →
- * cổ. Đo trên đoạn tay đã bỏ hai đầu (`PIERCE_TRIM`) với lõi tay bằng `PIERCE_CORE` bán kính. Trả các
+ * cổ; người mặc đồ (`palette.clad`) thì sườn áo lùi nhường chỗ cho tay và dày `CLAD_DEPTH` như `torsoMesh`
+ * (`cladProfile` trên chỗ trống `roots3` cho tay). Đo trên đoạn tay đã bỏ hai đầu (`PIERCE_TRIM`) với lõi tay bằng `PIERCE_CORE` bán kính. Trả các
  * đoạn lấn quá `tol`, sâu trước. docs/10-lop-ve-code.md#tay-xuyên-thân
  */
 export function armPierce(
@@ -57,8 +59,23 @@ export function armPierce(
   const W = sp.world;
   if (!j || !W) return [];
   const s = W.s;
-  const pr = profile(garmentOf(c.pieces.torso.garment, c.palette.clad), c.rig, c.rig.stroke / 2);
-  const [yTop, yBot] = [pr.pts[0][1], pr.pts[pr.pts.length - 1][1]];
+  const pal = wornPalette(c);
+  let pts = profile(garmentOf(c.pieces.torso.garment, pal.clad), c.rig, c.rig.stroke / 2).pts;
+  let depths = pts.map(([a]) => TORSO_DEPTH * a);
+  if (pal.clad) {
+    const w = limbWidths(pal);
+    const { room } = roots3(c.pieces.torso.garment, c.rig, {
+      clad: true,
+      sleeve: w.sleeve,
+      trouser: w.trouser,
+      bicep: pal.bicep,
+      skirt: wornSkirt(c.pieces.hem),
+      flare: pal.sleeveFlare,
+      sleeveLength: pal.sleeveLength,
+    });
+    if (room) ({ pts, depth: depths } = cladProfile(pts, room));
+  }
+  const [yTop, yBot] = [pts[0][1], pts[pts.length - 1][1]];
   // hệ thân: trục lên từ hông tới cổ, trục ngang qua hai vai; tiết diện đối xứng nên chiều tiến tuỳ dấu
   const hip = j.hip;
   const up = unit(sub(j.neck, hip));
@@ -75,12 +92,12 @@ export function armPierce(
     const d = sub(p, hip);
     const y = -dot(d, up) / s;
     if (y < yTop || y > yBot) return -Infinity;
-    const a = lerpAt(pr.pts, y, 1, 0);
-    if (!(a > 0)) return -Infinity;
+    const [a, dz] = profileAt(pts, depths, y);
+    if (!(a > 0) || !(dz > 0)) return -Infinity;
     const [x, z] = [dot(d, side) / s, dot(d, fwd) / s];
-    const q = Math.hypot(x / a, z / (TORSO_DEPTH * a));
+    const q = Math.hypot(x / a, z / dz);
     // quãng tới mặt áo dọc bán kính elip, quy về trục ngắn: đủ để xếp nặng nhẹ, không cần đúng tuyệt đối
-    return (1 - q) * TORSO_DEPTH * a * s + r;
+    return (1 - q) * Math.min(a, dz) * s + r;
   };
   const [near, far] = W.flip ? ["L", "R"] : ["R", "L"];
   const segs: [ArmPart, ActJoint, ActJoint][] = [

@@ -448,6 +448,19 @@ export const GarmentSchema = z.object({
   belly: z.number().min(0).optional(),
 });
 
+/**
+ * Tay áo, quần, giày đi theo thân áo này, đè `palette` của nhân vật khi thân áo ấy đang mặc — áo thay qua `items`
+ * (đồ Tây sang yukata) đổi luôn màu và độ dài tay áo, ống quần. Chỉ người 3D đọc. docs/01-rig.md#đồ-thay-được-items-và-equip
+ */
+export const PiecePaletteSchema = z.object({
+  sleeve: z.string().optional(),
+  sleeveLength: z.number().min(0).max(1).optional(),
+  sleeveFlare: z.number().min(0).optional(),
+  trouser: z.string().optional(),
+  trouserLength: z.number().min(0).max(1).optional(),
+  shoe: z.string().optional(),
+});
+
 export const SKIRT_STYLES = ["cone", "wrap", "apron"] as const;
 
 /** Vạt dài quấn (`skirt.style: "wrap"`). docs/02-trang-phuc.md#vạt-dài-quấn */
@@ -523,6 +536,7 @@ export const SocketPieceSchema = piece.extend({
   drape: DrapeSchema.optional(),
   shades: ShadesSchema.optional(),
   garment: GarmentSchema.optional(),
+  palette: PiecePaletteSchema.optional(),
   skirt: SkirtSchema.optional(),
   clip: z.boolean().default(false),
   clipGrow: z.number().default(1.12),
@@ -658,6 +672,8 @@ export const CharacterSchema = z.object({
         .extend({
           src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
           garment: GarmentSchema.optional(),
+          /** Tay áo, quần, giày của bộ áo này, đè `palette`; chỉ người 3D */
+          palette: PiecePaletteSchema.optional(),
         })
         .prefault({ scale: 1.1, aspect: 0.55 }),
       sleeveNear: piece.prefault({ aspect: 0.45 }),
@@ -817,6 +833,15 @@ export function equipPieces(c: CharacterData, e?: Equip): CharacterData["pieces"
 }
 
 /** Nhân vật với `pieces` đã mặc xong; mọi chỗ vẽ và mọi công thức hình học đi qua bản này. */
+/** `palette` của nhân vật cộng phần thân áo đang mặc đè lên (`pieces.torso.palette`): tay áo, quần, giày người 3D vẽ */
+export const wornPalette = <P extends object>(c: { palette: P; pieces: { torso: { palette?: Partial<P> } } }): P => {
+  const o = c.pieces.torso.palette;
+  if (!o) return c.palette;
+  const out = { ...c.palette };
+  for (const [k, v] of Object.entries(o)) if (v !== undefined) (out as Record<string, unknown>)[k] = v;
+  return out;
+};
+
 export const equipCharacter = (c: CharacterData, e?: Equip): CharacterData => {
   const pieces = equipPieces(c, e);
   return pieces === c.pieces ? c : { ...c, pieces };

@@ -388,7 +388,10 @@ tên vật trong nó là một giao kèo: mọi nhân vật đóng vai ấy ph�
 ngồi, có hay không lọn tóc) và `keys[].equip` giữa cảnh (thay áo, tháo kính gài nẹp) đều đổi được ở 3D. Bản mới dựng
 diễn tiếp từ cùng `sceneAt`, không mang trạng thái của bản cũ. Đổi vật ở `handNear` / `handFar` không dựng lại người:
 đồ cầm của người 3D là vật three gắn bằng `dress` (`items` hàm dựng), không phải mảnh. Thân áo 3D lấy màu `pieces.torso.color` (bỏ trống là
-`palette.garment`) nên vật thay áo đổi được màu thân; màu, độ dài, độ loe tay áo và quần là `palette`, không đổi theo vật.
+`palette.garment`) nên vật thay áo đổi được màu thân. Tay áo, quần, giày (`sleeve`, `sleeveLength`, `sleeveFlare`, `trouser`,
+`trouserLength`, `shoe`) là `palette`, trừ khi thân áo đang mặc khai `pieces.torso.palette` (hay vật thay `torso` khai
+`palette`): các trường ấy đè `palette` khi áo ấy đang mặc (`wornPalette`) — polo tay ngắn thay sang yukata tay dài loe,
+ống chân cùng màu vải. Bề dày tay chân (`sleeveWidth`, `trouserWidth`) không đổi theo vật.
 
 ## Thư viện tư thế
 
@@ -1461,7 +1464,8 @@ thân, đích hệ thân, đích thế giới, ngồi, lật, `height` khác `1`
 
 `armPierce(nhân vật, scenePose)` (`core/pierce.ts`) đo tay xuyên thân áo trên các khớp ấy: thân là
 khối tròn xoay dẹt của `torsoMesh` dựng lại không cần `three` — nửa rộng theo `profile` của áo, tiết
-diện ngang ellipse dẹt `TORSO_DEPTH`, gắn ở hông theo trục hông → cổ, cả người nhân `world.s`
+diện ngang ellipse dẹt `TORSO_DEPTH` (người mặc đồ: sườn áo lùi cho tay và dày `CLAD_DEPTH`, `cladProfile` trên
+chỗ trống `roots3`), gắn ở hông theo trục hông → cổ, cả người nhân `world.s`
 ([10](10-lop-ve-code.md#tay-xuyên-thân)). Đổi cách `torsoMesh` dựng thân thì đổi cùng `armPierce`.
 
 `figure3d` là hình học của người que SVG, không phải của three: hai đường trùng nhau ở kênh nâng

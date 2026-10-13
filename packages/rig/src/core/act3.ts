@@ -12,7 +12,7 @@ import {
   type M3,
   type V3,
 } from "./lens";
-import { limbWidths, type CharacterData, type Garment, type Skirt } from "./schema";
+import { limbWidths, wornPalette, type CharacterData, type Garment, type Skirt } from "./schema";
 import { profileAt, skirtSide, wornSkirt } from "./skirtShape";
 import { garmentOf, garmentShoulder, garmentSocket, profile, type P2, type Rig } from "./torso";
 
@@ -476,7 +476,7 @@ export function actJoints(
   if (!W) return undefined;
   const P = sp.pose;
   const B = bones3(c.rig.height);
-  const pal = c.palette;
+  const pal = wornPalette(c);
   const w = limbWidths(pal);
   const roots = roots3(c.pieces.torso.garment, c.rig, {
     clad: pal.clad,
