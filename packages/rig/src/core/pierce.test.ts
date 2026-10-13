@@ -41,6 +41,11 @@ describe("armPierce: tay người 3D xuyên thân áo của chính người ấy
     expect(at(undefined, clad)).toEqual([]);
   });
 
+  it("người mặc đồ bụng phệ tay buông choãi: không báo", () => {
+    const belly = { ...clad, pieces: { ...clad.pieces, torso: { ...clad.pieces.torso, garment: { style: "polo" as const, belly: 24 } } } };
+    expect(at(undefined, belly)).toEqual([]);
+  });
+
   it("người mặc đồ với tay chéo qua người: vẫn báo", () => {
     const hits = at([20, -250, 60], clad);
     expect(hits.length).toBeGreaterThan(0);

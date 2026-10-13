@@ -47,7 +47,8 @@ const unit = (a: V3): V3 => {
  * của `actJoints` (cùng khung xương, cùng IK), thân là khối tròn xoay dẹt của `torsoMesh` — nửa rộng
  * theo `profile` của áo, tiết diện ngang ellipse dẹt `TORSO_DEPTH`, gắn ở hông, dựng theo trục hông →
  * cổ; người mặc đồ (`palette.clad`) thì sườn áo lùi nhường chỗ cho tay và dày `CLAD_DEPTH` như `torsoMesh`
- * (`cladProfile` trên chỗ trống `roots3` cho tay). Đo trên đoạn tay đã bỏ hai đầu (`PIERCE_TRIM`) với lõi tay bằng `PIERCE_CORE` bán kính. Trả các
+ * (`cladProfile` trên chỗ trống `roots3` cho tay), và cánh tay bỏ thêm quãng trong hai lần bán kính nắp vai quanh khớp
+ * vai (tay choãi rộng vì bụng phệ còn nằm trong thân ở đó). Đo trên đoạn tay đã bỏ hai đầu (`PIERCE_TRIM`) với lõi tay bằng `PIERCE_CORE` bán kính. Trả các
  * đoạn lấn quá `tol`, sâu trước. docs/10-lop-ve-code.md#tay-xuyên-thân
  */
 export function armPierce(
@@ -62,6 +63,8 @@ export function armPierce(
   const pal = wornPalette(c);
   let pts = profile(garmentOf(c.pieces.torso.garment, pal.clad), c.rig, c.rig.stroke / 2).pts;
   let depths = pts.map(([a]) => TORSO_DEPTH * a);
+  /** Người mặc đồ: quanh khớp vai trong bán kính này (px) là nắp vai, cánh tay choãi rộng (bụng phệ) còn nằm trong thân */
+  let capZone = 0;
   if (pal.clad) {
     const w = limbWidths(pal);
     const { room } = roots3(c.pieces.torso.garment, c.rig, {
@@ -73,7 +76,10 @@ export function armPierce(
       flare: pal.sleeveFlare,
       sleeveLength: pal.sleeveLength,
     });
-    if (room) ({ pts, depth: depths } = cladProfile(pts, room));
+    if (room) {
+      ({ pts, depth: depths } = cladProfile(pts, room));
+      capZone = 2 * room.cap;
+    }
   }
   const [yTop, yBot] = [pts[0][1], pts[pts.length - 1][1]];
   // hệ thân: trục lên từ hông tới cổ, trục ngang qua hai vai; tiết diện đối xứng nên chiều tiến tuỳ dấu
@@ -111,9 +117,12 @@ export function armPierce(
     const { root, tip } = PIERCE_TRIM[part];
     const [a, b] = [j[A], j[B]];
     let depth = -Infinity;
+    const upper = part === "armNear" || part === "armFar";
     for (let i = 0; i <= STEPS; i++) {
       const k = root + ((1 - root - tip) * i) / STEPS;
-      depth = Math.max(depth, depthAt([0, 1, 2].map((m) => a[m] + (b[m] - a[m]) * k) as V3));
+      const p = [0, 1, 2].map((m) => a[m] + (b[m] - a[m]) * k) as V3;
+      if (upper && Math.hypot(...sub(p, a)) < capZone * s) continue;
+      depth = Math.max(depth, depthAt(p));
     }
     if (depth > tol) out.push({ part, depth });
   }
