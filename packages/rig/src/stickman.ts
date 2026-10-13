@@ -9,7 +9,8 @@ import { glassesMesh } from './glasses';
 import { INK, toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
-import { limbWidths, type Garment, type Glasses, type Sculpt, type Skirt } from './core/schema';
+import { limbWidths, type Garment, type Glasses, type Hat, type Pin, type Sculpt, type Skirt } from './core/schema';
+import { hatFit, hatMesh, insideHat, pinMesh } from './core/hat';
 import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, type Bones3 } from './core/act3';
 import { blushLevel, chibiShape } from './core/face';
 import { wornSkirt } from './core/skirtShape';
@@ -248,33 +249,78 @@ function arm(parent: THREE.Object3D, side: Side, x: number, y: number, B: Bones3
  * Tóc dựng khối của rig (`pieces.hair.sculpt` trong JSON nhân vật), lưới hệ sọ đơn vị phóng theo khối đầu. Đầu `human`:
  * tóc dời theo sọ (`humanHair`).
  */
-function sculptHair(head: THREE.Object3D, sculpt: Partial<Sculpt>, color: string, human: boolean) {
-  const mesh = sculptMesh(sculpt);
+function sculptHair(head: THREE.Object3D, sculpt: Partial<Sculpt>, color: string, human: boolean, cut?: (p: Vec3) => boolean, accent?: string) {
+  const mesh = sculptMesh(sculpt, { cut, accent: !!accent });
   if (human) {
     const bend = (p: number[]) => humanHair(p as Vec3);
     for (const tris of [mesh.shell, mesh.spikes, mesh.hang]) tris.forEach((t, i) => (tris[i] = t.map(bend) as typeof t));
     mesh.lines.forEach((l, i) => (mesh.lines[i] = l.map(bend) as typeof l));
   }
   // vỏ ngược đánh nhau độ sâu với sọ ngay dưới và bị vỏ tóc che ở lọn nằm sát: nét bóng dáng vẽ ở hậu kỳ
-  const mat = npr({ color, stipple: 0.05, stippleScale: 5, soft: 0.6, doubleSided: true, ink: 0.022 });
+  // màu phụ: một vật liệu màu theo đỉnh, nên chỗ giáp hai màu không có nét như hai vật
+  const mat = npr({ color: accent ? '#ffffff' : color, stipple: 0.05, stippleScale: 5, soft: 0.6, doubleSided: true, ink: 0.022, tint: !!accent });
+  const [c0, c1] = [new THREE.Color(color), new THREE.Color(accent ?? color)];
   for (const tris of [mesh.shell, mesh.spikes, mesh.hang]) {
     if (!tris.length) continue;
-    const pos = new Float32Array(tris.length * 9);
-    tris.forEach((t, i) => t.forEach((p, k) => pos.set(p, i * 9 + k * 3)));
-    let geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    geo = mergeVertices(geo);
-    geo.computeVertexNormals();
-    geo.scale(R.head, R.head * 1.04, R.head * 0.98);
-    const g = new THREE.Group(), m = new THREE.Mesh(geo, mat);
+    const tone = accent ? tris.map((_, i) => (tris === mesh.shell && mesh.tone?.[i] ? c1 : c0)) : undefined;
+    const g = new THREE.Group(), m = new THREE.Mesh(skullGeometry(tris, tone), mat);
     m.castShadow = true;
     m.userData.hair = tris === mesh.shell ? 'shell' : tris === mesh.spikes ? 'spikes' : 'hang';
     head.add(g.add(m));
   }
+  inkLines(head, mesh.lines, 0.012);
+}
+
+/** Lưới từ tam giác của hệ sọ đơn vị, phóng theo khối đầu như tóc; `tone` là màu từng tam giác (thuộc tính `tint`) */
+function skullGeometry(tris: Vec3[][], tone?: THREE.Color[]) {
+  const pos = new Float32Array(tris.length * 9);
+  tris.forEach((t, i) => t.forEach((p, k) => pos.set(p, i * 9 + k * 3)));
+  let geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  if (tone) {
+    const col = new Float32Array(tris.length * 9);
+    tone.forEach((c, i) => [0, 1, 2].forEach((k) => col.set([c.r, c.g, c.b], i * 9 + k * 3)));
+    geo.setAttribute('tint', new THREE.BufferAttribute(col, 3));
+  }
+  geo = mergeVertices(geo);
+  geo.computeVertexNormals();
+  geo.scale(R.head, R.head * 1.04, R.head * 0.98);
+  return geo;
+}
+
+/** Nét mực trên đầu theo các đường của hệ sọ đơn vị; đường khép kín khi điểm cuối trùng điểm đầu */
+function inkLines(head: THREE.Object3D, lines: Vec3[][], r: number) {
   // co điểm trước khi dựng ống: LOD thấp dựng lại ống từ `parameters.path`, co hình học sau đó thì nét bay khỏi đầu
-  for (const l of mesh.lines) {
-    const pts = l.map(([x, y, z]) => new THREE.Vector3(x * R.head, y * R.head * 1.04, z * R.head * 0.98));
-    head.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), l.length * 2, 0.012, 5), ink));
+  for (const l of lines) {
+    const closed = l.length > 2 && l[0].every((v, d) => v === l[l.length - 1][d]);
+    const pts = (closed ? l.slice(0, -1) : l).map(([x, y, z]) => new THREE.Vector3(x * R.head, y * R.head * 1.04, z * R.head * 0.98));
+    head.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, closed), l.length * 2, r, 5, closed), ink));
+  }
+}
+
+/**
+ * Mũ dựng khối (`pieces.crown.hat`) ôm sọ và vỏ tóc `hair`; trả vùng trong lòng mũ để tóc bỏ lọn, búi nằm trong ấy.
+ * docs/02-trang-phuc.md#mũ-dựng-khối
+ */
+function sculptHat(head: THREE.Object3D, hat: Partial<Hat>, hair: Partial<Sculpt> | undefined, color: string) {
+  const fit = hatFit(hat, hair);
+  const { tris, lines } = hatMesh(hat, fit);
+  const m = new THREE.Mesh(skullGeometry(tris), npr({ color, stipple: 0.04, stippleScale: 4, soft: 0.7, doubleSided: true, ink: 0.03 }));
+  m.castShadow = true;
+  m.userData.hair = 'hat';
+  head.add(new THREE.Group().add(m));
+  inkLines(head, lines, 0.01);
+  return (p: Vec3) => insideHat(fit, p);
+}
+
+/** Trâm cài búi (`pieces.headAcc.pin`) xuyên khối buộc của tóc `hair`: que màu `color`, hạt màu `bead`. docs/02-trang-phuc.md#trâm-cài-búi */
+function sculptPin(head: THREE.Object3D, pin: Partial<Pin>, hair: Partial<Sculpt> | undefined, human: boolean, color: string, bead: string) {
+  const m = pinMesh(pin, hair);
+  const bend = (t: Vec3[]) => (human ? t.map(humanHair) : t);
+  for (const [tris, c] of [[m.stick, color], [m.bead, bead]] as const) {
+    const mesh = new THREE.Mesh(skullGeometry(tris.map(bend)), npr({ color: c, stipple: 0.03, stippleScale: 4, soft: 0.7, ink: 0.014 }));
+    mesh.castShadow = true;
+    head.add(new THREE.Group().add(mesh));
   }
 }
 
@@ -292,6 +338,15 @@ export interface StickmanOptions {
   /** `pieces.hair.sculpt`, bỏ trống là đầu trọc */
   hair?: Partial<Sculpt>;
   hairColor?: string;
+  /** `pieces.hair.accent`: màu phụ của tóc dựng khối, vùng theo `accentTo` / `accentFrom` */
+  hairAccent?: string;
+  /** `pieces.crown.hat`: mũ dựng khối, màu `hatColor` (bỏ trống là màu áo) */
+  hat?: Partial<Hat>;
+  hatColor?: string;
+  /** `pieces.headAcc.pin`: trâm cài búi, que màu `pinColor`, hạt màu `pinBead` */
+  pin?: Partial<Pin>;
+  pinColor?: string;
+  pinBead?: string;
   /** `pieces.faceAcc.glasses`; `true` là kính tròn mặc định */
   glasses?: boolean | Partial<Glasses>;
   /** `pieces.faceAcc.color`, bỏ trống là màu áo */
@@ -390,7 +445,9 @@ export function stickman(o: StickmanOptions): Figure {
     g.scale.copy(skullScale).multiplyScalar(R.head);
     head.add(g);
   }
-  if (hair) sculptHair(head, hair, hairColor, human);
+  const cut = o.hat ? sculptHat(head, o.hat, hair, o.hatColor ?? color) : undefined;
+  if (hair) sculptHair(head, hair, hairColor, human, cut, o.hairAccent);
+  if (o.pin) sculptPin(head, o.pin, hair, human, o.pinColor ?? '#3a2a22', o.pinBead ?? o.pinColor ?? '#3a2a22');
   if (human) {
     for (const s of SIDES) {
       const ear = earGroup(s, R.head, skullScale, skinMat, hull, ink);
@@ -444,7 +501,7 @@ export function stickman(o: StickmanOptions): Figure {
       bendLimb(seg(a), b, seg(b), limbCurve);
     }
   }
-  const shell = head.children.flatMap((g) => g.children.filter((m) => m.userData.hair === 'shell').map((m) => ((m as THREE.Mesh).geometry.attributes.position.array)));
+  const shell = head.children.flatMap((g) => g.children.filter((m) => m.userData.hair === 'shell' || m.userData.hair === 'hat').map((m) => ((m as THREE.Mesh).geometry.attributes.position.array)));
   const fit = headFit(skullScale.clone().multiplyScalar(R.head), shell, eyes.offsetY);
   if (human) {
     // mặt trước ngang mắt trên đầu `human`: mắt thấp hơn tâm sọ thì đã vào phần nặn
@@ -615,6 +672,7 @@ function mergeStatic(j: THREE.Object3D) {
       const src = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry;
       g.setAttribute('position', src.attributes.position.clone());
       g.setAttribute('normal', src.attributes.normal.clone());
+      if (src.attributes.tint) g.setAttribute('tint', src.attributes.tint.clone());
       return g.applyMatrix4(inv.clone().multiply(m.matrixWorld));
     });
     const merged = new THREE.Mesh(mergeGeometries(geos), mat);
@@ -639,7 +697,9 @@ export interface CharacterJson {
   pieces: {
     torso: { garment?: Partial<Garment> };
     hem?: { src?: string; skirt?: Partial<Skirt>; color?: string };
-    hair?: { sculpt?: Partial<Sculpt>; color?: string };
+    hair?: { sculpt?: Partial<Sculpt>; color?: string; accent?: string };
+    crown?: { src: string; hat?: Partial<Hat>; color?: string };
+    headAcc?: { src: string; pin?: Partial<Pin>; color?: string; accent?: string };
     faceAcc?: { src: string; glasses?: Partial<Glasses>; color?: string };
   };
   /** Vật gọi tên: socket → cấu hình; `opts.items` cấp hàm dựng 3D theo cùng tên */
@@ -651,9 +711,11 @@ export function characterOptions(json: CharacterJson, opts: Partial<StickmanOpti
   const pal = json.palette, pc = json.pieces;
   return {
     rig: json.rig, garment: pc.torso.garment, color: pal.garment, skin: pal.skin,
-    skirt: wornSkirt(pc.hem), skirtColor: pc.hem?.color, hair: pc.hair?.sculpt, hairColor: pc.hair?.color,
+    skirt: wornSkirt(pc.hem), skirtColor: pc.hem?.color, hair: pc.hair?.sculpt, hairColor: pc.hair?.color, hairAccent: pc.hair?.accent,
     sleeveWidth: pal.sleeveWidth, trouserWidth: pal.trouserWidth, limbCurve: pal.limbCurve, faceShape: json.face, itemSpecs: json.items,
     glasses: pc.faceAcc?.src === 'sculpt' && pc.faceAcc.glasses, glassesColor: pc.faceAcc?.color,
+    ...(pc.crown?.src === 'sculpt' && { hat: pc.crown.hat ?? {}, hatColor: pc.crown.color }),
+    ...(pc.headAcc?.src === 'sculpt' && { pin: pc.headAcc.pin ?? {}, pinColor: pc.headAcc.color, pinBead: pc.headAcc.accent }),
     clad: pal.clad, sleeveColor: pal.sleeve, trouserColor: pal.trouser, shoeColor: pal.shoe, sleeveLength: pal.sleeveLength, bicep: pal.bicep,
     trouserLength: pal.trouserLength, headForm: json.head?.form, ...opts,
   };

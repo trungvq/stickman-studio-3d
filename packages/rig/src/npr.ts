@@ -283,10 +283,17 @@ varying vec3 vNormal;
 #ifdef USE_MAP
 varying vec2 vUv;
 #endif
+#ifdef USE_TINT
+attribute vec3 tint;
+varying vec3 vTint;
+#endif
 void main(){
   vec4 wp = modelMatrix * vec4(position, 1.0);
   vWorldPos = wp.xyz;
   vNormal = normalize(mat3(modelMatrix) * normal);
+  #ifdef USE_TINT
+    vTint = tint;
+  #endif
   #ifdef USE_MAP
     vUv = uv;
   #endif
@@ -304,6 +311,9 @@ varying vec3 vNormal;
 uniform sampler2D uMap;
 varying vec2 vUv;
 #endif
+#ifdef USE_TINT
+varying vec3 vTint;
+#endif
 ${COMMON}
 void main(){
   vec3 N = normalize(vNormal);
@@ -311,6 +321,9 @@ void main(){
     N = gl_FrontFacing ? N : -N;
   #endif
   vec3 base = uColor;
+  #ifdef USE_TINT
+    base *= vTint;
+  #endif
   float a = uOpacity;
   #ifdef USE_MAP
     vec4 tex = texture2D(uMap, vUv);
@@ -353,6 +366,8 @@ export interface NprOptions {
   ink?: number;
   /** Cùng tham số khác `group` là hai vật liệu: nét bóng dáng hậu kỳ coi là hai vật, có nét chỗ chồng nhau */
   group?: string;
+  /** Màu từng đỉnh: thuộc tính `tint` của lưới nhân vào `color`; hai màu trên một vật mà chỗ giáp không có nét */
+  tint?: boolean;
 }
 
 function shaded(defines: Record<string, string>, side: THREE.Side, own: Record<string, THREE.IUniform>) {
@@ -374,7 +389,7 @@ export function npr(o: NprOptions = {}): THREE.ShaderMaterial {
   const key = JSON.stringify(o);
   const hit = cache.get(key);
   if (hit) return hit;
-  const defines: Record<string, string> = { ...(o.doubleSided ? { DOUBLE_SIDED: '' } : {}), ...(o.spread ? { KEY_SPREAD: '' } : {}), ...(o.flat ? { FLAT_KEY: '' } : {}) };
+  const defines: Record<string, string> = { ...(o.doubleSided ? { DOUBLE_SIDED: '' } : {}), ...(o.spread ? { KEY_SPREAD: '' } : {}), ...(o.flat ? { FLAT_KEY: '' } : {}), ...(o.tint ? { USE_TINT: '' } : {}) };
   const m = shaded(defines, o.doubleSided ? THREE.DoubleSide : THREE.FrontSide, ownUniforms(o));
   if (o.ink) m.userData.ink = o.ink;
   cache.set(key, m);

@@ -114,6 +114,26 @@ export const SculptSchema = z.object({
   tie: z.number().default(55),
   /** Đuôi ngựa: đuôi rủ tới bấy nhiêu lần bán kính sọ dưới chỗ buộc, theo trọng lực */
   tail: z.number().default(1.3),
+  /** Đuôi ngựa, búi: kinh độ chỗ buộc; `180` giữa gáy */
+  tieLon: z.number().default(180),
+  /** Đuôi ngựa, búi: hệ số nhân bán kính búi và bề ngang đuôi */
+  knotSize: z.number().default(1),
+  /** Số lọn vểnh trên đỉnh đầu; `0` là không có */
+  ahoge: z.number().int().min(0).default(0),
+  /** Lọn vểnh: dài bấy nhiêu lần bán kính sọ */
+  ahogeLength: z.number().default(0.5),
+  /** Lọn vểnh: hướng cong trên mặt sọ, độ; `0` ra trước mặt, `90` về `+x`, `180` ra sau */
+  ahogeHeading: z.number().default(0),
+  /** Lọn vểnh: ngọn ngả khỏi phương dựng đứng bấy nhiêu độ; `90` nằm ngang, hơn nữa thì cụp xuống */
+  ahogeBend: z.number().default(120),
+  /** Chân tóc hai bên trán lùi lên bấy nhiêu độ (hói chữ M); `0` là không */
+  recede: z.number().default(0),
+  /** Kinh độ chỗ chân tóc lùi sâu nhất, hai bên đối xứng */
+  recedeAt: z.number().default(40),
+  /** Màu phụ `pieces.hair.accent`: phủ từ chân tóc lên bấy nhiêu phần chiều cao vỏ */
+  accentTo: z.number().default(0.45),
+  /** Màu phụ: từ kinh độ này ra sau gáy, hai bên đối xứng */
+  accentFrom: z.number().default(70),
 });
 
 /**
@@ -137,6 +157,50 @@ export const GlassesSchema = z.object({
   stand: z.number().default(0.12),
   /** Bề dày gọng, phần nét viền */
   thick: z.number().default(0.34),
+});
+
+/**
+ * Mũ dựng khối của người 3D: ôm sọ và vỏ tóc dưới nó, quay theo đầu. Góc theo độ, dài theo bán kính sọ.
+ * docs/02-trang-phuc.md#mũ-dựng-khối
+ */
+export const HAT_SHAPES = ["drum"] as const;
+
+export const HatSchema = z.object({
+  /** `drum` trụ thấp hở đáy, đỉnh phẳng bo mép */
+  shape: z.enum(HAT_SHAPES).default("drum"),
+  /** Vĩ độ miệng mũ ở giữa trán */
+  front: z.number().default(32),
+  /** Vĩ độ miệng mũ ở gáy */
+  back: z.number().default(18),
+  /** Thân mũ cao bấy nhiêu tính từ miệng; thấp hơn tóc dưới nó thì nâng cho trùm hết */
+  height: z.number().default(0.62),
+  /** Khoảng hở giữa thân mũ và vỏ tóc (hay sọ); âm là ôm chặt hơn */
+  ease: z.number().default(0.03),
+  /** Bán kính bo mép đỉnh */
+  round: z.number().default(0.12),
+  /** Miệng mũ nở ra bấy nhiêu phần bán kính thân, `0` là trụ thẳng */
+  flare: z.number().default(0),
+  /** Nếp gấp ngang: các độ cao, phần chiều cao thân */
+  folds: z.array(z.number()).default([0.32]),
+});
+
+/**
+ * Trâm cài búi: que mảnh xuyên qua khối buộc của tóc dựng khối (búi, đuôi ngựa), một hạt ở đầu que.
+ * docs/02-trang-phuc.md#trâm-cài-búi
+ */
+export const PinSchema = z.object({
+  /** Hướng đầu có hạt trên mặt búi, độ: `0` ngang về `+x`, `90` thẳng lên, `180` ngang về `−x` */
+  angle: z.number().default(40),
+  /** Đầu có hạt chếch ra khỏi mặt búi bấy nhiêu độ */
+  lean: z.number().default(15),
+  /** Dài cả que, lần bán kính sọ */
+  length: z.number().default(0.95),
+  /** Phần que nằm phía hạt, tính từ chỗ xuyên */
+  reach: z.number().default(0.6),
+  /** Bán kính que */
+  thick: z.number().default(0.02),
+  /** Bán kính hạt */
+  bead: z.number().default(0.065),
 });
 
 /**
@@ -267,6 +331,8 @@ export const SocketPieceSchema = piece.extend({
   src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
   glasses: GlassesSchema.optional(),
   beard: BeardSchema.optional(),
+  hat: HatSchema.optional(),
+  pin: PinSchema.optional(),
   garment: GarmentSchema.optional(),
   skirt: SkirtSchema.optional(),
   clip: z.boolean().default(false),
@@ -417,9 +483,20 @@ export const CharacterSchema = z.object({
           clipGrow: z.number().default(1.12),
         })
         .prefault({ aspect: 0.95 }),
-      crown: piece.prefault({ aspect: 0.95 }),
-      /** Phụ kiện đội trên mũ / bám sọ: sừng, tai, vòng hoa — đứng yên khi lắc đầu */
-      headAcc: piece.prefault({ aspect: 0.95 }),
+      /** Mũ; `sculpt` là mũ dựng khối của người 3D, số đo ở `hat` */
+      crown: piece
+        .extend({
+          src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
+          hat: HatSchema.optional(),
+        })
+        .prefault({ aspect: 0.95 }),
+      /** Phụ kiện đội trên mũ / bám sọ: sừng, tai, vòng hoa — đứng yên khi lắc đầu; `sculpt` là trâm cài búi của người 3D */
+      headAcc: piece
+        .extend({
+          src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
+          pin: PinSchema.optional(),
+        })
+        .prefault({ aspect: 0.95 }),
       /** Phụ kiện dán lên mặt: kính, sẹo, mặt nạ — trôi đúng bằng nét mặt; `sculpt` là kính dựng khối */
       faceAcc: piece
         .extend({
@@ -465,6 +542,8 @@ export type ViewTune = z.infer<typeof ViewTuneSchema>;
 export type Sculpt = z.infer<typeof SculptSchema>;
 export type Glasses = z.infer<typeof GlassesSchema>;
 export type Beard = z.infer<typeof BeardSchema>;
+export type Hat = z.infer<typeof HatSchema>;
+export type Pin = z.infer<typeof PinSchema>;
 export type BeardTip = (typeof BEARD_TIPS)[number];
 export type Garment = z.infer<typeof GarmentSchema>;
 export type Skirt = z.infer<typeof SkirtSchema>;

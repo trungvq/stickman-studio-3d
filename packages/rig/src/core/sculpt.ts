@@ -77,7 +77,29 @@ export function hairline(s: Sculpt, lon: number): number {
     const u = fromPart(s, lon);
     h += (u > at ? -depth : depth / 2) * bump(u, at, width);
   }
-  return h;
+  return h + recession(s, lon);
+}
+
+/**
+ * Chân tóc lùi lên ở kinh độ `lon` vì hói hai bên trán (chữ M), độ: từ giữa trán lùi dần như chữ V thành mũi nhọn, sâu nhất
+ * ở `recedeAt`, rồi về lại chân tóc thường trước tai
+ */
+export function recession(s: Sculpt, lon: number) {
+  if (!s.recede) return 0;
+  const a = Math.abs(lon);
+  const c = Math.max(1, Math.abs(s.recedeAt));
+  return s.recede * (a <= c ? Math.sin(((Math.PI / 2) * a) / c) : 1 - step(c, c * 2.1, a));
+}
+
+/**
+ * Vĩ độ chân lọn `lat` ở kinh độ `lon` dời lên theo chân tóc lùi: sát chân tóc dời đủ, lên tới đỉnh thì không dời,
+ * nên lọn của bảng kiểu không mọc trên chỗ hói
+ */
+export function recededLat(s: Sculpt, lon: number, lat: number) {
+  const r = recession(s, lon);
+  if (!r) return lat;
+  const h = hairline(s, lon) - r;
+  return lat + r * Math.max(0, Math.min(1, (90 - lat) / Math.max(1, 90 - h)));
 }
 
 /**
@@ -577,8 +599,41 @@ export function sculptPresetOf(raw: Partial<Sculpt> | undefined): SculptPreset |
   });
 }
 
+/**
+ * Màu phụ (`pieces.hair.accent`) phủ vỏ ở kinh độ `lon` từ chân tóc lên bấy nhiêu phần chiều cao vỏ: đủ `accentTo` từ
+ * `accentFrom` ra sau, mỏng dần về `0` trong `ACCENT_EASE` độ trước đó
+ */
+export function accentAt(s: Sculpt, lon: number) {
+  const a = Math.abs(lon);
+  return (
+    Math.max(0, Math.min(0.95, s.accentTo)) * step(s.accentFrom - ACCENT_EASE, s.accentFrom, a)
+  );
+}
+export const ACCENT_EASE = 25;
+
+/** Hướng ngang qua chỗ buộc trên mặt sọ, lấy làm trục tiết diện khối buộc */
+export const knotEast = (s: Sculpt): Vec3 => [-Math.cos(s.tieLon * D), 0, Math.sin(s.tieLon * D)];
+
+/**
+ * Khối buộc của đuôi ngựa, búi trong hệ sọ đơn vị, đầu thẳng: pháp tuyến sọ ở chỗ buộc, tâm khối, bán kính, nửa chiều
+ * cao theo pháp tuyến. Đuôi ngựa thì tâm ở chỗ buộc trên vỏ, bán kính là chỗ thắt
+ */
+export function knotFrame(s: Sculpt): { n: Vec3; center: Vec3; radius: number; h: number } {
+  const def = SCULPT_STYLES[s.style];
+  const n = onSkull(s.tieLon, s.tie);
+  if (def.bun) {
+    const radius = def.bun[0] * s.knotSize;
+    const h = radius * def.bun[1];
+    return { n, center: onSkull(s.tieLon, s.tie, s.volume + h * 0.35), radius, h };
+  }
+  const radius = (def.pony?.[0] ?? 0.1) * s.knotSize * 0.3;
+  return { n, center: onSkull(s.tieLon, s.tie, s.volume), radius, h: radius };
+}
+
 /** Đuôi ngựa và búi: số đỉnh mỗi vòng tiết diện, số đoạn dọc trục */
 export const KNOT_RING = 14;
+/** Người 3D: vòng tiết diện khối buộc dày hơn để bóng búi to không thành đa giác khi cận */
+export const KNOT_RING_3D = 28;
 export const PONY_SEG = 24;
 export const BUN_SEG = 12;
 
@@ -739,6 +794,104 @@ export function spikeRings(
   return rings;
 }
 
+/**
+ * Lọn gai và lọn vuốt của kiểu kèm bề dày vỏ dưới chân và độ nhô điểm điều khiển, cho `spikeRings`; kinh độ, hướng
+ * ngả của lọn vuốt đã lật theo ngôi. `spike` bằng 0 thì rỗng
+ */
+export function sculptSpikes(s: Sculpt): [Spike, number, number][] {
+  if (!(s.spike > 0)) return [];
+  const def = SCULPT_STYLES[s.style];
+  const rim = def.rim ?? 0.3;
+  return [
+    ...def.spikes.map(
+      ([lon, lat, ...rest]) =>
+        [[lon, recededLat(s, lon, lat), ...rest] as Spike, s.volume, 0.55] as [
+          Spike,
+          number,
+          number,
+        ],
+    ),
+    ...(def.swept ?? []).map(([u, lat0, len, heading, bend, width]): [Spike, number, number] => {
+      const side = Math.sign(s.part || 1);
+      const lon = s.part - side * u;
+      const lat = recededLat(s, lon, lat0);
+      const low = rootLat(s, lon);
+      const j = ((lat - low) / (90 - low)) * NJ;
+      return [
+        [lon, lat, len, -side * heading, bend, width],
+        shellLift(s, lon, lat, rowEase(j, s.style), rim * s.volume),
+        def.sweptArch ?? 0.55,
+      ];
+    }),
+  ];
+}
+
+/** Lọn vểnh: số đoạn từ chân tới mũi; kinh độ, vĩ độ chân lọn giữa; các lọn toả ra bấy nhiêu độ hướng */
+const AHOGE_SEG = 10;
+export const AHOGE_ROOT = [180, 80] as const;
+const AHOGE_FAN = 32;
+/** Nửa bề rộng lọn vểnh ở chỗ rộng nhất, lần bán kính sọ */
+const AHOGE_WIDTH = 0.06;
+
+/**
+ * Lọn vểnh trên đỉnh: `ahoge` lọn dẹt mọc từ xoáy (`AHOGE_ROOT`), rời vỏ theo pháp tuyến rồi cong dần về
+ * `ahogeHeading`, ngọn ngả `ahogeBend` độ khỏi phương dựng đứng. Bản rộng nằm ngang với mặt phẳng cong. Ra các vòng
+ * tiết diện như `spikeRings`, mỗi lọn một danh sách
+ */
+export function ahogeRings(s: Sculpt): Vec3[][][] {
+  const n = Math.max(0, Math.floor(s.ahoge));
+  const out: Vec3[][][] = [];
+  for (let i = 0; i < n; i++) {
+    const k = i - (n - 1) / 2;
+    const heading = s.ahogeHeading + AHOGE_FAN * k;
+    const lon = AHOGE_ROOT[0] + 9 * k;
+    const lat = AHOGE_ROOT[1] - 2 * Math.abs(k);
+    const len = s.ahogeLength * (1 - 0.2 * Math.abs(k));
+    const nrm = onSkull(lon, lat);
+    // Hướng cong trên mặt sọ: `0` về phía mặt (`+z`), `90` về `+x`
+    const want: Vec3 = [Math.sin(heading * D), 0, Math.cos(heading * D)];
+    const tang = want.map((v, d) => v - dot(want, nrm) * nrm[d]) as Vec3;
+    const tl = Math.hypot(...tang) || 1;
+    const h = tang.map((v) => v / tl) as Vec3;
+    const side = cross(nrm, h);
+    const low = rootLat(s, lon);
+    const lift = SCULPT_STYLES[s.style].crown
+      ? 0
+      : shellLift(
+          s,
+          lon,
+          lat,
+          rowEase(((lat - low) / (90 - low)) * NJ, s.style),
+          (SCULPT_STYLES[s.style].rim ?? 0.3) * s.volume,
+        );
+    const sink = AHOGE_WIDTH * 0.5;
+    let p = onSkull(lon, lat, lift - sink);
+    const rings: Vec3[][] = [];
+    for (let m = 0; m <= AHOGE_SEG; m++) {
+      const v = m / AHOGE_SEG;
+      const a = s.ahogeBend * D * v ** 1.4;
+      const dir = nrm.map((x, d) => x * Math.cos(a) + h[d] * Math.sin(a)) as Vec3;
+      // Pháp tuyến của trục trong mặt phẳng cong: tiết diện mỏng theo nó
+      const up = cross(side, dir);
+      if (m === AHOGE_SEG) rings.push([p]);
+      else {
+        const r = AHOGE_WIDTH * (0.55 + 0.45 * step(0, 0.4, v)) * (1 - v ** 1.6);
+        rings.push(
+          Array.from({ length: RING }, (_, j) => {
+            const b = (j / RING) * 2 * Math.PI;
+            const [u, w] = [Math.cos(b) * r, Math.sin(b) * r * 0.45];
+            return p.map((x, d) => x + side[d] * u + up[d] * w) as Vec3;
+          }),
+        );
+      }
+      const ds = (len + sink) / AHOGE_SEG;
+      p = p.map((x, d) => x + dir[d] * ds) as Vec3;
+    }
+    out.push(rings);
+  }
+  return out;
+}
+
 /** Lọn dẹt: số đoạn từ chân tới mũi */
 const LOCK_SEG = 12;
 
@@ -749,10 +902,11 @@ const LOCK_SEG = 12;
  */
 export function lockRings(
   s: Sculpt,
-  [u, lat, length, toward, lift, width, twist, rise = 0.35, sink = 0]: Lock,
+  [u, lat0, length, toward, lift, width, twist, rise = 0.35, sink = 0]: Lock,
 ): Vec3[][] {
   const flip = Math.sign(s.part || 1);
   const lon = s.part - flip * u;
+  const lat = recededLat(s, lon, lat0);
   const heading = -flip * toward;
   const turn = -flip * twist;
   const len = length * s.spike;
@@ -1253,35 +1407,24 @@ function buildSculpt(
 
   // Lọn gai tô chung path với vỏ nên chỗ gặp không có nét; tam giác, không phải ô bốn đỉnh:
   // ống cong thì ô bốn đỉnh chiếu ra có thể thành hình nơ, tô `nonzero` hở một nửa
-  if (s.spike > 0)
-    for (const [k, base, arch] of [
-      ...def.spikes.map((k) => [k, s.volume, 0.55] as const),
-      ...(def.swept ?? []).map(([u, lat, len, heading, bend, width]) => {
-        const side = Math.sign(s.part || 1);
-        const lon = s.part - side * u;
-        const low = rootLat(s, lon);
-        const j = ((lat - low) / (90 - low)) * NJ;
-        return [
-          [lon, lat, len, -side * heading, bend, width] as Spike,
-          shellLift(s, lon, lat, rowEase(j, s.style), rim * s.volume),
-          def.sweptArch ?? 0.55,
-        ] as const;
-      }),
-    ]) {
-      const rings = spikeRings(s, k, base, arch).map((r) => r.map((p) => turnPoint(t, p)));
-      coat(rings[0]);
-      for (let m = 0; m + 1 < rings.length; m++)
-        for (let r = 0; r < RING; r++) {
-          const [a, b] = [rings[m][r], rings[m][(r + 1) % RING]];
-          const next = rings[m + 1];
-          if (next.length === 1) coat([a, b, next[0]]);
-          else {
-            const [c, d] = [next[(r + 1) % RING], next[r]];
-            coat([a, b, c]);
-            coat([a, c, d]);
-          }
+  for (const tube of [
+    ...sculptSpikes(s).map(([k, base, arch]) => spikeRings(s, k, base, arch)),
+    ...ahogeRings(s),
+  ]) {
+    const rings = tube.map((r) => r.map((p) => turnPoint(t, p)));
+    coat(rings[0]);
+    for (let m = 0; m + 1 < rings.length; m++)
+      for (let r = 0; r < RING; r++) {
+        const [a, b] = [rings[m][r], rings[m][(r + 1) % RING]];
+        const next = rings[m + 1];
+        if (next.length === 1) coat([a, b, next[0]]);
+        else {
+          const [c, d] = [next[(r + 1) % RING], next[r]];
+          coat([a, b, c]);
+          coat([a, c, d]);
         }
-    }
+      }
+  }
 
   if (hanging) {
     // Mặt rủ: từ chỗ rời sọ buông theo trọng lực tới `length`, lớp ngoài ở vỏ, lớp trong sát sọ;
@@ -1383,8 +1526,8 @@ function buildSculpt(
     const R = 1 + s.volume;
     const behind = ([x, y, z]: Vec3) => z < Math.sqrt(Math.max(0, R * R - x * x - y * y));
     const within = ([x, y]: Vec3) => x * x + y * y < R * R;
-    const n = turnPoint(t, onSkull(180, s.tie));
-    const east = turnPoint(t, [1, 0, 0]);
+    const n = turnPoint(t, onSkull(s.tieLon, s.tie));
+    const east = turnPoint(t, knotEast(s));
     const unit = (v: Vec3, alt: Vec3) => {
       const k = Math.hypot(...v);
       return k > 1e-3 ? (v.map((a) => a / k) as Vec3) : alt;
@@ -1403,8 +1546,9 @@ function buildSculpt(
     let anchor: Vec3;
     if (def.pony) {
       // Rời gáy theo pháp tuyến, vồng ra rồi buông thẳng theo trọng lực tới `tail` dưới chỗ buộc
-      const [width, arch, flat] = def.pony;
-      anchor = turnPoint(t, onSkull(180, s.tie, 0));
+      const [w0, arch, flat] = def.pony;
+      const width = w0 * s.knotSize;
+      anchor = turnPoint(t, onSkull(s.tieLon, s.tie, 0));
       const at = (a: number, b: number): Vec3 =>
         anchor.map((v, d) => v + n[d] * arch * a + g[d] * s.tail * b) as Vec3;
       const P = [anchor, at(1, 0), at(1.1, 0.45), at(0.8, 1)];
@@ -1436,9 +1580,8 @@ function buildSculpt(
       });
     } else {
       // Búi là khối dẹt dọc pháp tuyến, chân chìm vào vỏ
-      const [radius, squash] = def.bun!;
-      const h = radius * squash;
-      anchor = turnPoint(t, onSkull(180, s.tie, s.volume + h * 0.35));
+      const { radius, h } = knotFrame(s);
+      anchor = turnPoint(t, onSkull(s.tieLon, s.tie, s.volume + h * 0.35));
       const b = unit(cross(n, east), east);
       const m = cross(n, b);
       for (let k = 0; k <= BUN_SEG; k++) {

@@ -25,10 +25,10 @@ Tay áo và quần cơ bản không cần mảnh ảnh: tô màu và tăng độ
 
 | Mảnh | Gắn vào | Cần ảnh? | Ghi chú |
 |---|---|:--:|---|
-| Mũ / khăn / búi tóc | `crown` | ✔ | `pieces.crown`, vẽ đè lên tóc. Ảnh riêng hoặc bộ phận SVG trong `PARTS` |
+| Mũ / khăn / búi tóc | `crown` | ✔ | `pieces.crown`, vẽ đè lên tóc. Ảnh riêng hoặc bộ phận SVG trong `PARTS`; người 3D có [mũ dựng khối](#mũ-dựng-khối) không cần ảnh |
 | Tóc | `hairline` | ✔ | `pieces.hair`, vẽ trên đầu. Một [kiểu tóc](#kiểu-tóc) trong `PARTS`, hoặc ảnh mái |
 | Tóc ảnh — sau đầu | `hairBack` | ✔ | `pieces.hairBack`, chỉ nhận ảnh, vẽ **sau cả thân và chân**. Bị bỏ qua khi `hair` là kiểu tóc |
-| Phụ kiện đầu | `headAcc` | ✔ | `pieces.headAcc`, sừng / tai / vòng hoa — vẽ **trên cả mũ**, bám sọ nên không trôi theo mặt |
+| Phụ kiện đầu | `headAcc` | ✔ | `pieces.headAcc`, sừng / tai / vòng hoa — vẽ **trên cả mũ**, bám sọ nên không trôi theo mặt; người 3D có [trâm cài búi](#trâm-cài-búi) không cần ảnh |
 | Phụ kiện mặt | `faceAcc` | ✔ | `pieces.faceAcc`, kính / sẹo / mặt nạ — vẽ trên nét mặt, dưới tóc và mũ, trôi đúng bằng mặt. Kính dùng [kính dựng khối](#kính-dựng-khối), không cần ảnh |
 | Râu | `chin` | ✔ | `pieces.chin`, vẽ trên cùng ở khối đầu, `layer: "under"` thì dưới nét mặt. Ảnh riêng, bộ phận SVG trong `PARTS`, hoặc [râu dựng khối](#râu-dựng-khối) không cần ảnh; ria mép vẽ code — [01](01-rig.md) |
 | Mặt | *(không có)* | ✘ | Mắt, mày, miệng vẽ bằng code |
@@ -210,6 +210,12 @@ ba. `hairline` và `sculptPaths` ở `sculpt.tsx`.
 | `crownFrom` / `crownEase` | 80 / 12 | Kiểu hói: kinh độ mũi trước của vành, và số độ kinh từ mũi tới chỗ vành mở hết bề cao |
 | `tie` | 55 | Đuôi ngựa, búi: vĩ độ chỗ buộc sau gáy (kinh độ 180) |
 | `tail` | 1.3 | Đuôi ngựa: đuôi rủ tới bấy nhiêu lần bán kính sọ dưới chỗ buộc, theo trọng lực |
+| `tieLon` | 180 | Đuôi ngựa, búi: kinh độ chỗ buộc; `180` giữa gáy, `−140` lệch về bên phải người |
+| `knotSize` | 1 | Đuôi ngựa, búi: hệ số nhân bán kính búi và bề ngang đuôi |
+| `ahoge` | 0 | Số [lọn vểnh](#lọn-vểnh) trên đỉnh; `0` là không có |
+| `ahogeLength` / `ahogeHeading` / `ahogeBend` | 0.5 / 0 / 120 | Lọn vểnh: dài (lần bán kính), hướng cong (`0` ra trước mặt, `90` về `+x`), ngọn ngả khỏi phương dựng đứng bấy nhiêu độ |
+| `recede` / `recedeAt` | 0 / 40 | [Hói chữ M](#hói-chữ-m): chân tóc hai bên trán lùi lên bấy nhiêu độ, sâu nhất ở kinh độ `±recedeAt` |
+| `accentTo` / `accentFrom` | 0.45 / 70 | [Màu phụ](#màu-phụ) `pieces.hair.accent`: phủ từ chân tóc lên bấy nhiêu phần chiều cao vỏ, từ kinh độ `±accentFrom` ra sau |
 
 Mặc định là tóc ngắn rẽ ngôi lệch của nam. `SCULPT_PRESETS` là bộ số mẫu — `short`
 (tóc nam ngắn), `buzz` (đầu đinh, `style: "buzz"`), `crop` (tròn ngắn, `style: "crop"`), `quiff` (mái dựng vuốt ngược, `style: "quiff"`), `spiky` (rối gai, `style: "spiky"`), `neat` (rẽ ngôi chải gọn,
@@ -518,9 +524,11 @@ phải có lưới riêng, tô chung path với vỏ.
 
 #### Đuôi ngựa và búi
 
-Kiểu `pony` và `bun` là vỏ trơn cộng **một khối buộc sau gáy** ở kinh độ 180, vĩ độ `tie`;
-không vẽ đường ngôi. Khối là ống có lưới riêng: mỗi vòng tiết diện `KNOT_RING` (14) đỉnh,
-đuôi ngựa `PONY_SEG` (24) đoạn dọc trục, búi `BUN_SEG` (12).
+Kiểu `pony` và `bun` là vỏ trơn cộng **một khối buộc** ở kinh độ `tieLon` (mặc định 180, giữa
+gáy), vĩ độ `tie`; không vẽ đường ngôi. Khối là ống có lưới riêng: mỗi vòng tiết diện `KNOT_RING` (14)
+đỉnh, người 3D `KNOT_RING_3D` (28) để búi to không thành đa giác khi cận; đuôi ngựa `PONY_SEG` (24)
+đoạn dọc trục, búi `BUN_SEG` (12). `knotSize` nhân bán kính búi và bề ngang đuôi (`width` của bảng).
+`knotFrame` cho pháp tuyến, tâm, bán kính và nửa chiều cao khối ở hệ sọ đơn vị — trâm cài búi đọc nó.
 
 | Trường của kiểu | Nghĩa |
 |---|---|
@@ -539,6 +547,9 @@ không vẽ đường ngôi. Khối là ống có lưới riêng: mỗi vòng ti
   vẫn chìm dưới vỏ.
 - **Búi** là khối tròn xoay dẹt dọc pháp tuyến, tâm cao `volume + 0.35·h` khỏi da
   (`h = squash·radius`), nên chân chìm vào vỏ.
+- **Lệch tâm**: `tieLon` khác 180 thì chỗ buộc dời quanh đầu, trục tiết diện là hướng ngang trên
+  mặt sọ ở chỗ ấy (`knotEast`). Búi thấp lệch nằm sau tai; đuôi ngựa lệch vẫn vồng ra theo pháp tuyến
+  rồi buông theo trọng lực, đẩy ra khỏi sọ như đuôi giữa gáy.
 - **Xếp lớp theo từng đoạn ống**, theo trung điểm trục của đoạn so với mặt cầu bao vỏ bán
   kính `R = 1 + volume`. Trước mặt cầu (`z ≥ √(R² − x² − y²)`, ngoài viền đầu là `z ≥ 0`)
   thì đoạn vào lớp `knot`: `SculptHair` vẽ nó **sau cùng**, trên vỏ, viền
@@ -560,6 +571,8 @@ không vẽ đường ngôi. Khối là ống có lưới riêng: mỗi vòng ti
 ±25°: nhìn trước đuôi nằm gọn sau đầu, nhìn nghiêng và sau lưng mới thấy. Buộc thấp đặt
 `tie` 15 chứ không sát gáy, vì gốc sát gáy thì đuôi ngắn mấy cũng lòi dưới đầu.
 | `bun` (búi cao) | 52 | 0 | 0 | 0.07 | 72 | — |
+
+Búi thấp to: `bun` với `tie` quanh 5–10 và `knotSize` 1.4 — khối rủ tới ngang gáy mà còn cách cổ áo.
 
 #### Ngắn xù
 
@@ -596,6 +609,44 @@ Ba kiểu tóc nam ngắn, mái `flat` nên không hõm thái dương và không
   (`turn` khoảng 20°), chân trồi trong 25% chiều dài, ngọn chìm vào vỏ sau đỉnh (`sink` 0.6).
   Sườn và sau đầu không có lọn. Mẫu có `part` −20, `front` 40, `fringe` 0, `ear` 18,
   `sideburn` −10 (tóc mai dài xuống trước tai), `volume` 0.1.
+
+#### Lọn vểnh
+
+`ahoge` > 0 mọc bấy nhiêu **lọn vểnh** (アホ毛) từ xoáy trên đỉnh (`AHOGE_ROOT`: kinh độ 180, vĩ độ
+80), trên mọi kiểu tóc; mặc định không có, nên bản cảnh sau tắt lọn chỉ cần một vật `items` thay
+`hair` với `ahoge: 0`. `ahogeRings` ra lưới, người 3D và 2.5D cùng dựng.
+
+- Mỗi lọn là dải dẹt: rời vỏ theo pháp tuyến, trục quay dần về `ahogeHeading` trên mặt sọ, góc ngả
+  khỏi pháp tuyến tăng theo `v^1.4` tới `ahogeBend` ở ngọn — `90` ngọn nằm ngang, `120` cụp xuống thành
+  móc. Dài `ahogeLength` lần bán kính, chân chìm nửa bề rộng dưới vỏ.
+- Bản rộng (`AHOGE_WIDTH` 0.06) nằm ngang với mặt phẳng cong, dày `0.45` bề rộng: nhìn thẳng thấy dải,
+  nhìn nghiêng thấy nét cong. Rộng nhất quãng giữa, thon nhọn ở ngọn.
+- Nhiều lọn toả ra `AHOGE_FAN` (32°) mỗi lọn quanh hướng giữa, chân dời 9° kinh độ, lọn ngoài ngắn hơn.
+- Có mũ dựng khối thì lọn có chân trong lòng mũ bị bỏ.
+
+#### Hói chữ M
+
+`recede` > 0 cho chân tóc hai bên trán lùi lên (`recession`, cộng vào `hairline`), dùng được với
+mọi kiểu, kể cả `slick`. Từ giữa trán chân tóc lùi theo `sin` của kinh độ tới đủ `recede` ở
+`±recedeAt`, nên giữa trán còn mũi nhọn; quá đó về lại chân tóc thường trong `1.1·recedeAt` độ kinh,
+trước tai không đổi. Lọn gai, lọn vuốt và lọn dẹt của bảng kiểu dời chân lên theo (`recededLat`):
+sát chân tóc dời đủ, lên tới đỉnh thì không dời, nên lọn không mọc trên chỗ hói.
+
+Vuốt ngược hói chữ M: mẫu `slick` cộng `recede` 16, hạ `front` còn 54 cho mũi giữa trán rõ hơn.
+
+#### Màu phụ
+
+`pieces.hair.accent` tô màu thứ hai lên phần dưới của vỏ — tóc mai bạc, hai bên muối tiêu. Vùng
+tính theo cột kinh độ (`accentAt`): từ chân tóc lên `accentTo` phần chiều cao vỏ (kiểu hói là chiều cao
+vành), đủ từ kinh độ `±accentFrom` ra sau gáy, mỏng dần về `0` trong `ACCENT_EASE` (25°) trước đó nên
+trán và mái giữ màu chính.
+
+- Chỉ người 3D có màu phụ; 2.5D bỏ qua `accent` của tóc.
+- Có màu phụ thì mỗi cột vỏ đặt một hàng lưới đúng mép vùng: `accentTo · NJ` hàng dưới, còn lại ở
+  trên, nên ranh giới là đường trơn chạy song song chân tóc, không bậc thang. Không có thì lưới y như
+  thường.
+- Hai màu là một vật liệu màu theo đỉnh (`npr({ tint })`, thuộc tính `tint` của lưới): nét bóng dáng
+  hậu kỳ coi cả tóc là một vật, chỗ giáp hai màu không có nét. Lọn, búi và mặt rủ giữ màu chính.
 
 ### Tóc ảnh
 
@@ -766,6 +817,68 @@ Góc tính bằng độ, dài tính bằng bán kính sọ.
 
 `beardPaths` và `SculptBeard` ở `beard.tsx`. `figureAnchors` dựng râu một lần (`A.beard`)
 cho cả hộp mảnh lẫn `<Character>`, theo khẩu hình ở tham số `mouth` (mặc định `closed`).
+
+## Mũ dựng khối
+
+`pieces.crown` với `src: "sculpt"` là mũ của **người 3D**, không cần ảnh: một khối ôm sọ và vỏ tóc
+dưới nó, quay theo đầu. 2D và 2.5D không vẽ gì ở `crown` khi `src` là `sculpt`.
+
+```json
+"crown": { "src": "sculpt", "color": "#F3EBDD", "hat": { "height": 0.6 } }
+```
+
+Góc theo độ, dài theo bán kính sọ.
+
+| Trường | Mặc định | Nghĩa |
+|---|---:|---|
+| `shape` | `drum` | `drum` trụ thấp hở đáy, đỉnh phẳng bo mép (mũ đầu bếp Nhật 和帽子, mũ thợ) |
+| `front` / `back` | 32 / 18 | Vĩ độ miệng mũ ở giữa trán, ở gáy: miệng là mặt phẳng qua hai điểm ấy |
+| `height` | 0.62 | Thân cao bấy nhiêu tính từ miệng theo trục mũ |
+| `ease` | 0.03 | Khoảng hở giữa thân mũ và tóc (hay sọ); âm là ôm chặt hơn |
+| `round` | 0.12 | Bán kính bo mép đỉnh |
+| `flare` | 0 | Miệng nở ra bấy nhiêu phần bán kính thân, nhỏ dần tới mép bo |
+| `folds` | `[0.32]` | Nếp gấp ngang: mỗi số là một vòng nét mực ở bấy nhiêu phần chiều cao thân; `[]` là trơn |
+
+- **Cỡ mũ đo trên đầu** (`hatFit`): lấy mẫu sọ và vỏ tóc (`shellAt`, như hàng vỏ khi đầu thẳng) mỗi
+  `3°`, giữ điểm trên miệng mũ (và dải `0.03` dưới nó). Thân là ống elip cùng tâm nhỏ nhất ôm mọi điểm
+  ấy, nở thêm `ease`: đầu đinh thì mũ ôm sát, tóc bồng thì mũ to theo. Thân cao ít nhất tới trên đỉnh tóc
+  `ease` cộng một phần bo, nên đỉnh mũ không cắt tóc.
+- **Tóc dưới mũ không lòi ra**: vỏ tóc nằm trong ống nên mũ che; lọn gai, lọn dẹt, lọn vểnh, búi, đuôi
+  ngựa có chân trong lòng mũ (`insideHat`) bị bỏ cả khối (`sculptMesh` nhận `cut`). Phần tóc dưới miệng
+  mũ — mai, gáy — vẫn hiện.
+- **Nét mực**: mũ là vật riêng có nét bóng dáng hậu kỳ dày `0.03` (`npr({ ink })`), nên miệng mũ có nét
+  rõ trên trán, mũ trắng trên áo trắng vẫn tách khối. Nếp gấp là ống mực mảnh nổi nhẹ khỏi thân.
+- Mũ vẽ hai mặt: nhìn từ dưới thấy lòng mũ cùng màu. Đỉnh mũ là đỉnh đầu của `headFit`, nên socket
+  `crown` của đồ gắn và nhãn bám đỉnh đầu nằm trên mũ.
+- `hatMesh` ra tam giác và vòng nếp gấp ở hệ sọ đơn vị; người 3D phóng theo khối đầu như tóc. Mũ không
+  dời theo `humanHair`: miệng mũ nằm ở nửa trên sọ, nơi đầu `human` trùng mặt cầu.
+- Màu là `pieces.crown.color`, bỏ trống thì lấy màu áo.
+
+## Trâm cài búi
+
+`pieces.headAcc` với `src: "sculpt"` là trâm (簪) của **người 3D**: một que mảnh xuyên khối buộc của tóc
+dựng khối, một hạt tròn ở đầu que. 2D và 2.5D không vẽ.
+
+```json
+"headAcc": { "src": "sculpt", "color": "#3A2A22", "accent": "#D9573B", "pin": { "angle": 40 } }
+```
+
+| Trường | Mặc định | Nghĩa |
+|---|---:|---|
+| `angle` | 40 | Hướng đầu có hạt trên mặt búi: `0` ngang về `+x`, `90` thẳng lên, `180` ngang về `−x` |
+| `lean` | 15 | Đầu có hạt chếch ra khỏi mặt búi bấy nhiêu độ |
+| `length` | 0.95 | Dài cả que |
+| `reach` | 0.6 | Phần que phía hạt, tính từ chỗ xuyên |
+| `thick` | 0.02 | Bán kính que (đầu kia thon còn `0.7`) |
+| `bead` | 0.065 | Bán kính hạt |
+
+- Que đặt theo `knotFrame` của tóc: xuyên điểm cao `0.2·h` trên tâm khối dọc pháp tuyến, nên búi lệch
+  (`tieLon`) hay búi to (`knotSize`) đều mang trâm theo. Mặt búi có hai tiếp tuyến: "lên" là hướng
+  thẳng đứng chiếu lên mặt búi (búi trên đỉnh thì là hướng về gáy), "ngang" vuông góc với nó, chọn chiều
+  về `+x`. Tóc không có khối buộc thì trâm cắm ở chỗ buộc trên vỏ.
+- Que màu `pieces.headAcc.color`, hạt màu `pieces.headAcc.accent` (bỏ trống thì cùng màu que); đầu
+  `human` thì trâm dời theo `humanHair` như tóc. Nét bóng dáng hậu kỳ mảnh `0.014`.
+- `pinMesh` ra tam giác que và hạt ở hệ sọ đơn vị.
 
 ## Thân áo dựng khối
 

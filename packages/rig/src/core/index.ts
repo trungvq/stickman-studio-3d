@@ -16,6 +16,7 @@ export * from "./garmentViews";
 export * from "./geometry";
 export * from "./glasses";
 export * from "./hand";
+export * from "./hat";
 export * from "./handMesh";
 export * from "./hairMigration";
 export * from "./hairstyles";

@@ -63,3 +63,34 @@ describe('tóc vuốt ngược', () => {
     expect(m.lines).toEqual([]);
   });
 });
+
+describe('trường JSON của tóc', () => {
+  const P = SCULPT_PRESETS;
+  const cases: [keyof Sculpt, Partial<Sculpt>, number][] = [
+    ['tieLon', P.bun.sculpt, 150],
+    ['knotSize', P.bun.sculpt, 1.3],
+    ['ahoge', P.neat.sculpt, 1],
+    ['ahogeLength', { ...P.neat.sculpt, ahoge: 1 }, 0.7],
+    ['ahogeHeading', { ...P.neat.sculpt, ahoge: 1 }, 60],
+    ['ahogeBend', { ...P.neat.sculpt, ahoge: 1 }, 60],
+    ['recede', P.slick.sculpt, 12],
+    ['recedeAt', { ...P.slick.sculpt, recede: 12 }, 55],
+    ['accentTo', P.baldLight.sculpt, 0.3],
+    ['accentFrom', P.baldLight.sculpt, 40],
+  ];
+  for (const [key, s, v] of cases)
+    it(`đọc \`${key}\``, () => {
+      const opt = { accent: key.startsWith('accent') };
+      expect(JSON.stringify(sculptMesh({ ...s, [key]: v }, opt))).not.toBe(JSON.stringify(sculptMesh(s, opt)));
+    });
+  it('màu phụ: không hỏi thì vỏ y như cũ, hỏi thì có tam giác màu phụ', () => {
+    const s = P.baldLight.sculpt;
+    expect(sculptMesh(s).tone).toBeUndefined();
+    const tone = sculptMesh(s, { accent: true }).tone!;
+    expect(tone.some(Boolean) && !tone.every(Boolean)).toBe(true);
+  });
+  it('`cut` bỏ cả khối búi, lọn có chân trong vùng', () => {
+    expect(sculptMesh(P.bun.sculpt, { cut: () => true }).spikes).toEqual([]);
+    expect(sculptMesh({ ...P.neat.sculpt, ahoge: 1 }, { cut: () => true }).spikes).toEqual([]);
+  });
+});
