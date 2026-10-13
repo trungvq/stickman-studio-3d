@@ -13,13 +13,13 @@ const AO_KERNEL = Array.from({ length: AO_N }, (_, i) => {
 }).join(', ');
 
 // Nét bóng dáng của vật liệu `userData.ink`: mầm là điểm ngay ngoài mép vật, loang bằng jump flood. Mầm `s` = (độ lệch
-// tới mầm gói một số, mã·1024 + bán kính px, độ sâu vật, độ đậm); `uInk[mã]` = (bề dày three, khe vật liệu); chỉ dò trong
-// các khung điểm ảnh (gồm cả hai mép) ôm vật có nét và bán kính nét. Cùng vật
-// liệu (tay áo cắm vào thân áo cùng màu) thì có nét ở mép nhìn sượt hay khe sâu, chỗ cắm vào nhau không; vật khác thì nét chỉ
-// dừng ở chỗ nó nằm hẳn trước.
+// tới mầm gói một số, mã·1024 + bán kính px, độ sâu vật, độ đậm); `uInk[mã]` = (bề dày three, khe vật liệu, dải khe cùng vật
+// liệu); chỉ dò trong các khung điểm ảnh (gồm cả hai mép) ôm vật có nét và bán kính nét. Cùng vật liệu (lọn cắm vào vỏ tóc,
+// tay áo cắm vào thân áo cùng màu) thì nét đậm dần theo khe sâu ở mép qua dải ấy: chỗ cắm vào nhau khe gần 0, không nét; mép
+// nằm trước thì có. Vật khác thì nét chỉ dừng ở chỗ nó nằm hẳn trước.
 const MAX_INK = 128, MAX_RECTS = 8;
 const INK_GLSL = /* glsl */ `
-uniform vec2 uInk[${MAX_INK}];
+uniform vec4 uInk[${MAX_INK}];
 ivec2 inkClamp(ivec2 q, vec4 r){ return clamp(q, ivec2(r.xy), ivec2(r.zw)); }
 float linz(float d){ float z = d * 2.0 - 1.0; return 2.0 * uNear * uFar / (uFar + uNear - z * (uFar - uNear)); }
 vec2 inkOff(vec4 s){ return vec2(mod(s.x, 2048.0), floor(s.x / 2048.0)) - 1024.0; }
@@ -35,7 +35,7 @@ float inkReach(vec4 s){ return s.y - floor(s.y / 1024.0) * 1024.0 - length(inkOf
 
 // uStep 0 gieo mầm; còn lại một bước loang, mỗi điểm giữ mầm phủ xa nhất trong chín điểm cách `uStep`.
 const JFA_FRAG = /* glsl */ `
-uniform highp sampler2D tPrev, tId, tZ, tN;
+uniform highp sampler2D tPrev, tId, tZ;
 uniform vec2 uRes;
 uniform float uNear, uFar, uStep;
 uniform vec4 uRect;
@@ -60,19 +60,12 @@ void main(){
       gl_FragColor = best;
       return;
     }
-    // mép vật kề nhìn sượt là bóng dáng thật của nó, có nét cả khi sát mặt sau; chỗ cắm vào nhau (vai liền) quay ra máy, không nét
-    float face = 1.0;
     for (int i = 1; i < 9; i += 2) {
       ivec2 q = inkClamp(p + ivec2(i % 3 - 1, i / 3 - 1), uRect);
-      if (texelFetch(tId, q, 0).r == idb) {
-        ze = max(ze, linz(texelFetch(tZ, q, 0).r));
-        vec2 c = (vec2(q) + 0.5) / uRes * 2.0 - 1.0;
-        vec3 v = normalize(vec3((c.x + uProj[2][0]) / uProj[0][0], (c.y + uProj[2][1]) / uProj[1][1], -1.0));
-        face = min(face, max(0.0, -dot(texelFetch(tN, q, 0).xyz * 2.0 - 1.0, v)));
-      }
+      if (texelFetch(tId, q, 0).r == idb) ze = max(ze, linz(texelFetch(tZ, q, 0).r));
     }
-    vec2 k = uInk[int(idb)];
-    float edge = uInk[int(idp)].y != k.y ? 1.0 : ze > 0.0 ? max(smoothstep(0.1 * k.x, 0.6 * k.x, zp - ze), 1.0 - smoothstep(0.3, 0.55, face)) : 0.0;
+    vec4 k = uInk[int(idb)];
+    float edge = uInk[int(idp)].y != k.y ? 1.0 : ze > 0.0 ? smoothstep(k.z, k.w, zp - ze) : 0.0;
     best = vec4(inkPack(vec2(0.0)), idb * 1024.0 + min(k.x * uProj[1][1] * uRes.y * 0.5 / zb, 1000.0), zb, edge);
     if (best.w <= 0.0 || inkGate(idp, zp, best) <= 0.0) best.z = -1.0;
     gl_FragColor = best;
@@ -418,7 +411,8 @@ function fitOrtho(cam: THREE.OrthographicCamera, dir: THREE.Vector3, region: THR
  * dò nét mực (mép độ sâu, cạnh gấp pháp tuyến) và bóng tiếp xúc; lượt cuối chấm hậu kỳ toàn khung. Vật `userData.noShadow` và
  * vỏ ngược (`BackSide`) không đổ bóng; vật `userData.noCrease` (người que) không có nét cạnh gấp; vật liệu `userData.ink` (`npr({ ink })`)
  * có nét bóng dáng dò ở hậu kỳ, cả khi tắt `outline` như vỏ ngược; các mesh cùng `userData.inkChain` và cùng vật liệu chung một
- * mã vật, chỗ nối không có nét.
+ * mã vật, chỗ nối không có nét. Mép vật đè lên vật khác cùng vật liệu có nét khi khe sâu qua `userData.inkGap` (three, cỡ bán
+ * kính vật: nét đầy ở 0,8, mờ dần dưới 0,3), không có thì theo bề dày nét.
  */
 export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSize = 2048 }: PipelineOptions = {}): Pipeline {
   renderer.localClippingEnabled = true;
@@ -441,7 +435,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
   const normalRT = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, count: 2, depthTexture: new THREE.DepthTexture(4, 4) });
   normalRT.textures[1].minFilter = normalRT.textures[1].magFilter = THREE.NearestFilter;
   const jfaRT = [0, 1].map(() => new THREE.WebGLRenderTarget(4, 4, { type: THREE.FloatType, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false }));
-  const inkTable = Array.from({ length: MAX_INK }, () => new THREE.Vector2());
+  const inkTable = Array.from({ length: MAX_INK }, () => new THREE.Vector4());
   const maskRT = new THREE.WebGLRenderTarget(4, 4, { format: THREE.RedFormat, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false });
   let rw = 4, rh = 4, dot = 6;
   // pháp tuyến hệ nhìn, mặt sau lật lại; a: 1 có nét gấp, 0,5 vật `noCrease`, 0,3 lưới người (`body`), 0 không có vật. Đích thứ hai: mã vật có nét bóng dáng, mặt nạ đứt nét của kiểu cel
@@ -500,7 +494,6 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       tPrev: { value: null },
       tId: { value: normalRT.textures[1] },
       tZ: { value: normalRT.depthTexture },
-      tN: { value: normalRT.textures[0] },
       uRes: { value: new THREE.Vector2() },
       uNear: { value: 0 },
       uFar: { value: 0 },
@@ -676,7 +669,8 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
         if (w > 0 && (chains.has(chain) || inks < MAX_INK - 1)) {
           if (!slots.has(m.material)) slots.set(m.material, slots.size + 1);
           id = chains.get(chain) ?? ++inks;
-          inkTable[id].set(w, slots.get(m.material)!);
+          const gap: number | undefined = m.userData.inkGap;
+          if (gap !== undefined || !chains.has(chain)) inkTable[id].set(w, slots.get(m.material)!, gap === undefined ? 0.1 * w : 0.3 * gap, gap === undefined ? 0.6 * w : 0.8 * gap);
           if (chain) chains.set(chain, id);
           if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
           const r = new THREE.Box2();

@@ -1358,8 +1358,8 @@ Ba góc quay tay của người 3D quanh chính nó, cho vẫy tay, ngửa tay, 
 
 Người 3D mặc đồ (`palette.clad`) có bàn tay năm ngón tròn mập kiểu hoạt hình: lòng bàn tay, ngón cái, trỏ, giữa, áp
 út, út, mỗi ngón hai đốt. Khung xương (`HAND_BONES`, `HAND_FINGERS`, `handFrames`), dáng có tên (`HAND_POSES`), dáng nghỉ
-(`HAND_RELAXED`), nang va chạm (`handCapsules`) và tâm nắm (`handGrip`) ở `core/hand.ts`; mặt da bàn tay ở
-`core/handMesh.ts`. Hành động chỉ chọn dáng cơ bản, không soạn từng ngón:
+(`HAND_RELAXED`) và tâm nắm (`handGrip`) ở `core/hand.ts`; mặt da bàn tay và nang va chạm (`handCapsules`,
+`fitCapsules`) ở `core/handMesh.ts`. Hành động chỉ chọn dáng cơ bản, không soạn từng ngón:
 
 | Dáng | Ngón |
 |---|---|
@@ -1599,8 +1599,10 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   vai liền không có đường may; các đoạn của một chi chung một mã vật (`userData.inkChain`), khuỷu và gối
   không có nét. Da chân trần là vật liệu riêng (`npr({ group })`), khác da tay: bàn tay đặt lên đùi trần vẫn có nét. Người mặc đồ chiếm chừng hai chục mã vật, `MAX_INK` (`128`) của pipeline đủ cho năm, sáu
   người; quá thì người sau chỉ còn vỏ viền.
-- **Va chạm** có thêm `hand` và `foot` (`handR`, `footL`… trong `touch`): bảy nang bàn tay (`handCapsules`:
-  hai ở hai mép lòng bàn tay, bán kính bằng nửa dày chứ không bằng nửa rộng, cộng một nang mỗi ngón) theo dáng đang vẽ, nang giày đáy đúng mặt đế; nang đầu `human` kéo xuống ôm má. Đồ cầm khai `touch` cả cẳng
+- **Va chạm** có thêm `hand` và `foot` (`handR`, `footL`… trong `touch`): nang bàn tay (`handCapsules`:
+  năm dải dọc lòng bàn tay bán kính bằng nửa dày, một nang gò ngón cái, một nang mỗi đốt ngón) dựng từ chính các khối và
+  phép biến đốt của da, phồng theo nắm đấm; `collide` nới chúng bằng `fitCapsules` cho ôm trọn lưới da đang vẽ — da uốn
+  mềm qua khớp lệch khỏi khối chừng một hai px, không nới thì ngón lún vào vật mà không bị báo; nang giày đáy đúng mặt đế; nang đầu `human` kéo xuống ôm má. Đồ cầm khai `touch` cả cẳng
   tay lẫn bàn tay cầm.
 - **Chi to** (vạm vỡ `sleeveWidth` `19`, `trouserWidth` `22`) đi cùng vai rộng: nới `shoulderHalf` (vạm vỡ
   `46`) hay `ease` của áo. Tay càng to thì gốc vai càng lùi vào góc vai áo, còn mép ngoài gốc đùi

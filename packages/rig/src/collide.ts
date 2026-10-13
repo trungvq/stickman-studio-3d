@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { ConvexHull } from 'three/addons/math/ConvexHull.js';
 import { place3, type Place3 } from './core/lens';
 import { lathePoints, toThree, U, type BatchSolid, type Item, type Vec3 } from './khoi';
-import { fingerVec, HAND_POSES, handCapsules } from './core/hand';
+import { fitCapsules, handCapsules } from './core/handMesh';
+import type { Hand } from './human';
 import { R, type Figure, type Side } from './stickman';
 
 // Kiểm người xuyên đồ ở tư thế hiện tại: người là các viên nang (chi, thân, đầu), đồ là khối lồi (hộp, món khối)
@@ -243,6 +244,16 @@ function torsoBox(fig: Figure) {
   return d.box;
 }
 
+const handMemo = new WeakMap<Hand, { key: string; caps: ReturnType<typeof handCapsules> }>();
+/** Nang bàn tay theo dáng đang vẽ (`shown`), nới cho ôm trọn lưới da; khung bàn tay, giữ tới khi dáng đổi */
+function handCaps(h: Hand) {
+  const key = h.shown.join(), hit = handMemo.get(h);
+  if (hit?.key === key) return hit.caps;
+  const caps = fitCapsules(handCapsules([0, 0, ...h.shown], h.side, h.scale, h.long), h.geo.attributes.position.array);
+  handMemo.set(h, { key, caps });
+  return caps;
+}
+
 /**
  * Các viên nang của người ở tư thế hiện tại, thế giới three. Nang ống chân dừng ở mút nét (bàn chân đặt trên sàn ở đó),
  * không trùm nửa cầu đầu nét: đứng hay ngồi đặt chân xuống mặt nào cũng không lún.
@@ -266,9 +277,8 @@ export function bodyCapsules(fig: Figure, parts: readonly BodyPart[] = BODY_PART
     if (want.has('shin')) seg(fig.legs[s].knee, 'shin', s);
     const h = fig.hands?.[s];
     if (h && want.has('hand')) {
-      // nang theo dáng đang vẽ: lòng bàn tay và từng ngón
-      const w = fig.arms[s].wrist, v = h.held ? [0, 0, ...fingerVec(HAND_POSES[h.held])] : h.acted;
-      for (const [a, b, r] of handCapsules(v, s, h.scale, h.long))
+      const w = fig.arms[s].wrist;
+      for (const [a, b, r] of handCaps(h))
         out.push({ part: 'hand', side: s, a: w.localToWorld(new THREE.Vector3(...a)), b: w.localToWorld(new THREE.Vector3(...b)), r: r * k });
     }
     const ankle = fig.legs[s].ankle;

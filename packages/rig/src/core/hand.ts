@@ -190,27 +190,6 @@ export function handFrames(
   return out;
 }
 
-const tip = (f: HandFrame): V3 => add3(f.o, matVec(f.R, [0, -f.len, 0]));
-
-/**
- * Nang va chạm của bàn tay trong khung bàn tay: `[đầu, cuối, bán kính]` — hai cho lòng bàn tay, rồi ngón trỏ, giữa, áp
- * út, út, ngón cái — đi theo dáng tay đang hiện
- */
-export function handCapsules(v: HandVec, side: number, k = 1, long = k): [V3, V3, number][] {
-  const F = handFrames(v, side, k, long);
-  const B = HAND_BONES;
-  // lòng bàn tay dẹt: hai nang bán kính bằng nửa dày đặt hai mép, không một nang tròn bằng nửa rộng
-  const [t, w] = [B.palm.half[0] * k, (B.palm.half[1] - B.palm.half[0]) * k];
-  const [y0, y1] = [-0.03 * long, -(B.palm.len - 0.03) * long];
-  return [
-    [[0, y0, -w], [0, y1, -w], t],
-    [[0, y0, w], [0, y1, w], t],
-    [F.index0.o, tip(F.index1), B.index.r * k],
-    ...FINGERS.map((n): [V3, V3, number] => [F[`${n}0`].o, tip(F[`${n}1`]), HAND_FINGERS[n].r * k]),
-    [F.thumb0.o, tip(F.thumb1), B.thumb.r * k],
-  ];
-}
-
 /** Tâm nắm của bàn tay bên `side` trong khung bàn tay: chỗ treo đồ cầm, giữa lòng bàn tay và các ngón của dáng `grip` */
 export const handGrip = (side: number, k = 1, long = k): V3 => {
   const [x, y, z] = HAND_BONES.grip;

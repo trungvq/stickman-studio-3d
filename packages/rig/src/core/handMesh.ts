@@ -324,21 +324,19 @@ export function handSkin(side: number, k: number, long: number, low = false): Ha
 }
 
 /**
- * Da bàn tay ở số bàn tay `v` (`HAND_DOF`, chỉ góc ngón): mỗi đỉnh là tổng có trọng số của các phép biến đốt từ dáng gốc
- * tới dáng ấy (linear blend skinning), ghi vào `out`
+ * Phép biến từng đốt từ dáng gốc `bind` tới khung `F`, mỗi đốt 12 số (ma trận 3×3 theo hàng rồi phần dời); kèm phồng nắm
+ * đấm `HAND_FIST` theo độ gập ở gốc ngón giữa
  */
-export function skinHand(s: HandSkin, v: HandVec, out: Float32Array) {
-  const F = handFrames(v, s.side, s.k, s.long);
+function pieceMaps(bind: Record<HandPiece, HandFrame>, F: Record<HandPiece, HandFrame>) {
   const A = new Float64Array(NB * 12);
-  // phồng theo độ gập ở gốc ngón giữa
   const [P, G] = [F.palm.R, F.middle0.R];
   const c = smoothstep(0, 1, 1 - (P[1] * G[1] + P[4] * G[4] + P[7] * G[7]));
   const [kx, kz] = HAND_FIST.map((f) => 1 + (f - 1) * c);
   HAND_PIECES.forEach((n, b) => {
     const R = F[n].R;
-    const Q = s.bind[n].R;
+    const Q = bind[n].R;
     const o = F[n].o;
-    const q = s.bind[n].o;
+    const q = bind[n].o;
     // R · Qᵀ · diag(kx, 1, kz), rồi dời: o − R · Qᵀ · q — phồng trong khung bàn tay quanh trục giữa lòng bàn tay
     for (let i = 0; i < 3; i++)
       for (let j = 0; j < 3; j++)
@@ -353,6 +351,30 @@ export function skinHand(s: HandSkin, v: HandVec, out: Float32Array) {
       A[b * 12 + i * 3 + 2] *= kz;
     }
   });
+  return { A, swell: Math.max(kx, kz) };
+}
+
+/** Điểm `p` của dáng gốc dời như một đỉnh da ở đó: trọng số `weightsOf`, phép biến đốt `A` của `pieceMaps` */
+function skinPoint(A: Float64Array, bind: Record<HandPiece, HandFrame>, k: number, p: V3): V3 {
+  const w = new Float32Array(NB);
+  weightsOf(p, bind, k, w, 0);
+  const out: V3 = [0, 0, 0];
+  for (let b = 0; b < NB; b++) {
+    const m = b * 12;
+    for (let i = 0; i < 3; i++)
+      out[i] +=
+        w[b] *
+        (A[m + i * 3] * p[0] + A[m + i * 3 + 1] * p[1] + A[m + i * 3 + 2] * p[2] + A[m + 9 + i]);
+  }
+  return out;
+}
+
+/**
+ * Da bàn tay ở số bàn tay `v` (`HAND_DOF`, chỉ góc ngón): mỗi đỉnh là tổng có trọng số của các phép biến đốt từ dáng gốc
+ * tới dáng ấy (linear blend skinning), ghi vào `out`
+ */
+export function skinHand(s: HandSkin, v: HandVec, out: Float32Array) {
+  const { A } = pieceMaps(s.bind, handFrames(v, s.side, s.k, s.long));
   const { pos, weights } = s;
   for (let v = 0, n = pos.length / 3; v < n; v++) {
     const x = pos[v * 3];
@@ -373,6 +395,87 @@ export function skinHand(s: HandSkin, v: HandVec, out: Float32Array) {
     out[v * 3 + 1] = oy;
     out[v * 3 + 2] = oz;
   }
+}
+
+const segDist = (p: V3, a: V3, b: V3) => {
+  const d = sub(b, a);
+  const w = sub(p, a);
+  const dd = dot(d, d);
+  const t = dd > 0 ? clamp(dot(w, d) / dd, 0, 1) : 0;
+  return Math.hypot(w[0] - t * d[0], w[1] - t * d[1], w[2] - t * d[2]);
+};
+
+/**
+ * Nới bán kính nang (`handCapsules`) cho ôm trọn da đã dời `pos` (`skinHand`): mỗi đỉnh lòi ra thì nang có mặt gần nó
+ * nhất phình tới nó. Da uốn mềm qua khớp nên lệch khỏi nang dựng từ khối chừng một hai px; nang đã nới thì không lệch
+ */
+export function fitCapsules(caps: [V3, V3, number][], pos: ArrayLike<number>): [V3, V3, number][] {
+  const r = caps.map((c) => c[2]);
+  for (let i = 0; i < pos.length; i += 3) {
+    const p: V3 = [pos[i], pos[i + 1], pos[i + 2]];
+    let best = 0;
+    let gap = Infinity;
+    let d0 = 0;
+    // so với bán kính gốc: nang đã phình không hút thêm đỉnh của nang khác
+    caps.forEach(([a, b, r0], j) => {
+      const d = segDist(p, a, b);
+      if (d - r0 >= gap) return;
+      gap = d - r0;
+      best = j;
+      d0 = d;
+    });
+    if (gap > 0) r[best] = Math.max(r[best], d0);
+  }
+  return caps.map(([a, b], j) => [a, b, r[j]]);
+}
+
+const tip = (f: HandFrame): V3 => [
+  f.o[0] - f.R[1] * f.len,
+  f.o[1] - f.R[4] * f.len,
+  f.o[2] - f.R[7] * f.len,
+];
+
+/** Số dải nang dọc lòng bàn tay, trải theo bề ngang: đủ dày để tấm dẹt không lõm giữa hai nang */
+const PALM_STRIPS = 5;
+
+/**
+ * Nang va chạm của bàn tay bên `side` trong khung bàn tay: `[đầu, cuối, bán kính]` — dải lòng bàn tay, gò ngón cái, rồi
+ * hai đốt mỗi ngón (cái, trỏ, giữa, áp út, út). Dựng từ chính các khối của `handField` và phép biến đốt của `skinHand`,
+ * nên ôm da đang vẽ ở mọi dáng, cả khi nắm đấm phồng
+ */
+export function handCapsules(v: HandVec, side: number, k = 1, long = k): [V3, V3, number][] {
+  const B = HAND_BONES;
+  const bind = handFrames(HAND_BIND, side, k, long);
+  const { A, swell } = pieceMaps(bind, handFrames(v, side, k, long));
+  const L = B.palm.len * long;
+  const [tx, wz] = [B.palm.half[0] * k, B.palm.half[1] * k];
+  const kr = Math.min(k, 1.3 * long);
+  const at = (p: V3) => skinPoint(A, bind, k, p);
+  const out: [V3, V3, number][] = [];
+  // tấm lòng bàn tay (`handField`): chữ nhật bo góc `c` dày `2·tx`; trục nang là chữ nhật ấy lùi vào `tx`
+  const [hy, c] = [L / 2 + 0.004 * long - tx, 0.75 * wz - tx];
+  for (let i = 0; i < PALM_STRIPS; i++) {
+    const z = (wz - tx) * ((2 * i) / (PALM_STRIPS - 1) - 1);
+    const e = Math.max(0, Math.abs(z) - 0.25 * wz);
+    const h = hy - (c - Math.sqrt(Math.max(0, c * c - e * e)));
+    out.push([at([0, -L / 2 + h, z]), at([0, -L / 2 - h, z]), tx * swell]);
+  }
+  const rt = B.thumb.r * kr;
+  const thenar: V3 = [-side * 0.55 * tx, -0.15 * L, 0.25 * wz];
+  out.push([at(thenar), at(bind.thumb0.o), 0.85 * rt * swell]);
+  const radius = (n: HandPiece) =>
+    n.startsWith("thumb")
+      ? rt
+      : n.startsWith("index")
+        ? B.index.r * kr
+        : HAND_FINGERS[n.slice(0, -1) as HandFinger].r * kr;
+  HAND_PIECES.forEach((n) => {
+    if (n === "palm") return;
+    const f = bind[n];
+    const r = radius(n) * (n.endsWith("0") ? 1 : 0.95) * swell;
+    out.push([at(f.o), at(tip(f)), r]);
+  });
+  return out;
 }
 
 /** Pháp tuyến đỉnh trơn từ tam giác (trung bình theo diện tích), ghi vào `out` */

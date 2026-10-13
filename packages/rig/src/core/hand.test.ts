@@ -18,6 +18,7 @@ import {
   HAND_POSES,
   HAND_RELAXED,
   HAND_REST,
+  fitCapsules,
   handCapsules,
   handFrames,
   handGrip,
@@ -112,9 +113,6 @@ describe("bảng dáng tay", () => {
       Math.max(...handCapsules(v, -1).map(([a, b]) => Math.max(-a[1], -b[1])));
     expect(span(vec("point"))).toBeGreaterThan(0.16);
     expect(span(vec("fist"))).toBeLessThan(0.115);
-    // nang ngón trỏ nối gốc với đầu ngón của chính khung xương
-    const idx = handCapsules(vec("point"), -1)[2];
-    expect(dist(idx[1], tipOf(vec("point"), "index1"))).toBeLessThan(1e-12);
   });
 });
 
@@ -335,5 +333,45 @@ describe("lưới bàn tay liền", () => {
     low = 0;
     for (let i = 1; i < out.length; i += 3) low = Math.min(low, out[i]);
     expect(-low).toBeGreaterThan(0.17);
+  });
+
+  it("nang va chạm ôm da ở mọi dáng: lòi dưới 1,5 % cỡ trước khi nới, `fitCapsules` nới chừng ấy là không đỉnh nào lòi", () => {
+    const seg = (p: V3, a: V3, b: V3) => {
+      const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+      const w = [p[0] - a[0], p[1] - a[1], p[2] - a[2]];
+      const t = Math.min(
+        1,
+        Math.max(
+          0,
+          (w[0] * d[0] + w[1] * d[1] + w[2] * d[2]) / (d[0] ** 2 + d[1] ** 2 + d[2] ** 2),
+        ),
+      );
+      return Math.hypot(w[0] - t * d[0], w[1] - t * d[1], w[2] - t * d[2]);
+    };
+    const worst = (caps: [V3, V3, number][], pos: Float32Array) => {
+      let m = -Infinity;
+      for (let i = 0; i < pos.length; i += 3) {
+        const p: V3 = [pos[i], pos[i + 1], pos[i + 2]];
+        m = Math.max(m, Math.min(...caps.map(([a, b, r]) => seg(p, a, b) - r)));
+      }
+      return m;
+    };
+    const poses = [vec("rest"), ...HAND_POSE_KINDS.map(vec), handVec({ pose: "fist", w: 0.5 })];
+    for (const [k, long] of [
+      [1, 1],
+      [1.75, 1.52],
+    ])
+      for (const side of [-1, 1]) {
+        const s = handSkin(side, k, long);
+        const out = new Float32Array(s.pos.length);
+        for (const v of poses) {
+          skinHand(s, v, out);
+          const caps = handCapsules(v, side, k, long);
+          expect(worst(caps, out)).toBeLessThan(0.015 * k);
+          const fit = fitCapsules(caps, out);
+          expect(worst(fit, out)).toBeLessThan(1e-9);
+          fit.forEach(([, , r], i) => expect(r - caps[i][2]).toBeLessThan(0.015 * k));
+        }
+      }
   });
 });

@@ -10,7 +10,8 @@ import { parseScene, resolveScene, sceneAt } from './core/scene';
 import { defaultCharacter, GarmentSchema, SculptSchema, SkirtSchema } from './core/schema';
 import { GARMENT_STYLES } from './core/torso';
 import { handScale, openLength } from './human';
-import { handCapsules, handGrip, HAND_POSES, HAND_REST } from './core/hand';
+import { handGrip, HAND_POSE_KINDS, HAND_POSES, HAND_REST } from './core/hand';
+import { handCapsules } from './core/handMesh';
 import { fromCharacter, R, type CharacterJson, type Figure } from './stickman';
 import sitJson from '../../../apps/studio/public/actions/sit-3d.json';
 import tableJson from '../../../apps/studio/public/actions/arms-on-table-3d.json';
@@ -122,11 +123,11 @@ describe('người 3D mặc đồ', () => {
     const w = f.arms[-1].wrist, sock = f.sockets.hand[-1].getWorldPosition(new THREE.Vector3());
     const g = new THREE.Vector3(...handGrip(-1, h.scale, h.long)).applyMatrix4(w.matrixWorld);
     expect(sock.distanceTo(g)).toBeLessThan(1e-9);
-    // các ngón ôm quanh tâm nắm: mỗi nang ngón cách tâm nắm chừng bán kính một cán cầm
+    // các ngón ôm quanh tâm nắm: mỗi nang đốt ngón (sau năm dải lòng bàn tay và gò ngón cái) cách tâm nắm chừng bán kính một cán cầm
     const caps = handCapsules([0, 0, ...HAND_POSES.grip.thumb, ...HAND_POSES.grip.index, ...HAND_POSES.grip.fingers, 0], -1, h.scale, h.long);
     const near = (a: number[], b: number[], c: number[]) => new THREE.Line3(new THREE.Vector3(...a), new THREE.Vector3(...b)).closestPointToPoint(new THREE.Vector3(...c), true, new THREE.Vector3()).distanceTo(new THREE.Vector3(...c));
     const at = handGrip(-1, h.scale, h.long);
-    for (const [a, b] of caps.slice(1)) expect(near(a, b, at)).toBeLessThan(0.06 * h.scale);
+    for (const [a, b] of caps.slice(6)) expect(near(a, b, at)).toBeLessThan(0.06 * h.scale);
   });
 
   it('nang va chạm bàn tay đi theo khung xương bàn tay: trỏ duỗi thì với xa, nắm thì gọn; cầm đồ thì theo dáng `grip`', () => {
@@ -147,6 +148,29 @@ describe('người 3D mặc đồ', () => {
     expect(far()).toBeLessThan(point - 0.03);
     held.release();
     expect(far()).toBeCloseTo(point, 9);
+  });
+
+  it('nang bàn tay của `collide` ôm trọn lưới da đang vẽ ở mọi dáng, cả khi cầm đồ: ngón lún vào vật là bị báo', () => {
+    const f = dressed();
+    const outside = () => {
+      f.root.updateMatrixWorld(true);
+      const caps = bodyCapsules(f, ['hand']).filter((c) => c.side === -1), line = new THREE.Line3(), p = new THREE.Vector3(), q = new THREE.Vector3();
+      const pos = f.hands![-1].geo.attributes.position, w = f.arms[-1].wrist.matrixWorld;
+      let m = -Infinity;
+      for (let i = 0; i < pos.count; i++) {
+        p.fromBufferAttribute(pos, i).applyMatrix4(w);
+        m = Math.max(m, Math.min(...caps.map((c) => line.set(c.a, c.b).closestPointToPoint(p, true, q).distanceTo(p) - c.r)));
+      }
+      return m;
+    };
+    for (const k of [...HAND_POSE_KINDS, 'rest'] as const) {
+      const v = k === 'rest' ? HAND_REST : [0, 0, ...HAND_POSES[k].thumb, ...HAND_POSES[k].index, ...HAND_POSES[k].fingers, HAND_POSES[k].spread];
+      act(f, { ...stand(), pose: { ...stand().pose, hand: { an: [40, -15, ...v.slice(2)] } } }, 0);
+      expect(outside()).toBeLessThan(1e-6);
+    }
+    const held = hold(f, new THREE.Group(), { hand: -1 });
+    expect(outside()).toBeLessThan(1e-6);
+    held.release();
   });
 
   it('`arms-on-table-3d` của bộ mẫu: bàn tay úp nằm trên mặt bàn chuẩn, không lún, cả người nền `lod: low`', () => {

@@ -356,6 +356,7 @@ export function stickman(o: StickmanOptions): Figure {
   const body = sculptTorso(spine, { garment, rig, color, accent, ink: INK, arm: at.room, lap, ...(clad && { sil: LIMB_SIL }), ...(clad && skirt && { tuck: -skirt.rise * rig.height }) });
   // khối thân áo là mảnh đầu tiên: `collide` lấy hộp thân từ nó
   spine.children[0].userData.torso = true;
+  spine.children[0].userData.inkGap = Math.max(...body.depth) / 100;
   let skirtRig: Figure['skirt'];
   if (skirt) {
     const dir: Vec3 = seated ? [0, 0.08, 1] : [0, 1, 0];
@@ -438,6 +439,8 @@ export function stickman(o: StickmanOptions): Figure {
   for (const s of SIDES) {
     for (const [a, b, w] of [[arms[s].shoulder, arms[s].elbow, sleeveWidth], [legs[s].hip, legs[s].knee, trouserWidth]] as const) {
       seg(a).userData.r = seg(b).userData.r = limbR(w);
+      // mép chi đè lên thân, hông cùng màu: nét theo khe sâu cỡ bán kính ống
+      seg(a).userData.inkGap = limbR(w);
       bendLimb(seg(a), b, seg(b), limbCurve);
     }
   }
@@ -510,6 +513,7 @@ function cladLimb(upper: THREE.Mesh, lower: THREE.Mesh, [L1, L2]: [number, numbe
 function pelvis(spine: THREE.Object3D, body: { profile: [number, number][]; depth: number[] }, hip: number, r: number, mat: THREE.Material) {
   const g = inked(pelvisGeometry(body.profile, body.depth, hip, r), mat);
   g.userData.pelvis = true;
+  g.userData.inkGap = r;
   spine.add(g);
 }
 
