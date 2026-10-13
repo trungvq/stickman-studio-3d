@@ -933,7 +933,7 @@ chúng đi theo:
 | `suit` vest cà vạt | V sâu, ve áo nổi khối | Cà vạt màu nét dài quá đáy cổ, cắt theo chữ V như luồn dưới vạt; nẹp, hai cúc, hai vạt bo ở gấu; sau lưng là dải cổ |
 | `hoodie` | V, mũ trùm nổi khối | Dây rút mọc từ mép mũ, túi trước, bo gấu 12 px |
 | `blouse` cổ lá sen | U, lá sen nổi khối | Lá sen ba cánh màu kem cố định `#f6efe4`, nơ màu nhấn, đường eo, nếp vạt quanh khối |
-| `wrap` cổ chéo | Chéo vạt trái đè vạt phải, dải cổ nổi khối | Cổ lót, đai, dây buộc, khoá và nút đai — [Áo cổ chéo](#áo-cổ-chéo), chỉ người 3D |
+| `wrap` cổ chéo | Chéo vạt trái đè vạt phải, dải cổ nổi khối | Cổ lót, đai, dây buộc, khoá và nút đai — [Áo cổ chéo](#áo-cổ-chéo); có `wrap.open` thì hai vạt mở — [Áo khoác vạt mở](#áo-khoác-vạt-mở); chỉ người 3D |
 
 Bốn kiểu áo nữ dùng cùng khối thân và bộ chỉnh:
 
@@ -1158,6 +1158,8 @@ của lõi, `torsoMesh`); người 2D và 2.5D vẽ thân trơn.
 | `under` | 0 | Cổ lót lộ một dải bấy nhiêu px phía trong dải cổ; `0` là không có |
 | `underColor` | `#f6efe4` | Màu cổ lót |
 | `obi` | | Đai; bỏ trống là không đai |
+| `open` | | Hai vạt mở, [Áo khoác vạt mở](#áo-khoác-vạt-mở); bỏ trống là cổ chéo |
+| `letters` | | Chữ dọc trên dải cổ, [Chữ trên dải cổ](#chữ-trên-dải-cổ) |
 
 | Trường của `wrap.obi` | Mặc định | Nghĩa |
 |---|---:|---|
@@ -1181,6 +1183,118 @@ Bộ số hay dùng, `rig.height = 1`:
 | Áo làm việc tới hông | `{ "style": "wrap" }` | Không đai, quần cùng màu |
 | Áo bếp tới hông | `{ "style": "wrap", "hem": 8 }` | Cổ cùng màu; tay xắn: `palette.sleeveLength` `0.5` |
 | Yukata ngồi tới đùi | `{ "style": "wrap", "hem": 40, "wrap": { "bandColor": "…", "obi": { "y": 14, "width": 14, "lift": 3, "knot": "kai" } } }` | Đai thấp bản hẹp; ống chân cùng màu vải: `palette.trouser` |
+
+### Áo khoác vạt mở
+
+Có `wrap.open` thì kiểu `wrap` là áo khoác vạt mở — 法被, 羽織: hai vạt không chéo nhau mà buông thẳng, chừa khe giữa
+thấy áo trong. Vạt là chính khối thân, cứng, không bay không rủ; tay áo là ống `palette.sleeve*` như mọi người mặc đồ.
+
+```json
+"torso": { "src": "sculpt", "accent": "#f3ebdd", "garment": { "style": "wrap", "hem": 12, "ease": 12,
+  "wrap": { "band": 7, "bandColor": "#3a2a22", "open": { "gap": 8 } } } }
+```
+
+- **Mép vạt** trái người mặc đi từ bên cổ phía `+x` chéo xuống như mép vạt trên của cổ chéo (dốc theo `neck` và
+  `neckFront`), tới `gap / 2` thì bẻ thẳng xuống gấu trong khoảng `WRAP_BEND` px; mép vạt phải đối xứng qua trục. Hai mép
+  không gặp nhau: khe giữa rộng `gap` px chỗ buông thẳng. `overlap` không dùng cho vạt; `neckFront` lớn thì chữ V sâu
+  hơn (羽織 bẻ ve: `44`).
+- **Dải cổ** rộng `band` px, màu `bandColor`, chạy từ gấu vạt trái lên bên cổ, vòng sau gáy, xuống suốt mép vạt phải tới
+  gấu; nổi khối và có nét viền như dải cổ chéo.
+- **Áo trong** là tấm màu `torso.accent` (bỏ trống là màu áo tối đi `0.3`) nổi `OPEN_FILL_LIFT` `0.6` px phủ khe giữa hai
+  mép vạt, từ miệng cổ áo trong tới gấu, lấn dưới dải cổ một px. Miệng cổ áo trong là cổ tròn hạ `OPEN_CREW` `4` px ở
+  giữa ngực; `cross > 0` thì là chữ V của cổ chéo 右前 giao ở `cross` px dưới chỗ viền cổ chạm mặt vát, kèm cổ lót
+  `under` px màu `underColor` dọc hai mép cổ chéo — chỉ phần lộ giữa hai mép vạt, phần còn lại dồn vào dưới dải cổ. Da
+  trong miệng cổ như cổ chéo.
+- **Đai** (`wrap.obi`) chỉ còn cung giữa hai mép vạt ở độ cao đai, bịt hai đầu; dây buộc và khoá đai như cổ chéo, không có
+  nút sau lưng. Đai nằm dưới vạt: `lift` nhỏ hơn độ nổi dải cổ (`1.5`) thì mép vạt đè lên đầu đai.
+- **Dây buộc trước ngực** (羽織紐, `tie > 0`): mỗi bên một ống tròn đường kính `tie` từ giữa dải cổ ở độ cao `tieY` võng
+  xuống `3` px tới nút tròn đường kính `1.7 · tie` giữa khe, nổi trên dải cổ.
+- Người ngồi: vạt, dải cổ, áo trong gập theo đùi cùng khối thân.
+
+| Trường của `wrap.open` | Mặc định | Nghĩa |
+|---|---:|---|
+| `gap` | 12 | Khe giữa hai mép vạt chỗ buông thẳng rộng bấy nhiêu px |
+| `cross` | 0 | Áo trong cổ chéo giao thấp hơn chỗ viền cổ chạm mặt vát bấy nhiêu px; `0` là áo trong cổ tròn |
+| `tie` | 0 | Dây buộc trước ngực dày bấy nhiêu px; `0` là không có |
+| `tieY` | 80 | Dây buộc cao hơn hông bấy nhiêu px, nhân `rig.height` |
+| `tieColor` | `#f6efe4` | |
+
+| Áo | `garment` | Ghi chú |
+|---|---|---|
+| 法被 tới hông | `{ "style": "wrap", "hem": 12, "ease": 12, "wrap": { "band": 7, "bandColor": "…", "open": { "gap": 8 } } }` | Áo trong `torso.accent`; tay ôm |
+| 羽織 tới giữa đùi | `{ "style": "wrap", "hem": 36, "ease": 13, "neckFront": 44, "wrap": { "band": 7, "under": 3, "open": { "gap": 18, "cross": 24, "tie": 1.8, "tieY": 86 }, "obi": { "y": 56, "width": 30, "lift": 1.5 } } }` | Khoác ngoài kimono: `accent` màu kimono, cổ lót kem trong khe, đai lộ giữa khe |
+
+### Chữ trên dải cổ
+
+`wrap.letters` in chữ xếp dọc lên dải cổ phía trước (衿文字), mỗi bên một chuỗi. Chữ là texture vẽ bằng canvas trên một
+lưới bám đúng mặt dải cổ, nổi trên dải `0.15` px: cong theo thân, khuất khi quay đi. Chuỗi chạy dọc dải theo độ cao, nên
+đặt ở đoạn dải buông thẳng; ở đoạn chéo gần cổ chữ bị kéo xiên. Áo cổ chéo khép chỉ in `left` (dải bên phải khuất dưới
+vạt trên). Canvas vẽ bằng phông hệ thống (`Noto Serif CJK JP`, `Noto Sans CJK JP` qua fontconfig, rồi `serif`,
+`sans-serif`); Node trần không có canvas thì không có chữ, hình khối vẫn đủ.
+
+```json
+"wrap": { "band": 7, "bandColor": "#3a2a22", "open": { "gap": 8 }, "letters": { "left": "楓荘", "color": "#ffffff" } }
+```
+
+| Trường của `wrap.letters` | Mặc định | Nghĩa |
+|---|---:|---|
+| `left` | `""` | Chuỗi trên dải cổ bên trái người mặc (`+x`, bên phải người xem) |
+| `right` | `""` | Bên phải người mặc |
+| `color` | `#ffffff` | |
+| `size` | `0.8 · band` | Cỡ một chữ, px; chuỗi dài `size` nhân số chữ |
+| `y` | 66 | Tâm chuỗi cao hơn hông bấy nhiêu px, nhân `rig.height` |
+| `font` | `serif` | `serif` (明朝) hay `sans` (ゴシック), đậm |
+
+### Hình in trên áo
+
+`garment.prints` là danh sách hình in lên mặt khối của **mọi kiểu** thân áo dựng khối (背紋 giữa lưng, chữ to sau lưng,
+dấu nhỏ trước ngực). Mỗi hình là một khung `size` × `size` px (chữ: một ô mỗi chữ, xếp dọc hay ngang) chiếu thẳng từ
+trước hay sau lên mặt khối, nổi `PRINT_LIFT` `0.8` px: nhìn thẳng thì không méo, cong theo thân, khuất khi quay đi, gập
+theo đùi khi ngồi. Rig không biết tên quán nào: hình là chuỗi chữ, path SVG trong JSON, hay một hình có tên trong
+`PRINT_SHAPES` (`core/print.ts`). Chỉ người 3D vẽ; 2D và 2.5D bỏ qua.
+
+```json
+"garment": { "style": "wrap", "prints": [{ "side": "back", "shape": "maple", "size": 66, "y": 70, "color": "#fff8ec" }] }
+```
+
+| Trường của `prints[]` | Mặc định | Nghĩa |
+|---|---:|---|
+| `side` | `back` | `back` giữa lưng, `front` trước ngực |
+| `x` | 0 | Tâm lệch khỏi giữa thân bấy nhiêu px về `+x` (bên trái người mặc) |
+| `y` | 72 | Tâm cao hơn hông bấy nhiêu px, nhân `rig.height` |
+| `size` | 40 | Cạnh khung của hình, hay cỡ một chữ, px |
+| `color` | `#fff8ec` | |
+| `text` | | Chữ in; có thì bỏ qua `path`, `shape` |
+| `font` | `serif` | Như `letters.font` |
+| `vertical` | `true` | Chữ xếp dọc từ trên xuống; `false` là một dòng ngang |
+| `path` | | Path SVG trong hộp `0…100`, `y` xuống, tô evenodd; có thì bỏ qua `shape` |
+| `shape` | `circle` | Hình có tên: `maple` lá phong năm thuỳ có cuống, `circle` tròn, `ring` vành khuyên, `diamond` thoi |
+| `rotate` | 0 | Xoay theo chiều kim đồng hồ khi nhìn thẳng vào hình, độ |
+
+### Thẻ tên
+
+`garment.badge` dán một thẻ chữ nhật bo góc lên ngực trái người mặc, trên **mọi kiểu** thân áo dựng khối. Thẻ là hình in
+bám mặt khối như `prints`, nổi `lift` px: nền `color`, viền mực mảnh ngoài cùng rồi viền `edge`, chữ `text` một dòng
+ngang chữ không chân đậm, co lại cho vừa thẻ. `wakaba` thêm dấu lá non 若葉マーク ở đầu trái: hình mũi tên chúc xuống chia
+đôi, nửa trái vàng `#f2c200`, nửa phải xanh lá `#1e9a48` khi nhìn thẳng, viền màu `edge`. Ở trung cảnh thẻ chỉ đọc
+được là một mảng sáng có chấm màu; chữ để cận cảnh. Bật tắt thẻ hay dấu theo cảnh: hai mục `items` của socket `torso`
+cùng `garment`, khác `badge` ([Đồ thay được](01-rig.md#đồ-thay-được-items-và-equip)).
+
+| Trường của `badge` | Mặc định | Nghĩa |
+|---|---:|---|
+| `x` | 19 | Tâm lệch khỏi giữa ngực bấy nhiêu px về `+x` (ngực trái người mặc) |
+| `y` | 86 | Tâm cao hơn hông bấy nhiêu px, nhân `rig.height` |
+| `width`, `height` | 12, 6 | px |
+| `round` | 1.2 | Bán kính bo góc, px |
+| `lift` | 0.8 | Thẻ nổi khỏi mặt khối bấy nhiêu px; dán lên dải cổ thì nâng quá độ nổi của dải (`3`) |
+| `color` | `#fff8ec` | Nền thẻ |
+| `edge` | `#3a2a22` | Viền thẻ, viền dấu lá non |
+| `text` | `""` | |
+| `textColor` | `#1c1c1e` | |
+| `wakaba` | `false` | Dấu lá non |
+
+Thân người mặc đồ hẹp (nửa ngang ngực chừng `30`–`34` px): thẻ quá `x + width / 2 ≈ 26` thì lấn sang sườn, méo theo mặt
+khối. Áo khoác vạt mở có dải cổ tới `gap / 2 + band` px: đặt thẻ ngoài khoảng ấy.
 
 ## Quần thì không, váy thì có
 

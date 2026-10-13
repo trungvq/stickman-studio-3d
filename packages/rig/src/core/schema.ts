@@ -288,6 +288,35 @@ export const ObiSchema = z.object({
   knotX: z.number().optional(),
 });
 
+/** Hai vạt mở của áo khoác kiểu `wrap`. docs/02-trang-phuc.md#áo-khoác-vạt-mở */
+export const OpenSchema = z.object({
+  /** Khe giữa hai mép vạt chỗ buông thẳng rộng bấy nhiêu px */
+  gap: z.number().default(12),
+  /** Áo trong cổ chéo: hai mép cổ áo trong giao nhau thấp hơn chỗ viền cổ chạm mặt vát bấy nhiêu px; `0` là áo trong cổ tròn */
+  cross: z.number().default(0),
+  /** Dây buộc trước ngực dày bấy nhiêu px; `0` là không có */
+  tie: z.number().default(0),
+  /** Dây buộc cao hơn hông bấy nhiêu px, nhân `rig.height` */
+  tieY: z.number().default(80),
+  tieColor: z.string().default("#f6efe4"),
+});
+
+export const PRINT_FONTS = ["serif", "sans"] as const;
+
+/** Chữ dọc trên dải cổ. docs/02-trang-phuc.md#chữ-trên-dải-cổ */
+export const LettersSchema = z.object({
+  /** Chuỗi chữ trên dải cổ bên trái người mặc (`+x`) */
+  left: z.string().default(""),
+  /** Bên phải người mặc; áo cổ chéo khép thì bỏ qua (dải ấy khuất dưới vạt trên) */
+  right: z.string().default(""),
+  color: z.string().default("#ffffff"),
+  /** Cỡ chữ, px; bỏ trống là `0.8` bản dải cổ */
+  size: z.number().optional(),
+  /** Tâm chuỗi chữ cao hơn hông bấy nhiêu px, nhân `rig.height` */
+  y: z.number().default(66),
+  font: z.enum(PRINT_FONTS).default("serif"),
+});
+
 /** Cổ chéo, dải cổ và đai của kiểu `wrap`. docs/02-trang-phuc.md#áo-cổ-chéo */
 export const WrapSchema = z.object({
   /** Mép vạt trên chạy xuống gấu lệch sang bên phải người mặc nhiều nhất bấy nhiêu px */
@@ -301,6 +330,53 @@ export const WrapSchema = z.object({
   underColor: z.string().default("#f6efe4"),
   /** Bỏ trống là không đai */
   obi: ObiSchema.optional(),
+  /** Có thì hai vạt không chéo nhau mà buông thẳng chừa khe giữa: áo khoác 法被, 羽織 */
+  open: OpenSchema.optional(),
+  letters: LettersSchema.optional(),
+});
+
+export const PRINT_SHAPE_NAMES = ["maple", "circle", "ring", "diamond"] as const;
+
+/** Hình in trên thân áo dựng khối: chữ, hình có tên hay path SVG. docs/02-trang-phuc.md#hình-in-trên-áo */
+export const PrintSchema = z.object({
+  side: z.enum(["back", "front"]).default("back"),
+  /** Tâm lệch khỏi giữa thân bấy nhiêu px về `+x` (bên trái người mặc) */
+  x: z.number().default(0),
+  /** Tâm cao hơn hông bấy nhiêu px, nhân `rig.height` */
+  y: z.number().default(72),
+  /** Cạnh hình vuông của hình, hay cỡ một chữ, px */
+  size: z.number().default(40),
+  color: z.string().default("#fff8ec"),
+  /** Chữ in; có thì bỏ qua `path` và `shape` */
+  text: z.string().optional(),
+  font: z.enum(PRINT_FONTS).default("serif"),
+  /** Chữ xếp dọc từ trên xuống; `false` là một dòng ngang */
+  vertical: z.boolean().default(true),
+  /** Path SVG trong hộp `0…100` (`y` xuống), tô theo luật evenodd; có thì bỏ qua `shape` */
+  path: z.string().optional(),
+  shape: z.enum(PRINT_SHAPE_NAMES).default("circle"),
+  /** Xoay theo chiều kim đồng hồ khi nhìn thẳng vào hình, độ */
+  rotate: z.number().default(0),
+});
+
+/** Thẻ tên dán ngực thân áo dựng khối. docs/02-trang-phuc.md#thẻ-tên */
+export const BadgeSchema = z.object({
+  /** Tâm lệch khỏi giữa ngực bấy nhiêu px về `+x` (ngực trái người mặc) */
+  x: z.number().default(19),
+  /** Tâm cao hơn hông bấy nhiêu px, nhân `rig.height` */
+  y: z.number().default(86),
+  width: z.number().default(12),
+  height: z.number().default(6),
+  round: z.number().default(1.2),
+  /** Thẻ nổi khỏi mặt khối bấy nhiêu px; dán lên dải cổ thì nâng quá độ nổi của dải */
+  lift: z.number().default(0.8),
+  color: z.string().default("#fff8ec"),
+  /** Màu viền in quanh mép mặt thẻ */
+  edge: z.string().default("#3a2a22"),
+  text: z.string().default(""),
+  textColor: z.string().default("#1c1c1e"),
+  /** Dấu lá non 若葉マーク ở đầu trái mặt thẻ */
+  wakaba: z.boolean().default(false),
 });
 
 export const GarmentSchema = z.object({
@@ -331,6 +407,10 @@ export const GarmentSchema = z.object({
   hemRound: z.number().optional(),
   /** Kiểu `wrap`: cổ chéo, dải cổ, đai; kiểu khác bỏ qua */
   wrap: WrapSchema.optional(),
+  /** Hình in trên mặt khối, chỉ người 3D */
+  prints: z.array(PrintSchema).optional(),
+  /** Thẻ tên dán ngực, chỉ người 3D */
+  badge: BadgeSchema.optional(),
 });
 
 export const SKIRT_STYLES = ["cone", "wrap", "apron"] as const;
@@ -619,6 +699,12 @@ export type Pin = z.infer<typeof PinSchema>;
 export type BeardTip = (typeof BEARD_TIPS)[number];
 export type Garment = z.infer<typeof GarmentSchema>;
 export type Wrap = z.infer<typeof WrapSchema>;
+export type Open = z.infer<typeof OpenSchema>;
+export type Letters = z.infer<typeof LettersSchema>;
+export type Print = z.infer<typeof PrintSchema>;
+export type PrintShape = (typeof PRINT_SHAPE_NAMES)[number];
+export type PrintFont = (typeof PRINT_FONTS)[number];
+export type Badge = z.infer<typeof BadgeSchema>;
 export type Obi = z.infer<typeof ObiSchema>;
 export type ObiKnot = (typeof OBI_KNOTS)[number];
 export type Skirt = z.infer<typeof SkirtSchema>;

@@ -7,7 +7,8 @@ import {
   type MarkFill, type P2, type Rig, type SP, type Surface,
 } from './core/torso';
 import { WrapSchema } from './core/schema';
-import { wrapParts } from './core/wrap';
+import { wrapParts, type WrapBody } from './core/wrap';
+import { printParts, type PrintPart } from './core/print';
 
 // Thân áo dựng khối từ bảng kiểu và mặt cắt `profile` của lõi: như `torsoPaths` nhưng giữ khối, nét và tấm ở 3D
 // thay vì chiếu ra path SVG.
@@ -30,6 +31,8 @@ export interface TorsoMesh {
   sheets: { grid: Vec3[][]; rims: number[]; color: MarkFill; line: number }[];
   /** Khối kín (đai, dây buộc, khoá, nút đai): tam giác quấn ra ngoài trong hệ thân `y` xuống */
   solids: { pts: Vec3[]; tris: number[]; color: MarkFill }[];
+  /** Hình in bám mặt khối (chữ trên dải cổ, hình in, mặt thẻ tên): lưới cột × hàng và nội dung vẽ lên texture */
+  prints: PrintPart[];
 }
 
 /** Cạnh tam giác của mảng tô dài nhất bấy nhiêu px: dài hơn thì dây cung cắt xuyên mặt cong của khối */
@@ -146,7 +149,7 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     return { pts, tris: tris.flat() };
   };
 
-  const out: TorsoMesh = { profile: pts, depth, lines: [], fills: [], dots: [], sheets: [], solids: [] };
+  const out: TorsoMesh = { profile: pts, depth, lines: [], fills: [], dots: [], sheets: [], solids: [], prints: [] };
   for (const m of def.marks(surf)) {
     if (m.dot) {
       out.dots.push({ p: onTorso(m.pts[0], 0), k: m.k });
@@ -219,11 +222,14 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     );
   }
 
+  const body: WrapBody = { s: surf, depth: dAt, raise: (sp, lift) => raise(sp, lift, 0, 0), height: rig.height };
   if (def.wrap) {
-    const w = wrapParts({ s: surf, depth: dAt, raise: (sp, lift) => raise(sp, lift, 0, 0), height: rig.height }, WrapSchema.parse(g.wrap ?? {}));
+    const w = wrapParts(body, WrapSchema.parse(g.wrap ?? {}));
     out.sheets.push(...w.sheets);
     out.solids.push(...w.solids);
+    out.prints.push(...w.prints);
   }
+  out.prints.push(...printParts(body, g));
 
   const spec = def.collar?.(surf);
   if (spec) {

@@ -373,3 +373,23 @@ describe('áo cổ chéo', () => {
     }
   });
 });
+
+describe('áo khoác vạt mở, hình in, thẻ tên', () => {
+  it('dựng được trong Node trần: mỗi hình in một lưới có texture, không đổ bóng, `collide` bỏ qua', () => {
+    const f = dressed((c) => {
+      c.pieces.torso = {
+        ...c.pieces.torso,
+        src: 'sculpt',
+        garment: GarmentSchema.parse({
+          style: 'wrap',
+          wrap: { band: 7, open: { gap: 8, tie: 1.6 }, letters: { left: '楓荘', right: '旅館' } },
+          prints: [{ shape: 'maple', size: 60 }],
+          badge: { text: '陽太', wakaba: true },
+        }),
+      };
+    });
+    const prints = f.spine.children.filter((o) => ((o as THREE.Mesh).material as THREE.ShaderMaterial)?.uniforms?.uMap?.value);
+    expect(prints).toHaveLength(4);
+    for (const p of prints) expect([p.userData.noShadow, p.userData.noCollide]).toEqual([true, true]);
+  });
+});

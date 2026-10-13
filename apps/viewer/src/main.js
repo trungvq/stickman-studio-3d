@@ -84,7 +84,7 @@ const MOUTHS = ['talkA', 'talkTeeth', 'talkB', 'talkTeeth', 'talkA', 'o'];
 /** Cảnh diễn hành động `?demo=`; không có cảnh ấy thì trả `undefined` */
 function setupDemo(name) {
   const own = { hold: holdDemo, light: lightDemo, room: roomDemo, stages: () => stagesDemo(host), decal: decalDemo, police: policeDemo };
-  for (const k of ['human', 'human-row', 'human-faces', 'human-bench', 'human-wrap', 'human-wrap-act']) own[k] = () => humanDemo(k);
+  for (const k of ['human', 'human-row', 'human-faces', 'human-bench', 'human-wrap', 'human-wrap-act', 'human-coat', 'human-coat-act']) own[k] = () => humanDemo(k);
   const d = own[name] ? own[name](q) : name && demo(name);
   if (['light', 'room', 'decal', 'police'].includes(name)) ground.visible = false;
   if (!d) return undefined;

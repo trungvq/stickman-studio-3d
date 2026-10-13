@@ -1,7 +1,10 @@
 import * as THREE from 'three';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { hullMaterial, npr } from './npr';
+import { hullMaterial, npr, surface } from './npr';
+import { canvasTexture } from './decal';
+import { path2D } from './canvas';
+import { WAKABA, type PrintArt, type PrintPart } from './core/print';
 import { APRON_LIFT, RIG, SKIRT_EASE, TORSO_DEPTH } from './core/constants';
 import { apronBow, apronOf, drape, drapeAt, hemHang, hemReach, sectionFront, wrapHemEdge, wrapHemOf } from './core/hem';
 import type { Garment, Skirt } from './core/schema';
@@ -85,6 +88,90 @@ function sheetGeometry(grid: Vec3[][]) {
   return g;
 }
 
+const FONTS = {
+  serif: '"Noto Serif CJK JP", "Noto Serif JP", "Hiragino Mincho ProN", serif',
+  sans: '"Noto Sans CJK JP", "Noto Sans JP", "Hiragino Sans", sans-serif',
+};
+
+type Ctx2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+
+/** Chữ xếp dọc hay một dòng ngang lấp đầy khung `W`×`H` */
+function letters(ctx: Ctx2D, text: string, font: keyof typeof FONTS, vertical: boolean, x: number, y: number, W: number, H: number) {
+  const chars = Array.from(text);
+  const pitch = (vertical ? H : W) / chars.length;
+  ctx.font = `700 ${Math.round(Math.min(vertical ? W : H, pitch) * 0.92)}px ${FONTS[font]}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  chars.forEach((ch, i) => ctx.fillText(ch, vertical ? x + W / 2 : x + (i + 0.5) * pitch, vertical ? y + (i + 0.5) * pitch : y + H / 2));
+}
+
+function drawArt(ctx: Ctx2D, art: PrintArt, W: number, H: number, k: number, ink: string) {
+  if (art.kind === 'text') {
+    ctx.fillStyle = art.color;
+    letters(ctx, art.text, art.font, art.vertical, 0, 0, W, H);
+  } else if (art.kind === 'path') {
+    ctx.fillStyle = art.color;
+    ctx.scale(W / 100, H / 100);
+    ctx.fill(path2D(art.d), 'evenodd');
+  } else {
+    // viền màu `edge` trong viền mực mảnh như nét của người
+    const lw = Math.max(1, H * 0.06);
+    const rect = (i: number) => {
+      ctx.beginPath();
+      ctx.roundRect(i, i, W - 2 * i, H - 2 * i, Math.max(0, art.round * k - i));
+    };
+    rect(lw / 2);
+    ctx.fillStyle = art.color;
+    ctx.fill();
+    ctx.lineWidth = lw;
+    ctx.strokeStyle = ink;
+    ctx.stroke();
+    rect(1.5 * lw);
+    ctx.strokeStyle = art.edge;
+    ctx.stroke();
+    const m = art.wakaba ? H * 0.74 : 0;
+    if (art.wakaba) {
+      ctx.save();
+      ctx.translate(H * 0.16, (H - m) / 2);
+      ctx.scale(m / 100, m / 100);
+      for (const [d, c] of [[WAKABA.left, WAKABA.colors[0]], [WAKABA.right, WAKABA.colors[1]]] as const) {
+        ctx.fillStyle = c;
+        ctx.fill(path2D(d));
+      }
+      ctx.lineWidth = 6;
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = art.edge;
+      for (const d of [WAKABA.left, WAKABA.right]) ctx.stroke(path2D(d));
+      ctx.restore();
+    }
+    if (art.text) {
+      const x0 = art.wakaba ? H * 0.16 + m : 0;
+      ctx.fillStyle = art.textColor;
+      ctx.save();
+      const [w, h] = [W - x0 - H * 0.16, H * 0.56];
+      ctx.translate(x0 + H * 0.08, (H - h) / 2);
+      const fit = Math.min(1, w / (Array.from(art.text).length * h));
+      letters(ctx, art.text, 'sans', false, (w - w * fit) / 2, 0, w * fit, h);
+      ctx.restore();
+    }
+  }
+}
+
+/** Lưới hình in thành mesh có uv: cột `u` trái sang phải, hàng `v` trên xuống, texture vẽ nội dung một lần */
+function printMesh(p: PrintPart, ink: string) {
+  const k = Math.min(16, 1024 / Math.max(p.w, p.h));
+  const [W, H] = [Math.max(8, Math.round(p.w * k)), Math.max(8, Math.round(p.h * k))];
+  const tex = canvasTexture(W, H, (ctx) => drawArt(ctx, p.art, W, H, k, ink));
+  tex.update(0);
+  const g = sheetGeometry(p.grid);
+  const [nu, nv] = [p.grid.length - 1, p.grid[0].length - 1];
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(p.grid.flatMap((col, i) => col.flatMap((_, j) => [i / nu, 1 - j / nv])), 2));
+  const m = new THREE.Mesh(g, surface({ map: tex.texture, alpha: 'blend', side: 'double', stipple: 0.04, soft: 1 }));
+  m.userData.noShadow = true;
+  m.userData.noCollide = true;
+  return m;
+}
+
 /**
  * Thân áo dựng khối của rig (`pieces.torso.garment`), gắn vào nhóm thân `spine`; trả mặt cắt và bề sâu đã dựng. `tuck` (px, y
  * xuống) là cạp váy liền mặt thân: nét, chấm, mảng tô dưới đó nằm trong váy nên không dựng, khỏi lòi qua cạp. `sil`: thân
@@ -164,6 +251,7 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
     hl.userData.noShadow = true;
     add(hl);
   }
+  for (const p of t.prints) if (p.grid.some((col) => col.some(shown))) add(printMesh(p, ink));
   const out = { profile: t.profile, depth: t.depth, refold: undefined as ((dir: [number, number]) => void) | undefined };
   if (!lap) return out;
   // gập từ hình đứng giữ sẵn, đơn vị three

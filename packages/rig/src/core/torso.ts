@@ -5,7 +5,7 @@ import { chain, weld } from "./sculpt";
 import { lonOf, turnPoint, type Vec3 } from "./sphere";
 import type { View } from "./types";
 
-export type Dims = Required<Omit<Garment, "style" | "wrap">>;
+export type Dims = Required<Omit<Garment, "style" | "wrap" | "prints" | "badge">>;
 export type P2 = [number, number];
 
 /** Điểm trên mặt khối: kinh độ, độ (`0` giữa ngực, dương về `+x`, `180` giữa lưng), và `y` của nhóm thân */

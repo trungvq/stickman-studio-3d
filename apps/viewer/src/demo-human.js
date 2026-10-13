@@ -8,7 +8,7 @@ import { SAMPLE_ITEMS } from './demo-hold.js';
 const STICK = new URLSearchParams(location.search).has('stick');
 
 /** JSON nhân vật mẫu: số đo để trống lấy mặc định của schema, `rig` và `palette` đè lên */
-function character(name, { rig, palette, face, garment, hair, hairColor, skirt, glasses }) {
+function character(name, { rig, palette, face, garment, accent, hair, hairColor, skirt, glasses }) {
   const json = {
     name,
     ...(rig && { rig }),
@@ -16,7 +16,7 @@ function character(name, { rig, palette, face, garment, hair, hairColor, skirt, 
     palette: { skin: '#f8e3c8', line: '#1c1c1e', clad: true, ...palette },
     ...(face && { face }),
     pieces: {
-      torso: { src: 'sculpt', garment },
+      torso: { src: 'sculpt', garment, ...(accent && { accent }) },
       hair: { src: 'sculpt', color: hairColor, sculpt: SCULPT_PRESETS[hair].sculpt },
       ...(skirt ? { hem: { src: 'sculpt', color: skirt.color, skirt: skirt.shape } } : {}),
       ...(glasses ? { faceAcc: { src: 'sculpt', color: '#3a2a22', glasses: GLASSES_PRESETS[glasses].glasses } } : {}),
@@ -96,6 +96,54 @@ const models = () => ({
     palette: { garment: '#f3ebdd', sleeve: '#f3ebdd', sleeveLength: 0.5, trouser: '#5e3f2c', shoe: '#2a2420', sleeveWidth: 18, trouserWidth: 19 },
     garment: { style: 'wrap', hem: 8 }, hair: 'buzz', hairColor: '#4a4440',
   }),
+  /** Áo khoác vạt mở tới hông: dải cổ nâu chữ dọc bên trái, lá phong sau lưng, áo trong kem cổ tròn, thẻ tên có dấu lá non */
+  HAPPI: character('vat-mo-ngan', {
+    palette: { garment: '#2e6b4f', sleeve: '#2e6b4f', sleeveWidth: 15, trouser: '#3a2a22', shoe: '#2a2420' },
+    accent: '#f3ebdd',
+    garment: {
+      style: 'wrap', hem: 12, ease: 12,
+      wrap: { band: 7, bandColor: '#3a2a22', open: { gap: 8 }, letters: { left: '楓荘', color: '#ffffff' } },
+      prints: [{ side: 'back', shape: 'maple', size: 66, y: 70, color: '#fff8ec' }],
+      badge: { text: '陽太', wakaba: true },
+    },
+    hair: 'neat', hairColor: '#2a1c15',
+  }),
+  /** Như trên, chữ dọc bên phải, chữ to sau lưng, thẻ tên không dấu */
+  HAPPI_B: character('vat-mo-chu', {
+    rig: { height: 0.95, shoulderHalf: 36, hipHalf: 21 },
+    palette: { garment: '#2b3a67', sleeve: '#2b3a67', sleeveWidth: 14, trouser: '#2b3a67', shoe: '#5e3f2c' },
+    accent: '#fff8ec',
+    garment: {
+      style: 'wrap', hem: 8, ease: 12,
+      wrap: { band: 7, bandColor: '#fff8ec', open: { gap: 6 }, letters: { right: '旅館', color: '#2b3a67', font: 'sans' } },
+      prints: [{ side: 'back', text: '祭', size: 44, y: 76, color: '#fff8ec' }, { side: 'front', shape: 'ring', size: 9, x: -22, y: 92, color: '#fff8ec' }],
+      badge: { text: '佐藤' },
+    },
+    hair: 'bob', hairColor: '#3b2a22',
+  }),
+  /** Áo khoác vạt mở tới giữa đùi khoác ngoài áo cổ chéo: cổ lót kem giao trong khe, đai lộ giữa khe, dây buộc trước ngực; váy thẳng từ dưới gấu áo khoác */
+  HAORI: character('vat-mo-dai', {
+    rig: { height: 0.92, shoulderHalf: 36, hipHalf: 22 },
+    palette: { garment: '#7a4e33', sleeve: '#7a4e33', sleeveWidth: 18, trouser: '#5b2a4a', shoe: '#fff8ec', trouserWidth: 17 },
+    accent: '#5b2a4a',
+    garment: {
+      style: 'wrap', hem: 36, ease: 13, neckFront: 44,
+      wrap: { band: 7, under: 3, underColor: '#fff8ec', open: { gap: 18, cross: 24, tie: 1.8, tieY: 86 }, obi: { color: '#c9a227', y: 56, width: 30, lift: 1.5 } },
+    },
+    hair: 'bun', hairColor: '#d8cfc4',
+    skirt: { color: '#5b2a4a', shape: { rise: -28, length: 140, flare: 3, pleats: 0 } },
+  }),
+  /** Sơ mi và áo cổ chéo khép mang thẻ tên, chữ dọc trên dải cổ áo cổ chéo */
+  SHIRT_TAG: character('so-mi-the', {
+    palette: { garment: '#3aa89c', sleeve: '#3aa89c', trouser: '#3b4252', shoe: '#3a2a20' },
+    garment: { style: 'shirt', badge: { text: '田辺', color: '#ffffff', edge: '#2b3a67' } }, hair: 'short', hairColor: '#2a1c15',
+  }),
+  WRAP_TAG: character('co-cheo-the', {
+    rig: { height: 0.95, shoulderHalf: 36, hipHalf: 21 },
+    palette: { garment: '#e39a9a', sleeve: '#e39a9a', trouser: '#e39a9a', shoe: '#5e3f2c' },
+    garment: { style: 'wrap', hem: 6, wrap: { band: 7, bandColor: '#7a2e3a', letters: { left: '楓荘' } }, badge: { wakaba: true, text: 'よし江' } },
+    hair: 'curly', hairColor: '#3b2a22',
+  }),
 });
 
 const keyAction = (name, mask, keys, extra = {}) => {
@@ -116,6 +164,9 @@ const own = () => ({
   // ngồi quỳ trên gót: đùi ngang ra trước, ống chân gập hẳn ra sau dưới đùi
   'seiza-3d': keyAction('seiza-3d', ['legNear', 'legFar', 'torso'], [{ t: 0, pose: { legNear: [90, -172], legFar: [90, -172], torso: 2 }, ease: 'linear' }], { authoredAt: 'side' }),
   'hands-lap-3d': keyAction('hands-lap-3d', ['armNear', 'armFar'], [{ t: 0, pose: {}, reach: { armNear: { at: [44, -16, 12], elbow: [0, 1, 0.6] }, armFar: { at: [44, -16, 12], elbow: [0, 1, 0.6] } }, ease: 'linear' }], { authoredAt: 'side' }),
+  // cúi chào sâu 45°, hai tay giơ thẳng ra trước
+  'bow45-3d': keyAction('bow45-3d', ['torso'], [{ t: 0, pose: { torso: 45 }, ease: 'linear' }], { authoredAt: 'side' }),
+  'reach-3d': keyAction('reach-3d', ['armNear', 'armFar'], [{ t: 0, pose: { armNear: [84, 6, 0], armFar: [84, 6, 0] }, ease: 'linear' }], { authoredAt: 'side' }),
   'face-wry': keyAction('face-wry', ['face'], [{ t: 0, pose: {}, face: { mouth: 'wryOpen', brow: 'skeptical', eyes: 'open' }, ease: 'linear' }]),
 });
 
@@ -184,6 +235,23 @@ const SCENES = {
     props: [stool(150, 0)],
   }),
   // cận mặt: ngượng đỏ mặt dần (`blush` của hành động), buồn, nói, méo há
+  // áo khoác vạt mở và thẻ tên: hàng đứng nhìn ống kính
+  'human-coat': ({ HAPPI, HAPPI_B, HAORI, SHIRT_TAG, WRAP_TAG }) => ({
+    cast: [HAPPI, HAPPI_B, HAORI, SHIRT_TAG, WRAP_TAG].map((c, i) => ({ id: `c${i}`, c, world: { at: [(i - 2) * 150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('face-calm'))] })),
+  }),
+  // áo khoác vạt mở: cúi chào 38° và 45°, giơ tay ra trước, ngồi ghế, ngồi quỳ trên gót; phía sau hai người đi
+  'human-coat-act': ({ HAPPI, HAPPI_B, HAORI }) => ({
+    cast: [
+      { id: 'b0', c: HAPPI, world: { at: [-300, 0, 0], yaw: 90 }, tracks: [track(clip('bow-3d')), track(clip('face-calm'))] },
+      { id: 'b1', c: HAPPI_B, world: { at: [-150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('bow45-3d')), track(clip('face-calm'))] },
+      { id: 'b2', c: HAPPI, world: { at: [0, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('reach-3d')), track(clip('face-calm'))] },
+      { id: 'b3', c: HAORI, world: { at: [150, -SEAT, 0], yaw: 90, sit: true, floor: 0 }, tracks: [track(clip('sit-3d')), track(clip('hands-knees-3d')), track(clip('face-calm'))] },
+      { id: 'b4', c: HAPPI, world: { at: [320, -SEIZA, 0], yaw: 90, sit: true, floor: 0 }, tracks: [track(clip('seiza-3d')), track(clip('hands-lap-3d')), track(clip('face-calm'))] },
+      { id: 'b5', c: HAPPI, world: { path: [{ t: 0, at: [-200, 0, -300], yaw: 10 }, { t: 4, at: [300, 0, -300], yaw: 10 }] }, tracks: [track(clip('walk')), track(clip('face-calm'))] },
+      { id: 'b6', c: HAORI, world: { path: [{ t: 0, at: [-400, 0, -300], yaw: 10 }, { t: 4, at: [100, 0, -300], yaw: 10 }] }, tracks: [track(clip('walk')), track(clip('face-calm'))] },
+    ],
+    props: [stool(150, 0)],
+  }),
   'human-faces': ({ LONG, GIRL, GLASSES, PONY }) => ({
     cast: [[LONG, 'face-shy'], [GIRL, 'face-sad'], [GLASSES, 'talk-lips'], [PONY, 'face-wry']].map(([c, f], i) => ({
       id: `m${i}`, c, world: { at: [(i - 1.5) * 150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip(f, f === 'talk-lips' ? 0.2 : 0))],
