@@ -4,98 +4,45 @@
   "duration": 1,
   "end": "hold",
   "authoredAt": "side",
-  "mask": [
-    "armFar",
-    "armNear",
-    "torso",
-    "head"
-  ],
+  "mask": ["armFar", "armNear", "torso", "head"],
   "keys": [
     {
       "t": 0,
       "pose": {
-        "armFar": [
-          3,
-          6,
-          0
-        ],
-        "armNear": [
-          3,
-          6,
-          0
-        ],
+        "armFar": [3, 6, 0],
+        "armNear": [3, 6, 0],
         "torso": 0,
-        "head": [
-          0,
-          0,
-          0
-        ]
+        "head": [0, 0, 0]
       },
       "ease": "smooth"
     },
     {
       "t": 0.3,
       "pose": {
-        "armFar": [
-          7,
-          5,
-          0
-        ],
-        "armNear": [
-          7,
-          5,
-          0
-        ],
+        "armFar": [7, 5, 0],
+        "armNear": [7, 5, 0],
         "torso": 16,
-        "head": [
-          0,
-          0,
-          8
-        ]
+        "head": [0, 0, 8]
       },
       "ease": "smooth"
     },
     {
       "t": 0.6,
       "pose": {
-        "armFar": [
-          7,
-          5,
-          0
-        ],
-        "armNear": [
-          7,
-          5,
-          0
-        ],
+        "armFar": [7, 5, 0],
+        "armNear": [7, 5, 0],
         "torso": 16,
-        "head": [
-          0,
-          0,
-          8
-        ]
+        "head": [0, 0, 8]
       },
       "ease": "smooth"
     },
     {
       "t": 1,
       "pose": {
-        "armFar": [
-          3,
-          6,
-          0
-        ],
-        "armNear": [
-          3,
-          6,
-          0
-        ],
+        "armFar": [3, 6, 0],
+        "armNear": [3, 6, 0],
         "torso": 0,
-        "head": [
-          0,
-          0,
-          0
-        ]
+        "head": [0, 0, 0]
       },
       "ease": "smooth"
     }
