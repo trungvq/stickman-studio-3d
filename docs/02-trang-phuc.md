@@ -1352,7 +1352,7 @@ Quãng một chu kỳ đổi theo `hip`, `knee`, `stance` — đo bằng `action
 ```
 
 Mỗi cột của tấm là một đường vải buông từ dây cạp phủ qua mặt người (`drape`): cắt dọc khối gồm thân áo dưới cạp,
-khối hông và hai ống chân (như [vạt dài quấn](#vạt-dài-quấn), nở thêm `APRON_LIFT` `3` px), vải đi từ dây cạp vòng
+khối hông và hai ống chân (như [vạt dài quấn](#vạt-dài-quấn), nở thêm `APRON_LIFT` `5` px), vải đi từ dây cạp vòng
 phía trước tới chỗ rời người rồi rủ thẳng. Đứng, cúi chào thì tấm rủ thẳng từ dây cạp trước hai đùi; bước thì gối trước
 đẩy tấm ra; ngồi thì tấm nằm trên đùi và dừng ở gối — phần rủ tự do dưới chỗ rời người nhân `hemHang` của góc đùi.
 `length` là chiều dài tấm đo dọc vải; mép dưới thẳng khi đứng.

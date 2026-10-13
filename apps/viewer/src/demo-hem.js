@@ -1,13 +1,11 @@
 import { act, addItem, Batch, body3, box, fromCharacter, parseAction, parseCharacter, parseScene, resolveScene, sceneAt, SCULPT_PRESETS } from '@stickman3d/rig';
 import { ACTIONS } from './demos.js';
 
-// Vạt treo hông (`?demo=hem`): một hàng người 3D mặc đồ — nữ vạt dài quấn tới mắt cá, nam vạt dài tới bắp chân, tạp dề kem
-// trên quần nơ son, tạp dề chàm dài ống chân. `?act=stand|walk|bow30|bow45|sit|seiza` chọn hành động (mặc định `stand`),
+// Vạt treo hông (`?demo=hem`): một hàng người 3D mặc áo cổ chéo — nữ kimono vạt dài quấn tới mắt cá, nam yukata vạt tới bắp
+// chân, áo làm việc tạp dề kem trên quần nơ son, áo bếp tạp dề chàm dài ống chân. `?act=stand|walk|bow30|bow45|sit|seiza` chọn hành động (mặc định `stand`),
 // `?turn=độ` xoay cả hàng tại chỗ (0 nhìn thẳng ống kính).
 
 const SPACING = 150;
-
-const TORSO = { style: 'shirt', hem: -18 };
 
 function character(name, { rig, palette, garment, hair, hairColor, hem }) {
   const r = parseCharacter({
@@ -28,23 +26,25 @@ function character(name, { rig, palette, garment, hair, hairColor, hem }) {
 const models = () => [
   character('vat-dai-nu', {
     palette: { garment: '#2B3A67', sleeve: '#2B3A67', trouser: '#2B3A67', shoe: '#F3EBDD' },
-    garment: TORSO, hair: 'bun', hairColor: '#2E2420',
-    hem: { color: '#2B3A67', skirt: { style: 'wrap', length: 192, flare: -4, pleats: 0 } },
+    garment: { style: 'wrap', hem: -36, neckBack: 8, wrap: { band: 5, under: 3, underColor: '#FFF8EC', obi: { color: '#EFE4CF', y: 56, width: 34, cord: 3, cordColor: '#D9573B', clasp: 7, knot: 'taiko' } } },
+    hair: 'bun', hairColor: '#2E2420',
+    hem: { color: '#2B3A67', skirt: { style: 'wrap', rise: 46, length: 211, flare: -4, pleats: 0 } },
   }),
   character('vat-bap-chan', {
-    palette: { garment: '#EFE4CF', sleeve: '#EFE4CF', trouser: '#EFE4CF', shoe: '#6B4A35' },
-    garment: TORSO, hair: 'short', hairColor: '#2a1c15',
-    hem: { color: '#EFE4CF', skirt: { style: 'wrap', length: 150, flare: 0, pleats: 0 } },
+    palette: { garment: '#EFE4CF', sleeve: '#EFE4CF', trouser: '#EFE4CF', shoe: '#6B4A35', sleeveWidth: 19 },
+    garment: { style: 'wrap', wrap: { bandColor: '#2B3A67', obi: { color: '#2B3A67', y: 14, width: 14, lift: 3, knot: 'kai' } } },
+    hair: 'short', hairColor: '#2a1c15',
+    hem: { color: '#EFE4CF', skirt: { style: 'wrap', rise: 16, length: 144, flare: 0, pleats: 0 } },
   }),
   character('tap-de-kem', {
     palette: { garment: '#5C7A6E', sleeve: '#5C7A6E', trouser: '#5C7A6E', shoe: '#3a2a20' },
-    garment: { style: 'shirt' }, hair: 'curly', hairColor: '#3b2a22',
+    garment: { style: 'wrap' }, hair: 'curly', hairColor: '#3b2a22',
     hem: { color: '#F3EBDD', skirt: { style: 'apron', length: 100, apron: { tieColor: '#D9573B' } } },
   }),
   character('tap-de-cham', {
     rig: { height: 1.05 },
-    palette: { garment: '#F3EBDD', sleeve: '#F3EBDD', trouser: '#5E3F2C', shoe: '#1e1a18' },
-    garment: { style: 'shirt' }, hair: 'buzz', hairColor: '#4a4440',
+    palette: { garment: '#F3EBDD', sleeve: '#F3EBDD', sleeveLength: 0.5, trouser: '#5E3F2C', shoe: '#1e1a18' },
+    garment: { style: 'wrap', hem: 8 }, hair: 'buzz', hairColor: '#4a4440',
     hem: { color: '#2B3A67', skirt: { style: 'apron', length: 140 } },
   }),
 ];

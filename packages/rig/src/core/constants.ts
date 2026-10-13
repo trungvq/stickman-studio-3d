@@ -101,7 +101,7 @@ export const SKIRT_FALL = 0.5;
 /** Vạt dài, tạp dề: đùi lệch phương đứng dưới góc đầu (độ) thì vạt phủ đủ ống chân, quá góc sau thì chỉ tới gối */
 export const HEM_HANG = [35, 70] as const;
 /** Tạp dề nằm cách mặt người và đồ bên dưới bấy nhiêu px */
-export const APRON_LIFT = 3;
+export const APRON_LIFT = 5;
 /** Thân áo chưa có hình `side` thì bóp ngang hình chính diện còn bấy nhiêu */
 export const SIDE_TORSO = 0.78;
 /** Đầu `side`: mắt cách tâm đầu bấy nhiêu lần nửa trục ngang, về phía `+x` */

@@ -181,6 +181,7 @@ const SHOTS = [
   ['vat-cui-45-sau', 'demo=hem&act=bow45&t=1&turn=200&az=0&el=8&look=0,1.9,0&dist=14'],
   ['vat-ngoi', 'demo=hem&act=sit&t=1&turn=55&az=0&el=8&look=0,1.6,0&dist=14'],
   ['vat-ngoi-truoc', 'demo=hem&act=sit&t=1&turn=10&az=0&el=8&look=0,1.6,0&dist=14'],
+  ['vat-ngoi-gan', 'demo=hem&act=sit&t=1&turn=35&az=0&el=20&look=0.75,1.3,0&dist=5'],
   ['vat-seiza', 'demo=hem&act=seiza&t=1&turn=55&az=0&el=10&look=0,1.2,0&dist=14'],
   ['vat-seiza-sau', 'demo=hem&act=seiza&t=1&turn=150&az=0&el=10&look=0,1.2,0&dist=14'],
   ['ban-tay', 'demo=hands&t=1.4&az=-20&el=6&look=0,2.6,0&dist=9'],

@@ -14,7 +14,7 @@ import { hatFit, hatMesh, insideHat, pinMesh } from './core/hat';
 import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, type Bones3 } from './core/act3';
 import { blushLevel, chibiShape } from './core/face';
 import { wornSkirt } from './core/skirtShape';
-import { hangsFromHip } from './core/hem';
+import { hangsFromHip, matchWrap } from './core/hem';
 import { humanHair, humanSkull } from './core/humanHead';
 import { Ankle, earGroup, handRig, humanHeadGeometry, neckGeometry, pelvisGeometry, shoeCapsule, shoeGeometry, type Hand } from './human';
 import { handGrip } from './core/hand';
@@ -422,7 +422,7 @@ export function stickman(o: StickmanOptions): Figure {
     const leg = (k: number) => (thighR * CLAD_TAPER.leg[k]) / CLAD_TAPER.leg[0];
     const seat = clad ? pelvisGeometry(body.profile, body.depth, at.hip, thighR / 100).attributes.position.array : undefined;
     const legR = clad ? ([thighR, leg(1), leg(2)] as const) : ([0, 0, 0].map(() => limbR(trouserWidth) * 100) as [number, number, number]);
-    const opts = { skirt, rig, color: skirtColor, ink: INK, legW: clad ? 2 * thighR : trouserWidth, legR, curve: limbCurve, ...(clad && { body, knee: leg(1), seat }) };
+    const opts = { skirt: matchWrap(skirt, garment), rig, color: skirtColor, ink: INK, legW: clad ? 2 * thighR : trouserWidth, legR, curve: limbCurve, ...(clad && { body, knee: leg(1), seat }) };
     if (hangsFromHip(skirt)) {
       const [lt, ls] = [B.thigh * 100, B.shin * 100];
       const legs = SIDES.map((s): HemLeg => {

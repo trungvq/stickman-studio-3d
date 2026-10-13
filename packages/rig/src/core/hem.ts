@@ -1,11 +1,25 @@
 import { D, HEM_HANG } from "./constants";
-import { ApronSchema, WrapHemSchema, type Skirt, type WrapHem } from "./schema";
+import {
+  ApronSchema,
+  WrapHemSchema,
+  WrapSchema,
+  type Garment,
+  type Skirt,
+  type WrapHem,
+} from "./schema";
 
 type P2 = readonly [number, number];
 type V3 = [number, number, number];
 
 /** Bộ số vạt dài quấn đã đủ */
 export const wrapHemOf = (g: Pick<Skirt, "wrap">) => WrapHemSchema.parse(g.wrap ?? {});
+/**
+ * Vạt dài không khai `skirt.wrap` mặc dưới thân áo cổ chéo: mép vạt trên lấy `overlap` của cổ chéo, nối liền mép áo
+ */
+export const matchWrap = <S extends Skirt>(g: S, garment: Partial<Garment> | undefined): S =>
+  g.style === "wrap" && !g.wrap && garment?.style === "wrap"
+    ? { ...g, wrap: { ...wrapHemOf(g), overlap: WrapSchema.parse(garment.wrap ?? {}).overlap } }
+    : g;
 /** Bộ số tạp dề đã đủ */
 export const apronOf = (g: Pick<Skirt, "apron">) => ApronSchema.parse(g.apron ?? {});
 
@@ -43,14 +57,17 @@ const cross = (o: P2, a: P2, b: P2) =>
 
 /**
  * Vải buông từ mép trên `top` phủ qua vật có mặt cắt dọc `pts` (`[tiến, y xuống]`): chuỗi đỉnh bao lồi của `top`, `pts`
- * và bóng rơi thẳng xuống của chúng, từ `top` vòng phía trước tới chỗ vải rời vật. Sau đỉnh cuối vải rủ thẳng xuống
+ * và bóng rơi thẳng xuống của chúng, từ `top` vòng phía trước tới chỗ vải rời vật. Sau đỉnh cuối vải rủ thẳng xuống.
+ * Vật phía trước `top` mà cao hơn nó (đùi người ngồi) thì vải đi thẳng lên trùm qua trước
  */
 export function drape(top: P2, pts: readonly P2[]): P2[] {
-  const real = [top, ...pts];
+  const over = Math.min(top[1], ...pts.filter((p) => p[0] > top[0]).map((p) => p[1]));
+  const start: P2 = over < top[1] ? [top[0], over - 1e-6] : top;
+  const real = [start, ...pts];
   const floor = Math.max(...real.map((p) => p[1])) + 1e4;
   const all = [...real, ...real.map((p): P2 => [p[0], floor])];
-  const path: P2[] = [top];
-  let c = top;
+  const path: P2[] = start === top ? [top] : [top, start];
+  let c = start;
   for (let k = 0; k < real.length; k++) {
     let p: P2 = [c[0], floor];
     for (const q of all) {

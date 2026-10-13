@@ -6,11 +6,13 @@ import {
   drapeAt,
   hemHang,
   hemReach,
+  matchWrap,
   RIG,
   roots3,
   SkirtSchema,
   wrapHemEdge,
   wrapHemOf,
+  WrapSchema,
 } from "./index";
 
 const LONG = SkirtSchema.parse({ style: "wrap", rise: 30, length: 195, flare: -4, pleats: 0 });
@@ -36,6 +38,19 @@ describe("vạt treo hông", () => {
     }
   });
 
+  it("vạt dài dưới thân áo cổ chéo: mép vạt nối liền mép áo", () => {
+    const own = { ...LONG, wrap: { overlap: 10, slant: 0 } };
+    expect(wrapHemEdge(wrapHemOf(matchWrap(LONG, { style: "wrap" })), 0)).toBe(
+      -WrapSchema.parse({}).overlap,
+    );
+    expect(
+      wrapHemOf(matchWrap(LONG, { style: "wrap", wrap: WrapSchema.parse({ overlap: 30 }) }))
+        .overlap,
+    ).toBe(30);
+    expect(matchWrap(own, { style: "wrap" })).toBe(own);
+    expect(matchWrap(LONG, { style: "shirt" })).toBe(LONG);
+  });
+
   it("vải buông thẳng từ dây cạp khi người khuất sau mép trên, phủ lên đùi rồi rời ở gối khi ngồi", () => {
     const body: [number, number][] = [
       [20, -27],
@@ -58,6 +73,14 @@ describe("vạt treo hông", () => {
     ];
     const path = drape([24, -27], lap);
     expect(path.map(([z]) => z)).toEqual([24, 80, 92]);
+    // đùi cao hơn dây cạp: vải lên trùm qua rồi phủ tới gối
+    const up = drape(
+      [24, -27],
+      lap.map(([z, y]): [number, number] => [z, y - 15]),
+    );
+    expect(up[1][0]).toBe(24);
+    expect(up[1][1]).toBeLessThan(-29);
+    expect(up[up.length - 1][0]).toBe(92);
     // sau đỉnh cuối vải rủ thẳng
     const [z, y] = drapeAt(path, 1000);
     expect(z).toBe(92);
