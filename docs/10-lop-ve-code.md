@@ -340,7 +340,8 @@ export function worldOf(
 ): { root: THREE.Object3D; pose(t: number): Record<string, Figure> } | null;
 ```
 
-`sceneName` là `scene.name`, như `scenes` của lớp vẽ code. `worldOf` chỉ được gọi cho cảnh `check`
+`init` phát sẵn module này: `src/khoi3d/world.ts` trả `buildWorld` của rig cho cảnh có trong `CANH_3D` — cùng
+cảnh three mà sân khấu Remotion vẽ ([03](03-scene.md#cảnh-3d)). `sceneName` là `scene.name`, như `scenes` của lớp vẽ code. `worldOf` chỉ được gọi cho cảnh `check`
 đo người lồng vào đồ (có `lens`, có người `world`, không khớp `stickman.frozen`, khớp `--scene`), và
 cho cảnh `scene_probe` hỏi (có `lens`, có người `world`); trả `null` thì cảnh ấy đi đường khối lớp vẽ
 code. `ctx` là dữ liệu đã nạp và parse — module chạy trong Node, không qua webpack, nên đọc dữ liệu từ

@@ -1309,3 +1309,73 @@ Khi repo video dùng dependency `link:` tới cây nguồn studio, bật alias
 `react` và `zod` trong `remotion.config.ts`. Khi cài từ registry, không cần
 alias. Version Remotion lấy từ hằng `REMOTION` trong
 `packages/cli/templates.mjs` và phải được pin cứng.
+
+### Cảnh 3D
+
+Cảnh có `lens` mà repo khai trong `CANH_3D` (`src/khoi3d/canh.ts`) thì `Scene.tsx` vẽ sân khấu three
+(`Scene3D`) thay cho người que 2D, lớp chữ 2D (`Overlay3D`) đè lên. Cảnh three ấy dựng bằng một hàm của rig,
+nên sân khấu Remotion và `worldOf` của `stickman check` ([10](10-lop-ve-code.md#đo-trên-cảnh-three)) cùng một
+bản — người, đồ, người nền, đồ riêng của cảnh:
+
+```ts
+buildWorld(scene, rt, spec: WorldSpec, data: WorldData, set?: Set3D): World3D          // Node trần được
+buildStage(scene, rt, spec, data, { size, aa?, software? }): Promise<{ stage, world }>  // cần WebGL
+```
+
+`rt` là `resolveScene` của `scene`; `data` là `{ characters, heights, bodies }` — JSON nhân vật theo tên file
+(giữ đuôi `.json`), `rig.height` và `body3` theo `id` của `cast`. Repo chỉ khai `WorldSpec` cho từng tên cảnh:
+
+| Trường của `WorldSpec` | |
+|---|---|
+| `set()` | Dựng bối cảnh `Set3D`; gọi một lần mỗi lần dựng cảnh |
+| `still` | `id` người đóng băng ở dáng giây 0 thành người nền (`seatCrowd`); bỏ trống là mọi người `world.sit`, `[]` là không ai |
+| `extra(marks, cast)` | Đồ riêng của cảnh `Extra3D`: nhận `scene.marks` và người diễn `Cast3D` |
+| `wear(id, fig)` | Đồ three gắn lên người diễn (`dress`, mũ, thẻ tên): gọi một lần cho mỗi bản người vừa dựng |
+| `lens(t)` | Ống kính ở giây `t`, đè `scene.lens`; `undefined` là `scene.lens` |
+| `grade(t)` | Hậu kỳ toàn khung ở giây `t` (`render(…, { grade })` của pipeline) |
+
+| `Set3D` | |
+|---|---|
+| `group` | Vỏ phòng và đồ đạc; người nền và nhóm của đồ riêng thêm vào đây |
+| `room` | Vỏ `room()` (hay cùng dạng): sân khấu gọi `room.cull(camera)` mỗi khung |
+| `palette` | Giờ trong ngày cho `setPalette` |
+| `lights(t, add?)` | Bộ đèn ở giây `t`; `add` là đèn riêng của cảnh (`LightAdd`: `lamps` nối thêm, `ceiling` độ sáng đèn trần 0–1, `sun: false` tắt nắng qua cửa) |
+| `update(t)` | Món chạy theo `t` (cửa, kim đồng hồ, texture chữ) |
+| `fonts` | `{ specs, text }` — phông decal `buildStage` nạp xong mới dựng đồ riêng và vẽ |
+| `background` | Màu ngoài vỏ phòng (camera trên đỉnh tường); mặc định `PAPER` |
+
+`Extra3D` là `{ group, update?(t), ready?, light?(t) }`: `group` vào bối cảnh, `update` chạy mỗi khung **sau** khi
+người đã đặt dáng, `ready` là promise `buildStage` chờ trước khung đầu (ảnh, phông riêng), `light` ra `LightAdd` của
+khung. `combineExtras(...xs)` gộp nhiều món làm một (đèn cục bộ nối nhau, đèn trần nhân nhau). `Cast3D` hỏi người ở
+khung đang vẽ, toạ độ rig: `fig(id)` bản người đang hiện, `at(id, mốc)` mốc của `landmark` (cổ tay thật sau IK, không
+phải đích tay của scene), `arm(id, side, "shoulder" | "elbow" | "wrist")`, kèm `scene`.
+
+`World3D`:
+
+| | |
+|---|---|
+| `root` | Bối cảnh và người diễn; thêm vào `stage.scene`, hay đưa thẳng cho `check` |
+| `pose(t)` | Đặt cả cảnh ở giây `t`: diễn người (`act` của `sceneAt`), rồi `set.update`, rồi `extra.update`; trả người đang hiện theo `id`. Đặt lại đủ mọi thứ, không dựa vào giây gọi trước |
+| `lights(t)` | `set.lights(t, extra.light(t))` |
+| `view(t)` | `{ crop: cameraAt(rt, t), lens, render }` cho `stage.draw(t, view)` |
+| `set`, `extra`, `cast`, `ready` | Bối cảnh, đồ riêng, `Cast3D`, promise của `extra.ready` |
+
+- **Người diễn mặc đồ qua `wardrobe`** ([01](01-rig.md#đồ-thay-được-items-và-equip)): mỗi bộ mảnh dựng khối và mỗi dáng
+  đứng / ngồi một bản. Bản mở màn của mỗi dáng có trong `path` dựng sẵn; bản khác (`keys[].equip` giữa cảnh) dựng lần
+  đầu cần tới, tự thêm vào `root`. Mỗi khung chỉ một bản hiện. Người nền mặc `equip` của giây 0.
+- `cast[].fade` ở 3D là bật tắt: mờ quá nửa thì tắt người.
+- `buildStage` dựng `set()`, nạp `set.fonts`, `buildWorld`, chờ `world.ready`, rồi `createStage` với `update` là
+  `pose(t)`, `room.cull(camera)`, `setLights(lights(t))`. Chromium vẽ phần mềm (`SwiftShader`) thì ném, trừ khi
+  `software: true`. Vẽ một khung là `stage.draw(t, world.view(t))`.
+- `plainRoom({ time, shell })` là phòng trơn mẫu; `roomLights(add)` đổi `LightAdd` thành tham số của `room().lights`
+  cho bối cảnh tự viết `lights: (t, add) => r.lights(roomLights(add))`.
+
+Cảnh của repo, ví dụ:
+
+```ts
+export const CANH_3D: Record<string, WorldSpec> = {
+  "vi-du-3d": { set: () => plainRoom() },
+  // phòng riêng của repo (hàm trả `Set3D`), người ngồi cũng diễn, cốc bám cổ tay người `a`
+  "s05-ban": { set: () => myRoom({ time: "night" }), still: [], extra: (m, cast) => heldCup(m, cast, "a") },
+};
+```

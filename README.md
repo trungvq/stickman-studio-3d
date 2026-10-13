@@ -185,8 +185,9 @@ stage.dispose();
 
 ## Dùng trong Remotion
 
-`stickman init` phát sẵn bản đủ ở `src/khoi3d/` của repo video (sân khấu, lớp chữ 2D đè lên, phòng trơn) —
-[docs/05](docs/05-repo-video.md). Phần dưới là khung của nó. Mỗi lần mount là **một canvas mới**: context đã `dispose` không dựng lại được
+`stickman init` phát sẵn bản đủ ở `src/khoi3d/` của repo video: sân khấu `Scene3D` trên `buildStage` / `buildWorld`
+của rig (cảnh three dựng chung cho Remotion và `stickman check`, [docs/03](docs/03-scene.md#cảnh-3d)), lớp chữ 2D đè
+lên, phòng trơn — [docs/05](docs/05-repo-video.md). Phần dưới là khung tay trên `createStage` cho app tự dựng cảnh. Mỗi lần mount là **một canvas mới**: context đã `dispose` không dựng lại được
 trên canvas cũ, và `StrictMode` chạy effect hai lần.
 
 ```tsx

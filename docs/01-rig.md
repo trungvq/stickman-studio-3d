@@ -383,8 +383,8 @@ tên vật trong nó là một giao kèo: mọi nhân vật đóng vai ấy ph�
 **Người 3D mặc đồ bằng `wardrobe`.** Người three dựng hình từ `pieces` một lần, nên đổi đồ là dựng người khác:
 `wardrobe(nhânVật, make)` giữ một bản cho mỗi bộ mảnh ở các socket người 3D dựng hình (`BUILT_SOCKETS`: `torso`,
 `hem`, `hair`, `crown`, `headAcc`, `faceAcc`, `neck`) và mỗi dáng đứng / ngồi; `get(sceneAt(...).equip, ngồi)` mặc
-`equip` vào JSON (`equipCharacter`), trả bản đúng bộ và báo `fresh` khi vừa dựng để chỗ gọi thêm vào cảnh. `Scene3D` của
-repo video dựng bản mở màn trước, bản khác lần đầu cần tới, mỗi khung chỉ hiện một bản: `cast[].equip` (yukata đứng hay
+`equip` vào JSON (`equipCharacter`), trả bản đúng bộ và báo `fresh` khi vừa dựng để chỗ gọi thêm vào cảnh. Cảnh three
+`buildWorld` ([03](03-scene.md#cảnh-3d)) dựng bản mở màn trước, bản khác lần đầu cần tới, mỗi khung chỉ hiện một bản: `cast[].equip` (yukata đứng hay
 ngồi, có hay không lọn tóc) và `keys[].equip` giữa cảnh (thay áo, tháo kính gài nẹp) đều đổi được ở 3D. Bản mới dựng
 diễn tiếp từ cùng `sceneAt`, không mang trạng thái của bản cũ. Đổi vật ở `handNear` / `handFar` không dựng lại người:
 đồ cầm của người 3D là vật three gắn bằng `dress` (`items` hàm dựng), không phải mảnh. Thân áo 3D lấy màu `pieces.torso.color` (bỏ trống là

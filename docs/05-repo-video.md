@@ -24,19 +24,20 @@ khai sẵn server, và `package.json` pin **đúng số version**, không `^`.
 
 Cùng với đó là **app Remotion**: `src/` (`index.ts`, `Root.tsx`, `Scene.tsx`,
 `data.ts`, `images.ts`, tầng tập `episode.ts` / `shots.ts` / `Episode.tsx`, và
-`Thumbnail.tsx`; cảnh 3D ở `khoi3d/` — `Scene3D.tsx` sân khấu three (người diễn mặc đồ theo `equip` qua
-[`wardrobe`](01-rig.md#đồ-thay-được-items-và-equip)), `Overlay3D.tsx` lớp chữ 2D đè
-lên, `set.ts` kiểu bối cảnh và phòng trơn `plainRoom`, `ChanDung.tsx` chân dung người 3D cho lớp 2D; cùng bốn file của repo `lop.tsx`, `parts.tsx`,
-`scene-wrap.tsx`, `khoi3d/canh.ts`), `tools/` (`still.mjs`, `thumbnails.mjs`, `srt.mjs`, `tts.py`,
+`Thumbnail.tsx`; cảnh 3D ở `khoi3d/` — `Scene3D.tsx` sân khấu three (`buildStage` của rig, người diễn mặc đồ theo
+`equip` — [03](03-scene.md#cảnh-3d)), `world.ts` cùng cảnh three ấy cho `check` ([Cảnh three cho
+`check`](#cảnh-three-cho-check)), `Overlay3D.tsx` lớp chữ 2D đè lên, `set.ts` đường import kiểu bối cảnh `Set3D` và
+phòng trơn `plainRoom` của rig, `ChanDung.tsx` chân dung người 3D cho lớp 2D; cùng bốn file của repo `lop.tsx`,
+`parts.tsx`, `scene-wrap.tsx`, `khoi3d/canh.ts`), `tools/` (`still.mjs`, `thumbnails.mjs`, `srt.mjs`, `tts.py`,
 `tts-blocks.py` cùng `len-giong.py`, `lipsync.mjs` cùng `words.py`, `sfx.py`, `sfx-el.py`,
 `sfx-loop.py`, `cut-torso.py`, `webpack.mjs` — [07](07-lam-tap.md#công-cụ-trong-tools)),
 `remotion.config.ts`, `tsconfig.json`, `pnpm-workspace.yaml`, và `package.json` có sẵn
 `pnpm remotion` / `render` / `still` / `frames` / `thumbnails` / `srt` / `tts` /
 `tts-blocks` / `lipsync` / `sfx` / `sfx-el` / `sfx-loop` / `cut-torso` (`pnpm studio` là
-character studio). Bảng riêng của tập cho các tool ấy — `sfx/*.json`, bản lời có tag —
+character studio) và `stickman.world` trỏ `src/khoi3d/world.ts`. Bảng riêng của tập cho các tool ấy — `sfx/*.json`, bản lời có tag —
 không có mẫu nào: tool đọc thấy thiếu thì báo cú pháp. `package.json` pin cả `three`; `scenes/vi-du-3d.json`
-là cảnh 3D mẫu, `khoi3d/canh.ts` nối tên nó với `plainRoom` — `Scene.tsx` gặp cảnh có trong `CANH_3D` thì vẽ
-người 3D thay người que 2D (`REMOTION_FLAT=1` vẽ bản 2D để so); `THU_3D` cùng file là composition thử bối cảnh
+là cảnh 3D mẫu, `khoi3d/canh.ts` nối tên nó với `plainRoom` (`CANH_3D`: tên cảnh → `WorldSpec`) — `Scene.tsx` gặp
+cảnh có trong `CANH_3D` thì vẽ người 3D thay người que 2D (`REMOTION_FLAT=1` vẽ bản 2D để so); `THU_3D` cùng file là composition thử bối cảnh
 (người, ống kính, khung cắt mượn của một cảnh), nằm trong thư mục `khoi3d` của Studio. Cảnh 3D nặng thì `pnpm studio-prod`
 chạy Studio bằng React production, mất fast refresh. Render cảnh 3D cần GPU qua Vulkan:
 `remotion.config.ts`, `tools/still.mjs` và `tools/thumbnails.mjs` đặt sẵn `gl: "vulkan"`. Mỗi file trong `scenes/` là một composition, mỗi file trong
@@ -147,37 +148,23 @@ cho nó. Khai module dựng cảnh trong `package.json`:
 ```
 
 Module xuất `worldOf(sceneName, ctx)`: cảnh có bối cảnh three thì trả `{ root, pose(t) }`, cảnh khác
-trả `null` và đi đường khối lớp vẽ code.
+trả `null` và đi đường khối lớp vẽ code. `init` khai sẵn `stickman.world` và phát `src/khoi3d/world.ts`: nó tra
+`CANH_3D` rồi trả `buildWorld` của rig ([03](03-scene.md#cảnh-3d)) — đúng cảnh three mà `Scene3D` vẽ, vì `World3D` có
+sẵn `root` và `pose(t)`.
 
 ```ts
-import * as THREE from "three";
-import { act, castCharacter, defaultCharacter, fromCharacter, sceneAt } from "@stickman3d/rig";
-import { SETS } from "./set"; // bối cảnh three của repo: phòng, bàn, đồ cầm
+import { buildWorld, type WorldCtx } from "@stickman3d/rig";
+import { CANH_3D } from "./canh";
 
-export function worldOf(sceneName: string, ctx: any) {
-  const set = SETS[sceneName];
-  if (!set) return null;
-  const root = set.build();
-  const figs = Object.fromEntries(
-    ctx.runtime.cast.map((m) => [m.id, fromCharacter(castCharacter(m, ctx.characters[m.character] ?? defaultCharacter()))]),
-  );
-  for (const f of Object.values(figs)) root.add(f.root);
-  return {
-    root,
-    pose(t: number) {
-      for (const [id, f] of Object.entries(figs))
-        act(f, sceneAt(ctx.runtime, id, t, ctx.heights[id], ctx.bodies[id]), t);
-      set.update(t, figs); // đồ chạy theo `t`, đồ cầm — đúng như một khung vẽ
-      return figs;
-    },
-  };
+export function worldOf(sceneName: string, ctx: WorldCtx) {
+  const spec = CANH_3D[sceneName];
+  return spec ? buildWorld(ctx.scene, ctx.runtime, spec, ctx) : null;
 }
 ```
 
-Code dựng cảnh tách khỏi phần WebGL (renderer, pipeline) để sân khấu Remotion và `worldOf` dùng chung
-một bản: `worldOf` chạy trong Node, không trình duyệt, không webpack. Hợp đồng đủ — trường của `ctx`,
-cách gói, vật nào tự bỏ khi đo, `noCollide`, `touch` trên vật three — ở
-[10](10-lop-ve-code.md#đo-trên-cảnh-three).
+`worldOf` chạy trong Node, không trình duyệt, không webpack: code dựng bối cảnh và đồ riêng của repo không được đụng
+`document` (canvas đi qua `newCanvas` / `canvasTexture` của rig). Hợp đồng đủ — trường của `ctx`, cách gói, vật nào tự
+bỏ khi đo, `noCollide`, `touch` trên vật three — ở [10](10-lop-ve-code.md#đo-trên-cảnh-three).
 
 ### Tập đã đóng
 
@@ -256,9 +243,11 @@ của repo video (`SEED_ONLY` trong `lib.mjs`), `stickman.json` không giữ bă
 **Đừng sửa file app Remotion và tool do studio phát.** Sửa rồi thì mỗi lần mẫu đổi là một lần
 trộn tay. Thứ của repo có chỗ riêng: lớp vẽ code ở `src/lop.tsx`, bộ phận vẽ bằng code ở
 `src/parts.tsx`, context cho lớp vẽ code cần dữ liệu của app Remotion ở `src/scene-wrap.tsx`
-(`<SceneWrap rt t>` bọc `<SceneWorld>` trong `Scene.tsx`), phòng 3D và cảnh 3D ở `src/khoi3d/canh.ts`
-(phòng riêng là hàm trả `Set3D`, để ở file mới cạnh nó), tool riêng ở file mới trong
-`tools/`. Máy có `/tmp` là tmpfs thì khai `"stickman": { "tmpdir": "~/.cache/remotion-tmp" }`
+(`<SceneWrap rt t>` bọc `<SceneWorld>` trong `Scene.tsx`), cảnh 3D ở `src/khoi3d/canh.ts` (`CANH_3D`: bối
+cảnh, người nền, đồ riêng của cảnh, đồ gắn lên người, ống kính và hậu kỳ theo giây — `WorldSpec`; phòng riêng là hàm
+trả `Set3D`, để ở file mới cạnh nó), tool riêng ở file mới trong `tools/`. Việc chung của cảnh 3D — dựng người, đổi
+đồ theo `equip`, người nền, đèn, nạp phông, sân khấu — nằm ở `buildWorld` / `buildStage` của rig nên theo version
+rig mà đến; thiếu tuỳ chọn thì thêm ở studio, đừng sửa `Scene3D.tsx` hay `world.ts`. Máy có `/tmp` là tmpfs thì khai `"stickman": { "tmpdir": "~/.cache/remotion-tmp" }`
 trong `package.json`: `tools/webpack.mjs` đưa thư mục tạm của mọi lượt bundle ra đó. Sửa
 được việc chung (lỗi, tuỳ chọn mới của tool) thì đưa về `packages/cli/scaffold` của studio.
 Rig mới đổi độ dài chân thì `upgrade` chỉ nhắc, cảnh dời bằng một lệnh riêng —

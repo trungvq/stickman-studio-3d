@@ -273,8 +273,9 @@ export const packageJson = ({ name, versions }) =>
       name,
       private: true,
       type: "module",
-      // Mã vẽ của repo: `stickman-render`, MCP và app Remotion cùng nạp từ đây — docs/10, docs/02
-      stickman: { layers: "src/lop.tsx", parts: "src/parts.tsx" },
+      // Mã vẽ của repo: `stickman-render`, MCP và app Remotion cùng nạp từ đây — docs/10, docs/02; `world` là cảnh three
+      // cho `check` — docs/10
+      stickman: { layers: "src/lop.tsx", parts: "src/parts.tsx", world: "src/khoi3d/world.ts" },
       scripts: {
         studio: "stickman studio",
         remotion: "remotion studio",

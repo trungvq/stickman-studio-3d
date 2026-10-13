@@ -43,3 +43,7 @@ export {
   along, appear, bounce, ease, flutter, keyed, place, presence, wobble,
   type AlongOptions, type AppearOptions, type Ease, type Key, type PathKey, type PathPose,
 } from './motion';
+export {
+  buildStage, buildWorld, combineExtras, plainRoom, roomLights,
+  type Cast3D, type Extra3D, type LightAdd, type Set3D, type World3D, type WorldCtx, type WorldData, type WorldSpec,
+} from './world';
