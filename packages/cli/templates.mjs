@@ -64,9 +64,12 @@ vừa làm gì.
 - Cảnh thì \`render_scene\` để xem và \`scene_probe\` để **đo** toạ độ bàn tay,
   đừng suy điểm gặp bằng mắt. Soi bố cục và khung thì \`render_scene\` với
   \`stage: true\` — mỗi ô là cả khung, có nền, đã đi qua camera.
+- Đặt tay lên một mặt (quầy, sách, bàn phím, bàn) hay đổi \`turn\` / \`elbow\` xong thì
+  đọc \`world.palms\` của \`scene_probe\` (lòng tay \`úp\`, \`down\` dưới 45), đừng phán
+  hướng lòng tay bằng mắt — \`docs 01\` § Hướng lòng bàn tay.
 - Sửa xong một cảnh thì \`check\` đúng cảnh ấy: MCP \`check({ scene: "<ten>" })\` hay
   \`pnpm exec stickman check --scene <ten>\` (regex trên id cảnh) — vài giây, bắt người
-  lồng vào đồ, chân trượt, hành động 2D trên người 3D, tay chân giật trên hình. \`check\` cả workspace chậm, để dành trước khi commit hay sau khi nâng rig.
+  lồng vào đồ, chân trượt, hành động 2D trên người 3D, tay chân giật trên hình, lòng bàn tay quay sai. \`check\` cả workspace chậm, để dành trước khi commit hay sau khi nâng rig.
 - Người 3D (\`cast[].world\`) chỉ diễn hành động soạn ở \`side\` ở kênh tay chân
   (\`stand-3d\`, \`sit-3d\`, bản \`-3d\` của repo), cả ở track thân từ giây 0 thay cho clip
   rỗng. Chỗ cố ý giật (giật mình, đập bàn) khai \`"snap": true\` ở hành động, ở clip hay ở

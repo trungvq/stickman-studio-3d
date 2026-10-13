@@ -27,6 +27,7 @@ export * from "./headwear";
 export * from "./idle";
 export * from "./ik";
 export * from "./lens";
+export * from "./palm";
 export * from "./parts";
 export * from "./pierce";
 export * from "./poses";

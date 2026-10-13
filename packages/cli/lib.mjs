@@ -1455,6 +1455,25 @@ export function snapOptions(dir = ".") {
   return out;
 }
 
+/**
+ * Ngưỡng đo lòng bàn tay: `stickman.palm` trong `package.json` — `{ down, hang, hold }` (độ, độ, giây),
+ * trường thiếu lấy `PALM_DOWN` / `PALM_HANG` / `PALM_HOLD` của rig; `false` là không đo. Sai kiểu thì trả
+ * `{ error }`. docs/03-scene.md#lòng-bàn-tay
+ */
+export function palmOptions(dir = ".") {
+  const raw = readPkg(resolve(dir))?.stickman?.palm;
+  if (raw === false) return { off: true };
+  const out = { down: rig.PALM_DOWN, hang: rig.PALM_HANG, hold: rig.PALM_HOLD };
+  if (raw === undefined) return out;
+  const bad = `package.json: stickman.palm phải là false hay { down, hang, hold } số dương, đang là ${JSON.stringify(raw)}`;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { error: bad };
+  for (const [key, v] of Object.entries(raw)) {
+    if (!(key in out) || typeof v !== "number" || !(v > 0)) return { error: bad };
+    out[key] = v;
+  }
+  return out;
+}
+
 /** Báo mốc khai mà JSON không neo: `stickman.marks.unused` trong `package.json`, `"off"` (mặc định) hay
  *  `"warn"` — lớp vẽ code đọc mốc qua `ctx.marks`, `check` không thấy. docs/03-scene.md#mốc-có-tên */
 export const marksUnused = (dir = ".") => readPkg(resolve(dir))?.stickman?.marks?.unused ?? "off";
@@ -1643,6 +1662,89 @@ function worldAt(rt, t, { world, tol, unknown }) {
       return { who, name: c.collider, depth: c.depth / U, key: `${who}|${c.collider}` };
     });
   return { hits, boxes };
+}
+
+/** Mặt nghiêng không quá ngần này (cos góc với phương đứng) mới là mặt ngang để đặt bàn tay */
+const FLAT_TOP = Math.cos((30 * Math.PI) / 180);
+
+/**
+ * Mặt trên cao nhất của các vật `cols` dọc đường đứng qua điểm three `p`, không cao hơn `p` quá `sink`
+ * (three): `{ y, flat, name }`, `flat` là mặt ấy gần nằm ngang. Khối lồi cắt theo các mặt phẳng, lưới
+ * tam giác theo từng tam giác; bỏ vật `skip(c)`
+ */
+function topUnder(cols, p, sink, skip) {
+  let best = null;
+  const take = (y, ny, name) => {
+    if (y > p.y + sink || (best && y <= best.y)) return;
+    best = { y, flat: Math.abs(ny) >= FLAT_TOP, name };
+  };
+  for (const c of cols) {
+    const b = c.box;
+    if (p.x < b.min.x || p.x > b.max.x || p.z < b.min.z || p.z > b.max.z) continue;
+    if (b.min.y > p.y + sink || (best && b.max.y <= best.y) || skip(c)) continue;
+    if (c.planes) {
+      let hi = Infinity;
+      let lo = -Infinity;
+      let ny = 1;
+      let inside = true;
+      for (const pl of c.planes) {
+        const n = pl.normal;
+        const r = -pl.constant - n.x * p.x - n.z * p.z;
+        if (n.y > 1e-6) {
+          if (r / n.y < hi) [hi, ny] = [r / n.y, n.y];
+        } else if (n.y < -1e-6) lo = Math.max(lo, r / n.y);
+        else if (r < -1e-6) inside = false;
+      }
+      if (inside && lo <= hi) take(hi, ny, c.name);
+    } else if (c.tris) {
+      const t = c.tris;
+      for (let i = 0; i + 8 < t.length; i += 9) {
+        const [ax, ay, az, bx, by, bz, cx, cy, cz] = t.subarray(i, i + 9);
+        const d = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+        if (Math.abs(d) < 1e-12) continue;
+        const u = ((bz - cz) * (p.x - cx) + (cx - bx) * (p.z - cz)) / d;
+        const v = ((cz - az) * (p.x - cx) + (ax - cx) * (p.z - cz)) / d;
+        if (u < 0 || v < 0 || u + v > 1) continue;
+        const [ex, ey, ez, fx, fy, fz] = [bx - ax, by - ay, bz - az, cx - ax, cy - ay, cz - az];
+        const nx = ey * fz - ez * fy;
+        const ny = ez * fx - ex * fz;
+        const nz = ex * fy - ey * fx;
+        take(u * ay + v * by + (1 - u - v) * cy, ny / (Math.hypot(nx, ny, nz) || 1), c.name);
+      }
+    }
+  }
+  return best;
+}
+
+/**
+ * Cảnh three ở giây `t` cho phép đo lòng bàn tay (`PalmFrame` của rig): `pose(t)` một lần; mặt ngang
+ * dưới một điểm trong mọi vật của cảnh trừ đồ người ấy mang và người nền đóng băng (`userData.crowd`);
+ * tay đang cầm đồ theo bàn tay three; người không có trong `pose(t)` là người đóng băng ở dáng giây 0.
+ * docs/03-scene.md#lòng-bàn-tay
+ */
+export function palmFrame(t, world) {
+  const { scene, colliders, U } = world;
+  const posed = scene.pose(t) ?? {};
+  scene.root.updateMatrixWorld(true);
+  const cols = colliders(scene.root);
+  return {
+    frozen: (id) => !posed[id],
+    held: (id, hand) => {
+      const h = posed[id]?.hands?.[hand === "R" ? -1 : 1];
+      return h ? !!h.held : undefined;
+    },
+    surface: (id, at) => {
+      const own = posed[id]?.root;
+      const p = { x: at[0] * U, y: -at[1] * U, z: -at[2] * U };
+      const top = topUnder(
+        cols,
+        p,
+        rig.PALM_SINK * U,
+        (c) => (!!own && c.owner === own) || !!c.from?.userData.crowd,
+      );
+      return top?.flat ? { gap: (p.y - top.y) / U, name: top.name } : null;
+    },
+  };
 }
 
 /** Vật dời xa nhất giữa hai mẫu, đơn vị thế giới: góc khung bao của cùng một vật; vật hiện hay ẩn thì không tính */
@@ -2087,6 +2189,8 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
   const tol = clashTol(root);
   const ratio = itemRatio(root);
   const self = selfTol(root);
+  const palm = palmOptions(root);
+  if (palm.error) bad(palm.error);
   if (typeof tol !== "number" || !(tol >= 0))
     bad(`package.json: stickman.clash.tol phải là số không âm, đang là ${JSON.stringify(tol)}`);
   else if (self !== false && (typeof self !== "number" || !(self >= 0)))
@@ -2156,6 +2260,19 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
           warn(`scenes/${name}.json: ${problem}`);
       } catch (e) {
         warn(`scenes/${name}.json: không đo được người 3D với đồ khối — ${e.message}`);
+      }
+      // Lòng bàn tay quay sai — docs/03-scene.md#lòng-bàn-tay
+      if (palm.error || palm.off) continue;
+      try {
+        const on = scene && !scene.error ? scene : undefined;
+        for (const problem of rig.scenePalmProblems(rt, {
+          ...palm,
+          characterOf: (m) => characterOf(m)?.character,
+          frame: on && ((t) => palmFrame(t, on)),
+        }))
+          warn(`scenes/${name}.json: ${problem}`);
+      } catch (e) {
+        warn(`scenes/${name}.json: không đo được lòng bàn tay — ${e.message}`);
       }
     }
   }

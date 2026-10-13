@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { act, type Acting } from './act';
-import { actJoints, armInner, armSide, CLAD_DEPTH, CLAD_GAP, cladArm, cladProfile, cladThigh, roots3, SPLAY3, type ActJoint } from './core/act3';
+import { actJoints, actPalms, armInner, armSide, CLAD_DEPTH, CLAD_GAP, cladArm, cladProfile, cladThigh, roots3, SPLAY3, type ActJoint } from './core/act3';
 import { D } from './core/constants';
+import { HAND_BONES } from './core/hand';
 import { defaultCharacter, limbWidths, SkirtSchema } from './core/schema';
 import { garmentOf, profile } from './core/torso';
 import type { Figure } from './stickman';
@@ -79,6 +80,16 @@ describe('actJoints', () => {
         const got = actJoints(c, sp)!;
         for (const k of Object.keys(want) as ActJoint[])
           for (let j = 0; j < 3; j++) expect(got[k][j], `${k}[${j}] ca ${i}${seated ? ' ngồi' : ''}${clad ? ' mặc đồ' : ''} cao ${height}`).toBeCloseTo(want[k][j], 6);
+        const palms = actPalms(c, sp);
+        expect(!!palms).toBe(clad);
+        for (const side of clad ? ([-1, 1] as const) : []) {
+          const k = side === -1 ? 'R' : 'L', wrist = p.arms[side].wrist, h = p.hands![side];
+          const q = wrist.getWorldQuaternion(new THREE.Quaternion());
+          const dir = (v: THREE.Vector3) => { const d = v.applyQuaternion(q); return [d.x, -d.y, -d.z]; };
+          const want3 = { palm: dir(new THREE.Vector3(-side, 0, 0)), finger: dir(new THREE.Vector3(0, -1, 0)), at: rig3(wrist.localToWorld(new THREE.Vector3(0, (-HAND_BONES.palm.len * h.long) / 2, 0))) };
+          for (const f of ['palm', 'finger', 'at'] as const)
+            for (let j = 0; j < 3; j++) expect(palms![k][f][j], `${f}${k}[${j}] ca ${i}`).toBeCloseTo(want3[f][j], 6);
+        }
       }
     }
   });

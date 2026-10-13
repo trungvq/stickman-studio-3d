@@ -1103,7 +1103,7 @@ server.registerTool(
   "scene_probe",
   {
     description:
-      "Số liệu một scene tại các mốc giây, đọc bằng anchorAt của rig nên đúng hệ toạ độ chỗ vẽ (y xuống, đất ở y của chân): chỗ đứng x (đã cộng trôi ngang), tư thế, lớp tay, nét mặt, toạ độ vai / khuỷu / cổ tay / bàn chân và khối đầu của từng người; đạo cụ thì chỗ đứng, trục bánh và góc bánh đã quay; động vật thì chỗ đứng, hông, vai, yên (saddle), gáy, mõm, bàn chân — con đang bị cưỡi hay xách trả kèm host. `anchors` hỏi thêm mốc bất kỳ — khớp hoặc socket mảnh — mỗi mốc trả {x, y, deg, w, h}: tâm hộp, góc SVG và cỡ hộp đã nhân scale, cắm thẳng vào translate/rotate của một <g> anh em với <Character>. Dùng để tính điểm gặp, đặt tay lên càng xe, bám hiệu ứng vào người thay vì đoán. Người 3D (cast[].world) kèm `world`: khớp hông/gối/bàn chân/vai/khuỷu/cổ tay/cổ/đầu trong toạ độ thế giới, yaw vẽ, yawSaid, yawHeading (người đi: hướng nhắm theo path), theta, seated, near (tay gần là tay phải hay trái), hands (đích thế giới đang áp). Cảnh có lens và người 3D kèm `clashes`: mỗi mốc giây, các chỗ phần người lồng vào đồ khối hay vào người khác sâu quá ngưỡng của check (stickman.clash.tol, mặc định 2) ({who, with, depth}) — rig không đẩy người ra khỏi đồ. Repo khai stickman.world và worldOf trả cảnh thì đồ là mọi vật của cảnh three ấy, đúng như check (who theo cú pháp touch: `a.foreArmR`); cảnh three hỏng thì `warnings` kể lỗi và mốc ấy đo bằng khối lớp vẽ code. `snaps`: các cú tay chân giật trên hình của cả cảnh (có `cast` thì của người ấy), cùng dòng báo và ngưỡng (stickman.snap) với check; cố ý giật thì khai `snap: true` ở hành động, ở clip hay ở mốc world.hands.",
+      "Số liệu một scene tại các mốc giây, đọc bằng anchorAt của rig nên đúng hệ toạ độ chỗ vẽ (y xuống, đất ở y của chân): chỗ đứng x (đã cộng trôi ngang), tư thế, lớp tay, nét mặt, toạ độ vai / khuỷu / cổ tay / bàn chân và khối đầu của từng người; đạo cụ thì chỗ đứng, trục bánh và góc bánh đã quay; động vật thì chỗ đứng, hông, vai, yên (saddle), gáy, mõm, bàn chân — con đang bị cưỡi hay xách trả kèm host. `anchors` hỏi thêm mốc bất kỳ — khớp hoặc socket mảnh — mỗi mốc trả {x, y, deg, w, h}: tâm hộp, góc SVG và cỡ hộp đã nhân scale, cắm thẳng vào translate/rotate của một <g> anh em với <Character>. Dùng để tính điểm gặp, đặt tay lên càng xe, bám hiệu ứng vào người thay vì đoán. Người 3D (cast[].world) kèm `world`: khớp hông/gối/bàn chân/vai/khuỷu/cổ tay/cổ/đầu trong toạ độ thế giới, yaw vẽ, yawSaid, yawHeading (người đi: hướng nhắm theo path), theta, seated, near (tay gần là tay phải hay trái), hands (đích thế giới đang áp), palms (người mặc đồ: lòng bàn tay phải/trái quay về đâu — úp/ngửa/vào thân/ra ngoài/ra trước/ra sau —, down: góc lệch khỏi úp, pháp tuyến lòng tay, hướng ngón, tâm; có stickman.world thì kèm on/gap: vật có mặt ngang dưới bàn tay và khe tới nó) — đặt tay lên mặt hay đổi turn/elbow xong thì đọc palms, đừng phán bằng mắt. Cảnh có lens và người 3D kèm `clashes`: mỗi mốc giây, các chỗ phần người lồng vào đồ khối hay vào người khác sâu quá ngưỡng của check (stickman.clash.tol, mặc định 2) ({who, with, depth}) — rig không đẩy người ra khỏi đồ. Repo khai stickman.world và worldOf trả cảnh thì đồ là mọi vật của cảnh three ấy, đúng như check (who theo cú pháp touch: `a.foreArmR`); cảnh three hỏng thì `warnings` kể lỗi và mốc ấy đo bằng khối lớp vẽ code. `snaps`: các cú tay chân giật trên hình của cả cảnh (có `cast` thì của người ấy), cùng dòng báo và ngưỡng (stickman.snap) với check; cố ý giật thì khai `snap: true` ở hành động, ở clip hay ở mốc world.hands.",
     inputSchema: {
       scene: Spec,
       t: z
@@ -1299,6 +1299,21 @@ server.registerTool(
       clashes = Object.fromEntries(
         times.map((time) => [time, cli.clashesAt(rt, time, { ...opts, world, onWorld })]),
       );
+      // Mặt ngang dưới bàn tay: khe từ điểm thấp nhất của bàn tay, như luật bàn tay đặt trên mặt ngang của `check`
+      if (world && cli.palmFrame)
+        for (const time of times) {
+          const fr = cli.palmFrame(time, world);
+          for (const row of rows.filter((r) => r.t === time && r.world?.palms))
+            for (const p of Object.values(row.world.palms)) {
+              let best = null;
+              for (const q of palmSkin.get(p) ?? []) {
+                const top = fr.surface(row.id, q);
+                if (top && (!best || top.gap < best.gap)) best = top;
+              }
+              if (best && best.gap <= PALM_NEAR)
+                Object.assign(p, { on: best.name, gap: +best.gap.toFixed(1) });
+            }
+        }
     }
     // Tay chân giật trên hình, cả cảnh — cùng phép đo với `check`
     const snaps = sceneSnapLines(rt, character, cast);
@@ -1313,6 +1328,8 @@ server.registerTool(
   }),
 );
 
+/** `scene_probe` kể mặt ngang dưới bàn tay khi điểm thấp nhất của bàn tay cách nó tới ngần này, px */
+const PALM_NEAR = 30;
 const r1 = (n) => +n.toFixed(1);
 const v3 = (v) => v.map(r1);
 const wrap180 = (a) => ((((a + 180) % 360) + 360) % 360) - 180;
@@ -1363,7 +1380,34 @@ function world3(rt, id, time, c, at, fa) {
           },
         }
       : {}),
+    ...palms3(c, at),
   };
+}
+
+/** Điểm da bàn tay của từng `world.palms` để `scene_probe` tìm mặt ngang dưới bàn tay */
+const palmSkin = new WeakMap();
+
+/**
+ * Lòng bàn tay người 3D mặc đồ, theo bên giải phẫu: quay về đâu (`faces`), lệch khỏi úp (`down`, độ), pháp
+ * tuyến lòng tay và hướng ngón (thế giới rig), tâm lòng bàn tay — docs/01-rig.md#hướng-lòng-bàn-tay
+ */
+function palms3(c, at) {
+  const P = rig.actPalms?.(c, at);
+  if (!P) return {};
+  const r2 = (n) => +n.toFixed(2);
+  const one = (p) => {
+    const f = rig.palmFace(p);
+    const o = {
+      faces: rig.PALM_FACES[f.face],
+      down: Math.round(f.down),
+      palm: p.palm.map(r2),
+      finger: p.finger.map(r2),
+      at: v3(p.at),
+    };
+    palmSkin.set(o, p.skin);
+    return o;
+  };
+  return { palms: { right: one(P.R), left: one(P.L) } };
 }
 
 server.registerTool(

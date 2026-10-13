@@ -52,7 +52,7 @@ Dựng và soi repo video: [05 — Dựng một repo video](05-repo-video.md).
 | `piece_prompt` | `socket`, `styles?`, `cols?`, `rows?`, `extra?` | Prompt tiếng Anh cho một lượt gen sheet. |
 | `add_piece` | `file`, `socket`, `name`, `description?`, `config?`, `as?` | Chép PNG vào `pieces/<socket>/` rồi ghi mục vào `catalog.json` của workspace; `file` trùng tên một mảnh chung là đè nó. |
 | `scene_events` | `scene`, `name?`, `cast?` | Mốc `events[]` của mọi hành động trong cảnh, đã đổi ra **giây scene** và sắp theo thời gian (`phase` và `cycle` của clip tính sẵn, clip lặp thì sự kiện lặp). Chỗ hỏi "lưỡi rìu chạm gỗ ở giây nào" — xem [03](03-scene.md#hỏi-sự-kiện). |
-| `scene_probe` | `scene`, `t` (số, `"@mốc"`, hoặc mảng), `cast?`, `anchors?` | Kèm `camera` tại từng mốc (`x`, `y`, `zoom`, `view`) — hiệu ứng bám đúng người vẫn có thể nằm ngoài khung. `x` đã cộng trôi, `flip`, `view` và `headView` đã lấy mẫu tại `t`, `rotate` (xoay cả người), pose, lớp, nét mặt, toạ độ vai/khuỷu/cổ tay/bàn chân và khối đầu; đạo cụ thì trục bánh và góc đã quay; động vật thì hông, vai, yên, gáy, mõm, chóp cánh, bàn chân, mỏ/mắt, `root` (`hip` là đang bay hay bị xách) và `host` (ai đang cưỡi / xách). `anchors` hỏi thêm mốc bất kỳ — khớp hoặc socket mảnh — mỗi mốc trả `{x, y, deg, w, h}`. Mọi số đi qua `anchorAt` của rig nên **cùng hệ với chỗ vẽ** (sân khấu của cảnh): bàn chân thấp hơn nằm đúng `groundY`, cắm thẳng vào hiệu ứng bên Remotion. Người 3D kèm `world`: khớp trong thế giới, hướng khai và hướng vẽ, đích tay — xem [Người 3D](#người-3d). |
+| `scene_probe` | `scene`, `t` (số, `"@mốc"`, hoặc mảng), `cast?`, `anchors?` | Kèm `camera` tại từng mốc (`x`, `y`, `zoom`, `view`) — hiệu ứng bám đúng người vẫn có thể nằm ngoài khung. `x` đã cộng trôi, `flip`, `view` và `headView` đã lấy mẫu tại `t`, `rotate` (xoay cả người), pose, lớp, nét mặt, toạ độ vai/khuỷu/cổ tay/bàn chân và khối đầu; đạo cụ thì trục bánh và góc đã quay; động vật thì hông, vai, yên, gáy, mõm, chóp cánh, bàn chân, mỏ/mắt, `root` (`hip` là đang bay hay bị xách) và `host` (ai đang cưỡi / xách). `anchors` hỏi thêm mốc bất kỳ — khớp hoặc socket mảnh — mỗi mốc trả `{x, y, deg, w, h}`. Mọi số đi qua `anchorAt` của rig nên **cùng hệ với chỗ vẽ** (sân khấu của cảnh): bàn chân thấp hơn nằm đúng `groundY`, cắm thẳng vào hiệu ứng bên Remotion. Người 3D kèm `world`: khớp trong thế giới, hướng khai và hướng vẽ, đích tay, hướng lòng bàn tay (`palms`) — xem [Người 3D](#người-3d). |
 
 Chỗ nào nhận `character` / `action` / `scene` thì nhận **tên file trong
 workspace hoặc object inline** chưa ghi — vòng lặp gen → nhìn → sửa không cần
@@ -155,7 +155,12 @@ không có tool riêng.
     "flip": true, "near": "left", "seated": true, "floor": 0, "s": 1,
     "joints": { "hip": [300, 96, 700], "kneeNear": [...], "footNear": [...], "shoulderNear": [...],
                 "elbowNear": [...], "wristNear": [...], "neck": [...], "head": [...], … },
-    "hands": { "right": { "at": [-124, -154, -32], "w": 1 }, "left": null }
+    "hands": { "right": { "at": [-124, -154, -32], "w": 1 }, "left": null },
+    "palms": {
+      "right": { "faces": "úp", "down": 20, "palm": [-0.2, 0.94, -0.27], "finger": [0.96, 0.13, -0.25],
+                 "at": [301.5, -220.1, 671.8], "on": "ban-phim", "gap": 4.4 },
+      "left": { "faces": "vào thân", "down": 72, … }
+    }
   }
   ```
 
@@ -164,6 +169,12 @@ không có tool riêng.
   quay. Người đứng yên thì `yaw` là đúng `yawSaid` ở mọi góc, kể cả nhìn thẳng ống kính (`theta` 0).
   `near` là tay / chân gần ống kính theo giải phẫu (`*Near` của `joints` là chi ấy);
   `hands` là đích thế giới đang áp (`w` là phần đích), đích hệ thân của hành động nằm ở `pose.reach`.
+  `palms` (người mặc đồ) là lòng bàn tay hai bên theo giải phẫu, đúng như three vẽ (`actPalms`):
+  `faces` lòng tay quay về đâu (`úp`, `ngửa`, `vào thân`, `ra ngoài`, `ra trước`, `ra sau`), `down` góc lệch
+  khỏi úp (độ), `palm` pháp tuyến lòng tay và `finger` hướng ngón (vectơ đơn vị, thế giới rig), `at` tâm lòng
+  bàn tay. Repo khai `stickman.world` thì kèm `on` (vật có mặt ngang dưới bàn tay) và `gap` (khe từ điểm thấp
+  nhất của bàn tay tới mặt ấy, âm là lún) khi khe dưới `30`. Đặt tay lên một mặt hay đổi `turn`, `elbow` xong
+  thì đọc nó thay cho nhìn hình ([01](01-rig.md#hướng-lòng-bàn-tay)).
   Cảnh có `lens` và người 3D kèm `clashes`: mỗi mốc hỏi, các chỗ phần người lồng vào đồ khối hay vào
   người khác sâu quá ngưỡng của `check`, sâu trước —
   `{ "0.5": [{ "who": "haru.head", "with": "hoc (mảnh 0)", "depth": 33 }] }`

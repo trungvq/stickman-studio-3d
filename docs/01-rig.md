@@ -1364,7 +1364,9 @@ Ba góc quay tay của người 3D quanh chính nó, cho vẫy tay, ngửa tay, 
   đúng bấy nhiêu, kể cả phần tay choãi (`roots3`): mẫu `wave-3d` của app xem thử dang `80` và lắc khuỷu `40..75`. Nhún vai ngửa tay là
   cẳng tay ra trước với `turn` `−90`.
 - **`turn` đo từ chính khung cẳng tay**, mà tay theo đích thì khung ấy quay theo hướng khuỷu: cẳng tay đặt trên bàn
-  với hướng khuỷu ra ngoài đã úp quá nửa lòng tay ở `turn` `0`, `arms-on-table-3d` chỉ cần `20`.
+  với hướng khuỷu ra ngoài đã úp quá nửa lòng tay ở `turn` `0`, `arms-on-table-3d` chỉ cần `20`. Một `turn` đúng với
+  hướng khuỷu này là sai với hướng khuỷu khác, nên đổi `turn` hay `elbow` xong thì đọc hướng lòng tay bằng số —
+  [Hướng lòng bàn tay](#hướng-lòng-bàn-tay).
 - Người que SVG của người 3D (`figure3d`) dựng xoắn vai; rig 2D phẳng không đọc nó.
 
 ### Bàn tay
@@ -1422,6 +1424,37 @@ gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` 
   liền một đường, không gồ ở gốc ngón cái. Gốc bốn ngón so le theo độ dài (giữa xa nhất, út gần nhất) nên hàng đốt
   là vòng cung bốn gồ nhỏ; khớp ngọn chuyển trọng số qua gần hai bán kính ngón nên đốt ngọn cuộn tròn.
 
+### Hướng lòng bàn tay
+
+`actPalms(nhân vật, scenePose)` (`core/act3.ts`) trả hai bàn tay (`R` phải, `L` trái người) đúng như
+three vẽ, trong toạ độ thế giới rig: cùng khung `Rw = Re · wristTurn` của `actJoints`, `act3.test.ts` giữ
+trùng với khớp cổ tay three. Trong khung bàn tay của `handFrames`, ngón mọc theo −y và gập về phía
+`−side · x` — đó là pháp tuyến lòng tay. Chỉ người mặc đồ có bàn tay; người que và người không có
+`world` thì không có gì.
+
+| Trường | Nghĩa |
+|---|---|
+| `palm` | Pháp tuyến lòng tay, vectơ đơn vị: hướng lòng tay quay về |
+| `finger` | Hướng dọc bàn tay, từ cổ tay ra đầu ngón |
+| `at` | Tâm lòng bàn tay |
+| `skin` | Tám điểm ngoài cùng của bàn tay theo dáng đang vẽ: giữa lòng tay, giữa mu tay, hai mép lòng bàn tay, đầu ngón cái, trỏ, giữa, út (trên trục đốt) |
+| `forward`, `out` | Hướng mặt người nằm ngang, hướng ngang từ thân ra phía tay ấy |
+
+`palmFace` (`core/palm.ts`) đọc ra lòng tay quay về đâu — trục trội trong `PALM_FACES`: `úp` / `ngửa` theo
+hướng xuống của thế giới, `ra trước` / `ra sau` theo hướng mặt nằm ngang, `vào thân` / `ra ngoài` theo phía
+tay ấy — và góc lệch khỏi úp (`down`, độ).
+
+- **Đừng phán hướng lòng tay bằng mắt.** Bàn tay vài chục pixel, mu và lòng tay cùng màu da. Đặt tay lên
+  một mặt (quầy, sách, bàn phím, bàn) hay đổi `turn`, `elbow` xong thì đọc `world.palms` của `scene_probe`
+  ([04](04-mcp.md#người-3d)): tay đặt trên mặt ngang phải `úp` (`down` dưới `45`), `on` và `gap` cho biết
+  vật dưới bàn tay và khe từ điểm thấp nhất của bàn tay tới nó; tay buông thì lòng tay quay vào đùi —
+  đứng thẳng là `vào thân`, cúi chào với bàn tay trước đùi là `ra sau`.
+- **Sửa bằng hướng khuỷu trước, `turn` sau.** Tay đặt bằng đích (`reach`, `world.hands`) thì khung `turn`
+  quay theo hướng khuỷu: khai `elbow` ra ngoài như `arms-on-table-3d` (`[-0.3, 0.3, 1]`) rồi chỉnh `turn`
+  (dương là sấp, lòng tay úp thêm khi cẳng tay chĩa ra trước).
+- `check` kêu bàn tay đặt trên mặt ngang mà không úp và tay buông mà lòng tay không quay vào đùi, kèm `turn` gợi ý —
+  [03](03-scene.md#lòng-bàn-tay).
+
 ### Khớp người 3D vẽ ra
 
 Sân khấu three đặt người que bằng `act` (`packages/rig/src/act.ts`); `actJoints(nhân vật, scenePose)`
@@ -1460,7 +1493,8 @@ từng khớp (vai `ZXY`: dang · gập · xoắn; khuỷu chỉ gập; cổ tay
 nét tay của người que; `act3.test.ts` dựng người que three thật và giữ hai bên
 trùng nhau tới `1e-6` ở mọi kiểu tư thế (kênh nâng lẫn không, dang, xoắn vai, lệch, xoay và gập cổ tay, nghiêng
 thân, đích hệ thân, đích thế giới, ngồi, lật, `height` khác `1`).
-Đổi khớp hay thứ tự quay ở `act`/`stickman.ts` thì đổi cùng `actJoints`, test đỏ là lệch.
+Đổi khớp hay thứ tự quay ở `act`/`stickman.ts` thì đổi cùng `actJoints`, test đỏ là lệch. `actPalms` đọc
+cùng phép tính ấy cho hướng lòng bàn tay ([Hướng lòng bàn tay](#hướng-lòng-bàn-tay)).
 
 `armPierce(nhân vật, scenePose)` (`core/pierce.ts`) đo tay xuyên thân áo trên các khớp ấy: thân là
 khối tròn xoay dẹt của `torsoMesh` dựng lại không cần `three` — nửa rộng theo `profile` của áo, tiết

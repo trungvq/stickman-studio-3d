@@ -1083,6 +1083,9 @@ thế giới (`stickman.clash.tol`) thì kêu, mỗi cặp một dòng; lấn c�
 chéo qua người hay buông tay từ đích phía bên kia là tay xuyên thân, `check` đo riêng —
 [10](10-lop-ve-code.md#tay-xuyên-thân).
 
+Lòng bàn tay đặt trên mặt ngang mà dựng đứng, tay buông mà lòng tay ngửa hay quay ra ngoài: `check` đo theo
+[Lòng bàn tay](#lòng-bàn-tay).
+
 ## Giật trên hình
 
 `check` (và `snaps` của `scene_probe`) lấy mẫu mỗi cảnh không đóng băng theo fps bản chốt, tính khớp
@@ -1127,6 +1130,42 @@ Ngưỡng ở `package.json` của repo video, trường thiếu lấy mặc đ�
 
 Mức cảnh báo, như người lồng vào đồ: hình vẫn ra, chỉ nhìn mới thấy. Cảnh khớp `stickman.frozen`
 không đo; `--scene` chỉ đo cảnh khớp.
+
+## Lòng bàn tay
+
+Bàn tay người 3D mặc đồ nhỏ trên hình, mu và lòng tay cùng màu da: lòng tay quay sai không ai nhìn ra.
+`check` đo nó trên chính bàn tay three vẽ (`actPalms`, [01](01-rig.md#hướng-lòng-bàn-tay)), lấy mẫu
+mỗi `0,1 s` cho cảnh có `lens` và người 3D, và kêu hai luật:
+
+- **Bàn tay đặt trên mặt ngang mà không úp.** Bàn tay duỗi (dáng nghỉ, `open` hay hoà giữa hai dáng
+  ấy — không phải `grip`, `point`, `fist`), không cầm đồ, có điểm ngoài cùng (`skin`) cách mặt trên nằm
+  ngang của một vật dưới nó không quá `8` đơn vị (hay lún vào tới `8`), mà pháp tuyến lòng tay lệch
+  hướng xuống quá `45°`: tay đặt lên quầy, sách, bàn phím, mặt bàn mà lòng tay dựng đứng như chặt tay.
+  Vật là mọi vật của cảnh three `stickman.world` trừ đồ người ấy mang và người nền đóng băng — repo
+  không khai `stickman.world` thì luật này không đo.
+- **Tay buông mà lòng tay không quay vào đùi.** Bàn tay buông bên đùi — ngón chĩa xuống (thành phần hướng xuống của `finger` từ
+  `0,5`), tâm lòng bàn tay cách đùi cùng bên (hông → gối) không quá `60` đơn vị nhân `world.s`: tay buông
+  bên sườn, cả lúc cúi chào với bàn tay trước đùi — mà pháp tuyến lòng tay lệch hướng từ bàn tay vào đùi
+  quá `60°`: lòng tay ra trước, ra ngoài, ngửa. Đứng thẳng lòng tay vào đùi, cúi chào lòng tay úp vào mặt
+  trước đùi thì không kêu.
+
+Chỉ kêu quãng kéo dài từ `0,3 s`: bàn tay lướt qua một tư thế giữa đoạn hoà không tính. Bỏ bàn tay ngoài
+khung camera và người khuất. Người nền đóng băng của cảnh three đo ở dáng giây `0`, dáng nó đứng suốt
+cảnh. Mỗi người, mỗi tay, mỗi luật một dòng, kèm giây lệch nhiều nhất, các quãng giây, `turn` lúc ấy và
+`turn` trong `−90..90` đưa lòng tay gần hướng đúng nhất (úp, hay vào đùi); tay đặt trên mặt ngang bằng đích
+cổ tay thì gợi ý cả hướng khuỷu:
+
+```
+scenes/canh-07.json: bàn tay đặt trên mặt ngang mà không úp — `yota` tay trái trên ban-phim: lòng tay vào thân, lệch 72° khỏi úp ở giây 3.80 · giây 3.50–3.80, 4.00–4.30. `turn` lúc ấy 0, xoay cẳng tay một mình không đủ (tốt nhất 70, còn lệch 35°); hay khai hướng khuỷu ra ngoài như `arms-on-table-3d` (`elbow` `[-0.3, 0.3, 1]`) — khung `turn` quay theo khuỷu. Clip đang chạy: stand-3d (than) (docs/01-rig.md#hướng-lòng-bàn-tay)
+```
+
+Ngưỡng ở `package.json` của repo video (độ, độ, giây), trường thiếu lấy mặc định; `false` là không đo:
+
+```json
+"stickman": { "palm": { "down": 45, "hang": 60, "hold": 0.3 } }
+```
+
+Mức cảnh báo. Cảnh khớp `stickman.frozen` không đo; `--scene` chỉ đo cảnh khớp.
 
 ## Nhóm
 

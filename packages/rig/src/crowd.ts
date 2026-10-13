@@ -14,7 +14,7 @@ function materialKey(m: THREE.Material) {
  * Đóng băng người nền ở tư thế hiện tại thành vài mesh tĩnh, một mesh mỗi vật liệu cho cả đám: cả hàng người ngồi
  * bàn chỉ còn chục lượt vẽ. Toạ độ thế giới — thêm nhóm trả về vào cùng chỗ với `root` của người (thường là `scene`)
  * và đừng thêm các `root` ấy nữa. Đồ đang cầm, đang đội gộp luôn; nét mặt và chớp mắt đứng yên. Lưới gộp không còn là
- * người (`userData.body`): `collide` đo nó như vật cản.
+ * người (`userData.body`): `collide` đo nó như vật cản; nó mang `userData.crowd` để phép đo mặt ngang dưới bàn tay bỏ qua.
  */
 export function freeze(figures: Figure | readonly Figure[]): THREE.Group {
   const list: readonly Figure[] = 'root' in figures ? [figures] : figures;
@@ -50,6 +50,7 @@ export function freeze(figures: Figure | readonly Figure[]): THREE.Group {
     if (b.noShadow) mesh.userData.noShadow = true;
     if (b.noCrease) mesh.userData.noCrease = true;
     if (b.noCollide) mesh.userData.noCollide = true;
+    mesh.userData.crowd = true;
     out.add(mesh);
   }
   return out;

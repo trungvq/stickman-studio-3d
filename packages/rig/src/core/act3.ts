@@ -1,6 +1,6 @@
 import { D, RIG, TORSO_DEPTH } from "./constants";
 import { lengths } from "./geometry";
-import { HAND_REST, handGrip, wristTurn } from "./hand";
+import { HAND_BONES, HAND_REST, handFrames, handGrip, wristTurn, type HandPiece } from "./hand";
 import { REACH_ELBOW } from "./ik";
 import {
   fromColumns,
@@ -462,16 +462,17 @@ export interface ActInput {
   };
 }
 
-/**
- * Khớp của người 3D đúng như `act` đặt người que three: cùng khung xương (`bones3`, `roots3`), cùng
- * luật đọc góc (`actAngles`, `actTwist`, `actHand`) và cùng IK (`actReach`, `armFrame`), trả trong toạ độ thế giới
- * rig; `hand` là chỗ treo đồ cầm (`handGrip`, người que ở mút nét). Không có `world` thì không có gì. `check` đo giật
- * tay chân trên các khớp này. docs/01-rig.md#khớp-người-3d-vẽ-ra
- */
-export function actJoints(
-  c: Pick<CharacterData, "rig" | "pieces" | "palette" | "head">,
-  sp: ActInput,
-): Record<ActJoint, V3> | undefined {
+/** Khung bàn tay three của một bên: cổ tay, hướng `Rw` (cột x, y, z của khung bàn tay `handFrames`), cỡ bàn tay */
+interface Wrist3 {
+  at: V3;
+  R: M3;
+  k: number;
+  long: number;
+  v: readonly number[];
+}
+
+/** Khớp three (chưa đổi sang rig), khung bàn tay hai bên và hướng hông `Rr` của một người 3D */
+function pose3(c: Pick<CharacterData, "rig" | "pieces" | "palette" | "head">, sp: ActInput) {
   const W = sp.world;
   if (!W) return undefined;
   const P = sp.pose;
@@ -498,6 +499,7 @@ export function actJoints(
   const at = (o: V3, R: M3, local: V3): V3 => add(o, mul(mv(R, local), s));
   const hips = at(root, Rr, [0, seated ? 0 : B.limb, 0]);
   const out = {} as Record<ActJoint, V3>;
+  const wrists: Partial<Record<"R" | "L", Wrist3>> = {};
   const tag = (side: number) => (side === -1 ? "R" : "L");
 
   for (const side of [near, -near]) {
@@ -563,9 +565,86 @@ export function actJoints(
     out[`elbow${tag(side)}` as ActJoint] = elbow;
     out[`wrist${tag(side)}` as ActJoint] = wr;
     out[`hand${tag(side)}` as ActJoint] = at(wr, Rw, grip);
+    if (hand)
+      wrists[tag(side)] = { at: wr, R: Rw, k: hand.k * s, long: hand.long * s, v: actHand(P, ch) };
   }
   out.hip = hips;
-  const rigOf = (p: V3): V3 => [p[0] * 100, -p[1] * 100, -p[2] * 100];
-  for (const k of Object.keys(out) as ActJoint[]) out[k] = rigOf(out[k]);
+  return { joints: out, wrists: hand ? (wrists as Record<"R" | "L", Wrist3>) : undefined, Rr, Rs };
+}
+
+const rigOf = (p: V3): V3 => [p[0] * 100, -p[1] * 100, -p[2] * 100];
+const rigDir = (p: V3): V3 => [p[0], -p[1], -p[2]];
+
+/**
+ * Khớp của người 3D đúng như `act` đặt người que three: cùng khung xương (`bones3`, `roots3`), cùng
+ * luật đọc góc (`actAngles`, `actTwist`, `actHand`) và cùng IK (`actReach`, `armFrame`), trả trong toạ độ thế giới
+ * rig; `hand` là chỗ treo đồ cầm (`handGrip`, người que ở mút nét). Không có `world` thì không có gì. `check` đo giật
+ * tay chân trên các khớp này. docs/01-rig.md#khớp-người-3d-vẽ-ra
+ */
+export function actJoints(
+  c: Pick<CharacterData, "rig" | "pieces" | "palette" | "head">,
+  sp: ActInput,
+): Record<ActJoint, V3> | undefined {
+  const p = pose3(c, sp);
+  if (!p) return undefined;
+  const out = {} as Record<ActJoint, V3>;
+  for (const k of Object.keys(p.joints) as ActJoint[]) out[k] = rigOf(p.joints[k]);
+  return out;
+}
+
+/**
+ * Bàn tay người 3D vẽ ra, toạ độ thế giới rig: `at` tâm lòng bàn tay, `palm` pháp tuyến lòng bàn tay (hướng lòng tay
+ * quay về, phía các ngón gập vào), `finger` hướng dọc bàn tay từ cổ tay ra đầu ngón; hai vectơ đơn vị. `forward` là
+ * hướng mặt người nằm ngang, `out` hướng ngang từ thân ra phía tay ấy. `skin`: các điểm ngoài cùng của bàn tay theo dáng
+ * đang vẽ — giữa lòng tay, giữa mu tay, hai mép lòng bàn tay, đầu ngón cái, trỏ, giữa, út (trên trục đốt)
+ */
+export interface ActPalm {
+  at: V3;
+  palm: V3;
+  finger: V3;
+  forward: V3;
+  out: V3;
+  skin: V3[];
+}
+
+/**
+ * Bàn tay hai bên (`R` phải, `L` trái người) đúng như `act` đặt: cùng khung `Rw = Re · wristTurn` của `actJoints`.
+ * Khung bàn tay `handFrames`: lòng tay quay về `−side · x`, ngón mọc theo −y. Chỉ người mặc đồ (`palette.clad`) có bàn
+ * tay; người que hay không có `world` thì không có gì. docs/01-rig.md#hướng-lòng-bàn-tay
+ */
+export function actPalms(
+  c: Pick<CharacterData, "rig" | "pieces" | "palette" | "head">,
+  sp: ActInput,
+): Record<"R" | "L", ActPalm> | undefined {
+  const p = pose3(c, sp);
+  if (!p?.wrists) return undefined;
+  const forward = rigDir(mv(p.Rr, [0, 0, 1]));
+  const out = {} as Record<"R" | "L", ActPalm>;
+  for (const k of ["R", "L"] as const) {
+    const side = k === "R" ? -1 : 1;
+    const { at, R, k: size, long, v } = p.wrists[k];
+    const world = (l: V3) => rigOf(add(at, mv(R, l)));
+    const mid = (-HAND_BONES.palm.len * long) / 2;
+    const [thick, half] = HAND_BONES.palm.half.map((h) => h * size);
+    const f = handFrames(v, side, size, long);
+    const tip = (n: HandPiece) => world(add(f[n].o, mv(f[n].R, [0, -f[n].len, 0])));
+    out[k] = {
+      at: world([0, mid, 0]),
+      palm: rigDir(unit(mv(R, [-side, 0, 0]))),
+      finger: rigDir(unit(mv(R, [0, -1, 0]))),
+      forward,
+      out: rigDir(mv(p.Rr, [side, 0, 0])),
+      skin: [
+        world([-side * thick, mid, 0]),
+        world([side * thick, mid, 0]),
+        world([0, mid, half]),
+        world([0, mid, -half]),
+        tip("thumb1"),
+        tip("index1"),
+        tip("middle1"),
+        tip("pinky1"),
+      ],
+    };
+  }
   return out;
 }
