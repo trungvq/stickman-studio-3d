@@ -476,7 +476,8 @@ export function stickman(o: StickmanOptions): Figure {
   const skin3 = { color: skin, stipple: 0.035, stippleScale: 4, soft: 1, flat: true };
   const skinMat = npr(skin3);
   // vỏ ngược dưới cằm `human` chìm sau cổ và cổ áo: nét bóng dáng vẽ thêm ở hậu kỳ
-  head.add(inked(skull, human ? npr({ ...skin3, ink: 0.03 }) : skinMat, 0.03));
+  const skullMat = human ? npr({ ...skin3, ink: 0.03 }) : skinMat;
+  head.add(inked(skull, skullMat, 0.03));
   const faceR = lod === 'low' ? stillFace(skullScale, faceShape, face, human, skin) : faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face }, human, skin);
   head.add(faceR.mesh);
   if (glasses) {
@@ -490,7 +491,7 @@ export function stickman(o: StickmanOptions): Figure {
   if (o.pin) sculptPin(head, o.pin, hair, human, o.pinColor ?? '#3a2a22', o.pinBead ?? o.pinColor ?? '#3a2a22');
   if (human) {
     for (const s of SIDES) {
-      const ear = earGroup(s, R.head, skullScale, skinMat, hull, ink);
+      const ear = earGroup(s, R.head, skullScale, skullMat, INK);
       if (!hairCovers(head, ear.position)) head.add(ear);
     }
     neck.add(inked(neckGeometry(head3(B, true) - R.head * 0.5, 0.135), skinMat, 0.022));

@@ -4,6 +4,8 @@ import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { HUMAN_HEAD, humanEar, humanSkull } from './core/humanHead';
 import { fingerVec, HAND_POSES, HAND_REST, type HandPose } from './core/hand';
 import { handSkin, skinHand, smoothNormals, type HandSkin } from './core/handMesh';
+import { newCanvas } from './canvas';
+import { G } from './npr';
 
 // Khối của người 3D mặc đồ (`palette.clad`) và đầu `head.form: "human"`: đầu có quai hàm, tai, cổ; bàn tay, giày, khối
 // hông. Chỉ hình học; `stickman.ts` gắn vào khớp và tô màu. docs/01-rig.md#người-3d-mặc-đồ
@@ -64,31 +66,141 @@ export function humanHeadGeometry(r: number, segs: [number, number], scale: THRE
   return smooth(g);
 }
 
+/** Bề dày nét chữ C của tai, phần bán kính đầu */
+const EAR_STROKE = 0.02;
+/** Nét chỗ tai cắt vào má, three: bằng nét bóng dáng `ink` của sọ */
+const EAR_SEAM = 0.03;
+const earInk = new Map<string, THREE.ShaderMaterial>();
+
+/** Nét chữ C mở về phía mặt trên canvas phủ mặt ngoài tai: x theo z, y theo −y của tai đơn vị; chỉ đọc alpha */
+function earCurl() {
+  const E = HUMAN_HEAD.ear, W = 128, H = Math.round((W * E.h) / E.w);
+  const canvas = newCanvas(W, H), g = canvas.getContext('2d') as CanvasRenderingContext2D;
+  g.lineCap = 'round';
+  g.lineWidth = (EAR_STROKE / (2 * E.w)) * W;
+  g.beginPath();
+  g.ellipse(0.46 * W, 0.5 * H, 0.18 * W, 0.21 * H, 0, (290 * Math.PI) / 180, (70 * Math.PI) / 180, true);
+  g.stroke();
+  const tex = new THREE.CanvasTexture(canvas as HTMLCanvasElement);
+  tex.anisotropy = 8;
+  return tex;
+}
+
 /**
- * Tai bên `side` trên đầu `human` (hệ nhóm đầu): vỏ dẹt chìm nửa vào má, mặt ngoài ngả ra trước, một nét cong chữ C mở
- * về phía mặt. `ink` là vật liệu nét.
+ * Nét trên mặt ngoài tai, đều vẽ phía trong tai: chữ C của `earCurl`; dải dọc chỗ tai cắt vào má (`gap` = cao trên mặt
+ * sọ, three); dải dọc bóng dáng tai chỗ mép tai nằm trước đầu (tia nhìn qua mép trúng sọ `humanSkull`; `h0..h2` đưa hệ tai
+ * về sọ đơn vị) — trên nền thì nét bóng dáng `ink` lo. Bóng dáng tính đúng trên ellipsoid `fit` (bán kính ba trục, dời x),
+ * không qua đạo hàm: mặt tai nhìn xiên vẫn giữ bề dày. Hai dải rộng `EAR_SEAM` đo trên mặt phẳng vuông tia nhìn như nét
+ * bóng dáng. Kiểu cel bỏ hai dải như vỏ ngược.
  */
-export function earGroup(side: -1 | 1, r: number, scale: THREE.Vector3, skin: THREE.Material, hull: THREE.Material, ink: THREE.Material) {
+function earMaterial(ink: string) {
+  let m = earInk.get(ink);
+  if (m) return m;
+  const H = HUMAN_HEAD;
+  m = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+    uniforms: { uMap: { value: earCurl() }, uColor: { value: new THREE.Color(ink) }, uW: { value: EAR_SEAM }, uShade: G.uShade },
+    vertexShader: /* glsl */ `
+      attribute float gap; attribute vec4 fit, h0, h1, h2; attribute vec3 sph;
+      varying float vGap, vScale; varying vec3 vW, vS, vL, vEye; varying vec4 vFit, vH0, vH1, vH2; varying vec2 vUv;
+      void main(){
+        vUv = uv; vGap = gap; vS = sph; vL = position; vFit = fit; vH0 = h0; vH1 = h1; vH2 = h2;
+        vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz;
+        vScale = length(modelMatrix[0].xyz);
+        vEye = (inverse(modelMatrix) * vec4(cameraPosition, 1.0)).xyz;
+        gl_Position = projectionMatrix * viewMatrix * w;
+      }`,
+    fragmentShader: /* glsl */ `
+      uniform sampler2D uMap; uniform vec3 uColor; uniform float uW, uShade;
+      varying float vGap, vScale; varying vec3 vW, vS, vL, vEye; varying vec4 vFit, vH0, vH1, vH2; varying vec2 vUv;
+      vec3 local(vec3 p){ return vFit.xyz * p + vec3(vFit.w, 0.0, 0.0); }
+      vec3 toHead(vec3 l){ vec4 h = vec4(l, 1.0); return vec3(dot(vH0, h), dot(vH1, h), dot(vH2, h)); }
+      // humanSkull của core/humanHead.ts; cao trên sọ theo tia từ tâm, sọ đơn vị
+      float above(vec3 x){
+        vec3 p = normalize(x);
+        float s = max(0.0, -p.y), s2 = s * s, b = (sqrt(p.z * p.z + 0.04) - p.z) / 2.0;
+        return length(x) - length(vec3(p.x * (1.0 + ${H.jaw} * s2), p.y * (1.0 + ${H.drop} * s2) * (1.0 - ${H.flat} * s2 * s2 * s2), p.z + s2 * (${H.chin} + ${H.nape} * b)));
+      }
+      void main(){
+        // chữ C chỉ ở nửa ngoài: dấu của fit.w là bên
+        float a = texture2D(uMap, vUv).a * step(0.0, vS.x * vFit.w);
+        if (abs(uShade - 1.0) > 0.5) {
+          vec3 v = normalize(vW - cameraPosition), dx = dFdx(vW), dy = dFdy(vW);
+          float px = max(length(dx - v * dot(dx, v)), length(dy - v * dot(dy, v))), w = uW / px;
+          float seam = abs(vGap) / max(length(vec2(dFdx(vGap), dFdy(vGap))), 1e-9);
+          // hệ tai đổi ra three, sọ đơn vị đổi ra hệ tai
+          float unit = 1.0 / length(vH0.xyz);
+          vec3 vl = normalize(vL - vEye);
+          // bóng dáng: trên cầu đơn vị của tai (fit) nhìn từ mắt, điểm bóng dáng q cùng mặt phẳng với tâm, mắt và điểm p
+          vec3 eu = (vEye - vec3(vFit.w, 0.0, 0.0)) / vFit.xyz, p = normalize(vS), e = normalize(eu), u = p - e * dot(p, e);
+          float k = 1.0 / length(eu);
+          vec3 q = e * k + (length(u) > 1e-5 ? normalize(u) : vec3(0.0)) * sqrt(max(1.0 - k * k, 0.0)), d = local(q) - local(p);
+          // tia nhìn qua q: điểm gần tâm sọ nhất nằm trong sọ thì sau mép tai ấy là đầu
+          vec3 eh = toHead(vEye), r = normalize(toHead(local(q)) - eh), cp = eh + r * dot(-eh, r);
+          float over = smoothstep(-px, px, -above(cp) * unit * vScale);
+          // điểm bóng dáng chìm trong má thì dải thon dần về chỗ cắt má thay vì cụt
+          float sil = (length(d - vl * dot(d, vl)) + 4.0 * max(-above(toHead(local(q))), 0.0) * unit) * vScale / px;
+          a = max(a, 1.0 - smoothstep(w - 0.75, w + 0.75, min(seam, over > 0.5 ? sil : 1e9)));
+        }
+        if (a < 0.004) discard;
+        gl_FragColor = vec4(uColor, a);
+      }`,
+  });
+  earInk.set(ink, m);
+  return m;
+}
+
+/** Cao của điểm `q` (sọ đơn vị) trên mặt đầu `human`, sọ đơn vị: tìm hướng trên cầu đơn vị mà `humanSkull` đưa về đúng tia tới `q` */
+function aboveSkull(q: THREE.Vector3) {
+  const t = q.clone().normalize(), u = t.clone(), s = new THREE.Vector3();
+  for (let i = 0; i < 6; i++) {
+    s.fromArray(humanSkull(u.toArray()));
+    u.add(t).sub(s.normalize()).normalize();
+  }
+  return q.length() - s.fromArray(humanSkull(u.toArray())).length();
+}
+
+/**
+ * Tai bên `side` trên đầu `human` (hệ nhóm đầu): vỏ dẹt chìm nửa vào má, mặt ngoài ngả ra trước. `skin` mang nét bóng
+ * dáng `ink` của sọ, cùng vật liệu nên chỗ tai cắt vào má không có nét bóng dáng; nét ấy và chữ C mở về phía mặt vẽ trên
+ * một lớp dán phủ ngoài tai (`earMaterial`), màu `ink`.
+ */
+export function earGroup(side: -1 | 1, r: number, scale: THREE.Vector3, skin: THREE.Material, ink: string) {
   const E = HUMAN_HEAD.ear;
   const [cx, cy, cz] = humanEar(side);
   const g = new THREE.Group();
   g.position.set(cx * r * scale.x, cy * r * scale.y, cz * r * scale.z);
   g.rotation.set(0, side * -0.35, side * 0.12);
-  const geo = smooth(new THREE.SphereGeometry(1, 14, 10).scale(E.out * r, E.h * r, E.w * r).translate(side * E.out * r * 0.35, 0, 0));
-  const m = new THREE.Mesh(geo, skin);
+  g.updateMatrix();
+  const shell = (geo: THREE.BufferGeometry, k = 1) => geo.scale(E.out * r * k, E.h * r * k, E.w * r * k).translate(side * E.out * r * 0.35, 0, 0);
+  const m = new THREE.Mesh(smooth(shell(new THREE.SphereGeometry(1, 48, 24))), skin);
   m.castShadow = true;
-  const h = new THREE.Mesh(geo, hull);
-  h.userData.noShadow = true;
-  g.add(m, h);
-  const pts: THREE.Vector3[] = [];
-  for (let a = 70; a <= 290; a += 20) {
-    const t = (a * Math.PI) / 180, y = 0.42 * Math.sin(t), z = 0.36 * Math.cos(t) - 0.08;
-    const x = Math.sqrt(Math.max(0, 1 - y * y - z * z));
-    pts.push(new THREE.Vector3(side * (x * E.out * r * 1.02 + E.out * r * 0.35), y * E.h * r, z * E.w * r));
+  // cùng vật liệu với sọ: nét bóng dáng tai chỉ ở mép trên nền hay vật khác, trên đầu thì `earMaterial` vẽ
+  m.userData.inkGap = 1;
+  const lines = new THREE.SphereGeometry(1, 48, 24);
+  lines.setAttribute('sph', lines.attributes.position.clone());
+  shell(lines, 1.01);
+  const p = lines.attributes.position, uv = lines.attributes.uv;
+  const gap = new Float32Array(p.count), q = new THREE.Vector3(), k = (r * (scale.x + scale.y + scale.z)) / 3;
+  for (let i = 0; i < p.count; i++) {
+    uv.setXY(i, 0.5 + p.getZ(i) / (2 * E.w * r * 1.01), 0.5 + p.getY(i) / (2 * E.h * r * 1.01));
+    q.fromBufferAttribute(p, i).applyMatrix4(g.matrix).divide(scale).divideScalar(r);
+    gap[i] = aboveSkull(q) * k;
   }
-  const c = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 16, 0.006, 5), ink);
+  lines.setAttribute('gap', new THREE.BufferAttribute(gap, 1));
+  const fit = [E.out * r, E.h * r, E.w * r, side * E.out * r * 0.35];
+  lines.setAttribute('fit', new THREE.BufferAttribute(new Float32Array(p.count * 4).map((_, i) => fit[i % 4]), 4));
+  // hàng của ma trận tai → sọ đơn vị: g.matrix rồi chia bán kính sọ theo trục
+  const e = g.matrix.elements, sr = [r * scale.x, r * scale.y, r * scale.z];
+  for (let j = 0; j < 3; j++) {
+    const row = [e[j], e[4 + j], e[8 + j], e[12 + j]].map((v) => v / sr[j]);
+    lines.setAttribute(`h${j}`, new THREE.BufferAttribute(new Float32Array(p.count * 4).map((_, i) => row[i % 4]), 4));
+  }
+  const c = new THREE.Mesh(lines, earMaterial(ink));
   c.userData.noShadow = true;
-  g.add(c);
+  c.userData.noCollide = true;
+  c.renderOrder = 1;
+  g.add(m, c);
   return g;
 }
 
