@@ -941,8 +941,8 @@ chiếu, zoom ở đó là phóng ảnh, không phải dolly.
 "world": { "path": [                                          // đi: chỗ người phải ở theo thời gian
   { "t": 0, "at": [60, 280, 1050], "yaw": 0 },               // đứng: at là điểm sàn dưới hông
   { "t": 5, "at": [-60, 280, 700], "yaw": 180 },              // mốc dừng: mốc sau đứng yên
-  { "t": 5.4, "at": [-60, 280, 700], "yaw": 270 },            // quay tại chỗ
-  { "t": 6.2, "at": [-60, 185.5, 624], "yaw": 270, "sit": true, "ease": true }
+  { "t": 5.8, "at": [-60, 280, 700], "yaw": 270 },            // quay tại chỗ: bước chân
+  { "t": 6.6, "at": [-60, 185.5, 624], "yaw": 270, "sit": true, "ease": true }
 ] }
 ```
 
@@ -1039,7 +1039,25 @@ Nên soạn theo:
   dừng sớm quá thì hụt, muộn quá thì chân đứng sững.
 - Clip ngồi bắt đầu đúng ở mốc đứng ngay trước mốc ngồi. Chân co lại trong đoạn đứng là bàn chân
   trụ đẩy hông lùi.
-- Quay tại chỗ khi chân đã khép (`idle`): hai bàn chân xoay quanh hông.
+- Quay tại chỗ khi chân đã khép (`idle`), mỗi `90°` cho `0,8 s` trở lên: dưới đó thân quay quá
+  `300°/s`, `check` kêu.
+
+#### Quay tại chỗ
+
+Hai mốc đứng liền nhau cùng `at`, `yaw` lệch từ `15°` (`TURN_STEP_MIN`) là quay tại chỗ, và người
+quay bằng bước chân: chân phía quay (quay phải — `yaw` tăng — là chân phải) nhấc lên đặt xuống chỗ
+của nó ở hướng mới, rồi chân kia theo. Mỗi nhịp như vậy quay nhiều nhất `90°` (`TURN_STEP_MAX`):
+quay nửa vòng là hai nhịp chia đều quãng giữa hai mốc. Trong một nhịp thân quay `60%` góc lúc chân
+dẫn bước (`TURN_LEAD`), phần còn lại lúc chân theo; giữa hai nhịp thân dừng, hai chân trên sàn.
+
+- Bàn chân trụ đứng yên trên sàn, bàn chân bước nhấc cao nhất `7%` độ dài chân. Chỗ đặt hai bàn chân
+  là chỗ của chân trong tư thế đang có (`idle`, `stand-3d` …) xoay quanh hông về hướng đầu và cuối
+  nhịp; góc chân (đùi, gối, dang) giải lại mỗi khung, đè kênh chân của hành động.
+- Hông hạ `1,5%` độ dài chân (gối chùng) trong cú quay, lên xuống êm ở `20%` đầu và cuối; thân
+  nghiêng `3°` về chân trụ (kênh `lean`).
+- `yaw` giữa hai mốc đi theo nhịp bước chứ không nội suy đều, kể cả với `worldFacingAt`.
+- Clip có sải chân còn lái chân lúc mốc đầu (kể cả lúc nó đang hoà ra) thì cú quay không bước: hai
+  bàn chân xoay quanh hông. Quay dưới `15°` cũng vậy.
 
 **Lật qua chính diện hay quay lưng đổi chân gần.** Chân gần (`ln`) là chân phía ống kính; thân quay
 qua `theta` 0 hay 180 thì chân gần là chân kia, nên từ lúc ấy `sceneAt` đổi chỗ các kênh gần ↔ xa

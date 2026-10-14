@@ -50,6 +50,7 @@ thì xem [docs/05](docs/05-repo-video.md).
 | `shade=cel` | Kiểu vẽ `cel` (`render({ shade })`): hai tông phẳng, bóng cắt gắt, nét một màu đứt quãng, không bóng tiếp xúc và hạt giấy. Phím C bật/tắt |
 | `shade=manga` | Kiểu vẽ `manga`: màu gốc phẳng, sáng tối bằng lưới chấm tông tối cùng sắc theo màn hình, nét đen liền dày. Phím M bật/tắt |
 | `demo=walk\|sit\|faces\|look` | Cảnh diễn hành động thay cho cảnh nói chuyện: đi theo `path`, ngồi đặt tay lên bàn và cúi chào, bảng nét mặt, quay đầu về ống kính |
+| `demo=turn` | Quay tại chỗ bằng bước chân: một người đi vào, dừng, quay phải `90°` về ống kính, quay trái nửa vòng (hai nhịp), quay phải `90°`; một cô đứng quay trái `90°` rồi quay lại |
 | `demo=hold` | Cầm đồ và đội đồ: một người đi bưng khay hai tay, đeo thẻ ngực; một cô thấp hơn cầm cốc, đội mũ cảnh sát; một người đeo kính râm, đội mũ, cầm tờ giấy; một hàng người nền `lod: 'low'` đóng băng ngồi bàn, người thứ tư ngồi lấn vào bàn. Góc trên trái là bảng va chạm của khung và số mesh, tam giác theo LOD |
 | `noreport` | Ẩn bảng va chạm của `demo=hold` |
 | `demo=camera` | Ống kính `scene.lens` và mốc `camera[]` của scene: máy đẩy vào người đang đi, lia theo, lùi ra. Nhãn và bong bóng 2D bám đỉnh đầu, mồm qua `screenOf` (chấm đỏ là đúng điểm mốc); góc máy xoay tay tắt |

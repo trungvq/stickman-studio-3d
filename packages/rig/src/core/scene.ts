@@ -68,7 +68,7 @@ import {
   blendPose,
 } from "./blend";
 import { D, FRAMES, RIG, type FrameName, type FrameSpec } from "./constants";
-import { feet, type Legs } from "./geometry";
+import { feet, lengths, type Legs } from "./geometry";
 import { BODY3, dirOf, facing, feet3, viewOfTheta, type Body3, type World } from "./figure3d";
 import { project, scaleAt, type Lens, type V3 } from "./lens";
 import { POSES, POSE_NAMES } from "./poses";
@@ -102,6 +102,7 @@ import {
   type Reach,
   type BodyPart,
   type FaceState,
+  type LegAngles,
   type Pose,
   type View,
 } from "./types";
@@ -1510,7 +1511,7 @@ export function sceneAt(
     faces.push(faceUpTo(tr, i, time, clock));
     equips.push(equipUpTo(tr, i, time, clock));
   }
-  const pose = poseAt(m, time, clock);
+  const pose = worldPoseAt(m, time, walk, height, dims.hipHalf);
   // Thân lật thì `poseAt` đổi kênh tay gần ↔ xa: lớp hành động khai theo cùng tay ấy; lớp mặc định
   // vẫn theo chỗ gần / xa nên đổi trước khi ghép với nó
   const own = clock && clock(time).half % 2 ? layers.map(swapLayers) : layers;
@@ -2525,7 +2526,7 @@ export function worldFacingAt(
   const m = member(rt, id);
   if (!m.world || !rt.lens) return;
   const walk = walkerOf(rt, m, height, dims.hipHalf);
-  const pose = poseAt(m, time, walk && clockOf(walk));
+  const pose = worldPoseAt(m, time, walk, height, dims.hipHalf);
   const at = worldAt(rt.lens, m.world, time, pose, height, dims.legHalf, walk);
   return { said: keyAt(keysOf(m.world), time).yaw, yaw: at.yaw };
 }
@@ -2560,11 +2561,47 @@ function keyAt(keys: WorldKey[], time: number) {
   const { a, b, u } = legOf(keys, time);
   const mix = (p: number, q: number) => p + (q - p) * u;
   if (!b) return { xz: [a.at[0], a.at[2]] as [number, number], y: a.at[1], yaw: a.yaw };
+  const turn = turnOf(a, b);
   return {
     xz: [mix(a.at[0], b.at[0]), mix(a.at[2], b.at[2])] as [number, number],
     y: mix(a.at[1], b.at[1]),
-    yaw: a.yaw + wrap180(b.yaw - a.yaw) * u,
+    yaw: turn
+      ? a.yaw + turn.delta * turnShare(turn.steps, (time - a.t) / (b.t - a.t))
+      : a.yaw + wrap180(b.yaw - a.yaw) * u,
   };
+}
+
+/** Quay tại chỗ dưới ngần này độ thì hai bàn chân xoay quanh hông, không bước */
+const TURN_STEP_MIN = 15;
+/** Một nhịp bước quay (chân dẫn rồi chân theo) quay nhiều nhất ngần này độ */
+const TURN_STEP_MAX = 90;
+/** Phần góc của một nhịp mà thân quay trong lúc chân dẫn bước */
+const TURN_LEAD = 0.6;
+/** Bàn chân bước nhấc cao nhất, phần độ dài chân */
+const TURN_LIFT = 0.07;
+/** Hông hạ khi bước quay, phần độ dài chân: gối chùng cho bàn chân trụ với tới */
+const TURN_DIP = 0.015;
+/** Phần đầu và cuối cú quay mà hông hạ xuống, đứng lên */
+const TURN_DIP_RAMP = 0.2;
+/** Thân nghiêng về chân trụ khi chân kia nhấc, độ */
+const TURN_LEAN = 3;
+
+/** Hai mốc đứng cùng `at` khác `yaw` là quay tại chỗ: góc quay (độ, có dấu) và số nhịp bước */
+function turnOf(a: WorldKey, b: WorldKey) {
+  if (a.sit || b.sit || a.at[0] !== b.at[0] || a.at[2] !== b.at[2]) return;
+  const delta = wrap180(b.yaw - a.yaw);
+  if (Math.abs(delta) < TURN_STEP_MIN) return;
+  return { delta, steps: Math.ceil(Math.abs(delta) / TURN_STEP_MAX) };
+}
+
+/** Phần góc đã quay ở `u` (0..1) của cú quay `steps` nhịp: mỗi nhịp thân quay phần lớn khi chân dẫn bước */
+function turnShare(steps: number, u: number): number {
+  const v = Math.min(1, Math.max(0, u)) * steps;
+  const j = Math.min(steps - 1, Math.floor(v));
+  const w = v - j;
+  const g =
+    w < 0.5 ? TURN_LEAD * smoothstep(2 * w) : TURN_LEAD + (1 - TURN_LEAD) * smoothstep(2 * w - 1);
+  return (j + g) / steps;
 }
 
 /**
@@ -2686,7 +2723,6 @@ function bakeWalker(
     clock: [],
     lift: [],
   };
-  const clock = clockOf(out);
   let H: [number, number] = [keys[0].at[0], keys[0].at[2]];
   let from = H;
   let seg = -1;
@@ -2757,7 +2793,7 @@ function bakeWalker(
       prevO = [prevO[1], prevO[0]];
       prevF = [prevF[1], prevF[0]];
     }
-    const pose = poseAt(m, t, clock);
+    const pose = worldPoseAt(m, t, out, height, hipHalf);
     const ys = feet(pose, height, RIG, true).map((q) => q[1]);
     lift = Math.max(...ys);
     out.lift.push(lift);
@@ -2916,7 +2952,8 @@ function pathAt(path: PathKey[], time: number): Spot {
 
 type Acting = Omit<CastMember, "travel">;
 
-function poseAt(m: Acting, time: number, clock?: Clock): Pose {
+/** `turn` sửa tư thế trước khi đổi kênh gần ↔ xa: kênh còn là chi gần lúc đầu cảnh */
+function poseAt(m: Acting, time: number, clock?: Clock, turn?: (p: Pose) => Pose): Pose {
   let pose: Pose = m.base;
   for (const tr of m.tracks) {
     const i = activeClip(tr, time);
@@ -2925,7 +2962,101 @@ function poseAt(m: Acting, time: number, clock?: Clock): Pose {
   // Người đi theo `path` đọc chân như soạn ở `side`: bàn chân trụ phải nằm trên sàn thế giới, và
   // hoà từ chân nâng sang chân 2D là bàn chân nhảy giữa chừng
   if (m.world?.path) pose = { ...pose, lift: { ...pose.lift, ln: true, lf: true } };
+  if (turn) pose = turn(pose);
   return clock && clock(time).half % 2 ? swapSides(pose) : pose;
+}
+
+/** Tư thế người 3D đi theo `path`: `poseAt` cộng bước chân của cú quay tại chỗ */
+function worldPoseAt(
+  m: Acting,
+  time: number,
+  walk: Walker | undefined,
+  height: number,
+  hipHalf: number,
+): Pose {
+  if (!walk) return poseAt(m, time);
+  const yaw = sampleAt(walk.yaw, walk.step, time);
+  const flip = walk.flip[stepIndex(walk, time)];
+  return poseAt(m, time, clockOf(walk), (p) =>
+    turnStep(m, time, p, yaw, walk.flip[0], flip, height, hipHalf),
+  );
+}
+
+/**
+ * Quay tại chỗ (`turnOf`) bằng bước chân: mỗi nhịp chân phía quay nhấc lên đặt xuống chỗ của nó ở
+ * hướng mới, rồi chân kia theo; bàn chân trụ đứng yên trên sàn, hông hạ chút cho gối chùng, thân
+ * nghiêng về chân trụ. Chỗ hai bàn chân lấy từ chân của `pose` ở hướng đầu và cuối nhịp; góc chân
+ * giải lại theo hướng thân đang vẽ `yaw` (độ). `pose` chưa đổi kênh: `ln` là chi gần lúc đầu cảnh,
+ * tức chân phải khi `flip0` không lật. Clip có sải chân đang lái chân thì giữ nguyên.
+ * docs/03-scene.md#quay-tại-chỗ
+ */
+function turnStep(
+  m: Acting,
+  time: number,
+  pose: Pose,
+  yaw: number,
+  flip0: boolean,
+  flip: boolean,
+  height: number,
+  hipHalf: number,
+): Pose {
+  const { a, b } = legOf(keysOf(m.world as WorldSpec), time);
+  const turn = b && turnOf(a, b);
+  if (!turn || strideClip(m, a.t) || strideClip(m, time)) return pose;
+  const u = (time - a.t) / (b.t - a.t);
+  const v = Math.min(1, Math.max(0, u)) * turn.steps;
+  const j = Math.min(turn.steps - 1, Math.floor(v));
+  const w = v - j;
+  const step = turn.delta / turn.steps;
+  // hướng thân so với đầu nhịp; hệ phẳng `[tiến, phải]` của đầu nhịp
+  const rel = wrap180(yaw - a.yaw - step * j) * D;
+  const rot = ([f, l]: [number, number], th: number): [number, number] => [
+    f * Math.cos(th) - l * Math.sin(th),
+    f * Math.sin(th) + l * Math.cos(th),
+  ];
+  const len = lengths(height);
+  const st = pose.stretch;
+  // chân phía quay dẫn: quay sang phải (`delta` dương) là chân phải
+  const right: "ln" | "lf" = flip0 ? "lf" : "ln";
+  const lead = turn.delta > 0 ? right : right === "ln" ? "lf" : "ln";
+  const ramp = Math.min(1, u / TURN_DIP_RAMP, (1 - u) / TURN_DIP_RAMP);
+  const out: Partial<Record<"ln" | "lf", LegAngles>> = {};
+  for (const ch of ["ln", "lf"] as const) {
+    const l1 = len.thigh * st[ch === "ln" ? 6 : 4];
+    const l2 = len.shin * st[ch === "ln" ? 7 : 5];
+    const [a0, b0, sp0 = 0] = pose[ch];
+    const x = Math.sin(a0 * D) * l1 + Math.sin((a0 + b0) * D) * l2;
+    const y = Math.cos(a0 * D) * l1 + Math.cos((a0 + b0) * D) * l2;
+    const side = ch === right ? 1 : -1;
+    const from: [number, number] = [x, side * (hipHalf + y * Math.sin(sp0 * D))];
+    const to = rot(from, step * D);
+    const p = ch === lead ? 2 * w : 2 * w - 1;
+    const s = smoothstep(Math.min(1, Math.max(0, p)));
+    const lift = p > 0 && p < 1 ? TURN_LIFT * (l1 + l2) * Math.sin(Math.PI * p) : 0;
+    const [f, l] = rot([from[0] + (to[0] - from[0]) * s, from[1] + (to[1] - from[1]) * s], -rel);
+    const depth = y * Math.cos(sp0 * D) - TURN_DIP * (l1 + l2) * smoothstep(ramp) - lift;
+    out[ch] = legTo(f, depth, side * l - hipHalf, l1, l2);
+  }
+  // thân nghiêng về chân trụ; `lean` dương là về chân đang xa
+  const stance = w < 0.5 ? (lead === "ln" ? "lf" : "ln") : lead;
+  const far = (stance === right) === flip;
+  const lean = TURN_LEAN * Math.sin(Math.PI * ((2 * w) % 1)) * (far ? 1 : -1);
+  return { ...pose, ln: out.ln!, lf: out.lf!, lean: (pose.lean ?? 0) + lean };
+}
+
+/**
+ * Góc chân nâng `[đùi, gối, dang]` đặt cổ chân ở `[tiến f, sâu dưới gốc depth, ra ngoài o]` so với gốc
+ * chân; gối gập ra trước. Xa quá tầm thì duỗi thẳng về phía ấy.
+ */
+function legTo(f: number, depth: number, o: number, l1: number, l2: number): LegAngles {
+  const sp = Math.atan2(o, depth) / D;
+  const y = Math.hypot(o, depth);
+  const r = Math.min(l1 + l2, Math.max(Math.abs(l1 - l2), Math.hypot(f, y), 1e-6));
+  const phi = Math.atan2(f, y) / D;
+  const acos = (c: number) => Math.acos(Math.min(1, Math.max(-1, c))) / D;
+  const al = acos((l1 * l1 + r * r - l2 * l2) / (2 * l1 * r));
+  const be = acos((l2 * l2 + r * r - l1 * l1) / (2 * l2 * r));
+  return [phi + al, -(al + be), sp];
 }
 
 const swapLayers = (l: Partial<ArmLayers>): Partial<ArmLayers> => ({

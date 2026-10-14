@@ -367,6 +367,61 @@ describe("hoà đi → đứng và quay tại chỗ: bàn chân liền, không x
   });
 });
 
+describe("quay tại chỗ bằng bước chân", () => {
+  const turn = (y1: number) =>
+    scene(
+      [
+        walker(
+          [
+            { t: 0.5, at: [0, 0, 900], yaw: 0 },
+            { t: 1.3, at: [0, 0, 900], yaw: y1 },
+          ],
+          [{ action: "idle", start: 0 }],
+        ),
+      ],
+      2,
+    );
+  const at = (rt: SceneRuntime, t: number) => {
+    const s = sceneAt(rt, "a", t, h, dims);
+    return feet3(s.pose, s.world!, h, dims.hipHalf);
+  };
+  const moved = (p: number[], q: number[]) => Math.hypot(p[0] - q[0], p[2] - q[2]);
+
+  it("chân phía quay bước trước, chân kia theo; chân trụ đứng yên, chân bước nhấc khỏi sàn", () => {
+    // ống kính ở gốc, người ở +z nhìn +x: chân gần (thứ hai) là chân phải; quay phải là `yaw` tăng
+    const rt = turn(90);
+    const [far0, near0] = at(rt, 0.5);
+    const [farMid, nearMid] = at(rt, 0.9);
+    const [far1, near1] = at(rt, 1.3);
+    expect(moved(farMid, far0)).toBeLessThan(0.5);
+    expect(moved(nearMid, near0)).toBeGreaterThan(15);
+    expect(moved(nearMid, near1)).toBeLessThan(0.5);
+    expect(moved(far1, far0)).toBeGreaterThan(15);
+    expect(Math.min(...at(rt, 0.7).map((p) => p[1]))).toBeLessThan(-8);
+    expect(Math.min(...at(rt, 1.1).map((p) => p[1]))).toBeLessThan(-8);
+    const end = sceneAt(rt, "a", 1.3, h, dims);
+    expect(end.world!.yaw / D).toBeCloseTo(90, 5);
+    expect(sceneSlideProblems(rt)).toStrictEqual([]);
+    expect(sceneTurnProblems(rt)).toStrictEqual([]);
+  });
+
+  it("quay trái thì chân trái dẫn; quay nửa vòng là hai nhịp", () => {
+    const rt = turn(-180);
+    const [far0, near0] = at(rt, 0.5);
+    const [farA, nearA] = at(rt, 0.7);
+    expect(moved(nearA, near0)).toBeLessThan(0.5);
+    expect(moved(farA, far0)).toBeGreaterThan(5);
+    // giữa hai nhịp cả hai chân đứng trên sàn, thân đã quay nửa đường
+    expect(Math.min(...at(rt, 0.9).map((p) => p[1]))).toBeGreaterThan(-0.5);
+    expect(sceneAt(rt, "a", 0.9, h, dims).world!.yaw / D).toBeCloseTo(-90, 5);
+  });
+
+  it("quay ít hơn ngưỡng thì không bước", () => {
+    const rt = turn(10);
+    expect(Math.min(...at(rt, 0.9).map((p) => p[1]))).toBeGreaterThan(-0.5);
+  });
+});
+
 describe("sceneSlideProblems cho người 3D đo trên sàn thế giới", () => {
   it("`path` dời người mà chân không bước là trượt", () => {
     const rt = scene(

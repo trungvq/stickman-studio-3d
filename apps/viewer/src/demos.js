@@ -80,6 +80,19 @@ const DEMOS = {
       [track(clip('walk'), clip('stand-3d', 3.75, { blend: 0.3 })), track(clip('face-calm'))], 0),
     member('nhin', GIRL, { at: [420, 0, 240], yaw: 150 }, [track(clip('stand-3d')), track(clip('face-smug')), track(clip('talk-lips', 0.3))], 1),
   ],
+  turn: () => [
+    member('quay', BOY, { path: [
+      { t: 0, at: [-300, 0, 0], yaw: 0 }, { t: 2.2, at: [-60, 0, 0], yaw: 0 },
+      { t: 2.6, at: [-60, 0, 0], yaw: 0 }, { t: 3.4, at: [-60, 0, 0], yaw: 90 },
+      { t: 4.2, at: [-60, 0, 0], yaw: 90 }, { t: 5.8, at: [-60, 0, 0], yaw: -90 },
+      { t: 6.4, at: [-60, 0, 0], yaw: -90 }, { t: 7.2, at: [-60, 0, 0], yaw: 0 },
+    ] }, [track(clip('walk'), clip('stand-3d', 1.95, { blend: 0.3 })), track(clip('face-calm'))], 0),
+    member('ban', GIRL, { path: [
+      { t: 0, at: [200, 0, -60], yaw: 180 }, { t: 1, at: [200, 0, -60], yaw: 180 },
+      { t: 1.8, at: [200, 0, -60], yaw: 90 }, { t: 4.6, at: [200, 0, -60], yaw: 90 },
+      { t: 5.4, at: [200, 0, -60], yaw: 180 },
+    ] }, [track(clip('stand-3d')), track(clip('face-smug'))], 1),
+  ],
   look: () => [
     member('thang', BOY, { at: [-110, 0, 0], yaw: 45 }, [track(clip('stand-3d')), track(clip('face-calm'))], 0),
     member('nhin', BOY, { at: [110, 0, 0], yaw: 45 }, [track(clip('stand-3d')), track(clip('face-calm')), track(clip('look-camera')), track(clip('talk-tilt', 0.5))], 1),
