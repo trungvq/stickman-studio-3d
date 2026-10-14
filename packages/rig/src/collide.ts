@@ -437,16 +437,30 @@ function capsuleConvex(c: Capsule, col: Collider): [number, THREE.Vector3] | nul
   return best < r ? [r - best, at] : null;
 }
 
+/** Khung bao từng tam giác của `tris` (min xyz, max xyz), tính một lần cho mỗi mảng tam giác */
+const triBoxMemo = new WeakMap<Float32Array, Float32Array>();
+function triBoxes(t: Float32Array) {
+  let b = triBoxMemo.get(t);
+  if (b) return b;
+  b = new Float32Array((Math.floor(t.length / 9)) * 6);
+  for (let i = 0, j = 0; i + 8 < t.length; i += 9, j += 6)
+    for (let k = 0; k < 3; k++) {
+      const x = t[i + k], y = t[i + 3 + k], z = t[i + 6 + k];
+      b[j + k] = Math.min(x, y, z), b[j + 3 + k] = Math.max(x, y, z);
+    }
+  triBoxMemo.set(t, b);
+  return b;
+}
+
 function capsuleCollider(c: Capsule, box: THREE.Box3, col: Collider): [number, THREE.Vector3] | null {
   if (!box.intersectsBox(col.box)) return null;
   if (col.planes) return capsuleConvex(c, col);
-  const t = col.tris!;
+  const t = col.tris!, tb = triBoxes(t), { min: lo, max: hi } = box;
   let best: [number, THREE.Vector3] | null = null;
-  const A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3(), tb = new THREE.Box3();
-  for (let i = 0; i + 8 < t.length; i += 9) {
+  const A = new THREE.Vector3(), B = new THREE.Vector3(), C = new THREE.Vector3();
+  for (let i = 0, j = 0; i + 8 < t.length; i += 9, j += 6) {
+    if (tb[j + 3] < lo.x || tb[j] > hi.x || tb[j + 4] < lo.y || tb[j + 1] > hi.y || tb[j + 5] < lo.z || tb[j + 2] > hi.z) continue;
     A.fromArray(t, i), B.fromArray(t, i + 3), C.fromArray(t, i + 6);
-    tb.makeEmpty().expandByPoint(A).expandByPoint(B).expandByPoint(C);
-    if (!tb.intersectsBox(box)) continue;
     const h = capsuleTri(c, A, B, C);
     if (h && (!best || h[0] > best[0])) best = h;
   }
@@ -499,8 +513,10 @@ export function collide(figures: readonly Figure[] | Record<string, Figure>, col
   const entries = Array.isArray(figures) ? figures.map((f, i) => [String(i), f] as const) : Object.entries(figures);
   const eye = o.eye && (o.eye instanceof THREE.Vector3 ? o.eye : new THREE.Vector3(...o.eye));
   const bodies = entries.map(([who, f]) => {
-    const caps = bodyCapsules(f, o.parts);
-    return { who, caps, boxes: caps.map((c) => new THREE.Box3().setFromPoints([c.a, c.b]).expandByScalar(c.r)), near: eye && nearSide(f, eye) };
+    const caps = bodyCapsules(f, o.parts), boxes = caps.map((c) => new THREE.Box3().setFromPoints([c.a, c.b]).expandByScalar(c.r));
+    // khung bao cả người: vật ngoài nó thì không viên nang nào chạm
+    const all = boxes.reduce((u, b) => u.union(b), new THREE.Box3());
+    return { who, caps, boxes, all, near: eye && nearSide(f, eye) };
   });
   const whoOf = new Map(entries.map(([who, f]) => [f.root as THREE.Object3D, who]));
   const found = new Map<string, Contact>();
@@ -517,11 +533,13 @@ export function collide(figures: readonly Figure[] | Record<string, Figure>, col
       else o.unknown?.(typeof t === 'string' ? t : t.part, col.name);
     }
     const self = col.owner && whoOf.get(col.owner);
-    for (const { who, caps, boxes, near } of bodies)
+    for (const { who, caps, boxes, all, near } of bodies) {
+      if (!all.intersectsBox(col.box)) continue;
       caps.forEach((c, k) => {
         const lim = rules.length ? allowance(rules, who, c, near, self) : 0;
         if (lim < Infinity) add(who, c, col.name, capsuleCollider(c, boxes[k], col), lim);
       });
+    }
   }
   if (o.people)
     for (let i = 0; i < bodies.length; i++)

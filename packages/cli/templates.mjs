@@ -76,7 +76,8 @@ vừa làm gì.
   \`pnpm can-tay <ten> <giây,…>\`: bảng ảnh cận từng bàn tay từ trước, chéo, ngang, kèm hướng lòng tay đo
   được — đừng phán dáng tay trên khung toàn cảnh, ở đó bàn tay chỉ 30–60 px.
 - Sửa xong một cảnh thì \`check\` đúng cảnh ấy: MCP \`check({ scene: "<ten>" })\` hay
-  \`pnpm exec stickman check --scene <ten>\` (regex trên id cảnh) — vài giây, bắt người
+  \`pnpm exec stickman check --scene <ten>\` (regex trên id cảnh) — cỡ chục giây, lâu hơn khi cảnh dài và
+  đông người; sửa nhiều cảnh thì gom chung một regex (\`'^t01-s0(16|21|35)'\`), các cảnh đo song song. Nó bắt người
   lồng vào đồ, chân trượt, hành động 2D trên người 3D, tay chân giật trên hình, lòng bàn tay quay sai,
   tay thẳng đuột, ngón hai tay chụm vào nhau, tay lơ lửng trên mặt, tay lấn vào đầu người khác. \`check\` cả workspace chậm, để dành trước khi commit hay sau khi nâng rig.
 - Người 3D (\`cast[].world\`) chỉ diễn hành động soạn ở \`side\` ở kênh tay chân

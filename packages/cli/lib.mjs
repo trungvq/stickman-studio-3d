@@ -11,8 +11,10 @@ import {
   writeFileSync,
 } from "node:fs";
 import { createRequire } from "node:module";
+import { availableParallelism, freemem } from "node:os";
 import { basename, delimiter, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { Worker } from "node:worker_threads";
 import * as rig from "@stickman3d/sketch";
 import * as FX from "@stickman3d/fx";
 import {
@@ -1389,9 +1391,10 @@ export const itemRatio = (dir = ".") => readPkg(resolve(dir))?.stickman?.clash?.
 /**
  * Quãng giây cảnh mà các shot của `episodes/` đưa lên hình, theo id cảnh: `[from, to]` mỗi shot, hai
  * shot liền nhau nối tiếp cùng một cảnh thì gộp — không có chỗ cắt giữa chúng. Cảnh không shot nào
- * dùng thì không có mục. docs/03-scene.md#giật-trên-hình
+ * dùng thì không có mục. Chỉ dựng runtime cho cảnh `wanted(id)` — cảnh khác không có mục.
+ * docs/03-scene.md#giật-trên-hình
  */
-function shotSpans(root, scenesByName, sceneRuntime) {
+function shotSpans(root, scenesByName, sceneRuntime, wanted = () => true) {
   const out = new Map();
   for (const f of listJson(join(root, "episodes"))) {
     let ep;
@@ -1402,7 +1405,7 @@ function shotSpans(root, scenesByName, sceneRuntime) {
     }
     let last = null;
     for (const shot of ep.shots ?? []) {
-      const rt = shot.scene && sceneRuntime(shot.scene);
+      const rt = shot.scene && wanted(shot.scene) && sceneRuntime(shot.scene);
       if (!rt) {
         last = null;
         continue;
@@ -1904,15 +1907,262 @@ export function sceneItemClashProblems(
   });
 }
 
+/** Người 3D trượt trên sàn, thân quay gắt: hợp lệ, chỉ nhìn là thấy — docs/03-scene.md#check-cho-người-3d */
+const moveProblems = (rt) => [...rig.sceneSlideProblems(rt), ...rig.sceneTurnProblems(rt)];
+
+/**
+ * Đo sâu một cảnh như `check`: trượt chân và thân quay gắt (`move`), người lồng vào đồ, tay sai
+ * dáng, lòng tay, đích theo mốc (`clash`), rồi giật trên hình (`snap`). Mỗi mục `{ msg }`, `error: true`
+ * là lỗi; mục `touch` lạ kèm `touch` (tên mục) vì `check` chỉ báo nó ở cảnh đầu tiên gặp. `ctx` là dữ
+ * liệu đã nạp của workspace cùng ngưỡng đã kiểm
+ */
+function deepScene(ctx, name) {
+  const { scenesByName, sceneRuntime, charactersByName, codeLayers, world, worldRel } = ctx;
+  const { clash, arm, palm, snap, spans } = ctx;
+  const out = { move: [], clash: [], snap: [] };
+  const data = scenesByName[name];
+  const rt = data && sceneRuntime(name);
+  if (!rt) return out;
+  try {
+    for (const problem of moveProblems(rt))
+      out.move.push({ msg: `scenes/${name}.json: ${problem}` });
+  } catch (e) {
+    out.move.push({ msg: `scenes/${name}.json: ${e.message}`, error: true });
+  }
+  const warn = (msg, touch) => out.clash.push(touch === undefined ? { msg } : { msg, touch });
+  if (clash && data.lens && data.cast.some((m) => m.world)) {
+    const { tol, ratio, self } = clash;
+    const characterOf = (m) => {
+      const character = m.character ? charactersByName[m.character] : rig.defaultCharacter();
+      return character && { character };
+    };
+    // `ctx` là dữ liệu `check` đã nạp và resolve, cùng khoá như `data.ts` của app Remotion
+    const scene =
+      world &&
+      worldScene(
+        world,
+        {
+          id: name,
+          scene: data,
+          runtime: rt,
+          characters: charactersByName,
+          actions: ctx.actionsByName,
+          animals: ctx.animalsByName,
+          props: ctx.props,
+        },
+        worldRel,
+      );
+    if (scene?.error) warn(`scenes/${name}.json: ${scene.error}`);
+    const onWorld = ({ error, unknown }) => {
+      if (error) warn(`scenes/${name}.json: ${worldRel}: ${error}`);
+      for (const [entry, thing] of unknown)
+        warn(
+          `scenes/${name}.json: \`touch\` "${entry}" của vật ${thing} không phải phần người nào — bỏ qua (docs/10-lop-ve-code.md#đo-trên-cảnh-three)`,
+          entry,
+        );
+    };
+    const on = scene && !scene.error ? scene : undefined;
+    try {
+      const samples = sceneSamples(rt, { characterOf });
+      for (const problem of [
+        ...sceneClashProblems(rt, {
+          characterOf,
+          codeLayers,
+          tol,
+          self,
+          samples,
+          world: on,
+          onWorld,
+        }),
+        ...(ratio === false
+          ? []
+          : sceneItemClashProblems(rt, { characterOf, codeLayers, tol, ratio, samples })),
+      ])
+        warn(`scenes/${name}.json: ${problem}`);
+    } catch (e) {
+      warn(`scenes/${name}.json: không đo được người 3D với đồ khối — ${e.message}`);
+    }
+    // Tay sai dáng: khuỷu thẳng, ngón chĩa vào nhau, lòng tay ngửa, lơ lửng trên mặt, chạm đầu người khác —
+    // docs/03-scene.md#tay-và-khuỷu
+    if (!arm.error && !arm.off)
+      try {
+        for (const problem of rig.sceneArmProblems(rt, {
+          ...arm,
+          characterOf: (m) => characterOf(m)?.character,
+          frame: on && ((t) => palmFrame(t, on)),
+        }))
+          warn(`scenes/${name}.json: ${problem}`);
+      } catch (e) {
+        warn(`scenes/${name}.json: không đo được tay sai dáng — ${e.message}`);
+      }
+    // Lòng bàn tay quay sai — docs/03-scene.md#lòng-bàn-tay
+    if (!palm.error && !palm.off) {
+      try {
+        for (const problem of rig.scenePalmProblems(rt, {
+          ...palm,
+          characterOf: (m) => characterOf(m)?.character,
+          frame: on && ((t) => palmFrame(t, on)),
+        }))
+          warn(`scenes/${name}.json: ${problem}`);
+      } catch (e) {
+        warn(`scenes/${name}.json: không đo được lòng bàn tay — ${e.message}`);
+      }
+      // Đích theo mốc thân, lòng tay theo ý định không đạt — docs/03-scene.md#bàn-tay-theo-ý-định
+      try {
+        for (const problem of rig.sceneAimProblems?.(rt, {
+          hold: palm.hold,
+          characterOf: (m) => characterOf(m)?.character,
+        }) ?? [])
+          warn(`scenes/${name}.json: ${problem}`);
+      } catch (e) {
+        warn(`scenes/${name}.json: không đo được đích theo mốc — ${e.message}`);
+      }
+    }
+  }
+  if (!snap.error && !snap.off) {
+    const characterOf = (m) =>
+      m.character ? charactersByName[m.character] : rig.defaultCharacter();
+    try {
+      for (const problem of rig.sceneSnapProblems(rt, { characterOf, ...snap, spans: spans[name] }))
+        out.snap.push({ msg: `scenes/${name}.json: ${problem}` });
+    } catch (e) {
+      out.snap.push({ msg: `scenes/${name}.json: không đo được giật trên hình — ${e.message}` });
+    }
+  }
+  return out;
+}
+
+/**
+ * Dữ liệu `deepScene` của một luồng phụ: nạp lại workspace như `checkWorkspace` (hai lớp nhân vật,
+ * hành động, động vật, đạo cụ của repo, bộ phận và lớp vẽ code, cảnh three) cho các cảnh `names`;
+ * ngưỡng (`clash`, `arm`, `palm`, `snap`) và `spans` lấy từ luồng chính đã kiểm
+ */
+export async function deepContext({ dir, names, ...opts }) {
+  const root = resolve(dir);
+  const actionsByName = loadActions([join(root, "actions"), COMMON.actions]);
+  const charactersByName = loadCharacters([join(root, "characters"), COMMON.characters]);
+  const animalsByName = loadAnimals([join(root, "animals"), COMMON.animals]);
+  const props = loadByFile([join(root, "props")], rig.parseProp);
+  if (partsEntry(root)) rig.registerParts(await loadParts(root));
+  const scenesByName = {};
+  for (const name of names) {
+    const r = rig.parseScene(readJson(join(root, "scenes", `${name}.json`)));
+    if (r.success) scenesByName[name] = r.data;
+  }
+  const runtimes = new Map();
+  const sceneRuntime = (name) => {
+    if (!runtimes.has(name)) {
+      let rt = null;
+      try {
+        rt = rig.resolveScene(
+          scenesByName[name],
+          actionsByName,
+          animalsByName,
+          props,
+          ...castBodies(scenesByName[name], charactersByName),
+        );
+      } catch {
+        rt = null;
+      }
+      runtimes.set(name, rt);
+    }
+    return runtimes.get(name);
+  };
+  let codeLayers = [];
+  if (layersEntry(root))
+    try {
+      codeLayers = await loadLayers(root);
+    } catch {
+      codeLayers = [];
+    }
+  const we = worldEntry(root);
+  let world = null;
+  if (we)
+    try {
+      world = await loadWorld(root);
+    } catch {
+      world = null;
+    }
+  return {
+    ...opts,
+    scenesByName,
+    sceneRuntime,
+    charactersByName,
+    actionsByName,
+    animalsByName,
+    props,
+    codeLayers,
+    world,
+    worldRel: we && relative(root, we),
+  };
+}
+
+/** RAM một luồng đo sâu cần, ước chừng */
+const JOB_RAM = 1e9;
+
+/** Số luồng đo sâu mặc định cho `n` cảnh: nửa số nhân, không quá số GB RAM còn trống */
+export const checkJobs = (n) =>
+  Math.max(1, Math.min(n, Math.floor(availableParallelism() / 2), Math.floor(freemem() / JOB_RAM)));
+
+/**
+ * `deepScene` cho mọi cảnh `names`, theo id cảnh. Nhiều cảnh thì chia cho `jobs` luồng phụ, mỗi luồng
+ * lấy cảnh kế tiếp (nặng trước) khi xong cảnh trước; luồng hỏng thì cảnh còn lại đo ở luồng chính
+ */
+async function deepScenes(root, names, ctx, jobs = checkJobs(names.length)) {
+  const out = new Map();
+  const n = Math.min(jobs, names.length);
+  if (n > 1) {
+    const { clash, arm, palm, snap, spans } = ctx;
+    // cảnh nặng (dài, đông người) đi trước để không cảnh nào kéo đuôi
+    const weight = (name) => {
+      const d = ctx.scenesByName[name];
+      return (d?.duration ?? 0) * Math.max(1, d?.cast.length ?? 0);
+    };
+    const queue = [...names].sort((a, b) => weight(b) - weight(a));
+    await Promise.all(
+      Array.from(
+        { length: n },
+        () =>
+          new Promise((done) => {
+            const w = new Worker(new URL("./check-worker.mjs", import.meta.url), {
+              workerData: { dir: root, names, clash, arm, palm, snap, spans },
+            });
+            const next = () => {
+              const name = queue.shift();
+              if (name === undefined) w.terminate().then(done, done);
+              else w.postMessage(name);
+            };
+            w.on("message", (m) => {
+              if (m.name !== undefined) out.set(m.name, m.result);
+              next();
+            });
+            w.on("error", done);
+            w.on("exit", done);
+          }),
+      ),
+    );
+  }
+  for (const name of names) if (!out.has(name)) out.set(name, deepScene(ctx, name));
+  return out;
+}
+
+/** Luồng phụ của `deepScenes`: nhận id cảnh, trả `deepScene` của nó */
+export async function deepWorker(port, data) {
+  const ctx = await deepContext(data);
+  port.on("message", (name) => port.postMessage({ name, result: deepScene(ctx, name) }));
+  port.postMessage({ ready: true });
+}
+
 /**
  * Soi một workspace: version đã đóng dấu so với rig đang cài, JSON hỏng, tham chiếu chéo trỏ
  * vào file không có, người 3D diễn hành động 2D, trượt hay lồng vào đồ, tay chân giật trên hình,
  * tiếng tràn chỗ.
  *
  * `scene` (regex trên id cảnh) chỉ soi sâu cảnh khớp: cảnh báo của chúng và lỗi ở bất kỳ đâu;
- * tập, tiếng, git và công cụ ngoài bỏ qua — docs/05-repo-video.md#soi-một-cảnh
+ * tập, tiếng, git và công cụ ngoài bỏ qua — docs/05-repo-video.md#soi-một-cảnh. `jobs` là số luồng
+ * đo sâu các cảnh, mặc định theo số nhân và RAM trống (`checkJobs`)
  */
-export async function checkWorkspace({ dir = ".", scene } = {}) {
+export async function checkWorkspace({ dir = ".", scene, jobs } = {}) {
   const root = resolve(dir);
   const problems = [];
   let focus = null;
@@ -1977,6 +2227,8 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
   }
 
   const scenesByName = {};
+  // Runtime theo id cảnh, dựng một lần cho mọi lượt đo; `null` là chưa dựng nổi
+  const runtimes = new Map();
   const assets = [];
   const inLayers = (dirs, file) => dirs.some((d) => existsSync(join(d, file)));
   // `animals` trước `scenes`: trôi ngang của con vật nướng từ chính JSON của nó
@@ -2064,9 +2316,10 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
             Object.fromEntries(props),
             ...castBodies(r.data, charactersByName),
           );
-          // Người 3D trượt trên sàn: hợp lệ, chỉ nhìn là thấy — docs/03-scene.md#check-cho-người-3d
-          for (const problem of rig.sceneSlideProblems(rt)) warn(`scenes/${f}: ${problem}`);
-          for (const problem of rig.sceneTurnProblems(rt)) warn(`scenes/${f}: ${problem}`);
+          runtimes.set(owner, rt);
+          // Trượt chân, thân quay gắt: cảnh không khớp `stickman.frozen` đo ở `deepScene`
+          if (frozen.test(owner))
+            for (const problem of moveProblems(rt)) warn(`scenes/${f}: ${problem}`);
           // Người 3D diễn hành động 2D ở kênh tay chân — docs/03-scene.md#hành-động-cho-người-3d
           for (const problem of rig.sceneSideProblems(rt, actionsByName))
             bad(`scenes/${f}: ${problem}`);
@@ -2187,7 +2440,6 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
   }
 
   const haveFfprobe = onPath("ffprobe");
-  const runtimes = new Map();
   /** Runtime của một file trong `scenes/`; `null` là chưa dựng nổi — lỗi đã kêu ở trên */
   const sceneRuntime = (name) => {
     if (runtimes.has(name)) return runtimes.get(name);
@@ -2219,6 +2471,7 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
   if (palm.error) bad(palm.error);
   const arm = armOptions(root);
   if (arm.error) bad(arm.error);
+  let clash = null;
   if (typeof tol !== "number" || !(tol >= 0))
     bad(`package.json: stickman.clash.tol phải là số không âm, đang là ${JSON.stringify(tol)}`);
   else if (self !== false && (typeof self !== "number" || !(self >= 0)))
@@ -2229,127 +2482,47 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
     bad(
       `package.json: stickman.clash.items phải là số trong [0, 1) hay false, đang là ${JSON.stringify(ratio)}`,
     );
-  else {
-    const touchSeen = new Set();
-    for (const [name, data] of Object.entries(scenesByName)) {
-      if (!data.lens || !data.cast.some((m) => m.world) || frozen.test(name) || !inFocus(name))
-        continue;
-      const rt = sceneRuntime(name);
-      if (!rt) continue;
-      owner = name;
-      const characterOf = (m) => {
-        const character = m.character ? charactersByName[m.character] : rig.defaultCharacter();
-        return character && { character };
-      };
-      // `ctx` là dữ liệu `check` đã nạp và resolve, cùng khoá như `data.ts` của app Remotion
-      const scene =
-        world &&
-        worldScene(
-          world,
-          {
-            id: name,
-            scene: data,
-            runtime: rt,
-            characters: charactersByName,
-            actions: actionsByName,
-            animals: animalsByName,
-            props: Object.fromEntries(props),
-          },
-          worldRel,
-        );
-      if (scene?.error) warn(`scenes/${name}.json: ${scene.error}`);
-      const onWorld = ({ error, unknown }) => {
-        if (error) warn(`scenes/${name}.json: ${worldRel}: ${error}`);
-        for (const [entry, thing] of unknown) {
-          if (touchSeen.has(entry)) continue;
-          touchSeen.add(entry);
-          warn(
-            `scenes/${name}.json: \`touch\` "${entry}" của vật ${thing} không phải phần người nào — bỏ qua (docs/10-lop-ve-code.md#đo-trên-cảnh-three)`,
-          );
-        }
-      };
-      const on = scene && !scene.error ? scene : undefined;
-      try {
-        const samples = sceneSamples(rt, { characterOf });
-        for (const problem of [
-          ...sceneClashProblems(rt, {
-            characterOf,
-            codeLayers,
-            tol,
-            self,
-            samples,
-            world: on,
-            onWorld,
-          }),
-          ...(ratio === false
-            ? []
-            : sceneItemClashProblems(rt, { characterOf, codeLayers, tol, ratio, samples })),
-        ])
-          warn(`scenes/${name}.json: ${problem}`);
-      } catch (e) {
-        warn(`scenes/${name}.json: không đo được người 3D với đồ khối — ${e.message}`);
-      }
-      // Tay sai dáng: khuỷu thẳng, ngón chĩa vào nhau, lòng tay ngửa, lơ lửng trên mặt, chạm đầu người khác —
-      // docs/03-scene.md#tay-và-khuỷu
-      if (!arm.error && !arm.off)
-        try {
-          for (const problem of rig.sceneArmProblems(rt, {
-            ...arm,
-            characterOf: (m) => characterOf(m)?.character,
-            frame: on && ((t) => palmFrame(t, on)),
-          }))
-            warn(`scenes/${name}.json: ${problem}`);
-        } catch (e) {
-          warn(`scenes/${name}.json: không đo được tay sai dáng — ${e.message}`);
-        }
-      // Lòng bàn tay quay sai — docs/03-scene.md#lòng-bàn-tay
-      if (palm.error || palm.off) continue;
-      try {
-        for (const problem of rig.scenePalmProblems(rt, {
-          ...palm,
-          characterOf: (m) => characterOf(m)?.character,
-          frame: on && ((t) => palmFrame(t, on)),
-        }))
-          warn(`scenes/${name}.json: ${problem}`);
-      } catch (e) {
-        warn(`scenes/${name}.json: không đo được lòng bàn tay — ${e.message}`);
-      }
-      // Đích theo mốc thân, lòng tay theo ý định không đạt — docs/03-scene.md#bàn-tay-theo-ý-định
-      try {
-        for (const problem of rig.sceneAimProblems?.(rt, {
-          hold: palm.hold,
-          characterOf: (m) => characterOf(m)?.character,
-        }) ?? [])
-          warn(`scenes/${name}.json: ${problem}`);
-      } catch (e) {
-        warn(`scenes/${name}.json: không đo được đích theo mốc — ${e.message}`);
-      }
-    }
-  }
-  owner = null;
-
-  // Tay chân giật trên hình, đo đúng như hình vẽ ra; cảnh khớp `stickman.frozen` thì không đo.
-  // docs/03-scene.md#giật-trên-hình
+  else clash = { tol, ratio, self };
+  // Tay chân giật trên hình, đo đúng như hình vẽ ra — docs/03-scene.md#giật-trên-hình
   const snap = snapOptions(root);
   if (snap.error) bad(snap.error);
-  else if (!snap.off) {
-    const spans = shotSpans(root, scenesByName, sceneRuntime);
-    for (const name of Object.keys(scenesByName)) {
-      if (frozen.test(name) || !inFocus(name)) continue;
-      const rt = sceneRuntime(name);
-      if (!rt) continue;
+  const deep = Object.keys(scenesByName).filter((name) => !frozen.test(name) && inFocus(name));
+  const wanted = new Set(deep);
+  const spans =
+    snap.error || snap.off
+      ? {}
+      : Object.fromEntries(shotSpans(root, scenesByName, sceneRuntime, (n) => wanted.has(n)));
+  const opts = { clash, arm, palm, snap, spans };
+  const results = await deepScenes(
+    root,
+    deep,
+    {
+      ...opts,
+      scenesByName,
+      sceneRuntime,
+      charactersByName,
+      actionsByName,
+      animalsByName,
+      props: Object.fromEntries(props),
+      codeLayers,
+      world,
+      worldRel,
+    },
+    jobs,
+  );
+  // Mục `touch` lạ chỉ báo ở cảnh đầu tiên gặp nó
+  const touchSeen = new Set();
+  for (const part of ["move", "clash", "snap"])
+    for (const name of deep) {
       owner = name;
-      const characterOf = (m) =>
-        m.character ? charactersByName[m.character] : rig.defaultCharacter();
-      try {
-        const opts = { characterOf, ...snap, spans: spans.get(name) };
-        for (const problem of rig.sceneSnapProblems(rt, opts))
-          warn(`scenes/${name}.json: ${problem}`);
-      } catch (e) {
-        warn(`scenes/${name}.json: không đo được giật trên hình — ${e.message}`);
+      for (const { msg, touch, error } of results.get(name)[part]) {
+        if (touch !== undefined) {
+          if (touchSeen.has(touch)) continue;
+          touchSeen.add(touch);
+        }
+        (error ? bad : warn)(msg);
       }
     }
-  }
   owner = null;
 
   if (focus) {

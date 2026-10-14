@@ -328,6 +328,18 @@ interface Sample {
   step: string;
 }
 
+/** Khung `sceneSnaps` không đọc tới: ngoài mọi cặp khung lên hình */
+const SKIPPED: Sample = {
+  pts: null,
+  visible: false,
+  hip: null,
+  lift: 0,
+  flip: false,
+  ik: [0, 0],
+  straight: [0, 0],
+  step: "",
+};
+
 const LIFT_BITS = ["an", "af", "ln", "lf"] as const;
 const SIDES = ["R", "L"] as const;
 
@@ -604,8 +616,10 @@ export function sceneSnaps(rt: SceneRuntime, o: SnapOptions): Snap[] {
     const c = castCharacter(m, base);
     const h = c.rig.height;
     const b = body3(c);
+    // chỉ khung là đầu hay cuối của một cặp lên hình mới được đọc; khung khác để trống
     const S: Sample[] = [];
-    for (let i = 0; i <= n; i++) S.push(sample(c, sceneAt(rt, m.id, i / fps, h, b)));
+    for (let i = 0; i <= n; i++)
+      S.push(shown[i] || shown[i + 1] ? sample(c, sceneAt(rt, m.id, i / fps, h, b)) : SKIPPED);
     const joints: string[] = m.world && rt.lens ? J3 : J2;
     const windows = snapWindows(m);
     // dịch chuyển mỗi khung của từng khớp, pixel video theo khung cắt của khung sau; NaN là không đo

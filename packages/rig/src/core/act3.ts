@@ -650,8 +650,19 @@ function arm3(T: Trunk3, P: PoseIn, hands: ActHands | undefined, side: number) {
   return { ch, sh, elbow, wr, Re, Rw, dev, grip, v };
 }
 
+/** `pose3` theo từng mẫu `sp`: `actJoints` và `actPalms` hỏi cùng một mẫu nhiều lần */
+const pose3Memo = new WeakMap<ActInput, { c: ActCharacter; p: ReturnType<typeof solvePose3> }>();
+
 /** Khớp three (chưa đổi sang rig), khung bàn tay hai bên và hướng hông `Rr` của một người 3D; đích theo mốc đã giải */
 function pose3(c: ActCharacter, sp0: ActInput) {
+  const hit = pose3Memo.get(sp0);
+  if (hit?.c === c) return hit.p;
+  const p = solvePose3(c, sp0);
+  pose3Memo.set(sp0, { c, p });
+  return p;
+}
+
+function solvePose3(c: ActCharacter, sp0: ActInput) {
   const T0 = trunk3(c, sp0);
   if (!T0) return undefined;
   const sp = solveActing(T0, sp0).input;

@@ -116,6 +116,10 @@ quay gắt, hành động 2D trên người 3D, người lồng vào đồ, gi�
 In cảnh báo của cảnh khớp và **mọi lỗi** ở bất kỳ đâu; tập, tiếng, `retime`, file chưa commit, công cụ ngoài thì bỏ qua — chúng chỉ có ở lượt toàn bộ, chạy trước khi
 commit hay sau khi nâng rig. Regex không khớp cảnh nào là lỗi.
 
+Nhiều cảnh (regex khớp cả nhóm, hay lượt toàn bộ) thì phần đo sâu từng cảnh — người lồng vào đồ, tay,
+lòng tay, giật trên hình — chia cho nhiều luồng: mặc định nửa số nhân, không quá số GB RAM còn trống;
+`--jobs <số>` đặt tay. Một cảnh thì chạy một luồng.
+
 ### Những thứ `check` soi mà không lệnh nào khác soi
 
 Các kiểm tra sau bắt lỗi hợp lệ theo schema nhưng làm thiếu hình hoặc tiếng:
@@ -250,7 +254,10 @@ cảnh, người nền, đồ riêng của cảnh, đồ gắn lên người, �
 trả `Set3D`, để ở file mới cạnh nó), tool riêng ở file mới trong `tools/`. Việc chung của cảnh 3D — dựng người, đổi
 đồ theo `equip`, người nền, đèn, nạp phông, sân khấu — nằm ở `buildWorld` / `buildStage` của rig nên theo version
 rig mà đến; thiếu tuỳ chọn thì thêm ở studio, đừng sửa `Scene3D.tsx` hay `world.ts`. Máy có `/tmp` là tmpfs thì khai `"stickman": { "tmpdir": "~/.cache/remotion-tmp" }`
-trong `package.json`: `tools/webpack.mjs` đưa thư mục tạm của mọi lượt bundle ra đó. Sửa
+trong `package.json`: `tools/webpack.mjs` đưa thư mục tạm của mọi lượt bundle ra đó. Bundle của `pnpm frames`,
+`can-tay`, `thumbnails` (`tools/bundle.mjs`) xoá khi tool thoát; tool bị giết cứng thì lượt bundle sau xoá hộ (bundle
+ghi pid chủ, chủ còn chạy thì không đụng). Bundle của `remotion render` không thuộc diện đó: dọn thư mục `tmpdir` theo
+tuổi bằng `systemd-tmpfiles` hay cron. Sửa
 được việc chung (lỗi, tuỳ chọn mới của tool) thì đưa về `packages/cli/scaffold` của studio.
 Rig mới đổi độ dài chân thì `upgrade` chỉ nhắc, cảnh dời bằng một lệnh riêng —
 [Đổi độ dài chân](#đổi-độ-dài-chân).

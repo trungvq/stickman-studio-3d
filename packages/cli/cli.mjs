@@ -30,6 +30,8 @@ const USAGE = `stickman <lệnh> [thư mục]
   check         soi workspace: JSON hỏng, file trỏ tới không có, người 3D trượt, công cụ ngoài;
                 --scene <regex> chỉ soi cảnh có id khớp (cảnh báo của chúng + mọi lỗi),
                 bỏ tập, tiếng, git — nhanh, dùng sau khi sửa một cảnh
+                --jobs <số> số luồng đo sâu các cảnh (mặc định nửa số nhân, không quá số GB
+                RAM trống)
   retime        đo lại tiếng rồi ghi số vào cue khai \`after\` và mốc khai ở \`shot.marks\`;
                 --mark <cảnh>:<tên>=<giây> đặt tay một mốc
   reseat        rig đổi độ dài chân: dời \`y\` của người ngồi 2D để hông ở đúng chỗ cũ, người
@@ -108,7 +110,16 @@ if (cmd === "init") {
     }
   }
 } else if (cmd === "check") {
-  const r = await checkWorkspace({ dir, scene: value("scene") });
+  const jobs = value("jobs");
+  if (jobs !== undefined && !(Number(jobs) >= 1)) {
+    console.error(`--jobs phải là số nguyên dương, không phải \`${jobs}\``);
+    process.exit(1);
+  }
+  const r = await checkWorkspace({
+    dir,
+    scene: value("scene"),
+    jobs: jobs && Math.floor(Number(jobs)),
+  });
   const n = Object.entries(r.counts)
     .filter(([k]) => k !== "common")
     .map(([k, v]) => `${v} ${k}`)

@@ -6,6 +6,7 @@
   "type": "module",
   "files": [
     "cli.mjs",
+    "check-worker.mjs",
     "lib.mjs",
     "serve.mjs",
     "templates.mjs",

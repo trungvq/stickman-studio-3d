@@ -278,6 +278,14 @@ describe("check: người lồng vào vật trên cảnh three (`stickman.world`
     );
   });
 
+  it("đo sâu chia nhiều luồng ra đúng như một luồng, cùng thứ tự", async () => {
+    const dir = worldspace();
+    const one = await checkWorkspace({ dir, jobs: 1 });
+    const many = await checkWorkspace({ dir, jobs: 3 });
+    assert.ok(one.problems.length > 0);
+    assert.deepEqual(many.problems, one.problems);
+  });
+
   it("chia nhỏ mẫu khi vật dời nhanh: túi bay qua đầu giữa hai mẫu vẫn bị bắt", async () => {
     const r = await checkWorkspace({ dir: worldspace(), scene: "^bay$" });
     const got = clashes(r).map((p) => p.msg);
