@@ -1666,7 +1666,9 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   cầu mông lùi sau, thấp hơn khớp hông (`BUTT`), trong nhóm thân, màu quần — màu váy khi có váy, trừ tạp dề. Tới nửa
   bán kính đùi dưới gấu, khối hông lùi hẳn vào trong thân áo: mông chỉ phồng ra dưới gấu, không lồi qua
   lưng áo. Váy dựng khối trùm đùi bằng ống thon như đùi, gốc `cladThigh`, gối `cladThigh · 0,9 / 1,35`; cạp
-  liền mặt thân áo ở độ cao cạp, cả bề ngang lẫn bề sâu, thay `skirt.waist`: thân đi xuống váy không gờ. Vạt dài
+  liền mặt thân áo ở độ cao cạp, cả bề ngang lẫn bề sâu, thay `skirt.waist`: thân đi xuống váy không gờ — người que
+  cũng thế ([02](02-trang-phuc.md#váy-dựng-khối)). Khối thân áo
+  dừng `1` px dưới cạp, trong váy: phần áo thừa nằm sát mặt váy là vệt áo lòi qua váy. Vạt dài
   quấn và tạp dề ([02](02-trang-phuc.md#vạt-dài-quấn)) treo ở nhóm hông, trùm cả khối hông khi thân cúi.
 - **Nét tay chân trên thân.** Tay buông cách sườn áo `CLAD_GAP`, cẳng tay vắt trước bụng: vỏ viền chìm sau
   thân áo. Thân áo, khối hông, ống tay chân, bàn tay và giày có thêm nét bóng dáng dò ở hậu kỳ (`LIMB_SIL`,

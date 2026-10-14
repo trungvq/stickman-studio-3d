@@ -251,9 +251,15 @@ export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Buil
     if (!skirt || !b) return { shoulder, hip, splay: SPLAY3 };
     // nét tay người que bán kính `BONES3.limb` nhân bề dày, đầu nét tròn
     const limb = BONES3.limb * 10 * b.sleeve;
-    const aW = Math.max(1, skirt.waist - inset);
+    // cạp liền mặt thân áo như `sculptSkirt` nhận `body`
+    const torso = profile(garmentOf(garment), rig, inset).pts;
+    const [aW, dW] = profileAt(
+      torso,
+      torso.map(([a]) => TORSO_DEPTH * a),
+      -skirt.rise * h,
+    );
     const leg = b.trouser / 2;
-    const side = skirtSide(skirt, h, aW, TORSO_DEPTH * aW, rig.hipHalf, leg, leg, inset);
+    const side = skirtSide(skirt, h, aW, dW, rig.hipHalf, leg, leg, inset);
     const r = [limb, limb, limb] as const;
     return {
       shoulder,

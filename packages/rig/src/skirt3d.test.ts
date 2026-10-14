@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { act, type Acting } from './act';
 import { cladHand, CLAD_TAPER, cladThigh, roots3 } from './core/act3';
 import { RIG } from './core/constants';
+import { DEFAULT_WALK, walkPose } from './core/walk';
 import { defaultCharacter, limbWidths, parseCharacter, SkirtSchema, type CharacterData, type Skirt } from './core/schema';
 import type { Figure } from './stickman';
 import blue from '../../../apps/studio/public/characters/common-blue-blouse-skirt.json';
@@ -179,5 +180,106 @@ describe('váy dựng khối', () => {
         };
         expect(widest(yH - 3), `${clad} ${flare}`).toBeLessThan(widest(0));
       }
+  });
+
+  it('lúc đi: chân và vỏ viền của nó không lòi qua mặt trước, mặt sau váy tới gần gấu; khối thân áo dừng ở cạp', async () => {
+    for (const [name, sk] of [['ngang gối', KNEE], ['bút chì', PENCIL], ['dài 96', { length: 96, flare: 8, pleats: 0 }]] as const) {
+      const c = skirted(sk, true);
+      c.pieces.torso.garment = { ...c.pieces.torso.garment!, style: 'cardigan', hem: 0 };
+      const g = c.pieces.hem.skirt!, h = c.rig.height;
+      const { p } = await posed(c);
+      const torso = p.spine.children[0] as THREE.Mesh;
+      torso.geometry.computeBoundingBox();
+      expect(-torso.geometry.boundingBox!.min.y * 100, name).toBeLessThanOrEqual(-g.rise * h + 1.01);
+      for (let k = 0; k < 12; k++) {
+        const w = walkPose(k / 12, DEFAULT_WALK);
+        act(p, { ...rest(), pose: { ...rest().pose, lf: [w.lf[0], w.lf[1], 0], ln: [w.ln[0], w.ln[1], 0] } });
+        p.root.updateMatrixWorld(true);
+        p.root.traverse((o) => o.userData.bend?.());
+        p.root.updateMatrixWorld(true);
+        const mesh = p.skirt!.group.children[0] as THREE.Mesh;
+        const pos = mesh.geometry.attributes.position, idx = mesh.geometry.index!;
+        const faces: [THREE.Vector3, THREE.Vector3][] = [];
+        for (let i = 0; i < idx.count; i += 3) {
+          const [a, b, d] = [0, 1, 2].map((j) => new THREE.Vector3().fromBufferAttribute(pos, idx.getX(i + j)));
+          const n = new THREE.Triangle(a, b, d).getNormal(new THREE.Vector3());
+          if (Math.abs(n.z) > Math.abs(n.x) && n.y > -0.5) faces.push([n, a]);
+        }
+        const inv = mesh.matrixWorld.clone().invert();
+        for (const s of [-1, 1] as const)
+          for (const j of [p.legs[s].hip, p.legs[s].knee]) {
+            const limb = j.children.find((o) => (o as THREE.Mesh).isMesh && o.userData.limb) as THREE.Mesh;
+            const lp = limb.geometry.attributes.position, ln = limb.geometry.attributes.normal;
+            let out = 0;
+            for (let i = 0; i < lp.count; i++) {
+              const v = new THREE.Vector3().fromBufferAttribute(lp, i).applyMatrix4(limb.matrixWorld);
+              // chân chui ra ở gấu: bỏ dải sát gấu
+              if (-p.spine.worldToLocal(v.clone()).y * 100 > (g.length - g.rise) * h * 0.85) continue;
+              v.addScaledVector(new THREE.Vector3().fromBufferAttribute(ln, i).transformDirection(limb.matrixWorld), 0.026).applyMatrix4(inv);
+              if (Math.max(...faces.map(([n, a]) => n.dot(v.clone().sub(a)))) > 0) out++;
+            }
+            expect(out, `${name}, pha ${k}, chân ${s}`).toBe(0);
+          }
+      }
+    }
+  });
+
+  it('người que: khối thân áo dừng ở cạp, phần dưới cạp nằm trong váy', async () => {
+    const cases: [string, CharacterData][] = [['mặc định', skirted({}, false)], ['ngang gối', skirted(KNEE, false)]];
+    for (const c of samples()) cases.push([c.name, c]);
+    for (const [name, c] of cases) {
+      const { p, mesh } = await posed(c);
+      const yW = -c.pieces.hem.skirt!.rise * c.rig.height;
+      const torso = p.spine.children[0] as THREE.Mesh;
+      const pos = torso.geometry.attributes.position;
+      let out = 0;
+      for (let i = 0; i < pos.count; i++) {
+        const v = new THREE.Vector3().fromBufferAttribute(pos, i);
+        if (-v.y * 100 > yW + 0.01 && !inside(mesh, torso.localToWorld(v))) out++;
+      }
+      expect(out, name).toBe(0);
+    }
+  });
+
+  it('ngồi ghế, quỳ 正座: đùi, gối, ống chân không lòi qua mặt váy ngang gối', async () => {
+    const { fromCharacter } = await import('./stickman');
+    for (const clad of [false, true])
+      for (const [pose, leg] of [['ghế', [90, -90]], ['quỳ', [80, -170]]] as const)
+        for (const torso of [3, 15]) {
+          const p = fromCharacter(skirted(KNEE, clad) as unknown as Parameters<typeof fromCharacter>[0], { seated: true });
+          act(p, {
+            pose: { af: [0, 0, 0, 0], an: [0, 0, 0, 0], lf: [leg[0], leg[1], 0], ln: [leg[0], leg[1], 0], torso, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { lf: true, ln: true } },
+            world: { hip: [0, -100, 0], yaw: 1, s: 1, flip: false, seated: true },
+            mouth: 'closed', brow: 'neutral', eyes: 'open',
+          });
+          p.root.traverse((o) => o.userData.bend?.());
+          p.root.updateMatrixWorld(true);
+          const mesh = p.skirt!.group.children[0] as THREE.Mesh;
+          const pos = mesh.geometry.attributes.position, idx = mesh.geometry.index!;
+          const faces: [THREE.Vector3, THREE.Vector3][] = [];
+          for (let i = 0; i < idx.count; i += 3) {
+            const [a, b, d] = [0, 1, 2].map((j) => new THREE.Vector3().fromBufferAttribute(pos, idx.getX(i + j)));
+            faces.push([new THREE.Triangle(a, b, d).getNormal(new THREE.Vector3()), a]);
+          }
+          const inv = mesh.matrixWorld.clone().invert();
+          const beyond = (v: THREE.Vector3) => Math.max(...faces.map(([n, a]) => n.dot(v.clone().sub(a))));
+          const facing = (v: THREE.Vector3) => faces.reduce((f, g) => (g[0].dot(v.clone().sub(g[1])) > f[0].dot(v.clone().sub(f[1])) ? g : f))[0];
+          let worst = 0;
+          for (const s of [-1, 1] as const)
+            for (const j of [p.legs[s].hip, p.legs[s].knee])
+              for (const o of j.children) {
+                const m = o as THREE.Mesh;
+                if (!m.isMesh || (m.material as THREE.Material).side === THREE.BackSide) continue;
+                const mp = m.geometry.attributes.position, mn = m.geometry.attributes.normal;
+                for (let i = 0; i < mp.count; i++) {
+                  const v = new THREE.Vector3().fromBufferAttribute(mp, i).applyMatrix4(m.matrixWorld).applyMatrix4(inv);
+                  const n = new THREE.Vector3().fromBufferAttribute(mn, i).transformDirection(m.matrixWorld).transformDirection(inv);
+                  const out = beyond(v);
+                  // lòi qua mặt váy: mặt chân song song mặt váy, ra ngoài khối mà vào trong `6` px đã trong khối; chân chui ra ở miệng váy thì không tính
+                  if (out > 0 && facing(v).dot(n) > 0.7 && beyond(v.clone().addScaledVector(n, -0.06)) < 0) worst = Math.max(worst, out * 100);
+                }
+              }
+          expect(worst, `${clad ? 'mặc đồ' : 'người que'}, ${pose}, thân ${torso}°`).toBeLessThan(0.5);
+        }
   });
 });

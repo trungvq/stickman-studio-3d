@@ -5,7 +5,7 @@ import { hullMaterial, npr, surface } from './npr';
 import { canvasTexture } from './decal';
 import { path2D } from './canvas';
 import { WAKABA, type PrintArt, type PrintPart } from './core/print';
-import { APRON_LIFT, RIG, SKIRT_EASE, TORSO_DEPTH } from './core/constants';
+import { APRON_LIFT, D, RIG, SKIRT_EASE, TORSO_DEPTH } from './core/constants';
 import { apronBow, apronOf, drape, drapeAt, hemHang, hemReach, sectionFront, wrapHemEdge, wrapHemOf } from './core/hem';
 import type { Garment, Skirt } from './core/schema';
 import { profileAt, skirtCover, skirtFall, skirtSpread, skirtTube } from './core/skirtShape';
@@ -17,6 +17,8 @@ import { torsoMesh, type ArmRoom, type NeckWear, type Rig } from './torso';
 const U = 0.01;
 type Vec3 = [number, number, number];
 const v3 = ([x, y, z]: Vec3) => new THREE.Vector3(x * U, -y * U, z * U);
+/** Khối thân áo thò xuống dưới cạp váy bấy nhiêu px, trong váy */
+const TUCK_DEPTH = 1;
 
 interface Palette { color: string; accent?: string; ink: string; skin?: string }
 
@@ -37,15 +39,22 @@ function tubeMesh(pts: Vec3[], r: number, mat: THREE.Material, closed = false) {
 
 /**
  * Khối thân: tiết diện ellipse nửa rộng `profile`, nửa sâu `depth` từng hàng (nửa trước `front`), bịt hai đầu; `cut` thêm
- * một hàng ở độ cao ấy.
+ * một hàng ở độ cao ấy, `end` cắt khối ở độ cao ấy.
  */
-function bodyGeometry(profile: [number, number][], depth: number[], cut?: number, front = depth) {
-  const i = cut === undefined ? -1 : profile.findIndex(([, y]) => y > cut);
-  if (i > 0 && profile[i - 1][1] < cut!) {
-    const u = (cut! - profile[i - 1][1]) / (profile[i][1] - profile[i - 1][1]);
+function bodyGeometry(profile: [number, number][], depth: number[], cut?: number, front = depth, end = Infinity) {
+  const row = (y: number) => {
+    const i = profile.findIndex(([, py]) => py > y);
+    if (i <= 0 || profile[i - 1][1] >= y) return;
+    const u = (y - profile[i - 1][1]) / (profile[i][1] - profile[i - 1][1]);
     const at = (d: number[]) => [...d.slice(0, i), d[i - 1] + (d[i] - d[i - 1]) * u, ...d.slice(i)];
-    profile = [...profile.slice(0, i), [profile[i - 1][0] + (profile[i][0] - profile[i - 1][0]) * u, cut!], ...profile.slice(i)];
+    profile = [...profile.slice(0, i), [profile[i - 1][0] + (profile[i][0] - profile[i - 1][0]) * u, y], ...profile.slice(i)];
     [depth, front] = [at(depth), at(front)];
+  };
+  if (cut !== undefined) row(cut);
+  if (end < profile[profile.length - 1][1]) {
+    row(end);
+    const n = Math.max(2, profile.findIndex(([, y]) => y > end));
+    [profile, depth, front] = [profile.slice(0, n), depth.slice(0, n), front.slice(0, n)];
   }
   const N = 48;
   const pos: number[] = [];
@@ -192,7 +201,8 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
   const add = (m: THREE.Mesh) => (geos.add(m.geometry), spine.add(m));
   const tube = (pts: Vec3[], r: number, mat: THREE.Material, closed = false) => add(tubeMesh(pts, r, mat, closed));
 
-  const body = bodyGeometry(t.profile, t.depth, lap?.fold?.top, t.front);
+  // khối thân dừng ngay dưới cạp váy, trong váy: phần còn lại sát mặt váy thành vệt áo lòi qua váy; nắp trên của váy bịt miệng
+  const body = bodyGeometry(t.profile, t.depth, lap?.fold?.top, t.front, tuck + TUCK_DEPTH);
   const m = new THREE.Mesh(body, sil ? npr({ color, stipple: 0.05, stippleScale: 3, soft: 1, ink: sil }) : matOf('color'));
   m.castShadow = true;
   add(m);
@@ -294,16 +304,16 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
  * `body`: mặt cắt và bề sâu thân áo đã dựng (`sculptTorso`), có thì cạp liền mặt thân ở độ cao cạp thay `skirt.waist`. `legW`
  * bề ngang chân ở gốc đùi, `knee` nửa bề ngang ở gối (bỏ trống là `legW / 2`); vạt treo hông đọc bán kính ống chân thật ở gốc
  * đùi, gối, cổ chân `legR`. `seat`: đỉnh khối hông
- * (three, hệ thân) mà vạt treo hông phải trùm; `curve`: `palette.limbCurve`
+ * (three, hệ thân) mà vạt treo hông phải trùm; `curve`: `palette.limbCurve`. `legs`: hai chân trong hệ thân của váy `cone`
  */
-export interface SkirtOptions { skirt: Skirt; rig: Rig; color: string; ink: string; thighs: { hip: Vec3; dir: Vec3 }[]; legW: number; knee?: number; legR?: readonly [number, number, number]; body?: { profile: [number, number][]; depth: number[] }; seat?: ArrayLike<number>; curve?: number }
+export interface SkirtOptions { skirt: Skirt; rig: Rig; color: string; ink: string; thighs: { hip: Vec3; dir: Vec3 }[]; legW: number; knee?: number; legR?: readonly [number, number, number]; body?: { profile: [number, number][]; depth: number[] }; seat?: ArrayLike<number>; curve?: number; legs?: HemLeg[] }
 
 /**
  * Váy dựng khối của rig (`pieces.hem.skirt`): bao lồi của vành cạp, vành gấu và hai ống đùi tới tầm váy
  * phủ, như hình bao `buildSkirt` vẽ ở 2D; ống đùi thon theo đùi từ hông tới gối. `thighs` là hông và hướng đùi trong
  * hệ thân (px, y xuống). Mọi khối nằm trong một nhóm `userData.skirt` gắn vào `spine`; `fitSkirt` dựng lại nó theo đùi.
  */
-export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thighs, legW, knee = legW / 2, body }: SkirtOptions): THREE.Group {
+export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thighs, legW, knee = legW / 2, body, legs, legR, curve }: SkirtOptions): THREE.Group {
   const group = new THREE.Group();
   group.userData.skirt = true;
   spine.add(group);
@@ -349,7 +359,16 @@ export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thi
       pts.push([hip[0] + d.x * reach + o1.x, hip[1] + d.y * reach + o1.y + drop, hip[2] + d.z * reach + o1.z]);
     }
   });
-  let geo: THREE.BufferGeometry = new ConvexGeometry(pts.map(v3));
+  const lr = legR ?? ([legW / 2, knee, knee] as const);
+  // chân buông: mọi khúc đùi, gối, ống chân còn cao hơn gấu nằm trong váy, cả gối nhô ra khi bước
+  if (legs && hang > 0.05)
+    for (const leg of legs)
+      for (const p of legRings(leg, lr, curve ?? 1, SKIRT_EASE - inset)) if (p[1] <= yH) pts.push(p);
+  const [s0, s1] = LAP_SEAT.map((a) => Math.cos(a * D)), seat = Math.min(1, Math.max(0, (s0 - hang) / (s0 - s1)));
+  if (legs && seat > 0) legs.forEach((leg, i) => pts.push(...lapRings(leg, covers[i], tubes[i], lr, curve ?? 1, SKIRT_EASE - inset, seat)));
+  // bao lồi của three hỏng khi điểm trùng hay gần trùng (vòng gối của `legRings` và của lòng váy): gộp theo lưới `0,01` px
+  const seen = new Set<string>();
+  let geo: THREE.BufferGeometry = new ConvexGeometry(pts.filter((p) => { const k = p.map((v) => Math.round(v * 100)).join(); return !seen.has(k) && !!seen.add(k); }).map((p) => v3(p.map((v) => Math.round(v * 100) / 100) as Vec3)));
   geo.deleteAttribute('normal');
   geo.deleteAttribute('uv');
   geo = mergeVertices(geo);
@@ -386,20 +405,112 @@ const sub3 = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 const len3 = (a: Vec3) => Math.hypot(a[0], a[1], a[2]);
 const mix3 = (a: Vec3, b: Vec3, u: number): Vec3 => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u];
 
-/** Vòng `n` điểm bán kính `r` quanh trục `d` ở tâm `c` (px) */
-function ringAround(c: Vec3, d: Vec3, r: number, n: number): Vec3[] {
+/** Vòng `n` điểm bán kính `r` quanh trục `d` ở tâm `c` (px); `rUp` bán kính theo phương vuông góc với ngang `x` */
+function ringAround(c: Vec3, d: Vec3, r: number, n: number, rUp = r): Vec3[] {
   const dir = new THREE.Vector3(...d).normalize();
   const side = new THREE.Vector3(1, 0, 0).addScaledVector(dir, -dir.x).normalize();
   const up = new THREE.Vector3().crossVectors(dir, side).normalize();
   return Array.from({ length: n }, (_, j) => {
-    const a = (2 * Math.PI * j) / n, ca = Math.cos(a) * r, sa = Math.sin(a) * r;
+    const a = (2 * Math.PI * j) / n, ca = Math.cos(a) * r, sa = Math.sin(a) * rUp;
     return [c[0] + side.x * ca + up.x * sa, c[1] + side.y * ca + up.y * sa, c[2] + side.z * ca + up.z * sa] as Vec3;
   });
 }
 
+const add3 = (a: Vec3, b: Vec3, k = 1): Vec3 => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k];
+const bez3 = (c: Vec3[], u: number): Vec3 => {
+  const v = 1 - u, w = [v * v * v, 3 * v * v * u, 3 * v * u * u, u * u * u];
+  return [0, 1, 2].map((k) => c.reduce((s, p, i) => s + p[k] * w[i], 0)) as Vec3;
+};
+
+/** Đùi và ống chân cong theo `bendLimb` của người 3D: đoạn Bézier, điểm điều khiển nhô `curve / 6` đoạn kia */
+function legCurves({ hip, knee, foot }: HemLeg, curve: number): [Vec3[], Vec3[]] {
+  const f = curve / 6, td = sub3(knee, hip), sd = sub3(foot, knee), P2 = sub3(foot, hip);
+  return [[hip, add3(hip, td, f), add3(knee, P2, -f), knee], [knee, add3(knee, P2, f), add3(foot, sd, -f), foot]];
+}
+
+/** Ống `c` từ `u = 0` tới `u1`, bán kính `ra → rb` cộng `ease` (theo phương vuông góc với ngang `easeUp`): các vòng điểm vào `pts` */
+function tubeRings(pts: Vec3[], c: Vec3[], u1: number, ra: number, rb: number, ease: number, n: number, easeUp = ease) {
+  for (let i = 0; i <= n; i++) {
+    const u = (u1 * i) / n, r = ra + (rb - ra) * u;
+    const d = sub3(bez3(c, Math.min(1, u + 0.01)), bez3(c, Math.max(0, u - 0.01)));
+    pts.push(...ringAround(bez3(c, u), d, r + ease, 16, r + easeUp));
+  }
+}
+
+/** Lòng váy: đùi trung bình lệch trục thân từ góc đầu tới góc sau (độ) thì đầu gối dần vào trong váy (`lapRings`) */
+const LAP_SEAT = [30, 60] as const;
+/** Lòng váy: gối gập từ góc đầu tới góc sau (độ, `0` là chân thẳng) thì cả ống chân dưới phần đùi váy phủ dần vào trong váy */
+const LAP_FOLD = [120, 150] as const;
+
+/** Váy cách mặt trước, mặt sau của chân bấy nhiêu px: vòng bao thưa và có cạnh, chân cong không lòi qua giữa hai vòng */
+const LEG_CLEAR = 4.5;
+
+/**
+ * Điểm bao cả chân `leg`: đùi `r0 → r1`, ống chân `r1 → r2`, cả mút tròn của đùi nhô qua gối; ngang nở `ease` như ống đùi
+ * (`skirtSide` chốt bề ngang váy), trước sau nở `LEG_CLEAR`
+ */
+function legRings(leg: HemLeg, [r0, r1, r2]: readonly [number, number, number], curve: number, ease: number) {
+  const [thigh, shin] = legCurves(leg, curve), td = sub3(leg.knee, leg.hip), pts: Vec3[] = [];
+  tubeRings(pts, thigh, 1, r0, r1, ease, 12, LEG_CLEAR);
+  tubeRings(pts, shin, 1, r1, r2, ease, 12, LEG_CLEAR);
+  pts.push(...ringAround(add3(leg.knee, td, (r1 + 1) / (len3(td) || 1)), td, 0.55 * r1 + ease, 16, 0.55 * r1 + LEG_CLEAR));
+  return pts;
+}
+
+/**
+ * Lòng váy `cone` trên chân `leg`: mặt đùi cong theo chân vẽ tới tầm phủ `cover` (ống váy `ra → rb` của `skirtTube`), khúc
+ * ống chân dưới phần đùi ấy — cả ống khi gối gập quá `LAP_FOLD` (quỳ 正座), không thì khúc lấn vào ống váy, nhập dần theo
+ * độ lấn — và đầu gối tròn khi vạt phủ tới mút tròn của đùi, theo `seat` (`0` chân buông, `1` ngồi). Ngang nở `ease`, trên
+ * dưới `LEG_CLEAR` như `legRings`
+ */
+function lapRings(leg: HemLeg, cover: number, [ra, rb]: readonly [number, number], [, r1, r2]: readonly [number, number, number], curve: number, ease: number, seat: number) {
+  const [thigh, shin] = legCurves(leg, curve), td = sub3(leg.knee, leg.hip), lt = len3(td) || 1, d = td.map((v) => v / lt) as Vec3, pts: Vec3[] = [];
+  const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const along = (c: Vec3[], u: number) => dot(sub3(bez3(c, u), leg.hip), d);
+  // mặt đùi cong tới đúng tầm phủ đo dọc đùi thẳng
+  let [lo, hi] = [0, 1];
+  if (along(thigh, 1) <= cover) lo = 1;
+  else for (let i = 0; i < 12; i++) [lo, hi] = along(thigh, (lo + hi) / 2) > cover ? [lo, (lo + hi) / 2] : [(lo + hi) / 2, hi];
+  // mặt trên cách đùi `LEG_CLEAR` như ống chân, mặt dưới (trên mặt ghế) giữ như ống váy
+  const lift = ((LEG_CLEAR - ease) * seat) / 2;
+  for (let i = 1; i <= 8; i++) {
+    const u = (lo * i) / 8, t = Math.max(0, along(thigh, u)), s = sub3(bez3(thigh, Math.min(1, u + 0.01)), bez3(thigh, Math.max(0, u - 0.01)));
+    const axis = mix3(d, s.map((v) => v / (len3(s) || 1)) as Vec3, seat), up = add3([0, -1, 0], axis, axis[1] / (dot(axis, axis) || 1)), r = ra + ((rb - ra) * t) / (cover || 1) - 0.3;
+    pts.push(...ringAround(add3(mix3(add3(leg.hip, d, t), bez3(thigh, u), seat), up, lift / (len3(up) || 1)), axis, r, 16, r + lift));
+  }
+  // mút tròn gốc đùi chĩa ra sau hông khi ngồi
+  pts.push(...ringAround(add3(leg.hip, d, -0.5 * ra * seat), d, ra * (1 - 0.25 * seat), 16));
+  const sd = sub3(leg.foot, leg.knee), [c0, c1] = LAP_FOLD.map((a) => Math.cos(a * D));
+  const fold = Math.min(1, Math.max(0, (c0 - dot(sd, d) / (len3(sd) || 1)) / (c0 - c1)));
+  let front = lt;
+  for (let i = 0; i <= 8; i++) front = Math.max(front, along(thigh, 0.5 + i / 16));
+  // đầu gối tròn: vạt phủ tới mút tròn của đùi thì trùm dần cả gối và đầu ống chân dưới gối
+  const e = seat * Math.min(1, Math.max(0, (cover - lt + r1) / (r1 / 2))), end = cover + e * (front + r1 + 1 - cover);
+  if (e > 0) pts.push(...ringAround(add3(leg.hip, d, end), d, rb + (0.55 * r1 + ease - rb) * e, 16, rb + (0.55 * r1 + LEG_CLEAR - rb) * e));
+  const ring = (u: number) => {
+    const P = bez3(shin, u), t = dot(sub3(P, leg.hip), d), tc = Math.min(cover, Math.max(0, t)), A = add3(leg.hip, d, tc), off = sub3(P, A);
+    const R = ra + ((rb - ra) * tc) / (cover || 1), rs = r1 + (r2 - r1) * u;
+    const w = Math.min(t > cover ? e : seat, seat * Math.max(fold, Math.min(1, Math.max(0, (R + rs - len3(off)) / rs))));
+    if (w < 0.05) return;
+    const s = sub3(bez3(shin, Math.min(1, u + 0.01)), bez3(shin, Math.max(0, u - 0.01))), ls = len3(s) || 1, k = Math.sign(dot(s, d)) || 1;
+    const axis = d.map((v, j) => v * k * (1 - w) + (s[j] / ls) * w) as Vec3;
+    pts.push(...ringAround(add3(A, off, w), axis, R + (rs + LEG_CLEAR - R) * w, 16));
+  };
+  // thêm vòng ở đúng chỗ ống chân qua mút phần phủ và qua hông: khối đổi liền theo dáng
+  const us: number[] = [];
+  for (let i = 0, n = 16; i <= n; i++) {
+    const [u0, u1] = [(i - 1) / n, i / n], [t0, t1] = [along(shin, Math.max(0, u0)), along(shin, u1)];
+    if (i > 0) for (const b of [0, end]) if ((t0 - b) * (t1 - b) < 0) us.push(u0 + ((u1 - u0) * (b - t0)) / (t1 - t0));
+    if (t1 >= 0 && t1 <= end) us.push(u1);
+  }
+  us.forEach(ring);
+  return pts;
+}
+
 /**
  * Điểm bao của vạt treo hông trong hệ hông (px, y xuống): vành cạp và thân áo dưới cạp, khối hông (theo nhóm thân), hai
- * ống chân tới tầm vạt phủ (`hemReach`). `lift` nở mọi khối thêm bấy nhiêu px. Trả cả cạp (hệ thân) và hàm đổi hệ thân → hệ hông
+ * ống chân tới tầm vạt phủ (`hemReach`); `wrap` bỏ phần khối hông, ống chân cao hơn cạp mà còn trong thân áo. `lift` nở mọi
+ * khối thêm bấy nhiêu px. Trả cả cạp (hệ thân) và hàm đổi hệ thân → hệ hông
  */
 function hipHull(o: Omit<SkirtOptions, 'thighs'>, pose: HemPose, lift: number) {
   const { skirt: g, rig, body, legW } = o;
@@ -428,6 +539,7 @@ function hipHull(o: Omit<SkirtOptions, 'thighs'>, pose: HemPose, lift: number) {
       const [a, y] = body.profile[i];
       if (y > yW) ellipse(a + 0.5, body.depth[i] + 0.5, y, 48);
     }
+  const n0 = pts.length;
   if (o.seat)
     for (let i = 0; i < o.seat.length; i += 3) {
       const p: Vec3 = [o.seat[i] / U, -o.seat[i + 1] / U, o.seat[i + 2] / U];
@@ -438,37 +550,31 @@ function hipHull(o: Omit<SkirtOptions, 'thighs'>, pose: HemPose, lift: number) {
   const [r0, r1, r2] = o.legR ?? [legW / 2, legW / 2, legW / 2];
   const ease = SKIRT_EASE + lift;
   let hang = 0;
-  // chi cong theo `bendLimb` của người 3D: đoạn Bézier, điểm điều khiển nhô `limbCurve / 6` đoạn kia
-  const f = (o.curve ?? 1) / 6;
-  const bez = (c: Vec3[], u: number): Vec3 => {
-    const v = 1 - u, w = [v * v * v, 3 * v * v * u, 3 * v * u * u, u * u * u];
-    return [0, 1, 2].map((k) => c.reduce((s, p, i) => s + p[k] * w[i], 0)) as Vec3;
-  };
-  const add = (a: Vec3, b: Vec3, k = 1): Vec3 => [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k];
-  const tube = (c: Vec3[], u1: number, ra: number, rb: number) => {
-    const n = 6;
-    for (let i = 0; i <= n; i++) {
-      const u = (u1 * i) / n;
-      const d = sub3(bez(c, Math.min(1, u + 0.01)), bez(c, Math.max(0, u - 0.01)));
-      pts.push(...ringAround(bez(c, u), d, ra + (rb - ra) * u + ease, 16));
-    }
-    return bez(c, u1);
-  };
-  const ends = pose.legs.map(({ hip, knee, foot }) => {
-    const td = sub3(knee, hip), sd = sub3(foot, knee), P2 = sub3(foot, hip);
+  const tube = (c: Vec3[], u1: number, ra: number, rb: number) => (tubeRings(pts, c, u1, ra, rb, ease, 6), bez3(c, u1));
+  const ends = pose.legs.map((leg) => {
+    const { hip, knee, foot } = leg, td = sub3(knee, hip), sd = sub3(foot, knee);
     const angle = Math.acos(Math.max(-1, Math.min(1, td[1] / (len3(td) || 1))));
     const [cT, cS] = hemReach(g, h, angle, lt, ls);
     hang += hemHang(angle) / pose.legs.length;
-    const thigh = [hip, add(hip, td, f), sub3(knee, P2.map((v) => v * f) as Vec3), knee];
-    const shin = [knee, add(knee, P2, f), sub3(foot, sd.map((v) => v * f) as Vec3), foot];
+    const [thigh, shin] = legCurves(leg, o.curve ?? 1);
     const e1 = tube(thigh, Math.min(1, cT / (len3(td) || 1)), r0, r1);
     if (cS <= 0.5) {
       // vạt dừng ở gối: trùm cả đầu gối tròn
-      if (cT >= len3(td) - 0.5) pts.push(...ringAround(add(knee, td, (r1 + 1) / (len3(td) || 1)), td, 0.55 * r1 + ease, 16));
+      if (cT >= len3(td) - 0.5) pts.push(...ringAround(add3(knee, td, (r1 + 1) / (len3(td) || 1)), td, 0.55 * r1 + ease, 16));
       return e1;
     }
     return tube(shin, Math.min(1, cS / (len3(sd) || 1)), r1, r2);
   });
+  // cạp thấp hơn hông: điểm cao hơn cạp còn trong thân áo nở `ease` kéo bao lên nằm sát dưới mặt áo, lòi qua thành răng cưa
+  const back = pose.spine.clone().invert();
+  const above = ([x, y, z]: Vec3) => {
+    tmp.set(x * U, -y * U, z * U).applyMatrix4(back);
+    const ys = -tmp.y / U;
+    if (ys >= yW) return false;
+    const [a, d] = body ? profileAt(body.profile, body.depth, ys) : [aW, dW];
+    return Math.hypot(tmp.x / U / (a + ease), tmp.z / U / (d + ease)) <= 1;
+  };
+  if (g.style === 'wrap') pts.push(...pts.splice(n0).filter((p) => !above(p)));
   return { pts, ends, hang, aW, dW, yW, toHip };
 }
 

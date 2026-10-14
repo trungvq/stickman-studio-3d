@@ -4,7 +4,7 @@ import { act, type Acting } from './act';
 import { APRON_GRID } from './garment';
 import { cladHand, roots3 } from './core/act3';
 import { RIG } from './core/constants';
-import { defaultCharacter, limbWidths, SkirtSchema, type CharacterData, type Skirt } from './core/schema';
+import { defaultCharacter, GarmentSchema, limbWidths, SkirtSchema, type CharacterData, type Skirt } from './core/schema';
 import type { Figure } from './stickman';
 
 beforeAll(() => {
@@ -143,6 +143,33 @@ describe('vạt dài quấn', () => {
       // dài gần hết vạt: từ trên hông xuống gần gấu
       expect(Math.min(...pts.map((v) => v.y))).toBeLessThan(5);
       expect(Math.max(...pts.map((v) => v.y))).toBeGreaterThan(150);
+    }
+  });
+
+  it('cạp thấp hơn hông: vạt không lên trên cạp, không nằm sát dưới mặt thân áo', async () => {
+    const c = dressed({ style: 'wrap', rise: -28, length: 140, flare: 3, pleats: 0 });
+    c.pieces.torso.garment = GarmentSchema.parse({ style: 'wrap', hem: 36, ease: 13, wrap: { band: 7, open: { gap: 18 } } });
+    const yW = 28 * c.rig.height;
+    for (const sp of [STAND, ...STRIDES, pose([0, 0], [0, 0], 30), pose([80, -170], [80, -170], 3, true)]) {
+      const p = await posed(c, sp);
+      const mesh = p.skirt!.group.children[0] as THREE.Mesh;
+      const pos = mesh.geometry.attributes.position;
+      const ys = Array.from({ length: pos.count }, (_, i) => -p.spine.worldToLocal(mesh.localToWorld(new THREE.Vector3().fromBufferAttribute(pos, i))).y * 100);
+      const label = `chân ${sp.pose.ln}/${sp.pose.lf}, thân ${sp.pose.torso}°`;
+      // ngồi thì đùi ra trước cao hơn cạp: vạt phủ lòng cắt qua mặt trước và hai sườn áo, chỉ đo lưng
+      const seated = !!sp.world!.seated;
+      if (!seated) expect(Math.min(...ys), label).toBeGreaterThan(yW - 0.01);
+      const torso = p.spine.children[0] as THREE.Mesh;
+      const tp = torso.geometry.attributes.position, tn = torso.geometry.attributes.normal;
+      let near = 0;
+      for (let i = 0; i < tp.count; i++) {
+        const v = new THREE.Vector3().fromBufferAttribute(tp, i);
+        if (-v.y * 100 > yW - 6 || (seated && v.z * 100 > -20)) continue;
+        // lùi vào trong mặt áo 3 px: chỗ ấy còn trong vạt là vạt nằm sát dưới mặt áo, viền và bóng lòi qua thành răng cưa
+        v.addScaledVector(new THREE.Vector3().fromBufferAttribute(tn, i), -0.03);
+        if (inside(mesh, torso.localToWorld(v))) near++;
+      }
+      expect(near, label).toBe(0);
     }
   });
 

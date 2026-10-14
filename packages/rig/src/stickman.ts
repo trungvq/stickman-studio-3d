@@ -437,7 +437,7 @@ export function stickman(o: StickmanOptions): Figure {
   // tạp dề mặc ngoài quần: thân áo, vạt áo người ngồi và khối hông như không có váy
   const dressed = skirt?.style === 'apron' ? undefined : skirt;
   const lap = seated ? (dressed ? { seat: -dressed.rise * rig.height } : { seat: seatAt, fold: { top: -(thighTop + 1), dir: [-0.1, 1] as [number, number] } }) : undefined;
-  const body = sculptTorso(spine, { garment, rig, color, accent, skin, ink: INK, arm: at.room, lap, ...((o.drape || o.shades) && { neck: { drape: o.drape, shades: o.shades, color: o.drapeColor ?? color } }), ...(clad && { sil: LIMB_SIL }), ...(clad && dressed && { tuck: -dressed.rise * rig.height }) });
+  const body = sculptTorso(spine, { garment, rig, color, accent, skin, ink: INK, arm: at.room, lap, ...((o.drape || o.shades) && { neck: { drape: o.drape, shades: o.shades, color: o.drapeColor ?? color } }), ...(clad && { sil: LIMB_SIL }), ...(dressed && { tuck: -dressed.rise * rig.height }) });
   // khối thân áo là mảnh đầu tiên: `collide` lấy hộp thân từ nó
   spine.children[0].userData.torso = true;
   spine.children[0].userData.inkGap = Math.max(...body.depth) / 100;
@@ -448,7 +448,7 @@ export function stickman(o: StickmanOptions): Figure {
     const leg = (k: number) => (thighR * CLAD_TAPER.leg[k]) / CLAD_TAPER.leg[0];
     const seat = clad ? pelvisGeometry(body.profile, body.depth, at.hip, thighR / 100).attributes.position.array : undefined;
     const legR = clad ? ([thighR, leg(1), leg(2)] as const) : ([0, 0, 0].map(() => limbR(trouserWidth) * 100) as [number, number, number]);
-    const opts = { skirt: matchWrap(skirt, garment), rig, color: skirtColor, ink: INK, legW: clad ? 2 * thighR : trouserWidth, legR, curve: limbCurve, ...(clad && { body, knee: leg(1), seat }) };
+    const opts = { skirt: matchWrap(skirt, garment), rig, color: skirtColor, ink: INK, legW: clad ? 2 * thighR : trouserWidth, legR, curve: limbCurve, body, ...(clad && { knee: leg(1), seat }) };
     if (hangsFromHip(skirt)) {
       const [lt, ls] = [B.thigh * 100, B.shin * 100];
       const legs = SIDES.map((s): HemLeg => {
@@ -678,27 +678,33 @@ export function fitSkirt(p: Figure) {
   }
   if (!sk) return;
   if (sk.hip) return fitHipHem(p, sk);
-  const key = thighs.map(({ hip, dir }) => [...hip.map((v) => Math.round(v * 10)), ...dir.map((v) => Math.round(v * 1000))].join(',')).join(';');
+  const legs = legsIn(p, toSpine);
+  const key = [...thighs.map(({ hip, dir }) => [...hip.map((v) => Math.round(v * 10)), ...dir.map((v) => Math.round(v * 1000))].join(',')), ...legs.flatMap((l) => [...l.knee, ...l.foot].map((v) => Math.round(v * 2)))].join(';');
   if (key === sk.key) return;
   sk.key = key;
   const parent = sk.group.parent!;
   sk.group.removeFromParent();
   sk.group.traverse((o) => (o as THREE.Mesh).geometry?.dispose());
-  sk.group = sculptSkirt(parent, { ...sk.opts, thighs });
+  sk.group = sculptSkirt(parent, { ...sk.opts, thighs, legs });
   sk.group.traverse(bodyMark);
   sk.group.updateMatrixWorld(true);
 }
 
-const kneeAt = new THREE.Matrix4(), footAt = new THREE.Vector3();
-/** Vạt treo hông: dựng lại theo nhóm thân và hai chân trong hệ hông */
-function fitHipHem(p: Figure, sk: NonNullable<Figure['skirt']>) {
+const kneeAt = new THREE.Matrix4(), footAt = new THREE.Vector3(), legAt = new THREE.Vector3();
+/** Hai chân của `p` (px, y xuống) trong hệ có ma trận `frame` so với nhóm hông: hông, gối, cổ chân */
+function legsIn(p: Figure, frame = new THREE.Matrix4()) {
   const px = (v: THREE.Vector3): Vec3 => [v.x * 100, -v.y * 100, v.z * 100];
-  const legs = SIDES.map((s): HemLeg => {
+  return SIDES.map((s): HemLeg => {
     const { hip, knee, ankle } = p.legs[s];
     kneeAt.multiplyMatrices(hip.matrix, knee.matrix);
-    footAt.copy(ankle?.position ?? new THREE.Vector3(0, -p.bones.shin, 0)).applyMatrix4(kneeAt);
-    return { hip: px(new THREE.Vector3().setFromMatrixPosition(hip.matrix)), knee: px(new THREE.Vector3().setFromMatrixPosition(kneeAt)), foot: px(footAt) };
+    footAt.copy(ankle?.position ?? new THREE.Vector3(0, -p.bones.shin, 0)).applyMatrix4(kneeAt).applyMatrix4(frame);
+    return { hip: px(legAt.setFromMatrixPosition(hip.matrix).applyMatrix4(frame)), knee: px(legAt.setFromMatrixPosition(kneeAt).applyMatrix4(frame)), foot: px(footAt) };
   });
+}
+
+/** Vạt treo hông: dựng lại theo nhóm thân và hai chân trong hệ hông */
+function fitHipHem(p: Figure, sk: NonNullable<Figure['skirt']>) {
+  const legs = legsIn(p);
   const key = [...p.spine.matrix.elements.slice(0, 11).map((v) => Math.round(v * 1000)), ...legs.flatMap((l) => [...l.knee, ...l.foot].map((v) => Math.round(v * 2)))].join(',');
   if (key === sk.key) return;
   sk.key = key;

@@ -1444,11 +1444,14 @@ ellipse nửa rộng `waist`, sâu `TORSO_DEPTH` lần như khối thân, cao h�
 vành cạp nở đều `flare` ra mọi phía — nhìn nghiêng váy xoè gần bằng nhìn thẳng — thấp hơn
 cạp `length`. Hình bao là bao lồi của hình chiếu hai vành ấy cùng hai đùi, nên một bộ số
 khớp khối thân ở mọi nấc, kể cả `quarter` có `cast[].turn` lớn, không có bộ chỉnh theo góc.
+Người 3D, người que lẫn người mặc đồ, không đọc `waist`: cạp liền mặt thân áo dựng khối ở độ cao cạp, cả bề
+ngang lẫn bề sâu, nhô nửa px, và khối thân áo dừng `1` px dưới cạp, trong váy — thân đi xuống váy không gờ, vạt áo
+không lòi qua mặt váy.
 
 | Trường | Mặc định | Nghĩa |
 |---|---:|---|
 | `rise` | 27 | Cạp cao hơn hông bấy nhiêu px, nhân `rig.height` |
-| `waist` | 40 | Nửa rộng cạp |
+| `waist` | 40 | Nửa rộng cạp ở 2D, 2.5D; người 3D cạp theo thân áo |
 | `length` | 52 | Gấu thấp hơn cạp bấy nhiêu px khi đùi buông thẳng, nhân `rig.height` |
 | `flare` | 12 | Gấu rộng hơn cạp bấy nhiêu px mỗi bên; âm là gấu hẹp hơn cạp |
 | `pleats` | 8 | Số nếp chia đều quanh khối; `0` là trơn |
@@ -1471,6 +1474,15 @@ khớp khối thân ở mọi nấc, kể cả `quarter` có `cast[].turn` lớn
   đùi lên `1` khi tới gối (`skirtFall`): váy ngắn ngồi nằm trên đùi, không rủ xuống mặt ghế. Sải chân thì váy giãn theo
   đùi trước và đùi sau, chân không xuyên ra hai bên; ngồi thì váy phủ lên lòng tới quá nửa
   đùi. Người 3D đo tầm phủ trên đùi thật rồi đổi ra phần ấy của đùi đã chiếu.
+  Người 3D đứng, đi còn trùm thêm mọi khúc đùi, đầu gối tròn và ống chân cao hơn gấu, cong như chân vẽ
+  (`palette.limbCurve`): ngang nở như ống đùi, trước sau cách chân `4,5` px, nên váy ngang gối lúc bước không lộ
+  gối qua mặt váy.
+  Người 3D ngồi thì lòng váy theo mặt đùi cong như chân vẽ tới tầm phủ, trùm mút tròn gốc đùi chĩa ra sau hông và ống
+  chân nằm dưới phần đùi váy phủ: gối gập quá `120°`, đủ ở `150°` (`LAP_FOLD`, quỳ 正座) thì cả khúc ống chân ấy, không
+  thì chỉ khúc lấn vào ống váy; vạt phủ quá mút đùi trừ bán kính gối (`lt − r`, đủ ở `lt − r / 2`) thì trùm cả đầu
+  gối tròn và đầu ống chân dưới gối. Mặt trên lòng váy và chỗ phủ ống chân cách chân `4,5` px như trước sau lúc đi, mặt
+  dưới đùi (trên mặt ghế) giữ như ống đùi. Phần ấy vào dần khi đùi trung bình lệch trục thân từ `30°` tới `60°`
+  (`LAP_SEAT`): đứng, đi không đổi, ngồi xuống không nhảy hình.
 - **Nếp** là đoạn thẳng trên mặt nón từ `0.3` tới `0.9` quãng cạp–gấu, ở kinh độ giữa hai
   nếp chia đều, chỉ vẽ ở chỗ quay ra người xem ít nhất `0.5`: nhìn sau chỉ thấy nếp lưng.
   Vành gấu co hết (đùi ngang) thì không còn nếp; lòng váy lúc ngồi trơn.
@@ -1509,8 +1521,9 @@ hông rồi thon về gấu theo ống đùi. `flare` âm quá mức ấy không
 
 Không mô phỏng vải: khối váy là **một bao lồi**, nên không có dáng lõm — váy đuôi cá, váy tầng, eo
 thắt giữa vạt đều không dựng được; hai chân sải rộng thì váy giãn thành một khối căng giữa hai đùi chứ
-không xếp nếp. Lòng váy lúc ngồi mép dưới thẳng từ mông tới mút đùi, và đùi chĩa lên quá ngang thì váy
-chỉ còn ôm hông. Váy dài quá gối lúc ngồi chỉ phủ lòng tới gối: phần vải rủ từ gối xuống không dựng. Studio chọn ở ô Tà áo (ô Váy dựng khối
+không xếp nếp. Lòng váy lúc ngồi của người 2D mép dưới thẳng từ mông tới mút đùi, của người 3D ôm theo ống chân
+gập bên dưới; đùi chĩa lên quá ngang thì váy chỉ còn ôm hông. Váy dài quá gối lúc ngồi chỉ phủ lòng tới gối: phần vải
+rủ từ gối xuống không dựng. Studio chọn ở ô Tà áo (ô Váy dựng khối
 đầu lưới đặt `src: "sculpt"`, `layer: "under"`); thẻ khi ấy
 chỉ còn màu váy, một thanh cho mỗi số và ô Vẽ dưới thân áo.
 
@@ -1542,6 +1555,9 @@ hai ống chân cong đúng như chân người 3D vẽ (`palette.limbCurve`) t�
   `HEM_HANG[1]` (`70°`) thì chỉ phủ đùi tới hết đầu gối (`hemHang`): ngồi ghế, quỳ 正座 vạt dừng ở gối, ống chân là ống
   quần — đặt `palette.trouser` cùng màu vải thì đọc như vạt rủ. Không dựng phần vải rủ từ gối xuống lúc ngồi. Vành gấu
   co theo cùng tỉ lệ.
+- **Cạp thấp hơn hông** (`rise` âm, cạp giấu dưới áo khoác dài): điểm khối hông và ống chân cao hơn cạp mà còn trong
+  thân áo nở `SKIRT_EASE` không vào bao, nên vạt không lên trên cạp nằm sát dưới mặt áo. Ngồi thì phần đùi chĩa ra
+  khỏi thân áo vẫn vào bao: vạt phủ lòng. Thân áo dài quá cạp, kể cả áo khoác vạt mở, dừng ở cạp trong vạt như `cone`.
 - Tay buông choãi tới khi nằm ngoài vạt đứng thẳng, như `cone` (`skirtSide`, [01](01-rig.md#người-3d-mặc-đồ)).
 - 2D và 2.5D vẽ kiểu này như khối `cone` cùng số.
 
