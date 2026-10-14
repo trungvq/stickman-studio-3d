@@ -108,6 +108,20 @@ const table =
   (_id, at: V3) =>
     Math.abs(at[0]) > 60 && Math.abs(at[0]) < 160 ? { gap: top - at[1], name: "bàn" } : null;
 
+describe("stand-3d: khuỷu gập tự nhiên", () => {
+  it("khuỷu 150–160° suốt nhịp thở, không báo gì", () => {
+    const rt = one([STAND]);
+    for (const t of [0, 0.4, 0.8, 1.6, 3]) {
+      const J = actJoints(clad, sceneAt(rt, "a", t, clad.rig.height, body3(clad)))!;
+      for (const k of ["R", "L"] as const) {
+        expect(elbowAngle(J, k)).toBeGreaterThan(150);
+        expect(elbowAngle(J, k)).toBeLessThan(160);
+      }
+    }
+    expect(sceneArms(rt, { characterOf })).toEqual([]);
+  });
+});
+
 describe("sceneArms: tay sai dáng", () => {
   it("tay buông thẳng như que: khuỷu thẳng kiểu tay buông, gợi ý đổi dáng đứng", () => {
     const got = sceneArms(one([STICK]), { characterOf });

@@ -1808,7 +1808,7 @@ Bộ chung soạn ở `side` (`authoredAt: "side"`) cho người 3D:
 
 | File | |
 |---|---|
-| `stand-3d` | Đứng thở: tay buông dọc thân, thân nhích theo nhịp thở |
+| `stand-3d` | Đứng thở: tay buông dọc thân, vai thả, cánh tay hơi ra sau (`−6°`) và khuỷu gập `24–27°` (góc khuỷu `153–156°`) — tay khỏi thẳng như que mà cổ tay vẫn ở chỗ cũ, không lấn vào quầy trước mặt; lòng tay quay vào đùi; thân nhích theo nhịp thở |
 | `walk` | Chu kỳ đi, `walkCycle` đọc ở `side` |
 | `sit-3d` | Ngồi: đùi ngang, ống chân thõng, tay buông; ghép với người ngồi (`world.sit`) |
 | `arms-on-table-3d` | Đặt tay lên bàn: đích cổ tay hệ thân `[100, −56, 22]`, thân cúi `5`, bàn tay dáng nghỉ úp (`turn` `20`, `bend` `−5`) nằm trên mặt bàn. Bàn khác cao thì scene đặt `world.hands` |

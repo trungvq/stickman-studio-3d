@@ -9,8 +9,8 @@
     {
       "t": 0,
       "pose": {
-        "armFar": [3, 8, 0],
-        "armNear": [3, 8, 0],
+        "armFar": [-6, 24, 0],
+        "armNear": [-6, 24, 0],
         "legFar": [1, 0],
         "legNear": [-1, 0],
         "torso": 0
@@ -20,8 +20,8 @@
     {
       "t": 0.5,
       "pose": {
-        "armFar": [4, 10, 0],
-        "armNear": [4, 10, 0],
+        "armFar": [-5, 27, 0],
+        "armNear": [-5, 27, 0],
         "legFar": [1, 0],
         "legNear": [-1, 0],
         "torso": 1.5
