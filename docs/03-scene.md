@@ -1173,6 +1173,19 @@ Ngưỡng ở `package.json` của repo video (độ, độ, giây), trường t
 
 Mức cảnh báo. Cảnh khớp `stickman.frozen` không đo; `--scene` chỉ đo cảnh khớp.
 
+Muốn **nhìn** dáng bàn tay thì đừng phán trên khung toàn cảnh (bàn tay 30–60 px): `pnpm can-tay` (`tools/can-tay.mjs`)
+đo bàn tay bằng `scene_probe`, đặt ống kính sát từng bàn tay từ trước mặt, chéo, ngang hông người ấy (thêm sau lưng khi tay
+ở sau thân), vẽ sân khấu 3D thật của cảnh — ngón, đồ cầm, đồ đặt, không lớp chữ 2D — rồi ghép mỗi cảnh một bảng
+`tmp/can-tay/<cảnh>.jpg`: hàng là một bàn tay ở một giây, cột là một góc, nhãn in `faces`, `down`, `gap` của probe. Hai bàn
+tay cách nhau dưới `70` chụp chung một ô.
+
+```bash
+pnpm can-tay <cảnh> 1.8,2.7 [<cảnh-2> 0.4 …] [--ai a,b] [--goc truoc,cheo,ngang,sau,tren] [--khung 110] [--out dir] [--tab N]
+```
+
+`--khung` là chiều cao vùng thấy quanh bàn tay, đơn vị thế giới rig. Cùng đường render với `pnpm frames` (composition
+`soi`, ống kính đè từng ô); máy đặt sát nên có ô bị người khác hay đồ đạc che — xem ô góc khác.
+
 ## Bàn tay theo ý định
 
 Đích theo mốc thân và lòng tay khai theo ý định ([01](01-rig.md#đích-theo-mốc),
@@ -1321,8 +1334,15 @@ composition; `calculateMetadata` gọi `parseScene` và `resolveScene` để l�
 pnpm remotion
 pnpm render <scene> out/<scene>.mp4
 pnpm still <scene> out/<scene>.png --frame=105
-pnpm frames <scene> 105,140-142
+pnpm frames <scene> 105,140-142 [<scene-2> 30,90 …] [thư mục ra] [--tab N]
 ```
+
+`pnpm frames` (`tools/still.mjs`) chụp nhiều khung của nhiều cảnh trong một lượt bundle: entry riêng
+`tools/soi.tsx` thêm composition `soi` mà khung thứ `i` là việc thứ `i` (cảnh, khung), không dựng `Root` (tính độ dài mọi
+cảnh và mọi tập — hàng chục giây mỗi trang ở repo trăm cảnh). Việc cùng cảnh xếp liền nhau, chia thành dải, mỗi dải một
+tab chạy song song (`--tab`, mặc định nửa số nhân): mỗi tab dựng cảnh 3D một lần rồi chỉ tua, sang cảnh khác mới dựng lại.
+Ảnh ra trùng từng pixel với `pnpm still`. Id không phải cảnh (tập, thumbnail) thì chụp thẳng composition ấy, chậm hơn vì
+phải dựng `Root`. Soi một lô nhiều cảnh thì gom vào **một** lần gọi. Bundle xoá khi xong.
 
 Repo chứa nhiều tập thì gom sidebar Studio theo tập bằng `stickman.folders` trong
 `package.json`: một regex, đoạn khớp đầu của id composition là tên thư mục.

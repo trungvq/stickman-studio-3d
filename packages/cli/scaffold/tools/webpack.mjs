@@ -25,7 +25,7 @@ export function commonDir() {
   return dir;
 }
 
-/** Dùng chung cho `remotion.config.ts`, `tools/still.mjs` và `tools/thumbnails.mjs` — mọi đường bundle phải cùng alias */
+/** Dùng chung cho `remotion.config.ts`, `tools/soi.mjs` và `tools/thumbnails.mjs` — mọi đường bundle phải cùng alias */
 export const webpackOverride = (c) => ({
   ...c,
   resolve: {

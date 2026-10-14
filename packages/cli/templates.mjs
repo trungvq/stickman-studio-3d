@@ -72,7 +72,9 @@ vừa làm gì.
 - Đặt tay lên một mặt (quầy, sách, bàn phím, bàn) hay đổi \`turn\` / \`elbow\` xong thì
   đọc \`world.palms\` của \`scene_probe\` (lòng tay \`úp\`, \`down\` dưới 45; \`aim\` là khe tới
   mốc và độ lệch còn lại so với \`palm\` đã khai), đừng phán hướng lòng tay bằng mắt —
-  \`docs 01\` § Hướng lòng bàn tay.
+  \`docs 01\` § Hướng lòng bàn tay. Muốn nhìn tận mắt dáng bàn tay người 3D thì
+  \`pnpm can-tay <ten> <giây,…>\`: bảng ảnh cận từng bàn tay từ trước, chéo, ngang, kèm hướng lòng tay đo
+  được — đừng phán dáng tay trên khung toàn cảnh, ở đó bàn tay chỉ 30–60 px.
 - Sửa xong một cảnh thì \`check\` đúng cảnh ấy: MCP \`check({ scene: "<ten>" })\` hay
   \`pnpm exec stickman check --scene <ten>\` (regex trên id cảnh) — vài giây, bắt người
   lồng vào đồ, chân trượt, hành động 2D trên người 3D, tay chân giật trên hình, lòng bàn tay quay sai. \`check\` cả workspace chậm, để dành trước khi commit hay sau khi nâng rig.
@@ -80,6 +82,8 @@ vừa làm gì.
   (\`stand-3d\`, \`sit-3d\`, bản \`-3d\` của repo), cả ở track thân từ giây 0 thay cho clip
   rỗng. Chỗ cố ý giật (giật mình, đập bàn) khai \`"snap": true\` ở hành động, ở clip hay ở
   mốc \`world.hands\` — \`docs 03\` § Giật trên hình.
+- Khung thật của app Remotion (cả lớp chữ của repo): \`pnpm frames <ten> 10,60,150-152 [<ten2> 30,90 …]\` —
+  một lượt bundle cho mọi cảnh, gom hết khung cần soi của cả lô vào một lần gọi.
 - Muốn nhìn chuyển động chứ không phải ảnh tĩnh: \`pnpm video --scene
   scenes/<ten>.json --out tmp/<ten>.mp4\`. Bản thật thì \`pnpm render <ten>\`.
 
@@ -203,7 +207,8 @@ pnpm remotion                            # Remotion Studio, tua được
 pnpm render <ten-canh|ten-tap> out/<ten>.mp4
 pnpm render:final <ten-tap> out/<ten>.mp4 # bản đăng: frame PNG, tóc dựng khối đúng góc từng khung
 pnpm still <ten-canh> out/<ten>.png --frame=105
-pnpm frames <ten-canh> 316,317,349-351   # nhiều khung, một lượt bundle
+pnpm frames <ten-canh> 316,317,349-351 [<ten-canh-2> 30,90 …]  # nhiều khung, nhiều cảnh, một lượt bundle
+pnpm can-tay <ten-canh> 1.8,2.7          # bảng ảnh cận bàn tay người 3D, kèm hướng lòng tay đo được
 pnpm thumbnails <ten-tap>                # mọi thumbnail của tập, khai ở episodes/<ten-tap>.json
 \`\`\`
 
@@ -296,6 +301,8 @@ export const packageJson = ({ name, versions }) =>
         "render:final": "REMOTION_QUALITY=final remotion render --image-format=png --crf=18",
         still: "remotion still",
         frames: "node tools/still.mjs",
+        // Bảng ảnh cận bàn tay người 3D — docs/03 § Lòng bàn tay
+        "can-tay": "node tools/can-tay.mjs",
         // `--experimental-strip-types` để Node 22 nạp thẳng `src/shots.ts`; Node 23.6+ bỏ qua cờ
         srt: "node --experimental-strip-types tools/srt.mjs",
         tts: ".venv/bin/python tools/tts.py",

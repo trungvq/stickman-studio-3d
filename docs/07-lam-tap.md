@@ -44,8 +44,8 @@ một chỗ: kéo/zoom khung preview trong Studio **ghi CSS thẳng vào source*
 (`translate`, `scale` trên `AbsoluteFill`) — thấy cảnh lệch hẳn đi thì xem
 `git diff` trước khi đi tìm lỗi ở scene.
 
-`pnpm still <id> --frame=N` chụp một khung cho agent; `pnpm frames <id> a,b,c-d`
-chụp nhiều khung trong một lượt bundle.
+`pnpm still <id> --frame=N` chụp một khung cho agent; `pnpm frames <id> a,b,c-d [<id2> e,f …]`
+chụp nhiều khung của nhiều cảnh trong một lượt bundle — [03](03-scene.md#remotion).
 
 ## Công cụ trong `tools/`
 
@@ -55,7 +55,8 @@ không đụng.
 
 | Lệnh | Việc | Nguồn của tập |
 |---|---|---|
-| `pnpm frames` | nhiều khung trong một lượt bundle | — |
+| `pnpm frames` | nhiều khung, nhiều cảnh trong một lượt bundle — [03](03-scene.md#remotion) | — |
+| `pnpm can-tay` | bảng ảnh cận bàn tay người 3D — [03](03-scene.md#lòng-bàn-tay) | — |
 | `pnpm thumbnails [tập]` | chụp mọi thumbnail và biến thể — [Thumbnail](#thumbnail) | `episodes/*.json` › `thumbnail` |
 | `pnpm tts` | lời dẫn VieNeu local — [Lời dẫn](#lời-dẫn) | `episodes/*.json` › `text` |
 | `pnpm tts-blocks` | lời dẫn ElevenLabs theo khối, cắt cue theo timestamp ký tự — [Lời dẫn ElevenLabs](#lời-dẫn-elevenlabs) | `loi-dan-tag.md` (`--src`) |

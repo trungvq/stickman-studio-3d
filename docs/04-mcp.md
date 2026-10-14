@@ -122,8 +122,8 @@ dưới đây không bao giờ lộ ra ở dải, dù nhìn kỹ đến đâu:
 
 Ngược lại, khung thật thì đắt: mỗi `remotion still` là một lượt bundle 20–30
 giây. Cần vài khung rời nhau ở hai bên một chỗ nối thì dùng
-`pnpm frames <cảnh> 316,317,349-351` của repo video — một lượt bundle, bao nhiêu
-khung cũng được.
+`pnpm frames <cảnh> 316,317,349-351 [<cảnh-2> …]` của repo video — một lượt bundle, bao nhiêu
+khung, bao nhiêu cảnh cũng được.
 
 ## Đo toạ độ và góc của một mảnh: hỏi `anchors`
 

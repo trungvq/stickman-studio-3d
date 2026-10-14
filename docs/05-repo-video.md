@@ -28,11 +28,11 @@ Cùng với đó là **app Remotion**: `src/` (`index.ts`, `Root.tsx`, `Scene.ts
 `equip` — [03](03-scene.md#cảnh-3d)), `world.ts` cùng cảnh three ấy cho `check` ([Cảnh three cho
 `check`](#cảnh-three-cho-check)), `Overlay3D.tsx` lớp chữ 2D đè lên, `set.ts` đường import kiểu bối cảnh `Set3D` và
 phòng trơn `plainRoom` của rig, `ChanDung.tsx` chân dung người 3D cho lớp 2D; cùng bốn file của repo `lop.tsx`,
-`parts.tsx`, `scene-wrap.tsx`, `khoi3d/canh.ts`), `tools/` (`still.mjs`, `thumbnails.mjs`, `srt.mjs`, `tts.py`,
+`parts.tsx`, `scene-wrap.tsx`, `khoi3d/canh.ts`), `tools/` (`still.mjs` và `can-tay.mjs` cùng `soi.mjs`, `soi.tsx`, `thumbnails.mjs`, `srt.mjs`, `tts.py`,
 `tts-blocks.py` cùng `len-giong.py`, `lipsync.mjs` cùng `words.py`, `sfx.py`, `sfx-el.py`,
 `sfx-loop.py`, `cut-torso.py`, `webpack.mjs` — [07](07-lam-tap.md#công-cụ-trong-tools)),
 `remotion.config.ts`, `tsconfig.json`, `pnpm-workspace.yaml`, và `package.json` có sẵn
-`pnpm remotion` / `render` / `still` / `frames` / `thumbnails` / `srt` / `tts` /
+`pnpm remotion` / `render` / `still` / `frames` / `can-tay` / `thumbnails` / `srt` / `tts` /
 `tts-blocks` / `lipsync` / `sfx` / `sfx-el` / `sfx-loop` / `cut-torso` (`pnpm studio` là
 character studio) và `stickman.world` trỏ `src/khoi3d/world.ts`. Bảng riêng của tập cho các tool ấy — `sfx/*.json`, bản lời có tag —
 không có mẫu nào: tool đọc thấy thiếu thì báo cú pháp. `package.json` pin cả `three`; `scenes/vi-du-3d.json`
@@ -40,7 +40,7 @@ là cảnh 3D mẫu, `khoi3d/canh.ts` nối tên nó với `plainRoom` (`CANH_3D
 cảnh có trong `CANH_3D` thì vẽ người 3D thay người que 2D (`REMOTION_FLAT=1` vẽ bản 2D để so); `THU_3D` cùng file là composition thử bối cảnh
 (người, ống kính, khung cắt mượn của một cảnh), nằm trong thư mục `khoi3d` của Studio. Cảnh 3D nặng thì `pnpm studio-prod`
 chạy Studio bằng React production, mất fast refresh. Render cảnh 3D cần GPU qua Vulkan:
-`remotion.config.ts`, `tools/still.mjs` và `tools/thumbnails.mjs` đặt sẵn `gl: "vulkan"`. Mỗi file trong `scenes/` là một composition, mỗi file trong
+`remotion.config.ts`, `tools/soi.mjs` và `tools/thumbnails.mjs` đặt sẵn `gl: "vulkan"`. Mỗi file trong `scenes/` là một composition, mỗi file trong
 `episodes/` cũng vậy; chi tiết và các bẫy ở [03](03-scene.md#remotion) và
 [07](07-lam-tap.md#bảng-thời-gian-của-cả-tập).
 
