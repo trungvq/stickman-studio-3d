@@ -3,9 +3,8 @@
 // bỏ trống tên tập là chụp mọi tập. Xem docs/07 § Thumbnail.
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { bundle } from "@remotion/bundler";
 import { getCompositions, renderStill } from "@remotion/renderer";
-import { webpackOverride } from "./webpack.mjs";
+import { ownBundle } from "./bundle.mjs";
 
 const [episode, outDir = "out/thumbnails"] = process.argv.slice(2);
 const isThumb = (id) =>
@@ -15,7 +14,7 @@ const isThumb = (id) =>
 
 // cảnh 3D (`src/khoi3d/`) vẽ bằng GPU qua Vulkan như `remotion.config.ts`; API renderer không đọc file ấy
 const chromiumOptions = { gl: "vulkan" };
-const serveUrl = await bundle({ entryPoint: resolve("src/index.ts"), webpackOverride });
+const { serveUrl } = await ownBundle(resolve("src/index.ts"));
 const thumbs = (await getCompositions(serveUrl, { chromiumOptions })).filter((c) => isThumb(c.id));
 if (!thumbs.length) {
   console.error(

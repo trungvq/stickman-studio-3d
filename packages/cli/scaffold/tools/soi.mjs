@@ -1,13 +1,11 @@
 // Phần chung của `tools/still.mjs` và `tools/can-tay.mjs`: một lượt bundle `tools/soi.tsx`, một Chrome, việc chia thành
 // dải liền nhau theo cảnh và mỗi dải một tab chạy song song. `renderStill` mở trang mới cho từng ảnh — nạp lại bundle,
 // ảnh, phông và dựng lại cả cảnh 3D (~7 s một ảnh); một tab của `renderFrames` dựng cảnh một lần rồi chỉ tua. Bundle
-// (~100 MB trong `TMPDIR`) xoá khi xong. Xem docs/03 § Remotion.
-import { rmSync } from "node:fs";
+// xoá khi xong (`bundle.mjs`). Xem docs/03 § Remotion.
 import { availableParallelism } from "node:os";
 import { fileURLToPath } from "node:url";
-import { bundle } from "@remotion/bundler";
 import { openBrowser, renderFrames, selectComposition } from "@remotion/renderer";
-import { webpackOverride } from "./webpack.mjs";
+import { ownBundle } from "./bundle.mjs";
 
 // cảnh 3D (`src/khoi3d/`) vẽ bằng GPU qua Vulkan như `remotion.config.ts`; API renderer không đọc file ấy
 export const chromiumOptions = { gl: "vulkan" };
@@ -21,17 +19,7 @@ export const defaultTabs = () => Math.max(1, Math.floor(availableParallelism() /
 
 /** Bundle `tools/soi.tsx`, mở Chrome. Gọi `close()` khi xong — nó xoá luôn bundle. */
 export async function openSoi() {
-  const serveUrl = await bundle({
-    entryPoint: fileURLToPath(new URL("./soi.tsx", import.meta.url)),
-    webpackOverride,
-  });
-  const drop = () => rmSync(serveUrl, { recursive: true, force: true });
-  process.once("exit", drop);
-  for (const sig of ["SIGINT", "SIGTERM"])
-    process.once(sig, () => {
-      drop();
-      process.exit(130);
-    });
+  const { serveUrl, drop } = await ownBundle(fileURLToPath(new URL("./soi.tsx", import.meta.url)));
   let browser;
   try {
     browser = await openBrowser("chrome", { chromiumOptions });
