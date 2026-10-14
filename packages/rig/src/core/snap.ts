@@ -386,9 +386,12 @@ const median = (xs: number[]) => {
   return s[s.length >> 1];
 };
 
-/** Quãng giây và nhóm khớp mà `snap` miễn đo: clip `snap` (hay hành động `snap`) và đoạn `world.hands` tới mốc `snap` */
-function snapWindows(m: CastMember) {
-  const out: { from: number; to: number; classes: Set<string> }[] = [];
+/**
+ * Quãng giây và nhóm khớp mà `snap` miễn đo: clip `snap` (hay hành động `snap`) và đoạn `world.hands` tới mốc `snap`; `by` là
+ * nguồn — với `hands`, `to` là chính mốc `snap`
+ */
+export function snapWindows(m: CastMember) {
+  const out: { from: number; to: number; classes: Set<string>; by: "clip" | "hands" }[] = [];
   for (const tr of m.tracks)
     tr.clips.forEach((c, i) => {
       if (!c.snap) return;
@@ -397,12 +400,18 @@ function snapWindows(m: CastMember) {
       const classes = new Set<string>(
         c.action ? chans.flatMap((k) => CHANNEL_CLASSES[k] ?? []) : ["arm", "leg", "head"],
       );
-      out.push({ from: c.start, to: next ? next.start + next.tau : Infinity, classes });
+      out.push({
+        from: c.start,
+        to: next ? next.start + next.tau : Infinity,
+        classes,
+        by: "clip",
+      });
     });
   for (const hand of ["right", "left"] as const) {
     const ks = (m.world?.hands ?? []).filter((k) => k[hand] !== undefined);
     ks.forEach((k, i) => {
-      if (k.snap && i > 0) out.push({ from: ks[i - 1].t, to: k.t, classes: new Set(["arm"]) });
+      if (k.snap && i > 0)
+        out.push({ from: ks[i - 1].t, to: k.t, classes: new Set(["arm"]), by: "hands" });
     });
   }
   return out;

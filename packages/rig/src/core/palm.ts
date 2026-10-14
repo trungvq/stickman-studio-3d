@@ -32,9 +32,9 @@ export const PALM_SINK = 8;
 
 /** Ngón trỏ và ba ngón còn lại gập gốc không quá ngần này độ là bàn tay duỗi (nghỉ, `open`), không phải cầm, chỉ, nắm */
 const FLAT_FINGERS = 30;
-/** Tay buông: ngón chĩa xuống (thành phần hướng xuống của `finger` từ ngần này) và tâm lòng bàn tay cách đùi cùng bên không quá `HANG_REACH` px (nhân `world.s`) */
-const HANG_FINGER = 0.5;
-const HANG_REACH = 60;
+/** Tay buông: ngón chĩa xuống (thành phần hướng xuống của `finger` từ ngần này) và tâm lòng bàn tay cách đùi cùng bên không quá `PALM_HANG_REACH` px (nhân `world.s`) */
+export const PALM_HANG_FINGER = 0.5;
+export const PALM_HANG_REACH = 60;
 
 export const PALM_FACES = {
   down: "úp",
@@ -133,7 +133,7 @@ export interface PalmIssue {
 }
 
 /** Điểm gần `p` nhất trên đùi (hông → gối): khoảng cách và hướng từ `p` tới nó */
-function toThigh(p: V3, hip: V3, knee: V3): { dist: number; dir: V3 } {
+export function toThigh(p: V3, hip: V3, knee: V3): { dist: number; dir: V3 } {
   const ab = sub(knee, hip);
   const u = Math.max(0, Math.min(1, dot(sub(p, hip), ab) / (dot(ab, ab) || 1)));
   const d = sub([hip[0] + ab[0] * u, hip[1] + ab[1] * u, hip[2] + ab[2] * u], p);
@@ -167,7 +167,7 @@ function bestTurn(
 }
 
 /** Clip đang chạy tại `t` có ghi kênh tay hay bàn tay: `file (track)` */
-function handClips(m: CastMember, t: number): string[] {
+export function handClips(m: CastMember, t: number): string[] {
   return m.tracks.flatMap((tr, ti) => {
     let c: (typeof tr.clips)[number] | undefined;
     for (const k of tr.clips) if (k.start <= t) c = k;
@@ -179,7 +179,10 @@ function handClips(m: CastMember, t: number): string[] {
 }
 
 /** Mặt ngang gần nhất dưới các điểm `pts`: khe nhỏ nhất */
-function lowest(pts: V3[], at: (p: V3) => PalmSurface | null | undefined): PalmSurface | null {
+export function lowestSurface(
+  pts: V3[],
+  at: (p: V3) => PalmSurface | null | undefined,
+): PalmSurface | null {
   let best: PalmSurface | null = null;
   for (const q of pts) {
     const s = at(q);
@@ -216,7 +219,7 @@ export function palmHits(
     const base = { id, hand, turn: v[0] ?? 0, ik };
     const f = palmFace(p);
     const surface =
-      palmFlat(v) && frame?.surface ? lowest(p.skin, (q) => frame.surface!(id, q)) : null;
+      palmFlat(v) && frame?.surface ? lowestSurface(p.skin, (q) => frame.surface!(id, q)) : null;
     if (surface && surface.gap >= -PALM_SINK && surface.gap <= PALM_GAP) {
       if (f.down > down)
         out.push({
@@ -229,9 +232,9 @@ export function palmHits(
         });
       continue;
     }
-    if (p.finger[1] < HANG_FINGER) continue;
+    if (p.finger[1] < PALM_HANG_FINGER) continue;
     const thigh = toThigh(p.at, J.hip, J[`knee${hand}`]);
-    if (thigh.dist > HANG_REACH * sp.world.s) continue;
+    if (thigh.dist > PALM_HANG_REACH * sp.world.s) continue;
     const away = (q: ActPalm) => deg(dot(q.palm, thigh.dir));
     if (away(p) <= hang) continue;
     out.push({

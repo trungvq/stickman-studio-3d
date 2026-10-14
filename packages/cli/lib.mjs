@@ -1474,6 +1474,31 @@ export function palmOptions(dir = ".") {
   return out;
 }
 
+/**
+ * Ngưỡng đo tay sai dáng: `stickman.arms` trong `package.json` — `{ straight, converge, upturn, hover, hold }` (độ, độ,
+ * độ, đơn vị rig, giây), trường thiếu lấy `ARM_STRAIGHT` / `ARM_CONVERGE` / `ARM_UPTURN` / `ARM_HOVER_GAP` / `PALM_HOLD`
+ * của rig; `false` là không đo. Sai kiểu thì trả `{ error }`. docs/03-scene.md#tay-và-khuỷu
+ */
+export function armOptions(dir = ".") {
+  const raw = readPkg(resolve(dir))?.stickman?.arms;
+  if (raw === false) return { off: true };
+  const out = {
+    straight: rig.ARM_STRAIGHT,
+    converge: rig.ARM_CONVERGE,
+    upturn: rig.ARM_UPTURN,
+    hover: rig.ARM_HOVER_GAP,
+    hold: rig.PALM_HOLD,
+  };
+  if (raw === undefined) return out;
+  const bad = `package.json: stickman.arms phải là false hay { straight, converge, upturn, hover, hold } số dương, đang là ${JSON.stringify(raw)}`;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { error: bad };
+  for (const [key, v] of Object.entries(raw)) {
+    if (!(key in out) || typeof v !== "number" || !(v > 0)) return { error: bad };
+    out[key] = v;
+  }
+  return out;
+}
+
 /** Báo mốc khai mà JSON không neo: `stickman.marks.unused` trong `package.json`, `"off"` (mặc định) hay
  *  `"warn"` — lớp vẽ code đọc mốc qua `ctx.marks`, `check` không thấy. docs/03-scene.md#mốc-có-tên */
 export const marksUnused = (dir = ".") => readPkg(resolve(dir))?.stickman?.marks?.unused ?? "off";
@@ -2192,6 +2217,8 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
   const self = selfTol(root);
   const palm = palmOptions(root);
   if (palm.error) bad(palm.error);
+  const arm = armOptions(root);
+  if (arm.error) bad(arm.error);
   if (typeof tol !== "number" || !(tol >= 0))
     bad(`package.json: stickman.clash.tol phải là số không âm, đang là ${JSON.stringify(tol)}`);
   else if (self !== false && (typeof self !== "number" || !(self >= 0)))
@@ -2241,9 +2268,9 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
           );
         }
       };
+      const on = scene && !scene.error ? scene : undefined;
       try {
         const samples = sceneSamples(rt, { characterOf });
-        const on = scene && !scene.error ? scene : undefined;
         for (const problem of [
           ...sceneClashProblems(rt, {
             characterOf,
@@ -2262,10 +2289,22 @@ export async function checkWorkspace({ dir = ".", scene } = {}) {
       } catch (e) {
         warn(`scenes/${name}.json: không đo được người 3D với đồ khối — ${e.message}`);
       }
+      // Tay sai dáng: khuỷu thẳng, ngón chĩa vào nhau, lòng tay ngửa, lơ lửng trên mặt, chạm đầu người khác —
+      // docs/03-scene.md#tay-và-khuỷu
+      if (!arm.error && !arm.off)
+        try {
+          for (const problem of rig.sceneArmProblems(rt, {
+            ...arm,
+            characterOf: (m) => characterOf(m)?.character,
+            frame: on && ((t) => palmFrame(t, on)),
+          }))
+            warn(`scenes/${name}.json: ${problem}`);
+        } catch (e) {
+          warn(`scenes/${name}.json: không đo được tay sai dáng — ${e.message}`);
+        }
       // Lòng bàn tay quay sai — docs/03-scene.md#lòng-bàn-tay
       if (palm.error || palm.off) continue;
       try {
-        const on = scene && !scene.error ? scene : undefined;
         for (const problem of rig.scenePalmProblems(rt, {
           ...palm,
           characterOf: (m) => characterOf(m)?.character,

@@ -1466,6 +1466,9 @@ tay ấy — và góc lệch khỏi úp (`down`, độ).
   ra ngoài như `arms-on-table-3d` (`[-0.3, 0.3, 1]`) rồi chỉnh `turn` (dương là sấp, lòng tay úp thêm khi cẳng tay chĩa ra trước).
 - `check` kêu bàn tay đặt trên mặt ngang mà không úp và tay buông mà lòng tay không quay vào đùi, kèm `turn` gợi ý —
   [03](03-scene.md#lòng-bàn-tay).
+- `check` còn kêu tay thẳng đuột (khuỷu từ `170°`: đích xa quá tầm, tay buông, góc của hành động), ngón hai tay gần nhau
+  chĩa vào nhau, lòng tay ngửa khi bàn tay thấp, bàn tay đặt bằng đích lơ lửng trên mặt và bàn tay lấn vào đầu người khác —
+  [03](03-scene.md#tay-và-khuỷu).
 
 ### Khớp người 3D vẽ ra
 

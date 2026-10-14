@@ -71,7 +71,8 @@ function workspace(stickman = {}, episode = null) {
   for (const d of ["scenes", "actions", "characters", "pieces"])
     mkdirSync(join(dir, d), { recursive: true });
   const json = (rel, v) => writeFileSync(join(dir, rel), `${JSON.stringify(v, null, 2)}\n`);
-  json("package.json", { name: "thu", stickman: { frozen: "^old-", ...stickman } });
+  // người đứng tay thẳng: luật tay sai dáng có test riêng
+  json("package.json", { name: "thu", stickman: { frozen: "^old-", arms: false, ...stickman } });
   for (const a of [STAND, COVER, COVER3D, RAISE]) json(`actions/${a.name}.json`, a);
   json("actions/vong.json", { name: "vong", end: "wrap", keys: coverKeys });
   json("scenes/loi.json", person3d("loi", "che"));

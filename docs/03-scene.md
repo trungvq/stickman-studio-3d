@@ -1090,7 +1090,8 @@ chéo qua người hay buông tay từ đích phía bên kia là tay xuyên thâ
 [10](10-lop-ve-code.md#tay-xuyên-thân).
 
 Lòng bàn tay đặt trên mặt ngang mà dựng đứng, tay buông mà lòng tay ngửa hay quay ra ngoài: `check` đo theo
-[Lòng bàn tay](#lòng-bàn-tay).
+[Lòng bàn tay](#lòng-bàn-tay). Tay thẳng đuột, ngón hai tay chụm vào nhau, lòng tay ngửa khi bàn tay thấp, bàn tay
+lơ lửng trên mặt nó nhắm tới, bàn tay lấn vào đầu người khác: [Tay và khuỷu](#tay-và-khuỷu).
 
 ## Giật trên hình
 
@@ -1200,6 +1201,56 @@ khai mốc hay ý định, và kêu quãng từ `stickman.palm.hold` (`0,3 s`):
 
 Mốc bàn tay khai cả `turn` lẫn `palm` thì `check` và `validate` kêu ở file hành động: `turn` bị bỏ qua. Mức cảnh báo; tắt
 cùng `stickman.palm: false`.
+
+## Tay và khuỷu
+
+Tay thẳng đuột như que, hai bàn tay chụm ngón vào nhau, lòng tay ngửa khi buông, ngón chạm mặt mà còn hở, nắm tay đè vào
+đầu người khác — hình vẫn ra, bàn tay vài chục pixel nên nhìn khung toàn cảnh không thấy. `check` đo trên đúng khớp và bàn tay
+`act` đặt (`actJoints`, `actPalms`; `sceneArms` của `core/armAudit.ts`), lấy mẫu mỗi `0,1 s` người 3D của cảnh có `lens`, và
+kêu quãng từ `0,3 s`. Bỏ người khuất và cổ tay ngoài khung camera; luật bàn tay (`converge`, `upturn`, `hover`) bỏ tay đang
+cầm đồ và chỉ đo người mặc đồ (`palette.clad`).
+
+| Luật | Kêu khi | Ngưỡng |
+|---|---|---|
+| **Khuỷu thẳng** | Góc vai – khuỷu – cổ tay từ `ARM_STRAIGHT` | `170°` |
+| **Ngón hai tay chĩa vào nhau** | Hai cổ tay cách nhau dưới `ARM_NEAR` lần bề ngang hai vai, không bắt chéo, hai bàn tay duỗi ngón (không nắm), mà tổng góc ngón hai tay lệch vào đường giữa thân quá `ARM_CONVERGE` (mỗi tay đều lệch vào) | `1` vai, `30°` |
+| **Lòng tay ngửa khi buông** | Bàn tay dưới hông hay sát đùi (cách đùi không quá `60 · s`), không phải tay buông bên đùi ngón chĩa xuống (luật tay buông của [Lòng bàn tay](#lòng-bàn-tay) đo nó), mà pháp tuyến lòng tay lệch hướng lên không quá `ARM_UPTURN` — hay lệch hướng mặt không quá `ARM_FRONT` (lòng tay ra trước) | `60°`, `35°` |
+| **Bàn tay lơ lửng trên mặt** | Tay đặt bằng đích (phần đích từ `0,9`), ngón trỏ duỗi (đặt, chỉ, gõ), điểm thấp nhất của bàn tay cách mặt ngang dưới nó quá `ARM_HOVER_GAP` mà không quá `ARM_HOVER_MAX` — đích nhắm chạm mặt mà không tới. Cần [`stickman.world`](05-repo-video.md#cảnh-three-cho-check) như luật bàn tay đặt trên mặt ngang | `4`, `15` (rig nhân `world.s`) |
+| **Bàn tay lấn vào đầu người khác** | Một điểm của bàn tay (`skin`, người que: cổ tay và tâm nắm) vào trong khối đầu người 3D khác, bán kính `ARM_HEAD_R` quanh tâm đầu | `60` (rig nhân `world.s` của người bị chạm) |
+
+**Khuỷu thẳng chia ba kiểu, gợi ý sửa khác nhau:**
+
+- **Đích xa quá tầm** — phần đích cổ tay (`reach` của hành động hay `world.hands`) từ `0,5`: IK duỗi thẳng tay về phía đích
+  ngoài tầm. Kéo đích về gần vai (cổ tay cách vai chừng `90%` tầm với, khuỷu còn gập `20–30°`) hay dời người lại gần vật.
+- **Tay buông** — không theo đích, trục vai → cổ tay lệch phương thẳng đứng không quá `ARM_HANG_CONE` (`30°`): dáng đứng, ngồi
+  để tay thẳng như que. Dùng dáng có khuỷu gập (`stand-3d` gập khoảng `25°`), hay gập số thứ hai của `armNear` / `armFar`.
+  Kênh tay không mang cờ nâng vẽ ở dáng nghỉ thẳng tay ([Hành động cho người 3D](#hành-động-cho-người-3d)): hành động chỉ ghi một
+  tay đặt ở track thân thì tay kia buông thẳng — để `stand-3d` ở track thân, hành động ấy ở track trên.
+- **Góc của hành động** — còn lại (chỉ tay, vung tay bằng góc): gập số thứ hai của kênh tay `15–30°`.
+
+**Cố ý thì không kêu:**
+
+- `snap` ([Giật trên hình](#giật-trên-hình)) miễn khuỷu thẳng và chạm đầu `ARM_SNAP` (`0,5 s`) từ đầu clip `snap`, và quanh
+  mốc `world.hands` `snap` (`0,5 s` trước và sau mốc) — cú dứ, cú vung là một khoảnh khắc, giữ tay thẳng sau đó vẫn là lỗi.
+- Hai tay khai đích tới tay kia (`otherWrist`, `otherPalm`, `otherBack`, `otherGrip`) hay khai `fingers`, lòng hai tay cùng
+  quay vào đường giữa thân (vỗ, chắp, xoa tay): ngón chụm vào nhau là cố ý.
+- Tay khai `palm` theo ý định ([01](01-rig.md#hướng-lòng-tay-theo-ý)): lòng tay ngửa là cố ý.
+
+Rig không có đích tới người khác, nên tay chạm đầu người khác luôn kêu trừ quãng `snap`. Mỗi người, mỗi tay, mỗi luật (và
+mỗi kiểu khuỷu, mỗi người bị chạm) một dòng, kèm giây tệ nhất, số đo, các quãng giây, cách sửa và clip đang chạy:
+
+```
+scenes/canh-26.json: tay thẳng đuột tới đích — `saito` tay phải: khuỷu 180° ở giây 0.50 · giây 0.40–1.10, 1.80–4.60. Đích cổ tay (`world.hands` hay `reach`) xa quá tầm với nên IK duỗi thẳng tay: kéo đích về gần vai … Clip đang chạy: dung-bung-3d (than), ngon-tro-gan-3d (ngon) (docs/03-scene.md#tay-và-khuỷu)
+scenes/canh-26.json: bàn tay lấn vào đầu người khác — `saito` tay phải vào đầu `yota` sâu 18.2 ở giây 2.90 · giây 2.90–4.60. …
+```
+
+Ngưỡng ở `package.json` của repo video (độ, độ, độ, đơn vị rig, giây), trường thiếu lấy mặc định; `false` là không đo:
+
+```json
+"stickman": { "arms": { "straight": 170, "converge": 30, "upturn": 60, "hover": 4, "hold": 0.3 } }
+```
+
+Mức cảnh báo. Cảnh khớp `stickman.frozen` không đo; `--scene` chỉ đo cảnh khớp.
 
 ## Nhóm
 
