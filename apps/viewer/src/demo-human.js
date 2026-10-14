@@ -341,9 +341,9 @@ const SCENES = {
     ],
     props: [stool(150, 0)],
   }),
-  'human-faces': ({ LONG, GIRL, GLASSES, PONY }) => ({
-    cast: [[LONG, 'face-shy'], [GIRL, 'face-sad'], [GLASSES, 'talk-lips'], [PONY, 'face-wry']].map(([c, f], i) => ({
-      id: `m${i}`, c, world: { at: [(i - 1.5) * 150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip(f, f === 'talk-lips' ? 0.2 : 0))],
+  'human-faces': ({ LONG, SHORT, GIRL, GLASSES, PONY }) => ({
+    cast: [[LONG, 'face-shy'], [GIRL, 'face-sad'], [SHORT, 'face-shocked'], [GLASSES, 'talk-lips'], [PONY, 'face-wry']].map(([c, f], i) => ({
+      id: `m${i}`, c, world: { at: [(i - 2) * 150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip(f, f === 'talk-lips' ? 0.2 : 0))],
     })),
   }),
 };

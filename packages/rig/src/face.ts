@@ -102,7 +102,7 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
     if (human) {
       paintAt(g, [mouthMark(s.mouth, 0, mouthCy)], CHIBI.mouth, 0, mouthCy);
       for (const side of [-1, 1] as const) {
-        const o = { only: side, squash: CHIBI.squash };
+        const o = { only: side, squash: CHIBI.squash, pupil: CHIBI.pupil };
         paintAt(g, [eyeMarks(s.eyes, 0, sh.offsetY, sh.eyeGap, o), eyeShine(s.eyes, 0, sh.offsetY, sh.eyeGap, o)], CHIBI.eye, (side * sh.eyeGap) / 2, sh.offsetY);
       }
       paint(g, [browMarks(s.brow, 0, sh.offsetY - CHIBI.brow, sh.eyeGap)]);

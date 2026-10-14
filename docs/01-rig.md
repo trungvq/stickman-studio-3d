@@ -877,7 +877,7 @@ Mắt là hai chấm, đổi kiểu chứ không có tham số:
 |---|---|---|
 | `open` | Chấm tròn `r6` | Mặc định |
 | `shut` | Đoạn thẳng ngắn | Chớp, nhắm tịt, nhăn mặt |
-| `wide` | Lòng trắng `r12` viền đậm + con ngươi `r5` | Trợn, sốc, hoảng |
+| `wide` | Lòng trắng `r9` viền + con ngươi `r4` | Trợn, sốc, hoảng |
 | `squint` | Nửa dưới con ngươi, mi trên sụp | Nheo, nghi ngờ, mệt |
 | `happy` | Cung cong lên | Cười tít |
 | `squeezed` | Hai nét gấp `> <` | Nhắm chặt, đau, gồng |
@@ -1606,8 +1606,9 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   má ở mọi góc quay. `CHIBI` (`core/face.ts`) cộng vào `face` của JSON nhân vật: mắt hạ `10`, hai mắt
   giãn thêm `18`, mồm gần mắt `10` px (`chibiShape`) — kính và `headFit` đọc chỗ mắt đã dời. Mỗi mắt
   phóng `1,45` lần quanh tâm của nó, bóp ngang `0,75` thành bầu dục đứng, con ngươi đang mở có đốm
-  sáng (`eyeShine`); mồm thu `0,8`, mày nhấc `3` px. 2D không vẽ các nét ấy. Má ửng theo `face.blush`
-  của nhân vật, không theo dáng đầu — [Má ửng](#má-ửng).
+  sáng (`eyeShine`); con ngươi `wide` to hơn của người que (`pupil` `0,85` thay `0,7` lần `EYE_R`);
+  mồm thu `0,8`, mày nhấc `3` px. 2D không vẽ các nét ấy. Má ửng theo `face.blush` của nhân vật,
+  không theo dáng đầu — [Má ửng](#má-ửng).
 - **Tóc dựng khối dời theo sọ.** Mỗi đỉnh tóc dời đúng bằng điểm sọ bên dưới nó (`humanHair`): tóc
   giữ bề dày, gáy thu thì tóc gáy thu theo, tóc rủ không xuyên quai hàm. Kính và `headFit` đọc nửa
   trên nên như đầu cầu. Tai ẩn khi tóc phủ chỗ tai (tia từ ngoài vào tâm tai chạm vỏ tóc hay tóc rủ).
