@@ -1,6 +1,6 @@
 {
   "name": "@stickman3d/rig",
-  "version": "7.3.0",
+  "version": "7.4.0",
   "description": "Người que 3D trên three.js và lõi rig: JSON nhân vật, hành động, cảnh, sceneAt",
   "license": "MIT",
   "type": "module",
