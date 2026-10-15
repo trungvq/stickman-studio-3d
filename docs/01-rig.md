@@ -1389,6 +1389,7 @@ Người 3D mặc đồ (`palette.clad`) có bàn tay năm ngón tròn mập ki�
 | `flat` | Duỗi thẳng, ngón khép, hơi ưỡn: đặt phẳng chịu lực lên tay vịn, mặt bàn, đùi |
 | `hook` | Móc: gốc ngón gần thẳng, đốt ngọn gập hẳn — quai túi, cán vali |
 | `edge` | Kẹp cạnh vật dẹt: ngón cái mặt trước, các ngón duỗi đỡ mặt sau — điện thoại ngang hai tay |
+| `span` | Xoè ôm hai cạnh vật dẹt: lòng tay và các ngón gần thẳng áp mặt sau, đầu ngón tì cạnh này, ngón cái dựng dọc cạnh kia — một tay giơ điện thoại khoe màn |
 
 **Dáng nghỉ không nằm trong bảng**: ngón cong nhẹ, ngón cái khép sát cạnh ngón trỏ — bàn tay không ai đặt dáng, và
 gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` (`{}`). Thêm một dáng là thêm một dòng vào
@@ -1409,10 +1410,10 @@ gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` 
   nghỉ, cổ tay thẳng). Kênh `hand` tách khỏi kênh tay: một track chỉ ghi `hand` ngửa hay úp bàn tay trên
   một track tay khác.
 - **Cầm đồ.** `hold` (và `dress` vào `handNear` / `handFar`) đặt `held` của bàn tay — dáng `grip`, hay
-  `HoldOptions.pose` (một dáng của bảng, kể cả `pinch`, `edge`, `hook`) — đè góc ngón của hành động, giữ xoay và gập cổ tay.
+  `HoldOptions.pose` (một dáng của bảng, kể cả `pinch`, `edge`, `span`, `hook`) — đè góc ngón của hành động, giữ xoay và gập cổ tay.
   Đồ ngồi ở **tâm nắm của dáng đang giữ** (`HAND_GRIPS`): chỗ treo vẫn là tâm nắm của `grip` (`handGrip`), dáng khác dời đồ
   đi `gripShift` trong khung bàn tay — chén ngồi trên vòng ngón cái, ngón trỏ của `pinch`, điện thoại ngang ngồi giữa ngón cái
-  và các ngón của `edge`. Đồ căn cho `grip` không đổi chỗ. Đồ bật ở một khung (`equip` là công tắc), nên muốn tay khép dần
+  và các ngón của `edge`, điện thoại dọc ngồi trước lòng tay, bề ngang giữa ngón cái và đầu các ngón của `span`. Đồ căn cho `grip` không đổi chỗ. Đồ bật ở một khung (`equip` là công tắc), nên muốn tay khép dần
   thì cho hành động đưa bàn tay về dáng cầm trước mốc `equip`.
 - **Tâm nắm theo góc ngón** (`handGripOf`): hoà `HAND_GRIPS` theo độ gần của chín góc ngón với từng dáng, nên đúng bảng khi
   đúng dáng và đổi liền khi dáng hoà — `point: "grip"` của đích bàn tay đọc nó ([Đích theo mốc](#đích-theo-mốc)).

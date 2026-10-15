@@ -55,7 +55,7 @@ const vec = (p: keyof typeof HAND_POSES | "rest") => [
 ];
 
 describe("bảng dáng tay", () => {
-  it("mười dáng soạn được, mỗi dáng đủ chín góc ngón, có nhãn và tâm nắm; dáng nghỉ ngoài bảng; `HAND_DOF` là xoay, gập cổ tay rồi chín góc ngón", () => {
+  it("mười một dáng soạn được, mỗi dáng đủ chín góc ngón, có nhãn và tâm nắm; dáng nghỉ ngoài bảng; `HAND_DOF` là xoay, gập cổ tay rồi chín góc ngón", () => {
     expect(HAND_POSE_KINDS).toEqual(Object.keys(HAND_POSES));
     expect([...HAND_POSE_KINDS].sort()).toEqual([
       "clasp",
@@ -68,6 +68,7 @@ describe("bảng dáng tay", () => {
       "open",
       "pinch",
       "point",
+      "span",
     ]);
     expect(Object.keys(HAND_GRIPS).sort()).toEqual([...HAND_POSE_KINDS, "rest"].sort());
     for (const k of HAND_POSE_KINDS) {
