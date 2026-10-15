@@ -8,6 +8,7 @@ import {
   sceneTime,
   warpTable,
   type SceneData,
+  type SceneRuntime,
 } from "@stickman3d/sketch";
 import { SceneWorld, type CodeLayer } from "@stickman3d/fx";
 import { useMemo } from "react";
@@ -34,6 +35,26 @@ import { CODE_LAYERS } from "./lop";
 import { SceneWrap } from "./scene-wrap";
 
 const NO_WARP = warpTable([]);
+
+type Aspects = NonNullable<ReturnType<typeof useImagesReady>>;
+
+/** Nhân vật và đạo cụ đã áp tỉ lệ ảnh đo được: `ALL_IMAGES` đo một lượt cho cả tab nên tính một lần */
+const measure = (aspects: Aspects) => {
+  const chars = structuredClone(CHARACTERS);
+  for (const c of Object.values(chars)) applyAspects(c, aspects);
+  const props = structuredClone(PROPS);
+  for (const p of Object.values(props)) {
+    const f = pieceFile(p.body);
+    if (f && aspects[f] !== undefined) p.body.aspect = aspects[f];
+  }
+  const urls = Object.fromEntries(Object.entries(chars).map(([k, c]) => [k, pieceUrls(c)]));
+  return { chars, props, urls };
+};
+
+let MEASURED: ReturnType<typeof measure> | undefined;
+
+/** `resolveScene` một lần cho mỗi object cảnh, dùng lại qua mọi shot và lượt mount của tab */
+const RUNTIMES = new WeakMap<SceneData, SceneRuntime>();
 
 // Remotion đưa biến `REMOTION_*` vào `process.env` của trang lúc render
 declare const process: { env: Record<string, string | undefined> };
@@ -66,26 +87,16 @@ export const Scene = ({
   // Nền cũng thế: hộp vẽ tính ở chỗ vẽ vì `parallax` làm nó đổi theo mốc camera
   const world = useMemo(() => {
     if (!aspects) return null;
-    const chars = structuredClone(CHARACTERS);
-    for (const c of Object.values(chars)) applyAspects(c, aspects);
-    const props = structuredClone(PROPS);
-    for (const p of Object.values(props)) {
-      const f = pieceFile(p.body);
-      if (f && aspects[f] !== undefined) p.body.aspect = aspects[f];
+    const { chars, props, urls } = (MEASURED ??= measure(aspects));
+    let rt = RUNTIMES.get(scene);
+    if (!rt) {
+      const measured = {
+        ...scene,
+        bg: scene.bg.map((b) => ({ ...b, aspect: aspects[b.file] ?? b.aspect })),
+      };
+      rt = resolveScene(measured, ACTIONS, ANIMALS, props, castHeights(scene), castBodies(scene));
+      RUNTIMES.set(scene, rt);
     }
-    const measured = {
-      ...scene,
-      bg: scene.bg.map((b) => ({ ...b, aspect: aspects[b.file] ?? b.aspect })),
-    };
-    const rt = resolveScene(
-      measured,
-      ACTIONS,
-      ANIMALS,
-      props,
-      castHeights(scene),
-      castBodies(scene),
-    );
-    const urls = Object.fromEntries(Object.entries(chars).map(([k, c]) => [k, pieceUrls(c)]));
     return { rt, chars, props, urls };
   }, [scene, aspects]);
 
@@ -107,7 +118,7 @@ export const Scene = ({
   if (c3)
     return (
       <AbsoluteFill style={{ background: PAPER }}>
-        <Scene3D scene={scene} t={t} {...c3} />
+        <Scene3D scene={scene} rt={rt} t={t} {...c3} />
         <svg
           width={width}
           height={height}

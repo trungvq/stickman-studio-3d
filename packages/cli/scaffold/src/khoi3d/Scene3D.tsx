@@ -2,6 +2,7 @@ import {
   buildStage,
   resolveScene,
   type SceneData,
+  type SceneRuntime,
   type Stage,
   type World3D,
   type WorldSpec,
@@ -15,17 +16,33 @@ import { ACTIONS, ANIMALS, CHARACTERS, castBodies, castHeights, PROPS } from "..
  * riêng `extra`) trên sân khấu `buildStage`, mỗi khung vẽ đồng bộ ở giây cảnh `t` trước khi Remotion chụp — camera theo
  * `scene.lens` (hay `lens(t)`) và khung cắt `cameraAt` của scene. `stickman check` dựng cùng cảnh ấy (`world.ts`).
  */
-export type Scene3DProps = WorldSpec & { scene: SceneData; t: number };
+export type Scene3DProps = WorldSpec & {
+  scene: SceneData;
+  /** `resolveScene` của chính `scene` mà nơi gọi đã có (`Scene`); bỏ trống thì tự tính */
+  rt?: SceneRuntime;
+  t: number;
+};
 
-export const Scene3D = ({ scene, t, set, still, extra, wear, lens, grade }: Scene3DProps) => {
+export const Scene3D = ({
+  scene,
+  rt: given,
+  t,
+  set,
+  still,
+  extra,
+  wear,
+  lens,
+  grade,
+}: Scene3DProps) => {
   const { width, height } = useVideoConfig();
   const host = useRef<HTMLDivElement>(null);
   const world = useRef<{ stage: Stage; world: World3D } | null>(null);
   const [wait] = useState(() => delayRender("cảnh 3D"));
   const released = useRef(false);
   const rt = useMemo(
-    () => resolveScene(scene, ACTIONS, ANIMALS, PROPS, castHeights(scene), castBodies(scene)),
-    [scene],
+    () =>
+      given ?? resolveScene(scene, ACTIONS, ANIMALS, PROPS, castHeights(scene), castBodies(scene)),
+    [scene, given],
   );
 
   const draw = (t: number) => world.current?.stage.draw(t, world.current.world.view(t));

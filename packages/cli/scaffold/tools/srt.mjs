@@ -53,7 +53,8 @@ const PROPS = load([join(ROOT, "props")], parseProp, true);
 const SECONDS = {};
 const sceneSeconds = (name) => {
   if (!SCENES[name]) throw new Error(`không có scenes/${name}.json`);
-  return (SECONDS[name] ??= resolveScene(SCENES[name], ACTIONS, ANIMALS, PROPS).duration);
+  return (SECONDS[name] ??=
+    SCENES[name].duration ?? resolveScene(SCENES[name], ACTIONS, ANIMALS, PROPS).duration);
 };
 
 const run = (bin, args) => {

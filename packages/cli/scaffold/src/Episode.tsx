@@ -1,4 +1,4 @@
-import { FRAMES, resolveScene, type FrameName } from "@stickman3d/sketch";
+import { FRAMES, resolveScene, type FrameName, type SceneData } from "@stickman3d/sketch";
 import { useMemo } from "react";
 import {
   Audio,
@@ -14,13 +14,21 @@ import type { CueData, EpisodeData, ShotData } from "./episode";
 import { Scene } from "./Scene";
 import { cueStart, layoutShots, type LaidShot } from "./shots";
 
-const SECONDS: Record<string, number> = {};
+const SECONDS = new WeakMap<SceneData, number>();
 
-/** Độ dài một cảnh; shot không khai `to` thì lấy hết cảnh */
+/** Độ dài một cảnh: `scene.duration`, thiếu thì `resolveScene` một lần rồi nhớ theo object cảnh — `Root` dùng chung */
+export const sceneDuration = (s: SceneData): number => {
+  if (s.duration !== undefined) return s.duration;
+  let d = SECONDS.get(s);
+  if (d === undefined) SECONDS.set(s, (d = resolveScene(s, ACTIONS, ANIMALS, PROPS).duration));
+  return d;
+};
+
+/** Độ dài một cảnh theo tên; shot không khai `to` thì lấy hết cảnh */
 export const sceneSeconds = (name: string): number => {
   const s = SCENES[name];
   if (!s) throw new Error(`không có scenes/${name}.json`);
-  return (SECONDS[name] ??= resolveScene(s, ACTIONS, ANIMALS, PROPS).duration);
+  return sceneDuration(s);
 };
 
 /** Khung của một cảnh — `wide` cho tập, `tall` cho short. docs/03-scene.md#khung-hình */

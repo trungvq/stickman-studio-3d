@@ -1,10 +1,10 @@
-import { FRAMES, SceneSchema, parseScene, resolveScene, type SceneData } from "@stickman3d/sketch";
+import { FRAMES, SceneSchema, parseScene, type SceneData } from "@stickman3d/sketch";
 import type { ReactElement } from "react";
 import { Composition, Folder, useCurrentFrame, useVideoConfig } from "remotion";
 import { z } from "zod";
 import pkg from "../package.json";
-import { ACTIONS, ANIMALS, EPISODES, PROPS, SCENES } from "./data";
-import { Episode, episodeVideo, sceneFrame, sceneSeconds } from "./Episode";
+import { EPISODES, SCENES } from "./data";
+import { Episode, episodeVideo, sceneDuration, sceneFrame, sceneSeconds } from "./Episode";
 import { EpisodeSchema, episodeThumbnails, parseEpisode } from "./episode";
 import { THU_3D } from "./khoi3d/canh";
 import { Scene3D } from "./khoi3d/Scene3D";
@@ -20,8 +20,7 @@ const wh = (v: { w: number; h: number }) => ({ width: v.w, height: v.h });
 /** Cỡ pixel của một cảnh, theo `scene.frame`: `wide` ra 1920×1080, `tall` ra 1080×1920 */
 const size = (scene: SceneData) => wh(FRAMES[scene.frame].video);
 
-const frames = (scene: Parameters<typeof resolveScene>[0]) =>
-  Math.ceil(resolveScene(scene, ACTIONS, ANIMALS, PROPS).duration * FPS);
+const frames = (scene: SceneData) => Math.ceil(sceneDuration(scene) * FPS);
 
 const FOLDERS = (pkg as { stickman?: { folders?: string } }).stickman?.folders;
 
