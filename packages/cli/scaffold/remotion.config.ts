@@ -1,4 +1,5 @@
 import { Config } from "@remotion/cli/config";
+import { createRequire } from "node:module";
 import { webpackOverride } from "./tools/webpack.mjs";
 
 Config.setVideoImageFormat("jpeg");
@@ -8,11 +9,20 @@ Config.setChromiumOpenGlRenderer("vulkan");
 // `pnpm remotion-prod` (`STUDIO_FAST=1`): studio dùng React production — cảnh 3D nặng nhanh ~2,7 lần,
 // đổi lại mất fast refresh (sửa code phải reload trang) và cảnh báo dev của React. Runtime,
 // loader, plugin fast refresh và lớp gắn vị trí mã cho `<Sequence>` của Remotion cần React dev nên gỡ hết.
+// Không có fast refresh thì không module nào nhận cập nhật, client HMR của studio reload cả trang mỗi
+// lần lưu file: entry `noReload` tắt cờ `reload` của nó, sửa xong F5 lấy bundle mới. Plugin HMR phải
+// giữ — client ném lỗi lúc nạp khi không có `module.hot`, trang trắng.
+const shared = createRequire(
+  createRequire(`${process.cwd()}/`).resolve("@remotion/bundler"),
+).resolve("@remotion/studio-shared");
+const noReload = `data:text/javascript,${encodeURIComponent(
+  `import { hotMiddlewareOptions } from ${JSON.stringify(shared)}; hotMiddlewareOptions.reload = false;`,
+)}`;
 const noRefresh = (s: unknown) => !/fast-refresh|setup-sequence-stack-traces/.test(String(s));
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const reactProd = (w: any) => ({
   ...w,
-  entry: Array.isArray(w.entry) ? w.entry.filter(noRefresh) : w.entry,
+  entry: Array.isArray(w.entry) ? [...w.entry.filter(noRefresh), noReload] : w.entry,
   plugins: w.plugins?.filter((p: object) => p.constructor.name !== "ReactFreshWebpackPlugin"),
   module: {
     ...w.module,
