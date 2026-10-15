@@ -38,7 +38,7 @@ character studio) và `stickman.world` trỏ `src/khoi3d/world.ts`. Bảng riên
 không có mẫu nào: tool đọc thấy thiếu thì báo cú pháp. `package.json` pin cả `three`; `scenes/vi-du-3d.json`
 là cảnh 3D mẫu, `khoi3d/canh.ts` nối tên nó với `plainRoom` (`CANH_3D`: tên cảnh → `WorldSpec`) — `Scene.tsx` gặp
 cảnh có trong `CANH_3D` thì vẽ người 3D thay người que 2D (`REMOTION_FLAT=1` vẽ bản 2D để so); `THU_3D` cùng file là composition thử bối cảnh
-(người, ống kính, khung cắt mượn của một cảnh), nằm trong thư mục `khoi3d` của Studio. Cảnh 3D nặng thì `pnpm studio-prod`
+(người, ống kính, khung cắt mượn của một cảnh), nằm trong thư mục `khoi3d` của Studio. Cảnh 3D nặng thì `pnpm remotion-prod`
 chạy Studio bằng React production, mất fast refresh. Render cảnh 3D cần GPU qua Vulkan:
 `remotion.config.ts`, `tools/soi.mjs` và `tools/thumbnails.mjs` đặt sẵn `gl: "vulkan"`. Mỗi file trong `scenes/` là một composition, mỗi file trong
 `episodes/` cũng vậy; chi tiết và các bẫy ở [03](03-scene.md#remotion) và

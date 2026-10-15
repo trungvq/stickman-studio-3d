@@ -5,7 +5,7 @@ Config.setVideoImageFormat("jpeg");
 // Cảnh 3D (`src/khoi3d/`): GPU thật qua ANGLE trên Vulkan; máy không có Vulkan thì tạo context lỗi ngay, không âm thầm vẽ phần mềm
 Config.setChromiumOpenGlRenderer("vulkan");
 
-// `pnpm studio-prod` (`STUDIO_FAST=1`): studio dùng React production — cảnh 3D nặng nhanh ~2,7 lần,
+// `pnpm remotion-prod` (`STUDIO_FAST=1`): studio dùng React production — cảnh 3D nặng nhanh ~2,7 lần,
 // đổi lại mất fast refresh (sửa code phải reload trang) và cảnh báo dev của React. Runtime,
 // loader, plugin fast refresh và lớp gắn vị trí mã cho `<Sequence>` của Remotion cần React dev nên gỡ hết.
 const noRefresh = (s: unknown) => !/fast-refresh|setup-sequence-stack-traces/.test(String(s));

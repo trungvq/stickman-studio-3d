@@ -296,7 +296,7 @@ export const packageJson = ({ name, versions }) =>
         studio: "stickman studio",
         remotion: "remotion studio",
         // React production: cảnh 3D nặng nhanh hơn, mất fast refresh — `remotion.config.ts`
-        "studio-prod": "STUDIO_FAST=1 remotion studio",
+        "remotion-prod": "STUDIO_FAST=1 remotion studio",
         render: "remotion render",
         // Bản upload phải là frame PNG: frame JPEG để x264 tiêu bit bám gợn quanh nét mực — docs/07.
         // `REMOTION_QUALITY=final` chiếu tóc dựng khối đúng góc từng khung — docs/02
