@@ -16,7 +16,7 @@ import {
   worldFacingAt,
   type SceneRuntime,
 } from "./index";
-import { nextBearing, standing } from "./index";
+import { bakeTravel, nextBearing, standing } from "./index";
 
 const c = defaultCharacter();
 const dims = body3(c);
@@ -598,5 +598,36 @@ describe("worldFacingAt", () => {
     expect(wb.yaw / D).toBeCloseTo(90, 6);
     expect(wb.theta).toBeCloseTo(0, 4);
     expect(worldFacingAt(rt, "c", 1, h, dims)).toBeUndefined();
+  });
+});
+
+describe("bảng `travel` chỉ nướng cho người trôi theo chân", () => {
+  const walking = { tracks: [{ clips: [{ start: 0, action: "walk" }] }] };
+  const rt = scene(
+    [
+      { id: "flat", ...walking },
+      {
+        id: "path",
+        ...walking,
+        path: [
+          { t: 0, x: 0 },
+          { t: 2, x: 300 },
+        ],
+      },
+      { id: "world", ...walking, world: { at: [0, 0, 900] } },
+    ],
+    2,
+  );
+  const table = (id: string) => rt.cast.find((m) => m.id === id)!.travel;
+
+  it("người 3D và người đi `path` không nướng", () => {
+    expect(table("world").xs).toStrictEqual([0]);
+    expect(table("path").xs).toStrictEqual([0]);
+  });
+
+  it("người 2D vẫn nướng từ tư thế từng khung", () => {
+    const tb = table("flat");
+    expect(tb).toStrictEqual(bakeTravel((t) => sceneAt(rt, "flat", t).pose, rt.duration));
+    expect(Math.abs(tb.xs[tb.xs.length - 1])).toBeGreaterThan(0.1);
   });
 });

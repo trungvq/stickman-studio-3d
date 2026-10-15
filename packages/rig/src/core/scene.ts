@@ -1122,12 +1122,27 @@ function cycleForSpeed(
   return (s * scale) / (r.speed as number);
 }
 
+type Stride = (a: ActionData, base: Pose) => number;
+
+/** `actionStride` nhớ theo cặp hành động và tư thế nền trong một lượt `resolveScene`: cả đám đông đi chung vài hành động */
+function strideCache(): Stride {
+  const memo = new Map<ActionData, Map<Pose, number>>();
+  return (a, base) => {
+    let byBase = memo.get(a);
+    if (!byBase) memo.set(a, (byBase = new Map()));
+    let v = byBase.get(base);
+    if (v === undefined) byBase.set(base, (v = actionStride(a, base)));
+    return v;
+  };
+}
+
 function resolveTrack(
   raw: SceneSpec["cast"][number]["tracks"][number],
   base: Pose,
   scale: number,
   who: string,
   actions: Record<string, ActionData>,
+  stride: Stride,
 ): Track {
   const tr: Track = { name: raw.name, clips: [] };
   raw.clips.forEach((r, i) => {
@@ -1137,7 +1152,7 @@ function resolveTrack(
     if (r.action && !action) fail(`${where}: không có hành động \`${r.action}\``);
     if (action && action.schemaVersion !== ACTION_VERSION)
       fail(`${where}: \`${r.action}\` chưa qua \`parseAction\``);
-    const cycle = cycleForSpeed(r, () => actionStride(action as ActionData, base), scale, where);
+    const cycle = cycleForSpeed(r, () => stride(action as ActionData, base), scale, where);
     const c: Clip = {
       start: r.start,
       file: r.action,
@@ -1176,6 +1191,7 @@ export function resolveScene(
 ): SceneRuntime {
   // Mốc có tên giải ra số ở đây và chỉ ở đây: mọi thứ dưới đọc số
   const scene = unmarkScene(raw);
+  const stride = strideCache();
   const seen = new Set<string>();
   const claim = (id: string) => {
     if (seen.has(id)) fail(`\`id\` trùng: \`${id}\``);
@@ -1293,12 +1309,12 @@ export function resolveScene(
       if (socks.has(c.socket)) fail(`${m.id}: hai con cùng cầm ở \`${c.socket}\``);
       socks.add(c.socket);
     }
-    const tracks = m.tracks.map((t) => resolveTrack(t, base, m.scale, m.id, actions));
+    const tracks = m.tracks.map((t) => resolveTrack(t, base, m.scale, m.id, actions, stride));
     if (m.world?.path)
       for (const tr of tracks)
         for (const c of tr.clips) {
           if (!c.action || !writesLegs(c)) continue;
-          const st = actionStride(c.action, base);
+          const st = stride(c.action, base);
           if (Math.abs(st) > STRIDE_MIN) c.stride = st;
         }
     return {
@@ -1361,7 +1377,10 @@ export function resolveScene(
     ...(scene.lens && {
       lens: { ...scene.lens, yaw: scene.lens.yaw * D, pitch: scene.lens.pitch * D },
     }),
-    cast: cast.map((m) => ({ ...m, travel: bakeTravel((t) => poseAt(m, t), duration) })),
+    cast: cast.map((m) => ({
+      ...m,
+      travel: drifts(m) ? bakeTravel((t) => poseAt(m, t), duration) : STILL,
+    })),
     props,
     heights,
     bodies,
@@ -1966,6 +1985,13 @@ export const flipAt = (rt: SceneRuntime, id: string, time: number): boolean =>
   flipOf(member(rt, id).flip, time);
 
 type Spot = Pick<ScenePose, "x" | "groundY" | "scale">;
+
+/** Người trôi ngang bằng bảng `travel`: còn lại đứng theo `world`, `path`, yên con vật hay chỗ ngồi — đường của `spotAt` / `hostSpot` */
+const drifts = (m: Pick<CastMember, "world" | "path" | "mount" | "sit">): boolean =>
+  !m.world && !m.path && !m.mount && !m.sit;
+
+/** Bảng của người không trôi theo chân: `travelAt` ra 0 ở mọi `t` */
+const STILL: TravelTable = { step: TRAVEL_STEP, xs: [0] };
 
 const spotAt = (m: CastMember, time: number, height: number): Spot =>
   m.path

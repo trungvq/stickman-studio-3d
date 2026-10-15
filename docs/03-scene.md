@@ -222,7 +222,8 @@ của một người: nó lấy mẫu tư thế đã gom mọi track theo bướ
 [01](01-rig.md#chu-kỳ-đi)), và `sceneAt` chỉ tra bảng. Bảng tính cho
 `height = 1`, nên `sceneAt` nhận thêm `height` của người diễn — bàn chân dài ra
 thì bước dài ra. Nối `walk` vào `idle` là hết trôi, không cần khai gì: chân đứng
-yên thì bảng đứng yên.
+yên thì bảng đứng yên. Người đứng theo chỗ khác — `world`, `path`, `mount`, `sit` —
+không nướng: bảng của họ là hằng `0`.
 
 ### Đường đi soạn tay
 
