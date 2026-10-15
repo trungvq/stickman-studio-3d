@@ -108,7 +108,7 @@ import {
 } from "./types";
 
 /** Bump khi đổi hình dạng JSON scene; `migrateScene` phải có nhánh tương ứng. */
-export const SCENE_VERSION = 27;
+export const SCENE_VERSION = 28;
 
 /** `"@ten"` hay `"@ten+0.4"` / `"@ten-1"`: một mốc có tên trong `scene.marks` cộng phần lệch giây */
 export const MARK_REF = /^@([A-Za-z0-9_-]+)(?:\s*([+-])\s*(\d+(?:\.\d+)?))?$/;
@@ -283,7 +283,8 @@ const V3Schema = z.tuple([z.number(), z.number(), z.number()]);
  * Mốc chỗ đặt người 3D: `at` toạ độ thế giới — ngồi (`sit`) thì là điểm trên mặt ngồi ngay dưới
  * khớp hông, không thì điểm sàn dưới hông —, `yaw` độ quanh trục đứng (0 là mặt hướng +x, 90 là
  * −z). `path` là chỗ người phải ở theo thời gian (`ease` thì êm): đứng thì hông suy từ bàn chân
- * trụ, nhịp chân co giãn cho kịp; đoạn có mốc ngồi thì hông nội suy. docs/03-scene.md#đi-theo-path
+ * trụ, nhịp chân co giãn cho kịp; đoạn có mốc ngồi thì hông nội suy. `steps` là số nhịp bước của cú
+ * quay tại chỗ kết thúc ở mốc này. docs/03-scene.md#đi-theo-path
  */
 const WorldKeySchema = z.object({
   t: time(),
@@ -291,6 +292,7 @@ const WorldKeySchema = z.object({
   yaw: z.number().default(0),
   sit: z.boolean().default(false),
   ease: z.boolean().default(false),
+  steps: z.number().int().min(1).optional(),
 });
 
 /**
@@ -766,6 +768,7 @@ export function migrateScene(json: unknown): unknown {
   // v24 → v25 `cast[].base` nhận số dang của tay chân và `torso: [cúi, nghiêng]`; dạng cũ vẫn hợp lệ
   // v25 → v26 `cast[].base` nhận số xoắn vai, `clips[].mask` nhận kênh `hand`; dạng cũ vẫn hợp lệ
   // v26 → v27 `world.hands[]` nhận mốc thân (`to`), điểm bàn tay (`point`) và lòng tay theo ý định (`palm`, `fingers`); dạng cũ vẫn hợp lệ
+  // v27 → v28 thêm `world.path[].steps`; thiếu là số nhịp quay tại chỗ tự suy từ góc
   o.schemaVersion = SCENE_VERSION;
   return o;
 }
@@ -2339,7 +2342,8 @@ const STALL_MIN = 0.25;
 /**
  * Trượt của một người 3D, đo trên mặt sàn thế giới: chân chịu lực (luật của
  * `bakeFeetTravel`) dịch trong cửa sổ `SLIDE_WINDOW` quá nửa quãng hông đi cộng `SLIDE_MIN` (đơn
- * vị rig, quy ra thế giới bằng `s`) là trượt. Đoạn có mốc ngồi là hông nội suy, không đo. Kèm hai
+ * vị rig, quy ra thế giới bằng `s`) là trượt. Đoạn có mốc ngồi là hông nội suy, không đo; cú quay
+ * tại chỗ bằng bước chân (`turnStep`) không đo, chân xoay của nó trượt cố ý. Kèm hai
  * lỗi của `path`: mốc dừng (đứng yên sau nó, ngồi sau nó, hay mốc cuối) mà hông không tới, và clip
  * có sải chân chạy khi `path` đứng yên.
  */
@@ -2381,7 +2385,9 @@ function worldSlideProblems(rt: SceneRuntime, m: CastMember): string[] {
         ys,
         fwd.map((x, i) => x - (prev as { fwd: number[] }).fwd[i]),
       );
-      const both = bearing.filter((i) => was.includes(i));
+      // chân xoay của cú quay tại chỗ trượt trên sàn là cố ý
+      const both =
+        turnStepAt(m, t) || turnStepAt(m, t - dt) ? [] : bearing.filter((i) => was.includes(i));
       for (const i of both) {
         slip[0] += (ft[i][0] - prev.ft[i][0]) / both.length;
         slip[1] += (ft[i][2] - prev.ft[i][2]) / both.length;
@@ -2453,7 +2459,8 @@ const TURN_BACK_SPAN = 1.5;
  * Người 3D mà thân quay gắt: quay nhanh hơn `TURN_JERK` độ/giây, hay quay đi `TURN_BACK`° rồi quay
  * lại quá nửa trong `TURN_BACK_SPAN` giây. Đo trên hướng thân thế giới `sceneAt(…).world.yaw` từng
  * khung, nên bắt cả cú quay do rig tự lái (hông trượt quá mốc dừng, hướng thân lái theo `path`)
- * chứ không chỉ mốc `yaw` khai. Mỗi cú một dòng. docs/03-scene.md#check-cho-người-3d
+ * chứ không chỉ mốc `yaw` khai. Mỗi cú một dòng. Kèm cú quay tại chỗ khai `steps` ít tới mức một
+ * nhịp quá `TURN_STEP_MAX`. docs/03-scene.md#check-cho-người-3d
  */
 export function sceneTurnProblems(rt: SceneRuntime): string[] {
   if (!rt.lens) return [];
@@ -2533,6 +2540,15 @@ export function sceneTurnProblems(rt: SceneRuntime): string[] {
       );
       while (i < peaks.length && peaks[i] < back) i++;
     }
+    // `steps` khai ít quá: một nhịp bước quay quá `TURN_STEP_MAX`
+    const keys = m.world.path ?? [];
+    for (let k = 1; k < keys.length; k++) {
+      const turn = keys[k].steps && turnOf(keys[k - 1], keys[k]);
+      if (!turn || Math.abs(turn.delta) / turn.steps <= TURN_STEP_MAX) continue;
+      bad.push(
+        `\`${m.id}\` giây ${sec(keys[k - 1].t)}–${sec(keys[k].t)}: quay tại chỗ ${Math.round(Math.abs(turn.delta))}° trong ${turn.steps} nhịp, mỗi nhịp ${Math.round(Math.abs(turn.delta) / turn.steps)}° (nhiều nhất ${TURN_STEP_MAX}°) — bàn chân bước vòng quanh hông; tăng \`steps\` lên ${Math.ceil(Math.abs(turn.delta) / TURN_STEP_MAX)}, hay bỏ trống cho rig tự chia`,
+      );
+    }
   }
   return bad;
 }
@@ -2599,35 +2615,35 @@ function keyAt(keys: WorldKey[], time: number) {
 
 /** Quay tại chỗ dưới ngần này độ thì hai bàn chân xoay quanh hông, không bước */
 const TURN_STEP_MIN = 15;
-/** Một nhịp bước quay (chân dẫn rồi chân theo) quay nhiều nhất ngần này độ */
+/** Một nhịp bước quay (một chân bước, chân kia xoay trên sàn) quay nhiều nhất ngần này độ */
 const TURN_STEP_MAX = 90;
-/** Phần góc của một nhịp mà thân quay trong lúc chân dẫn bước */
-const TURN_LEAD = 0.6;
+/** Phần nhịp mà chân bước đặt xuống trước khi thân dừng, và chân xoay chờ trước khi trượt */
+const TURN_LAG = 0.15;
 /** Bàn chân bước nhấc cao nhất, phần độ dài chân */
 const TURN_LIFT = 0.07;
 /** Hông hạ khi bước quay, phần độ dài chân: gối chùng cho bàn chân trụ với tới */
 const TURN_DIP = 0.015;
 /** Phần đầu và cuối cú quay mà hông hạ xuống, đứng lên */
 const TURN_DIP_RAMP = 0.2;
-/** Thân nghiêng về chân trụ khi chân kia nhấc, độ */
+/** Thân nghiêng về chân xoay khi chân kia nhấc, độ */
 const TURN_LEAN = 3;
 
-/** Hai mốc đứng cùng `at` khác `yaw` là quay tại chỗ: góc quay (độ, có dấu) và số nhịp bước */
+/**
+ * Hai mốc đứng cùng `at` khác `yaw` là quay tại chỗ: góc quay (độ, có dấu) và số nhịp bước — `b.steps`
+ * khai thì theo nó (kể cả dưới `TURN_STEP_MIN`), không thì mỗi nhịp tới `TURN_STEP_MAX`
+ */
 function turnOf(a: WorldKey, b: WorldKey) {
   if (a.sit || b.sit || a.at[0] !== b.at[0] || a.at[2] !== b.at[2]) return;
   const delta = wrap180(b.yaw - a.yaw);
-  if (Math.abs(delta) < TURN_STEP_MIN) return;
-  return { delta, steps: Math.ceil(Math.abs(delta) / TURN_STEP_MAX) };
+  if (delta === 0 || (!b.steps && Math.abs(delta) < TURN_STEP_MIN)) return;
+  return { delta, steps: b.steps ?? Math.ceil(Math.abs(delta) / TURN_STEP_MAX) };
 }
 
-/** Phần góc đã quay ở `u` (0..1) của cú quay `steps` nhịp: mỗi nhịp thân quay phần lớn khi chân dẫn bước */
+/** Phần góc đã quay ở `u` (0..1) của cú quay `steps` nhịp: mỗi nhịp thân quay êm một lượt, dừng giữa hai nhịp */
 function turnShare(steps: number, u: number): number {
   const v = Math.min(1, Math.max(0, u)) * steps;
   const j = Math.min(steps - 1, Math.floor(v));
-  const w = v - j;
-  const g =
-    w < 0.5 ? TURN_LEAD * smoothstep(2 * w) : TURN_LEAD + (1 - TURN_LEAD) * smoothstep(2 * w - 1);
-  return (j + g) / steps;
+  return (j + smoothstep(v - j)) / steps;
 }
 
 /**
@@ -3008,13 +3024,22 @@ function worldPoseAt(
   );
 }
 
+/** Cú quay tại chỗ đang bước lúc `time`: mốc đầu, mốc cuối và `turnOf` của chúng; clip có sải chân đang lái chân thì không */
+function turnStepAt(m: Acting, time: number) {
+  if (!m.world?.path) return;
+  const { a, b } = legOf(keysOf(m.world as WorldSpec), time);
+  const turn = b && turnOf(a, b);
+  if (!turn || strideClip(m, a.t) || strideClip(m, time)) return;
+  return { a, b, turn };
+}
+
 /**
- * Quay tại chỗ (`turnOf`) bằng bước chân: mỗi nhịp chân phía quay nhấc lên đặt xuống chỗ của nó ở
- * hướng mới, rồi chân kia theo; bàn chân trụ đứng yên trên sàn, hông hạ chút cho gối chùng, thân
- * nghiêng về chân trụ. Chỗ hai bàn chân lấy từ chân của `pose` ở hướng đầu và cuối nhịp; góc chân
- * giải lại theo hướng thân đang vẽ `yaw` (độ). `pose` chưa đổi kênh: `ln` là chi gần lúc đầu cảnh,
- * tức chân phải khi `flip0` không lật. Clip có sải chân đang lái chân thì giữ nguyên.
- * docs/03-scene.md#quay-tại-chỗ
+ * Quay tại chỗ (`turnOf`) bằng bước chân: mỗi nhịp một chân nhấc lên đặt xuống chỗ của nó ở hướng
+ * mới, chân kia xoay trên sàn tới chỗ của nó (không nhấc); nhịp đầu chân phía quay bước, các nhịp
+ * sau đổi chân. Hông hạ chút cho gối chùng, thân nghiêng về chân xoay một lần mỗi nhịp. Chỗ hai bàn
+ * chân lấy từ chân của `pose` ở hướng đầu và cuối nhịp; góc chân giải lại theo hướng thân đang vẽ
+ * `yaw` (độ). `pose` chưa đổi kênh: `ln` là chi gần lúc đầu cảnh, tức chân phải khi `flip0` không
+ * lật. docs/03-scene.md#quay-tại-chỗ
  */
 function turnStep(
   m: Acting,
@@ -3026,9 +3051,9 @@ function turnStep(
   height: number,
   hipHalf: number,
 ): Pose {
-  const { a, b } = legOf(keysOf(m.world as WorldSpec), time);
-  const turn = b && turnOf(a, b);
-  if (!turn || strideClip(m, a.t) || strideClip(m, time)) return pose;
+  const at = turnStepAt(m, time);
+  if (!at) return pose;
+  const { a, b, turn } = at;
   const u = (time - a.t) / (b.t - a.t);
   const v = Math.min(1, Math.max(0, u)) * turn.steps;
   const j = Math.min(turn.steps - 1, Math.floor(v));
@@ -3042,9 +3067,10 @@ function turnStep(
   ];
   const len = lengths(height);
   const st = pose.stretch;
-  // chân phía quay dẫn: quay sang phải (`delta` dương) là chân phải
+  // nhịp đầu chân phía quay bước (quay phải — `delta` dương — là chân phải), nhịp sau đổi chân
   const right: "ln" | "lf" = flip0 ? "lf" : "ln";
-  const lead = turn.delta > 0 ? right : right === "ln" ? "lf" : "ln";
+  const left = right === "ln" ? "lf" : "ln";
+  const lead = turn.delta > 0 === (j % 2 === 0) ? right : left;
   const ramp = Math.min(1, u / TURN_DIP_RAMP, (1 - u) / TURN_DIP_RAMP);
   const out: Partial<Record<"ln" | "lf", LegAngles>> = {};
   for (const ch of ["ln", "lf"] as const) {
@@ -3056,17 +3082,17 @@ function turnStep(
     const side = ch === right ? 1 : -1;
     const from: [number, number] = [x, side * (hipHalf + y * Math.sin(sp0 * D))];
     const to = rot(from, step * D);
-    const p = ch === lead ? 2 * w : 2 * w - 1;
+    // chân bước đi trước thân, đặt xuống trước khi thân dừng; chân xoay trượt theo sau
+    const p = ch === lead ? w / (1 - TURN_LAG) : (w - TURN_LAG) / (1 - TURN_LAG);
     const s = smoothstep(Math.min(1, Math.max(0, p)));
-    const lift = p > 0 && p < 1 ? TURN_LIFT * (l1 + l2) * Math.sin(Math.PI * p) : 0;
+    const lift = ch === lead && p > 0 && p < 1 ? TURN_LIFT * (l1 + l2) * Math.sin(Math.PI * p) : 0;
     const [f, l] = rot([from[0] + (to[0] - from[0]) * s, from[1] + (to[1] - from[1]) * s], -rel);
     const depth = y * Math.cos(sp0 * D) - TURN_DIP * (l1 + l2) * smoothstep(ramp) - lift;
     out[ch] = legTo(f, depth, side * l - hipHalf, l1, l2);
   }
-  // thân nghiêng về chân trụ; `lean` dương là về chân đang xa
-  const stance = w < 0.5 ? (lead === "ln" ? "lf" : "ln") : lead;
-  const far = (stance === right) === flip;
-  const lean = TURN_LEAN * Math.sin(Math.PI * ((2 * w) % 1)) * (far ? 1 : -1);
+  // thân nghiêng về chân xoay; `lean` dương là về chân đang xa
+  const far = (lead !== right) === flip;
+  const lean = TURN_LEAN * Math.sin(Math.PI * w) * (far ? 1 : -1);
   return { ...pose, ln: out.ln!, lf: out.lf!, lean: (pose.lean ?? 0) + lean };
 }
 

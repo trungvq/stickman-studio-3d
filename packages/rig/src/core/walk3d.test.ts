@@ -84,7 +84,13 @@ function scene(cast: unknown[], duration?: number): SceneRuntime {
   return resolveScene(r.data, ACTIONS);
 }
 
-type Key = { t: number; at: [number, number, number]; yaw: number; sit?: boolean };
+type Key = {
+  t: number;
+  at: [number, number, number];
+  yaw: number;
+  sit?: boolean;
+  steps?: number;
+};
 
 /** Đi theo vòng tròn tâm `[cx, cz]` bán kính `rho`, từ góc `a0` tới `a1` (độ) trong `dur` giây */
 function arc(cx: number, cz: number, rho: number, a0: number, a1: number, dur: number): Key[] {
@@ -368,18 +374,18 @@ describe("hoà đi → đứng và quay tại chỗ: bàn chân liền, không x
 });
 
 describe("quay tại chỗ bằng bước chân", () => {
-  const turn = (y1: number) =>
+  const turn = (y1: number, t1 = 1.3, steps?: number) =>
     scene(
       [
         walker(
           [
             { t: 0.5, at: [0, 0, 900], yaw: 0 },
-            { t: 1.3, at: [0, 0, 900], yaw: y1 },
+            { t: t1, at: [0, 0, 900], yaw: y1, steps },
           ],
           [{ action: "idle", start: 0 }],
         ),
       ],
-      2,
+      t1 + 0.7,
     );
   const at = (rt: SceneRuntime, t: number) => {
     const s = sceneAt(rt, "a", t, h, dims);
@@ -387,38 +393,86 @@ describe("quay tại chỗ bằng bước chân", () => {
   };
   const moved = (p: number[], q: number[]) => Math.hypot(p[0] - q[0], p[2] - q[2]);
 
-  it("chân phía quay bước trước, chân kia theo; chân trụ đứng yên, chân bước nhấc khỏi sàn", () => {
+  /**
+   * Hai bàn chân bám theo từng chân thật từ `0,5 s` (thứ tự lúc ấy: xa, gần) — lật qua chính diện
+   * hay quay lưng đổi thứ tự của `feet3`: chỗ đầu, chỗ cuối và độ nhấc cao nhất (y âm là lên) trong `[t0, t1]`
+   */
+  const track = (rt: SceneRuntime, t0: number, t1: number) => {
+    let cur = at(rt, 0.5);
+    const out = cur.map((p) => ({ from: p, to: p, top: p[1] }));
+    for (let t = 0.5; t <= t1 + 1e-9; t += 1 / 120) {
+      const [p, q] = at(rt, t);
+      const d = (x: number[], y: number[]) => Math.hypot(x[0] - y[0], x[1] - y[1], x[2] - y[2]);
+      cur = d(p, cur[0]) + d(q, cur[1]) <= d(q, cur[0]) + d(p, cur[1]) ? [p, q] : [q, p];
+      cur.forEach((f, i) => {
+        if (t < t0 - 1e-9) out[i].from = f;
+        else out[i].top = Math.min(out[i].top, f[1]);
+        out[i].to = f;
+      });
+    }
+    return out;
+  };
+
+  it("mỗi nhịp một chân bước: chân phía quay nhấc lên, chân kia xoay trên sàn tới chỗ mới", () => {
     // ống kính ở gốc, người ở +z nhìn +x: chân gần (thứ hai) là chân phải; quay phải là `yaw` tăng
     const rt = turn(90);
-    const [far0, near0] = at(rt, 0.5);
-    const [farMid, nearMid] = at(rt, 0.9);
-    const [far1, near1] = at(rt, 1.3);
-    expect(moved(farMid, far0)).toBeLessThan(0.5);
-    expect(moved(nearMid, near0)).toBeGreaterThan(15);
-    expect(moved(nearMid, near1)).toBeLessThan(0.5);
-    expect(moved(far1, far0)).toBeGreaterThan(15);
-    expect(Math.min(...at(rt, 0.7).map((p) => p[1]))).toBeLessThan(-8);
-    expect(Math.min(...at(rt, 1.1).map((p) => p[1]))).toBeLessThan(-8);
+    const [left, right] = track(rt, 0.5, 1.3);
+    expect(right.top).toBeLessThan(-8);
+    expect(left.top).toBeGreaterThan(-0.5);
+    expect(moved(right.from, right.to)).toBeGreaterThan(15);
+    expect(moved(left.from, left.to)).toBeGreaterThan(15);
     const end = sceneAt(rt, "a", 1.3, h, dims);
     expect(end.world!.yaw / D).toBeCloseTo(90, 5);
     expect(sceneSlideProblems(rt)).toStrictEqual([]);
     expect(sceneTurnProblems(rt)).toStrictEqual([]);
   });
 
-  it("quay trái thì chân trái dẫn; quay nửa vòng là hai nhịp", () => {
-    const rt = turn(-180);
-    const [far0, near0] = at(rt, 0.5);
-    const [farA, nearA] = at(rt, 0.7);
-    expect(moved(nearA, near0)).toBeLessThan(0.5);
-    expect(moved(farA, far0)).toBeGreaterThan(5);
+  it("quay trái thì chân trái dẫn; quay nửa vòng là hai nhịp, nhịp sau đổi chân", () => {
+    const rt = turn(-180, 2.1);
+    // nhịp đầu chân trái bước, chân phải xoay trên sàn; nhịp sau ngược lại
+    const [left1, right1] = track(rt, 0.5, 1.3);
+    const [left2, right2] = track(rt, 1.3, 2.1);
+    expect(left1.top).toBeLessThan(-8);
+    expect(right1.top).toBeGreaterThan(-0.5);
+    expect(right2.top).toBeLessThan(-8);
+    expect(left2.top).toBeGreaterThan(-0.5);
+    for (const f of [left1, right1, left2, right2]) expect(moved(f.from, f.to)).toBeGreaterThan(15);
     // giữa hai nhịp cả hai chân đứng trên sàn, thân đã quay nửa đường
-    expect(Math.min(...at(rt, 0.9).map((p) => p[1]))).toBeGreaterThan(-0.5);
-    expect(sceneAt(rt, "a", 0.9, h, dims).world!.yaw / D).toBeCloseTo(-90, 5);
+    expect(Math.min(left1.to[1], right1.to[1])).toBeGreaterThan(-0.5);
+    expect(sceneAt(rt, "a", 1.3, h, dims).world!.yaw / D).toBeCloseTo(-90, 5);
+    expect(sceneSlideProblems(rt)).toStrictEqual([]);
+    expect(sceneTurnProblems(rt)).toStrictEqual([]);
   });
 
   it("quay ít hơn ngưỡng thì không bước", () => {
     const rt = turn(10);
     expect(Math.min(...at(rt, 0.9).map((p) => p[1]))).toBeGreaterThan(-0.5);
+  });
+
+  it("`steps` khai số nhịp: 90° trong hai nhịp, phải rồi trái", () => {
+    const rt = turn(90, 2.1, 2);
+    const [left1, right1] = track(rt, 0.5, 1.3);
+    const [left2, right2] = track(rt, 1.3, 2.1);
+    expect(right1.top).toBeLessThan(-8);
+    expect(left1.top).toBeGreaterThan(-0.5);
+    expect(left2.top).toBeLessThan(-8);
+    expect(right2.top).toBeGreaterThan(-0.5);
+    expect(sceneAt(rt, "a", 1.3, h, dims).world!.yaw / D).toBeCloseTo(45, 5);
+    expect(sceneSlideProblems(rt)).toStrictEqual([]);
+    expect(sceneTurnProblems(rt)).toStrictEqual([]);
+  });
+
+  it("`steps` khai thì bước cả khi quay dưới ngưỡng", () => {
+    const [left, right] = track(turn(10, 1.3, 1), 0.5, 1.3);
+    expect(right.top).toBeLessThan(-8);
+    expect(left.top).toBeGreaterThan(-0.5);
+  });
+
+  it("`steps` ít tới mức một nhịp quá 90° thì `check` kêu", () => {
+    const bad = sceneTurnProblems(turn(180, 2.1, 1));
+    expect(bad).toHaveLength(1);
+    expect(bad[0]).toMatch(/^`a` giây 0\.50–2\.10: quay tại chỗ 180° trong 1 nhịp, mỗi nhịp 180°/);
+    expect(bad[0]).toContain("tăng `steps` lên 2");
   });
 });
 

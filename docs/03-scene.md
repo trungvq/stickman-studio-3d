@@ -1040,25 +1040,38 @@ Nên soạn theo:
   dừng sớm quá thì hụt, muộn quá thì chân đứng sững.
 - Clip ngồi bắt đầu đúng ở mốc đứng ngay trước mốc ngồi. Chân co lại trong đoạn đứng là bàn chân
   trụ đẩy hông lùi.
-- Quay tại chỗ khi chân đã khép (`idle`), mỗi `90°` cho `0,8 s` trở lên: dưới đó thân quay quá
-  `300°/s`, `check` kêu.
+- Quay tại chỗ khi chân đã khép (`idle`), mỗi `90°` cho `0,8 s` trở lên; dưới `0,45 s` thân quay
+  quá `300°/s`, `check` kêu.
 
 #### Quay tại chỗ
 
 Hai mốc đứng liền nhau cùng `at`, `yaw` lệch từ `15°` (`TURN_STEP_MIN`) là quay tại chỗ, và người
-quay bằng bước chân: chân phía quay (quay phải — `yaw` tăng — là chân phải) nhấc lên đặt xuống chỗ
-của nó ở hướng mới, rồi chân kia theo. Mỗi nhịp như vậy quay nhiều nhất `90°` (`TURN_STEP_MAX`):
-quay nửa vòng là hai nhịp chia đều quãng giữa hai mốc. Trong một nhịp thân quay `60%` góc lúc chân
-dẫn bước (`TURN_LEAD`), phần còn lại lúc chân theo; giữa hai nhịp thân dừng, hai chân trên sàn.
+quay bằng bước chân. Mỗi nhịp chỉ một chân nhấc: chân bước nhấc lên đặt xuống chỗ của nó ở hướng
+mới, chân kia xoay trên sàn (trên mũi chân, không nhấc) từ chỗ cũ tới chỗ của nó ở hướng mới. Mỗi
+nhịp quay nhiều nhất `90°` (`TURN_STEP_MAX`): quay nửa vòng là hai nhịp chia đều quãng giữa hai mốc.
+Nhịp đầu chân phía quay bước (quay phải — `yaw` tăng — là chân phải), nhịp sau đổi chân: chân vừa
+xoay giờ bước, chân vừa bước giờ xoay, nên nửa vòng là trái rồi phải như hai bước đi.
 
-- Bàn chân trụ đứng yên trên sàn, bàn chân bước nhấc cao nhất `7%` độ dài chân. Chỗ đặt hai bàn chân
-  là chỗ của chân trong tư thế đang có (`idle`, `stand-3d` …) xoay quanh hông về hướng đầu và cuối
-  nhịp; góc chân (đùi, gối, dang) giải lại mỗi khung, đè kênh chân của hành động.
+`steps` ở mốc cuối của cú quay khai số nhịp: góc và thời gian chia đều cho từng ấy nhịp, chân vẫn
+luân phiên. Bỏ trống là `ceil(|góc| / 90°)`. Khai `steps` thì người bước cả khi quay dưới `15°`.
+`steps` ít tới mức một nhịp quá `90°` thì `check` kêu: bàn chân bước vòng quanh hông.
+
+```jsonc
+{ "t": 4.0, "at": [-60, 280, 700], "yaw": 180 },
+{ "t": 5.6, "at": [-60, 280, 700], "yaw": 270, "steps": 2 }   // 90° trong hai nhịp: phải rồi trái
+```
+
+- Trong một nhịp thân quay êm một lượt; chân bước đi trước thân và đặt xuống `15%` nhịp trước khi
+  thân dừng (`TURN_LAG`), chân xoay chờ `15%` nhịp đầu rồi trượt theo. Giữa hai nhịp thân dừng, hai
+  chân trên sàn.
+- Bàn chân bước nhấc cao nhất `7%` độ dài chân. Chỗ đặt hai bàn chân là chỗ của chân trong tư thế
+  đang có (`idle`, `stand-3d` …) xoay quanh hông về hướng đầu và cuối nhịp; góc chân (đùi, gối,
+  dang) giải lại mỗi khung, đè kênh chân của hành động.
 - Hông hạ `1,5%` độ dài chân (gối chùng) trong cú quay, lên xuống êm ở `20%` đầu và cuối; thân
-  nghiêng `3°` về chân trụ (kênh `lean`).
+  nghiêng `3°` về chân xoay một lần mỗi nhịp (kênh `lean`).
 - `yaw` giữa hai mốc đi theo nhịp bước chứ không nội suy đều, kể cả với `worldFacingAt`.
 - Clip có sải chân còn lái chân lúc mốc đầu (kể cả lúc nó đang hoà ra) thì cú quay không bước: hai
-  bàn chân xoay quanh hông. Quay dưới `15°` cũng vậy.
+  bàn chân xoay quanh hông. Quay dưới `15°` không khai `steps` cũng vậy.
 
 **Lật qua chính diện hay quay lưng đổi chân gần.** Chân gần (`ln`) là chân phía ống kính; thân quay
 qua `theta` 0 hay 180 thì chân gần là chân kia, nên từ lúc ấy `sceneAt` đổi chỗ các kênh gần ↔ xa
@@ -1088,13 +1101,15 @@ từ góc đang hoà về dáng nghỉ trong một khung.
 
 `sceneSlideProblems` đo trên mặt sàn thế giới, cửa sổ `0,4 s`: bàn chân chịu lực dịch quá nửa
 quãng hông đi cộng `8 · s` đơn vị là trượt (`path` dời người mà chân không bước, hay chân bước khi
-đứng yên ở `world.at`). Đoạn có mốc ngồi không đo. Kèm hai lỗi của `path`: mốc dừng mà hông cách
+đứng yên ở `world.at`). Đoạn có mốc ngồi không đo; cú [quay tại chỗ](#quay-tại-chỗ) bằng bước chân
+cũng không — chân xoay của nó trượt trên sàn là cố ý. Kèm hai lỗi của `path`: mốc dừng mà hông cách
 `at` quá `20 · s`, và clip có sải chân chạy khi `path` đã đứng yên quá `0,25 s`.
 
 `sceneTurnProblems` đo hướng thân thế giới từng khung (`1/60 s`) và kêu hai kiểu thân quay gắt:
 quay nhanh hơn `300°/s` (mỗi quãng một dòng), và quay đi từ `20°` rồi quay lại quá nửa cú ấy trong
 `1,5 s`. Nó đo hướng rig thật sự vẽ, nên bắt cả cú quay rig tự sinh mà JSON không khai: hông trượt
-quá mốc dừng, hướng lái theo `path`, mốc `yaw` đổi trong một khung:
+quá mốc dừng, hướng lái theo `path`, mốc `yaw` đổi trong một khung. Kèm cú
+[quay tại chỗ](#quay-tại-chỗ) khai `steps` ít tới mức một nhịp quá `90°`:
 
 ```
 `haru` giây 1.93–2.00: thân quay 720°/s (ngưỡng 300°/s) — …
