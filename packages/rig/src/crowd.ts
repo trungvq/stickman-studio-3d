@@ -64,7 +64,7 @@ export interface Seat {
   yaw: number;
   /** Đè lên người mẫu cho riêng chỗ này: màu áo, tóc, kiểu áo */
   opts?: Partial<StickmanOptions>;
-  /** Dáng đã lấy mẫu (`sceneAt` ở một `t`, như `act`) thay cho dáng ngồi dựng sẵn */
+  /** Dáng đã lấy mẫu (`sceneAt` ở một `t`, như `act`) thay cho dáng ngồi dựng sẵn; người đứng (`world.seated` không bật) dựng áo dáng đứng */
   acting?: Acting;
   /** Dáng tay dựng sẵn: `desk` hai tay đặt lên mặt bàn trước người, `lap` đặt trên đùi. Mặc định `desk`. */
   hands?: 'desk' | 'lap';
@@ -79,8 +79,10 @@ const wobble = (i: number, k: number) => ((Math.sin(i * 12.9898 + k * 78.233) * 
 export function seatCrowd(seats: readonly Seat[], base: StickmanOptions | ((i: number, seat: Seat) => StickmanOptions)): THREE.Group {
   const figs = seats.map((seat, i) => {
     const o = typeof base === 'function' ? base(i, seat) : base;
-    const fig = stickman({ seed: i, ...o, ...seat.opts, lod: 'low', seated: true });
-    put(fig, seat.at, seat.yaw, true);
+    // dáng lấy mẫu của người đứng thì dựng áo, váy dáng đứng: dựng dáng ngồi là vạt trước trải ra như phủ đùi
+    const seated = seat.acting ? !!seat.acting.world?.seated : true;
+    const fig = stickman({ seed: i, ...o, ...seat.opts, lod: 'low', seated });
+    put(fig, seat.at, seat.yaw, seated);
     if (seat.acting) act(fig, seat.acting, 0);
     else {
       const desk = (seat.hands ?? 'desk') === 'desk';
