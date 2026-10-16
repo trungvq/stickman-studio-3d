@@ -1084,9 +1084,10 @@ Không có chỏm vai: tay áo là mảnh riêng bám que tay.
 - **Vạt áo người 3D ngồi** (`seated`, `lapFold` của lõi). Gấu thấp hơn hông thì khối thân không buông thẳng
   xuyên đùi xuống ghế. Chỗ gập cao hơn hông bằng chỗ cao nhất của mặt đùi khi gối gập vuông — đùi cong vồng
   theo `bendLimb` (điểm điều khiển thứ hai nhô `limbCurve / 6` ống chân) và thon dần về gối — gồm vỏ viền,
-  cộng 1 px. Dưới chỗ gập, nửa trước nằm ngang trên đùi: vành xa chỗ gập bao nhiêu thì nửa sâu thêm bấy
-  nhiêu dọc đùi, không hẹp lại ở góc bo của gấu, nên các vành lồng nhau thành vạt nửa ellipse mép trơn.
-  Nửa sau, hai sườn và tâm nắp gấu buông tới mặt ghế (`legHalf` dưới hông) rồi dừng; kinh độ trước ±`0.3`
+  cộng 1 px. Dưới chỗ gập, áo dài (gấu thấp hơn hông từ `LAP_FLAP` = 20 px: yukata, kimono, áo khoác dài) có
+  nửa trước nằm ngang trên đùi: vành xa chỗ gập bao nhiêu thì nửa sâu thêm bấy nhiêu dọc đùi, không hẹp lại ở
+  góc bo của gấu, nên các vành lồng nhau thành vạt nửa ellipse mép trơn. Áo ngắn hơn (sơ mi, polo, len) không
+  trải vạt: nửa trước giữ chỗ cũ và dừng ở đường gập, bụng bo xuống mặt đùi. Nửa sau, hai sườn và tâm nắp gấu buông tới mặt ghế (`legHalf` dưới hông) rồi dừng; kinh độ trước ±`0.3`
   (`cos`) chuyển dần từ buông sang gập. Nửa trước không thấp hơn đường qua chỗ gập theo hướng đùi: thân ngả
   trước thì bụng dừng trên đùi. Nét, chấm, mảng giữ khoảng nổi khỏi mặt khối. Hướng đùi là hướng đùi trung
   bình trong mặt dọc của thân; `act` gập lại khi nó đổi quá nửa độ, người nền `lod: 'low'` gập sẵn chếch

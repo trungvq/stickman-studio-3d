@@ -737,6 +737,9 @@ export function profile(g: Dims & { belly?: number; bellySide?: number }, rig: R
   };
 }
 
+/** Gấu thấp hơn hông chưa tới bấy nhiêu px thì nửa trước người ngồi không trải vạt lên đùi mà bo vào chỗ gập (`lapFold`) */
+export const LAP_FLAP = 20;
+
 /** Vạt áo của người ngồi (`lapFold`), px hệ thân, y xuống: mặt ghế; `fold` là chỗ gập và hướng đùi `[y, z]` */
 export interface Lap {
   seat: number;
@@ -744,9 +747,10 @@ export interface Lap {
 }
 
 /**
- * Thân áo người ngồi (`profile` / `depth` của khối, hệ thân px, y xuống, z ra trước ngực): dưới `fold.top`, nửa trước gập
- * theo đùi — vành xa chỗ gập bao nhiêu thì nửa sâu thêm bấy nhiêu dọc đùi, các vành lồng nhau thành vạt nửa ellipse, mép
- * trơn — còn nửa sau và hai sườn buông tới `seat`; nửa trước không thấp
+ * Thân áo người ngồi (`profile` / `depth` của khối, hệ thân px, y xuống, z ra trước ngực): dưới `fold.top`, gấu thấp hơn
+ * hông từ `LAP_FLAP` thì nửa trước gập theo đùi — vành xa chỗ gập bao nhiêu thì nửa sâu thêm bấy nhiêu dọc đùi, các vành
+ * lồng nhau thành vạt nửa ellipse, mép trơn; gấu ngắn hơn thì nửa trước giữ chỗ cũ rồi dừng ở đường gập, bụng bo xuống
+ * đùi — còn nửa sau và hai sườn buông tới `seat`; nửa trước không thấp
  * hơn đường qua chỗ gập theo hướng đùi, nên thân ngả trước thì bụng dừng trên đùi. Không có `fold` thì mọi điểm dưới `seat`
  * chỉ dồn lên `seat`. Điểm nổi khỏi mặt khối (nét, mảng) giữ khoảng nổi ấy.
  */
@@ -778,6 +782,7 @@ export function lapFold(
   const l = Math.hypot(...fold.dir) || 1;
   const [dy, dz] = [fold.dir[0] / l, fold.dir[1] / l];
   const slope = dz > 0.1 ? dy / dz : 0;
+  const flap = pr[pr.length - 1][1] >= LAP_FLAP;
   // vạt không hẹp lại dọc đùi: góc bo của gấu hẹp dần mà vạt dài thêm thì các vành cắt nhau, dải lật úp lòi vỏ viền
   const wide: number[] = [];
   pr.forEach(([pa, py], i) => wide.push(Math.max(wide[i - 1] ?? 0, py > top ? pa : 0)));
@@ -795,13 +800,13 @@ export function lapFold(
     const k = Math.min(1, Math.max(0, c / 0.3));
     const w = k * k * (3 - 2 * k);
     const [x1, y1, z1] =
-      h > 0
+      h > 0 && flap
         ? [
             lerp(x, x * (Math.max(a, wide[i - 1] ?? 0) / a), w),
             lerp(Math.min(y, seat), top + h * c * dy - e * dz, w),
             lerp(z, (dt + h * dz) * c + e * dy, w),
           ]
-        : [x, y, z];
+        : [x, h > 0 ? Math.min(y, seat) : y, z];
     return [x1, lerp(y1, Math.min(y1, top + z1 * slope - Math.max(0, e)), w), z1];
   };
 }

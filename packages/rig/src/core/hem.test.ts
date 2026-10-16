@@ -14,6 +14,7 @@ import {
   wrapHemOf,
   WrapSchema,
 } from "./index";
+import { LAP_FLAP, lapFold } from "./torso";
 
 const LONG = SkirtSchema.parse({ style: "wrap", rise: 30, length: 195, flare: -4, pleats: 0 });
 
@@ -94,5 +95,28 @@ describe("vạt treo hông", () => {
     const apron = SkirtSchema.parse({ style: "apron", length: 100 });
     expect(roots3({ style: "shirt" }, rig, { ...b, skirt: apron }).splay).toBe(bare);
     expect(roots3({ style: "shirt" }, rig, { ...b, skirt: LONG }).splay).toBeGreaterThan(bare);
+  });
+});
+
+describe("vạt áo người ngồi", () => {
+  const body = (hem: number) => {
+    const pr: [number, number][] = [];
+    for (let y = -120; y <= hem; y += 4) pr.push([40, y]);
+    if (pr[pr.length - 1][1] !== hem) pr.push([40, hem]);
+    return { pr, depth: pr.map(() => 25) };
+  };
+  const lap = { seat: 12, fold: { top: -14, dir: [-0.1, 1] as [number, number] } };
+
+  it("gấu ngắn: nửa trước không trải ra trước, dừng ở đường gập", () => {
+    const { pr, depth } = body(LAP_FLAP - 8);
+    const [x, y, z] = lapFold(pr, depth, lap)([0, LAP_FLAP - 8, 25]);
+    expect([x, z]).toEqual([0, 25]);
+    expect(y).toBeLessThanOrEqual(lap.fold.top + 25 * -0.1 + 1e-9);
+  });
+
+  it("gấu dài: nửa trước gập thành vạt nằm dọc đùi", () => {
+    const { pr, depth } = body(LAP_FLAP + 20);
+    const [, , z] = lapFold(pr, depth, lap)([0, LAP_FLAP + 20, 25]);
+    expect(z).toBeGreaterThan(25 + LAP_FLAP);
   });
 });
