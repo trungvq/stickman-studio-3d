@@ -453,7 +453,7 @@ export function loadScene(
     for (const k of m.world?.hands ?? [])
       for (const h of [k.right?.hold, k.left?.hold]) {
         if (!h) continue;
-        const { item } = rig.sceneHoldRef(h);
+        const item = rig.heldBase(rig.sceneHoldRef(h).item);
         held[item] ??= maybe(heldDirs, `${item}.json`, rig.parseHeldItem);
       }
   const rt = rig.resolveScene(scene, actions, animals, props, heights, bodies, held);

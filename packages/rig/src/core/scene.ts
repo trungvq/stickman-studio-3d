@@ -49,6 +49,7 @@ import {
 import {
   heldAxis,
   heldGrip,
+  heldBase,
   heldPoint,
   HOLD_BLEND,
   holdIntent,
@@ -1224,10 +1225,11 @@ export function resolveScene(
   propSpecs: Record<string, PropData> = {},
   heights: Record<string, number> = {},
   bodies: Record<string, Body3> = {},
-  held: Record<string, HeldItemSpec> = {},
+  held0: Record<string, HeldItemSpec> = {},
 ): SceneRuntime {
   // Mốc có tên giải ra số ở đây và chỉ ở đây: mọi thứ dưới đọc số
   const scene = unmarkScene(raw);
+  const held = heldInstances(held0, scene.cast);
   const stride = strideCache();
   const seen = new Set<string>();
   const claim = (id: string) => {
@@ -3004,6 +3006,28 @@ function holdRun(
 }
 
 /**
+ * Bảng món cộng các tên thể hiện scene nhắc tới: `vali:2` (hai món cùng loại trên một người hay trong một cảnh) dùng
+ * chung `held/vali.json` mà là một món riêng — `provide`, `holder`, đổi tay theo tên đủ
+ */
+function heldInstances(
+  held: Record<string, HeldItemSpec>,
+  cast: { world?: { hands?: HandKey[] } }[],
+): Record<string, HeldItemSpec> {
+  let out = held;
+  for (const m of cast)
+    for (const k of m.world?.hands ?? [])
+      for (const h of [k.right?.hold, k.left?.hold]) {
+        if (!h) continue;
+        const { item } = sceneHoldRef(h);
+        const base = heldBase(item);
+        if (out[item] || base === item || !held[base]) continue;
+        if (out === held) out = { ...held };
+        out[item] = held[base];
+      }
+  return out;
+}
+
+/**
  * Lần cầm hai tay khai lệch ở `world.hands`: một tay cầm kiểu hai tay (`both`) mà cùng lúc tay kia cầm món khác — kiểu hai
  * tay không thành, mỗi tay mang một món. `check` (nhóm `ref`) báo. docs/03-scene.md#đồ-cầm-tay
  */
@@ -3247,7 +3271,8 @@ function checkHolds(
       if (h.hold) {
         const { item, grip } = sceneHoldRef(h.hold);
         const spec =
-          held[item] ?? fail(`${where}: không có món \`${item}\` (\`held/${item}.json\`)`);
+          held[item] ??
+          fail(`${where}: không có món \`${item}\` (\`held/${heldBase(item)}.json\`)`);
         try {
           heldGrip(spec, grip, item);
           const { face, roll } = holdIntent(spec, h.hold);

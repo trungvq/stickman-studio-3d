@@ -397,6 +397,22 @@ describe("`world.hands[].hold` trong scene", () => {
     expect(rep.reach!.gap).toBeLessThan(3);
   });
 
+  it("tên thể hiện `món:<tên>`: hai món cùng loại trên một người dùng chung `held/<món>.json`", () => {
+    const sp = at([
+      {
+        t: 0,
+        right: { at: [-30, -270, -70], point: "grip", hold: "coc#quai" },
+        left: { at: [30, -270, -70], point: "grip", hold: "coc:2#quai" },
+      },
+    ]);
+    const held = actHeld(C, sp);
+    expect(held.R).toMatchObject({ item: "coc", grip: "quai" });
+    expect(held.L).toMatchObject({ item: "coc:2", grip: "quai" });
+    expect(() => at([{ t: 0, right: { at: [0, -270, -70], hold: "ly:2#quai" } }])).toThrow(
+      /không có món `ly:2` \(`held\/ly.json`\)/,
+    );
+  });
+
   it("đang hoà giữa hai đích: khe đo tới đích đã hoà, không báo tay hụt giữa đường", () => {
     const sp = at(
       [

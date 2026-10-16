@@ -349,6 +349,12 @@ export interface ReachHold {
   enter?: number;
 }
 
+/** Tên file của món cho tên thể hiện `món:<tên>` (`vali:2` → `vali`); tên không có `:` là chính nó */
+export const heldBase = (item: string): string => {
+  const i = item.indexOf(":");
+  return i > 0 ? item.slice(0, i) : item;
+};
+
 /** Giây hoà khi một tay bắt đầu cầm (tay phụ với tới món) hay đổi kiểu cầm cùng món (liên kết cũ → mới) */
 export const HOLD_BLEND = 0.3;
 
