@@ -47,6 +47,9 @@ function drawn(p: Figure, sp: Acting): Record<ActJoint, [number, number, number]
   return out;
 }
 
+/** Hai ca dựng hàng chục người que three: chạy riêng chừng 3 s, cả bộ test chạy song song thì lâu gấp mấy lần */
+const SLOW = 30_000;
+
 describe('actJoints', () => {
   it('trùng khớp người que three mà `act` đặt, ở mọi kiểu tư thế, cả người mặc đồ, người lùn và người mặc váy', async () => {
     const { fromCharacter } = await import('./stickman');
@@ -92,7 +95,7 @@ describe('actJoints', () => {
         }
       }
     }
-  });
+    }, SLOW);
 
   it('đích theo mốc thân và lòng tay theo ý định: `act` giải trên chính người ấy trùng `actJoints`, cả hai tay bám nhau', async () => {
     const { fromCharacter } = await import('./stickman');
@@ -131,7 +134,7 @@ describe('actJoints', () => {
           for (let j = 0; j < 3; j++) expect(got[k][j], `${k}[${j}] ca ${i} cao ${height}`).toBeCloseTo(want[k][j], 6);
       }
     }
-  });
+    }, SLOW);
 
   it('người mặc đồ: gốc vai là tâm vòng tròn bán kính ống tay tiếp xúc vát vai và sườn áo; `bicep` nở nó ra ngoài sườn', () => {
     const c = defaultCharacter();
