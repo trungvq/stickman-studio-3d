@@ -429,7 +429,8 @@ export function sceneAims(
       for (const hand of ["R", "L"] as const) {
         const r = res.report[hand];
         const hits: Omit<AimIssue, "runs" | "clips">[] = [];
-        if (r.reach && r.reach.gap > gap * sp.world.s)
+        // đích do món đặt (tay phụ, `item:<mốc>`) là luật `held:reach`
+        if (r.reach && !r.reach.hold && r.reach.gap > gap * sp.world.s)
           hits.push({
             id: m.id,
             hand,

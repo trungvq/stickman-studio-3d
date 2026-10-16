@@ -1027,8 +1027,11 @@ export function aimWrist(
 
 /** Một tay đã giải: đích đã quy về số, số bàn tay, và độ lệch còn lại so với cái đã khai */
 export interface AimReport {
-  /** Mốc của đích (`at` là toạ độ thô với điểm khác cổ tay) và khe từ điểm bàn tay tới đích, rig; chỉ khi phần đích đủ `1` */
-  reach?: { to: BodyMark | "at"; point: ReachPoint; gap: number };
+  /**
+   * Mốc của đích (`at` là toạ độ thô với điểm khác cổ tay) và khe từ điểm bàn tay tới đích, rig; chỉ khi phần đích đủ `1`.
+   * `hold`: đích do món đang cầm — `support` tay phụ với tới mốc kiểu cầm của nó trên món, `item` điểm `item:<mốc>`
+   */
+  reach?: { to: BodyMark | "at"; point: ReachPoint; gap: number; hold?: "support" | "item" };
   /** Góc lệch còn lại của lòng tay, của ngón so với hướng đã khai, độ */
   palm?: number;
   fingers?: number;
@@ -1038,7 +1041,15 @@ export interface AimReport {
    * Ý định của món đang cầm, trục chính: trục trong khung món, hướng muốn và hướng đạt (thế giới rig, đơn vị), góc lệch
    * còn lại (độ) và các khớp cổ tay đang kẹp ở giới hạn
    */
-  hold?: { axis: V3; want: V3; got: V3; err: number; clamped: ("turn" | "bend" | "dev")[] };
+  hold?: {
+    axis: V3;
+    want: V3;
+    got: V3;
+    err: number;
+    clamped: ("turn" | "bend" | "dev")[];
+    /** Đích của trục chính như scene khai (`up`, `camera`, `holderFace`, `<người>.<mốc>`, mốc thân, vectơ) */
+    toward?: string;
+  };
 }
 
 const hasTerms = (r: ReachIn | undefined) => !!(r && r.w > 0 && r.terms?.length);
@@ -1368,6 +1379,7 @@ function solveActing(
           got: rigDir(unit(got)),
           err,
           clamped,
+          ...(main.label && { toward: main.label }),
         },
       };
     };
@@ -1535,6 +1547,9 @@ function solveActing(
         to: main.to ?? "at",
         point: pt,
         gap: (len(sub(handAt(h, pt), want)) * 100) / s,
+        ...(role?.role === "support" && full === rw
+          ? { hold: "support" as const }
+          : role && pt.startsWith("item:") && { hold: "item" as const }),
       };
     }
     report[T.tag(side)] = rep;

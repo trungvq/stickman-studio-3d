@@ -67,10 +67,10 @@ describe("check: tham số và nhóm luật", () => {
   it("tên nhóm sai, bỏ hết nhóm, thiếu giá trị, `--jobs` không dương là lỗi kèm danh sách nhóm", () => {
     assert.match(
       parseCheckArgs(["--only", "hand,move"]).error,
-      /không có nhóm `hand` — nhóm của check: ref, move, hands, held, clash, episode/,
+      /không có nhóm `hand` — nhóm của check: ref, move, hands, held, legacy, clash, episode/,
     );
     assert.match(
-      parseCheckArgs(["--skip", "ref,move,hands,held,clash,episode"]).error,
+      parseCheckArgs(["--skip", "ref,move,hands,held,legacy,clash,episode"]).error,
       /không còn nhóm/,
     );
     assert.match(parseCheckArgs(["--only"]).error, /--only cần một giá trị/);
@@ -279,7 +279,7 @@ describe("check: chạy theo nhóm", () => {
     assert.ok(held.time.three > 0);
     assert.equal(held.time.clash, undefined);
     assert.equal(held.time.move, undefined);
-    const skip = await checkWorkspace({ dir, jobs: 1, skip: "clash,hands,held" });
+    const skip = await checkWorkspace({ dir, jobs: 1, skip: "clash,hands,held,legacy" });
     assert.equal(skip.time.three, undefined);
     assert.ok(skip.time.move > 0);
   });

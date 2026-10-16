@@ -37,8 +37,9 @@ const USAGE = `stickman <lệnh> [thư mục]
                 (đi chung --scene thì lấy cảnh khớp cả hai)
                 --only <nhóm,…> / --skip <nhóm,…> chọn nhóm luật: ref (JSON, tham chiếu),
                 move (trượt, thân quay, giật), hands (tay, lòng tay), held (đồ cầm),
-                clash (lồng vào đồ, vào người, tay xuyên thân), episode (tập, tiếng, git,
-                công cụ ngoài); nhóm không chạy thì không dựng thứ nó cần
+                legacy (đồ cầm còn đi đường cũ), clash (lồng vào đồ, vào người, tay xuyên
+                thân), episode (tập, tiếng, git, công cụ ngoài); nhóm không chạy thì không
+                dựng thứ nó cần
                 --held tên tắt của --only held
                 --baseline <file> chỉ in cảnh báo mới hay nặng hơn file ấy (kèm mọi lỗi)
                 --save-baseline <file> ghi cảnh báo lượt này vào file (gộp cảnh không chạy lại)

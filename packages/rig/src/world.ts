@@ -75,6 +75,8 @@ export interface Cast3D {
    * giới three (đã nhân cỡ người) — để `extra` đặt món đúng chỗ ấy sau khi thả. Chưa thả lần nào thì `undefined`
    */
   released(item: string, t: number, owner?: string): Released | undefined;
+  /** Các món đã đăng ký qua `provide`: `check` đo món nhảy và cảnh khai `hold` món không ai đăng ký */
+  provided(): readonly { item: string; object: THREE.Object3D; owner?: string }[];
 }
 
 /** Lần thả một món: ai, tay nào, giây nào, món ở đâu (ma trận thế giới three) */
@@ -203,6 +205,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     provide: () => undefined,
     holder: () => undefined,
     released: () => undefined,
+    provided: () => [],
   };
   // món cầm tay đăng ký qua `provide`: rig gắn theo `world.hands[].hold` sau khi người và đồ riêng đã đặt
   const provided: Provided[] = [];
@@ -231,6 +234,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     if (entry(item, owner)) throw new Error(`\`provide\`: món \`${item}\`${owner ? ` của \`${owner}\`` : ''} đã đăng ký`);
     provided.push({ item, object, owner, home: { position: object.position.clone(), quaternion: object.quaternion.clone(), ...(object.parent && { parent: object.parent }) } });
   };
+  cast3.provided = () => provided.map((p) => ({ item: p.item, object: p.object, ...(p.owner !== undefined && { owner: p.owner }) }));
   cast3.holder = (item, t, owner) => {
     const h = carrying(entry(item, owner), t);
     return h && { id: h.id, side: h.side };

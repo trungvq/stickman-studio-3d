@@ -248,8 +248,8 @@ class BlankPath2D {
 
 /**
  * Cảnh three của repo video, hay `null` nếu repo không khai `stickman.world`: `{ worldOf, collide,
- * colliders, U, heldHands }` — `worldOf` của entry, các thứ sau của chính bản rig mà entry nạp (`heldHands`
- * trống khi bản rig ấy chưa có). Đặt `Path2D`
+ * colliders, U, heldHands, legacyHolds }` — `worldOf` của entry, các thứ sau của chính bản rig mà entry nạp
+ * (`heldHands`, `legacyHolds` trống khi bản rig ấy chưa có). Đặt `Path2D`
  * rỗng vào `globalThis` khi Node không có. Hợp đồng ở docs/10-lop-ve-code.md#đo-trên-cảnh-three
  */
 export async function loadWorld(root = process.cwd()) {
@@ -271,6 +271,7 @@ export * from "@stickman3d/rig";`,
     colliders: mod.colliders,
     U: mod.U,
     heldHands: mod.heldHands,
+    legacyHolds: mod.legacyHolds,
   };
 }
 

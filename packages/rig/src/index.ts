@@ -16,7 +16,7 @@ export {
 export { freeze, seatCrowd, type Seat } from './crowd';
 export { room, type DoorSpec, type Face, type FloorPattern, type PanelSpec, type Room, type RoomDoor, type RoomOptions, type RoomTones, type RoomWindow, type WallSide, type WindowSpec } from './room';
 export { BODY_PARTS, bodyCapsules, collide, colliders, type BodyPart, type Collider, type CollideOptions, type Contact, type Touch } from './collide';
-export { heldHands } from './held';
+export { heldHands, legacyHolds, type LegacyHold } from './held';
 export { act, type ActPose, type ActReach, type Acting, type ActWorld } from './act';
 export { type FaceRig, type FaceShape, type Wrinkle } from './face';
 export { GLASSES_DEFAULT, glassesLines, glassesMesh } from './glasses';
@@ -46,5 +46,5 @@ export {
 } from './motion';
 export {
   buildStage, buildWorld, combineExtras, plainRoom, roomLights,
-  type Cast3D, type Extra3D, type LightAdd, type Set3D, type World3D, type WorldCtx, type WorldData, type WorldSpec,
+  type Cast3D, type Extra3D, type LightAdd, type Released, type Set3D, type World3D, type WorldCtx, type WorldData, type WorldSpec,
 } from './world';

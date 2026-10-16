@@ -320,6 +320,8 @@ export interface HoldAxis {
   axis: V3;
   target: HoldTarget;
   tilt?: number;
+  /** Đích như scene khai, để báo: `up`, `camera`, `holderFace`, `<người>.<mốc>`, mốc thân, vectơ */
+  label?: string;
 }
 
 /**

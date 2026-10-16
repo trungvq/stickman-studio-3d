@@ -1524,8 +1524,9 @@ export function armOptions(dir = ".") {
 
 /**
  * Ngưỡng đo đồ cầm tay: `stickman.held` trong `package.json` — `{ pose, pierce, touch, grip, up, face, drift, turn,
- * hold }` (độ, đơn vị rig, đơn vị rig, đơn vị rig, độ, độ, đơn vị rig, độ, giây), trường thiếu lấy các hằng `HELD_*` của
- * rig; `false` là không đo. Sai kiểu thì trả `{ error }`. docs/03-scene.md#đồ-cầm-tay
+ * reach, hold }` (độ, đơn vị rig, đơn vị rig, đơn vị rig, độ, độ, đơn vị rig, độ, đơn vị rig, giây), trường thiếu lấy các
+ * hằng `HELD_*` (`reach`: `AIM_GAP`) của rig; `false` là không đo. Sai kiểu thì trả `{ error }`.
+ * docs/03-scene.md#đồ-cầm-tay
  */
 export function heldOptions(dir = ".") {
   const raw = readPkg(resolve(dir))?.stickman?.held;
@@ -1539,6 +1540,7 @@ export function heldOptions(dir = ".") {
     face: rig.HELD_FACE,
     drift: rig.HELD_DRIFT,
     turn: rig.HELD_TURN,
+    reach: rig.AIM_GAP,
     hold: rig.HELD_HOLD,
   };
   if (raw === undefined) return out;
@@ -1554,9 +1556,10 @@ export function heldOptions(dir = ".") {
 /**
  * Số đo đồ cầm ở giây `t` trên cảnh three `world` (`worldScene`): `pose(t)` rồi `heldHands` của rig cho mọi người đang
  * hiện — `frame` của `sceneHeld`. `pose(t)` ném thì giây ấy không có số đo, `onError(t, lỗi)`. `null` khi rig của repo
- * chưa có `heldHands`. docs/03-scene.md#đồ-cầm-tay
+ * chưa có `heldHands`. `onPosed(posed, t)` được gọi sau mỗi lần đặt cảnh (luật `legacy` đọc cùng tư thế ấy).
+ * docs/03-scene.md#đồ-cầm-tay
  */
-export function heldFrame(rt, world, onError) {
+export function heldFrame(rt, world, onError, onPosed) {
   const { scene, U, heldHands } = world;
   if (typeof heldHands !== "function") return null;
   const eye = rt.lens && [rt.lens.eye[0] * U, -rt.lens.eye[1] * U, -rt.lens.eye[2] * U];
@@ -1569,9 +1572,37 @@ export function heldFrame(rt, world, onError) {
       return [];
     }
     scene.root.updateMatrixWorld(true);
+    onPosed?.(posed, t);
     return Object.entries(posed).flatMap(([id, f]) =>
       f?.root && shown(f.root) ? heldHands(f, id, { U, eye }) : [],
     );
+  };
+}
+
+/**
+ * Các món đăng ký (`Cast3D.provide`) ở giây `t` trên cảnh three `world`: chỗ, hướng (thế giới rig), có hiện không, ai mang
+ * — `items` của `sceneHeld` (món nhảy qua mốc `hold`). `null` khi cảnh không có `cast.provided` (rig cũ, `worldOf` tự dựng)
+ */
+export function heldItemsFrame(world) {
+  const { scene, U } = world;
+  if (typeof scene.cast?.provided !== "function") return null;
+  return (t) => {
+    scene.pose(t);
+    scene.root.updateMatrixWorld(true);
+    return scene.cast.provided().map(({ item, object, owner }) => {
+      const p = object.getWorldPosition(object.position.clone());
+      const q = object.getWorldQuaternion(object.quaternion.clone());
+      const h = scene.cast.holder(item, t, owner);
+      return {
+        obj: object.id,
+        item,
+        ...(owner !== undefined && { owner }),
+        p: [p.x / U, -p.y / U, -p.z / U],
+        q: [q.x, q.y, q.z, q.w],
+        shown: shown(object),
+        ...(h && { holder: { id: h.id, hand: h.side < 0 ? "R" : "L" } }),
+      };
+    });
   };
 }
 
@@ -2000,7 +2031,7 @@ const moveProblems = (rt) => [...rig.sceneSlideProblems(rt), ...rig.sceneTurnPro
  * và `held` cần cảnh three, `clash` cần cả cảnh three lẫn mẫu khối người, `episode` là tập, tiếng, git —
  * docs/05-repo-video.md#nhóm-luật
  */
-export const CHECK_GROUPS = ["ref", "move", "hands", "held", "clash", "episode"];
+export const CHECK_GROUPS = ["ref", "move", "hands", "held", "legacy", "clash", "episode"];
 
 /**
  * Nhóm luật `check` chạy: `only` (mảng hay chuỗi phẩy ngăn, trống là mọi nhóm) trừ `skip`. Trả `{ groups, all }`,
@@ -2058,6 +2089,7 @@ export const CHECK_TIMES = {
   move: "move",
   hands: "hands",
   held: "held",
+  legacy: "legacy",
   clash: "clash",
   episode: "episode",
 };
@@ -2066,7 +2098,7 @@ export const CHECK_TIMES = {
  * Luật đồ cầm tay của một cảnh (`sceneHeld` của rig) trên cảnh three `on` đã dựng (`worldScene`). `quiet`: lượt đo người
  * lồng vào vật đã báo cảnh three ném lỗi, không báo lại
  */
-function heldRows(ctx, rt, on, warn, quiet) {
+function heldRows(ctx, rt, on, warn, quiet, onPosed) {
   let thrown = quiet;
   const onError = (t, e) => {
     if (!thrown)
@@ -2075,11 +2107,12 @@ function heldRows(ctx, rt, on, warn, quiet) {
       );
     thrown = true;
   };
-  const frame = heldFrame(rt, on, onError);
+  const frame = heldFrame(rt, on, onError, onPosed);
   if (!frame) return;
+  const items = heldItemsFrame(on);
   let issues;
   try {
-    issues = rig.sceneHeld(rt, { ...ctx.held, frame });
+    issues = rig.sceneHeld(rt, { ...ctx.held, frame, ...(items && { items }) });
   } catch (e) {
     return warn(`không đo được đồ cầm tay — ${e.message}`);
   }
@@ -2088,6 +2121,31 @@ function heldRows(ctx, rt, on, warn, quiet) {
       key: `held:${s.rule}|${s.id}|${s.hand}|${s.item}`,
       measure: s.worst,
     });
+  // Cảnh khai `hold` món mà `extra` không `provide`
+  if (items && rig.heldUnprovided)
+    for (const u of rig.heldUnprovided(rt, on.scene.cast.provided()))
+      warn(rig.heldUnprovidedLine(u), { key: `held:provide|${u.id}|${u.item}` });
+}
+
+/**
+ * Các lần cầm còn đi đường cũ (`legacyHolds` của bản rig cảnh three `world` nạp) gom qua các giây đã đặt cảnh: `add(posed)`
+ * cho mỗi tư thế, `line()` một dòng cho cả cảnh hay `null`
+ */
+function legacyCollector(world) {
+  const seen = new Map();
+  return {
+    add(posed) {
+      for (const [id, f] of Object.entries(posed ?? {}))
+        if (f?.root)
+          for (const l of world.legacyHolds?.(f, id) ?? [])
+            if (!seen.has(`${l.id}|${l.hand}|${l.item}`))
+              seen.set(`${l.id}|${l.hand}|${l.item}`, l);
+    },
+    get size() {
+      return seen.size;
+    },
+    line: () => (seen.size ? rig.heldLegacyLine([...seen.values()]) : null),
+  };
 }
 
 /**
@@ -2126,6 +2184,7 @@ function deepScene(ctx, name) {
   const doClash = has("clash") && !!clash && people;
   const doHands = has("hands") && people;
   const doHeld = has("held") && !!held && !held.off && !held.error && people;
+  const doLegacy = has("legacy") && people;
   const warn = (group, msg, extra) => out.clash.push(row(group, msg, extra));
   const characterOf = (m) => {
     const character = m.character ? charactersByName[m.character] : rig.defaultCharacter();
@@ -2133,7 +2192,7 @@ function deepScene(ctx, name) {
   };
   // Cảnh three dựng một lần cho mọi nhóm cần nó; `ctx` là dữ liệu `check` đã nạp và resolve, cùng khoá như `data.ts`
   let on;
-  if (world && (doClash || doHands || doHeld)) {
+  if (world && (doClash || doHands || doHeld || doLegacy)) {
     const scene = lap(time, "three", () =>
       worldScene(
         world,
@@ -2149,7 +2208,8 @@ function deepScene(ctx, name) {
         worldRel,
       ),
     );
-    if (scene?.error) warn(doClash ? "clash" : doHands ? "hands" : "held", scene.error);
+    if (scene?.error)
+      warn(doClash ? "clash" : doHands ? "hands" : doHeld ? "held" : "legacy", scene.error);
     on = scene && !scene.error ? scene : undefined;
   }
   if (doClash)
@@ -2226,11 +2286,35 @@ function deepScene(ctx, name) {
         );
       }
     });
-  // Đồ cầm tay: dáng, ngón xuyên đồ, độ ôm, món xoay, món trôi — docs/03-scene.md#đồ-cầm-tay
+  // Đồ cầm tay: dáng, ngón xuyên đồ, độ ôm, món xoay, món trôi, món nhảy, tay phụ — docs/03-scene.md#đồ-cầm-tay
+  const legacy = doLegacy && on ? legacyCollector(on) : null;
   if (doHeld && on)
     lap(time, "held", () =>
-      heldRows(ctx, rt, on, (msg, extra) => warn("held", msg, extra), doClash),
+      heldRows(
+        ctx,
+        rt,
+        on,
+        (msg, extra) => warn("held", msg, extra),
+        doClash,
+        legacy && ((posed) => legacy.add(posed)),
+      ),
     );
+  // Đồ cầm còn đi đường cũ: một dòng cho cả cảnh; đi cùng `held` thì đọc chung các tư thế ấy
+  if (legacy)
+    lap(time, "legacy", () => {
+      if (!doHeld)
+        for (let t = 0; t <= rt.duration + 1e-9; t += rig.HELD_EVERY) {
+          let posed;
+          try {
+            posed = on.scene.pose(+t.toFixed(4));
+          } catch {
+            break;
+          }
+          legacy.add(posed);
+        }
+      const line = legacy.line();
+      if (line) warn("legacy", line, { key: "legacy", measure: legacy.size });
+    });
   if (has("move") && !snap.error && !snap.off)
     lap(time, "move", () => {
       const characterOf = (m) =>
@@ -2318,7 +2402,7 @@ export async function deepContext({ dir, names, ...opts }) {
 }
 
 /** Nhóm cần cảnh three của repo (`stickman.world`) */
-const WORLD_GROUPS = ["clash", "hands", "held"];
+const WORLD_GROUPS = ["clash", "hands", "held", "legacy"];
 
 /** RAM một luồng đo sâu cần, ước chừng */
 const JOB_RAM = 1e9;
@@ -2693,6 +2777,7 @@ export async function checkWorkspace({
     actions: rig.parseAction,
     props: rig.parseProp,
     animals: rig.parseAnimal,
+    held: rig.parseHeldItem,
     scenes: rig.parseScene,
   };
   const characters = [];
@@ -2818,6 +2903,9 @@ export async function checkWorkspace({
             } catch (e) {
               bad(`scenes/${f}: ${e.message}`);
             }
+            // Hai tay của món cầm hai tay khai hai món khác nhau — docs/03-scene.md#đồ-cầm-tay
+            for (const problem of rt && rig.sceneHoldProblems ? rig.sceneHoldProblems(rt) : [])
+              refWarn(`scenes/${f}: ${problem}`);
             for (const file of rig.sceneImages(r.data))
               if (!existsSync(join(root, "assets/bg", file)))
                 bad(`scenes/${f}: nền trỏ tới assets/bg/${file} không có`);
@@ -3005,7 +3093,7 @@ export async function checkWorkspace({
   if (has("held") && held.error) bad(held.error);
   if (nameList(only).includes("held") && held.off)
     bad("nhóm `held`: rig đang cài chưa có luật đồ cầm, hay stickman.held là false");
-  const deep = ["move", "hands", "held", "clash"].some(has)
+  const deep = ["move", "hands", "held", "legacy", "clash"].some(has)
     ? Object.keys(scenesByName).filter(
         (name) => !frozen.test(name) && (!focusing || focused.has(name)),
       )

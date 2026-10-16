@@ -10,11 +10,15 @@ import {
   meshWinding,
   nearestHandPose,
   quatAngle,
+  heldLegacyLine,
   sceneHeld,
   segMeshDistance,
+  HELD_UP,
   type HeldHand,
+  type HeldItemPose,
 } from "./heldAudit";
 import type { V3 } from "./lens";
+import { parseHeldItem } from "./heldItem";
 import { parseScene, resolveScene } from "./scene";
 
 /** Hộp kín thẳng trục `lo..hi`, 12 tam giác quấn ra ngoài; `flip` quấn ngược */
@@ -175,5 +179,122 @@ describe("sceneHeld: luật trên cả cảnh", () => {
     expect(issues[0].drift!.from).toBe(0);
     expect(issues[0].drift!.turn).toBeGreaterThan(50);
     expect(issues[0].runs[0][1]).toBeLessThan(1);
+  });
+});
+
+describe("kiểu cầm cứng", () => {
+  const rigid = (o: Partial<HeldHand> = {}) =>
+    sample({ hold: "chen#kep", follow: "wrist", obj: 7, ...o });
+  const rules = (o: Partial<HeldHand>) => heldHits(rigid(o)).map((h) => h.rule);
+
+  it("không so dáng hành động; ý định đo theo bộ giải (`intent`), không theo `userData.hold`", () => {
+    expect(rules({ acted: handVec("pinch") })).toEqual([]);
+    expect(rules({ up: 80, face: { angle: 120, toward: "camera" } })).toEqual([]);
+    const intent = { err: HELD_UP + 5, clamped: ["bend" as const], want: [0, -1, 0] as V3 };
+    expect(rules({ intent: { rule: "up", ...intent, got: [0, 0, 1] } })).toEqual(["up"]);
+    expect(rules({ intent: { rule: "face", ...intent, got: [0, 0, 1] } })).toEqual([]);
+    expect(
+      rules({ intent: { rule: "face", ...intent, err: 90, toward: "saito.eye", got: [0, 0, 1] } }),
+    ).toEqual(["face"]);
+  });
+
+  it("tay phụ hay `item:` còn cách đích quá `AIM_GAP` nhân cỡ người: `reach`", () => {
+    const reach = { kind: "support" as const, point: "grip", to: "at", s: 1 };
+    expect(rules({ reach: { ...reach, gap: 4 } })).toEqual([]);
+    expect(rules({ reach: { ...reach, gap: 9 } })).toEqual(["reach"]);
+    expect(rules({ reach: { ...reach, gap: 9, s: 2 } })).toEqual([]);
+  });
+
+  it("dòng báo ý định kể đích, khớp kẹp và gợi ý; lỗi liên kết trỏ về `held/<món>.json`", () => {
+    const r = parseScene({
+      duration: 1,
+      lens: { eye: [0, -300, -900], yaw: 0, pitch: 10, f: 800, cx: 0, cy: 0 },
+      cast: [{ id: "a", world: { at: [0, 0, 0] }, tracks: [] }],
+    });
+    if (!r.success) throw new Error(r.error.message);
+    const rt = resolveScene(r.data, {});
+    const s = rigid({
+      intent: {
+        rule: "face",
+        err: 100,
+        clamped: ["turn"],
+        toward: "camera",
+        want: [0, 0, -1],
+        got: [0, 0, 1],
+      },
+      grip: 9,
+    });
+    const lines = sceneHeld(rt, { frame: () => [s] }).map(heldLine);
+    expect(lines.find((l) => l.startsWith("mặt món quay sai"))).toMatch(
+      /lệch 100° khỏi `camera`; cổ tay kẹp ở xoay cẳng tay ±90 — đổi `elbow`/,
+    );
+    expect(lines.find((l) => l.startsWith("món không nằm trong tay"))).toContain(
+      "sửa kiểu cầm `chen#kep` ở `held/chen.json`",
+    );
+  });
+
+  it("món cứng không đo trôi; món nhảy qua mốc `hold` (gắn, thả, đổi tay) đo hai bên mốc", () => {
+    const r = parseScene({
+      duration: 3,
+      lens: { eye: [0, -300, -900], yaw: 0, pitch: 10, f: 800, cx: 0, cy: 0 },
+      cast: [
+        {
+          id: "a",
+          world: {
+            at: [0, 0, 0],
+            hands: [
+              { t: 0.5, right: { hold: "chen#kep" } },
+              { t: 1.5, right: { hold: null } },
+              { t: 2.5, right: { hold: "chen#kep" } },
+            ],
+          },
+          tracks: [],
+        },
+      ],
+    });
+    if (!r.success) throw new Error(r.error.message);
+    const chen = {
+      size: [4, 4, 4],
+      anchors: { rim: { at: [0, 2, 0], dir: [0, 1, 0] }, body: { at: [2, 0, 0], dir: [1, 0, 0] } },
+      grips: {
+        kep: { pose: "pinch", at: "body", palm: { into: "body" }, fingers: { along: "rim" } },
+      },
+    };
+    const parsed = parseHeldItem(chen);
+    if (!parsed.success) throw new Error(parsed.error.message);
+    const rt = resolveScene(r.data, {}, {}, {}, {}, {}, { chen: parsed.data });
+    const held = (t: number) => (t >= 0.5 && t < 1.5) || t >= 2.5;
+    const issues = sceneHeld(rt, {
+      // món xoay trong tay suốt quãng cầm: đường cứng không báo trôi
+      frame: (t) =>
+        held(t) ? [rigid({ rel: { p: [0, -8, 0], q: [0, Math.sin(t), 0, Math.cos(t)] } })] : [],
+      items: (t): HeldItemPose[] => [
+        {
+          obj: 7,
+          item: "chen",
+          // nằm bàn ở x 0; trong tay ở x 10 — gắn ở 0,5 nhảy, thả ở 1,5 nhảy; lần cầm thứ hai tay tới đúng chỗ món
+          p: held(t) ? [t < 2 ? 10 : 0, 0, 0] : [0, 0, 0],
+          q: [0, 0, 0, 1],
+          shown: true,
+          ...(held(t) && { holder: { id: "a", hand: "R" as const } }),
+        },
+      ],
+    });
+    expect(issues.map((i) => i.rule)).toEqual(["jump"]);
+    expect(issues[0].runs).toEqual([
+      [0.5, 0.5],
+      [1.5, 1.5],
+    ]);
+    expect(heldLine(issues[0])).toMatch(/^món nhảy lúc (gắn vào tay|thả) — `a` tay phải cầm chen/);
+  });
+
+  it("đường cũ: một dòng cho cả cảnh, kể từng lần cầm", () => {
+    const line = heldLegacyLine([
+      { id: "a", hand: "R", item: "dien-thoai", follow: "wrist" },
+      { id: "b", hand: "L", item: "chen", follow: "level" },
+    ]);
+    expect(line).toMatch(/^đồ cầm còn đi đường cũ — 2 lần cầm/);
+    expect(line).toContain("`b` tay trái cầm chen (`level`)");
+    expect(line).toContain("`--skip legacy`");
   });
 });

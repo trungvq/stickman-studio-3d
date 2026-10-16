@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { actAngles, actHand, actReach, actTwist, armFrame, needsSolve, plainActing, resolveActing, type ActFrame } from './core/act3';
+import { actAim, actAngles, actHand, actReach, actTwist, armFrame, needsSolve, plainActing, type ActFrame } from './core/act3';
 import type { Aim, ReachTerm } from './core/bodyMark';
 import type { V3 } from './core/lens';
 import type { BrowKind, EyeKind, MouthKind } from './core/types';
@@ -106,7 +106,14 @@ function blinking(t: number, seed: number) {
  */
 export function act(p: Figure, sp0: Acting, t?: number) {
   // đích theo mốc thân, lòng tay theo ý định: quy về số trên chính người này, như `actJoints` của lõi
-  const sp = needsSolve(sp0) ? (sp0.world ? resolveActing(p.body, sp0) : plainActing(sp0)) : sp0;
+  // độ lệch còn lại từng tay giữ ở `p.aim` cho `heldHands` (ý định của món, tay phụ) — như `resolveActing`
+  let sp = sp0;
+  p.aim = undefined;
+  if (needsSolve(sp0)) {
+    const r = sp0.world ? actAim(p.body, sp0) : undefined;
+    sp = r ? { ...sp0, pose: r.input.pose as Acting['pose'], world: r.input.world as Acting['world'] } : plainActing(sp0);
+    if (r) p.aim = r.report;
+  }
   const { pose: P, world: W } = sp;
   const flip = !!W?.flip;
   const near: Side = flip ? 1 : -1;

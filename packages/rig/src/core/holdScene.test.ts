@@ -4,7 +4,9 @@ import { body3 } from "./figure3d";
 import { fingerVec, HAND_POSES } from "./hand";
 import { heldPoint, parseHeldItem, type HeldItemSpec } from "./heldItem";
 import { matVec, type M3, type V3 } from "./lens";
-import { parseScene, resolveScene, sceneAt } from "./scene";
+import { heldUnprovided } from "./heldAudit";
+import { sceneAims } from "./palm";
+import { parseScene, resolveScene, sceneAt, sceneHoldProblems } from "./scene";
 import { CharacterSchema } from "./schema";
 import cocJson from "../../../../apps/studio/public/held/coc.json";
 
@@ -76,7 +78,17 @@ const TRAY = spec({
   },
 });
 
-const HELD = { "dien-thoai": PHONE, coc: spec(cocJson), khay: TRAY };
+/** Khay dài quá hai sải tay: tay phụ không với tới mép kia */
+const LONG = spec({
+  ...TRAY,
+  anchors: {
+    top: { at: [0, 2, 0], dir: [0, 1, 0] },
+    rimR: { at: [120, 0, 0], dir: [1, 0, 0] },
+    rimL: { at: [-120, 0, 0], dir: [-1, 0, 0] },
+  },
+});
+
+const HELD = { "dien-thoai": PHONE, coc: spec(cocJson), khay: TRAY, "khay-dai": LONG };
 const LENS = { eye: [0, -250, -1400], yaw: 0, pitch: 0, f: 800 };
 
 const scene = (hands: unknown[], more: object[] = []) => {
@@ -302,5 +314,74 @@ describe("`world.hands[].hold` trong scene", () => {
     expect(roles[-1]?.role).toBe("lead");
     expect(roles[1]?.role).toBe("support");
     expect(Object.keys(actHeld(C, sp))).toEqual(["R"]);
+  });
+});
+
+describe("báo cho `check`", () => {
+  it("ý định: đích như scene khai; đích do món đặt mang nhãn, `sceneAims` để luật `held:reach` báo", () => {
+    const down = at([
+      {
+        t: 0,
+        right: {
+          at: [-30, -290, -90],
+          point: "grip",
+          hold: { item: "dien-thoai", grip: "khoe", face: { axis: "screen", toward: "down" } },
+        },
+      },
+    ]);
+    expect(actAim(C, down)!.report.R.hold!.toward).toBe("down");
+    const cast = at(
+      [
+        {
+          t: 0,
+          right: {
+            at: [-30, -280, -80],
+            point: "grip",
+            hold: { item: "dien-thoai", grip: "doc", face: { cast: "b" } },
+          },
+        },
+      ],
+      0,
+      [{ id: "b", world: { at: [-200, 0, -250] }, tracks: [] }],
+    );
+    expect(actAim(C, cast)!.report.R.hold!.toward).toBe("b.eye");
+    const tray = actAim(
+      C,
+      at([{ t: 0, right: { at: [-30, -260, -80], point: "grip", hold: "khay#bung" } }]),
+    )!;
+    expect(tray.report.L.reach!.hold).toBe("support");
+    expect(tray.report.R.reach!.hold).toBeUndefined();
+    const ear = actAim(
+      C,
+      at([{ t: 0, right: { to: "ear", point: "item:speaker", hold: "dien-thoai#tai" } }]),
+    )!;
+    expect(ear.report.R.reach!.hold).toBe("item");
+    // tay phụ ngoài tầm: mép kia của khay dài vượt tầm tay trái
+    const hands = [{ t: 0, right: { at: [-30, -260, -80], point: "grip", hold: "khay-dai#bung" } }];
+    expect(actAim(C, at(hands))!.report.L.reach!.gap).toBeGreaterThan(6);
+    expect(
+      sceneAims({ ...runtime(hands), duration: 0.5 }, { characterOf: () => C }).filter(
+        (i) => i.rule === "reach" && i.hand === "L",
+      ),
+    ).toEqual([]);
+  });
+
+  it("món hai tay mà tay kia cầm món khác: `ref` báo; khai `hold` mà không ai đăng ký món: `held` báo", () => {
+    const rt = runtime([
+      { t: 0, right: { at: [-30, -260, -80], point: "grip", hold: "khay#bung" } },
+      { t: 1, left: { at: [30, -260, -80], point: "grip", hold: "dien-thoai#khoe" } },
+    ]);
+    const lines = sceneHoldProblems(rt);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatch(
+      /^a: `world.hands` t=1: kiểu cầm hai tay `khay#bung` ở tay phải mà tay kia đang cầm `dien-thoai`/,
+    );
+    expect(heldUnprovided(rt, [{ item: "khay" }])).toEqual([{ id: "a", item: "dien-thoai", t: 1 }]);
+    expect(
+      heldUnprovided(rt, [
+        { item: "khay", owner: "b" },
+        { item: "dien-thoai", owner: "a" },
+      ]),
+    ).toEqual([{ id: "a", item: "khay", t: 0 }]);
   });
 });

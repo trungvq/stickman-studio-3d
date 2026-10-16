@@ -5,6 +5,10 @@ import { parseAction } from './core/action';
 import { gripCenter, heldPoint, parseHeldItem, type HeldItemSpec } from './core/heldItem';
 import { parseScene, resolveScene } from './core/scene';
 import { defaultCharacter } from './core/schema';
+import { sceneHeld, type HeldItemPose } from './core/heldAudit';
+import { hold } from './attach';
+import { heldHands, legacyHolds } from './held';
+import { U } from './khoi';
 import { buildWorld, plainRoom, type Cast3D } from './world';
 import cocJson from '../../../apps/studio/public/held/coc.json';
 
@@ -42,7 +46,7 @@ c.palette.clad = true;
 const characters = { 'a.json': c };
 const lens = { eye: [0, -250, -1400] as [number, number, number], yaw: 0, pitch: 0, f: 800, cx: 0, cy: 0 };
 
-function world(hands: unknown[], provide: (cast: Cast3D, g: THREE.Group) => void) {
+function world(hands: unknown[], provide: (cast: Cast3D, g: THREE.Group) => void, out?: { rt?: ReturnType<typeof resolveScene> }) {
   const sc = parseScene({
     name: 'x', lens, duration: 3,
     cast: [{ id: 'a', character: 'a.json', world: { at: [0, 0, 0], yaw: 90, hands }, tracks: [{ clips: [{ action: 'still', start: 0 }] }] }],
@@ -50,6 +54,7 @@ function world(hands: unknown[], provide: (cast: Cast3D, g: THREE.Group) => void
   if (!sc.success) throw new Error(sc.error.message);
   const heights = { a: 1 }, bodies = { a: body3(c) };
   const rt = resolveScene(sc.data, { still }, {}, {}, heights, bodies, HELD);
+  if (out) out.rt = rt;
   return buildWorld(sc.data, rt, {
     set: () => plainRoom(),
     extra: (_m, cast) => {
@@ -138,5 +143,67 @@ describe('`Cast3D.provide`: rig gắn món theo `world.hands[].hold`', () => {
     expect(fig.holding?.[-1]).toMatchObject({ item: 'khay', both: true, pose: 'edge' });
     expect(fig.holding?.[1]).toMatchObject({ item: 'khay', both: true, pose: 'edge' });
     expect(fig.hands![1].held).toBe('edge');
+  });
+});
+
+describe('số đo cho `check`', () => {
+  const HANDS = [
+    { t: 0.5, right: { at: [-30, -270, -60], point: 'grip', hold: 'coc#quai' } },
+    { t: 1.5, right: { hold: null } },
+  ];
+  const mesh = () => {
+    const o = cup();
+    o.position.set(1, 0.5, 2);
+    return o;
+  };
+
+  it('`heldHands`: kiểu cầm, vật, ý định bộ giải nhắm; `provided` kể món; `legacyHolds` chỉ kể đường cũ', () => {
+    const o = mesh();
+    let cast!: Cast3D;
+    const w = world(HANDS, (k, g) => {
+      cast = k;
+      g.add(o);
+      k.provide('coc', o, 'a');
+    });
+    const fig = w.pose(1).a;
+    w.root.updateMatrixWorld(true);
+    const [h] = heldHands(fig, 'a');
+    expect(h).toMatchObject({ item: 'coc', hold: 'coc#quai', obj: o.id, intent: { rule: 'up', toward: 'up' } });
+    expect(h.intent!.err).toBeLessThan(30);
+    expect(cast.provided()).toEqual([{ item: 'coc', object: o, owner: 'a' }]);
+    expect(legacyHolds(fig, 'a')).toEqual([]);
+    const other = cup();
+    fig.root.add(other);
+    hold(fig, other, { hand: 1, follow: 'level' });
+    expect(legacyHolds(fig, 'a')).toEqual([{ id: 'a', hand: 'L', item: 'coc', follow: 'level', both: false }]);
+  });
+
+  it('món nằm xa tay lúc gắn và về chỗ cũ lúc thả: `jump` ở cả hai mốc', () => {
+    const o = mesh();
+    let cast!: Cast3D;
+    const out: { rt?: ReturnType<typeof resolveScene> } = {};
+    const w = world(HANDS, (k, g) => {
+      cast = k;
+      g.add(o);
+      k.provide('coc', o);
+    }, out);
+    const frame = (t: number) => {
+      const posed = w.pose(t);
+      w.root.updateMatrixWorld(true);
+      return Object.entries(posed).flatMap(([id, f]) => heldHands(f, id));
+    };
+    const items = (t: number): HeldItemPose[] => {
+      w.pose(t);
+      w.root.updateMatrixWorld(true);
+      const p = o.getWorldPosition(new THREE.Vector3());
+      const q = o.getWorldQuaternion(new THREE.Quaternion());
+      const h = cast.holder('coc', t);
+      return [{ obj: o.id, item: 'coc', p: [p.x / U, -p.y / U, -p.z / U], q: [q.x, q.y, q.z, q.w], shown: true, ...(h && { holder: { id: h.id, hand: h.side < 0 ? 'R' as const : 'L' as const } }) }];
+    };
+    const issues = sceneHeld(out.rt!, { frame, items });
+    const jump = issues.find((i) => i.rule === 'jump')!;
+    expect(jump.runs).toEqual([[0.5, 0.5], [1.5, 1.5]]);
+    expect(jump.jump!.move).toBeGreaterThan(50);
+    expect(issues.some((i) => i.rule === 'drift' || i.rule === 'pose')).toBe(false);
   });
 });

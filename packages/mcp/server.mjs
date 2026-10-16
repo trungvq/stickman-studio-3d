@@ -1346,6 +1346,7 @@ function heldProbe(h) {
   const declared = rig.nearestHandPose(h.acted);
   return {
     item: h.item,
+    ...(h.hold ? { hold: h.hold } : {}),
     pose: h.pose,
     follow: h.follow,
     declared: declared.pose,
@@ -1356,6 +1357,28 @@ function heldProbe(h) {
     palm: { gap: r1(h.palm.gap), angle: Math.round(h.palm.angle) },
     ...(h.up !== undefined ? { up: Math.round(h.up) } : {}),
     ...(h.face ? { face: { angle: Math.round(h.face.angle), toward: h.face.toward } } : {}),
+    ...(h.intent
+      ? {
+          intent: {
+            rule: h.intent.rule,
+            ...(h.intent.toward ? { toward: h.intent.toward } : {}),
+            want: h.intent.want.map((x) => +x.toFixed(3)),
+            got: h.intent.got.map((x) => +x.toFixed(3)),
+            err: Math.round(h.intent.err),
+            clamped: h.intent.clamped,
+          },
+        }
+      : {}),
+    ...(h.reach
+      ? {
+          reach: {
+            kind: h.reach.kind,
+            point: h.reach.point,
+            to: h.reach.to,
+            gap: r1(h.reach.gap),
+          },
+        }
+      : {}),
     rel: { p: v3(h.rel.p), q: h.rel.q.map((x) => +x.toFixed(3)) },
     issues: rig.heldHits(h).map((x) => x.rule),
   };
@@ -1676,7 +1699,7 @@ server.registerTool(
         .union([z.string(), z.array(z.string())])
         .optional()
         .describe(
-          "Chỉ chạy các nhóm luật: ref, move, hands, held, clash, episode (phẩy ngăn hay mảng)",
+          "Chỉ chạy các nhóm luật: ref, move, hands, held, legacy, clash, episode (phẩy ngăn hay mảng)",
         ),
       skip: z
         .union([z.string(), z.array(z.string())])

@@ -100,10 +100,18 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
     const rel = new THREE.Matrix4().copy(W).invert().multiply(entry.object.matrixWorld);
     const rp = new THREE.Vector3(), rq = new THREE.Quaternion(), rs = new THREE.Vector3();
     rel.decompose(rp, rq, rs);
+    // kiểu cầm cứng: ý định và đích do món đặt, đúng như bộ giải của `act` đã nhắm (`fig.aim`)
+    const rep = fig.aim?.[side < 0 ? 'R' : 'L'];
+    const ih = entry.grip !== undefined ? rep?.hold : undefined;
+    const reach = entry.grip !== undefined && rep?.reach?.hold ? rep.reach : undefined;
     out.push({
       id, hand: side < 0 ? 'R' : 'L',
-      item: nameOf(entry.object),
-      key: `${entry.object.id}|${entry.pose}|${entry.follow}|${entry.offset ?? ''}|${entry.rotate ?? ''}`,
+      item: entry.item ?? nameOf(entry.object),
+      obj: entry.object.id,
+      ...(entry.grip !== undefined && { hold: `${entry.item}#${entry.grip}` }),
+      ...(ih && { intent: { rule: ih.toward === 'up' ? 'up' as const : 'face' as const, err: ih.err, clamped: ih.clamped, ...(ih.toward && { toward: ih.toward }), want: ih.want, got: ih.got } }),
+      ...(reach && { reach: { kind: reach.hold!, gap: reach.gap, s: k, point: reach.point, to: reach.to } }),
+      key: `${entry.object.id}|${entry.grip ?? ''}|${entry.pose}|${entry.follow}|${entry.offset ?? ''}|${entry.rotate ?? ''}`,
       pose: h.held ?? entry.pose,
       follow: entry.follow,
       acted: h.acted,
@@ -113,6 +121,21 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
       rel: { p: [(rp.x * k) / u, (rp.y * k) / u, (rp.z * k) / u], q: [rq.x, rq.y, rq.z, rq.w] },
       at: [G[0] / u, -G[1] / u, -G[2] / u],
     });
+  }
+  return out;
+}
+
+/** Một lần cầm còn đi đường cũ (`hold` không có kiểu cầm `held/`): người, tay, món, cách bám */
+export interface LegacyHold { id: string; hand: 'R' | 'L'; item: string; follow: string; both: boolean }
+
+/** Các lần cầm đường cũ của người `fig` (tên `id`) ở tư thế hiện tại, món đang hiện — luật `legacy` của `check` đọc */
+export function legacyHolds(fig: Figure, id: string): LegacyHold[] {
+  const out: LegacyHold[] = [];
+  if (!fig.holding || !shown(fig.root)) return out;
+  for (const side of [-1, 1] as Side[]) {
+    const e = fig.holding[side];
+    if (!e || e.grip !== undefined || !shown(e.object)) continue;
+    out.push({ id, hand: side < 0 ? 'R' : 'L', item: nameOf(e.object), follow: e.follow, both: e.both });
   }
   return out;
 }

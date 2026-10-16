@@ -11,7 +11,7 @@ import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
 import { equipCharacter, limbWidths, wornPalette, type CharacterData, type Drape, type Equip, type PieceKey, type Garment, type Glasses, type Hat, type Pin, type Sculpt, type Shades, type Skirt } from './core/schema';
 import { hatFit, hatMesh, insideHat, pinMesh } from './core/hat';
-import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, SLEEVE_EASE, sleeveGrow, type ActCharacter, type Bones3 } from './core/act3';
+import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, SLEEVE_EASE, sleeveGrow, type ActCharacter, type AimReport, type Bones3 } from './core/act3';
 import { blushLevel, chibiShape } from './core/face';
 import { wornSkirt } from './core/skirtShape';
 import { hangsFromHip, matchWrap } from './core/hem';
@@ -69,6 +69,8 @@ export interface Figure {
   hands?: Record<Side, Hand>;
   /** Món từng bàn tay đang cầm (`hold` ghi, `release` xoá) */
   holding?: Partial<Record<Side, Holding>>;
+  /** Độ lệch còn lại từng tay (`R` phải, `L` trái người) ở lần `act` gần nhất, khi có gì phải giải (`actAim` của lõi) */
+  aim?: Record<'R' | 'L', AimReport>;
   /** Khung xương theo `rig.height` (`bones3` của lõi): `act` đặt đoạn chi bằng nó */
   bones: Bones3;
   /** Tay choãi, radian (`roots3`) */

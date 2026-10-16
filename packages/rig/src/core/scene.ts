@@ -3002,6 +3002,36 @@ function holdRun(
   return run;
 }
 
+/**
+ * Lần cầm hai tay khai lệch ở `world.hands`: một tay cầm kiểu hai tay (`both`) mà cùng lúc tay kia cầm món khác — kiểu hai
+ * tay không thành, mỗi tay mang một món. `check` (nhóm `ref`) báo. docs/03-scene.md#đồ-cầm-tay
+ */
+export function sceneHoldProblems(rt: SceneRuntime): string[] {
+  const out: string[] = [];
+  for (const m of rt.cast) {
+    const keys = m.world?.hands;
+    if (!keys?.length) continue;
+    const said = new Set<string>();
+    for (const k of keys) {
+      const runs = { right: holdRun(keys, "right", k.t), left: holdRun(keys, "left", k.t) };
+      if (!runs.right || !runs.left) continue;
+      const refs = { right: sceneHoldRef(runs.right.hold), left: sceneHoldRef(runs.left.hold) };
+      if (refs.right.item === refs.left.item) continue;
+      for (const side of ["right", "left"] as const) {
+        const a = refs[side];
+        const b = refs[side === "right" ? "left" : "right"];
+        const key = `${side}|${a.item}#${a.grip}|${b.item}`;
+        if (!rt.held[a.item]?.grips[a.grip]?.both || said.has(key)) continue;
+        said.add(key);
+        out.push(
+          `${m.id}: \`world.hands\` t=${k.t}: kiểu cầm hai tay \`${a.item}#${a.grip}\` ở tay ${side === "right" ? "phải" : "trái"} mà tay kia đang cầm \`${b.item}\` — hai tay của món hai tay phải cùng một món: tay kia khai cùng món, hay \`hold: null\` (docs/03-scene.md#đồ-cầm-tay)`,
+        );
+      }
+    }
+  }
+  return out;
+}
+
 /** Đích một trục ý định ra dạng bộ giải đọc; người khác trong `cast` ước ra điểm thế giới ở giây đang lấy mẫu */
 function holdTarget(
   t: AxisIntent["toward"],
@@ -3018,6 +3048,16 @@ function holdTarget(
   };
 }
 
+/** Đích một trục ý định như scene khai, để báo */
+const towardLabel = (t: AxisIntent["toward"]): string =>
+  typeof t === "string"
+    ? t
+    : Array.isArray(t)
+      ? `[${t.join(", ")}]`
+      : "cast" in t
+        ? `${t.cast}.${t.mark ?? "eye"}`
+        : t.mark;
+
 /** Ý định của một lần cầm ra số hạng bàn tay (`AimTerm.hold`) */
 function holdAim(
   spec: HeldItemSpec,
@@ -3030,6 +3070,7 @@ function holdAim(
     axis: heldAxis(spec, a.axis),
     target: holdTarget(a.toward, castAt),
     ...(a.tilt && { tilt: a.tilt }),
+    label: towardLabel(a.toward),
   });
   return { item, grip, ...(face && { face: axis(face) }), ...(roll && { roll: axis(roll) }) };
 }
