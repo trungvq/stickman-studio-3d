@@ -53,6 +53,7 @@ export const COMMON = {
   actions: join(SOURCES.sample, "actions"),
   animals: join(SOURCES.sample, "animals"),
   characters: join(SOURCES.sample, "characters"),
+  held: join(SOURCES.sample, "held"),
 };
 
 /** Chép một lần lúc `init` làm mẫu, từ đó là của repo video */
@@ -72,7 +73,7 @@ const KEEP_DIRS = [
  * `actions/` và `animals/` thường rỗng suốt cả tập (bộ chung của studio là đủ), mà git
  * không giữ thư mục rỗng — clone lại là bundle vỡ. Nên chúng cũng cần `.gitkeep`.
  */
-const CONTEXT_DIRS = ["characters", "actions", "animals", "pieces"];
+const CONTEXT_DIRS = ["characters", "actions", "animals", "held", "pieces"];
 const DIRS = [...SEED_DIRS, ...CONTEXT_DIRS, ...KEEP_DIRS];
 /** Thư mục có thể rỗng mà vẫn phải sống qua git */
 const GITKEEP_DIRS = [...CONTEXT_DIRS, ...KEEP_DIRS];
@@ -620,6 +621,17 @@ function loadActions(layers) {
 
 /** Động vật qua các lớp, khoá giữ cả đuôi như `scene.animals[].animal`; file hỏng thì `check` báo ở vòng của nó */
 const loadAnimals = (layers) => loadByFile(layers, rig.parseAnimal);
+
+/** Món cầm tay qua các lớp, khoá không đuôi như `world.hands[].hold` (`món#kiểu`); bản của repo đè bản chung */
+export function loadHeld(layers) {
+  const out = {};
+  for (const dir of [...layers].reverse())
+    for (const f of listJson(dir)) {
+      const r = rig.parseHeldItem(readJson(join(dir, f)));
+      if (r.success) out[f.replace(/\.json$/, "")] = r.data;
+    }
+  return out;
+}
 
 /** Nhân vật qua các lớp, khoá giữ cả đuôi như `scene.cast[].character` */
 const loadCharacters = (layers) => loadByFile(layers, rig.parseCharacter);

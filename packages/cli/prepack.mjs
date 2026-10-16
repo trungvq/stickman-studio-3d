@@ -15,6 +15,7 @@ const SKIP_IN_STUDIO = new Set([
   "scenes",
   "props",
   "animals",
+  "held",
   "episodes",
   "pieces",
 ]);

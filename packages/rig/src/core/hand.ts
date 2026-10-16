@@ -40,6 +40,7 @@ export const HAND_POSES = {
   hook: { thumb: [12, 20, 6, 10], index: [28, 96], fingers: [32, 100], spread: 0 },
   edge: { thumb: [66, 45, 0, 5], index: [10, 6], fingers: [12, 8], spread: 1 },
   span: { thumb: [71, 6, 0, 44], index: [3, 20], fingers: [3, 21], spread: 0 },
+  thumbsUp: { thumb: [80, 4, 0, 0], index: [90, 85], fingers: [90, 85], spread: 0 },
 } as const satisfies Record<string, Fingers>;
 
 export type HandPose = keyof typeof HAND_POSES;
@@ -57,6 +58,7 @@ export const HAND_POSE_LABELS: Record<HandPose, string> = {
   hook: "móc",
   edge: "kẹp cạnh",
   span: "ôm hai cạnh",
+  thumbsUp: "giơ ngón cái",
 };
 
 /**
@@ -77,6 +79,7 @@ export const HAND_GRIPS: Record<HandPose | "rest", V3> = {
   hook: [0.036, -0.124, 0],
   edge: [0.045, -0.1, 0.035],
   span: [0.035, -0.117, 0.027],
+  thumbsUp: [0.03, -0.085, 0],
 };
 
 /**

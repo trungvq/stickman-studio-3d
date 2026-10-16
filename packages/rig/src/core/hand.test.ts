@@ -55,7 +55,7 @@ const vec = (p: keyof typeof HAND_POSES | "rest") => [
 ];
 
 describe("bảng dáng tay", () => {
-  it("mười một dáng soạn được, mỗi dáng đủ chín góc ngón, có nhãn và tâm nắm; dáng nghỉ ngoài bảng; `HAND_DOF` là xoay, gập cổ tay rồi chín góc ngón", () => {
+  it("mười hai dáng soạn được, mỗi dáng đủ chín góc ngón, có nhãn và tâm nắm; dáng nghỉ ngoài bảng; `HAND_DOF` là xoay, gập cổ tay rồi chín góc ngón", () => {
     expect(HAND_POSE_KINDS).toEqual(Object.keys(HAND_POSES));
     expect([...HAND_POSE_KINDS].sort()).toEqual([
       "clasp",
@@ -69,6 +69,7 @@ describe("bảng dáng tay", () => {
       "pinch",
       "point",
       "span",
+      "thumbsUp",
     ]);
     expect(Object.keys(HAND_GRIPS).sort()).toEqual([...HAND_POSE_KINDS, "rest"].sort());
     for (const k of HAND_POSE_KINDS) {
@@ -167,7 +168,7 @@ describe("kênh `hand` của hành động", () => {
     expect(parseAction(k({ bend: -100 })).success).toBe(false);
     expect(parseAction(k({ pose: "wave" })).success).toBe(false);
     // dáng nghỉ không soạn được: bỏ trống `pose`; không có góc ngón thô
-    for (const v of ["relaxed", "pinchy", "thumbsUp"]) {
+    for (const v of ["relaxed", "pinchy", "thumbsDown"]) {
       expect(parseAction(k({ pose: v })).success).toBe(false);
       expect(parseAction({ keys: [{ t: 0, pose: {}, hand: { armNear: v } }] }).success).toBe(false);
     }
