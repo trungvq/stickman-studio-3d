@@ -79,7 +79,11 @@ vừa làm gì.
   \`pnpm exec stickman check --scene <ten>\` (regex trên id cảnh) — cỡ chục giây, lâu hơn khi cảnh dài và
   đông người; sửa nhiều cảnh thì gom chung một regex (\`'^t01-s0(16|21|35)'\`), các cảnh đo song song. Nó bắt người
   lồng vào đồ, chân trượt, hành động 2D trên người 3D, tay chân giật trên hình, lòng bàn tay quay sai,
-  tay thẳng đuột, ngón hai tay chụm vào nhau, tay lơ lửng trên mặt, tay lấn vào đầu người khác. \`check\` cả workspace chậm, để dành trước khi commit hay sau khi nâng rig.
+  tay thẳng đuột, ngón hai tay chụm vào nhau, tay lơ lửng trên mặt, tay lấn vào đầu người khác. Sửa gì thì chỉ chạy
+  nhóm luật của thứ ấy, nhóm không chạy thì không dựng: \`--only move,clash\` (chỗ đứng, \`path\`), \`--only hands,clash\`
+  (tay), \`--only held,clash\` (đồ cầm), \`--uses <hành động> --only ref,move,hands,held\` (hành động chung) — bảng đủ ở
+  \`docs 05\` § Nhóm luật. Cuối lô, trước commit: đủ nhóm trên các cảnh vừa đổi với \`--baseline <file>\` để chỉ thấy
+  cảnh báo mới. \`check\` cả workspace chậm, để dành trước khi commit hay sau khi nâng rig.
 - Người 3D (\`cast[].world\`) chỉ diễn hành động soạn ở \`side\` ở kênh tay chân
   (\`stand-3d\`, \`sit-3d\`, bản \`-3d\` của repo), cả ở track thân từ giây 0 thay cho clip
   rỗng. Chỗ cố ý giật (giật mình, đập bàn) khai \`"snap": true\` ở hành động, ở clip hay ở
@@ -227,6 +231,7 @@ cho cue có \`loop\`, \`pnpm lipsync\` sinh khẩu hình từ file lời, \`pnpm
 \`\`\`bash
 pnpm check                              # cả workspace
 pnpm exec stickman check --scene <ten>  # chỉ một cảnh vừa sửa (regex trên id cảnh)
+pnpm exec stickman check --scene <ten> --only hands,clash  # chỉ nhóm luật của thứ vừa sửa
 \`\`\`
 
 Thay một file tiếng thì \`pnpm retime\`: nó đo lại file rồi ghi số vào cue khai

@@ -1128,6 +1128,10 @@ Lòng bàn tay đặt trên mặt ngang mà dựng đứng, tay buông mà lòng
 lơ lửng trên mặt nó nhắm tới, bàn tay lấn vào đầu người khác: [Tay và khuỷu](#tay-và-khuỷu). Đồ cầm tay sai dáng, ngón xuyên đồ,
 món lơ lửng ngoài tay, món xoay sai, món trôi trong bàn tay: [Đồ cầm tay](#đồ-cầm-tay).
 
+Các luật này chạy riêng được theo nhóm: trượt, thân quay gắt và giật trên hình ở `move`, tay sai dáng, lòng tay, đích theo
+mốc ở `hands`, đồ cầm ở `held`, người lồng vào đồ, vào người khác và tay xuyên thân ở `clash` —
+[05](05-repo-video.md#nhóm-luật).
+
 ## Giật trên hình
 
 `check` (và `snaps` của `scene_probe`) lấy mẫu mỗi cảnh không đóng băng theo fps bản chốt, tính khớp
@@ -1313,7 +1317,7 @@ lúc ấy (dáng, trục ngón vào trong món, độ ôm — mấy nhóm ngón 
 scenes/canh-07.json: ngón xuyên đồ — `saito` tay phải cầm chen-ruou: trục đầu ngón áp út vào trong món 4.1 (da lún 6.8); dời món (`offset`, `rotate`) hay đổi dáng ở giây 1.70 · giây 0.00–8.20. Lúc ấy: dáng grip (level) · xương đầu ngón áp út vào trong món 4.1 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · tâm nắm trong món 4.3 · lòng tay cách 0.4 góc 90°. Clip đang chạy: kep-chen-xa-3d (chen) (docs/03-scene.md#đồ-cầm-tay)
 ```
 
-Chỉ đo đồ cầm, nhanh (vài giây một cảnh): `stickman check --held --scene <regex>`. `scene_probe` trả cùng số đo ở
+Chỉ đo đồ cầm, nhanh (vài giây một cảnh): `stickman check --only held --scene <regex>` (tên tắt `--held`) — nhóm `held`, [05](05-repo-video.md#nhóm-luật). `scene_probe` trả cùng số đo ở
 `world.held` ([04](04-mcp.md#người-3d)). Ngưỡng ở `package.json` của repo video, trường thiếu lấy mặc định; `false` là
 không đo:
 

@@ -109,40 +109,134 @@ tập mất cả phút. Sửa xong một cảnh thì chỉ soi cảnh ấy:
 
 ```bash
 pnpm exec stickman check --scene t03-s01-cd-haru   # regex trên id cảnh: ^t03-s01 lấy cả nhóm
+pnpm exec stickman check --uses ngoi-nga-3d        # mọi cảnh dùng hành động ấy
 ```
 
-MCP: `check({ scene })`. Cảnh khớp được soi đủ như lượt toàn bộ (tham chiếu, trượt chân, thân
+MCP: `check({ scene, uses })`. Cảnh khớp được soi đủ như lượt toàn bộ (tham chiếu, trượt chân, thân
 quay gắt, hành động 2D trên người 3D, người lồng vào đồ, giật trên hình…); cảnh không khớp chỉ được parse cho tham chiếu chéo.
 In cảnh báo của cảnh khớp và **mọi lỗi** ở bất kỳ đâu; tập, tiếng, `retime`, file chưa commit, công cụ ngoài thì bỏ qua — chúng chỉ có ở lượt toàn bộ, chạy trước khi
 commit hay sau khi nâng rig. Regex không khớp cảnh nào là lỗi.
 
+`--uses <tên,…>` chọn cảnh mà JSON dùng một trong các tên: hành động (`clips[].action` của người và động vật), nhân vật
+(`cast[].character`), đạo cụ (`props[].prop`), động vật (`animals[].animal`); tên viết có hay không đuôi `.json` đều được.
+Đi chung `--scene` thì lấy cảnh khớp cả hai. Tên không có trong `actions/`, `characters/`, `props/`, `animals/` (kể cả bộ
+chung) là lỗi, không cảnh nào dùng cũng là lỗi. Cảnh báo của chính file hành động có tên trong `--uses` (công tắc `equip`,
+khuỷu gập ngược, mốc ngoài `mask`…) cũng in. Bối cảnh, đồ khối và đồ cầm repo dựng bằng code trong `src/` không nằm trong
+JSON cảnh nên `--uses` không tra được: cảnh dùng chúng thì chọn bằng `--scene`.
+
 Nhiều cảnh (regex khớp cả nhóm, hay lượt toàn bộ) thì phần đo sâu từng cảnh — người lồng vào đồ, tay,
 lòng tay, giật trên hình — chia cho nhiều luồng: mặc định nửa số nhân, không quá số GB RAM còn trống;
-`--jobs <số>` đặt tay. Một cảnh thì chạy một luồng. `--held` chỉ đo đồ cầm tay, bỏ mọi luật khác — [03](03-scene.md#đồ-cầm-tay).
+`--jobs <số>` đặt tay. Một cảnh thì chạy một luồng.
+
+### Nhóm luật
+
+Luật của `check` chia sáu nhóm theo thứ chúng cần dựng. `--only <nhóm,…>` chỉ chạy các nhóm ấy, `--skip <nhóm,…>` bỏ
+chúng; không cờ nào là đủ sáu nhóm. Tên sai là lỗi kèm danh sách nhóm. `--held` là tên tắt của `--only held`. MCP:
+`check({ only, skip })`. Nhóm không chạy thì thứ chỉ nó cần không dựng — không gói module cảnh three, không dựng cảnh
+three của từng cảnh, không lấy mẫu khối người, không mở luồng phụ — nên lượt hẹp nhanh thật chứ không chỉ in ít dòng hơn.
+
+| Nhóm | Luật | Cần dựng |
+|---|---|---|
+| `ref` | tham chiếu chéo (nhân vật, hành động, đạo cụ, động vật, nền, `fx`, `equip`), version pin, file giống bộ chung, bộ đồ của nhân vật; công tắc `equip` một chiều, hai track cùng ghi một socket, khuỷu gập ngược khi giơ tay, mốc ngoài `mask`, hành động tự giật, mốc khai không ai neo, người 3D diễn hành động 2D; lớp vẽ code bật cho cảnh không có, thư mục sidebar | JSON, runtime, gói lớp vẽ code |
+| `move` | người 3D trượt, không tới mốc dừng, thân quay gắt; tay chân giật trên hình | runtime, khớp người theo thời gian |
+| `hands` | tay sai dáng, lòng bàn tay quay sai, đích theo mốc và lòng tay theo ý định không đạt | runtime, cảnh three (mặt ngang dưới bàn tay) |
+| `held` | đồ cầm tay sai | runtime, cảnh three |
+| `clash` | người lồng vào đồ, vào người khác, tay xuyên thân, đồ lồng vào đồ, `touch` lạ | runtime, cảnh three, lớp vẽ code, mẫu khối người mỗi `0,25 s` |
+| `episode` | tham chiếu của tập, tiếng dài hơn chỗ nó nằm, bè lặp kêu khi sân khấu đứng yên, số cũ phải `retime`, file chưa commit, công cụ ngoài, `sfx/` đọc không được | tập, tiếng (`ffprobe`), git — chỉ ở lượt toàn bộ, không có khi `--scene` hay `--uses` |
+
+Nhóm nào cũng báo JSON hỏng theo zod, lỗi của `resolveScene` (mốc không có, ai cưỡi, ai xách) và ngưỡng hỏng trong
+`package.json` của nhóm đang chạy: không parse được thì không đo được gì. Runtime (`resolveScene`) dựng cho mọi nhóm vì
+chính nó là phép kiểm tham chiếu chéo của `ref`, và nó rẻ so với các phép đo. **Tay xuyên thân nằm ở `clash`** dù là
+luật của tay: nó đo chung một lượt với người lồng vào đồ (`sceneClashes` trên khối người, giây lấy mẫu chia nhỏ theo vật
+của cảnh three dời), ngưỡng ở `stickman.clash.self`; tách sang `hands` thì hoặc `hands` phải chạy cả lượt va chạm, hoặc
+số đo lệch lượt đủ. Cảnh three dựng một lần cho mọi nhóm cần nó; dựng hỏng thì dòng báo mang nhóm đầu tiên trong
+`clash`, `hands`, `held` đang chạy.
+
+Sửa gì chạy nhóm nào:
+
+| Sửa | Chạy |
+|---|---|
+| Chỗ đứng, đường đi (`world.at`, `path`) | `move,clash` |
+| Tay (`world.hands`, `reach`, dáng tay) | `hands,clash` (+`held` nếu tay đang cầm) |
+| Đồ cầm, kiểu cầm | `held,clash` |
+| Thời gian, retime, audio | `move` + lượt toàn bộ cho `episode` |
+| Bối cảnh, đồ khối | `clash,hands` |
+| Hành động chung | `--uses <tên> --only ref,move,hands,held` |
+| Nâng rig | đủ, toàn workspace |
+| Cuối lô, trước commit | đủ trên cảnh vừa đổi, `--baseline` |
+
+```bash
+pnpm exec stickman check --scene '^t01-s04[0-5]' --only hands,clash
+pnpm exec stickman check --uses ngoi-nga-3d --only ref,move,hands,held
+```
+
+`--time` in thời gian từng nhóm và từng phần dựng chung — nạp workspace, dựng runtime, gói lớp vẽ code, gói module
+cảnh three, nạp luồng phụ, dựng cảnh three — cộng dồn trên mọi cảnh và mọi luồng (nên tổng lớn hơn thời gian đồng hồ
+khi chạy nhiều luồng), kèm thời gian đồng hồ của cả lượt. MCP luôn trả `time` (ms từng phần) và `wall`.
+
+### Baseline
+
+`--save-baseline <file>` ghi cảnh báo của lượt này ra JSON. `--baseline <file>` so lượt này với file ấy và chỉ in cảnh
+báo **mới** hay **nặng hơn**, cùng mọi lỗi; mục **đã hết** in thành dòng `đã hết:`, dòng cuối thêm
+`N mới, M nặng hơn, K đã hết`. Hai cờ đi chung được: so với bản cũ rồi ghi bản mới. Chưa có file thì mọi cảnh báo là
+mới. Đường dẫn tính từ thư mục workspace. MCP: `check({ baseline, saveBaseline })`, cảnh báo mang `delta` (`"mới"`,
+`"nặng hơn"` kèm `was` / `now`).
+
+So theo khoá ổn định, không theo giây: cảnh, luật, rồi người, tay, món hay cặp va chạm — người lồng vào đồ khoá theo cặp
+phần người ↔ vật, tay và lòng tay theo luật, người, tay, vật dưới tay hay mốc, đồ cầm theo luật, người, tay, món, giật
+trên hình theo người và khớp. Luật chỉ có dòng chữ (trượt, thân quay, tham chiếu, tiếng) khoá bằng chính dòng ấy, bỏ
+phần clip đang chạy, số đứng riêng thay bằng `#`. Nhiều dòng cùng khoá gộp một mục: `count` dòng, `measure` là số đo
+lớn nhất.
+
+**Nặng hơn** khi thêm dòng cùng khoá, hay số đo chính (độ lấn, góc, khe, px nhảy, độ lún, quãng trượt, độ cụt) gấp từ
+`1,25` lần bản cũ **và** hơn từ `1` đơn vị của số đo ấy — dưới ngưỡng ấy là dao động do sửa cảnh khác, không phải lỗi
+mới. **Đã hết** chỉ tính trong phạm vi lượt chạy: mục của cảnh đã soi và nhóm đã chạy; mục không gắn cảnh (file hành
+động, lớp vẽ code, tập, git) chỉ ở lượt toàn bộ. Lỗi không vào baseline: lỗi là thứ chặn, không phải nợ để dành.
+
+Ghi thì gộp: mục trong phạm vi lượt chạy thay bằng mục của lượt này, mục ngoài phạm vi (cảnh không soi, nhóm không chạy)
+giữ nguyên — soi từng phần vẫn giữ baseline đủ. Xếp theo cảnh (mục không gắn cảnh trước), nhóm, khoá; chạy lại mà không
+gì đổi thì file không đổi:
+
+```json
+{
+  "stickman": "check-baseline",
+  "rig": "7.7.3",
+  "warnings": [
+    {
+      "scene": "t01-s009-saito",
+      "group": "held",
+      "key": "scenes/t01-s009-saito.json|held:pierce|doan-02|R|dien-thoai-tay",
+      "count": 1,
+      "measure": 1.53,
+      "msg": "scenes/t01-s009-saito.json: ngón xuyên đồ — `doan-02` tay phải cầm dien-thoai-tay: trục đầu ngón cái vào trong món 1.5 (da lún 4.8); …"
+    }
+  ]
+}
+```
 
 ### Những thứ `check` soi mà không lệnh nào khác soi
 
 Các kiểm tra sau bắt lỗi hợp lệ theo schema nhưng làm thiếu hình hoặc tiếng:
 
-| | Bắt bằng gì |
-|---|---|
-| **Tiếng dài hơn chỗ nó nằm** | Đo file bằng `ffprobe` rồi so với độ dài shot (`warpTable` của rig, cùng hàm mà `layoutShots` dùng, nên hai bên không lệch). Quá `0,05 s` mới kêu. Không có `ffprobe` thì bỏ qua, không kêu oan |
-| **File có trên đĩa mà chưa commit** | `git ls-files`; file không được theo dõi sẽ thiếu sau khi clone. File `.gitignore` loại (audio gen ra, render) là cố ý để ngoài git, không kêu |
-| **Công tắc `equip` một chiều** | `equipSwitchProblems` của rig: socket bật tắt mà trạng thái không đổi frame nào — [03](03-scene.md#bốn-bẫy-của-equip) |
-| **Hai track cùng ghi một socket** | `sceneEquipProblems` của rig: track sau đè track trước, nên cái gỡ mũ ở track trước bị track sau cầm đồ đè lại |
-| **Khuỷu gập ngược khi giơ tay** | `armFoldProblems` của rig: mốc có `\|vai\| > 120` mà khuỷu ngược dấu vai — cẳng tay bung ra ngoài thay vì cuộn về đầu — [00](00-bat-bien.md#dấu-góc-và-hình-học) |
-| **Mốc ghi kênh ngoài `mask`** | `maskProblems` của rig: giá trị bị bỏ im lặng — nụ cười khai ở `face` mà `mask` thiếu `face` thì không bao giờ hiện |
-| **Người 3D trượt, không tới mốc dừng** | `sceneSlideProblems` đo trên mặt sàn thế giới cho người có `world`: bàn chân chịu lực dịch quá nửa quãng hông đi trong `0,4 s`, mốc dừng của `path` mà hông cách quá `20` đơn vị rig, clip có sải chân chạy khi `path` đã đứng yên — [03](03-scene.md#check-cho-người-3d) |
-| **Người 3D lồng vào đồ** | `sceneClashProblems` của cli: phần người lấn quá `2` đơn vị thế giới (`stickman.clash.tol`) vào khối đồ của lớp vẽ code (`solidClashes` của fx) hay vào người khác. Repo khai [`stickman.world`](#cảnh-three-cho-check) thì phần người đo với mọi vật của chính cảnh three ấy bằng `collide` của rig, thay cho khối đồ của lớp vẽ code. Mỗi cặp một dòng kèm giây sâu nhất và các quãng giây; món hay vật khai `touch` thì bỏ phần người ấy — [10](10-lop-ve-code.md#người-lồng-vào-đồ) |
-| **Tay xuyên thân** | `sceneClashProblems` của cli (`armPierce` của lõi, tay và thân đúng như three vẽ): cánh tay, cẳng tay (bỏ quãng sát vai và sát cổ tay) lấn vào thân áo của chính người ấy quá `4` (`stickman.clash.self`, `false` là tắt) — [10](10-lop-ve-code.md#tay-xuyên-thân) |
-| **Đồ lồng vào đồ** | `sceneItemClashProblems` của cli (`solidItemClashes` của fx): hai món của lớp vẽ code lấn nhau quá `stickman.clash.tol` **và** phần thể tích món nhỏ nằm trong món kia quá `0,1` (`stickman.clash.items`, `false` là tắt), mỗi cặp một dòng; món khai tên món kia trong `touch` thì bỏ — [10](10-lop-ve-code.md#đồ-lồng-vào-đồ) |
-| **Người 3D diễn hành động 2D** | `sceneSideProblems` của rig, **mức lỗi**: người có `world` mà clip ghi kênh tay chân của hành động không soạn ở `side` — sân khấu three vẽ kênh ấy ở dáng nghỉ, hoà với hành động `side` là giật một khung. Mỗi người, mỗi clip một dòng kèm bản `-3d` có sẵn — [03](03-scene.md#hành-động-cho-người-3d) |
-| **Lòng bàn tay quay sai** | `scenePalmProblems` của rig (`actPalms`, bàn tay đúng như three vẽ), mặt ngang dưới bàn tay lấy từ cảnh three [`stickman.world`](#cảnh-three-cho-check) (`palmFrame` của cli): bàn tay duỗi đặt trên mặt ngang mà lòng tay lệch khỏi úp quá `45°`, tay buông bên đùi mà lòng tay lệch hướng vào đùi quá `60°`, kéo dài từ `0,3 s` (`stickman.palm`, `false` là tắt) — [03](03-scene.md#lòng-bàn-tay) |
-| **Đồ cầm tay sai** | `sceneHeldProblems` của rig trên cảnh three [`stickman.world`](#cảnh-three-cho-check) (`heldFrame` của cli, `heldHands` của người 3D): dáng `hold` khác dáng khai, trục ngón vào trong món quá `1,25`, món không chạm tay, tâm nắm ngoài món quá `3`, trục ý định của món (`userData.hold`) lệch, món trôi trong khung bàn tay; kéo dài từ `0,3 s` (`stickman.held`, `false` là tắt) — [03](03-scene.md#đồ-cầm-tay) |
-| **Tay sai dáng** | `sceneArmProblems` của rig (`actJoints`, `actPalms`, đúng như three vẽ): khuỷu thẳng từ `170°` (đích xa quá tầm, tay buông, góc của hành động), ngón hai tay gần nhau chĩa vào nhau quá `30°`, lòng tay ngửa hay ra trước khi bàn tay thấp, bàn tay đặt bằng đích lơ lửng `4–15` trên mặt ngang (cần [`stickman.world`](#cảnh-three-cho-check)), bàn tay lấn vào đầu người khác; kéo dài từ `0,3 s` (`stickman.arms`, `false` là tắt) — [03](03-scene.md#tay-và-khuỷu) |
-| **Tay chân giật trên hình** | `sceneSnapProblems` của rig: lấy mẫu theo fps bản chốt, khớp đúng như hình vẽ ra (`actJoints` cho người 3D, `joints2` cho người 2D) qua khung cắt camera, khung nào một khớp nhảy vượt nền chuyển động quanh nó quá ngưỡng (`stickman.snap`) thì kêu, kèm lý do đọc từ timeline; chỗ khai `snap` thì bỏ — [03](03-scene.md#giật-trên-hình) |
-| **Hành động tự giật** | `actionSnapProblems` của rig: `wrap` mà mốc cuối ở `t: 1` lệch mốc đầu, hay hai mốc sát nhau đổi góc lớn hơn hẳn hai đoạn kề; file khai `snap` thì bỏ — [01](01-rig.md#hành-động-giật-có-chủ-ý) |
-| **Mốc khai mà không ai neo** | Chỉ khi khai `stickman.marks.unused: "warn"`: mốc trong `marks` không chỗ nào trong JSON viết `"@tên"`. Mặc định tắt, vì lớp vẽ code đọc mốc qua `ctx.marks` mà `check` không thấy — [03](03-scene.md#mốc-có-tên) |
+| | Nhóm | Bắt bằng gì |
+|---|---|---|
+| **Tiếng dài hơn chỗ nó nằm** | `episode` | Đo file bằng `ffprobe` rồi so với độ dài shot (`warpTable` của rig, cùng hàm mà `layoutShots` dùng, nên hai bên không lệch). Quá `0,05 s` mới kêu. Không có `ffprobe` thì bỏ qua, không kêu oan |
+| **File có trên đĩa mà chưa commit** | `episode` | `git ls-files`; file không được theo dõi sẽ thiếu sau khi clone. File `.gitignore` loại (audio gen ra, render) là cố ý để ngoài git, không kêu |
+| **Công tắc `equip` một chiều** | `ref` | `equipSwitchProblems` của rig: socket bật tắt mà trạng thái không đổi frame nào — [03](03-scene.md#bốn-bẫy-của-equip) |
+| **Hai track cùng ghi một socket** | `ref` | `sceneEquipProblems` của rig: track sau đè track trước, nên cái gỡ mũ ở track trước bị track sau cầm đồ đè lại |
+| **Khuỷu gập ngược khi giơ tay** | `ref` | `armFoldProblems` của rig: mốc có `\|vai\| > 120` mà khuỷu ngược dấu vai — cẳng tay bung ra ngoài thay vì cuộn về đầu — [00](00-bat-bien.md#dấu-góc-và-hình-học) |
+| **Mốc ghi kênh ngoài `mask`** | `ref` | `maskProblems` của rig: giá trị bị bỏ im lặng — nụ cười khai ở `face` mà `mask` thiếu `face` thì không bao giờ hiện |
+| **Người 3D trượt, không tới mốc dừng** | `move` | `sceneSlideProblems` đo trên mặt sàn thế giới cho người có `world`: bàn chân chịu lực dịch quá nửa quãng hông đi trong `0,4 s`, mốc dừng của `path` mà hông cách quá `20` đơn vị rig, clip có sải chân chạy khi `path` đã đứng yên — [03](03-scene.md#check-cho-người-3d) |
+| **Người 3D lồng vào đồ** | `clash` | `sceneClashProblems` của cli: phần người lấn quá `2` đơn vị thế giới (`stickman.clash.tol`) vào khối đồ của lớp vẽ code (`solidClashes` của fx) hay vào người khác. Repo khai [`stickman.world`](#cảnh-three-cho-check) thì phần người đo với mọi vật của chính cảnh three ấy bằng `collide` của rig, thay cho khối đồ của lớp vẽ code. Mỗi cặp một dòng kèm giây sâu nhất và các quãng giây; món hay vật khai `touch` thì bỏ phần người ấy — [10](10-lop-ve-code.md#người-lồng-vào-đồ) |
+| **Tay xuyên thân** | `clash` | `sceneClashProblems` của cli (`armPierce` của lõi, tay và thân đúng như three vẽ): cánh tay, cẳng tay (bỏ quãng sát vai và sát cổ tay) lấn vào thân áo của chính người ấy quá `4` (`stickman.clash.self`, `false` là tắt) — [10](10-lop-ve-code.md#tay-xuyên-thân) |
+| **Đồ lồng vào đồ** | `clash` | `sceneItemClashProblems` của cli (`solidItemClashes` của fx): hai món của lớp vẽ code lấn nhau quá `stickman.clash.tol` **và** phần thể tích món nhỏ nằm trong món kia quá `0,1` (`stickman.clash.items`, `false` là tắt), mỗi cặp một dòng; món khai tên món kia trong `touch` thì bỏ — [10](10-lop-ve-code.md#đồ-lồng-vào-đồ) |
+| **Người 3D diễn hành động 2D** | `ref` | `sceneSideProblems` của rig, **mức lỗi**: người có `world` mà clip ghi kênh tay chân của hành động không soạn ở `side` — sân khấu three vẽ kênh ấy ở dáng nghỉ, hoà với hành động `side` là giật một khung. Mỗi người, mỗi clip một dòng kèm bản `-3d` có sẵn — [03](03-scene.md#hành-động-cho-người-3d) |
+| **Lòng bàn tay quay sai** | `hands` | `scenePalmProblems` của rig (`actPalms`, bàn tay đúng như three vẽ), mặt ngang dưới bàn tay lấy từ cảnh three [`stickman.world`](#cảnh-three-cho-check) (`palmFrame` của cli): bàn tay duỗi đặt trên mặt ngang mà lòng tay lệch khỏi úp quá `45°`, tay buông bên đùi mà lòng tay lệch hướng vào đùi quá `60°`, kéo dài từ `0,3 s` (`stickman.palm`, `false` là tắt) — [03](03-scene.md#lòng-bàn-tay) |
+| **Đồ cầm tay sai** | `held` | `sceneHeldProblems` của rig trên cảnh three [`stickman.world`](#cảnh-three-cho-check) (`heldFrame` của cli, `heldHands` của người 3D): dáng `hold` khác dáng khai, trục ngón vào trong món quá `1,25`, món không chạm tay, tâm nắm ngoài món quá `3`, trục ý định của món (`userData.hold`) lệch, món trôi trong khung bàn tay; kéo dài từ `0,3 s` (`stickman.held`, `false` là tắt) — [03](03-scene.md#đồ-cầm-tay) |
+| **Tay sai dáng** | `hands` | `sceneArmProblems` của rig (`actJoints`, `actPalms`, đúng như three vẽ): khuỷu thẳng từ `170°` (đích xa quá tầm, tay buông, góc của hành động), ngón hai tay gần nhau chĩa vào nhau quá `30°`, lòng tay ngửa hay ra trước khi bàn tay thấp, bàn tay đặt bằng đích lơ lửng `4–15` trên mặt ngang (cần [`stickman.world`](#cảnh-three-cho-check)), bàn tay lấn vào đầu người khác; kéo dài từ `0,3 s` (`stickman.arms`, `false` là tắt) — [03](03-scene.md#tay-và-khuỷu) |
+| **Tay chân giật trên hình** | `move` | `sceneSnapProblems` của rig: lấy mẫu theo fps bản chốt, khớp đúng như hình vẽ ra (`actJoints` cho người 3D, `joints2` cho người 2D) qua khung cắt camera, khung nào một khớp nhảy vượt nền chuyển động quanh nó quá ngưỡng (`stickman.snap`) thì kêu, kèm lý do đọc từ timeline; chỗ khai `snap` thì bỏ — [03](03-scene.md#giật-trên-hình) |
+| **Hành động tự giật** | `ref` | `actionSnapProblems` của rig: `wrap` mà mốc cuối ở `t: 1` lệch mốc đầu, hay hai mốc sát nhau đổi góc lớn hơn hẳn hai đoạn kề; file khai `snap` thì bỏ — [01](01-rig.md#hành-động-giật-có-chủ-ý) |
+| **Mốc khai mà không ai neo** | `ref` | Chỉ khi khai `stickman.marks.unused: "warn"`: mốc trong `marks` không chỗ nào trong JSON viết `"@tên"`. Mặc định tắt, vì lớp vẽ code đọc mốc qua `ctx.marks` mà `check` không thấy — [03](03-scene.md#mốc-có-tên) |
 
 ### Cảnh three cho `check`
 
