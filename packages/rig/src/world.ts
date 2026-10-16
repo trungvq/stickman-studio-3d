@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { act } from './act';
 import { grip as gripPose, hold, type Held, type Holding } from './attach';
-import { actHeld, holdRoles } from './core/act3';
-import type { HeldItemSpec, HoldAim } from './core/heldItem';
+import { actHeld, holdRoles, leadGrip } from './core/act3';
+import { gripCenter, gripFrame, gripHand, type GripFrame, type HeldItemSpec, type HoldAim, type ReachHold } from './core/heldItem';
 import type { HandPose } from './core/hand';
 import type { HeldIntent } from './core/heldAudit';
 import { PAPER } from './core/constants';
@@ -146,6 +146,7 @@ interface Want {
   item: string;
   grip: string;
   spec: HeldItemSpec;
+  hold: ReachHold;
   support?: { side: Side; pose: HandPose; grip: string };
   aim: { k: number; hold?: HoldAim }[];
 }
@@ -160,6 +161,8 @@ function heldIntentOf(a: HoldAim): HeldIntent | undefined {
   return undefined;
 }
 const fromThree = (p: THREE.Vector3): Vec3 => [p.x / U, -p.y / U, -p.z / U];
+/** Liên kết kiểu cầm ra ma trận three */
+const m4 = (G: GripFrame) => new THREE.Matrix4().set(G.R[0], G.R[1], G.R[2], G.p[0], G.R[3], G.R[4], G.R[5], G.p[1], G.R[6], G.R[7], G.R[8], G.p[2], 0, 0, 0, 1);
 
 /**
  * Cảnh three của `scene`: người diễn đặt dáng theo `sceneAt` mỗi `pose(t)`, mặc đồ theo `equip` qua `wardrobe`, `cast[].fade`
@@ -274,9 +277,9 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
         if (!r || !p) continue;
         const sup = roles[-side as Side];
         want.set(p, {
-          fig, side, item: r.hold.item, grip: r.hold.grip, spec: r.hold.spec,
+          fig, side, item: r.hold.item, grip: r.hold.grip, spec: r.hold.spec, hold: r.hold,
           ...(sup?.role === 'support' && { support: { side: -side as Side, pose: sup.hand.pose, grip: sup.hold.grip } }),
-          aim: (side === near ? hands.near : hands.far)?.aim?.terms.filter((a) => a.hold?.item === r.hold.item && a.hold.grip === r.hold.grip) ?? [],
+          aim: (side === near ? hands.near : hands.far)?.aim?.terms.filter((a) => a.hold?.item === r.hold.item && (a.hold.grip === r.hold.grip || a.hold.grip === r.hold.from?.grip)) ?? [],
         });
       }
     }
@@ -286,13 +289,27 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
       if (on && !(w && on.fig === w.fig && on.side === w.side && on.grip === w.grip && on.support?.side === w.support?.side)) letGo(p);
       if (w && !p.on) take(p, w);
       if (!p.on || !w) continue;
-      p.object.position.set(0, 0, 0);
-      p.object.quaternion.identity();
+      regrip(p.object, w);
       const main = w.aim.reduce<{ k: number; hold?: HoldAim } | undefined>((a, t) => (!a || t.k > a.k ? t : a), undefined)?.hold;
       const intent = main && heldIntentOf(main);
       if (intent) p.object.userData.hold = intent;
       else delete p.object.userData.hold;
     }
+  };
+  /** Món trong khung mang của kiểu cầm mới; đang hoà từ kiểu cũ (`hold.from`) thì đặt lệch đúng phần còn lại của liên kết cũ */
+  const regrip = (o: THREE.Object3D, w: Want) => {
+    o.position.set(0, 0, 0);
+    o.quaternion.identity();
+    if (!w.hold.from) return;
+    const h = w.fig.hands?.[w.side];
+    const [k, long] = [h?.scale ?? 1, h?.long ?? h?.scale ?? 1];
+    const gh = gripHand(w.spec.grips[w.grip], w.side);
+    const own = (G: GripFrame, c: [number, number, number]): GripFrame => (h ? G : { ...G, p: [G.p[0] - c[0], G.p[1] - c[1], G.p[2] - c[2]] });
+    const G1 = own(gripFrame(w.spec, gh, w.side, k, long), gripCenter(gh.pose, w.side));
+    const b = leadGrip(w.hold, gh, w.side, k, long, 1);
+    const Gb = own(b.G, b.center);
+    const m1 = m4(G1), mb = m4(Gb);
+    m1.invert().multiply(mb).decompose(o.position, o.quaternion, v3);
   };
   const take = (p: Provided, w: Want) => {
     p.object.position.set(0, 0, 0);

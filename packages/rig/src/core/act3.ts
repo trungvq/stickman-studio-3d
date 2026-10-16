@@ -27,6 +27,7 @@ import {
 import {
   isOtherHand,
   type Aim,
+  type AimTerm,
   type AimDir,
   type HandPoint,
   type BodyMark,
@@ -42,6 +43,7 @@ import {
   handAxes,
   heldPoint,
   leadSide,
+  mixGrip,
   type GripFrame,
   type GripHand,
   type HeldItemSpec,
@@ -1115,6 +1117,40 @@ const spin = (v: V3, u: V3, a: number): V3 => {
   return add(add(mul(v, c), mul(cross(u, v), s)), mul(u, dot(u, v) * (1 - c)));
 };
 
+const lerp3 = (a: V3, b: V3, f: number): V3 => add(mul(a, 1 - f), mul(b, f));
+
+/**
+ * Liên kết của tay mang món ở khung này và tâm nắm của dáng: kiểu cầm đang có, hoà từ kiểu cầm trước của cùng món
+ * (`hold.from`) trong quãng hoà
+ */
+export function leadGrip(
+  h: ReachHold,
+  hand: GripHand,
+  side: number,
+  k: number,
+  long: number,
+  s: number,
+): { G: GripFrame; center: V3 } {
+  const G = gripFrame(h.spec, hand, side, k, long, s);
+  const center = gripCenter(hand.pose, side, k, long);
+  const g0 = h.from && h.from.k > 0 ? h.spec.grips[h.from.grip] : undefined;
+  if (!g0) return { G, center };
+  const h0 = gripHand(g0, side);
+  const f = 1 - h.from!.k;
+  return {
+    G: mixGrip(gripFrame(h.spec, h0, side, k, long, s), G, f),
+    center: lerp3(gripCenter(h0.pose, side, k, long), center, f),
+  };
+}
+
+/** Bàn tay của kiểu cầm trước (`hold.from`) cho tay phụ: tay kia của kiểu hai tay cũ, hay kiểu cũ của chính nó (đổi tay) */
+function supportFrom(h: ReachHold, side: number, lead: number): GripHand | undefined {
+  const g0 = h.from && h.from.k > 0 ? h.spec.grips[h.from.grip] : undefined;
+  if (!g0) return undefined;
+  if (g0.both) return leadSide(g0.both.lead) === lead ? g0.both.other : undefined;
+  return gripHand(g0, side);
+}
+
 /** Vai trò một bàn tay với món đang cầm: `lead` mang món, `support` với tới mốc của nó trên món tay `lead` mang */
 export interface HoldRole {
   hold: ReachHold;
@@ -1196,10 +1232,10 @@ function solveActing(
     const stick: V3 | undefined = T.hand
       ? undefined
       : [0, (-(BONES3.limb * T.w.sleeve) / 10) * s, 0];
-    const center = gripCenter(r.hand.pose, side, k, long);
+    let center = gripCenter(r.hand.pose, side, k, long);
     let G: GripFrame | undefined;
     if (r.role === "lead") {
-      G = gripFrame(r.hold.spec, r.hand, side, k, long, s);
+      ({ G, center } = leadGrip(r.hold, r.hand, side, k, long, s));
       if (stick) G = { ...G, p: add(sub(G.p, center), stick) };
     }
     extras[side] = { gripAt: stick ?? center, ...(G && { G, spec: r.hold.spec }) };
@@ -1236,17 +1272,57 @@ function solveActing(
     const role = roles[side];
     let rw = W0.hands?.[wk];
     const lead = role?.role === "support" ? done[role.lead] : undefined;
+    let entering = false;
     if (role?.role === "support" && lead?.G && lead.spec) {
       // tay phụ: đích là mốc kiểu cầm của tay này trên món tay kia mang, lòng tay và ngón theo khung món
-      const ax = gripAxes(lead.spec, role.hand);
+      let ax = gripAxes(lead.spec, role.hand);
+      const h0 = supportFrom(role.hold, side, role.lead);
+      if (h0) {
+        // đổi kiểu cầm: mốc của tay phụ trên món hoà từ kiểu cũ
+        const a0 = gripAxes(lead.spec, h0);
+        const f = 1 - role.hold.from!.k;
+        ax = {
+          at: lerp3(a0.at, ax.at, f),
+          palm: unit(lerp3(a0.palm, ax.palm, f)),
+          fingers: unit(lerp3(a0.fingers, ax.fingers, f)),
+        };
+      }
       const toW = (v: V3) => mv(lead.R, mv(lead.G!.R, v));
       const at = rigOf(add(lead.at, mv(lead.R, gripPoint(lead.G, ax.at))));
+      const item: ReachTerm = { k: 1, at, point: "grip" };
+      const held: AimTerm = {
+        k: 1,
+        palm: { abs: toW(ax.palm) },
+        fingers: { abs: toW(ax.fingers) },
+      };
+      // vừa cầm: tay phụ hoà từ chỗ nó đang ở (đích của nó, hay hành động) tới mốc trên món
+      const own = rw?.hold?.item === role.hold.item ? rw.hold : role.hold;
+      const e = own.enter ?? 1;
+      entering = e < 0.999;
+      const was: readonly ReachTerm[] | undefined =
+        rw && rw.w > 0
+          ? hasTerms(rw)
+            ? rw.terms
+            : [{ k: 1, at: [...rw.at] as V3, point: "wrist" }]
+          : undefined;
       rw = {
-        w: 1,
+        w: entering ? (was ? rw!.w + (1 - rw!.w) * e : e) : 1,
         at,
         ...(rw?.elbow && { elbow: rw.elbow }),
-        terms: [{ k: 1, at, point: "grip" }],
-        aim: { terms: [{ k: 1, palm: { abs: toW(ax.palm) }, fingers: { abs: toW(ax.fingers) } }] },
+        terms: entering
+          ? [...(was ?? []).map((t) => ({ ...t, k: t.k * (1 - e) })), { ...item, k: was ? e : 1 }]
+          : [item],
+        aim: {
+          terms: entering
+            ? [
+                { ...held, k: e },
+                ...(rw?.aim?.terms ?? [{ k: 1, keep: true }]).map((t) => ({
+                  ...t,
+                  k: t.k * (1 - e),
+                })),
+              ]
+            : [held],
+        },
         ...(rw?.hold && { hold: rw.hold }),
       };
     }
@@ -1315,7 +1391,11 @@ function solveActing(
       const G = h.G;
       const main = ha.face ?? ha.roll;
       if (role?.role !== "lead" || !G || !main) return undefined;
-      if (rw?.hold?.item !== ha.item || rw.hold.grip !== ha.grip) return undefined;
+      if (
+        rw?.hold?.item !== ha.item ||
+        (rw.hold.grip !== ha.grip && rw.hold.from?.grip !== ha.grip)
+      )
+        return undefined;
       const origin = add(h.at, mv(h.R, G.p));
       const dirTo = (t: HoldTarget): V3 | undefined => {
         if ("name" in t) {
@@ -1544,7 +1624,7 @@ function solveActing(
     A = arm3(T, P, hands, side);
     const h = state(A, side);
     const full =
-      rw && rw.w >= 0.999 && hasTerms(rw)
+      rw && rw.w >= 0.999 && hasTerms(rw) && !entering
         ? rw
         : rb && rb.w >= 0.999 && hasTerms(rb) && !(rw && rw.w > 0)
           ? rb
@@ -1708,10 +1788,12 @@ export function actHeld(c: ActCharacter, sp: ActInput): Partial<Record<"R" | "L"
     const { at, R } = p.frames[tag];
     const k = W?.k ?? 1;
     const long = W?.long ?? 1;
-    let G = gripFrame(r.hold.spec, r.hand, side, k, long, T.s);
+    const lg = leadGrip(r.hold, r.hand, side, k, long, T.s);
+    const center = lg.center;
+    let G = lg.G;
     if (!W) {
       const stick: V3 = [0, (-(BONES3.limb * T.w.sleeve) / 10) * T.s, 0];
-      G = { ...G, p: add(sub(G.p, gripCenter(r.hand.pose, side, k, long)), stick) };
+      G = { ...G, p: add(sub(G.p, center), stick) };
     }
     out[tag] = {
       item: r.hold.item,

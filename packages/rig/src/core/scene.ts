@@ -50,6 +50,7 @@ import {
   heldAxis,
   heldGrip,
   heldPoint,
+  HOLD_BLEND,
   holdIntent,
   SceneHoldSchema,
   sceneHoldRef,
@@ -3093,13 +3094,26 @@ function handAt(
   const a = ks[i];
   const b = time > a.t ? ks[i + 1] : undefined;
   const ra = a[side];
-  const f = b ? smoothstep((time - a.t) / (b.t - a.t)) : 0;
+  const fk = b ? smoothstep((time - a.t) / (b.t - a.t)) : 0;
   const now = holdRun(keys, side, time);
   const nowRef = now && sceneHoldRef(now.hold);
+  // `HOLD_BLEND` giây đầu của lần cầm (trừ lần cầm từ đầu cảnh): đổi kiểu cầm cùng món thì liên kết và ý định hoà từ kiểu
+  // cũ; cầm món mới thì `enter` cho tay phụ hoà tới mốc trên món
+  const blend = now && now.since > 0 && time - now.since < HOLD_BLEND;
+  const prev = blend ? holdRun(keys, side, now!.since - 1e-6) : undefined;
+  const prevRef = prev && sceneHoldRef(prev.hold);
+  const f = blend ? smoothstep((time - now!.since) / HOLD_BLEND) : 1;
+  const regrip =
+    !!(nowRef && prevRef) &&
+    prevRef!.item === nowRef!.item &&
+    prevRef!.grip !== nowRef!.grip &&
+    !!held[nowRef!.item]?.grips[prevRef!.grip];
   const hold: ReachHold | undefined = nowRef && {
     ...nowRef,
     spec: held[nowRef.item],
     since: now.since,
+    ...(blend && regrip && { from: { grip: prevRef!.grip, k: 1 - f } }),
+    ...(blend && prevRef?.item !== nowRef.item && { enter: f }),
   };
   /**
    * Ý định ở mốc `kt` của lần cầm đang có ở `time`: lần cầm có hiệu lực ở mốc ấy, hay ngay trước nó — mốc thả (`hold: null`,
@@ -3136,8 +3150,15 @@ function handAt(
   };
   const keep: Aim = { terms: [{ k: 1, keep: true }] };
   const finish = (r: Reach | undefined, pa?: Reach, pb?: Reach): Reach | undefined => {
-    const aim =
-      pa?.aim || pb?.aim ? (b ? mixAim(pa?.aim ?? keep, pb?.aim ?? keep, f) : pa?.aim) : undefined;
+    let aim =
+      pa?.aim || pb?.aim ? (b ? mixAim(pa?.aim ?? keep, pb?.aim ?? keep, fk) : pa?.aim) : undefined;
+    if (hold?.from) {
+      // ý định của kiểu cũ nhường dần cho kiểu mới
+      const old: Aim = {
+        terms: [{ k: 1, hold: holdAim(hold.spec, prev!.hold, castAt) } as AimTerm],
+      };
+      aim = mixAim(old, aim ?? keep, 1 - hold.from.k);
+    } else if (hold?.enter !== undefined && aim) aim = mixAim(keep, aim, hold.enter);
     if (!r && !aim && !hold) return undefined;
     return {
       ...(r ?? { w: 0, at: [0, 0, 0] }),
@@ -3154,7 +3175,7 @@ function handAt(
   const pb = one(rb, b.t);
   // hai mốc cùng có đích mà một bên không khai hướng khuỷu: giữ hướng của bên kia, không nội suy
   if (pa && pb && !!pa.elbow !== !!pb.elbow) pa.elbow = pb.elbow = pa.elbow ?? pb.elbow;
-  const r = mixReach(pa, pb, f);
+  const r = mixReach(pa, pb, fk);
   const out =
     r && (pa?.elbow || pb?.elbow ? r : { w: r.w, at: r.at, ...(r.terms && { terms: r.terms }) });
   return finish(out, pa, pb);

@@ -335,13 +335,74 @@ export interface HoldAim {
   roll?: HoldAxis;
 }
 
-/** Lần cầm của một bàn tay ở một khung (`Reach.hold` của `world.hands`): món, kiểu cầm, JSON món, giây bắt đầu cầm */
+/**
+ * Lần cầm của một bàn tay ở một khung (`Reach.hold` của `world.hands`): món, kiểu cầm, JSON món, giây bắt đầu cầm. Trong
+ * `HOLD_BLEND` giây đầu của lần cầm: `from` là kiểu cầm trước đó của cùng món trên tay này và phần còn lại của nó (liên kết
+ * hoà dần từ kiểu cũ sang kiểu mới), `enter` là phần đã vào của lần cầm (tay phụ hoà dần tới mốc của nó trên món)
+ */
 export interface ReachHold {
   item: string;
   grip: string;
   spec: HeldItemSpec;
   since: number;
+  from?: { grip: string; k: number };
+  enter?: number;
 }
+
+/** Giây hoà khi một tay bắt đầu cầm (tay phụ với tới món) hay đổi kiểu cầm cùng món (liên kết cũ → mới) */
+export const HOLD_BLEND = 0.3;
+
+/** Phép quay quanh trục đơn vị `u` góc `a` (radian) */
+function rotAxis(u: V3, a: number): M3 {
+  const [x, y, z] = u;
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  const t = 1 - c;
+  return [
+    t * x * x + c,
+    t * x * y - s * z,
+    t * x * z + s * y,
+    t * x * y + s * z,
+    t * y * y + c,
+    t * y * z - s * x,
+    t * x * z - s * y,
+    t * y * z + s * x,
+    t * z * z + c,
+  ];
+}
+
+/** Hoà hai phép quay theo đường ngắn nhất: `f` 0 là `a`, 1 là `b` */
+export function mixRotation(a: M3, b: M3, f: number): M3 {
+  if (f <= 0) return a;
+  if (f >= 1) return b;
+  const D = matMul(tr(a), b);
+  const c = Math.max(-1, Math.min(1, (D[0] + D[4] + D[8] - 1) / 2));
+  const th = Math.acos(c);
+  if (th <= 1e-6) return a;
+  let u: V3 = [D[7] - D[5], D[2] - D[6], D[3] - D[1]];
+  if (Math.hypot(...u) < 1e-6) {
+    // quay nửa vòng: trục là cột lớn nhất của `D + I`
+    const cols: V3[] = [
+      [D[0] + 1, D[3], D[6]],
+      [D[1], D[4] + 1, D[7]],
+      [D[2], D[5], D[8] + 1],
+    ];
+    u = cols.reduce((m, v) => (Math.hypot(...v) > Math.hypot(...m) ? v : m));
+  }
+  return matMul(a, rotAxis(unit(u), th * f));
+}
+
+/** Hoà hai liên kết: quay theo đường ngắn nhất từ `a` tới `b`, dời thẳng; `f` 0 là `a`, 1 là `b` */
+export const mixGrip = (a: GripFrame, b: GripFrame, f: number): GripFrame =>
+  f <= 0
+    ? a
+    : f >= 1
+      ? b
+      : {
+          R: mixRotation(a.R, b.R, f),
+          p: add(mul(a.p, 1 - f), mul(b.p, f)),
+          u: a.u + (b.u - a.u) * f,
+        };
 
 /** Ý định của mốc `hold` trong scene: tên `món#kiểu`, hay object đè `face` / `up` / `roll` của ý định mặc định */
 export const SceneHoldSchema = z.union([

@@ -336,6 +336,46 @@ describe("`world.hands[].hold` trong scene", () => {
     expect(jump).toBeLessThan(15);
   });
 
+  it("đổi kiểu cầm cùng món: liên kết hoà trong `HOLD_BLEND`, món không nhảy qua mốc", () => {
+    const hands = [
+      { t: 0, right: { at: [-30, -270, -70], point: "grip", hold: "dien-thoai#khoe" } },
+      { t: 1, right: { at: [-30, -270, -70], point: "grip", hold: "dien-thoai#doc" } },
+    ];
+    const rt = runtime(hands);
+    const pose = (t: number) => actHeld(C, sceneAt(rt, "a", t, 1, body3(C)) as ActInput).R!;
+    let move = 0;
+    let turn = 0;
+    for (let i = 54; i <= 84; i++) {
+      const [a, b] = [pose((i - 1) / 60), pose(i / 60)];
+      move = Math.max(move, len(sub(a.at, b.at)));
+      turn = Math.max(turn, deg(axisW(a.R, [0, 0, 1]), axisW(b.R, [0, 0, 1])));
+    }
+    // liên kết thay trong một khung thì màn xoay ~90° qua mốc
+    expect(turn).toBeLessThan(15);
+    expect(move).toBeLessThan(3);
+    expect(pose(0.99).grip).toBe("khoe");
+    expect(pose(1.01).grip).toBe("doc");
+    // hết quãng hoà: đúng kiểu mới
+    const sp = sceneAt(rt, "a", 1.5, 1, body3(C)) as ActInput;
+    expect(sp.world!.hands!.near!.hold!.from).toBeUndefined();
+  });
+
+  it("vừa cầm hai tay: tay phụ hoà từ chỗ nó đang ở tới mép món, không nhảy", () => {
+    const hands = [
+      { t: 0, left: { at: [40, -200, 0] } },
+      { t: 1, right: { at: [-30, -260, -80], point: "grip", hold: "khay#bung" } },
+    ];
+    const rt = runtime(hands);
+    const wrist = (t: number) => actJoints(C, sceneAt(rt, "a", t, 1, body3(C)) as ActInput)!.wristL;
+    let jump = 0;
+    for (let i = 55; i <= 84; i++)
+      jump = Math.max(jump, len(sub(wrist((i - 1) / 60), wrist(i / 60))));
+    // tay phụ vào vai ở đúng mốc thì nhảy tới mép khay trong một khung (~60)
+    expect(jump).toBeLessThan(15);
+    const r = actAim(C, sceneAt(rt, "a", 1.5, 1, body3(C)) as ActInput)!;
+    expect(r.report.L.reach!.gap).toBeLessThan(3);
+  });
+
   it("đổi tay: hai tay cùng một món, tay cầm trước mang món", () => {
     const hands = [
       { t: 0, right: { at: [-20, -270, -70], point: "grip", hold: "coc#quai" } },
