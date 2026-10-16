@@ -1,6 +1,6 @@
 {
   "name": "@stickman3d/mcp",
-  "version": "7.7.2",
+  "version": "7.7.3",
   "description": "MCP server để agent dựng nhân vật, hành động, scene người que rồi soi bằng ảnh",
   "license": "MIT",
   "type": "module",

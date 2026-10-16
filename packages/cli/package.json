@@ -1,6 +1,6 @@
 {
   "name": "@stickman3d/cli",
-  "version": "7.7.2",
+  "version": "7.7.3",
   "description": "Khởi tạo và kiểm workspace người que cho một repo video",
   "license": "MIT",
   "type": "module",
