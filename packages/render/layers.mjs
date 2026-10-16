@@ -248,7 +248,8 @@ class BlankPath2D {
 
 /**
  * Cảnh three của repo video, hay `null` nếu repo không khai `stickman.world`: `{ worldOf, collide,
- * colliders, U }` — `worldOf` của entry, ba thứ sau của chính bản rig mà entry nạp. Đặt `Path2D`
+ * colliders, U, heldHands }` — `worldOf` của entry, các thứ sau của chính bản rig mà entry nạp (`heldHands`
+ * trống khi bản rig ấy chưa có). Đặt `Path2D`
  * rỗng vào `globalThis` khi Node không có. Hợp đồng ở docs/10-lop-ve-code.md#đo-trên-cảnh-three
  */
 export async function loadWorld(root = process.cwd()) {
@@ -258,13 +259,19 @@ export async function loadWorld(root = process.cwd()) {
   const mod = await loadEntry(root, entry, "world", "cảnh three", {
     plugins: [hollowReact, sharedWithRepo(root)],
     stdin: `export * as world from ${JSON.stringify(entry)};
-export { collide, colliders, U } from "@stickman3d/rig";`,
+export * from "@stickman3d/rig";`,
     resolveExtensions: [".ts", ".tsx", ".mts", ".mjs", ".js", ".jsx", ".cjs", ".json"],
     loader: { ".css": "empty" },
   });
   if (typeof mod.world.worldOf !== "function")
     throw new Error(`${entry} phải \`export function worldOf(sceneName, rt)\``);
-  return { worldOf: mod.world.worldOf, collide: mod.collide, colliders: mod.colliders, U: mod.U };
+  return {
+    worldOf: mod.world.worldOf,
+    collide: mod.collide,
+    colliders: mod.colliders,
+    U: mod.U,
+    heldHands: mod.heldHands,
+  };
 }
 
 /**

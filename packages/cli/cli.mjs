@@ -32,6 +32,8 @@ const USAGE = `stickman <lệnh> [thư mục]
                 bỏ tập, tiếng, git — nhanh, dùng sau khi sửa một cảnh
                 --jobs <số> số luồng đo sâu các cảnh (mặc định nửa số nhân, không quá số GB
                 RAM trống)
+                --held chỉ đo đồ cầm tay (dáng, ngón xuyên đồ, độ ôm, món xoay, món trôi),
+                bỏ mọi luật khác — đi với --scene cho nhanh
   retime        đo lại tiếng rồi ghi số vào cue khai \`after\` và mốc khai ở \`shot.marks\`;
                 --mark <cảnh>:<tên>=<giây> đặt tay một mốc
   reseat        rig đổi độ dài chân: dời \`y\` của người ngồi 2D để hông ở đúng chỗ cũ, người
@@ -119,6 +121,7 @@ if (cmd === "init") {
     dir,
     scene: value("scene"),
     jobs: jobs && Math.floor(Number(jobs)),
+    only: flag("held") ? "held" : undefined,
   });
   const n = Object.entries(r.counts)
     .filter(([k]) => k !== "common")

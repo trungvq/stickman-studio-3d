@@ -1502,6 +1502,59 @@ export function armOptions(dir = ".") {
   return out;
 }
 
+/**
+ * Ngưỡng đo đồ cầm tay: `stickman.held` trong `package.json` — `{ pose, pierce, touch, grip, up, face, drift, turn,
+ * hold }` (độ, đơn vị rig, đơn vị rig, đơn vị rig, độ, độ, đơn vị rig, độ, giây), trường thiếu lấy các hằng `HELD_*` của
+ * rig; `false` là không đo. Sai kiểu thì trả `{ error }`. docs/03-scene.md#đồ-cầm-tay
+ */
+export function heldOptions(dir = ".") {
+  const raw = readPkg(resolve(dir))?.stickman?.held;
+  if (raw === false || !rig.sceneHeldProblems) return { off: true };
+  const out = {
+    pose: rig.HELD_POSE,
+    pierce: rig.HELD_PIERCE,
+    touch: rig.HELD_TOUCH,
+    grip: rig.HELD_GRIP,
+    up: rig.HELD_UP,
+    face: rig.HELD_FACE,
+    drift: rig.HELD_DRIFT,
+    turn: rig.HELD_TURN,
+    hold: rig.HELD_HOLD,
+  };
+  if (raw === undefined) return out;
+  const bad = `package.json: stickman.held phải là false hay { ${Object.keys(out).join(", ")} } số dương, đang là ${JSON.stringify(raw)}`;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { error: bad };
+  for (const [key, v] of Object.entries(raw)) {
+    if (!(key in out) || typeof v !== "number" || !(v > 0)) return { error: bad };
+    out[key] = v;
+  }
+  return out;
+}
+
+/**
+ * Số đo đồ cầm ở giây `t` trên cảnh three `world` (`worldScene`): `pose(t)` rồi `heldHands` của rig cho mọi người đang
+ * hiện — `frame` của `sceneHeld`. `pose(t)` ném thì giây ấy không có số đo, `onError(t, lỗi)`. `null` khi rig của repo
+ * chưa có `heldHands`. docs/03-scene.md#đồ-cầm-tay
+ */
+export function heldFrame(rt, world, onError) {
+  const { scene, U, heldHands } = world;
+  if (typeof heldHands !== "function") return null;
+  const eye = rt.lens && [rt.lens.eye[0] * U, -rt.lens.eye[1] * U, -rt.lens.eye[2] * U];
+  return (t) => {
+    let posed;
+    try {
+      posed = scene.pose(t) ?? {};
+    } catch (e) {
+      onError?.(t, e);
+      return [];
+    }
+    scene.root.updateMatrixWorld(true);
+    return Object.entries(posed).flatMap(([id, f]) =>
+      f?.root && shown(f.root) ? heldHands(f, id, { U, eye }) : [],
+    );
+  };
+}
+
 /** Báo mốc khai mà JSON không neo: `stickman.marks.unused` trong `package.json`, `"off"` (mặc định) hay
  *  `"warn"` — lớp vẽ code đọc mốc qua `ctx.marks`, `check` không thấy. docs/03-scene.md#mốc-có-tên */
 export const marksUnused = (dir = ".") => readPkg(resolve(dir))?.stickman?.marks?.unused ?? "off";
@@ -1911,6 +1964,51 @@ export function sceneItemClashProblems(
 const moveProblems = (rt) => [...rig.sceneSlideProblems(rt), ...rig.sceneTurnProblems(rt)];
 
 /**
+ * Luật đồ cầm tay của một cảnh (`sceneHeldProblems` của rig) trên cảnh three của nó; `on` là cảnh three đã dựng
+ * (`worldScene`), thiếu thì dựng ở đây. Cảnh không có `lens`, người 3D hay cảnh three thì không đo
+ */
+function heldScene(ctx, name, data, rt, warn, on) {
+  const { held, world, worldRel } = ctx;
+  if (!held || held.off || held.error || !world || !data.lens || !data.cast.some((m) => m.world))
+    return;
+  // lượt `check` đủ đã báo cảnh three ném lỗi (đo người lồng vào vật); `--held` thì báo ở đây, một lần
+  let thrown = !!on;
+  const onError = (t, e) => {
+    if (!thrown)
+      warn(
+        `scenes/${name}.json: ${worldRel}: cảnh three ném lỗi ở giây ${t.toFixed(2)} — ${e.message}; bỏ đo đồ cầm tay ở giây ấy`,
+      );
+    thrown = true;
+  };
+  if (!on) {
+    const scene = worldScene(
+      world,
+      {
+        id: name,
+        scene: data,
+        runtime: rt,
+        characters: ctx.charactersByName,
+        actions: ctx.actionsByName,
+        animals: ctx.animalsByName,
+        props: ctx.props,
+      },
+      worldRel,
+    );
+    if (scene?.error) return warn(`scenes/${name}.json: ${scene.error}`);
+    if (!scene) return;
+    on = scene;
+  }
+  const frame = heldFrame(rt, on, onError);
+  if (!frame) return;
+  try {
+    for (const problem of rig.sceneHeldProblems(rt, { ...held, frame }))
+      warn(`scenes/${name}.json: ${problem}`);
+  } catch (e) {
+    warn(`scenes/${name}.json: không đo được đồ cầm tay — ${e.message}`);
+  }
+}
+
+/**
  * Đo sâu một cảnh như `check`: trượt chân và thân quay gắt (`move`), người lồng vào đồ, tay sai
  * dáng, lòng tay, đích theo mốc (`clash`), rồi giật trên hình (`snap`). Mỗi mục `{ msg }`, `error: true`
  * là lỗi; mục `touch` lạ kèm `touch` (tên mục) vì `check` chỉ báo nó ở cảnh đầu tiên gặp. `ctx` là dữ
@@ -1918,11 +2016,15 @@ const moveProblems = (rt) => [...rig.sceneSlideProblems(rt), ...rig.sceneTurnPro
  */
 function deepScene(ctx, name) {
   const { scenesByName, sceneRuntime, charactersByName, codeLayers, world, worldRel } = ctx;
-  const { clash, arm, palm, snap, spans } = ctx;
+  const { clash, arm, palm, snap, spans, only } = ctx;
   const out = { move: [], clash: [], snap: [] };
   const data = scenesByName[name];
   const rt = data && sceneRuntime(name);
   if (!rt) return out;
+  if (only === "held") {
+    heldScene(ctx, name, data, rt, (msg) => out.clash.push({ msg }));
+    return out;
+  }
   try {
     for (const problem of moveProblems(rt))
       out.move.push({ msg: `scenes/${name}.json: ${problem}` });
@@ -2018,6 +2120,8 @@ function deepScene(ctx, name) {
         warn(`scenes/${name}.json: không đo được đích theo mốc — ${e.message}`);
       }
     }
+    // Đồ cầm tay: dáng, ngón xuyên đồ, độ ôm, món xoay, món trôi — docs/03-scene.md#đồ-cầm-tay
+    if (on) heldScene(ctx, name, data, rt, warn, on);
   }
   if (!snap.error && !snap.off) {
     const characterOf = (m) =>
@@ -2112,7 +2216,7 @@ async function deepScenes(root, names, ctx, jobs = checkJobs(names.length)) {
   const out = new Map();
   const n = Math.min(jobs, names.length);
   if (n > 1) {
-    const { clash, arm, palm, snap, spans } = ctx;
+    const { clash, arm, palm, snap, spans, held, only } = ctx;
     // cảnh nặng (dài, đông người) đi trước để không cảnh nào kéo đuôi
     const weight = (name) => {
       const d = ctx.scenesByName[name];
@@ -2125,7 +2229,7 @@ async function deepScenes(root, names, ctx, jobs = checkJobs(names.length)) {
         () =>
           new Promise((done) => {
             const w = new Worker(new URL("./check-worker.mjs", import.meta.url), {
-              workerData: { dir: root, names, clash, arm, palm, snap, spans },
+              workerData: { dir: root, names, clash, arm, palm, snap, spans, held, only },
             });
             const next = () => {
               const name = queue.shift();
@@ -2162,7 +2266,7 @@ export async function deepWorker(port, data) {
  * tập, tiếng, git và công cụ ngoài bỏ qua — docs/05-repo-video.md#soi-một-cảnh. `jobs` là số luồng
  * đo sâu các cảnh, mặc định theo số nhân và RAM trống (`checkJobs`)
  */
-export async function checkWorkspace({ dir = ".", scene, jobs } = {}) {
+export async function checkWorkspace({ dir = ".", scene, jobs, only } = {}) {
   const root = resolve(dir);
   const problems = [];
   let focus = null;
@@ -2486,13 +2590,18 @@ export async function checkWorkspace({ dir = ".", scene, jobs } = {}) {
   // Tay chân giật trên hình, đo đúng như hình vẽ ra — docs/03-scene.md#giật-trên-hình
   const snap = snapOptions(root);
   if (snap.error) bad(snap.error);
+  // Đồ cầm tay đo trên cảnh three — docs/03-scene.md#đồ-cầm-tay
+  const held = heldOptions(root);
+  if (held.error) bad(held.error);
+  if (only === "held" && held.off)
+    bad("`--held`: rig đang cài chưa có luật đồ cầm, hay stickman.held là false");
   const deep = Object.keys(scenesByName).filter((name) => !frozen.test(name) && inFocus(name));
   const wanted = new Set(deep);
   const spans =
-    snap.error || snap.off
+    snap.error || snap.off || only === "held"
       ? {}
       : Object.fromEntries(shotSpans(root, scenesByName, sceneRuntime, (n) => wanted.has(n)));
-  const opts = { clash, arm, palm, snap, spans };
+  const opts = { clash, arm, palm, snap, spans, held, only };
   const results = await deepScenes(
     root,
     deep,
