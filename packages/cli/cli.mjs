@@ -2,9 +2,12 @@
 // stickman init | upgrade | check | docs | retime | reseat | studio — dựng, nâng, soi và mở workspace của một repo video.
 import { createInterface } from "node:readline/promises";
 import {
+  CHECK_GROUPS,
+  CHECK_TIMES,
   checkWorkspace,
   initWorkspace,
   listDocs,
+  parseCheckArgs,
   readDoc,
   reseatWorkspace,
   retimeWorkspace,
@@ -30,10 +33,18 @@ const USAGE = `stickman <lệnh> [thư mục]
   check         soi workspace: JSON hỏng, file trỏ tới không có, người 3D trượt, công cụ ngoài;
                 --scene <regex> chỉ soi cảnh có id khớp (cảnh báo của chúng + mọi lỗi),
                 bỏ tập, tiếng, git — nhanh, dùng sau khi sửa một cảnh
+                --uses <tên,…> chỉ soi cảnh dùng hành động, nhân vật, đạo cụ, động vật ấy
+                (đi chung --scene thì lấy cảnh khớp cả hai)
+                --only <nhóm,…> / --skip <nhóm,…> chọn nhóm luật: ref (JSON, tham chiếu),
+                move (trượt, thân quay, giật), hands (tay, lòng tay), held (đồ cầm),
+                clash (lồng vào đồ, vào người, tay xuyên thân), episode (tập, tiếng, git,
+                công cụ ngoài); nhóm không chạy thì không dựng thứ nó cần
+                --held tên tắt của --only held
+                --baseline <file> chỉ in cảnh báo mới hay nặng hơn file ấy (kèm mọi lỗi)
+                --save-baseline <file> ghi cảnh báo lượt này vào file (gộp cảnh không chạy lại)
+                --time in thời gian từng nhóm và phần dựng chung
                 --jobs <số> số luồng đo sâu các cảnh (mặc định nửa số nhân, không quá số GB
                 RAM trống)
-                --held chỉ đo đồ cầm tay (dáng, ngón xuyên đồ, độ ôm, món xoay, món trôi),
-                bỏ mọi luật khác — đi với --scene cho nhanh
   retime        đo lại tiếng rồi ghi số vào cue khai \`after\` và mốc khai ở \`shot.marks\`;
                 --mark <cảnh>:<tên>=<giây> đặt tay một mốc
   reseat        rig đổi độ dài chân: dời \`y\` của người ngồi 2D để hông ở đúng chỗ cũ, người
@@ -112,17 +123,12 @@ if (cmd === "init") {
     }
   }
 } else if (cmd === "check") {
-  const jobs = value("jobs");
-  if (jobs !== undefined && !(Number(jobs) >= 1)) {
-    console.error(`--jobs phải là số nguyên dương, không phải \`${jobs}\``);
+  const o = parseCheckArgs(args.slice(1));
+  if (o.error) {
+    console.error(o.error);
     process.exit(1);
   }
-  const r = await checkWorkspace({
-    dir,
-    scene: value("scene"),
-    jobs: jobs && Math.floor(Number(jobs)),
-    only: flag("held") ? "held" : undefined,
-  });
+  const r = await checkWorkspace({ dir, ...o });
   const n = Object.entries(r.counts)
     .filter(([k]) => k !== "common")
     .map(([k, v]) => `${v} ${k}`)
@@ -130,17 +136,41 @@ if (cmd === "init") {
   console.log(
     `${r.dir}\n${n}${r.counts.common === undefined ? "" : `, + ${r.counts.common} file bộ chung của studio`}\n` +
       `pin @${r.stamped ?? "?"}, rig ${r.rig ? `@${r.rig}` : "chưa cài"}` +
+      (r.groups && r.groups.length < CHECK_GROUPS.length
+        ? `\nchỉ chạy nhóm: ${r.groups.join(", ")}`
+        : "") +
       (r.scenes ? `\nchỉ soi ${r.scenes.length} cảnh: ${r.scenes.join(", ")}` : ""),
   );
+  if (o.time && r.time) {
+    const s = (ms) => (ms / 1000).toFixed(1).padStart(7);
+    console.log("thời gian (giây, cộng dồn mọi cảnh và mọi luồng):");
+    for (const [k, label] of Object.entries(CHECK_TIMES))
+      if (r.time[k] !== undefined) console.log(`  ${label.padEnd(38)}${s(r.time[k])}`);
+    console.log(`  ${"cả lượt (đồng hồ)".padEnd(38)}${s(r.wall)}`);
+  }
+  for (const g of r.baseline?.gone ?? []) console.log(`đã hết: ${g.msg}`);
   // Lỗi in **sau cùng** rồi mới tới dòng đếm: soi `check` bằng `tail` là chuyện thường, và
   // lỗi mới là thứ chặn — in xuôi thì một lỗi lọt lên đầu đống cảnh báo là không ai thấy.
   const errors = r.problems.filter((p) => p.level === "lỗi");
   const warnings = r.problems.filter((p) => p.level !== "lỗi");
-  for (const p of [...warnings, ...errors]) console.log(`${p.level}: ${p.msg}`);
+  const delta = (p) =>
+    p.delta === "mới"
+      ? " (mới)"
+      : p.delta === "nặng hơn"
+        ? p.now.count > p.was.count
+          ? ` (nặng hơn: ${p.was.count} → ${p.now.count} dòng)`
+          : ` (nặng hơn: ${p.was.measure} → ${p.now.measure})`
+        : "";
+  for (const p of [...warnings, ...errors]) console.log(`${p.level}${delta(p)}: ${p.msg}`);
+  const b = r.baseline;
   console.log(
     (r.problems.length
       ? `${errors.length} lỗi, ${warnings.length} cảnh báo.`
       : "Không thấy vấn đề gì.") +
+      (b
+        ? ` So với ${b.file}${b.missing ? " (chưa có file, mọi cảnh báo là mới)" : ""}: ${b.fresh} mới, ${b.worse} nặng hơn, ${b.gone.length} đã hết.`
+        : "") +
+      (r.saved ? ` Đã ghi ${r.saved.warnings} cảnh báo vào ${r.saved.file}.` : "") +
       (r.frozen ? ` Bỏ qua ${r.frozen} của cảnh, tập, lớp khớp stickman.frozen.` : ""),
   );
   if (errors.length) process.exitCode = 1;

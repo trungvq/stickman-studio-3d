@@ -1658,15 +1658,45 @@ server.registerTool(
   "check",
   {
     description:
-      "Soi workspace: version đã pin so với @stickman3d/sketch đang cài, JSON hỏng, socket trỏ tới mảnh không có, PNG thiếu alpha, mảnh không có trong danh mục, lớp vẽ code gói được không và `scenes` của nó có trỏ đúng tên cảnh, và công cụ ngoài (rsvg-convert / ffmpeg / ffprobe / magick) thiếu trên PATH. Soi cả workspace chậm: sửa xong một cảnh thì truyền `scene` — chỉ soi cảnh khớp (cảnh báo của chúng, người lồng vào đồ, kèm mọi lỗi), bỏ tập, tiếng, mảnh, git.",
+      "Soi workspace: version đã pin so với @stickman3d/sketch đang cài, JSON hỏng, socket trỏ tới mảnh không có, PNG thiếu alpha, mảnh không có trong danh mục, lớp vẽ code gói được không và `scenes` của nó có trỏ đúng tên cảnh, và công cụ ngoài (rsvg-convert / ffmpeg / ffprobe / magick) thiếu trên PATH. Soi cả workspace chậm: sửa xong một cảnh thì truyền `scene` — chỉ soi cảnh khớp (cảnh báo của chúng, người lồng vào đồ, kèm mọi lỗi), bỏ tập, tiếng, mảnh, git. Sửa gì thì chỉ chạy nhóm luật của thứ ấy (`only`): chỗ đứng, path → move,clash; tay → hands,clash (+held nếu đang cầm); đồ cầm → held,clash; bối cảnh, đồ khối → clash,hands; hành động chung → `uses` tên ấy + ref,move,hands,held. Nhóm không chạy thì không dựng thứ nó cần. Cuối lô thì đủ nhóm với `baseline` để chỉ thấy cảnh báo mới. Kết quả kèm `time` (ms từng nhóm, cộng dồn mọi luồng).",
     inputSchema: {
       scene: z
         .string()
         .optional()
         .describe("Regex trên id cảnh (tên file bỏ .json), vd. `t03-s01-cd-haru` hay `^t03-s01`"),
+      uses: z
+        .union([z.string(), z.array(z.string())])
+        .optional()
+        .describe(
+          "Chỉ soi cảnh dùng các tên này: hành động, nhân vật, đạo cụ, động vật (phẩy ngăn hay mảng); đi chung `scene` thì lấy cảnh khớp cả hai",
+        ),
+      only: z
+        .union([z.string(), z.array(z.string())])
+        .optional()
+        .describe(
+          "Chỉ chạy các nhóm luật: ref, move, hands, held, clash, episode (phẩy ngăn hay mảng)",
+        ),
+      skip: z
+        .union([z.string(), z.array(z.string())])
+        .optional()
+        .describe("Bỏ các nhóm luật này"),
+      baseline: z
+        .string()
+        .optional()
+        .describe(
+          "File baseline (đường từ workspace): chỉ trả lỗi và cảnh báo mới hay nặng hơn file ấy, kèm số đã hết",
+        ),
+      saveBaseline: z
+        .string()
+        .optional()
+        .describe(
+          "Ghi cảnh báo lượt này vào file baseline, gộp với mục của cảnh và nhóm không chạy",
+        ),
     },
   },
-  guard(async ({ scene }) => text(await cli.checkWorkspace({ dir: WS, scene }))),
+  guard(async ({ scene, uses, only, skip, baseline, saveBaseline }) =>
+    text(await cli.checkWorkspace({ dir: WS, scene, uses, only, skip, baseline, saveBaseline })),
+  ),
 );
 
 server.registerPrompt(
