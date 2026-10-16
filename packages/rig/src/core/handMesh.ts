@@ -438,6 +438,13 @@ const tip = (f: HandFrame): V3 => [
 /** Số dải nang dọc lòng bàn tay, trải theo bề ngang: đủ dày để tấm dẹt không lõm giữa hai nang */
 const PALM_STRIPS = 5;
 
+/** Tên từng nang của `handCapsules`, cùng thứ tự: các dải lòng bàn tay, gò ngón cái, rồi hai đốt mỗi ngón */
+export const HAND_CAPSULE_PIECES: readonly ("thenar" | HandPiece)[] = [
+  ...Array<HandPiece>(PALM_STRIPS).fill("palm"),
+  "thenar",
+  ...HAND_PIECES.filter((n) => n !== "palm"),
+];
+
 /**
  * Nang va chạm của bàn tay bên `side` trong khung bàn tay: `[đầu, cuối, bán kính]` — dải lòng bàn tay, gò ngón cái, rồi
  * hai đốt mỗi ngón (cái, trỏ, giữa, áp út, út). Dựng từ chính các khối của `handField` và phép biến đốt của `skinHand`,

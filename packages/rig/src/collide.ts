@@ -117,11 +117,11 @@ function itemColliders(item: Item, name: string): Collider[] {
 
 const opacity = (o: THREE.Object3D) => ((o as THREE.Mesh).material as THREE.ShaderMaterial | undefined)?.uniforms?.uOpacity?.value ?? 1;
 /** Mờ quá nửa như `appear` (mất bóng, mất viền); nhóm khối thì xét các lưới của nó */
-const faded = (o: THREE.Object3D) =>
+export const faded = (o: THREE.Object3D) =>
   (o as THREE.Mesh).isMesh ? opacity(o) < 0.5 : o.children.some((c) => (c as THREE.Mesh).isMesh && opacity(c) < 0.5);
 
 /** Lưới không đo bằng tam giác: `noCollide`, lưới của chính người (`body`), vỏ nét ngược, vật đã mờ */
-const skipMesh = (m: THREE.Mesh) =>
+export const skipMesh = (m: THREE.Mesh) =>
   !!m.userData.noCollide || !!m.userData.body || (m.material as THREE.Material).side === THREE.BackSide || faded(m);
 
 type Attr = THREE.BufferAttribute | THREE.InterleavedBufferAttribute;
@@ -130,7 +130,7 @@ const version = (a: Attr | null) => (a ? ((a as THREE.InterleavedBufferAttribute
 const trisMemo = new WeakMap<THREE.Mesh, { pos: Attr; idx: Attr | null; ver: number; iver: number; m: THREE.Matrix4; tris: Float32Array; box: THREE.Box3 }>();
 
 /** Tam giác thế giới của một lưới */
-function meshTris(m: THREE.Mesh, name: string): Collider | null {
+export function meshTris(m: THREE.Mesh, name: string): Collider | null {
   const pos = m.geometry?.attributes.position as Attr | undefined, idx = m.geometry?.index ?? null;
   if (!pos) return null;
   const hit = trisMemo.get(m);
@@ -246,7 +246,7 @@ function torsoBox(fig: Figure) {
 
 const handMemo = new WeakMap<Hand, { key: string; caps: ReturnType<typeof handCapsules> }>();
 /** Nang bàn tay theo dáng đang vẽ (`shown`), nới cho ôm trọn lưới da; khung bàn tay, giữ tới khi dáng đổi */
-function handCaps(h: Hand) {
+export function handCaps(h: Hand) {
   const key = h.shown.join(), hit = handMemo.get(h);
   if (hit?.key === key) return hit.caps;
   const caps = fitCapsules(handCapsules([0, 0, ...h.shown], h.side, h.scale, h.long), h.geo.attributes.position.array);

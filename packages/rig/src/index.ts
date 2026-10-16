@@ -11,11 +11,12 @@ export {
 } from './stickman';
 export {
   dress, grip, hold, SOCKET_NAMES, torsoSocket, wear,
-  type EquipState, type Gear, type HeadFit, type Held, type HoldOptions, type ItemBuild, type ItemContext, type ItemFactories, type ItemFactory, type SocketName, type Sockets,
+  type EquipState, type Gear, type HeadFit, type Held, type Holding, type HoldOptions, type ItemBuild, type ItemContext, type ItemFactories, type ItemFactory, type SocketName, type Sockets,
 } from './attach';
 export { freeze, seatCrowd, type Seat } from './crowd';
 export { room, type DoorSpec, type Face, type FloorPattern, type PanelSpec, type Room, type RoomDoor, type RoomOptions, type RoomTones, type RoomWindow, type WallSide, type WindowSpec } from './room';
 export { BODY_PARTS, bodyCapsules, collide, colliders, type BodyPart, type Collider, type CollideOptions, type Contact, type Touch } from './collide';
+export { heldHands } from './held';
 export { act, type ActPose, type ActReach, type Acting, type ActWorld } from './act';
 export { type FaceRig, type FaceShape, type Wrinkle } from './face';
 export { GLASSES_DEFAULT, glassesLines, glassesMesh } from './glasses';
