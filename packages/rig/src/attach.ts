@@ -55,6 +55,19 @@ export interface HoldOptions {
   pose?: HandPose;
 }
 
+/**
+ * Lần cầm đang giữ của một bàn tay (`Figure.holding[side]`): `hold` ghi, `release` xoá. `check` đọc nó để tìm món trong tay
+ * và đo đồ cầm (docs/03-scene.md#đồ-cầm-tay); món khai ý định ở `object.userData.hold` (`HeldIntent` của lõi)
+ */
+export interface Holding {
+  object: THREE.Object3D;
+  pose: HandPose;
+  follow: 'wrist' | 'level' | 'tilt';
+  both: boolean;
+  offset?: readonly [number, number, number];
+  rotate?: readonly [number, number, number];
+}
+
 export interface Held {
   object: THREE.Object3D;
   /** Khoảng cách hai mút tay lúc cập nhật gần nhất (hệ người, chưa nhân `root.scale`); một tay là 0 */
@@ -126,16 +139,23 @@ export function hold(fig: Figure, object: THREE.Object3D, o: HoldOptions): Held 
   const holder = gripped(object, o);
   const sides: Side[] = o.hand === 'both' ? [-1, 1] : [o.hand];
   holder.userData.touch = sides.flatMap((s) => [forearm(s), palm(s)]);
-  for (const s of sides) grip(fig, s, o.pose ?? 'grip');
+  const pose = o.pose ?? 'grip';
+  const entry: Holding = { object, pose, follow: o.follow ?? (o.hand === 'both' ? 'level' : 'wrist'), both: o.hand === 'both', offset: o.offset, rotate: o.rotate };
+  for (const s of sides) {
+    grip(fig, s, pose);
+    (fig.holding ??= {})[s] = entry;
+  }
   const held: Held = {
     object, span: 0,
     release: () => {
       carrier.removeFromParent();
-      for (const s of sides) grip(fig, s, undefined);
+      for (const s of sides) {
+        grip(fig, s, undefined);
+        if (fig.holding?.[s] === entry) delete fig.holding[s];
+      }
     },
   };
   let carrier: THREE.Object3D;
-  const pose = o.pose ?? 'grip';
   if (o.hand !== 'both' && (o.follow ?? 'wrist') === 'wrist') {
     // đồ ngồi ở tâm nắm của dáng đang giữ: dời trong khung chỗ treo
     carrier = new THREE.Group();

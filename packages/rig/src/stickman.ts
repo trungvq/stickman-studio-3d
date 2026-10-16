@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { buildSockets, dress, headFit, newGear, type EquipState, type Gear, type ItemFactories, type Sockets } from './attach';
+import { buildSockets, dress, headFit, newGear, type EquipState, type Gear, type Holding, type ItemFactories, type Sockets } from './attach';
 import { D, DEFAULT_FACE } from './core/constants';
 import type { FaceState } from './core/types';
 import { faceRig, type FaceRig, type FaceShape } from './face';
@@ -67,6 +67,8 @@ export interface Figure {
   lap?: { refold: (dir: [number, number]) => void; key: string };
   /** Bàn tay của người `clad` */
   hands?: Record<Side, Hand>;
+  /** Món từng bàn tay đang cầm (`hold` ghi, `release` xoá) */
+  holding?: Partial<Record<Side, Holding>>;
   /** Khung xương theo `rig.height` (`bones3` của lõi): `act` đặt đoạn chi bằng nó */
   bones: Bones3;
   /** Tay choãi, radian (`roots3`) */
