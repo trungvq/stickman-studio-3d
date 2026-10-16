@@ -10,8 +10,8 @@ export {
   type Arm, type CharacterJson, type Figure, type Hand, type Leg, type Lod, type Side, type StickmanOptions,
 } from './stickman';
 export {
-  dress, grip, hold, SOCKET_NAMES, torsoSocket, wear,
-  type EquipState, type Gear, type HeadFit, type Held, type Holding, type HoldOptions, type ItemBuild, type ItemContext, type ItemFactories, type ItemFactory, type SocketName, type Sockets,
+  dress, grip, gripIntent, hold, SOCKET_NAMES, torsoSocket, wear,
+  type EquipState, type Gear, type HeadFit, type Held, type HoldGrip, type Holding, type HoldOptions, type ItemBuild, type ItemContext, type ItemFactories, type ItemFactory, type SocketName, type Sockets,
 } from './attach';
 export { freeze, seatCrowd, type Seat } from './crowd';
 export { room, type DoorSpec, type Face, type FloorPattern, type PanelSpec, type Room, type RoomDoor, type RoomOptions, type RoomTones, type RoomWindow, type WallSide, type WindowSpec } from './room';
