@@ -1240,7 +1240,7 @@ hạn khớp — hình vẫn ra. `check` đo trên đúng phép giải của `ac
 khai mốc hay ý định, và kêu quãng từ `stickman.palm.hold` (`0,3 s`):
 
 - **Bàn tay không tới mốc**: phần đích đủ `1` mà điểm bàn tay (`point`) còn cách mốc quá `AIM_GAP` (`6` đơn vị rig nhân
-  `world.s`) — dời người, đổi `offset`, nới `stretch` hay chọn mốc gần hơn.
+  `world.s`) — dời người, đổi `offset`, nới `stretch` hay chọn mốc gần hơn. Đang hoà giữa hai mốc thì đo tới đích đã hoà.
 - **Lòng tay không quay được về hướng đã khai**: còn lệch quá `AIM_ANGLE` (`25°`); ngón quá `AIM_FINGERS` (`40°`) — đổi
   `elbow` (khung cẳng tay quay theo hướng khuỷu) hay hướng đã khai.
 
@@ -1307,8 +1307,8 @@ nào, món quay về đâu, ở `world.hands[].hold`; cảnh three của repo đ
   { "t": 0,   "left":  { "at": [-80, -280, 310], "point": "grip", "elbow": [0, 1, -0.4],
                          "hold": { "item": "dien-thoai", "grip": "khoe", "face": { "cast": "saito" } } } },
   { "t": 2,   "right": { "hold": { "item": "chen", "grip": "kep", "up": "rim" } } },     // không `at`: chỗ tay theo hành động
-  { "t": 3.4, "right": { "to": "mouth", "point": "item:rim",
-                         "hold": { "item": "chen", "grip": "kep", "face": { "axis": "rim", "toward": { "mark": "mouth" }, "tilt": -30 } } } },
+  { "t": 3.4, "right": { "to": "mouth", "offset": [3, 0, 0], "point": "item:rim",
+                         "hold": { "item": "chen", "grip": "kep", "face": { "axis": "rim", "toward": { "mark": "head" }, "tilt": -15 } } } },
   { "t": 4.5, "right": { "hold": null }, "left": { "hold": null } }
 ]
 ```
@@ -1316,11 +1316,22 @@ nào, món quay về đâu, ở `world.hands[].hold`; cảnh three của repo đ
 - **`hold` là bậc thang**, không nội suy: có hiệu lực từ mốc khai nó tới mốc kế của tay ấy có `hold` khác hay
   `hold: null`. Mốc nhắc tay mà không khai `hold` giữ lần cầm đang có; `right: null` thả đích chứ không buông món. Vị
   trí và ý định giữa các mốc trong một quãng cầm thì hoà êm như mọi trường khác: đổi ý định là cổ tay xoay dần.
+- **Quãng hoà của lần cầm** (`HOLD_BLEND`, `0,3 s` sau mốc khai `hold`; lần cầm từ giây 0 thì không hoà). Đổi kiểu cầm
+  trên cùng tay, cùng món (`kep-ho-so#om` → `#mo`): liên kết tay–món, tâm nắm và ý định hoà từ kiểu cũ sang kiểu mới, món
+  xoay dần trong tay chứ không nhảy (`ReachHold.from`). Cầm món mới: tay phụ (kiểu `both`, đổi tay) đi từ chỗ nó đang ở
+  (đích của nó hay hành động) tới mốc của nó trên món, và ý định của tay mang món vào dần từ bàn tay của hành động
+  (`ReachHold.enter`). Ngón đổi dáng ngay ở mốc.
+- **Hai món cùng loại**: tên thể hiện `món:<tên>` (`"vali:2#keo"`) dùng chung `held/vali.json` mà là món riêng —
+  `provide("vali:2", …)`, `holder`, đổi tay đều theo tên đủ; cùng tên trần thì rig coi là một món (đổi tay).
 - Mốc chỉ có `hold` (không `at` / `to`) thì chỗ tay theo hành động, rig chỉ giải hướng. `hold` không đi cùng `palm`,
   `fingers`, `bend` ở cùng mốc: hướng bàn tay do ý định quyết.
 - `point: "item:<mốc>"` đặt mốc ấy của món vào đích: loa vào tai, miệng chén vào mồm, ngòi bút xuống giấy, đáy chén
-  xuống mặt bàn. Tay chưa cầm thì lùi về `grip`.
-- `resolveScene` báo lỗi khi món, kiểu cầm, mốc của `item:` hay trục ý định không có, `{ cast }` không phải người 3D
+  xuống mặt bàn. Tay chưa cầm thì lùi về `grip`. Món đã sát mặt thì ý định nhắm `{ "mark": "head" }` (tâm đầu): hướng từ
+  món tới mốc trên mặt (`mouth`, `ear`) lật khi món chạm mốc ấy, hướng tới tâm đầu thì không.
+- Ý định xoay khuỷu được: giá xoay khuỷu khỏi hướng đã khai tăng theo bình phương (tay mang và tay phụ), nên khuỷu nhích
+  dần quanh `elbow` chứ không bật sang nghiệm xa để bớt vài độ lệch của món. Ý định vượt tầm cổ tay (`turn` qua ±90) thì
+  cổ tay vẫn có thể lật phía một khung: `check` báo bàn tay nhảy và `held:face` — đổi `elbow`, đổi ý định hay kiểu cầm.
+- `resolveScene` báo lỗi khi món (kể cả `vali` của `vali:2`), kiểu cầm, mốc của `item:` hay trục ý định không có, `{ cast }` không phải người 3D
   trong `cast`, hay mốc người khác ngoài `eye`, `mouth`, `chest`, `belly`. Tham số thứ bảy của `resolveScene` là bảng
   món theo tên (`held/` qua hai lớp, khoá không đuôi).
 
@@ -1361,7 +1372,7 @@ lưới hiện hình của món (mọi lưới mặt trước, kể cả lưới
 | **Món không nằm trong tay** | Tâm nắm của dáng đang vẽ (`handGripOf`) ngoài mặt món quá `HELD_GRIP`; dáng kẹp đầu ngón (`pinch`, `edge`, `span`, `hook`) `HELD_GRIP_PINCH` | `3`, `5` |
 | **Món nghiêng** (`up`) | Kiểu cầm cứng: ý định trục chính về hướng lên (`up`) mà bộ giải còn lệch quá `HELD_UP` (`AimReport.hold`). Đường cũ: món khai `userData.hold.up` mà trục ấy lệch hướng lên quá ngưỡng | `30°` |
 | **Mặt món quay sai** (`face`) | Kiểu cầm cứng: ý định trục chính về đích khác (`camera`, `holderFace`, người khác, mốc thân, hướng) mà còn lệch quá `HELD_FACE`. Đường cũ: món khai `face` + `faceToward` mà trục ấy lệch hướng tới mặt người cầm (ống kính) quá ngưỡng | `65°` |
-| **Tay phụ, `item:` không tới** (`reach`) | Kiểu cầm cứng: tay phụ (kiểu `both`, đổi tay) còn cách mốc kiểu cầm của nó trên món, hay điểm `item:<mốc>` còn cách đích, quá `AIM_GAP` nhân `world.s`. Luật đích theo mốc của `hands` không báo hai ca này | `6` |
+| **Tay phụ, `item:` không tới** (`reach`) | Kiểu cầm cứng: tay phụ (kiểu `both`, đổi tay) còn cách mốc kiểu cầm của nó trên món, hay điểm `item:<mốc>` còn cách đích, quá `AIM_GAP` nhân `world.s`; đang hoà giữa hai mốc thì đo tới đích đã hoà, trong quãng tay phụ vào món thì không đo. Luật đích theo mốc của `hands` không báo hai ca này | `6` |
 | **Món trôi** (`drift`, đường cũ) | Món dời quá `HELD_DRIFT` hay xoay quá `HELD_TURN` trong khung bàn tay so với lúc bắt đầu cầm (một lần cầm: cùng món, dáng, `follow`, `offset`, `rotate`, liền mạch) — `follow: "level"` đứng theo người nên cổ tay xoay là món trôi. Món cứng không trôi theo cách dựng | `3`, `20°` |
 | **Món nhảy** (`jump`) | Món đăng ký (`cast.provide`) dời quá `HELD_DRIFT` hay xoay quá `HELD_TURN` trong thế giới qua một mốc `hold` (so `HELD_JUMP_EPS` giây hai bên mốc): lúc gắn (món nằm xa chỗ tay sẽ cầm), lúc thả (món về chỗ `provide` mà `extra` không giữ ở chỗ thả), lúc đổi tay (tay mới chưa tới đúng mốc, hay không xoay kịp) | `3`, `20°` |
 
