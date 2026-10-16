@@ -1102,6 +1102,11 @@ export const AIM_SWIVEL = 90;
 const SWIVEL_STEP = 15;
 /** Giá mỗi độ xoay khuỷu khỏi hướng đã khai, quy ra độ lệch của lòng tay */
 const SWIVEL_COST = 0.08;
+/**
+ * Món đang cầm: giá xoay khuỷu tăng theo bình phương, bằng giá thẳng ở ngần này độ — ý định nhích khuỷu từ từ quanh
+ * hướng đã khai, không nhảy sang nghiệm xa chỉ để bớt vài độ lệch của món
+ */
+const HOLD_SWIVEL = 10;
 
 /** Quay `v` quanh trục đơn vị `u` một góc `a` (radian) */
 const spin = (v: V3, u: V3, a: number): V3 => {
@@ -1451,6 +1456,10 @@ function solveActing(
     const wantsFingers =
       !!elbow0 &&
       [aimB, aimW].some((a) => a?.terms.some((t) => (t.fingers || t.hold) && t.k > 0.01));
+    // tay đang cầm món, mang hay đỡ: khuỷu theo giá của món cầm
+    const holding =
+      role?.role === "support" ||
+      [aimB, aimW].some((a) => a?.terms.some((t) => t.hold && t.k > 0.01));
     let tbd: [number, number, number] = [raw[0] ?? 0, raw[1] ?? 0, dev0];
     let elbow = elbow0;
     /** Đặt đích, hướng khuỷu, bàn tay và lệch cổ tay vào tư thế đang giải */
@@ -1494,7 +1503,7 @@ function solveActing(
           place(R, tbd, el);
           const B = arm3(T, P, hands, side);
           const h = state(B, side);
-          let cost = SWIVEL_COST * Math.abs(a);
+          let cost = SWIVEL_COST * (holding ? (a * a) / HOLD_SWIVEL : Math.abs(a));
           for (const aim of [aimB, aimW]) if (aim) cost += solveAim(aim, tbd, B, h, true).cost;
           return { cost, a, el };
         };

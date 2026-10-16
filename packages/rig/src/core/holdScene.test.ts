@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { actAim, actHeld, holdRoles, resolveActing, type ActInput } from "./act3";
+import { actAim, actHeld, actJoints, holdRoles, resolveActing, type ActInput } from "./act3";
 import { body3 } from "./figure3d";
 import { fingerVec, HAND_POSES } from "./hand";
 import { heldPoint, parseHeldItem, type HeldItemSpec } from "./heldItem";
@@ -88,7 +88,22 @@ const LONG = spec({
   },
 });
 
-const HELD = { "dien-thoai": PHONE, coc: spec(cocJson), khay: TRAY, "khay-dai": LONG };
+/** Bút: ngòi chúi ra trước và xuống, tay theo đích thế giới */
+const PEN = spec({
+  size: [2.6, 30, 3.4],
+  anchors: { tip: { at: [0, 0, 0], dir: [0, -1, 0] }, barrel: { at: [0, 7, 0] } },
+  grips: {
+    viet: {
+      pose: "pinch",
+      at: { anchor: "barrel", offset: [0, 0, 1.2] },
+      palm: [1, 0, 0],
+      fingers: { toward: "tip" },
+      intent: { face: { axis: "tip", toward: [0.5, 0.866, 0] } },
+    },
+  },
+});
+
+const HELD = { "dien-thoai": PHONE, coc: spec(cocJson), khay: TRAY, "khay-dai": LONG, but: PEN };
 const LENS = { eye: [0, -250, -1400], yaw: 0, pitch: 0, f: 800 };
 
 const scene = (hands: unknown[], more: object[] = []) => {
@@ -302,6 +317,23 @@ describe("`world.hands[].hold` trong scene", () => {
     expect(r.report.R.hold!.err).toBeLessThan(15);
     const resolved = resolveActing(C, sp);
     expect(resolved.pose.hand!.af!.slice(2)).toEqual(fingerVec(HAND_POSES.edge));
+  });
+
+  it("ý định không làm khuỷu bật: tay dời êm thì khuỷu đi liền", () => {
+    const hands = [
+      { t: 0, right: { at: [-2, -249, 36], elbow: [0.13, 0.87, 0.92], hold: "but#viet" } },
+      { t: 2, right: { at: [-35, -182, 100], elbow: [0.13, 0.87, 0.92] } },
+    ];
+    const rt = runtime(hands);
+    let prev: V3 | undefined;
+    let jump = 0;
+    for (let i = 0; i <= 120; i++) {
+      const e = actJoints(C, sceneAt(rt, "a", i / 60, 1, body3(C)) as ActInput)!.elbowR;
+      if (prev) jump = Math.max(jump, len(sub(e, prev)));
+      prev = e;
+    }
+    // cổ tay dời ~1 mỗi khung; giá xoay khuỷu thẳng thì bộ giải nhảy giữa hai nghiệm cách xa nhau, khuỷu bật ~40
+    expect(jump).toBeLessThan(15);
   });
 
   it("đổi tay: hai tay cùng một món, tay cầm trước mang món", () => {
