@@ -7,9 +7,9 @@ không có bước "tạo từ mô tả" — nghĩ ra JSON là việc của mode
 
 ## Chạy
 
-Workspace là thư mục có `characters/`, `actions/`, `scenes/`, `props/`, `pieces/`,
+Workspace là thư mục có `characters/`, `actions/`, `scenes/`, `props/`, `held/`, `pieces/`,
 giống studio; ảnh nằm trong `pieces/<socket>/` và `list` trả tên kèm thư mục
-con. `characters/`, `actions/`, `animals/` và `pieces/` có **bộ chung của studio
+con. `characters/`, `actions/`, `animals/`, `held/` và `pieces/` có **bộ chung của studio
 làm lớp dưới** ([05 — Hai lớp](05-repo-video.md#hai-lớp)): đọc và render thấy cả
 hai, ghi chỉ vào workspace. Server đọc `cwd` hoặc `--workspace <dir>`;
 ảnh ghi ra `--out` (mặc định `<workspace>/tmp/mcp`).
@@ -33,14 +33,14 @@ Dựng và soi repo video: [05 — Dựng một repo video](05-repo-video.md).
 | `docs` | `file?` | Chính bộ spec này, của đúng version đang cài. Trống là mục lục; `file` nhận tiền tố (`02` ra `02-trang-phuc.md`). Repo video không có bản chép nào — docs đi theo package đã pin nên không lệch version được. |
 | `init` | `force?`, `name?` | Dựng workspace repo video: bộ mẫu nhân vật / cảnh / đạo cụ / tập, app Remotion, stickman.md / AGENTS.md / CLAUDE.md / README.md / .mcp.json / package.json. Mảnh, hành động và docs không chép — chúng đi theo package. |
 | `upgrade` | `modified?`, `dryRun?` | Nâng workspace lên bộ `@stickman3d` đang cài: chép lại app Remotion và file cho agent, trộn số version vào `package.json`. Không đụng `characters`/`actions`/`scenes`/`props`/`pieces`. `modified` (`bỏ qua`/`đè`/`dừng`) quyết định số phận file đã sửa tay — xem [05](05-repo-video.md#nâng-lên-bộ-rig-mới). |
-| `check` | `scene?`, `uses?`, `only?`, `skip?`, `baseline?`, `saveBaseline?` | Soi workspace: version đã pin so với rig đang cài, JSON hỏng, scene trỏ tới nhân vật / hành động / đạo cụ / động vật không có, file chép y nguyên bộ chung. Cộng cả lớp **lỗi câm**: tiếng dài hơn chỗ nó nằm, file có trên đĩa mà chưa commit, công tắc `equip` một chiều, hai track cùng ghi một socket, người 3D lồng vào đồ khối, lòng bàn tay quay sai, tay sai dáng (khuỷu thẳng, ngón chụm, lòng tay ngửa, lơ lửng trên mặt, chạm đầu người khác) — xem [05](05-repo-video.md#soi-workspace). `scene` (regex trên id cảnh) chỉ soi cảnh khớp, `uses` (tên hành động, nhân vật, đạo cụ, động vật) chỉ soi cảnh dùng chúng — [05](05-repo-video.md#soi-một-cảnh). `only` / `skip` chọn nhóm luật (`ref`, `move`, `hands`, `held`, `clash`, `episode`), nhóm không chạy thì không dựng thứ nó cần — [05](05-repo-video.md#nhóm-luật). `baseline` chỉ trả lỗi và cảnh báo mới hay nặng hơn file baseline (`delta`), `saveBaseline` ghi cảnh báo lượt này vào file — [05](05-repo-video.md#baseline). Kết quả kèm `groups`, `time` (ms từng nhóm và phần dựng chung, cộng dồn mọi luồng) và `wall`. |
+| `check` | `scene?`, `uses?`, `only?`, `skip?`, `baseline?`, `saveBaseline?` | Soi workspace: version đã pin so với rig đang cài, JSON hỏng, scene trỏ tới nhân vật / hành động / đạo cụ / động vật không có, file chép y nguyên bộ chung. Cộng cả lớp **lỗi câm**: tiếng dài hơn chỗ nó nằm, file có trên đĩa mà chưa commit, công tắc `equip` một chiều, hai track cùng ghi một socket, người 3D lồng vào đồ khối, lòng bàn tay quay sai, tay sai dáng (khuỷu thẳng, ngón chụm, lòng tay ngửa, lơ lửng trên mặt, chạm đầu người khác) — xem [05](05-repo-video.md#soi-workspace). `scene` (regex trên id cảnh) chỉ soi cảnh khớp, `uses` (tên hành động, nhân vật, đạo cụ, động vật) chỉ soi cảnh dùng chúng — [05](05-repo-video.md#soi-một-cảnh). `only` / `skip` chọn nhóm luật (`ref`, `move`, `hands`, `held`, `legacy`, `clash`, `episode`), nhóm không chạy thì không dựng thứ nó cần — [05](05-repo-video.md#nhóm-luật). `baseline` chỉ trả lỗi và cảnh báo mới hay nặng hơn file baseline (`delta`), `saveBaseline` ghi cảnh báo lượt này vào file — [05](05-repo-video.md#baseline). Kết quả kèm `groups`, `time` (ms từng nhóm và phần dựng chung, cộng dồn mọi luồng) và `wall`. |
 | `retime` | `dryRun?`, `set?` | Đo lại tiếng rồi ghi số vào cue có `after` và mốc khai ở `shot.marks` ([07](07-lam-tap.md#mốc-có-tên-và-retime)); `set: [{ scene, mark, seconds }]` đặt tay. `dryRun` chỉ liệt kê số sẽ đổi. |
 | `describe_rig` | – | Mọi thứ để chọn: `POSES`, kênh khớp, bộ sinh + tham số, `PARTS` theo socket, kiểu đầu/tóc/râu/mặt, lớp tay, góc nhìn, hằng số rig, các quy ước dấu góc, và `world3d` cho [người 3D](#người-3d). |
-| `schema` | `kind` | JSON Schema sinh từ zod + object mặc định; `scenes` kèm `example3d` (ống kính, một người ngồi gõ phím, một người đi theo `path`). |
-| `list` | `kind` (`characters`/`actions`/`scenes`/`props`/`animals`/`pieces`) | Tên file + `name`; hành động kèm `mask`; PNG kèm kích thước và mục danh mục (đã gộp hai lớp); file hỏng kèm lỗi. `characters`, `actions`, `animals` và `pieces` kèm `layer` (`workspace` / `common`), cùng tên thì chỉ thấy bản workspace. |
+| `schema` | `kind` | JSON Schema sinh từ zod + object mặc định; `scenes` kèm `example3d` (ống kính, một người ngồi gõ phím, một người đi theo `path`) và `exampleHold` (mốc `world.hands` cầm cốc, đưa lên mồm, đặt lại, buông); `held` mặc định là món mẫu `coc` ([01](01-rig.md#kiểu-cầm)). |
+| `list` | `kind` (`characters`/`actions`/`scenes`/`props`/`animals`/`held`/`pieces`) | Tên file + `name` (`held` thì `grips`: tên các kiểu cầm); hành động kèm `mask`; PNG kèm kích thước và mục danh mục (đã gộp hai lớp); file hỏng kèm lỗi. `characters`, `actions`, `animals`, `held` và `pieces` kèm `layer` (`workspace` / `common`), cùng tên thì chỉ thấy bản workspace. |
 
 | `read` | `kind`, `file` | Bản đã parse, đủ mặc định. |
-| `validate` | `data` \| `file`, `kind` | Kiểm object inline hoặc file có sẵn (kể cả file lớp chung); `kind` bỏ trống thì tự nhận theo nội dung và trả về trong kết quả. Bản đã parse hoặc danh sách lỗi có `path`. Scene chạy luôn `resolveScene` để bắt lỗi chéo. Kèm `warnings` cho thứ **hợp lệ mà vẫn ra hình thiếu**: hành động có công tắc `equip` một chiều, khuỷu gập ngược khi giơ tay, mốc ghi kênh ngoài `mask` hay mốc bàn tay khai cả `turn` lẫn `palm`; scene có hai track cùng ghi một socket, người 3D trượt trên sàn hay không tới mốc dừng của `path`, thân người 3D quay gắt, tay chân giật trên hình (cùng dòng và ngưỡng với `check`); hành động tự giật (`wrap` nhảy ở đường nối vòng, mốc sát nhau đổi góc vọt). Scene kèm `errors` cho thứ `check` coi là lỗi: người 3D diễn hành động 2D ở kênh tay chân. |
+| `validate` | `data` \| `file`, `kind` | Kiểm object inline hoặc file có sẵn (kể cả file lớp chung); `kind` bỏ trống thì tự nhận theo nội dung và trả về trong kết quả. Bản đã parse hoặc danh sách lỗi có `path`. Scene chạy luôn `resolveScene` để bắt lỗi chéo. Kèm `warnings` cho thứ **hợp lệ mà vẫn ra hình thiếu**: hành động có công tắc `equip` một chiều, khuỷu gập ngược khi giơ tay, mốc ghi kênh ngoài `mask` hay mốc bàn tay khai cả `turn` lẫn `palm`; scene có hai track cùng ghi một socket, người 3D trượt trên sàn hay không tới mốc dừng của `path`, thân người 3D quay gắt, tay chân giật trên hình (cùng dòng và ngưỡng với `check`); hành động tự giật (`wrap` nhảy ở đường nối vòng, mốc sát nhau đổi góc vọt); scene có tay cầm kiểu hai tay trong khi tay kia cầm món khác. `kind` `held` nhận ra theo `anchors` + `grips`. Scene kèm `errors` cho thứ `check` coi là lỗi: người 3D diễn hành động 2D ở kênh tay chân. |
 | `write` | `kind`, `file`, `data`, `overwrite?` | Ghi bản đã parse; không đè khi thiếu `overwrite`. |
 | `patch` | `kind`, `file`, `patch` | Deep-merge rồi parse rồi ghi; `null` xoá khoá, mảng thay cả mảng. Vá một nhân vật, hành động hay con vật của lớp chung là tạo bản đè trong thư mục cùng tên của workspace (`from` cho biết nguồn). |
 
@@ -182,8 +182,11 @@ không có tool riêng.
   Repo khai `stickman.world` thì người đang cầm đồ kèm `held.right` / `held.left`, cùng số đo với luật đồ cầm của `check`
   ([03](03-scene.md#đồ-cầm-tay)): `item`, `pose` (dáng vẽ), `declared` (dáng hành động khai), `follow`, `pierce`
   (`core` trục đốt vào trong món, `depth` da lún, `piece` đốt), `wrap` (nhóm chạm món), `gaps`, `grip` (tâm nắm tới mặt
-  món, âm là trong), `palm` (`gap`, `angle`), `up` / `face` (góc lệch trục ý định), `rel` (món trong khung bàn tay — so hai
-  mốc để thấy món trôi), `issues` (luật sẽ kêu).
+  món, âm là trong), `palm` (`gap`, `angle`), `up` / `face` (góc lệch trục ý định của `userData.hold`), `rel` (món trong
+  khung bàn tay — so hai mốc để thấy món trôi), `issues` (luật sẽ kêu). Kiểu cầm cứng kèm `hold` (`"món#kiểu"`; không có
+  là đường cũ), `intent` — ý định trục chính bộ giải nhắm: `rule` (`up` / `face`), `toward` (đích như scene khai),
+  `want` / `got` (hướng muốn / đạt, thế giới rig), `err` (độ còn lệch), `clamped` (khớp cổ tay kẹp: `turn`, `bend`,
+  `dev`) — và `reach` khi đích do món đặt: `kind` (`support` tay phụ, `item` điểm `item:<mốc>`), `point`, `to`, `gap`.
   Cảnh có `lens` và người 3D kèm `clashes`: mỗi mốc hỏi, các chỗ phần người lồng vào đồ khối hay vào
   người khác sâu quá ngưỡng của `check`, sâu trước —
   `{ "0.5": [{ "who": "haru.head", "with": "hoc (mảnh 0)", "depth": 33 }] }`
@@ -200,7 +203,8 @@ không có tool riêng.
 - **`describe_rig`** có `world3d`: trục thế giới, `yaw`, `theta` và bảng nấc `viewOfTheta`,
   `scene.lens` khác `camera[]`, `cast[].world`, `authoredAt`, `reach` và `REACH_ELBOW`,
   `twist` (xoắn vai, lệch cổ tay), `hand` (kênh bàn tay, dáng `HAND_POSES` — tên dáng ở `handPoses` —, `palm` /
-  `fingers` theo ý định), `world.hands`, mốc thân (`bodyMarks`) và hướng gọi tên (`palmDirs`), và bộ hành động 3D lấy từ chính các file `authoredAt: "side"` trong hai lớp. Vẽ của MCP
+  `fingers` theo ý định), `world.hands`, `held` (món cầm tay, kiểu cầm, ý định, `world.hands[].hold`, `cast.provide`) cùng
+`heldItems` (món có trong hai lớp và kiểu cầm của từng món), mốc thân (`bodyMarks`) và hướng gọi tên (`palmDirs`), và bộ hành động 3D lấy từ chính các file `authoredAt: "side"` trong hai lớp. Vẽ của MCP
   là người SVG nên không thấy ngón; xoắn vai thì thấy.
 - **`render_action` / `render_character` với `yaw`** vẽ người 3D đứng một mình giữa sân khấu
   trống: một cảnh tối thiểu (`solo3d` / `soloStage` của `@stickman3d/fx`, ống kính cúi `pitch`, mặc định `16`)

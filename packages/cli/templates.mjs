@@ -17,6 +17,7 @@ này**. Rig là \`@stickman3d/rig@${rigVersion}\` đã pin — đừng sửa gì
 | \`actions/\` | JSON hành động của tập này. Hành động chung (\`walk\`, \`idle\`, \`wave\`…) đi theo studio, không nằm ở đây; \`list\` gắn \`layer\` cho biết. Muốn sửa một cái chung thì \`patch\` nó — bản đè sẽ nằm ở đây. |
 | \`scenes/\` | JSON cảnh: ghép hành động theo timeline, nhiều người, đạo cụ và động vật (kể cả người cưỡi, người xách); kèm nền và camera của cảnh. |
 | \`props/\` | JSON đạo cụ có bánh (\`docs 06\`); scene trỏ bằng tên file. |
+| \`held/\` | JSON món cầm tay (\`docs 01\` § Kiểu cầm): khung, mốc và các kiểu cầm của từng món — điện thoại, chén, khay. Scene cầm bằng \`world.hands[].hold: "món#kiểu"\`. Món mẫu \`coc\` đi theo studio, trùng tên thì bản ở đây đè. |
 | \`animals/\` | JSON động vật của tập này (\`docs 08\`); scene trỏ bằng tên file. Bảy con mẫu (\`dog\`, \`chicken\`, \`bird\`, \`tiger\`, \`horse\`, \`lion\`, \`elephant\`) đi theo studio như hành động chung, \`patch\` thì bản đè nằm ở đây. |
 | \`episodes/\` | JSON tập: xếp các cảnh thành shot, cộng tiếng và lời, thumbnail và các biến thể của nó. Xem \`docs 07\` § Bảng thời gian của cả tập. |
 | \`sfx/\` | Bảng tiếng động của tập: \`recipes.json\` cho \`pnpm sfx\`, \`elevenlabs.json\` cho \`pnpm sfx-el\`, \`loops.json\` cho \`pnpm sfx-loop\`. Thư viện chung nằm trong \`tools/\`. Xem \`docs 07\` § Tiếng động. |
@@ -69,6 +70,11 @@ vừa làm gì.
   thì khai \`hand: { "palm": "down" }\` (hay \`{ "toward": "mouth" }\`), đừng đoán \`turn\` —
   \`docs 01\` § Đích theo mốc, § Hướng lòng tay theo ý. Dáng cầm vật nhỏ, móc quai, kẹp cạnh,
   đặt phẳng có sẵn: \`pinch\`, \`hook\`, \`edge\`, \`flat\`, \`cup\`, \`clasp\`.
+- Người cầm đồ: món khai một lần ở \`held/<món>.json\` (mốc và kiểu cầm — dáng ngón, chỗ, hướng món trong tay), cảnh
+  khai \`world.hands[].hold: "món#kiểu"\` (bậc thang tới \`hold: null\`) cùng ý định — món quay về đâu
+  (\`face: "camera"\`, \`{ "cast": "b" }\`, \`up: "rim"\`) —, đừng khai \`palm\` / \`fingers\` cho tay đang cầm; cảnh three
+  đăng ký vật bằng \`cast.provide("món", vật)\` trong \`extra\`, rig gắn món vào tay suốt quãng cầm — \`docs 01\` § Kiểu
+  cầm, \`docs 03\` § Đồ cầm tay. Ngón có ôm món không thì soi \`pnpm can-tay\`.
 - Đặt tay lên một mặt (quầy, sách, bàn phím, bàn) hay đổi \`turn\` / \`elbow\` xong thì
   đọc \`world.palms\` của \`scene_probe\` (lòng tay \`úp\`, \`down\` dưới 45; \`aim\` là khe tới
   mốc và độ lệch còn lại so với \`palm\` đã khai), đừng phán hướng lòng tay bằng mắt —
@@ -81,9 +87,10 @@ vừa làm gì.
   lồng vào đồ, chân trượt, hành động 2D trên người 3D, tay chân giật trên hình, lòng bàn tay quay sai,
   tay thẳng đuột, ngón hai tay chụm vào nhau, tay lơ lửng trên mặt, tay lấn vào đầu người khác. Sửa gì thì chỉ chạy
   nhóm luật của thứ ấy, nhóm không chạy thì không dựng: \`--only move,clash\` (chỗ đứng, \`path\`), \`--only hands,clash\`
-  (tay), \`--only held,clash\` (đồ cầm), \`--uses <hành động> --only ref,move,hands,held\` (hành động chung) — bảng đủ ở
-  \`docs 05\` § Nhóm luật. Cuối lô, trước commit: đủ nhóm trên các cảnh vừa đổi với \`--baseline <file>\` để chỉ thấy
-  cảnh báo mới. \`check\` cả workspace chậm, để dành trước khi commit hay sau khi nâng rig.
+  (tay), \`--only held,clash\` (đồ cầm, kiểu cầm; thêm \`ref\` khi sửa \`held/\`), \`--uses <hành động> --only
+  ref,move,hands,held\` (hành động chung) — bảng đủ ở \`docs 05\` § Nhóm luật. Cuối lô: đủ nhóm trên các cảnh của lô với
+  \`--baseline <file>\` để chỉ thấy cảnh báo mới. \`check\` cả workspace chậm: chỉ chạy ở cuối tập hay sau khi nâng rig.
+  Nhóm \`legacy\` kể đồ cầm còn đi đường cũ (\`hold\` không có kiểu cầm); cảnh cũ chưa chuyển thì \`--skip legacy\`.
 - Người 3D (\`cast[].world\`) chỉ diễn hành động soạn ở \`side\` ở kênh tay chân
   (\`stand-3d\`, \`sit-3d\`, bản \`-3d\` của repo), cả ở track thân từ giây 0 thay cho clip
   rỗng. Chỗ cố ý giật (giật mình, đập bàn) khai \`"snap": true\` ở hành động, ở clip hay ở
@@ -125,7 +132,7 @@ Mảnh là **ảnh mực hai màu**: nét đen, ruột trắng, màu thật nằ
   đừng vá \`node_modules\`.
 - Nâng lên bộ rig mới: cài version mới rồi \`stickman upgrade\` (\`--dry-run\` xem trước).
   Nó chép lại app Remotion và file agent — docs không nằm trong đó vì không có bản chép.
-  \`characters/\`, \`actions/\`, \`scenes/\`, \`episodes/\`, \`props/\`, \`animals/\`, \`pieces/\`, \`sfx/\` không bị đụng.
+  \`characters/\`, \`actions/\`, \`scenes/\`, \`episodes/\`, \`props/\`, \`animals/\`, \`held/\`, \`pieces/\`, \`sfx/\` không bị đụng.
   File mình sửa tay thì nó hỏi trước khi đè.
 - **Đừng sửa file \`src/\` và \`tools/\` do studio phát** — mẫu đổi là phải trộn tay. Lớp vẽ code ở
   \`src/lop.tsx\`, bộ phận code ở \`src/parts.tsx\`, context cho lớp vẽ cần dữ liệu app Remotion ở

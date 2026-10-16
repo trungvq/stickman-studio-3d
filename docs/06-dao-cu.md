@@ -9,6 +9,10 @@ Người ngồi được vào trong nếu nó có **chỗ ngồi** — xem [dư�
 File nằm ở `props/` của workspace, đi qua `PropSchema` / `parseProp` như mọi JSON
 khác. Đặt lên sân khấu ở `scene.props[]` — xem [03](03-scene.md#đạo-cụ).
 
+Món người cầm trong tay (điện thoại, chén, khay) không phải đạo cụ: nó là `held/<món>.json` — khung, mốc, kiểu cầm —,
+lưới do cảnh three của repo dựng, scene cầm bằng `world.hands[].hold` ([01](01-rig.md#kiểu-cầm),
+[03](03-scene.md#đồ-cầm-tay)).
+
 ## Hình dạng JSON
 
 ```json

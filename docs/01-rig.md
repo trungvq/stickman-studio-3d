@@ -1390,6 +1390,7 @@ Người 3D mặc đồ (`palette.clad`) có bàn tay năm ngón tròn mập ki�
 | `hook` | Móc: gốc ngón gần thẳng, đốt ngọn gập hẳn — quai túi, cán vali |
 | `edge` | Kẹp cạnh vật dẹt: ngón cái mặt trước, các ngón duỗi đỡ mặt sau — điện thoại ngang hai tay |
 | `span` | Xoè ôm hai cạnh vật dẹt: lòng tay và các ngón gần thẳng áp mặt sau, đầu ngón tì cạnh này, ngón cái dựng dọc cạnh kia — một tay giơ điện thoại khoe màn |
+| `thumbsUp` | Giơ ngón cái: ngón cái dạng hẳn, dựng lên, bốn ngón nắm — khen, đồng ý; tâm nắm như `fist` |
 
 **Dáng nghỉ không nằm trong bảng**: ngón cong nhẹ, ngón cái khép sát cạnh ngón trỏ — bàn tay không ai đặt dáng, và
 gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` (`{}`). Thêm một dáng là thêm một dòng vào
@@ -1409,17 +1410,21 @@ gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` 
   tay một bên không xoá bàn tay bên kia của track dưới (`composePose`); bên không ai ghi là `HAND_REST` (dáng
   nghỉ, cổ tay thẳng). Kênh `hand` tách khỏi kênh tay: một track chỉ ghi `hand` ngửa hay úp bàn tay trên
   một track tay khác.
-- **Cầm đồ.** `hold` (và `dress` vào `handNear` / `handFar`) đặt `held` của bàn tay — dáng `grip`, hay
-  `HoldOptions.pose` (một dáng của bảng, kể cả `pinch`, `edge`, `span`, `hook`) — đè góc ngón của hành động, giữ xoay và gập cổ tay.
-  Đồ ngồi ở **tâm nắm của dáng đang giữ** (`HAND_GRIPS`): chỗ treo vẫn là tâm nắm của `grip` (`handGrip`), dáng khác dời đồ
+- **Cầm đồ.** `hold` (và `dress` vào `handNear` / `handFar`) đặt `held` của bàn tay, đè góc ngón của hành động, giữ xoay
+  và gập cổ tay. Kiểu cầm cứng (`HoldOptions.grip`, `world.hands[].hold`) lấy dáng, chỗ và hướng món từ `held/<món>.json` —
+  [Kiểu cầm](#kiểu-cầm). Đường cũ (`hold` không `grip`, `@deprecated`) đặt dáng `grip`, hay
+  `HoldOptions.pose` (một dáng của bảng, kể cả `pinch`, `edge`, `span`, `hook`), và
+  đồ ngồi ở **tâm nắm của dáng đang giữ** (`HAND_GRIPS`): chỗ treo vẫn là tâm nắm của `grip` (`handGrip`), dáng khác dời đồ
   đi `gripShift` trong khung bàn tay — chén ngồi trên vòng ngón cái, ngón trỏ của `pinch`, điện thoại ngang ngồi giữa ngón cái
   và các ngón của `edge`, điện thoại dọc ngồi trước lòng tay, bề ngang giữa ngón cái và đầu các ngón của `span`. Đồ căn cho `grip` không đổi chỗ. Đồ bật ở một khung (`equip` là công tắc), nên muốn tay khép dần
   thì cho hành động đưa bàn tay về dáng cầm trước mốc `equip`.
-- **Món trong tay ghi trên người.** `hold` ghi `Figure.holding[side]` (`Holding`: `object`, `pose`, `follow`, `both`,
-  `offset`, `rotate`), `release` xoá — `check` đọc nó để đo đồ cầm ([03](03-scene.md#đồ-cầm-tay)). Món khai ý định ở
-  `object.userData.hold` (`HeldIntent`, trục trong khung món, three): `up` trục phải gần hướng lên (chén, ly, bình đứng),
-  `face` mặt phải quay về `faceToward` — `"holderFace"` mặt người cầm, `"camera"` ống kính (màn điện thoại đọc, khoe).
-  Kiểu cầm nghiêng cố ý (rót) thì không khai `up`. `grip` gọi riêng (không qua `hold`) không ghi gì.
+- **Món trong tay ghi trên người.** `hold` ghi `Figure.holding[side]` (`Holding`: `object`, `item`, `grip`, `pose`,
+  `follow`, `both`, `offset`, `rotate`; `item`, `grip` chỉ có ở kiểu cầm cứng), `release` xoá — `check` đọc nó để đo đồ
+  cầm ([03](03-scene.md#đồ-cầm-tay)). `object.userData.hold` (`HeldIntent`, trục trong khung món, three) là ý định để đo:
+  `up` trục phải gần hướng lên (chén, ly, bình đứng), `face` mặt phải quay về `faceToward` — `"holderFace"` mặt người
+  cầm, `"camera"` ống kính. Kiểu cầm cứng thì rig tự ghi từ ý định đang nhắm; đường cũ thì repo khai, kiểu cầm nghiêng cố
+  ý (rót) thì không khai `up`. `grip` gọi riêng (không qua `hold`) không ghi gì. `act` giữ độ lệch còn lại của từng tay ở
+  `Figure.aim` (`AimReport` của `actAim`) cho `check` đọc lý do.
 - **Tâm nắm theo góc ngón** (`handGripOf`): hoà `HAND_GRIPS` theo độ gần của chín góc ngón với từng dáng, nên đúng bảng khi
   đúng dáng và đổi liền khi dáng hoà — `point: "grip"` của đích bàn tay đọc nó ([Đích theo mốc](#đích-theo-mốc)).
 - **Một mặt da liền.** `handSkin` dựng một lưới kín từ hợp trơn (smooth-min) các khối của khung xương ở dáng gốc
@@ -1441,6 +1446,86 @@ gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` 
   lộ vành cổ tay áo quanh nó. Gốc ngón cái và ngón trỏ nằm trong bề ngang lòng bàn tay, lòng bàn tay thu ít về cổ tay: mép trên nắm đấm
   liền một đường, không gồ ở gốc ngón cái. Gốc bốn ngón so le theo độ dài (giữa xa nhất, út gần nhất) nên hàng đốt
   là vòng cung bốn gồ nhỏ; khớp ngọn chuyển trọng số qua gần hai bán kính ngón nên đốt ngọn cuộn tròn.
+
+### Kiểu cầm
+
+Món cầm tay là **dữ liệu**, không phải code three: `held/<món>.json` của repo video, qua `HeldItemSchema` /
+`parseHeldItem` (`core/heldItem.ts`, `schemaVersion` là `HELD_VERSION`). Lớp chung có món mẫu `coc` (cốc quai), repo
+trùng tên thì đè ([05](05-repo-video.md#hai-lớp)). Bộ giải tay, `check`, `scene_probe` và MCP cùng đọc file ấy, và bộ
+giải chạy trước code dựng cảnh của repo; code dựng lưới món đọc mốc từ chính file ấy, nên mốc và lưới có một nguồn số.
+
+```jsonc
+// held/dien-thoai.json — khung món: y lên, +z mặt trước, đơn vị rig (×0,01 ra three của người cao 4,3)
+{
+  "size": [18, 36, 3.5],
+  "anchors": {
+    "screen":  { "at": [0, 0, 1.75], "dir": [0, 0, 1] },
+    "back":    { "at": [0, 0, -1.75], "dir": [0, 0, -1] },
+    "top":     { "at": [0, 18, 0], "dir": [0, 1, 0] },
+    "edgeR":   { "at": [9, 0, 0], "dir": [1, 0, 0] },
+    "speaker": { "at": [0, 15, 1.75], "dir": [0, 0, 1] }
+  },
+  "grips": {
+    "khoe": {
+      "pose": "span",
+      "at": { "anchor": "back", "offset": [0, -6, -1.5] },
+      "palm": { "into": "back" },
+      "fingers": { "toward": "edgeR" },
+      "touch": ["self.hand", "self.foreArm"],
+      "intent": { "face": { "axis": "screen", "toward": "camera" }, "roll": { "axis": "top", "toward": "up" } }
+    }
+  }
+}
+```
+
+| Trường | Nghĩa |
+|---|---|
+| `size` | Hộp bao của món |
+| `anchors` | Mốc có tên: điểm `at`, pháp tuyến ra ngoài `dir` (cần cho `into`, `along` và trục ý định) |
+| `hang` | Tên các nhóm con của lưới món quay theo phương đứng mỗi khung: chùm chìa thõng, dòng rượu rót |
+| `grips.<kiểu>.pose` | Dáng ngón khi cầm, nguồn duy nhất: ngón của hành động không vẽ khi đang cầm |
+| `at` | Điểm của món trùng tâm nắm của `pose` (`HAND_GRIPS`, nhân cỡ bàn tay): tên mốc hay `{ anchor, offset }` |
+| `palm`, `fingers` | Pháp tuyến lòng tay và hướng ngón trong khung món: `{ into: mốc }` ngược pháp tuyến mốc (lòng tay áp vào mặt ấy), `{ along: mốc }` theo pháp tuyến, `{ toward: mốc }` từ điểm nắm tới mốc, hay vectơ. `fingers` trực giao hoá theo `palm` |
+| `touch` | Phần người được lấn vào món, cộng với cẳng tay và bàn tay cầm ([10](10-lop-ve-code.md#người-lồng-vào-đồ)) |
+| `intent` | Ý định mặc định: `face`, `up`, `roll` (dưới) |
+| `left` | Phần khác của tay trái, thường chỉ `fingers` |
+| `both` | Cầm hai tay: `{ lead: "right" \| "left", other: { pose, at, palm, fingers } }` |
+
+**Kiểu cầm là liên kết cứng tay ↔ món.** `gripFrame` tìm phép quay đưa `palm` về lòng tay và `fingers` về hướng ngón
+của bàn tay ấy, rồi dời cho `at` trùng tâm nắm: ra một ma trận cố định món trong khung bàn tay, không có `offset` /
+`rotate` Euler. Đúng với mọi cỡ tay (`HAND_GRIPS` nhân `k`, `long` của từng người). Tay trái không soi gương món: cùng
+`palm`, `fingers` mà lòng tay ở phía kia, nên ngón cái tự sang cạnh kia và chữ trên màn không ngược; món không đối xứng
+thì khai `left`. `parseHeldItem` báo mốc không có, `into` / `along` / trục ý định trỏ mốc không `dir`, `palm` song song
+`fingers`, `up` đi cùng `face`.
+
+**Ý định** nói món quay về đâu; trục là tên mốc (lấy `dir`) hay vectơ khung món:
+
+- `face: { axis, toward, tilt? }`, trục chính. `toward`: `camera` (mắt ống kính), `holderFace` (mặt người cầm), `up`,
+  `down` hay tên hệ thân khác của `PALM_DIRS`, vectơ hệ thân, `{ cast: "<id>", mark? }` (mặt người 3D khác, hay `mouth`,
+  `chest`, `belly` của người ấy — ước từ chỗ đặt và góc cúi thân, không đọc đầu quay), `{ mark }` (mốc thân của chính người
+  cầm). `tilt` (độ) quay hướng đích lên trong mặt phẳng đứng chứa nó, âm là xuống.
+- `up: "<mốc>"`, viết tắt `face: { axis, toward: "up" }`: chén, ly đứng.
+- `roll`, trục phụ chốt độ lăn (đầu máy lên trên). Không có thì giữ độ lăn gần bàn tay đang có.
+
+Rig giải ý định trên cổ tay (`aimWrist`): trục chính trọng số `1`, `roll` `0,3`, khuỷu xoay trong `±AIM_SWIVEL` quanh
+`elbow` đã khai. Giới hạn cổ tay giữ nguyên — xoay `±90`, gập `±AIM_BEND`, lệch `±AIM_DEV`, kênh tay không nâng thì lệch
+cổ tay giữ `0` —: không đạt thì món lệch thật, `AimReport.hold` ghi trục, hướng muốn, hướng đạt, góc còn lệch và khớp
+kẹp, `check` báo ([03](03-scene.md#đồ-cầm-tay)). Vị trí tay (`at`, `to`, `point`) luôn thắng ý định.
+
+**Hai tay.** Kiểu `both`: món cứng theo tay `lead`, tay kia không có đích riêng — rig đặt nó vào mốc `both.other.at`
+trên món, lòng tay và ngón theo `both.other`. Tay phụ không với tới thì món không trôi theo nó, `check` báo. Hai tay
+cùng khai một món kiểu một tay là đổi tay: tay khai trước mang món, tay kia với tới mốc kiểu cầm của chính nó trên món;
+tay cũ `hold: null` thì món sang tay mới.
+
+**Gắn món** (three, `attach.ts`): `hold(fig, vật, { hand, grip: { item, spec, grip } })` treo món vào chỗ treo bàn tay
+bằng liên kết ấy, đặt dáng `pose` (tay phụ của `both` giữ dáng `both.other.pose`), ghi `Figure.holding` có `item`, `grip`;
+`follow`, `offset`, `rotate`, `pose` đi cùng `grip` là lỗi. Cảnh không gọi `hold` tay mà khai `world.hands[].hold` và đăng
+ký món bằng `cast.provide`, rig gắn và gỡ ([03](03-scene.md#đồ-cầm-tay)). `ItemBuild.hold` của đồ `items` nhận cùng `grip`:
+món cứng theo tay, không có ý định.
+
+**Đường cũ.** `hold` không `grip` — `follow` (`wrist`, `level`, `tilt`), `offset`, `rotate`, `pose`, ý định repo khai ở
+`userData.hold` — đánh dấu `@deprecated` và vẽ đúng như các bản trước, để cảnh đã duyệt không đổi hình; `check` kể chúng
+ở nhóm `legacy` ([05](05-repo-video.md#nhóm-luật)).
 
 ### Hướng lòng bàn tay
 
@@ -1753,7 +1838,7 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 | `to` | Mốc thân (`BODY_MARKS`), thay cho `at`; đúng một trong hai |
 | `side` | `"same"` (mặc định) bên cùng phía tay đang với, `"other"` bên kia — mốc có hai bên: `cheek`, `eye`, `ear`, `shoulder`, `hip`, `thigh`, `knee` |
 | `offset` | Dời khỏi mốc `[tiến, y, ra ngoài]`, đơn vị rig nhân `world.s`, **không** nhân `height`; theo khung phần người mang mốc, `ra ngoài` dương về phía chính tay ấy |
-| `point` | Điểm bàn tay đặt vào đích: `wrist`, `palm` (giữa mặt lòng tay), `back` (giữa mu tay), `grip` (tâm nắm của dáng đang vẽ, `handGripOf`), `tip` (đầu ngón giữa). Thiếu là `wrist` với `at`, `palm` với `to`. Đi được cả với `at` |
+| `point` | Điểm bàn tay đặt vào đích: `wrist`, `palm` (giữa mặt lòng tay), `back` (giữa mu tay), `grip` (tâm nắm của dáng đang vẽ, `handGripOf`), `tip` (đầu ngón giữa); ở `world.hands` của tay đang cầm kiểu cứng còn có `item:<mốc>`, mốc của món ([Kiểu cầm](#kiểu-cầm)). Thiếu là `wrist` với `at`, `palm` với `to`. Đi được cả với `at` |
 | `elbow` | Hướng khuỷu hệ thân như đích toạ độ |
 
 | Mốc | Chỗ | Khung của `offset` |
