@@ -36,7 +36,31 @@ import {
   type Channel,
 } from "./action";
 import type { Root } from "./types";
-import { AimDirSchema, BODY_MARKS, HAND_POINTS, type Aim } from "./bodyMark";
+import { bones3, head3 } from "./act3";
+import {
+  AimDirSchema,
+  BODY_MARKS,
+  PALM_DIRS,
+  ReachPointSchema,
+  type Aim,
+  type AimTerm,
+  type BodyMark,
+} from "./bodyMark";
+import {
+  heldAxis,
+  heldGrip,
+  heldPoint,
+  holdIntent,
+  SceneHoldSchema,
+  sceneHoldRef,
+  type AxisIntent,
+  type HeldItemSpec,
+  type HoldAim,
+  type HoldAxis,
+  type HoldTarget,
+  type ReachHold,
+  type SceneHold,
+} from "./heldItem";
 import {
   ANIMAL_ANCHOR_NAMES,
   ANIMAL_CHANNELS,
@@ -108,7 +132,7 @@ import {
 } from "./types";
 
 /** Bump khi đổi hình dạng JSON scene; `migrateScene` phải có nhánh tương ứng. */
-export const SCENE_VERSION = 28;
+export const SCENE_VERSION = 29;
 
 /** `"@ten"` hay `"@ten+0.4"` / `"@ten-1"`: một mốc có tên trong `scene.marks` cộng phần lệch giây */
 export const MARK_REF = /^@([A-Za-z0-9_-]+)(?:\s*([+-])\s*(\d+(?:\.\d+)?))?$/;
@@ -297,9 +321,10 @@ const WorldKeySchema = z.object({
 
 /**
  * Đích một bàn tay trong thế giới: `at` toạ độ thế giới, hay mốc thân `to` trên chính người ấy (`side`, `offset` như đích
- * của hành động); `point` là điểm bàn tay đặt vào đích (thiếu là cổ tay với `at`, lòng tay với `to`); `elbow` hướng khuỷu
- * (bỏ trống là mặc định hệ thân). `palm` / `fingers` / `bend` khai lòng tay theo ý định, đè bàn tay của hành động theo
- * phần đích. docs/03-scene.md#đích-bàn-tay-thế-giới
+ * của hành động); `point` là điểm bàn tay đặt vào đích (thiếu là cổ tay với `at`, lòng tay với `to`; `item:<mốc>` là mốc
+ * của món đang cầm); `elbow` hướng khuỷu (bỏ trống là mặc định hệ thân). `palm` / `fingers` / `bend` khai lòng tay theo ý
+ * định, đè bàn tay của hành động theo phần đích. `hold` là món cầm từ mốc này (`món#kiểu` hay object đè ý định, `null`
+ * là buông): mốc chỉ có `hold` thì vị trí lấy từ hành động. docs/03-scene.md#đích-bàn-tay-thế-giới
  */
 const HandSchema = z
   .object({
@@ -307,14 +332,18 @@ const HandSchema = z
     to: z.enum(BODY_MARKS).optional(),
     side: z.enum(["same", "other"]).optional(),
     offset: V3Schema.optional(),
-    point: z.enum(HAND_POINTS).optional(),
+    point: ReachPointSchema.optional(),
     elbow: V3Schema.optional(),
     palm: AimDirSchema.optional(),
     fingers: AimDirSchema.optional(),
     bend: z.number().min(-90).max(90).optional(),
+    hold: SceneHoldSchema.nullable().optional(),
   })
-  .refine((h) => !!h.at !== !!h.to, {
+  .refine((h) => (h.hold !== undefined ? !(h.at && h.to) : !!h.at !== !!h.to), {
     message: "đích bàn tay cần đúng một trong `at` (toạ độ thế giới) hay `to` (mốc thân)",
+  })
+  .refine((h) => !h.hold || (!h.palm && !h.fingers && h.bend === undefined), {
+    message: "mốc có `hold` thì hướng tay do ý định của món quyết — bỏ `palm`, `fingers`, `bend`",
   })
   .refine((h) => !!h.to || (h.side === undefined && h.offset === undefined), {
     message: "`side`, `offset` chỉ đi với `to`",
@@ -769,6 +798,7 @@ export function migrateScene(json: unknown): unknown {
   // v25 → v26 `cast[].base` nhận số xoắn vai, `clips[].mask` nhận kênh `hand`; dạng cũ vẫn hợp lệ
   // v26 → v27 `world.hands[]` nhận mốc thân (`to`), điểm bàn tay (`point`) và lòng tay theo ý định (`palm`, `fingers`); dạng cũ vẫn hợp lệ
   // v27 → v28 thêm `world.path[].steps`; thiếu là số nhịp quay tại chỗ tự suy từ góc
+  // v28 → v29 `world.hands[]` nhận món cầm (`hold`) và điểm `item:<mốc>`; dạng cũ vẫn hợp lệ
   o.schemaVersion = SCENE_VERSION;
   return o;
 }
@@ -881,6 +911,8 @@ export interface SceneRuntime {
   marks: Record<string, number>;
   /** `scene.lens`, góc đã ra radian */
   lens?: Lens;
+  /** Món cầm tay (`held/<món>.json`) theo tên, do chỗ nạp đưa vào; `world.hands[].hold` tra ở đây */
+  held: Record<string, HeldItemSpec>;
 }
 
 /** Khung camera lúc `time`; `view` là hộp cắt trong hệ toạ độ sân khấu */
@@ -1191,6 +1223,7 @@ export function resolveScene(
   propSpecs: Record<string, PropData> = {},
   heights: Record<string, number> = {},
   bodies: Record<string, Body3> = {},
+  held: Record<string, HeldItemSpec> = {},
 ): SceneRuntime {
   // Mốc có tên giải ra số ở đây và chỉ ở đây: mọi thứ dưới đọc số
   const scene = unmarkScene(raw);
@@ -1274,6 +1307,7 @@ export function resolveScene(
     keyed(m.id, m.fade, "fade");
     keyed(m.id, m.world?.path, "world.path");
     keyed(m.id, m.world?.hands, "world.hands");
+    if (m.world?.hands) checkHolds(m.id, m.world.hands, held, scene.cast);
     if (m.world) {
       if (!scene.lens) fail(`${m.id}: có \`world\` thì cảnh phải có \`lens\``);
       if (m.mount || m.sit)
@@ -1387,6 +1421,7 @@ export function resolveScene(
     props,
     heights,
     bodies,
+    held,
     animals: beasts.map((a) => {
       const host = hosts.get(a.id);
       const m = { ...a, host };
@@ -1539,7 +1574,12 @@ export function sceneAt(
   const own = clock && clock(time).half % 2 ? layers.map(swapLayers) : layers;
   const placed =
     m.world && rt.lens && worldAt(rt.lens, m.world, time, pose, height, dims.legHalf, walk).world;
-  const world = placed && m.world?.hands ? withHands(placed, m.world.hands, time) : placed;
+  const world =
+    placed && m.world?.hands
+      ? withHands(placed, m.world.hands, time, rt.held, (who, mark) =>
+          castMarkAt(rt, who, mark, time),
+        )
+      : placed;
   const body = world ? viewOfTheta(world.theta) : stepOf(m.view, time);
   const views = clampViews({ body, head: m.headView && !world ? stepOf(m.headView, time) : body });
   const spot3 = world && {
@@ -2929,9 +2969,82 @@ function worldAt(
 }
 
 type HandKey = NonNullable<WorldSpec["hands"]>[number];
+type HandSide = "right" | "left";
 
-/** Đích một tay tại `time`: nội suy êm giữa hai mốc nhắc tay ấy, `null` là `w` 0 */
-function handAt(keys: HandKey[], side: "right" | "left", time: number): Reach | undefined {
+/** Mốc thân trên người khác trong `cast` được ước ở chỗ này: mặt (giữa hai mắt), mồm, ngực, bụng */
+const CAST_MARKS = ["eye", "mouth", "chest", "belly"] as const;
+
+/**
+ * Lần cầm của tay `side` ở giây `time`: mốc gần nhất (không sau `time`) khai `hold` của tay ấy; `null` là buông. `since` là
+ * giây bắt đầu chuỗi mốc cầm cùng món, cùng kiểu cầm; `key` là mốc khai `hold` gần nhất (ý định)
+ */
+function holdRun(
+  keys: HandKey[],
+  side: HandSide,
+  time: number,
+): { hold: SceneHold; since: number } | undefined {
+  let run: { hold: SceneHold; since: number } | undefined;
+  for (const k of keys) {
+    if (k.t > time) break;
+    const h = k[side]?.hold;
+    if (h === undefined) continue;
+    if (h === null) {
+      run = undefined;
+      continue;
+    }
+    const r = sceneHoldRef(h);
+    const same = run && sceneHoldRef(run.hold);
+    run = {
+      hold: h,
+      since: same && same.item === r.item && same.grip === r.grip ? run!.since : k.t,
+    };
+  }
+  return run;
+}
+
+/** Đích một trục ý định ra dạng bộ giải đọc; người khác trong `cast` ước ra điểm thế giới ở giây đang lấy mẫu */
+function holdTarget(
+  t: AxisIntent["toward"],
+  castAt: (id: string, mark: BodyMark | undefined) => V3,
+): HoldTarget {
+  if (typeof t === "string")
+    return t === "camera" || t === "holderFace" ? { name: t } : { v: [...PALM_DIRS[t]] as V3 };
+  if (Array.isArray(t)) return { v: [...t] as V3 };
+  if ("cast" in t) return { at: castAt(t.cast, t.mark) };
+  return {
+    to: t.mark,
+    ...(t.side && { side: t.side }),
+    ...(t.offset && { offset: [...t.offset] as V3 }),
+  };
+}
+
+/** Ý định của một lần cầm ra số hạng bàn tay (`AimTerm.hold`) */
+function holdAim(
+  spec: HeldItemSpec,
+  h: SceneHold,
+  castAt: (id: string, mark: BodyMark | undefined) => V3,
+): HoldAim {
+  const { item, grip } = sceneHoldRef(h);
+  const { face, roll } = holdIntent(spec, h);
+  const axis = (a: AxisIntent): HoldAxis => ({
+    axis: heldAxis(spec, a.axis),
+    target: holdTarget(a.toward, castAt),
+    ...(a.tilt && { tilt: a.tilt }),
+  });
+  return { item, grip, ...(face && { face: axis(face) }), ...(roll && { roll: axis(roll) }) };
+}
+
+/**
+ * Đích một tay tại `time`: nội suy êm giữa hai mốc nhắc tay ấy, `null` là `w` 0. Món đang cầm (`hold`) là bậc thang theo
+ * `holdRun`; ý định của nó là số hạng bàn tay của mọi mốc trong quãng cầm, nên đổi ý định thì cổ tay xoay dần
+ */
+function handAt(
+  keys: HandKey[],
+  side: HandSide,
+  time: number,
+  held: Record<string, HeldItemSpec>,
+  castAt: (id: string, mark: BodyMark | undefined) => V3,
+): Reach | undefined {
   const ks = keys.filter((k) => k[side] !== undefined) as (HandKey & { t: number })[];
   if (!ks.length) return;
   let i = 0;
@@ -2940,14 +3053,35 @@ function handAt(keys: HandKey[], side: "right" | "left", time: number): Reach | 
   const b = time > a.t ? ks[i + 1] : undefined;
   const ra = a[side];
   const f = b ? smoothstep((time - a.t) / (b.t - a.t)) : 0;
-  const one = (h: typeof ra): Reach | undefined => {
-    if (!h) return undefined;
-    const term = reachTerm({ ...h, ...(h.to && { at: undefined }) });
+  const now = holdRun(keys, side, time);
+  const nowRef = now && sceneHoldRef(now.hold);
+  const hold: ReachHold | undefined = nowRef && {
+    ...nowRef,
+    spec: held[nowRef.item],
+    since: now.since,
+  };
+  /** Ý định của lần cầm đang có hiệu lực ở mốc `kt`: chỉ khi đó vẫn là lần cầm của `time` */
+  const intentAt = (kt: number): Aim | undefined => {
+    const run = holdRun(keys, side, Math.max(kt, hold?.since ?? kt));
+    if (!run || !hold) return undefined;
+    const r = sceneHoldRef(run.hold);
+    if (r.item !== hold.item || r.grip !== hold.grip) return undefined;
+    return { terms: [{ k: 1, hold: holdAim(hold.spec, run.hold, castAt) } as AimTerm] };
+  };
+  const one = (h: typeof ra, kt: number): Reach | undefined => {
+    const intent = intentAt(kt);
+    if (!h) return intent && { w: 0, at: [0, 0, 0], aim: intent };
+    const placed = !!(h.at || h.to);
+    const term = placed ? reachTerm({ ...h, ...(h.to && { at: undefined }) }) : undefined;
     // lòng tay theo ý định của mốc; mốc không khai giữ bàn tay của hành động
     const aim: Aim | undefined =
-      h.palm || h.fingers ? keyAim({ palm: h.palm, fingers: h.fingers, bend: h.bend }) : undefined;
+      intent ??
+      (h.palm || h.fingers
+        ? keyAim({ palm: h.palm, fingers: h.fingers, bend: h.bend })
+        : undefined);
+    if (!placed && !aim) return undefined;
     return {
-      w: 1,
+      w: placed ? 1 : 0,
       at: (h.at ?? [0, 0, 0]) as [number, number, number],
       ...(h.elbow && { elbow: h.elbow }),
       ...(term && { terms: [term] }),
@@ -2955,29 +3089,129 @@ function handAt(keys: HandKey[], side: "right" | "left", time: number): Reach | 
     };
   };
   const keep: Aim = { terms: [{ k: 1, keep: true }] };
-  const withAim = (r: Reach | undefined, pa?: Reach, pb?: Reach): Reach | undefined => {
-    if (!r || !(pa?.aim || pb?.aim)) return r;
-    return { ...r, aim: mixAim(pa?.aim ?? keep, pb?.aim ?? keep, f) };
+  const finish = (r: Reach | undefined, pa?: Reach, pb?: Reach): Reach | undefined => {
+    const aim =
+      pa?.aim || pb?.aim ? (b ? mixAim(pa?.aim ?? keep, pb?.aim ?? keep, f) : pa?.aim) : undefined;
+    if (!r && !aim && !hold) return undefined;
+    return {
+      ...(r ?? { w: 0, at: [0, 0, 0] }),
+      ...(aim && { aim }),
+      ...(hold && { hold }),
+    };
   };
-  if (!b) return one(ra);
+  if (!b) {
+    const p = one(ra, a.t);
+    return finish(p && p.w > 0 ? { ...p, aim: undefined } : undefined, p);
+  }
   const rb = b[side];
-  const pa = one(ra);
-  const pb = one(rb);
+  const pa = one(ra, a.t);
+  const pb = one(rb, b.t);
   // hai mốc cùng có đích mà một bên không khai hướng khuỷu: giữ hướng của bên kia, không nội suy
   if (pa && pb && !!pa.elbow !== !!pb.elbow) pa.elbow = pb.elbow = pa.elbow ?? pb.elbow;
   const r = mixReach(pa, pb, f);
-  if (!r) return;
-  const out = pa?.elbow || pb?.elbow ? r : { w: r.w, at: r.at, ...(r.terms && { terms: r.terms }) };
-  return withAim(out, pa, pb);
+  const out =
+    r && (pa?.elbow || pb?.elbow ? r : { w: r.w, at: r.at, ...(r.terms && { terms: r.terms }) });
+  return finish(out, pa, pb);
 }
 
 /** Gắn đích cổ tay thế giới vào chỗ đặt: tay phải là tay gần khi không lật */
-function withHands(w: World, keys: HandKey[], time: number): World {
-  const right = handAt(keys, "right", time);
-  const left = handAt(keys, "left", time);
+function withHands(
+  w: World,
+  keys: HandKey[],
+  time: number,
+  held: Record<string, HeldItemSpec> = {},
+  castAt: (id: string, mark: BodyMark | undefined) => V3 = () => fail("không ước được người khác"),
+): World {
+  const right = handAt(keys, "right", time, held, castAt);
+  const left = handAt(keys, "left", time, held, castAt);
   if (!right && !left) return w;
   const [near, far] = w.flip ? [left, right] : [right, left];
   return { ...w, hands: { ...(near && { near }), ...(far && { far }) } };
+}
+
+/**
+ * Mốc thân của người `id` (người 3D trong `cast`) ở `time`, toạ độ thế giới rig, ước từ chỗ đặt, góc cúi thân và khung
+ * xương theo `rig.height` — không giải tay, không đọc đầu quay: đủ cho hướng món quay về người ấy (`face: { cast }`)
+ */
+function castMarkAt(rt: SceneRuntime, id: string, mark: BodyMark | undefined, time: number): V3 {
+  const m = member(rt, id);
+  const lens =
+    (m.world && rt.lens) || fail(`\`${id}\`: \`face: { cast }\` cần người 3D (\`cast[].world\`)`);
+  const height = rt.heights[id] ?? 1;
+  const dims = rt.bodies[id] ?? BODY3;
+  const walk = walkerOf(rt, m, height, dims.hipHalf);
+  const pose = worldPoseAt(m, time, walk, height, dims.hipHalf);
+  const w = worldAt(lens, m.world!, time, pose, height, dims.legHalf, walk).world;
+  const B = bones3(height);
+  const k = 100 * w.s;
+  const bend = (pose.torso ?? 0) * D;
+  // hệ thân rig: tiến theo `dirOf(yaw)`, y xuống
+  const F = dirOf(w.yaw);
+  const along = (up: number, fwd: number): V3 => [
+    w.hip[0] + F[0] * fwd * k,
+    w.hip[1] - up * k,
+    w.hip[2] + F[2] * fwd * k,
+  ];
+  const onTorso = (u: number, front = 0) => along(u * Math.cos(bend), u * Math.sin(bend) + front);
+  const which = mark ?? "eye";
+  if (which === "chest") return onTorso(0.7 * B.torso, 0.12);
+  if (which === "belly") return onTorso(0.3 * B.torso, 0.14);
+  const neck = B.torso + B.neck * 0.5;
+  const head = neck + head3(B) - B.neck * 0.5;
+  // mặt trước sọ: nửa bề sâu đầu ra trước, mồm thấp hơn mắt chừng một phần năm đầu
+  return onTorso(which === "mouth" ? head - B.head * 0.35 : head - B.head * 0.1, B.head * 0.45);
+}
+
+/**
+ * Lần cầm khai ở `world.hands` của người `who` phải có thật: món trong `held`, kiểu cầm của món, trục ý định trên mốc có
+ * `dir`, người khác của `face: { cast }`, và `point: "item:<mốc>"` chỉ ở mốc đang cầm, mốc ấy có trên món
+ */
+function checkHolds(
+  who: string,
+  keys: HandKey[],
+  held: Record<string, HeldItemSpec>,
+  cast: { id: string; world?: unknown }[],
+) {
+  for (const k of keys)
+    for (const side of ["right", "left"] as const) {
+      const h = k[side];
+      if (!h) continue;
+      const where = `${who}: \`world.hands\` ${side} t=${k.t}`;
+      if (h.hold) {
+        const { item, grip } = sceneHoldRef(h.hold);
+        const spec =
+          held[item] ?? fail(`${where}: không có món \`${item}\` (\`held/${item}.json\`)`);
+        try {
+          heldGrip(spec, grip, item);
+          const { face, roll } = holdIntent(spec, h.hold);
+          for (const a of [face, roll])
+            if (a) {
+              heldAxis(spec, a.axis);
+              const t = a.toward;
+              if (typeof t === "object" && !Array.isArray(t) && "cast" in t) {
+                const c = cast.find((m) => m.id === t.cast);
+                if (!c?.world) throw new Error(`\`${t.cast}\` không phải người 3D trong \`cast\``);
+                if (t.mark && !(CAST_MARKS as readonly string[]).includes(t.mark))
+                  throw new Error(`mốc trên người khác chỉ ước được ${CAST_MARKS.join(", ")}`);
+              }
+            }
+        } catch (e) {
+          fail(`${where}: ${(e as Error).message}`);
+        }
+      }
+      if (typeof h.point === "string" && h.point.startsWith("item:")) {
+        const run =
+          holdRun(keys, side, k.t) ??
+          fail(`${where}: \`point: ${h.point}\` cần món đang cầm (\`hold\`)`);
+        const { item } = sceneHoldRef(run.hold);
+        const spec = held[item];
+        try {
+          if (spec) heldPoint(spec, h.point.slice(5));
+        } catch (e) {
+          fail(`${where}: ${(e as Error).message}`);
+        }
+      }
+    }
 }
 
 function pathAt(path: PathKey[], time: number): Spot {

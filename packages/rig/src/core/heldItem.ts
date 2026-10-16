@@ -307,3 +307,85 @@ export function heldGrip(item: HeldItemSpec, grip: string, name = "món"): GripS
 
 /** Mốc thân của đích ý định `{ cast, mark }` hay `{ mark }`: mặc định là mặt (giữa hai mắt) */
 export const intentMark = (t: { mark?: BodyMark }): BodyMark => t.mark ?? "eye";
+
+/** Đích một trục ý định đã quy về dạng bộ giải đọc: tên, vectơ hệ thân, mốc thân của người cầm, hay điểm thế giới rig */
+export type HoldTarget =
+  | { name: "camera" | "holderFace" }
+  | { v: V3 }
+  | { to: BodyMark; side?: "same" | "other"; offset?: V3 }
+  | { at: V3 };
+
+/** Một trục ý định đã quy: trục trong khung món (đơn vị), đích, độ nghiêng khỏi đích */
+export interface HoldAxis {
+  axis: V3;
+  target: HoldTarget;
+  tilt?: number;
+}
+
+/**
+ * Ý định của món là một số hạng của bàn tay (`AimTerm.hold`): trục chính `face` (cả `up`), trục phụ `roll`; `item`, `grip`
+ * là lần cầm sinh ra nó — bộ giải bỏ qua số hạng của lần cầm khác lần đang cầm
+ */
+export interface HoldAim {
+  item: string;
+  grip: string;
+  face?: HoldAxis;
+  roll?: HoldAxis;
+}
+
+/** Lần cầm của một bàn tay ở một khung (`Reach.hold` của `world.hands`): món, kiểu cầm, JSON món, giây bắt đầu cầm */
+export interface ReachHold {
+  item: string;
+  grip: string;
+  spec: HeldItemSpec;
+  since: number;
+}
+
+/** Ý định của mốc `hold` trong scene: tên `món#kiểu`, hay object đè `face` / `up` / `roll` của ý định mặc định */
+export const SceneHoldSchema = z.union([
+  z.string().regex(/^[^#]+#[^#]+$/, { message: "cần dạng `món#kiểu`" }),
+  z.strictObject({
+    item: z.string().min(1),
+    grip: z.string().min(1),
+    face: z.union([AxisIntentSchema, IntentTargetSchema]).optional(),
+    up: z.union([z.string().min(1), v3]).optional(),
+    roll: AxisIntentSchema.optional(),
+  }),
+]);
+export type SceneHold = z.infer<typeof SceneHoldSchema>;
+
+/** Món và kiểu cầm của một mốc `hold` */
+export const sceneHoldRef = (h: SceneHold): { item: string; grip: string } =>
+  typeof h === "string" ? holdRef(h) : { item: h.item, grip: h.grip };
+
+/** Bên giải phẫu (`-1` phải) của `both.lead` */
+export const leadSide = (lead: "right" | "left") => (lead === "right" ? -1 : 1);
+
+/**
+ * Ý định của mốc `hold`: ý định mặc định của kiểu cầm, `face` / `up` (cùng là trục chính) và `roll` của mốc đè lên. `face`
+ * khai đích không có trục thì lấy trục chính của ý định mặc định. Trả `face`, `roll` dạng `AxisIntent`
+ */
+export function holdIntent(
+  item: HeldItemSpec,
+  h: SceneHold,
+): { face?: AxisIntent; roll?: AxisIntent } {
+  const { grip } = sceneHoldRef(h);
+  const d = heldGrip(item, grip).intent;
+  const main = (i: HoldIntentSpec | undefined): AxisIntent | undefined =>
+    i?.face ?? (i?.up !== undefined ? { axis: i.up, toward: "up" } : undefined);
+  let face = main(d);
+  let roll = d?.roll;
+  if (typeof h === "object") {
+    if (h.up !== undefined) face = { axis: h.up, toward: "up" };
+    else if (h.face !== undefined) {
+      if (typeof h.face === "object" && !Array.isArray(h.face) && "axis" in h.face) face = h.face;
+      else {
+        if (!face)
+          throw new Error(`\`${grip}\` không có trục ý định mặc định cho \`face\` khai đích trần`);
+        face = { axis: face.axis, toward: h.face as IntentTarget };
+      }
+    }
+    if (h.roll) roll = h.roll;
+  }
+  return { ...(face && { face }), ...(roll && { roll }) };
+}

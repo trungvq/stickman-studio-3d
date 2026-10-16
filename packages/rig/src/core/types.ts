@@ -1,5 +1,6 @@
 import type { BROWS, EYES, MOUTHS } from "./face";
 import type { Aim, ReachTerm } from "./bodyMark";
+import type { ReachHold } from "./heldItem";
 
 /** [góc khớp cha, góc khớp con tương đối] */
 export type Limb = [number, number];
@@ -60,6 +61,8 @@ export interface Reach {
   terms?: ReachTerm[];
   /** Lòng tay theo ý định của `world.hands`: đè bàn tay của hành động theo phần `w` */
   aim?: Aim;
+  /** Món đang cầm (`world.hands[].hold`): bậc thang, không nội suy */
+  hold?: ReachHold;
 }
 
 /** Hai kênh tay nhận đích cổ tay */

@@ -24,7 +24,16 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { ACTIONS, ANIMALS, CHARACTERS, PROPS, SCENES, castBodies, castHeights } from "../src/data";
+import {
+  ACTIONS,
+  ANIMALS,
+  CHARACTERS,
+  HELD,
+  PROPS,
+  SCENES,
+  castBodies,
+  castHeights,
+} from "../src/data";
 import { CANH_3D } from "../src/khoi3d/canh";
 import { CODE_PARTS } from "../src/parts";
 import { Root } from "../src/Root";
@@ -53,7 +62,7 @@ const LensStill = ({ scene, t, lens }: { scene: SceneData; t: number; lens: Lens
       `cảnh ${scene.name} không có trong CANH_3D (khoi3d/canh.ts) — không phải cảnh 3D`,
     );
   const rt = useMemo(
-    () => resolveScene(scene, ACTIONS, ANIMALS, PROPS, castHeights(scene), castBodies(scene)),
+    () => resolveScene(scene, ACTIONS, ANIMALS, PROPS, castHeights(scene), castBodies(scene), HELD),
     [scene],
   );
   const fr = FRAMES[scene.frame];
@@ -141,7 +150,9 @@ const SoiRoot = () => {
             [...new Set(props.soi.map((j) => j.scene))].map((s) => [
               s,
               SCENES[s]
-                ? Math.ceil(resolveScene(SCENES[s], ACTIONS, ANIMALS, PROPS).duration * FPS)
+                ? Math.ceil(
+                    resolveScene(SCENES[s], ACTIONS, ANIMALS, PROPS, {}, {}, HELD).duration * FPS,
+                  )
                 : 0,
             ]),
           ),

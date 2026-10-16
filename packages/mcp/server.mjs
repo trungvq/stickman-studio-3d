@@ -32,6 +32,7 @@ const DIRS = {
   scenes: resolve(WS, "scenes"),
   props: resolve(WS, "props"),
   animals: resolve(WS, "animals"),
+  held: resolve(WS, "held"),
   pieces: resolve(WS, "pieces"),
   bg: resolve(WS, "assets/bg"),
 };
@@ -105,6 +106,7 @@ async function bind(version) {
     ...Object.fromEntries(Object.entries(DIRS).map(([k, d]) => [k, [d]])),
     actions: R.layers(DIRS.actions, cli.COMMON.actions),
     animals: R.layers(DIRS.animals, cli.COMMON.animals),
+    held: R.layers(DIRS.held, cli.COMMON.held),
     characters: R.layers(DIRS.characters, cli.COMMON.characters),
     pieces: R.layers(DIRS.pieces, cli.COMMON.pieces),
   };
@@ -223,7 +225,7 @@ const loadAnimal = (spec) => {
 };
 
 const loadScene = (s) =>
-  R.loadScene(s, LAYERS.actions, LAYERS.animals, LAYERS.props, LAYERS.characters);
+  R.loadScene(s, LAYERS.actions, LAYERS.animals, LAYERS.props, LAYERS.characters, LAYERS.held);
 
 /**
  * Cảnh three `stickman.world` của repo cho một cảnh, để `scene_probe` đo người lồng vào vật như `check`:

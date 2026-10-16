@@ -1124,6 +1124,7 @@ export async function planReseat({ dir = ".", before } = {}) {
   }
   const characters = loadCharacters([join(root, "characters"), COMMON.characters]);
   const animals = loadAnimals([join(root, "animals"), COMMON.animals]);
+  const held = loadHeld([join(root, "held"), COMMON.held]);
   const props = loadByFile([join(root, "props")], rig.parseProp);
   const frozen = frozenOf(root);
   if (frozen.error) plan.problems.push(frozen.error);
@@ -1133,7 +1134,14 @@ export async function planReseat({ dir = ".", before } = {}) {
       try {
         const r = rig.parseScene(JSON.parse(text));
         if (!r.success) return issues(r.error);
-        rig.resolveScene(r.data, actionsNow, animals, props, ...castBodies(r.data, characters));
+        rig.resolveScene(
+          r.data,
+          actionsNow,
+          animals,
+          props,
+          ...castBodies(r.data, characters),
+          held,
+        );
       } catch (e) {
         return e.message;
       }
@@ -1157,14 +1165,14 @@ export async function planReseat({ dir = ".", before } = {}) {
     try {
       ({ scene, paces } = repace(
         r.data,
-        rig.resolveScene(r.data, actionsThen, animals, props, ...bodies),
+        rig.resolveScene(r.data, actionsThen, animals, props, ...bodies, held),
         actionsNow,
         from,
         file,
       ));
       // Đời trước dựng trên cảnh đã giãn nhịp: hoà giữa đi và ngồi rơi đúng pha như bây giờ
-      then = rig.resolveScene(scene, actionsThen, animals, props, ...bodies);
-      now = rig.resolveScene(scene, actionsNow, animals, props, ...bodies);
+      then = rig.resolveScene(scene, actionsThen, animals, props, ...bodies, held);
+      now = rig.resolveScene(scene, actionsNow, animals, props, ...bodies, held);
     } catch (e) {
       plan.problems.push(`${file}: ${e.message}`);
       continue;
@@ -1616,6 +1624,7 @@ export const worldData = (dir = ".") => {
     characters: loadCharacters([join(root, "characters"), COMMON.characters]),
     actions: loadActions([join(root, "actions"), COMMON.actions]),
     animals: loadAnimals([join(root, "animals"), COMMON.animals]),
+    held: loadHeld([join(root, "held"), COMMON.held]),
     props: loadByFile([join(root, "props")], rig.parseProp),
   };
 };
@@ -2250,6 +2259,7 @@ export async function deepContext({ dir, names, ...opts }) {
   const actionsByName = loadActions([join(root, "actions"), COMMON.actions]);
   const charactersByName = loadCharacters([join(root, "characters"), COMMON.characters]);
   const animalsByName = loadAnimals([join(root, "animals"), COMMON.animals]);
+  const heldByName = loadHeld([join(root, "held"), COMMON.held]);
   const props = loadByFile([join(root, "props")], rig.parseProp);
   if (partsEntry(root)) rig.registerParts(await loadParts(root));
   const scenesByName = {};
@@ -2268,6 +2278,7 @@ export async function deepContext({ dir, names, ...opts }) {
           animalsByName,
           props,
           ...castBodies(scenesByName[name], charactersByName),
+          heldByName,
         );
       } catch {
         rt = null;
@@ -2687,6 +2698,7 @@ export async function checkWorkspace({
   const characters = [];
   const props = [];
   const animalsByName = loadAnimals(animalsLayers);
+  const heldByName = loadHeld([join(root, "held"), COMMON.held]);
   if (usesNames.length) {
     const known = new Set([
       ...Object.keys(actionsByName),
@@ -2784,6 +2796,7 @@ export async function checkWorkspace({
               animalsByName,
               Object.fromEntries(props),
               ...castBodies(r.data, charactersByName),
+              heldByName,
             ),
           );
           runtimes.set(owner, rt);
@@ -2949,6 +2962,7 @@ export async function checkWorkspace({
             animalsByName,
             Object.fromEntries(props),
             ...castBodies(data, charactersByName),
+            heldByName,
           ),
         );
     } catch {

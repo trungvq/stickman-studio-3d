@@ -19,6 +19,7 @@ import {
   ANIMALS,
   BACKGROUNDS,
   CHARACTERS,
+  HELD,
   PROPS,
   animalUrls,
   castBodies,
@@ -94,7 +95,15 @@ export const Scene = ({
         ...scene,
         bg: scene.bg.map((b) => ({ ...b, aspect: aspects[b.file] ?? b.aspect })),
       };
-      rt = resolveScene(measured, ACTIONS, ANIMALS, props, castHeights(scene), castBodies(scene));
+      rt = resolveScene(
+        measured,
+        ACTIONS,
+        ANIMALS,
+        props,
+        castHeights(scene),
+        castBodies(scene),
+        HELD,
+      );
       RUNTIMES.set(scene, rt);
     }
     return { rt, chars, props, urls };

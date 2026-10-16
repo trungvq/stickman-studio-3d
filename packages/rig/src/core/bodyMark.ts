@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { HoldAim } from "./heldItem";
 
 /**
  * Mốc có tên trên người 3D cho đích bàn tay (`keys[].reach`, `world.hands`) và hướng lòng tay (`palm: { toward }`). Chỗ
@@ -81,6 +82,15 @@ export const HEAD_BODY_MARKS: readonly BodyMark[] = [
 /** Điểm trên bàn tay đặt vào đích: cổ tay, giữa lòng tay, giữa mu tay, tâm nắm của dáng đang vẽ, đầu ngón giữa */
 export const HAND_POINTS = ["wrist", "palm", "back", "grip", "tip"] as const;
 export type HandPoint = (typeof HAND_POINTS)[number];
+/** Điểm bàn tay đặt vào đích ở `world.hands`: cả mốc của món đang cầm (`item:<mốc>`) */
+export type ReachPoint = HandPoint | `item:${string}`;
+/** `point` của `world.hands`: `HAND_POINTS` hay `item:<mốc>` */
+export const ReachPointSchema = z.union([
+  z.enum(HAND_POINTS),
+  z.custom<`item:${string}`>((v) => typeof v === "string" && /^item:.+$/.test(v), {
+    message: "điểm bàn tay là `wrist`, `palm`, `back`, `grip`, `tip` hay `item:<mốc của món>`",
+  }),
+]);
 
 /**
  * Hướng gọi tên, hệ thân `[tiến, y, ra ngoài]` như đích cổ tay: `in` về đường giữa thân, `out` ra phía chính tay ấy,
@@ -126,6 +136,8 @@ export type AimDirJson = z.infer<typeof AimDirSchema>;
 /** Hướng đã quy về dạng nội suy được: vectơ hệ thân, hay mốc */
 export interface AimDir {
   v?: V3;
+  /** Hướng thế giới three, rig tự đặt (tay phụ của món cầm hai tay) */
+  abs?: V3;
   to?: BodyMark;
   side?: "same" | "other";
   offset?: V3;
@@ -149,7 +161,7 @@ export interface ReachTerm {
   to?: BodyMark;
   side?: "same" | "other";
   offset?: V3;
-  point?: HandPoint;
+  point?: ReachPoint;
 }
 
 /**
@@ -163,6 +175,8 @@ export interface AimTerm {
   fingers?: AimDir;
   bend?: number;
   keep?: boolean;
+  /** Ý định của món đang cầm (`world.hands[].hold`): rig giải ra lòng tay, ngón */
+  hold?: HoldAim;
 }
 
 /** Bàn tay theo ý định của một kênh tay: các số hạng, phần cộng lại là `1` */

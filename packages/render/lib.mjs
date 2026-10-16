@@ -398,9 +398,17 @@ export function renderBoxes({ character, poseName = "idle", arms = 22, view, hea
  * Nạp mọi hành động, con vật và đạo cụ mà scene nhắc tới rồi `resolveScene`; mỗi `*Dirs` là
  * các lớp, xem `layers`. Trôi ngang của con vật nướng từ chính JSON của nó nên phải có mặt
  * ngay lúc này; đạo cụ có người ngồi cần chỗ ngồi; `charactersDirs` cho `rt.heights` và `rt.bodies` — đạo
- * cụ theo người cao thấp khác `1` trôi theo số ấy. Thiếu file thì để trống, chỗ vẽ báo sau.
+ * cụ theo người cao thấp khác `1` trôi theo số ấy; `heldDirs` cho món cầm tay của `world.hands[].hold`. Thiếu file thì
+ * để trống, chỗ vẽ báo sau.
  */
-export function loadScene(scene, actionsDirs, animalsDirs, propsDirs = [], charactersDirs = []) {
+export function loadScene(
+  scene,
+  actionsDirs,
+  animalsDirs,
+  propsDirs = [],
+  charactersDirs = [],
+  heldDirs = [],
+) {
   const actions = {};
   const need = (name) => {
     if (!name || actions[name]) return;
@@ -439,7 +447,16 @@ export function loadScene(scene, actionsDirs, animalsDirs, propsDirs = [], chara
     const c = m.character && maybe(charactersDirs, m.character, rig.parseCharacter);
     if (c) [heights[m.id], bodies[m.id]] = [c.rig.height, rig.body3(c)];
   }
-  const rt = rig.resolveScene(scene, actions, animals, props, heights, bodies);
+  // món cầm tay mà `world.hands[].hold` nhắc tới; thiếu thì `resolveScene` báo
+  const held = {};
+  for (const m of scene.cast)
+    for (const k of m.world?.hands ?? [])
+      for (const h of [k.right?.hold, k.left?.hold]) {
+        if (!h) continue;
+        const { item } = rig.sceneHoldRef(h);
+        held[item] ??= maybe(heldDirs, `${item}.json`, rig.parseHeldItem);
+      }
+  const rt = rig.resolveScene(scene, actions, animals, props, heights, bodies, held);
   // `scene.fx` qua zod của @stickman3d/fx ngay lúc nạp — rig chỉ mang nó theo
   FX.sceneFx(rt);
   return { actions, animals, props, rt };

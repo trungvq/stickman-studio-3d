@@ -48,6 +48,8 @@ export interface World {
   theta: number;
   /** Đích cổ tay thế giới của tay gần, tay xa (`cast[].world.hands` đã lấy mẫu); đè đích hệ thân */
   hands?: { near?: Reach; far?: Reach };
+  /** Mắt ống kính ở khung này (thế giới rig) khi ống kính chạy theo `t` ngoài `lens`: ý định quay món về ống kính đọc nó */
+  eye?: V3;
 }
 
 export const dirOf = (yaw: number): V3 => [Math.cos(yaw), 0, -Math.sin(yaw)];

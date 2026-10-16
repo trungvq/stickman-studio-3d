@@ -9,7 +9,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { useAudioDurations } from "./audio";
-import { ACTIONS, ANIMALS, AUDIO, PROPS, SCENES } from "./data";
+import { ACTIONS, ANIMALS, AUDIO, HELD, PROPS, SCENES } from "./data";
 import type { CueData, EpisodeData, ShotData } from "./episode";
 import { Scene } from "./Scene";
 import { cueStart, layoutShots, type LaidShot } from "./shots";
@@ -20,7 +20,8 @@ const SECONDS = new WeakMap<SceneData, number>();
 export const sceneDuration = (s: SceneData): number => {
   if (s.duration !== undefined) return s.duration;
   let d = SECONDS.get(s);
-  if (d === undefined) SECONDS.set(s, (d = resolveScene(s, ACTIONS, ANIMALS, PROPS).duration));
+  if (d === undefined)
+    SECONDS.set(s, (d = resolveScene(s, ACTIONS, ANIMALS, PROPS, {}, {}, HELD).duration));
   return d;
 };
 

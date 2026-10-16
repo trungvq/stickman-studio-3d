@@ -73,6 +73,7 @@ const piecesDirs = layers(resolve(CWD, flag("pieces", "pieces")), common?.pieces
 const actionsDirs = layers(resolve(CWD, flag("actions", "actions")), common?.actions);
 const animalsDirs = layers(resolve(CWD, flag("animals", "animals")), common?.animals);
 const charsDirs = layers(resolve(CWD, flag("characters", "characters")), common?.characters);
+const heldDirs = layers(resolve(CWD, flag("held", "held")), common?.held);
 
 // Xoè tay để hai mảnh vai áo tách khỏi thân; xa dương, gần âm
 const spread = (p, arms) => ({
@@ -89,7 +90,14 @@ try {
     // Đo `aspect` từng lớp nền trước `resolveScene` — số khai trong JSON chỉ là cái đệm lần trước
     const bgUrls = mountBg(parsed.data, layers(resolve(CWD, flag("bgdir", "assets/bg")), null));
     const propsDir = resolve(CWD, flag("props", "props"));
-    const { rt, animals } = loadScene(parsed.data, actionsDirs, animalsDirs, [propsDir], charsDirs);
+    const { rt, animals } = loadScene(
+      parsed.data,
+      actionsDirs,
+      animalsDirs,
+      [propsDir],
+      charsDirs,
+      heldDirs,
+    );
 
     const props = {};
     const beasts = {};

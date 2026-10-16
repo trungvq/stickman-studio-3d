@@ -292,7 +292,9 @@ export const ReachSchema = z
 export type ReachJson = z.infer<typeof ReachSchema>;
 
 /** Số hạng của một đích JSON: toạ độ thô với điểm khác cổ tay, hay mốc thân; toạ độ cổ tay thì không có */
-export const reachTerm = (r: ReachJson): ReachTerm | undefined =>
+export const reachTerm = (
+  r: Omit<ReachJson, "point"> & { point?: ReachTerm["point"] },
+): ReachTerm | undefined =>
   r.to
     ? {
         k: 1,

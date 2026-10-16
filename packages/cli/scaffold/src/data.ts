@@ -1,7 +1,7 @@
 // JSON và PNG nạp qua bundler, không qua `staticFile` — thư mục thật của workspace
 // (`actions/`, `characters/`, `scenes/`, `props/`, `animals/`, `pieces/`) chính là nguồn, không phải `public/`.
 // Thêm file vào các thư mục ấy là Remotion Studio thấy ngay, khỏi sửa file này.
-// `actions/`, `animals/`, `characters/` và `pieces/` có bộ chung của studio làm lớp dưới: `@stickman-common` là alias
+// `actions/`, `animals/`, `characters/`, `held/` và `pieces/` có bộ chung của studio làm lớp dưới: `@stickman-common` là alias
 
 // `remotion.config.ts` trỏ vào `@stickman3d/cli`; file cùng tên thì bản của repo đè.
 import {
@@ -11,6 +11,7 @@ import {
   parseAction,
   parseAnimal,
   parseCharacter,
+  parseHeldItem,
   parseProp,
   parseScene,
   pieceFile,
@@ -18,6 +19,7 @@ import {
   type AnimalData,
   type Body3,
   type CharacterData,
+  type HeldItemSpec,
   type PieceUrls,
   type PropData,
   type SceneData,
@@ -33,6 +35,7 @@ const charactersCtx = require.context("../characters", false, /\.json$/);
 const scenesCtx = require.context("../scenes", false, /\.json$/);
 const propsCtx = require.context("../props", false, /\.json$/);
 const animalsCtx = require.context("../animals", false, /\.json$/);
+const heldCtx = require.context("../held", false, /\.json$/);
 const piecesCtx = require.context("../pieces", true, /\.png$/);
 const episodesCtx = require.context("../episodes", false, /\.json$/);
 // Nền và tiếng nằm ở `assets/`, không phải `pieces/` — chúng không phải mảnh của ai
@@ -46,6 +49,11 @@ const commonActionsCtx = require.context(
 );
 const commonAnimalsCtx = require.context(
   "@stickman-common/animals",
+  false,
+  /^\.\/(?!index\.json$).+\.json$/,
+);
+const commonHeldCtx = require.context(
+  "@stickman-common/held",
   false,
   /^\.\/(?!index\.json$).+\.json$/,
 );
@@ -118,6 +126,14 @@ export const castBodies = (scene: SceneData): Record<string, Body3> =>
 export const ANIMALS: Record<string, AnimalData> = load<AnimalData>(
   [commonAnimalsCtx, animalsCtx],
   parseAnimal,
+);
+
+/** Món cầm tay lấy khoá không đuôi — `world.hands[].hold` gọi bằng `món#kiểu`; `resolveScene` cần bảng này */
+export const HELD: Record<string, HeldItemSpec> = Object.fromEntries(
+  Object.entries(load<HeldItemSpec>([commonHeldCtx, heldCtx], parseHeldItem)).map(([f, h]) => [
+    f.replace(/\.json$/, ""),
+    h,
+  ]),
 );
 
 /** Một composition cho mỗi file trong `episodes/`, như `scenes/` */

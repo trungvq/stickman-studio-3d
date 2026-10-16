@@ -23,6 +23,7 @@ import {
   type ActionKey,
   type CharacterData,
   type Equip,
+  type HandPoint,
   type Lens,
   type PoseDelta,
   type V3,
@@ -195,7 +196,8 @@ export function reachAt(a: ActionData, t: number, pose: PoseDelta): ActionKey["r
             to: term.to,
             ...(term.side && { side: term.side }),
             ...(term.offset && { offset: term.offset.map(round1) as V3 }),
-            ...(term.point && { point: term.point }),
+            // đích của hành động chỉ có điểm bàn tay, không có mốc món (`item:`)
+            ...(term.point && { point: term.point as HandPoint }),
           }
         : { at: r.at.map(round1) as V3 }),
       ...(bent && { elbow: elbow.map((v) => Math.round(v * 100) / 100) as V3 }),
