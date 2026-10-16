@@ -118,7 +118,7 @@ commit hay sau khi nâng rig. Regex không khớp cảnh nào là lỗi.
 
 Nhiều cảnh (regex khớp cả nhóm, hay lượt toàn bộ) thì phần đo sâu từng cảnh — người lồng vào đồ, tay,
 lòng tay, giật trên hình — chia cho nhiều luồng: mặc định nửa số nhân, không quá số GB RAM còn trống;
-`--jobs <số>` đặt tay. Một cảnh thì chạy một luồng.
+`--jobs <số>` đặt tay. Một cảnh thì chạy một luồng. `--held` chỉ đo đồ cầm tay, bỏ mọi luật khác — [03](03-scene.md#đồ-cầm-tay).
 
 ### Những thứ `check` soi mà không lệnh nào khác soi
 
@@ -138,6 +138,7 @@ Các kiểm tra sau bắt lỗi hợp lệ theo schema nhưng làm thiếu hình
 | **Đồ lồng vào đồ** | `sceneItemClashProblems` của cli (`solidItemClashes` của fx): hai món của lớp vẽ code lấn nhau quá `stickman.clash.tol` **và** phần thể tích món nhỏ nằm trong món kia quá `0,1` (`stickman.clash.items`, `false` là tắt), mỗi cặp một dòng; món khai tên món kia trong `touch` thì bỏ — [10](10-lop-ve-code.md#đồ-lồng-vào-đồ) |
 | **Người 3D diễn hành động 2D** | `sceneSideProblems` của rig, **mức lỗi**: người có `world` mà clip ghi kênh tay chân của hành động không soạn ở `side` — sân khấu three vẽ kênh ấy ở dáng nghỉ, hoà với hành động `side` là giật một khung. Mỗi người, mỗi clip một dòng kèm bản `-3d` có sẵn — [03](03-scene.md#hành-động-cho-người-3d) |
 | **Lòng bàn tay quay sai** | `scenePalmProblems` của rig (`actPalms`, bàn tay đúng như three vẽ), mặt ngang dưới bàn tay lấy từ cảnh three [`stickman.world`](#cảnh-three-cho-check) (`palmFrame` của cli): bàn tay duỗi đặt trên mặt ngang mà lòng tay lệch khỏi úp quá `45°`, tay buông bên đùi mà lòng tay lệch hướng vào đùi quá `60°`, kéo dài từ `0,3 s` (`stickman.palm`, `false` là tắt) — [03](03-scene.md#lòng-bàn-tay) |
+| **Đồ cầm tay sai** | `sceneHeldProblems` của rig trên cảnh three [`stickman.world`](#cảnh-three-cho-check) (`heldFrame` của cli, `heldHands` của người 3D): dáng `hold` khác dáng khai, trục ngón vào trong món quá `1,25`, món không chạm tay, tâm nắm ngoài món quá `3`, trục ý định của món (`userData.hold`) lệch, món trôi trong khung bàn tay; kéo dài từ `0,3 s` (`stickman.held`, `false` là tắt) — [03](03-scene.md#đồ-cầm-tay) |
 | **Tay sai dáng** | `sceneArmProblems` của rig (`actJoints`, `actPalms`, đúng như three vẽ): khuỷu thẳng từ `170°` (đích xa quá tầm, tay buông, góc của hành động), ngón hai tay gần nhau chĩa vào nhau quá `30°`, lòng tay ngửa hay ra trước khi bàn tay thấp, bàn tay đặt bằng đích lơ lửng `4–15` trên mặt ngang (cần [`stickman.world`](#cảnh-three-cho-check)), bàn tay lấn vào đầu người khác; kéo dài từ `0,3 s` (`stickman.arms`, `false` là tắt) — [03](03-scene.md#tay-và-khuỷu) |
 | **Tay chân giật trên hình** | `sceneSnapProblems` của rig: lấy mẫu theo fps bản chốt, khớp đúng như hình vẽ ra (`actJoints` cho người 3D, `joints2` cho người 2D) qua khung cắt camera, khung nào một khớp nhảy vượt nền chuyển động quanh nó quá ngưỡng (`stickman.snap`) thì kêu, kèm lý do đọc từ timeline; chỗ khai `snap` thì bỏ — [03](03-scene.md#giật-trên-hình) |
 | **Hành động tự giật** | `actionSnapProblems` của rig: `wrap` mà mốc cuối ở `t: 1` lệch mốc đầu, hay hai mốc sát nhau đổi góc lớn hơn hẳn hai đoạn kề; file khai `snap` thì bỏ — [01](01-rig.md#hành-động-giật-có-chủ-ý) |

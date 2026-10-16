@@ -1415,6 +1415,11 @@ gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` 
   đi `gripShift` trong khung bàn tay — chén ngồi trên vòng ngón cái, ngón trỏ của `pinch`, điện thoại ngang ngồi giữa ngón cái
   và các ngón của `edge`, điện thoại dọc ngồi trước lòng tay, bề ngang giữa ngón cái và đầu các ngón của `span`. Đồ căn cho `grip` không đổi chỗ. Đồ bật ở một khung (`equip` là công tắc), nên muốn tay khép dần
   thì cho hành động đưa bàn tay về dáng cầm trước mốc `equip`.
+- **Món trong tay ghi trên người.** `hold` ghi `Figure.holding[side]` (`Holding`: `object`, `pose`, `follow`, `both`,
+  `offset`, `rotate`), `release` xoá — `check` đọc nó để đo đồ cầm ([03](03-scene.md#đồ-cầm-tay)). Món khai ý định ở
+  `object.userData.hold` (`HeldIntent`, trục trong khung món, three): `up` trục phải gần hướng lên (chén, ly, bình đứng),
+  `face` mặt phải quay về `faceToward` — `"holderFace"` mặt người cầm, `"camera"` ống kính (màn điện thoại đọc, khoe).
+  Kiểu cầm nghiêng cố ý (rót) thì không khai `up`. `grip` gọi riêng (không qua `hold`) không ghi gì.
 - **Tâm nắm theo góc ngón** (`handGripOf`): hoà `HAND_GRIPS` theo độ gần của chín góc ngón với từng dáng, nên đúng bảng khi
   đúng dáng và đổi liền khi dáng hoà — `point: "grip"` của đích bàn tay đọc nó ([Đích theo mốc](#đích-theo-mốc)).
 - **Một mặt da liền.** `handSkin` dựng một lưới kín từ hợp trơn (smooth-min) các khối của khung xương ở dáng gốc

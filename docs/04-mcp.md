@@ -179,6 +179,11 @@ không có tool riêng.
   `fingers` thì kèm `aim`: `reach` (mốc, điểm bàn tay, `gap` khe từ điểm ấy tới mốc, đơn vị rig — chỉ khi phần đích
   đủ `1`), `palmOff` / `fingersOff` (độ lệch còn lại so với hướng đã khai), `cycle` khi hai tay cùng bám nhau
   ([01](01-rig.md#đích-theo-mốc)).
+  Repo khai `stickman.world` thì người đang cầm đồ kèm `held.right` / `held.left`, cùng số đo với luật đồ cầm của `check`
+  ([03](03-scene.md#đồ-cầm-tay)): `item`, `pose` (dáng vẽ), `declared` (dáng hành động khai), `follow`, `pierce`
+  (`core` trục đốt vào trong món, `depth` da lún, `piece` đốt), `wrap` (nhóm chạm món), `gaps`, `grip` (tâm nắm tới mặt
+  món, âm là trong), `palm` (`gap`, `angle`), `up` / `face` (góc lệch trục ý định), `rel` (món trong khung bàn tay — so hai
+  mốc để thấy món trôi), `issues` (luật sẽ kêu).
   Cảnh có `lens` và người 3D kèm `clashes`: mỗi mốc hỏi, các chỗ phần người lồng vào đồ khối hay vào
   người khác sâu quá ngưỡng của `check`, sâu trước —
   `{ "0.5": [{ "who": "haru.head", "with": "hoc (mảnh 0)", "depth": 33 }] }`

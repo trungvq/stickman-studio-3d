@@ -1125,7 +1125,8 @@ chéo qua người hay buông tay từ đích phía bên kia là tay xuyên thâ
 
 Lòng bàn tay đặt trên mặt ngang mà dựng đứng, tay buông mà lòng tay ngửa hay quay ra ngoài: `check` đo theo
 [Lòng bàn tay](#lòng-bàn-tay). Tay thẳng đuột, ngón hai tay chụm vào nhau, lòng tay ngửa khi bàn tay thấp, bàn tay
-lơ lửng trên mặt nó nhắm tới, bàn tay lấn vào đầu người khác: [Tay và khuỷu](#tay-và-khuỷu).
+lơ lửng trên mặt nó nhắm tới, bàn tay lấn vào đầu người khác: [Tay và khuỷu](#tay-và-khuỷu). Đồ cầm tay sai dáng, ngón xuyên đồ,
+món lơ lửng ngoài tay, món xoay sai, món trôi trong bàn tay: [Đồ cầm tay](#đồ-cầm-tay).
 
 ## Giật trên hình
 
@@ -1285,6 +1286,43 @@ Ngưỡng ở `package.json` của repo video (độ, độ, độ, đơn vị r
 ```
 
 Mức cảnh báo. Cảnh khớp `stickman.frozen` không đo; `--scene` chỉ đo cảnh khớp.
+
+## Đồ cầm tay
+
+Món `hold` gắn vào bàn tay (`Figure.holding`, [01](01-rig.md#bàn-tay)) miễn va chạm với bàn tay cầm nó (`touch`), nên luật
+người lồng vào đồ không nhìn chỗ ấy; dáng ngón do `hold` đặt, chỗ và hướng món do `offset`, `rotate`, `follow` — hai nguồn
+độc lập với cổ tay của scene. `check` đo riêng trên cảnh three [`stickman.world`](05-repo-video.md#cảnh-three-cho-check):
+mỗi `0,1 s`, mỗi bàn tay người mặc đồ đang cầm một món hiện trên hình (`heldHands` của người 3D, `sceneHeld` của lõi), với
+lưới hiện hình của món (mọi lưới mặt trước, kể cả lưới `noCollide`, bỏ vỏ nét) và nang bàn tay theo dáng đang vẽ
+(`handCapsules`, `fitCapsules`). Kêu quãng từ `0,3 s` (trôi thì mọi độ dài), bỏ bàn tay ngoài khung camera:
+
+| Luật | Kêu khi | Ngưỡng |
+|---|---|---|
+| **Dáng khác dáng khai** | Dáng có tên gần góc ngón hành động khai nhất (`nearestHandPose`) không phải dáng nghỉ, khác dáng `hold` đang vẽ, và góc ngón lệch quá `HELD_POSE` (trung bình bình phương chín góc ngón) — `hold` mặc định `grip` đè dáng hành động khai | `6°` |
+| **Ngón xuyên đồ** | Trục một nang (lòng bàn tay, gò ngón cái, từng đốt ngón) vào trong món quá `HELD_PIERCE`. Trong món là số vòng của lưới (winding number) từ `0,75`: đúng với món lõm (lòng chén là ngoài), món ghép nhiều mảnh hở; trục cắt qua tấm mỏng thì vào trong bằng nửa bề dày tấm. Đo trục chứ không đo da: nang bàn tay mập nên da chạm món đã lún vài đơn vị | `1,25` |
+| **Món không chạm tay** | Không nhóm nào (ngón cái, trỏ, giữa–út, lòng tay) cách mặt món dưới `HELD_TOUCH` | `1` |
+| **Món không nằm trong tay** | Tâm nắm của dáng đang vẽ (`handGripOf`) ngoài mặt món quá `HELD_GRIP`; dáng kẹp đầu ngón (`pinch`, `edge`, `span`, `hook`) `HELD_GRIP_PINCH` | `3`, `5` |
+| **Món nghiêng** | Món khai `userData.hold.up` mà trục ấy lệch hướng lên quá `HELD_UP` | `30°` |
+| **Mặt món quay sai** | Món khai `face` + `faceToward` mà trục ấy lệch hướng tới mặt người cầm (ống kính) quá `HELD_FACE` | `65°` |
+| **Món trôi** | Món dời quá `HELD_DRIFT` hay xoay quá `HELD_TURN` trong khung bàn tay so với lúc bắt đầu cầm (một lần cầm: cùng món, dáng, `follow`, `offset`, `rotate`, liền mạch) — `follow: "level"` đứng theo người nên cổ tay xoay là món trôi | `3`, `20°` |
+
+Đơn vị rig, thế giới (người cao ~430). Mỗi người, mỗi tay, mỗi món, mỗi luật một dòng, kèm giây tệ nhất, quãng giây, các số đo
+lúc ấy (dáng, trục ngón vào trong món, độ ôm — mấy nhóm ngón chạm, tâm nắm, lòng tay tới món và góc) và clip đang chạy:
+
+```
+scenes/canh-07.json: ngón xuyên đồ — `saito` tay phải cầm chen-ruou: trục đầu ngón áp út vào trong món 4.1 (da lún 6.8); dời món (`offset`, `rotate`) hay đổi dáng ở giây 1.70 · giây 0.00–8.20. Lúc ấy: dáng grip (level) · xương đầu ngón áp út vào trong món 4.1 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · tâm nắm trong món 4.3 · lòng tay cách 0.4 góc 90°. Clip đang chạy: kep-chen-xa-3d (chen) (docs/03-scene.md#đồ-cầm-tay)
+```
+
+Chỉ đo đồ cầm, nhanh (vài giây một cảnh): `stickman check --held --scene <regex>`. `scene_probe` trả cùng số đo ở
+`world.held` ([04](04-mcp.md#người-3d)). Ngưỡng ở `package.json` của repo video, trường thiếu lấy mặc định; `false` là
+không đo:
+
+```json
+"stickman": { "held": { "pose": 6, "pierce": 1.25, "touch": 1, "grip": 3, "up": 30, "face": 65, "drift": 3, "turn": 20, "hold": 0.3 } }
+```
+
+Mức cảnh báo. Cảnh khớp `stickman.frozen` không đo; `--scene` chỉ đo cảnh khớp. Số đo không thay mắt: nghi thì soi bàn tay
+cận cảnh đúng giây ấy.
 
 ## Nhóm
 
