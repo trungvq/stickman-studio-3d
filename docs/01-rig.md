@@ -1845,6 +1845,7 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 |---|---|---|
 | `mouth`, `eye`, `cheek`, `forehead` | Trên mặt nặn của đầu (`faceSurface`, `chibiShape` của đầu `human`, `face` của nhân vật) | Đầu |
 | `chin`, `crown`, `backHead` | Dưới cằm, đỉnh sọ, sau gáy đầu (`humanSkull`; chưa tính bề dày tóc) | Đầu |
+| `head` | Tâm sọ, trong đầu. Đích hướng của món cầm (`face: { axis, toward: { mark: "head" } }`): loa áp tai, miệng chén kề môi — hướng từ món tới tâm đầu không lật khi món đã sát mặt. Không dùng làm chỗ đặt tay | Đầu |
 | `ear` | Mặt ngoài tai (`humanEar`); tóc phủ tai thì cộng `offset` ra ngoài | Đầu |
 | `nape`, `shoulder` | Gáy cổ; đỉnh nắp vai (`roots3`) | Thân |
 | `chest`, `belly`, `back`, `hip` | Mặt áo giữa ngực, đỉnh bụng (gồm bụng phệ), giữa lưng ngang thắt lưng, sườn ngang hông — `profile` của áo, người mặc đồ theo `cladProfile` | Thân (đã cúi, nghiêng) |

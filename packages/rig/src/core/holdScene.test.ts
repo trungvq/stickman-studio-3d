@@ -376,6 +376,39 @@ describe("`world.hands[].hold` trong scene", () => {
     expect(r.report.L.reach!.gap).toBeLessThan(3);
   });
 
+  it("đích ý định `{ mark: head }`: loa áp tai, màn quay vào tâm đầu", () => {
+    const sp = at([
+      {
+        t: 0,
+        right: {
+          to: "ear",
+          point: "item:speaker",
+          hold: {
+            item: "dien-thoai",
+            grip: "tai",
+            face: { axis: "screen", toward: { mark: "head" } },
+          },
+        },
+      },
+    ]);
+    const rep = actAim(C, sp)!.report.R;
+    expect(rep.hold!.toward).toBe("head");
+    expect(rep.hold!.err).toBeLessThan(20);
+    expect(rep.reach!.gap).toBeLessThan(3);
+  });
+
+  it("đang hoà giữa hai đích: khe đo tới đích đã hoà, không báo tay hụt giữa đường", () => {
+    const sp = at(
+      [
+        { t: 0, right: { to: "chest", offset: [40, 45, 10], point: "grip", hold: "coc#quai" } },
+        { t: 1, right: { to: "mouth", point: "item:rim" } },
+      ],
+      0.5,
+    );
+    // đích nặng nhất (`mouth`) còn cách xa giữa quãng hoà; bàn tay tới đúng đích đã hoà
+    expect(actAim(C, sp)!.report.R.reach!.gap).toBeLessThan(3);
+  });
+
   it("đổi tay: hai tay cùng một món, tay cầm trước mang món", () => {
     const hands = [
       { t: 0, right: { at: [-20, -270, -70], point: "grip", hold: "coc#quai" } },

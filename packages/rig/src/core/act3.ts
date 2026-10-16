@@ -842,6 +842,10 @@ function markAt(
       p = at(H, T.Rn, S.onSkull([0, 0.1, -1]));
       R = T.Rn;
       break;
+    case "head":
+      p = H;
+      R = T.Rn;
+      break;
     case "ear": {
       const E = HUMAN_HEAD.ear;
       const e = S.human ? humanEar(sd as -1 | 1) : unit([sd, E.y, E.z]);
@@ -1632,10 +1636,22 @@ function solveActing(
     if (full) {
       const main = full.terms!.reduce((a, b) => (b.k > a.k ? b : a));
       const [want, pt] = goal(main, full === rw);
+      let gap = len(sub(handAt(h, pt), want));
+      if (full.terms!.length > 1) {
+        // đang hoà giữa hai đích: đo tới đích đã hoà (đúng chỗ bộ giải nhắm), không tới đích của số hạng nặng nhất
+        let acc: V3 = ZERO3;
+        let sum = 0;
+        for (const t of full.terms!) {
+          const [p, q] = goal(t, full === rw);
+          acc = add(acc, mul(sub(handAt(h, q), p), t.k));
+          sum += t.k;
+        }
+        gap = Math.min(gap, len(acc) / (sum || 1));
+      }
       rep.reach = {
         to: main.to ?? "at",
         point: pt,
-        gap: (len(sub(handAt(h, pt), want)) * 100) / s,
+        gap: (gap * 100) / s,
         ...(role?.role === "support" && full === rw
           ? { hold: "support" as const }
           : role && pt.startsWith("item:") && { hold: "item" as const }),

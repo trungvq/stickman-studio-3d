@@ -15,6 +15,7 @@ export const BODY_MARKS = [
   "forehead",
   "crown",
   "backHead",
+  "head",
   "nape",
   "shoulder",
   "chest",
@@ -39,6 +40,7 @@ export const BODY_MARK_LABELS: Record<BodyMark, string> = {
   forehead: "trán",
   crown: "đỉnh sọ",
   backHead: "sau gáy đầu",
+  head: "tâm sọ, trong đầu: đích hướng món (loa áp tai, miệng chén kề môi), không phải chỗ đặt tay",
   nape: "gáy cổ",
   shoulder: "đỉnh vai",
   chest: "giữa ngực, mặt áo",
@@ -77,6 +79,7 @@ export const HEAD_BODY_MARKS: readonly BodyMark[] = [
   "forehead",
   "crown",
   "backHead",
+  "head",
 ];
 
 /** Điểm trên bàn tay đặt vào đích: cổ tay, giữa lòng tay, giữa mu tay, tâm nắm của dáng đang vẽ, đầu ngón giữa */
