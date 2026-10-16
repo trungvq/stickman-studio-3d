@@ -1,8 +1,13 @@
 import * as THREE from 'three';
 import { act } from './act';
+import { grip as gripPose, hold, type Held, type Holding } from './attach';
+import { actHeld, holdRoles } from './core/act3';
+import type { HeldItemSpec, HoldAim } from './core/heldItem';
+import type { HandPose } from './core/hand';
+import type { HeldIntent } from './core/heldAudit';
 import { PAPER } from './core/constants';
 import type { Body3 } from './core/figure3d';
-import { cameraAt, castCharacter, sceneAt, type CastMember, type SceneData, type SceneRuntime } from './core/scene';
+import { cameraAt, castCharacter, sceneAt, type CastMember, type SceneData, type ScenePose, type SceneRuntime } from './core/scene';
 import { equipCharacter, type CharacterData } from './core/schema';
 import { seatCrowd } from './crowd';
 import { loadFonts } from './decal';
@@ -14,7 +19,7 @@ import type { AaMode, Grade } from './pipeline';
 import { room, type Room, type RoomOptions } from './room';
 import { landmark, type Landmark } from './screen';
 import { createStage, type FrameView, type Stage } from './stage';
-import { characterOptions, fromCharacter, wardrobe, type CharacterJson, type Figure } from './stickman';
+import { characterOptions, fromCharacter, wardrobe, type CharacterJson, type Figure, type Side } from './stickman';
 
 // Cảnh three của một scene 3D — docs/03-scene.md#cảnh-3d. Sân khấu Remotion (`buildStage`) và `worldOf` của `stickman check`
 // (Node, không WebGL) dựng cùng một bản bằng `buildWorld`.
@@ -57,6 +62,27 @@ export interface Cast3D {
   at(id: string, name: Landmark): Vec3 | null;
   /** Khớp tay bên `side` (`-1` phải người, `1` trái) của `id` */
   arm(id: string, side: -1 | 1, joint: 'shoulder' | 'elbow' | 'wrist'): Vec3 | null;
+  /**
+   * Đăng ký món cầm tay `item` (tên trong `held/`) với `object` dựng ở gốc khung món; `owner` là người mà món ấy là của
+   * (hai người cùng có một loại món). Tới quãng `world.hands[].hold` của ai đó cầm món, rig gắn món vào tay người ấy; hết
+   * quãng thì trả về chỗ cũ (cha và vị trí lúc đăng ký). Gọi trong `extra`. Món đang trong tay thì `extra` đừng đặt nó
+   */
+  provide(item: string, object: THREE.Object3D, owner?: string): void;
+  /** Ai đang mang món `item` (của `owner`) ở giây `t`: người, tay mang món; không ai thì `undefined` */
+  holder(item: string, t: number, owner?: string): { id: string; side: Side } | undefined;
+  /**
+   * Lần thả gần nhất (không sau `t`) của món `item` (của `owner`): người, tay, giây thả, và chỗ món lúc thả — ma trận thế
+   * giới three (đã nhân cỡ người) — để `extra` đặt món đúng chỗ ấy sau khi thả. Chưa thả lần nào thì `undefined`
+   */
+  released(item: string, t: number, owner?: string): Released | undefined;
+}
+
+/** Lần thả một món: ai, tay nào, giây nào, món ở đâu (ma trận thế giới three) */
+export interface Released {
+  id: string;
+  side: Side;
+  t: number;
+  matrix: THREE.Matrix4;
 }
 
 /** Cách dựng một cảnh 3D mà repo video khai theo tên cảnh */
@@ -101,6 +127,36 @@ export interface World3D {
 }
 
 const v3 = new THREE.Vector3();
+
+/** Món đã đăng ký: chỗ cũ (cha và vị trí lúc đăng ký) và lần gắn đang giữ */
+interface Provided {
+  item: string;
+  object: THREE.Object3D;
+  owner?: string;
+  home: { parent?: THREE.Object3D | null; position: THREE.Vector3; quaternion: THREE.Quaternion };
+  on?: { fig: Figure; side: Side; grip: string; held: Held; support?: { side: Side; entry?: Holding } };
+}
+
+/** Món một người phải mang ở khung này: tay mang, kiểu cầm, tay phụ, các số hạng ý định của lần cầm */
+interface Want {
+  fig: Figure;
+  side: Side;
+  item: string;
+  grip: string;
+  spec: HeldItemSpec;
+  support?: { side: Side; pose: HandPose; grip: string };
+  aim: { k: number; hold?: HoldAim }[];
+}
+
+/** Ý định đang nhắm ra `userData.hold` cho `check`: trục lên, hay mặt về ống kính / mặt người cầm */
+function heldIntentOf(a: HoldAim): HeldIntent | undefined {
+  const f = a.face;
+  if (!f) return undefined;
+  const t = f.target;
+  if ('name' in t) return { face: [...f.axis] as [number, number, number], faceToward: t.name };
+  if ('v' in t && t.v[0] === 0 && t.v[1] === -1 && t.v[2] === 0 && !f.tilt) return { up: [...f.axis] as [number, number, number] };
+  return undefined;
+}
 const fromThree = (p: THREE.Vector3): Vec3 => [p.x / U, -p.y / U, -p.z / U];
 
 /**
@@ -144,6 +200,123 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     fig: (id) => current.get(id),
     at: (id, name) => { const f = posed(id); return f ? fromThree(landmark(f, name, undefined, v3)) : null; },
     arm: (id, side, joint) => { const f = posed(id); return f ? fromThree(f.arms[side][joint].getWorldPosition(v3)) : null; },
+    provide: () => undefined,
+    holder: () => undefined,
+    released: () => undefined,
+  };
+  // món cầm tay đăng ký qua `provide`: rig gắn theo `world.hands[].hold` sau khi người và đồ riêng đã đặt
+  const provided: Provided[] = [];
+  const entry = (item: string, owner?: string) => provided.find((p) => p.item === item && p.owner === owner);
+  const pick = (item: string, who: string) => entry(item, who) ?? entry(item);
+  const seeing = (ac: ScenePose, t: number): ScenePose => {
+    const L = spec.lens?.(t);
+    return L && ac.world ? { ...ac, world: { ...ac.world, eye: [...L.eye] as [number, number, number] } } : ac;
+  };
+  /** Người, tay mang món `p` ở giây `t` (thuần: chỉ đọc scene) */
+  const carrying = (p: Provided | undefined, t: number) => {
+    if (!p) return undefined;
+    for (const c of cast) {
+      const ac = acting(c.id, t);
+      const roles = ac.world?.hands ? holdRoles(ac.world.hands, ac.world.flip ? 1 : -1) : {};
+      for (const side of [-1, 1] as Side[]) {
+        const r = roles[side];
+        if (r?.role === 'lead' && pick(r.hold.item, c.id) === p) return { id: c.id, side, ac };
+      }
+    }
+    return undefined;
+  };
+  // giây các mốc `hold` của mọi người: chỗ một món có thể đổi người mang
+  const holdTimes = [...new Set(cast.flatMap((c) => (c.world!.hands ?? []).filter((k) => k.right?.hold !== undefined || k.left?.hold !== undefined).map((k) => k.t as number)))].sort((a, b) => b - a);
+  cast3.provide = (item, object, owner) => {
+    if (entry(item, owner)) throw new Error(`\`provide\`: món \`${item}\`${owner ? ` của \`${owner}\`` : ''} đã đăng ký`);
+    provided.push({ item, object, owner, home: { position: object.position.clone(), quaternion: object.quaternion.clone(), ...(object.parent && { parent: object.parent }) } });
+  };
+  cast3.holder = (item, t, owner) => {
+    const h = carrying(entry(item, owner), t);
+    return h && { id: h.id, side: h.side };
+  };
+  cast3.released = (item, t, owner) => {
+    const p = entry(item, owner);
+    if (!p) return undefined;
+    for (const tr of holdTimes) {
+      if (tr > t || carrying(p, tr)) continue;
+      const before = tr - 1e-3;
+      const h = carrying(p, before);
+      if (!h) continue;
+      const c = cast.find((m) => m.id === h.id)!;
+      const ac = seeing(h.ac, before);
+      const held = actHeld(equipCharacter(base(c), ac.equip), ac)[h.side < 0 ? 'R' : 'L'];
+      if (!held) continue;
+      const R = held.R;
+      const m = new THREE.Matrix4().set(R[0], R[1], R[2], 0, R[3], R[4], R[5], 0, R[6], R[7], R[8], 0, 0, 0, 0, 1);
+      m.scale(new THREE.Vector3().copy(p.object.scale).multiplyScalar(held.s));
+      m.setPosition(held.at[0] * U, -held.at[1] * U, -held.at[2] * U);
+      return { id: h.id, side: h.side, t: tr, matrix: m };
+    }
+    return undefined;
+  };
+  /** Gắn, gỡ món theo lần cầm của mọi người diễn ở khung đang đặt; món trong tay ngồi đúng gốc khung món */
+  const carry = (acts: Map<string, ScenePose>) => {
+    const want = new Map<Provided, Want>();
+    for (const [id, ac] of acts) {
+      const fig = current.get(id);
+      const hands = ac.world?.hands;
+      if (!fig || !hands) continue;
+      const near: Side = ac.world!.flip ? 1 : -1;
+      const roles = holdRoles(hands, near);
+      for (const side of [-1, 1] as Side[]) {
+        const r = roles[side];
+        const p = r?.role === 'lead' ? pick(r.hold.item, id) : undefined;
+        if (!r || !p) continue;
+        const sup = roles[-side as Side];
+        want.set(p, {
+          fig, side, item: r.hold.item, grip: r.hold.grip, spec: r.hold.spec,
+          ...(sup?.role === 'support' && { support: { side: -side as Side, pose: sup.hand.pose, grip: sup.hold.grip } }),
+          aim: (side === near ? hands.near : hands.far)?.aim?.terms.filter((a) => a.hold?.item === r.hold.item && a.hold.grip === r.hold.grip) ?? [],
+        });
+      }
+    }
+    for (const p of provided) {
+      if (p.home.parent === undefined && !p.on) p.home.parent = p.object.parent;
+      const w = want.get(p), on = p.on;
+      if (on && !(w && on.fig === w.fig && on.side === w.side && on.grip === w.grip && on.support?.side === w.support?.side)) letGo(p);
+      if (w && !p.on) take(p, w);
+      if (!p.on || !w) continue;
+      p.object.position.set(0, 0, 0);
+      p.object.quaternion.identity();
+      const main = w.aim.reduce<{ k: number; hold?: HoldAim } | undefined>((a, t) => (!a || t.k > a.k ? t : a), undefined)?.hold;
+      const intent = main && heldIntentOf(main);
+      if (intent) p.object.userData.hold = intent;
+      else delete p.object.userData.hold;
+    }
+  };
+  const take = (p: Provided, w: Want) => {
+    p.object.position.set(0, 0, 0);
+    p.object.quaternion.identity();
+    const held = hold(w.fig, p.object, { hand: w.side, grip: { item: w.item, spec: w.spec, grip: w.grip } });
+    let entry: Holding | undefined;
+    // đổi tay: tay phụ giữ dáng kiểu cầm của nó trên món (kiểu cầm hai tay thì `hold` đã lo)
+    if (w.support && !w.spec.grips[w.grip].both) {
+      gripPose(w.fig, w.support.side, w.support.pose);
+      entry = { object: p.object, item: w.item, grip: w.support.grip, pose: w.support.pose, follow: 'wrist', both: true };
+      (w.fig.holding ??= {})[w.support.side] = entry;
+    }
+    p.on = { fig: w.fig, side: w.side, grip: w.grip, held, ...(w.support && { support: { side: w.support.side, entry } }) };
+  };
+  const letGo = (p: Provided) => {
+    const on = p.on!;
+    on.held.release();
+    const sup = on.support;
+    if (sup?.entry) {
+      gripPose(on.fig, sup.side, undefined);
+      if (on.fig.holding?.[sup.side] === sup.entry) delete on.fig.holding[sup.side];
+    }
+    p.on = undefined;
+    const { parent, position, quaternion } = p.home;
+    p.object.removeFromParent();
+    p.object.position.copy(position);
+    p.object.quaternion.copy(quaternion);
+    parent?.add(p.object);
   };
   const x = extra?.(rt.marks, cast3);
   if (x) s.group.add(x.group);
@@ -151,8 +324,10 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     root, set: s, extra: x, cast: cast3,
     ready: Promise.resolve(x?.ready),
     pose(t) {
+      const acts = new Map<string, ScenePose>();
       for (const a of actors) {
-        const ac = acting(a.id, t);
+        const ac = seeing(acting(a.id, t), t);
+        acts.set(a.id, ac);
         const { fig, fresh } = a.w.get(ac.equip, !!ac.world?.seated);
         if (fresh) root.add(fig.root);
         for (const f of a.w.figures.values()) f.root.visible = f === fig && ac.opacity > 0.5;
@@ -161,6 +336,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
       }
       s.update?.(t);
       x?.update?.(t);
+      if (provided.length) carry(acts);
       return Object.fromEntries(current);
     },
     lights: (t) => s.lights(t, x?.light?.(t)),

@@ -1356,7 +1356,8 @@ function solveActing(
       const clamped: ("turn" | "bend" | "dev")[] = [];
       if (Math.abs(sol.turn) >= 90 - 0.05) clamped.push("turn");
       if (Math.abs(sol.bend) >= AIM_BEND - 0.05) clamped.push("bend");
-      if (lifted && Math.abs(sol.dev) >= AIM_DEV - 0.05) clamped.push("dev");
+      // kênh giữ 2D không có lệch cổ tay: lệch bị giữ ở 0
+      if (lifted ? Math.abs(sol.dev) >= AIM_DEV - 0.05 : err > 1) clamped.push("dev");
       const got = mv(mm(A.Re, wristTurn(sol.turn, sol.bend, sol.dev, side)), aH);
       return {
         sol,

@@ -3060,13 +3060,18 @@ function handAt(
     spec: held[nowRef.item],
     since: now.since,
   };
-  /** Ý định của lần cầm đang có hiệu lực ở mốc `kt`: chỉ khi đó vẫn là lần cầm của `time` */
+  /**
+   * Ý định ở mốc `kt` của lần cầm đang có ở `time`: lần cầm có hiệu lực ở mốc ấy, hay ngay trước nó — mốc thả (`hold: null`,
+   * đổi món) vẫn giữ ý định tới đúng lúc thả
+   */
   const intentAt = (kt: number): Aim | undefined => {
-    const run = holdRun(keys, side, Math.max(kt, hold?.since ?? kt));
-    if (!run || !hold) return undefined;
-    const r = sceneHoldRef(run.hold);
-    if (r.item !== hold.item || r.grip !== hold.grip) return undefined;
-    return { terms: [{ k: 1, hold: holdAim(hold.spec, run.hold, castAt) } as AimTerm] };
+    if (!hold) return undefined;
+    for (const run of [holdRun(keys, side, kt), holdRun(keys, side, kt - 1e-6)]) {
+      const r = run && sceneHoldRef(run.hold);
+      if (r && r.item === hold.item && r.grip === hold.grip)
+        return { terms: [{ k: 1, hold: holdAim(hold.spec, run!.hold, castAt) } as AimTerm] };
+    }
+    return undefined;
   };
   const one = (h: typeof ra, kt: number): Reach | undefined => {
     const intent = intentAt(kt);
