@@ -827,32 +827,77 @@ dưới nó, quay theo đầu. 2D và 2.5D không vẽ gì ở `crown` khi `src`
 "crown": { "src": "sculpt", "color": "#F3EBDD", "hat": { "height": 0.6 } }
 ```
 
-Góc theo độ, dài theo bán kính sọ.
+Hai dáng (`shape`):
+
+- `drum` — trụ thấp hở đáy, đỉnh phẳng bo mép: mũ đầu bếp Nhật 和帽子, mũ thợ.
+- `peaked` — mũ kê-pi có lưỡi trai (制帽 của cảnh sát Nhật): băng quanh chân, chóp loe rộng hơn băng tới đỉnh
+  phẳng, lưỡi trai nửa elip chúc xuống trước trán, dây quai ngang băng trên lưỡi trai, hai nút ở đầu quai,
+  huy hiệu giữa trán chỗ chóp gặp băng (sao năm cánh trong vòng lá hở đỉnh, trên đế tròn).
+
+Góc theo độ, dài theo bán kính sọ. Ô có hai số cách bằng `·` là `drum` · `peaked`: JSON bỏ trống thì lấy theo dáng
+(`HAT_SHAPE_DEFAULTS`, đọc qua `hatSpec`).
 
 | Trường | Mặc định | Nghĩa |
 |---|---:|---|
-| `shape` | `drum` | `drum` trụ thấp hở đáy, đỉnh phẳng bo mép (mũ đầu bếp Nhật 和帽子, mũ thợ) |
-| `front` / `back` | 32 / 18 | Vĩ độ miệng mũ ở giữa trán, ở gáy: miệng là mặt phẳng qua hai điểm ấy |
-| `height` | 0.62 | Thân cao bấy nhiêu tính từ miệng theo trục mũ |
+| `shape` | `drum` | `drum` hay `peaked` |
+| `front` / `back` | 32 / 18 · 24 / 14 | Vĩ độ miệng mũ ở giữa trán, ở gáy: miệng là mặt phẳng qua hai điểm ấy |
+| `height` | 0.62 · 0.66 | Thân cao bấy nhiêu tính từ miệng theo trục mũ |
 | `ease` | 0.03 | Khoảng hở giữa thân mũ và tóc (hay sọ); âm là ôm chặt hơn |
-| `round` | 0.12 | Bán kính bo mép đỉnh |
-| `flare` | 0 | Miệng nở ra bấy nhiêu phần bán kính thân, nhỏ dần tới mép bo |
-| `folds` | `[0.32]` | Nếp gấp ngang: mỗi số là một vòng nét mực ở bấy nhiêu phần chiều cao thân; `[]` là trơn |
+| `round` | 0.12 · 0.05 | Bán kính bo mép đỉnh |
+| `flare` | 0 · 0.24 | `drum`: miệng nở ra bấy nhiêu phần bán kính thân, nhỏ dần tới mép bo. `peaked`: chóp nở dần từ mép trên băng, tới đỉnh rộng hơn băng bấy nhiêu phần |
+| `folds` | `[0.32]` · `[]` | Nếp gấp ngang: mỗi số là một vòng nét mực ở bấy nhiêu phần chiều cao thân (`peaked`: phần chóp trên băng); `[]` là trơn |
+| `band` | 0.24 | `peaked`: băng cao bấy nhiêu tính từ miệng |
+| `bandColor` | `#16171b` | `peaked`: màu băng, cũng là màu đế huy hiệu |
+| `brim` | 0.5 | `peaked`: lưỡi trai chìa ra trước miệng mũ bấy nhiêu ở giữa trán; `0` là không có |
+| `droop` | 24 | `peaked`: lưỡi trai chúc xuống bấy nhiêu độ so với mặt miệng mũ |
+| `brimColor` | `#101114` | `peaked`: màu lưỡi trai |
+| `strap` | 0.055 | `peaked`: bản dây quai; `0` là không có quai và nút |
+| `strapColor` | `#222327` | `peaked`: màu dây quai |
+| `badge` | 0.13 | `peaked`: bán kính huy hiệu (không quá nửa phần chóp trên băng); `0` là không có |
+| `badgeColor` | `#d8aa3c` | `peaked`: màu huy hiệu và hai nút ở đầu quai |
 
 - **Cỡ mũ đo trên đầu** (`hatFit`): lấy mẫu sọ và vỏ tóc (`shellAt`, như hàng vỏ khi đầu thẳng) mỗi
   `3°`, giữ điểm trên miệng mũ (và dải `0.03` dưới nó). Thân là ống elip cùng tâm nhỏ nhất ôm mọi điểm
   ấy, nở thêm `ease`: đầu đinh thì mũ ôm sát, tóc bồng thì mũ to theo. Thân cao ít nhất tới trên đỉnh tóc
-  `ease` cộng một phần bo, nên đỉnh mũ không cắt tóc.
+  `ease` cộng một phần bo, nên đỉnh mũ không cắt tóc. Băng của `peaked` là chính ống ấy; chóp loe ra ngoài nó.
 - **Tóc dưới mũ không lòi ra**: vỏ tóc nằm trong ống nên mũ che; lọn gai, lọn dẹt, lọn vểnh, búi, đuôi
   ngựa có chân trong lòng mũ (`insideHat`) bị bỏ cả khối (`sculptMesh` nhận `cut`). Phần tóc dưới miệng
   mũ — mai, gáy — vẫn hiện.
+- **Lưỡi trai của `peaked`** là tấm dày hình lưỡi liềm: mép trong theo miệng mũ nửa trước (hai đầu ngang
+  thái dương), mép ngoài nửa elip chìa `brim`, mỗi điểm chúc `droop` quanh chân của nó trên miệng mũ. Nó gắn
+  vào khối đầu như cả mũ nên gật, lắc đầu không xuyên mặt; phần chìa ra luôn nằm ngoài sọ (miệng mũ ở nửa trên,
+  nơi đầu `human` trùng mặt cầu).
 - **Nét mực**: mũ là vật riêng có nét bóng dáng hậu kỳ dày `0.03` (`npr({ ink })`), nên miệng mũ có nét
-  rõ trên trán, mũ trắng trên áo trắng vẫn tách khối. Nếp gấp là ống mực mảnh nổi nhẹ khỏi thân.
+  rõ trên trán, mũ trắng trên áo trắng vẫn tách khối. Nếp gấp là ống mực mảnh nổi nhẹ khỏi thân; `peaked`
+  có thêm một vòng ở đường nối băng với chóp. Các phần của `peaked` là một vật liệu tô màu theo tam giác
+  (khe sâu `inkGap` `0.06`): quai và huy hiệu nổi sát băng không bị nét của băng phủ, mép lưỡi trai và chóp loe
+  vẫn có nét.
 - Mũ vẽ hai mặt: nhìn từ dưới thấy lòng mũ cùng màu. Đỉnh mũ là đỉnh đầu của `headFit`, nên socket
   `crown` của đồ gắn và nhãn bám đỉnh đầu nằm trên mũ.
-- `hatMesh` ra tam giác và vòng nếp gấp ở hệ sọ đơn vị; người 3D phóng theo khối đầu như tóc. Mũ không
-  dời theo `humanHair`: miệng mũ nằm ở nửa trên sọ, nơi đầu `human` trùng mặt cầu.
-- Màu là `pieces.crown.color`, bỏ trống thì lấy màu áo.
+- `hatMesh` ra tam giác từng phần (`tris` thân, `band`, `seat` đế huy hiệu, `brim`, `strap`, `badge`) và vòng
+  nét ở hệ sọ đơn vị; người 3D phóng theo khối đầu như tóc. Mũ không dời theo `humanHair`: miệng mũ nằm ở nửa
+  trên sọ, nơi đầu `human` trùng mặt cầu.
+- Màu thân là `pieces.crown.color`, bỏ trống thì lấy màu áo.
+
+Cảnh sát đồn khu vực (地域警察官), mũ mùa đông: thân cùng màu áo đông 濃紺 ("xanh than đậm"), băng, quai,
+lưỡi trai đen, huy hiệu vàng — đúng mặc định của `peaked`, chỉ cần màu thân:
+
+```json
+"crown": { "src": "sculpt", "color": "#1e2638", "hat": { "shape": "peaked" } }
+```
+
+Cảnh sát giao thông đang điều khiển, bắt lỗi: bọc mũ trắng (白色帽子おおい) và quai trắng (白色あごひも); băng,
+lưỡi trai, huy hiệu giữ nguyên — chỉ đổi màu:
+
+```json
+"crown": { "src": "sculpt", "color": "#f4f2ec", "hat": { "shape": "peaked", "strapColor": "#f4f2ec" } }
+```
+
+Màu theo [`警察官の服制に関する規則`](https://laws.e-gov.go.jp/law/331M50400000004) (国家公安委員会規則第4号, 別表): mũ đông cùng màu áo đông (濃紺色); lưỡi trai và
+quai bằng nhựa đen; huy hiệu 日章 vàng trong vòng hoa anh đào vàng, đế đen; băng (帯章) vải đen, từ 警部補 trở lên dệt
+thêm sọc vàng hay xanh theo cấp — rig không vẽ sọc, 巡査 / 巡査部長 là băng đen trơn. Mũ hè, mũ giao mùa màu 藍色
+("chàm"). Quai trắng và bọc mũ trắng của cảnh sát giao thông theo quy định của từng tỉnh (ví dụ [quy định của cảnh
+sát Gunma](https://www.pref.gunma.jp/uploaded/attachment/153572.pdf), điều 6).
 
 ## Trâm cài búi
 

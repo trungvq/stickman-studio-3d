@@ -3,7 +3,8 @@ import * as THREE from 'three';
 
 // Đầu và đồ đội (`?demo=headgear`): một hàng người 3D mặc đồ soi tóc và đồ đội đầu — búi cao, búi thấp lệch có trâm,
 // búi thấp to, ngôi lệch mái rủ có lọn vểnh, vuốt ngược hói chữ M, đầu đinh đội mũ trụ thấp, hói nhẹ mai hai màu.
-// `?turn=độ` xoay từng người tại chỗ (mặc định 0, nhìn thẳng ống kính), `?bow=độ` cúi thân tới trước.
+// `?row=caps` thay hàng ấy bằng hàng mũ kê-pi: cảnh sát khu vực tóc ngắn, tóc dài; cảnh sát giao thông tóc ngắn, đuôi ngựa.
+// `?turn=độ` xoay từng người tại chỗ (mặc định 0, nhìn thẳng ống kính), `?bow=độ` cúi thân tới trước, `?nod=độ` cúi đầu.
 
 const SPACING = 1.4;
 
@@ -32,6 +33,15 @@ const HEADS = [
   { name: 'hoi-mai-bac', hair: { color: '#5E4A3E', accent: '#D8CFC4', sculpt: { ...P.baldLight.sculpt } }, garment: '#D9C8A9' },
 ];
 
+const POLICE = { src: 'sculpt', color: '#1e2638', hat: { shape: 'peaked' } };
+const TRAFFIC = { src: 'sculpt', color: '#f4f2ec', hat: { shape: 'peaked', strapColor: '#f4f2ec' } };
+const CAPS = [
+  { name: 'canh-sat-ngan', hair: { color: '#2A1E18', sculpt: { ...P.short.sculpt } }, crown: POLICE, garment: '#2a3550' },
+  { name: 'canh-sat-dai', hair: { color: '#3A2A22', sculpt: { ...P.shoulder.sculpt } }, crown: POLICE, garment: '#2a3550' },
+  { name: 'giao-thong-ngan', hair: { color: '#2A1E18', sculpt: { ...P.buzz.sculpt } }, crown: TRAFFIC, garment: '#2a3550' },
+  { name: 'giao-thong-duoi', hair: { color: '#2E2420', sculpt: { ...P.ponyLow.sculpt } }, crown: TRAFFIC, garment: '#2a3550' },
+];
+
 function figureOf({ name, hair, crown, headAcc, garment }, seed) {
   const r = parseCharacter({
     name,
@@ -49,12 +59,14 @@ function figureOf({ name, hair, crown, headAcc, garment }, seed) {
 }
 
 export function headgear(q) {
-  const n = HEADS.length;
-  const figs = HEADS.map(figureOf);
+  const row = q.get('row') === 'caps' ? CAPS : HEADS;
+  const n = row.length;
+  const figs = row.map(figureOf);
   figs.forEach((f, i) => {
     f.root.position.set((i - (n - 1) / 2) * SPACING, 0, 0);
     f.root.rotation.y = (Number(q.get('turn') ?? 0) * Math.PI) / 180;
     f.spine.rotation.x = (Number(q.get('bow') ?? 0) * Math.PI) / 180;
+    f.head.rotation.x = (Number(q.get('nod') ?? 0) * Math.PI) / 180;
     f.face.set({ mouth: 'closed', brow: 'neutral', eyes: 'open' });
     for (const s of [-1, 1]) f.legs[s].hip.rotation.set(0, 0, s * 0.03);
   });

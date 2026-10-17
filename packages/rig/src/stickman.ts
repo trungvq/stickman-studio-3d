@@ -10,7 +10,7 @@ import { INK, toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
 import { equipCharacter, limbWidths, wornPalette, type CharacterData, type Drape, type Equip, type PieceKey, type Garment, type Glasses, type Hat, type Pin, type Sculpt, type Shades, type Skirt } from './core/schema';
-import { hatFit, hatMesh, insideHat, pinMesh } from './core/hat';
+import { hatFit, hatMesh, hatSpec, insideHat, pinMesh } from './core/hat';
 import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, SLEEVE_EASE, sleeveGrow, type ActCharacter, type AimReport, type Bones3 } from './core/act3';
 import { blushLevel, chibiShape } from './core/face';
 import { wornSkirt } from './core/skirtShape';
@@ -319,13 +319,21 @@ function inkLines(head: THREE.Object3D, lines: Vec3[][], r: number) {
  * docs/02-trang-phuc.md#mũ-dựng-khối
  */
 function sculptHat(head: THREE.Object3D, hat: Partial<Hat>, hair: Partial<Sculpt> | undefined, color: string) {
-  const fit = hatFit(hat, hair);
-  const { tris, lines } = hatMesh(hat, fit);
-  const m = new THREE.Mesh(skullGeometry(tris), npr({ color, stipple: 0.04, stippleScale: 4, soft: 0.7, doubleSided: true, ink: 0.03 }));
-  m.castShadow = true;
-  m.userData.hair = 'hat';
-  head.add(new THREE.Group().add(m));
-  inkLines(head, lines, 0.01);
+  const h = hatSpec(hat);
+  const fit = hatFit(h, hair);
+  const m = hatMesh(h, fit);
+  // một vật liệu màu theo tam giác: chỗ giáp hai phần không có nét như hai vật, nên quai và huy hiệu nổi sát băng không bị
+  // nét bóng dáng của băng phủ; khe sâu `inkGap` cho mép lưỡi trai, chóp loe vẫn có nét
+  const parts = [[m.tris, color], [m.band, h.bandColor], [m.seat, h.bandColor], [m.brim, h.brimColor], [m.strap, h.strapColor], [m.badge, h.badgeColor]] as const;
+  const multi = h.shape !== 'drum';
+  const tris = parts.flatMap(([t]) => t);
+  const tone = multi ? parts.flatMap(([t, c]) => t.map(() => new THREE.Color(c))) : undefined;
+  const mesh = new THREE.Mesh(skullGeometry(tris, tone), npr({ color: multi ? '#ffffff' : color, stipple: 0.04, stippleScale: 4, soft: 0.7, doubleSided: true, ink: 0.03, tint: multi }));
+  mesh.castShadow = true;
+  mesh.userData.hair = 'hat';
+  if (multi) mesh.userData.inkGap = 0.06;
+  head.add(new THREE.Group().add(mesh));
+  inkLines(head, m.lines, 0.01);
   return (p: Vec3) => insideHat(fit, p);
 }
 

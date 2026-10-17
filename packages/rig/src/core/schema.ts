@@ -163,26 +163,52 @@ export const GlassesSchema = z.object({
  * Mũ dựng khối của người 3D: ôm sọ và vỏ tóc dưới nó, quay theo đầu. Góc theo độ, dài theo bán kính sọ.
  * docs/02-trang-phuc.md#mũ-dựng-khối
  */
-export const HAT_SHAPES = ["drum"] as const;
+export const HAT_SHAPES = ["drum", "peaked"] as const;
+export type HatShape = (typeof HAT_SHAPES)[number];
 
 export const HatSchema = z.object({
-  /** `drum` trụ thấp hở đáy, đỉnh phẳng bo mép */
+  /** `drum` trụ thấp hở đáy, đỉnh phẳng bo mép; `peaked` mũ kê-pi: băng quanh chân, chóp loe đỉnh phẳng, lưỡi trai, quai, huy hiệu */
   shape: z.enum(HAT_SHAPES).default("drum"),
-  /** Vĩ độ miệng mũ ở giữa trán */
-  front: z.number().default(32),
+  /** Vĩ độ miệng mũ ở giữa trán; bỏ trống theo `HAT_SHAPE_DEFAULTS` của dáng */
+  front: z.number().optional(),
   /** Vĩ độ miệng mũ ở gáy */
-  back: z.number().default(18),
+  back: z.number().optional(),
   /** Thân mũ cao bấy nhiêu tính từ miệng; thấp hơn tóc dưới nó thì nâng cho trùm hết */
-  height: z.number().default(0.62),
+  height: z.number().optional(),
   /** Khoảng hở giữa thân mũ và vỏ tóc (hay sọ); âm là ôm chặt hơn */
   ease: z.number().default(0.03),
   /** Bán kính bo mép đỉnh */
-  round: z.number().default(0.12),
-  /** Miệng mũ nở ra bấy nhiêu phần bán kính thân, `0` là trụ thẳng */
-  flare: z.number().default(0),
+  round: z.number().optional(),
+  /** `drum`: miệng mũ nở ra bấy nhiêu phần bán kính thân; `peaked`: chóp nở rộng hơn băng bấy nhiêu phần ở đỉnh */
+  flare: z.number().optional(),
   /** Nếp gấp ngang: các độ cao, phần chiều cao thân */
-  folds: z.array(z.number()).default([0.32]),
+  folds: z.array(z.number()).optional(),
+  /** `peaked`: băng quanh chân mũ cao bấy nhiêu tính từ miệng */
+  band: z.number().default(0.24),
+  /** `peaked`: màu băng, cũng là màu đế huy hiệu */
+  bandColor: z.string().default("#16171b"),
+  /** `peaked`: lưỡi trai chìa ra trước miệng mũ bấy nhiêu ở giữa trán; `0` là không có */
+  brim: z.number().default(0.5),
+  /** `peaked`: lưỡi trai chúc xuống bấy nhiêu độ so với miệng mũ */
+  droop: z.number().default(24),
+  brimColor: z.string().default("#101114"),
+  /** `peaked`: bản dây quai ngang trán trên lưỡi trai; `0` là không có */
+  strap: z.number().default(0.055),
+  strapColor: z.string().default("#222327"),
+  /** `peaked`: bán kính huy hiệu trên trán, chỗ chóp gặp băng; `0` là không có */
+  badge: z.number().default(0.13),
+  /** `peaked`: màu huy hiệu và hai nút ở đầu dây quai */
+  badgeColor: z.string().default("#d8aa3c"),
 });
+
+/** Số đo theo dáng mũ khi JSON bỏ trống. docs/02-trang-phuc.md#mũ-dựng-khối */
+export const HAT_SHAPE_DEFAULTS: Record<
+  HatShape,
+  { front: number; back: number; height: number; round: number; flare: number; folds: number[] }
+> = {
+  drum: { front: 32, back: 18, height: 0.62, round: 0.12, flare: 0, folds: [0.32] },
+  peaked: { front: 24, back: 14, height: 0.66, round: 0.05, flare: 0.24, folds: [] },
+};
 
 /**
  * Trâm cài búi: que mảnh xuyên qua khối buộc của tóc dựng khối (búi, đuôi ngựa), một hạt ở đầu que.
