@@ -57,6 +57,7 @@ không đụng.
 |---|---|---|
 | `pnpm frames` | nhiều khung, nhiều cảnh trong một lượt bundle — [03](03-scene.md#remotion) | — |
 | `pnpm can-tay` | bảng ảnh cận bàn tay người 3D — [03](03-scene.md#lòng-bàn-tay) | — |
+| `pnpm bang-cam` | bảng duyệt mọi kiểu cầm (món × kiểu × hai cỡ tay × ba góc), `--so` so hồi quy với bảng chuẩn — [03](03-scene.md#bảng-duyệt-kiểu-cầm) | `held/`, `CANH_3D["bang-cam"]` |
 | `pnpm thumbnails [tập]` | chụp mọi thumbnail và biến thể — [Thumbnail](#thumbnail) | `episodes/*.json` › `thumbnail` |
 | `pnpm tts` | lời dẫn VieNeu local — [Lời dẫn](#lời-dẫn) | `episodes/*.json` › `text` |
 | `pnpm tts-blocks` | lời dẫn ElevenLabs theo khối, cắt cue theo timestamp ký tự — [Lời dẫn ElevenLabs](#lời-dẫn-elevenlabs) | `loi-dan-tag.md` (`--src`) |

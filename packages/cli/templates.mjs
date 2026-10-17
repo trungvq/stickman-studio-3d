@@ -74,7 +74,9 @@ vừa làm gì.
   khai \`world.hands[].hold: "món#kiểu"\` (bậc thang tới \`hold: null\`) cùng ý định — món quay về đâu
   (\`face: "camera"\`, \`{ "cast": "b" }\`, \`up: "rim"\`) —, đừng khai \`palm\` / \`fingers\` cho tay đang cầm; cảnh three
   đăng ký vật bằng \`cast.provide("món", vật)\` trong \`extra\`, rig gắn món vào tay suốt quãng cầm — \`docs 01\` § Kiểu
-  cầm, \`docs 03\` § Đồ cầm tay. Ngón có ôm món không thì soi \`pnpm can-tay\`.
+  cầm, \`docs 03\` § Đồ cầm tay. Ngón có ôm món không thì soi \`pnpm can-tay\`. Thêm hay sửa kiểu cầm thì soi cả bảng
+  \`pnpm bang-cam\` (mọi món × kiểu × tay nhỏ nhất, lớn nhất × ba góc, kèm số đo \`held\`); nâng rig xong thì
+  \`pnpm bang-cam --so\` so từng ô với bảng chuẩn đã duyệt — \`docs 03\` § Bảng duyệt kiểu cầm.
 - Đặt tay lên một mặt (quầy, sách, bàn phím, bàn) hay đổi \`turn\` / \`elbow\` xong thì
   đọc \`world.palms\` của \`scene_probe\` (lòng tay \`úp\`, \`down\` dưới 45; \`aim\` là khe tới
   mốc và độ lệch còn lại so với \`palm\` đã khai), đừng phán hướng lòng tay bằng mắt —
@@ -222,6 +224,7 @@ pnpm render:final <ten-tap> out/<ten>.mp4 # bản đăng: frame PNG, tóc dựng
 pnpm still <ten-canh> out/<ten>.png --frame=105
 pnpm frames <ten-canh> 316,317,349-351 [<ten-canh-2> 30,90 …]  # nhiều khung, nhiều cảnh, một lượt bundle
 pnpm can-tay <ten-canh> 1.8,2.7          # bảng ảnh cận bàn tay người 3D, kèm hướng lòng tay đo được
+pnpm bang-cam [--so]                     # bảng duyệt mọi kiểu cầm của held/; --so so với bảng chuẩn đã duyệt
 pnpm thumbnails <ten-tap>                # mọi thumbnail của tập, khai ở episodes/<ten-tap>.json
 \`\`\`
 
@@ -317,6 +320,8 @@ export const packageJson = ({ name, versions }) =>
         frames: "node tools/still.mjs",
         // Bảng ảnh cận bàn tay người 3D — docs/03 § Lòng bàn tay
         "can-tay": "node tools/can-tay.mjs",
+        // Bảng duyệt kiểu cầm: món × kiểu × hai cỡ tay × ba góc, so hồi quy sau khi nâng rig — docs/03 § Bảng duyệt kiểu cầm
+        "bang-cam": "node tools/bang-cam.mjs",
         // `--experimental-strip-types` để Node 22 nạp thẳng `src/shots.ts`; Node 23.6+ bỏ qua cờ
         srt: "node --experimental-strip-types tools/srt.mjs",
         tts: ".venv/bin/python tools/tts.py",

@@ -1426,6 +1426,39 @@ video, trường thiếu lấy mặc định; `false` là không đo:
 Mức cảnh báo. Cảnh khớp `stickman.frozen` không đo; `--scene` chỉ đo cảnh khớp. Số đo không thay mắt: nghi thì soi bàn tay
 cận cảnh đúng giây ấy.
 
+### Bảng duyệt kiểu cầm
+
+Kiểu cầm sai thì sai ở mọi cảnh dùng nó, và nâng rig (bộ giải cổ tay, ngón ôm, `HAND_GRIPS`) đổi hình của mọi kiểu cầm
+một lượt. `pnpm bang-cam` (`tools/bang-cam.mjs`) soi cả thư viện một lần: mỗi món của `held/` (của repo, không lớp chung)
+× mỗi kiểu cầm × hai cỡ tay × ba góc (trước, chéo, ngang), mỗi ô là ảnh cận bàn tay như `pnpm can-tay`, nhãn in số đo
+luật `held` ở đúng khung ấy.
+
+- **Hai cỡ tay**: người có bàn tay nhỏ nhất và lớn nhất trong `characters/` của repo (bề ngang `cladHand(…).k` nhân
+  `rig.height`); `--ai a,b` chỉ định người khác. Kiểu một tay có khai `left` thì thêm hàng tay trái; kiểu `both` là
+  một hàng hai tay.
+- **Dáng tay**: mốc `world.hands` đầu tiên trong `scenes/` cầm đúng `món#kiểu` (cảnh `thu-grip*` trước, rồi `thu-*`,
+  rồi cảnh khác) chép sang người đứng `stand-3d` ở `--at`, quay `--yaw` (`at` thế giới, `elbow` đổi theo chỗ đứng; mốc
+  chỉ có ở tay kia thì soi gương), bỏ phần đè ý định để soi ý định mặc định. Không cảnh nào dùng thì tay đặt trước
+  ngực. Cột "Dáng lấy từ" của mục lục ghi nguồn.
+- **Cảnh dựng tạm** mang tên `bang-cam`, không có file trong `scenes/`: repo khai `CANH_3D["bang-cam"]` đăng ký lưới cho
+  mọi món người trong cảnh khai `hold` (`cast.provide(món, lưới, id người)`), cùng lưới các cảnh thật dùng. `tools/soi.tsx`
+  nhận cảnh dựng tạm qua `inputProps.scenes`.
+- **Ra** `tmp/bang-cam/`: `<món>.jpg` một bảng mỗi món (hàng: kiểu × tay × người, cột: góc), `index.html` / `index.md`
+  mục lục mọi hàng (nguồn dáng, số đo, dòng `check` báo), `o/` ảnh từng ô, `do.json` số đo. Số đo: `lún` da lún sâu nhất
+  vào món (âm là khe), `hở` ngón khai `wrap` còn hở, `nắm` tâm nắm tới mặt món, `lòng` khe/góc lòng tay (không đo với
+  dáng kẹp), `up`/`face` góc lệch ý định và khớp cổ tay kẹp, `tới` khe tay phụ hay `item:` tới đích; `!!` là luật `held`.
+- **Tất định**: cùng code, cùng dữ liệu là cùng pixel. Nên bảng là cổng hồi quy:
+
+```bash
+pnpm bang-cam                 # sinh bảng, mở tmp/bang-cam/index.html mà duyệt
+pnpm bang-cam --luu-chuan     # sau khi duyệt: chép bảng sang tmp/bang-cam-chuan (ngoài git)
+pnpm bang-cam --so            # sau mỗi lần nâng rig hay sửa held/: sinh lại, so từng ô với chuẩn
+```
+
+`--so` in hàng đổi (số pixel khác từng góc, số đo trước → sau), ảnh chuẩn | mới | chỗ khác ở `tmp/bang-cam/khac/`, thoát
+`1` khi có đổi; chưa có chuẩn thì báo rồi thoát `2`, không sinh gì. Ô đổi mà đúng ý (sửa kiểu cầm, rig sửa lỗi) thì duyệt
+lại rồi `--luu-chuan`. Thêm món, thêm người làm đổi hàng (`MỚI`, `MẤT`) — bảng chuẩn đi theo `held/` và `characters/`.
+
 ## Nhóm
 
 Một cụm người và đồ đặt chung — bàn làm việc với hai người ngồi, bàn họp với bốn ghế — khai

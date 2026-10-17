@@ -74,10 +74,10 @@ async function renderStrips(base, composition, inputProps, frames, tabs, onFrame
 /**
  * Việc `soi` của `tools/soi.tsx` trên khung `w`×`h`. Xếp việc cùng cảnh liền nhau trước khi gọi: mỗi dải chỉ dựng lại
  * cảnh khi sang cảnh khác. `keep(job, frames)` lọc việc trước khi vẽ, `frames` là số khung của từng cảnh (`0`: không có
- * cảnh ấy). `onJob(job, png, i)`.
+ * cảnh ấy). `scenes`: cảnh dựng tạm theo id (JSON scene, không nằm trong `scenes/`). `onJob(job, png, i)`.
  */
-export async function renderSoi(soi, { jobs, w, h, tabs = defaultTabs(), keep, onJob }) {
-  const inputProps = { soi: jobs, w, h };
+export async function renderSoi(soi, { jobs, w, h, tabs = defaultTabs(), keep, onJob, scenes }) {
+  const inputProps = { soi: jobs, w, h, ...(scenes && { scenes }) };
   const composition = await selectComposition({ ...soi.base, id: "soi", inputProps });
   const frames = composition.props.frames;
   const idx = jobs

@@ -28,11 +28,11 @@ Cùng với đó là **app Remotion**: `src/` (`index.ts`, `Root.tsx`, `Scene.ts
 `equip` — [03](03-scene.md#cảnh-3d)), `world.ts` cùng cảnh three ấy cho `check` ([Cảnh three cho
 `check`](#cảnh-three-cho-check)), `Overlay3D.tsx` lớp chữ 2D đè lên, `set.ts` đường import kiểu bối cảnh `Set3D` và
 phòng trơn `plainRoom` của rig, `ChanDung.tsx` chân dung người 3D cho lớp 2D; cùng bốn file của repo `lop.tsx`,
-`parts.tsx`, `scene-wrap.tsx`, `khoi3d/canh.ts`), `tools/` (`still.mjs` và `can-tay.mjs` cùng `soi.mjs`, `soi.tsx`, `thumbnails.mjs`, `srt.mjs`, `tts.py`,
+`parts.tsx`, `scene-wrap.tsx`, `khoi3d/canh.ts`), `tools/` (`still.mjs`, `can-tay.mjs` và `bang-cam.mjs` cùng `soi.mjs`, `soi.tsx`, `thumbnails.mjs`, `srt.mjs`, `tts.py`,
 `tts-blocks.py` cùng `len-giong.py`, `lipsync.mjs` cùng `words.py`, `sfx.py`, `sfx-el.py`,
 `sfx-loop.py`, `cut-torso.py`, `webpack.mjs` — [07](07-lam-tap.md#công-cụ-trong-tools)),
 `remotion.config.ts`, `tsconfig.json`, `pnpm-workspace.yaml`, và `package.json` có sẵn
-`pnpm remotion` / `render` / `still` / `frames` / `can-tay` / `thumbnails` / `srt` / `tts` /
+`pnpm remotion` / `render` / `still` / `frames` / `can-tay` / `bang-cam` / `thumbnails` / `srt` / `tts` /
 `tts-blocks` / `lipsync` / `sfx` / `sfx-el` / `sfx-loop` / `cut-torso` (`pnpm studio` là
 character studio) và `stickman.world` trỏ `src/khoi3d/world.ts`. Bảng riêng của tập cho các tool ấy — `sfx/*.json`, bản lời có tag —
 không có mẫu nào: tool đọc thấy thiếu thì báo cú pháp. `package.json` pin cả `three`; `scenes/vi-du-3d.json`
@@ -366,6 +366,8 @@ tuổi bằng `systemd-tmpfiles` hay cron. Sửa
 được việc chung (lỗi, tuỳ chọn mới của tool) thì đưa về `packages/cli/scaffold` của studio.
 Rig mới đổi độ dài chân thì `upgrade` chỉ nhắc, cảnh dời bằng một lệnh riêng —
 [Đổi độ dài chân](#đổi-độ-dài-chân).
+Repo có `held/` và đã lưu bảng chuẩn kiểu cầm thì nâng xong chạy `pnpm bang-cam --so`: nó so từng ô cận bàn tay của
+mọi kiểu cầm với bảng đã duyệt và chỉ in ô đổi ([03](03-scene.md#bảng-duyệt-kiểu-cầm)).
 
 **Hướng dẫn dùng rig ở `stickman.md`, luật riêng của tập ở `AGENTS.md`.** Hai
 chủ khác nhau: `upgrade` sinh lại file trước theo version đang cài, file sau thì

@@ -6,6 +6,7 @@
 import {
   FRAMES,
   buildStage,
+  parseScene,
   resolveScene,
   type SceneData,
   type Stage,
@@ -44,8 +45,30 @@ type Lens = NonNullable<SceneData["lens"]>;
 /** Khung `frame` của composition cảnh `scene`; hay giây cảnh `t` nhìn qua ống kính `lens` (chỉ sân khấu 3D, không lớp 2D) */
 export type SoiJob = { scene: string; frame: number } | { scene: string; t: number; lens: Lens };
 
-/** `frames`: số khung của từng cảnh có trong `soi`, như composition của cảnh ấy — `calculateMetadata` điền, `0` là không có cảnh */
-export type SoiProps = { soi: SoiJob[]; w: number; h: number; frames?: Record<string, number> };
+/**
+ * `frames`: số khung của từng cảnh có trong `soi`, như composition của cảnh ấy — `calculateMetadata` điền, `0` là không có
+ * cảnh. `scenes`: cảnh dựng tạm không nằm trong `scenes/` (JSON thô, theo id việc dùng ở `soi[].scene`), như bảng kiểu cầm
+ * của `tools/bang-cam.mjs`; cảnh three của nó tra `CANH_3D` theo `name` trong JSON, không theo id
+ */
+export type SoiProps = {
+  soi: SoiJob[];
+  w: number;
+  h: number;
+  frames?: Record<string, number>;
+  scenes?: Record<string, unknown>;
+};
+
+/** Cảnh của việc: file trong `scenes/`, không thì cảnh dựng tạm của `inputProps.scenes` (parse một lần mỗi id) */
+const inline = new Map<string, SceneData | null>();
+const sceneOf = (id: string, raw?: Record<string, unknown>): SceneData | undefined => {
+  if (SCENES[id]) return SCENES[id];
+  if (!raw?.[id]) return undefined;
+  if (!inline.has(id)) {
+    const r = parseScene(raw[id]);
+    inline.set(id, r.success ? r.data : null);
+  }
+  return inline.get(id) ?? undefined;
+};
 
 // Khớp `FPS` và độ dài cảnh của `src/Root.tsx`: khung `frame` của cảnh phải ra đúng giây cảnh ấy
 const FPS = 60;
@@ -113,10 +136,10 @@ const LensStill = ({ scene, t, lens }: { scene: SceneData; t: number; lens: Lens
   return <div ref={host} style={{ position: "absolute", inset: 0 }} />;
 };
 
-const Soi = ({ soi }: SoiProps) => {
+const Soi = ({ soi, scenes }: SoiProps) => {
   const job = soi[useCurrentFrame()];
-  const scene = SCENES[job.scene];
-  if (!scene) throw new Error(`không có scenes/${job.scene}.json`);
+  const scene = sceneOf(job.scene, scenes);
+  if (!scene) throw new Error(`không có scenes/${job.scene}.json (hay cảnh dựng tạm hỏng)`);
   // `key` theo cảnh: cùng cảnh thì giữ sân khấu đã dựng, sang cảnh khác thì dựng lại và Remotion chờ lại
   return "lens" in job ? (
     <LensStill key={job.scene} scene={scene} t={job.t} lens={job.lens} />
@@ -142,19 +165,20 @@ const SoiRoot = () => {
       width={p.w ?? 1920}
       height={p.h ?? 1080}
       durationInFrames={length(p.soi)}
-      defaultProps={{ soi: p.soi, w: p.w ?? 1920, h: p.h ?? 1080 }}
+      defaultProps={{ soi: p.soi, w: p.w ?? 1920, h: p.h ?? 1080, scenes: p.scenes }}
       calculateMetadata={({ props }) => ({
         props: {
           ...props,
           frames: Object.fromEntries(
-            [...new Set(props.soi.map((j) => j.scene))].map((s) => [
-              s,
-              SCENES[s]
-                ? Math.ceil(
-                    resolveScene(SCENES[s], ACTIONS, ANIMALS, PROPS, {}, {}, HELD).duration * FPS,
-                  )
-                : 0,
-            ]),
+            [...new Set(props.soi.map((j) => j.scene))].map((s) => {
+              const d = sceneOf(s, props.scenes);
+              return [
+                s,
+                d
+                  ? Math.ceil(resolveScene(d, ACTIONS, ANIMALS, PROPS, {}, {}, HELD).duration * FPS)
+                  : 0,
+              ];
+            }),
           ),
         },
       })}
