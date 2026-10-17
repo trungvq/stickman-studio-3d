@@ -1,6 +1,6 @@
 {
   "name": "@stickman3d/sketch",
-  "version": "7.11.0",
+  "version": "7.11.1",
   "description": "Người que vẽ SVG bằng React: <Character>, <Prop>, <Animal> trên lõi của @stickman3d/rig",
   "license": "MIT",
   "type": "module",
