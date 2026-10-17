@@ -6,8 +6,9 @@ import {
   bellyAt, COLLAR_LEAN, COLLAR_LINE, curve, GARMENT_STYLES, garmentOf, lerp, lerpAt, lipOf, profile, RIB_FRONT, spline,
   type MarkFill, type P2, type Rig, type SP, type Surface,
 } from './core/torso';
-import { WrapSchema, type Drape, type Shades } from './core/schema';
+import { WrapSchema, type Drape, type Necklace, type Shades } from './core/schema';
 import { drapeSolid, shadesSolids } from './core/drape';
+import { necklaceSolids } from './core/jewelry';
 import { wrapParts, type WrapBody } from './core/wrap';
 import { printParts, type PrintPart } from './core/print';
 
@@ -32,8 +33,11 @@ export interface TorsoMesh {
   dots: { p: Vec3; k: number }[];
   /** Tấm nổi khối (cổ bẻ, viền gân, mũ trùm, dải cổ chéo): lưới cột × hàng, hàng `rims` có nét viền */
   sheets: { grid: Vec3[][]; rims: number[]; color: MarkFill; line: number }[];
-  /** Khối kín (đai, dây buộc, khoá, nút đai): tam giác quấn ra ngoài trong hệ thân `y` xuống */
-  solids: { pts: Vec3[]; tris: number[]; color: MarkFill }[];
+  /**
+   * Khối kín (đai, dây buộc, khoá, nút đai): tam giác quấn ra ngoài trong hệ thân `y` xuống. Có `ink` là đồ nhỏ (trang sức):
+   * vỏ viền dày bấy nhiêu px, không nét hậu kỳ (`userData.noEdge`)
+   */
+  solids: { pts: Vec3[]; tris: number[]; color: MarkFill; ink?: number }[];
   /** Hình in bám mặt khối (chữ trên dải cổ, hình in, mặt thẻ tên): lưới cột × hàng và nội dung vẽ lên texture */
   prints: PrintPart[];
 }
@@ -41,8 +45,8 @@ export interface TorsoMesh {
 /** Cạnh tam giác của mảng tô dài nhất bấy nhiêu px: dài hơn thì dây cung cắt xuyên mặt cong của khối */
 const FILL_EDGE = 5;
 
-/** Đồ dựng khối ở socket `neck` bám thân áo: khăn vắt vai màu `color`, kính gài nẹp */
-export interface NeckWear { drape?: Partial<Drape>; shades?: Partial<Shades>; color: string }
+/** Đồ dựng khối ở socket `neck` bám thân áo: khăn vắt vai màu `color`, kính gài nẹp, dây chuyền */
+export interface NeckWear { drape?: Partial<Drape>; shades?: Partial<Shades>; necklace?: Partial<Necklace>; color: string }
 
 /**
  * `arm` có là người `clad`: vát vai `cladSlope`, sườn áo lùi theo `cladProfile`. `neck`: khăn vắt vai, kính gài nẹp
@@ -249,6 +253,7 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     if (d) out.solids.push({ ...d, color: neck.color as MarkFill });
   }
   if (neck?.shades) out.solids.push(...shadesSolids({ s: surf, raise: (sp, lift) => raise(sp, lift, 0, 0) }, neck.shades));
+  if (neck?.necklace) out.solids.push(...necklaceSolids({ s: surf, raise: (sp, lift) => raise(sp, lift, 0, 0) }, neck.necklace));
 
   const spec = def.collar?.(surf);
   if (spec) {

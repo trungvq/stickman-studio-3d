@@ -2,6 +2,7 @@ import { act, addItem, Batch, box, cameraAt, cladThigh, limbWidths, parseAction,
 import { actDemos } from './demo-acts.js';
 import { mouths, styles } from './demo-styles.js';
 import { headgear } from './demo-headgear.js';
+import { jewelry } from './demo-jewelry.js';
 import { hem } from './demo-hem.js';
 
 // Cảnh diễn hành động (`?demo=`): scene JSON dựng tại chỗ, @stickman3d/rig lấy mẫu từng khung bằng `sceneAt`,
@@ -138,6 +139,7 @@ export function demo(name) {
   if (name === 'styles') return styles(new URLSearchParams(location.search));
   if (name === 'mouths') return mouths();
   if (name === 'headgear') return headgear(new URLSearchParams(location.search));
+  if (name === 'jewelry') return jewelry(new URLSearchParams(location.search));
   if (name === 'hem') return hem(new URLSearchParams(location.search));
   const make = DEMOS[name] ?? ACTS[name]?.cast;
   if (!make) return null;

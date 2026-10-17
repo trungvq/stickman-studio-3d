@@ -4,7 +4,7 @@ import type { Aim, ReachTerm } from './core/bodyMark';
 import type { V3 } from './core/lens';
 import type { BrowKind, EyeKind, MouthKind } from './core/types';
 import { toThree, type Vec3 } from './khoi';
-import { fitSkirt, type Figure, type Side } from './stickman';
+import { fitSkirt, hangJewelry, type Figure, type Side } from './stickman';
 import { poseHand } from './human';
 
 // Diễn theo tư thế đã lấy mẫu của @stickman3d/sketch (`sceneAt`, docs/01-rig.md#người-3d): package không đọc JSON hành
@@ -159,6 +159,7 @@ export function act(p: Figure, sp0: Acting, t?: number) {
   }
   p.root.updateMatrixWorld(true);
   fitSkirt(p);
+  hangJewelry(p);
   reachArm(p, near, P.reach?.an, W?.hands?.near);
   reachArm(p, -near as Side, P.reach?.af, W?.hands?.far);
 

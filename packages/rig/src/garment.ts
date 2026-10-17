@@ -189,7 +189,7 @@ function printMesh(p: PrintPart, ink: string) {
  * Thân áo dựng khối của rig (`pieces.torso.garment`), gắn vào nhóm thân `spine`; trả mặt cắt và bề sâu đã dựng. `tuck` (px, y
  * xuống) là cạp váy liền mặt thân: nét, chấm, mảng tô dưới đó nằm trong váy nên không dựng, khỏi lòi qua cạp. `sil`: thân
  * áo có thêm nét bóng dáng hậu kỳ bề dày ấy (`npr({ ink })`). `lap`: người ngồi, vạt dưới hông gập lên đùi (`lapFold`); có
- * `lap.fold` thì trả thêm `refold` gập lại theo hướng đùi mới. `neck`: khăn vắt vai, kính gài nẹp, khối kín cùng thân áo.
+ * `lap.fold` thì trả thêm `refold` gập lại theo hướng đùi mới. `neck`: khăn vắt vai, kính gài nẹp, dây chuyền, khối kín cùng thân áo.
  */
 export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, skin, arm, tuck = Infinity, sil, lap, neck }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom; tuck?: number; sil?: number; lap?: Lap; neck?: NeckWear } & Palette) {
   const t = torsoMesh(garment, rig, arm, neck);
@@ -260,8 +260,10 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
     const c = colorOf(s.color, pal);
     const sm = new THREE.Mesh(g, sil ? npr({ color: c, stipple: 0.05, stippleScale: 3, soft: 1, ink: sil }) : matOf(s.color));
     sm.castShadow = true;
+    // đồ nhỏ (trang sức) có vỏ viền mảnh riêng: nét hậu kỳ hai mép lấp kín vật vài điểm ảnh
+    if (s.ink !== undefined) sm.userData.noEdge = true;
     add(sm);
-    const hl = new THREE.Mesh(g, hullMaterial(0.02, ink));
+    const hl = new THREE.Mesh(g, hullMaterial(s.ink !== undefined ? s.ink * U : 0.02, ink));
     hl.userData.noShadow = true;
     add(hl);
   }

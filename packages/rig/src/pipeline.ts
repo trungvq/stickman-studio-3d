@@ -165,7 +165,10 @@ void main(){
   float wd = invz(texture2D(tDepth, vUv - vec2(0.0, px.y)).r);
   vec4 n0 = texture2D(tNormal, vUv);
   // lưới người (a 0,3) không nhận: cằm sát cổ áo, tay sát thân thành vệt lem; bóng đổ của đèn đã đủ
-  if (uAo > 0.0 && uShade < 0.5 && d0 < 0.99999 && abs(n0.a - 0.3) > 0.05) {
+  // vật noEdge (a 0,1): đồ nhỏ có vỏ viền riêng, không nhận bóng tiếp xúc, nét hậu kỳ và nét bóng dáng của vật khác — bề ngang
+  // vài điểm ảnh thì nét hai mép lấp kín
+  bool fine = abs(n0.a - 0.1) < 0.05;
+  if (uAo > 0.0 && uShade < 0.5 && d0 < 0.99999 && abs(n0.a - 0.3) > 0.05 && !fine) {
     float o = smoothstep(0.08, 0.55, ssao(vUv)) * uAo;
     col *= mix(vec3(1.0), uShadowTint * 0.8, clamp(o, 0.0, 1.0) * 0.75);
   }
@@ -207,7 +210,7 @@ void main(){
   }
   // nét gấp dày theo điểm ảnh: đồ nhỏ ở xa nhạt dần cho khỏi đen kịt
   crease = smoothstep(0.25, 0.45, crease) * mix(1.0, 0.35, smoothstep(8.0, 25.0, 1.0 / w0));
-  float edge = max(smoothstep(0.0025, 0.01, lap), crease) * uOutline;
+  float edge = fine ? 0.0 : max(smoothstep(0.0025, 0.01, lap), crease) * uOutline;
   if (uShade > 0.5) {
     // kiểu cel: nét một màu, đứt theo mặt nạ của vật ở phía gần (Laplacian chỉ dương ở phía ấy). Bề dày nằm ngoài vật gần như
     // vỏ ngược — đi từ điểm này ra tám hướng, gặp chỗ độ sâu nhảy về gần là đang trong nét của vật ấy — nên ngón tay không bị lấp.
@@ -233,7 +236,8 @@ void main(){
     }
     col = mix(col, mix(uCelInk, uInkColor, manga), ink);
   } else col = mix(col, col * vec3(0.2, 0.18, 0.26), edge * 0.92);
-  if (uSil > 0.5) col = mix(col, uInkColor, texelFetch(tInk, ivec2(gl_FragCoord.xy), 0).r);
+  // nét bóng dáng của vật bên dưới không loang lên đồ nhỏ nằm sát nó: dây chuyền cách thân áo chưa tới ba lần bề dày nét
+  if (uSil > 0.5 && !fine) col = mix(col, uInkColor, texelFetch(tInk, ivec2(gl_FragCoord.xy), 0).r);
   vec2 fc = vUv * uRes;
   if (uPixel > 0.5) col = floor(col * 14.0 + 0.5 + bayer4(fc) - 0.5) / 14.0;
   else if (uPaper > 0.5 && uShade < 0.5) col *= 0.975 + 0.05 * h12(floor(gl_FragCoord.xy));
@@ -409,7 +413,9 @@ function fitOrtho(cam: THREE.OrthographicCamera, dir: THREE.Vector3, region: THR
  * Pipeline vẽ trên một `WebGLRenderer`: bản đồ bóng cho đèn chính (trực giao), nắng qua cửa sổ (trực giao, cắt ở mặt tường)
  * và tối đa `MAX_LAMP_SHADOWS` đèn rọi (phối cảnh); cảnh vào render target có độ sâu, pháp tuyến vào một lượt riêng; lượt hậu kỳ
  * dò nét mực (mép độ sâu, cạnh gấp pháp tuyến) và bóng tiếp xúc; lượt cuối chấm hậu kỳ toàn khung. Vật `userData.noShadow` và
- * vỏ ngược (`BackSide`) không đổ bóng; vật `userData.noCrease` (người que) không có nét cạnh gấp; vật liệu `userData.ink` (`npr({ ink })`)
+ * vỏ ngược (`BackSide`) không đổ bóng; vật `userData.noCrease` (người que) không có nét cạnh gấp; vật `userData.noEdge` (đồ nhỏ có vỏ
+ * viền riêng: trang sức) không có nét hậu kỳ nào dò từ độ sâu, pháp tuyến, không nhận bóng tiếp xúc và nét bóng dáng của vật
+ * khác; vật liệu `userData.ink` (`npr({ ink })`)
  * có nét bóng dáng dò ở hậu kỳ, cả khi tắt `outline` như vỏ ngược; các mesh cùng `userData.inkChain` và cùng vật liệu chung một
  * mã vật, chỗ nối không có nét. Mép vật đè lên vật khác cùng vật liệu có nét khi khe sâu qua `userData.inkGap` (three, cỡ bán
  * kính vật: nét đầy ở 0,8, mờ dần dưới 0,3), không có thì theo bề dày nét.
@@ -438,7 +444,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
   const inkTable = Array.from({ length: MAX_INK }, () => new THREE.Vector4());
   const maskRT = new THREE.WebGLRenderTarget(4, 4, { format: THREE.RedFormat, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false });
   let rw = 4, rh = 4, dot = 6;
-  // pháp tuyến hệ nhìn, mặt sau lật lại; a: 1 có nét gấp, 0,5 vật `noCrease`, 0,3 lưới người (`body`), 0 không có vật. Đích thứ hai: mã vật có nét bóng dáng, mặt nạ đứt nét của kiểu cel
+  // pháp tuyến hệ nhìn, mặt sau lật lại; a: 1 có nét gấp, 0,5 vật `noCrease`, 0,3 lưới người (`body`), 0,1 vật `noEdge`, 0 không có vật. Đích thứ hai: mã vật có nét bóng dáng, mặt nạ đứt nét của kiểu cel
   const normalMat = (a: number, id: number) => new THREE.ShaderMaterial({
     side: THREE.DoubleSide,
     vertexShader: /* glsl */ `varying vec3 vN, vL; void main(){ vN = normalize(normalMatrix * normal); vL = ${SCALED_POSITION}; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
@@ -448,7 +454,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
   // decal giữ độ lệch sâu của vật liệu gốc, không thì giành điểm ảnh với mặt dưới nó thành nét lấm chấm
   const normalMats = new Map<string, THREE.ShaderMaterial>();
   const normalFor = (m: THREE.Mesh, src: THREE.Material, id: number) => {
-    const a = m.userData.body ? 0.3 : m.userData.noCrease ? 0.5 : 1, key = `${a} ${id}` + (src.polygonOffset ? ` ${src.polygonOffsetFactor} ${src.polygonOffsetUnits}` : '');
+    const a = m.userData.noEdge ? 0.1 : m.userData.body ? 0.3 : m.userData.noCrease ? 0.5 : 1, key = `${a} ${id}` + (src.polygonOffset ? ` ${src.polygonOffsetFactor} ${src.polygonOffsetUnits}` : '');
     let mat = normalMats.get(key);
     if (!mat) {
       normalMats.set(key, (mat = normalMat(a, id)));

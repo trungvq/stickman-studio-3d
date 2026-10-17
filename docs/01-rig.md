@@ -265,10 +265,10 @@ trước.
 |---|---|---|
 | `crown` | Đỉnh đầu | Khăn vấn, búi tóc, mũ — có `nonla` / `cap` / `khan` vẽ code; người 3D có [mũ dựng khối](02-trang-phuc.md#mũ-dựng-khối) |
 | `hairline` | Trán | Tóc |
-| `headAcc` | Đỉnh đầu, trên mũ | Phụ kiện đầu: sừng, tai, vòng hoa — `pieces.headAcc`, bám sọ, **không** trôi theo mặt; người 3D có [trâm cài búi](02-trang-phuc.md#trâm-cài-búi) |
+| `headAcc` | Đỉnh đầu, trên mũ | Phụ kiện đầu: sừng, tai, vòng hoa — `pieces.headAcc`, bám sọ, **không** trôi theo mặt; người 3D có [trâm cài búi](02-trang-phuc.md#trâm-cài-búi) và [bông tai](02-trang-phuc.md#bông-tai) |
 | `faceAcc` | Ngang mắt | Phụ kiện mặt: kính, sẹo, mặt nạ — `pieces.faceAcc`, trôi **đúng bằng** nét mặt |
 | `chin` | Cằm | Râu — `pieces.chin`: ảnh, bộ phận trong `PARTS`, hay [râu dựng khối](02-trang-phuc.md#râu-dựng-khối); `layer` chọn trên hay dưới nét mặt, râu dựng khối luôn dưới |
-| `neck` | Khớp cổ | Khăn quàng, cà vạt, yếm — có `khanco` vẽ code; người 3D có [khăn vắt vai và kính gài nẹp](02-trang-phuc.md#khăn-vắt-vai-và-kính-gài-nẹp) |
+| `neck` | Khớp cổ | Khăn quàng, cà vạt, yếm — có `khanco` vẽ code; người 3D có [khăn vắt vai và kính gài nẹp](02-trang-phuc.md#khăn-vắt-vai-và-kính-gài-nẹp), [dây chuyền](02-trang-phuc.md#dây-chuyền) |
 | `torso` | Thân | Thân áo; có các mẫu áo trong `PARTS` |
 | `pelvis` | Hông | Tà áo, váy — `pieces.hem`, có `skirt` / `ta` vẽ code, hay [váy dựng khối](02-trang-phuc.md#váy-dựng-khối); `layer` chọn trên hay dưới thân áo |
 | `handNear/handFar` | Bàn tay | Đồ cầm tay: công cụ, gậy, bó đồ — `pieces.handNear/handFar` |
@@ -1800,8 +1800,8 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
 - **Tóc dựng khối dời theo sọ.** Mỗi đỉnh tóc dời đúng bằng điểm sọ bên dưới nó (`humanHair`): tóc
   giữ bề dày, gáy thu thì tóc gáy thu theo, tóc rủ không xuyên quai hàm. Kính và `headFit` đọc nửa
   trên nên như đầu cầu. Tai ẩn khi tóc phủ chỗ tai (tia từ ngoài vào tâm tai chạm vỏ tóc hay tóc rủ).
-  [Mũ dựng khối](02-trang-phuc.md#mũ-dựng-khối) và [trâm cài búi](02-trang-phuc.md#trâm-cài-búi) chỉ có ở
-  người 3D.
+  [Mũ dựng khối](02-trang-phuc.md#mũ-dựng-khối), [trâm cài búi](02-trang-phuc.md#trâm-cài-búi) và
+  [bông tai](02-trang-phuc.md#bông-tai) chỉ có ở người 3D; bông tai bám dái tai, tóc phủ tai thì che nó.
 - **Vai liền tay.** Khớp vai của người mặc đồ ở `garmentSocket` (`core/torso.ts`): tâm vòng tròn bán
   kính gốc ống cánh tay (`cladArm`) nội tiếp góc giữa vát vai và sườn áo của mặt khối; vát vai là
   `cladSlope` của kiểu áo, thoải hơn `slope` của người que ([docs/02](02-trang-phuc.md)). Nắp ống tay

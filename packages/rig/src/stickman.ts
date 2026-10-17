@@ -9,8 +9,9 @@ import { glassesMesh } from './glasses';
 import { INK, toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
-import { equipCharacter, limbWidths, wornPalette, type CharacterData, type Drape, type Equip, type PieceKey, type Garment, type Glasses, type Hat, type Pin, type Sculpt, type Shades, type Skirt } from './core/schema';
+import { equipCharacter, limbWidths, wornPalette, type CharacterData, type Drape, type Earrings, type Equip, type PieceKey, type Garment, type Glasses, type Hat, type Necklace, type Pin, type Sculpt, type Shades, type Skirt } from './core/schema';
 import { hatFit, hatMesh, hatSpec, insideHat, pinMesh } from './core/hat';
+import { earringMesh } from './core/jewelry';
 import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, SLEEVE_EASE, sleeveGrow, type ActCharacter, type AimReport, type Bones3 } from './core/act3';
 import { blushLevel, chibiShape } from './core/face';
 import { wornSkirt } from './core/skirtShape';
@@ -348,6 +349,58 @@ function sculptPin(head: THREE.Object3D, pin: Partial<Pin>, hair: Partial<Sculpt
   }
 }
 
+/**
+ * Bông tai (`pieces.headAcc.earrings`) ở hai dái tai: phần cố định gắn vào đầu, vòng và phần thõng là nhóm quay quanh lỗ xỏ
+ * (`userData.dangle`), `hangJewelry` quay cho thõng theo trọng lực. docs/02-trang-phuc.md#bông-tai
+ */
+function sculptEarrings(head: THREE.Object3D, earrings: Partial<Earrings>, human: boolean) {
+  const metal = earrings.color ?? '#d9b44a';
+  const gem = earrings.gem ?? metal;
+  const mat = (c: string) => npr({ color: c, stipple: 0.03, stippleScale: 4, soft: 0.6, ink: 0.012 });
+  const put = (parent: THREE.Object3D, tris: Vec3[][], c: string) => {
+    if (!tris.length) return;
+    const m = new THREE.Mesh(skullGeometry(tris), mat(c));
+    m.castShadow = true;
+    m.userData.noEdge = true;
+    parent.add(m);
+  };
+  for (const side of SIDES) {
+    const e = earringMesh(earrings, side, human);
+    const fixed = new THREE.Group();
+    put(fixed, e.metal, metal);
+    put(fixed, e.gem, gem);
+    if (fixed.children.length) head.add(fixed);
+    if (!e.hang) continue;
+    const g = new THREE.Group();
+    g.position.set(...(e.hang.pivot.map((v, i) => v * R.head * SKULL3[i]) as Vec3));
+    g.userData.dangle = true;
+    put(g, e.hang.metal, metal);
+    put(g, e.hang.gem, gem);
+    head.add(g);
+  }
+}
+
+const qHead = new THREE.Quaternion(), qFall = new THREE.Quaternion(), headDown = new THREE.Vector3();
+const DOWN = new THREE.Vector3(0, -1, 0);
+/**
+ * Phần thõng của bông tai (`userData.dangle` trên nhóm đầu) quay quanh lỗ xỏ cho trục `−y` của nó chỉ thẳng xuống thế giới:
+ * nghiêng đầu, cúi, ngả thì vòng và bông dài vẫn rủ. `act` gọi sau khi đặt khớp; cảnh tự đặt khớp thì gọi sau
+ * `updateMatrixWorld`
+ */
+export function hangJewelry(p: Figure) {
+  const list = p.head.children.filter((o) => o.userData.dangle);
+  if (!list.length) return;
+  p.head.getWorldQuaternion(qHead);
+  headDown.set(0, -1, 0).applyQuaternion(qHead);
+  qFall.setFromUnitVectors(headDown, DOWN);
+  // quay `qFall` trong thế giới, đổi về hệ đầu: q = qHead⁻¹ · qFall · qHead
+  const q = qHead.clone().invert().multiply(qFall).multiply(qHead);
+  for (const g of list) {
+    g.quaternion.copy(q);
+    g.updateMatrixWorld(true);
+  }
+}
+
 export interface StickmanOptions {
   /** `rig` của JSON nhân vật, px như JSON */
   rig: Rig;
@@ -371,10 +424,14 @@ export interface StickmanOptions {
   pin?: Partial<Pin>;
   pinColor?: string;
   pinBead?: string;
+  /** `pieces.headAcc.earrings`: bông tai hai bên, màu ở chính `earrings` */
+  earrings?: Partial<Earrings>;
   /** `pieces.neck.drape`: khăn vắt vai, màu `drapeColor` (bỏ trống là màu áo); `pieces.neck.shades`: kính gài nẹp */
   drape?: Partial<Drape>;
   drapeColor?: string;
   shades?: Partial<Shades>;
+  /** `pieces.neck.necklace`: dây chuyền, màu ở chính `necklace` */
+  necklace?: Partial<Necklace>;
   /** `pieces.faceAcc.glasses`; `true` là kính tròn mặc định */
   glasses?: boolean | Partial<Glasses>;
   /** `pieces.faceAcc.color`, bỏ trống là màu áo */
@@ -451,7 +508,7 @@ export function stickman(o: StickmanOptions): Figure {
   // tạp dề mặc ngoài quần: thân áo, vạt áo người ngồi và khối hông như không có váy
   const dressed = skirt?.style === 'apron' ? undefined : skirt;
   const lap = seated ? (dressed ? { seat: -dressed.rise * rig.height } : { seat: seatAt, fold: { top: -(thighTop + 1), dir: [-0.1, 1] as [number, number] } }) : undefined;
-  const body = sculptTorso(spine, { garment, rig, color, accent, skin, ink: INK, arm: at.room, lap, ...((o.drape || o.shades) && { neck: { drape: o.drape, shades: o.shades, color: o.drapeColor ?? color } }), ...(clad && { sil: LIMB_SIL }), ...(dressed && { tuck: -dressed.rise * rig.height }) });
+  const body = sculptTorso(spine, { garment, rig, color, accent, skin, ink: INK, arm: at.room, lap, ...((o.drape || o.shades || o.necklace) && { neck: { drape: o.drape, shades: o.shades, necklace: o.necklace, color: o.drapeColor ?? color } }), ...(clad && { sil: LIMB_SIL }), ...(dressed && { tuck: -dressed.rise * rig.height }) });
   // khối thân áo là mảnh đầu tiên: `collide` lấy hộp thân từ nó
   spine.children[0].userData.torso = true;
   spine.children[0].userData.inkGap = Math.max(...body.depth) / 100;
@@ -503,6 +560,7 @@ export function stickman(o: StickmanOptions): Figure {
   const cut = o.hat ? sculptHat(head, o.hat, hair, o.hatColor ?? color) : undefined;
   if (hair) sculptHair(head, hair, hairColor, human, cut, o.hairAccent);
   if (o.pin) sculptPin(head, o.pin, hair, human, o.pinColor ?? '#3a2a22', o.pinBead ?? o.pinColor ?? '#3a2a22');
+  if (o.earrings) sculptEarrings(head, o.earrings, human);
   if (human) {
     for (const s of SIDES) {
       const ear = earGroup(s, R.head, skullScale, skullMat, INK);
@@ -779,6 +837,7 @@ function mergeStatic(j: THREE.Object3D) {
     merged.castShadow = list.some((m) => m.castShadow);
     if (list.some((m) => m.userData.torso)) merged.userData.torso = true;
     if (list.every((m) => m.userData.noShadow)) merged.userData.noShadow = true;
+    if (list.every((m) => m.userData.noEdge)) merged.userData.noEdge = true;
     for (const m of list) m.removeFromParent();
     j.add(merged);
   }
@@ -803,9 +862,9 @@ export interface CharacterJson {
     hem?: { src?: string; skirt?: Partial<Skirt>; color?: string };
     hair?: { sculpt?: Partial<Sculpt>; color?: string; accent?: string };
     crown?: { src: string; hat?: Partial<Hat>; color?: string };
-    headAcc?: { src: string; pin?: Partial<Pin>; color?: string; accent?: string };
+    headAcc?: { src: string; pin?: Partial<Pin>; earrings?: Partial<Earrings>; color?: string; accent?: string };
     faceAcc?: { src: string; glasses?: Partial<Glasses>; color?: string };
-    neck?: { src?: string; drape?: Partial<Drape>; shades?: Partial<Shades>; color?: string };
+    neck?: { src?: string; drape?: Partial<Drape>; shades?: Partial<Shades>; necklace?: Partial<Necklace>; color?: string };
   };
   /** Vật gọi tên: socket → cấu hình; `opts.items` cấp hàm dựng 3D theo cùng tên */
   items?: Gear['specs'];
@@ -820,8 +879,9 @@ export function characterOptions(json: CharacterJson, opts: Partial<StickmanOpti
     sleeveWidth: pal.sleeveWidth, trouserWidth: pal.trouserWidth, limbCurve: pal.limbCurve, faceShape: json.face, itemSpecs: json.items,
     glasses: pc.faceAcc?.src === 'sculpt' && pc.faceAcc.glasses, glassesColor: pc.faceAcc?.color,
     ...(pc.crown?.src === 'sculpt' && { hat: pc.crown.hat ?? {}, hatColor: pc.crown.color }),
-    ...(pc.headAcc?.src === 'sculpt' && { pin: pc.headAcc.pin ?? {}, pinColor: pc.headAcc.color, pinBead: pc.headAcc.accent }),
-    ...(pc.neck?.src === 'sculpt' && { drape: pc.neck.drape, shades: pc.neck.shades, drapeColor: pc.neck.color }),
+    // `headAcc` dựng khối chỉ có bông tai thì không cắm trâm mặc định
+    ...(pc.headAcc?.src === 'sculpt' && { pin: pc.headAcc.pin ?? (pc.headAcc.earrings ? undefined : {}), earrings: pc.headAcc.earrings, pinColor: pc.headAcc.color, pinBead: pc.headAcc.accent }),
+    ...(pc.neck?.src === 'sculpt' && { drape: pc.neck.drape, shades: pc.neck.shades, necklace: pc.neck.necklace, drapeColor: pc.neck.color }),
     clad: pal.clad, sleeveColor: pal.sleeve, trouserColor: pal.trouser, shoeColor: pal.shoe, sleeveLength: pal.sleeveLength, sleeveFlare: pal.sleeveFlare, bicep: pal.bicep,
     trouserLength: pal.trouserLength, headForm: json.head?.form, ...opts,
   };

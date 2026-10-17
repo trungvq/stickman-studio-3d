@@ -436,6 +436,40 @@ export const ShadesSchema = z.object({
   lens: z.string().default("#2a2b33"),
 });
 
+/** Dây chuyền của người 3D (`pieces.neck.necklace`): vòng quanh chân cổ, võng trước ngực, bám mặt thân. docs/02-trang-phuc.md#dây-chuyền */
+export const NecklaceSchema = z.object({
+  /** `chain` dây mảnh liền, `pearl` chuỗi hạt tròn nối nhau */
+  style: z.enum(["chain", "pearl"]).default("chain"),
+  /** Màu dây hay màu hạt; bỏ trống là vàng (`chain`), trắng ngà (`pearl`) */
+  color: z.string().optional(),
+  /** Chỗ thấp nhất giữa ngực thấp hơn chân cổ bấy nhiêu px */
+  drop: z.number().default(20),
+  /** Bán kính dây (`chain`) hay bán kính hạt (`pearl`), px; bỏ trống là `0.75` / `1.9` */
+  thick: z.number().optional(),
+  /** Mặt dây ở chỗ thấp nhất: `none` không có, `round` hạt tròn dẹt, `drop` giọt nước */
+  pendant: z.enum(["none", "round", "drop"]).default("round"),
+  /** Bán kính mặt dây, px */
+  size: z.number().default(3.6),
+  /** Màu mặt dây; bỏ trống là màu dây */
+  gem: z.string().optional(),
+});
+
+/** Bông tai của người 3D (`pieces.headAcc.earrings`): một cặp ở dái tai. docs/02-trang-phuc.md#bông-tai */
+export const EarringsSchema = z.object({
+  /** `stud` nụ, `hoop` vòng tròn, `drop` dài thả có viên ở đáy */
+  shape: z.enum(["stud", "hoop", "drop"]).default("stud"),
+  /** Màu kim loại */
+  color: z.string().default("#d9b44a"),
+  /** Màu viên (nụ, viên ở đáy bông dài); bỏ trống là màu kim loại */
+  gem: z.string().optional(),
+  /** Bán kính nụ, bán kính vòng, bán kính viên ở đáy; lần bán kính sọ. Bỏ trống: `0.06` / `0.15` / `0.07` */
+  size: z.number().optional(),
+  /** Bông dài: từ lỗ xỏ tới đáy viên, lần bán kính sọ */
+  length: z.number().default(0.36),
+  /** Bán kính sợi kim loại, lần bán kính sọ */
+  thick: z.number().default(0.014),
+});
+
 export const GarmentSchema = z.object({
   /** Kiểu áo trong `GARMENT_STYLES`: `bare` ngực trần, `tshirt` áo phông cổ tròn, `shirt` sơ mi, `polo`, `sweater` áo len, `suit` vest, `hoodie`, `blouse` cổ lá sen, `wrap` cổ chéo */
   style: z.enum(GARMENT_STYLE_NAMES).default("tshirt"),
@@ -563,6 +597,8 @@ export const SocketPieceSchema = piece.extend({
   pin: PinSchema.optional(),
   drape: DrapeSchema.optional(),
   shades: ShadesSchema.optional(),
+  necklace: NecklaceSchema.optional(),
+  earrings: EarringsSchema.optional(),
   garment: GarmentSchema.optional(),
   palette: PiecePaletteSchema.optional(),
   skirt: SkirtSchema.optional(),
@@ -706,12 +742,13 @@ export const CharacterSchema = z.object({
         .prefault({ scale: 1.1, aspect: 0.55 }),
       sleeveNear: piece.prefault({ aspect: 0.45 }),
       sleeveFar: piece.prefault({ aspect: 0.45 }),
-      /** Khăn quàng, cà vạt, yếm; `sculpt` là khăn vắt vai (`drape`) và kính gài nẹp (`shades`) của người 3D */
+      /** Khăn quàng, cà vạt, yếm; `sculpt` là khăn vắt vai (`drape`), kính gài nẹp (`shades`) và dây chuyền (`necklace`) của người 3D */
       neck: piece
         .extend({
           src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
           drape: DrapeSchema.optional(),
           shades: ShadesSchema.optional(),
+          necklace: NecklaceSchema.optional(),
         })
         .prefault({ aspect: 1 }),
       hairBack: piece.prefault({ aspect: 0.62 }),
@@ -732,11 +769,12 @@ export const CharacterSchema = z.object({
           hat: HatSchema.optional(),
         })
         .prefault({ aspect: 0.95 }),
-      /** Phụ kiện đội trên mũ / bám sọ: sừng, tai, vòng hoa — đứng yên khi lắc đầu; `sculpt` là trâm cài búi của người 3D */
+      /** Phụ kiện đội trên mũ / bám sọ: sừng, tai, vòng hoa — đứng yên khi lắc đầu; `sculpt` là trâm cài búi (`pin`) và bông tai (`earrings`) của người 3D */
       headAcc: piece
         .extend({
           src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
           pin: PinSchema.optional(),
+          earrings: EarringsSchema.optional(),
         })
         .prefault({ aspect: 0.95 }),
       /** Phụ kiện dán lên mặt: kính, sẹo, mặt nạ — trôi đúng bằng nét mặt; `sculpt` là kính dựng khối */
@@ -788,6 +826,8 @@ export type Hat = z.infer<typeof HatSchema>;
 export type Pin = z.infer<typeof PinSchema>;
 export type Drape = z.infer<typeof DrapeSchema>;
 export type Shades = z.infer<typeof ShadesSchema>;
+export type Necklace = z.infer<typeof NecklaceSchema>;
+export type Earrings = z.infer<typeof EarringsSchema>;
 export type BeardTip = (typeof BEARD_TIPS)[number];
 export type Garment = z.infer<typeof GarmentSchema>;
 export type Wrap = z.infer<typeof WrapSchema>;

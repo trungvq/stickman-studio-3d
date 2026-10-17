@@ -28,7 +28,7 @@ Tay áo và quần cơ bản không cần mảnh ảnh: tô màu và tăng độ
 | Mũ / khăn / búi tóc | `crown` | ✔ | `pieces.crown`, vẽ đè lên tóc. Ảnh riêng hoặc bộ phận SVG trong `PARTS`; người 3D có [mũ dựng khối](#mũ-dựng-khối) không cần ảnh |
 | Tóc | `hairline` | ✔ | `pieces.hair`, vẽ trên đầu. Một [kiểu tóc](#kiểu-tóc) trong `PARTS`, hoặc ảnh mái |
 | Tóc ảnh — sau đầu | `hairBack` | ✔ | `pieces.hairBack`, chỉ nhận ảnh, vẽ **sau cả thân và chân**. Bị bỏ qua khi `hair` là kiểu tóc |
-| Phụ kiện đầu | `headAcc` | ✔ | `pieces.headAcc`, sừng / tai / vòng hoa — vẽ **trên cả mũ**, bám sọ nên không trôi theo mặt; người 3D có [trâm cài búi](#trâm-cài-búi) không cần ảnh |
+| Phụ kiện đầu | `headAcc` | ✔ | `pieces.headAcc`, sừng / tai / vòng hoa — vẽ **trên cả mũ**, bám sọ nên không trôi theo mặt; người 3D có [trâm cài búi](#trâm-cài-búi) và [bông tai](#bông-tai) không cần ảnh |
 | Phụ kiện mặt | `faceAcc` | ✔ | `pieces.faceAcc`, kính / sẹo / mặt nạ — vẽ trên nét mặt, dưới tóc và mũ, trôi đúng bằng mặt. Kính dùng [kính dựng khối](#kính-dựng-khối), không cần ảnh |
 | Râu | `chin` | ✔ | `pieces.chin`, vẽ trên cùng ở khối đầu, `layer: "under"` thì dưới nét mặt. Ảnh riêng, bộ phận SVG trong `PARTS`, hoặc [râu dựng khối](#râu-dựng-khối) không cần ảnh; ria mép vẽ code — [01](01-rig.md) |
 | Mặt | *(không có)* | ✘ | Mắt, mày, miệng vẽ bằng code |
@@ -36,7 +36,7 @@ Tay áo và quần cơ bản không cần mảnh ảnh: tô màu và tăng độ
 | Thân áo trên | `torso` | ✔ | Vai xuống eo. Hoặc [thân áo dựng khối](#thân-áo-dựng-khối), không cần ảnh |
 | Vai áo gần | cánh tay trên gần | ✔ | Vẽ **trên** thân áo — tạo hình mới không dùng, xem dưới |
 | Vai áo xa | cánh tay trên xa | ✔ | Vẽ **dưới** thân áo — tạo hình mới không dùng, xem dưới |
-| Khăn cổ / cà vạt / yếm | `neck` | ✔ | `pieces.neck`, treo ở khớp cổ, vẽ trên thân áo. Nghiêng theo thân, **không** theo đầu |
+| Khăn cổ / cà vạt / yếm | `neck` | ✔ | `pieces.neck`, treo ở khớp cổ, vẽ trên thân áo. Nghiêng theo thân, **không** theo đầu. Người 3D có [khăn vắt vai, kính gài nẹp](#khăn-vắt-vai-và-kính-gài-nẹp) và [dây chuyền](#dây-chuyền) không cần ảnh |
 | Tà áo / váy | `pelvis` | ✔ | Áo thụng, váy dài — xem dưới. Váy ngắn dùng [váy dựng khối](#váy-dựng-khối), không cần ảnh |
 | Tay áo (phần cẳng) | đoạn tay | ✘ | Tô màu + tăng độ dày |
 | Quần | đoạn chân | ✘ | Tô màu + tăng độ dày |
@@ -925,6 +925,41 @@ dựng khối, một hạt tròn ở đầu que. 2D và 2.5D không vẽ.
   `human` thì trâm dời theo `humanHair` như tóc. Nét bóng dáng hậu kỳ mảnh `0.014`.
 - `pinMesh` ra tam giác que và hạt ở hệ sọ đơn vị.
 
+## Bông tai
+
+`pieces.headAcc.earrings` với `src: "sculpt"` là một cặp bông tai của **người 3D**, mỗi tai một chiếc ở dái tai. Cùng
+socket với [trâm](#trâm-cài-búi): một mảnh mang được cả hai. 2D và 2.5D không vẽ.
+
+```json
+"headAcc": { "src": "sculpt", "earrings": { "shape": "drop", "gem": "#B3243A" } }
+```
+
+Dài theo bán kính sọ.
+
+| Trường | Mặc định | Nghĩa |
+|---|---:|---|
+| `shape` | `stud` | `stud` nụ dẹt áp dái tai, `hoop` vòng tròn xỏ qua dái tai, `drop` hạt ở dái tai, sợi thõng và viên giọt nước ở đáy |
+| `color` | `#d9b44a` | Màu kim loại: vòng, sợi, hạt |
+| `gem` | màu kim loại | Màu viên: nụ, viên ở đáy bông dài |
+| `size` | `0.06` / `0.15` / `0.07` | Bán kính nụ / bán kính vòng / bán kính viên đáy, theo `shape` |
+| `length` | 0.36 | Bông dài: từ chỗ treo tới đáy viên |
+| `thick` | 0.014 | Bán kính sợi kim loại; vòng dày `1.3` lần |
+
+- **Cỡ hơi to hơn thật** (nụ thật chừng `0.02`, vòng `0.11` bán kính sọ): ở trung cảnh cả đầu chỉ vài chục điểm ảnh, cỡ
+  thật thì bông tai còn một hai điểm ảnh, lẫn vào nét viền đầu. Cỡ mặc định to chừng gấp rưỡi tới gấp ba cho đọc được như
+  hoạt hình; cận mặt muốn thật hơn thì hạ `size`.
+- **Chỗ đeo đọc từ tai của đầu `human`** (`HUMAN_HEAD.ear`, đặt và quay như tai của người 3D): `earLobe` cho lỗ xỏ giữa bề
+  dày dái tai và mặt ngoài dái tai. Đầu cầu không vẽ tai, bông tai đeo ở cùng chỗ trên mặt cầu.
+- **Tóc phủ tai thì che bông tai** như thật: không có luật ẩn riêng, vỏ tóc nằm ngoài nên che phần trong nó; vòng và bông
+  dài thõng dưới mép tóc thì lộ phần dưới.
+- **Phần thõng theo trọng lực.** Vòng và sợi + viên của bông dài là nhóm quay quanh chỗ treo (`userData.dangle` trong nhóm
+  đầu): `act` gọi `hangJewelry` sau khi đặt khớp, quay nhóm cho trục `−y` của nó chỉ thẳng xuống thế giới — nghiêng đầu,
+  cúi chào thì bông vẫn rủ. Cảnh tự đặt khớp (không qua `act`) thì gọi `hangJewelry(fig)` sau `updateMatrixWorld`. Không
+  đung đưa theo thời gian.
+- `pieces.headAcc` dựng khối chỉ có `earrings` thì không cắm trâm mặc định; muốn cả trâm thì khai `pin`.
+- Nét bóng dáng hậu kỳ mảnh `0.012`; vật `userData.noEdge` (xem [Dây chuyền](#dây-chuyền)).
+- `earringMesh` ra tam giác kim loại, viên và phần thõng (tính từ chỗ treo) ở hệ sọ đơn vị.
+
 ## Thân áo dựng khối
 
 `pieces.torso` với `src: "sculpt"` là thân áo không vẽ sẵn hình nào: áo là vài đặc điểm
@@ -1290,7 +1325,7 @@ nổi khối (`shirt`, `polo`, `bowShirt`, `suit`, `blazer`, `blouse`), chỉ ng
 ## Khăn vắt vai và kính gài nẹp
 
 Socket `neck` với `src: "sculpt"` là đồ dựng khối bám thân áo của người 3D, cắm được qua `items` như mọi socket; 2D và
-2.5D không vẽ gì. Một mảnh có thể mang cả hai.
+2.5D không vẽ gì. Một mảnh mang được cả khăn, kính và [dây chuyền](#dây-chuyền).
 
 ### Khăn vắt vai
 
@@ -1336,6 +1371,45 @@ thân. Mắt kính màu `lens`, cầu và gọng màu mực, mỗi phần một 
 
 Kính đeo trên mặt và kính gài nẹp là hai vật khác socket: đổi giữa chừng bằng `equip` (`{ "faceAcc": "kinh-ram", "neck":
 null }`).
+
+### Dây chuyền
+
+`neck.necklace`: dây mảnh hay chuỗi ngọc vòng quanh chân cổ, nằm trên mặt thân áo, võng xuống trước ngực, mặt dây ở chỗ
+thấp nhất. Màu ở chính `necklace`, không đọc `neck.color` (màu khăn).
+
+```json
+"neck": { "src": "sculpt", "necklace": { "pendant": "drop", "gem": "#B3243A" } }
+```
+
+```json
+"neck": { "src": "sculpt", "necklace": { "style": "pearl", "pendant": "none", "drop": 16 } }
+```
+
+| Trường | Mặc định | Nghĩa |
+|---|---:|---|
+| `style` | `chain` | `chain` dây liền, `pearl` chuỗi hạt tròn sát nhau |
+| `color` | `#d9b44a` / `#f4ede0` | Màu dây (vàng) / màu hạt (trắng ngà) |
+| `drop` | 20 | Chỗ thấp nhất giữa ngực thấp hơn chân cổ bấy nhiêu px |
+| `thick` | 0.75 / 1.9 | Bán kính dây / bán kính hạt, px |
+| `pendant` | `round` | Mặt dây: `none` không có, `round` hạt tròn dẹt, `drop` giọt nước đầu nhọn quay lên |
+| `size` | 3.6 | Bán kính mặt dây, px |
+| `gem` | màu dây | Màu mặt dây |
+
+- **Theo viền cổ áo đang mặc.** Sau gáy và hai bên, dây chạy theo viền cổ (`Surface.neck`) lùi vào trong `NECKLACE_INSET`
+  (`1.2` px cộng bán kính dây): nằm trên da giữa cổ và mép cổ, trong viền gân của áo phông, dưới chân cổ bẻ của sơ mi. Phía
+  trước dây võng theo `cos^k` của góc quanh cổ (`k` `1.7` có mặt dây, `1.3` không), cùng một vòng cho cổ U, cổ V, cổ vuông:
+  cổ vuông thì dây nằm trong khoảng hở, cổ V hẹp thì dây vắt qua vạt, cổ bẻ, lá sen che chỗ chúng phủ.
+- Mỗi điểm dây nổi khỏi mặt khối bán kính dây cộng `NECKLACE_LIFT` (`0.35` px), thêm độ nổi viền gân ở giữa ngực
+  (`rib.lift[0]·RIB_FRONT`) để dây vắt qua viền không chìm. Khối cứng trong nhóm thân: cúi chào thì dây theo thân, không
+  rủ khỏi ngực.
+- **Cỡ hơi to hơn thật**: dây thật một hai ly còn chưa tới một điểm ảnh ở trung cảnh; dây mặc định dày `1.5` px, mặt dây
+  bán kính `3.6` px, hạt ngọc `1.9` px để đọc được như hoạt hình. Cận ngực muốn mảnh hơn thì hạ `thick`, `size`.
+- **Nét**: vỏ viền mảnh riêng (`ink` của khối kín, px: dây `0.3`, hạt `0.4`, mặt dây `0.6`). Khối thân áo có `ink` là đồ
+  nhỏ: lưới mang `userData.noEdge`, pipeline không vẽ nét hậu kỳ dò từ độ sâu, pháp tuyến, không chấm bóng tiếp xúc và
+  không cho nét bóng dáng của vật khác loang lên nó — dây vài điểm ảnh mà nhận nét hai mép hay nét bóng dáng thân áo (dây
+  nằm cách thân chưa tới ba lần bề dày nét) thì đen kín.
+- Hạt ngọc đếm theo chu vi, cách nhau chừng `2.05` lần bán kính; khoen nối mặt dây chỉ có ở `chain`.
+- `necklaceSolids` ra khối kín hệ nhóm thân như `drapeSolid`, `shadesSolids`.
 
 ### Áo khoác vạt mở
 
