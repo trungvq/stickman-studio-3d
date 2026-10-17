@@ -1,6 +1,6 @@
 {
   "name": "@stickman3d/render",
-  "version": "7.9.0",
+  "version": "7.10.0",
   "description": "Vẽ nhân vật người que ra PNG bằng @stickman3d/sketch, không cần trình duyệt",
   "license": "MIT",
   "type": "module",
