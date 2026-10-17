@@ -39,6 +39,7 @@ import {
   gripCenter,
   gripFrame,
   gripHand,
+  gripOf,
   gripPoint,
   handAxes,
   heldPoint,
@@ -1150,7 +1151,7 @@ export function leadGrip(
 ): { G: GripFrame; center: V3 } {
   const G = gripFrame(h.spec, hand, side, k, long, s);
   const center = gripCenter(hand.pose, side, k, long);
-  const g0 = h.from && h.from.k > 0 ? h.spec.grips[h.from.grip] : undefined;
+  const g0 = h.from && h.from.k > 0 ? gripOf(h.spec, h.from.grip) : undefined;
   if (!g0) return { G, center };
   const h0 = gripHand(g0, side);
   const f = 1 - h.from!.k;
@@ -1162,7 +1163,7 @@ export function leadGrip(
 
 /** Bàn tay của kiểu cầm trước (`hold.from`) cho tay phụ: tay kia của kiểu hai tay cũ, hay kiểu cũ của chính nó (đổi tay) */
 function supportFrom(h: ReachHold, side: number, lead: number): GripHand | undefined {
-  const g0 = h.from && h.from.k > 0 ? h.spec.grips[h.from.grip] : undefined;
+  const g0 = h.from && h.from.k > 0 ? gripOf(h.spec, h.from.grip) : undefined;
   if (!g0) return undefined;
   if (g0.both) return leadSide(g0.both.lead) === lead ? g0.both.other : undefined;
   return gripHand(g0, side);
@@ -1188,10 +1189,14 @@ export function holdRoles(
   near: number,
 ): Partial<Record<number, HoldRole>> {
   const out: Partial<Record<number, HoldRole>> = {};
-  const own = (side: number) => (side === near ? hands?.near : hands?.far)?.hold;
+  // kiểu treo không chiếm bàn tay: không có vai trò, tay ấy cầm kiểu hai tay hay làm tay phụ được
+  const own = (side: number) => {
+    const h = (side === near ? hands?.near : hands?.far)?.hold;
+    return h && gripOf(h.spec, h.grip) ? h : undefined;
+  };
   for (const side of [-1, 1]) {
     const h = own(side);
-    const g = h && h.spec.grips[h.grip];
+    const g = h && gripOf(h.spec, h.grip);
     if (!h || !g?.both) continue;
     const L = leadSide(g.both.lead);
     const free = (x: ReachHold | undefined) => !x || x.item === h.item;
@@ -1204,7 +1209,7 @@ export function holdRoles(
   const lead = right && left && right.item === left.item ? (left.since < right.since ? 1 : -1) : 0;
   for (const side of [-1, 1]) {
     const h = own(side);
-    const g = h && h.spec.grips[h.grip];
+    const g = h && gripOf(h.spec, h.grip);
     if (out[side] || !h || !g) continue;
     const role = lead && side !== lead ? "support" : "lead";
     out[side] = { hold: h, role, hand: gripHand(g, side), lead: lead || side };
@@ -1737,10 +1742,11 @@ function solveActing(
     if (role?.role === "lead" && rep.hold && rep.hold.err > HOLD_ALT && T.hand && hm) {
       // ý định không với tới: kiểu cầm khác của cùng món có với tới không — chỉ giải lại cổ tay với liên kết ấy
       const spec = role.hold.spec;
-      const two = !!spec.grips[role.hold.grip]?.both;
+      const two = !!gripOf(spec, role.hold.grip)?.both;
       const alts: { grip: string; err: number }[] = [];
-      for (const [g, gs] of Object.entries(spec.grips)) {
-        if (g === role.hold.grip || !!gs.both !== two) continue;
+      for (const g of Object.keys(spec.grips)) {
+        const gs = gripOf(spec, g);
+        if (!gs || g === role.hold.grip || !!gs.both !== two) continue;
         if (gs.both && leadSide(gs.both.lead) !== side) continue;
         const G = gripFrame(spec, gripHand(gs, side), side, k, long, s);
         const r = holdSolve(hm, [raw[0] ?? 0, raw[1] ?? 0, dev0], A, { ...h, G }, false);

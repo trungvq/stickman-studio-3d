@@ -1,7 +1,8 @@
 import { AIM_BEND, AIM_DEV } from "./act3";
 import { fingerVec, HAND_POSES, HAND_RELAXED, type HandPose, type HandVec } from "./hand";
 import { depthAt, project, type V3 } from "./lens";
-import { sceneHoldRef, type HeldFinger } from "./heldItem";
+import { sceneHoldRef, type CarryOn, type HeldFinger } from "./heldItem";
+import { CARRY } from "./heldCarry";
 import { AIM_GAP, handClips, PALM_HAND_LABELS, type PalmHand } from "./palm";
 import { cameraAt, type SceneRuntime } from "./scene";
 
@@ -141,6 +142,38 @@ export interface HeldHand {
    */
   reach?: { kind: "support" | "item"; gap: number; s: number; point: string; to: string };
 }
+
+/**
+ * Số đo một món treo trên cánh tay (kiểu treo) ở một giây — `heldCarries` của người 3D đưa ra. Đơn vị rig thế giới, góc độ
+ */
+export interface HeldCarry {
+  id: string;
+  hand: PalmHand;
+  item: string;
+  /** `id` của vật three của món */
+  obj?: number;
+  /** `món#kiểu` như `world.hands[].hold` */
+  hold: string;
+  on: CarryOn;
+  key: string;
+  /** Chỗ treo, thế giới rig: để bỏ món ngoài khung camera */
+  at: V3;
+  /** Đỉnh quai (`at` của kiểu treo) cách chỗ treo */
+  seat: number;
+  /** Khuỷu: góc giữa cánh tay trên và cẳng tay (`180` thẳng), cẳng tay ngóc khỏi phương ngang (âm là chúc xuống) */
+  bend?: number;
+  rise?: number;
+  /** Phần người gần thân món nhất sau khi trừ phần cho lấn (`touch`): khe (âm là lồng), tên phần, độ được lấn */
+  body: { gap: number; part: string; allow?: number };
+  /** Độ thân món bị đẩy khỏi phương đứng để khỏi lồng vào thân, đùi */
+  swing: number;
+  /** Cỡ người (`world.s`) */
+  s: number;
+}
+
+/** Một mẫu của `HeldOptions.frame`: bàn tay đang cầm, hay món treo trên cánh tay */
+export type HeldSample = HeldHand | HeldCarry;
+export const isHeldCarry = (s: HeldSample): s is HeldCarry => "on" in s;
 
 /** Một món đăng ký (`Cast3D.provide`) ở một giây: chỗ trong thế giới rig, hướng, có hiện không, ai đang mang */
 export interface HeldItemPose {
@@ -442,11 +475,22 @@ export function quatAngle(a: readonly number[], b: readonly number[]): number {
 // ── Luật trên cả cảnh ──────────────────────────────────────────────────────────────────────────────────────────────
 
 export type HeldRule =
-  "pose" | "pierce" | "loose" | "wrap" | "grip" | "up" | "face" | "drift" | "jump" | "reach";
+  | "pose"
+  | "pierce"
+  | "loose"
+  | "wrap"
+  | "grip"
+  | "up"
+  | "face"
+  | "drift"
+  | "jump"
+  | "reach"
+  | "seat"
+  | "body";
 
 export interface HeldOptions {
-  /** Số đo các bàn tay đang cầm đồ ở giây `t` (`heldHands` của người 3D trên cảnh three) */
-  frame: (t: number) => readonly HeldHand[] | null | undefined;
+  /** Số đo các bàn tay đang cầm đồ, các món treo trên cánh tay ở giây `t` (`heldHands`, `heldCarries` của người 3D) */
+  frame: (t: number) => readonly HeldSample[] | null | undefined;
   /** Các món đăng ký (`Cast3D.provide`) ở giây `t`: để đo món nhảy qua mốc `hold`; không có thì không đo */
   items?: (t: number) => readonly HeldItemPose[];
   /** Ngưỡng, mặc định các hằng `HELD_*`; giây, mặc định `HELD_HOLD`, `HELD_EVERY` */
@@ -462,6 +506,9 @@ export interface HeldOptions {
   turn?: number;
   /** Khe tay phụ, điểm `item:` tới đích (rig, nhân cỡ người), mặc định `AIM_GAP` */
   reach?: number;
+  /** Kiểu treo: đỉnh quai cách chỗ treo (`CARRY.seat`), thân món lồng vào người (`CARRY.body`) */
+  seat?: number;
+  body?: number;
   hold?: number;
   every?: number;
 }
@@ -475,8 +522,8 @@ export interface HeldIssue {
   t: number;
   /** Độ nặng để chọn giây tệ nhất và sắp dòng: lún, góc, khe, độ trôi */
   worst: number;
-  sample: HeldHand;
-  /** Dáng hành động khai (dáng gần nhất của `acted`) */
+  sample: HeldSample;
+  /** Dáng hành động khai (dáng gần nhất của `acted`); món treo thì `rest` */
   declared: { pose: HandPose | "rest"; off: number };
   /** Trôi: dời (rig) và xoay (độ) so với lúc bắt đầu cầm */
   drift?: { move: number; turn: number; from: number };
@@ -544,6 +591,27 @@ export function heldHits(
   return out;
 }
 
+/**
+ * Các luật một món treo phạm ở một giây: `seat` — đỉnh quai rời chỗ treo, khuỷu mở quá `CARRY.bend` hay cẳng tay chúc quá
+ * `CARRY.rise` (không còn chỗ gập giữ quai); `body` — thân món lồng vào người quá phần `touch` cho lấn cộng `body`
+ */
+export function carryHits(
+  s: HeldCarry,
+  o: Omit<HeldOptions, "frame"> = {},
+): { rule: HeldRule; worst: number }[] {
+  const out: { rule: HeldRule; worst: number }[] = [];
+  const seat = o.seat ?? CARRY.seat;
+  const off = Math.max(
+    s.seat / seat,
+    s.bend !== undefined && s.bend > CARRY.bend ? 1 + (s.bend - CARRY.bend) / 10 : 0,
+    s.rise !== undefined && s.rise < CARRY.rise ? 1 + (CARRY.rise - s.rise) / 10 : 0,
+  );
+  if (off > 1) out.push({ rule: "seat", worst: off });
+  const sink = -(s.body.gap + (s.body.allow ?? 0));
+  if (sink > (o.body ?? CARRY.body)) out.push({ rule: "body", worst: sink });
+  return out;
+}
+
 /** Món đăng ký nhảy (dời quá `drift`, xoay quá `turn`) qua một mốc `hold` của scene: so hai bên mốc, `HELD_JUMP_EPS` giây */
 function heldJumps(
   rt: SceneRuntime,
@@ -564,7 +632,7 @@ function heldJumps(
   const turnMax = o.turn ?? HELD_TURN;
   const out: {
     rule: HeldRule;
-    s: HeldHand;
+    s: HeldSample;
     t: number;
     worst: number;
     from: number;
@@ -621,7 +689,7 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
   const times = Array.from({ length: n + 1 }, (_, i) => +(i * every).toFixed(4));
   type Run = {
     rule: HeldRule;
-    s: HeldHand;
+    s: HeldSample;
     t: number;
     worst: number;
     from: number;
@@ -665,9 +733,18 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
       const who = `${s.id}|${s.hand}`;
       held.add(who);
       const g = grips.get(who);
-      if (!g || g.key !== s.key) grips.set(who, { key: s.key, s, t });
+      if (!isHeldCarry(s) && (!g || g.key !== s.key)) grips.set(who, { key: s.key, s, t });
       if (!inView(t, s.at)) continue;
       const base = `${who}|${s.item}`;
+      if (isHeldCarry(s)) {
+        // món treo: thõng theo trọng lực mỗi khung, không trôi trong tay
+        for (const h of carryHits(s, o)) {
+          const k = `${base}|${h.rule}`;
+          seen.add(k);
+          hit(k, i, t, { rule: h.rule, s, t, worst: h.worst });
+        }
+        continue;
+      }
       for (const h of heldHits(s, o)) {
         const k = `${base}|${h.rule}`;
         seen.add(k);
@@ -707,7 +784,7 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
       t: r.t,
       worst: r.worst,
       sample: r.s,
-      declared: nearestHandPose(r.s.acted),
+      declared: isHeldCarry(r.s) ? { pose: "rest", off: 0 } : nearestHandPose(r.s.acted),
       ...(r.drift && { drift: r.drift }),
       ...(r.jump && { jump: r.jump }),
       runs: prev ? prev.runs : [[r.from, r.to]],
@@ -724,6 +801,8 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
     "face",
     "up",
     "drift",
+    "seat",
+    "body",
     "jump",
   ];
   return [...merged.values()].sort(
@@ -785,6 +864,54 @@ export function heldSummary(s: HeldHand, touch = HELD_TOUCH): string {
   return parts.join(" · ");
 }
 
+const CARRY_ON_LABELS: Record<CarryOn, string> = { elbow: "khuỷu", shoulder: "vai" };
+
+/** Các số đo chính của một món treo ở một giây, một dòng */
+export function carrySummary(s: HeldCarry): string {
+  return [
+    `kiểu treo ${s.hold} (${CARRY_ON_LABELS[s.on]})`,
+    `đỉnh quai cách chỗ treo ${r1(s.seat)}`,
+    ...(s.bend !== undefined
+      ? [
+          `khuỷu ${Math.round(s.bend)}°, cẳng tay ${s.rise! >= 0 ? "ngóc" : "chúc"} ${Math.round(Math.abs(s.rise!))}°`,
+        ]
+      : []),
+    `thân món ${s.body.gap < 0 ? `lồng ${r1(-s.body.gap)} vào` : `cách ${r1(s.body.gap)}`} ${s.body.part}${s.body.allow ? ` (cho lấn ${r1(s.body.allow)})` : ""}`,
+    `đẩy khỏi phương đứng ${Math.round(s.swing)}°`,
+  ].join(" · ");
+}
+
+/** Dòng báo của một mục món treo sai */
+function carryLine(s: HeldIssue, x: HeldCarry, when: string): string {
+  const who = `\`${s.id}\` ${PALM_HAND_LABELS[s.hand]} treo ${s.item} (\`${x.hold}\`, ${CARRY_ON_LABELS[x.on]})`;
+  const head = (): string => {
+    if (s.rule === "body")
+      return `món treo lồng vào người — ${who}: thân món lồng ${r1(-x.body.gap)} vào \`${x.body.part}\`${x.body.allow ? ` (cho lấn ${r1(x.body.allow)})` : ""}; ${
+        /^(upperArm|foreArm|hand)/.test(x.body.part)
+          ? "dang tay ra khỏi món (`world.hands` `at` / `elbow` ra ngoài)"
+          : "dời tay, chỗ đứng hay dáng cho món có chỗ thõng"
+      }, khai \`touch\` ở kiểu treo nếu cố ý ép sát, hay thu \`shape\` ở \`held/${x.hold.split("#")[0]}.json\``;
+    if (s.rule === "seat") {
+      const why =
+        x.bend !== undefined && x.bend > CARRY.bend
+          ? `khuỷu mở ${Math.round(x.bend)}° (giữ quai cần dưới ${CARRY.bend}°) — gập khuỷu: cổ tay lên trước vai, khuỷu chĩa xuống`
+          : x.rise !== undefined && x.rise < CARRY.rise
+            ? `cẳng tay chúc ${Math.round(-x.rise)}° dưới phương ngang, quai tuột về cổ tay — nâng cổ tay cao hơn khuỷu`
+            : `đỉnh quai cách chỗ treo ${r1(x.seat)} — \`extra\` đừng đặt món đang treo, hay \`at\` của kiểu treo không phải đỉnh quai`;
+      return `quai không nằm trên chỗ treo — ${who}: ${why}`;
+    }
+    const j = s.jump!;
+    return `món nhảy ${JUMP_LABELS[j.kind]} — ${who}: qua mốc giây ${sec(s.t)} món dời ${r1(j.move)}, xoay ${Math.round(j.turn)}°; ${
+      j.kind === "take"
+        ? "đặt món (`extra`) đúng chỗ nó sẽ treo"
+        : j.kind === "release"
+          ? "đặt món (`extra`) ở chỗ thả từ mốc thả — `cast.released` không trả chỗ cho món treo"
+          : "cho hai mốc trùng chỗ treo, hay chuyển món qua bàn tay"
+    }`;
+  };
+  return `${head()} ${when}. Lúc ấy: ${carrySummary(x)} (docs/03-scene.md#đồ-cầm-tay)`;
+}
+
 /** Dòng báo của một mục đồ cầm sai, như `check` in */
 export function heldLine(s: HeldIssue): string {
   const runs = s.runs
@@ -792,6 +919,8 @@ export function heldLine(s: HeldIssue): string {
     .map(([a, b]) => (a === b ? sec(a) : `${sec(a)}–${sec(b)}`))
     .join(", ");
   const more = s.runs.length > 4 ? `, +${s.runs.length - 4} quãng` : "";
+  if (isHeldCarry(s.sample))
+    return carryLine(s, s.sample, `ở giây ${sec(s.t)} · giây ${runs}${more}`);
   const who = `\`${s.id}\` ${PALM_HAND_LABELS[s.hand]} cầm ${s.item}`;
   const x = s.sample;
   // kiểu cầm cứng: lỗi ở liên kết tay–món sai ở mọi cảnh dùng kiểu cầm ấy
@@ -818,7 +947,7 @@ export function heldLine(s: HeldIssue): string {
         : "cổ tay còn tầm mà khuỷu hết xoay"
     } — đổi \`elbow\` (khung cẳng tay quay theo hướng khuỷu), dời chỗ tay, đổi tay hay ${regrip}`;
   };
-  const head: Record<HeldRule, () => string> = {
+  const head: Record<Exclude<HeldRule, "seat" | "body">, () => string> = {
     pose: () =>
       `dáng tay cầm khác dáng khai — ${who}: hành động khai \`${s.declared.pose}\` mà \`hold\` vẽ \`${x.pose}\` (ngón lệch ${Math.round(s.worst)}°); truyền dáng ấy vào \`HoldOptions.pose\` hay sửa dáng khai`,
     pierce: () =>
@@ -859,7 +988,7 @@ export function heldLine(s: HeldIssue): string {
       `món trôi trong bàn tay — ${who} (\`follow: ${x.follow}\`): so với giây ${sec(s.drift!.from)} món dời ${r1(s.drift!.move)}, xoay ${Math.round(s.drift!.turn)}° trong khung bàn tay; cổ tay xoay mà món đứng theo người — bám cổ tay (\`follow: "wrist"\`) hay giữ cổ tay yên`,
   };
   const clips = s.clips.length ? `. Clip đang chạy: ${s.clips.join(", ")}` : "";
-  return `${head[s.rule]()} ở giây ${sec(s.t)} · giây ${runs}${more}. Lúc ấy: ${heldSummary(x)}${clips} (docs/03-scene.md#đồ-cầm-tay)`;
+  return `${head[s.rule as keyof typeof head]()} ở giây ${sec(s.t)} · giây ${runs}${more}. Lúc ấy: ${heldSummary(x)}${clips} (docs/03-scene.md#đồ-cầm-tay)`;
 }
 
 /** `sceneHeld` ra dòng báo. docs/03-scene.md#đồ-cầm-tay */

@@ -12,8 +12,8 @@
 //
 // Dáng tay: mốc `world.hands` đầu tiên trong `scenes/` cầm đúng `món#kiểu` ấy (ưu tiên `thu-grip*`, rồi `thu-*`, rồi cảnh
 // khác; cùng hạng thì tên cảnh, giây), bỏ phần đè ý định để soi ý định mặc định của kiểu cầm. Không cảnh nào dùng thì
-// tay đặt trước ngực. Người đứng `stand-3d` ở `--at` (mặc định `0,0,0`), quay `--yaw` (mặc định 90), ống kính chính
-// diện cách 720. Cảnh dựng tạm mang tên `bang-cam`: repo khai `CANH_3D["bang-cam"]` (`src/khoi3d/canh.ts`) đăng ký lưới
+// tay đặt trước ngực; kiểu treo thì khuỷu gập chữ V (cổ tay trước vai) hay tay dang ngoài túi đeo vai, ảnh lấy cả món và
+// đoạn tay. Người đứng `stand-3d` ở `--at` (mặc định `0,0,0`), quay `--yaw` (mặc định 90), ống kính chính diện cách 720. Cảnh dựng tạm mang tên `bang-cam`: repo khai `CANH_3D["bang-cam"]` (`src/khoi3d/canh.ts`) đăng ký lưới
 // cho mọi món mà người trong cảnh khai `hold` (`cast.provide(món, lưới, id người)`). Tất định: cùng code, cùng dữ liệu
 // là cùng pixel.
 //
@@ -222,6 +222,33 @@ function handsFor(key, side) {
     return { hands, from: `${src.scene} ${src.id} ${src.t}s${mir ? " (soi gương)" : ""}` };
   }
   const lr = side === "right" ? -1 : 1;
+  // kiểu treo: bàn tay tự do, cánh tay đặt cho chỗ treo — khuỷu gập chữ V (cổ tay trước vai), hay tay dang ngoài túi đeo vai
+  const on = data.held[key.split("#")[0]]?.grips[key.split("#")[1]]?.on;
+  if (on === "elbow")
+    return {
+      hands: {
+        [side]: {
+          to: "shoulder",
+          offset: [36, 30, 0],
+          point: "wrist",
+          elbow: moveDir([0.7 * lr, 1, -0.2], 90, YAW, false),
+          hold: key,
+        },
+      },
+      from: "mặc định (khuỷu gập, cổ tay trước vai)",
+    };
+  if (on === "shoulder")
+    return {
+      hands: {
+        [side]: {
+          at: moveDir([90 * lr, -185, -10], 90, YAW, false).map((v, i) => r2(v + AT[i])),
+          point: "wrist",
+          elbow: moveDir([0.6 * lr, 1, 0], 90, YAW, false),
+          hold: key,
+        },
+      },
+      from: "mặc định (tay dang ngoài túi)",
+    };
   return {
     hands: {
       [side]: {
@@ -281,6 +308,7 @@ for (const item of items) {
           size: r2(p.size),
           from,
           two: !!g.both,
+          carry: !!g.on && g.on !== "hand",
           scene,
         });
       }
@@ -304,13 +332,23 @@ const RULE = {
   up: "up lệch",
   face: "mặt lệch",
   reach: "không tới",
+  seat: "quai rời chỗ treo",
+  body: "lồng người",
   jump: "nhảy",
   pose: "dáng",
   drift: "trôi",
 };
 
-/** Số đo một bàn tay: chuỗi ngắn cho nhãn */
+/** Số đo một bàn tay (hay một món treo): chuỗi ngắn cho nhãn */
 const tomTat = (s) => {
+  if (s.on)
+    return [
+      `treo ${s.on === "elbow" ? "khuỷu" : "vai"}`,
+      `quai ${r1(s.seat)}`,
+      ...(s.bend !== undefined ? [`khuỷu ${Math.round(s.bend)}°/${Math.round(s.rise)}°`] : []),
+      `thân ${r1(s.body.gap)} ${s.body.part}`,
+      `đẩy ${Math.round(s.swing)}°`,
+    ].join(" · ");
   const a = [`lún ${r1(s.pierce.depth)}`];
   const open = s.wrap && s.fingers ? rig.heldOpen(s) : [];
   if (open.length) a.push(`hở ${open.map((f) => `${VN[f]} ${r1(s.fingers[f])}`).join(", ")}`);
@@ -382,24 +420,29 @@ for (const c of cells) {
     .sort((a, b) => order(a.hand) - order(b.hand))
     .map((s) => ({
       hand: s.hand,
-      at: s.at.map(r2),
+      // món treo: tâm khung ảnh giữa chỗ treo và đáy món
+      at: (s.on ? s.at.map((v, i) => v + (i === 1 ? data.held[c.item].size[1] / 2 : 0)) : s.at).map(
+        r2,
+      ),
       text: tomTat(s),
-      raw: {
-        pierce: s.pierce,
-        fingers: s.fingers,
-        wrap: s.wrap,
-        grip: s.grip,
-        palm: s.palm,
-        up: s.up,
-        face: s.face,
-        intent: s.intent && {
-          rule: s.intent.rule,
-          err: s.intent.err,
-          clamped: s.intent.clamped,
-          alts: s.intent.alts,
-        },
-        reach: s.reach,
-      },
+      raw: s.on
+        ? { on: s.on, seat: s.seat, bend: s.bend, rise: s.rise, body: s.body, swing: s.swing }
+        : {
+            pierce: s.pierce,
+            fingers: s.fingers,
+            wrap: s.wrap,
+            grip: s.grip,
+            palm: s.palm,
+            up: s.up,
+            face: s.face,
+            intent: s.intent && {
+              rule: s.intent.rule,
+              err: s.intent.err,
+              clamped: s.intent.clamped,
+              alts: s.intent.alts,
+            },
+            reach: s.reach,
+          },
     }));
   if (!c.hands.length && !c.error) c.error = "không bàn tay nào cầm món ở giây chụp";
 }
@@ -432,7 +475,9 @@ for (const c of cells) {
   const pts = c.hands.map((h) => h.at);
   const mid = mul(pts.reduce(add), 1 / pts.length);
   const span = pts.length > 1 ? Math.hypot(...sub(pts[0], pts[1])) : 0;
-  const khung = Math.round(Math.min(220, Math.max(70, big * 1.5, span * 1.6 + 30)));
+  const khung = Math.round(
+    Math.min(220, Math.max(70, big * (c.carry ? 1.7 : 1.5), span * 1.6 + 30)),
+  );
   const ben = c.two ? 1 : c.side === "right" ? 1 : -1;
   const F = fwd(YAW);
   const R = rgt(YAW);
@@ -520,7 +565,7 @@ const md = [
   "# Bảng duyệt kiểu cầm",
   "",
   `Rig \`${rig.RIG_VERSION ?? JSON.parse(readFileSync(join(root, "node_modules/@stickman3d/rig/package.json"), "utf8")).version}\` · giây ${T} · người: ${people.map((p) => `\`${p.file}\` (tay ${r2(p.size)})`).join(", ")} · ${cells.length} hàng × ${GOC.length} góc.`,
-  "Số đo (đơn vị rig, góc độ): `lún` da lún sâu nhất vào món (âm là khe), `hở` ngón khai `wrap` còn cách món, `nắm` tâm nắm tới mặt món (âm là trong món), `lòng` khe/góc lòng tay (không đo với dáng kẹp `edge`, `pinch`, `hook`), `up`/`face` góc lệch ý định và khớp cổ tay kẹp, `tới` khe tay phụ hay `item:` tới đích. `!!` là luật `held` của `check` báo trên cảnh này.",
+  "Số đo (đơn vị rig, góc độ): `lún` da lún sâu nhất vào món (âm là khe), `hở` ngón khai `wrap` còn cách món, `nắm` tâm nắm tới mặt món (âm là trong món), `lòng` khe/góc lòng tay (không đo với dáng kẹp `edge`, `pinch`, `hook`), `up`/`face` góc lệch ý định và khớp cổ tay kẹp, `tới` khe tay phụ hay `item:` tới đích; món treo: `quai` đỉnh quai tới chỗ treo, `khuỷu` góc gập/độ ngóc cẳng tay, `thân` khe thân món tới phần người gần nhất, `đẩy` góc lệch khỏi phương đứng. `!!` là luật `held` của `check` báo trên cảnh này.",
   "",
   "| Món#kiểu | Tay | Người | Dáng lấy từ | Số đo | `check` |",
   "|---|---|---|---|---|---|",

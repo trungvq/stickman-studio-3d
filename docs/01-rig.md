@@ -1450,7 +1450,8 @@ gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` 
 ### Kiểu cầm
 
 Món cầm tay là **dữ liệu**, không phải code three: `held/<món>.json` của repo video, qua `HeldItemSchema` /
-`parseHeldItem` (`core/heldItem.ts`, `schemaVersion` là `HELD_VERSION`). Lớp chung có món mẫu `coc` (cốc quai), repo
+`parseHeldItem` (`core/heldItem.ts`, `schemaVersion` là `HELD_VERSION`). Lớp chung có món mẫu `coc` (cốc quai) và `tui`
+(túi xách, [kiểu treo](#kiểu-treo)), repo
 trùng tên thì đè ([05](05-repo-video.md#hai-lớp)). Bộ giải tay, `check`, `scene_probe` và MCP cùng đọc file ấy, và bộ
 giải chạy trước code dựng cảnh của repo; code dựng lưới món đọc mốc từ chính file ấy, nên mốc và lưới có một nguồn số.
 
@@ -1483,6 +1484,7 @@ giải chạy trước code dựng cảnh của repo; code dựng lưới món �
 | `size` | Hộp bao của món |
 | `anchors` | Mốc có tên: điểm `at`, pháp tuyến ra ngoài `dir` (cần cho `into`, `along` và trục ý định) |
 | `hang` | Tên các nhóm con của lưới món quay theo phương đứng mỗi khung: chùm chìa thõng, dòng rượu rót |
+| `grips.<kiểu>.on` | Chỗ món nằm: `hand` (mặc định, bàn tay) hay chỗ treo trên cánh tay `elbow`, `shoulder` — [kiểu treo](#kiểu-treo), các trường dưới chỉ dành cho bàn tay |
 | `grips.<kiểu>.pose` | Dáng ngón khi cầm, nguồn duy nhất: ngón của hành động không vẽ khi đang cầm |
 | `at` | Điểm của món trùng tâm nắm của `pose` (`HAND_GRIPS`, nhân cỡ bàn tay): tên mốc hay `{ anchor, offset }` |
 | `palm`, `fingers` | Pháp tuyến lòng tay và hướng ngón trong khung món: `{ into: mốc }` ngược pháp tuyến mốc (lòng tay áp vào mặt ấy), `{ along: mốc }` theo pháp tuyến, `{ toward: mốc }` từ điểm nắm tới mốc, hay vectơ. `fingers` trực giao hoá theo `palm` |
@@ -1573,6 +1575,54 @@ món thì `check` báo `held:pierce`; dò `at` cho lòng tay vừa áp mặt mó
 **Đường cũ.** `hold` không `grip` — `follow` (`wrist`, `level`, `tilt`), `offset`, `rotate`, `pose`, ý định repo khai ở
 `userData.hold` — đánh dấu `@deprecated` và vẽ đúng như các bản trước, để cảnh đã duyệt không đổi hình; `check` kể chúng
 ở nhóm `legacy` ([05](05-repo-video.md#nhóm-luật)).
+
+#### Kiểu treo
+
+Món treo trên cánh tay chứ không nằm trong bàn tay — túi khoác khuỷu, túi đeo vai — là một mục `grips` khai `on`:
+
+```jsonc
+// held/tui.json (món mẫu của lớp chung): thân túi 30 × 26 × 10 ở y 0–26, hai quai, mép dưới thanh ngang của quai ở y 74
+{
+  "size": [30, 74, 10],
+  "anchors": { "quai": { "at": [0, 74, 0], "dir": [0, 1, 0] }, "mat": { "at": [0, 13, 5], "dir": [0, 0, 1] } },
+  "shape": [{ "box": [30, 26, 10], "at": [0, 13, 0], "round": 2 }],
+  "grips": {
+    "khuyu": { "on": "elbow", "at": "quai" },
+    "vai": { "on": "shoulder", "at": "quai", "touch": [{ "part": "upperArm", "max": 2 }] }
+  }
+}
+```
+
+| Trường | Nghĩa |
+|---|---|
+| `on` | `elbow`: quai vắt ở mặt trong chỗ gập khuỷu, thanh quai vắt qua là cẳng tay. `shoulder`: quai trên đỉnh vai, phía trong khớp vai hơn nửa bán kính cánh tay (trên mặt thân áo), tay luồn ra ngoài quai — món nằm giữa cánh tay và thân |
+| `at` | Điểm của món đặt đúng vào chỗ treo: đỉnh quai, mặt trong (mặt áp lên tay, lên vai) |
+| `yaw` | Quay thân món quanh phương đứng (độ, dương là ngược chiều kim đồng hồ nhìn từ trên xuống) |
+| `touch` | Phần người được lấn vào thân món, như kiểu cầm; `{ part, max }` cho lấn tới `max` |
+
+Kiểu treo không có `pose`, `palm`, `fingers`, `wrap`, `intent`, `left`, `both` (zod báo), và món phải có `shape` — hình
+**thân** món, không gồm quai: quai nằm trên tay, trên vai theo cách dựng. `parseHeldItem` báo kiểu treo thiếu `shape`.
+
+**Treo mỗi khung** (`carry` của `attach.ts`, `carryFrame` của `core/heldCarry.ts`):
+
+1. Chỗ treo `carrySeat` trên người đã đặt dáng. Khuỷu: `elbowSeat` dời khớp khuỷu theo phân giác hai đoạn tay một bán kính
+   cẳng tay (tay gần thẳng thì về phía trên cẳng tay), kèm góc khuỷu `bend` (`180` thẳng) và độ ngóc cẳng tay `rise`. Vai:
+   điểm cố định trong hệ thân, tính một lần từ tia dọi xuống mặt thân áo.
+2. Món thõng: `at` trùng chỗ treo, trục y của món lên thẳng, mặt trước (+z) theo hướng nằm ngang của thanh quai — cẳng tay
+   ở khuỷu (túi chĩa mặt theo cẳng tay), trục vai ra ngoài ở vai (túi áp mặt vào sườn) —, quay thêm `yaw`.
+3. Thân món lồng vào thân áo, khối hông, váy (đám điểm trên mặt lưới, `carryBody`) hay nang đùi thì đẩy ra quanh chỗ treo
+   theo hướng nằm ngang từ trục thân ra, lấy góc nhỏ nhất vừa hết lồng (tới `CARRY.swing` `80°`). Đeo vai: cánh tay trên
+   cùng bên ở phía ngoài món; góc ấy mà món lồng vào cánh tay thì lùi về chỗ hai bên lồng bằng nhau — túi kẹp giữa tay và
+   sườn, `check` báo để dang tay ra.
+
+Mọi bước chỉ đọc tư thế của khung đang vẽ: Remotion vẽ khung nhảy cóc vẫn ra cùng hình. Món không đung đưa theo quán tính.
+
+**Bàn tay tự do.** Bàn tay của tay treo món theo hành động (hay `world.hands`): không dáng nắm, không ý định, không vai trò
+với bộ giải (`holdRoles` bỏ qua lần treo), `Figure.holding` không ghi gì; món treo ghi ở `Figure.carrying[side]`. Tay kia
+cầm món khác, kể cả kiểu hai tay (`both`): lần treo không chiếm bàn tay. Nhóm mang món treo khai `userData.touch` cánh tay
+trên và cẳng tay của tay ấy (quai vắt qua), thêm thân khi đeo vai (quai nằm trên vai), cộng `touch` của kiểu treo.
+Cảnh khai ở `world.hands[].hold` như kiểu cầm ([03](03-scene.md#đồ-cầm-tay)); gọi tay thì `carry(fig, vật, { hand, grip })`,
+`hold` nhận kiểu treo thì chuyển sang `carry`.
 
 ### Hướng lòng bàn tay
 

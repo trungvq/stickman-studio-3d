@@ -36,7 +36,7 @@ Dựng và soi repo video: [05 — Dựng một repo video](05-repo-video.md).
 | `check` | `scene?`, `uses?`, `only?`, `skip?`, `baseline?`, `saveBaseline?` | Soi workspace: version đã pin so với rig đang cài, JSON hỏng, scene trỏ tới nhân vật / hành động / đạo cụ / động vật không có, file chép y nguyên bộ chung. Cộng cả lớp **lỗi câm**: tiếng dài hơn chỗ nó nằm, file có trên đĩa mà chưa commit, công tắc `equip` một chiều, hai track cùng ghi một socket, người 3D lồng vào đồ khối, lòng bàn tay quay sai, tay sai dáng (khuỷu thẳng, ngón chụm, lòng tay ngửa, lơ lửng trên mặt, chạm đầu người khác) — xem [05](05-repo-video.md#soi-workspace). `scene` (regex trên id cảnh) chỉ soi cảnh khớp, `uses` (tên hành động, nhân vật, đạo cụ, động vật) chỉ soi cảnh dùng chúng — [05](05-repo-video.md#soi-một-cảnh). `only` / `skip` chọn nhóm luật (`ref`, `move`, `hands`, `held`, `legacy`, `clash`, `episode`), nhóm không chạy thì không dựng thứ nó cần — [05](05-repo-video.md#nhóm-luật). `baseline` chỉ trả lỗi và cảnh báo mới hay nặng hơn file baseline (`delta`), `saveBaseline` ghi cảnh báo lượt này vào file — [05](05-repo-video.md#baseline). Kết quả kèm `groups`, `time` (ms từng nhóm và phần dựng chung, cộng dồn mọi luồng) và `wall`. |
 | `retime` | `dryRun?`, `set?` | Đo lại tiếng rồi ghi số vào cue có `after` và mốc khai ở `shot.marks` ([07](07-lam-tap.md#mốc-có-tên-và-retime)); `set: [{ scene, mark, seconds }]` đặt tay. `dryRun` chỉ liệt kê số sẽ đổi. |
 | `describe_rig` | – | Mọi thứ để chọn: `POSES`, kênh khớp, bộ sinh + tham số, `PARTS` theo socket, kiểu đầu/tóc/râu/mặt, lớp tay, góc nhìn, hằng số rig, các quy ước dấu góc, và `world3d` cho [người 3D](#người-3d). |
-| `schema` | `kind` | JSON Schema sinh từ zod + object mặc định; `scenes` kèm `example3d` (ống kính, một người ngồi gõ phím, một người đi theo `path`) và `exampleHold` (mốc `world.hands` cầm cốc, đưa lên mồm, đặt lại, buông); `held` mặc định là món mẫu `coc` ([01](01-rig.md#kiểu-cầm)). |
+| `schema` | `kind` | JSON Schema sinh từ zod + object mặc định; `scenes` kèm `example3d` (ống kính, một người ngồi gõ phím, một người đi theo `path`) và `exampleHold` (mốc `world.hands` cầm cốc, đưa lên mồm, đặt lại, buông); `held` mặc định là món mẫu `coc` (bộ chung còn có túi `tui`, [kiểu treo](01-rig.md#kiểu-treo)) ([01](01-rig.md#kiểu-cầm)). |
 | `list` | `kind` (`characters`/`actions`/`scenes`/`props`/`animals`/`held`/`pieces`) | Tên file + `name` (`held` thì `grips`: tên các kiểu cầm); hành động kèm `mask`; PNG kèm kích thước và mục danh mục (đã gộp hai lớp); file hỏng kèm lỗi. `characters`, `actions`, `animals`, `held` và `pieces` kèm `layer` (`workspace` / `common`), cùng tên thì chỉ thấy bản workspace. |
 
 | `read` | `kind`, `file` | Bản đã parse, đủ mặc định. |
@@ -189,6 +189,10 @@ không có tool riêng.
   `dev`), `alts` (kiểu cầm khác của cùng món và lệch của nó, khi lệch quá `HOLD_ALT`) — và `reach` khi đích do món đặt: `kind` (`support` tay phụ, `item` điểm `item:<mốc>`), `point`, `to`, `gap`.
   Món có hình va chạm (`shape`) thì `pierce`, `gaps` đo tới hình ấy và kèm `fingers` (khe từng ngón tới hình), `hug`
   (ngón kiểu cầm khai ôm, `wrap` của `held/`), `open` (ngón khai ôm còn hở quá `HELD_WRAP`).
+  Món treo trên cánh tay (kiểu treo, [01](01-rig.md#kiểu-treo)) ở `carry.right` / `carry.left`: `item`, `hold`, `on`
+  (`elbow` / `shoulder`), `seat` (đỉnh quai tới chỗ treo), `bend` / `rise` (khuỷu: góc gập, độ ngóc cẳng tay), `body`
+  (`gap` khe thân món tới phần người gần nhất — âm là lồng —, `part`, `allow` phần `touch` cho lấn), `swing` (độ đẩy khỏi
+  phương đứng), `issues` (`seat`, `body`).
   Cảnh có `lens` và người 3D kèm `clashes`: mỗi mốc hỏi, các chỗ phần người lồng vào đồ khối hay vào
   người khác sâu quá ngưỡng của `check`, sâu trước —
   `{ "0.5": [{ "who": "haru.head", "with": "hoc (mảnh 0)", "depth": 33 }] }`

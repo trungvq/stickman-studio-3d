@@ -2,7 +2,10 @@ import * as THREE from 'three';
 import { R, type Figure, type Side } from './stickman';
 import { RIG } from './core/constants';
 import { gripShift, type HandPose } from './core/hand';
-import { gripCenter, gripFrame, gripHand, heldAxis, heldGrip, type GripHand, type GripSpec, type HeldItemSpec } from './core/heldItem';
+import { gripCenter, gripFrame, gripHand, gripSpec, heldAxis, heldGrip, isCarry, type CarrySpec, type GripHand, type GripSpec, type HeldItemSpec } from './core/heldItem';
+import { carryFrame, elbowSeat, type CarryBody } from './core/heldCarry';
+import { bodyCapsules } from './collide';
+import type { V3 } from './core/lens';
 import { heldFit } from './core/heldFit';
 import { fingerVec, HAND_POSES } from './core/hand';
 import type { HeldIntent } from './core/heldAudit';
@@ -246,7 +249,8 @@ export function hold(fig: Figure, object: THREE.Object3D, o: HoldOptions): Held 
 const sideOf = (lead: 'right' | 'left'): Side => (lead === 'right' ? -1 : 1);
 
 /** Ý định mặc định của kiểu cầm ra `userData.hold` cho `check` (chỉ phần đo được: `up`, `face` về mặt người cầm hay ống kính) */
-export function gripIntent(spec: HeldItemSpec, g: GripSpec): HeldIntent | undefined {
+export function gripIntent(spec: HeldItemSpec, g: GripSpec | CarrySpec): HeldIntent | undefined {
+  if (isCarry(g)) return undefined;
   const i = g.intent;
   if (!i) return undefined;
   const up = i.up ?? (i.face?.toward === 'up' ? i.face.axis : undefined);
@@ -308,7 +312,11 @@ class Carrier extends THREE.Group {
 function holdGrip(fig: Figure, object: THREE.Object3D, hand: Side | 'both', g: HoldGrip, o: HoldOptions): Held {
   if (o.follow || o.offset || o.rotate || o.pose)
     throw new Error(`\`hold\`: kiểu cầm \`${g.item}#${g.grip}\` không đi cùng \`follow\`, \`offset\`, \`rotate\`, \`pose\``);
-  const spec = heldGrip(g.spec, g.grip, g.item);
+  if (isCarry(heldGrip(g.spec, g.grip, g.item))) {
+    if (hand === 'both') throw new Error(`\`hold\`: \`${g.item}#${g.grip}\` là kiểu treo, treo trên một tay`);
+    return carry(fig, object, { hand, grip: g });
+  }
+  const spec = gripSpec(g.spec, g.grip, g.item);
   if (hand === 'both' && !spec.both) throw new Error(`\`hold\`: \`${g.item}#${g.grip}\` không phải kiểu cầm hai tay`);
   const lead: Side = spec.both ? sideOf(spec.both.lead) : (hand as Side);
   const other = -lead as Side;
@@ -351,6 +359,198 @@ function holdGrip(fig: Figure, object: THREE.Object3D, hand: Side | 'both', g: H
         grip(fig, s, undefined);
         if (fig.holding && fig.holding[s] === entries.get(s)) delete fig.holding[s];
       }
+    },
+  };
+}
+
+/** Món treo trên một cánh tay (`Figure.carrying[side]`): `carry` ghi, `release` xoá; `check` đo nó (`heldCarries`) */
+export interface Carrying {
+  object: THREE.Object3D;
+  item: string;
+  grip: string;
+  spec: HeldItemSpec;
+  carry: CarrySpec;
+  /** Lần đặt gần nhất: góc đẩy khỏi phương đứng (độ), khe thân món tới thân, đùi (đơn vị rig thế giới, âm là lồng) */
+  fit?: { swing: number; gap: number; part?: string };
+}
+
+/** Chỗ treo của kiểu treo trên người đã đặt dáng, thế giới three: điểm, thanh quai vắt qua, hướng từ thân ra; khuỷu kèm góc */
+export interface CarrySeat {
+  pivot: THREE.Vector3;
+  bar: THREE.Vector3;
+  away: THREE.Vector3;
+  /** Khuỷu: góc giữa cánh tay trên và cẳng tay (độ, `180` thẳng), cẳng tay ngóc khỏi phương ngang (độ) */
+  bend?: number;
+  rise?: number;
+}
+
+const tag = (s: Side) => (s < 0 ? 'R' : 'L');
+const limbR = (j: THREE.Object3D) => ((j.children.find((c) => c.userData.limb) as THREE.Mesh | undefined)?.userData.r as number | undefined) ?? 0;
+const shoulderMemo = new WeakMap<Figure, Partial<Record<Side, THREE.Vector3>>>();
+
+/**
+ * Điểm đặt quai trên đỉnh vai, hệ thân (`spine`): phía trong khớp vai hơn nửa bán kính cánh tay, trên mặt thân áo (tia
+ * dọi từ trên xuống); thân không có lưới thì trên khớp vai một bán kính tay. Đứng yên trong hệ thân nên tính một lần
+ */
+function shoulderTop(fig: Figure, side: Side): THREE.Vector3 {
+  const memo = shoulderMemo.get(fig) ?? {};
+  shoulderMemo.set(fig, memo);
+  const hit = memo[side];
+  if (hit) return hit;
+  const sh = fig.arms[side].shoulder, r = limbR(sh);
+  const x = sh.position.x - side * r * 0.6, z = sh.position.z;
+  let y = sh.position.y + r;
+  const shells = fig.spine.children.filter((c): c is THREE.Mesh => (c as THREE.Mesh).isMesh && !c.userData.noShadow && !c.userData.limb);
+  const probe = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+  let top = -Infinity;
+  for (const mesh of shells) {
+    const inv = mesh.matrix.clone().invert();
+    const o = new THREE.Vector3(x, y + 5, z).applyMatrix4(inv), d = new THREE.Vector3(0, -1, 0).transformDirection(inv);
+    probe.geometry = mesh.geometry;
+    const h = new THREE.Raycaster(o, d).intersectObject(probe)[0];
+    if (h) top = Math.max(top, h.point.applyMatrix4(mesh.matrix).y);
+  }
+  if (top > -Infinity) y = top;
+  return (memo[side] = new THREE.Vector3(x, y, z));
+}
+
+/**
+ * Chỗ treo của kiểu treo `on` trên tay `side` của người ở dáng đang đặt (thế giới three; gọi sau khi ma trận thế giới của
+ * người đã tính). Khuỷu: mặt trong chỗ gập (`elbowSeat` của lõi). Vai: đỉnh vai phía trong khớp vai, thanh quai là trục vai
+ * ra ngoài. `away` từ trục thân (hông → cổ) ra chỗ treo
+ */
+export function carrySeat(fig: Figure, side: Side, on: CarrySpec['on']): CarrySeat {
+  const w = (o: THREE.Object3D) => o.getWorldPosition(new THREE.Vector3());
+  const k = fig.root.getWorldScale(new THREE.Vector3()).x;
+  let seat: CarrySeat;
+  if (on === 'elbow') {
+    const a = fig.arms[side];
+    const v = (o: THREE.Object3D): V3 => w(o).toArray() as V3;
+    const e = elbowSeat(v(a.shoulder), v(a.elbow), v(a.wrist), limbR(a.elbow) * k);
+    seat = { pivot: new THREE.Vector3(...e.pivot), bar: new THREE.Vector3(...e.bar), away: new THREE.Vector3(), bend: e.bend, rise: e.rise };
+  } else {
+    seat = {
+      pivot: fig.spine.localToWorld(shoulderTop(fig, side).clone()),
+      bar: new THREE.Vector3(side, 0, 0).transformDirection(fig.spine.matrixWorld),
+      away: new THREE.Vector3(),
+    };
+  }
+  const h = w(fig.hips), n = w(fig.neck), ax = n.clone().sub(h);
+  const f = Math.max(0, Math.min(1, seat.pivot.clone().sub(h).dot(ax) / Math.max(1e-9, ax.lengthSq())));
+  seat.away.copy(seat.pivot).sub(h.addScaledVector(ax, f));
+  if (seat.away.x ** 2 + seat.away.z ** 2 < 1e-10) seat.away.copy(seat.bar);
+  return seat;
+}
+
+const front = (o: THREE.Object3D): o is THREE.Mesh => {
+  const m = o as THREE.Mesh;
+  return !!m.isMesh && !m.userData.noShadow && !(Array.isArray(m.material) ? m.material : [m.material]).every((x) => x.side === THREE.BackSide);
+};
+
+/** Đám điểm mặt thân áo, khối hông và váy (thế giới three): sát hơn nang dựng từ hộp thân, eo hẹp hơn vai */
+function torsoCloud(fig: Figure): number[] {
+  const out: number[] = [];
+  const v = new THREE.Vector3();
+  const take = (m: THREE.Mesh) => {
+    const a = m.geometry.attributes.position;
+    if (!a) return;
+    m.updateWorldMatrix(true, false);
+    for (let i = 0; i < a.count; i++) {
+      v.fromBufferAttribute(a, i).applyMatrix4(m.matrixWorld);
+      out.push(v.x, v.y, v.z);
+    }
+  };
+  const torso = fig.spine.children.find((c) => c.userData.torso);
+  if (torso && front(torso)) take(torso);
+  for (const g of [fig.hips.children.find((c) => c.userData.pelvis), fig.skirt?.group])
+    g?.traverse((o) => {
+      if (front(o) && o.visible) take(o);
+    });
+  return out;
+}
+
+/**
+ * Các phần người mà món treo đo tới, thế giới three: mặt thân áo, hông, váy (`torso`, đám điểm) và nang các chi (`thighR`,
+ * `upperArmL`…, như `bodyCapsules`); `parts` lọc theo tên phần không kể bên
+ */
+export function carryBody(fig: Figure, parts?: readonly string[]): CarryBody[] {
+  const want = (p: string) => !parts || parts.includes(p);
+  const out: CarryBody[] = [];
+  if (want('torso')) out.push({ pts: torsoCloud(fig), part: 'torso' });
+  const limbs = (['head', 'upperArm', 'foreArm', 'thigh', 'shin', 'hand'] as const).filter(want);
+  if (limbs.length)
+    for (const c of bodyCapsules(fig, limbs))
+      out.push({ a: c.a.toArray() as V3, b: c.b.toArray() as V3, r: c.r, part: `${c.part}${c.side ? tag(c.side) : ''}` });
+  return out;
+}
+
+/** Nhóm mang món treo: mỗi lần three tính ma trận thì đặt lại theo chỗ treo, trọng lực và thân, đùi của người */
+class CarryRig extends THREE.Group {
+  private busy = false;
+  constructor(private place: (g: THREE.Group) => void) {
+    super();
+  }
+  private run() {
+    if (this.busy || !this.parent) return;
+    this.busy = true;
+    try {
+      this.place(this);
+    } finally {
+      this.busy = false;
+    }
+  }
+  override updateMatrixWorld(force?: boolean) {
+    this.run();
+    super.updateMatrixWorld(force);
+  }
+  override updateWorldMatrix(updateParents: boolean, updateChildren: boolean) {
+    if (updateParents) this.parent?.updateWorldMatrix(true, false);
+    this.run();
+    super.updateWorldMatrix(false, updateChildren);
+  }
+}
+
+const _cm = new THREE.Matrix4(), _ci = new THREE.Matrix4();
+
+/**
+ * Treo `object` trên cánh tay theo kiểu treo `grip` (`on: elbow | shoulder`): đỉnh quai (`at`) ở chỗ treo (`carrySeat`), thân
+ * món thõng theo trọng lực, đẩy khỏi thân và đùi (`carryFrame` của lõi) — đặt lại mỗi lần three tính ma trận. Bàn tay của tay
+ * ấy không đổi dáng, `Figure.holding` không đổi; `Figure.carrying[side]` ghi lần treo. Vật dựng ở gốc khung món như kiểu
+ * cầm. docs/01-rig.md#kiểu-treo
+ */
+export function carry(fig: Figure, object: THREE.Object3D, o: { hand: Side; grip: HoldGrip }): Held {
+  const side = o.hand, g = o.grip;
+  const spec = heldGrip(g.spec, g.grip, g.item);
+  if (!isCarry(spec)) throw new Error(`\`carry\`: \`${g.item}#${g.grip}\` là kiểu cầm bằng bàn tay — dùng \`hold\``);
+  if (!g.spec.shape) throw new Error(`\`carry\`: \`${g.item}\` cần \`shape\` cho kiểu treo`);
+  const entry: Carrying = { object, item: g.item, grip: g.grip, spec: g.spec, carry: spec };
+  const rig = new CarryRig((c) => {
+    const root = fig.root;
+    // ma trận thế giới của cả người (nhóm này đang bận nên không tự đặt lại giữa chừng)
+    root.updateWorldMatrix(true, true);
+    const k = root.getWorldScale(new THREE.Vector3()).x;
+    const seat = carrySeat(fig, side, spec.on);
+    const fit = carryFrame({
+      item: g.spec, grip: spec, pivot: seat.pivot.toArray() as V3, bar: seat.bar.toArray() as V3, away: seat.away.toArray() as V3,
+      u: 0.01 * k, body: carryBody(fig, ['torso', 'thigh']),
+      // tay luồn ngoài túi đeo vai: cánh tay trên cùng bên ép túi vào thân
+      ...(spec.on === 'shoulder' && { outer: carryBody(fig, ['upperArm']).filter((b) => b.part === `upperArm${tag(side)}`) }),
+    });
+    const { R, p } = fit.G;
+    _cm.set(R[0] * k, R[1] * k, R[2] * k, p[0], R[3] * k, R[4] * k, R[5] * k, p[1], R[6] * k, R[7] * k, R[8] * k, p[2], 0, 0, 0, 1);
+    _ci.copy(root.matrixWorld).invert().multiply(_cm).decompose(c.position, c.quaternion, c.scale);
+    entry.fit = { swing: fit.swing, gap: fit.gap * k, ...(fit.part && { part: fit.part }) };
+  });
+  const t = tag(side);
+  rig.userData.touch = [`self.upperArm${t}`, `self.foreArm${t}`, ...(spec.on === 'shoulder' ? ['self.torso'] : []), ...(spec.touch ?? [])];
+  rig.add(object);
+  fig.root.add(rig);
+  (fig.carrying ??= {})[side] = entry;
+  return {
+    object, span: 0,
+    release: () => {
+      rig.removeFromParent();
+      if (fig.carrying?.[side] === entry) delete fig.carrying[side];
     },
   };
 }

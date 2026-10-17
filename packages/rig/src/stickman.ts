@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { buildSockets, dress, headFit, newGear, type EquipState, type Gear, type Holding, type ItemFactories, type Sockets } from './attach';
+import { buildSockets, dress, headFit, newGear, type Carrying, type EquipState, type Gear, type Holding, type ItemFactories, type Sockets } from './attach';
 import { D, DEFAULT_FACE } from './core/constants';
 import type { FaceState } from './core/types';
 import { faceRig, type FaceRig, type FaceShape } from './face';
@@ -69,6 +69,8 @@ export interface Figure {
   hands?: Record<Side, Hand>;
   /** Món từng bàn tay đang cầm (`hold` ghi, `release` xoá) */
   holding?: Partial<Record<Side, Holding>>;
+  /** Món treo trên từng cánh tay (kiểu treo: khuỷu, vai — `carry` ghi, `release` xoá); bàn tay ấy vẫn tự do */
+  carrying?: Partial<Record<Side, Carrying>>;
   /** Độ lệch còn lại từng tay (`R` phải, `L` trái người) ở lần `act` gần nhất, khi có gì phải giải (`actAim` của lõi) */
   aim?: Record<'R' | 'L', AimReport>;
   /** Khung xương theo `rig.height` (`bones3` của lõi): `act` đặt đoạn chi bằng nó */

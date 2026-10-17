@@ -1524,8 +1524,8 @@ export function armOptions(dir = ".") {
 
 /**
  * Ngưỡng đo đồ cầm tay: `stickman.held` trong `package.json` — `{ pose, pierce, touch, wrap, grip, up, face, drift,
- * turn, reach, hold }` (độ, rồi đơn vị rig bốn trường, độ, độ, đơn vị rig, độ, đơn vị rig, giây), trường thiếu lấy các
- * hằng `HELD_*` (`reach`: `AIM_GAP`) của rig; `false` là không đo. Sai kiểu thì trả `{ error }`.
+ * turn, reach, seat, body, hold }` (độ, rồi đơn vị rig bốn trường, độ, độ, đơn vị rig, độ, đơn vị rig ba trường, giây),
+ * trường thiếu lấy các hằng `HELD_*` (`reach`: `AIM_GAP`; `seat`, `body`: `CARRY`) của rig; `false` là không đo. Sai kiểu thì trả `{ error }`.
  * docs/03-scene.md#đồ-cầm-tay
  */
 export function heldOptions(dir = ".") {
@@ -1542,6 +1542,8 @@ export function heldOptions(dir = ".") {
     drift: rig.HELD_DRIFT,
     turn: rig.HELD_TURN,
     reach: rig.AIM_GAP,
+    seat: rig.CARRY?.seat,
+    body: rig.CARRY?.body,
     hold: rig.HELD_HOLD,
   };
   if (raw === undefined) return out;
@@ -1555,13 +1557,13 @@ export function heldOptions(dir = ".") {
 }
 
 /**
- * Số đo đồ cầm ở giây `t` trên cảnh three `world` (`worldScene`): `pose(t)` rồi `heldHands` của rig cho mọi người đang
+ * Số đo đồ cầm ở giây `t` trên cảnh three `world` (`worldScene`): `pose(t)` rồi `heldHands`, `heldCarries` của rig cho mọi người đang
  * hiện — `frame` của `sceneHeld`. `pose(t)` ném thì giây ấy không có số đo, `onError(t, lỗi)`. `null` khi rig của repo
  * chưa có `heldHands`. `onPosed(posed, t)` được gọi sau mỗi lần đặt cảnh (luật `legacy` đọc cùng tư thế ấy).
  * docs/03-scene.md#đồ-cầm-tay
  */
 export function heldFrame(rt, world, onError, onPosed) {
-  const { scene, U, heldHands } = world;
+  const { scene, U, heldHands, heldCarries } = world;
   if (typeof heldHands !== "function") return null;
   const eye = rt.lens && [rt.lens.eye[0] * U, -rt.lens.eye[1] * U, -rt.lens.eye[2] * U];
   return (t) => {
@@ -1575,7 +1577,9 @@ export function heldFrame(rt, world, onError, onPosed) {
     scene.root.updateMatrixWorld(true);
     onPosed?.(posed, t);
     return Object.entries(posed).flatMap(([id, f]) =>
-      f?.root && shown(f.root) ? heldHands(f, id, { U, eye }) : [],
+      f?.root && shown(f.root)
+        ? [...heldHands(f, id, { U, eye }), ...(heldCarries?.(f, id, { U }) ?? [])]
+        : [],
     );
   };
 }

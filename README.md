@@ -53,6 +53,7 @@ thì xem [docs/05](docs/05-repo-video.md).
 | `demo=turn` | Quay tại chỗ bằng bước chân: một người đi vào, dừng, quay phải `90°` về ống kính, quay trái nửa vòng (hai nhịp), quay phải `90°`; một cô đứng quay trái `90°` rồi quay lại |
 | `demo=hold` | Cầm đồ và đội đồ: một người đi bưng khay hai tay, đeo thẻ ngực; một cô thấp hơn cầm cốc, đội mũ cảnh sát; một người đeo kính râm, đội mũ, cầm tờ giấy; một hàng người nền `lod: 'low'` đóng băng ngồi bàn, người thứ tư ngồi lấn vào bàn. Góc trên trái là bảng va chạm của khung và số mesh, tam giác theo LOD |
 | `noreport` | Ẩn bảng va chạm của `demo=hold` |
+| `demo=carry` | Món treo trên cánh tay (kiểu treo, `held/tui.json` của bộ chung) qua `world.hands[].hold` và `cast.provide`: một cô đeo túi vai phải, tay luồn ngoài quai, tay trái cầm cốc; một cô mặc váy khoác túi ở khuỷu trái gập, tay phải cầm cốc (`apps/viewer/src/demo-carry.js`) |
 | `demo=camera` | Ống kính `scene.lens` và mốc `camera[]` của scene: máy đẩy vào người đang đi, lia theo, lùi ra. Nhãn và bong bóng 2D bám đỉnh đầu, mồm qua `screenOf` (chấm đỏ là đúng điểm mốc); góc máy xoay tay tắt |
 | `demo=light` | Phòng thử đèn: đèn trần, nắng qua cửa sổ, bàn có đèn bàn, hai người que (`apps/viewer/src/demo-light.js`) |
 | `demo=room` | Bộ dựng phòng: văn phòng có dải cửa sổ (rèm lá kéo xuống 30%), cửa sổ nhỏ, cửa ra hành lang có biển, đèn tấm trên trần, hai đảo bàn người nền đóng băng (JSON nhân vật mẫu qua `characterOptions`), một người đi về phía cửa; cửa mở dần từ giây 2,5 (`apps/viewer/src/demo-room.js`) |

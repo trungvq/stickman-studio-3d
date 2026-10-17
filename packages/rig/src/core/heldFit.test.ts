@@ -12,6 +12,7 @@ import { heldHits, HELD_PIERCE_FIT, HELD_WRAP, heldLine, type HeldHand } from ".
 import {
   gripFrame,
   gripHand,
+  gripSpec,
   HELD_FINGERS,
   parseHeldItem,
   type GripFrame,
@@ -123,7 +124,7 @@ describe("handFrames: độ gập thêm từng đốt", () => {
 describe("heldFit: ngón ôm theo đồ", () => {
   const solve = (r: number, side: number, k: number, long: number, wrap?: readonly string[]) => {
     const item = rod(r, wrap as never);
-    const gh = gripHand(item.grips.nam, side);
+    const gh = gripHand(gripSpec(item, "nam"), side);
     const G = gripFrame(item, gh, side, k, long);
     const v = [0, 0, ...fingerVec(HAND_POSES.grip)];
     const inp = { v, side, k, long, shape: item.shape!, G, wrap: gh.wrap };
@@ -163,7 +164,7 @@ describe("heldFit: ngón ôm theo đồ", () => {
 
   it("món xa bàn tay: không đổi gì; cùng số vào là cùng số ra", () => {
     const item = rod(2.5);
-    const gh = gripHand(item.grips.nam, -1);
+    const gh = gripHand(gripSpec(item, "nam"), -1);
     const G = gripFrame(item, gh, -1);
     const far = { ...G, p: [G.p[0] + 1, G.p[1], G.p[2]] as V3 };
     const v = [0, 0, ...fingerVec(HAND_POSES.grip)];

@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { faded, handCaps, meshTris } from './collide';
+import { carryBody, carrySeat } from './attach';
+import { carryClearance } from './core/heldCarry';
 import { handGripOf, handPoint } from './core/hand';
 import { HAND_CAPSULE_PIECES } from './core/handMesh';
-import { angleBetween, capsuleDepth, meshBox, meshSigned, type HeldGroup, type HeldHand, type HeldIntent } from './core/heldAudit';
+import { angleBetween, capsuleDepth, meshBox, meshSigned, type HeldCarry, type HeldGroup, type HeldHand, type HeldIntent } from './core/heldAudit';
 import { capsuleClearance } from './core/heldFit';
-import type { GripFrame, HeldFinger } from './core/heldItem';
+import { heldPoint, type GripFrame, type HeldFinger } from './core/heldItem';
 import type { V3 } from './core/lens';
 import { U } from './khoi';
 import type { Figure, Side } from './stickman';
@@ -145,6 +147,62 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
       ...(face && { face }),
       rel: { p: [(rp.x * k) / u, (rp.y * k) / u, (rp.z * k) / u], q: [rq.x, rq.y, rq.z, rq.w] },
       at: [G[0] / u, -G[1] / u, -G[2] / u],
+    });
+  }
+  return out;
+}
+
+/** Phần người được lấn vào thân món treo, `touch` của kiểu treo: `'[self.]<phần>[R|L]'` là bao nhiêu cũng được, `{ part, max }` tới `max` */
+function carryAllow(touch: readonly (string | { part: string; max: number })[], part: string): number {
+  let out = 0;
+  for (const t of touch) {
+    const [name, max] = typeof t === 'string' ? [t, Infinity] : [t.part, t.max];
+    const n = name.replace(/^self\./, '');
+    if (n === part || (n.length && part.startsWith(n) && /^[RL]$/.test(part.slice(n.length)))) out = Math.max(out, max);
+  }
+  return out;
+}
+
+/**
+ * Số đo từng món treo trên cánh tay của người `fig` (tên `id`, kiểu treo `Figure.carrying`) đang hiện trên hình: đỉnh quai
+ * tới chỗ treo, góc khuỷu và độ ngóc cẳng tay (khuỷu), khe thân món (hình va chạm `shape`) tới từng phần người — trừ đoạn
+ * tay quai vắt qua, cộng phần `touch` cho lấn —, góc đẩy khỏi phương đứng. Đơn vị rig thế giới. Gọi như `heldHands`.
+ * docs/03-scene.md#đồ-cầm-tay
+ */
+export function heldCarries(fig: Figure, id: string, o: { U?: number } = {}): HeldCarry[] {
+  const u = o.U ?? U;
+  const out: HeldCarry[] = [];
+  if (!fig.carrying || !shown(fig.root)) return out;
+  fig.root.updateWorldMatrix(true, true);
+  const k = fig.root.getWorldScale(new THREE.Vector3()).x;
+  const parts = carryBody(fig);
+  for (const side of [-1, 1] as Side[]) {
+    const e = fig.carrying[side];
+    if (!e || !shown(e.object) || !e.spec.shape) continue;
+    const t = side < 0 ? 'R' : 'L';
+    const seat = carrySeat(fig, side, e.carry.on);
+    const top = e.object.localToWorld(new THREE.Vector3(...heldPoint(e.spec, e.carry.at).map((v) => v * 0.01)));
+    // món trong thế giới three dạng liên kết của lõi: khe đo bằng cùng hình va chạm như ngón ôm
+    const IF = itemFrame(new THREE.Matrix4(), e.object);
+    const skip = e.carry.on === 'elbow' ? [`upperArm${t}`, `foreArm${t}`] : [];
+    let body = { gap: Infinity, part: '', allow: 0 };
+    for (const c of parts) {
+      const part = c.part;
+      if (skip.includes(part)) continue;
+      const gap = carryClearance(e.spec.shape, IF, c) * (IF.u / u);
+      const allow = carryAllow(e.carry.touch ?? [], part);
+      if (gap + allow < body.gap + body.allow) body = { gap, part, allow };
+    }
+    out.push({
+      id, hand: t, item: e.item, obj: e.object.id,
+      hold: `${e.item}#${e.grip}`, on: e.carry.on,
+      key: `${e.object.id}|${e.grip}|${e.carry.on}`,
+      at: [seat.pivot.x / u, -seat.pivot.y / u, -seat.pivot.z / u],
+      seat: top.distanceTo(seat.pivot) / u,
+      ...(seat.bend !== undefined && { bend: seat.bend, rise: seat.rise! }),
+      body: { gap: body.gap, part: body.part, ...(body.allow > 0 && { allow: body.allow }) },
+      swing: e.fit?.swing ?? 0,
+      s: k,
     });
   }
   return out;

@@ -267,6 +267,14 @@ const SHOTS = [
   ['tay-vin', 'demo=hand-aim&act=armrest&t=1.4&focus=b:near&az=-75&el=20&dist=2.4'],
   ['chen-nho', 'demo=hand-aim&act=sake&t=1.4&focus=a:near&az=-30&el=8&dist=2'],
   ['dien-thoai-ngang', 'demo=hand-aim&act=phone2&t=1.4&focus=a:hands&az=-30&el=8&dist=2.4'],
+  ['tui', 'demo=carry&t=1&az=0&el=6&look=0,2.2,0&dist=8'],
+  ['tui-34', 'demo=carry&t=1&az=35&el=10&look=0,2.2,0&dist=8'],
+  ['tui-vai-ngang', 'demo=carry&t=1&az=-90&el=6&look=-1.1,2.5,0&dist=3'],
+  ['tui-vai-cheo', 'demo=carry&t=1&az=-35&el=10&look=-1.3,2.5,0&dist=3'],
+  ['tui-vai-sau', 'demo=carry&t=1&az=-150&el=10&look=-1.3,2.5,0&dist=3'],
+  ['tui-khuyu-ngang', 'demo=carry&t=1&az=90&el=6&look=1.1,2.1,0&dist=3'],
+  ['tui-khuyu-cheo', 'demo=carry&t=1&az=35&el=10&look=1.4,2.1,0&dist=3'],
+  ['tui-khuyu-sau', 'demo=carry&t=1&az=150&el=10&look=1.4,2.1,0&dist=3'],
 ];
 
 const { values: o } = parseArgs({ options: { out: { type: 'string' }, vs: { type: 'string' }, only: { type: 'string' }, soft: { type: 'boolean' }, q: { type: 'string' } } });

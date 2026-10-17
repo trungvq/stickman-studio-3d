@@ -48,7 +48,9 @@ import {
 } from "./bodyMark";
 import {
   heldAxis,
+  gripOf,
   heldGrip,
+  isCarry,
   heldBase,
   heldPoint,
   HOLD_BLEND,
@@ -3064,7 +3066,8 @@ export function sceneHoldProblems(rt: SceneRuntime): string[] {
         const a = refs[side];
         const b = refs[side === "right" ? "left" : "right"];
         const key = `${side}|${a.item}#${a.grip}|${b.item}`;
-        if (!rt.held[a.item]?.grips[a.grip]?.both || said.has(key)) continue;
+        const spec = rt.held[a.item];
+        if (!spec || !gripOf(spec, a.grip)?.both || said.has(key)) continue;
         said.add(key);
         out.push(
           `${m.id}: \`world.hands\` t=${k.t}: kiểu cầm hai tay \`${a.item}#${a.grip}\` ở tay ${side === "right" ? "phải" : "trái"} mà tay kia đang cầm \`${b.item}\` — hai tay của món hai tay phải cùng một món: tay kia khai cùng món, hay \`hold: null\` (docs/03-scene.md#đồ-cầm-tay)`,
@@ -3150,17 +3153,20 @@ function handAt(
   const prev = blend ? holdRun(keys, side, now!.since - 1e-6) : undefined;
   const prevRef = prev && sceneHoldRef(prev.hold);
   const f = blend ? smoothstep((time - now!.since) / HOLD_BLEND) : 1;
+  // kiểu treo không hoà liên kết, không có ý định: món theo chỗ treo ngay từ mốc
+  const carried = !!nowRef && isCarry(held[nowRef.item]?.grips[nowRef.grip]);
   const regrip =
+    !carried &&
     !!(nowRef && prevRef) &&
     prevRef!.item === nowRef!.item &&
     prevRef!.grip !== nowRef!.grip &&
-    !!held[nowRef!.item]?.grips[prevRef!.grip];
+    !!gripOf(held[nowRef!.item], prevRef!.grip);
   const hold: ReachHold | undefined = nowRef && {
     ...nowRef,
     spec: held[nowRef.item],
     since: now.since,
     ...(blend && regrip && { from: { grip: prevRef!.grip, k: 1 - f } }),
-    ...(blend && prevRef?.item !== nowRef.item && { enter: f }),
+    ...(blend && !carried && prevRef?.item !== nowRef.item && { enter: f }),
     ...(poseAt &&
       prior !== undefined && {
         prior: { dt: time - prior, pose: () => poseAt(+prior.toFixed(6)) },
@@ -3171,7 +3177,7 @@ function handAt(
    * đổi món) vẫn giữ ý định tới đúng lúc thả
    */
   const intentAt = (kt: number): Aim | undefined => {
-    if (!hold) return undefined;
+    if (!hold || carried) return undefined;
     for (const run of [holdRun(keys, side, kt), holdRun(keys, side, kt - 1e-6)]) {
       const r = run && sceneHoldRef(run.hold);
       if (r && r.item === hold.item && r.grip === hold.grip)
@@ -3323,8 +3329,12 @@ function checkHolds(
         const run =
           holdRun(keys, side, k.t) ??
           fail(`${where}: \`point: ${h.point}\` cần món đang cầm (\`hold\`)`);
-        const { item } = sceneHoldRef(run.hold);
+        const { item, grip } = sceneHoldRef(run.hold);
         const spec = held[item];
+        if (spec && isCarry(spec.grips[grip]))
+          fail(
+            `${where}: \`point: ${h.point}\` cần món cầm trong bàn tay — \`${item}#${grip}\` là kiểu treo (\`on: ${(spec.grips[grip] as { on: string }).on}\`)`,
+          );
         try {
           if (spec) heldPoint(spec, h.point.slice(5));
         } catch (e) {

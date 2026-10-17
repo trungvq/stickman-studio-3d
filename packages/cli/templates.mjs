@@ -76,7 +76,9 @@ vừa làm gì.
   đăng ký vật bằng \`cast.provide("món", vật)\` trong \`extra\`, rig gắn món vào tay suốt quãng cầm — \`docs 01\` § Kiểu
   cầm, \`docs 03\` § Đồ cầm tay. Ngón có ôm món không thì soi \`pnpm can-tay\`. Thêm hay sửa kiểu cầm thì soi cả bảng
   \`pnpm bang-cam\` (mọi món × kiểu × tay nhỏ nhất, lớn nhất × ba góc, kèm số đo \`held\`); nâng rig xong thì
-  \`pnpm bang-cam --so\` so từng ô với bảng chuẩn đã duyệt — \`docs 03\` § Bảng duyệt kiểu cầm.
+  \`pnpm bang-cam --so\` so từng ô với bảng chuẩn đã duyệt — \`docs 03\` § Bảng duyệt kiểu cầm. Món treo trên cánh tay
+  (túi khoác khuỷu, đeo vai) là kiểu treo \`"on": "elbow" | "shoulder"\` cùng \`shape\` thân món, cảnh khai \`hold\` như
+  thường, bàn tay ấy để tự do; khuỷu phải gập, tay phải dang ngoài túi — \`docs 01\` § Kiểu treo.
 - Đặt tay lên một mặt (quầy, sách, bàn phím, bàn) hay đổi \`turn\` / \`elbow\` xong thì
   đọc \`world.palms\` của \`scene_probe\` (lòng tay \`úp\`, \`down\` dưới 45; \`aim\` là khe tới
   mốc và độ lệch còn lại so với \`palm\` đã khai), đừng phán hướng lòng tay bằng mắt —

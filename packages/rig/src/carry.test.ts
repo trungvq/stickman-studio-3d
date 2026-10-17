@@ -1,0 +1,177 @@
+import * as THREE from 'three';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { body3 } from './core/figure3d';
+import { parseAction } from './core/action';
+import { heldPoint, parseHeldItem, type HeldItemSpec } from './core/heldItem';
+import { parseScene, resolveScene } from './core/scene';
+import { defaultCharacter } from './core/schema';
+import { heldLine, sceneHeld, type HeldCarry, type HeldItemPose } from './core/heldAudit';
+import { CARRY } from './core/heldCarry';
+import { carrySeat } from './attach';
+import { heldCarries, heldHands } from './held';
+import { U } from './khoi';
+import { buildWorld, plainRoom, type Cast3D } from './world';
+import tuiJson from '../../../apps/studio/public/held/tui.json';
+import cocJson from '../../../apps/studio/public/held/coc.json';
+
+// Kiểu treo: túi khoác khuỷu, đeo vai — rig treo món trên cánh tay theo `world.hands[].hold`, `check` đo chỗ treo và thân món
+
+beforeAll(() => {
+  const ctx = new Proxy({}, { get: (_t, k) => (k === 'measureText' ? () => ({ width: 0 }) : () => undefined), set: () => true });
+  const g = globalThis as { document?: unknown; Path2D?: unknown };
+  g.Path2D ??= class { moveTo() {} lineTo() {} ellipse() {} arc() {} bezierCurveTo() {} quadraticCurveTo() {} closePath() {} rect() {} };
+  g.document ??= { createElement: () => ({ width: 0, height: 0, style: {}, getContext: () => ctx }) };
+});
+
+const spec = (j: unknown): HeldItemSpec => {
+  const r = parseHeldItem(j);
+  if (!r.success) throw new Error(r.error.message);
+  return r.data;
+};
+const TUI = spec(tuiJson);
+const HELD = { tui: TUI, coc: spec(cocJson) };
+
+const still = parseAction({ name: 'still', duration: 1, end: 'hold', authoredAt: 'side', keys: [{ t: 0, pose: {} }] }).data!;
+const c = defaultCharacter();
+c.palette.clad = true;
+const lens = { eye: [0, -250, -1400] as [number, number, number], yaw: 0, pitch: 0, f: 800, cx: 0, cy: 0 };
+
+/** Khuỷu gập chữ V: cổ tay trước vai, khuỷu chĩa xuống ra ngoài */
+const ELBOW = { to: 'shoulder', offset: [36, 30, 0], point: 'wrist', elbow: [-0.7, 1, -0.2] };
+/** Tay phải dang ngoài túi đeo vai */
+const OUT = { at: [-90, -185, -10], point: 'wrist', elbow: [-0.6, 1, 0] };
+
+function world(hands: unknown[], out?: { rt?: ReturnType<typeof resolveScene> }) {
+  const sc = parseScene({
+    name: 'x', lens, duration: 3,
+    cast: [{ id: 'a', character: 'a.json', world: { at: [0, 0, 0], yaw: 90, hands }, tracks: [{ clips: [{ action: 'still', start: 0 }] }] }],
+  });
+  if (!sc.success) throw new Error(sc.error.message);
+  const heights = { a: 1 }, bodies = { a: body3(c) };
+  const rt = resolveScene(sc.data, { still }, {}, {}, heights, bodies, HELD);
+  if (out) out.rt = rt;
+  const bag = new THREE.Group();
+  bag.name = 'tui';
+  bag.add(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.26, 0.1).translate(0, 0.13, 0), new THREE.MeshBasicMaterial()));
+  bag.position.set(2, 0, 1);
+  const cup = new THREE.Group();
+  cup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.2), new THREE.MeshBasicMaterial()));
+  let cast!: Cast3D;
+  const w = buildWorld(sc.data, rt, {
+    set: () => plainRoom(),
+    extra: (_m, k) => {
+      cast = k;
+      const g = new THREE.Group();
+      g.add(bag, cup);
+      k.provide('tui', bag);
+      k.provide('coc', cup);
+      return { group: g };
+    },
+  }, { characters: { 'a.json': c }, heights, bodies });
+  return { w, bag, cup, cast };
+}
+
+const posed = (w: ReturnType<typeof world>['w'], t: number) => {
+  const fig = w.pose(t).a;
+  w.root.updateMatrixWorld(true);
+  return fig;
+};
+const frame = (w: ReturnType<typeof world>['w']) => (t: number) => {
+  const f = posed(w, t);
+  return [...heldHands(f, 'a'), ...heldCarries(f, 'a')];
+};
+
+describe('kiểu treo: rig treo món trên cánh tay', () => {
+  it('khoác khuỷu: đỉnh quai ở chỗ gập, thân món thõng đứng; bàn tay tự do, tay kia cầm cốc', () => {
+    const { w, bag, cast } = world([{ t: 0, right: { ...ELBOW, hold: 'tui#khuyu' }, left: { at: [40, -250, -40], point: 'grip', hold: 'coc#quai' } }]);
+    const fig = posed(w, 0.5);
+    expect(fig.carrying?.[-1]).toMatchObject({ item: 'tui', grip: 'khuyu' });
+    expect(fig.holding?.[-1]).toBeUndefined();
+    expect(fig.hands![-1].held).toBeUndefined();
+    expect(fig.holding?.[1]).toMatchObject({ item: 'coc', grip: 'quai' });
+    expect(cast.holder('tui', 0.5)).toEqual({ id: 'a', side: -1 });
+    const seat = carrySeat(fig, -1, 'elbow');
+    const top = bag.localToWorld(new THREE.Vector3(...heldPoint(TUI, 'quai').map((v) => v * 0.01)));
+    expect(top.distanceTo(seat.pivot)).toBeLessThan(1e-6);
+    expect(seat.bend!).toBeLessThan(CARRY.bend);
+    const [m] = heldCarries(fig, 'a');
+    expect(m).toMatchObject({ hold: 'tui#khuyu', on: 'elbow', hand: 'R', obj: bag.id });
+    expect(m.body.gap).toBeGreaterThan(-CARRY.body);
+    // thân món thẳng đứng trừ góc đẩy khỏi thân
+    const up = new THREE.Vector3(0, 1, 0).transformDirection(bag.matrixWorld);
+    expect(Math.abs(Math.acos(up.y) * (180 / Math.PI) - m.swing)).toBeLessThan(0.5);
+  });
+
+  it('đeo vai: đỉnh quai trên đỉnh vai phía trong khớp vai, thân món đẩy khỏi thân áo, tay dang ngoài túi thì không lồng', () => {
+    const { w, bag } = world([{ t: 0, right: { ...OUT, hold: 'tui#vai' } }]);
+    const fig = posed(w, 0.5);
+    const seat = carrySeat(fig, -1, 'shoulder');
+    const sh = fig.arms[-1].shoulder.getWorldPosition(new THREE.Vector3());
+    // phía trong khớp vai (tay phải ở −x), cao hơn khớp
+    expect(seat.pivot.x).toBeGreaterThan(sh.x);
+    expect(seat.pivot.y).toBeGreaterThan(sh.y);
+    const top = bag.localToWorld(new THREE.Vector3(...heldPoint(TUI, 'quai').map((v) => v * 0.01)));
+    expect(top.distanceTo(seat.pivot)).toBeLessThan(1e-6);
+    const [m] = heldCarries(fig, 'a');
+    expect(m.on).toBe('shoulder');
+    expect(m.body.gap + (m.body.allow ?? 0)).toBeGreaterThan(-CARRY.body);
+    // thân túi ở dưới vai, ngoài thân
+    const mid = bag.localToWorld(new THREE.Vector3(0, 0.13, 0));
+    expect(mid.x).toBeLessThan(seat.pivot.x);
+    expect(mid.y).toBeLessThan(sh.y);
+  });
+
+  it('`hold: null` gỡ món về chỗ cũ; vẽ nhảy cóc ra cùng chỗ', () => {
+    const { w, bag, cast } = world([{ t: 0, right: { ...ELBOW, hold: 'tui#khuyu' } }, { t: 1, right: { hold: null } }]);
+    posed(w, 0.5);
+    const at = bag.getWorldPosition(new THREE.Vector3());
+    posed(w, 2);
+    expect(bag.position.toArray()).toEqual([2, 0, 1]);
+    expect(cast.holder('tui', 2)).toBeUndefined();
+    const fig = posed(w, 0.5);
+    expect(fig.carrying?.[-1]).toBeDefined();
+    expect(bag.getWorldPosition(new THREE.Vector3()).distanceTo(at)).toBeLessThan(1e-9);
+    posed(w, 2);
+    expect(fig.carrying?.[-1]).toBeUndefined();
+  });
+});
+
+describe('kiểu treo: luật `held`', () => {
+  it('tay buông thẳng mà khai khoác khuỷu: `seat` (khuỷu không gập giữ quai)', () => {
+    const out: { rt?: ReturnType<typeof resolveScene> } = {};
+    const { w } = world([{ t: 0, right: { at: [-40, -150, 0], point: 'wrist', hold: 'tui#khuyu' } }], out);
+    const issues = sceneHeld(out.rt!, { frame: frame(w) });
+    const seat = issues.find((i) => i.rule === 'seat')!;
+    expect(seat).toBeDefined();
+    expect((seat.sample as HeldCarry).bend!).toBeGreaterThan(CARRY.bend);
+    expect(heldLine(seat)).toMatch(/quai không nằm trên chỗ treo — `a` tay phải treo tui \(`tui#khuyu`, khuỷu\): khuỷu mở/);
+  });
+
+  it('tay buông sát người mà đeo vai: `body` (cánh tay lồng vào túi); dang tay ra thì hết', () => {
+    const out: { rt?: ReturnType<typeof resolveScene> } = {};
+    const { w } = world([{ t: 0, right: { at: [-42, -165, 0], point: 'wrist', hold: 'tui#vai' } }], out);
+    const issues = sceneHeld(out.rt!, { frame: frame(w) });
+    const body = issues.find((i) => i.rule === 'body')!;
+    expect(body).toBeDefined();
+    expect((body.sample as HeldCarry).body.part).toMatch(/^(upperArmR|torso)$/);
+    expect(heldLine(body)).toMatch(/món treo lồng vào người/);
+    const ok: { rt?: ReturnType<typeof resolveScene> } = {};
+    const good = world([{ t: 0, right: { ...OUT, hold: 'tui#vai' } }], ok);
+    expect(sceneHeld(ok.rt!, { frame: frame(good.w) }).filter((i) => i.rule === 'body' || i.rule === 'seat')).toEqual([]);
+  });
+
+  it('món nằm xa lúc treo: `jump` lúc gắn', () => {
+    const out: { rt?: ReturnType<typeof resolveScene> } = {};
+    const { w, bag, cast } = world([{ t: 0.5, right: { ...ELBOW, hold: 'tui#khuyu' } }], out);
+    const items = (t: number): HeldItemPose[] => {
+      posed(w, t);
+      const p = bag.getWorldPosition(new THREE.Vector3());
+      const q = bag.getWorldQuaternion(new THREE.Quaternion());
+      const h = cast.holder('tui', t);
+      return [{ obj: bag.id, item: 'tui', p: [p.x / U, -p.y / U, -p.z / U], q: [q.x, q.y, q.z, q.w], shown: true, ...(h && { holder: { id: h.id, hand: h.side < 0 ? 'R' as const : 'L' as const } }) }];
+    };
+    const jump = sceneHeld(out.rt!, { frame: frame(w), items }).find((i) => i.rule === 'jump')!;
+    expect(jump.jump!.kind).toBe('take');
+    expect(heldLine(jump)).toMatch(/món nhảy lúc gắn vào tay — `a` tay phải treo tui/);
+  });
+});

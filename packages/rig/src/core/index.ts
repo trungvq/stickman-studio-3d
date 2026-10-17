@@ -26,6 +26,7 @@ export * from "./head";
 export * from "./humanHead";
 export * from "./headwear";
 export * from "./heldAudit";
+export * from "./heldCarry";
 export * from "./heldFit";
 export * from "./heldItem";
 export * from "./idle";

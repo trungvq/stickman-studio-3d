@@ -101,12 +101,40 @@ const TouchSchema = z.union([z.string(), z.strictObject({ part: z.string(), max:
  * cứng theo tay `lead`, tay kia với tới `other`
  */
 export const GripSpecSchema = GripHandSchema.extend({
+  on: z.literal("hand").optional(),
   touch: z.array(TouchSchema).optional(),
   intent: HoldIntentSchema.optional(),
   left: GripHandSchema.partial().optional(),
   both: z.strictObject({ lead: z.enum(["right", "left"]), other: GripHandSchema }).optional(),
 });
 export type GripSpec = z.infer<typeof GripSpecSchema>;
+
+/** Chỗ treo món trên cánh tay của kiểu treo: khuỷu gập (quai vắt ở mặt trong khuỷu), đầu vai (quai trên vai, tay ngoài quai) */
+export const CARRY_ON = ["elbow", "shoulder"] as const;
+export type CarryOn = (typeof CARRY_ON)[number];
+
+/**
+ * Kiểu treo: món không nằm trong bàn tay mà treo ở `on` — mốc `at` của món (đỉnh quai) đặt vào chỗ treo, thân món thõng
+ * theo trọng lực mỗi khung, đẩy khỏi thân và đùi theo hình va chạm (`shape`, bắt buộc). Bàn tay của tay ấy theo hành
+ * động. `yaw` quay thân món quanh phương đứng (độ), `touch` như kiểu cầm. docs/01-rig.md#kiểu-treo
+ */
+export const CarrySpecSchema = z.strictObject({
+  on: z.enum(CARRY_ON),
+  at: AnchorRefSchema,
+  yaw: z.number().min(-180).max(180).optional(),
+  touch: z.array(TouchSchema).optional(),
+});
+export type CarrySpec = z.infer<typeof CarrySpecSchema>;
+
+/** Một mục của `grips`: kiểu cầm bằng bàn tay hay kiểu treo trên cánh tay */
+export type HeldGripSpec = GripSpec | CarrySpec;
+
+/** Kiểu treo (`on` là `elbow` / `shoulder`), không phải kiểu cầm bằng bàn tay */
+export const isCarry = (g: HeldGripSpec | undefined): g is CarrySpec =>
+  !!g && g.on !== undefined && g.on !== "hand";
+
+/** Mục `grips`, phân theo `on`: không khai hay `hand` là kiểu cầm bằng bàn tay, chỗ treo trên cánh tay là kiểu treo */
+const GripEntrySchema = z.discriminatedUnion("on", [CarrySpecSchema, GripSpecSchema]);
 
 const AnchorSchema = z.strictObject({ at: v3, dir: v3.optional() });
 
@@ -145,7 +173,7 @@ export const HeldItemSchema = z
     /** Hộp bao, đơn vị rig */
     size: v3,
     anchors: z.record(z.string(), AnchorSchema),
-    grips: z.record(z.string(), GripSpecSchema),
+    grips: z.record(z.string(), GripEntrySchema),
     /** Tên nhóm con của món treo theo trọng lực (chùm chìa thõng, dòng rượu rót) */
     hang: z.array(z.string().min(1)).optional(),
     /** Hình va chạm: hợp các khối (`HeldShapeSchema`) — ngón ôm theo đồ và luật `held` đo trên nó */
@@ -202,6 +230,15 @@ export const HeldItemSchema = z
     });
     for (const [name, g] of Object.entries(m.grips)) {
       const path = ["grips", name];
+      if (isCarry(g)) {
+        ref(g.at, [...path, "at"]);
+        if (!m.shape)
+          bad(
+            path,
+            `kiểu treo \`on: ${g.on}\` cần \`shape\` (thân món): thân món đẩy khỏi người theo hình ấy`,
+          );
+        continue;
+      }
       if (hand(g, path)) axes(g, path);
       if (g.left && hand(g.left, [...path, "left"]) && hand(g, path))
         axes({ ...g, ...g.left }, [...path, "left"]);
@@ -343,11 +380,25 @@ export function gripFrame(
 export const gripPoint = (G: GripFrame, q: V3): V3 => add(matVec(G.R, mul(q, G.u)), G.p);
 
 /** Kiểu cầm `grip` của món, hay ném lỗi có tên */
-export function heldGrip(item: HeldItemSpec, grip: string, name = "món"): GripSpec {
+export function heldGrip(item: HeldItemSpec, grip: string, name = "món"): HeldGripSpec {
   const g = item.grips[grip];
   if (!g) throw new Error(`\`${name}\` không có kiểu cầm \`${grip}\``);
   return g;
 }
+
+/** Kiểu cầm bằng bàn tay `grip` của món; không có, hay là kiểu treo, thì ném lỗi có tên */
+export function gripSpec(item: HeldItemSpec, grip: string, name = "món"): GripSpec {
+  const g = heldGrip(item, grip, name);
+  if (isCarry(g))
+    throw new Error(`\`${name}#${grip}\` là kiểu treo (\`on: ${g.on}\`), không cầm bằng bàn tay`);
+  return g;
+}
+
+/** Kiểu cầm bằng bàn tay của món (`undefined` khi không có hay là kiểu treo) */
+export const gripOf = (item: HeldItemSpec, grip: string): GripSpec | undefined => {
+  const g = item.grips[grip];
+  return g && !isCarry(g) ? g : undefined;
+};
 
 /** Mốc thân của đích ý định `{ cast, mark }` hay `{ mark }`: mặc định là mặt (giữa hai mắt) */
 export const intentMark = (t: { mark?: BodyMark }): BodyMark => t.mark ?? "eye";
@@ -409,7 +460,7 @@ export const HOLD_BLEND = 0.3;
 export const HOLD_SLEW_STEP = 1 / 30;
 
 /** Phép quay quanh trục đơn vị `u` góc `a` (radian) */
-function rotAxis(u: V3, a: number): M3 {
+export function rotAxis(u: V3, a: number): M3 {
   const [x, y, z] = u;
   const c = Math.cos(a);
   const s = Math.sin(a);
@@ -489,7 +540,15 @@ export function holdIntent(
   h: SceneHold,
 ): { face?: AxisIntent; roll?: AxisIntent } {
   const { grip } = sceneHoldRef(h);
-  const d = heldGrip(item, grip).intent;
+  const g = heldGrip(item, grip);
+  if (isCarry(g)) {
+    if (typeof h === "object" && (h.face !== undefined || h.up !== undefined || h.roll))
+      throw new Error(
+        `\`${grip}\` là kiểu treo: món thõng theo trọng lực, không có ý định \`face\` / \`up\` / \`roll\``,
+      );
+    return {};
+  }
+  const d = g.intent;
   const main = (i: HoldIntentSpec | undefined): AxisIntent | undefined =>
     i?.face ?? (i?.up !== undefined ? { axis: i.up, toward: "up" } : undefined);
   let face = main(d);

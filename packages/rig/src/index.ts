@@ -10,13 +10,13 @@ export {
   type Arm, type CharacterJson, type Figure, type Hand, type Leg, type Lod, type Side, type StickmanOptions,
 } from './stickman';
 export {
-  dress, fitHolding, grip, gripIntent, hold, SOCKET_NAMES, torsoSocket, wear,
-  type EquipState, type Gear, type HeadFit, type Held, type HoldGrip, type Holding, type HoldOptions, type ItemBuild, type ItemContext, type ItemFactories, type ItemFactory, type SocketName, type Sockets,
+  carry, carrySeat, dress, fitHolding, grip, gripIntent, hold, SOCKET_NAMES, torsoSocket, wear,
+  type Carrying, type CarrySeat, type EquipState, type Gear, type HeadFit, type Held, type HoldGrip, type Holding, type HoldOptions, type ItemBuild, type ItemContext, type ItemFactories, type ItemFactory, type SocketName, type Sockets,
 } from './attach';
 export { freeze, seatCrowd, type Seat } from './crowd';
 export { room, type DoorSpec, type Face, type FloorPattern, type PanelSpec, type Room, type RoomDoor, type RoomOptions, type RoomTones, type RoomWindow, type WallSide, type WindowSpec } from './room';
 export { BODY_PARTS, bodyCapsules, collide, colliders, type BodyPart, type Collider, type CollideOptions, type Contact, type Touch } from './collide';
-export { heldHands, legacyHolds, type LegacyHold } from './held';
+export { heldCarries, heldHands, legacyHolds, type LegacyHold } from './held';
 export { act, type ActPose, type ActReach, type Acting, type ActWorld } from './act';
 export { type FaceRig, type FaceShape, type Wrinkle } from './face';
 export { GLASSES_DEFAULT, glassesLines, glassesMesh } from './glasses';

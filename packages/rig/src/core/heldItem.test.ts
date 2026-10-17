@@ -4,6 +4,7 @@ import {
   gripAxes,
   gripFrame,
   gripHand,
+  gripSpec,
   gripPoint,
   heldDir,
   heldPoint,
@@ -58,7 +59,7 @@ const parse = (j: unknown): HeldItemSpec => {
 
 describe("held/<món>.json", () => {
   it("nạp được món mẫu chung và món điện thoại", () => {
-    expect(parse(cocJson).grips.quai.pose).toBe("grip");
+    expect(gripSpec(parse(cocJson), "quai").pose).toBe("grip");
     expect(parse(PHONE).schemaVersion).toBe(1);
   });
 
@@ -112,7 +113,7 @@ describe("held/<món>.json", () => {
 
 describe("gripFrame", () => {
   const m = parse(PHONE);
-  const g = m.grips.khoe;
+  const g = gripSpec(m, "khoe");
 
   it("phép quay thật (không soi gương), lòng tay và ngón trùng hướng khai", () => {
     const ax = gripAxes(m, g);
@@ -163,7 +164,7 @@ describe("gripFrame", () => {
 
   it("`left` đè riêng cho tay trái", () => {
     const coc = parse(cocJson);
-    const q = coc.grips.quai;
+    const q = gripSpec(coc, "quai");
     expect(gripHand(q, -1).fingers).toEqual([-1, 0, 0]);
     expect(gripHand(q, 1).fingers).toEqual([1, 0, 0]);
     // cốc cầm quai: ngón cái lên trên ở cả hai tay
