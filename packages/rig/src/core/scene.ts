@@ -52,6 +52,7 @@ import {
   heldBase,
   heldPoint,
   HOLD_BLEND,
+  HOLD_SLEW_STEP,
   holdIntent,
   SceneHoldSchema,
   sceneHoldRef,
@@ -1542,6 +1543,18 @@ export function castCharacter(m: Pick<CastData, "turn">, c: CharacterData): Char
   return out;
 }
 
+/** Tư thế ở một mẫu của chuỗi cổ tay mang món (`ReachHold.prior`): mỗi mẫu một lần cho một runtime */
+const keyPoses = new WeakMap<SceneRuntime, Map<string, ScenePose>>();
+
+function keyPose(rt: SceneRuntime, id: string, t: number, height: number, dims: Body3): ScenePose {
+  let m = keyPoses.get(rt);
+  if (!m) keyPoses.set(rt, (m = new Map()));
+  const k = `${id}|${t}|${height}|${dims.legHalf}|${dims.hipHalf}`;
+  let sp = m.get(k);
+  if (!sp) m.set(k, (sp = sceneAt(rt, id, t, height, dims)));
+  return sp;
+}
+
 /**
  * Tư thế, lớp, nét mặt và chỗ đứng của một người tại `time` giây; `height` là
  * `rig.height` của người diễn, trôi ngang tỉ lệ với nó. Track sau đè track trước.
@@ -1579,8 +1592,13 @@ export function sceneAt(
     m.world && rt.lens && worldAt(rt.lens, m.world, time, pose, height, dims.legHalf, walk).world;
   const world =
     placed && m.world?.hands
-      ? withHands(placed, m.world.hands, time, rt.held, (who, mark) =>
-          castMarkAt(rt, who, mark, time),
+      ? withHands(
+          placed,
+          m.world.hands,
+          time,
+          rt.held,
+          (who, mark) => castMarkAt(rt, who, mark, time),
+          (t) => keyPose(rt, id, t, height, dims),
         )
       : placed;
   const body = world ? viewOfTheta(world.theta) : stepOf(m.view, time);
@@ -3110,6 +3128,7 @@ function handAt(
   time: number,
   held: Record<string, HeldItemSpec>,
   castAt: (id: string, mark: BodyMark | undefined) => V3,
+  poseAt?: (t: number) => object,
 ): Reach | undefined {
   const ks = keys.filter((k) => k[side] !== undefined) as (HandKey & { t: number })[];
   if (!ks.length) return;
@@ -3121,6 +3140,10 @@ function handAt(
   const fk = b ? smoothstep((time - a.t) / (b.t - a.t)) : 0;
   const now = holdRun(keys, side, time);
   const nowRef = now && sceneHoldRef(now.hold);
+  // mẫu trước khung này, trên lưới `HOLD_SLEW_STEP` từ mốc gần nhất: cổ tay mang món nối từ đó
+  const key = ks[i].t < time - 1e-9 ? ks[i] : ks[i - 1];
+  const prior =
+    key && key.t + HOLD_SLEW_STEP * Math.ceil((time - key.t) / HOLD_SLEW_STEP - 1 - 1e-3);
   // `HOLD_BLEND` giây đầu của lần cầm (trừ lần cầm từ đầu cảnh): đổi kiểu cầm cùng món thì liên kết và ý định hoà từ kiểu
   // cũ; cầm món mới thì `enter` cho tay phụ hoà tới mốc trên món
   const blend = now && now.since > 0 && time - now.since < HOLD_BLEND;
@@ -3138,6 +3161,10 @@ function handAt(
     since: now.since,
     ...(blend && regrip && { from: { grip: prevRef!.grip, k: 1 - f } }),
     ...(blend && prevRef?.item !== nowRef.item && { enter: f }),
+    ...(poseAt &&
+      prior !== undefined && {
+        prior: { dt: time - prior, pose: () => poseAt(+prior.toFixed(6)) },
+      }),
   };
   /**
    * Ý định ở mốc `kt` của lần cầm đang có ở `time`: lần cầm có hiệu lực ở mốc ấy, hay ngay trước nó — mốc thả (`hold: null`,
@@ -3212,9 +3239,10 @@ function withHands(
   time: number,
   held: Record<string, HeldItemSpec> = {},
   castAt: (id: string, mark: BodyMark | undefined) => V3 = () => fail("không ước được người khác"),
+  poseAt?: (t: number) => object,
 ): World {
-  const right = handAt(keys, "right", time, held, castAt);
-  const left = handAt(keys, "left", time, held, castAt);
+  const right = handAt(keys, "right", time, held, castAt, poseAt);
+  const left = handAt(keys, "left", time, held, castAt, poseAt);
   if (!right && !left) return w;
   const [near, far] = w.flip ? [left, right] : [right, left];
   return { ...w, hands: { ...(near && { near }), ...(far && { far }) } };

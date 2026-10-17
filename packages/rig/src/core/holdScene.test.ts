@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { actAim, actHeld, actJoints, holdRoles, resolveActing, type ActInput } from "./act3";
+import {
+  actAim,
+  actHeld,
+  actJoints,
+  HOLD_ALT,
+  HOLD_SLEW,
+  holdRoles,
+  resolveActing,
+  type ActInput,
+} from "./act3";
 import { body3 } from "./figure3d";
 import { fingerVec, HAND_POSES } from "./hand";
 import { heldPoint, parseHeldItem, type HeldItemSpec } from "./heldItem";
@@ -103,7 +112,63 @@ const PEN = spec({
   },
 });
 
-const HELD = { "dien-thoai": PHONE, coc: spec(cocJson), khay: TRAY, "khay-dai": LONG, but: PEN };
+/** Kẹp hồ sơ hai tay: `om` ôm gáy, `mo` mở bìa — món xoay nửa vòng trong bàn tay khi đổi */
+const FOLDER = spec({
+  size: [54, 5.2, 72],
+  anchors: {
+    cover: { at: [0, 5.2, 0], dir: [0, 1, 0] },
+    spine: { at: [-27, 2.6, 0], dir: [-1, 0, 0] },
+    edgeR: { at: [27, 1.4, 0], dir: [1, 0, 0] },
+    top: { at: [0, 0.7, -36], dir: [0, 0, -1] },
+    spineBack: { at: [-27, 0, 0], dir: [0, -1, 0] },
+  },
+  grips: {
+    om: {
+      pose: "edge",
+      at: { anchor: "spine", offset: [3, 0, 0] },
+      palm: { into: "spine" },
+      fingers: { along: "cover" },
+      intent: { face: { axis: "cover", toward: "forward" }, roll: { axis: "top", toward: "up" } },
+      both: {
+        lead: "right",
+        other: {
+          pose: "edge",
+          at: { anchor: "edgeR", offset: [-3, 1.2, 0] },
+          palm: { into: "edgeR" },
+          fingers: { along: "cover" },
+        },
+      },
+    },
+    mo: {
+      pose: "edge",
+      at: { anchor: "edgeR", offset: [-3, 1.4, 0] },
+      palm: { into: "edgeR" },
+      fingers: { along: "top" },
+      intent: {
+        face: { axis: "cover", toward: "holderFace" },
+        roll: { axis: "top", toward: "forward" },
+      },
+      both: {
+        lead: "right",
+        other: {
+          pose: "flat",
+          at: { anchor: "spineBack", offset: [0, -1, 0] },
+          palm: { into: "spineBack" },
+          fingers: { along: "top" },
+        },
+      },
+    },
+  },
+});
+
+const HELD = {
+  "dien-thoai": PHONE,
+  coc: spec(cocJson),
+  khay: TRAY,
+  "khay-dai": LONG,
+  but: PEN,
+  kep: FOLDER,
+};
 const LENS = { eye: [0, -250, -1400], yaw: 0, pitch: 0, f: 800 };
 
 const scene = (hands: unknown[], more: object[] = []) => {
@@ -435,6 +500,128 @@ describe("`world.hands[].hold` trong scene", () => {
     expect(roles[-1]?.role).toBe("lead");
     expect(roles[1]?.role).toBe("support");
     expect(Object.keys(actHeld(C, sp))).toEqual(["R"]);
+  });
+});
+
+/** Mẫu không có chuỗi cổ tay (`ReachHold.prior`): bộ giải chỉ thấy khung này */
+const alone = (sp: ActInput): ActInput => {
+  const H = sp.world!.hands!;
+  const f = (x: typeof H.near) =>
+    x && { ...x, ...(x.hold && { hold: { ...x.hold, prior: undefined } }) };
+  return { ...sp, world: { ...sp.world!, hands: { near: f(H.near), far: f(H.far) } } };
+};
+
+describe("cổ tay mang món nối từ mẫu trước", () => {
+  // màn về ống kính khi tay đưa từ trước ngực sang giữa thân: xoay cần đi qua giới hạn ±90
+  const swing = [
+    { t: 0, right: { at: [-30, -260, -80], hold: "dien-thoai#khoe" } },
+    { t: 1, right: { at: [0, -260, 0] } },
+  ];
+
+  it("ý định vượt tầm cổ tay: cổ tay không lật trong một khung, đi dần tới nghiệm mới", () => {
+    const rt = runtime(swing);
+    const turn = (t: number, f = (x: ActInput) => x) =>
+      resolveActing(C, f(sceneAt(rt, "a", t, 1, body3(C)) as ActInput)).pose.hand!.an![0];
+    let lone = 0;
+    let kept = 0;
+    for (let i = 1; i <= 30; i++) {
+      lone = Math.max(lone, Math.abs(turn(i / 30, alone) - turn((i - 1) / 30, alone)));
+      kept = Math.max(kept, Math.abs(turn(i / 30) - turn((i - 1) / 30)));
+    }
+    // giải riêng từng khung: cổ tay lật ±90 → ∓90 trong một khung
+    expect(lone).toBeGreaterThan(150);
+    expect(kept).toBeLessThanOrEqual(HOLD_SLEW + 1e-6);
+  });
+
+  it("chuỗi chỉ phụ thuộc scene: khung giải theo thứ tự nào cũng ra cùng số", () => {
+    const frames = Array.from({ length: 31 }, (_, i) => i / 30);
+    const solve = (order: number[]) => {
+      const rt = runtime(swing);
+      const out = new Map<number, readonly number[]>();
+      for (const t of order)
+        out.set(t, resolveActing(C, sceneAt(rt, "a", t, 1, body3(C)) as ActInput).pose.hand!.an!);
+      return frames.map((t) => out.get(t));
+    };
+    const shuffled = [...frames].sort((a, b) => Math.sin(a * 977) - Math.sin(b * 977));
+    expect(solve(shuffled)).toEqual(solve(frames));
+    expect(solve([...frames].reverse())).toEqual(solve(frames));
+  });
+
+  it("ý định với tới, tay đi êm: gần như giải riêng từng khung; chỗ lật thì đi dần", () => {
+    const rt = runtime([
+      { t: 0, right: { at: [-2, -249, 36], elbow: [0.13, 0.87, 0.92], hold: "but#viet" } },
+      { t: 2, right: { at: [-35, -182, 100], elbow: [0.13, 0.87, 0.92] } },
+    ]);
+    const hand = (t: number, f = (x: ActInput) => x) =>
+      resolveActing(C, f(sceneAt(rt, "a", t, 1, body3(C)) as ActInput)).pose.hand!.an!;
+    let off = 0;
+    for (let i = 0; i <= 30; i++)
+      off = Math.max(off, ...[0, 1].map((j) => Math.abs(hand(i / 30)[j] - hand(i / 30, alone)[j])));
+    // khuỷu chỉ bị giữ khi nghiệm riêng từng khung nhảy quá `HOLD_SWIVEL_SLEW`: vài độ
+    expect(off).toBeLessThan(5);
+    // giây 1.2–1.3 giải riêng thì cổ tay lật (xoay 57 → −51, gập −49 → 54)
+    let lone = 0;
+    let kept = 0;
+    for (let i = 31; i <= 45; i++) {
+      lone = Math.max(lone, Math.abs(hand(i / 30, alone)[0] - hand((i - 1) / 30, alone)[0]));
+      kept = Math.max(kept, Math.abs(hand(i / 30)[0] - hand((i - 1) / 30)[0]));
+    }
+    expect(lone).toBeGreaterThan(90);
+    expect(kept).toBeLessThanOrEqual(HOLD_SLEW + 1e-6);
+  });
+
+  it("đổi kiểu cầm hai tay khi món xoay nửa vòng: cổ tay tay phụ đi dần, không lật", () => {
+    const rt = runtime([
+      {
+        t: 0,
+        right: { at: [-28, -240, -158], elbow: [-0.5, 1, 0.4], hold: "kep#om" },
+        left: { at: [28, -240, -158], elbow: [0.5, 1, 0.4], hold: "kep#om" },
+      },
+      {
+        t: 1,
+        right: { at: [-52, -262, -140], elbow: [-0.5, 1, 0.4], hold: "kep#mo" },
+        left: { at: [52, -262, -140], elbow: [0.5, 1, 0.4], hold: "kep#mo" },
+      },
+    ]);
+    const turn = (t: number, f = (x: ActInput) => x) =>
+      resolveActing(C, f(sceneAt(rt, "a", t, 1, body3(C)) as ActInput)).pose.hand!.af![0];
+    let lone = 0;
+    let kept = 0;
+    for (let i = 25; i <= 48; i++) {
+      lone = Math.max(lone, Math.abs(turn(i / 30, alone) - turn((i - 1) / 30, alone)));
+      kept = Math.max(kept, Math.abs(turn(i / 30) - turn((i - 1) / 30)));
+    }
+    expect(lone).toBeGreaterThan(150);
+    expect(kept).toBeLessThanOrEqual(HOLD_SLEW + 1e-6);
+  });
+
+  it("ý định không với tới: báo kiểu cầm khác của cùng món với tới được", () => {
+    const sp = at([
+      {
+        t: 0,
+        right: {
+          at: [-30, -290, -90],
+          point: "grip",
+          hold: {
+            item: "dien-thoai",
+            grip: "khoe",
+            face: { axis: "screen", toward: "up" },
+            roll: { axis: "top", toward: "out" },
+          },
+        },
+      },
+    ]);
+    const rep = actAim(C, sp)!.report.R.hold!;
+    expect(rep.err).toBeGreaterThan(HOLD_ALT);
+    expect(rep.alts!.map((a) => a.grip).sort()).toEqual(["doc", "tai"]);
+    expect(rep.alts![0].err).toBeLessThan(20);
+    // với tới thì không thử
+    expect(
+      actAim(
+        C,
+        at([{ t: 0, right: { at: [-30, -270, -70], point: "grip", hold: "dien-thoai#khoe" } }]),
+      )!.report.R.hold!.alts,
+    ).toBeUndefined();
   });
 });
 

@@ -42,6 +42,7 @@ import {
   gripPoint,
   handAxes,
   heldPoint,
+  HOLD_SLEW_STEP,
   leadSide,
   mixGrip,
   type GripFrame,
@@ -1055,6 +1056,11 @@ export interface AimReport {
     clamped: ("turn" | "bend" | "dev")[];
     /** Đích của trục chính như scene khai (`up`, `camera`, `holderFace`, `<người>.<mốc>`, mốc thân, vectơ) */
     toward?: string;
+    /**
+     * Lệch còn quá `HOLD_ALT`: các kiểu cầm khác của cùng món (cùng một tay hay cùng hai tay) với cùng ý định, cánh tay giữ
+     * nguyên, lệch còn lại (độ), ít trước
+     */
+    alts?: { grip: string; err: number }[];
   };
 }
 
@@ -1120,6 +1126,13 @@ const spin = (v: V3, u: V3, a: number): V3 => {
   const s = Math.sin(a);
   return add(add(mul(v, c), mul(cross(u, v), s)), mul(u, dot(u, v) * (1 - c)));
 };
+
+/** Độ xoay, gập, lệch cổ tay tối đa của tay mang món giữa hai mẫu `HOLD_SLEW_STEP` liền nhau */
+export const HOLD_SLEW = 15;
+/** Ý định của món còn lệch quá ngần này độ thì bộ giải thử các kiểu cầm khác của cùng món (`AimReport.hold.alts`) */
+export const HOLD_ALT = 30;
+/** Độ xoay khuỷu (quanh trục vai → đích) tối đa của tay mang món giữa hai mẫu `HOLD_SLEW_STEP` liền nhau */
+export const HOLD_SWIVEL_SLEW = 5;
 
 const lerp3 = (a: V3, b: V3, f: number): V3 => add(mul(a, 1 - f), mul(b, f));
 
@@ -1214,12 +1227,62 @@ function turnTo(a: V3, b: V3): M3 {
 
 const UP3: V3 = [0, 1, 0];
 
+/** Xoay, gập, lệch cổ tay và góc xoay khuỷu quanh trục vai → đích (độ) */
+type WristTbd = [number, number, number, number];
+
+/** Xoay, gập, lệch cổ tay đã giải hai bên ở tư thế mẫu trước (`ReachHold.prior`), theo bên giải phẫu */
+const priorWrists = new WeakMap<
+  object,
+  { c: ActCharacter; wrist: Partial<Record<"R" | "L", WristTbd>> }
+>();
+
+/** Dấu vân của nhân vật: chỗ gọi dựng lại object nhân vật mỗi khung vẫn trúng bộ nhớ của chuỗi */
+const prints = new WeakMap<object, string>();
+const sameC = (a: ActCharacter | undefined, b: ActCharacter) =>
+  a === b || (!!a && printOf(a) === printOf(b));
+const printOf = (c: ActCharacter) => {
+  let p = prints.get(c);
+  if (p === undefined) prints.set(c, (p = JSON.stringify(c)));
+  return p;
+};
+
+/**
+ * Cổ tay bên `tag` ở mẫu trước của lần cầm `h`. Mẫu ấy giải theo mẫu trước nó, tới mốc đầu — một chuỗi chỉ phụ thuộc
+ * scene, nên khung nào giải trước cũng ra cùng số
+ */
+function priorWrist(c: ActCharacter, h: ReachHold, tag: "R" | "L"): WristTbd | undefined {
+  // lùi theo chuỗi tới mẫu đã giải rồi giải xuôi: mỗi lần giải chỉ hỏi mẫu ngay trước nó, đã có sẵn
+  const chain: ActInput[] = [];
+  for (let cur: ReachHold | undefined = h; cur?.prior;) {
+    const sp = cur.prior.pose() as ActInput;
+    if (sameC(priorWrists.get(sp)?.c, c)) break;
+    chain.push(sp);
+    const W = sp.world;
+    const near = W && (tag === "R" ? -1 : 1) === (W.flip ? 1 : -1);
+    const [own, other] = near ? [W?.hands?.near, W?.hands?.far] : [W?.hands?.far, W?.hands?.near];
+    cur = own?.hold ?? other?.hold;
+  }
+  for (let i = chain.length - 1; i >= 0; i--) {
+    const T = trunk3(c, chain[i]);
+    priorWrists.set(chain[i], { c, wrist: T ? solveActing(T, chain[i]).wrist : {} });
+  }
+  const sp = h.prior?.pose();
+  const hit = sp && priorWrists.get(sp);
+  return hit && sameC(hit.c, c) ? hit.wrist[tag] : undefined;
+}
+
 function solveActing(
   T: Trunk3,
   sp: ActInput,
-): { input: ActInput; report: Record<"R" | "L", AimReport> } {
+): {
+  input: ActInput;
+  report: Record<"R" | "L", AimReport>;
+  /** Xoay, gập, lệch cổ tay của tay mang món theo ý định: cho mẫu sau (`ReachHold.prior`) */
+  wrist: Partial<Record<"R" | "L", WristTbd>>;
+} {
   const report = { R: {}, L: {} } as Record<"R" | "L", AimReport>;
-  if (!needsSolve(sp)) return { input: sp, report };
+  const wrist: Partial<Record<"R" | "L", WristTbd>> = {};
+  if (!needsSolve(sp)) return { input: sp, report, wrist };
   const P0 = sp.pose;
   const W0 = sp.world!;
   let P: PoseIn = { ...P0, reach: { ...P0.reach }, hand: { ...P0.hand }, aim: undefined };
@@ -1569,6 +1632,18 @@ function solveActing(
     };
     const handR = (A: ReturnType<typeof arm3>, q: readonly number[]) =>
       mm(A.Re, wristTurn(q[0], q[1], q[2], side));
+    // tay mang món theo ý định, tay đỡ món: cổ tay, khuỷu đi từ nghiệm của mẫu trước, mỗi mẫu tối đa `HOLD_SLEW`,
+    // `HOLD_SWIVEL_SLEW`
+    const slew =
+      role?.role === "support" ||
+      (role?.role === "lead" && !!aimW?.terms.some((t) => t.hold && t.k > 0.01))
+        ? (priorWrist(T.c, role.hold, T.tag(side)) ?? null)
+        : undefined;
+    // phần của một mẫu đã trôi từ mẫu trước: tốc độ đều cả khi khung dày hơn mẫu
+    const part = Math.min(1, (role?.hold.prior?.dt ?? HOLD_SLEW_STEP) / HOLD_SLEW_STEP);
+    const lo = slew ? Math.max(-AIM_SWIVEL, slew[3] - HOLD_SWIVEL_SLEW * part) : -AIM_SWIVEL;
+    const hi = slew ? Math.min(AIM_SWIVEL, slew[3] + HOLD_SWIVEL_SLEW * part) : AIM_SWIVEL;
+    let swivel = 0;
     let A = arm3(T, P, hands, side);
     let last: V3 | undefined;
     for (let i = 0; i < AIM_ITER; i++) {
@@ -1591,18 +1666,32 @@ function solveActing(
           for (const aim of [aimB, aimW]) if (aim) cost += solveAim(aim, tbd, B, h, true).cost;
           return { cost, a, el };
         };
-        let best = tryAt(0);
-        for (let a = -AIM_SWIVEL; a <= AIM_SWIVEL; a += SWIVEL_STEP) {
-          const c = tryAt(a);
-          if (c.cost < best.cost - 1e-9) best = c;
-        }
-        for (let step = SWIVEL_STEP / 2; step >= 1; step /= 2)
-          for (const a of [best.a - step, best.a + step])
-            if (Math.abs(a) <= AIM_SWIVEL) {
+        /** Dò xoay khuỷu trong `[l, h]`: lưới `SWIVEL_STEP` rồi chia đôi quanh chỗ tốt nhất */
+        const search = (l: number, h: number, edges: boolean) => {
+          let best = tryAt(Math.max(l, Math.min(h, 0)));
+          for (let a = -AIM_SWIVEL; a <= AIM_SWIVEL; a += SWIVEL_STEP) {
+            if (a < l || a > h) continue;
+            const c = tryAt(a);
+            if (c.cost < best.cost - 1e-9) best = c;
+          }
+          if (edges)
+            for (const a of [l, h]) {
               const c = tryAt(a);
               if (c.cost < best.cost - 1e-9) best = c;
             }
+          for (let step = SWIVEL_STEP / 2; step >= 1; step /= 2)
+            for (const a of [best.a - step, best.a + step])
+              if (a >= l && a <= h) {
+                const c = tryAt(a);
+                if (c.cost < best.cost - 1e-9) best = c;
+              }
+          return best;
+        };
+        let best = search(-AIM_SWIVEL, AIM_SWIVEL, false);
+        // khuỷu mang món nhảy xa mẫu trước: dò lại trong tầm đi được
+        if (best.a < lo - 1e-9 || best.a > hi + 1e-9) best = search(lo, hi, true);
         elbow = best.el;
+        swivel = best.a;
       }
       place(R, tbd, elbow);
       A = arm3(T, P, hands, side);
@@ -1624,9 +1713,41 @@ function solveActing(
       last = A.wr;
       if (moved < 1e-5 && i > 0) break;
     }
+    const solved = tbd;
+    if (slew !== undefined) {
+      // ý định đổi nhánh cổ tay (xoay quá tầm, gập gần 90): cổ tay đi dần tới nghiệm mới
+      if (slew)
+        tbd = tbd.map(
+          (x, j) => slew[j] + Math.max(-HOLD_SLEW * part, Math.min(HOLD_SLEW * part, x - slew[j])),
+        ) as typeof tbd;
+      wrist[T.tag(side)] = [...tbd, swivel];
+    }
     place(handR(A, tbd), tbd, elbow);
     A = arm3(T, P, hands, side);
     const h = state(A, side);
+    if (rep.hold && h.G && tbd !== solved && tbd.some((x, j) => Math.abs(x - solved[j]) > 1e-9)) {
+      // cổ tay còn đang đi tới nghiệm: lệch của món đo ở bàn tay đã vẽ
+      const got = rigDir(unit(mv(handR(A, tbd), unit(mv(h.G.R, rep.hold.axis)))));
+      rep.hold = { ...rep.hold, got, err: ang(got, rep.hold.want) };
+    }
+    const hm = aimW?.terms.reduce<AimTerm | undefined>(
+      (a, t) => (t.hold && (!a || t.k > a.k) ? t : a),
+      undefined,
+    )?.hold;
+    if (role?.role === "lead" && rep.hold && rep.hold.err > HOLD_ALT && T.hand && hm) {
+      // ý định không với tới: kiểu cầm khác của cùng món có với tới không — chỉ giải lại cổ tay với liên kết ấy
+      const spec = role.hold.spec;
+      const two = !!spec.grips[role.hold.grip]?.both;
+      const alts: { grip: string; err: number }[] = [];
+      for (const [g, gs] of Object.entries(spec.grips)) {
+        if (g === role.hold.grip || !!gs.both !== two) continue;
+        if (gs.both && leadSide(gs.both.lead) !== side) continue;
+        const G = gripFrame(spec, gripHand(gs, side), side, k, long, s);
+        const r = holdSolve(hm, [raw[0] ?? 0, raw[1] ?? 0, dev0], A, { ...h, G }, false);
+        if (r) alts.push({ grip: g, err: r.err });
+      }
+      if (alts.length) rep.hold = { ...rep.hold, alts: alts.sort((a, b) => a.err - b.err) };
+    }
     const full =
       rw && rw.w >= 0.999 && hasTerms(rw) && !entering
         ? rw
@@ -1666,6 +1787,7 @@ function solveActing(
       world: { ...W0, ...(W0.hands && { hands }) },
     },
     report,
+    wrist,
   };
 }
 

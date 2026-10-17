@@ -132,6 +132,8 @@ export interface HeldHand {
     toward?: string;
     want: V3;
     got: V3;
+    /** Kiểu cầm khác của cùng món với cùng ý định, lệch còn lại (độ), ít trước (`AimReport.hold.alts`) */
+    alts?: readonly { grip: string; err: number }[];
   };
   /**
    * Kiểu cầm cứng: đích do món đặt cho bàn tay — `support` tay phụ với tới mốc kiểu cầm của nó trên món, `item` điểm
@@ -803,12 +805,19 @@ export function heldLine(s: HeldIssue): string {
       : c === "bend"
         ? `gập cổ tay ±${AIM_BEND}`
         : `lệch cổ tay ±${AIM_DEV}`;
-  const intentLine = () =>
-    `${i!.rule === "up" ? "món nghiêng" : "mặt món quay sai"} — ${who}: trục ý định còn lệch ${Math.round(i!.err)}° khỏi \`${i!.toward ?? (i!.rule === "up" ? "up" : "đích")}\`; ${
+  const intentLine = () => {
+    // kiểu cầm khác của cùng món mà ý định với tới (dưới ngưỡng của luật)
+    const limit = i!.rule === "up" ? HELD_UP : HELD_FACE;
+    const alt = i!.alts?.find((a) => a.err <= limit);
+    const regrip = alt
+      ? `đổi kiểu cầm: \`${s.item}#${alt.grip}\` với tới (lệch ${Math.round(alt.err)}°)`
+      : "đổi kiểu cầm";
+    return `${i!.rule === "up" ? "món nghiêng" : "mặt món quay sai"} — ${who}: trục ý định còn lệch ${Math.round(i!.err)}° khỏi \`${i!.toward ?? (i!.rule === "up" ? "up" : "đích")}\`; ${
       i!.clamped.length
         ? `cổ tay kẹp ở ${i!.clamped.map(clamp).join(", ")}`
         : "cổ tay còn tầm mà khuỷu hết xoay"
-    } — đổi \`elbow\` (khung cẳng tay quay theo hướng khuỷu), dời chỗ tay, đổi tay hay đổi kiểu cầm`;
+    } — đổi \`elbow\` (khung cẳng tay quay theo hướng khuỷu), dời chỗ tay, đổi tay hay ${regrip}`;
+  };
   const head: Record<HeldRule, () => string> = {
     pose: () =>
       `dáng tay cầm khác dáng khai — ${who}: hành động khai \`${s.declared.pose}\` mà \`hold\` vẽ \`${x.pose}\` (ngón lệch ${Math.round(s.worst)}°); truyền dáng ấy vào \`HoldOptions.pose\` hay sửa dáng khai`,

@@ -1511,8 +1511,11 @@ thì khai `left`. `parseHeldItem` báo mốc không có, `into` / `along` / tr�
 
 Rig giải ý định trên cổ tay (`aimWrist`): trục chính trọng số `1`, `roll` `0,3`, khuỷu xoay trong `±AIM_SWIVEL` quanh
 `elbow` đã khai. Giới hạn cổ tay giữ nguyên — xoay `±90`, gập `±AIM_BEND`, lệch `±AIM_DEV`, kênh tay không nâng thì lệch
-cổ tay giữ `0` —: không đạt thì món lệch thật, `AimReport.hold` ghi trục, hướng muốn, hướng đạt, góc còn lệch và khớp
-kẹp, `check` báo ([03](03-scene.md#đồ-cầm-tay)). Vị trí tay (`at`, `to`, `point`) luôn thắng ý định.
+cổ tay giữ `0` —: không đạt thì món lệch thật, `AimReport.hold` ghi trục, hướng muốn, hướng đạt, góc còn lệch, khớp
+kẹp và (lệch quá `HOLD_ALT`) kiểu cầm khác của cùng món với lệch của nó (`alts`), `check` báo
+([03](03-scene.md#đồ-cầm-tay)). Vị trí tay (`at`, `to`, `point`) luôn thắng ý định. Cổ tay và khuỷu của tay mang món, tay
+phụ đi từ nghiệm của mẫu trước với tốc độ có hạn (`HOLD_SLEW`, `HOLD_SWIVEL_SLEW`): ý định vượt tầm thì cổ tay sang nghiệm
+mới trong vài khung chứ không lật trong một khung ([03](03-scene.md#đồ-cầm-tay)).
 
 **Hai tay.** Kiểu `both`: món cứng theo tay `lead`, tay kia không có đích riêng — rig đặt nó vào mốc `both.other.at`
 trên món, lòng tay và ngón theo `both.other`. Tay phụ không với tới thì món không trôi theo nó, `check` báo. Hai tay

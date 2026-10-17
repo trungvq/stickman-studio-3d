@@ -186,7 +186,7 @@ không có tool riêng.
   khung bàn tay — so hai mốc để thấy món trôi), `issues` (luật sẽ kêu). Kiểu cầm cứng kèm `hold` (`"món#kiểu"`; không có
   là đường cũ), `intent` — ý định trục chính bộ giải nhắm: `rule` (`up` / `face`), `toward` (đích như scene khai),
   `want` / `got` (hướng muốn / đạt, thế giới rig), `err` (độ còn lệch), `clamped` (khớp cổ tay kẹp: `turn`, `bend`,
-  `dev`) — và `reach` khi đích do món đặt: `kind` (`support` tay phụ, `item` điểm `item:<mốc>`), `point`, `to`, `gap`.
+  `dev`), `alts` (kiểu cầm khác của cùng món và lệch của nó, khi lệch quá `HOLD_ALT`) — và `reach` khi đích do món đặt: `kind` (`support` tay phụ, `item` điểm `item:<mốc>`), `point`, `to`, `gap`.
   Món có hình va chạm (`shape`) thì `pierce`, `gaps` đo tới hình ấy và kèm `fingers` (khe từng ngón tới hình), `hug`
   (ngón kiểu cầm khai ôm, `wrap` của `held/`), `open` (ngón khai ôm còn hở quá `HELD_WRAP`).
   Cảnh có `lens` và người 3D kèm `clashes`: mỗi mốc hỏi, các chỗ phần người lồng vào đồ khối hay vào

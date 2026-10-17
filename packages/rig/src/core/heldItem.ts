@@ -382,7 +382,9 @@ export interface HoldAim {
 /**
  * Lần cầm của một bàn tay ở một khung (`Reach.hold` của `world.hands`): món, kiểu cầm, JSON món, giây bắt đầu cầm. Trong
  * `HOLD_BLEND` giây đầu của lần cầm: `from` là kiểu cầm trước đó của cùng món trên tay này và phần còn lại của nó (liên kết
- * hoà dần từ kiểu cũ sang kiểu mới), `enter` là phần đã vào của lần cầm (tay phụ hoà dần tới mốc của nó trên món)
+ * hoà dần từ kiểu cũ sang kiểu mới), `enter` là phần đã vào của lần cầm (tay phụ hoà dần tới mốc của nó trên món). `prior`
+ * là mẫu trước của tay ấy (`HOLD_SLEW_STEP`): cách bao nhiêu giây và tư thế của người ở đó — cổ tay mang món đi từ nghiệm
+ * ở đó với tốc độ có hạn
  */
 export interface ReachHold {
   item: string;
@@ -391,6 +393,7 @@ export interface ReachHold {
   since: number;
   from?: { grip: string; k: number };
   enter?: number;
+  prior?: { dt: number; pose: () => object };
 }
 
 /** Tên file của món cho tên thể hiện `món:<tên>` (`vali:2` → `vali`); tên không có `:` là chính nó */
@@ -401,6 +404,9 @@ export const heldBase = (item: string): string => {
 
 /** Giây hoà khi một tay bắt đầu cầm (tay phụ với tới món) hay đổi kiểu cầm cùng món (liên kết cũ → mới) */
 export const HOLD_BLEND = 0.3;
+
+/** Giây giữa hai mẫu của chuỗi cổ tay mang món (`ReachHold.prior`), tính từ mốc `world.hands` gần nhất của tay ấy */
+export const HOLD_SLEW_STEP = 1 / 30;
 
 /** Phép quay quanh trục đơn vị `u` góc `a` (radian) */
 function rotAxis(u: V3, a: number): M3 {

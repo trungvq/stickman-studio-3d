@@ -1329,8 +1329,15 @@ nào, món quay về đâu, ở `world.hands[].hold`; cảnh three của repo đ
   xuống mặt bàn. Tay chưa cầm thì lùi về `grip`. Món đã sát mặt thì ý định nhắm `{ "mark": "head" }` (tâm đầu): hướng từ
   món tới mốc trên mặt (`mouth`, `ear`) lật khi món chạm mốc ấy, hướng tới tâm đầu thì không.
 - Ý định xoay khuỷu được: giá xoay khuỷu khỏi hướng đã khai tăng theo bình phương (tay mang và tay phụ), nên khuỷu nhích
-  dần quanh `elbow` chứ không bật sang nghiệm xa để bớt vài độ lệch của món. Ý định vượt tầm cổ tay (`turn` qua ±90) thì
-  cổ tay vẫn có thể lật phía một khung: `check` báo bàn tay nhảy và `held:face` — đổi `elbow`, đổi ý định hay kiểu cầm.
+  dần quanh `elbow` chứ không bật sang nghiệm xa để bớt vài độ lệch của món.
+- **Cổ tay mang món đi liền mạch.** Tay mang món theo ý định và tay phụ giải từ nghiệm của mẫu trước: một chuỗi mẫu cách
+  nhau `HOLD_SLEW_STEP` (`1/30 s`) tính từ mốc `world.hands` gần nhất của tay ấy (`ReachHold.prior`), mẫu đầu là mốc
+  đầu. Xoay, gập, lệch cổ tay đi tối đa `HOLD_SLEW` (`15°`) một mẫu, xoay khuỷu `HOLD_SWIVEL_SLEW` (`5°`) — tính theo
+  phần mẫu đã trôi, nên khung dày hơn mẫu vẫn đi đều. Nghiệm riêng của khung đi chậm hơn thế thì giữ y nguyên; nhảy xa
+  hơn (ý định vượt tầm cổ tay: xoay qua `±90`, gập gần 90, món xoay nửa vòng lúc đổi kiểu cầm) thì cổ tay, khuỷu đi dần
+  sang nghiệm mới trong vài khung thay vì lật trong một khung. Chuỗi chỉ phụ thuộc scene, mỗi mẫu giải một lần cho một
+  runtime: Remotion vẽ khung theo thứ tự nào cũng ra cùng hình. Trong lúc cổ tay đang đi, lệch của ý định
+  (`AimReport.hold.err`) đo ở bàn tay đã vẽ.
 - `resolveScene` báo lỗi khi món (kể cả `vali` của `vali:2`), kiểu cầm, mốc của `item:` hay trục ý định không có, `{ cast }` không phải người 3D
   trong `cast`, hay mốc người khác ngoài `eye`, `mouth`, `chest`, `belly`. Tham số thứ bảy của `resolveScene` là bảng
   món theo tên (`held/` qua hai lớp, khoá không đuôi).
@@ -1388,7 +1395,10 @@ scenes/t02-s010.json: mặt món quay sai — `sakura` tay trái cầm dien-thoa
 Món cứng sai `pierce`, `loose`, `wrap`, `grip` là lỗi của **kiểu cầm**, đúng hay sai ở mọi cảnh dùng nó: dòng báo trỏ về
 `held/<món>.json`. Dòng `up` / `face` của kiểu cầm cứng kể đích, góc còn lệch, khớp cổ tay kẹp (xoay cẳng tay `±90`, gập
 `±AIM_BEND`, lệch `±AIM_DEV`) hay khuỷu hết xoay, và gợi ý: đổi `elbow` (khung cẳng tay quay theo hướng khuỷu), dời chỗ
-tay, đổi tay, đổi kiểu cầm. Thêm hai dòng một lần mỗi cảnh, không theo giây:
+tay, đổi tay, đổi kiểu cầm. Lệch quá `HOLD_ALT` (`30°`) thì bộ giải thử các kiểu cầm khác của cùng món (cùng một tay hay
+cùng hai tay, tay mang món như nhau) với cùng ý định, cánh tay giữ nguyên (`AimReport.hold.alts`); kiểu nào còn lệch dưới
+ngưỡng của luật thì dòng báo nêu tên nó: `… hay đổi kiểu cầm: \`dien-thoai#doc\` với tới (lệch 12°)`. Rig không tự đổi
+kiểu cầm — đó là việc của cảnh. Thêm hai dòng một lần mỗi cảnh, không theo giây:
 
 - **Cầm món không có trong cảnh** (`held`): người khai `hold` một món mà cảnh three không `provide` món ấy cho người ấy
   (chung hay `owner` là người ấy) — tay diễn kiểu cầm mà trong tay không có gì.

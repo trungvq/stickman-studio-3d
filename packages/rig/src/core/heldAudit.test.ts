@@ -231,6 +231,26 @@ describe("kiểu cầm cứng", () => {
     expect(lines.find((l) => l.startsWith("món không nằm trong tay"))).toContain(
       "sửa kiểu cầm `chen#kep` ở `held/chen.json`",
     );
+    // kiểu cầm khác của cùng món với tới: gợi ý tên nó; không cái nào dưới ngưỡng thì chỉ nói chung
+    const alt = (alts: { grip: string; err: number }[]) =>
+      sceneHeld(rt, {
+        frame: () => [
+          rigid({
+            intent: {
+              rule: "up",
+              err: 50,
+              clamped: ["bend"],
+              want: [0, -1, 0],
+              got: [0, 0, 1],
+              alts,
+            },
+          }),
+        ],
+      })
+        .map(heldLine)
+        .find((l) => l.startsWith("món nghiêng"));
+    expect(alt([{ grip: "do", err: 12 }])).toContain("đổi kiểu cầm: `chen#do` với tới (lệch 12°)");
+    expect(alt([{ grip: "do", err: 40 }])).toMatch(/hay đổi kiểu cầm ở giây/);
   });
 
   it("món cứng không đo trôi; món nhảy qua mốc `hold` (gắn, thả, đổi tay) đo hai bên mốc", () => {
