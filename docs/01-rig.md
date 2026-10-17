@@ -1488,8 +1488,10 @@ giải chạy trước code dựng cảnh của repo; code dựng lưới món �
 | `palm`, `fingers` | Pháp tuyến lòng tay và hướng ngón trong khung món: `{ into: mốc }` ngược pháp tuyến mốc (lòng tay áp vào mặt ấy), `{ along: mốc }` theo pháp tuyến, `{ toward: mốc }` từ điểm nắm tới mốc, hay vectơ. `fingers` trực giao hoá theo `palm` |
 | `touch` | Phần người được lấn vào món, cộng với cẳng tay và bàn tay cầm ([10](10-lop-ve-code.md#người-lồng-vào-đồ)) |
 | `intent` | Ý định mặc định: `face`, `up`, `roll` (dưới) |
+| `wrap` | Các ngón ôm món (`thumb`, `index`, `middle`, `ring`, `pinky`): món có `shape` thì ngón ấy cuộn tới khi chạm (dưới) |
 | `left` | Phần khác của tay trái, thường chỉ `fingers` |
-| `both` | Cầm hai tay: `{ lead: "right" \| "left", other: { pose, at, palm, fingers } }` |
+| `both` | Cầm hai tay: `{ lead: "right" \| "left", other: { pose, at, palm, fingers, wrap? } }` |
+| `shape` | Hình va chạm của món: hợp các khối (dưới). Có thì ngón ôm theo đồ và luật `held` đo trên nó |
 
 **Kiểu cầm là liên kết cứng tay ↔ món.** `gripFrame` tìm phép quay đưa `palm` về lòng tay và `fingers` về hướng ngón
 của bàn tay ấy, rồi dời cho `at` trùng tâm nắm: ra một ma trận cố định món trong khung bàn tay, không có `offset` /
@@ -1522,6 +1524,48 @@ bằng liên kết ấy, đặt dáng `pose` (tay phụ của `both` giữ dáng
 `follow`, `offset`, `rotate`, `pose` đi cùng `grip` là lỗi. Cảnh không gọi `hold` tay mà khai `world.hands[].hold` và đăng
 ký món bằng `cast.provide`, rig gắn và gỡ ([03](03-scene.md#đồ-cầm-tay)). `ItemBuild.hold` của đồ `items` nhận cùng `grip`:
 món cứng theo tay, không có ý định.
+
+#### Hình va chạm của món
+
+`shape` là hợp các khối đơn giản, khung món, đơn vị rig — đủ sát lưới hiện hình ở vùng bàn tay với tới:
+
+| Khối | Trường |
+|---|---|
+| Hộp | `{ "box": [rộng, cao, sâu], "at"?: tâm, "round"?: bo cạnh (không quá nửa cạnh ngắn) }`, thẳng trục khung món |
+| Trụ, trụ côn | `{ "cyl": bán kính ở from, "from": điểm, "to": điểm, "r2"?: bán kính ở to }` — vai bình, thân chén, que nghiêng |
+| Ống rỗng | trụ kèm `"wall": dày` (nhỏ hơn bán kính): hở hai đầu — miệng chén, vòng chìa |
+| Cầu | `{ "ball": bán kính, "at"?: tâm }` |
+
+```jsonc
+"shape": [
+  { "cyl": 13, "from": [0, -32, 0], "to": [0, -14, 0] },              // thân bình
+  { "cyl": 13, "from": [0, -14, 0], "to": [0, -2, 0], "r2": 8 },      // vai
+  { "cyl": 4, "from": [0, 8, 0], "to": [0, 14, 0] }                   // cổ
+]
+```
+
+`heldDistance(shape, p)` (`core/heldFit.ts`) là khoảng cách có dấu tới hợp ấy (dương ở ngoài). Repo video tự kiểm hình
+khớp lưới: đỉnh lưới quanh chỗ nắm không lồi ra ngoài hình, mặt hình không thừa ra ngoài lưới quá một hai đơn vị —
+hình nhỏ hơn lưới là ngón lún vào lưới mà `check` không thấy, hình to hơn là ngón dừng lơ lửng.
+
+#### Ngón ôm theo đồ
+
+Món có `shape` thì dáng `pose` của kiểu cầm chỉ là điểm xuất phát. Mỗi khung, `heldFit` đo chỗ món trong khung bàn
+tay rồi chỉnh từng ngón độc lập, hai đốt mỗi ngón (`HAND_FIT`: độ gập thêm cộng vào góc ở gốc đốt; ngón cái cũng thế,
+dạng và đối của nó giữ nguyên):
+
+1. Ngón khai `wrap` mà còn hở: cuộn hai đốt cùng lúc tới khi một đốt chạm (khe da `HELD_FIT.touch`, ép nhẹ), rồi cuộn
+   riêng đốt ngọn tới khi nó chạm. Không chạm trong `HELD_FIT.curl` độ thì giữ dáng.
+2. Mọi ngón: đốt gốc lún quá `HELD_FIT.sink` thì mở ra hay gập vào, phía nào tới chỗ vừa chạm gần hơn; rồi đốt ngọn.
+   Gốc đốt đã ở trong món (khớp ngón, lòng tay lún — kiểu cầm đặt sai `at`) thì đốt chỉ cần không lún hơn gốc.
+
+Số gập thêm ở trong `HandVec` sau `HAND_DOF` (mười số theo `HAND_FIT`); `handFrames`, da và nang bàn tay đọc chúng,
+`handGripOf` không (tâm nắm vẫn theo dáng). Tính theo cỡ tay từng người (`k`, `long`), chỉ từ khung đang vẽ: Remotion vẽ
+khung nhảy cóc vẫn ra cùng hình. Tay phụ của `both` và tay đổi tay cũng ôm (chỗ món trong khung bàn tay đo từ ma trận
+thế giới). Món không có `shape` thì không gì đổi.
+
+Kiểu cầm vẫn phải đặt đúng `at`: ngón chỉ cuộn quanh khớp của nó, không dời được bàn tay. Lòng tay hay khớp ngón nằm trong
+món thì `check` báo `held:pierce`; dò `at` cho lòng tay vừa áp mặt món.
 
 **Đường cũ.** `hold` không `grip` — `follow` (`wrist`, `level`, `tilt`), `offset`, `rotate`, `pose`, ý định repo khai ở
 `userData.hold` — đánh dấu `@deprecated` và vẽ đúng như các bản trước, để cảnh đã duyệt không đổi hình; `check` kể chúng

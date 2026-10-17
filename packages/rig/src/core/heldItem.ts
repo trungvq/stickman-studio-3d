@@ -33,12 +33,20 @@ export const ItemDirSchema = z.union([
 ]);
 export type ItemDir = z.infer<typeof ItemDirSchema>;
 
-/** Một bàn tay của kiểu cầm: dáng ngón, điểm của món trùng tâm nắm của dáng ấy, lòng tay và ngón trong khung món */
+/** Ngón của bàn tay khi ôm theo đồ: cái, trỏ, giữa, áp út, út */
+export const HELD_FINGERS = ["thumb", "index", "middle", "ring", "pinky"] as const;
+export type HeldFinger = (typeof HELD_FINGERS)[number];
+
+/**
+ * Một bàn tay của kiểu cầm: dáng ngón, điểm của món trùng tâm nắm của dáng ấy, lòng tay và ngón trong khung món; `wrap`
+ * là các ngón ôm món — món có hình va chạm (`shape`) thì ngón ấy cuộn thêm tới khi chạm mặt món (`heldFit`)
+ */
 export const GripHandSchema = z.strictObject({
   pose: z.enum(HAND_POSE_KINDS),
   at: AnchorRefSchema,
   palm: ItemDirSchema,
   fingers: ItemDirSchema,
+  wrap: z.array(z.enum(HELD_FINGERS)).optional(),
 });
 export type GripHand = z.infer<typeof GripHandSchema>;
 
@@ -102,6 +110,31 @@ export type GripSpec = z.infer<typeof GripSpecSchema>;
 
 const AnchorSchema = z.strictObject({ at: v3, dir: v3.optional() });
 
+const pos = z.number().positive();
+
+/**
+ * Một khối của hình va chạm, khung món, đơn vị rig: hộp `box` (cỡ ba cạnh, tâm `at`, bo cạnh `round`), trụ `cyl` (bán kính ở
+ * `from`, tới `to`; `r2` là bán kính ở `to` — trụ côn, vai bình; `wall` là ống rỗng thành dày ngần ấy, hở hai đầu — miệng
+ * chén, vòng chìa), cầu `ball` (bán kính, tâm `at`). Hình của món là hợp các khối; ngón ôm và luật `held` đo trên nó.
+ * docs/01-rig.md#hình-va-chạm-của-món
+ */
+export const HeldShapeSchema = z.union([
+  z.strictObject({
+    box: z.tuple([pos, pos, pos]),
+    at: v3.optional(),
+    round: z.number().min(0).optional(),
+  }),
+  z.strictObject({
+    cyl: pos,
+    from: v3,
+    to: v3,
+    r2: z.number().min(0).optional(),
+    wall: pos.optional(),
+  }),
+  z.strictObject({ ball: pos, at: v3.optional() }),
+]);
+export type HeldShape = z.infer<typeof HeldShapeSchema>;
+
 export const HeldItemSchema = z
   .object({
     schemaVersion: z
@@ -115,6 +148,8 @@ export const HeldItemSchema = z
     grips: z.record(z.string(), GripSpecSchema),
     /** Tên nhóm con của món treo theo trọng lực (chùm chìa thõng, dòng rượu rót) */
     hang: z.array(z.string().min(1)).optional(),
+    /** Hình va chạm: hợp các khối (`HeldShapeSchema`) — ngón ôm theo đồ và luật `held` đo trên nó */
+    shape: z.array(HeldShapeSchema).min(1).optional(),
   })
   .superRefine((m, ctx) => {
     let issues = 0;
@@ -157,6 +192,14 @@ export const HeldItemSchema = z
       }
     };
     if (!Object.keys(m.grips).length) bad(["grips"], "món cần ít nhất một kiểu cầm");
+    m.shape?.forEach((b, i) => {
+      if ("box" in b && b.round !== undefined && 2 * b.round > Math.min(...b.box))
+        bad(["shape", i, "round"], "bo cạnh quá nửa cạnh ngắn nhất của hộp");
+      if ("cyl" in b && Math.hypot(...sub(b.to as V3, b.from as V3)) < 1e-6)
+        bad(["shape", i], "trụ có `from` trùng `to`");
+      if ("cyl" in b && b.wall !== undefined && b.wall >= Math.min(b.cyl, b.r2 ?? b.cyl))
+        bad(["shape", i, "wall"], "thành ống dày hơn bán kính");
+    });
     for (const [name, g] of Object.entries(m.grips)) {
       const path = ["grips", name];
       if (hand(g, path)) axes(g, path);
@@ -243,6 +286,7 @@ const pickHand = (g: GripHand): GripHand => ({
   at: g.at,
   palm: g.palm,
   fingers: g.fingers,
+  ...(g.wrap && { wrap: g.wrap }),
 });
 
 /** Lòng tay (`palm`) và ngón (`fingers`, trực giao hoá theo lòng tay) của một bàn tay cầm, khung món, đơn vị */

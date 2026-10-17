@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { act } from './act';
-import { grip as gripPose, hold, type Held, type Holding } from './attach';
+import { fitHolding, grip as gripPose, hold, type Held, type Holding } from './attach';
 import { actHeld, holdRoles, leadGrip } from './core/act3';
 import { gripCenter, gripFrame, gripHand, type GripFrame, type HeldItemSpec, type HoldAim, type ReachHold } from './core/heldItem';
 import type { HandPose } from './core/hand';
@@ -319,7 +319,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     // đổi tay: tay phụ giữ dáng kiểu cầm của nó trên món (kiểu cầm hai tay thì `hold` đã lo)
     if (w.support && !w.spec.grips[w.grip].both) {
       gripPose(w.fig, w.support.side, w.support.pose);
-      entry = { object: p.object, item: w.item, grip: w.support.grip, pose: w.support.pose, follow: 'wrist', both: true };
+      entry = { object: p.object, item: w.item, grip: w.support.grip, spec: w.spec, hand: gripHand(w.spec.grips[w.support.grip], w.support.side), pose: w.support.pose, follow: 'wrist', both: true };
       (w.fig.holding ??= {})[w.support.side] = entry;
     }
     p.on = { fig: w.fig, side: w.side, grip: w.grip, held, ...(w.support && { support: { side: w.support.side, entry } }) };
@@ -357,7 +357,10 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
       }
       s.update?.(t);
       x?.update?.(t);
-      if (provided.length) carry(acts);
+      if (provided.length) {
+        carry(acts);
+        for (const f of current.values()) fitHolding(f);
+      }
       return Object.fromEntries(current);
     },
     lights: (t) => s.lights(t, x?.light?.(t)),

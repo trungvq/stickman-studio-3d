@@ -1,7 +1,7 @@
 import { AIM_BEND, AIM_DEV } from "./act3";
 import { fingerVec, HAND_POSES, HAND_RELAXED, type HandPose, type HandVec } from "./hand";
 import { depthAt, project, type V3 } from "./lens";
-import { sceneHoldRef } from "./heldItem";
+import { sceneHoldRef, type HeldFinger } from "./heldItem";
 import { AIM_GAP, handClips, PALM_HAND_LABELS, type PalmHand } from "./palm";
 import { cameraAt, type SceneRuntime } from "./scene";
 
@@ -28,8 +28,15 @@ export const HELD_POSE = 6;
  * từ `1,5`
  */
 export const HELD_PIERCE = 1.25;
+/**
+ * Món có hình va chạm (`shape`): hình sát mặt món và ngón ôm theo nó, nên trục ngón vào trong hình quá ngần này (đơn vị
+ * rig) đã là xuyên — kể cả tấm mỏng (phiếu, kẹp hồ sơ) mà trục ngón cắt qua
+ */
+export const HELD_PIERCE_FIT = 0.5;
 /** Nang cách mặt món không quá ngần này (đơn vị rig, âm là lún) là chạm món */
 export const HELD_TOUCH = 1;
+/** Ngón kiểu cầm khai ôm (`wrap`) cách hình va chạm của món quá ngần này (đơn vị rig) là ngón hở */
+export const HELD_WRAP = 1.5;
 /** Tâm nắm ngoài mặt món quá ngần này (đơn vị rig) là món không nằm trong tay; dáng kẹp đầu ngón dùng `HELD_GRIP_PINCH` */
 export const HELD_GRIP = 3;
 export const HELD_GRIP_PINCH = 5;
@@ -96,6 +103,9 @@ export interface HeldHand {
   pierce: { depth: number; core: number; piece: string };
   /** Khe nhỏ nhất từ từng nhóm ngón tới mặt món (âm là lún) */
   gaps: Record<HeldGroup, number>;
+  /** Món có hình va chạm (`shape`): khe nhỏ nhất của từng ngón tới hình ấy (âm là lún); `wrap` các ngón kiểu cầm khai ôm */
+  fingers?: Record<HeldFinger, number>;
+  wrap?: readonly HeldFinger[];
   /** Tâm nắm của dáng đang vẽ tới mặt món: dương ở ngoài, âm ở trong món */
   grip: number;
   /** Giữa lòng tay tới mặt món, góc giữa pháp tuyến lòng tay và hướng tới chỗ gần nhất của món */
@@ -430,7 +440,7 @@ export function quatAngle(a: readonly number[], b: readonly number[]): number {
 // ── Luật trên cả cảnh ──────────────────────────────────────────────────────────────────────────────────────────────
 
 export type HeldRule =
-  "pose" | "pierce" | "loose" | "grip" | "up" | "face" | "drift" | "jump" | "reach";
+  "pose" | "pierce" | "loose" | "wrap" | "grip" | "up" | "face" | "drift" | "jump" | "reach";
 
 export interface HeldOptions {
   /** Số đo các bàn tay đang cầm đồ ở giây `t` (`heldHands` của người 3D trên cảnh three) */
@@ -441,6 +451,8 @@ export interface HeldOptions {
   pose?: number;
   pierce?: number;
   touch?: number;
+  /** Khe ngón ôm (`HELD_WRAP`) */
+  wrap?: number;
   grip?: number;
   up?: number;
   face?: number;
@@ -486,6 +498,11 @@ export function heldWrap(s: Pick<HeldHand, "gaps">, touch = HELD_TOUCH): HeldGro
   return (["thumb", "index", "fingers", "palm"] as const).filter((g) => s.gaps[g] <= touch);
 }
 
+/** Ngón kiểu cầm khai ôm (`wrap`) mà còn cách hình va chạm của món quá `max` */
+export function heldOpen(s: Pick<HeldHand, "fingers" | "wrap">, max = HELD_WRAP): HeldFinger[] {
+  return (s.wrap ?? []).filter((f) => (s.fingers?.[f] ?? -Infinity) > max);
+}
+
 /** Các luật một bàn tay phạm ở một giây (trừ `drift`, đo trên cả lần cầm) */
 export function heldHits(
   s: HeldHand,
@@ -498,9 +515,16 @@ export function heldHits(
   const off = handPoseOff(s.acted, s.pose);
   if (!rigid && decl.pose !== "rest" && decl.pose !== s.pose && off > (o.pose ?? HELD_POSE))
     out.push({ rule: "pose", worst: off });
-  if (s.pierce.core > (o.pierce ?? HELD_PIERCE)) out.push({ rule: "pierce", worst: s.pierce.core });
+  const pierce = s.fingers
+    ? Math.min(o.pierce ?? HELD_PIERCE, HELD_PIERCE_FIT)
+    : (o.pierce ?? HELD_PIERCE);
+  if (s.pierce.core > pierce) out.push({ rule: "pierce", worst: s.pierce.core });
   const wrap = heldWrap(s, o.touch);
   if (!wrap.length) out.push({ rule: "loose", worst: Math.min(...Object.values(s.gaps)) });
+  else {
+    const open = heldOpen(s, o.wrap);
+    if (open.length) out.push({ rule: "wrap", worst: Math.max(...open.map((f) => s.fingers![f])) });
+  }
   const pinch = HELD_PINCHES.includes(s.pose);
   if (s.grip > (pinch ? HELD_GRIP_PINCH : (o.grip ?? HELD_GRIP)))
     out.push({ rule: "grip", worst: s.grip });
@@ -693,6 +717,7 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
     "pose",
     "grip",
     "loose",
+    "wrap",
     "reach",
     "face",
     "up",
@@ -721,6 +746,13 @@ const PIECE_LABELS: Record<string, string> = {
   pinky1: "đầu ngón út",
 };
 export const heldPieceLabel = (p: string) => PIECE_LABELS[p] ?? p;
+const FINGER_LABELS: Record<HeldFinger, string> = {
+  thumb: "cái",
+  index: "trỏ",
+  middle: "giữa",
+  ring: "áp út",
+  pinky: "út",
+};
 
 /** Các số đo chính của một giây, một dòng: dáng, lún, ôm, tâm nắm, lòng tay, trục */
 export function heldSummary(s: HeldHand, touch = HELD_TOUCH): string {
@@ -733,6 +765,9 @@ export function heldSummary(s: HeldHand, touch = HELD_TOUCH): string {
         ? `da lún ${r1(s.pierce.depth)} ở ${heldPieceLabel(s.pierce.piece)}`
         : `khe ${r1(-s.pierce.depth)}`,
     `ôm ${wrap.filter((g) => g !== "palm").length}/3${wrap.length ? ` (${wrap.map((g) => HELD_GROUP_LABELS[g]).join(", ")})` : ""}`,
+    ...(s.wrap?.length && s.fingers
+      ? [`ngón ôm ${s.wrap.map((f) => `${FINGER_LABELS[f]} ${r1(s.fingers![f])}`).join(", ")}`]
+      : []),
     `tâm nắm ${s.grip < 0 ? `trong món ${r1(-s.grip)}` : `cách món ${r1(s.grip)}`}`,
     `lòng tay cách ${r1(s.palm.gap)}${s.palm.gap > 0.05 ? ` góc ${Math.round(s.palm.angle)}°` : ""}`,
   ];
@@ -781,6 +816,12 @@ export function heldLine(s: HeldIssue): string {
       `ngón xuyên đồ — ${who}: trục ${heldPieceLabel(x.pierce.piece)} vào trong món ${r1(x.pierce.core)} (da lún ${r1(x.pierce.depth)}); ${fixGrip ?? "dời món (`offset`, `rotate`) hay đổi dáng"}`,
     loose: () =>
       `món không chạm bàn tay — ${who}: không ngón nào, lòng tay cũng không chạm (khe nhỏ nhất ${r1(s.worst)})${fixGrip ? `; ${fixGrip}` : ""}`,
+    wrap: () =>
+      `ngón ôm mà hở — ${who}: ${heldOpen(x)
+        .map((f) => `ngón ${FINGER_LABELS[f]} cách món ${r1(x.fingers![f])}`)
+        .join(
+          ", ",
+        )} — ngón cuộn hết tầm vẫn không chạm hình va chạm; sửa kiểu cầm \`${x.hold}\` (\`at\`, \`pose\`, bỏ ngón khỏi \`wrap\`) hay \`shape\` ở \`held/${(x.hold ?? "").split("#")[0]}.json\``,
     grip: () =>
       `món không nằm trong tay — ${who}: tâm nắm của dáng \`${x.pose}\` cách mặt món ${r1(x.grip)}${fixGrip ? `; ${fixGrip}` : ""}`,
     up: () =>

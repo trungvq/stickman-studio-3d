@@ -102,6 +102,23 @@ export const HAND_DOF = [
 
 export type HandVec = readonly number[];
 
+/**
+ * Đốt nhận độ gập thêm của ngón ôm theo đồ (`heldFit`), theo thứ tự này: số thứ `HAND_DOF.length + i` của một `HandVec`
+ * (bỏ trống là `0`) cộng vào góc gập ở gốc đốt ấy, độ. Hai đốt mỗi ngón: cái, trỏ, giữa, áp út, út
+ */
+export const HAND_FIT = [
+  "thumb0",
+  "thumb1",
+  "index0",
+  "index1",
+  "middle0",
+  "middle1",
+  "ring0",
+  "ring1",
+  "pinky0",
+  "pinky1",
+] as const;
+
 export const fingerVec = (f: Fingers): number[] => [...f.thumb, ...f.index, ...f.fingers, f.spread];
 
 /** Bàn tay không ai ghi: cẳng tay trung tính (lòng tay quay vào thân), cổ tay thẳng, ngón thả lỏng */
@@ -194,7 +211,9 @@ export function handFrames(
   long = k,
 ): Record<HandPiece, HandFrame> {
   const p = -side;
-  const [abd, opp, tb, tt, ib, it, fb, ft, sp] = v.slice(2).map((x) => (x ?? 0) * D);
+  const [abd, opp, tb0, tt0, ib0, it0, fb, ft, sp] = v.slice(2).map((x) => (x ?? 0) * D);
+  const fit = (i: number) => (v[HAND_DOF.length + i] ?? 0) * D;
+  const [tb, tt, ib, it] = [tb0 + fit(0), tt0 + fit(1), ib0 + fit(2), it0 + fit(3)];
   const B = HAND_BONES;
   const at = ([x, y, z]: V3): V3 => [p * x * k, y * long, z * k];
   const chain = (o: V3, R0: M3, len: readonly [number, number], bend: number) => {
@@ -219,17 +238,17 @@ export function handFrames(
     index0,
     index1,
   } as Record<HandPiece, HandFrame>;
-  for (const n of FINGERS) {
+  FINGERS.forEach((n, j) => {
     const f = HAND_FINGERS[n];
     const [a, b] = chain(
       at([B.fingers.at[0], B.fingers.at[1] + f.dy, B.fingers.at[2] + f.dz]),
-      matMul(rotX(-(f.fan * D + f.fanK * sp)), rotZ(p * (fb + f.curl * D))),
+      matMul(rotX(-(f.fan * D + f.fanK * sp)), rotZ(p * (fb + f.curl * D + fit(4 + 2 * j)))),
       [B.fingers.len[0] * f.len, B.fingers.len[1] * f.len],
-      ft + f.curl * D,
+      ft + f.curl * D + fit(5 + 2 * j),
     );
     out[`${n}0`] = a;
     out[`${n}1`] = b;
-  }
+  });
   return out;
 }
 

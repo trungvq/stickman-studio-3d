@@ -136,3 +136,50 @@ describe('hold({ grip }): món cứng theo bàn tay', () => {
     expect(chum.quaternion.equals(new THREE.Quaternion())).toBe(true);
   });
 });
+
+/** Gậy đứng bán kính 2,5 (cán), có hình va chạm; năm ngón khai ôm */
+const ROD = spec({
+  size: [5, 30, 5],
+  anchors: { mid: { at: [0, 0, 0] } },
+  grips: { nam: { pose: 'grip', at: 'mid', palm: [0, 0, 1], fingers: [-1, 0, 0], wrap: ['thumb', 'index', 'middle', 'ring', 'pinky'] } },
+  shape: [{ cyl: 2.5, from: [0, -15, 0], to: [0, 15, 0] }],
+});
+const rod = () => {
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.3, 24), new THREE.MeshBasicMaterial()));
+  g.name = 'gay';
+  return g;
+};
+
+describe('ngón ôm theo đồ: món có hình va chạm', () => {
+  it('cầm thì từng đốt gập thêm (`Hand.fit`), hai tay, hai cỡ tay; không ngón nào lún, ngón ôm chạm; buông thì về dáng hành động', async () => {
+    const { heldHands } = await import('./held');
+    const { HELD_PIERCE_FIT, HELD_WRAP } = await import('./core/heldAudit');
+    for (const sleeve of [undefined, 30]) {
+      const p = await person(sleeve);
+      act(p, reach(20, 10));
+      for (const side of [-1, 1] as Side[]) {
+        const h = hold(p, rod(), { hand: side, grip: { item: 'gay', spec: ROD, grip: 'nam' } });
+        const H = p.hands![side];
+        expect(H.fit).toHaveLength(10);
+        expect(H.shown).toHaveLength(19);
+        p.root.updateMatrixWorld(true);
+        const [m] = heldHands(p, 'a').filter((x) => x.hand === (side < 0 ? 'R' : 'L'));
+        expect(m.wrap).toEqual(['thumb', 'index', 'middle', 'ring', 'pinky']);
+        expect(m.pierce.core).toBeLessThan(HELD_PIERCE_FIT);
+        for (const f of m.wrap!) expect(m.fingers![f]).toBeLessThan(HELD_WRAP);
+        h.release();
+        expect(H.fit).toBeUndefined();
+        expect(H.shown).toHaveLength(9);
+      }
+    }
+  });
+
+  it('món không có hình va chạm: dáng đúng dáng kiểu cầm, không gập thêm', async () => {
+    const p = await person();
+    act(p, reach());
+    hold(p, phone(), { hand: -1, grip: { item: 'dien-thoai', spec: PHONE, grip: 'khoe' } });
+    expect(p.hands![-1].fit).toBeUndefined();
+    expect(p.hands![-1].shown).toEqual([71, 6, 0, 44, 3, 20, 3, 21, 0]);
+  });
+});

@@ -1523,8 +1523,8 @@ export function armOptions(dir = ".") {
 }
 
 /**
- * Ngưỡng đo đồ cầm tay: `stickman.held` trong `package.json` — `{ pose, pierce, touch, grip, up, face, drift, turn,
- * reach, hold }` (độ, đơn vị rig, đơn vị rig, đơn vị rig, độ, độ, đơn vị rig, độ, đơn vị rig, giây), trường thiếu lấy các
+ * Ngưỡng đo đồ cầm tay: `stickman.held` trong `package.json` — `{ pose, pierce, touch, wrap, grip, up, face, drift,
+ * turn, reach, hold }` (độ, rồi đơn vị rig bốn trường, độ, độ, đơn vị rig, độ, đơn vị rig, giây), trường thiếu lấy các
  * hằng `HELD_*` (`reach`: `AIM_GAP`) của rig; `false` là không đo. Sai kiểu thì trả `{ error }`.
  * docs/03-scene.md#đồ-cầm-tay
  */
@@ -1535,6 +1535,7 @@ export function heldOptions(dir = ".") {
     pose: rig.HELD_POSE,
     pierce: rig.HELD_PIERCE,
     touch: rig.HELD_TOUCH,
+    wrap: rig.HELD_WRAP,
     grip: rig.HELD_GRIP,
     up: rig.HELD_UP,
     face: rig.HELD_FACE,

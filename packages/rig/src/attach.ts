@@ -2,7 +2,9 @@ import * as THREE from 'three';
 import { R, type Figure, type Side } from './stickman';
 import { RIG } from './core/constants';
 import { gripShift, type HandPose } from './core/hand';
-import { gripCenter, gripFrame, gripHand, heldAxis, heldGrip, type GripSpec, type HeldItemSpec } from './core/heldItem';
+import { gripCenter, gripFrame, gripHand, heldAxis, heldGrip, type GripHand, type GripSpec, type HeldItemSpec } from './core/heldItem';
+import { heldFit } from './core/heldFit';
+import { fingerVec, HAND_POSES } from './core/hand';
 import type { HeldIntent } from './core/heldAudit';
 import type { Vec3 } from './khoi';
 import { poseHand } from './human';
@@ -76,6 +78,9 @@ export interface Holding {
   object: THREE.Object3D;
   item?: string;
   grip?: string;
+  /** Kiểu cầm cứng: JSON món và bàn tay của kiểu cầm cho tay này (tay phụ là `both.other`) — ngón ôm theo đồ đọc */
+  spec?: HeldItemSpec;
+  hand?: GripHand;
   pose: HandPose;
   follow: 'wrist' | 'level' | 'tilt';
   both: boolean;
@@ -141,7 +146,38 @@ export function grip(fig: Figure, side: Side, pose: HandPose | undefined) {
   const h = fig.hands?.[side];
   if (!h) return;
   h.held = pose;
+  h.fit = undefined;
   poseHand(h);
+}
+
+const _w = new THREE.Matrix4(), _rel = new THREE.Matrix4(), _p = new THREE.Vector3(), _rq = new THREE.Quaternion(), _s = new THREE.Vector3(), _r3 = new THREE.Matrix3();
+
+/**
+ * Ngón ôm theo đồ (`heldFit` của lõi) cho các bàn tay đang cầm cứng một món có hình va chạm (`shape`): đo chỗ món trong
+ * khung bàn tay từ ma trận thế giới rồi đặt độ gập thêm từng đốt lên dáng của kiểu cầm. Gọi sau khi người, món đã đặt
+ * xong ở khung đang vẽ; tất định theo khung ấy. docs/01-rig.md#ngón-ôm-theo-đồ
+ */
+export function fitHolding(fig: Figure) {
+  for (const side of [-1, 1] as Side[]) {
+    const h = fig.hands?.[side], e = fig.holding?.[side];
+    if (!h) continue;
+    if (!e?.spec?.shape || !e.hand || !h.held) {
+      if (h.fit) {
+        h.fit = undefined;
+        poseHand(h);
+      }
+      continue;
+    }
+    const wrist = fig.arms[side].wrist;
+    e.object.updateWorldMatrix(true, false);
+    wrist.updateWorldMatrix(true, false);
+    _rel.copy(_w.copy(wrist.matrixWorld).invert()).multiply(e.object.matrixWorld);
+    _rel.decompose(_p, _rq, _s);
+    const R = _r3.setFromMatrix4(_w.makeRotationFromQuaternion(_rq)).transpose().elements;
+    const G = { R: [...R] as [number, number, number, number, number, number, number, number, number], p: [_p.x, _p.y, _p.z] as [number, number, number], u: 0.01 * _s.x };
+    h.fit = heldFit({ v: [0, 0, ...fingerVec(HAND_POSES[h.held])], side, k: h.scale, long: h.long, shape: e.spec.shape, G, wrap: e.hand.wrap });
+    poseHand(h);
+  }
 }
 
 /**
@@ -298,12 +334,14 @@ function holdGrip(fig: Figure, object: THREE.Object3D, hand: Side | 'both', g: H
   if (intent) object.userData.hold = intent;
   const entries = new Map<Side, Holding>();
   for (const s of sides) {
-    const pose = s === lead ? gh.pose : spec.both!.other.pose;
-    const entry: Holding = { object, item: g.item, grip: g.grip, pose, follow: 'wrist', both: !!spec.both };
+    const hand = s === lead ? gh : spec.both!.other;
+    const pose = hand.pose;
+    const entry: Holding = { object, item: g.item, grip: g.grip, spec: g.spec, hand, pose, follow: 'wrist', both: !!spec.both };
     entries.set(s, entry);
     grip(fig, s, pose);
     (fig.holding ??= {})[s] = entry;
   }
+  if (g.spec.shape) fitHolding(fig);
   return {
     object, span: 0,
     release: () => {

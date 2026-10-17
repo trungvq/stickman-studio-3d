@@ -140,7 +140,7 @@ three của từng cảnh, không lấy mẫu khối người, không mở luồ
 | `ref` | tham chiếu chéo (nhân vật, hành động, đạo cụ, động vật, nền, `fx`, `equip`), version pin, file giống bộ chung, bộ đồ của nhân vật; công tắc `equip` một chiều, hai track cùng ghi một socket, khuỷu gập ngược khi giơ tay, mốc ngoài `mask`, hành động tự giật, mốc khai không ai neo, người 3D diễn hành động 2D; tay cầm kiểu hai tay trong khi tay kia cầm món khác; lớp vẽ code bật cho cảnh không có, thư mục sidebar | JSON, runtime, gói lớp vẽ code |
 | `move` | người 3D trượt, không tới mốc dừng, thân quay gắt; tay chân giật trên hình | runtime, khớp người theo thời gian |
 | `hands` | tay sai dáng, lòng bàn tay quay sai, đích theo mốc và lòng tay theo ý định không đạt | runtime, cảnh three (mặt ngang dưới bàn tay) |
-| `held` | đồ cầm tay sai: ngón xuyên, món hở, tâm nắm xa, ý định không đạt, tay phụ hay `item:` không tới, món nhảy qua mốc `hold`, cầm món không ai `provide`; đường cũ thêm dáng khác dáng khai, món trôi | runtime, cảnh three |
+| `held` | đồ cầm tay sai: ngón xuyên, món hở, ngón khai ôm mà hở (món có `shape`), tâm nắm xa, ý định không đạt, tay phụ hay `item:` không tới, món nhảy qua mốc `hold`, cầm món không ai `provide`; đường cũ thêm dáng khác dáng khai, món trôi | runtime, cảnh three |
 | `legacy` | đồ cầm còn đi đường cũ (`hold` không có kiểu cầm `held/`), một dòng mỗi cảnh | runtime, cảnh three |
 | `clash` | người lồng vào đồ, vào người khác, tay xuyên thân, đồ lồng vào đồ, `touch` lạ | runtime, cảnh three, lớp vẽ code, mẫu khối người mỗi `0,25 s` |
 | `episode` | tham chiếu của tập, tiếng dài hơn chỗ nó nằm, bè lặp kêu khi sân khấu đứng yên, số cũ phải `retime`, file chưa commit, công cụ ngoài, `sfx/` đọc không được | tập, tiếng (`ffprobe`), git — chỉ ở lượt toàn bộ, không có khi `--scene` hay `--uses` |
@@ -162,7 +162,7 @@ Sửa gì chạy nhóm nào:
 | Chỗ đứng, đường đi (`world.at`, `path`) | `move,clash` |
 | Tay (`world.hands`, `reach`, dáng tay) | `hands,clash` (+`held` nếu tay đang cầm) |
 | Đồ cầm trong cảnh (`world.hands[].hold`, ý định, `point: item:`), `cast.provide` | `held,clash` |
-| Kiểu cầm, mốc (`held/<món>.json`) | `ref,held,clash` trên mọi cảnh có món ấy (`--scene`) |
+| Kiểu cầm, mốc, hình va chạm, ngón ôm (`held/<món>.json`) | `ref,held,clash` trên mọi cảnh có món ấy (`--scene`); repo tự kiểm hình khớp lưới |
 | Thời gian, retime, audio | `move` + lượt toàn bộ cho `episode` |
 | Bối cảnh, đồ khối | `clash,hands` |
 | Hành động chung | `--uses <tên> --only ref,move,hands,held` |

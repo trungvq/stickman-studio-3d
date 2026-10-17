@@ -228,6 +228,8 @@ export interface Hand {
   acted: readonly number[];
   /** Dáng giữ khi đang cầm đồ (`grip` của attach.ts): đè góc ngón của hành động, giữ xoay và gập cổ tay */
   held?: HandPose;
+  /** Độ gập thêm từng đốt khi ngón ôm theo đồ (`HAND_FIT`, `heldFit` của lõi), cộng vào dáng `held` */
+  fit?: readonly number[];
   /** Góc ngón đang vẽ */
   shown: number[];
 }
@@ -252,8 +254,8 @@ export function handRig(side: -1 | 1, k: number, long: number, low = false): Han
  */
 export function poseHand(h: Hand, v?: readonly number[]) {
   if (v) h.acted = v;
-  const want = h.held ? [0, 0, ...fingerVec(HAND_POSES[h.held])] : h.acted;
-  if (h.shown.length && h.shown.every((x, i) => Math.abs(x - want[i + 2]) < 1e-3)) return;
+  const want = h.held ? [0, 0, ...fingerVec(HAND_POSES[h.held]), ...(h.fit ?? [])] : h.acted;
+  if (h.shown.length === want.length - 2 && h.shown.every((x, i) => Math.abs(x - want[i + 2]) < 1e-3)) return;
   h.shown = want.slice(2);
   const P = h.geo.attributes.position as THREE.BufferAttribute, N = h.geo.attributes.normal as THREE.BufferAttribute;
   skinHand(h.skin, want, P.array as Float32Array);

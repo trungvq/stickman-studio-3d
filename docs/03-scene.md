@@ -1353,6 +1353,8 @@ extra: (_marks, cast) => {
   thả gần nhất — người, tay, giây, ma trận thế giới của món lúc thả — để `extra` giữ món đúng chỗ thả. `cast.provided()`
   kể các món đã đăng ký.
 - `owner` bỏ trống là món chung: người nào khai `hold` món ấy cũng cầm được. Có `owner` thì chỉ người ấy.
+- Món có hình va chạm (`shape`, [01](01-rig.md#hình-va-chạm-của-món)): sau khi gắn, mỗi khung rig cho ngón của mọi bàn
+  tay đang cầm (tay mang, tay phụ) ôm theo món (`fitHolding`, [01](01-rig.md#ngón-ôm-theo-đồ)) — chỉ đọc khung ấy.
 
 **Đường cũ.** Repo gọi `hold` của rig với `follow`, `offset`, `rotate`, `pose` (không `grip`) trong `extra`: dáng ngón do
 `hold` đặt, chỗ và hướng món do `offset`, `rotate`, `follow` — hai nguồn độc lập với cổ tay của scene. Đường này
@@ -1361,14 +1363,17 @@ extra: (_marks, cast) => {
 Món gắn vào bàn tay (`Figure.holding`, [01](01-rig.md#bàn-tay)) miễn va chạm với bàn tay cầm nó (`touch`), nên luật
 người lồng vào đồ không nhìn chỗ ấy. `check` đo riêng trên cảnh three [`stickman.world`](05-repo-video.md#cảnh-three-cho-check):
 mỗi `0,1 s`, mỗi bàn tay người mặc đồ đang cầm một món hiện trên hình (`heldHands` của người 3D, `sceneHeld` của lõi), với
-lưới hiện hình của món (mọi lưới mặt trước, kể cả lưới `noCollide`, bỏ vỏ nét) và nang bàn tay theo dáng đang vẽ
-(`handCapsules`, `fitCapsules`). Kêu quãng từ `0,3 s` (trôi, nhảy thì mọi độ dài), bỏ bàn tay ngoài khung camera:
+nang bàn tay theo dáng đang vẽ (`handCapsules`, `fitCapsules`, cả độ gập thêm của ngón ôm). Lún, khe và độ ôm đo tới
+hình va chạm của món (`shape`) khi kiểu cầm cứng có, không thì tới lưới hiện hình của món (mọi lưới mặt trước, kể cả
+lưới `noCollide`, bỏ vỏ nét); tâm nắm và lòng tay luôn đo tới lưới. Kêu quãng từ `0,3 s` (trôi, nhảy thì mọi độ dài),
+bỏ bàn tay ngoài khung camera:
 
 | Luật | Kêu khi | Ngưỡng |
 |---|---|---|
 | **Dáng khác dáng khai** (`pose`, đường cũ) | Dáng có tên gần góc ngón hành động khai nhất (`nearestHandPose`) không phải dáng nghỉ, khác dáng `hold` đang vẽ, và góc ngón lệch quá `HELD_POSE` (trung bình bình phương chín góc ngón) — `hold` mặc định `grip` đè dáng hành động khai. Kiểu cầm cứng không đo: dáng chỉ có ở kiểu cầm | `6°` |
-| **Ngón xuyên đồ** | Trục một nang (lòng bàn tay, gò ngón cái, từng đốt ngón) vào trong món quá `HELD_PIERCE`. Trong món là số vòng của lưới (winding number) từ `0,75`: đúng với món lõm (lòng chén là ngoài), món ghép nhiều mảnh hở; trục cắt qua tấm mỏng thì vào trong bằng nửa bề dày tấm. Đo trục chứ không đo da: nang bàn tay mập nên da chạm món đã lún vài đơn vị | `1,25` |
+| **Ngón xuyên đồ** | Trục một nang (lòng bàn tay, gò ngón cái, từng đốt ngón) vào trong món quá `HELD_PIERCE`. Trong món là số vòng của lưới (winding number) từ `0,75`: đúng với món lõm (lòng chén là ngoài), món ghép nhiều mảnh hở; trục cắt qua tấm mỏng thì vào trong bằng nửa bề dày tấm. Đo trục chứ không đo da: nang bàn tay mập nên da chạm món đã lún vài đơn vị. Món có `shape`: trục vào trong hình quá `HELD_PIERCE_FIT` — hình sát mặt và ngón đã ôm theo nó, nên trục ngón cắt qua tấm mỏng (phiếu, kẹp hồ sơ) cũng bắt được | `1,25`; `0,5` |
 | **Món không chạm tay** | Không nhóm nào (ngón cái, trỏ, giữa–út, lòng tay) cách mặt món dưới `HELD_TOUCH` | `1` |
+| **Ngón ôm mà hở** (`wrap`) | Món có `shape`: một ngón kiểu cầm khai `wrap` còn cách hình quá `HELD_WRAP` — ngón cuộn hết tầm vẫn không chạm (món nhỏ hơn nắm tay ở đó, `at` đặt xa) | `1,5` |
 | **Món không nằm trong tay** | Tâm nắm của dáng đang vẽ (`handGripOf`) ngoài mặt món quá `HELD_GRIP`; dáng kẹp đầu ngón (`pinch`, `edge`, `span`, `hook`) `HELD_GRIP_PINCH` | `3`, `5` |
 | **Món nghiêng** (`up`) | Kiểu cầm cứng: ý định trục chính về hướng lên (`up`) mà bộ giải còn lệch quá `HELD_UP` (`AimReport.hold`). Đường cũ: món khai `userData.hold.up` mà trục ấy lệch hướng lên quá ngưỡng | `30°` |
 | **Mặt món quay sai** (`face`) | Kiểu cầm cứng: ý định trục chính về đích khác (`camera`, `holderFace`, người khác, mốc thân, hướng) mà còn lệch quá `HELD_FACE`. Đường cũ: món khai `face` + `faceToward` mà trục ấy lệch hướng tới mặt người cầm (ống kính) quá ngưỡng | `65°` |
@@ -1380,7 +1385,7 @@ lưới hiện hình của món (mọi lưới mặt trước, kể cả lưới
 scenes/t02-s010.json: mặt món quay sai — `sakura` tay trái cầm dien-thoai: trục ý định còn lệch 72° khỏi `saito.eye`; cổ tay kẹp ở xoay cẳng tay ±90 — đổi `elbow` (khung cẳng tay quay theo hướng khuỷu), dời chỗ tay, đổi tay hay đổi kiểu cầm ở giây 1.20 · giây 0.90–1.60. Lúc ấy: kiểu cầm dien-thoai#khoe (dáng span) · … · ý định về saito.eye lệch 72° (kẹp turn) (docs/03-scene.md#đồ-cầm-tay)
 ```
 
-Món cứng sai `pierce`, `loose`, `grip` là lỗi của **kiểu cầm**, đúng hay sai ở mọi cảnh dùng nó: dòng báo trỏ về
+Món cứng sai `pierce`, `loose`, `wrap`, `grip` là lỗi của **kiểu cầm**, đúng hay sai ở mọi cảnh dùng nó: dòng báo trỏ về
 `held/<món>.json`. Dòng `up` / `face` của kiểu cầm cứng kể đích, góc còn lệch, khớp cổ tay kẹp (xoay cẳng tay `±90`, gập
 `±AIM_BEND`, lệch `±AIM_DEV`) hay khuỷu hết xoay, và gợi ý: đổi `elbow` (khung cẳng tay quay theo hướng khuỷu), dời chỗ
 tay, đổi tay, đổi kiểu cầm. Thêm hai dòng một lần mỗi cảnh, không theo giây:
@@ -1405,7 +1410,7 @@ Chỉ đo đồ cầm, nhanh (vài giây một cảnh): `stickman check --only h
 video, trường thiếu lấy mặc định; `false` là không đo:
 
 ```json
-"stickman": { "held": { "pose": 6, "pierce": 1.25, "touch": 1, "grip": 3, "up": 30, "face": 65, "drift": 3, "turn": 20, "reach": 6, "hold": 0.3 } }
+"stickman": { "held": { "pose": 6, "pierce": 1.25, "touch": 1, "wrap": 1.5, "grip": 3, "up": 30, "face": 65, "drift": 3, "turn": 20, "reach": 6, "hold": 0.3 } }
 ```
 
 Mức cảnh báo. Cảnh khớp `stickman.frozen` không đo; `--scene` chỉ đo cảnh khớp. Số đo không thay mắt: nghi thì soi bàn tay

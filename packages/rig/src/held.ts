@@ -3,6 +3,8 @@ import { faded, handCaps, meshTris } from './collide';
 import { handGripOf, handPoint } from './core/hand';
 import { HAND_CAPSULE_PIECES } from './core/handMesh';
 import { angleBetween, capsuleDepth, meshBox, meshSigned, type HeldGroup, type HeldHand, type HeldIntent } from './core/heldAudit';
+import { capsuleClearance } from './core/heldFit';
+import type { GripFrame, HeldFinger } from './core/heldItem';
 import type { V3 } from './core/lens';
 import { U } from './khoi';
 import type { Figure, Side } from './stickman';
@@ -40,6 +42,16 @@ const nameOf = (o: THREE.Object3D) => {
 
 const GROUP: Record<string, HeldGroup> = { palm: 'palm', thenar: 'palm', thumb0: 'thumb', thumb1: 'thumb', index0: 'index', index1: 'index' };
 
+const _wi = new THREE.Matrix4(), _rm = new THREE.Matrix4(), _rp = new THREE.Vector3(), _rq = new THREE.Quaternion(), _rs = new THREE.Vector3(), _m3 = new THREE.Matrix3();
+
+/** Món trong khung cổ tay `W` (thế giới three) dạng liên kết của lõi (`GripFrame`: `R` hàng trước, `u` đơn vị three một đơn vị rig) */
+function itemFrame(W: THREE.Matrix4, object: THREE.Object3D): GripFrame {
+  _rm.copy(_wi.copy(W).invert()).multiply(object.matrixWorld);
+  _rm.decompose(_rp, _rq, _rs);
+  const R = _m3.setFromMatrix4(_wi.makeRotationFromQuaternion(_rq)).transpose().elements;
+  return { R: [...R] as GripFrame['R'], p: [_rp.x, _rp.y, _rp.z], u: 0.01 * _rs.x };
+}
+
 /**
  * Số đo từng bàn tay của người `fig` (tên `id`) đang cầm một món hiện trên hình: lún và khe của từng nang bàn tay tới lưới
  * món, tâm nắm và lòng tay tới món, trục ý định của món (`userData.hold`: `up`, `face`, `faceToward`), món trong khung bàn
@@ -64,15 +76,27 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
       return [v.x, v.y, v.z];
     };
     const v = [0, 0, ...h.shown];
-    // nang bàn tay theo dáng đang vẽ, thế giới three
+    // nang bàn tay theo dáng đang vẽ: lún, khe tới hình va chạm của món (`shape`) nếu kiểu cầm cứng có, không thì tới lưới
     const gaps: Record<HeldGroup, number> = { thumb: Infinity, index: Infinity, fingers: Infinity, palm: Infinity };
+    const each: Partial<Record<HeldFinger, number>> = {};
     let pierce = { depth: -Infinity, core: -Infinity, piece: 'palm' };
+    const shape = entry.grip !== undefined ? entry.spec?.shape : undefined;
+    const IF = shape && itemFrame(W, entry.object);
     handCaps(h).forEach(([a, b, r], i) => {
       const piece = HAND_CAPSULE_PIECES[i];
-      const d = capsuleDepth(mesh, world(a), world(b), r * k, REACH * u, box) / u;
+      let d: number, core: number;
+      if (IF) {
+        // khung món ra đơn vị rig của thế giới: cỡ món trong tay nhân cỡ người
+        const c = capsuleClearance(shape!, IF, a, b, r), sc = (IF.u / 0.01) * k;
+        [d, core] = [-c.gap * sc, c.core * sc];
+      } else {
+        d = capsuleDepth(mesh, world(a), world(b), r * k, REACH * u, box) / u;
+        core = d - (r * k) / u;
+      }
       const g = GROUP[piece] ?? 'fingers';
       gaps[g] = Math.min(gaps[g], -d);
-      const core = d - (r * k) / u;
+      const f = piece === 'palm' || piece === 'thenar' ? undefined : (piece.slice(0, -1) as HeldFinger);
+      if (f) each[f] = Math.min(each[f] ?? Infinity, -d);
       if (core > pierce.core) pierce = { depth: d, core, piece };
     });
     const G = world(handGripOf(v, side, h.scale, h.long));
@@ -116,6 +140,7 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
       follow: entry.follow,
       acted: h.acted,
       pierce, gaps, grip, palm,
+      ...(IF && { fingers: each as Record<HeldFinger, number>, ...(entry.hand?.wrap?.length && { wrap: entry.hand.wrap }) }),
       ...(up !== undefined && { up }),
       ...(face && { face }),
       rel: { p: [(rp.x * k) / u, (rp.y * k) / u, (rp.z * k) / u], q: [rq.x, rq.y, rq.z, rq.w] },
