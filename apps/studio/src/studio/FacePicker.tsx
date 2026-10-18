@@ -37,11 +37,17 @@ export const MOUTH_LABELS: Record<MouthKind, string> = {
   grin: "cười toe",
   wry: "cười gượng · mím",
   wryOpen: "cười gượng · há",
+  pursed: "mím · phồng má",
+  puffed: "nín · phồng hai má",
+  meh: "chán · nghi ngờ",
+  smirk: "nhếch mép",
+  fang: "cười nanh",
   frown: "mếu",
   pain: "đau",
   grit: "nghiến răng",
   o: "ngạc nhiên",
   wide: "la hét",
+  shout: "quát mắng",
 };
 export const BROW_LABELS: Record<BrowKind, string> = {
   neutral: "thường",
@@ -58,11 +64,13 @@ export const EYE_LABELS: Record<EyeKind, string> = {
   open: "mở",
   shut: "nhắm",
   wide: "trợn",
+  bulge: "mắt trố",
   squint: "nheo",
   happy: "cười tít",
   squeezed: "nhắm chặt",
   droopy: "rũ",
   wink: "nháy một bên",
+  sly: "cười nham hiểm",
 };
 
 const FIELD_LABELS: Record<FaceField, string> = { mouth: "Miệng", brow: "Lông mày", eyes: "Mắt" };

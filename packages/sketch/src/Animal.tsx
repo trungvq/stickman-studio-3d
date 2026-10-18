@@ -850,6 +850,14 @@ function Eye({ at: [x, y], r, kind, line }: { at: Pt; r: number; kind: EyeKind; 
     case "wide":
       return (
         <g>
+          <circle cx={x} cy={y} r={r * 1.2} fill={line} />
+          <circle cx={x} cy={y} r={r * 0.66} fill="white" />
+          <circle cx={x} cy={y} r={r * 0.3} fill={line} />
+        </g>
+      );
+    case "bulge":
+      return (
+        <g>
           <circle cx={x} cy={y} r={r * 1.9} fill="white" stroke={line} strokeWidth={r * 0.3} />
           <circle cx={x} cy={y} r={r * 0.9} fill={line} />
         </g>
@@ -953,6 +961,12 @@ const BEAK_GAP: Record<MouthKind, number> = {
   grit: 6,
   wry: 3,
   wryOpen: 14,
+  pursed: 0,
+  puffed: 0,
+  meh: 0,
+  smirk: 0,
+  fang: 6,
+  shout: 40,
 };
 
 /**

@@ -796,16 +796,21 @@ function fitHipHem(p: Figure, sk: NonNullable<Figure['skirt']>) {
 }
 
 const stillFaces = new Map<string, FaceRig>();
-/** Nét mặt dùng chung cho người nền: một texture cho mọi người cùng dáng mặt, nét, mức ửng và màu da; `set` không đổi gì */
+/** Nét mặt dùng chung cho người nền: một cặp texture mặt và mồm cho mọi người cùng dáng mặt, nét, mức ửng và màu da; `set` không đổi gì, mồm không lật */
 function stillFace(scale: THREE.Vector3, shape: Partial<FaceShape> = {}, state?: Partial<FaceState>, human = false, skin?: string): FaceRig {
   const s = { ...DEFAULT_FACE, ...state }, { blush, ...rest } = shape, lv = blushLevel(blush, s.blush);
   const key = JSON.stringify([rest, s.mouth, s.brow, s.eyes, lv, human, skin]);
   let f = stillFaces.get(key);
   if (!f) stillFaces.set(key, (f = faceRig(R.head, scale, { ...rest, blush: lv }, { ...s, blush: 0 }, human, skin)));
-  const mesh = new THREE.Mesh(f.mesh.geometry, f.mesh.material);
-  mesh.userData.noShadow = true;
-  mesh.userData.noCollide = true;
-  mesh.renderOrder = f.mesh.renderOrder;
+  const copy = (m: THREE.Mesh) => {
+    const c = new THREE.Mesh(m.geometry, m.material);
+    c.userData.noShadow = true;
+    c.userData.noCollide = true;
+    c.renderOrder = m.renderOrder;
+    return c;
+  };
+  const mesh = copy(f.mesh);
+  for (const c of f.mesh.children) mesh.add(copy(c as THREE.Mesh));
   return { mesh, state: s, set() {} };
 }
 

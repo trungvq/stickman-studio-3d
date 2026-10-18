@@ -76,6 +76,8 @@ describe("nét mặt chibi", () => {
     expect(n(eyeShine("wink", 0, 0, 40))).toBe(1);
     expect(n(eyeShine("wink", 0, 0, 40, { only: -1 }))).toBe(0);
     expect(n(eyeShine("happy", 0, 0, 40))).toBe(0);
+    expect(n(eyeShine("bulge", 0, 0, 40))).toBe(2);
+    expect(n(eyeShine("wide", 0, 0, 40))).toBe(0);
   });
 });
 

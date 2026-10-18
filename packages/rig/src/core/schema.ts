@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { HAIR_BACK_FOLLOW, HEAD_FOLLOW, INK, RIG, SHADE } from "./constants";
+import { FACE_REST } from "./face";
 import { migrateHairPieces } from "./hairMigration";
 
 /** Bump khi đổi hình dạng JSON nhân vật; `migrateCharacter` phải có nhánh tương ứng. */
@@ -718,6 +719,9 @@ export const EquipSchema = z.union([EquipStepSchema, z.array(EquipStepSchema)]);
 /** Giá trị `equip` đưa socket về mảnh nền trong `pieces`. */
 export const BASE_ITEM = "base";
 
+const rest = (k: keyof typeof FACE_REST) =>
+  z.number().min(FACE_REST[k].min).max(FACE_REST[k].max).default(FACE_REST[k].def);
+
 export const CharacterSchema = z.object({
   schemaVersion: z
     .literal(CHARACTER_VERSION, {
@@ -787,6 +791,13 @@ export const CharacterSchema = z.object({
       mouthGap: z.number().default(34),
       /** Má ửng `0..1` của người 3D, màu suy từ `palette.skin` (`blushColor`); `0` tắt, 2D không vẽ */
       blush: z.number().min(0).max(1).default(0),
+      /** Nét mặt nghỉ riêng của nhân vật, mặc định và khoảng ở `FACE_REST`. docs/01-rig.md#nét-mặt-riêng */
+      eyeScale: rest("eyeScale"),
+      eyeWidth: rest("eyeWidth"),
+      lid: rest("lid"),
+      shine: rest("shine"),
+      browWidth: rest("browWidth"),
+      browTilt: rest("browTilt"),
       moustache: z
         .object({
           kind: z

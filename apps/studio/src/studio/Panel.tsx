@@ -21,6 +21,8 @@ import {
   BeardSchema,
   type BeardTip,
   equipPieces,
+  FACE_REST,
+  type FaceRest,
   HEAD_KEYS,
   HEAD_SHAPES,
   MOUSTACHE_KINDS,
@@ -84,6 +86,16 @@ const MOUSTACHE_LABELS: Record<MoustacheKind, string> = {
   walrus: "ria hải mã",
   horseshoe: "ria móng ngựa",
 };
+
+/** Nét mặt nghỉ riêng của nhân vật: khoảng kéo lấy từ `FACE_REST` */
+const REST_SLIDERS: [keyof FaceRest, string, number][] = [
+  ["eyeScale", "Cỡ mắt (3D)", 0.05],
+  ["eyeWidth", "Ngang mắt (3D)", 0.05],
+  ["lid", "Mi sụp", 0.05],
+  ["shine", "Đốm sáng (3D)", 0.1],
+  ["browWidth", "Dày mày", 0.05],
+  ["browTilt", "Nghiêng mày", 0.5],
+];
 
 /** Tầm kéo thường ngày của từng số trong `SculptSchema`; số đo theo bán kính sọ hiện theo phần trăm */
 type SculptNum = { [K in keyof Sculpt]: Sculpt[K] extends number ? K : never }[keyof Sculpt];
@@ -1155,6 +1167,17 @@ export function Panel(p: PanelProps) {
                 step={0.05}
                 onChange={(v) => mutate((d) => (d.face.blush = v))}
               />
+              {REST_SLIDERS.map(([k, label, step]) => (
+                <SliderRow
+                  key={k}
+                  label={label}
+                  value={face[k]}
+                  min={FACE_REST[k].min}
+                  max={FACE_REST[k].max}
+                  step={step}
+                  onChange={(v) => mutate((d) => (d.face[k] = v))}
+                />
+              ))}
               <SliderRow
                 label="Tóc trôi"
                 value={Math.round(c.head.follow * 100)}
@@ -1173,6 +1196,12 @@ export function Panel(p: PanelProps) {
             <Hint>
               Lắc đầu thì tóc, mũ trôi theo mặt bấy nhiêu phần; 0 là bám sọ, đứng yên. Mảng tóc sau
               nằm sau trục lắc nên kéo âm mới đúng chiều — mặc định 10 và −20.
+            </Hint>
+            <Hint>
+              Cỡ mắt → nghiêng mày là nét mặt nghỉ riêng của nhân vật, đi theo mọi nét mặt: mỗi
+              người chỉ khác 2–3 số. Nghiêng mày dương nhấc đầu trong (hiền, rụt rè), âm hạ xuống
+              (nghiêm); mi sụp 0,4 là lười, 0,15–0,25 là khó tính, nham hiểm. Số có (3D) chỉ đầu
+              người 3D đọc.
             </Hint>
           </Section>
 

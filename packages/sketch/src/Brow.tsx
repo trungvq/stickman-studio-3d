@@ -9,6 +9,8 @@ export function Brow({
   gap,
   only,
   squash,
+  width,
+  tilt,
 }: {
   kind: BrowKind;
   cx: number;
@@ -18,6 +20,10 @@ export function Brow({
   only?: 1 | -1;
   /** Bóp ngang nét mày khi đầu quay */
   squash?: number;
+  /** Nhân bề dày nét, `face.browWidth` của nhân vật */
+  width?: number;
+  /** Cộng vào độ nghiêng, dương nhấc đầu trong; `face.browTilt` của nhân vật */
+  tilt?: number;
 }) {
-  return faceMark(browMarks(kind, cx, cy, gap, { only, squash }));
+  return faceMark(browMarks(kind, cx, cy, gap, { only, squash, width, tilt }));
 }

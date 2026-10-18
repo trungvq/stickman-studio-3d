@@ -945,6 +945,7 @@ export function Character({
                               gap={eyeGap}
                               only={s}
                               squash={k}
+                              lid={face.lid}
                             />
                             <Brow
                               kind={brow}
@@ -953,6 +954,8 @@ export function Character({
                               gap={eyeGap}
                               only={s}
                               squash={k}
+                              width={face.browWidth}
+                              tilt={face.browTilt}
                             />
                           </g>
                         ) : null;
@@ -967,6 +970,7 @@ export function Character({
                             gap={eyeGap}
                             only={only ?? (A.face.farHidden ? -1 : undefined)}
                             squash={only ? undefined : A.face.squash}
+                            lid={face.lid}
                           />
                         </g>
                         <g transform={small(browCx)}>
@@ -977,6 +981,8 @@ export function Character({
                             gap={eyeGap}
                             only={only ?? (A.face.farHidden ? -1 : undefined)}
                             squash={A.face.squash}
+                            width={face.browWidth}
+                            tilt={face.browTilt}
                           />
                         </g>
                       </>

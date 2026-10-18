@@ -618,6 +618,9 @@ server.registerTool(
         "face.wrinkle (kind none|light|deep, color, width, dy) là dấu hiệu tuổi tác vẽ bằng code: nếp trán, chân chim, thêm túi mắt và pháp lệnh ở deep. Nó bám tâm mặt nên đi theo lắc/gật, và bị mảnh tóc hay mũ che phần trán. Nhân vật già thì dùng nó cùng tóc râu màu bạc, đừng gen nếp nhăn vào mảnh ảnh.",
       blushNote:
         "face.blush (0..1, mặc định 0) của nhân vật là má ửng của người 3D, màu suy từ palette.skin nên đọc được trên da sáng lẫn da sẫm; 2D không vẽ. keys[].face.blush (0..1) của hành động cộng thêm vào nó (kẹp ở 1) và nội suy giữa các mốc như góc, không bậc thang như mouth/brow/eyes — ngượng đỏ mặt dần là hai mốc blush 0 → 0.6, mask phải có face.",
+      faceRest: rig.FACE_REST,
+      faceRestNote:
+        "face.eyeScale, eyeWidth, lid, shine, browWidth, browTilt (mặc định và khoảng ở faceRest) là nét mặt nghỉ riêng của nhân vật: mọi người dùng chung bộ nét mặt, mỗi người khác nhau ở 2–3 số này. eyeScale nhân cỡ mắt, eyeWidth nhân bề ngang (<1 hẹp, >1 tròn), shine nhân đốm sáng (0 là mắt không đốm, lạnh): ba số này chỉ đầu human của người 3D đọc. lid là mi trên sụp, phần chiều cao con ngươi (0.4 lười, 0.15–0.25 nghiêm, nham hiểm), ăn ở mắt open, mắt mở của wink, wide và bulge (nhẹ hơn), squint lấy số lớn hơn; browWidth nhân bề dày mày; browTilt cộng vào độ nghiêng mọi kiểu mày, dương nhấc đầu trong (hiền, rụt rè), âm hạ đầu trong (nghiêm, khó tính). Ba số sau mọi nét mặt đọc, cả 2D. Phản diện vẫn cùng rig: lid 0.25, shine 0.5 kèm miệng smirk / fang, mắt sly; quát mắng là miệng shout. Ngạc nhiên thường là mắt wide (cùng họ chấm đặc với open), mắt trố bulge (lòng trắng to) để dành cho cú sốc lớn.",
       mouth: rig.MOUTH_KINDS,
       brow: rig.BROW_KINDS,
       eyes: rig.EYE_KINDS,

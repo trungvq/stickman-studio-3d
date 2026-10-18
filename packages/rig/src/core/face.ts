@@ -37,8 +37,17 @@ const WHITE = "#f7f2e6";
 /** Bán kính con ngươi lúc mở thường; các kiểu mắt khác đo theo nó */
 export const EYE_R = 6;
 
-const LINE = { fill: "none", stroke: MOUTH_INK, strokeWidth: 4, strokeLinecap: "round" } as const;
-const RIM = { fill: "none", stroke: MOUTH_INK, strokeWidth: 4, strokeLinejoin: "round" } as const;
+const LINE = { fill: "none", stroke: MOUTH_INK, strokeWidth: 3, strokeLinecap: "round" } as const;
+const THIN = { fill: "none", stroke: MOUTH_INK, strokeWidth: 2.2, strokeLinecap: "round" } as const;
+const RIM = { fill: "none", stroke: MOUTH_INK, strokeWidth: 2.4, strokeLinejoin: "round" } as const;
+/** Vạch ngăn hai hàm răng trong `talkTeeth`, `grit` */
+const SEAM = { fill: "none", stroke: MOUTH_INK, strokeWidth: 1.6 } as const;
+
+interface MouthDef {
+  /** Mép trên / dưới so với tâm miệng, cho râu bám theo */
+  extent: { top: number; bottom: number };
+  marks: (cx: number, cy: number) => FaceMark;
+}
 
 /** Viền chữ D: góc trên nhọn, mép trên vồng `0,5`, đáy tròn */
 function dPath(cx: number, cy: number, w: number, top: number, bottom: number) {
@@ -108,12 +117,6 @@ function open(
 /** Nửa bề ngang và nửa chiều cao của khẩu hình nghiến răng */
 const GRIT = { w: 15, h: 7 };
 
-interface MouthDef {
-  /** Mép trên / dưới so với tâm miệng, cho râu bám theo */
-  extent: { top: number; bottom: number };
-  marks: (cx: number, cy: number) => FaceMark;
-}
-
 function sad(large: boolean): MouthDef {
   const b = large ? 10 : 4;
   return {
@@ -157,6 +160,41 @@ function angry(b: number): MouthDef {
   };
 }
 
+/** La mắng: hình thang bè dưới rộng gần nửa mặt, mép trên vồng cao, đáy tròn xuống gần cằm, dải răng trên theo vồng, lưỡi to */
+const shout: MouthDef = {
+  extent: { top: -14, bottom: 30 },
+  marks: (cx, cy) => {
+    const d =
+      `M ${cx - 23} ${cy - 5} Q ${cx} ${cy - 21} ${cx + 23} ${cy - 5}` +
+      ` C ${cx + 27} ${cy + 4} ${cx + 30} ${cy + 17} ${cx + 28} ${cy + 24}` +
+      ` Q ${cx} ${cy + 33} ${cx - 28} ${cy + 24}` +
+      ` C ${cx - 30} ${cy + 17} ${cx - 27} ${cy + 4} ${cx - 23} ${cy - 5} Z`;
+    return {
+      group: [
+        { clip: d },
+        { path: d, fill: CAVITY },
+        {
+          group: [
+            { ellipse: [cx, cy + 28, 17, 9], fill: TONGUE },
+            {
+              path: `M ${cx - 34} ${cy - 24} H ${cx + 34} V ${cy + 2} H ${cx + 23} Q ${cx} ${cy - 12} ${cx - 23} ${cy + 2} H ${cx - 34} Z`,
+              fill: TOOTH,
+            },
+          ],
+          clipped: true,
+        },
+        { path: d, ...RIM },
+      ],
+    };
+  },
+};
+
+/** Ngoặc má phồng ở `x`, mở về phía `s` (`1` là `)`) */
+const cheek = (cx: number, cy: number, x: number, s: 1 | -1): FaceMark => ({
+  path: `M ${cx + x} ${cy - 6} Q ${cx + x + s * 5.5} ${cy} ${cx + x} ${cy + 6}`,
+  ...THIN,
+});
+
 /** Khẩu hình: thứ tự khoá là thứ tự của `MOUTH_KINDS` */
 export const MOUTHS = {
   closed: {
@@ -184,9 +222,7 @@ export const MOUTHS = {
           { path: d, fill: TOOTH },
           {
             path: `M ${cx - w} ${mid} Q ${cx} ${mid + 1.5} ${cx + w} ${mid}`,
-            fill: "none",
-            stroke: MOUTH_INK,
-            strokeWidth: 2,
+            ...SEAM,
             clipped: true,
           },
           { path: d, ...RIM },
@@ -235,8 +271,8 @@ export const MOUTHS = {
         ` L ${cx - w + 1} ${cy - h + r} Q ${cx - w} ${cy - h} ${cx - w + r} ${cy - h} Z`;
       return {
         group: [
-          { path: box, fill: TOOTH, stroke: MOUTH_INK, strokeWidth: 4, strokeLinejoin: "round" },
-          { line: [cx - w + 2, cy, cx + w - 2, cy], stroke: MOUTH_INK, strokeWidth: 2 },
+          { path: box, ...RIM, fill: TOOTH },
+          { line: [cx - w + 2, cy, cx + w - 2, cy], ...SEAM },
         ],
       };
     },
@@ -287,8 +323,70 @@ export const MOUTHS = {
       };
     },
   },
+  pursed: {
+    extent: { top: -2, bottom: 2 },
+    // Má phồng bên phải: ngoặc `)` ôm khoé phải
+    marks: (cx, cy) => ({
+      group: [
+        { path: `M ${cx - 10} ${cy} Q ${cx} ${cy + 1.5} ${cx + 9} ${cy - 0.5}`, ...LINE },
+        cheek(cx, cy, 12, 1),
+      ],
+    }),
+  },
+  puffed: {
+    extent: { top: -2, bottom: 2 },
+    // Nín thở: hai má phồng ôm khoé thành `( ‿ )`
+    marks: (cx, cy) => ({
+      group: [
+        { path: `M ${cx - 5} ${cy} Q ${cx} ${cy + 2} ${cx + 5} ${cy}`, ...LINE },
+        cheek(cx, cy, -9.5, -1),
+        cheek(cx, cy, 9.5, 1),
+      ],
+    }),
+  },
+  meh: {
+    extent: { top: -3, bottom: 2 },
+    // Phẳng, khoé phải nhếch lên một vạch: chán, nghi ngờ
+    marks: (cx, cy) => ({
+      group: [
+        { path: `M ${cx - 11} ${cy + 0.5} Q ${cx - 1} ${cy + 1.5} ${cx + 9} ${cy - 0.5}`, ...LINE },
+        {
+          path: `M ${cx + 10} ${cy - 3.5} Q ${cx + 12.5} ${cy - 0.5} ${cx + 10.5} ${cy + 2.5}`,
+          ...THIN,
+        },
+      ],
+    }),
+  },
+  smirk: {
+    extent: { top: -5, bottom: 3 },
+    // Nhếch một khoé (ニヤリ): nét ngắn gần phẳng, khoé phải vểnh lên
+    marks: (cx, cy) => ({
+      path: `M ${cx - 9} ${cy + 0.5} C ${cx - 3} ${cy + 2.5} ${cx + 5} ${cy + 2} ${cx + 9} ${cy - 3.5}`,
+      ...LINE,
+    }),
+  },
+  fang: {
+    extent: { top: -6, bottom: 9.5 },
+    // Cười hé lệch, khoé phải cao, một răng nanh trắng (八重歯) từ mép trên gần khoé ấy
+    marks: (cx, cy) => {
+      const d = `M ${cx - 12} ${cy - 1} Q ${cx} ${cy + 0.5} ${cx + 12} ${cy - 5} C ${cx + 11.5} ${cy + 6} ${cx + 5} ${cy + 10} ${cx - 1} ${cy + 8} C ${cx - 7} ${cy + 6} ${cx - 11} ${cy + 2} ${cx - 12} ${cy - 1} Z`;
+      return {
+        group: [
+          { clip: d },
+          { path: d, fill: CAVITY },
+          {
+            path: `M ${cx} ${cy - 6} L ${cx + 11} ${cy - 9} L ${cx + 6} ${cy + 7} Z`,
+            fill: TOOTH,
+            clipped: true,
+          },
+          { path: d, ...RIM },
+        ],
+      };
+    },
+  },
   o: oval(5, 6, 0, 4, 0),
   wide: oval(13, 15, 0, 6.5, 6),
+  shout,
 } satisfies Record<string, MouthDef>;
 
 /** Nét mồm tâm `(cx, cy)` */
@@ -303,24 +401,81 @@ export function mouthExtent(kind: MouthKind): { top: number; bottom: number } {
 
 const EYE_LINE = { fill: "none", stroke: EYE_INK, strokeWidth: 4, strokeLinecap: "round" } as const;
 
-/** Một mắt tâm `(x, cy)`, bên `s` (`-1` trái hình), hình tròn bóp ngang còn `k`, con ngươi `wide` bán kính `p · R` */
-type EyeDef = (x: number, cy: number, s: 1 | -1, k: number, p: number) => FaceMark;
+/** Bầu dục tâm `(x, cy)` cắt ngang ở phần `f` chiều cao tính từ đỉnh, giữ phần dưới: mi trên sụp */
+function lidCut(x: number, cy: number, rx: number, ry: number, f: number): string {
+  if (f <= 0)
+    return `M ${x} ${cy - ry} A ${rx} ${ry} 0 1 0 ${x} ${cy + ry} A ${rx} ${ry} 0 1 0 ${x} ${cy - ry} Z`;
+  const h = rx * Math.sqrt(Math.max(0, 1 - (2 * f - 1) ** 2));
+  const y = cy + ry * (2 * f - 1);
+  return `M ${x - h} ${y} A ${rx} ${ry} 0 ${f < 0.5 ? 1 : 0} 0 ${x + h} ${y} Z`;
+}
+
+/** Con ngươi bầu dục; `lid` khác `0` thì mi trên cắt đi phần ấy của chiều cao */
+const pupil = (x: number, cy: number, rx: number, ry: number, lid: number): FaceMark =>
+  lid > 0
+    ? { path: lidCut(x, cy, rx, ry, lid), fill: EYE_INK }
+    : { ellipse: [x, cy, rx, ry], fill: EYE_INK };
+
+/**
+ * Một mắt tâm `(x, cy)`, bên `s` (`-1` trái hình), hình tròn bóp ngang còn `k`, con ngươi `wide` / `bulge` bán kính
+ * `p · R`, mi trên nghỉ sụp `lid` phần chiều cao
+ */
+type EyeDef = (x: number, cy: number, s: 1 | -1, k: number, p: number, lid: number) => FaceMark;
 const R = EYE_R;
 const WIDE_PUPIL = 0.7;
+/** Mắt trợn mở to hơn mắt nghỉ: mi sụp `lid` chỉ cắt bấy nhiêu phần ấy */
+const WIDE_LID = 0.5;
+/** `wide`: bầu dục đặc to hơn mắt mở bấy nhiêu lần, lòng trắng giữa chiếm `white` bán kính, con ngươi `dot · p · R` */
+const WIDE = { r: 1.35, white: 0.55, dot: 0.45 };
+/** Bán kính lòng trắng `bulge` theo `R` */
+const BULGE = 1.5;
 
-/** Kiểu mắt: thứ tự khoá là thứ tự của `EYE_KINDS`; `wide` là kiểu duy nhất có lòng trắng */
+/** Kiểu mắt: thứ tự khoá là thứ tự của `EYE_KINDS`; `wide` và `bulge` có lòng trắng */
 export const EYES = {
-  open: (x, cy, _s, k) => ({ ellipse: [x, cy, R * k, R], fill: EYE_INK }),
+  open: (x, cy, _s, k, _p, lid) => pupil(x, cy, R * k, R, lid),
   shut: (x, cy) => ({ line: [x - 7, cy, x + 7, cy], ...EYE_LINE }),
-  wide: (x, cy, _s, k, p) => ({
-    group: [
-      { ellipse: [x, cy, R * 1.5 * k, R * 1.5], fill: WHITE, stroke: EYE_INK, strokeWidth: 2.5 },
-      { ellipse: [x, cy, R * p * k, R * p], fill: EYE_INK },
-    ],
-  }),
-  // Mi trên sụp xuống: chỉ còn nửa dưới con ngươi
-  squint: (x, cy, _s, k) => ({
-    path: `M ${x - R * k} ${cy} A ${R * k} ${R} 0 0 0 ${x + R * k} ${cy} Z`,
+  // Mắt mở to hơn, lòng trắng giữa vành đen, con ngươi co còn chấm
+  wide: (x, cy, _s, k, p, lid) => {
+    const [rx, ry] = [R * WIDE.r * k, R * WIDE.r];
+    const d = lidCut(x, cy, rx, ry, lid * WIDE_LID);
+    const w = WIDE.white;
+    return {
+      group: [
+        { clip: d },
+        { path: d, fill: EYE_INK },
+        { ellipse: [x, cy, rx * w, ry * w], fill: WHITE, clipped: true },
+        { ellipse: [x, cy, WIDE.dot * p * R * k, WIDE.dot * p * R], fill: EYE_INK, clipped: true },
+      ],
+    };
+  },
+  // Mắt trố: lòng trắng to viền mảnh, con ngươi giữa
+  bulge: (x, cy, _s, k, p, lid) => {
+    const iris = { ellipse: [x, cy, R * p * k, R * p] as Quad, fill: EYE_INK };
+    if (!(lid > 0))
+      return {
+        group: [
+          {
+            ellipse: [x, cy, R * BULGE * k, R * BULGE],
+            fill: WHITE,
+            stroke: EYE_INK,
+            strokeWidth: 2.5,
+          },
+          iris,
+        ],
+      };
+    const d = lidCut(x, cy, R * BULGE * k, R * BULGE, lid * WIDE_LID);
+    return {
+      group: [
+        { clip: d },
+        { path: d, fill: WHITE },
+        { ...iris, clipped: true },
+        { path: d, fill: "none", stroke: EYE_INK, strokeWidth: 2.5, strokeLinejoin: "round" },
+      ],
+    };
+  },
+  // Mi trên sụp xuống: chỉ còn nửa dưới con ngươi, `lid` nghỉ sâu hơn thì theo nó
+  squint: (x, cy, _s, k, _p, lid) => ({
+    path: lidCut(x, cy, R * k, R, Math.max(0.5, lid)),
     fill: EYE_INK,
   }),
   happy: (x, cy) => ({
@@ -336,10 +491,19 @@ export const EYES = {
     path: `M ${x - s * 7} ${cy - 3} Q ${x} ${cy} ${x + s * 7} ${cy + 3} Q ${x} ${cy + 10} ${x - s * 7} ${cy - 3} Z`,
     fill: EYE_INK,
   }),
-  wink: (x, cy, s, k) =>
+  wink: (x, cy, s, k, _p, lid) =>
     s === -1
       ? { path: `M ${x - 7} ${cy + 2} Q ${x} ${cy - 3} ${x + 7} ${cy + 2}`, ...EYE_LINE }
-      : { ellipse: [x, cy, R * k, R], fill: EYE_INK },
+      : pupil(x, cy, R * k, R, lid),
+  // Cười nham hiểm (ニタァ): trăng lưỡi liềm, mi dưới cong lên khoét lõm vào bầu dục, không đốm sáng
+  sly: (x, cy, _s, k) => {
+    const [rx, ry, y] = [R * k * 1.15, R * 1.05, cy + 0.55 * R];
+    const h = rx * Math.sqrt(1 - ((y - cy) / ry) ** 2);
+    return {
+      path: `M ${x - h} ${y} A ${rx} ${ry} 0 1 1 ${x + h} ${y} Q ${x} ${cy - 0.35 * R} ${x - h} ${y} Z`,
+      fill: EYE_INK,
+    };
+  },
 } satisfies Record<string, EyeDef>;
 
 /** Đầu `side` chỉ vẽ nét bên `only`; `squash` bóp ngang hình nét khi đầu quay */
@@ -348,9 +512,21 @@ export interface FaceSides {
   squash?: number;
 }
 
-/** `pupil` bán kính con ngươi `wide` theo `EYE_R` */
+/**
+ * `pupil` bán kính con ngươi `bulge` theo `EYE_R`, chấm con ngươi `wide` theo nó; `lid` mi trên nghỉ sụp phần chiều cao
+ * con ngươi (`open`, mắt mở của `wink`, `wide` và `bulge` nửa số; `squint` lấy số lớn hơn); `shine` nhân đốm sáng của
+ * `eyeShine`, `0` là không có
+ */
 export interface EyeSides extends FaceSides {
   pupil?: number;
+  lid?: number;
+  shine?: number;
+}
+
+/** `width` nhân bề dày nét mày, `tilt` cộng vào độ nghiêng của mọi kiểu mày — dương nhấc đầu trong */
+export interface BrowSides extends FaceSides {
+  width?: number;
+  tilt?: number;
 }
 
 const sidesOf = (only?: 1 | -1) => ([-1, 1] as const).filter((s) => !only || s === only);
@@ -366,7 +542,9 @@ export function eyeMarks(
   const k = o.squash ?? (o.only ? SIDE_EYE_OVAL : 1);
   const p = o.pupil ?? WIDE_PUPIL;
   const eye: EyeDef = EYES[kind];
-  return { group: sidesOf(o.only).map((s) => eye(cx + (s * gap) / 2, cy, s, k, p)) };
+  return {
+    group: sidesOf(o.only).map((s) => eye(cx + (s * gap) / 2, cy, s, k, p, o.lid ?? 0)),
+  };
 }
 
 /** `lift` hạ cả hai nét xuống, `tilt` nhấc đầu trong lên, `arch` uốn cung; `far` là nét bên `+1` */
@@ -391,17 +569,18 @@ export function browMarks(
   cx: number,
   cy: number,
   gap: number,
-  o: FaceSides = {},
+  o: BrowSides = {},
 ): FaceMark {
   const squash = o.squash ?? 1;
   const shape: BrowShape & { far?: BrowShape } = BROWS[kind];
   return {
     fill: "none",
     stroke: EYE_INK,
-    strokeWidth: 4,
+    strokeWidth: 4 * (o.width ?? 1),
     strokeLinecap: "round",
     group: sidesOf(o.only).map((s) => {
-      const { lift, tilt, arch } = s === 1 && shape.far ? shape.far : shape;
+      const { lift, arch, ...t } = s === 1 && shape.far ? shape.far : shape;
+      const tilt = t.tilt + (o.tilt ?? 0);
       const y = cy - BROW_ABOVE + lift;
       const ex = cx + (s * gap) / 2;
       return {
@@ -486,7 +665,8 @@ export function wrinkleMarks(
 /**
  * Nét mặt chibi của đầu `human` trên người 3D: mắt hạ `offsetY`, giãn `eyeGap`, mồm gần mắt `mouthGap` (cộng vào
  * `face` của JSON nhân vật); nét mắt phóng `eye` quanh tâm mắt và bóp ngang `squash` thành bầu dục đứng, con ngươi
- * `wide` bán kính `pupil · EYE_R`, mồm phóng `mouth`, mày nhấc `brow` px. 2D không đọc. docs/01-rig.md#người-3d-mặc-đồ
+ * `bulge` bán kính `pupil · EYE_R`, mồm phóng `mouth`, mày nhấc `brow` px. `FACE_REST` của nhân vật chỉnh `eye`,
+ * `squash` và đốm sáng. 2D không đọc. docs/01-rig.md#người-3d-mặc-đồ
  */
 export const CHIBI = {
   shift: { offsetY: 10, eyeGap: 18, mouthGap: -10 },
@@ -496,6 +676,29 @@ export const CHIBI = {
   mouth: 0.8,
   brow: 3,
 } as const;
+
+/**
+ * Nét mặt nghỉ riêng của nhân vật — trường cùng tên trong `face` của JSON nhân vật, mặc định và khoảng cho phép.
+ * `eyeScale` nhân `CHIBI.eye`, `eyeWidth` nhân `CHIBI.squash`, `shine` nhân đốm sáng: chỉ đầu `human` đọc. `lid` mi
+ * trên sụp (`EyeSides.lid`), `browWidth` / `browTilt` nhân bề dày / cộng độ nghiêng mày (`BrowSides`): mọi nét mặt
+ * đọc. docs/01-rig.md#nét-mặt-riêng
+ */
+export const FACE_REST = {
+  eyeScale: { def: 1, min: 0.7, max: 1.3 },
+  eyeWidth: { def: 1, min: 0.7, max: 1.3 },
+  lid: { def: 0, min: 0, max: 0.6 },
+  shine: { def: 1, min: 0, max: 1.5 },
+  browWidth: { def: 1, min: 0.5, max: 1.8 },
+  browTilt: { def: 0, min: -8, max: 8 },
+} as const;
+
+export type FaceRest = Record<keyof typeof FACE_REST, number>;
+
+/** `FACE_REST` của `face`, trường bỏ trống lấy mặc định */
+export function faceRest(face: Partial<FaceRest> = {}): FaceRest {
+  const keys = Object.keys(FACE_REST) as (keyof FaceRest)[];
+  return Object.fromEntries(keys.map((k) => [k, face[k] ?? FACE_REST[k].def])) as FaceRest;
+}
 
 /** `face` của JSON nhân vật dời theo `CHIBI.shift` */
 export function chibiShape<T extends { offsetY: number; eyeGap: number; mouthGap: number }>(
@@ -510,10 +713,13 @@ export function chibiShape<T extends { offsetY: number; eyeGap: number; mouthGap
   };
 }
 
-/** Bán kính con ngươi theo `EYE_R` của kiểu mắt có đốm sáng, `wide` đọc `pupil`; `wink` chỉ bên `+1` còn mở */
+/** Bán kính con ngươi theo `EYE_R` của kiểu mắt có đốm sáng, `bulge` đọc `pupil`; `wink` chỉ bên `+1` còn mở */
 const SHINE: Partial<Record<EyeKind, number>> = { open: 1, wink: 1 };
 
-/** Đốm sáng trên con ngươi của mắt chibi, cùng tâm, `only` và `squash` như `eyeMarks`; kiểu mắt nhắm thì rỗng */
+/**
+ * Đốm sáng trên con ngươi của mắt chibi, cùng tâm, `only`, `squash` và `lid` như `eyeMarks`, cỡ nhân `shine`; kiểu mắt
+ * nhắm thì rỗng. Mi sụp thì đốm hạ xuống dưới mép mi; mi sụp hay đốm to hơn mặc định thì cắt theo hình mắt.
+ */
 export function eyeShine(
   kind: EyeKind,
   cx: number,
@@ -521,17 +727,25 @@ export function eyeShine(
   gap: number,
   o: EyeSides = {},
 ): FaceMark {
-  const p = (kind === "wide" ? (o.pupil ?? WIDE_PUPIL) : (SHINE[kind] ?? 0)) * R;
+  const p = (kind === "bulge" ? (o.pupil ?? WIDE_PUPIL) : (SHINE[kind] ?? 0)) * R;
   const squash = o.squash ?? 1;
-  const sides = p ? sidesOf(o.only).filter((s) => kind !== "wink" || s === 1) : [];
+  const [k, lid] = [o.shine ?? 1, o.lid ?? 0];
+  const sides = p && k > 0 ? sidesOf(o.only).filter((s) => kind !== "wink" || s === 1) : [];
+  const r = 0.36 * p * k;
+  const [ry, f] = kind === "bulge" ? [BULGE * R, lid * WIDE_LID] : [R, lid];
+  const y = lid > 0 ? Math.max(cy - 0.42 * p, cy + ry * (2 * f - 1) + r + 0.08 * p) : cy - 0.42 * p;
+  const cut = lid > 0 || k > 1;
+  const dots: FaceMark[] = sides.map((s) => {
+    const x = cx + (s * gap) / 2;
+    return {
+      ellipse: [x - 0.3 * p * squash, y, r * squash, r] as Quad,
+      ...(cut && { clipped: true as const }),
+    };
+  });
+  const eye = (s: 1 | -1) => lidCut(cx + (s * gap) / 2, cy, ry * squash, ry, f);
   return {
     fill: WHITE,
-    group: sides.map((s) => {
-      const x = cx + (s * gap) / 2;
-      return {
-        ellipse: [x - 0.3 * p * squash, cy - 0.42 * p, 0.36 * p * squash, 0.36 * p] as Quad,
-      };
-    }),
+    group: cut && dots.length ? [{ clip: sides.map(eye).join(" ") }, ...dots] : dots,
   };
 }
 

@@ -809,25 +809,54 @@ Không cần viseme thật. Cảm xúc chọn một **bộ** khẩu hình, mỗi
 cắn, há vừa, há to, tròn. Khi nói, miệng xoay chủ yếu giữa răng cắn và há vừa, há to ở tiếng
 nhấn, tròn ở nguyên âm tròn môi, khép khi nghỉ từ 0,2 s.
 
+Khẩu hình theo lối sticker chibi: miệng mở là **chữ D** đối xứng — mép trên gần phẳng, đáy tròn —,
+khoang đỏ nâu `#7a2b22`, dải răng trên `#f7f2e6` bám mép trên, lưỡi `#d0675a` nhô lên từ đáy ở miệng há
+to (`talkB`, `talkO`, `wryOpen`, `wide`, `shout`). Viền khoang mực nâu `2,4` px đầu, khẩu hình khép là một
+nét `3` px — mảnh hơn nét mày (`4`) cho miệng chibi nhỏ khỏi nặng. Các vai của một bộ dùng chung dáng, chỉ
+khác độ há, nên nhép nhanh không giật hình. `wry`, `wryOpen`, `pursed`, `meh`, `smirk`, `fang` lệch về
+khoé phải — nhếch là cố ý; còn lại đối xứng qua trục giữa mặt.
+
+Người 3D dán khẩu hình lên một lớp riêng trên sọ và chỉnh lớp ấy ngay trước mỗi lần vẽ, theo góc
+camera quanh trục đứng của đầu (`packages/rig/src/face.ts`), chỉ khẩu hình đổi, mắt và mày giữ nguyên:
+
+- Camera lệch sang bên phải người quá `TURN` (≈ 9°) thì lật gương khẩu hình: khoé cao của khẩu hình
+  lệch đổi bên, khẩu hình đối xứng giữ nguyên hình.
+- Mồm lệch khỏi camera quá `CHEEK` (≈ 66°) thì trượt theo sọ về phía camera, giữ mồm nhỏ sát mép mặt
+  thay vì cuộn mất sau mép đầu (cheeky mouth của anime); dừng khi mép mồm nửa rộng `21` px chạm vòng sọ ở
+  cao độ mồm. Không giãn ngang: mồm nghiêng nhỏ hơn mồm chính diện. `shout` rộng hơn mức ấy nên lúc trượt hết
+  mép xa của nó tràn ra mép đầu.
+
+Lớp mồm phủ mép trên / dưới (`extent`) của mọi khẩu hình; thêm khẩu hình cao hơn thì nới `MOUTH_BOX`
+(`face.test.ts` giữ hai bên khớp).
+
+Cả hai chỉ đọc camera và đầu ở khung đang vẽ, không nhớ khung trước: cùng `t` cùng góc máy là cùng ảnh.
+Người nền (`lod: "low"`) không lật, không trượt.
+
 | Hình miệng | SVG | Kích hoạt |
 |---|---|---|
 | `closed` | Đoạn thẳng ngắn | Im lặng |
 | `parted` | Khe nhỏ khép nhọn hai đầu, không răng | Khựng, chưa biết đáp; đi với mắt `open`, mày `lifted` |
-| `talkTeeth` | Chữ D (mép trên gần phẳng, đáy tròn) tô trắng, vạch mực cong chia hai hàm, không khoang | Nói: răng cắn — tiếng nhỏ, phụ âm, nguyên âm `i`, nghỉ ngắn |
-| `talkA` | Chữ D, dải răng trên, khoang đỏ nâu bên dưới | Nói: há vừa — nguyên âm `a`, `e`, tiếng thường |
+| `talkTeeth` | Chữ D tô trắng, vạch mực cong chia hai hàm, không khoang | Nói: răng cắn — tiếng nhỏ, phụ âm, nguyên âm `i`, nghỉ ngắn |
+| `talkA` | Chữ D, dải răng trên, khoang bên dưới | Nói: há vừa — nguyên âm `a`, `e`, tiếng thường |
 | `talkB` | Chữ D sâu hơn `talkA` (cao ≥ 1,25 lần), dải răng trên, lưỡi ở đáy | Nói: há to — tiếng nhấn, to nhất đoạn |
-| `talkO` | Bầu dục đứng có viền, dải răng trên, lưỡi ở đáy | Nói: nguyên âm `o` kéo dài (おう, おお, オー) |
+| `talkO` | Bầu dục đứng, dải răng trên, lưỡi ở đáy | Nói: nguyên âm `o` kéo dài (おう, おお, オー) |
 | `talkSadA` / `talkSadB` | Miệng hé ngang, vòm trên nhẹ, đáy phẳng, khoé bo; A tô trắng, B mở sâu với dải răng trên | Nói buồn nhẹ, ngập ngừng, thắc mắc |
-| `talkAngryA` / `talkAngryB` | Khoang miệng căng bè, dải răng trên, há nhỏ / lớn | Vừa giận vừa nói |
+| `talkAngryA` / `talkAngryB` | Hình thang bè dưới, mép trên vồng, dải răng trên; há nhỏ / lớn | Vừa giận vừa nói |
 | `smile` | Cung cong lên | Vui |
 | `frown` | Cung cong xuống | Buồn, thất vọng |
 | `pain` | Nét run dạng sóng | Đau, nhăn nhó |
-| `o` | Tròn nhỏ có viền, dải răng trên | Ngạc nhiên; nói: nguyên âm tròn môi |
-| `wide` | Ellipse gần tròn, to, có viền, dải răng trên, lưỡi ở đáy | La hét |
-| `grit` | Hình thang bo góc (trên rộng hơn dưới), dải răng trắng liền chia đôi ngang | Nghiến răng, gồng, tức; răng cắn của bộ giận |
-| `grin` | Cung cong xuống tô khoang miệng, dải răng trắng bám mép trên | Cười toe, hớn hở; há to của bộ vui |
-| `wry` | Nét lượn sóng hai khoé hếch lên, lệch nhẹ (波線の口) | Cười gượng mím môi, ngượng, 「うん…」 |
-| `wryOpen` | Miệng há lệch: khoé trái cao, khoé phải thấp, đáy sâu về phải, dải răng trên bám mép, lưỡi hồng ở đáy | Cười gượng há miệng 「えへへ…」, (^^;) — đi với mắt `happy`, mày `sad` |
+| `o` | Tròn nhỏ, dải răng trên | Ngạc nhiên; nói: nguyên âm tròn môi |
+| `wide` | Bầu dục gần tròn, to, dải răng trên, lưỡi ở đáy | La hét |
+| `grit` | Hình thang bo góc (trên rộng hơn dưới) tô trắng, một vạch giữa chia hai hàm | Nghiến răng, gồng, tức; răng cắn của bộ giận |
+| `grin` | Cung cong xuống tô khoang, dải răng trắng bám mép trên | Cười toe, hớn hở; há to của bộ vui — vui hay không là ở mắt |
+| `wry` | Nét lượn sóng, khoé phải nhếch (波線の口) | Cười gượng mím môi, ngượng, 「うん…」 |
+| `wryOpen` | Miệng há lệch: khoé trái cao hẳn khoé phải, đáy sâu về phải, dải răng trên, lưỡi ở đáy | Cười gượng há miệng 「えへへ…」, (^^;) — đi với mắt `happy`, mày `sad` |
+| `pursed` | Nét mím, ngoặc `)` ôm khoé phải (má phồng một bên) | Mím môi phân vân, ngượng, nén khó chịu |
+| `puffed` | Nét ngắn giữa hai ngoặc `( )` (phồng hai má) | Nín thở, nín cười, phụng phịu |
+| `meh` | Nét phẳng, khoé phải nhếch một vạch | Chán, nghi ngờ, không tin |
+| `smirk` | Nét ngắn gần phẳng, khoé phải vểnh lên (ニヤリ) | Nhếch mép đắc ý, phản diện; đi với mắt `squint` / `sly`, mày `flat` |
+| `fang` | Miệng hé lệch, khoé phải cao, một răng nanh trắng to từ mép trên gần khoé ấy (八重歯) | Cười tinh quái, láu cá, phản diện nhỏ |
+| `shout` | Hình thang bè dưới rộng gần nửa mặt (`0,37` bề ngang đầu sau khi phóng), mép trên vồng cao, đáy tròn xuống gần cằm, dải răng trên theo vồng, lưỡi to | Quát, mắng (怒鳴る); đi với mày `angry`, mắt `open` / `squeezed` |
 
 Bộ khẩu hình theo cảm xúc (`--mood` của `lipsync`):
 
@@ -866,25 +895,31 @@ Nghỉ của bộ giận là cung trễ `frown`, không phải `grit`: nghiến 
 - Hình đặt đúng mốc đầu mora, không đi trước hay sau tiếng. Ra khoảng 8 lần đổi hình mỗi giây,
   mỗi hình 0,1–0,15 s, mỗi câu 4–5 hình khác nhau.
 
-Răng luôn là **một dải trắng liền**, không kẻ từng chiếc — kẻ ô ở cỡ này thành hàm răng nhe.
+Răng luôn là **một dải trắng liền**, không kẻ từng chiếc — kẻ ô ở cỡ này thành hàm răng nhe; `talkTeeth`,
+`grit` chỉ có một vạch giữa hai hàm, `fang` một chiếc nanh.
 
 `mouthExtent(kind)` trả mép trên / dưới của mỗi khẩu hình so với tâm miệng (`extent` của nó trong
 `MOUTHS`) — đây là số mà ria mép bám vào.
 
-Mắt là hai chấm, đổi kiểu chứ không có tham số:
+Mắt là hai chấm, đổi kiểu theo nét mặt; cỡ, mi và đốm sáng nghỉ là của nhân vật ([Nét mặt riêng](#nét-mặt-riêng)):
 
 | Kiểu mắt | SVG | Kích hoạt |
 |---|---|---|
 | `open` | Chấm tròn `r6` | Mặc định |
 | `shut` | Đoạn thẳng ngắn | Chớp, nhắm tịt, nhăn mặt |
-| `wide` | Lòng trắng `r9` viền + con ngươi `r4` | Trợn, sốc, hoảng |
+| `wide` | Bầu dục đặc `1,35` lần mắt mở, lòng trắng giữa, con ngươi co còn chấm | Ngạc nhiên, sốc, hoảng |
+| `bulge` | Lòng trắng to `r9` viền mảnh + con ngươi `r4` (mắt trố) | Sốc tột độ, hiếm dùng |
 | `squint` | Nửa dưới con ngươi, mi trên sụp | Nheo, nghi ngờ, mệt |
 | `happy` | Cung cong lên | Cười tít |
 | `squeezed` | Hai nét gấp `> <` | Nhắm chặt, đau, gồng |
 | `droopy` | Mi xiên xuống phía ngoài, mảng mắt rũ | Mệt, buồn nhẹ |
 | `wink` | Mắt gần nhắm cong nhẹ, mắt xa mở | Nháy mắt, ra hiệu |
+| `sly` | Trăng lưỡi liềm: mi dưới cong lên khoét lõm vào bầu dục, hai khoé nhọn, không đốm sáng (ニタァ) | Cười nham hiểm, đắc ý; đi với `smirk` / `fang` |
 
-`wide` là kiểu duy nhất có lòng trắng và dùng với mày `raised`.
+`wide` và `bulge` có lòng trắng, dùng với mày `raised`; `wide` cùng họ chấm đặc với `open` nên là mắt
+ngạc nhiên thường ngày, `bulge` lệch hẳn khỏi nét chung, để dành cho cú sốc lớn. Mắt lim dim nghi ngờ (ジト目) là `squint`;
+mắt lười hay khó tính thường ngày là `face.lid` của nhân vật ([Nét mặt riêng](#nét-mặt-riêng)), không phải
+một kiểu mắt.
 
 Mày `lifted` nhấc nhẹ, gần ngang; dùng cho phản ứng thoáng qua. Mày `raised`
 nhấc cao và cong rõ, dùng cho ngạc nhiên mạnh hơn.
@@ -978,6 +1013,43 @@ mọi dáng đầu; 2D không vẽ. Mức ửng là `face.blush` của nhân v�
   dùng chung texture theo dáng mặt, nét, nấc ửng và màu da.
 
 `face-shy` của bộ mẫu ửng từ `0` lên `0,6` trong `0,6` s.
+
+### Nét mặt riêng
+
+Mọi nhân vật dùng chung bộ khẩu hình, mắt, mày; mỗi người khác nhau ở nét mặt **nghỉ** — sáu số trong `face`
+của JSON nhân vật, mặc định và khoảng ở `FACE_REST` (`core/face.ts`). Mặc định cho đúng nét chung, nên nhân
+vật không khai vẽ ra như cũ từng nét. Chọn 2–3 số cho mỗi người, đừng chỉnh cả sáu.
+
+| Trường | Mặc định | Khoảng | Nghĩa | Ai đọc |
+|---|---|---|---|---|
+| `eyeScale` | `1` | `0,7..1,3` | Nhân cỡ mắt chibi (`CHIBI.eye`) | Đầu `human` |
+| `eyeWidth` | `1` | `0,7..1,3` | Nhân độ bóp ngang (`CHIBI.squash`): dưới `1` mắt hẹp, trên `1` mắt tròn | Đầu `human` |
+| `lid` | `0` | `0..0,6` | Mi trên nghỉ sụp, phần chiều cao con ngươi tính từ đỉnh, cắt ngang | Mọi nét mặt |
+| `shine` | `1` | `0..1,5` | Nhân đốm sáng; `0` là mắt không đốm | Đầu `human` |
+| `browWidth` | `1` | `0,5..1,8` | Nhân bề dày nét mày | Mọi nét mặt |
+| `browTilt` | `0` | `−8..8` | Cộng vào độ nghiêng của mọi kiểu mày, cùng đơn vị `tilt` của `BROWS`: dương nhấc đầu trong (hiền, rụt rè), âm hạ đầu trong (nghiêm, khó tính) | Mọi nét mặt |
+
+- **`lid` ăn ở mắt có con ngươi mở**: `open`, mắt mở của `wink`, `wide` và `bulge` (cắt cả lòng trắng, chỉ
+  nửa số — trợn là mở to hơn mắt nghỉ); `squint` lấy số lớn hơn giữa `0,5` và `lid`; mắt nhắm, `droopy`, `sly` bỏ qua.
+  Đốm sáng hạ xuống dưới mép mi và cắt theo hình mắt.
+- **`browTilt` cộng lên cả biểu cảm**: người rụt rè giận thì mày `angry` bớt dữ, người khó tính cười thì mày
+  vẫn hơi chau. Đó là chủ ý — nét nghỉ đi theo người qua mọi nét mặt.
+- **2D và đầu cầu của người 3D** đọc `lid`, `browWidth`, `browTilt` (`<Eyes lid>`, `<Brow width tilt>`);
+  `eyeScale`, `eyeWidth`, `shine` thuộc nét chibi nên chỉ đầu `human` đọc.
+
+Công thức mẫu cho một dàn văn phòng:
+
+| Vai | Nét nghỉ |
+|---|---|
+| Đàn em vui tính | `eyeScale 1,15`, `shine 1,3`, `browTilt 1` |
+| Sếp nghiêm | `eyeScale 0,85`, `eyeWidth 0,85`, `shine 0,6`, `browWidth 1,4`, `browTilt −3` |
+| Đồng nghiệp lười | `lid 0,4`, `shine 0`, `browTilt 1` |
+| Chị お局 khó tính | `eyeWidth 0,85`, `lid 0,15`, `browWidth 0,8`, `browTilt −4` |
+| Đối thủ nham hiểm | `lid 0,25`, `shine 0,5`, `browTilt −1,5`; hành động để miệng nghỉ `smirk` |
+| Lính mới rụt rè | `eyeScale 1,15`, `shine 1,2`, `browTilt 4`, `browWidth 0,8` |
+
+Phản diện vẫn cùng rig: dữ là ở vài nét — mi sụp không đốm sáng, miệng `smirk` / `fang`, mắt `sly`, mày
+`flat` hay `angry`; cảnh mắng là miệng `shout`.
 
 ### Tóc
 
@@ -1198,7 +1270,7 @@ dựng — hình bao của mái chính diện, cộng một chỏm sọ phủ t�
 | `TORSO_DEPTH` | 0.78 | Thân áo dựng khối: bề dày trước–sau của khối bằng bấy nhiêu lần bề ngang ở cùng độ cao |
 | `TORSO_TILT` | 0.25 | Thân áo dựng khối của người 2D nhìn từ hơi cao: điểm quay ra người xem `z` px thì thấp xuống bấy nhiêu lần `z`. Người 3D chiếu thật ([Người 3D](#người-3d)) |
 | `SIDE_EYE` | 0.74 | Mắt cách tâm đầu bấy nhiêu lần nửa trục ngang, về `+x` |
-| `SIDE_EYE_OVAL` | 0.7 | Hình tròn của mắt (con ngươi, lòng trắng `wide`, `squint`) bóp ngang còn bấy nhiêu |
+| `SIDE_EYE_OVAL` | 0.7 | Hình tròn của mắt (con ngươi, `wide`, lòng trắng `bulge`, `squint`) bóp ngang còn bấy nhiêu |
 | `SIDE_MOUTH_INSET` | 0.08 | Tâm mồm cách viền đầu, tính bằng nửa trục ngang; nửa trước cắt theo viền |
 | `SIDE_CHIN_INSET` | 0.08 | Râu `chin` không có hình `side`: trục giữa cách viền đầu, tính bằng nửa trục ngang; nửa xa bị cắt |
 | `SIDE_GLASSES_ARM` | 0.61 | Càng kính `side` dài bấy nhiêu lần bề ngang hộp, từ tâm mắt kính tới tai |
@@ -1794,8 +1866,10 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   má ở mọi góc quay. `CHIBI` (`core/face.ts`) cộng vào `face` của JSON nhân vật: mắt hạ `10`, hai mắt
   giãn thêm `18`, mồm gần mắt `10` px (`chibiShape`) — kính và `headFit` đọc chỗ mắt đã dời. Mỗi mắt
   phóng `1,45` lần quanh tâm của nó, bóp ngang `0,75` thành bầu dục đứng, con ngươi đang mở có đốm
-  sáng (`eyeShine`); con ngươi `wide` to hơn của người que (`pupil` `0,85` thay `0,7` lần `EYE_R`);
-  mồm thu `0,8`, mày nhấc `3` px. 2D không vẽ các nét ấy. Má ửng theo `face.blush` của nhân vật,
+  sáng (`eyeShine`) — `wide` không có, lòng trắng giữa đã là chỗ sáng; con ngươi `bulge` và chấm con ngươi
+  `wide` to hơn của người que (`pupil` `0,85` thay `0,7` lần `EYE_R`);
+  mồm thu `0,8`, mày nhấc `3` px. Cỡ mắt, độ bóp và đốm sáng nhân theo [nét mặt riêng](#nét-mặt-riêng) của
+  nhân vật. 2D không vẽ các nét ấy. Má ửng theo `face.blush` của nhân vật,
   không theo dáng đầu — [Má ửng](#má-ửng).
 - **Tóc dựng khối dời theo sọ.** Mỗi đỉnh tóc dời đúng bằng điểm sọ bên dưới nó (`humanHair`): tóc
   giữ bề dày, gáy thu thì tóc gáy thu theo, tóc rủ không xuyên quai hàm. Kính và `headFit` đọc nửa

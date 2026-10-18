@@ -209,7 +209,7 @@ trên mọi kiểu đầu theo `head.eye`: `open` chấm, `shut` vạch dọc tr
 trắng, `squint` nửa phía cằm, `happy` cung vồng lên đỉnh đầu, `squeezed` nhắm chặt
 dạng nét gấp, `droopy` có mi rũ, `wink` khép cong con mắt nhìn thấy trong góc nghiêng.
 **Mỏ chỉ đầu `beak` vẽ**; mỗi tên miệng là một độ há của mỏ dưới quanh khớp mỏ — `closed 0°`, `talkTeeth 4°`, `talkA 10°`, `talkB 24°`,
-`o 14°`, `wide 34°`, các tên còn lại ở giữa — nên hành động nhép miệng của người
+`o 14°`, `wide 34°`, miệng mím `pursed`, `puffed`, `meh` khép `0°`, các tên còn lại ở giữa — nên hành động nhép miệng của người
 (`mouth.json`) đặt lên chim là chim nói. Đầu khác `beak` bỏ qua `mouth`. Ảnh `pieces.head`
 thay trọn khối đầu nên cũng thay luôn mỏ và mắt: mặt cử động chỉ có với đầu vẽ code.
 
