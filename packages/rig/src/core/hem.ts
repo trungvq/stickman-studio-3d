@@ -58,12 +58,13 @@ const cross = (o: P2, a: P2, b: P2) =>
 /**
  * Vải buông từ mép trên `top` phủ qua vật có mặt cắt dọc `pts` (`[tiến, y xuống]`): chuỗi đỉnh bao lồi của `top`, `pts`
  * và bóng rơi thẳng xuống của chúng, từ `top` vòng phía trước tới chỗ vải rời vật. Sau đỉnh cuối vải rủ thẳng xuống.
- * Vật phía trước `top` mà cao hơn nó (đùi người ngồi) thì vải đi thẳng lên trùm qua trước
+ * Vật phía trước `top` mà cao hơn nó (đùi người ngồi) thì vải đi thẳng lên trùm qua trước. Điểm cao hơn chỗ bắt đầu (lưng
+ * sau `top`) không thuộc đường vải
  */
 export function drape(top: P2, pts: readonly P2[]): P2[] {
   const over = Math.min(top[1], ...pts.filter((p) => p[0] > top[0]).map((p) => p[1]));
   const start: P2 = over < top[1] ? [top[0], over - 1e-6] : top;
-  const real = [start, ...pts];
+  const real = [start, ...pts.filter((p) => p[1] >= start[1])];
   const floor = Math.max(...real.map((p) => p[1])) + 1e4;
   const all = [...real, ...real.map((p): P2 => [p[0], floor])];
   const path: P2[] = start === top ? [top] : [top, start];

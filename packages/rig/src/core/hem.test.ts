@@ -82,6 +82,12 @@ describe("vạt treo hông", () => {
     expect(up[1][0]).toBe(24);
     expect(up[1][1]).toBeLessThan(-29);
     expect(up[up.length - 1][0]).toBe(92);
+    // lưng sau dây cạp cao hơn chỗ vải bắt đầu: vải vẫn phủ tới gối, không vòng ra sau lưng
+    const back = drape(
+      [24, -27],
+      [...lap.map(([z, y]): [number, number] => [z, y - 15]), [-30, -33]],
+    );
+    expect(back.map(([z]) => z)).toEqual(up.map(([z]) => z));
     // sau đỉnh cuối vải rủ thẳng
     const [z, y] = drapeAt(path, 1000);
     expect(z).toBe(92);
