@@ -1,12 +1,31 @@
 import { D, REAR_YAW, RIG, TORSO_DEPTH, TORSO_TILT } from "./constants";
-import { GarmentSchema, type CharacterData, type Garment, type GarmentStyle } from "./schema";
+import {
+  GarmentSchema,
+  type CharacterData,
+  type Garment,
+  type GarmentStyle,
+  type Tie,
+} from "./schema";
 import { localProject, type LocalLens } from "./lens";
 import { chain, weld } from "./sculpt";
 import { lonOf, turnPoint, type Vec3 } from "./sphere";
 import type { View } from "./types";
 
 export type Dims = Required<
-  Omit<Garment, "style" | "wrap" | "prints" | "badge" | "collarUp" | "belly" | "bellySide">
+  Omit<
+    Garment,
+    | "style"
+    | "wrap"
+    | "prints"
+    | "badge"
+    | "collarUp"
+    | "belly"
+    | "bellySide"
+    | "neckline"
+    | "marks"
+    | "panels"
+    | "inner"
+  >
 >;
 export type P2 = [number, number];
 
@@ -18,11 +37,14 @@ export type MarkFill = "color" | "line" | "accent" | "skin" | `#${string}`;
 
 /**
  * Một đặc điểm trên mặt khối. `pts` không `fill` là nét, `closed` thì khép vòng; có `fill` là mảng
- * kín tô màu, viền nét `k` (`0` là không viền). `dot` là một chấm ở điểm đầu
+ * kín tô màu, viền nét `k` (`0` là không viền), nổi `lift` px ở người 3D (bỏ trống `0.3`). `dot` là một chấm ở điểm đầu.
+ * `ink`: độ đậm của nét, chấm — `1` (bỏ trống) màu nét, nhỏ hơn thì nhạt về màu thân
  */
-type Mark = {
+export type Mark = {
   k: number;
+  ink?: number;
   fill?: MarkFill;
+  lift?: number;
   graze?: number;
   pts: SP[];
   closed?: boolean;
@@ -42,6 +64,8 @@ export interface Surface {
   top: (grow?: number) => number;
   /** Điểm cách trục `x` px ở độ cao `y`, mặt trước hay mặt sau; quá bề ngang thì dồn về cạnh */
   at: (x: number, y: number, back?: boolean) => SP;
+  /** Nửa bề sâu khối ở độ cao `y`, nửa trước hay nửa sau; chỉ người 3D */
+  depth?: (y: number, back?: boolean) => number;
   /** Điểm trên viền cổ nở rộng và hạ `grow` px, ở góc `phi` quanh trục cổ: `0` giữa trước, `±180` giữa sau */
   neck: (phi: number, grow?: number) => SP;
   /** `y` ở phân số `t` từ vành vai (`0`) xuống khớp hông (`1`) */
@@ -216,6 +240,15 @@ const TEE: Dims = {
   hemRound: 8,
 };
 
+/** Vải áo dày thêm bấy nhiêu px mỗi bên ngoài thân người (`BODY`) */
+export const CLOTH = 2;
+
+/**
+ * Dáng thân người của mọi kiểu ở cùng `rig`: thân trần là chính nó, áo phông là nó nở thêm `CLOTH`. Mép trên ngang mép
+ * trên áo phông nên cổ lộ ra bằng nhau; miệng cổ hẹp hơn cổ người 3D để cổ mọc liền từ mặt vát
+ */
+const BODY: Dims = { ...TEE, ease: TEE.ease - CLOTH, hem: -4, neck: 17, neckFront: 0 };
+
 /** Đường quanh khối ở độ cao `y` */
 const around = (y: number, k: number): Mark => ({
   pts: curve(72, (u): SP => [-180 + 360 * u, y]),
@@ -240,26 +273,84 @@ const placket = (s: Surface, us: number[]) => {
   return us.map((u) => yA + (s.yH - yA) * u);
 };
 
+/** Polygon trên hình phẳng ra mặt khối, cạnh chia nhỏ trên hình phẳng: cạnh thẳng ở mặt trước vẫn thẳng khi nhìn thẳng */
+const onPlane = (s: Surface, poly: P2[]): SP[] =>
+  poly.flatMap(([x, y], i) => {
+    const [qx, qy] = poly[(i + 1) % poly.length];
+    const n = Math.max(1, Math.ceil(Math.hypot(qx - x, qy - y) / 2));
+    return curve(n, (u): SP => s.at(x + (qx - x) * u, y + (qy - y) * u)).slice(0, -1);
+  });
+
+/** Cà vạt mặc định: nút sát viền cổ, bản rộng dần, mũi thấp hơn chỗ viền cổ chạm mặt vát `length` px */
+const tiePoly = (s: Surface, t: Tie): P2[] => {
+  const top = s.top();
+  const k = (t.length - 11) / 91;
+  return (
+    [
+      [-5.5, 1],
+      [5.5, 1],
+      [3, 11],
+      [8, 11 + 49 * k],
+      [8.5, 11 + 81 * k],
+      [0, 11 + 91 * k],
+      [-8.5, 11 + 81 * k],
+      [-8, 11 + 49 * k],
+      [-3, 11],
+    ] as P2[]
+  ).map(([x, y]) => [x * t.width, top + y]);
+};
+
+/** Áo trong nổi bấy nhiêu px ở người 3D: vỏ viền cổ người cắm xiên qua mặt vát, áo trong nổi thấp thì vỏ ấy lòi qua thành chấm mực */
+const INNER_LIFT = 1;
+
+/**
+ * Áo trong lộ giữa hai vạt cổ chữ V (`garment.inner`): phủ cả miệng cổ từ mép trên khối tới đáy chữ V, liền viền cổ;
+ * cà vạt cắt theo chữ V như luồn dưới vạt. `fill`, `tie` là mặc định của kiểu khi `inner` không khai
+ */
+function innerMarks(s: Surface, fill?: MarkFill, tie?: Partial<Tie>): Mark[] {
+  const inner = s.g.inner;
+  const out: Mark[] = [];
+  const color = inner?.color ?? fill;
+  if (color) {
+    const w = 3 * s.g.neck;
+    out.push({
+      pts: onPlane(
+        s,
+        inV(s, [
+          [-w, s.yC],
+          [w, s.yC],
+          [0, s.top() + s.g.neckFront],
+        ]),
+      ),
+      fill: color,
+      k: inner?.line ?? 0,
+      lift: INNER_LIFT,
+    });
+  }
+  const t = inner?.tie === false ? undefined : (inner?.tie ?? tie);
+  if (t) {
+    const spec = { width: 1, length: 102, line: 0, ...t };
+    out.push({
+      pts: onPlane(s, inV(s, tiePoly(s, spec))),
+      fill: spec.color ?? "line",
+      k: spec.line,
+      lift: INNER_LIFT + 0.05,
+    });
+  }
+  return out;
+}
+
 const COLLAR_CREAM = "#f6efe4";
+
+/** Nét ngực, lưng của thân trần: mảnh và nhạt, chỉ gợi khối */
+const BARE_LINE = 0.5;
+const BARE_INK = 0.3;
 
 /** Bảng của từng kiểu thân áo; JSON chọn tên kiểu và đè vài số. docs/02-trang-phuc.md#thân-áo-dựng-khối */
 export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
   bare: {
     label: "Ngực trần dựng khối",
-    dims: {
-      ease: 0,
-      fit: 0.55,
-      waist: 8,
-      hem: -4,
-      rise: -5,
-      neck: 15,
-      neckFront: 0,
-      neckBack: 0,
-      slope: 0.85,
-      cladSlope: 0.85,
-      round: 12,
-      hemRound: 10,
-    },
+    dims: BODY,
     neckline: "round",
     marks: (s) => [
       ...SIDES.map((d) => ({
@@ -267,26 +358,30 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
           d * (5 + 48 * u),
           s.t(0.15 + 0.05 * Math.sin(Math.PI * u) - 0.05 * u),
         ]),
-        k: 0.89,
+        k: BARE_LINE,
+        ink: BARE_INK,
       })),
       {
         pts: [
           [0, s.t(0.26)],
           [0, s.t(0.43)],
         ],
-        k: 0.89,
+        k: BARE_LINE,
+        ink: BARE_INK,
       },
-      { pts: [[0, s.t(0.66)]], k: 0.6, dot: true },
+      { pts: [[0, s.t(0.66)]], k: 0.45, ink: BARE_INK, dot: true },
       {
         pts: [
-          [180, s.t(0.05)],
-          [180, s.t(0.68)],
+          [180, s.t(0.36)],
+          [180, s.t(0.64)],
         ],
-        k: 0.89,
+        k: BARE_LINE,
+        ink: BARE_INK,
       },
       ...SIDES.map((d) => ({
         pts: curve(8, (u): SP => [180 + d * (35 - 24 * u), s.t(bezier(u, 0.14, 0.33, 0.2))]),
-        k: 0.89,
+        k: BARE_LINE,
+        ink: BARE_INK,
       })),
     ],
   },
@@ -363,25 +458,9 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
     dims: { ...TEE, hem: 10, fit: 0.8, neckFront: 76 },
     neckline: "v",
     marks: (s) => {
-      const top = s.top();
       const [yA, ...buttons] = placket(s, [0, 0.26, 0.6]);
       return [
-        // Cà vạt dài quá đáy cổ, cắt theo chữ V: đuôi luồn dưới vạt áo
-        {
-          pts: inV(s, [
-            [-5.5, top + 1],
-            [5.5, top + 1],
-            [3, top + 11],
-            [8, top + 60],
-            [8.5, top + 92],
-            [0, top + 102],
-            [-8.5, top + 92],
-            [-8, top + 60],
-            [-3, top + 11],
-          ]).map(([x, y]) => s.at(x, y)),
-          fill: "line",
-          k: 0,
-        },
+        ...innerMarks(s, undefined, {}),
         { pts: [s.at(0, yA), s.at(-1, yA + 20), s.at(0, s.yH - 9)], k: 0.45 },
         // Hai vạt trước bo tròn ở gấu
         ...SIDES.map((d) => ({
@@ -472,26 +551,14 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
     label: "Blazer nữ dựng khối",
     dims: { ...TEE, ease: 8, waist: 11, fit: 0.85, hem: 0, neckFront: 73 },
     neckline: "v",
-    marks: (s) => {
-      const top = s.top();
-      return [
-        {
-          pts: inV(s, [
-            [-17, top + 13],
-            [0, top + 17],
-            [17, top + 13],
-            [0, top + s.g.neckFront],
-          ]).map(([x, y]) => s.at(x, y)),
-          fill: "accent",
-          k: 0.45,
-        },
-        ...placket(s, [0.38, 0.75]).map((y) => ({ pts: [s.at(18, y)], dot: true, k: 1.05 })),
-        ...SIDES.map((d) => ({
-          pts: [s.at(d * 25, placket(s, [0.62])[0]), s.at(d * 37, placket(s, [0.54])[0])],
-          k: 0.5,
-        })),
-      ];
-    },
+    marks: (s) => [
+      ...innerMarks(s, "accent"),
+      ...placket(s, [0.38, 0.75]).map((y) => ({ pts: [s.at(18, y)], dot: true, k: 1.05 })),
+      ...SIDES.map((d) => ({
+        pts: [s.at(d * 25, placket(s, [0.62])[0]), s.at(d * 37, placket(s, [0.54])[0])],
+        k: 0.5,
+      })),
+    ],
     collar: (s) => ({
       stand: 4,
       band: 7,
@@ -513,15 +580,7 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
     neckline: "v",
     rib: { width: 5, stand: 2, lift: [2, 0.5], line: 0.55 },
     marks: (s) => [
-      {
-        pts: inV(s, [
-          [-22, s.top() + 12],
-          [22, s.top() + 12],
-          [0, s.top() + s.g.neckFront],
-        ]).map(([x, y]) => s.at(x, y)),
-        fill: "accent",
-        k: 0.45,
-      },
+      ...innerMarks(s, "accent"),
       { pts: [s.at(-3, s.top() + s.g.neckFront), s.at(-3, s.yH - 2)], k: 0.45 },
       ...placket(s, [0.2, 0.5, 0.8]).map((y) => ({ pts: [s.at(3, y)], dot: true, k: 0.85 })),
       around(s.yH - 9, 0.5),
@@ -878,7 +937,7 @@ export interface TorsoPaths {
   /** Hình bao của khối, đã co vào nửa nét: viền vẽ dày gấp đôi bên dưới ruột */
   body: string;
   /** Đặc điểm trên mặt khối theo thứ tự vẽ, đã bỏ phần quay ra sau: có `fill` là mảng tô không viền, không thì là nét */
-  lines: { d: string; k: number; fill?: MarkFill }[];
+  lines: { d: string; k: number; fill?: MarkFill; ink?: number }[];
   /**
    * Cổ bẻ nổi khối, từng tấm theo thứ tự vẽ (chân cổ rồi lá cổ): `under` là phần sau viền bóng của
    * thân, vẽ trước ruột thân để thân che; `over` vẽ sau các đặc điểm. `edge` là nét viền vẽ dưới ruột.
@@ -1056,9 +1115,9 @@ function buildTorso(c: CharacterData, yaw: number, stroke: number, lens?: LocalL
       const dip =
         c < 0
           ? (g.neckBack + grow) * -c
-          : def.neckline === "v"
+          : (g.neckline ?? def.neckline) === "v"
             ? (g.neckFront + grow) * (1 - Math.abs(Math.sin(phi * D)))
-            : def.neckline === "square"
+            : (g.neckline ?? def.neckline) === "square"
               ? (g.neckFront + grow) * Math.min(1, c * 3)
               : (g.neckFront + grow) * c;
       const [lon, y] = at(x, top(grow) + dip, c < 0);
@@ -1091,12 +1150,12 @@ function buildTorso(c: CharacterData, yaw: number, stroke: number, lens?: LocalL
 
   const lines: TorsoPaths["lines"] = [];
   /** Cắt đường ở chỗ quay ra sau, giữ các đoạn phía trước */
-  const trace = (sps: SP[], k: number, min = GRAZE) => {
+  const trace = (sps: SP[], k: number, min = GRAZE, ink?: number) => {
     if (!(k > 0)) return;
     const pts = sps.map(onTorso);
     let run: Vec3[] = [];
     const flush = () => {
-      if (run.length > 1) lines.push({ d: path(run), k });
+      if (run.length > 1) lines.push({ d: path(run), k, ...(ink !== undefined && { ink }) });
       run = [];
     };
     pts.forEach((q, i) => {
@@ -1138,28 +1197,42 @@ function buildTorso(c: CharacterData, yaw: number, stroke: number, lens?: LocalL
     });
     return out;
   };
+  /** Phần thấy được còn diện tích: mảng dồn lên mép cạnh khối (kinh độ ±90) chỉ là dải không bề rộng */
+  const solidPart = (vis: SP[]) =>
+    vis.length > 2 &&
+    Math.abs(
+      vis.reduce((a, p, i) => {
+        const q = vis[(i + 1) % vis.length];
+        return a + p[0] * q[1] - q[0] * p[1];
+      }, 0),
+    ) > 1e-3;
   const fillPoly = (poly: SP[], fill: MarkFill) => {
     if (lens) {
       const vis = facingPart(poly);
-      if (vis.length > 2) lines.push({ d: `${path(vis.map((q) => onTorso(q).p))}Z`, k: 0, fill });
+      if (solidPart(vis)) lines.push({ d: `${path(vis.map((q) => onTorso(q).p))}Z`, k: 0, fill });
       return;
     }
     for (const shift of [-360, 0, 360]) {
       const moved = poly.map(([l, y]): SP => [l + shift, y]);
       const vis = keep(keep(moved, lonC - 90, 1), lonC + 90, -1);
-      if (vis.length > 2) lines.push({ d: `${path(vis.map((q) => onTorso(q).p))}Z`, k: 0, fill });
+      if (solidPart(vis)) lines.push({ d: `${path(vis.map((q) => onTorso(q).p))}Z`, k: 0, fill });
     }
   };
 
-  for (const m of def.marks(surf)) {
+  for (const m of g.marks === false ? [] : def.marks(surf)) {
     if (m.dot) {
       const q = onTorso(m.pts[0]);
-      if (q.v > 0.3) lines.push({ d: `M${f(q.p[0])} ${f(q.p[1])}h0.01`, k: m.k });
+      if (q.v > 0.3)
+        lines.push({
+          d: `M${f(q.p[0])} ${f(q.p[1])}h0.01`,
+          k: m.k,
+          ...(m.ink !== undefined && { ink: m.ink }),
+        });
       continue;
     }
     const pts = dense(m.pts, m.closed || !!m.fill);
     if (m.fill) fillPoly(pts, m.fill);
-    trace(pts, m.k, m.graze ?? (m.fill ? 0 : GRAZE));
+    trace(pts, m.k, m.graze ?? (m.fill ? 0 : GRAZE), m.ink);
   }
 
   const collar: TorsoPaths["collar"] = { under: [], over: [] };

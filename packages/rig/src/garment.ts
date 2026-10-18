@@ -22,6 +22,24 @@ const TUCK_DEPTH = 1;
 
 interface Palette { color: string; accent?: string; ink: string; skin?: string }
 
+/** Tham số vật liệu da của người 3D: thân trần, mảng da trên thân áo và tay chân trần cùng tham số là cùng một vật liệu, chỗ nối không có nét */
+export const skinLook = (color: string) => ({ color, stipple: 0.035, stippleScale: 4, soft: 1, flat: true });
+
+export const sameColor = (a?: string, b?: string) => !!a && !!b && new THREE.Color(a).getHex() === new THREE.Color(b).getHex();
+
+/**
+ * Vật liệu vải chung của thân áo và tay áo khác màu ở người mặc đồ: màu từng đỉnh (`tint`), nét bóng dáng `ink`. Một vật liệu
+ * thì nét bóng dáng hậu kỳ coi thân và tay là một vật: vai liền không đường may như thân và tay cùng màu
+ */
+export const clothMaterial = (ink: number) => npr({ color: '#ffffff', stipple: 0.05, stippleScale: 3, soft: 1, ink, tint: true });
+
+/** Tô cả lưới một màu cho vật liệu `tint` */
+export function paint(geo: THREE.BufferGeometry, color: string) {
+  const c = new THREE.Color(color), n = geo.attributes.position.count, a = new Float32Array(3 * n);
+  for (let i = 0; i < n; i++) c.toArray(a, 3 * i);
+  geo.setAttribute('tint', new THREE.BufferAttribute(a, 3));
+}
+
 function colorOf(fill: MarkFill, { color, accent, ink, skin }: Palette): string {
   if (fill === 'color') return color;
   if (fill === 'skin') return skin ?? '#f0d9b8';
@@ -190,8 +208,9 @@ function printMesh(p: PrintPart, ink: string) {
  * xuống) là cạp váy liền mặt thân: nét, chấm, mảng tô dưới đó nằm trong váy nên không dựng, khỏi lòi qua cạp. `sil`: thân
  * áo có thêm nét bóng dáng hậu kỳ bề dày ấy (`npr({ ink })`). `lap`: người ngồi, vạt dưới hông gập lên đùi (`lapFold`); có
  * `lap.fold` thì trả thêm `refold` gập lại theo hướng đùi mới. `neck`: khăn vắt vai, kính gài nẹp, dây chuyền, khối kín cùng thân áo.
+ * `cloth`: thân áo (và khối kín màu áo) dùng vật liệu vải chung với tay áo khác màu (`clothMaterial`), thay vật liệu nét `sil`.
  */
-export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, skin, arm, tuck = Infinity, sil, lap, neck }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom; tuck?: number; sil?: number; lap?: Lap; neck?: NeckWear } & Palette) {
+export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, skin, arm, tuck = Infinity, sil, lap, neck, cloth }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom; tuck?: number; sil?: number; lap?: Lap; neck?: NeckWear; cloth?: THREE.Material } & Palette) {
   const t = torsoMesh(garment, rig, arm, neck);
   const pal = { color, accent, ink, skin };
   const matOf = (fill: MarkFill, soft = 1) => npr({ color: colorOf(fill, pal), stipple: 0.05, stippleScale: 3, soft });
@@ -203,7 +222,12 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
 
   // khối thân dừng ngay dưới cạp váy, trong váy: phần còn lại sát mặt váy thành vệt áo lòi qua váy; nắp trên của váy bịt miệng
   const body = bodyGeometry(t.profile, t.depth, lap?.fold?.top, t.front, tuck + TUCK_DEPTH);
-  const m = new THREE.Mesh(body, sil ? npr({ color, stipple: 0.05, stippleScale: 3, soft: 1, ink: sil }) : matOf('color'));
+  // da trên thân (thân màu da, mảng `skin`) là chính vật liệu da tay trần: vai trần liền tay, mép khoét có nét hậu kỳ
+  const skinInk = sil && skin ? npr({ ...skinLook(skin), ink: sil, doubleSided: true }) : undefined;
+  const inkGap = Math.max(...t.depth) / 100;
+  const bare = !!skinInk && sameColor(color, skin);
+  if (cloth && !bare) paint(body, color);
+  const m = new THREE.Mesh(body, bare ? skinInk : cloth ?? (sil ? npr({ color, stipple: 0.05, stippleScale: 3, soft: 1, ink: sil }) : matOf('color')));
   m.castShadow = true;
   add(m);
   const h = new THREE.Mesh(body, hullMaterial(0.026, ink));
@@ -216,8 +240,30 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(f.pts.flatMap((p) => v3(p).toArray()), 3));
     g.setIndex(f.tris);
-    g.computeVertexNormals();
-    add(new THREE.Mesh(g, npr({ color: colorOf(f.fill, pal), stipple: 0.04, soft: 1, doubleSided: true })));
+    if (f.decal) g.setAttribute('normal', new THREE.Float32BufferAttribute(f.decal.normals.flatMap(([x, y, z]) => [x, -y, z]), 3));
+    else g.computeVertexNormals();
+    if (f.skin && skinInk) {
+      const sm = new THREE.Mesh(g, skinInk);
+      sm.userData.noShadow = true;
+      sm.userData.noCollide = true;
+      sm.userData.inkGap = inkGap;
+      add(sm);
+      continue;
+    }
+    if (!f.decal) {
+      add(new THREE.Mesh(g, npr({ color: colorOf(f.fill, pal), stipple: 0.04, soft: 1, doubleSided: true })));
+      continue;
+    }
+    // nét nhạt (`ink`): màu nét pha về màu thân
+    const tone = f.ink === undefined ? colorOf(f.fill, pal) : new THREE.Color(color).lerp(new THREE.Color(colorOf(f.fill, pal)), f.ink).getStyle();
+    // mảng áo không ghi độ sâu: nét bóng dáng của thân không viền quanh từng sọc; lớp trên vẽ sau
+    const mat = surface({ color: tone, side: 'double', stipple: 0.04, soft: 1, offset: false, flat: f.ink !== undefined && bare });
+    mat.depthWrite = false;
+    const dm = new THREE.Mesh(g, mat);
+    dm.renderOrder = 1 + Math.round(f.decal.lift * 100);
+    dm.userData.noShadow = true;
+    dm.userData.noCollide = true;
+    add(dm);
   }
   for (const l of t.lines) {
     const closed = l.pts.length > 40 && v3(l.pts[0]).distanceTo(v3(l.pts[l.pts.length - 1])) < 0.02;
@@ -258,7 +304,10 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
     g.setIndex(idx);
     g.computeVertexNormals();
     const c = colorOf(s.color, pal);
-    const sm = new THREE.Mesh(g, sil ? npr({ color: c, stipple: 0.05, stippleScale: 3, soft: 1, ink: sil }) : matOf(s.color));
+    // khối màu áo cùng vật liệu với thân: chỗ cắm vào thân không có nét
+    const same = cloth && !bare && sameColor(c, color);
+    if (same) paint(g, c);
+    const sm = new THREE.Mesh(g, same ? cloth : sil ? npr({ color: c, stipple: 0.05, stippleScale: 3, soft: 1, ink: sil }) : matOf(s.color));
     sm.castShadow = true;
     // đồ nhỏ (trang sức) có vỏ viền mảnh riêng: nét hậu kỳ hai mép lấp kín vật vài điểm ảnh
     if (s.ink !== undefined) sm.userData.noEdge = true;

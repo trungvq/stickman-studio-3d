@@ -110,7 +110,7 @@ hơn và mày chiếu co theo khối sọ. Tóc phẳng giữ công thức nén 
 
 **Thân áo dựng khối đổi gốc chi của cả nhân vật.** `src: "sculpt"` ở `torso` thay
 `SIDE_SHOULDER` / `SIDE_HIP` bằng vai và hông chiếu từ vành của khối: vai nằm trên tâm nét
-viền áo, không ở `rig.shoulderHalf` — áo có `ease` thì rộng hơn, thân trần thì hẹp hơn; hành
+viền áo, không ở `rig.shoulderHalf` — áo có `ease` lớn thì rộng hơn, thân trần hẹp hơn áo phông `CLOTH`; hành
 động căn cho hai tay chạm nhau giữa ngực phải thử lại trên nhân vật ấy. Ở `side` cả vai lẫn hông
 chập về trục giữa, đứng yên hai chân trùng nhau. Ở `rear` hai gốc còn một nửa khoảng cách
 và **chi gần sang `+x`** (`Figure.nearSide = +1`): gốc quay ra ống kính nằm phía mặt hướng
@@ -118,6 +118,12 @@ tới, `armNear` / `legNear` vẫn là chi gần ống kính. Công thức rẽ 
 vật đã `equip` — mặc vật có thân áo dựng khối giữa cảnh là đổi luôn chỗ vai và hông ở
 `side`, và đổi thân `back` thành thân `rear` thật ở `view: "rear"`. `dx` … `rotate`, `aspect`, `views` và `clip` của `torso` bị bỏ qua; hộp mảnh là
 hộp bao hình chiếu. Xem [02](02-trang-phuc.md#thân-áo-dựng-khối).
+
+**Mảng áo mặt trước, mặt sau đo `x` dọc mặt khối, không trên hình nhìn thẳng.** `garment.panels` với `side` `front` /
+`back` / `both` đo `x` theo cung tiết diện từ đường giữa; quá phần tư chu vi ở độ cao ấy thì dồn về kinh độ `±90` thành dải
+không bề rộng — mảng đặt ngoài thân biến mất, không gì báo. Đo trên hình nhìn thẳng (nửa rộng ngang ngực người mặc đồ chỉ
+chừng `28`–`30` px) là đặt mảng lệch vào trong. Mảng `fill: "skin"` của người mặc đồ là da thật (ghi độ sâu, vật liệu da tay
+trần): mảng màu, hoạ tiết, hình in dưới nó bị che. Xem [02](02-trang-phuc.md#mảng-áo-và-hoạ-tiết).
 
 **Thân người 3D chiếu qua `fig3.torsoLens`, co dọc theo góc cúi.** Tự gọi `torsoPaths` (hay
 `skirtPaths`) cho người 3D thì truyền ống kính ấy, không thì nhận thân 2D ở góc `theta`, lệch

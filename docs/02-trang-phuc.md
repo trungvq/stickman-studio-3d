@@ -986,32 +986,39 @@ góc, eo co nhẹ, tay mọc ra từ viền thân. Góc quay là nấc của th�
 | Trường | `bare` | `tshirt` | `shirt` | `polo` | `sweater` | `suit` | `hoodie` | `blouse` | Nghĩa |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
 | `style` | | | | | | | | | Tên kiểu; mặc định `tshirt` |
-| `ease` | 0 | 11 | 11 | 11 | 11 | 11 | 11 | 9 | Vải rộng hơn thân bấy nhiêu px mỗi bên |
-| `fit` | 0.55 | 0.7 | 0.7 | 0.7 | 0.7 | 0.8 | 0.7 | 1 | Độ suông: gấu rộng bằng hông ở `0`, bằng vai ở `1` |
-| `waist` | 8 | 4 | 4 | 4 | 4 | 4 | 4 | 10 | Eo co vào bấy nhiêu px mỗi bên |
+| `ease` | 9 | 11 | 11 | 11 | 11 | 11 | 11 | 9 | Vải rộng hơn thân bấy nhiêu px mỗi bên |
+| `fit` | 0.7 | 0.7 | 0.7 | 0.7 | 0.7 | 0.8 | 0.7 | 1 | Độ suông: gấu rộng bằng hông ở `0`, bằng vai ở `1` |
+| `waist` | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 10 | Eo co vào bấy nhiêu px mỗi bên |
 | `hem` | −4 | 1 | 5 | 3.5 | 2 | 10 | 5.5 | 8 | Gấu thấp hơn hông bấy nhiêu px, nhân `rig.height`; giữa gấu còn võng thêm |
-| `rise` | −5 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | Mép trên của khối cao hơn khớp cổ bấy nhiêu px; áo có cổ đứng quanh cổ |
-| `neck` | 15 | 20 | 20 | 20 | 20 | 20 | 20 | 19 | Nửa rộng miệng cổ áo, chỗ viền cổ chạm mặt vát hai bên |
+| `rise` | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | Mép trên của khối cao hơn khớp cổ bấy nhiêu px; áo có cổ đứng quanh cổ |
+| `neck` | 17 | 20 | 20 | 20 | 20 | 20 | 20 | 19 | Nửa rộng miệng cổ áo, chỗ viền cổ chạm mặt vát hai bên |
 | `neckFront` | 0 | 7 | 10 | 9 | 12 | 76 | 8 | 8 | Viền cổ trước thấp hơn chỗ chạm hai bên bấy nhiêu px trên mặt khối; âm là cao hơn |
 | `neckBack` | 0 | 0 | 0 | 0 | 0 | 0 | 8 | 0 | Như `neckFront`, phía sau |
-| `slope` | 0.85 | 0.6 | 0.6 | 0.6 | 0.6 | 0.6 | 0.7 | 0.6 | Vát vai hạ bấy nhiêu px mỗi px ra ngang |
-| `cladSlope` | 0.85 | 0.4 | 0.4 | 0.4 | 0.4 | 0.4 | 0.5 | 0.4 | Như `slope` cho nhân vật `palette.clad`, cả 2D lẫn 3D: vai thoải để tay to buông thẳng |
-| `round` | 12 | 16 | 16 | 16 | 16 | 16 | 16 | 16 | Bán kính bo góc giữa vát vai và thân |
-| `hemRound` | 10 | 8 | 8 | 8 | 8 | 8 | 8 | 8 | Bán kính bo góc gấu |
+| `slope` | 0.6 | 0.6 | 0.6 | 0.6 | 0.6 | 0.6 | 0.7 | 0.6 | Vát vai hạ bấy nhiêu px mỗi px ra ngang |
+| `cladSlope` | 0.4 | 0.4 | 0.4 | 0.4 | 0.4 | 0.4 | 0.5 | 0.4 | Như `slope` cho nhân vật `palette.clad`, cả 2D lẫn 3D: vai thoải để tay to buông thẳng |
+| `round` | 16 | 16 | 16 | 16 | 16 | 16 | 16 | 16 | Bán kính bo góc giữa vát vai và thân |
+| `hemRound` | 8 | 8 | 8 | 8 | 8 | 8 | 8 | 8 | Bán kính bo góc gấu |
+
+**Một dáng thân người cho mọi kiểu.** `bare` là thân người (`BODY` ở `core/torso.ts`): số của áo phông, nhỏ hơn `CLOTH`
+(`2` px) mỗi bên, mép trên cùng độ cao với mép trên áo phông, miệng cổ hẹp hơn cổ người 3D để cổ mọc liền từ mặt vát. Áo là
+lớp vải ngoài thân ấy: cởi áo phông ra, người mặc đồ hẹp đi chừng `1`–`2` px, gốc vai lùi vào chừng `2` px, cổ lộ ra bằng
+nhau. Kiểu khác (`blazer` `ease` `8`, `cardigan` `12`…) là áo rộng, chật hơn áo phông bấy nhiêu.
 
 Trường bỏ trống lấy số của kiểu ở bảng `GARMENT_STYLES`; `garmentOf` trả bộ số đã đủ. `collarUp` ([cổ dựng](#cổ-dựng)) và `belly`
-([bụng phệ](#bụng-phệ)) không thuộc bảng kiểu: bỏ trống là `0` ở mọi kiểu.
+([bụng phệ](#bụng-phệ)) không thuộc bảng kiểu: bỏ trống là `0` ở mọi kiểu. `neckline`, `marks`
+([dáng cổ và đặc điểm của kiểu](#dáng-cổ-và-đặc-điểm-của-kiểu)), `panels` ([mảng áo và hoạ tiết](#mảng-áo-và-hoạ-tiết)) và
+`inner` ([áo trong và cà vạt](#áo-trong-và-cà-vạt)) cũng không thuộc bảng kiểu.
 Kiểu mang cả những đặc điểm không có số, đặt theo số đo đã đủ nên đè `neck`, `hem`… thì
 chúng đi theo:
 
 | Kiểu | Cổ | Đặc điểm |
 |---|---|---|
-| `bare` ngực trần | | Hai nét ngực, xương ức, rốn, sống lưng, hai bả vai |
+| `bare` ngực trần | | Hai nét ngực, xương ức, rốn, hai bả vai và sống lưng ở thắt lưng dưới bả vai, mảnh và nhạt (`ink` `0.3`) chỉ gợi khối; người 3D mặc đồ có thân màu da (`color` trùng `palette.skin`) dùng chính vật liệu da tay trần: vai liền tay không nét |
 | `tshirt` áo phông | U, gân nổi khối | |
 | `shirt` sơ mi | V, cổ bẻ nổi khối | Lá cổ nhọn, nẹp chạy tới gấu, ba cúc |
 | `polo` áo polo | V, cổ bẻ nổi khối | Lá cổ ngắn hơn, nẹp ngắn khép đáy, một cúc |
 | `sweater` áo len | U, gân nổi khối có vạch | Bo gấu 13 px có vạch quanh khối |
-| `suit` vest cà vạt | V sâu, ve áo nổi khối | Cà vạt màu nét dài quá đáy cổ, cắt theo chữ V như luồn dưới vạt; nẹp, hai cúc, hai vạt bo ở gấu; sau lưng là dải cổ |
+| `suit` vest cà vạt | V sâu, ve áo nổi khối | Cà vạt màu nét dài quá đáy cổ, cắt theo chữ V như luồn dưới vạt; không áo trong (thân áo lộ giữa hai ve) trừ khi khai `inner.color`; nẹp, hai cúc, hai vạt bo ở gấu; sau lưng là dải cổ |
 | `hoodie` | V, mũ trùm nổi khối | Dây rút mọc từ mép mũ, túi trước, bo gấu 12 px |
 | `blouse` cổ lá sen | U, lá sen nổi khối | Lá sen ba cánh màu kem cố định `#f6efe4`, nơ màu nhấn, đường eo, nếp vạt quanh khối |
 | `wrap` cổ chéo | Chéo vạt trái đè vạt phải, dải cổ nổi khối | Cổ lót, đai, dây buộc, khoá và nút đai — [Áo cổ chéo](#áo-cổ-chéo); có `wrap.open` thì hai vạt mở — [Áo khoác vạt mở](#áo-khoác-vạt-mở); chỉ người 3D |
@@ -1026,8 +1033,9 @@ Bốn kiểu áo nữ dùng cùng khối thân và bộ chỉnh:
 | `squareNeck` | `ease: 9`, `waist: 10`, `fit: 1`, `hem: 9`, `neck: 23`, `neckFront: 19` | Cổ vuông bo nhẹ, đường eo cao, vạt xòe với nếp lớn |
 
 Áo trong, nơ, cúc và túi chiếu trên mặt khối, khuất khi quay lưng; ve và viền cổ
-có bề dày riêng. `accent` của blazer và cardigan là màu áo trong. Áo trong blazer
-cắt theo miệng chữ V, không trải xuống vạt bụng; cúc và túi đặt theo khoảng từ đáy
+có bề dày riêng. `accent` của blazer và cardigan là màu áo trong. Áo trong phủ cả miệng
+cổ chữ V từ mép trên khối tới đáy chữ V, liền viền cổ, không viền, không trải xuống vạt bụng
+([áo trong và cà vạt](#áo-trong-và-cà-vạt)); cúc và túi đặt theo khoảng từ đáy
 cổ tới gấu. Bộ phối váy ngắn dùng `garment.hem: -18` để áo dừng ở eo, trên cạp của
 [váy dựng khối](#váy-dựng-khối) với số mặc định.
 
@@ -1066,7 +1074,9 @@ Không có chỏm vai: tay áo là mảnh riêng bám que tay.
 - **Đặc điểm trên mặt khối** đặt bằng kinh độ và `y` của nhóm thân, hoặc bằng `x` cách
   trục ở mặt trước / mặt sau (đổi ra kinh độ theo nửa rộng ở độ cao ấy). Ba loại: nét,
   chấm và mảng kín. Chúng dán trên mặt khối, không có bề dày, nên nhìn nghiêng dồn về viền
-  bóng: thứ phải nhô khỏi hình bao (cổ bẻ, viền cổ gân, mũ trùm) là tấm lưới.
+  bóng: thứ phải nhô khỏi hình bao (cổ bẻ, viền cổ gân, mũ trùm) là tấm lưới. Nét, chấm nhạt (`ink` dưới `1`) pha màu
+  nét về màu thân bấy nhiêu: người que vẽ nét với độ mờ ấy; người 3D dựng chúng thành hình in bám mặt khối như mảng áo
+  (dải thon hai đầu như nét bút, chấm tròn), không nổi khối, không nhận nét hậu kỳ, nên không cắt viền bóng.
 - **Nét ẩn theo pháp tuyến**, chỉ vẽ ở chỗ quay ra người xem ít nhất `0.5` để không dồn
   sát viền bóng; `quarter` thấy đường tâm lệch sang `+x`. Nét quanh khối (bo gấu, đường
   eo) chạy tới sát viền bóng; vạch ngắn ẩn sớm hơn, ở `0.3`.
@@ -1522,6 +1532,164 @@ cùng `garment`, khác `badge` ([Đồ thay được](01-rig.md#đồ-thay-đư�
 
 Thân người mặc đồ hẹp (nửa ngang ngực chừng `30`–`34` px): thẻ quá `x + width / 2 ≈ 26` thì lấn sang sườn, méo theo mặt
 khối. Áo khoác vạt mở có dải cổ tới `gap / 2 + band` px: đặt thẻ ngoài khoảng ấy.
+
+### Dáng cổ và đặc điểm của kiểu
+
+`garment.neckline` (`round` chữ U, `v` chữ V, `square` cổ vuông) đè dáng viền cổ trước của kiểu, cả 2D lẫn 3D: viền cổ gân,
+cổ bẻ, áo trong, `clip` của mảng áo đều theo viền cổ đã đè. Áo phông cổ V sâu là `tshirt` với `neckline: "v"` và
+`neckFront` lớn.
+
+`garment.marks: false` bỏ mọi đặc điểm dán của kiểu (nét, chấm, mảng: nẹp, cúc, túi, áo trong, cà vạt, ngực trần); cổ bẻ,
+viền gân, mũ trùm, cổ chéo vẫn dựng. Thân trơn để tự vẽ bằng [mảng áo](#mảng-áo-và-hoạ-tiết): `{ "style": "bare", "marks":
+false }` là thân ôm không cổ áo.
+
+### Áo trong và cà vạt
+
+`garment.inner` chỉnh áo trong lộ giữa hai vạt cổ chữ V và cà vạt của `blazer`, `cardigan`, `suit`. Áo trong phủ cả miệng cổ
+chữ V, từ mép trên khối xuống đáy chữ V, liền viền cổ: không có dải màu áo khoác giữa viền cổ và áo trong. Cà vạt có nút sát
+viền cổ, bản rộng dần, cắt theo chữ V như luồn dưới vạt nên phần dưới đáy chữ V khuất; đáy chữ V là chỗ cài cúc trên của
+áo khoác. Chỉ người 3D nổi chúng khỏi mặt khối (áo trong `1` px, cà vạt `1.05` px): vỏ viền cổ người cắm xiên qua mặt vát,
+nổi thấp thì vỏ ấy lòi qua thành chấm mực.
+
+```json
+"garment": { "style": "blazer", "neckFront": 90, "inner": { "color": "#A9C8E8", "tie": { "color": "#1A2236" } } }
+```
+
+| Trường của `inner` | Mặc định | Nghĩa |
+|---|---:|---|
+| `color` | `accent` (blazer, cardigan), không có (suit) | Màu áo trong; màu tô như mảng áo: `color`, `line`, `accent`, `skin` hay mã màu |
+| `line` | 0 | Nét viền áo trong, lần nét thân |
+| `tie` | không có (blazer, cardigan), cà vạt màu nét (suit) | Cà vạt; `false` bỏ cà vạt của suit |
+
+| Trường của `inner.tie` | Mặc định | Nghĩa |
+|---|---:|---|
+| `color` | `line` | Màu cà vạt |
+| `width` | 1 | Nhân bề ngang |
+| `length` | 102 | Mũi cà vạt thấp hơn chỗ viền cổ chạm mặt vát bấy nhiêu px |
+| `line` | 0 | Nét viền, lần nét thân |
+
+### Mảng áo và hoạ tiết
+
+`garment.panels` là danh sách mảng màu kín trên mặt khối của **mọi kiểu** thân áo dựng khối: phối màu từng mảng, sọc ngang,
+sọc dọc, kẻ ô, chấm bi, chỗ khoét lộ da. Mỗi mảng là một polygon (hay path SVG) chiếu thẳng từ trước, từ sau, hay trải quanh
+khối, tô một màu, có viền và hoạ tiết tuỳ chọn; bỏ trống `pts` và `path` là cả thân. Mảng bám mặt khối như hình in: cong theo
+thân, khuất khi quay đi, gập theo đùi khi ngồi. Chỉ người 3D dựng (`panelParts` của lõi, `torsoMesh`); 2D và 2.5D bỏ qua.
+
+```json
+"garment": { "style": "tshirt", "panels": [{ "pattern": { "color": "#f4efe6", "width": 6, "gap": 7 } }] }
+```
+
+| Trường của `panels[]` | Mặc định | Nghĩa |
+|---|---:|---|
+| `fill` | | Màu nền: `color` màu áo, `line` màu nét, `accent` màu nhấn, `skin` màu da, hay mã màu `#rrggbb`; bỏ trống là không tô (chỉ hoạ tiết, viền) |
+| `side` | `front` | `front` chiếu từ trước, `back` từ sau, `both` cùng `pts` cả trước lẫn sau, `around` trải quanh khối |
+| `pts` | | Đỉnh polygon `[x, y]`: `x` px cách trục về `+x` (bên trái người mặc) — với `around` là kinh độ, độ (`0` giữa ngực, `180` giữa lưng) —, `y` theo `from` |
+| `path` | | Path SVG trong hộp `0…100` (`y` xuống), tâm `x`, `y`, khung `width` × `height`; mỗi đường con tô kín riêng (không khoét lỗ). Chỉ nhận `M L H V C Q Z`; có thì bỏ qua `pts` |
+| `x`, `y` | 0, 0 | Tâm của `path` |
+| `size` | 40 | Cạnh khung của `path`, px; `width`, `height` đè từng chiều |
+| `rotate` | 0 | Xoay `path` theo chiều kim đồng hồ khi nhìn thẳng, độ |
+| `from` | `hip` | `y` đo từ đâu: `hip` cao hơn hông bấy nhiêu px, nhân `rig.height`; `neck` thấp hơn chỗ viền cổ chạm mặt vát bấy nhiêu px (âm là cao hơn) |
+| `mirror` | `false` | Thêm bản lật qua trục giữa |
+| `clip` | `none` | `neck` chỉ giữ phần trong miệng cổ (trên viền cổ), `body` chỉ giữ phần dưới viền cổ |
+| `line` | 0 | Nét viền, lần nét thân |
+| `pattern` | | Hoạ tiết lặp trong mảng |
+| `layer` | `over` | `under` dưới đặc điểm của kiểu (áo trong, cà vạt), `over` trên |
+
+| Trường của `pattern` | Mặc định | Nghĩa |
+|---|---:|---|
+| `kind` | `stripes` | `stripes` sọc, `check` kẻ ô (sọc hai chiều vuông góc), `dots` chấm bi so le |
+| `color` | `#ffffff` | Màu sọc, chấm; màu tô như `fill` |
+| `width` | 6 | Bề rộng sọc, đường kính chấm, px |
+| `gap` | 6 | Khoảng trống giữa hai sọc, hai chấm, px |
+| `angle` | 0 | `0` sọc ngang, `90` sọc dọc; dương là đầu phải của sọc ngóc lên khi nhìn thẳng, độ |
+| `offset` | 0 | Dời cả hoạ tiết theo pháp tuyến của sọc, px |
+| `cross` | `color` | Kẻ ô: màu ô hai sọc chéo nhau |
+
+- **Ba hệ toạ độ.** `front` / `back` đo `x` px dọc mặt khối từ đường giữa trước / giữa sau, theo cung tiết diện ở độ cao
+  ấy (cùng chiều `+x` bên trái người mặc, nên nhìn từ sau thì hình lật ngang): mảng đặt theo px trên mặt vải, gần đường giữa
+  trùng hình nhìn thẳng, ra sườn không dồn lại. `x` quá phần tư chu vi tiết diện thì dồn về sườn (kinh độ `±90`): mảng mặt
+  trước không bao giờ tràn sang lưng. Người mặc đồ ngang ngực nửa rộng chừng `28`–`30` px nhưng từ đường giữa ra sườn chừng
+  `44` px vải, nên phù hiệu ngực ở `x` `±30` vẫn nằm trên ngực. Trên mặt vát vai tiết diện nhỏ dần lên cổ: dây vai ở `x` cố
+  định vắt qua đỉnh vai sát cổ hơn ở ngực. `around` đo theo kinh độ nên trải quanh khối liền mạch. Hoạ tiết đo bằng px trong
+  hệ của mảng; với `around` kinh độ đổi ra px ở nửa rộng ngang ngực. Gốc hoạ tiết ở giữa thân, ngang chỗ viền cổ chạm mặt
+  vát. Sọc dọc cả thân nên đặt trên mảng cả thân (hay `around`): sọc theo kinh tuyến, chụm dần lên vai như đường may, nở theo
+  sườn áo ở vạt. Lưới hình in cắt ô theo cả từng hàng của mặt cắt nên bám đúng góc bo gấu và bo vai.
+- `y` dưới mép trên khối hay quá gấu thì dồn về mép ấy; mép trên, gấu, sườn (chỗ mặt trước gặp mặt sau) và đường nối sau lưng
+  của mảng cả thân không có nét viền dù `line > 0`. Chỗ cắt theo viền cổ (`clip`) có nét.
+- **Lớp.** Mảng sau trong danh sách nằm trên mảng trước cùng lớp; hoạ tiết trên nền của chính mảng ấy. Nền và hoạ tiết vẽ
+  như hình in: không ghi độ sâu, nổi `0.36` px (lớp `over`, mỗi mảng sau thêm `0.03`) hay `0.16` px (lớp `under`) — nét bóng
+  dáng hậu kỳ của thân không viền quanh từng sọc. Hình in và thẻ tên nằm trên mọi mảng. Mảng `fill: "skin"` nổi ít nhất
+  `1` px như áo trong. Nét, chấm của kiểu (nẹp, cúc) là ống nổi trên mặt khối, luôn thấy trên mảng.
+- **Da của người mặc đồ là da thật, không phải hình in.** Ở người `palette.clad`, mảng `fill: "skin"` là lưới kín ghi độ sâu,
+  cùng vật liệu với tay chân trần: vai trần liền tay không nét, mép khoét có nét bóng dáng hậu kỳ như mép tay áo, mảng màu và
+  hoạ tiết nằm dưới nó bị che. Người que vẫn vẽ nó như hình in.
+- Tay áo, cổ bẻ, viền gân, mũ trùm, dải cổ chéo tô màu riêng của chúng, không nhận hoạ tiết: áo sọc tay dài thì tay áo một
+  màu (`palette.sleeve`).
+
+#### Khoét: áo ba lỗ, áo hai dây, cổ V sâu
+
+Chỗ khoét là mảng `fill: "skin"` trên [dáng thân chung](#thân-áo-dựng-khối): áo khoét dựng trên `bare` bỏ đặc điểm
+(`{ "style": "bare", "marks": false }`), nên thân áo đúng bằng thân trần và bằng áo phông trừ `CLOTH`, vai trần không phồng,
+cổ lộ ra như áo phông. Khối thân không bị cắt: mảng da phủ lên nó bằng vật liệu da tay trần (người mặc đồ), mép khoét có nét
+hậu kỳ, không cần `line`; người que cần `line` (`0.6`) cho mép sạch. Tay trần là `palette.sleeveLength: 0`.
+
+Khoét thật — thân da dưới một lớp vải thủng — cho cùng hình: vải chỉ dày `CLOTH`, bậc ở mép khoét dưới `2` px, còn vai liền
+tay và nét mép khoét thì mảng da đã có. Vì thế không có lớp vải riêng: gốc tay, khối hông, cổ, vạt người ngồi và va chạm
+(`collide`, `check`) vẫn đặt theo một khối thân.
+
+Áo ba lỗ — cổ khoét tròn sâu phía trước, nông phía sau, dây vai `x` từ `21` tới `29`, nách khoét sâu, trước và sau như nhau:
+
+```json
+"garment": { "style": "bare", "marks": false, "panels": [
+  { "fill": "skin", "from": "neck",
+    "pts": [[-21, -16], [21, -16], [21, 4], [18, 17], [10, 26], [0, 28], [-10, 26], [-18, 17], [-21, 4]] },
+  { "side": "back", "fill": "skin", "from": "neck",
+    "pts": [[-21, -16], [21, -16], [21, 3], [14, 10], [0, 12], [-14, 10], [-21, 3]] },
+  { "side": "both", "mirror": true, "fill": "skin", "from": "neck",
+    "pts": [[29, -16], [90, -16], [90, 50], [44, 44], [34, 34], [30, 16]] }] }
+```
+
+Áo hai dây — khoét giữa hai dây xuống ngực, trước và sau như nhau, và khoét ngoài dây xuống nách; dây là khoảng `x` từ `21`
+tới `25` còn lại:
+
+```json
+"garment": { "style": "bare", "marks": false, "hem": 2, "panels": [
+  { "side": "both", "fill": "skin", "from": "neck",
+    "pts": [[-21, -16], [21, -16], [21, 22], [10, 30], [0, 32], [-10, 30], [-21, 22]] },
+  { "side": "both", "mirror": true, "fill": "skin", "from": "neck",
+    "pts": [[25, -16], [90, -16], [90, 50], [38, 42], [28, 22]] }] }
+```
+
+Cổ V sâu — viền gân theo chữ V, miệng cổ lộ da:
+
+```json
+"garment": { "style": "tshirt", "neckline": "v", "neckFront": 46, "panels": [{ "fill": "skin", "clip": "neck" }] }
+```
+
+#### Mẫu
+
+| Áo | `garment` |
+|---|---|
+| Áo phông sọc ngang | `{ "style": "tshirt", "panels": [{ "pattern": { "color": "#f4efe6", "width": 6, "gap": 7 } }] }` |
+| Sơ mi sọc dọc | `{ "style": "shirt", "panels": [{ "pattern": { "color": "#3a6ea8", "width": 3, "gap": 6, "angle": 90 } }] }` |
+| Sơ mi kẻ ô | `{ "style": "shirt", "panels": [{ "pattern": { "kind": "check", "color": "#c23b3b", "width": 4, "gap": 9, "cross": "#7a1f1f" } }] }` |
+| Phối màu: cầu vai, mảng trước, chấm bi | `{ "style": "tshirt", "panels": [{ "side": "around", "fill": "#e0b23a", "pts": [[-180, 140], [180, 140], [180, 95], [-180, 95]], "line": 0.45 }, { "fill": "#c8663a", "pts": [[-60, 60], [0, 60], [0, -10], [-60, -10]] }, { "pts": [[2, 60], [60, 60], [60, -10], [2, -10]], "pattern": { "kind": "dots", "color": "#ffffff", "width": 4, "gap": 5 } }] }` |
+
+Đồng phục cảnh sát khu vực mùa đông (người mặc đồ `rig.height` `1.1`, áo khoác xanh than ve gập `pieces.torso.color`
+`#1E2638`, tay áo, quần cùng màu): sơ mi xanh nhạt liền từ cổ, cà vạt xanh than từ nút cổ tới chỗ cài cúc, thắt lưng quanh
+eo có khoá, bao súng bên phải:
+
+```json
+"torso": { "src": "sculpt", "color": "#1E2638", "garment": {
+  "style": "blazer", "fit": 0.8, "waist": 4, "hem": 10, "neckFront": 90,
+  "inner": { "color": "#A9C8E8", "tie": { "color": "#1A2236" } },
+  "panels": [
+    { "side": "around", "fill": "#0E0E10", "pts": [[-180, 29], [180, 29], [180, 19], [-180, 19]] },
+    { "fill": "#C9CCD1", "pts": [[-4, 28], [4, 28], [4, 20], [-4, 20]] },
+    { "fill": "#0E0E10", "pts": [[-2, 26], [2, 26], [2, 22], [-2, 22]] },
+    { "fill": "#0E0E10", "x": -30, "y": 11, "size": 26, "path": "M22 0 H78 V70 Q78 96 50 98 Q22 96 22 70 Z", "line": 0.4 }
+  ] } }
+```
 
 ## Quần thì không, váy thì có
 

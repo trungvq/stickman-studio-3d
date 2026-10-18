@@ -146,7 +146,21 @@ export interface ArmRoom {
   r: readonly [number, number, number];
   len: readonly [number, number];
   side: number;
+  /** Gốc đùi: tâm cách trục, bán kính, px (`cladThigh`) */
+  thigh?: readonly [number, number];
 }
+
+/** Mút gốc đùi người mặc đồ dẹt bấy nhiêu lần bán kính, nhô lên trên khớp hông */
+export const THIGH_ROOT = 0.35;
+/**
+ * Sườn áo người mặc đồ rộng hơn mép ngoài gốc đùi ít nhất bấy nhiêu px từ khớp hông xuống gấu: tay buông sát hông thì
+ * sườn áo lùi tới đúng mép đùi, mặt đùi tiếp xúc mặt thân lòi qua góc bo gấu thành chấm mực
+ */
+export const THIGH_CLEAR = 1;
+/** Sườn áo nở dần tới mép gốc đùi cộng `THIGH_CLEAR` trong bấy nhiêu px trên khớp hông, phủ cả mút gốc đùi */
+export const THIGH_RAMP = 12;
+/** Sườn áo ở độ cao gấu hẹp hơn mép gốc đùi cộng `THIGH_CLEAR` quá bấy nhiêu px thì giữ dáng áo, đùi lòi ra dưới gấu */
+export const THIGH_REACH = 3;
 
 /** Mép trong cánh tay buông ở độ cao `y` trừ một `CLAD_GAP`, px; trên vai là `-Infinity` */
 export function armInner(room: Omit<ArmRoom, "side">, y: number) {
@@ -170,13 +184,49 @@ export const armSide = (room: ArmRoom, y: number) => Math.max(room.side, armInne
  * Mặt cắt thân áo của người mặc đồ: dưới tâm gốc vai sườn áo lùi về `armSide`, chuyển êm trong bán kính nắp vai — tay
  * buông theo `roots3` nằm ngoài thân, không lấn vào; dưới khuỷu thân được nở theo tay nên hông rộng thành dáng quả lê.
  * `depth` là nửa bề sâu từng hàng: `CLAD_DEPTH` lần nửa rộng nhưng không quá `CLAD_DEPTH · armSide`, nên vai rộng mà
- * mỏng, ngực và lưng phẳng một mạch, nhìn ngang không gù
+ * mỏng, ngực và lưng phẳng một mạch, nhìn ngang không gù. Từ khớp hông (gấu cao hơn thì từ gấu) xuống gấu sườn áo không
+ * hẹp hơn mép ngoài gốc đùi (`room.thigh`) ở độ cao ấy cộng `THIGH_CLEAR`, kể cả ở góc bo gấu; nở dần trong `THIGH_RAMP` px
+ * phía trên
  */
 export function cladProfile(pts: readonly P2[], room: ArmRoom): { pts: P2[]; depth: number[] } {
-  const out = pts.map(([a, y]): P2 => {
+  const side = ([a, y]: P2): P2 => {
     const u = Math.max(0, Math.min(1, (y - room.at[1]) / room.cap));
     const lim = armSide(room, y);
     return [a > lim ? a + (lim - a) * u * u * (3 - 2 * u) : a, y];
+  };
+  // gấu cao hơn khớp hông thì chỉ phải phủ mút gốc đùi ở độ cao gấu
+  const low = Math.min(0, pts[pts.length - 1][1]);
+  const v0 = room.thigh ? low / (THIGH_ROOT * room.thigh[1]) : -1;
+  const edge =
+    room.thigh && v0 > -1
+      ? room.thigh[0] + room.thigh[1] * Math.sqrt(1 - v0 * v0) + THIGH_CLEAR
+      : undefined;
+  // áo hẹp hẳn hơn hông (chỗ rộng nhất quanh hông, trước góc bo gấu) thì đùi lòi ra rõ dưới gấu như quần rộng hơn áo,
+  // không phải chấm: giữ dáng áo
+  const sides = pts.map(side);
+  const near =
+    edge !== undefined &&
+    edge - Math.max(...sides.filter(([, y]) => y >= low - THIGH_RAMP).map(([b]) => b)) <=
+      THIGH_REACH &&
+    sides.some(([b, y]) => y >= low - THIGH_RAMP && b < edge);
+  // hàng mặt cắt thưa: thêm hàng trong quãng nở để sườn áo cong êm, vỏ viền không lòi qua chỗ gãy lõm
+  const rows = [...pts];
+  if (near)
+    for (let ye = low - THIGH_RAMP; ye <= low; ye += 2) {
+      const i = rows.findIndex(([, y]) => y > ye);
+      if (i <= 0 || rows[i - 1][1] >= ye - 0.3 || rows[i][1] <= ye + 0.3) continue;
+      const [[a0, y0], [a1, y1]] = [rows[i - 1], rows[i]];
+      rows.splice(i, 0, [a0 + ((a1 - a0) * (ye - y0)) / (y1 - y0), ye]);
+    }
+  const out = rows.map((p): P2 => {
+    const [b, y] = side(p);
+    if (!near || b >= edge!) return [b, y];
+    const v = Math.max(0, Math.min(1, 1 + (y - low) / THIGH_RAMP));
+    // tay buông vẫn cách sườn áo ít nhất `CLAD_GAP - THIGH_CLEAR`
+    return [
+      Math.max(b, Math.min(b + (edge! - b) * v * v * (3 - 2 * v), armSide(room, y) + THIGH_CLEAR)),
+      y,
+    ];
   });
   return { pts: out, depth: out.map(([a, y]) => CLAD_DEPTH * Math.min(a, armSide(room, y))) };
 }
@@ -314,7 +364,7 @@ export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Buil
   const yW = skirt ? -skirt.rise * h : 0;
   const knee = (thigh * CLAD_TAPER.leg[1]) / CLAD_TAPER.leg[0];
   const roomAt = (splay: number): ArmRoom => {
-    const room = { at, cap, splay, r, len };
+    const room = { at, cap, splay, r, len, thigh: [rig.hipHalf, thigh] as const };
     return { ...room, side: armInner(room, at[1] + len[0] * Math.cos(splay)) };
   };
   const fits = (splay: number) => {

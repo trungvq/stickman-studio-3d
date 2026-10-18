@@ -1816,7 +1816,15 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   vào tay. `roots3` trả chỗ ấy ở `room`; thân áo, nét, khuy, khối hông và va chạm dựng theo mặt cắt đã lùi.
   Góc vai giữ nguyên nên nắp tay vẫn ôm góc vai. Nửa bề sâu từng hàng là `CLAD_DEPTH` (`0,95`) lần nửa
   rộng — dày hơn `TORSO_DEPTH` của người que — nhưng không quá `CLAD_DEPTH · armSide`, nên vai rộng mà
-  mỏng, ngực và lưng phẳng một mạch, nhìn ngang không gù.
+  mỏng, ngực và lưng phẳng một mạch, nhìn ngang không gù. Từ khớp hông (gấu cao hơn thì từ gấu) xuống gấu, sườn áo
+  không hẹp hơn mép ngoài gốc đùi ở độ cao ấy cộng `THIGH_CLEAR` (`1` px), kể cả ở góc bo gấu, nở dần trong `THIGH_RAMP`
+  (`12` px) phía trên: tay buông sát hông đặt sườn áo đúng mép đùi, mặt đùi trùng mặt thân thì lòi qua góc gấu thành chấm
+  mực; tay buông vẫn cách sườn áo ít nhất `CLAD_GAP − THIGH_CLEAR`. Áo hẹp hơn mép ấy quá `THIGH_REACH` (`3` px)
+  giữ dáng áo: đùi lòi rõ ra dưới gấu như quần rộng hơn áo.
+- **Cởi áo không đổi dáng người.** Thân trần (`bare`) là dáng thân chung, áo phông là nó nở thêm `CLOTH` (`2` px) mỗi bên
+  ([02](02-trang-phuc.md#thân-áo-dựng-khối)): gốc vai, sườn, cổ lộ ra gần như trùng nhau, đổi áo giữa cảnh tay chỉ dời chừng
+  `2` px. Thân màu da (`pieces.torso.color` trùng `palette.skin`) và mảng da trên thân áo dùng chính vật liệu da tay trần:
+  vai trần liền tay không nét.
 - **Tay buông thẳng.** Tay buông choãi khỏi thân `SPLAY3` (`0,08` rad) quanh trục tiến, người mặc đồ cũng
   thế: thân nhường chỗ chứ tay không xoè. Ngang hông, mép trong cẳng tay phải cách mép ngoài gốc đùi
   `hipHalf + cladThigh` một `CLAD_GAP`; hông hay đùi to hơn mức ấy thì tay choãi thêm (`roots3`). Thân bụng phệ
@@ -1861,8 +1869,9 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   quấn và tạp dề ([02](02-trang-phuc.md#vạt-dài-quấn)) treo ở nhóm hông, trùm cả khối hông khi thân cúi.
 - **Nét tay chân trên thân.** Tay buông cách sườn áo `CLAD_GAP`, cẳng tay vắt trước bụng: vỏ viền chìm sau
   thân áo. Thân áo, khối hông, ống tay chân, bàn tay và giày có thêm nét bóng dáng dò ở hậu kỳ (`LIMB_SIL`,
-  `npr({ ink })`). Thân áo và tay áo cùng màu là cùng vật liệu nên nét chỉ hiện ở chỗ tay nằm hẳn trước thân,
-  vai liền không có đường may; các đoạn của một chi chung một mã vật (`userData.inkChain`), khuỷu và gối
+  `npr({ ink })`). Thân áo và tay áo là cùng vật liệu nên nét chỉ hiện ở chỗ tay nằm hẳn trước thân, vai liền không
+  có đường may: cùng màu thì chung vật liệu `npr`, khác màu thì chung vật liệu vải tô màu từng đỉnh (`clothMaterial`,
+  `npr({ tint })`) — trừ thân trần và tay áo loe; các đoạn của một chi chung một mã vật (`userData.inkChain`), khuỷu và gối
   không có nét. Da chân trần là vật liệu riêng (`npr({ group })`), khác da tay: bàn tay đặt lên đùi trần vẫn có nét. Người mặc đồ chiếm chừng hai chục mã vật, `MAX_INK` (`128`) của pipeline đủ cho năm, sáu
   người; quá thì người sau chỉ còn vỏ viền.
 - **Va chạm** có thêm `hand` và `foot` (`handR`, `footL`… trong `touch`): nang bàn tay (`handCapsules`:

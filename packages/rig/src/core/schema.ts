@@ -405,6 +405,95 @@ export const BadgeSchema = z.object({
   wakaba: z.boolean().default(false),
 });
 
+/** Màu tô trên thân áo dựng khối: màu áo, màu nét, màu nhấn, màu da hay một mã màu */
+export const MarkFillSchema = z.union([
+  z.enum(["color", "line", "accent", "skin"]),
+  z
+    .string()
+    .regex(
+      /^#[0-9a-fA-F]{3,8}$/,
+      "màu tô là color, line, accent, skin hay mã màu #rrggbb",
+    ) as unknown as z.ZodType<`#${string}`>,
+]);
+
+export const PATTERN_KINDS = ["stripes", "check", "dots"] as const;
+
+/** Hoạ tiết lặp trên một mảng áo. docs/02-trang-phuc.md#mảng-áo-và-hoạ-tiết */
+export const PatternSchema = z.object({
+  /** `stripes` sọc, `check` kẻ ô (sọc hai chiều vuông góc), `dots` chấm bi */
+  kind: z.enum(PATTERN_KINDS).default("stripes"),
+  color: MarkFillSchema.default("#ffffff"),
+  /** Bề rộng sọc, hay đường kính chấm, px */
+  width: z.number().positive().default(6),
+  /** Khoảng trống giữa hai sọc, hai chấm, px */
+  gap: z.number().min(0).default(6),
+  /** `0` sọc ngang, `90` sọc dọc; dương là đầu phải của sọc ngóc lên khi nhìn thẳng, độ */
+  angle: z.number().default(0),
+  /** Dời cả hoạ tiết theo pháp tuyến của sọc bấy nhiêu px */
+  offset: z.number().default(0),
+  /** Kẻ ô: màu ô hai sọc chéo nhau; bỏ trống là `color` */
+  cross: MarkFillSchema.optional(),
+});
+
+export const PANEL_SIDES = ["front", "back", "both", "around"] as const;
+
+/** Mảng màu kín trên thân áo dựng khối, có viền và hoạ tiết tuỳ chọn. docs/02-trang-phuc.md#mảng-áo-và-hoạ-tiết */
+export const PanelSchema = z.object({
+  /** Màu nền của mảng; bỏ trống là không tô, chỉ hoạ tiết và viền */
+  fill: MarkFillSchema.optional(),
+  /** `front` mặt trước, `back` mặt sau, `both` cả hai (cùng `pts`), `around` quanh khối: `x` của `pts` là kinh độ, độ */
+  side: z.enum(PANEL_SIDES).default("front"),
+  /** Đỉnh polygon `[x, y]`: `x` px cách trục về `+x` (bên trái người mặc), `y` theo `from`; bỏ trống cùng `path` là cả thân */
+  pts: z
+    .array(z.tuple([z.number(), z.number()]))
+    .min(3)
+    .optional(),
+  /** Path SVG trong hộp `0…100` (`y` xuống) chiếu lên mặt khối như `prints`, tâm `x`, `y`; có thì bỏ qua `pts` */
+  path: z
+    .string()
+    .regex(/^[\sMLHVCQZmlhvcqz\d.,eE+-]*$/, "path chỉ nhận lệnh M L H V C Q Z")
+    .optional(),
+  x: z.number().default(0),
+  y: z.number().default(0),
+  size: z.number().positive().default(40),
+  width: z.number().positive().optional(),
+  height: z.number().positive().optional(),
+  rotate: z.number().default(0),
+  /** `y` đo từ đâu: `hip` cao hơn hông bấy nhiêu px nhân `rig.height`, `neck` thấp hơn chỗ viền cổ chạm mặt vát bấy nhiêu px */
+  from: z.enum(["hip", "neck"]).default("hip"),
+  /** Thêm bản lật qua trục giữa: một mảng cho cả hai bên người */
+  mirror: z.boolean().default(false),
+  /** `neck` chỉ giữ phần trong miệng cổ (trên viền cổ), `body` chỉ giữ phần dưới viền cổ */
+  clip: z.enum(["none", "neck", "body"]).default("none"),
+  /** Nét viền, lần nét thân; `0` là không viền. Viền không chạy dọc mép khối (mép trên, gấu, sườn của mặt trước/sau) */
+  line: z.number().min(0).default(0),
+  pattern: PatternSchema.optional(),
+  /** `under` dưới đặc điểm của kiểu (áo trong, cà vạt), `over` trên */
+  layer: z.enum(["under", "over"]).default("over"),
+});
+
+/** Cà vạt trong miệng cổ chữ V, cắt theo chữ V như luồn dưới vạt */
+export const TieSchema = z.object({
+  /** Bỏ trống là màu nét */
+  color: MarkFillSchema.optional(),
+  /** Nhân bề ngang */
+  width: z.number().positive().default(1),
+  /** Mũi cà vạt thấp hơn chỗ viền cổ chạm mặt vát bấy nhiêu px; phần dưới đáy chữ V khuất dưới vạt */
+  length: z.number().default(102),
+  /** Nét viền, lần nét thân */
+  line: z.number().min(0).default(0),
+});
+
+/** Áo trong lộ ở miệng cổ chữ V của `blazer`, `cardigan`, `suit`. docs/02-trang-phuc.md#áo-trong-và-cà-vạt */
+export const InnerSchema = z.object({
+  /** Màu áo trong; bỏ trống là `accent` (blazer, cardigan) hay không có (suit) */
+  color: MarkFillSchema.optional(),
+  /** Nét viền áo trong, lần nét thân */
+  line: z.number().min(0).default(0),
+  /** Cà vạt; `false` bỏ cà vạt của `suit` */
+  tie: z.union([z.literal(false), TieSchema]).optional(),
+});
+
 /** Khăn vắt vai của người 3D (`pieces.neck.drape`): dải phẳng vắt qua một vai, khối cứng bám thân. docs/02-trang-phuc.md#khăn-vắt-vai */
 export const DrapeSchema = z.object({
   /** Vai vắt khăn: `left` vai trái người mặc (`+x` hệ thân), `right` vai phải */
@@ -496,6 +585,14 @@ export const GarmentSchema = z.object({
   round: z.number().optional(),
   /** Bán kính bo góc gấu */
   hemRound: z.number().optional(),
+  /** Đè dáng viền cổ trước của kiểu: `round` chữ U, `v` chữ V, `square` cổ vuông */
+  neckline: z.enum(["round", "v", "square"]).optional(),
+  /** `false` bỏ đặc điểm dán của kiểu (nét, chấm, mảng); cổ bẻ, viền gân, mũ trùm, cổ chéo vẫn dựng */
+  marks: z.boolean().optional(),
+  /** Mảng màu kín, hoạ tiết, chỗ khoét lộ da (`fill: "skin"`); chỉ người 3D. docs/02-trang-phuc.md#mảng-áo-và-hoạ-tiết */
+  panels: z.array(PanelSchema).optional(),
+  /** Áo trong và cà vạt ở miệng cổ chữ V của `blazer`, `cardigan`, `suit` */
+  inner: InnerSchema.optional(),
   /** Kiểu `wrap`: cổ chéo, dải cổ, đai; kiểu khác bỏ qua */
   wrap: WrapSchema.optional(),
   /** Hình in trên mặt khối, chỉ người 3D */
@@ -837,6 +934,10 @@ export type Print = z.infer<typeof PrintSchema>;
 export type PrintShape = (typeof PRINT_SHAPE_NAMES)[number];
 export type PrintFont = (typeof PRINT_FONTS)[number];
 export type Badge = z.infer<typeof BadgeSchema>;
+export type Panel = z.infer<typeof PanelSchema>;
+export type Pattern = z.infer<typeof PatternSchema>;
+export type Inner = z.infer<typeof InnerSchema>;
+export type Tie = z.infer<typeof TieSchema>;
 export type Obi = z.infer<typeof ObiSchema>;
 export type ObiKnot = (typeof OBI_KNOTS)[number];
 export type Skirt = z.infer<typeof SkirtSchema>;

@@ -411,6 +411,8 @@ export interface SurfaceOptions {
   soft?: number;
   /** Mặt vẽ: `back` cho mặt sau giấy dùng chung lưới với mặt trước */
   side?: 'front' | 'back' | 'double';
+  /** Như `NprOptions.flat`: hình in trên da mặt, da thân */
+  flat?: boolean;
   /** Đẩy độ sâu về phía camera để decal nằm sát mặt khác không giành điểm ảnh với mặt ấy. Mặc định có khi có `map`. */
   offset?: boolean;
 }
@@ -423,6 +425,7 @@ export function surface(o: SurfaceOptions = {}): THREE.ShaderMaterial {
   if (o.map && alpha === 'blend') defines.MAP_BLEND = '';
   if (o.map && alpha === 'cut') defines.MAP_CUT = '';
   if (o.side && o.side !== 'front') defines.DOUBLE_SIDED = '';
+  if (o.flat) defines.FLAT_KEY = '';
   const side = o.side === 'back' ? THREE.BackSide : o.side === 'double' ? THREE.DoubleSide : THREE.FrontSide;
   const m = shaded(defines, side, { ...ownUniforms({ stipple: 0.06, ...o }), uMap: { value: o.map ?? null } });
   m.transparent = alpha === 'blend' || (o.opacity ?? 1) < 1;

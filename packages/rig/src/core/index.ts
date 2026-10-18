@@ -80,6 +80,7 @@ export {
   type MarkFill,
   type TorsoPaths,
 } from "./torso";
+export { flattenPath, PANEL_LIFT, panelParts, type PanelParts } from "./panel";
 export * from "./traced";
 export * from "./travel";
 export * from "./types";

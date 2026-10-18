@@ -44,7 +44,14 @@ export function SculptTorso({
         l.fill ? (
           <path key={i} d={l.d} fill={fillOf(l.fill)} />
         ) : (
-          <path key={i} d={l.d} fill="none" stroke={line} strokeWidth={stroke * l.k} />
+          <path
+            key={i}
+            d={l.d}
+            fill="none"
+            stroke={line}
+            strokeWidth={stroke * l.k}
+            strokeOpacity={l.ink}
+          />
         ),
       )}
       {collar("over")}

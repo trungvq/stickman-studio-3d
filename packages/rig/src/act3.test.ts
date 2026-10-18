@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { act, type Acting } from './act';
-import { actJoints, actPalms, armInner, armSide, CLAD_DEPTH, CLAD_GAP, cladArm, cladProfile, cladThigh, roots3, SPLAY3, type ActJoint } from './core/act3';
+import { actJoints, actPalms, armInner, armSide, CLAD_DEPTH, CLAD_GAP, cladArm, cladProfile, cladThigh, roots3, SPLAY3, THIGH_CLEAR, THIGH_RAMP, type ActJoint } from './core/act3';
 import { D } from './core/constants';
 import { HAND_BONES } from './core/hand';
 import { defaultCharacter, limbWidths, SkirtSchema } from './core/schema';
@@ -172,7 +172,9 @@ describe('actJoints', () => {
       else expect(armInner(room, 0)).toBeCloseTo(hipHalf + thigh, 4);
       const { pts: side, depth } = cladProfile(profile(garmentOf(g, true), rig, rig.stroke / 2).pts, room);
       side.forEach(([a, y], i) => {
-        if (y > room.at[1] + room.cap) expect(a).toBeLessThanOrEqual(armSide(room, y) + 1e-9);
+        // quanh hông sườn áo phủ gốc đùi thêm `THIGH_CLEAR`: tay vẫn cách sườn ít nhất `CLAD_GAP - THIGH_CLEAR`
+        const slack = y >= -THIGH_RAMP ? THIGH_CLEAR : 0;
+        if (y > room.at[1] + room.cap) expect(a, `${w} ${height} ${hipHalf} y ${y}`).toBeLessThanOrEqual(armSide(room, y) + slack + 1e-9);
         if (y < room.at[1] + room.len[0] * Math.cos(r.splay)) expect(depth[i]).toBeLessThanOrEqual(CLAD_DEPTH * room.side + 1e-9);
       });
     }

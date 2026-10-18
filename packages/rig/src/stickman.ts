@@ -4,7 +4,7 @@ import { buildSockets, dress, headFit, newGear, type Carrying, type EquipState, 
 import { D, DEFAULT_FACE } from './core/constants';
 import type { FaceState } from './core/types';
 import { faceRig, type FaceRig, type FaceShape } from './face';
-import { apronTie, sculptHipHem, sculptSkirt, sculptTorso, type HemLeg, type SkirtOptions } from './garment';
+import { apronTie, clothMaterial, paint, sameColor, sculptHipHem, sculptSkirt, sculptTorso, skinLook, type HemLeg, type SkirtOptions } from './garment';
 import { glassesMesh } from './glasses';
 import { INK, toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
@@ -12,7 +12,7 @@ import { sculptMesh } from './sculpt';
 import { equipCharacter, limbWidths, wornPalette, type CharacterData, type Drape, type Earrings, type Equip, type PieceKey, type Garment, type Glasses, type Hat, type Necklace, type Pin, type Sculpt, type Shades, type Skirt } from './core/schema';
 import { hatFit, hatMesh, hatSpec, insideHat, pinMesh } from './core/hat';
 import { earringMesh } from './core/jewelry';
-import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, SLEEVE_EASE, sleeveGrow, type ActCharacter, type AimReport, type Bones3 } from './core/act3';
+import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, SLEEVE_EASE, sleeveGrow, THIGH_ROOT, type ActCharacter, type AimReport, type Bones3 } from './core/act3';
 import { blushLevel, chibiShape } from './core/face';
 import { wornSkirt } from './core/skirtShape';
 import { hangsFromHip, matchWrap } from './core/hem';
@@ -507,8 +507,12 @@ export function stickman(o: StickmanOptions): Figure {
   // gập sẵn hơi chếch lên cho người nền `lod: 'low'` (gộp lưới, không gập lại): thân ngả trước vài độ thì vạt vẫn trên đùi
   // tạp dề mặc ngoài quần: thân áo, vạt áo người ngồi và khối hông như không có váy
   const dressed = skirt?.style === 'apron' ? undefined : skirt;
+  // tay áo khác màu thân áo: thân và tay áo chung vật liệu vải, tô màu từng đỉnh — vai liền như cùng màu. Thân trần, tay áo
+  // loe (vật liệu hai mặt) giữ vật liệu riêng
+  const sleeveColor = o.sleeveColor ?? '#1a1a1a';
+  const cloth = clad && !o.sleeveFlare && (o.sleeveLength ?? 1) > 0 && !sameColor(sleeveColor, color) && !sameColor(color, skin) ? clothMaterial(LIMB_SIL) : undefined;
   const lap = seated ? (dressed ? { seat: -dressed.rise * rig.height } : { seat: seatAt, fold: { top: -(thighTop + 1), dir: [-0.1, 1] as [number, number] } }) : undefined;
-  const body = sculptTorso(spine, { garment, rig, color, accent, skin, ink: INK, arm: at.room, lap, ...((o.drape || o.shades || o.necklace) && { neck: { drape: o.drape, shades: o.shades, necklace: o.necklace, color: o.drapeColor ?? color } }), ...(clad && { sil: LIMB_SIL }), ...(dressed && { tuck: -dressed.rise * rig.height }) });
+  const body = sculptTorso(spine, { garment, rig, color, accent, skin, ink: INK, arm: at.room, lap, ...((o.drape || o.shades || o.necklace) && { neck: { drape: o.drape, shades: o.shades, necklace: o.necklace, color: o.drapeColor ?? color } }), ...(clad && { sil: LIMB_SIL }), ...(dressed && { tuck: -dressed.rise * rig.height }), cloth });
   // khối thân áo là mảnh đầu tiên: `collide` lấy hộp thân từ nó
   spine.children[0].userData.torso = true;
   spine.children[0].userData.inkGap = Math.max(...body.depth) / 100;
@@ -544,7 +548,7 @@ export function stickman(o: StickmanOptions): Figure {
     skull = new THREE.SphereGeometry(R.head, ...q.skull);
     skull.scale(skullScale.x, skullScale.y, skullScale.z);
   }
-  const skin3 = { color: skin, stipple: 0.035, stippleScale: 4, soft: 1, flat: true };
+  const skin3 = skinLook(skin);
   const skinMat = npr(skin3);
   // vỏ ngược dưới cằm `human` chìm sau cổ và cổ áo: nét bóng dáng vẽ thêm ở hậu kỳ
   const skullMat = human ? npr({ ...skin3, ink: 0.03 }) : skinMat;
@@ -583,7 +587,7 @@ export function stickman(o: StickmanOptions): Figure {
     const limbSkin = npr({ ...skin3, ink: LIMB_SIL, doubleSided: true });
     // chân trần là vật khác bàn tay: tay đặt lên đùi vẫn có nét
     const legSkin = npr({ ...skin3, ink: LIMB_SIL, doubleSided: true, group: 'leg' });
-    const { sleeveColor = '#1a1a1a', trouserColor = '#1a1a1a', shoeColor = '#2b2623', sleeveLength = 1, trouserLength = 1, sleeveFlare = 0 } = o;
+    const { trouserColor = '#1a1a1a', shoeColor = '#2b2623', sleeveLength = 1, trouserLength = 1, sleeveFlare = 0 } = o;
     // tay áo loe: ống phủ hở miệng nhìn được lòng trong, đĩa lót tối hơn lùi trong miệng
     const flare = sleeveFlare > 0 && { cover: npr({ color: sleeveColor, stipple: 0.05, stippleScale: 3, soft: 1, ink: LIMB_SIL, doubleSided: true }), lining: npr({ color: new THREE.Color(sleeveColor).multiplyScalar(0.45).getStyle(), stipple: 0, soft: 1, ink: LIMB_SIL }), grow: sleeveFlare / 100 };
     const thigh = thighR / 100;
@@ -591,7 +595,7 @@ export function stickman(o: StickmanOptions): Figure {
     const legTaper = [thigh / limbR(trouserWidth), CLAD_TAPER.leg[1], CLAD_TAPER.leg[2]] as const;
     hands = {} as Record<Side, Hand>;
     for (const s of SIDES) {
-      cladLimb(seg(arms[s].shoulder), seg(arms[s].elbow), [B.upperArm, B.foreArm], [CLAD_TAPER.arm[0] * (1 + bicep), CLAD_TAPER.arm[1], CLAD_TAPER.arm[2]], tone(sleeveColor), limbSkin, sleeveLength, true, flare || undefined);
+      cladLimb(seg(arms[s].shoulder), seg(arms[s].elbow), [B.upperArm, B.foreArm], [CLAD_TAPER.arm[0] * (1 + bicep), CLAD_TAPER.arm[1], CLAD_TAPER.arm[2]], cloth ?? tone(sleeveColor), limbSkin, sleeveLength, true, flare || undefined, cloth && sleeveColor);
       cladLimb(seg(legs[s].hip), seg(legs[s].knee), [B.thigh, B.shin], legTaper, tone(trouserColor), legSkin, trouserLength, false);
       const { k, long } = cladHand(sleeveWidth, rig.stroke, B.foreArm * 100);
       hands[s] = handRig(s, k, long, lod === 'low');
@@ -645,13 +649,14 @@ export function stickman(o: StickmanOptions): Figure {
 /**
  * Đoạn chi `upper` → `lower` của người `clad` (dài `L1`, `L2`): ống tô màu có vỏ viền, thon theo `taper` (bán kính ở gốc,
  * khớp giữa, ngọn, nhân `userData.r`). `f` phần chi từ gốc phủ `cover`, còn lại `skin`; phủ hết thì `cuff` thêm cổ tay áo.
+ * `tint`: `cover` là vật liệu vải chung (`clothMaterial`), lưới phủ tô màu ấy.
  * `flare`: tay áo loe — ống phủ `flare.cover` rộng dần thêm tới `flare.grow` ở miệng, miệng hở có đĩa lót `flare.lining`, tay
  * trong là da.
  */
-function cladLimb(upper: THREE.Mesh, lower: THREE.Mesh, [L1, L2]: [number, number], taper: readonly [number, number, number], cover: THREE.Material, skin: THREE.Material, f: number, cuff: boolean, flare?: { cover: THREE.Material; lining: THREE.Material; grow: number }) {
+function cladLimb(upper: THREE.Mesh, lower: THREE.Mesh, [L1, L2]: [number, number], taper: readonly [number, number, number], cover: THREE.Material, skin: THREE.Material, f: number, cuff: boolean, flare?: { cover: THREE.Material; lining: THREE.Material; grow: number }, tint?: string) {
   upper.userData.taper = [taper[0], taper[1]];
   // gốc đùi to nằm trong khối hông: mút tròn đủ cỡ thì chĩa ra sau xuyên váy khi ngồi
-  if (!cuff) upper.userData.root = 0.35;
+  if (!cuff) upper.userData.root = THIGH_ROOT;
   lower.userData.taper = [taper[1], taper[2]];
   const full = f >= 0.999 && !flare;
   // khuỷu, gối: hai ống chồng mút lên nhau, nét bóng dáng hậu kỳ coi cả chi là một vật
@@ -659,12 +664,14 @@ function cladLimb(upper: THREE.Mesh, lower: THREE.Mesh, [L1, L2]: [number, numbe
   for (const m of [upper, lower]) {
     m.userData.inkChain = chain;
     m.material = full ? cover : skin;
+    if (full && tint) paint(m.geometry, tint);
     const h = new THREE.Mesh(m.geometry, limbHull);
     h.userData.noShadow = true;
     m.add(h);
   }
   const add = (m: THREE.Mesh, u0: number, u1: number, rim: number, flat: number, more: Partial<Cover> = {}, mat = cover, hull = true) => {
     const geo = tube(), c = new THREE.Mesh(geo, mat);
+    if (mat === cover && tint) paint(geo, tint);
     c.castShadow = true;
     c.userData.inkChain = more.disk === undefined ? chain : -chain;
     if (hull) {
@@ -830,7 +837,7 @@ function mergeStatic(j: THREE.Object3D) {
       const src = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry;
       g.setAttribute('position', src.attributes.position.clone());
       g.setAttribute('normal', src.attributes.normal.clone());
-      if (src.attributes.tint) g.setAttribute('tint', src.attributes.tint.clone());
+      if (src.attributes.tint && (mat as THREE.ShaderMaterial).defines?.USE_TINT !== undefined) g.setAttribute('tint', src.attributes.tint.clone());
       return g.applyMatrix4(inv.clone().multiply(m.matrixWorld));
     });
     const merged = new THREE.Mesh(mergeGeometries(geos), mat);

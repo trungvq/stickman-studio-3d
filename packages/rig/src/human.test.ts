@@ -392,4 +392,41 @@ describe('áo khoác vạt mở, hình in, thẻ tên', () => {
     expect(prints).toHaveLength(4);
     for (const p of prints) expect([p.userData.noShadow, p.userData.noCollide]).toEqual([true, true]);
   });
+
+  it('mảng áo là lưới không ghi độ sâu, vẽ sau thân theo lớp, không đổ bóng; người ngồi gập theo đùi', () => {
+    for (const seated of [false, true]) {
+      const f = dressed((c) => {
+        c.pieces.torso = {
+          ...c.pieces.torso,
+          src: 'sculpt',
+          garment: GarmentSchema.parse({ style: 'tshirt', hem: 30, panels: [{ fill: '#ff0000' }, { pattern: { width: 4, gap: 4 } }] }),
+        };
+      }, { seated });
+      const decals = f.spine.children.filter((o) => (o as THREE.Mesh).material && !((o as THREE.Mesh).material as THREE.Material).depthWrite && o.renderOrder > 0);
+      expect(decals, String(seated)).toHaveLength(2);
+      expect(decals[1].renderOrder).toBeGreaterThan(decals[0].renderOrder);
+      for (const d of decals) expect([d.userData.noShadow, d.userData.noCollide]).toEqual([true, true]);
+    }
+  });
+
+  it('tay áo khác màu thân áo chung vật liệu vải tô màu từng đỉnh: vai liền không đường may', () => {
+    const torso = (f: Figure) => f.spine.children.find((o) => o.userData.torso) as THREE.Mesh;
+    const sleeve = (f: Figure) => f.arms[-1].shoulder.children.find((o) => o.userData.limb) as THREE.Mesh;
+    const tint = (m: THREE.Mesh) => new THREE.Color().fromArray(Array.from((m.geometry.attributes.tint as THREE.BufferAttribute).array.slice(0, 3))).getHexString();
+    const paint = (garment: string, sleeveColor: string) =>
+      dressed((c) => {
+        c.pieces.torso = { ...c.pieces.torso, src: 'sculpt', color: garment, garment: GarmentSchema.parse({ style: 'shirt' }) };
+        c.palette.garment = garment;
+        c.palette.sleeve = sleeveColor;
+      });
+    const two = paint('#efe6d6', '#c23b3b');
+    expect(torso(two).material).toBe(sleeve(two).material);
+    expect(tint(torso(two))).toBe('efe6d6');
+    expect(tint(sleeve(two))).toBe('c23b3b');
+    // cùng màu: vật liệu thường, không tô màu từng đỉnh
+    const one = paint('#3aa89c', '#3aa89c');
+    expect(torso(one).material).toBe(sleeve(one).material);
+    expect(torso(one).geometry.attributes.tint).toBeUndefined();
+  });
 });
+

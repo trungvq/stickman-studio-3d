@@ -164,7 +164,7 @@ describe("thân áo dựng khối", () => {
     const spine = (view: View) =>
       paths(dressed({ style: "bare" }), view).lines.some((l) => {
         const p = points(l.d);
-        return p.length >= 2 && p.every(([x]) => Math.abs(x) < 0.5) && p.at(-1)![1] - p[0][1] > 30;
+        return p.length >= 2 && p.every(([x]) => Math.abs(x) < 0.5) && p.at(-1)![1] - p[0][1] > 25;
       });
     expect(spine("back")).toBe(true);
     expect(spine("front")).toBe(false);
