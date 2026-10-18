@@ -217,7 +217,9 @@ JSON, render ra PNG rồi mở ảnh xem. Xem [AGENTS.md](AGENTS.md).
 ## Dựng phim
 
 App Remotion có sẵn ở \`src/\`: một composition cho mỗi file trong \`scenes/\` (một
-cảnh) và mỗi file trong \`episodes/\` (cả tập):
+cảnh) và mỗi file trong \`episodes/\` (cả tập). Mỗi bundle chỉ mang phạm vi của lượt chạy:
+\`render\` / \`still\` lấy id gõ vào, Studio lấy \`stickman.scope\` của \`package.json\` hay
+\`STICKMAN_SCOPE=t02 pnpm remotion\` (docs/03 § Phạm vi bundle):
 
 \`\`\`bash
 pnpm remotion                            # Remotion Studio, tua được

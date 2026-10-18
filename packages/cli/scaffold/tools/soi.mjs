@@ -6,6 +6,7 @@ import { availableParallelism } from "node:os";
 import { fileURLToPath } from "node:url";
 import { openBrowser, renderFrames, selectComposition } from "@remotion/renderer";
 import { ownBundle } from "./bundle.mjs";
+import { bundleScope } from "./scope.mjs";
 
 // cảnh 3D (`src/khoi3d/`) vẽ bằng GPU qua Vulkan như `remotion.config.ts`; API renderer không đọc file ấy
 export const chromiumOptions = { gl: "vulkan" };
@@ -17,9 +18,15 @@ export const envVariables = Object.fromEntries(
 /** Số tab mặc định: nửa số nhân — mỗi tab giữ một cảnh 3D trên GPU, nhiều hơn thì giành nhau chứ không nhanh hơn */
 export const defaultTabs = () => Math.max(1, Math.floor(availableParallelism() / 2));
 
-/** Bundle `tools/soi.tsx`, mở Chrome. Gọi `close()` khi xong — nó xoá luôn bundle. */
-export async function openSoi() {
-  const { serveUrl, drop } = await ownBundle(fileURLToPath(new URL("./soi.tsx", import.meta.url)));
+/**
+ * Bundle `tools/soi.tsx`, mở Chrome. Gọi `close()` khi xong — nó xoá luôn bundle. `ids`: cảnh, tập, thumbnail sẽ soi —
+ * khoá phạm vi của `scope.mjs` (cảnh kéo theo cảnh cùng thư mục); bỏ trống là cả workspace. Ảnh tĩnh nên không mang tiếng.
+ */
+export async function openSoi(ids = ["*"]) {
+  const scope = bundleScope(process.cwd(), ids, { audio: "none" });
+  const { serveUrl, drop } = await ownBundle(fileURLToPath(new URL("./soi.tsx", import.meta.url)), {
+    scope,
+  });
   let browser;
   try {
     browser = await openBrowser("chrome", { chromiumOptions });
@@ -30,7 +37,7 @@ export async function openSoi() {
   const base = { serveUrl, chromiumOptions, envVariables, puppeteerInstance: browser };
   return {
     base,
-    /** Composition `id` của app (`Root`) — tập, thumbnail; dựng cả `Root` nên chậm, cảnh thì đi `renderSoi` */
+    /** Composition `id` của app (`Root`) — tập, thumbnail; mỗi trang dựng lại cả cảnh, nên cảnh thì đi `renderSoi` */
     composition: (id) => selectComposition({ ...base, id, inputProps: {} }),
     close: async () => {
       await browser.close({ silent: true }).catch(() => {});

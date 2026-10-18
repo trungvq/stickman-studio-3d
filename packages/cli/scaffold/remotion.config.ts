@@ -1,5 +1,6 @@
 import { Config } from "@remotion/cli/config";
 import { createRequire } from "node:module";
+import { cliScope } from "./tools/scope.mjs";
 import { sweepAndReport } from "./tools/sweep.mjs";
 import { ownTmpdir, webpackOverride } from "./tools/webpack.mjs";
 
@@ -44,8 +45,14 @@ const reactProd = (w: any) => ({
 // làm webpack tìm react ở repo kia, hai bản react là hook hỏng. Cài lại từ registry thì
 // chú thích lại.
 // const one = (m: string) => `${process.cwd()}/node_modules/${m}`;
+// Phạm vi bundle (`tools/scope.mjs`, docs/03 § Phạm vi bundle): `render` / `still <id>` chỉ mang composition gõ trên
+// dòng lệnh, Studio và `remotion bundle` theo `STICKMAN_SCOPE` hay `stickman.scope` của `package.json`
+const scope = cliScope(process.cwd(), process.argv);
+let told = false;
 Config.overrideWebpackConfig((c) => {
-  const w = webpackOverride(c);
+  if (!told) console.warn(`stickman: ${scope.summary()}`);
+  told = true;
+  const w = webpackOverride(c, scope);
   // w.resolve.alias["react/jsx-runtime"] = one("react/jsx-runtime.js");
   // w.resolve.alias["react-dom"] = one("react-dom");
   // w.resolve.alias.react = one("react");

@@ -67,7 +67,7 @@ const clip = (id, frames, length) => {
   return frames.filter((f) => f < length);
 };
 
-const soi = await openSoi();
+const soi = await openSoi([...asks.keys()]);
 try {
   const outputs = [];
   const save = (id, frame, png) => {

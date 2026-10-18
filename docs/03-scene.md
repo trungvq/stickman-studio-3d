@@ -1600,10 +1600,15 @@ vẫn tính là đang bước. `min` bỏ qua quãng ngắn hơn ngần ấy gi�
 
 ## Remotion
 
-`stickman init` dựng app trong repo video. Mỗi file `scenes/*.json` là một
-composition; `calculateMetadata` gọi `parseScene` và `resolveScene` để lấy
-`durationInFrames`, và lấy cỡ khung từ `FRAMES[scene.frame].video`. Cả app chạy
-`60 fps` — hằng `FPS` ở `Root.tsx`, và `tools/srt.mjs` khai cùng số ấy.
+`stickman init` dựng app trong repo video. Mỗi file `scenes/*.json` trong bundle là một
+composition, mỗi file `episodes/*.json` cũng vậy; bundle chỉ mang [phạm vi](#phạm-vi-bundle)
+của lượt chạy. Props của composition chỉ là `{ id }`: component tra dữ liệu ở `SCENES` /
+`EPISODES` của `data.ts`, `calculateMetadata` lấy `durationInFrames` (`resolveScene` khi cảnh
+không khai `duration`) và cỡ khung `FRAMES[scene.frame].video` — chỉ cho composition được chọn,
+nên `Root` dựng nhanh và danh sách composition nhỏ dù bundle mang bao nhiêu cảnh. Đừng đưa dữ
+liệu cảnh, tập hay `schema` zod vào props: Remotion tuần tự hoá cả danh sách composition mỗi lần
+chọn một cái, quá ~230 MB là `defaultProps too big`. Cả app chạy `60 fps` — hằng `FPS` ở
+`Root.tsx`, và `tools/srt.mjs` khai cùng số ấy.
 
 ```bash
 pnpm remotion
@@ -1613,11 +1618,11 @@ pnpm frames <scene> 105,140-142 [<scene-2> 30,90 …] [thư mục ra] [--tab N]
 ```
 
 `pnpm frames` (`tools/still.mjs`) chụp nhiều khung của nhiều cảnh trong một lượt bundle: entry riêng
-`tools/soi.tsx` thêm composition `soi` mà khung thứ `i` là việc thứ `i` (cảnh, khung), không dựng `Root` (tính độ dài mọi
-cảnh và mọi tập — hàng chục giây mỗi trang ở repo trăm cảnh). Việc cùng cảnh xếp liền nhau, chia thành dải, mỗi dải một
+`tools/soi.tsx` thêm composition `soi` mà khung thứ `i` là việc thứ `i` (cảnh, khung); bundle chỉ mang các id xin soi
+(phạm vi của chúng), không tiếng. Việc cùng cảnh xếp liền nhau, chia thành dải, mỗi dải một
 tab chạy song song (`--tab`, mặc định nửa số nhân): mỗi tab dựng cảnh 3D một lần rồi chỉ tua, sang cảnh khác mới dựng lại.
-Ảnh ra trùng từng pixel với `pnpm still`. Id không phải cảnh (tập, thumbnail) thì chụp thẳng composition ấy, chậm hơn vì
-phải dựng `Root`. Soi một lô nhiều cảnh thì gom vào **một** lần gọi. Bundle xoá khi xong; trước khi bundle tool dọn rác
+Ảnh ra trùng từng pixel với `pnpm still`. Id không phải cảnh (tập, thumbnail) thì chụp thẳng composition ấy của `Root`.
+Soi một lô nhiều cảnh thì gom vào **một** lần gọi. Bundle xoá khi xong; trước khi bundle tool dọn rác
 cũ trong `TMPDIR` ([05](05-repo-video.md#thư-mục-tạm)).
 
 Repo chứa nhiều tập thì gom sidebar Studio theo tập bằng `stickman.folders` trong
@@ -1668,6 +1673,54 @@ Khi repo video dùng dependency `link:` tới cây nguồn studio, bật alias
 `react` và `zod` trong `remotion.config.ts`. Khi cài từ registry, không cần
 alias. Version Remotion lấy từ hằng `REMOTION` trong
 `packages/cli/templates.mjs` và phải được pin cứng.
+
+### Phạm vi bundle
+
+`src/data.ts` nạp `scenes/`, `episodes/` và `assets/audio/` bằng `require.context`, nhưng
+plugin của `tools/webpack.mjs` thu hẹp ba context ấy theo **phạm vi** của lượt bundle
+(`tools/scope.mjs`): cỡ bundle, thời gian dựng `Root` và số composition đi theo phạm vi, không
+theo số tập của repo. Phạm vi là danh sách khoá phẩy ngăn:
+
+| Khoá | Vào bundle |
+|---|---|
+| `*` | cả workspace |
+| id một cảnh | cảnh ấy và mọi cảnh cùng thư mục `stickman.folders` (không khai `folders` thì mọi cảnh chung một thư mục) |
+| id một tập, hay `<tập>-thumb[-<khoá>]` | tập ấy, cảnh nó gọi (shot, thumbnail), cảnh cùng thư mục, tiếng cue của nó |
+| tên thư mục (`t02`) | mọi cảnh, tập trong thư mục, cùng cảnh và tiếng các tập ấy gọi |
+
+| Lệnh | Phạm vi |
+|---|---|
+| `pnpm render <id>`, `pnpm still <id>` | chính `<id>` gõ trên dòng lệnh (`remotion.config.ts` đọc `process.argv`); `still` không mang tiếng |
+| `pnpm remotion`, `remotion bundle` | `STICKMAN_SCOPE`, không thì `stickman.scope` của `package.json`, không thì `*`; Studio mang cả thư mục tiếng |
+| `pnpm frames`, `can-tay` | các id xin soi, không tiếng |
+| `pnpm thumbnails [tập]` | tập ấy, hay mọi tập có `thumbnail`; không tiếng |
+| `pnpm bang-cam` | rỗng — chỉ cảnh dựng tạm |
+
+`STICKMAN_SCOPE` thắng ở mọi lệnh `remotion …`: `STICKMAN_SCOPE=t01 pnpm remotion` mở Studio cho
+tập 1, `STICKMAN_SCOPE=t02,thu` cho hai thư mục. Repo nhiều tập thì khai thư mục đang làm cho
+Studio — `stickman check` kêu khoá không khớp gì:
+
+```json
+"stickman": { "folders": "^(t\\d+|thu)", "scope": "t02" }
+```
+
+Lệnh `remotion …` in một dòng `stickman: phạm vi …` với số cảnh, tập, file tiếng vào bundle.
+
+- **Cảnh phụ để cùng thư mục với cảnh chủ.** Lớp vẽ code tra `SCENES[...]` (ô cảnh, chia đôi
+  khung) chỉ thấy cảnh trong bundle; cảnh cùng thư mục luôn đi theo. Tập gọi cảnh ngoài thư mục
+  qua `shots[].scene` thì cảnh ấy cũng vào; thiếu là `sceneSeconds` nổ `không có scenes/<id>.json
+  trong bundle`.
+- **Tiếng chỉ có file cue gọi tên** (kể cả bản lồng tiếng `<thư mục>/<lang>/<file>`); Studio
+  thêm cả thư mục đầu của chúng và thư mục trùng tên thư mục phạm vi, nên tiếng gen mới hiện
+  ngay. File không tập nào gọi không vào bundle. `public/` nối bằng symlink (`remotion render` /
+  `still`, tool của repo), `remotion bundle --out-dir` mới chép.
+- Studio thấy ngay cảnh, tập mới trong thư mục của phạm vi; cảnh ngoài thư mục mà tập mới gọi,
+  hay đổi `stickman.scope`, thì mở lại Studio.
+- **Bundle dựng sẵn** (`remotion bundle --out-dir`, rồi `remotion render <bundle> <id>`): đặt
+  `STICKMAN_SCOPE=<id>` lúc bundle.
+- Id gõ ở `remotion render` không phải cảnh, tập hay thumbnail (composition thử `THU_3D`) thì
+  về phạm vi mặc định kèm cảnh báo: chỉ `STICKMAN_SCOPE=<thư mục của cảnh nó mượn>`. `THU_3D`
+  chỉ có composition khi cảnh của nó trong bundle.
 
 ### Cảnh 3D
 

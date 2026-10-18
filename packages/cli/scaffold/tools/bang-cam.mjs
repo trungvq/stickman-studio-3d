@@ -503,7 +503,7 @@ const DRAW = 2 * TILE;
 rmSync(join(outDir, "o"), { recursive: true, force: true });
 rmSync(join(outDir, "khac"), { recursive: true, force: true });
 for (const it of items) mkdirSync(join(outDir, "o", it), { recursive: true });
-const soi = await openSoi();
+const soi = await openSoi([]);
 try {
   await renderSoi(soi, {
     jobs: jobs.map(({ scene, t, lens }) => ({ scene, t, lens })),

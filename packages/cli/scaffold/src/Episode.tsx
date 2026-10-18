@@ -16,6 +16,16 @@ import { cueStart, layoutShots, type LaidShot } from "./shots";
 
 const SECONDS = new WeakMap<SceneData, number>();
 
+/** Cảnh theo tên; thiếu thì nổ — file không có, hay nằm ngoài phạm vi bundle (docs/03-scene.md#phạm-vi-bundle) */
+const sceneNamed = (name: string): SceneData => {
+  const s = SCENES[name];
+  if (!s)
+    throw new Error(
+      `không có scenes/${name}.json trong bundle — thiếu file, hay ngoài STICKMAN_SCOPE`,
+    );
+  return s;
+};
+
 /** Độ dài một cảnh: `scene.duration`, thiếu thì `resolveScene` một lần rồi nhớ theo object cảnh — `Root` dùng chung */
 export const sceneDuration = (s: SceneData): number => {
   if (s.duration !== undefined) return s.duration;
@@ -26,18 +36,10 @@ export const sceneDuration = (s: SceneData): number => {
 };
 
 /** Độ dài một cảnh theo tên; shot không khai `to` thì lấy hết cảnh */
-export const sceneSeconds = (name: string): number => {
-  const s = SCENES[name];
-  if (!s) throw new Error(`không có scenes/${name}.json`);
-  return sceneDuration(s);
-};
+export const sceneSeconds = (name: string): number => sceneDuration(sceneNamed(name));
 
 /** Khung của một cảnh — `wide` cho tập, `tall` cho short. docs/03-scene.md#khung-hình */
-export const sceneFrame = (name: string): FrameName => {
-  const s = SCENES[name];
-  if (!s) throw new Error(`không có scenes/${name}.json`);
-  return s.frame;
-};
+export const sceneFrame = (name: string): FrameName => sceneNamed(name).frame;
 
 /**
  * Cỡ pixel của cả tập. Một tập là một composition nên chỉ có **một** khung: shot trộn

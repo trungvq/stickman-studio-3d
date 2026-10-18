@@ -37,8 +37,8 @@ Mỗi bước kết thúc bằng một cổng kiểm tra:
 | `remotion studio` | Cả cảnh, có nền có tiếng, tua được | **Người** |
 | `remotion render` | mp4 chốt | Cuối |
 
-**Remotion Studio là preview server, không phải editor.** `defaultProps` đi qua
-`data.ts` chứ không phải object literal, nên nó **không ghi ngược props vào file**
+**Remotion Studio là preview server, không phải editor.** Props chỉ mang id, dữ liệu
+tra ở `data.ts`, nên nó **không ghi ngược props vào file**
 và không kéo thả clip được; vòng lặp là sửa JSON → hot-reload → nhìn. Cẩn thận
 một chỗ: kéo/zoom khung preview trong Studio **ghi CSS thẳng vào source**
 (`translate`, `scale` trên `AbsoluteFill`) — thấy cảnh lệch hẳn đi thì xem
@@ -46,6 +46,8 @@ một chỗ: kéo/zoom khung preview trong Studio **ghi CSS thẳng vào source*
 
 `pnpm still <id> --frame=N` chụp một khung cho agent; `pnpm frames <id> a,b,c-d [<id2> e,f …]`
 chụp nhiều khung của nhiều cảnh trong một lượt bundle — [03](03-scene.md#remotion).
+Studio chỉ thấy [phạm vi bundle](03-scene.md#phạm-vi-bundle): `stickman.scope` của
+`package.json`, hay `STICKMAN_SCOPE=t03 pnpm remotion` cho một tập khác.
 
 ## Công cụ trong `tools/`
 
@@ -519,6 +521,10 @@ pnpm still <tập>-thumb-a out/thumb.png   # một cái
 ```bash
 pnpm render:final tap out/tap.mp4
 ```
+
+Bundle của lệnh này chỉ mang tập `tap`, cảnh của nó và file tiếng cue của nó
+([03](03-scene.md#phạm-vi-bundle)). Render từ bundle dựng sẵn (`remotion bundle --out-dir`,
+rồi render từng đoạn) thì bundle với `STICKMAN_SCOPE=tap`.
 
 Bản upload dùng frame PNG; preview có thể dùng JPEG để render nhanh. `render:final` còn
 đặt `REMOTION_QUALITY=final` để tóc dựng khối chiếu đúng góc từng khung, không làm tròn

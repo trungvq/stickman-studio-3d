@@ -1,11 +1,10 @@
-import { FRAMES, SceneSchema, parseScene, type SceneData } from "@stickman3d/sketch";
-import type { ReactElement } from "react";
+import { FRAMES, type SceneData } from "@stickman3d/sketch";
+import type { ComponentProps, ReactElement } from "react";
 import { Composition, Folder, useCurrentFrame, useVideoConfig } from "remotion";
-import { z } from "zod";
 import pkg from "../package.json";
 import { EPISODES, SCENES } from "./data";
 import { Episode, episodeVideo, sceneDuration, sceneFrame, sceneSeconds } from "./Episode";
-import { EpisodeSchema, episodeThumbnails, parseEpisode } from "./episode";
+import { episodeThumbnails, type ThumbnailData } from "./episode";
 import { THU_3D } from "./khoi3d/canh";
 import { Scene3D } from "./khoi3d/Scene3D";
 import { Scene } from "./Scene";
@@ -14,7 +13,7 @@ import { Thumbnail } from "./Thumbnail";
 
 const FPS = 60;
 
-/** Cỡ pixel viết sẵn cho `<Composition>` và cho `calculateMetadata` */
+/** Cỡ pixel cho `calculateMetadata` */
 const wh = (v: { w: number; h: number }) => ({ width: v.w, height: v.h });
 
 /** Cỡ pixel của một cảnh, theo `scene.frame`: `wide` ra 1920×1080, `tall` ra 1080×1920 */
@@ -39,6 +38,21 @@ const inFolders = (comps: ReactElement<{ id: string }>[]) => {
   );
 };
 
+/** Cảnh `scenes/<id>.json`: props chỉ mang id, dữ liệu tra ở `SCENES` */
+const SceneById = ({ id }: { id: string }) => <Scene scene={SCENES[id]} />;
+
+/** Tập `episodes/<id>.json`; props khác của `Episode` (`lang`…) đi thẳng qua `--props` */
+type EpisodeProps = { id: string } & Omit<ComponentProps<typeof Episode>, "episode" | "fps">;
+const EpisodeById = ({ id, ...rest }: EpisodeProps) => (
+  <Episode episode={EPISODES[id]} fps={FPS} {...rest} />
+);
+
+/** Id composition → thumbnail, của mọi tập trong bundle */
+const THUMBS: Record<string, ThumbnailData> = Object.fromEntries(
+  Object.entries(EPISODES).flatMap(([id, ep]) => Object.entries(episodeThumbnails(id, ep))),
+);
+const ThumbnailById = ({ id }: { id: string }) => <Thumbnail thumb={THUMBS[id]} />;
+
 /** Composition thử bối cảnh `THU_3D[id]`; `--props='{"frames":1200}'` kéo dài để đo thời gian render */
 const Thu3D = ({ id }: { id: string; frames?: number }) => {
   const frame = useCurrentFrame();
@@ -48,84 +62,74 @@ const Thu3D = ({ id }: { id: string; frames?: number }) => {
 };
 
 /**
- * Một composition cho mỗi file trong `scenes/`, và một cho mỗi file trong `episodes/` —
- * thêm file là có thêm composition. Cảnh là đơn vị dựng, tập là đơn vị xem. Tập có
- * `thumbnail` thì thêm `<tập>-thumb` một khung, hay `<tập>-thumb-<khoá>` cho mỗi biến thể:
- * `pnpm thumbnails` chụp hết trong một lượt bundle. Sidebar Studio gom theo
- * `stickman.folders` của `package.json` — docs/03-scene.md#remotion. Bối cảnh thử `THU_3D`
- * (`khoi3d/canh.ts`) nằm riêng trong thư mục `khoi3d`.
+ * Một composition cho mỗi cảnh và mỗi tập **trong bundle** — `src/data.ts` nạp `scenes/`, `episodes/` theo phạm vi bundle
+ * (`tools/scope.mjs`, docs/03-scene.md#phạm-vi-bundle). Props chỉ mang id: dữ liệu tra trong component, độ dài và cỡ
+ * khung tính ở `calculateMetadata`, chỉ cho composition được chọn — danh sách composition nhỏ và Root dựng nhanh dù
+ * bundle mang bao nhiêu cảnh. Tập có `thumbnail` thì thêm `<tập>-thumb` một khung, hay `<tập>-thumb-<khoá>` cho mỗi biến
+ * thể: `pnpm thumbnails` chụp hết trong một lượt bundle. Sidebar Studio gom theo `stickman.folders` của `package.json`.
+ * Bối cảnh thử `THU_3D` (`khoi3d/canh.ts`) nằm riêng trong thư mục `khoi3d`, chỉ khi cảnh của nó có trong bundle.
  */
 export const Root = () => (
   <>
     {inFolders([
-      ...Object.entries(SCENES).map(([id, scene]) => (
+      ...Object.keys(SCENES).map((id) => (
         <Composition
           key={id}
           id={id}
-          component={Scene}
+          component={SceneById}
           fps={FPS}
-          {...size(scene)}
-          durationInFrames={frames(scene)}
-          schema={z.object({ scene: SceneSchema })}
-          defaultProps={{ scene }}
+          defaultProps={{ id }}
           calculateMetadata={({ props }) => {
-            const s = parseScene(props.scene);
-            if (!s.success) throw new Error(s.error.message);
-            return { props: { scene: s.data }, durationInFrames: frames(s.data), ...size(s.data) };
+            const s = SCENES[props.id];
+            return { durationInFrames: frames(s), ...size(s) };
           }}
         />
       )),
-      ...Object.entries(EPISODES).map(([id, episode]) => (
+      ...Object.keys(EPISODES).map((id) => (
         <Composition
           key={id}
           id={id}
-          component={Episode}
+          component={EpisodeById}
           fps={FPS}
-          {...wh(episodeVideo(episode, id))}
-          durationInFrames={episodeFrames(layoutShots(episode, FPS, sceneSeconds))}
-          schema={z.object({ episode: EpisodeSchema, lang: z.string().optional() })}
-          defaultProps={{ episode, fps: FPS }}
+          defaultProps={{ id }}
           calculateMetadata={({ props }) => {
-            const e = parseEpisode(props.episode);
-            if (!e.success) throw new Error(e.error.message);
+            const e = EPISODES[props.id];
             return {
-              props: { episode: e.data, fps: FPS, lang: props.lang },
-              durationInFrames: episodeFrames(layoutShots(e.data, FPS, sceneSeconds)),
-              ...wh(episodeVideo(e.data, id)),
+              durationInFrames: episodeFrames(layoutShots(e, FPS, sceneSeconds)),
+              ...wh(episodeVideo(e, props.id)),
             };
           }}
         />
       )),
-      ...Object.entries(EPISODES).flatMap(([id, episode]) =>
-        Object.entries(episodeThumbnails(id, episode)).map(([thumbId, thumb]) => (
-          <Composition
-            key={thumbId}
-            id={thumbId}
-            component={Thumbnail}
-            fps={FPS}
-            {...wh(FRAMES[sceneFrame(thumb.scene)].video)}
-            durationInFrames={1}
-            defaultProps={{ thumb }}
-          />
-        )),
-      ),
+      ...Object.entries(THUMBS).map(([id, thumb]) => (
+        <Composition
+          key={id}
+          id={id}
+          component={ThumbnailById}
+          fps={FPS}
+          durationInFrames={1}
+          defaultProps={{ id }}
+          calculateMetadata={() => wh(FRAMES[sceneFrame(thumb.scene)].video)}
+        />
+      )),
     ])}
-    {Object.keys(THU_3D).length > 0 && (
+    {Object.values(THU_3D).some((t) => SCENES[t.scene]) && (
       <Folder name="khoi3d">
-        {Object.entries(THU_3D).map(([id, { scene }]) => (
-          <Composition
-            key={id}
-            id={id}
-            component={Thu3D}
-            fps={FPS}
-            {...size(SCENES[scene])}
-            durationInFrames={frames(SCENES[scene])}
-            defaultProps={{ id }}
-            calculateMetadata={({ props }) => ({
-              durationInFrames: props.frames ?? frames(SCENES[scene]),
-            })}
-          />
-        ))}
+        {Object.entries(THU_3D)
+          .filter(([, t]) => SCENES[t.scene])
+          .map(([id, { scene }]) => (
+            <Composition
+              key={id}
+              id={id}
+              component={Thu3D}
+              fps={FPS}
+              defaultProps={{ id }}
+              calculateMetadata={({ props }) => ({
+                durationInFrames: props.frames ?? frames(SCENES[scene]),
+                ...size(SCENES[scene]),
+              })}
+            />
+          ))}
       </Folder>
     )}
   </>

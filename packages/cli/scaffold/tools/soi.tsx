@@ -1,8 +1,8 @@
 // Entry Remotion của `tools/still.mjs` và `tools/can-tay.mjs`. Bundle này có thêm composition `soi`: khung thứ `i` là việc
 // `soi[i]` của `inputProps` — một khung của một cảnh, hay một ống kính đè nhìn vào một giây của cảnh 3D. Một tab Remotion
 // giữ cảnh đang dựng qua các khung liền nhau cùng cảnh, nên mỗi khung chỉ tốn phần vẽ và chụp. Không có `soi` trong
-// `inputProps` thì là đúng `Root` của app — khung của tập, thumbnail. Không dựng `Root` khi soi: nó tính độ dài mọi cảnh
-// và mọi tập, ~20 s mỗi trang ở repo trăm cảnh. Xem docs/03 § Remotion.
+// `inputProps` thì là đúng `Root` của app — khung của tập, thumbnail. Bundle chỉ mang cảnh, tập được soi (`openSoi` của
+// `soi.mjs`, phạm vi `scope.mjs`). Xem docs/03 § Remotion.
 import {
   FRAMES,
   buildStage,

@@ -25,6 +25,7 @@ import {
   partsEntry,
   worldEntry,
 } from "@stickman3d/render";
+import { bundleScope, parseTokens } from "./scaffold/tools/scope.mjs";
 import * as T from "./templates.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -3038,6 +3039,22 @@ export async function checkWorkspace({
           `package.json: stickman.folders cắt "${id}" ra thư mục "${name}" — chỉ nhận a-z A-Z 0-9 - và chữ Hán`,
         );
     }
+  }
+
+  // Phạm vi bundle mặc định của Studio: khoá không khớp gì là Studio mở ra trống — docs/03-scene.md#phạm-vi-bundle
+  const scopeRaw = readPkg(root)?.stickman?.scope;
+  if (has("ref") && scopeRaw !== undefined) {
+    if (typeof scopeRaw !== "string")
+      bad(
+        `package.json: stickman.scope phải là chuỗi khoá phẩy ngăn, đang là ${JSON.stringify(scopeRaw)}`,
+      );
+    else
+      try {
+        for (const t of bundleScope(root, parseTokens(scopeRaw)).unknown)
+          warn(`package.json: stickman.scope có khoá "${t}" không khớp cảnh, tập hay thư mục nào`);
+      } catch (e) {
+        bad(`package.json: stickman.scope — ${e.message}`);
+      }
   }
 
   const haveFfprobe = has("episode") && onPath("ffprobe");

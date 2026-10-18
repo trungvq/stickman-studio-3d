@@ -7,8 +7,11 @@ import { bundle } from "@remotion/bundler";
 import { MARK, sweepAndReport } from "./sweep.mjs";
 import { ownTmpdir, webpackOverride } from "./webpack.mjs";
 
-/** Bundle `entryPoint` (alias chung của `webpack.mjs`); `drop()` xoá nó, thoát hay Ctrl-C cũng tự xoá */
-export async function ownBundle(entryPoint) {
+/**
+ * Bundle `entryPoint` (alias chung của `webpack.mjs`); `drop()` xoá nó, thoát hay Ctrl-C cũng tự xoá. `scope` (`bundleScope`
+ * của `scope.mjs`) chọn cảnh, tập, tiếng vào bundle; bỏ trống là phạm vi mặc định. `public/` nối bằng symlink, không chép.
+ */
+export async function ownBundle(entryPoint, { scope } = {}) {
   sweepAndReport({ own: ownTmpdir !== null });
   let made = null;
   const drop = () => made && rmSync(made, { recursive: true, force: true });
@@ -20,7 +23,8 @@ export async function ownBundle(entryPoint) {
     });
   const serveUrl = await bundle({
     entryPoint,
-    webpackOverride,
+    webpackOverride: (c) => webpackOverride(c, scope),
+    symlinkPublicDir: true,
     onDirectoryCreated: (d) => {
       made = d;
       writeFileSync(join(d, MARK), String(process.pid));

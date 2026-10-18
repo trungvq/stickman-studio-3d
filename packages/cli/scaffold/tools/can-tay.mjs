@@ -184,7 +184,7 @@ function handsOf({ canh, giay, data }) {
 }
 
 // Đo trong lúc bundle: hai việc không chờ nhau
-const [p, o] = await Promise.allSettled([probe(), openSoi()]);
+const [p, o] = await Promise.allSettled([probe(), openSoi(asks.map((a) => a.canh))]);
 if (o.status === "rejected") throw o.reason;
 const soi = o.value;
 if (p.status === "rejected") {

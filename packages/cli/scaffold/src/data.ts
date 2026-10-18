@@ -1,6 +1,8 @@
 // JSON và PNG nạp qua bundler, không qua `staticFile` — thư mục thật của workspace
 // (`actions/`, `characters/`, `scenes/`, `props/`, `animals/`, `pieces/`) chính là nguồn, không phải `public/`.
-// Thêm file vào các thư mục ấy là Remotion Studio thấy ngay, khỏi sửa file này.
+// Thêm file vào các thư mục ấy là Remotion Studio thấy ngay, khỏi sửa file này. `scenes/`, `episodes/` và `assets/audio/`
+// chỉ vào bundle phần thuộc phạm vi bundle (`tools/scope.mjs`, docs/03-scene.md#phạm-vi-bundle): plugin của
+// `tools/webpack.mjs` thu hẹp ba context ấy, nên `SCENES`, `EPISODES`, `AUDIO` chỉ có phần ấy.
 // `actions/`, `animals/`, `characters/`, `held/` và `pieces/` có bộ chung của studio làm lớp dưới: `@stickman-common` là alias
 
 // `remotion.config.ts` trỏ vào `@stickman3d/cli`; file cùng tên thì bản của repo đè.
@@ -136,7 +138,7 @@ export const HELD: Record<string, HeldItemSpec> = Object.fromEntries(
   ]),
 );
 
-/** Một composition cho mỗi file trong `episodes/`, như `scenes/` */
+/** Một composition cho mỗi file trong `episodes/` của phạm vi bundle, như `scenes/` */
 export const EPISODES: Record<string, EpisodeData> = Object.fromEntries(
   Object.entries(load<EpisodeData>([episodesCtx], parseEpisode)).map(([f, e]) => [
     f.replace(/\.json$/, ""),
