@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -14,6 +14,12 @@ if (tmpdir) {
   process.env.TMPDIR = tmpdir.replace(/^~(?=\/|$)/, homedir());
   mkdirSync(process.env.TMPDIR, { recursive: true });
 }
+
+/** Thư mục tạm riêng khai ở `stickman.tmpdir`; `null` khi không khai hay khai trỏ vào thư mục tạm chung của hệ */
+export const ownTmpdir =
+  tmpdir && !["/tmp", "/var/tmp", "/dev/shm"].includes(realpathSync(process.env.TMPDIR))
+    ? process.env.TMPDIR
+    : null;
 
 /** Bộ chung của studio (mảnh, hành động và động vật mẫu) trong @stickman3d/cli: `template/` khi cài từ
 

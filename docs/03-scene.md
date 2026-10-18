@@ -1617,7 +1617,8 @@ pnpm frames <scene> 105,140-142 [<scene-2> 30,90 …] [thư mục ra] [--tab N]
 cảnh và mọi tập — hàng chục giây mỗi trang ở repo trăm cảnh). Việc cùng cảnh xếp liền nhau, chia thành dải, mỗi dải một
 tab chạy song song (`--tab`, mặc định nửa số nhân): mỗi tab dựng cảnh 3D một lần rồi chỉ tua, sang cảnh khác mới dựng lại.
 Ảnh ra trùng từng pixel với `pnpm still`. Id không phải cảnh (tập, thumbnail) thì chụp thẳng composition ấy, chậm hơn vì
-phải dựng `Root`. Soi một lô nhiều cảnh thì gom vào **một** lần gọi. Bundle xoá khi xong.
+phải dựng `Root`. Soi một lô nhiều cảnh thì gom vào **một** lần gọi. Bundle xoá khi xong; trước khi bundle tool dọn rác
+cũ trong `TMPDIR` ([05](05-repo-video.md#thư-mục-tạm)).
 
 Repo chứa nhiều tập thì gom sidebar Studio theo tập bằng `stickman.folders` trong
 `package.json`: một regex, đoạn khớp đầu của id composition là tên thư mục.

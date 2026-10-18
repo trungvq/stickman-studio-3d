@@ -1,6 +1,10 @@
 import { Config } from "@remotion/cli/config";
 import { createRequire } from "node:module";
-import { webpackOverride } from "./tools/webpack.mjs";
+import { sweepAndReport } from "./tools/sweep.mjs";
+import { ownTmpdir, webpackOverride } from "./tools/webpack.mjs";
+
+// `remotion render` / `still` / `studio` dọn `TMPDIR` như tool của repo: bundle, Chrome của lượt bị giết giữa chừng
+sweepAndReport({ own: ownTmpdir !== null });
 
 Config.setVideoImageFormat("jpeg");
 // Cảnh 3D (`src/khoi3d/`): GPU thật qua ANGLE trên Vulkan; máy không có Vulkan thì tạo context lỗi ngay, không âm thầm vẽ phần mềm

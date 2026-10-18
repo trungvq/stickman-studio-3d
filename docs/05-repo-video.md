@@ -358,11 +358,8 @@ trộn tay. Thứ của repo có chỗ riêng: lớp vẽ code ở `src/lop.tsx`
 cảnh, người nền, đồ riêng của cảnh, đồ gắn lên người, ống kính và hậu kỳ theo giây — `WorldSpec`; phòng riêng là hàm
 trả `Set3D`, để ở file mới cạnh nó), tool riêng ở file mới trong `tools/`. Việc chung của cảnh 3D — dựng người, đổi
 đồ theo `equip`, người nền, đèn, nạp phông, sân khấu — nằm ở `buildWorld` / `buildStage` của rig nên theo version
-rig mà đến; thiếu tuỳ chọn thì thêm ở studio, đừng sửa `Scene3D.tsx` hay `world.ts`. Máy có `/tmp` là tmpfs thì khai `"stickman": { "tmpdir": "~/.cache/remotion-tmp" }`
-trong `package.json`: `tools/webpack.mjs` đưa thư mục tạm của mọi lượt bundle ra đó. Bundle của `pnpm frames`,
-`can-tay`, `thumbnails` (`tools/bundle.mjs`) xoá khi tool thoát; tool bị giết cứng thì lượt bundle sau xoá hộ (bundle
-ghi pid chủ, chủ còn chạy thì không đụng). Bundle của `remotion render` không thuộc diện đó: dọn thư mục `tmpdir` theo
-tuổi bằng `systemd-tmpfiles` hay cron. Sửa
+rig mà đến; thiếu tuỳ chọn thì thêm ở studio, đừng sửa `Scene3D.tsx` hay `world.ts`. Thư mục tạm của tool Remotion:
+[Thư mục tạm](#thư-mục-tạm). Sửa
 được việc chung (lỗi, tuỳ chọn mới của tool) thì đưa về `packages/cli/scaffold` của studio.
 Rig mới đổi độ dài chân thì `upgrade` chỉ nhắc, cảnh dời bằng một lệnh riêng —
 [Đổi độ dài chân](#đổi-độ-dài-chân).
@@ -393,6 +390,26 @@ File mình chọn bỏ qua thì `stickman.json` ghi băm của **bản mẫu v�
 phải băm bản đang sửa — ghi băm bản đang sửa là lần `upgrade` sau tưởng nó
 nguyên vẹn và đè mất. Nhờ vậy mỗi bản mẫu chỉ hỏi **một lần**: mẫu chưa đổi thì
 lần sau bỏ qua im lặng, mẫu đổi thật mới hỏi lại.
+
+## Thư mục tạm
+
+Máy có `/tmp` là tmpfs thì khai `"stickman": { "tmpdir": "~/.cache/remotion-tmp" }` trong `package.json`:
+`tools/webpack.mjs` đưa thư mục tạm của mọi lượt bundle, render ra đó. Bundle của `pnpm frames`, `can-tay`, `thumbnails`
+(`tools/bundle.mjs`) ghi pid chủ vào `.stickman-pid` và xoá khi tool thoát. Mỗi lượt bundle của các tool ấy và mỗi lần
+`remotion render`, `remotion still`, `remotion studio` nạp `remotion.config.ts` đều dọn `TMPDIR` trước
+(`tools/sweep.mjs`):
+
+- bundle có `.stickman-pid` (của tool bị giết cứng) mà tiến trình chủ đã chết; chủ còn chạy thì giữ dù cũ mấy;
+- thứ Remotion đặt tên — `remotion-webpack-bundle-*` không có `.stickman-pid`, `remotion-v*-assets*`,
+  `react-motion-render*`, `remotion-filelist*`, `remotion-large-audio-mixing*` — khi chính nó và mọi mục ngay trong nó
+  cũ hơn 12 giờ (`MAX_AGE`) và không tiến trình nào mở file trong đó hay đứng trong đó (đọc `/proc`, chỉ Linux);
+- cùng luật tuổi ấy, file, thư mục tạm của Chrome (`.com.google.Chrome.*`, `.org.chromium.Chromium.*`,
+  `puppeteer_dev_chrome_profile-*`) — chỉ khi `stickman.tmpdir` khai một thư mục riêng; `TMPDIR` là `/tmp`,
+  `/var/tmp`, `/dev/shm` thì chỉ dọn thứ Remotion đặt tên.
+
+Thư mục khai ở `stickman.tmpdir` coi như của riêng tool Remotion: nhiều repo video khai chung một thư mục thì repo nào
+chạy tool cũng dọn hộ rác của repo kia. Lượt render chạy quá 12 giờ thì đi bundle riêng ngoài `TMPDIR`
+(`remotion bundle --out-dir`), không thì bundle không dấu của nó có thể bị dọn giữa chừng.
 
 ## Đổi độ dài chân
 
