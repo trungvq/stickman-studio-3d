@@ -3,6 +3,8 @@ import {
   ACTION_VERSION,
   ARM_CHANNELS,
   CHANNELS,
+  EASES,
+  EASE_NAMES,
   JOINT_CHANNELS,
   PoseDeltaSchema,
   actionDelta,
@@ -36,10 +38,11 @@ import {
   type Channel,
 } from "./action";
 import type { Root } from "./types";
-import { bones3, head3 } from "./act3";
+import { bones3, head3, markAt, trunk3, type ActCharacter, type Trunk3 } from "./act3";
 import {
   AimDirSchema,
   BODY_MARKS,
+  isOtherHand,
   PALM_DIRS,
   ReachPointSchema,
   type Aim,
@@ -47,6 +50,8 @@ import {
   type BodyMark,
 } from "./bodyMark";
 import {
+  AxisIntentSchema,
+  IntentTargetSchema,
   heldAxis,
   gripOf,
   heldGrip,
@@ -56,6 +61,8 @@ import {
   HOLD_BLEND,
   HOLD_SLEW_STEP,
   holdIntent,
+  mixRotation,
+  rotAxis,
   SceneHoldSchema,
   sceneHoldRef,
   type AxisIntent,
@@ -63,6 +70,7 @@ import {
   type HoldAim,
   type HoldAxis,
   type HoldTarget,
+  type IntentTarget,
   type ReachHold,
   type SceneHold,
 } from "./heldItem";
@@ -96,15 +104,31 @@ import {
   blendLayers,
   blendPose,
 } from "./blend";
+import { shapeBound } from "./heldCarry";
 import { D, FRAMES, RIG, type FrameName, type FrameSpec } from "./constants";
 import { feet, lengths, type Legs } from "./geometry";
 import { BODY3, dirOf, facing, feet3, viewOfTheta, type Body3, type World } from "./figure3d";
-import { project, scaleAt, type Lens, type V3 } from "./lens";
+import {
+  add3,
+  cross3,
+  dot3,
+  fromColumns,
+  matMul,
+  matVec,
+  project,
+  scale3,
+  sub3,
+  scaleAt,
+  type Lens,
+  type M3,
+  type V3,
+} from "./lens";
 import { POSES, POSE_NAMES } from "./poses";
 import { propSeat, type PropData } from "./props";
 import {
   EquipSchema,
   composeEquip,
+  defaultCharacter,
   equipSteps,
   type CharacterData,
   type Equip,
@@ -366,6 +390,39 @@ const HandKeySchema = z.object({
   /** Đoạn từ mốc trước tới mốc này cố ý nhanh (chộp, giật tay): `check` không đo giật tay ở đoạn ấy */
   snap: z.boolean().optional(),
 });
+
+/**
+ * Mốc món đặt trước (`scene.items[]`): món `item` ở giây `t`, người cầm `cast`. Chỗ là mốc thân `to` của người cầm dời
+ * `offset` `[tiến, y, ngang]` (ngang dương về phía tay phải người cầm), hay toạ độ thế giới `at`; `point` là mốc của món đặt
+ * vào chỗ ấy, bỏ trống là tâm hộp bao. `face` / `up` (trục chính) và `roll` (trục phụ) cho trọn hướng món, vectơ ở hệ thân
+ * người cầm `[tiến, y, ngang phải]`; thiếu trục nào lấy của nhóm. `ease` là đường hoà vào mốc này.
+ * docs/11-nhom-cam.md#mốc-món-items
+ */
+export const SceneItemMarkSchema = z
+  .strictObject({
+    t: time(),
+    cast: z.string().min(1),
+    item: z.string().min(1),
+    to: z.enum(BODY_MARKS).optional(),
+    at: V3Schema.optional(),
+    offset: V3Schema.optional(),
+    point: z.string().min(1).optional(),
+    face: z.union([AxisIntentSchema, IntentTargetSchema]).optional(),
+    up: z.union([z.string().min(1), V3Schema]).optional(),
+    roll: AxisIntentSchema.optional(),
+    ease: z.enum(EASE_NAMES).optional(),
+  })
+  .refine((k) => !!k.at !== !!k.to, {
+    message: "chỗ món cần đúng một trong `at` (toạ độ thế giới) hay `to` (mốc thân)",
+  })
+  .refine((k) => !!k.to || k.offset === undefined, { message: "`offset` chỉ đi với `to`" })
+  .refine((k) => !isOtherHand(k.to), {
+    message: "mốc món không đặt theo bàn tay: bàn tay suy từ món",
+  })
+  .refine((k) => !(k.face && k.up !== undefined), {
+    message: "`up` là viết tắt của `face` hướng lên — khai một",
+  });
+export type SceneItemMark = Unmarked<z.infer<typeof SceneItemMarkSchema>>;
 
 /**
  * Người đặt trong thế giới 3D của `scene.lens`: chỗ đứng, cỡ, góc nhìn, lật đều suy từ đây mỗi
@@ -650,6 +707,8 @@ export const SceneSchema = z.object({
   camera: z.array(CameraKeySchema).default([]),
   groups: z.array(GroupSchema).default([]),
   cast: z.array(CastSchema).min(1),
+  /** Mốc món đặt trước: chỗ, hướng món theo thời gian; chỗ cầm ở `cast[].world.hands[].hold`. docs/11-nhom-cam.md#mốc-món-items */
+  items: z.array(SceneItemMarkSchema).optional(),
   props: z.array(PropCastSchema).default([]),
   animals: z.array(AnimalCastSchema).default([]),
   /**
@@ -918,6 +977,8 @@ export interface SceneRuntime {
   lens?: Lens;
   /** Món cầm tay (`held/<món>.json`) theo tên, do chỗ nạp đưa vào; `world.hands[].hold` tra ở đây */
   held: Record<string, HeldItemSpec>;
+  /** `scene.items`, `@mốc` đã thành số; `itemAt` đọc */
+  items?: SceneItemMark[];
 }
 
 /** Khung camera lúc `time`; `view` là hộp cắt trong hệ toạ độ sân khấu */
@@ -1406,6 +1467,7 @@ export function resolveScene(
       id = scene.cast.find((c) => c.id === next)?.sit?.in;
     }
   }
+  if (scene.items) checkItems(scene.items, held, scene.cast);
   const duration = scene.duration ?? sceneEnd(cast, beasts);
   return {
     name: scene.name,
@@ -1428,6 +1490,7 @@ export function resolveScene(
     heights,
     bodies,
     held,
+    ...(scene.items && { items: scene.items }),
     animals: beasts.map((a) => {
       const host = hosts.get(a.id);
       const m = { ...a, host };
@@ -3154,7 +3217,7 @@ function handAt(
   const prevRef = prev && sceneHoldRef(prev.hold);
   const f = blend ? smoothstep((time - now!.since) / HOLD_BLEND) : 1;
   // kiểu treo không hoà liên kết, không có ý định: món theo chỗ treo ngay từ mốc
-  const carried = !!nowRef && isCarry(held[nowRef.item]?.grips[nowRef.grip]);
+  const carried = !!nowRef && isCarry(held[nowRef.item]?.grips?.[nowRef.grip]);
   const regrip =
     !carried &&
     !!(nowRef && prevRef) &&
@@ -3331,9 +3394,9 @@ function checkHolds(
           fail(`${where}: \`point: ${h.point}\` cần món đang cầm (\`hold\`)`);
         const { item, grip } = sceneHoldRef(run.hold);
         const spec = held[item];
-        if (spec && isCarry(spec.grips[grip]))
+        if (spec && isCarry(spec.grips?.[grip]))
           fail(
-            `${where}: \`point: ${h.point}\` cần món cầm trong bàn tay — \`${item}#${grip}\` là kiểu treo (\`on: ${(spec.grips[grip] as { on: string }).on}\`)`,
+            `${where}: \`point: ${h.point}\` cần món cầm trong bàn tay — \`${item}#${grip}\` là kiểu treo (\`on: ${(spec.grips?.[grip] as { on: string }).on}\`)`,
           );
         try {
           if (spec) heldPoint(spec, h.point.slice(5));
@@ -3342,6 +3405,290 @@ function checkHolds(
         }
       }
     }
+}
+
+/** Bên của mốc thân người cầm món đặt trước: tay phải — `offset` ngang và `PALM_DIRS` `out` dương về phía tay phải */
+const ITEM_SIDE = -1;
+/** Góc ngẩng lớn nhất của `holderFace` ở mốc món: món ngang ngực người chibi mà không kẹp thì mặt món gần ngửa */
+const HOLDER_FACE_RISE = 45 * D;
+/** Trục phụ lệch trục chính dưới 18° (|cos| > 0,95): hướng món suy biến, `check` báo */
+const ITEM_AXIS_COS = 0.95;
+
+/** Hướng mặc định của nhóm đang cầm, cho trục món mà mốc không khai */
+export interface ItemDefaults {
+  face?: AxisIntent;
+  up?: string | V3;
+  roll?: AxisIntent;
+}
+
+export interface ItemOptions {
+  /** JSON nhân vật của người cầm theo `id`; thiếu là người mẫu (mặc áo, đầu người) cao `rt.heights[id]` */
+  chars?: Record<string, ActCharacter>;
+  defaults?: ItemDefaults;
+}
+
+/** Món đặt trước ở một giây: điểm món `q` (khung món, đơn vị rig) nằm ở `P + R · q · s` (thế giới rig) */
+export interface ItemPose {
+  /** Khung món → thế giới rig */
+  R: M3;
+  /** Gốc khung món, thế giới rig */
+  P: V3;
+  /** Người cầm của mốc gần nhất không sau giây ấy */
+  cast: string;
+  /** `world.s` của người cầm */
+  s: number;
+  /** Trục phụ lệch trục chính dưới 18°: hướng món suy biến */
+  degenerate?: true;
+}
+
+const toThree = (p: readonly number[]): V3 => [p[0] / 100, -p[1] / 100, -p[2] / 100];
+const norm3 = (v: V3): V3 => scale3(v, 1 / (Math.hypot(...v) || 1));
+const perp3 = (v: V3, n: V3): V3 => sub3(v, scale3(n, dot3(v, n)));
+const tr3 = (R: M3): M3 => [R[0], R[3], R[6], R[1], R[4], R[7], R[2], R[5], R[8]];
+
+const sampleChars = new Map<number, ActCharacter>();
+function sampleChar(height: number): ActCharacter {
+  let c = sampleChars.get(height);
+  if (!c) {
+    const d = defaultCharacter();
+    c = {
+      ...d,
+      rig: { ...d.rig, height },
+      palette: { ...d.palette, clad: true },
+      head: { ...d.head, form: "human" },
+    };
+    sampleChars.set(height, c);
+  }
+  return c;
+}
+
+/** Thân 3D của người cầm `id` ở `time` (chưa giải tay, nên mốc món không vòng qua bàn tay) */
+function holderTrunk(
+  rt: SceneRuntime,
+  id: string,
+  time: number,
+  chars?: Record<string, ActCharacter>,
+): Trunk3 {
+  const m = member(rt, id);
+  const lens =
+    (m.world && rt.lens) ||
+    fail(`\`${id}\`: người cầm món đặt trước phải là người 3D (\`cast[].world\`)`);
+  const height = rt.heights[id] ?? 1;
+  const dims = rt.bodies[id] ?? BODY3;
+  const walk = walkerOf(rt, m, height, dims.hipHalf);
+  const pose = worldPoseAt(m, time, walk, height, dims.hipHalf);
+  const world = worldAt(lens, m.world!, time, pose, height, dims.legHalf, walk).world;
+  return trunk3(chars?.[id] ?? sampleChar(height), { pose, world })!;
+}
+
+const eyeMid = (T: Trunk3): V3 =>
+  scale3(
+    add3(markAt(T, { to: "eye" }, -1, undefined), markAt(T, { to: "eye" }, 1, undefined)),
+    0.5,
+  );
+
+/** Chỗ mốc thân `to` dời `offset` của người cầm (three); `eye` là giữa hai mắt */
+function itemMarkPoint(T: Trunk3, to: BodyMark, offset?: readonly number[]): V3 {
+  if (to !== "eye") return markAt(T, { to, offset }, ITEM_SIDE, undefined);
+  if (!offset) return eyeMid(T);
+  const moved = sub3(
+    markAt(T, { to, offset }, ITEM_SIDE, undefined),
+    markAt(T, { to }, ITEM_SIDE, undefined),
+  );
+  return add3(eyeMid(T), moved);
+}
+
+/** `holderFace` từ `from` (three): tới giữa hai mắt; ngẩng quá `HOLDER_FACE_RISE` thì kẹp, hướng ngang lấy về tâm sọ */
+function holderFace(T: Trunk3, from: V3): V3 {
+  const d = sub3(eyeMid(T), from);
+  if (Math.atan2(d[1], Math.hypot(d[0], d[2])) <= HOLDER_FACE_RISE) return d;
+  // mặt người chibi nhô trước ngực: hướng ngang tới mắt đổi dấu theo vài px, tâm sọ thì không
+  let h = sub3(T.out.head, from);
+  if (Math.hypot(h[0], h[2]) < 1e-9) h = matVec(T.Rr, [0, 0, -1]);
+  const k = Math.hypot(h[0], h[2]);
+  const c = Math.cos(HOLDER_FACE_RISE);
+  return [(h[0] / k) * c, Math.sin(HOLDER_FACE_RISE), (h[2] / k) * c];
+}
+
+/** Hướng từ `from` (three) tới đích ý định của mốc món, đọc ở `time`; vectơ ở hệ thân người cầm */
+function itemToward(rt: SceneRuntime, T: Trunk3, t: IntentTarget, from: V3, time: number): V3 {
+  if (t === "holderFace") return holderFace(T, from);
+  if (t === "camera") {
+    const eye = T.W.eye ?? T.W.lens?.eye ?? fail("`camera` cần `scene.lens`");
+    return sub3(toThree(eye), from);
+  }
+  const body = (v: readonly number[]) => matVec(T.Rr, [ITEM_SIDE * v[2], -v[1], v[0]]);
+  if (typeof t === "string") return body(PALM_DIRS[t]);
+  if (Array.isArray(t)) return body(t);
+  if ("cast" in t) return sub3(toThree(castMarkAt(rt, t.cast, t.mark, time)), from);
+  const ref = { to: t.mark, side: t.side, offset: t.offset };
+  return sub3(markAt(T, ref, ITEM_SIDE, undefined), from);
+}
+
+/** Phép quay ngắn nhất đưa hướng đơn vị `a` tới `b` */
+function arcRot(a: V3, b: V3): M3 {
+  const u = cross3(a, b);
+  const c = Math.max(-1, Math.min(1, dot3(a, b)));
+  if (Math.hypot(...u) > 1e-9) return rotAxis(norm3(u), Math.acos(c));
+  if (c > 0) return [1, 0, 0, 0, 1, 0, 0, 0, 1];
+  return rotAxis(norm3(perp3(Math.abs(a[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0], a)), Math.PI);
+}
+
+/** Trục chính và trục phụ của mốc món: `up` / `face` / `roll` của mốc, thiếu trục nào lấy của nhóm */
+function itemIntent(k: SceneItemMark, d?: ItemDefaults) {
+  const group: AxisIntent | undefined =
+    d?.face ?? (d?.up !== undefined ? { axis: d.up, toward: "up" } : undefined);
+  let face = group;
+  if (k.up !== undefined) face = { axis: k.up, toward: "up" };
+  else if (k.face !== undefined)
+    face =
+      typeof k.face === "object" && !Array.isArray(k.face) && "axis" in k.face
+        ? k.face
+        : group && { axis: group.axis, toward: k.face as IntentTarget };
+  return { face, roll: k.roll ?? d?.roll };
+}
+
+const itemSpec = (rt: SceneRuntime, item: string): HeldItemSpec =>
+  rt.held[item] ??
+  rt.held[heldBase(item)] ??
+  fail(`không có món \`${item}\` (\`held/${heldBase(item)}.json\`)`);
+
+/** Tâm hộp bao của món (khung món) */
+const itemCentre = (spec: HeldItemSpec): V3 =>
+  spec.shape ? [...shapeBound(spec.shape)[0]] : [0, 0, 0];
+
+/** Một mốc món giải ở `time` (three): hướng `R`, chỗ `at` của điểm món `pt`; `gap` là góc độ giữa đích hai trục */
+function solveItemMark(rt: SceneRuntime, k: SceneItemMark, time: number, o: ItemOptions) {
+  const spec = itemSpec(rt, k.item);
+  const T = holderTrunk(rt, k.cast, time, o.chars);
+  const at = k.at ? toThree(k.at) : itemMarkPoint(T, k.to!, k.offset);
+  const pt = k.point ? heldPoint(spec, k.point) : itemCentre(spec);
+  const { face, roll } = itemIntent(k, o.defaults);
+  const aim = (a: AxisIntent): V3 | undefined => {
+    const d0 = itemToward(rt, T, a.toward, at, time);
+    if (Math.hypot(...d0) < 1e-9) return undefined;
+    const d = norm3(d0);
+    const u = cross3(d, [0, 1, 0]);
+    return a.tilt && Math.hypot(...u) > 1e-6 ? matVec(rotAxis(norm3(u), a.tilt * D), d) : d;
+  };
+  const out = (R: M3, gap?: number) => ({ R, at, pt, s: T.s, ...(gap !== undefined && { gap }) });
+  const main = face ?? roll;
+  const dM = main && aim(main);
+  if (!main || !dM) return out(T.Rr);
+  const aH = heldAxis(spec, main.axis);
+  const second = face && roll;
+  let gap: number | undefined;
+  if (second) {
+    const aS = heldAxis(spec, second.axis);
+    const dS = aim(second);
+    const cos = Math.max(Math.abs(dot3(aS, aH)), dS ? Math.abs(dot3(dS, dM)) : 1);
+    gap = Math.acos(Math.min(1, cos)) / D;
+    const ru = perp3(aS, aH);
+    const du = dS && perp3(dS, dM);
+    if (du && Math.hypot(...ru) > 1e-6 && Math.hypot(...du) > 1e-6) {
+      const r = norm3(ru);
+      const q = norm3(du);
+      const R = matMul(fromColumns(dM, q, cross3(dM, q)), tr3(fromColumns(aH, r, cross3(aH, r))));
+      return out(R, gap);
+    }
+  }
+  // không trục phụ, hay trục phụ trùng hẳn trục chính: món quay ít nhất từ hệ thân người cầm
+  return out(matMul(arcRot(matVec(T.Rr, aH), dM), T.Rr), gap);
+}
+
+/**
+ * Món đặt trước `item` ở `time` theo `scene.items`: giữa hai mốc thì chỗ món hoà theo `ease` của mốc sau, mỗi mốc đọc
+ * trong khung mốc thân ở chính `time`, hướng hoà cầu giữa hai phép quay giải ở hai mốc; trước mốc đầu, sau mốc cuối giữ
+ * mốc gần nhất. Món không có mốc thì `undefined`. Trục phụ suy biến không ném, trả `degenerate`.
+ * docs/11-nhom-cam.md#mốc-món-items
+ */
+export function itemAt(
+  rt: SceneRuntime,
+  item: string,
+  time: number,
+  o: ItemOptions = {},
+): ItemPose | undefined {
+  const ks = rt.items?.filter((k) => k.item === item);
+  if (!ks?.length) return undefined;
+  let i = 0;
+  while (i + 1 < ks.length && ks[i + 1].t <= time) i++;
+  const a = ks[i];
+  const b = time > a.t ? ks[i + 1] : undefined;
+  const A = solveItemMark(rt, a, time, o);
+  const B = b && solveItemMark(rt, b, time, o);
+  const f = b ? EASES[b.ease ?? "smooth"]((time - a.t) / (b.t - a.t)) : 0;
+  const mix = (p: V3, q: V3 | undefined) => (q ? add3(p, scale3(sub3(q, p), f)) : p);
+  const R = B ? mixRotation(A.R, B.R, f) : A.R;
+  const s = B ? A.s + (B.s - A.s) * f : A.s;
+  const P = sub3(mix(A.at, B?.at), scale3(matVec(R, mix(A.pt, B?.pt)), 0.01 * s));
+  const bad = [A, B].some((m) => m?.gap !== undefined && Math.cos(m.gap * D) > ITEM_AXIS_COS);
+  return {
+    R: [R[0], R[1], R[2], -R[3], -R[4], -R[5], -R[6], -R[7], -R[8]],
+    P: [P[0] * 100, -P[1] * 100, -P[2] * 100],
+    cast: a.cast,
+    s,
+    ...(bad && { degenerate: true as const }),
+  };
+}
+
+/**
+ * Mốc món có hướng suy biến: đích trục phụ lệch đích trục chính dưới 18° (|cos| > 0,95), xét ở chính giây của mốc. `check`
+ * (nhóm `ref`, lỗi `item`) báo; rig không tự đổi. docs/11-nhom-cam.md#mốc-món-items
+ */
+export function sceneItemProblems(rt: SceneRuntime, o: ItemOptions = {}): string[] {
+  const out: string[] = [];
+  for (const k of rt.items ?? []) {
+    const { gap } = solveItemMark(rt, k, k.t, o);
+    if (gap === undefined || Math.cos(gap * D) <= ITEM_AXIS_COS) continue;
+    out.push(
+      `${k.cast}: \`items\` ${k.item} t=${k.t}: trục phụ (\`roll\`) lệch trục chính ${gap.toFixed(1)}° (dưới 18°) — hướng món suy biến; khai \`roll\` khác (docs/11-nhom-cam.md#mốc-món-items)`,
+    );
+  }
+  return out;
+}
+
+/**
+ * Mốc món phải có thật: người cầm là người 3D trong `cast`, món trong `held`, `point` và trục trên món, người khác của
+ * `face: { cast }`; `t` của cùng một món tăng dần
+ */
+function checkItems(
+  items: SceneItemMark[],
+  held: Record<string, HeldItemSpec>,
+  cast: { id: string; world?: unknown }[],
+) {
+  const last = new Map<string, number>();
+  items.forEach((k, i) => {
+    const where = `\`items[${i}]\` ${k.item} t=${k.t}`;
+    const prev = last.get(k.item);
+    if (prev !== undefined && k.t <= prev) fail(`${where}: \`t\` của cùng một món phải tăng dần`);
+    last.set(k.item, k.t);
+    const c =
+      cast.find((m) => m.id === k.cast) ?? fail(`${where}: không có \`${k.cast}\` trong \`cast\``);
+    if (!c.world) fail(`${where}: người cầm \`${k.cast}\` phải là người 3D (\`cast[].world\`)`);
+    const spec =
+      held[k.item] ??
+      held[heldBase(k.item)] ??
+      fail(`${where}: không có món \`${k.item}\` (\`held/${heldBase(k.item)}.json\`)`);
+    try {
+      if (k.point) heldPoint(spec, k.point);
+      if (k.up !== undefined) heldAxis(spec, k.up);
+      for (const a of [k.face, k.roll]) {
+        if (!a || typeof a !== "object" || Array.isArray(a)) continue;
+        if ("axis" in a) heldAxis(spec, a.axis);
+        const t = "axis" in a ? a.toward : a;
+        if (typeof t !== "object" || Array.isArray(t)) continue;
+        if ("cast" in t) {
+          if (!cast.find((m) => m.id === t.cast)?.world)
+            throw new Error(`\`${t.cast}\` không phải người 3D trong \`cast\``);
+          if (t.mark && !(CAST_MARKS as readonly string[]).includes(t.mark))
+            throw new Error(`mốc trên người khác chỉ ước được ${CAST_MARKS.join(", ")}`);
+        } else if (isOtherHand(t.mark))
+          throw new Error(`đích \`${t.mark}\` là bàn tay: bàn tay suy từ món`);
+      }
+    } catch (e) {
+      fail(`${where}: ${(e as Error).message}`);
+    }
+  });
 }
 
 function pathAt(path: PathKey[], time: number): Spot {

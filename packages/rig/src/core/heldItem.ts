@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BODY_MARKS, PALM_DIR_NAMES, type BodyMark, type PalmDir } from "./bodyMark";
 import { HAND_GRIPS, HAND_POSE_KINDS, type HandPose } from "./hand";
+import { topProblems } from "./heldGeom";
 import { fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
 
 /**
@@ -10,7 +11,9 @@ import { fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
  * three của người cao 4,3). docs/01-rig.md#kiểu-cầm
  */
 
-export const HELD_VERSION = 1;
+/** Bản schema mới nhất rig hiểu (2: nhóm cầm); `HELD_MIN` là bản cũ nhất còn nạp (1: `grips`) */
+export const HELD_VERSION = 2;
+export const HELD_MIN = 1;
 
 const v3 = z.tuple([z.number(), z.number(), z.number()]);
 
@@ -140,6 +143,33 @@ const AnchorSchema = z.strictObject({ at: v3, dir: v3.optional() });
 
 const pos = z.number().positive();
 
+/** Nhãn phần (`part`) và khối chi tiết (`detail`) của món v2 */
+const shapeTag = { part: z.string().min(1).optional(), detail: z.literal(true).optional() };
+
+/** Mặt trước, đầu trên: tên mốc có `dir` hay vectơ khung món (v2) */
+const FrameDirSchema = z.union([z.string().min(1), v3]);
+
+/** Loại khối hình ép cho một phần khi rig suy sai (v2) */
+export const PART_AS = ["slab", "disc", "rod", "lathe", "box"] as const;
+
+/** Thuộc tính một phần của món v2: `grip: false` không được cầm; `as` (+ `axis`) ép loại khối hình, `rod` cần `axis` */
+export const HeldPartSchema = z.strictObject({
+  grip: z.boolean().optional(),
+  as: z.enum(PART_AS).optional(),
+  axis: FrameDirSchema.optional(),
+});
+export type HeldPart = z.infer<typeof HeldPartSchema>;
+
+/** Chỗ treo của nhóm `carry` (v2): tên mốc đỉnh quai, mặt trong khuỷu / đầu vai */
+export const HeldSeatsSchema = z.strictObject({
+  elbow: z.string().min(1).optional(),
+  shoulder: z.string().min(1).optional(),
+});
+export type HeldSeats = z.infer<typeof HeldSeatsSchema>;
+
+/** Trường chỉ có ở món v2 */
+const V2_ONLY = ["front", "top", "parts", "seats", "touch"] as const;
+
 /**
  * Một khối của hình va chạm, khung món, đơn vị rig: hộp `box` (cỡ ba cạnh, tâm `at`, bo cạnh `round`), trụ `cyl` (bán kính ở
  * `from`, tới `to`; `r2` là bán kính ở `to` — trụ côn, vai bình; `wall` là ống rỗng thành dày ngần ấy, hở hai đầu — miệng
@@ -151,6 +181,7 @@ export const HeldShapeSchema = z.union([
     box: z.tuple([pos, pos, pos]),
     at: v3.optional(),
     round: z.number().min(0).optional(),
+    ...shapeTag,
   }),
   z.strictObject({
     cyl: pos,
@@ -158,22 +189,75 @@ export const HeldShapeSchema = z.union([
     to: v3,
     r2: z.number().min(0).optional(),
     wall: pos.optional(),
+    ...shapeTag,
   }),
-  z.strictObject({ ball: pos, at: v3.optional() }),
+  z.strictObject({ ball: pos, at: v3.optional(), ...shapeTag }),
 ]);
 export type HeldShape = z.infer<typeof HeldShapeSchema>;
+
+/** Kiểm riêng của món v2: nằm trong `superRefine`, `bad` báo lỗi theo đường dẫn */
+function checkV2(
+  m: {
+    anchors: Record<string, { at: V3; dir?: V3 | undefined }>;
+    shape?: HeldShape[] | undefined;
+    grips?: unknown;
+    front?: string | V3 | undefined;
+    top?: string | V3 | undefined;
+    parts?: Record<string, HeldPart> | undefined;
+    seats?: HeldSeats | undefined;
+  },
+  bad: (path: (string | number)[], message: string) => void,
+) {
+  if (m.grips !== undefined)
+    bad(["grips"], "món v2 không có `grips`; chỗ cầm khai ở cảnh: docs/11 mục 4");
+  if (!m.shape) bad(["shape"], "món v2 cần `shape` (hình va chạm)");
+  const dirOf = (d: string | V3, path: (string | number)[]) => {
+    if (typeof d !== "string") {
+      if (Math.hypot(...d) < 1e-9) bad(path, "hướng là vectơ không");
+    } else if (!(d in m.anchors)) bad(path, `không có mốc \`${d}\``);
+    else if (!m.anchors[d].dir) bad(path, `mốc \`${d}\` không có \`dir\``);
+  };
+  if (m.front !== undefined) dirOf(m.front, ["front"]);
+  if (m.top !== undefined) dirOf(m.top, ["top"]);
+  for (const k of ["elbow", "shoulder"] as const) {
+    const a = m.seats?.[k];
+    if (a !== undefined && !(a in m.anchors)) bad(["seats", k], `không có mốc \`${a}\``);
+  }
+  for (const [name, p] of Object.entries(m.parts ?? {})) {
+    if (p.as === "rod" && p.axis === undefined)
+      bad(["parts", name], '`as: "rod"` cần `axis` (trục của thanh)');
+    if (p.axis !== undefined) dirOf(p.axis, ["parts", name, "axis"]);
+  }
+  if (
+    m.shape?.length &&
+    m.shape.every((b) => b.detail || (b.part !== undefined && m.parts?.[b.part]?.grip === false))
+  )
+    bad(["shape"], "mọi khối đều là `detail` hay thuộc phần `grip: false` — không còn gì để cầm");
+  for (const msg of topProblems(m)) bad(["top"], msg);
+}
 
 export const HeldItemSchema = z
   .object({
     schemaVersion: z
-      .literal(HELD_VERSION, {
+      .union([z.literal(1), z.literal(2)], {
         error: "JSON món cầm thuộc phiên bản schema khác; cần bản @stickman3d/rig khớp với nó",
       })
-      .default(HELD_VERSION),
+      .default(1),
     /** Hộp bao, đơn vị rig */
     size: v3,
     anchors: z.record(z.string(), AnchorSchema),
-    grips: z.record(z.string(), GripEntrySchema),
+    /** v1: kiểu cầm của món. v2 không có: chỗ cầm khai ở cảnh */
+    grips: z.record(z.string(), GripEntrySchema).optional(),
+    /** v2: mặt trước (mốc có `dir` hay vectơ); bỏ trống là `+z` */
+    front: FrameDirSchema.optional(),
+    /** v2: đầu trên (mốc có `dir` hay vectơ); bỏ trống là `+y` hay hướng miệng */
+    top: FrameDirSchema.optional(),
+    /** v2: thuộc tính phần, khoá là nhãn `part` của khối `shape` */
+    parts: z.record(z.string().min(1), HeldPartSchema).optional(),
+    /** v2: chỗ treo của nhóm `carry` */
+    seats: HeldSeatsSchema.optional(),
+    /** v2: phần người được lấn vào món khi cầm */
+    touch: z.array(TouchSchema).optional(),
     /** Tên nhóm con của món treo theo trọng lực (chùm chìa thõng, dòng rượu rót) */
     hang: z.array(z.string().min(1)).optional(),
     /** Hình va chạm: hợp các khối (`HeldShapeSchema`) — ngón ôm theo đồ và luật `held` đo trên nó */
@@ -219,7 +303,6 @@ export const HeldItemSchema = z
         bad(path, (e as Error).message);
       }
     };
-    if (!Object.keys(m.grips).length) bad(["grips"], "món cần ít nhất một kiểu cầm");
     m.shape?.forEach((b, i) => {
       if ("box" in b && b.round !== undefined && 2 * b.round > Math.min(...b.box))
         bad(["shape", i, "round"], "bo cạnh quá nửa cạnh ngắn nhất của hộp");
@@ -228,8 +311,23 @@ export const HeldItemSchema = z
       if ("cyl" in b && b.wall !== undefined && b.wall >= Math.min(b.cyl, b.r2 ?? b.cyl))
         bad(["shape", i, "wall"], "thành ống dày hơn bán kính");
     });
+    if (m.schemaVersion === 2) {
+      checkV2(m, bad);
+      return;
+    }
+    for (const f of V2_ONLY)
+      if (m[f] !== undefined) bad([f], `\`${f}\` chỉ có ở món v2 (\`schemaVersion: 2\`)`);
+    m.shape?.forEach((b, i) => {
+      for (const f of ["part", "detail"] as const)
+        if (f in b && b[f] !== undefined)
+          bad(["shape", i, f], `\`${f}\` chỉ có ở món v2 (\`schemaVersion: 2\`)`);
+    });
+    if (!m.grips) return bad(["grips"], "món v1 cần `grips`");
+    if (!Object.keys(m.grips).length) bad(["grips"], "món cần ít nhất một kiểu cầm");
     for (const [name, g] of Object.entries(m.grips)) {
       const path = ["grips", name];
+      if (name.startsWith("@"))
+        bad(path, "tên kiểu cầm không được bắt đầu bằng `@` (dành cho `món@nhóm`)");
       if (isCarry(g)) {
         ref(g.at, [...path, "at"]);
         if (!m.shape)
@@ -252,15 +350,16 @@ export const HeldItemSchema = z
   });
 export type HeldItemSpec = z.infer<typeof HeldItemSchema>;
 
-/** Nâng JSON đời cũ lên `HELD_VERSION`. File mới hơn thì trả nguyên để zod báo lỗi. */
+/** Thiếu `schemaVersion` thì là 1; số đã khai giữ nguyên (không nâng lên `HELD_VERSION`), số mới hơn để zod báo lỗi. */
 export function migrateHeldItem(json: unknown): unknown {
   if (!json || typeof json !== "object" || Array.isArray(json)) return json;
   const o = structuredClone(json) as Record<string, unknown>;
-  const from = typeof o.schemaVersion === "number" ? o.schemaVersion : 0;
-  if (from > HELD_VERSION) return o;
-  o.schemaVersion = HELD_VERSION;
+  if (typeof o.schemaVersion !== "number") o.schemaVersion = HELD_MIN;
   return o;
 }
+
+/** Món v2 (nhóm cầm): không có `grips`, chỗ cầm khai ở cảnh bằng `món@nhóm` */
+export const isHeldV2 = (item: { schemaVersion: number }): boolean => item.schemaVersion === 2;
 
 export const parseHeldItem = (json: unknown) => HeldItemSchema.safeParse(migrateHeldItem(json));
 
@@ -379,9 +478,14 @@ export function gripFrame(
 /** Điểm `q` của món (đơn vị rig, khung món) ra khung bàn tay */
 export const gripPoint = (G: GripFrame, q: V3): V3 => add(matVec(G.R, mul(q, G.u)), G.p);
 
+const noV2 = (item: HeldItemSpec, name: string) => {
+  if (isHeldV2(item)) throw new Error(`\`${name}\`: món v2 không có kiểu cầm, khai \`món@nhóm\``);
+};
+
 /** Kiểu cầm `grip` của món, hay ném lỗi có tên */
 export function heldGrip(item: HeldItemSpec, grip: string, name = "món"): HeldGripSpec {
-  const g = item.grips[grip];
+  noV2(item, name);
+  const g = item.grips?.[grip];
   if (!g) throw new Error(`\`${name}\` không có kiểu cầm \`${grip}\``);
   return g;
 }
@@ -395,8 +499,9 @@ export function gripSpec(item: HeldItemSpec, grip: string, name = "món"): GripS
 }
 
 /** Kiểu cầm bằng bàn tay của món (`undefined` khi không có hay là kiểu treo) */
-export const gripOf = (item: HeldItemSpec, grip: string): GripSpec | undefined => {
-  const g = item.grips[grip];
+export const gripOf = (item: HeldItemSpec, grip: string, name = "món"): GripSpec | undefined => {
+  noV2(item, name);
+  const g = item.grips?.[grip];
   return g && !isCarry(g) ? g : undefined;
 };
 
@@ -511,22 +616,161 @@ export const mixGrip = (a: GripFrame, b: GripFrame, f: number): GripFrame =>
           u: a.u + (b.u - a.u) * f,
         };
 
-/** Ý định của mốc `hold` trong scene: tên `món#kiểu`, hay object đè `face` / `up` / `roll` của ý định mặc định */
-export const SceneHoldSchema = z.union([
-  z.string().regex(/^[^#]+#[^#]+$/, { message: "cần dạng `món#kiểu`" }),
-  z.strictObject({
-    item: z.string().min(1),
-    grip: z.string().min(1),
-    face: z.union([AxisIntentSchema, IntentTargetSchema]).optional(),
-    up: z.union([z.string().min(1), v3]).optional(),
-    roll: AxisIntentSchema.optional(),
-  }),
-]);
-export type SceneHold = z.infer<typeof SceneHoldSchema>;
+/** Mười bốn nhóm cầm của rig (docs/11-nhom-cam.md mục 3) */
+export const GROUP_IDS = [
+  "sheet",
+  "card",
+  "pen",
+  "chopsticks",
+  "cylinder",
+  "round",
+  "bowl",
+  "handle",
+  "palmBox",
+  "platform",
+  "hug",
+  "clamp",
+  "carry",
+  "soft",
+] as const;
+export type GroupId = (typeof GROUP_IDS)[number];
 
-/** Món và kiểu cầm của một mốc `hold` */
-export const sceneHoldRef = (h: SceneHold): { item: string; grip: string } =>
-  typeof h === "string" ? holdRef(h) : { item: h.item, grip: h.grip };
+const HOLD_EDGES = ["top", "bottom", "left", "right", "front", "back"] as const;
+const HOLD_ALONG = ["corner", "low", "mid", "high"] as const;
+const HOLD_THUMB = ["front", "back", "top", "bottom", "left", "right", "up", "down"] as const;
+const HOLD_SLANT = ["in", "low", "high"] as const;
+
+/** Trường chỗ cầm dùng chung cho `hold` và `both` của tay phụ */
+const holdPlace = {
+  part: z.string().min(1).optional(),
+  edge: z.union([z.enum(HOLD_EDGES), z.number()]).optional(),
+  along: z.union([z.enum(HOLD_ALONG), z.number().min(0).max(1)]).optional(),
+  thumb: z.enum(HOLD_THUMB).optional(),
+  slant: z.union([z.enum(HOLD_SLANT), z.number().min(-90).max(90)]).optional(),
+  variant: z.string().min(1).optional(),
+  psi: z.number().optional(),
+  inset: z.number().optional(),
+};
+
+/** Tay phụ của `both`: đè từng phần lên chỗ cầm mặc định của nhóm */
+export const SupportOverrideSchema = z.strictObject({
+  group: z.enum(GROUP_IDS).optional(),
+  ...holdPlace,
+});
+export type SupportOverride = z.infer<typeof SupportOverrideSchema>;
+
+const groupOf = (s: string): string => s.slice(s.indexOf("@") + 1);
+const groupName = (g: string) => `\`${g}\` không phải nhóm cầm (${GROUP_IDS.join(", ")})`;
+
+const HoldStringV1 = z.string().regex(/^[^#@]+#[^#@]+$/, { message: "cần dạng `món#kiểu`" });
+const HoldStringV2 = z
+  .string()
+  .regex(/^[^#@]+@[a-zA-Z]+$/, { message: "cần dạng `món@nhóm`" })
+  .refine((s) => (GROUP_IDS as readonly string[]).includes(groupOf(s)), {
+    message: "tên nhóm cầm không có trong bảng nhóm",
+  });
+const HoldObjectV1 = z.strictObject({
+  item: z.string().min(1),
+  grip: z.string().min(1).regex(/^[^@]/, { message: "tên kiểu cầm không bắt đầu bằng `@`" }),
+  face: z.union([AxisIntentSchema, IntentTargetSchema]).optional(),
+  up: z.union([z.string().min(1), v3]).optional(),
+  roll: AxisIntentSchema.optional(),
+});
+const HoldObjectV2 = z.strictObject({
+  item: z.string().min(1),
+  group: z.enum(GROUP_IDS),
+  ...holdPlace,
+  around: z.number().optional(),
+  tilt: z.number().optional(),
+  face: z.union([AxisIntentSchema, IntentTargetSchema]).optional(),
+  up: z.union([z.string().min(1), v3]).optional(),
+  roll: AxisIntentSchema.optional(),
+  keep: z.literal(true).optional(),
+  both: z.union([z.literal(true), SupportOverrideSchema]).optional(),
+  touch: z.array(TouchSchema).optional(),
+  regrip: z.literal(true).optional(),
+  on: z.enum(CARRY_ON).optional(),
+  yaw: z.number().optional(),
+});
+
+const HOLD_FORMS =
+  "chuỗi `món#kiểu`, chuỗi `món@nhóm`, object `{ item, grip, … }` hay object `{ item, group, … }`";
+
+/** Lời báo của `SceneHoldSchema` khi không nhánh nào khớp: nêu đúng dạng người viết đang khai */
+function holdFormError(iss: {
+  input?: unknown;
+  errors?: { path: PropertyKey[]; message: string }[][];
+}): string {
+  const x = iss.input;
+  if (typeof x === "string") {
+    if (x.includes("#") && x.includes("@"))
+      return `\`${x}\`: chuỗi chỉ có \`#\` (món#kiểu) hoặc \`@\` (món@nhóm), không cả hai`;
+    if (x.includes("#")) return `\`${x}\`: cần dạng \`món#kiểu\``;
+    if (x.includes("@")) {
+      const g = groupOf(x);
+      return /^[^#@]+@[a-zA-Z]+$/.test(x) && !(GROUP_IDS as readonly string[]).includes(g)
+        ? `\`${x}\`: ${groupName(g)}`
+        : `\`${x}\`: cần dạng \`món@nhóm\``;
+    }
+    return `\`${x}\`: cần dạng \`món#kiểu\` hay \`món@nhóm\``;
+  }
+  if (x && typeof x === "object" && !Array.isArray(x)) {
+    const o = x as Record<string, unknown>;
+    const v2 = "group" in o && !("grip" in o);
+    const detail = (iss.errors?.[v2 ? 3 : 2] ?? [])
+      .map((e) => (e.path.length ? `${e.path.join(".")}: ${e.message}` : e.message))
+      .join("; ");
+    return `\`hold\` dạng object ${v2 ? "`{ item, group, … }`" : "`{ item, grip, … }`"} sai${detail ? `: ${detail}` : ""}`;
+  }
+  return `\`hold\` cần ${HOLD_FORMS}`;
+}
+
+/**
+ * Chỗ cầm của mốc `hold` trong scene, bốn dạng: `món#kiểu` và `{ item, grip, … }` (kiểu cầm của món v1; object đè `face` /
+ * `up` / `roll`), `món@nhóm` và `{ item, group, … }` (nhóm cầm của món v2, docs/11-nhom-cam.md mục 4)
+ */
+export const SceneHoldSchema = z.union([HoldStringV1, HoldStringV2, HoldObjectV1, HoldObjectV2], {
+  error: (iss) => (iss.code === "invalid_union" ? holdFormError(iss as never) : undefined),
+});
+export type SceneHold = z.infer<typeof SceneHoldSchema>;
+export type SceneHoldGroup = z.infer<typeof HoldObjectV2>;
+
+/** `"grip"`: kiểu cầm của món v1; `"group"`: nhóm cầm của món v2 */
+export const holdKind = (h: SceneHold): "grip" | "group" =>
+  typeof h === "string" ? (h.includes("@") ? "group" : "grip") : "group" in h ? "group" : "grip";
+
+/** Chỗ cầm v2 dạng object: chuỗi `món@nhóm` đổi ra `{ item, group }` */
+export function groupHold(h: SceneHold): SceneHoldGroup {
+  if (typeof h === "object") {
+    if ("group" in h) return h;
+    throw new Error(`\`${h.item}#${h.grip}\` là kiểu cầm v1, không có nhóm`);
+  }
+  const i = h.indexOf("@");
+  if (i <= 0 || i === h.length - 1 || h.includes("#"))
+    throw new Error(`\`${h}\`: cần dạng \`món@nhóm\``);
+  const group = h.slice(i + 1);
+  if (!(GROUP_IDS as readonly string[]).includes(group))
+    throw new Error(`\`${h}\`: ${groupName(group)}`);
+  return { item: h.slice(0, i), group: group as GroupId };
+}
+
+/** Khoá lần cầm v2: `@nhóm/biến thể/phần/cạnh/ngón cái` (trường thiếu để trống); trường số trượt không vào khoá */
+const groupKey = (g: SceneHoldGroup): string =>
+  `@${g.group}/${[g.variant, g.part, g.edge, g.thumb].map((v) => v ?? "").join("/")}`;
+
+/** Món và khoá lần cầm của một mốc `hold`: tên kiểu cầm (v1), hay `@nhóm/biến thể/phần/cạnh/ngón cái` (v2) */
+export function sceneHoldRef(h: SceneHold): { item: string; grip: string } {
+  if (typeof h === "object" && !("group" in h)) return { item: h.item, grip: h.grip };
+  if (typeof h === "string" && !h.includes("@")) return holdRef(h);
+  const g = groupHold(h);
+  return { item: g.item, grip: groupKey(g) };
+}
+
+/** Khoá để nối các mốc `hold` liền nhau thành một lần cầm: món và khoá lần cầm (`regrip` do bên gọi xét) */
+export const holdRunKey = (h: SceneHold): string => {
+  const { item, grip } = sceneHoldRef(h);
+  return grip.startsWith("@") ? `${item}${grip}` : `${item}#${grip}`;
+};
 
 /** Bên giải phẫu (`-1` phải) của `both.lead` */
 export const leadSide = (lead: "right" | "left") => (lead === "right" ? -1 : 1);

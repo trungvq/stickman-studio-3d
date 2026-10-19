@@ -31,11 +31,11 @@ const close = (a: readonly number[], b: readonly number[], d = 6) =>
 
 describe("held/<món>.json: kiểu treo", () => {
   it("món mẫu `tui` nạp được; `on` bỏ trống hay `hand` là kiểu cầm bằng bàn tay", () => {
-    expect(TUI.grips.khuyu).toEqual({ on: "elbow", at: "quai" });
-    expect(isCarry(TUI.grips.vai)).toBe(true);
-    expect(isCarry(COC.grips.quai)).toBe(false);
+    expect(TUI.grips!.khuyu).toEqual({ on: "elbow", at: "quai" });
+    expect(isCarry(TUI.grips!.vai)).toBe(true);
+    expect(isCarry(COC.grips!.quai)).toBe(false);
     const hand = spec({ ...cocJson, grips: { quai: { ...cocJson.grips.quai, on: "hand" } } });
-    expect(isCarry(hand.grips.quai)).toBe(false);
+    expect(isCarry(hand.grips!.quai)).toBe(false);
     expect(() => gripSpec(TUI, "khuyu", "tui")).toThrow(/kiểu treo/);
   });
 
@@ -75,7 +75,7 @@ describe("elbowSeat, carryFrame", () => {
     expect(elbowSeat([0, 3, 0], [0, 2, 0], [0, 1.5, 0.5], 0.1).rise).toBeCloseTo(-45);
   });
 
-  const grip = TUI.grips.khuyu as CarrySpec;
+  const grip = TUI.grips!.khuyu as CarrySpec;
   const top = heldPoint(TUI, "quai");
 
   it("không gì cản: đỉnh quai ở chỗ treo, y của món lên, mặt trước theo hướng ngang của thanh quai", () => {

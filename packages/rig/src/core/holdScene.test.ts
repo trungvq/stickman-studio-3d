@@ -282,7 +282,7 @@ describe("`world.hands[].hold` trong scene", () => {
     const target: V3 = [-30, -280, -60];
     const sp = at([{ t: 0, right: { at: target, point: "grip", hold: "dien-thoai#khoe" } }]);
     const held = actHeld(C, sp).R!;
-    const q = heldPoint(PHONE, PHONE.grips.khoe.at);
+    const q = heldPoint(PHONE, PHONE.grips!.khoe.at);
     expect(len(sub(pointW(held, q), target))).toBeLessThan(1);
   });
 

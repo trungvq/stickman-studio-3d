@@ -3,11 +3,15 @@ import {
   HAND_DOF,
   HAND_FINGERS,
   HAND_FIT,
+  HAND_PIECES,
+  HAND_REST,
   handFrames,
   type HandFinger,
   type HandFrame,
+  type HandPiece,
   type HandVec,
 } from "./hand";
+import { handCapsules, skinHand, type HandSkin } from "./handMesh";
 import { HELD_FINGERS, type GripFrame, type HeldFinger, type HeldShape } from "./heldItem";
 import { matVec, type V3 } from "./lens";
 
@@ -177,6 +181,22 @@ export const HELD_FIT = {
   open: 80,
 } as const;
 
+/** Vai trò của một ngón (hay lòng tay) khi cầm, docs/11-nhom-cam.md#6-ngón */
+export const FINGER_ROLES = ["press", "wrap", "tip", "support", "free", "extend"] as const;
+export type FingerRole = (typeof FINGER_ROLES)[number];
+/** Vai trò theo ngón và lòng tay; ngón không khai là `support` */
+export type FingerRoles = Partial<Record<HeldFinger | "palm", FingerRole>>;
+
+/** Độ cuộn thêm nhiều nhất mỗi đốt theo vai trò, độ (`tip` chỉ cuộn đốt ngọn) */
+export const HELD_ROLE_CURL: Record<FingerRole, number> = {
+  press: 40,
+  wrap: HELD_FIT.curl,
+  tip: 30,
+  support: 0,
+  free: 0,
+  extend: 0,
+};
+
 /** Tầm gập tuyệt đối của mỗi đốt, độ: `[duỗi ngược, gập hết]` */
 const LIMITS: Record<HeldFinger, readonly [readonly [number, number], readonly [number, number]]> =
   {
@@ -231,13 +251,17 @@ export interface HeldFitInput {
   shape: readonly HeldShape[];
   /** Món trong khung bàn tay (`gripFrame`, hay đo từ ma trận thế giới); `u` là đơn vị three của một đơn vị rig */
   G: GripFrame;
-  /** Ngón ôm món: cuộn tới khi chạm; ngón khác chỉ gỡ khi lún */
+  /** Ngón ôm món: cuộn tới khi chạm; ngón khác chỉ gỡ khi lún. Bỏ qua khi có `roles` */
   wrap?: readonly HeldFinger[];
+  /** Vai trò từng ngón; có thì nhắm `touch` trên nang phình thêm `bulge` */
+  roles?: FingerRoles;
+  /** Độ lồi da từng đốt ở dáng gốc (`skinBulge`), chỉ đọc khi có `roles` */
+  bulge?: Partial<Record<HandPiece, number>>;
 }
 
 /** Khe từng đốt của các ngón ở số bàn tay `v` (đã cộng độ gập thêm), đơn vị rig */
 export function fingerClearance(
-  inp: Omit<HeldFitInput, "wrap">,
+  inp: Omit<HeldFitInput, "wrap" | "roles" | "bulge">,
   v: HandVec,
 ): Record<HeldFinger, [number, number]> {
   const F = handFrames(v, inp.side, inp.k, inp.long);
@@ -259,17 +283,23 @@ export function fingerClearance(
 }
 
 /**
- * Độ gập thêm của mười đốt (`HAND_FIT`, độ) cho bàn tay giữ dáng `v` ôm món: mỗi ngón độc lập. Ngón khai `wrap` mà còn hở
- * thì cuộn cả hai đốt cùng lúc tới khi một đốt chạm (`HELD_FIT.touch`), rồi cuộn riêng đốt ngọn tới khi nó chạm; không
- * chạm trong tầm `HELD_FIT.curl` thì giữ dáng. Rồi mọi ngón: đốt gốc lún quá `HELD_FIT.sink` thì mở (hay gập, phía nào gần
- * hơn) tới vừa chạm, đốt ngọn cũng thế. Cuối cùng đốt ngọn của ngón ôm còn hở thì cuộn tiếp tới mặt kế
+ * Độ gập thêm của mười đốt (`HAND_FIT`, độ) cho bàn tay giữ dáng `v` ôm món: mỗi ngón độc lập, theo vai trò (`roles`;
+ * không có thì ngón khai `wrap` là `wrap`, ngón khác `support`). `wrap`, `press` còn hở thì cuộn cả hai đốt cùng lúc tới
+ * khi một đốt chạm (`HELD_FIT.touch`), rồi cuộn riêng đốt ngọn tới khi nó chạm; `tip` chỉ cuộn đốt ngọn; không chạm trong
+ * tầm `HELD_ROLE_CURL` thì giữ dáng. `free` hoà nửa về dáng nghỉ. Rồi mọi ngón: đốt gốc lún quá `HELD_FIT.sink` thì mở
+ * (hay gập, phía nào gần hơn; `extend` chỉ mở) tới vừa chạm, đốt ngọn cũng thế. Cuối cùng đốt ngọn của ngón `wrap` còn hở
+ * thì cuộn tiếp tới mặt kế
  */
 export function heldFit(inp: HeldFitInput): number[] {
   const n = HAND_DOF.length;
   const out = new Array<number>(HAND_FIT.length).fill(0);
-  const wrap = new Set(inp.wrap ?? []);
+  const roles: FingerRoles =
+    inp.roles ?? Object.fromEntries((inp.wrap ?? []).map((f) => [f, "wrap"]));
+  const bulge = inp.roles ? (inp.bulge ?? {}) : {};
   const { touch, sink, step, curl, open } = HELD_FIT;
   HELD_FINGERS.forEach((f, j) => {
+    const role = roles[f] ?? "support";
+    const cap = HELD_ROLE_CURL[role];
     const base = inp.v[BASE_DOF[f]] ?? 0;
     const tip = inp.v[BASE_DOF[f] + 1] ?? 0;
     const lim = LIMITS[f];
@@ -297,7 +327,7 @@ export function heldFit(inp: HeldFitInput): number[] {
           inp.G,
           P.o,
           tipOf(P),
-          pieceRadius(f, s as 0 | 1, inp.k, inp.long),
+          pieceRadius(f, s as 0 | 1, inp.k, inp.long) + (bulge[`${f}${s as 0 | 1}`] ?? 0),
         );
       });
     };
@@ -323,10 +353,10 @@ export function heldFit(inp: HeldFitInput): number[] {
       }
       return undefined;
     };
-    if (wrap.has(f)) {
+    if (role === "wrap" || role === "press") {
       const g = gap(0, 0);
       if (Math.min(...g) > touch) {
-        const top = Math.min(curl, hi(0), hi(1));
+        const top = Math.min(cap, hi(0), hi(1));
         const s = seek(
           0,
           top,
@@ -336,11 +366,20 @@ export function heldFit(inp: HeldFitInput): number[] {
           d0 = Math.min(s, hi(0));
           d1 = Math.min(s, hi(1));
           if (gap(d0, d1)[1] > touch) {
-            const t = seek(d1, Math.min(d1 + curl, hi(1)), (x) => gap(d0, x)[1] <= touch);
+            const to = role === "wrap" ? d1 + curl : cap;
+            const t = seek(d1, Math.min(to, hi(1)), (x) => gap(d0, x)[1] <= touch);
             if (t !== undefined) d1 = t;
           }
         }
       }
+    } else if (role === "tip") {
+      if (gap(0, 0)[1] > touch) {
+        const t = seek(0, Math.min(cap, hi(1)), (x) => gap(0, x)[1] <= touch);
+        if (t !== undefined) d1 = t;
+      }
+    } else if (role === "free") {
+      d0 = clamp((HAND_REST[BASE_DOF[f]] - base) / 2, lo(0), hi(0));
+      d1 = clamp((HAND_REST[BASE_DOF[f] + 1] - tip) / 2, lo(1), hi(1));
     }
     // gỡ đốt lún: phía nào tới chỗ vừa chạm gần hơn (gốc đốt đã lún thì chỉ cần không lún hơn gốc); không phía nào thoát thì giữ
     const free = (s: 0 | 1) => {
@@ -352,13 +391,13 @@ export function heldFit(inp: HeldFitInput): number[] {
       const ok = (x: number) => at(x) >= floor;
       const [x0, x1] = [Math.max(cur - open, lo(s)), Math.min(cur + open, hi(s))];
       const a = seek(cur, x0, ok);
-      const b = seek(cur, x1, ok);
+      const b = role === "extend" ? undefined : seek(cur, x1, ok);
       let best =
         a === undefined ? b : b === undefined ? a : Math.abs(a - cur) <= Math.abs(b - cur) ? a : b;
       if (best === undefined) {
         // không góc nào tới chỗ vừa chạm: góc lún ít nhất trong tầm, khi đỡ hẳn
         let [bx, bg] = [cur, now];
-        for (let x = x0; x <= x1 + 1e-9; x += step) {
+        for (let x = x0; x <= (role === "extend" ? cur : x1) + 1e-9; x += step) {
           const g = at(x);
           if (g > bg + 1e-9) [bx, bg] = [x, g];
         }
@@ -371,7 +410,7 @@ export function heldFit(inp: HeldFitInput): number[] {
     free(0);
     free(1);
     // ngón ôm: đốt gốc đã gỡ ra áp mặt món thì đốt ngọn cuộn tiếp tới mặt kế (vòng qua cạnh món dày)
-    if (wrap.has(f) && gap(d0, d1)[1] > touch) {
+    if (role === "wrap" && gap(d0, d1)[1] > touch) {
       const t = seek(d1, Math.min(d1 + curl, hi(1)), (x) => gap(d0, x)[1] <= touch);
       if (t !== undefined) d1 = t;
     }
@@ -379,4 +418,91 @@ export function heldFit(inp: HeldFitInput): number[] {
     out[2 * j + 1] = d1;
   });
   return out;
+}
+
+const pieces = new WeakMap<HandSkin, Uint8Array>();
+
+/** Đốt có trọng số lớn nhất của từng đỉnh da (chỉ số trong `HAND_PIECES`) */
+export function skinPieces(skin: HandSkin): Uint8Array {
+  let out = pieces.get(skin);
+  if (out) return out;
+  const NB = HAND_PIECES.length;
+  const { weights } = skin;
+  out = new Uint8Array(weights.length / NB);
+  for (let i = 0; i < out.length; i++) {
+    let best = 0;
+    for (let b = 1; b < NB; b++) if (weights[i * NB + b] > weights[i * NB + best]) best = b;
+    out[i] = best;
+  }
+  pieces.set(skin, out);
+  return out;
+}
+
+const segDist = (p: V3, a: V3, b: V3) => {
+  const d = sub(b, a);
+  const w = sub(p, a);
+  const dd = dot(d, d);
+  const t = dd > 0 ? clamp(dot(w, d) / dd, 0, 1) : 0;
+  return Math.hypot(w[0] - t * d[0], w[1] - t * d[1], w[2] - t * d[2]);
+};
+
+/**
+ * Độ lồi da `δ` từng đốt ở số bàn tay `v`, đơn vị khung bàn tay: khoảng lớn nhất từ đỉnh da (đốt trọng số lớn nhất) tới
+ * mặt nang chưa phình của đốt (`pieceRadius`; lòng tay: các dải lòng tay và gò ngón cái của `handCapsules`). Đo một lần
+ * mỗi lần cầm ở dáng gốc, đưa vào `heldFit({ roles, bulge })`
+ */
+export function skinBulge(skin: HandSkin, v: HandVec): Record<HandPiece, number> {
+  const { side, k, long } = skin;
+  const pos = new Float32Array(skin.pos.length);
+  skinHand(skin, v, pos);
+  const dom = skinPieces(skin);
+  const F = handFrames(v, side, k, long);
+  const caps = handCapsules(v, side, k, long);
+  const tx = HAND_BONES.palm.half[0] * k;
+  const rt = HAND_BONES.thumb.r * Math.min(k, 1.3 * long);
+  // bán kính chưa phình của năm dải lòng tay (`tx`) và gò ngón cái (`0,85 · rt`), như `handCapsules`
+  const palm = caps.slice(0, 6).map(([a, b], i) => [a, b, i < 5 ? tx : 0.85 * rt] as const);
+  const out = Object.fromEntries(HAND_PIECES.map((n) => [n, -Infinity])) as Record<
+    HandPiece,
+    number
+  >;
+  for (let i = 0; i < dom.length; i++) {
+    const n = HAND_PIECES[dom[i]];
+    const p: V3 = [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]];
+    let d: number;
+    if (n === "palm") d = Math.min(...palm.map(([a, b, r]) => segDist(p, a, b) - r));
+    else {
+      const f = n.slice(0, -1) as HeldFinger;
+      d = segDist(p, F[n].o, tipOf(F[n])) - pieceRadius(f, +n.slice(-1) as 0 | 1, k, long);
+    }
+    if (d > out[n]) out[n] = d;
+  }
+  for (const n of HAND_PIECES) if (out[n] === -Infinity) out[n] = 0;
+  return out;
+}
+
+/**
+ * Lún của da bàn tay vào món, đơn vị rig: `pos` đỉnh da đang vẽ (khung bàn tay, `skinHand`), `piece` đốt của từng đỉnh
+ * (`skinPieces`), `IF` món trong khung bàn tay. `depth` đỉnh sâu nhất trong hình (âm là khe nhỏ nhất khi không đỉnh nào
+ * chạm); `gaps` khe nhỏ nhất theo ngón và lòng tay
+ */
+export function skinDepth(
+  pos: ArrayLike<number>,
+  piece: ArrayLike<number>,
+  IF: GripFrame,
+  shape: readonly HeldShape[],
+): { depth: number; gaps: Record<HeldFinger | "palm", number> } {
+  const owner = HAND_PIECES.map((n) => (n === "palm" ? "palm" : (n.slice(0, -1) as HeldFinger)));
+  const gaps = Object.fromEntries(["palm", ...HELD_FINGERS].map((f) => [f, Infinity])) as Record<
+    HeldFinger | "palm",
+    number
+  >;
+  let depth = -Infinity;
+  for (let i = 0; i < piece.length; i++) {
+    const d = heldDistance(shape, toItem(IF, [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]]));
+    if (-d > depth) depth = -d;
+    const o = owner[piece[i]];
+    if (d < gaps[o]) gaps[o] = d;
+  }
+  return { depth, gaps };
 }

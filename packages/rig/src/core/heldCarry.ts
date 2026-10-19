@@ -86,7 +86,7 @@ export function elbowSeat(
 
 /** Cầu bao của hình va chạm (khung món, đơn vị rig): tâm hộp bao các khối, bán kính tới khối xa nhất */
 const boundMemo = new WeakMap<readonly HeldShape[], [V3, number]>();
-function shapeBound(shape: readonly HeldShape[]): [V3, number] {
+export function shapeBound(shape: readonly HeldShape[]): [V3, number] {
   const hit = boundMemo.get(shape);
   if (hit) return hit;
   const lo: V3 = [Infinity, Infinity, Infinity];

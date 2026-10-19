@@ -614,7 +614,7 @@ export type ActCharacter = Pick<CharacterData, "rig" | "pieces" | "palette" | "h
 };
 
 /** Thân người 3D ở một tư thế, chưa có tay: khớp chân, thân, cổ, đầu, khung từng phần, mọi số đo tay cần (three) */
-function trunk3(c: ActCharacter, sp: ActInput) {
+export function trunk3(c: ActCharacter, sp: ActInput) {
   const W = sp.world;
   if (!W) return undefined;
   const P = sp.pose;
@@ -696,7 +696,7 @@ function trunk3(c: ActCharacter, sp: ActInput) {
   };
 }
 
-type Trunk3 = NonNullable<ReturnType<typeof trunk3>>;
+export type Trunk3 = NonNullable<ReturnType<typeof trunk3>>;
 
 /** Tay bên `side` của thân `T` ở tư thế `P` với đích thế giới `hands`: vai, khuỷu, cổ tay, khung bàn tay */
 function arm3(T: Trunk3, P: PoseIn, hands: ActHands | undefined, side: number) {
@@ -833,7 +833,7 @@ function handAt(h: HandState, point: ReachPoint): V3 {
 }
 
 /** Số đo đầu, thân, đùi cho mốc; tính một lần mỗi thân */
-function markShape(T: Trunk3) {
+export function markShape(T: Trunk3) {
   const { c, B } = T;
   const human = c.head.form === "human";
   const f0 = { offsetY: 0, eyeGap: 26, mouthGap: 34, ...c.face };
@@ -860,7 +860,7 @@ const shapes = new WeakMap<object, ReturnType<typeof markShape>>();
  * Mốc `to` trên người thân `T` (three) cho tay bên `hand`, bên mốc `sel`; `offset` `[tiến, y, ra ngoài]` (rig, nhân
  * `world.s`) theo khung phần người mang mốc, `ra ngoài` dương về phía chính tay ấy. Mốc trên tay kia đọc `other`
  */
-function markAt(
+export function markAt(
   T: Trunk3,
   ref: { to: BodyMark; side?: "same" | "other"; offset?: readonly number[] },
   hand: number,
@@ -1808,7 +1808,7 @@ function solveActing(
       const spec = role.hold.spec;
       const two = !!gripOf(spec, role.hold.grip)?.both;
       const alts: { grip: string; err: number }[] = [];
-      for (const g of Object.keys(spec.grips)) {
+      for (const g of Object.keys(spec.grips ?? {})) {
         const gs = gripOf(spec, g);
         if (!gs || g === role.hold.grip || !!gs.both !== two) continue;
         if (gs.both && leadSide(gs.both.lead) !== side) continue;

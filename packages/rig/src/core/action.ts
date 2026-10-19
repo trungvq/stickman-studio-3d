@@ -710,7 +710,8 @@ export function animalActionMask(a: ActionData): AnimalChannel[] {
 
 const spring = (u: number) => 1 - Math.exp(-6 * u) * Math.cos(9 * u);
 
-const EASES: Record<ActionKey["ease"], (u: number) => number> = {
+/** Đường hoà theo tên `ease` (`EASE_NAMES`): phần đã đi `u` 0–1 ra phần hoà */
+export const EASES: Record<ActionKey["ease"], (u: number) => number> = {
   linear: (u) => u,
   // Chuẩn hoá để vẫn chạm đúng mốc sau ở u = 1
   spring: (u) => spring(u) / spring(1),

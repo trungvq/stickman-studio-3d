@@ -224,7 +224,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
   const hung = (ac: ScenePose, side: Side) => {
     const W = ac.world;
     const h = W && (side === (W.flip ? 1 : -1) ? W.hands?.near : W.hands?.far)?.hold;
-    return h && isCarry(h.spec.grips[h.grip]) ? h : undefined;
+    return h && isCarry(h.spec.grips?.[h.grip]) ? h : undefined;
   };
   /** Người, tay mang món `p` ở giây `t` (thuần: chỉ đọc scene); cầm trong bàn tay trước, treo trên cánh tay sau */
   const carrying = (p: Provided | undefined, t: number) => {

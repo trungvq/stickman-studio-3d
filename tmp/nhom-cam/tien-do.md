@@ -4,7 +4,7 @@ Worktree studio: `~/Work/Dev/stickman-studio-3d-nhom-cam` (nhánh `feat/nhom-cam
 Worktree video: `~/Work/Dev/youtube-video/jp-sukatto-nhom-cam` (nhánh `auto/nhom-cam`, từ `origin/auto/t02-build`)
 
 ## Đang làm
-Giai đoạn 3 — lõi. Kế hoạch job: `tmp/nhom-cam/gd3-ke-hoach.md` (đang lập).
+Giai đoạn 3 — lõi. Kế hoạch job: `tmp/nhom-cam/gd3-ke-hoach.md` (21 job G3-01…G3-21, 14 đợt, mốc commit M1–M8).
 
 ## Tóm tắt bước 0 (xong)
 - Prototype `b0/grasp.mts`: graspFrame `sheet` pinch/flat/rim (khớp fixture ≤ 0,27°), `cylinder` wrap trên rod; bàn tay từ món; khuỷu E(φ); giải lựa chọn thiếu.
@@ -28,11 +28,27 @@ Giai đoạn 3 — lõi. Kế hoạch job: `tmp/nhom-cam/gd3-ke-hoach.md` (đang
 | B0b render vòng 1 | xong: `b0/hinh/vong1/to-{1,2,3}.jpg`. Đã xem: c1–c3 ổn; c4 gãy cổ tay (chỉ có `pinch`); c5 cán chọc đầu, tay trái ép ngực, khuỷu nhảy 50°/mẫu. Lún 0,89 (bảng), 1,47 (cán r 2,5) |
 | B0a vòng 3 + B0b render vòng 2 | xong — chốt trọng số, kết quả ở `b0/ket-qua.md`, ảnh `b0/hinh/vong2/` |
 | Review Fable spec mục 4–5 + ảnh bước 0 (T3 task `nhom-cam-b0-review-1`) | xong: 14 lỗ hổng + 6 câu chữ, nhận hết | `review-b0.md` |
-| B0c sửa spec theo review | xong | `docs/11-nhom-cam.md` |
+| B0c sửa spec theo review | xong |
+| G3-01 schema món v1+v2 | xong, xanh (thêm `!` ở 7 chỗ test cũ cho typecheck, không đổi logic) | `heldItem.ts` |
+| G3-02 chỗ cầm v2, khoá lần cầm | xong, xanh | `heldItem.ts` |
+| G3-10 mốc món `items` cấp cảnh, `itemAt` | xong, xanh; `sceneItemProblems` chưa nối vào `check` (để G3-16/18) | `scene.ts`, `sceneItems.test.ts` |
+| G3-03 fixture test | xong: 15 GripFrame, 8 món v2 (ngưỡng trực chuẩn 2e-6 vì số làm tròn 6 chữ số; `tom-hum` không có mốc `front`) | `core/__fixtures__/` |
+| G3-04 khối hình `heldGeom.ts` | xong: handDims cỡ 1 W 8,40 A 9,76 L 17,89 P 10,10 | `heldGeom.ts` |
+| G3-07 bảng nhóm `graspGroups.ts` (+ luật lấp đầy slab, nối `topProblems`) | xong; `ong-nghe-ban` khớp cả `palmBox` (xem lại ở giai đoạn 4) | `graspGroups.ts` |
+| Mốc M1+M2 (+G3-10): t02 `check --only ref,held,clash` so baseline: 0 mới, 0 nặng hơn | commit | |
+| G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
+| G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
 | T0 ảnh "trước" mọi lần cầm t02 (`cam-do`, `can-tay`) | xong: 142 lần cầm / 61 cảnh, 160 cặp (cảnh, giây); góc `cheo` dùng được, `truoc` 50/407 ô đen; `cam-do` 14 `!!` đều `but-bi#cup` (cờ cũ) | `tmp/nhom-cam/truoc/` |
 | Baseline `check --scene ^t02- --only held,clash` | xong: 0 lỗi, 193 cảnh báo, 2m16 | `tmp/nhom-cam/baseline/check-held-clash.{json,txt}` |
 
 ## Đã tự quyết
+- Fixture test của rig không mang tên nhân vật/cảnh của tập: `takumi-bang-gia.json` → `nguoi-cam-bang.json` (biên giới AGENTS.md).
+- `SCENE_VERSION` không nâng ở giai đoạn 3–5; nâng cùng bản 8.0.0 ở giai đoạn 6 (cảnh chuyển sang `hold` v2).
+- `holderFace` kẹp ngẩng 45° và lấy hướng ngang về tâm sọ (không về mắt) — mắt takumi nằm trước bảng nên hướng về mắt làm bảng quay ra ngoài.
+- `itemGeom`: một `lathe` cho mỗi phần chỉ khi mọi trụ của phần đồng trục; trụ thành `rod` cần `2r ≤ 0,5·dài` (như hộp); `slab` từ bao nhiều khối cần lấp đầy ≥ 0,5 (đũa không ra `slab`). Cần ghi vào spec mục 2 ở G3-20.
+- Mốc món `items` đặt ở CẤP CẢNH (cạnh `cast`), mỗi mốc có `cast`; `hands` vẫn ở `cast[].world.hands` (schema hiện có). Spec mục 4 đã ghi.
+- Giai đoạn 3–5 chạy song song đường cũ: `HeldItemSchema` nhận v1 (`grips`) và v2, `SceneHoldSchema` nhận `món#kiểu` và `món@nhóm`/`{group}`; test cũ phải xanh nguyên. Giai đoạn 6 mới xoá v1.
+- Dời sang giai đoạn 4: dáng `tripod`/`chopsticks` (`hand.ts`). Dời sang giai đoạn 6: `migrate-held`, món mẫu `coc`/`tui` v2.
 - Xoay cẳng tay vượt ±90 (ca đỡ đáy tấm cần −103): GIỮ kẹp hiện có của rig (±90, ±`AIM_BEND`, ±`AIM_DEV`); nghiệm vượt vẽ theo kẹp, khuỷu giữ φ, `check` báo `wrist`.
 - Bước 0 dừng ở vòng 2 (không cần vòng 3): khuỷu, cổ tay ổn ở ca 1, 2, 3, 5; ca 4 còn vượt xoay cẳng tay (thành cảnh báo `wrist` theo spec) và ngón hở — việc của dáng ngón giai đoạn 4. Chốt `w_down 0,3`, `w_body 10`, `w_cont 2`.
 - Bước 0 vòng 2: `w_cont` 0,2 → 2 (khuỷu nhảy 50°/mẫu ở ca 5). Ca 5 đặt cán chéo trước người kiểu cầm chổi thay vì đứng sát vai (ví dụ cuốc của spec chọc vào đầu chibi). Ca 1 nâng bảng lên giữa ngực, ca 2 đẩy bảng xa mặt ≥ 8 — chỗ đặt món là việc của cảnh, không đổi bộ giải.

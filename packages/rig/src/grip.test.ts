@@ -81,7 +81,7 @@ describe('hold({ grip }): món cứng theo bàn tay', () => {
         p.root.updateMatrixWorld(true);
         const H = p.hands![side];
         const want = world(p.arms[side].wrist, gripCenter('span', side, H.scale, H.long));
-        const got = world(o, heldPoint(PHONE, PHONE.grips.khoe.at).map((v) => v * 0.01));
+        const got = world(o, heldPoint(PHONE, PHONE.grips!.khoe.at).map((v) => v * 0.01));
         expect(got.distanceTo(want)).toBeLessThan(1e-6);
         expect(p.holding?.[side]).toMatchObject({ item: 'dien-thoai', grip: 'khoe', pose: 'span', follow: 'wrist', both: false });
         expect(H.held).toBe('span');

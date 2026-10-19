@@ -180,7 +180,7 @@ for (const name of sceneFiles) {
         if (!key || sources.has(`${key}|${side}`)) continue;
         const other = side === "right" ? "left" : "right";
         // tay kia chỉ chép khi nó là tay phụ của cùng món (kiểu `both`): cùng tên đủ (`vali:2` là món khác)
-        const g = data.held[key.split("#")[0]]?.grips[key.split("#")[1]];
+        const g = data.held[key.split("#")[0]]?.grips?.[key.split("#")[1]];
         const same = !!g?.both && holdKey(k[other]?.hold) === holdKey(k[side].hold);
         sources.set(`${key}|${side}`, {
           scene: name,
@@ -223,7 +223,7 @@ function handsFor(key, side) {
   }
   const lr = side === "right" ? -1 : 1;
   // kiểu treo: bàn tay tự do, cánh tay đặt cho chỗ treo — khuỷu gập chữ V (cổ tay trước vai), hay tay dang ngoài túi đeo vai
-  const on = data.held[key.split("#")[0]]?.grips[key.split("#")[1]]?.on;
+  const on = data.held[key.split("#")[0]]?.grips?.[key.split("#")[1]]?.on;
   if (on === "elbow")
     return {
       hands: {
@@ -268,7 +268,7 @@ const slug = (s) => s.replace(/[^a-zA-Z0-9-]+/g, "-");
 const cells = [];
 for (const item of items) {
   const spec = data.held[item];
-  for (const [grip, g] of Object.entries(spec.grips)) {
+  for (const [grip, g] of Object.entries(spec.grips ?? {})) {
     const sides = g.both ? [g.both.lead] : g.left ? ["right", "left"] : ["right"];
     for (const side of sides)
       for (const p of people) {

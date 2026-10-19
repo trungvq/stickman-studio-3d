@@ -180,7 +180,7 @@ function sniffKind(o) {
   if ("keys" in o || "gen" in o) return "actions";
   if ("legs" in o || "legHind" in o) return "animals";
   if ("wheel" in o) return "props";
-  if ("grips" in o && "anchors" in o) return "held";
+  if ("anchors" in o && ("grips" in o || "shape" in o)) return "held";
   if ("pieces" in o || "palette" in o || "face" in o) return "characters";
   return null;
 }
@@ -534,7 +534,7 @@ function world3Notes() {
     heldItems: listFiles("held").flatMap(({ file }) => {
       try {
         return [
-          { file: file.replace(/\.json$/, ""), grips: Object.keys(load("held", file).grips) },
+          { file: file.replace(/\.json$/, ""), grips: Object.keys(load("held", file).grips ?? {}) },
         ];
       } catch {
         return [];
@@ -722,7 +722,9 @@ server.registerTool(
         ? {
             file: f,
             ...at,
-            ...(kind === "held" ? { grips: Object.keys(r.data.grips) } : { name: r.data.name }),
+            ...(kind === "held"
+              ? { grips: Object.keys(r.data.grips ?? {}) }
+              : { name: r.data.name }),
             ...(kind === "actions" ? { mask: rig.actionMask(r.data) } : {}),
           }
         : { file: f, ...at, error: issues(r.error) };
