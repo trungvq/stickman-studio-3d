@@ -35,13 +35,19 @@ Giai đoạn 3 — lõi. Kế hoạch job: `tmp/nhom-cam/gd3-ke-hoach.md` (21 jo
 | G3-03 fixture test | xong: 15 GripFrame, 8 món v2 (ngưỡng trực chuẩn 2e-6 vì số làm tròn 6 chữ số; `tom-hum` không có mốc `front`) | `core/__fixtures__/` |
 | G3-04 khối hình `heldGeom.ts` | xong: handDims cỡ 1 W 8,40 A 9,76 L 17,89 P 10,10 | `heldGeom.ts` |
 | G3-07 bảng nhóm `graspGroups.ts` (+ luật lấp đầy slab, nối `topProblems`) | xong; `ong-nghe-ban` khớp cả `palmBox` (xem lại ở giai đoạn 4) | `graspGroups.ts` |
-| Mốc M1+M2 (+G3-10): t02 `check --only ref,held,clash` so baseline: 0 mới, 0 nặng hơn | commit | |
+| Mốc M1+M2 (+G3-10): t02 `check --only ref,held,clash` so baseline: 0 mới, 0 nặng hơn | commit `89553f2` | |
+| G3-08 `graspFrame` sheet + palmBox | xong: `bang-gia#doc` 0,27°/0; `dien-thoai#doc` 0,43°/0; rim `tom-hum#nhac` lệch 1,5, `bao#doc` 2,0 (thụt rim) | `graspSolve.ts` |
+| G3-09 `graspAt`, giải lựa chọn, `GraspReport` | xong: ca1–ca4 khớp `ca.json` (cả φ); giải đủ thiếu 10 ms (33 ứng viên) | `graspSolve.ts`, `graspAt.test.ts` |
+| Mốc M3 | commit | |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
 | T0 ảnh "trước" mọi lần cầm t02 (`cam-do`, `can-tay`) | xong: 142 lần cầm / 61 cảnh, 160 cặp (cảnh, giây); góc `cheo` dùng được, `truoc` 50/407 ô đen; `cam-do` 14 `!!` đều `but-bi#cup` (cờ cũ) | `tmp/nhom-cam/truoc/` |
 | Baseline `check --scene ^t02- --only held,clash` | xong: 0 lỗi, 193 cảnh báo, 2m16 | `tmp/nhom-cam/baseline/check-held-clash.{json,txt}` |
 
 ## Đã tự quyết
+- `tilt` của `palmBox` lưới 2 điểm = hai đầu miền (0°, 25°); nghiệm rời tốt nhất vẫn giữ mặc định 20° làm ứng viên đầu.
+- Mặt người cầm cho `thumb` mặc định (tay dẫn) lấy tâm đầu.
+- Thụt `rim` giữ 1 (theo spec); fixture `tom-hum#nhac` (tâm nắm cao hơn giữa bề dày 1,5) và `bao#doc` (thụt 3) lệch vị trí → chỉnh ở giai đoạn 4 nhóm `sheet` theo ảnh.
 - Fixture test của rig không mang tên nhân vật/cảnh của tập: `takumi-bang-gia.json` → `nguoi-cam-bang.json` (biên giới AGENTS.md).
 - `SCENE_VERSION` không nâng ở giai đoạn 3–5; nâng cùng bản 8.0.0 ở giai đoạn 6 (cảnh chuyển sang `hold` v2).
 - `holderFace` kẹp ngẩng 45° và lấy hướng ngang về tâm sọ (không về mắt) — mắt takumi nằm trước bảng nên hướng về mắt làm bảng quay ra ngoài.

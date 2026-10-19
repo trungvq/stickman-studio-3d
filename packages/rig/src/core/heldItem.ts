@@ -388,9 +388,10 @@ const anchorOf = (item: HeldItemSpec, name: string) => {
   return a;
 };
 
-/** Điểm của món (đơn vị rig, khung món) */
-export function heldPoint(item: HeldItemSpec, ref: AnchorRef): V3 {
+/** Điểm của món (đơn vị rig, khung món): mốc, mốc cộng `offset`, hay toạ độ khung món */
+export function heldPoint(item: HeldItemSpec, ref: AnchorRef | V3): V3 {
   if (typeof ref === "string") return [...anchorOf(item, ref).at] as V3;
+  if (Array.isArray(ref)) return [...ref] as V3;
   const p = anchorOf(item, ref.anchor).at as V3;
   return ref.offset ? add(p, ref.offset as V3) : [...p];
 }
@@ -425,8 +426,11 @@ const pickHand = (g: GripHand): GripHand => ({
   ...(g.wrap && { wrap: g.wrap }),
 });
 
+/** Bàn tay cầm có điểm nắm là toạ độ khung món (nhóm cầm dựng từ khối hình) hay mốc */
+export type GraspHand = Omit<GripHand, "at"> & { at: AnchorRef | V3 };
+
 /** Lòng tay (`palm`) và ngón (`fingers`, trực giao hoá theo lòng tay) của một bàn tay cầm, khung món, đơn vị */
-export function gripAxes(item: HeldItemSpec, h: GripHand): { palm: V3; fingers: V3; at: V3 } {
+export function gripAxes(item: HeldItemSpec, h: GraspHand): { palm: V3; fingers: V3; at: V3 } {
   const at = heldPoint(item, h.at);
   const palm = heldDir(item, h.palm, at);
   const f0 = heldDir(item, h.fingers, at);
@@ -460,7 +464,7 @@ export interface GripFrame {
  */
 export function gripFrame(
   item: HeldItemSpec,
-  h: GripHand,
+  h: GraspHand,
   side: number,
   k = 1,
   long = k,

@@ -325,6 +325,132 @@
       "right": [283.72, -302.42, 524.7],
       "left": [216.28, -302.42, 524.7]
     },
-    "restAllowMax": 4.43
+    "restAllowMax": 4.43,
+    "items": {
+      "c1": {
+        "P": [250, -265.83, 577.19],
+        "x": [1, 0, 0],
+        "y": [0, -0.7071068, -0.7071068],
+        "z": [0, 0.7071068, -0.7071068]
+      },
+      "c2": {
+        "P": [250, -388.93, 621.08],
+        "x": [1, 0, 0],
+        "y": [0, 0, -1],
+        "z": [0, 1, 0]
+      },
+      "c3": {
+        "P": [250, -262.6, 580.65],
+        "x": [-1, 0, 0],
+        "y": [0, 0, 1],
+        "z": [0, 1, 0]
+      }
+    },
+    "choose": {
+      "c1": {
+        "item": "c1",
+        "hands": [
+          {
+            "hand": "right",
+            "given": {
+              "edge": "right",
+              "along": 0.33,
+              "thumb": "front"
+            },
+            "rig": {
+              "variant": "pinch",
+              "slant": 30
+            },
+            "wrist": [-79.2, -11.4, -2.3],
+            "phi": 55
+          }
+        ]
+      },
+      "c2": {
+        "item": "c2",
+        "hands": [
+          {
+            "hand": "right",
+            "given": {
+              "edge": "bottom"
+            },
+            "rig": {
+              "variant": "pinch",
+              "thumb": "front",
+              "along": 0.25,
+              "slant": -30
+            },
+            "wrist": [-27.5, 18.1, -2.1],
+            "phi": -80
+          }
+        ]
+      },
+      "c3": {
+        "item": "c3",
+        "hands": [
+          {
+            "hand": "right",
+            "given": {
+              "edge": "left"
+            },
+            "rig": {
+              "variant": "pinch",
+              "thumb": "back",
+              "along": 0.5,
+              "slant": 0
+            },
+            "wrist": [-42, 3.5, -0.6],
+            "phi": 62.5
+          },
+          {
+            "hand": "left",
+            "given": {
+              "edge": "right"
+            },
+            "rig": {
+              "variant": "pinch",
+              "thumb": "back",
+              "along": 0.5,
+              "slant": 0
+            },
+            "wrist": [-42, 3.5, -0.6],
+            "phi": 62.5
+          }
+        ]
+      },
+      "c4": {
+        "item": "c3",
+        "hands": [
+          {
+            "hand": "right",
+            "given": {
+              "edge": "bottom"
+            },
+            "rig": {
+              "variant": "rim",
+              "thumb": "front",
+              "along": 0.75,
+              "slant": -22.5
+            },
+            "wrist": [-103, 12.2, -16.2],
+            "phi": 22.5
+          },
+          {
+            "hand": "left",
+            "given": {
+              "edge": "top",
+              "along": 0.3
+            },
+            "rig": {
+              "variant": "rim",
+              "thumb": "back",
+              "slant": 22.5
+            },
+            "wrist": [4.9, 3.4, -5.9],
+            "phi": 85
+          }
+        ]
+      }
+    }
   }
 }

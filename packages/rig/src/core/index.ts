@@ -18,6 +18,7 @@ export * from "./geometry";
 export * from "./glasses";
 export * from "./graspArm";
 export * from "./graspGroups";
+export * from "./graspSolve";
 export * from "./hand";
 export * from "./drape";
 export * from "./hat";
