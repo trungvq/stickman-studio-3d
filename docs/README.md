@@ -16,6 +16,7 @@ video chỉ tiêu thụ những gì mô tả ở đây, không viết lại.
 | [08 — Rig động vật](08-dong-vat.md) | Động vật bốn chân và hai chân: bộ xương, dáng đi dựng từ bàn chân, cánh và bay, mỏ và mắt, hành động mốc, ghép bộ phận |
 | [09 — Hiệu ứng](09-hieu-ung.md) | `@stickman3d/fx`: `scene.fx[]`, mười ba loại hiệu ứng thuần theo `t`, ba lớp chèn, bám người qua `anchorAt` |
 | [10 — Lớp vẽ code](10-lop-ve-code.md) | Bối cảnh vẽ bằng code, rung máy, đẩy chỗ đứng: `stickman.layers` của repo video, năm chỗ móc; `check` đo người lồng vào đồ, trên khối lớp vẽ code hay cảnh three của `stickman.world` |
+| [11 — Nhóm cầm (bản nháp)](11-nhom-cam.md) | Thiết kế cầm đồ theo nhóm hình dáng, chưa code: ba lớp nhóm ở rig, hình ở món, lựa chọn và ý định ở cảnh; 14 nhóm, bộ chọn phương án, ngón theo vai trò, luật `held` mới, chuyển đổi |
 
 **Nội dung** của một tập phim — kịch bản, nhân vật, cảnh — nằm trong repo video.
 Bộ tài liệu này chỉ chứa spec, bất biến và quy trình dùng chung; không chứa nhật
