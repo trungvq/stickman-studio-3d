@@ -1,0 +1,10331 @@
+{
+ "generated": "2026-10-19T19:28:22.759Z",
+ "source": "tmp/nhom-cam/b0/grasp.mts (gói esbuild từ packages/rig/src/core, xuất thêm trunk3/markShape/markAt lúc gói)",
+ "params": {
+  "w_down": 0.3,
+  "w_body": 10,
+  "w_cont": 0.2,
+  "turnMax": 90,
+  "AIM_BEND": 50,
+  "AIM_DEV": 20,
+  "AIM_GAP": 6,
+  "HOLD_SLEW_STEP": 0.03333333333333333,
+  "REACH_ELBOW": [
+   -0.4,
+   1,
+   0.5
+  ],
+  "sheetPalm": {
+   "a": 0.7654,
+   "b": 0.6436
+  },
+  "cylPalmBulgeOverK": 1.17,
+  "choice": {
+   "domains": {
+    "edge": [
+     "top",
+     "bottom",
+     "left",
+     "right"
+    ],
+    "thumb": [
+     "front",
+     "back"
+    ],
+    "along": [
+     0.25,
+     0.5,
+     0.75
+    ],
+    "slant": [
+     -30,
+     0,
+     30
+    ]
+   },
+   "defaults": {
+    "thumb": "front",
+    "along": 0.5,
+    "slant": 0
+   },
+   "devMax": 0.05,
+   "note": "slant 3 điểm −30/0/30 (low/in/high), dương về đầu cao; along từ đầu thấp; giá lệch mặc định = 0,05 · phần trường thiếu khác mặc định"
+  },
+  "phi": "góc khuỷu quanh trục vai → cổ tay; 0 = thõng (chiếu của −y three), +90 = ra ngoài phía tay ấy",
+  "elbow": "mốc tay `world.hands`: `at` = wrist (rig), `point: \"wrist\"`, `elbow` = véc tơ này (thế giới rig); act3 `actReach` dùng [x, −y, −z] làm pole"
+ },
+ "holder": {
+  "cast": "takumi",
+  "scene": "t02-s023-bang-gia",
+  "t": 1,
+  "s": 1,
+  "flip": true,
+  "height": 1.06,
+  "handK": 1.9167,
+  "handLong": 1.7797,
+  "W": 16.1,
+  "c1HolderFace": {
+   "elevDeg": 84.4,
+   "forwardComp": 0.098,
+   "used": "face toward [−1, −1, 0] hệ thân (lùi, lên 45°)"
+  },
+  "d": {
+   "c": 0.1553,
+   "d": 2.5,
+   "note": "d = c·W; c mặc định = 2,5 / W của người cầm (ra lại bang-gia#doc ở cỡ tay này)"
+  },
+  "stillness": [
+   {
+    "t": 0,
+    "torso": 0,
+    "lean": 0,
+    "head": [
+     0,
+     0,
+     0
+    ],
+    "hip": [
+     250,
+     -180.2,
+     506
+    ]
+   },
+   {
+    "t": 0.5,
+    "torso": 9,
+    "lean": 0,
+    "head": [
+     0,
+     0,
+     -6
+    ],
+    "hip": [
+     250,
+     -180.2,
+     506
+    ]
+   },
+   {
+    "t": 1,
+    "torso": 9,
+    "lean": 0,
+    "head": [
+     0,
+     0,
+     -6
+    ],
+    "hip": [
+     250,
+     -180.2,
+     506
+    ]
+   },
+   {
+    "t": 2,
+    "torso": 9,
+    "lean": 0,
+    "head": [
+     0,
+     0,
+     -6
+    ],
+    "hip": [
+     250,
+     -180.2,
+     506
+    ]
+   },
+   {
+    "t": 4,
+    "torso": 9,
+    "lean": 0,
+    "head": [
+     0,
+     0,
+     -6
+    ],
+    "hip": [
+     250,
+     -180.2,
+     506
+    ]
+   },
+   {
+    "t": 8,
+    "torso": 9,
+    "lean": 0,
+    "head": [
+     0,
+     0,
+     -6
+    ],
+    "hip": [
+     250,
+     -180.2,
+     506
+    ]
+   }
+  ],
+  "shoulders": {
+   "right": [
+    283.72,
+    -302.42,
+    524.7
+   ],
+   "left": [
+    216.28,
+    -302.42,
+    524.7
+   ]
+  },
+  "armLen": {
+   "l1": 65.72,
+   "l2": 61.48
+  },
+  "restArmIntrusion": {
+   "before": {
+    "right": {
+     "max": 4.43,
+     "at": "upper.torso"
+    },
+    "left": {
+     "max": 4.43,
+     "at": "upper.torso"
+    }
+   },
+   "after": {
+    "right": {
+     "max": 0,
+     "at": "-"
+    },
+    "left": {
+     "max": 0,
+     "at": "-"
+    }
+   },
+   "allowMax": 4.43
+  }
+ },
+ "items": {
+  "_b0-can": {
+   "schemaVersion": 1,
+   "size": [
+    5,
+    120,
+    5
+   ],
+   "anchors": {
+    "luoi": {
+     "at": [
+      0,
+      120,
+      0
+     ],
+     "dir": [
+      0,
+      1,
+      0
+     ]
+    },
+    "duoi": {
+     "at": [
+      0,
+      0,
+      0
+     ],
+     "dir": [
+      0,
+      -1,
+      0
+     ]
+    },
+    "center": {
+     "at": [
+      0,
+      60,
+      0
+     ]
+    }
+   },
+   "grips": {
+    "tam": {
+     "pose": "fist",
+     "at": "center",
+     "palm": [
+      0,
+      0,
+      1
+     ],
+     "fingers": [
+      1,
+      0,
+      0
+     ]
+    }
+   },
+   "shape": [
+    {
+     "cyl": 2.5,
+     "from": [
+      0,
+      0,
+      0
+     ],
+     "to": [
+      0,
+      120,
+      0
+     ]
+    }
+   ]
+  }
+ },
+ "fixtures": {
+  "sheet": [
+   {
+    "size": "1",
+    "hand": "right",
+    "W": 8.4,
+    "d=2.5": {
+     "d": 2.5,
+     "rotDeg": 0.27,
+     "posRig": 0.07
+    },
+    "d=c·W": {
+     "d": 1.3,
+     "rotDeg": 0.27,
+     "posRig": 1.16
+    }
+   },
+   {
+    "size": "1",
+    "hand": "left",
+    "W": 8.4,
+    "d=2.5": {
+     "d": 2.5,
+     "rotDeg": 0.27,
+     "posRig": 0.07
+    },
+    "d=c·W": {
+     "d": 1.3,
+     "rotDeg": 0.27,
+     "posRig": 1.16
+    }
+   },
+   {
+    "size": "1.61",
+    "hand": "right",
+    "W": 13.52,
+    "d=2.5": {
+     "d": 2.5,
+     "rotDeg": 0.27,
+     "posRig": 0.07
+    },
+    "d=c·W": {
+     "d": 2.1,
+     "rotDeg": 0.27,
+     "posRig": 0.37
+    }
+   },
+   {
+    "size": "1.61",
+    "hand": "left",
+    "W": 13.52,
+    "d=2.5": {
+     "d": 2.5,
+     "rotDeg": 0.27,
+     "posRig": 0.07
+    },
+    "d=c·W": {
+     "d": 2.1,
+     "rotDeg": 0.27,
+     "posRig": 0.37
+    }
+   },
+   {
+    "size": "2.16",
+    "hand": "right",
+    "W": 18.14,
+    "d=2.5": {
+     "d": 2.5,
+     "rotDeg": 0.27,
+     "posRig": 0.07
+    },
+    "d=c·W": {
+     "d": 2.82,
+     "rotDeg": 0.27,
+     "posRig": 0.36
+    }
+   },
+   {
+    "size": "2.16",
+    "hand": "left",
+    "W": 18.14,
+    "d=2.5": {
+     "d": 2.5,
+     "rotDeg": 0.27,
+     "posRig": 0.07
+    },
+    "d=c·W": {
+     "d": 2.82,
+     "rotDeg": 0.27,
+     "posRig": 0.36
+    }
+   },
+   {
+    "size": "t01-sakura",
+    "hand": "right",
+    "W": 14.7,
+    "d=2.5": {
+     "d": 2.5,
+     "rotDeg": 0.27,
+     "posRig": 0.07
+    },
+    "d=c·W": {
+     "d": 2.28,
+     "rotDeg": 0.27,
+     "posRig": 0.19
+    }
+   },
+   {
+    "size": "t01-sakura",
+    "hand": "left",
+    "W": 14.7,
+    "d=2.5": {
+     "d": 2.5,
+     "rotDeg": 0.27,
+     "posRig": 0.07
+    },
+    "d=c·W": {
+     "d": 2.28,
+     "rotDeg": 0.27,
+     "posRig": 0.19
+    }
+   },
+   {
+    "size": "kuroiwa",
+    "hand": "right",
+    "W": 16.8,
+    "d=2.5": {
+     "d": 2.5,
+     "rotDeg": 0.27,
+     "posRig": 0.07
+    },
+    "d=c·W": {
+     "d": 2.61,
+     "rotDeg": 0.27,
+     "posRig": 0.16
+    }
+   },
+   {
+    "size": "kuroiwa",
+    "hand": "left",
+    "W": 16.8,
+    "d=2.5": {
+     "d": 2.5,
+     "rotDeg": 0.27,
+     "posRig": 0.07
+    },
+    "d=c·W": {
+     "d": 2.61,
+     "rotDeg": 0.27,
+     "posRig": 0.16
+    }
+   }
+  ],
+  "cRef": 0.1553,
+  "slantFixture": 19.71,
+  "alongFixture": 0.2931,
+  "cylinder": {
+   "fixture": "chai-dia#co",
+   "axis": [
+    0,
+    1,
+    0
+   ],
+   "rho": [
+    0,
+    0,
+    -1
+   ],
+   "palmVsMinusRho": 26.8,
+   "thumbVsAxis": 26.8,
+   "fingersVsAxis": 90,
+   "centreToAxis": 5,
+   "rAtCentre": 5.6,
+   "modelCentreToAxisK1": 5.37,
+   "note": "khung chuẩn dùng: n = −ρ, t = +a (thumb up), f = side·(t×n); fixture nghiêng lòng tay xuống theo vai chai"
+  }
+ },
+ "frameCheck": [
+  {
+   "ca": "fixture",
+   "edge": "edgeR",
+   "thumb": "front",
+   "hand": "right",
+   "worldThumb": "-",
+   "det": 1,
+   "thumbF": 2.18,
+   "indexF": -1.68,
+   "middleF": -1.43,
+   "palmF": 3.58,
+   "wristF": 4.84,
+   "wristIn": -9.5,
+   "nF": 0.765,
+   "fIn": 0.721,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "fixture",
+   "edge": "edgeL",
+   "thumb": "front",
+   "hand": "left",
+   "worldThumb": "-",
+   "det": 1,
+   "thumbF": 2.18,
+   "indexF": -1.68,
+   "middleF": -1.43,
+   "palmF": 3.58,
+   "wristF": 4.84,
+   "wristIn": -9.5,
+   "nF": 0.765,
+   "fIn": 0.721,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "top",
+   "thumb": "front",
+   "hand": "right",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "top",
+   "thumb": "front",
+   "hand": "left",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "top",
+   "thumb": "back",
+   "hand": "right",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "top",
+   "thumb": "back",
+   "hand": "left",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "bottom",
+   "thumb": "front",
+   "hand": "right",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "bottom",
+   "thumb": "front",
+   "hand": "left",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "bottom",
+   "thumb": "back",
+   "hand": "right",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "bottom",
+   "thumb": "back",
+   "hand": "left",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "left",
+   "thumb": "front",
+   "hand": "right",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "left",
+   "thumb": "front",
+   "hand": "left",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "left",
+   "thumb": "back",
+   "hand": "right",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "left",
+   "thumb": "back",
+   "hand": "left",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "right",
+   "thumb": "front",
+   "hand": "right",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "right",
+   "thumb": "front",
+   "hand": "left",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "right",
+   "thumb": "back",
+   "hand": "right",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c2",
+   "edge": "right",
+   "thumb": "back",
+   "hand": "left",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "top",
+   "thumb": "front",
+   "hand": "right",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "top",
+   "thumb": "front",
+   "hand": "left",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "top",
+   "thumb": "back",
+   "hand": "right",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "top",
+   "thumb": "back",
+   "hand": "left",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "bottom",
+   "thumb": "front",
+   "hand": "right",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "bottom",
+   "thumb": "front",
+   "hand": "left",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "bottom",
+   "thumb": "back",
+   "hand": "right",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "bottom",
+   "thumb": "back",
+   "hand": "left",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "left",
+   "thumb": "front",
+   "hand": "right",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "left",
+   "thumb": "front",
+   "hand": "left",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "left",
+   "thumb": "back",
+   "hand": "right",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "left",
+   "thumb": "back",
+   "hand": "left",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "right",
+   "thumb": "front",
+   "hand": "right",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "right",
+   "thumb": "front",
+   "hand": "left",
+   "worldThumb": "ra xa",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "right",
+   "thumb": "back",
+   "hand": "right",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  },
+  {
+   "ca": "c4",
+   "edge": "right",
+   "thumb": "back",
+   "hand": "left",
+   "worldThumb": "về người cầm",
+   "det": 1,
+   "thumbF": 3.76,
+   "indexF": -3.3,
+   "middleF": -2.87,
+   "palmF": 6.31,
+   "wristF": 8.28,
+   "wristIn": -19.08,
+   "nF": 0.765,
+   "fIn": 0.765,
+   "fF": -0.644,
+   "ok": true
+  }
+ ],
+ "wristConvention": {
+  "compared": 12,
+  "skippedOverLimit": 132,
+  "maxAbsDiffDeg": 0,
+  "note": "aimWrist(Re, side, palm, fingers) của act3 trên cùng cẳng tay; khác biệt chỉ khi ngoài giới hạn (aimWrist kẹp)"
+ },
+ "selfCheck": {
+  "rebuildDeg": 0
+ },
+ "cost": {
+  "msEvalPhi": 0.0072,
+  "msSolvePhi": 0.339,
+  "evalsPerSolve": 40
+ },
+ "table": [
+  {
+   "ca": "c1",
+   "tay": "P",
+   "choice": "variant=pinch edge=right thumb=front along=0.33 slant=30*",
+   "phi": 50,
+   "phi0": 32.1,
+   "turn": -73.3,
+   "bend": -4.2,
+   "dev": -3.7,
+   "over": "-",
+   "lan": 0,
+   "lanAt": "-",
+   "khe": 0,
+   "E": 0.363
+  },
+  {
+   "ca": "c2",
+   "tay": "P",
+   "choice": "variant=pinch edge=bottom thumb=front* along=0.25* slant=-30*",
+   "phi": -80,
+   "phi0": 25.6,
+   "turn": -27.5,
+   "bend": 18.1,
+   "dev": -2.1,
+   "over": "-",
+   "lan": 0,
+   "lanAt": "-",
+   "khe": 0,
+   "E": 0.374
+  },
+  {
+   "ca": "c3",
+   "tay": "P",
+   "choice": "variant=pinch edge=left thumb=back* along=0.5* slant=0*",
+   "phi": 62.5,
+   "phi0": 28.7,
+   "turn": -42,
+   "bend": 3.5,
+   "dev": -0.6,
+   "over": "-",
+   "lan": 0,
+   "lanAt": "-",
+   "khe": 0,
+   "E": 0.14
+  },
+  {
+   "ca": "c3",
+   "tay": "T",
+   "choice": "variant=pinch edge=right thumb=back* along=0.5* slant=0*",
+   "phi": 62.5,
+   "phi0": 28.7,
+   "turn": -42,
+   "bend": 3.5,
+   "dev": -0.6,
+   "over": "-",
+   "lan": 0,
+   "lanAt": "-",
+   "khe": 0,
+   "E": 0.14
+  },
+  {
+   "ca": "c4",
+   "tay": "P",
+   "choice": "variant=pinch edge=bottom thumb=back* along=0.25* slant=30*",
+   "phi": 0,
+   "phi0": 20.1,
+   "turn": -32,
+   "bend": 50.6,
+   "dev": 39.4,
+   "over": "bend,dev",
+   "lan": 3.3,
+   "lanAt": "upper.torso",
+   "khe": 0,
+   "E": 14.321
+  },
+  {
+   "ca": "c4",
+   "tay": "T",
+   "choice": "variant=pinch edge=top thumb=back* along=0.3 slant=30*",
+   "phi": 145,
+   "phi0": 21,
+   "turn": -97.5,
+   "bend": -28.4,
+   "dev": -10,
+   "over": "turn",
+   "lan": 0,
+   "lanAt": "-",
+   "khe": 0,
+   "E": 1.337
+  },
+  {
+   "ca": "c5",
+   "tay": "P",
+   "t": 0,
+   "choice": "variant=wrap part=can along=0.95 around=240* thumb=up",
+   "phi": 70,
+   "phi0": 111.4,
+   "turn": -19.3,
+   "bend": -2.6,
+   "dev": 21,
+   "over": "dev",
+   "lan": 0.69,
+   "lanAt": "upper.torso",
+   "khe": 0,
+   "E": 0.676
+  },
+  {
+   "ca": "c5",
+   "tay": "T",
+   "t": 0,
+   "choice": "variant=wrap part=can along=0.55 around=0* thumb=up",
+   "phi": 57.5,
+   "phi0": -10,
+   "turn": -52.3,
+   "bend": -23.6,
+   "dev": -20,
+   "over": "-",
+   "lan": 5.26,
+   "lanAt": "upper.torso",
+   "khe": 0,
+   "E": 2.913
+  },
+  {
+   "ca": "c5",
+   "tay": "P",
+   "t": 0.1,
+   "choice": "variant=wrap part=can along=0.95 around=240* thumb=up",
+   "phi": 70,
+   "phi0": 111.4,
+   "turn": -19.3,
+   "bend": -2.6,
+   "dev": 21,
+   "over": "dev",
+   "lan": 0.69,
+   "lanAt": "upper.torso",
+   "khe": 0,
+   "E": 0.676
+  },
+  {
+   "ca": "c5",
+   "tay": "T",
+   "t": 0.1,
+   "choice": "variant=wrap part=can along=0.5278 around=0* thumb=up",
+   "phi": 57.5,
+   "phi0": -10.1,
+   "turn": -52.9,
+   "bend": -24,
+   "dev": -21.6,
+   "over": "dev",
+   "lan": 5.56,
+   "lanAt": "upper.torso",
+   "khe": 0,
+   "E": 3.314
+  },
+  {
+   "ca": "c5",
+   "tay": "P",
+   "t": 0.2,
+   "choice": "variant=wrap part=can along=0.95 around=240* thumb=up",
+   "phi": 70,
+   "phi0": 111.4,
+   "turn": -19.3,
+   "bend": -2.6,
+   "dev": 21,
+   "over": "dev",
+   "lan": 0.69,
+   "lanAt": "upper.torso",
+   "khe": 0,
+   "E": 0.676
+  },
+  {
+   "ca": "c5",
+   "tay": "T",
+   "t": 0.2,
+   "choice": "variant=wrap part=can along=0.4722 around=0* thumb=up",
+   "phi": 110,
+   "phi0": -10.5,
+   "turn": -110,
+   "bend": -31.2,
+   "dev": 22.2,
+   "over": "turn,dev",
+   "lan": 0,
+   "lanAt": "-",
+   "khe": 0,
+   "E": 3.153
+  },
+  {
+   "ca": "c5",
+   "tay": "P",
+   "t": 0.3,
+   "choice": "variant=wrap part=can along=0.95 around=240* thumb=up",
+   "phi": 70,
+   "phi0": 111.4,
+   "turn": -19.3,
+   "bend": -2.6,
+   "dev": 21,
+   "over": "dev",
+   "lan": 0.69,
+   "lanAt": "upper.torso",
+   "khe": 0,
+   "E": 0.676
+  },
+  {
+   "ca": "c5",
+   "tay": "T",
+   "t": 0.3,
+   "choice": "variant=wrap part=can along=0.4 around=0* thumb=up",
+   "phi": 105,
+   "phi0": -11.2,
+   "turn": -107.4,
+   "bend": -31.9,
+   "dev": 13.1,
+   "over": "turn",
+   "lan": 0,
+   "lanAt": "-",
+   "khe": 0,
+   "E": 1.924
+  },
+  {
+   "ca": "c5",
+   "tay": "P",
+   "t": 0.4,
+   "choice": "variant=wrap part=can along=0.95 around=240* thumb=up",
+   "phi": 70,
+   "phi0": 111.4,
+   "turn": -19.3,
+   "bend": -2.6,
+   "dev": 21,
+   "over": "dev",
+   "lan": 0.69,
+   "lanAt": "upper.torso",
+   "khe": 0,
+   "E": 0.676
+  },
+  {
+   "ca": "c5",
+   "tay": "T",
+   "t": 0.4,
+   "choice": "variant=wrap part=can along=0.3278 around=0* thumb=up",
+   "phi": 100,
+   "phi0": -12.1,
+   "turn": -104.6,
+   "bend": -32.3,
+   "dev": 3.8,
+   "over": "turn",
+   "lan": 0,
+   "lanAt": "-",
+   "khe": 0,
+   "E": 1.581
+  },
+  {
+   "ca": "c5",
+   "tay": "P",
+   "t": 0.5,
+   "choice": "variant=wrap part=can along=0.95 around=240* thumb=up",
+   "phi": 70,
+   "phi0": 111.4,
+   "turn": -19.3,
+   "bend": -2.6,
+   "dev": 21,
+   "over": "dev",
+   "lan": 0.69,
+   "lanAt": "upper.torso",
+   "khe": 0,
+   "E": 0.676
+  },
+  {
+   "ca": "c5",
+   "tay": "T",
+   "t": 0.5,
+   "choice": "variant=wrap part=can along=0.2722 around=0* thumb=up",
+   "phi": 95,
+   "phi0": -13,
+   "turn": -101.1,
+   "bend": -32.4,
+   "dev": -4.4,
+   "over": "turn",
+   "lan": 0,
+   "lanAt": "-",
+   "khe": 0,
+   "E": 1.426
+  },
+  {
+   "ca": "c5",
+   "tay": "P",
+   "t": 0.6,
+   "choice": "variant=wrap part=can along=0.95 around=240* thumb=up",
+   "phi": 70,
+   "phi0": 111.4,
+   "turn": -19.3,
+   "bend": -2.6,
+   "dev": 21,
+   "over": "dev",
+   "lan": 0.69,
+   "lanAt": "upper.torso",
+   "khe": 0,
+   "E": 0.676
+  },
+  {
+   "ca": "c5",
+   "tay": "T",
+   "t": 0.6,
+   "choice": "variant=wrap part=can along=0.25 around=0* thumb=up",
+   "phi": 95,
+   "phi0": -13.4,
+   "turn": -101.8,
+   "bend": -32.1,
+   "dev": -5.9,
+   "over": "turn",
+   "lan": 0,
+   "lanAt": "-",
+   "khe": 0,
+   "E": 1.465
+  }
+ ],
+ "cases": [
+  {
+   "id": "c1",
+   "label": "đọc ngang ngực, mặt về người đọc ~45°; tay phải edge right, along 0,33, thumb front",
+   "item": "bang-gia",
+   "mark": {
+    "to": "chest",
+    "offset": [
+     30,
+     5,
+     0
+    ],
+    "face": {
+     "axis": "front",
+     "toward": [
+      -1,
+      -1,
+      0
+     ]
+    },
+    "roll": {
+     "axis": "top",
+     "toward": "up"
+    }
+   },
+   "markNote": "holderFace từ ngực+30 ngẩng 84.4° và hơi ra trước (thành phần tiến 0.098): mặt bảng gần ngửa, roll top→up suy biến; khai thẳng face toward [−1, −1, 0] hệ thân (lùi, lên 45°) theo đề \"mặt về mặt người đọc ~45°\"",
+   "variantNote": "prototype chỉ có biến thể `pinch`: `variant` giữ mặc định, không giải",
+   "mainAxisWorld": [
+    0,
+    -0.707,
+    -0.707
+   ],
+   "mainAxisElevDeg": 45,
+   "hands": [
+    {
+     "hand": "right",
+     "hold": {
+      "group": "sheet",
+      "edge": "right",
+      "along": 0.33,
+      "thumb": "front",
+      "slant": 30,
+      "d": 2.5
+     },
+     "item": {
+      "origin": [
+       250,
+       -258.02,
+       575.95
+      ],
+      "axes": {
+       "x": [
+        1,
+        0,
+        0
+       ],
+       "y": [
+        0,
+        -0.707,
+        -0.707
+       ],
+       "z": [
+        0,
+        0.707,
+        -0.707
+       ]
+      },
+      "placed": [
+       250,
+       -258.45,
+       575.53
+      ]
+     },
+     "wrist": [
+      284.78,
+      -249.06,
+      554.43
+     ],
+     "handAxes": {
+      "palm": [
+       -0.557,
+       -0.769,
+       -0.314
+      ],
+      "fingers": [
+       -0.663,
+       0.184,
+       0.726
+      ],
+      "thumbSide": [
+       0.5,
+       -0.612,
+       0.612
+      ]
+     },
+     "gripCenter": [
+      269.5,
+      -251.48,
+      568.56
+     ],
+     "contactItem": [
+      19.5,
+      0.6,
+      9.86
+     ],
+     "shoulder": [
+      283.72,
+      -302.42,
+      524.7
+     ],
+     "elbowAt": [
+      325.82,
+      -254.47,
+      508.97
+     ],
+     "wristReached": [
+      284.78,
+      -249.06,
+      554.43
+     ],
+     "phi": 50,
+     "phi0": 32.1,
+     "elbow": [
+      0.7456,
+      0.313,
+      -0.5883
+     ],
+     "wristAngles": {
+      "turn": -73.3,
+      "bend": -4.2,
+      "dev": -3.7,
+      "over": []
+     },
+     "E": 0.363,
+     "terms": {
+      "wrist": 0.356,
+      "over": 0,
+      "down": 0.007,
+      "body": 0,
+      "cont": 0
+     },
+     "body": {
+      "max": 0,
+      "at": "-",
+      "parts": {}
+     },
+     "reachGap": 0,
+     "reachGapOverAimGap": 0,
+     "gripFrame": {
+      "R": [
+       -0.557358,
+       0.765378,
+       -0.321789,
+       0.662837,
+       0.643581,
+       0.382688,
+       0.499998,
+       0,
+       -0.866027
+      ],
+      "p": [
+       0.195238,
+       -0.370172,
+       0.012807
+      ],
+      "u": 0.01
+     },
+     "gripSpec": {
+      "name": "_b0-c1-P",
+      "spec": {
+       "pose": "sheet",
+       "at": {
+        "anchor": "center",
+        "offset": [
+         19.5,
+         0,
+         9.86
+        ]
+       },
+       "palm": [
+        -0.55736,
+        0.76538,
+        -0.32179
+       ],
+       "fingers": [
+        -0.86603,
+        0,
+        -0.5
+       ],
+       "wrap": [
+        "thumb",
+        "index",
+        "middle",
+        "ring",
+        "pinky"
+       ],
+       "touch": [
+        "self.hand"
+       ]
+      }
+     },
+     "choice": {
+      "variant": "pinch",
+      "edge": "right",
+      "thumb": "front",
+      "along": 0.33,
+      "slant": 30
+     },
+     "by": {
+      "variant": "default",
+      "edge": "scene",
+      "thumb": "scene",
+      "along": "scene",
+      "slant": "rig"
+     },
+     "choiceSolve": {
+      "candidates": 3,
+      "ms": 2.86,
+      "missing": [
+       "slant"
+      ],
+      "top": [
+       {
+        "slant": 30,
+        "cost": 0.413,
+        "phi": 50,
+        "turn": -73.3,
+        "bend": -4.2,
+        "dev": -3.7,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "slant": 0,
+        "cost": 0.518,
+        "phi": 87.5,
+        "turn": -79.4,
+        "bend": -10.3,
+        "dev": -4.3,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "slant": -30,
+        "cost": 0.755,
+        "phi": 120,
+        "turn": -88.3,
+        "bend": -12,
+        "dev": -3.2,
+        "lan": 0,
+        "gap": 0
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "c2",
+   "label": "đọc ngang mặt, song song mặt; tay phải edge bottom",
+   "item": "bang-gia",
+   "mark": {
+    "to": "eye",
+    "offset": [
+     32,
+     0,
+     0
+    ],
+    "face": {
+     "axis": "front",
+     "toward": "back"
+    },
+    "roll": {
+     "axis": "top",
+     "toward": "up"
+    }
+   },
+   "variantNote": "prototype chỉ có biến thể `pinch`: `variant` giữ mặc định, không giải",
+   "mainAxisWorld": [
+    0,
+    0,
+    -1
+   ],
+   "mainAxisElevDeg": 0,
+   "hands": [
+    {
+     "hand": "right",
+     "hold": {
+      "group": "sheet",
+      "edge": "bottom",
+      "along": 0.25,
+      "thumb": "front",
+      "slant": -30,
+      "d": 2.5
+     },
+     "item": {
+      "origin": [
+       250,
+       -388.93,
+       621.08
+      ],
+      "axes": {
+       "x": [
+        1,
+        0,
+        0
+       ],
+       "y": [
+        0,
+        0,
+        -1
+       ],
+       "z": [
+        0,
+        1,
+        0
+       ]
+      },
+      "placed": [
+       250,
+       -388.93,
+       620.48
+      ]
+     },
+     "wrist": [
+      249.3,
+      -347.15,
+      612.2
+     ],
+     "handAxes": {
+      "palm": [
+       0.322,
+       -0.557,
+       -0.765
+      ],
+      "fingers": [
+       0.383,
+       -0.663,
+       0.644
+      ],
+      "thumbSide": [
+       0.866,
+       0.5,
+       0
+      ]
+     },
+     "gripCenter": [
+      261,
+      -362.43,
+      620.48
+     ],
+     "contactItem": [
+      11,
+      0.6,
+      26.5
+     ],
+     "shoulder": [
+      283.72,
+      -302.42,
+      524.7
+     ],
+     "elbowAt": [
+      231.21,
+      -320.18,
+      560
+     ],
+     "wristReached": [
+      249.3,
+      -347.15,
+      612.2
+     ],
+     "phi": -80,
+     "phi0": 25.6,
+     "elbow": [
+      -0.9438,
+      0.1568,
+      -0.291
+     ],
+     "wristAngles": {
+      "turn": -27.5,
+      "bend": 18.1,
+      "dev": -2.1,
+      "over": []
+     },
+     "E": 0.374,
+     "terms": {
+      "wrist": 0.183,
+      "over": 0,
+      "down": 0.19,
+      "body": 0,
+      "cont": 0
+     },
+     "body": {
+      "max": 0,
+      "at": "-",
+      "parts": {}
+     },
+     "reachGap": 0,
+     "reachGapOverAimGap": 0,
+     "gripFrame": {
+      "R": [
+       0.321789,
+       0.765378,
+       -0.557358,
+       -0.382688,
+       0.643581,
+       0.662837,
+       0.866027,
+       0,
+       0.499998
+      ],
+      "p": [
+       0.167128,
+       -0.336742,
+       -0.202846
+      ],
+      "u": 0.01
+     },
+     "gripSpec": {
+      "name": "_b0-c2-P",
+      "spec": {
+       "pose": "sheet",
+       "at": {
+        "anchor": "center",
+        "offset": [
+         11,
+         0,
+         26.5
+        ]
+       },
+       "palm": [
+        0.32179,
+        0.76538,
+        -0.55736
+       ],
+       "fingers": [
+        0.5,
+        0,
+        -0.86603
+       ],
+       "wrap": [
+        "thumb",
+        "index",
+        "middle",
+        "ring",
+        "pinky"
+       ],
+       "touch": [
+        "self.hand"
+       ]
+      }
+     },
+     "choice": {
+      "variant": "pinch",
+      "edge": "bottom",
+      "thumb": "front",
+      "along": 0.25,
+      "slant": -30
+     },
+     "by": {
+      "variant": "default",
+      "edge": "scene",
+      "thumb": "rig",
+      "along": "rig",
+      "slant": "rig"
+     },
+     "choiceSolve": {
+      "candidates": 18,
+      "ms": 5.76,
+      "missing": [
+       "thumb",
+       "along",
+       "slant"
+      ],
+      "top": [
+       {
+        "thumb": "front",
+        "along": 0.25,
+        "slant": -30,
+        "cost": 0.407,
+        "phi": -80,
+        "turn": -27.5,
+        "bend": 18.1,
+        "dev": -2.1,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "front",
+        "along": 0.5,
+        "slant": -30,
+        "cost": 0.506,
+        "phi": -82.5,
+        "turn": -20.7,
+        "bend": 24.5,
+        "dev": 5.4,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "front",
+        "along": 0.75,
+        "slant": 0,
+        "cost": 0.611,
+        "phi": -85,
+        "turn": 2,
+        "bend": 28.3,
+        "dev": -8.3,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "front",
+        "along": 0.75,
+        "slant": -30,
+        "cost": 0.841,
+        "phi": -80,
+        "turn": -16.6,
+        "bend": 27.9,
+        "dev": 15.8,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "front",
+        "along": 0.5,
+        "slant": 0,
+        "cost": 0.908,
+        "phi": -85,
+        "turn": -4.2,
+        "bend": 26.4,
+        "dev": -18.5,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "front",
+        "along": 0.25,
+        "slant": 30,
+        "cost": 1.019,
+        "phi": 35,
+        "turn": -95.6,
+        "bend": -17.7,
+        "dev": -1,
+        "lan": 1.91,
+        "gap": 0
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "c3",
+   "label": "khoe hai tay hai cạnh bên, mặt bảng ra trước; phải edge left, trái edge right",
+   "item": "bang-gia",
+   "mark": {
+    "to": "chest",
+    "offset": [
+     35,
+     0,
+     0
+    ],
+    "face": {
+     "axis": "front",
+     "toward": "forward"
+    },
+    "roll": {
+     "axis": "top",
+     "toward": "up"
+    }
+   },
+   "variantNote": "prototype chỉ có biến thể `pinch`: `variant` giữ mặc định, không giải",
+   "mainAxisWorld": [
+    0,
+    0,
+    1
+   ],
+   "mainAxisElevDeg": 0,
+   "hands": [
+    {
+     "hand": "right",
+     "hold": {
+      "group": "sheet",
+      "edge": "left",
+      "along": 0.5,
+      "thumb": "back",
+      "slant": 0,
+      "d": 2.5
+     },
+     "item": {
+      "origin": [
+       250,
+       -262.6,
+       580.65
+      ],
+      "axes": {
+       "x": [
+        -1,
+        0,
+        0
+       ],
+       "y": [
+        0,
+        0,
+        1
+       ],
+       "z": [
+        0,
+        1,
+        0
+       ]
+      },
+      "placed": [
+       250,
+       -262.6,
+       581.25
+      ]
+     },
+     "wrist": [
+      288.58,
+      -260.11,
+      572.97
+     ],
+     "handAxes": {
+      "palm": [
+       -0.644,
+       0,
+       -0.765
+      ],
+      "fingers": [
+       -0.765,
+       0,
+       0.644
+      ],
+      "thumbSide": [
+       0,
+       -1,
+       0
+      ]
+     },
+     "gripCenter": [
+      269.5,
+      -262.6,
+      581.25
+     ],
+     "contactItem": [
+      -19.5,
+      0.6,
+      0
+     ],
+     "shoulder": [
+      283.72,
+      -302.42,
+      524.7
+     ],
+     "elbowAt": [
+      333.11,
+      -259.47,
+      530.58
+     ],
+     "wristReached": [
+      288.58,
+      -260.11,
+      572.97
+     ],
+     "phi": 62.5,
+     "phi0": 28.7,
+     "elbow": [
+      0.8521,
+      0.348,
+      -0.3908
+     ],
+     "wristAngles": {
+      "turn": -42,
+      "bend": 3.5,
+      "dev": -0.6,
+      "over": []
+     },
+     "E": 0.14,
+     "terms": {
+      "wrist": 0.114,
+      "over": 0,
+      "down": 0.025,
+      "body": 0,
+      "cont": 0
+     },
+     "body": {
+      "max": 0,
+      "at": "-",
+      "parts": {}
+     },
+     "reachGap": 0,
+     "reachGapOverAimGap": 0,
+     "gripFrame": {
+      "R": [
+       0.643579,
+       -0.765379,
+       0,
+       -0.765379,
+       -0.643579,
+       0,
+       0,
+       0,
+       -1
+      ],
+      "p": [
+       0.189507,
+       -0.344712,
+       0.024917
+      ],
+      "u": 0.01
+     },
+     "gripSpec": {
+      "name": "_b0-c3-P",
+      "spec": {
+       "pose": "sheet",
+       "at": {
+        "anchor": "center",
+        "offset": [
+         -19.5,
+         0,
+         0
+        ]
+       },
+       "palm": [
+        0.64358,
+        -0.76538,
+        0
+       ],
+       "fingers": [
+        1,
+        0,
+        0
+       ],
+       "wrap": [
+        "thumb",
+        "index",
+        "middle",
+        "ring",
+        "pinky"
+       ],
+       "touch": [
+        "self.hand"
+       ]
+      }
+     },
+     "choice": {
+      "variant": "pinch",
+      "edge": "left",
+      "thumb": "back",
+      "along": 0.5,
+      "slant": 0
+     },
+     "by": {
+      "variant": "default",
+      "edge": "scene",
+      "thumb": "rig",
+      "along": "rig",
+      "slant": "rig"
+     },
+     "choiceSolve": {
+      "candidates": 18,
+      "ms": 6.41,
+      "missing": [
+       "thumb",
+       "along",
+       "slant"
+      ],
+      "top": [
+       {
+        "thumb": "back",
+        "along": 0.5,
+        "slant": 0,
+        "cost": 0.156,
+        "phi": 62.5,
+        "turn": -42,
+        "bend": 3.5,
+        "dev": -0.6,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "along": 0.25,
+        "slant": 0,
+        "cost": 0.21,
+        "phi": 52.5,
+        "turn": -29.9,
+        "bend": 13.9,
+        "dev": 5.1,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "along": 0.75,
+        "slant": 30,
+        "cost": 0.292,
+        "phi": 40,
+        "turn": -55.7,
+        "bend": 10.4,
+        "dev": 1.7,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "along": 0.75,
+        "slant": 0,
+        "cost": 0.298,
+        "phi": 72.5,
+        "turn": -55.6,
+        "bend": -6.5,
+        "dev": -3.1,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "along": 0.25,
+        "slant": -30,
+        "cost": 0.37,
+        "phi": 85,
+        "turn": -31.9,
+        "bend": -11.8,
+        "dev": -10.4,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "along": 0.5,
+        "slant": 30,
+        "cost": 0.442,
+        "phi": 30,
+        "turn": -45,
+        "bend": 24.7,
+        "dev": 5.6,
+        "lan": 0,
+        "gap": 0
+       }
+      ]
+     }
+    },
+    {
+     "hand": "left",
+     "hold": {
+      "group": "sheet",
+      "edge": "right",
+      "along": 0.5,
+      "thumb": "back",
+      "slant": 0,
+      "d": 2.5
+     },
+     "item": {
+      "origin": [
+       250,
+       -262.6,
+       580.65
+      ],
+      "axes": {
+       "x": [
+        -1,
+        0,
+        0
+       ],
+       "y": [
+        0,
+        0,
+        1
+       ],
+       "z": [
+        0,
+        1,
+        0
+       ]
+      },
+      "placed": [
+       250,
+       -262.6,
+       581.25
+      ]
+     },
+     "wrist": [
+      211.42,
+      -260.11,
+      572.97
+     ],
+     "handAxes": {
+      "palm": [
+       0.644,
+       0,
+       -0.765
+      ],
+      "fingers": [
+       0.765,
+       0,
+       0.644
+      ],
+      "thumbSide": [
+       0,
+       -1,
+       0
+      ]
+     },
+     "gripCenter": [
+      230.5,
+      -262.6,
+      581.25
+     ],
+     "contactItem": [
+      19.5,
+      0.6,
+      0
+     ],
+     "shoulder": [
+      216.28,
+      -302.42,
+      524.7
+     ],
+     "elbowAt": [
+      166.89,
+      -259.47,
+      530.58
+     ],
+     "wristReached": [
+      211.42,
+      -260.11,
+      572.97
+     ],
+     "phi": 62.5,
+     "phi0": 28.7,
+     "elbow": [
+      -0.8521,
+      0.348,
+      -0.3908
+     ],
+     "wristAngles": {
+      "turn": -42,
+      "bend": 3.5,
+      "dev": -0.6,
+      "over": []
+     },
+     "E": 0.14,
+     "terms": {
+      "wrist": 0.114,
+      "over": 0,
+      "down": 0.025,
+      "body": 0,
+      "cont": 0
+     },
+     "body": {
+      "max": 0,
+      "at": "-",
+      "parts": {}
+     },
+     "reachGap": 0,
+     "reachGapOverAimGap": 0,
+     "gripFrame": {
+      "R": [
+       0.643579,
+       0.765379,
+       0,
+       0.765379,
+       -0.643579,
+       0,
+       0,
+       0,
+       -1
+      ],
+      "p": [
+       -0.189507,
+       -0.344712,
+       0.024917
+      ],
+      "u": 0.01
+     },
+     "gripSpec": {
+      "name": "_b0-c3-T",
+      "spec": {
+       "pose": "sheet",
+       "at": {
+        "anchor": "center",
+        "offset": [
+         19.5,
+         0,
+         0
+        ]
+       },
+       "palm": [
+        -0.64358,
+        -0.76538,
+        0
+       ],
+       "fingers": [
+        -1,
+        0,
+        0
+       ],
+       "wrap": [
+        "thumb",
+        "index",
+        "middle",
+        "ring",
+        "pinky"
+       ],
+       "touch": [
+        "self.hand"
+       ]
+      }
+     },
+     "choice": {
+      "variant": "pinch",
+      "edge": "right",
+      "thumb": "back",
+      "along": 0.5,
+      "slant": 0
+     },
+     "by": {
+      "variant": "default",
+      "edge": "scene",
+      "thumb": "rig",
+      "along": "rig",
+      "slant": "rig"
+     },
+     "choiceSolve": {
+      "candidates": 18,
+      "ms": 9.34,
+      "missing": [
+       "thumb",
+       "along",
+       "slant"
+      ],
+      "top": [
+       {
+        "thumb": "back",
+        "along": 0.5,
+        "slant": 0,
+        "cost": 0.156,
+        "phi": 62.5,
+        "turn": -42,
+        "bend": 3.5,
+        "dev": -0.6,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "along": 0.25,
+        "slant": 0,
+        "cost": 0.21,
+        "phi": 52.5,
+        "turn": -29.9,
+        "bend": 13.9,
+        "dev": 5.1,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "along": 0.75,
+        "slant": 30,
+        "cost": 0.292,
+        "phi": 40,
+        "turn": -55.7,
+        "bend": 10.4,
+        "dev": 1.7,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "along": 0.75,
+        "slant": 0,
+        "cost": 0.298,
+        "phi": 72.5,
+        "turn": -55.6,
+        "bend": -6.5,
+        "dev": -3.1,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "along": 0.25,
+        "slant": -30,
+        "cost": 0.37,
+        "phi": 85,
+        "turn": -31.9,
+        "bend": -11.8,
+        "dev": -10.4,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "along": 0.5,
+        "slant": 30,
+        "cost": 0.442,
+        "phi": 30,
+        "turn": -45,
+        "bend": 24.7,
+        "dev": 5.6,
+        "lan": 0,
+        "gap": 0
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "c4",
+   "label": "khoe; phải edge bottom, trái edge top along 0,3",
+   "item": "bang-gia",
+   "mark": {
+    "to": "chest",
+    "offset": [
+     35,
+     0,
+     0
+    ],
+    "face": {
+     "axis": "front",
+     "toward": "forward"
+    },
+    "roll": {
+     "axis": "top",
+     "toward": "up"
+    }
+   },
+   "variantNote": "prototype chỉ có biến thể `pinch`: `variant` giữ mặc định, không giải",
+   "mainAxisWorld": [
+    0,
+    0,
+    1
+   ],
+   "mainAxisElevDeg": 0,
+   "hands": [
+    {
+     "hand": "right",
+     "hold": {
+      "group": "sheet",
+      "edge": "bottom",
+      "along": 0.25,
+      "thumb": "back",
+      "slant": 30,
+      "d": 2.5
+     },
+     "item": {
+      "origin": [
+       250,
+       -262.6,
+       580.65
+      ],
+      "axes": {
+       "x": [
+        -1,
+        0,
+        0
+       ],
+       "y": [
+        0,
+        0,
+        1
+       ],
+       "z": [
+        0,
+        1,
+        0
+       ]
+      },
+      "placed": [
+       250,
+       -262.6,
+       581.25
+      ]
+     },
+     "wrist": [
+      268.38,
+      -218.33,
+      572.97
+     ],
+     "handAxes": {
+      "palm": [
+       -0.322,
+       -0.557,
+       -0.765
+      ],
+      "fingers": [
+       -0.383,
+       -0.663,
+       0.644
+      ],
+      "thumbSide": [
+       0.866,
+       -0.5,
+       0
+      ]
+     },
+     "gripCenter": [
+      261,
+      -236.1,
+      581.25
+     ],
+     "contactItem": [
+      -11,
+      0.6,
+      26.5
+     ],
+     "shoulder": [
+      283.72,
+      -302.42,
+      524.7
+     ],
+     "elbowAt": [
+      286.1,
+      -237.17,
+      517.19
+     ],
+     "wristReached": [
+      268.38,
+      -218.33,
+      572.97
+     ],
+     "phi": 0,
+     "phi0": 20.1,
+     "elbow": [
+      0.2594,
+      0.516,
+      -0.8164
+     ],
+     "wristAngles": {
+      "turn": -32,
+      "bend": 50.6,
+      "dev": 39.4,
+      "over": [
+       "bend",
+       "dev"
+      ]
+     },
+     "E": 14.321,
+     "terms": {
+      "wrist": 3.023,
+      "over": 9.376,
+      "down": 0.009,
+      "body": 1.913,
+      "cont": 0
+     },
+     "body": {
+      "max": 3.3,
+      "at": "upper.torso",
+      "parts": {
+       "upper.torso": 3.3,
+       "fore.torso": 3
+      }
+     },
+     "reachGap": 0,
+     "reachGapOverAimGap": 0,
+     "gripFrame": {
+      "R": [
+       0.321789,
+       -0.765378,
+       -0.557358,
+       -0.382688,
+       -0.643581,
+       0.662837,
+       -0.866027,
+       0,
+       -0.499998
+      ],
+      "p": [
+       0.247106,
+       -0.413211,
+       0.062153
+      ],
+      "u": 0.01
+     },
+     "gripSpec": {
+      "name": "_b0-c4-P",
+      "spec": {
+       "pose": "sheet",
+       "at": {
+        "anchor": "center",
+        "offset": [
+         -11,
+         0,
+         26.5
+        ]
+       },
+       "palm": [
+        0.32179,
+        -0.76538,
+        -0.55736
+       ],
+       "fingers": [
+        0.5,
+        0,
+        -0.86603
+       ],
+       "wrap": [
+        "thumb",
+        "index",
+        "middle",
+        "ring",
+        "pinky"
+       ],
+       "touch": [
+        "self.hand"
+       ]
+      }
+     },
+     "choice": {
+      "variant": "pinch",
+      "edge": "bottom",
+      "thumb": "back",
+      "along": 0.25,
+      "slant": 30
+     },
+     "by": {
+      "variant": "default",
+      "edge": "scene",
+      "thumb": "rig",
+      "along": "rig",
+      "slant": "rig"
+     },
+     "choiceSolve": {
+      "candidates": 18,
+      "ms": 6.96,
+      "missing": [
+       "thumb",
+       "along",
+       "slant"
+      ],
+      "top": [
+       {
+        "thumb": "back",
+        "along": 0.25,
+        "slant": 30,
+        "cost": 14.371,
+        "phi": 0,
+        "turn": -32,
+        "bend": 50.6,
+        "dev": 39.4,
+        "lan": 3.3,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "along": 0.5,
+        "slant": 30,
+        "cost": 23.49,
+        "phi": 0,
+        "turn": -30.1,
+        "bend": 41.4,
+        "dev": 46.7,
+        "lan": 3.48,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "along": 0.75,
+        "slant": 30,
+        "cost": 33.571,
+        "phi": 2.5,
+        "turn": -31,
+        "bend": 32.5,
+        "dev": 53,
+        "lan": 3.85,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "along": 0.25,
+        "slant": 0,
+        "cost": 37.917,
+        "phi": -5,
+        "turn": -47.8,
+        "bend": 60.3,
+        "dev": 51.6,
+        "lan": 6.28,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "along": 0.25,
+        "slant": -30,
+        "cost": 58.726,
+        "phi": -12.5,
+        "turn": -70.6,
+        "bend": 71.2,
+        "dev": 50.7,
+        "lan": 11.85,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "along": 0.5,
+        "slant": 0,
+        "cost": 64.847,
+        "phi": -5,
+        "turn": -40.5,
+        "bend": 54.1,
+        "dev": 63.7,
+        "lan": 7.43,
+        "gap": 0
+       }
+      ]
+     }
+    },
+    {
+     "hand": "left",
+     "hold": {
+      "group": "sheet",
+      "edge": "top",
+      "along": 0.3,
+      "thumb": "back",
+      "slant": 30,
+      "d": 2.5
+     },
+     "item": {
+      "origin": [
+       250,
+       -262.6,
+       580.65
+      ],
+      "axes": {
+       "x": [
+        -1,
+        0,
+        0
+       ],
+       "y": [
+        0,
+        0,
+        1
+       ],
+       "z": [
+        0,
+        1,
+        0
+       ]
+      },
+      "placed": [
+       250,
+       -262.6,
+       581.25
+      ]
+     },
+     "wrist": [
+      229.5,
+      -304.38,
+      572.97
+     ],
+     "handAxes": {
+      "palm": [
+       0.322,
+       0.557,
+       -0.765
+      ],
+      "fingers": [
+       0.383,
+       0.663,
+       0.644
+      ],
+      "thumbSide": [
+       0.866,
+       -0.5,
+       0
+      ]
+     },
+     "gripCenter": [
+      241.2,
+      -289.1,
+      581.25
+     ],
+     "contactItem": [
+      8.8,
+      0.6,
+      -26.5
+     ],
+     "shoulder": [
+      216.28,
+      -302.42,
+      524.7
+     ],
+     "elbowAt": [
+      191.59,
+      -351.29,
+      561.05
+     ],
+     "wristReached": [
+      229.5,
+      -304.38,
+      572.97
+     ],
+     "phi": 145,
+     "phi0": 21,
+     "elbow": [
+      -0.5617,
+      -0.8185,
+      0.1206
+     ],
+     "wristAngles": {
+      "turn": -97.5,
+      "bend": -28.4,
+      "dev": -10,
+      "over": [
+       "turn"
+      ]
+     },
+     "E": 1.337,
+     "terms": {
+      "wrist": 1.034,
+      "over": 0.07,
+      "down": 0.234,
+      "body": 0,
+      "cont": 0
+     },
+     "body": {
+      "max": 0,
+      "at": "-",
+      "parts": {}
+     },
+     "reachGap": 0,
+     "reachGapOverAimGap": 0,
+     "gripFrame": {
+      "R": [
+       0.321789,
+       0.765378,
+       -0.557358,
+       0.382688,
+       -0.643581,
+       -0.662837,
+       -0.866027,
+       0,
+       -0.499998
+      ],
+      "p": [
+       -0.240026,
+       -0.404792,
+       -0.031372
+      ],
+      "u": 0.01
+     },
+     "gripSpec": {
+      "name": "_b0-c4-T",
+      "spec": {
+       "pose": "sheet",
+       "at": {
+        "anchor": "center",
+        "offset": [
+         8.8,
+         0,
+         -26.5
+        ]
+       },
+       "palm": [
+        -0.32179,
+        -0.76538,
+        0.55736
+       ],
+       "fingers": [
+        -0.5,
+        0,
+        0.86603
+       ],
+       "wrap": [
+        "thumb",
+        "index",
+        "middle",
+        "ring",
+        "pinky"
+       ],
+       "touch": [
+        "self.hand"
+       ]
+      }
+     },
+     "choice": {
+      "variant": "pinch",
+      "edge": "top",
+      "thumb": "back",
+      "along": 0.3,
+      "slant": 30
+     },
+     "by": {
+      "variant": "default",
+      "edge": "scene",
+      "thumb": "rig",
+      "along": "scene",
+      "slant": "rig"
+     },
+     "choiceSolve": {
+      "candidates": 6,
+      "ms": 2.5,
+      "missing": [
+       "thumb",
+       "slant"
+      ],
+      "top": [
+       {
+        "thumb": "back",
+        "slant": 30,
+        "cost": 1.387,
+        "phi": 145,
+        "turn": -97.5,
+        "bend": -28.4,
+        "dev": -10,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "slant": -30,
+        "cost": 2.711,
+        "phi": -117.5,
+        "turn": -121.9,
+        "bend": 15.1,
+        "dev": 10.9,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "front",
+        "slant": 30,
+        "cost": 3.063,
+        "phi": 150,
+        "turn": 62.7,
+        "bend": -62.9,
+        "dev": 15.7,
+        "lan": 0,
+        "gap": 0
+       },
+       {
+        "thumb": "back",
+        "slant": 0,
+        "cost": 12.765,
+        "phi": -120,
+        "turn": -132.4,
+        "bend": 15.4,
+        "dev": 35.9,
+        "lan": 3.05,
+        "gap": 0
+       },
+       {
+        "thumb": "front",
+        "slant": 0,
+        "cost": 44.315,
+        "phi": 160,
+        "turn": 27.8,
+        "bend": -54.1,
+        "dev": 57.5,
+        "lan": 5.38,
+        "gap": 0
+       },
+       {
+        "thumb": "front",
+        "slant": -30,
+        "cost": 115.66,
+        "phi": 160,
+        "turn": 16.6,
+        "bend": -32,
+        "dev": 84.4,
+        "lan": 4.54,
+        "gap": 0
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "c5",
+   "label": "thanh trượt: cán tạm, tay phải along 0,95, tay trái along 0,55 → 0,25 trong 0,6 s (smoothstep), mẫu mỗi HOLD_SLEW_STEP",
+   "item": "_b0-can",
+   "mark": {
+    "to": "shoulder",
+    "offset": [
+     10,
+     -40,
+     20
+    ],
+    "point": "luoi",
+    "up": "luoi",
+    "roll": {
+     "axis": [
+      0,
+      0,
+      1
+     ],
+     "toward": "forward"
+    }
+   },
+   "byNote": "thumb không giải (giữ `up` như đề: ca 5 như cũ); around giải một lần mỗi tay ở t = 0",
+   "around": {
+    "right": 240,
+    "left": 0,
+    "candidatesRight": [
+     {
+      "around": 0,
+      "cost": 40.43,
+      "phi": 115
+     },
+     {
+      "around": 30,
+      "cost": 59.675,
+      "phi": 147.5
+     },
+     {
+      "around": 60,
+      "cost": 59.849,
+      "phi": 177.5
+     },
+     {
+      "around": 90,
+      "cost": 43.384,
+      "phi": -157.5
+     },
+     {
+      "around": 120,
+      "cost": 27.151,
+      "phi": -142.5
+     },
+     {
+      "around": 150,
+      "cost": 19.778,
+      "phi": -135
+     },
+     {
+      "around": 180,
+      "cost": 17.605,
+      "phi": -102.5
+     },
+     {
+      "around": 210,
+      "cost": 2.635,
+      "phi": 57.5
+     },
+     {
+      "around": 240,
+      "cost": 0.676,
+      "phi": 70
+     },
+     {
+      "around": 270,
+      "cost": 0.827,
+      "phi": 67.5
+     },
+     {
+      "around": 300,
+      "cost": 2.453,
+      "phi": 60
+     },
+     {
+      "around": 330,
+      "cost": 14.657,
+      "phi": 82.5
+     }
+    ],
+    "candidatesLeft": [
+     {
+      "around": 0,
+      "cost": 2.913,
+      "phi": 57.5
+     },
+     {
+      "around": 30,
+      "cost": 8.334,
+      "phi": 72.5
+     },
+     {
+      "around": 60,
+      "cost": 43.225,
+      "phi": -67.5
+     },
+     {
+      "around": 90,
+      "cost": 43.894,
+      "phi": -60
+     },
+     {
+      "around": 120,
+      "cost": 61.049,
+      "phi": -92.5
+     },
+     {
+      "around": 150,
+      "cost": 277.854,
+      "phi": -150
+     },
+     {
+      "around": 180,
+      "cost": 359.562,
+      "phi": 177.5
+     },
+     {
+      "around": 210,
+      "cost": 357.185,
+      "phi": 162.5
+     },
+     {
+      "around": 240,
+      "cost": 260.588,
+      "phi": 142.5
+     },
+     {
+      "around": 270,
+      "cost": 18.481,
+      "phi": 70
+     },
+     {
+      "around": 300,
+      "cost": 7.747,
+      "phi": 55
+     },
+     {
+      "around": 330,
+      "cost": 3.722,
+      "phi": 57.5
+     }
+    ]
+   },
+   "samples": [
+    {
+     "i": 0,
+     "t": 0,
+     "alongL": 0.55,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.55,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -287.09,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -287.09,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        54,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        235.62,
+        -267.86,
+        577.14
+       ],
+       "wristReached": [
+        288.59,
+        -287.09,
+        552.57
+       ],
+       "phi": 57.5,
+       "phi0": -10,
+       "elbow": [
+        -0.4007,
+        0.5271,
+        0.7494
+       ],
+       "wristAngles": {
+        "turn": -52.3,
+        "bend": -23.6,
+        "dev": -20,
+        "over": []
+       },
+       "E": 2.913,
+       "terms": {
+        "wrist": 0.889,
+        "over": 0,
+        "down": 0.093,
+        "body": 1.932,
+        "cont": 0
+       },
+       "body": {
+        "max": 5.26,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 5.26
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.54
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-0",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           -6,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.55,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 1,
+     "t": 0.0333,
+     "alongL": 0.5473,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.5473251028806585,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -287.41,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -287.41,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        54.321,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        235.71,
+        -268,
+        577.2
+       ],
+       "wristReached": [
+        288.59,
+        -287.41,
+        552.57
+       ],
+       "phi": 57.5,
+       "phi0": -10,
+       "elbow": [
+        -0.3987,
+        0.5275,
+        0.7502
+       ],
+       "wristAngles": {
+        "turn": -52.4,
+        "bend": -23.6,
+        "dev": -20.2,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 2.952,
+       "terms": {
+        "wrist": 0.9,
+        "over": 0.001,
+        "down": 0.093,
+        "body": 1.959,
+        "cont": 0
+       },
+       "body": {
+        "max": 5.29,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 5.29
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.54321
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-1",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           -5.679,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.5473,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 2,
+     "t": 0.0667,
+     "alongL": 0.5397,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.5397119341563786,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -288.32,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -288.32,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        55.235,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        235.98,
+        -268.4,
+        577.36
+       ],
+       "wristReached": [
+        288.59,
+        -288.32,
+        552.57
+       ],
+       "phi": 57.5,
+       "phi0": -10,
+       "elbow": [
+        -0.3931,
+        0.5286,
+        0.7524
+       ],
+       "wristAngles": {
+        "turn": -52.6,
+        "bend": -23.8,
+        "dev": -20.7,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 3.078,
+       "terms": {
+        "wrist": 0.935,
+        "over": 0.014,
+        "down": 0.093,
+        "body": 2.037,
+        "cont": 0
+       },
+       "body": {
+        "max": 5.4,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 5.4
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.552346
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-2",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           -4.7654,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.5397,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 3,
+     "t": 0.1,
+     "alongL": 0.5278,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.5277777777777778,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -289.75,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -289.75,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        56.667,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        236.4,
+        -269.04,
+        577.61
+       ],
+       "wristReached": [
+        288.59,
+        -289.75,
+        552.57
+       ],
+       "phi": 57.5,
+       "phi0": -10.1,
+       "elbow": [
+        -0.3842,
+        0.5303,
+        0.7558
+       ],
+       "wristAngles": {
+        "turn": -52.9,
+        "bend": -24,
+        "dev": -21.6,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 3.314,
+       "terms": {
+        "wrist": 0.99,
+        "over": 0.068,
+        "down": 0.093,
+        "body": 2.164,
+        "cont": 0
+       },
+       "body": {
+        "max": 5.56,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 5.56
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.566667
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-3",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           -3.3333,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.5278,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 4,
+     "t": 0.1333,
+     "alongL": 0.5121,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.5121399176954733,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -291.63,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -291.63,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        58.543,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        236.97,
+        -269.9,
+        577.93
+       ],
+       "wristReached": [
+        288.59,
+        -291.63,
+        552.57
+       ],
+       "phi": 57.5,
+       "phi0": -10.2,
+       "elbow": [
+        -0.3725,
+        0.5322,
+        0.7603
+       ],
+       "wristAngles": {
+        "turn": -53.4,
+        "bend": -24.4,
+        "dev": -22.8,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 3.696,
+       "terms": {
+        "wrist": 1.064,
+        "over": 0.199,
+        "down": 0.093,
+        "body": 2.339,
+        "cont": 0
+       },
+       "body": {
+        "max": 5.78,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 5.78
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.585432
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-4",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           -1.4568,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.5121,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 5,
+     "t": 0.1667,
+     "alongL": 0.4934,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.49341563786008236,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -293.88,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -293.88,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        60.79,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        237.45,
+        -272.83,
+        579.43
+       ],
+       "wristReached": [
+        288.59,
+        -293.88,
+        552.57
+       ],
+       "phi": 60,
+       "phi0": -10.3,
+       "elbow": [
+        -0.3626,
+        0.497,
+        0.7884
+       ],
+       "wristAngles": {
+        "turn": -56.2,
+        "bend": -25.9,
+        "dev": -22.4,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 4.348,
+       "terms": {
+        "wrist": 1.088,
+        "over": 0.14,
+        "down": 0.1,
+        "body": 3.019,
+        "cont": 0.001
+       },
+       "body": {
+        "max": 6.57,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 6.57
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.607901
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-5",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           0.7901,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.4934,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 6,
+     "t": 0.2,
+     "alongL": 0.4722,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.4722222222222222,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -296.42,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -296.42,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        63.333,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        239.91,
+        -316.29,
+        584.43
+       ],
+       "wristReached": [
+        288.59,
+        -296.42,
+        552.57
+       ],
+       "phi": 110,
+       "phi0": -10.5,
+       "elbow": [
+        -0.3134,
+        -0.341,
+        0.8863
+       ],
+       "wristAngles": {
+        "turn": -110,
+        "bend": -31.2,
+        "dev": 22.2,
+        "over": [
+         "turn",
+         "dev"
+        ]
+       },
+       "E": 3.153,
+       "terms": {
+        "wrist": 1.754,
+        "over": 0.618,
+        "down": 0.226,
+        "body": 0,
+        "cont": 0.556
+       },
+       "body": {
+        "max": 0,
+        "at": "-",
+        "parts": {}
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.633333
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-6",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           3.3333,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.4722,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 7,
+     "t": 0.2333,
+     "alongL": 0.4492,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.4491769547325103,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -299.18,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -299.18,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        66.099,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        239.34,
+        -317.86,
+        584.27
+       ],
+       "wristReached": [
+        288.59,
+        -299.18,
+        552.57
+       ],
+       "phi": 110,
+       "phi0": -10.7,
+       "elbow": [
+        -0.3247,
+        -0.3417,
+        0.8819
+       ],
+       "wristAngles": {
+        "turn": -110.9,
+        "bend": -31,
+        "dev": 20.8,
+        "over": [
+         "turn",
+         "dev"
+        ]
+       },
+       "E": 2.461,
+       "terms": {
+        "wrist": 1.683,
+        "over": 0.551,
+        "down": 0.227,
+        "body": 0,
+        "cont": 0
+       },
+       "body": {
+        "max": 0,
+        "at": "-",
+        "parts": {}
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.660988
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-7",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           6.0988,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.4492,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 8,
+     "t": 0.2667,
+     "alongL": 0.4249,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.4248971193415638,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -302.1,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -302.1,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        69.012,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        238.47,
+        -317.39,
+        584.72
+       ],
+       "wristReached": [
+        288.59,
+        -302.1,
+        552.57
+       ],
+       "phi": 107.5,
+       "phi0": -10.9,
+       "elbow": [
+        -0.3419,
+        -0.3007,
+        0.8903
+       ],
+       "wristAngles": {
+        "turn": -109.1,
+        "bend": -31.5,
+        "dev": 17,
+        "over": [
+         "turn"
+        ]
+       },
+       "E": 2.166,
+       "terms": {
+        "wrist": 1.492,
+        "over": 0.451,
+        "down": 0.221,
+        "body": 0,
+        "cont": 0.001
+       },
+       "body": {
+        "max": 0,
+        "at": "-",
+        "parts": {}
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.690123
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-8",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           9.0123,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.4249,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 9,
+     "t": 0.3,
+     "alongL": 0.4,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.4,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -305.09,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -305.09,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        72,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        237.77,
+        -316.89,
+        585.09
+       ],
+       "wristReached": [
+        288.59,
+        -305.09,
+        552.57
+       ],
+       "phi": 105,
+       "phi0": -11.2,
+       "elbow": [
+        -0.3557,
+        -0.2587,
+        0.8981
+       ],
+       "wristAngles": {
+        "turn": -107.4,
+        "bend": -31.9,
+        "dev": 13.1,
+        "over": [
+         "turn"
+        ]
+       },
+       "E": 1.924,
+       "terms": {
+        "wrist": 1.334,
+        "over": 0.373,
+        "down": 0.216,
+        "body": 0,
+        "cont": 0.001
+       },
+       "body": {
+        "max": 0,
+        "at": "-",
+        "parts": {}
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.72
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-9",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           12,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.4,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 10,
+     "t": 0.3333,
+     "alongL": 0.3751,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.3751028806584362,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -308.07,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -308.07,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        74.988,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        237.27,
+        -316.35,
+        585.4
+       ],
+       "wristReached": [
+        288.59,
+        -308.07,
+        552.57
+       ],
+       "phi": 102.5,
+       "phi0": -11.5,
+       "elbow": [
+        -0.3659,
+        -0.2159,
+        0.9053
+       ],
+       "wristAngles": {
+        "turn": -105.6,
+        "bend": -32.3,
+        "dev": 9.2,
+        "over": [
+         "turn"
+        ]
+       },
+       "E": 1.723,
+       "terms": {
+        "wrist": 1.21,
+        "over": 0.301,
+        "down": 0.211,
+        "body": 0,
+        "cont": 0.001
+       },
+       "body": {
+        "max": 0,
+        "at": "-",
+        "parts": {}
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.749877
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-10",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           14.9877,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.3751,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 11,
+     "t": 0.3667,
+     "alongL": 0.3508,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.35082304526748975,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -310.99,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -310.99,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        77.901,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        236.91,
+        -317.88,
+        585.15
+       ],
+       "wristReached": [
+        288.59,
+        -310.99,
+        552.57
+       ],
+       "phi": 102.5,
+       "phi0": -11.8,
+       "elbow": [
+        -0.3733,
+        -0.2151,
+        0.9024
+       ],
+       "wristAngles": {
+        "turn": -106.5,
+        "bend": -32,
+        "dev": 7.6,
+        "over": [
+         "turn"
+        ]
+       },
+       "E": 1.728,
+       "terms": {
+        "wrist": 1.182,
+        "over": 0.335,
+        "down": 0.212,
+        "body": 0,
+        "cont": 0
+       },
+       "body": {
+        "max": 0,
+        "at": "-",
+        "parts": {}
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.779012
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-11",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           17.9012,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.3508,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 12,
+     "t": 0.4,
+     "alongL": 0.3278,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.3277777777777778,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -313.75,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -313.75,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        80.667,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        236.72,
+        -317.18,
+        585.39
+       ],
+       "wristReached": [
+        288.59,
+        -313.75,
+        552.57
+       ],
+       "phi": 100,
+       "phi0": -12.1,
+       "elbow": [
+        -0.3777,
+        -0.1718,
+        0.9099
+       ],
+       "wristAngles": {
+        "turn": -104.6,
+        "bend": -32.3,
+        "dev": 3.8,
+        "over": [
+         "turn"
+        ]
+       },
+       "E": 1.581,
+       "terms": {
+        "wrist": 1.11,
+        "over": 0.263,
+        "down": 0.206,
+        "body": 0,
+        "cont": 0.001
+       },
+       "body": {
+        "max": 0,
+        "at": "-",
+        "parts": {}
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.806667
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-12",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           20.6667,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.3278,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 13,
+     "t": 0.4333,
+     "alongL": 0.3066,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.3065843621399177,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -316.3,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -316.3,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        83.21,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        236.72,
+        -316.37,
+        585.58
+       ],
+       "wristReached": [
+        288.59,
+        -316.3,
+        552.57
+       ],
+       "phi": 97.5,
+       "phi0": -12.4,
+       "elbow": [
+        -0.3781,
+        -0.1285,
+        0.9168
+       ],
+       "wristAngles": {
+        "turn": -102.6,
+        "bend": -32.5,
+        "dev": 0.1,
+        "over": [
+         "turn"
+        ]
+       },
+       "E": 1.472,
+       "terms": {
+        "wrist": 1.072,
+        "over": 0.197,
+        "down": 0.201,
+        "body": 0,
+        "cont": 0.001
+       },
+       "body": {
+        "max": 0,
+        "at": "-",
+        "parts": {}
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.832099
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-13",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           23.2099,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.3066,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 14,
+     "t": 0.4667,
+     "alongL": 0.2879,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.28786008230452675,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -318.54,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -318.54,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        85.457,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        236.59,
+        -317.53,
+        585.35
+       ],
+       "wristReached": [
+        288.59,
+        -318.54,
+        552.57
+       ],
+       "phi": 97.5,
+       "phi0": -12.7,
+       "elbow": [
+        -0.3814,
+        -0.1278,
+        0.9155
+       ],
+       "wristAngles": {
+        "turn": -103.3,
+        "bend": -32.2,
+        "dev": -1.1,
+        "over": [
+         "turn"
+        ]
+       },
+       "E": 1.495,
+       "terms": {
+        "wrist": 1.075,
+        "over": 0.218,
+        "down": 0.202,
+        "body": 0,
+        "cont": 0
+       },
+       "body": {
+        "max": 0,
+        "at": "-",
+        "parts": {}
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.854568
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-14",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           25.4568,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.2879,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 15,
+     "t": 0.5,
+     "alongL": 0.2722,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.2722222222222222,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -320.42,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -320.42,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        87.333,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        236.85,
+        -316.39,
+        585.53
+       ],
+       "wristReached": [
+        288.59,
+        -320.42,
+        552.57
+       ],
+       "phi": 95,
+       "phi0": -13,
+       "elbow": [
+        -0.3767,
+        -0.0849,
+        0.9224
+       ],
+       "wristAngles": {
+        "turn": -101.1,
+        "bend": -32.4,
+        "dev": -4.4,
+        "over": [
+         "turn"
+        ]
+       },
+       "E": 1.426,
+       "terms": {
+        "wrist": 1.076,
+        "over": 0.152,
+        "down": 0.196,
+        "body": 0,
+        "cont": 0.001
+       },
+       "body": {
+        "max": 0,
+        "at": "-",
+        "parts": {}
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.873333
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-15",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           27.3333,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.2722,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 16,
+     "t": 0.5333,
+     "alongL": 0.2603,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.2602880658436214,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -321.85,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -321.85,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        88.765,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        236.81,
+        -317.13,
+        585.37
+       ],
+       "wristReached": [
+        288.59,
+        -321.85,
+        552.57
+       ],
+       "phi": 95,
+       "phi0": -13.2,
+       "elbow": [
+        -0.3781,
+        -0.0845,
+        0.9219
+       ],
+       "wristAngles": {
+        "turn": -101.5,
+        "bend": -32.2,
+        "dev": -5.2,
+        "over": [
+         "turn"
+        ]
+       },
+       "E": 1.445,
+       "terms": {
+        "wrist": 1.085,
+        "over": 0.163,
+        "down": 0.197,
+        "body": 0,
+        "cont": 0
+       },
+       "body": {
+        "max": 0,
+        "at": "-",
+        "parts": {}
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.887654
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-16",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           28.7654,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.2603,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 17,
+     "t": 0.5667,
+     "alongL": 0.2527,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.25267489711934155,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -322.76,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -322.76,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        89.679,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        236.78,
+        -317.61,
+        585.26
+       ],
+       "wristReached": [
+        288.59,
+        -322.76,
+        552.57
+       ],
+       "phi": 95,
+       "phi0": -13.4,
+       "elbow": [
+        -0.379,
+        -0.0843,
+        0.9216
+       ],
+       "wristAngles": {
+        "turn": -101.7,
+        "bend": -32.1,
+        "dev": -5.7,
+        "over": [
+         "turn"
+        ]
+       },
+       "E": 1.46,
+       "terms": {
+        "wrist": 1.092,
+        "over": 0.17,
+        "down": 0.197,
+        "body": 0,
+        "cont": 0
+       },
+       "body": {
+        "max": 0,
+        "at": "-",
+        "parts": {}
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.89679
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-17",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           29.679,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.2527,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    },
+    {
+     "i": 18,
+     "t": 0.6,
+     "alongL": 0.25,
+     "hands": [
+      {
+       "hand": "right",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "handAxes": {
+        "palm": [
+         -0.866,
+         0,
+         0.5
+        ],
+        "fingers": [
+         0.5,
+         0,
+         0.866
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        307.16,
+        -239.09,
+        540.86
+       ],
+       "contactItem": [
+        -3.443,
+        6,
+        -1.988
+       ],
+       "shoulder": [
+        283.72,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        278.31,
+        -261.13,
+        473.86
+       ],
+       "wristReached": [
+        304.58,
+        -239.09,
+        524.88
+       ],
+       "phi": 70,
+       "phi0": 111.4,
+       "elbow": [
+        -0.3165,
+        0.107,
+        -0.9425
+       ],
+       "wristAngles": {
+        "turn": -19.3,
+        "bend": -2.6,
+        "dev": 21,
+        "over": [
+         "dev"
+        ]
+       },
+       "E": 0.676,
+       "terms": {
+        "wrist": 0.579,
+        "over": 0.027,
+        "down": 0.038,
+        "body": 0.033,
+        "cont": 0
+       },
+       "body": {
+        "max": 0.69,
+        "at": "upper.torso",
+        "parts": {
+         "upper.torso": 0.69
+        }
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0.866027,
+         0,
+         0.499998,
+         0.499998,
+         0,
+         -0.866027,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         0.097258,
+         -0.151273,
+         -0.06
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-P",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           -3.4432,
+           -54,
+           -1.9879
+          ]
+         },
+         "palm": [
+          0.86603,
+          0,
+          0.5
+         ],
+         "fingers": [
+          -0.5,
+          0,
+          0.86603
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.95,
+        "around": 240,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      },
+      {
+       "hand": "left",
+       "hold": {
+        "group": "cylinder",
+        "along": 0.25,
+        "around": 0,
+        "thumb": "up"
+       },
+       "item": {
+        "origin": [
+         303.72,
+         -233.09,
+         542.85
+        ],
+        "axes": {
+         "x": [
+          -1,
+          0,
+          0
+         ],
+         "y": [
+          0,
+          -1,
+          0
+         ],
+         "z": [
+          0,
+          0,
+          1
+         ]
+        },
+        "placed": [
+         303.72,
+         -353.09,
+         542.85
+        ]
+       },
+       "wrist": [
+        288.59,
+        -323.09,
+        552.57
+       ],
+       "handAxes": {
+        "palm": [
+         0,
+         0,
+         -1
+        ],
+        "fingers": [
+         1,
+         0,
+         0
+        ],
+        "thumbSide": [
+         0,
+         -1,
+         0
+        ]
+       },
+       "gripCenter": [
+        303.72,
+        -323.09,
+        546.82
+       ],
+       "contactItem": [
+        0,
+        90,
+        3.976
+       ],
+       "shoulder": [
+        216.28,
+        -302.42,
+        524.7
+       ],
+       "elbowAt": [
+        236.77,
+        -317.77,
+        585.22
+       ],
+       "wristReached": [
+        288.59,
+        -323.09,
+        552.57
+       ],
+       "phi": 95,
+       "phi0": -13.4,
+       "elbow": [
+        -0.3793,
+        -0.0842,
+        0.9214
+       ],
+       "wristAngles": {
+        "turn": -101.8,
+        "bend": -32.1,
+        "dev": -5.9,
+        "over": [
+         "turn"
+        ]
+       },
+       "E": 1.465,
+       "terms": {
+        "wrist": 1.095,
+        "over": 0.173,
+        "down": 0.197,
+        "body": 0,
+        "cont": 0
+       },
+       "body": {
+        "max": 0,
+        "at": "-",
+        "parts": {}
+       },
+       "reachGap": 0,
+       "reachGapOverAimGap": 0,
+       "gripFrame": {
+        "R": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "p": [
+         -0.097258,
+         -0.151273,
+         -0.9
+        ],
+        "u": 0.01
+       },
+       "gripSpec": {
+        "name": "_b0-c5-T-18",
+        "spec": {
+         "pose": "fist",
+         "at": {
+          "anchor": "center",
+          "offset": [
+           0,
+           30,
+           3.9758
+          ]
+         },
+         "palm": [
+          0,
+          0,
+          -1
+         ],
+         "fingers": [
+          -1,
+          0,
+          0
+         ],
+         "wrap": [
+          "thumb",
+          "index",
+          "middle",
+          "ring",
+          "pinky"
+         ],
+         "touch": [
+          "self.hand"
+         ]
+        }
+       },
+       "choice": {
+        "variant": "wrap",
+        "part": "can",
+        "along": 0.25,
+        "around": 0,
+        "thumb": "up"
+       },
+       "by": {
+        "part": "scene",
+        "along": "scene",
+        "around": "rig",
+        "thumb": "default",
+        "variant": "default"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
