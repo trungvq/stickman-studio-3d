@@ -1,4 +1,13 @@
-import { AIM_BEND, AIM_DEV, armFrame, BONES3, markShape, twoBone3, type Trunk3 } from "./act3";
+import {
+  AIM_BEND,
+  AIM_DEV,
+  armFrame,
+  BONES3,
+  markShape,
+  TURN_MAX,
+  twoBone3,
+  type Trunk3,
+} from "./arm3";
 import { D, RIG } from "./constants";
 import { HOLD_SLEW_STEP } from "./heldItem";
 import { SKULL3 } from "./humanHead";
@@ -23,8 +32,8 @@ export const W_DOWN = 0.3;
 export const W_BODY = 10;
 /** Trọng số liền với mẫu trước của lần cầm */
 export const W_CONT = 2;
-/** Giới hạn xoay cẳng tay: kẹp `−90..90` của `aimWrist` */
-const TURN_MAX = 90;
+/** Dải `|xuống⊥|` (sin góc trục vai → cổ tay với phương đứng) mà gốc `φ` hoà từ `−tiến` sang hình chiếu hướng xuống */
+export const PHI_DOWN = [0.1, 0.3] as const;
 /** Phạt phần cổ tay vượt giới hạn */
 const W_OVER = 10;
 /** Số mẫu dọc mỗi đoạn tay khi đo lấn */
@@ -224,11 +233,18 @@ export function armInput(T: Trunk3, side: number, shape = markShape(T)): ArmInpu
   return inp;
 }
 
-/** Khung quanh trục vai → cổ tay: `d0` hướng thõng (trục gần đứng thì `−tiến`), `o0` ra ngoài phía tay ấy */
+/**
+ * Khung quanh trục vai → cổ tay: `d0` hình chiếu của hướng xuống, trục gần đứng (`|xuống⊥|` từ `PHI_DOWN[1]` về
+ * `PHI_DOWN[0]`) hoà dần sang `−tiến`; `o0` ra ngoài phía tay ấy
+ */
 function phiBasis(inp: ArmInput, Wp: V3) {
   const n = unit(sub3(Wp, inp.S));
-  let d0 = perp([0, -1, 0], n);
-  if (len(d0) < 1e-6) d0 = perp(matVec(inp.Rr, [0, 0, -1]), n);
+  const down: V3 = [0, -1, 0];
+  const [lo, hi] = PHI_DOWN;
+  const k = Math.max(0, Math.min(1, (len(perp(down, n)) - lo) / (hi - lo)));
+  const back = matVec(inp.Rr, [0, 0, -1]);
+  let d0 = perp(add3(scale3(down, k), scale3(back, 1 - k)), n);
+  if (len(d0) < 1e-9) d0 = perp(matVec(inp.Rr, [inp.side, 0, 0]), n);
   d0 = unit(d0);
   return { d0, o0: unit(scale3(cross3(n, d0), inp.side)) };
 }

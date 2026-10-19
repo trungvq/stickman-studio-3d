@@ -38,13 +38,20 @@ Giai đoạn 3 — lõi. Kế hoạch job: `tmp/nhom-cam/gd3-ke-hoach.md` (21 jo
 | Mốc M1+M2 (+G3-10): t02 `check --only ref,held,clash` so baseline: 0 mới, 0 nặng hơn | commit `89553f2` | |
 | G3-08 `graspFrame` sheet + palmBox | xong: `bang-gia#doc` 0,27°/0; `dien-thoai#doc` 0,43°/0; rim `tom-hum#nhac` lệch 1,5, `bao#doc` 2,0 (thụt rim) | `graspSolve.ts` |
 | G3-09 `graspAt`, giải lựa chọn, `GraspReport` | xong: ca1–ca4 khớp `ca.json` (cả φ); giải đủ thiếu 10 ms (33 ứng viên) | `graspSolve.ts`, `graspAt.test.ts` |
-| Mốc M3 | commit | |
+| Mốc M3 | commit `130b188` | |
+| G3-11 nối chỗ cầm nhóm vào `scene.ts` | xong: t02 0 mới; `graspAtTime` nhớ theo runtime; `AIM_GAP` sang `constants.ts` | `scene.ts`, `holdSceneV2.test.ts` |
+| Review Fable `graspSolve` + `items` (T3 task `nhom-cam-g3-review-grasp-1`) | xong: 11 lỗi, 4 lệch spec, 5 test, 3 rủi ro — nhận hết | `review-g3-grasp.md` |
+| G3-R1 sửa review phần graspSolve/graspArm/graspGroups + file lá act3 | xong: `core/arm3.ts` lá (không vòng import); 19 test thêm; ca1–ca4 giữ | |
+| G3-R2 sửa review phần `items` của `scene.ts` + một nguồn nghiệm (`graspAtTime` với nhân vật thật) | xong: t02 0 mới; khung ấm 0,054 ms | |
+| Mốc M4 (G3-11, R1, R2) | commit | |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
 | T0 ảnh "trước" mọi lần cầm t02 (`cam-do`, `can-tay`) | xong: 142 lần cầm / 61 cảnh, 160 cặp (cảnh, giây); góc `cheo` dùng được, `truoc` 50/407 ô đen; `cam-do` 14 `!!` đều `but-bi#cup` (cờ cũ) | `tmp/nhom-cam/truoc/` |
 | Baseline `check --scene ^t02- --only held,clash` | xong: 0 lỗi, 193 cảnh báo, 2m16 | `tmp/nhom-cam/baseline/check-held-clash.{json,txt}` |
 
 ## Đã tự quyết
+- `edgeHigh` cạnh gần ngang: so độ chạy ngang thân với trước–sau (chia 45°), trước–sau thì đầu thấp là đầu gần người cầm.
+- Tay dẫn `sheet` không khai `edge`: tấm đứng `bottom`; tấm nằm cạnh về phía tay ấy.
 - `tilt` của `palmBox` lưới 2 điểm = hai đầu miền (0°, 25°); nghiệm rời tốt nhất vẫn giữ mặc định 20° làm ứng viên đầu.
 - Mặt người cầm cho `thumb` mặc định (tay dẫn) lấy tâm đầu.
 - Thụt `rim` giữ 1 (theo spec); fixture `tom-hum#nhac` (tâm nắm cao hơn giữa bề dày 1,5) và `bao#doc` (thụt 3) lệch vị trí → chỉnh ở giai đoạn 4 nhóm `sheet` theo ảnh.

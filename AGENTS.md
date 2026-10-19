@@ -103,8 +103,8 @@ nhìn +z local; bên `-1` là tay/chân phải.
 **`act` nhận `ScenePose` của `sceneAt`.** Chỉ kênh tay chân soạn ở `side` (`pose.lift`) được đọc;
 góc `0` thẳng xuống, dương ra trước, chi gần là bên phải người khi không lật. Hông lấy thẳng từ
 `world.hip` nên độ dài chi 3D phải khớp `RIG` của lõi (đùi, ống chân, hông ±`hipHalf`), lệch là
-chân trượt khi đi theo `path`. Khung xương (`BONES3`, `roots3`), luật đọc góc (`actAngles`) và IK
-(`actReach`) nằm ở `core/act3.ts`; `actJoints` của lõi tính lại đúng các khớp `act` đặt để `check`
+chân trượt khi đi theo `path`. Khung xương (`BONES3`, `roots3`) và luật đọc góc (`actAngles`) nằm
+ở `core/arm3.ts`, IK (`actReach`) ở `core/act3.ts`; `actJoints` của lõi tính lại đúng các khớp `act` đặt để `check`
 đo giật trên hình vẽ ra — sửa khớp hay thứ tự quay ở `act.ts`/`stickman.ts` thì sửa cùng
 `actJoints`, `act3.test.ts` giữ hai bên trùng.
 

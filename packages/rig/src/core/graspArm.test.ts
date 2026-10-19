@@ -10,6 +10,7 @@ import {
   wristAngles,
   type ArmInput,
   type ArmSeg,
+  type ArmSol,
 } from "./graspArm";
 import { wristTurn } from "./hand";
 import { HOLD_SLEW_STEP } from "./heldItem";
@@ -23,6 +24,7 @@ if (!parsed.success) throw new Error("nguoi");
 const T = trunk3(parsed.data, { pose: fx.pose, world: fx.world } as unknown as ActInput)!;
 const shape = markShape(T);
 const RIGHT = -1;
+const D2R = Math.PI / 180;
 const LEFT = 1;
 const inR = armInput(T, RIGHT, shape);
 const inL = armInput(T, LEFT, shape);
@@ -164,5 +166,60 @@ describe("graspArm", () => {
     expect(x.terms.body).toBeGreaterThanOrEqual(y.terms.body);
     const far: ArmSeg = { S: [9, 9, 9], E: [9, 9, 10], W: [9, 9, 11] };
     expect(evalPhi(inL, Wp, Rw, 12.5, undefined, far).E).toBe(y.E);
+  });
+});
+
+describe("chuỗi φ và gốc φ", () => {
+  const at = (phi: number) => ({ phi }) as ArmSol;
+  const ang = (a: V3, b: V3) => Math.acos(Math.max(-1, Math.min(1, dot(unit(a), unit(b))))) / D2R;
+
+  it("`phiAt` qua ranh ±180° đi đường ngắn nhất", () => {
+    const chain = [
+      { t: 0, sol: at(170) },
+      { t: HOLD_SLEW_STEP, sol: at(-170) },
+    ];
+    expect(Math.abs(phiAt(chain, HOLD_SLEW_STEP / 2))).toBeCloseTo(180, 9);
+    expect(phiAt(chain, HOLD_SLEW_STEP / 4)).toBeCloseTo(175, 9);
+    expect(phiAt(chain, (3 * HOLD_SLEW_STEP) / 4)).toBeCloseTo(-175, 9);
+  });
+
+  it("`phiChain`: `t1` không chia hết bước thì mẫu cuối là mẫu đầu tiên không trước `t1`", () => {
+    const q = { inp: inL, ...handOf(fx.ca.c5Left[0], LEFT) };
+    const [t0, t1] = [0.2, 0.2 + 2.5 * HOLD_SLEW_STEP];
+    const chain = phiChain(t0, t1, () => q);
+    expect(chain).toHaveLength(4);
+    chain.forEach((c, i) => expect(c.t).toBeCloseTo(t0 + i * HOLD_SLEW_STEP, 12));
+    expect(chain[3].t).toBeGreaterThanOrEqual(t1);
+    expect(chain[2].t).toBeLessThan(t1);
+  });
+
+  it("cổ tay thẳng dưới vai: gốc `φ` là `−tiến`, hoà êm sang hình chiếu hướng xuống", () => {
+    const back = matVec(T.Rr, [0, 0, -1]);
+    const r = 0.8 * (inR.l1 + inR.l2);
+    const pole = (a: number, az: number) => {
+      const h = matVec(T.Rr, [Math.sin(az * D2R), 0, Math.cos(az * D2R)]);
+      const c = Math.sqrt(1 - a * a);
+      const n: V3 = [h[0] * a, -c + h[1] * a, h[2] * a];
+      const Wp: V3 = [inR.S[0] + n[0] * r, inR.S[1] + n[1] * r, inR.S[2] + n[2] * r];
+      const x = evalPhi(inR, Wp, T.Rr, 0);
+      expect(Number.isFinite(x.E)).toBe(true);
+      return { n, p: x.pole };
+    };
+    expect(ang(pole(0, 0).p, back)).toBeLessThan(1e-6);
+    for (let az = 0; az < 360; az += 45) {
+      expect(ang(pole(0.05, az).p, back)).toBeLessThan(5);
+      const { n, p } = pole(0.35, az);
+      const d = sub([0, -1, 0], n.map((v) => v * -n[1]) as V3);
+      expect(ang(p, d)).toBeLessThan(1e-6);
+    }
+    // trục ngả ra trước, sang hai bên: gốc `φ` đổi dần, không nhảy
+    for (const az of [0, 90, -90]) {
+      let prev = pole(0, az).p;
+      for (let a = 0.01; a <= 0.4; a += 0.01) {
+        const { p } = pole(a, az);
+        expect(ang(p, prev)).toBeLessThan(15);
+        prev = p;
+      }
+    }
   });
 });

@@ -249,6 +249,24 @@ async function probeWorld(id, scene, runtime) {
   }
 }
 
+/** Mốc món sai hướng (`sceneItemProblems`) trên nhân vật thật của người cầm, như `check` */
+function itemProblems(scene, rt) {
+  if (!rt.items || !rig.sceneItemProblems) return [];
+  const chars = {};
+  for (const m of scene.cast)
+    try {
+      const c = m.character ? loadSpec("characters", m.character) : rig.defaultCharacter();
+      chars[m.id] = rig.castCharacter(m, c);
+    } catch {
+      // file nhân vật thiếu: rig báo người cầm thiếu nhân vật
+    }
+  try {
+    return rig.sceneItemProblems(rt, { chars });
+  } catch (e) {
+    return [e.message];
+  }
+}
+
 /** Tay chân giật trên hình của cả cảnh (hay của một người), cùng phép đo và ngưỡng với `check` (`stickman.snap`) */
 function sceneSnapLines(rt, character, cast) {
   const opts = cli.snapOptions?.(WS);
@@ -784,8 +802,12 @@ server.registerTool(
         ...sceneSnapLines(rt),
         ...(rig.sceneHoldProblems?.(rt) ?? []),
       ];
-      // `check` coi là lỗi: người 3D diễn hành động 2D ở kênh tay chân
-      const errors = rig.sceneSideProblems?.(rt, allActions()) ?? [];
+      // `check` coi là lỗi: người 3D diễn hành động 2D ở kênh tay chân, mốc món sai hướng hay không tay nào cầm
+      const errors = [
+        ...(rig.sceneSideProblems?.(rt, allActions()) ?? []),
+        ...itemProblems(r.data, rt),
+        ...(rig.sceneItemHoldProblems?.(rt) ?? []),
+      ];
       return text({
         ok: true,
         kind,

@@ -11,9 +11,9 @@ import {
   type GraspCtx,
   type GraspSolution,
 } from "./graspSolve";
-import { itemGeom } from "./heldGeom";
+import { itemGeom, type SlabFeature } from "./heldGeom";
 import { gripPoint, HOLD_SLEW_STEP, parseHeldItem, type HeldItemSpec } from "./heldItem";
-import { fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
+import { add3, fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
 import type { ItemPose } from "./scene";
 import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
@@ -112,6 +112,36 @@ describe("handFromItem", () => {
     }
     const d = matMul(tr(Rw), Rw);
     for (let i = 0; i < 9; i++) expect(d[i]).toBeCloseTo(i % 4 === 0 ? 1 : 0, 6);
+  });
+
+  it("vòng kín với cỡ khác 1, cỡ dọc khác cỡ ngang, tay trái", () => {
+    const s = 0.85;
+    const pose = poseOf(ITEMS.c2, s);
+    const [k, long] = [1.7 * s, 1.4 * s];
+    const g = graspFrame(
+      BANG,
+      itemGeom(BANG),
+      { group: "sheet", edge: "left", thumb: "back", variant: "rim", along: 0.7, slant: 10 },
+      LEFT,
+      ctx.dims,
+      k,
+      long,
+      s,
+    );
+    const { Wp, Rw } = handFromItem(pose.R, pose.P, pose.s, g.G);
+    for (const q of [
+      [0, 0, 0],
+      [-31, 0.4, 12],
+      [8, 1.2, -20],
+    ] as V3[]) {
+      const w = matVec(Rw, gripPoint(g.G, q)).map((v, i) => v + Wp[i]) as V3;
+      const rig = matVec(pose.R, q).map((v, i) => (pose.P[i] + v * s) / 100) as V3;
+      expect(dist(w, [rig[0], -rig[1], -rig[2]])).toBeLessThan(1e-12);
+    }
+    const d = matMul(tr(Rw), Rw);
+    for (let i = 0; i < 9; i++) expect(d[i]).toBeCloseTo(i % 4 === 0 ? 1 : 0, 9);
+    const c = handFromItem(pose.R, pose.P, pose.s, g.G);
+    expect(c).toEqual({ Wp, Rw });
   });
 
   it("khung cầm dựng với cỡ khác món là lỗi", () => {
@@ -247,6 +277,106 @@ describe("chooseMissing", () => {
       later: [1.2, 1.4, 1.6, 1.8, 2].map((t) => ({ t, pose })),
     });
     expect(many.cost).toBeCloseTo(base.cost * 3 - 2 * devOf(base), 9);
+  });
+});
+
+describe("chooseMissing: khối hình, mốc sau, cạnh", () => {
+  const pose = poseOf(ITEMS.c3);
+  const hold = { item: "bang-gia", group: "sheet", edge: "left" } as const;
+
+  it("hai khối cùng phần, cùng loại: nghiệm dựng trên đúng khối của nó", () => {
+    const twin = item(bangGia);
+    const g = itemGeom(twin);
+    const i0 = g.features.findIndex((f) => f.kind === "slab");
+    const near = g.features[i0] as SlabFeature;
+    const d: V3 = [0, 0, 400];
+    const far: SlabFeature = {
+      ...near,
+      c: add3(near.c, d),
+      edges: near.edges.map((e) => ({ ...e, at: add3(e.at, d) })),
+    };
+    g.features[i0] = far;
+    g.features.push(near);
+    const c2 = graspCtx(T, { "bang-gia": twin });
+    const sol = chooseMissing(c2, hold, pose, RIGHT);
+    expect(sol.choice.featureIndex).toBe(g.features.length - 1);
+    expect(sol.frame.feature).toBe(near);
+    const one = chooseMissing(ctx, hold, pose, RIGHT);
+    expect(sol.Wp).toEqual(one.Wp);
+    expect(sol.cost).toBe(one.cost);
+    const again = graspFrame(
+      twin,
+      g,
+      { ...sol.choice, group: "sheet" },
+      RIGHT,
+      c2.dims,
+      c2.k * c2.s,
+      c2.long * c2.s,
+      pose.s,
+      sol.high,
+    );
+    expect(again.G).toEqual(sol.frame.G);
+    expect(() =>
+      graspFrame(twin, g, { group: "sheet", edge: "left", featureIndex: 99 }, RIGHT, c2.dims),
+    ).toThrow(/99/);
+  });
+
+  it("mốc món sau của người khác hay cỡ khác bị bỏ, không lỗi", () => {
+    const base = chooseMissing(ctx, hold, pose, RIGHT, { t0: 1 });
+    const other = chooseMissing(ctx, hold, pose, RIGHT, {
+      t0: 1,
+      later: [
+        { t: 1.5, pose: { ...pose, cast: "khac", s: 1.3 } },
+        { t: 2, pose: { ...pose, s: 1.2 } },
+      ],
+    });
+    expect(other.cost).toBe(base.cost);
+  });
+
+  it("`high` mà chưa khai `edge` là lỗi", () => {
+    expect(() => chooseMissing(ctx, "bang-gia@sheet", pose, RIGHT, { high: [1, 0, 0] })).toThrow(
+      /edge/,
+    );
+  });
+
+  it("tay dẫn không khai `edge`: tấm đứng `bottom`, tấm nằm cạnh phía tay ấy", () => {
+    const lead = { solve: false } as const;
+    for (const side of [RIGHT, LEFT])
+      expect(chooseMissing(ctx, "bang-gia@sheet", pose, side, lead).choice.edge).toBe("bottom");
+    const flat = item({
+      schemaVersion: 2,
+      size: [40, 0.6, 34],
+      front: [0, 0, 1],
+      top: [0, 1, 0],
+      anchors: {},
+      shape: [{ box: [40, 0.6, 34], at: [0, 0.3, 0] }],
+    });
+    const c2 = graspCtx(T, { "tam-nam": flat });
+    expect(chooseMissing(c2, "tam-nam@sheet", pose, RIGHT, lead).choice.edge).toBe("right");
+    expect(chooseMissing(c2, "tam-nam@sheet", pose, LEFT, lead).choice.edge).toBe("left");
+  });
+
+  it("chỉ giải cạnh dài ≥ 0,6·W", () => {
+    const w = 0.5 * ctx.dims.W;
+    const strip = item({
+      schemaVersion: 2,
+      size: [60, 1, w],
+      front: "front",
+      top: "top",
+      anchors: {
+        front: { at: [0, 1, 0], dir: [0, 1, 0] },
+        top: { at: [0, 0.5, -w / 2], dir: [0, 0, -1] },
+      },
+      shape: [{ box: [60, 1, w], at: [0, 0.5, 0] }],
+    });
+    const c2 = graspCtx(T, { strip });
+    const f = itemGeom(strip).features.find((x): x is SlabFeature => x.kind === "slab")!;
+    const long = f.edges.filter((e) => e.len >= 0.6 * ctx.dims.W).map((e) => e.name);
+    expect(long).toHaveLength(2);
+    const sol = chooseMissing(c2, "strip@sheet", pose, RIGHT);
+    expect(long).toContain(sol.choice.edge);
+    // 2 cạnh × 2 mặt × 3 biến thể, rồi `along` 3 × `slant` 3
+    expect(sol.candidates).toBe(12 + 9);
   });
 });
 

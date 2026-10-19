@@ -1,9 +1,11 @@
-import { AIM_BEND, AIM_DEV, markShape, type Trunk3 } from "./act3";
+import { AIM_BEND, AIM_DEV, markShape, TURN_MAX, type Trunk3 } from "./arm3";
+import { AIM_GAP } from "./constants";
 import { armInput, solvePhi, type ArmInput, type ArmSeg, type ArmSol } from "./graspArm";
 import {
   GRIP_GROUPS,
   groupNeeds,
   holdDefaults,
+  longEdges,
   type GroupSpec,
   type PoseRef,
   type PoseSpec,
@@ -48,7 +50,6 @@ import {
   type SceneHold,
 } from "./heldItem";
 import { add3, cross3, dot3, matMul, matVec, scale3, sub3, type M3, type V3 } from "./lens";
-import { AIM_GAP } from "./palm";
 import type { ItemPose } from "./scene";
 
 /**
@@ -60,6 +61,8 @@ import type { ItemPose } from "./scene";
 export interface GraspChoice {
   part?: string;
   feature?: FeatureKind;
+  /** Chỉ số khối hình trong `itemGeom(spec).features`: định danh khối khi một phần có nhiều khối cùng loại */
+  featureIndex?: number;
   edge?: SideName | number;
   along?: AlongName | number;
   thumb?: SideName | "up" | "down";
@@ -128,8 +131,6 @@ const BOX_RISE = 20;
 const BOX_SHIFT = 2;
 const BOX_GAP = 2.8;
 const SLOPE = Math.sin(30 * D2R);
-/** Kẹp xoay cẳng tay, như `aimWrist` */
-const TURN_MAX = 90;
 
 /** Hướng trục `v` lấy dấu theo tham chiếu đầu tiên không vuông góc với nó */
 const signed = (v: V3, refs: V3[]): V3 => {
@@ -210,14 +211,18 @@ export const CONTACTS: Partial<Record<GroupId, Record<string, ContactFn>>> = {
 
 /**
  * Đầu cao của cạnh có hướng `e` (khung món) khi món quay `R` (khung món → thế giới, `up` là hướng lên): cạnh dốc ≥ 30° so
- * với mặt ngang thì đầu trên; gần ngang thì đầu thấp về phía tay `side` theo `across` (ngang hệ thân, dương về tay phải
- * người cầm). Trả `±e`. docs/11-nhom-cam.md#chỗ-cầm-castworldhandshold
+ * với mặt ngang thì đầu trên; gần ngang mà chạy ngang thân hơn chạy trước–sau thì đầu thấp về phía tay `side` theo
+ * `across` (ngang hệ thân, dương về tay phải người cầm), không thì đầu thấp về phía người cầm (`−tiến`). Trả `±e`.
+ * docs/11-nhom-cam.md#chỗ-cầm-castworldhandshold
  */
 export function edgeHigh(e: V3, R: M3, side: number, across: V3, up: V3 = [0, -1, 0]): V3 {
   const w = matVec(R, e);
   const rise = dot3(w, up) / (len3(w) || 1);
   if (Math.abs(rise) >= SLOPE - 1e-9) return rise > 0 ? e : neg(e);
-  return dot3(w, scale3(across, -side)) > 0 ? neg(e) : e;
+  const a = dot3(w, across);
+  const f = dot3(w, cross3(up, across));
+  if (Math.abs(a) >= Math.abs(f)) return a * side < 0 ? neg(e) : e;
+  return f > 0 ? e : neg(e);
 }
 
 const edgeOk = (f: Feature, edge: GraspChoice["edge"]) =>
@@ -231,7 +236,10 @@ const faceOk = (f: Feature, thumb: GraspChoice["thumb"]) =>
   thumb === undefined ||
   (f.kind === "slab" || f.kind === "disc" ? f.faces.some((x) => x.name === thumb) : true);
 
-/** Khối hình của chỗ cầm: ưu tiên khối đạt `needs` ở cỡ tay này, không có thì khối cùng loại đầu tiên */
+/**
+ * Khối hình của chỗ cầm: `featureIndex` nếu khai, không thì ưu tiên khối đạt `needs` ở cỡ tay này, không có thì khối cùng
+ * loại đầu tiên
+ */
 function pickFeature(
   spec: HeldItemSpec,
   geom: ItemGeom,
@@ -240,6 +248,15 @@ function pickFeature(
   c: GraspChoice,
 ): Feature {
   const kinds = new Set<string>(group.needs.flatMap((n) => n.kinds));
+  if (c.featureIndex !== undefined) {
+    const f = geom.features[c.featureIndex];
+    if (!f) throw new Error(`món không có khối hình số ${c.featureIndex}`);
+    if (!kinds.has(f.kind) || (c.part !== undefined && f.part !== c.part))
+      throw new Error(
+        `khối hình số ${c.featureIndex} (\`${f.kind}\` ở phần \`${f.part}\`) không hợp chỗ cầm nhóm \`${group.id}\``,
+      );
+    return f;
+  }
   const ok = (f: Feature) =>
     kinds.has(f.kind) &&
     (c.part === undefined || f.part === c.part) &&
@@ -348,6 +365,7 @@ export function graspFrame(
     choice: {
       part: feature.part,
       feature: feature.kind,
+      featureIndex: geom.features.indexOf(feature),
       ...(edge !== undefined && { edge }),
       along: ct.along,
       ...(thumb !== undefined && { thumb: thumb as GraspChoice["thumb"] }),
@@ -448,7 +466,10 @@ export interface GraspReport {
   };
 }
 
-/** Mốc món sau mốc bắt đầu của lần cầm; `ctx` là người cầm lúc ấy, thiếu thì người lúc bắt đầu */
+/**
+ * Mốc món sau mốc bắt đầu của lần cầm; `ctx` là người cầm lúc ấy, thiếu thì người lúc bắt đầu. Mốc khác `cast` hay cỡ với
+ * mốc bắt đầu bị bỏ
+ */
 export interface GraspLater {
   t: number;
   pose: ItemPose;
@@ -466,15 +487,16 @@ export interface GraspOpts {
   t0?: number;
   /** Mốc món sau `t0`: giá cộng ở các mốc trong `LATER_SPAN` giây, tối đa `LATER_MAX`, trọng số `LATER_W` */
   later?: readonly GraspLater[];
-  /** Đầu cao của cạnh đã xét ở mốc bắt đầu lần cầm */
+  /** Đầu cao của cạnh đã xét ở mốc bắt đầu lần cầm; nhóm có `edge` thì cảnh phải khai `edge` */
   high?: V3;
-  /** `false`: không giải, trường thiếu lấy mặc định của nhóm (tay dẫn) */
+  /** `false`: không giải, trường thiếu lấy mặc định của nhóm (tay dẫn); `edge` của tấm: đứng `bottom`, nằm cạnh phía tay */
   solve?: boolean;
 }
 
 /** Giá lệch mặc định: `DEV_COST · (số trường lệch) / (số trường thiếu có mặc định)` */
 const DEV_COST = 0.05;
-const LATER_SPAN = 1.5;
+/** Mốc món sau mốc bắt đầu lần cầm cộng vào giá của lựa chọn trong ngần này giây */
+export const LATER_SPAN = 1.5;
 const LATER_MAX = 4;
 const LATER_W = 0.5;
 const KIND_ORDER: FeatureKind[] = ["slab", "disc", "rod", "lathe", "box", "face"];
@@ -565,10 +587,20 @@ export function chooseMissing(
     const v = (h as Record<string, unknown>)[k];
     if (v !== undefined) (given as Record<string, unknown>)[k] = v;
   }
+  if (opts.high && group.choices.edge && given.edge === undefined)
+    throw new Error(
+      `\`${h.item}@${h.group}\`: \`high\` là đầu cao của một cạnh, cần \`edge\` khai`,
+    );
   const solve = opts.solve !== false;
   const t0 = opts.t0 ?? 0;
   const later = (opts.later ?? [])
-    .filter((x) => x.t > t0 && x.t <= t0 + LATER_SPAN + 1e-9)
+    .filter(
+      (x) =>
+        x.t > t0 &&
+        x.t <= t0 + LATER_SPAN + 1e-9 &&
+        x.pose.cast === pose.cast &&
+        Math.abs(x.pose.s - pose.s) < 1e-9,
+    )
     .slice(0, LATER_MAX);
   const missing = Object.keys(group.choices).filter(
     (k) => (FIELDS as readonly string[]).includes(k) && given[k as Field] === undefined,
@@ -612,7 +644,13 @@ export function chooseMissing(
   ): Cand => {
     tried++;
     const high = opts.high ?? highOf(geom, f, c, pose.R, sd, ctx.across);
-    const choice = { ...c, group: h.group, part: f.part, feature: f.kind };
+    const choice = {
+      ...c,
+      group: h.group,
+      part: f.part,
+      feature: f.kind,
+      featureIndex: geom.features.indexOf(f),
+    };
     const frame = graspFrame(
       spec,
       geom,
@@ -647,6 +685,17 @@ export function chooseMissing(
       bestDefs = defs;
     }
   };
+  const lead =
+    !solve && h.group === "sheet"
+      ? (f: Feature) =>
+          f.kind === "slab" || f.kind === "disc"
+            ? f.lying
+              ? sd < 0
+                ? "right"
+                : "left"
+              : "bottom"
+            : undefined
+      : undefined;
 
   for (const f of feats) {
     const defs = holdDefaults(group, geom, {
@@ -661,13 +710,15 @@ export function chooseMissing(
       let vals: (string | number)[] = [];
       if (k === "variant") vals = variants;
       else if (ch.kind === "names" && ch.values) vals = [...ch.values];
-      else if (k === "edge" && f.kind === "slab") vals = f.edges.map((e) => e.name);
-      else if (k === "edge" && f.kind === "disc") vals = [...f.rim];
+      else if (k === "edge" && f.kind === "slab") {
+        const long = longEdges(f, ctx.dims);
+        vals = (long.length ? long : f.edges).map((e) => e.name);
+      } else if (k === "edge" && f.kind === "disc") vals = [...f.rim];
       else if (k === "thumb" && (f.kind === "slab" || f.kind === "disc"))
         vals = f.faces.map((x) => x.name);
       if (!solve || !vals.length) {
-        const d = defs[k] ?? vals[0];
-        return [d];
+        const l = k === "edge" ? lead?.(f) : undefined;
+        return [defs[k] ?? (l !== undefined && vals.includes(l) ? l : vals[0])];
       }
       return vals;
     };
@@ -720,17 +771,30 @@ export function chooseMissing(
       thumb: rough.choice.thumb,
       variant: rough.choice.variant,
     };
-    for (const c of combos) take(run(rough.feature, { ...base, ...c }, bestDefs), bestDefs);
+    // hoà thì giá trị liên tục nhỏ hơn trước, theo thứ tự trường (docs/11 mục 5)
+    const before = (a: GraspChoice, b: GraspChoice) => {
+      for (const k of free) if (a[k] !== b[k]) return (a[k] as number) < (b[k] as number);
+      return false;
+    };
+    for (const c of combos) {
+      const x = run(rough.feature, { ...base, ...c }, bestDefs);
+      if (
+        x.cost < best.cost - 1e-12 ||
+        (x.cost <= best.cost + 1e-12 && before(x.choice, best.choice))
+      )
+        best = x;
+    }
   }
   const win: Cand = best;
   const by: GraspBy = {};
   for (const k of Object.keys(win.choice) as (keyof GraspChoice)[])
-    by[k] =
-      given[k] !== undefined
-        ? "scene"
-        : solve && (sizes[k] ?? 0) > 1 && (k === "feature" || missing.includes(k))
-          ? "rig"
-          : "default";
+    if (k !== "featureIndex")
+      by[k] =
+        given[k] !== undefined
+          ? "scene"
+          : solve && (sizes[k] ?? 0) > 1 && (k === "feature" || missing.includes(k))
+            ? "rig"
+            : "default";
   return {
     item: h.item,
     group: h.group,

@@ -3,7 +3,8 @@ import { fingerVec, HAND_POSES, HAND_RELAXED, type HandPose, type HandVec } from
 import { depthAt, project, type V3 } from "./lens";
 import { sceneHoldRef, type CarryOn, type HeldFinger } from "./heldItem";
 import { CARRY } from "./heldCarry";
-import { AIM_GAP, handClips, PALM_HAND_LABELS, type PalmHand } from "./palm";
+import { AIM_GAP } from "./constants";
+import { handClips, PALM_HAND_LABELS, type PalmHand } from "./palm";
 import { cameraAt, type SceneRuntime } from "./scene";
 
 /**

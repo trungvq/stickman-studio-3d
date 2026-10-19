@@ -9,6 +9,7 @@ import {
   type ActPalm,
 } from "./act3";
 import { actionMask } from "./action";
+import { AIM_GAP } from "./constants";
 import { body3 } from "./figure3d";
 import { depthAt, project, type V3 } from "./lens";
 import { cameraAt, castCharacter, sceneAt, type CastMember, type SceneRuntime } from "./scene";
@@ -357,8 +358,6 @@ export function palmLine(s: PalmIssue): string {
 export const scenePalmProblems = (rt: SceneRuntime, o: PalmOptions): string[] =>
   scenePalms(rt, o).map(palmLine);
 
-/** Đích theo mốc còn cách điểm bàn tay quá ngần này (rig, nhân `world.s`) thì `check` báo */
-export const AIM_GAP = 6;
 /** Lòng tay khai theo ý định còn lệch quá ngần này độ thì báo */
 export const AIM_ANGLE = 25;
 /** Ngón khai theo ý định còn lệch quá ngần này độ thì báo: hướng ngón là phụ, khuỷu và giới hạn cổ tay quyết phần còn lại */

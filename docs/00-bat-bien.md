@@ -395,7 +395,7 @@ bằng tay. `palm` thắng `turn`. Với không tới, xoay không tới thì `c
 vòng khi cánh tay qua đỉnh đầu, và lệch với `actJoints`. Xem [01](01-rig.md#đích-bàn-tay).
 
 **Đo giật trên đúng hình vẽ ra.** `actJoints` của lõi và `act` của three dùng chung khung xương,
-luật đọc góc và IK (`core/act3.ts`), cả xoắn vai, ba góc cổ tay và tâm nắm (`hand*`); đổi một bên mà không
+luật đọc góc và IK (`core/arm3.ts`, `core/act3.ts`), cả xoắn vai, ba góc cổ tay và tâm nắm (`hand*`); đổi một bên mà không
 đổi bên kia thì `check` đo một hình khác hình lên phim — `act3.test.ts` giữ chúng trùng. Chỗ cố ý giật khai `snap`, đừng nới ngưỡng cả repo.
 Xem [01](01-rig.md#khớp-người-3d-vẽ-ra).
 

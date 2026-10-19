@@ -1,6 +1,6 @@
 import type { HandPose } from "./hand";
 import type { FingerRole } from "./heldFit";
-import { gripSpan, type Feature, type HandDims, type ItemGeom } from "./heldGeom";
+import { gripSpan, type Feature, type HandDims, type ItemGeom, type SlabFeature } from "./heldGeom";
 import {
   CARRY_ON,
   GROUP_IDS,
@@ -182,6 +182,12 @@ const thick = (f: Feature) => (f.kind === "slab" || f.kind === "disc" ? f.t : In
 const radius = (f: Feature) => (f.kind === "rod" ? f.R : f.kind === "lathe" ? f.rMax : Infinity);
 const span = (g: ItemGeom, f: Feature) => Math.max(0, ...gripSpan(g, f).map((s) => s.len));
 
+/** Cạnh tấm được cầm dài ít nhất ngần này lần `W` (`sheet`) */
+export const EDGE_MIN = 0.6;
+/** Cạnh của tấm đủ dài để cầm (`EDGE_MIN · W`), theo thứ tự của `heldGeom` */
+export const longEdges = (f: SlabFeature, h: HandDims) =>
+  f.edges.filter((e) => e.len >= EDGE_MIN * h.W);
+
 const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
   sheet: {
     label: "Tấm kẹp mép",
@@ -191,8 +197,8 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
         test: (f, h) =>
           thick(f) <= 0.45 * h.A &&
           (f.kind === "slab"
-            ? Math.max(...f.edges.map((e) => e.len)) >= 0.6 * h.W
-            : f.kind === "disc" && 2 * f.radius >= 0.6 * h.W),
+            ? longEdges(f, h).length > 0
+            : f.kind === "disc" && 2 * f.radius >= EDGE_MIN * h.W),
         text: "tấm hay đĩa dày ≤ 0,45·A, cạnh dài ≥ 0,6·W",
       },
     ],

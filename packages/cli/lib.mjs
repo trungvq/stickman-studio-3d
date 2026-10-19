@@ -649,6 +649,15 @@ const castBodies = (scene, characters) => {
   ];
 };
 
+/** `chars` của `itemAt` / `sceneItemProblems` / `graspAtTime`: nhân vật thật của từng người trong `cast`, file thiếu thì bỏ */
+export const castChars = (scene, characters) =>
+  Object.fromEntries(
+    scene.cast.flatMap((m) => {
+      const c = m.character ? characters[m.character] : rig.defaultCharacter();
+      return c ? [[m.id, rig.castCharacter(m, c)]] : [];
+    }),
+  );
+
 function loadByFile(layers, parse) {
   const out = {};
   for (const dir of [...layers].reverse())
@@ -2912,6 +2921,19 @@ export async function checkWorkspace({
             // Hai tay của món cầm hai tay khai hai món khác nhau — docs/03-scene.md#đồ-cầm-tay
             for (const problem of rt && rig.sceneHoldProblems ? rig.sceneHoldProblems(rt) : [])
               refWarn(`scenes/${f}: ${problem}`);
+            // Mốc món suy biến hay không tay nào cầm — docs/11-nhom-cam.md#mốc-món-items
+            if (rt?.items && rig.sceneItemProblems) {
+              try {
+                const chars = castChars(r.data, charactersByName);
+                for (const problem of [
+                  ...rig.sceneItemProblems(rt, { chars }),
+                  ...rig.sceneItemHoldProblems(rt),
+                ])
+                  bad(`scenes/${f}: ${problem}`);
+              } catch (e) {
+                bad(`scenes/${f}: ${e.message}`);
+              }
+            }
             for (const file of rig.sceneImages(r.data))
               if (!existsSync(join(root, "assets/bg", file)))
                 bad(`scenes/${f}: nền trỏ tới assets/bg/${file} không có`);

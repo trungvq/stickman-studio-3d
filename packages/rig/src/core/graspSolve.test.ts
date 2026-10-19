@@ -10,7 +10,7 @@ import {
   type GroupId,
   type HeldItemSpec,
 } from "./heldItem";
-import { matMul, matVec, type M3, type V3 } from "./lens";
+import { fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
 import grip from "./__fixtures__/grip-frames.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
@@ -374,6 +374,31 @@ describe("edgeHigh", () => {
   it("cạnh ngang: đầu thấp về phía tay ấy", () => {
     close(edgeHigh([1, 0, 0], R, -1, across), [-1, 0, 0]);
     close(edgeHigh([1, 0, 0], R, 1, across), [1, 0, 0]);
+  });
+
+  it("tấm nằm: cạnh chạy trước–sau có đầu thấp về phía người cầm, cạnh chạy ngang thân về phía tay ấy", () => {
+    const flat = sheet([40, 0.6, 34], [0, 0.3, 0], [0, 0, 1], [0, 1, 0]);
+    const f = itemGeom(flat).features.find((x): x is SlabFeature => x.kind === "slab")!;
+    expect(f.lying).toBe(true);
+    // món nằm trước người cầm, `front` về người cầm (−z), quay quanh phương đứng `yaw`; người cầm nhìn +z
+    const ahead: V3 = [0, 0, 1];
+    const dot = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    for (const yaw of [0, 20, -20]) {
+      const c = Math.cos(yaw * D2R);
+      const s = Math.sin(yaw * D2R);
+      const Rl = fromColumns([c, 0, s], [0, -1, 0], [s, 0, -c]);
+      for (const thumb of ["top", "bottom"] as const)
+        for (const side of [-1, 1]) {
+          for (const edge of ["left", "right"] as const) {
+            const hi = edgeHigh(edgeFrame(f, edge, thumb).e, Rl, side, across);
+            expect(dot(matVec(Rl, hi), ahead)).toBeGreaterThan(0);
+          }
+          for (const edge of ["front", "back"] as const) {
+            const hi = edgeHigh(edgeFrame(f, edge, thumb).e, Rl, side, across);
+            expect(dot(matVec(Rl, hi), across) * side).toBeGreaterThan(0);
+          }
+        }
+    }
   });
 
   it("ngưỡng 30°: dốc 31° là đầu trên, 29° theo tay", () => {

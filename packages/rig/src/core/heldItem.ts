@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BODY_MARKS, PALM_DIR_NAMES, type BodyMark, type PalmDir } from "./bodyMark";
 import { HAND_GRIPS, HAND_POSE_KINDS, type HandPose } from "./hand";
+import type { GraspChoice } from "./graspSolve";
 import { topProblems } from "./heldGeom";
 import { fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
 
@@ -544,16 +545,29 @@ export interface HoldAim {
  * `HOLD_BLEND` giây đầu của lần cầm: `from` là kiểu cầm trước đó của cùng món trên tay này và phần còn lại của nó (liên kết
  * hoà dần từ kiểu cũ sang kiểu mới), `enter` là phần đã vào của lần cầm (tay phụ hoà dần tới mốc của nó trên món). `prior`
  * là mẫu trước của tay ấy (`HOLD_SLEW_STEP`): cách bao nhiêu giây và tư thế của người ở đó — cổ tay mang món đi từ nghiệm
- * ở đó với tốc độ có hạn
+ * ở đó với tốc độ có hạn. `grasp` là chỗ cầm nhóm (`món@nhóm`); `from.grasp` của lần cầm trước
  */
 export interface ReachHold {
   item: string;
   grip: string;
   spec: HeldItemSpec;
   since: number;
-  from?: { grip: string; k: number };
+  from?: { grip: string; k: number; grasp?: HoldGrasp };
   enter?: number;
   prior?: { dt: number; pose: () => object };
+  grasp?: HoldGrasp;
+}
+
+/**
+ * Chỗ cầm nhóm (`món@nhóm`) của một lần cầm ở một khung: `hold` là mốc tay gần nhất dạng object, trường số đã hoà tới khung
+ * này; `mode` `item` khi món có mốc ở `items` (bàn tay suy từ món), `hand` khi tay dẫn; `choice` là trường cảnh khai, tay dẫn
+ * cộng mặc định của nhóm; lựa chọn rig giải cho món đặt trước ở `graspAtTime`. docs/11-nhom-cam.md mục 4, 5
+ */
+export interface HoldGrasp {
+  hold: SceneHoldGroup;
+  mode: "item" | "hand";
+  choice: GraspChoice;
+  t0: number;
 }
 
 /** Tên file của món cho tên thể hiện `món:<tên>` (`vali:2` → `vali`); tên không có `:` là chính nó */

@@ -144,3 +144,6 @@ export const ARM_LAYER_LABELS: Record<ArmLayer, string> = {
   mid: "giữa — trên thân áo, dưới đầu",
   front: "trước — trên đầu",
 };
+
+/** Đích theo mốc còn cách điểm bàn tay quá ngần này (rig, nhân `world.s`) thì `check` báo */
+export const AIM_GAP = 6;
