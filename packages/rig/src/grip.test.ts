@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { act, type Acting } from './act';
 import { hold } from './attach';
+import { fingerVec, HAND_POSES } from './core/hand';
 import { gripCenter, heldPoint, parseHeldItem, type HeldItemSpec } from './core/heldItem';
 import { defaultCharacter } from './core/schema';
 import type { Figure, Side } from './stickman';
@@ -180,6 +181,6 @@ describe('ngón ôm theo đồ: món có hình va chạm', () => {
     act(p, reach());
     hold(p, phone(), { hand: -1, grip: { item: 'dien-thoai', spec: PHONE, grip: 'khoe' } });
     expect(p.hands![-1].fit).toBeUndefined();
-    expect(p.hands![-1].shown).toEqual([71, 6, 0, 44, 3, 20, 3, 21, 0]);
+    expect(p.hands![-1].shown).toEqual(fingerVec(HAND_POSES.span));
   });
 });

@@ -13,6 +13,7 @@ import {
   HAND_GRIPS,
   HAND_BIND,
   HAND_BONES,
+  HAND_CAPSULE_PIECES,
   HAND_PIECES,
   HAND_POSE_KINDS,
   HAND_POSE_LABELS,
@@ -35,6 +36,7 @@ import {
   smoothstep,
   type ActionData,
   type HandPiece,
+  type HandPose,
   type V3,
 } from "./index";
 
@@ -95,8 +97,51 @@ describe("bảng dáng tay", () => {
     const r = vec("rest");
     expect(reach(r, "index1")).toBeGreaterThan(0.165);
     expect(dist(tipOf(r, "thumb1"), tipOf(r, "index1"))).toBeLessThan(0.1);
+    // ngón cái dài như tay người: khép sát thì đầu ngón cái vượt khớp gốc ngón trỏ, tới gần giữa đốt gốc
+    for (const p of ["rest", "cup", "flat"] as const)
+      expect(-tipOf(vec(p), "thumb1")[1]).toBeGreaterThan(
+        -HAND_BONES.index.at[1] + 0.38 * HAND_BONES.index.len[0],
+      );
     // nắm: đầu ngón cái vắt trước mặt lòng bàn tay, ngang chỗ các ngón đã cuộn
     expect(tipOf(vec("fist"), "thumb1")[0]).toBeGreaterThan(HAND_BONES.palm.half[0]);
+  });
+
+  it("ngón cái dài mà không lấn: dáng nghỉ không lún vào đốt gốc ngón trỏ; dáng áp món lên lòng tay không có gốc ngón cái lồi vào vùng ấy", () => {
+    const seg = (p: V3, a: V3, b: V3) => {
+      const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+      const w = [p[0] - a[0], p[1] - a[1], p[2] - a[2]];
+      const t = Math.min(
+        1,
+        Math.max(
+          0,
+          (w[0] * d[0] + w[1] * d[1] + w[2] * d[2]) / (d[0] ** 2 + d[1] ** 2 + d[2] ** 2),
+        ),
+      );
+      return Math.hypot(w[0] - t * d[0], w[1] - t * d[1], w[2] - t * d[2]);
+    };
+    const cap = (v: number[], n: string) =>
+      handCapsules(v, -1)[HAND_CAPSULE_PIECES.indexOf(n as HandPiece)];
+    // khe da ngón cái (đốt ngọn) tới đốt gốc ngón trỏ, dò dọc đốt ngọn ngón cái
+    const [a, b, r] = cap(vec("rest"), "thumb1");
+    const [c, d, ri] = cap(vec("rest"), "index0");
+    let gap = Infinity;
+    for (let i = 0; i <= 40; i++) {
+      const p: V3 = [0, 1, 2].map((j) => a[j] + ((b[j] - a[j]) * i) / 40) as V3;
+      gap = Math.min(gap, seg(p, c, d) - r - ri);
+    }
+    expect(gap).toBeGreaterThanOrEqual(0);
+    // vùng lòng tay áp món (từ nửa lòng bàn tay tới hàng khớp gốc ngón): đốt gốc ngón cái không lồi ra trước mặt lòng tay
+    const lift = (p: HandPose) => {
+      const [a, b, r] = cap(vec(p), "thumb0");
+      let m = -Infinity;
+      for (let i = 0; i <= 20; i++) {
+        const y = a[1] + ((b[1] - a[1]) * i) / 20;
+        if (y < -0.05 && y > HAND_BONES.index.at[1])
+          m = Math.max(m, a[0] + ((b[0] - a[0]) * i) / 20 + r);
+      }
+      return m - HAND_BONES.palm.half[0];
+    };
+    for (const p of ["span", "edge"] as const) expect(lift(p)).toBeLessThanOrEqual(0);
   });
 
   it("hai bàn tay soi gương qua mặt phẳng giữa; lòng tay quay về phía thân", () => {

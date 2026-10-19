@@ -21,7 +21,7 @@ export interface Fingers {
 
 /** Dáng nghỉ: ngón cong nhẹ, ngón cái khép sát ngón trỏ — bàn tay không ai đặt dáng, và gốc mà `w` hoà từ đó. Không soạn được */
 export const HAND_RELAXED: Fingers = {
-  thumb: [15, 20, 4, 8],
+  thumb: [11, 16, 4, 8],
   index: [8, 10],
   fingers: [10, 14],
   spread: 2,
@@ -29,18 +29,18 @@ export const HAND_RELAXED: Fingers = {
 
 /** Dáng tay soạn được. Thêm một dáng là thêm một dòng; `HandPose` và `HAND_POSE_KINDS` lấy từ khoá của bảng */
 export const HAND_POSES = {
-  open: { thumb: [40, 15, 0, 0], index: [0, 0], fingers: [0, 0], spread: 6 },
-  grip: { thumb: [55, 65, 10, 15], index: [45, 80], fingers: [50, 80], spread: 0 },
-  point: { thumb: [45, 70, 25, 30], index: [0, 0], fingers: [90, 100], spread: 0 },
-  fist: { thumb: [20, 85, 25, 30], index: [90, 85], fingers: [90, 85], spread: 0 },
-  cup: { thumb: [12, 18, 4, 6], index: [4, 6], fingers: [6, 8], spread: 1 },
-  pinch: { thumb: [55, 55, 15, 20], index: [45, 35], fingers: [70, 70], spread: 0 },
+  open: { thumb: [40, 12, 0, 0], index: [0, 0], fingers: [0, 0], spread: 6 },
+  grip: { thumb: [50, 61, -4, 15], index: [45, 80], fingers: [50, 80], spread: 0 },
+  point: { thumb: [37, 78, 29, 31], index: [0, 0], fingers: [90, 100], spread: 0 },
+  fist: { thumb: [16, 85, 29, 30], index: [90, 85], fingers: [90, 85], spread: 0 },
+  cup: { thumb: [11, 15, 4, 4], index: [4, 6], fingers: [6, 8], spread: 1 },
+  pinch: { thumb: [46, 46, 6, 22], index: [45, 35], fingers: [70, 70], spread: 0 },
   clasp: { thumb: [62, 55, 18, 22], index: [52, 62], fingers: [58, 66], spread: 0 },
-  flat: { thumb: [16, 4, 0, 0], index: [-4, -2], fingers: [-4, -2], spread: 1 },
-  hook: { thumb: [12, 20, 6, 10], index: [28, 96], fingers: [32, 100], spread: 0 },
-  edge: { thumb: [66, 45, 0, 5], index: [10, 6], fingers: [12, 8], spread: 1 },
+  flat: { thumb: [16, 3, 0, 0], index: [-4, -2], fingers: [-4, -2], spread: 1 },
+  hook: { thumb: [14, 18, 4, 8], index: [28, 96], fingers: [32, 100], spread: 0 },
+  edge: { thumb: [72, 29, 5, 5], index: [10, 6], fingers: [12, 8], spread: 1 },
   span: { thumb: [71, 6, 0, 44], index: [3, 20], fingers: [3, 21], spread: 0 },
-  sheet: { thumb: [0, 20, 10, 30], index: [40, 0], fingers: [43, 2], spread: 0 },
+  sheet: { thumb: [12, 40, 16, 20], index: [40, 0], fingers: [43, 2], spread: 0 },
   thumbsUp: { thumb: [80, 4, 0, 0], index: [90, 85], fingers: [90, 85], spread: 0 },
 } as const satisfies Record<string, Fingers>;
 
@@ -158,7 +158,7 @@ export function handVec(k: HandPose | HandKey): number[] {
  */
 export const HAND_BONES = {
   palm: { len: 0.101, half: [0.026, 0.042] as const },
-  thumb: { at: [0.019, -0.033, 0.022] as V3, len: [0.04, 0.035] as const, r: 0.017 },
+  thumb: { at: [0.019, -0.033, 0.03] as V3, len: [0.048, 0.04] as const, r: 0.017 },
   index: { at: [0, -0.101, 0.026] as V3, len: [0.04, 0.037] as const, r: 0.015 },
   fingers: { at: [0, -0.101, -0.014] as V3, len: [0.037, 0.032] as const },
   grip: [0.04, -0.088, 0] as V3,

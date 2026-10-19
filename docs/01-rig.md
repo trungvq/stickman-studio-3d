@@ -1462,10 +1462,10 @@ Người 3D mặc đồ (`palette.clad`) có bàn tay năm ngón tròn mập ki�
 | `hook` | Móc: gốc ngón gần thẳng, đốt ngọn gập hẳn — quai túi, cán vali |
 | `edge` | Kẹp cạnh vật dẹt: ngón cái mặt trước, các ngón duỗi đỡ mặt sau — điện thoại ngang hai tay |
 | `span` | Xoè ôm hai cạnh vật dẹt: lòng tay và các ngón gần thẳng áp mặt sau, đầu ngón tì cạnh này, ngón cái dựng dọc cạnh kia — một tay giơ điện thoại khoe màn |
-| `sheet` | Kẹp vật mỏng ở mép (tờ giấy, thẻ, bảng giá, thực đơn): bốn ngón khép, gập chừng 40° ở gốc, đệm ngón đỡ mặt sau; ngón cái khép, gần duỗi, đệm ngón cái áp mặt trước trên đốt gốc ngón trỏ. Mặt tờ nghiêng chừng 40° so với lòng tay, nên kiểu cầm khai `palm` ≈ 0,76 × pháp tuyến mặt trước + 0,64 × `fingers` (hướng ngón trên mặt tờ); mép tờ chạy dọc hàng khớp gốc ngón, lòng tay ở ngoài tờ |
+| `sheet` | Kẹp vật mỏng ở mép (tờ giấy, thẻ, bảng giá, thực đơn): bốn ngón khép, gập chừng 40° ở gốc, đệm ngón đỡ mặt sau; ngón cái khép, gần duỗi, gần song song ngón trỏ (chếch vào trong chừng 15°), đệm ngón cái áp mặt trước — với `bang-gia#doc` ngón cái và các ngón cùng đè từ mép vào sâu chừng 3 đơn vị rig ở bàn tay cỡ `1`, 5,75 ở cỡ `1,61`, 6,25 ở cỡ `2,16`. Mặt tờ nghiêng chừng 40° so với lòng tay, nên kiểu cầm khai `palm` ≈ 0,76 × pháp tuyến mặt trước + 0,64 × `fingers` (hướng ngón trên mặt tờ); mép tờ chạy dọc hàng khớp gốc ngón, lòng tay ở ngoài tờ |
 | `thumbsUp` | Giơ ngón cái: ngón cái dạng hẳn, dựng lên, bốn ngón nắm — khen, đồng ý; tâm nắm như `fist` |
 
-**Dáng nghỉ không nằm trong bảng**: ngón cong nhẹ, ngón cái khép sát cạnh ngón trỏ — bàn tay không ai đặt dáng, và
+**Dáng nghỉ không nằm trong bảng**: ngón cong nhẹ, ngón cái khép sát cạnh ngón trỏ, đầu ngón cái tới gần giữa đốt gốc ngón trỏ — bàn tay không ai đặt dáng, và
 gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` (`{}`). Thêm một dáng là thêm một dòng vào
 `HAND_POSES`; `HandPose` và `HAND_POSE_KINDS` lấy từ khoá của bảng.
 
@@ -1475,6 +1475,11 @@ gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` 
   gập thêm về phía ngón út): xoè thì toả nhẹ, nắm thì ngón út cuộn sâu nhất. Mọi
   ngón gập về phía lòng tay; ngón cái dạng ra phía trước bàn tay rồi đối về lòng tay, nên đối nhiều thì gập
   là vắt ngang lòng tay.
+- **Ngón cái dài như tay người.** Gốc ngón cái (`HAND_BONES.thumb.at`) ở chừng một phần ba lòng bàn tay tính từ cổ tay,
+  chỗ khớp gốc ngón cái của tay người, lệch về phía ngón cái; hai đốt `0,048` và `0,040` (ngón trỏ `0,04`, `0,037`):
+  khép sát (dáng nghỉ, `cup`, `flat`, `hook`) thì đầu ngón cái vượt khớp gốc ngón trỏ, tới gần giữa đốt gốc (0,4–0,45 đốt), da ngón cái không lún vào nó (dáng nghỉ hở chừng 0,1 đơn vị ở cỡ `1`). Dáng áp
+  món lên lòng tay (`span`, `edge`) giữ đốt gốc ngón cái ngoài vùng lòng tay áp món (từ nửa lòng bàn tay tới hàng khớp
+  gốc ngón); tâm nắm (`HAND_GRIPS`) không đổi.
 - **Mốc** (`keys[].hand.armNear` / `armFar`) là tên dáng, hay `{ pose, w, turn, bend, palm, fingers }`: dáng hoà từ dáng
   nghỉ theo `w` (`0..1`, mặc định `1`); `turn`, `bend` là hai góc thô của cổ tay ([Xoắn tay](#xoắn-tay)); `palm`, `fingers`
   là hướng theo ý định, rig giải ra góc ([Hướng lòng tay theo ý](#hướng-lòng-tay-theo-ý)). `handVec` đổi một mốc ra số.
@@ -1505,7 +1510,7 @@ gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` 
   mặt và làm trơn — lòng bàn tay chảy liền vào năm ngón, các ngón mọc ra từ cùng mặt, không có vỏ riêng nên không
   có nếp hay nét viền bên trong bàn tay. Dựng một lần mỗi cỡ (`k`, `long`, `low`) lúc dựng người rồi giữ, tay trái là
   tay phải soi gương. Mỗi đỉnh buộc vào lòng bàn tay và hai đốt ngón gần nhất, trọng số chuyển mềm qua mỗi khớp
-  trong khoảng hơn một bán kính ngón, nên ngón cong chứ không gãy góc; `skinHand` (linear blend skinning) và
+  trong khoảng hơn một bán kính ngón, nên ngón cong chứ không gãy góc (trọng số dưới `1e-4` bỏ đi rồi chuẩn hoá lại cho tổng `1`); `skinHand` (linear blend skinning) và
   `smoothNormals` dời da khi số bàn tay đổi (`poseHand`), cỡ `0,2` ms một bàn tay, không đổi thì không làm gì.
 - **Một lượt vẽ, vỏ viền lùi.** Vỏ viền dùng chung đỉnh đã dời và lùi ra xa máy dọc tia nhìn `HAND_INK_PUSH` (nhân
   cỡ bàn tay; `hullMaterial(…, push)`): chỗ trên hình giữ nguyên nên mép ngoài vẫn đậm, nhưng ở chỗ lõm — kẽ ngón

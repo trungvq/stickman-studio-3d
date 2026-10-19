@@ -31,6 +31,8 @@ export interface HandSkin {
 }
 
 const NB = HAND_PIECES.length;
+/** Trọng số da nhỏ hơn ngần này coi là 0 (`weightsOf`), `skinHand` không cộng */
+const SKIN_EPS = 1e-4;
 const FINGERS = Object.keys(HAND_FINGERS) as HandFinger[];
 /**
  * Bàn tay nắm hẳn (ngón giữa gập gốc 90°) phồng bề dày (x) và bề ngang (z) chừng này lần quanh trục giữa lòng bàn tay:
@@ -267,7 +269,13 @@ function weightsOf(
     w[c.b0] += share * Math.max(0, 1 - root - tip);
     w[c.b0 + 1] += share * tip;
   });
-  for (let b = 0; b < NB; b++) out[at + b] = w[b];
+  // trọng số dưới `SKIN_EPS` về 0 rồi chuẩn hoá lại: `skinHand` bỏ qua chúng, nên giữ chúng là da co về gốc toạ độ
+  let total = 0;
+  for (let b = 0; b < NB; b++) {
+    if (w[b] < SKIN_EPS) w[b] = 0;
+    total += w[b];
+  }
+  for (let b = 0; b < NB; b++) out[at + b] = w[b] / total;
 }
 
 const cache = new Map<string, HandSkin>();
@@ -385,7 +393,7 @@ export function skinHand(s: HandSkin, v: HandVec, out: Float32Array) {
     let oz = 0;
     for (let b = 0; b < NB; b++) {
       const w = weights[v * NB + b];
-      if (w < 1e-4) continue;
+      if (w < SKIN_EPS) continue;
       const m = b * 12;
       ox += w * (A[m] * x + A[m + 1] * y + A[m + 2] * z + A[m + 9]);
       oy += w * (A[m + 3] * x + A[m + 4] * y + A[m + 5] * z + A[m + 10]);
