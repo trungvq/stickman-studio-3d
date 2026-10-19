@@ -1462,6 +1462,7 @@ Người 3D mặc đồ (`palette.clad`) có bàn tay năm ngón tròn mập ki�
 | `hook` | Móc: gốc ngón gần thẳng, đốt ngọn gập hẳn — quai túi, cán vali |
 | `edge` | Kẹp cạnh vật dẹt: ngón cái mặt trước, các ngón duỗi đỡ mặt sau — điện thoại ngang hai tay |
 | `span` | Xoè ôm hai cạnh vật dẹt: lòng tay và các ngón gần thẳng áp mặt sau, đầu ngón tì cạnh này, ngón cái dựng dọc cạnh kia — một tay giơ điện thoại khoe màn |
+| `sheet` | Kẹp vật mỏng ở mép (tờ giấy, thẻ, bảng giá, thực đơn): bốn ngón khép, gập chừng 40° ở gốc, đệm ngón đỡ mặt sau; ngón cái khép, gần duỗi, đệm ngón cái áp mặt trước trên đốt gốc ngón trỏ. Mặt tờ nghiêng chừng 40° so với lòng tay, nên kiểu cầm khai `palm` ≈ 0,76 × pháp tuyến mặt trước + 0,64 × `fingers` (hướng ngón trên mặt tờ); mép tờ chạy dọc hàng khớp gốc ngón, lòng tay ở ngoài tờ |
 | `thumbsUp` | Giơ ngón cái: ngón cái dạng hẳn, dựng lên, bốn ngón nắm — khen, đồng ý; tâm nắm như `fist` |
 
 **Dáng nghỉ không nằm trong bảng**: ngón cong nhẹ, ngón cái khép sát cạnh ngón trỏ — bàn tay không ai đặt dáng, và

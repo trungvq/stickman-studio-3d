@@ -60,7 +60,7 @@ export const HELD_JUMP_EPS = 1e-3;
 export const HELD_WIND = 0.75;
 
 /** Dáng kẹp bằng đầu ngón: món ngồi giữa ngón cái và ngón đối diện, lòng tay không áp */
-export const HELD_PINCHES: readonly HandPose[] = ["pinch", "edge", "span", "hook"];
+export const HELD_PINCHES: readonly HandPose[] = ["pinch", "edge", "span", "hook", "sheet"];
 
 /** Nhóm ngón khi đo độ ôm */
 export type HeldGroup = "thumb" | "index" | "fingers" | "palm";
