@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "size": [20.4, 76, 20.4],
+  "anchors": {
+    "mouth": { "at": [0, 76, 0], "dir": [0, 1, 0] },
+    "mieng": { "at": [0, 70, 0] },
+    "neck": { "at": [0, 64, 0] },
+    "shoulder": { "at": [0, 56, 0] },
+    "belly": { "at": [0, 22, 0] },
+    "nhan": { "at": [0, 22, 10.45], "dir": [0, 0, 1] },
+    "base": { "at": [0, 0, 0], "dir": [0, -1, 0] }
+  },
+  "grips": {
+    "co": {
+      "pose": "grip",
+      "at": { "anchor": "shoulder", "offset": [0, 0, -5.0] },
+      "palm": [0, -0.45, 0.89],
+      "fingers": [-1, 0, 0],
+      "wrap": ["thumb", "index", "middle", "ring", "pinky"],
+      "left": { "fingers": [1, 0, 0] },
+      "touch": ["self.hand"],
+      "intent": { "up": "mouth" }
+    },
+    "rot": {
+      "pose": "grip",
+      "at": { "anchor": "shoulder", "offset": [0, 0, -5.0] },
+      "palm": [0, -0.45, 0.89],
+      "fingers": [-0.87, 0.5, 0],
+      "wrap": ["thumb", "index", "middle", "ring", "pinky"],
+      "left": { "fingers": [0.87, 0.5, 0] },
+      "touch": ["self.hand"],
+      "intent": {
+        "face": { "axis": "mouth", "toward": [0.58, 0, -1], "tilt": -25 }
+      }
+    },
+    "rot-hai": {
+      "pose": "grip",
+      "at": { "anchor": "shoulder", "offset": [0, 0, -5.0] },
+      "palm": [0, -0.45, 0.89],
+      "fingers": [-0.87, 0.5, 0],
+      "wrap": ["thumb", "index", "middle", "ring", "pinky"],
+      "left": { "fingers": [0.87, 0.5, 0] },
+      "touch": ["self.hand"],
+      "intent": {
+        "face": { "axis": "mouth", "toward": [1, 0, 0.58], "tilt": -25 }
+      },
+      "both": {
+        "lead": "right",
+        "other": {
+          "pose": "flat",
+          "at": "base",
+          "palm": { "into": "base" },
+          "fingers": [0, 0, 1]
+        }
+      }
+    },
+    "rot-than": {
+      "pose": "grip",
+      "at": { "anchor": "belly", "offset": [0, 0, -9.2] },
+      "palm": [0, 0, 1],
+      "fingers": [-1, 0, 0],
+      "wrap": ["thumb", "index", "middle", "ring", "pinky"],
+      "left": { "fingers": [1, 0, 0] },
+      "touch": ["self.hand"],
+      "intent": {
+        "face": { "axis": "mouth", "toward": [1, 0, 0.58], "tilt": -10 }
+      }
+    },
+    "rot-hai-than": {
+      "pose": "grip",
+      "at": { "anchor": "belly", "offset": [0, 0, -9.2] },
+      "palm": [0, 0, 1],
+      "fingers": [-1, 0, 0],
+      "wrap": ["thumb", "index", "middle", "ring", "pinky"],
+      "left": { "fingers": [1, 0, 0] },
+      "touch": ["self.hand"],
+      "intent": {
+        "face": { "axis": "mouth", "toward": [1, 0, 0.58], "tilt": -10 }
+      },
+      "both": {
+        "lead": "right",
+        "other": {
+          "pose": "flat",
+          "at": "base",
+          "palm": { "into": "base" },
+          "fingers": [0, 0, 1]
+        }
+      }
+    },
+    "bung": {
+      "pose": "grip",
+      "at": { "anchor": "belly", "offset": [0, -10, -9.2] },
+      "palm": [0, 0, 1],
+      "fingers": [-1, 0, 0],
+      "wrap": ["thumb", "index", "middle", "ring", "pinky"],
+      "left": { "fingers": [1, 0, 0] },
+      "touch": ["self.hand"],
+      "intent": {
+        "up": "mouth",
+        "roll": { "axis": "nhan", "toward": "forward" }
+      },
+      "both": {
+        "lead": "right",
+        "other": {
+          "pose": "flat",
+          "at": { "anchor": "base", "offset": [0, -1.5, 0] },
+          "palm": [0, 1, 0],
+          "fingers": [0, 0, 1]
+        }
+      }
+    },
+    "xem": {
+      "pose": "grip",
+      "at": { "anchor": "shoulder", "offset": [5.0, 0, 0] },
+      "palm": [-0.89, -0.45, 0],
+      "fingers": [0, 0, -1],
+      "wrap": ["thumb", "index", "middle", "ring", "pinky"],
+      "left": {
+        "at": { "anchor": "shoulder", "offset": [-5.0, 0, 0] },
+        "palm": [0.89, -0.45, 0],
+        "fingers": [0, 0, -1]
+      },
+      "touch": ["self.hand"],
+      "intent": {
+        "face": { "axis": "nhan", "toward": "holderFace" },
+        "roll": { "axis": "mouth", "toward": "up" }
+      }
+    }
+  },
+  "hang": ["dong-ruou"],
+  "shape": [
+    { "cyl": 9.4, "from": [0, 0, 0], "to": [0, 0.8, 0], "r2": 10.2 },
+    { "cyl": 10.2, "from": [0, 0.8, 0], "to": [0, 40, 0] },
+    { "cyl": 10.2, "from": [0, 40, 0], "to": [0, 44, 0], "r2": 9.8 },
+    { "cyl": 9.8, "from": [0, 44, 0], "to": [0, 48, 0], "r2": 8.6 },
+    { "cyl": 8.6, "from": [0, 48, 0], "to": [0, 52, 0], "r2": 7 },
+    { "cyl": 7, "from": [0, 52, 0], "to": [0, 56, 0], "r2": 5.6 },
+    { "cyl": 5.6, "from": [0, 56, 0], "to": [0, 59, 0], "r2": 4.7 },
+    { "cyl": 4.7, "from": [0, 59, 0], "to": [0, 61, 0], "r2": 4.4 },
+    { "cyl": 4.4, "from": [0, 61, 0], "to": [0, 68.5, 0] },
+    { "cyl": 5.1, "from": [0, 68.5, 0], "to": [0, 76, 0] }
+  ]
+}
