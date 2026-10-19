@@ -190,7 +190,9 @@ export function necklaceSolids(
       const [p, q] = [path[i - 1], path[i % NP]];
       const c = add(p, [sub(q, p), u]);
       const t = unit(sub(q, p));
-      const nm = normal(sps[i - 1], p);
+      // pháp tuyến vuông góc hướng dây: chỗ dây gãy dốc (hai bên cổ) hạt vẫn tròn, không méo thành bầu dục lún vào vai
+      const n0 = normal(sps[i - 1], p);
+      const nm = unit(add(n0, [t, -dot(n0, t)]));
       const side = cross(t, nm);
       beads.push(
         ball(
