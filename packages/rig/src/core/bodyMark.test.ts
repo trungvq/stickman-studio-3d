@@ -3,6 +3,8 @@ import {
   actAim,
   actJoints,
   actPalms,
+  AIM_BEND,
+  AIM_DEV,
   aimWrist,
   bodyMarkAt,
   needsSolve,
@@ -338,7 +340,11 @@ describe("hướng lòng tay theo ý định", () => {
         rotZ((r() * 2 - 1) * Math.PI),
       );
       const side = r() < 0.5 ? -1 : 1;
-      const [t, b, d] = [(r() * 2 - 1) * 85, (r() * 2 - 1) * 70, (r() * 2 - 1) * 25];
+      const [t, b, d] = [
+        (r() * 2 - 1) * 85,
+        (r() * 2 - 1) * (AIM_BEND - 5),
+        (r() * 2 - 1) * (AIM_DEV - 5),
+      ];
       const want = matVec(matMul(Re, wristTurn(t, b, d, side)), [-side, 0, 0]);
       const fing = matVec(matMul(Re, wristTurn(t, b, d, side)), [0, -1, 0]);
       const sol = aimWrist(Re, side, want, undefined);
@@ -464,7 +470,8 @@ describe("đích thế giới theo mốc và lòng tay trong scene", () => {
 
   it("`world.hands` nhận `point: palm` và `palm`: lòng tay úp đúng trên điểm thế giới", () => {
     const c = PEOPLE[1][1];
-    const at = [-48, -112, -6];
+    // tay đủ xa thân cho cẳng tay gần ngang: lòng tay úp trong tầm gập `±AIM_BEND`
+    const at = [-48, -112, -16];
     const rt = resolveScene(
       scene([{ t: 0, right: { at, point: "palm", palm: "down" } }]),
       {},

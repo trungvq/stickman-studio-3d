@@ -1408,7 +1408,7 @@ scenes/t02-s010.json: mặt món quay sai — `sakura` tay trái cầm dien-thoa
 
 Món cứng sai `pierce`, `loose`, `wrap`, `grip` là lỗi của **kiểu cầm**, đúng hay sai ở mọi cảnh dùng nó: dòng báo trỏ về
 `held/<món>.json`. Dòng `up` / `face` của kiểu cầm cứng kể đích, góc còn lệch, khớp cổ tay kẹp (xoay cẳng tay `±90`, gập
-`±AIM_BEND`, lệch `±AIM_DEV`) hay khuỷu hết xoay, và gợi ý: đổi `elbow` (khung cẳng tay quay theo hướng khuỷu), dời chỗ
+`±AIM_BEND` `50`, lệch `±AIM_DEV` `20`) hay khuỷu hết xoay, và gợi ý: đổi `elbow` (khung cẳng tay quay theo hướng khuỷu), dời chỗ
 tay, đổi tay, đổi kiểu cầm. Lệch quá `HOLD_ALT` (`30°`) thì bộ giải thử các kiểu cầm khác của cùng món (cùng một tay hay
 cùng hai tay, tay mang món như nhau) với cùng ý định, cánh tay giữ nguyên (`AimReport.hold.alts`); kiểu nào còn lệch dưới
 ngưỡng của luật thì dòng báo nêu tên nó: `… hay đổi kiểu cầm: \`dien-thoai#doc\` với tới (lệch 12°)`. Rig không tự đổi

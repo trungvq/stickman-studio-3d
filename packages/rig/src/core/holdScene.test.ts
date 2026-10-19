@@ -321,7 +321,7 @@ describe("`world.hands[].hold` trong scene", () => {
   });
 
   it("đè ý định ở mốc: `face: { cast }` quay màn về người khác", () => {
-    const other = { id: "b", world: { at: [-200, 0, -250], yaw: -45 }, tracks: [] };
+    const other = { id: "b", world: { at: [-100, 0, -350], yaw: -45 }, tracks: [] };
     const sp = at(
       [
         {
@@ -339,23 +339,23 @@ describe("`world.hands[].hold` trong scene", () => {
     const held = actHeld(C, sp).R!;
     const o = pointW(held, [0, 0, 0]);
     const screen = axisW(held.R, [0, 0, 1]);
-    // mặt người kia: đứng ở x −200, z −250, mắt chừng y −390
-    expect(deg(screen, sub([-200, -390, -250], o))).toBeLessThan(25);
+    // mặt người kia: đứng ở x −100, z −350, mắt chừng y −390
+    expect(deg(screen, sub([-100, -390, -350], o))).toBeLessThan(25);
   });
 
   it("quá tầm cổ tay: báo lệch và khớp bị kẹp, không nới giới hạn", () => {
-    // màn úp xuống đất mà đầu máy chĩa vào giữa thân: cổ tay phải gập quá `AIM_BEND`
+    // màn ngửa lên mà đầu máy chĩa ra ngoài, tay cao sát ngực: cổ tay phải gập quá `AIM_BEND`
     const sp = at([
       {
         t: 0,
         right: {
-          at: [-30, -290, -90],
+          at: [-40, -310, -50],
           point: "grip",
           hold: {
             item: "dien-thoai",
             grip: "khoe",
-            face: { axis: "screen", toward: "down" },
-            roll: { axis: "top", toward: "in" },
+            face: { axis: "screen", toward: "up" },
+            roll: { axis: "top", toward: "out" },
           },
         },
       },
@@ -559,7 +559,7 @@ describe("cổ tay mang món nối từ mẫu trước", () => {
       off = Math.max(off, ...[0, 1].map((j) => Math.abs(hand(i / 30)[j] - hand(i / 30, alone)[j])));
     // khuỷu chỉ bị giữ khi nghiệm riêng từng khung nhảy quá `HOLD_SWIVEL_SLEW`: vài độ
     expect(off).toBeLessThan(5);
-    // giây 1.2–1.3 giải riêng thì cổ tay lật (xoay 57 → −51, gập −49 → 54)
+    // giây 1.2–1.23 giải riêng thì cổ tay lật (xoay 59 → −50, gập −49 → 50)
     let lone = 0;
     let kept = 0;
     for (let i = 31; i <= 45; i++) {
@@ -567,7 +567,8 @@ describe("cổ tay mang món nối từ mẫu trước", () => {
       kept = Math.max(kept, Math.abs(hand(i / 30)[0] - hand((i - 1) / 30)[0]));
     }
     expect(lone).toBeGreaterThan(90);
-    expect(kept).toBeLessThanOrEqual(HOLD_SLEW + 1e-6);
+    // mẫu trước lấy ở giây làm tròn 6 số lẻ: cổ tay đang đi hết tốc độ lệch cỡ `1e-4`°
+    expect(kept).toBeLessThanOrEqual(HOLD_SLEW + 1e-3);
   });
 
   it("đổi kiểu cầm hai tay khi món xoay nửa vòng: cổ tay tay phụ đi dần, không lật", () => {
@@ -600,7 +601,7 @@ describe("cổ tay mang món nối từ mẫu trước", () => {
       {
         t: 0,
         right: {
-          at: [-30, -290, -90],
+          at: [-30, -290, -50],
           point: "grip",
           hold: {
             item: "dien-thoai",
@@ -614,7 +615,7 @@ describe("cổ tay mang món nối từ mẫu trước", () => {
     const rep = actAim(C, sp)!.report.R.hold!;
     expect(rep.err).toBeGreaterThan(HOLD_ALT);
     expect(rep.alts!.map((a) => a.grip).sort()).toEqual(["doc", "tai"]);
-    expect(rep.alts![0].err).toBeLessThan(20);
+    expect(rep.alts![0].err).toBeLessThan(25);
     // với tới thì không thử
     expect(
       actAim(

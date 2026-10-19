@@ -116,10 +116,11 @@ export const head3 = (B: Bones3, human = false) =>
 
 /**
  * Bán kính chi người 3D mặc đồ (`palette.clad`) ở gốc, khớp giữa, ngọn, nhân bán kính chi: bắp tay to hơn cẳng tay
- * như đùi với ống chân
+ * như đùi với ống chân. Cổ tay `0,53`: bề ngang cổ tay chừng `0,75` bề ngang lòng bàn tay (`cladHand`), dày hơn lòng tay
+ * chừng `1,2` lần
  */
 export const CLAD_TAPER = {
-  arm: [1.12, 0.88, 0.74],
+  arm: [1.12, 0.88, 0.53],
   leg: [1.35, 0.9, 0.74],
 } as const;
 
@@ -235,7 +236,10 @@ export function cladProfile(pts: readonly P2[], room: ArmRoom): { pts: P2[]; dep
 const OPEN_LEN = 0.19;
 const OPEN_REACH = 0.55;
 
-/** Cỡ bàn tay người mặc đồ theo bán kính cổ tay `rw` (three): nhân vào bề ngang `HAND_BONES` (`handFrames`, `handRig`) */
+/**
+ * Cỡ bàn tay người mặc đồ theo `rw` (three) — `0,8` nửa bề dày tay (`cladHand`), không theo ống cổ tay `CLAD_TAPER`: nhân vào
+ * bề ngang `HAND_BONES` (`handFrames`, `handRig`)
+ */
 export const handScale = (rw: number) => Math.max(1, rw / 0.048);
 
 /** Cỡ dọc của bàn tay xoè cỡ `k` trên cẳng tay dài `foreArm` (three): chi to mà ngắn thì găng tròn lại, không dài tới gối */
@@ -778,10 +782,20 @@ function solvePose3(c: ActCharacter, sp0: ActInput) {
 
 /** Lặp giải đích theo điểm bàn tay và hướng lòng tay: chỗ bàn tay và hướng cổ tay phụ thuộc nhau, hội tụ trong vài vòng */
 const AIM_ITER = 8;
-/** Giới hạn gập cổ tay khi rig tự giải lòng tay (độ); xoay cẳng tay giữ `−90..90` như JSON */
-export const AIM_BEND = 75;
-/** Giới hạn lệch cổ tay (số thứ ba của tay) khi rig tự giải hướng ngón, độ */
-export const AIM_DEV = 30;
+/**
+ * Giới hạn gập cổ tay khi rig tự giải lòng tay (độ); xoay cẳng tay giữ `−90..90` như JSON. Quá chừng `50°` cổ tay khối
+ * của người que trông gãy: ý định vượt thì món lệch thật và `check` báo khớp kẹp
+ */
+export const AIM_BEND = 50;
+/** Giới hạn lệch cổ tay (số thứ ba của tay) khi rig tự giải hướng ngón, độ; cùng lý do với `AIM_BEND` */
+export const AIM_DEV = 20;
+/** Lưới gập cổ tay của bước dò `aimWrist`: bội `15` nằm trong `±AIM_BEND` cộng hai biên */
+const AIM_BEND_N = Math.ceil(AIM_BEND / 15);
+const AIM_BEND_GRID = [
+  -AIM_BEND,
+  ...Array.from({ length: 2 * AIM_BEND_N - 1 }, (_, i) => (i + 1 - AIM_BEND_N) * 15),
+  AIM_BEND,
+];
 
 const ZERO3: V3 = [0, 0, 0];
 const tr = (R: M3): M3 => [R[0], R[3], R[6], R[1], R[4], R[7], R[2], R[5], R[8]];
@@ -1040,7 +1054,7 @@ export function aimWrist(
   } else if (df) {
     let c = Infinity;
     for (let t = -90; t <= 90; t += 15)
-      for (let b = -AIM_BEND; b <= AIM_BEND; b += 15) {
+      for (const b of AIM_BEND_GRID) {
         const bb = clampB(b);
         const d = bestDev(t, bb);
         const v = cost(t, bb, d);

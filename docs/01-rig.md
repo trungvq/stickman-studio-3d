@@ -1584,9 +1584,9 @@ thì khai `left`. `parseHeldItem` báo mốc không có, `into` / `along` / tr�
 - `roll`, trục phụ chốt độ lăn (đầu máy lên trên). Không có thì giữ độ lăn gần bàn tay đang có.
 
 Rig giải ý định trên cổ tay (`aimWrist`): trục chính trọng số `1`, `roll` `0,3`, khuỷu xoay trong `±AIM_SWIVEL` quanh
-`elbow` đã khai. Giới hạn cổ tay giữ nguyên — xoay `±90`, gập `±AIM_BEND`, lệch `±AIM_DEV`, kênh tay không nâng thì lệch
-cổ tay giữ `0` —: không đạt thì món lệch thật, `AimReport.hold` ghi trục, hướng muốn, hướng đạt, góc còn lệch, khớp
-kẹp và (lệch quá `HOLD_ALT`) kiểu cầm khác của cùng món với lệch của nó (`alts`), `check` báo
+`elbow` đã khai. Giới hạn cổ tay giữ nguyên — xoay `±90`, gập `±AIM_BEND` (`50`), lệch `±AIM_DEV` (`20`), kênh tay
+không nâng thì lệch cổ tay giữ `0` —: không đạt thì món lệch thật, `AimReport.hold` ghi trục, hướng muốn, hướng đạt, góc
+còn lệch, khớp kẹp và (lệch quá `HOLD_ALT`) kiểu cầm khác của cùng món với lệch của nó (`alts`), `check` báo
 ([03](03-scene.md#đồ-cầm-tay)). Vị trí tay (`at`, `to`, `point`) luôn thắng ý định. Cổ tay và khuỷu của tay mang món, tay
 phụ đi từ nghiệm của mẫu trước với tốc độ có hạn (`HOLD_SLEW`, `HOLD_SWIVEL_SLEW`): ý định vượt tầm thì cổ tay sang nghiệm
 mới trong vài khung chứ không lật trong một khung ([03](03-scene.md#đồ-cầm-tay)).
@@ -1910,8 +1910,8 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   `19..21°`; người que `6°` và `14°`. Cạp liền thân áo đã lùi theo tay nên độ choãi gần như chỉ theo độ
   dốc `flare / length` của vạt.
 - **Chi thon và phủ màu.** Ống chi thon theo bán kính (`CLAD_TAPER`): vai `1,12` → khuỷu `0,88` → cổ
-  tay `0,74` — bắp tay to hơn cẳng tay —, hông `1,35` → gối `0,9` → cổ chân
-  `0,74`. Phủ hết thì ống tô màu áo, quần; phủ một phần thì ống da và một ống phủ to hơn `1,1` lần từ
+  tay `0,53` — bắp tay to hơn cẳng tay; cổ tay ngang chừng `0,75` lòng bàn tay, dày hơn lòng tay chừng `1,2`
+  lần —, hông `1,35` → gối `0,9` → cổ chân `0,74`. Phủ hết thì ống tô màu áo, quần; phủ một phần thì ống da và một ống phủ to hơn `1,1` lần từ
   gốc chi, mép nở `1,12` lần. Gốc đùi là bán kính ống quần nhân `1,35` (`cladThigh`), tâm ở `±hipHalf`:
   `hipHalf` lớn hơn gốc đùi thì hai chân tách nhau, nhỏ hơn thì hai đùi lấn vào nhau. Ống phủ hết tay có
   cổ tay áo ở `0,84..1` cẳng tay. Độ cong chi vẫn là
@@ -1924,9 +1924,9 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   to. Va chạm (`collide`) vẫn là ống tay, không đo tay áo; không có vạt tay rủ (袂).
 - **Bàn tay có khớp.** Một mặt da liền năm ngón trên khung xương lòng bàn tay và năm ngón; dáng tay là góc khớp —
   [Bàn tay](#bàn-tay). Lòng bàn tay quay về phía thân, ngón cái ra trước, cỡ
-  theo bán kính cổ tay (`handScale`). Bàn tay xoè dài không quá `0,55` cẳng tay (`openLength`): chi to mà
-  ngắn thì bàn tay ngắn lại thay vì thõng tới gối, bề ngang vẫn theo cổ tay; ba hàm ở lõi, `cladHand` gộp
-  chúng cho `stickman.ts` và `roots3`. `hold` giữ dáng `grip` ở ngón tới lúc `release()` (`grip` của
+  theo `sleeveWidth` (`handScale` của `0,8` nửa bề dày tay), không theo ống cổ tay `CLAD_TAPER`. Bàn tay xoè dài không
+  quá `0,55` cẳng tay (`openLength`): chi to mà ngắn thì bàn tay ngắn lại thay vì thõng tới gối, bề ngang vẫn theo
+  `sleeveWidth`; ba hàm ở lõi, `cladHand` gộp chúng cho `stickman.ts` và `roots3`. `hold` giữ dáng `grip` ở ngón tới lúc `release()` (`grip` của
   attach.ts), và khung `hand` của đồ cầm ở **tâm nắm** (`handGrip`), không ở mút nét: đồ căn cho người que
   lùi vào lòng bàn tay vài px.
 - **Giày ở cổ chân, hông không đổi.** `Leg.ankle` treo ở mút ống chân; đế giày nằm đúng mặt sàn ở
@@ -2067,9 +2067,10 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 | `bend` | Khai kèm thì giữ cố định, rig chỉ giải phần còn lại |
 
 - **Rig giải mỗi khung** (`aimWrist`): lòng tay chỉ phụ thuộc xoay và gập cổ tay (lệch cổ tay không đổi pháp tuyến lòng tay)
-  nên hai góc ấy giải đúng; ngón lấy thêm lệch cổ tay (số thứ ba của tay, kênh nâng, `±AIM_DEV` `30`) và, khi tay theo đích,
+  nên hai góc ấy giải đúng; ngón lấy thêm lệch cổ tay (số thứ ba của tay, kênh nâng, `±AIM_DEV` `20`) và, khi tay theo đích,
   xoay khuỷu quanh trục vai → cổ tay tới `±AIM_SWIVEL` (`90`), ưu tiên gần hướng khuỷu đã khai. Kẹp trong `turn` `−90..90`,
-  `bend` `±AIM_BEND` (`75`); ngoài tầm thì lấy chỗ gần nhất trong hộp giới hạn.
+  `bend` `±AIM_BEND` (`50`) — quá chừng `50°` cổ tay khối của người que trông gãy —; ngoài tầm thì lấy chỗ gần nhất trong
+  hộp giới hạn.
 - **`palm` / `fingers` thắng `turn`.** Mốc khai cả hai thì `turn` bị bỏ qua — `validate` và `check` kêu (`aimProblems`).
 - **Hoà là hoà góc đã giải.** Mốc thô sang mốc ý định: từng số hạng giải riêng rồi cộng góc theo phần, nên cổ tay xoay dần,
   không lật nửa vòng (góc nằm trong `±90`, nội suy thẳng). `world.hands` nhận cùng `palm`, `fingers`, `bend`, đè bàn tay của
