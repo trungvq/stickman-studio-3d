@@ -1,0 +1,837 @@
+{
+ "note": "Lần cầm lệch quá 5° hay 1 đơn vị (migrate-held, t02). angle: độ quay món trong bàn tay cũ → mới; shift: dời điểm món ở tâm nắm cũ (đơn vị rig). seconds: t₀ và vài giây trong lần cầm (end = mốc đổi hold kế hay hết cảnh).",
+ "rows": [
+  {
+   "scene": "t02-s013-khoe",
+   "cast": "takumi",
+   "side": "right",
+   "role": "tay dẫn",
+   "t0": 1.1,
+   "end": 5.608,
+   "seconds": [
+    1.1,
+    1.4,
+    3.35,
+    5.51
+   ],
+   "old": "dien-thoai#khoe",
+   "hold": {
+    "item": "dien-thoai",
+    "group": "palmBox",
+    "part": "body",
+    "along": 0.344,
+    "thumb": "right",
+    "tilt": 0,
+    "face": {
+     "axis": "screen",
+     "toward": {
+      "cast": "yota"
+     }
+    },
+    "roll": {
+     "axis": "top",
+     "toward": "up"
+    }
+   },
+   "label": "palmBox · part body · along 0.344 · thumb right · tilt 0 · face: screen → {\"cast\":\"yota\"} · roll: top → up",
+   "angle": 0.11,
+   "shift": 2.39
+  },
+  {
+   "scene": "t02-s030-khai-vi",
+   "cast": "yoshie-di",
+   "side": "right",
+   "role": "tay dẫn",
+   "t0": 0,
+   "end": 7.515,
+   "seconds": [
+    0,
+    0.3,
+    3.76,
+    7.42
+   ],
+   "old": "khay-suat#bung",
+   "hold": {
+    "item": "khay-suat",
+    "group": "platform",
+    "part": "day",
+    "edge": "right",
+    "along": 0.5,
+    "psi": 90,
+    "inset": 6,
+    "roll": {
+     "axis": [
+      0,
+      0,
+      -1
+     ],
+     "toward": "forward"
+    },
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 6
+    }
+   },
+   "label": "platform · part day · edge right · along 0.5 · psi 90 · inset 6 · both {part day, edge left, along 0.5, psi 90, inset 6} · roll: [0, 0, -1] → forward",
+   "angle": 0,
+   "shift": 1.74,
+   "support": {
+    "angle": 0,
+    "shift": 1.74
+   }
+  },
+  {
+   "scene": "t02-s030-khai-vi",
+   "cast": "yoshie-di",
+   "side": "left",
+   "role": "tay phụ",
+   "t0": 0,
+   "end": 7.515,
+   "seconds": [
+    0,
+    0.3,
+    3.76,
+    7.42
+   ],
+   "old": "khay-suat#bung",
+   "hold": {
+    "support of": "right",
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 6
+    }
+   },
+   "label": "(tay phụ của `both`)",
+   "angle": 0,
+   "shift": 1.74
+  },
+  {
+   "scene": "t02-s033-ruou-tang",
+   "cast": "takumi",
+   "side": "right",
+   "role": "tay dẫn",
+   "t0": 0,
+   "end": 1.3,
+   "seconds": [
+    0,
+    0.3,
+    0.65,
+    1.2
+   ],
+   "old": "chen#kep",
+   "hold": {
+    "item": "chen",
+    "group": "bowl",
+    "part": "body",
+    "along": 0.138,
+    "around": 180
+   },
+   "label": "bowl · part body · along 0.138 · around 180",
+   "angle": 4.0,
+   "shift": 1.04
+  },
+  {
+   "scene": "t02-s053-hanh-lang",
+   "cast": "yota",
+   "side": "right",
+   "role": "tay dẫn",
+   "t0": 0,
+   "end": 6.979,
+   "seconds": [
+    0,
+    0.3,
+    3.49,
+    6.88
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "item": "khay",
+    "group": "platform",
+    "part": "day",
+    "edge": "right",
+    "along": 0.5,
+    "psi": 90,
+    "inset": 6,
+    "roll": {
+     "axis": "far",
+     "toward": "forward"
+    },
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 6
+    }
+   },
+   "label": "platform · part day · edge right · along 0.5 · psi 90 · inset 6 · both {part day, edge left, along 0.5, psi 90, inset 6} · roll: far → forward",
+   "angle": 0,
+   "shift": 1.74,
+   "support": {
+    "angle": 0,
+    "shift": 1.74
+   }
+  },
+  {
+   "scene": "t02-s053-hanh-lang",
+   "cast": "yota",
+   "side": "left",
+   "role": "tay phụ",
+   "t0": 0,
+   "end": 6.979,
+   "seconds": [
+    0,
+    0.3,
+    3.49,
+    6.88
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "support of": "right",
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 6
+    }
+   },
+   "label": "(tay phụ của `both`)",
+   "angle": 0,
+   "shift": 1.74
+  },
+  {
+   "scene": "t02-s054-xin-loi",
+   "cast": "yota",
+   "side": "right",
+   "role": "tay dẫn",
+   "t0": 0,
+   "end": 6.827,
+   "seconds": [
+    0,
+    0.3,
+    3.41,
+    6.73
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "item": "khay",
+    "group": "platform",
+    "part": "day",
+    "edge": "right",
+    "along": 0.5,
+    "psi": 90,
+    "inset": 6,
+    "roll": {
+     "axis": "far",
+     "toward": "forward"
+    },
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 6
+    }
+   },
+   "label": "platform · part day · edge right · along 0.5 · psi 90 · inset 6 · both {part day, edge left, along 0.5, psi 90, inset 6} · roll: far → forward",
+   "angle": 0,
+   "shift": 1.74,
+   "support": {
+    "angle": 0,
+    "shift": 1.74
+   }
+  },
+  {
+   "scene": "t02-s054-xin-loi",
+   "cast": "yota",
+   "side": "left",
+   "role": "tay phụ",
+   "t0": 0,
+   "end": 6.827,
+   "seconds": [
+    0,
+    0.3,
+    3.41,
+    6.73
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "support of": "right",
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 6
+    }
+   },
+   "label": "(tay phụ của `both`)",
+   "angle": 0,
+   "shift": 1.74
+  },
+  {
+   "scene": "t02-s055-nhan-viec",
+   "cast": "yota",
+   "side": "right",
+   "role": "tay dẫn",
+   "t0": 0,
+   "end": 5.439,
+   "seconds": [
+    0,
+    0.3,
+    2.72,
+    5.34
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "item": "khay",
+    "group": "platform",
+    "part": "day",
+    "edge": "right",
+    "along": 0.5,
+    "psi": 90,
+    "inset": 6,
+    "roll": {
+     "axis": "far",
+     "toward": "forward"
+    },
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 6
+    }
+   },
+   "label": "platform · part day · edge right · along 0.5 · psi 90 · inset 6 · both {part day, edge left, along 0.5, psi 90, inset 6} · roll: far → forward",
+   "angle": 0,
+   "shift": 1.74,
+   "support": {
+    "angle": 0,
+    "shift": 1.74
+   }
+  },
+  {
+   "scene": "t02-s055-nhan-viec",
+   "cast": "yota",
+   "side": "left",
+   "role": "tay phụ",
+   "t0": 0,
+   "end": 5.439,
+   "seconds": [
+    0,
+    0.3,
+    2.72,
+    5.34
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "support of": "right",
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 6
+    }
+   },
+   "label": "(tay phụ của `both`)",
+   "angle": 0,
+   "shift": 1.74
+  },
+  {
+   "scene": "t02-s055-nhan-viec",
+   "cast": "chiaki-nhan",
+   "side": "right",
+   "role": "tay dẫn",
+   "t0": 0,
+   "end": 5.439,
+   "seconds": [
+    0,
+    0.3,
+    2.72,
+    5.34
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "item": "khay",
+    "group": "platform",
+    "part": "day",
+    "edge": "right",
+    "along": 0.5,
+    "psi": 90,
+    "inset": 5.8,
+    "roll": {
+     "axis": "far",
+     "toward": "forward"
+    },
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 5.8
+    }
+   },
+   "label": "platform · part day · edge right · along 0.5 · psi 90 · inset 5.8 · both {part day, edge left, along 0.5, psi 90, inset 5.8} · roll: far → forward",
+   "angle": 0,
+   "shift": 1.8,
+   "support": {
+    "angle": 0,
+    "shift": 1.8
+   }
+  },
+  {
+   "scene": "t02-s055-nhan-viec",
+   "cast": "chiaki-nhan",
+   "side": "left",
+   "role": "tay phụ",
+   "t0": 0,
+   "end": 5.439,
+   "seconds": [
+    0,
+    0.3,
+    2.72,
+    5.34
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "support of": "right",
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 5.8
+    }
+   },
+   "label": "(tay phụ của `both`)",
+   "angle": 0,
+   "shift": 1.8
+  },
+  {
+   "scene": "t02-s056-bieu",
+   "cast": "chiaki-nhan",
+   "side": "right",
+   "role": "tay dẫn",
+   "t0": 0,
+   "end": 5.493,
+   "seconds": [
+    0,
+    0.3,
+    2.75,
+    5.39
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "item": "khay",
+    "group": "platform",
+    "part": "day",
+    "edge": "right",
+    "along": 0.5,
+    "psi": 90,
+    "inset": 5.8,
+    "roll": {
+     "axis": "far",
+     "toward": "forward"
+    },
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 5.8
+    }
+   },
+   "label": "platform · part day · edge right · along 0.5 · psi 90 · inset 5.8 · both {part day, edge left, along 0.5, psi 90, inset 5.8} · roll: far → forward",
+   "angle": 0,
+   "shift": 1.8,
+   "support": {
+    "angle": 0,
+    "shift": 1.8
+   }
+  },
+  {
+   "scene": "t02-s056-bieu",
+   "cast": "chiaki-nhan",
+   "side": "left",
+   "role": "tay phụ",
+   "t0": 0,
+   "end": 5.493,
+   "seconds": [
+    0,
+    0.3,
+    2.75,
+    5.39
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "support of": "right",
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 5.8
+    }
+   },
+   "label": "(tay phụ của `both`)",
+   "angle": 0,
+   "shift": 1.8
+  },
+  {
+   "scene": "t02-s057-moi",
+   "cast": "chiaki-nhan",
+   "side": "right",
+   "role": "tay dẫn",
+   "t0": 0,
+   "end": 7.072,
+   "seconds": [
+    0,
+    0.3,
+    3.54,
+    6.97
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "item": "khay",
+    "group": "platform",
+    "part": "day",
+    "edge": "right",
+    "along": 0.5,
+    "psi": 90,
+    "inset": 5.8,
+    "roll": {
+     "axis": "far",
+     "toward": "forward"
+    },
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 5.8
+    }
+   },
+   "label": "platform · part day · edge right · along 0.5 · psi 90 · inset 5.8 · both {part day, edge left, along 0.5, psi 90, inset 5.8} · roll: far → forward",
+   "angle": 0,
+   "shift": 1.8,
+   "support": {
+    "angle": 0,
+    "shift": 1.8
+   }
+  },
+  {
+   "scene": "t02-s057-moi",
+   "cast": "chiaki-nhan",
+   "side": "left",
+   "role": "tay phụ",
+   "t0": 0,
+   "end": 7.072,
+   "seconds": [
+    0,
+    0.3,
+    3.54,
+    6.97
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "support of": "right",
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 5.8
+    }
+   },
+   "label": "(tay phụ của `both`)",
+   "angle": 0,
+   "shift": 1.8
+  },
+  {
+   "scene": "t02-s058-quan-truoc",
+   "cast": "chiaki-nhan",
+   "side": "right",
+   "role": "tay dẫn",
+   "t0": 0,
+   "end": 10.722,
+   "seconds": [
+    0,
+    0.3,
+    5.36,
+    10.62
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "item": "khay",
+    "group": "platform",
+    "part": "day",
+    "edge": "right",
+    "along": 0.5,
+    "psi": 90,
+    "inset": 5.8,
+    "roll": {
+     "axis": "far",
+     "toward": "forward"
+    },
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 5.8
+    }
+   },
+   "label": "platform · part day · edge right · along 0.5 · psi 90 · inset 5.8 · both {part day, edge left, along 0.5, psi 90, inset 5.8} · roll: far → forward",
+   "angle": 0,
+   "shift": 1.8,
+   "support": {
+    "angle": 0,
+    "shift": 1.8
+   }
+  },
+  {
+   "scene": "t02-s058-quan-truoc",
+   "cast": "chiaki-nhan",
+   "side": "left",
+   "role": "tay phụ",
+   "t0": 0,
+   "end": 10.722,
+   "seconds": [
+    0,
+    0.3,
+    5.36,
+    10.62
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "support of": "right",
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 5.8
+    }
+   },
+   "label": "(tay phụ của `both`)",
+   "angle": 0,
+   "shift": 1.8
+  },
+  {
+   "scene": "t02-s059-gia-da-bao",
+   "cast": "chiaki-nhan",
+   "side": "right",
+   "role": "tay dẫn",
+   "t0": 0,
+   "end": 7.7,
+   "seconds": [
+    0,
+    0.3,
+    3.85,
+    7.6
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "item": "khay",
+    "group": "platform",
+    "part": "day",
+    "edge": "right",
+    "along": 0.5,
+    "psi": 90,
+    "inset": 5.8,
+    "roll": {
+     "axis": "far",
+     "toward": "forward"
+    },
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 5.8
+    }
+   },
+   "label": "platform · part day · edge right · along 0.5 · psi 90 · inset 5.8 · both {part day, edge left, along 0.5, psi 90, inset 5.8} · roll: far → forward",
+   "angle": 0,
+   "shift": 1.8,
+   "support": {
+    "angle": 0,
+    "shift": 1.8
+   }
+  },
+  {
+   "scene": "t02-s059-gia-da-bao",
+   "cast": "chiaki-nhan",
+   "side": "left",
+   "role": "tay phụ",
+   "t0": 0,
+   "end": 7.7,
+   "seconds": [
+    0,
+    0.3,
+    3.85,
+    7.6
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "support of": "right",
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 5.8
+    }
+   },
+   "label": "(tay phụ của `both`)",
+   "angle": 0,
+   "shift": 1.8
+  },
+  {
+   "scene": "t02-s060-mot-dem",
+   "cast": "chiaki-nhan",
+   "side": "right",
+   "role": "tay dẫn",
+   "t0": 0,
+   "end": 7.589,
+   "seconds": [
+    0,
+    0.3,
+    3.79,
+    7.49
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "item": "khay",
+    "group": "platform",
+    "part": "day",
+    "edge": "right",
+    "along": 0.5,
+    "psi": 90,
+    "inset": 5.8,
+    "roll": {
+     "axis": "far",
+     "toward": "forward"
+    },
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 5.8
+    }
+   },
+   "label": "platform · part day · edge right · along 0.5 · psi 90 · inset 5.8 · both {part day, edge left, along 0.5, psi 90, inset 5.8} · roll: far → forward",
+   "angle": 0,
+   "shift": 1.8,
+   "support": {
+    "angle": 0,
+    "shift": 1.8
+   }
+  },
+  {
+   "scene": "t02-s060-mot-dem",
+   "cast": "chiaki-nhan",
+   "side": "left",
+   "role": "tay phụ",
+   "t0": 0,
+   "end": 7.589,
+   "seconds": [
+    0,
+    0.3,
+    3.79,
+    7.49
+   ],
+   "old": "khay#bung",
+   "hold": {
+    "support of": "right",
+    "both": {
+     "part": "day",
+     "edge": "left",
+     "along": 0.5,
+     "psi": 90,
+     "inset": 5.8
+    }
+   },
+   "label": "(tay phụ của `both`)",
+   "angle": 0,
+   "shift": 1.8
+  },
+  {
+   "scene": "t02-s060-mot-dem",
+   "cast": "erika",
+   "side": "left",
+   "role": "tay dẫn",
+   "t0": 0.6,
+   "end": 7.589,
+   "seconds": [
+    0.6,
+    0.9,
+    4.09,
+    7.49
+   ],
+   "old": "dien-thoai#cam",
+   "hold": {
+    "item": "dien-thoai",
+    "group": "palmBox",
+    "part": "body",
+    "along": 0.344,
+    "thumb": "left",
+    "tilt": 0,
+    "keep": true,
+    "regrip": true
+   },
+   "label": "palmBox · part body · along 0.344 · thumb left · tilt 0 · keep · regrip",
+   "angle": 0.11,
+   "shift": 2.39
+  }
+ ],
+ "manual": [
+  {
+   "scene": "t02-s051-bep-3",
+   "cast": "yoshie",
+   "side": "right",
+   "role": "tay dẫn",
+   "t0": 1.3,
+   "end": 2.4,
+   "seconds": [
+    1.3,
+    1.6,
+    1.75,
+    2.0,
+    2.1
+   ],
+   "old": "phieu-lien#cam",
+   "hold": {
+    "item": "phieu-lien",
+    "group": "sheet",
+    "part": "body",
+    "edge": "right",
+    "along": 0.5,
+    "thumb": "front",
+    "variant": "flat",
+    "slant": 0,
+    "roll": {
+     "axis": "top",
+     "toward": [
+      0,
+      -0.35,
+      0.94
+     ]
+    }
+   },
+   "angle": 0.0,
+   "shift": 0.05,
+   "note": "Sửa tay: v1 không chốt lăn, mặc định nhóm `roll: top → up` gần trùng trục `face` (holderFace gần thẳng trên) nên lăn suy biến; khai `roll` hệ thân theo hướng `top` của v1 (đo bằng scene_probe). Khung bàn tay thế giới so v1 — có roll: 1.6 s 18,1° (đang hoà vào), 1.75 s 6,0°, 2.0 s 1,4°, 2.1 s 0,5°; không roll: 7,8° / 14,7° / 4,7° / 4,2°."
+  }
+ ]
+}
