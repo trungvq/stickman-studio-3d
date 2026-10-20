@@ -1,5 +1,5 @@
 import { HAND_BONES, HAND_REST, handFrames, handVec, type HandFrame } from "./hand";
-import type { HeldItemSpec, HeldShape } from "./heldItem";
+import type { HeldItemSpec, HeldSeats, HeldShape } from "./heldItem";
 import { add3, cross3, dot3, scale3, sub3, type V3 } from "./lens";
 
 /**
@@ -130,9 +130,11 @@ export interface ItemGeom {
   /** Hộp bao của các phần `grip: false` */
   blocked: { part: string; min: V3; max: V3 }[];
   features: Feature[];
+  /** Chỗ treo của món (`seats`), cho nhóm `carry` */
+  seats?: HeldSeats;
 }
 
-type GeomSpec = Pick<HeldItemSpec, "anchors" | "shape" | "front" | "top" | "parts">;
+type GeomSpec = Pick<HeldItemSpec, "anchors" | "shape" | "front" | "top" | "parts" | "seats">;
 
 const D2R = Math.PI / 180;
 const PARALLEL = Math.cos(2 * D2R);
@@ -757,6 +759,7 @@ export function itemGeom(spec: GeomSpec): ItemGeom {
     parts,
     blocked: parts.filter((p) => !p.grip).map((p) => ({ part: p.name, min: p.min, max: p.max })),
     features,
+    ...(spec.seats && (spec.seats.elbow || spec.seats.shoulder) ? { seats: spec.seats } : {}),
   };
   CACHE.set(spec, geom);
   return geom;

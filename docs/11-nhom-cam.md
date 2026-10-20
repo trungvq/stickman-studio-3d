@@ -429,7 +429,10 @@ nắp; dáng mới `claw`). Lựa chọn: hướng tiếp cận, biến thể. M
 - **Vai trò**: cái `press` (cạnh), trỏ–áp út `press` (vòng ra sau, cuộn cả hai đốt tới tì cạnh kia), út `support` (đỡ
   góc dưới), lòng tay `press`.
 - **Lựa chọn**: `thumb` ∈ {`left`, `right`} (cạnh dài có ngón cái; mặc định **cùng bên với tay**), `along` (**0,4**), `tilt`
-  ∈ [0°, 25°] (**20°**).
+  ∈ [0°, 25°] (**20°**). `tilt` từ 15° trở lên gò ngón cái ép cạnh có ngón cái (lún 0,3–1,4 ở cỡ tay 1,61), ≤ 10°
+  không lún ở cỡ 1,61–2,16: rig giải `tilt` với giá lún (mục 5).
+- **Khoe một tay** (màn ra người xem, tay trước ngực): mọi `thumb` × `tilt` × `along` đều vượt kẹp cổ tay (nhỏ nhất 12–14°,
+  `thumb` khác bên tay, `tilt` 25°, `along` 1) — giới hạn khớp, `check` báo `wrist`; khoe bằng hai tay hay nhóm `sheet`.
 - **Tay**: một; hai tay ôm trước ngực thì tay phụ mặc định `platform` ở mặt sau.
 - **Hướng mặc định**: `face: { axis: <front>, toward: "holderFace" }`. Áp tai: cùng nhóm, cùng chỗ bám, ý định màn vào má
   (`toward: { mark: "head" }`), cảnh đặt tay cạnh tai.
@@ -461,7 +464,9 @@ Món gắn vào **cẳng tay** — cần thêm chỗ gắn cẳng tay ở rig (n
 #### 13. `carry` — treo (bản đầu)
 
 Giữ nguyên hành vi của kiểu treo ([01](01-rig.md#kiểu-treo), `heldCarry.ts`): cảnh khai `group: "carry", on`, món khai `seats`
-và `shape` (thân). Không có lòng tay, ngón, ý định; bàn tay theo hành động. `yaw` chuyển từ món lên cảnh. **Để sau**: thay
+và `shape` (thân). Không có lòng tay, ngón, ý định; bàn tay theo hành động. `yaw` chuyển từ món lên cảnh. Món áp được nhóm
+khi có ít nhất một chỗ treo trong `seats`; `on` bắt buộc và `seats[on]` phải có. `carrySpecOf` đổi chỗ cầm ra spec treo
+`{ on, at: seats[on], yaw, touch }` (`touch` của món cộng của cảnh) mà `carryFrame` nhận. **Để sau**: thay
 `seats` bằng khai hình quai (phần `quai`, khối `path`) và để rig chọn điểm treo trên quai theo `on` (mặt trong quai cho
 khuỷu, đỉnh quai cho vai) — sạch hơn vì không còn mốc riêng cho từng cách treo.
 
@@ -695,15 +700,17 @@ E(φ) = ½ (turn/90)² + (bend/AIM_BEND)² + ½ (dev/AIM_DEV)²         cổ tay
 
 Cảnh thường khai đủ chỗ cầm. Thiếu trường nào:
 
-- **Món đặt trước**: rig giải **một lần cho mỗi lần cầm**, ở mốc bắt đầu, trên món đã đứng yên ở chỗ khai, với nhân vật thật
-  của người cầm. Lựa chọn rig giải chỉ đọc ở `graspAtTime`; `ReachHold.grasp.choice` của `sceneAt` chỉ mang trường cảnh
-  khai. Hai bậc: giải rời trước (`edge`, `thumb`, `variant`, `part`) với trường liên tục ở mặc định; rồi lưới liên tục chỉ
-  quanh ứng viên rời tốt nhất (`along` 3 điểm, `slant` 3, `around` 12, `tilt` 2, `psi` 8). `slant` lấy ba điểm `−½`, `0`, `+½` miền của biến thể
-  (`pinch` ±30°, `flat` ±45°, `rim` ±22,5°). Giá của một ứng viên là `min_φ E(φ)` cộng `(khe tầm với / AIM_GAP)²`, cộng ở mốc
-  bắt đầu và các mốc món trong 1,5 s sau còn cùng người cầm, cùng cỡ (tối đa 4, mốc sau trọng số 0,5); lệch khỏi mặc định
-  nhóm cộng `0,05 · (số trường lệch mặc định) / (số trường thiếu có mặc định)`. Lấy ứng viên rẻ nhất; hoà thì theo thứ tự ứng viên: `part`, khối hình
-  theo `FeatureKind`, `edge`, `thumb`, `variant`, `along`, `slant`, rồi `around`, `tilt`, `psi` (rời theo thứ tự miền khai,
-  liên tục tăng dần). Giải 3–18 ứng viên mất 3–9 ms.
+- **Món đặt trước**: rig giải **một lần cho mỗi lần cầm**, ở mốc bắt đầu, trên món đã đứng yên ở chỗ khai, với nhân vật
+  thật của người cầm. Lựa chọn rig giải chỉ đọc ở `graspAtTime`; `ReachHold.grasp.choice` của `sceneAt` chỉ mang trường
+  cảnh khai. Hai bậc: giải rời trước (`edge`, `thumb`, `variant`, `part`) với trường liên tục ở mặc định; rồi lưới liên
+  tục chỉ quanh ứng viên rời tốt nhất (`along` 3 điểm, `slant` 3, `around` 12, `tilt` 6 đều gồm hai đầu, `psi` 8). `slant`
+  lấy ba điểm `−½`, `0`, `+½` miền của biến thể (`pinch` ±30°, `flat` ±45°, `rim` ±22,5°). Giá của một ứng viên là `min_φ
+  E(φ)` cộng `(khe tầm với / AIM_GAP)²`, cộng ở mốc bắt đầu và các mốc món trong 1,5 s sau còn cùng người cầm, cùng cỡ
+  (tối đa 4, mốc sau trọng số 0,5); lệch khỏi mặc định nhóm cộng `0,05 · (số trường lệch mặc định) / (số trường thiếu có
+  mặc định)`. `palmBox` cộng thêm giá lún `(lún / HELD_SINK)²`: lún da (như luật `sink`) của bàn tay đúng khung cầm, ngón
+  ôm theo vai trò (`heldFit`), nhớ theo khung; ứng viên đã đắt hơn ứng viên tốt nhất thì không đo. Lấy ứng viên rẻ nhất;
+  hoà thì theo thứ tự ứng viên: `part`, khối hình theo `FeatureKind`, `edge`, `thumb`, `variant`, `along`, `slant`, rồi
+  `around`, `tilt`, `psi` (rời theo thứ tự miền khai, liên tục tăng dần). Giải 3–20 ứng viên mất 3–10 ms.
 - **`variant`** của tấm luôn có `flat` và `rim` trong miền giải: `pinch` ở cạnh dưới gãy cổ tay (bend 51°, dev 39°), `rim`
   đỡ được. Dáng `rim` cuộn ngón theo bề dày làm ở giai đoạn 4.
 - **Tay dẫn**: lấy mặc định của nhóm (mục 3), không giải; `thumb` của tấm theo mặt quay về người cầm ở mốc bắt đầu lần cầm,
@@ -798,7 +805,7 @@ của một ranh giới lần cầm (`holdBlending` của `scene.ts`: vừa cầ
 | `up`, `face`, `reach` (tay phụ, `item:`) | tay dẫn | `AimReport.hold` như kiểu cầm v1 | như v1 |
 | `jump`, `seat`, `body`, cầm món không ai `provide` | cả hai | Như [03](03-scene.md#đồ-cầm-tay); `jump` có loại "đổi chỗ cầm" giữa hai lần cầm cùng món | như v1 |
 | lỗi `ref` `group` | `resolveScene` | Món không có khối hình nào cho nhóm với cỡ tay của người khai (`checkHolds` của `scene.ts`); dòng báo nêu khối hình món có, và phần khác còn vừa nếu có: `` `<món>` phần `than` (r 15) quá tầm nắm của tay `<người>` (0,95 · W = 14,0): khai `part: "vai"` hay hai tay `` | lỗi |
-| lỗi `ref` `choice` | `resolveScene` | Chỗ cầm không hợp lệ: trường không thuộc nhóm, `edge`/`thumb` không có trên khối hình, `part` không có hay `grip: false`, `along` ngoài 0–1, `both` với nhóm một tay, `both` mà tay kia cũng có `hold` ở cùng `t`, `on`/`yaw` ngoài `carry`, nhóm `later`; món có mốc ở `items` mà mốc tay khai đích (`to`, `at`, `offset`, `point`) hay ý định (`face`, `up`, `roll`, `keep`); mốc món ở `t` không tay nào cầm món ấy | lỗi |
+| lỗi `ref` `choice` | `resolveScene` | Chỗ cầm không hợp lệ: trường không thuộc nhóm, `edge`/`thumb` không có trên khối hình, `part` không có hay `grip: false`, `along` ngoài 0–1, `both` với nhóm một tay, `both` mà tay kia cũng có `hold` ở cùng `t`, `on`/`yaw` ngoài `carry`, `carry` thiếu `on` hay món không có `seats[on]`, nhóm `later`; món có mốc ở `items` mà mốc tay khai đích (`to`, `at`, `offset`, `point`) hay ý định (`face`, `up`, `roll`, `keep`); mốc món ở `t` không tay nào cầm món ấy | lỗi |
 | lỗi `ref` `item` | `resolveScene` | Mốc món có đích của trục phụ lệch đích của trục chính dưới 18° (cos tuyệt đối > 0,95): hướng món suy biến, dòng báo gợi `roll` khác; đích của một trục trùng chỗ món; `face` trần không có trục (mốc không khai, nhóm không có mặc định). Rig không tự đổi | lỗi |
 
 Ngưỡng số cấu hình ở `package.json` `stickman.held` ([05](05-repo-video.md#nhóm-luật)): `pierce`, `touch`, `wrap`, `grip`,
@@ -866,7 +873,9 @@ v1 của `held/` và bỏ món v2; có `--nhom` thì chỉ món v2 (`--mon` mặ
 - Người đứng như chế độ kiểu cầm; món đặt trước ngực bằng `items` theo hướng mặc định của nhóm, chỗ cầm nhóm do rig giải
   (`món@nhóm`). Hai cỡ tay: người có bàn tay nhỏ nhất và lớn nhất trong `characters/` (`--ai` đổi người).
 - Hàng mẫu: chỗ cầm mặc định và từng biến thể của nhóm; `sheet` thêm ngón cái trước / sau, đọc ngang mặt, khoe một tay, khoe
-  hai tay hai cạnh bên, khoe hai tay trên dưới; `palmBox` thêm đọc ngang mặt, khoe một tay, áp tai (tay dẫn).
+  hai tay hai cạnh bên, khoe hai tay trên dưới; `palmBox` thêm đọc ngang mặt, khoe một tay, áp tai (tay dẫn); `carry` chỉ hai
+  hàng treo khuỷu và treo vai (cảnh khai `touch` cho vai), tay đặt như kiểu treo v1, món không đặt trước ngực, `do.json` giữ
+  `seat`, `body`, `swing` (và `bend`, `rise` của khuỷu).
 - Cặp (món, nhóm, người) mà món không có khối hình đạt `needs` của nhóm với cỡ tay ấy bị bỏ; lý do ở `do.json` (`bo`) và dòng
   in ra.
 - Nhãn in chỗ cầm rig chọn, `lún` trên da, `role` từng ngón (khe tới món, vai trò), cổ tay vượt kẹp, `size`; `do.json` giữ thêm

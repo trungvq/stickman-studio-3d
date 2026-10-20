@@ -5,7 +5,7 @@ import { gripShift, type HandPose } from './core/hand';
 import { heldAxis, heldGrip, isCarry, isHeldV2, type CarrySpec, type GraspHand, type GripFrame, type GripSpec, type HeldItemSpec, type ReachHold } from './core/heldItem';
 import { holdHand, holdLinkFrame, isCarryHold } from './core/holdLink';
 import { handDims } from './core/heldGeom';
-import { carryFrame, elbowSeat, type CarryBody } from './core/heldCarry';
+import { carryFrame, carrySpecOf, elbowSeat, type CarryBody } from './core/heldCarry';
 import { bodyCapsules } from './collide';
 import type { V3 } from './core/lens';
 import { heldFit, skinBulge, type FingerRoles } from './core/heldFit';
@@ -417,6 +417,7 @@ function holdGrip(fig: Figure, object: THREE.Object3D, hand: Side | 'both', g: H
 export interface Carrying {
   object: THREE.Object3D;
   item: string;
+  /** Tên kiểu treo (v1), khoá lần cầm `@carry/…` (v2) */
   grip: string;
   spec: HeldItemSpec;
   carry: CarrySpec;
@@ -563,15 +564,16 @@ class CarryRig extends THREE.Group {
 const _cm = new THREE.Matrix4(), _ci = new THREE.Matrix4();
 
 /**
- * Treo `object` trên cánh tay theo kiểu treo `grip` (`on: elbow | shoulder`): đỉnh quai (`at`) ở chỗ treo (`carrySeat`), thân
+ * Treo `object` trên cánh tay theo kiểu treo `grip` hay `món@carry` (`carrySpecOf`, `on: elbow | shoulder`): đỉnh quai (`at`) ở chỗ treo (`carrySeat`), thân
  * món thõng theo trọng lực, đẩy khỏi thân và đùi (`carryFrame` của lõi) — đặt lại mỗi lần three tính ma trận. Bàn tay của tay
  * ấy không đổi dáng, `Figure.holding` không đổi; `Figure.carrying[side]` ghi lần treo. Vật dựng ở gốc khung món như kiểu
  * cầm. docs/01-rig.md#kiểu-treo
  */
 export function carry(fig: Figure, object: THREE.Object3D, o: { hand: Side; grip: HoldGrip }): Held {
-  const side = o.hand, g = o.grip;
-  const spec = heldGrip(g.spec, g.grip, g.item);
-  if (!isCarry(spec)) throw new Error(`\`carry\`: \`${g.item}#${g.grip}\` là kiểu cầm bằng bàn tay — dùng \`hold\``);
+  const side = o.hand, g = o.grip, grasp = g.hold?.grasp;
+  const name = grasp ? `${g.item}@${grasp.hold.group}` : `${g.item}#${g.grip}`;
+  const spec = grasp ? carrySpecOf(g.spec, g.hold!) : heldGrip(g.spec, g.grip, g.item);
+  if (!spec || !isCarry(spec)) throw new Error(`\`carry\`: \`${name}\` là kiểu cầm bằng bàn tay — dùng \`hold\``);
   if (!g.spec.shape) throw new Error(`\`carry\`: \`${g.item}\` cần \`shape\` cho kiểu treo`);
   const entry: Carrying = { object, item: g.item, grip: g.grip, spec: g.spec, carry: spec };
   const rig = new CarryRig((c) => {

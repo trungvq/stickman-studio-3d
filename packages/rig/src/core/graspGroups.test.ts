@@ -44,8 +44,8 @@ describe("bảng GRIP_GROUPS", () => {
     }
   });
 
-  it("chỉ `sheet` và `palmBox` không `later`", () => {
-    expect(GROUP_IDS.filter((g) => !GRIP_GROUPS[g].later)).toEqual(["sheet", "palmBox"]);
+  it("chỉ `sheet`, `palmBox` và `carry` không `later`", () => {
+    expect(GROUP_IDS.filter((g) => !GRIP_GROUPS[g].later)).toEqual(["sheet", "palmBox", "carry"]);
   });
 
   it("mặc định nằm trong miền", () => {
@@ -104,10 +104,11 @@ describe("groupNeeds trên tám món", () => {
     expect(ids(bienLai)).toEqual(["sheet"]);
   });
 
-  it("đũa không ra `sheet`; chai, túi hiệu không có nhóm đã làm", () => {
+  it("đũa không ra `sheet`; chai không có nhóm đã làm; túi hiệu có `seats` chỉ ra `carry`", () => {
     expect(ids(dua)).toEqual([]);
     expect(ids(chaiDia)).toEqual([]);
-    expect(ids(tuiHieu)).toEqual([]);
+    expect(ids(tuiHieu)).toEqual(["carry"]);
+    expect(ids({ ...tuiHieu, seats: undefined })).toEqual([]);
   });
 
   it("đĩa tôm hùm ra `sheet` bằng cả tấm lẫn đĩa", () => {
@@ -268,7 +269,23 @@ describe("checkChoice", () => {
 
   it("nhóm `later`", () => {
     expect(check(sheet, "pen", {})[0]).toMatch(/nhóm `pen` \(Bút\) chưa làm/);
-    expect(check(sheet, "carry", { on: "elbow" })).toHaveLength(1);
+  });
+
+  it("`carry`: thiếu `on`, món không có `seats[on]`, món không có chỗ treo", () => {
+    const tui = geomOf(tuiHieu);
+    expect(check(tui, "carry", { on: "elbow" })).toEqual([]);
+    expect(check(tui, "carry", { on: "shoulder", yaw: 30 })).toEqual([]);
+    expect(check(tui, "carry", {})).toEqual([
+      "`mon@carry`: thiếu `on`: chỗ treo trên cánh tay (elbow, shoulder)",
+    ]);
+    const elbow = geomOf({ ...tuiHieu, seats: { elbow: "treoKhuyu" } });
+    expect(check(elbow, "carry", { on: "shoulder" })).toEqual([
+      "`mon@carry`: món không có chỗ treo `seats.shoulder` (có: elbow)",
+    ]);
+    const bare = check(sheet, "carry", { on: "elbow" });
+    expect(bare).toHaveLength(1);
+    expect(bare[0]).toMatch(/không có khối hình nào cho nhóm `carry` \(Treo\).*chỗ treo `seats`/);
+    expect(check(tui, "carry", { on: "elbow", both: true })[0]).toMatch(/một tay/);
   });
 
   it("`along` ngoài 0–1, tên lạ", () => {

@@ -5,6 +5,7 @@ import { actHeld, holdRoles, leadGrip } from './core/act3';
 import type { GraspHand, GripFrame, HeldItemSpec, HoldAim, ReachHold } from './core/heldItem';
 import type { FingerRoles } from './core/heldFit';
 import { handDims } from './core/heldGeom';
+import { carrySpecOf } from './core/heldCarry';
 import { isCarryHold } from './core/holdLink';
 import type { HandPose } from './core/hand';
 import type { HeldIntent } from './core/heldAudit';
@@ -139,7 +140,7 @@ interface Provided {
   object: THREE.Object3D;
   owner?: string;
   home: { parent?: THREE.Object3D | null; position: THREE.Vector3; quaternion: THREE.Quaternion };
-  on?: { fig: Figure; side: Side; grip: string; held: Held; support?: { side: Side; entry?: Holding } };
+  on?: { fig: Figure; side: Side; grip: string; carry?: string; held: Held; support?: { side: Side; entry?: Holding } };
 }
 
 /** Món một người phải mang ở khung này: tay mang, kiểu cầm, tay phụ, các số hạng ý định của lần cầm */
@@ -155,8 +156,8 @@ interface Want {
   /** Tay kia trên cùng món: tay phụ, hay tay thứ hai của món đặt trước; `v`, `roles` của chỗ cầm nhóm */
   support?: { side: Side; pose: HandPose; grip: string; hand: GraspHand; v?: readonly number[]; roles?: FingerRoles };
   aim: { k: number; hold?: HoldAim }[];
-  /** Kiểu treo: món treo trên cánh tay `side`, không trong bàn tay */
-  carry?: boolean;
+  /** Treo: món treo trên cánh tay `side`, không trong bàn tay — khoá chỗ treo (`on`, `at`, `yaw`, `touch` của `carrySpecOf`) */
+  carry?: string;
 }
 
 /** Ý định đang nhắm ra `userData.hold` cho `check`: trục lên, hay mặt về ống kính / mặt người cầm */
@@ -318,13 +319,13 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
         const h = hung(ac, side);
         const p = h && pick(h.item, id);
         if (!h || !p || want.has(p)) continue;
-        want.set(p, { id, fig, side, item: h.item, grip: h.grip, spec: h.spec, hold: h, aim: [], carry: true });
+        want.set(p, { id, fig, side, item: h.item, grip: h.grip, spec: h.spec, hold: h, aim: [], carry: JSON.stringify(carrySpecOf(h.spec, h)) });
       }
     }
     for (const p of provided) {
       if (p.home.parent === undefined && !p.on) p.home.parent = p.object.parent;
       const w = want.get(p), on = p.on;
-      if (on && !(w && on.fig === w.fig && on.side === w.side && on.grip === w.grip && on.support?.side === w.support?.side)) letGo(p);
+      if (on && !(w && on.fig === w.fig && on.side === w.side && on.grip === w.grip && on.carry === w.carry && on.support?.side === w.support?.side)) letGo(p);
       if (w && !p.on) take(p, w);
       if (!p.on || !w) continue;
       if (w.carry) {
@@ -380,7 +381,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
       entry = { object: p.object, item: w.item, grip: sup.grip, spec: w.spec, hand: sup.hand, pose: sup.pose, follow: 'wrist', both: true, ...(sup.roles && { roles: sup.roles }) };
       (w.fig.holding ??= {})[sup.side] = entry;
     }
-    p.on = { fig: w.fig, side: w.side, grip: w.grip, held, ...(w.support && { support: { side: w.support.side, entry } }) };
+    p.on = { fig: w.fig, side: w.side, grip: w.grip, ...(w.carry && { carry: w.carry }), held, ...(w.support && { support: { side: w.support.side, entry } }) };
   };
   const letGo = (p: Provided) => {
     const on = p.on!;

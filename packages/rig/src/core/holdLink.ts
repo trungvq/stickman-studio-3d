@@ -46,9 +46,9 @@ const isGroupHold = (h: ReachHold) => !!h.grasp || isHeldV2(h.spec);
 
 /** Lần cầm treo trên cánh tay (không chiếm bàn tay): kiểu treo của món v1, nhóm `carry` */
 export const isCarryHold = (
-  spec: HeldItemSpec,
+  spec: HeldItemSpec | undefined,
   h: Pick<ReachHold, "grip"> & { grasp?: Pick<HoldGrasp, "hold"> },
-): boolean => (h.grasp ? h.grasp.hold.group === "carry" : isCarry(spec.grips?.[h.grip]));
+): boolean => (h.grasp ? h.grasp.hold.group === "carry" : isCarry(spec?.grips?.[h.grip]));
 
 const FIELDS = [
   "part",

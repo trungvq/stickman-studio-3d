@@ -1116,10 +1116,13 @@ const armPartLabel = (k: string) => {
 
 const CARRY_ON_LABELS: Record<CarryOn, string> = { elbow: "khuỷu", shoulder: "vai" };
 
+/** Tên món của `hold` kiểu cầm v1 (`món#kiểu`) hay chỗ cầm nhóm v2 (`món@nhóm`) */
+const holdItem = (hold: string): string => hold.split(/[#@]/)[0];
+
 /** Các số đo chính của một món treo ở một giây, một dòng */
 export function carrySummary(s: HeldCarry): string {
   return [
-    `kiểu treo ${s.hold} (${CARRY_ON_LABELS[s.on]})`,
+    `${s.hold.includes("@") ? "chỗ cầm" : "kiểu treo"} ${s.hold} (${CARRY_ON_LABELS[s.on]})`,
     `đỉnh quai cách chỗ treo ${r1(s.seat)}`,
     ...(s.bend !== undefined
       ? [
@@ -1133,6 +1136,8 @@ export function carrySummary(s: HeldCarry): string {
 
 /** Dòng báo của một mục món treo sai */
 function carryLine(s: HeldIssue, x: HeldCarry, when: string): string {
+  const v2 = x.hold.includes("@");
+  const file = `held/${holdItem(x.hold)}.json`;
   const who = `\`${s.id}\` ${PALM_HAND_LABELS[s.hand]} treo ${s.item} (\`${x.hold}\`, ${CARRY_ON_LABELS[x.on]})`;
   const head = (): string => {
     if (s.rule === "body")
@@ -1140,14 +1145,14 @@ function carryLine(s: HeldIssue, x: HeldCarry, when: string): string {
         /^(upperArm|foreArm|hand)/.test(x.body.part)
           ? "dang tay ra khỏi món (`world.hands` `at` / `elbow` ra ngoài)"
           : "dời tay, chỗ đứng hay dáng cho món có chỗ thõng"
-      }, khai \`touch\` ở kiểu treo nếu cố ý ép sát, hay thu \`shape\` ở \`held/${x.hold.split("#")[0]}.json\``;
+      }, khai \`touch\` ở ${v2 ? 'chỗ cầm của cảnh (`hold` `group: "carry"`)' : "kiểu treo"} nếu cố ý ép sát, hay thu \`shape\` ở \`${file}\``;
     if (s.rule === "seat") {
       const why =
         x.bend !== undefined && x.bend > CARRY.bend
           ? `khuỷu mở ${Math.round(x.bend)}° (giữ quai cần dưới ${CARRY.bend}°) — gập khuỷu: cổ tay lên trước vai, khuỷu chĩa xuống`
           : x.rise !== undefined && x.rise < CARRY.rise
             ? `cẳng tay chúc ${Math.round(-x.rise)}° dưới phương ngang, quai tuột về cổ tay — nâng cổ tay cao hơn khuỷu`
-            : `đỉnh quai cách chỗ treo ${r1(x.seat)} — \`extra\` đừng đặt món đang treo, hay \`at\` của kiểu treo không phải đỉnh quai`;
+            : `đỉnh quai cách chỗ treo ${r1(x.seat)} — \`extra\` đừng đặt món đang treo, hay ${v2 ? `\`seats.${x.on}\` ở \`${file}\`` : "`at` của kiểu treo"} không phải đỉnh quai`;
       return `quai không nằm trên chỗ treo — ${who}: ${why}`;
     }
     const j = s.jump!;
@@ -1176,7 +1181,7 @@ export function heldLine(s: HeldIssue): string {
   if (isGroupHeld(x)) return groupLine(s, x, who, `ở giây ${sec(s.t)} · giây ${runs}${more}`);
   // kiểu cầm cứng: lỗi ở liên kết tay–món sai ở mọi cảnh dùng kiểu cầm ấy
   const fixGrip = x.hold
-    ? `sửa kiểu cầm \`${x.hold}\` ở \`held/${x.hold.split("#")[0]}.json\` (\`at\`, \`palm\`, \`fingers\`, \`pose\`) — nó sai ở mọi cảnh dùng nó`
+    ? `sửa kiểu cầm \`${x.hold}\` ở \`held/${holdItem(x.hold)}.json\` (\`at\`, \`palm\`, \`fingers\`, \`pose\`) — nó sai ở mọi cảnh dùng nó`
     : undefined;
   const i = x.intent;
   const clamp = (c: HeldClamp) =>
@@ -1213,7 +1218,7 @@ export function heldLine(s: HeldIssue): string {
         .map((f) => `ngón ${FINGER_LABELS[f]} cách món ${r1(x.fingers![f])}`)
         .join(
           ", ",
-        )} — ngón cuộn hết tầm vẫn không chạm hình va chạm; sửa kiểu cầm \`${x.hold}\` (\`at\`, \`pose\`, bỏ ngón khỏi \`wrap\`) hay \`shape\` ở \`held/${(x.hold ?? "").split("#")[0]}.json\``,
+        )} — ngón cuộn hết tầm vẫn không chạm hình va chạm; sửa kiểu cầm \`${x.hold}\` (\`at\`, \`pose\`, bỏ ngón khỏi \`wrap\`) hay \`shape\` ở \`held/${holdItem(x.hold ?? "")}.json\``,
     grip: () =>
       `món không nằm trong tay — ${who}: tâm nắm của dáng \`${x.pose}\` cách mặt món ${r1(x.grip)}${fixGrip ? `; ${fixGrip}` : ""}`,
     up: () =>

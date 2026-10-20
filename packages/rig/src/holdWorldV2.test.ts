@@ -4,13 +4,15 @@ import { body3 } from './core/figure3d';
 import { parseHeldItem, type HeldItemSpec, type ReachHold } from './core/heldItem';
 import { holdLinkFrame } from './core/holdLink';
 import { itemAt, parseScene, resolveScene, sceneAt } from './core/scene';
-import { parseCharacter } from './core/schema';
+import { defaultCharacter, parseCharacter } from './core/schema';
 import { fitHolding } from './attach';
+import { heldCarries } from './held';
 import { U } from './khoi';
 import { buildWorld, plainRoom, type Cast3D } from './world';
 import fx from './core/__fixtures__/nguoi-cam-bang.json';
 import bangGia from './core/__fixtures__/held-v2/bang-gia.json';
 import dienThoai from './core/__fixtures__/held-v2/dien-thoai.json';
+import tuiHieu from './core/__fixtures__/held-v2/tui-hieu.json';
 
 // Chỗ cầm nhóm (`món@nhóm`) gắn món three qua `holdLink`: món đặt trước ngồi ở `itemAt`, tay dẫn mang món theo bàn tay
 
@@ -164,5 +166,82 @@ describe('tay dẫn (`mode: "hand"`)', () => {
     expect(h.fit).toBe(a);
     w.pose(1.5);
     expect(h.fit).toBe(a);
+  });
+});
+
+describe('treo (`món@carry`)', () => {
+  // `touch` của túi khai ở cảnh `on: shoulder`; bản v1 cùng thân, cùng mốc, chỗ treo là kiểu treo của `grips`
+  const { touch, ...bare } = tuiHieu;
+  const V2 = spec(bare);
+  const V1 = spec({
+    size: bare.size, anchors: bare.anchors, shape: bare.shape,
+    grips: { khuyu: { on: 'elbow', at: 'treoKhuyu' }, vai: { on: 'shoulder', at: 'quai', touch } },
+  });
+  const c = defaultCharacter();
+  c.palette.clad = true;
+  const ELBOW = { to: 'shoulder', offset: [36, 30, 0], point: 'wrist', elbow: [-0.7, 1, -0.2] };
+  const OUT = { at: [-90, -185, -10], point: 'wrist', elbow: [-0.6, 1, 0] };
+
+  function carryWorld(item: HeldItemSpec, hands: unknown[]) {
+    const sc = parseScene({
+      name: 'x', duration: 3,
+      lens: { eye: [0, -250, -1400], yaw: 0, pitch: 0, f: 800 },
+      cast: [{ id: 'a', character: 'a.json', world: { at: [0, 0, 0], yaw: 90, hands } }],
+    });
+    if (!sc.success) throw new Error(sc.error.message);
+    const heights = { a: 1 }, bodies = { a: body3(c) };
+    const rt = resolveScene(sc.data, {}, {}, {}, heights, bodies, { 'tui-hieu': item });
+    const bag = new THREE.Group();
+    bag.add(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 0.2).translate(0, 0.25, 0), new THREE.MeshBasicMaterial()));
+    const w = buildWorld(sc.data, rt, {
+      set: () => plainRoom(),
+      extra: (_m, k) => {
+        const g = new THREE.Group();
+        g.add(bag);
+        k.provide('tui-hieu', bag);
+        return { group: g };
+      },
+    }, { characters: { 'a.json': c }, heights, bodies });
+    return { w, bag };
+  }
+  const at = (x: ReturnType<typeof carryWorld>, t: number) => {
+    const fig = x.w.pose(t).a;
+    x.w.root.updateMatrixWorld(true);
+    return fig;
+  };
+  const v2 = (h: object) => ({ hold: { item: 'tui-hieu', group: 'carry', ...h } });
+
+  const PAIRS = [
+    { name: 'khuỷu', v1: { ...ELBOW, hold: 'tui-hieu#khuyu' }, v2: { ...ELBOW, ...v2({ on: 'elbow' }) }, on: 'elbow' },
+    { name: 'vai', v1: { ...OUT, hold: 'tui-hieu#vai' }, v2: { ...OUT, ...v2({ on: 'shoulder', touch }) }, on: 'shoulder' },
+  ];
+  for (const P of PAIRS)
+    it(`\`on: ${P.on}\` treo y như kiểu treo ${P.name} v1: cùng khung món (≤ 1e-9), cùng \`heldCarries\``, () => {
+      const a = carryWorld(V1, [{ t: 0, right: P.v1 }]);
+      const b = carryWorld(V2, [{ t: 0, right: P.v2 }]);
+      for (const t of [0.2, 1.5]) {
+        const fa = at(a, t), fb = at(b, t);
+        const ea = fa.carrying![-1]!, eb = fb.carrying![-1]!;
+        expect(eb.carry.on).toBe(P.on);
+        expect(fb.holding?.[-1]).toBeUndefined();
+        a.bag.matrixWorld.elements.forEach((x, i) => expect(Math.abs(x - b.bag.matrixWorld.elements[i])).toBeLessThanOrEqual(1e-9));
+        expect(Math.abs(ea.fit!.swing - eb.fit!.swing)).toBeLessThanOrEqual(1e-9);
+        const [ca] = heldCarries(fa, 'a'), [cb] = heldCarries(fb, 'a');
+        expect(cb.hold).toBe('tui-hieu@carry');
+        expect(cb.key).toBe(`${b.bag.id}|tui-hieu@carry|${P.on}`);
+        expect(Math.abs(ca.seat - cb.seat)).toBeLessThanOrEqual(1e-9);
+        expect(Math.abs(ca.swing - cb.swing)).toBeLessThanOrEqual(1e-9);
+        expect(Math.abs(ca.body.gap - cb.body.gap)).toBeLessThanOrEqual(1e-9);
+        expect(cb.body.part).toBe(ca.body.part);
+        expect(cb.body.allow).toBe(ca.body.allow);
+        expect(cb.bend).toBe(ca.bend);
+        expect(cb.rise).toBe(ca.rise);
+      }
+    });
+
+  it('đổi `on` giữa hai mốc: món treo lại ở chỗ mới', () => {
+    const x = carryWorld(V2, [{ t: 0, right: { ...ELBOW, ...v2({ on: 'elbow' }) } }, { t: 1, right: { ...OUT, ...v2({ on: 'shoulder', touch }) } }]);
+    expect(at(x, 0.5).carrying![-1]!.carry.on).toBe('elbow');
+    expect(at(x, 2).carrying![-1]!.carry.on).toBe('shoulder');
   });
 });

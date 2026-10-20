@@ -182,7 +182,7 @@ function carryAllow(touch: readonly (string | { part: string; max: number })[], 
 }
 
 /**
- * Số đo từng món treo trên cánh tay của người `fig` (tên `id`, kiểu treo `Figure.carrying`) đang hiện trên hình: đỉnh quai
+ * Số đo từng món treo trên cánh tay của người `fig` (tên `id`, kiểu treo hay `món@carry` của `Figure.carrying`) đang hiện trên hình: đỉnh quai
  * tới chỗ treo, góc khuỷu và độ ngóc cẳng tay (khuỷu), khe thân món (hình va chạm `shape`) tới từng phần người — trừ đoạn
  * tay quai vắt qua, cộng phần `touch` cho lấn —, góc đẩy khỏi phương đứng. Đơn vị rig thế giới. Gọi như `heldHands`.
  * docs/03-scene.md#đồ-cầm-tay
@@ -198,6 +198,8 @@ export function heldCarries(fig: Figure, id: string, o: { U?: number } = {}): He
     const e = fig.carrying[side];
     if (!e || !shown(e.object) || !e.spec.shape) continue;
     const t = side < 0 ? 'R' : 'L';
+    // khoá lần cầm v2 bắt đầu bằng `@`, tên kiểu treo v1 thì không
+    const v2 = e.grip.startsWith('@'), name = v2 ? `${e.item}@carry` : `${e.item}#${e.grip}`;
     const seat = carrySeat(fig, side, e.carry.on);
     const top = e.object.localToWorld(new THREE.Vector3(...heldPoint(e.spec, e.carry.at).map((v) => v * 0.01)));
     // món trong thế giới three dạng liên kết của lõi: khe đo bằng cùng hình va chạm như ngón ôm
@@ -213,8 +215,8 @@ export function heldCarries(fig: Figure, id: string, o: { U?: number } = {}): He
     }
     out.push({
       id, hand: t, item: e.item, obj: e.object.id,
-      hold: `${e.item}#${e.grip}`, on: e.carry.on,
-      key: `${e.object.id}|${e.grip}|${e.carry.on}`,
+      hold: name, on: e.carry.on,
+      key: `${e.object.id}|${v2 ? name : e.grip}|${e.carry.on}`,
       at: [seat.pivot.x / u, -seat.pivot.y / u, -seat.pivot.z / u],
       seat: top.distanceTo(seat.pivot) / u,
       ...(seat.bend !== undefined && { bend: seat.bend, rise: seat.rise! }),

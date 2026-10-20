@@ -17,7 +17,8 @@
 // mẫu × hai cỡ tay. Người đứng như trên, món đặt trước ngực bằng `items` theo hướng mặc định của nhóm, chỗ cầm nhóm
 // giải bằng rig (`món@nhóm`); hàng mẫu: chỗ cầm mặc định, từng biến thể của nhóm, và với `sheet` thêm ngón cái trước /
 // sau, đọc ngang mặt, khoe một tay, khoe hai tay hai cạnh bên, khoe hai tay trên dưới; với `palmBox` thêm đọc ngang mặt,
-// khoe một tay, áp tai (tay dẫn). Cặp (món, nhóm, người) mà món không có khối hình đạt `needs` của nhóm với cỡ tay ấy
+// khoe một tay, áp tai (tay dẫn); `carry` hai hàng treo khuỷu (`on: elbow`) và treo vai (`on: shoulder`, cảnh khai `touch`), tay
+// đặt như kiểu treo v1, món không đặt trước ngực. Cặp (món, nhóm, người) mà món không có khối hình đạt `needs` của nhóm với cỡ tay ấy
 // bị bỏ, lý do vào `do.json` (`bo`). Nhãn in chỗ cầm rig chọn, `lún` trên da, `role` từng ngón (khe tới món, vai trò),
 // cổ tay vượt kẹp, `size`; `do.json` giữ thêm `pierce`, `grip`, `grasp`.
 //
@@ -239,6 +240,29 @@ const copyHand = (h, src, key, flip) => {
   return out;
 };
 
+/** Cách đặt cánh tay cho chỗ treo: khuỷu gập chữ V (cổ tay trước vai), hay tay dang ngoài túi đeo vai; `hold` là chỗ cầm */
+const treoTay = (side, on, hold) => {
+  const lr = side === "right" ? -1 : 1;
+  return on === "elbow"
+    ? {
+        to: "shoulder",
+        offset: [36, 30, 0],
+        point: "wrist",
+        elbow: moveDir([0.7 * lr, 1, -0.2], 90, YAW, false),
+        hold,
+      }
+    : {
+        at: moveDir([90 * lr, -185, -10], 90, YAW, false).map((v, i) => r2(v + AT[i])),
+        point: "wrist",
+        elbow: moveDir([0.6 * lr, 1, 0], 90, YAW, false),
+        hold,
+      };
+};
+const TREO_TU = {
+  elbow: "mặc định (khuỷu gập, cổ tay trước vai)",
+  shoulder: "mặc định (tay dang ngoài túi)",
+};
+
 /** Mốc tay của ô `key` (món#kiểu) cầm bằng tay `side`: từ cảnh, hay mặc định trước ngực */
 function handsFor(key, side) {
   const other = side === "right" ? "left" : "right";
@@ -253,34 +277,11 @@ function handsFor(key, side) {
     }
     return { hands, from: `${src.scene} ${src.id} ${src.t}s${mir ? " (soi gương)" : ""}` };
   }
-  const lr = side === "right" ? -1 : 1;
-  // kiểu treo: bàn tay tự do, cánh tay đặt cho chỗ treo — khuỷu gập chữ V (cổ tay trước vai), hay tay dang ngoài túi đeo vai
+  // kiểu treo: bàn tay tự do, cánh tay đặt cho chỗ treo
   const on = data.held[key.split("#")[0]]?.grips?.[key.split("#")[1]]?.on;
-  if (on === "elbow")
-    return {
-      hands: {
-        [side]: {
-          to: "shoulder",
-          offset: [36, 30, 0],
-          point: "wrist",
-          elbow: moveDir([0.7 * lr, 1, -0.2], 90, YAW, false),
-          hold: key,
-        },
-      },
-      from: "mặc định (khuỷu gập, cổ tay trước vai)",
-    };
-  if (on === "shoulder")
-    return {
-      hands: {
-        [side]: {
-          at: moveDir([90 * lr, -185, -10], 90, YAW, false).map((v, i) => r2(v + AT[i])),
-          point: "wrist",
-          elbow: moveDir([0.6 * lr, 1, 0], 90, YAW, false),
-          hold: key,
-        },
-      },
-      from: "mặc định (tay dang ngoài túi)",
-    };
+  if (on === "elbow" || on === "shoulder")
+    return { hands: { [side]: treoTay(side, on, key) }, from: TREO_TU[on] };
+  const lr = side === "right" ? -1 : 1;
   return {
     hands: {
       [side]: {
@@ -376,6 +377,25 @@ if (!nhomXin) {
   const hangMau = (item, group, spec) => {
     const gs = rig.GRIP_GROUPS[group];
     const H = (extra = {}) => ({ hold: { item, group, ...extra } });
+    if (group === "carry")
+      return Object.keys(spec.seats ?? {}).map((on) => ({
+        ma: `treo-${on}`,
+        ten: `treo ${on === "elbow" ? "khuỷu" : "vai"}`,
+        from: TREO_TU[on],
+        hands: {
+          right: treoTay("right", on, {
+            item,
+            group,
+            on,
+            ...(on === "shoulder" && {
+              touch: [
+                { part: "upperArm", max: 5 },
+                { part: "torso", max: 5 },
+              ],
+            }),
+          }),
+        },
+      }));
     const rows = [{ ma: "mac-dinh", ten: "mặc định", mark: NGUC, hands: { right: H() } }];
     for (const v of Object.keys(gs.variants))
       if (Object.keys(gs.variants).length > 1 && v !== gs.choices.variant?.default)
@@ -473,9 +493,9 @@ if (!nhomXin) {
             side,
             person,
             size: r2(p.size),
-            from: row.mark ? "hàng mẫu (món đặt trước ngực)" : "hàng mẫu (tay dẫn)",
+            from: row.from ?? (row.mark ? "hàng mẫu (món đặt trước ngực)" : "hàng mẫu (tay dẫn)"),
             two,
-            carry: false,
+            carry: group === "carry",
             scene: dungCanh(p, row.hands, row.mark ? [{ item, ...row.mark }] : []),
           });
         }
@@ -559,7 +579,6 @@ const tomTatNhom = (s) => {
 
 /** Số đo một bàn tay (hay một món treo): chuỗi ngắn cho nhãn */
 const tomTat = (s) => {
-  if (rig.isGroupHeld(s)) return tomTatNhom(s);
   if (s.on)
     return [
       `treo ${s.on === "elbow" ? "khuỷu" : "vai"}`,
@@ -568,6 +587,7 @@ const tomTat = (s) => {
       `thân ${r1(s.body.gap)} ${s.body.part}`,
       `đẩy ${Math.round(s.swing)}°`,
     ].join(" · ");
+  if (rig.isGroupHeld(s)) return tomTatNhom(s);
   const a = [`lún ${r1(s.pierce.depth)}`];
   const open = s.wrap && s.fingers ? rig.heldOpen(s) : [];
   if (open.length) a.push(`hở ${open.map((f) => `${VN[f]} ${r1(s.fingers[f])}`).join(", ")}`);

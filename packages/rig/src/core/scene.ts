@@ -87,7 +87,6 @@ import {
   groupHold,
   heldGrip,
   holdKind,
-  isCarry,
   isHeldV2,
   heldBase,
   heldPoint,
@@ -140,7 +139,8 @@ import {
   blendLayers,
   blendPose,
 } from "./blend";
-import { shapeBound } from "./heldCarry";
+import { carrySpecOf, shapeBound, type CarryRef } from "./heldCarry";
+import { isCarryHold } from "./holdLink";
 import { D, FRAMES, RIG, type FrameName, type FrameSpec } from "./constants";
 import { feet, lengths, type Legs } from "./geometry";
 import { BODY3, dirOf, facing, feet3, viewOfTheta, type Body3, type World } from "./figure3d";
@@ -3288,11 +3288,7 @@ function handAt(
   const f = blend ? smoothstep((time - now!.since) / HOLD_BLEND) : 1;
   const v2 = !!now && holdKind(now.hold) === "group";
   // kiểu treo không hoà liên kết, không có ý định: món theo chỗ treo ngay từ mốc
-  const carried =
-    !!nowRef &&
-    (v2
-      ? groupHold(now!.hold).group === "carry"
-      : isCarry(held[nowRef.item]?.grips?.[nowRef.grip]));
+  const carried = !!nowRef && isCarryHold(held[nowRef.item], carryRef(now!.hold));
   const regrip =
     !carried &&
     !!(nowRef && prevRef) &&
@@ -3862,6 +3858,12 @@ function castMarkAt(rt: SceneRuntime, id: string, mark: BodyMark | undefined, ti
   return onTorso(which === "mouth" ? head - B.head * 0.35 : head - B.head * 0.1, B.head * 0.45);
 }
 
+/** Lần cầm của mốc `hold` cho `isCarryHold` / `carrySpecOf`: khoá kiểu cầm, chỗ cầm nhóm của cảnh */
+const carryRef = (h: SceneHold): CarryRef => ({
+  grip: sceneHoldRef(h).grip,
+  ...(holdKind(h) === "group" && { grasp: { hold: groupHold(h) } }),
+});
+
 /** Mốc tay của món đặt trước không khai đích, ý định: bàn tay suy từ món (docs/11-nhom-cam.md#chỗ-cầm) */
 const PLACED_TARGET = ["to", "at", "offset", "point"] as const;
 const PLACED_INTENT = ["face", "up", "roll", "keep"] as const;
@@ -3958,10 +3960,14 @@ function checkHolds(
           fail(`${where}: \`point: ${h.point}\` cần món đang cầm (\`hold\`)`);
         const { item, grip } = sceneHoldRef(run.hold);
         const spec = held[item];
-        if (spec && isCarry(spec.grips?.[grip]))
+        const ref = carryRef(run.hold);
+        if (spec && isCarryHold(spec, ref)) {
+          const name = ref.grasp ? `${item}@carry` : `${item}#${grip}`;
+          const on = ref.grasp ? ref.grasp.hold.on : carrySpecOf(spec, ref)?.on;
           fail(
-            `${where}: \`point: ${h.point}\` cần món cầm trong bàn tay — \`${item}#${grip}\` là kiểu treo (\`on: ${(spec.grips?.[grip] as { on: string }).on}\`)`,
+            `${where}: \`point: ${h.point}\` cần món cầm trong bàn tay — \`${name}\` là kiểu treo (\`on: ${on}\`)`,
           );
+        }
         try {
           if (spec) heldPoint(spec, h.point.slice(5));
         } catch (e) {

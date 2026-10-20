@@ -647,14 +647,19 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
 
   carry: {
     label: "Treo",
-    needs: [{ kinds: ["box"], text: "thân món (hình va chạm) và chỗ treo `seats`" }],
+    needs: [
+      {
+        kinds: ["box"],
+        test: (_f, _h, g) => !!(g.seats?.elbow || g.seats?.shoulder),
+        text: "thân món (hình va chạm) và chỗ treo `seats`",
+      },
+    ],
     variants: { default: { frame: "nf", roles: roles("free", "free", "free") } },
     choices: {
       on: names(CARRY_ON),
       yaw: range(-180, 180, { default: 0 }),
     },
     hands: "one",
-    later: true,
   },
 
   soft: {
@@ -876,8 +881,8 @@ const faceOk = (f: Feature, thumb: string): boolean =>
 
 /**
  * Lỗi `group` và `choice` của một chỗ cầm v2 (docs/11 mục 7): nhóm `later`, trường không thuộc nhóm, `on` / `yaw` ngoài
- * `carry`, `both` với nhóm một tay, biến thể, số ngoài miền, `part` / `edge` / `thumb` không có trên khối hình, và món
- * không có khối hình cho nhóm. Mảng rỗng là hợp lệ
+ * `carry`, `carry` thiếu `on` hay món không có `seats[on]`, `both` với nhóm một tay, biến thể, số ngoài miền, `part` /
+ * `edge` / `thumb` không có trên khối hình, và món không có khối hình cho nhóm. Mảng rỗng là hợp lệ
  */
 export function checkChoice(
   group: GroupId | GroupSpec,
@@ -925,6 +930,14 @@ export function checkChoice(
   }
   if (h.both !== undefined && spec.hands === "one")
     bad(`nhóm \`${spec.id}\` một tay, không có \`both\``);
+  if (spec.choices.on) {
+    const seats = geom.seats;
+    if (h.on === undefined) bad(`thiếu \`on\`: chỗ treo trên cánh tay (${CARRY_ON.join(", ")})`);
+    else if (seats && !seats[h.on])
+      bad(
+        `món không có chỗ treo \`seats.${h.on}\` (có: ${CARRY_ON.filter((k) => seats[k]).join(", ")})`,
+      );
+  }
 
   const part = h.part;
   if (part !== undefined) {

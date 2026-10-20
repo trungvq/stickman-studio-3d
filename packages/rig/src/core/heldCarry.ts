@@ -1,11 +1,15 @@
 import { capsuleClearance, heldDistance, toItem } from "./heldFit";
 import {
+  CARRY_ON,
   heldPoint,
+  isCarry,
   rotAxis,
   type CarrySpec,
   type GripFrame,
   type HeldItemSpec,
   type HeldShape,
+  type HoldGrasp,
+  type ReachHold,
 } from "./heldItem";
 import { fromColumns, matMul, matVec, type V3 } from "./lens";
 
@@ -28,6 +32,34 @@ export const CARRY = {
   /** Thân món lồng vào người quá ngần này */
   body: 1.5,
 } as const;
+
+/** Lần cầm như `ReachHold`: tên kiểu cầm (v1), chỗ cầm nhóm của cảnh (`grasp.hold`, v2) */
+export type CarryRef = Pick<ReachHold, "grip"> & { grasp?: Pick<HoldGrasp, "hold"> };
+
+/**
+ * Spec treo của lần cầm `h` trên món `spec`: kiểu treo của món v1, hay `món@carry` của v2 — `at` là `seats[on]` của món,
+ * `yaw` của cảnh, `touch` của món cộng của cảnh. Lần cầm không treo thì `undefined`; `carry` thiếu `on` hay món không có
+ * `seats[on]` thì ném lỗi có tên
+ */
+export function carrySpecOf(spec: HeldItemSpec, h: CarryRef): CarrySpec | undefined {
+  const g = h.grasp?.hold;
+  if (!g) {
+    const v1 = spec.grips?.[h.grip];
+    return isCarry(v1) ? v1 : undefined;
+  }
+  if (g.group !== "carry") return undefined;
+  const where = `\`${g.item}@carry\``;
+  if (!g.on) throw new Error(`${where}: thiếu \`on\` (${CARRY_ON.join(", ")})`);
+  const at = spec.seats?.[g.on];
+  if (!at) throw new Error(`${where}: món không có chỗ treo \`seats.${g.on}\``);
+  const touch = [...(spec.touch ?? []), ...(g.touch ?? [])];
+  return {
+    on: g.on,
+    at,
+    ...(g.yaw !== undefined && { yaw: g.yaw }),
+    ...(touch.length > 0 && { touch }),
+  };
+}
 
 /** Một viên nang của người: hai đầu trục, bán kính, tên phần (`torso`, `thighR`…) */
 export interface CarryCapsule {

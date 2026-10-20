@@ -14,6 +14,7 @@ import {
   sceneHeld,
   segMeshDistance,
   HELD_UP,
+  type HeldCarry,
   type HeldHand,
   type HeldItemPose,
 } from "./heldAudit";
@@ -251,6 +252,41 @@ describe("kiểu cầm cứng", () => {
         .find((l) => l.startsWith("món nghiêng"));
     expect(alt([{ grip: "do", err: 12 }])).toContain("đổi kiểu cầm: `chen#do` với tới (lệch 12°)");
     expect(alt([{ grip: "do", err: 40 }])).toMatch(/hay đổi kiểu cầm ở giây/);
+  });
+
+  it("dòng báo món treo lấy đúng tên món cho kiểu treo v1 và chỗ cầm v2; v2 trỏ chỗ cầm của cảnh", () => {
+    const carry = (hold: string, o: Partial<HeldCarry> = {}): HeldCarry => ({
+      id: "a",
+      hand: "R",
+      item: "tui-hieu",
+      hold,
+      on: "shoulder",
+      key: `1|${hold}|shoulder`,
+      at: [0, -150, 0],
+      seat: 0,
+      body: { gap: -9, part: "torso" },
+      swing: 0,
+      s: 1,
+      ...o,
+    });
+    const r = parseScene({
+      duration: 1,
+      lens: { eye: [0, -300, -900], yaw: 0, pitch: 10, f: 800, cx: 0, cy: 0 },
+      cast: [{ id: "a", world: { at: [0, 0, 0] }, tracks: [] }],
+    });
+    if (!r.success) throw new Error(r.error.message);
+    const rt = resolveScene(r.data, {});
+    const line = (c: HeldCarry) => sceneHeld(rt, { frame: () => [c] }).map(heldLine)[0];
+    const v1 = line(carry("tui-hieu#vai"));
+    expect(v1).toContain("khai `touch` ở kiểu treo");
+    expect(v1).toContain("`held/tui-hieu.json`");
+    const v2 = line(carry("tui-hieu@carry"));
+    expect(v2).toContain("khai `touch` ở chỗ cầm của cảnh");
+    expect(v2).toContain("`held/tui-hieu.json`");
+    expect(v2).toContain("chỗ cầm tui-hieu@carry");
+    expect(v2).not.toMatch(/@carry\.json|kiểu treo/);
+    const seat = line(carry("tui-hieu@carry", { seat: 20, body: { gap: 5, part: "torso" } }));
+    expect(seat).toContain("`seats.shoulder` ở `held/tui-hieu.json`");
   });
 
   it("món cứng không đo trôi; món nhảy qua mốc `hold` (gắn, thả, đổi tay) đo hai bên mốc", () => {
