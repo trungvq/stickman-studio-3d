@@ -5,6 +5,8 @@ Worktree video: `~/Work/Dev/youtube-video/jp-sukatto-nhom-cam` (nhánh `auto/nho
 
 ## Đang làm
 Giai đoạn 3 — lõi. Kế hoạch job: `tmp/nhom-cam/gd3-ke-hoach.md` (21 job G3-01…G3-21, 14 đợt, mốc commit M1–M8).
+Xong: G3-01…G3-12, G3-21 (dữ liệu), sửa hai vòng review. Còn: G3-13 → 14 → 15 → 16 → (17, 18) → (19, 20), rồi kiểm cuối giai đoạn 3.
+Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa — bỏ mọi bước review Fable còn lại (kể cả "Review Fable MỘT vòng" ở các giai đoạn sau).
 
 ## Tóm tắt bước 0 (xong)
 - Prototype `b0/grasp.mts`: graspFrame `sheet` pinch/flat/rim (khớp fixture ≤ 0,27°), `cylinder` wrap trên rod; bàn tay từ món; khuỷu E(φ); giải lựa chọn thiếu.
@@ -24,7 +26,7 @@ Giai đoạn 3 — lõi. Kế hoạch job: `tmp/nhom-cam/gd3-ke-hoach.md` (21 jo
 ## Job
 | Job | Trạng thái | Đầu ra |
 |---|---|---|
-| B0a prototype graspFrame + khuỷu E(φ), bảng số 5 ca | vòng 1 xong (fixture `bang-gia#doc` lệch 0,27°/0,07; φ một mẫu 0,38 ms; giải lựa chọn 8 ứng viên 3 ms). Vòng 2 đang chạy: rig giải trường không khai, soát khung ca 4 (`dev −134` nghi lỗi) | `tmp/nhom-cam/b0/grasp.mts`, `ca.json` |
+| B0a prototype graspFrame + khuỷu E(φ), bảng số 5 ca | xong (3 vòng) | `tmp/nhom-cam/b0/grasp.mts`, `ca.json` |
 | B0b render vòng 1 | xong: `b0/hinh/vong1/to-{1,2,3}.jpg`. Đã xem: c1–c3 ổn; c4 gãy cổ tay (chỉ có `pinch`); c5 cán chọc đầu, tay trái ép ngực, khuỷu nhảy 50°/mẫu. Lún 0,89 (bảng), 1,47 (cán r 2,5) |
 | B0a vòng 3 + B0b render vòng 2 | xong — chốt trọng số, kết quả ở `b0/ket-qua.md`, ảnh `b0/hinh/vong2/` |
 | Review Fable spec mục 4–5 + ảnh bước 0 (T3 task `nhom-cam-b0-review-1`) | xong: 14 lỗ hổng + 6 câu chữ, nhận hết | `review-b0.md` |
@@ -43,7 +45,10 @@ Giai đoạn 3 — lõi. Kế hoạch job: `tmp/nhom-cam/gd3-ke-hoach.md` (21 jo
 | Review Fable `graspSolve` + `items` (T3 task `nhom-cam-g3-review-grasp-1`) | xong: 11 lỗi, 4 lệch spec, 5 test, 3 rủi ro — nhận hết | `review-g3-grasp.md` |
 | G3-R1 sửa review phần graspSolve/graspArm/graspGroups + file lá act3 | xong: `core/arm3.ts` lá (không vòng import); 19 test thêm; ca1–ca4 giữ | |
 | G3-R2 sửa review phần `items` của `scene.ts` + một nguồn nghiệm (`graspAtTime` với nhân vật thật) | xong: t02 0 mới; khung ấm 0,054 ms | |
-| Mốc M4 (G3-11, R1, R2) | commit | |
+| Mốc M4 (G3-11, R1, R2) | commit `66a34cb` | |
+| G3-12 act3 tay dẫn v2 + `holdLink.ts` | xong: t02 0 mới; `dien-thoai@palmBox` lòng tay 0,42°; `both` tay phụ khe 0,73; commit cùng mốc M5a | `holdLink.ts`, `holdLink.test.ts` |
+| G3-13 act3 món đặt trước | CHƯA LÀM — agent dừng vì hết hạn mức trước khi sửa file nào; làm lại từ đầu | |
+| G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
 | T0 ảnh "trước" mọi lần cầm t02 (`cam-do`, `can-tay`) | xong: 142 lần cầm / 61 cảnh, 160 cặp (cảnh, giây); góc `cheo` dùng được, `truoc` 50/407 ô đen; `cam-do` 14 `!!` đều `but-bi#cup` (cờ cũ) | `tmp/nhom-cam/truoc/` |
@@ -74,3 +79,9 @@ Giai đoạn 3 — lõi. Kế hoạch job: `tmp/nhom-cam/gd3-ke-hoach.md` (21 jo
 - Có nới kẹp xoay cẳng tay quá ±90 không? Ca "khoe, một tay đỡ cạnh dưới" (bước 0 ca 4, `rim`) cần −103; hiện thành cảnh báo `wrist` và bàn tay lệch chỗ cầm chút ít. Ảnh: `tmp/nhom-cam/b0/hinh/vong2/to-2.jpg`.
 
 ## Bước kế
+1. G3-13 (Opus) — act3 đường món đặt trước: prompt mẫu như G3-12 trong kế hoạch, dòng G3-13; đầu vào `graspAtTime(rt, id, side, t, { chars, trunks })`; nhánh `mode: "item"` thoát trước `aimWrist`/dò khuỷu/`priorWrist`/`HOLD_SLEW`; `actJoints` khớp; gỡ `todo` ở `holdLink.test.ts`. Kiểm t02 so baseline + `check --scene '^thu-nhom-cam'`.
+2. Commit M5 (`feat(rig): drive hands from placed items in act3`), push.
+3. G3-14 (attach/world qua `holdLink`, `fitHolding` nhớ theo lần cầm) → G3-15 (`held.ts` dùng `skinDepth`) → G3-16 (luật `check` mới) → commit M6.
+4. G3-17 (MCP) ∥ G3-18 (CLI: `lib.mjs` ~:2257 còn gọi `heldGrip` → 5 cảnh báo ở `thu-nhom-cam`) → G3-19 (`bang-cam --nhom`) ∥ G3-20 (docs; nhớ ghi luật `itemGeom` vào spec mục 2; cập nhật số dòng `act3.ts:NNNN` trong docs/11 sau khi tách `arm3.ts`) → commit M7, M8.
+5. Kiểm cuối giai đoạn 3 (mục 3 của kế hoạch): render `pnpm frames thu-nhom-cam` + `can-tay`, TỰ mở ảnh; gom vào `duyet/`. Tóm tắt giai đoạn vào file này, commit, push hai nhánh.
+6. Giai đoạn 4 → 6 theo prompt gốc (không review Fable).
