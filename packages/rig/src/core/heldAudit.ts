@@ -151,6 +151,8 @@ export interface HeldHand {
   wrap?: readonly HeldFinger[];
   /** Chỗ cầm nhóm: vai trò ngón và lòng tay của biến thể (docs/11 mục 6) */
   roles?: FingerRoles;
+  /** Chỗ cầm nhóm: tầm cuộn của biến thể (`VariantSpec.curl`), độ */
+  curl?: number;
   /** Tâm nắm của dáng đang vẽ tới mặt món (chỗ cầm nhóm: tới hình va chạm): dương ở ngoài, âm ở trong món */
   grip: number;
   /** Giữa lòng tay tới mặt món, góc giữa pháp tuyến lòng tay và hướng tới chỗ gần nhất của món */

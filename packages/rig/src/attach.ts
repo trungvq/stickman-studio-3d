@@ -91,8 +91,9 @@ export interface Holding {
   spec?: HeldItemSpec;
   hand?: GraspHand;
   pose: HandPose;
-  /** Chỗ cầm nhóm: vai trò ngón cho `heldFit` */
+  /** Chỗ cầm nhóm: vai trò ngón, tầm cuộn của biến thể cho `heldFit` */
   roles?: FingerRoles;
+  curl?: number;
   follow: 'wrist' | 'level' | 'tilt';
   both: boolean;
   offset?: readonly [number, number, number];
@@ -209,12 +210,12 @@ export function fitHolding(fig: Figure) {
     const R = _r3.setFromMatrix4(_w.makeRotationFromQuaternion(_rq)).transpose().elements;
     const q = [...R, _p.x, _p.y, _p.z, 0.01 * _s.x].map((x) => Math.round(x * FIT_Q));
     const v = h.heldV ?? [0, 0, ...fingerVec(HAND_POSES[h.held])];
-    const key = `${e.item}|${e.grip}|${h.held}|${h.heldV ? v.join() : ''}|${q.join()}`;
+    const key = `${e.item}|${e.grip}|${h.held}|${h.heldV ? v.join() : ''}|${e.curl ?? ''}|${q.join()}`;
     h.fit = remember(fits, h, key, () => {
       const n = q.map((x) => x / FIT_Q);
       const G = { R: n.slice(0, 9) as [number, number, number, number, number, number, number, number, number], p: n.slice(9, 12) as [number, number, number], u: n[12] };
       const roles = e.roles && { roles: e.roles, bulge: remember(bulges, h, v.join(), () => skinBulge(h.skin, v)) };
-      return heldFit({ v, side, k: h.scale, long: h.long, shape: e.spec!.shape!, G, wrap: e.hand!.wrap, ...roles });
+      return heldFit({ v, side, k: h.scale, long: h.long, shape: e.spec!.shape!, G, wrap: e.hand!.wrap, ...roles, ...(e.curl !== undefined && { curl: e.curl }) });
     });
     poseHand(h);
   }
@@ -393,7 +394,8 @@ function holdGrip(fig: Figure, object: THREE.Object3D, hand: Side | 'both', g: H
     const hd = s === lead ? x.hand : x.both!.other;
     const v = s === lead ? x.pose : x.both!.pose;
     const roles = s === lead ? x.roles : x.both!.roles;
-    const entry: Holding = { object, item: g.item, grip: g.grip, spec: g.spec, hand: hd, pose: hd.pose, follow: 'wrist', both: !!x.both, ...(roles && { roles }) };
+    const curl = s === lead ? x.curl : x.both!.curl;
+    const entry: Holding = { object, item: g.item, grip: g.grip, spec: g.spec, hand: hd, pose: hd.pose, follow: 'wrist', both: !!x.both, ...(roles && { roles }), ...(curl !== undefined && { curl }) };
     entries.set(s, entry);
     grip(fig, s, hd.pose, group ? v : undefined);
     (fig.holding ??= {})[s] = entry;

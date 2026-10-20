@@ -47,6 +47,8 @@ export interface VariantSpec {
   frame: FrameKind;
   pose?: PoseSpec;
   roles: RoleMap;
+  /** Tầm cuộn thêm từ dáng gốc, độ, mọi đốt (`HeldFitInput.curl`); bỏ trống là theo vai trò (`HELD_ROLE_CURL`) */
+  curl?: number;
   /** Tên `món#kiểu` v1 mà khung chuẩn của biến thể lấy ra */
   fixture?: string;
 }

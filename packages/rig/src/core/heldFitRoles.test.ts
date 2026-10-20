@@ -142,6 +142,53 @@ describe("heldFit theo vai trò", () => {
   });
 });
 
+describe("`curl`: tầm cuộn của biến thể", () => {
+  /** Ca tất định quanh bàn tay: dáng, vai trò, que hay tấm đặt lệch theo lưới */
+  const grid = (): HeldFitInput[] => {
+    const out: HeldFitInput[] = [];
+    const poses: HandPose[] = ["open", "grip", "pinch", "sheet"];
+    const shapes: HeldFitInput["shape"][] = [
+      rodZ(0.8),
+      rodZ(2),
+      [{ box: [0.6, 20, 30], at: [0, -5, 0] }],
+    ];
+    poses.forEach((pose, i) =>
+      shapes.forEach((shape, j) =>
+        [-0.1, -0.14, -0.18].forEach((y, l) =>
+          out.push({
+            ...hold(pose, shape, [0.02 + 0.01 * ((i + j + l) % 3), y, 0]),
+            roles: all(FINGER_ROLES[(i + 2 * j + l) % FINGER_ROLES.length]),
+          }),
+        ),
+      ),
+    );
+    return out;
+  };
+
+  it("`curl: 15`: không đốt nào gập quá dáng gốc + 15°, dù không chặn thì có đốt quá", () => {
+    let over = 0;
+    for (const inp of grid()) {
+      if (Math.max(...heldFit(inp)) > 15) over++;
+      for (const x of heldFit({ ...inp, curl: 15 })) expect(x).toBeLessThanOrEqual(15 + 1e-9);
+    }
+    expect(over).toBeGreaterThan(0);
+  });
+
+  it("`press` trên que mảnh: khe khép được trong 15° thì cùng số, xa hơn thì giữ dáng", () => {
+    const near = { ...hold("open", rodZ(0.8), [0.03, -0.14, 0]), roles: all("press") };
+    const fit = heldFit({ ...near, curl: 15 });
+    expect(fit).toEqual(heldFit(near));
+    expect(fit[HAND_FIT.indexOf("index0")]).toBeGreaterThan(0);
+    const far = { ...near, G: { ...near.G, p: [0.04, -0.12, 0] as V3 } };
+    expect(heldFit(far)[HAND_FIT.indexOf("index0")]).toBeGreaterThan(15);
+    expect(heldFit({ ...far, curl: 15 })[HAND_FIT.indexOf("index0")]).toBe(0);
+  });
+
+  it("`curl` rộng hơn mọi tầm: trùng số khi không khai", () => {
+    for (const inp of grid()) expect(heldFit({ ...inp, curl: 1e3 })).toEqual(heldFit(inp));
+  });
+});
+
 describe("tự hiệu chỉnh da", () => {
   const skin = handSkin(-1, 1, 1);
 

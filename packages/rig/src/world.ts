@@ -154,7 +154,7 @@ interface Want {
   hold: ReachHold;
   hand?: GraspHand;
   /** Tay kia trên cùng món: tay phụ, hay tay thứ hai của món đặt trước; `v`, `roles` của chỗ cầm nhóm */
-  support?: { side: Side; pose: HandPose; grip: string; hand: GraspHand; v?: readonly number[]; roles?: FingerRoles };
+  support?: { side: Side; pose: HandPose; grip: string; hand: GraspHand; v?: readonly number[]; roles?: FingerRoles; curl?: number };
   aim: { k: number; hold?: HoldAim }[];
   /** Treo: món treo trên cánh tay `side`, không trong bàn tay — khoá chỗ treo (`on`, `at`, `yaw`, `touch` của `carrySpecOf`) */
   carry?: string;
@@ -310,7 +310,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
         const two = sup && (sup.role === 'support' || (sup.hold.grasp?.mode === 'item' && r.hold.grasp?.mode === 'item' && sup.hold.item === r.hold.item)) ? sup : undefined;
         want.set(p, {
           id, fig, side, item: r.hold.item, grip: r.hold.grip, spec: r.hold.spec, hold: r.hold, hand: r.hand,
-          ...(two && { support: { side: -side as Side, pose: two.hand.pose, grip: two.hold.grip, hand: two.hand, ...(two.hold.grasp && { v: two.pose, roles: two.roles }) } }),
+          ...(two && { support: { side: -side as Side, pose: two.hand.pose, grip: two.hold.grip, hand: two.hand, ...(two.hold.grasp && { v: two.pose, roles: two.roles, ...(two.curl !== undefined && { curl: two.curl }) }) } }),
           aim: (side === near ? hands.near : hands.far)?.aim?.terms.filter((a) => a.hold?.item === r.hold.item && (a.hold.grip === r.hold.grip || a.hold.grip === r.hold.from?.grip)) ?? [],
         });
       }
@@ -378,7 +378,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     const sup = w.support;
     if (sup && w.fig.holding?.[sup.side]?.object !== p.object) {
       gripPose(w.fig, sup.side, sup.pose, sup.v);
-      entry = { object: p.object, item: w.item, grip: sup.grip, spec: w.spec, hand: sup.hand, pose: sup.pose, follow: 'wrist', both: true, ...(sup.roles && { roles: sup.roles }) };
+      entry = { object: p.object, item: w.item, grip: sup.grip, spec: w.spec, hand: sup.hand, pose: sup.pose, follow: 'wrist', both: true, ...(sup.roles && { roles: sup.roles }), ...(sup.curl !== undefined && { curl: sup.curl }) };
       (w.fig.holding ??= {})[sup.side] = entry;
     }
     p.on = { fig: w.fig, side: w.side, grip: w.grip, ...(w.carry && { carry: w.carry }), held, ...(w.support && { support: { side: w.support.side, entry } }) };

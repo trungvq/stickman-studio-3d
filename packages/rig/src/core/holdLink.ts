@@ -33,13 +33,21 @@ export interface HoldLinkHand {
   pose: HandVec;
   /** Vai trò ngón (v2) cho `heldFit` */
   roles?: RoleMap;
+  /** Tầm cuộn của biến thể (v2, `VariantSpec.curl`) cho `heldFit` */
+  curl?: number;
   /** Cầm hai tay: bên tay mang món và bàn tay của tay kia */
-  both?: { lead: number; other: GraspHand; pose: HandVec; roles?: RoleMap };
+  both?: { lead: number; other: GraspHand; pose: HandVec; roles?: RoleMap; curl?: number };
   /** Khung cầm (v2) */
   frame?: GraspFrame;
 }
 
 const namedPose = (h: GraspHand): number[] => [0, 0, ...fingerVec(HAND_POSES[h.pose])];
+
+/** `curl` của biến thể khung `fr` trong nhóm `group`, không khai thì không có trường */
+const curlOf = (group: GroupId, fr: GraspFrame) => {
+  const curl = GRIP_GROUPS[group].variants[fr.choice.variant ?? ""]?.curl;
+  return curl === undefined ? {} : { curl };
+};
 
 /** Lần cầm là chỗ cầm nhóm: món v2 dù cảnh chưa gắn `grasp` */
 const isGroupHold = (h: ReachHold) => !!h.grasp || isHeldV2(h.spec);
@@ -194,7 +202,7 @@ function supportOf(
     long,
     s,
   );
-  return { lead: side, other: fr.hand, pose: fr.pose, roles: fr.roles };
+  return { lead: side, other: fr.hand, pose: fr.pose, roles: fr.roles, ...curlOf(group, fr) };
 }
 
 /** Bàn tay v2 và khung của nó */
@@ -212,7 +220,14 @@ function groupHand(
     g.frame ??
     frameOf(h.spec, fillChoice(h.spec, g.hold.group, g.choice, side, dims), side, dims, k, long, s);
   const both = g.hold.both ? supportOf(h.spec, g, fr, side, dims, k, long, s) : undefined;
-  return { hand: fr.hand, pose: fr.pose, roles: fr.roles, frame: fr, ...(both && { both }) };
+  return {
+    hand: fr.hand,
+    pose: fr.pose,
+    roles: fr.roles,
+    ...curlOf(g.hold.group, fr),
+    frame: fr,
+    ...(both && { both }),
+  };
 }
 
 /**

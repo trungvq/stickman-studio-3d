@@ -153,6 +153,7 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
       ...(ih && { intent: { rule: ih.toward === 'up' ? 'up' as const : 'face' as const, err: ih.err, clamped: ih.clamped, ...(ih.toward && { toward: ih.toward }), want: ih.want, got: ih.got, ...(ih.alts && { alts: ih.alts }) } }),
       ...(grasp && { grasp }),
       ...(group && entry.roles && { roles: entry.roles }),
+      ...(group && entry.curl !== undefined && { curl: entry.curl }),
       ...(size && { size }),
       ...(reach && { reach: { kind: reach.hold!, gap: reach.gap, s: k, point: reach.point, to: reach.to } }),
       key: `${entry.object.id}|${entry.grip ?? ''}|${entry.pose}|${entry.follow}|${entry.offset ?? ''}|${entry.rotate ?? ''}`,

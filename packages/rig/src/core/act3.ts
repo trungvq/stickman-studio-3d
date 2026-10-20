@@ -574,6 +574,8 @@ export interface HoldRole {
   pose: HandVec;
   /** Vai trò ngón (chỗ cầm nhóm) */
   roles?: RoleMap;
+  /** Tầm cuộn của biến thể (chỗ cầm nhóm) */
+  curl?: number;
   /** Bên (`-1` phải) của tay mang món */
   lead: number;
 }
@@ -614,6 +616,7 @@ export function holdRoles(
       hand: lx.hand,
       pose: lx.pose,
       ...(lx.roles && { roles: lx.roles }),
+      ...(lx.curl !== undefined && { curl: lx.curl }),
       lead: L,
     };
     out[-L] = {
@@ -622,6 +625,7 @@ export function holdRoles(
       hand: b.other,
       pose: b.pose,
       ...(b.roles && { roles: b.roles }),
+      ...(b.curl !== undefined && { curl: b.curl }),
       lead: L,
     };
   }
@@ -643,6 +647,7 @@ export function holdRoles(
       hand: l.x.hand,
       pose: l.x.pose,
       ...(l.x.roles && { roles: l.x.roles }),
+      ...(l.x.curl !== undefined && { curl: l.x.curl }),
       lead: lead || side,
     };
   }

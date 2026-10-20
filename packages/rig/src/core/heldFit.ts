@@ -257,11 +257,13 @@ export interface HeldFitInput {
   roles?: FingerRoles;
   /** Độ lồi da từng đốt ở dáng gốc (`skinBulge`), chỉ đọc khi có `roles` */
   bulge?: Partial<Record<HandPiece, number>>;
+  /** Tầm cuộn của biến thể (`VariantSpec.curl`), độ: không đốt nào gập quá dáng gốc ngần này, mọi vai trò */
+  curl?: number;
 }
 
 /** Khe từng đốt của các ngón ở số bàn tay `v` (đã cộng độ gập thêm), đơn vị rig */
 export function fingerClearance(
-  inp: Omit<HeldFitInput, "wrap" | "roles" | "bulge">,
+  inp: Omit<HeldFitInput, "wrap" | "roles" | "bulge" | "curl">,
   v: HandVec,
 ): Record<HeldFinger, [number, number]> {
   const F = handFrames(v, inp.side, inp.k, inp.long);
@@ -288,7 +290,7 @@ export function fingerClearance(
  * khi một đốt chạm (`HELD_FIT.touch`), rồi cuộn riêng đốt ngọn tới khi nó chạm; `tip` chỉ cuộn đốt ngọn; không chạm trong
  * tầm `HELD_ROLE_CURL` thì giữ dáng. `free` hoà nửa về dáng nghỉ. Rồi mọi ngón: đốt gốc lún quá `HELD_FIT.sink` thì mở
  * (hay gập, phía nào gần hơn; `extend` chỉ mở) tới vừa chạm, đốt ngọn cũng thế. Cuối cùng đốt ngọn của ngón `wrap` còn hở
- * thì cuộn tiếp tới mặt kế
+ * thì cuộn tiếp tới mặt kế. `curl` chặn mọi độ gập thêm (cả khi gỡ lún)
  */
 export function heldFit(inp: HeldFitInput): number[] {
   const n = HAND_DOF.length;
@@ -306,7 +308,7 @@ export function heldFit(inp: HeldFitInput): number[] {
     // góc tuyệt đối của mỗi đốt cộng phần `curl` riêng của ngón (giữa–út)
     const extra = f === "thumb" || f === "index" ? 0 : HAND_FINGERS[f as HandFinger].curl;
     const lo = (s: 0 | 1) => lim[s][0] - (s ? tip : base) - extra;
-    const hi = (s: 0 | 1) => lim[s][1] - (s ? tip : base) - extra;
+    const hi = (s: 0 | 1) => Math.min(lim[s][1] - (s ? tip : base) - extra, inp.curl ?? Infinity);
     let d0 = 0;
     let d1 = 0;
     const vec = (a: number, b: number) => {
