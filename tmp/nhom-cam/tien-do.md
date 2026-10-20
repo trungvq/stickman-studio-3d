@@ -67,6 +67,15 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 | G3-16b báo `grasp` tay dẫn + `grip` hai chiều | xong: tay dẫn v2 có `grasp.mode: "hand"` (`by` chỉ scene/default; cổ tay đọc từ tay vẽ); `HeldOptions.gripDeclared` (khai thì thắng, hai chiều); `size` chỉ xét món đặt trước. t02 0 mới, 0 lỗi | `holdLeadGrasp.test.ts`, `g316b/` |
 | G3-20 docs | xong: docs/11 (file lõi, luật `itemGeom`, `HELD_VERSION`, một nguồn nghiệm, `was`/`released`, luật `check`, con trỏ dòng → tên hàm, tên người trung tính), docs/01, 03, 04, 05, 07, README, `AGENTS.md` dòng bố cục | `docs/` |
 | G3-21c/d sửa lật bảng ở cảnh thử | không nhận: c tắc (vùng chết 65–125° khi bảng giữa ngực); d đạt 0 lỗi nhưng đổi tay 3 lần trong 0,9 s và bắt chéo cẳng tay lúc khoe (ảnh `g321d/thu-nhom-cam.jpg`) → giữ cảnh đã commit (1 lỗi `wrist` 2,0–2,3 s). Bản tung hứng lưu `g321d/thu-nhom-cam.tung-hung.json` | `ban-giao-g3-21c.md` |
+| G4-00 mức v1 | xong: 21 món, 60 kiểu, 206 dòng tay (lún, nắm, khe từng ngón, lòng) | `g4-chuan-v1/{muc.md,do.json}` |
+| G4-X1 món thử v2 | xong: 16 `held/thu-*.json` (shape v1 hiện tại + nhãn Phụ lục A), bí danh `luoi-mon.ts`, `describe_held` khớp kế hoạch; video commit `ea27a14`. Lưu ý: `thu-tui` phần `day` là cả hộp thân dưới (v1 không có đáy riêng) — G4-92 có thể cần tách | `g4-x1/` |
+| G4-52 cạnh của mặt | xong: `FaceFeature.edges` (`name`, `inward`, `at`, `len`); fixture trung tính `held-v2/khay.json`; đáy khay 4 cạnh đúng | `heldGeom.ts`, `g452-*` |
+| G4-73+82 dáng `tripod`, `chopsticks` | xong: `HAND_POSES` 15 dáng, `HELD_PINCHES`; khe cái–trỏ tripod 2,96; que khớp nang không lún; t02 0 mới. Ảnh `g4-dang/` — không món thì như tay cuộn lỏng, đánh giá lại khi có món (G4-74, G4-83) | `hand.ts`, `g473-*` |
+| G4-11 ngón palmBox | phần: trỏ–áp út `tip` → `press`, khe 4,9–6,5 → 0,2–0,4 (v1 0,1–0,3); út còn thõng (6,9/8,2). Lún sakura 1,20 (v1 0,8, ngưỡng 0,65) do gốc ngón cái ép cạnh gần khi `tilt` 25; tay trái áp tai lún 0,60 → 0,71. Fixture 0,43°/0,78 giữ. Quyết: G4-12 thêm lún vào giá chọn `tilt` / thu miền `tilt` (tilt ≤ 10 hết lún), không nới fixture | `g4-palmBox/`, `ban-giao-g4-11.md` |
+| G4-22 carry v2 lõi | xong (chưa commit, chờ G4-12 cùng file `graspGroups.ts`): `carry` bỏ `later`, `needs` theo `seats` (`ItemGeom.seats`), `carrySpecOf`, lỗi thiếu `on`/`seats[on]`; khung treo v2 = v1 ≤ 1e-9; t02 0 mới | `heldCarry.ts`, `g422/` |
+| G4-23 carry v2 three | xong (chưa commit): `attach.carry`, `heldCarries` (`hold: món@carry`), `world.ts` khoá treo theo `carrySpecOf` (đổi `on` treo lại); khớp v1 ≤ 1e-9; t02 0 mới | `holdWorldV2.test.ts`, `g423-*` |
+| G4-12 palmBox tilt theo lún | xong: giá `(sink/HELD_SINK)²` đo trên da ở `chooseMissing`, lưới `tilt` 6 điểm; mặc định sakura tilt 10 lún 1,20→0, kuroiwa tilt 15 lún 0,50→0; khe trỏ–áp út 0,2–0,5. Khoe một tay vượt cổ tay mọi ứng viên (tối thiểu 13,8°/11,9°) → `check` báo `wrist` (`g4-palmBox/khoe.md`). Đọc ngang mặt: cảnh đặt máy xa (khe ≥ 6,3). Commit `ac8d513` (M4-1) | `g4-palmBox/`, `duyet/g4-palmBox-*.jpg` |
+| G4-24 hàng mẫu carry + gợi ý v2 | xong: `--nhom carry` 2 hàng × 2 cỡ, 12 ô trùng từng byte với v1; `heldAudit` gợi ý tên món đúng cho v2. Commit `838b9f9` (M4-2 cùng G4-22, 23); video `07b1b71` | `g4-carry/`, `duyet/g4-carry-*.jpg` |
 | G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
@@ -74,6 +83,9 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 | Baseline `check --scene ^t02- --only held,clash` | xong: 0 lỗi, 193 cảnh báo, 2m16 | `tmp/nhom-cam/baseline/check-held-clash.{json,txt}` |
 
 ## Đã tự quyết
+- G4-11: lún `palmBox` vượt v1 xử lý ở chọn `tilt` (G4-12: lún da vào giá ứng viên, hay miền `tilt` 0–10), KHÔNG dời khỏi fixture `dien-thoai#doc` hay nới ngưỡng `sink`.
+- Giai đoạn 4 (mặc định của `gd4-ke-hoach.md` mục 4, nhận hết): giá riêng cho biến thể `sheet` ≠ mặc định 0,5; `palmBox` trỏ–áp út `tip` → `press` (sửa spec mục 3); mọi ứng viên vượt cổ tay thì coi là giới hạn khớp, `check` báo; lật tấm 180° khi cầm giữ `mixRotation`, coi là giới hạn khớp (lỗi `wrist` ở `thu-nhom-cam` 2,0–2,3 s giữ); `around = 0` trên trụ = hướng `front` chiếu lên mặt phẳng vuông trục; `platform` đỡ mặt chúc xuống nhất ở đầu lần cầm (tay dẫn: gần `−top`), lưới `psi` 5 điểm bước 45°; `touch` khoác vai do cảnh khai, không để trên món; thanh mảnh < 0,2·W dùng `fist` + cuộn thêm; `bang-cam` bỏ hàng hai tay khi hai cạnh cách < 1,2·W; thêm `tripod`, `chopsticks` vào `HELD_PINCHES`.
+- Gộp mọi job "Món thử" (G4-21/31/41/51/61/71/81/91/A1) thành một job G4-X1 vì cùng sửa `luoi-mon.ts`.
 - Từ G3-15, `check` t02 so baseline `tmp/nhom-cam/baseline/check-held-clash-g315.json` (baseline cũ + 9 `loose` của `tom-hum#nhac`). Lý do: thước da (spec mục 7) đúng hơn nang; nang phình che chỗ hở thật (lòng tay cách 5, s042 cách 15); hình vẽ không đổi. Sửa ở giai đoạn 4 (nhóm `sheet` `rim`/`lathe` của tôm) hay giai đoạn 6 (chuyển `tom-hum` sang v2), không vá `held/tom-hum.json` v1.
 - Nghiệm cũ khi đổi lần cầm mang ở trường mới `ReachHold.was` (đóng băng ngay trước ranh giới), không ở `from` như spec viết: chạy tiếp chuỗi φ cũ qua ranh giới thì nhảy nhánh (24–31 px). G3-20 ghi `was`/`released` vào spec mục 5 "Đổi lần cầm".
 - `w_cont` ở mẫu đầu lần cầm vẫn so φ cuối của lần cầm trước (theo spec) dù φ ấy là tư thế bất khả — có thể kéo rig chọn sai `thumb`. Giữ theo spec; xem lại ở giai đoạn 4 nếu gặp ở cảnh thật.
@@ -110,8 +122,12 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 - Lật tấm 180° khi đang cầm (cảnh thử 2,0–2,3 s, lỗi `wrist`): cần đường hoà `path` quanh `m` / trượt tay theo cạnh; vùng chết 65–125° khi tấm giữa ngực (`ban-giao-g3-21c.md`, công cụ dò `g321d/tools/`).
 - Đổi `thumb` của tấm (lệch nửa vòng) chưa hoà theo `path` quanh `m` (spec cũ); `mixRotation` quay quanh trục cố định — làm ở nhóm `sheet`, cập nhật docs/11 mục 5 khi xong.
 - `holdBlending` chỉ làm im `grip`/`loose`/`role`; `pierce`/`sink` trong cửa sổ hoà vẫn đo — xem lại nếu gặp báo giả ở cảnh thật.
+- Món vẽ ở `bang-cam` nhỏ hơn hình bộ giải dùng (điện thoại ×0,9): lõi đo lún 1,22 thì `check` đo 0,71 — kiểm lại khớp lưới món ↔ `shape` ở giai đoạn 5 (`held/` v2, `held-moc`).
+- Tay dẫn `palmBox` áp tai lấy `tilt` mặc định 20 → lún 0,71 (ngưỡng 0,65). Xem lại mặc định khi chuyển cảnh.
 - `bang-cam`: hàng `biến thể flat` trùng `mặc định` khi rig chọn `flat`.
 
 ## Bước kế
-1. Lập `gd4-ke-hoach.md` (mỗi nhóm: một dòng cách cầm thật, món đại diện, job, mốc commit), rồi chạy nhóm 1 `palmBox`.
-2. Giai đoạn 5 → 6 theo prompt gốc.
+0. PHIÊN DỪNG do sắp hết hạn mức (2026-10-20). Lúc dừng đang chạy G4-32 (giá biến thể `sheet`, `graspSolve.ts` `chooseMissing`) ∥ G4-72 (`curl` theo biến thể: `heldFit.ts`, `VariantSpec`, `holdLink.ts`, `attach.ts`, `held.ts`). Commit cuối đã xanh: `838b9f9` (studio), `07b1b71` (video). Phiên sau: `git status` ở studio — có thay đổi chưa commit mà bảng Job chưa ghi "xong" thì đọc `ban-giao-g4-32.md` / `ban-giao-g4-72.md` nếu có, chạy chuỗi kiểm; xanh thì commit, không thì `git diff > tmp/nhom-cam/do-dang.patch` rồi `git checkout` file ấy và giao lại job.
+1. Nhóm `sheet`: G4-32 ∥ G4-72 → 33 (`pinch`) → 34 (`rim`) → 35 (vành đĩa) → 36 (hàng mẫu) → 37 (docs + render), commit M4-3.
+2. Rồi cylinder (42–48), platform (53–57), card, chopsticks (74–76), pen (83–85), handle, bowl theo `gd4-ke-hoach.md`; G4-13, 14, 25 đã gộp vào G4-11/12/24; G4-X1 thay mọi job "Món thử"; G4-52, 73, 82 xong.
+3. Giai đoạn 5 → 6.
