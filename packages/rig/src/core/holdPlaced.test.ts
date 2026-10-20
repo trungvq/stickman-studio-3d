@@ -13,7 +13,7 @@ import {
 import { body3 } from "./figure3d";
 import * as arm from "./graspArm";
 import { wristTurn } from "./hand";
-import { parseHeldItem, type HeldItemSpec } from "./heldItem";
+import { HOLD_SLEW_STEP, parseHeldItem, type HeldItemSpec } from "./heldItem";
 import { matMul, matVec, type M3, type V3 } from "./lens";
 import {
   graspAtTime,
@@ -29,6 +29,8 @@ import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import ongNghe from "./__fixtures__/held-v2/ong-nghe-ban.json";
+import khay from "./__fixtures__/held-v2/khay.json";
+import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
 
 vi.mock("./graspArm", async (orig) => {
   const m = await orig<typeof import("./graspArm")>();
@@ -47,7 +49,12 @@ if (!r1.success) throw new Error(r1.error.message);
 const ONG: HeldItemSpec = r1.data;
 const chars = { nguoi: NGUOI };
 
-function runtime(hands: unknown[], items: unknown[], item = "bang-gia"): SceneRuntime {
+function runtime(
+  hands: unknown[],
+  items: unknown[],
+  item = "bang-gia",
+  held: Record<string, HeldItemSpec> = { [item]: item === "bang-gia" ? BANG : ONG },
+): SceneRuntime {
   const r = parseScene({
     duration: 4,
     lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
@@ -61,15 +68,7 @@ function runtime(hands: unknown[], items: unknown[], item = "bang-gia"): SceneRu
     items,
   });
   if (!r.success) throw new Error(r.error.message);
-  return resolveScene(
-    r.data,
-    {},
-    {},
-    {},
-    { nguoi: H },
-    { nguoi: body3(NGUOI) },
-    { [item]: item === "bang-gia" ? BANG : ONG },
-  );
+  return resolveScene(r.data, {}, {}, {}, { nguoi: H }, { nguoi: body3(NGUOI) }, held);
 }
 
 const poseAt = (rt: SceneRuntime, t: number): ActInput =>
@@ -347,4 +346,136 @@ describe("tay trượt dọc thanh `cylinder`", () => {
     },
     30000,
   );
+});
+
+describe("`both` trên món đặt trước: tay phụ giải như tay dẫn", () => {
+  const parse = (j: unknown): HeldItemSpec => {
+    const r = parseHeldItem(j);
+    if (!r.success) throw new Error(r.error.message);
+    return r.data;
+  };
+  const KHAY = parse(khay);
+  const CHAI = parse(chaiDia);
+  // chai đứng hơi nghiêng: cả hai cổ tay trong giới hạn; khay nằm ngang sát kẹp xoay cẳng tay
+  type Case = [string, HeldItemSpec, string, number[], number[], number[] | undefined];
+  const cases: Case[] = [
+    ["khay", KHAY, "platform", [30, 20, 0], [45, 10, 0], undefined],
+    ["chai-dia", CHAI, "cylinder", [25, 20, 10], [25, 10, 15], [0.3, 1, 0.3]],
+  ];
+  const scene = (c: Case, lead: "right" | "left") => {
+    const [item, S, group, o1, o2, up] = c;
+    const at = (t: number, offset: readonly number[]) => ({
+      t,
+      cast: "nguoi",
+      item,
+      to: "chest",
+      offset,
+      ...(up && { up }),
+    });
+    return runtime(
+      [{ t: 0, [lead]: { hold: { item, group, both: true } } }],
+      [at(0, o1), at(1, o2)],
+      item,
+      { [item]: S },
+    );
+  };
+  const cross = (a: readonly number[], b: readonly number[]) => [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0],
+  ];
+  /** Góc (độ) đo bằng `atan2`: đủ chính xác ở góc rất nhỏ */
+  const fine = (a: readonly number[], b: readonly number[]) =>
+    Math.atan2(Math.hypot(...cross(a, b)), a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / D2R;
+  const wrap = (d: number) => ((((d + 180) % 360) + 360) % 360) - 180;
+
+  /** Khuỷu, cổ tay, lòng tay, ngón người 3D vẽ trùng nghiệm `graspAtTime` của tay `side` */
+  function same(rt: SceneRuntime, sp: ActInput, t: number, side: "right" | "left") {
+    const sol = graspAtTime(rt, "nguoi", side, t, { chars })!;
+    const tag = side === "right" ? "R" : "L";
+    const s = side === "right" ? -1 : 1;
+    const j = actJoints(NGUOI, sp)!;
+    expect(dist(j[`elbow${tag}`], rig(sol.arm.elbow))).toBeLessThanOrEqual(1e-9);
+    expect(dist(j[`wrist${tag}`], rig(sol.arm.reach))).toBeLessThanOrEqual(1e-9);
+    const palm = actPalms(NGUOI, sp)![tag];
+    const R = drawnRw(sol);
+    expect(fine(palm.palm, dir(matVec(R, [-s, 0, 0])))).toBeLessThanOrEqual(1e-6);
+    expect(fine(palm.finger, dir(matVec(R, [0, -1, 0])))).toBeLessThanOrEqual(1e-6);
+    return sol;
+  }
+
+  it.each(cases)(
+    "`%s` `both`: tay phụ tới chỗ cầm, khuỷu liền khi món dời, `actJoints` khớp `graspAtTime` hai tay",
+    (...c: Case) => {
+      const rt = scene(c, "right");
+      expect(sceneHoldProblems(rt)).toEqual([]);
+      let prev: Record<"right" | "left", number> | undefined;
+      for (let i = 0; i * HOLD_SLEW_STEP <= 1.2 + 1e-9; i++) {
+        const t = i * HOLD_SLEW_STEP;
+        const sp = poseAt(rt, t);
+        const lead = same(rt, sp, t, "right");
+        const sup = same(rt, sp, t, "left");
+        if (i % 6 === 0) {
+          const rep = actAim(NGUOI, sp)!.report;
+          for (const tag of ["R", "L"] as const) {
+            const g = rep[tag].hold!.grasp!;
+            expect(g.mode).toBe("item");
+            expect(rep[tag].reach!.gap).toBeLessThan(0.01);
+            expect(g.arm.wrist.off).toBeLessThanOrEqual(1);
+          }
+          expect(rep.L.hold!.grasp!.choice).toEqual(sup.choice);
+        }
+        expect(sup.t0).toBe(0);
+        if (c[0] === "khay") {
+          // cạnh đối trên cùng mặt đỡ
+          expect(sup.group).toBe("platform");
+          expect(sup.choice.featureIndex).toBe(lead.choice.featureIndex);
+          expect([lead.choice.edge, sup.choice.edge].sort()).toEqual(["left", "right"]);
+        } else {
+          // lòng tay đỡ mặt đáy (pháp tuyến ngoài `−top`), ngón theo `psi` rig giải
+          expect(sup.group).toBe("platform");
+          expect(sup.frame.feature.kind).toBe("face");
+          const n = (sup.frame.feature as { n: V3 }).n;
+          expect(n[1]).toBeCloseTo(-1, 9);
+          expect(sup.by.psi).toBe("rig");
+          // miệng chai hướng lên: tay phụ đỡ từ dưới
+          expect(matVec(itemAt(rt, "chai-dia", t, { chars })!.R, [0, 1, 0])[1]).toBeLessThan(-0.8);
+        }
+        if (prev) {
+          expect(Math.abs(wrap(lead.arm.phi - prev.right))).toBeLessThanOrEqual(2.5 + 1e-9);
+          expect(Math.abs(wrap(sup.arm.phi - prev.left))).toBeLessThanOrEqual(2.5 + 1e-9);
+        }
+        prev = { right: lead.arm.phi, left: sup.arm.phi };
+      }
+    },
+    60000,
+  );
+
+  it("tay `both` giải trước: tay dẫn trái không tính tay phải, tay phụ phải tính tay dẫn vào số hạng lấn", () => {
+    const spy = vi.mocked(arm.solvePhi);
+    const rt = scene(cases[0], "left");
+    spy.mockClear();
+    const t = 0.4;
+    const sup = graspAtTime(rt, "nguoi", "right", t, { chars })!;
+    const lead = graspAtTime(rt, "nguoi", "left", t, { chars })!;
+    const rights = spy.mock.calls.filter((c) => c[0].side === -1);
+    expect(rights.length).toBeGreaterThan(0);
+    for (const c of rights) expect(c[4]).toBeDefined();
+    for (const c of spy.mock.calls.filter((x) => x[0].side === 1)) expect(c[4]).toBeUndefined();
+    const T = trunk3(NGUOI, poseAt(rt, t))!;
+    const other = arm.armSeg(arm.armInput(T, 1), lead.arm);
+    const withOther = arm.evalPhi(
+      arm.armInput(T, -1),
+      sup.Wp,
+      sup.Rw,
+      sup.arm.phi,
+      undefined,
+      other,
+    );
+    expect(sup.arm.terms.body).toBeCloseTo(withOther.terms.body, 9);
+    expect([lead.choice.edge, sup.choice.edge].sort()).toEqual(["left", "right"]);
+    const sp = poseAt(rt, t);
+    same(rt, sp, t, "left");
+    same(rt, sp, t, "right");
+  });
 });

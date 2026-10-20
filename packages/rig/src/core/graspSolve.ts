@@ -994,6 +994,9 @@ export function chooseMissing(
     const v = (h as Record<string, unknown>)[k];
     if (v !== undefined) (given as Record<string, unknown>)[k] = v;
   }
+  // khối hình đã định (tay phụ của `both`): chỉ số trong `itemGeom(spec).features`
+  const fixed = (h as GraspChoice).featureIndex;
+  if (fixed !== undefined) given.featureIndex = fixed;
   if (opts.high && group.choices.edge && given.edge === undefined)
     throw new Error(
       `\`${h.item}@${h.group}\`: \`high\` là đầu cao của một cạnh, cần \`edge\` khai`,
@@ -1020,6 +1023,7 @@ export function chooseMissing(
     kinds.has(f.kind) &&
     (given.part === undefined || f.part === given.part) &&
     (given.feature === undefined || f.kind === given.feature) &&
+    (fixed === undefined || geom.features.indexOf(f) === fixed) &&
     edgeOk(f, given.edge);
   let feats = groupNeeds(geom, group, ctx.dims, spec.anchors).filter(fit);
   if (!feats.length) feats = geom.features.filter(fit);

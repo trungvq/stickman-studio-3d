@@ -97,6 +97,7 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 | G4-48b docs `flat` + render tổng `cylinder` | xong: docs commit; render ở `ed39e0f`: 29 hàng, chai thân/vai/cổ trúng chỗ, lún ≤ 0,54, không xuyên; ống nghe áp tai lún ≤ 0,06; ống nghe trước ngực vượt cổ tay (hàng mẫu dựng đứng loa ra ngoài), chai đặc tuyến `size`. Mốc M4-4 | `g4-cylinder/` |
 | G4-53 `platform` `palm` | xong: `CONTACTS.platform.palm` (cạnh của mặt, thụt `platformInset(ψ)`, `n = −face.n`, ψ dương về đầu cao, món không hướng thì đầu cao về `−front`), da lòng cách mặt `PLATFORM_GAP` 0,15, kẹp `along` cho bàn tay nằm trong cạnh, chọn mặt theo rủi ro 6, lưới `psi` 5 điểm + lưới quanh nghiệm tốt nhất từng cạnh; bỏ `later`, `psi` mặc định 90, dáng `PLATFORM_FLAT` (flat + gốc 30°, ngọn 5°), `needs` mặt chứa 0,4·W × 0,6·L, trục hướng mặc định `support`; tay dẫn chọn mặt/cạnh; tay phụ cùng nhóm cạnh đối theo tên. Fixture `phieu#do` 0°/≤ 0,94; `khay#bung` 0° nhưng lệch 1,35/2,4 (sakura/kuroiwa) vì `inset₀` lớn theo tay và v1 gò lòng lún 1,2–1,5. Ảnh: khay lòng ngửa đỡ đáy, ngón duỗi, cái ngoài mép; phiếu phẳng trên lòng. Mọi ô hàng chung vượt cổ tay 3–18° (xoay cẳng tay cần 93–108°, món sát ngực) → G4-56 đẩy món ra; phiếu kuroiwa đầu ngón cái lộ chấm qua tờ (lún 0,5). t02 0 mới | `g453/`, `duyet/g4-platform-palm.jpg` |
 | G4-54 tay phụ khác nhóm | xong: `placeChoice` ở `holdLink.ts` — `support.place` `bottom`/`back` đặt lòng tay lên mặt hộp hướng `−top`/`−front` xa nhất của phần bám, ngón theo `top` chiếu lên mặt, `psi 0`, tâm giữa mặt, né tay dẫn cùng mặt; cảnh đè được; `checkChoice` chỉ báo `both` khi nhóm không có `support`. Chai `both` tay trái đỡ đáy (lún 0,39), điện thoại đỡ mặt sau (đầu ngón thò qua mép, khe 1,2–2,1 tay lớn — chấp nhận), khay cạnh đối. Tay dẫn không đổi số. t02 0 mới | `g454/` |
+| G4-55 `both` món đặt trước | xong: tay `both` giải trước (không thì tay phải), tay phụ chỗ cầm từ `supportOf`/`placeChoice`, `chooseMissing` có lấn tay dẫn (nhận `featureIndex`), khuỷu `E(φ)` riêng; tay phụ khác nhóm để `psi` cho bộ giải; `actJoints` khớp `graspAtTime` cả hai tay (1e-9 / 1e-6°). Khay hai tay lún ≤ 0,04, chai đỡ đáy lún 0,38, cổ tay không vượt khi món đủ xa; sát ngực tay ngửa vượt kẹp ±90 (rủi ro 11). Tay dẫn chọn chỗ không xét tay phụ (khay lệch một bên → tay phụ vượt 35–73°). t02 0 mới, `thu-nhom-cam` y số | `g455/` |
 | G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
@@ -142,6 +143,8 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 - G4-53: fixture `khay#bung` không ép ≤ 1 đơn vị ở cỡ tay thật — v2 thụt `inset₀ = W/2` theo tay và da lòng vừa áp đáy (v1 thụt 6 cố định, gò lòng lún); ảnh v2 đỡ rõ hơn v1. `inset` chưa vào miền giải (chỉ mặc định).
 
+- Chủ dự án (2026-10-20 19:10) cho tăng tốc từ sau G4-55: (1) agent chính commit dựa vào log cổng kiểm xanh của agent con, không chạy lại; (2) job không render "trước" — ảnh trước lấy từ render của job liền trước (`g4xx/`); (3) mỗi nhóm gộp "hàng mẫu + docs + render tổng" thành một job.
+
 ## Cần chủ dự án
 - Có nới kẹp xoay cẳng tay quá ±90 không? Ca "khoe, một tay đỡ cạnh dưới" (bước 0 ca 4, `rim`) cần −103; hiện thành cảnh báo `wrist` và bàn tay lệch chỗ cầm chút ít. Ảnh: `tmp/nhom-cam/b0/hinh/vong2/to-2.jpg`.
 
@@ -162,11 +165,12 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 - `cylinder` chai dĩa: ngón cái dọc thân hướng lên, nhìn trước như "giơ ngón cái" cạnh chai. Vùng chuyển dáng cái 0,36–0,42·W lòng tay nhấc 1,3–2,2 (vai chai). Cán r 2,5 bốn ngón chưa khép qua đỉnh thanh (thanh sát gốc ngón; dời chỗ cầm vỡ fixture).
 - Trượt dọc thanh: φ theo lưới 2,5° dao nấc (lòng 2–4°/mẫu), cổ tay nhảy 0,8 px ở `along` 0,58.
 - `resolveScene` kiểm `choice` bằng tay người mẫu cùng chiều cao (`holderDims`), không phải tay thật (kuroiwa W 14,7 thay 16,8).
+- `both` món đặt trước: tay dẫn chọn chỗ không xét tay phụ; `bang-cam` tổ hợp chéo `thu-chai-dia@platform` ném "cần `edge`".
 - Hàng "bê hai vành" đĩa: ngón cái hơi dựng, hở 1,6–2,9.
 - `rim` `slant` âm: ngón nghiêng về mặt cái, tấm kẹp giữa trỏ và giữa (khoe báo). Út hở hơn v1 0,5–1,8 ở `slant` ±22,5.
 
 ## Bước kế
 0. Phiên tiếp tục (2026-10-20) sau khi chủ dự án chốt hướng G4-38b. Worktree sạch, mọi việc xanh đã commit và push. Studio xem `git log`, video `9b13333`.
-1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. Platform: 52–54 xong → 55 → 56 (hàng mẫu: đẩy món xa ngực để hết vượt cổ tay) → 57.
+1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. Platform: 52–55 xong → 56+57 gộp (hàng mẫu: đẩy món xa ngực, hàng `both`; docs; render tổng).
 3. Rồi platform 53–57, card 62–64, chopsticks 74–76 (nhớ `frameSink` truyền `curl`), pen 83–85, handle 92–95, bowl A2–A4, Z1, Z2 theo `gd4-ke-hoach.md`. Đã xong/gộp: 00, X1, 11–14, 22–25, 32–38b, 41–48, 52, 72, 73, 82.
 4. Giai đoạn 5 → 6.

@@ -24,6 +24,7 @@ import {
   type HeldItemSpec,
   type HoldGrasp,
   type ReachHold,
+  type SceneHoldGroup,
 } from "./heldItem";
 import { dot3, sub3, type V3 } from "./lens";
 
@@ -224,28 +225,34 @@ function placeChoice(
   };
 }
 
-/**
- * Tay phụ của `both` (v2): chỗ mặc định của nhóm (`support` của `GRIP_GROUPS`) — cùng nhóm thì giữ `keep` của tay dẫn
- * và cạnh theo `edge`, khác nhóm thì mặt theo `place` (`placeChoice`) — rồi object của cảnh đè từng phần. Nhóm chưa có chỗ
- * tiếp xúc, hay khác nhóm tay dẫn mà không có `place`, thì không có tay phụ
- */
-function supportOf(
-  spec: HeldItemSpec,
-  g: HoldGrasp,
-  lead: GraspFrame,
-  side: number,
-  dims: HandDims,
-  k: number,
-  long: number,
-  s: number,
-): HoldLinkHand["both"] {
-  const sup = GRIP_GROUPS[g.hold.group].support;
-  const o = g.hold.both === true ? {} : (g.hold.both ?? {});
+/** Nhóm của tay phụ khi tay dẫn khai `both` trên chỗ cầm `hold`; nhóm chưa có chỗ tiếp xúc, hay khác nhóm mà không có `place`, thì không có tay phụ */
+export function supportGroup(hold: SceneHoldGroup): GroupId | undefined {
+  if (!hold.both) return undefined;
+  const sup = GRIP_GROUPS[hold.group].support;
+  const o = hold.both === true ? {} : hold.both;
   const group = o.group ?? sup?.group;
   if (!group || !CONTACTS[group]) return undefined;
-  const same = group === g.hold.group;
+  if (group !== hold.group && !(sup?.group === group && sup.place)) return undefined;
+  return group;
+}
+
+/**
+ * Chỗ cầm của tay phụ của `both` (v2) theo khung tay dẫn `lead`: chỗ mặc định của nhóm (`support` của `GRIP_GROUPS`) — cùng
+ * nhóm thì giữ `keep` của tay dẫn và cạnh theo `edge`, khác nhóm thì mặt theo `place` (`placeChoice`) — rồi object của cảnh
+ * đè từng phần. Trường còn thiếu do bên gọi điền (mặc định của nhóm, hay `chooseMissing` với món đặt trước)
+ */
+export function supportChoice(
+  spec: HeldItemSpec,
+  hold: SceneHoldGroup,
+  lead: GraspFrame,
+  dims: HandDims,
+): { group: GroupId; choice: GraspChoice } | undefined {
+  const group = supportGroup(hold);
+  if (!group) return undefined;
+  const sup = GRIP_GROUPS[hold.group].support;
+  const o = hold.both === true ? {} : (hold.both ?? {});
+  const same = group === hold.group;
   const place = !same && sup?.group === group ? sup.place : undefined;
-  if (!same && !place) return undefined;
   const c: Record<string, unknown> = place
     ? { ...placeChoice(spec, place, lead.hand.at as V3, dims) }
     : {};
@@ -266,16 +273,32 @@ function supportOf(
     if (v !== undefined) c[key] = v;
   }
   if (o.part !== undefined && o.part !== c.part) delete c.featureIndex;
+  return { group, choice: c as GraspChoice };
+}
+
+/** Tay phụ của `both` (v2) của tay dẫn: `supportChoice`, trường thiếu lấy mặc định của nhóm */
+function supportOf(
+  spec: HeldItemSpec,
+  g: HoldGrasp,
+  lead: GraspFrame,
+  side: number,
+  dims: HandDims,
+  k: number,
+  long: number,
+  s: number,
+): HoldLinkHand["both"] {
+  const sc = supportChoice(spec, g.hold, lead, dims);
+  if (!sc) return undefined;
   const fr = frameOf(
     spec,
-    fillChoice(spec, group, c as GraspChoice, -side, dims),
+    fillChoice(spec, sc.group, sc.choice, -side, dims),
     -side,
     dims,
     k,
     long,
     s,
   );
-  return { lead: side, other: fr.hand, pose: fr.pose, roles: fr.roles, ...curlOf(group, fr) };
+  return { lead: side, other: fr.hand, pose: fr.pose, roles: fr.roles, ...curlOf(sc.group, fr) };
 }
 
 /** Bàn tay v2 và khung của nó */

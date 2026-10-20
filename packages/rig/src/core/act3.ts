@@ -609,6 +609,12 @@ export function holdRoles(
     const L = b.lead;
     const free = (y: ReachHold | undefined) => !y || y.item === h.item;
     if (out[L] || out[-L] || !free(own(L)) || !free(own(-L))) continue;
+    // món đặt trước: tay phụ cầm theo nghiệm của chính nó (`ReachHold.solve`); chưa có thì tay ấy tự do
+    const placed = h.grasp?.mode === "item";
+    const sl = placed ? links[-L] : undefined;
+    if (placed && sl?.h.grasp?.mode !== "item") continue;
+    const sh = sl ? sl.h : h;
+    const sb = sl ? { other: sl.x.hand, pose: sl.x.pose, roles: sl.x.roles, curl: sl.x.curl } : b;
     const lx = L === side ? x : holdHand(h, L, dims)!;
     out[L] = {
       hold: h,
@@ -620,12 +626,12 @@ export function holdRoles(
       lead: L,
     };
     out[-L] = {
-      hold: h,
+      hold: sh,
       role: "support",
-      hand: b.other,
-      pose: b.pose,
-      ...(b.roles && { roles: b.roles }),
-      ...(b.curl !== undefined && { curl: b.curl }),
+      hand: sb.other,
+      pose: sb.pose,
+      ...(sb.roles && { roles: sb.roles }),
+      ...(sb.curl !== undefined && { curl: sb.curl }),
       lead: L,
     };
   }

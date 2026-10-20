@@ -142,7 +142,7 @@ import {
   blendPose,
 } from "./blend";
 import { carrySpecOf, shapeBound, type CarryRef } from "./heldCarry";
-import { isCarryHold } from "./holdLink";
+import { isCarryHold, supportChoice, supportGroup } from "./holdLink";
 import { D, FRAMES, RIG, type FrameName, type FrameSpec } from "./constants";
 import { feet, lengths, type Legs } from "./geometry";
 import { BODY3, dirOf, facing, feet3, viewOfTheta, type Body3, type World } from "./figure3d";
@@ -3110,12 +3110,8 @@ const regripOf = (h: SceneHold): boolean => typeof h === "object" && "group" in 
  * Lần cầm của tay `side` ở giây `time`: mốc gần nhất (không sau `time`) khai `hold` của tay ấy; `null` là buông. `since` là
  * giây bắt đầu chuỗi mốc cầm cùng món, cùng khoá lần cầm (`sceneHoldRef`), không `regrip`
  */
-function holdRun(
-  keys: HandKey[],
-  side: HandSide,
-  time: number,
-): { hold: SceneHold; since: number } | undefined {
-  let run: { hold: SceneHold; since: number } | undefined;
+function holdRun(keys: HandKey[], side: HandSide, time: number): HoldRun | undefined {
+  let run: HoldRun | undefined;
   for (const k of keys) {
     if (k.t > time) break;
     const h = k[side]?.hold;
@@ -3145,8 +3141,8 @@ export function holdBlending(rt: SceneRuntime, id: string, hand: "R" | "L", time
   const side: HandSide = hand === "R" ? "right" : "left";
   for (const k of keys) {
     if (k.t > time) break;
-    if (k.t <= 0 || time - k.t >= HOLD_BLEND || k[side]?.hold === undefined) continue;
-    if (holdRun(keys, side, k.t - 1e-6)?.since !== holdRun(keys, side, k.t)?.since) return true;
+    if (k.t <= 0 || time - k.t >= HOLD_BLEND || !holdKey(k)) continue;
+    if (!sameRun(effRun(rt, keys, side, k.t - 1e-6), effRun(rt, keys, side, k.t))) return true;
   }
   return false;
 }
@@ -3285,14 +3281,16 @@ function handAt(
   host?: GraspHost,
 ): Reach | undefined {
   const ks = keys.filter((k) => k[side] !== undefined) as (HandKey & { t: number })[];
-  if (!ks.length) return;
+  const now = holdRun(keys, side, time);
+  // tay phụ của `both` trên món đặt trước, hay lần cầm ấy vừa xong
+  const extra = host && !now ? supportHold(host, keys, side, time, held) : undefined;
+  if (!ks.length) return extra && { w: 0, at: [0, 0, 0], hold: extra };
   let i = 0;
   while (i + 1 < ks.length && ks[i + 1].t <= time) i++;
   const a = ks[i];
   const b = time > a.t ? ks[i + 1] : undefined;
   const ra = a[side];
   const fk = b ? smoothstep((time - a.t) / (b.t - a.t)) : 0;
-  const now = holdRun(keys, side, time);
   const nowRef = now && sceneHoldRef(now.hold);
   // mẫu trước khung này, trên lưới `HOLD_SLEW_STEP` từ mốc gần nhất: cổ tay mang món nối từ đó
   const key = ks[i].t < time - 1e-9 ? ks[i] : ks[i - 1];
@@ -3391,7 +3389,8 @@ function handAt(
   };
   const keep: Aim = { terms: [{ k: 1, keep: true }] };
   const finish = (r: Reach | undefined, pa?: Reach, pb?: Reach): Reach | undefined => {
-    if (gone) return { ...(finishHeld(r, pa, pb) ?? { w: 0, at: [0, 0, 0] }), hold: gone };
+    const tail = extra ?? gone;
+    if (tail) return { ...(finishHeld(r, pa, pb) ?? { w: 0, at: [0, 0, 0] }), hold: tail };
     return finishHeld(r, pa, pb);
   };
   const finishHeld = (r: Reach | undefined, pa?: Reach, pb?: Reach): Reach | undefined => {
@@ -3450,7 +3449,50 @@ interface GraspHost {
   id: string;
 }
 
-type HoldRun = { hold: SceneHold; since: number };
+/** Lần cầm của một tay; tay phụ của `both` trên món đặt trước mang `lead` (tay dẫn) và `end` (giây hết, không có là hết cảnh) */
+type HoldRun = { hold: SceneHold; since: number; lead?: HandSide; end?: number };
+
+const otherSide = (side: HandSide): HandSide => (side === "right" ? "left" : "right");
+const holdKey = (k: HandKey) => k.right?.hold !== undefined || k.left?.hold !== undefined;
+const sameRun = (a: HoldRun | undefined, b: HoldRun | undefined) =>
+  a?.since === b?.since && a?.lead === b?.lead;
+
+const supportMemo = new WeakMap<HandKey[], Partial<Record<HandSide, HoldRun[]>>>();
+
+/**
+ * Các lần cầm tay phụ của tay `side`: tay ấy không cầm gì mà tay kia cầm món đặt trước khai `both` có tay phụ
+ * (`supportGroup`). Lần cầm mới khi tay dẫn mở lần cầm mới. `hold` chỉ mang món và nhóm; chỗ cầm giải ở `graspStart`
+ */
+function supportRuns(rt: SceneRuntime, keys: HandKey[], side: HandSide): HoldRun[] {
+  let m = supportMemo.get(keys);
+  if (!m) supportMemo.set(keys, (m = {}));
+  const hit = m[side];
+  if (hit) return hit;
+  const lead = otherSide(side);
+  const out: HoldRun[] = [];
+  let cur: { run: HoldRun; key: string } | undefined;
+  for (const k of keys) {
+    if (!holdKey(k)) continue;
+    const L = holdRun(keys, lead, k.t);
+    const g = L && !holdRun(keys, side, k.t) && placedRun(rt, L) ? groupHold(L.hold) : undefined;
+    const group = g && supportGroup(g);
+    const key = group ? `${L!.since}|${group}` : undefined;
+    if (cur && key === cur.key) continue;
+    if (cur) cur.run.end = k.t;
+    cur = undefined;
+    if (!group) continue;
+    cur = { run: { hold: { item: g!.item, group }, since: k.t, lead }, key: key! };
+    out.push(cur.run);
+  }
+  return (m[side] = out);
+}
+
+const supportRun = (rt: SceneRuntime, keys: HandKey[], side: HandSide, time: number) =>
+  supportRuns(rt, keys, side).find((r) => r.since <= time && time < (r.end ?? Infinity));
+
+/** Lần cầm của tay `side` ở `time`: lần cầm tay ấy khai, không thì lần cầm tay phụ */
+const effRun = (rt: SceneRuntime, keys: HandKey[], side: HandSide, time: number) =>
+  holdRun(keys, side, time) ?? supportRun(rt, keys, side, time);
 
 /** Trường số của chỗ cầm nhóm: tay trượt hoà chúng giữa hai mốc tay của cùng lần cầm */
 const SLIDE_FIELDS = ["along", "slant", "around", "tilt", "psi", "inset"] as const;
@@ -3497,16 +3539,17 @@ function placedWas(
   side: HandSide,
   time: number,
 ): { run: HoldRun; was: { k: number; solve: PlacedSolve } } | undefined {
+  const { rt, id } = host;
   for (let i = keys.length - 1; i >= 0; i--) {
     const k = keys[i];
-    if (k.t > time || k[side]?.hold === undefined) continue;
+    if (k.t > time || !holdKey(k)) continue;
     if (time - k.t >= HOLD_BLEND) return undefined;
-    const prev = holdRun(keys, side, k.t - 1e-6);
-    if (prev?.since === holdRun(keys, side, k.t)?.since) continue;
-    if (!prev || !placedRun(host.rt, prev)) return undefined;
-    const g = groupHold(prev.hold);
-    const { rt, id } = host;
+    const prev = effRun(rt, keys, side, k.t - 1e-6);
+    if (sameRun(prev, effRun(rt, keys, side, k.t))) continue;
+    if (!prev || !placedRun(rt, prev)) return undefined;
     const t0 = k.t - 1e-6;
+    // hướng món của tay phụ theo nhóm tay dẫn
+    const g = groupHold(prev.lead ? holdRun(keys, prev.lead, t0)!.hold : prev.hold);
     const solve: PlacedSolve = (c) => {
       const o: ItemOptions = {
         chars: { [id]: c },
@@ -3521,6 +3564,47 @@ function placedWas(
     return { run: prev, was: { k: 1 - smoothstep((time - k.t) / HOLD_BLEND), solve } };
   }
   return undefined;
+}
+
+/**
+ * Lần cầm tay phụ của tay `side` ở `time` (`supportRun`): bàn tay suy từ món như tay khai `hold`, vừa cầm thì hoà từ tay
+ * tự do (`enter`) hay từ lần cầm món đặt trước vừa xong (`was`); tay phụ vừa xong thì chỉ còn hoà ra
+ */
+function supportHold(
+  host: GraspHost,
+  keys: HandKey[],
+  side: HandSide,
+  time: number,
+  held: Record<string, HeldItemSpec>,
+): ReachHold | undefined {
+  const { rt, id } = host;
+  const run = supportRun(rt, keys, side, time);
+  const was = placedWas(host, keys, side, time);
+  if (!run) {
+    if (!was) return undefined;
+    const ref = sceneHoldRef(was.run.hold);
+    return { ...ref, spec: held[ref.item], since: was.run.since, was: was.was, released: true };
+  }
+  const g = groupHold(run.hold);
+  const blend = run.since > 0 && time - run.since < HOLD_BLEND;
+  const prev = blend ? effRun(rt, keys, side, run.since - 1e-6) : undefined;
+  const enter =
+    blend && (!prev || sceneHoldRef(prev.hold).item !== g.item)
+      ? smoothstep((time - run.since) / HOLD_BLEND)
+      : undefined;
+  return {
+    ...sceneHoldRef(run.hold),
+    spec: held[g.item],
+    since: run.since,
+    grasp: { hold: g, mode: "item", choice: {}, t0: run.since },
+    solve: (c: ActCharacter, T?: Trunk3) =>
+      graspAtTime(rt, id, side, time, {
+        chars: { [id]: c },
+        ...(T && { trunks: { [id]: T } }),
+      }),
+    ...(enter !== undefined && { enter }),
+    ...(was && { was: was.was }),
+  };
 }
 
 const sideSign = (side: HandSide) => (side === "right" ? -1 : 1);
@@ -3643,6 +3727,7 @@ const handKeys = (rt: SceneRuntime, id: string): HandKey[] => member(rt, id).wor
 
 /** Giây mốc tay đầu tiên sau `run` mở lần cầm khác hay buông; lần cầm tới hết cảnh là `Infinity` */
 function runEnd(keys: HandKey[], side: HandSide, run: HoldRun): number {
+  if (run.lead) return run.end ?? Infinity;
   for (const k of keys)
     if (
       k.t > run.since &&
@@ -3688,14 +3773,14 @@ function graspStart(
   if (hit) return hit;
   const keys = handKeys(rt, id);
   const t0 = run.since;
-  const start = holdRun(keys, side, t0) ?? run;
-  const g = groupHold(start.hold);
-  const before = holdRun(keys, side, t0 - 1e-6);
-  const phiPrev =
-    before && holdKind(before.hold) === "group" && itemMarked(rt, groupHold(before.hold).item)
-      ? lastPhi(rt, id, side, before, t0, o)
-      : undefined;
   const holder = (t: number) => graspCtx(holderTrunk(rt, id, t, o), rt.held);
+  const ctx = holder(t0);
+  const g = run.lead
+    ? supportAt(rt, id, run, ctx, o)
+    : groupHold((holdRun(keys, side, t0) ?? run).hold);
+  const before = effRun(rt, keys, side, t0 - 1e-6);
+  const phiPrev =
+    before && placedRun(rt, before) ? lastPhi(rt, id, side, before, t0, o) : undefined;
   const poseAt = (t: number) => itemAt(rt, g.item, t, o)!;
   const end = runEnd(keys, side, run);
   const later: GraspLater[] = (rt.items ?? [])
@@ -3704,7 +3789,6 @@ function graspStart(
       const other = placedOther(rt, id, side, k.t, o);
       return { t: k.t, pose: poseAt(k.t), ctx: holder(k.t), ...(other && { other }) };
     });
-  const ctx = holder(t0);
   const { elbow } = slideHold(keys, side, t0, run, {});
   const other = placedOther(rt, id, side, t0, o);
   const sol = chooseMissing(ctx, g, poseAt(t0), sideSign(side), {
@@ -3717,6 +3801,27 @@ function graspStart(
   const out: GraspRun = { sol, ctx, t0, ...(phiPrev !== undefined && { phiPrev }), chain: [] };
   m.set(key, out);
   return out;
+}
+
+/**
+ * Chỗ cầm của tay phụ `run` ở mốc bắt đầu: `supportChoice` trên khung tay dẫn đã giải ở giây ấy; trường còn thiếu
+ * `chooseMissing` giải
+ */
+function supportAt(
+  rt: SceneRuntime,
+  id: string,
+  run: HoldRun,
+  ctx: GraspCtx,
+  o: ItemOptions,
+): SceneHoldGroup {
+  const L = holdRun(handKeys(rt, id), run.lead!, run.since)!;
+  const lead = graspArmAt(rt, id, run.lead!, run.since, o, L)!.sol;
+  const g = groupHold(L.hold);
+  const sc = supportChoice(itemSpec(rt, g.item), g, lead.frame, ctx.dims)!;
+  const c: GraspChoice = { ...sc.choice };
+  // tay phụ khác nhóm: hướng ngón trên mặt đỡ để `chooseMissing` giải, trừ khi cảnh khai
+  if (sc.group !== g.group && (g.both === true || g.both?.psi === undefined)) delete c.psi;
+  return { ...c, item: g.item, group: sc.group } as SceneHoldGroup;
 }
 
 /** `φ` mẫu cuối (không trước `t1`) của lần cầm `run` */
@@ -3807,8 +3912,8 @@ export function graspAtTime(
 }
 
 /**
- * Tay phải đã đặt trên món đặt trước ở `time`: tay trái giải sau, tính nó vào số hạng lấn (docs/11-nhom-cam.md § Khuỷu tự
- * nhiên)
+ * Tay đã đặt trên món đặt trước ở `time` cho số hạng lấn của tay `side` giải sau nó: tay dẫn của `both` giải trước, tay phụ
+ * sau; không có `both` thì tay phải trước (docs/11-nhom-cam.md § Khuỷu tự nhiên)
  */
 function placedOther(
   rt: SceneRuntime,
@@ -3817,8 +3922,14 @@ function placedOther(
   time: number,
   o: ItemOptions,
 ): ArmSeg | undefined {
-  if (side !== "left") return undefined;
-  const r = graspArmAt(rt, id, "right", time, o);
+  const keys = handKeys(rt, id);
+  const other = otherSide(side);
+  const own = holdRun(keys, side, time);
+  if (
+    own ? !!supportRun(rt, keys, other, time) || side !== "left" : !supportRun(rt, keys, side, time)
+  )
+    return undefined;
+  const r = graspArmAt(rt, id, other, time, o);
   return r && armSeg(r.inp, r.sol.arm);
 }
 
@@ -3828,7 +3939,7 @@ function graspArmAt(
   side: HandSide,
   time: number,
   o: ItemOptions,
-  run = holdRun(handKeys(rt, id), side, time),
+  run = effRun(rt, handKeys(rt, id), side, time),
 ): { sol: GraspAtTime; inp: ArmInput } | undefined {
   if (!run || !placedRun(rt, run)) return undefined;
   // `trunks` là thân ở đúng `time`: mẫu của chuỗi ở giây khác dựng thân riêng
