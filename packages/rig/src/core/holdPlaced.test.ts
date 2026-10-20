@@ -21,6 +21,7 @@ import {
   parseScene,
   resolveScene,
   sceneAt,
+  sceneHoldProblems,
   type GraspAtTime,
   type SceneRuntime,
 } from "./scene";
@@ -297,6 +298,20 @@ describe("tay trượt dọc thanh `cylinder`", () => {
     }
     return out;
   }
+
+  it("cảnh khai `along` sát loa: rig kẹp tâm nắm, `sceneHoldProblems` báo một dòng cảnh báo", () => {
+    const rt = runtime([{ t: 0, right: { hold: slide(1) } }], [ong(0)], "ong-nghe");
+    const sol = graspAtTime(rt, "nguoi", "right", 0.5, { chars })!;
+    expect(sol.choice.along).toBeGreaterThan(0.75);
+    expect(sol.choice.along).toBeLessThan(0.85);
+    const lines = sceneHoldProblems(rt);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatch(/^nguoi: `world.hands` right t=0 \(cảnh báo `choice`\)/);
+    expect(lines[0]).toMatch(/`along: 1` sát phần `grip: false` `loa`/);
+    expect(
+      sceneHoldProblems(runtime([{ t: 0, right: { hold: slide(0.5) } }], [ong(0)], "ong-nghe")),
+    ).toEqual([]);
+  });
 
   it.each([
     ["món đứng yên", [ong(0), ong(2.5)]],

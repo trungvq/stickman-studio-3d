@@ -1,6 +1,9 @@
 import type { HandPose } from "./hand";
 import { heldDistance, type FingerRole } from "./heldFit";
 import {
+  alongFrac,
+  alongRoom,
+  axialAt,
   edgeFrame,
   gripSpan,
   type DiscFeature,
@@ -156,6 +159,11 @@ export interface GroupSpec {
   support?: SupportSpec;
   intent?: GroupIntent;
   size?: SizeSpec;
+  /**
+   * Tâm nắm cách phần `grip: false` ít nhất ngần này lần `W` dọc trục: `along` kẹp vào miền ấy (`alongRoom`); rig không
+   * chọn `around` mà phần ấy nhô ra phía lòng tay (`bulgeToward`)
+   */
+  clear?: number;
   motion?: "write" | "pick";
   later?: true;
 }
@@ -223,6 +231,12 @@ const sorted = (f: Feature): number[] | undefined =>
 const thick = (f: Feature) => (f.kind === "slab" || f.kind === "disc" ? f.t : Infinity);
 const radius = (f: Feature) => (f.kind === "rod" ? f.R : f.kind === "lathe" ? f.rMax : Infinity);
 const span = (g: ItemGeom, f: Feature) => Math.max(0, ...gripSpan(g, f).map((s) => s.len));
+
+/** `cylinder`: tâm nắm cách phần `grip: false` ít nhất ngần này lần `W` dọc trục */
+export const GRIP_CLEAR = 0.3;
+/** Có đoạn bám liền dài `≥ len · W` chứa được tâm nắm cách phần `grip: false` `≥ clear · W` */
+const roomy = (g: ItemGeom, f: Feature, W: number, len: number, clear: number) =>
+  gripSpan(g, f).some((s) => s.len >= len * W && alongRoom(s, clear * W) !== undefined);
 
 /** Cạnh tấm được cầm dài ít nhất ngần này lần `W` (`sheet`) */
 export const EDGE_MIN = 0.6;
@@ -480,8 +494,8 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
         kinds: ["rod", "lathe"],
         test: (f, h, g) =>
           (f.kind === "rod" ? f.r : f.kind === "lathe" ? f.rMax : 0) >= 0.06 * h.W &&
-          span(g, f) >= 0.6 * h.W,
-        text: "thanh hay trụ bán kính 0,06–0,95·W, đoạn bám liền ≥ 0,6·W",
+          roomy(g, f, h.W, 0.6, GRIP_CLEAR),
+        text: "thanh hay trụ bán kính 0,06–0,95·W, đoạn bám liền ≥ 0,6·W chứa tâm nắm cách phần `grip: false` ≥ 0,3·W",
       },
     ],
     variants: {
@@ -509,6 +523,7 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
     support: { group: "platform", place: "bottom" },
     intent: { face: { axis: "top", toward: "up" } },
     size: { of: radius },
+    clear: GRIP_CLEAR,
   },
 
   round: {
@@ -1087,4 +1102,35 @@ export function checkChoice(
     }
   }
   return out;
+}
+
+/**
+ * Cảnh báo của một chỗ cầm v2 hợp lệ (docs/11 mục 7), không chặn: `along` cảnh khai sát phần `grip: false` quá `clear · W`
+ * của nhóm — rig kẹp tâm nắm về miền `alongRoom`. Mảng rỗng là không có gì
+ */
+export function choiceWarnings(
+  group: GroupId | GroupSpec,
+  geom: ItemGeom,
+  hold: SceneHold,
+  dims: HandDims,
+  anchors?: Record<string, { dir?: unknown }>,
+): string[] {
+  const spec = specOf(group);
+  const h: SceneHoldGroup = groupHold(hold);
+  if (!spec.clear || spec.later || h.along === undefined || !spec.choices.along) return [];
+  const want = alongFrac(h.along, 1, dims.W);
+  const clear = spec.clear * dims.W;
+  const out = new Set<string>();
+  for (const { feature: f } of groupFits(geom, spec, dims, anchors)) {
+    if ((f.kind !== "rod" && f.kind !== "lathe") || (h.part !== undefined && f.part !== h.part))
+      continue;
+    const p = axialAt(geom, f, want, 0, { clear });
+    if (Math.abs(p.along - want) < 1e-9) continue;
+    const low = want < p.along;
+    const gap = Math.max(0, low ? want : 1 - want) * p.seg.len;
+    out.add(
+      `\`${h.item}@${spec.id}\`: \`along: ${h.along}\` sát phần \`grip: false\` \`${p.seg.cut[low ? 0 : 1]}\` — tâm nắm cách nó ${fmt(gap)} dọc trục, dưới ${String(spec.clear).replace(".", ",")}·W (${fmt(clear)}); rig kẹp về \`along\` ${p.along.toFixed(2).replace(".", ",")}, khai \`along\` ${low ? "≥" : "≤"} ${p.along.toFixed(2).replace(".", ",")}`,
+    );
+  }
+  return [...out];
 }

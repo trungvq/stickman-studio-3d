@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { trunk3, type ActInput } from "./act3";
 import { phiChain } from "./graspArm";
-import { FLAT_MAX } from "./graspGroups";
+import { FLAT_MAX, GRIP_CLEAR } from "./graspGroups";
 import {
   chooseMissing,
   CONTACTS,
@@ -13,7 +13,14 @@ import {
   type GraspCtx,
   type GraspSolution,
 } from "./graspSolve";
-import { itemGeom, type SlabFeature } from "./heldGeom";
+import {
+  alongRoom,
+  bulgeToward,
+  gripSpan,
+  itemGeom,
+  type RodFeature,
+  type SlabFeature,
+} from "./heldGeom";
 import { gripPoint, HOLD_SLEW_STEP, parseHeldItem, type HeldItemSpec } from "./heldItem";
 import { handSkin, skinHand } from "./handMesh";
 import { HELD_SINK } from "./heldAudit";
@@ -662,22 +669,84 @@ describe("chooseMissing `cylinder`", () => {
     s: 1,
   };
 
+  // `part` × `thumb` 2, rồi `along` 3 × `around` 12; ống nghe bỏ ba `around` (0, 30, 330) về mặt có loa, mic nhô
   it.each([
-    ["chai-dia", upright, 3],
-    ["ong-nghe-ban", handset, 1],
+    ["chai-dia", upright, 3, 12],
+    ["ong-nghe-ban", handset, 1, 9],
   ] as const)(
     "đủ thiếu `%s@cylinder`: rig giải `part`, `thumb`, `along`, `around` không lỗi",
-    (id, pose, parts) => {
+    (id, pose, parts, arounds) => {
       for (const side of [RIGHT, LEFT]) {
         const sol = chooseMissing(cc, `${id}@cylinder`, pose, side);
-        // `part` × `thumb` 2, rồi `along` 3 × `around` 12
-        expect(sol.candidates).toBe(parts * 2 + 36);
+        expect(sol.candidates).toBe(parts * 2 + 3 * arounds);
         for (const k of ["thumb", "along", "around"] as const) expect(sol.by[k]).toBe("rig");
         expect(sol.choice.variant).toBe("wrap");
         expect(Number.isFinite(sol.cost)).toBe(true);
       }
     },
   );
+
+  /** Lún da của bàn tay đúng khung cầm của nghiệm, ngón ôm theo vai trò */
+  const sinkOf = (sol: GraspSolution, spec: HeldItemSpec) => {
+    const f = sol.frame;
+    const skin = handSkin(sol.side, cc.k, cc.long);
+    const fit = heldFit({
+      v: f.pose,
+      side: sol.side,
+      k: cc.k,
+      long: cc.long,
+      shape: spec.shape!,
+      G: f.G,
+      roles: f.roles,
+      bulge: skinBulge(skin, f.pose),
+    });
+    const pos = new Float32Array(skin.pos.length);
+    skinHand(skin, [...f.pose, ...fit], pos);
+    const { gaps } = skinDepth(pos, skinPieces(skin), f.G, spec.shape!);
+    return Math.max(0, -Math.min(...Object.values(gaps)));
+  };
+
+  it("ống nghe: rig không áp lòng tay vào mặt có loa, mic nhô ra; tâm nắm cách chúng ≥ 0,3·W; không lún quá `HELD_SINK`", () => {
+    const spec = item(ongNgheBan);
+    const geom = itemGeom(spec);
+    const rod = geom.features.find((f) => f.kind === "rod") as RodFeature;
+    const [seg] = gripSpan(geom, rod);
+    const room = alongRoom(seg, GRIP_CLEAR * cc.dims.W)!;
+    for (const side of [RIGHT, LEFT]) {
+      const sol = chooseMissing(cc, "ong-nghe-ban@cylinder", handset, side);
+      expect(sol.by.around).toBe("rig");
+      expect(bulgeToward(geom, rod, sol.choice.around!, 0)).toEqual([]);
+      expect(sol.choice.along).toBeGreaterThanOrEqual(room[0] - 1e-9);
+      expect(sol.choice.along).toBeLessThanOrEqual(room[1] + 1e-9);
+      expect(sinkOf(sol, spec)).toBeLessThanOrEqual(HELD_SINK);
+    }
+    // cảnh khai mặt trước: ngón đâm vào loa
+    const front = chooseMissing(
+      cc,
+      { item: "ong-nghe-ban", group: "cylinder", around: 0 },
+      handset,
+      RIGHT,
+    );
+    expect(sinkOf(front, spec)).toBeGreaterThan(HELD_SINK);
+  });
+
+  it("ống nghe: cảnh khai `along` sát loa thì tâm nắm kẹp cách loa 0,3·W", () => {
+    const geom = itemGeom(item(ongNgheBan));
+    const rod = geom.features.find((f) => f.kind === "rod") as RodFeature;
+    const [seg] = gripSpan(geom, rod);
+    expect(seg.cut).toEqual(["mic", "loa"]);
+    const hi = 1 - (GRIP_CLEAR * cc.dims.W) / seg.len;
+    for (const along of [1, 0.95]) {
+      const sol = chooseMissing(
+        cc,
+        { item: "ong-nghe-ban", group: "cylinder", along, around: 180, thumb: "up" },
+        handset,
+        RIGHT,
+      );
+      expect(sol.by.along).toBe("scene");
+      expect(sol.choice.along).toBeCloseTo(hi, 9);
+    }
+  });
 
   it("tay dẫn (`solve: false`): mặc định nhóm, `along` 0,5, ngón cái lên, `around` 0", () => {
     const sol = graspAt(cc, "chai-dia@cylinder", upright, RIGHT, undefined, { solve: false });

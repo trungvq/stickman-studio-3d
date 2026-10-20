@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   alongFrac,
+  alongRoom,
   axialAt,
+  bulgeToward,
   edgeFrame,
+  faceRho,
   gripSpan,
   handDims,
   itemGeom,
@@ -358,6 +361,36 @@ describe("axialAt trên trụ tiện và thanh", () => {
     expect(p(90).r).toBeCloseTo(9, 9);
     expect(p(180).r).toBeCloseTo(3, 9);
     expect(p(45).r).toBeCloseTo(3 * Math.SQRT2, 9);
+  });
+
+  it("ống nghe: hai đầu đoạn bám bị `mic`, `loa` cắt; `clear` kẹp `along` cách chúng, đầu của chính khối không kẹp", () => {
+    const g = itemGeom(item(ongNgheBan));
+    const [r] = of(g.features, "rod");
+    const [seg] = gripSpan(g, r);
+    expect(seg.cut).toEqual(["mic", "loa"]);
+    expect(alongRoom(seg, 4.4)).toEqual([0.2, 0.8]);
+    expect(alongRoom(seg, 11.1)).toBeUndefined();
+    close(axialAt(g, r, 1, 0, { clear: 4.4 }).at, [0, 0, 6.6]);
+    expect(axialAt(g, r, 0, 0, { clear: 4.4 }).along).toBeCloseTo(0.2, 9);
+    expect(axialAt(g, r, 0.5, 0, { clear: 4.4 }).along).toBe(0.5);
+    expect(axialAt(g, r, 1, 0, { clear: 12 }).along).toBe(0.5);
+    const chai = itemGeom(item(chaiDia));
+    const [than] = of(chai.features, "lathe");
+    const [s] = gripSpan(chai, than);
+    expect(s.cut).toEqual([undefined, "mieng"]);
+    expect(alongRoom(s, 6.85)).toEqual([0, 0.9]);
+  });
+
+  it("ống nghe: loa, mic nhô về phía lòng tay chỉ khi lòng tay áp mặt trước; thanh hộp áp mặt gần `around` nhất", () => {
+    const g = itemGeom(item(ongNgheBan));
+    const [r] = of(g.features, "rod");
+    close(faceRho(r, axialAt(g, r, 0.5, 30).rho), [0, -1, 0]);
+    close(faceRho(r, axialAt(g, r, 0.5, 60).rho), [1, 0, 0]);
+    for (const around of [0, 30, 330])
+      expect(bulgeToward(g, r, around, 1.5)).toEqual(["mic", "loa"]);
+    for (const around of [60, 90, 180, 270]) expect(bulgeToward(g, r, around, 1.5)).toEqual([]);
+    // mặt trước nhô 6: quá ngưỡng 6 thì không tính
+    expect(bulgeToward(g, r, 0, 6)).toEqual([]);
   });
 
   it("đũa (không `front`): `ρ(0)` là `b0`, `ρ(90) = a × ρ(0)`; đầu cao cắt ở núm", () => {

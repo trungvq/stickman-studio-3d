@@ -3,8 +3,10 @@ import {
   FLAT_MAX,
   GRIP_GROUPS,
   SIZE_WARN,
+  GRIP_CLEAR,
   checkChoice,
   checkGroup,
+  choiceWarnings,
   groupFits,
   groupIntent,
   groupNeeds,
@@ -387,6 +389,72 @@ describe("checkChoice", () => {
     expect(err[0]).toMatch(/phần `nho` không có khối hình/);
     expect(err[0]).toMatch(/phần khác còn vừa: `khay`/);
     expect(check(g, "sheet", { part: "khay" })).toEqual([]);
+  });
+});
+
+describe("`cylinder`: biên phần `grip: false`", () => {
+  const W = dims.W;
+  /** Thanh tròn r 3 dọc y, đoạn bám giữa dài `len`; `caps` đầu bị phần `grip: false` riêng (dài 10) chặn */
+  const rod = (len: number, caps: ("lo" | "hi")[]) =>
+    itemGeom(
+      item({
+        schemaVersion: 2,
+        size: [6, len + 20, 6],
+        anchors: {},
+        parts: { lo: { grip: false }, hi: { grip: false } },
+        shape: [
+          { cyl: 3, from: [0, 0, 0], to: [0, len, 0], part: "than" },
+          ...caps.map((c) => ({
+            cyl: 3,
+            from: [0, c === "lo" ? -10 : len, 0],
+            to: [0, c === "lo" ? 0 : len + 10, 0],
+            part: c,
+          })),
+        ],
+      }),
+    );
+  const fits = (g: ReturnType<typeof rod>) => groupNeeds(g, "cylinder", dims).length > 0;
+
+  it("`needs`: đoạn bám liền ≥ 0,6·W chứa tâm nắm cách phần `grip: false` ≥ 0,3·W", () => {
+    expect(GRIP_CLEAR).toBe(0.3);
+    expect(fits(rod(0.6 * W + 0.1, ["lo", "hi"]))).toBe(true);
+    expect(fits(rod(0.6 * W - 0.1, ["lo", "hi"]))).toBe(false);
+    expect(fits(rod(0.6 * W + 0.1, ["hi"]))).toBe(true);
+    expect(checkGroup(rod(0.6 * W - 0.1, ["lo", "hi"]), "cylinder", dims)[0]).toMatch(
+      /tâm nắm cách phần `grip: false` ≥ 0,3·W/,
+    );
+  });
+
+  it("`choiceWarnings`: `along` sát loa, mic báo phần nào, khoảng cách và `along` rig kẹp về; `checkChoice` không lỗi", () => {
+    const g = geomOf(ongNgheBan);
+    const warn = (along: number | string) =>
+      choiceWarnings("cylinder", g, { item: "ong-nghe", group: "cylinder", along } as never, dims);
+    const hi = warn(0.95);
+    expect(hi).toHaveLength(1);
+    expect(hi[0]).toMatch(/`along: 0.95` sát phần `grip: false` `loa`/);
+    // W 13,5: 0,3·W = 4,1 trên đoạn 22
+    expect(hi[0]).toMatch(/cách nó 1,1 dọc trục, dưới 0,3·W \(4,1\)/);
+    expect(hi[0]).toMatch(/kẹp về `along` 0,82, khai `along` ≤ 0,82/);
+    expect(warn(0)[0]).toMatch(/`mic`.*khai `along` ≥ 0,18/);
+    expect(warn(0.5)).toEqual([]);
+    expect(warn("high")).toEqual([]);
+    expect(
+      checkChoice(
+        "cylinder",
+        g,
+        { item: "ong-nghe", group: "cylinder", along: 0.95 } as never,
+        dims,
+      ),
+    ).toEqual([]);
+    // cổ chai nối miệng: thân, vai, cổ cùng một đoạn bám, báo một dòng
+    const chai = choiceWarnings(
+      "cylinder",
+      geomOf(chaiDia),
+      { item: "chai", group: "cylinder", along: 0.98 } as never,
+      dims,
+    );
+    expect(chai).toHaveLength(1);
+    expect(chai[0]).toMatch(/`mieng`/);
   });
 });
 

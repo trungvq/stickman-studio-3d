@@ -31,8 +31,10 @@ import { HELD_FIT, heldDistance, heldFit, skinBulge, skinDepth, skinPieces } fro
 import {
   alongFrac,
   axialAt,
+  bulgeToward,
   edgeFrame,
   edgePoint,
+  faceRho,
   handDims,
   itemGeom,
   type AlongName,
@@ -316,23 +318,16 @@ function skinTouch(shape: readonly HeldShape[], o: V3, u: V3, pts: readonly V3[]
 
 /**
  * `cylinder` `wrap` (khung `nt`): lòng tay áp mặt trụ ở `along` của đoạn bám liền, phía `ρ(around)` (thanh hộp: mặt gần
- * nhất), ngón cái về `±a`.
+ * nhất), ngón cái về `±a`. `along` kẹp cho tâm nắm cách phần `grip: false` `clear · W` (`alongRoom`).
  * Lòng tay ngả theo dốc mặt món (`WRAP_GAIN`); tâm nắm dời ra theo `ρ` tới khi da lòng tay (`palmSkin`) còn cách hình
  * `WRAP_GAP`
  */
 const wrap: ContactFn = (x) => {
   const f = x.feature as RodFeature | LatheFeature;
-  const along = alongFrac(x.along, 1, x.dims.W);
-  const p0 = axialAt(x.geom, f, along, x.around ?? 0);
-  const faces = f.kind === "rod" && f.wide ? [f.wide, unit(cross3(f.a, f.wide))] : [];
-  const p = faces.length
-    ? {
-        ...p0,
-        rho: faces
-          .flatMap((v) => [v, neg(v)])
-          .reduce((a, b) => (dot3(b, p0.rho) > dot3(a, p0.rho) + EPS ? b : a)),
-      }
-    : p0;
+  const clear = (GRIP_GROUPS.cylinder.clear ?? 0) * x.dims.W;
+  const p0 = axialAt(x.geom, f, alongFrac(x.along, 1, x.dims.W), x.around ?? 0, { clear });
+  const along = p0.along;
+  const p = { ...p0, rho: faceRho(f, p0.rho) };
   const far = reachOf(x.geom);
   let slope = 0;
   if (x.shape) {
@@ -755,11 +750,16 @@ const VARIANT_COST = 0.5;
 export const LATER_SPAN = 1.5;
 const LATER_MAX = 4;
 const LATER_W = 0.5;
-/** Nhóm có giá lún da trong `chooseMissing`: gò ngón cái ép cạnh hộp theo khung bàn tay, ngón ôm không gỡ được */
-const SINK_GROUPS: ReadonlySet<GroupId> = new Set(["palmBox"]);
+/**
+ * Nhóm có giá lún da trong `chooseMissing`: gò ngón cái ép cạnh hộp theo khung bàn tay (`palmBox`), ngón cái áp thân trụ
+ * đâm vào khối `grip: false` nhô ra (`cylinder`); ngón ôm không gỡ được
+ */
+const SINK_GROUPS: ReadonlySet<GroupId> = new Set(["palmBox", "cylinder"]);
 /** Giá lún `SINK_W · (lún / SINK_REF)²`; `SINK_REF` là ngưỡng luật `sink` (`HELD_SINK` của `heldAudit.ts`) */
 const SINK_W = 1;
 const SINK_REF = Math.abs(HELD_FIT.touch) + 0.5;
+/** Trụ: `around` mà phần `grip: false` kề đoạn bám nhô khỏi mặt quá ngần này lần `W` về phía lòng tay thì rig không chọn */
+const BULGE = 0.1;
 /** Vành đĩa giải trên lưới góc bước này, độ (`0` ở `front`, hay `top` với đĩa đứng, về `right`) */
 const DISC_STEP = 30;
 /** `rim` không khai `thumb`, món không khai `top`: ngón cái ở mặt hướng lên quá ngần này (cos 45°: tấm nằm trong thế giới) */
@@ -1030,7 +1030,17 @@ export function chooseMissing(
     return up[i] > RIM_UP ? f.faces[i].name : undefined;
   };
 
+  // nhóm có `clear`: bỏ `around` mà phần `grip: false` nhô ra phía lòng tay, trừ khi mọi `around` của lưới đều thế
+  const aroundOk = (f: Feature): ((v: number) => boolean) => {
+    const ch = group.choices.around;
+    if (!group.clear || ch?.kind !== "range" || (f.kind !== "rod" && f.kind !== "lathe"))
+      return () => true;
+    const ok = (v: number) => !bulgeToward(geom, f, v, BULGE * ctx.dims.W).length;
+    return grid("around", ch, "").some(ok) ? ok : () => true;
+  };
+
   for (const f of feats) {
+    const okAround = aroundOk(f);
     const defs = holdDefaults(group, geom, {
       feature: f,
       side: sd,
@@ -1062,7 +1072,11 @@ export function chooseMissing(
         const ch = group.choices[k];
         if (!ch) continue;
         const v =
-          given[k] ?? defs[k] ?? (ch.kind === "range" ? grid(k, ch, variant)[0] : undefined);
+          given[k] ??
+          defs[k] ??
+          (ch.kind === "range"
+            ? grid(k, ch, variant).filter((x) => k !== "around" || okAround(x))[0]
+            : undefined);
         if (v !== undefined) o[k] = v;
       }
       return o as GraspChoice;
@@ -1107,10 +1121,13 @@ export function chooseMissing(
     return false;
   };
   for (const [root, defs] of free.length ? roots : []) {
+    const okAround = aroundOk(root.feature);
     let combos: GraspChoice[] = [{}];
     for (const k of free) {
       const ch = group.choices[k] as RangeChoice;
-      const vals = grid(k, ch, root.choice.variant ?? "");
+      const vals = grid(k, ch, root.choice.variant ?? "").filter(
+        (x) => k !== "around" || okAround(x),
+      );
       seen(k, vals.length);
       combos = combos.flatMap((c) => vals.map((v) => ({ ...c, [k]: v })));
     }

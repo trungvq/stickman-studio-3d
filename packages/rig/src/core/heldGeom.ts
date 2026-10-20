@@ -130,7 +130,7 @@ export interface ItemGeom {
   mouth?: V3;
   parts: PartGeom[];
   /** Hộp bao của các phần `grip: false` */
-  blocked: { part: string; min: V3; max: V3 }[];
+  blocked: { part: string; min: V3; max: V3; shape: HeldShape[] }[];
   features: Feature[];
   /** Chỗ treo của món (`seats`), cho nhóm `carry` */
   seats?: HeldSeats;
@@ -211,6 +211,18 @@ function blockBox(b: HeldShape): [V3, V3] {
     hi[k] = Math.max(y.from[k] + y.r0 * e, y.to[k] + y.r1 * e);
   }
   return [lo, hi];
+}
+
+/** Điểm xa nhất của khối theo hướng đơn vị `d`: `max dot(p, d)` */
+function blockReach(b: HeldShape, d: V3): number {
+  if ("box" in b) {
+    const c = (b.at ?? [0, 0, 0]) as V3;
+    return dot3(c, d) + b.box.reduce((sum, x, k) => sum + (Math.abs(d[k]) * x) / 2, 0);
+  }
+  if ("ball" in b) return dot3((b.at ?? [0, 0, 0]) as V3, d) + b.ball;
+  const y = cylOf(b, 0)!;
+  const e = Math.sqrt(Math.max(0, 1 - dot3(y.d, d) ** 2));
+  return Math.max(dot3(y.from, d) + y.r0 * e, dot3(y.to, d) + y.r1 * e);
 }
 
 const unionBox = (boxes: [V3, V3][]): [V3, V3] => {
@@ -762,7 +774,9 @@ export function itemGeom(spec: GeomSpec): ItemGeom {
     ...(hasFront ? { hasFront: true as const } : {}),
     ...(mouth ? { mouth } : {}),
     parts,
-    blocked: parts.filter((p) => !p.grip).map((p) => ({ part: p.name, min: p.min, max: p.max })),
+    blocked: parts
+      .filter((p) => !p.grip)
+      .map((p) => ({ part: p.name, min: p.min, max: p.max, shape: p.blocks.map((i) => shape[i]) })),
     features,
     ...(spec.seats && (spec.seats.elbow || spec.seats.shoulder) ? { seats: spec.seats } : {}),
   };
@@ -856,6 +870,8 @@ export interface GripSegment {
   hi: V3;
   len: number;
   parts: string[];
+  /** Phần `grip: false` cắt đầu thấp, đầu cao của đoạn; không có là đầu của chính khối */
+  cut: [string | undefined, string | undefined];
 }
 
 type Line = { part: string; o: V3; a: V3; s0: number; s1: number; r: number };
@@ -938,19 +954,23 @@ export function gripSpan(
     }
     base = { ...base, s0, s1 };
   }
-  let segs: [number, number][] = [[base.s0, base.s1]];
+  // hộp chạm sát đầu đoạn (miệng chai nối cổ) cũng là cắt
+  const TOUCH_TOL = 1e-4 * Math.max(1, base.s1 - base.s0);
+  type Seg = [number, number, string | undefined, string | undefined];
+  let segs: Seg[] = [[base.s0, base.s1, undefined, undefined]];
   for (const b of geom.blocked) {
     const cut = boxSpan(b.min, b.max, base.o, base.a, base.r, pad);
     if (!cut) continue;
-    segs = segs.flatMap(
-      ([x, y]): [number, number][] =>
+    segs = segs.flatMap(([x, y, p, q]): Seg[] =>
+      (
         [
-          [x, Math.min(y, cut[0])],
-          [Math.max(x, cut[1]), y],
-        ].filter(([p, q]) => q - p > EPS) as [number, number][],
+          [x, Math.min(y, cut[0]), p, y >= cut[0] - TOUCH_TOL ? b.part : q],
+          [Math.max(x, cut[1]), y, x <= cut[1] + TOUCH_TOL ? b.part : p, q],
+        ] as Seg[]
+      ).filter(([u, v]) => v - u > EPS),
     );
   }
-  return segs.map(([x, y]) => ({
+  return segs.map(([x, y, p, q]) => ({
     lo: add3(base.o, scale3(base.a, x)),
     hi: add3(base.o, scale3(base.a, y)),
     len: y - x,
@@ -962,7 +982,19 @@ export function gripSpan(
           .map((l) => l.part),
       ),
     ],
+    cut: [p, q],
   }));
+}
+
+/**
+ * Miền `along` (tỉ lệ của đoạn `seg`) mà điểm trên trục cách đầu bị phần `grip: false` cắt ít nhất `clear`; đầu của chính
+ * khối không giữ khoảng. Đoạn ngắn quá thì `undefined`
+ */
+export function alongRoom(seg: GripSegment, clear: number): [number, number] | undefined {
+  const L = Math.max(seg.len, EPS);
+  const lo = seg.cut[0] !== undefined ? clear / L : 0;
+  const hi = seg.cut[1] !== undefined ? 1 - clear / L : 1;
+  return lo <= hi + 1e-12 ? [lo, Math.max(lo, hi)] : undefined;
 }
 
 export interface AxialPoint {
@@ -976,6 +1008,8 @@ export interface AxialPoint {
   r: number;
   /** Đoạn bám liền chứa điểm */
   seg: GripSegment;
+  /** `along` đã kẹp vào `[0, 1]` và `alongRoom` của `clear` */
+  along: number;
 }
 
 /** Trục tới mặt của một thanh theo hướng `rho` (vuông góc trục) */
@@ -989,14 +1023,15 @@ function rodReach(f: RodFeature, rho: V3): number {
 /**
  * Điểm ở `along` (0 đầu thấp, 1 đầu cao) của đoạn bám liền quanh thanh hay trụ tiện `f` (`gripSpan`, `pad` như ở đó), quay
  * `around` độ quanh trục: `ρ(0)` là `F` chiếu lên mặt vuông góc trục (món không khai `front`, hay `F` dọc trục: `b0`),
- * `ρ(90) = a × ρ(0)`. Bán kính lấy ở khối đồng trục chứa điểm (lớn nhất ở chỗ nối)
+ * `ρ(90) = a × ρ(0)`. Bán kính lấy ở khối đồng trục chứa điểm (lớn nhất ở chỗ nối). `clear`: điểm cách phần `grip: false`
+ * ít nhất ngần này dọc trục (`alongRoom`; đoạn ngắn quá thì giữa đoạn)
  */
 export function axialAt(
   geom: ItemGeom,
   f: RodFeature | LatheFeature,
   along: number,
   around: number,
-  opts: { pad?: number } = {},
+  opts: { pad?: number; clear?: number } = {},
 ): AxialPoint {
   const segs = gripSpan(geom, f, opts);
   const over = (g: GripSegment) =>
@@ -1006,7 +1041,12 @@ export function axialAt(
     undefined,
   );
   if (!seg) throw new Error(`\`${f.part}\` không còn đoạn bám (phần \`grip: false\` che hết)`);
-  const at = add3(seg.lo, scale3(f.a, Math.min(1, Math.max(0, along)) * seg.len));
+  let u = Math.min(1, Math.max(0, along));
+  if (opts.clear) {
+    const room = alongRoom(seg, opts.clear);
+    u = room ? Math.min(room[1], Math.max(room[0], u)) : 0.5;
+  }
+  const at = add3(seg.lo, scale3(f.a, u * seg.len));
   const pf = perp(geom.F, f.a);
   const r0 = geom.hasFront && len3(pf) > 1e-3 ? unit(pf) : f.b0;
   const rho = radialDir({ b0: r0, b90: unit(cross3(f.a, r0)) }, around);
@@ -1021,7 +1061,39 @@ export function axialAt(
     if (s < -tol || s > g.len + tol) continue;
     r = Math.max(r, g.kind === "lathe" ? latheRadius(g, s) : rodReach(g, rho));
   }
-  return { at, a: f.a, rho, r, seg };
+  return { at, a: f.a, rho, r, seg, along: u };
+}
+
+/** Hướng lòng tay áp của thanh hộp: mặt tiết diện gần `rho` nhất; thanh tròn, trụ tiện giữ `rho` */
+export function faceRho(f: RodFeature | LatheFeature, rho: V3): V3 {
+  if (f.kind !== "rod" || !f.wide) return rho;
+  return [f.wide, unit(cross3(f.a, f.wide))]
+    .flatMap((v) => [v, neg(v)])
+    .reduce((a, b) => (dot3(b, rho) > dot3(a, rho) + EPS ? b : a));
+}
+
+/**
+ * Phần `grip: false` cắt đoạn bám của `f` mà nhô khỏi mặt khối quá `margin` về phía lòng tay ở `around` (`faceRho`): đo từ
+ * mặt khối ở đầu đoạn kề phần ấy
+ */
+export function bulgeToward(
+  geom: ItemGeom,
+  f: RodFeature | LatheFeature,
+  around: number,
+  margin: number,
+): string[] {
+  const out: string[] = [];
+  const mid = axialAt(geom, f, 0.5, around);
+  const rho = faceRho(f, mid.rho);
+  for (const b of geom.blocked) {
+    const end = mid.seg.cut.indexOf(b.part);
+    if (end < 0) continue;
+    const p = axialAt(geom, f, end, around);
+    const r = f.kind === "rod" ? rodReach(f, rho) : p.r;
+    const m = Math.max(...b.shape.map((x) => blockReach(x, rho))) - dot3(p.at, rho);
+    if (m > r + margin) out.push(b.part);
+  }
+  return out;
 }
 
 export interface HandDims {
