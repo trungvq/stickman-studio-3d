@@ -485,7 +485,6 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
     support: { group: "platform", place: "bottom" },
     intent: { face: { axis: "top", toward: "up" } },
     size: { of: radius },
-    later: true,
   },
 
   round: {

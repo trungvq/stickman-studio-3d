@@ -16,7 +16,9 @@ import {
   type RoleMap,
 } from "./graspGroups";
 import {
+  HAND_BONES,
   HAND_DOF,
+  HAND_PIECES,
   HAND_POSES,
   handVec,
   mixHand,
@@ -28,6 +30,7 @@ import { handSkin, skinHand } from "./handMesh";
 import { HELD_FIT, heldDistance, heldFit, skinBulge, skinDepth, skinPieces } from "./heldFit";
 import {
   alongFrac,
+  axialAt,
   edgeFrame,
   edgePoint,
   handDims,
@@ -39,13 +42,17 @@ import {
   type FeatureKind,
   type HandDims,
   type ItemGeom,
+  type LatheFeature,
+  type RodFeature,
   type SideName,
   type SlabFeature,
 } from "./heldGeom";
 import {
+  gripCenter,
   gripFrame,
   gripPoint,
   groupHold,
+  handAxes,
   heldBase,
   HELD_FINGERS,
   type GraspHand,
@@ -101,6 +108,8 @@ export interface ContactInput {
   high?: V3;
   /** Hình va chạm của món, khung món */
   shape?: readonly HeldShape[];
+  /** Đỉnh da lòng tay ở dáng gốc tính từ tâm nắm, đơn vị món, toạ độ theo `palm`, `fingers`, `palm × fingers` */
+  palmSkin?: () => readonly V3[];
 }
 
 /** Tâm nắm `at`, lòng tay `palm` và ngón `fingers` (trực giao với lòng tay) trong khung món; `along` là tỉ lệ đã giải */
@@ -157,6 +166,15 @@ const BOX_RISE = 20;
 const BOX_SHIFT = 2;
 const BOX_GAP = 2.8;
 const SLOPE = Math.sin(30 * D2R);
+/** `wrap`: lòng tay ngả ngần này lần góc dốc mặt món trên `±WRAP_HALF · W` dọc trục (fixture `chai-dia#co`), tối đa 45° */
+const WRAP_GAIN = 1.6;
+const WRAP_HALF = 0.3;
+const WRAP_STEPS = 5;
+const WRAP_TILT_MAX = 45;
+/** `wrap`: da lòng tay cách mặt món ngần này, đơn vị món (fixture `chai-dia#co` hở lòng 0,6–0,9) */
+const WRAP_GAP = 0.7;
+/** Dò mặt hình: coi là chạm khi cách dưới ngần này, đơn vị món */
+const TOUCH = 0.01;
 
 /** Hướng trục `v` lấy dấu theo tham chiếu đầu tiên không vuông góc với nó */
 const signed = (v: V3, refs: V3[]): V3 => {
@@ -259,10 +277,80 @@ const palmBox: ContactFn = (x) => {
   return { at, along, palm, fingers: unit(perp(raw, palm)) };
 };
 
+/** Khoảng bao của các phần món (cả phần `grip: false`): đường dò từ ngoài vào bắt đầu xa ngần này */
+const reachOf = (g: ItemGeom) => Math.max(1, ...g.parts.map((p) => len3(sub3(p.max, p.min)))) * 2;
+
+/** Từ `o` theo `dir`, chỗ xa nhất còn chạm hình (dò cầu từ `far` vào); không gặp vật liệu thì `undefined` */
+function outerAt(shape: readonly HeldShape[], o: V3, dir: V3, far: number): number | undefined {
+  let t = far;
+  for (let i = 0; i < 96 && t > -EPS; i++) {
+    const d = heldDistance(shape, add3(o, scale3(dir, t)));
+    if (d < TOUCH) return t;
+    t -= d;
+  }
+  return undefined;
+}
+
+/** Tâm nắm ở `o + u · S` với các điểm da `pts` (khung món, tính từ tâm nắm): `S` lớn nhất mà da còn cách hình `WRAP_GAP` */
+function skinTouch(shape: readonly HeldShape[], o: V3, u: V3, pts: readonly V3[], far: number) {
+  let S = far;
+  for (let i = 0; i < 96; i++) {
+    const c = add3(o, scale3(u, S));
+    let d = Infinity;
+    for (const q of pts) d = Math.min(d, heldDistance(shape, add3(c, q)));
+    if (d < WRAP_GAP + TOUCH) return S;
+    S -= d - WRAP_GAP;
+    if (S < -far) break;
+  }
+  return undefined;
+}
+
+/**
+ * `cylinder` `wrap` (khung `nt`): lòng tay áp mặt trụ ở `along` của đoạn bám liền, phía `ρ(around)` (thanh hộp: mặt gần
+ * nhất), ngón cái về `±a`.
+ * Lòng tay ngả theo dốc mặt món (`WRAP_GAIN`); tâm nắm dời ra theo `ρ` tới khi da lòng tay (`palmSkin`) còn cách hình
+ * `WRAP_GAP`
+ */
+const wrap: ContactFn = (x) => {
+  const f = x.feature as RodFeature | LatheFeature;
+  const along = alongFrac(x.along, 1, x.dims.W);
+  const p0 = axialAt(x.geom, f, along, x.around ?? 0);
+  const faces = f.kind === "rod" && f.wide ? [f.wide, unit(cross3(f.a, f.wide))] : [];
+  const p = faces.length
+    ? {
+        ...p0,
+        rho: faces
+          .flatMap((v) => [v, neg(v)])
+          .reduce((a, b) => (dot3(b, p0.rho) > dot3(a, p0.rho) + EPS ? b : a)),
+      }
+    : p0;
+  const far = reachOf(x.geom);
+  let slope = 0;
+  if (x.shape) {
+    const h = WRAP_HALF * x.dims.W;
+    const rs = Array.from({ length: WRAP_STEPS }, (_, i) => h * ((2 * i) / (WRAP_STEPS - 1) - 1))
+      .map((w) => [w, outerAt(x.shape!, add3(p.at, scale3(p.a, w)), p.rho, far)] as const)
+      .filter((q): q is readonly [number, number] => q[1] !== undefined);
+    if (rs.length > 1)
+      slope = (rs[0][1] - rs[rs.length - 1][1]) / (rs[rs.length - 1][0] - rs[0][0]);
+  }
+  const b = Math.max(-WRAP_TILT_MAX, Math.min(WRAP_TILT_MAX, (WRAP_GAIN * Math.atan(slope)) / D2R));
+  const palm = neg(mix2(p.rho, Math.cos(b * D2R), p.a, Math.sin(b * D2R)));
+  const t = unit(perp(scale3(p.a, x.thumb === "down" ? -1 : 1), palm));
+  const fingers = unit(scale3(cross3(t, palm), x.side));
+  const z = cross3(palm, fingers);
+  const pts = (x.palmSkin?.() ?? []).map((c) =>
+    add3(add3(scale3(palm, c[0]), scale3(fingers, c[1])), scale3(z, c[2])),
+  );
+  const S = (x.shape && pts.length && skinTouch(x.shape, p.at, p.rho, pts, far)) || p.r;
+  return { at: add3(p.at, scale3(p.rho, S)), along, palm, fingers };
+};
+
 /** Chỗ tiếp xúc theo nhóm và biến thể; nhóm chưa có ở đây thì `graspFrame` báo lỗi */
 export const CONTACTS: Partial<Record<GroupId, Record<string, ContactFn>>> = {
   sheet: { pinch, flat, rim },
   palmBox: { default: palmBox },
+  cylinder: { wrap },
 };
 
 /**
@@ -329,6 +417,7 @@ function pickFeature(
 }
 
 const BASE = [HAND_DOF.indexOf("indexBase"), HAND_DOF.indexOf("fingersBase")];
+const PALM = HAND_PIECES.indexOf("palm");
 const THUMB = HAND_DOF.indexOf("thumbAbd");
 
 function poseVec(r: PoseRef): number[] {
@@ -364,6 +453,33 @@ function basePose(ps: PoseSpec, f: Feature, dims: HandDims, thick?: number): num
   const [lo, hi] = ps.range;
   const w = Number.isFinite(x) ? Math.min(1, Math.max(0, (x - lo) / (hi - lo))) : 0;
   return mixHand(poseVec(ps.closed), poseVec(ps.open), w);
+}
+
+const palms = new Map<string, V3[]>();
+
+/**
+ * Đỉnh da lòng tay (đốt trọng số lớn nhất là lòng tay) của bàn tay bên `side` cỡ `k`, cỡ dọc `long` ở dáng `v`, tính từ
+ * tâm nắm của dáng `pose`: toạ độ theo pháp tuyến lòng tay, hướng ngón, phía ngón cái của khung bàn tay, đơn vị rig
+ */
+function palmPoints(side: number, k: number, long: number, v: HandVec, pose: HandPose): V3[] {
+  const key = [side, k, long, ...v].map((x) => x.toFixed(4)).join() + pose;
+  let out = palms.get(key);
+  if (out) return out;
+  const skin = handSkin(side, k, long);
+  const pos = new Float32Array(skin.pos.length);
+  skinHand(skin, v, pos);
+  const dom = skinPieces(skin);
+  const c = gripCenter(pose, side, k, long);
+  const { n, f } = handAxes(side);
+  const z = cross3(n, f);
+  out = [];
+  for (let i = 0; i < dom.length; i++) {
+    if (dom[i] !== PALM) continue;
+    const d = sub3([pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]], c);
+    out.push([dot3(d, n) * 100, dot3(d, f) * 100, dot3(d, z) * 100]);
+  }
+  palms.set(key, out);
+  return out;
 }
 
 /**
@@ -430,6 +546,14 @@ export function graspFrame(
     inset,
     high: eHigh,
     shape: spec.shape,
+    palmSkin: () =>
+      palmPoints(
+        side,
+        dims.W / (200 * HAND_BONES.palm.half[1]),
+        dims.P / (100 * HAND_BONES.palm.len),
+        basePose(vs.pose!, feature, dims),
+        vs.pose!.closed.pose as HandPose,
+      ),
   });
   const name = vs.pose.closed.pose as HandPose;
   const hand: GraspHand = {

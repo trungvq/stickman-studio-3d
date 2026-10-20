@@ -45,8 +45,13 @@ describe("bảng GRIP_GROUPS", () => {
     }
   });
 
-  it("chỉ `sheet`, `palmBox` và `carry` không `later`", () => {
-    expect(GROUP_IDS.filter((g) => !GRIP_GROUPS[g].later)).toEqual(["sheet", "palmBox", "carry"]);
+  it("chỉ `sheet`, `cylinder`, `palmBox` và `carry` không `later`", () => {
+    expect(GROUP_IDS.filter((g) => !GRIP_GROUPS[g].later)).toEqual([
+      "sheet",
+      "cylinder",
+      "palmBox",
+      "carry",
+    ]);
   });
 
   it("mặc định nằm trong miền", () => {
@@ -105,11 +110,11 @@ describe("groupNeeds trên tám món", () => {
     expect(ids(bienLai)).toEqual(["sheet"]);
   });
 
-  it("đũa không ra `sheet`; chai không có nhóm đã làm; túi hiệu có `seats` chỉ ra `carry`", () => {
-    expect(ids(dua)).toEqual([]);
-    expect(ids(chaiDia)).toEqual([]);
-    expect(ids(tuiHieu)).toEqual(["carry"]);
-    expect(ids({ ...tuiHieu, seats: undefined })).toEqual([]);
+  it("đũa, chai, quai túi ra `cylinder` (đũa không ra `sheet`); túi hiệu có `seats` mới ra `carry`", () => {
+    expect(ids(dua)).toEqual(["cylinder"]);
+    expect(ids(chaiDia)).toEqual(["cylinder"]);
+    expect(ids(tuiHieu)).toEqual(["cylinder", "carry"]);
+    expect(ids({ ...tuiHieu, seats: undefined })).toEqual(["cylinder"]);
   });
 
   it("đĩa tôm hùm ra `sheet` bằng cả tấm lẫn đĩa", () => {
@@ -124,9 +129,18 @@ describe("groupNeeds trên tám món", () => {
   });
 
   it("nhóm `later` không có khối hình nào dù món hợp", () => {
-    const g = geomOf(ongNgheBan);
-    expect(groupNeeds(g, "cylinder", dims)).toEqual([]);
     expect(groupNeeds(geomOf(dua), "chopsticks", dims)).toEqual([]);
+  });
+
+  it("`cylinder`: tay cầm ống nghe ra một thanh, chai ra ba trụ tiện (thân, vai, cổ)", () => {
+    expect(groupNeeds(geomOf(ongNgheBan), "cylinder", dims).map((f) => [f.kind, f.part])).toEqual([
+      ["rod", "tay"],
+    ]);
+    expect(groupNeeds(geomOf(chaiDia), "cylinder", dims).map((f) => [f.kind, f.part])).toEqual([
+      ["lathe", "than"],
+      ["lathe", "vai"],
+      ["lathe", "co"],
+    ]);
   });
 
   it("nhóm chưa `later` thì đũa ra hai thanh cho `chopsticks`, trừ khi thiếu mốc `tip` có `dir`", () => {

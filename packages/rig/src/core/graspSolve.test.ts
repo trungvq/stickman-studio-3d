@@ -7,6 +7,7 @@ import { HELD_SINK } from "./heldAudit";
 import { heldFit, skinBulge, skinDepth, skinPieces, toItem } from "./heldFit";
 import { edgeFrame, handDims, itemGeom, type Feature, type SlabFeature } from "./heldGeom";
 import {
+  gripCenter,
   gripPoint,
   parseHeldItem,
   rotAxis,
@@ -18,6 +19,7 @@ import { fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
 import grip from "./__fixtures__/grip-frames.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
+import ongNghe from "./__fixtures__/held-v2/ong-nghe-ban.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import tomHum from "./__fixtures__/held-v2/tom-hum.json";
 
@@ -294,6 +296,105 @@ describe("tay trái không soi gương món", () => {
       expect(sink(1.61, 25)).toBeGreaterThan(HELD_SINK);
     },
   );
+});
+
+describe("`cylinder` `wrap`", () => {
+  const CHAI = item(chaiDia);
+  const geom = itemGeom(CHAI);
+  const thumbOf = (G: GripFrame): V3 => matVec(tr(G.R), [0, 0, 1]);
+  const fingersOf = (G: GripFrame): V3 => matVec(tr(G.R), [0, -1, 0]);
+
+  // `along` của fixture: tâm nắm của dáng đóng (`fist`) theo khung fixture, trên đoạn bám y 0–68,5
+  it("ra lại fixture `chai-dia#co` ở hai cỡ tay, hai tay trong 5° và 1 đơn vị", () => {
+    for (const size of ["t01-sakura", "kuroiwa"])
+      for (const [side, n] of SIDES) {
+        const fx = FIX["chai-dia#co"][size];
+        const F = fx[side];
+        const y = toItem(F, gripCenter("fist", n, fx.k, fx.long))[1];
+        const g = graspFrame(
+          CHAI,
+          geom,
+          { group: "cylinder", part: "vai", along: y / 68.5, around: 180, thumb: "up" },
+          n,
+          handDims(fx.k, fx.long),
+          fx.k,
+          fx.long,
+        );
+        const q = F.centre.item;
+        expect(rotDeg(g.G.R, F.R), `${size} ${side}`).toBeLessThanOrEqual(5);
+        expect(
+          dist(gripPoint(g.G, q), gripPoint(F, q)) / g.G.u,
+          `${size} ${side}`,
+        ).toBeLessThanOrEqual(1);
+      }
+  });
+
+  it("tay trái det +1, cùng lòng tay, ngón quấn ngược chiều; ngón cái về đầu trên, `down` về đầu dưới", () => {
+    const dims = handDims(1.75, 1.545);
+    for (const thumb of ["up", "down"] as const) {
+      const pick: Pick = { group: "cylinder", along: 0.5, around: 30, thumb };
+      const [r, l] = [-1, 1].map((s) => graspFrame(CHAI, geom, pick, s, dims, 1.75, 1.545));
+      expect(det(r.G.R)).toBeCloseTo(1, 9);
+      expect(det(l.G.R)).toBeCloseTo(1, 9);
+      close(r.hand.palm as V3, l.hand.palm as V3);
+      close(r.hand.at as V3, l.hand.at as V3);
+      close(
+        fingersOf(r.G),
+        fingersOf(l.G).map((x) => -x),
+      );
+      for (const g of [r, l])
+        expect(thumbOf(g.G)[1] * (thumb === "up" ? 1 : -1)).toBeGreaterThan(0.99);
+    }
+  });
+
+  it("thân thẳng: lòng tay `−ρ(around)`, ngón vuông góc trục, tâm nắm ngoài trục theo `ρ`; vai: lòng tay ngả theo dốc", () => {
+    const dims = handDims(1.75, 1.545);
+    const body = graspFrame(CHAI, geom, { group: "cylinder", along: 0.4, around: 90 }, -1, dims);
+    // `ρ(0)` là `front` (nhãn, +z), `ρ(90) = a × ρ(0)` = +x
+    close(body.hand.palm as V3, [-1, 0, 0], 1e-9);
+    expect(Math.abs((body.hand.fingers as V3)[1])).toBeLessThan(1e-9);
+    const at = body.hand.at as V3;
+    expect(at[1]).toBeCloseTo(0.4 * 68.5, 9);
+    expect(at[0]).toBeGreaterThan(10.2);
+    const shoulder = graspFrame(CHAI, geom, { group: "cylinder", along: 0.8, around: 0 }, -1, dims);
+    expect((shoulder.hand.palm as V3)[1]).toBeLessThan(-0.3);
+    expect(body.choice).toMatchObject({
+      part: "than",
+      feature: "lathe",
+      along: 0.4,
+      around: 90,
+      thumb: "up",
+    });
+  });
+
+  it("thanh hộp `ong-nghe-ban`: lòng tay áp phẳng mặt gần `around` nhất (180 là lưng), da lòng tay không lún", () => {
+    const ONG = item(ongNghe);
+    const k = 1.75;
+    const long = 1.545;
+    const g = graspFrame(
+      ONG,
+      itemGeom(ONG),
+      { group: "cylinder", around: 180 },
+      -1,
+      handDims(k, long),
+      k,
+      long,
+    );
+    close(g.hand.palm as V3, [0, -1, 0], 1e-9);
+    expect(g.choice).toMatchObject({ part: "tay", feature: "rod", along: 0.5 });
+    const skin = handSkin(-1, k, long);
+    const pos = new Float32Array(skin.pos.length);
+    skinHand(skin, g.pose, pos);
+    const { gaps } = skinDepth(pos, skinPieces(skin), g.G, ONG.shape!);
+    expect(gaps.palm).toBeGreaterThan(0.5);
+    expect(gaps.palm).toBeLessThan(1);
+    const at = (around: number) =>
+      graspFrame(ONG, itemGeom(ONG), { group: "cylinder", around }, -1, handDims(k, long), k, long)
+        .hand.palm as V3;
+    close(at(150), [0, -1, 0], 1e-9);
+    close(at(330), [0, 1, 0], 1e-9);
+    close(at(80), [-1, 0, 0], 1e-9);
+  });
 });
 
 describe("đổi `thumb` là quay π quanh `m`", () => {
@@ -779,11 +880,9 @@ describe("graspFrame", () => {
     expect(run()).toBe(a);
   });
 
-  it("chỉ `sheet`, `palmBox` có chỗ tiếp xúc; thiếu `edge` của tấm là lỗi", () => {
-    expect(Object.keys(CONTACTS)).toEqual(["sheet", "palmBox"]);
-    expect(() => graspFrame(BANG, itemGeom(BANG), { group: "cylinder" }, -1, dims)).toThrow(
-      /cylinder/,
-    );
+  it("chỉ `sheet`, `palmBox`, `cylinder` có chỗ tiếp xúc; thiếu `edge` của tấm là lỗi", () => {
+    expect(Object.keys(CONTACTS)).toEqual(["sheet", "palmBox", "cylinder"]);
+    expect(() => graspFrame(BANG, itemGeom(BANG), { group: "bowl" }, -1, dims)).toThrow(/bowl/);
     expect(() => graspFrame(BANG, itemGeom(BANG), { group: "sheet" }, -1, dims)).toThrow(/edge/);
   });
 
@@ -794,6 +893,7 @@ describe("graspFrame", () => {
   it("`around`, `psi`, `inset` đi tới chỗ tiếp xúc; `choice` giữ những trường nhóm có", () => {
     const chai = item(chaiDia);
     const seen: ContactInput[] = [];
+    const keep = CONTACTS.cylinder;
     CONTACTS.cylinder = {
       wrap: (x) => {
         seen.push(x);
@@ -814,7 +914,7 @@ describe("graspFrame", () => {
       expect(g.choice).toMatchObject({ around: 30, along: 0.4 });
       expect("psi" in g.choice || "inset" in g.choice).toBe(false);
     } finally {
-      delete CONTACTS.cylinder;
+      CONTACTS.cylinder = keep;
     }
   });
 

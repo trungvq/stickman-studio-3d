@@ -25,6 +25,8 @@ import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import tomHum from "./__fixtures__/held-v2/tom-hum.json";
+import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
+import ongNgheBan from "./__fixtures__/held-v2/ong-nghe-ban.json";
 
 // người mẫu đứng cầm bảng ở t = 1; mốc món và số đối chiếu của prototype bước 0 (docs/11-nhom-cam.md mục 5)
 const item = (json: unknown): HeldItemSpec => {
@@ -641,5 +643,45 @@ describe("chooseMissing `palmBox`: giá lún da", () => {
       sol.high,
     );
     expect(sol.frame.G).toEqual(g.G);
+  });
+});
+
+describe("chooseMissing `cylinder`", () => {
+  const cc = graspCtx(T, { "chai-dia": item(chaiDia), "ong-nghe-ban": item(ongNgheBan) });
+  // chai đứng trước ngực, đầu trên lên (y rig xuống); ống nghe đứng, mặt trước (loa, mic) quay về người cầm
+  const upright: ItemPose = {
+    R: fromColumns([1, 0, 0], [0, -1, 0], [0, 0, -1]),
+    P: [240, -200, 560],
+    cast: "nguoi",
+    s: 1,
+  };
+  const handset: ItemPose = {
+    R: fromColumns([1, 0, 0], [0, 0, 1], [0, -1, 0]),
+    P: [240, -250, 560],
+    cast: "nguoi",
+    s: 1,
+  };
+
+  it.each([
+    ["chai-dia", upright, 3],
+    ["ong-nghe-ban", handset, 1],
+  ] as const)(
+    "đủ thiếu `%s@cylinder`: rig giải `part`, `thumb`, `along`, `around` không lỗi",
+    (id, pose, parts) => {
+      for (const side of [RIGHT, LEFT]) {
+        const sol = chooseMissing(cc, `${id}@cylinder`, pose, side);
+        // `part` × `thumb` 2, rồi `along` 3 × `around` 12
+        expect(sol.candidates).toBe(parts * 2 + 36);
+        for (const k of ["thumb", "along", "around"] as const) expect(sol.by[k]).toBe("rig");
+        expect(sol.choice.variant).toBe("wrap");
+        expect(Number.isFinite(sol.cost)).toBe(true);
+      }
+    },
+  );
+
+  it("tay dẫn (`solve: false`): mặc định nhóm, `along` 0,5, ngón cái lên, `around` 0", () => {
+    const sol = graspAt(cc, "chai-dia@cylinder", upright, RIGHT, undefined, { solve: false });
+    expect(sol.candidates).toBe(1);
+    expect(sol.choice).toMatchObject({ part: "than", along: 0.5, thumb: "up", variant: "wrap" });
   });
 });
