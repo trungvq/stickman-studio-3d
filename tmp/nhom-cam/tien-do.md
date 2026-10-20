@@ -91,6 +91,8 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 | G4-44 `cylinder` dáng theo bán kính | xong: dáng hoà theo r tại chỗ cầm (không `rMax`), `PoseSpec.thumb` bảng góc ngón cái theo bán kính (trụ mảnh: cái dọc trục chồng trỏ–giữa; trụ to: dọc thân hướng lên; chuyển 0,36–0,42·W), `WRAP_OPEN`/`WRAP_CLOSED` mở rồi `heldFit` khép; cái lấy r nhỏ hơn giữa chỗ cầm và 0,5·W về phía cái (`WRAP_THUMB_AHEAD`). Chai dĩa lún 2,45 → 0,14; chai đặc tuyến 4,5–5,4 → 0,07–0,10 (hết xuyên); cán r 2,5 lún 0,30/0,41. Fixture `chai-dia#co` 0,64/0,63. Không theo rủi ro 8 (`fist` + knuckle lún 0,7–0,9). Ống nghe còn lún 3,4–3,9 vào khối loa (`grip: false`) ở `around 0` → G4-45/47 | `g444/`, `duyet/g4-cylinder-cai-truoc-sau.jpg` |
 | G4-46 trượt dọc thanh | xong (chỉ test): `along` 0,25 → 0,75 trên `ong-nghe-ban`, 30 fps: φ ≤ 2,5°/mẫu, khuỷu vẽ 2,9°, lòng 4,0°, cổ tay 1,2 px, món 0,15 px; `scene.ts` không đổi | `holdPlaced.test.ts`, `g446/` |
 | G4-45 biên `grip: false` | xong: `needs` `cylinder` chỗ cho tâm nắm cách phần không bám ≥ 0,3·W; kẹp `along` (`GRIP_CLEAR` 0,3·W), `choiceWarnings` báo `along` sát (tới `check` nhóm `ref` và MCP); `chooseMissing` `cylinder` cộng giá lún da (`SINK_GROUPS`), bỏ `around` mà phần không bám nhô > 0,1·W (`BULGE`) phía lòng. Ống nghe hết xuyên (1,52 → −0,95), lún 3,36/3,90 → 0,66/0,58, nhưng hàng mẫu (ống nghe đứng, loa ra ngoài) vượt cổ tay 20° → lỗi `wrist`; chai y số. `chooseMissing` 81–139 ms/tay. t02 0 mới | `g445/`, `duyet/g4-cylinder-ong-nghe-truoc-sau.jpg` |
+| G4-48a docs `cylinder` | xong, commit `9636e9c`. Banner đầu docs/11 và mục 9 "mười hai nhóm `later`" lỗi thời → Z1 | `docs/11` |
+| G4-47 hàng mẫu `cylinder` | xong: `along thấp/cao`, `ngón cái xuống`, `nắm phần <p>` (theo hình món, `along` giữa phần), `áp tai` (tay trái dẫn, `around 180`); lọc hàng `checkChoice`/`resolveScene` từ chối cho mọi nhóm. 26 hàng, 0 ô lỗi. Vai/cổ chai trúng chỗ. Áp tai: ống nghe NẰM NGANG, bàn tay xoè — kém v1 (dựng dọc má) → G4-47b. Commit `f3f07ad`, video `5d3e19b` | `g447/` |
 | G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
@@ -153,11 +155,12 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 - `FLAT_MAX` lấy theo tay nhỏ (0,24·W); `checkHolds` kiểm bằng tay mẫu W ≈ 14,7 nên cảnh khai `flat` trên tấm 3,5–4 báo cho mọi cỡ tay.
 - `cylinder` chai dĩa: ngón cái dọc thân hướng lên, nhìn trước như "giơ ngón cái" cạnh chai. Vùng chuyển dáng cái 0,36–0,42·W lòng tay nhấc 1,3–2,2 (vai chai). Cán r 2,5 bốn ngón chưa khép qua đỉnh thanh (thanh sát gốc ngón; dời chỗ cầm vỡ fixture).
 - Trượt dọc thanh: φ theo lưới 2,5° dao nấc (lòng 2–4°/mẫu), cổ tay nhảy 0,8 px ở `along` 0,58.
+- `resolveScene` kiểm `choice` bằng tay người mẫu cùng chiều cao (`holderDims`), không phải tay thật (kuroiwa W 14,7 thay 16,8).
 - Hàng "bê hai vành" đĩa: ngón cái hơi dựng, hở 1,6–2,9.
 - `rim` `slant` âm: ngón nghiêng về mặt cái, tấm kẹp giữa trỏ và giữa (khoe báo). Út hở hơn v1 0,5–1,8 ở `slant` ±22,5.
 
 ## Bước kế
 0. Phiên tiếp tục (2026-10-20) sau khi chủ dự án chốt hướng G4-38b. Worktree sạch, mọi việc xanh đã commit và push. Studio xem `git log`, video `9b13333`.
-1. Nhóm `sheet` xong (M4-3). Cylinder: 42–46 xong → 47 (hàng mẫu; ống nghe áp tai mặt lưng; lọc hàng `checkChoice` lỗi của `sheet`) → 48.
+1. Nhóm `sheet` xong (M4-3). Cylinder: 42–47, 48a xong → 47b (ống nghe áp tai dựng dọc má như v1) → render tổng `cylinder` + `so-v1.md` (48b) → M4-4.
 3. Rồi cylinder 43–48 (42 xong), platform 53–57, card 62–64, chopsticks 74–76 (nhớ `frameSink` truyền `curl`), pen 83–85, handle 92–95, bowl A2–A4, Z1, Z2 theo `gd4-ke-hoach.md`. Đã xong/gộp: 00, X1, 11–14, 22–25, 32–37, 42, 52, 72, 73, 82.
 4. Giai đoạn 5 → 6.
