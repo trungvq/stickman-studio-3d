@@ -21,7 +21,7 @@
 // mà món không có, bị bỏ trước khi giải (`do.json` `loc`); hàng giải ra cùng chỗ cầm, cùng vị trí món với hàng trước nó bị bỏ
 // (`trung`); hàng mà `checkChoice` của rig báo lỗi (biến thể quá bề dày ở mép, phần không có…) cũng bị bỏ, mọi nhóm; với `palmBox` thêm đọc ngang mặt,
 // khoe một tay, áp tai (tay dẫn); với `cylinder` thêm `along` thấp / cao, ngón cái xuống, nắm từng phần bám được (vai, cổ… `along` giữa phần),
-// áp tai (tay dẫn, `around` 180: lòng áp lưng tay cầm); `card` thêm `edge top`, ngón cái mặt trước / sau, tay dẫn, tay dẫn mặt trước lên và đưa thẻ ra trước; `platform` (món ngang bụng, xa ngực hơn hàng chung) thêm `psi` 0 / 90 và tay dẫn; `platform`,
+// áp tai (tay dẫn, `around` 180: lòng áp lưng tay cầm); `card` thêm `edge top`, ngón cái mặt trước / sau, tay dẫn, tay dẫn mặt trước lên và đưa thẻ ra trước; `platform` (món ngang bụng, xa ngực hơn hàng chung) thêm `psi` 0 / 90 và tay dẫn; `chopsticks` (đũa trước ngực ngọn ra trước chúc 30°, hai que chéo) thêm `along` 0,15 / 0,45 và tay dẫn phải / trái; `platform`,
 // `cylinder` (chai đứng hơi nghiêng), `palmBox` thêm hàng hai tay `both` món đặt trước, bỏ khi món không có mặt đáy / sau có cạnh cho tay phụ
 // (`loc`); `platform` mà mặt đỡ chọn ra không có cạnh thì cả cặp bị bỏ (`bo`); `carry` hai hàng treo khuỷu (`on: elbow`) và treo vai (`on: shoulder`, cảnh khai `touch`), tay
 // đặt như kiểu treo v1, món không đặt trước ngực. Cặp (món, nhóm, người) mà món không có khối hình đạt `needs` của nhóm với cỡ tay ấy
@@ -391,6 +391,14 @@ if (!nhomXin) {
   const TAY_DAN = { to: "chest", offset: [40, 10, 30], point: "grip" };
   /** Tay dẫn đưa ra trước (trao cho người đối diện), ngón theo món */
   const DUA = { to: "chest", offset: [60, 0, 25], point: "grip" };
+  /** Đũa không có hướng mặc định: ngọn ra trước chúc 30°, hai que xếp chéo xuống trái để cổ tay và khuỷu không vượt kẹp */
+  const NGON = { face: { axis: "tip", toward: "forward", tilt: -30 } };
+  const DUA_DAT = {
+    to: "chest",
+    offset: [45, -3, 0],
+    ...NGON,
+    roll: { axis: [1, 0, 0], toward: [0, Math.cos(Math.PI / 6), -Math.sin(Math.PI / 6)] },
+  };
   /** Lý do `both` của (món, nhóm) không áp được (`undefined` khi áp được): mặt đỡ của tay phụ không có trên món */
   const khongBoth = (group, geom) => {
     const sup = rig.GRIP_GROUPS[group].support;
@@ -483,7 +491,7 @@ if (!nhomXin) {
           }),
         },
       }));
-    const dat = group === "platform" ? XA : NGUC;
+    const dat = { platform: XA, chopsticks: DUA_DAT }[group] ?? NGUC;
     const rows = [{ ma: "mac-dinh", ten: "mặc định", mark: dat, hands: { right: H() } }];
     if (Object.keys(gs.variants).length > 1)
       for (const v of Object.keys(gs.variants))
@@ -607,6 +615,28 @@ if (!nhomXin) {
         },
       );
     }
+    if (group === "chopsticks")
+      rows.push(
+        {
+          ma: "along-thap",
+          ten: "along thấp (0,15)",
+          mark: DUA_DAT,
+          hands: { right: H({ along: 0.15 }) },
+        },
+        {
+          ma: "along-cao",
+          ten: "along cao (0,45)",
+          mark: DUA_DAT,
+          hands: { right: H({ along: 0.45 }) },
+        },
+        { ma: "tay-dan", ten: "tay dẫn", hands: { right: { ...TAY_DAN, ...H(NGON) } } },
+        {
+          ma: "tay-dan-trai",
+          ten: "tay dẫn trái",
+          lead: "left",
+          hands: { left: { ...TAY_DAN, ...H(NGON) } },
+        },
+      );
     if (group === "platform")
       rows.push(
         { ma: "psi-0", ten: "ψ 0 (ngón vào mặt)", mark: XA, hands: { right: H({ psi: 0 }) } },
