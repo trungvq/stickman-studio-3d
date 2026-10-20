@@ -146,7 +146,7 @@ describe("bảng dáng tay", () => {
     for (const p of ["span", "edge"] as const) expect(lift(p)).toBeLessThanOrEqual(0);
   });
 
-  it("cầm bút, cầm đũa: đủ năm ngón, góc trong tầm khớp; đệm ngón cái và ngón trỏ của `tripod` hở vừa thân bút, ngón cái không lún vào ngón nào", () => {
+  it("cầm bút, cầm đũa: đủ năm ngón, góc trong tầm khớp; đệm ngón cái và ngón trỏ của `tripod` hở vừa thân bút, ngón cái không lún vào ngón nào; tâm nắm `chopsticks` trùng `pinch`", () => {
     const segSeg = (a: V3, b: V3, c: V3, d: V3) => {
       const seg = (p: V3) => {
         const u = [d[0] - c[0], d[1] - c[1], d[2] - c[2]];
@@ -187,13 +187,8 @@ describe("bảng dáng tay", () => {
     }
     // bút r 1,3 đơn vị rig ở cỡ `1` (1/100 đơn vị three)
     expect(Math.abs(gap(vec("tripod"), "thumb1", "index1") - 0.026)).toBeLessThanOrEqual(0.01);
-    // đũa: que trên lệch khỏi đường ngón cái – trỏ nên khe rộng hơn bút; ngón trỏ duỗi hơn
-    expect(gap(vec("chopsticks"), "thumb1", "index1")).toBeGreaterThan(
-      gap(vec("tripod"), "thumb1", "index1"),
-    );
-    expect(-tipOf(vec("chopsticks"), "index1")[1]).toBeGreaterThan(
-      -tipOf(vec("tripod"), "index1")[1],
-    );
+    // đũa: khung cầm dựng từ fixture dáng `pinch`
+    expect(HAND_GRIPS.chopsticks).toEqual(HAND_GRIPS.pinch);
   });
 
   it("hai bàn tay soi gương qua mặt phẳng giữa; lòng tay quay về phía thân", () => {

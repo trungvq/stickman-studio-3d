@@ -38,7 +38,7 @@ import { add3, dot3, scale3, sub3, type V3 } from "./lens";
 
 export type NeedKind = Feature["kind"] | "path" | "ball";
 /** Dáng tay chưa soạn: nhóm dùng nó là `later` */
-export type PlannedPose = "tripod" | "chopsticks" | "ball" | "claw";
+export type PlannedPose = "tripod" | "ball" | "claw";
 export type GroupPoseName = HandPose | PlannedPose;
 
 /**
@@ -246,6 +246,8 @@ const thick = (f: Feature) => (f.kind === "slab" || f.kind === "disc" ? f.t : In
 const radius = (f: Feature) => (f.kind === "rod" ? f.R : f.kind === "lathe" ? f.rMax : Infinity);
 const span = (g: ItemGeom, f: Feature) => Math.max(0, ...gripSpan(g, f).map((s) => s.len));
 
+/** `chopsticks`: ngón chỉ cuộn thêm ngần này độ để khép khe, gỡ lún (docs/11 mục 6 điểm 4) */
+const CHOP_CURL = 15;
 /** `cylinder`: tâm nắm cách phần `grip: false` ít nhất ngần này lần `W` dọc trục */
 export const GRIP_CLEAR = 0.3;
 /** `cylinder`: thanh hộp áp mặt rộng ít nhất ngần này lần `W` thì lòng áp phẳng, ngón dọc thân (`flat`) */
@@ -499,13 +501,13 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
           range: [0, 0.15],
         },
         roles: roles("press", "support", "free", { index: "press", pinky: "free" }),
+        curl: CHOP_CURL,
         fixture: "dua#cam",
       },
     },
     choices: { part: PART, along: range(0.15, 0.45, { default: 0.25 }) },
     hands: "one",
     motion: "pick",
-    later: true,
   },
 
   cylinder: {

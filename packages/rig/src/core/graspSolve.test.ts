@@ -22,7 +22,7 @@ import {
   type GroupId,
   type HeldItemSpec,
 } from "./heldItem";
-import { add3, fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
+import { add3, fromColumns, matMul, matVec, sub3, type M3, type V3 } from "./lens";
 import grip from "./__fixtures__/grip-frames.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
@@ -30,6 +30,7 @@ import ongNghe from "./__fixtures__/held-v2/ong-nghe-ban.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import tomHum from "./__fixtures__/held-v2/tom-hum.json";
 import khay from "./__fixtures__/held-v2/khay.json";
+import dua from "./__fixtures__/held-v2/dua.json";
 
 const item = (json: unknown): HeldItemSpec => {
   const r = parseHeldItem(json);
@@ -1310,8 +1311,15 @@ describe("graspFrame", () => {
     expect(run()).toBe(a);
   });
 
-  it("chỉ `sheet`, `card`, `palmBox`, `cylinder`, `platform` có chỗ tiếp xúc; thiếu `edge` của tấm là lỗi", () => {
-    expect(Object.keys(CONTACTS)).toEqual(["sheet", "card", "palmBox", "cylinder", "platform"]);
+  it("chỉ `sheet`, `card`, `palmBox`, `cylinder`, `platform`, `chopsticks` có chỗ tiếp xúc; thiếu `edge` của tấm là lỗi", () => {
+    expect(Object.keys(CONTACTS)).toEqual([
+      "sheet",
+      "card",
+      "palmBox",
+      "cylinder",
+      "platform",
+      "chopsticks",
+    ]);
     expect(() => graspFrame(BANG, itemGeom(BANG), { group: "bowl" }, -1, dims)).toThrow(/bowl/);
     expect(() => graspFrame(BANG, itemGeom(BANG), { group: "sheet" }, -1, dims)).toThrow(/edge/);
   });
@@ -1366,3 +1374,104 @@ describe("graspFrame", () => {
     }
   });
 });
+
+describe("`chopsticks` `grip`", () => {
+  const DUA = item(dua);
+  const geom = itemGeom(DUA);
+  const FIXC: Case = { fixture: "dua#cam", spec: DUA, pick: both({ group: "chopsticks" }, {}, {}) };
+  // sakura, kuroiwa
+  const REAL = [
+    [1.75, 1.545],
+    [2, 1.813],
+  ] as const;
+  const tip: V3 = [0, -35.68, 67.1];
+  const end: V3 = [0, 2.82, -5.3];
+
+  it("ra lại fixture `dua#cam` ở mọi cỡ, hai tay trong 5° và 1 đơn vị với `along` mặc định 0,25", () => {
+    for (const size of SIZES)
+      for (const [side, n] of SIDES) {
+        const r = residual(FIXC, size, side, n);
+        expect(r.g.choice.along, `${size} ${side}`).toBe(0.25);
+        expect(r.rot, `${size} ${side}`).toBeLessThanOrEqual(5);
+        expect(r.pos, `${size} ${side}`).toBeLessThanOrEqual(1);
+      }
+  });
+
+  it("ngón dọc que về ngọn; `along` từ đầu cầm; hai tay đổi que kề ngón cái, det +1, cùng một khung từ que nào", () => {
+    const dims = handDims(1.75, 1.545);
+    const axis = [tip[0] - end[0], tip[1] - end[1], tip[2] - end[2]] as V3;
+    const at = (along: number, side: number, featureIndex?: number) =>
+      graspFrame(
+        DUA,
+        geom,
+        { group: "chopsticks", along, ...(featureIndex !== undefined && { featureIndex }) },
+        side,
+        dims,
+        1.75,
+        1.545,
+      );
+    for (const side of [-1, 1]) {
+      const g = at(0.25, side);
+      expect(det(g.G.R)).toBeCloseTo(1, 9);
+      const f = g.hand.fingers as V3;
+      expect(f[1] * axis[1] + f[2] * axis[2]).toBeGreaterThan(0.99 * Math.hypot(...axis));
+      // dời theo `along`: tâm nắm đi dọc đường giữa về ngọn
+      const step = sub3(at(0.4, side).hand.at as V3, g.hand.at as V3);
+      expect(Math.hypot(...step)).toBeCloseTo(0.15 * 82.0157, 2);
+      expect(step[1] * axis[1] + step[2] * axis[2]).toBeGreaterThan(0);
+      // tâm nắm `pinch` của fixture về que phía tay (tay phải `+x`)
+      close(at(0.25, side, 0).G.R, at(0.25, side, 1).G.R, 1e-12);
+    }
+    expect(Math.sign((at(0.25, -1).hand.at as V3)[0])).toBe(
+      -Math.sign((at(0.25, 1).hand.at as V3)[0]),
+    );
+  });
+
+  it("trên da: ngón cái, trỏ chạm hay hở dưới 0,15·W, không lún quá `HELD_SINK`, không xuyên; ngón cuộn thêm ≤ 15° — hai cỡ tay, hai tay", () => {
+    for (const [k, long] of REAL)
+      for (const [, side] of SIDES) {
+        const r = chopSkin(DUA, { group: "chopsticks" }, side, k, long);
+        const at = `${k} ${side}`;
+        const W = handDims(k, long).W;
+        expect(r.gaps.thumb, at).toBeLessThanOrEqual(0.9);
+        expect(r.gaps.index, at).toBeLessThanOrEqual(0.15 * W);
+        expect(r.sink, at).toBeLessThanOrEqual(HELD_SINK);
+        expect(r.pierce, at).toBeLessThan(0);
+        for (const x of r.fit) expect(x, at).toBeLessThanOrEqual(15);
+      }
+  });
+});
+
+function chopSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long: number) {
+  const g = graspFrame(spec, itemGeom(spec), pick, side, handDims(k, long), k, long);
+  const skin = handSkin(side, k, long);
+  const fit = heldFit({
+    v: g.pose,
+    side,
+    k,
+    long,
+    shape: spec.shape!,
+    G: g.G,
+    roles: g.roles,
+    bulge: skinBulge(skin, g.pose),
+    curl: GRIP_GROUPS.chopsticks.variants.grip.curl,
+  });
+  const v = [...g.pose, ...fit];
+  const pos = new Float32Array(skin.pos.length);
+  skinHand(skin, v, pos);
+  const { gaps } = skinDepth(pos, skinPieces(skin), g.G, spec.shape!);
+  const F = handFrames(v, side, k, long);
+  const pierce = Math.max(
+    ...HAND_PIECES.filter((n) => n !== "palm").map(
+      (n) =>
+        capsuleClearance(
+          spec.shape!,
+          g.G,
+          F[n].o,
+          add3(F[n].o, matVec(F[n].R, [0, -F[n].len, 0])),
+          0,
+        ).core,
+    ),
+  );
+  return { gaps, fit, sink: Math.max(0, -Math.min(...Object.values(gaps))), pierce };
+}

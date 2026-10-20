@@ -113,6 +113,8 @@ export interface ContactInput {
   high?: V3;
   /** Hình va chạm của món, khung món */
   shape?: readonly HeldShape[];
+  /** Mốc `tip` của món, khung món */
+  tip?: V3;
   /**
    * Đỉnh da lòng tay ở dáng gốc tính từ tâm nắm, đơn vị món, toạ độ theo `palm`, `fingers`, `palm × fingers`; `at` là số đo
    * ở chỗ tiếp xúc như `GraspContact`
@@ -194,6 +196,12 @@ const PAD_SHIFT = (HAND_GRIPS.pinch[2] - HAND_BONES.index.at[2]) / (2 * HAND_BON
 /** `pad`: đệm trỏ đi trước tâm nắm theo hướng ngón ngần này lần `W`; cách đầu cạnh ít nhất `PAD_END` lần `W` */
 const PAD_AHEAD = 0.4;
 const PAD_END = 0.2;
+/**
+ * `chopsticks` (fixture `dua#cam`): lòng tay `n = CHOP_PALM[0] · b + CHOP_PALM[1] · c`, tâm nắm cách đường giữa hai que
+ * `CHOP_OFF` về phía `b` (trên que kề ngón cái), đơn vị món
+ */
+const CHOP_PALM: readonly [number, number] = [-0.5, -Math.sqrt(3) / 2];
+const CHOP_OFF = 2.4;
 /** `platform`: da lòng tay cách mặt đỡ ngần này, đơn vị món */
 const PLATFORM_GAP = 0.15;
 /** Dò mặt hình: coi là chạm khi cách dưới ngần này, đơn vị món */
@@ -457,6 +465,39 @@ const platformPalm: ContactFn = (x) => {
   return { at: add3(o, scale3(f.n, S)), along, palm, fingers };
 };
 
+/**
+ * `chopsticks`: hai que mảnh cùng phần, `along` từ đầu cầm (xa mốc `tip`) dọc cả hai que. Khung fixture dời theo đường giữa
+ * hai que: ngón dọc que về ngọn (`d`), `b` từ que này sang que kia (tay phải về `R` của món), `c` hoàn chỉnh theo bên tay
+ */
+const chopGrip: ContactFn = (x) => {
+  const f = x.feature as RodFeature;
+  const pair = x.geom.features
+    .filter(
+      (o): o is RodFeature =>
+        o !== f &&
+        o.kind === "rod" &&
+        o.part === f.part &&
+        Math.abs(dot3(o.a, f.a)) >= Math.cos(15 * D2R),
+    )
+    .sort((a, b) => len3(sub3(a.c, f.c)) - len3(sub3(b.c, f.c)))[0];
+  const tip = x.tip ?? f.lo;
+  const along = alongFrac(x.along, f.len, x.dims.W);
+  const axis = (r: RodFeature) => {
+    const hi = add3(r.lo, scale3(r.a, r.len));
+    const [from, to] = len3(sub3(hi, tip)) >= len3(sub3(r.lo, tip)) ? [hi, r.lo] : [r.lo, hi];
+    return { at: add3(from, scale3(sub3(to, from), along)), d: sub3(to, from) };
+  };
+  const p = axis(f);
+  const q = pair ? axis(pair) : p;
+  const d = unit(add3(p.d, q.d));
+  const mid = scale3(add3(p.at, q.at), 0.5);
+  const b0 = len3(perp(sub3(q.at, p.at), d)) > EPS ? unit(perp(sub3(q.at, p.at), d)) : x.geom.R;
+  const b = scale3(signed(b0, [x.geom.R, x.geom.U, x.geom.F]), -x.side);
+  const c = scale3(cross3(d, b), -x.side);
+  const palm = mix2(b, CHOP_PALM[0], c, CHOP_PALM[1]);
+  return { at: add3(mid, scale3(b, CHOP_OFF)), along, palm, fingers: d };
+};
+
 /** Chỗ tiếp xúc theo nhóm và biến thể; nhóm chưa có ở đây thì `graspFrame` báo lỗi */
 export const CONTACTS: Partial<Record<GroupId, Record<string, ContactFn>>> = {
   sheet: { pinch, flat, rim },
@@ -464,6 +505,7 @@ export const CONTACTS: Partial<Record<GroupId, Record<string, ContactFn>>> = {
   palmBox: { default: palmBox },
   cylinder: { wrap, flat: flatRod },
   platform: { palm: platformPalm },
+  chopsticks: { grip: chopGrip },
 };
 
 /**
@@ -700,6 +742,7 @@ export function graspFrame(
     inset,
     high: eHigh,
     shape: spec.shape,
+    tip: spec.anchors?.tip?.at,
     palmSkin: (at) =>
       palmPoints(
         side,
@@ -901,7 +944,7 @@ const sinks = new WeakMap<HeldItemSpec, Map<string, number>>();
 
 /**
  * Da lún sâu nhất vào món (đơn vị món, như luật `sink`) khi bàn tay ở đúng khung cầm `f` và ngón ôm theo vai trò
- * (`heldFit`); bàn tay cỡ `k`, `long` của người cỡ `s`. Nhớ theo món, bàn tay, khung và dáng
+ * (`heldFit`, tầm cuộn `curl` của biến thể); bàn tay cỡ `k`, `long` của người cỡ `s`. Nhớ theo món, bàn tay, khung và dáng
  */
 function frameSink(
   spec: HeldItemSpec,
@@ -910,12 +953,13 @@ function frameSink(
   k: number,
   long: number,
   s: number,
+  curl?: number,
 ) {
   if (!spec.shape?.length) return 0;
   const G = { R: f.G.R, p: scale3(f.G.p, 1 / s), u: f.G.u / s };
   const key = [side, k, long, ...G.R, ...G.p, G.u, ...f.pose]
     .map((x) => x.toFixed(6))
-    .concat(JSON.stringify(f.roles))
+    .concat(JSON.stringify(f.roles), String(curl))
     .join();
   let m = sinks.get(spec);
   if (!m) sinks.set(spec, (m = new Map()));
@@ -931,6 +975,7 @@ function frameSink(
       G,
       roles: f.roles,
       bulge: skinBulge(skin, f.pose),
+      ...(curl !== undefined && { curl }),
     });
     const pos = new Float32Array(skin.pos.length);
     skinHand(skin, [...f.pose, ...fit], pos);
@@ -947,11 +992,11 @@ function specOf(ctx: GraspCtx, item: string): HeldItemSpec {
   return s;
 }
 
-/** Lưới của trường liên tục: `along` 3 điểm, `slant` ½ miền hai phía và 0, `around` 12, `tilt` 6, `psi` 5 điểm đều gồm hai đầu */
+/** Lưới của trường liên tục: `along` 3 điểm giữa miền, `slant` ½ miền hai phía và 0, `around` 12, `tilt` 6, `psi` 5 điểm đều gồm hai đầu */
 function grid(key: Field, c: RangeChoice, variant: string): number[] {
   const [lo, hi] = c.byVariant?.[variant] ?? [c.min, c.max];
   const ring = (n: number) => Array.from({ length: n }, (_, i) => lo + ((hi - lo) * i) / n);
-  if (key === "along") return [0.25, 0.5, 0.75];
+  if (key === "along") return [0.25, 0.5, 0.75].map((x) => lo + (hi - lo) * x);
   if (key === "slant") return [lo / 2, 0, hi / 2];
   if (key === "around") return ring(12);
   if (key === "psi") return ring(4).concat(hi);
@@ -1130,7 +1175,8 @@ export function chooseMissing(
       cost += VARIANT_COST;
     // giá lún không âm: ứng viên đã đắt hơn ứng viên tốt nhất thì không cần đo
     if (solve && SINK_GROUPS.has(h.group) && (!best || cost <= best.cost + 1e-12)) {
-      const sink = frameSink(spec, frame, sd, ctx.k, ctx.long, ctx.s) * pose.s;
+      const curl = group.variants[frame.choice.variant ?? ""]?.curl;
+      const sink = frameSink(spec, frame, sd, ctx.k, ctx.long, ctx.s, curl) * pose.s;
       cost += SINK_W * (sink / SINK_REF) ** 2;
     }
     return { choice: frame.choice, feature: f, frame, high, Wp, Rw, arm: sol, cost };

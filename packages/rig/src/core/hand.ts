@@ -43,7 +43,7 @@ export const HAND_POSES = {
   sheet: { thumb: [12, 40, 16, 20], index: [40, 0], fingers: [43, 2], spread: 0 },
   thumbsUp: { thumb: [80, 4, 0, 0], index: [90, 85], fingers: [90, 85], spread: 0 },
   tripod: { thumb: [52, 60, 10, 8], index: [40, 40], fingers: [48, 76], spread: 0 },
-  chopsticks: { thumb: [48, 56, 12, 0], index: [28, 42], fingers: [34, 45], spread: 2 },
+  chopsticks: { thumb: [36, 52, 6, 0], index: [50, 35], fingers: [45, 50], spread: 2 },
 } as const satisfies Record<string, Fingers>;
 
 export type HandPose = keyof typeof HAND_POSES;
@@ -88,7 +88,8 @@ export const HAND_GRIPS: Record<HandPose | "rest", V3> = {
   sheet: [0.031, -0.112, 0.013],
   thumbsUp: [0.03, -0.085, 0],
   tripod: [0.063, -0.104, 0.033],
-  chopsticks: [0.062, -0.117, 0.022],
+  // trùng `pinch`: khung `chopsticks` dựng từ fixture dáng `pinch` (`graspSolve.ts`)
+  chopsticks: [0.07, -0.106, 0.072],
 };
 
 /**

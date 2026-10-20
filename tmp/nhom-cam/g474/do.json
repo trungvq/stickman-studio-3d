@@ -1,0 +1,272 @@
+{
+ "t": 0.5,
+ "people": [
+  {
+   "file": "t01-sakura.json",
+   "size": 1.61,
+   "dims": {
+    "W": 14.700000000000003,
+    "A": 16.44858224639421,
+    "L": 30.06267922061609,
+    "P": 16.957368421052635
+   }
+  },
+  {
+   "file": "kuroiwa.json",
+   "size": 2.16,
+   "dims": {
+    "W": 16.8,
+    "A": 16.659942296600185,
+    "L": 30.177341709067022,
+    "P": 16.957368421052635
+   }
+  }
+ ],
+ "nhom": [
+  "chopsticks"
+ ],
+ "bo": [],
+ "loc": [],
+ "trung": [],
+ "cells": [
+  {
+   "id": "bang-cam-thu-dua-chopsticks-mac-dinh-P-t01-sakura",
+   "item": "thu-dua",
+   "group": "chopsticks",
+   "ma": "mac-dinh",
+   "grip": "mặc định (grip)",
+   "key": "thu-dua@chopsticks mặc định (grip)",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-dua: xoay -122°/±90, gập -9°/±50, lệch 23°/±20 — vượt 31.6°, bàn tay vẽ lệch chỗ cầm 11.4 (chỗ cầm `thu-dua@chopsticks` (part que (mặc định), along 0.25 (rig chọn), variant grip (mặc định))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-dua` ở `items`) ở giây 1.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-dua@chopsticks` (part que (mặc định), along 0.25 (rig chọn), variant grip (mặc định)) (dáng chopsticks) · khe 2.9 · ôm 0/3 · ngón cái (press) 2.9, trỏ (press) 4.1, giữa (support) 8.2, áp út (support) 12.6, út (free) 16.4, lòng (free) 6.4 · tâm nắm cách món 4.3 · lòng tay cách 12.1 góc 72° · cổ tay xoay -122°, gập -9°, lệch 23° (vượt kẹp 31.6°, bàn tay lệch chỗ cầm 11.4) · khuỷu φ -117° · tay lấn 0.4 (bắp tay vào đầu). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "món không chạm bàn tay — `cam` tay phải cầm thu-dua: không ngón, lòng tay nào của vai trò `press` / `wrap` / `tip` chạm món (khe nhỏ nhất 2.9) (chỗ cầm `thu-dua@chopsticks` (part que (mặc định), along 0.25 (rig chọn), variant grip (mặc định))) ở giây 0.90 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-dua@chopsticks` (part que (mặc định), along 0.25 (rig chọn), variant grip (mặc định)) (dáng chopsticks) · khe 2.9 · ôm 0/3 · ngón cái (press) 2.9, trỏ (press) 4.1, giữa (support) 8.2, áp út (support) 12.6, út (free) 16.4, lòng (free) 6.4 · tâm nắm cách món 4.3 · lòng tay cách 12.1 góc 72° · cổ tay xoay -121°, gập -9°, lệch 23° (vượt kẹp 31.5°, bàn tay lệch chỗ cầm 11.3) · khuỷu φ -117° · tay lấn 0.5 (bắp tay vào đầu). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist",
+    "loose"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -102.94,
+      -249.36,
+      262.94
+     ],
+     "text": "variant grip part que along 0.3\n   lún 0 · xuyên -5.8 · nắm 4.2 · cổ tay vượt 31°\n   hở cái 2.9, trỏ 4.1\n   cái(press) 2.9 trỏ(press) 4.1 giữa(support) 8.3\n   áp út(support) 12.6 út(free) 16.5 lòng(free) 6.5",
+     "raw": {
+      "pierce": {
+       "depth": -2.914743150208132,
+       "core": -5.771320306433965,
+       "piece": "thumb1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "press",
+       "palm": "free",
+       "index": "press",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "free"
+      },
+      "gaps": {
+       "thumb": 2.914743150208132,
+       "index": 4.128980559798871,
+       "fingers": 8.270442302333304,
+       "palm": 6.503443359042924
+      },
+      "hold": "thu-dua@chopsticks////",
+      "grasp": {
+       "group": "chopsticks",
+       "mode": "item",
+       "choice": {
+        "part": "que",
+        "feature": "rod",
+        "featureIndex": 0,
+        "along": 0.25,
+        "variant": "grip"
+       },
+       "by": {
+        "part": "default",
+        "feature": "rig",
+        "along": "rig",
+        "variant": "default"
+       },
+       "arm": {
+        "phi": -117.5,
+        "wrist": {
+         "turn": -121.03145903792493,
+         "bend": -9.122530444366717,
+         "dev": 23.191257803571563,
+         "over": 31.031459037924932,
+         "off": 11.218440732266252
+        },
+        "body": 0.7921344035457274,
+        "gap": 0,
+        "bodyRatio": 0.0857288315525679,
+        "bodyPart": "upper.head"
+       }
+      },
+      "fingers": {
+       "thumb": 2.914743150208132,
+       "index": 4.128980559798871,
+       "middle": 8.270442302333304,
+       "ring": 12.615516313388358,
+       "pinky": 16.488518922705527
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring"
+      ],
+      "grip": 4.1938251041501955,
+      "palm": {
+       "gap": 12.140137455602455,
+       "angle": 71.69977033824452
+      },
+      "intent": {
+       "rule": "face",
+       "err": 30.68371340783493,
+       "clamped": [
+        "turn",
+        "dev"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 115,
+   "tiles": [
+    "o/thu-dua/bang-cam-thu-dua-chopsticks-mac-dinh-P-t01-sakura-truoc.png",
+    "o/thu-dua/bang-cam-thu-dua-chopsticks-mac-dinh-P-t01-sakura-cheo.png",
+    "o/thu-dua/bang-cam-thu-dua-chopsticks-mac-dinh-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-dua-chopsticks-mac-dinh-P-kuroiwa",
+   "item": "thu-dua",
+   "group": "chopsticks",
+   "ma": "mac-dinh",
+   "grip": "mặc định (grip)",
+   "key": "thu-dua@chopsticks mặc định (grip)",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-dua: xoay -122°/±90, gập -5°/±50, lệch 18°/±20 — vượt 31.7°, bàn tay vẽ lệch chỗ cầm 12.8 (chỗ cầm `thu-dua@chopsticks` (part que (mặc định), along 0.23 (rig chọn), variant grip (mặc định))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-dua` ở `items`) ở giây 1.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-dua@chopsticks` (part que (mặc định), along 0.23 (rig chọn), variant grip (mặc định)) (dáng chopsticks) · khe 3.6 · ôm 0/3 · ngón cái (press) 3.6, trỏ (press) 5.2, giữa (support) 9.9, áp út (support) 14.9, út (free) 19.3, lòng (free) 7.5 · tâm nắm cách món 5.7 · lòng tay cách 14.4 góc 76° · cổ tay xoay -122°, gập -5°, lệch 18° (vượt kẹp 31.7°, bàn tay lệch chỗ cầm 12.8) · khuỷu φ -117°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "món không nằm trong tay — `cam` tay phải cầm thu-dua: tâm nắm của dáng `chopsticks` cách hình món 5.7 (chỗ cầm `thu-dua@chopsticks` (part que (mặc định), along 0.23 (rig chọn), variant grip (mặc định))) ở giây 1.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-dua@chopsticks` (part que (mặc định), along 0.23 (rig chọn), variant grip (mặc định)) (dáng chopsticks) · khe 3.6 · ôm 0/3 · ngón cái (press) 3.6, trỏ (press) 5.2, giữa (support) 9.9, áp út (support) 14.9, út (free) 19.3, lòng (free) 7.5 · tâm nắm cách món 5.7 · lòng tay cách 14.4 góc 76° · cổ tay xoay -122°, gập -5°, lệch 18° (vượt kẹp 31.7°, bàn tay lệch chỗ cầm 12.8) · khuỷu φ -117°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "món không chạm bàn tay — `cam` tay phải cầm thu-dua: không ngón, lòng tay nào của vai trò `press` / `wrap` / `tip` chạm món (khe nhỏ nhất 3.6) (chỗ cầm `thu-dua@chopsticks` (part que (mặc định), along 0.23 (rig chọn), variant grip (mặc định))) ở giây 0.90 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-dua@chopsticks` (part que (mặc định), along 0.23 (rig chọn), variant grip (mặc định)) (dáng chopsticks) · khe 3.6 · ôm 0/3 · ngón cái (press) 3.6, trỏ (press) 5.2, giữa (support) 9.9, áp út (support) 14.9, út (free) 19.3, lòng (free) 7.5 · tâm nắm cách món 5.7 · lòng tay cách 14.4 góc 76° · cổ tay xoay -122°, gập -5°, lệch 18° (vượt kẹp 31.6°, bàn tay lệch chỗ cầm 12.8) · khuỷu φ -117°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist",
+    "grip",
+    "loose"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -104.38,
+      -290.82,
+      263.67
+     ],
+     "text": "variant grip part que along 0.2\n   lún 0 · xuyên -6.9 · nắm 5.5 · cổ tay vượt 31.2°\n   hở cái 3.6, trỏ 5.2\n   cái(press) 3.6 trỏ(press) 5.2 giữa(support) 10\n   áp út(support) 14.9 út(free) 19.4 lòng(free) 7.6",
+     "raw": {
+      "pierce": {
+       "depth": -3.6080988887456362,
+       "core": -6.868934502842373,
+       "piece": "thumb1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "press",
+       "palm": "free",
+       "index": "press",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "free"
+      },
+      "gaps": {
+       "thumb": 3.6080988887456362,
+       "index": 5.209956890339215,
+       "fingers": 9.953701733236061,
+       "palm": 7.589780393979671
+      },
+      "hold": "thu-dua@chopsticks////",
+      "grasp": {
+       "group": "chopsticks",
+       "mode": "item",
+       "choice": {
+        "part": "que",
+        "feature": "rod",
+        "featureIndex": 0,
+        "along": 0.225,
+        "variant": "grip"
+       },
+       "by": {
+        "part": "default",
+        "feature": "rig",
+        "along": "rig",
+        "variant": "default"
+       },
+       "arm": {
+        "phi": -117.5,
+        "wrist": {
+         "turn": -121.19596146021306,
+         "bend": -4.725698750373123,
+         "dev": 18.234697381823782,
+         "over": 31.195961460213056,
+         "off": 12.635763372399863
+        },
+        "body": 0.23216424444392025,
+        "gap": 0,
+        "bodyRatio": 0.021985250420825782,
+        "bodyPart": "upper.head"
+       }
+      },
+      "fingers": {
+       "thumb": 3.6080988887456362,
+       "index": 5.209956890339215,
+       "middle": 9.953701733236061,
+       "ring": 14.94681525208717,
+       "pinky": 19.36137804590826
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring"
+      ],
+      "grip": 5.546498400230196,
+      "palm": {
+       "gap": 14.382914949723776,
+       "angle": 75.25031609190586
+      },
+      "intent": {
+       "rule": "face",
+       "err": 31.195961460212988,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 115,
+   "tiles": [
+    "o/thu-dua/bang-cam-thu-dua-chopsticks-mac-dinh-P-kuroiwa-truoc.png",
+    "o/thu-dua/bang-cam-thu-dua-chopsticks-mac-dinh-P-kuroiwa-cheo.png",
+    "o/thu-dua/bang-cam-thu-dua-chopsticks-mac-dinh-P-kuroiwa-ngang.png"
+   ]
+  }
+ ]
+}

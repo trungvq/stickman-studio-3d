@@ -48,10 +48,11 @@ describe("bảng GRIP_GROUPS", () => {
     }
   });
 
-  it("chỉ `sheet`, `card`, `cylinder`, `palmBox`, `platform` và `carry` không `later`", () => {
+  it("chỉ `sheet`, `card`, `chopsticks`, `cylinder`, `palmBox`, `platform` và `carry` không `later`", () => {
     expect(GROUP_IDS.filter((g) => !GRIP_GROUPS[g].later)).toEqual([
       "sheet",
       "card",
+      "chopsticks",
       "cylinder",
       "palmBox",
       "platform",
@@ -91,7 +92,6 @@ describe("bảng GRIP_GROUPS", () => {
           if (p && !(p.pose in HAND_POSES)) expect(g.later, `${id}:${p.pose}`).toBe(true);
     }
     expect(GRIP_GROUPS.pen.later).toBe(true);
-    expect(GRIP_GROUPS.chopsticks.later).toBe(true);
   });
 
   it("tay phụ trỏ tới nhóm có thật", () => {
@@ -116,8 +116,8 @@ describe("groupNeeds trên tám món", () => {
     expect(ids(bienLai)).toEqual(["sheet", "card", "platform"]);
   });
 
-  it("đũa, chai, quai túi ra `cylinder` (đũa không ra `sheet`); túi hiệu có `seats` mới ra `carry`", () => {
-    expect(ids(dua)).toEqual(["cylinder", "platform"]);
+  it("đũa ra `chopsticks`; đũa, chai, quai túi ra `cylinder` (đũa không ra `sheet`); túi hiệu có `seats` mới ra `carry`", () => {
+    expect(ids(dua)).toEqual(["chopsticks", "cylinder", "platform"]);
     expect(ids(chaiDia)).toEqual(["cylinder", "platform"]);
     expect(ids(tuiHieu)).toEqual(["cylinder", "platform", "carry"]);
     expect(ids({ ...tuiHieu, seats: undefined })).toEqual(["cylinder", "platform"]);
@@ -135,7 +135,7 @@ describe("groupNeeds trên tám món", () => {
   });
 
   it("nhóm `later` không có khối hình nào dù món hợp", () => {
-    expect(groupNeeds(geomOf(dua), "chopsticks", dims)).toEqual([]);
+    expect(groupNeeds(geomOf(dua), "pen", dims)).toEqual([]);
   });
 
   it("`cylinder`: tay cầm ống nghe ra một thanh, chai ra ba trụ tiện (thân, vai, cổ)", () => {
@@ -149,13 +149,11 @@ describe("groupNeeds trên tám món", () => {
     ]);
   });
 
-  it("nhóm chưa `later` thì đũa ra hai thanh cho `chopsticks`, trừ khi thiếu mốc `tip` có `dir`", () => {
-    const open: GroupSpec = { ...GRIP_GROUPS.chopsticks, later: undefined };
-    delete open.later;
+  it("đũa ra hai thanh cho `chopsticks`, trừ khi thiếu mốc `tip` có `dir`", () => {
     const g = geomOf(dua);
-    expect(groupNeeds(g, open, dims)).toHaveLength(2);
-    expect(groupNeeds(g, open, dims, item(dua).anchors)).toHaveLength(2);
-    expect(groupNeeds(g, open, dims, {})).toEqual([]);
+    expect(groupNeeds(g, "chopsticks", dims)).toHaveLength(2);
+    expect(groupNeeds(g, "chopsticks", dims, item(dua).anchors)).toHaveLength(2);
+    expect(groupNeeds(g, "chopsticks", dims, {})).toEqual([]);
   });
 });
 

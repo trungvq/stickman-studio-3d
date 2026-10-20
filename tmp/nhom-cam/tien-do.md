@@ -102,6 +102,7 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 | G4-62 `card` `pad` | xong: `CONTACTS.card.pad` (khung `nf`, `n = F`, thụt `PAD_INSET` 0,15·W giữa bề dày thật, kẹp `along` theo `PAD_SHIFT`/`PAD_AHEAD`/`PAD_END` để đệm trỏ nằm trên thẻ), tay dẫn mặc định `edge` như `sheet`, bỏ `later`; `thumb: back` ↔ `n = F` theo fixture. Fixture `the-phong#kep` 0°, ≤ 0,47 ở cỡ tay thật (cỡ 1 lệch 1,24). Khe cái 1,4/1,6, trỏ 0,5/0,6 (v1 0,6–0,7 / 0) — dưới 0,15·W; kuroiwa cảnh báo `role`. Ảnh: thẻ nhô khỏi đầu ngón, rõ hơn v1; ngón cái dưới mép chứ không áp mặt sau (khung fixture lòng song song thẻ, trục kẹp `pinch` dọc ngón). `HAND_GRIPS.pinch` z 0,072 nằm ngoài hai đầu ngón (số cũ?). t02 0 mới | `g462/`, `duyet/g4-card-pad.jpg` |
 | G5-1 nhãn phần món v2 (giai đoạn 5, chạy sớm song song) | xong: 35 món v1 (Phụ lục A đếm 34) có bản v2 ở thư mục chờ video `held-v2/` (18 món chép từ `thu-*`, bỏ `touch` của điện thoại; 17 món mới); `tools/held-moc.mjs` kiểm parse, đủ món, `shape`/mốc khớp v1, phần có khối, `front`/`top`/`seats` có thật, khối hình (`KHOI_HINH`) theo nhóm, khớp lưới ↔ `shape` (lệch đã biết `LECH_BIET`: tôm 8,3 chỗ cầm, chìa, bò đá, vali, khay suất, chồng khăn; điện thoại 1,20). Cần xem: `chong-khan`, `vali` (thêm `quai`), `ong-nghe` (không có `loa`/`mic` riêng), `bo-dam`, `ly-bia`, `chia`, `khay-tra`, `so-tay`/`kep-ho-so` không nhãn. t02 "53 held" 0 mới. Video commit | `g5/nhan.md` |
 | G4-63+64 `card` hàng mẫu + docs + render | xong: hàng mặc định, `edge top`, cái mặt trước/sau, tay dẫn, tay dẫn mặt trước lên, đưa thẻ; khoá trùng gồm đích tay và ý định; docs nhóm 2, mục 4/5/8, banner (sáu nhóm chạy). Mặc định / cái trước đạt (cái 1,0–1,6, trỏ 0,5–0,6, lún 0). `edge top` thẻ trước ngực vượt cổ tay 21–25° (giới hạn khớp của chỗ đặt); ba hàng tay dẫn gần như một ảnh, "đưa thẻ" không duỗi tay. Mốc M4-6 | `g4-card/` |
+| G4-74 `chopsticks` `grip` | xong: `CONTACTS.chopsticks.grip` (que bạn cùng phần trong 15°, `along` từ đầu xa `tip` — `ContactInput.tip`; khung theo đường giữa hai que, `CHOP_PALM`, `CHOP_OFF` 2,4), bỏ `later`, `curl` 15, `frameSink` truyền `curl`; lưới `along` 3 điểm theo miền của nhóm; dáng `chopsticks` mới ở `hand.ts`, `HAND_GRIPS.chopsticks` = `pinch` (bỏ 2 khẳng định của G4-73). Fixture `dua#cam` 1,94°/0,45; cái 0,3/−0,2, trỏ 1,9/2,4 (v1 0,4/0,6, 2,4/3,0), lún ≤ 0,22. Ảnh tay dẫn ngang v1 (nắm đũa, cái đè hai que) — không phải cách cầm đũa thật (que dưới ở khe cái–trỏ không đặt được trong khung fixture). Hàng món đặt trước vượt cổ tay 31° (món không có hướng mặc định). t02 0 mới | `g474/`, `duyet/g4-chopsticks.jpg` |
 | G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
@@ -151,6 +152,8 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 - G4-62: giữ khung chuẩn `card` theo fixture `the-phong#kep` (lòng song song thẻ), không đổi theo trục kẹp `pinch` (lệch ~90°); ảnh đọc được là cầm thẻ.
 
+- G4-74: `chopsticks` giữ khung fixture `dua#cam` (ngang v1: nắm đũa). Cầm đũa thật (que dưới ở khe cái–trỏ và đầu áp út, que trên kẹp như bút) cần khung chuẩn mới bỏ fixture — để sau, làm khi chủ dự án muốn.
+
 ## Cần chủ dự án
 - Có nới kẹp xoay cẳng tay quá ±90 không? Ca "khoe, một tay đỡ cạnh dưới" (bước 0 ca 4, `rim`) cần −103; hiện thành cảnh báo `wrist` và bàn tay lệch chỗ cầm chút ít. Ảnh: `tmp/nhom-cam/b0/hinh/vong2/to-2.jpg`.
 
@@ -175,11 +178,12 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 - `platform` phiếu sakura: đầu ngón cái/trỏ lộ qua tờ ở góc (lún 0,54); chỗ đặt món rất nhạy với vượt cổ tay. `palmBox` `both` món đặt trước: `placeChoice` để lòng tay phụ cách mặt sau 1,4–2,0.
 - `card`: ngón cái không áp mặt sau thẻ; `HAND_GRIPS.pinch` (tâm nắm dáng `pinch`) nằm ngoài hai đầu ngón — xem lại khi đụng `hand.ts`.
 - `bang-cam` `card`: hàng "đưa thẻ" chưa giống trao thẻ (tay không duỗi) — tư thế tay là của cảnh; mặt trước thẻ vẽ đen.
+- `chopsticks` món đặt trước: cần hướng mặc định theo `tip` hay lựa chọn lật π quanh đường giữa (que đối xứng).
 - Hàng "bê hai vành" đĩa: ngón cái hơi dựng, hở 1,6–2,9.
 - `rim` `slant` âm: ngón nghiêng về mặt cái, tấm kẹp giữa trỏ và giữa (khoe báo). Út hở hơn v1 0,5–1,8 ở `slant` ±22,5.
 
 ## Bước kế
 0. Phiên tiếp tục (2026-10-20) sau khi chủ dự án chốt hướng G4-38b. Worktree sạch, mọi việc xanh đã commit và push. Studio xem `git log`, video `9b13333`.
-1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. `platform` (M4-5) xong. `card` (M4-6) xong. Chopsticks: G4-74 đang chạy → 75+76 gộp. Song song: T0b chụp lại ảnh "trước" (worktree `stickman-studio-3d-truoc` @ `c925657`, `jp-sukatto-truoc`).
+1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. `platform` (M4-5) xong. `card` (M4-6) xong. Chopsticks: 74 xong → 75+76 gộp. Song song: T0b chụp lại ảnh "trước" (worktree `stickman-studio-3d-truoc` @ `c925657`, `jp-sukatto-truoc`).
 3. Rồi chopsticks 74–76 (nhớ `frameSink` truyền `curl`), pen 83–85, handle 92–95, bowl A2–A4, Z1, Z2 theo `gd4-ke-hoach.md`. Đã xong/gộp: 00, X1, 11–14, 22–25, 32–38b, 41–48, 52, 72, 73, 82.
 4. Giai đoạn 5 → 6.
