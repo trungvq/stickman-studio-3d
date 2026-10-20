@@ -302,8 +302,11 @@ describe("checkChoice", () => {
     expect(check(sheet, "sheet", { yaw: 10 })[0]).toMatch(/`yaw` chỉ có ở nhóm `carry`/);
   });
 
-  it("`both` với nhóm một tay", () => {
-    expect(check(phone, "palmBox", { both: true })[0]).toMatch(/một tay, không có `both`/);
+  it("`both` với nhóm một tay không có tay phụ", () => {
+    const one = { ...GRIP_GROUPS.palmBox, support: undefined };
+    const h = hold({ both: true }, "palmBox");
+    expect(checkChoice(one, phone, h, dims)[0]).toMatch(/một tay, không có `both`/);
+    expect(checkChoice("palmBox", phone, h, dims).join()).not.toMatch(/`both`/);
     expect(check(sheet, "sheet", { both: true })).toEqual([]);
   });
 

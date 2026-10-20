@@ -1078,9 +1078,9 @@ const faceOk = (f: Feature, thumb: string): boolean =>
 
 /**
  * Lỗi `group` và `choice` của một chỗ cầm v2 (docs/11 mục 7): nhóm `later`, trường không thuộc nhóm, `on` / `yaw` ngoài
- * `carry`, `carry` thiếu `on` hay món không có `seats[on]`, `both` với nhóm một tay, biến thể, số ngoài miền, `part` /
- * `edge` / `thumb` không có trên khối hình, biến thể quá bề dày ở mép (`thickMax`, đo trên `shape`), và món không có khối
- * hình cho nhóm. Mảng rỗng là hợp lệ
+ * `carry`, `carry` thiếu `on` hay món không có `seats[on]`, `both` với nhóm một tay không có tay phụ (`support`), biến thể,
+ * số ngoài miền, `part` / `edge` / `thumb` không có trên khối hình, biến thể quá bề dày ở mép (`thickMax`, đo trên `shape`),
+ * và món không có khối hình cho nhóm. Mảng rỗng là hợp lệ
  */
 export function checkChoice(
   group: GroupId | GroupSpec,
@@ -1127,7 +1127,7 @@ export function checkChoice(
       bad(`\`${key}: ${v}\` không phải tên gọi hợp lệ${c.names ? ` (${c.names.join(", ")})` : ""}`);
     }
   }
-  if (h.both !== undefined && spec.hands === "one")
+  if (h.both !== undefined && spec.hands === "one" && !spec.support)
     bad(`nhóm \`${spec.id}\` một tay, không có \`both\``);
   if (spec.choices.on) {
     const seats = geom.seats;

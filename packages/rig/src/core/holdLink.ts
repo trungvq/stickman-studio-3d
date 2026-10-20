@@ -25,7 +25,7 @@ import {
   type HoldGrasp,
   type ReachHold,
 } from "./heldItem";
-import type { V3 } from "./lens";
+import { dot3, sub3, type V3 } from "./lens";
 
 /**
  * Lớp liên kết tay ↔ món: chỗ duy nhất rẽ kiểu cầm của món v1 (`món#kiểu`) và chỗ cầm nhóm (`món@nhóm`, `ReachHold.grasp`)
@@ -182,8 +182,52 @@ function oppositeEdge(fr: GraspFrame): GraspChoice["edge"] {
 }
 
 /**
+ * Chỗ của tay phụ khác nhóm (`support.place`) trên mặt hộp có pháp tuyến `−top` (`bottom`) hay `−front` (`back`), xa nhất
+ * theo hướng ấy, ở phần cầm được: ngón theo `top` chiếu lên mặt (mặt vuông `top` thì theo `front`), tay tới từ cạnh sau
+ * ngón (`psi` 0), tâm nắm giữa mặt; tay dẫn nằm trên mặt ấy thì tâm nắm dời theo ngón tới khi gót lòng qua bàn tay dẫn.
+ * Không có mặt thì mặc định của nhóm
+ */
+function placeChoice(
+  spec: HeldItemSpec,
+  place: "bottom" | "back",
+  lead: V3,
+  dims: HandDims,
+): GraspChoice {
+  const geom = itemGeom(spec);
+  const d = (place === "bottom" ? geom.U : geom.F).map((v) => -v) as V3;
+  const off = new Set(geom.parts.filter((p) => !p.grip).map((p) => p.name));
+  const area = (f: FaceFeature) => f.half[0] * f.half[1];
+  let best: FaceFeature | undefined;
+  for (const x of geom.features) {
+    if (x.kind !== "face" || !x.edges.length || off.has(x.part) || dot3(x.n, d) < 1 - 1e-6)
+      continue;
+    const k = best ? dot3(x.c, d) - dot3(best.c, d) : 1;
+    if (k > 1e-6 || (k > -1e-6 && area(x) > area(best!) + 1e-6)) best = x;
+  }
+  if (!best) return {};
+  const f = best;
+  const flat = (v: V3) => sub3(v, f.n.map((q) => q * dot3(v, f.n)) as V3);
+  const u = flat(geom.U);
+  const g = Math.hypot(...u) > 0.5 ? u : flat(geom.F);
+  const ed = f.edges.reduce((a, b) => (dot3(b.inward, g) > dot3(a.inward, g) ? b : a));
+  let s = dot3(sub3(f.c, ed.at), ed.inward);
+  if (Math.abs(dot3(sub3(lead, f.c), f.n)) <= dims.W)
+    s = Math.max(s, dot3(sub3(lead, ed.at), ed.inward) + (dims.W + dims.P) / 2);
+  return {
+    part: f.part,
+    feature: "face",
+    featureIndex: geom.features.indexOf(f),
+    edge: ed.name,
+    psi: 0,
+    inset: s,
+    along: 0.5,
+  };
+}
+
+/**
  * Tay phụ của `both` (v2): chỗ mặc định của nhóm (`support` của `GRIP_GROUPS`) — cùng nhóm thì giữ `keep` của tay dẫn
- * và cạnh theo `edge` — rồi object của cảnh đè từng phần. Nhóm chưa có chỗ tiếp xúc hay khác nhóm tay dẫn thì không có tay phụ
+ * và cạnh theo `edge`, khác nhóm thì mặt theo `place` (`placeChoice`) — rồi object của cảnh đè từng phần. Nhóm chưa có chỗ
+ * tiếp xúc, hay khác nhóm tay dẫn mà không có `place`, thì không có tay phụ
  */
 function supportOf(
   spec: HeldItemSpec,
@@ -198,9 +242,18 @@ function supportOf(
   const sup = GRIP_GROUPS[g.hold.group].support;
   const o = g.hold.both === true ? {} : (g.hold.both ?? {});
   const group = o.group ?? sup?.group;
-  if (!group || !CONTACTS[group] || group !== g.hold.group) return undefined;
-  const c: Record<string, unknown> = {};
-  if (group === g.hold.group) {
+  if (!group || !CONTACTS[group]) return undefined;
+  const same = group === g.hold.group;
+  const place = !same && sup?.group === group ? sup.place : undefined;
+  if (!same && !place) return undefined;
+  const c: Record<string, unknown> = place
+    ? { ...placeChoice(spec, place, lead.hand.at as V3, dims) }
+    : {};
+  // cảnh đổi phần hay cạnh: cạnh, thụt, chỗ dọc cạnh và hướng ngón lại theo mặc định của nhóm
+  if (place && o.part !== undefined && o.part !== c.part) delete c.edge;
+  if (place && (o.edge !== undefined || c.edge === undefined))
+    for (const key of ["psi", "inset", "along"]) delete c[key];
+  if (same) {
     const lc = lead.choice as Record<string, unknown>;
     Object.assign(c, { part: lc.part, feature: lc.feature, featureIndex: lc.featureIndex });
     for (const key of sup?.group === group ? (sup.keep ?? []) : [])

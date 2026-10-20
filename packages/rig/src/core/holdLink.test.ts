@@ -23,6 +23,7 @@ import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import tomHum from "./__fixtures__/held-v2/tom-hum.json";
 import ongNgheBan from "./__fixtures__/held-v2/ong-nghe-ban.json";
 import khay from "./__fixtures__/held-v2/khay.json";
+import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
 
 const spec = (j: unknown): HeldItemSpec => {
   const r = parseHeldItem(j);
@@ -276,6 +277,49 @@ describe("lớp liên kết tay ↔ món", () => {
       const held = actHeld(NGUOI, sp)[key === "right" ? "R" : "L"]!;
       // trục món (loa ở trên) gần phương đứng: `R` ở thế giới three, y lên
       expect(angle(matVec(held.R, [0, 0, 1]), [0, 1, 0])).toBeLessThan(35);
+    }
+  });
+  it("`both` tay dẫn: chai đỡ đáy, điện thoại đỡ mặt sau (`place`), khay cạnh đối; tay phụ tới chỗ, lòng và ngón theo khung", () => {
+    const { W, P } = handDims(1);
+    const cases = [
+      ["chai-dia", spec(chaiDia), "cylinder", [0, 1, 0], [30, 20, 0]],
+      ["dien-thoai", PHONE, "palmBox", [0, 0, 1], [30, 20, 0]],
+      ["khay", spec(khay), "platform", [0, 1, 0], [30, 20, 30]],
+    ] as const;
+    for (const [item, S, group, palm, offset] of cases) {
+      const rt = runtime(
+        [
+          {
+            t: 0,
+            right: { to: "chest", offset, point: "grip", hold: { item, group, both: true } },
+          },
+        ],
+        { [item]: S },
+      );
+      const sp = poseAt(rt, 0.5);
+      const x = holdHand(rightHold(sp), -1, handDims(1))!;
+      expect(x.both, item).toMatchObject({ lead: -1, roles: { palm: "press" } });
+      const o = x.both!.other;
+      // lòng tay phụ ngược pháp tuyến ngoài của mặt đỡ (khung món)
+      expect(angle(o.palm as V3, palm), item).toBeLessThan(1e-6);
+      const lead = heldPoint(S, x.hand.at as V3);
+      const other = heldPoint(S, o.at as V3);
+      if (item === "chai-dia") {
+        // giữa đáy, ngón về `front`
+        expect(Math.abs(other[1])).toBeLessThan(2);
+        expect(Math.hypot(other[0], other[2])).toBeLessThan(1e-6);
+        expect(angle(o.fingers as V3, [0, 0, 1])).toBeLessThan(1e-6);
+      } else if (item === "dien-thoai") {
+        // trên bàn tay dẫn, ngón về `top`
+        expect(other[2]).toBeLessThan(-1.44);
+        expect(other[1] - lead[1]).toBeGreaterThanOrEqual((W + P) / 2 - 1e-6);
+        expect(angle(o.fingers as V3, [0, 1, 0])).toBeLessThan(1e-6);
+      } else expect(lead[0] + other[0]).toBeCloseTo(0, 9);
+      const rep = actAim(NGUOI, sp)!.report.L;
+      expect(rep.reach, item).toMatchObject({ hold: "support" });
+      expect(rep.reach!.gap, item).toBeLessThanOrEqual(1);
+      expect(rep.palm, item).toBeLessThanOrEqual(10);
+      expect(rep.fingers, item).toBeLessThanOrEqual(5);
     }
   });
 });
