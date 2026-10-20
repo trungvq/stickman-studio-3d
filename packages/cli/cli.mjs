@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// stickman init | upgrade | check | docs | retime | reseat | studio — dựng, nâng, soi và mở workspace của một repo video.
+// stickman init | upgrade | check | docs | retime | reseat | migrate-held | studio — dựng, nâng, soi và mở workspace của một repo video.
+import { readFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import {
   CHECK_GROUPS,
@@ -13,6 +14,7 @@ import {
   retimeWorkspace,
   upgradeWorkspace,
 } from "./lib.mjs";
+import { migrateHeld, migrateTable, writeMigrateReport } from "./migrate-held.mjs";
 import { serveStudio } from "./serve.mjs";
 
 const args = process.argv.slice(2);
@@ -52,6 +54,13 @@ const USAGE = `stickman <lệnh> [thư mục]
                 đứng giữ chân trên đất, người đi giãn \`cycle\` để giữ quãng đi; bỏ qua cảnh
                 khớp stickman.frozen.
                 --before <ref> đọc actions/ đời trước ở commit ấy
+  migrate-held  chuyển món v1 (\`grips\`) sang v2 và \`hold\` \`món#kiểu\` của cảnh sang chỗ cầm nhóm
+                \`{ item, group, … }\` (tay dẫn), chỗ cầm gần liên kết cũ nhất; in bảng lệch từng lần cầm.
+                --scene <regex> chỉ cảnh có id khớp
+                --held-dir <thư mục> món v2 có nhãn phần (mặc định held); món v1 đọc ở held/
+                --map <file> JSON \`{ "món#kiểu": { group, part?, variant? } }\` đè bảng ánh xạ
+                --out <file.md> ghi bảng và kết quả JSON (cùng tên, đuôi .json)
+                --dry-run chỉ in, không ghi cảnh hay món
   studio        mở character studio (app tĩnh) đọc sẵn workspace này; ghi thì bấm Mở thư mục
 
   --force       đè file có sẵn (chỉ init)
@@ -59,10 +68,10 @@ const USAGE = `stickman <lệnh> [thư mục]
   --name <tên>  tên project trong package.json (mặc định: tên thư mục)
   --yes         upgrade: đè hết, không hỏi
   --skip-modified  upgrade: giữ nguyên mọi file đã sửa tay, không hỏi
-  --dry-run     upgrade / retime / reseat: chỉ in ra sẽ làm gì
+  --dry-run     upgrade / retime / reseat / migrate-held: chỉ in ra sẽ làm gì
 
 Nội dung của repo — characters, actions, scenes, props, pieces — upgrade không đụng tới;
-chỉ reseat ghi vào scenes/, và chỉ khi gọi nó.
+chỉ reseat và migrate-held ghi vào scenes/, và chỉ khi gọi chúng.
 `;
 
 const list = (label, files) =>
@@ -220,6 +229,30 @@ if (cmd === "init") {
         (r.frozen ? ` Bỏ qua ${r.frozen} cảnh khớp stickman.frozen.` : ""),
     );
   if (r.problems.length) process.exitCode = 1;
+} else if (cmd === "migrate-held") {
+  const dryRun = flag("dry-run");
+  const mapFile = value("map");
+  const r = migrateHeld({
+    dir,
+    scene: value("scene"),
+    heldDir: value("held-dir", "held"),
+    map: mapFile ? JSON.parse(readFileSync(mapFile, "utf8")) : undefined,
+    dryRun,
+  });
+  const out = value("out");
+  if (out) {
+    const w = writeMigrateReport(r, out);
+    console.log(`Đã ghi ${w.md}, ${w.json}`);
+  } else console.log(migrateTable(r));
+  const s = r.summary;
+  console.log(
+    `${s.holds} lần cầm: ${s.ok} chuyển được, ${s.pending} chờ nhóm, ${s.error} lỗi; ${s.flag} lệch quá ngưỡng.` +
+      (dryRun
+        ? " Chạy khô, chưa ghi gì."
+        : ` Đã ghi ${r.scenes.filter((x) => x.wrote).length} cảnh, ${r.items.filter((x) => x.wrote).length} món; ${r.scenes.filter((x) => x.blocked).length} cảnh chưa ghi vì còn lần cầm chưa chuyển được.`),
+  );
+  for (const p of r.problems) console.log(`lỗi: ${p}`);
+  if (s.error || r.problems.length) process.exitCode = 1;
 } else if (cmd === "studio") {
   const r = await serveStudio({ dir, port: Number(value("port", 5173)) });
   console.log(`Studio đọc ${r.root}
