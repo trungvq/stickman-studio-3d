@@ -5,9 +5,11 @@ import {
   alongRoom,
   axialAt,
   edgeFrame,
+  faceRho,
   gripSpan,
   type DiscFeature,
   type Feature,
+  type FeatureKind,
   type HandDims,
   type ItemGeom,
   type SideName,
@@ -78,6 +80,8 @@ export interface VariantSpec {
   fixture?: string;
   /** Bề dày thật ở mép (`edgeThick`) tối đa, lần `W`: dày hơn thì biến thể không áp */
   thickMax?: number;
+  /** Khối hình biến thể áp được; bỏ trống là mọi khối hình của nhóm */
+  kinds?: FeatureKind[];
 }
 
 export interface FeatureNeed {
@@ -164,6 +168,8 @@ export interface GroupSpec {
    * chọn `around` mà phần ấy nhô ra phía lòng tay (`bulgeToward`)
    */
   clear?: number;
+  /** Biến thể khi chỗ cầm không khai `variant` mà nhóm không có mặc định: theo khối hình, `around`, cỡ tay */
+  variantOf?: (f: Feature, g: ItemGeom, around: number | undefined, h: HandDims) => string;
   motion?: "write" | "pick";
   later?: true;
 }
@@ -183,6 +189,9 @@ const WRAP_THUMB = [
   [0.4, [90, 40, -10, 0]],
   [0.42, [50, 20, 0, 10]],
 ] as const satisfies readonly (readonly [number, ThumbAngles])[];
+
+/** `cylinder` `flat`: ngón cái khép dọc cạnh trỏ, nằm trên mặt rộng (dáng `span` dạng ra ngoài mép) */
+const FLAT_THUMB = [20, 6, 0, 10] as const;
 
 export const SIZE_WARN = 0.8;
 export const SIZE_MAX = 0.95;
@@ -234,6 +243,14 @@ const span = (g: ItemGeom, f: Feature) => Math.max(0, ...gripSpan(g, f).map((s) 
 
 /** `cylinder`: tâm nắm cách phần `grip: false` ít nhất ngần này lần `W` dọc trục */
 export const GRIP_CLEAR = 0.3;
+/** `cylinder`: thanh hộp áp mặt rộng ít nhất ngần này lần `W` thì lòng áp phẳng, ngón dọc thân (`flat`) */
+export const FLAT_WIDE = 1;
+/** `cylinder`: `flat` khi lòng tay áp mặt rộng (`2R`) của thanh hộp rộng hơn `FLAT_WIDE · W`, không thì `wrap` */
+const cylinderVariant = (f: Feature, g: ItemGeom, around: number | undefined, h: HandDims) => {
+  if (f.kind !== "rod" || !f.wide || 2 * f.R < FLAT_WIDE * h.W) return "wrap";
+  const rho = faceRho(f, axialAt(g, f, 0.5, around ?? 0).rho);
+  return Math.abs(dot3(rho, f.wide)) < 0.5 ? "flat" : "wrap";
+};
 /** Có đoạn bám liền dài `≥ len · W` chứa được tâm nắm cách phần `grip: false` `≥ clear · W` */
 const roomy = (g: ItemGeom, f: Feature, W: number, len: number, clear: number) =>
   gripSpan(g, f).some((s) => s.len >= len * W && alongRoom(s, clear * W) !== undefined);
@@ -512,6 +529,19 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
         roles: roles("wrap", "wrap", "press"),
         fixture: "chai-dia#co",
       },
+      flat: {
+        frame: "nt",
+        pose: {
+          open: { pose: "span", thumb: FLAT_THUMB },
+          closed: { pose: "span", thumb: FLAT_THUMB },
+          by: "radius",
+          unit: "W",
+          range: [0.06, 0.95],
+        },
+        roles: roles("press", "press", "press", { pinky: "support" }),
+        fixture: "ong-nghe-ban#tai",
+        kinds: ["rod"],
+      },
     },
     choices: {
       part: PART,
@@ -524,6 +554,7 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
     intent: { face: { axis: "top", toward: "up" } },
     size: { of: radius },
     clear: GRIP_CLEAR,
+    variantOf: cylinderVariant,
   },
 
   round: {
@@ -1091,6 +1122,11 @@ export function checkChoice(
   )
     bad(`\`thumb: ${h.thumb}\` không có trên khối hình (${byEdge.map(describe).join(", ")})`);
   const v = h.variant;
+  const kinds = v !== undefined ? spec.variants[v]?.kinds : undefined;
+  if (kinds && byEdge.length && !byEdge.some((f) => kinds.includes(f.kind)))
+    bad(
+      `biến thể \`${v}\` chỉ áp trên ${kinds.map((k) => `\`${k}\``).join(", ")} (${byEdge.map(describe).join(", ")})`,
+    );
   const max = v !== undefined ? spec.variants[v]?.thickMax : undefined;
   if (v !== undefined && max !== undefined && byEdge.length) {
     const thick = byEdge.map((f) => tooThick(spec, v, f, h.edge, dims, shape));

@@ -21,6 +21,7 @@ import grip from "./__fixtures__/grip-frames.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import tomHum from "./__fixtures__/held-v2/tom-hum.json";
+import ongNgheBan from "./__fixtures__/held-v2/ong-nghe-ban.json";
 
 const spec = (j: unknown): HeldItemSpec => {
   const r = parseHeldItem(j);
@@ -34,6 +35,7 @@ const H = NGUOI.rig.height;
 const BANG = spec(bangGia);
 const PHONE = spec(dienThoai);
 const TOM = spec(tomHum);
+const HANDSET = spec(ongNgheBan);
 
 const D2R = Math.PI / 180;
 const tr = (R: M3): M3 => [R[0], R[3], R[6], R[1], R[4], R[7], R[2], R[5], R[8]];
@@ -209,6 +211,42 @@ describe("lớp liên kết tay ↔ món", () => {
       };
       expect(angle(dir(x.hand.at as V3), radialDir(d, edge))).toBeLessThan(5);
       expect(angle(dir(x.both!.other.at as V3), radialDir(d, opp))).toBeLessThan(5);
+    }
+  });
+
+  it("tay dẫn áp tai `ong-nghe-ban@cylinder` `around` 180: `flat`, ngón dọc thân về loa, ống nghe dựng dọc má", () => {
+    for (const key of ["right", "left"] as const) {
+      const rt = runtime(
+        [
+          {
+            t: 0,
+            [key]: {
+              to: "ear",
+              point: "item:speaker",
+              hold: {
+                item: "ong-nghe-ban",
+                group: "cylinder",
+                around: 180,
+                face: { axis: "front", toward: { mark: "head" } },
+                touch: ["self.head"],
+              },
+            },
+          },
+        ],
+        { "ong-nghe-ban": HANDSET },
+      );
+      const sp = poseAt(rt, 0.5);
+      const w = sp.world!;
+      const side = key === "right" ? -1 : 1;
+      const h = (side === nearSide(sp) ? w.hands!.near : w.hands!.far)!.hold!;
+      const x = holdHand(h, side, handDims(1))!;
+      expect(x.frame!.choice.variant).toBe("flat");
+      // lòng tay áp mặt lưng, ngón dọc trục về đầu loa (khung món)
+      expect(angle(x.hand.palm as V3, [0, -1, 0])).toBeLessThan(1);
+      expect(angle(x.hand.fingers as V3, [0, 0, 1])).toBeLessThan(1);
+      const held = actHeld(NGUOI, sp)[key === "right" ? "R" : "L"]!;
+      // trục món (loa ở trên) gần phương đứng: `R` ở thế giới three, y lên
+      expect(angle(matVec(held.R, [0, 0, 1]), [0, 1, 0])).toBeLessThan(35);
     }
   });
 });

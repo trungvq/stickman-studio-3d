@@ -456,6 +456,20 @@ describe("`cylinder`: biên phần `grip: false`", () => {
     expect(chai).toHaveLength(1);
     expect(chai[0]).toMatch(/`mieng`/);
   });
+
+  it("`cylinder` `flat` chỉ áp trên thanh: ống nghe hợp lệ, chai báo lỗi", () => {
+    const flat = (spec: unknown, item: string) =>
+      checkChoice(
+        "cylinder",
+        geomOf(spec),
+        { item, group: "cylinder", variant: "flat" } as never,
+        dims,
+      );
+    expect(flat(ongNgheBan, "ong-nghe")).toEqual([]);
+    expect(flat(chaiDia, "chai")).toEqual([
+      expect.stringMatching(/biến thể `flat` chỉ áp trên `rod`/),
+    ]);
+  });
 });
 
 describe("`checkV2` nối `topProblems`", () => {

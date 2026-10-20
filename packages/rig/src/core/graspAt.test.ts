@@ -15,7 +15,9 @@ import {
 } from "./graspSolve";
 import {
   alongRoom,
+  axialAt,
   bulgeToward,
+  faceRho,
   gripSpan,
   itemGeom,
   type RodFeature,
@@ -669,6 +671,17 @@ describe("chooseMissing `cylinder`", () => {
     s: 1,
   };
 
+  /** Biến thể mong đợi: thanh hộp ống nghe áp mặt rộng (`front` / `back`) là `flat`, còn lại `wrap` */
+  const variantAt = (id: string, around: number) => {
+    if (id !== "ong-nghe-ban") return "wrap";
+    const geom = itemGeom(item(ongNgheBan));
+    const rod = geom.features.find((f) => f.kind === "rod") as RodFeature;
+    const rho = faceRho(rod, axialAt(geom, rod, 0.5, around).rho);
+    return Math.abs(rho[0] * rod.wide![0] + rho[1] * rod.wide![1] + rho[2] * rod.wide![2]) < 0.5
+      ? "flat"
+      : "wrap";
+  };
+
   // `part` × `thumb` 2, rồi `along` 3 × `around` 12; ống nghe bỏ ba `around` (0, 30, 330) về mặt có loa, mic nhô
   it.each([
     ["chai-dia", upright, 3, 12],
@@ -680,7 +693,7 @@ describe("chooseMissing `cylinder`", () => {
         const sol = chooseMissing(cc, `${id}@cylinder`, pose, side);
         expect(sol.candidates).toBe(parts * 2 + 3 * arounds);
         for (const k of ["thumb", "along", "around"] as const) expect(sol.by[k]).toBe("rig");
-        expect(sol.choice.variant).toBe("wrap");
+        expect(sol.choice.variant).toBe(variantAt(id, sol.choice.around!));
         expect(Number.isFinite(sol.cost)).toBe(true);
       }
     },
@@ -720,10 +733,10 @@ describe("chooseMissing `cylinder`", () => {
       expect(sol.choice.along).toBeLessThanOrEqual(room[1] + 1e-9);
       expect(sinkOf(sol, spec)).toBeLessThanOrEqual(HELD_SINK);
     }
-    // cảnh khai mặt trước: ngón đâm vào loa
+    // cảnh khai mặt trước, ngón ôm: ngón đâm vào loa
     const front = chooseMissing(
       cc,
-      { item: "ong-nghe-ban", group: "cylinder", around: 0 },
+      { item: "ong-nghe-ban", group: "cylinder", around: 0, variant: "wrap" },
       handset,
       RIGHT,
     );

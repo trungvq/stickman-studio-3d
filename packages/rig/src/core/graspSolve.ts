@@ -356,11 +356,30 @@ const wrap: ContactFn = (x) => {
   return { at: add3(p.at, scale3(p.rho, S)), along, palm, fingers, radius, thumbRadius };
 };
 
+/**
+ * `cylinder` `flat` (thanh hộp mặt rộng hơn lòng tay): lòng tay áp phẳng mặt gần `ρ(around)`, ngón dọc trục về phía
+ * `thumb` (`up` là `+a`); `along` như `wrap`, tâm nắm dời ra tới khi da lòng tay còn cách hình `WRAP_GAP`
+ */
+const flatRod: ContactFn = (x) => {
+  const f = x.feature as RodFeature;
+  const clear = (GRIP_GROUPS.cylinder.clear ?? 0) * x.dims.W;
+  const p0 = axialAt(x.geom, f, alongFrac(x.along, 1, x.dims.W), x.around ?? 0, { clear });
+  const rho = faceRho(f, p0.rho);
+  const palm = neg(rho);
+  const fingers = scale3(p0.a, x.thumb === "down" ? -1 : 1);
+  const z = cross3(palm, fingers);
+  const pts = (x.palmSkin?.({}) ?? []).map((c) =>
+    add3(add3(scale3(palm, c[0]), scale3(fingers, c[1])), scale3(z, c[2])),
+  );
+  const S = (x.shape && pts.length && skinTouch(x.shape, p0.at, rho, pts, reachOf(x.geom))) || p0.r;
+  return { at: add3(p0.at, scale3(rho, S)), along: p0.along, palm, fingers };
+};
+
 /** Chỗ tiếp xúc theo nhóm và biến thể; nhóm chưa có ở đây thì `graspFrame` báo lỗi */
 export const CONTACTS: Partial<Record<GroupId, Record<string, ContactFn>>> = {
   sheet: { pinch, flat, rim },
   palmBox: { default: palmBox },
-  cylinder: { wrap },
+  cylinder: { wrap, flat: flatRod },
 };
 
 /**
@@ -541,7 +560,10 @@ export function graspFrame(
   const feature = pickFeature(spec, geom, group, dims, choice);
   const def = holdDefaults(group, geom, { feature, side: side < 0 ? -1 : 1 });
   const variant =
-    choice.variant ?? (def.variant as string | undefined) ?? Object.keys(group.variants)[0];
+    choice.variant ??
+    (def.variant as string | undefined) ??
+    group.variantOf?.(feature, geom, choice.around ?? (def.around as number | undefined), dims) ??
+    Object.keys(group.variants)[0];
   const vs = group.variants[variant];
   const contact = byVariant[variant];
   if (!vs || !contact)
@@ -941,6 +963,8 @@ export function chooseMissing(
     (group.choices.variant?.kind === "names" && group.choices.variant.values) ||
     Object.keys(group.variants)
   ).filter((v) => byVariant[v] && group.variants[v]?.pose);
+  // nhóm suy biến thể từ khối hình và `around` (`variantOf`): để `graspFrame` chọn theo từng ứng viên
+  const auto = !!group.variantOf && given.variant === undefined && !group.choices.variant;
 
   const sizes: Partial<Record<keyof GraspChoice, number>> = {
     part: new Set(feats.map((f) => f.part)).size,
@@ -1091,9 +1115,13 @@ export function chooseMissing(
     for (const edge of edges)
       for (const thumb of thumbs)
         for (const variant of vars) {
-          const v = (variant as string | undefined) ?? (defs.variant as string) ?? variants[0];
+          const v =
+            (variant as string | undefined) ??
+            (defs.variant as string | undefined) ??
+            (auto ? undefined : variants[0]);
           if (v === "rim" && up !== undefined && thumb !== up) continue;
           if (
+            v !== undefined &&
             given.variant === undefined &&
             tooThick(group, v, f, edge as SideName | number | undefined, ctx.dims, spec.shape) !==
               undefined
@@ -1101,10 +1129,10 @@ export function chooseMissing(
             continue;
           const c = {
             ...given,
-            ...cont(v),
+            ...cont(v ?? ""),
             ...(edge !== undefined && { edge }),
             ...(thumb !== undefined && { thumb }),
-            variant: v,
+            ...(v !== undefined && { variant: v }),
           } as GraspChoice;
           take(run(f, c, defs), defs);
         }
@@ -1135,7 +1163,7 @@ export function chooseMissing(
       ...given,
       edge: root.choice.edge,
       thumb: root.choice.thumb,
-      variant: root.choice.variant,
+      ...(!auto && { variant: root.choice.variant }),
     };
     for (const c of combos) {
       const x = run(root.feature, { ...base, ...c }, defs);

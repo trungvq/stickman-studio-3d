@@ -140,7 +140,8 @@ describe("heldHits: chỗ cầm nhóm", () => {
 
   it("`grip`: tâm nắm ngoài hình món, ngưỡng theo nhóm", () => {
     expect(heldGripMax("sheet")).toBe(HELD_GRIP_PINCH);
-    expect(heldGripMax("cylinder")).toBe(HELD_GRIP);
+    expect(heldGripMax("cylinder", "wrap")).toBe(HELD_GRIP);
+    expect(heldGripMax("cylinder", "flat")).toBe(HELD_GRIP_PINCH);
     expect(rules({ grip: HELD_GRIP_PINCH - 1 })).toEqual([]);
     expect(rules({ grip: HELD_GRIP_PINCH + 1 })).toEqual(["grip"]);
     const rod = { grasp: grasp({ group: "cylinder", choice: { variant: "wrap" } }) };
