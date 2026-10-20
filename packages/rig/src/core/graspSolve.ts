@@ -474,6 +474,8 @@ export interface GraspLater {
   t: number;
   pose: ItemPose;
   ctx?: GraspCtx;
+  /** Tay đã đặt lúc ấy (số hạng lấn) */
+  other?: ArmSeg;
 }
 
 export interface GraspOpts {
@@ -668,7 +670,7 @@ export function chooseMissing(
     let cost = sol.E + gapCost(sol, pose.s);
     for (const x of later) {
       const q = handFromItem(x.pose.R, x.pose.P, x.pose.s, frame.G);
-      const s = solvePhi((x.ctx ?? ctx).arms[sd], q.Wp, q.Rw, undefined, undefined, opts.elbow);
+      const s = solvePhi((x.ctx ?? ctx).arms[sd], q.Wp, q.Rw, undefined, x.other, opts.elbow);
       cost += LATER_W * (s.E + gapCost(s, x.pose.s));
     }
     const withDef = missing.filter((k) => defs[k] !== undefined);

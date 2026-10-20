@@ -39,7 +39,16 @@ import {
 } from "./action";
 import type { Root } from "./types";
 import { bones3, cladHand, head3, markAt, trunk3, type ActCharacter, type Trunk3 } from "./act3";
-import { armInput, evalPhi, phiAt, solvePhi, type ArmSol } from "./graspArm";
+import {
+  armInput,
+  armSeg,
+  evalPhi,
+  phiAt,
+  solvePhi,
+  type ArmInput,
+  type ArmSeg,
+  type ArmSol,
+} from "./graspArm";
 import {
   checkChoice,
   checkGroup,
@@ -1695,7 +1704,7 @@ export function sceneAt(
           rt.held,
           (who, mark) => castMarkAt(rt, who, mark, time),
           (t) => keyPose(rt, id, t, height, dims),
-          { rt, height },
+          { rt, height, id },
         )
       : placed;
   const body = world ? viewOfTheta(world.theta) : stepOf(m.view, time);
@@ -3295,6 +3304,13 @@ function handAt(
         prior: { dt: time - prior, pose: () => poseAt(+prior.toFixed(6)) },
       }),
     ...(grasp && { grasp }),
+    ...(placedItem && {
+      solve: (c: ActCharacter, T?: Trunk3) =>
+        graspAtTime(host!.rt, host!.id, side, time, {
+          chars: { [host!.id]: c },
+          ...(T && { trunks: { [host!.id]: T } }),
+        }),
+    }),
   };
   /**
    * Ý định ở mốc `kt` của lần cầm đang có ở `time`: lần cầm có hiệu lực ở mốc ấy, hay ngay trước nó — mốc thả (`hold: null`,
@@ -3383,6 +3399,7 @@ function withHands(
 interface GraspHost {
   rt: SceneRuntime;
   height: number;
+  id: string;
 }
 
 type HoldRun = { hold: SceneHold; since: number };
@@ -3593,14 +3610,19 @@ function graspStart(
   const end = runEnd(keys, side, run);
   const later: GraspLater[] = (rt.items ?? [])
     .filter((k) => k.item === g.item && k.t > t0 && k.t <= t0 + LATER_SPAN + 1e-9 && k.t < end)
-    .map((k) => ({ t: k.t, pose: poseAt(k.t), ctx: holder(k.t) }));
+    .map((k) => {
+      const other = placedOther(rt, id, side, k.t, o);
+      return { t: k.t, pose: poseAt(k.t), ctx: holder(k.t), ...(other && { other }) };
+    });
   const ctx = holder(t0);
   const { elbow } = slideHold(keys, side, t0, run, {});
+  const other = placedOther(rt, id, side, t0, o);
   const sol = chooseMissing(ctx, g, poseAt(t0), sideSign(side), {
     t0,
     later,
     ...(phiPrev !== undefined && { phiPrev }),
     ...(elbow && { elbow }),
+    ...(other && { other }),
   });
   const out: GraspRun = { sol, ctx, t0, ...(phiPrev !== undefined && { phiPrev }), chain: [] };
   m.set(key, out);
@@ -3668,7 +3690,8 @@ function chainTo(
     const t = r.t0 + i * HOLD_SLEW_STEP;
     const q = graspSample(rt, id, side, run, r, t, o);
     const prev = i ? r.chain[i - 1].sol.phi : r.phiPrev;
-    r.chain.push({ t, sol: solvePhi(q.inp, q.Wp, q.Rw, prev, undefined, q.elbow) });
+    const other = placedOther(rt, id, side, t, o);
+    r.chain.push({ t, sol: solvePhi(q.inp, q.Wp, q.Rw, prev, other, q.elbow) });
   }
 }
 
@@ -3690,6 +3713,32 @@ export function graspAtTime(
   time: number,
   o: ItemOptions = {},
 ): GraspAtTime | undefined {
+  return graspArmAt(rt, id, side, time, o)?.sol;
+}
+
+/**
+ * Tay phải đã đặt trên món đặt trước ở `time`: tay trái giải sau, tính nó vào số hạng lấn (docs/11-nhom-cam.md § Khuỷu tự
+ * nhiên)
+ */
+function placedOther(
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  time: number,
+  o: ItemOptions,
+): ArmSeg | undefined {
+  if (side !== "left") return undefined;
+  const r = graspArmAt(rt, id, "right", time, o);
+  return r && armSeg(r.inp, r.sol.arm);
+}
+
+function graspArmAt(
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  time: number,
+  o: ItemOptions,
+): { sol: GraspAtTime; inp: ArmInput } | undefined {
   const keys = handKeys(rt, id);
   const run = holdRun(keys, side, time);
   if (!run || holdKind(run.hold) !== "group" || !itemMarked(rt, groupHold(run.hold).item))
@@ -3699,8 +3748,12 @@ export function graspAtTime(
   const r = graspStart(rt, id, side, run, at);
   chainTo(rt, id, side, run, r, Math.max(0, Math.floor((time - r.t0) / HOLD_SLEW_STEP)) + 1, at);
   const q = graspSample(rt, id, side, run, r, time, o);
-  const arm = evalPhi(q.inp, q.Wp, q.Rw, phiAt(r.chain, time), undefined, undefined, q.elbow);
-  return { ...r.sol, choice: q.frame.choice, frame: q.frame, Wp: q.Wp, Rw: q.Rw, arm, t0: r.t0 };
+  const other = placedOther(rt, id, side, time, o);
+  const arm = evalPhi(q.inp, q.Wp, q.Rw, phiAt(r.chain, time), undefined, other, q.elbow);
+  return {
+    sol: { ...r.sol, choice: q.frame.choice, frame: q.frame, Wp: q.Wp, Rw: q.Rw, arm, t0: r.t0 },
+    inp: q.inp,
+  };
 }
 
 /**

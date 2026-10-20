@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { BODY_MARKS, PALM_DIR_NAMES, type BodyMark, type PalmDir } from "./bodyMark";
 import { HAND_GRIPS, HAND_POSE_KINDS, type HandPose } from "./hand";
-import type { GraspChoice } from "./graspSolve";
+import type { ActCharacter, Trunk3 } from "./arm3";
+import type { GraspChoice, GraspFrame, GraspSolution } from "./graspSolve";
 import { topProblems } from "./heldGeom";
 import { fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
 
@@ -545,7 +546,8 @@ export interface HoldAim {
  * `HOLD_BLEND` giây đầu của lần cầm: `from` là kiểu cầm trước đó của cùng món trên tay này và phần còn lại của nó (liên kết
  * hoà dần từ kiểu cũ sang kiểu mới), `enter` là phần đã vào của lần cầm (tay phụ hoà dần tới mốc của nó trên món). `prior`
  * là mẫu trước của tay ấy (`HOLD_SLEW_STEP`): cách bao nhiêu giây và tư thế của người ở đó — cổ tay mang món đi từ nghiệm
- * ở đó với tốc độ có hạn. `grasp` là chỗ cầm nhóm (`món@nhóm`); `from.grasp` của lần cầm trước
+ * ở đó với tốc độ có hạn. `grasp` là chỗ cầm nhóm (`món@nhóm`); `from.grasp` của lần cầm trước. `solve`: món đặt trước,
+ * bàn tay của khung này giải trên nhân vật `c` (thân `T` đã dựng) — `graspAtTime` của scene
  */
 export interface ReachHold {
   item: string;
@@ -556,6 +558,7 @@ export interface ReachHold {
   enter?: number;
   prior?: { dt: number; pose: () => object };
   grasp?: HoldGrasp;
+  solve?: (c: ActCharacter, T?: Trunk3) => (GraspSolution & { t0: number }) | undefined;
 }
 
 /**
@@ -568,6 +571,8 @@ export interface HoldGrasp {
   mode: "item" | "hand";
   choice: GraspChoice;
   t0: number;
+  /** Khung cầm đã giải của món đặt trước (`ReachHold.solve`) */
+  frame?: GraspFrame;
 }
 
 /** Tên file của món cho tên thể hiện `món:<tên>` (`vali:2` → `vali`); tên không có `:` là chính nó */

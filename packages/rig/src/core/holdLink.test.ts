@@ -175,8 +175,4 @@ describe("lớp liên kết tay ↔ món", () => {
     expect(rep.L.reach!.gap).toBeLessThanOrEqual(1);
     expect(Object.keys(actHeld(NGUOI, sp))).toEqual(["R"]);
   });
-
-  it.todo(
-    "món đặt trước (`mode: item`): `Wp`, `Rw`, `φ` cứng, không `aimWrist` / `HOLD_SLEW` (G3-13)",
-  );
 });

@@ -207,25 +207,18 @@ function groupHand(
   s: number,
 ): HoldLinkHand | undefined {
   const g = h.grasp;
-  // `mode: "item"` (món đặt trước) tạm đi như tay dẫn: món theo bàn tay (G3-13)
   if (!g || g.hold.group === "carry") return undefined;
-  const fr = frameOf(
-    h.spec,
-    fillChoice(h.spec, g.hold.group, g.choice, side, dims),
-    side,
-    dims,
-    k,
-    long,
-    s,
-  );
+  const fr =
+    g.frame ??
+    frameOf(h.spec, fillChoice(h.spec, g.hold.group, g.choice, side, dims), side, dims, k, long, s);
   const both = g.hold.both ? supportOf(h.spec, g, fr, side, dims, k, long, s) : undefined;
   return { hand: fr.hand, pose: fr.pose, roles: fr.roles, frame: fr, ...(both && { both }) };
 }
 
 /**
  * Bàn tay của lần cầm `h` cho tay bên `side` (`-1` phải), cỡ tay `dims` (đơn vị món): v1 `gripHand` của kiểu cầm, v2 khung
- * cầm `graspFrame` trên lựa chọn của cảnh cộng mặc định của nhóm. `undefined` khi lần cầm không chiếm bàn tay (kiểu treo,
- * kiểu cầm không có)
+ * cầm `graspFrame` trên lựa chọn của cảnh cộng mặc định của nhóm, món đặt trước khung đã giải (`grasp.frame`). `undefined`
+ * khi lần cầm không chiếm bàn tay (kiểu treo, kiểu cầm không có)
  */
 export function holdHand(
   h: ReachHold,
