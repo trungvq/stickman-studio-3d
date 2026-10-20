@@ -19,8 +19,9 @@
 // trước / sau, đọc ngang mặt, khoe một tay, khoe hai tay hai cạnh bên, khoe hai tay trên dưới (bỏ khi hai cạnh cách < 1,3·W),
 // bê hai tay hai vành (đĩa, tấm nằm); hàng khai `edge` / `thumb` không có trên khối hình tấm hay đĩa, hay cần mốc món
 // mà món không có, bị bỏ trước khi giải (`do.json` `loc`); hàng giải ra cùng chỗ cầm, cùng vị trí món với hàng trước nó bị bỏ
-// (`trung`); với `palmBox` thêm đọc ngang mặt,
-// khoe một tay, áp tai (tay dẫn); `carry` hai hàng treo khuỷu (`on: elbow`) và treo vai (`on: shoulder`, cảnh khai `touch`), tay
+// (`trung`); hàng mà `checkChoice` của rig báo lỗi (biến thể quá bề dày ở mép, phần không có…) cũng bị bỏ, mọi nhóm; với `palmBox` thêm đọc ngang mặt,
+// khoe một tay, áp tai (tay dẫn); với `cylinder` thêm `along` thấp / cao, ngón cái xuống, nắm từng phần bám được (vai, cổ… `along` giữa phần),
+// áp tai (tay dẫn, `around` 180: lòng áp lưng tay cầm); `carry` hai hàng treo khuỷu (`on: elbow`) và treo vai (`on: shoulder`, cảnh khai `touch`), tay
 // đặt như kiểu treo v1, món không đặt trước ngực. Cặp (món, nhóm, người) mà món không có khối hình đạt `needs` của nhóm với cỡ tay ấy
 // bị bỏ, lý do vào `do.json` (`bo`). Nhãn in chỗ cầm rig chọn, `lún` trên da, `role` từng ngón (khe tới món, vai trò),
 // cổ tay vượt kẹp, `size`; `do.json` giữ thêm `pierce`, `grip`, `grasp`.
@@ -404,8 +405,35 @@ if (!nhomXin) {
       if (typeof a === "string" && !spec.anchors?.[a]) return `món không có mốc \`${a}\``;
     }
   };
+  /** Lỗi `checkChoice` của rig trên các chỗ cầm của hàng (`undefined` khi hợp lệ) */
+  const loiChon = (row, group, spec, geom, dims) => {
+    if (group === "carry") return;
+    const errs = Object.values(row.hands).flatMap(({ hold: h }) =>
+      h?.group === group ? rig.checkChoice(group, geom, h, dims, spec.anchors, spec.shape) : [],
+    );
+    return errs.length ? [...new Set(errs)].join(" ").replace(/`[^`]*@[^`]*`: /g, "") : undefined;
+  };
+  /** `along` giữa phần của khối `f` trong đoạn bám liền (miền cách phần `grip: false` đủ `clear`); `giua`: phần chứa `along` giữa đoạn */
+  const giuaPhan = (geom, f, clear) => {
+    const segs = rig.gripSpan(geom, f);
+    const s = (q) =>
+      (q[0] - f.lo[0]) * f.a[0] + (q[1] - f.lo[1]) * f.a[1] + (q[2] - f.lo[2]) * f.a[2];
+    const seg = segs.reduce((b, g) => {
+      const o = (x) => Math.min(s(x.hi), f.len) - Math.max(s(x.lo), 0);
+      return !b || o(g) > o(b) ? g : b;
+    }, undefined);
+    const room = rig.alongRoom(seg, clear) ?? [0.5, 0.5];
+    const lo = Math.max(s(seg.lo), 0),
+      hi = Math.min(s(seg.hi), f.len);
+    const u = (x) => (x - s(seg.lo)) / seg.len;
+    const [a, b] = [Math.max(u(lo), room[0]), Math.min(u(hi), room[1])];
+    return {
+      along: r2(a <= b ? (a + b) / 2 : u((lo + hi) / 2)),
+      giua: u(lo) <= 0.5 && u(hi) >= 0.5,
+    };
+  };
   /** Hàng mẫu của (món, nhóm): `mark` là mốc món (`items[]`, bỏ trống với tay dẫn), `hands` mốc tay, `lead` tay chụp */
-  const hangMau = (item, group, spec, fits, dims) => {
+  const hangMau = (item, group, spec, geom, fits, dims) => {
     const gs = rig.GRIP_GROUPS[group];
     const H = (extra = {}) => ({ hold: { item, group, ...extra } });
     if (group === "carry")
@@ -495,7 +523,30 @@ if (!nhomXin) {
           },
         });
     }
-    if (group === "palmBox" && spec.anchors?.speaker)
+    if (group === "cylinder") {
+      rows.push(
+        { ma: "along-thap", ten: "along thấp", mark: NGUC, hands: { right: H({ along: "low" }) } },
+        { ma: "along-cao", ten: "along cao", mark: NGUC, hands: { right: H({ along: "high" }) } },
+        {
+          ma: "cai-xuong",
+          ten: "ngón cái xuống",
+          mark: NGUC,
+          hands: { right: H({ thumb: "down" }) },
+        },
+      );
+      for (const { feature: f } of fits) {
+        if (f.kind !== "lathe" && f.kind !== "rod") continue;
+        const { along, giua } = giuaPhan(geom, f, (gs.clear ?? 0) * dims.W);
+        if (!giua)
+          rows.push({
+            ma: `phan-${f.part}`,
+            ten: `nắm phần ${f.part}`,
+            mark: NGUC,
+            hands: { right: H({ part: f.part, along }) },
+          });
+      }
+    }
+    if (["palmBox", "cylinder"].includes(group) && spec.anchors?.speaker)
       rows.push({
         ma: "ap-tai",
         ten: "áp tai",
@@ -507,6 +558,10 @@ if (!nhomXin) {
             hold: {
               item,
               group,
+              ...(group === "cylinder" && {
+                around: 180,
+                roll: { axis: spec.top ?? "top", toward: "up" },
+              }),
               face: { axis: spec.front ?? "front", toward: { mark: "head" } },
               touch: ["self.head"],
             },
@@ -530,8 +585,10 @@ if (!nhomXin) {
           });
           continue;
         }
-        for (const row of hangMau(item, group, spec, fits, p.dims)) {
-          const why = group === "sheet" && khongAp(row, spec, fits);
+        for (const row of hangMau(item, group, spec, geom, fits, p.dims)) {
+          const why =
+            (group === "sheet" && khongAp(row, spec, fits)) ||
+            loiChon(row, group, spec, geom, p.dims);
           if (why) {
             loc.push({ item, group, person: p.file.replace(/\.json$/, ""), row: row.ten, why });
             continue;
@@ -676,7 +733,10 @@ for (const c of cells) {
   try {
     rt = rig.resolveScene(sc, data.actions, data.animals, data.props, heights, bodies, data.held);
   } catch (e) {
-    c.error = `resolveScene: ${e.message}`;
+    // `resolveScene` đo cỡ tay theo chiều cao người mẫu, có thể chặt hơn cỡ tay của nhân vật
+    const loi = nhomXin && e.message.match(/lỗi `(?:choice|group)`: (.*)$/);
+    if (loi) c.loc = loi[1].replace(/^`[^`]*@[^`]*`: /, "");
+    else c.error = `resolveScene: ${e.message}`;
     continue;
   }
   const w = worldScene(
@@ -760,9 +820,15 @@ for (const c of cells) {
   if (!c.hands.length && !c.error) c.error = "không bàn tay nào cầm món ở giây chụp";
 }
 
-// ---- nhóm: nhãn hàng mặc định, bỏ hàng trùng hàng trước ----
+// ---- nhóm: bỏ hàng `resolveScene` từ chối, nhãn hàng mặc định, bỏ hàng trùng hàng trước ----
 const trung = [];
 if (nhomXin) {
+  for (const c of [...cells])
+    if (c.loc) {
+      loc.push({ item: c.item, group: c.group, person: c.person, row: c.grip, why: c.loc });
+      console.log(`  bỏ hàng ${c.key} ${c.person}: ${c.loc}`);
+      cells.splice(cells.indexOf(c), 1);
+    }
   const dau = new Map();
   const chon = (c) => JSON.stringify(c.hands.map((h) => [h.hand, h.raw.grasp?.choice]));
   for (const c of [...cells]) {
