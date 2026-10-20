@@ -23,6 +23,7 @@ import bienLai from "./__fixtures__/held-v2/bien-lai.json";
 import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import dua from "./__fixtures__/held-v2/dua.json";
+import but from "./__fixtures__/held-v2/but.json";
 import ongNgheBan from "./__fixtures__/held-v2/ong-nghe-ban.json";
 import tomHum from "./__fixtures__/held-v2/tom-hum.json";
 import tuiHieu from "./__fixtures__/held-v2/tui-hieu.json";
@@ -48,10 +49,11 @@ describe("bảng GRIP_GROUPS", () => {
     }
   });
 
-  it("chỉ `sheet`, `card`, `chopsticks`, `cylinder`, `palmBox`, `platform` và `carry` không `later`", () => {
+  it("chỉ `sheet`, `card`, `pen`, `chopsticks`, `cylinder`, `palmBox`, `platform` và `carry` không `later`", () => {
     expect(GROUP_IDS.filter((g) => !GRIP_GROUPS[g].later)).toEqual([
       "sheet",
       "card",
+      "pen",
       "chopsticks",
       "cylinder",
       "palmBox",
@@ -91,7 +93,7 @@ describe("bảng GRIP_GROUPS", () => {
         for (const p of [v.pose?.open, v.pose?.closed])
           if (p && !(p.pose in HAND_POSES)) expect(g.later, `${id}:${p.pose}`).toBe(true);
     }
-    expect(GRIP_GROUPS.pen.later).toBe(true);
+    expect(GRIP_GROUPS.round.later).toBe(true);
   });
 
   it("tay phụ trỏ tới nhóm có thật", () => {
@@ -135,7 +137,16 @@ describe("groupNeeds trên tám món", () => {
   });
 
   it("nhóm `later` không có khối hình nào dù món hợp", () => {
-    expect(groupNeeds(geomOf(dua), "pen", dims)).toEqual([]);
+    expect(groupNeeds(geomOf(but), "pen", dims)).toHaveLength(1);
+    expect(groupNeeds(geomOf(but), { ...GRIP_GROUPS.pen, later: true }, dims)).toEqual([]);
+  });
+
+  it("bút ra `pen` bằng trụ tiện thân; đôi đũa (hai thanh song song cùng phần) không ra `pen`", () => {
+    expect(groupNeeds(geomOf(but), "pen", dims).map((f) => [f.kind, f.part])).toEqual([
+      ["lathe", "than"],
+    ]);
+    expect(groupNeeds(geomOf(but), "pen", dims, item(but).anchors)).toHaveLength(1);
+    expect(groupNeeds(geomOf(dua), "pen", handDims(2))).toEqual([]);
   });
 
   it("`cylinder`: tay cầm ống nghe ra một thanh, chai ra ba trụ tiện (thân, vai, cổ)", () => {
@@ -310,7 +321,7 @@ describe("checkChoice", () => {
   });
 
   it("nhóm `later`", () => {
-    expect(check(sheet, "pen", {})[0]).toMatch(/nhóm `pen` \(Bút\) chưa làm/);
+    expect(check(sheet, "round", {})[0]).toMatch(/nhóm `round` \(Khối tròn\) chưa làm/);
   });
 
   it("`carry`: thiếu `on`, món không có `seats[on]`, món không có chỗ treo", () => {

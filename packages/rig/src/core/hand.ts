@@ -42,7 +42,7 @@ export const HAND_POSES = {
   span: { thumb: [71, 6, 0, 44], index: [3, 20], fingers: [3, 21], spread: 0 },
   sheet: { thumb: [12, 40, 16, 20], index: [40, 0], fingers: [43, 2], spread: 0 },
   thumbsUp: { thumb: [80, 4, 0, 0], index: [90, 85], fingers: [90, 85], spread: 0 },
-  tripod: { thumb: [52, 60, 10, 8], index: [40, 40], fingers: [48, 76], spread: 0 },
+  tripod: { thumb: [28, 45, 0, 0], index: [40, 40], fingers: [48, 76], spread: 0 },
   chopsticks: { thumb: [36, 52, 6, 0], index: [50, 35], fingers: [45, 50], spread: 2 },
 } as const satisfies Record<string, Fingers>;
 

@@ -105,6 +105,7 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 | G4-74 `chopsticks` `grip` | xong: `CONTACTS.chopsticks.grip` (que bạn cùng phần trong 15°, `along` từ đầu xa `tip` — `ContactInput.tip`; khung theo đường giữa hai que, `CHOP_PALM`, `CHOP_OFF` 2,4), bỏ `later`, `curl` 15, `frameSink` truyền `curl`; lưới `along` 3 điểm theo miền của nhóm; dáng `chopsticks` mới ở `hand.ts`, `HAND_GRIPS.chopsticks` = `pinch` (bỏ 2 khẳng định của G4-73). Fixture `dua#cam` 1,94°/0,45; cái 0,3/−0,2, trỏ 1,9/2,4 (v1 0,4/0,6, 2,4/3,0), lún ≤ 0,22. Ảnh tay dẫn ngang v1 (nắm đũa, cái đè hai que) — không phải cách cầm đũa thật (que dưới ở khe cái–trỏ không đặt được trong khung fixture). Hàng món đặt trước vượt cổ tay 31° (món không có hướng mặc định). t02 0 mới | `g474/`, `duyet/g4-chopsticks.jpg` |
 | T0b chụp lại ảnh "trước" | xong: worktree `stickman-studio-3d-truoc` @ `c925657`, `jp-sukatto-truoc` detach @ `a7db3b5` (sau đó món `thu-*` v2 làm rig cũ đổ; t02 và tool không đổi). `cam-do` khớp từng byte `truoc/cam-do.txt`. 160 cặp / 61 cảnh, 1535 png + 61 bảng (1,3 GB, không commit); ô đen `truoc` 69/511, `cheo` 0. Lệnh: `truoc/chup.py` (đổi `OUT` sang `sau/can-tay` cho ảnh sau ở giai đoạn 6) | `truoc/chup.{md,py}` |
 | G4-75+76 `chopsticks` hàng mẫu + docs + render | xong: món đặt trước `DUA_DAT` (`offset [45,−3,0]`, ngọn ra trước chúc 30, `roll` hai que chéo) hết vượt cổ tay; hàng mặc định, `along` 0,15/0,45, tay dẫn hai tay. Trỏ 1,8–2,5, cái −0,4…0,4, lún ≤ 0,4 (≤ v1); còn `role` (trỏ > 1,5). Docs nhóm 4, mục 5/6/8/9/10, `docs/01` bảng dáng; banner bảy nhóm chạy. Mốc M4-7 | `g4-chopsticks/` |
+| G4-83 `pen` `grip` | xong: `CONTACTS.pen.grip` (`penGrip`: điểm trục cách `tip` `along` 0,3, lăn 0, `PEN_PALM`/`PEN_FINGERS`/`PEN_OFF`·W khớp fixture tay phải, tay trái soi gương — fixture tay trái để cái ở phía xa bút, không phải cầm bút), bỏ `later`, `curl` 15, `pen` cần một thanh (đũa không đạt); dáng `tripod` (ngón cái `[28,45,0,0]` thay `[52,60,10,8]`), không dùng `cup` (cái lún 1,0–1,1). Fixture 0,04°/≤ 0,22 cỡ thật; khe ≤ v1 + 0,3, lún ≤ 0,25. Ảnh ngang v1: bút ở khe cái–trỏ, ngòi giữa hai đầu ngón; từ lưng tay như nắm lỏng. Hàng chung (bút dựng đứng) vượt cổ tay 72–78° → hàng mẫu đặt ngòi ra trước-xuống. t02 0 mới | `g483/`, `duyet/g4-pen.jpg` |
 | G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
@@ -156,6 +157,8 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 - G4-74: `chopsticks` giữ khung fixture `dua#cam` (ngang v1: nắm đũa). Cầm đũa thật (que dưới ở khe cái–trỏ và đầu áp út, que trên kẹp như bút) cần khung chuẩn mới bỏ fixture — để sau, làm khi chủ dự án muốn.
 
+- G4-83: tay trái `pen` so fixture tay phải soi gương, không so fixture tay trái v1 (cái phía xa bút, bút tì áp út).
+
 ## Cần chủ dự án
 - Có nới kẹp xoay cẳng tay quá ±90 không? Ca "khoe, một tay đỡ cạnh dưới" (bước 0 ca 4, `rim`) cần −103; hiện thành cảnh báo `wrist` và bàn tay lệch chỗ cầm chút ít. Ảnh: `tmp/nhom-cam/b0/hinh/vong2/to-2.jpg`.
 
@@ -186,6 +189,6 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 ## Bước kế
 0. Phiên tiếp tục (2026-10-20) sau khi chủ dự án chốt hướng G4-38b. Worktree sạch, mọi việc xanh đã commit và push. Studio xem `git log`, video `9b13333`.
-1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. `platform` (M4-5) xong. `card` (M4-6) xong. `chopsticks` (M4-7) xong. Pen: G4-83 đang chạy → 84+85 gộp. G6-1 `migrate-held` đang chạy.
+1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. `platform` (M4-5) xong. `card` (M4-6) xong. `chopsticks` (M4-7) xong. Pen: 83 xong → 84+85 gộp. G6-1 `migrate-held` đang chạy.
 3. Rồi pen 83–85, handle 92–95, bowl A2–A4, Z1, Z2 theo `gd4-ke-hoach.md`. Đã xong/gộp: 00, X1, 11–14, 22–25, 32–38b, 41–48, 52, 72, 73, 82.
 4. Giai đoạn 5 → 6.

@@ -202,6 +202,13 @@ const PAD_END = 0.2;
  */
 const CHOP_PALM: readonly [number, number] = [-0.5, -Math.sqrt(3) / 2];
 const CHOP_OFF = 2.4;
+/**
+ * `pen` (fixture `but#viet`): lòng tay, ngón và tâm nắm (lần `W`, tính từ điểm trục ở `along`) theo `d` trục từ ngòi về đuôi,
+ * `ρ` (`around` 0), `σ = d × ρ` của tay phải (tay trái soi gương qua mặt `d`, `ρ`)
+ */
+const PEN_PALM: V3 = [-0.7739, 0.4869, -0.4049];
+const PEN_FINGERS: V3 = [-0.4092, -0.8725, -0.2671];
+const PEN_OFF: V3 = [-0.11, 0.1852, -0.1555];
 /** `platform`: da lòng tay cách mặt đỡ ngần này, đơn vị món */
 const PLATFORM_GAP = 0.15;
 /** Dò mặt hình: coi là chạm khi cách dưới ngần này, đơn vị món */
@@ -498,6 +505,29 @@ const chopGrip: ContactFn = (x) => {
   return { at: add3(mid, scale3(b, CHOP_OFF)), along, palm, fingers: d };
 };
 
+/**
+ * `pen`: kẹp ba điểm cách ngòi `along` đoạn bám (tính từ đầu gần mốc `tip`), thân ngả về khe cái–trỏ; lăn quanh trục cố định
+ * `around` 0. Khung fixture theo `d`, `ρ`, `σ` (`PEN_PALM`)
+ */
+const penGrip: ContactFn = (x) => {
+  const f = x.feature as RodFeature | LatheFeature;
+  const { seg } = axialAt(x.geom, f, 0, 0);
+  const tip = x.tip ?? seg.lo;
+  const low = len3(sub3(seg.lo, tip)) <= len3(sub3(seg.hi, tip));
+  const u = alongFrac(x.along, seg.len, x.dims.W);
+  const p = axialAt(x.geom, f, low ? u : 1 - u, 0);
+  const d = low ? p.a : neg(p.a);
+  const sigma = scale3(cross3(d, p.rho), -x.side);
+  const loc = (c: V3) => add3(add3(scale3(d, c[0]), scale3(p.rho, c[1])), scale3(sigma, c[2]));
+  const palm = unit(loc(PEN_PALM));
+  return {
+    at: add3(p.at, scale3(loc(PEN_OFF), x.dims.W)),
+    along: low ? p.along : 1 - p.along,
+    palm,
+    fingers: unit(perp(loc(PEN_FINGERS), palm)),
+  };
+};
+
 /** Chỗ tiếp xúc theo nhóm và biến thể; nhóm chưa có ở đây thì `graspFrame` báo lỗi */
 export const CONTACTS: Partial<Record<GroupId, Record<string, ContactFn>>> = {
   sheet: { pinch, flat, rim },
@@ -506,6 +536,7 @@ export const CONTACTS: Partial<Record<GroupId, Record<string, ContactFn>>> = {
   cylinder: { wrap, flat: flatRod },
   platform: { palm: platformPalm },
   chopsticks: { grip: chopGrip },
+  pen: { grip: penGrip },
 };
 
 /**

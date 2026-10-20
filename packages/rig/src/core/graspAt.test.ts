@@ -38,6 +38,7 @@ import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
 import ongNgheBan from "./__fixtures__/held-v2/ong-nghe-ban.json";
 import khay from "./__fixtures__/held-v2/khay.json";
 import dua from "./__fixtures__/held-v2/dua.json";
+import but from "./__fixtures__/held-v2/but.json";
 
 // người mẫu đứng cầm bảng ở t = 1; mốc món và số đối chiếu của prototype bước 0 (docs/11-nhom-cam.md mục 5)
 const item = (json: unknown): HeldItemSpec => {
@@ -451,6 +452,28 @@ describe("chooseMissing `chopsticks`", () => {
       expect(
         chooseMissing(dc, "dua@chopsticks", poseOf(ITEMS.c3), side, { solve: false }).choice.along,
       ).toBe(0.25);
+  });
+});
+
+describe("chooseMissing `pen`", () => {
+  const bc = graspCtx(T, { but: item(but) });
+
+  it("đủ thiếu: rig giải `part`, `along` trong miền 0,15–0,45, biến thể `grip`; hai tay không lỗi", () => {
+    for (const side of [RIGHT, LEFT]) {
+      const sol = graspAt(bc, "but@pen", poseOf(ITEMS.c3), side);
+      expect(sol.choice).toMatchObject({ part: "than", variant: "grip" });
+      expect(sol.by.along).toBe("rig");
+      expect(sol.choice.along).toBeGreaterThanOrEqual(0.15);
+      expect(sol.choice.along).toBeLessThanOrEqual(0.45);
+      expect(Number.isFinite(sol.cost)).toBe(true);
+    }
+  });
+
+  it("tay dẫn lấy `along` mặc định 0,3", () => {
+    for (const side of [RIGHT, LEFT])
+      expect(
+        chooseMissing(bc, "but@pen", poseOf(ITEMS.c3), side, { solve: false }).choice.along,
+      ).toBe(0.3);
   });
 });
 

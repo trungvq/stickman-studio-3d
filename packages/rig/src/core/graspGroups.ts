@@ -38,7 +38,7 @@ import { add3, dot3, scale3, sub3, type V3 } from "./lens";
 
 export type NeedKind = Feature["kind"] | "path" | "ball";
 /** Dáng tay chưa soạn: nhóm dùng nó là `later` */
-export type PlannedPose = "tripod" | "ball" | "claw";
+export type PlannedPose = "ball" | "claw";
 export type GroupPoseName = HandPose | PlannedPose;
 
 /**
@@ -246,8 +246,19 @@ const thick = (f: Feature) => (f.kind === "slab" || f.kind === "disc" ? f.t : In
 const radius = (f: Feature) => (f.kind === "rod" ? f.R : f.kind === "lathe" ? f.rMax : Infinity);
 const span = (g: ItemGeom, f: Feature) => Math.max(0, ...gripSpan(g, f).map((s) => s.len));
 
-/** `chopsticks`: ngón chỉ cuộn thêm ngần này độ để khép khe, gỡ lún (docs/11 mục 6 điểm 4) */
-const CHOP_CURL = 15;
+/** `pen`, `chopsticks`: ngón chỉ cuộn thêm ngần này độ để khép khe, gỡ lún (docs/11 mục 6 điểm 4) */
+const THIN_CURL = 15;
+/** Thanh khác cùng phần với `f`, lệch trục `≤ 15°` (đôi đũa) */
+const pairOf = (f: Feature, g: ItemGeom, R = Infinity) =>
+  g.features.some(
+    (o) =>
+      o !== f &&
+      o.kind === "rod" &&
+      o.part === f.part &&
+      o.R <= R &&
+      f.kind === "rod" &&
+      Math.abs(dot3(o.a, f.a)) >= Math.cos(15 * D2R),
+  );
 /** `cylinder`: tâm nắm cách phần `grip: false` ít nhất ngần này lần `W` dọc trục */
 export const GRIP_CLEAR = 0.3;
 /** `cylinder`: thanh hộp áp mặt rộng ít nhất ngần này lần `W` thì lòng áp phẳng, ngón dọc thân (`flat`) */
@@ -444,9 +455,12 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
     needs: [
       {
         kinds: ["rod", "lathe"],
-        test: (f, h) =>
-          radius(f) <= 0.12 * h.W && (f.kind === "rod" || f.kind === "lathe") && f.len >= 1.2 * h.W,
-        text: "thanh hay trụ bán kính ≤ 0,12·W, dài ≥ 1,2·W",
+        test: (f, h, g) =>
+          radius(f) <= 0.12 * h.W &&
+          (f.kind === "rod" || f.kind === "lathe") &&
+          f.len >= 1.2 * h.W &&
+          !pairOf(f, g),
+        text: "một thanh hay trụ bán kính ≤ 0,12·W, dài ≥ 1,2·W (không có thanh song song cùng phần)",
       },
     ],
     anchors: ["tip"],
@@ -461,13 +475,13 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
           range: [0, 0.12],
         },
         roles: roles("press", "free", "free", { index: "press", middle: "support" }),
+        curl: THIN_CURL,
         fixture: "but#viet",
       },
     },
     choices: { part: PART, along: range(0.15, 0.45, { default: 0.3 }) },
     hands: "one",
     motion: "write",
-    later: true,
   },
 
   chopsticks: {
@@ -475,17 +489,7 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
     needs: [
       {
         kinds: ["rod"],
-        test: (f, h, g) =>
-          f.kind === "rod" &&
-          f.R <= 0.15 * h.W &&
-          g.features.some(
-            (o) =>
-              o !== f &&
-              o.kind === "rod" &&
-              o.part === f.part &&
-              o.R <= 0.15 * h.W &&
-              Math.abs(dot3(o.a, f.a)) >= Math.cos(15 * D2R),
-          ),
+        test: (f, h, g) => f.kind === "rod" && f.R <= 0.15 * h.W && pairOf(f, g, 0.15 * h.W),
         text: "hai thanh mảnh (r ≤ 0,15·W) cùng phần, lệch ≤ 15°",
       },
     ],
@@ -501,7 +505,7 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
           range: [0, 0.15],
         },
         roles: roles("press", "support", "free", { index: "press", pinky: "free" }),
-        curl: CHOP_CURL,
+        curl: THIN_CURL,
         fixture: "dua#cam",
       },
     },

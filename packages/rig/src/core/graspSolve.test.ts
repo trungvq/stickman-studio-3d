@@ -31,6 +31,7 @@ import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import tomHum from "./__fixtures__/held-v2/tom-hum.json";
 import khay from "./__fixtures__/held-v2/khay.json";
 import dua from "./__fixtures__/held-v2/dua.json";
+import but from "./__fixtures__/held-v2/but.json";
 
 const item = (json: unknown): HeldItemSpec => {
   const r = parseHeldItem(json);
@@ -85,11 +86,13 @@ interface Case {
   high?: V3;
   /** Dư vị trí chấp nhận, đơn vị món */
   pos?: number;
+  /** Khung thay cho `grip-frames.json` */
+  fix?: Record<string, FixSize>;
 }
 
 /** Dư của khung dựng lại so với fixture: góc quay, khoảng điểm nắm của fixture trong khung bàn tay (đơn vị món) */
 function residual(c: Case, size: string, side: Side, sideN: number) {
-  const fx = FIX[c.fixture][size];
+  const fx = (c.fix ?? FIX[c.fixture])[size];
   const dims = handDims(fx.k, fx.long);
   const g = graspFrame(
     c.spec,
@@ -1311,7 +1314,7 @@ describe("graspFrame", () => {
     expect(run()).toBe(a);
   });
 
-  it("chỉ `sheet`, `card`, `palmBox`, `cylinder`, `platform`, `chopsticks` có chỗ tiếp xúc; thiếu `edge` của tấm là lỗi", () => {
+  it("chỉ `sheet`, `card`, `palmBox`, `cylinder`, `platform`, `chopsticks`, `pen` có chỗ tiếp xúc; thiếu `edge` của tấm là lỗi", () => {
     expect(Object.keys(CONTACTS)).toEqual([
       "sheet",
       "card",
@@ -1319,6 +1322,7 @@ describe("graspFrame", () => {
       "cylinder",
       "platform",
       "chopsticks",
+      "pen",
     ]);
     expect(() => graspFrame(BANG, itemGeom(BANG), { group: "bowl" }, -1, dims)).toThrow(/bowl/);
     expect(() => graspFrame(BANG, itemGeom(BANG), { group: "sheet" }, -1, dims)).toThrow(/edge/);
@@ -1430,7 +1434,7 @@ describe("`chopsticks` `grip`", () => {
   it("trên da: ngón cái, trỏ chạm hay hở dưới 0,15·W, không lún quá `HELD_SINK`, không xuyên; ngón cuộn thêm ≤ 15° — hai cỡ tay, hai tay", () => {
     for (const [k, long] of REAL)
       for (const [, side] of SIDES) {
-        const r = chopSkin(DUA, { group: "chopsticks" }, side, k, long);
+        const r = gripSkin(DUA, { group: "chopsticks" }, side, k, long);
         const at = `${k} ${side}`;
         const W = handDims(k, long).W;
         expect(r.gaps.thumb, at).toBeLessThanOrEqual(0.9);
@@ -1442,7 +1446,83 @@ describe("`chopsticks` `grip`", () => {
   });
 });
 
-function chopSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long: number) {
+describe("`pen` `grip`", () => {
+  const BUT = item(but);
+  const SIZES2 = ["1.61", "2.16", "t01-sakura", "kuroiwa"] as const;
+  const REAL = [
+    [1.75, 1.545],
+    [2, 1.813],
+  ] as const;
+  // fixture tay trái không soi gương món (v1: ngón cái ở phía kia thân bút); bút đối xứng qua `x = 0` nên so với tay phải soi gương
+  const MIRROR: Record<string, FixSize> = Object.fromEntries(
+    SIZES2.map((size) => {
+      const f = FIX["but#viet"][size];
+      const { R, p, u, centre } = f.right;
+      const left: FixHand = {
+        R: R.map((v, i) => (i < 3 !== (i % 3 === 0) ? -v : v)) as unknown as M3,
+        p: [-p[0], p[1], p[2]],
+        u,
+        centre: { item: [-centre.item[0], centre.item[1], centre.item[2]] },
+      };
+      return [size, { ...f, left }];
+    }),
+  );
+  const FIXP: Case = { fixture: "but#viet", spec: BUT, pick: both({ group: "pen" }, {}, {}) };
+  const FIXM: Case = { ...FIXP, fix: MIRROR };
+
+  it("ra lại fixture `but#viet` ở cỡ tay thật, hai tay (tay trái soi gương) trong 5° và 1 đơn vị với `along` mặc định 0,3", () => {
+    for (const size of SIZES2)
+      for (const [side, n] of SIDES) {
+        const r = residual(side === "left" ? FIXM : FIXP, size, side, n);
+        expect(r.g.choice.along, `${size} ${side}`).toBe(0.3);
+        expect(r.g.pose, `${size} ${side}`).toEqual(handVec("tripod"));
+        expect(r.rot, `${size} ${side}`).toBeLessThanOrEqual(5);
+        expect(r.pos, `${size} ${side}`).toBeLessThanOrEqual(1);
+      }
+  });
+
+  it("`along` tính từ mốc `tip` dọc đoạn bám; hai tay soi gương qua mặt chứa trục, det +1", () => {
+    const dims = handDims(1.75, 1.545);
+    const at = (spec: HeldItemSpec, along: number, side: number) =>
+      graspFrame(spec, itemGeom(spec), { group: "pen", along }, side, dims, 1.75, 1.545);
+    for (const side of [-1, 1]) {
+      const g = at(BUT, 0.3, side);
+      expect(det(g.G.R)).toBeCloseTo(1, 9);
+      // ngón chúc về ngòi
+      expect((g.hand.fingers as V3)[1]).toBeLessThan(0);
+      const step = sub3(at(BUT, 0.45, side).hand.at as V3, g.hand.at as V3);
+      close(step, [0, 0.15 * 26.8, 0], 1e-9);
+    }
+    const r = at(BUT, 0.3, -1).hand;
+    const l = at(BUT, 0.3, 1).hand;
+    close(l.at as V3, [-(r.at as V3)[0], (r.at as V3)[1], (r.at as V3)[2]], 1e-9);
+    close(l.palm as V3, [-(r.palm as V3)[0], (r.palm as V3)[1], (r.palm as V3)[2]], 1e-9);
+    // mốc `tip` ở đầu kia: chỗ cầm lật qua giữa đoạn bám (y 3,2–30)
+    const flip = item({
+      ...but,
+      anchors: { ...but.anchors, tip: { at: [0, 30, 0], dir: [0, 1, 0] } },
+    });
+    const f = at(flip, 0.3, -1).hand;
+    expect((f.at as V3)[1]).toBeCloseTo(33.2 - (r.at as V3)[1], 9);
+    expect((f.fingers as V3)[1]).toBeGreaterThan(0);
+  });
+
+  it("trên da: ngón cái, trỏ, giữa chạm (hở ≤ khe v1 + 0,3), không lún quá `HELD_SINK`, không xuyên; ngón cuộn thêm ≤ 15° — hai cỡ tay, hai tay", () => {
+    for (const [k, long] of REAL)
+      for (const [, side] of SIDES) {
+        const r = gripSkin(BUT, { group: "pen" }, side, k, long);
+        const at = `${k} ${side}`;
+        expect(r.gaps.thumb, at).toBeLessThanOrEqual(0.1);
+        expect(r.gaps.index, at).toBeLessThanOrEqual(0.3);
+        expect(r.gaps.middle, at).toBeLessThanOrEqual(0.4);
+        expect(r.sink, at).toBeLessThanOrEqual(HELD_SINK);
+        expect(r.pierce, at).toBeLessThan(0);
+        for (const x of r.fit) expect(x, at).toBeLessThanOrEqual(15);
+      }
+  });
+});
+
+function gripSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long: number) {
   const g = graspFrame(spec, itemGeom(spec), pick, side, handDims(k, long), k, long);
   const skin = handSkin(side, k, long);
   const fit = heldFit({
@@ -1454,7 +1534,7 @@ function chopSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long:
     G: g.G,
     roles: g.roles,
     bulge: skinBulge(skin, g.pose),
-    curl: GRIP_GROUPS.chopsticks.variants.grip.curl,
+    curl: GRIP_GROUPS[pick.group].variants.grip.curl,
   });
   const v = [...g.pose, ...fit];
   const pos = new Float32Array(skin.pos.length);
