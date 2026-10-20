@@ -85,6 +85,16 @@ export interface BoxFeature {
   half: V3;
 }
 
+export interface FaceEdge {
+  /** Tên theo hướng ra ngoài của cạnh trong khung món */
+  name: SideName;
+  /** Pháp tuyến của cạnh, nằm trong mặt, hướng vào trong mặt */
+  inward: V3;
+  /** Giữa cạnh */
+  at: V3;
+  len: number;
+}
+
 export interface FaceFeature {
   kind: "face";
   part: string;
@@ -95,6 +105,8 @@ export interface FaceFeature {
   u: V3;
   v: V3;
   half: [number, number];
+  /** Bốn cạnh của mặt hộp; mặt tròn của trụ tiện không có cạnh */
+  edges: FaceEdge[];
 }
 
 export type Feature =
@@ -332,6 +344,39 @@ function slabOf(part: string, lo: V3, hi: V3, U: V3, F: V3, R: V3): SlabFeature 
   return { kind: "slab", part, c, half, t: size[ni], lying, faces, edges };
 }
 
+/** Bốn cạnh của mặt chữ nhật `(c, u, v, half)`; tên cạnh theo trục khung món nằm trong mặt */
+function faceEdges(c: V3, n: V3, u: V3, v: V3, half: [number, number], U: V3, F: V3, R: V3) {
+  const axes = { U, F, R } as const;
+  const ax = (["U", "F", "R"] as const).reduce((b, k) =>
+    Math.abs(dot3(n, axes[k])) > Math.abs(dot3(n, axes[b])) + EPS ? k : b,
+  );
+  const [X1, X2] = OTHER[ax];
+  const straight = Math.abs(dot3(u, axes[X1])) + Math.abs(dot3(v, axes[X2]));
+  const swapped = Math.abs(dot3(u, axes[X2])) + Math.abs(dot3(v, axes[X1]));
+  const pairs: [V3, "U" | "F" | "R", number][] =
+    straight >= swapped
+      ? [
+          [u, X1, 0],
+          [v, X2, 1],
+        ]
+      : [
+          [u, X2, 0],
+          [v, X1, 1],
+        ];
+  const out: FaceEdge[] = [];
+  for (const [d, X, i] of pairs)
+    for (const sg of [1, -1]) {
+      const m = scale3(d, sg);
+      out.push({
+        name: sideName(m, U, F, R, [X]),
+        inward: neg(m),
+        at: add3(c, scale3(m, half[i])),
+        len: 2 * half[1 - i],
+      });
+    }
+  return out;
+}
+
 function boxFaces(part: string, lo: V3, hi: V3, U: V3, F: V3, R: V3): FaceFeature[] {
   const half = scale3(sub3(hi, lo), 0.5);
   const c = add3(lo, half);
@@ -340,16 +385,18 @@ function boxFaces(part: string, lo: V3, hi: V3, U: V3, F: V3, R: V3): FaceFeatur
     const [j, k] = [0, 1, 2].filter((x) => x !== i);
     for (const sg of [1, -1]) {
       const n = scale3(AXES[i], sg);
+      const fc = add3(c, scale3(n, half[i]));
       out.push({
         kind: "face",
         part,
         name: sideName(n, U, F, R),
         from: "box",
-        c: add3(c, scale3(n, half[i])),
+        c: fc,
         n,
         u: AXES[j],
         v: AXES[k],
         half: [half[j], half[k]],
+        edges: faceEdges(fc, n, AXES[j], AXES[k], [half[j], half[k]], U, F, R),
       });
     }
   }
@@ -542,6 +589,7 @@ function latheEnds(l: LatheFeature, others: Cyl[], U: V3, F: V3, R: V3): FaceFea
       u: l.b0,
       v: l.b90,
       half: [r, r],
+      edges: [],
     });
   }
   return out;

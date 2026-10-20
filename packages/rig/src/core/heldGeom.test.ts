@@ -8,6 +8,7 @@ import {
   topProblems,
   type DiscFeature,
   type Feature,
+  type FaceFeature,
   type LatheFeature,
   type RodFeature,
   type SlabFeature,
@@ -20,6 +21,7 @@ import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import dua from "./__fixtures__/held-v2/dua.json";
 import ongNgheBan from "./__fixtures__/held-v2/ong-nghe-ban.json";
+import khay from "./__fixtures__/held-v2/khay.json";
 import tomHum from "./__fixtures__/held-v2/tom-hum.json";
 import tuiHieu from "./__fixtures__/held-v2/tui-hieu.json";
 
@@ -30,6 +32,7 @@ const item = (json: unknown): HeldItemSpec => {
 };
 const of = <K extends Feature["kind"]>(fs: Feature[], kind: K) =>
   fs.filter((f): f is Extract<Feature, { kind: K }> => f.kind === kind);
+const dot = (a: readonly number[], b: readonly number[]) => a.reduce((s, x, i) => s + x * b[i], 0);
 const close = (a: readonly number[], b: readonly number[], d = 1e-6) =>
   a.forEach((x, i) => expect(x).toBeCloseTo(b[i], -Math.log10(d) - 1));
 
@@ -194,6 +197,55 @@ describe("tên mặt, tên cạnh của tấm", () => {
     expect(standing.faces.map((f) => f.name)).toEqual(["front", "back"]);
     expect(standing.edges.map((e) => e.name).sort()).toEqual(["bottom", "left", "right", "top"]);
     close(standing.edges.find((e) => e.name === "top")!.m, [0, 0, -1]);
+  });
+});
+
+describe("cạnh của mặt", () => {
+  const bottom = (json: unknown): FaceFeature => {
+    const g = itemGeom(item(json));
+    return of(g.features, "face").find((f) => f.part === "day" && f.name === "bottom")!;
+  };
+
+  it("đáy khay: bốn cạnh front, back, left, right với dài và điểm giữa đúng", () => {
+    const f = bottom(khay);
+    expect(f.edges.map((e) => e.name).sort()).toEqual(["back", "front", "left", "right"]);
+    const by = Object.fromEntries(f.edges.map((e) => [e.name, e]));
+    close(by.front.at, [0, 0, 26]);
+    close(by.back.at, [0, 0, -26]);
+    close(by.right.at, [46, 0, 0]);
+    close(by.left.at, [-46, 0, 0]);
+    expect([by.front.len, by.back.len, by.left.len, by.right.len]).toEqual([92, 92, 52, 52]);
+    expect(f.edges.reduce((a, e) => a + e.len, 0)).toBeCloseTo(2 * (92 + 52));
+    close(by.front.inward, [0, 0, -1]);
+    close(by.right.inward, [-1, 0, 0]);
+  });
+
+  it("pháp tuyến trong nằm trong mặt, trực giao cạnh, chỉ vào tâm mặt", () => {
+    for (const json of [khay, bangGia, dienThoai]) {
+      for (const f of of(itemGeom(item(json)).features, "face")) {
+        for (const e of f.edges) {
+          const along = [f.u, f.v].find((d) => Math.abs(dot(d, e.inward)) < 1e-9)!;
+          expect(Math.abs(dot(e.inward, f.n))).toBeCloseTo(0);
+          expect(Math.abs(dot(along, e.inward))).toBeCloseTo(0);
+          const toC = [0, 1, 2].map((i) => f.c[i] - e.at[i]);
+          expect(dot(toC, e.inward)).toBeGreaterThan(0);
+          expect(e.len).toBeCloseTo(2 * (Math.abs(dot(along, f.u)) > 0.5 ? f.half[0] : f.half[1]));
+        }
+        if (f.from === "box") expect(f.edges).toHaveLength(4);
+      }
+    }
+  });
+
+  it("mặt tròn của trụ tiện không có cạnh", () => {
+    const ends = of(itemGeom(item(chaiDia)).features, "face").filter((f) => f.from === "lathe");
+    expect(ends.length).toBeGreaterThan(0);
+    for (const f of ends) expect(f.edges).toEqual([]);
+  });
+
+  it("khung món nghiêng 44°: bốn cạnh của đáy vẫn khác tên", () => {
+    const g = itemGeom(SLAB_BOX(tilt(44)));
+    for (const f of of(g.features, "face"))
+      expect(new Set(f.edges.map((e) => e.name)).size).toBe(f.edges.length);
   });
 });
 
