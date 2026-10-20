@@ -5,7 +5,7 @@ import { carryClearance } from './core/heldCarry';
 import { handGripOf, handPoint } from './core/hand';
 import { HAND_CAPSULE_PIECES } from './core/handMesh';
 import { angleBetween, capsuleDepth, meshBox, meshSigned, type HeldCarry, type HeldGroup, type HeldHand, type HeldIntent } from './core/heldAudit';
-import { capsuleClearance } from './core/heldFit';
+import { capsuleClearance, skinDepth, skinPieces } from './core/heldFit';
 import { heldPoint, type GripFrame, type HeldFinger } from './core/heldItem';
 import type { V3 } from './core/lens';
 import { U } from './khoi';
@@ -84,23 +84,31 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
     let pierce = { depth: -Infinity, core: -Infinity, piece: 'palm' };
     const shape = entry.grip !== undefined ? entry.spec?.shape : undefined;
     const IF = shape && itemFrame(W, entry.object);
-    handCaps(h).forEach(([a, b, r], i) => {
+    const caps = handCaps(h);
+    // kiểu cầm cứng: lún, khe đo trên đỉnh da đang vẽ (`skinDepth`), phồng khớp tính cả; trục nang chỉ cho `pierce`
+    const skin = IF && skinDepth(h.geo.attributes.position.array, skinPieces(h.skin), IF, shape!);
+    const sc = IF ? (IF.u / 0.01) * k : 1;
+    caps.forEach(([a, b, r], i) => {
       const piece = HAND_CAPSULE_PIECES[i];
+      const f = piece === 'palm' || piece === 'thenar' ? undefined : (piece.slice(0, -1) as HeldFinger);
       let d: number, core: number;
       if (IF) {
-        // khung món ra đơn vị rig của thế giới: cỡ món trong tay nhân cỡ người
-        const c = capsuleClearance(shape!, IF, a, b, r), sc = (IF.u / 0.01) * k;
-        [d, core] = [-c.gap * sc, c.core * sc];
+        const c = capsuleClearance(shape!, IF, a, b, r);
+        [d, core] = [-skin!.gaps[f ?? 'palm'] * sc, c.core * sc];
       } else {
         d = capsuleDepth(mesh, world(a), world(b), r * k, REACH * u, box) / u;
         core = d - (r * k) / u;
+        const g = GROUP[piece] ?? 'fingers';
+        gaps[g] = Math.min(gaps[g], -d);
+        if (f) each[f] = Math.min(each[f] ?? Infinity, -d);
       }
-      const g = GROUP[piece] ?? 'fingers';
-      gaps[g] = Math.min(gaps[g], -d);
-      const f = piece === 'palm' || piece === 'thenar' ? undefined : (piece.slice(0, -1) as HeldFinger);
-      if (f) each[f] = Math.min(each[f] ?? Infinity, -d);
       if (core > pierce.core) pierce = { depth: d, core, piece };
     });
+    if (skin) {
+      const s = skin.gaps;
+      Object.assign(gaps, { thumb: s.thumb * sc, index: s.index * sc, fingers: Math.min(s.middle, s.ring, s.pinky) * sc, palm: s.palm * sc });
+      for (const f of ['thumb', 'index', 'middle', 'ring', 'pinky'] as const) each[f] = s[f] * sc;
+    }
     const G = world(handGripOf(v, side, h.scale, h.long));
     const P = world(handPoint('palm', v, side, h.scale, h.long));
     const n = new THREE.Vector3(-side, 0, 0).transformDirection(W);
@@ -129,6 +137,7 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
     // kiểu cầm cứng: ý định và đích do món đặt, đúng như bộ giải của `act` đã nhắm (`fig.aim`)
     const rep = fig.aim?.[side < 0 ? 'R' : 'L'];
     const ih = entry.grip !== undefined ? rep?.hold : undefined;
+    const grasp = ih?.grasp;
     const reach = entry.grip !== undefined && rep?.reach?.hold ? rep.reach : undefined;
     out.push({
       id, hand: side < 0 ? 'R' : 'L',
@@ -136,6 +145,7 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
       obj: entry.object.id,
       ...(entry.grip !== undefined && { hold: `${entry.item}#${entry.grip}` }),
       ...(ih && { intent: { rule: ih.toward === 'up' ? 'up' as const : 'face' as const, err: ih.err, clamped: ih.clamped, ...(ih.toward && { toward: ih.toward }), want: ih.want, got: ih.got, ...(ih.alts && { alts: ih.alts }) } }),
+      ...(grasp && { grasp }),
       ...(reach && { reach: { kind: reach.hold!, gap: reach.gap, s: k, point: reach.point, to: reach.to } }),
       key: `${entry.object.id}|${entry.grip ?? ''}|${entry.pose}|${entry.follow}|${entry.offset ?? ''}|${entry.rotate ?? ''}`,
       pose: h.held ?? entry.pose,

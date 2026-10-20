@@ -1,4 +1,5 @@
 import { AIM_BEND, AIM_DEV } from "./act3";
+import type { GraspReport } from "./graspSolve";
 import { fingerVec, HAND_POSES, HAND_RELAXED, type HandPose, type HandVec } from "./hand";
 import { depthAt, project, type V3 } from "./lens";
 import { sceneHoldRef, type CarryOn, type HeldFinger } from "./heldItem";
@@ -137,6 +138,8 @@ export interface HeldHand {
     /** Kiểu cầm khác của cùng món với cùng ý định, lệch còn lại (độ), ít trước (`AimReport.hold.alts`) */
     alts?: readonly { grip: string; err: number }[];
   };
+  /** Chỗ cầm nhóm đã giải của lần cầm (`AimReport.hold.grasp`): nhóm, khối hình, cổ tay, khuỷu */
+  grasp?: GraspReport;
   /**
    * Kiểu cầm cứng: đích do món đặt cho bàn tay — `support` tay phụ với tới mốc kiểu cầm của nó trên món, `item` điểm
    * `item:<mốc>` vào đích; khe còn lại (rig, đã chia cỡ người `s`)
