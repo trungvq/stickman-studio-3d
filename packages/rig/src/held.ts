@@ -4,8 +4,9 @@ import { carryBody, carrySeat } from './attach';
 import { carryClearance } from './core/heldCarry';
 import { handGripOf, handPoint } from './core/hand';
 import { HAND_CAPSULE_PIECES } from './core/handMesh';
-import { angleBetween, capsuleDepth, meshBox, meshSigned, type HeldCarry, type HeldGroup, type HeldHand, type HeldIntent } from './core/heldAudit';
-import { capsuleClearance, skinDepth, skinPieces } from './core/heldFit';
+import { angleBetween, capsuleDepth, heldSize, meshBox, meshSigned, type HeldCarry, type HeldGroup, type HeldHand, type HeldIntent } from './core/heldAudit';
+import { capsuleClearance, heldDistance, skinDepth, skinPieces, toItem } from './core/heldFit';
+import { handDims } from './core/heldGeom';
 import { heldPoint, type GripFrame, type HeldFinger } from './core/heldItem';
 import type { V3 } from './core/lens';
 import { U } from './khoi';
@@ -109,10 +110,13 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
       Object.assign(gaps, { thumb: s.thumb * sc, index: s.index * sc, fingers: Math.min(s.middle, s.ring, s.pinky) * sc, palm: s.palm * sc });
       for (const f of ['thumb', 'index', 'middle', 'ring', 'pinky'] as const) each[f] = s[f] * sc;
     }
-    const G = world(handGripOf(v, side, h.scale, h.long));
+    const g0 = handGripOf(v, side, h.scale, h.long);
+    const G = world(g0);
     const P = world(handPoint('palm', v, side, h.scale, h.long));
     const n = new THREE.Vector3(-side, 0, 0).transformDirection(W);
-    const grip = meshSigned(mesh, G, box).d / u;
+    // chỗ cầm nhóm: tâm nắm đo tới hình va chạm (docs/11 mục 7)
+    const group = entry.grip?.startsWith('@') ?? false;
+    const grip = group && IF ? heldDistance(shape!, toItem(IF, g0 as V3)) * sc : meshSigned(mesh, G, box).d / u;
     const pc = meshSigned(mesh, P, box);
     const toward: V3 = [pc.q[0] - P[0], pc.q[1] - P[1], pc.q[2] - P[2]];
     const palm = { gap: pc.d / u, angle: pc.d > 0.05 * u ? angleBetween([n.x, n.y, n.z], toward) : 0 };
@@ -139,13 +143,17 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
     const ih = entry.grip !== undefined ? rep?.hold : undefined;
     const grasp = ih?.grasp;
     const reach = entry.grip !== undefined && rep?.reach?.hold ? rep.reach : undefined;
+    const size = group && grasp && entry.spec ? heldSize(entry.spec, grasp, handDims(h.scale, h.long)) : undefined;
     out.push({
       id, hand: side < 0 ? 'R' : 'L',
       item: entry.item ?? nameOf(entry.object),
       obj: entry.object.id,
-      ...(entry.grip !== undefined && { hold: `${entry.item}#${entry.grip}` }),
+      ...(entry.grip !== undefined && { hold: group ? `${entry.item}${entry.grip}` : `${entry.item}#${entry.grip}` }),
+      ...(group && { s: k }),
       ...(ih && { intent: { rule: ih.toward === 'up' ? 'up' as const : 'face' as const, err: ih.err, clamped: ih.clamped, ...(ih.toward && { toward: ih.toward }), want: ih.want, got: ih.got, ...(ih.alts && { alts: ih.alts }) } }),
       ...(grasp && { grasp }),
+      ...(group && entry.roles && { roles: entry.roles }),
+      ...(size && { size }),
       ...(reach && { reach: { kind: reach.hold!, gap: reach.gap, s: k, point: reach.point, to: reach.to } }),
       key: `${entry.object.id}|${entry.grip ?? ''}|${entry.pose}|${entry.follow}|${entry.offset ?? ''}|${entry.rotate ?? ''}`,
       pose: h.held ?? entry.pose,

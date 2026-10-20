@@ -3134,6 +3134,22 @@ function holdRun(
 }
 
 /**
+ * Tay `hand` của người `id` ở `time` còn trong `HOLD_BLEND` của một ranh giới lần cầm (vừa cầm, đổi chỗ cầm, vừa buông —
+ * `ReachHold.enter` / `from` / `was`): bàn tay đang đi tới món, chưa tới chỗ cầm. Ranh giới ở giây `0` không hoà
+ */
+export function holdBlending(rt: SceneRuntime, id: string, hand: "R" | "L", time: number): boolean {
+  const keys = rt.cast.find((m) => m.id === id)?.world?.hands;
+  if (!keys) return false;
+  const side: HandSide = hand === "R" ? "right" : "left";
+  for (const k of keys) {
+    if (k.t > time) break;
+    if (k.t <= 0 || time - k.t >= HOLD_BLEND || k[side]?.hold === undefined) continue;
+    if (holdRun(keys, side, k.t - 1e-6)?.since !== holdRun(keys, side, k.t)?.since) return true;
+  }
+  return false;
+}
+
+/**
  * Bảng món cộng các tên thể hiện scene nhắc tới: `vali:2` (hai món cùng loại trên một người hay trong một cảnh) dùng
  * chung `held/vali.json` mà là một món riêng — `provide`, `holder`, đổi tay theo tên đủ
  */

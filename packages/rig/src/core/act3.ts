@@ -840,6 +840,12 @@ function placeArm(
   };
 }
 
+/** Báo chỗ cầm kèm độ lấn theo bán kính tay của cánh tay đã vẽ (luật `arm` của `check`) */
+const withBody = (r: GraspReport, a: ArmSol): GraspReport => ({
+  ...r,
+  arm: { ...r.arm, bodyRatio: a.bodyRatio, ...(a.bodyPart && { bodyPart: a.bodyPart }) },
+});
+
 const clampTo = (v: number, L: number) => Math.max(-L, Math.min(L, v));
 /** Xoay, gập, lệch cổ tay của cánh tay đã giải, kẹp ở giới hạn như người 3D vẽ */
 const wristOf = ({ wrist: w }: ArmSol): number[] => [
@@ -927,7 +933,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
           got: front(A.Rw),
           err: Math.acos(Math.max(-1, Math.min(1, (off[0] + off[4] + off[8] - 1) / 2))) / D,
           clamped,
-          grasp: graspReport(item, item.t0, "item"),
+          grasp: withBody(graspReport(item, item.t0, "item"), item.arm),
         },
       };
       done[side] = state(A, side);

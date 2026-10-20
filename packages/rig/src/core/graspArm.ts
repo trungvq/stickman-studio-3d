@@ -97,8 +97,10 @@ export interface ArmSol {
     dev: number;
     over: { turn: number; bend: number; dev: number };
   };
-  /** Lấn lớn nhất vào thân, đầu, tay kia, px */
+  /** Lấn lớn nhất vào thân, đầu, tay kia, px; `bodyRatio` lấn lớn nhất chia bán kính tay ở chỗ ấy, `bodyPart` chỗ ấy */
   body: number;
+  bodyRatio: number;
+  bodyPart?: string;
   /** Khe từ cổ tay với tới tới `Wp` khi ngoài tầm với, rig */
   gap: number;
   E: number;
@@ -184,11 +186,14 @@ function intrusion(inp: ArmInput, S0: V3, E: V3, W: V3, other?: ArmSeg) {
   }
   let sum = 0;
   let max = 0;
-  for (const v of best.values()) {
+  let q = 0;
+  let part: string | undefined;
+  for (const [k, v] of best) {
     sum += v.q * v.q;
     max = Math.max(max, v.d);
+    if (v.q > q) [q, part] = [v.q, k];
   }
-  return { sum, max };
+  return { sum, max, q, part };
 }
 
 /**
@@ -303,6 +308,8 @@ export function evalPhi(
     fore,
     wrist: { ...a, over },
     body: body.max,
+    bodyRatio: body.q,
+    ...(body.part && { bodyPart: body.part }),
     gap: Math.max(0, (len(sub3(Wp, S)) - (inp.l1 + inp.l2)) * 100),
     E: wristE + overE + down + bodyE + cont,
     terms: { wrist: wristE, over: overE, down, body: bodyE, cont },

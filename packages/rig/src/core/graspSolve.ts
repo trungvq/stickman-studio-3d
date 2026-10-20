@@ -462,6 +462,9 @@ export interface GraspReport {
     phi: number;
     wrist: { turn: number; bend: number; dev: number; over: number; off: number };
     body: number;
+    /** Lấn chia bán kính tay ở chỗ lấn và chỗ ấy (`ArmSol.bodyRatio`, `bodyPart`): `act` điền khi tay vẽ theo nghiệm */
+    bodyRatio?: number;
+    bodyPart?: string;
     gap: number;
   };
 }
