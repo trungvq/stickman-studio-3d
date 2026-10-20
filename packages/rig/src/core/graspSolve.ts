@@ -22,7 +22,7 @@ import {
   type HandVec,
 } from "./hand";
 import { handSkin, skinHand } from "./handMesh";
-import { HELD_FIT, heldFit, skinBulge, skinDepth, skinPieces } from "./heldFit";
+import { HELD_FIT, heldDistance, heldFit, skinBulge, skinDepth, skinPieces } from "./heldFit";
 import {
   alongFrac,
   edgeFrame,
@@ -49,6 +49,7 @@ import {
   type GripFrame,
   type GroupId,
   type HeldItemSpec,
+  type HeldShape,
   type SceneHold,
 } from "./heldItem";
 import { add3, cross3, dot3, matMul, matVec, scale3, sub3, type M3, type V3 } from "./lens";
@@ -89,6 +90,8 @@ export interface ContactInput {
   tilt: number;
   /** Đầu cao của cạnh, khung món (`edgeHigh`); bỏ trống là `m × F` */
   high?: V3;
+  /** Hình va chạm của món, khung món */
+  shape?: readonly HeldShape[];
 }
 
 /** Tâm nắm `at`, lòng tay `palm` và ngón `fingers` (trực giao với lòng tay) trong khung món; `along` là tỉ lệ đã giải */
@@ -97,6 +100,8 @@ export interface GraspContact {
   palm: V3;
   fingers: V3;
   along: number;
+  /** Bề dày đo ở chỗ ngón ôm, thay bề dày khối hình khi hoà dáng (`by: "thick"`) */
+  thick?: number;
 }
 
 export type ContactFn = (x: ContactInput) => GraspContact;
@@ -125,13 +130,21 @@ const perp = (v: V3, n: V3): V3 => sub3(v, scale3(n, dot3(v, n)));
 const mix2 = (a: V3, ca: number, b: V3, cb: number): V3 => add3(scale3(a, ca), scale3(b, cb));
 
 /** Thụt tâm nắm vào trong tấm, đơn vị món, cố định mọi cỡ tay (fixture của từng biến thể) */
-export const SHEET_INSET = { pinch: 2.5, flat: 5, rim: 1 } as const;
+export const SHEET_INSET = { pinch: 2.5, flat: 5, rim: 3.2 } as const;
 /** `sheet` `pinch`: `n = a · F + b · f` (fixture `bang-gia#doc`) */
 const PINCH_PALM: readonly [number, number] = [0.7654, 0.6436];
 /** `pinch`: tâm nắm cách mặt bốn ngón (mặt kia của `F`) ngần này, mọi bề dày (giữa bề dày của `bang-gia#doc`, dày 1) */
 const PINCH_BACK = 0.5;
 /** `pinch`: tấm dày hơn `2 · PINCH_BACK` thì tâm nắm lùi ra mép ngần này lần phần dày thêm (mép lọt sâu vào kẽ cái–trỏ) */
 const PINCH_OUT = 1.3;
+/** `rim`: thụt bớt ngần này lần bề dày, không dưới `RIM_MIN` (tấm mỏng lọt sâu vào kẽ cái–trỏ, mép dày tì gốc ngón) */
+const RIM_OUT = 0.8;
+const RIM_MIN = 1;
+/** `rim`: tâm nắm cách mặt ngón cái `F` ngần này, tấm mỏng hơn hai lần thì giữa bề dày (fixture `tom-hum#nhac`) */
+const RIM_TOP = 1.9;
+/** `rim`: dáng hoà theo bề dày thật của tấm ở ngần này vào trong tâm nắm (vành đĩa mỏng hơn hộp bao), đo `RIM_STEPS` điểm */
+const RIM_PROBE = 1;
+const RIM_STEPS = 24;
 /** `palmBox` (fixture `dien-thoai#doc`): ngón chếch về đầu trên trong mặt máy, độ; tâm nắm lệch về cạnh đầu ngón và sau mặt sau, đơn vị món */
 const BOX_RISE = 20;
 const BOX_SHIFT = 2;
@@ -179,12 +192,29 @@ const flat: ContactFn = (x) => {
 
 /** Khung `nt`: `n = −m`, ngón cái về `F`, ngón dọc mép `side · (F × n)` chúc `slant` về phía `−F` */
 const rim: ContactFn = (x) => {
-  const { m, F, at, along } = sheetEdge(x, SHEET_INSET.rim);
+  const t = (x.feature as SlabFeature | DiscFeature).t;
+  const d = Math.max(RIM_MIN, SHEET_INSET.rim - RIM_OUT * t);
+  const { m, F, at: mid, along } = sheetEdge(x, d);
+  const at = add3(mid, scale3(F, Math.max(0, t / 2 - RIM_TOP)));
   const n = neg(m);
   const f0 = unit(scale3(cross3(F, n), x.side));
   const sl = x.slant * D2R;
-  return { at, along, palm: n, fingers: unit(mix2(f0, Math.cos(sl), F, -Math.sin(sl))) };
+  return {
+    at,
+    along,
+    palm: n,
+    fingers: unit(mix2(f0, Math.cos(sl), F, -Math.sin(sl))),
+    ...(x.shape && { thick: thickAt(x.shape, sub3(mid, scale3(m, RIM_PROBE)), F, t) }),
+  };
 };
+
+/** Bề dày vật liệu trên đoạn dài `t` qua `c` theo `F` (khung món), lấy mẫu `RIM_STEPS` điểm */
+function thickAt(shape: readonly HeldShape[], c: V3, F: V3, t: number): number {
+  let n = 0;
+  for (let i = 0; i < RIM_STEPS; i++)
+    if (heldDistance(shape, add3(c, scale3(F, ((i + 0.5) / RIM_STEPS - 0.5) * t))) < 0) n++;
+  return (n / RIM_STEPS) * t;
+}
 
 /** Trục mỏng, trục dài của hộp (chỉ số), trục dài lấy dấu về `top` */
 function boxAxes(b: BoxFeature, g: Pick<ItemGeom, "U" | "F" | "R">) {
@@ -286,7 +316,10 @@ const THUMB = HAND_DOF.indexOf("thumbAbd");
 function poseVec(r: PoseRef): number[] {
   if (!(r.pose in HAND_POSES)) throw new Error(`dáng \`${r.pose}\` chưa soạn`);
   const v = handVec(r.pose as HandPose);
-  for (const i of BASE) v[i] += r.knuckle ?? 0;
+  for (const i of BASE) {
+    v[i] += r.knuckle ?? 0;
+    v[i + 1] += r.tip ?? 0;
+  }
   r.thumb?.forEach((a, i) => (v[THUMB + i] = a));
   return v;
 }
@@ -304,9 +337,12 @@ function measure(f: Feature, by: PoseSpec["by"]): number {
   return f.kind === "box" || f.kind === "slab" ? 2 * [...f.half].sort((a, b) => a - b)[1] : NaN;
 }
 
-/** Dáng gốc: dáng đóng ở `range[0]`, dáng mở ở `range[1]` (số đo món theo `A` hay `W`), hoà góc ở giữa */
-function basePose(ps: PoseSpec, f: Feature, dims: HandDims): number[] {
-  const x = measure(f, ps.by) / dims[ps.unit];
+/**
+ * Dáng gốc: dáng đóng ở `range[0]`, dáng mở ở `range[1]` (số đo món theo `A` hay `W`, `thick` của chỗ tiếp xúc nếu có),
+ * hoà góc ở giữa
+ */
+function basePose(ps: PoseSpec, f: Feature, dims: HandDims, thick?: number): number[] {
+  const x = (ps.by === "thick" && thick !== undefined ? thick : measure(f, ps.by)) / dims[ps.unit];
   const [lo, hi] = ps.range;
   const w = Number.isFinite(x) ? Math.min(1, Math.max(0, (x - lo) / (hi - lo))) : 0;
   return mixHand(poseVec(ps.closed), poseVec(ps.open), w);
@@ -358,7 +394,19 @@ export function graspFrame(
   const slant = typeof sl === "number" ? sl : sl === "low" ? half[0] : sl === "high" ? half[1] : 0;
   const tilt = choice.tilt ?? (def.tilt as number | undefined) ?? 0;
   const along = choice.along ?? (def.along as number | undefined) ?? 0.5;
-  const ct = contact({ geom, feature, side, dims, edge, along, thumb, slant, tilt, high: eHigh });
+  const ct = contact({
+    geom,
+    feature,
+    side,
+    dims,
+    edge,
+    along,
+    thumb,
+    slant,
+    tilt,
+    high: eHigh,
+    shape: spec.shape,
+  });
   const name = vs.pose.closed.pose as HandPose;
   const hand: GraspHand = {
     pose: name,
@@ -370,7 +418,7 @@ export function graspFrame(
   return {
     G: gripFrame(spec, hand, side, k, long, s),
     hand,
-    pose: basePose(vs.pose, feature, dims),
+    pose: basePose(vs.pose, feature, dims, ct.thick),
     roles: vs.roles,
     feature,
     choice: {

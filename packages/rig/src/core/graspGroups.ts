@@ -25,10 +25,14 @@ export type NeedKind = Feature["kind"] | "path" | "ball";
 export type PlannedPose = "tripod" | "chopsticks" | "ball" | "claw";
 export type GroupPoseName = HandPose | PlannedPose;
 
-/** Một dáng mở hay đóng; `knuckle` là độ gập thêm ở gốc ngón, `thumb` thay góc ngón cái của dáng (`Fingers.thumb`) */
+/**
+ * Một dáng mở hay đóng; `knuckle`, `tip` là độ gập thêm ở gốc, ở ngọn bốn ngón; `thumb` thay góc ngón cái của dáng
+ * (`Fingers.thumb`). Tâm nắm của khung theo tên dáng đóng
+ */
 export interface PoseRef {
   pose: GroupPoseName;
   knuckle?: number;
+  tip?: number;
   thumb?: readonly [number, number, number, number];
 }
 
@@ -193,6 +197,8 @@ export const longEdges = (f: SlabFeature, h: HandDims) =>
 
 /** Ngón cái `pinch`: khép theo trỏ, ngọn duỗi ngược để đầu ngón đè mặt trước mà đốt gốc (da phình to) tránh mép */
 const PINCH_THUMB = [0, 10, 10, -20] as const;
+/** Ngón cái `rim`: khép về cạnh trỏ, đè mặt `F` lên trỏ đã cuộn; góc chọn để `handGripOf` của dáng đóng còn ở kẽ cái–trỏ */
+const RIM_THUMB = [25, 20, 10, 25] as const;
 
 const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
   sheet: {
@@ -237,12 +243,12 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
         frame: "nt",
         pose: {
           open: { pose: "edge" },
-          closed: { pose: "edge" },
+          closed: { pose: "edge", knuckle: 45, tip: 65, thumb: RIM_THUMB },
           by: "thick",
           unit: "A",
-          range: [0.05, 0.45],
+          range: [0.05, 0.2],
         },
-        roles: roles("press", "press", "press"),
+        roles: roles("press", "support", "press", { index: "wrap", middle: "press" }),
         fixture: "tom-hum#nhac",
       },
     },

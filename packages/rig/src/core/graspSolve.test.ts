@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { GRIP_GROUPS } from "./graspGroups";
 import { CONTACTS, edgeHigh, graspFrame, SHEET_INSET, type GraspChoice } from "./graspSolve";
-import { HAND_DOF, handVec } from "./hand";
+import { HAND_DOF, HAND_PIECES, handVec } from "./hand";
 import { handSkin, skinHand } from "./handMesh";
 import { HELD_SINK } from "./heldAudit";
-import { heldFit, skinBulge, skinDepth, skinPieces } from "./heldFit";
+import { heldFit, skinBulge, skinDepth, skinPieces, toItem } from "./heldFit";
 import { edgeFrame, handDims, itemGeom, type SlabFeature } from "./heldGeom";
 import {
   gripPoint,
@@ -159,8 +159,9 @@ const CASES: Case[] = [
       { edge: "left" },
       { edge: "right" },
     ),
+    pos: 0.1,
   },
-  // tâm nắm của fixture ở 4,2 trên đáy đĩa, giữa bề dày tấm là 2,7
+  // tâm nắm của fixture cách mặt trên đĩa 1,2, thụt 0,9
   {
     fixture: "tom-hum#nhac",
     spec: TOM,
@@ -169,9 +170,9 @@ const CASES: Case[] = [
       { edge: "left" },
       { edge: "right" },
     ),
-    pos: 1.6,
+    pos: 0.75,
   },
-  // fixture thụt 3 từ mép, `rim` thụt `SHEET_INSET.rim`
+  // tờ báo dày 0,24: fixture thụt 3 từ mép
   {
     fixture: "bao#doc",
     spec: BAO,
@@ -181,7 +182,7 @@ const CASES: Case[] = [
       { edge: "left" },
     ),
     high: [0, 1, 0],
-    pos: 3 - SHEET_INSET.rim + 0.05,
+    pos: 0.1,
   },
 ];
 
@@ -354,7 +355,8 @@ describe("biến thể của `sheet`", () => {
       }
   });
 
-  it("thụt `d` cố định mọi cỡ tay: pinch 2,5, flat 5, rim 1, giữa bề dày", () => {
+  it("thụt `d` cố định mọi cỡ tay: pinch 2,5, flat 5, rim 3,2 − 0,8 · dày, giữa bề dày", () => {
+    const d = { pinch: SHEET_INSET.pinch, flat: SHEET_INSET.flat, rim: SHEET_INSET.rim - 0.8 };
     for (const variant of ["pinch", "flat", "rim"] as const)
       for (const k of [1, 2.16]) {
         const g = graspFrame(
@@ -365,8 +367,22 @@ describe("biến thể của `sheet`", () => {
           handDims(k),
           k,
         );
-        close(g.hand.at as V3, [22 - SHEET_INSET[variant], 0.6, 0], 1e-6);
+        close(g.hand.at as V3, [22 - d[variant], 0.6, 0], 1e-6);
       }
+  });
+
+  it("`rim` tấm dày: thụt không dưới 1, tâm nắm cách mặt ngón cái 1,9", () => {
+    const thick = sheet([40, 6, 40], [0, 0, 0], [0, 1, 0], [0, 0, -1]);
+    for (const thumb of ["front", "back"] as const) {
+      const g = graspFrame(
+        thick,
+        itemGeom(thick),
+        { group: "sheet", variant: "rim", edge: "right", thumb },
+        -1,
+        dims,
+      );
+      close(g.hand.at as V3, [19, thumb === "front" ? 1.1 : -1.1, 0], 1e-9);
+    }
   });
 
   it("`slant` theo tên: `low`, `high` là nửa miền của biến thể", () => {
@@ -486,6 +502,109 @@ describe("`sheet` `pinch` trên da", () => {
     close(at(thick, "front"), [20, -2.5, 0], 1e-9);
     close(at(thick, "back"), [20, 2.5, 0], 1e-9);
     close(at(PHIEU, "front"), [20 - 2.5 - 1.3 * 0.4, 0.6, 0], 1e-9);
+  });
+});
+
+/** `rim` trên da: khe từng ngón, lún, độ cao trung bình của ngón cái và trỏ theo `F` so với giữa bề dày ở cạnh */
+function rimSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long: number, high?: V3) {
+  const g = graspFrame(spec, itemGeom(spec), pick, side, handDims(k, long), k, long, 1, high);
+  const skin = handSkin(side, k, long);
+  const fit = heldFit({
+    v: g.pose,
+    side,
+    k,
+    long,
+    shape: spec.shape!,
+    G: g.G,
+    roles: g.roles,
+    bulge: skinBulge(skin, g.pose),
+  });
+  const pos = new Float32Array(skin.pos.length);
+  skinHand(skin, [...g.pose, ...fit], pos);
+  const piece = skinPieces(skin);
+  const { gaps } = skinDepth(pos, piece, g.G, spec.shape!);
+  const fr = edgeFrame(g.feature as SlabFeature, pick.edge!, pick.thumb as "front");
+  const sum = { thumb: [0, 0], index: [0, 0] };
+  for (let i = 0; i < piece.length; i++) {
+    const f = HAND_PIECES[piece[i]].slice(0, -1) as keyof typeof sum;
+    if (!(f in sum)) continue;
+    const q = toItem(g.G, [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]]);
+    sum[f][0] +=
+      (q[0] - fr.at[0]) * fr.F[0] + (q[1] - fr.at[1]) * fr.F[1] + (q[2] - fr.at[2]) * fr.F[2];
+    sum[f][1]++;
+  }
+  return {
+    g,
+    gaps,
+    sink: Math.max(0, -Math.min(...Object.values(gaps))),
+    up: { thumb: sum.thumb[0] / sum.thumb[1], index: sum.index[0] / sum.index[1] },
+  };
+}
+
+describe("`sheet` `rim` trên da", () => {
+  const SLANTS = [0, 22.5, 45];
+
+  it("tấm mỏng (báo 0,24, phiếu 0,6): ngón cái đè mặt `F`, trỏ cuộn dưới mép chạm mặt kia, lún ≤ 0,35", () => {
+    for (const [spec, edge, high] of [
+      [BAO, "right", [0, 1, 0]],
+      [PHIEU, "right", [0, 0, -1]],
+    ] as const)
+      for (const [k, long] of HANDS)
+        for (const side of [-1, 1])
+          for (const slant of SLANTS) {
+            const pick: Pick = { group: "sheet", variant: "rim", edge, thumb: "front", slant };
+            const r = rimSkin(spec, pick, side, k, long, high as V3);
+            const at = `${k} ${side} ${slant}`;
+            expect(r.up.thumb, at).toBeGreaterThan(1);
+            expect(r.up.index, at).toBeLessThan(-1);
+            expect(r.gaps.thumb, at).toBeLessThanOrEqual(1.1);
+            expect(r.gaps.index, at).toBeLessThanOrEqual(0.4);
+            expect(r.sink, at).toBeLessThanOrEqual(0.35);
+          }
+  });
+
+  it("dáng theo bề dày ở chỗ ngón ôm: vành đĩa mỏng gần dáng đóng dù hộp bao dày 5,4; tấm đặc dày 3,9 là dáng mở", () => {
+    const ps = GRIP_GROUPS.sheet.variants.rim.pose!;
+    const i = HAND_DOF.indexOf("indexBase");
+    const open = handVec(ps.open.pose as "edge");
+    const shut = handVec(ps.closed.pose as "edge")[i] + ps.closed.knuckle!;
+    const pick = (edge: "left", feature?: "slab"): Pick => ({
+      group: "sheet",
+      variant: "rim",
+      edge,
+      thumb: "top",
+      ...(feature && { feature }),
+    });
+    for (const [k, long] of HANDS) {
+      const tom = graspFrame(TOM, itemGeom(TOM), pick("left", "slab"), -1, handDims(k, long));
+      expect(tom.pose[i]).toBeGreaterThan((shut + open[i]) / 2);
+      const bo = graspFrame(BO_DA, itemGeom(BO_DA), pick("left"), -1, handDims(k, long));
+      close(bo.pose, open, 1e-12);
+    }
+  });
+
+  it("tấm dày (3,9), vành đĩa: không lún quá 0,1; trỏ áp mép, ngón cái trên mặt `F`", () => {
+    for (const [spec, feature] of [
+      [BO_DA, undefined],
+      [TOM, "slab"],
+    ] as const)
+      for (const [k, long] of HANDS)
+        for (const side of [-1, 1])
+          for (const slant of SLANTS) {
+            const pick: Pick = {
+              group: "sheet",
+              variant: "rim",
+              edge: "left",
+              thumb: "top",
+              slant,
+              ...(feature && { feature }),
+            };
+            const r = rimSkin(spec, pick, side, k, long);
+            const at = `${feature ?? "bo-da"} ${k} ${side} ${slant}`;
+            expect(r.sink, at).toBeLessThanOrEqual(0.1);
+            expect(r.gaps.index, at).toBeLessThanOrEqual(0.4);
+            expect(r.up.thumb, at).toBeGreaterThan(r.up.index);
+          }
   });
 });
 
