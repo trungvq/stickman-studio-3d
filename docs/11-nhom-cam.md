@@ -325,27 +325,43 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
 #### 1. `sheet` — tấm kẹp mép (bản đầu)
 
 - **Cần**: `slab` hay `disc` có bề dày `t ≤ 0,45 · A`; cạnh được cầm dài `≥ 0,6 · W`.
-- **Chỗ tiếp xúc**: một điểm trên cạnh, ở `along`; tâm nắm thụt vào trong tấm `d`, giữa bề dày. `d` cố định ở mọi cỡ tay,
-  theo fixture của biến thể: `pinch` 2,5, `flat` 5, `rim` 1.
+- **Chỗ tiếp xúc**: một điểm trên cạnh, ở `along`; tâm nắm thụt vào trong tấm `d` và đặt theo bề dày `t` của tấm (đơn vị
+  rig của món, cố định ở mọi cỡ tay). `flat`: giữa bề dày, `d` = 5 (`SHEET_INSET.flat`). `pinch`: cách mặt bốn ngón
+  `PINCH_BACK` = 0,5, `d = max(0; 2,5 − 1,3 · (t − 1))` (`SHEET_INSET.pinch`, `PINCH_OUT`; tấm dày hơn 1 thì tâm nắm lùi
+  ra mép). `rim`: cách mặt ngón cái `F` `RIM_TOP` = 1,9 (tấm mỏng hơn 3,8 thì giữa bề dày), `d = max(1; 3,2 − 0,8 · t)`
+  (`SHEET_INSET.rim`, `RIM_OUT`, `RIM_MIN`).
 - **Biến thể**:
   - **`pinch`** (fixture `bang-gia#doc`, `frame: "nf"`): bốn ngón khép gập chừng 40° đè mặt kia, ngón cái đè mặt có ngón cái
     `F`; `n = 0,7654 · F + 0,6436 · f`, `f` = hướng vào trong tấm (`−m`) quay `slant` trong mặt tấm. Dáng mở → đóng: `sheet`
-    với gốc ngón gập 30° → `sheet`, theo `t` trong `[0,05 · A, 0,45 · A]` (tấm dày thì mở).
+    với gốc ngón gập 30° → `sheet`, theo `t` trong `[0,05 · A, 0,45 · A]` (tấm dày thì mở). Ngón cái ở cả hai dáng là
+    `PINCH_THUMB = [0, 10, 10, −20]` (`PoseRef.thumb`, góc bốn khớp ngón cái): khép theo trỏ, ngọn duỗi ngược để đầu ngón
+    đè mặt `F` mà đốt gốc (da phình) tránh mép. Ngón cái ở mặt sau (`thumb` đổi mặt, quay π quanh `m`) đặt cổ tay bên kia
+    mặt phẳng tấm vì lòng tay nghiêng 40°: vượt kẹp cổ tay 17–25° ở `slant` 30° (`bang-gia`, hai cỡ tay) — giới hạn khớp,
+    `check` báo `wrist`; cầm bằng ngón cái mặt trước, `flat` hay `rim`.
   - `flat` (fixture `phieu-lien#cam`, `thuc-don#khoe`; `frame: "nf"`): lòng tay và ngón áp phẳng mặt kia, ngón cái vắt qua
     mép đè mặt `F`; `n = F`, `f = −m` quay `slant`. Dáng `edge`.
   - `rim` (fixture `tom-hum#nhac`, `bo-da#bung`, `bao#doc`; `frame: "nt"`): lòng tay áp mép, ngón cái trên mặt `F`, ngón dưới
-    mặt kia — bê vành đĩa, cầm hai bên tờ báo; `n = −m`, `t = F`, ngón chúc `slant` quanh `m`. Dáng `edge` phải cuộn ngón qua mép theo bề dày tấm
-    (giai đoạn 4).
-- **Vai trò**: ngón cái `press` (mặt `F`); trỏ–út `press` (mặt kia; `flat` thì `support`); lòng tay `free` (`flat`, `rim`:
-  `press`).
-- **Lựa chọn**: `edge` (cạnh dài ≥ 0,6 · W trong bốn cạnh; đĩa: góc, lưới 30°; tay dẫn: tấm đứng `bottom`, tấm nằm cạnh
-  phía tay ấy `right`/`left`); `along` ∈ [0, 1], **0,5**; `thumb` — mặt có ngón cái: tấm đứng
-  {`front`, `back`}, tấm nằm {`top`, `bottom`}; đổi bằng quay π quanh `m` (giữ chiều bàn tay). Mặc định (tay dẫn): mặt của
+    mặt kia — bê vành đĩa, cầm hai bên tờ báo; `n = −m`, `t = F`, ngón chúc `slant` quanh `m`. Dáng mở `edge`; dáng đóng
+    `edge` cuộn thêm gốc ngón `PoseRef.knuckle` 45° và ngọn `PoseRef.tip` 65° (gập thêm đốt ngọn bốn ngón) với ngón cái
+    `RIM_THUMB = [25, 20, 10, 25]` (chọn để `handGripOf` của dáng đóng còn ở kẽ cái–trỏ, không thì luật `grip` báo giả),
+    theo `t` trong `[0,05 · A, 0,2 · A]`. Dáng hoà theo bề dày **thật ở chỗ ngón ôm**, không phải bề dày hộp bao: `thickAt`
+    đo vật liệu dọc `F` ở `RIM_PROBE` = 1 vào trong tâm nắm (`RIM_STEPS` = 24 mẫu), ra `GraspContact.thick` mà dáng đọc
+    khi `by: "thick"` — vành đĩa mỏng cuộn gần kín dù hộp bao dày.
+- **Vai trò**: `pinch`: ngón cái `press` (mặt `F`), bốn ngón `press` (mặt kia), lòng tay `free`. `flat`: ngón cái `press`,
+  bốn ngón `support`, lòng tay `press`. `rim`: ngón cái `press`, trỏ `wrap`, giữa `press`, áp út và út `support`, lòng tay
+  `press`.
+- **Lựa chọn**: `edge` (cạnh dài ≥ 0,6 · W trong bốn cạnh; đĩa: góc `0..330` bước 30° (`DISC_STEP`), `0` ở `front` — hay
+  `top` với đĩa đứng — tăng về `right`; tay dẫn: tấm đứng `bottom` (đĩa đứng 180), tấm nằm cạnh phía tay ấy
+  `right`/`left` (đĩa nằm 90 tay phải, 270 tay trái)); `along` ∈ [0, 1], **0,5**; `thumb` — mặt có ngón cái: tấm đứng
+  {`front`, `back`}, tấm nằm {`top`, `bottom`}; đổi bằng quay π quanh `m` (giữ chiều bàn tay). `rim` không khai `thumb` thì
+  ngón cái ở mặt trên: món khai `top` và tấm nằm trong khung món thì mặt `top`, không thì mặt hướng lên trong thế giới khi
+  lệch phương thẳng đứng dưới 45°; tấm đứng (cả trong thế giới) thì rig thử hai mặt. Mặc định (tay dẫn): mặt của
   tấm quay về người cầm ở mốc bắt đầu lần cầm — tấm đứng `front` hay `back` theo `F · (hướng tới tâm đầu người cầm) > 0`, tấm
   nằm `top`; món đặt trước đã giải. `variant` ∈
   {**`pinch`**, `flat`, `rim`}; `slant` ∈ [−60°, 60°] (`pinch`), [−90°, 90°] (`flat`; ±90 là ngón chạy dọc mép), [−45°, 45°]
   (`rim`).
-- **Tay**: một hay hai. Tay phụ mặc định: cùng nhóm, cùng biến thể, cùng `thumb`, cạnh đối diện, cùng `along`. Hai tay
+- **Tay**: một hay hai. Tay phụ mặc định: cùng nhóm, cùng biến thể, cùng `thumb`, cạnh đối diện (tấm: cạnh có pháp tuyến
+  ngoài ngược nhất; đĩa: góc + 180), cùng `along`. Hai tay
   cùng cạnh (hoá đơn hai tay cầm mép dưới) thì cảnh khai chỗ cầm từng tay.
 - **Hướng mặc định**: `face: { axis: <front>, toward: "holderFace" }`, `roll: { axis: <top>, toward: "up" }`.
 
@@ -468,7 +484,7 @@ và `shape` (thân). Không có lòng tay, ngón, ý định; bàn tay theo hàn
 khi có ít nhất một chỗ treo trong `seats`; `on` bắt buộc và `seats[on]` phải có. `carrySpecOf` đổi chỗ cầm ra spec treo
 `{ on, at: seats[on], yaw, touch }` (`touch` của món cộng của cảnh) mà `carryFrame` nhận. **Để sau**: thay
 `seats` bằng khai hình quai (phần `quai`, khối `path`) và để rig chọn điểm treo trên quai theo `on` (mặt trong quai cho
-khuỷu, đỉnh quai cho vai) — sạch hơn vì không còn mốc riêng cho từng cách treo.
+khuỷu, đỉnh quai cho vai), một mốc cho mọi cách treo.
 
 #### 14. `soft` — vật mềm (để sau)
 
@@ -708,12 +724,15 @@ Cảnh thường khai đủ chỗ cầm. Thiếu trường nào:
   (`pinch` ±30°, `flat` ±45°, `rim` ±22,5°). Giá của một ứng viên là `min_φ E(φ)` cộng `(khe tầm với / AIM_GAP)²`, cộng ở
   mốc bắt đầu và các mốc món trong 1,5 s sau còn cùng người cầm, cùng cỡ (tối đa 4, mốc sau trọng số 0,5); lệch khỏi mặc
   định nhóm cộng `0,05 · (số trường lệch mặc định) / (số trường thiếu có mặc định)`, `variant` khác `variant.default` của
-  nhóm cộng thêm `0,5`. `palmBox` cộng thêm giá lún `(lún / HELD_SINK)²`: lún da (như luật `sink`) của bàn tay đúng khung
+  nhóm cộng thêm `VARIANT_COST` = 0,5. `palmBox` cộng thêm giá lún `(lún / HELD_SINK)²`: lún da (như luật `sink`) của bàn tay đúng khung
   cầm, ngón ôm theo vai trò (`heldFit`), nhớ theo khung; ứng viên đã đắt hơn ứng viên tốt nhất thì không đo. Lấy ứng viên
   rẻ nhất; hoà thì theo thứ tự ứng viên: `part`, khối hình theo `FeatureKind`, `edge`, `thumb`, `variant`, `along`,
   `slant`, rồi `around`, `tilt`, `psi` (rời theo thứ tự miền khai, liên tục tăng dần). Giải 3–42 ứng viên mất 3–17 ms.
-- **`variant`** của tấm luôn có `flat` và `rim` trong miền giải: `pinch` ở cạnh dưới gãy cổ tay (bend 51°, dev 39°), `rim`
-  đỡ được. Dáng `rim` cuộn ngón theo bề dày làm ở giai đoạn 4.
+- **`variant`** của tấm giải trên cả `pinch`, `flat`, `rim`: `flat` và `rim` mất `VARIANT_COST`, nên chỉ thắng khi `pinch`
+  đắt hơn chúng quá 0,5 — ở cạnh dưới `pinch` gãy cổ tay (bend 51°, dev 39°), `rim` đỡ được.
+- **Vành đĩa**: `edge` của `disc` giải trên lưới góc `0..330` bước 30 (`DISC_STEP`). Góc khai bằng số chỉ hợp khối `disc`
+  (`edgeOk`), nên phần ra cả `slab` (hộp bao) lẫn `disc` thì khai góc chọn `disc`. `rim` không khai `thumb` chỉ thử mặt
+  trên (mục 3, nhóm 1).
 - **Tay dẫn**: lấy mặc định của nhóm (mục 3), không giải; `thumb` của tấm theo mặt quay về người cầm ở mốc bắt đầu lần cầm,
   `edge` của tấm `bottom` (tấm đứng) hay cạnh phía tay ấy (tấm nằm) (mục 3, nhóm 1).
 
@@ -932,7 +951,7 @@ Hai đường (món đặt trước, tay dẫn) chạy đủ cho `sheet` (`pinch
 11. Docs — 01 § Kiểu cầm, 03 § Đồ cầm tay, 04, 05 trỏ về đây.
 
 Để giai đoạn 4: dáng `tripod`, `chopsticks` (`hand.ts`); mười hai nhóm `later`; chỉnh ngưỡng, khung chuẩn và dáng ngón theo
-ảnh: `sheet` mặc định rig chọn `flat`, `rim` còn ngón hở, `pinch` ngón cái hở, `palmBox` ngón `tip` hở. Để giai đoạn 6:
+ảnh: `palmBox` ngón `tip` hở. Để giai đoạn 6:
 `stickman migrate-held`, món mẫu `coc`, `tui` v2, xoá đường v1.
 
 ### Giai đoạn 4 — từng nhóm
@@ -942,7 +961,9 @@ vai trò, test, hàng `bang-cam` cho chủ dự án duyệt:
 
 1. `palmBox` (34) — gồm áp tai.
 2. `carry` (25) — chỉ đổi cách khai (`seats`, `on` ở cảnh); hành vi không đổi.
-3. `sheet` (18) — `pinch`, `flat`, `rim`; một và hai tay; đĩa tròn.
+3. `sheet` (18) — `pinch`, `flat`, `rim`; một và hai tay; đĩa tròn. Hiện tại: biến thể mặc định `pinch`, ngón cái khép theo trỏ
+   (`PoseRef.thumb`); `rim` cuộn ngón theo bề dày thật chỗ ôm (`PoseRef.tip`, `thickAt`); đĩa chọn vành theo góc, ngón cái `rim`
+   ở mặt trên.
 4. `cylinder` (11) — `lathe` và `rod` (ống nghe); tay trượt dọc thanh; tay phụ `platform`.
 5. `platform` (10) — một và hai tay.
 6. `card` (7) — `pad`.
