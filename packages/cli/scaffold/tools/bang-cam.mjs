@@ -399,6 +399,15 @@ if (!nhomXin) {
     ...NGON,
     roll: { axis: [1, 0, 0], toward: [0, Math.cos(Math.PI / 6), -Math.sin(Math.PI / 6)] },
   };
+  /** Bút không có hướng mặc định: ngòi ra trước chúc xuống, hơi sang trái, để cổ tay không vượt kẹp */
+  const BUT_DAT = {
+    to: "chest",
+    offset: [44, 16, 25],
+    face: { axis: "tip", toward: [0.8, 0.6, -0.2] },
+  };
+  /** Tay dẫn bút ở trước ngực (`ben` ±1 là bên tay), ngòi xuống mặt bàn */
+  const BUT_BAN = (ben) => ({ to: "chest", offset: [40, 30, 25 * ben], point: "item:tip" });
+  const NGOI_BAN = { face: { axis: "tip", toward: [0.5, 0.866, 0] } };
   /** Lý do `both` của (món, nhóm) không áp được (`undefined` khi áp được): mặt đỡ của tay phụ không có trên món */
   const khongBoth = (group, geom) => {
     const sup = rig.GRIP_GROUPS[group].support;
@@ -491,7 +500,7 @@ if (!nhomXin) {
           }),
         },
       }));
-    const dat = { platform: XA, chopsticks: DUA_DAT }[group] ?? NGUC;
+    const dat = { platform: XA, chopsticks: DUA_DAT, pen: BUT_DAT }[group] ?? NGUC;
     const rows = [{ ma: "mac-dinh", ten: "mặc định", mark: dat, hands: { right: H() } }];
     if (Object.keys(gs.variants).length > 1)
       for (const v of Object.keys(gs.variants))
@@ -635,6 +644,32 @@ if (!nhomXin) {
           ten: "tay dẫn trái",
           lead: "left",
           hands: { left: { ...TAY_DAN, ...H(NGON) } },
+        },
+      );
+    if (group === "pen")
+      rows.push(
+        {
+          ma: "along-thap",
+          ten: "along thấp (0,15)",
+          mark: BUT_DAT,
+          hands: { right: H({ along: 0.15 }) },
+        },
+        {
+          ma: "along-cao",
+          ten: "along cao (0,45)",
+          mark: BUT_DAT,
+          hands: { right: H({ along: 0.45 }) },
+        },
+        {
+          ma: "tay-dan",
+          ten: "tay dẫn, ngòi xuống mặt bàn",
+          hands: { right: { ...BUT_BAN(1), ...H(NGOI_BAN) } },
+        },
+        {
+          ma: "tay-dan-trai",
+          ten: "tay dẫn trái, ngòi xuống mặt bàn",
+          lead: "left",
+          hands: { left: { ...BUT_BAN(-1), ...H(NGOI_BAN) } },
         },
       );
     if (group === "platform")
