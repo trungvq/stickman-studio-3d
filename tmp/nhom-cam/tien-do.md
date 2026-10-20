@@ -3,10 +3,18 @@
 Worktree studio: `~/Work/Dev/stickman-studio-3d-nhom-cam` (nhánh `feat/nhom-cam`)
 Worktree video: `~/Work/Dev/youtube-video/jp-sukatto-nhom-cam` (nhánh `auto/nhom-cam`, từ `origin/auto/t02-build`)
 
+## Giai đoạn 3 — XONG (2026-10-20 09:30)
+- Lõi chạy đủ hai đường cho `sheet` và `palmBox`: món đặt trước (`items` cấp cảnh, `graspAtTime` một nguồn nghiệm, khuỷu E(φ), hoà vào/ra lần cầm bằng nghiệm cũ đóng băng) và tay dẫn (`holdLink`); `món#kiểu` v1 chạy song song nguyên số.
+- Gắn món three qua `holdLink`, `fitHolding` nhớ theo tay; đo lún trên da (`skinDepth`); luật `check` nhóm (`reach`/`wrist` lỗi, `arm`, `role`, `sink`, `grip` theo nhóm, im trong cửa sổ hoà).
+- MCP `describe_held`, `scene_probe` `grasp` (cả tay dẫn); CLI ngưỡng mới; `bang-cam --nhom`; docs 01/03/04/05/07/11.
+- Kiểm cuối (`g3-cuoi/`): t02 `ref` 0 lỗi; `held,clash` 0 mới/0 nặng hơn so `baseline/check-held-clash-g315.json`; s023 0 lỗi 1 cảnh báo; `thu-nhom-cam` 1 lỗi (`wrist` lúc lật bảng — để nhóm `sheet` giai đoạn 4) 4 cảnh báo ngón.
+- Test studio: rig 990, sketch 245, fx 44, cli 67 — xanh; video `pnpm test` xanh.
+- Ảnh duyệt: `duyet/g3-thu-nhom-cam-frames.jpg`, `duyet/g3-thu-nhom-cam-can-tay.jpg`, `duyet/g3-bang-cam-nhom-thu-{bang-gia,dien-thoai}.jpg`.
+- Hình t02 không đổi ở giai đoạn 3 (chỉ đường v2 mới vẽ khác); baseline đổi vì thước da, xem "Đã tự quyết".
+
 ## Đang làm
-Giai đoạn 3 — lõi. Kế hoạch job: `tmp/nhom-cam/gd3-ke-hoach.md` (21 job G3-01…G3-21, 14 đợt, mốc commit M1–M8).
-Xong: G3-01…G3-13, G3-21 (dữ liệu), sửa hai vòng review. Xong thêm G3-13b, G3-14 (commit M6a). Còn: G3-21b (cảnh thử 3D có món) ∥ 15 → 16 → (17, 18) → (19, 20), rồi kiểm cuối giai đoạn 3.
-Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa — bỏ mọi bước review Fable còn lại (kể cả "Review Fable MỘT vòng" ở các giai đoạn sau).
+Giai đoạn 4 — từng nhóm theo docs/11 mục 9 (palmBox → carry → sheet → cylinder → platform → card → chopsticks → pen → handle → bowl). Kế hoạch: `tmp/nhom-cam/gd4-ke-hoach.md`.
+Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 ## Tóm tắt bước 0 (xong)
 - Prototype `b0/grasp.mts`: graspFrame `sheet` pinch/flat/rim (khớp fixture ≤ 0,27°), `cylinder` wrap trên rod; bàn tay từ món; khuỷu E(φ); giải lựa chọn thiếu.
@@ -50,6 +58,15 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa — bỏ mọi bư�
 | G3-13 act3 món đặt trước | xong: `actJoints` khớp graspAtTime (khuỷu 1e-13, lòng tay 1e-6°); t02 0 mới/0 nặng hơn; `thu-nhom-cam` 0 lỗi 9 cảnh báo (tay xuyên thân 25–30 ở 2,2–4,5 s và 5,6–5,9 s; φ nhảy 57,5→−167,5 khi bảng quay `holderFace`→`camera`; nhảy 140 px ở 2,50/4,50 s vì chưa hoà vào/ra lần cầm). Commit `55fd3d8` (M5) | `ReachHold.solve`, `holdPlaced.test.ts`, `actPlaced.test.ts` |
 | G3-14 gắn món three qua `holdLink` | xong (chờ commit cùng G3-13b): món đặt trước ở `itemAt` ≤ 0,01; tay dẫn theo `holdLinkFrame` < 1e-6; `fitHolding` nhớ theo tay (≤ 8 mục), ms/khung 2,55→0,91 (đặt trước), 5,68→3,73 (tay dẫn); thêm `Hand.heldV` ở `human.ts` (2 dòng, ngoài phạm vi, nhận). Khung render `thu-nhom-cam` là người 2D, không có món — cảnh thử chưa phải cảnh 3D → G3-21b | `attach.ts`, `world.ts`, `holdWorldV2.test.ts`, `g314-*` |
 | G3-13b hoà vào/ra lần cầm món đặt trước + chẩn đoán cảnh thử | xong: hoà `HOLD_BLEND` từ nghiệm cũ ĐÓNG BĂNG ngay trước ranh giới (`ReachHold.was`, nhả tay ra `hold: null` mang hold giả `released: true`); bước lớn nhất ≤ 0,25 tổng quãng; nhảy cóc = tuần tự (<1e-9). φ nhảy 2,0–2,5 s và tay trái xuyên thân là do cảnh soạn (bảng quay 180° mà tay giữ chỗ cầm → lệch cổ tay 142°; `offset` ngoài âm kéo tay qua người) → sửa `scenes/thu-nhom-cam.json`. `thu-nhom-cam` sạch; t02 0 mới. Commit M6a | `holdBlend.test.ts`, `g313b-*` |
+| G3-21b cảnh thử vẽ 3D | xong: `src/khoi3d/thu-grip.ts` thêm `thu-nhom-cam` (sân `sanh`, `luoiMon` hai món); check 0 lỗi 5 cảnh báo (ngón hở 1,9–7,2; tay trái 2,50–2,70 tâm nắm cách món 94 — đang hoà vào lần cầm; thân lấn bảng 5,6 lúc xoay 2,09–2,16). Ảnh `duyet/g3-thu-nhom-cam-can-tay.jpg`: món trong tay, điện thoại áp tai; kẹp bảng ra nắm đấm, ngón hở (giai đoạn 4). Video commit `bfd1f34` | `g321b/` |
+| G3-15 `held.ts` đo trên da | xong: kiểu cầm có `shape` đo lún/khe bằng `skinDepth`; `HeldHand.grasp`; `bang-gia@sheet` lún 0,50 (nang cũ 3,27). t02: 9 `loose` mới, đều `tom-hum#nhac` (khe 1,5–2,0; s042 8,0) — thước da lộ chỗ hở thật, hình không đổi → baseline mới `baseline/check-held-clash-g315.json` (= cũ + đúng 9 dòng ấy; 1 số đo `wrap` s041 5,58→6,34). Ngón cái `sheet` pinch hở 3,07 (giai đoạn 4) | `held.ts`, `heldSkin.test.ts`, `g315-*` |
+| G3-16 luật `check` nhóm | xong: v2 (`@` trong khoá) có `pierce`, `sink` (`HELD_SINK` 0,65), `loose`, `role`, `grip` theo nhóm; món đặt trước thêm `reach`/`wrist` (lỗi khi vượt), `arm`; im trong cửa sổ hoà (`holdBlending`); dòng báo trỏ chỗ cầm ở cảnh. t02 0 mới so `-g315`. `thu-nhom-cam` 5 cảnh báo: thân↔bảng 5,6 lúc xoay (cảnh), `wrist` tay phải vượt 29° ở 2,0–2,3 (cảnh: bảng quay 90° trước khi đổi chỗ cầm lúc 2,25), ngón cái pinch hở 3,1 ×2, ngón `tip` palmBox hở 5,6–6,2 (giai đoạn 4). Còn cho G3-18: `heldRows` đọc `HeldIssue.error`, `heldOptions` thêm `sink`/`wrist`/`arm`, ngưỡng `grip` theo nhóm bỏ qua `package.json` | `heldAuditGroup.test.ts`, `g316-*` |
+| G3-17 MCP | xong: `describe_held` (phần, khối hình, mốc, nhóm áp được + miền + mặc định, `unfit`/`later`), `list`/`schema(held)` v2, `scene_probe` `world.held.<tay>.grasp` (giây 1: choice, by scene/rig/default, arm φ 57,5). Thiếu: tay dẫn v2 chưa có `grasp` → G3-16b | `server.mjs`, `docs/04`, `g317/` |
+| G3-18 CLI | xong: `heldRows` đọc `HeldIssue.error` (`reach`, `wrist` vượt → lỗi), `heldOptions` `sink`/`wrist`/`arm`; `held.test.mjs` 6 ca (thêm vào script test cli). t02 0 mới, 0 lỗi so `-g315`. `thu-nhom-cam` 1 lỗi (`wrist` tay phải vượt 29° 2,0–2,3 s, do cảnh) 4 cảnh báo. Thiếu: `groupHits` không đọc `o.grip` (khai nhỏ hơn ngưỡng nhóm vô tác dụng) → G3-16b | `lib.mjs`, `held.test.mjs`, `g318-*` |
+| G3-19 `bang-cam --nhom` | xong: nhóm × món v2 × hàng mẫu × hai cỡ tay (sakura W 14,7, kuroiwa W 16,8), `do.json` có `sink`/`roles`/`gaps`/`grasp`/`bo`; không cờ giữ chế độ cũ, bỏ món v2. Video: chép đè `tools/bang-cam.mjs` (bản cũ đổ ở `grips`). Sheet: 44 hàng, 36 có luật báo, 0 lỗi. Ảnh `duyet/g3-bang-cam-nhom-*.jpg` | `scaffold/tools/bang-cam.mjs` |
+| G3-16b báo `grasp` tay dẫn + `grip` hai chiều | xong: tay dẫn v2 có `grasp.mode: "hand"` (`by` chỉ scene/default; cổ tay đọc từ tay vẽ); `HeldOptions.gripDeclared` (khai thì thắng, hai chiều); `size` chỉ xét món đặt trước. t02 0 mới, 0 lỗi | `holdLeadGrasp.test.ts`, `g316b/` |
+| G3-20 docs | xong: docs/11 (file lõi, luật `itemGeom`, `HELD_VERSION`, một nguồn nghiệm, `was`/`released`, luật `check`, con trỏ dòng → tên hàm, tên người trung tính), docs/01, 03, 04, 05, 07, README, `AGENTS.md` dòng bố cục | `docs/` |
+| G3-21c/d sửa lật bảng ở cảnh thử | không nhận: c tắc (vùng chết 65–125° khi bảng giữa ngực); d đạt 0 lỗi nhưng đổi tay 3 lần trong 0,9 s và bắt chéo cẳng tay lúc khoe (ảnh `g321d/thu-nhom-cam.jpg`) → giữ cảnh đã commit (1 lỗi `wrist` 2,0–2,3 s). Bản tung hứng lưu `g321d/thu-nhom-cam.tung-hung.json` | `ban-giao-g3-21c.md` |
 | G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
@@ -57,6 +74,7 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa — bỏ mọi bư�
 | Baseline `check --scene ^t02- --only held,clash` | xong: 0 lỗi, 193 cảnh báo, 2m16 | `tmp/nhom-cam/baseline/check-held-clash.{json,txt}` |
 
 ## Đã tự quyết
+- Từ G3-15, `check` t02 so baseline `tmp/nhom-cam/baseline/check-held-clash-g315.json` (baseline cũ + 9 `loose` của `tom-hum#nhac`). Lý do: thước da (spec mục 7) đúng hơn nang; nang phình che chỗ hở thật (lòng tay cách 5, s042 cách 15); hình vẽ không đổi. Sửa ở giai đoạn 4 (nhóm `sheet` `rim`/`lathe` của tôm) hay giai đoạn 6 (chuyển `tom-hum` sang v2), không vá `held/tom-hum.json` v1.
 - Nghiệm cũ khi đổi lần cầm mang ở trường mới `ReachHold.was` (đóng băng ngay trước ranh giới), không ở `from` như spec viết: chạy tiếp chuỗi φ cũ qua ranh giới thì nhảy nhánh (24–31 px). G3-20 ghi `was`/`released` vào spec mục 5 "Đổi lần cầm".
 - `w_cont` ở mẫu đầu lần cầm vẫn so φ cuối của lần cầm trước (theo spec) dù φ ấy là tư thế bất khả — có thể kéo rig chọn sai `thumb`. Giữ theo spec; xem lại ở giai đoạn 4 nếu gặp ở cảnh thật.
 - `human.ts` thêm `Hand.heldV` (G3-14, ngoài phạm vi job) — nhận: tay 3D cần dáng v2 đã hoà + fit, không thì tính da hai lần mỗi khung.
@@ -83,10 +101,17 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa — bỏ mọi bư�
 ## Cần chủ dự án
 - Có nới kẹp xoay cẳng tay quá ±90 không? Ca "khoe, một tay đỡ cạnh dưới" (bước 0 ca 4, `rim`) cần −103; hiện thành cảnh báo `wrist` và bàn tay lệch chỗ cầm chút ít. Ảnh: `tmp/nhom-cam/b0/hinh/vong2/to-2.jpg`.
 
+## Việc dồn cho giai đoạn 4 (từ ảnh/số giai đoạn 3)
+- `sheet` mặc định: rig chọn `flat` (lòng tay úp lên mép trên tấm) thay vì `pinch` mặc định nhóm — trông không như người đọc bảng; xem lại giá chọn biến thể.
+- `rim`: bàn tay lơ lửng, giữa/áp út/út hở 5,5–12,4 (cả khoe một tay, khoe hai tay trên dưới).
+- `pinch`: ngón cái hở 2,5–3,6; `pinch` cái sau cổ tay vượt 17–25°, nắm 5,5–6,6.
+- `palmBox`: ngón `tip` hở 4,9–6,2; khoe một tay cổ tay vượt 36° (sakura); điện thoại `pinch` lún 1,1–1,3, cái sau xuyên +0,9.
+- Khoe hai tay hai bên với điện thoại: hai bàn tay chồng nhau.
+- Lật tấm 180° khi đang cầm (cảnh thử 2,0–2,3 s, lỗi `wrist`): cần đường hoà `path` quanh `m` / trượt tay theo cạnh; vùng chết 65–125° khi tấm giữa ngực (`ban-giao-g3-21c.md`, công cụ dò `g321d/tools/`).
+- Đổi `thumb` của tấm (lệch nửa vòng) chưa hoà theo `path` quanh `m` (spec cũ); `mixRotation` quay quanh trục cố định — làm ở nhóm `sheet`, cập nhật docs/11 mục 5 khi xong.
+- `holdBlending` chỉ làm im `grip`/`loose`/`role`; `pierce`/`sink` trong cửa sổ hoà vẫn đo — xem lại nếu gặp báo giả ở cảnh thật.
+- `bang-cam`: hàng `biến thể flat` trùng `mặc định` khi rig chọn `flat`.
+
 ## Bước kế
-1. G3-13b (Opus, đang chạy) — hoà vào/ra lần cầm món đặt trước (spec mục 5 "Đổi lần cầm") + chẩn đoán φ nhảy/tay xuyên thân ở `thu-nhom-cam` 2,2 s. Song song G3-14.
-2. (bỏ — M5 đã commit `55fd3d8`)
-3. G3-14 (attach/world qua `holdLink`, `fitHolding` nhớ theo lần cầm) → G3-15 (`held.ts` dùng `skinDepth`) → G3-16 (luật `check` mới) → commit M6.
-4. G3-17 (MCP) ∥ G3-18 (CLI: `lib.mjs` ~:2257 còn gọi `heldGrip` → 5 cảnh báo ở `thu-nhom-cam`) → G3-19 (`bang-cam --nhom`) ∥ G3-20 (docs; nhớ ghi luật `itemGeom` vào spec mục 2; cập nhật số dòng `act3.ts:NNNN` trong docs/11 sau khi tách `arm3.ts`) → commit M7, M8.
-5. Kiểm cuối giai đoạn 3 (mục 3 của kế hoạch): render `pnpm frames thu-nhom-cam` + `can-tay`, TỰ mở ảnh; gom vào `duyet/`. Tóm tắt giai đoạn vào file này, commit, push hai nhánh.
-6. Giai đoạn 4 → 6 theo prompt gốc (không review Fable).
+1. Lập `gd4-ke-hoach.md` (mỗi nhóm: một dòng cách cầm thật, món đại diện, job, mốc commit), rồi chạy nhóm 1 `palmBox`.
+2. Giai đoạn 5 → 6 theo prompt gốc.
