@@ -613,14 +613,6 @@
     {
       "scene": "t02-s026-tra-ten",
       "group": "clash",
-      "key": "scenes/t02-s026-tra-ten.json|người|takumi.handL|dien-thoai-tay",
-      "count": 1,
-      "measure": 3.33,
-      "msg": "scenes/t02-s026-tra-ten.json: người lồng vào đồ — takumi.handL ↔ dien-thoai-tay lấn 3.3 ở giây 3.56 · giây 3.53–3.59"
-    },
-    {
-      "scene": "t02-s026-tra-ten",
-      "group": "clash",
       "key": "scenes/t02-s026-tra-ten.json|người|takumi.handL|quay",
       "count": 1,
       "measure": 5.14,
@@ -648,31 +640,23 @@
       "key": "scenes/t02-s028-doi-chia.json|held:role|takumi|R|the-phong",
       "count": 1,
       "measure": 1.51,
-      "msg": "scenes/t02-s028-doi-chia.json: ngón không chạm món — `takumi` tay phải cầm the-phong: ngón cái (`tip`) cách món 1.5 (chỗ cầm `the-phong@card` (part body, edge bottom, along 0.5, thumb back, variant pad (mặc định), slant 0)); dáng ngón của nhóm chưa khép tới món — đổi `variant` hay `edge`, không thì là việc của dáng nhóm ở rig ở giây 4.10 · giây 0.00–3.70, 4.10–4.30. Lúc ấy: chỗ cầm `the-phong@card` (part body, edge bottom, along 0.5, thumb back, variant pad (mặc định), slant 0) (dáng pinch) · khe 0.2 · ôm 2/3 (trỏ, giữa–út) · ngón cái (tip) 1.5, trỏ (tip) 0.6, giữa (free) 0.2, áp út (free) 2.4, út (free) 6.7, lòng (free) 8.1 · tâm nắm trong món 0.4 · lòng tay cách 11.0 góc 43° · ý định trục lên lệch 2° (kẹp dev). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
-    },
-    {
-      "scene": "t02-s028-doi-chia",
-      "group": "held",
-      "key": "scenes/t02-s028-doi-chia.json|held:up|takumi|R|the-phong",
-      "count": 1,
-      "measure": 82.99,
-      "msg": "scenes/t02-s028-doi-chia.json: món nghiêng — `takumi` tay phải cầm the-phong: trục ý định còn lệch 83° khỏi `up` (chỗ cầm `the-phong@card` (part body, edge bottom, along 0.5, thumb back, variant pad (mặc định), slant 0)); đổi `face` / `up` của mốc tay, `elbow`, hay `edge` / `thumb` ở giây 3.90 · giây 3.80–4.00. Lúc ấy: chỗ cầm `the-phong@card` (part body, edge bottom, along 0.5, thumb back, variant pad (mặc định), slant 0) (dáng pinch) · khe 0.4 · ôm 2/3 (trỏ, giữa–út) · ngón cái (tip) 5.1, trỏ (tip) 0.5, giữa (free) 0.4, áp út (free) 1.2, út (free) 5.2, lòng (free) 4.3 · tâm nắm cách món 5.1 · lòng tay cách 11.3 góc 83° · ý định trục lên lệch 83° (kẹp bend, dev). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+      "msg": "scenes/t02-s028-doi-chia.json: ngón không chạm món — `takumi` tay phải cầm the-phong: ngón cái (`tip`) cách món 1.5 (chỗ cầm `the-phong@card` (part body, edge top, along 0.5, thumb front, variant pad (mặc định), slant 0)); dáng ngón của nhóm chưa khép tới món — đổi `variant` hay `edge`, không thì là việc của dáng nhóm ở rig ở giây 0.00 · giây 0.00–3.70. Lúc ấy: chỗ cầm `the-phong@card` (part body, edge top, along 0.5, thumb front, variant pad (mặc định), slant 0) (dáng pinch) · khe 0.2 · ôm 2/3 (trỏ, giữa–út) · ngón cái (tip) 1.5, trỏ (tip) 0.6, giữa (free) 0.2, áp út (free) 2.4, út (free) 6.7, lòng (free) 8.1 · tâm nắm trong món 0.4 · lòng tay cách 11.0 góc 43° · ý định về đích lệch 0°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
     },
     {
       "scene": "t02-s028-doi-chia",
       "group": "clash",
       "key": "scenes/t02-s028-doi-chia.json|người|takumi.armFar|takumi.torso",
       "count": 1,
-      "measure": 7.53,
-      "msg": "scenes/t02-s028-doi-chia.json: tay xuyên thân — takumi.armFar lấn vào takumi.torso 7.5 ở giây 3.91 · giây 3.91"
+      "measure": 9.18,
+      "msg": "scenes/t02-s028-doi-chia.json: tay xuyên thân — takumi.armFar lấn vào takumi.torso 9.2 ở giây 3.91 · giây 3.91"
     },
     {
       "scene": "t02-s028-doi-chia",
       "group": "clash",
       "key": "scenes/t02-s028-doi-chia.json|người|takumi.forearmFar|takumi.torso",
       "count": 1,
-      "measure": 7.53,
-      "msg": "scenes/t02-s028-doi-chia.json: tay xuyên thân — takumi.forearmFar lấn vào takumi.torso 7.5 ở giây 3.91 · giây 3.91"
+      "measure": 9.18,
+      "msg": "scenes/t02-s028-doi-chia.json: tay xuyên thân — takumi.forearmFar lấn vào takumi.torso 9.2 ở giây 3.91 · giây 3.91"
     },
     {
       "scene": "t02-s028-doi-chia",
@@ -687,24 +671,24 @@
       "group": "clash",
       "key": "scenes/t02-s028-doi-chia.json|người|takumi.handR|quay",
       "count": 1,
-      "measure": 7.43,
-      "msg": "scenes/t02-s028-doi-chia.json: người lồng vào đồ — takumi.handR ↔ quay lấn 7.4 ở giây 3.88 · giây 3.78, 3.88"
+      "measure": 5.89,
+      "msg": "scenes/t02-s028-doi-chia.json: người lồng vào đồ — takumi.handR ↔ quay lấn 5.9 ở giây 3.88 · giây 3.78, 3.88"
     },
     {
       "scene": "t02-s028-doi-chia",
       "group": "clash",
       "key": "scenes/t02-s028-doi-chia.json|người|yota.armNear|yota.torso",
       "count": 1,
-      "measure": 9.08,
-      "msg": "scenes/t02-s028-doi-chia.json: tay xuyên thân — yota.armNear lấn vào yota.torso 9.1 ở giây 5.75 · giây 3.38–5.75"
+      "measure": 11.16,
+      "msg": "scenes/t02-s028-doi-chia.json: tay xuyên thân — yota.armNear lấn vào yota.torso 11.2 ở giây 3.84 · giây 3.41–5.75"
     },
     {
       "scene": "t02-s028-doi-chia",
       "group": "clash",
       "key": "scenes/t02-s028-doi-chia.json|người|yota.foreArmL|but-bi",
       "count": 1,
-      "measure": 7.76,
-      "msg": "scenes/t02-s028-doi-chia.json: người lồng vào đồ — yota.foreArmL ↔ but-bi lấn 7.8 ở giây 5.75 · giây 5.69–5.75"
+      "measure": 8.25,
+      "msg": "scenes/t02-s028-doi-chia.json: người lồng vào đồ — yota.foreArmL ↔ but-bi lấn 8.2 ở giây 5.75 · giây 5.69–5.75"
     },
     {
       "scene": "t02-s028-doi-chia",
@@ -727,32 +711,16 @@
       "group": "clash",
       "key": "scenes/t02-s028-doi-chia.json|người|yota.forearmNear|yota.torso",
       "count": 1,
-      "measure": 9.08,
-      "msg": "scenes/t02-s028-doi-chia.json: tay xuyên thân — yota.forearmNear lấn vào yota.torso 9.1 ở giây 5.75 · giây 3.38–5.75"
-    },
-    {
-      "scene": "t02-s028-doi-chia",
-      "group": "clash",
-      "key": "scenes/t02-s028-doi-chia.json|người|yota.handL|ban-phim",
-      "count": 1,
-      "measure": 2.16,
-      "msg": "scenes/t02-s028-doi-chia.json: người lồng vào đồ — yota.handL ↔ ban-phim lấn 2.2 ở giây 5.59 · giây 5.59"
-    },
-    {
-      "scene": "t02-s028-doi-chia",
-      "group": "clash",
-      "key": "scenes/t02-s028-doi-chia.json|người|yota.handL|but-bi",
-      "count": 1,
-      "measure": 6.64,
-      "msg": "scenes/t02-s028-doi-chia.json: người lồng vào đồ — yota.handL ↔ but-bi lấn 6.6 ở giây 5.69 · giây 5.66–5.75"
+      "measure": 11.16,
+      "msg": "scenes/t02-s028-doi-chia.json: tay xuyên thân — yota.forearmNear lấn vào yota.torso 11.2 ở giây 3.84 · giây 3.41–5.75"
     },
     {
       "scene": "t02-s028-doi-chia",
       "group": "clash",
       "key": "scenes/t02-s028-doi-chia.json|người|yota.handL|quay",
       "count": 1,
-      "measure": 2.37,
-      "msg": "scenes/t02-s028-doi-chia.json: người lồng vào đồ — yota.handL ↔ quay lấn 2.4 ở giây 5.56 · giây 5.56"
+      "measure": 2.25,
+      "msg": "scenes/t02-s028-doi-chia.json: người lồng vào đồ — yota.handL ↔ quay lấn 2.2 ở giây 5.56 · giây 5.56"
     },
     {
       "scene": "t02-s029-mong-cho",
@@ -1597,14 +1565,6 @@
     {
       "scene": "t02-s050-them-bo",
       "group": "clash",
-      "key": "scenes/t02-s050-them-bo.json|người|yoshie.handL|but-bi",
-      "count": 1,
-      "measure": 3.53,
-      "msg": "scenes/t02-s050-them-bo.json: người lồng vào đồ — yoshie.handL ↔ but-bi lấn 3.5 ở giây 1.03 · giây 1.00–1.13, 1.19"
-    },
-    {
-      "scene": "t02-s050-them-bo",
-      "group": "clash",
       "key": "scenes/t02-s050-them-bo.json|người|yoshie.torso|phieu-bo-ghi",
       "count": 1,
       "measure": 4.79,
@@ -1675,22 +1635,6 @@
       "msg": "scenes/t02-s052-o1-sofa.json: người lồng vào đồ — erika.torso ↔ sofa lấn 21.0 ở giây 0.00 · giây 0.00–0.75"
     },
     {
-      "scene": "t02-s053-hanh-lang",
-      "group": "held",
-      "key": "scenes/t02-s053-hanh-lang.json|held:sink|yota|L|khay",
-      "count": 1,
-      "measure": 0.7,
-      "msg": "scenes/t02-s053-hanh-lang.json: da lún vào món — `yota` tay trái cầm khay: lún 0.7 (quá 0.7) (chỗ cầm `khay@platform` (part day, edge right)); ngón ôm không gỡ được — đổi `variant` / `slant`, không thì là việc của dáng nhóm ở rig ở giây 4.80 · giây 1.30–1.90, 4.50–5.10. Lúc ấy: chỗ cầm `khay@platform` (part day, edge right) (dáng flat) · da lún 0.5 ở đầu ngón trỏ · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) -0.7, trỏ (support) -0.5, giữa (support) 0.3, áp út (support) 0.0, út (support) 0.4, lòng (press) -0.6 · tâm nắm cách món 0.6 · lòng tay cách 2.2 góc 6°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
-    },
-    {
-      "scene": "t02-s055-nhan-viec",
-      "group": "held",
-      "key": "scenes/t02-s055-nhan-viec.json|held:sink|yota|L|khay",
-      "count": 1,
-      "measure": 0.7,
-      "msg": "scenes/t02-s055-nhan-viec.json: da lún vào món — `yota` tay trái cầm khay: lún 0.7 (quá 0.7) (chỗ cầm `khay@platform` (part day, edge right)); ngón ôm không gỡ được — đổi `variant` / `slant`, không thì là việc của dáng nhóm ở rig ở giây 1.60 · giây 1.30–1.90. Lúc ấy: chỗ cầm `khay@platform` (part day, edge right) (dáng flat) · da lún 0.5 ở đầu ngón trỏ · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) -0.7, trỏ (support) -0.5, giữa (support) 0.3, áp út (support) 0.0, út (support) 0.4, lòng (press) -0.6 · tâm nắm cách món 0.6 · lòng tay cách 2.2 góc 6°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
-    },
-    {
       "scene": "t02-s057-moi",
       "group": "clash",
       "key": "scenes/t02-s057-moi.json|người|takumi.head|erika.head",
@@ -1733,22 +1677,6 @@
     {
       "scene": "t02-s060-mot-dem",
       "group": "clash",
-      "key": "scenes/t02-s060-mot-dem.json|người|erika.foreArmR|dien-thoai-tay",
-      "count": 1,
-      "measure": 12.47,
-      "msg": "scenes/t02-s060-mot-dem.json: người lồng vào đồ — erika.foreArmR ↔ dien-thoai-tay lấn 12.5 ở giây 1.03 · giây 1.00–1.13"
-    },
-    {
-      "scene": "t02-s060-mot-dem",
-      "group": "clash",
-      "key": "scenes/t02-s060-mot-dem.json|người|erika.handR|dien-thoai-tay",
-      "count": 1,
-      "measure": 6.63,
-      "msg": "scenes/t02-s060-mot-dem.json: người lồng vào đồ — erika.handR ↔ dien-thoai-tay lấn 6.6 ở giây 1.00 · giây 0.97–1.03"
-    },
-    {
-      "scene": "t02-s060-mot-dem",
-      "group": "clash",
       "key": "scenes/t02-s060-mot-dem.json|người|erika.torso|dien-thoai-tay",
       "count": 1,
       "measure": 10.94,
@@ -1768,15 +1696,15 @@
       "key": "scenes/t02-s060-mot-dem.json|người|takumi.armFar|takumi.torso",
       "count": 1,
       "measure": 10.89,
-      "msg": "scenes/t02-s060-mot-dem.json: tay xuyên thân — takumi.armFar lấn vào takumi.torso 10.9 ở giây 0.63 · giây 0.59–0.66, 1.78–2.06"
+      "msg": "scenes/t02-s060-mot-dem.json: tay xuyên thân — takumi.armFar lấn vào takumi.torso 10.9 ở giây 0.63 · giây 0.59–0.66, 1.94–2.03"
     },
     {
       "scene": "t02-s060-mot-dem",
       "group": "clash",
       "key": "scenes/t02-s060-mot-dem.json|người|takumi.foreArmR|chai-dac-tuyen-chiaki-nhan",
       "count": 1,
-      "measure": 8.79,
-      "msg": "scenes/t02-s060-mot-dem.json: người lồng vào đồ — takumi.foreArmR ↔ chai-dac-tuyen-chiaki-nhan lấn 8.8 ở giây 1.13 · giây 1.06–1.13"
+      "measure": 5.87,
+      "msg": "scenes/t02-s060-mot-dem.json: người lồng vào đồ — takumi.foreArmR ↔ chai-dac-tuyen-chiaki-nhan lấn 5.9 ở giây 1.13 · giây 1.09–1.13"
     },
     {
       "scene": "t02-s060-mot-dem",
@@ -1784,15 +1712,15 @@
       "key": "scenes/t02-s060-mot-dem.json|người|takumi.forearmFar|takumi.torso",
       "count": 1,
       "measure": 10.89,
-      "msg": "scenes/t02-s060-mot-dem.json: tay xuyên thân — takumi.forearmFar lấn vào takumi.torso 10.9 ở giây 0.63 · giây 0.59–0.66, 1.91–2.06"
+      "msg": "scenes/t02-s060-mot-dem.json: tay xuyên thân — takumi.forearmFar lấn vào takumi.torso 10.9 ở giây 0.63 · giây 0.59–0.66, 1.94–2.03"
     },
     {
       "scene": "t02-s060-mot-dem",
       "group": "clash",
       "key": "scenes/t02-s060-mot-dem.json|người|takumi.handR|chai-dac-tuyen-chiaki-nhan",
       "count": 1,
-      "measure": 8.07,
-      "msg": "scenes/t02-s060-mot-dem.json: người lồng vào đồ — takumi.handR ↔ chai-dac-tuyen-chiaki-nhan lấn 8.1 ở giây 1.13 · giây 0.97–1.13"
+      "measure": 8.1,
+      "msg": "scenes/t02-s060-mot-dem.json: người lồng vào đồ — takumi.handR ↔ chai-dac-tuyen-chiaki-nhan lấn 8.1 ở giây 1.00 · giây 0.97–1.13"
     },
     {
       "scene": "t02-s060-mot-dem",
