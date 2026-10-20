@@ -1528,10 +1528,18 @@ gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` 
 ### Kiểu cầm
 
 Món cầm tay là **dữ liệu**, không phải code three: `held/<món>.json` của repo video, qua `HeldItemSchema` /
-`parseHeldItem` (`core/heldItem.ts`, `schemaVersion` là `HELD_VERSION`). Lớp chung có món mẫu `coc` (cốc quai) và `tui`
+`parseHeldItem` (`core/heldItem.ts`, `schemaVersion` từ `HELD_MIN` tới `HELD_VERSION`). Lớp chung có món mẫu `coc` (cốc quai) và `tui`
 (túi xách, [kiểu treo](#kiểu-treo)), repo
 trùng tên thì đè ([05](05-repo-video.md#hai-lớp)). Bộ giải tay, `check`, `scene_probe` và MCP cùng đọc file ấy, và bộ
 giải chạy trước code dựng cảnh của repo; code dựng lưới món đọc mốc từ chính file ấy, nên mốc và lưới có một nguồn số.
+
+**Hai đời món.** `schemaVersion` thiếu hay `1` (`HELD_MIN`) là món có `grips` — phần còn lại của mục này. `2` (`HELD_VERSION`)
+là món **nhóm cầm**: không `grips`, cảnh khai chỗ cầm `món@nhóm`, rig suy khối hình từ `shape`, tự dựng chỗ tiếp xúc, cổ tay,
+khuỷu và ngón — [11](11-nhom-cam.md). Hai đời cùng nạp, cùng qua bộ giải và `check`; lần cầm đi đường của đời món nó trỏ tới.
+Phần lõi của nhóm cầm: `core/heldGeom.ts` (khối hình), `graspGroups.ts` (bảng nhóm), `graspSolve.ts` (chỗ tiếp xúc, giải
+lựa chọn), `graspArm.ts` (khuỷu tự nhiên; `W_DOWN` `0,3`, `W_BODY` `10`, `W_CONT` `2`), `holdLink.ts` (liên kết tay ↔ món cho
+`act3.ts` và `attach.ts`), `arm3.ts` (khung xương và luật đọc góc mà các file trên cùng đọc). `AIM_GAP` (`6`, `core/constants.ts`)
+là ngưỡng không tới của cả đích theo mốc, tay phụ và chỗ cầm nhóm.
 
 ```jsonc
 // held/dien-thoai.json — khung món: y lên, +z mặt trước, đơn vị rig (×0,01 ra three của người cao 4,3)
@@ -1740,7 +1748,8 @@ tay ấy — và góc lệch khỏi úp (`down`, độ).
 
 Sân khấu three đặt người que bằng `act` (`packages/rig/src/act.ts`); `actJoints(nhân vật, scenePose)`
 của lõi (`core/act3.ts`) trả đúng các khớp ấy trong toạ độ thế giới rig, không cần `three` — `check`
-đo giật tay chân trên chúng ([03](03-scene.md#giật-trên-hình)). Hai bên dùng chung:
+đo giật tay chân trên chúng ([03](03-scene.md#giật-trên-hình)). Hai bên dùng chung (khung xương, luật đọc góc và `twoBone3`
+ở `core/arm3.ts`; `core/act3.ts` xuất lại chúng và giữ `actReach`, `actJoints`):
 
 - **Khung xương** `bones3(rig.height)` (đơn vị three, tức rig chia 100), gốc vai và gốc chân
   `roots3(áo, rig, { clad, sleeve, trouser, bicep, skirt })` cùng góc tay choãi của nó, tâm đầu `head3(khung, human)` — `stickman.ts` dựng người que từ

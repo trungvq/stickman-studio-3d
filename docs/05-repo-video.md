@@ -141,7 +141,7 @@ three của từng cảnh, không lấy mẫu khối người, không mở luồ
 | `ref` | tham chiếu chéo (nhân vật, hành động, đạo cụ, động vật, nền, `fx`, `equip`), version pin, file giống bộ chung, bộ đồ của nhân vật; công tắc `equip` một chiều, hai track cùng ghi một socket, khuỷu gập ngược khi giơ tay, mốc ngoài `mask`, hành động tự giật, mốc khai không ai neo, người 3D diễn hành động 2D; tay cầm kiểu hai tay trong khi tay kia cầm món khác; lớp vẽ code bật cho cảnh không có, thư mục sidebar | JSON, runtime, gói lớp vẽ code |
 | `move` | người 3D trượt, không tới mốc dừng, thân quay gắt; tay chân giật trên hình | runtime, khớp người theo thời gian |
 | `hands` | tay sai dáng, lòng bàn tay quay sai, đích theo mốc và lòng tay theo ý định không đạt | runtime, cảnh three (mặt ngang dưới bàn tay) |
-| `held` | đồ cầm tay sai: ngón xuyên, món hở, ngón khai ôm mà hở (món có `shape`), tâm nắm xa, ý định không đạt, tay phụ hay `item:` không tới, món nhảy qua mốc `hold`, cầm món không ai `provide`; đường cũ thêm dáng khác dáng khai, món trôi | runtime, cảnh three |
+| `held` | đồ cầm tay sai: ngón xuyên, món hở, ngón khai ôm mà hở (món có `shape`), tâm nắm xa, ý định không đạt, tay phụ hay `item:` không tới, món nhảy qua mốc `hold`, cầm món không ai `provide`; chỗ cầm nhóm (`món@nhóm`) thêm da lún, ngón vai trò hở, cổ tay vượt kẹp hay sát kẹp, tay lấn thân, món to so với tay; đường cũ thêm dáng khác dáng khai, món trôi | runtime, cảnh three |
 | `legacy` | đồ cầm còn đi đường cũ (`hold` không có kiểu cầm `held/`), một dòng mỗi cảnh | runtime, cảnh three |
 | `clash` | người lồng vào đồ, vào người khác, tay xuyên thân, đồ lồng vào đồ, `touch` lạ | runtime, cảnh three, lớp vẽ code, mẫu khối người mỗi `0,25 s` |
 | `episode` | tham chiếu của tập, tiếng dài hơn chỗ nó nằm, bè lặp kêu khi sân khấu đứng yên, số cũ phải `retime`, file chưa commit, công cụ ngoài, `sfx/` đọc không được | tập, tiếng (`ffprobe`), git — chỉ ở lượt toàn bộ, không có khi `--scene` hay `--uses` |
@@ -163,7 +163,7 @@ Sửa gì chạy nhóm nào:
 | Chỗ đứng, đường đi (`world.at`, `path`) | `move,clash` |
 | Tay (`world.hands`, `reach`, dáng tay) | `hands,clash` (+`held` nếu tay đang cầm) |
 | Đồ cầm trong cảnh (`world.hands[].hold`, ý định, `point: item:`), `cast.provide` | `held,clash` |
-| Kiểu cầm, mốc, hình va chạm, ngón ôm (`held/<món>.json`) | `ref,held,clash` trên mọi cảnh có món ấy (`--scene`); repo tự kiểm hình khớp lưới |
+| Kiểu cầm hay nhóm cầm, mốc, hình va chạm, ngón ôm (`held/<món>.json`, v1 hay v2) | `ref,held,clash` trên mọi cảnh có món ấy (`--scene`); repo tự kiểm hình khớp lưới |
 | Thời gian, retime, audio | `move` + lượt toàn bộ cho `episode` |
 | Bối cảnh, đồ khối | `clash,hands` |
 | Hành động chung | `--uses <tên> --only ref,move,hands,held` |
@@ -240,7 +240,7 @@ Các kiểm tra sau bắt lỗi hợp lệ theo schema nhưng làm thiếu hình
 | **Đồ lồng vào đồ** | `clash` | `sceneItemClashProblems` của cli (`solidItemClashes` của fx): hai món của lớp vẽ code lấn nhau quá `stickman.clash.tol` **và** phần thể tích món nhỏ nằm trong món kia quá `0,1` (`stickman.clash.items`, `false` là tắt), mỗi cặp một dòng; món khai tên món kia trong `touch` thì bỏ — [10](10-lop-ve-code.md#đồ-lồng-vào-đồ) |
 | **Người 3D diễn hành động 2D** | `ref` | `sceneSideProblems` của rig, **mức lỗi**: người có `world` mà clip ghi kênh tay chân của hành động không soạn ở `side` — sân khấu three vẽ kênh ấy ở dáng nghỉ, hoà với hành động `side` là giật một khung. Mỗi người, mỗi clip một dòng kèm bản `-3d` có sẵn — [03](03-scene.md#hành-động-cho-người-3d) |
 | **Lòng bàn tay quay sai** | `hands` | `scenePalmProblems` của rig (`actPalms`, bàn tay đúng như three vẽ), mặt ngang dưới bàn tay lấy từ cảnh three [`stickman.world`](#cảnh-three-cho-check) (`palmFrame` của cli): bàn tay duỗi đặt trên mặt ngang mà lòng tay lệch khỏi úp quá `45°`, tay buông bên đùi mà lòng tay lệch hướng vào đùi quá `60°`, kéo dài từ `0,3 s` (`stickman.palm`, `false` là tắt) — [03](03-scene.md#lòng-bàn-tay) |
-| **Đồ cầm tay sai** | `held` | `sceneHeld` của rig trên cảnh three [`stickman.world`](#cảnh-three-cho-check) (`heldFrame`, `heldItemsFrame` của cli, `heldHands` của người 3D): trục ngón vào trong món quá `1,25`, món không chạm tay, tâm nắm ngoài món quá `3`, ý định không đạt (kiểu cầm cứng: `AimReport.hold` kèm khớp kẹp; đường cũ: `userData.hold`), tay phụ hay `item:` không tới, món nhảy qua mốc gắn / thả / đổi tay, món khai `hold` mà cảnh không `provide`; món treo (kiểu treo, `heldCarries`) quai rời chỗ treo hay khuỷu không gập giữ quai, thân món lồng vào người; đường cũ thêm dáng `hold` khác dáng khai, món trôi trong khung bàn tay; kéo dài từ `0,3 s` (`stickman.held`, `false` là tắt) — [03](03-scene.md#đồ-cầm-tay) |
+| **Đồ cầm tay sai** | `held` | `sceneHeld` của rig trên cảnh three [`stickman.world`](#cảnh-three-cho-check) (`heldFrame`, `heldItemsFrame` của cli, `heldHands` của người 3D): trục ngón vào trong món quá `1,25`, món không chạm tay, tâm nắm ngoài món quá `3`, ý định không đạt (kiểu cầm cứng: `AimReport.hold` kèm khớp kẹp; đường cũ: `userData.hold`), tay phụ hay `item:` không tới, món nhảy qua mốc gắn / thả / đổi tay, món khai `hold` mà cảnh không `provide`; chỗ cầm nhóm đi bộ luật riêng ([11](11-nhom-cam.md#7-luật-check-nhóm-held)): `sink` (da lún), `role`, `grip` theo nhóm, và với món đặt trước `reach` (ngoài tầm — lỗi), `wrist` (vượt kẹp — lỗi, sát kẹp — cảnh báo), `arm`, `size`; món treo (kiểu treo, `heldCarries`) quai rời chỗ treo hay khuỷu không gập giữ quai, thân món lồng vào người; đường cũ thêm dáng `hold` khác dáng khai, món trôi trong khung bàn tay; kéo dài từ `0,3 s` (`stickman.held`: `pierce`, `touch`, `wrap`, `grip`, `up`, `face`, `drift`, `turn`, `reach`, `sink`, `wrist`, `arm`, `seat`, `body`, `hold` — số dương, thiếu thì lấy mặc định của rig; `grip` khai thì thắng ngưỡng theo nhóm; `false` là tắt) — [03](03-scene.md#đồ-cầm-tay) |
 | **Đồ cầm còn đi đường cũ** | `legacy` | `legacyHolds` của người 3D: lần cầm qua `hold` không có kiểu cầm, một dòng mỗi cảnh — [01](01-rig.md#kiểu-cầm) |
 | **Tay sai dáng** | `hands` | `sceneArmProblems` của rig (`actJoints`, `actPalms`, đúng như three vẽ): khuỷu thẳng từ `170°` (đích xa quá tầm, tay buông, góc của hành động), ngón hai tay gần nhau chĩa vào nhau quá `30°`, lòng tay ngửa hay ra trước khi bàn tay thấp, bàn tay đặt bằng đích lơ lửng `4–15` trên mặt ngang (cần [`stickman.world`](#cảnh-three-cho-check)), bàn tay lấn vào đầu người khác; kéo dài từ `0,3 s` (`stickman.arms`, `false` là tắt) — [03](03-scene.md#tay-và-khuỷu) |
 | **Tay chân giật trên hình** | `move` | `sceneSnapProblems` của rig: lấy mẫu theo fps bản chốt, khớp đúng như hình vẽ ra (`actJoints` cho người 3D, `joints2` cho người 2D) qua khung cắt camera, khung nào một khớp nhảy vượt nền chuyển động quanh nó quá ngưỡng (`stickman.snap`) thì kêu, kèm lý do đọc từ timeline; chỗ khai `snap` thì bỏ — [03](03-scene.md#giật-trên-hình) |
@@ -303,7 +303,9 @@ Lớp dưới **không nằm trong repo video**: nó là
 
 `template/` trong package `@stickman3d/cli` (chạy từ cây nguồn thì là
 `apps/studio/public`), hằng `COMMON` trong `lib.mjs`. Đọc thì tìm lớp trên
-trước, không có mới xuống lớp dưới; file **trùng đường dẫn** thì lớp trên đè.
+trước, không có mới xuống lớp dưới; file **trùng đường dẫn** thì lớp trên đè. `held/` nhận món v1 (`grips`) và món v2
+(`schemaVersion: 2`, nhóm cầm — [11](11-nhom-cam.md)) trong cùng một thư mục, ở cả hai lớp; mỗi lần cầm đi đường của đời món
+nó trỏ tới.
 Danh mục cũng gộp như thế (`mergePieceCatalogs` trong rig, đè theo `file`).
 Ghi thì luôn vào lớp trên.
 
@@ -365,7 +367,9 @@ rig mà đến; thiếu tuỳ chọn thì thêm ở studio, đừng sửa `Scene
 Rig mới đổi độ dài chân thì `upgrade` chỉ nhắc, cảnh dời bằng một lệnh riêng —
 [Đổi độ dài chân](#đổi-độ-dài-chân).
 Repo có `held/` và đã lưu bảng chuẩn kiểu cầm thì nâng xong chạy `pnpm bang-cam --so`: nó so từng ô cận bàn tay của
-mọi kiểu cầm với bảng đã duyệt và chỉ in ô đổi ([03](03-scene.md#bảng-duyệt-kiểu-cầm)).
+mọi kiểu cầm với bảng đã duyệt và chỉ in ô đổi ([03](03-scene.md#bảng-duyệt-kiểu-cầm)). Món v2 có bảng riêng: `pnpm bang-cam
+--nhom <nhóm,…>` (nhóm × món × chỗ cầm mẫu × hai cỡ tay), cùng `--so` / `--luu-chuan` / `--chuan`; không `--nhom` thì chỉ món
+v1 ([11](11-nhom-cam.md#bang-cam-theo-nhóm)).
 
 **Hướng dẫn dùng rig ở `stickman.md`, luật riêng của tập ở `AGENTS.md`.** Hai
 chủ khác nhau: `upgrade` sinh lại file trước theo version đang cài, file sau thì
