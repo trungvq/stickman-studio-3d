@@ -12,6 +12,13 @@ Worktree video: `~/Work/Dev/youtube-video/jp-sukatto-nhom-cam` (nhánh `auto/nho
 - Ảnh duyệt: `duyet/g3-thu-nhom-cam-frames.jpg`, `duyet/g3-thu-nhom-cam-can-tay.jpg`, `duyet/g3-bang-cam-nhom-thu-{bang-gia,dien-thoai}.jpg`.
 - Hình t02 không đổi ở giai đoạn 3 (chỉ đường v2 mới vẽ khác); baseline đổi vì thước da, xem "Đã tự quyết".
 
+## Giai đoạn 6 — XONG (2026-10-21)
+- `stickman migrate-held` (cli) chuyển 61 cảnh t02 (121 lần cầm + 21 tay phụ) và 33 cảnh thử ngoài t02 (bảng kiểu riêng `tools/migrate-map.json`); không cảnh nào còn `món#kiểu`. `held/` video là v2 (35 món + `thu-*`), `held-moc` chỉ v2.
+- Đường v1 xoá khỏi rig (`feat(rig)!:` `cd82ab4`), `SCENE_VERSION` 30; `hold` v1/món đời 1 báo lỗi gợi ý `migrate-held`. Không nâng version gói.
+- `check` t02 `ref,held,clash`: 0 lỗi; baseline mới `baseline/check-held-clash-g6.json` (217 cảnh báo; so g315: 26 mới — 24 `role` v2 chấp nhận — 1 nặng hơn, 11 hết). `thu-nhom-cam` 1 lỗi đã biết. `cam-do` không `!!` mới.
+- Shot đổi hình: `shot-doi-hinh.md` (29 dòng, 15 cảnh), ảnh `duyet/g6-doi-hinh-*.jpg`.
+- Sửa thêm: lấn mới do `touch` tay kia bị bỏ (cảnh + tool), `touch` theo mốc `hold` đang hiệu lực mỗi khung.
+
 ## Giai đoạn 4 — XONG (2026-10-21)
 - Mười nhóm chạy (`sheet`, `card`, `pen`, `chopsticks`, `cylinder` (`wrap`, `flat`), `bowl`, `handle`, `palmBox`, `platform`, `carry`); bốn `later` (`round`, `hug`, `clamp`, `soft`).
 - Mỗi nhóm có chỗ tiếp xúc khớp fixture v1 (lệch đã ghi ở "Đã tự quyết": `khay#bung` 1,35–2,4, `chen#kep` ≤ 1,5), hàng mẫu `bang-cam --nhom`, docs/11 mục 3 và tóm tắt mục 9.
@@ -25,7 +32,7 @@ Worktree video: `~/Work/Dev/youtube-video/jp-sukatto-nhom-cam` (nhánh `auto/nho
 - `bang-cam --nhom` đủ mười nhóm. Ảnh "trước" chụp lại (T0b). `migrate-held` có sẵn (G6-1).
 
 ## Đang làm
-Giai đoạn 6 — chuyển cảnh t02, xoá v1 (`gd6-ke-hoach.md`). (Giai đoạn 4 theo docs/11 mục 9 (palmBox → carry → sheet → cylinder → platform → card → chopsticks → pen → handle → bowl). Kế hoạch: `tmp/nhom-cam/gd4-ke-hoach.md`.
+Không còn việc giao.  (Giai đoạn 4 theo docs/11 mục 9 (palmBox → carry → sheet → cylinder → platform → card → chopsticks → pen → handle → bowl). Kế hoạch: `tmp/nhom-cam/gd4-ke-hoach.md`.
 Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 ## Tóm tắt bước 0 (xong)
@@ -128,6 +135,7 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 | G6-5 xoá đường v1 | xong: xoá `grips`, `heldGrip`/`gripOf`/`gripSpec`, `isCarry`, `holdKind`, `holdIntent`, `HOLD_ALT`, luật `wrap`/`heldOpen`, `bang-cam` chế độ kiểu cầm, MCP v1; `gripFrame` → `graspLink` (chỉ vectơ); `heldGripMax` → `groupGripMax`; `coc`/`tui` mẫu sang v2 (viewer `demo-carry`); docs bỏ Phụ lục A, "Thứ gãy khi xoá v1". `SCENE_VERSION` 30: `hold` v1 và món đời 1 báo lỗi zod gợi ý `stickman migrate-held` (tool đọc v1 bằng schema riêng). Cổng kiểm xanh (rig 1107); t02 check trước/sau giống từng byte (0 lỗi, 226 cảnh báo). Không nâng version gói. Commit `cd82ab4`, video `3229ad8` | `g6/xoa-v1.md` |
 | G6-2b sửa lấn mới t02 | xong: t02 0 lỗi; so g315 26 mới (24 `role` v2 chấp nhận, `phieu-lien` hở 1,0), 1 nặng hơn, 11 hết. 4 chỗ do `migrate-held` bỏ `touch` `self.hand`/`self.foreArm` (v1 miễn cả hai bên, v2 chỉ bên cầm) → khai lại ở cảnh; s060 chai `around` 90 → 105 (lệch 14,6° lúc 1,16 s), s028 thẻ `slant` −20 (lấn quầy 7,43 → 5,89, trên khung thật ≤ 3,9 ≈ v1), s028 đích tay phải x +4, s053/s055 `both.along` 0,55; s030 khay suất lún 1,83 giữ (v1 1,7). Baseline mới `baseline/check-held-clash-g6.json` (217 cảnh báo). Lỗi rig: `migrate-held` `TOUCH_DEFAULT`; `regrip` cùng khoá `check` giữ `touch` lần cầm đầu; tay phụ `platform` tay dẫn lún ~1,5. Video commit | `g6/sua-lan.md` |
 | G6-6a hai lỗi `touch` | xong: `migrate-held` `touchOther` ghi `self.handX`/`self.foreArmX` tay kia cho kiểu một tay (v1 miễn cả hai bên); `Held.retouch` đặt lại `touch` theo mốc `hold` đang hiệu lực mỗi khung (`world.ts`) — `check` khớp `scene_probe` khi `regrip` cùng khoá. Test cli + `holdWorldV2.test.ts`. t02 so g6: 0 mới, 0 nặng hơn, 0 hết | `g6/g66a.md` |
+| G6-4 ảnh sau + shot đổi hình | xong: ảnh sau 2162 png (1,8 GB, không commit) cho mọi cặp của `lan-cam.json` + giây của `lech.json` (ảnh trước bổ sung `truoc/can-tay-them/`); `shot-doi-hinh.md` 29 dòng / 15 cảnh, dải ảnh `duyet/g6-doi-hinh-*.jpg` + tờ tổng. 3 khác rõ (chén s033 ôm thành thay kẹp; thẻ s028 nghiêng khác; phiếu liền s051 lúc 1,6 s), 23 khác ít (20 dòng khay lùi khỏi lòng ~1,7–1,8; điện thoại s013 dời 2,4), 3 gần như không khác; không xuyên/hở lộ mới. `cam-do` `!!` 14 → 14 | `shot-doi-hinh.md`, `duyet/g6-*` |
 | G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
@@ -217,4 +225,4 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 - `rim` `slant` âm: ngón nghiêng về mặt cái, tấm kẹp giữa trỏ và giữa (khoe báo). Út hở hơn v1 0,5–1,8 ở `slant` ±22,5.
 
 ## Bước kế
-0. Giai đoạn 4, 5 xong. Giai đoạn 6 theo `tmp/nhom-cam/gd6-ke-hoach.md`: G6-2 chạy `migrate-held` thật trên t02 → G6-3 thay `held/` → G6-4 ảnh sau + `shot-doi-hinh.md` → G6-5 xoá v1 + `SCENE_VERSION` → G6-6 baseline mới.
+0. Sáu giai đoạn xong. Chờ chủ dự án duyệt nhánh `feat/nhom-cam` (studio) và `auto/nhom-cam` (video): ảnh `duyet/`, `shot-doi-hinh.md`, mục "Cần chủ dự án". Phát hành rig (version gói, `pnpm release`, `pnpm rig registry`) và merge là việc của chủ dự án.
