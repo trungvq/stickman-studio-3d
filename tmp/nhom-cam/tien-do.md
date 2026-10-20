@@ -94,6 +94,7 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 | G4-48a docs `cylinder` | xong, commit `9636e9c`. Banner đầu docs/11 và mục 9 "mười hai nhóm `later`" lỗi thời → Z1 | `docs/11` |
 | G4-47 hàng mẫu `cylinder` | xong: `along thấp/cao`, `ngón cái xuống`, `nắm phần <p>` (theo hình món, `along` giữa phần), `áp tai` (tay trái dẫn, `around 180`); lọc hàng `checkChoice`/`resolveScene` từ chối cho mọi nhóm. 26 hàng, 0 ô lỗi. Vai/cổ chai trúng chỗ. Áp tai: ống nghe NẰM NGANG, bàn tay xoè — kém v1 (dựng dọc má) → G4-47b. Commit `f3f07ad`, video `5d3e19b` | `g447/` |
 | G4-47b ống nghe áp tai | xong: nguyên nhân là `wrap` bắt trục vuông góc ngón, ở tai cần lệch cổ tay ~90° (giới hạn 20°) → ống nghe nằm ngang. Thêm biến thể `cylinder.flat` (`kinds: rod`, dáng `span`, `FLAT_THUMB`, ngón/lòng `press`, út `support`), `GroupSpec.variantOf` (thanh hộp, lòng áp mặt rộng ≥ `FLAT_WIDE`·W → `flat`), tiếp xúc `flatRod`; `checkChoice` báo `flat` trên trụ tiện. Áp tai dọc má, lún 0,06/0, cổ tay không kẹp, ngang v1 cả hai tay; ống nghe trước ngực cũng ra `flat` (cổ tay vượt 20 → 0,4/2,5°). Chai y số. Ngưỡng `grip` tay dẫn `cylinder` không khai `variant` thành 5 (dáng `span` trong `HELD_PINCHES`) | `g447b/`, `duyet/g4-cylinder-ap-tai.jpg` |
+| G4-48b docs `flat` + render tổng `cylinder` | xong: docs commit; render ở `ed39e0f`: 29 hàng, chai thân/vai/cổ trúng chỗ, lún ≤ 0,54, không xuyên; ống nghe áp tai lún ≤ 0,06; ống nghe trước ngực vượt cổ tay (hàng mẫu dựng đứng loa ra ngoài), chai đặc tuyến `size`. Mốc M4-4 | `g4-cylinder/` |
 | G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
@@ -162,6 +163,6 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 ## Bước kế
 0. Phiên tiếp tục (2026-10-20) sau khi chủ dự án chốt hướng G4-38b. Worktree sạch, mọi việc xanh đã commit và push. Studio xem `git log`, video `9b13333`.
-1. Nhóm `sheet` xong (M4-3). Cylinder: 42–47, 48a xong → render tổng `cylinder` + `so-v1.md` (48b) → M4-4.
-3. Rồi cylinder 43–48 (42 xong), platform 53–57, card 62–64, chopsticks 74–76 (nhớ `frameSink` truyền `curl`), pen 83–85, handle 92–95, bowl A2–A4, Z1, Z2 theo `gd4-ke-hoach.md`. Đã xong/gộp: 00, X1, 11–14, 22–25, 32–37, 42, 52, 72, 73, 82.
+1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. Kế: platform G4-53 (52 xong).
+3. Rồi platform 53–57, card 62–64, chopsticks 74–76 (nhớ `frameSink` truyền `curl`), pen 83–85, handle 92–95, bowl A2–A4, Z1, Z2 theo `gd4-ke-hoach.md`. Đã xong/gộp: 00, X1, 11–14, 22–25, 32–38b, 41–48, 52, 72, 73, 82.
 4. Giai đoạn 5 → 6.

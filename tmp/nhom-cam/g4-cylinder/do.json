@@ -1,0 +1,3676 @@
+{
+ "t": 0.5,
+ "people": [
+  {
+   "file": "t01-sakura.json",
+   "size": 1.61,
+   "dims": {
+    "W": 14.700000000000003,
+    "A": 16.44858224639421,
+    "L": 30.06267922061609,
+    "P": 16.957368421052635
+   }
+  },
+  {
+   "file": "kuroiwa.json",
+   "size": 2.16,
+   "dims": {
+    "W": 16.8,
+    "A": 16.659942296600185,
+    "L": 30.177341709067022,
+    "P": 16.957368421052635
+   }
+  }
+ ],
+ "nhom": [
+  "cylinder"
+ ],
+ "bo": [],
+ "loc": [
+  {
+   "item": "thu-chai-dia",
+   "group": "cylinder",
+   "person": "t01-sakura",
+   "row": "biến thể flat",
+   "why": "biến thể `flat` chỉ áp trên `rod` (trụ tiện `than` (r 10,2), trụ tiện `vai` (r 10,2), trụ tiện `co` (r 4,4))"
+  },
+  {
+   "item": "thu-chai-dia",
+   "group": "cylinder",
+   "person": "kuroiwa",
+   "row": "biến thể flat",
+   "why": "biến thể `flat` chỉ áp trên `rod` (trụ tiện `than` (r 10,2), trụ tiện `vai` (r 10,2), trụ tiện `co` (r 4,4))"
+  },
+  {
+   "item": "thu-chai-dac-tuyen",
+   "group": "cylinder",
+   "person": "t01-sakura",
+   "row": "biến thể flat",
+   "why": "biến thể `flat` chỉ áp trên `rod` (trụ tiện `than` (r 13,2), trụ tiện `vai` (r 13,2), trụ tiện `co` (r 5,2))"
+  },
+  {
+   "item": "thu-chai-dac-tuyen",
+   "group": "cylinder",
+   "person": "kuroiwa",
+   "row": "biến thể flat",
+   "why": "biến thể `flat` chỉ áp trên `rod` (trụ tiện `than` (r 13,2), trụ tiện `vai` (r 13,2), trụ tiện `co` (r 5,2))"
+  }
+ ],
+ "trung": [
+  {
+   "id": "bang-cam-thu-chai-dia-cylinder-bien-the-wrap-P-t01-sakura",
+   "key": "thu-chai-dia@cylinder biến thể wrap",
+   "person": "t01-sakura",
+   "giong": "bang-cam-thu-chai-dia-cylinder-mac-dinh-P-t01-sakura"
+  },
+  {
+   "id": "bang-cam-thu-chai-dia-cylinder-along-thap-P-t01-sakura",
+   "key": "thu-chai-dia@cylinder along thấp",
+   "person": "t01-sakura",
+   "giong": "bang-cam-thu-chai-dia-cylinder-mac-dinh-P-t01-sakura"
+  },
+  {
+   "id": "bang-cam-thu-chai-dia-cylinder-bien-the-wrap-P-kuroiwa",
+   "key": "thu-chai-dia@cylinder biến thể wrap",
+   "person": "kuroiwa",
+   "giong": "bang-cam-thu-chai-dia-cylinder-mac-dinh-P-kuroiwa"
+  },
+  {
+   "id": "bang-cam-thu-chai-dia-cylinder-along-thap-P-kuroiwa",
+   "key": "thu-chai-dia@cylinder along thấp",
+   "person": "kuroiwa",
+   "giong": "bang-cam-thu-chai-dia-cylinder-mac-dinh-P-kuroiwa"
+  },
+  {
+   "id": "bang-cam-thu-ong-nghe-ban-cylinder-bien-the-flat-P-t01-sakura",
+   "key": "thu-ong-nghe-ban@cylinder biến thể flat",
+   "person": "t01-sakura",
+   "giong": "bang-cam-thu-ong-nghe-ban-cylinder-mac-dinh-P-t01-sakura"
+  },
+  {
+   "id": "bang-cam-thu-ong-nghe-ban-cylinder-along-thap-P-t01-sakura",
+   "key": "thu-ong-nghe-ban@cylinder along thấp",
+   "person": "t01-sakura",
+   "giong": "bang-cam-thu-ong-nghe-ban-cylinder-mac-dinh-P-t01-sakura"
+  },
+  {
+   "id": "bang-cam-thu-ong-nghe-ban-cylinder-cai-xuong-P-t01-sakura",
+   "key": "thu-ong-nghe-ban@cylinder ngón cái xuống",
+   "person": "t01-sakura",
+   "giong": "bang-cam-thu-ong-nghe-ban-cylinder-mac-dinh-P-t01-sakura"
+  },
+  {
+   "id": "bang-cam-thu-ong-nghe-ban-cylinder-along-thap-P-kuroiwa",
+   "key": "thu-ong-nghe-ban@cylinder along thấp",
+   "person": "kuroiwa",
+   "giong": "bang-cam-thu-ong-nghe-ban-cylinder-mac-dinh-P-kuroiwa"
+  },
+  {
+   "id": "bang-cam-thu-ong-nghe-ban-cylinder-cai-xuong-P-kuroiwa",
+   "key": "thu-ong-nghe-ban@cylinder ngón cái xuống",
+   "person": "kuroiwa",
+   "giong": "bang-cam-thu-ong-nghe-ban-cylinder-mac-dinh-P-kuroiwa"
+  },
+  {
+   "id": "bang-cam-thu-chai-dac-tuyen-cylinder-bien-the-wrap-P-t01-sakura",
+   "key": "thu-chai-dac-tuyen@cylinder biến thể wrap",
+   "person": "t01-sakura",
+   "giong": "bang-cam-thu-chai-dac-tuyen-cylinder-mac-dinh-P-t01-sakura"
+  },
+  {
+   "id": "bang-cam-thu-chai-dac-tuyen-cylinder-along-thap-P-t01-sakura",
+   "key": "thu-chai-dac-tuyen@cylinder along thấp",
+   "person": "t01-sakura",
+   "giong": "bang-cam-thu-chai-dac-tuyen-cylinder-mac-dinh-P-t01-sakura"
+  },
+  {
+   "id": "bang-cam-thu-chai-dac-tuyen-cylinder-bien-the-wrap-P-kuroiwa",
+   "key": "thu-chai-dac-tuyen@cylinder biến thể wrap",
+   "person": "kuroiwa",
+   "giong": "bang-cam-thu-chai-dac-tuyen-cylinder-mac-dinh-P-kuroiwa"
+  },
+  {
+   "id": "bang-cam-thu-chai-dac-tuyen-cylinder-along-thap-P-kuroiwa",
+   "key": "thu-chai-dac-tuyen@cylinder along thấp",
+   "person": "kuroiwa",
+   "giong": "bang-cam-thu-chai-dac-tuyen-cylinder-mac-dinh-P-kuroiwa"
+  }
+ ],
+ "cells": [
+  {
+   "id": "bang-cam-thu-chai-dia-cylinder-mac-dinh-P-t01-sakura",
+   "item": "thu-chai-dia",
+   "group": "cylinder",
+   "ma": "mac-dinh",
+   "grip": "mặc định (wrap)",
+   "key": "thu-chai-dia@cylinder mặc định (wrap)",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -100.56,
+      -227.9,
+      235.58
+     ],
+     "text": "variant wrap part than along 0.3 thumb up\n   lún 0.1 · xuyên -1.7 · nắm -2 · cỡ 0.69·W\n   cái(wrap) -0.1 trỏ(wrap) 0 giữa(wrap) 0\n   áp út(wrap) 0 út(wrap) -0.1 lòng(press) 0.6",
+     "raw": {
+      "pierce": {
+       "depth": 0.05940886721309367,
+       "core": -1.7258165133083927,
+       "piece": "pinky1"
+      },
+      "sink": 0.13900005829963644,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": -0.13900005829963644,
+       "index": -0.032573564299175566,
+       "fingers": -0.05940886721309367,
+       "palm": 0.6057289939366334
+      },
+      "size": {
+       "of": 10.2,
+       "W": 14.700000000000003,
+       "ratio": 0.6938775510204079
+      },
+      "hold": "thu-chai-dia@cylinder////",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "than",
+        "feature": "lathe",
+        "featureIndex": 0,
+        "along": 0.25,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 300
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 37.5,
+        "wrist": {
+         "turn": -27.631357749000234,
+         "bend": -8.989735323298133,
+         "dev": -7.47966934534094,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.13900005829963644,
+       "index": -0.032573564299175566,
+       "middle": 0.016281537557002675,
+       "ring": -0.003844828523209997,
+       "pinky": -0.05940886721309367
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -1.9805498837626057,
+      "palm": {
+       "gap": 1.8376205920574793,
+       "angle": 45.50540785690661
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 114,
+   "tiles": [
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-mac-dinh-P-t01-sakura-truoc.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-mac-dinh-P-t01-sakura-cheo.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-mac-dinh-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dia-cylinder-along-cao-P-t01-sakura",
+   "item": "thu-chai-dia",
+   "group": "cylinder",
+   "ma": "along-cao",
+   "grip": "along cao",
+   "key": "thu-chai-dia@cylinder along cao",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -97.85,
+      -255.38,
+      235.77
+     ],
+     "text": "variant wrap part than along 0.8 thumb up\n   lún 0.1 · xuyên -1.8 · nắm -1 · cỡ 0.69·W\n   cái(wrap) 0 trỏ(wrap) -0.1 giữa(wrap) 0\n   áp út(wrap) 0 út(wrap) 0 lòng(press) 0.9",
+     "raw": {
+      "pierce": {
+       "depth": -0.008182824750448382,
+       "core": -1.81888246317736,
+       "piece": "pinky1"
+      },
+      "sink": 0.05314894294386673,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": -0.02001529378749147,
+       "index": -0.05314894294386673,
+       "fingers": -0.025429735178591192,
+       "palm": 0.9124416296112948
+      },
+      "size": {
+       "of": 10.2,
+       "W": 14.700000000000003,
+       "ratio": 0.6938775510204079
+      },
+      "hold": "thu-chai-dia@cylinder////",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "than",
+        "feature": "lathe",
+        "featureIndex": 0,
+        "along": 0.75,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 330
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "along": "scene",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 85,
+        "wrist": {
+         "turn": -50.09390086964033,
+         "bend": -6.276327322485535,
+         "dev": -5.472938025480235,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.02001529378749147,
+       "index": -0.05314894294386673,
+       "middle": 0.04578182553643269,
+       "ring": -0.025429735178591192,
+       "pinky": 0.008182824750448382
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -1.027886230904195,
+      "palm": {
+       "gap": 2.863546887582562,
+       "angle": 31.13764610259405
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 114,
+   "tiles": [
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-along-cao-P-t01-sakura-truoc.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-along-cao-P-t01-sakura-cheo.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-along-cao-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dia-cylinder-cai-xuong-P-t01-sakura",
+   "item": "thu-chai-dia",
+   "group": "cylinder",
+   "ma": "cai-xuong",
+   "grip": "ngón cái xuống",
+   "key": "thu-chai-dia@cylinder ngón cái xuống",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -90.95,
+      -254,
+      250.77
+     ],
+     "text": "variant wrap part than along 0.8 thumb down\n   lún 0.3 · xuyên -1.8 · nắm 1.7 · cỡ 0.69·W\n   cái(wrap) -0.1 trỏ(wrap) 0.1 giữa(wrap) 0\n   áp út(wrap) 0 út(wrap) -0.3 lòng(press) 0.6",
+     "raw": {
+      "pierce": {
+       "depth": 0.28002047776723205,
+       "core": -1.7547568647470242,
+       "piece": "pinky1"
+      },
+      "sink": 0.28002047776723205,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": -0.08032225143077731,
+       "index": 0.0654094363927194,
+       "fingers": -0.28002047776723205,
+       "palm": 0.5542843468789649
+      },
+      "size": {
+       "of": 10.2,
+       "W": 14.700000000000003,
+       "ratio": 0.6938775510204079
+      },
+      "hold": "thu-chai-dia@cylinder////down",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "than",
+        "feature": "lathe",
+        "featureIndex": 0,
+        "along": 0.75,
+        "thumb": "down",
+        "variant": "wrap",
+        "around": 180
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "along": "rig",
+        "thumb": "scene",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 87.5,
+        "wrist": {
+         "turn": 65.53961021713765,
+         "bend": -2.2340500234882312,
+         "dev": 0.9258880520602857,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.08032225143077731,
+       "index": 0.0654094363927194,
+       "middle": 0.04694085976652244,
+       "ring": -0.04660835546400653,
+       "pinky": -0.28002047776723205
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 1.6976179193851373,
+      "palm": {
+       "gap": 2.9177565521797417,
+       "angle": 26.215376821249105
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 114,
+   "tiles": [
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-cai-xuong-P-t01-sakura-truoc.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-cai-xuong-P-t01-sakura-cheo.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-cai-xuong-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dia-cylinder-phan-vai-P-t01-sakura",
+   "item": "thu-chai-dia",
+   "group": "cylinder",
+   "ma": "phan-vai",
+   "grip": "nắm phần vai",
+   "key": "thu-chai-dia@cylinder nắm phần vai",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -97.95,
+      -254.7,
+      235.59
+     ],
+     "text": "variant wrap part vai along 0.7 thumb up\n   lún 0.1 · xuyên -1.8 · nắm -1.1 · cỡ 0.69·W\n   cái(wrap) 0 trỏ(wrap) -0.1 giữa(wrap) 0.1\n   áp út(wrap) 0 út(wrap) 0 lòng(press) 0.9",
+     "raw": {
+      "pierce": {
+       "depth": 0.0030468330932364998,
+       "core": -1.8210062607359152,
+       "piece": "pinky1"
+      },
+      "sink": 0.05409496726188334,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": -0.039139261120247675,
+       "index": -0.05409496726188334,
+       "fingers": -0.017724447273529894,
+       "palm": 0.8965458712935388
+      },
+      "size": {
+       "of": 10.2,
+       "W": 14.700000000000003,
+       "ratio": 0.6938775510204079
+      },
+      "hold": "thu-chai-dia@cylinder//vai//",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "vai",
+        "feature": "lathe",
+        "featureIndex": 9,
+        "along": 0.74,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 330
+       },
+       "by": {
+        "part": "scene",
+        "feature": "default",
+        "along": "scene",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 85,
+        "wrist": {
+         "turn": -49.93563417726107,
+         "bend": -6.22653980256387,
+         "dev": -4.963146823652185,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.039139261120247675,
+       "index": -0.05409496726188334,
+       "middle": 0.05288480599727493,
+       "ring": -0.017724447273529894,
+       "pinky": -0.0030468330932364998
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -1.0830672755816413,
+      "palm": {
+       "gap": 2.781425643472842,
+       "angle": 31.076177591497533
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0.0000017075472925031877,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 114,
+   "tiles": [
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-phan-vai-P-t01-sakura-truoc.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-phan-vai-P-t01-sakura-cheo.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-phan-vai-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dia-cylinder-phan-co-P-t01-sakura",
+   "item": "thu-chai-dia",
+   "group": "cylinder",
+   "ma": "phan-co",
+   "grip": "nắm phần co",
+   "key": "thu-chai-dia@cylinder nắm phần co",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -96.06,
+      -267.07,
+      238.87
+     ],
+     "text": "variant wrap part co along 0.9 thumb up\n   lún 0.3 · xuyên -1.7 · nắm -1.1 · cỡ 0.3·W\n   cái(wrap) 0.4 trỏ(wrap) -0.1 giữa(wrap) -0.1\n   áp út(wrap) -0.1 út(wrap) -0.3 lòng(press) 0.4",
+     "raw": {
+      "pierce": {
+       "depth": 0.3366008458366715,
+       "core": -1.7298589398766269,
+       "piece": "pinky1"
+      },
+      "sink": 0.3366008458366715,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": 0.38381588361156205,
+       "index": -0.06311891870292909,
+       "fingers": -0.3366008458366715,
+       "palm": 0.4022944140328911
+      },
+      "size": {
+       "of": 4.4,
+       "W": 14.700000000000003,
+       "ratio": 0.2993197278911564
+      },
+      "hold": "thu-chai-dia@cylinder//co//",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "co",
+        "feature": "lathe",
+        "featureIndex": 17,
+        "along": 0.91,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 330
+       },
+       "by": {
+        "part": "scene",
+        "feature": "default",
+        "along": "scene",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 87.5,
+        "wrist": {
+         "turn": -83.52960587658801,
+         "bend": -11.194039771792237,
+         "dev": -4.8094070932929105,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 0.38381588361156205,
+       "index": -0.06311891870292909,
+       "middle": -0.06404158507236525,
+       "ring": -0.11235662220417669,
+       "pinky": -0.3366008458366715
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -1.1360644303401348,
+      "palm": {
+       "gap": 3.167269284708702,
+       "angle": 49.170647322342525
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 114,
+   "tiles": [
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-phan-co-P-t01-sakura-truoc.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-phan-co-P-t01-sakura-cheo.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-phan-co-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dia-cylinder-mac-dinh-P-kuroiwa",
+   "item": "thu-chai-dia",
+   "group": "cylinder",
+   "ma": "mac-dinh",
+   "grip": "mặc định (wrap)",
+   "key": "thu-chai-dia@cylinder mặc định (wrap)",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -96.04,
+      -267.8,
+      231.24
+     ],
+     "text": "variant wrap part than along 0.3 thumb up\n   lún 0.2 · xuyên -2 · nắm -1 · cỡ 0.61·W\n   cái(wrap) -0.2 trỏ(wrap) 0 giữa(wrap) 0\n   áp út(wrap) 0 út(wrap) -0.1 lòng(press) 0.5",
+     "raw": {
+      "pierce": {
+       "depth": 0.0668522763461823,
+       "core": -1.9837216456540219,
+       "piece": "pinky1"
+      },
+      "sink": 0.2034679649759532,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": -0.2034679649759532,
+       "index": -0.02963176598687589,
+       "fingers": -0.0668522763461823,
+       "palm": 0.5335945840434047
+      },
+      "size": {
+       "of": 10.2,
+       "W": 16.8,
+       "ratio": 0.6071428571428571
+      },
+      "hold": "thu-chai-dia@cylinder////",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "than",
+        "feature": "lathe",
+        "featureIndex": 0,
+        "along": 0.25,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 330
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 57.5,
+        "wrist": {
+         "turn": -44.68270494191968,
+         "bend": 3.520060751931598,
+         "dev": -2.085850099495421,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.2034679649759532,
+       "index": -0.02963176598687589,
+       "middle": 0.03690187698695446,
+       "ring": -0.01776764549707721,
+       "pinky": -0.0668522763461823
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -1.0310556661747157,
+      "palm": {
+       "gap": 2.4015003986344357,
+       "angle": 49.99059759521039
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 114,
+   "tiles": [
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-mac-dinh-P-kuroiwa-truoc.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-mac-dinh-P-kuroiwa-cheo.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-mac-dinh-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dia-cylinder-along-cao-P-kuroiwa",
+   "item": "thu-chai-dia",
+   "group": "cylinder",
+   "ma": "along-cao",
+   "grip": "along cao",
+   "key": "thu-chai-dia@cylinder along cao",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -94.46,
+      -295.88,
+      233.8
+     ],
+     "text": "variant wrap part than along 0.8 thumb up\n   lún 0.1 · xuyên -2.1 · nắm -1 · cỡ 0.61·W\n   cái(wrap) -0.1 trỏ(wrap) 0 giữa(wrap) 0\n   áp út(wrap) 0 út(wrap) -0.1 lòng(press) 1.1",
+     "raw": {
+      "pierce": {
+       "depth": 0.051527195594495596,
+       "core": -2.0626032771509015,
+       "piece": "pinky1"
+      },
+      "sink": 0.0602429329635562,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": -0.0602429329635562,
+       "index": -0.028568021637526655,
+       "fingers": -0.051527195594495596,
+       "palm": 1.052612632591982
+      },
+      "size": {
+       "of": 10.2,
+       "W": 16.8,
+       "ratio": 0.6071428571428571
+      },
+      "hold": "thu-chai-dia@cylinder////",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "than",
+        "feature": "lathe",
+        "featureIndex": 0,
+        "along": 0.75,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 0
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "along": "scene",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 77.5,
+        "wrist": {
+         "turn": -47.553120650837656,
+         "bend": 18.913106499312896,
+         "dev": 2.9412159457008076,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.0602429329635562,
+       "index": -0.028568021637526655,
+       "middle": -0.0033163813863848336,
+       "ring": -0.0156689777084525,
+       "pinky": -0.051527195594495596
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -1.0219355988047976,
+      "palm": {
+       "gap": 3.5517191698260797,
+       "angle": 30.708254358652596
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 114,
+   "tiles": [
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-along-cao-P-kuroiwa-truoc.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-along-cao-P-kuroiwa-cheo.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-along-cao-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dia-cylinder-cai-xuong-P-kuroiwa",
+   "item": "thu-chai-dia",
+   "group": "cylinder",
+   "ma": "cai-xuong",
+   "grip": "ngón cái xuống",
+   "key": "thu-chai-dia@cylinder ngón cái xuống",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -90.13,
+      -294.54,
+      249.57
+     ],
+     "text": "variant wrap part than along 0.8 thumb down\n   lún 0.2 · xuyên -2.1 · nắm 2.1 · cỡ 0.61·W\n   cái(wrap) -0.2 trỏ(wrap) 0 giữa(wrap) 0\n   áp út(wrap) -0.1 út(wrap) -0.1 lòng(press) 0.5",
+     "raw": {
+      "pierce": {
+       "depth": 0.14715457281003924,
+       "core": -2.0972983251817605,
+       "piece": "pinky1"
+      },
+      "sink": 0.154828621007324,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": -0.154828621007324,
+       "index": 0.0027312290712710637,
+       "fingers": -0.14715457281003924,
+       "palm": 0.5100794732528974
+      },
+      "size": {
+       "of": 10.2,
+       "W": 16.8,
+       "ratio": 0.6071428571428571
+      },
+      "hold": "thu-chai-dia@cylinder////down",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "than",
+        "feature": "lathe",
+        "featureIndex": 0,
+        "along": 0.75,
+        "thumb": "down",
+        "variant": "wrap",
+        "around": 180
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "along": "rig",
+        "thumb": "scene",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 85,
+        "wrist": {
+         "turn": 67.83076308204494,
+         "bend": 6.325366803553573,
+         "dev": -1.4506101700117742,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.154828621007324,
+       "index": 0.0027312290712710637,
+       "middle": 0.0338412035684781,
+       "ring": -0.0755454557551723,
+       "pinky": -0.14715457281003924
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 2.0676105082929808,
+      "palm": {
+       "gap": 3.388095191963909,
+       "angle": 32.46955383856001
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 114,
+   "tiles": [
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-cai-xuong-P-kuroiwa-truoc.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-cai-xuong-P-kuroiwa-cheo.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-cai-xuong-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dia-cylinder-phan-vai-P-kuroiwa",
+   "item": "thu-chai-dia",
+   "group": "cylinder",
+   "ma": "phan-vai",
+   "grip": "nắm phần vai",
+   "key": "thu-chai-dia@cylinder nắm phần vai",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -94.46,
+      -295.2,
+      233.66
+     ],
+     "text": "variant wrap part vai along 0.7 thumb up\n   lún 0.1 · xuyên -2.1 · nắm -1.1 · cỡ 0.61·W\n   cái(wrap) -0.1 trỏ(wrap) 0 giữa(wrap) 0\n   áp út(wrap) 0 út(wrap) 0 lòng(press) 1",
+     "raw": {
+      "pierce": {
+       "depth": 0.04049267318770207,
+       "core": -2.073366953037585,
+       "piece": "pinky1"
+      },
+      "sink": 0.11345062312570131,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": -0.11345062312570131,
+       "index": -0.027840153007869038,
+       "fingers": -0.04049267318770207,
+       "palm": 0.9884467162234781
+      },
+      "size": {
+       "of": 10.2,
+       "W": 16.8,
+       "ratio": 0.6071428571428571
+      },
+      "hold": "thu-chai-dia@cylinder//vai//",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "vai",
+        "feature": "lathe",
+        "featureIndex": 9,
+        "along": 0.74,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 0
+       },
+       "by": {
+        "part": "scene",
+        "feature": "default",
+        "along": "scene",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 77.5,
+        "wrist": {
+         "turn": -47.14940247676581,
+         "bend": 18.94071811087809,
+         "dev": 3.297508660828283,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.11345062312570131,
+       "index": -0.027840153007869038,
+       "middle": -0.024008607717986644,
+       "ring": -0.004143588188736236,
+       "pinky": -0.04049267318770207
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -1.142328196475424,
+      "palm": {
+       "gap": 3.412957062713745,
+       "angle": 29.28293944930907
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 114,
+   "tiles": [
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-phan-vai-P-kuroiwa-truoc.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-phan-vai-P-kuroiwa-cheo.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-phan-vai-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dia-cylinder-phan-co-P-kuroiwa",
+   "item": "thu-chai-dia",
+   "group": "cylinder",
+   "ma": "phan-co",
+   "grip": "nắm phần co",
+   "key": "thu-chai-dia@cylinder nắm phần co",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -94.46,
+      -307.63,
+      236.81
+     ],
+     "text": "variant wrap part co along 0.9 thumb up\n   lún 0.4 · xuyên -2 · nắm -0.8 · cỡ 0.26·W\n   cái(wrap) 0.7 trỏ(wrap) 0.2 giữa(wrap) -0.1\n   áp út(wrap) -0.2 út(wrap) -0.4 lòng(press) 1",
+     "raw": {
+      "pierce": {
+       "depth": 0.4007176337348595,
+       "core": -1.956497499699365,
+       "piece": "pinky1"
+      },
+      "sink": 0.4007176337348595,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": 0.7226475868904894,
+       "index": 0.18536761556359593,
+       "fingers": -0.4007176337348595,
+       "palm": 1.0489965958973215
+      },
+      "size": {
+       "of": 4.4,
+       "W": 16.8,
+       "ratio": 0.2619047619047619
+      },
+      "hold": "thu-chai-dia@cylinder//co//",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "co",
+        "feature": "lathe",
+        "featureIndex": 17,
+        "along": 0.91,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 0
+       },
+       "by": {
+        "part": "scene",
+        "feature": "default",
+        "along": "scene",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 87.5,
+        "wrist": {
+         "turn": -82.5891892049088,
+         "bend": 14.846229088005721,
+         "dev": -0.8037629327308167,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 0.7226475868904894,
+       "index": 0.18536761556359593,
+       "middle": -0.0912179800855144,
+       "ring": -0.21058771695273035,
+       "pinky": -0.4007176337348595
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.8267343188747702,
+      "palm": {
+       "gap": 4.538195376783796,
+       "angle": 45.47790937856635
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 114,
+   "tiles": [
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-phan-co-P-kuroiwa-truoc.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-phan-co-P-kuroiwa-cheo.png",
+    "o/thu-chai-dia/bang-cam-thu-chai-dia-cylinder-phan-co-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-ong-nghe-ban-cylinder-mac-dinh-P-t01-sakura",
+   "item": "thu-ong-nghe-ban",
+   "group": "cylinder",
+   "ma": "mac-dinh",
+   "grip": "mặc định (flat)",
+   "key": "thu-ong-nghe-ban@cylinder mặc định (flat)",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-ong-nghe-ban: xoay 57°/±90, gập -5°/±50, lệch 21°/±20 — vượt 0.7°, bàn tay vẽ lệch chỗ cầm 0.2 (chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.25 (rig chọn), thumb down (rig chọn), variant flat (mặc định), around 150 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-ong-nghe-ban` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.25 (rig chọn), thumb down (rig chọn), variant flat (mặc định), around 150 (rig chọn)) (dáng span) · khe 0.2 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (press) -0.1, trỏ (press) 0.2, giữa (press) 0.1, áp út (press) 0.2, út (support) 3.4, lòng (press) 0.7 · tâm nắm cách món 1.2 · lòng tay cách 2.8 góc 0° · cổ tay xoay 57°, gập -5°, lệch 21° (vượt kẹp 0.7°, bàn tay lệch chỗ cầm 0.2) · khuỷu φ 165° · tay lấn 0.5 (bắp tay vào đầu) · cỡ 9.0 = 0.61 · W. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -91.9,
+      -235.94,
+      248.8
+     ],
+     "text": "variant flat part tay along 0.3 thumb down\n   lún 0.1 · xuyên -2.1 · nắm 1.2 · cỡ 0.61·W · cổ tay vượt 0.4°\n   cái(press) -0.1 trỏ(press) 0.2 giữa(press) 0.1\n   áp út(press) 0.2 út(support) 3.3 lòng(press) 0.7",
+     "raw": {
+      "pierce": {
+       "depth": -0.19499294161800534,
+       "core": -2.111388802681159,
+       "piece": "ring1"
+      },
+      "sink": 0.062148201465566974,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "press",
+       "middle": "press",
+       "ring": "press",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.062148201465566974,
+       "index": 0.19036687612537623,
+       "fingers": 0.12389801144603971,
+       "palm": 0.6965950846672414
+      },
+      "size": {
+       "of": 9,
+       "W": 14.700000000000003,
+       "ratio": 0.6122448979591836
+      },
+      "hold": "thu-ong-nghe-ban@cylinder////",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "tay",
+        "feature": "rod",
+        "featureIndex": 0,
+        "along": 0.25,
+        "thumb": "down",
+        "variant": "flat",
+        "around": 150
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 165,
+        "wrist": {
+         "turn": 56.97360946098107,
+         "bend": -4.4301556471024535,
+         "dev": 20.397975186510248,
+         "over": 0.3979751865102479,
+         "off": 0.12974822685736256
+        },
+        "body": 0.6266802123645512,
+        "gap": 0,
+        "bodyRatio": 0.06782253380568735,
+        "bodyPart": "upper.head"
+       }
+      },
+      "fingers": {
+       "thumb": -0.062148201465566974,
+       "index": 0.19036687612537623,
+       "middle": 0.12389801144603971,
+       "ring": 0.19499294161800534,
+       "pinky": 3.345527787305765
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 1.1697250831534614,
+      "palm": {
+       "gap": 2.784463005763227,
+       "angle": 0
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0.39797518650884034,
+       "clamped": [
+        "dev"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 70,
+   "tiles": [
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-mac-dinh-P-t01-sakura-truoc.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-mac-dinh-P-t01-sakura-cheo.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-mac-dinh-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-ong-nghe-ban-cylinder-bien-the-wrap-P-t01-sakura",
+   "item": "thu-ong-nghe-ban",
+   "group": "cylinder",
+   "ma": "bien-the-wrap",
+   "grip": "biến thể wrap",
+   "key": "thu-ong-nghe-ban@cylinder biến thể wrap",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-ong-nghe-ban: xoay 111°/±90, gập -1°/±50, lệch -11°/±20 — vượt 20.6°, bàn tay vẽ lệch chỗ cầm 2.0 (chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.75 (rig chọn), thumb down (rig chọn), variant wrap, around 150 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-ong-nghe-ban` ở `items`) ở giây 1.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.75 (rig chọn), thumb down (rig chọn), variant wrap, around 150 (rig chọn)) (dáng fist) · da lún 0.7 ở đầu ngón giữa · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (wrap) 0.1, trỏ (wrap) -0.1, giữa (wrap) -0.7, áp út (wrap) 0.0, út (wrap) -0.4, lòng (press) 0.9 · tâm nắm cách món 1.4 · lòng tay cách 2.6 góc 21° · cổ tay xoay 111°, gập -1°, lệch -11° (vượt kẹp 20.6°, bàn tay lệch chỗ cầm 2.0) · khuỷu φ 93° · cỡ 9.0 = 0.61 · W. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "da lún vào món — `cam` tay phải cầm thu-ong-nghe-ban: lún 0.7 (quá 0.7) (chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.75 (rig chọn), thumb down (rig chọn), variant wrap, around 150 (rig chọn))); ngón ôm không gỡ được — đổi `variant` / `slant`, không thì là việc của dáng nhóm ở rig ở giây 1.00 · giây 0.40–1.00. Lúc ấy: chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.75 (rig chọn), thumb down (rig chọn), variant wrap, around 150 (rig chọn)) (dáng fist) · da lún 0.7 ở đầu ngón giữa · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (wrap) 0.1, trỏ (wrap) -0.1, giữa (wrap) -0.7, áp út (wrap) 0.0, út (wrap) -0.4, lòng (press) 0.9 · tâm nắm cách món 1.4 · lòng tay cách 2.6 góc 21° · cổ tay xoay 111°, gập -1°, lệch -11° (vượt kẹp 20.6°, bàn tay lệch chỗ cầm 2.0) · khuỷu φ 93° · cỡ 9.0 = 0.61 · W. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist",
+    "sink"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -92.34,
+      -239.16,
+      249
+     ],
+     "text": "variant wrap part tay along 0.8 thumb down\n   lún 0.7 · xuyên -0.9 · nắm 1.4 · cỡ 0.61·W · cổ tay vượt 20°\n   cái(wrap) 0.1 trỏ(wrap) -0.1 giữa(wrap) -0.7\n   áp út(wrap) 0 út(wrap) -0.4 lòng(press) 1",
+     "raw": {
+      "pierce": {
+       "depth": 0.6619242912858291,
+       "core": -0.9487841689210134,
+       "piece": "middle1"
+      },
+      "sink": 0.6619242912858291,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": 0.11262716032023332,
+       "index": -0.09093159819408213,
+       "fingers": -0.6619242912858291,
+       "palm": 0.954867417592516
+      },
+      "size": {
+       "of": 9,
+       "W": 14.700000000000003,
+       "ratio": 0.6122448979591836
+      },
+      "hold": "thu-ong-nghe-ban@cylinder/wrap///",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "tay",
+        "feature": "rod",
+        "featureIndex": 0,
+        "along": 0.75,
+        "thumb": "down",
+        "variant": "wrap",
+        "around": 150
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "scene",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 92.5,
+        "wrist": {
+         "turn": 110.04865126825577,
+         "bend": -1.2577242631456118,
+         "dev": -10.928638767724378,
+         "over": 20.048651268255767,
+         "off": 1.9337749731445248
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 0.11262716032023332,
+       "index": -0.09093159819408213,
+       "middle": -0.6619242912858291,
+       "ring": -0.0037958320593300945,
+       "pinky": -0.4389048684439375
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 1.370297559639473,
+      "palm": {
+       "gap": 2.5920991348136635,
+       "angle": 20.04377121120316
+      },
+      "intent": {
+       "rule": "face",
+       "err": 20.048651268255753,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 70,
+   "tiles": [
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-bien-the-wrap-P-t01-sakura-truoc.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-bien-the-wrap-P-t01-sakura-cheo.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-bien-the-wrap-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-ong-nghe-ban-cylinder-along-cao-P-t01-sakura",
+   "item": "thu-ong-nghe-ban",
+   "group": "cylinder",
+   "ma": "along-cao",
+   "grip": "along cao",
+   "key": "thu-ong-nghe-ban@cylinder along cao",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-ong-nghe-ban: xoay 52°/±90, gập -51°/±50, lệch -28°/±20 — vượt 8.0°, bàn tay vẽ lệch chỗ cầm 2.6 (chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.75, thumb down (rig chọn), variant flat (mặc định), around 150 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-ong-nghe-ban` ở `items`) ở giây 1.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.75, thumb down (rig chọn), variant flat (mặc định), around 150 (rig chọn)) (dáng span) · khe 0.2 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (press) 0.2, trỏ (press) 0.2, giữa (press) 0.1, áp út (press) 0.2, út (support) 2.3, lòng (press) 0.6 · tâm nắm cách món 0.9 · lòng tay cách 2.7 góc 1° · cổ tay xoay 52°, gập -51°, lệch -28° (vượt kẹp 8.0°, bàn tay lệch chỗ cầm 2.6) · khuỷu φ -127° · tay lấn 2.0 (bắp tay vào đầu) · cỡ 9.0 = 0.61 · W. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -94.28,
+      -247.48,
+      248.43
+     ],
+     "text": "variant flat part tay along 0.8 thumb down\n   lún 0 · xuyên -2.1 · nắm 0.8 · cỡ 0.61·W · cổ tay vượt 7.9°\n   cái(press) 0.1 trỏ(press) 0.2 giữa(press) 0.1\n   áp út(press) 0.2 út(support) 2.2 lòng(press) 0.6",
+     "raw": {
+      "pierce": {
+       "depth": -0.2032879336823279,
+       "core": -2.11638945785241,
+       "piece": "ring1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "press",
+       "middle": "press",
+       "ring": "press",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": 0.1031983530125613,
+       "index": 0.22583372551322745,
+       "fingers": 0.14425652825377488,
+       "palm": 0.5638725791562442
+      },
+      "size": {
+       "of": 9,
+       "W": 14.700000000000003,
+       "ratio": 0.6122448979591836
+      },
+      "hold": "thu-ong-nghe-ban@cylinder////",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "tay",
+        "feature": "rod",
+        "featureIndex": 0,
+        "along": 0.75,
+        "thumb": "down",
+        "variant": "flat",
+        "around": 150
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "along": "scene",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": -127.5,
+        "wrist": {
+         "turn": 52.06953467120312,
+         "bend": -51.27470865153778,
+         "dev": -27.929685226439354,
+         "over": 7.929685226439354,
+         "off": 2.5970854296500074
+        },
+        "body": 2.240687076290002,
+        "gap": 0,
+        "bodyRatio": 0.2424986013300868,
+        "bodyPart": "upper.head"
+       }
+      },
+      "fingers": {
+       "thumb": 0.1031983530125613,
+       "index": 0.22583372551322745,
+       "middle": 0.14425652825377488,
+       "ring": 0.2032879336823279,
+       "pinky": 2.188485703590512
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.8026519113729056,
+      "palm": {
+       "gap": 2.6225263295549084,
+       "angle": 1.274708651537399
+      },
+      "intent": {
+       "rule": "face",
+       "err": 8.031325884408254,
+       "clamped": [
+        "bend",
+        "dev"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 70,
+   "tiles": [
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-along-cao-P-t01-sakura-truoc.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-along-cao-P-t01-sakura-cheo.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-along-cao-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-ong-nghe-ban-cylinder-ap-tai-T-t01-sakura",
+   "item": "thu-ong-nghe-ban",
+   "group": "cylinder",
+   "ma": "ap-tai",
+   "grip": "áp tai",
+   "key": "thu-ong-nghe-ban@cylinder áp tai",
+   "side": "left",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (tay dẫn)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "L",
+     "at": [
+      -19.29,
+      -333.44,
+      300.7
+     ],
+     "text": "variant flat part tay along 0.5 thumb up (tay dẫn)\n   lún 0.1 · xuyên -2.1 · nắm 1.2 · cỡ 0.61·W\n   cái(press) -0.1 trỏ(press) 0.2 giữa(press) 0.1\n   áp út(press) 0.2 út(support) 3.3 lòng(press) 0.7",
+     "raw": {
+      "pierce": {
+       "depth": -0.1949929416179353,
+       "core": -2.111388802681088,
+       "piece": "ring1"
+      },
+      "sink": 0.06214820146563717,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "press",
+       "middle": "press",
+       "ring": "press",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.06214820146563717,
+       "index": 0.19036687612530528,
+       "fingers": 0.12389801144596871,
+       "palm": 0.696595084667175
+      },
+      "size": {
+       "of": 9,
+       "W": 14.700000000000003,
+       "ratio": 0.6122448979591836
+      },
+      "hold": "thu-ong-nghe-ban@cylinder////",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "hand",
+       "choice": {
+        "part": "tay",
+        "feature": "rod",
+        "featureIndex": 0,
+        "along": 0.5,
+        "thumb": "up",
+        "variant": "flat",
+        "around": 180
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "along": "default",
+        "thumb": "default",
+        "variant": "default",
+        "around": "scene"
+       },
+       "arm": {
+        "phi": 4.187933083245753,
+        "wrist": {
+         "turn": -89.86390787815623,
+         "bend": -32.81426115389749,
+         "dev": 3.0158772663850097,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "bodyRatio": 0,
+        "gap": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.06214820146563717,
+       "index": 0.19036687612530528,
+       "middle": 0.12389801144596871,
+       "ring": 0.1949929416179353,
+       "pinky": 3.261241498162614
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 1.1697250831533925,
+      "palm": {
+       "gap": 2.784452119591213,
+       "angle": 0.00002369125720716377
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      },
+      "reach": {
+       "kind": "item",
+       "gap": 0.01179445059746534,
+       "s": 1,
+       "point": "item:speaker",
+       "to": "ear"
+      }
+     }
+    }
+   ],
+   "khung": 70,
+   "tiles": [
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-ap-tai-T-t01-sakura-truoc.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-ap-tai-T-t01-sakura-cheo.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-ap-tai-T-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-ong-nghe-ban-cylinder-mac-dinh-P-kuroiwa",
+   "item": "thu-ong-nghe-ban",
+   "group": "cylinder",
+   "ma": "mac-dinh",
+   "grip": "mặc định (flat)",
+   "key": "thu-ong-nghe-ban@cylinder mặc định (flat)",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-ong-nghe-ban: xoay 52°/±90, gập -1°/±50, lệch 23°/±20 — vượt 2.9°, bàn tay vẽ lệch chỗ cầm 1.1 (chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.25 (rig chọn), thumb down (rig chọn), variant flat (mặc định), around 150 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-ong-nghe-ban` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.25 (rig chọn), thumb down (rig chọn), variant flat (mặc định), around 150 (rig chọn)) (dáng span) · khe 0.3 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (press) 0.0, trỏ (press) 0.2, giữa (press) 0.2, áp út (press) 0.3, út (support) 5.4, lòng (press) 0.7 · tâm nắm cách món 1.4 · lòng tay cách 3.2 góc 0° · cổ tay xoay 52°, gập -1°, lệch 23° (vượt kẹp 2.9°, bàn tay lệch chỗ cầm 1.1) · khuỷu φ 163° · tay lấn 1.6 (bắp tay vào đầu) · cỡ 9.0 = 0.54 · W. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -90.71,
+      -276.7,
+      247.74
+     ],
+     "text": "variant flat part tay along 0.3 thumb down\n   lún 0 · xuyên -2.4 · nắm 1.4 · cỡ 0.54·W · cổ tay vượt 2.5°\n   cái(press) 0 trỏ(press) 0.2 giữa(press) 0.2\n   áp út(press) 0.2 út(support) 5.3 lòng(press) 0.7",
+     "raw": {
+      "pierce": {
+       "depth": -0.19831344910347323,
+       "core": -2.425309836101387,
+       "piece": "ring1"
+      },
+      "sink": 0.000990110635630259,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "press",
+       "middle": "press",
+       "ring": "press",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.000990110635630259,
+       "index": 0.17352111339582074,
+       "fingers": 0.19831344910347323,
+       "palm": 0.6964900314809136
+      },
+      "size": {
+       "of": 9,
+       "W": 16.8,
+       "ratio": 0.5357142857142857
+      },
+      "hold": "thu-ong-nghe-ban@cylinder////",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "tay",
+        "feature": "rod",
+        "featureIndex": 0,
+        "along": 0.25,
+        "thumb": "down",
+        "variant": "flat",
+        "around": 150
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 162.5,
+        "wrist": {
+         "turn": 51.570454839142926,
+         "bend": -0.38688789731070106,
+         "dev": 22.528555531780974,
+         "over": 2.528555531780974,
+         "off": 0.9660350404274718
+        },
+        "body": 1.8005124240296801,
+        "gap": 0,
+        "bodyRatio": 0.17050307045735608,
+        "bodyPart": "upper.head"
+       }
+      },
+      "fingers": {
+       "thumb": -0.000990110635630259,
+       "index": 0.17352111339582074,
+       "middle": 0.21935037970555976,
+       "ring": 0.19831344910347323,
+       "pinky": 5.344931024241671
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 1.393581538076729,
+      "palm": {
+       "gap": 3.2389854122488515,
+       "angle": 0
+      },
+      "intent": {
+       "rule": "face",
+       "err": 2.5285555317809094,
+       "clamped": [
+        "dev"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 70,
+   "tiles": [
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-mac-dinh-P-kuroiwa-truoc.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-mac-dinh-P-kuroiwa-cheo.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-mac-dinh-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-ong-nghe-ban-cylinder-bien-the-wrap-P-kuroiwa",
+   "item": "thu-ong-nghe-ban",
+   "group": "cylinder",
+   "ma": "bien-the-wrap",
+   "grip": "biến thể wrap",
+   "key": "thu-ong-nghe-ban@cylinder biến thể wrap",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-ong-nghe-ban: xoay 110°/±90, gập 8°/±50, lệch -10°/±20 — vượt 20.0°, bàn tay vẽ lệch chỗ cầm 2.9 (chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.75 (rig chọn), thumb down (rig chọn), variant wrap, around 150 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-ong-nghe-ban` ở `items`) ở giây 1.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.75 (rig chọn), thumb down (rig chọn), variant wrap, around 150 (rig chọn)) (dáng fist) · da lún 0.1 ở đầu ngón út · ôm 3/3 (cái, trỏ, giữa–út) · ngón cái (wrap) 0.2, trỏ (wrap) 0.0, giữa (wrap) -0.1, áp út (wrap) 0.0, út (wrap) -0.1, lòng (press) 1.0 · tâm nắm cách món 2.0 · lòng tay cách 2.8 góc 20° · cổ tay xoay 110°, gập 8°, lệch -10° (vượt kẹp 20.0°, bàn tay lệch chỗ cầm 2.9) · khuỷu φ 93° · cỡ 9.0 = 0.54 · W. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -91.09,
+      -280.08,
+      248.32
+     ],
+     "text": "variant wrap part tay along 0.8 thumb down\n   lún 0.6 · xuyên -1.7 · nắm 2 · cỡ 0.54·W · cổ tay vượt 19.5°\n   cái(wrap) 0.1 trỏ(wrap) 0 giữa(wrap) -0.6\n   áp út(wrap) 0 út(wrap) -0.2 lòng(press) 1",
+     "raw": {
+      "pierce": {
+       "depth": 0.582995456713121,
+       "core": -1.6936415250289993,
+       "piece": "middle1"
+      },
+      "sink": 0.582995456713121,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": 0.13227000874588812,
+       "index": -0.024327014387747425,
+       "fingers": -0.582995456713121,
+       "palm": 1.0279227782054186
+      },
+      "size": {
+       "of": 9,
+       "W": 16.8,
+       "ratio": 0.5357142857142857
+      },
+      "hold": "thu-ong-nghe-ban@cylinder/wrap///",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "tay",
+        "feature": "rod",
+        "featureIndex": 0,
+        "along": 0.75,
+        "thumb": "down",
+        "variant": "wrap",
+        "around": 150
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "scene",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 92.5,
+        "wrist": {
+         "turn": 109.5139235563201,
+         "bend": 7.783651691622942,
+         "dev": -9.979320525271737,
+         "over": 19.513923556320094,
+         "off": 2.858806188409762
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 0.13227000874588812,
+       "index": -0.024327014387747425,
+       "middle": -0.582995456713121,
+       "ring": -0.04801741229258605,
+       "pinky": -0.19221082064929007
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 1.9776143437878995,
+      "palm": {
+       "gap": 2.8132418199910525,
+       "angle": 19.33239881681844
+      },
+      "intent": {
+       "rule": "face",
+       "err": 19.513923556320027,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 70,
+   "tiles": [
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-bien-the-wrap-P-kuroiwa-truoc.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-bien-the-wrap-P-kuroiwa-cheo.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-bien-the-wrap-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-ong-nghe-ban-cylinder-bien-the-flat-P-kuroiwa",
+   "item": "thu-ong-nghe-ban",
+   "group": "cylinder",
+   "ma": "bien-the-flat",
+   "grip": "biến thể flat",
+   "key": "thu-ong-nghe-ban@cylinder biến thể flat",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -84.61,
+      -276.77,
+      239.94
+     ],
+     "text": "variant flat part tay along 0.3 thumb down\n   lún 0 · xuyên -2.4 · nắm 1.5 · cỡ 0.54·W\n   cái(press) 0.7 trỏ(press) 0.2 giữa(press) 0.2\n   áp út(press) 0.4 út(support) 4.6 lòng(press) 0.7",
+     "raw": {
+      "pierce": {
+       "depth": -0.3873073279858126,
+       "core": -2.4265717145924066,
+       "piece": "ring1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "press",
+       "middle": "press",
+       "ring": "press",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": 0.6728798866272356,
+       "index": 0.17352111339573817,
+       "fingers": 0.21941594481472926,
+       "palm": 0.6964900314808276
+      },
+      "size": {
+       "of": 9,
+       "W": 16.8,
+       "ratio": 0.5357142857142857
+      },
+      "hold": "thu-ong-nghe-ban@cylinder/flat///",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "tay",
+        "feature": "rod",
+        "featureIndex": 0,
+        "along": 0.25,
+        "thumb": "down",
+        "variant": "flat",
+        "around": 60
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "scene",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 160,
+        "wrist": {
+         "turn": -29.83693840298874,
+         "bend": 32.497660405071755,
+         "dev": 13.292912102499134,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 0.6728798866272356,
+       "index": 0.17352111339573817,
+       "middle": 0.21941594481472926,
+       "ring": 0.3873073279858126,
+       "pinky": 4.622255219312026
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 1.451368614849961,
+      "palm": {
+       "gap": 4.031263469412187,
+       "angle": 36.53749766826541
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 70,
+   "tiles": [
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-bien-the-flat-P-kuroiwa-truoc.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-bien-the-flat-P-kuroiwa-cheo.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-bien-the-flat-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-ong-nghe-ban-cylinder-along-cao-P-kuroiwa",
+   "item": "thu-ong-nghe-ban",
+   "group": "cylinder",
+   "ma": "along-cao",
+   "grip": "along cao",
+   "key": "thu-ong-nghe-ban@cylinder along cao",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-ong-nghe-ban: xoay 51°/±90, gập -3°/±50, lệch 35°/±20 — vượt 15.0°, bàn tay vẽ lệch chỗ cầm 5.7 (chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.75, thumb down (rig chọn), variant flat (mặc định), around 150 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-ong-nghe-ban` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.75, thumb down (rig chọn), variant flat (mặc định), around 150 (rig chọn)) (dáng span) · khe 0.2 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (press) -0.1, trỏ (press) 0.2, giữa (press) 0.2, áp út (press) 6.6, út (support) 8.9, lòng (press) 0.6 · tâm nắm cách món 1.4 · lòng tay cách 3.2 góc 0° · cổ tay xoay 51°, gập -3°, lệch 35° (vượt kẹp 15.0°, bàn tay lệch chỗ cầm 5.7) · khuỷu φ 155° · tay lấn 2.0 (bắp tay vào đầu) · cỡ 9.0 = 0.54 · W. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "ngón không chạm món — `cam` tay phải cầm thu-ong-nghe-ban: ngón áp út (`press`) cách món 6.6 (chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.75, thumb down (rig chọn), variant flat (mặc định), around 150 (rig chọn))); dáng ngón của nhóm chưa khép tới món — đổi `variant` hay `edge`, không thì là việc của dáng nhóm ở rig ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-ong-nghe-ban@cylinder` (part tay (mặc định), along 0.75, thumb down (rig chọn), variant flat (mặc định), around 150 (rig chọn)) (dáng span) · khe 0.2 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (press) -0.1, trỏ (press) 0.2, giữa (press) 0.2, áp út (press) 6.6, út (support) 8.9, lòng (press) 0.6 · tâm nắm cách món 1.4 · lòng tay cách 3.2 góc 0° · cổ tay xoay 51°, gập -3°, lệch 35° (vượt kẹp 15.0°, bàn tay lệch chỗ cầm 5.7) · khuỷu φ 155° · tay lấn 2.0 (bắp tay vào đầu) · cỡ 9.0 = 0.54 · W. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist",
+    "role"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -86.48,
+      -287.91,
+      247.74
+     ],
+     "text": "variant flat part tay along 0.8 thumb down\n   lún 0.1 · xuyên -2.6 · nắm 1.4 · cỡ 0.54·W · cổ tay vượt 14.7°\n   hở áp út 6.6\n   cái(press) -0.1 trỏ(press) 0.2 giữa(press) 0.2\n   áp út(press) 6.6 út(support) 8.8 lòng(press) 0.7",
+     "raw": {
+      "pierce": {
+       "depth": -0.23351353835612582,
+       "core": -2.627751614410923,
+       "piece": "middle1"
+      },
+      "sink": 0.0520787417887405,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "press",
+       "middle": "press",
+       "ring": "press",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.0520787417887405,
+       "index": 0.16489557623875806,
+       "fingers": 0.23351353835612582,
+       "palm": 0.653835457563515
+      },
+      "size": {
+       "of": 9,
+       "W": 16.8,
+       "ratio": 0.5357142857142857
+      },
+      "hold": "thu-ong-nghe-ban@cylinder////",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "tay",
+        "feature": "rod",
+        "featureIndex": 0,
+        "along": 0.75,
+        "thumb": "down",
+        "variant": "flat",
+        "around": 150
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "along": "scene",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 155,
+        "wrist": {
+         "turn": 51.072958129934925,
+         "bend": -2.1978846253411275,
+         "dev": 34.660769245637304,
+         "over": 14.660769245637304,
+         "off": 5.586334647728706
+        },
+        "body": 2.3510085995699708,
+        "gap": 0,
+        "bodyRatio": 0.22263339011079267,
+        "bodyPart": "upper.head"
+       }
+      },
+      "fingers": {
+       "thumb": -0.0520787417887405,
+       "index": 0.16489557623875806,
+       "middle": 0.23351353835612582,
+       "ring": 6.550587902038798,
+       "pinky": 8.846798739329499
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 1.393581538076722,
+      "palm": {
+       "gap": 3.2389854122488515,
+       "angle": 0
+      },
+      "intent": {
+       "rule": "face",
+       "err": 14.66076924563736,
+       "clamped": [
+        "dev"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 70,
+   "tiles": [
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-along-cao-P-kuroiwa-truoc.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-along-cao-P-kuroiwa-cheo.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-along-cao-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-ong-nghe-ban-cylinder-ap-tai-T-kuroiwa",
+   "item": "thu-ong-nghe-ban",
+   "group": "cylinder",
+   "ma": "ap-tai",
+   "grip": "áp tai",
+   "key": "thu-ong-nghe-ban@cylinder áp tai",
+   "side": "left",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (tay dẫn)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "L",
+     "at": [
+      -19.11,
+      -380.86,
+      300.12
+     ],
+     "text": "variant flat part tay along 0.5 thumb up (tay dẫn)\n   lún 0 · xuyên -2.4 · nắm 1.4 · cỡ 0.54·W\n   cái(press) 0 trỏ(press) 0.2 giữa(press) 0.2\n   áp út(press) 0.4 út(support) 4.5 lòng(press) 0.7",
+     "raw": {
+      "pierce": {
+       "depth": -0.38730732798575573,
+       "core": -2.426571714592347,
+       "piece": "ring1"
+      },
+      "sink": 0.0009901106357652623,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "press",
+       "middle": "press",
+       "ring": "press",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.0009901106357652623,
+       "index": 0.1735211133956831,
+       "fingers": 0.2194159448146742,
+       "palm": 0.6964900314807814
+      },
+      "size": {
+       "of": 9,
+       "W": 16.8,
+       "ratio": 0.5357142857142857
+      },
+      "hold": "thu-ong-nghe-ban@cylinder////",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "hand",
+       "choice": {
+        "part": "tay",
+        "feature": "rod",
+        "featureIndex": 0,
+        "along": 0.5,
+        "thumb": "up",
+        "variant": "flat",
+        "around": 180
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "along": "default",
+        "thumb": "default",
+        "variant": "default",
+        "around": "scene"
+       },
+       "arm": {
+        "phi": 3.8985159460889918,
+        "wrist": {
+         "turn": -88.05295292377853,
+         "bend": -48.20050954363755,
+         "dev": 1.5296488141233768,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "bodyRatio": 0,
+        "gap": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.0009901106357652623,
+       "index": 0.1735211133956831,
+       "middle": 0.2194159448146742,
+       "ring": 0.38730732798575573,
+       "pinky": 4.531510679124186
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 1.3935815380765932,
+      "palm": {
+       "gap": 3.2389896654316597,
+       "angle": 0.00002709302391958106
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      },
+      "reach": {
+       "kind": "item",
+       "gap": 0.010367183666001,
+       "s": 1,
+       "point": "item:speaker",
+       "to": "ear"
+      }
+     }
+    }
+   ],
+   "khung": 70,
+   "tiles": [
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-ap-tai-T-kuroiwa-truoc.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-ap-tai-T-kuroiwa-cheo.png",
+    "o/thu-ong-nghe-ban/bang-cam-thu-ong-nghe-ban-cylinder-ap-tai-T-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dac-tuyen-cylinder-mac-dinh-P-t01-sakura",
+   "item": "thu-chai-dac-tuyen",
+   "group": "cylinder",
+   "ma": "mac-dinh",
+   "grip": "mặc định (wrap)",
+   "key": "thu-chai-dac-tuyen@cylinder mặc định (wrap)",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "món quá cỡ tay — `cam` tay phải cầm thu-chai-dac-tuyen: khối hình đã chọn cỡ 13.2 = 0.90 · W (W 14.7, từ 0.8 · W nắm không kín) (chỗ cầm `thu-chai-dac-tuyen@cylinder` (part than (rig chọn), along 0.25 (rig chọn), thumb up (rig chọn), variant wrap (mặc định), around 300 (rig chọn))); khai `part` khác hay cầm hai tay (`both`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-chai-dac-tuyen@cylinder` (part than (rig chọn), along 0.25 (rig chọn), thumb up (rig chọn), variant wrap (mặc định), around 300 (rig chọn)) (dáng fist) · khe 0.1 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (wrap) -0.1, trỏ (wrap) 0.0, giữa (wrap) 0.1, áp út (wrap) 0.0, út (wrap) 0.1, lòng (press) 0.6 · tâm nắm trong món 2.3 · lòng tay cách 1.4 góc 21° · cổ tay xoay -24°, gập -1°, lệch -3° · khuỷu φ 33° · cỡ 13.2 = 0.90 · W. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "size"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -103.04,
+      -221.25,
+      234.25
+     ],
+     "text": "variant wrap part than along 0.3 thumb up\n   lún 0.1 · xuyên -1.7 · nắm -2.3 · cỡ 0.9·W\n   cái(wrap) -0.1 trỏ(wrap) 0 giữa(wrap) 0.1\n   áp út(wrap) 0 út(wrap) 0.1 lòng(press) 0.6",
+     "raw": {
+      "pierce": {
+       "depth": -0.05239094559836664,
+       "core": -1.715364732543056,
+       "piece": "pinky1"
+      },
+      "sink": 0.06997439400932846,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": -0.06997439400932846,
+       "index": 0.037965801306473416,
+       "fingers": 0.033994724921726054,
+       "palm": 0.6355768529039006
+      },
+      "size": {
+       "of": 13.2,
+       "W": 14.700000000000003,
+       "ratio": 0.8979591836734692
+      },
+      "hold": "thu-chai-dac-tuyen@cylinder////",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "than",
+        "feature": "lathe",
+        "featureIndex": 0,
+        "along": 0.25,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 300
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 32.5,
+        "wrist": {
+         "turn": -23.56352786444289,
+         "bend": -0.8324376011878412,
+         "dev": -2.3804991294165374,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.06997439400932846,
+       "index": 0.037965801306473416,
+       "middle": 0.05729215304083367,
+       "ring": 0.033994724921726054,
+       "pinky": 0.05239094559836664
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -2.2865368729572526,
+      "palm": {
+       "gap": 1.4273576822420873,
+       "angle": 20.810490585634046
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0.0000012074182697257333,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 152,
+   "tiles": [
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-mac-dinh-P-t01-sakura-truoc.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-mac-dinh-P-t01-sakura-cheo.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-mac-dinh-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dac-tuyen-cylinder-along-cao-P-t01-sakura",
+   "item": "thu-chai-dac-tuyen",
+   "group": "cylinder",
+   "ma": "along-cao",
+   "grip": "along cao",
+   "key": "thu-chai-dac-tuyen@cylinder along cao",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "món quá cỡ tay — `cam` tay phải cầm thu-chai-dac-tuyen: khối hình đã chọn cỡ 13.2 = 0.90 · W (W 14.7, từ 0.8 · W nắm không kín) (chỗ cầm `thu-chai-dac-tuyen@cylinder` (part than (rig chọn), along 0.75, thumb up (rig chọn), variant wrap (mặc định), around 330 (rig chọn))); khai `part` khác hay cầm hai tay (`both`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-chai-dac-tuyen@cylinder` (part than (rig chọn), along 0.75, thumb up (rig chọn), variant wrap (mặc định), around 330 (rig chọn)) (dáng fist) · khe 0.1 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (wrap) -0.1, trỏ (wrap) 0.0, giữa (wrap) 0.1, áp út (wrap) 0.1, út (wrap) 0.1, lòng (press) 0.8 · tâm nắm trong món 1.9 · lòng tay cách 2.4 góc 19° · cổ tay xoay -49°, gập -2°, lệch -4° · khuỷu φ 85° · cỡ 13.2 = 0.90 · W. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "size"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -96.31,
+      -261.6,
+      234.67
+     ],
+     "text": "variant wrap part than along 0.8 thumb up\n   lún 0.1 · xuyên -1.8 · nắm -1.9 · cỡ 0.9·W\n   cái(wrap) -0.1 trỏ(wrap) 0 giữa(wrap) 0.1\n   áp út(wrap) 0.1 út(wrap) 0.1 lòng(press) 0.8",
+     "raw": {
+      "pierce": {
+       "depth": -0.06231945162525675,
+       "core": -1.8491775498940348,
+       "piece": "pinky1"
+      },
+      "sink": 0.13784218670064072,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": -0.13784218670064072,
+       "index": 0.017648860725305724,
+       "fingers": 0.06231945162525675,
+       "palm": 0.8414978827727679
+      },
+      "size": {
+       "of": 13.2,
+       "W": 14.700000000000003,
+       "ratio": 0.8979591836734692
+      },
+      "hold": "thu-chai-dac-tuyen@cylinder////",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "than",
+        "feature": "lathe",
+        "featureIndex": 0,
+        "along": 0.75,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 330
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "along": "scene",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 85,
+        "wrist": {
+         "turn": -48.45543082528567,
+         "bend": -1.7849182542579116,
+         "dev": -3.991779687436561,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.13784218670064072,
+       "index": 0.017648860725305724,
+       "middle": 0.09900915253950156,
+       "ring": 0.08209774463257537,
+       "pinky": 0.06231945162525675
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -1.9167041620792697,
+      "palm": {
+       "gap": 2.3761712736419582,
+       "angle": 19.31042209200627
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 152,
+   "tiles": [
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-along-cao-P-t01-sakura-truoc.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-along-cao-P-t01-sakura-cheo.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-along-cao-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dac-tuyen-cylinder-cai-xuong-P-t01-sakura",
+   "item": "thu-chai-dac-tuyen",
+   "group": "cylinder",
+   "ma": "cai-xuong",
+   "grip": "ngón cái xuống",
+   "key": "thu-chai-dac-tuyen@cylinder ngón cái xuống",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "món quá cỡ tay — `cam` tay phải cầm thu-chai-dac-tuyen: khối hình đã chọn cỡ 13.2 = 0.90 · W (W 14.7, từ 0.8 · W nắm không kín) (chỗ cầm `thu-chai-dac-tuyen@cylinder` (part than (rig chọn), along 0.75 (rig chọn), thumb down, variant wrap (mặc định), around 180 (rig chọn))); khai `part` khác hay cầm hai tay (`both`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-chai-dac-tuyen@cylinder` (part than (rig chọn), along 0.75 (rig chọn), thumb down, variant wrap (mặc định), around 180 (rig chọn)) (dáng fist) · da lún 0.1 ở đầu ngón út · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (wrap) 0.0, trỏ (wrap) 0.1, giữa (wrap) 0.2, áp út (wrap) 0.0, út (wrap) -0.1, lòng (press) 0.6 · tâm nắm cách món 0.7 · lòng tay cách 2.3 góc 27° · cổ tay xoay 59°, gập 2°, lệch 0° · khuỷu φ 88° · cỡ 13.2 = 0.90 · W. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "size"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -92.65,
+      -251.73,
+      255.3
+     ],
+     "text": "variant wrap part than along 0.8 thumb down\n   lún 0.1 · xuyên -1.7 · nắm 0.7 · cỡ 0.9·W\n   cái(wrap) 0 trỏ(wrap) 0.1 giữa(wrap) 0.2\n   áp út(wrap) 0 út(wrap) -0.1 lòng(press) 0.6",
+     "raw": {
+      "pierce": {
+       "depth": 0.059473777682639554,
+       "core": -1.7337522200084083,
+       "piece": "pinky1"
+      },
+      "sink": 0.059473777682639554,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": 0.017423306054126893,
+       "index": 0.12189144214068467,
+       "fingers": -0.059473777682639554,
+       "palm": 0.6039539483511168
+      },
+      "size": {
+       "of": 13.2,
+       "W": 14.700000000000003,
+       "ratio": 0.8979591836734692
+      },
+      "hold": "thu-chai-dac-tuyen@cylinder////down",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "than",
+        "feature": "lathe",
+        "featureIndex": 0,
+        "along": 0.75,
+        "thumb": "down",
+        "variant": "wrap",
+        "around": 180
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "along": "rig",
+        "thumb": "scene",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 87.5,
+        "wrist": {
+         "turn": 59.92349666163656,
+         "bend": 2.0127087114700064,
+         "dev": -0.6293792075923443,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 0.017423306054126893,
+       "index": 0.12189144214068467,
+       "middle": 0.20077123232430444,
+       "ring": 0.03467774631641239,
+       "pinky": -0.059473777682639554
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.6701004007467998,
+      "palm": {
+       "gap": 2.344264142264165,
+       "angle": 27.477215068250857
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0.0000017075472925031877,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 152,
+   "tiles": [
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-cai-xuong-P-t01-sakura-truoc.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-cai-xuong-P-t01-sakura-cheo.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-cai-xuong-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dac-tuyen-cylinder-phan-vai-P-t01-sakura",
+   "item": "thu-chai-dac-tuyen",
+   "group": "cylinder",
+   "ma": "phan-vai",
+   "grip": "nắm phần vai",
+   "key": "thu-chai-dac-tuyen@cylinder nắm phần vai",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "ngón không chạm món — `cam` tay phải cầm thu-chai-dac-tuyen: ngón út (`wrap`) cách món 3.4 (chỗ cầm `thu-chai-dac-tuyen@cylinder` (part vai, along 0.79, thumb up (rig chọn), variant wrap (mặc định), around 330 (rig chọn))); dáng ngón của nhóm chưa khép tới món — đổi `variant` hay `edge`, không thì là việc của dáng nhóm ở rig ở giây 0.10 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-chai-dac-tuyen@cylinder` (part vai, along 0.79, thumb up (rig chọn), variant wrap (mặc định), around 330 (rig chọn)) (dáng fist) · khe 0.0 · ôm 3/3 (cái, trỏ, giữa–út) · ngón cái (wrap) -0.5, trỏ (wrap) 0.0, giữa (wrap) 0.1, áp út (wrap) 0.0, út (wrap) 3.4, lòng (press) 1.4 · tâm nắm trong món 0.4 · lòng tay cách 3.9 góc 19° · cổ tay xoay -44°, gập -1°, lệch -5° · khuỷu φ 88° · cỡ 13.2 = 0.90 · W. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "món quá cỡ tay — `cam` tay phải cầm thu-chai-dac-tuyen: khối hình đã chọn cỡ 13.2 = 0.90 · W (W 14.7, từ 0.8 · W nắm không kín) (chỗ cầm `thu-chai-dac-tuyen@cylinder` (part vai, along 0.79, thumb up (rig chọn), variant wrap (mặc định), around 330 (rig chọn))); khai `part` khác hay cầm hai tay (`both`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-chai-dac-tuyen@cylinder` (part vai, along 0.79, thumb up (rig chọn), variant wrap (mặc định), around 330 (rig chọn)) (dáng fist) · khe 0.0 · ôm 3/3 (cái, trỏ, giữa–út) · ngón cái (wrap) -0.5, trỏ (wrap) 0.0, giữa (wrap) 0.1, áp út (wrap) 0.0, út (wrap) 3.4, lòng (press) 1.4 · tâm nắm trong món 0.4 · lòng tay cách 3.9 góc 19° · cổ tay xoay -44°, gập -1°, lệch -5° · khuỷu φ 88° · cỡ 13.2 = 0.90 · W. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "role",
+    "size"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -96.16,
+      -264.1,
+      234.99
+     ],
+     "text": "variant wrap part vai along 0.8 thumb up\n   lún 0.5 · xuyên -2.1 · nắm -0.4 · cỡ 0.9·W\n   hở út 3.4\n   cái(wrap) -0.5 trỏ(wrap) 0 giữa(wrap) 0.1\n   áp út(wrap) 0 út(wrap) 3.4 lòng(press) 1.4",
+     "raw": {
+      "pierce": {
+       "depth": -0.01859936898828242,
+       "core": -2.10496422616937,
+       "piece": "ring1"
+      },
+      "sink": 0.528797366928169,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": -0.528797366928169,
+       "index": 0.03641292523785645,
+       "fingers": 0.01859936898828242,
+       "palm": 1.4498332478557285
+      },
+      "size": {
+       "of": 13.2,
+       "W": 14.700000000000003,
+       "ratio": 0.8979591836734692
+      },
+      "hold": "thu-chai-dac-tuyen@cylinder//vai//",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "vai",
+        "feature": "lathe",
+        "featureIndex": 9,
+        "along": 0.79,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 330
+       },
+       "by": {
+        "part": "scene",
+        "feature": "default",
+        "along": "scene",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 87.5,
+        "wrist": {
+         "turn": -43.53924079805759,
+         "bend": -1.6816744992239083,
+         "dev": -4.7054893103835544,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.528797366928169,
+       "index": 0.03641292523785645,
+       "middle": 0.07193633874640422,
+       "ring": 0.01859936898828242,
+       "pinky": 3.44292092049422
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.41487169427456627,
+      "palm": {
+       "gap": 3.8913451343970977,
+       "angle": 19.34978477412888
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 152,
+   "tiles": [
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-phan-vai-P-t01-sakura-truoc.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-phan-vai-P-t01-sakura-cheo.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-phan-vai-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dac-tuyen-cylinder-phan-co-P-t01-sakura",
+   "item": "thu-chai-dac-tuyen",
+   "group": "cylinder",
+   "ma": "phan-co",
+   "grip": "nắm phần co",
+   "key": "thu-chai-dac-tuyen@cylinder nắm phần co",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-chai-dac-tuyen: xoay -91°/±90, gập -10°/±50, lệch -4°/±20 — vượt 0.8°, bàn tay vẽ lệch chỗ cầm 0.0 (chỗ cầm `thu-chai-dac-tuyen@cylinder` (part co, along 0.93, thumb up (rig chọn), variant wrap (mặc định), around 330 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-chai-dac-tuyen` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-chai-dac-tuyen@cylinder` (part co, along 0.93, thumb up (rig chọn), variant wrap (mặc định), around 330 (rig chọn)) (dáng fist) · da lún 0.5 ở đầu ngón út · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (wrap) 0.1, trỏ (wrap) 0.0, giữa (wrap) -0.1, áp út (wrap) -0.1, út (wrap) -0.5, lòng (press) 0.5 · tâm nắm trong món 0.7 · lòng tay cách 3.0 góc 40° · cổ tay xoay -91°, gập -10°, lệch -4° (vượt kẹp 0.8°, bàn tay lệch chỗ cầm 0.0) · khuỷu φ 93° · cỡ 5.2 = 0.35 · W. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -96.45,
+      -273.4,
+      238.18
+     ],
+     "text": "variant wrap part co along 0.9 thumb up\n   lún 0.5 · xuyên -1.5 · nắm -0.7 · cỡ 0.35·W · cổ tay vượt 0.5°\n   cái(wrap) 0.1 trỏ(wrap) 0 giữa(wrap) -0.1\n   áp út(wrap) -0.1 út(wrap) -0.5 lòng(press) 0.5",
+     "raw": {
+      "pierce": {
+       "depth": 0.5107337762997893,
+       "core": -1.476204108677105,
+       "piece": "pinky1"
+      },
+      "sink": 0.5107337762997893,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": 0.11622448784352102,
+       "index": 0.02530257500720534,
+       "fingers": -0.5107337762997893,
+       "palm": 0.4504935696398453
+      },
+      "size": {
+       "of": 5.15,
+       "W": 14.700000000000003,
+       "ratio": 0.3503401360544217
+      },
+      "hold": "thu-chai-dac-tuyen@cylinder//co//",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "co",
+        "feature": "lathe",
+        "featureIndex": 17,
+        "along": 0.93,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 330
+       },
+       "by": {
+        "part": "scene",
+        "feature": "default",
+        "along": "scene",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 92.5,
+        "wrist": {
+         "turn": -90.48404171151172,
+         "bend": -9.894708926223489,
+         "dev": -3.6528468918680344,
+         "over": 0.48404171151172193,
+         "off": 0.025663640772854518
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 0.11622448784352102,
+       "index": 0.02530257500720534,
+       "middle": -0.056233215282149196,
+       "ring": -0.11219856056245724,
+       "pinky": -0.5107337762997893
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.7140677152299022,
+      "palm": {
+       "gap": 2.97509057208491,
+       "angle": 39.851362810837024
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0.48404171151078434,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 152,
+   "tiles": [
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-phan-co-P-t01-sakura-truoc.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-phan-co-P-t01-sakura-cheo.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-phan-co-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dac-tuyen-cylinder-mac-dinh-P-kuroiwa",
+   "item": "thu-chai-dac-tuyen",
+   "group": "cylinder",
+   "ma": "mac-dinh",
+   "grip": "mặc định (wrap)",
+   "key": "thu-chai-dac-tuyen@cylinder mặc định (wrap)",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -97.71,
+      -262.75,
+      230.13
+     ],
+     "text": "variant wrap part than along 0.3 thumb up\n   lún 0.1 · xuyên -2 · nắm -2.6 · cỡ 0.79·W\n   cái(wrap) -0.1 trỏ(wrap) 0 giữa(wrap) 0.1\n   áp út(wrap) 0 út(wrap) 0 lòng(press) 0.6",
+     "raw": {
+      "pierce": {
+       "depth": -0.03213268445315264,
+       "core": -2.0014004582882055,
+       "piece": "pinky1"
+      },
+      "sink": 0.09995844894096881,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": -0.09995844894096881,
+       "index": -0.000053518609240299484,
+       "fingers": 0.03213268445315264,
+       "palm": 0.6019479622945648
+      },
+      "size": {
+       "of": 13.2,
+       "W": 16.8,
+       "ratio": 0.7857142857142856
+      },
+      "hold": "thu-chai-dac-tuyen@cylinder////",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "than",
+        "feature": "lathe",
+        "featureIndex": 0,
+        "along": 0.25,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 330
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 52.5,
+        "wrist": {
+         "turn": -39.421402882490504,
+         "bend": 10.58493778566158,
+         "dev": 0.22339391012219956,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.09995844894096881,
+       "index": -0.000053518609240299484,
+       "middle": 0.062039211689059556,
+       "ring": 0.03371121372044072,
+       "pinky": 0.03213268445315264
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -2.6296300666371315,
+      "palm": {
+       "gap": 1.858212098821554,
+       "angle": 24.99459197168043
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 152,
+   "tiles": [
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-mac-dinh-P-kuroiwa-truoc.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-mac-dinh-P-kuroiwa-cheo.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-mac-dinh-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dac-tuyen-cylinder-along-cao-P-kuroiwa",
+   "item": "thu-chai-dac-tuyen",
+   "group": "cylinder",
+   "ma": "along-cao",
+   "grip": "along cao",
+   "key": "thu-chai-dac-tuyen@cylinder along cao",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -96.08,
+      -302.78,
+      233.03
+     ],
+     "text": "variant wrap part than along 0.8 thumb up\n   lún 0 · xuyên -2.1 · nắm -1.5 · cỡ 0.79·W\n   cái(wrap) 0.3 trỏ(wrap) 0 giữa(wrap) 0.1\n   áp út(wrap) 0 út(wrap) 0.2 lòng(press) 0.9",
+     "raw": {
+      "pierce": {
+       "depth": -0.2267792592165403,
+       "core": -2.132191134463559,
+       "piece": "pinky1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": 0.25899445461210185,
+       "index": 0.009760237943009176,
+       "fingers": 0.04467033885684216,
+       "palm": 0.8508165374396514
+      },
+      "size": {
+       "of": 13.2,
+       "W": 16.8,
+       "ratio": 0.7857142857142856
+      },
+      "hold": "thu-chai-dac-tuyen@cylinder////",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "than",
+        "feature": "lathe",
+        "featureIndex": 0,
+        "along": 0.75,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 330
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "along": "scene",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 90,
+        "wrist": {
+         "turn": -50.47747792593532,
+         "bend": -12.111189234392262,
+         "dev": -6.183601663871615,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 0.25899445461210185,
+       "index": 0.009760237943009176,
+       "middle": 0.05632041908779702,
+       "ring": 0.04467033885684216,
+       "pinky": 0.2267792592165403
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -1.5303267823692295,
+      "palm": {
+       "gap": 3.6598274482784285,
+       "angle": 25.094059113486804
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 152,
+   "tiles": [
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-along-cao-P-kuroiwa-truoc.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-along-cao-P-kuroiwa-cheo.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-along-cao-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dac-tuyen-cylinder-cai-xuong-P-kuroiwa",
+   "item": "thu-chai-dac-tuyen",
+   "group": "cylinder",
+   "ma": "cai-xuong",
+   "grip": "ngón cái xuống",
+   "key": "thu-chai-dac-tuyen@cylinder ngón cái xuống",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -92.1,
+      -291.78,
+      254.05
+     ],
+     "text": "variant wrap part than along 0.8 thumb down\n   lún 0.1 · xuyên -2 · nắm 0.8 · cỡ 0.79·W\n   cái(wrap) 0 trỏ(wrap) 0.1 giữa(wrap) 0\n   áp út(wrap) 0 út(wrap) -0.1 lòng(press) 0.6",
+     "raw": {
+      "pierce": {
+       "depth": 0.07857731803018263,
+       "core": -1.9943095168998695,
+       "piece": "pinky1"
+      },
+      "sink": 0.07857731803018263,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": -0.008571855349114088,
+       "index": 0.09415008563537342,
+       "fingers": -0.07857731803018263,
+       "palm": 0.5601090403596923
+      },
+      "size": {
+       "of": 13.2,
+       "W": 16.8,
+       "ratio": 0.7857142857142856
+      },
+      "hold": "thu-chai-dac-tuyen@cylinder////down",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "than",
+        "feature": "lathe",
+        "featureIndex": 0,
+        "along": 0.75,
+        "thumb": "down",
+        "variant": "wrap",
+        "around": 180
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "along": "rig",
+        "thumb": "scene",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 82.5,
+        "wrist": {
+         "turn": 63.01943953955079,
+         "bend": 11.360692820696931,
+         "dev": -1.4198971411213965,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.008571855349114088,
+       "index": 0.09415008563537342,
+       "middle": 0.0004740977795984293,
+       "ring": 0.021133232622391522,
+       "pinky": -0.07857731803018263
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.8109443146417501,
+      "palm": {
+       "gap": 2.7413326422576967,
+       "angle": 27.330324404462544
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 152,
+   "tiles": [
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-cai-xuong-P-kuroiwa-truoc.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-cai-xuong-P-kuroiwa-cheo.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-cai-xuong-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dac-tuyen-cylinder-phan-vai-P-kuroiwa",
+   "item": "thu-chai-dac-tuyen",
+   "group": "cylinder",
+   "ma": "phan-vai",
+   "grip": "nắm phần vai",
+   "key": "thu-chai-dac-tuyen@cylinder nắm phần vai",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -94.46,
+      -300.83,
+      231.03
+     ],
+     "text": "variant wrap part vai along 0.8 thumb up\n   lún 0.5 · xuyên -2.1 · nắm -0.5 · cỡ 0.79·W\n   cái(wrap) -0.5 trỏ(wrap) 0 giữa(wrap) 0\n   áp út(wrap) 0.1 út(wrap) 0.1 lòng(press) 0.9",
+     "raw": {
+      "pierce": {
+       "depth": -0.05398289894292437,
+       "core": -2.120168981168651,
+       "piece": "pinky1"
+      },
+      "sink": 0.5448902106600546,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": -0.5448902106600546,
+       "index": -0.006030960159533822,
+       "fingers": 0.044661756746003894,
+       "palm": 0.9485877022485527
+      },
+      "size": {
+       "of": 13.2,
+       "W": 16.8,
+       "ratio": 0.7857142857142856
+      },
+      "hold": "thu-chai-dac-tuyen@cylinder//vai//",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "vai",
+        "feature": "lathe",
+        "featureIndex": 9,
+        "along": 0.79,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 0
+       },
+       "by": {
+        "part": "scene",
+        "feature": "default",
+        "along": "scene",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 77.5,
+        "wrist": {
+         "turn": -38.05824486256076,
+         "bend": 19.866530808463782,
+         "dev": 5.725044134684681,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.5448902106600546,
+       "index": -0.006030960159533822,
+       "middle": 0.044661756746003894,
+       "ring": 0.053698808816936824,
+       "pinky": 0.05398289894292437
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.5257864376270192,
+      "palm": {
+       "gap": 3.0294344791201007,
+       "angle": 25.510923615543543
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 152,
+   "tiles": [
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-phan-vai-P-kuroiwa-truoc.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-phan-vai-P-kuroiwa-cheo.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-phan-vai-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-chai-dac-tuyen-cylinder-phan-co-P-kuroiwa",
+   "item": "thu-chai-dac-tuyen",
+   "group": "cylinder",
+   "ma": "phan-co",
+   "grip": "nắm phần co",
+   "key": "thu-chai-dac-tuyen@cylinder nắm phần co",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -94.46,
+      -313.01,
+      236.65
+     ],
+     "text": "variant wrap part co along 0.9 thumb up\n   lún 0.3 · xuyên -2 · nắm -0.3 · cỡ 0.31·W\n   cái(wrap) 0.2 trỏ(wrap) 0 giữa(wrap) -0.1\n   áp út(wrap) -0.2 út(wrap) -0.3 lòng(press) 0.4",
+     "raw": {
+      "pierce": {
+       "depth": 0.3332680167040086,
+       "core": -1.9720640386755937,
+       "piece": "pinky1"
+      },
+      "sink": 0.3332680167040086,
+      "roles": {
+       "thumb": "wrap",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": 0.18431550174011682,
+       "index": 0.010012385806425607,
+       "fingers": -0.3332680167040086,
+       "palm": 0.3736820397001646
+      },
+      "size": {
+       "of": 5.15,
+       "W": 16.8,
+       "ratio": 0.30654761904761907
+      },
+      "hold": "thu-chai-dac-tuyen@cylinder//co//",
+      "grasp": {
+       "group": "cylinder",
+       "mode": "item",
+       "choice": {
+        "part": "co",
+        "feature": "lathe",
+        "featureIndex": 17,
+        "along": 0.92,
+        "thumb": "up",
+        "variant": "wrap",
+        "around": 0
+       },
+       "by": {
+        "part": "scene",
+        "feature": "default",
+        "along": "scene",
+        "thumb": "rig",
+        "variant": "default",
+        "around": "rig"
+       },
+       "arm": {
+        "phi": 87.5,
+        "wrist": {
+         "turn": -82.51569379625091,
+         "bend": 15.327193488920862,
+         "dev": -2.0965511875358893,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0.04269924483694432,
+        "gap": 0,
+        "bodyRatio": 0.003421413849114128,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": 0.18431550174011682,
+       "index": 0.010012385806425607,
+       "middle": -0.05696321718904508,
+       "ring": -0.15556788818462744,
+       "pinky": -0.3332680167040086
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.29425788763605004,
+      "palm": {
+       "gap": 3.884563296882963,
+       "angle": 46.229153410214785
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0.0000012074182697257333,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 152,
+   "tiles": [
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-phan-co-P-kuroiwa-truoc.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-phan-co-P-kuroiwa-cheo.png",
+    "o/thu-chai-dac-tuyen/bang-cam-thu-chai-dac-tuyen-cylinder-phan-co-P-kuroiwa-ngang.png"
+   ]
+  }
+ ]
+}
