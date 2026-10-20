@@ -22,7 +22,7 @@
   },
   "scripts": {
     "typecheck": "echo skip",
-    "test": "node --test reseat.test.mjs upgrade.test.mjs clash.test.mjs snap.test.mjs palm.test.mjs groups.test.mjs sweep.test.mjs scope.test.mjs",
+    "test": "node --test reseat.test.mjs upgrade.test.mjs clash.test.mjs snap.test.mjs palm.test.mjs groups.test.mjs sweep.test.mjs scope.test.mjs held.test.mjs",
     "build": "echo skip",
     "prepack": "node prepack.mjs",
     "postpack": "node prepack.mjs --clean"

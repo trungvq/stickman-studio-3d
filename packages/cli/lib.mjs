@@ -1534,9 +1534,11 @@ export function armOptions(dir = ".") {
 
 /**
  * Ngưỡng đo đồ cầm tay: `stickman.held` trong `package.json` — `{ pose, pierce, touch, wrap, grip, up, face, drift,
- * turn, reach, seat, body, hold }` (độ, rồi đơn vị rig bốn trường, độ, độ, đơn vị rig, độ, đơn vị rig ba trường, giây),
- * trường thiếu lấy các hằng `HELD_*` (`reach`: `AIM_GAP`; `seat`, `body`: `CARRY`) của rig; `false` là không đo. Sai kiểu thì trả `{ error }`.
- * docs/03-scene.md#đồ-cầm-tay
+ * turn, reach, seat, body, sink, wrist, arm, hold }` (độ, rồi đơn vị rig bốn trường, độ, độ, đơn vị rig, độ, đơn vị rig
+ * ba trường, đơn vị rig, độ, tỉ lệ bán kính tay, giây), trường thiếu lấy các hằng `HELD_*` (`reach`: `AIM_GAP`; `seat`,
+ * `body`: `CARRY`) của rig; `false` là không đo. `grip` khai thì thắng cả ngưỡng theo nhóm (`gripDeclared`). Sai kiểu thì
+ * trả `{ error }`. docs/03-scene.md#đồ-cầm-tay, docs/11-nhom-cam.md
+
  */
 export function heldOptions(dir = ".") {
   const raw = readPkg(resolve(dir))?.stickman?.held;
@@ -1554,6 +1556,9 @@ export function heldOptions(dir = ".") {
     reach: rig.AIM_GAP,
     seat: rig.CARRY?.seat,
     body: rig.CARRY?.body,
+    sink: rig.HELD_SINK,
+    wrist: rig.HELD_WRIST,
+    arm: rig.HELD_ARM,
     hold: rig.HELD_HOLD,
   };
   if (raw === undefined) return out;
@@ -1563,13 +1568,15 @@ export function heldOptions(dir = ".") {
     if (!(key in out) || typeof v !== "number" || !(v > 0)) return { error: bad };
     out[key] = v;
   }
+  if ("grip" in raw) out.gripDeclared = true;
   return out;
 }
 
 /**
  * Số đo đồ cầm ở giây `t` trên cảnh three `world` (`worldScene`): `pose(t)` rồi `heldHands`, `heldCarries` của rig cho mọi người đang
  * hiện — `frame` của `sceneHeld`. `pose(t)` ném thì giây ấy không có số đo, `onError(t, lỗi)`. `null` khi rig của repo
- * chưa có `heldHands`. `onPosed(posed, t)` được gọi sau mỗi lần đặt cảnh (luật `legacy` đọc cùng tư thế ấy).
+ * chưa có `heldHands`. Món đặt trước (chỗ cầm nhóm v2) mang `grasp` của `HeldHand`, kiểu cầm cứng v1 thì không. `onPosed(posed, t)`
+ * được gọi sau mỗi lần đặt cảnh (luật `legacy` đọc cùng tư thế ấy).
  * docs/03-scene.md#đồ-cầm-tay
  */
 export function heldFrame(rt, world, onError, onPosed) {
@@ -2113,7 +2120,7 @@ export const CHECK_TIMES = {
  * Luật đồ cầm tay của một cảnh (`sceneHeld` của rig) trên cảnh three `on` đã dựng (`worldScene`). `quiet`: lượt đo người
  * lồng vào vật đã báo cảnh three ném lỗi, không báo lại
  */
-function heldRows(ctx, rt, on, warn, quiet, onPosed) {
+export function heldRows(ctx, rt, on, warn, quiet, onPosed) {
   let thrown = quiet;
   const onError = (t, e) => {
     if (!thrown)
@@ -2125,17 +2132,23 @@ function heldRows(ctx, rt, on, warn, quiet, onPosed) {
   const frame = heldFrame(rt, on, onError, onPosed);
   if (!frame) return;
   const items = heldItemsFrame(on);
+  const { gripDeclared, ...opts } = ctx.held;
   let issues;
   try {
-    issues = rig.sceneHeld(rt, { ...ctx.held, frame, ...(items && { items }) });
+    issues = rig.sceneHeld(rt, { ...opts, frame, ...(items && { items }) });
   } catch (e) {
     return warn(`không đo được đồ cầm tay — ${e.message}`);
   }
-  for (const s of issues)
+  for (const s of issues) {
+    // Chỗ cầm nhóm đo `grip` theo nhóm; `grip` khai ở `package.json` thắng
+    if (gripDeclared && s.rule === "grip" && s.sample.hold?.includes("@") && s.worst <= opts.grip)
+      continue;
     warn(rig.heldLine(s), {
       key: `held:${s.rule}|${s.id}|${s.hand}|${s.item}`,
       measure: s.worst,
+      ...(s.error && { error: true }),
     });
+  }
   // Cảnh khai `hold` món mà `extra` không `provide`
   if (items && rig.heldUnprovided)
     for (const u of rig.heldUnprovided(rt, on.scene.cast.provided()))
