@@ -17,7 +17,7 @@ import { matVec, type V3 } from "./lens";
 
 /**
  * Ngón ôm theo đồ: hình va chạm của món (`held/<món>.json` `shape`, hợp hộp, trụ, cầu) là một hàm khoảng cách có dấu; mỗi
- * khung, từ dáng của kiểu cầm, từng ngón gỡ khỏi mặt món khi lún vào và ngón khai `wrap` cuộn thêm từng đốt (gốc rồi
+ * khung, từ dáng của chỗ cầm, từng ngón gỡ khỏi mặt món khi lún vào và ngón vai trò ôm cuộn thêm từng đốt (gốc rồi
  * ngọn) tới khi chạm. Thuần, tất định theo đúng một khung: chỉ đọc chỗ món trong khung bàn tay và cỡ bàn tay.
  * docs/01-rig.md#ngón-ôm-theo-đồ
  */
@@ -243,13 +243,13 @@ const tipOf = (F: HandFrame): V3 => {
 };
 
 export interface HeldFitInput {
-  /** Số bàn tay của dáng kiểu cầm (`HAND_DOF`) */
+  /** Số bàn tay của dáng chỗ cầm (`HAND_DOF`) */
   v: HandVec;
   side: number;
   k: number;
   long: number;
   shape: readonly HeldShape[];
-  /** Món trong khung bàn tay (`gripFrame`, hay đo từ ma trận thế giới); `u` là đơn vị three của một đơn vị rig */
+  /** Món trong khung bàn tay (`graspLink`, hay đo từ ma trận thế giới); `u` là đơn vị three của một đơn vị rig */
   G: GripFrame;
   /** Ngón ôm món: cuộn tới khi chạm; ngón khác chỉ gỡ khi lún. Bỏ qua khi có `roles` */
   wrap?: readonly HeldFinger[];

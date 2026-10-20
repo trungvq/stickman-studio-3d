@@ -1,12 +1,12 @@
-// `stickman migrate-held`: chuyển món v1 (`grips`) và `hold` `món#kiểu` của cảnh sang món v2 và chỗ cầm nhóm
-// `{ item, group, … }`, đi đường tay dẫn. docs/11-nhom-cam.md mục 8
+// `stickman migrate-held`: chuyển món bản 1 (`grips`) và `hold` `món#kiểu` của cảnh sang món v2 và chỗ cầm nhóm
+// `{ item, group, … }`, đi đường tay dẫn. Rig chỉ nạp món v2: món bản 1 đọc bằng schema riêng ở đây. docs/11-nhom-cam.md mục 8
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, resolve } from "node:path";
 import * as rig from "@stickman3d/sketch";
-import { COMMON, loadHeld } from "./lib.mjs";
+import { COMMON } from "./lib.mjs";
 
 /**
- * Bảng kiểu cũ → nhóm (docs/11 Phụ lục A): `group`, phần và biến thể ép khi tìm chỗ cầm. `--map <file>` đè hay thêm dòng
+ * Bảng kiểu cũ → nhóm mặc định: `group`, phần và biến thể ép khi tìm chỗ cầm. `--map <file>` đè hay thêm dòng
  */
 export const HOLD_MAP = {
   "dien-thoai#doc": { group: "palmBox" },
@@ -35,6 +35,159 @@ export const HOLD_MAP = {
   "the-phong#cam": { group: "card" },
   "the-phong#dua": { group: "card" },
 };
+
+// ── Món bản 1 (`grips`) ─────────────────────────────────────────────────────────────────────────────────────────────
+
+const CARRY_ON = ["elbow", "shoulder"];
+const isNum = (x) => typeof x === "number" && Number.isFinite(x);
+const isV3 = (x) => Array.isArray(x) && x.length === 3 && x.every(isNum);
+const isObj = (x) => !!x && typeof x === "object" && !Array.isArray(x);
+
+/** Lỗi cấu trúc của một món bản 1: mốc, kiểu cầm (bàn tay hay treo), tham chiếu mốc; rỗng là đọc được */
+function v1Problems(o) {
+  const out = [];
+  const bad = (path, msg) => out.push(`${path}: ${msg}`);
+  if (!isV3(o.size)) bad("size", "cần ba số");
+  if (!isObj(o.anchors)) return [...out, "anchors: cần object mốc"];
+  for (const [n, a] of Object.entries(o.anchors))
+    if (!isObj(a) || !isV3(a.at) || (a.dir !== undefined && !isV3(a.dir)))
+      bad(`anchors.${n}`, "cần `{ at, dir? }`");
+  const has = (n) => typeof n === "string" && n in o.anchors;
+  const ref = (r, path) => {
+    const n = typeof r === "string" ? r : isObj(r) ? r.anchor : undefined;
+    if (!has(n)) bad(path, `không có mốc \`${n}\``);
+    else if (isObj(r) && r.offset !== undefined && !isV3(r.offset)) bad(path, "`offset` cần ba số");
+  };
+  const dir = (d, path) => {
+    if (isV3(d)) return;
+    const e = isObj(d) ? Object.entries(d) : [];
+    if (e.length !== 1 || !["into", "along", "toward"].includes(e[0][0]) || !has(e[0][1]))
+      bad(path, "cần vectơ hay `{ into | along | toward: mốc }`");
+  };
+  const hand = (h, path, partial = false) => {
+    if (!isObj(h)) return bad(path, "cần object");
+    if (h.pose !== undefined || !partial)
+      if (typeof h.pose !== "string") bad(`${path}.pose`, "cần tên dáng");
+    for (const k of ["at", "palm", "fingers"])
+      if (h[k] !== undefined || !partial) (k === "at" ? ref : dir)(h[k], `${path}.${k}`);
+  };
+  if (!isObj(o.grips) || !Object.keys(o.grips).length)
+    return [...out, "grips: cần ít nhất một kiểu cầm"];
+  for (const [n, g] of Object.entries(o.grips)) {
+    const path = `grips.${n}`;
+    if (!isObj(g)) {
+      bad(path, "cần object");
+      continue;
+    }
+    if (g.on !== undefined && g.on !== "hand") {
+      if (!CARRY_ON.includes(g.on)) bad(`${path}.on`, `cần ${CARRY_ON.join(" | ")}`);
+      ref(g.at, `${path}.at`);
+      continue;
+    }
+    hand(g, path);
+    if (g.left !== undefined) hand(g.left, `${path}.left`, true);
+    if (g.both !== undefined) {
+      if (!isObj(g.both) || !["right", "left"].includes(g.both.lead))
+        bad(`${path}.both`, "cần `{ lead: right | left, other }`");
+      else hand(g.both.other, `${path}.both.other`);
+    }
+  }
+  return out;
+}
+
+/** Món bản 1 (`schemaVersion` 1 hay không khai, có `grips`): `{ success, data }` hay `{ success: false, problems }` */
+export function parseV1Item(json) {
+  if (!isObj(json)) return { success: false, problems: ["không phải object"] };
+  if (json.schemaVersion !== undefined && json.schemaVersion !== 1)
+    return { success: false, problems: [`schemaVersion ${json.schemaVersion}`] };
+  const problems = v1Problems(json);
+  return problems.length
+    ? { success: false, problems }
+    : { success: true, data: { ...structuredClone(json), schemaVersion: 1 } };
+}
+
+/** Kiểu treo (`on` là `elbow` / `shoulder`), không phải kiểu cầm bằng bàn tay */
+const isCarry = (g) => !!g && g.on !== undefined && g.on !== "hand";
+
+/** Bên giải phẫu (`-1` phải) của `both.lead` */
+const leadSide = (lead) => (lead === "right" ? -1 : 1);
+
+/** Kiểu cầm `kieu` của món bản 1, hay ném lỗi có tên */
+function v1Grip(v1, kieu, name) {
+  const g = v1.grips?.[kieu];
+  if (!g) throw new Error(`\`${name}\` không có kiểu cầm \`${kieu}\``);
+  return g;
+}
+
+/** Bàn tay của kiểu cầm cho tay bên `side` (`-1` phải): tay trái lấy phần `left` đè lên */
+const gripHand = (g, side) => {
+  const h = { pose: g.pose, at: g.at, palm: g.palm, fingers: g.fingers };
+  return side > 0 && g.left ? { ...h, ...g.left } : h;
+};
+
+const unit = (v) => {
+  const n = Math.hypot(...v) || 1;
+  return v.map((x) => x / n);
+};
+
+/** Hướng khung món của `palm` / `fingers` bản 1: vectơ, `into` ngược pháp tuyến mốc, `along` theo nó, `toward` tới mốc */
+function v1Dir(v1, d, from) {
+  if (Array.isArray(d)) return unit(d);
+  if ("into" in d) return rig.heldAxis(v1, d.into).map((x) => -x);
+  if ("along" in d) return rig.heldAxis(v1, d.along);
+  const p = rig.heldPoint(v1, d.toward);
+  const v = [p[0] - from[0], p[1] - from[1], p[2] - from[2]];
+  if (Math.hypot(...v) < 1e-9) throw new Error(`\`toward: ${d.toward}\` trùng điểm nắm`);
+  return unit(v);
+}
+
+/** Liên kết cứng của bàn tay kiểu cầm bản 1 `h`: quy mốc ra vectơ khung món rồi `graspLink` của rig */
+function v1Link(v1, h, side, k, long) {
+  const at = rig.heldPoint(v1, h.at);
+  const hand = { pose: h.pose, at, palm: v1Dir(v1, h.palm, at), fingers: v1Dir(v1, h.fingers, at) };
+  return rig.graspLink(hand, side, k, long, 1);
+}
+
+/** `hold` của cảnh là kiểu cầm bản 1: chuỗi `món#kiểu`, object `{ item, grip, … }` */
+const isV1Hold = (h) =>
+  typeof h === "string" ? !h.includes("@") : !!h && typeof h === "object" && !("group" in h);
+
+/**
+ * Ý định của mốc `hold` bản 1: ý định mặc định của kiểu cầm, `face` / `up` / `roll` của mốc đè lên; `face` khai đích trần
+ * lấy trục chính của ý định mặc định
+ */
+export function v1Intent(v1, h) {
+  const kieu = typeof h === "string" ? h.slice(h.indexOf("#") + 1) : h.grip;
+  const g = v1Grip(v1, kieu, "món");
+  if (isCarry(g)) return {};
+  const d = g.intent;
+  let face = d?.face ?? (d?.up !== undefined ? { axis: d.up, toward: "up" } : undefined);
+  let roll = d?.roll;
+  if (typeof h === "object") {
+    if (h.up !== undefined) face = { axis: h.up, toward: "up" };
+    else if (h.face !== undefined) {
+      if (isObj(h.face) && "axis" in h.face) face = h.face;
+      else {
+        if (!face)
+          throw new Error(`\`${kieu}\` không có trục ý định mặc định cho \`face\` khai đích trần`);
+        face = { axis: face.axis, toward: h.face };
+      }
+    }
+    if (h.roll) roll = h.roll;
+  }
+  return { ...(face && { face }), ...(roll && { roll }) };
+}
+
+/** Món bản 1 qua các lớp (lớp sau đè lớp trước theo tên file); file không đọc được bỏ qua */
+function loadV1(layers) {
+  const out = {};
+  for (const dir of layers)
+    for (const f of listJson(dir)) {
+      const r = parseV1Item(readJson(join(dir, f)));
+      if (r.success) out[f.replace(/\.json$/, "")] = r.data;
+    }
+  return out;
+}
 
 /** Lệch quá ngần này là shot đổi hình, chủ dự án duyệt */
 export const MIGRATE_ANGLE = 5;
@@ -120,10 +273,10 @@ function v2Hand(spec, hold, side, hand) {
   const x = rig.holdHand(rh, side, dims);
   if (!x?.frame) throw new Error(`\`${hold.item}@${hold.group}\` không cầm bằng bàn tay`);
   return {
-    G: rig.gripFrame(spec, x.frame.hand, side, hand.k, hand.long, 1),
+    G: rig.graspLink(x.frame.hand, side, hand.k, hand.long, 1),
     choice: x.frame.choice,
     ...(x.both && {
-      support: rig.gripFrame(spec, x.both.other, -side, hand.k, hand.long, 1),
+      support: rig.graspLink(x.both.other, -side, hand.k, hand.long, 1),
     }),
   };
 }
@@ -304,11 +457,11 @@ const sameIntent = (spec, a, b) =>
   (a.tilt ?? 0) === (b.tilt ?? 0);
 
 /**
- * Ý định của kiểu cũ (`holdIntent`, đè của cảnh đã gộp) ghi vào chỗ cầm v2 khi khác mặc định của nhóm: không có ý định thì
+ * Ý định của kiểu cũ (`v1Intent`, đè của cảnh đã gộp) ghi vào chỗ cầm v2 khi khác mặc định của nhóm: không có ý định thì
  * `keep: true`. `note` khi v2 không diễn được đúng (nhóm thêm trục v1 không chốt)
  */
 export function intentFields(v1, v2, oldHold, group) {
-  const old = rig.holdIntent(v1, oldHold);
+  const old = v1Intent(v1, oldHold);
   if (group === "carry") return { fields: {} };
   const def = rig.groupIntent(group, { item: "x", group }, geomOf(v2));
   if (!old.face && !old.roll) return { fields: def.face || def.roll ? { keep: true } : {} };
@@ -333,7 +486,7 @@ export function touchSplit(v1) {
   for (const [name, g] of Object.entries(v1.grips ?? {}))
     own[name] = (g.touch ?? []).filter((t) => typeof t !== "string" || !TOUCH_DEFAULT.has(t));
   const hands = Object.entries(v1.grips ?? {})
-    .filter(([, g]) => !rig.isCarry(g))
+    .filter(([, g]) => !isCarry(g))
     .map(([n]) => n);
   const key = (t) => JSON.stringify(t);
   // một kiểu cầm thì mọi `touch` là của kiểu ấy (tai, ôm): xuống cảnh
@@ -352,7 +505,7 @@ export function migrateItem(v1, labels) {
   const seats = {};
   const problems = [];
   for (const [n, g] of Object.entries(v1.grips ?? {}))
-    if (rig.isCarry(g)) {
+    if (isCarry(g)) {
       if (typeof g.at !== "string") problems.push(`kiểu treo \`${n}\`: \`at\` không phải tên mốc`);
       else seats[g.on] = g.at;
     }
@@ -396,10 +549,10 @@ function holdLabel(h) {
 
 /** Chỗ cầm nhóm cho một kiểu cũ trên tay `side` của người có bàn tay `hand`: chỗ cầm, lệch, tay phụ */
 function convertGrip({ item, kieu, v1, v2, side, hand, want }) {
-  const g = rig.heldGrip(v1, kieu, item);
+  const g = v1Grip(v1, kieu, item);
   const group = want.group;
   if (group === "carry") {
-    if (!rig.isCarry(g)) return { status: "lỗi", note: `\`${item}#${kieu}\` không phải kiểu treo` };
+    if (!isCarry(g)) return { status: "lỗi", note: `\`${item}#${kieu}\` không phải kiểu treo` };
     const seat = v2.seats?.[g.on];
     const same = typeof g.at === "string" && seat === g.at;
     return {
@@ -412,10 +565,10 @@ function convertGrip({ item, kieu, v1, v2, side, hand, want }) {
     };
   }
   if (!groupReady(group)) return { status: "chờ nhóm" };
-  if (rig.isCarry(g)) return { status: "lỗi", note: `\`${item}#${kieu}\` là kiểu treo` };
-  const L = g.both ? rig.leadSide(g.both.lead) : side;
-  const hh = rig.gripHand(g, L);
-  const target = rig.gripFrame(v1, hh, L, hand.k, hand.long, 1);
+  if (isCarry(g)) return { status: "lỗi", note: `\`${item}#${kieu}\` là kiểu treo` };
+  const L = g.both ? leadSide(g.both.lead) : side;
+  const hh = gripHand(g, L);
+  const target = v1Link(v1, hh, L, hand.k, hand.long);
   const q = rig.heldPoint(v1, hh.at);
   const make = (c) => ({ item, group, ...c, ...(g.both && { both: true }) });
   const best = nearest({
@@ -448,7 +601,7 @@ function convertGrip({ item, kieu, v1, v2, side, hand, want }) {
   if (!g.both) return res;
   // tay phụ: `both: true` khi mặc định của nhóm đủ gần tay kia của kiểu cũ, không thì đè bằng chỗ gần nhất
   const ho = g.both.other;
-  const tOther = rig.gripFrame(v1, ho, -L, hand.k, hand.long, 1);
+  const tOther = v1Link(v1, ho, -L, hand.k, hand.long);
   const qo = rig.heldPoint(v1, ho.at);
   const dflt = gripDelta(tOther, v2Hand(v2, hold, L, hand).support, qo);
   if (dflt.angle <= MIGRATE_ANGLE && dflt.shift <= MIGRATE_SHIFT)
@@ -489,7 +642,7 @@ const over = (d) => !!d && (d.angle > MIGRATE_ANGLE || d.shift > MIGRATE_SHIFT);
 
 /** Nạp món v1 (`held/` cùng lớp chung), món v2 (`heldDir`), nhân vật (lớp chung và repo) */
 function loadWorkspace(root, heldDir) {
-  const v1 = loadHeld([join(root, "held"), COMMON.held]);
+  const v1 = loadV1([COMMON.held, join(root, "held")]);
   const v2 = {};
   for (const f of listJson(resolve(root, heldDir))) {
     const r = rig.parseHeldItem(readJson(join(resolve(root, heldDir), f)));
@@ -531,14 +684,13 @@ export function migrateHeld({ dir = ".", scene, heldDir = "held", map, dryRun = 
     const v1 = ws.v1[base];
     const v2 = ws.v2[base];
     const want = table[baseRef(ref)];
-    if (v1 && !rig.isHeldV2(v1)) used.set(base, v1);
+    if (v1) used.set(base, v1);
     if (!want) return { status: "lỗi", note: `\`${baseRef(ref)}\` không có trong bảng ánh xạ` };
-    if (!v1 || rig.isHeldV2(v1)) return { status: "lỗi", note: `không có món v1 \`${base}\`` };
-    if (!v2 || !rig.isHeldV2(v2))
-      return { status: "lỗi", note: `không có món v2 \`${base}\` ở ${heldDir}/` };
+    if (!v1) return { status: "lỗi", note: `không có món v1 \`${base}\`` };
+    if (!v2) return { status: "lỗi", note: `không có món v2 \`${base}\` ở ${heldDir}/` };
     const g = v1.grips?.[kieu];
     if (!g) return { status: "lỗi", note: `\`${base}\` không có kiểu \`${kieu}\`` };
-    const L = g.both ? rig.leadSide(g.both.lead) : sd;
+    const L = g.both ? leadSide(g.both.lead) : sd;
     const ck = JSON.stringify([base, kieu, L, hand.k, hand.long]);
     if (!cache.has(ck))
       cache.set(ck, convertGrip({ item: base, kieu, v1, v2, side: L, hand, want }));
@@ -567,7 +719,7 @@ export function migrateHeld({ dir = ".", scene, heldDir = "held", map, dryRun = 
         for (const side of ["right", "left"]) {
           const h = k[side]?.hold;
           if (h === undefined) continue;
-          if (h === null || rig.holdKind(h) === "group") {
+          if (h === null || !isV1Hold(h)) {
             runs[side] = null;
             continue;
           }

@@ -623,7 +623,7 @@ function loadActions(layers) {
 /** Động vật qua các lớp, khoá giữ cả đuôi như `scene.animals[].animal`; file hỏng thì `check` báo ở vòng của nó */
 const loadAnimals = (layers) => loadByFile(layers, rig.parseAnimal);
 
-/** Món cầm tay qua các lớp, khoá không đuôi như `world.hands[].hold` (`món#kiểu`); bản của repo đè bản chung */
+/** Món cầm tay qua các lớp, khoá không đuôi như món của `world.hands[].hold` (`món@nhóm`); bản của repo đè bản chung */
 export function loadHeld(layers) {
   const out = {};
   for (const dir of [...layers].reverse())
@@ -1575,7 +1575,7 @@ export function heldOptions(dir = ".") {
 /**
  * Số đo đồ cầm ở giây `t` trên cảnh three `world` (`worldScene`): `pose(t)` rồi `heldHands`, `heldCarries` của rig cho mọi người đang
  * hiện — `frame` của `sceneHeld`. `pose(t)` ném thì giây ấy không có số đo, `onError(t, lỗi)`. `null` khi rig của repo
- * chưa có `heldHands`. Món đặt trước (chỗ cầm nhóm v2) mang `grasp` của `HeldHand`, kiểu cầm cứng v1 thì không. `onPosed(posed, t)`
+ * chưa có `heldHands`. Chỗ cầm nhóm mang `grasp` của `HeldHand`, đồ cầm đường cũ thì không. `onPosed(posed, t)`
  * được gọi sau mỗi lần đặt cảnh (luật `legacy` đọc cùng tư thế ấy).
  * docs/03-scene.md#đồ-cầm-tay
  */

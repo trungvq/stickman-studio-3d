@@ -11,23 +11,14 @@ import {
   type CarryCapsule,
   type CarryRef,
 } from "./heldCarry";
-import {
-  gripPoint,
-  gripSpec,
-  heldPoint,
-  holdIntent,
-  isCarry,
-  parseHeldItem,
-  type CarrySpec,
-  type HeldItemSpec,
-} from "./heldItem";
+import { gripPoint, heldPoint, parseHeldItem, type HeldItemSpec } from "./heldItem";
 import { isCarryHold } from "./holdLink";
 import { matVec, type V3 } from "./lens";
 import { parseScene, resolveScene, sceneAt } from "./scene";
 import { CharacterSchema } from "./schema";
 import cocJson from "../../../../apps/studio/public/held/coc.json";
 import tuiJson from "../../../../apps/studio/public/held/tui.json";
-import tuiV2Json from "./__fixtures__/held-v2/tui-hieu.json";
+import tuiHieuJson from "./__fixtures__/held-v2/tui-hieu.json";
 
 const spec = (j: unknown): HeldItemSpec => {
   const r = parseHeldItem(j);
@@ -36,40 +27,19 @@ const spec = (j: unknown): HeldItemSpec => {
 };
 const TUI = spec(tuiJson);
 const COC = spec(cocJson);
+/** Lần treo `món@carry` của cảnh */
+const carry = (item: string, h: object): CarryRef => ({
+  grasp: { hold: { item, group: "carry", ...h } },
+});
 const close = (a: readonly number[], b: readonly number[], d = 6) =>
   a.forEach((x, i) => expect(x).toBeCloseTo(b[i], d));
 
-describe("held/<món>.json: kiểu treo", () => {
-  it("món mẫu `tui` nạp được; `on` bỏ trống hay `hand` là kiểu cầm bằng bàn tay", () => {
-    expect(TUI.grips!.khuyu).toEqual({ on: "elbow", at: "quai" });
-    expect(isCarry(TUI.grips!.vai)).toBe(true);
-    expect(isCarry(COC.grips!.quai)).toBe(false);
-    const hand = spec({ ...cocJson, grips: { quai: { ...cocJson.grips.quai, on: "hand" } } });
-    expect(isCarry(hand.grips!.quai)).toBe(false);
-    expect(() => gripSpec(TUI, "khuyu", "tui")).toThrow(/kiểu treo/);
-  });
-
-  it("báo kiểu treo thiếu `shape`, mốc không có, trường của bàn tay, chỗ treo lạ", () => {
-    const msg = (j: unknown) => {
-      const r = parseHeldItem(j);
-      return r.success
-        ? ""
-        : r.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(" | ");
-    };
-    const bare = { ...tuiJson, shape: undefined };
-    expect(msg(bare)).toMatch(/grips\.khuyu: kiểu treo `on: elbow` cần `shape`/);
-    expect(msg({ ...tuiJson, grips: { x: { on: "elbow", at: "khong" } } })).toMatch(
-      /grips\.x\.at: không có mốc `khong`/,
-    );
-    expect(msg({ ...tuiJson, grips: { x: { on: "elbow", at: "quai", pose: "grip" } } })).toMatch(
-      /grips\.x: .*"pose"/,
-    );
-    expect(msg({ ...tuiJson, grips: { x: { on: "knee", at: "quai" } } })).toMatch(/grips\.x\.on/);
-  });
-
-  it("kiểu treo không có ý định: đè `face` ở scene là lỗi", () => {
-    expect(holdIntent(TUI, "tui#vai")).toEqual({});
-    expect(() => holdIntent(TUI, { item: "tui", grip: "vai", up: "quai" })).toThrow(/kiểu treo/);
+describe("held/<món>.json: chỗ treo", () => {
+  it("món mẫu `tui` nạp được; `carrySpecOf` lấy đỉnh quai từ `seats[on]`", () => {
+    expect(TUI.seats).toEqual({ elbow: "quai", shoulder: "quai" });
+    expect(carrySpecOf(TUI, carry("tui", { on: "elbow" }))).toEqual({ on: "elbow", at: "quai" });
+    expect(carrySpecOf(COC, { grasp: { hold: { item: "coc", group: "handle" } } })).toBeUndefined();
+    expect(carrySpecOf(COC, {})).toBeUndefined();
   });
 });
 
@@ -85,7 +55,7 @@ describe("elbowSeat, carryFrame", () => {
     expect(elbowSeat([0, 3, 0], [0, 2, 0], [0, 1.5, 0.5], 0.1).rise).toBeCloseTo(-45);
   });
 
-  const grip = TUI.grips!.khuyu as CarrySpec;
+  const grip = carrySpecOf(TUI, carry("tui", { on: "elbow" }))!;
   const top = heldPoint(TUI, "quai");
 
   it("không gì cản: đỉnh quai ở chỗ treo, y của món lên, mặt trước theo hướng ngang của thanh quai", () => {
@@ -156,49 +126,12 @@ describe("elbowSeat, carryFrame", () => {
   });
 });
 
-describe("scene: lần treo không chiếm bàn tay", () => {
-  const C = CharacterSchema.parse({ head: { form: "human" }, palette: { clad: true } });
-  const runtime = (hands: unknown[]) => {
-    const sc = parseScene({
-      name: "x",
-      lens: { eye: [0, -250, -1400], yaw: 0, pitch: 0, f: 800 },
-      cast: [{ id: "a", world: { at: [0, 0, 0], yaw: 90, hands }, tracks: [] }],
-    });
-    if (!sc.success) throw new Error(sc.error.message);
-    return resolveScene(sc.data, {}, {}, {}, { a: 1 }, { a: body3(C) }, { tui: TUI, coc: COC });
-  };
-
-  it("tay treo không có vai trò, không ý định; tay kia cầm cốc như thường", () => {
-    const rt = runtime([
-      { t: 0, right: { hold: "tui#khuyu" }, left: { at: [40, -250, -40], hold: "coc#quai" } },
-    ]);
-    const sp = sceneAt(rt, "a", 0.5, 1, body3(C)) as ActInput;
-    const roles = holdRoles(sp.world!.hands, -1);
-    expect(roles[-1]).toBeUndefined();
-    expect(roles[1]).toMatchObject({ role: "lead", hold: { item: "coc" } });
-    expect(sp.world!.hands!.near!.hold).toMatchObject({ item: "tui", grip: "khuyu" });
-    expect(sp.world!.hands!.near!.aim).toBeUndefined();
-    const held = actHeld(C, sp);
-    expect(held.R).toBeUndefined();
-    expect(held.L).toBeDefined();
-  });
-
-  it("`point: item:` trên món treo là lỗi", () => {
-    expect(() =>
-      runtime([
-        { t: 0, right: { hold: "tui#khuyu" } },
-        { t: 1, right: { at: [0, -200, 0], point: "item:quai" } },
-      ]),
-    ).toThrow(/kiểu treo/);
-  });
-});
-
 describe("carryHits", () => {
   const S: HeldCarry = {
     id: "a",
     hand: "R",
     item: "tui",
-    hold: "tui#khuyu",
+    hold: "tui@carry",
     on: "elbow",
     key: "k",
     at: [0, 0, 0],
@@ -236,7 +169,7 @@ describe("carryHits", () => {
 
   it("dòng báo nêu chỗ sai và cách sửa", () => {
     expect(heldLine(issue({ ...S, rise: -40 }, "seat"))).toMatch(
-      /quai không nằm trên chỗ treo — `a` tay phải treo tui \(`tui#khuyu`, khuỷu\): cẳng tay chúc 40° .* · giây 0\.50–1\.50\. Lúc ấy: kiểu treo tui#khuyu \(khuỷu\)/,
+      /quai không nằm trên chỗ treo — `a` tay phải treo tui \(`tui@carry`, khuỷu\): cẳng tay chúc 40° .* · giây 0\.50–1\.50\. Lúc ấy: chỗ cầm tui@carry \(khuỷu\)/,
     );
     expect(
       heldLine(issue({ ...S, on: "shoulder", body: { gap: -4, part: "upperArmR" } }, "body")),
@@ -246,105 +179,77 @@ describe("carryHits", () => {
   });
 });
 
-describe("treo v2: `món@carry` đọc `seats` của món", () => {
-  const V2 = spec(tuiV2Json);
-  // cùng thân, cùng mốc ở dạng v1: chỗ treo là kiểu treo của `grips`
-  const V1 = spec({
-    size: tuiV2Json.size,
-    anchors: tuiV2Json.anchors,
-    shape: tuiV2Json.shape,
-    grips: {
-      khuyu: { on: "elbow", at: "treoKhuyu" },
-      vai: { on: "shoulder", at: "quai", touch: tuiV2Json.touch },
-    },
-  });
-  const v2 = (h: object): CarryRef => ({
-    grip: "@carry////",
-    grasp: { hold: { item: "tui-hieu", group: "carry", ...h } },
-  });
+describe("treo: `món@carry` đọc `seats` của món", () => {
+  const HIEU = spec(tuiHieuJson);
+  const hieu = (h: object): CarryRef => carry("tui-hieu", h);
 
-  it("`carrySpecOf`: `at` là `seats[on]`, `yaw` của cảnh, `touch` của món cộng của cảnh; v1 là kiểu treo của `grips`", () => {
-    expect(carrySpecOf(V2, v2({ on: "elbow" }))).toEqual({
+  it("`carrySpecOf`: `at` là `seats[on]`, `yaw` của cảnh, `touch` của món cộng của cảnh", () => {
+    expect(carrySpecOf(HIEU, hieu({ on: "elbow" }))).toEqual({
       on: "elbow",
       at: "treoKhuyu",
-      touch: V2.touch,
+      touch: HIEU.touch,
     });
-    expect(carrySpecOf(V2, v2({ on: "shoulder", yaw: 20, touch: ["self.head"] }))).toEqual({
+    expect(carrySpecOf(HIEU, hieu({ on: "shoulder", yaw: 20, touch: ["self.head"] }))).toEqual({
       on: "shoulder",
       at: "quai",
       yaw: 20,
-      touch: [...V2.touch!, "self.head"],
+      touch: [...HIEU.touch!, "self.head"],
     });
-    expect(carrySpecOf(V1, { grip: "khuyu" })).toBe(V1.grips!.khuyu);
-    expect(carrySpecOf(V1, { grip: "x" })).toBeUndefined();
-    expect(carrySpecOf(V2, v2({ group: "palmBox" }))).toBeUndefined();
-    expect(isCarryHold(V2, v2({ on: "elbow" }))).toBe(true);
-    expect(isCarryHold(undefined, { grip: "x" })).toBe(false);
+    expect(carrySpecOf(HIEU, hieu({ group: "palmBox" }))).toBeUndefined();
+    expect(isCarryHold(hieu({ on: "elbow" }))).toBe(true);
+    expect(isCarryHold(hieu({ group: "palmBox" }))).toBe(false);
+    expect(isCarryHold({})).toBe(false);
   });
 
   it("`carrySpecOf`: thiếu `on`, món không có `seats[on]` là lỗi có tên", () => {
-    expect(() => carrySpecOf(V2, v2({}))).toThrow(/`tui-hieu@carry`: thiếu `on`/);
-    const elbow = spec({ ...tuiV2Json, seats: { elbow: "treoKhuyu" } });
-    expect(() => carrySpecOf(elbow, v2({ on: "shoulder" }))).toThrow(
+    expect(() => carrySpecOf(HIEU, hieu({}))).toThrow(/`tui-hieu@carry`: thiếu `on`/);
+    const elbow = spec({ ...tuiHieuJson, seats: { elbow: "treoKhuyu" } });
+    expect(() => carrySpecOf(elbow, hieu({ on: "shoulder" }))).toThrow(
       /không có chỗ treo `seats.shoulder`/,
     );
   });
 
-  it("`on: elbow` / `shoulder` ra cùng `carryFrame` với kiểu treo v1", () => {
-    const torso: CarryCapsule = { a: [-0.2, 0, 0], b: [-0.2, 2, 0], r: 0.22, part: "torso" };
-    const arm: CarryCapsule = { a: [0.12, 2, 0], b: [0.12, 0.8, 0], r: 0.05, part: "upperArmR" };
-    const cases = [
-      { pivot: [1, 2, 3], bar: [0.6, 0.8, 0], away: [1, 0, 0], body: [] },
-      { pivot: [0, 2, 0], bar: [0, 0, 1], away: [1, 0, 0], body: [torso] },
-      { pivot: [0, 2, 0], bar: [0, 0, 1], away: [1, 0, 0], body: [torso], outer: [arm] },
-    ] as { pivot: V3; bar: V3; away: V3; body: CarryCapsule[]; outer?: CarryCapsule[] }[];
-    const pairs = [
-      [v2({ on: "elbow" }), "khuyu", 0],
-      [v2({ on: "shoulder" }), "vai", 0],
-      [v2({ on: "elbow", yaw: 35 }), "khuyu", 35],
-    ] as const;
-    for (const [ref, grip, yaw] of pairs)
-      for (const c of cases) {
-        const g1 = V1.grips![grip] as CarrySpec;
-        const a = carryFrame({ ...c, item: V1, grip: yaw ? { ...g1, yaw } : g1, u: 0.01 });
-        const b = carryFrame({ ...c, item: V2, grip: carrySpecOf(V2, ref)!, u: 0.01 });
-        a.G.R.forEach((x, i) => expect(Math.abs(x - b.G.R[i])).toBeLessThanOrEqual(1e-9));
-        a.G.p.forEach((x, i) => expect(Math.abs(x - b.G.p[i])).toBeLessThanOrEqual(1e-9));
-        expect(Math.abs(a.swing - b.swing)).toBeLessThanOrEqual(1e-9);
-        expect(b.gap === a.gap || Math.abs(a.gap - b.gap) <= 1e-9).toBe(true);
-        expect(b.part).toBe(a.part);
-      }
-  });
-
   describe("scene", () => {
     const C = CharacterSchema.parse({ head: { form: "human" }, palette: { clad: true } });
-    const runtime = (hands: unknown[], item: HeldItemSpec = V2) => {
+    const runtime = (hands: unknown[], item: HeldItemSpec = HIEU) => {
+      const items = { "tui-hieu": item, coc: COC };
       const sc = parseScene({
         name: "x",
         lens: { eye: [0, -250, -1400], yaw: 0, pitch: 0, f: 800 },
         cast: [{ id: "a", world: { at: [0, 0, 0], yaw: 90, hands }, tracks: [] }],
       });
       if (!sc.success) throw new Error(sc.error.message);
-      return resolveScene(sc.data, {}, {}, {}, { a: 1 }, { a: body3(C) }, { "tui-hieu": item });
+      return resolveScene(sc.data, {}, {}, {}, { a: 1 }, { a: body3(C) }, items);
     };
     const hold = (h: object) => ({ hold: { item: "tui-hieu", group: "carry", ...h } });
 
-    it("tay treo không có vai trò, không ý định", () => {
-      const rt = runtime([{ t: 0, right: hold({ on: "elbow" }) }]);
+    it("tay treo không có vai trò, không ý định; tay kia cầm cốc như thường", () => {
+      const rt = runtime([
+        {
+          t: 0,
+          right: hold({ on: "elbow" }),
+          left: { at: [40, -250, -40], hold: "coc@cylinder" },
+        },
+      ]);
       const sp = sceneAt(rt, "a", 0.5, 1, body3(C)) as ActInput;
-      expect(holdRoles(sp.world!.hands, -1)[-1]).toBeUndefined();
+      const roles = holdRoles(sp.world!.hands, -1);
+      expect(roles[-1]).toBeUndefined();
+      expect(roles[1]).toMatchObject({ role: "lead", hold: { item: "coc" } });
+      expect(sp.world!.hands!.near!.hold).toMatchObject({ item: "tui-hieu", grip: "@carry////" });
       expect(sp.world!.hands!.near!.aim).toBeUndefined();
-      expect(actHeld(C, sp).R).toBeUndefined();
+      const held = actHeld(C, sp);
+      expect(held.R).toBeUndefined();
+      expect(held.L).toBeDefined();
     });
 
     it("thiếu `on`, `seats[on]` không có: lỗi `choice` có tên", () => {
       expect(() => runtime([{ t: 0, right: hold({}) }])).toThrow(/lỗi `choice`: .*thiếu `on`/);
       expect(() => runtime([{ t: 0, right: { hold: "tui-hieu@carry" } }])).toThrow(/thiếu `on`/);
-      const elbow = spec({ ...tuiV2Json, seats: { elbow: "treoKhuyu" } });
+      const elbow = spec({ ...tuiHieuJson, seats: { elbow: "treoKhuyu" } });
       expect(() => runtime([{ t: 0, right: hold({ on: "shoulder" }) }], elbow)).toThrow(
         /lỗi `choice`: .*không có chỗ treo `seats.shoulder`/,
       );
-      const bare = spec({ ...tuiV2Json, seats: undefined });
+      const bare = spec({ ...tuiHieuJson, seats: undefined });
       expect(() => runtime([{ t: 0, right: hold({ on: "elbow" }) }], bare)).toThrow(
         /lỗi `group`: .*nhóm `carry`/,
       );
@@ -356,7 +261,7 @@ describe("treo v2: `món@carry` đọc `seats` của món", () => {
           { t: 0, right: hold({ on: "elbow" }) },
           { t: 1, right: { at: [0, -200, 0], point: "item:quai" } },
         ]),
-      ).toThrow(/`tui-hieu@carry` là kiểu treo \(`on: elbow`\)/);
+      ).toThrow(/cần món cầm trong bàn tay — `tui-hieu@carry` treo trên tay \(`on: elbow`\)/);
     });
   });
 });

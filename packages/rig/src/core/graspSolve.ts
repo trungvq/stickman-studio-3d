@@ -54,7 +54,7 @@ import {
 } from "./heldGeom";
 import {
   gripCenter,
-  gripFrame,
+  graspLink,
   gripPoint,
   groupHold,
   handAxes,
@@ -756,7 +756,7 @@ function palmPoints(side: number, k: number, long: number, v: HandVec, pose: Han
 
 /**
  * Khung cầm của chỗ cầm `choice` (nhóm `group`) trên món `spec` (`geom = itemGeom(spec)`) cho tay bên `side`: chỗ tiếp xúc
- * của nhóm, bàn tay tổng hợp có điểm nắm là toạ độ khung món, `G` như `gripFrame` (`k`, `long`, `s` như ở đó), dáng gốc
+ * của nhóm, bàn tay tổng hợp có điểm nắm là toạ độ khung món, `G` như `graspLink` (`k`, `long`, `s` như ở đó), dáng gốc
  * theo `dims` (cỡ tay, đơn vị món). Trường thiếu lấy mặc định của nhóm; `eHigh` là đầu cao của cạnh (`edgeHigh`)
  */
 export function graspFrame(
@@ -844,7 +844,7 @@ export function graspFrame(
     wrap: HELD_FINGERS.filter((f) => vs.roles[f] !== "free" && vs.roles[f] !== "extend"),
   };
   return {
-    G: gripFrame(spec, hand, side, k, long, s),
+    G: graspLink(hand, side, k, long, s),
     hand,
     pose: basePose(vs.pose, feature, dims, ct),
     roles: vs.roles,

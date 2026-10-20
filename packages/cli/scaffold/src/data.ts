@@ -130,7 +130,7 @@ export const ANIMALS: Record<string, AnimalData> = load<AnimalData>(
   parseAnimal,
 );
 
-/** Món cầm tay lấy khoá không đuôi — `world.hands[].hold` gọi bằng `món#kiểu`; `resolveScene` cần bảng này */
+/** Món cầm tay lấy khoá không đuôi — `world.hands[].hold` gọi bằng `món@nhóm`; `resolveScene` cần bảng này */
 export const HELD: Record<string, HeldItemSpec> = Object.fromEntries(
   Object.entries(load<HeldItemSpec>([commonHeldCtx, heldCtx], parseHeldItem)).map(([f, h]) => [
     f.replace(/\.json$/, ""),

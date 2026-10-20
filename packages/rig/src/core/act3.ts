@@ -66,13 +66,9 @@ import {
 import {
   gripAxes,
   gripCenter,
-  gripFrame,
-  gripHand,
-  gripOf,
   gripPoint,
   handAxes,
   HOLD_SLEW_STEP,
-  leadSide,
   mixGrip,
   mixRotation,
   type GripFrame,
@@ -428,7 +424,7 @@ export function aimWrist(
 export interface AimReport {
   /**
    * Mốc của đích (`at` là toạ độ thô với điểm khác cổ tay) và khe từ điểm bàn tay tới đích, rig; chỉ khi phần đích đủ `1`.
-   * `hold`: đích do món đang cầm — `support` tay phụ với tới mốc kiểu cầm của nó trên món, `item` điểm `item:<mốc>`
+   * `hold`: đích do món đang cầm — `support` tay phụ với tới chỗ của nó trên món, `item` điểm `item:<mốc>`
    */
   reach?: { to: BodyMark | "at"; point: ReachPoint; gap: number; hold?: "support" | "item" };
   /** Góc lệch còn lại của lòng tay, của ngón so với hướng đã khai, độ */
@@ -449,11 +445,6 @@ export interface AimReport {
     clamped: ("turn" | "bend" | "dev")[];
     /** Đích của trục chính như scene khai (`up`, `camera`, `holderFace`, `<người>.<mốc>`, mốc thân, vectơ) */
     toward?: string;
-    /**
-     * Lệch còn quá `HOLD_ALT`: các kiểu cầm khác của cùng món (cùng một tay hay cùng hai tay) với cùng ý định, cánh tay giữ
-     * nguyên, lệch còn lại (độ), ít trước
-     */
-    alts?: { grip: string; err: number }[];
     grasp?: GraspReport;
   };
 }
@@ -523,26 +514,23 @@ const spin = (v: V3, u: V3, a: number): V3 => {
 
 /** Độ xoay, gập, lệch cổ tay tối đa của tay mang món giữa hai mẫu `HOLD_SLEW_STEP` liền nhau */
 export const HOLD_SLEW = 15;
-/** Ý định của món còn lệch quá ngần này độ thì bộ giải thử các kiểu cầm khác của cùng món (`AimReport.hold.alts`) */
-export const HOLD_ALT = 30;
 /** Độ xoay khuỷu (quanh trục vai → đích) tối đa của tay mang món giữa hai mẫu `HOLD_SLEW_STEP` liền nhau */
 export const HOLD_SWIVEL_SLEW = 5;
 
 const lerp3 = (a: V3, b: V3, f: number): V3 => add(mul(a, 1 - f), mul(b, f));
 
 /**
- * Liên kết của tay mang món ở khung này và tâm nắm của dáng: kiểu cầm đang có, hoà từ kiểu cầm trước của cùng món
+ * Liên kết của tay mang món ở khung này và tâm nắm của dáng: chỗ cầm đang có, hoà từ chỗ cầm trước của cùng món
  * (`hold.from`) trong quãng hoà
  */
 export function leadGrip(
   h: ReachHold,
-  hand: GraspHand,
   side: number,
   k: number,
   long: number,
   s: number,
 ): { G: GripFrame; center: V3 } {
-  const { G, center } = holdLinkFrame(h, side, k, long, s, hand);
+  const { G, center } = holdLinkFrame(h, side, k, long, s);
   const p = h.grasp?.mode === "item" ? undefined : holdFrom(h);
   if (!p) return { G, center };
   const b = holdLinkFrame(p, side, k, long, s);
@@ -550,7 +538,7 @@ export function leadGrip(
   return { G: mixGrip(b.G, G, f), center: lerp3(b.center, center, f) };
 }
 
-/** Bàn tay của kiểu cầm trước (`hold.from`) cho tay phụ: tay kia của kiểu hai tay cũ, hay kiểu cũ của chính nó (đổi tay) */
+/** Bàn tay của lần cầm trước (`hold.from`) cho tay phụ: tay phụ của `both` cũ, hay chỗ cầm cũ của chính nó (đổi tay) */
 function supportFrom(
   h: ReachHold,
   side: number,
@@ -568,7 +556,7 @@ function supportFrom(
 export interface HoldRole {
   hold: ReachHold;
   role: "lead" | "support";
-  /** Bàn tay của kiểu cầm cho tay này */
+  /** Bàn tay của chỗ cầm cho tay này */
   hand: GraspHand;
   /** Dáng ngón (`HAND_DOF`) của tay này khi cầm */
   pose: HandVec;
@@ -581,9 +569,9 @@ export interface HoldRole {
 }
 
 /**
- * Vai trò hai bàn tay theo lần cầm của `world.hands` (`near`: bên của tay gần). Kiểu cầm hai tay (`both`): món theo
- * `both.lead`, tay kia với tới `both.other` (tay ấy không khai `hold` hay khai cùng món). Hai tay cùng khai một món kiểu
- * một tay (đổi tay): tay cầm trước (`since` nhỏ hơn, bằng nhau thì tay phải) mang món, tay kia với tới mốc kiểu cầm của mình.
+ * Vai trò hai bàn tay theo lần cầm của `world.hands` (`near`: bên của tay gần). Cầm hai tay (`both`): món theo tay dẫn,
+ * tay kia với tới chỗ của tay phụ (tay ấy không khai `hold` hay khai cùng món). Hai tay cùng khai một món không `both`
+ * (đổi tay): tay cầm trước (`since` nhỏ hơn, bằng nhau thì tay phải) mang món, tay kia với tới chỗ cầm của mình.
  * Món đặt trước: mỗi tay khai nó đều theo món
  */
 export function holdRoles(
@@ -592,7 +580,7 @@ export function holdRoles(
   dims: HandDims = handDims(1),
 ): Partial<Record<number, HoldRole>> {
   const out: Partial<Record<number, HoldRole>> = {};
-  // kiểu treo không chiếm bàn tay: không có vai trò, tay ấy cầm kiểu hai tay hay làm tay phụ được
+  // món treo không chiếm bàn tay: không có vai trò, tay ấy cầm hai tay hay làm tay phụ được
   const links: Partial<Record<number, { h: ReachHold; x: HoldLinkHand }>> = {};
   for (const side of [-1, 1]) {
     const h0 = (side === near ? hands?.near : hands?.far)?.hold;
@@ -931,7 +919,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
   const dims = handDims(k / s, long / s);
   const placed = placedHolds(T, W0.hands);
   const roles = holdRoles(placed.hands, near, dims);
-  // món trong khung bàn tay (tay mang món) và tâm nắm của dáng kiểu cầm; người que không bàn tay nắm ở mút nét
+  // món trong khung bàn tay (tay mang món) và tâm nắm của dáng chỗ cầm; người que không bàn tay nắm ở mút nét
   const extras: Partial<Record<number, HoldState>> = {};
   for (const side of [-1, 1]) {
     const r = roles[side];
@@ -942,7 +930,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
     let center = gripCenter(r.hand.pose, side, k, long);
     let G: GripFrame | undefined;
     if (r.role === "lead") {
-      ({ G, center } = leadGrip(r.hold, r.hand, side, k, long, s));
+      ({ G, center } = leadGrip(r.hold, side, k, long, s));
       if (stick) G = { ...G, p: add(sub(G.p, center), stick) };
     }
     extras[side] = { gripAt: stick ?? center, ...(G && { G, spec: r.hold.spec }) };
@@ -1006,12 +994,12 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
     const lead = role?.role === "support" ? done[role.lead] : undefined;
     let entering = false;
     if (role?.role === "support" && lead?.G && lead.spec) {
-      // tay phụ: đích là mốc kiểu cầm của tay này trên món tay kia mang, lòng tay và ngón theo khung món
-      let ax = gripAxes(lead.spec, role.hand);
+      // tay phụ: đích là chỗ cầm của tay này trên món tay kia mang, lòng tay và ngón theo khung món
+      let ax = gripAxes(role.hand);
       const h0 = supportFrom(role.hold, side, role.lead, dims);
       if (h0) {
-        // đổi kiểu cầm: mốc của tay phụ trên món hoà từ kiểu cũ
-        const a0 = gripAxes(lead.spec, h0);
+        // đổi chỗ cầm: mốc của tay phụ trên món hoà từ chỗ cũ
+        const a0 = gripAxes(h0);
         const f = 1 - role.hold.from!.k;
         ax = {
           at: lerp3(a0.at, ax.at, f),
@@ -1064,7 +1052,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
     const other = done[-side] ?? state(arm3(T, P, hands, side * -1), -side);
     const rep: AimReport = cycle ? { cycle: true } : {};
     const raw = actHand(P0, ch);
-    // đang cầm: ngón theo dáng của kiểu cầm, không theo hành động
+    // đang cầm: ngón theo dáng của chỗ cầm, không theo hành động
     const fingersV = role ? role.pose.slice(2) : raw.slice(2);
     const body = (v: readonly number[]): V3 => [side * v[2], -v[1], v[0]];
     /** Điểm đích (three) của một số hạng và điểm bàn tay đặt vào đó */
@@ -1395,32 +1383,6 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
       const got = rigDir(unit(mv(handR(A, tbd), unit(mv(h.G.R, rep.hold.axis)))));
       rep.hold = { ...rep.hold, got, err: ang(got, rep.hold.want) };
     }
-    const hm = aimW?.terms.reduce<AimTerm | undefined>(
-      (a, t) => (t.hold && (!a || t.k > a.k) ? t : a),
-      undefined,
-    )?.hold;
-    if (
-      role?.role === "lead" &&
-      !role.hold.grasp &&
-      rep.hold &&
-      rep.hold.err > HOLD_ALT &&
-      T.hand &&
-      hm
-    ) {
-      // ý định không với tới: kiểu cầm khác của cùng món có với tới không — chỉ giải lại cổ tay với liên kết ấy
-      const spec = role.hold.spec;
-      const two = !!gripOf(spec, role.hold.grip)?.both;
-      const alts: { grip: string; err: number }[] = [];
-      for (const g of Object.keys(spec.grips ?? {})) {
-        const gs = gripOf(spec, g);
-        if (!gs || g === role.hold.grip || !!gs.both !== two) continue;
-        if (gs.both && leadSide(gs.both.lead) !== side) continue;
-        const G = gripFrame(spec, gripHand(gs, side), side, k, long, s);
-        const r = holdSolve(hm, [raw[0] ?? 0, raw[1] ?? 0, dev0], A, { ...h, G }, false);
-        if (r) alts.push({ grip: g, err: r.err });
-      }
-      if (alts.length) rep.hold = { ...rep.hold, alts: alts.sort((a, b) => a.err - b.err) };
-    }
     const lg = role?.role === "lead" ? role.hold.grasp : undefined;
     const fr = lg?.mode === "hand" && h.G ? holdHand(role!.hold, side, dims)?.frame : undefined;
     if (lg && fr) {
@@ -1594,7 +1556,7 @@ export interface ActHeld {
 
 /**
  * Món hai bàn tay đang mang theo `world.hands[].hold` (`R` phải, `L` trái người), đúng như `act` đặt tay và như `hold`
- * với kiểu cầm gắn món: tay phụ của món cầm hai tay không mang món. Chỉ người 3D có `world`. docs/03-scene.md#đồ-cầm-tay
+ * với chỗ cầm gắn món: tay phụ của món cầm hai tay không mang món. Chỉ người 3D có `world`. docs/03-scene.md#đồ-cầm-tay
  */
 export function actHeld(c: ActCharacter, sp: ActInput): Partial<Record<"R" | "L", ActHeld>> {
   const p = pose3(c, sp);
@@ -1611,7 +1573,7 @@ export function actHeld(c: ActCharacter, sp: ActInput): Partial<Record<"R" | "L"
     const { at, R } = p.frames[tag];
     const k = W?.k ?? 1;
     const long = W?.long ?? 1;
-    const lg = leadGrip(r.hold, r.hand, side, k, long, T.s);
+    const lg = leadGrip(r.hold, side, k, long, T.s);
     const center = lg.center;
     let G = lg.G;
     if (!W) {

@@ -79,14 +79,14 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
       return [v.x, v.y, v.z];
     };
     const v = [0, 0, ...h.shown];
-    // nang bàn tay theo dáng đang vẽ: lún, khe tới hình va chạm của món (`shape`) nếu kiểu cầm cứng có, không thì tới lưới
+    // nang bàn tay theo dáng đang vẽ: lún, khe tới hình va chạm của món (`shape`) nếu lần cầm cứng có, không thì tới lưới
     const gaps: Record<HeldGroup, number> = { thumb: Infinity, index: Infinity, fingers: Infinity, palm: Infinity };
     const each: Partial<Record<HeldFinger, number>> = {};
     let pierce = { depth: -Infinity, core: -Infinity, piece: 'palm' };
     const shape = entry.grip !== undefined ? entry.spec?.shape : undefined;
     const IF = shape && itemFrame(W, entry.object);
     const caps = handCaps(h);
-    // kiểu cầm cứng: lún, khe đo trên đỉnh da đang vẽ (`skinDepth`), phồng khớp tính cả; trục nang chỉ cho `pierce`
+    // cầm cứng: lún, khe đo trên đỉnh da đang vẽ (`skinDepth`), phồng khớp tính cả; trục nang chỉ cho `pierce`
     const skin = IF && skinDepth(h.geo.attributes.position.array, skinPieces(h.skin), IF, shape!);
     const sc = IF ? (IF.u / 0.01) * k : 1;
     caps.forEach(([a, b, r], i) => {
@@ -138,7 +138,7 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
     const rel = new THREE.Matrix4().copy(W).invert().multiply(entry.object.matrixWorld);
     const rp = new THREE.Vector3(), rq = new THREE.Quaternion(), rs = new THREE.Vector3();
     rel.decompose(rp, rq, rs);
-    // kiểu cầm cứng: ý định và đích do món đặt, đúng như bộ giải của `act` đã nhắm (`fig.aim`)
+    // cầm cứng: ý định và đích do món đặt, đúng như bộ giải của `act` đã nhắm (`fig.aim`)
     const rep = fig.aim?.[side < 0 ? 'R' : 'L'];
     const ih = entry.grip !== undefined ? rep?.hold : undefined;
     const grasp = ih?.grasp;
@@ -150,7 +150,7 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
       obj: entry.object.id,
       ...(entry.grip !== undefined && { hold: group ? `${entry.item}${entry.grip}` : `${entry.item}#${entry.grip}` }),
       ...(group && { s: k }),
-      ...(ih && { intent: { rule: ih.toward === 'up' ? 'up' as const : 'face' as const, err: ih.err, clamped: ih.clamped, ...(ih.toward && { toward: ih.toward }), want: ih.want, got: ih.got, ...(ih.alts && { alts: ih.alts }) } }),
+      ...(ih && { intent: { rule: ih.toward === 'up' ? 'up' as const : 'face' as const, err: ih.err, clamped: ih.clamped, ...(ih.toward && { toward: ih.toward }), want: ih.want, got: ih.got } }),
       ...(grasp && { grasp }),
       ...(group && entry.roles && { roles: entry.roles }),
       ...(group && entry.curl !== undefined && { curl: entry.curl }),
@@ -161,7 +161,7 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
       follow: entry.follow,
       acted: h.acted,
       pierce, gaps, grip, palm,
-      ...(IF && { fingers: each as Record<HeldFinger, number>, ...(entry.hand?.wrap?.length && { wrap: entry.hand.wrap }) }),
+      ...(IF && { fingers: each as Record<HeldFinger, number> }),
       ...(up !== undefined && { up }),
       ...(face && { face }),
       rel: { p: [(rp.x * k) / u, (rp.y * k) / u, (rp.z * k) / u], q: [rq.x, rq.y, rq.z, rq.w] },
@@ -171,7 +171,7 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
   return out;
 }
 
-/** Phần người được lấn vào thân món treo, `touch` của kiểu treo: `'[self.]<phần>[R|L]'` là bao nhiêu cũng được, `{ part, max }` tới `max` */
+/** Phần người được lấn vào thân món treo, `touch` của món treo: `'[self.]<phần>[R|L]'` là bao nhiêu cũng được, `{ part, max }` tới `max` */
 function carryAllow(touch: readonly (string | { part: string; max: number })[], part: string): number {
   let out = 0;
   for (const t of touch) {
@@ -183,7 +183,7 @@ function carryAllow(touch: readonly (string | { part: string; max: number })[], 
 }
 
 /**
- * Số đo từng món treo trên cánh tay của người `fig` (tên `id`, kiểu treo hay `món@carry` của `Figure.carrying`) đang hiện trên hình: đỉnh quai
+ * Số đo từng món treo trên cánh tay của người `fig` (tên `id`, `món@carry` của `Figure.carrying`) đang hiện trên hình: đỉnh quai
  * tới chỗ treo, góc khuỷu và độ ngóc cẳng tay (khuỷu), khe thân món (hình va chạm `shape`) tới từng phần người — trừ đoạn
  * tay quai vắt qua, cộng phần `touch` cho lấn —, góc đẩy khỏi phương đứng. Đơn vị rig thế giới. Gọi như `heldHands`.
  * docs/03-scene.md#đồ-cầm-tay
@@ -199,8 +199,7 @@ export function heldCarries(fig: Figure, id: string, o: { U?: number } = {}): He
     const e = fig.carrying[side];
     if (!e || !shown(e.object) || !e.spec.shape) continue;
     const t = side < 0 ? 'R' : 'L';
-    // khoá lần cầm v2 bắt đầu bằng `@`, tên kiểu treo v1 thì không
-    const v2 = e.grip.startsWith('@'), name = v2 ? `${e.item}@carry` : `${e.item}#${e.grip}`;
+    const name = `${e.item}@carry`;
     const seat = carrySeat(fig, side, e.carry.on);
     const top = e.object.localToWorld(new THREE.Vector3(...heldPoint(e.spec, e.carry.at).map((v) => v * 0.01)));
     // món trong thế giới three dạng liên kết của lõi: khe đo bằng cùng hình va chạm như ngón ôm
@@ -217,7 +216,7 @@ export function heldCarries(fig: Figure, id: string, o: { U?: number } = {}): He
     out.push({
       id, hand: t, item: e.item, obj: e.object.id,
       hold: name, on: e.carry.on,
-      key: `${e.object.id}|${v2 ? name : e.grip}|${e.carry.on}`,
+      key: `${e.object.id}|${name}|${e.carry.on}`,
       at: [seat.pivot.x / u, -seat.pivot.y / u, -seat.pivot.z / u],
       seat: top.distanceTo(seat.pivot) / u,
       ...(seat.bend !== undefined && { bend: seat.bend, rise: seat.rise! }),
@@ -229,7 +228,7 @@ export function heldCarries(fig: Figure, id: string, o: { U?: number } = {}): He
   return out;
 }
 
-/** Một lần cầm còn đi đường cũ (`hold` không có kiểu cầm `held/`): người, tay, món, cách bám */
+/** Một lần cầm còn đi đường cũ (`hold` không có chỗ cầm nhóm `held/`): người, tay, món, cách bám */
 export interface LegacyHold { id: string; hand: 'R' | 'L'; item: string; follow: string; both: boolean }
 
 /** Các lần cầm đường cũ của người `fig` (tên `id`) ở tư thế hiện tại, món đang hiện — luật `legacy` của `check` đọc */

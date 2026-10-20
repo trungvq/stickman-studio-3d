@@ -85,16 +85,11 @@ import {
   AxisIntentSchema,
   IntentTargetSchema,
   heldAxis,
-  gripOf,
   groupHold,
-  heldGrip,
-  holdKind,
-  isHeldV2,
   heldBase,
   heldPoint,
   HOLD_BLEND,
   HOLD_SLEW_STEP,
-  holdIntent,
   mixRotation,
   rotAxis,
   SceneHoldSchema,
@@ -141,7 +136,7 @@ import {
   blendLayers,
   blendPose,
 } from "./blend";
-import { carrySpecOf, shapeBound, type CarryRef } from "./heldCarry";
+import { shapeBound, type CarryRef } from "./heldCarry";
 import { isCarryHold, supportChoice, supportGroup } from "./holdLink";
 import { D, FRAMES, RIG, type FrameName, type FrameSpec } from "./constants";
 import { feet, lengths, type Legs } from "./geometry";
@@ -201,7 +196,7 @@ import {
 } from "./types";
 
 /** Bump khi đổi hình dạng JSON scene; `migrateScene` phải có nhánh tương ứng. */
-export const SCENE_VERSION = 29;
+export const SCENE_VERSION = 30;
 
 /** `"@ten"` hay `"@ten+0.4"` / `"@ten-1"`: một mốc có tên trong `scene.marks` cộng phần lệch giây */
 export const MARK_REF = /^@([A-Za-z0-9_-]+)(?:\s*([+-])\s*(\d+(?:\.\d+)?))?$/;
@@ -392,8 +387,8 @@ const WorldKeySchema = z.object({
  * Đích một bàn tay trong thế giới: `at` toạ độ thế giới, hay mốc thân `to` trên chính người ấy (`side`, `offset` như đích
  * của hành động); `point` là điểm bàn tay đặt vào đích (thiếu là cổ tay với `at`, lòng tay với `to`; `item:<mốc>` là mốc
  * của món đang cầm); `elbow` hướng khuỷu (bỏ trống là mặc định hệ thân). `palm` / `fingers` / `bend` khai lòng tay theo ý
- * định, đè bàn tay của hành động theo phần đích. `hold` là món cầm từ mốc này (`món#kiểu` hay object đè ý định, `null`
- * là buông): mốc chỉ có `hold` thì vị trí lấy từ hành động. docs/03-scene.md#đích-bàn-tay-thế-giới
+ * định, đè bàn tay của hành động theo phần đích. `hold` là chỗ cầm từ mốc này (`món@nhóm` hay `{ item, group, … }`,
+ * `null` là buông): mốc chỉ có `hold` thì vị trí lấy từ hành động. docs/03-scene.md#đích-bàn-tay-thế-giới
  */
 const HandSchema = z
   .object({
@@ -903,6 +898,8 @@ export function migrateScene(json: unknown): unknown {
   // v26 → v27 `world.hands[]` nhận mốc thân (`to`), điểm bàn tay (`point`) và lòng tay theo ý định (`palm`, `fingers`); dạng cũ vẫn hợp lệ
   // v27 → v28 thêm `world.path[].steps`; thiếu là số nhịp quay tại chỗ tự suy từ góc
   // v28 → v29 `world.hands[]` nhận món cầm (`hold`) và điểm `item:<mốc>`; dạng cũ vẫn hợp lệ
+  // v29 → v30 `hold` chỉ nhận chỗ cầm nhóm (`món@nhóm`, `{ item, group, … }`); `món#kiểu` và `{ item, grip }` để zod báo kèm
+  // lệnh chuyển `stickman migrate-held` — chuyển cần món bản 1 nên không tự đổi ở đây
   o.schemaVersion = SCENE_VERSION;
   return o;
 }
@@ -3104,7 +3101,7 @@ type HandSide = "right" | "left";
 /** Mốc thân trên người khác trong `cast` được ước ở chỗ này: mặt (giữa hai mắt), mồm, ngực, bụng */
 const CAST_MARKS = ["eye", "mouth", "chest", "belly"] as const;
 
-const regripOf = (h: SceneHold): boolean => typeof h === "object" && "group" in h && !!h.regrip;
+const regripOf = (h: SceneHold): boolean => typeof h === "object" && !!h.regrip;
 
 /**
  * Lần cầm của tay `side` ở giây `time`: mốc gần nhất (không sau `time`) khai `hold` của tay ấy; `null` là buông. `since` là
@@ -3170,8 +3167,8 @@ function heldInstances(
 }
 
 /**
- * Lần cầm hai tay khai lệch ở `world.hands`: một tay cầm kiểu hai tay (`both`) mà cùng lúc tay kia cầm món khác — kiểu hai
- * tay không thành, mỗi tay mang một món; và cảnh báo của chỗ cầm nhóm (`choiceWarnings`, cỡ tay người mẫu cao như người
+ * Lần cầm hai tay khai lệch ở `world.hands`: một tay cầm hai tay (`both`) mà cùng lúc tay kia cầm món khác — cầm hai tay
+ * không thành, mỗi tay mang một món; và cảnh báo của chỗ cầm nhóm (`choiceWarnings`, cỡ tay người mẫu cao như người
  * cầm). `check` (nhóm `ref`) báo. docs/03-scene.md#đồ-cầm-tay
  */
 export function sceneHoldProblems(rt: SceneRuntime): string[] {
@@ -3183,8 +3180,8 @@ export function sceneHoldProblems(rt: SceneRuntime): string[] {
     for (const k of keys)
       for (const side of ["right", "left"] as const) {
         const h = k[side]?.hold;
-        const spec = h && holdKind(h) === "group" ? rt.held[groupHold(h).item] : undefined;
-        if (!h || !spec || !isHeldV2(spec)) continue;
+        const spec = h ? rt.held[groupHold(h).item] : undefined;
+        if (!h || !spec) continue;
         const g = groupHold(h);
         const dims = holderDims(rt.heights[m.id] ?? 1);
         for (const line of choiceWarnings(g.group, itemGeom(spec), h, dims, spec.anchors)) {
@@ -3203,16 +3200,13 @@ export function sceneHoldProblems(rt: SceneRuntime): string[] {
       for (const side of ["right", "left"] as const) {
         const a = refs[side];
         const b = refs[side === "right" ? "left" : "right"];
-        const h = runs[side]!.hold;
-        const v2 = holdKind(h) === "group";
-        const name = v2 ? `${a.item}@${groupHold(h).group}` : `${a.item}#${a.grip}`;
+        const g = groupHold(runs[side]!.hold);
+        const name = `${a.item}@${g.group}`;
         const key = `${side}|${name}|${b.item}`;
-        const spec = rt.held[a.item];
-        const both = v2 ? !!groupHold(h).both : !!spec && !!gripOf(spec, a.grip)?.both;
-        if (!both || said.has(key)) continue;
+        if (!g.both || said.has(key)) continue;
         said.add(key);
         out.push(
-          `${m.id}: \`world.hands\` t=${k.t}: kiểu cầm hai tay \`${name}\` ở tay ${side === "right" ? "phải" : "trái"} mà tay kia đang cầm \`${b.item}\` — hai tay của món hai tay phải cùng một món: tay kia khai cùng món, hay \`hold: null\` (docs/03-scene.md#đồ-cầm-tay)`,
+          `${m.id}: \`world.hands\` t=${k.t}: cầm hai tay \`${name}\` (\`both\`) ở tay ${side === "right" ? "phải" : "trái"} mà tay kia đang cầm \`${b.item}\` — hai tay của món hai tay phải cùng một món: tay kia khai cùng món, hay \`hold: null\` (docs/03-scene.md#đồ-cầm-tay)`,
         );
       }
     }
@@ -3253,10 +3247,7 @@ function holdAim(
   castAt: (id: string, mark: BodyMark | undefined) => V3,
 ): HoldAim {
   const { item, grip } = sceneHoldRef(h);
-  const { face, roll } =
-    holdKind(h) === "group"
-      ? groupIntent(groupHold(h).group, h, itemGeom(spec))
-      : holdIntent(spec, h);
+  const { face, roll } = groupIntent(groupHold(h).group, h, itemGeom(spec));
   const axis = (a: AxisIntent): HoldAxis => ({
     axis: heldAxis(spec, a.axis),
     target: holdTarget(a.toward, castAt),
@@ -3296,27 +3287,18 @@ function handAt(
   const key = ks[i].t < time - 1e-9 ? ks[i] : ks[i - 1];
   const prior =
     key && key.t + HOLD_SLEW_STEP * Math.ceil((time - key.t) / HOLD_SLEW_STEP - 1 - 1e-3);
-  // `HOLD_BLEND` giây đầu của lần cầm (trừ lần cầm từ đầu cảnh): đổi kiểu cầm cùng món thì liên kết và ý định hoà từ kiểu
+  // `HOLD_BLEND` giây đầu của lần cầm (trừ lần cầm từ đầu cảnh): đổi chỗ cầm cùng món thì liên kết và ý định hoà từ chỗ
   // cũ; cầm món mới thì `enter` cho tay phụ hoà tới mốc trên món
   const blend = now && now.since > 0 && time - now.since < HOLD_BLEND;
   const prev = blend ? holdRun(keys, side, now!.since - 1e-6) : undefined;
   const prevRef = prev && sceneHoldRef(prev.hold);
   const f = blend ? smoothstep((time - now!.since) / HOLD_BLEND) : 1;
-  const v2 = !!now && holdKind(now.hold) === "group";
-  // kiểu treo không hoà liên kết, không có ý định: món theo chỗ treo ngay từ mốc
-  const carried = !!nowRef && isCarryHold(held[nowRef.item], carryRef(now!.hold));
-  const regrip =
-    !carried &&
-    !!(nowRef && prevRef) &&
-    prevRef!.item === nowRef!.item &&
-    (v2
-      ? holdKind(prev!.hold) === "group"
-      : prevRef!.grip !== nowRef!.grip && !!gripOf(held[nowRef!.item], prevRef!.grip));
-  const grasp = v2 && host ? holdGraspAt(host, keys, side, time, now!) : undefined;
+  // món treo không hoà liên kết, không có ý định: món theo chỗ treo ngay từ mốc
+  const carried = !!now && isCarryHold(carryRef(now.hold));
+  const regrip = !carried && !!(nowRef && prevRef) && prevRef!.item === nowRef!.item;
+  const grasp = now && host ? holdGraspAt(host, keys, side, time, now) : undefined;
   const prevGrasp =
-    blend && regrip && v2 && host
-      ? holdGraspAt(host, keys, side, now!.since - 1e-6, prev!)
-      : undefined;
+    blend && regrip && host ? holdGraspAt(host, keys, side, now!.since - 1e-6, prev!) : undefined;
   const placedItem = grasp?.mode === "item";
   const was = host && placedWas(host, keys, side, time);
   const hold: ReachHold | undefined = nowRef && {
@@ -3526,7 +3508,7 @@ const itemMarked = (rt: SceneRuntime, item: string): boolean =>
 
 /** Lần cầm nhóm của món đặt trước */
 const placedRun = (rt: SceneRuntime, run: HoldRun): boolean =>
-  holdKind(run.hold) === "group" && itemMarked(rt, groupHold(run.hold).item);
+  itemMarked(rt, groupHold(run.hold).item);
 
 /**
  * Lần cầm món đặt trước vừa xong trên tay `side`, còn hoà ra ở `time` (`HOLD_BLEND` từ ranh giới): phần còn lại và bàn tay
@@ -3747,7 +3729,7 @@ function itemGroupDefaults(
 ): ItemDefaults | undefined {
   for (const side of ["right", "left"] as const) {
     const run = holdRun(keys, side, time);
-    if (!run || holdKind(run.hold) !== "group") continue;
+    if (!run) continue;
     const g = groupHold(run.hold);
     if (g.item !== item) continue;
     return groupIntent(g.group, { item, group: g.group }, itemGeom(spec()));
@@ -3988,20 +3970,16 @@ function castMarkAt(rt: SceneRuntime, id: string, mark: BodyMark | undefined, ti
   return onTorso(which === "mouth" ? head - B.head * 0.35 : head - B.head * 0.1, B.head * 0.45);
 }
 
-/** Lần cầm của mốc `hold` cho `isCarryHold` / `carrySpecOf`: khoá kiểu cầm, chỗ cầm nhóm của cảnh */
-const carryRef = (h: SceneHold): CarryRef => ({
-  grip: sceneHoldRef(h).grip,
-  ...(holdKind(h) === "group" && { grasp: { hold: groupHold(h) } }),
-});
+/** Lần cầm của mốc `hold` cho `isCarryHold` / `carrySpecOf`: chỗ cầm nhóm của cảnh */
+const carryRef = (h: SceneHold): CarryRef => ({ grasp: { hold: groupHold(h) } });
 
 /** Mốc tay của món đặt trước không khai đích, ý định: bàn tay suy từ món (docs/11-nhom-cam.md#chỗ-cầm) */
 const PLACED_TARGET = ["to", "at", "offset", "point"] as const;
 const PLACED_INTENT = ["face", "up", "roll", "keep"] as const;
 
 /**
- * Lần cầm khai ở `world.hands` của người `who` phải có thật: món trong `held`, kiểu cầm của món, trục ý định trên mốc có
- * `dir`, người khác của `face: { cast }`, và `point: "item:<mốc>"` chỉ ở mốc đang cầm, mốc ấy có trên món. Chỗ cầm nhóm:
- * món có khối hình cho nhóm với cỡ tay `dims` (lỗi `group`), chỗ cầm hợp lệ (lỗi `choice`: `checkChoice`, món đặt trước
+ * Lần cầm khai ở `world.hands` của người `who` phải có thật: món trong `held`, trục ý định trên mốc có `dir`, người khác
+ * của `face: { cast }`, và `point: "item:<mốc>"` chỉ ở mốc đang cầm, mốc ấy có trên món. Chỗ cầm nhóm: món có khối hình cho nhóm với cỡ tay `dims` (lỗi `group`), chỗ cầm hợp lệ (lỗi `choice`: `checkChoice`, món đặt trước
  * mà mốc tay khai đích hay ý định, `both` mà tay kia cũng cầm). Mốc món của `who` khai `face` trần mà nhóm tay đang cầm
  * không có trục mặc định: lỗi `item`
  */
@@ -4019,7 +3997,7 @@ function checkHolds(
       const h = k[side];
       const where = `${who}: \`world.hands\` ${side} t=${k.t}`;
       const cur = holdRun(keys, side, k.t);
-      const g = cur && holdKind(cur.hold) === "group" ? groupHold(cur.hold) : undefined;
+      const g = cur && groupHold(cur.hold);
       if (g?.both && holdRun(keys, side === "right" ? "left" : "right", k.t))
         fail(
           `${where} (lỗi \`choice\`): \`${g.item}@${g.group}\` khai \`both\` mà tay kia cũng cầm ở giây này — bỏ \`both\` hay \`hold\` của tay kia`,
@@ -4038,42 +4016,34 @@ function checkHolds(
           );
       }
       if (h.hold) {
-        const { item, grip } = sceneHoldRef(h.hold);
+        const { item } = sceneHoldRef(h.hold);
         const spec =
           held[item] ??
           fail(`${where}: không có món \`${item}\` (\`held/${heldBase(item)}.json\`)`);
-        const v2 = holdKind(h.hold) === "group";
-        if (v2) {
-          const hg = groupHold(h.hold);
-          if (!isHeldV2(spec))
-            fail(`${where}: \`${item}\` là món v1 (kiểu cầm ở \`grips\`): khai \`${item}#<kiểu>\``);
-          const geom = itemGeom(spec);
-          const later = !!GRIP_GROUPS[hg.group].later;
-          const partOk =
-            hg.part === undefined || geom.parts.some((p) => p.name === hg.part && p.grip);
-          const groupLines =
-            later || !partOk
-              ? []
-              : checkGroup(geom, hg.group, dims(), { item, part: hg.part, anchors: spec.anchors });
-          const choiceLines = checkChoice(
-            hg.group,
-            geom,
-            h.hold,
-            dims(),
-            spec.anchors,
-            spec.shape,
-          ).filter((l) => !groupLines.includes(l));
-          const lines = [
-            ...groupLines.map((l) => `lỗi \`group\`: ${l}`),
-            ...choiceLines.map((l) => `lỗi \`choice\`: ${l}`),
-          ];
-          if (lines.length) fail(`${where}: ${lines.join("; ")}`);
-        }
+        const hg = groupHold(h.hold);
+        const geom = itemGeom(spec);
+        const later = !!GRIP_GROUPS[hg.group].later;
+        const partOk =
+          hg.part === undefined || geom.parts.some((p) => p.name === hg.part && p.grip);
+        const groupLines =
+          later || !partOk
+            ? []
+            : checkGroup(geom, hg.group, dims(), { item, part: hg.part, anchors: spec.anchors });
+        const choiceLines = checkChoice(
+          hg.group,
+          geom,
+          h.hold,
+          dims(),
+          spec.anchors,
+          spec.shape,
+        ).filter((l) => !groupLines.includes(l));
+        const lines = [
+          ...groupLines.map((l) => `lỗi \`group\`: ${l}`),
+          ...choiceLines.map((l) => `lỗi \`choice\`: ${l}`),
+        ];
+        if (lines.length) fail(`${where}: ${lines.join("; ")}`);
         try {
-          if (!v2) heldGrip(spec, grip, item);
-          const { face, roll } = v2
-            ? groupIntent(groupHold(h.hold).group, h.hold, itemGeom(spec))
-            : holdIntent(spec, h.hold);
+          const { face, roll } = groupIntent(hg.group, h.hold, geom);
           for (const a of [face, roll])
             if (a) {
               heldAxis(spec, a.axis);
@@ -4093,16 +4063,13 @@ function checkHolds(
         const run =
           holdRun(keys, side, k.t) ??
           fail(`${where}: \`point: ${h.point}\` cần món đang cầm (\`hold\`)`);
-        const { item, grip } = sceneHoldRef(run.hold);
+        const { item } = sceneHoldRef(run.hold);
         const spec = held[item];
         const ref = carryRef(run.hold);
-        if (spec && isCarryHold(spec, ref)) {
-          const name = ref.grasp ? `${item}@carry` : `${item}#${grip}`;
-          const on = ref.grasp ? ref.grasp.hold.on : carrySpecOf(spec, ref)?.on;
+        if (spec && isCarryHold(ref))
           fail(
-            `${where}: \`point: ${h.point}\` cần món cầm trong bàn tay — \`${name}\` là kiểu treo (\`on: ${on}\`)`,
+            `${where}: \`point: ${h.point}\` cần món cầm trong bàn tay — \`${item}@carry\` treo trên tay (\`on: ${ref.grasp!.hold.on}\`)`,
           );
-        }
         try {
           if (spec) heldPoint(spec, h.point.slice(5));
         } catch (e) {

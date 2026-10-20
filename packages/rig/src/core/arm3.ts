@@ -381,7 +381,7 @@ export interface ReachIn {
   w: number;
   terms?: readonly ReachTerm[];
   aim?: Aim;
-  /** Món đang cầm (`world.hands[].hold`): dáng ngón, điểm `item:<mốc>` và ý định theo kiểu cầm */
+  /** Món đang cầm (`world.hands[].hold`): dáng ngón, điểm `item:<mốc>` và ý định theo chỗ cầm */
   hold?: ReachHold;
 }
 
@@ -620,7 +620,7 @@ export interface HandState extends HoldState {
   stick?: V3;
 }
 
-/** Phần cầm đồ của một bàn tay: tâm nắm của dáng kiểu cầm, và (tay mang món) món trong khung bàn tay */
+/** Phần cầm đồ của một bàn tay: tâm nắm của dáng chỗ cầm, và (tay mang món) món trong khung bàn tay */
 export interface HoldState {
   gripAt?: V3;
   G?: GripFrame;

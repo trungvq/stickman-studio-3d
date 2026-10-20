@@ -48,7 +48,7 @@ export const HELD_PIERCE = 1.25;
 export const HELD_PIERCE_FIT = 0.5;
 /** Nang cách mặt món không quá ngần này (đơn vị rig, âm là lún) là chạm món */
 export const HELD_TOUCH = 1;
-/** Ngón kiểu cầm khai ôm (`wrap`) cách hình va chạm của món quá ngần này (đơn vị rig) là ngón hở */
+/** Ngón vai trò buộc chạm (`press`, `wrap`, `tip`) cách hình va chạm của món quá ngần này (đơn vị rig) là ngón hở */
 export const HELD_WRAP = 1.5;
 /** Tâm nắm ngoài mặt món quá ngần này (đơn vị rig) là món không nằm trong tay; dáng kẹp đầu ngón dùng `HELD_GRIP_PINCH` */
 export const HELD_GRIP = 3;
@@ -93,7 +93,7 @@ export const HELD_ARM = 0.3;
  * Chỗ cầm nhóm: tâm nắm ngoài hình món quá ngần này là món không nằm trong tay — nhóm (hay biến thể) có dáng kẹp đầu ngón
  * (`HELD_PINCHES`) dùng `HELD_GRIP_PINCH`, còn lại `HELD_GRIP`
  */
-export function heldGripMax(group: GroupId, variant?: string): number {
+export function groupGripMax(group: GroupId, variant?: string): number {
   const vs = GRIP_GROUPS[group].variants;
   const list = variant && vs[variant] ? [vs[variant]] : Object.values(vs);
   const pinch = list.some((v) =>
@@ -146,9 +146,8 @@ export interface HeldHand {
   pierce: { depth: number; core: number; piece: string };
   /** Khe nhỏ nhất từ từng nhóm ngón tới mặt món (âm là lún) */
   gaps: Record<HeldGroup, number>;
-  /** Món có hình va chạm (`shape`): khe nhỏ nhất của từng ngón tới hình ấy (âm là lún); `wrap` các ngón kiểu cầm khai ôm */
+  /** Món có hình va chạm (`shape`): khe nhỏ nhất của từng ngón tới hình ấy (âm là lún) */
   fingers?: Record<HeldFinger, number>;
-  wrap?: readonly HeldFinger[];
   /** Chỗ cầm nhóm: vai trò ngón và lòng tay của biến thể (docs/11 mục 6) */
   roles?: FingerRoles;
   /** Chỗ cầm nhóm: tầm cuộn của biến thể (`VariantSpec.curl`), độ */
@@ -166,17 +165,14 @@ export interface HeldHand {
   at: V3;
   /** `id` của vật three của món: cùng món qua các giây */
   obj?: number;
-  /**
-   * Kiểu cầm cứng đang cầm, `món#kiểu` như `world.hands[].hold` (`held/<món>.json`), hay khoá lần cầm của chỗ cầm nhóm
-   * `món@nhóm/biến thể/phần/cạnh/ngón cái`; không có là đường cũ
-   */
+  /** Khoá lần cầm của chỗ cầm nhóm `món@nhóm/biến thể/phần/cạnh/ngón cái`; không có là đường cũ */
   hold?: string;
   /** Cỡ người (`world.s`) */
   s?: number;
   /** Chỗ cầm nhóm có `size`: số đo của khối hình đã chọn, `W` của tay, tỉ lệ (`heldSize`) */
   size?: { of: number; W: number; ratio: number };
   /**
-   * Kiểu cầm cứng, tay mang món: ý định trục chính bộ giải nhắm (`AimReport.hold`) — `up` khi đích là hướng lên, `face`
+   * Chỗ cầm nhóm, tay mang món: ý định trục chính bộ giải nhắm (`AimReport.hold`) — `up` khi đích là hướng lên, `face`
    * với mọi đích khác; góc còn lệch (độ), khớp cổ tay kẹp, đích như scene khai, hướng muốn và hướng đạt (thế giới rig)
    */
   intent?: {
@@ -186,20 +182,18 @@ export interface HeldHand {
     toward?: string;
     want: V3;
     got: V3;
-    /** Kiểu cầm khác của cùng món với cùng ý định, lệch còn lại (độ), ít trước (`AimReport.hold.alts`) */
-    alts?: readonly { grip: string; err: number }[];
   };
   /** Chỗ cầm nhóm đã giải (`AimReport.hold.grasp`), món đặt trước (`item`) hay tay dẫn (`hand`): nhóm, khối hình, cổ tay, khuỷu */
   grasp?: GraspReport;
   /**
-   * Kiểu cầm cứng: đích do món đặt cho bàn tay — `support` tay phụ với tới mốc kiểu cầm của nó trên món, `item` điểm
-   * `item:<mốc>` vào đích; khe còn lại (rig, đã chia cỡ người `s`)
+   * Chỗ cầm nhóm: đích do món đặt cho bàn tay — `support` tay phụ với tới chỗ của nó trên món, `item` điểm `item:<mốc>`
+   * vào đích; khe còn lại (rig, đã chia cỡ người `s`)
    */
   reach?: { kind: "support" | "item"; gap: number; s: number; point: string; to: string };
 }
 
 /**
- * Số đo một món treo trên cánh tay (kiểu treo) ở một giây — `heldCarries` của người 3D đưa ra. Đơn vị rig thế giới, góc độ
+ * Số đo một món treo trên cánh tay (`món@carry`) ở một giây — `heldCarries` của người 3D đưa ra. Đơn vị rig thế giới, góc độ
  */
 export interface HeldCarry {
   id: string;
@@ -207,13 +201,13 @@ export interface HeldCarry {
   item: string;
   /** `id` của vật three của món */
   obj?: number;
-  /** `món#kiểu` như `world.hands[].hold` */
+  /** `món@carry` */
   hold: string;
   on: CarryOn;
   key: string;
   /** Chỗ treo, thế giới rig: để bỏ món ngoài khung camera */
   at: V3;
-  /** Đỉnh quai (`at` của kiểu treo) cách chỗ treo */
+  /** Đỉnh quai (`seats[on]` của món) cách chỗ treo */
   seat: number;
   /** Khuỷu: góc giữa cánh tay trên và cẳng tay (`180` thẳng), cẳng tay ngóc khỏi phương ngang (âm là chúc xuống) */
   bend?: number;
@@ -533,7 +527,6 @@ export type HeldRule =
   | "pose"
   | "pierce"
   | "loose"
-  | "wrap"
   | "grip"
   | "up"
   | "face"
@@ -557,10 +550,10 @@ export interface HeldOptions {
   pose?: number;
   pierce?: number;
   touch?: number;
-  /** Khe ngón ôm (`HELD_WRAP`) */
+  /** Khe ngón vai trò buộc chạm (`HELD_WRAP`) */
   wrap?: number;
   grip?: number;
-  /** `grip` do cấu hình khai: thay ngưỡng theo nhóm (`heldGripMax`) của chỗ cầm nhóm, cả khi nhỏ hơn */
+  /** `grip` do cấu hình khai: thay ngưỡng theo nhóm (`groupGripMax`) của chỗ cầm nhóm, cả khi nhỏ hơn */
   gripDeclared?: boolean;
   up?: number;
   face?: number;
@@ -601,13 +594,13 @@ export interface HeldIssue {
   clips: string[];
 }
 
-/** Loại mốc món nhảy: gắn vào tay, thả khỏi tay, đổi tay (cùng người hay người khác), đổi kiểu cầm trên cùng tay */
+/** Loại mốc món nhảy: gắn vào tay, thả khỏi tay, đổi tay (cùng người hay người khác), đổi chỗ cầm trên cùng tay */
 export type HeldJumpKind = "take" | "release" | "swap" | "regrip";
 const JUMP_LABELS: Record<HeldJumpKind, string> = {
   take: "lúc gắn vào tay",
   release: "lúc thả",
   swap: "lúc đổi tay",
-  regrip: "lúc đổi kiểu cầm",
+  regrip: "lúc đổi chỗ cầm",
 };
 
 /** Bao nhiêu nhóm ngón (cái, trỏ, giữa–út) chạm món, và nhóm nào */
@@ -615,12 +608,7 @@ export function heldWrap(s: Pick<HeldHand, "gaps">, touch = HELD_TOUCH): HeldGro
   return (["thumb", "index", "fingers", "palm"] as const).filter((g) => s.gaps[g] <= touch);
 }
 
-/** Ngón kiểu cầm khai ôm (`wrap`) mà còn cách hình va chạm của món quá `max` */
-export function heldOpen(s: Pick<HeldHand, "fingers" | "wrap">, max = HELD_WRAP): HeldFinger[] {
-  return (s.wrap ?? []).filter((f) => (s.fingers?.[f] ?? -Infinity) > max);
-}
-
-/** Chỗ cầm nhóm (`món@nhóm`), không phải kiểu cầm `món#kiểu` */
+/** Chỗ cầm nhóm (`món@nhóm`), không phải đồ cầm đường cũ */
 export const isGroupHeld = (s: Pick<HeldHand, "hold">) => !!s.hold?.includes("@");
 
 /** Ngón, lòng tay mà vai trò buộc chạm món (`press`, `wrap`, `tip`) */
@@ -691,7 +679,7 @@ function groupHits(s: HeldHand, o: Omit<HeldOptions, "frame">, blend: boolean): 
     const max =
       o.gripDeclared && o.grip !== undefined
         ? o.grip
-        : group && heldGripMax(group, variant || undefined);
+        : group && groupGripMax(group, variant || undefined);
     if (max !== undefined && s.grip > max) out.push({ rule: "grip", worst: s.grip });
   }
   if (placed) {
@@ -726,33 +714,19 @@ const groupOfKey = (hold: string): GroupId | undefined => {
 export function heldHits(s: HeldHand, o: Omit<HeldOptions, "frame"> = {}, blend = false): Hit[] {
   if (isGroupHeld(s)) return groupHits(s, o, blend);
   const out: Hit[] = [];
-  // kiểu cầm cứng: dáng ngón chỉ có ở kiểu cầm, ngón của hành động không vẽ khi đang cầm
-  const rigid = s.hold !== undefined;
   const decl = nearestHandPose(s.acted);
   const off = handPoseOff(s.acted, s.pose);
-  if (!rigid && decl.pose !== "rest" && decl.pose !== s.pose && off > (o.pose ?? HELD_POSE))
+  if (decl.pose !== "rest" && decl.pose !== s.pose && off > (o.pose ?? HELD_POSE))
     out.push({ rule: "pose", worst: off });
   const pierce = s.fingers
     ? Math.min(o.pierce ?? HELD_PIERCE, HELD_PIERCE_FIT)
     : (o.pierce ?? HELD_PIERCE);
   if (s.pierce.core > pierce) out.push({ rule: "pierce", worst: s.pierce.core });
-  const wrap = heldWrap(s, o.touch);
-  if (!wrap.length) out.push({ rule: "loose", worst: Math.min(...Object.values(s.gaps)) });
-  else {
-    const open = heldOpen(s, o.wrap);
-    if (open.length) out.push({ rule: "wrap", worst: Math.max(...open.map((f) => s.fingers![f])) });
-  }
+  if (!heldWrap(s, o.touch).length)
+    out.push({ rule: "loose", worst: Math.min(...Object.values(s.gaps)) });
   const pinch = HELD_PINCHES.includes(s.pose);
   if (s.grip > (pinch ? HELD_GRIP_PINCH : (o.grip ?? HELD_GRIP)))
     out.push({ rule: "grip", worst: s.grip });
-  if (rigid) {
-    const i = s.intent;
-    if (i && i.err > (i.rule === "up" ? (o.up ?? HELD_UP) : (o.face ?? HELD_FACE)))
-      out.push({ rule: i.rule, worst: i.err });
-    if (s.reach && s.reach.gap > (o.reach ?? AIM_GAP) * s.reach.s)
-      out.push({ rule: "reach", worst: s.reach.gap });
-    return out;
-  }
   if (s.up !== undefined && s.up > (o.up ?? HELD_UP)) out.push({ rule: "up", worst: s.up });
   if (s.face && s.face.angle > (o.face ?? HELD_FACE))
     out.push({ rule: "face", worst: s.face.angle });
@@ -875,7 +849,7 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
     if (r.rule === "drift" || r.to - r.from + every >= hold - 1e-9) done.push(r);
   };
   // lần cầm đang chạy của từng bàn tay: khoá, món trong khung bàn tay lúc đầu
-  const grips = new Map<string, { key: string; s: HeldHand; t: number }>();
+  const firsts = new Map<string, { key: string; s: HeldHand; t: number }>();
   const hit = (k: string, i: number, t: number, run: Omit<Run, "from" | "to" | "last">) => {
     const r = open.get(k);
     if (r && r.last === i - 1) {
@@ -901,8 +875,8 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
     for (const s of o.frame(t) ?? []) {
       const who = `${s.id}|${s.hand}`;
       held.add(who);
-      const g = grips.get(who);
-      if (!isHeldCarry(s) && (!g || g.key !== s.key)) grips.set(who, { key: s.key, s, t });
+      const g = firsts.get(who);
+      if (!isHeldCarry(s) && (!g || g.key !== s.key)) firsts.set(who, { key: s.key, s, t });
       if (!inView(t, s.at)) continue;
       const base = `${who}|${s.item}`;
       if (isHeldCarry(s)) {
@@ -920,9 +894,9 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
         seen.add(k);
         hit(k, i, t, { rule: h.rule, s, t, worst: h.worst, ...(h.error && { error: h.error }) });
       }
-      // kiểu cầm cứng: món không trôi trong tay theo cách dựng, chỗ hở là ở mốc gắn, thả, đổi tay (`jump`)
+      // chỗ cầm nhóm: món không trôi trong tay theo cách dựng, chỗ hở là ở mốc gắn, thả, đổi tay (`jump`)
       if (s.hold !== undefined) continue;
-      const g0 = grips.get(who)!;
+      const g0 = firsts.get(who)!;
       const move = len(sub(s.rel.p, g0.s.rel.p));
       const turn = quatAngle(s.rel.q, g0.s.rel.q);
       if (move > (o.drift ?? HELD_DRIFT) || turn > (o.turn ?? HELD_TURN)) {
@@ -932,7 +906,7 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
         hit(k, i, t, { rule: "drift", s, t, worst, drift: { move, turn, from: g0.t } });
       }
     }
-    for (const who of [...grips.keys()]) if (!held.has(who)) grips.delete(who);
+    for (const who of [...firsts.keys()]) if (!held.has(who)) firsts.delete(who);
     for (const k of [...open.keys()]) if (!seen.has(k)) close(k);
   });
   for (const k of [...open.keys()]) close(k);
@@ -969,7 +943,6 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
     "pose",
     "grip",
     "loose",
-    "wrap",
     "role",
     "reach",
     "arm",
@@ -1050,16 +1023,13 @@ export function heldSummary(s: HeldHand, touch = HELD_TOUCH): string {
   const wrap = heldWrap(s, touch);
   if (isGroupHeld(s)) return groupSummary(s, wrap);
   const parts = [
-    s.hold ? `kiểu cầm ${s.hold} (dáng ${s.pose})` : `dáng ${s.pose} (${s.follow})`,
+    `dáng ${s.pose} (${s.follow})`,
     s.pierce.core > 0
       ? `xương ${heldPieceLabel(s.pierce.piece)} vào trong món ${r1(s.pierce.core)}`
       : s.pierce.depth > 0
         ? `da lún ${r1(s.pierce.depth)} ở ${heldPieceLabel(s.pierce.piece)}`
         : `khe ${r1(-s.pierce.depth)}`,
     `ôm ${wrap.filter((g) => g !== "palm").length}/3${wrap.length ? ` (${wrap.map((g) => HELD_GROUP_LABELS[g]).join(", ")})` : ""}`,
-    ...(s.wrap?.length && s.fingers
-      ? [`ngón ôm ${s.wrap.map((f) => `${FINGER_LABELS[f]} ${r1(s.fingers![f])}`).join(", ")}`]
-      : []),
     `tâm nắm ${s.grip < 0 ? `trong món ${r1(-s.grip)}` : `cách món ${r1(s.grip)}`}`,
     `lòng tay cách ${r1(s.palm.gap)}${s.palm.gap > 0.05 ? ` góc ${Math.round(s.palm.angle)}°` : ""}`,
   ];
@@ -1068,7 +1038,7 @@ export function heldSummary(s: HeldHand, touch = HELD_TOUCH): string {
       `ý định ${s.intent.rule === "up" ? "trục lên" : `về ${s.intent.toward ?? "đích"}`} lệch ${Math.round(s.intent.err)}°${s.intent.clamped.length ? ` (kẹp ${s.intent.clamped.join(", ")})` : ""}`,
     );
   else if (s.up !== undefined) parts.push(`trục lên lệch ${Math.round(s.up)}°`);
-  if (s.face && !s.hold)
+  if (s.face)
     parts.push(
       `mặt lệch ${Math.round(s.face.angle)}° khỏi ${s.face.toward === "camera" ? "ống kính" : "mặt người cầm"}`,
     );
@@ -1118,13 +1088,13 @@ const armPartLabel = (k: string) => {
 
 const CARRY_ON_LABELS: Record<CarryOn, string> = { elbow: "khuỷu", shoulder: "vai" };
 
-/** Tên món của `hold` kiểu cầm v1 (`món#kiểu`) hay chỗ cầm nhóm v2 (`món@nhóm`) */
-const holdItem = (hold: string): string => hold.split(/[#@]/)[0];
+/** Tên món của khoá lần cầm `món@nhóm/…` */
+const holdItem = (hold: string): string => hold.split("@")[0];
 
 /** Các số đo chính của một món treo ở một giây, một dòng */
 export function carrySummary(s: HeldCarry): string {
   return [
-    `${s.hold.includes("@") ? "chỗ cầm" : "kiểu treo"} ${s.hold} (${CARRY_ON_LABELS[s.on]})`,
+    `chỗ cầm ${s.hold} (${CARRY_ON_LABELS[s.on]})`,
     `đỉnh quai cách chỗ treo ${r1(s.seat)}`,
     ...(s.bend !== undefined
       ? [
@@ -1138,7 +1108,6 @@ export function carrySummary(s: HeldCarry): string {
 
 /** Dòng báo của một mục món treo sai */
 function carryLine(s: HeldIssue, x: HeldCarry, when: string): string {
-  const v2 = x.hold.includes("@");
   const file = `held/${holdItem(x.hold)}.json`;
   const who = `\`${s.id}\` ${PALM_HAND_LABELS[s.hand]} treo ${s.item} (\`${x.hold}\`, ${CARRY_ON_LABELS[x.on]})`;
   const head = (): string => {
@@ -1147,14 +1116,14 @@ function carryLine(s: HeldIssue, x: HeldCarry, when: string): string {
         /^(upperArm|foreArm|hand)/.test(x.body.part)
           ? "dang tay ra khỏi món (`world.hands` `at` / `elbow` ra ngoài)"
           : "dời tay, chỗ đứng hay dáng cho món có chỗ thõng"
-      }, khai \`touch\` ở ${v2 ? 'chỗ cầm của cảnh (`hold` `group: "carry"`)' : "kiểu treo"} nếu cố ý ép sát, hay thu \`shape\` ở \`${file}\``;
+      }, khai \`touch\` ở chỗ cầm của cảnh (\`hold\` \`group: "carry"\`) nếu cố ý ép sát, hay thu \`shape\` ở \`${file}\``;
     if (s.rule === "seat") {
       const why =
         x.bend !== undefined && x.bend > CARRY.bend
           ? `khuỷu mở ${Math.round(x.bend)}° (giữ quai cần dưới ${CARRY.bend}°) — gập khuỷu: cổ tay lên trước vai, khuỷu chĩa xuống`
           : x.rise !== undefined && x.rise < CARRY.rise
             ? `cẳng tay chúc ${Math.round(-x.rise)}° dưới phương ngang, quai tuột về cổ tay — nâng cổ tay cao hơn khuỷu`
-            : `đỉnh quai cách chỗ treo ${r1(x.seat)} — \`extra\` đừng đặt món đang treo, hay ${v2 ? `\`seats.${x.on}\` ở \`${file}\`` : "`at` của kiểu treo"} không phải đỉnh quai`;
+            : `đỉnh quai cách chỗ treo ${r1(x.seat)} — \`extra\` đừng đặt món đang treo, hay \`seats.${x.on}\` ở \`${file}\` không phải đỉnh quai`;
       return `quai không nằm trên chỗ treo — ${who}: ${why}`;
     }
     const j = s.jump!;
@@ -1181,60 +1150,22 @@ export function heldLine(s: HeldIssue): string {
   const who = `\`${s.id}\` ${PALM_HAND_LABELS[s.hand]} cầm ${s.item}`;
   const x = s.sample;
   if (isGroupHeld(x)) return groupLine(s, x, who, `ở giây ${sec(s.t)} · giây ${runs}${more}`);
-  // kiểu cầm cứng: lỗi ở liên kết tay–món sai ở mọi cảnh dùng kiểu cầm ấy
-  const fixGrip = x.hold
-    ? `sửa kiểu cầm \`${x.hold}\` ở \`held/${holdItem(x.hold)}.json\` (\`at\`, \`palm\`, \`fingers\`, \`pose\`) — nó sai ở mọi cảnh dùng nó`
-    : undefined;
-  const i = x.intent;
-  const clamp = (c: HeldClamp) =>
-    c === "turn"
-      ? "xoay cẳng tay ±90"
-      : c === "bend"
-        ? `gập cổ tay ±${AIM_BEND}`
-        : `lệch cổ tay ±${AIM_DEV}`;
-  const intentLine = () => {
-    // kiểu cầm khác của cùng món mà ý định với tới (dưới ngưỡng của luật)
-    const limit = i!.rule === "up" ? HELD_UP : HELD_FACE;
-    const alt = i!.alts?.find((a) => a.err <= limit);
-    const regrip = alt
-      ? `đổi kiểu cầm: \`${s.item}#${alt.grip}\` với tới (lệch ${Math.round(alt.err)}°)`
-      : "đổi kiểu cầm";
-    return `${i!.rule === "up" ? "món nghiêng" : "mặt món quay sai"} — ${who}: trục ý định còn lệch ${Math.round(i!.err)}° khỏi \`${i!.toward ?? (i!.rule === "up" ? "up" : "đích")}\`; ${
-      i!.clamped.length
-        ? `cổ tay kẹp ở ${i!.clamped.map(clamp).join(", ")}`
-        : "cổ tay còn tầm mà khuỷu hết xoay"
-    } — đổi \`elbow\` (khung cẳng tay quay theo hướng khuỷu), dời chỗ tay, đổi tay hay ${regrip}`;
-  };
   const head: Record<
-    Exclude<HeldRule, "seat" | "body" | "wrist" | "arm" | "role" | "sink" | "size">,
+    Exclude<HeldRule, "seat" | "body" | "wrist" | "arm" | "role" | "sink" | "size" | "reach">,
     () => string
   > = {
     pose: () =>
       `dáng tay cầm khác dáng khai — ${who}: hành động khai \`${s.declared.pose}\` mà \`hold\` vẽ \`${x.pose}\` (ngón lệch ${Math.round(s.worst)}°); truyền dáng ấy vào \`HoldOptions.pose\` hay sửa dáng khai`,
     pierce: () =>
-      `ngón xuyên đồ — ${who}: trục ${heldPieceLabel(x.pierce.piece)} vào trong món ${r1(x.pierce.core)} (da lún ${r1(x.pierce.depth)}); ${fixGrip ?? "dời món (`offset`, `rotate`) hay đổi dáng"}`,
+      `ngón xuyên đồ — ${who}: trục ${heldPieceLabel(x.pierce.piece)} vào trong món ${r1(x.pierce.core)} (da lún ${r1(x.pierce.depth)}); dời món (\`offset\`, \`rotate\`) hay đổi dáng`,
     loose: () =>
-      `món không chạm bàn tay — ${who}: không ngón nào, lòng tay cũng không chạm (khe nhỏ nhất ${r1(s.worst)})${fixGrip ? `; ${fixGrip}` : ""}`,
-    wrap: () =>
-      `ngón ôm mà hở — ${who}: ${heldOpen(x)
-        .map((f) => `ngón ${FINGER_LABELS[f]} cách món ${r1(x.fingers![f])}`)
-        .join(
-          ", ",
-        )} — ngón cuộn hết tầm vẫn không chạm hình va chạm; sửa kiểu cầm \`${x.hold}\` (\`at\`, \`pose\`, bỏ ngón khỏi \`wrap\`) hay \`shape\` ở \`held/${holdItem(x.hold ?? "")}.json\``,
+      `món không chạm bàn tay — ${who}: không ngón nào, lòng tay cũng không chạm (khe nhỏ nhất ${r1(s.worst)})`,
     grip: () =>
-      `món không nằm trong tay — ${who}: tâm nắm của dáng \`${x.pose}\` cách mặt món ${r1(x.grip)}${fixGrip ? `; ${fixGrip}` : ""}`,
+      `món không nằm trong tay — ${who}: tâm nắm của dáng \`${x.pose}\` cách mặt món ${r1(x.grip)}`,
     up: () =>
-      i
-        ? intentLine()
-        : `món nghiêng — ${who}: trục lên của món lệch ${Math.round(x.up ?? 0)}° khỏi hướng lên`,
+      `món nghiêng — ${who}: trục lên của món lệch ${Math.round(x.up ?? 0)}° khỏi hướng lên`,
     face: () =>
-      i
-        ? intentLine()
-        : `mặt món quay sai — ${who}: mặt món lệch ${Math.round(x.face?.angle ?? 0)}° khỏi ${x.face?.toward === "camera" ? "ống kính" : "mặt người cầm"}`,
-    reach: () =>
-      x.reach?.kind === "item"
-        ? `món không tới đích — ${who}: \`${x.reach.point}\` còn cách \`${x.reach.to}\` ${r1(s.worst)}; tay không với tới — dời người, chọn đích gần hơn hay nới \`stretch\``
-        : `tay phụ không với tới món — ${who}: còn cách mốc kiểu cầm của nó trên món ${r1(s.worst)}; món theo tay chính, không trôi theo tay phụ — dời tay chính, đổi \`elbow\` hay đổi kiểu cầm`,
+      `mặt món quay sai — ${who}: mặt món lệch ${Math.round(x.face?.angle ?? 0)}° khỏi ${x.face?.toward === "camera" ? "ống kính" : "mặt người cầm"}`,
     jump: () => {
       const j = s.jump!;
       const fix =
@@ -1263,7 +1194,9 @@ function groupLine(s: HeldIssue, x: HeldHand, who: string, when: string): string
       case "reach":
         return a && g?.mode === "item"
           ? `tay không tới chỗ cầm — ${who}: duỗi hết tay vẫn còn cách ${r1(s.worst)} (${place}); dời ${item} lại gần người hay đổi \`edge\` / \`along\``
-          : `tay phụ không với tới món — ${who}: còn cách chỗ của nó trên món ${r1(s.worst)} (${place}); dời tay chính, đổi \`elbow\` hay đổi \`edge\``;
+          : x.reach?.kind === "item"
+            ? `món không tới đích — ${who}: \`${x.reach.point}\` còn cách \`${x.reach.to}\` ${r1(s.worst)} (${place}); tay không với tới — dời người, chọn đích gần hơn hay nới \`stretch\``
+            : `tay phụ không với tới món — ${who}: còn cách chỗ của nó trên món ${r1(s.worst)} (${place}); dời tay chính, đổi \`elbow\` hay đổi \`edge\``;
       case "wrist": {
         const w = a!.wrist;
         const over = s.worst > 0;
@@ -1306,7 +1239,7 @@ export const sceneHeldProblems = (rt: SceneRuntime, o: HeldOptions): string[] =>
 
 /**
  * Người khai `world.hands[].hold` một món mà cảnh three không đăng ký món ấy cho người ấy (`Cast3D.provide`, chung hay
- * `owner` là người ấy): tay diễn kiểu cầm mà không có gì trong tay. Mỗi người, mỗi món một mục, kèm giây đầu khai
+ * `owner` là người ấy): tay diễn cầm mà không có gì trong tay. Mỗi người, mỗi món một mục, kèm giây đầu khai
  */
 export function heldUnprovided(
   rt: SceneRuntime,
@@ -1329,7 +1262,7 @@ export function heldUnprovided(
 
 /** Dòng báo của một món khai `hold` mà không ai đăng ký */
 export const heldUnprovidedLine = (u: { id: string; item: string; t: number }): string =>
-  `cầm món không có trong cảnh — \`${u.id}\` khai \`hold\` món \`${u.item}\` (từ giây ${sec(u.t)}) mà cảnh three không đăng ký món ấy: gọi \`cast.provide("${u.item}", vật, "${u.id}")\` (hay không \`owner\`) trong \`extra\` — không thì tay diễn kiểu cầm mà trong tay không có gì (docs/03-scene.md#đồ-cầm-tay)`;
+  `cầm món không có trong cảnh — \`${u.id}\` khai \`hold\` món \`${u.item}\` (từ giây ${sec(u.t)}) mà cảnh three không đăng ký món ấy: gọi \`cast.provide("${u.item}", vật, "${u.id}")\` (hay không \`owner\`) trong \`extra\` — không thì tay diễn cầm mà trong tay không có gì (docs/03-scene.md#đồ-cầm-tay)`;
 
 /** Dòng báo các lần cầm còn đi đường cũ của một cảnh: một dòng, kể từng người, tay, món */
 export function heldLegacyLine(
@@ -1340,5 +1273,5 @@ export function heldLegacyLine(
     .map((l) => `\`${l.id}\` ${PALM_HAND_LABELS[l.hand]} cầm ${l.item} (\`${l.follow}\`)`)
     .join(", ");
   const more = list.length > 6 ? `, +${list.length - 6}` : "";
-  return `đồ cầm còn đi đường cũ — ${list.length} lần cầm qua \`hold\` không có kiểu cầm (\`follow\`/\`offset\`/\`rotate\`/\`pose\`): ${each}${more}. Chuyển sang \`held/<món>.json\` + \`world.hands[].hold\` + \`cast.provide\`; muốn im thì \`--skip legacy\` (docs/03-scene.md#đồ-cầm-tay)`;
+  return `đồ cầm còn đi đường cũ — ${list.length} lần cầm qua \`hold\` không có chỗ cầm nhóm (\`follow\`/\`offset\`/\`rotate\`/\`pose\`): ${each}${more}. Chuyển sang \`held/<món>.json\` + \`world.hands[].hold\` + \`cast.provide\`; muốn im thì \`--skip legacy\` (docs/03-scene.md#đồ-cầm-tay)`;
 }

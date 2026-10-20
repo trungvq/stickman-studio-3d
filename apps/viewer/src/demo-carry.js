@@ -4,7 +4,7 @@ import { ACTIONS } from './demos.js';
 import tuiJson from '../../studio/public/held/tui.json';
 import cocJson from '../../studio/public/held/coc.json';
 
-// `?demo=carry`: món treo trên cánh tay (kiểu treo, `held/tui.json` của bộ chung) qua `world.hands[].hold` và
+// `?demo=carry`: món treo trên cánh tay (`món@carry`, `held/tui.json` của bộ chung) qua `world.hands[].hold` và
 // `cast.provide` như repo video. Trái: túi đeo vai phải, tay luồn ngoài quai, tay trái cầm cốc. Phải: túi khoác khuỷu
 // trái gập chữ V, váy, tay phải cầm cốc.
 
@@ -67,11 +67,11 @@ export function carryDemo() {
   };
   const HANDS = {
     a: [{ t: 0,
-      right: { at: [-200, -185, -10], point: 'wrist', elbow: [-0.6, 1, 0], hold: 'tui#vai' },
-      left: { to: 'chest', offset: [55, 40, 22], point: 'grip', elbow: [0, 1, 0.4], hold: 'coc#quai' } }],
+      right: { at: [-200, -185, -10], point: 'wrist', elbow: [-0.6, 1, 0], hold: { item: 'tui', group: 'carry', on: 'shoulder', touch: [{ part: 'upperArm', max: 2 }] } },
+      left: { to: 'chest', offset: [55, 40, 22], point: 'grip', elbow: [0, 1, 0.4], hold: 'coc@cylinder' } }],
     b: [{ t: 0,
-      left: { to: 'shoulder', offset: [36, 30, 0], point: 'wrist', elbow: [0.7, 1, -0.2], hold: 'tui#khuyu' },
-      right: { to: 'chest', offset: [55, 40, 22], point: 'grip', elbow: [0, 1, 0.4], hold: 'coc#quai' } }],
+      left: { to: 'shoulder', offset: [36, 30, 0], point: 'wrist', elbow: [0.7, 1, -0.2], hold: { item: 'tui', group: 'carry', on: 'elbow' } },
+      right: { to: 'chest', offset: [55, 40, 22], point: 'grip', elbow: [0, 1, 0.4], hold: 'coc@cylinder' } }],
   };
   const sc = parseScene({
     name: 'demo-carry', duration: 3,

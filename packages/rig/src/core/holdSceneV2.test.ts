@@ -12,12 +12,11 @@ import {
   type GraspAtTime,
   type SceneRuntime,
 } from "./scene";
-import { CharacterSchema, parseCharacter } from "./schema";
+import { parseCharacter } from "./schema";
 import type { Reach } from "./types";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
-import v1Reach from "./__fixtures__/hold-v1-reach.json";
 
 vi.mock("./graspSolve", async (orig) => {
   const m = await orig<typeof import("./graspSolve")>();
@@ -29,99 +28,6 @@ const spec = (j: unknown): HeldItemSpec => {
   if (!r.success) throw new Error(r.error.message);
   return r.data;
 };
-
-// đường `món#kiểu`: cảnh và số ghi từ code trước khi có chỗ cầm nhóm (`__fixtures__/hold-v1-reach.json`)
-const C1 = CharacterSchema.parse({ head: { form: "human" }, palette: { clad: true } });
-const PHONE_V1 = spec({
-  size: [18, 36, 3.5],
-  anchors: {
-    screen: { at: [0, 0, 1.75], dir: [0, 0, 1] },
-    back: { at: [0, 0, -1.75], dir: [0, 0, -1] },
-    top: { at: [0, 18, 0], dir: [0, 1, 0] },
-    speaker: { at: [0, 15, 1.75], dir: [0, 0, 1] },
-  },
-  grips: {
-    khoe: {
-      pose: "span",
-      at: { anchor: "back", offset: [0, -6, -1.5] },
-      palm: { into: "back" },
-      fingers: { toward: "top" },
-      intent: { face: { axis: "screen", toward: "camera" }, roll: { axis: "top", toward: "up" } },
-    },
-    doc: {
-      pose: "span",
-      at: { anchor: "back", offset: [0, -4, -1.5] },
-      palm: { into: "back" },
-      fingers: { toward: "top" },
-      intent: { face: { axis: "screen", toward: "holderFace" } },
-    },
-  },
-});
-const PEN_V1 = spec({
-  size: [2.6, 30, 3.4],
-  anchors: { tip: { at: [0, 0, 0], dir: [0, -1, 0] }, barrel: { at: [0, 7, 0] } },
-  grips: {
-    viet: {
-      pose: "pinch",
-      at: { anchor: "barrel", offset: [0, 0, 1.2] },
-      palm: [1, 0, 0],
-      fingers: { toward: "tip" },
-      intent: { face: { axis: "tip", toward: [0.5, 0.866, 0] } },
-    },
-  },
-});
-const HANDS_V1 = [
-  { t: 0, right: { to: "chest", offset: [30, 20, 10], point: "grip", hold: "dien-thoai#doc" } },
-  { t: 0.4, left: { to: "belly", offset: [25, 0, 15], hold: "but#viet" } },
-  { t: 1, right: { to: "chest", offset: [35, 10, 10], hold: "dien-thoai#khoe" } },
-  {
-    t: 1.6,
-    right: {
-      hold: { item: "dien-thoai", grip: "khoe", face: { axis: "screen", toward: { cast: "b" } } },
-    },
-  },
-  {
-    t: 2.4,
-    right: { to: "head", offset: [0, 0, 18], point: "item:speaker", hold: "dien-thoai#doc" },
-  },
-  { t: 3, right: { hold: null }, left: { at: [20, -90, 40], point: "item:tip", hold: "but#viet" } },
-  { t: 3.5, right: null, left: { hold: "dien-thoai#khoe" } },
-  { t: 4, left: null },
-];
-const TIMES_V1 = [
-  0, 0.1, 0.35, 0.4, 0.5, 0.7, 1, 1.05, 1.2, 1.31, 1.6, 1.7, 2, 2.4, 2.45, 2.6, 3, 3.1, 3.3, 3.5,
-  3.6, 3.9, 4, 4.5,
-];
-
-function v1Hands() {
-  const r = parseScene({
-    name: "x",
-    lens: { eye: [0, -250, -1400], yaw: 0, pitch: 0, f: 800 },
-    cast: [
-      { id: "a", world: { at: [0, 0, 0], yaw: 90, hands: HANDS_V1 }, tracks: [] },
-      { id: "b", world: { at: [120, 0, 60], yaw: 270 }, tracks: [] },
-    ],
-  });
-  if (!r.success) throw new Error(r.error.message);
-  const rt = resolveScene(
-    r.data,
-    {},
-    {},
-    {},
-    { a: 1, b: 1 },
-    { a: body3(C1), b: body3(C1) },
-    {
-      "dien-thoai": PHONE_V1,
-      but: PEN_V1,
-    },
-  );
-  return TIMES_V1.map((t) => {
-    const w = sceneAt(rt, "a", t, 1, body3(C1)).world!;
-    return JSON.parse(
-      JSON.stringify({ t, hands: w.hands ?? null }, (k, v) => (k === "spec" ? undefined : v)),
-    );
-  });
-}
 
 // chỗ cầm nhóm: người mẫu đứng cầm bảng (như `sceneItems.test.ts`)
 const parsed = parseCharacter(fx.character);
@@ -178,10 +84,19 @@ const mark = (t: number, offset = [30, -2.9, 0]) => ({
 const SHEET = { item: "bang-gia", group: "sheet", edge: "right", along: 0.33, thumb: "front" };
 
 describe("chỗ cầm nhóm trong cảnh", () => {
-  it("`món#kiểu` ra `ReachHold` như cũ, không có `grasp`", () => {
-    const now = v1Hands();
-    expect(now).toEqual(v1Reach);
-    expect(JSON.stringify(now)).not.toContain('"grasp"');
+  it("`hold` dạng `{ item, grip }` hay chuỗi có `#`: `parseScene` báo lỗi", () => {
+    const parse = (hold: unknown) =>
+      parseScene({
+        name: "x",
+        lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
+        cast: [{ id: "a", world: { at: [0, 0, 0], hands: [{ t: 0, right: { hold } }] } }],
+      });
+    const grip = parse({ item: "dien-thoai", grip: "doc" });
+    expect(grip.success).toBe(false);
+    expect(grip.error!.message).toMatch(/stickman migrate-held/);
+    const hash = parse("dien-thoai#doc");
+    expect(hash.success).toBe(false);
+    expect(hash.error!.message).toMatch(/món@nhóm/);
   });
 
   it("tay dẫn `món@sheet`: `mode: hand`, lựa chọn mặc định của nhóm, ý định của nhóm", () => {
@@ -256,9 +171,6 @@ describe("chỗ cầm nhóm trong cảnh", () => {
     expect(() =>
       runtime([{ t: 0, right: { to: "chest", hold: { ...SHEET, around: 30 } } }]),
     ).toThrow(/lỗi `choice`.*`around`/);
-    expect(() => runtime([{ t: 0, right: { to: "chest", hold: "bang-gia#doc" } }])).toThrow(
-      /món v2 không có kiểu cầm/,
-    );
   });
 
   it("mốc món ở giây không tay nào cầm: `sceneItemHoldProblems`", () => {

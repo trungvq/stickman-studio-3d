@@ -170,13 +170,9 @@ describe('tay dẫn (`mode: "hand"`)', () => {
 });
 
 describe('treo (`món@carry`)', () => {
-  // `touch` của túi khai ở cảnh `on: shoulder`; bản v1 cùng thân, cùng mốc, chỗ treo là kiểu treo của `grips`
+  // `touch` của túi khai ở cảnh `on: shoulder`
   const { touch, ...bare } = tuiHieu;
-  const V2 = spec(bare);
-  const V1 = spec({
-    size: bare.size, anchors: bare.anchors, shape: bare.shape,
-    grips: { khuyu: { on: 'elbow', at: 'treoKhuyu' }, vai: { on: 'shoulder', at: 'quai', touch } },
-  });
+  const TUI = spec(bare);
   const c = defaultCharacter();
   c.palette.clad = true;
   const ELBOW = { to: 'shoulder', offset: [36, 30, 0], point: 'wrist', elbow: [-0.7, 1, -0.2] };
@@ -209,38 +205,26 @@ describe('treo (`món@carry`)', () => {
     x.w.root.updateMatrixWorld(true);
     return fig;
   };
-  const v2 = (h: object) => ({ hold: { item: 'tui-hieu', group: 'carry', ...h } });
+  const hieu = (h: object) => ({ hold: { item: 'tui-hieu', group: 'carry', ...h } });
 
-  const PAIRS = [
-    { name: 'khuỷu', v1: { ...ELBOW, hold: 'tui-hieu#khuyu' }, v2: { ...ELBOW, ...v2({ on: 'elbow' }) }, on: 'elbow' },
-    { name: 'vai', v1: { ...OUT, hold: 'tui-hieu#vai' }, v2: { ...OUT, ...v2({ on: 'shoulder', touch }) }, on: 'shoulder' },
+  const CASES = [
+    { on: 'elbow', hand: { ...ELBOW, ...hieu({ on: 'elbow' }) } },
+    { on: 'shoulder', hand: { ...OUT, ...hieu({ on: 'shoulder', touch }) } },
   ];
-  for (const P of PAIRS)
-    it(`\`on: ${P.on}\` treo y như kiểu treo ${P.name} v1: cùng khung món (≤ 1e-9), cùng \`heldCarries\``, () => {
-      const a = carryWorld(V1, [{ t: 0, right: P.v1 }]);
-      const b = carryWorld(V2, [{ t: 0, right: P.v2 }]);
+  for (const P of CASES)
+    it(`\`on: ${P.on}\`: món treo trên tay, bàn tay tự do; \`heldCarries\` mang khoá \`món@carry\``, () => {
+      const x = carryWorld(TUI, [{ t: 0, right: P.hand }]);
       for (const t of [0.2, 1.5]) {
-        const fa = at(a, t), fb = at(b, t);
-        const ea = fa.carrying![-1]!, eb = fb.carrying![-1]!;
-        expect(eb.carry.on).toBe(P.on);
-        expect(fb.holding?.[-1]).toBeUndefined();
-        a.bag.matrixWorld.elements.forEach((x, i) => expect(Math.abs(x - b.bag.matrixWorld.elements[i])).toBeLessThanOrEqual(1e-9));
-        expect(Math.abs(ea.fit!.swing - eb.fit!.swing)).toBeLessThanOrEqual(1e-9);
-        const [ca] = heldCarries(fa, 'a'), [cb] = heldCarries(fb, 'a');
-        expect(cb.hold).toBe('tui-hieu@carry');
-        expect(cb.key).toBe(`${b.bag.id}|tui-hieu@carry|${P.on}`);
-        expect(Math.abs(ca.seat - cb.seat)).toBeLessThanOrEqual(1e-9);
-        expect(Math.abs(ca.swing - cb.swing)).toBeLessThanOrEqual(1e-9);
-        expect(Math.abs(ca.body.gap - cb.body.gap)).toBeLessThanOrEqual(1e-9);
-        expect(cb.body.part).toBe(ca.body.part);
-        expect(cb.body.allow).toBe(ca.body.allow);
-        expect(cb.bend).toBe(ca.bend);
-        expect(cb.rise).toBe(ca.rise);
+        const fig = at(x, t);
+        expect(fig.carrying![-1]!.carry.on).toBe(P.on);
+        expect(fig.holding?.[-1]).toBeUndefined();
+        const [m] = heldCarries(fig, 'a');
+        expect(m).toMatchObject({ hold: 'tui-hieu@carry', on: P.on, key: `${x.bag.id}|tui-hieu@carry|${P.on}` });
       }
     });
 
   it('đổi `on` giữa hai mốc: món treo lại ở chỗ mới', () => {
-    const x = carryWorld(V2, [{ t: 0, right: { ...ELBOW, ...v2({ on: 'elbow' }) } }, { t: 1, right: { ...OUT, ...v2({ on: 'shoulder', touch }) } }]);
+    const x = carryWorld(TUI, [{ t: 0, right: { ...ELBOW, ...hieu({ on: 'elbow' }) } }, { t: 1, right: { ...OUT, ...hieu({ on: 'shoulder', touch }) } }]);
     expect(at(x, 0.5).carrying![-1]!.carry.on).toBe('elbow');
     expect(at(x, 2).carrying![-1]!.carry.on).toBe('shoulder');
   });

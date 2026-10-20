@@ -979,8 +979,9 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
   { "t": 3.2, "right": null },                                 // thả: tay phải về góc của hành động
   { "t": 4, "left": { "at": [-82, -112, 20], "point": "palm", "palm": "down" } }, // lòng tay úp trên tay vịn
   { "t": 6, "left": { "to": "mouth", "palm": { "toward": "mouth" } } },       // mốc thân của chính người ấy
-  { "t": 7, "right": { "at": [-90, -280, -60], "point": "grip", "hold": "dien-thoai#khoe" } }, // cầm món, màn về ống kính
-  { "t": 9, "right": { "to": "ear", "point": "item:speaker", "hold": "dien-thoai#tai" } },     // loa vào tai
+  { "t": 7, "right": { "at": [-90, -280, -60], "point": "grip", "hold": "dien-thoai@palmBox" } }, // cầm món, màn về mặt người cầm
+  { "t": 9, "right": { "to": "ear", "point": "item:speaker",                                  // loa vào tai
+                       "hold": { "item": "dien-thoai", "group": "palmBox", "face": { "axis": "screen", "toward": { "mark": "head" } } } } },
   { "t": 11, "right": { "hold": null } }                                      // buông món
 ]
 ```
@@ -993,8 +994,7 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
   điểm ấy của bàn tay vào `at` — tay lên tay vịn, mặt bàn thì `point: "palm"` ở mặt trên. `to` / `side` / `offset` thay `at`
   bằng mốc thân của chính người ấy ([01](01-rig.md#đích-theo-mốc)). `palm`, `fingers`, `bend` khai lòng tay theo ý định
   ([01](01-rig.md#hướng-lòng-tay-theo-ý)), đè bàn tay của hành động theo phần đích; mốc không khai giữ bàn tay của hành động.
-- **`hold`** cầm món của `held/`: kiểu cầm của món v1 (`"món#kiểu"`, hay `{ item, grip, face?, up?, roll? }` đè ý định mặc
-  định của kiểu cầm), hay chỗ cầm nhóm của món v2 (`"món@nhóm"`, hay `{ item, group, edge?, along?, thumb?, … }`) —
+- **`hold`** cầm món của `held/` theo chỗ cầm nhóm (`"món@nhóm"`, hay `{ item, group, edge?, along?, thumb?, face?, … }`) —
   [Đồ cầm tay](#đồ-cầm-tay). Đang cầm thì `point` nhận thêm `item:<mốc>`: mốc ấy của món vào đích.
 - `snap: true` trên một mốc: đoạn từ mốc trước của tay ấy tới mốc này cố ý nhanh (chộp, giật tay),
   `check` không đo giật tay ở đoạn ấy — [Giật trên hình](#giật-trên-hình).
@@ -1300,16 +1300,17 @@ Mức cảnh báo. Cảnh khớp `stickman.frozen` không đo; `--scene` chỉ �
 
 ## Đồ cầm tay
 
-Món cầm tay khai ở `held/<món>.json` (mốc, hình, kiểu cầm của món v1 — [01](01-rig.md#kiểu-cầm); món v2 không có kiểu cầm, chỗ cầm theo nhóm — [11](11-nhom-cam.md)); scene nói tay nào cầm món gì lúc
-nào, món quay về đâu, ở `world.hands[].hold`; cảnh three của repo đăng ký vật three của món.
+Món cầm tay khai ở `held/<món>.json` (mốc, hình — [01](01-rig.md#món-cầm-tay)); scene nói tay nào cầm món gì lúc nào, cầm
+chỗ nào theo nhóm hình dáng ([11](11-nhom-cam.md)), món quay về đâu, ở `world.hands[].hold`; cảnh three của repo đăng ký
+vật three của món.
 
 ```jsonc
 "hands": [
   { "t": 0,   "left":  { "at": [-80, -280, 310], "point": "grip", "elbow": [0, 1, -0.4],
-                         "hold": { "item": "dien-thoai", "grip": "khoe", "face": { "cast": "saito" } } } },
-  { "t": 2,   "right": { "hold": { "item": "chen", "grip": "kep", "up": "rim" } } },     // không `at`: chỗ tay theo hành động
+                         "hold": { "item": "dien-thoai", "group": "palmBox", "face": { "axis": "screen", "toward": { "cast": "khach" } } } } },
+  { "t": 2,   "right": { "hold": "chen@bowl" } },              // không `at`: chỗ tay theo hành động, miệng chén ngửa (mặc định nhóm)
   { "t": 3.4, "right": { "to": "mouth", "offset": [3, 0, 0], "point": "item:rim",
-                         "hold": { "item": "chen", "grip": "kep", "face": { "axis": "rim", "toward": { "mark": "head" }, "tilt": -15 } } } },
+                         "hold": { "item": "chen", "group": "bowl", "face": { "axis": "rim", "toward": { "mark": "head" }, "tilt": -15 } } } },
   { "t": 4.5, "right": { "hold": null }, "left": { "hold": null } }
 ]
 ```
@@ -1317,24 +1318,24 @@ nào, món quay về đâu, ở `world.hands[].hold`; cảnh three của repo đ
 - **`hold` là bậc thang**, không nội suy: có hiệu lực từ mốc khai nó tới mốc kế của tay ấy có `hold` khác hay
   `hold: null`. Mốc nhắc tay mà không khai `hold` giữ lần cầm đang có; `right: null` thả đích chứ không buông món. Vị
   trí và ý định giữa các mốc trong một quãng cầm thì hoà êm như mọi trường khác: đổi ý định là cổ tay xoay dần.
-- **Chỗ cầm nhóm và món đặt trước** (món v2, [11](11-nhom-cam.md#4-schema-cảnh)): `hold` là `"món@nhóm"` hay `{ item, group, … }`
+- **Chỗ cầm nhóm và món đặt trước** ([11](11-nhom-cam.md#4-schema-cảnh)): `hold` là `"món@nhóm"` hay `{ item, group, … }`
   (`edge`, `along`, `thumb`, `variant`, `around`, … tuỳ nhóm; trường không khai thì rig giải hay lấy mặc định nhóm, và
-  `scene_probe` trả lựa chọn đã giải cùng nguồn của nó). Hai đường chạy cùng lúc, theo món có mốc ở **`items[]`** hay không.
+  `scene_probe` trả lựa chọn đã giải cùng nguồn của nó). Hai đường, theo món có mốc ở **`items[]`** hay không.
   `items[]` nằm ở cấp cảnh cạnh `cast`: mỗi mốc `{ t, cast, item, to | at, offset?, point?, face?, up?, roll?, ease? }` nói món
   ở đâu, quay về đâu theo thời gian, mốc tay của người `cast` cầm nó. Món có mốc là **món đặt trước**: mốc tay chỉ khai
   `hold` (không `to`, `at`, `offset`, `point`, `face`, `up`, `roll`, `keep` — lỗi `choice`), bàn tay, cổ tay, khuỷu và ngón do
   rig suy từ món và chỗ cầm; các trường số của chỗ cầm (`along`, `slant`, `around`, …) hoà giữa hai mốc tay. Món không có mốc
   là **tay dẫn**: mốc tay đặt bàn tay như mọi mốc `world.hands` (`to`/`at`, `point`), món theo bàn tay, ý định `face`/`up`/`roll`
-  hay mặc định của nhóm. Một chỗ cầm nhóm hợp lệ khi món là v2 có khối hình cho nhóm với cỡ tay người cầm; `món@nhóm` trỏ món
-  v1 hay `món#kiểu` trỏ món v2 là lỗi `resolveScene`. Luật, hoà vào/ra lần cầm, báo `grasp` và `check` nhóm ở
+  hay mặc định của nhóm. Một chỗ cầm nhóm hợp lệ khi món có khối hình cho nhóm với cỡ tay người cầm; `hold` dạng khác là lỗi
+  zod kèm lệnh `stickman migrate-held` ([11](11-nhom-cam.md#8-chuyển-đổi)). Luật, hoà vào/ra lần cầm, báo `grasp` và `check` nhóm ở
   [11](11-nhom-cam.md#5-giải-tay-theo-món), [11](11-nhom-cam.md#7-luật-check-nhóm-held).
 - **Quãng hoà của lần cầm** (`HOLD_BLEND`, `0,3 s` sau mốc khai `hold`; lần cầm từ giây 0 thì không hoà). Món đặt trước hoà
   bàn tay từ nghiệm cũ đóng băng ngay trước ranh giới (đổi chỗ cầm, buông) hay từ tay tự do (vừa cầm) sang nghiệm mới
-  ([11](11-nhom-cam.md#đổi-lần-cầm)). Kiểu cầm v1: đổi kiểu cầm trên cùng tay, cùng món (`kep-ho-so#om` → `#mo`): liên kết tay–món, tâm nắm và ý định hoà từ kiểu cũ sang kiểu mới, món
-  xoay dần trong tay chứ không nhảy (`ReachHold.from`). Cầm món mới: tay phụ (kiểu `both`, đổi tay) đi từ chỗ nó đang ở
-  (đích của nó hay hành động) tới mốc của nó trên món, và ý định của tay mang món vào dần từ bàn tay của hành động
-  (`ReachHold.enter`). Ngón đổi dáng ngay ở mốc.
-- **Hai món cùng loại**: tên thể hiện `món:<tên>` (`"vali:2#keo"`) dùng chung `held/vali.json` mà là món riêng —
+  ([11](11-nhom-cam.md#đổi-lần-cầm)). Tay dẫn đổi chỗ cầm trên cùng tay, cùng món: liên kết tay–món, tâm nắm và ý định hoà
+  từ chỗ cầm cũ sang chỗ mới, món xoay dần trong tay chứ không nhảy (`ReachHold.from`). Cầm món mới: tay phụ (`both`, đổi
+  tay) đi từ chỗ nó đang ở (đích của nó hay hành động) tới chỗ cầm của nó trên món, và ý định của tay mang món vào dần từ
+  bàn tay của hành động (`ReachHold.enter`).
+- **Hai món cùng loại**: tên thể hiện `món:<tên>` (`"vali:2@handle"`) dùng chung `held/vali.json` mà là món riêng —
   `provide("vali:2", …)`, `holder`, đổi tay đều theo tên đủ; cùng tên trần thì rig coi là một món (đổi tay).
 - Mốc chỉ có `hold` (không `at` / `to`) thì chỗ tay theo hành động, rig chỉ giải hướng. `hold` không đi cùng `palm`,
   `fingers`, `bend` ở cùng mốc: hướng bàn tay do ý định quyết.
@@ -1347,12 +1348,12 @@ nào, món quay về đâu, ở `world.hands[].hold`; cảnh three của repo đ
   nhau `HOLD_SLEW_STEP` (`1/30 s`) tính từ mốc `world.hands` gần nhất của tay ấy (`ReachHold.prior`), mẫu đầu là mốc
   đầu. Xoay, gập, lệch cổ tay đi tối đa `HOLD_SLEW` (`15°`) một mẫu, xoay khuỷu `HOLD_SWIVEL_SLEW` (`5°`) — tính theo
   phần mẫu đã trôi, nên khung dày hơn mẫu vẫn đi đều. Nghiệm riêng của khung đi chậm hơn thế thì giữ y nguyên; nhảy xa
-  hơn (ý định vượt tầm cổ tay: xoay qua `±90`, gập gần 90, món xoay nửa vòng lúc đổi kiểu cầm) thì cổ tay, khuỷu đi dần
+  hơn (ý định vượt tầm cổ tay: xoay qua `±90`, gập gần 90, món xoay nửa vòng lúc đổi chỗ cầm) thì cổ tay, khuỷu đi dần
   sang nghiệm mới trong vài khung thay vì lật trong một khung. Chuỗi chỉ phụ thuộc scene, mỗi mẫu giải một lần cho một
   runtime: Remotion vẽ khung theo thứ tự nào cũng ra cùng hình. Trong lúc cổ tay đang đi, lệch của ý định
   (`AimReport.hold.err`) đo ở bàn tay đã vẽ.
-- **Kiểu treo** (`on: elbow | shoulder`, [01](01-rig.md#kiểu-treo)) khai cùng chỗ: `"right": { "hold": "tui#khuyu" }`, `hold:
-  null` thì gỡ. Món treo trên cánh tay ấy, không hoà (`HOLD_BLEND` không áp), không có ý định (đè `face` / `up` / `roll`
+- **Món treo** (nhóm `carry`, `on: elbow | shoulder`, [01](01-rig.md#món-treo)) khai cùng chỗ:
+  `"right": { "hold": { "item": "tui", "group": "carry", "on": "elbow" } }`, `hold: null` thì gỡ. Món treo trên cánh tay ấy, không hoà (`HOLD_BLEND` không áp), không có ý định (đè `face` / `up` / `roll`
   là lỗi), không nhận `point: "item:<mốc>"`. Chỗ tay vẫn theo `at` / `to` / hành động: túi khoác khuỷu cần khuỷu gập —
   cổ tay trước vai (`"to": "shoulder"`, `offset` ra trước, xuống), `elbow` chĩa xuống ra ngoài —; túi đeo vai cần cánh tay
   dang ra ngoài túi. Mốc khai `hold` vẫn không đi cùng `palm`, `fingers`, `bend`: lòng tay của tay treo món khai ở mốc khác
@@ -1360,7 +1361,7 @@ nào, món quay về đâu, ở `world.hands[].hold`; cảnh three của repo đ
 - **Một `hold` mỗi tay**: tay treo món không cầm thêm món bằng bàn tay ấy — bàn tay tự do nhưng chỗ khai đã là lần treo;
   món thứ hai cầm ở tay kia (túi khoác khuỷu trái, điện thoại tay phải). Cùng một món vừa khai treo ở tay này vừa cầm trong
   bàn tay kia thì bàn tay thắng (món vào tay, như lấy túi xuống).
-- `resolveScene` báo lỗi khi món (kể cả `vali` của `vali:2`), kiểu cầm, mốc của `item:` hay trục ý định không có, `{ cast }` không phải người 3D
+- `resolveScene` báo lỗi khi món (kể cả `vali` của `vali:2`), mốc của `item:` hay trục ý định không có, chỗ cầm không hợp lệ ([11](11-nhom-cam.md#7-luật-check-nhóm-held)), `{ cast }` không phải người 3D
   trong `cast`, hay mốc người khác ngoài `eye`, `mouth`, `chest`, `belly`. Tham số thứ bảy của `resolveScene` là bảng
   món theo tên (`held/` qua hai lớp, khoá không đuôi).
 
@@ -1375,8 +1376,8 @@ extra: (_marks, cast) => {
 }
 ```
 
-- Sau khi `act` mọi người và `extra.update`, mỗi khung rig gắn món vào tay mang nó (kiểu `both` thì tay `lead`; đổi
-  tay thì tay khai trước), kiểu treo thì treo lên cánh tay ấy, và hết quãng cầm thì trả về cha và vị trí lúc `provide`. Món
+- Sau khi `act` mọi người và `extra.update`, mỗi khung rig gắn món vào tay mang nó (`both` thì tay dẫn; đổi tay thì tay
+  khai trước), món treo thì treo lên cánh tay ấy, và hết quãng cầm thì trả về cha và vị trí lúc `provide`. Món
   đang trong tay hay đang treo thì `extra` đừng đặt nó.
 - `cast.holder(món, t, owner?)` cho biết ai, tay nào đang mang món ở giây `t` (cầm trong bàn tay hay treo trên cánh tay).
   `cast.released(món, t, owner?)` trả lần thả gần nhất — người, tay, giây, ma trận thế giới của món lúc thả — để `extra` giữ
@@ -1391,48 +1392,44 @@ extra: (_marks, cast) => {
 `@deprecated`, vẽ như các bản trước; `check` kể nó ở nhóm `legacy`.
 
 Món gắn vào bàn tay (`Figure.holding`, [01](01-rig.md#bàn-tay)) miễn va chạm với bàn tay cầm nó (`touch`), món treo
-(`Figure.carrying`) miễn với đoạn tay quai vắt qua ([01](01-rig.md#kiểu-treo)), nên luật người lồng vào đồ không nhìn chỗ
+(`Figure.carrying`) miễn với đoạn tay quai vắt qua ([01](01-rig.md#món-treo)), nên luật người lồng vào đồ không nhìn chỗ
 ấy. `check` đo riêng trên cảnh three [`stickman.world`](05-repo-video.md#cảnh-three-cho-check):
 mỗi `0,1 s`, mỗi bàn tay người mặc đồ đang cầm một món hiện trên hình và mỗi món treo trên cánh tay (`heldHands`,
 `heldCarries` của người 3D, `sceneHeld` của lõi), với
 nang bàn tay theo dáng đang vẽ (`handCapsules`, `fitCapsules`, cả độ gập thêm của ngón ôm). Lún, khe và độ ôm đo tới
-hình va chạm của món (`shape`) khi kiểu cầm cứng có, không thì tới lưới hiện hình của món (mọi lưới mặt trước, kể cả
+hình va chạm của món (`shape`) khi cầm cứng, không thì tới lưới hiện hình của món (mọi lưới mặt trước, kể cả
 lưới `noCollide`, bỏ vỏ nét); tâm nắm và lòng tay luôn đo tới lưới. Kêu quãng từ `0,3 s` (trôi, nhảy thì mọi độ dài),
 bỏ bàn tay ngoài khung camera:
 
 | Luật | Kêu khi | Ngưỡng |
 |---|---|---|
-| **Dáng khác dáng khai** (`pose`, đường cũ) | Dáng có tên gần góc ngón hành động khai nhất (`nearestHandPose`) không phải dáng nghỉ, khác dáng `hold` đang vẽ, và góc ngón lệch quá `HELD_POSE` (trung bình bình phương chín góc ngón) — `hold` mặc định `grip` đè dáng hành động khai. Kiểu cầm cứng không đo: dáng chỉ có ở kiểu cầm | `6°` |
+| **Dáng khác dáng khai** (`pose`, đường cũ) | Dáng có tên gần góc ngón hành động khai nhất (`nearestHandPose`) không phải dáng nghỉ, khác dáng `hold` đang vẽ, và góc ngón lệch quá `HELD_POSE` (trung bình bình phương chín góc ngón) — `hold` mặc định `grip` đè dáng hành động khai. Cầm cứng không đo: dáng do chỗ cầm | `6°` |
 | **Ngón xuyên đồ** | Trục một nang (lòng bàn tay, gò ngón cái, từng đốt ngón) vào trong món quá `HELD_PIERCE`. Trong món là số vòng của lưới (winding number) từ `0,75`: đúng với món lõm (lòng chén là ngoài), món ghép nhiều mảnh hở; trục cắt qua tấm mỏng thì vào trong bằng nửa bề dày tấm. Đo trục chứ không đo da: nang bàn tay mập nên da chạm món đã lún vài đơn vị. Món có `shape`: trục vào trong hình quá `HELD_PIERCE_FIT` — hình sát mặt và ngón đã ôm theo nó, nên trục ngón cắt qua tấm mỏng (phiếu, kẹp hồ sơ) cũng bắt được | `1,25`; `0,5` |
 | **Món không chạm tay** | Không nhóm nào (ngón cái, trỏ, giữa–út, lòng tay) cách mặt món dưới `HELD_TOUCH` | `1` |
-| **Ngón ôm mà hở** (`wrap`) | Món có `shape`: một ngón kiểu cầm khai `wrap` còn cách hình quá `HELD_WRAP` — ngón cuộn hết tầm vẫn không chạm (món nhỏ hơn nắm tay ở đó, `at` đặt xa) | `1,5` |
 | **Món không nằm trong tay** | Tâm nắm của dáng đang vẽ (`handGripOf`) ngoài mặt món quá `HELD_GRIP`; dáng kẹp đầu ngón (`pinch`, `edge`, `span`, `hook`) `HELD_GRIP_PINCH` | `3`, `5` |
-| **Món nghiêng** (`up`) | Kiểu cầm cứng: ý định trục chính về hướng lên (`up`) mà bộ giải còn lệch quá `HELD_UP` (`AimReport.hold`). Đường cũ: món khai `userData.hold.up` mà trục ấy lệch hướng lên quá ngưỡng | `30°` |
-| **Mặt món quay sai** (`face`) | Kiểu cầm cứng: ý định trục chính về đích khác (`camera`, `holderFace`, người khác, mốc thân, hướng) mà còn lệch quá `HELD_FACE`. Đường cũ: món khai `face` + `faceToward` mà trục ấy lệch hướng tới mặt người cầm (ống kính) quá ngưỡng | `65°` |
-| **Tay phụ, `item:` không tới** (`reach`) | Kiểu cầm cứng: tay phụ (kiểu `both`, đổi tay) còn cách mốc kiểu cầm của nó trên món, hay điểm `item:<mốc>` còn cách đích, quá `AIM_GAP` nhân `world.s`; đang hoà giữa hai mốc thì đo tới đích đã hoà, trong quãng tay phụ vào món thì không đo. Luật đích theo mốc của `hands` không báo hai ca này | `6` |
+| **Món nghiêng** (`up`) | Tay dẫn cầm cứng: ý định trục chính về hướng lên (`up`) mà bộ giải còn lệch quá `HELD_UP` (`AimReport.hold`). Đường cũ: món khai `userData.hold.up` mà trục ấy lệch hướng lên quá ngưỡng | `30°` |
+| **Mặt món quay sai** (`face`) | Tay dẫn cầm cứng: ý định trục chính về đích khác (`camera`, `holderFace`, người khác, mốc thân, hướng) mà còn lệch quá `HELD_FACE`. Đường cũ: món khai `face` + `faceToward` mà trục ấy lệch hướng tới mặt người cầm (ống kính) quá ngưỡng | `65°` |
+| **Tay phụ, `item:` không tới** (`reach`) | Tay dẫn cầm cứng: tay phụ (`both`, đổi tay) còn cách chỗ cầm của nó trên món, hay điểm `item:<mốc>` còn cách đích, quá `AIM_GAP` nhân `world.s`; đang hoà giữa hai mốc thì đo tới đích đã hoà, trong quãng tay phụ vào món thì không đo. Luật đích theo mốc của `hands` không báo hai ca này | `6` |
 | **Món trôi** (`drift`, đường cũ) | Món dời quá `HELD_DRIFT` hay xoay quá `HELD_TURN` trong khung bàn tay so với lúc bắt đầu cầm (một lần cầm: cùng món, dáng, `follow`, `offset`, `rotate`, liền mạch) — `follow: "level"` đứng theo người nên cổ tay xoay là món trôi. Món cứng không trôi theo cách dựng | `3`, `20°` |
-| **Quai không nằm trên chỗ treo** (`seat`, kiểu treo) | Đỉnh quai (`at`) cách chỗ treo quá `CARRY.seat` (`extra` đặt món đang treo, `at` không phải đỉnh quai); khoác khuỷu mà khuỷu mở quá `CARRY.bend` (`150°`, không còn chỗ gập giữ quai) hay cẳng tay chúc quá `CARRY.rise` (`10°` dưới phương ngang, quai tuột về cổ tay) | `3` |
-| **Món treo lồng vào người** (`body`, kiểu treo) | Thân món (`shape`) lồng vào một phần người — mặt thân áo, hông, váy (đám điểm trên lưới), nang đầu, chi, bàn tay; trừ cánh tay trên và cẳng tay mà quai khoác khuỷu vắt qua — sâu hơn phần `touch` của kiểu treo cho lấn cộng `CARRY.body`. Thường là cánh tay buông sát sườn mà túi đeo vai kẹp giữa: dang tay ra | `1,5` |
+| **Quai không nằm trên chỗ treo** (`seat`, món treo) | Đỉnh quai (`seats[on]`) cách chỗ treo quá `CARRY.seat` (`extra` đặt món đang treo, mốc `seats[on]` không phải đỉnh quai); khoác khuỷu mà khuỷu mở quá `CARRY.bend` (`150°`, không còn chỗ gập giữ quai) hay cẳng tay chúc quá `CARRY.rise` (`10°` dưới phương ngang, quai tuột về cổ tay) | `3` |
+| **Món treo lồng vào người** (`body`, món treo) | Thân món (`shape`) lồng vào một phần người — mặt thân áo, hông, váy (đám điểm trên lưới), nang đầu, chi, bàn tay; trừ cánh tay trên và cẳng tay mà quai khoác khuỷu vắt qua — sâu hơn phần `touch` của món và chỗ cầm cho lấn cộng `CARRY.body`. Thường là cánh tay buông sát sườn mà túi đeo vai kẹp giữa: dang tay ra | `1,5` |
 | **Món nhảy** (`jump`) | Món đăng ký (`cast.provide`) dời quá `HELD_DRIFT` hay xoay quá `HELD_TURN` trong thế giới qua một mốc `hold` (so `HELD_JUMP_EPS` giây hai bên mốc): lúc gắn (món nằm xa chỗ tay sẽ cầm), lúc thả (món về chỗ `provide` mà `extra` không giữ ở chỗ thả), lúc đổi tay (tay mới chưa tới đúng mốc, hay không xoay kịp) | `3`, `20°` |
 
 ```
-scenes/t02-s010.json: mặt món quay sai — `sakura` tay trái cầm dien-thoai: trục ý định còn lệch 72° khỏi `saito.eye`; cổ tay kẹp ở xoay cẳng tay ±90 — đổi `elbow` (khung cẳng tay quay theo hướng khuỷu), dời chỗ tay, đổi tay hay đổi kiểu cầm ở giây 1.20 · giây 0.90–1.60. Lúc ấy: kiểu cầm dien-thoai#khoe (dáng span) · … · ý định về saito.eye lệch 72° (kẹp turn) (docs/03-scene.md#đồ-cầm-tay)
+scenes/canh-05.json: mặt món quay sai — `nguoi-a` tay trái cầm dien-thoai: trục ý định còn lệch 72° khỏi `khach.eye` (chỗ cầm `dien-thoai@palmBox` (…)); đổi `face` / `up` của mốc tay, `elbow`, hay `edge` / `thumb` ở giây 1.20 · giây 0.90–1.60. Lúc ấy: … (docs/11-nhom-cam.md#7-luật-check-nhóm-held)
 ```
 
-Món cứng sai `pierce`, `loose`, `wrap`, `grip` là lỗi của **kiểu cầm**, đúng hay sai ở mọi cảnh dùng nó: dòng báo trỏ về
-`held/<món>.json`. Dòng `up` / `face` của kiểu cầm cứng kể đích, góc còn lệch, khớp cổ tay kẹp (xoay cẳng tay `±90`, gập
-`±AIM_BEND` `50`, lệch `±AIM_DEV` `20`) hay khuỷu hết xoay, và gợi ý: đổi `elbow` (khung cẳng tay quay theo hướng khuỷu), dời chỗ
-tay, đổi tay, đổi kiểu cầm. Lệch quá `HOLD_ALT` (`30°`) thì bộ giải thử các kiểu cầm khác của cùng món (cùng một tay hay
-cùng hai tay, tay mang món như nhau) với cùng ý định, cánh tay giữ nguyên (`AimReport.hold.alts`); kiểu nào còn lệch dưới
-ngưỡng của luật thì dòng báo nêu tên nó: `… hay đổi kiểu cầm: \`dien-thoai#doc\` với tới (lệch 12°)`. Rig không tự đổi
-kiểu cầm — đó là việc của cảnh. Thêm hai dòng một lần mỗi cảnh, không theo giây:
+Dòng `up` / `face` của tay dẫn kể đích, góc còn lệch, khớp cổ tay kẹp (xoay cẳng tay `±90`, gập `±AIM_BEND` `50`, lệch
+`±AIM_DEV` `20`) hay khuỷu hết xoay, và gợi ý: đổi `face` / `up` của mốc tay, `elbow` (khung cẳng tay quay theo hướng
+khuỷu), đổi chỗ cầm (`edge`, `thumb`). Rig không tự đổi chỗ cầm — đó là việc của cảnh. Thêm hai dòng một lần mỗi cảnh,
+không theo giây:
 
 - **Cầm món không có trong cảnh** (`held`): người khai `hold` một món mà cảnh three không `provide` món ấy cho người ấy
-  (chung hay `owner` là người ấy) — tay diễn kiểu cầm mà trong tay không có gì.
-- **Đồ cầm còn đi đường cũ** (nhóm `legacy`): các lần cầm qua `hold` không có kiểu cầm, một dòng kể từng người, tay, món,
+  (chung hay `owner` là người ấy) — tay diễn cầm mà trong tay không có gì.
+- **Đồ cầm còn đi đường cũ** (nhóm `legacy`): các lần cầm qua `hold` gọi tay không có chỗ cầm nhóm, một dòng kể từng người, tay, món,
   `follow`. Cảnh cũ chưa chuyển thì `--skip legacy`.
 
-Nhóm `ref` báo thêm: `held/<món>.json` hỏng theo zod, và mốc mà một tay cầm kiểu hai tay (`both`) trong khi tay kia cầm
+Nhóm `ref` báo thêm: `held/<món>.json` hỏng theo zod, và mốc mà một tay cầm hai tay (`both`) trong khi tay kia cầm
 món khác (`sceneHoldProblems`).
 
 Đơn vị rig, thế giới (người cao ~430). Mỗi người, mỗi tay, mỗi món, mỗi luật một dòng, kèm giây tệ nhất, quãng giây, các số đo
@@ -1443,15 +1440,15 @@ scenes/canh-07.json: ngón xuyên đồ — `saito` tay phải cầm chen-ruou: 
 ```
 
 **Chỗ cầm nhóm** (`món@nhóm`) đi bộ luật riêng, đo tới hình (`shape`) và trên da bàn tay đang vẽ ([11](11-nhom-cam.md#7-luật-check-nhóm-held)):
-`pierce`, `sink` (da lún quá `HELD_SINK` `0,65`), `loose`, `role` (ngón có vai trò mà hở quá `wrap`), `grip` (ngưỡng theo nhóm; `grip`
+`pierce`, `sink` (da lún quá `HELD_SINK` `0,65`), `loose`, `role` (ngón có vai trò mà hở quá ngưỡng `wrap` `1,5`), `grip` (ngưỡng theo nhóm; `grip`
 khai ở `package.json` thì thắng, cả khi nhỏ hơn); món đặt trước thêm `reach` và `wrist` (cổ tay vượt kẹp — lỗi; còn cách kẹp
 dưới `HELD_WRIST` `5°` — cảnh báo), `arm` (tay lấn thân quá `HELD_ARM` `0,3` bán kính tay) và `size`; tay dẫn đọc `up`, `face`,
-`reach` như kiểu cầm v1. `grip`, `loose`, `role` im trong quãng hoà của lần cầm. Dòng báo trỏ về chỗ cầm và hướng món của cảnh,
-không về `held/<món>.json#kiểu`. Nhóm `ref` báo thêm `group` (món không có khối hình cho nhóm với cỡ tay), `choice` (chỗ cầm
+`reach` (bảng trên). `grip`, `loose`, `role` im trong quãng hoà của lần cầm. Dòng báo trỏ về chỗ cầm và hướng món của cảnh.
+Nhóm `ref` báo thêm `group` (món không có khối hình cho nhóm với cỡ tay), `choice` (chỗ cầm
 không hợp lệ) và `item` (mốc `items[]` có hướng suy biến).
 
 Chỉ đo đồ cầm, nhanh (vài giây một cảnh): `stickman check --only held --scene <regex>` (tên tắt `--held`) — nhóm `held`, [05](05-repo-video.md#nhóm-luật). `scene_probe` trả cùng số đo ở
-`world.held` ([04](04-mcp.md#người-3d)), kèm `hold`, `intent`, `reach` của kiểu cầm cứng, `grasp` của chỗ cầm nhóm (món đặt trước và tay dẫn); món treo ở `world.carry` (`seat`,
+`world.held` ([04](04-mcp.md#người-3d)), kèm `hold`, `intent`, `reach`, `grasp` của chỗ cầm nhóm (món đặt trước và tay dẫn); món treo ở `world.carry` (`seat`,
 `bend`, `rise`, `body`, `swing`, luật phạm). Ngưỡng ở `package.json` của repo
 video, trường thiếu lấy mặc định; `false` là không đo:
 
@@ -1462,32 +1459,28 @@ video, trường thiếu lấy mặc định; `false` là không đo:
 Mức cảnh báo. Cảnh khớp `stickman.frozen` không đo; `--scene` chỉ đo cảnh khớp. Số đo không thay mắt: nghi thì soi bàn tay
 cận cảnh đúng giây ấy.
 
-### Bảng duyệt kiểu cầm
+### Bảng duyệt nhóm cầm
 
-Kiểu cầm sai thì sai ở mọi cảnh dùng nó, và nâng rig (bộ giải cổ tay, ngón ôm, `HAND_GRIPS`) đổi hình của mọi kiểu cầm
-một lượt. `pnpm bang-cam` (`tools/bang-cam.mjs`) soi cả thư viện một lần: mỗi món của `held/` (của repo, không lớp chung)
-× mỗi kiểu cầm × hai cỡ tay × ba góc (trước, chéo, ngang), mỗi ô là ảnh cận bàn tay như `pnpm can-tay`, nhãn in số đo
-luật `held` ở đúng khung ấy.
+Dáng nhóm sai thì sai ở mọi cảnh cầm món bằng nhóm ấy, và nâng rig (bộ giải, ngón ôm, `HAND_GRIPS`) đổi hình của mọi chỗ
+cầm một lượt. `pnpm bang-cam [--nhom <nhóm,…>] [--mon <món,…>]` (`tools/bang-cam.mjs`) soi cả thư viện một lần: mỗi nhóm
+chạy được × mỗi món của `held/` (của repo, không lớp chung) đạt điều kiện của nhóm × chỗ cầm mẫu × hai cỡ tay × ba góc
+(trước, chéo, ngang), mỗi ô là ảnh cận bàn tay như `pnpm can-tay`, nhãn in số đo luật `held` ở đúng khung ấy. Hàng mẫu,
+hàng lọc, cặp bỏ: [11](11-nhom-cam.md#bang-cam-theo-nhóm).
 
 - **Hai cỡ tay**: người có bàn tay nhỏ nhất và lớn nhất trong `characters/` của repo (bề ngang `cladHand(…).k` nhân
-  `rig.height`); `--ai a,b` chỉ định người khác. Kiểu một tay có khai `left` thì thêm hàng tay trái; kiểu `both` là
-  một hàng hai tay.
-- **Dáng tay**: mốc `world.hands` đầu tiên trong `scenes/` cầm đúng `món#kiểu` (cảnh `thu-grip*` trước, rồi `thu-*`,
-  rồi cảnh khác) chép sang người đứng `stand-3d` ở `--at`, quay `--yaw` (`at` thế giới, `elbow` đổi theo chỗ đứng; mốc
-  chỉ có ở tay kia thì soi gương), bỏ phần đè ý định để soi ý định mặc định. Không cảnh nào dùng thì tay đặt trước
-  ngực; kiểu treo thì khuỷu gập chữ V (cổ tay trước vai) hay tay dang ngoài túi đeo vai, ô ảnh lấy cả món và đoạn tay, nhãn
+  `rig.height`); `--ai a,b` chỉ định người khác.
+- **Người đứng** `stand-3d` ở `--at`, quay `--yaw`; món đặt bằng `items` theo hướng mặc định của nhóm, chỗ cầm do rig giải.
+  Món treo (`carry`): khuỷu gập chữ V (cổ tay trước vai) hay tay dang ngoài túi đeo vai, ô ảnh lấy cả món và đoạn tay, nhãn
   in `quai` (đỉnh quai tới chỗ treo), `khuỷu` (góc gập/độ ngóc), `thân` (khe thân món tới phần người gần nhất), `đẩy` (góc
-  lệch khỏi phương đứng). Cột "Dáng lấy từ" của mục lục ghi nguồn.
+  lệch khỏi phương đứng).
 - **Cảnh dựng tạm** mang tên `bang-cam`, không có file trong `scenes/`: repo khai `CANH_3D["bang-cam"]` đăng ký lưới cho
   mọi món người trong cảnh khai `hold` (`cast.provide(món, lưới, id người)`), cùng lưới các cảnh thật dùng. `tools/soi.tsx`
   nhận cảnh dựng tạm qua `inputProps.scenes`.
-- **Ra** `tmp/bang-cam/`: `<món>.jpg` một bảng mỗi món (hàng: kiểu × tay × người, cột: góc), `index.html` / `index.md`
-  mục lục mọi hàng (nguồn dáng, số đo, dòng `check` báo), `o/` ảnh từng ô, `do.json` số đo. Số đo: `lún` da lún sâu nhất
-  vào món (âm là khe), `hở` ngón khai `wrap` còn hở, `nắm` tâm nắm tới mặt món, `lòng` khe/góc lòng tay (không đo với
-  dáng kẹp), `up`/`face` góc lệch ý định và khớp cổ tay kẹp, `tới` khe tay phụ hay `item:` tới đích; `!!` là luật `held`.
-- **Theo nhóm** (`pnpm bang-cam --nhom sheet,palmBox [--mon …]`): bảng của món v2 — hàng là nhóm × món × chỗ cầm mẫu (mặc định,
-  từng biến thể, đọc ngang mặt, khoe một / hai tay, áp tai) × hai cỡ tay, món đặt trước ngực bằng `items`, chỗ cầm do rig giải;
-  không `--nhom` thì chỉ món v1 và ngược lại, món sai đời bị bỏ kèm dòng báo. Chi tiết ở [11](11-nhom-cam.md#bang-cam-theo-nhóm).
+- **Ra** `tmp/bang-cam/`: `<món>.jpg` một bảng mỗi món (hàng: nhóm × chỗ cầm × tay × người, cột: góc), `index.html` /
+  `index.md` mục lục mọi hàng (chỗ cầm, món đặt ở đâu, số đo, dòng `check` báo), `o/` ảnh từng ô, `do.json` số đo. Số đo:
+  `lún` da lún sâu nhất vào món (âm là khe), `role` khe từng ngón tới món theo vai trò, `nắm` tâm nắm tới mặt món, `lòng`
+  khe/góc lòng tay (không đo với dáng kẹp), `up`/`face` góc lệch ý định và khớp cổ tay kẹp, `tới` khe tay phụ hay `item:`
+  tới đích, cổ tay vượt kẹp, `size`; `!!` là luật `held`.
 - **Tất định**: cùng code, cùng dữ liệu là cùng pixel. Nên bảng là cổng hồi quy:
 
 ```bash
@@ -1497,7 +1490,7 @@ pnpm bang-cam --so            # sau mỗi lần nâng rig hay sửa held/: sinh 
 ```
 
 `--so` in hàng đổi (số pixel khác từng góc, số đo trước → sau), ảnh chuẩn | mới | chỗ khác ở `tmp/bang-cam/khac/`, thoát
-`1` khi có đổi; chưa có chuẩn thì báo rồi thoát `2`, không sinh gì. Ô đổi mà đúng ý (sửa kiểu cầm, rig sửa lỗi) thì duyệt
+`1` khi có đổi; chưa có chuẩn thì báo rồi thoát `2`, không sinh gì. Ô đổi mà đúng ý (sửa món, rig sửa lỗi) thì duyệt
 lại rồi `--luu-chuan`. Thêm món, thêm người làm đổi hàng (`MỚI`, `MẤT`) — bảng chuẩn đi theo `held/` và `characters/`.
 
 ## Nhóm

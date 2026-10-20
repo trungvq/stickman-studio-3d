@@ -143,7 +143,7 @@ interface Provided {
   on?: { fig: Figure; side: Side; grip: string; carry?: string; held: Held; support?: { side: Side; entry?: Holding } };
 }
 
-/** Món một người phải mang ở khung này: tay mang, kiểu cầm, tay phụ, các số hạng ý định của lần cầm */
+/** Món một người phải mang ở khung này: tay mang, chỗ cầm, tay phụ, các số hạng ý định của lần cầm */
 interface Want {
   id: string;
   fig: Figure;
@@ -170,7 +170,7 @@ function heldIntentOf(a: HoldAim): HeldIntent | undefined {
   return undefined;
 }
 const fromThree = (p: THREE.Vector3): Vec3 => [p.x / U, -p.y / U, -p.z / U];
-/** Liên kết kiểu cầm ra ma trận three */
+/** Liên kết của lần cầm ra ma trận three */
 const m4 = (G: GripFrame) => new THREE.Matrix4().set(G.R[0], G.R[1], G.R[2], G.p[0], G.R[3], G.R[4], G.R[5], G.p[1], G.R[6], G.R[7], G.R[8], G.p[2], 0, 0, 0, 1);
 
 /**
@@ -227,11 +227,11 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     const L = spec.lens?.(t);
     return L && ac.world ? { ...ac, world: { ...ac.world, eye: [...L.eye] as [number, number, number] } } : ac;
   };
-  /** Lần treo (kiểu treo) của tay `side` ở dáng `ac` */
+  /** Lần treo (`món@carry`) của tay `side` ở dáng `ac` */
   const hung = (ac: ScenePose, side: Side) => {
     const W = ac.world;
     const h = W && (side === (W.flip ? 1 : -1) ? W.hands?.near : W.hands?.far)?.hold;
-    return h && isCarryHold(h.spec, h) ? h : undefined;
+    return h && isCarryHold(h) ? h : undefined;
   };
   /** Người, tay mang món `p` ở giây `t` (thuần: chỉ đọc scene); cầm trong bàn tay trước, treo trên cánh tay sau */
   const carrying = (p: Provided | undefined, t: number) => {
@@ -314,7 +314,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
           aim: (side === near ? hands.near : hands.far)?.aim?.terms.filter((a) => a.hold?.item === r.hold.item && (a.hold.grip === r.hold.grip || a.hold.grip === r.hold.from?.grip)) ?? [],
         });
       }
-      // kiểu treo: món chưa ai cầm trong bàn tay thì treo trên cánh tay khai nó
+      // món treo: món chưa ai cầm trong bàn tay thì treo trên cánh tay khai nó
       for (const side of [-1, 1] as Side[]) {
         const h = hung(ac, side);
         const p = h && pick(h.item, id);
@@ -353,7 +353,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     const h = w.fig.hands?.[w.side];
     const [k, long] = [h?.scale ?? 1, h?.long ?? h?.scale ?? 1];
     const own = (G: GripFrame, c: readonly number[]): GripFrame => (h ? G : { ...G, p: [G.p[0] - c[0], G.p[1] - c[1], G.p[2] - c[2]] });
-    const b = leadGrip(w.hold, w.hand, w.side, k, long, 1);
+    const b = leadGrip(w.hold, w.side, k, long, 1);
     m4(own(link.G, link.center)).invert().multiply(m4(own(b.G, b.center))).decompose(o.position, o.quaternion, v3);
   };
   const _M = new THREE.Matrix4(), _R = new THREE.Matrix4(), _Q = new THREE.Quaternion(), _P = new THREE.Vector3(), _S = new THREE.Vector3();

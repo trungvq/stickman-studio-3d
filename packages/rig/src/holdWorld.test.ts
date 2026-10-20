@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { body3 } from './core/figure3d';
 import { parseAction } from './core/action';
-import { gripCenter, heldPoint, parseHeldItem, type HeldItemSpec } from './core/heldItem';
+import { gripCenter, parseHeldItem, type HeldItemSpec } from './core/heldItem';
 import { parseScene, resolveScene } from './core/scene';
 import { defaultCharacter } from './core/schema';
 import { sceneHeld, type HeldItemPose } from './core/heldAudit';
@@ -11,6 +11,7 @@ import { heldHands, legacyHolds } from './held';
 import { U } from './khoi';
 import { buildWorld, plainRoom, type Cast3D } from './world';
 import cocJson from '../../../apps/studio/public/held/coc.json';
+import khay from './core/__fixtures__/held-v2/khay.json';
 
 // Rig tự gắn món theo `world.hands[].hold`: repo đăng ký món bằng `cast.provide`, rig gắn, gỡ, trả về chỗ cũ
 
@@ -26,19 +27,10 @@ const spec = (j: unknown): HeldItemSpec => {
   if (!r.success) throw new Error(r.error.message);
   return r.data;
 };
-const TRAY = spec({
-  size: [54, 4, 34],
-  anchors: { top: { at: [0, 2, 0], dir: [0, 1, 0] }, rimR: { at: [27, 0, 0], dir: [1, 0, 0] }, rimL: { at: [-27, 0, 0], dir: [-1, 0, 0] } },
-  grips: {
-    bung: {
-      pose: 'edge', at: 'rimR', palm: { into: 'rimR' }, fingers: [0, 0, -1],
-      intent: { up: 'top', roll: { axis: 'rimL', toward: 'in' } },
-      both: { lead: 'right', other: { pose: 'edge', at: 'rimL', palm: { into: 'rimL' }, fingers: [0, 0, -1] } },
-    },
-  },
-});
 const COC = spec(cocJson);
-const HELD = { coc: COC, khay: TRAY };
+const HELD = { coc: COC, khay: spec(khay) };
+/** Cốc cầm thân, miệng cốc lên */
+const COC_UP = { item: 'coc', group: 'cylinder', up: 'rim' };
 
 const still = parseAction({ name: 'still', duration: 1, end: 'hold', authoredAt: 'side', keys: [{ t: 0, pose: {} }] }).data!;
 const c = defaultCharacter();
@@ -74,7 +66,7 @@ const cup = () => {
 
 describe('`Cast3D.provide`: rig gắn món theo `world.hands[].hold`', () => {
   const HANDS = [
-    { t: 0, right: { at: [-30, -270, -60], point: 'grip', hold: 'coc#quai' } },
+    { t: 0, right: { at: [-30, -270, -60], point: 'grip', hold: COC_UP } },
     { t: 1, right: { hold: null } },
   ];
 
@@ -90,12 +82,12 @@ describe('`Cast3D.provide`: rig gắn món theo `world.hands[].hold`', () => {
     const home = o.parent;
     const fig = w.pose(0.2).a;
     w.root.updateMatrixWorld(true);
-    expect(fig.holding?.[-1]).toMatchObject({ item: 'coc', grip: 'quai', pose: 'grip' });
+    const held = fig.holding![-1]!;
+    expect(held).toMatchObject({ item: 'coc', grip: '@cylinder////', pose: held.hand!.pose });
     const H = fig.hands![-1];
-    const want = fig.arms[-1].wrist.localToWorld(new THREE.Vector3(...gripCenter('grip', -1, H.scale, H.long)));
-    const got = o.localToWorld(new THREE.Vector3(...heldPoint(COC, 'handle').map((v) => v * 0.01)));
+    const want = fig.arms[-1].wrist.localToWorld(new THREE.Vector3(...gripCenter(held.pose, -1, H.scale, H.long)));
+    const got = o.localToWorld(new THREE.Vector3(...held.hand!.at.map((v) => v * 0.01)));
     expect(got.distanceTo(want)).toBeLessThan(1e-6);
-    expect(o.userData.hold).toEqual({ up: [0, 1, 0] });
     expect(cast.holder('coc', 0.5)).toEqual({ id: 'a', side: -1 });
     expect(cast.holder('coc', 1.5)).toBeUndefined();
     // cốc đứng (gần mốc thả tay đã buông dần về hành động, cổ tay hết tầm giữ cốc đứng)
@@ -134,21 +126,22 @@ describe('`Cast3D.provide`: rig gắn món theo `world.hands[].hold`', () => {
 
   it('hai tay: món theo tay chính, tay phụ giữ dáng của nó; đăng ký trùng là lỗi', () => {
     const o = new THREE.Group();
-    const w = world([{ t: 0, right: { at: [-30, -260, -80], point: 'grip', hold: 'khay#bung' } }], (k, g) => {
+    const w = world([{ t: 0, right: { at: [-30, -260, -80], point: 'grip', hold: { item: 'khay', group: 'platform', both: true } } }], (k, g) => {
       g.add(o);
       k.provide('khay', o);
       expect(() => k.provide('khay', new THREE.Group())).toThrow(/đã đăng ký/);
     });
     const fig = w.pose(0.2).a;
-    expect(fig.holding?.[-1]).toMatchObject({ item: 'khay', both: true, pose: 'edge' });
-    expect(fig.holding?.[1]).toMatchObject({ item: 'khay', both: true, pose: 'edge' });
-    expect(fig.hands![1].held).toBe('edge');
+    expect(fig.holding?.[-1]).toMatchObject({ item: 'khay', both: true });
+    expect(fig.holding?.[1]).toMatchObject({ item: 'khay', both: true });
+    expect(fig.holding![-1]!.object).toBe(fig.holding![1]!.object);
+    expect(fig.hands![1].held).toBe(fig.holding![1]!.pose);
   });
 });
 
 describe('số đo cho `check`', () => {
   const HANDS = [
-    { t: 0.5, right: { at: [-30, -270, -60], point: 'grip', hold: 'coc#quai' } },
+    { t: 0.5, right: { at: [-30, -270, -60], point: 'grip', hold: COC_UP } },
     { t: 1.5, right: { hold: null } },
   ];
   const mesh = () => {
@@ -157,7 +150,7 @@ describe('số đo cho `check`', () => {
     return o;
   };
 
-  it('`heldHands`: kiểu cầm, vật, ý định bộ giải nhắm; `provided` kể món; `legacyHolds` chỉ kể đường cũ', () => {
+  it('`heldHands`: chỗ cầm, vật, ý định bộ giải nhắm; `provided` kể món; `legacyHolds` chỉ kể đường cũ', () => {
     const o = mesh();
     let cast!: Cast3D;
     const w = world(HANDS, (k, g) => {
@@ -168,7 +161,7 @@ describe('số đo cho `check`', () => {
     const fig = w.pose(1).a;
     w.root.updateMatrixWorld(true);
     const [h] = heldHands(fig, 'a');
-    expect(h).toMatchObject({ item: 'coc', hold: 'coc#quai', obj: o.id, intent: { rule: 'up', toward: 'up' } });
+    expect(h).toMatchObject({ item: 'coc', hold: 'coc@cylinder////', obj: o.id, intent: { rule: 'up', toward: 'up' } });
     expect(h.intent!.err).toBeLessThan(30);
     expect(cast.provided()).toEqual([{ item: 'coc', object: o, owner: 'a' }]);
     expect(legacyHolds(fig, 'a')).toEqual([]);

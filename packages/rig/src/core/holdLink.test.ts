@@ -3,10 +3,8 @@ import { actAim, actHeld, actPalms, holdRoles, leadGrip, type ActInput } from ".
 import { body3 } from "./figure3d";
 import { handDims, itemGeom, radialDir, type DiscFeature } from "./heldGeom";
 import {
+  graspLink,
   gripCenter,
-  gripFrame,
-  gripHand,
-  gripSpec,
   heldPoint,
   parseHeldItem,
   type HeldItemSpec,
@@ -81,43 +79,7 @@ const rightHold = (sp: ActInput): ReachHold => {
 };
 
 describe("lớp liên kết tay ↔ món", () => {
-  it("món v1 qua `holdLink` ra đúng `GripFrame` và tâm nắm cũ", () => {
-    const PH = spec({
-      size: [18, 36, 3.5],
-      anchors: {
-        back: { at: [0, 0, -1.75], dir: [0, 0, -1] },
-        top: { at: [0, 18, 0], dir: [0, 1, 0] },
-      },
-      shape: [{ box: [18, 36, 3.5] }],
-      grips: {
-        doc: {
-          pose: "span",
-          at: { anchor: "back", offset: [0, -4, -1.5] },
-          palm: { into: "back" },
-          fingers: { toward: "top" },
-          left: { at: { anchor: "back", offset: [1, -4, -1.5] } },
-        },
-        treo: { on: "elbow", at: "top" },
-      },
-    });
-    const h: ReachHold = { item: "dien-thoai", grip: "doc", spec: PH, since: 0 };
-    for (const side of [-1, 1]) {
-      const hand = gripHand(gripSpec(PH, "doc"), side);
-      const old = {
-        G: gripFrame(PH, hand, side, 1.3, 1.5, 0.8),
-        center: gripCenter(hand.pose, side, 1.3, 1.5),
-      };
-      expect(holdLinkFrame(h, side, 1.3, 1.5, 0.8)).toEqual(old);
-      expect(holdLinkFrame(h, side, 1.3, 1.5, 0.8, hand)).toEqual(old);
-      expect(leadGrip(h, hand, side, 1.3, 1.5, 0.8)).toEqual(old);
-      expect(holdHand(h, side)!.hand).toEqual(hand);
-    }
-    expect(holdHand({ ...h, grip: "treo" }, -1)).toBeUndefined();
-    expect(isCarryHold(PH, { grip: "treo" })).toBe(true);
-    expect(isCarryHold(PH, { grip: "doc" })).toBe(false);
-  });
-
-  it("tay dẫn `dien-thoai@palmBox`: lòng tay áp mặt sau, khung lệch ≤ 5° so `dien-thoai#doc`", () => {
+  it("tay dẫn `dien-thoai@palmBox`: lòng tay áp mặt sau, khung lệch ≤ 5° so khung chuẩn của fixture", () => {
     const rt = runtime(
       [
         {
@@ -138,10 +100,24 @@ describe("lớp liên kết tay ↔ món", () => {
     // dáng ngón là dáng gốc đã hoà của khung cầm
     expect(role.pose).toEqual(holdHand(h, -1)!.pose);
 
+    // tay dẫn không hoà: `leadGrip` là `holdLinkFrame`, liên kết là `graspLink` của bàn tay khung cầm
+    const [k, long, s] = [1.3, 1.5, 0.8];
+    const link = holdLinkFrame(h, -1, k, long, s);
+    expect(leadGrip(h, -1, k, long, s)).toEqual(link);
+    const x = holdHand(h, -1, handDims(k / s, long / s))!;
+    expect(link.center).toEqual(gripCenter(x.hand.pose, -1, k, long));
+    const L = graspLink(x.hand, -1, k, long, s);
+    link.G.R.forEach((v, i) => expect(v).toBeCloseTo(L.R[i], 9));
+    link.G.p.forEach((v, i) => expect(v).toBeCloseTo(L.p[i], 9));
+    expect(isCarryHold(h)).toBe(false);
+    expect(
+      isCarryHold({ ...h, grasp: { ...h.grasp!, hold: { item: "tui", group: "carry" } } }),
+    ).toBe(true);
+
     const held = actHeld(NGUOI, sp).R!;
     expect(held.item).toBe("dien-thoai");
     const palm = actPalms(NGUOI, actAim(NGUOI, sp)!.input)!.R;
-    // lòng tay áp mặt sau, nghiêng như kiểu cầm `dien-thoai#doc` (khung món)
+    // lòng tay áp mặt sau, nghiêng như khung chuẩn (`grip-frames.json`, khung món)
     const want = matVec(held.R, FIX["dien-thoai#doc"]["1"].right.palm);
     expect(angle(palm.palm, [want[0], -want[1], -want[2]])).toBeLessThanOrEqual(5);
   });

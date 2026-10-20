@@ -154,7 +154,7 @@ describe("migrate-held", () => {
     assert.equal(holds.length, 4);
     for (const h of holds) {
       assert.ok(rig.SceneHoldSchema.safeParse(h).success, JSON.stringify(h));
-      assert.equal(rig.holdKind(h), "group");
+      assert.ok(typeof h === "object" && "group" in h, JSON.stringify(h));
     }
     const [tam0, tam1, tui, hop] = holds;
     assert.equal(tam0.group, "sheet");

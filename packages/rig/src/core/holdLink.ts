@@ -7,17 +7,10 @@ import {
   type RoleMap,
 } from "./graspGroups";
 import { CONTACTS, edgeOk, graspFrame, type GraspChoice, type GraspFrame } from "./graspSolve";
-import { fingerVec, HAND_POSES, type HandVec } from "./hand";
+import type { HandVec } from "./hand";
 import { handDims, itemGeom, type FaceFeature, type Feature, type HandDims } from "./heldGeom";
 import {
   gripCenter,
-  gripFrame,
-  gripHand,
-  gripOf,
-  gripSpec,
-  isCarry,
-  isHeldV2,
-  leadSide,
   type GraspHand,
   type GripFrame,
   type GroupId,
@@ -28,28 +21,23 @@ import {
 } from "./heldItem";
 import { dot3, sub3, type V3 } from "./lens";
 
-/**
- * Lớp liên kết tay ↔ món: chỗ duy nhất rẽ kiểu cầm của món v1 (`món#kiểu`) và chỗ cầm nhóm (`món@nhóm`, `ReachHold.grasp`)
- * cho bàn tay. docs/11-nhom-cam.md mục 4–6
- */
+/** Lớp liên kết tay ↔ món: bàn tay của chỗ cầm nhóm (`món@nhóm`, `ReachHold.grasp`). docs/11-nhom-cam.md mục 4–6 */
 
 /** Bàn tay của một lần cầm cho tay bên `side` */
 export interface HoldLinkHand {
   /** Điểm nắm, lòng tay, ngón trong khung món */
   hand: GraspHand;
-  /** Dáng (`HAND_DOF`, xoay và gập `0`): dáng tên của kiểu cầm (v1), dáng gốc đã hoà của `graspFrame` (v2) */
+  /** Dáng (`HAND_DOF`, xoay và gập `0`): dáng gốc đã hoà của `graspFrame` */
   pose: HandVec;
-  /** Vai trò ngón (v2) cho `heldFit` */
+  /** Vai trò ngón cho `heldFit` */
   roles?: RoleMap;
-  /** Tầm cuộn của biến thể (v2, `VariantSpec.curl`) cho `heldFit` */
+  /** Tầm cuộn của biến thể (`VariantSpec.curl`) cho `heldFit` */
   curl?: number;
   /** Cầm hai tay: bên tay mang món và bàn tay của tay kia */
   both?: { lead: number; other: GraspHand; pose: HandVec; roles?: RoleMap; curl?: number };
-  /** Khung cầm (v2) */
+  /** Khung cầm */
   frame?: GraspFrame;
 }
-
-const namedPose = (h: GraspHand): number[] => [0, 0, ...fingerVec(HAND_POSES[h.pose])];
 
 /** `curl` của biến thể khung `fr` trong nhóm `group`, không khai thì không có trường */
 const curlOf = (group: GroupId, fr: GraspFrame) => {
@@ -57,14 +45,9 @@ const curlOf = (group: GroupId, fr: GraspFrame) => {
   return curl === undefined ? {} : { curl };
 };
 
-/** Lần cầm là chỗ cầm nhóm: món v2 dù cảnh chưa gắn `grasp` */
-const isGroupHold = (h: ReachHold) => !!h.grasp || isHeldV2(h.spec);
-
-/** Lần cầm treo trên cánh tay (không chiếm bàn tay): kiểu treo của món v1, nhóm `carry` */
-export const isCarryHold = (
-  spec: HeldItemSpec | undefined,
-  h: Pick<ReachHold, "grip"> & { grasp?: Pick<HoldGrasp, "hold"> },
-): boolean => (h.grasp ? h.grasp.hold.group === "carry" : isCarry(spec?.grips?.[h.grip]));
+/** Lần cầm treo trên cánh tay (không chiếm bàn tay): nhóm `carry` */
+export const isCarryHold = (h: { grasp?: Pick<HoldGrasp, "hold"> }): boolean =>
+  h.grasp?.hold.group === "carry";
 
 const FIELDS = [
   "part",
@@ -237,7 +220,7 @@ export function supportGroup(hold: SceneHoldGroup): GroupId | undefined {
 }
 
 /**
- * Chỗ cầm của tay phụ của `both` (v2) theo khung tay dẫn `lead`: chỗ mặc định của nhóm (`support` của `GRIP_GROUPS`) — cùng
+ * Chỗ cầm của tay phụ của `both` theo khung tay dẫn `lead`: chỗ mặc định của nhóm (`support` của `GRIP_GROUPS`) — cùng
  * nhóm thì giữ `keep` của tay dẫn và cạnh theo `edge`, khác nhóm thì mặt theo `place` (`placeChoice`) — rồi object của cảnh
  * đè từng phần. Trường còn thiếu do bên gọi điền (mặc định của nhóm, hay `chooseMissing` với món đặt trước)
  */
@@ -276,7 +259,7 @@ export function supportChoice(
   return { group, choice: c as GraspChoice };
 }
 
-/** Tay phụ của `both` (v2) của tay dẫn: `supportChoice`, trường thiếu lấy mặc định của nhóm */
+/** Tay phụ của `both` của tay dẫn: `supportChoice`, trường thiếu lấy mặc định của nhóm */
 function supportOf(
   spec: HeldItemSpec,
   g: HoldGrasp,
@@ -301,7 +284,7 @@ function supportOf(
   return { lead: side, other: fr.hand, pose: fr.pose, roles: fr.roles, ...curlOf(sc.group, fr) };
 }
 
-/** Bàn tay v2 và khung của nó */
+/** Bàn tay của chỗ cầm nhóm và khung của nó */
 function groupHand(
   h: ReachHold,
   side: number,
@@ -327,31 +310,21 @@ function groupHand(
 }
 
 /**
- * Bàn tay của lần cầm `h` cho tay bên `side` (`-1` phải), cỡ tay `dims` (đơn vị món): v1 `gripHand` của kiểu cầm, v2 khung
- * cầm `graspFrame` trên lựa chọn của cảnh cộng mặc định của nhóm, món đặt trước khung đã giải (`grasp.frame`). `undefined`
- * khi lần cầm không chiếm bàn tay (kiểu treo, kiểu cầm không có)
+ * Bàn tay của lần cầm `h` cho tay bên `side` (`-1` phải), cỡ tay `dims` (đơn vị món): khung cầm `graspFrame` trên lựa chọn
+ * của cảnh cộng mặc định của nhóm, món đặt trước khung đã giải (`grasp.frame`). `undefined` khi lần cầm không chiếm bàn tay
+ * (nhóm `carry`, lần cầm không có chỗ cầm nhóm)
  */
 export function holdHand(
   h: ReachHold,
   side: number,
   dims: HandDims = handDims(1),
 ): HoldLinkHand | undefined {
-  if (isGroupHold(h)) return groupHand(h, side, dims, 1, 1, 1);
-  const g = gripOf(h.spec, h.grip);
-  if (!g) return undefined;
-  const hand = gripHand(g, side);
-  return {
-    hand,
-    pose: namedPose(hand),
-    ...(g.both && {
-      both: { lead: leadSide(g.both.lead), other: g.both.other, pose: namedPose(g.both.other) },
-    }),
-  };
+  return groupHand(h, side, dims, 1, 1, 1);
 }
 
 /**
  * Liên kết cứng của tay mang món (`GripFrame`) và tâm nắm của dáng, khung bàn tay bên `side` cỡ `k`, cỡ dọc `long`, cỡ
- * người `s` (như `gripFrame`): v1 từ `hand` (bỏ trống là `gripHand` của kiểu cầm), v2 từ `graspFrame` (bỏ qua `hand`)
+ * người `s` (như `graspLink`), từ `graspFrame`
  */
 export function holdLinkFrame(
   h: ReachHold,
@@ -359,25 +332,15 @@ export function holdLinkFrame(
   k = 1,
   long = k,
   s = 1,
-  hand?: GraspHand,
 ): { G: GripFrame; center: V3 } {
-  if (isGroupHold(h)) {
-    const x = groupHand(h, side, handDims(k / s, long / s), k, long, s);
-    if (!x?.frame) throw new Error(`\`${h.item}\`: lần cầm \`${h.grip}\` không cầm bằng bàn tay`);
-    return { G: x.frame.G, center: gripCenter(x.frame.hand.pose, side, k, long) };
-  }
-  const hh = hand ?? gripHand(gripSpec(h.spec, h.grip, h.item), side);
-  return {
-    G: gripFrame(h.spec, hh, side, k, long, s),
-    center: gripCenter(hh.pose, side, k, long),
-  };
+  const x = groupHand(h, side, handDims(k / s, long / s), k, long, s);
+  if (!x?.frame) throw new Error(`\`${h.item}\`: lần cầm \`${h.grip}\` không cầm bằng bàn tay`);
+  return { G: x.frame.G, center: gripCenter(x.frame.hand.pose, side, k, long) };
 }
 
-/** Lần cầm trước của cùng món (`h.from`) còn đang hoà, dạng `ReachHold`; kiểu cũ không chiếm bàn tay thì không có */
+/** Lần cầm trước của cùng món (`h.from`) còn đang hoà, dạng `ReachHold`; lần cầm cũ không chiếm bàn tay thì không có */
 export function holdFrom(h: ReachHold): ReachHold | undefined {
   const f = h.from;
-  if (!f || f.k <= 0) return undefined;
-  const p: ReachHold = { ...h, grip: f.grip, from: undefined, grasp: f.grasp };
-  if (isGroupHold(p)) return f.grasp && f.grasp.hold.group !== "carry" ? p : undefined;
-  return gripOf(h.spec, f.grip) ? p : undefined;
+  if (!f || f.k <= 0 || !f.grasp || f.grasp.hold.group === "carry") return undefined;
+  return { ...h, grip: f.grip, from: undefined, grasp: f.grasp };
 }

@@ -288,15 +288,15 @@ describe("`palmBox` mặc định trên điện thoại: trỏ–áp út `press`
     const { gaps } = skinDepth(pos, skinPieces(skin), g.G, spec.shape!);
     return { gaps, sink: Math.max(0, -Math.min(...Object.values(gaps))) };
   };
-  // khe trỏ, giữa, áp út của kiểu v1 `dien-thoai#doc` (bang-cam, giây 0,5)
-  const v1 = { "t01-sakura": [0.1, 0.2, 0.1], kuroiwa: [0.2, 0.3, 0.2] } as const;
+  // khe trỏ, giữa, áp út chuẩn của khung fixture `dien-thoai#doc` (bang-cam, giây 0,5)
+  const base = { "t01-sakura": [0.1, 0.2, 0.1], kuroiwa: [0.2, 0.3, 0.2] } as const;
 
-  it("khe trỏ–áp út không quá mức v1 + 0,3, hai cỡ tay, hai tay", () => {
+  it("khe trỏ–áp út không quá mức chuẩn + 0,3, hai cỡ tay, hai tay", () => {
     for (const size of ["t01-sakura", "kuroiwa"] as const)
       for (const side of [-1, 1]) {
         const { gaps } = measure(size, side);
         (["index", "middle", "ring"] as const).forEach((f, i) =>
-          expect(gaps[f], `${size} ${side} ${f}`).toBeLessThanOrEqual(v1[size][i] + 0.3),
+          expect(gaps[f], `${size} ${side} ${f}`).toBeLessThanOrEqual(base[size][i] + 0.3),
         );
       }
   });

@@ -3,25 +3,19 @@ import { HAND_POSE_KINDS } from "./hand";
 import {
   GROUP_IDS,
   groupHold,
-  holdKind,
   holdRunKey,
   SceneHoldSchema,
   sceneHoldRef,
+  graspLink,
   gripAxes,
-  gripFrame,
-  gripHand,
-  gripOf,
-  gripSpec,
+  gripCenter,
   gripPoint,
-  HELD_MIN,
   HELD_VERSION,
-  heldDir,
-  heldGrip,
+  heldAxis,
   heldPoint,
-  holdRef,
-  isHeldV2,
   migrateHeldItem,
   parseHeldItem,
+  type GraspHand,
   type HeldItemSpec,
 } from "./heldItem";
 import { matVec, type M3, type V3 } from "./lens";
@@ -37,162 +31,11 @@ const det = (R: M3) =>
 const close = (a: readonly number[], b: readonly number[], eps = 1e-9) =>
   a.forEach((x, i) => expect(x).toBeCloseTo(b[i], -Math.log10(eps)));
 
-/** Điện thoại dựng đứng: màn +z, đầu máy +y */
-const PHONE = {
-  size: [18, 36, 3.5],
-  anchors: {
-    screen: { at: [0, 0, 1.75], dir: [0, 0, 1] },
-    back: { at: [0, 0, -1.75], dir: [0, 0, -1] },
-    top: { at: [0, 18, 0], dir: [0, 1, 0] },
-    bottom: { at: [0, -18, 0], dir: [0, -1, 0] },
-    edgeR: { at: [9, 0, 0], dir: [1, 0, 0] },
-    edgeL: { at: [-9, 0, 0], dir: [-1, 0, 0] },
-    speaker: { at: [0, 15, 1.75], dir: [0, 0, 1] },
-  },
-  grips: {
-    khoe: {
-      pose: "span",
-      at: { anchor: "back", offset: [0, -6, -1.5] },
-      palm: { into: "back" },
-      fingers: { toward: "edgeR" },
-      touch: ["self.hand", "self.foreArm"],
-      intent: {
-        face: { axis: "screen", toward: "camera" },
-        roll: { axis: "top", toward: "up" },
-      },
-    },
-  },
-};
-
 const parse = (j: unknown): HeldItemSpec => {
   const r = parseHeldItem(j);
   if (!r.success) throw new Error(r.error.message);
   return r.data;
 };
-
-describe("held/<món>.json", () => {
-  it("nạp được món mẫu chung và món điện thoại", () => {
-    expect(gripSpec(parse(cocJson), "quai").pose).toBe("grip");
-    expect(parse(PHONE).schemaVersion).toBe(1);
-  });
-
-  it("báo mốc không có, mốc thiếu `dir`, lòng tay song song ngón, `up` lẫn `face`", () => {
-    const bad = (patch: (j: typeof PHONE) => void) => {
-      const j = structuredClone(PHONE);
-      patch(j);
-      const r = parseHeldItem(j);
-      expect(r.success).toBe(false);
-      return r.error!.issues.map((i) => i.message).join("; ");
-    };
-    expect(bad((j) => (j.grips.khoe.at = { anchor: "nope", offset: [0, 0, 0] }))).toMatch(
-      /không có mốc `nope`/,
-    );
-    expect(
-      bad((j) => {
-        (j.anchors as Record<string, unknown>).mid = { at: [0, 0, 0] };
-        j.grips.khoe.palm = { into: "mid" };
-      }),
-    ).toMatch(/không có `dir`/);
-    expect(
-      bad((j) => void ((j.grips.khoe as Record<string, unknown>).fingers = { along: "screen" })),
-    ).toMatch(/song song/);
-    expect(
-      bad(
-        (j) =>
-          ((j.grips.khoe.intent as Record<string, unknown>) = {
-            up: "top",
-            face: { axis: "screen", toward: "camera" },
-          }),
-      ),
-    ).toMatch(/`up`/);
-    expect(bad((j) => void ((j as Record<string, unknown>).schemaVersion = 99))).toMatch(
-      /phiên bản/,
-    );
-  });
-
-  it("điểm, hướng `into` / `along` / `toward` trong khung món", () => {
-    const m = parse(PHONE);
-    close(heldPoint(m, { anchor: "back", offset: [0, -6, -1.5] }), [0, -6, -3.25]);
-    close(heldDir(m, { into: "back" }, [0, 0, 0]), [0, 0, 1]);
-    close(heldDir(m, { along: "top" }, [0, 0, 0]), [0, 1, 0]);
-    close(heldDir(m, { toward: "edgeR" }, [0, 0, 0]), [1, 0, 0]);
-  });
-
-  it("`món#kiểu`", () => {
-    expect(holdRef("dien-thoai#tai")).toEqual({ item: "dien-thoai", grip: "tai" });
-    expect(() => holdRef("dien-thoai")).toThrow(/món#kiểu/);
-  });
-});
-
-describe("gripFrame", () => {
-  const m = parse(PHONE);
-  const g = gripSpec(m, "khoe");
-
-  it("phép quay thật (không soi gương), lòng tay và ngón trùng hướng khai", () => {
-    const ax = gripAxes(m, g);
-    close(ax.palm, [0, 0, 1]);
-    // `toward: edgeR` từ điểm nắm, trực giao hoá theo lòng tay: vắt ngang chếch lên đầu máy
-    expect(ax.fingers[2]).toBeCloseTo(0, 9);
-    expect(ax.fingers[0]).toBeGreaterThan(0.8);
-    for (const side of [-1, 1]) {
-      const G = gripFrame(m, gripHand(g, side), side);
-      expect(det(G.R)).toBeCloseTo(1, 9);
-      close(matVec(G.R, ax.palm), [-side, 0, 0]);
-      close(matVec(G.R, ax.fingers), [0, -1, 0]);
-    }
-  });
-
-  it("tay trái, tay phải cùng kiểu cầm: cùng chỗ trên món, ngón cái ở hai cạnh", () => {
-    const at = heldPoint(m, g.at);
-    const thumbs: V3[] = [];
-    for (const side of [-1, 1]) {
-      const G = gripFrame(m, gripHand(g, side), side);
-      // tâm nắm của dáng ra khung món
-      const c = gripPoint(G, at);
-      close(c, [-side * 0.035, -0.117, 0.027]);
-      thumbs.push(matVec(tr(G.R), [0, 0, 1]));
-    }
-    expect(dot(thumbs[0], thumbs[1])).toBeCloseTo(-1, 9);
-    // ngón vắt về cạnh phải máy: phía ngón cái tay phải ngả về đáy máy, tay trái về đầu máy
-    expect(thumbs[0][1]).toBeLessThan(-0.8);
-    expect(thumbs[0][2]).toBeCloseTo(0, 9);
-  });
-
-  it("cỡ tay khác, người cỡ khác: điểm `at` vẫn trùng tâm nắm", () => {
-    const at = heldPoint(m, g.at);
-    for (const [k, long, s] of [
-      [1, 1, 1],
-      [1.4, 1.1, 1],
-      [2, 1.6, 1.3],
-    ])
-      for (const side of [-1, 1]) {
-        const G = gripFrame(m, gripHand(g, side), side, k * s, long * s, s);
-        close(gripPoint(G, at), [-side * 0.035 * k * s, -0.117 * long * s, 0.027 * k * s]);
-        // món to theo người: hai mốc cách nhau đúng khoảng rig nhân 0,01·s
-        const a = gripPoint(G, heldPoint(m, "top"));
-        const b = gripPoint(G, heldPoint(m, "bottom"));
-        expect(Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])).toBeCloseTo(0.36 * s, 9);
-      }
-  });
-
-  it("`left` đè riêng cho tay trái", () => {
-    const coc = parse(cocJson);
-    const q = gripSpec(coc, "quai");
-    expect(gripHand(q, -1).fingers).toEqual([-1, 0, 0]);
-    expect(gripHand(q, 1).fingers).toEqual([1, 0, 0]);
-    // cốc cầm quai: ngón cái lên trên ở cả hai tay
-    for (const side of [-1, 1]) {
-      const G = gripFrame(coc, gripHand(q, side), side);
-      close(matVec(tr(G.R), [0, 0, 1]), [0, 1, 0]);
-    }
-  });
-});
-
-describe("thumbsUp", () => {
-  it("là dáng soạn được", () => {
-    expect(HAND_POSE_KINDS).toContain("thumbsUp");
-  });
-});
 
 const DIEN_THOAI_V2 = {
   schemaVersion: 2,
@@ -252,7 +95,7 @@ const TUI_HIEU_V2 = {
   shape: [{ box: [65.6, 70, 23], at: [0, 35, 0] }],
 };
 
-describe("món v1 và v2", () => {
+describe("held/<món>.json", () => {
   const errs = (j: unknown) => {
     const r = parseHeldItem(j);
     expect(r.success).toBe(false);
@@ -264,43 +107,41 @@ describe("món v1 và v2", () => {
     return o;
   };
 
-  it("phiên bản: 2 mới nhất, 1 cũ nhất", () => {
+  it("phiên bản 2", () => {
     expect(HELD_VERSION).toBe(2);
-    expect(HELD_MIN).toBe(1);
   });
 
-  it("`coc`, `tui` mẫu (v1) nạp như cũ, không bị nâng phiên bản", () => {
-    for (const j of [cocJson, tuiJson]) {
-      const m = parse(j);
-      expect(m.schemaVersion).toBe(1);
-      expect(isHeldV2(m)).toBe(false);
-      expect(Object.keys(m.grips ?? {}).length).toBeGreaterThan(0);
-    }
-    expect(gripSpec(parse(cocJson), "quai").pose).toBe("grip");
-    expect(heldGrip(parse(tuiJson), Object.keys(parse(tuiJson).grips!)[0])).toBeTruthy();
+  it("`coc`, `tui` mẫu nạp được: phần, chỗ treo", () => {
+    const coc = parse(cocJson);
+    expect(coc.schemaVersion).toBe(2);
+    expect(new Set(coc.shape!.map((b) => b.part))).toEqual(new Set(["than", "quai"]));
+    expect(coc.shape!.filter((b) => b.detail)).toHaveLength(2);
+    const tui = parse(tuiJson);
+    expect(tui.seats).toEqual({ elbow: "quai", shoulder: "quai" });
+    expect(tui.shape![0]).toMatchObject({ part: "than" });
   });
 
-  it("`migrateHeldItem`: thiếu số ra 1, giữ nguyên 1 và 2, không nâng mù", () => {
-    const noVer: Record<string, unknown> = { ...PHONE };
+  it("`migrateHeldItem`: thiếu số ra 1, số đã khai giữ nguyên", () => {
+    const noVer: Record<string, unknown> = { ...DIEN_THOAI_V2 };
     delete noVer.schemaVersion;
     expect((migrateHeldItem(noVer) as { schemaVersion: number }).schemaVersion).toBe(1);
-    expect(
-      (migrateHeldItem({ ...PHONE, schemaVersion: 1 }) as { schemaVersion: number }).schemaVersion,
-    ).toBe(1);
     expect((migrateHeldItem(DIEN_THOAI_V2) as { schemaVersion: number }).schemaVersion).toBe(2);
     expect((migrateHeldItem({ schemaVersion: 3 }) as { schemaVersion: number }).schemaVersion).toBe(
       3,
     );
-    expect(parse(PHONE).schemaVersion).toBe(1);
   });
 
-  it("ba ví dụ v2 của spec nạp được", () => {
-    for (const j of [DIEN_THOAI_V2, CHAI_DIA_V2, TUI_HIEU_V2]) {
-      const m = parse(j);
-      expect(m.schemaVersion).toBe(2);
-      expect(isHeldV2(m)).toBe(true);
-      expect(m.grips).toBeUndefined();
-    }
+  it("món bản 1 (thiếu `schemaVersion` hay khai 1) bị từ chối, lời báo chỉ `stickman migrate-held`", () => {
+    const noVer = edit(DIEN_THOAI_V2, (o) => delete o.schemaVersion);
+    expect(errs(noVer)).toMatch(/stickman migrate-held/);
+    expect(errs(edit(DIEN_THOAI_V2, (o) => (o.schemaVersion = 1)))).toMatch(
+      /stickman migrate-held/,
+    );
+  });
+
+  it("ba ví dụ của spec nạp được", () => {
+    for (const j of [DIEN_THOAI_V2, CHAI_DIA_V2, TUI_HIEU_V2])
+      expect(parse(j).schemaVersion).toBe(2);
     const dt = parse(DIEN_THOAI_V2);
     expect(dt.shape![3]).toMatchObject({ detail: true });
     expect(parse(CHAI_DIA_V2).shape![0]).toMatchObject({ part: "than" });
@@ -308,7 +149,7 @@ describe("món v1 và v2", () => {
     expect(parse(TUI_HIEU_V2).seats).toEqual({ elbow: "treoKhuyu", shoulder: "quai" });
   });
 
-  it("`touch`, `parts.as` + `axis` của món v2", () => {
+  it("`touch`, `parts.as` + `axis`", () => {
     const m = parse(
       edit(CHAI_DIA_V2, (o) => {
         o.touch = ["self.hand", { part: "self.foreArm", max: 2 }];
@@ -319,43 +160,14 @@ describe("món v1 và v2", () => {
     expect(m.parts?.than).toEqual({ as: "rod", axis: [0, 1, 0] });
   });
 
-  it("v2 có `grips` bị từ chối, chỉ về chỗ cầm ở cảnh", () => {
-    expect(errs(edit(DIEN_THOAI_V2, (o) => (o.grips = PHONE.grips)))).toMatch(
-      /chỗ cầm khai ở cảnh: docs\/11 mục 4/,
-    );
-  });
-
-  it("v2 thiếu `shape` bị từ chối", () => {
+  it("thiếu `shape` bị từ chối", () => {
     expect(errs(edit(DIEN_THOAI_V2, (o) => delete o.shape))).toMatch(/cần `shape`/);
   });
 
-  it("v1 thiếu `grips` bị từ chối", () => {
-    expect(errs(edit(PHONE, (o) => delete o.grips))).toMatch(/cần `grips`/);
-    expect(errs(edit(PHONE, (o) => (o.grips = {})))).toMatch(/ít nhất một kiểu cầm/);
-  });
-
-  it("v1 có trường chỉ có ở v2 bị từ chối", () => {
-    expect(errs(edit(PHONE, (o) => (o.front = "screen")))).toMatch(/`front` chỉ có ở món v2/);
-    expect(errs(edit(PHONE, (o) => (o.touch = ["self.hand"])))).toMatch(/`touch` chỉ có ở món v2/);
-    expect(errs(edit(PHONE, (o) => (o.seats = { elbow: "top" })))).toMatch(/`seats`/);
-    expect(errs(edit(PHONE, (o) => (o.parts = {})))).toMatch(/`parts`/);
-    expect(errs(edit(PHONE, (o) => (o.shape = [{ box: [1, 1, 1], part: "than" }])))).toMatch(
-      /`part` chỉ có ở món v2/,
-    );
-    expect(errs(edit(PHONE, (o) => (o.shape = [{ box: [1, 1, 1], detail: true }])))).toMatch(
-      /`detail` chỉ có ở món v2/,
-    );
-  });
-
-  it("tên kiểu cầm v1 không bắt đầu bằng `@`", () => {
-    expect(errs(edit(PHONE, (o) => (o.grips = { "@sheet": PHONE.grips.khoe })))).toMatch(
-      /không được bắt đầu bằng `@`/,
-    );
-  });
-
-  it("`schemaVersion: 3` báo lỗi phiên bản", () => {
+  it("`schemaVersion` lạ báo lỗi phiên bản", () => {
     expect(errs(edit(DIEN_THOAI_V2, (o) => (o.schemaVersion = 3)))).toMatch(/phiên bản/);
-    expect(errs(edit(PHONE, (o) => (o.schemaVersion = 0)))).toMatch(/phiên bản/);
+    expect(errs(edit(DIEN_THOAI_V2, (o) => (o.schemaVersion = 0)))).toMatch(/phiên bản/);
+    expect(errs(edit(DIEN_THOAI_V2, (o) => (o.schemaVersion = 99)))).toMatch(/phiên bản/);
   });
 
   it("`front` / `top` / `seats` trỏ mốc không có hay không có `dir`", () => {
@@ -402,18 +214,75 @@ describe("món v1 và v2", () => {
     ).toBe(2);
   });
 
-  it("`heldGrip`, `gripSpec`, `gripOf` gặp món v2 ném lỗi có tên", () => {
+  it("điểm và trục trong khung món", () => {
     const m = parse(DIEN_THOAI_V2);
-    for (const f of [
-      () => heldGrip(m, "khoe", "dien-thoai"),
-      () => gripSpec(m, "khoe", "dien-thoai"),
-      () => gripOf(m, "khoe", "dien-thoai"),
-    ])
-      expect(f).toThrow(/`dien-thoai`: món v2 không có kiểu cầm, khai `món@nhóm`/);
+    close(heldPoint(m, { anchor: "back", offset: [0, -6, -1.5] }), [0, -6, -2.94]);
+    close(heldPoint(m, "top"), [0, 18.9, 0]);
+    close(heldPoint(m, [1, 2, 3]), [1, 2, 3]);
+    close(heldAxis(m, "back"), [0, 0, -1]);
+    close(heldAxis(m, [0, 3, 4]), [0, 0.6, 0.8]);
+    expect(() => heldPoint(m, "nope")).toThrow(/không có mốc `nope`/);
   });
 });
 
-describe("SceneHoldSchema: bốn dạng", () => {
+describe("graspLink", () => {
+  // điện thoại khoe màn: lưng máy trong lòng tay, ngón vắt về cạnh phải chếch lên đầu máy
+  const at: V3 = [0, -6, -2.94];
+  const hand: GraspHand = { pose: "span", at, palm: [0, 0, 1], fingers: [9.225, 6, 2.94] };
+
+  it("phép quay thật (không soi gương), lòng tay và ngón trùng hướng khai", () => {
+    const ax = gripAxes(hand);
+    close(ax.palm, [0, 0, 1]);
+    // ngón trực giao hoá theo lòng tay
+    expect(ax.fingers[2]).toBeCloseTo(0, 9);
+    expect(ax.fingers[0]).toBeGreaterThan(0.8);
+    expect(() => gripAxes({ ...hand, fingers: [0, 0, 2] })).toThrow(/song song/);
+    for (const side of [-1, 1]) {
+      const G = graspLink(hand, side);
+      expect(det(G.R)).toBeCloseTo(1, 9);
+      close(matVec(G.R, ax.palm), [-side, 0, 0]);
+      close(matVec(G.R, ax.fingers), [0, -1, 0]);
+    }
+  });
+
+  it("tay trái, tay phải cùng bàn tay trên món: cùng chỗ, ngón cái ở hai cạnh", () => {
+    const thumbs: V3[] = [];
+    for (const side of [-1, 1]) {
+      const G = graspLink(hand, side);
+      close(gripPoint(G, at), gripCenter("span", side));
+      thumbs.push(matVec(tr(G.R), [0, 0, 1]));
+    }
+    expect(dot(thumbs[0], thumbs[1])).toBeCloseTo(-1, 9);
+    // ngón vắt về cạnh phải máy: phía ngón cái tay phải ngả về đáy máy, tay trái về đầu máy
+    expect(thumbs[0][1]).toBeLessThan(-0.8);
+    expect(thumbs[0][2]).toBeCloseTo(0, 9);
+  });
+
+  it("cỡ tay khác, người cỡ khác: điểm `at` vẫn trùng tâm nắm", () => {
+    const m = parse(DIEN_THOAI_V2);
+    for (const [k, long, s] of [
+      [1, 1, 1],
+      [1.4, 1.1, 1],
+      [2, 1.6, 1.3],
+    ])
+      for (const side of [-1, 1]) {
+        const G = graspLink(hand, side, k * s, long * s, s);
+        close(gripPoint(G, at), gripCenter("span", side, k * s, long * s));
+        // món to theo người: hai mốc cách nhau đúng khoảng rig nhân 0,01·s
+        const a = gripPoint(G, heldPoint(m, "top"));
+        const b = gripPoint(G, heldPoint(m, "bottom"));
+        expect(Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])).toBeCloseTo(0.378 * s, 9);
+      }
+  });
+});
+
+describe("thumbsUp", () => {
+  it("là dáng soạn được", () => {
+    expect(HAND_POSE_KINDS).toContain("thumbsUp");
+  });
+});
+
+describe("SceneHoldSchema", () => {
   const ok = (h: unknown) => SceneHoldSchema.safeParse(h);
   const msg = (h: unknown) => {
     const r = ok(h);
@@ -427,10 +296,8 @@ describe("SceneHoldSchema: bốn dạng", () => {
     expect(new Set(GROUP_IDS).size).toBe(14);
   });
 
-  it("bốn dạng parse", () => {
-    expect(ok("bang-gia#doc").success).toBe(true);
+  it("`món@nhóm` và `{ item, group, … }` parse", () => {
     expect(ok("bang-gia@sheet").success).toBe(true);
-    expect(ok({ item: "dien-thoai", grip: "tai", up: "top" }).success).toBe(true);
     expect(
       ok({
         item: "bang-gia",
@@ -448,37 +315,41 @@ describe("SceneHoldSchema: bốn dạng", () => {
     expect(ok({ item: "chai", group: "cylinder", both: true, around: 30 }).success).toBe(true);
   });
 
+  it("object có `grip` bị từ chối, lời báo chỉ `stickman migrate-held`", () => {
+    for (const h of [
+      { item: "a", grip: "x", along: 0.5 },
+      { item: "dien-thoai", grip: "tai", up: "top" },
+    ])
+      expect(msg(h)).toMatch(/\{ item, group, … \}.*stickman migrate-held/);
+  });
+
+  it("chuỗi có `#` bị từ chối", () => {
+    for (const h of ["bang-gia#doc", "a#", "a#b@c", "a@b#c"]) expect(msg(h)).toMatch(/món@nhóm/);
+  });
+
+  it("chuỗi có `#`: lời báo chỉ `stickman migrate-held`", () => {
+    expect(msg("bang-gia#doc")).toMatch(/stickman migrate-held/);
+  });
+
   it("lỗi có tên từng dạng", () => {
-    expect(msg("a#b@c")).toMatch(/không cả hai/);
-    expect(msg("a@b#c")).toMatch(/không cả hai/);
-    expect(msg("a#")).toMatch(/món#kiểu/);
     expect(msg("a@")).toMatch(/món@nhóm/);
-    expect(msg("a@khongco")).toMatch(/không phải nhóm cầm/);
-    expect(msg("a")).toMatch(/món#kiểu.*món@nhóm/);
+    expect(msg("a@khongco")).toMatch(/nhóm cầm/);
+    expect(msg("a")).toMatch(/món@nhóm/);
     expect(msg({ item: "a", group: "khongco" })).toMatch(/\{ item, group, … \}.*group/);
-    expect(msg({ item: "a", grip: "x", along: 0.5 })).toMatch(/along/);
     expect(msg({ item: "a", group: "sheet", along: 2 })).toMatch(/along/);
     expect(msg({ item: "a", group: "sheet", both: { thumb: "xyz" } })).toMatch(/both/);
-    expect(msg({ item: "a", grip: "@x" })).toMatch(/@/);
     expect(msg(5)).toMatch(/hold/);
   });
 
-  it("holdKind và groupHold", () => {
-    expect(holdKind("bang-gia#doc")).toBe("grip");
-    expect(holdKind({ item: "a", grip: "g" })).toBe("grip");
-    expect(holdKind("bang-gia@sheet")).toBe("group");
-    expect(holdKind({ item: "a", group: "pen" })).toBe("group");
+  it("groupHold", () => {
     expect(groupHold("bang-gia@sheet")).toEqual({ item: "bang-gia", group: "sheet" });
     const o = { item: "a", group: "pen" as const, variant: "v" };
     expect(groupHold(o)).toBe(o);
     expect(() => groupHold("a#b")).toThrow(/món@nhóm/);
     expect(() => groupHold("a@khongco")).toThrow(/nhóm cầm/);
-    expect(() => groupHold({ item: "a", grip: "g" })).toThrow(/kiểu cầm v1/);
   });
 
-  it("khoá lần cầm: v1 không đổi, v2 dựng từ trường rời", () => {
-    expect(sceneHoldRef("bang-gia#doc")).toEqual({ item: "bang-gia", grip: "doc" });
-    expect(sceneHoldRef({ item: "a", grip: "g", up: "top" })).toEqual({ item: "a", grip: "g" });
+  it("khoá lần cầm dựng từ trường rời", () => {
     expect(sceneHoldRef("bang-gia@sheet")).toEqual({ item: "bang-gia", grip: "@sheet////" });
     expect(
       sceneHoldRef({
@@ -490,10 +361,8 @@ describe("SceneHoldSchema: bốn dạng", () => {
         thumb: "up",
       }),
     ).toEqual({ item: "cuoc", grip: "@cylinder/v/can/top/up" });
-    expect(holdRunKey("bang-gia#doc")).toBe("bang-gia#doc");
     expect(holdRunKey("bang-gia@sheet")).toBe("bang-gia@sheet////");
   });
-
   it("món@nhóm bằng {item, group}", () => {
     const a = sceneHoldRef(groupHold("bang-gia@sheet"));
     expect(a).toEqual(sceneHoldRef("bang-gia@sheet"));

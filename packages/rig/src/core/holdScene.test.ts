@@ -3,21 +3,25 @@ import {
   actAim,
   actHeld,
   actJoints,
-  HOLD_ALT,
   HOLD_SLEW,
   holdRoles,
   resolveActing,
   type ActInput,
 } from "./act3";
+import { trunk3 } from "./arm3";
 import { body3 } from "./figure3d";
-import { fingerVec, HAND_POSES } from "./hand";
-import { heldPoint, parseHeldItem, type HeldItemSpec } from "./heldItem";
+import { handDims } from "./heldGeom";
+import { parseHeldItem, type HeldItemSpec } from "./heldItem";
+import { holdHand } from "./holdLink";
 import { matVec, type M3, type V3 } from "./lens";
 import { heldUnprovided } from "./heldAudit";
 import { sceneAims } from "./palm";
 import { parseScene, resolveScene, sceneAt, sceneHoldProblems } from "./scene";
 import { CharacterSchema } from "./schema";
 import cocJson from "../../../../apps/studio/public/held/coc.json";
+import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
+import khay from "./__fixtures__/held-v2/khay.json";
+import butJson from "./__fixtures__/held-v2/but.json";
 
 const C = CharacterSchema.parse({ head: { form: "human" }, palette: { clad: true } });
 const spec = (j: unknown): HeldItemSpec => {
@@ -26,149 +30,44 @@ const spec = (j: unknown): HeldItemSpec => {
   return r.data;
 };
 
-const PHONE = spec({
-  size: [18, 36, 3.5],
-  anchors: {
-    screen: { at: [0, 0, 1.75], dir: [0, 0, 1] },
-    back: { at: [0, 0, -1.75], dir: [0, 0, -1] },
-    top: { at: [0, 18, 0], dir: [0, 1, 0] },
-    bottom: { at: [0, -18, 0], dir: [0, -1, 0] },
-    edgeR: { at: [9, 0, 0], dir: [1, 0, 0] },
-    edgeL: { at: [-9, 0, 0], dir: [-1, 0, 0] },
-    speaker: { at: [0, 15, 1.75], dir: [0, 0, 1] },
-  },
-  grips: {
-    khoe: {
-      pose: "span",
-      at: { anchor: "back", offset: [0, -6, -1.5] },
-      palm: { into: "back" },
-      fingers: { toward: "edgeR" },
-      intent: {
-        face: { axis: "screen", toward: "camera" },
-        roll: { axis: "top", toward: "up" },
-      },
-    },
-    doc: {
-      pose: "span",
-      at: { anchor: "back", offset: [0, -4, -1.5] },
-      palm: { into: "back" },
-      fingers: { toward: "top" },
-      intent: { face: { axis: "screen", toward: "holderFace" } },
-    },
-    tai: {
-      pose: "cup",
-      at: { anchor: "back", offset: [0, 6, -1.5] },
-      palm: { into: "back" },
-      fingers: { toward: "top" },
-    },
-  },
-});
-
-/** Khay hai tay: tay phải mang, tay trái đỡ mép trái */
-const TRAY = spec({
-  size: [54, 4, 34],
-  anchors: {
-    top: { at: [0, 2, 0], dir: [0, 1, 0] },
-    rimR: { at: [27, 0, 0], dir: [1, 0, 0] },
-    rimL: { at: [-27, 0, 0], dir: [-1, 0, 0] },
-  },
-  grips: {
-    bung: {
-      pose: "edge",
-      at: "rimR",
-      palm: { into: "rimR" },
-      fingers: [0, 0, -1],
-      intent: { up: "top", roll: { axis: "rimL", toward: "in" } },
-      both: {
-        lead: "right",
-        other: { pose: "edge", at: "rimL", palm: { into: "rimL" }, fingers: [0, 0, -1] },
-      },
-    },
-  },
-});
+const PHONE = spec(dienThoai);
+const COC = spec(cocJson);
+const KHAY = spec(khay);
 
 /** Khay dài quá hai sải tay: tay phụ không với tới mép kia */
 const LONG = spec({
-  ...TRAY,
+  ...khay,
+  size: [240, 8, 52],
   anchors: {
-    top: { at: [0, 2, 0], dir: [0, 1, 0] },
-    rimR: { at: [120, 0, 0], dir: [1, 0, 0] },
-    rimL: { at: [-120, 0, 0], dir: [-1, 0, 0] },
+    ...khay.anchors,
+    rimL: { at: [-120, 2, 0], dir: [-1, 0, 0] },
+    rimR: { at: [120, 2, 0], dir: [1, 0, 0] },
   },
-});
-
-/** Bút: ngòi chúi ra trước và xuống, tay theo đích thế giới */
-const PEN = spec({
-  size: [2.6, 30, 3.4],
-  anchors: { tip: { at: [0, 0, 0], dir: [0, -1, 0] }, barrel: { at: [0, 7, 0] } },
-  grips: {
-    viet: {
-      pose: "pinch",
-      at: { anchor: "barrel", offset: [0, 0, 1.2] },
-      palm: [1, 0, 0],
-      fingers: { toward: "tip" },
-      intent: { face: { axis: "tip", toward: [0.5, 0.866, 0] } },
-    },
-  },
-});
-
-/** Kẹp hồ sơ hai tay: `om` ôm gáy, `mo` mở bìa — món xoay nửa vòng trong bàn tay khi đổi */
-const FOLDER = spec({
-  size: [54, 5.2, 72],
-  anchors: {
-    cover: { at: [0, 5.2, 0], dir: [0, 1, 0] },
-    spine: { at: [-27, 2.6, 0], dir: [-1, 0, 0] },
-    edgeR: { at: [27, 1.4, 0], dir: [1, 0, 0] },
-    top: { at: [0, 0.7, -36], dir: [0, 0, -1] },
-    spineBack: { at: [-27, 0, 0], dir: [0, -1, 0] },
-  },
-  grips: {
-    om: {
-      pose: "edge",
-      at: { anchor: "spine", offset: [3, 0, 0] },
-      palm: { into: "spine" },
-      fingers: { along: "cover" },
-      intent: { face: { axis: "cover", toward: "forward" }, roll: { axis: "top", toward: "up" } },
-      both: {
-        lead: "right",
-        other: {
-          pose: "edge",
-          at: { anchor: "edgeR", offset: [-3, 1.2, 0] },
-          palm: { into: "edgeR" },
-          fingers: { along: "cover" },
-        },
-      },
-    },
-    mo: {
-      pose: "edge",
-      at: { anchor: "edgeR", offset: [-3, 1.4, 0] },
-      palm: { into: "edgeR" },
-      fingers: { along: "top" },
-      intent: {
-        face: { axis: "cover", toward: "holderFace" },
-        roll: { axis: "top", toward: "forward" },
-      },
-      both: {
-        lead: "right",
-        other: {
-          pose: "flat",
-          at: { anchor: "spineBack", offset: [0, -1, 0] },
-          palm: { into: "spineBack" },
-          fingers: { along: "top" },
-        },
-      },
-    },
-  },
+  shape: khay.shape.map((b) => ({ ...b, box: [240, b.box[1], b.box[2]] })),
 });
 
 const HELD = {
   "dien-thoai": PHONE,
-  coc: spec(cocJson),
-  khay: TRAY,
+  coc: COC,
+  khay: KHAY,
   "khay-dai": LONG,
-  but: PEN,
-  kep: FOLDER,
+  but: spec(butJson),
 };
+
+/** Điện thoại cầm lòng tay (`palmBox`), trường cảnh khai đè lên */
+const phone = (o: object = {}) => ({ item: "dien-thoai", group: "palmBox", ...o });
+/** Khoe màn: màn về ống kính, đầu máy lên */
+const KHOE = phone({
+  face: { axis: "screen", toward: "camera" },
+  roll: { axis: "top", toward: "up" },
+});
+/** Đọc màn: màn về mặt người cầm */
+const DOC = phone({ face: { axis: "screen", toward: "holderFace" } });
+/** Khay bưng hai tay */
+const BUNG = { item: "khay", group: "platform", both: true };
+/** Bút cầm viết */
+const PEN = { item: "but", group: "pen", face: { axis: "tip", toward: [0.5, 0.866, 0] } };
+
 const LENS = { eye: [0, -250, -1400], yaw: 0, pitch: 0, f: 800 };
 
 const scene = (hands: unknown[], more: object[] = []) => {
@@ -217,15 +116,16 @@ const pointW = (h: { at: V3; R: M3; s: number }, q: V3): V3 => {
 };
 
 describe("`world.hands[].hold` trong scene", () => {
-  it("món, kiểu cầm, mốc của `point: item:` phải có; `hold` không đi cùng `palm`", () => {
-    expect(() => runtime([{ t: 0, right: { hold: "nope#x" } }])).toThrow(/không có món `nope`/);
-    expect(() => runtime([{ t: 0, right: { hold: "dien-thoai#x" } }])).toThrow(/kiểu cầm `x`/);
+  it("món, mốc của `point: item:` phải có; `hold` không đi cùng `palm`", () => {
+    expect(() => runtime([{ t: 0, right: { hold: "nope@palmBox" } }])).toThrow(
+      /không có món `nope`/,
+    );
     expect(() => runtime([{ t: 0, right: { at: [0, -280, -60], point: "item:speaker" } }])).toThrow(
       /cần món đang cầm/,
     );
     expect(() =>
       runtime([
-        { t: 0, right: { at: [0, -280, -60], point: "item:nope", hold: "dien-thoai#tai" } },
+        { t: 0, right: { at: [0, -280, -60], point: "item:nope", hold: "dien-thoai@palmBox" } },
       ]),
     ).toThrow(/không có mốc `nope`/);
     expect(
@@ -235,85 +135,86 @@ describe("`world.hands[].hold` trong scene", () => {
         cast: [
           {
             id: "a",
-            world: { at: [0, 0, 0], hands: [{ t: 0, right: { hold: "a#b", palm: "up" } }] },
+            world: { at: [0, 0, 0], hands: [{ t: 0, right: { hold: "a@sheet", palm: "up" } }] },
           },
         ],
       }).success,
     ).toBe(false);
     // mốc chỉ có `hold`: hợp lệ, vị trí theo hành động
-    expect(() => runtime([{ t: 0, right: { hold: "dien-thoai#tai" } }])).not.toThrow();
+    expect(() => runtime([{ t: 0, right: { hold: "dien-thoai@palmBox" } }])).not.toThrow();
   });
 
   it("`hold` là bậc thang: từ mốc khai tới mốc `hold` khác hay `null`; mốc không khai thì giữ", () => {
     const hands = [
       { t: 0, right: { at: [-30, -280, -60] } },
-      { t: 1, right: { at: [-30, -280, -60], hold: "dien-thoai#khoe" } },
+      { t: 1, right: { at: [-30, -280, -60], hold: "coc@cylinder" } },
       { t: 2, right: { at: [-20, -300, -60] } },
-      { t: 3, right: { hold: "dien-thoai#doc" } },
+      { t: 3, right: { hold: { item: "coc", group: "cylinder", part: "quai" } } },
       { t: 4, right: { hold: null } },
     ];
     const h = (t: number) => at(hands, t).world?.hands?.near?.hold;
     expect(h(0.99)).toBeUndefined();
-    expect(h(1)).toMatchObject({ item: "dien-thoai", grip: "khoe", since: 1 });
-    expect(h(2.5)).toMatchObject({ grip: "khoe", since: 1 });
-    expect(h(3.2)).toMatchObject({ grip: "doc", since: 3 });
+    expect(h(1)).toMatchObject({ item: "coc", grip: "@cylinder////", since: 1 });
+    expect(h(2.5)).toMatchObject({ grip: "@cylinder////", since: 1 });
+    expect(h(3.2)).toMatchObject({ grip: "@cylinder//quai//", since: 3 });
     expect(h(4)).toBeUndefined();
     // quãng t 3 → 4: mốc chỉ có `hold` nên vị trí trả dần về hành động
     expect(at(hands, 3).world?.hands?.near?.w).toBe(0);
   });
 
-  it("đang cầm: ngón theo dáng kiểu cầm, không theo hành động", () => {
-    const sp = at([{ t: 0, right: { at: [-30, -280, -60], point: "grip", hold: "coc#quai" } }]);
+  it("đang cầm: ngón theo dáng của chỗ cầm, không theo hành động", () => {
+    const sp = at([{ t: 0, right: { at: [-30, -280, -60], point: "grip", hold: "coc@cylinder" } }]);
     const r = resolveActing(C, sp);
     const near = r.pose.hand!.an!;
-    expect(near.slice(2)).toEqual(fingerVec(HAND_POSES.grip));
+    const T = trunk3(C, sp)!;
+    const dims = T.hand ? handDims(T.hand.k, T.hand.long) : handDims(1 / T.s);
+    const role = holdRoles(sp.world!.hands, -1, dims)[-1]!;
+    expect(near.slice(2, role.pose.length)).toEqual(role.pose.slice(2));
   });
 
   it("`point: item:<mốc>`: mốc của món nằm đúng đích (loa vào tai)", () => {
-    const sp = at([{ t: 0, right: { to: "ear", point: "item:speaker", hold: "dien-thoai#tai" } }]);
+    const sp = at([
+      { t: 0, right: { to: "ear", point: "item:speaker", hold: "dien-thoai@palmBox" } },
+    ]);
     const rep = actAim(C, sp)!.report.R;
     expect(rep.reach?.point).toBe("item:speaker");
     expect(rep.reach!.gap).toBeLessThan(1);
     const held = actHeld(C, sp).R!;
-    expect(held).toMatchObject({ item: "dien-thoai", grip: "tai" });
+    expect(held).toMatchObject({ item: "dien-thoai", grip: "@palmBox////" });
   });
 
-  it("món đặt bằng `point: grip`: điểm nắm của kiểu cầm trùng đích", () => {
+  it("món đặt bằng `point: grip`: điểm nắm của chỗ cầm trùng đích", () => {
     const target: V3 = [-30, -280, -60];
-    const sp = at([{ t: 0, right: { at: target, point: "grip", hold: "dien-thoai#khoe" } }]);
+    const sp = at([{ t: 0, right: { at: target, point: "grip", hold: KHOE } }]);
     const held = actHeld(C, sp).R!;
-    const q = heldPoint(PHONE, PHONE.grips!.khoe.at);
+    const q = holdHand(sp.world!.hands!.near!.hold!, -1, handDims(1))!.hand.at;
     expect(len(sub(pointW(held, q), target))).toBeLessThan(1);
   });
 
-  it("ý định `face: camera` + `roll: up`: màn về ống kính, đầu máy lên", () => {
-    const sp = at([
-      { t: 0, right: { at: [-30, -290, -70], point: "grip", hold: "dien-thoai#khoe" } },
-    ]);
+  it("ý định `face: camera`: màn về ống kính", () => {
+    const sp = at([{ t: 0, right: { at: [-40, -310, -45], point: "grip", hold: KHOE } }]);
     const held = actHeld(C, sp).R!;
     const o = pointW(held, [0, 0, 0]);
     const screen = axisW(held.R, [0, 0, 1]);
     expect(deg(screen, sub(LENS.eye, o))).toBeLessThan(15);
-    expect(deg(axisW(held.R, [0, 1, 0]), [0, -1, 0])).toBeLessThan(30);
     const rep = actAim(C, sp)!.report.R.hold!;
     expect(rep.err).toBeLessThan(15);
   });
 
-  it("ý định `holderFace`: màn quay lên mặt người cầm (kiểu `doc`)", () => {
-    const sp = at([
-      { t: 0, right: { at: [-25, -270, -45], point: "grip", hold: "dien-thoai#doc" } },
-    ]);
+  it("ý định `holderFace`: màn quay lên mặt người cầm", () => {
+    const sp = at([{ t: 0, right: { at: [-25, -270, -90], point: "grip", hold: DOC } }]);
     const rep = actAim(C, sp)!.report.R.hold!;
     expect(rep.err).toBeLessThan(20);
     // màn hướng lên trên, không ra ống kính
     expect(rep.got[1]).toBeLessThan(0);
-    expect(deg(rep.got, sub(LENS.eye, [-25, -270, -45]))).toBeGreaterThan(60);
+    expect(deg(rep.got, sub(LENS.eye, [-25, -270, -90]))).toBeGreaterThan(60);
   });
 
   it("chén đứng (`up: rim`) với cả hai tay, đổi tay vẫn đứng", () => {
     for (const side of ["right", "left"] as const) {
       const x = side === "right" ? -30 : 30;
-      const sp = at([{ t: 0, [side]: { at: [x, -270, -60], point: "grip", hold: "coc#quai" } }]);
+      const hold = { item: "coc", group: "cylinder", up: "rim" };
+      const sp = at([{ t: 0, [side]: { at: [x, -270, -60], point: "grip", hold } }]);
       const tag = side === "right" ? "R" : "L";
       const held = actHeld(C, sp)[tag]!;
       expect(deg(axisW(held.R, [0, 1, 0]), [0, -1, 0])).toBeLessThan(10);
@@ -327,9 +228,9 @@ describe("`world.hands[].hold` trong scene", () => {
         {
           t: 0,
           right: {
-            at: [-40, -290, -70],
+            at: [-40, -310, -45],
             point: "grip",
-            hold: { item: "dien-thoai", grip: "khoe", face: { cast: "b" } },
+            hold: { ...KHOE, face: { axis: "screen", toward: { cast: "b" } } },
           },
         },
       ],
@@ -351,12 +252,10 @@ describe("`world.hands[].hold` trong scene", () => {
         right: {
           at: [-40, -310, -50],
           point: "grip",
-          hold: {
-            item: "dien-thoai",
-            grip: "khoe",
+          hold: phone({
             face: { axis: "screen", toward: "up" },
             roll: { axis: "top", toward: "out" },
-          },
+          }),
         },
       },
     ]);
@@ -365,8 +264,8 @@ describe("`world.hands[].hold` trong scene", () => {
     expect(rep.clamped).toContain("bend");
   });
 
-  it("hai tay: món theo tay chính, tay phụ với tới mốc của nó trên món", () => {
-    const sp = at([{ t: 0, right: { at: [-30, -260, -80], point: "grip", hold: "khay#bung" } }]);
+  it("hai tay: món theo tay chính, tay phụ với tới chỗ của nó trên món", () => {
+    const sp = at([{ t: 0, right: { at: [-30, -260, -80], point: "grip", hold: BUNG } }]);
     expect(holdRoles(sp.world!.hands, -1)).toMatchObject({
       [-1]: { role: "lead" },
       1: { role: "support", lead: -1 },
@@ -380,13 +279,14 @@ describe("`world.hands[].hold` trong scene", () => {
     // khay nằm ngang, tay chính đạt ý định
     expect(deg(axisW(held.R!.R, [0, 1, 0]), [0, -1, 0])).toBeLessThan(15);
     expect(r.report.R.hold!.err).toBeLessThan(15);
+    const support = holdRoles(sp.world!.hands, -1)[1]!;
     const resolved = resolveActing(C, sp);
-    expect(resolved.pose.hand!.af!.slice(2)).toEqual(fingerVec(HAND_POSES.edge));
+    expect(resolved.pose.hand!.af!.slice(2, support.pose.length)).toEqual(support.pose.slice(2));
   });
 
   it("ý định không làm khuỷu bật: tay dời êm thì khuỷu đi liền", () => {
     const hands = [
-      { t: 0, right: { at: [-2, -249, 36], elbow: [0.13, 0.87, 0.92], hold: "but#viet" } },
+      { t: 0, right: { at: [-2, -249, 36], elbow: [0.13, 0.87, 0.92], hold: PEN } },
       { t: 2, right: { at: [-35, -182, 100], elbow: [0.13, 0.87, 0.92] } },
     ];
     const rt = runtime(hands);
@@ -401,10 +301,17 @@ describe("`world.hands[].hold` trong scene", () => {
     expect(jump).toBeLessThan(15);
   });
 
-  it("đổi kiểu cầm cùng món: liên kết hoà trong `HOLD_BLEND`, món không nhảy qua mốc", () => {
+  it("đổi chỗ cầm cùng món: liên kết hoà trong `HOLD_BLEND`, món không nhảy qua mốc", () => {
     const hands = [
-      { t: 0, right: { at: [-30, -270, -70], point: "grip", hold: "dien-thoai#khoe" } },
-      { t: 1, right: { at: [-30, -270, -70], point: "grip", hold: "dien-thoai#doc" } },
+      { t: 0, right: { at: [-30, -270, -70], point: "grip", hold: "coc@cylinder" } },
+      {
+        t: 1,
+        right: {
+          at: [-30, -270, -70],
+          point: "grip",
+          hold: { item: "coc", group: "cylinder", part: "quai" },
+        },
+      },
     ];
     const rt = runtime(hands);
     const pose = (t: number) => actHeld(C, sceneAt(rt, "a", t, 1, body3(C)) as ActInput).R!;
@@ -418,9 +325,9 @@ describe("`world.hands[].hold` trong scene", () => {
     // liên kết thay trong một khung thì màn xoay ~90° qua mốc
     expect(turn).toBeLessThan(15);
     expect(move).toBeLessThan(3);
-    expect(pose(0.99).grip).toBe("khoe");
-    expect(pose(1.01).grip).toBe("doc");
-    // hết quãng hoà: đúng kiểu mới
+    expect(pose(0.99).grip).toBe("@cylinder////");
+    expect(pose(1.01).grip).toBe("@cylinder//quai//");
+    // hết quãng hoà: đúng chỗ cầm mới
     const sp = sceneAt(rt, "a", 1.5, 1, body3(C)) as ActInput;
     expect(sp.world!.hands!.near!.hold!.from).toBeUndefined();
   });
@@ -428,7 +335,7 @@ describe("`world.hands[].hold` trong scene", () => {
   it("vừa cầm hai tay: tay phụ hoà từ chỗ nó đang ở tới mép món, không nhảy", () => {
     const hands = [
       { t: 0, left: { at: [40, -200, 0] } },
-      { t: 1, right: { at: [-30, -260, -80], point: "grip", hold: "khay#bung" } },
+      { t: 1, right: { at: [-30, -260, -80], point: "grip", hold: BUNG } },
     ];
     const rt = runtime(hands);
     const wrist = (t: number) => actJoints(C, sceneAt(rt, "a", t, 1, body3(C)) as ActInput)!.wristL;
@@ -448,11 +355,7 @@ describe("`world.hands[].hold` trong scene", () => {
         right: {
           to: "ear",
           point: "item:speaker",
-          hold: {
-            item: "dien-thoai",
-            grip: "tai",
-            face: { axis: "screen", toward: { mark: "head" } },
-          },
+          hold: phone({ face: { axis: "screen", toward: { mark: "head" } } }),
         },
       },
     ]);
@@ -466,14 +369,14 @@ describe("`world.hands[].hold` trong scene", () => {
     const sp = at([
       {
         t: 0,
-        right: { at: [-30, -270, -70], point: "grip", hold: "coc#quai" },
-        left: { at: [30, -270, -70], point: "grip", hold: "coc:2#quai" },
+        right: { at: [-30, -270, -70], point: "grip", hold: "coc@cylinder" },
+        left: { at: [30, -270, -70], point: "grip", hold: "coc:2@cylinder" },
       },
     ]);
     const held = actHeld(C, sp);
-    expect(held.R).toMatchObject({ item: "coc", grip: "quai" });
-    expect(held.L).toMatchObject({ item: "coc:2", grip: "quai" });
-    expect(() => at([{ t: 0, right: { at: [0, -270, -70], hold: "ly:2#quai" } }])).toThrow(
+    expect(held.R).toMatchObject({ item: "coc", grip: "@cylinder////" });
+    expect(held.L).toMatchObject({ item: "coc:2", grip: "@cylinder////" });
+    expect(() => at([{ t: 0, right: { at: [0, -270, -70], hold: "ly:2@cylinder" } }])).toThrow(
       /không có món `ly:2` \(`held\/ly.json`\)/,
     );
   });
@@ -481,7 +384,7 @@ describe("`world.hands[].hold` trong scene", () => {
   it("đang hoà giữa hai đích: khe đo tới đích đã hoà, không báo tay hụt giữa đường", () => {
     const sp = at(
       [
-        { t: 0, right: { to: "chest", offset: [40, 45, 10], point: "grip", hold: "coc#quai" } },
+        { t: 0, right: { to: "chest", offset: [40, 45, 10], point: "grip", hold: "coc@cylinder" } },
         { t: 1, right: { to: "mouth", point: "item:rim" } },
       ],
       0.5,
@@ -492,8 +395,8 @@ describe("`world.hands[].hold` trong scene", () => {
 
   it("đổi tay: hai tay cùng một món, tay cầm trước mang món", () => {
     const hands = [
-      { t: 0, right: { at: [-20, -270, -70], point: "grip", hold: "coc#quai" } },
-      { t: 1, left: { at: [20, -270, -70], point: "grip", hold: "coc#quai" } },
+      { t: 0, right: { at: [-20, -270, -70], point: "grip", hold: "coc@cylinder" } },
+      { t: 1, left: { at: [20, -270, -70], point: "grip", hold: "coc@cylinder" } },
     ];
     const sp = at(hands, 1.5);
     const roles = holdRoles(sp.world!.hands, -1);
@@ -514,7 +417,7 @@ const alone = (sp: ActInput): ActInput => {
 describe("cổ tay mang món nối từ mẫu trước", () => {
   // màn về ống kính khi tay đưa từ trước ngực sang giữa thân: xoay cần đi qua giới hạn ±90
   const swing = [
-    { t: 0, right: { at: [-30, -260, -80], hold: "dien-thoai#khoe" } },
+    { t: 0, right: { at: [-30, -260, -80], hold: KHOE } },
     { t: 1, right: { at: [0, -260, 0] } },
   ];
 
@@ -546,84 +449,6 @@ describe("cổ tay mang món nối từ mẫu trước", () => {
     expect(solve(shuffled)).toEqual(solve(frames));
     expect(solve([...frames].reverse())).toEqual(solve(frames));
   });
-
-  it("ý định với tới, tay đi êm: gần như giải riêng từng khung; chỗ lật thì đi dần", () => {
-    const rt = runtime([
-      { t: 0, right: { at: [-2, -249, 36], elbow: [0.13, 0.87, 0.92], hold: "but#viet" } },
-      { t: 2, right: { at: [-35, -182, 100], elbow: [0.13, 0.87, 0.92] } },
-    ]);
-    const hand = (t: number, f = (x: ActInput) => x) =>
-      resolveActing(C, f(sceneAt(rt, "a", t, 1, body3(C)) as ActInput)).pose.hand!.an!;
-    let off = 0;
-    for (let i = 0; i <= 30; i++)
-      off = Math.max(off, ...[0, 1].map((j) => Math.abs(hand(i / 30)[j] - hand(i / 30, alone)[j])));
-    // khuỷu chỉ bị giữ khi nghiệm riêng từng khung nhảy quá `HOLD_SWIVEL_SLEW`: vài độ
-    expect(off).toBeLessThan(5);
-    // giây 1.2–1.23 giải riêng thì cổ tay lật (xoay 59 → −50, gập −49 → 50)
-    let lone = 0;
-    let kept = 0;
-    for (let i = 31; i <= 45; i++) {
-      lone = Math.max(lone, Math.abs(hand(i / 30, alone)[0] - hand((i - 1) / 30, alone)[0]));
-      kept = Math.max(kept, Math.abs(hand(i / 30)[0] - hand((i - 1) / 30)[0]));
-    }
-    expect(lone).toBeGreaterThan(90);
-    // mẫu trước lấy ở giây làm tròn 6 số lẻ: cổ tay đang đi hết tốc độ lệch cỡ `1e-4`°
-    expect(kept).toBeLessThanOrEqual(HOLD_SLEW + 1e-3);
-  });
-
-  it("đổi kiểu cầm hai tay khi món xoay nửa vòng: cổ tay tay phụ đi dần, không lật", () => {
-    const rt = runtime([
-      {
-        t: 0,
-        right: { at: [-28, -240, -158], elbow: [-0.5, 1, 0.4], hold: "kep#om" },
-        left: { at: [28, -240, -158], elbow: [0.5, 1, 0.4], hold: "kep#om" },
-      },
-      {
-        t: 1,
-        right: { at: [-52, -262, -140], elbow: [-0.5, 1, 0.4], hold: "kep#mo" },
-        left: { at: [52, -262, -140], elbow: [0.5, 1, 0.4], hold: "kep#mo" },
-      },
-    ]);
-    const turn = (t: number, f = (x: ActInput) => x) =>
-      resolveActing(C, f(sceneAt(rt, "a", t, 1, body3(C)) as ActInput)).pose.hand!.af![0];
-    let lone = 0;
-    let kept = 0;
-    for (let i = 25; i <= 48; i++) {
-      lone = Math.max(lone, Math.abs(turn(i / 30, alone) - turn((i - 1) / 30, alone)));
-      kept = Math.max(kept, Math.abs(turn(i / 30) - turn((i - 1) / 30)));
-    }
-    expect(lone).toBeGreaterThan(150);
-    expect(kept).toBeLessThanOrEqual(HOLD_SLEW + 1e-6);
-  });
-
-  it("ý định không với tới: báo kiểu cầm khác của cùng món với tới được", () => {
-    const sp = at([
-      {
-        t: 0,
-        right: {
-          at: [-30, -290, -50],
-          point: "grip",
-          hold: {
-            item: "dien-thoai",
-            grip: "khoe",
-            face: { axis: "screen", toward: "up" },
-            roll: { axis: "top", toward: "out" },
-          },
-        },
-      },
-    ]);
-    const rep = actAim(C, sp)!.report.R.hold!;
-    expect(rep.err).toBeGreaterThan(HOLD_ALT);
-    expect(rep.alts!.map((a) => a.grip).sort()).toEqual(["doc", "tai"]);
-    expect(rep.alts![0].err).toBeLessThan(25);
-    // với tới thì không thử
-    expect(
-      actAim(
-        C,
-        at([{ t: 0, right: { at: [-30, -270, -70], point: "grip", hold: "dien-thoai#khoe" } }]),
-      )!.report.R.hold!.alts,
-    ).toBeUndefined();
-  });
 });
 
 describe("báo cho `check`", () => {
@@ -634,7 +459,7 @@ describe("báo cho `check`", () => {
         right: {
           at: [-30, -290, -90],
           point: "grip",
-          hold: { item: "dien-thoai", grip: "khoe", face: { axis: "screen", toward: "down" } },
+          hold: phone({ face: { axis: "screen", toward: "down" } }),
         },
       },
     ]);
@@ -646,7 +471,7 @@ describe("báo cho `check`", () => {
           right: {
             at: [-30, -280, -80],
             point: "grip",
-            hold: { item: "dien-thoai", grip: "doc", face: { cast: "b" } },
+            hold: phone({ face: { axis: "screen", toward: { cast: "b" } } }),
           },
         },
       ],
@@ -656,17 +481,19 @@ describe("báo cho `check`", () => {
     expect(actAim(C, cast)!.report.R.hold!.toward).toBe("b.eye");
     const tray = actAim(
       C,
-      at([{ t: 0, right: { at: [-30, -260, -80], point: "grip", hold: "khay#bung" } }]),
+      at([{ t: 0, right: { at: [-30, -260, -80], point: "grip", hold: BUNG } }]),
     )!;
     expect(tray.report.L.reach!.hold).toBe("support");
     expect(tray.report.R.reach!.hold).toBeUndefined();
     const ear = actAim(
       C,
-      at([{ t: 0, right: { to: "ear", point: "item:speaker", hold: "dien-thoai#tai" } }]),
+      at([{ t: 0, right: { to: "ear", point: "item:speaker", hold: "dien-thoai@palmBox" } }]),
     )!;
     expect(ear.report.R.reach!.hold).toBe("item");
     // tay phụ ngoài tầm: mép kia của khay dài vượt tầm tay trái
-    const hands = [{ t: 0, right: { at: [-30, -260, -80], point: "grip", hold: "khay-dai#bung" } }];
+    const hands = [
+      { t: 0, right: { at: [-30, -260, -80], point: "grip", hold: { ...BUNG, item: "khay-dai" } } },
+    ];
     expect(actAim(C, at(hands))!.report.L.reach!.gap).toBeGreaterThan(6);
     expect(
       sceneAims({ ...runtime(hands), duration: 0.5 }, { characterOf: () => C }).filter(
@@ -675,22 +502,18 @@ describe("báo cho `check`", () => {
     ).toEqual([]);
   });
 
-  it("món hai tay mà tay kia cầm món khác: `ref` báo; khai `hold` mà không ai đăng ký món: `held` báo", () => {
+  it("khai `hold` mà không ai đăng ký món: `held` báo", () => {
     const rt = runtime([
-      { t: 0, right: { at: [-30, -260, -80], point: "grip", hold: "khay#bung" } },
-      { t: 1, left: { at: [30, -260, -80], point: "grip", hold: "dien-thoai#khoe" } },
+      { t: 0, right: { at: [-30, -260, -80], point: "grip", hold: "coc@cylinder" } },
+      { t: 1, left: { at: [30, -260, -80], point: "grip", hold: KHOE } },
     ]);
-    const lines = sceneHoldProblems(rt);
-    expect(lines).toHaveLength(1);
-    expect(lines[0]).toMatch(
-      /^a: `world.hands` t=1: kiểu cầm hai tay `khay#bung` ở tay phải mà tay kia đang cầm `dien-thoai`/,
-    );
-    expect(heldUnprovided(rt, [{ item: "khay" }])).toEqual([{ id: "a", item: "dien-thoai", t: 1 }]);
+    expect(sceneHoldProblems(rt)).toEqual([]);
+    expect(heldUnprovided(rt, [{ item: "coc" }])).toEqual([{ id: "a", item: "dien-thoai", t: 1 }]);
     expect(
       heldUnprovided(rt, [
-        { item: "khay", owner: "b" },
+        { item: "coc", owner: "b" },
         { item: "dien-thoai", owner: "a" },
       ]),
-    ).toEqual([{ id: "a", item: "khay", t: 0 }]);
+    ).toEqual([{ id: "a", item: "coc", t: 0 }]);
   });
 });

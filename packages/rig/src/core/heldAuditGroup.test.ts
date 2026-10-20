@@ -6,11 +6,13 @@ import type { GraspReport } from "./graspSolve";
 import { handVec } from "./hand";
 import {
   HELD_ARM,
+  HELD_FACE,
   HELD_GRIP,
   HELD_GRIP_PINCH,
   HELD_SINK,
+  HELD_UP,
   HELD_WRIST,
-  heldGripMax,
+  groupGripMax,
   heldHits,
   heldLine,
   heldPlace,
@@ -20,6 +22,7 @@ import {
 } from "./heldAudit";
 import { itemGeom } from "./heldGeom";
 import { HOLD_BLEND, parseHeldItem } from "./heldItem";
+import type { V3 } from "./lens";
 import { parseScene, resolveScene, holdBlending } from "./scene";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
@@ -139,9 +142,9 @@ describe("heldHits: chỗ cầm nhóm", () => {
   });
 
   it("`grip`: tâm nắm ngoài hình món, ngưỡng theo nhóm", () => {
-    expect(heldGripMax("sheet")).toBe(HELD_GRIP_PINCH);
-    expect(heldGripMax("cylinder", "wrap")).toBe(HELD_GRIP);
-    expect(heldGripMax("cylinder", "flat")).toBe(HELD_GRIP_PINCH);
+    expect(groupGripMax("sheet")).toBe(HELD_GRIP_PINCH);
+    expect(groupGripMax("cylinder", "wrap")).toBe(HELD_GRIP);
+    expect(groupGripMax("cylinder", "flat")).toBe(HELD_GRIP_PINCH);
     expect(rules({ grip: HELD_GRIP_PINCH - 1 })).toEqual([]);
     expect(rules({ grip: HELD_GRIP_PINCH + 1 })).toEqual(["grip"]);
     const rod = { grasp: grasp({ group: "cylinder", choice: { variant: "wrap" } }) };
@@ -186,6 +189,34 @@ describe("heldHits: chỗ cầm nhóm", () => {
     const lead = { grasp: undefined, hold: "dien-thoai@palmBox////", item: "dien-thoai" };
     expect(rules(lead)).toEqual([]);
     expect(rules({ ...lead, grip: HELD_GRIP_PINCH + 1 })).toEqual(["grip"]);
+  });
+
+  it("tay dẫn: không so dáng hành động; ý định đo theo bộ giải (`intent`), không theo `up` / `face`", () => {
+    const lead = { grasp: undefined, hold: "dien-thoai@palmBox////", item: "dien-thoai" };
+    expect(rules({ ...lead, acted: handVec("pinch") })).toEqual([]);
+    expect(rules({ ...lead, up: 80, face: { angle: 120, toward: "camera" } })).toEqual([]);
+    const intent = {
+      err: HELD_UP + 5,
+      clamped: ["bend" as const],
+      want: [0, -1, 0] as V3,
+      got: [0, 0, 1] as V3,
+    };
+    expect(rules({ ...lead, intent: { rule: "up", ...intent } })).toEqual(["up"]);
+    expect(rules({ ...lead, intent: { rule: "face", ...intent } })).toEqual([]);
+    expect(
+      rules({
+        ...lead,
+        intent: { rule: "face", ...intent, err: HELD_FACE + 5, toward: "saito.eye" },
+      }),
+    ).toEqual(["face"]);
+  });
+
+  it("tay dẫn: tay phụ hay `item:` còn cách đích quá `AIM_GAP` nhân cỡ người: `reach`", () => {
+    const lead = { grasp: undefined, hold: "dien-thoai@palmBox////", item: "dien-thoai" };
+    const reach = { kind: "support" as const, point: "grip", to: "at", s: 1 };
+    expect(rules({ ...lead, reach: { ...reach, gap: AIM_GAP - 1 } })).toEqual([]);
+    expect(rules({ ...lead, reach: { ...reach, gap: AIM_GAP + 2 } })).toEqual(["reach"]);
+    expect(rules({ ...lead, reach: { ...reach, gap: AIM_GAP + 2, s: 2 } })).toEqual([]);
   });
 
   it("trong cửa sổ hoà lần cầm: không `grip`, `loose`, `role`; `sink` vẫn xét", () => {
@@ -269,6 +300,22 @@ describe("sceneHeld: chỗ cầm nhóm", () => {
     );
     expect(lines.find((l) => l.startsWith("ngón không chạm món"))).toContain(
       "ngón cái (`press`) cách món 3.0",
+    );
+    const turned = sample({
+      grasp: undefined,
+      hold: "dien-thoai@palmBox////",
+      item: "dien-thoai",
+      intent: {
+        rule: "face",
+        err: 100,
+        clamped: ["turn"],
+        toward: "camera",
+        want: [0, 0, -1],
+        got: [0, 0, 1],
+      },
+    });
+    expect(sceneHeld(rt, { frame: () => [turned] }).map(heldLine)[0]).toMatch(
+      /^mặt món quay sai — .*lệch 100° khỏi `camera` \(chỗ cầm `dien-thoai@palmBox`\)/,
     );
     expect(heldPlace({ item: "dien-thoai", hold: "dien-thoai@palmBox////" })).toBe(
       "`dien-thoai@palmBox`",

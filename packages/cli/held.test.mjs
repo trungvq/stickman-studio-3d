@@ -72,8 +72,8 @@ const v2 = (o = {}) => ({
   grasp: grasp(),
   ...o,
 });
-/** Kiểu cầm cứng v1: không có `grasp` */
-const v1 = { ...base, key: "7|bang-gia#cam", hold: "bang-gia#cam" };
+/** Đồ cầm đường cũ: không có chỗ cầm nhóm, không `grasp` */
+const old = { ...base, key: "7|wrist" };
 
 const scene = () => {
   const r = rig.parseScene({
@@ -97,10 +97,10 @@ const world = (hands, spy) => ({
 });
 
 describe("check: đồ cầm tay chỗ cầm nhóm", () => {
-  it("`heldFrame`: v1 trả cùng `HeldHand`, v2 mang `grasp.choice`", () => {
+  it("`heldFrame`: đường cũ trả cùng `HeldHand`, chỗ cầm nhóm mang `grasp.choice`", () => {
     const rt = scene();
-    const one = heldFrame(rt, world([v1]))(0.5);
-    assert.deepEqual(one, [v1]);
+    const one = heldFrame(rt, world([old]))(0.5);
+    assert.deepEqual(one, [old]);
     assert.equal(one[0].grasp, undefined);
     const two = heldFrame(rt, world([v2()]))(0.5);
     assert.equal(two[0].grasp.choice.variant, "pinch");
@@ -130,8 +130,8 @@ describe("check: đồ cầm tay chỗ cầm nhóm", () => {
     return rows;
   };
 
-  it("v1 không thành lỗi; v2 đặt trước ngoài tầm với (`reach`) thành lỗi", () => {
-    assert.deepEqual(run([v1]), []);
+  it("đường cũ không thành lỗi; món đặt trước ngoài tầm với (`reach`) thành lỗi", () => {
+    assert.deepEqual(run([old]), []);
     assert.deepEqual(run([v2()]), []);
     const rows = run([v2({ grasp: grasp({ gap: rig.AIM_GAP + 2 }) })]);
     assert.equal(rows.length, 1);

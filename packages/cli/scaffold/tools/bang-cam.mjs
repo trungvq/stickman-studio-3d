@@ -1,39 +1,18 @@
-// Bảng duyệt kiểu cầm: `pnpm bang-cam [--nhom a,b] [--mon a,b] [--ai a,b] [--out dir] [--tab N]`
+// Bảng duyệt nhóm cầm: `pnpm bang-cam [--nhom a,b] [--mon a,b] [--ai a,b] [--out dir] [--tab N]`
 //
-// Hai chế độ. Không `--nhom`: bảng món `held/` v1 (có `grips`), món v2 bị bỏ. Có `--nhom`: bảng nhóm cầm của món v2 (mục
-// "Theo nhóm" dưới). Cả hai ra cùng một bộ file.
+// Hàng là nhóm × món × chỗ cầm mẫu × hai cỡ tay (người có bàn tay nhỏ nhất và lớn nhất trong `characters/`), cột là ba góc
+// (trước, chéo, ngang) với ống kính sát bàn tay như `pnpm can-tay`, kèm số đo luật `held` của `check` ở đúng khung ấy.
+// Người đứng `stand-3d` ở `--at` (mặc định `0,0,0`), quay `--yaw` (mặc định 90); món đặt bằng `items` theo hướng mặc định
+// của nhóm, chỗ cầm nhóm giải bằng rig (`món@nhóm`). Hàng mẫu, hàng lọc (`loc`), cặp bỏ (`bo`) và hàng trùng (`trung`):
+// docs/11-nhom-cam.md § `bang-cam` theo nhóm. Cảnh dựng tạm mang tên `bang-cam`: repo khai `CANH_3D["bang-cam"]`
+// (`src/khoi3d/canh.ts`) đăng ký lưới cho mọi món mà người trong cảnh khai `hold`. Tất định: cùng code, cùng dữ liệu là
+// cùng pixel. Ra
 //
-// Chế độ kiểu cầm: mỗi món của `held/` × mỗi kiểu cầm × hai cỡ tay (người có bàn tay nhỏ nhất và lớn nhất trong `characters/`) × ba góc
-// (trước, chéo, ngang): một người đứng cầm món bằng kiểu ấy, ống kính đặt sát bàn tay như `pnpm can-tay`, kèm số đo luật
-// `held` của `check` ở đúng khung ấy. Kiểu một tay có khai `left` thì thêm hàng tay trái. Ra
-//
-//   <out>/<món>.jpg      một bảng mỗi món: hàng là kiểu cầm × tay × người, cột là góc; nhãn in số đo
-//   <out>/index.md       mọi ô: món#kiểu, tay, người, dáng lấy từ đâu, số đo, dòng `check` báo
+//   <out>/<món>.jpg      một bảng mỗi món: hàng là nhóm × chỗ cầm × tay × người, cột là góc; nhãn in số đo
+//   <out>/index.md       mọi hàng: món@nhóm chỗ cầm, tay, người, món đặt ở đâu, số đo, dòng `check` báo
 //   <out>/index.html     cùng nội dung, kèm ảnh bảng
 //   <out>/o/…png         ảnh từng ô (800×800), cái mà lệnh so đọc
-//   <out>/do.json        số đo từng ô
-//
-// Theo nhóm (`--nhom sheet,palmBox`, món v2 của `--mon`, mặc định mọi món v2 của `held/`): hàng là nhóm × món × chỗ cầm
-// mẫu × hai cỡ tay. Người đứng như trên, món đặt trước ngực bằng `items` theo hướng mặc định của nhóm, chỗ cầm nhóm
-// giải bằng rig (`món@nhóm`); hàng mẫu: chỗ cầm mặc định (nhãn in biến thể rig chọn), từng biến thể của nhóm, và với `sheet` thêm ngón cái
-// trước / sau, đọc ngang mặt, khoe một tay, khoe hai tay hai cạnh bên, khoe hai tay trên dưới (bỏ khi hai cạnh cách < 1,3·W),
-// bê hai tay hai vành (đĩa, tấm nằm); hàng khai `edge` / `thumb` không có trên khối hình tấm hay đĩa, hay cần mốc món
-// mà món không có, bị bỏ trước khi giải (`do.json` `loc`); hàng giải ra cùng chỗ cầm, cùng vị trí món với hàng trước nó bị bỏ
-// (`trung`); hàng mà `checkChoice` của rig báo lỗi (biến thể quá bề dày ở mép, phần không có…) cũng bị bỏ, mọi nhóm; với `palmBox` thêm đọc ngang mặt,
-// khoe một tay, áp tai (tay dẫn); `handle` đặt túi ngang hông (`to: hip`) thêm `along` 0,2 / 0,7 và tay buông xách phải / trái (tay dẫn, không khai đích); với `cylinder` thêm `along` thấp / cao, ngón cái xuống, nắm từng phần bám được (vai, cổ… `along` giữa phần),
-// áp tai (tay dẫn, `around` 180: lòng áp lưng tay cầm); `card` thêm `edge top`, ngón cái mặt trước / sau, tay dẫn, tay dẫn mặt trước lên và đưa thẻ ra trước; `platform` (món ngang bụng, xa ngực hơn hàng chung) thêm `psi` 0 / 90 và tay dẫn; `chopsticks` (đũa trước ngực ngọn ra trước chúc 30°, hai que chéo) thêm `along` 0,15 / 0,45 và tay dẫn phải / trái; `platform`,
-// `cylinder` (chai đứng hơi nghiêng), `palmBox` thêm hàng hai tay `both` món đặt trước, bỏ khi món không có mặt đáy / sau có cạnh cho tay phụ
-// (`loc`); `platform` mà mặt đỡ chọn ra không có cạnh thì cả cặp bị bỏ (`bo`); `carry` hai hàng treo khuỷu (`on: elbow`) và treo vai (`on: shoulder`, cảnh khai `touch`), tay
-// đặt như kiểu treo v1, món không đặt trước ngực. Cặp (món, nhóm, người) mà món không có khối hình đạt `needs` của nhóm với cỡ tay ấy
-// bị bỏ, lý do vào `do.json` (`bo`). Nhãn in chỗ cầm rig chọn, `lún` trên da, `role` từng ngón (khe tới món, vai trò),
-// cổ tay vượt kẹp, `size`; `do.json` giữ thêm `pierce`, `grip`, `grasp`.
-//
-// Dáng tay (chế độ kiểu cầm): mốc `world.hands` đầu tiên trong `scenes/` cầm đúng `món#kiểu` ấy (ưu tiên `thu-grip*`, rồi `thu-*`, rồi cảnh
-// khác; cùng hạng thì tên cảnh, giây), bỏ phần đè ý định để soi ý định mặc định của kiểu cầm. Không cảnh nào dùng thì
-// tay đặt trước ngực; kiểu treo thì khuỷu gập chữ V (cổ tay trước vai) hay tay dang ngoài túi đeo vai, ảnh lấy cả món và
-// đoạn tay. Người đứng `stand-3d` ở `--at` (mặc định `0,0,0`), quay `--yaw` (mặc định 90), ống kính chính diện cách 720. Cảnh dựng tạm mang tên `bang-cam`: repo khai `CANH_3D["bang-cam"]` (`src/khoi3d/canh.ts`) đăng ký lưới
-// cho mọi món mà người trong cảnh khai `hold` (`cast.provide(món, lưới, id người)`). Tất định: cùng code, cùng dữ liệu
-// là cùng pixel.
+//   <out>/do.json        số đo từng hàng
 //
 // So hồi quy (sau mỗi lần nâng rig, khi đã có bảng chuẩn):
 //
@@ -42,14 +21,12 @@
 //                               ảnh khác biệt ở <out>/khac/; chưa có chuẩn thì báo rồi thoát (mã 2), không sinh gì
 //
 //   --chuan  thư mục bảng chuẩn (mặc định tmp/bang-cam-chuan), ngoài git
-//   --nhom   nhóm cầm, phẩy ngăn (`GRIP_GROUPS`): bật chế độ theo nhóm
-//   --mon    món, phẩy ngăn (mặc định mọi file của `held/` cùng đời với chế độ)
+//   --nhom   nhóm cầm, phẩy ngăn (`GRIP_GROUPS`; mặc định mọi nhóm có chỗ tiếp xúc trong `CONTACTS` cùng `carry`)
+//   --mon    món, phẩy ngăn (mặc định mọi file của `held/`)
 //   --ai     file nhân vật (không đuôi), phẩy ngăn — thay cho cặp tay nhỏ nhất / lớn nhất
 //   --at     chỗ đứng `x,y,z` (thế giới rig); --yaw góc quay người
 //   --t      giây chụp và đo (mặc định 0.5; cảnh dài 1 s, cầm từ giây 0)
 //   --tab    số tab song song (mặc định nửa số nhân)
-//
-// docs/05-repo-video.md § Bảng kiểu cầm, docs/01-rig.md § Kiểu cầm, docs/11-nhom-cam.md § `bang-cam` theo nhóm.
 import { execFileSync } from "node:child_process";
 import {
   cpSync,
@@ -147,13 +124,12 @@ for (const m of monXin ?? [])
 for (const g of nhomXin ?? [])
   if (!rig.GRIP_GROUPS[g])
     throw new Error(`không có nhóm \`${g}\` (có: ${Object.keys(rig.GRIP_GROUPS).join(", ")})`);
-// món đời nào thì chế độ ấy: v2 (không `grips`) chỉ vào bảng nhóm, v1 chỉ vào bảng kiểu cầm
-const doiMon = (m) => rig.isHeldV2(data.held[m]);
-const items = (monXin ?? heldRepo).filter((m) => (nhomXin ? doiMon(m) : !doiMon(m)));
-const boMon = (monXin ?? heldRepo).filter((m) => !items.includes(m));
-if (boMon.length)
-  console.log(
-    `bỏ ${boMon.length} món ${nhomXin ? "v1 (chạy không `--nhom`)" : "v2 (chạy với `--nhom`)"}: ${boMon.join(", ")}`,
+const items = monXin ?? heldRepo;
+// nhóm chạy được: có chỗ tiếp xúc và không `later`; `carry` treo, không cần chỗ tiếp xúc
+const nhom =
+  nhomXin ??
+  Object.keys(rig.GRIP_GROUPS).filter(
+    (g) => g === "carry" || (rig.CONTACTS[g] && !rig.GRIP_GROUPS[g].later),
   );
 
 /** Bàn tay của một nhân vật: `k`, `long` của `cladHand`; người không mặc đồ thì `1`, `1` */
@@ -184,68 +160,18 @@ const people = (() => {
   return all.length === 1 ? all : [all[0], all[all.length - 1]];
 })();
 
-// ---- dáng tay: mốc đầu tiên trong scenes/ cầm đúng món#kiểu ----
+// ---- đặt người và tay ----
 const RAD = Math.PI / 180;
 const fwd = (yaw) => [Math.cos(yaw * RAD), 0, -Math.sin(yaw * RAD)];
 const rgt = (yaw) => [-Math.sin(yaw * RAD), 0, -Math.cos(yaw * RAD)];
 const dot = (a, b) => a.reduce((s, v, i) => s + v * b[i], 0);
 const r2 = (n) => Math.round(n * 100) / 100;
-/** Hướng / điểm thế giới của người đứng ở `at0` quay `yaw0` sang người ở `at1` quay `yaw1`; `flip` soi gương trái–phải */
-const moveDir = (d, yaw0, yaw1, flip) => {
+/** Hướng thế giới của người quay `yaw0` sang người quay `yaw1` */
+const moveDir = (d, yaw0, yaw1) => {
   const f = dot(d, fwd(yaw0));
-  const r = dot(d, rgt(yaw0)) * (flip ? -1 : 1);
+  const r = dot(d, rgt(yaw0));
   return fwd(yaw1).map((v, i) => r2(v * f + rgt(yaw1)[i] * r + (i === 1 ? d[1] : 0)));
 };
-// chỉ kiểu cầm v1 (`món#kiểu`); chỗ cầm nhóm (`món@nhóm`, `{ item, group }`) không có dáng nguồn
-const holdKey = (h) =>
-  typeof h === "string" ? (h.includes("@") ? undefined : h) : h?.grip && `${h.item}#${h.grip}`;
-const baseKey = (k) => k && k.replace(/^([^#:]+):[^#]*/, "$1");
-const rank = (name) => (name.startsWith("thu-grip") ? 0 : name.startsWith("thu-") ? 1 : 2);
-const sceneFiles = listJson(join(root, "scenes"))
-  .map((f) => f.replace(/\.json$/, ""))
-  .sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
-const sources = new Map(); // "món#kiểu|side" → { scene, id, t, at, yaw, hands: { right?, left? } }
-for (const name of sceneFiles) {
-  let j;
-  try {
-    j = JSON.parse(readFileSync(join(root, "scenes", `${name}.json`), "utf8"));
-  } catch {
-    continue;
-  }
-  for (const c of j.cast ?? [])
-    for (const k of c.world?.hands ?? [])
-      for (const side of ["right", "left"]) {
-        const key = baseKey(holdKey(k[side]?.hold));
-        if (!key || sources.has(`${key}|${side}`)) continue;
-        const other = side === "right" ? "left" : "right";
-        // tay kia chỉ chép khi nó là tay phụ của cùng món (kiểu `both`): cùng tên đủ (`vali:2` là món khác)
-        const g = data.held[key.split("#")[0]]?.grips?.[key.split("#")[1]];
-        const same = !!g?.both && holdKey(k[other]?.hold) === holdKey(k[side].hold);
-        sources.set(`${key}|${side}`, {
-          scene: name,
-          id: c.id,
-          t: k.t,
-          at: c.world.at ?? [0, 0, 0],
-          yaw: c.world.yaw ?? 0,
-          hands: { [side]: k[side], ...(same && { [other]: k[other] }) },
-        });
-      }
-}
-
-/** Một tay của mốc nguồn sang người của bảng: bỏ đè ý định, đổi `at` / `elbow` theo chỗ đứng, soi gương nếu đổi tay */
-const copyHand = (h, src, key, flip) => {
-  const out = {};
-  for (const f of ["to", "side", "offset", "point", "stretch", "bend"])
-    if (h[f] !== undefined) out[f] = h[f];
-  if (h.at) {
-    const d = h.at.map((v, i) => v - src.at[i]);
-    out.at = moveDir(d, src.yaw, YAW, flip).map((v, i) => r2(v + AT[i]));
-  }
-  if (h.elbow) out.elbow = moveDir(h.elbow, src.yaw, YAW, flip);
-  out.hold = key;
-  return out;
-};
-
 /** Cách đặt cánh tay cho chỗ treo: khuỷu gập chữ V (cổ tay trước vai), hay tay dang ngoài túi đeo vai; `hold` là chỗ cầm */
 const treoTay = (side, on, hold) => {
   const lr = side === "right" ? -1 : 1;
@@ -254,13 +180,13 @@ const treoTay = (side, on, hold) => {
         to: "shoulder",
         offset: [36, 30, 0],
         point: "wrist",
-        elbow: moveDir([0.7 * lr, 1, -0.2], 90, YAW, false),
+        elbow: moveDir([0.7 * lr, 1, -0.2], 90, YAW),
         hold,
       }
     : {
-        at: moveDir([90 * lr, -185, -10], 90, YAW, false).map((v, i) => r2(v + AT[i])),
+        at: moveDir([90 * lr, -185, -10], 90, YAW).map((v, i) => r2(v + AT[i])),
         point: "wrist",
-        elbow: moveDir([0.6 * lr, 1, 0], 90, YAW, false),
+        elbow: moveDir([0.6 * lr, 1, 0], 90, YAW),
         hold,
       };
 };
@@ -268,39 +194,6 @@ const TREO_TU = {
   elbow: "mặc định (khuỷu gập, cổ tay trước vai)",
   shoulder: "mặc định (tay dang ngoài túi)",
 };
-
-/** Mốc tay của ô `key` (món#kiểu) cầm bằng tay `side`: từ cảnh, hay mặc định trước ngực */
-function handsFor(key, side) {
-  const other = side === "right" ? "left" : "right";
-  const own = sources.get(`${key}|${side}`);
-  const mir = !own && sources.get(`${key}|${other}`);
-  const src = own || mir;
-  if (src) {
-    const hands = {};
-    for (const [s, h] of Object.entries(src.hands)) {
-      const to = mir ? (s === "right" ? "left" : "right") : s;
-      hands[to] = copyHand(h, src, key, !!mir);
-    }
-    return { hands, from: `${src.scene} ${src.id} ${src.t}s${mir ? " (soi gương)" : ""}` };
-  }
-  // kiểu treo: bàn tay tự do, cánh tay đặt cho chỗ treo
-  const on = data.held[key.split("#")[0]]?.grips?.[key.split("#")[1]]?.on;
-  if (on === "elbow" || on === "shoulder")
-    return { hands: { [side]: treoTay(side, on, key) }, from: TREO_TU[on] };
-  const lr = side === "right" ? -1 : 1;
-  return {
-    hands: {
-      [side]: {
-        to: "chest",
-        offset: [55, 40, 22],
-        point: "grip",
-        elbow: moveDir([0, 1, 0.4 * lr], 90, YAW, false),
-        hold: key,
-      },
-    },
-    from: "mặc định (trước ngực)",
-  };
-}
 
 // ---- ô ----
 const slug = (s) => s.replace(/[^a-zA-Z0-9-]+/g, "-");
@@ -339,34 +232,8 @@ function dungCanh(p, hands, marks = []) {
 const loc = [];
 /** Vị trí đặt món (`items[]`) của mỗi hàng nhóm, để so hàng trùng sau khi giải */
 const viTri = new Map();
-if (!nhomXin) {
-  for (const item of items) {
-    const spec = data.held[item];
-    for (const [grip, g] of Object.entries(spec.grips ?? {})) {
-      const sides = g.both ? [g.both.lead] : g.left ? ["right", "left"] : ["right"];
-      for (const side of sides)
-        for (const p of people) {
-          const key = `${item}#${grip}`;
-          const { hands, from } = handsFor(key, side);
-          const id = `bang-cam-${slug(item)}-${slug(grip)}-${side === "right" ? "P" : "T"}-${slug(p.file.replace(/\.json$/, ""))}`;
-          cells.push({
-            id,
-            item,
-            grip,
-            key,
-            side,
-            person: p.file.replace(/\.json$/, ""),
-            size: r2(p.size),
-            from,
-            two: !!g.both,
-            carry: !!g.on && g.on !== "hand",
-            scene: dungCanh(p, hands),
-          });
-        }
-    }
-  }
-} else {
-  // ---- hàng mẫu theo nhóm ----
+// ---- hàng mẫu theo nhóm ----
+{
   const NGUC = { to: "chest", offset: [30, -3, 0] };
   // trục `front` / `top` của món theo tên mốc món khai (`spec.front`, `spec.top`)
   const huong = (spec, to) => ({
@@ -773,7 +640,7 @@ if (!nhomXin) {
   for (const item of items) {
     const spec = data.held[item];
     const geom = rig.itemGeom(spec);
-    for (const group of nhomXin)
+    for (const group of nhom)
       for (const p of people) {
         const fits = rig.groupFits(geom, group, p.dims, spec.anchors);
         if (!fits.length) {
@@ -852,7 +719,7 @@ if (!nhomXin) {
 }
 if (!cells.length)
   throw new Error(
-    `không có ô nào: ${items.length ? "không món nào đạt nhóm nào (xem dòng bỏ ở trên)" : `không có món ${nhomXin ? "v2" : "v1"} trong held/ hay --mon`}`,
+    `không có ô nào: ${items.length ? "không món nào đạt nhóm nào (xem dòng bỏ ở trên)" : "không có món trong held/ hay --mon"}`,
   );
 
 // ---- đo: cảnh three trong Node, luật `held` như `check` ----
@@ -865,7 +732,6 @@ const r1 = (n) => Math.round(n * 10) / 10;
 const VN = { thumb: "cái", index: "trỏ", middle: "giữa", ring: "áp út", pinky: "út" };
 const RULE = {
   pierce: "xuyên",
-  wrap: "ôm hở",
   loose: "lỏng",
   grip: "nắm xa",
   up: "up lệch",
@@ -925,29 +791,16 @@ const tomTatNhom = (s) => {
 };
 
 /** Số đo một bàn tay (hay một món treo): chuỗi ngắn cho nhãn */
-const tomTat = (s) => {
-  if (s.on)
-    return [
-      `treo ${s.on === "elbow" ? "khuỷu" : "vai"}`,
-      `quai ${r1(s.seat)}`,
-      ...(s.bend !== undefined ? [`khuỷu ${Math.round(s.bend)}°/${Math.round(s.rise)}°`] : []),
-      `thân ${r1(s.body.gap)} ${s.body.part}`,
-      `đẩy ${Math.round(s.swing)}°`,
-    ].join(" · ");
-  if (rig.isGroupHeld(s)) return tomTatNhom(s);
-  const a = [`lún ${r1(s.pierce.depth)}`];
-  const open = s.wrap && s.fingers ? rig.heldOpen(s) : [];
-  if (open.length) a.push(`hở ${open.map((f) => `${VN[f]} ${r1(s.fingers[f])}`).join(", ")}`);
-  a.push(`nắm ${r1(s.grip)}`);
-  if (!["edge", "pinch", "hook"].includes(s.pose))
-    a.push(`lòng ${r1(s.palm.gap)}/${Math.round(s.palm.angle)}°`);
-  if (s.intent)
-    a.push(
-      `${s.intent.rule} ${Math.round(s.intent.err)}°${s.intent.clamped.length ? ` kẹp ${s.intent.clamped.join("+")}` : ""}`,
-    );
-  if (s.reach) a.push(`tới ${r1(s.reach.gap)}`);
-  return a.join(" · ");
-};
+const tomTat = (s) =>
+  s.on
+    ? [
+        `treo ${s.on === "elbow" ? "khuỷu" : "vai"}`,
+        `quai ${r1(s.seat)}`,
+        ...(s.bend !== undefined ? [`khuỷu ${Math.round(s.bend)}°/${Math.round(s.rise)}°`] : []),
+        `thân ${r1(s.body.gap)} ${s.body.part}`,
+        `đẩy ${Math.round(s.swing)}°`,
+      ].join(" · ")
+    : tomTatNhom(s);
 
 for (const c of cells) {
   const parsed = rig.parseScene(c.scene);
@@ -964,7 +817,7 @@ for (const c of cells) {
     rt = rig.resolveScene(sc, data.actions, data.animals, data.props, heights, bodies, data.held);
   } catch (e) {
     // `resolveScene` đo cỡ tay theo chiều cao người mẫu, có thể chặt hơn cỡ tay của nhân vật
-    const loi = nhomXin && e.message.match(/lỗi `(?:choice|group)`: (.*)$/);
+    const loi = e.message.match(/lỗi `(?:choice|group)`: (.*)$/);
     if (loi) c.loc = loi[1].replace(/^`[^`]*@[^`]*`: /, "");
     else c.error = `resolveScene: ${e.message}`;
     continue;
@@ -1018,22 +871,19 @@ for (const c of cells) {
         ? { on: s.on, seat: s.seat, bend: s.bend, rise: s.rise, body: s.body, swing: s.swing }
         : {
             pierce: s.pierce,
-            ...(rig.isGroupHeld(s) && {
-              sink: lunDa(s),
-              roles: s.roles,
-              gaps: s.gaps,
-              size: s.size,
-              hold: s.hold,
-              grasp: s.grasp && {
-                group: s.grasp.group,
-                mode: s.grasp.mode,
-                choice: s.grasp.choice,
-                by: s.grasp.by,
-                arm: s.grasp.arm,
-              },
-            }),
+            sink: lunDa(s),
+            roles: s.roles,
+            gaps: s.gaps,
+            size: s.size,
+            hold: s.hold,
+            grasp: s.grasp && {
+              group: s.grasp.group,
+              mode: s.grasp.mode,
+              choice: s.grasp.choice,
+              by: s.grasp.by,
+              arm: s.grasp.arm,
+            },
             fingers: s.fingers,
-            wrap: s.wrap,
             grip: s.grip,
             palm: s.palm,
             up: s.up,
@@ -1042,7 +892,6 @@ for (const c of cells) {
               rule: s.intent.rule,
               err: s.intent.err,
               clamped: s.intent.clamped,
-              alts: s.intent.alts,
             },
             reach: s.reach,
           },
@@ -1050,9 +899,9 @@ for (const c of cells) {
   if (!c.hands.length && !c.error) c.error = "không bàn tay nào cầm món ở giây chụp";
 }
 
-// ---- nhóm: bỏ hàng `resolveScene` từ chối, nhãn hàng mặc định, bỏ hàng trùng hàng trước ----
+// ---- bỏ hàng `resolveScene` từ chối, nhãn hàng mặc định, bỏ hàng trùng hàng trước ----
 const trung = [];
-if (nhomXin) {
+{
   for (const c of [...cells])
     if (c.loc) {
       loc.push({ item: c.item, group: c.group, person: c.person, row: c.grip, why: c.loc });
@@ -1152,7 +1001,7 @@ try {
 // ---- bảng mỗi món ----
 const tay = (c) => `${c.two ? "hai tay" : c.side === "right" ? "tay phải" : "tay trái"}`;
 const nhanHang = (c) =>
-  `${c.key}${c.group ? "\n" : " · "}${tay(c)} · ${c.person} (tay ${c.size})` +
+  `${c.key}\n${tay(c)} · ${c.person} (tay ${c.size})` +
   (c.error
     ? `\nLỖI ${c.error}`
     : `\n${c.hands.map((h) => `${h.hand === "R" ? "P" : "T"}: ${h.text}`).join("\n")}`) +
@@ -1195,40 +1044,33 @@ for (const it of items) {
 
 // ---- mục lục ----
 const md = [
-  "# Bảng duyệt kiểu cầm",
+  "# Bảng duyệt nhóm cầm",
   "",
   `Rig \`${rig.RIG_VERSION ?? JSON.parse(readFileSync(join(root, "node_modules/@stickman3d/rig/package.json"), "utf8")).version}\` · giây ${T} · người: ${people.map((p) => `\`${p.file}\` (tay ${r2(p.size)})`).join(", ")} · ${cells.length} hàng × ${GOC.length} góc.`,
-  "Số đo (đơn vị rig, góc độ): `lún` da lún sâu nhất vào món (âm là khe), `hở` ngón khai `wrap` còn cách món, `nắm` tâm nắm tới mặt món (âm là trong món), `lòng` khe/góc lòng tay (không đo với dáng kẹp `edge`, `pinch`, `hook`), `up`/`face` góc lệch ý định và khớp cổ tay kẹp, `tới` khe tay phụ hay `item:` tới đích; món treo: `quai` đỉnh quai tới chỗ treo, `khuỷu` góc gập/độ ngóc cẳng tay, `thân` khe thân món tới phần người gần nhất, `đẩy` góc lệch khỏi phương đứng. `!!` là luật `held` của `check` báo trên cảnh này.",
-  ...(nhomXin
+  "Số đo (đơn vị rig, góc độ). Chỗ cầm nhóm: dòng đầu là lựa chọn rig giải (`variant`, `edge`, `along`, `thumb`…), dòng hai `lún` da lún sâu nhất vào món, `xuyên` trục nang tới mặt món (âm là còn ngoài), `nắm` tâm nắm tới hình, `cỡ` khối hình / `W` tay, `cổ tay vượt` độ vượt kẹp, `hở` ngón có vai trò chạm mà còn cách món; dòng ba là khe từng ngón tới món (âm là lún) và vai trò (`press`, `wrap`, `tip`, `support`, `free`). Món treo: `quai` đỉnh quai tới chỗ treo, `khuỷu` góc gập/độ ngóc cẳng tay, `thân` khe thân món tới phần người gần nhất, `đẩy` góc lệch khỏi phương đứng. `!!` là luật `held` của `check` báo trên cảnh này.",
+  "",
+  ...(bo.length
     ? [
+        "Bỏ (món không có khối hình đạt `needs` của nhóm với cỡ tay):",
+        ...bo.map((b) => `- \`${b.item}@${b.group}\` ${b.person}: ${b.why}`),
         "",
-        "Chỗ cầm nhóm: dòng đầu là lựa chọn rig giải (`variant`, `edge`, `along`, `thumb`…), dòng hai `lún` da lún sâu nhất vào món, `xuyên` trục nang tới mặt món (âm là còn ngoài), `nắm` tâm nắm tới hình, `cỡ` khối hình / `W` tay, `cổ tay vượt` độ vượt kẹp, `hở` ngón có vai trò chạm mà còn cách món; dòng ba là khe từng ngón tới món (âm là lún) và vai trò (`press`, `wrap`, `tip`, `support`, `free`).",
-        "",
-        ...(bo.length
-          ? [
-              "Bỏ (món không có khối hình đạt `needs` của nhóm với cỡ tay):",
-              ...bo.map((b) => `- \`${b.item}@${b.group}\` ${b.person}: ${b.why}`),
-              "",
-            ]
-          : []),
-        ...(loc.length
-          ? [
-              "Bỏ (hàng mẫu không áp được cho món):",
-              ...loc.map((b) => `- \`${b.item}@${b.group} ${b.row}\` ${b.person}: ${b.why}`),
-              "",
-            ]
-          : []),
-        ...(trung.length
-          ? [
-              "Bỏ (giải ra cùng chỗ cầm, cùng vị trí món với hàng trước):",
-              ...trung.map((t) => `- \`${t.key}\` ${t.person}: giống \`${t.giong}\``),
-              "",
-            ]
-          : []),
       ]
     : []),
-  "",
-  "| Món#kiểu | Tay | Người | Dáng lấy từ | Số đo | `check` |",
+  ...(loc.length
+    ? [
+        "Bỏ (hàng mẫu không áp được cho món):",
+        ...loc.map((b) => `- \`${b.item}@${b.group} ${b.row}\` ${b.person}: ${b.why}`),
+        "",
+      ]
+    : []),
+  ...(trung.length
+    ? [
+        "Bỏ (giải ra cùng chỗ cầm, cùng vị trí món với hàng trước):",
+        ...trung.map((t) => `- \`${t.key}\` ${t.person}: giống \`${t.giong}\``),
+        "",
+      ]
+    : []),
+  "| Chỗ cầm | Tay | Người | Cách đặt | Số đo | `check` |",
   "|---|---|---|---|---|---|",
   ...cells.map(
     (c) =>
@@ -1244,10 +1086,10 @@ writeFileSync(join(outDir, "index.md"), md.join("\n"));
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
 writeFileSync(
   join(outDir, "index.html"),
-  `<!doctype html><meta charset="utf-8"><title>Bảng kiểu cầm</title><style>body{font:14px sans-serif;margin:20px;background:#f5f0e5}td,th{border:1px solid #ccc;padding:3px 6px;vertical-align:top}table{border-collapse:collapse}.bad{color:#b00}img{max-width:100%}</style>` +
-    `<h1>Bảng duyệt kiểu cầm</h1><p>${esc(md[2])}</p><p>${esc(md[3])}</p>` +
+  `<!doctype html><meta charset="utf-8"><title>Bảng nhóm cầm</title><style>body{font:14px sans-serif;margin:20px;background:#f5f0e5}td,th{border:1px solid #ccc;padding:3px 6px;vertical-align:top}table{border-collapse:collapse}.bad{color:#b00}img{max-width:100%}</style>` +
+    `<h1>Bảng duyệt nhóm cầm</h1><p>${esc(md[2])}</p><p>${esc(md[3])}</p>` +
     `<p>${sheets.map((s) => `<a href="#${s.it}">${s.it}</a>`).join(" · ")}</p>` +
-    `<table><tr><th>Món#kiểu</th><th>Tay</th><th>Người</th><th>Dáng lấy từ</th><th>Số đo</th><th>check</th></tr>` +
+    `<table><tr><th>Chỗ cầm</th><th>Tay</th><th>Người</th><th>Cách đặt</th><th>Số đo</th><th>check</th></tr>` +
     cells
       .map(
         (c) =>
@@ -1260,7 +1102,10 @@ writeFileSync(
 const doJson = {
   t: T,
   people,
-  ...(nhomXin && { nhom: nhomXin, bo, loc, trung }),
+  nhom,
+  bo,
+  loc,
+  trung,
   // bỏ JSON cảnh dựng tạm: dựng lại được từ dữ liệu, `do.json` chỉ giữ số đo
   cells: cells.map((c) => ({ ...c, scene: undefined, tiles: c.tiles?.map((x) => x.file) })),
 };

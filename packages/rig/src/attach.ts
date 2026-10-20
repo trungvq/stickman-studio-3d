@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { R, type Figure, type Side } from './stickman';
 import { RIG } from './core/constants';
 import { gripShift, type HandPose } from './core/hand';
-import { heldAxis, heldGrip, isCarry, isHeldV2, type CarrySpec, type GraspHand, type GripFrame, type GripSpec, type HeldItemSpec, type ReachHold } from './core/heldItem';
+import { type CarrySpec, type GraspHand, type GripFrame, type HeldItemSpec, type ReachHold } from './core/heldItem';
 import { holdHand, holdLinkFrame, isCarryHold } from './core/holdLink';
 import { handDims } from './core/heldGeom';
 import { carryFrame, carrySpecOf, elbowSeat, type CarryBody } from './core/heldCarry';
@@ -10,7 +10,6 @@ import { bodyCapsules } from './collide';
 import type { V3 } from './core/lens';
 import { heldFit, skinBulge, type FingerRoles } from './core/heldFit';
 import { fingerVec, HAND_POSES } from './core/hand';
-import type { HeldIntent } from './core/heldAudit';
 import type { Vec3 } from './khoi';
 import { poseHand, type Hand } from './human';
 
@@ -60,8 +59,8 @@ export interface HoldGrip {
 }
 
 /**
- * Cách cầm. `grip`: món cứng theo bàn tay bằng liên kết của kiểu cầm (`gripFrame` của lõi) — dáng ngón, chỗ và hướng món
- * đều do kiểu cầm; không đi cùng `follow`, `offset`, `rotate`, `pose`. Không có `grip` là đường cũ: `wrist` đi cứng theo cổ
+ * Cách cầm. `grip`: món cứng theo bàn tay bằng liên kết của chỗ cầm nhóm (`holdLinkFrame` của lõi) — dáng ngón, chỗ và
+ * hướng món đều do chỗ cầm; không đi cùng `follow`, `offset`, `rotate`, `pose`. Không có `grip` là đường cũ: `wrist` đi cứng theo cổ
  * tay, `level` đặt ở cổ tay nhưng đứng thẳng, quay theo hướng người (cốc, khay). Hai tay (`hand: 'both'`): gốc ở giữa hai
  * mút tay, x từ tay phải sang tay trái; `level` giữ mặt ngang (khay), `tilt` nghiêng theo chênh cao hai tay (báo, laptop).
  */
@@ -80,14 +79,14 @@ export interface HoldOptions {
 
 /**
  * Lần cầm đang giữ của một bàn tay (`Figure.holding[side]`): `hold` ghi, `release` xoá. `check` đọc nó để tìm món trong tay
- * và đo đồ cầm (docs/03-scene.md#đồ-cầm-tay); món khai ý định ở `object.userData.hold` (`HeldIntent` của lõi). Kiểu cầm
+ * và đo đồ cầm (docs/03-scene.md#đồ-cầm-tay); món khai ý định ở `object.userData.hold` (`HeldIntent` của lõi). Cầm
  * cứng ghi `item`, `grip`
  */
 export interface Holding {
   object: THREE.Object3D;
   item?: string;
   grip?: string;
-  /** Kiểu cầm cứng: JSON món và bàn tay của kiểu cầm cho tay này (tay phụ là `both.other`) — ngón ôm theo đồ đọc */
+  /** Cầm cứng: JSON món và bàn tay của chỗ cầm cho tay này (tay phụ là `both.other`) — ngón ôm theo đồ đọc */
   spec?: HeldItemSpec;
   hand?: GraspHand;
   pose: HandPose;
@@ -283,22 +282,10 @@ export function hold(fig: Figure, object: THREE.Object3D, o: HoldOptions): Held 
   return held;
 }
 
-/** Ý định mặc định của kiểu cầm ra `userData.hold` cho `check` (chỉ phần đo được: `up`, `face` về mặt người cầm hay ống kính) */
-export function gripIntent(spec: HeldItemSpec, g: GripSpec | CarrySpec): HeldIntent | undefined {
-  if (isCarry(g)) return undefined;
-  const i = g.intent;
-  if (!i) return undefined;
-  const up = i.up ?? (i.face?.toward === 'up' ? i.face.axis : undefined);
-  if (up !== undefined) return { up: heldAxis(spec, up) };
-  const t = i.face?.toward;
-  if (i.face && (t === 'camera' || t === 'holderFace')) return { face: heldAxis(spec, i.face.axis), faceToward: t };
-  return undefined;
-}
-
 const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _m4 = new THREE.Matrix4(), _y = new THREE.Vector3();
 
 /**
- * Nhóm mang món của kiểu cầm cứng: tĩnh trong khung chỗ treo, chỉ xoay các nhóm con `hang` của món theo trọng lực mỗi lần
+ * Nhóm mang món của lần cầm cứng: tĩnh trong khung chỗ treo, chỉ xoay các nhóm con `hang` của món theo trọng lực mỗi lần
  * three tính ma trận (trục y của nhóm ấy về thẳng đứng, quay ít nhất)
  */
 class Carrier extends THREE.Group {
@@ -340,20 +327,17 @@ class Carrier extends THREE.Group {
 }
 
 /**
- * Cầm cứng theo kiểu cầm `g`: món treo vào chỗ treo của bàn tay chính bằng liên kết của lần cầm (`holdLinkFrame`: kiểu cầm
- * hay chỗ cầm nhóm), tính theo cỡ bàn tay của người (người que không có bàn tay thì điểm nắm ở mút nét). Cầm hai tay
- * (`both`): món theo tay dẫn, tay kia giữ dáng của nó trên món — chỗ của tay ấy là việc của bộ giải (`world.hands[].hold`)
+ * Cầm cứng theo chỗ cầm nhóm `g`: món treo vào chỗ treo của bàn tay chính bằng liên kết của lần cầm (`holdLinkFrame`), tính
+ * theo cỡ bàn tay của người (người que không có bàn tay thì điểm nắm ở mút nét). Cầm hai tay (`both`): món theo tay dẫn, tay
+ * kia giữ dáng của nó trên món — chỗ của tay ấy là việc của bộ giải (`world.hands[].hold`)
  */
 function holdGrip(fig: Figure, object: THREE.Object3D, hand: Side | 'both', g: HoldGrip, o: HoldOptions): Held {
   const rh: ReachHold = g.hold ?? { item: g.item, grip: g.grip, spec: g.spec, since: 0 };
-  const group = !!rh.grasp || isHeldV2(g.spec);
-  const name = rh.grasp ? `${g.item}@${rh.grasp.hold.group}` : `${g.item}#${g.grip}`;
+  const name = rh.grasp ? `${g.item}@${rh.grasp.hold.group}` : `${g.item}${g.grip}`;
   if (o.follow || o.offset || o.rotate || o.pose)
-    throw new Error(`\`hold\`: kiểu cầm \`${name}\` không đi cùng \`follow\`, \`offset\`, \`rotate\`, \`pose\``);
-  // tên kiểu cầm không có thì ném lỗi có tên
-  if (!group) heldGrip(g.spec, g.grip, g.item);
-  if (isCarryHold(g.spec, rh)) {
-    if (hand === 'both') throw new Error(`\`hold\`: \`${name}\` là kiểu treo, treo trên một tay`);
+    throw new Error(`\`hold\`: chỗ cầm \`${name}\` không đi cùng \`follow\`, \`offset\`, \`rotate\`, \`pose\``);
+  if (isCarryHold(rh)) {
+    if (hand === 'both') throw new Error(`\`hold\`: \`${name}\` là món treo, treo trên một tay`);
     return carry(fig, object, { hand, grip: g });
   }
   const dims = (s: Side) => {
@@ -363,12 +347,12 @@ function holdGrip(fig: Figure, object: THREE.Object3D, hand: Side | 'both', g: H
   const first: Side = hand === 'both' ? -1 : hand;
   let x = holdHand(rh, first, dims(first));
   if (!x) throw new Error(`\`hold\`: \`${name}\` không cầm bằng bàn tay`);
-  if (hand === 'both' && !x.both) throw new Error(`\`hold\`: \`${name}\` không phải kiểu cầm hai tay`);
+  if (hand === 'both' && !x.both) throw new Error(`\`hold\`: \`${name}\` không cầm hai tay (\`both\`)`);
   const lead = (x.both ? x.both.lead : first) as Side;
   if (lead !== first) x = holdHand(rh, lead, dims(lead))!;
   const other = -lead as Side;
   const h = fig.hands?.[lead];
-  const link = holdLinkFrame(rh, lead, h?.scale ?? 1, h?.long ?? h?.scale ?? 1, 1, x.hand);
+  const link = holdLinkFrame(rh, lead, h?.scale ?? 1, h?.long ?? h?.scale ?? 1, 1);
   const G = link.G;
   const socket = fig.sockets.hand[lead];
   // khung chỗ treo dời khỏi cổ tay bấy nhiêu; người que không có bàn tay thì điểm nắm của món đặt ngay chỗ treo
@@ -382,13 +366,10 @@ function holdGrip(fig: Figure, object: THREE.Object3D, hand: Side | 'both', g: H
   _m4.set(G.R[0], G.R[1], G.R[2], 0, G.R[3], G.R[4], G.R[5], 0, G.R[6], G.R[7], G.R[8], 0, 0, 0, 0, 1);
   carrier.quaternion.setFromRotationMatrix(_m4);
   const sides: Side[] = x.both ? [lead, other] : [lead];
-  const spec = group ? undefined : heldGrip(g.spec, g.grip, g.item) as GripSpec;
-  const touch = group ? [...(g.spec.touch ?? []), ...(rh.grasp?.hold.touch ?? [])] : (spec!.touch ?? []);
+  const touch = [...(g.spec.touch ?? []), ...(rh.grasp?.hold.touch ?? [])];
   carrier.userData.touch = [...sides.flatMap((s) => [forearm(s), palm(s)]), ...touch];
   carrier.add(object);
   socket.add(carrier);
-  const intent = spec && gripIntent(g.spec, spec);
-  if (intent) object.userData.hold = intent;
   const entries = new Map<Side, Holding>();
   for (const s of sides) {
     const hd = s === lead ? x.hand : x.both!.other;
@@ -397,7 +378,7 @@ function holdGrip(fig: Figure, object: THREE.Object3D, hand: Side | 'both', g: H
     const curl = s === lead ? x.curl : x.both!.curl;
     const entry: Holding = { object, item: g.item, grip: g.grip, spec: g.spec, hand: hd, pose: hd.pose, follow: 'wrist', both: !!x.both, ...(roles && { roles }), ...(curl !== undefined && { curl }) };
     entries.set(s, entry);
-    grip(fig, s, hd.pose, group ? v : undefined);
+    grip(fig, s, hd.pose, v);
     (fig.holding ??= {})[s] = entry;
   }
   if (g.spec.shape) fitHolding(fig);
@@ -419,7 +400,7 @@ function holdGrip(fig: Figure, object: THREE.Object3D, hand: Side | 'both', g: H
 export interface Carrying {
   object: THREE.Object3D;
   item: string;
-  /** Tên kiểu treo (v1), khoá lần cầm `@carry/…` (v2) */
+  /** Khoá lần cầm `@carry/…` */
   grip: string;
   spec: HeldItemSpec;
   carry: CarrySpec;
@@ -427,7 +408,7 @@ export interface Carrying {
   fit?: { swing: number; gap: number; part?: string };
 }
 
-/** Chỗ treo của kiểu treo trên người đã đặt dáng, thế giới three: điểm, thanh quai vắt qua, hướng từ thân ra; khuỷu kèm góc */
+/** Chỗ treo của món treo trên người đã đặt dáng, thế giới three: điểm, thanh quai vắt qua, hướng từ thân ra; khuỷu kèm góc */
 export interface CarrySeat {
   pivot: THREE.Vector3;
   bar: THREE.Vector3;
@@ -468,7 +449,7 @@ function shoulderTop(fig: Figure, side: Side): THREE.Vector3 {
 }
 
 /**
- * Chỗ treo của kiểu treo `on` trên tay `side` của người ở dáng đang đặt (thế giới three; gọi sau khi ma trận thế giới của
+ * Chỗ treo `on` trên tay `side` của người ở dáng đang đặt (thế giới three; gọi sau khi ma trận thế giới của
  * người đã tính). Khuỷu: mặt trong chỗ gập (`elbowSeat` của lõi). Vai: đỉnh vai phía trong khớp vai, thanh quai là trục vai
  * ra ngoài. `away` từ trục thân (hông → cổ) ra chỗ treo
  */
@@ -566,17 +547,17 @@ class CarryRig extends THREE.Group {
 const _cm = new THREE.Matrix4(), _ci = new THREE.Matrix4();
 
 /**
- * Treo `object` trên cánh tay theo kiểu treo `grip` hay `món@carry` (`carrySpecOf`, `on: elbow | shoulder`): đỉnh quai (`at`) ở chỗ treo (`carrySeat`), thân
+ * Treo `object` trên cánh tay theo `món@carry` (`carrySpecOf`, `on: elbow | shoulder`): đỉnh quai (`at`) ở chỗ treo (`carrySeat`), thân
  * món thõng theo trọng lực, đẩy khỏi thân và đùi (`carryFrame` của lõi) — đặt lại mỗi lần three tính ma trận. Bàn tay của tay
- * ấy không đổi dáng, `Figure.holding` không đổi; `Figure.carrying[side]` ghi lần treo. Vật dựng ở gốc khung món như kiểu
- * cầm. docs/01-rig.md#kiểu-treo
+ * ấy không đổi dáng, `Figure.holding` không đổi; `Figure.carrying[side]` ghi lần treo. Vật dựng ở gốc khung món như món
+ * cầm. docs/11-nhom-cam.md mục 3
  */
 export function carry(fig: Figure, object: THREE.Object3D, o: { hand: Side; grip: HoldGrip }): Held {
   const side = o.hand, g = o.grip, grasp = g.hold?.grasp;
-  const name = grasp ? `${g.item}@${grasp.hold.group}` : `${g.item}#${g.grip}`;
-  const spec = grasp ? carrySpecOf(g.spec, g.hold!) : heldGrip(g.spec, g.grip, g.item);
-  if (!spec || !isCarry(spec)) throw new Error(`\`carry\`: \`${name}\` là kiểu cầm bằng bàn tay — dùng \`hold\``);
-  if (!g.spec.shape) throw new Error(`\`carry\`: \`${g.item}\` cần \`shape\` cho kiểu treo`);
+  const name = grasp ? `${g.item}@${grasp.hold.group}` : `${g.item}${g.grip}`;
+  const spec = grasp && carrySpecOf(g.spec, g.hold!);
+  if (!spec) throw new Error(`\`carry\`: \`${name}\` không phải \`món@carry\` — cầm bằng bàn tay thì dùng \`hold\``);
+  if (!g.spec.shape) throw new Error(`\`carry\`: \`${g.item}\` cần \`shape\` cho món treo`);
   const entry: Carrying = { object, item: g.item, grip: g.grip, spec: g.spec, carry: spec };
   const rig = new CarryRig((c) => {
     const root = fig.root;
@@ -700,8 +681,8 @@ export function buildSockets(fig: Pick<Figure, 'root' | 'spine' | 'head' | 'arms
 }
 
 /**
- * Vật gọi tên trong `items` của JSON nhân vật dựng ra; `hold` bỏ trống thì đồ tay cầm cứng theo cổ tay. `hold.grip` là kiểu
- * cầm cứng (`HoldGrip`): kiểu cầm hai tay thì món theo tay `both.lead` của nó dù cắm ở socket tay nào
+ * Vật gọi tên trong `items` của JSON nhân vật dựng ra; `hold` bỏ trống thì đồ tay cầm cứng theo cổ tay. `hold.grip` là chỗ
+ * cầm nhóm (`HoldGrip`): cầm hai tay thì món theo tay dẫn của lần cầm dù cắm ở socket tay nào
  */
 export interface ItemBuild {
   object: THREE.Object3D;

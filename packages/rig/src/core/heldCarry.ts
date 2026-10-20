@@ -2,24 +2,22 @@ import { capsuleClearance, heldDistance, toItem } from "./heldFit";
 import {
   CARRY_ON,
   heldPoint,
-  isCarry,
   rotAxis,
   type CarrySpec,
   type GripFrame,
   type HeldItemSpec,
   type HeldShape,
   type HoldGrasp,
-  type ReachHold,
 } from "./heldItem";
 import { fromColumns, matMul, matVec, type V3 } from "./lens";
 
 /**
- * Kiểu treo (`grips.<kiểu>.on` là `elbow` / `shoulder`): chỗ treo trên cánh tay và món thõng theo trọng lực quanh nó, đẩy
+ * Nhóm `carry` (`on` là `elbow` / `shoulder`): chỗ treo trên cánh tay và món thõng theo trọng lực quanh nó, đẩy
  * khỏi thân và đùi. Thuần: điểm và nang trong một hệ bất kỳ có y lên (thế giới three), người 3D đưa vào. Một khung chỉ phụ
- * thuộc tư thế ở khung ấy. docs/01-rig.md#kiểu-treo
+ * thuộc tư thế ở khung ấy. docs/11-nhom-cam.md mục 3
  */
 
-/** Ngưỡng của kiểu treo, góc độ, đơn vị rig */
+/** Ngưỡng của món treo, góc độ, đơn vị rig */
 export const CARRY = {
   /** Góc lệch xa nhất khỏi phương đứng mà thân món được đẩy ra khi lồng vào thân, đùi */
   swing: 80,
@@ -33,21 +31,16 @@ export const CARRY = {
   body: 1.5,
 } as const;
 
-/** Lần cầm như `ReachHold`: tên kiểu cầm (v1), chỗ cầm nhóm của cảnh (`grasp.hold`, v2) */
-export type CarryRef = Pick<ReachHold, "grip"> & { grasp?: Pick<HoldGrasp, "hold"> };
+/** Lần cầm: chỗ cầm nhóm của cảnh (`grasp.hold`) */
+export type CarryRef = { grasp?: Pick<HoldGrasp, "hold"> };
 
 /**
- * Spec treo của lần cầm `h` trên món `spec`: kiểu treo của món v1, hay `món@carry` của v2 — `at` là `seats[on]` của món,
- * `yaw` của cảnh, `touch` của món cộng của cảnh. Lần cầm không treo thì `undefined`; `carry` thiếu `on` hay món không có
- * `seats[on]` thì ném lỗi có tên
+ * Spec treo của lần cầm `h` trên món `spec` (`món@carry`): `at` là `seats[on]` của món, `yaw` của cảnh, `touch` của món cộng
+ * của cảnh. Lần cầm không treo thì `undefined`; `carry` thiếu `on` hay món không có `seats[on]` thì ném lỗi có tên
  */
 export function carrySpecOf(spec: HeldItemSpec, h: CarryRef): CarrySpec | undefined {
   const g = h.grasp?.hold;
-  if (!g) {
-    const v1 = spec.grips?.[h.grip];
-    return isCarry(v1) ? v1 : undefined;
-  }
-  if (g.group !== "carry") return undefined;
+  if (!g || g.group !== "carry") return undefined;
   const where = `\`${g.item}@carry\``;
   if (!g.on) throw new Error(`${where}: thiếu \`on\` (${CARRY_ON.join(", ")})`);
   const at = spec.seats?.[g.on];
@@ -191,7 +184,7 @@ export interface CarryFit {
 }
 
 /**
- * Món treo bằng kiểu treo `grip` ở chỗ treo `pivot`: đỉnh quai (`grip.at`) trùng `pivot`, trục y của món về phương đứng,
+ * Món treo theo spec treo `grip` ở chỗ treo `pivot`: đỉnh quai (`grip.at`) trùng `pivot`, trục y của món về phương đứng,
  * mặt trước (+z) theo hướng nằm ngang của thanh quai vắt qua (`bar`: cẳng tay ở khuỷu, hướng ra ngoài vai ở vai), quay thêm
  * `grip.yaw` quanh phương đứng. Thân món (hình va chạm `shape`) lồng vào các nang `body` thì đẩy ra quanh `pivot` về phía
  * `away` (nằm ngang, từ thân ra), lấy góc nhỏ nhất vừa hết lồng, tới `CARRY.swing`. `outer` là phần người ở phía ngoài

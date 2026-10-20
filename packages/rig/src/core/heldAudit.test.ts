@@ -13,7 +13,6 @@ import {
   heldLegacyLine,
   sceneHeld,
   segMeshDistance,
-  HELD_UP,
   type HeldCarry,
   type HeldHand,
   type HeldItemPose,
@@ -21,6 +20,7 @@ import {
 import type { V3 } from "./lens";
 import { parseHeldItem } from "./heldItem";
 import { parseScene, resolveScene } from "./scene";
+import chenJson from "./__fixtures__/held-v2/chen.json";
 
 /** Hộp kín thẳng trục `lo..hi`, 12 tam giác quấn ra ngoài; `flip` quấn ngược */
 function box(lo: V3, hi: V3, flip = false): Float32Array {
@@ -183,78 +183,18 @@ describe("sceneHeld: luật trên cả cảnh", () => {
   });
 });
 
-describe("kiểu cầm cứng", () => {
+describe("đồ cầm theo `world.hands`", () => {
   const rigid = (o: Partial<HeldHand> = {}) =>
-    sample({ hold: "chen#kep", follow: "wrist", obj: 7, ...o });
-  const rules = (o: Partial<HeldHand>) => heldHits(rigid(o)).map((h) => h.rule);
-
-  it("không so dáng hành động; ý định đo theo bộ giải (`intent`), không theo `userData.hold`", () => {
-    expect(rules({ acted: handVec("pinch") })).toEqual([]);
-    expect(rules({ up: 80, face: { angle: 120, toward: "camera" } })).toEqual([]);
-    const intent = { err: HELD_UP + 5, clamped: ["bend" as const], want: [0, -1, 0] as V3 };
-    expect(rules({ intent: { rule: "up", ...intent, got: [0, 0, 1] } })).toEqual(["up"]);
-    expect(rules({ intent: { rule: "face", ...intent, got: [0, 0, 1] } })).toEqual([]);
-    expect(
-      rules({ intent: { rule: "face", ...intent, err: 90, toward: "saito.eye", got: [0, 0, 1] } }),
-    ).toEqual(["face"]);
-  });
-
-  it("tay phụ hay `item:` còn cách đích quá `AIM_GAP` nhân cỡ người: `reach`", () => {
-    const reach = { kind: "support" as const, point: "grip", to: "at", s: 1 };
-    expect(rules({ reach: { ...reach, gap: 4 } })).toEqual([]);
-    expect(rules({ reach: { ...reach, gap: 9 } })).toEqual(["reach"]);
-    expect(rules({ reach: { ...reach, gap: 9, s: 2 } })).toEqual([]);
-  });
-
-  it("dòng báo ý định kể đích, khớp kẹp và gợi ý; lỗi liên kết trỏ về `held/<món>.json`", () => {
-    const r = parseScene({
-      duration: 1,
-      lens: { eye: [0, -300, -900], yaw: 0, pitch: 10, f: 800, cx: 0, cy: 0 },
-      cast: [{ id: "a", world: { at: [0, 0, 0] }, tracks: [] }],
+    sample({
+      hold: "chen@bowl////",
+      key: "7|@bowl////",
+      follow: "wrist",
+      obj: 7,
+      fingers: { thumb: 0, index: 0, middle: 0, ring: 0, pinky: 0 },
+      ...o,
     });
-    if (!r.success) throw new Error(r.error.message);
-    const rt = resolveScene(r.data, {});
-    const s = rigid({
-      intent: {
-        rule: "face",
-        err: 100,
-        clamped: ["turn"],
-        toward: "camera",
-        want: [0, 0, -1],
-        got: [0, 0, 1],
-      },
-      grip: 9,
-    });
-    const lines = sceneHeld(rt, { frame: () => [s] }).map(heldLine);
-    expect(lines.find((l) => l.startsWith("mặt món quay sai"))).toMatch(
-      /lệch 100° khỏi `camera`; cổ tay kẹp ở xoay cẳng tay ±90 — đổi `elbow`/,
-    );
-    expect(lines.find((l) => l.startsWith("món không nằm trong tay"))).toContain(
-      "sửa kiểu cầm `chen#kep` ở `held/chen.json`",
-    );
-    // kiểu cầm khác của cùng món với tới: gợi ý tên nó; không cái nào dưới ngưỡng thì chỉ nói chung
-    const alt = (alts: { grip: string; err: number }[]) =>
-      sceneHeld(rt, {
-        frame: () => [
-          rigid({
-            intent: {
-              rule: "up",
-              err: 50,
-              clamped: ["bend"],
-              want: [0, -1, 0],
-              got: [0, 0, 1],
-              alts,
-            },
-          }),
-        ],
-      })
-        .map(heldLine)
-        .find((l) => l.startsWith("món nghiêng"));
-    expect(alt([{ grip: "do", err: 12 }])).toContain("đổi kiểu cầm: `chen#do` với tới (lệch 12°)");
-    expect(alt([{ grip: "do", err: 40 }])).toMatch(/hay đổi kiểu cầm ở giây/);
-  });
 
-  it("dòng báo món treo lấy đúng tên món cho kiểu treo v1 và chỗ cầm v2; v2 trỏ chỗ cầm của cảnh", () => {
+  it("dòng báo món treo lấy đúng tên món, trỏ chỗ cầm của cảnh", () => {
     const carry = (hold: string, o: Partial<HeldCarry> = {}): HeldCarry => ({
       id: "a",
       hand: "R",
@@ -277,19 +217,16 @@ describe("kiểu cầm cứng", () => {
     if (!r.success) throw new Error(r.error.message);
     const rt = resolveScene(r.data, {});
     const line = (c: HeldCarry) => sceneHeld(rt, { frame: () => [c] }).map(heldLine)[0];
-    const v1 = line(carry("tui-hieu#vai"));
-    expect(v1).toContain("khai `touch` ở kiểu treo");
-    expect(v1).toContain("`held/tui-hieu.json`");
-    const v2 = line(carry("tui-hieu@carry"));
-    expect(v2).toContain("khai `touch` ở chỗ cầm của cảnh");
-    expect(v2).toContain("`held/tui-hieu.json`");
-    expect(v2).toContain("chỗ cầm tui-hieu@carry");
-    expect(v2).not.toMatch(/@carry\.json|kiểu treo/);
+    const body = line(carry("tui-hieu@carry"));
+    expect(body).toContain("khai `touch` ở chỗ cầm của cảnh");
+    expect(body).toContain("`held/tui-hieu.json`");
+    expect(body).toContain("chỗ cầm tui-hieu@carry");
+    expect(body).not.toMatch(/@carry\.json/);
     const seat = line(carry("tui-hieu@carry", { seat: 20, body: { gap: 5, part: "torso" } }));
     expect(seat).toContain("`seats.shoulder` ở `held/tui-hieu.json`");
   });
 
-  it("món cứng không đo trôi; món nhảy qua mốc `hold` (gắn, thả, đổi tay) đo hai bên mốc", () => {
+  it("chỗ cầm nhóm không đo trôi; món nhảy qua mốc `hold` (gắn, thả, đổi tay) đo hai bên mốc", () => {
     const r = parseScene({
       duration: 3,
       lens: { eye: [0, -300, -900], yaw: 0, pitch: 10, f: 800, cx: 0, cy: 0 },
@@ -299,9 +236,9 @@ describe("kiểu cầm cứng", () => {
           world: {
             at: [0, 0, 0],
             hands: [
-              { t: 0.5, right: { hold: "chen#kep" } },
+              { t: 0.5, right: { hold: "chen@bowl" } },
               { t: 1.5, right: { hold: null } },
-              { t: 2.5, right: { hold: "chen#kep" } },
+              { t: 2.5, right: { hold: "chen@bowl" } },
             ],
           },
           tracks: [],
@@ -309,19 +246,12 @@ describe("kiểu cầm cứng", () => {
       ],
     });
     if (!r.success) throw new Error(r.error.message);
-    const chen = {
-      size: [4, 4, 4],
-      anchors: { rim: { at: [0, 2, 0], dir: [0, 1, 0] }, body: { at: [2, 0, 0], dir: [1, 0, 0] } },
-      grips: {
-        kep: { pose: "pinch", at: "body", palm: { into: "body" }, fingers: { along: "rim" } },
-      },
-    };
-    const parsed = parseHeldItem(chen);
+    const parsed = parseHeldItem(chenJson);
     if (!parsed.success) throw new Error(parsed.error.message);
     const rt = resolveScene(r.data, {}, {}, {}, {}, {}, { chen: parsed.data });
     const held = (t: number) => (t >= 0.5 && t < 1.5) || t >= 2.5;
     const issues = sceneHeld(rt, {
-      // món xoay trong tay suốt quãng cầm: đường cứng không báo trôi
+      // món xoay trong tay suốt quãng cầm: chỗ cầm nhóm không báo trôi
       frame: (t) =>
         held(t) ? [rigid({ rel: { p: [0, -8, 0], q: [0, Math.sin(t), 0, Math.cos(t)] } })] : [],
       items: (t): HeldItemPose[] => [

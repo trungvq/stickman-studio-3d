@@ -10,7 +10,7 @@ export {
   type Arm, type CharacterJson, type Figure, type Hand, type Leg, type Lod, type Side, type StickmanOptions,
 } from './stickman';
 export {
-  carry, carrySeat, dress, fitHolding, grip, gripIntent, hold, SOCKET_NAMES, torsoSocket, wear,
+  carry, carrySeat, dress, fitHolding, grip, hold, SOCKET_NAMES, torsoSocket, wear,
   type Carrying, type CarrySeat, type EquipState, type Gear, type HeadFit, type Held, type HoldGrip, type Holding, type HoldOptions, type ItemBuild, type ItemContext, type ItemFactories, type ItemFactory, type SocketName, type Sockets,
 } from './attach';
 export { freeze, seatCrowd, type Seat } from './crowd';

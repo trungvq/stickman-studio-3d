@@ -1,15 +1,14 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "size": [30, 74, 10],
+  "front": "mat",
+  "top": "quai",
   "anchors": {
     "quai": { "at": [0, 74, 0], "dir": [0, 1, 0] },
     "day": { "at": [0, 0, 0], "dir": [0, -1, 0] },
     "mat": { "at": [0, 13, 5], "dir": [0, 0, 1] },
     "lung": { "at": [0, 13, -5], "dir": [0, 0, -1] }
   },
-  "shape": [{ "box": [30, 26, 10], "at": [0, 13, 0], "round": 2 }],
-  "grips": {
-    "khuyu": { "on": "elbow", "at": "quai" },
-    "vai": { "on": "shoulder", "at": "quai", "touch": [{ "part": "upperArm", "max": 2 }] }
-  }
+  "seats": { "elbow": "quai", "shoulder": "quai" },
+  "shape": [{ "box": [30, 26, 10], "at": [0, 13, 0], "round": 2, "part": "than" }]
 }

@@ -40,7 +40,7 @@ const item = (json: unknown): HeldItemSpec => {
   if (!r.success) throw new Error(r.error.message);
   return r.data;
 };
-// tấm tối thiểu cùng số đo với món v1 của fixture: một khối hộp, `front`, `top` khai bằng vectơ
+// tấm tối thiểu cùng số đo với món của fixture: một khối hộp, `front`, `top` khai bằng vectơ
 const sheet = (box: V3, at: V3, front: V3, top: V3) =>
   item({ schemaVersion: 2, size: box, front, top, anchors: {}, shape: [{ box, at }] });
 
@@ -1333,7 +1333,7 @@ describe("graspFrame", () => {
     expect(() => graspFrame(BANG, itemGeom(BANG), { group: "sheet" }, -1, dims)).toThrow(/edge/);
   });
 
-  it("`G` là `gripFrame` của bàn tay tổng hợp: điểm nắm về tâm nắm của dáng", () => {
+  it("`G` là `graspLink` của bàn tay tổng hợp: điểm nắm về tâm nắm của dáng", () => {
     const g = graspFrame(PHONE, itemGeom(PHONE), { group: "palmBox" }, -1, dims, 1.61);
     close(gripPoint(g.G, g.hand.at as V3), [0.035 * 1.61, -0.117 * 1.61, 0.027 * 1.61], 1e-12);
   });
@@ -1458,7 +1458,7 @@ describe("`pen` `grip`", () => {
     [1.75, 1.545],
     [2, 1.813],
   ] as const;
-  // fixture tay trái không soi gương món (v1: ngón cái ở phía kia thân bút); bút đối xứng qua `x = 0` nên so với tay phải soi gương
+  // fixture tay trái không soi gương món (ngón cái ở phía kia thân bút); bút đối xứng qua `x = 0` nên so với tay phải soi gương
   const MIRROR: Record<string, FixSize> = Object.fromEntries(
     SIZES2.map((size) => {
       const f = FIX["but#viet"][size];
@@ -1512,7 +1512,7 @@ describe("`pen` `grip`", () => {
     expect((f.fingers as V3)[1]).toBeGreaterThan(0);
   });
 
-  it("trên da: ngón cái, trỏ, giữa chạm (hở ≤ khe v1 + 0,3), không lún quá `HELD_SINK`, không xuyên; ngón cuộn thêm ≤ 15° — hai cỡ tay, hai tay", () => {
+  it("trên da: ngón cái, trỏ, giữa chạm (hở ≤ 0,1 / 0,3 / 0,4), không lún quá `HELD_SINK`, không xuyên; ngón cuộn thêm ≤ 15° — hai cỡ tay, hai tay", () => {
     for (const [k, long] of REAL)
       for (const [, side] of SIDES) {
         const r = gripSkin(BUT, { group: "pen" }, side, k, long);

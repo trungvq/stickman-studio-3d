@@ -8,13 +8,12 @@ import {
   heldFit,
   shapeDistance,
 } from "./heldFit";
-import { heldHits, HELD_PIERCE_FIT, HELD_WRAP, heldLine, type HeldHand } from "./heldAudit";
+import { heldHits, HELD_PIERCE_FIT, type HeldHand } from "./heldAudit";
 import {
-  gripFrame,
-  gripHand,
-  gripSpec,
+  graspLink,
   HELD_FINGERS,
   parseHeldItem,
+  type GraspHand,
   type GripFrame,
   type HeldShape,
 } from "./heldItem";
@@ -27,14 +26,17 @@ const spec = (j: unknown) => {
   return r.data;
 };
 
-/** Gậy đứng bán kính `r` (cán, cổ chai), nắm ở tâm: kiểu `grip` ôm cả năm ngón */
-const rod = (r: number, wrap = [...HELD_FINGERS]) =>
+/** Gậy đứng bán kính `r` (cán, cổ chai) */
+const rod = (r: number) =>
   spec({
+    schemaVersion: 2,
     size: [2 * r, 30, 2 * r],
     anchors: { mid: { at: [0, 0, 0] } },
-    grips: { nam: { pose: "grip", at: "mid", palm: [0, 0, 1], fingers: [-1, 0, 0], wrap } },
     shape: [{ cyl: r, from: [0, -15, 0], to: [0, 15, 0] }],
   });
+
+/** Bàn tay nắm gậy ở tâm, dáng `grip` */
+const NAM: GraspHand = { pose: "grip", at: [0, 0, 0], palm: [0, 0, 1], fingers: [-1, 0, 0] };
 
 /** Hai cỡ tay: mặc định và tay to, dài */
 const SIZES = [
@@ -90,11 +92,7 @@ describe("hình va chạm: khoảng cách có dấu", () => {
   });
 
   it("schema: bo cạnh quá nửa cạnh, ống thành dày hơn bán kính là lỗi", () => {
-    const base = {
-      size: [4, 4, 4],
-      anchors: { a: { at: [0, 0, 0] } },
-      grips: { g: { pose: "grip", at: "a", palm: [1, 0, 0], fingers: [0, -1, 0] } },
-    };
+    const base = { schemaVersion: 2, size: [4, 4, 4], anchors: { a: { at: [0, 0, 0] } } };
     expect(parseHeldItem({ ...base, shape: [{ box: [4, 2, 4], round: 1.2 }] }).success).toBe(false);
     expect(
       parseHeldItem({ ...base, shape: [{ cyl: 2, from: [0, 0, 0], to: [0, 1, 0], wall: 2 }] })
@@ -122,12 +120,17 @@ describe("handFrames: độ gập thêm từng đốt", () => {
 });
 
 describe("heldFit: ngón ôm theo đồ", () => {
-  const solve = (r: number, side: number, k: number, long: number, wrap?: readonly string[]) => {
-    const item = rod(r, wrap as never);
-    const gh = gripHand(gripSpec(item, "nam"), side);
-    const G = gripFrame(item, gh, side, k, long);
+  const solve = (
+    r: number,
+    side: number,
+    k: number,
+    long: number,
+    wrap: readonly (typeof HELD_FINGERS)[number][] = HELD_FINGERS,
+  ) => {
+    const item = rod(r);
+    const G = graspLink(NAM, side, k, long);
     const v = [0, 0, ...fingerVec(HAND_POSES.grip)];
-    const inp = { v, side, k, long, shape: item.shape!, G, wrap: gh.wrap };
+    const inp = { v, side, k, long, shape: item.shape!, G, wrap };
     const fit = heldFit(inp);
     return {
       fit,
@@ -137,7 +140,7 @@ describe("heldFit: ngón ôm theo đồ", () => {
     };
   };
 
-  it("cán vừa nắm tay, hai tay, hai cỡ tay: ngón khai ôm chạm mặt cán, không ngón nào lún", () => {
+  it("cán vừa nắm tay, hai tay, hai cỡ tay: ngón `wrap` chạm mặt cán, không ngón nào lún", () => {
     for (const side of [-1, 1])
       for (const [k, long] of SIZES) {
         const { after } = solve(2.5, side, k, long);
@@ -149,7 +152,7 @@ describe("heldFit: ngón ôm theo đồ", () => {
       }
   });
 
-  it("cán mảnh hơn nắm tay: ngón khai ôm cuộn thêm; ngón không khai ôm không cuộn thêm, chỉ gỡ khi lún", () => {
+  it("cán mảnh hơn nắm tay: ngón `wrap` cuộn thêm; ngón khác không cuộn thêm, chỉ gỡ khi lún", () => {
     for (const [k, long] of SIZES) {
       const { fit, before, after } = solve(0.8, -1, k, long, ["index", "middle"]);
       expect(Math.min(...before.index)).toBeGreaterThan(HELD_FIT.touch);
@@ -164,17 +167,15 @@ describe("heldFit: ngón ôm theo đồ", () => {
 
   it("món xa bàn tay: không đổi gì; cùng số vào là cùng số ra", () => {
     const item = rod(2.5);
-    const gh = gripHand(gripSpec(item, "nam"), -1);
-    const G = gripFrame(item, gh, -1);
+    const wrap = HELD_FINGERS;
+    const G = graspLink(NAM, -1);
     const far = { ...G, p: [G.p[0] + 1, G.p[1], G.p[2]] as V3 };
     const v = [0, 0, ...fingerVec(HAND_POSES.grip)];
-    expect(
-      heldFit({ v, side: -1, k: 1, long: 1, shape: item.shape!, G: far, wrap: gh.wrap }),
-    ).toEqual(HAND_FIT.map(() => 0));
-    const a = heldFit({ v, side: -1, k: 1, long: 1, shape: item.shape!, G, wrap: gh.wrap });
-    expect(heldFit({ v, side: -1, k: 1, long: 1, shape: item.shape!, G, wrap: gh.wrap })).toEqual(
-      a,
+    expect(heldFit({ v, side: -1, k: 1, long: 1, shape: item.shape!, G: far, wrap })).toEqual(
+      HAND_FIT.map(() => 0),
     );
+    const a = heldFit({ v, side: -1, k: 1, long: 1, shape: item.shape!, G, wrap });
+    expect(heldFit({ v, side: -1, k: 1, long: 1, shape: item.shape!, G, wrap })).toEqual(a);
   });
 });
 
@@ -185,12 +186,10 @@ const sample = (o: Partial<HeldHand> = {}): HeldHand => ({
   key: "binh|co",
   pose: "grip",
   follow: "wrist",
-  hold: "binh#co",
   acted: handVec("grip"),
   pierce: { depth: 1, core: -0.5, piece: "index1" },
   gaps: { thumb: 0, index: 0, fingers: 0, palm: 0 },
   fingers: { thumb: 0, index: 0, middle: 0, ring: 0, pinky: 0 },
-  wrap: ["index", "middle", "ring", "pinky"],
   grip: -1,
   palm: { gap: 0, angle: 0 },
   rel: { p: [0, -8, 0], q: [0, 0, 0, 1] },
@@ -199,25 +198,8 @@ const sample = (o: Partial<HeldHand> = {}): HeldHand => ({
 });
 
 describe("luật `held` trên hình va chạm", () => {
-  it("ngón khai ôm còn hở quá `HELD_WRAP`: `wrap`, dòng báo kể ngón", () => {
+  it("bàn tay ôm sát món: không lỗi", () => {
     expect(heldHits(sample())).toEqual([]);
-    const s = sample({ fingers: { thumb: 5, index: 0, middle: 0, ring: 0, pinky: HELD_WRAP + 1 } });
-    const hits = heldHits(s);
-    expect(hits.map((h) => h.rule)).toEqual(["wrap"]);
-    const line = heldLine({
-      id: "a",
-      hand: "R",
-      item: "binh",
-      rule: "wrap",
-      t: 1,
-      worst: hits[0].worst,
-      sample: s,
-      declared: { pose: "grip", off: 0 },
-      runs: [[0, 1]],
-      clips: [],
-    });
-    expect(line).toContain("ngón út cách món 2.5");
-    expect(line).not.toContain("ngón cái");
   });
 
   it("trục ngón vào trong hình quá `HELD_PIERCE_FIT` là xuyên; lưới (không hình) giữ ngưỡng cũ", () => {
@@ -229,7 +211,6 @@ describe("luật `held` trên hình va chạm", () => {
       heldHits(
         sample({
           fingers: undefined,
-          wrap: undefined,
           pierce: { depth: 2, core, piece: "pinky1" },
         }),
       ),

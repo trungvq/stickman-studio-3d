@@ -47,7 +47,7 @@ export type SoiJob = { scene: string; frame: number } | { scene: string; t: numb
 
 /**
  * `frames`: số khung của từng cảnh có trong `soi`, như composition của cảnh ấy — `calculateMetadata` điền, `0` là không có
- * cảnh. `scenes`: cảnh dựng tạm không nằm trong `scenes/` (JSON thô, theo id việc dùng ở `soi[].scene`), như bảng kiểu cầm
+ * cảnh. `scenes`: cảnh dựng tạm không nằm trong `scenes/` (JSON thô, theo id việc dùng ở `soi[].scene`), như bảng nhóm cầm
  * của `tools/bang-cam.mjs`; cảnh three của nó tra `CANH_3D` theo `name` trong JSON, không theo id
  */
 export type SoiProps = {

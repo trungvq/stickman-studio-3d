@@ -1,6 +1,8 @@
 {
-  "schemaVersion": 1,
-  "size": [18, 20, 30],
+  "schemaVersion": 2,
+  "size": [17, 20, 23.5],
+  "front": "front",
+  "top": "rim",
   "anchors": {
     "rim": { "at": [0, 20, 0], "dir": [0, 1, 0] },
     "base": { "at": [0, 0, 0], "dir": [0, -1, 0] },
@@ -8,33 +10,10 @@
     "body": { "at": [0, 10, 0] },
     "handle": { "at": [0, 9.5, -13.5], "dir": [0, 0, -1] }
   },
-  "grips": {
-    "quai": {
-      "pose": "grip",
-      "at": "handle",
-      "palm": { "into": "handle" },
-      "fingers": [-1, 0, 0],
-      "left": { "fingers": [1, 0, 0] },
-      "touch": ["self.hand"],
-      "intent": { "up": "rim" }
-    },
-    "om": {
-      "pose": "cup",
-      "at": { "anchor": "front", "offset": [0, 0, 2] },
-      "palm": { "into": "front" },
-      "fingers": [-1, 0, 0],
-      "left": { "fingers": [1, 0, 0] },
-      "touch": ["self.hand"],
-      "intent": { "up": "rim" },
-      "both": {
-        "lead": "right",
-        "other": {
-          "pose": "flat",
-          "at": { "anchor": "base", "offset": [0, -2, 0] },
-          "palm": { "into": "base" },
-          "fingers": [0, 0, 1]
-        }
-      }
-    }
-  }
+  "shape": [
+    { "cyl": 8, "r2": 8.5, "from": [0, 0, 0], "to": [0, 20, 0], "part": "than" },
+    { "cyl": 1.5, "from": [0, 3, -13.5], "to": [0, 16, -13.5], "part": "quai" },
+    { "box": [3, 3, 7], "at": [0, 14.5, -10.5], "part": "quai", "detail": true },
+    { "box": [3, 3, 7], "at": [0, 4.5, -10.5], "part": "quai", "detail": true }
+  ]
 }

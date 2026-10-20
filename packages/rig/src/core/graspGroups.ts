@@ -77,7 +77,7 @@ export interface VariantSpec {
   roles: RoleMap;
   /** Tầm cuộn thêm từ dáng gốc, độ, mọi đốt (`HeldFitInput.curl`); bỏ trống là theo vai trò (`HELD_ROLE_CURL`) */
   curl?: number;
-  /** Tên `món#kiểu` v1 mà khung chuẩn của biến thể lấy ra */
+  /** Khoá khung chuẩn của biến thể trong fixture test (`__fixtures__/grip-frames.json`) */
   fixture?: string;
   /** Bề dày thật ở mép (`edgeThick`) tối đa, lần `W`: dày hơn thì biến thể không áp */
   thickMax?: number;

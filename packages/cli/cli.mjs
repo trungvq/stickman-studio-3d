@@ -54,10 +54,10 @@ const USAGE = `stickman <lệnh> [thư mục]
                 đứng giữ chân trên đất, người đi giãn \`cycle\` để giữ quãng đi; bỏ qua cảnh
                 khớp stickman.frozen.
                 --before <ref> đọc actions/ đời trước ở commit ấy
-  migrate-held  chuyển món v1 (\`grips\`) sang v2 và \`hold\` \`món#kiểu\` của cảnh sang chỗ cầm nhóm
+  migrate-held  chuyển món bản 1 (kiểu cầm khai theo món) sang v2 và \`hold\` \`món#kiểu\` của cảnh sang chỗ cầm nhóm
                 \`{ item, group, … }\` (tay dẫn), chỗ cầm gần liên kết cũ nhất; in bảng lệch từng lần cầm.
                 --scene <regex> chỉ cảnh có id khớp
-                --held-dir <thư mục> món v2 có nhãn phần (mặc định held); món v1 đọc ở held/
+                --held-dir <thư mục> món v2 có nhãn phần (mặc định held); món bản 1 đọc ở held/
                 --map <file> JSON \`{ "món#kiểu": { group, part?, variant? } }\` đè bảng ánh xạ
                 --out <file.md> ghi bảng và kết quả JSON (cùng tên, đuôi .json)
                 --dry-run chỉ in, không ghi cảnh hay món

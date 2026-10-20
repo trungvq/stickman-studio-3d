@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isHeldV2, parseHeldItem } from "./heldItem";
+import { parseHeldItem } from "./heldItem";
 import type { M3, V3 } from "./lens";
 import grip from "./__fixtures__/grip-frames.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
@@ -11,7 +11,7 @@ import ongNgheBan from "./__fixtures__/held-v2/ong-nghe-ban.json";
 import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
 import tuiHieu from "./__fixtures__/held-v2/tui-hieu.json";
 
-// GripFrame của mười lăm kiểu cầm trên bàn tay hiện tại; mỗi kiểu có các cỡ tay `1`, `1.61`, `2.16` và hai cảnh mẫu
+// khung chuẩn (`GripFrame`) của mười lăm chỗ cầm trên bàn tay hiện tại; mỗi chỗ có các cỡ tay `1`, `1.61`, `2.16` và hai cảnh mẫu
 interface Frame {
   R: M3;
   p: V3;
@@ -50,8 +50,8 @@ const det = (m: M3) =>
   m[1] * (m[3] * m[8] - m[5] * m[6]) +
   m[2] * (m[3] * m[7] - m[4] * m[6]);
 
-describe("GripFrame của 15 kiểu cầm", () => {
-  it("đủ 15 kiểu", () => {
+describe("khung chuẩn của 15 chỗ cầm", () => {
+  it("đủ 15 khung", () => {
     expect(Object.keys(frames).sort()).toEqual([...NAMES].sort());
   });
 
@@ -93,14 +93,13 @@ const ITEMS: Record<string, string[]> = {
   "tui-hieu": [],
 };
 
-describe("tám món v2", () => {
+describe("tám món mẫu", () => {
   for (const [name, labels] of Object.entries(ITEMS))
-    it(`${name}: parse không lỗi, v2, nhãn phần`, () => {
+    it(`${name}: parse không lỗi, nhãn phần`, () => {
       const r = parseHeldItem(JSON_OF[name]);
       if (!r.success) throw new Error(r.error.issues.map((i) => i.message).join("; "));
       const item = r.data;
-      expect(isHeldV2(item)).toBe(true);
-      expect(item.grips).toBeUndefined();
+      expect(item.schemaVersion).toBe(2);
       expect(item.shape?.length).toBeGreaterThan(0);
       const used = new Set(item.shape?.flatMap((b) => (b.part ? [b.part] : [])));
       expect([...used].sort()).toEqual([...labels].sort());
