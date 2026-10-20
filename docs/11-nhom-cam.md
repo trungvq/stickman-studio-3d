@@ -1,10 +1,10 @@
 # 11 — Nhóm cầm
 
-> **Lõi chạy chín nhóm `sheet`, `card`, `palmBox`, `cylinder`, `platform`, `chopsticks`, `pen`, `handle`, `carry`; năm nhóm còn lại là `later`.** Cầm đồ của rig bàn tay theo **nhóm hình
+> **Lõi chạy mười nhóm `sheet`, `card`, `pen`, `chopsticks`, `cylinder`, `bowl`, `handle`, `palmBox`, `platform`, `carry`; bốn nhóm `round`, `hug`, `clamp`, `soft` để sau (`later`).** Cầm đồ của rig bàn tay theo **nhóm hình
 > dáng** (món v2, `món@nhóm`) chạy song song với "kiểu cầm khai theo món" (món v1, `held/<món>.json` `grips`, `món#kiểu`,
 > [01](01-rig.md#kiểu-cầm)); hai đường cùng nạp, cùng qua `check` (mục [8](#8-chuyển-đổi)). Các quyết định chủ dự án
 > ghi như luật; bảy điểm chọn giữa các phương án ở [Đã chốt](#10-đã-chốt). Hằng số của bàn tay từ món ở mục
-> [5](#5-giải-tay-theo-món); ngưỡng của từng nhóm còn chỉnh ở giai đoạn 4 (mục [9](#9-kế-hoạch-code)). Phần nhắc cảnh của một tập cụ thể nằm ở [Phụ lục A](#phụ-lục-a--chuyển-cảnh-t02-tạm), xoá
+> [5](#5-giải-tay-theo-món); chỗ tiếp xúc, dáng và ngưỡng từng nhóm ở mục [3](#3-schema-nhóm-rig-grip_groups). Phần nhắc cảnh của một tập cụ thể nằm ở [Phụ lục A](#phụ-lục-a--chuyển-cảnh-t02-tạm), xoá
 > khỏi bộ docs khi đã chuyển xong.
 
 Kiểu cầm v1 là một liên kết cứng tay ↔ món soạn tay cho từng món (`GripSpecSchema`, `core/heldItem.ts`), đặt tên theo việc
@@ -78,7 +78,7 @@ cỡ tay người (k, long, s) ────────────────�
 ### Phạm vi: bản đầu làm, để sau
 
 Định nghĩa đủ 14 nhóm và hai lớp động tác (chủ dự án đã chốt danh sách), nhưng **bản đầu chỉ làm những gì cảnh đang
-dùng**. Phần "để sau" giữ định nghĩa trong bản này để schema và tên không phải đổi khi làm tới.
+dùng**: mười nhóm chạy, bốn nhóm `round`, `hug`, `clamp`, `soft` là `later` (`needs` không bao giờ đạt, `check` báo "chưa làm"). Phần "để sau" giữ định nghĩa trong bản này để schema và tên không phải đổi khi làm tới.
 
 | | Bản đầu | Để sau |
 |---|---|---|
@@ -257,7 +257,7 @@ phần không suy ra được từ kiểu cầm cũ (mục [8](#8-chuyển-đổ
 Mọi ngưỡng tính theo cỡ bàn tay của chính người cầm, đơn vị rig của món (cỡ người `s` triệt tiêu). Ba số, tính một lần mỗi
 cỡ (`handDims(k, long)`) từ `HAND_BONES` và `handFrames` (`hand.ts:159`, `:210`):
 
-| Số | Nghĩa | Ở cỡ `1` (đo 2026-10-19, ngón cái giai đoạn 1) |
+| Số | Nghĩa | Ở cỡ `1` |
 |---|---|---|
 | `W` | Bề ngang lòng bàn tay (`2 · palm.half[1] · k`) | 8,4 · k |
 | `A` | Khe đầu ngón cái – đầu ngón trỏ ở dáng `open` | 9,76 · k |
@@ -267,7 +267,7 @@ Bàn tay không nhân theo chiều cao người. Hai người có tay nhỏ nh�
 
 **Phụ thuộc ngón cái.** Ngón cái có gốc `[0,019, −0,033, 0,030]`, hai đốt `0,048`, `0,040` (`hand.ts:161`). `W`, `A`, `L`,
 `P` và hệ số lòng tay `sheet pinch` đo trên bàn tay ấy; độ thụt `d` của
-`sheet` ở nhóm 1 (bên dưới); khung chuẩn các nhóm khác đặt ở giai đoạn 4 theo ảnh.
+`sheet` ở nhóm 1 (bên dưới); khung chuẩn các nhóm khác là fixture của nhóm (`fixture`).
 
 ### Kiểu dữ liệu
 
@@ -338,7 +338,7 @@ trên **bàn tay hiện tại**, lưu ở `core/__fixtures__/grip-frames.json`; 
 
 ### Từng nhóm
 
-Ngưỡng là điểm xuất phát, chỉnh ở giai đoạn 4 trên bảng `bang-cam`. "Lựa chọn" là các trường chỗ cầm cảnh khai; thiếu thì
+Ngưỡng chỉnh trên bảng `bang-cam`. "Lựa chọn" là các trường chỗ cầm cảnh khai; thiếu thì
 món đặt trước để rig giải, tay dẫn lấy giá trị in đậm (mục [5](#lựa-chọn-cảnh-không-khai)). **Hướng mặc định** là hướng món
 khi mốc món không khai `face`/`up` (món đặt trước), hay ý định cổ tay khi `hold` không khai (tay dẫn).
 
@@ -515,10 +515,22 @@ nắp; dáng mới `claw`). Lựa chọn: hướng tiếp cận, biến thể. M
 - **Cần**: `lathe` có miệng, bán kính lớn nhất `≤ 1,3 · W`.
 - **Biến thể**: **`side`** (fixture `chen#kep`: lòng tay ôm thân, dáng `clasp`, `frame: "nt"` như trụ, phía ngón cái về
   miệng). Để sau: `base` (đáy trên đầu ngón, ngón cái gác miệng — chén cơm kiểu Nhật).
-- **Vai trò**: cái, trỏ, giữa `wrap`; áp út, út `support`.
-- **Lựa chọn**: `around`, `along` (độ cao trên thành, **`low`**).
-- **Tay**: một hay hai; tay phụ mặc định `platform` dưới đáy. **Hướng mặc định**: `up` = trục miệng (một nguồn: miệng suy
-  từ `wall`).
+- **Chỗ tiếp xúc** `side` (`CONTACTS.bowl.side`): điểm trên trục là `axialAt` ở `along` (tính từ đáy), `around` (mục 2); lòng tay `n = −ρ(around)`,
+  ngả theo dốc thành (`slopeAt`, dùng chung với `wrap`) tối đa `BOWL_TILT_MAX` = 4° (fixture `chen#kep` lòng song song trục); hướng
+  ngón theo `up` = trục miệng (`mouth: "lo"` thì ngược), phía ngón cái về miệng. Tâm nắm dời ra theo `ρ` tới khi **da lòng tay**
+  (`palmSkin`) cách hình `BOWL_GAP` = −0,6 (đơn vị món; âm là áp lún nhẹ); không có hình thì dời tới `r`.
+- **Dáng**: `clasp` ở cả hai đầu, hoà theo `r` tại chỗ cầm (`by: "radius"`, `[0, 1,3] · W`). Ngón cái `BOWL_THUMB` = `[15, 50, −30, 20]`:
+  ít dạng, đối nhiều, gốc duỗi ngược, nằm vắt trên vành chén phía lòng tay.
+- **Vai trò**: cái, trỏ, giữa `wrap`; lòng tay `press`; áp út, út `support`.
+- **Độ khớp**: fixture `chen#kep` (`around` 180, `along` 1/6) lệch 4,0° ở mọi cỡ tay và 1,45 (sakura) / 0,79 (kuroiwa) đơn vị, trong ngưỡng
+  1,5 của test: fixture đặt tâm nắm `clasp` trên trục chén nên lòng tay lún 2,0 / 1,4, còn v2 lún da 0,3–0,5 (≤ 0,65); ép lệch ≤ 1 thì lòng tay
+  sakura lún ≥ 0,86. Khe cái–trỏ–giữa ≤ 0,9 (cái gác miệng chén hở nhẹ khi `along` 0,5).
+- **Lựa chọn**: `part`, `around` ∈ [0°, 360°), `along` ∈ [0, 0,5] (tên `low` = 0,25 là **mặc định**, `mid` = 0,5). Miền dừng ở nửa dưới thành: cao hơn
+  thì lòng tay trùm miệng chén và áp út, út không còn đỡ dưới. `around` còn bị cổ tay giới hạn: rig chọn khoảng 330° ở ngực; `around` 45
+  vượt cổ tay 14–25° (lòng tay ra ngoài), 90 vượt tới 96° và bàn tay lìa khỏi chén, 270 xuyên vào thân chén ở tay nhỏ.
+- **Tay**: một hay hai; tay phụ mặc định `platform` dưới đáy (`place: "bottom"`, mục [5](#tay-phụ-both)): lòng ngửa đỡ đáy, ngón cái tay phụ
+  `free`. Tay phụ ngửa xoay cẳng tay sát −90°: ở tay nhỏ `check` báo `wrist` (cảnh báo, vượt 0,0°) dù chén nghiêng nhẹ (`up` lệch về trước và phía tay đỡ).
+  **Hướng mặc định**: `up` = trục miệng (một nguồn: miệng suy từ `wall`), miệng ngửa.
 
 #### 8. `handle` — quai (bản đầu: `hook`)
 
@@ -842,7 +854,7 @@ Cảnh thường khai đủ chỗ cầm. Thiếu trường nào:
   thật của người cầm. Lựa chọn rig giải chỉ đọc ở `graspAtTime`; `ReachHold.grasp.choice` của `sceneAt` chỉ mang trường
   cảnh khai. Hai bậc: giải rời trước (`edge`, `thumb`, `variant`, `part`) với trường liên tục ở mặc định; rồi lưới liên
   tục quanh ứng viên rời tốt nhất, và quanh ứng viên rời tốt nhất của `variant.default` khi rig giải `variant` (`along` 3
-  điểm ở ¼, ½, ¾ miền của nhóm (đũa, bút: 0,225, 0,3, 0,375), `slant` 3, `around` 12, `tilt` 6 đều gồm hai đầu, `psi` 5 điểm đều gồm hai đầu). `slant` lấy ba điểm `−½`, `0`, `+½` miền của biến thể
+  điểm ở ¼, ½, ¾ miền của nhóm (đũa, bút: 0,225, 0,3, 0,375; chén: 0,125, 0,25, 0,375), `slant` 3, `around` 12, `tilt` 6 đều gồm hai đầu, `psi` 5 điểm đều gồm hai đầu). `slant` lấy ba điểm `−½`, `0`, `+½` miền của biến thể
   (`pinch` ±30°, `flat` ±45°, `rim` ±22,5°). Giá của một ứng viên là `min_φ E(φ)` cộng `(khe tầm với / AIM_GAP)²`, cộng ở
   mốc bắt đầu và các mốc món trong 1,5 s sau còn cùng người cầm, cùng cỡ (tối đa 4, mốc sau trọng số 0,5); lệch khỏi mặc
   định nhóm cộng `0,05 · (số trường lệch mặc định) / (số trường thiếu có mặc định)`, `variant` khác `variant.default` của
@@ -875,10 +887,10 @@ có chỗ tiếp xúc, hay khác nhóm mà không có `support.place`, thì khô
 
 - **Cùng nhóm** (`platform`, `sheet` `rim`): giữ `part` và khối hình của lead, `keep` của `support`, `edge` đối (`opposite`) hay cùng
   (`same`) cạnh lead. Trường còn lại do bộ giải hay mặc định nhóm.
-- **Khác nhóm** (`support.place`; `cylinder`, `palmBox` → `platform`): `placeChoice` đặt lòng tay lên mặt hộp có pháp tuyến ngoài
+- **Khác nhóm** (`support.place`; `cylinder`, `bowl`, `palmBox` → `platform`): `placeChoice` đặt lòng tay lên mặt hộp có pháp tuyến ngoài
   `−top` (`bottom`: đáy chai) hay `−front` (`back`: mặt sau máy), xa nhất theo hướng ấy, ở phần cầm được (không `grip: false`).
   Ngón theo `top` chiếu lên mặt (mặt vuông `top` thì theo `front`), tay tới từ cạnh sau ngón (`psi` 0), tâm nắm giữa mặt, `along` 0,5.
-  Tay lead nằm trên mặt ấy (cách mặt không quá `W`) thì tâm nắm dời theo ngón tới khi gót lòng qua bàn tay lead (né tay lead). Món
+  Tay lead úp lòng lên mặt ấy (`lead.palm · n < −0,5`, cách mặt không quá `W`) thì tâm nắm dời theo ngón tới khi gót lòng qua bàn tay lead (né tay lead); lòng tay lead ôm thành bên (chén, chai) không làm tay phụ lệch đáy. Món
   không có mặt như thế thì tay phụ lấy mặc định của nhóm.
 - **Món đặt trước**: tay `both` giải trước (không có `both` thì tay phải); tay phụ giải sau ở cùng mốc bắt đầu: `supportChoice`
   trên khung tay lead, khối hình cố định bằng `featureIndex`, trường còn thiếu `chooseMissing` giải như tay lead (cùng giá, số hạng
@@ -1040,7 +1052,7 @@ Bảng cho cảnh t02 ở [Phụ lục A](#phụ-lục-a--chuyển-cảnh-t02-t�
    là độ dời của điểm món ở tâm nắm cũ; lệch quá `5°` hay `1` đơn vị đánh dấu **!**, là shot đổi hình, chủ dự án duyệt. Dòng tay
    phụ của `both` đo so với tay kia của kiểu cũ. Lần cầm có chỗ cầm không qua `checkChoice` hay cảnh sau chuyển không qua
    schema là lỗi.
-   - **Chưa ghi.** Nhóm còn `later` hay chưa có chỗ tiếp xúc: bảng ghi `chờ nhóm`, `hold` chỉ mang `item`, `group`, phần và
+   - **Chưa ghi.** Nhóm `later` (`round`, `hug`, `clamp`, `soft`): bảng ghi `chờ nhóm`, `hold` chỉ mang `item`, `group`, phần và
      biến thể ép. Cảnh còn lần cầm `chờ nhóm` hay lỗi thì **cả cảnh không ghi** (không ghi nửa cảnh); chạy lại khi nhóm đã xong.
      Có lỗi hay lỗi nạp thì lệnh thoát mã `1`.
 4. **Thay `held/` và kiểm.** Chạy tool thật, rồi mới thay `held/` bằng bản v2 (thay trước khi chạy thì không còn v1 để đọc).
@@ -1068,7 +1080,8 @@ v1 của `held/` và bỏ món v2; có `--nhom` thì chỉ món v2 (`--mon` mặ
   ngang mặt, khoe một tay, khoe hai tay hai cạnh bên, khoe hai tay trên dưới (bỏ khi hai cạnh cách nhau dưới 1,3·`W` của cỡ
   tay đang vẽ), và với đĩa hay tấm nằm trong khung món thì bê hai tay hai vành (`rim`, `both`, tay phụ cạnh đối); `palmBox` thêm đọc ngang mặt, khoe một tay, áp tai (tay dẫn); `card` thêm `edge top`, ngón cái mặt trước / sau, tay dẫn, tay dẫn
   mặt trước lên (`face: front → up`) và đưa thẻ ra trước (tay dẫn, `edge: top`); `platform` đặt món ngang bụng, xa ngực
-  hơn hàng chung (`offset [80, 20, 0]`) và thêm `ψ` 0 / 90 và tay dẫn; `chopsticks` đặt đũa trước ngực (`offset [45, −3, 0]`) có hướng (`face: tip → forward, tilt −30`, `roll` hai que chéo xuống trái), thêm `along` 0,15 / 0,45, tay dẫn phải và trái (cùng `face`); `pen` đặt bút trước ngực (`offset [44, 16, 25]`) ngòi ra trước chúc xuống (`face: tip → [0,8, 0,6, −0,2]`), thêm `along` 0,15 / 0,45, tay dẫn phải và trái (`offset [40, 30, ±25]`, `point: item:tip`, `face: tip → [0,5, 0,866, 0]`); `handle` đặt túi ngang hông (`to: hip`, `offset [0, 65, 30]`: quai ngang tầm tay buông, cách thân ra phía tay phải để cẳng tay không vào thân), thêm `along` 0,2 / 0,7 và tay buông xách phải / trái (tay dẫn không khai đích, món theo bàn tay); `platform`, `cylinder` (chai đứng hơi nghiêng) và `palmBox` thêm hàng hai
+  hơn hàng chung (`offset [80, 20, 0]`) và thêm `ψ` 0 / 90 và tay dẫn; `chopsticks` đặt đũa trước ngực (`offset [45, −3, 0]`) có hướng (`face: tip → forward, tilt −30`, `roll` hai que chéo xuống trái), thêm `along` 0,15 / 0,45, tay dẫn phải và trái (cùng `face`); `pen` đặt bút trước ngực (`offset [44, 16, 25]`) ngòi ra trước chúc xuống (`face: tip → [0,8, 0,6, −0,2]`), thêm `along` 0,15 / 0,45, tay dẫn phải và trái (`offset [40, 30, ±25]`, `point: item:tip`, `face: tip → [0,5, 0,866, 0]`); `handle` đặt túi ngang hông (`to: hip`, `offset [0, 65, 30]`: quai ngang tầm tay buông, cách thân ra phía tay phải để cẳng tay không vào thân), thêm `along` 0,2 / 0,7 và tay buông xách phải / trái (tay dẫn không khai đích, món theo bàn tay); `bowl` đặt chén trước ngực, thêm `along` 0,1 / giữa (0,5), `around` 0 và 45 (hàng giới hạn cổ tay), tay dẫn phải và trái (miệng ngửa) và tay dẫn hai tay đỡ đáy;
+  `platform`, `cylinder` (chai đứng hơi nghiêng), `bowl` (chén nghiêng nhẹ) và `palmBox` thêm hàng hai
   tay `both` món đặt trước (tay phụ cạnh đối, đỡ đáy, đỡ mặt sau); `carry` chỉ hai
   hàng treo khuỷu và treo vai (cảnh khai `touch` cho vai), tay đặt như kiểu treo v1, món không đặt trước ngực, `do.json` giữ
   `seat`, `body`, `swing` (và `bend`, `rise` của khuỷu).
@@ -1105,13 +1118,13 @@ Các hằng số ở mục [5](#5-giải-tay-theo-món); độ thụt `d` ở nh
 
 ### Giai đoạn 3 — lõi (xong)
 
-Hai đường (món đặt trước, tay dẫn) chạy đủ cho `sheet` (`pinch`, `flat`, `rim`) và `palmBox`: gắn món, ngón, khuỷu, `check`,
+Hai đường (món đặt trước, tay dẫn) chạy đủ cho mười nhóm: gắn món, ngón, khuỷu, `check`,
 `scene_probe`, `bang-cam`. Theo file:
 
 1. `core/heldItem.ts` — `HeldItemSchema` v1 và v2, `SceneHoldSchema` bốn dạng, `ReachHold` (`grasp`, `solve`, `was`,
    `released`, `from`, `enter`), `HoldGrasp`. `GripSpecSchema`, `gripFrame`, `heldGrip` còn cho v1.
 2. `core/heldGeom.ts` — `itemGeom`, `handDims`.
-3. `core/graspGroups.ts` — `GRIP_GROUPS` đủ 14 nhóm; chín nhóm chạy, năm nhóm kia `later` (`check` báo "chưa làm").
+3. `core/graspGroups.ts` — `GRIP_GROUPS` đủ 14 nhóm; mười nhóm chạy, bốn nhóm kia `later` (`check` báo "chưa làm").
 4. `core/graspSolve.ts`, `core/graspArm.ts` — `graspFrame`, bàn tay từ món, khuỷu `E(φ)` và chuỗi mẫu, giải lựa chọn thiếu,
    `GraspReport`.
 5. `core/scene.ts` — `items`, `itemAt`, `graspAtTime` (nhớ theo runtime và nhân vật), `ReachHold.solve`, hoà vào/ra lần
@@ -1126,38 +1139,37 @@ Hai đường (món đặt trước, tay dẫn) chạy đủ cho `sheet` (`pinch
     `heldOptions` (`sink`, `wrist`, `arm`, `grip`), `heldRows` đọc lỗi `reach`/`wrist`, `bang-cam --nhom`.
 11. Docs — 01 § Kiểu cầm, 03 § Đồ cầm tay, 04, 05 trỏ về đây.
 
-Để giai đoạn 4: năm nhóm `later`; chỉnh ngưỡng, khung chuẩn và dáng ngón theo
-ảnh: `palmBox` ngón `tip` hở. Để giai đoạn 6:
-`stickman migrate-held`, món mẫu `coc`, `tui` v2, xoá đường v1.
+Để giai đoạn 6: `stickman migrate-held`, món mẫu `coc`, `tui` v2, xoá đường v1.
 
-### Giai đoạn 4 — từng nhóm
+### Giai đoạn 4 — mười nhóm (xong)
 
-Theo số cặp cảnh–kiểu ở t02 (Phụ lục A); mỗi nhóm: khung chuẩn từ fixture, ngưỡng `needs`, dáng mở/đóng (dáng mới nếu cần),
-vai trò, test, hàng `bang-cam` cho chủ dự án duyệt:
+Mỗi nhóm có chỗ tiếp xúc (`CONTACTS`), dáng mở/đóng, vai trò, khung chuẩn khớp fixture, test và hàng `bang-cam --nhom` (mục 8);
+số cặp cảnh–kiểu ở t02 (Phụ lục A) trong ngoặc. Chi tiết từng nhóm ở mục 3.
 
-1. `palmBox` (34) — gồm áp tai.
-2. `carry` (25) — chỉ đổi cách khai (`seats`, `on` ở cảnh); hành vi không đổi.
-3. `sheet` (18) — `pinch`, `flat`, `rim`; một và hai tay; đĩa tròn. Hiện tại: biến thể mặc định `pinch`, ngón cái khép theo trỏ
-   (`PoseRef.thumb`); `rim` cuộn ngón theo bề dày thật chỗ ôm (`PoseRef.tip`, `thickAt`); đĩa chọn vành theo góc, ngón cái `rim`
-   ở mặt trên.
-4. `cylinder` (11) — `lathe` và `rod` (ống nghe); tay trượt dọc thanh; tay phụ `platform`. Hiện tại: `flat` (thanh hộp mặt rộng: `variantOf`, `flatRod`, dáng `span`); `wrap` bám cả đoạn bám liền
-   (`axialAt`, `around`), lòng tay áp mặt và ngả theo dốc, dáng hoà theo bán kính tại chỗ cầm, ngón cái theo hai họ
+1. `palmBox` (34) — gồm áp tai: trỏ–áp út `press`, `tilt` rig giải theo giá lún da (lưới 6 điểm).
+2. `carry` (25) — `needs` theo `seats`, `carrySpecOf`; khung treo bằng kiểu treo v1.
+3. `sheet` (18) — `pinch`, `flat`, `rim`; một và hai tay; đĩa tròn. Biến thể mặc định `pinch`, ngón cái khép theo trỏ (`PoseRef.thumb`);
+   `rim` cuộn ngón theo bề dày thật chỗ ôm (`PoseRef.tip`, `thickAt`); đĩa chọn vành theo góc, ngón cái `rim` ở mặt trên; `pinch`/`flat`
+   đo bề dày thật ở mép (`spanAt`).
+4. `cylinder` (11) — `lathe` và `rod` (ống nghe); tay trượt dọc thanh; tay phụ `platform`. `flat` (thanh hộp mặt rộng: `variantOf`, `flatRod`, dáng `span`);
+   `wrap` bám cả đoạn bám liền (`axialAt`, `around`), lòng tay áp mặt và ngả theo dốc, dáng hoà theo bán kính tại chỗ cầm, ngón cái theo hai họ
    (`PoseSpec.thumb`), tâm nắm cách phần `grip: false` `GRIP_CLEAR`, giá lún và loại `around` nhô (`BULGE`) khi rig giải.
-5. `platform` (10) — một và hai tay. Hiện tại: `palm` (`CONTACTS.platform.palm`: cạnh `edge` của mặt, `ψ`, `inset₀`, `PLATFORM_GAP`, dáng
+5. `platform` (10) — một và hai tay. `palm` (`CONTACTS.platform.palm`: cạnh `edge` của mặt, `ψ`, `inset₀`, `PLATFORM_GAP`, dáng
    `PLATFORM_FLAT`), chọn mặt theo hướng chúc xuống, lưới `psi` 5 điểm và lưới quanh nghiệm tốt nhất từng cạnh; tay phụ cùng nhóm
-   ở cạnh đối, tay phụ khác nhóm (`placeChoice`) và `both` món đặt trước cho `cylinder`, `palmBox`.
-6. `card` (7) — `pad`. Hiện tại: `CONTACTS.card.pad` (khung `nf`, `n = F`, `PAD_INSET`, kẹp `along` theo `PAD_SHIFT`/`PAD_AHEAD`/`PAD_END`), tay dẫn lấy `edge`
+   ở cạnh đối, tay phụ khác nhóm (`placeChoice`) và `both` món đặt trước cho `cylinder`, `bowl`, `palmBox`.
+6. `card` (7) — `pad`: `CONTACTS.card.pad` (khung `nf`, `n = F`, `PAD_INSET`, kẹp `along` theo `PAD_SHIFT`/`PAD_AHEAD`/`PAD_END`), tay dẫn lấy `edge`
    và `thumb` như `sheet`.
-7. `chopsticks` (6) — `grip`. Hiện tại: `CONTACTS.chopsticks.grip` (đường giữa hai que, `along` từ đầu xa `tip`, `CHOP_PALM`, `CHOP_OFF`), dáng
+7. `chopsticks` (6) — `grip`: `CONTACTS.chopsticks.grip` (đường giữa hai que, `along` từ đầu xa `tip`, `CHOP_PALM`, `CHOP_OFF`), dáng
    `chopsticks`, `curl` 15, khung fixture `dua#cam` (ngang v1: nắm đũa).
-8. `pen` (4) — `grip`. Hiện tại: `CONTACTS.pen.grip` (điểm trục cách `tip` `along`, `PEN_PALM`, `PEN_FINGERS`, `PEN_OFF`), tay trái soi gương, một thanh, dáng
+8. `pen` (4) — `grip`: `CONTACTS.pen.grip` (điểm trục cách `tip` `along`, `PEN_PALM`, `PEN_FINGERS`, `PEN_OFF`), tay trái soi gương, một thanh, dáng
    `tripod`, `curl` 15, khung fixture `but#viet`.
-9. `handle` (3) — `hook`. Hiện tại: `CONTACTS.handle.hook` (tâm nắm trên thanh, ngón về `−top`), `RodFeature.gap` và `needs` (`HOOK_GAP`, `HOOK_TILT`), dáng
+9. `handle` (3) — `hook`: `CONTACTS.handle.hook` (tâm nắm trên thanh, ngón về `−top`), `RodFeature.gap` và `needs` (`HOOK_GAP`, `HOOK_TILT`), dáng
    `hook` với `HOOK` (gốc −40°, ngọn −10°), khung fixture `tui#xach`.
-10. `bowl` (1) — `side`.
+10. `bowl` (1) — `side`: `CONTACTS.bowl.side` (lòng tay `−ρ`, ngả theo thành ≤ `BOWL_TILT_MAX`, da lòng `BOWL_GAP`, ngón cái `BOWL_THUMB` về miệng),
+    `along` 0–0,5, tay phụ `platform` đỡ đáy, khung fixture `chen#kep` (lệch ≤ 1,5).
 
-Xong mười nhóm thì chuyển cảnh t02 một lần, xoá đường `món#kiểu` cùng bản phát hành (rig `8.0.0`: đổi schema `held/` và
-`hold`). Phần "để sau" (mục 1) làm khi có cảnh cần.
+Còn lại: giai đoạn 5 (`held/` sang v2 cho cả 34 món, `tools/held-moc.mjs` kiểm nhãn phần) và giai đoạn 6 (chuyển cảnh t02 một lần, xoá đường
+`món#kiểu`, rig `8.0.0`: đổi schema `held/` và `hold`). Phần "để sau" (mục 1) làm khi có cảnh cần.
 
 ## 10. Đã chốt
 
@@ -1175,7 +1187,7 @@ Chủ dự án duyệt 2026-10-19 và 2026-10-20:
 6. **Có viết tắt `"món@nhóm"`**.
 7. **Món to so với tay**: nhận tới `0,95 · W`, cảnh báo `size` từ `0,8 · W`; quá nữa là lỗi `group`, dòng lỗi gợi phần khác
    còn vừa hay hai tay.
-8. **Đũa**: giai đoạn 4 làm dáng `chopsticks` và chỗ tiếp xúc `grip` theo khung fixture; `pick`, tách que trên và cầm đũa thật làm khi có shot cần gắp thật.
+8. **Đũa**: dáng `chopsticks` và chỗ tiếp xúc `grip` theo khung fixture; `pick`, tách que trên và cầm đũa thật làm khi có shot cần gắp thật.
 
 ## Phụ lục A — chuyển cảnh t02 (tạm)
 

@@ -408,6 +408,8 @@ if (!nhomXin) {
   /** Tay dẫn bút ở trước ngực (`ben` ±1 là bên tay), ngòi xuống mặt bàn */
   const BUT_BAN = (ben) => ({ to: "chest", offset: [40, 30, 25 * ben], point: "item:tip" });
   const NGOI_BAN = { face: { axis: "tip", toward: [0.5, 0.866, 0] } };
+  /** Chén hơi nghiêng, xa ngực hơn chai: cẳng tay xoay của tay đỡ đáy không vượt kẹp */
+  const CHEN_NGHIENG = { to: "chest", offset: [35, 20, 10], up: [0.2, 1, 0.2] };
   /** Túi hạ xuống dưới tay: quai ngang hông, cách thân ra phía tay phải để cẳng tay không vào thân */
   const HONG = { to: "hip", offset: [0, 65, 30] };
   /** Lý do `both` của (món, nhóm) không áp được (`undefined` khi áp được): mặt đỡ của tay phụ không có trên món */
@@ -691,18 +693,53 @@ if (!nhomXin) {
         { ma: "tay-buong", ten: "tay buông xách", hands: { right: H() } },
         { ma: "tay-buong-trai", ten: "tay buông xách (trái)", lead: "left", hands: { left: H() } },
       );
+    if (group === "bowl")
+      rows.push(
+        {
+          ma: "along-thap",
+          ten: "along thấp (0,1)",
+          mark: NGUC,
+          hands: { right: H({ along: 0.1 }) },
+        },
+        {
+          ma: "along-giua",
+          ten: "along giữa (0,5)",
+          mark: NGUC,
+          hands: { right: H({ along: "mid" }) },
+        },
+        { ma: "around-0", ten: "around 0", mark: NGUC, hands: { right: H({ around: 0 }) } },
+        {
+          ma: "around-45",
+          ten: "around 45 (giới hạn cổ tay)",
+          mark: NGUC,
+          hands: { right: H({ around: 45 }) },
+        },
+        { ma: "tay-dan", ten: "tay dẫn, miệng ngửa", hands: { right: { ...TAY_DAN, ...H() } } },
+        {
+          ma: "tay-dan-trai",
+          ten: "tay dẫn trái, miệng ngửa",
+          lead: "left",
+          hands: { left: { ...TAY_DAN, ...H() } },
+        },
+        {
+          ma: "tay-dan-hai",
+          ten: "tay dẫn hai tay đỡ đáy",
+          hai: true,
+          hands: { right: { ...TAY_DAN, ...H({ both: true }) } },
+        },
+      );
     if (group === "platform")
       rows.push(
         { ma: "psi-0", ten: "ψ 0 (ngón vào mặt)", mark: XA, hands: { right: H({ psi: 0 }) } },
         { ma: "psi-90", ten: "ψ 90 (ngón dọc cạnh)", mark: XA, hands: { right: H({ psi: 90 }) } },
         { ma: "tay-dan", ten: "tay dẫn", hands: { right: { ...TAY_DAN, ...H() } } },
       );
-    if (["platform", "cylinder", "palmBox"].includes(group)) {
+    if (["platform", "cylinder", "palmBox", "bowl"].includes(group)) {
       const why = khongBoth(group, geom);
       const both = {
         ma: "hai-tay-dat",
         ten: "hai tay (món đặt trước)",
-        mark: { platform: XA, cylinder: NGHIENG, palmBox: NGUC }[group],
+        mark: { platform: XA, cylinder: NGHIENG, palmBox: NGUC, bowl: CHEN_NGHIENG }[group],
         hai: true,
         hands: { right: H({ both: true }) },
       };
