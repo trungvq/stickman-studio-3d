@@ -547,7 +547,9 @@ export interface HoldAim {
  * hoà dần từ kiểu cũ sang kiểu mới), `enter` là phần đã vào của lần cầm (tay phụ hoà dần tới mốc của nó trên món). `prior`
  * là mẫu trước của tay ấy (`HOLD_SLEW_STEP`): cách bao nhiêu giây và tư thế của người ở đó — cổ tay mang món đi từ nghiệm
  * ở đó với tốc độ có hạn. `grasp` là chỗ cầm nhóm (`món@nhóm`); `from.grasp` của lần cầm trước. `solve`: món đặt trước,
- * bàn tay của khung này giải trên nhân vật `c` (thân `T` đã dựng) — `graspAtTime` của scene
+ * bàn tay của khung này giải trên nhân vật `c` (thân `T` đã dựng) — `graspAtTime` của scene. `was`: lần cầm món đặt trước
+ * liền trước trên tay này còn hoà ra (`HOLD_BLEND`), phần còn lại `k` và bàn tay của nó ở khung này. `released`: tay đã
+ * buông, lần cầm chỉ mang `was` — không vai trò, không món, không dáng ngón
  */
 export interface ReachHold {
   item: string;
@@ -558,8 +560,16 @@ export interface ReachHold {
   enter?: number;
   prior?: { dt: number; pose: () => object };
   grasp?: HoldGrasp;
-  solve?: (c: ActCharacter, T?: Trunk3) => (GraspSolution & { t0: number }) | undefined;
+  solve?: PlacedSolve;
+  was?: { k: number; solve: PlacedSolve };
+  released?: true;
 }
+
+/** Bàn tay cầm món đặt trước ở một khung, giải trên nhân vật `c` (thân `T` đã dựng) */
+export type PlacedSolve = (
+  c: ActCharacter,
+  T?: Trunk3,
+) => (GraspSolution & { t0: number }) | undefined;
 
 /**
  * Chỗ cầm nhóm (`món@nhóm`) của một lần cầm ở một khung: `hold` là mốc tay gần nhất dạng object, trường số đã hoà tới khung

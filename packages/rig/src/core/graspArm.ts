@@ -249,6 +249,13 @@ function phiBasis(inp: ArmInput, Wp: V3) {
   return { d0, o0: unit(scale3(cross3(n, d0), inp.side)) };
 }
 
+/** `φ` (độ) của khuỷu `El` quanh trục vai → `Wp`, cùng gốc với `evalPhi` */
+export function phiOf(inp: ArmInput, Wp: V3, El: V3): number {
+  const B = phiBasis(inp, Wp);
+  const e = sub3(El, inp.S);
+  return Math.atan2(dot3(e, B.o0), dot3(e, B.d0)) / D;
+}
+
 /**
  * `E(φ)` của tay `inp` với cổ tay `Wp`, khung bàn tay `Rw` (three) ở góc khuỷu `phi` (độ): dựng hai đoạn tay, đọc góc
  * cổ tay. `elbow` là hướng khuỷu của mốc tay (thế giới rig), thiếu thì `REACH_ELBOW`

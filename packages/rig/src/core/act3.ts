@@ -35,6 +35,7 @@ import type { RoleMap } from "./graspGroups";
 import { graspReport, type GraspReport, type GraspSolution } from "./graspSolve";
 import { handDims, type HandDims } from "./heldGeom";
 import { holdFrom, holdHand, holdLinkFrame, type HoldLinkHand } from "./holdLink";
+import { armInput, evalPhi, phiOf, type ArmSol } from "./graspArm";
 import { REACH_ELBOW } from "./ik";
 import {
   fromColumns,
@@ -67,6 +68,7 @@ import {
   HOLD_SLEW_STEP,
   leadSide,
   mixGrip,
+  mixRotation,
   type GripFrame,
   type GraspHand,
   type HoldAim,
@@ -584,7 +586,8 @@ export function holdRoles(
   // kiểu treo không chiếm bàn tay: không có vai trò, tay ấy cầm kiểu hai tay hay làm tay phụ được
   const links: Partial<Record<number, { h: ReachHold; x: HoldLinkHand }>> = {};
   for (const side of [-1, 1]) {
-    const h = (side === near ? hands?.near : hands?.far)?.hold;
+    const h0 = (side === near ? hands?.near : hands?.far)?.hold;
+    const h = h0?.released ? undefined : h0;
     const x = h && holdHand(h, side, dims);
     if (x) links[side] = { h: h!, x };
   }
@@ -724,7 +727,7 @@ function placedHolds(T: Trunk3, hands: ActHands | undefined) {
   for (const wk of ["near", "far"] as const) {
     const r = hands?.[wk];
     const h = r?.hold;
-    if (h?.grasp?.mode !== "item" || !h.solve) continue;
+    if (h?.grasp?.mode !== "item" || !h.solve || h.released) continue;
     let m = placedMemo.get(h);
     if (!m || !sameC(m.c, T.c)) placedMemo.set(h, (m = { c: T.c, sol: h.solve(canon(T.c), T) }));
     if (!m.sol) continue;
@@ -734,15 +737,118 @@ function placedHolds(T: Trunk3, hands: ActHands | undefined) {
   return { hands: out, sols };
 }
 
-function solveActing(
-  T: Trunk3,
-  sp: ActInput,
-): {
+type Solved = {
   input: ActInput;
   report: Record<"R" | "L", AimReport>;
   /** Xoay, gập, lệch cổ tay của tay mang món theo ý định: cho mẫu sau (`ReachHold.prior`) */
   wrist: Partial<Record<"R" | "L", WristTbd>>;
-} {
+};
+
+/** Nghiệm của lần cầm món đặt trước đang hoà ra (`ReachHold.was`) theo khung và nhân vật */
+const wasMemo = new WeakMap<object, { c: ActCharacter; sol: PlacedSol | undefined }>();
+
+/** Cánh tay vẽ ra để hoà: cổ tay, khung bàn tay, khuỷu (three) và ngón */
+type ArmState = { Wp: V3; Rw: M3; El: V3; fingers: readonly number[] };
+
+/**
+ * Tay cầm món đặt trước hoà vào và ra trong `HOLD_BLEND` (docs/11-nhom-cam.md § Đổi lần cầm): từ nghiệm cũ — lần cầm món
+ * đặt trước trước đó (`was`), hay tay tự do khi vừa cầm (`enter`) — sang nghiệm mới; cổ tay dời thẳng, bàn tay quay theo
+ * đường ngắn nhất, `φ` hoà theo đường ngắn nhất, ngón hoà thẳng
+ */
+function solveActing(T: Trunk3, sp: ActInput): Solved {
+  const hands = sp.world?.hands;
+  if (!hands || !needsSolve(sp)) return solveCore(T, sp);
+  const plan: { wk: "near" | "far"; side: number; f: number; old: PlacedSol | "free" }[] = [];
+  let main: ActHands = hands;
+  for (const wk of ["near", "far"] as const) {
+    const r = hands[wk];
+    const h = r?.hold;
+    if (!r || !h) continue;
+    const side = wk === "near" ? T.near : -T.near;
+    if (h.released) main = { ...main, [wk]: { ...r, hold: undefined } };
+    let old: PlacedSol | undefined;
+    if (h.was) {
+      let m = wasMemo.get(h.was);
+      if (!m || !sameC(m.c, T.c))
+        wasMemo.set(h.was, (m = { c: T.c, sol: h.was.solve(canon(T.c), T) }));
+      old = m.sol;
+    }
+    if (old) plan.push({ wk, side, f: 1 - h.was!.k, old });
+    else if (h.grasp?.mode === "item" && h.solve && h.enter !== undefined && h.enter < 1)
+      plan.push({ wk, side, f: h.enter, old: "free" });
+  }
+  const at = (x: ActHands) => (x === hands ? sp : { ...sp, world: { ...sp.world!, hands: x } });
+  const out = solveCore(T, at(main));
+  if (!plan.length) return out;
+  let free: ActInput | undefined;
+  if (plan.some((p) => p.old === "free")) {
+    let x = main;
+    for (const p of plan)
+      if (p.old === "free") x = { ...x, [p.wk]: { ...x[p.wk]!, hold: undefined } };
+    free = solveCore(T, at(x)).input;
+  }
+  let P: PoseIn = out.input.pose;
+  const H: ActHands = { ...out.input.world!.hands };
+  const drawn = (x: ActInput, side: number): ArmState => {
+    const A = arm3(T, x.pose, x.world?.hands, side);
+    return { Wp: A.wr, Rw: A.Rw, El: A.elbow, fingers: A.v.slice(2) };
+  };
+  for (const p of plan) {
+    const a: ArmState =
+      p.old === "free"
+        ? drawn(free!, p.side)
+        : { Wp: p.old.Wp, Rw: p.old.Rw, El: p.old.arm.elbow, fingers: p.old.frame.pose.slice(2) };
+    const b = drawn(out.input, p.side);
+    const inp = armInput(T, p.side);
+    const Wp = lerp3(a.Wp, b.Wp, p.f);
+    const fa = phiOf(inp, a.Wp, a.El);
+    const fb = phiOf(inp, b.Wp, b.El);
+    const d = ((((fb - fa + 180) % 360) + 360) % 360) - 180;
+    const arm = evalPhi(inp, Wp, mixRotation(a.Rw, b.Rw, p.f), fa + d * p.f);
+    // góc cổ tay hoà giữa hai đầu đã kẹp: góc tách từ khung bàn tay nhảy khi xoay vượt ±180
+    const qa = wristOf(evalPhi(inp, a.Wp, a.Rw, fa));
+    const qb = wristOf(evalPhi(inp, b.Wp, b.Rw, fb));
+    const q = qa.map((x, i) => x + (qb[i] - x) * p.f);
+    const fingers = b.fingers.map((x, i) => (a.fingers[i] ?? x) + (x - (a.fingers[i] ?? x)) * p.f);
+    P = placeArm(P, H, p.side === T.near ? "an" : "af", p.wk, Wp, arm.pole, q, fingers);
+  }
+  return { ...out, input: { pose: P, world: { ...out.input.world!, hands: H } } };
+}
+
+/**
+ * Đặt tay kênh `ch` theo cánh tay đã giải `arm` với cổ tay `Wp` (three): đích thế giới có hướng khuỷu, góc cổ tay kẹp ở giới
+ * hạn, ngón `fingers`; ghi vào `H`, trả tư thế mới
+ */
+function placeArm(
+  P: PoseIn,
+  H: ActHands,
+  ch: "an" | "af",
+  wk: "near" | "far",
+  Wp: V3,
+  pole: V3,
+  [turn, bend, dev]: readonly number[],
+  fingers: readonly number[],
+): PoseIn {
+  const a = P.lift?.[ch] ? [...P[ch]] : [0, 0, 0, 0, 0];
+  a[2] = dev;
+  H[wk] = { at: rigOf(Wp), elbow: rigDir(pole), w: 1 };
+  return {
+    ...P,
+    [ch]: a,
+    lift: { ...P.lift, [ch]: true },
+    hand: { ...P.hand, [ch]: [turn, bend, ...fingers] },
+  };
+}
+
+const clampTo = (v: number, L: number) => Math.max(-L, Math.min(L, v));
+/** Xoay, gập, lệch cổ tay của cánh tay đã giải, kẹp ở giới hạn như người 3D vẽ */
+const wristOf = ({ wrist: w }: ArmSol): number[] => [
+  clampTo(w.turn, TURN_MAX),
+  clampTo(w.bend, AIM_BEND),
+  clampTo(w.dev, AIM_DEV),
+];
+
+function solveCore(T: Trunk3, sp: ActInput): Solved {
   const report = { R: {}, L: {} } as Record<"R" | "L", AimReport>;
   const wrist: Partial<Record<"R" | "L", WristTbd>> = {};
   if (!needsSolve(sp)) return { input: sp, report, wrist };
@@ -807,16 +913,8 @@ function solveActing(
       // món đặt trước: cổ tay, khung bàn tay và khuỷu là nghiệm `graspAtTime`, không ý định, không đi từ mẫu trước;
       // cổ tay vượt giới hạn thì vẽ theo kẹp, ngoài tầm với thì tay duỗi về `Wp`
       const w = item.arm.wrist;
-      const cl = (v: number, L: number) => Math.max(-L, Math.min(L, v));
-      const arm = P0.lift?.[ch] ? [...P[ch]] : [0, 0, 0, 0, 0];
-      arm[2] = cl(w.dev, AIM_DEV);
-      hands[wk] = { at: rigOf(item.Wp), elbow: rigDir(item.arm.pole), w: 1 };
-      const v = [
-        cl(w.turn, TURN_MAX),
-        cl(w.bend, AIM_BEND),
-        ...(role ?? { pose: actHand(P0, ch) }).pose.slice(2),
-      ];
-      P = { ...P, [ch]: arm, lift: { ...P.lift, [ch]: true }, hand: { ...P.hand, [ch]: v } };
+      const fingers = (role ?? { pose: actHand(P0, ch) }).pose.slice(2);
+      P = placeArm(P, hands, ch, wk, item.Wp, item.arm.pole, wristOf(item.arm), fingers);
       const A = arm3(T, P, hands, side);
       const front = (R: M3) => rigDir(unit(mv(R, mv(item.frame.G.R, [0, 0, 1]))));
       const off = mm(tr(item.Rw), A.Rw);

@@ -105,6 +105,7 @@ import {
   type HoldGrasp,
   type HoldTarget,
   type IntentTarget,
+  type PlacedSolve,
   type ReachHold,
   type SceneHold,
   type SceneHoldGroup,
@@ -3289,6 +3290,7 @@ function handAt(
       ? holdGraspAt(host, keys, side, now!.since - 1e-6, prev!)
       : undefined;
   const placedItem = grasp?.mode === "item";
+  const was = host && placedWas(host, keys, side, time);
   const hold: ReachHold | undefined = nowRef && {
     ...nowRef,
     spec: held[nowRef.item],
@@ -3311,7 +3313,19 @@ function handAt(
           ...(T && { trunks: { [host!.id]: T } }),
         }),
     }),
+    ...(was && { was: was.was }),
   };
+  // vừa buông món đặt trước: lần cầm cũ chỉ còn hoà ra
+  const gone: ReachHold | undefined =
+    !hold && was
+      ? {
+          ...sceneHoldRef(was.run.hold),
+          spec: held[sceneHoldRef(was.run.hold).item],
+          since: was.run.since,
+          was: was.was,
+          released: true,
+        }
+      : undefined;
   /**
    * Ý định ở mốc `kt` của lần cầm đang có ở `time`: lần cầm có hiệu lực ở mốc ấy, hay ngay trước nó — mốc thả (`hold: null`,
    * đổi món) vẫn giữ ý định tới đúng lúc thả
@@ -3347,6 +3361,10 @@ function handAt(
   };
   const keep: Aim = { terms: [{ k: 1, keep: true }] };
   const finish = (r: Reach | undefined, pa?: Reach, pb?: Reach): Reach | undefined => {
+    if (gone) return { ...(finishHeld(r, pa, pb) ?? { w: 0, at: [0, 0, 0] }), hold: gone };
+    return finishHeld(r, pa, pb);
+  };
+  const finishHeld = (r: Reach | undefined, pa?: Reach, pb?: Reach): Reach | undefined => {
     let aim =
       pa?.aim || pb?.aim ? (b ? mixAim(pa?.aim ?? keep, pb?.aim ?? keep, fk) : pa?.aim) : undefined;
     if (hold?.from && hold.from.grasp?.mode !== "item") {
@@ -3433,6 +3451,47 @@ function declared(g: SceneHoldGroup): GraspChoice {
 /** Món có mốc ở `scene.items`: món đặt trước */
 const itemMarked = (rt: SceneRuntime, item: string): boolean =>
   !!rt.items?.some((k) => k.item === item);
+
+/** Lần cầm nhóm của món đặt trước */
+const placedRun = (rt: SceneRuntime, run: HoldRun): boolean =>
+  holdKind(run.hold) === "group" && itemMarked(rt, groupHold(run.hold).item);
+
+/**
+ * Lần cầm món đặt trước vừa xong trên tay `side`, còn hoà ra ở `time` (`HOLD_BLEND` từ ranh giới): phần còn lại và bàn tay
+ * của nó ngay trước ranh giới — nghiệm cũ đứng yên, không giải tiếp qua ranh giới (chuỗi `φ` của lần cầm đã xong có thể
+ * nhảy nhánh khi món đi tiếp). docs/11-nhom-cam.md § Đổi lần cầm
+ */
+function placedWas(
+  host: GraspHost,
+  keys: HandKey[],
+  side: HandSide,
+  time: number,
+): { run: HoldRun; was: { k: number; solve: PlacedSolve } } | undefined {
+  for (let i = keys.length - 1; i >= 0; i--) {
+    const k = keys[i];
+    if (k.t > time || k[side]?.hold === undefined) continue;
+    if (time - k.t >= HOLD_BLEND) return undefined;
+    const prev = holdRun(keys, side, k.t - 1e-6);
+    if (prev?.since === holdRun(keys, side, k.t)?.since) continue;
+    if (!prev || !placedRun(host.rt, prev)) return undefined;
+    const g = groupHold(prev.hold);
+    const { rt, id } = host;
+    const t0 = k.t - 1e-6;
+    const solve: PlacedSolve = (c) => {
+      const o: ItemOptions = {
+        chars: { [id]: c },
+        defaults: groupIntent(
+          g.group,
+          { item: g.item, group: g.group },
+          itemGeom(itemSpec(rt, g.item)),
+        ),
+      };
+      return graspArmAt(rt, id, side, t0, o, prev)?.sol;
+    };
+    return { run: prev, was: { k: 1 - smoothstep((time - k.t) / HOLD_BLEND), solve } };
+  }
+  return undefined;
+}
 
 const sideSign = (side: HandSide) => (side === "right" ? -1 : 1);
 
@@ -3738,11 +3797,9 @@ function graspArmAt(
   side: HandSide,
   time: number,
   o: ItemOptions,
+  run = holdRun(handKeys(rt, id), side, time),
 ): { sol: GraspAtTime; inp: ArmInput } | undefined {
-  const keys = handKeys(rt, id);
-  const run = holdRun(keys, side, time);
-  if (!run || holdKind(run.hold) !== "group" || !itemMarked(rt, groupHold(run.hold).item))
-    return undefined;
+  if (!run || !placedRun(rt, run)) return undefined;
   // `trunks` là thân ở đúng `time`: mẫu của chuỗi ở giây khác dựng thân riêng
   const at = { ...o, trunks: undefined };
   const r = graspStart(rt, id, side, run, at);
