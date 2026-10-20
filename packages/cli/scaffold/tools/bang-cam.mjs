@@ -20,7 +20,7 @@
 // bê hai tay hai vành (đĩa, tấm nằm); hàng khai `edge` / `thumb` không có trên khối hình tấm hay đĩa, hay cần mốc món
 // mà món không có, bị bỏ trước khi giải (`do.json` `loc`); hàng giải ra cùng chỗ cầm, cùng vị trí món với hàng trước nó bị bỏ
 // (`trung`); hàng mà `checkChoice` của rig báo lỗi (biến thể quá bề dày ở mép, phần không có…) cũng bị bỏ, mọi nhóm; với `palmBox` thêm đọc ngang mặt,
-// khoe một tay, áp tai (tay dẫn); với `cylinder` thêm `along` thấp / cao, ngón cái xuống, nắm từng phần bám được (vai, cổ… `along` giữa phần),
+// khoe một tay, áp tai (tay dẫn); `handle` đặt túi ngang hông (`to: hip`) thêm `along` 0,2 / 0,7 và tay buông xách phải / trái (tay dẫn, không khai đích); với `cylinder` thêm `along` thấp / cao, ngón cái xuống, nắm từng phần bám được (vai, cổ… `along` giữa phần),
 // áp tai (tay dẫn, `around` 180: lòng áp lưng tay cầm); `card` thêm `edge top`, ngón cái mặt trước / sau, tay dẫn, tay dẫn mặt trước lên và đưa thẻ ra trước; `platform` (món ngang bụng, xa ngực hơn hàng chung) thêm `psi` 0 / 90 và tay dẫn; `chopsticks` (đũa trước ngực ngọn ra trước chúc 30°, hai que chéo) thêm `along` 0,15 / 0,45 và tay dẫn phải / trái; `platform`,
 // `cylinder` (chai đứng hơi nghiêng), `palmBox` thêm hàng hai tay `both` món đặt trước, bỏ khi món không có mặt đáy / sau có cạnh cho tay phụ
 // (`loc`); `platform` mà mặt đỡ chọn ra không có cạnh thì cả cặp bị bỏ (`bo`); `carry` hai hàng treo khuỷu (`on: elbow`) và treo vai (`on: shoulder`, cảnh khai `touch`), tay
@@ -408,6 +408,8 @@ if (!nhomXin) {
   /** Tay dẫn bút ở trước ngực (`ben` ±1 là bên tay), ngòi xuống mặt bàn */
   const BUT_BAN = (ben) => ({ to: "chest", offset: [40, 30, 25 * ben], point: "item:tip" });
   const NGOI_BAN = { face: { axis: "tip", toward: [0.5, 0.866, 0] } };
+  /** Túi hạ xuống dưới tay: quai ngang hông, cách thân ra phía tay phải để cẳng tay không vào thân */
+  const HONG = { to: "hip", offset: [0, 65, 30] };
   /** Lý do `both` của (món, nhóm) không áp được (`undefined` khi áp được): mặt đỡ của tay phụ không có trên món */
   const khongBoth = (group, geom) => {
     const sup = rig.GRIP_GROUPS[group].support;
@@ -500,7 +502,7 @@ if (!nhomXin) {
           }),
         },
       }));
-    const dat = { platform: XA, chopsticks: DUA_DAT, pen: BUT_DAT }[group] ?? NGUC;
+    const dat = { platform: XA, chopsticks: DUA_DAT, pen: BUT_DAT, handle: HONG }[group] ?? NGUC;
     const rows = [{ ma: "mac-dinh", ten: "mặc định", mark: dat, hands: { right: H() } }];
     if (Object.keys(gs.variants).length > 1)
       for (const v of Object.keys(gs.variants))
@@ -672,6 +674,23 @@ if (!nhomXin) {
           hands: { left: { ...BUT_BAN(-1), ...H(NGOI_BAN) } },
         },
       );
+    if (group === "handle")
+      rows.push(
+        {
+          ma: "along-thap",
+          ten: "along thấp (0,2)",
+          mark: HONG,
+          hands: { right: H({ along: 0.2 }) },
+        },
+        {
+          ma: "along-cao",
+          ten: "along cao (0,7)",
+          mark: HONG,
+          hands: { right: H({ along: 0.7 }) },
+        },
+        { ma: "tay-buong", ten: "tay buông xách", hands: { right: H() } },
+        { ma: "tay-buong-trai", ten: "tay buông xách (trái)", lead: "left", hands: { left: H() } },
+      );
     if (group === "platform")
       rows.push(
         { ma: "psi-0", ten: "ψ 0 (ngón vào mặt)", mark: XA, hands: { right: H({ psi: 0 }) } },
@@ -771,7 +790,11 @@ if (!nhomXin) {
             side,
             person,
             size: r2(p.size),
-            from: row.from ?? (row.mark ? "hàng mẫu (món đặt trước ngực)" : "hàng mẫu (tay dẫn)"),
+            from:
+              row.from ??
+              (row.mark
+                ? `hàng mẫu (món đặt ${group === "handle" ? "ngang hông" : "trước ngực"})`
+                : "hàng mẫu (tay dẫn)"),
             two,
             carry: group === "carry",
             scene: dungCanh(p, row.hands, row.mark ? [{ item, ...row.mark }] : []),
