@@ -43,16 +43,23 @@ export interface PoseRef {
   pose: GroupPoseName;
   knuckle?: number;
   tip?: number;
-  thumb?: readonly [number, number, number, number];
+  thumb?: ThumbAngles;
 }
 
-/** Dáng theo số đo món: `closed` ở `range[0]`, `open` ở `range[1]` (đơn vị `A` hay `W`) */
+/** Góc ngón cái `[dạng, đối, gập gốc, gập ngọn]`, độ (`Fingers.thumb`) */
+export type ThumbAngles = readonly [number, number, number, number];
+
+/**
+ * Dáng theo số đo món: `closed` ở `range[0]`, `open` ở `range[1]` (đơn vị `A` hay `W`). `thumb`: góc ngón cái theo số đo
+ * (cùng đơn vị, tăng dần), nội suy tuyến tính, ngoài bảng lấy đầu gần; có thì đè ngón cái của dáng hoà
+ */
 export interface PoseSpec {
   open: PoseRef;
   closed: PoseRef;
   by: "thick" | "radius" | "width";
   unit: "A" | "W";
   range: [number, number];
+  thumb?: readonly (readonly [number, ThumbAngles])[];
 }
 
 export type FrameKind = "nf" | "nt";
@@ -152,6 +159,22 @@ export interface GroupSpec {
   motion?: "write" | "pick";
   later?: true;
 }
+
+/** `cylinder` `wrap`: gập gốc, gập ngọn thêm của bốn ngón — mở hơn chỗ chạm để `heldFit` cuộn tới; đóng hơn thì đốt ngọn lún */
+const WRAP_OPEN = [-20, -80] as const;
+const WRAP_CLOSED = [-35, -85] as const;
+/**
+ * `cylinder` `wrap`, ngón cái theo bán kính chỗ cầm (`W`): trụ mảnh thì đối hết, nằm dọc trục chồng lên trỏ–giữa về phía út;
+ * trụ to thì dạng, ít đối, áp dọc thân về đầu trên. Đổi họ qua dạng hết (`0,36–0,42·W`): đối giữa chừng thì cắt vào trụ
+ */
+const WRAP_THUMB = [
+  [0.17, [60, 60, 45, 60]],
+  [0.3, [60, 90, 45, 10]],
+  [0.36, [60, 90, 45, 10]],
+  [0.38, [80, 90, 0, 0]],
+  [0.4, [90, 40, -10, 0]],
+  [0.42, [50, 20, 0, 10]],
+] as const satisfies readonly (readonly [number, ThumbAngles])[];
 
 export const SIZE_WARN = 0.8;
 export const SIZE_MAX = 0.95;
@@ -465,11 +488,12 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
       wrap: {
         frame: "nt",
         pose: {
-          open: { pose: "grip" },
-          closed: { pose: "fist" },
+          open: { pose: "grip", knuckle: WRAP_OPEN[0], tip: WRAP_OPEN[1] },
+          closed: { pose: "fist", knuckle: WRAP_CLOSED[0], tip: WRAP_CLOSED[1] },
           by: "radius",
           unit: "W",
           range: [0.06, 0.95],
+          thumb: WRAP_THUMB,
         },
         roles: roles("wrap", "wrap", "press"),
         fixture: "chai-dia#co",

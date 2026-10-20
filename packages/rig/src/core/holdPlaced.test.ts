@@ -27,6 +27,7 @@ import {
 import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
+import ongNghe from "./__fixtures__/held-v2/ong-nghe-ban.json";
 
 vi.mock("./graspArm", async (orig) => {
   const m = await orig<typeof import("./graspArm")>();
@@ -40,9 +41,12 @@ const parsed = parseCharacter(fx.character);
 if (!parsed.success) throw new Error("nguoi");
 const NGUOI = parsed.data;
 const H = NGUOI.rig.height;
+const r1 = parseHeldItem(ongNghe);
+if (!r1.success) throw new Error(r1.error.message);
+const ONG: HeldItemSpec = r1.data;
 const chars = { nguoi: NGUOI };
 
-function runtime(hands: unknown[], items: unknown[]): SceneRuntime {
+function runtime(hands: unknown[], items: unknown[], item = "bang-gia"): SceneRuntime {
   const r = parseScene({
     duration: 4,
     lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
@@ -63,7 +67,7 @@ function runtime(hands: unknown[], items: unknown[]): SceneRuntime {
     {},
     { nguoi: H },
     { nguoi: body3(NGUOI) },
-    { "bang-gia": BANG },
+    { [item]: item === "bang-gia" ? BANG : ONG },
   );
 }
 
@@ -224,4 +228,108 @@ describe("món đặt trước trong act3", () => {
     expectMatches(rt, t, "right");
     expectMatches(rt, t, "left");
   });
+});
+
+describe("tay trượt dọc thanh `cylinder`", () => {
+  const ong = (t: number, offset = [30, -2.9, 0]) => ({ ...mark(t, offset), item: "ong-nghe" });
+  const slide = (along: number) => ({
+    item: "ong-nghe",
+    group: "cylinder",
+    part: "tay",
+    along,
+    thumb: "up",
+    around: 0,
+  });
+  const sub = (a: readonly number[], b: readonly number[]): V3 => [
+    a[0] - b[0],
+    a[1] - b[1],
+    a[2] - b[2],
+  ];
+  /** Phần của `v` vuông góc với trục `a` */
+  function perp(v: V3, a: V3): V3 {
+    const k = (v[0] * a[0] + v[1] * a[1] + v[2] * a[2]) / (a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+    return [v[0] - a[0] * k, v[1] - a[1] * k, v[2] - a[2] * k];
+  }
+
+  const wrap = (d: number) => ((((d + 180) % 360) + 360) % 360) - 180;
+
+  /** Bước lớn nhất giữa hai mẫu cách `step`: `φ`, khuỷu vẽ (quanh trục vai → cổ tay), lòng tay, cổ tay, món (px rig) */
+  function sweep(rt: SceneRuntime, t1: number, step: number) {
+    const out = {
+      phi: 0,
+      elbow: 0,
+      palm: 0,
+      wrist: 0,
+      item: 0,
+      n: 0,
+      along: [] as number[],
+    };
+    let prev:
+      | { phi: number; S: V3; E: V3; W: V3; palm: readonly number[]; P: readonly number[] }
+      | undefined;
+    for (let i = 0; i * step <= t1 + 1e-9; i++) {
+      const t = i * step;
+      const sp = poseAt(rt, t);
+      const j = actJoints(NGUOI, sp)!;
+      const sol = graspAtTime(rt, "nguoi", "right", t, { chars })!;
+      const cur = {
+        phi: sol.arm.phi,
+        S: j.shoulderR as V3,
+        E: j.elbowR as V3,
+        W: j.wristR as V3,
+        palm: actPalms(NGUOI, sp)!.R.palm,
+        P: itemAt(rt, "ong-nghe", t, { chars })!.P,
+      };
+      out.along.push(sol.choice.along as number);
+      if (prev) {
+        out.phi = Math.max(out.phi, Math.abs(wrap(cur.phi - prev.phi)));
+        const axis = sub(cur.W, cur.S);
+        out.elbow = Math.max(
+          out.elbow,
+          angle(perp(sub(cur.E, cur.S), axis), perp(sub(prev.E, prev.S), axis)),
+        );
+        out.palm = Math.max(out.palm, angle(cur.palm, prev.palm));
+        out.wrist = Math.max(out.wrist, dist(cur.W, prev.W));
+        out.item = Math.max(out.item, dist(cur.P, prev.P));
+      }
+      prev = cur;
+      out.n++;
+    }
+    return out;
+  }
+
+  it.each([
+    ["món đứng yên", [ong(0), ong(2.5)]],
+    ["món dời theo", [ong(0), ong(2.5, [34, -8, 4])]],
+  ] as const)(
+    "`along` 0,25 → 0,75 giữa hai mốc tay, %s: khuỷu, lòng tay, cổ tay, món liền",
+    (_, items) => {
+      const rt = runtime(
+        [
+          { t: 0, right: { hold: slide(0.25) } },
+          { t: 2, right: { hold: slide(0.75) } },
+        ],
+        [...items],
+        "ong-nghe",
+      );
+      for (const step of [1 / 30, 1 / 60]) {
+        const r = sweep(rt, 2.5, step);
+        expect(r.n).toBeGreaterThanOrEqual(30);
+        // `along` hoà đơn điệu 0,25 → 0,75, rồi giữ
+        expect(r.along[0]).toBeCloseTo(0.25, 9);
+        expect(r.along[r.along.length - 1]).toBeCloseTo(0.75, 9);
+        for (let i = 1; i < r.along.length; i++) {
+          expect(r.along[i]).toBeGreaterThanOrEqual(r.along[i - 1] - 1e-12);
+          expect(r.along[i] - r.along[i - 1]).toBeLessThan(0.05);
+        }
+        // `φ` giải trên lưới 2,5° nên bước 2,5° là một nấc; khuỷu vẽ thêm phần trục vai → cổ tay xoay theo
+        expect(r.phi).toBeLessThanOrEqual(2.5 * (step * 30) + 1e-9);
+        expect(r.elbow).toBeLessThanOrEqual(3.5);
+        expect(r.palm).toBeLessThanOrEqual(5);
+        expect(r.wrist).toBeLessThanOrEqual(1.5);
+        expect(r.item).toBeLessThanOrEqual(1);
+      }
+    },
+    30000,
+  );
 });

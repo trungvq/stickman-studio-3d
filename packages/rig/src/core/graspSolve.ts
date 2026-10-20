@@ -108,8 +108,11 @@ export interface ContactInput {
   high?: V3;
   /** Hình va chạm của món, khung món */
   shape?: readonly HeldShape[];
-  /** Đỉnh da lòng tay ở dáng gốc tính từ tâm nắm, đơn vị món, toạ độ theo `palm`, `fingers`, `palm × fingers` */
-  palmSkin?: () => readonly V3[];
+  /**
+   * Đỉnh da lòng tay ở dáng gốc tính từ tâm nắm, đơn vị món, toạ độ theo `palm`, `fingers`, `palm × fingers`; `at` là số đo
+   * ở chỗ tiếp xúc như `GraspContact`
+   */
+  palmSkin?: (at?: Pick<GraspContact, "thick" | "radius" | "thumbRadius">) => readonly V3[];
 }
 
 /** Tâm nắm `at`, lòng tay `palm` và ngón `fingers` (trực giao với lòng tay) trong khung món; `along` là tỉ lệ đã giải */
@@ -120,6 +123,10 @@ export interface GraspContact {
   along: number;
   /** Bề dày đo ở chỗ ngón ôm, thay bề dày khối hình khi hoà dáng (`by: "thick"`) */
   thick?: number;
+  /** Bán kính trụ tiện ở chỗ cầm (`axialAt`), thay `rMax` khi hoà dáng (`by: "radius"`) */
+  radius?: number;
+  /** Bán kính tra bảng ngón cái (`PoseSpec.thumb`); bỏ trống là `radius` */
+  thumbRadius?: number;
 }
 
 export type ContactFn = (x: ContactInput) => GraspContact;
@@ -173,6 +180,8 @@ const WRAP_STEPS = 5;
 const WRAP_TILT_MAX = 45;
 /** `wrap`: da lòng tay cách mặt món ngần này, đơn vị món (fixture `chai-dia#co` hở lòng 0,6–0,9) */
 const WRAP_GAP = 0.7;
+/** `wrap`: ngón cái tra bảng theo bán kính nhỏ hơn của chỗ cầm và chỗ cách ngần này lần `W` về phía ngón cái (vai chai thắt) */
+const WRAP_THUMB_AHEAD = 0.5;
 /** Dò mặt hình: coi là chạm khi cách dưới ngần này, đơn vị món */
 const TOUCH = 0.01;
 
@@ -339,11 +348,17 @@ const wrap: ContactFn = (x) => {
   const t = unit(perp(scale3(p.a, x.thumb === "down" ? -1 : 1), palm));
   const fingers = unit(scale3(cross3(t, palm), x.side));
   const z = cross3(palm, fingers);
-  const pts = (x.palmSkin?.() ?? []).map((c) =>
+  const radius = f.kind === "lathe" ? p.r : undefined;
+  const ahead = along + ((x.thumb === "down" ? -1 : 1) * WRAP_THUMB_AHEAD * x.dims.W) / p.seg.len;
+  const thumbRadius =
+    radius === undefined
+      ? undefined
+      : Math.min(radius, axialAt(x.geom, f, Math.min(1, Math.max(0, ahead)), x.around ?? 0).r);
+  const pts = (x.palmSkin?.({ radius, thumbRadius }) ?? []).map((c) =>
     add3(add3(scale3(palm, c[0]), scale3(fingers, c[1])), scale3(z, c[2])),
   );
   const S = (x.shape && pts.length && skinTouch(x.shape, p.at, p.rho, pts, far)) || p.r;
-  return { at: add3(p.at, scale3(p.rho, S)), along, palm, fingers };
+  return { at: add3(p.at, scale3(p.rho, S)), along, palm, fingers, radius, thumbRadius };
 };
 
 /** Chỗ tiếp xúc theo nhóm và biến thể; nhóm chưa có ở đây thì `graspFrame` báo lỗi */
@@ -445,14 +460,38 @@ function measure(f: Feature, by: PoseSpec["by"]): number {
 }
 
 /**
- * Dáng gốc: dáng đóng ở `range[0]`, dáng mở ở `range[1]` (số đo món theo `A` hay `W`, `thick` của chỗ tiếp xúc nếu có),
- * hoà góc ở giữa
+ * Dáng gốc: dáng đóng ở `range[0]`, dáng mở ở `range[1]` (số đo món theo `A` hay `W`; `thick`, `radius` của chỗ tiếp xúc
+ * nếu có), hoà góc ở giữa
  */
-function basePose(ps: PoseSpec, f: Feature, dims: HandDims, thick?: number): number[] {
-  const x = (ps.by === "thick" && thick !== undefined ? thick : measure(f, ps.by)) / dims[ps.unit];
+function basePose(
+  ps: PoseSpec,
+  f: Feature,
+  dims: HandDims,
+  at: Pick<GraspContact, "thick" | "radius" | "thumbRadius"> = {},
+): number[] {
+  const local = ps.by === "thick" ? at.thick : ps.by === "radius" ? at.radius : undefined;
+  const x = (local ?? measure(f, ps.by)) / dims[ps.unit];
   const [lo, hi] = ps.range;
   const w = Number.isFinite(x) ? Math.min(1, Math.max(0, (x - lo) / (hi - lo))) : 0;
-  return mixHand(poseVec(ps.closed), poseVec(ps.open), w);
+  const v = mixHand(poseVec(ps.closed), poseVec(ps.open), w);
+  if (ps.thumb?.length) {
+    const xt =
+      ps.by === "radius" && at.thumbRadius !== undefined ? at.thumbRadius / dims[ps.unit] : x;
+    thumbAt(ps.thumb, Number.isFinite(xt) ? xt : lo).forEach((a, i) => (v[THUMB + i] = a));
+  }
+  return v;
+}
+
+/** Góc ngón cái của bảng `PoseSpec.thumb` ở số đo `x`: nội suy tuyến tính, ngoài bảng lấy đầu gần */
+function thumbAt(tab: NonNullable<PoseSpec["thumb"]>, x: number): readonly number[] {
+  if (x <= tab[0][0]) return tab[0][1];
+  for (let i = 1; i < tab.length; i++) {
+    const [x1, b] = tab[i];
+    if (x > x1) continue;
+    const [x0, a] = tab[i - 1];
+    return mixHand(a, b, (x - x0) / (x1 - x0));
+  }
+  return tab[tab.length - 1][1];
 }
 
 const palms = new Map<string, V3[]>();
@@ -546,12 +585,12 @@ export function graspFrame(
     inset,
     high: eHigh,
     shape: spec.shape,
-    palmSkin: () =>
+    palmSkin: (at) =>
       palmPoints(
         side,
         dims.W / (200 * HAND_BONES.palm.half[1]),
         dims.P / (100 * HAND_BONES.palm.len),
-        basePose(vs.pose!, feature, dims),
+        basePose(vs.pose!, feature, dims, at),
         vs.pose!.closed.pose as HandPose,
       ),
   });
@@ -566,7 +605,7 @@ export function graspFrame(
   return {
     G: gripFrame(spec, hand, side, k, long, s),
     hand,
-    pose: basePose(vs.pose, feature, dims, ct.thick),
+    pose: basePose(vs.pose, feature, dims, ct),
     roles: vs.roles,
     feature,
     choice: {
