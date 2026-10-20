@@ -167,6 +167,28 @@ describe('tay dẫn (`mode: "hand"`)', () => {
     w.pose(1.5);
     expect(h.fit).toBe(a);
   });
+
+  it('`touch` của món theo mốc `hold` đang hiệu lực: `regrip` cùng khoá khai `touch` mới, đi tuần tự như dựng mới ở giây ấy', () => {
+    const keys = [
+      HANDS[0],
+      { ...HANDS[1], right: { ...HANDS[1].right, hold: { item: 'dien-thoai', group: 'palmBox', regrip: true, touch: ['self.handL'] } } },
+    ];
+    const touchOf = (o: THREE.Object3D) => {
+      const out: unknown[] = [];
+      for (let p = o.parent; p; p = p.parent) out.push(...((p.userData.touch as unknown[] | undefined) ?? []));
+      return out;
+    };
+    const seq = world(keys);
+    seq.w.pose(0.5);
+    expect(touchOf(seq.objects['dien-thoai'])).not.toContain('self.handL');
+    seq.w.pose(1.5);
+    const fresh = world(keys);
+    fresh.w.pose(1.5);
+    expect(touchOf(fresh.objects['dien-thoai'])).toContain('self.handL');
+    expect(touchOf(seq.objects['dien-thoai'])).toEqual(touchOf(fresh.objects['dien-thoai']));
+    seq.w.pose(0.5);
+    expect(touchOf(seq.objects['dien-thoai'])).not.toContain('self.handL');
+  });
 });
 
 describe('treo (`món@carry`)', () => {

@@ -333,6 +333,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
         continue;
       }
       regrip(p, w, t);
+      p.on.held.retouch?.(w.hold);
       const main = w.aim.reduce<{ k: number; hold?: HoldAim } | undefined>((a, t) => (!a || t.k > a.k ? t : a), undefined)?.hold;
       const intent = main && heldIntentOf(main);
       if (intent) p.object.userData.hold = intent;

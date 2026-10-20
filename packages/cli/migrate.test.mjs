@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import * as rig from "@stickman3d/sketch";
-import { migrateHeld, migrateTable } from "./migrate-held.mjs";
+import { migrateHeld, migrateTable, touchOther } from "./migrate-held.mjs";
 
 // Món trung tính: tấm (`sheet`), hộp cỡ lòng tay (`palmBox`), túi treo khuỷu (`carry`)
 const TAM = {
@@ -167,6 +167,10 @@ describe("migrate-held", () => {
     assert.equal(hop.face, undefined);
     assert.equal(hop.thumb, "left");
     assert.deepEqual(tui, { item: "tui-treo", group: "carry", on: "elbow" });
+    // `touch` không bên của v1 miễn cả hai tay, v2 chỉ miễn bên cầm: bên kia xuống chỗ cầm
+    assert.deepEqual(tam0.touch, ["self.handL"]);
+    assert.deepEqual(tam1.touch, ["self.handL"]);
+    assert.deepEqual(hop.touch, ["self.handR", "self.foreArmR"]);
 
     for (const r of a.rows.filter((x) => x.old !== "tui-treo#khuyu")) {
       assert.ok(r.lead.angle < 5, `${r.old}: góc ${r.lead.angle}`);
@@ -181,6 +185,14 @@ describe("migrate-held", () => {
       ],
     );
     assert.match(migrateTable(a), /\| canh-a \| nguoi-b \| trái \| 0 \| `hop#doc` \| palmBox/);
+  });
+
+  it("`touchOther`: bên kia của tay cầm; cầm hai tay (`both`) và kiểu treo không thêm", () => {
+    const g = { touch: ["self.hand", "self.foreArm", "self.torso", { part: "self.hand", max: 2 }] };
+    assert.deepEqual(touchOther(g, "right"), ["self.handL", "self.foreArmL"]);
+    assert.deepEqual(touchOther(g, "left"), ["self.handR", "self.foreArmR"]);
+    assert.deepEqual(touchOther({ ...g, both: { lead: "right" } }, "right"), []);
+    assert.deepEqual(touchOther({ ...g, on: "elbow", at: "treo" }, "right"), []);
   });
 
   it("ghi cảnh khi không chạy khô, cảnh ghi ra nạp lại được", () => {

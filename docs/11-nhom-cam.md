@@ -963,7 +963,8 @@ Lần cầm có khoá `món@nhóm/…` (chỗ cầm nhóm) đi qua `groupHits` c
 nhóm) giữ bộ luật của [03](03-scene.md#đồ-cầm-tay) (`pose`, `drift`, `grip` theo `HELD_PINCHES`). Mỗi luật nhóm là một dòng
 báo trỏ về **chỗ cầm và hướng món** (của cảnh hay của rig). **Cửa sổ hoà**: tay còn trong `HOLD_BLEND`
 của một ranh giới lần cầm (`holdBlending` của `scene.ts`: vừa cầm, đổi chỗ cầm, vừa buông) đang đi tới món, nên `grip`,
-`loose`, `role` im; các luật còn lại vẫn đo.
+`loose`, `role` im; các luật còn lại vẫn đo. `touch` của chỗ cầm là của mốc `hold` đang hiệu lực ở giây đo, kể cả mốc sau
+trong cùng lần cầm (`regrip` cùng khoá), như `scene_probe`.
 
 | Luật | Áp cho | Kêu khi | Mức |
 |---|---|---|---|
@@ -1021,7 +1022,8 @@ v2 và `hold` của cảnh sang chỗ cầm nhóm `{ item, group, … }`.
    <file.md>` ghi bảng kèm kết quả JSON cạnh nó; `--scene <regex>` chỉ cảnh có id khớp.
    - **Món.** Món v2 nhận `seats` từ kiểu treo và `touch` chung của mọi kiểu cầm bằng tay; tool chỉ ghi file ở `--held-dir`
      khi `seats` hay `touch` lệch món v2 sẵn có, còn lại báo `khớp`. `touch` mà nhóm tự cho lấn (`self.hand`, `self.foreArm`)
-     bỏ. `touch` riêng của một kiểu cầm không lên món mà xuống `touch` của chỗ cầm trong cảnh; món có một kiểu cầm bằng tay
+     bỏ; nhóm chỉ cho lấn bên cầm (hai bên khi `both`), nên bên kia (`self.handL`, `self.foreArmL` hay `R`) ghi xuống `touch`
+     của chỗ cầm trong cảnh. `touch` riêng của một kiểu cầm không lên món mà xuống `touch` của chỗ cầm trong cảnh; món có một kiểu cầm bằng tay
      thì mọi `touch` của nó xuống cảnh.
    - **Cảnh.** Mỗi `hold` bản 1 → `{ item, group, … }` theo bảng kiểu → nhóm `HOLD_MAP` của `packages/cli/migrate-held.mjs`;
      `--map <file>` đè hay thêm dòng `{ group, part?, variant? }` theo khoá kiểu cầm; kiểu không có trong bảng là lỗi. Kiểu

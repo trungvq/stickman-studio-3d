@@ -106,6 +106,8 @@ export interface Held {
   release(): void;
   /** Kiểu cầm cứng: liên kết nhóm mang món dựng theo và tâm nắm của dáng (`holdLinkFrame`), tay mang món */
   link?: { G: GripFrame; center: V3; side: Side };
+  /** Kiểu cầm cứng: đặt lại `userData.touch` theo mốc `hold` đang hiệu lực (cùng lần cầm, mốc sau khai `touch` khác) */
+  retouch?(hold: ReachHold): void;
 }
 
 const D = Math.PI / 180;
@@ -366,8 +368,10 @@ function holdGrip(fig: Figure, object: THREE.Object3D, hand: Side | 'both', g: H
   _m4.set(G.R[0], G.R[1], G.R[2], 0, G.R[3], G.R[4], G.R[5], 0, G.R[6], G.R[7], G.R[8], 0, 0, 0, 0, 1);
   carrier.quaternion.setFromRotationMatrix(_m4);
   const sides: Side[] = x.both ? [lead, other] : [lead];
-  const touch = [...(g.spec.touch ?? []), ...(rh.grasp?.hold.touch ?? [])];
-  carrier.userData.touch = [...sides.flatMap((s) => [forearm(s), palm(s)]), ...touch];
+  const retouch = (h: ReachHold) => {
+    carrier.userData.touch = [...sides.flatMap((s) => [forearm(s), palm(s)]), ...(g.spec.touch ?? []), ...(h.grasp?.hold.touch ?? [])];
+  };
+  retouch(rh);
   carrier.add(object);
   socket.add(carrier);
   const entries = new Map<Side, Holding>();
@@ -385,6 +389,7 @@ function holdGrip(fig: Figure, object: THREE.Object3D, hand: Side | 'both', g: H
   return {
     object, span: 0,
     link: { ...link, side: lead },
+    retouch,
     release: () => {
       carrier.removeFromParent();
       for (const { node, rest } of hang) node.quaternion.copy(rest);

@@ -500,6 +500,18 @@ export function touchSplit(v1) {
   return { common, own: rest };
 }
 
+/**
+ * Mục `touch` không bên (`self.hand`, `self.foreArm`) của kiểu cầm `g` miễn cả hai tay; v2 chỉ tự miễn bên cầm (hai bên khi
+ * `both`): ghi bên kia của tay cầm `side` (`"right"`/`"left"`) xuống `touch` của chỗ cầm. Kiểu treo không xét
+ */
+export function touchOther(g, side) {
+  if (g.both || isCarry(g)) return [];
+  const other = side === "right" ? "L" : "R";
+  return (g.touch ?? [])
+    .filter((t) => typeof t === "string" && TOUCH_DEFAULT.has(t))
+    .map((t) => `${t}${other}`);
+}
+
 /** Món v2 từ món v1: bỏ `grips`, `seats` từ kiểu treo, `touch` chung; nhãn phần lấy từ `labels` (món v2 sẵn có) */
 export function migrateItem(v1, labels) {
   const seats = {};
@@ -739,7 +751,10 @@ export function migrateHeld({ dir = ".", scene, heldDir = "held", map, dryRun = 
           let hold;
           if (res.want && res.status !== "lỗi" && !res.support) {
             const intent = intentFields(res.v1, res.v2, h, res.want.group);
-            const touch = touchSplit(res.v1).own[ref.split("#")[1]] ?? [];
+            const touch = [
+              ...(touchSplit(res.v1).own[ref.split("#")[1]] ?? []),
+              ...touchOther(res.g, side),
+            ];
             const pending = res.status === "chờ nhóm";
             hold = {
               item,
