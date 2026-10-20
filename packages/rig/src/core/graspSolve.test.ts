@@ -247,6 +247,19 @@ describe("tay trái không soi gương món", () => {
     expect(thumbOf(r.G)[1]).toBeGreaterThan(0.8);
     expect(thumbOf(l.G)[1]).toBeGreaterThan(0.8);
   });
+
+  it("`palmBox` mặc định: cái, trỏ–áp út, lòng tay `press`, út `support`; ngón ôm là cái–út", () => {
+    const g = graspFrame(PHONE, itemGeom(PHONE), { group: "palmBox" }, -1, dims, 1.61);
+    expect(g.roles).toEqual({
+      thumb: "press",
+      index: "press",
+      middle: "press",
+      ring: "press",
+      pinky: "support",
+      palm: "press",
+    });
+    expect(g.hand.wrap).toEqual(["thumb", "index", "middle", "ring", "pinky"]);
+  });
 });
 
 describe("đổi `thumb` là quay π quanh `m`", () => {

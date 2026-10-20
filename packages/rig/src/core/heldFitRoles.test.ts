@@ -11,9 +11,16 @@ import {
   skinDepth,
   skinPieces,
   type FingerRole,
+  type FingerRoles,
   type HeldFitInput,
 } from "./heldFit";
+import { graspFrame } from "./graspSolve";
+import { HELD_SINK } from "./heldAudit";
+import { handDims, itemGeom } from "./heldGeom";
+import { parseHeldItem } from "./heldItem";
 import type { V3 } from "./lens";
+import grip from "./__fixtures__/grip-frames.json";
+import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 
 const I = [1, 0, 0, 0, 1, 0, 0, 0, 1] as HeldFitInput["G"]["R"];
 const FINGERS = ["thumb", "index", "middle", "ring", "pinky"] as const;
@@ -203,5 +210,63 @@ describe("`skinDepth`: lún đo trên đỉnh da", () => {
     const { depth, gaps } = skinDepth(pos, piece, IF, [{ box: [20, 400, 400], at: [10, 0, 0] }]);
     expect(Math.abs(depth - 0.5)).toBeLessThan(0.05);
     expect(Math.min(...Object.values(gaps))).toBeCloseTo(-depth, 9);
+  });
+});
+
+describe("`palmBox` mặc định trên điện thoại: trỏ–áp út `press` tì cạnh kia", () => {
+  const phone = parseHeldItem(dienThoai);
+  if (!phone.success) throw new Error(phone.error.message);
+  const spec = phone.data;
+  const geom = itemGeom(spec);
+  const fix = (grip as unknown as Record<string, Record<string, { k: number; long: number }>>)[
+    "dien-thoai#doc"
+  ];
+  /** Khe da từng ngón và lún da sâu nhất (0 khi không lún), đơn vị món */
+  const measure = (size: string, side: number, roles?: FingerRoles) => {
+    const { k, long } = fix[size];
+    const g = graspFrame(spec, geom, { group: "palmBox" }, side, handDims(k, long), k, long);
+    const skin = handSkin(side, k, long);
+    const fit = heldFit({
+      v: g.pose,
+      side,
+      k,
+      long,
+      shape: spec.shape!,
+      G: g.G,
+      roles: roles ?? g.roles,
+      bulge: skinBulge(skin, g.pose),
+    });
+    const pos = new Float32Array(skin.pos.length);
+    skinHand(skin, [...g.pose, ...fit], pos);
+    const { gaps } = skinDepth(pos, skinPieces(skin), g.G, spec.shape!);
+    return { gaps, sink: Math.max(0, -Math.min(...Object.values(gaps))) };
+  };
+  // khe trỏ, giữa, áp út của kiểu v1 `dien-thoai#doc` (bang-cam, giây 0,5)
+  const v1 = { "t01-sakura": [0.1, 0.2, 0.1], kuroiwa: [0.2, 0.3, 0.2] } as const;
+
+  it("khe trỏ–áp út không quá mức v1 + 0,3, hai cỡ tay, hai tay", () => {
+    for (const size of ["t01-sakura", "kuroiwa"] as const)
+      for (const side of [-1, 1]) {
+        const { gaps } = measure(size, side);
+        (["index", "middle", "ring"] as const).forEach((f, i) =>
+          expect(gaps[f], `${size} ${side} ${f}`).toBeLessThanOrEqual(v1[size][i] + 0.3),
+        );
+      }
+  });
+
+  it("lún da không quá vai trò `tip` + 0,1; tay lớn không quá `HELD_SINK`", () => {
+    const tip = {
+      thumb: "press",
+      index: "tip",
+      middle: "tip",
+      ring: "tip",
+      palm: "press",
+    } as const;
+    for (const size of ["t01-sakura", "kuroiwa"])
+      for (const side of [-1, 1]) {
+        const a = measure(size, side);
+        expect(a.sink, `${size} ${side}`).toBeLessThanOrEqual(measure(size, side, tip).sink + 0.1);
+        if (size === "kuroiwa") expect(a.sink).toBeLessThanOrEqual(HELD_SINK);
+      }
   });
 });

@@ -426,7 +426,8 @@ nắp; dáng mới `claw`). Lựa chọn: hướng tiếp cận, biến thể. M
   dựng dọc một cạnh dài, đầu các ngón tì cạnh dài kia: `f` từ cạnh có ngón cái sang cạnh kia; điểm ở `along` dọc cạnh dài;
   lòng tay chếch `tilt` quanh trục dọc máy.
 - **Dáng mở → đóng**: `span` → `span` khép bớt, theo `w`.
-- **Vai trò**: cái `press` (cạnh), trỏ–áp út `tip` (cạnh kia), út `support`, lòng tay `press`.
+- **Vai trò**: cái `press` (cạnh), trỏ–áp út `press` (vòng ra sau, cuộn cả hai đốt tới tì cạnh kia), út `support` (đỡ
+  góc dưới), lòng tay `press`.
 - **Lựa chọn**: `thumb` ∈ {`left`, `right`} (cạnh dài có ngón cái; mặc định **cùng bên với tay**), `along` (**0,4**), `tilt`
   ∈ [0°, 25°] (**20°**).
 - **Tay**: một; hai tay ôm trước ngực thì tay phụ mặc định `platform` ở mặt sau.

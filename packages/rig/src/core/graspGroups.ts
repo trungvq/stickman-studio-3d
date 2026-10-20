@@ -534,7 +534,7 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
           unit: "W",
           range: [0.7, 1.9],
         },
-        roles: roles("press", "tip", "press", { pinky: "support" }),
+        roles: roles("press", "press", "press", { pinky: "support" }),
         fixture: "dien-thoai#doc",
       },
     },
