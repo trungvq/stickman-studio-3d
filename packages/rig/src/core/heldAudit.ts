@@ -72,7 +72,15 @@ export const HELD_JUMP_EPS = 1e-3;
 export const HELD_WIND = 0.75;
 
 /** Dáng kẹp bằng đầu ngón: món ngồi giữa ngón cái và ngón đối diện, lòng tay không áp */
-export const HELD_PINCHES: readonly HandPose[] = ["pinch", "edge", "span", "hook", "sheet"];
+export const HELD_PINCHES: readonly HandPose[] = [
+  "pinch",
+  "edge",
+  "span",
+  "hook",
+  "sheet",
+  "tripod",
+  "chopsticks",
+];
 
 /** Chỗ cầm nhóm: da lún quá ngần này (đơn vị rig, đo trên da), `heldFit` đã nhắm khe `HELD_FIT.touch` trên da */
 export const HELD_SINK = Math.abs(HELD_FIT.touch) + 0.5;

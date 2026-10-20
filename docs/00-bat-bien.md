@@ -374,8 +374,8 @@ khác độ dài bằng `mixAngles`, góc cúi của `torso` trong JSON lấy b�
 … b[i])` ra `NaN`. Chân dang không chạm sàn nếu không vươn `1 / cos(dang)`.
 [01](01-rig.md#dang-và-nghiêng-ngang)
 
-**Dáng tay là góc khớp, một bảng: `HAND_POSES` (`core/hand.ts`).** Bốn dáng soạn được (`open`, `grip`, `point`,
-`fist`), dáng nghỉ `HAND_RELAXED` ngoài bảng — mốc bỏ trống `pose` là nó. Bàn tay năm ngón của người 3D mặc đồ là một mặt da liền
+**Dáng tay là góc khớp, một bảng: `HAND_POSES` (`core/hand.ts`).** Dáng soạn được là các khoá của
+bảng, dáng nghỉ `HAND_RELAXED` ngoài bảng — mốc bỏ trống `pose` là nó. Bàn tay năm ngón của người 3D mặc đồ là một mặt da liền
 buộc vào các đốt, da dời theo góc; hoà dáng là hoà góc (`HandVec`), không đổi lưới, nên không có dáng nào bật tắt.
 Đổi khung xương hay `HAND_BIND` thì lưới dựng lại theo — đừng ghép thêm khối rời vào bàn tay, mối nối là nét viền
 bên trong.

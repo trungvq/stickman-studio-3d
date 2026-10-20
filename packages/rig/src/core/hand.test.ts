@@ -57,9 +57,10 @@ const vec = (p: keyof typeof HAND_POSES | "rest") => [
 ];
 
 describe("bảng dáng tay", () => {
-  it("mười ba dáng soạn được, mỗi dáng đủ chín góc ngón, có nhãn và tâm nắm; dáng nghỉ ngoài bảng; `HAND_DOF` là xoay, gập cổ tay rồi chín góc ngón", () => {
+  it("mười lăm dáng soạn được, mỗi dáng đủ chín góc ngón, có nhãn và tâm nắm; dáng nghỉ ngoài bảng; `HAND_DOF` là xoay, gập cổ tay rồi chín góc ngón", () => {
     expect(HAND_POSE_KINDS).toEqual(Object.keys(HAND_POSES));
     expect([...HAND_POSE_KINDS].sort()).toEqual([
+      "chopsticks",
       "clasp",
       "cup",
       "edge",
@@ -73,6 +74,7 @@ describe("bảng dáng tay", () => {
       "sheet",
       "span",
       "thumbsUp",
+      "tripod",
     ]);
     expect(Object.keys(HAND_GRIPS).sort()).toEqual([...HAND_POSE_KINDS, "rest"].sort());
     for (const k of HAND_POSE_KINDS) {
@@ -142,6 +144,56 @@ describe("bảng dáng tay", () => {
       return m - HAND_BONES.palm.half[0];
     };
     for (const p of ["span", "edge"] as const) expect(lift(p)).toBeLessThanOrEqual(0);
+  });
+
+  it("cầm bút, cầm đũa: đủ năm ngón, góc trong tầm khớp; đệm ngón cái và ngón trỏ của `tripod` hở vừa thân bút, ngón cái không lún vào ngón nào", () => {
+    const segSeg = (a: V3, b: V3, c: V3, d: V3) => {
+      const seg = (p: V3) => {
+        const u = [d[0] - c[0], d[1] - c[1], d[2] - c[2]];
+        const w = [p[0] - c[0], p[1] - c[1], p[2] - c[2]];
+        const t = Math.min(
+          1,
+          Math.max(
+            0,
+            (w[0] * u[0] + w[1] * u[1] + w[2] * u[2]) / (u[0] ** 2 + u[1] ** 2 + u[2] ** 2),
+          ),
+        );
+        return Math.hypot(w[0] - t * u[0], w[1] - t * u[1], w[2] - t * u[2]);
+      };
+      let m = Infinity;
+      for (let i = 0; i <= 40; i++)
+        m = Math.min(m, seg([0, 1, 2].map((j) => a[j] + ((b[j] - a[j]) * i) / 40) as V3));
+      return m;
+    };
+    const gap = (v: number[], x: HandPiece, y: HandPiece) => {
+      const caps = handCapsules(v, -1);
+      const [a, b, r] = caps[HAND_CAPSULE_PIECES.indexOf(x)];
+      const [c, d, q] = caps[HAND_CAPSULE_PIECES.indexOf(y)];
+      return Math.min(segSeg(a, b, c, d), segSeg(c, d, a, b)) - r - q;
+    };
+    for (const p of ["tripod", "chopsticks"] as const) {
+      const f = HAND_POSES[p];
+      expect(Object.keys(handFrames(vec(p), -1))).toEqual([...HAND_PIECES]);
+      f.thumb.slice(0, 2).forEach((a) => expect(a).toBeGreaterThanOrEqual(0));
+      f.thumb.forEach((a) => expect(Math.abs(a)).toBeLessThanOrEqual(90));
+      [...f.index, ...f.fingers].forEach((a) => {
+        expect(a).toBeGreaterThanOrEqual(-5);
+        expect(a).toBeLessThanOrEqual(100);
+      });
+      expect(f.spread).toBeGreaterThanOrEqual(0);
+      for (const o of ["index0", "index1", "middle0", "middle1", "ring1"] as const)
+        for (const t of ["thumb0", "thumb1"] as const)
+          expect(gap(vec(p), t, o)).toBeGreaterThanOrEqual(0);
+    }
+    // bút r 1,3 đơn vị rig ở cỡ `1` (1/100 đơn vị three)
+    expect(Math.abs(gap(vec("tripod"), "thumb1", "index1") - 0.026)).toBeLessThanOrEqual(0.01);
+    // đũa: que trên lệch khỏi đường ngón cái – trỏ nên khe rộng hơn bút; ngón trỏ duỗi hơn
+    expect(gap(vec("chopsticks"), "thumb1", "index1")).toBeGreaterThan(
+      gap(vec("tripod"), "thumb1", "index1"),
+    );
+    expect(-tipOf(vec("chopsticks"), "index1")[1]).toBeGreaterThan(
+      -tipOf(vec("tripod"), "index1")[1],
+    );
   });
 
   it("hai bàn tay soi gương qua mặt phẳng giữa; lòng tay quay về phía thân", () => {
