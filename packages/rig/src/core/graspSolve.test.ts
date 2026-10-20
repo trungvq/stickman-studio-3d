@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { GRIP_GROUPS } from "./graspGroups";
-import { CONTACTS, edgeHigh, graspFrame, SHEET_INSET, type GraspChoice } from "./graspSolve";
+import {
+  CONTACTS,
+  edgeHigh,
+  graspFrame,
+  SHEET_INSET,
+  type ContactInput,
+  type GraspChoice,
+} from "./graspSolve";
 import { HAND_DOF, HAND_PIECES, handVec } from "./hand";
 import { handSkin, skinHand } from "./handMesh";
 import { HELD_SINK } from "./heldAudit";
@@ -17,6 +24,7 @@ import {
 import { fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
 import grip from "./__fixtures__/grip-frames.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
+import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import tomHum from "./__fixtures__/held-v2/tom-hum.json";
 
@@ -696,5 +704,49 @@ describe("graspFrame", () => {
   it("`G` là `gripFrame` của bàn tay tổng hợp: điểm nắm về tâm nắm của dáng", () => {
     const g = graspFrame(PHONE, itemGeom(PHONE), { group: "palmBox" }, -1, dims, 1.61);
     close(gripPoint(g.G, g.hand.at as V3), [0.035 * 1.61, -0.117 * 1.61, 0.027 * 1.61], 1e-12);
+  });
+  it("`around`, `psi`, `inset` đi tới chỗ tiếp xúc; `choice` giữ những trường nhóm có", () => {
+    const chai = item(chaiDia);
+    const seen: ContactInput[] = [];
+    CONTACTS.cylinder = {
+      wrap: (x) => {
+        seen.push(x);
+        return { at: [0, 64, 4.4], palm: [0, 0, -1], fingers: [1, 0, 0], along: 0.4 };
+      },
+    };
+    try {
+      const g = graspFrame(
+        chai,
+        itemGeom(chai),
+        { group: "cylinder", part: "co", around: 30, psi: 45, inset: 6 },
+        -1,
+        dims,
+      );
+      expect(seen).toHaveLength(1);
+      expect(seen[0]).toMatchObject({ around: 30, psi: 45, inset: 6, along: 0.5 });
+      expect(seen[0].feature.part).toBe("co");
+      expect(g.choice).toMatchObject({ around: 30, along: 0.4 });
+      expect("psi" in g.choice || "inset" in g.choice).toBe(false);
+    } finally {
+      delete CONTACTS.cylinder;
+    }
+  });
+
+  it("`sheet`, `palmBox` không khai thì không nhận `around`, `psi`, `inset`", () => {
+    const keep = { sheet: CONTACTS.sheet!.pinch, palmBox: CONTACTS.palmBox!.default };
+    const seen: ContactInput[] = [];
+    CONTACTS.sheet!.pinch = (x) => (seen.push(x), keep.sheet(x));
+    CONTACTS.palmBox!.default = (x) => (seen.push(x), keep.palmBox(x));
+    try {
+      const a = graspFrame(BANG, itemGeom(BANG), { group: "sheet", edge: "bottom" }, -1, dims);
+      const b = graspFrame(PHONE, itemGeom(PHONE), { group: "palmBox" }, 1, dims);
+      expect(seen).toHaveLength(2);
+      for (const x of seen)
+        expect([x.around, x.psi, x.inset]).toEqual([undefined, undefined, undefined]);
+      for (const g of [a, b]) expect(Object.keys(g.choice)).not.toContain("around");
+    } finally {
+      CONTACTS.sheet!.pinch = keep.sheet;
+      CONTACTS.palmBox!.default = keep.palmBox;
+    }
   });
 });

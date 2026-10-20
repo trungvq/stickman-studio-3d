@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   alongFrac,
+  axialAt,
   edgeFrame,
   gripSpan,
   handDims,
   itemGeom,
+  latheRadius,
   topProblems,
   type DiscFeature,
   type Feature,
@@ -291,6 +293,123 @@ describe("gripSpan trên cạnh tấm", () => {
     const [seg] = gripSpan(g, s, { edge: "right" });
     expect(seg.len).toBe(58);
     expect(() => gripSpan(g, s)).toThrow(/cần `edge`/);
+  });
+});
+
+describe("axialAt trên trụ tiện và thanh", () => {
+  const rodItem = (from: V3, to: V3, front: V3) =>
+    item({
+      schemaVersion: 2,
+      size: [40, 40, 40],
+      anchors: {},
+      front,
+      top: [0, 1, 0],
+      shape: [{ cyl: 2, from, to }],
+    });
+
+  it("chai địa: `along` 0/1 là hai đầu đoạn bám y 0–68,5 (cắt miệng), `pad` thu đầu cao", () => {
+    const g = itemGeom(item(chaiDia));
+    for (const l of of(g.features, "lathe")) {
+      close(axialAt(g, l, 0, 0).at, [0, 0, 0]);
+      close(axialAt(g, l, 1, 0).at, [0, 68.5, 0]);
+      close(axialAt(g, l, 0.5, 0).at, [0, 34.25, 0]);
+      close(axialAt(g, l, 1.4, 0).at, [0, 68.5, 0]);
+    }
+    const [than] = of(g.features, "lathe");
+    close(axialAt(g, than, 1, 0, { pad: 1 }).at, [0, 67.5, 0]);
+  });
+
+  it("chai địa: `r(s)` khớp `latheRadius` của phần chứa điểm, lớn nhất ở chỗ nối", () => {
+    const g = itemGeom(item(chaiDia));
+    const [than, vai, co] = of(g.features, "lathe");
+    const at = (y: number) => axialAt(g, vai, y / 68.5, 0).r;
+    expect(at(20)).toBeCloseTo(latheRadius(than, 20), 9);
+    expect(at(50)).toBeCloseTo(latheRadius(vai, 10), 9);
+    expect(at(50)).toBeCloseTo(7.8, 9);
+    expect(at(57.5)).toBeCloseTo(latheRadius(vai, 17.5), 9);
+    expect(at(65)).toBeCloseTo(latheRadius(co, 4), 9);
+    expect(at(0.4)).toBeCloseTo(9.8, 9);
+    expect(at(40)).toBeCloseTo(10.2, 9);
+    expect(at(61)).toBeCloseTo(4.4, 9);
+  });
+
+  it("chai địa: `ρ(0)` là `front` (nhãn), `ρ(90)` là `right`, `ρ(θ)` không phụ thuộc `along`", () => {
+    const g = itemGeom(item(chaiDia));
+    const [, vai] = of(g.features, "lathe");
+    expect(g.hasFront).toBe(true);
+    close(axialAt(g, vai, 0.5, 0).rho, [0, 0, 1]);
+    close(axialAt(g, vai, 0.5, 90).rho, g.R);
+    close(axialAt(g, vai, 0.5, 90).rho, [1, 0, 0]);
+    close(axialAt(g, vai, 0.9, 180).rho, [0, 0, -1]);
+    close(axialAt(g, vai, 0.1, 270).rho, [-1, 0, 0]);
+    close(axialAt(g, vai, 0.5, 0).a, [0, 1, 0]);
+  });
+
+  it("ống nghe: `along` 0/1 là hai đầu thân giữa mic và loa, `ρ(0)` mặt trước, `r` tới mặt tiết diện", () => {
+    const g = itemGeom(item(ongNgheBan));
+    const [r] = of(g.features, "rod");
+    close(axialAt(g, r, 0, 0).at, [0, 0, -11]);
+    close(axialAt(g, r, 1, 0).at, [0, 0, 11]);
+    const p = (deg: number) => axialAt(g, r, 0.5, deg);
+    close(p(0).rho, [0, -1, 0]);
+    close(p(90).rho, [1, 0, 0]);
+    close(p(180).rho, [0, 1, 0]);
+    expect(p(0).r).toBeCloseTo(3, 9);
+    expect(p(90).r).toBeCloseTo(9, 9);
+    expect(p(180).r).toBeCloseTo(3, 9);
+    expect(p(45).r).toBeCloseTo(3 * Math.SQRT2, 9);
+  });
+
+  it("đũa (không `front`): `ρ(0)` là `b0`, `ρ(90) = a × ρ(0)`; đầu cao cắt ở núm", () => {
+    const g = itemGeom(item(dua));
+    expect(g.hasFront).toBeUndefined();
+    for (const r of of(g.features, "rod")) {
+      const [seg] = gripSpan(g, r);
+      expect(seg.len).toBeLessThan(r.len - 1);
+      close(axialAt(g, r, 0, 0).at, seg.lo);
+      close(axialAt(g, r, 1, 0).at, seg.hi);
+      close(axialAt(g, r, 0, 0).rho, r.b0);
+      const x = axialAt(g, r, 0, 90).rho;
+      close(x, [
+        r.a[1] * r.b0[2] - r.a[2] * r.b0[1],
+        r.a[2] * r.b0[0] - r.a[0] * r.b0[2],
+        r.a[0] * r.b0[1] - r.a[1] * r.b0[0],
+      ]);
+      expect(dot(x, r.a)).toBeCloseTo(0, 9);
+      expect(axialAt(g, r, 0.3, 0).r).toBe(1.5);
+    }
+  });
+
+  it("trụ nằm có `front`: `ρ(0)` là `front` chiếu, không phải `b0`; `front` dọc trục thì `b0`", () => {
+    const across = itemGeom(rodItem([-15, 0, 0], [15, 0, 0], [0, 0, 1]));
+    const [r] = of(across.features, "lathe");
+    close(r.b0, [0, 1, 0]);
+    close(axialAt(across, r, 0.5, 0).rho, [0, 0, 1]);
+    close(axialAt(across, r, 0.5, 90).rho, [0, -1, 0]);
+    const tilted = itemGeom(rodItem([-15, 0, 0], [15, 0, 0], [0.5, 0, 1]));
+    close(axialAt(tilted, of(tilted.features, "lathe")[0], 0.5, 0).rho, [0, 0, 1]);
+    const along = itemGeom(rodItem([0, 0, -15], [0, 0, 15], [0, 0, 1]));
+    const [q] = of(along.features, "lathe");
+    close(axialAt(along, q, 0.5, 0).rho, q.b0);
+    close(axialAt(along, q, 0.5, 0).rho, [0, 1, 0]);
+    close(axialAt(along, q, 0.5, 90).rho, [-1, 0, 0]);
+  });
+
+  it("phần `grip: false` che hết thì báo lỗi", () => {
+    const g = itemGeom(
+      item({
+        schemaVersion: 2,
+        size: [40, 40, 40],
+        anchors: {},
+        parts: { vo: { grip: false } },
+        shape: [
+          { cyl: 2, from: [0, 0, 0], to: [0, 30, 0], part: "can" },
+          { box: [10, 40, 10], at: [0, 15, 0], part: "vo" },
+        ],
+      }),
+    );
+    const [l] = of(g.features, "lathe");
+    expect(() => axialAt(g, l, 0.5, 0)).toThrow(/không còn đoạn bám/);
   });
 });
 

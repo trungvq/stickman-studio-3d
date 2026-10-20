@@ -124,6 +124,8 @@ export interface ItemGeom {
   U: V3;
   F: V3;
   R: V3;
+  /** `F` lấy từ `front` của món (không thì `F` là hướng tạm) */
+  hasFront?: true;
   /** Hướng miệng (`lathe` có `wall` ở một đầu) */
   mouth?: V3;
   parts: PartGeom[];
@@ -501,17 +503,19 @@ function partsOf(spec: GeomSpec): PartGeom[] {
   });
 }
 
-function frameOf(spec: GeomSpec): { U: V3; F: V3; R: V3; mouth?: V3 } {
+function frameOf(spec: GeomSpec): { U: V3; F: V3; R: V3; mouth?: V3; hasFront: boolean } {
   const mouth = mouthDir(spec);
   const U = anchorDir(spec, spec.top) ?? mouth ?? [0, 1, 0];
-  let F = perp(anchorDir(spec, spec.front) ?? [0, 0, 1], U);
+  const front = anchorDir(spec, spec.front);
+  let F = perp(front ?? [0, 0, 1], U);
+  const hasFront = !!front && len3(F) >= 1e-3;
   if (len3(F) < 1e-3)
     F = perp(
       AXES.reduce((b, x) => (Math.abs(dot3(x, U)) < Math.abs(dot3(b, U)) ? x : b)),
       U,
     );
   F = unit(F);
-  return { U, F, R: unit(cross3(U, F)), mouth };
+  return { U, F, R: unit(cross3(U, F)), mouth, hasFront };
 }
 
 function axialOf(part: string, a: V3, lo: V3, len: number, U: V3, F: V3, R: V3): Axial {
@@ -686,7 +690,7 @@ const CACHE = new WeakMap<object, ItemGeom>();
 export function itemGeom(spec: GeomSpec): ItemGeom {
   const hit = CACHE.get(spec);
   if (hit) return hit;
-  const { U, F, R, mouth } = frameOf(spec);
+  const { U, F, R, mouth, hasFront } = frameOf(spec);
   const shape = spec.shape ?? [];
   const parts = partsOf(spec);
   const allCyls = parts
@@ -755,6 +759,7 @@ export function itemGeom(spec: GeomSpec): ItemGeom {
     U,
     F,
     R,
+    ...(hasFront ? { hasFront: true as const } : {}),
     ...(mouth ? { mouth } : {}),
     parts,
     blocked: parts.filter((p) => !p.grip).map((p) => ({ part: p.name, min: p.min, max: p.max })),
@@ -958,6 +963,65 @@ export function gripSpan(
       ),
     ],
   }));
+}
+
+export interface AxialPoint {
+  /** Điểm trên trục */
+  at: V3;
+  /** Trục, về phía U */
+  a: V3;
+  /** Hướng bán kính `ρ(θ)` */
+  rho: V3;
+  /** Trục tới mặt món theo `ρ`: `r(s)` của trụ tiện, `r` của thanh tròn, tới mặt tiết diện của thanh hộp */
+  r: number;
+  /** Đoạn bám liền chứa điểm */
+  seg: GripSegment;
+}
+
+/** Trục tới mặt của một thanh theo hướng `rho` (vuông góc trục) */
+function rodReach(f: RodFeature, rho: V3): number {
+  if (!f.wide) return f.r;
+  const cw = Math.abs(dot3(rho, f.wide));
+  const cn = Math.abs(dot3(rho, unit(cross3(f.a, f.wide))));
+  return Math.min(cw > EPS ? f.R / cw : Infinity, cn > EPS ? f.r / cn : Infinity);
+}
+
+/**
+ * Điểm ở `along` (0 đầu thấp, 1 đầu cao) của đoạn bám liền quanh thanh hay trụ tiện `f` (`gripSpan`, `pad` như ở đó), quay
+ * `around` độ quanh trục: `ρ(0)` là `F` chiếu lên mặt vuông góc trục (món không khai `front`, hay `F` dọc trục: `b0`),
+ * `ρ(90) = a × ρ(0)`. Bán kính lấy ở khối đồng trục chứa điểm (lớn nhất ở chỗ nối)
+ */
+export function axialAt(
+  geom: ItemGeom,
+  f: RodFeature | LatheFeature,
+  along: number,
+  around: number,
+  opts: { pad?: number } = {},
+): AxialPoint {
+  const segs = gripSpan(geom, f, opts);
+  const over = (g: GripSegment) =>
+    Math.min(dot3(sub3(g.hi, f.lo), f.a), f.len) - Math.max(dot3(sub3(g.lo, f.lo), f.a), 0);
+  const seg = segs.reduce<GripSegment | undefined>(
+    (b, g) => (!b || over(g) > over(b) + EPS ? g : b),
+    undefined,
+  );
+  if (!seg) throw new Error(`\`${f.part}\` không còn đoạn bám (phần \`grip: false\` che hết)`);
+  const at = add3(seg.lo, scale3(f.a, Math.min(1, Math.max(0, along)) * seg.len));
+  const pf = perp(geom.F, f.a);
+  const r0 = geom.hasFront && len3(pf) > 1e-3 ? unit(pf) : f.b0;
+  const rho = radialDir({ b0: r0, b90: unit(cross3(f.a, r0)) }, around);
+  const own = lineOf(f)!;
+  let r = 0;
+  for (const g of geom.features) {
+    if (g.kind !== "rod" && g.kind !== "lathe") continue;
+    const l = lineOf(g)!;
+    if (g !== f && !coaxial({ o: own.o, d: own.a, r: own.r }, { o: l.o, d: l.a, r: l.r })) continue;
+    const s = dot3(sub3(at, g.lo), g.a);
+    const tol = 1e-4 * Math.max(1, g.len);
+    if (s < -tol || s > g.len + tol) continue;
+    r = Math.max(r, g.kind === "lathe" ? latheRadius(g, s) : rodReach(g, rho));
+  }
+  return { at, a: f.a, rho, r, seg };
 }
 
 export interface HandDims {

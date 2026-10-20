@@ -88,6 +88,12 @@ export interface ContactInput {
   thumb?: string;
   slant: number;
   tilt: number;
+  /** Độ quanh trục trụ, thanh (`axialAt`) */
+  around?: number;
+  /** Độ, hướng ngón đo từ pháp tuyến trong của cạnh (`platform`) */
+  psi?: number;
+  /** Cạnh tới tâm nắm theo pháp tuyến trong (`platform`) */
+  inset?: number;
   /** Đầu cao của cạnh, khung món (`edgeHigh`); bỏ trống là `m × F` */
   high?: V3;
   /** Hình va chạm của món, khung món */
@@ -395,6 +401,9 @@ export function graspFrame(
   const slant = typeof sl === "number" ? sl : sl === "low" ? half[0] : sl === "high" ? half[1] : 0;
   const tilt = choice.tilt ?? (def.tilt as number | undefined) ?? 0;
   const along = choice.along ?? (def.along as number | undefined) ?? 0.5;
+  const around = choice.around ?? (def.around as number | undefined);
+  const psi = choice.psi ?? (def.psi as number | undefined);
+  const inset = choice.inset ?? (def.inset as number | undefined);
   const ct = contact({
     geom,
     feature,
@@ -405,6 +414,9 @@ export function graspFrame(
     thumb,
     slant,
     tilt,
+    around,
+    psi,
+    inset,
     high: eHigh,
     shape: spec.shape,
   });
@@ -432,6 +444,9 @@ export function graspFrame(
       variant,
       ...(group.choices.slant && { slant }),
       ...(group.choices.tilt && { tilt }),
+      ...(group.choices.around && around !== undefined && { around }),
+      ...(group.choices.psi && psi !== undefined && { psi }),
+      ...(group.choices.inset && inset !== undefined && { inset }),
     },
   };
 }
