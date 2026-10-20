@@ -19,6 +19,7 @@ import {
 import {
   HAND_BONES,
   HAND_DOF,
+  HAND_GRIPS,
   HAND_PIECES,
   HAND_POSES,
   handVec,
@@ -186,6 +187,13 @@ const WRAP_TILT_MAX = 45;
 const WRAP_GAP = 0.7;
 /** `wrap`: ngón cái tra bảng theo bán kính nhỏ hơn của chỗ cầm và chỗ cách ngần này lần `W` về phía ngón cái (vai chai thắt) */
 const WRAP_THUMB_AHEAD = 0.5;
+/** `card` `pad`: tâm nắm thụt vào trong tấm ngần này lần `W` */
+const PAD_INSET = 0.15;
+/** `pad`: đệm trỏ cách tâm nắm của dáng `pinch` về phía ngược ngón cái, lần `W` */
+const PAD_SHIFT = (HAND_GRIPS.pinch[2] - HAND_BONES.index.at[2]) / (2 * HAND_BONES.palm.half[1]);
+/** `pad`: đệm trỏ đi trước tâm nắm theo hướng ngón ngần này lần `W`; cách đầu cạnh ít nhất `PAD_END` lần `W` */
+const PAD_AHEAD = 0.4;
+const PAD_END = 0.2;
 /** `platform`: da lòng tay cách mặt đỡ ngần này, đơn vị món */
 const PLATFORM_GAP = 0.15;
 /** Dò mặt hình: coi là chạm khi cách dưới ngần này, đơn vị món */
@@ -238,6 +246,25 @@ const flat: ContactFn = (x) => {
   const { m, e, F, at: mid, along } = sheetEdge(x, SHEET_INSET.flat);
   const at = add3(mid, scale3(F, (lo + hi) / 2));
   return { at, along, palm: F, fingers: unit(inward(m, e, x.slant)), thick: t };
+};
+
+/**
+ * Lòng tay `n = F` (đệm trỏ mặt kia, ngón cái phía `F`; fixture `the-phong#kep`), ngón vào trong tấm, tâm nắm giữa bề dày
+ * thật; `along` kẹp cho đệm trỏ nằm trong cạnh, cạnh ngắn quá thì đệm trỏ ở giữa
+ */
+const pad: ContactFn = (x) => {
+  const { W } = x.dims;
+  const { m, e, F, len, along: a0 } = sheetEdge(x, 0);
+  const f = unit(inward(m, e, x.slant));
+  const thumb = scale3(cross3(F, f), x.side);
+  const o = dot3(add3(scale3(thumb, -PAD_SHIFT * W), scale3(f, PAD_AHEAD * W)), e);
+  const end = PAD_END * W;
+  const s = (len > 2 * end ? Math.min(len - end, Math.max(end, a0 * len + o)) : len / 2) - o;
+  const along = Math.min(1, Math.max(0, s / len));
+  const y = { ...x, along };
+  const { lo, hi, t } = sheetSpan(y, PAD_INSET * W);
+  const { at: mid } = sheetEdge(y, PAD_INSET * W);
+  return { at: add3(mid, scale3(F, (lo + hi) / 2)), along, palm: F, fingers: f, thick: t };
 };
 
 /** Khung `nt`: `n = −m`, ngón cái về `F`, ngón dọc mép `side · (F × n)` chúc `slant` về phía `−F` */
@@ -433,6 +460,7 @@ const platformPalm: ContactFn = (x) => {
 /** Chỗ tiếp xúc theo nhóm và biến thể; nhóm chưa có ở đây thì `graspFrame` báo lỗi */
 export const CONTACTS: Partial<Record<GroupId, Record<string, ContactFn>>> = {
   sheet: { pinch, flat, rim },
+  card: { pad },
   palmBox: { default: palmBox },
   cylinder: { wrap, flat: flatRod },
   platform: { palm: platformPalm },
@@ -1132,7 +1160,7 @@ export function chooseMissing(
       home = [x, defs];
   };
   const lead =
-    !solve && h.group === "sheet"
+    !solve && (h.group === "sheet" || h.group === "card")
       ? (f: Feature) => {
           if (f.kind !== "slab" && f.kind !== "disc") return undefined;
           const l = f.lying ? (sd < 0 ? "right" : "left") : "bottom";

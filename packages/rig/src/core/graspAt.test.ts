@@ -400,6 +400,37 @@ describe("chooseMissing: khối hình, mốc sau, cạnh", () => {
   });
 });
 
+describe("chooseMissing `card`", () => {
+  const pose = poseOf(ITEMS.c3);
+  const card = (front: V3, top: V3) =>
+    item({
+      schemaVersion: 2,
+      size: [28, 0.8, 17.6],
+      front,
+      top,
+      anchors: {},
+      shape: [{ box: [28, 0.8, 17.6], at: [0, 0.4, 0] }],
+    });
+  const c2 = graspCtx(T, { the: card([0, 1, 0], [0, 0, -1]), nam: card([0, 0, 1], [0, 1, 0]) });
+
+  it("đủ thiếu: rig giải `edge`, `thumb`, `along`, `slant`, biến thể `pad`; hai tay không lỗi", () => {
+    for (const side of [RIGHT, LEFT]) {
+      const sol = graspAt(c2, "the@card", pose, side);
+      expect(sol.choice.variant).toBe("pad");
+      for (const k of ["edge", "thumb", "along", "slant"] as const) expect(sol.by[k]).toBe("rig");
+      expect(Number.isFinite(sol.cost)).toBe(true);
+    }
+  });
+
+  it("tay dẫn không khai `edge`: tấm đứng `bottom`, tấm nằm cạnh phía tay ấy", () => {
+    const lead = { solve: false } as const;
+    for (const side of [RIGHT, LEFT])
+      expect(chooseMissing(c2, "the@card", pose, side, lead).choice.edge).toBe("bottom");
+    expect(chooseMissing(c2, "nam@card", pose, RIGHT, lead).choice.edge).toBe("right");
+    expect(chooseMissing(c2, "nam@card", pose, LEFT, lead).choice.edge).toBe("left");
+  });
+});
+
 describe("chooseMissing: giá biến thể", () => {
   // mặt bảng quay về người cầm, mép trên ngửa `a` độ, bảng ở `P`
   const reading = (P: V3, a: number): ItemPose => {

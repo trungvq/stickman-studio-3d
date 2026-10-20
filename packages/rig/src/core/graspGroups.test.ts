@@ -48,9 +48,10 @@ describe("bảng GRIP_GROUPS", () => {
     }
   });
 
-  it("chỉ `sheet`, `cylinder`, `palmBox`, `platform` và `carry` không `later`", () => {
+  it("chỉ `sheet`, `card`, `cylinder`, `palmBox`, `platform` và `carry` không `later`", () => {
     expect(GROUP_IDS.filter((g) => !GRIP_GROUPS[g].later)).toEqual([
       "sheet",
+      "card",
       "cylinder",
       "palmBox",
       "platform",
@@ -103,16 +104,16 @@ describe("bảng GRIP_GROUPS", () => {
 
 describe("groupNeeds trên tám món", () => {
   // `platform`: mặt hộp bao chứa được 0,4·W × 0,6·L (đũa: hộp bao hai que), đáy chai
-  it("bảng giá ra `sheet`, `platform`", () => {
-    expect(ids(bangGia)).toEqual(["sheet", "platform"]);
+  it("bảng giá ra `sheet`, `card`, `platform`", () => {
+    expect(ids(bangGia)).toEqual(["sheet", "card", "platform"]);
   });
 
   it("điện thoại ra `sheet`, `palmBox` và `platform`", () => {
     expect(ids(dienThoai)).toEqual(["sheet", "palmBox", "platform"]);
   });
 
-  it("biên lai ra `sheet`, `platform`, không ra `palmBox`", () => {
-    expect(ids(bienLai)).toEqual(["sheet", "platform"]);
+  it("biên lai ra `sheet`, `card`, `platform`, không ra `palmBox`", () => {
+    expect(ids(bienLai)).toEqual(["sheet", "card", "platform"]);
   });
 
   it("đũa, chai, quai túi ra `cylinder` (đũa không ra `sheet`); túi hiệu có `seats` mới ra `carry`", () => {

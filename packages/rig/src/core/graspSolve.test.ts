@@ -22,7 +22,7 @@ import {
   type GroupId,
   type HeldItemSpec,
 } from "./heldItem";
-import { fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
+import { add3, fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
 import grip from "./__fixtures__/grip-frames.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
@@ -47,6 +47,7 @@ const PHIEU = sheet([40, 0.6, 34], [0, 0.4, 0], [0, 1, 0], [0, 0, -1]);
 const THUC_DON = sheet([36, 1.4, 52], [0, 0.7, 0], [0, 1, 0], [0, 0, -1]);
 const BO_DA = sheet([83.2, 3.9, 55.9], [0, 4.55, 0], [0, 0, 1], [0, 1, 0]);
 const BAO = sheet([200, 136, 0.24], [0, 0, 0.12], [0, 0, 1], [0, 1, 0]);
+const THE = sheet([28, 0.8, 17.6], [0, 0.4, 0], [0, 1, 0], [0, 0, -1]);
 
 const D2R = Math.PI / 180;
 const SIZES = ["1", "1.61", "2.16", "t01-sakura", "kuroiwa"] as const;
@@ -913,6 +914,127 @@ describe("`sheet` `rim` trên da", () => {
   });
 });
 
+describe("`card` `pad`", () => {
+  // fixture `the-phong#kep`: cạnh dưới, thụt 2,5, giữa bề dày, lòng tay hướng `−front`
+  const KEP: Case = {
+    fixture: "the-phong#kep",
+    spec: THE,
+    pick: both({ group: "card", edge: "bottom", thumb: "back" }, {}, {}),
+  };
+  const SIZES2 = ["1.61", "2.16", "t01-sakura", "kuroiwa"] as const;
+
+  it("ra lại fixture `the-phong#kep` ở cỡ tay thật, hai tay trong 5° và 1 đơn vị", () => {
+    for (const size of SIZES2)
+      for (const [side, n] of SIDES) {
+        const r = residual(KEP, size, side, n);
+        expect(r.rot, `${size} ${side}`).toBeLessThanOrEqual(5);
+        expect(r.pos, `${size} ${side}`).toBeLessThanOrEqual(1);
+      }
+  });
+
+  it("ngón cái của fixture ở phía mặt `back`: lòng tay `n = F` của mặt có ngón cái", () => {
+    for (const size of SIZES2)
+      for (const [side, n] of SIDES) {
+        const fx = FIX["the-phong#kep"][size];
+        const F = handFrames(handVec("pinch"), n, fx.k, fx.long).thumb1;
+        const tip = toItem(fx[side], add3(F.o, matVec(F.R, [0, -F.len, 0])));
+        expect(tip[1], `${size} ${side}`).toBeLessThan(0.4);
+        close(residual(KEP, size, side, n).g.hand.palm as V3, [0, -1, 0], 1e-12);
+      }
+  });
+
+  it("tâm nắm thụt 0,15·W giữa bề dày, ngón vào trong tấm quay `slant`", () => {
+    const dims = handDims(1.75, 1.68);
+    for (const slant of [-30, 0, 30]) {
+      const g = graspFrame(
+        THE,
+        itemGeom(THE),
+        { group: "card", edge: "bottom", thumb: "front", slant },
+        -1,
+        dims,
+      );
+      close(g.hand.palm as V3, [0, 1, 0], 1e-12);
+      close(g.hand.fingers as V3, [-Math.sin(slant * D2R), 0, -Math.cos(slant * D2R)], 1e-12);
+      expect((g.hand.at as V3)[2]).toBeCloseTo(8.8 - 0.15 * dims.W, 9);
+      expect((g.hand.at as V3)[1]).toBeCloseTo(0.4, 9);
+      expect(g.pose).toEqual(handVec("pinch"));
+    }
+  });
+
+  it("trên da: đệm trỏ áp mặt kia, ngón cái ở mép phía `F`, không lún, không xuyên — hai cỡ tay, hai tay", () => {
+    for (const [k, long] of HANDS)
+      for (const [, side] of SIDES)
+        for (const slant of [-22.5, 0, 22.5]) {
+          const pick: Pick = { group: "card", edge: "bottom", thumb: "back", slant };
+          const r = cardSkin(THE, pick, side, k, long);
+          const at = `${k} ${side} ${slant}`;
+          expect(r.gaps.index, at).toBeLessThanOrEqual(0.7);
+          expect(r.gaps.thumb, at).toBeLessThanOrEqual(1.7);
+          expect(r.sink, at).toBeLessThanOrEqual(0.1);
+          expect(r.pierce, at).toBeLessThan(0);
+        }
+  });
+
+  it("`along` kẹp cho đệm trỏ nằm trong cạnh; cạnh dài thì giữ `along` khai", () => {
+    for (const [k, long] of HANDS)
+      for (const [, side] of SIDES)
+        for (const along of [0, 0.25, 0.5, 0.75, 1]) {
+          const r = cardSkin(
+            THE,
+            { group: "card", edge: "right", thumb: "back", along },
+            side,
+            k,
+            long,
+          );
+          expect(r.gaps.index, `${k} ${side} ${along}`).toBeLessThanOrEqual(0.7);
+        }
+    const g = graspFrame(
+      THE,
+      itemGeom(THE),
+      { group: "card", edge: "bottom", thumb: "back", along: 0.5 },
+      -1,
+      handDims(1.75, 1.68),
+    );
+    expect(g.choice.along).toBe(0.5);
+  });
+});
+
+/** Ngón theo vai trò rồi đo trên da: khe từng ngón, lún sâu nhất, trục nang sâu nhất vào món */
+function cardSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long: number) {
+  const g = graspFrame(spec, itemGeom(spec), pick, side, handDims(k, long), k, long);
+  const skin = handSkin(side, k, long);
+  const v = [
+    ...g.pose,
+    ...heldFit({
+      v: g.pose,
+      side,
+      k,
+      long,
+      shape: spec.shape!,
+      G: g.G,
+      roles: g.roles,
+      bulge: skinBulge(skin, g.pose),
+    }),
+  ];
+  const pos = new Float32Array(skin.pos.length);
+  skinHand(skin, v, pos);
+  const { gaps } = skinDepth(pos, skinPieces(skin), g.G, spec.shape!);
+  const F = handFrames(v, side, k, long);
+  const pierce = Math.max(
+    ...HAND_PIECES.filter((n) => n !== "palm").map(
+      (n) =>
+        capsuleClearance(
+          spec.shape!,
+          g.G,
+          F[n].o,
+          add3(F[n].o, matVec(F[n].R, [0, -F[n].len, 0])),
+          0,
+        ).core,
+    ),
+  );
+  return { gaps, sink: Math.max(0, -Math.min(...Object.values(gaps))), pierce };
+}
+
 describe("`platform` `palm`", () => {
   const KHAY = item(khay);
   // phiếu của fixture `phieu#do`: nằm, mặt trước lên, đầu trên ra xa
@@ -1188,8 +1310,8 @@ describe("graspFrame", () => {
     expect(run()).toBe(a);
   });
 
-  it("chỉ `sheet`, `palmBox`, `cylinder`, `platform` có chỗ tiếp xúc; thiếu `edge` của tấm là lỗi", () => {
-    expect(Object.keys(CONTACTS)).toEqual(["sheet", "palmBox", "cylinder", "platform"]);
+  it("chỉ `sheet`, `card`, `palmBox`, `cylinder`, `platform` có chỗ tiếp xúc; thiếu `edge` của tấm là lỗi", () => {
+    expect(Object.keys(CONTACTS)).toEqual(["sheet", "card", "palmBox", "cylinder", "platform"]);
     expect(() => graspFrame(BANG, itemGeom(BANG), { group: "bowl" }, -1, dims)).toThrow(/bowl/);
     expect(() => graspFrame(BANG, itemGeom(BANG), { group: "sheet" }, -1, dims)).toThrow(/edge/);
   });

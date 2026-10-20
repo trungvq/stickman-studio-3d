@@ -435,7 +435,6 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
       face: { axis: "front", toward: "holderFace" },
       roll: { axis: "top", toward: "up" },
     },
-    later: true,
   },
 
   pen: {

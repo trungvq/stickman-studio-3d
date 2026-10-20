@@ -99,6 +99,7 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 | G4-54 tay phụ khác nhóm | xong: `placeChoice` ở `holdLink.ts` — `support.place` `bottom`/`back` đặt lòng tay lên mặt hộp hướng `−top`/`−front` xa nhất của phần bám, ngón theo `top` chiếu lên mặt, `psi 0`, tâm giữa mặt, né tay dẫn cùng mặt; cảnh đè được; `checkChoice` chỉ báo `both` khi nhóm không có `support`. Chai `both` tay trái đỡ đáy (lún 0,39), điện thoại đỡ mặt sau (đầu ngón thò qua mép, khe 1,2–2,1 tay lớn — chấp nhận), khay cạnh đối. Tay dẫn không đổi số. t02 0 mới | `g454/` |
 | G4-55 `both` món đặt trước | xong: tay `both` giải trước (không thì tay phải), tay phụ chỗ cầm từ `supportOf`/`placeChoice`, `chooseMissing` có lấn tay dẫn (nhận `featureIndex`), khuỷu `E(φ)` riêng; tay phụ khác nhóm để `psi` cho bộ giải; `actJoints` khớp `graspAtTime` cả hai tay (1e-9 / 1e-6°). Khay hai tay lún ≤ 0,04, chai đỡ đáy lún 0,38, cổ tay không vượt khi món đủ xa; sát ngực tay ngửa vượt kẹp ±90 (rủi ro 11). Tay dẫn chọn chỗ không xét tay phụ (khay lệch một bên → tay phụ vượt 35–73°). t02 0 mới, `thu-nhom-cam` y số | `g455/` |
 | G4-56+57 `platform` hàng mẫu + docs + render | xong: món `platform` đặt `offset [80,20,0]` (xa ngực hơn 30), hàng mặc định, `ψ 0/90`, tay dẫn, `both` món đặt trước; hàng `both` cho `cylinder` (chai rót, tay phụ đỡ đáy) và `palmBox` (tay phụ đỡ mặt sau); lọc `both` không có mặt cho tay phụ, cặp `platform` không có cạnh. Quét 18 món 3 nhóm: 666 ô, 0 lỗi. Docs nhóm 5, 9, 10, mục 5 (tay phụ `both`, `psi` 5 điểm), 7, 9. Khay lún 0,04/0 (v1 1,3/1,2), khe ngón ≤ 0,4 (v1 2,1–3,0), không vượt; phiếu lún 0,54/0,13, vượt 6,6/2,2° (góc tờ lộ đầu ngón cái — sakura); chai rót sạch; điện thoại hai tay lòng phụ cách mặt sau 1,4/2,0 (`grip`, `loose`). Mốc M4-5 | `g4-platform/`, `duyet/g4-platform-tong.jpg` |
+| G4-62 `card` `pad` | xong: `CONTACTS.card.pad` (khung `nf`, `n = F`, thụt `PAD_INSET` 0,15·W giữa bề dày thật, kẹp `along` theo `PAD_SHIFT`/`PAD_AHEAD`/`PAD_END` để đệm trỏ nằm trên thẻ), tay dẫn mặc định `edge` như `sheet`, bỏ `later`; `thumb: back` ↔ `n = F` theo fixture. Fixture `the-phong#kep` 0°, ≤ 0,47 ở cỡ tay thật (cỡ 1 lệch 1,24). Khe cái 1,4/1,6, trỏ 0,5/0,6 (v1 0,6–0,7 / 0) — dưới 0,15·W; kuroiwa cảnh báo `role`. Ảnh: thẻ nhô khỏi đầu ngón, rõ hơn v1; ngón cái dưới mép chứ không áp mặt sau (khung fixture lòng song song thẻ, trục kẹp `pinch` dọc ngón). `HAND_GRIPS.pinch` z 0,072 nằm ngoài hai đầu ngón (số cũ?). t02 0 mới | `g462/`, `duyet/g4-card-pad.jpg` |
 | G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
@@ -146,6 +147,8 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 - Chủ dự án (2026-10-20 19:10) cho tăng tốc từ sau G4-55: (1) agent chính commit dựa vào log cổng kiểm xanh của agent con, không chạy lại; (2) job không render "trước" — ảnh trước lấy từ render của job liền trước (`g4xx/`); (3) mỗi nhóm gộp "hàng mẫu + docs + render tổng" thành một job.
 
+- G4-62: giữ khung chuẩn `card` theo fixture `the-phong#kep` (lòng song song thẻ), không đổi theo trục kẹp `pinch` (lệch ~90°); ảnh đọc được là cầm thẻ.
+
 ## Cần chủ dự án
 - Có nới kẹp xoay cẳng tay quá ±90 không? Ca "khoe, một tay đỡ cạnh dưới" (bước 0 ca 4, `rim`) cần −103; hiện thành cảnh báo `wrist` và bàn tay lệch chỗ cầm chút ít. Ảnh: `tmp/nhom-cam/b0/hinh/vong2/to-2.jpg`.
 
@@ -168,11 +171,12 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 - `resolveScene` kiểm `choice` bằng tay người mẫu cùng chiều cao (`holderDims`), không phải tay thật (kuroiwa W 14,7 thay 16,8).
 - `both` món đặt trước: tay dẫn chọn chỗ không xét tay phụ; `bang-cam` tổ hợp chéo `thu-chai-dia@platform` ném "cần `edge`".
 - `platform` phiếu sakura: đầu ngón cái/trỏ lộ qua tờ ở góc (lún 0,54); chỗ đặt món rất nhạy với vượt cổ tay. `palmBox` `both` món đặt trước: `placeChoice` để lòng tay phụ cách mặt sau 1,4–2,0.
+- `card`: ngón cái không áp mặt sau thẻ; `HAND_GRIPS.pinch` (tâm nắm dáng `pinch`) nằm ngoài hai đầu ngón — xem lại khi đụng `hand.ts`.
 - Hàng "bê hai vành" đĩa: ngón cái hơi dựng, hở 1,6–2,9.
 - `rim` `slant` âm: ngón nghiêng về mặt cái, tấm kẹp giữa trỏ và giữa (khoe báo). Út hở hơn v1 0,5–1,8 ở `slant` ±22,5.
 
 ## Bước kế
 0. Phiên tiếp tục (2026-10-20) sau khi chủ dự án chốt hướng G4-38b. Worktree sạch, mọi việc xanh đã commit và push. Studio xem `git log`, video `9b13333`.
-1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. `platform` (M4-5) xong. Card: G4-62 đang chạy → 63+64 gộp.
+1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. `platform` (M4-5) xong. Card: 62 xong → 63+64 gộp.
 3. Rồi card 62–64, chopsticks 74–76 (nhớ `frameSink` truyền `curl`), pen 83–85, handle 92–95, bowl A2–A4, Z1, Z2 theo `gd4-ke-hoach.md`. Đã xong/gộp: 00, X1, 11–14, 22–25, 32–38b, 41–48, 52, 72, 73, 82.
 4. Giai đoạn 5 → 6.
