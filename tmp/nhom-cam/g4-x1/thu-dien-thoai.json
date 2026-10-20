@@ -1,0 +1,223 @@
+{
+  "item": "thu-dien-thoai",
+  "layer": "workspace",
+  "schemaVersion": 2,
+  "size": [18.45, 37.8, 2.88],
+  "hand": {
+    "scale": 1,
+    "W": 8.4,
+    "A": 9.76,
+    "L": 17.89,
+    "P": 10.1
+  },
+  "frame": {
+    "front": "screen",
+    "top": "top",
+    "F": [0, 0, 1],
+    "U": [0, 1, 0],
+    "right": [1, 0, 0]
+  },
+  "anchors": {
+    "screen": {
+      "at": [0, 0, 1.44],
+      "dir": [0, 0, 1]
+    },
+    "back": {
+      "at": [0, 0, -1.44],
+      "dir": [0, 0, -1]
+    },
+    "top": {
+      "at": [0, 18.9, 0],
+      "dir": [0, 1, 0]
+    },
+    "bottom": {
+      "at": [0, -18.9, 0],
+      "dir": [0, -1, 0]
+    },
+    "edgeR": {
+      "at": [9.2, 0, 0],
+      "dir": [1, 0, 0]
+    },
+    "edgeL": {
+      "at": [-9.2, 0, 0],
+      "dir": [-1, 0, 0]
+    },
+    "speaker": {
+      "at": [0, 17, 1.44],
+      "dir": [0, 0, 1]
+    }
+  },
+  "parts": [
+    {
+      "name": "body",
+      "grip": true,
+      "blocks": 6,
+      "min": [-9.2, -18.9, -1.4],
+      "max": [9.2, 18.9, 1.4]
+    }
+  ],
+  "features": [
+    {
+      "kind": "slab",
+      "part": "body",
+      "size": [18.4, 37.8, 2.9],
+      "t": 2.88,
+      "lying": false,
+      "faces": [
+        "front",
+        "back"
+      ],
+      "edges": [
+        {
+          "name": "right",
+          "len": 37.8
+        },
+        {
+          "name": "left",
+          "len": 37.8
+        },
+        {
+          "name": "top",
+          "len": 18.4
+        },
+        {
+          "name": "bottom",
+          "len": 18.4
+        }
+      ]
+    },
+    {
+      "kind": "box",
+      "part": "body",
+      "size": [18.4, 37.8, 2.9]
+    }
+  ],
+  "groups": [
+    {
+      "group": "sheet",
+      "label": "Tấm kẹp mép",
+      "hold": "thu-dien-thoai@sheet",
+      "hands": "either",
+      "variants": [
+        "pinch",
+        "flat",
+        "rim"
+      ],
+      "features": [
+        {
+          "kind": "slab",
+          "part": "body",
+          "size": [18.4, 37.8, 2.9],
+          "t": 2.88,
+          "lying": false,
+          "faces": [
+            "front",
+            "back"
+          ],
+          "edges": [
+            {
+              "name": "right",
+              "len": 37.8
+            },
+            {
+              "name": "left",
+              "len": 37.8
+            },
+            {
+              "name": "top",
+              "len": 18.4
+            },
+            {
+              "name": "bottom",
+              "len": 18.4
+            }
+          ]
+        }
+      ],
+      "choices": {
+        "part": {
+          "values": [
+            "body"
+          ]
+        },
+        "edge": {
+          "values": [
+            "right",
+            "left",
+            "top",
+            "bottom"
+          ]
+        },
+        "along": {
+          "min": 0,
+          "max": 1,
+          "default": 0.5,
+          "names": [
+            "corner",
+            "low",
+            "mid",
+            "high"
+          ]
+        },
+        "thumb": {
+          "values": [
+            "front",
+            "back"
+          ]
+        },
+        "variant": {
+          "values": [
+            "pinch",
+            "flat",
+            "rim"
+          ],
+          "default": "pinch"
+        },
+        "slant": {
+          "min": -90,
+          "max": 90,
+          "default": 0,
+          "names": [
+            "in",
+            "low",
+            "high"
+          ],
+          "byVariant": {
+            "pinch": [-60, 60],
+            "flat": [-90, 90],
+            "rim": [-45, 45]
+          }
+        }
+      },
+      "defaults": {
+        "along": 0.5,
+        "thumb": "front",
+        "variant": "pinch",
+        "slant": 0
+      }
+    }
+  ],
+  "unfit": [
+    {
+      "group": "palmBox",
+      "label": "Hộp cỡ lòng tay",
+      "needs": [
+        "hộp dày 0,1–0,6·W, rộng 0,7–1,9·W, dài ≥ 1,2·W"
+      ]
+    }
+  ],
+  "later": [
+    "card",
+    "pen",
+    "chopsticks",
+    "cylinder",
+    "round",
+    "bowl",
+    "handle",
+    "platform",
+    "hug",
+    "clamp",
+    "carry",
+    "soft"
+  ]
+}

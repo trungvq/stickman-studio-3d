@@ -1,0 +1,122 @@
+{
+  "item": "thu-ong-nghe-ban",
+  "layer": "workspace",
+  "schemaVersion": 2,
+  "size": [18, 12, 44],
+  "hand": {
+    "scale": 1,
+    "W": 8.4,
+    "A": 9.76,
+    "L": 17.89,
+    "P": 10.1
+  },
+  "frame": {
+    "front": "front",
+    "top": "top",
+    "F": [0, -1, 0],
+    "U": [0, 0, 1],
+    "right": [1, 0, 0]
+  },
+  "anchors": {
+    "front": {
+      "at": [0, -3, 0],
+      "dir": [0, -1, 0]
+    },
+    "back": {
+      "at": [0, 3, 0],
+      "dir": [0, 1, 0]
+    },
+    "speaker": {
+      "at": [0, -9, 16.5],
+      "dir": [0, -1, 0]
+    },
+    "mic": {
+      "at": [0, -9, -16.5],
+      "dir": [0, -1, 0]
+    },
+    "top": {
+      "at": [0, -3, 22],
+      "dir": [0, 0, 1]
+    }
+  },
+  "parts": [
+    {
+      "name": "tay",
+      "grip": true,
+      "blocks": 1,
+      "min": [-9, -3, -22],
+      "max": [9, 3, 22]
+    },
+    {
+      "name": "mic",
+      "grip": false,
+      "blocks": 1,
+      "min": [-9, -9, -22],
+      "max": [9, -1, -11]
+    },
+    {
+      "name": "loa",
+      "grip": false,
+      "blocks": 1,
+      "min": [-9, -9, 11],
+      "max": [9, -1, 22]
+    }
+  ],
+  "blocked": [
+    {
+      "part": "mic",
+      "min": [-9, -9, -22],
+      "max": [9, -1, -11]
+    },
+    {
+      "part": "loa",
+      "min": [-9, -9, 11],
+      "max": [9, -1, 22]
+    }
+  ],
+  "features": [
+    {
+      "kind": "rod",
+      "part": "tay",
+      "len": 44,
+      "r": 3,
+      "R": 9
+    },
+    {
+      "kind": "box",
+      "part": "tay",
+      "size": [18, 6, 44]
+    }
+  ],
+  "groups": [],
+  "unfit": [
+    {
+      "group": "sheet",
+      "label": "Tấm kẹp mép",
+      "needs": [
+        "tấm hay đĩa dày ≤ 0,45·A, cạnh dài ≥ 0,6·W"
+      ]
+    },
+    {
+      "group": "palmBox",
+      "label": "Hộp cỡ lòng tay",
+      "needs": [
+        "hộp dày 0,1–0,6·W, rộng 0,7–1,9·W, dài ≥ 1,2·W"
+      ]
+    }
+  ],
+  "later": [
+    "card",
+    "pen",
+    "chopsticks",
+    "cylinder",
+    "round",
+    "bowl",
+    "handle",
+    "platform",
+    "hug",
+    "clamp",
+    "carry",
+    "soft"
+  ]
+}

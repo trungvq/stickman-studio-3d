@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 26,
+  "name": "thu-nhom-cam",
+  "frame": "wide",
+  "duration": 8,
+  "camera": [{ "t": 0, "x": 0, "y": 0, "zoom": 1 }],
+  "lens": { "eye": [0, -400, -900], "yaw": 0, "pitch": 0, "f": 1000, "cx": 0, "cy": 0 },
+  "items": [
+    { "t": 0, "cast": "takumi", "item": "thu-bang-gia", "to": "chest", "offset": [30, -3, 0], "face": { "axis": "front", "toward": "holderFace" } },
+    { "t": 2, "cast": "takumi", "item": "thu-bang-gia", "to": "chest", "offset": [30, -3, 0], "face": { "axis": "front", "toward": "holderFace" } },
+    { "t": 2.25, "cast": "takumi", "item": "thu-bang-gia", "to": "chest", "offset": [32, -2, 0], "face": { "axis": "front", "toward": [0, -0.3, 1] }, "roll": { "axis": "top", "toward": "up" } },
+    { "t": 2.5, "cast": "takumi", "item": "thu-bang-gia", "to": "chest", "offset": [35, 0, 0], "face": { "axis": "front", "toward": "camera" }, "roll": { "axis": "top", "toward": "up" } },
+    { "t": 4.4, "cast": "takumi", "item": "thu-bang-gia", "to": "chest", "offset": [35, 0, 0], "face": { "axis": "front", "toward": "camera" }, "roll": { "axis": "top", "toward": "up" } }
+  ],
+  "cast": [
+    {
+      "id": "takumi",
+      "character": "takumi.json",
+      "world": {
+        "at": [0, 0, 200],
+        "yaw": 90,
+        "hands": [
+          {
+            "t": 0,
+            "right": { "hold": { "item": "thu-bang-gia", "group": "sheet", "edge": "right", "along": 0.33, "thumb": "front" } }
+          },
+          {
+            "t": 2.25,
+            "right": { "hold": { "item": "thu-bang-gia", "group": "sheet", "edge": "left", "along": 0.5, "thumb": "back", "variant": "pinch" } }
+          },
+          {
+            "t": 2.5,
+            "right": { "hold": { "item": "thu-bang-gia", "group": "sheet", "edge": "left", "along": 0.5, "thumb": "back", "variant": "pinch" } },
+            "left": { "hold": { "item": "thu-bang-gia", "group": "sheet", "edge": "right", "thumb": "back" } }
+          },
+          {
+            "t": 4.5,
+            "right": { "hold": null, "to": "hip", "offset": [18, 0, 40], "point": "grip" },
+            "left": { "hold": null, "to": "hip", "offset": [18, 0, 40], "point": "grip" }
+          },
+          {
+            "t": 5,
+            "left": { "to": "chest", "offset": [30, 20, 25], "point": "grip", "hold": "thu-dien-thoai@palmBox" }
+          },
+          {
+            "t": 6.5,
+            "left": {
+              "to": "ear",
+              "point": "item:speaker",
+              "hold": { "item": "thu-dien-thoai", "group": "palmBox", "face": { "axis": "screen", "toward": { "mark": "head" } }, "touch": ["self.head"] }
+            }
+          }
+        ]
+      },
+      "tracks": [
+        { "name": "than", "clips": [{ "start": 0, "action": "stand-3d" }] },
+        { "name": "mat", "clips": [{ "start": 0, "action": "face-kind" }] }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,150 @@
+{
+  "item": "thu-bo-da",
+  "layer": "workspace",
+  "schemaVersion": 2,
+  "size": [83.2, 28.86, 55.9],
+  "hand": {
+    "scale": 1,
+    "W": 8.4,
+    "A": 9.76,
+    "L": 17.89,
+    "P": 10.1
+  },
+  "frame": {
+    "front": "front",
+    "top": "top",
+    "F": [0, 0, 1],
+    "U": [0, 1, 0],
+    "right": [1, 0, 0]
+  },
+  "anchors": {
+    "top": {
+      "at": [0, 6.5, 0],
+      "dir": [0, 1, 0]
+    },
+    "bottom": {
+      "at": [0, 2.6, 0],
+      "dir": [0, -1, 0]
+    },
+    "rimR": {
+      "at": [41.6, 4.55, 0],
+      "dir": [1, 0, 0]
+    },
+    "rimL": {
+      "at": [-41.6, 4.55, 0],
+      "dir": [-1, 0, 0]
+    },
+    "front": {
+      "at": [0, 4.55, 27.95],
+      "dir": [0, 0, 1]
+    },
+    "far": {
+      "at": [0, 4.55, -27.95],
+      "dir": [0, 0, -1]
+    }
+  },
+  "parts": [
+    {
+      "name": "dia",
+      "grip": true,
+      "blocks": 3,
+      "min": [-41.6, 0, -27.9],
+      "max": [41.6, 6.5, 27.9]
+    },
+    {
+      "name": "mon-an",
+      "grip": false,
+      "blocks": 4,
+      "min": [-37.7, 6.5, -20.8],
+      "max": [40, 27.3, 25.7]
+    }
+  ],
+  "blocked": [
+    {
+      "part": "mon-an",
+      "min": [-37.7, 6.5, -20.8],
+      "max": [40, 27.3, 25.7]
+    }
+  ],
+  "features": [
+    {
+      "kind": "slab",
+      "part": "dia",
+      "size": [83.2, 6.5, 55.9],
+      "t": 6.5,
+      "lying": true,
+      "faces": [
+        "top",
+        "bottom"
+      ],
+      "edges": [
+        {
+          "name": "right",
+          "len": 55.9
+        },
+        {
+          "name": "left",
+          "len": 55.9
+        },
+        {
+          "name": "front",
+          "len": 83.2
+        },
+        {
+          "name": "back",
+          "len": 83.2
+        }
+      ]
+    },
+    {
+      "kind": "rod",
+      "part": "dia",
+      "len": 50.7,
+      "r": 1.3,
+      "R": 3.3
+    },
+    {
+      "kind": "rod",
+      "part": "dia",
+      "len": 50.7,
+      "r": 1.3,
+      "R": 3.3
+    },
+    {
+      "kind": "box",
+      "part": "dia",
+      "size": [83.2, 6.5, 55.9]
+    }
+  ],
+  "groups": [],
+  "unfit": [
+    {
+      "group": "sheet",
+      "label": "Tấm kẹp mép",
+      "needs": [
+        "tấm hay đĩa dày ≤ 0,45·A, cạnh dài ≥ 0,6·W"
+      ]
+    },
+    {
+      "group": "palmBox",
+      "label": "Hộp cỡ lòng tay",
+      "needs": [
+        "hộp dày 0,1–0,6·W, rộng 0,7–1,9·W, dài ≥ 1,2·W"
+      ]
+    }
+  ],
+  "later": [
+    "card",
+    "pen",
+    "chopsticks",
+    "cylinder",
+    "round",
+    "bowl",
+    "handle",
+    "platform",
+    "hug",
+    "clamp",
+    "carry",
+    "soft"
+  ]
+}

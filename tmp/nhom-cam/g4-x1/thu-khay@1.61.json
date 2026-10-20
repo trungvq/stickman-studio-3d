@@ -1,0 +1,241 @@
+{
+  "item": "thu-khay",
+  "layer": "workspace",
+  "schemaVersion": 2,
+  "size": [92, 8, 52],
+  "hand": {
+    "scale": 1.61,
+    "W": 13.52,
+    "A": 15.72,
+    "L": 28.8,
+    "P": 16.26
+  },
+  "frame": {
+    "front": null,
+    "top": "top",
+    "F": [0, 0, 1],
+    "U": [0, 1, 0],
+    "right": [1, 0, 0]
+  },
+  "anchors": {
+    "top": {
+      "at": [0, 4, 0],
+      "dir": [0, 1, 0]
+    },
+    "bottom": {
+      "at": [0, 0, 0],
+      "dir": [0, -1, 0]
+    },
+    "rimL": {
+      "at": [-46, 2, 0],
+      "dir": [-1, 0, 0]
+    },
+    "rimR": {
+      "at": [46, 2, 0],
+      "dir": [1, 0, 0]
+    },
+    "far": {
+      "at": [0, 2, -26],
+      "dir": [0, 0, -1]
+    }
+  },
+  "parts": [
+    {
+      "name": "day",
+      "grip": true,
+      "blocks": 1,
+      "min": [-46, 0, -26],
+      "max": [46, 4, 26]
+    },
+    {
+      "name": "vanh",
+      "grip": true,
+      "blocks": 2,
+      "min": [-46, 4, -26],
+      "max": [46, 8, 26]
+    }
+  ],
+  "features": [
+    {
+      "kind": "slab",
+      "part": "day",
+      "size": [92, 4, 52],
+      "t": 4,
+      "lying": true,
+      "faces": [
+        "top",
+        "bottom"
+      ],
+      "edges": [
+        {
+          "name": "right",
+          "len": 52
+        },
+        {
+          "name": "left",
+          "len": 52
+        },
+        {
+          "name": "front",
+          "len": 92
+        },
+        {
+          "name": "back",
+          "len": 92
+        }
+      ]
+    },
+    {
+      "kind": "box",
+      "part": "day",
+      "size": [92, 4, 52]
+    },
+    {
+      "kind": "rod",
+      "part": "vanh",
+      "len": 92,
+      "r": 1.5,
+      "R": 2
+    },
+    {
+      "kind": "rod",
+      "part": "vanh",
+      "len": 92,
+      "r": 1.5,
+      "R": 2
+    },
+    {
+      "kind": "box",
+      "part": "vanh",
+      "size": [92, 4, 52]
+    }
+  ],
+  "groups": [
+    {
+      "group": "sheet",
+      "label": "Tấm kẹp mép",
+      "hold": "thu-khay@sheet",
+      "hands": "either",
+      "variants": [
+        "pinch",
+        "flat",
+        "rim"
+      ],
+      "features": [
+        {
+          "kind": "slab",
+          "part": "day",
+          "size": [92, 4, 52],
+          "t": 4,
+          "lying": true,
+          "faces": [
+            "top",
+            "bottom"
+          ],
+          "edges": [
+            {
+              "name": "right",
+              "len": 52
+            },
+            {
+              "name": "left",
+              "len": 52
+            },
+            {
+              "name": "front",
+              "len": 92
+            },
+            {
+              "name": "back",
+              "len": 92
+            }
+          ]
+        }
+      ],
+      "choices": {
+        "part": {
+          "values": [
+            "day"
+          ]
+        },
+        "edge": {
+          "values": [
+            "right",
+            "left",
+            "front",
+            "back"
+          ]
+        },
+        "along": {
+          "min": 0,
+          "max": 1,
+          "default": 0.5,
+          "names": [
+            "corner",
+            "low",
+            "mid",
+            "high"
+          ]
+        },
+        "thumb": {
+          "values": [
+            "top",
+            "bottom"
+          ]
+        },
+        "variant": {
+          "values": [
+            "pinch",
+            "flat",
+            "rim"
+          ],
+          "default": "pinch"
+        },
+        "slant": {
+          "min": -90,
+          "max": 90,
+          "default": 0,
+          "names": [
+            "in",
+            "low",
+            "high"
+          ],
+          "byVariant": {
+            "pinch": [-60, 60],
+            "flat": [-90, 90],
+            "rim": [-45, 45]
+          }
+        }
+      },
+      "defaults": {
+        "along": 0.5,
+        "thumb": "top",
+        "variant": "pinch",
+        "slant": 0
+      }
+    }
+  ],
+  "unfit": [
+    {
+      "group": "palmBox",
+      "label": "Hộp cỡ lòng tay",
+      "needs": [
+        "hộp dày 0,1–0,6·W, rộng 0,7–1,9·W, dài ≥ 1,2·W"
+      ]
+    }
+  ],
+  "later": [
+    "card",
+    "pen",
+    "chopsticks",
+    "cylinder",
+    "round",
+    "bowl",
+    "handle",
+    "platform",
+    "hug",
+    "clamp",
+    "carry",
+    "soft"
+  ]
+}

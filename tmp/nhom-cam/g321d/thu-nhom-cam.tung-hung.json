@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 26,
+  "name": "thu-nhom-cam",
+  "frame": "wide",
+  "duration": 8,
+  "camera": [{ "t": 0, "x": 0, "y": 0, "zoom": 1 }],
+  "lens": { "eye": [0, -400, -900], "yaw": 0, "pitch": 0, "f": 1000, "cx": 0, "cy": 0 },
+  "items": [
+    { "t": 0, "cast": "takumi", "item": "thu-bang-gia", "to": "chest", "offset": [30, -3, 0], "face": { "axis": "front", "toward": "holderFace" } },
+    { "t": 2, "cast": "takumi", "item": "thu-bang-gia", "to": "chest", "offset": [30, -3, 0], "face": { "axis": "front", "toward": "holderFace" } },
+    {
+      "t": 2.3,
+      "cast": "takumi",
+      "item": "thu-bang-gia",
+      "to": "chest",
+      "offset": [30, -2, 35],
+      "face": { "axis": "front", "toward": [-0.5, 0, -0.866] },
+      "roll": { "axis": "top", "toward": "up" }
+    },
+    {
+      "t": 2.45,
+      "cast": "takumi",
+      "item": "thu-bang-gia",
+      "to": "chest",
+      "offset": [30, -2, 35],
+      "face": { "axis": "front", "toward": [-0.5, 0, -0.866] },
+      "roll": { "axis": "top", "toward": "up" }
+    },
+    {
+      "t": 2.7,
+      "cast": "takumi",
+      "item": "thu-bang-gia",
+      "to": "chest",
+      "offset": [30, -2, 28],
+      "face": { "axis": "front", "toward": [0.1219, 0, -0.9925] },
+      "roll": { "axis": "top", "toward": "up" }
+    },
+    {
+      "t": 2.85,
+      "cast": "takumi",
+      "item": "thu-bang-gia",
+      "to": "chest",
+      "offset": [30, -2, 28],
+      "face": { "axis": "front", "toward": [0.1219, 0, -0.9925] },
+      "roll": { "axis": "top", "toward": "up" }
+    },
+    {
+      "t": 3.2,
+      "cast": "takumi",
+      "item": "thu-bang-gia",
+      "to": "chest",
+      "offset": [40, 0, 20],
+      "face": { "axis": "front", "toward": "camera" },
+      "roll": { "axis": "top", "toward": "up" }
+    },
+    {
+      "t": 4.4,
+      "cast": "takumi",
+      "item": "thu-bang-gia",
+      "to": "chest",
+      "offset": [40, 0, 20],
+      "face": { "axis": "front", "toward": "camera" },
+      "roll": { "axis": "top", "toward": "up" }
+    }
+  ],
+  "cast": [
+    {
+      "id": "takumi",
+      "character": "takumi.json",
+      "world": {
+        "at": [0, 0, 200],
+        "yaw": 90,
+        "hands": [
+          { "t": 0, "right": { "hold": { "item": "thu-bang-gia", "group": "sheet", "edge": "right", "along": 0.33, "thumb": "front", "variant": "pinch", "slant": 30 } } },
+          { "t": 2.0, "right": { "hold": { "item": "thu-bang-gia", "group": "sheet", "edge": "right", "along": 0.33, "thumb": "front", "variant": "pinch", "slant": 30 } } },
+          {
+            "t": 2.3,
+            "left": { "hold": { "item": "thu-bang-gia", "group": "sheet", "edge": "top", "thumb": "front", "variant": "pinch" } },
+            "right": { "hold": { "item": "thu-bang-gia", "group": "sheet", "edge": "right", "along": 0.33, "thumb": "front", "variant": "pinch", "slant": 24 } }
+          },
+          { "t": 2.45, "right": { "hold": null } },
+          { "t": 2.7, "right": { "hold": { "item": "thu-bang-gia", "group": "sheet", "edge": "right", "thumb": "back", "variant": "rim" } } },
+          { "t": 2.85, "left": { "hold": null } },
+          { "t": 3.2, "left": { "hold": { "item": "thu-bang-gia", "group": "sheet", "edge": "top", "thumb": "back", "variant": "rim", "slant": 0 } } },
+          {
+            "t": 4.5,
+            "right": { "hold": null, "to": "hip", "offset": [18, 0, 40], "point": "grip" },
+            "left": { "hold": null, "to": "hip", "offset": [18, 0, 40], "point": "grip" }
+          },
+          { "t": 5, "left": { "to": "chest", "offset": [30, 20, 25], "point": "grip", "hold": "thu-dien-thoai@palmBox" } },
+          {
+            "t": 6.5,
+            "left": {
+              "to": "ear",
+              "point": "item:speaker",
+              "hold": { "item": "thu-dien-thoai", "group": "palmBox", "face": { "axis": "screen", "toward": { "mark": "head" } }, "touch": ["self.head"] }
+            }
+          }
+        ]
+      },
+      "tracks": [{ "name": "than", "clips": [{ "start": 0, "action": "stand-3d" }] }, { "name": "mat", "clips": [{ "start": 0, "action": "face-kind" }] }]
+    }
+  ]
+}

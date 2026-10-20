@@ -1,0 +1,107 @@
+{
+  "item": "thu-dua",
+  "layer": "workspace",
+  "schemaVersion": 2,
+  "size": [10, 41.1, 76.8],
+  "hand": {
+    "scale": 1.61,
+    "W": 13.52,
+    "A": 15.72,
+    "L": 28.8,
+    "P": 16.26
+  },
+  "frame": {
+    "front": null,
+    "top": null,
+    "F": [0, 0, 1],
+    "U": [0, 1, 0],
+    "right": [1, 0, 0]
+  },
+  "anchors": {
+    "shaft": {
+      "at": [0, 0, 0]
+    },
+    "tip": {
+      "at": [0, -35.68, 67.1],
+      "dir": [0, -0.4695, 0.8829]
+    },
+    "end": {
+      "at": [0, 2.82, -5.3]
+    }
+  },
+  "parts": [
+    {
+      "name": "que",
+      "grip": true,
+      "blocks": 2,
+      "min": [-4.7, -37, -6],
+      "max": [4.7, 4.1, 67.8]
+    },
+    {
+      "name": "nut",
+      "grip": false,
+      "blocks": 1,
+      "min": [-5, -2, -9],
+      "max": [5, 2, -4]
+    }
+  ],
+  "blocked": [
+    {
+      "part": "nut",
+      "min": [-5, -2, -9],
+      "max": [5, 2, -4]
+    }
+  ],
+  "features": [
+    {
+      "kind": "rod",
+      "part": "que",
+      "len": 82,
+      "r": 1.5,
+      "R": 1.5
+    },
+    {
+      "kind": "rod",
+      "part": "que",
+      "len": 82,
+      "r": 1.5,
+      "R": 1.5
+    },
+    {
+      "kind": "box",
+      "part": "que",
+      "size": [9.4, 41.1, 73.8]
+    }
+  ],
+  "groups": [],
+  "unfit": [
+    {
+      "group": "sheet",
+      "label": "Tấm kẹp mép",
+      "needs": [
+        "tấm hay đĩa dày ≤ 0,45·A, cạnh dài ≥ 0,6·W"
+      ]
+    },
+    {
+      "group": "palmBox",
+      "label": "Hộp cỡ lòng tay",
+      "needs": [
+        "hộp dày 0,1–0,6·W, rộng 0,7–1,9·W, dài ≥ 1,2·W"
+      ]
+    }
+  ],
+  "later": [
+    "card",
+    "pen",
+    "chopsticks",
+    "cylinder",
+    "round",
+    "bowl",
+    "handle",
+    "platform",
+    "hug",
+    "clamp",
+    "carry",
+    "soft"
+  ]
+}
