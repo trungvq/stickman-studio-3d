@@ -460,7 +460,8 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
   - `along` khai sát phần `grip: false` quá `GRIP_CLEAR · W` thì rig kẹp tâm nắm về miền `alongRoom` và `check` báo **cảnh báo**
     `choice` (mục 7): nêu phần cắt, khoảng cách và `along` rig kẹp về.
   - Ống nghe máy bàn, máy tường, bộ đàm: `rod` của tay cầm. Áp tai là lòng tay áp mặt lưng của thân (`around 180`; mặt trước nhô loa, mic), rig suy ra `flat`; ý định loa vào tai ở cảnh.
-- **Tay**: một hay hai. Tay phụ mặc định: `platform` ở mặt đáy (rót có tay đỡ)
+- **Tay**: một hay hai. Tay phụ mặc định: `platform` ở mặt đáy (`place: "bottom"`; rót có tay đỡ, mục [5](#tay-phụ-both)). Chai đứng
+  thẳng thì lòng ngửa của tay đỡ đáy cần xoay cẳng tay quá ±90°: đặt chai nghiêng nhẹ (`up` lệch về trước và về phía tay đỡ).
 - **Hướng mặc định**: `up: <top>`. Rót không có chỗ nắm riêng: mốc món đặt miệng chai, nghiêng trục miệng về cốc; cảnh khai
   `part` (thân hay vai), không khai thì rig giải trên chai đã đứng yên (mục [5](#lựa-chọn-cảnh-không-khai)).
 
@@ -502,23 +503,40 @@ nắp; dáng mới `claw`). Lựa chọn: hướng tiếp cận, biến thể. M
   không lún ở cỡ 1,61–2,16: rig giải `tilt` với giá lún (mục 5).
 - **Khoe một tay** (màn ra người xem, tay trước ngực): mọi `thumb` × `tilt` × `along` đều vượt kẹp cổ tay (nhỏ nhất 12–14°,
   `thumb` khác bên tay, `tilt` 25°, `along` 1) — giới hạn khớp, `check` báo `wrist`; khoe bằng hai tay hay nhóm `sheet`.
-- **Tay**: một; hai tay ôm trước ngực thì tay phụ mặc định `platform` ở mặt sau.
+- **Tay**: một; `both` được vì nhóm có `support: { group: "platform", place: "back" }`: tay phụ đặt lòng tay lên mặt sau (pháp tuyến
+  `−front`) của máy, tay tới từ cạnh sau ngón (mục [5](#tay-phụ-both)). Hai tay ôm điện thoại trước ngực, màn về người cầm.
 - **Hướng mặc định**: `face: { axis: <front>, toward: "holderFace" }`. Áp tai: cùng nhóm, cùng chỗ bám, ý định màn vào má
   (`toward: { mark: "head" }`), cảnh đặt tay cạnh tai.
 
 #### 10. `platform` — đỡ dưới (bản đầu: `palm`)
 
-- **Cần**: một `face` có diện tích `≥ 0,4 · W × 0,6 · L`.
-- **Chỗ tiếp xúc** (`frame: "nf"`, fixture `khay#bung`, `phieu#do`): giữa lòng tay áp mặt (`n` ngược pháp tuyến ngoài của
-  mặt). Tay đến từ cạnh `edge`, hướng ngón `ψ` đo từ pháp tuyến trong của cạnh ấy (`0` = ngón chĩa vuông góc vào trong mặt,
-  `±90°` = ngón chạy dọc cạnh). `inset` là khoảng từ cạnh tới tâm nắm theo pháp tuyến trong; mặc định vừa đủ cho bàn tay
-  nằm trọn trong mặt: `inset₀(ψ) = ½ · (W · |sin ψ| + P · |cos ψ|)`, `P` dài lòng bàn tay (10,1 · long). Fixture
-  `khay#bung` (tay sát vành trái, phải; ngón về phía xa, `ψ = ±90°`) cho `inset₀ = W / 2` ≈ 6,7 ở cỡ `1,61`, khớp tâm nắm
-  cách vành 6 của kiểu cũ (`x = ±40` trên nửa rộng 46).
+- **Cần**: một `face` chứa được `0,4 · W × 0,6 · L` (`2 · min(half) ≥ 0,4 · W`, `2 · max(half) ≥ 0,6 · L`).
+- **Chỗ tiếp xúc** (`frame: "nf"`, fixture `khay#bung`, `phieu#do`): lòng tay ngửa áp mặt (`n` ngược pháp tuyến ngoài của mặt), ngón
+  duỗi `PLATFORM_FLAT`. Tay đến từ cạnh `edge` của mặt (`FaceFeature.edges`: `name`, `inward`, `at`, `len`).
+  - **`ψ`**: hướng ngón đo từ pháp tuyến trong của cạnh quay về đầu cao của cạnh: `0` ngón chĩa vuông góc vào trong mặt, `+90°`
+    ngón chạy dọc cạnh về đầu cao, `−90°` về đầu thấp. Đầu cao theo `edgeHigh` (như đầu thấp của `along`,
+    mục 4 "Vị trí dọc cạnh", đảo lại); không có hướng món trong thế giới (`graspFrame` thiếu `high`) thì đầu về `−front`, cạnh
+    vuông góc `front` thì về `top`.
+  - **`inset`**: khoảng từ cạnh tới tâm nắm theo pháp tuyến trong; mặc định vừa đủ cho bàn tay nằm trọn trong mặt,
+    `inset₀(ψ) = ½ · (W · |sin ψ| + P · |cos ψ|)` (`platformInset`), `P` dài lòng bàn tay (10,1 · long). Fixture `khay#bung` (tay sát
+    vành trái, phải; ngón về phía xa, `ψ = ±90°`) cho `inset₀ = W / 2` ≈ 6,7 ở cỡ `1,61`.
+  - **`along`** kẹp cho bàn tay nằm trong cạnh: gót lòng `P` sau tâm nắm, đầu ngón `L − P` trước, ngang `W`, quay theo `ψ`; cạnh ngắn
+    hơn bàn tay thì tâm nắm ở giữa cạnh.
+  - Tâm nắm hạ theo pháp tuyến mặt tới khi da lòng tay cách hình `PLATFORM_GAP` = 0,15 (đơn vị món; không có hình thì đặt đúng mặt).
+  - **Dáng** `PLATFORM_FLAT` = `flat` cộng gập gốc 30°, gập ngọn 5° (đệm ngón chạm mặt ngang gò lòng tay, da lòng dày hơn ngón), ở
+    cả hai đầu dáng.
+- **Chọn mặt** (không có trường cảnh cho mặt): `part`, `feature`, `featureIndex` khai thì giữ; không thì trong các mặt đạt `needs`,
+  món đặt trước lấy mặt có pháp tuyến ngoài chúc xuống nhất ở mốc bắt đầu, tay dẫn lấy mặt gần `−top`; hoà thì gần `−front`
+  (`supportFaces`).
 - **Vai trò**: lòng tay `press`, ngón `support`, ngón cái `free`. Để sau: `tips` (đầu ngón đỡ, khay cao ngang vai).
-- **Lựa chọn**: mặt (mặc định mặt có pháp tuyến gần `−top`), `edge`, `along`, `ψ` (lưới 45°), `inset` (quanh `inset₀`).
-- **Tay**: một hay hai; tay phụ mặc định cùng nhóm, cạnh đối diện. **Hướng mặc định**: trục ngược pháp tuyến mặt đỡ hướng
-  lên (khay: `top` lên; phiếu đỡ mặt sau: `front` lên).
+- **Lựa chọn**: `part`, `edge`, `along` (**0,5**), `psi` ∈ [−90°, 90°] (**90°**), `inset` (cảnh khai thì đè; rig không giải). Rig
+  giải `psi` trên lưới 5 điểm đều `−90, −45, 0, 45, 90` và `edge` từng cạnh của mặt (mục 5).
+- **Tay**: một hay hai (`hands: "either"`). Tay phụ `support: { group: "platform", edge: "opposite" }`: cùng mặt, cạnh đối diện
+  của cạnh tay dẫn (`oppositeEdge`: theo tên `left` ↔ `right`, `top` ↔ `bottom`, `front` ↔ `back`).
+- **Hướng mặc định**: `face: { axis: "support", toward: "up" }`; trục `support` là ngược pháp tuyến mặt lớn (diện tích
+  `≥ ½` mặt lớn nhất; gần `−top`, hoà gần `−front`) nên mặt đỡ ngửa lên: khay `top` lên, phiếu đỡ mặt sau `front` lên.
+- **Giới hạn khớp**: lòng ngửa nằm sát kẹp xoay cẳng tay ±90°. Món sát ngực cần 93–108° và `check` báo `wrist`; món đặt xa ngực
+  và thấp hơn (`to: "chest"`, `offset: [80, 20, 0]`) thì khay vừa kẹp, phiếu còn vượt vài độ. `bang-cam` đặt `platform` ở chỗ này.
 
 #### 11. `hug` — ôm vào thân (để sau)
 
@@ -773,7 +791,7 @@ Cảnh thường khai đủ chỗ cầm. Thiếu trường nào:
   thật của người cầm. Lựa chọn rig giải chỉ đọc ở `graspAtTime`; `ReachHold.grasp.choice` của `sceneAt` chỉ mang trường
   cảnh khai. Hai bậc: giải rời trước (`edge`, `thumb`, `variant`, `part`) với trường liên tục ở mặc định; rồi lưới liên
   tục quanh ứng viên rời tốt nhất, và quanh ứng viên rời tốt nhất của `variant.default` khi rig giải `variant` (`along` 3
-  điểm, `slant` 3, `around` 12, `tilt` 6 đều gồm hai đầu, `psi` 8). `slant` lấy ba điểm `−½`, `0`, `+½` miền của biến thể
+  điểm, `slant` 3, `around` 12, `tilt` 6 đều gồm hai đầu, `psi` 5 điểm đều gồm hai đầu). `slant` lấy ba điểm `−½`, `0`, `+½` miền của biến thể
   (`pinch` ±30°, `flat` ±45°, `rim` ±22,5°). Giá của một ứng viên là `min_φ E(φ)` cộng `(khe tầm với / AIM_GAP)²`, cộng ở
   mốc bắt đầu và các mốc món trong 1,5 s sau còn cùng người cầm, cùng cỡ (tối đa 4, mốc sau trọng số 0,5); lệch khỏi mặc
   định nhóm cộng `0,05 · (số trường lệch mặc định) / (số trường thiếu có mặc định)`, `variant` khác `variant.default` của
@@ -797,6 +815,25 @@ Cảnh thường khai đủ chỗ cầm. Thiếu trường nào:
   trên (mục 3, nhóm 1).
 - **Tay dẫn**: lấy mặc định của nhóm (mục 3), không giải; `thumb` của tấm theo mặt quay về người cầm ở mốc bắt đầu lần cầm,
   `edge` của tấm `bottom` (tấm đứng) hay cạnh phía tay ấy (tấm nằm) (mục 3, nhóm 1).
+
+### Tay phụ (`both`)
+
+Cảnh khai `both` ở tay lead; tay kia là tay phụ. Nhóm của tay phụ là `support.group` của nhóm lead (hay `both.group`); nhóm chưa
+có chỗ tiếp xúc, hay khác nhóm mà không có `support.place`, thì không có tay phụ. Chỗ cầm tay phụ (`supportChoice`) là mặc định của
+`support`, rồi object `both` của cảnh đè từng trường:
+
+- **Cùng nhóm** (`platform`, `sheet` `rim`): giữ `part` và khối hình của lead, `keep` của `support`, `edge` đối (`opposite`) hay cùng
+  (`same`) cạnh lead. Trường còn lại do bộ giải hay mặc định nhóm.
+- **Khác nhóm** (`support.place`; `cylinder`, `palmBox` → `platform`): `placeChoice` đặt lòng tay lên mặt hộp có pháp tuyến ngoài
+  `−top` (`bottom`: đáy chai) hay `−front` (`back`: mặt sau máy), xa nhất theo hướng ấy, ở phần cầm được (không `grip: false`).
+  Ngón theo `top` chiếu lên mặt (mặt vuông `top` thì theo `front`), tay tới từ cạnh sau ngón (`psi` 0), tâm nắm giữa mặt, `along` 0,5.
+  Tay lead nằm trên mặt ấy (cách mặt không quá `W`) thì tâm nắm dời theo ngón tới khi gót lòng qua bàn tay lead (né tay lead). Món
+  không có mặt như thế thì tay phụ lấy mặc định của nhóm.
+- **Món đặt trước**: tay `both` giải trước (không có `both` thì tay phải); tay phụ giải sau ở cùng mốc bắt đầu: `supportChoice`
+  trên khung tay lead, khối hình cố định bằng `featureIndex`, trường còn thiếu `chooseMissing` giải như tay lead (cùng giá, số hạng
+  lấn gồm tay lead đã đặt) và khuỷu `E(φ)` riêng. Tay phụ khác nhóm để `psi` cho bộ giải, trừ khi `both.psi` khai. Tay lead chọn
+  chỗ cầm không xét tay phụ: chỗ lệch một bên thì tay phụ có thể vượt kẹp cổ tay.
+- **Tay dẫn**: tay phụ đặt theo khung tay lead đã vẽ, `psi` 0 với tay phụ khác nhóm.
 
 ### Đổi lần cầm
 
@@ -887,7 +924,7 @@ của một ranh giới lần cầm (`holdBlending` của `scene.ts`: vừa cầ
 | `up`, `face`, `reach` (tay phụ, `item:`) | tay dẫn | `AimReport.hold` như kiểu cầm v1 | như v1 |
 | `jump`, `seat`, `body`, cầm món không ai `provide` | cả hai | Như [03](03-scene.md#đồ-cầm-tay); `jump` có loại "đổi chỗ cầm" giữa hai lần cầm cùng món | như v1 |
 | lỗi `ref` `group` | `resolveScene` | Món không có khối hình nào cho nhóm với cỡ tay của người khai (`checkHolds` của `scene.ts`); dòng báo nêu khối hình món có, và phần khác còn vừa nếu có: `` `<món>` phần `than` (r 15) quá tầm nắm của tay `<người>` (0,95 · W = 14,0): khai `part: "vai"` hay hai tay `` | lỗi |
-| lỗi `ref` `choice` | `resolveScene` | Chỗ cầm không hợp lệ: trường không thuộc nhóm, `edge`/`thumb` không có trên khối hình, biến thể quá bề dày ở mép (`flat` trên tấm dày hơn `FLAT_MAX · W`), biến thể không áp trên loại khối hình (`flat` của `cylinder` chỉ trên `rod`; chai, trụ tiện báo lỗi kèm khối hình món có), `part` không có hay `grip: false`, `along` ngoài 0–1, `both` với nhóm một tay, `both` mà tay kia cũng có `hold` ở cùng `t`, `on`/`yaw` ngoài `carry`, `carry` thiếu `on` hay món không có `seats[on]`, nhóm `later`; món có mốc ở `items` mà mốc tay khai đích (`to`, `at`, `offset`, `point`) hay ý định (`face`, `up`, `roll`, `keep`); mốc món ở `t` không tay nào cầm món ấy | lỗi |
+| lỗi `ref` `choice` | `resolveScene` | Chỗ cầm không hợp lệ: trường không thuộc nhóm, `edge`/`thumb` không có trên khối hình, biến thể quá bề dày ở mép (`flat` trên tấm dày hơn `FLAT_MAX · W`), biến thể không áp trên loại khối hình (`flat` của `cylinder` chỉ trên `rod`; chai, trụ tiện báo lỗi kèm khối hình món có), `part` không có hay `grip: false`, `along` ngoài 0–1, `both` với nhóm một tay không có `support`, `both` mà tay kia cũng có `hold` ở cùng `t`, `on`/`yaw` ngoài `carry`, `carry` thiếu `on` hay món không có `seats[on]`, nhóm `later`; món có mốc ở `items` mà mốc tay khai đích (`to`, `at`, `offset`, `point`) hay ý định (`face`, `up`, `roll`, `keep`); mốc món ở `t` không tay nào cầm món ấy | lỗi |
 | cảnh báo `ref` `choice` | `sceneHoldProblems` (`choiceWarnings`) | Chỗ cầm hợp lệ mà `along` cảnh khai sát phần `grip: false` quá `clear · W` của nhóm (`cylinder`: `GRIP_CLEAR` = 0,3): tâm nắm cách phần ấy dưới ngưỡng. Dòng báo nêu phần cắt, khoảng cách dọc trục, `along` rig kẹp về (`alongRoom`) và `along` nên khai; cỡ tay lấy theo người cầm. Không chặn | cảnh báo |
 | lỗi `ref` `item` | `resolveScene` | Mốc món có đích của trục phụ lệch đích của trục chính dưới 18° (cos tuyệt đối > 0,95): hướng món suy biến, dòng báo gợi `roll` khác; đích của một trục trùng chỗ món; `face` trần không có trục (mốc không khai, nhóm không có mặc định). Rig không tự đổi | lỗi |
 
@@ -957,11 +994,14 @@ v1 của `held/` và bỏ món v2; có `--nhom` thì chỉ món v2 (`--mon` mặ
   (`món@nhóm`). Hai cỡ tay: người có bàn tay nhỏ nhất và lớn nhất trong `characters/` (`--ai` đổi người).
 - Hàng mẫu: chỗ cầm mặc định (nhãn in biến thể rig chọn) và từng biến thể của nhóm; `sheet` thêm ngón cái trước / sau, đọc
   ngang mặt, khoe một tay, khoe hai tay hai cạnh bên, khoe hai tay trên dưới (bỏ khi hai cạnh cách nhau dưới 1,3·`W` của cỡ
-  tay đang vẽ), và với đĩa hay tấm nằm trong khung món thì bê hai tay hai vành (`rim`, `both`, tay phụ cạnh đối); `palmBox` thêm đọc ngang mặt, khoe một tay, áp tai (tay dẫn); `carry` chỉ hai
+  tay đang vẽ), và với đĩa hay tấm nằm trong khung món thì bê hai tay hai vành (`rim`, `both`, tay phụ cạnh đối); `palmBox` thêm đọc ngang mặt, khoe một tay, áp tai (tay dẫn); `platform` đặt món ngang bụng, xa ngực
+  hơn hàng chung (`offset [80, 20, 0]`) và thêm `ψ` 0 / 90 và tay dẫn; `platform`, `cylinder` (chai đứng hơi nghiêng) và `palmBox` thêm hàng hai
+  tay `both` món đặt trước (tay phụ cạnh đối, đỡ đáy, đỡ mặt sau); `carry` chỉ hai
   hàng treo khuỷu và treo vai (cảnh khai `touch` cho vai), tay đặt như kiểu treo v1, món không đặt trước ngực, `do.json` giữ
   `seat`, `body`, `swing` (và `bend`, `rise` của khuỷu).
 - Hàng `sheet` khai `edge` hay `thumb` không có trên khối hình tấm hay đĩa của món, hay cần mốc món (`front`) mà món không có,
-  bị lọc trước khi giải; `do.json` (`loc`) và `index.md` kê hàng lọc kèm lý do.
+  bị lọc trước khi giải; hàng `both` mà món không có mặt đáy / sau có cạnh cho tay phụ cũng bị lọc; `do.json` (`loc`) và `index.md`
+  kê hàng lọc kèm lý do. Cặp (món, `platform`) mà mặt đỡ chọn ra (chúc xuống nhất) không có cạnh (đáy chai tròn) bị bỏ cả cặp (`bo`).
 - Hàng giải ra cùng chỗ cầm, đặt món cùng vị trí với một hàng đứng trước nó thì bị bỏ; `do.json` (`trung`) và `index.md`
   kê hàng bỏ.
 - Cặp (món, nhóm, người) mà món không có khối hình đạt `needs` của nhóm với cỡ tay ấy bị bỏ; lý do ở `do.json` (`bo`) và dòng
@@ -1030,7 +1070,9 @@ vai trò, test, hàng `bang-cam` cho chủ dự án duyệt:
 4. `cylinder` (11) — `lathe` và `rod` (ống nghe); tay trượt dọc thanh; tay phụ `platform`. Hiện tại: `flat` (thanh hộp mặt rộng: `variantOf`, `flatRod`, dáng `span`); `wrap` bám cả đoạn bám liền
    (`axialAt`, `around`), lòng tay áp mặt và ngả theo dốc, dáng hoà theo bán kính tại chỗ cầm, ngón cái theo hai họ
    (`PoseSpec.thumb`), tâm nắm cách phần `grip: false` `GRIP_CLEAR`, giá lún và loại `around` nhô (`BULGE`) khi rig giải.
-5. `platform` (10) — một và hai tay.
+5. `platform` (10) — một và hai tay. Hiện tại: `palm` (`CONTACTS.platform.palm`: cạnh `edge` của mặt, `ψ`, `inset₀`, `PLATFORM_GAP`, dáng
+   `PLATFORM_FLAT`), chọn mặt theo hướng chúc xuống, lưới `psi` 5 điểm và lưới quanh nghiệm tốt nhất từng cạnh; tay phụ cùng nhóm
+   ở cạnh đối, tay phụ khác nhóm (`placeChoice`) và `both` món đặt trước cho `cylinder`, `palmBox`.
 6. `card` (7) — `pad`.
 7. `chopsticks` (6) — dáng `chopsticks`.
 8. `pen` (4) — dáng `tripod`.

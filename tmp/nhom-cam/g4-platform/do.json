@@ -1,0 +1,2437 @@
+{
+ "t": 0.5,
+ "people": [
+  {
+   "file": "t01-sakura.json",
+   "size": 1.61,
+   "dims": {
+    "W": 14.700000000000003,
+    "A": 16.44858224639421,
+    "L": 30.06267922061609,
+    "P": 16.957368421052635
+   }
+  },
+  {
+   "file": "kuroiwa.json",
+   "size": 2.16,
+   "dims": {
+    "W": 16.8,
+    "A": 16.659942296600185,
+    "L": 30.177341709067022,
+    "P": 16.957368421052635
+   }
+  }
+ ],
+ "nhom": [
+  "platform"
+ ],
+ "bo": [],
+ "loc": [],
+ "trung": [
+  {
+   "id": "bang-cam-thu-khay-platform-psi-90-P-t01-sakura",
+   "key": "thu-khay@platform ψ 90 (ngón dọc cạnh)",
+   "person": "t01-sakura",
+   "giong": "bang-cam-thu-khay-platform-mac-dinh-P-t01-sakura"
+  },
+  {
+   "id": "bang-cam-thu-phieu-platform-psi-90-P-t01-sakura",
+   "key": "thu-phieu@platform ψ 90 (ngón dọc cạnh)",
+   "person": "t01-sakura",
+   "giong": "bang-cam-thu-phieu-platform-mac-dinh-P-t01-sakura"
+  },
+  {
+   "id": "bang-cam-thu-phieu-platform-psi-90-P-kuroiwa",
+   "key": "thu-phieu@platform ψ 90 (ngón dọc cạnh)",
+   "person": "kuroiwa",
+   "giong": "bang-cam-thu-phieu-platform-mac-dinh-P-kuroiwa"
+  }
+ ],
+ "cells": [
+  {
+   "id": "bang-cam-thu-khay-platform-mac-dinh-P-t01-sakura",
+   "item": "thu-khay",
+   "group": "platform",
+   "ma": "mac-dinh",
+   "grip": "mặc định (palm)",
+   "key": "thu-khay@platform mặc định (palm)",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -135.4,
+      -212.31,
+      193.36
+     ],
+     "text": "variant palm part day edge left along 0.5\n   lún 0 · xuyên -1.8 · nắm 0.7\n   cái(free) 0 trỏ(support) 0 giữa(support) 0\n   áp út(support) 0 út(support) 0.1 lòng(press) 0.1",
+     "raw": {
+      "pierce": {
+       "depth": -0.09411990046501728,
+       "core": -1.819445827525942,
+       "piece": "pinky1"
+      },
+      "sink": 0.035628235340112724,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.035628235340112724,
+       "index": 0.026907467842107735,
+       "fingers": 0.010456585884099923,
+       "palm": 0.1495090067386684
+      },
+      "hold": "thu-khay@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "day",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "left",
+        "along": 0.5,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "edge": "rig",
+        "along": "rig",
+        "variant": "default",
+        "psi": "rig"
+       },
+       "arm": {
+        "phi": -7.5,
+        "wrist": {
+         "turn": -83.38842454840055,
+         "bend": 19.014115149482436,
+         "dev": -8.108482606521228,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0.10848989834902589,
+        "gap": 0,
+        "bodyRatio": 0.00993497237628442,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": -0.035628235340112724,
+       "index": 0.026907467842107735,
+       "middle": 0.010456585884099923,
+       "ring": 0.035261803865438424,
+       "pinky": 0.09411990046501728
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.6622491189495845,
+      "palm": {
+       "gap": 2.2946691215477433,
+       "angle": 0
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 138,
+   "tiles": [
+    "o/thu-khay/bang-cam-thu-khay-platform-mac-dinh-P-t01-sakura-truoc.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-mac-dinh-P-t01-sakura-cheo.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-mac-dinh-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-khay-platform-psi-0-P-t01-sakura",
+   "item": "thu-khay",
+   "group": "platform",
+   "ma": "psi-0",
+   "grip": "ψ 0 (ngón vào mặt)",
+   "key": "thu-khay@platform ψ 0 (ngón vào mặt)",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-khay: xoay -102°/±90, gập 3°/±50, lệch 14°/±20 — vượt 11.7°, bàn tay vẽ lệch chỗ cầm 1.6 (chỗ cầm `thu-khay@platform` (part day (rig chọn), edge back (rig chọn), along 0.25 (rig chọn), variant palm (mặc định), psi 0)); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-khay` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-khay@platform` (part day (rig chọn), edge back (rig chọn), along 0.25 (rig chọn), variant palm (mặc định), psi 0) (dáng flat) · da lún 0.4 ở đầu ngón út · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) -0.3, trỏ (support) 0.0, giữa (support) 0.1, áp út (support) -0.1, út (support) -0.4, lòng (press) -1.1 · tâm nắm trong món 1.6 · lòng tay cách 3.2 góc 93° · cổ tay xoay -102°, gập 3°, lệch 14° (vượt kẹp 11.7°, bàn tay lệch chỗ cầm 1.6) · khuỷu φ 15° · tay lấn 1.0 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "da lún vào món — `cam` tay phải cầm thu-khay: lún 1.1 (quá 0.7) (chỗ cầm `thu-khay@platform` (part day (rig chọn), edge back (rig chọn), along 0.25 (rig chọn), variant palm (mặc định), psi 0)); ngón ôm không gỡ được — đổi `variant` / `slant`, không thì là việc của dáng nhóm ở rig ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-khay@platform` (part day (rig chọn), edge back (rig chọn), along 0.25 (rig chọn), variant palm (mặc định), psi 0) (dáng flat) · da lún 0.4 ở đầu ngón út · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) -0.3, trỏ (support) 0.0, giữa (support) 0.1, áp út (support) -0.1, út (support) -0.4, lòng (press) -1.1 · tâm nắm trong món 1.6 · lòng tay cách 3.2 góc 93° · cổ tay xoay -102°, gập 3°, lệch 14° (vượt kẹp 11.7°, bàn tay lệch chỗ cầm 1.6) · khuỷu φ 15° · tay lấn 1.0 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist",
+    "sink"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -118.19,
+      -215.37,
+      211.87
+     ],
+     "text": "variant palm part day edge back along 0.3\n   lún 1.1 · xuyên -1.3 · nắm -1.6 · cổ tay vượt 11.7°\n   cái(free) -0.3 trỏ(support) 0 giữa(support) 0.1\n   áp út(support) -0.1 út(support) -0.4 lòng(press) -1.1",
+     "raw": {
+      "pierce": {
+       "depth": 0.37718733696988016,
+       "core": -1.3369601735803416,
+       "piece": "pinky1"
+      },
+      "sink": 1.1008907453185792,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.31828429363804656,
+       "index": 0.04869988713558593,
+       "fingers": -0.37718733696988016,
+       "palm": -1.1008907453185792
+      },
+      "hold": "thu-khay@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "day",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "back",
+        "along": 0.25,
+        "variant": "palm",
+        "psi": 0
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "edge": "rig",
+        "along": "rig",
+        "variant": "default",
+        "psi": "scene"
+       },
+       "arm": {
+        "phi": 15,
+        "wrist": {
+         "turn": -101.65849347513604,
+         "bend": 3.8648976910139323,
+         "dev": 13.708325763019197,
+         "over": 11.65849347513604,
+         "off": 1.5854518477792572
+        },
+        "body": 0.985257182441754,
+        "gap": 0,
+        "bodyRatio": 0.09199413468176974,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": -0.31828429363804656,
+       "index": 0.04869988713558593,
+       "middle": 0.06713226722470456,
+       "ring": -0.10350460169180975,
+       "pinky": -0.37718733696988016
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -1.6074951750868887,
+      "palm": {
+       "gap": 3.1680464869327185,
+       "angle": 92.81591842239196
+      },
+      "intent": {
+       "rule": "face",
+       "err": 11.658493475136044,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 138,
+   "tiles": [
+    "o/thu-khay/bang-cam-thu-khay-platform-psi-0-P-t01-sakura-truoc.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-psi-0-P-t01-sakura-cheo.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-psi-0-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-khay-platform-tay-dan-P-t01-sakura",
+   "item": "thu-khay",
+   "group": "platform",
+   "ma": "tay-dan",
+   "grip": "tay dẫn",
+   "key": "thu-khay@platform tay dẫn",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (tay dẫn)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -126.4,
+      -228.24,
+      233.59
+     ],
+     "text": "variant palm part day edge right along 0.5 (tay dẫn)\n   lún 0 · xuyên -1.8 · nắm 0.7\n   cái(free) 0 trỏ(support) 0 giữa(support) 0\n   áp út(support) 0 út(support) 0.1 lòng(press) 0.1",
+     "raw": {
+      "pierce": {
+       "depth": -0.09411990046506169,
+       "core": -1.8194458275259864,
+       "piece": "pinky1"
+      },
+      "sink": 0.035628235340068315,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.035628235340068315,
+       "index": 0.026907467842152144,
+       "fingers": 0.010456585884144332,
+       "palm": 0.1495090067387128
+      },
+      "hold": "thu-khay@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "hand",
+       "choice": {
+        "part": "day",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "right",
+        "along": 0.5,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "default",
+        "along": "default",
+        "variant": "default",
+        "psi": "default"
+       },
+       "arm": {
+        "phi": 0.3596091217553976,
+        "wrist": {
+         "turn": -90,
+         "bend": -15.000281067912937,
+         "dev": 15.000292470332443,
+         "over": 0,
+         "off": 0
+        },
+        "body": 9.310883382775579,
+        "bodyRatio": 1.0157661683845978,
+        "bodyPart": "fore.torso",
+        "gap": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.035628235340068315,
+       "index": 0.026907467842152144,
+       "middle": 0.010456585884144332,
+       "ring": 0.03526180386548283,
+       "pinky": 0.09411990046506169
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.6622491189496289,
+      "palm": {
+       "gap": 2.2946648969117147,
+       "angle": 0.000009956626120759439
+      },
+      "up": 0.27056699524425687,
+      "intent": {
+       "rule": "up",
+       "err": 0.26916455889142865,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 138,
+   "tiles": [
+    "o/thu-khay/bang-cam-thu-khay-platform-tay-dan-P-t01-sakura-truoc.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-tay-dan-P-t01-sakura-cheo.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-tay-dan-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-khay-platform-hai-tay-dat-H-t01-sakura",
+   "item": "thu-khay",
+   "group": "platform",
+   "ma": "hai-tay-dat",
+   "grip": "hai tay (món đặt trước)",
+   "key": "thu-khay@platform hai tay (món đặt trước)",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": true,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -135.4,
+      -212.31,
+      193.36
+     ],
+     "text": "variant palm part day edge left along 0.5\n   lún 0 · xuyên -1.8 · nắm 0.7\n   cái(free) 0 trỏ(support) 0 giữa(support) 0\n   áp út(support) 0 út(support) 0.1 lòng(press) 0.1",
+     "raw": {
+      "pierce": {
+       "depth": -0.09411990046501728,
+       "core": -1.819445827525942,
+       "piece": "pinky1"
+      },
+      "sink": 0.035628235340112724,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.035628235340112724,
+       "index": 0.026907467842107735,
+       "fingers": 0.010456585884099923,
+       "palm": 0.1495090067386684
+      },
+      "hold": "thu-khay@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "day",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "left",
+        "along": 0.5,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "edge": "rig",
+        "along": "rig",
+        "variant": "default",
+        "psi": "rig"
+       },
+       "arm": {
+        "phi": -7.5,
+        "wrist": {
+         "turn": -83.38842454840055,
+         "bend": 19.014115149482436,
+         "dev": -8.108482606521228,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0.10848989834902589,
+        "gap": 0,
+        "bodyRatio": 0.00993497237628442,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": -0.035628235340112724,
+       "index": 0.026907467842107735,
+       "middle": 0.010456585884099923,
+       "ring": 0.035261803865438424,
+       "pinky": 0.09411990046501728
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.6622491189495845,
+      "palm": {
+       "gap": 2.2946691215477433,
+       "angle": 0
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    },
+    {
+     "hand": "L",
+     "at": [
+      -54.6,
+      -212.31,
+      193.36
+     ],
+     "text": "variant palm part day edge right along 0.5\n   lún 0 · xuyên -1.8 · nắm 0.7\n   cái(free) 0 trỏ(support) 0 giữa(support) 0\n   áp út(support) 0 út(support) 0.1 lòng(press) 0.1",
+     "raw": {
+      "pierce": {
+       "depth": -0.09411990046501906,
+       "core": -1.8194458275259437,
+       "piece": "pinky1"
+      },
+      "sink": 0.03562823534011028,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.03562823534011028,
+       "index": 0.026907467842109956,
+       "fingers": 0.010456585884102143,
+       "palm": 0.14950900673867062
+      },
+      "hold": "thu-khay@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "day",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "right",
+        "along": 0.5,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "scene",
+        "feature": "scene",
+        "edge": "scene",
+        "along": "rig",
+        "variant": "default",
+        "psi": "rig"
+       },
+       "arm": {
+        "phi": -7.5,
+        "wrist": {
+         "turn": -83.38842454840055,
+         "bend": 19.014115149482436,
+         "dev": -8.108482606521228,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0.10848989834902589,
+        "gap": 0,
+        "bodyRatio": 0.00993497237628442,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": -0.03562823534011028,
+       "index": 0.026907467842109956,
+       "middle": 0.010456585884102143,
+       "ring": 0.0352618038654402,
+       "pinky": 0.09411990046501906
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.6622491189495867,
+      "palm": {
+       "gap": 2.2946691215477433,
+       "angle": 0
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 159,
+   "tiles": [
+    "o/thu-khay/bang-cam-thu-khay-platform-hai-tay-dat-H-t01-sakura-truoc.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-hai-tay-dat-H-t01-sakura-cheo.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-hai-tay-dat-H-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-khay-platform-mac-dinh-P-kuroiwa",
+   "item": "thu-khay",
+   "group": "platform",
+   "ma": "mac-dinh",
+   "grip": "mặc định (palm)",
+   "key": "thu-khay@platform mặc định (palm)",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay sát giới hạn — `cam` tay phải cầm thu-khay: xoay -88°/±90, gập 5°/±50, lệch -2°/±20 — còn 2.1° tới kẹp (chỗ cầm `thu-khay@platform` (part day (rig chọn), edge left (rig chọn), along 0.73 (rig chọn), variant palm (mặc định), psi 90 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-khay` ở `items`) ở giây 1.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-khay@platform` (part day (rig chọn), edge left (rig chọn), along 0.73 (rig chọn), variant palm (mặc định), psi 90 (rig chọn)) (dáng flat) · khe 0.0 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) 0.2, trỏ (support) 0.4, giữa (support) 0.2, áp út (support) 0.1, út (support) 0.0, lòng (press) 0.1 · tâm nắm cách món 0.9 · lòng tay cách 2.8 góc 0° · cổ tay xoay -88°, gập 5°, lệch -2° · khuỷu φ -2° · tay lấn 0.2 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -134.6,
+      -252.71,
+      180.55
+     ],
+     "text": "variant palm part day edge left along 0.7\n   lún 0 · xuyên -2.1 · nắm 0.9\n   cái(free) 0.2 trỏ(support) 0.4 giữa(support) 0.2\n   áp út(support) 0.1 út(support) 0 lòng(press) 0.1",
+     "raw": {
+      "pierce": {
+       "depth": -0.027307564020155876,
+       "core": -2.0517484530545693,
+       "piece": "pinky1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": 0.1607616186141869,
+       "index": 0.40961995124816475,
+       "fingers": 0.027307564020155876,
+       "palm": 0.14931603670119295
+      },
+      "hold": "thu-khay@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "day",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "left",
+        "along": 0.7268766411793989,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "edge": "rig",
+        "along": "rig",
+        "variant": "default",
+        "psi": "rig"
+       },
+       "arm": {
+        "phi": -2.5,
+        "wrist": {
+         "turn": -87.87364296780653,
+         "bend": 4.889314371453296,
+         "dev": -1.5791522084632228,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0.23186815419611762,
+        "gap": 0,
+        "bodyRatio": 0.018579179022124807,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": 0.1607616186141869,
+       "index": 0.40961995124816475,
+       "middle": 0.15602528452872952,
+       "ring": 0.05087002515792703,
+       "pinky": 0.027307564020155876
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.8853006764430111,
+      "palm": {
+       "gap": 2.7509231074508644,
+       "angle": 0
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 138,
+   "tiles": [
+    "o/thu-khay/bang-cam-thu-khay-platform-mac-dinh-P-kuroiwa-truoc.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-mac-dinh-P-kuroiwa-cheo.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-mac-dinh-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-khay-platform-psi-0-P-kuroiwa",
+   "item": "thu-khay",
+   "group": "platform",
+   "ma": "psi-0",
+   "grip": "ψ 0 (ngón vào mặt)",
+   "key": "thu-khay@platform ψ 0 (ngón vào mặt)",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-khay: xoay -96°/±90, gập -7°/±50, lệch 17°/±20 — vượt 5.9°, bàn tay vẽ lệch chỗ cầm 0.7 (chỗ cầm `thu-khay@platform` (part day (rig chọn), edge back (rig chọn), along 0.25 (rig chọn), variant palm (mặc định), psi 0)); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-khay` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-khay@platform` (part day (rig chọn), edge back (rig chọn), along 0.25 (rig chọn), variant palm (mặc định), psi 0) (dáng flat) · da lún 1.0 ở đầu ngón út · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) -0.2, trỏ (support) 0.1, giữa (support) 0.1, áp út (support) -0.2, út (support) -1.0, lòng (press) -0.8 · tâm nắm trong món 1.7 · lòng tay cách 3.6 góc 91° · cổ tay xoay -96°, gập -7°, lệch 17° (vượt kẹp 5.9°, bàn tay lệch chỗ cầm 0.7) · khuỷu φ 8° · tay lấn 0.8 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "da lún vào món — `cam` tay phải cầm thu-khay: lún 1.0 (quá 0.7) (chỗ cầm `thu-khay@platform` (part day (rig chọn), edge back (rig chọn), along 0.25 (rig chọn), variant palm (mặc định), psi 0)); ngón ôm không gỡ được — đổi `variant` / `slant`, không thì là việc của dáng nhóm ở rig ở giây 1.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-khay@platform` (part day (rig chọn), edge back (rig chọn), along 0.25 (rig chọn), variant palm (mặc định), psi 0) (dáng flat) · da lún 1.0 ở đầu ngón út · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) -0.1, trỏ (support) 0.1, giữa (support) 0.1, áp út (support) -0.2, út (support) -1.0, lòng (press) -0.8 · tâm nắm trong món 1.7 · lòng tay cách 3.6 góc 91° · cổ tay xoay -96°, gập -5°, lệch 17° (vượt kẹp 5.7°, bàn tay lệch chỗ cầm 0.7) · khuỷu φ 8° · tay lấn 0.7 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist",
+    "sink"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -119.5,
+      -255.89,
+      209.42
+     ],
+     "text": "variant palm part day edge back along 0.3\n   lún 1 · xuyên -1 · nắm -1.7 · cổ tay vượt 5.8°\n   cái(free) -0.2 trỏ(support) 0.1 giữa(support) 0.1\n   áp út(support) -0.2 út(support) -1 lòng(press) -0.8",
+     "raw": {
+      "pierce": {
+       "depth": 0.981523657256457,
+       "core": -0.9737504980305554,
+       "piece": "pinky1"
+      },
+      "sink": 0.981523657256457,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.152494918858874,
+       "index": 0.08827622577144245,
+       "fingers": -0.981523657256457,
+       "palm": -0.8371530112696677
+      },
+      "hold": "thu-khay@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "day",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "back",
+        "along": 0.25,
+        "variant": "palm",
+        "psi": 0
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "edge": "rig",
+        "along": "rig",
+        "variant": "default",
+        "psi": "scene"
+       },
+       "arm": {
+        "phi": 7.5,
+        "wrist": {
+         "turn": -95.7934832773679,
+         "bend": -6.224819696631961,
+         "dev": 16.657027516090174,
+         "over": 5.793483277367898,
+         "off": 0.7331956719488447
+        },
+        "body": 0.7497332233471141,
+        "gap": 0,
+        "bodyRatio": 0.06646571128963777,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": -0.152494918858874,
+       "index": 0.08827622577144245,
+       "middle": 0.05255532108406813,
+       "ring": -0.21600432007542514,
+       "pinky": -0.981523657256457
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -1.7042127491930992,
+      "palm": {
+       "gap": 3.5970271754419714,
+       "angle": 90.5373266391433
+      },
+      "intent": {
+       "rule": "face",
+       "err": 5.793483277367976,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 138,
+   "tiles": [
+    "o/thu-khay/bang-cam-thu-khay-platform-psi-0-P-kuroiwa-truoc.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-psi-0-P-kuroiwa-cheo.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-psi-0-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-khay-platform-psi-90-P-kuroiwa",
+   "item": "thu-khay",
+   "group": "platform",
+   "ma": "psi-90",
+   "grip": "ψ 90 (ngón dọc cạnh)",
+   "key": "thu-khay@platform ψ 90 (ngón dọc cạnh)",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-khay: xoay -92°/±90, gập -1°/±50, lệch 1°/±20 — vượt 2.1°, bàn tay vẽ lệch chỗ cầm 0.2 (chỗ cầm `thu-khay@platform` (part day (rig chọn), edge left (rig chọn), along 0.5 (rig chọn), variant palm (mặc định), psi 90)); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-khay` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-khay@platform` (part day (rig chọn), edge left (rig chọn), along 0.5 (rig chọn), variant palm (mặc định), psi 90) (dáng flat) · khe 0.3 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) -0.1, trỏ (support) 0.2, giữa (support) 0.1, áp út (support) 0.1, út (support) 0.3, lòng (press) 0.0 · tâm nắm cách món 0.8 · lòng tay cách 2.7 góc 2° · cổ tay xoay -92°, gập -1°, lệch 1° (vượt kẹp 2.1°, bàn tay lệch chỗ cầm 0.2) · khuỷu φ 3° · tay lấn 0.5 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -134.35,
+      -252.79,
+      192.35
+     ],
+     "text": "variant palm part day edge left along 0.5\n   lún 0.1 · xuyên -2.3 · nắm 0.8 · cổ tay vượt 2°\n   cái(free) -0.1 trỏ(support) 0.2 giữa(support) 0.1\n   áp út(support) 0.1 út(support) 0.3 lòng(press) 0",
+     "raw": {
+      "pierce": {
+       "depth": -0.29106607577017835,
+       "core": -2.3222783615639453,
+       "piece": "pinky1"
+      },
+      "sink": 0.07149161182861573,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.07149161182861573,
+       "index": 0.18522679570078268,
+       "fingers": 0.06825310994719212,
+       "palm": -0.03873146839916485
+      },
+      "hold": "thu-khay@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "day",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "left",
+        "along": 0.5,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "edge": "rig",
+        "along": "rig",
+        "variant": "default",
+        "psi": "scene"
+       },
+       "arm": {
+        "phi": 2.5,
+        "wrist": {
+         "turn": -92.0370052221009,
+         "bend": -0.6799663289078047,
+         "dev": 0.9821837373291148,
+         "over": 2.037005222100902,
+         "off": 0.20454002167223767
+        },
+        "body": 0.48448336515744295,
+        "gap": 0,
+        "bodyRatio": 0.0388207824645387,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": -0.07149161182861573,
+       "index": 0.18522679570078268,
+       "middle": 0.12660054904900828,
+       "ring": 0.06825310994719212,
+       "pinky": 0.29106607577017835
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.8065366989627589,
+      "palm": {
+       "gap": 2.748561083219858,
+       "angle": 2.0368617615998943
+      },
+      "intent": {
+       "rule": "face",
+       "err": 2.0370052221007953,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 138,
+   "tiles": [
+    "o/thu-khay/bang-cam-thu-khay-platform-psi-90-P-kuroiwa-truoc.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-psi-90-P-kuroiwa-cheo.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-psi-90-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-khay-platform-tay-dan-P-kuroiwa",
+   "item": "thu-khay",
+   "group": "platform",
+   "ma": "tay-dan",
+   "grip": "tay dẫn",
+   "key": "thu-khay@platform tay dẫn",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (tay dẫn)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -126.74,
+      -269,
+      232.5
+     ],
+     "text": "variant palm part day edge right along 0.5 (tay dẫn)\n   lún 0 · xuyên -2.1 · nắm 0.9\n   cái(free) 0.2 trỏ(support) 0.4 giữa(support) 0.2\n   áp út(support) 0.1 út(support) 0 lòng(press) 0.1",
+     "raw": {
+      "pierce": {
+       "depth": -0.027307564020251356,
+       "core": -2.0517484530546652,
+       "piece": "pinky1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": 0.16076161861429125,
+       "index": 0.40961995124826334,
+       "fingers": 0.027307564020251356,
+       "palm": 0.14931603670129687
+      },
+      "hold": "thu-khay@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "hand",
+       "choice": {
+        "part": "day",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "right",
+        "along": 0.5,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "default",
+        "along": "default",
+        "variant": "default",
+        "psi": "default"
+       },
+       "arm": {
+        "phi": 0.44178413275938055,
+        "wrist": {
+         "turn": -90,
+         "bend": -19.150009729834235,
+         "dev": 19.15004302622496,
+         "over": 0,
+         "off": 0
+        },
+        "body": 3.218743199271036,
+        "bodyRatio": 0.3384588011851773,
+        "bodyPart": "fore.torso",
+        "gap": 0
+       }
+      },
+      "fingers": {
+       "thumb": 0.16076161861429125,
+       "index": 0.40961995124826334,
+       "middle": 0.15602528452882677,
+       "ring": 0.050870025158022955,
+       "pinky": 0.027307564020251356
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.8853006764431111,
+      "palm": {
+       "gap": 2.750914661506338,
+       "angle": 0.000006097163388881822
+      },
+      "up": 0.3206255676033413,
+      "intent": {
+       "rule": "up",
+       "err": 0.31864509477190267,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 138,
+   "tiles": [
+    "o/thu-khay/bang-cam-thu-khay-platform-tay-dan-P-kuroiwa-truoc.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-tay-dan-P-kuroiwa-cheo.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-tay-dan-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-khay-platform-hai-tay-dat-H-kuroiwa",
+   "item": "thu-khay",
+   "group": "platform",
+   "ma": "hai-tay-dat",
+   "grip": "hai tay (món đặt trước)",
+   "key": "thu-khay@platform hai tay (món đặt trước)",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": true,
+   "carry": false,
+   "lines": [
+    "cổ tay sát giới hạn — `cam` tay phải cầm thu-khay: xoay -88°/±90, gập 5°/±50, lệch -2°/±20 — còn 2.1° tới kẹp (chỗ cầm `thu-khay@platform` (part day (rig chọn), edge left (rig chọn), along 0.73 (rig chọn), variant palm (mặc định), psi 90 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-khay` ở `items`) ở giây 1.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-khay@platform` (part day (rig chọn), edge left (rig chọn), along 0.73 (rig chọn), variant palm (mặc định), psi 90 (rig chọn)) (dáng flat) · khe 0.0 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) 0.2, trỏ (support) 0.4, giữa (support) 0.2, áp út (support) 0.1, út (support) 0.0, lòng (press) 0.1 · tâm nắm cách món 0.9 · lòng tay cách 2.8 góc 0° · cổ tay xoay -88°, gập 5°, lệch -2° · khuỷu φ -2° · tay lấn 0.2 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "cổ tay sát giới hạn — `cam` tay trái cầm thu-khay: xoay -88°/±90, gập 5°/±50, lệch -2°/±20 — còn 2.1° tới kẹp (chỗ cầm `thu-khay@platform` (part day, edge right, along 0.73 (rig chọn), variant palm (mặc định), psi 90 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-khay` ở `items`) ở giây 1.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-khay@platform` (part day, edge right, along 0.73 (rig chọn), variant palm (mặc định), psi 90 (rig chọn)) (dáng flat) · khe 0.0 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) 0.2, trỏ (support) 0.4, giữa (support) 0.2, áp út (support) 0.1, út (support) 0.0, lòng (press) 0.1 · tâm nắm cách món 0.9 · lòng tay cách 2.8 góc 0° · cổ tay xoay -88°, gập 5°, lệch -2° · khuỷu φ -2° · tay lấn 0.2 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -134.6,
+      -252.71,
+      180.55
+     ],
+     "text": "variant palm part day edge left along 0.7\n   lún 0 · xuyên -2.1 · nắm 0.9\n   cái(free) 0.2 trỏ(support) 0.4 giữa(support) 0.2\n   áp út(support) 0.1 út(support) 0 lòng(press) 0.1",
+     "raw": {
+      "pierce": {
+       "depth": -0.027307564020155876,
+       "core": -2.0517484530545693,
+       "piece": "pinky1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": 0.1607616186141869,
+       "index": 0.40961995124816475,
+       "fingers": 0.027307564020155876,
+       "palm": 0.14931603670119295
+      },
+      "hold": "thu-khay@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "day",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "left",
+        "along": 0.7268766411793989,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "rig",
+        "feature": "rig",
+        "edge": "rig",
+        "along": "rig",
+        "variant": "default",
+        "psi": "rig"
+       },
+       "arm": {
+        "phi": -2.5,
+        "wrist": {
+         "turn": -87.87364296780653,
+         "bend": 4.889314371453296,
+         "dev": -1.5791522084632228,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0.23186815419611762,
+        "gap": 0,
+        "bodyRatio": 0.018579179022124807,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": 0.1607616186141869,
+       "index": 0.40961995124816475,
+       "middle": 0.15602528452872952,
+       "ring": 0.05087002515792703,
+       "pinky": 0.027307564020155876
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.8853006764430111,
+      "palm": {
+       "gap": 2.7509231074508644,
+       "angle": 0
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    },
+    {
+     "hand": "L",
+     "at": [
+      -55.4,
+      -252.71,
+      180.55
+     ],
+     "text": "variant palm part day edge right along 0.7\n   lún 0 · xuyên -2.1 · nắm 0.9\n   cái(free) 0.2 trỏ(support) 0.4 giữa(support) 0.2\n   áp út(support) 0.1 út(support) 0 lòng(press) 0.1",
+     "raw": {
+      "pierce": {
+       "depth": -0.027307564020149215,
+       "core": -2.051748453054563,
+       "piece": "pinky1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": 0.1607616186141829,
+       "index": 0.4096199512481554,
+       "fingers": 0.027307564020149215,
+       "palm": 0.14931603670118895
+      },
+      "hold": "thu-khay@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "day",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "right",
+        "along": 0.7268766411793989,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "scene",
+        "feature": "scene",
+        "edge": "scene",
+        "along": "rig",
+        "variant": "default",
+        "psi": "rig"
+       },
+       "arm": {
+        "phi": -2.5,
+        "wrist": {
+         "turn": -87.87364296780655,
+         "bend": 4.889314371453296,
+         "dev": -1.5791522084632286,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0.23186815419611762,
+        "gap": 0,
+        "bodyRatio": 0.018579179022124807,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": 0.1607616186141829,
+       "index": 0.4096199512481554,
+       "middle": 0.15602528452872064,
+       "ring": 0.05087002515791904,
+       "pinky": 0.027307564020149215
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.8853006764430049,
+      "palm": {
+       "gap": 2.7509231074508644,
+       "angle": 0
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 157,
+   "tiles": [
+    "o/thu-khay/bang-cam-thu-khay-platform-hai-tay-dat-H-kuroiwa-truoc.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-hai-tay-dat-H-kuroiwa-cheo.png",
+    "o/thu-khay/bang-cam-thu-khay-platform-hai-tay-dat-H-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-phieu-platform-mac-dinh-P-t01-sakura",
+   "item": "thu-phieu",
+   "group": "platform",
+   "ma": "mac-dinh",
+   "grip": "mặc định (palm)",
+   "key": "thu-phieu@platform mặc định (palm)",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-phieu: xoay -97°/±90, gập 14°/±50, lệch 13°/±20 — vượt 6.6°, bàn tay vẽ lệch chỗ cầm 1.2 (chỗ cầm `thu-phieu@platform` (part body (mặc định), edge left (rig chọn), along 0.5 (rig chọn), variant palm (mặc định), psi 90 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-phieu` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-phieu@platform` (part body (mặc định), edge left (rig chọn), along 0.5 (rig chọn), variant palm (mặc định), psi 90 (rig chọn)) (dáng flat) · da lún 0.5 ở đầu ngón trỏ · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) -0.5, trỏ (support) -0.5, giữa (support) -0.1, áp út (support) 0.0, út (support) 0.5, lòng (press) -0.5 · tâm nắm cách món 0.1 · lòng tay cách 2.1 góc 6° · cổ tay xoay -97°, gập 14°, lệch 13° (vượt kẹp 6.6°, bàn tay lệch chỗ cầm 1.2) · khuỷu φ 8° · tay lấn 2.4 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -108.19,
+      -216.3,
+      193.48
+     ],
+     "text": "variant palm edge left along 0.5\n   lún 0.5 · xuyên -1.5 · nắm 0.1 · cổ tay vượt 6.6°\n   cái(free) -0.5 trỏ(support) -0.5 giữa(support) -0.1\n   áp út(support) 0 út(support) 0.5 lòng(press) -0.5",
+     "raw": {
+      "pierce": {
+       "depth": 0.5260279665044939,
+       "core": -1.4619755983176987,
+       "piece": "index1"
+      },
+      "sink": 0.5360755609965568,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.5360755609965568,
+       "index": -0.5260279665044939,
+       "fingers": -0.08286243251048418,
+       "palm": -0.45737037152504245
+      },
+      "hold": "thu-phieu@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "body",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "left",
+        "along": 0.5,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "rig",
+        "along": "rig",
+        "variant": "default",
+        "psi": "rig"
+       },
+       "arm": {
+        "phi": 7.5,
+        "wrist": {
+         "turn": -96.60953753142158,
+         "bend": 15.095745209110376,
+         "dev": 12.740173534552923,
+         "over": 6.60953753142158,
+         "off": 1.2218127748405483
+        },
+        "body": 2.3935119477769042,
+        "gap": 0,
+        "bodyRatio": 0.21918607580374577,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": -0.5360755609965568,
+       "index": -0.5260279665044939,
+       "middle": -0.08286243251048418,
+       "ring": 0.005104702496616652,
+       "pinky": 0.4554079792864053
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.12179789776685365,
+      "palm": {
+       "gap": 2.144393401331568,
+       "angle": 6.381215146517241
+      },
+      "intent": {
+       "rule": "face",
+       "err": 6.609537531421565,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 102,
+   "tiles": [
+    "o/thu-phieu/bang-cam-thu-phieu-platform-mac-dinh-P-t01-sakura-truoc.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-mac-dinh-P-t01-sakura-cheo.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-mac-dinh-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-phieu-platform-psi-0-P-t01-sakura",
+   "item": "thu-phieu",
+   "group": "platform",
+   "ma": "psi-0",
+   "grip": "ψ 0 (ngón vào mặt)",
+   "key": "thu-phieu@platform ψ 0 (ngón vào mặt)",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-phieu: xoay -102°/±90, gập -2°/±50, lệch 27°/±20 — vượt 11.7°, bàn tay vẽ lệch chỗ cầm 3.4 (chỗ cầm `thu-phieu@platform` (part body (mặc định), edge top (rig chọn), along 0.25 (rig chọn), variant palm (mặc định), psi 0)); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-phieu` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-phieu@platform` (part body (mặc định), edge top (rig chọn), along 0.25 (rig chọn), variant palm (mặc định), psi 0) (dáng flat) · da lún 0.5 ở đầu ngón út · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) -0.5, trỏ (support) 0.0, giữa (support) 0.1, áp út (support) 0.0, út (support) -0.5, lòng (press) -0.5 · tâm nắm cách món 1.7 · lòng tay cách 3.4 góc 95° · cổ tay xoay -102°, gập -2°, lệch 27° (vượt kẹp 11.7°, bàn tay lệch chỗ cầm 3.4) · khuỷu φ 15° · tay lấn 2.8 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -103.53,
+      -219.19,
+      220.1
+     ],
+     "text": "variant palm edge top along 0.3\n   lún 0.5 · xuyên -0.8 · nắm 1.7 · cổ tay vượt 11.6°\n   cái(free) -0.5 trỏ(support) 0 giữa(support) 0.1\n   áp út(support) 0 út(support) -0.5 lòng(press) -0.5",
+     "raw": {
+      "pierce": {
+       "depth": 0.4914172475508215,
+       "core": -0.7934509989339114,
+       "piece": "pinky1"
+      },
+      "sink": 0.5402470063571565,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.5307482508982424,
+       "index": -0.0022543135968248196,
+       "fingers": -0.4914172475508215,
+       "palm": -0.5402470063571565
+      },
+      "hold": "thu-phieu@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "body",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "top",
+        "along": 0.25,
+        "variant": "palm",
+        "psi": 0
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "rig",
+        "along": "rig",
+        "variant": "default",
+        "psi": "scene"
+       },
+       "arm": {
+        "phi": 15,
+        "wrist": {
+         "turn": -101.5554256584341,
+         "bend": -1.305899126089542,
+         "dev": 26.900654038434812,
+         "over": 11.555425658434103,
+         "off": 3.4667001220026874
+        },
+        "body": 2.7835668643464055,
+        "gap": 0,
+        "bodyRatio": 0.28815391970459686,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": -0.5307482508982424,
+       "index": -0.0022543135968248196,
+       "middle": 0.06579753145046907,
+       "ring": 0.026190853823875426,
+       "pinky": -0.4914172475508215
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 1.6623026082369778,
+      "palm": {
+       "gap": 3.4219536638350867,
+       "angle": 95.17491027174844
+      },
+      "intent": {
+       "rule": "face",
+       "err": 13.317313166810575,
+       "clamped": [
+        "turn",
+        "dev"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 102,
+   "tiles": [
+    "o/thu-phieu/bang-cam-thu-phieu-platform-psi-0-P-t01-sakura-truoc.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-psi-0-P-t01-sakura-cheo.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-psi-0-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-phieu-platform-tay-dan-P-t01-sakura",
+   "item": "thu-phieu",
+   "group": "platform",
+   "ma": "tay-dan",
+   "grip": "tay dẫn",
+   "key": "thu-phieu@platform tay dẫn",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (tay dẫn)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -126.4,
+      -228.24,
+      233.59
+     ],
+     "text": "variant palm edge right along 0.5 (tay dẫn)\n   lún 0 · xuyên -1.8 · nắm 0.7\n   cái(free) 0 trỏ(support) 0 giữa(support) 0\n   áp út(support) 0 út(support) 0.1 lòng(press) 0.1",
+     "raw": {
+      "pierce": {
+       "depth": -0.09411990046507268,
+       "core": -1.8194458275259977,
+       "piece": "pinky1"
+      },
+      "sink": 0.035628235340057324,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.035628235340057324,
+       "index": 0.026907467842163135,
+       "fingers": 0.010456585884155323,
+       "palm": 0.1495090067387238
+      },
+      "hold": "thu-phieu@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "hand",
+       "choice": {
+        "part": "body",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "right",
+        "along": 0.5,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "default",
+        "along": "default",
+        "variant": "default",
+        "psi": "default"
+       },
+       "arm": {
+        "phi": 0.3596091217553976,
+        "wrist": {
+         "turn": -90,
+         "bend": -15.000281067912937,
+         "dev": 15.000292470332443,
+         "over": 0,
+         "off": 0
+        },
+        "body": 9.310883382775579,
+        "bodyRatio": 1.0157661683845978,
+        "bodyPart": "fore.torso",
+        "gap": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.035628235340057324,
+       "index": 0.026907467842163135,
+       "middle": 0.010456585884155323,
+       "ring": 0.035261803865493824,
+       "pinky": 0.09411990046507268
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.6622491189496398,
+      "palm": {
+       "gap": 2.2946654358392347,
+       "angle": 0.0000205970127328611
+      },
+      "up": 0.27056699524425687,
+      "intent": {
+       "rule": "up",
+       "err": 0.26916455889142865,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 102,
+   "tiles": [
+    "o/thu-phieu/bang-cam-thu-phieu-platform-tay-dan-P-t01-sakura-truoc.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-tay-dan-P-t01-sakura-cheo.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-tay-dan-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-phieu-platform-hai-tay-dat-H-t01-sakura",
+   "item": "thu-phieu",
+   "group": "platform",
+   "ma": "hai-tay-dat",
+   "grip": "hai tay (món đặt trước)",
+   "key": "thu-phieu@platform hai tay (món đặt trước)",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": true,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-phieu: xoay -97°/±90, gập 14°/±50, lệch 13°/±20 — vượt 6.6°, bàn tay vẽ lệch chỗ cầm 1.2 (chỗ cầm `thu-phieu@platform` (part body (mặc định), edge left (rig chọn), along 0.5 (rig chọn), variant palm (mặc định), psi 90 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-phieu` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-phieu@platform` (part body (mặc định), edge left (rig chọn), along 0.5 (rig chọn), variant palm (mặc định), psi 90 (rig chọn)) (dáng flat) · da lún 0.5 ở đầu ngón trỏ · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) -0.5, trỏ (support) -0.5, giữa (support) -0.1, áp út (support) 0.0, út (support) 0.5, lòng (press) -0.5 · tâm nắm cách món 0.1 · lòng tay cách 2.1 góc 6° · cổ tay xoay -97°, gập 14°, lệch 13° (vượt kẹp 6.6°, bàn tay lệch chỗ cầm 1.2) · khuỷu φ 8° · tay lấn 2.4 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "cổ tay vượt giới hạn — `cam` tay trái cầm thu-phieu: xoay -97°/±90, gập 14°/±50, lệch 13°/±20 — vượt 6.6°, bàn tay vẽ lệch chỗ cầm 1.2 (chỗ cầm `thu-phieu@platform` (part body, edge right, along 0.5 (rig chọn), variant palm (mặc định), psi 90 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-phieu` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-phieu@platform` (part body, edge right, along 0.5 (rig chọn), variant palm (mặc định), psi 90 (rig chọn)) (dáng flat) · da lún 0.5 ở đầu ngón trỏ · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) -0.5, trỏ (support) -0.5, giữa (support) -0.1, áp út (support) 0.0, út (support) 0.5, lòng (press) -0.5 · tâm nắm cách món 0.1 · lòng tay cách 2.1 góc 6° · cổ tay xoay -97°, gập 14°, lệch 13° (vượt kẹp 6.6°, bàn tay lệch chỗ cầm 1.2) · khuỷu φ 8° · tay lấn 2.4 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -108.19,
+      -216.3,
+      193.48
+     ],
+     "text": "variant palm edge left along 0.5\n   lún 0.5 · xuyên -1.5 · nắm 0.1 · cổ tay vượt 6.6°\n   cái(free) -0.5 trỏ(support) -0.5 giữa(support) -0.1\n   áp út(support) 0 út(support) 0.5 lòng(press) -0.5",
+     "raw": {
+      "pierce": {
+       "depth": 0.5260279665044939,
+       "core": -1.4619755983176987,
+       "piece": "index1"
+      },
+      "sink": 0.5360755609965568,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.5360755609965568,
+       "index": -0.5260279665044939,
+       "fingers": -0.08286243251048418,
+       "palm": -0.45737037152504245
+      },
+      "hold": "thu-phieu@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "body",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "left",
+        "along": 0.5,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "rig",
+        "along": "rig",
+        "variant": "default",
+        "psi": "rig"
+       },
+       "arm": {
+        "phi": 7.5,
+        "wrist": {
+         "turn": -96.60953753142158,
+         "bend": 15.095745209110376,
+         "dev": 12.740173534552923,
+         "over": 6.60953753142158,
+         "off": 1.2218127748405483
+        },
+        "body": 2.3935119477769042,
+        "gap": 0,
+        "bodyRatio": 0.21918607580374577,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": -0.5360755609965568,
+       "index": -0.5260279665044939,
+       "middle": -0.08286243251048418,
+       "ring": 0.005104702496616652,
+       "pinky": 0.4554079792864053
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.12179789776685365,
+      "palm": {
+       "gap": 2.144393401331568,
+       "angle": 6.381215146517241
+      },
+      "intent": {
+       "rule": "face",
+       "err": 6.609537531421565,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    },
+    {
+     "hand": "L",
+     "at": [
+      -81.81,
+      -216.3,
+      193.48
+     ],
+     "text": "variant palm edge right along 0.5\n   lún 0.5 · xuyên -1.5 · nắm 0.1 · cổ tay vượt 6.6°\n   cái(free) -0.5 trỏ(support) -0.5 giữa(support) -0.1\n   áp út(support) 0 út(support) 0.5 lòng(press) -0.5",
+     "raw": {
+      "pierce": {
+       "depth": 0.5260279665044139,
+       "core": -1.461975598317619,
+       "piece": "index1"
+      },
+      "sink": 0.5360755609966454,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.5360755609966454,
+       "index": -0.5260279665044139,
+       "fingers": -0.08286243251056385,
+       "palm": -0.4573703715251322
+      },
+      "hold": "thu-phieu@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "body",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "right",
+        "along": 0.5,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "scene",
+        "feature": "scene",
+        "edge": "scene",
+        "along": "rig",
+        "variant": "default",
+        "psi": "rig"
+       },
+       "arm": {
+        "phi": 7.5,
+        "wrist": {
+         "turn": -96.60953753142158,
+         "bend": 15.095745209110369,
+         "dev": 12.740173534552916,
+         "over": 6.60953753142158,
+         "off": 1.2218127748405478
+        },
+        "body": 2.39351194777689,
+        "gap": 0,
+        "bodyRatio": 0.21918607580374447,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": -0.5360755609966454,
+       "index": -0.5260279665044139,
+       "middle": -0.08286243251056385,
+       "ring": 0.0051047024965358255,
+       "pinky": 0.45540797928632276
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.12179789776676944,
+      "palm": {
+       "gap": 2.144393401331568,
+       "angle": 6.381215146517241
+      },
+      "intent": {
+       "rule": "face",
+       "err": 6.609537531421565,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 102,
+   "tiles": [
+    "o/thu-phieu/bang-cam-thu-phieu-platform-hai-tay-dat-H-t01-sakura-truoc.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-hai-tay-dat-H-t01-sakura-cheo.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-hai-tay-dat-H-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-phieu-platform-mac-dinh-P-kuroiwa",
+   "item": "thu-phieu",
+   "group": "platform",
+   "ma": "mac-dinh",
+   "grip": "mặc định (palm)",
+   "key": "thu-phieu@platform mặc định (palm)",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-phieu: xoay -92°/±90, gập 7°/±50, lệch 15°/±20 — vượt 2.2°, bàn tay vẽ lệch chỗ cầm 0.4 (chỗ cầm `thu-phieu@platform` (part body (mặc định), edge left (rig chọn), along 0.75 (rig chọn), variant palm (mặc định), psi 90 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-phieu` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-phieu@platform` (part body (mặc định), edge left (rig chọn), along 0.75 (rig chọn), variant palm (mặc định), psi 90 (rig chọn)) (dáng flat) · khe 0.1 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) -0.1, trỏ (support) -0.1, giữa (support) 0.1, áp út (support) 0.1, út (support) 0.1, lòng (press) -0.1 · tâm nắm cách món 0.6 · lòng tay cách 2.7 góc 2° · cổ tay xoay -92°, gập 7°, lệch 15° (vượt kẹp 2.2°, bàn tay lệch chỗ cầm 0.4) · khuỷu φ 3° · tay lấn 2.0 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -108.23,
+      -256.42,
+      175.4
+     ],
+     "text": "variant palm edge left along 0.8\n   lún 0.1 · xuyên -2.1 · nắm 0.6 · cổ tay vượt 2.2°\n   cái(free) -0.1 trỏ(support) -0.1 giữa(support) 0.1\n   áp út(support) 0.1 út(support) 0.1 lòng(press) -0.1",
+     "raw": {
+      "pierce": {
+       "depth": -0.08288753402535887,
+       "core": -2.116064511498216,
+       "piece": "pinky1"
+      },
+      "sink": 0.13126277488474125,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.13126277488474125,
+       "index": -0.10058771193457827,
+       "fingers": 0.051566693949179676,
+       "palm": -0.09768364395637696
+      },
+      "hold": "thu-phieu@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "body",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "left",
+        "along": 0.75,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "rig",
+        "along": "rig",
+        "variant": "default",
+        "psi": "rig"
+       },
+       "arm": {
+        "phi": 2.5,
+        "wrist": {
+         "turn": -92.21439672516846,
+         "bend": 7.70500046411787,
+         "dev": 14.585159010959897,
+         "over": 2.2143967251684558,
+         "off": 0.39961081057518777
+        },
+        "body": 1.9361201369650205,
+        "gap": 0,
+        "bodyRatio": 0.15513783148758176,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": -0.13126277488474125,
+       "index": -0.10058771193457827,
+       "middle": 0.10955053026297334,
+       "ring": 0.051566693949179676,
+       "pinky": 0.08288753402535887
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.6260164257327694,
+      "palm": {
+       "gap": 2.6673111236574343,
+       "angle": 2.194401594191087
+      },
+      "intent": {
+       "rule": "face",
+       "err": 2.2143967251683065,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 102,
+   "tiles": [
+    "o/thu-phieu/bang-cam-thu-phieu-platform-mac-dinh-P-kuroiwa-truoc.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-mac-dinh-P-kuroiwa-cheo.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-mac-dinh-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-phieu-platform-psi-0-P-kuroiwa",
+   "item": "thu-phieu",
+   "group": "platform",
+   "ma": "psi-0",
+   "grip": "ψ 0 (ngón vào mặt)",
+   "key": "thu-phieu@platform ψ 0 (ngón vào mặt)",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-phieu: xoay -96°/±90, gập -9°/±50, lệch 29°/±20 — vượt 9.4°, bàn tay vẽ lệch chỗ cầm 3.9 (chỗ cầm `thu-phieu@platform` (part body (mặc định), edge top (rig chọn), along 0.25 (rig chọn), variant palm (mặc định), psi 0)); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-phieu` ở `items`) ở giây 1.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-phieu@platform` (part body (mặc định), edge top (rig chọn), along 0.25 (rig chọn), variant palm (mặc định), psi 0) (dáng flat) · da lún 0.5 ở đầu ngón út · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) -0.2, trỏ (support) 0.1, giữa (support) 0.1, áp út (support) -0.1, út (support) -0.5, lòng (press) -0.4 · tâm nắm cách món 1.3 · lòng tay cách 3.8 góc 93° · cổ tay xoay -96°, gập -9°, lệch 29° (vượt kẹp 9.4°, bàn tay lệch chỗ cầm 3.9) · khuỷu φ 8° · tay lấn 1.4 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -103.45,
+      -259.46,
+      217.47
+     ],
+     "text": "variant palm edge top along 0.3\n   lún 0.5 · xuyên -0.8 · nắm 1.3 · cổ tay vượt 9.2°\n   cái(free) -0.2 trỏ(support) 0.1 giữa(support) 0.2\n   áp út(support) -0.1 út(support) -0.5 lòng(press) -0.4",
+     "raw": {
+      "pierce": {
+       "depth": 0.5324330573467757,
+       "core": -0.8099274089518342,
+       "piece": "pinky1"
+      },
+      "sink": 0.5324330573467757,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.22125182802578608,
+       "index": 0.08947004317060937,
+       "fingers": -0.5324330573467757,
+       "palm": -0.44942793631929356
+      },
+      "hold": "thu-phieu@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "body",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "top",
+        "along": 0.25,
+        "variant": "palm",
+        "psi": 0
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "rig",
+        "along": "rig",
+        "variant": "default",
+        "psi": "scene"
+       },
+       "arm": {
+        "phi": 7.5,
+        "wrist": {
+         "turn": -95.8564366127555,
+         "bend": -9.727784219703803,
+         "dev": 29.249238986214248,
+         "over": 9.249238986214248,
+         "off": 3.7989663411986245
+        },
+        "body": 1.5735292932518536,
+        "gap": 0,
+        "bodyRatio": 0.1394972777705544,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": -0.22125182802578608,
+       "index": 0.08947004317060937,
+       "middle": 0.16865020538520406,
+       "ring": -0.10852987577040987,
+       "pinky": -0.5324330573467757
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 1.3102445466627057,
+      "palm": {
+       "gap": 3.7996019930296456,
+       "angle": 92.5622279489123
+      },
+      "intent": {
+       "rule": "face",
+       "err": 10.07317127244537,
+       "clamped": [
+        "turn",
+        "dev"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 102,
+   "tiles": [
+    "o/thu-phieu/bang-cam-thu-phieu-platform-psi-0-P-kuroiwa-truoc.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-psi-0-P-kuroiwa-cheo.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-psi-0-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-phieu-platform-tay-dan-P-kuroiwa",
+   "item": "thu-phieu",
+   "group": "platform",
+   "ma": "tay-dan",
+   "grip": "tay dẫn",
+   "key": "thu-phieu@platform tay dẫn",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (tay dẫn)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -126.74,
+      -269,
+      232.5
+     ],
+     "text": "variant palm edge right along 0.5 (tay dẫn)\n   lún 0 · xuyên -2.1 · nắm 0.9\n   cái(free) 0.2 trỏ(support) 0.4 giữa(support) 0.2\n   áp út(support) 0.1 út(support) 0 lòng(press) 0.1",
+     "raw": {
+      "pierce": {
+       "depth": -0.027307564020217938,
+       "core": -2.0517484530546315,
+       "piece": "pinky1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": 0.16076161861425783,
+       "index": 0.40961995124823003,
+       "fingers": 0.027307564020217938,
+       "palm": 0.14931603670126345
+      },
+      "hold": "thu-phieu@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "hand",
+       "choice": {
+        "part": "body",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "right",
+        "along": 0.5,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "default",
+        "along": "default",
+        "variant": "default",
+        "psi": "default"
+       },
+       "arm": {
+        "phi": 0.44178413275938055,
+        "wrist": {
+         "turn": -90,
+         "bend": -19.150009729834235,
+         "dev": 19.15004302622496,
+         "over": 0,
+         "off": 0
+        },
+        "body": 3.218743199271036,
+        "bodyRatio": 0.3384588011851773,
+        "bodyPart": "fore.torso",
+        "gap": 0
+       }
+      },
+      "fingers": {
+       "thumb": 0.16076161861425783,
+       "index": 0.40961995124823003,
+       "middle": 0.15602528452879336,
+       "ring": 0.05087002515798954,
+       "pinky": 0.027307564020217938
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.8853006764430777,
+      "palm": {
+       "gap": 2.7509261409187853,
+       "angle": 0.00001631132260876835
+      },
+      "up": 0.3206255676033413,
+      "intent": {
+       "rule": "up",
+       "err": 0.31864509477190267,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 102,
+   "tiles": [
+    "o/thu-phieu/bang-cam-thu-phieu-platform-tay-dan-P-kuroiwa-truoc.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-tay-dan-P-kuroiwa-cheo.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-tay-dan-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-phieu-platform-hai-tay-dat-H-kuroiwa",
+   "item": "thu-phieu",
+   "group": "platform",
+   "ma": "hai-tay-dat",
+   "grip": "hai tay (món đặt trước)",
+   "key": "thu-phieu@platform hai tay (món đặt trước)",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": true,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-phieu: xoay -92°/±90, gập 7°/±50, lệch 15°/±20 — vượt 2.2°, bàn tay vẽ lệch chỗ cầm 0.4 (chỗ cầm `thu-phieu@platform` (part body (mặc định), edge left (rig chọn), along 0.75 (rig chọn), variant palm (mặc định), psi 90 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-phieu` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-phieu@platform` (part body (mặc định), edge left (rig chọn), along 0.75 (rig chọn), variant palm (mặc định), psi 90 (rig chọn)) (dáng flat) · khe 0.1 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) -0.1, trỏ (support) -0.1, giữa (support) 0.1, áp út (support) 0.1, út (support) 0.1, lòng (press) -0.1 · tâm nắm cách món 0.6 · lòng tay cách 2.7 góc 2° · cổ tay xoay -92°, gập 7°, lệch 15° (vượt kẹp 2.2°, bàn tay lệch chỗ cầm 0.4) · khuỷu φ 3° · tay lấn 2.0 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "cổ tay vượt giới hạn — `cam` tay trái cầm thu-phieu: xoay -92°/±90, gập 7°/±50, lệch 15°/±20 — vượt 2.2°, bàn tay vẽ lệch chỗ cầm 0.4 (chỗ cầm `thu-phieu@platform` (part body, edge right, along 0.75 (rig chọn), variant palm (mặc định), psi 90 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-phieu` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-phieu@platform` (part body, edge right, along 0.75 (rig chọn), variant palm (mặc định), psi 90 (rig chọn)) (dáng flat) · khe 0.1 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (free) -0.1, trỏ (support) -0.1, giữa (support) 0.1, áp út (support) 0.1, út (support) 0.1, lòng (press) -0.1 · tâm nắm cách món 0.6 · lòng tay cách 2.7 góc 2° · cổ tay xoay -92°, gập 7°, lệch 15° (vượt kẹp 2.2°, bàn tay lệch chỗ cầm 0.4) · khuỷu φ 3° · tay lấn 2.0 (bắp tay vào thân). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -108.23,
+      -256.42,
+      175.4
+     ],
+     "text": "variant palm edge left along 0.8\n   lún 0.1 · xuyên -2.1 · nắm 0.6 · cổ tay vượt 2.2°\n   cái(free) -0.1 trỏ(support) -0.1 giữa(support) 0.1\n   áp út(support) 0.1 út(support) 0.1 lòng(press) -0.1",
+     "raw": {
+      "pierce": {
+       "depth": -0.08288753402535887,
+       "core": -2.116064511498216,
+       "piece": "pinky1"
+      },
+      "sink": 0.13126277488474125,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.13126277488474125,
+       "index": -0.10058771193457827,
+       "fingers": 0.051566693949179676,
+       "palm": -0.09768364395637696
+      },
+      "hold": "thu-phieu@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "body",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "left",
+        "along": 0.75,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "rig",
+        "along": "rig",
+        "variant": "default",
+        "psi": "rig"
+       },
+       "arm": {
+        "phi": 2.5,
+        "wrist": {
+         "turn": -92.21439672516846,
+         "bend": 7.70500046411787,
+         "dev": 14.585159010959897,
+         "over": 2.2143967251684558,
+         "off": 0.39961081057518777
+        },
+        "body": 1.9361201369650205,
+        "gap": 0,
+        "bodyRatio": 0.15513783148758176,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": -0.13126277488474125,
+       "index": -0.10058771193457827,
+       "middle": 0.10955053026297334,
+       "ring": 0.051566693949179676,
+       "pinky": 0.08288753402535887
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.6260164257327694,
+      "palm": {
+       "gap": 2.6673111236574343,
+       "angle": 2.194401594191087
+      },
+      "intent": {
+       "rule": "face",
+       "err": 2.2143967251683065,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    },
+    {
+     "hand": "L",
+     "at": [
+      -81.77,
+      -256.42,
+      175.4
+     ],
+     "text": "variant palm edge right along 0.8\n   lún 0.1 · xuyên -2.1 · nắm 0.6 · cổ tay vượt 2.2°\n   cái(free) -0.1 trỏ(support) -0.1 giữa(support) 0.1\n   áp út(support) 0.1 út(support) 0.1 lòng(press) -0.1",
+     "raw": {
+      "pierce": {
+       "depth": -0.08288753402532124,
+       "core": -2.116064511498178,
+       "piece": "pinky1"
+      },
+      "sink": 0.1312627748847929,
+      "roles": {
+       "thumb": "free",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.1312627748847929,
+       "index": -0.10058771193461827,
+       "fingers": 0.0515666939491425,
+       "palm": -0.097683643956428
+      },
+      "hold": "thu-phieu@platform////",
+      "grasp": {
+       "group": "platform",
+       "mode": "item",
+       "choice": {
+        "part": "body",
+        "feature": "face",
+        "featureIndex": 5,
+        "edge": "right",
+        "along": 0.75,
+        "variant": "palm",
+        "psi": 90
+       },
+       "by": {
+        "part": "scene",
+        "feature": "scene",
+        "edge": "scene",
+        "along": "rig",
+        "variant": "default",
+        "psi": "rig"
+       },
+       "arm": {
+        "phi": 2.5,
+        "wrist": {
+         "turn": -92.21439672516847,
+         "bend": 7.70500046411787,
+         "dev": 14.58515901095989,
+         "over": 2.21439672516847,
+         "off": 0.399610810575189
+        },
+        "body": 1.9361201369650205,
+        "gap": 0,
+        "bodyRatio": 0.15513783148758176,
+        "bodyPart": "upper.torso"
+       }
+      },
+      "fingers": {
+       "thumb": -0.1312627748847929,
+       "index": -0.10058771193461827,
+       "middle": 0.10955053026293485,
+       "ring": 0.0515666939491425,
+       "pinky": 0.08288753402532124
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.6260164257327258,
+      "palm": {
+       "gap": 2.6673111236574343,
+       "angle": 2.1944015941912536
+      },
+      "intent": {
+       "rule": "face",
+       "err": 2.2143967251683065,
+       "clamped": [
+        "turn"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 102,
+   "tiles": [
+    "o/thu-phieu/bang-cam-thu-phieu-platform-hai-tay-dat-H-kuroiwa-truoc.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-hai-tay-dat-H-kuroiwa-cheo.png",
+    "o/thu-phieu/bang-cam-thu-phieu-platform-hai-tay-dat-H-kuroiwa-ngang.png"
+   ]
+  }
+ ]
+}

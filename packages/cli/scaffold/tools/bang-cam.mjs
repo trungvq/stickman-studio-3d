@@ -21,7 +21,9 @@
 // mà món không có, bị bỏ trước khi giải (`do.json` `loc`); hàng giải ra cùng chỗ cầm, cùng vị trí món với hàng trước nó bị bỏ
 // (`trung`); hàng mà `checkChoice` của rig báo lỗi (biến thể quá bề dày ở mép, phần không có…) cũng bị bỏ, mọi nhóm; với `palmBox` thêm đọc ngang mặt,
 // khoe một tay, áp tai (tay dẫn); với `cylinder` thêm `along` thấp / cao, ngón cái xuống, nắm từng phần bám được (vai, cổ… `along` giữa phần),
-// áp tai (tay dẫn, `around` 180: lòng áp lưng tay cầm); `carry` hai hàng treo khuỷu (`on: elbow`) và treo vai (`on: shoulder`, cảnh khai `touch`), tay
+// áp tai (tay dẫn, `around` 180: lòng áp lưng tay cầm); `platform` (món ngang bụng, xa ngực hơn hàng chung) thêm `psi` 0 / 90 và tay dẫn; `platform`,
+// `cylinder` (chai đứng hơi nghiêng), `palmBox` thêm hàng hai tay `both` món đặt trước, bỏ khi món không có mặt đáy / sau có cạnh cho tay phụ
+// (`loc`); `platform` mà mặt đỡ chọn ra không có cạnh thì cả cặp bị bỏ (`bo`); `carry` hai hàng treo khuỷu (`on: elbow`) và treo vai (`on: shoulder`, cảnh khai `touch`), tay
 // đặt như kiểu treo v1, món không đặt trước ngực. Cặp (món, nhóm, người) mà món không có khối hình đạt `needs` của nhóm với cỡ tay ấy
 // bị bỏ, lý do vào `do.json` (`bo`). Nhãn in chỗ cầm rig chọn, `lún` trên da, `role` từng ngón (khe tới món, vai trò),
 // cổ tay vượt kẹp, `size`; `do.json` giữ thêm `pierce`, `grip`, `grasp`.
@@ -381,6 +383,28 @@ if (!nhomXin) {
     offset: [32, 0, 0],
     ...huong(spec, "back"),
   });
+  // đỡ dưới: món ngang bụng, xa ngực hơn hàng chung để cẳng tay xoay không vượt ±90
+  const XA = { to: "chest", offset: [80, 20, 0] };
+  // trụ đứng hơi nghiêng: tay phụ đỡ đáy không quay cẳng tay quá kẹp
+  const NGHIENG = { to: "chest", offset: [25, 20, 10], up: [0.3, 1, 0.3] };
+  /** Tay dẫn chạm món ở ngực, ngón theo món (`point: grip`): tay phụ `both` đặt theo tay này */
+  const TAY_DAN = { to: "chest", offset: [40, 10, 30], point: "grip" };
+  /** Lý do `both` của (món, nhóm) không áp được (`undefined` khi áp được): mặt đỡ của tay phụ không có trên món */
+  const khongBoth = (group, geom) => {
+    const sup = rig.GRIP_GROUPS[group].support;
+    if (!sup) return `nhóm \`${group}\` không có tay phụ`;
+    const off = new Set(geom.parts.filter((p) => !p.grip).map((p) => p.name));
+    const faces = geom.features.filter(
+      (f) => f.kind === "face" && f.edges.length && !off.has(f.part),
+    );
+    if (sup.place) {
+      const d = (sup.place === "bottom" ? geom.U : geom.F).map((v) => -v);
+      return faces.some((f) => f.n[0] * d[0] + f.n[1] * d[1] + f.n[2] * d[2] > 1 - 1e-6)
+        ? undefined
+        : `món không có mặt ${sup.place === "bottom" ? "đáy" : "sau"} có cạnh cho tay phụ`;
+    }
+    return faces.length ? undefined : "món không có mặt có cạnh cho tay phụ";
+  };
   /** Khoảng giữa hai cạnh của khối tấm / đĩa (đơn vị rig); `undefined` khi tấm không có một trong hai cạnh */
   const cachCanh = (f, a, b) => {
     if (f.kind === "disc") return 2 * f.radius;
@@ -455,7 +479,8 @@ if (!nhomXin) {
           }),
         },
       }));
-    const rows = [{ ma: "mac-dinh", ten: "mặc định", mark: NGUC, hands: { right: H() } }];
+    const dat = group === "platform" ? XA : NGUC;
+    const rows = [{ ma: "mac-dinh", ten: "mặc định", mark: dat, hands: { right: H() } }];
     if (Object.keys(gs.variants).length > 1)
       for (const v of Object.keys(gs.variants))
         rows.push({
@@ -546,6 +571,24 @@ if (!nhomXin) {
           });
       }
     }
+    if (group === "platform")
+      rows.push(
+        { ma: "psi-0", ten: "ψ 0 (ngón vào mặt)", mark: XA, hands: { right: H({ psi: 0 }) } },
+        { ma: "psi-90", ten: "ψ 90 (ngón dọc cạnh)", mark: XA, hands: { right: H({ psi: 90 }) } },
+        { ma: "tay-dan", ten: "tay dẫn", hands: { right: { ...TAY_DAN, ...H() } } },
+      );
+    if (["platform", "cylinder", "palmBox"].includes(group)) {
+      const why = khongBoth(group, geom);
+      const both = {
+        ma: "hai-tay-dat",
+        ten: "hai tay (món đặt trước)",
+        mark: { platform: XA, cylinder: NGHIENG, palmBox: NGUC }[group],
+        hai: true,
+        hands: { right: H({ both: true }) },
+      };
+      if (why) rows.push({ ...both, khong: why });
+      else rows.push(both);
+    }
     if (["palmBox", "cylinder"].includes(group) && spec.anchors?.speaker)
       rows.push({
         ma: "ap-tai",
@@ -585,8 +628,28 @@ if (!nhomXin) {
           });
           continue;
         }
+        // `platform`: mặt đỡ chọn ra (chúc xuống nhất) không có cạnh thì tay không có chỗ tới
+        const dap =
+          group === "platform" &&
+          rig
+            .supportFaces(
+              fits.map((x) => x.feature).filter((f) => f.kind === "face"),
+              geom.U.map((v) => -v),
+              geom.F.map((v) => -v),
+            )
+            .find((f) => !f.edges.length);
+        if (dap) {
+          bo.push({
+            item,
+            group,
+            person: p.file.replace(/\.json$/, ""),
+            why: `nhóm \`platform\` cần \`edge\`: mặt đỡ \`${dap.part}\` của món không có cạnh`,
+          });
+          continue;
+        }
         for (const row of hangMau(item, group, spec, geom, fits, p.dims)) {
           const why =
+            row.khong ||
             (group === "sheet" && khongAp(row, spec, fits)) ||
             loiChon(row, group, spec, geom, p.dims);
           if (why) {
