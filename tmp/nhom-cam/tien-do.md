@@ -76,6 +76,8 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 | G4-23 carry v2 three | xong (chưa commit): `attach.carry`, `heldCarries` (`hold: món@carry`), `world.ts` khoá treo theo `carrySpecOf` (đổi `on` treo lại); khớp v1 ≤ 1e-9; t02 0 mới | `holdWorldV2.test.ts`, `g423-*` |
 | G4-12 palmBox tilt theo lún | xong: giá `(sink/HELD_SINK)²` đo trên da ở `chooseMissing`, lưới `tilt` 6 điểm; mặc định sakura tilt 10 lún 1,20→0, kuroiwa tilt 15 lún 0,50→0; khe trỏ–áp út 0,2–0,5. Khoe một tay vượt cổ tay mọi ứng viên (tối thiểu 13,8°/11,9°) → `check` báo `wrist` (`g4-palmBox/khoe.md`). Đọc ngang mặt: cảnh đặt máy xa (khe ≥ 6,3). Commit `ac8d513` (M4-1) | `g4-palmBox/`, `duyet/g4-palmBox-*.jpg` |
 | G4-24 hàng mẫu carry + gợi ý v2 | xong: `--nhom carry` 2 hàng × 2 cỡ, 12 ô trùng từng byte với v1; `heldAudit` gợi ý tên món đúng cho v2. Commit `838b9f9` (M4-2 cùng G4-22, 23); video `07b1b71` | `g4-carry/`, `duyet/g4-carry-*.jpg` |
+| G4-72 `curl` theo biến thể | xong: `HeldFitInput.curl`, `VariantSpec.curl?`, truyền qua `holdLink`/`holdRoles`/`fitHolding`; không khai thì y số cũ (1 170 ca); t02 0 mới. Còn: `frameSink` của `graspSolve.ts` chưa truyền `curl` — làm ở G4-74/83. Commit cùng tên `feat(rig): cap finger curl…` | `heldFitRoles.test.ts`, `g472-*` |
+| G4-32 giá biến thể `sheet` | xong: `VARIANT_COST 0,5` + lưới quanh ứng viên rời tốt nhất của biến thể mặc định; hàng mặc định `thu-bang-gia` flat → `pinch` (cả hai cỡ), "khoe dưới–trên" vẫn `rim`; 1 test cũ đổi số đếm ứng viên (12+9 → 12+9+9). Ngón cái pinch hở 2,8/3,6 (G4-33). Ảnh `duyet/g4-sheet-mac-dinh-sakura-truoc-sau.jpg` | `g432/` |
 | G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
@@ -127,7 +129,7 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 - `bang-cam`: hàng `biến thể flat` trùng `mặc định` khi rig chọn `flat`.
 
 ## Bước kế
-0. PHIÊN DỪNG do sắp hết hạn mức (2026-10-20). Lúc dừng đang chạy G4-32 (giá biến thể `sheet`, `graspSolve.ts` `chooseMissing`) ∥ G4-72 (`curl` theo biến thể: `heldFit.ts`, `VariantSpec`, `holdLink.ts`, `attach.ts`, `held.ts`). Commit cuối đã xanh: `838b9f9` (studio), `07b1b71` (video). Phiên sau: `git status` ở studio — có thay đổi chưa commit mà bảng Job chưa ghi "xong" thì đọc `ban-giao-g4-32.md` / `ban-giao-g4-72.md` nếu có, chạy chuỗi kiểm; xanh thì commit, không thì `git diff > tmp/nhom-cam/do-dang.patch` rồi `git checkout` file ấy và giao lại job.
-1. Nhóm `sheet`: G4-32 ∥ G4-72 → 33 (`pinch`) → 34 (`rim`) → 35 (vành đĩa) → 36 (hàng mẫu) → 37 (docs + render), commit M4-3.
-2. Rồi cylinder (42–48), platform (53–57), card, chopsticks (74–76), pen (83–85), handle, bowl theo `gd4-ke-hoach.md`; G4-13, 14, 25 đã gộp vào G4-11/12/24; G4-X1 thay mọi job "Món thử"; G4-52, 73, 82 xong.
+0. Phiên dừng (2026-10-20) do sắp hết hạn mức, worktree sạch, mọi job đã giao đều xong và commit. Commit cuối: studio xem `git log`, video `07b1b71`.
+1. Nhóm `sheet`: G4-33 (`pinch`: ngón cái hở 2,5–3,6, cái sau vượt cổ tay, điện thoại lún 1,1–1,3) → 34 (`rim`) → 35 (vành đĩa) → 36 (hàng mẫu) → 37 (docs + render), commit M4-3.
+2. Rồi cylinder (42–48), platform (53–57), card (62–64), chopsticks (74–76; nhớ `frameSink` truyền `curl`), pen (83–85), handle (92–95), bowl (A2–A4), Z1, Z2 theo `gd4-ke-hoach.md`. Đã xong/gộp: 00, X1 (mọi "Món thử"), 11, 12 (+13, 14), 22, 23, 24 (+25), 32, 52, 72, 73, 82.
 3. Giai đoạn 5 → 6.
