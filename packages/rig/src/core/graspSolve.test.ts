@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { CONTACTS, edgeHigh, graspFrame, SHEET_INSET, type GraspChoice } from "./graspSolve";
 import { HAND_DOF, handVec } from "./hand";
+import { handSkin, skinHand } from "./handMesh";
+import { HELD_SINK } from "./heldAudit";
+import { heldFit, skinBulge, skinDepth, skinPieces } from "./heldFit";
 import { edgeFrame, handDims, itemGeom, type SlabFeature } from "./heldGeom";
 import {
   gripPoint,
@@ -260,6 +263,34 @@ describe("tay trái không soi gương món", () => {
     });
     expect(g.hand.wrap).toEqual(["thumb", "index", "middle", "ring", "pinky"]);
   });
+
+  // lún là gò ngón cái ép cạnh gần theo khung bàn tay, ngón ôm không gỡ được: `chooseMissing` cộng giá lún
+  it.each([-1, 1])(
+    "`palmBox` tay %i: `tilt` ≤ 10° không lún ở cỡ 1,61, 2,16; `tilt` 25° lún quá `HELD_SINK` ở 1,61",
+    (side) => {
+      const geom = itemGeom(PHONE);
+      const sink = (k: number, tilt: number) => {
+        const g = graspFrame(PHONE, geom, { group: "palmBox", tilt }, side, handDims(k), k);
+        const skin = handSkin(side, k, k);
+        const fit = heldFit({
+          v: g.pose,
+          side,
+          k,
+          long: k,
+          shape: PHONE.shape!,
+          G: g.G,
+          roles: g.roles,
+          bulge: skinBulge(skin, g.pose),
+        });
+        const pos = new Float32Array(skin.pos.length);
+        skinHand(skin, [...g.pose, ...fit], pos);
+        const { gaps } = skinDepth(pos, skinPieces(skin), g.G, PHONE.shape!);
+        return Math.max(0, -Math.min(...Object.values(gaps)));
+      };
+      for (const k of [1.61, 2.16]) for (const tilt of [0, 5, 10]) expect(sink(k, tilt)).toBe(0);
+      expect(sink(1.61, 25)).toBeGreaterThan(HELD_SINK);
+    },
+  );
 });
 
 describe("đổi `thumb` là quay π quanh `m`", () => {

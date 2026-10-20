@@ -21,6 +21,8 @@ import {
   type HandPose,
   type HandVec,
 } from "./hand";
+import { handSkin, skinHand } from "./handMesh";
+import { HELD_FIT, heldFit, skinBulge, skinDepth, skinPieces } from "./heldFit";
 import {
   alongFrac,
   edgeFrame,
@@ -504,6 +506,11 @@ const DEV_COST = 0.05;
 export const LATER_SPAN = 1.5;
 const LATER_MAX = 4;
 const LATER_W = 0.5;
+/** Nhóm có giá lún da trong `chooseMissing`: gò ngón cái ép cạnh hộp theo khung bàn tay, ngón ôm không gỡ được */
+const SINK_GROUPS: ReadonlySet<GroupId> = new Set(["palmBox"]);
+/** Giá lún `SINK_W · (lún / SINK_REF)²`; `SINK_REF` là ngưỡng luật `sink` (`HELD_SINK` của `heldAudit.ts`) */
+const SINK_W = 1;
+const SINK_REF = Math.abs(HELD_FIT.touch) + 0.5;
 const KIND_ORDER: FeatureKind[] = ["slab", "disc", "rod", "lathe", "box", "face"];
 const DISCRETE = ["edge", "thumb", "variant"] as const;
 const CONTINUOUS = ["along", "slant", "around", "tilt", "psi"] as const;
@@ -517,13 +524,57 @@ const geomOf = (spec: HeldItemSpec): ItemGeom => {
   return g;
 };
 
+const sinks = new WeakMap<HeldItemSpec, Map<string, number>>();
+
+/**
+ * Da lún sâu nhất vào món (đơn vị món, như luật `sink`) khi bàn tay ở đúng khung cầm `f` và ngón ôm theo vai trò
+ * (`heldFit`); bàn tay cỡ `k`, `long` của người cỡ `s`. Nhớ theo món, bàn tay, khung và dáng
+ */
+function frameSink(
+  spec: HeldItemSpec,
+  f: GraspFrame,
+  side: number,
+  k: number,
+  long: number,
+  s: number,
+) {
+  if (!spec.shape?.length) return 0;
+  const G = { R: f.G.R, p: scale3(f.G.p, 1 / s), u: f.G.u / s };
+  const key = [side, k, long, ...G.R, ...G.p, G.u, ...f.pose]
+    .map((x) => x.toFixed(6))
+    .concat(JSON.stringify(f.roles))
+    .join();
+  let m = sinks.get(spec);
+  if (!m) sinks.set(spec, (m = new Map()));
+  let d = m.get(key);
+  if (d === undefined) {
+    const skin = handSkin(side, k, long);
+    const fit = heldFit({
+      v: f.pose,
+      side,
+      k,
+      long,
+      shape: spec.shape,
+      G,
+      roles: f.roles,
+      bulge: skinBulge(skin, f.pose),
+    });
+    const pos = new Float32Array(skin.pos.length);
+    skinHand(skin, [...f.pose, ...fit], pos);
+    const { gaps } = skinDepth(pos, skinPieces(skin), G, spec.shape);
+    d = Math.max(0, -Math.min(...Object.values(gaps)));
+    m.set(key, d);
+  }
+  return d;
+}
+
 function specOf(ctx: GraspCtx, item: string): HeldItemSpec {
   const s = ctx.held[item] ?? ctx.held[heldBase(item)];
   if (!s) throw new Error(`không có món \`${item}\``);
   return s;
 }
 
-/** Lưới của trường liên tục: `along` 3 điểm, `slant` ½ miền hai phía và 0, `around` 12, `tilt` hai đầu, `psi` 8 */
+/** Lưới của trường liên tục: `along` 3 điểm, `slant` ½ miền hai phía và 0, `around` 12, `tilt` 6 điểm đều gồm hai đầu, `psi` 8 */
 function grid(key: Field, c: RangeChoice, variant: string): number[] {
   const [lo, hi] = c.byVariant?.[variant] ?? [c.min, c.max];
   const ring = (n: number) => Array.from({ length: n }, (_, i) => lo + ((hi - lo) * i) / n);
@@ -531,6 +582,7 @@ function grid(key: Field, c: RangeChoice, variant: string): number[] {
   if (key === "slant") return [lo / 2, 0, hi / 2];
   if (key === "around") return ring(12);
   if (key === "psi") return ring(8);
+  if (key === "tilt") return ring(5).concat(hi);
   return [lo, hi];
 }
 
@@ -679,6 +731,11 @@ export function chooseMissing(
     const withDef = missing.filter((k) => defs[k] !== undefined);
     const off = withDef.filter((k) => c[k as Field] !== defs[k]).length;
     if (withDef.length) cost += (DEV_COST * off) / withDef.length;
+    // giá lún không âm: ứng viên đã đắt hơn ứng viên tốt nhất thì không cần đo
+    if (solve && SINK_GROUPS.has(h.group) && (!best || cost <= best.cost + 1e-12)) {
+      const sink = frameSink(spec, frame, sd, ctx.k, ctx.long, ctx.s) * pose.s;
+      cost += SINK_W * (sink / SINK_REF) ** 2;
+    }
     return { choice: frame.choice, feature: f, frame, high, Wp, Rw, arm: sol, cost };
   };
 

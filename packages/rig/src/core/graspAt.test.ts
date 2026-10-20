@@ -13,11 +13,15 @@ import {
 } from "./graspSolve";
 import { itemGeom, type SlabFeature } from "./heldGeom";
 import { gripPoint, HOLD_SLEW_STEP, parseHeldItem, type HeldItemSpec } from "./heldItem";
-import { add3, fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
+import { handSkin, skinHand } from "./handMesh";
+import { HELD_SINK } from "./heldAudit";
+import { heldFit, skinBulge, skinDepth, skinPieces } from "./heldFit";
+import { add3, cross3, fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
 import type { ItemPose } from "./scene";
 import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
+import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 
 // người mẫu đứng cầm bảng ở t = 1; mốc món và số đối chiếu của prototype bước 0 (docs/11-nhom-cam.md mục 5)
 const item = (json: unknown): HeldItemSpec => {
@@ -418,5 +422,80 @@ describe("tay trượt", () => {
       jump = Math.max(jump, Math.abs(chain[i].sol.phi - chain[i - 1].sol.phi));
     expect(jump).toBeLessThanOrEqual(2.5);
     expect(Math.abs(chain.at(-1)!.sol.phi - chain[0].sol.phi)).toBeGreaterThan(0);
+  });
+});
+
+describe("chooseMissing `palmBox`: giá lún da", () => {
+  const PHONE = item(dienThoai);
+  const pc = graspCtx(T, { "dien-thoai": PHONE });
+  // điện thoại trước ngực, màn chếch lên về người cầm, đầu máy lên
+  const len = (a: V3) => Math.hypot(a[0], a[1], a[2]);
+  const unit = (a: V3): V3 => [a[0] / len(a), a[1] / len(a), a[2] / len(a)];
+  const n = unit([0, -0.3, -1]);
+  const x = unit(cross3([0, -1, 0], n));
+  const pose: ItemPose = {
+    R: fromColumns(x, cross3(n, x), n),
+    P: [230, -265.83, 560],
+    cast: "nguoi",
+    s: 1,
+  };
+  /** Lún da và khe ngón của bàn tay đúng khung cầm của nghiệm, ngón ôm theo vai trò */
+  const skinOf = (sol: GraspSolution) => {
+    const f = sol.frame;
+    const skin = handSkin(sol.side, pc.k, pc.long);
+    const fit = heldFit({
+      v: f.pose,
+      side: sol.side,
+      k: pc.k,
+      long: pc.long,
+      shape: PHONE.shape!,
+      G: f.G,
+      roles: f.roles,
+      bulge: skinBulge(skin, f.pose),
+    });
+    const pos = new Float32Array(skin.pos.length);
+    skinHand(skin, [...f.pose, ...fit], pos);
+    const { gaps } = skinDepth(pos, skinPieces(skin), f.G, PHONE.shape!);
+    return { sink: Math.max(0, -Math.min(...Object.values(gaps))), gaps };
+  };
+
+  it("rig chọn `tilt` không lún quá `HELD_SINK`, trỏ–áp út vẫn khép; `tilt` 25 cùng chỗ lún dù cổ tay trong giới hạn", () => {
+    const sol = chooseMissing(pc, "dien-thoai@palmBox", pose, RIGHT);
+    // `thumb` 2, rồi `along` 3 × `tilt` 6
+    expect(sol.candidates).toBe(2 + 18);
+    expect(sol.by.tilt).toBe("rig");
+    expect(sol.choice.tilt).toBeLessThan(20);
+    const got = skinOf(sol);
+    expect(got.sink).toBeLessThanOrEqual(HELD_SINK);
+    for (const f of ["index", "middle", "ring"] as const) expect(got.gaps[f]).toBeLessThan(0.6);
+    expect(Math.max(...Object.values(sol.arm.wrist.over))).toBe(0);
+    const steep = chooseMissing(
+      pc,
+      { ...sol.choice, item: "dien-thoai", group: "palmBox", tilt: 25 },
+      pose,
+      RIGHT,
+    );
+    expect(skinOf(steep).sink).toBeGreaterThan(HELD_SINK);
+    expect(Math.max(...Object.values(steep.arm.wrist.over))).toBe(0);
+    expect(steep.arm.E).toBeLessThan(sol.arm.E);
+  });
+
+  it("cảnh khai đủ như fixture `dien-thoai#doc` thì không giải: nghiệm là khung của fixture", () => {
+    const given = { thumb: "right", along: 15.9 / 37.8, tilt: 20 } as const;
+    const sol = chooseMissing(pc, { item: "dien-thoai", group: "palmBox", ...given }, pose, RIGHT);
+    expect(sol.candidates).toBe(1);
+    for (const k of ["thumb", "along", "tilt"] as const) expect(sol.by[k]).toBe("scene");
+    const g = graspFrame(
+      PHONE,
+      itemGeom(PHONE),
+      { group: "palmBox", ...given },
+      RIGHT,
+      pc.dims,
+      pc.k * pc.s,
+      pc.long * pc.s,
+      pose.s,
+      sol.high,
+    );
+    expect(sol.frame.G).toEqual(g.G);
   });
 });
