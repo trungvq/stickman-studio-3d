@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { GRIP_GROUPS } from "./graspGroups";
 import { CONTACTS, edgeHigh, graspFrame, SHEET_INSET, type GraspChoice } from "./graspSolve";
 import { HAND_DOF, handVec } from "./hand";
 import { handSkin, skinHand } from "./handMesh";
@@ -391,8 +392,10 @@ describe("biến thể của `sheet`", () => {
     expect(g.hand.wrap).toEqual(["thumb", "index", "middle", "ring", "pinky"]);
   });
 
-  it("dáng gốc: tấm mỏng là dáng đóng, tấm dày là dáng mở (gốc ngón gập thêm 30°)", () => {
+  it("dáng gốc: tấm mỏng là dáng đóng, tấm dày là dáng mở (gốc ngón gập thêm 30°); ngón cái theo bảng nhóm", () => {
     const closed = handVec("sheet");
+    const th = GRIP_GROUPS.sheet.variants.pinch.pose!.closed.thumb!;
+    closed.splice(HAND_DOF.indexOf("thumbAbd"), 4, ...th);
     const thin = graspFrame(BANG, geom, { group: "sheet", edge: "left" }, 1, handDims(2.16));
     close(thin.pose, closed, 1e-12);
     const thick = sheet([40, 6, 40], [0, 0, 0], [0, 1, 0], [0, 0, -1]);
@@ -400,6 +403,89 @@ describe("biến thể của `sheet`", () => {
     const want = [...closed];
     for (const dof of ["indexBase", "fingersBase"] as const) want[HAND_DOF.indexOf(dof)] += 30;
     close(open.pose, want, 1e-12);
+  });
+});
+
+// cỡ tay của hai người mẫu `bang-cam` (W 14,7 / 16,8, P 16,96): `handDims(k, long)`
+const HANDS = [
+  [1.75, 1.68],
+  [2, 1.68],
+] as const;
+
+/** Ngón ôm theo vai trò rồi đo trên da: khe ngón cái, lún sâu nhất */
+function pinchSkin(
+  spec: HeldItemSpec,
+  pick: Pick,
+  side: number,
+  k: number,
+  long: number,
+  high: V3,
+) {
+  const g = graspFrame(spec, itemGeom(spec), pick, side, handDims(k, long), k, long, 1, high);
+  const skin = handSkin(side, k, long);
+  const fit = heldFit({
+    v: g.pose,
+    side,
+    k,
+    long,
+    shape: spec.shape!,
+    G: g.G,
+    roles: g.roles,
+    bulge: skinBulge(skin, g.pose),
+  });
+  const pos = new Float32Array(skin.pos.length);
+  skinHand(skin, [...g.pose, ...fit], pos);
+  const { gaps } = skinDepth(pos, skinPieces(skin), g.G, spec.shape!);
+  return { thumb: gaps.thumb, sink: Math.max(0, -Math.min(...Object.values(gaps))) };
+}
+
+describe("`sheet` `pinch` trên da", () => {
+  it("bảng: ngón cái đè mặt trước (khe ≤ 0,8), lún ≤ 0,6 — hai cỡ tay, hai tay, mọi `slant` lưới", () => {
+    for (const [k, long] of HANDS)
+      for (const [edge, side] of [
+        ["right", -1],
+        ["left", 1],
+      ] as const)
+        for (const slant of [-30, 0, 30]) {
+          const pick: Pick = { group: "sheet", variant: "pinch", thumb: "front", edge, slant };
+          const r = pinchSkin(BANG, pick, side, k, long, [0, 0, -1]);
+          expect(r.thumb, `${k} ${edge} ${slant}`).toBeLessThanOrEqual(0.8);
+          expect(r.sink, `${k} ${edge} ${slant}`).toBeLessThanOrEqual(0.6);
+        }
+  });
+
+  it("điện thoại (dày 2,88): lún dưới `HELD_SINK` cả hai đầu cao, hai mặt ngón cái", () => {
+    for (const [k, long] of HANDS)
+      for (const high of [
+        [0, 1, 0],
+        [0, -1, 0],
+      ] as V3[])
+        for (const thumb of ["front", "back"] as const) {
+          const pick: Pick = {
+            group: "sheet",
+            variant: "pinch",
+            thumb,
+            edge: "right",
+            along: 0.33,
+            slant: 30,
+          };
+          expect(pinchSkin(PHONE, pick, -1, k, long, high).sink).toBeLessThan(HELD_SINK);
+        }
+  });
+
+  it("tâm nắm cách mặt bốn ngón 0,5; tấm dày hơn 1 thì lùi ra mép 1,3 lần phần dày thêm", () => {
+    const thick = sheet([40, 6, 40], [0, 0, 0], [0, 1, 0], [0, 0, -1]);
+    const at = (spec: HeldItemSpec, thumb: "front" | "back") =>
+      graspFrame(
+        spec,
+        itemGeom(spec),
+        { group: "sheet", variant: "pinch", edge: "right", thumb },
+        -1,
+        handDims(1),
+      ).hand.at as V3;
+    close(at(thick, "front"), [20, -2.5, 0], 1e-9);
+    close(at(thick, "back"), [20, 2.5, 0], 1e-9);
+    close(at(PHIEU, "front"), [20 - 2.5 - 1.3 * 0.4, 0.6, 0], 1e-9);
   });
 });
 

@@ -128,6 +128,10 @@ const mix2 = (a: V3, ca: number, b: V3, cb: number): V3 => add3(scale3(a, ca), s
 export const SHEET_INSET = { pinch: 2.5, flat: 5, rim: 1 } as const;
 /** `sheet` `pinch`: `n = a · F + b · f` (fixture `bang-gia#doc`) */
 const PINCH_PALM: readonly [number, number] = [0.7654, 0.6436];
+/** `pinch`: tâm nắm cách mặt bốn ngón (mặt kia của `F`) ngần này, mọi bề dày (giữa bề dày của `bang-gia#doc`, dày 1) */
+const PINCH_BACK = 0.5;
+/** `pinch`: tấm dày hơn `2 · PINCH_BACK` thì tâm nắm lùi ra mép ngần này lần phần dày thêm (mép lọt sâu vào kẽ cái–trỏ) */
+const PINCH_OUT = 1.3;
 /** `palmBox` (fixture `dien-thoai#doc`): ngón chếch về đầu trên trong mặt máy, độ; tâm nắm lệch về cạnh đầu ngón và sau mặt sau, đơn vị món */
 const BOX_RISE = 20;
 const BOX_SHIFT = 2;
@@ -159,9 +163,12 @@ const inward = (m: V3, e: V3, slant: number): V3 =>
   mix2(neg(m), Math.cos(slant * D2R), e, Math.sin(slant * D2R));
 
 const pinch: ContactFn = (x) => {
-  const { m, e, F, at, along } = sheetEdge(x, SHEET_INSET.pinch);
+  const t = (x.feature as SlabFeature | DiscFeature).t;
+  const d = Math.max(0, SHEET_INSET.pinch - PINCH_OUT * (t - 2 * PINCH_BACK));
+  const { m, e, F, at: mid, along } = sheetEdge(x, d);
   const f = inward(m, e, x.slant);
   const [a, b] = PINCH_PALM;
+  const at = sub3(mid, scale3(F, t / 2 - PINCH_BACK));
   return { at, along, palm: unit(mix2(F, a, f, b)), fingers: unit(mix2(f, a, F, -b)) };
 };
 
@@ -274,11 +281,13 @@ function pickFeature(
 }
 
 const BASE = [HAND_DOF.indexOf("indexBase"), HAND_DOF.indexOf("fingersBase")];
+const THUMB = HAND_DOF.indexOf("thumbAbd");
 
 function poseVec(r: PoseRef): number[] {
   if (!(r.pose in HAND_POSES)) throw new Error(`dáng \`${r.pose}\` chưa soạn`);
   const v = handVec(r.pose as HandPose);
   for (const i of BASE) v[i] += r.knuckle ?? 0;
+  r.thumb?.forEach((a, i) => (v[THUMB + i] = a));
   return v;
 }
 

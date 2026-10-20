@@ -78,6 +78,7 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 | G4-24 hàng mẫu carry + gợi ý v2 | xong: `--nhom carry` 2 hàng × 2 cỡ, 12 ô trùng từng byte với v1; `heldAudit` gợi ý tên món đúng cho v2. Commit `838b9f9` (M4-2 cùng G4-22, 23); video `07b1b71` | `g4-carry/`, `duyet/g4-carry-*.jpg` |
 | G4-72 `curl` theo biến thể | xong: `HeldFitInput.curl`, `VariantSpec.curl?`, truyền qua `holdLink`/`holdRoles`/`fitHolding`; không khai thì y số cũ (1 170 ca); t02 0 mới. Còn: `frameSink` của `graspSolve.ts` chưa truyền `curl` — làm ở G4-74/83. Commit cùng tên `feat(rig): cap finger curl…` | `heldFitRoles.test.ts`, `g472-*` |
 | G4-32 giá biến thể `sheet` | xong: `VARIANT_COST 0,5` + lưới quanh ứng viên rời tốt nhất của biến thể mặc định; hàng mặc định `thu-bang-gia` flat → `pinch` (cả hai cỡ), "khoe dưới–trên" vẫn `rim`; 1 test cũ đổi số đếm ứng viên (12+9 → 12+9+9). Ngón cái pinch hở 2,8/3,6 (G4-33). Ảnh `duyet/g4-sheet-mac-dinh-sakura-truoc-sau.jpg` | `g432/` |
+| G4-33 `sheet` `pinch` | xong: `PoseRef.thumb`, `PINCH_THUMB [0,10,10,−20]`; tâm nắm cách mặt bốn ngón `PINCH_BACK` 0,5; thụt `max(0, 2,5 − 1,3·(t−1))` (tấm dày 1 không đổi). Khe cái 2,8/3,6 → 0,6/0,7 (v1 0,3/0,5), lún 0,50 giữ; điện thoại `pinch` lún 1,11 → ≤ 0,20; fixture < 0,3°. `thumb: back` vẫn vượt cổ tay 24,9/17,0°, nắm 6,6/5,5 (do nghiêng lòng 40° của `PINCH_PALM`; nghiêng 25° hết vượt nhưng fixture lệch 15°) → giới hạn khớp. t02 0 mới; `thu-nhom-cam` 1 lỗi 1 cảnh báo | `g433/`, `duyet/g4-sheet-pinch-truoc-sau.jpg` |
 | G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
@@ -112,6 +113,8 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 - Giới hạn xoay cẳng tay 90° lấy theo kẹp trong `aimWrist` (lõi chưa export hằng số).
 - Ảnh "trước" (673 MB, `tmp/nhom-cam/truoc/can-tay/`) không commit; chỉ commit `lan-cam.{json,md}`, `cam-do.txt`. Phiên khác mất ảnh thì chụp lại từ commit `c925657` của rig.
 
+- G4-33: `pinch` ngón cái mặt sau (`thumb: back`) vượt cổ tay 17–25° là giới hạn khớp (cùng luật "mọi ứng viên vượt"); giữ fixture `bang-gia#doc` ≤ 0,3°, không giảm nghiêng lòng `PINCH_PALM`. `check` báo `wrist`; điện thoại cái sau sakura lún 1,22 đi kèm.
+
 ## Cần chủ dự án
 - Có nới kẹp xoay cẳng tay quá ±90 không? Ca "khoe, một tay đỡ cạnh dưới" (bước 0 ca 4, `rim`) cần −103; hiện thành cảnh báo `wrist` và bàn tay lệch chỗ cầm chút ít. Ảnh: `tmp/nhom-cam/b0/hinh/vong2/to-2.jpg`.
 
@@ -130,6 +133,6 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 ## Bước kế
 0. Phiên dừng (2026-10-20) do sắp hết hạn mức, worktree sạch, mọi job đã giao đều xong và commit. Commit cuối: studio xem `git log`, video `07b1b71`.
-1. Nhóm `sheet`: G4-33 (`pinch`: ngón cái hở 2,5–3,6, cái sau vượt cổ tay, điện thoại lún 1,1–1,3) → 34 (`rim`) → 35 (vành đĩa) → 36 (hàng mẫu) → 37 (docs + render), commit M4-3.
+1. Nhóm `sheet`: G4-33 xong → 34 (`rim`) → 35 (vành đĩa) → 36 (hàng mẫu) → 37 (docs + render), commit M4-3.
 2. Rồi cylinder (42–48), platform (53–57), card (62–64), chopsticks (74–76; nhớ `frameSink` truyền `curl`), pen (83–85), handle (92–95), bowl (A2–A4), Z1, Z2 theo `gd4-ke-hoach.md`. Đã xong/gộp: 00, X1 (mọi "Món thử"), 11, 12 (+13, 14), 22, 23, 24 (+25), 32, 52, 72, 73, 82.
 3. Giai đoạn 5 → 6.

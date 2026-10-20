@@ -25,10 +25,11 @@ export type NeedKind = Feature["kind"] | "path" | "ball";
 export type PlannedPose = "tripod" | "chopsticks" | "ball" | "claw";
 export type GroupPoseName = HandPose | PlannedPose;
 
-/** Một dáng mở hay đóng; `knuckle` là độ gập thêm ở gốc ngón */
+/** Một dáng mở hay đóng; `knuckle` là độ gập thêm ở gốc ngón, `thumb` thay góc ngón cái của dáng (`Fingers.thumb`) */
 export interface PoseRef {
   pose: GroupPoseName;
   knuckle?: number;
+  thumb?: readonly [number, number, number, number];
 }
 
 /** Dáng theo số đo món: `closed` ở `range[0]`, `open` ở `range[1]` (đơn vị `A` hay `W`) */
@@ -190,6 +191,9 @@ export const EDGE_MIN = 0.6;
 export const longEdges = (f: SlabFeature, h: HandDims) =>
   f.edges.filter((e) => e.len >= EDGE_MIN * h.W);
 
+/** Ngón cái `pinch`: khép theo trỏ, ngọn duỗi ngược để đầu ngón đè mặt trước mà đốt gốc (da phình to) tránh mép */
+const PINCH_THUMB = [0, 10, 10, -20] as const;
+
 const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
   sheet: {
     label: "Tấm kẹp mép",
@@ -208,8 +212,8 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
       pinch: {
         frame: "nf",
         pose: {
-          open: { pose: "sheet", knuckle: 30 },
-          closed: { pose: "sheet" },
+          open: { pose: "sheet", knuckle: 30, thumb: PINCH_THUMB },
+          closed: { pose: "sheet", thumb: PINCH_THUMB },
           by: "thick",
           unit: "A",
           range: [0.05, 0.45],
