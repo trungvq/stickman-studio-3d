@@ -21,7 +21,7 @@
 // mà món không có, bị bỏ trước khi giải (`do.json` `loc`); hàng giải ra cùng chỗ cầm, cùng vị trí món với hàng trước nó bị bỏ
 // (`trung`); hàng mà `checkChoice` của rig báo lỗi (biến thể quá bề dày ở mép, phần không có…) cũng bị bỏ, mọi nhóm; với `palmBox` thêm đọc ngang mặt,
 // khoe một tay, áp tai (tay dẫn); với `cylinder` thêm `along` thấp / cao, ngón cái xuống, nắm từng phần bám được (vai, cổ… `along` giữa phần),
-// áp tai (tay dẫn, `around` 180: lòng áp lưng tay cầm); `platform` (món ngang bụng, xa ngực hơn hàng chung) thêm `psi` 0 / 90 và tay dẫn; `platform`,
+// áp tai (tay dẫn, `around` 180: lòng áp lưng tay cầm); `card` thêm `edge top`, ngón cái mặt trước / sau, tay dẫn, tay dẫn mặt trước lên và đưa thẻ ra trước; `platform` (món ngang bụng, xa ngực hơn hàng chung) thêm `psi` 0 / 90 và tay dẫn; `platform`,
 // `cylinder` (chai đứng hơi nghiêng), `palmBox` thêm hàng hai tay `both` món đặt trước, bỏ khi món không có mặt đáy / sau có cạnh cho tay phụ
 // (`loc`); `platform` mà mặt đỡ chọn ra không có cạnh thì cả cặp bị bỏ (`bo`); `carry` hai hàng treo khuỷu (`on: elbow`) và treo vai (`on: shoulder`, cảnh khai `touch`), tay
 // đặt như kiểu treo v1, món không đặt trước ngực. Cặp (món, nhóm, người) mà món không có khối hình đạt `needs` của nhóm với cỡ tay ấy
@@ -389,6 +389,8 @@ if (!nhomXin) {
   const NGHIENG = { to: "chest", offset: [25, 20, 10], up: [0.3, 1, 0.3] };
   /** Tay dẫn chạm món ở ngực, ngón theo món (`point: grip`): tay phụ `both` đặt theo tay này */
   const TAY_DAN = { to: "chest", offset: [40, 10, 30], point: "grip" };
+  /** Tay dẫn đưa ra trước (trao cho người đối diện), ngón theo món */
+  const DUA = { to: "chest", offset: [60, 0, 25], point: "grip" };
   /** Lý do `both` của (món, nhóm) không áp được (`undefined` khi áp được): mặt đỡ của tay phụ không có trên món */
   const khongBoth = (group, geom) => {
     const sup = rig.GRIP_GROUPS[group].support;
@@ -424,10 +426,12 @@ if (!nhomXin) {
       if (h?.thumb !== undefined && !tenMat.includes(h.thumb))
         return `\`thumb: ${h.thumb}\` không có trên khối hình của món`;
     }
-    for (const k of ["face", "roll"]) {
-      const a = row.mark?.[k]?.axis;
-      if (typeof a === "string" && !spec.anchors?.[a]) return `món không có mốc \`${a}\``;
-    }
+    const huong = [row.mark, ...Object.values(row.hands).map((x) => x.hold)];
+    for (const k of ["face", "roll"])
+      for (const m of huong) {
+        const a = m?.[k]?.axis;
+        if (typeof a === "string" && !spec.anchors?.[a]) return `món không có mốc \`${a}\``;
+      }
   };
   /** Lỗi `checkChoice` của rig trên các chỗ cầm của hàng (`undefined` khi hợp lệ) */
   const loiChon = (row, group, spec, geom, dims) => {
@@ -571,6 +575,38 @@ if (!nhomXin) {
           });
       }
     }
+    if (group === "card") {
+      const huongThe = (roll) => ({
+        face: { axis: spec.front ?? "front", toward: "up" },
+        roll: { axis: roll, toward: "forward" },
+      });
+      rows.push(
+        { ma: "canh-tren", ten: "edge top", mark: NGUC, hands: { right: H({ edge: "top" }) } },
+        {
+          ma: "cai-truoc",
+          ten: "ngón cái mặt trước",
+          mark: NGUC,
+          hands: { right: H({ thumb: "front" }) },
+        },
+        {
+          ma: "cai-sau",
+          ten: "ngón cái mặt sau",
+          mark: NGUC,
+          hands: { right: H({ thumb: "back" }) },
+        },
+        { ma: "tay-dan", ten: "tay dẫn", hands: { right: { ...TAY_DAN, ...H() } } },
+        {
+          ma: "tay-dan-len",
+          ten: "tay dẫn, mặt trước lên",
+          hands: { right: { ...TAY_DAN, ...H(huongThe(spec.top ?? "top")) } },
+        },
+        {
+          ma: "dua-the",
+          ten: "đưa thẻ ra trước",
+          hands: { right: { ...DUA, ...H({ edge: "top", ...huongThe("bottom") }) } },
+        },
+      );
+    }
     if (group === "platform")
       rows.push(
         { ma: "psi-0", ten: "ψ 0 (ngón vào mặt)", mark: XA, hands: { right: H({ psi: 0 }) } },
@@ -650,7 +686,7 @@ if (!nhomXin) {
         for (const row of hangMau(item, group, spec, geom, fits, p.dims)) {
           const why =
             row.khong ||
-            (group === "sheet" && khongAp(row, spec, fits)) ||
+            (["sheet", "card"].includes(group) && khongAp(row, spec, fits)) ||
             loiChon(row, group, spec, geom, p.dims);
           if (why) {
             loc.push({ item, group, person: p.file.replace(/\.json$/, ""), row: row.ten, why });
@@ -675,7 +711,13 @@ if (!nhomXin) {
             carry: group === "carry",
             scene: dungCanh(p, row.hands, row.mark ? [{ item, ...row.mark }] : []),
           };
-          viTri.set(cell, JSON.stringify(row.mark ?? null));
+          // tay dẫn không có mốc món: vị trí món do đích tay và ý định của chỗ cầm
+          const dich = Object.values(row.hands).map(({ hold: h, ...tay }) => ({
+            ...tay,
+            face: h?.face,
+            roll: h?.roll,
+          }));
+          viTri.set(cell, JSON.stringify(row.mark ?? dich));
           cells.push(cell);
         }
       }
