@@ -989,7 +989,7 @@ Chi phí (cỡ `1,61`): 0,3–1,7 ms một bàn tay, mỗi `0,1 s` của `check`
 
 **Hai đường cùng chạy.** `HeldItemSchema` nhận món v1 (`grips`) và v2 (nhóm cầm), `SceneHoldSchema` nhận `món#kiểu`,
 `{ item, grip, … }`, `món@nhóm`, `{ item, group, … }`; mỗi lần cầm đi đường của đời món nó trỏ tới (`holdKind`), `check` chọn
-bộ luật theo khoá lần cầm (mục [7](#7-luật-check-nhóm-held)). `SCENE_VERSION` không đổi. `migrate-held` chưa có. Việc dưới đây
+bộ luật theo khoá lần cầm (mục [7](#7-luật-check-nhóm-held)). `SCENE_VERSION` không đổi. Việc dưới đây
 là một lần, cùng bản phát hành xoá đường v1 (rig `8.0.0`, giai đoạn 6); không giữ hai đường song song ở cảnh sau lần chuyển.
 Bảng cho cảnh t02 ở [Phụ lục A](#phụ-lục-a--chuyển-cảnh-t02-tạm).
 
@@ -998,15 +998,37 @@ Bảng cho cảnh t02 ở [Phụ lục A](#phụ-lục-a--chuyển-cảnh-t02-t�
    `describe_held` (MCP mới) và `pnpm bang-cam --mon <món>`; `tools/held-moc.mjs` của repo (`pnpm test`) kiểm: mọi phần có tên
    trong `parts` có khối, mốc `front`/`top`/`seats` có thật, khối hình suy ra khớp kỳ vọng ghi trong test của repo (ví dụ
    `dua` có hai `rod`).
-2. **Tool `stickman migrate-held`** chỉ lo phần máy làm được: bỏ `grips`; `seats` từ kiểu treo cũ; `touch` chung lên món,
-   `touch` riêng (như `self.head` của `tai`) xuống cảnh; với cảnh: mỗi `hold` cũ → `{ item, group, … }` theo bảng ánh xạ kiểu
-   cũ → nhóm (Phụ lục A), ý định của kiểu cũ (`holdIntent` của `heldItem.ts`) ghi ra khi khác mặc định nhóm (không có thì
-   `keep: true`), `both` → `both: true` (cộng đè tay phụ khi khác mặc định). Cảnh cũ đi đường **tay dẫn** (mốc tay giữ đích).
-3. **Chỗ cầm tương đương.** Với mỗi lần cầm: dựng liên kết cũ, tìm chỗ cầm của nhóm gần nó nhất (góc quay + khoảng dời nhỏ
-   nhất) và **ghi đủ mọi trường** vào cảnh, không để rig giải. In bảng `cảnh · người · tay · t₀ · cũ · chỗ cầm · góc, khoảng lệch
-   món trong tay`; lệch quá `5°` hay `1` đơn vị là shot đổi hình, chủ dự án duyệt.
-4. **Kiểm.** `stickman check --only ref,held` trên `^t02-`, `pnpm bang-cam` bản mới, `pnpm frames` các shot đổi hình cho chủ dự
-   án duyệt. Cảnh nào chuyển sang món đặt trước là việc soạn lại từng cảnh khi chủ dự án muốn, không do tool.
+2. **Tool `stickman migrate-held`** đọc món v1 ở `held/` (cùng lớp chung), nhãn phần của món v2 ở `--held-dir` (mặc định
+   `held`; đang còn v1 ở `held/` thì để món v2 ở thư mục khác), nhân vật ở `characters/`. Chạy `--dry-run` trước: chỉ in bảng,
+   không ghi gì; `--out <file.md>` ghi bảng kèm kết quả JSON cạnh nó; `--scene <regex>` chỉ cảnh có id khớp.
+   - **Món.** Món v2 nhận `seats` từ kiểu treo cũ và `touch` chung của mọi kiểu cầm bằng tay, bỏ `grips`; tool chỉ ghi file
+     ở `--held-dir` khi `seats` hay `touch` lệch món v2 sẵn có, còn lại báo `khớp`. `touch` mà v2 tự cho lấn (`self.hand`,
+     `self.foreArm`) bỏ. `touch` riêng của một kiểu (như `self.head` của `tai`) không lên món: xuống `touch` của chỗ cầm trong
+     cảnh. Món có một kiểu cầm bằng tay thì mọi `touch` của nó là của kiểu ấy, xuống cảnh.
+   - **Cảnh.** Mỗi `hold` `món#kiểu` → `{ item, group, … }` theo bảng kiểu cũ → nhóm (Phụ lục A, đặt ở `HOLD_MAP` của
+     `packages/cli/migrate-held.mjs`; `--map <file>` đè hay thêm dòng `"món#kiểu": { group, part?, variant? }`; kiểu không có
+     trong bảng là lỗi). Kiểu treo → `carry` với `on`, `yaw` của kiểu cũ, không dò. `hold` đã là nhóm, hay `null`, giữ nguyên.
+     Cảnh cũ đi đường **tay dẫn** (mốc tay giữ đích).
+   - **Ý định.** Của kiểu cũ (`holdIntent` của `heldItem.ts`) ghi ra chỉ khi khác mặc định của nhóm trên món; kiểu cũ không có
+     ý định mà nhóm có mặc định thì `keep: true`. Nhóm thêm trục mà kiểu cũ không chốt thì diễn không đúng: bảng ghi chú.
+   - **`both`.** Tay dẫn của kiểu cũ mang `both: true` (hay đè tay phụ khi mặc định của nhóm lệch tay kia quá ngưỡng và có đè
+     bớt lệch hẳn); tay kia của kiểu cũ thành `hold: null`.
+   - **`regrip`.** Kiểu cũ đổi giữa hai khoá lần cầm mà chỗ cầm mới trùng khoá thì lần sau mang `regrip: true`, giữ ranh giới
+     lần cầm.
+3. **Chỗ cầm tương đương.** Với mỗi lần cầm tay (không phải treo): dựng liên kết cũ bằng **bàn tay thật của người cầm** (cỡ
+   theo nhân vật và trang phục của thành viên cảnh), quét lựa chọn của nhóm (phần, cạnh, mặt ngón cái, biến thể, các trường
+   liên tục) qua chính đường tay dẫn của rig (`holdHand`, `gripFrame`), lấy chỗ cầm có góc quay `/ 5°` cộng khoảng dời `/ 1`
+   đơn vị nhỏ nhất, và **ghi đủ mọi trường** vào cảnh, không để rig giải. Không có nhân vật của thành viên thì không ghi cảnh.
+   In bảng `cảnh · người · tay · t₀ · cũ · chỗ cầm · góc, khoảng lệch món trong tay`: góc là phép quay món trong bàn tay, khoảng
+   là độ dời của điểm món ở tâm nắm cũ; lệch quá `5°` hay `1` đơn vị đánh dấu **!**, là shot đổi hình, chủ dự án duyệt. Dòng tay
+   phụ của `both` đo so với tay kia của kiểu cũ. Lần cầm có chỗ cầm không qua `checkChoice` hay cảnh sau chuyển không qua
+   schema là lỗi.
+   - **Chưa ghi.** Nhóm còn `later` hay chưa có chỗ tiếp xúc: bảng ghi `chờ nhóm`, `hold` chỉ mang `item`, `group`, phần và
+     biến thể ép. Cảnh còn lần cầm `chờ nhóm` hay lỗi thì **cả cảnh không ghi** (không ghi nửa cảnh); chạy lại khi nhóm đã xong.
+     Có lỗi hay lỗi nạp thì lệnh thoát mã `1`.
+4. **Thay `held/` và kiểm.** Chạy tool thật, rồi mới thay `held/` bằng bản v2 (thay trước khi chạy thì không còn v1 để đọc).
+   `stickman check --only ref,held` trên `^t02-`, `pnpm bang-cam` bản mới, `pnpm frames` các shot đổi hình cho chủ dự án duyệt.
+   Cảnh nào chuyển sang món đặt trước là việc soạn lại từng cảnh khi chủ dự án muốn, không do tool.
 
 ### Thứ gãy khi xoá v1 (giai đoạn 6)
 

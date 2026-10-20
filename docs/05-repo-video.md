@@ -476,6 +476,28 @@ Không đụng: cảnh khớp `stickman.frozen`, người 3D (`world`), người
 của file giữ nguyên. Ghi xong thì `stickman.json` nhận `legs` mới, nên chạy lại không dời
 thêm; có cảnh không nạp được thì không ghi gì cả. `init` ghi sẵn `legs` của rig đang cài.
 
+## Chuyển món cầm v1 sang nhóm cầm
+
+`stickman migrate-held` chuyển món `held/` đời `grips` sang món nhóm cầm và `hold` `món#kiểu` của cảnh sang
+`{ item, group, … }` ở **tay dẫn**: dựng liên kết cũ bằng bàn tay thật của nhân vật rồi ghi chỗ cầm nhóm gần nó nhất, đủ mọi
+trường. Chạy khô trước, rồi ghi:
+
+```bash
+pnpm exec stickman migrate-held --held-dir held-v2 --dry-run --out tmp/migrate.md
+pnpm exec stickman migrate-held --held-dir held-v2
+```
+
+| Cờ | Làm gì |
+|---|---|
+| `--scene <regex>` | Chỉ cảnh có id khớp |
+| `--held-dir <thư mục>` | Món nhóm cầm có nhãn phần (mặc định `held`); món `grips` đọc ở `held/` |
+| `--map <file>` | JSON `{ "món#kiểu": { group, part?, variant? } }` đè hay thêm bảng kiểu cũ → nhóm |
+| `--out <file.md>` | Ghi bảng lệch từng lần cầm và kết quả JSON cùng tên |
+| `--dry-run` | Chỉ in; không ghi cảnh hay món |
+
+Chỉ ghi vào `scenes/` và `--held-dir`; cảnh còn lần cầm chưa chuyển được thì không ghi. Thứ tự các bước, cách đọc bảng và
+ngưỡng lệch: [11](11-nhom-cam.md#8-chuyển-đổi).
+
 ## Studio đọc repo video
 
 `@stickman3d/cli` gói cả app studio đã build, nên repo video mở studio tại chỗ:
