@@ -528,6 +528,24 @@ const penGrip: ContactFn = (x) => {
   };
 };
 
+/**
+ * `handle` `hook` (khung `nf`, fixture `tui#xach`): tâm nắm dáng `hook` trên trục thanh ở `along`, ngón vuông góc thanh về
+ * phía `−top` (món treo dưới tay) luồn qua khe sau thanh, lòng tay về `ρ(0)` (`front` chiếu lên mặt vuông góc trục)
+ */
+const hook: ContactFn = (x) => {
+  const f = x.feature as RodFeature;
+  const p = axialAt(x.geom, f, alongFrac(x.along, 1, x.dims.W), 0);
+  const down = perp(neg(x.geom.U), p.a);
+  const fingers = len3(down) > EPS ? unit(down) : unit(cross3(p.a, p.rho));
+  const n = perp(p.rho, fingers);
+  return {
+    at: p.at,
+    along: p.along,
+    palm: len3(n) > EPS ? unit(n) : unit(cross3(p.a, fingers)),
+    fingers,
+  };
+};
+
 /** Chỗ tiếp xúc theo nhóm và biến thể; nhóm chưa có ở đây thì `graspFrame` báo lỗi */
 export const CONTACTS: Partial<Record<GroupId, Record<string, ContactFn>>> = {
   sheet: { pinch, flat, rim },
@@ -537,6 +555,7 @@ export const CONTACTS: Partial<Record<GroupId, Record<string, ContactFn>>> = {
   platform: { palm: platformPalm },
   chopsticks: { grip: chopGrip },
   pen: { grip: penGrip },
+  handle: { hook },
 };
 
 /**

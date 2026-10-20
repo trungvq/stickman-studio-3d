@@ -4,6 +4,7 @@ import {
   GRIP_GROUPS,
   SIZE_WARN,
   GRIP_CLEAR,
+  HOOK_GAP,
   checkChoice,
   checkGroup,
   choiceWarnings,
@@ -27,6 +28,7 @@ import but from "./__fixtures__/held-v2/but.json";
 import ongNgheBan from "./__fixtures__/held-v2/ong-nghe-ban.json";
 import tomHum from "./__fixtures__/held-v2/tom-hum.json";
 import tuiHieu from "./__fixtures__/held-v2/tui-hieu.json";
+import tui from "./__fixtures__/held-v2/tui.json";
 
 const item = (json: unknown): HeldItemSpec => {
   const r = parseHeldItem(json);
@@ -49,13 +51,14 @@ describe("bảng GRIP_GROUPS", () => {
     }
   });
 
-  it("chỉ `sheet`, `card`, `pen`, `chopsticks`, `cylinder`, `palmBox`, `platform` và `carry` không `later`", () => {
+  it("chỉ `sheet`, `card`, `pen`, `chopsticks`, `cylinder`, `handle`, `palmBox`, `platform` và `carry` không `later`", () => {
     expect(GROUP_IDS.filter((g) => !GRIP_GROUPS[g].later)).toEqual([
       "sheet",
       "card",
       "pen",
       "chopsticks",
       "cylinder",
+      "handle",
       "palmBox",
       "platform",
       "carry",
@@ -158,6 +161,33 @@ describe("groupNeeds trên tám món", () => {
       ["lathe", "vai"],
       ["lathe", "co"],
     ]);
+  });
+
+  it("`handle`: túi ra đúng thanh ngang của quai (dây quai dốc theo `top` không ra); vành khay sát đáy, đũa không ra", () => {
+    const g = geomOf(tui);
+    for (const d of [dims, handDims(1.75, 1.545), handDims(2, 1.813)]) {
+      const fs = groupNeeds(g, "handle", d);
+      expect(fs.map((f) => [f.kind, f.part])).toEqual([["rod", "quai"]]);
+      expect(fs[0].kind === "rod" && fs[0].blocks).toEqual([5]);
+    }
+    expect(groupNeeds(geomOf(khay), "handle", dims)).toEqual([]);
+    expect(groupNeeds(geomOf(dua), "handle", dims)).toEqual([]);
+  });
+
+  it("`handle`: khe sau thanh dưới hai bán kính ngón thì không đạt", () => {
+    const bag = (gap: number) =>
+      item({
+        schemaVersion: 2,
+        size: [32, 20, 6],
+        anchors: {},
+        shape: [
+          { box: [32, 3, 6], at: [0, gap + 1.5, 0], part: "quai" },
+          { box: [40, 10, 10], at: [0, -5, 0], part: "than" },
+        ],
+      });
+    const need = HOOK_GAP * dims.W;
+    expect(groupNeeds(itemGeom(bag(need + 0.1)), "handle", dims)).toHaveLength(1);
+    expect(groupNeeds(itemGeom(bag(need - 0.1)), "handle", dims)).toEqual([]);
   });
 
   it("đũa ra hai thanh cho `chopsticks`, trừ khi thiếu mốc `tip` có `dir`", () => {

@@ -1,4 +1,4 @@
-import type { HandPose } from "./hand";
+import { HAND_BONES, type HandPose } from "./hand";
 import { heldDistance, type FingerRole } from "./heldFit";
 import {
   alongFrac,
@@ -195,6 +195,9 @@ const WRAP_THUMB = [
 /** `platform` `palm`: ngón gập gốc, ngọn để đệm ngón chạm mặt đỡ ngang gò lòng tay (da lòng dày hơn ngón) */
 const PLATFORM_FLAT: PoseRef = { pose: "flat", knuckle: 30, tip: 5 };
 
+/** `handle` `hook`: gốc ngón duỗi, ngọn gập ~90° móc dưới quai (dáng `hook` gập gốc 28–32° đẩy đốt gốc vào quai dày) */
+const HOOK: PoseRef = { pose: "hook", knuckle: -40, tip: -10 };
+
 /** `cylinder` `flat`: ngón cái khép dọc cạnh trỏ, nằm trên mặt rộng (dáng `span` dạng ra ngoài mép) */
 const FLAT_THUMB = [20, 6, 0, 10] as const;
 
@@ -259,6 +262,10 @@ const pairOf = (f: Feature, g: ItemGeom, R = Infinity) =>
       f.kind === "rod" &&
       Math.abs(dot3(o.a, f.a)) >= Math.cos(15 * D2R),
   );
+/** `handle`: khe sau thanh ít nhất hai bán kính ngón trỏ (ngón to nhất), lần `W` */
+export const HOOK_GAP = (2 * HAND_BONES.index.r) / (2 * HAND_BONES.palm.half[1]);
+/** `handle`: thanh lệch `top` từ ngần này độ trở lên (món treo dưới tay) */
+export const HOOK_TILT = 45;
 /** `cylinder`: tâm nắm cách phần `grip: false` ít nhất ngần này lần `W` dọc trục */
 export const GRIP_CLEAR = 0.3;
 /** `cylinder`: thanh hộp áp mặt rộng ít nhất ngần này lần `W` thì lòng áp phẳng, ngón dọc thân (`flat`) */
@@ -647,16 +654,21 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
     needs: [
       {
         kinds: ["rod"],
-        test: (f, h, g) => f.kind === "rod" && f.R <= 0.3 * h.W && span(g, f) >= 0.8 * h.W,
-        text: "thanh có R ≤ 0,3·W, đoạn bám liền ≥ 0,8·W",
+        test: (f, h, g) =>
+          f.kind === "rod" &&
+          f.R <= 0.3 * h.W &&
+          Math.abs(dot3(f.a, g.U)) <= Math.cos(HOOK_TILT * D2R) &&
+          span(g, f) >= 0.8 * h.W &&
+          f.gap >= HOOK_GAP * h.W,
+        text: "thanh có R ≤ 0,3·W, lệch `top` ≥ 45°, đoạn bám liền ≥ 0,8·W, khe sau thanh ≥ 2 × bán kính ngón",
       },
     ],
     variants: {
       hook: {
         frame: "nf",
         pose: {
-          open: { pose: "hook" },
-          closed: { pose: "hook" },
+          open: HOOK,
+          closed: HOOK,
           by: "radius",
           unit: "W",
           range: [0, 0.3],
@@ -668,7 +680,6 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
     choices: { part: PART, along: ALONG },
     hands: "one",
     intent: { face: { axis: "top", toward: "up" } },
-    later: true,
   },
 
   palmBox: {

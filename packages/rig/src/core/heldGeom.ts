@@ -1,4 +1,5 @@
 import { HAND_BONES, HAND_REST, handFrames, handVec, type HandFrame } from "./hand";
+import { heldDistance } from "./heldFit";
 import type { HeldItemSpec, HeldSeats, HeldShape } from "./heldItem";
 import { add3, cross3, dot3, scale3, sub3, type V3 } from "./lens";
 
@@ -76,6 +77,8 @@ export interface RodFeature extends Axial {
   R: number;
   /** Hướng của nửa cạnh dài `R` (thanh hộp) */
   wide?: V3;
+  /** Khe sau thanh: từ mặt thanh tới phần còn lại của món, hẹp nhất quanh trục, rộng nhất dọc đoạn bám (`rodGap`) */
+  gap: number;
 }
 
 export interface BoxFeature {
@@ -636,6 +639,7 @@ function boxRod(
     r: s[ia] / 2,
     R: s[ib] / 2,
     wide: AXES[ib],
+    gap: Infinity,
   };
 }
 
@@ -669,6 +673,7 @@ function forcedRod(p: PartGeom, axis: V3, U: V3, F: V3, R: V3): RodFeature {
     r: Math.min(ru, rv),
     R: Math.max(ru, rv),
     wide: ru >= rv ? b0 : b90,
+    gap: Infinity,
   };
 }
 
@@ -745,6 +750,7 @@ export function itemGeom(spec: GeomSpec): ItemGeom {
             blocks: [y.i],
             r: y.rMax,
             R: y.rMax,
+            gap: Infinity,
           });
         }
     for (const l of lathes)
@@ -780,6 +786,7 @@ export function itemGeom(spec: GeomSpec): ItemGeom {
     features,
     ...(spec.seats && (spec.seats.elbow || spec.seats.shoulder) ? { seats: spec.seats } : {}),
   };
+  for (const f of features) if (f.kind === "rod") f.gap = rodGap(geom, f, shape);
   CACHE.set(spec, geom);
   return geom;
 }
@@ -1018,6 +1025,42 @@ function rodReach(f: RodFeature, rho: V3): number {
   const cw = Math.abs(dot3(rho, f.wide));
   const cn = Math.abs(dot3(rho, unit(cross3(f.a, f.wide))));
   return Math.min(cw > EPS ? f.R / cw : Infinity, cn > EPS ? f.r / cn : Infinity);
+}
+
+/** Khe sau thanh: số hướng quanh trục, số điểm dọc mỗi đoạn bám */
+const GAP_AROUND = 24;
+const GAP_ALONG = 9;
+
+/**
+ * Khe từ mặt thanh `f` tới các khối khác của món (dò cầu theo `ρ`): ngón móc quanh thanh nên lấy hướng hẹp nhất quanh trục,
+ * rồi chỗ rộng nhất dọc các đoạn bám. Không chạm gì trong hộp bao món thì `Infinity`
+ */
+function rodGap(geom: ItemGeom, f: RodFeature, shape: readonly HeldShape[]): number {
+  const rest = shape.filter((_, i) => !f.blocks.includes(i));
+  if (!rest.length) return Infinity;
+  const [lo, hi] = unionBox(shape.map(blockBox));
+  const far = len3(sub3(hi, lo));
+  const ray = (o: V3, rho: V3) => {
+    let t = 0;
+    for (let i = 0; i < 64 && t <= far; i++) {
+      const d = heldDistance(rest, add3(o, scale3(rho, t)));
+      if (d < 0.01) return t;
+      t += d;
+    }
+    return Infinity;
+  };
+  let best = 0;
+  for (const seg of gripSpan(geom, f))
+    for (let j = 0; j < GAP_ALONG; j++) {
+      const c = add3(seg.lo, scale3(f.a, ((j + 0.5) / GAP_ALONG) * seg.len));
+      let g = Infinity;
+      for (let k = 0; k < GAP_AROUND && g > best; k++) {
+        const rho = radialDir(f, (360 * k) / GAP_AROUND);
+        g = Math.min(g, ray(add3(c, scale3(rho, rodReach(f, rho))), rho));
+      }
+      best = Math.max(best, g);
+    }
+  return best;
 }
 
 /**

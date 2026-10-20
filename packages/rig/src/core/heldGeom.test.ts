@@ -29,6 +29,7 @@ import ongNgheBan from "./__fixtures__/held-v2/ong-nghe-ban.json";
 import khay from "./__fixtures__/held-v2/khay.json";
 import tomHum from "./__fixtures__/held-v2/tom-hum.json";
 import tuiHieu from "./__fixtures__/held-v2/tui-hieu.json";
+import tui from "./__fixtures__/held-v2/tui.json";
 
 const item = (json: unknown): HeldItemSpec => {
   const r = parseHeldItem(json);
@@ -443,6 +444,38 @@ describe("axialAt trên trụ tiện và thanh", () => {
     );
     const [l] = of(g.features, "lathe");
     expect(() => axialAt(g, l, 0.5, 0)).toThrow(/không còn đoạn bám/);
+  });
+});
+
+describe("khe sau thanh", () => {
+  it("quai túi: từ mặt dưới thanh (y 83,2) tới thân (y 58,7) là 24,5; bốn dây quai chụm ở hai đầu thanh hẹp hơn", () => {
+    const rods = of(itemGeom(item(tui)).features, "rod").filter((f) => f.part === "quai");
+    const bar = rods.find((f) => f.blocks[0] === 5)!;
+    expect(bar.gap).toBeCloseTo(24.5, 1);
+    for (const f of rods) if (f !== bar) expect(f.gap).toBeLessThan(bar.gap);
+  });
+
+  it("vành khay nằm sát đáy: khe 0; thanh đứng một mình: không chạm gì", () => {
+    for (const f of of(itemGeom(item(khay)).features, "rod")) expect(f.gap).toBe(0);
+    const [f] = of(
+      itemGeom(
+        item({
+          schemaVersion: 2,
+          size: [30, 3, 3],
+          anchors: {},
+          shape: [{ box: [30, 3, 3] }],
+        }),
+      ).features,
+      "rod",
+    );
+    expect(f.gap).toBe(Infinity);
+  });
+
+  it("hai que đũa sát nhau: khe hẹp hơn hai ngón cỡ 1,61", () => {
+    for (const f of of(itemGeom(item(dua)).features, "rod")) {
+      expect(f.gap).toBeGreaterThan(0);
+      expect(f.gap).toBeLessThan(2 * 0.015 * 1.61 * 100);
+    }
   });
 });
 

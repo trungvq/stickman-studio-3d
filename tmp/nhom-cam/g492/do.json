@@ -1,0 +1,280 @@
+{
+ "t": 0.5,
+ "people": [
+  {
+   "file": "t01-sakura.json",
+   "size": 1.61,
+   "dims": {
+    "W": 14.700000000000003,
+    "A": 16.44858224639421,
+    "L": 30.06267922061609,
+    "P": 16.957368421052635
+   }
+  },
+  {
+   "file": "kuroiwa.json",
+   "size": 2.16,
+   "dims": {
+    "W": 16.8,
+    "A": 16.659942296600185,
+    "L": 30.177341709067022,
+    "P": 16.957368421052635
+   }
+  }
+ ],
+ "nhom": [
+  "handle"
+ ],
+ "bo": [],
+ "loc": [],
+ "trung": [],
+ "cells": [
+  {
+   "id": "bang-cam-thu-tui-handle-mac-dinh-P-t01-sakura",
+   "item": "thu-tui",
+   "group": "handle",
+   "ma": "mac-dinh",
+   "grip": "mặc định (hook)",
+   "key": "thu-tui@handle mặc định (hook)",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-tui: xoay -112°/±90, gập 85°/±50, lệch 22°/±20 — vượt 35.3°, bàn tay vẽ lệch chỗ cầm 13.9 (chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.25 (rig chọn), variant hook (mặc định))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-tui` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.25 (rig chọn), variant hook (mặc định)) (dáng hook) · khe 2.7 · ôm 0/3 · ngón cái (free) 2.7, trỏ (wrap) 8.7, giữa (wrap) 9.8, áp út (wrap) 10.0, út (wrap) 10.8, lòng (free) 7.6 · tâm nắm cách món 8.5 · lòng tay cách 10.3 góc 47° · cổ tay xoay -112°, gập 85°, lệch 22° (vượt kẹp 35.3°, bàn tay lệch chỗ cầm 13.9) · khuỷu φ -130° · tay lấn 15.6 (bắp tay vào đầu). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "món không nằm trong tay — `cam` tay phải cầm thu-tui: tâm nắm của dáng `hook` cách hình món 8.5 (chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.25 (rig chọn), variant hook (mặc định))) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.25 (rig chọn), variant hook (mặc định)) (dáng hook) · khe 2.7 · ôm 0/3 · ngón cái (free) 2.7, trỏ (wrap) 8.7, giữa (wrap) 9.8, áp út (wrap) 10.0, út (wrap) 10.8, lòng (free) 7.6 · tâm nắm cách món 8.5 · lòng tay cách 10.3 góc 47° · cổ tay xoay -112°, gập 85°, lệch 22° (vượt kẹp 35.3°, bàn tay lệch chỗ cầm 13.9) · khuỷu φ -130° · tay lấn 15.6 (bắp tay vào đầu). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "món không chạm bàn tay — `cam` tay phải cầm thu-tui: không ngón, lòng tay nào của vai trò `press` / `wrap` / `tip` chạm món (khe nhỏ nhất 8.7) (chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.25 (rig chọn), variant hook (mặc định))) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.25 (rig chọn), variant hook (mặc định)) (dáng hook) · khe 2.7 · ôm 0/3 · ngón cái (free) 2.7, trỏ (wrap) 8.7, giữa (wrap) 9.8, áp út (wrap) 10.0, út (wrap) 10.8, lòng (free) 7.6 · tâm nắm cách món 8.5 · lòng tay cách 10.3 góc 47° · cổ tay xoay -112°, gập 85°, lệch 22° (vượt kẹp 35.3°, bàn tay lệch chỗ cầm 13.9) · khuỷu φ -130° · tay lấn 15.6 (bắp tay vào đầu). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "tay lấn người — `cam` tay phải cầm thu-tui: bắp tay vào đầu lấn 15.7 (quá 0.3 lần bán kính tay) (chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.25 (rig chọn), variant hook (mặc định))); dời mốc món `thu-tui` ở `items` ra xa người, đổi `edge` hay cầm bằng tay kia ở giây 1.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.25 (rig chọn), variant hook (mặc định)) (dáng hook) · khe 2.5 · ôm 0/3 · ngón cái (free) 2.5, trỏ (wrap) 8.4, giữa (wrap) 9.5, áp út (wrap) 9.7, út (wrap) 10.5, lòng (free) 7.4 · tâm nắm cách món 8.2 · lòng tay cách 10.2 góc 49° · cổ tay xoay -113°, gập 84°, lệch 21° (vượt kẹp 34.4°, bàn tay lệch chỗ cầm 13.7) · khuỷu φ -130° · tay lấn 15.7 (bắp tay vào đầu). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist",
+    "grip",
+    "loose",
+    "arm"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -94.76,
+      -283.22,
+      230.31
+     ],
+     "text": "variant hook part quai along 0.3\n   lún 0 · xuyên -5.3 · nắm 8.3 · cổ tay vượt 34.9°\n   hở trỏ 8.5, giữa 9.7, áp út 9.8, út 10.6\n   cái(free) 2.6 trỏ(wrap) 8.5 giữa(wrap) 9.7\n   áp út(wrap) 9.8 út(wrap) 10.6 lòng(free) 7.5",
+     "raw": {
+      "pierce": {
+       "depth": -2.6164445162169896,
+       "core": -5.309197279384602,
+       "piece": "thumb1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "free",
+       "palm": "free",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": 2.6164445162169896,
+       "index": 8.534778367886668,
+       "fingers": 9.659306125206845,
+       "palm": 7.46078354539678
+      },
+      "hold": "thu-tui@handle////",
+      "grasp": {
+       "group": "handle",
+       "mode": "item",
+       "choice": {
+        "part": "quai",
+        "feature": "rod",
+        "featureIndex": 12,
+        "along": 0.25,
+        "variant": "hook"
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "along": "rig",
+        "variant": "default"
+       },
+       "arm": {
+        "phi": -130,
+        "wrist": {
+         "turn": -112.15587337654479,
+         "bend": 84.88327556725238,
+         "dev": 21.493314719346532,
+         "over": 34.88327556725238,
+         "off": 13.784521004726924
+        },
+        "body": 15.65289573590633,
+        "gap": 0,
+        "bodyRatio": 1.6940363350547976,
+        "bodyPart": "upper.head"
+       }
+      },
+      "fingers": {
+       "thumb": 2.6164445162169896,
+       "index": 8.534778367886668,
+       "middle": 9.659306125206845,
+       "ring": 9.821204038403792,
+       "pinky": 10.634424747391416
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 8.322487205211338,
+      "palm": {
+       "gap": 10.264255997918795,
+       "angle": 48.06059965968695
+      },
+      "intent": {
+       "rule": "face",
+       "err": 41.9123103592289,
+       "clamped": [
+        "turn",
+        "bend",
+        "dev"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 148,
+   "tiles": [
+    "o/thu-tui/bang-cam-thu-tui-handle-mac-dinh-P-t01-sakura-truoc.png",
+    "o/thu-tui/bang-cam-thu-tui-handle-mac-dinh-P-t01-sakura-cheo.png",
+    "o/thu-tui/bang-cam-thu-tui-handle-mac-dinh-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-tui-handle-mac-dinh-P-kuroiwa",
+   "item": "thu-tui",
+   "group": "handle",
+   "ma": "mac-dinh",
+   "grip": "mặc định (hook)",
+   "key": "thu-tui@handle mặc định (hook)",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay vượt giới hạn — `cam` tay phải cầm thu-tui: xoay -136°/±90, gập 41°/±50, lệch -61°/±20 — vượt 46.4°, bàn tay vẽ lệch chỗ cầm 9.1 (chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.75 (rig chọn), variant hook (mặc định))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-tui` ở `items`) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.75 (rig chọn), variant hook (mặc định)) (dáng hook) · khe 0.1 · ôm 1/3 (cái) · ngón cái (free) 0.1, trỏ (wrap) 4.7, giữa (wrap) 6.5, áp út (wrap) 7.8, út (wrap) 9.3, lòng (free) 5.8 · tâm nắm cách món 5.7 · lòng tay cách 10.9 góc 52° · cổ tay xoay -136°, gập 41°, lệch -61° (vượt kẹp 46.4°, bàn tay lệch chỗ cầm 9.1) · khuỷu φ 155° · tay lấn 5.3 (bắp tay vào đầu). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "món không nằm trong tay — `cam` tay phải cầm thu-tui: tâm nắm của dáng `hook` cách hình món 5.7 (chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.75 (rig chọn), variant hook (mặc định))) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.75 (rig chọn), variant hook (mặc định)) (dáng hook) · khe 0.1 · ôm 1/3 (cái) · ngón cái (free) 0.1, trỏ (wrap) 4.7, giữa (wrap) 6.5, áp út (wrap) 7.8, út (wrap) 9.3, lòng (free) 5.8 · tâm nắm cách món 5.7 · lòng tay cách 10.9 góc 52° · cổ tay xoay -136°, gập 41°, lệch -61° (vượt kẹp 46.4°, bàn tay lệch chỗ cầm 9.1) · khuỷu φ 155° · tay lấn 5.3 (bắp tay vào đầu). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "món không chạm bàn tay — `cam` tay phải cầm thu-tui: không ngón, lòng tay nào của vai trò `press` / `wrap` / `tip` chạm món (khe nhỏ nhất 4.7) (chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.75 (rig chọn), variant hook (mặc định))) ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.75 (rig chọn), variant hook (mặc định)) (dáng hook) · khe 0.1 · ôm 1/3 (cái) · ngón cái (free) 0.1, trỏ (wrap) 4.7, giữa (wrap) 6.5, áp út (wrap) 7.8, út (wrap) 9.3, lòng (free) 5.8 · tâm nắm cách món 5.7 · lòng tay cách 10.9 góc 52° · cổ tay xoay -136°, gập 41°, lệch -61° (vượt kẹp 46.4°, bàn tay lệch chỗ cầm 9.1) · khuỷu φ 155° · tay lấn 5.3 (bắp tay vào đầu). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "tay lấn người — `cam` tay phải cầm thu-tui: bắp tay vào đầu lấn 5.8 (quá 0.3 lần bán kính tay) (chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.75 (rig chọn), variant hook (mặc định))); dời mốc món `thu-tui` ở `items` ra xa người, đổi `edge` hay cầm bằng tay kia ở giây 1.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-tui@handle` (part quai (mặc định), along 0.75 (rig chọn), variant hook (mặc định)) (dáng hook) · khe 0.1 · ôm 1/3 (cái) · ngón cái (free) 0.1, trỏ (wrap) 4.6, giữa (wrap) 6.3, áp út (wrap) 7.7, út (wrap) 9.2, lòng (free) 5.7 · tâm nắm cách món 5.6 · lòng tay cách 10.9 góc 53° · cổ tay xoay -136°, gập 41°, lệch -60° (vượt kẹp 45.7°, bàn tay lệch chỗ cầm 9.0) · khuỷu φ 155° · tay lấn 5.8 (bắp tay vào đầu). Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist",
+    "grip",
+    "loose",
+    "arm"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -100.53,
+      -321.66,
+      231.72
+     ],
+     "text": "variant hook part quai along 0.8\n   lún 0 · xuyên -3 · nắm 5.6 · cổ tay vượt 46°\n   hở trỏ 4.6, giữa 6.4, áp út 7.8, út 9.2\n   cái(free) 0.1 trỏ(wrap) 4.6 giữa(wrap) 6.4\n   áp út(wrap) 7.8 út(wrap) 9.2 lòng(free) 5.8",
+     "raw": {
+      "pierce": {
+       "depth": -0.12056358296934679,
+       "core": -2.989484752296486,
+       "piece": "thumb1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "free",
+       "palm": "free",
+       "index": "wrap",
+       "middle": "wrap",
+       "ring": "wrap",
+       "pinky": "wrap"
+      },
+      "gaps": {
+       "thumb": 0.12056358296934679,
+       "index": 4.63107221120382,
+       "fingers": 6.413119759745978,
+       "palm": 5.778471769243252
+      },
+      "hold": "thu-tui@handle////",
+      "grasp": {
+       "group": "handle",
+       "mode": "item",
+       "choice": {
+        "part": "quai",
+        "feature": "rod",
+        "featureIndex": 12,
+        "along": 0.75,
+        "variant": "hook"
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "along": "rig",
+        "variant": "default"
+       },
+       "arm": {
+        "phi": 155,
+        "wrist": {
+         "turn": -136.01163289103604,
+         "bend": 40.937418753269384,
+         "dev": -60.64400929276377,
+         "over": 46.011632891036044,
+         "off": 9.026985995597073
+        },
+        "body": 5.528295049625757,
+        "gap": 0,
+        "bodyRatio": 0.5235127887903178,
+        "bodyPart": "upper.head"
+       }
+      },
+      "fingers": {
+       "thumb": 0.12056358296934679,
+       "index": 4.63107221120382,
+       "middle": 6.413119759745978,
+       "ring": 7.758736233673757,
+       "pinky": 9.232372823585026
+      },
+      "wrap": [
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 5.629741362748477,
+      "palm": {
+       "gap": 10.928380501327734,
+       "angle": 52.76994262710226
+      },
+      "intent": {
+       "rule": "face",
+       "err": 35.60820713744978,
+       "clamped": [
+        "turn",
+        "dev"
+       ]
+      }
+     }
+    }
+   ],
+   "khung": 148,
+   "tiles": [
+    "o/thu-tui/bang-cam-thu-tui-handle-mac-dinh-P-kuroiwa-truoc.png",
+    "o/thu-tui/bang-cam-thu-tui-handle-mac-dinh-P-kuroiwa-cheo.png",
+    "o/thu-tui/bang-cam-thu-tui-handle-mac-dinh-P-kuroiwa-ngang.png"
+   ]
+  }
+ ]
+}

@@ -108,6 +108,7 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 | G4-83 `pen` `grip` | xong: `CONTACTS.pen.grip` (`penGrip`: điểm trục cách `tip` `along` 0,3, lăn 0, `PEN_PALM`/`PEN_FINGERS`/`PEN_OFF`·W khớp fixture tay phải, tay trái soi gương — fixture tay trái để cái ở phía xa bút, không phải cầm bút), bỏ `later`, `curl` 15, `pen` cần một thanh (đũa không đạt); dáng `tripod` (ngón cái `[28,45,0,0]` thay `[52,60,10,8]`), không dùng `cup` (cái lún 1,0–1,1). Fixture 0,04°/≤ 0,22 cỡ thật; khe ≤ v1 + 0,3, lún ≤ 0,25. Ảnh ngang v1: bút ở khe cái–trỏ, ngòi giữa hai đầu ngón; từ lưng tay như nắm lỏng. Hàng chung (bút dựng đứng) vượt cổ tay 72–78° → hàng mẫu đặt ngòi ra trước-xuống. t02 0 mới | `g483/`, `duyet/g4-pen.jpg` |
 | G6-1 `stickman migrate-held` (chạy khô, sớm) | xong: `packages/cli/migrate-held.mjs` (`--scene`, `--held-dir`, `--dry-run`, `--out`, `--map`); bảng Phụ lục A `HOLD_MAP` trong package; dựng liên kết v1 bằng tay thật của nhân vật, quét lựa chọn nhóm qua đường tay dẫn (`holdHand`/`gripFrame`), ghi đủ trường; ý định chỉ khi khác mặc định (`keep: true` khi v1 không có); `both`: tay dẫn `both: true`, tay kia `hold: null`; `regrip` khi cùng khoá lần cầm; cảnh còn lần cầm "chờ nhóm" thì không ghi. Test `migrate.test.mjs` (3 ca trung tính). Chạy khô t02: 142 dòng (121 + 21 tay phụ), 117 chuyển, 4 chờ (`tui#xach` ×3 `handle`, `chen#kep` `bowl`), 0 lỗi; lệch > 5°/1: `khay#bung` 9 + `khay-suat#bung` 1 (1,74–1,80, 0°), `dien-thoai#khoe`, `#cam` (2,39, `tilt` chạm 0); còn lại ≤ 1,94°/0,95. Ý định không diễn được: `phieu-lien#cam` (`roll`). Docs mục 8, docs/05 chưa sửa | `g6/migrate-kho.{md,json}` |
 | G4-84+85 `pen` hàng mẫu + docs + render | xong: món đặt trước `offset [44,16,25]`, ngòi ra trước-xuống (`[0,5,0,866,0]` của Phụ lục A còn lệch cổ tay 14–20° với món đặt trước), `along` 0,15/0,45, tay dẫn hai tay ngòi xuống bàn. 10 hàng, 0 luật báo; lún ≤ 0,25, khe ≤ v1 + 0,3. Docs nhóm 3, banner tám nhóm chạy, `THIN_CURL`; `docs/01` `tripod`. Tay dẫn trái cẳng tay vắt chéo bụng, hơi gượng. Mốc M4-8 | `g4-pen/` |
+| G4-92+93 `handle` `hook` | xong: `RodFeature.gap` (khe sau thanh, hẹp nhất quanh thanh × thoáng nhất dọc đoạn bám; nhập `heldDistance` từ `heldFit` — vòng import chỉ trong hàm); `handle.needs` khe ≥ `HOOK_GAP`·W (≈ 0,357) + thanh nghiêng ≥ `HOOK_TILT` 45° khỏi `top` (không thì quai đeo túi đạt); bỏ `later`; dáng `HOOK` (hook, gốc −40, ngọn −10; không sửa `hand.ts` vì v1 dùng); `CONTACTS.handle.hook` (`nf`, ngón về `−top`, lòng về `front`). Fixture `tui#xach` 0°/0 cỡ thật. Tay buông xách: lún 0 (v1 0,9/0,6), khe ≤ 0,25, lệch cổ tay −18,8° (sát ±20). Ảnh ngang v1, ngón móc rõ hơn. Hàng chung (túi trước ngực) vượt cổ tay 35–46°. `vali` quai trên không đạt (khe 0), `ly-bia` quai đứng bị loại. t02 0 mới | `g492/`, `duyet/g4-handle.jpg` |
 | G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
@@ -161,6 +162,8 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 - G4-83: tay trái `pen` so fixture tay phải soi gương, không so fixture tay trái v1 (cái phía xa bút, bút tì áp út).
 
+- G4-92: thêm luật `handle` thanh nghiêng ≥ 45° khỏi `top` (spec không có) để quai đeo/quai đứng không thành chỗ cầm mặc định.
+
 ## Cần chủ dự án
 - Có nới kẹp xoay cẳng tay quá ±90 không? Ca "khoe, một tay đỡ cạnh dưới" (bước 0 ca 4, `rim`) cần −103; hiện thành cảnh báo `wrist` và bàn tay lệch chỗ cầm chút ít. Ảnh: `tmp/nhom-cam/b0/hinh/vong2/to-2.jpg`.
 
@@ -191,6 +194,6 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 ## Bước kế
 0. Phiên tiếp tục (2026-10-20) sau khi chủ dự án chốt hướng G4-38b. Worktree sạch, mọi việc xanh đã commit và push. Studio xem `git log`, video `9b13333`.
-1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. `platform` (M4-5) xong. `card` (M4-6) xong. `chopsticks` (M4-7) xong. `pen` (M4-8) xong. Handle: G4-92+93 gộp đang chạy → 94+95 gộp.
+1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. `platform` (M4-5) xong. `card` (M4-6) xong. `chopsticks` (M4-7) xong. `pen` (M4-8) xong. Handle: 92+93 xong → 94+95 gộp. Bowl: A2 (A1 xong).
 3. Rồi handle 92–95, bowl A2–A4, Z1, Z2 theo `gd4-ke-hoach.md`. Đã xong/gộp: 00, X1, 11–14, 22–25, 32–38b, 41–48, 52, 72, 73, 82.
 4. Giai đoạn 5 → 6.
