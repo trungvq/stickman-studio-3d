@@ -82,7 +82,7 @@ dùng**. Phần "để sau" giữ định nghĩa trong bản này để schema v
 
 | | Bản đầu | Để sau |
 |---|---|---|
-| Nhóm | `sheet` (`pinch`, `flat`, `rim`), `card` (`pad`), `pen` (dáng), `chopsticks` (dáng), `cylinder` (`wrap`), `bowl` (`side`), `handle` (`hook`), `palmBox`, `platform` (`palm`), `carry` | `round`, `hug`, `clamp`, `soft`; biến thể `card.lateral`, `card.between`, `cylinder.index`, `handle.wrap`, `handle.ring`, `platform.tips`, `bowl.base` |
+| Nhóm | `sheet` (`pinch`, `flat`, `rim`), `card` (`pad`), `pen` (dáng), `chopsticks` (dáng), `cylinder` (`wrap`, `flat`), `bowl` (`side`), `handle` (`hook`), `palmBox`, `platform` (`palm`), `carry` | `round`, `hug`, `clamp`, `soft`; biến thể `card.lateral`, `card.between`, `cylinder.index`, `handle.wrap`, `handle.ring`, `platform.tips`, `bowl.base` |
 | Khối hình | `slab`, `disc`, `rod`, `lathe`, `box`, `face` | `path` (quai cong), `ball` |
 | Món | `shape` + `part` + `detail`, `parts`, `front`, `top`, `anchors`, `seats`, `touch`, `hang` | `joints` (que trên của đũa), `soft`; `seats` thay bằng khai hình quai |
 | Cảnh | `items`; `hold` có chỗ cầm, `"món@nhóm"`, `both`, `touch`, `regrip`; tay dẫn với ý định, `keep` | `write`, `pick`, lớp không cầm (`contact`) |
@@ -287,6 +287,7 @@ interface GroupSpec {
   support?: SupportSpec;                          // tay phụ mặc định khi cảnh khai `both`
   intent?: HoldIntentSpec;                        // hướng món mặc định (trục theo `front` / `top` / miệng của món)
   fixture?: string;                               // tên fixture GripFrame chuẩn trong test (mục 9)
+  variantOf?: (f: Feature, g: ItemGeom, around: number | undefined, h: HandDims) => string;  // biến thể khi cảnh không khai và nhóm không có mặc định
   motion?: "write" | "pick";                      // động tác trong tay (để sau)
   later?: true;                                   // để sau: `needs` không bao giờ đạt, `check` báo "chưa làm"
 }
@@ -318,7 +319,7 @@ trên **bàn tay hiện tại**, lưu ở `core/__fixtures__/grip-frames.json`; 
 | 2 | `card` | Tấm nhỏ kẹp đầu ngón | `slab` mỏng | một | thẻ, thẻ phòng, giấy tờ | bản đầu (`pad`) |
 | 3 | `pen` | Bút | `rod`/`lathe` mảnh + `tip` | một | bút | bản đầu (dáng) |
 | 4 | `chopsticks` | Đũa | hai `rod` mảnh + `tip` | một | đũa | bản đầu (dáng) |
-| 5 | `cylinder` | Thân trụ | `lathe`, `rod` | một / hai | chai ×2, bình, bộ đàm, ống nghe ×2 | bản đầu (`wrap`) |
+| 5 | `cylinder` | Thân trụ | `lathe`, `rod` | một / hai | chai ×2, bình, bộ đàm, ống nghe ×2 | bản đầu (`wrap`, `flat`) |
 | 6 | `round` | Khối tròn | `ball`, `lathe` ngắn | một | — | để sau |
 | 7 | `bowl` | Chén không quai | `lathe` có miệng | một / hai | chén | bản đầu (`side`) |
 | 8 | `handle` | Quai | `rod` có khe sau (`path` để sau) | một | túi, cốc bia, vali, vòng chìa | bản đầu (`hook`) |
@@ -411,7 +412,7 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
 - **Dáng**: `chopsticks` (mới, soạn tay). **Vai trò**: cái, trỏ `press`; giữa, áp út `support`; út `free`.
 - **Tay**: một.
 
-#### 5. `cylinder` — thân trụ (bản đầu: `wrap`)
+#### 5. `cylinder` — thân trụ (bản đầu: `wrap`, `flat`)
 
 - **Cần**: `lathe` hay `rod` có `r ∈ [0,06 · W, 0,95 · W]` (với `rod` xét cả `R ≤ 0,95 · W`). **Đoạn bám liền** (mục 2) dài
   `≥ 0,6 · W` (ba ngón trỏ, giữa, áp út) và chứa được tâm nắm cách phần `grip: false` `≥ 0,3 · W` (`GRIP_CLEAR`; `alongRoom`).
@@ -439,13 +440,26 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
   |---|---|---|---|---|---|---|
   | `[dạng, đối, gập gốc, gập ngọn]` | 60, 60, 45, 60 | 60, 90, 45, 10 | 60, 90, 45, 10 | 80, 90, 0, 0 | 90, 40, −10, 0 | 50, 20, 0, 10 |
 
-- **Vai trò**: mọi ngón `wrap`, lòng tay `press`. Để sau: `index` (ngón trỏ duỗi dọc thân, #17).
+- **Vai trò** `wrap`: mọi ngón `wrap`, lòng tay `press`. Để sau: `index` (ngón trỏ duỗi dọc thân, #17).
+- **Biến thể `flat`** (`kinds: ["rod"]`, `frame: "nt"`, fixture `ong-nghe-ban#tai`): thanh hộp rộng hơn lòng tay thì ngón không ôm
+  quanh được, lòng tay áp phẳng lên mặt rộng và ngón nằm dọc thân (ống nghe áp tai dựng dọc má).
+  - **Khi nào rig chọn**: chỗ cầm không khai `variant` thì `variantOf` (`cylinderVariant`) trả `flat` khi khối hình là `rod` hộp có
+    mặt rộng `2R ≥ FLAT_WIDE · W` (`FLAT_WIDE` = 1) và lòng tay áp đúng mặt rộng ấy: mặt gần `ρ(around)` nhất (`faceRho`) có
+    pháp tuyến có `|cos|` với trục cạnh dài dưới 0,5 (ống nghe mặt lưng hay mặt trước ra `flat`, mặt hông ra `wrap`).
+    Thanh tròn, trụ tiện (chai) và thanh hộp hẹp hơn lòng tay luôn `wrap`. `around` lấy của cảnh, không khai thì mặc định của
+    nhóm. Cảnh khai `variant` thì giữ nguyên.
+  - **Chỗ tiếp xúc** (`flatRod`): lòng tay `n = −ρ` với `ρ` là pháp tuyến mặt rộng áp (`faceRho`), hướng ngón là trục `a` (`thumb`
+    `up` về `+a`, `down` ngược), không ngả theo dốc. Điểm trên trục và kẹp `along` như `wrap` (`axialAt`, `clear = GRIP_CLEAR · W`);
+    tâm nắm dời ra theo `ρ` tới khi da lòng tay còn cách hình `WRAP_GAP` = 0,7 (không có hình thì dời tới `r`).
+  - **Dáng**: `span` ở cả hai đầu (không hoà theo bán kính), ngón cái `FLAT_THUMB` = `[20, 6, 0, 10]` (khép dọc cạnh ngón trỏ, nằm
+    trên mặt rộng); `by: "radius"` trong `[0,06, 0,95] · W` như `wrap`. Dáng kẹp đầu ngón nên `grip` dùng `HELD_GRIP_PINCH` (mục 7).
+  - **Vai trò**: ngón cái, trỏ, giữa, áp út và lòng tay `press`, út `support`.
 - **Lựa chọn**: `part` (phần có khối trụ, bám được), `along` ∈ {`low`, **`mid`**, `high`} hay số, `around` ∈ [0°, 360°) (mục 2; tay dẫn
-  không khai thì `0`), `thumb` ∈ {**`up`**, `down`}. `along` trải **cả đoạn bám liền**, nên `part` chọn khối cho đặc trưng (số đo,
+  không khai thì `0`), `thumb` ∈ {**`up`**, `down`}, `variant` ∈ {`wrap`, `flat`} (không khai thì rig suy theo `around`, xem `flat`). `along` trải **cả đoạn bám liền**, nên `part` chọn khối cho đặc trưng (số đo,
   mặt) còn `along` chạy qua mọi khối nối nhau. Tay trượt dọc thanh đổi `along` giữa hai mốc tay (mục 4).
   - `along` khai sát phần `grip: false` quá `GRIP_CLEAR · W` thì rig kẹp tâm nắm về miền `alongRoom` và `check` báo **cảnh báo**
     `choice` (mục 7): nêu phần cắt, khoảng cách và `along` rig kẹp về.
-  - Ống nghe máy bàn, máy tường, bộ đàm: `rod` của tay cầm. Áp tai là lòng tay áp mặt lưng của thân (`around 180`; mặt trước nhô loa, mic); ý định loa vào tai ở cảnh.
+  - Ống nghe máy bàn, máy tường, bộ đàm: `rod` của tay cầm. Áp tai là lòng tay áp mặt lưng của thân (`around 180`; mặt trước nhô loa, mic), rig suy ra `flat`; ý định loa vào tai ở cảnh.
 - **Tay**: một hay hai. Tay phụ mặc định: `platform` ở mặt đáy (rót có tay đỡ)
 - **Hướng mặc định**: `up: <top>`. Rót không có chỗ nắm riêng: mốc món đặt miệng chai, nghiêng trục miệng về cốc; cảnh khai
   `part` (thân hay vai), không khai thì rig giải trên chai đã đứng yên (mục [5](#lựa-chọn-cảnh-không-khai)).
@@ -769,6 +783,9 @@ Cảnh thường khai đủ chỗ cầm. Thiếu trường nào:
   rẻ nhất; hoà thì theo thứ tự ứng viên: `part`, khối hình theo `FeatureKind`, `edge`, `thumb`, `variant`, `along`,
   `slant`, rồi `around`, `tilt`, `psi` (rời theo thứ tự miền khai, liên tục tăng dần). Giải 3–42 ứng viên mất 3–17 ms; `cylinder`
   (29–42 ứng viên, có đo lún) mất 80–140 ms mỗi tay.
+- **`variant` của trụ** (`cylinder`, không có `choices.variant`) không giải thành một ô riêng: `chooseMissing` để `graspFrame` suy
+  biến thể của từng ứng viên theo khối hình và `around` của nó (`variantOf`, mục 3 nhóm 5), nên lưới `around` của ống nghe đi qua cả
+  `flat` (mặt rộng) lẫn `wrap` (mặt hông). Cảnh khai `variant` thì giữ nguyên, kể cả `wrap` trên mặt trước.
 - **Loại `around` của trụ** (`BULGE` = 0,1): nhóm có `clear` bỏ khỏi lưới (bậc rời lẫn lưới liên tục) mọi `around` mà phần `grip: false`
   kề đoạn bám nhô khỏi mặt khối quá `0,1 · W` về phía lòng tay (`bulgeToward`, đo bằng điểm xa nhất của từng khối; thanh hộp:
   mặt lòng tay áp là mặt gần `ρ` nhất). Ống nghe loại mặt trước (0°, 30°, 330°: loa, mic nhô); 60°, 90°, 180°, 270° giữ. Mọi `around`
@@ -862,7 +879,7 @@ của một ranh giới lần cầm (`holdBlending` của `scene.ts`: vừa cầ
 | `sink` | mọi chỗ cầm nhóm | Da lún quá `HELD_SINK` (`|HELD_FIT.touch| + 0,5` = `0,65`), đo trên **da** ([bên dưới](#đo-lún-trên-da)); ngón ôm đã nhắm trên da nên không gỡ được là lỗi dáng nhóm | cảnh báo |
 | `loose` | mọi chỗ cầm nhóm | Không vùng da nào của vai trò bắt buộc (`press`, `wrap`, `tip`, lòng tay `press`; không vai trò nào bắt buộc thì xét cả bàn tay) cách hình dưới `HELD_TOUCH` (`1`) | cảnh báo |
 | `role` | mọi chỗ cầm nhóm | Ngón có vai trò `press` / `wrap` / `tip` còn cách hình quá `HELD_WRAP` (`1,5`), đo trên da | cảnh báo |
-| `grip` | mọi chỗ cầm nhóm | Tâm nắm cách **hình** (`shape`) quá ngưỡng của nhóm (`heldGripMax`: nhóm hay biến thể có dáng kẹp đầu ngón `HELD_PINCHES` dùng `HELD_GRIP_PINCH` `5`, còn lại `HELD_GRIP` `3`; tay dẫn lấy biến thể cảnh khai). `grip` khai ở `package.json` thì thắng ngưỡng nhóm, cả khi nhỏ hơn (`gripDeclared`) | cảnh báo |
+| `grip` | mọi chỗ cầm nhóm | Tâm nắm cách **hình** (`shape`) quá ngưỡng của nhóm (`heldGripMax`: nhóm hay biến thể có dáng kẹp đầu ngón `HELD_PINCHES` dùng `HELD_GRIP_PINCH` `5`, còn lại `HELD_GRIP` `3`; tay dẫn lấy biến thể cảnh khai: `cylinder` không khai `variant` lấy `5` vì `flat` có dáng `span`, `wrap` khai rõ lấy `3`). `grip` khai ở `package.json` thì thắng ngưỡng nhóm, cả khi nhỏ hơn (`gripDeclared`) | cảnh báo |
 | `reach` | món đặt trước | Tay duỗi hết vẫn không tới chỗ cầm: khe tầm với `arm.gap` quá `AIM_GAP · s` | **lỗi** |
 | `wrist` | món đặt trước | Ở khuỷu tốt nhất cổ tay vượt `TURN_MAX`, `AIM_BEND` hay `AIM_DEV` (`heldWristMargin` dương) — lỗi, kèm độ vượt và độ lệch bàn tay – chỗ cầm; còn cách giới hạn dưới `HELD_WRIST` (`5°`) — cảnh báo. Dòng báo gợi đổi `edge`/`thumb` hay hướng món | lỗi / cảnh báo |
 | `arm` | món đặt trước | Bắp tay, cẳng tay lấn vào thân, đầu hay tay kia quá `HELD_ARM` (`0,3`) lần bán kính tay ở chỗ lấn (`bodyRatio`) | cảnh báo |
@@ -870,7 +887,7 @@ của một ranh giới lần cầm (`holdBlending` của `scene.ts`: vừa cầ
 | `up`, `face`, `reach` (tay phụ, `item:`) | tay dẫn | `AimReport.hold` như kiểu cầm v1 | như v1 |
 | `jump`, `seat`, `body`, cầm món không ai `provide` | cả hai | Như [03](03-scene.md#đồ-cầm-tay); `jump` có loại "đổi chỗ cầm" giữa hai lần cầm cùng món | như v1 |
 | lỗi `ref` `group` | `resolveScene` | Món không có khối hình nào cho nhóm với cỡ tay của người khai (`checkHolds` của `scene.ts`); dòng báo nêu khối hình món có, và phần khác còn vừa nếu có: `` `<món>` phần `than` (r 15) quá tầm nắm của tay `<người>` (0,95 · W = 14,0): khai `part: "vai"` hay hai tay `` | lỗi |
-| lỗi `ref` `choice` | `resolveScene` | Chỗ cầm không hợp lệ: trường không thuộc nhóm, `edge`/`thumb` không có trên khối hình, biến thể quá bề dày ở mép (`flat` trên tấm dày hơn `FLAT_MAX · W`), `part` không có hay `grip: false`, `along` ngoài 0–1, `both` với nhóm một tay, `both` mà tay kia cũng có `hold` ở cùng `t`, `on`/`yaw` ngoài `carry`, `carry` thiếu `on` hay món không có `seats[on]`, nhóm `later`; món có mốc ở `items` mà mốc tay khai đích (`to`, `at`, `offset`, `point`) hay ý định (`face`, `up`, `roll`, `keep`); mốc món ở `t` không tay nào cầm món ấy | lỗi |
+| lỗi `ref` `choice` | `resolveScene` | Chỗ cầm không hợp lệ: trường không thuộc nhóm, `edge`/`thumb` không có trên khối hình, biến thể quá bề dày ở mép (`flat` trên tấm dày hơn `FLAT_MAX · W`), biến thể không áp trên loại khối hình (`flat` của `cylinder` chỉ trên `rod`; chai, trụ tiện báo lỗi kèm khối hình món có), `part` không có hay `grip: false`, `along` ngoài 0–1, `both` với nhóm một tay, `both` mà tay kia cũng có `hold` ở cùng `t`, `on`/`yaw` ngoài `carry`, `carry` thiếu `on` hay món không có `seats[on]`, nhóm `later`; món có mốc ở `items` mà mốc tay khai đích (`to`, `at`, `offset`, `point`) hay ý định (`face`, `up`, `roll`, `keep`); mốc món ở `t` không tay nào cầm món ấy | lỗi |
 | cảnh báo `ref` `choice` | `sceneHoldProblems` (`choiceWarnings`) | Chỗ cầm hợp lệ mà `along` cảnh khai sát phần `grip: false` quá `clear · W` của nhóm (`cylinder`: `GRIP_CLEAR` = 0,3): tâm nắm cách phần ấy dưới ngưỡng. Dòng báo nêu phần cắt, khoảng cách dọc trục, `along` rig kẹp về (`alongRoom`) và `along` nên khai; cỡ tay lấy theo người cầm. Không chặn | cảnh báo |
 | lỗi `ref` `item` | `resolveScene` | Mốc món có đích của trục phụ lệch đích của trục chính dưới 18° (cos tuyệt đối > 0,95): hướng món suy biến, dòng báo gợi `roll` khác; đích của một trục trùng chỗ món; `face` trần không có trục (mốc không khai, nhóm không có mặc định). Rig không tự đổi | lỗi |
 
@@ -1010,7 +1027,7 @@ vai trò, test, hàng `bang-cam` cho chủ dự án duyệt:
 3. `sheet` (18) — `pinch`, `flat`, `rim`; một và hai tay; đĩa tròn. Hiện tại: biến thể mặc định `pinch`, ngón cái khép theo trỏ
    (`PoseRef.thumb`); `rim` cuộn ngón theo bề dày thật chỗ ôm (`PoseRef.tip`, `thickAt`); đĩa chọn vành theo góc, ngón cái `rim`
    ở mặt trên.
-4. `cylinder` (11) — `lathe` và `rod` (ống nghe); tay trượt dọc thanh; tay phụ `platform`. Hiện tại: `wrap` bám cả đoạn bám liền
+4. `cylinder` (11) — `lathe` và `rod` (ống nghe); tay trượt dọc thanh; tay phụ `platform`. Hiện tại: `flat` (thanh hộp mặt rộng: `variantOf`, `flatRod`, dáng `span`); `wrap` bám cả đoạn bám liền
    (`axialAt`, `around`), lòng tay áp mặt và ngả theo dốc, dáng hoà theo bán kính tại chỗ cầm, ngón cái theo hai họ
    (`PoseSpec.thumb`), tâm nắm cách phần `grip: false` `GRIP_CLEAR`, giá lún và loại `around` nhô (`BULGE`) khi rig giải.
 5. `platform` (10) — một và hai tay.
@@ -1057,9 +1074,9 @@ từ liên kết cũ; tool đo lại. "Ý định ghi" là ý định của ki�
 | `tom-hum#nhac` | 8 | `sheet` `rim`, `both` | vành trái/phải, `thumb: top` | `up: top`, `roll: duoi → forward` | — |
 | `khay#bung` | 8 | `platform`, `both` | `edge` left/right, `ψ` ngón về `back` | `roll: far → forward` | — |
 | `dua#cam` | 6 | `chopsticks` | fixture | `face: tip → forward, tilt −30` | — |
-| `ong-nghe-ban#tai` | 5 | `cylinder`, `part: tay` | lòng tay áp `back`, `thumb: up` | `face: front → {mark: head}`; `touch: self.head` | 1 cặp |
+| `ong-nghe-ban#tai` | 5 | `cylinder`, `part: tay` | lòng tay áp `back`, `thumb: up`; biến thể `flat` (rig suy, không cần khai) | `face: front → {mark: head}`; `touch: self.head` | 1 cặp |
 | `but#viet` | 4 | `pen` | fixture | `face: tip → [0,5, 0,866, 0]` | — |
-| `ong-nghe#tai` | 4 | `cylinder`, `part: tay` | như trên | như trên | — |
+| `ong-nghe#tai` | 4 | `cylinder`, `part: tay` | như trên, biến thể `flat` (rig suy) | như trên | — |
 | `bao#doc` | 4 | `sheet` `rim`, `both` | `edge` right/left, `along` ≈ 0,17 | `face: front → back, tilt 10`, `roll: top → up` | — |
 | `tui#xach` | 3 | `handle` `hook` | `along: mid` | — | — |
 | `the-phong#kep` | 3 | `card` | `edge: bottom` | `face: front → up`, `roll: top → forward` | — |
