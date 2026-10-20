@@ -147,6 +147,40 @@ describe("heldHits: chỗ cầm nhóm", () => {
     expect(rules({ ...rod, grip: HELD_GRIP + 1, roles: undefined })).toEqual(["grip"]);
   });
 
+  it("`grip` cấu hình khai (`gripDeclared`) thay ngưỡng theo nhóm cả hai chiều; không khai thì `grip` bị bỏ qua", () => {
+    const hits = (grip: number, o: { grip?: number; gripDeclared?: boolean }) =>
+      heldHits(sample({ grip }), o).map((h) => h.rule);
+    expect(hits(2, { grip: 1, gripDeclared: true })).toEqual(["grip"]);
+    expect(hits(2, { grip: 1 })).toEqual([]);
+    expect(hits(HELD_GRIP_PINCH + 1, { grip: HELD_GRIP_PINCH + 2, gripDeclared: true })).toEqual(
+      [],
+    );
+    expect(hits(HELD_GRIP_PINCH + 1, { grip: HELD_GRIP })).toEqual(["grip"]);
+    const lead = { grasp: undefined, hold: "dien-thoai@palmBox////", item: "dien-thoai" };
+    expect(heldHits(sample({ ...lead, grip: 2 }), { grip: 1, gripDeclared: true })).toHaveLength(1);
+  });
+
+  it('tay dẫn có `grasp` (`mode: "hand"`): luật như tay dẫn không `grasp`', () => {
+    const g = grasp(
+      {
+        item: "dien-thoai",
+        group: "palmBox",
+        mode: "hand",
+        choice: { part: "body", feature: "box", along: 0.4, tilt: 20, featureIndex: 0 },
+        by: { part: "default", feature: "default", along: "default", tilt: "default" },
+      },
+      { wrist: { turn: 120, bend: 80, dev: 40, over: 30, off: 0 }, bodyRatio: 2, gap: 40 },
+    );
+    const lead = {
+      hold: "dien-thoai@palmBox////",
+      item: "dien-thoai",
+      size: { of: 9, W: 10, ratio: 0.9 },
+    };
+    expect(rules({ ...lead, grasp: g })).toEqual(rules({ ...lead, grasp: undefined }));
+    expect(rules({ ...lead, grasp: g })).toEqual([]);
+    expect(rules({ ...lead, grasp: g, grip: HELD_GRIP_PINCH + 1 })).toEqual(["grip"]);
+  });
+
   it("tay dẫn (không `grasp`): nhóm đọc từ khoá lần cầm, không xét `wrist`, `arm`", () => {
     const lead = { grasp: undefined, hold: "dien-thoai@palmBox////", item: "dien-thoai" };
     expect(rules(lead)).toEqual([]);

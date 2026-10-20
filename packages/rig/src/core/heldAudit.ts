@@ -179,7 +179,7 @@ export interface HeldHand {
     /** Kiểu cầm khác của cùng món với cùng ý định, lệch còn lại (độ), ít trước (`AimReport.hold.alts`) */
     alts?: readonly { grip: string; err: number }[];
   };
-  /** Chỗ cầm nhóm đã giải của lần cầm món đặt trước (`AimReport.hold.grasp`): nhóm, khối hình, cổ tay, khuỷu */
+  /** Chỗ cầm nhóm đã giải (`AimReport.hold.grasp`), món đặt trước (`item`) hay tay dẫn (`hand`): nhóm, khối hình, cổ tay, khuỷu */
   grasp?: GraspReport;
   /**
    * Kiểu cầm cứng: đích do món đặt cho bàn tay — `support` tay phụ với tới mốc kiểu cầm của nó trên món, `item` điểm
@@ -550,6 +550,8 @@ export interface HeldOptions {
   /** Khe ngón ôm (`HELD_WRAP`) */
   wrap?: number;
   grip?: number;
+  /** `grip` do cấu hình khai: thay ngưỡng theo nhóm (`heldGripMax`) của chỗ cầm nhóm, cả khi nhỏ hơn */
+  gripDeclared?: boolean;
   up?: number;
   face?: number;
   drift?: number;
@@ -674,9 +676,13 @@ function groupHits(s: HeldHand, o: Omit<HeldOptions, "frame">, blend: boolean): 
         out.push({ rule: "role", worst: Math.max(...open.map((f) => s.fingers![f])) });
     }
     const group = g?.group ?? groupOfKey(s.hold!);
-    const variant = g?.choice.variant ?? s.hold!.split("/")[1];
-    if (group && s.grip > heldGripMax(group, variant || undefined))
-      out.push({ rule: "grip", worst: s.grip });
+    // tay dẫn: biến thể như khoá lần cầm (cảnh khai), không theo mặc định đã điền
+    const variant = (placed ? g.choice.variant : undefined) ?? s.hold!.split("/")[1];
+    const max =
+      o.gripDeclared && o.grip !== undefined
+        ? o.grip
+        : group && heldGripMax(group, variant || undefined);
+    if (max !== undefined && s.grip > max) out.push({ rule: "grip", worst: s.grip });
   }
   if (placed) {
     if (g.arm.gap > (o.reach ?? AIM_GAP) * (s.s ?? 1))
@@ -692,7 +698,8 @@ function groupHits(s: HeldHand, o: Omit<HeldOptions, "frame">, blend: boolean): 
     if (s.reach && s.reach.gap > (o.reach ?? AIM_GAP) * s.reach.s)
       out.push({ rule: "reach", worst: s.reach.gap });
   }
-  if (s.size && s.size.ratio >= SIZE_WARN) out.push({ rule: "size", worst: s.size.ratio });
+  if (placed && s.size && s.size.ratio >= SIZE_WARN)
+    out.push({ rule: "size", worst: s.size.ratio });
   return out;
 }
 
@@ -1235,7 +1242,7 @@ function groupLine(s: HeldIssue, x: HeldHand, who: string, when: string): string
   const place = `chỗ cầm ${heldPlace(x)}`;
   const g = x.grasp;
   const a = g?.arm;
-  const item = g ? `mốc món \`${x.item}\` ở \`items\`` : "đích tay";
+  const item = g?.mode === "item" ? `mốc món \`${x.item}\` ở \`items\`` : "đích tay";
   const head = (): string => {
     switch (s.rule) {
       case "reach":

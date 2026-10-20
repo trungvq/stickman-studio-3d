@@ -169,5 +169,9 @@ describe("check: đồ cầm tay chỗ cầm nhóm", () => {
       ["held:grip"],
     );
     assert.deepEqual(run([far], heldOptions(pkg({ grip: 8 }))), []);
+    assert.deepEqual(
+      run([v2({ grip: 2 })], heldOptions(pkg({ grip: 1 }))).map((r) => r.key.split("|")[0]),
+      ["held:grip"],
+    );
   });
 });

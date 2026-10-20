@@ -2132,17 +2132,14 @@ export function heldRows(ctx, rt, on, warn, quiet, onPosed) {
   const frame = heldFrame(rt, on, onError, onPosed);
   if (!frame) return;
   const items = heldItemsFrame(on);
-  const { gripDeclared, ...opts } = ctx.held;
   let issues;
   try {
-    issues = rig.sceneHeld(rt, { ...opts, frame, ...(items && { items }) });
+    // `gripDeclared`: `grip` khai ở `package.json` thay ngưỡng theo nhóm của chỗ cầm nhóm
+    issues = rig.sceneHeld(rt, { ...ctx.held, frame, ...(items && { items }) });
   } catch (e) {
     return warn(`không đo được đồ cầm tay — ${e.message}`);
   }
   for (const s of issues) {
-    // Chỗ cầm nhóm đo `grip` theo nhóm; `grip` khai ở `package.json` thắng
-    if (gripDeclared && s.rule === "grip" && s.sample.hold?.includes("@") && s.worst <= opts.grip)
-      continue;
     warn(rig.heldLine(s), {
       key: `held:${s.rule}|${s.id}|${s.hand}|${s.item}`,
       measure: s.worst,

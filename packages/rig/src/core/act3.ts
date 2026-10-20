@@ -32,7 +32,13 @@ import {
   type HandVec,
 } from "./hand";
 import type { RoleMap } from "./graspGroups";
-import { graspReport, type GraspReport, type GraspSolution } from "./graspSolve";
+import {
+  graspReport,
+  type GraspBy,
+  type GraspChoice,
+  type GraspReport,
+  type GraspSolution,
+} from "./graspSolve";
 import { handDims, type HandDims } from "./heldGeom";
 import { holdFrom, holdHand, holdLinkFrame, type HoldLinkHand } from "./holdLink";
 import { armInput, evalPhi, phiOf, type ArmSol } from "./graspArm";
@@ -72,6 +78,7 @@ import {
   type GripFrame,
   type GraspHand,
   type HoldAim,
+  type HoldGrasp,
   type HoldTarget,
   type ReachHold,
 } from "./heldItem";
@@ -846,6 +853,51 @@ const withBody = (r: GraspReport, a: ArmSol): GraspReport => ({
   arm: { ...r.arm, bodyRatio: a.bodyRatio, ...(a.bodyPart && { bodyPart: a.bodyPart }) },
 });
 
+/**
+ * Báo chỗ cầm của tay dẫn bên `side` (`mode: "hand"`): lựa chọn đã điền của khung cầm, nguồn `scene` / `default`, cánh
+ * tay đọc trên tay đã vẽ `A` (khuỷu `φ`, góc cổ tay như vẽ, lấn thân và tay kia `B`)
+ */
+function handGrasp(
+  T: Trunk3,
+  side: number,
+  g: HoldGrasp,
+  choice: GraspChoice,
+  A: ReturnType<typeof arm3>,
+  B?: ReturnType<typeof arm3>,
+): GraspReport {
+  const inp = armInput(T, side);
+  const other = B && { S: B.sh, E: B.elbow, W: B.wr };
+  const a = evalPhi(inp, A.wr, A.Rw, phiOf(inp, A.wr, A.elbow), undefined, other);
+  const said = g.hold as Partial<Record<keyof GraspChoice, unknown>>;
+  const by: GraspBy = {};
+  for (const k of Object.keys(choice) as (keyof GraspChoice)[])
+    if (k !== "featureIndex") by[k] = said[k] !== undefined ? "scene" : "default";
+  const [turn, bend, dev] = [A.v[0] ?? 0, A.v[1] ?? 0, A.dev];
+  const lim = (v: number, L: number) => Math.max(0, Math.abs(v) - L);
+  return {
+    item: g.hold.item,
+    group: g.hold.group,
+    mode: "hand",
+    t0: g.t0,
+    choice,
+    by,
+    arm: {
+      phi: a.phi,
+      wrist: {
+        turn,
+        bend,
+        dev,
+        over: Math.max(lim(turn, TURN_MAX), lim(bend, AIM_BEND), lim(dev, AIM_DEV)),
+        off: 0,
+      },
+      body: a.body,
+      bodyRatio: a.bodyRatio,
+      ...(a.bodyPart && { bodyPart: a.bodyPart }),
+      gap: a.gap,
+    },
+  };
+}
+
 const clampTo = (v: number, L: number) => Math.max(-L, Math.min(L, v));
 /** Xoay, gập, lệch cổ tay của cánh tay đã giải, kẹp ở giới hạn như người 3D vẽ */
 const wristOf = ({ wrist: w }: ArmSol): number[] => [
@@ -1357,6 +1409,17 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
         if (r) alts.push({ grip: g, err: r.err });
       }
       if (alts.length) rep.hold = { ...rep.hold, alts: alts.sort((a, b) => a.err - b.err) };
+    }
+    const lg = role?.role === "lead" ? role.hold.grasp : undefined;
+    const fr = lg?.mode === "hand" && h.G ? holdHand(role!.hold, side, dims)?.frame : undefined;
+    if (lg && fr) {
+      const grasp = handGrasp(T, side, lg, fr.choice, A, done[-side] && arm3(T, P, hands, -side));
+      if (rep.hold) rep.hold = { ...rep.hold, grasp };
+      else {
+        // không ý định: trục là mặt trước của món, muốn và đạt theo bàn tay vẽ
+        const front = rigDir(unit(mv(A.Rw, mv(h.G!.R, [0, 0, 1]))));
+        rep.hold = { axis: [0, 0, 1], want: front, got: front, err: 0, clamped: [], grasp };
+      }
     }
     const full =
       rw && rw.w >= 0.999 && hasTerms(rw) && !entering
