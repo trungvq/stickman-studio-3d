@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { trunk3, type ActInput } from "./act3";
 import { phiChain } from "./graspArm";
+import { FLAT_MAX } from "./graspGroups";
 import {
   chooseMissing,
+  CONTACTS,
   graspAt,
   graspCtx,
   graspFrame,
@@ -431,6 +433,42 @@ describe("chooseMissing: giá biến thể", () => {
 
 /** Phần giá lệch mặc định của nghiệm (giá trừ E và khe ở mốc bắt đầu) */
 const devOf = (s: GraspSolution) => s.cost - s.arm.E - (s.arm.gap / 6) ** 2;
+
+describe("chooseMissing: `flat` theo bề dày ở mép", () => {
+  const slab = (t: number) =>
+    item({
+      schemaVersion: 2,
+      size: [44, t, 58],
+      front: [0, 1, 0],
+      top: [0, 0, -1],
+      anchors: {},
+      shape: [{ box: [44, t, 58], at: [0, t / 2, 0] }],
+    });
+  // bảng đứng trước ngực, mặt quay về người cầm
+  const pose: ItemPose = {
+    R: fromColumns([1, 0, 0], [0, 0, -1], [0, 1, 0]),
+    P: [200, -230, 560],
+    cast: "nguoi",
+    s: 1,
+  };
+
+  it("tấm dày quá `FLAT_MAX · W` ở mép: rig không thử `flat`; tấm mỏng thì thử", () => {
+    const thick = FLAT_MAX * ctx.dims.W + 0.5;
+    const c2 = graspCtx(T, { mong: slab(1), day: slab(thick) });
+    const keep = CONTACTS.sheet!.flat;
+    let n = 0;
+    CONTACTS.sheet!.flat = (x) => (n++, keep(x));
+    try {
+      chooseMissing(c2, "mong@sheet", pose, RIGHT);
+      expect(n).toBeGreaterThan(0);
+      n = 0;
+      expect(chooseMissing(c2, "day@sheet", pose, RIGHT).choice.variant).not.toBe("flat");
+      expect(n).toBe(0);
+    } finally {
+      CONTACTS.sheet!.flat = keep;
+    }
+  });
+});
 
 describe("chooseMissing: vành đĩa", () => {
   // đĩa tôm hùm nằm ngửa trước ngực; `ngua: false` là úp (mặt `bottom` của món hướng lên)

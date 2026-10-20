@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  FLAT_MAX,
   GRIP_GROUPS,
   SIZE_WARN,
   checkChoice,
@@ -287,6 +288,39 @@ describe("checkChoice", () => {
     expect(bare).toHaveLength(1);
     expect(bare[0]).toMatch(/không có khối hình nào cho nhóm `carry` \(Treo\).*chỗ treo `seats`/);
     expect(check(tui, "carry", { on: "elbow", both: true })[0]).toMatch(/một tay/);
+  });
+
+  it("`flat` trên tấm dày quá `FLAT_MAX · W` ở mép (đo trên hình): báo, gợi biến thể khác", () => {
+    const slab = (shape: object[], t: number) =>
+      item({
+        schemaVersion: 2,
+        size: [60, t, 40],
+        front: [0, 1, 0],
+        top: [0, 0, -1],
+        anchors: {},
+        shape,
+      });
+    const t = FLAT_MAX * dims.W + 0.5;
+    const thick = slab([{ box: [60, t, 40], at: [0, t / 2, 0] }], t);
+    // tấm có chân: hộp bao dày, mép chỉ có lớp mặt dày 1
+    const plate = slab(
+      [
+        { box: [60, 1, 40], at: [0, t - 0.5, 0] },
+        { box: [40, t - 1, 30], at: [0, (t - 1) / 2, 0] },
+      ],
+      t,
+    );
+    const run = (s: HeldItemSpec, h: object) =>
+      checkChoice("sheet", itemGeom(s), hold(h), dims, undefined, s.shape);
+    const out = run(thick, { variant: "flat" });
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatch(
+      /biến thể `flat` cần bề dày ở mép ≤ 0,24·W \(\d+,\d\), mép dày \d+,\d: ngón cái không vắt qua mép — dùng `pinch` hay `rim`/,
+    );
+    expect(run(thick, { variant: "pinch" })).toEqual([]);
+    expect(run(thick, {})).toEqual([]);
+    expect(run(plate, { variant: "flat", edge: "right" })).toEqual([]);
+    expect(run(item(bangGia), { variant: "flat" })).toEqual([]);
   });
 
   it("`along` ngoài 0–1, tên lạ", () => {

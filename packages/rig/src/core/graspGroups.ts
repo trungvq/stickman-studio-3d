@@ -1,6 +1,15 @@
 import type { HandPose } from "./hand";
-import type { FingerRole } from "./heldFit";
-import { gripSpan, type Feature, type HandDims, type ItemGeom, type SlabFeature } from "./heldGeom";
+import { heldDistance, type FingerRole } from "./heldFit";
+import {
+  edgeFrame,
+  gripSpan,
+  type DiscFeature,
+  type Feature,
+  type HandDims,
+  type ItemGeom,
+  type SideName,
+  type SlabFeature,
+} from "./heldGeom";
 import {
   CARRY_ON,
   GROUP_IDS,
@@ -9,11 +18,12 @@ import {
   type AxisIntent,
   type GroupId,
   type HeldFinger,
+  type HeldShape,
   type IntentTarget,
   type SceneHold,
   type SceneHoldGroup,
 } from "./heldItem";
-import { dot3, type V3 } from "./lens";
+import { add3, dot3, scale3, sub3, type V3 } from "./lens";
 
 /**
  * Bảng nhóm cầm (`GRIP_GROUPS`): điều kiện hình học theo cỡ tay, biến thể (khung, dáng, vai trò ngón), lựa chọn và miền,
@@ -56,6 +66,8 @@ export interface VariantSpec {
   curl?: number;
   /** Tên `món#kiểu` v1 mà khung chuẩn của biến thể lấy ra */
   fixture?: string;
+  /** Bề dày thật ở mép (`edgeThick`) tối đa, lần `W`: dày hơn thì biến thể không áp */
+  thickMax?: number;
 }
 
 export interface FeatureNeed {
@@ -195,6 +207,68 @@ export const EDGE_MIN = 0.6;
 export const longEdges = (f: SlabFeature, h: HandDims) =>
   f.edges.filter((e) => e.len >= EDGE_MIN * h.W);
 
+/** Thụt tâm nắm vào trong tấm, đơn vị món, cố định mọi cỡ tay (fixture của từng biến thể) */
+export const SHEET_INSET = { pinch: 2.5, flat: 5, rim: 3.2 } as const;
+/** `flat`: khe đệm ngón cái dáng `edge` – mặt lòng tay, lần `W` (0,24 ở cỡ k 1,75 dọc 1,545; 0,25 ở k 2 dọc 1,813) */
+export const FLAT_MAX = 0.24;
+const SPAN_STEPS = 24;
+
+/** Đoạn có vật liệu dọc `F` qua `c` trong `[−t/2, t/2]` (khung món), `SPAN_STEPS` mẫu: hai mút tính từ `c` */
+export function spanAt(
+  shape: readonly HeldShape[],
+  c: V3,
+  F: V3,
+  t: number,
+): [number, number] | undefined {
+  const h = t / SPAN_STEPS;
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (let i = 0; i < SPAN_STEPS; i++) {
+    const s = (i + 0.5) * h - t / 2;
+    if (heldDistance(shape, add3(c, scale3(F, s))) >= 0) continue;
+    lo = Math.min(lo, s - h / 2);
+    hi = Math.max(hi, s + h / 2);
+  }
+  return lo < hi ? [lo, hi] : undefined;
+}
+
+/** Bề dày vật liệu ở `inset` vào trong giữa cạnh `edge` của tấm hay đĩa; không có hình thì bề dày khối hình */
+export function edgeThick(
+  f: SlabFeature | DiscFeature,
+  edge: SideName | number,
+  inset: number,
+  shape?: readonly HeldShape[],
+): number {
+  const fr = edgeFrame(f, edge, f.faces[0].name);
+  const s = shape && spanAt(shape, sub3(fr.at, scale3(fr.m, inset)), fr.F, f.t);
+  return s ? s[1] - s[0] : f.t;
+}
+
+/**
+ * Bề dày ở mép khi biến thể `variant` không áp được trên khối hình `f` (vượt `thickMax · W` ở cạnh `edge`, hay ở mọi cạnh
+ * được cầm khi bỏ trống); áp được thì `undefined`
+ */
+export function tooThick(
+  group: GroupSpec,
+  variant: string,
+  f: Feature,
+  edge: SideName | number | undefined,
+  dims: HandDims,
+  shape?: readonly HeldShape[],
+): number | undefined {
+  const max = group.variants[variant]?.thickMax;
+  if (max === undefined || (f.kind !== "slab" && f.kind !== "disc")) return undefined;
+  const inset = SHEET_INSET[variant as keyof typeof SHEET_INSET] ?? 0;
+  const edges =
+    edge !== undefined
+      ? [edge]
+      : f.kind === "slab"
+        ? (longEdges(f, dims).length ? longEdges(f, dims) : f.edges).map((e) => e.name)
+        : f.rim;
+  const t = Math.min(...edges.map((e) => edgeThick(f, e, inset, shape)));
+  return t > max * dims.W ? t : undefined;
+}
+
 /** Ngón cái `pinch`: khép theo trỏ, ngọn duỗi ngược để đầu ngón đè mặt trước mà đốt gốc (da phình to) tránh mép */
 const PINCH_THUMB = [0, 10, 10, -20] as const;
 /** Ngón cái `rim`: khép về cạnh trỏ, đè mặt `F` lên trỏ đã cuộn; góc chọn để `handGripOf` của dáng đóng còn ở kẽ cái–trỏ */
@@ -238,6 +312,7 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
         },
         roles: roles("press", "support", "press"),
         fixture: "phieu-lien#cam",
+        thickMax: FLAT_MAX,
       },
       rim: {
         frame: "nt",
@@ -894,7 +969,8 @@ const faceOk = (f: Feature, thumb: string): boolean =>
 /**
  * Lỗi `group` và `choice` của một chỗ cầm v2 (docs/11 mục 7): nhóm `later`, trường không thuộc nhóm, `on` / `yaw` ngoài
  * `carry`, `carry` thiếu `on` hay món không có `seats[on]`, `both` với nhóm một tay, biến thể, số ngoài miền, `part` /
- * `edge` / `thumb` không có trên khối hình, và món không có khối hình cho nhóm. Mảng rỗng là hợp lệ
+ * `edge` / `thumb` không có trên khối hình, biến thể quá bề dày ở mép (`thickMax`, đo trên `shape`), và món không có khối
+ * hình cho nhóm. Mảng rỗng là hợp lệ
  */
 export function checkChoice(
   group: GroupId | GroupSpec,
@@ -902,6 +978,7 @@ export function checkChoice(
   hold: SceneHold,
   dims: HandDims,
   anchors?: Record<string, { dir?: unknown }>,
+  shape?: readonly HeldShape[],
 ): string[] {
   const spec = specOf(group);
   const h: SceneHoldGroup = groupHold(hold);
@@ -975,5 +1052,16 @@ export function checkChoice(
     !byEdge.some((f) => faceOk(f, h.thumb!))
   )
     bad(`\`thumb: ${h.thumb}\` không có trên khối hình (${byEdge.map(describe).join(", ")})`);
+  const v = h.variant;
+  const max = v !== undefined ? spec.variants[v]?.thickMax : undefined;
+  if (v !== undefined && max !== undefined && byEdge.length) {
+    const thick = byEdge.map((f) => tooThick(spec, v, f, h.edge, dims, shape));
+    if (thick.every((t) => t !== undefined)) {
+      const others = Object.keys(spec.variants).filter((x) => !spec.variants[x].thickMax);
+      bad(
+        `biến thể \`${v}\` cần bề dày ở mép ≤ ${String(max).replace(".", ",")}·W (${fmt(max * dims.W)}), mép dày ${fmt(Math.min(...(thick as number[])))}: ngón cái không vắt qua mép — dùng ${others.map((x) => `\`${x}\``).join(" hay ")}`,
+      );
+    }
+  }
   return out;
 }

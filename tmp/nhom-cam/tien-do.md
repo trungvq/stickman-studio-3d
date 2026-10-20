@@ -86,6 +86,7 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 | G4-42 trục chung | xong: `axialAt(geom, f, along, around)` (along 0/1 hai đầu đoạn bám, ρ(0) = `front` chiếu, ρ(90) = a × ρ(0), `r` lathe theo `latheRadius`, rod hộp đo theo ρ), `ItemGeom.hasFront`, `ContactInput.around/psi/inset`. Commit `17d281a` | `heldGeom.ts` |
 | G4-37b render tổng `sheet` | xong ở `17d281a`: 88 hàng; lộ ngón cái `pinch` chỉ khớp tấm dày 1 (thực đơn 1,4 lún 0,66–0,70, cái hở 1,6–2,2; báo cái 2,4), `rim` cái hở 1,2–3,6, `flat` tấm dày 3,9 lún 3,1 → G4-38 | `g4-sheet/` |
 | G4-38 ngón cái theo bề dày | TẮC (dừng sau ~2 giờ, lõi trả về HEAD): ngón cái `pinch` không ép xuống được trong khung (gập ngón cái nhấc khỏi mặt `F`), `free()` gỡ lún đẩy ngón cái ra ngoài mép ở tấm dày; nang gốc ngón cái phình δ 2,7 là sàn khe; lún thực đơn 0,66–0,70 là út và lòng tay ở `slant` 30, không phải ngón cái; báo sakura hở do cổ tay vượt 32–68°. Đo bề dày thật ở mép (`spanAt`) giúp đĩa (tôm 1,41 → 0,8). Không bộ góc `PINCH_THUMB` nào giữ khe ≤ 0,8 mọi `slant` khi tấm ≥ 2 | `ban-giao-g4-38.md`, `g438/thu/` (công cụ đo nhanh 45 s, đầu dò) |
+| G4-38b bề dày thật ở mép | xong: `spanAt`/`edgeThick`/`tooThick` (`graspGroups.ts`, cùng `SHEET_INSET`); `pinch`/`flat` dùng bề dày thật dọc `F` ở mép cho thụt, tâm nắm, dáng (tấm một khối y số cũ); `VariantSpec.thickMax`, `FLAT_MAX = 0,24·W` (khe đệm cái–lòng ở dáng `edge`); `chooseMissing` bỏ `flat` khi mép dày quá, cảnh khai thì `checkChoice` (nhận thêm `shape`) báo `choice`. Tôm `pinch` cái 1,41/1,55 → 0,82/1,02; bò 1,63/1,74 → 1,08/1,31; tôm `flat` kuroiwa lún 0,84 → 0,34; bò `flat` lún 3,1 → không vẽ (lỗi `choice`). Bảng giá, thực đơn, điện thoại y nguyên. t02 0 mới | `g438b/`, `duyet/g4-sheet-be-day-mep-truoc-sau.jpg` |
 | G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
@@ -127,6 +128,8 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 - G4-36: ngưỡng bỏ hàng hai tay 1,3·W (thay mặc định 1,2·W của kế hoạch) vì điện thoại sakura 18,45 ≥ 17,6 vẫn chồng tay.
 - G4-35: luật ngón cái mặt trên chỉ cho `rim`; `pinch` mặc định trên đĩa đứng giữ cái mặt sau (đĩa ở cảnh khai `rim`, Phụ lục A). Phần `dia` ra cả `slab` lẫn `disc` giữ nguyên, xem lại ở giai đoạn 5 (`held-moc`).
 
+- Chủ dự án (2026-10-20): món mỏng hở/lún chút không sao nếu không lộ. Đích job cầm đồ theo mức lộ: khe ngón cái ≲ 0,15·W, lún không xuyên món, mở ảnh kiểm; không viết lại `heldFit` để gỡ vài phần mười. G4-38b chỉ: bề dày thật ở mép cho `pinch`/`flat` (`spanAt`), `flat` không áp được trên tấm quá dày.
+
 ## Cần chủ dự án
 - Có nới kẹp xoay cẳng tay quá ±90 không? Ca "khoe, một tay đỡ cạnh dưới" (bước 0 ca 4, `rim`) cần −103; hiện thành cảnh báo `wrist` và bàn tay lệch chỗ cầm chút ít. Ảnh: `tmp/nhom-cam/b0/hinh/vong2/to-2.jpg`.
 
@@ -142,12 +145,13 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 - Món vẽ ở `bang-cam` nhỏ hơn hình bộ giải dùng (điện thoại ×0,9): lõi đo lún 1,22 thì `check` đo 0,71 — kiểm lại khớp lưới món ↔ `shape` ở giai đoạn 5 (`held/` v2, `held-moc`).
 - Tay dẫn `palmBox` áp tai lấy `tilt` mặc định 20 → lún 0,71 (ngưỡng 0,65). Xem lại mặc định khi chuyển cảnh.
 - `bang-cam`: hàng `biến thể flat` trùng `mặc định` khi rig chọn `flat`.
+- `bang-cam`: hàng `checkChoice` báo lỗi (bò `flat` quá dày) còn vẽ ô LỖI xám, chữ chồng — lọc như hàng không áp được ở job `bang-cam` kế (G4-47).
+- `FLAT_MAX` lấy theo tay nhỏ (0,24·W); `checkHolds` kiểm bằng tay mẫu W ≈ 14,7 nên cảnh khai `flat` trên tấm 3,5–4 báo cho mọi cỡ tay.
 - Hàng "bê hai vành" đĩa: ngón cái hơi dựng, hở 1,6–2,9.
 - `rim` `slant` âm: ngón nghiêng về mặt cái, tấm kẹp giữa trỏ và giữa (khoe báo). Út hở hơn v1 0,5–1,8 ở `slant` ±22,5.
 
 ## Bước kế
-0. Phiên dừng (2026-10-20) theo yêu cầu chủ dự án, sau G4-38. Worktree sạch, mọi việc xanh đã commit và push. Studio xem `git log`, video `9b13333`.
-1. G4-38b (Opus): sửa ngón cái ở `heldFit.ts` — vai trò `press` gập theo chiều khép khe, `free()` không đẩy ngón cái ra ngoài mép; rồi đo bề dày thật ở mép (`spanAt`) cho `pinch`/`flat` và chỉnh ngón cái theo bề dày. Dùng lại công cụ đo nhanh `g438/thu/bang-cam-do.mjs` và đầu dò. Đầu ra như G4-38 (khe cái ≤ 0,8, lún ≤ 0,65 ở 6 món `sheet`, fixture giữ). Lún thực đơn `slant` 30 (út, lòng) tách job riêng nếu còn. Đọc `ban-giao-g4-38.md`.
-2. Sau G4-38b: render lại tổng `sheet`, `so-v1.md`, mốc M4-3 (mọi thay đổi `sheet` đã commit từng job: `8855d13`, `ec5329a`, `6353590`, `07ad22d`, `000aed4`).
+0. Phiên tiếp tục (2026-10-20) sau khi chủ dự án chốt hướng G4-38b. Worktree sạch, mọi việc xanh đã commit và push. Studio xem `git log`, video `9b13333`.
+1. Nhóm `sheet` xong (M4-3). Kế: cylinder G4-43.
 3. Rồi cylinder 43–48 (42 xong), platform 53–57, card 62–64, chopsticks 74–76 (nhớ `frameSink` truyền `curl`), pen 83–85, handle 92–95, bowl A2–A4, Z1, Z2 theo `gd4-ke-hoach.md`. Đã xong/gộp: 00, X1, 11–14, 22–25, 32–37, 42, 52, 72, 73, 82.
 4. Giai đoạn 5 → 6.

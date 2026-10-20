@@ -1,18 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { GRIP_GROUPS } from "./graspGroups";
-import {
-  CONTACTS,
-  edgeHigh,
-  graspFrame,
-  SHEET_INSET,
-  type ContactInput,
-  type GraspChoice,
-} from "./graspSolve";
+import { FLAT_MAX, GRIP_GROUPS, SHEET_INSET, tooThick } from "./graspGroups";
+import { CONTACTS, edgeHigh, graspFrame, type ContactInput, type GraspChoice } from "./graspSolve";
 import { HAND_DOF, HAND_PIECES, handVec } from "./hand";
 import { handSkin, skinHand } from "./handMesh";
 import { HELD_SINK } from "./heldAudit";
 import { heldFit, skinBulge, skinDepth, skinPieces, toItem } from "./heldFit";
-import { edgeFrame, handDims, itemGeom, type SlabFeature } from "./heldGeom";
+import { edgeFrame, handDims, itemGeom, type Feature, type SlabFeature } from "./heldGeom";
 import {
   gripPoint,
   parseHeldItem,
@@ -510,6 +503,99 @@ describe("`sheet` `pinch` trên da", () => {
     close(at(thick, "front"), [20, -2.5, 0], 1e-9);
     close(at(thick, "back"), [20, 2.5, 0], 1e-9);
     close(at(PHIEU, "front"), [20 - 2.5 - 1.3 * 0.4, 0.6, 0], 1e-9);
+  });
+});
+
+describe("`sheet` `pinch`, `flat`: bề dày thật ở mép", () => {
+  // tấm có chân: lớp mặt dày 1 (y 5–6) phủ cả tấm, chân 40 × 5 × 30 ở giữa — hộp bao dày 6
+  const PLATE = item({
+    schemaVersion: 2,
+    size: [60, 6, 40],
+    front: [0, 1, 0],
+    top: [0, 0, -1],
+    anchors: {},
+    shape: [
+      { box: [60, 1, 40], at: [0, 5.5, 0] },
+      { box: [40, 5, 30], at: [0, 2.5, 0] },
+    ],
+  });
+  const TOP = sheet([60, 1, 40], [0, 5.5, 0], [0, 1, 0], [0, 0, -1]);
+  const slabOf = (spec: HeldItemSpec) => itemGeom(spec).features.find((x) => x.kind === "slab")!;
+  const input = (spec: HeldItemSpec, f: Feature, edge: string | number, thumb: string) => ({
+    geom: itemGeom(spec),
+    feature: f,
+    side: -1,
+    dims: handDims(1.75, 1.68),
+    edge: edge as ContactInput["edge"],
+    along: 0.5,
+    thumb,
+    slant: 0,
+    tilt: 0,
+    shape: spec.shape,
+  });
+
+  it("tấm có chân: chỗ tiếp xúc và dáng như tấm phẳng của lớp mặt", () => {
+    expect(slabOf(PLATE).t).toBe(6);
+    for (const variant of ["pinch", "flat"])
+      for (const thumb of ["front", "back"] as const)
+        for (const [k, long] of HANDS) {
+          const pick: Pick = { group: "sheet", variant, edge: "right", thumb };
+          const a = graspFrame(PLATE, itemGeom(PLATE), pick, -1, handDims(k, long), k, long);
+          const b = graspFrame(TOP, itemGeom(TOP), pick, -1, handDims(k, long), k, long);
+          close(a.hand.at as V3, b.hand.at as V3, 1e-9);
+          close(a.hand.palm as V3, b.hand.palm as V3, 1e-12);
+          close(a.pose, b.pose, 1e-9);
+        }
+  });
+
+  it("đĩa: bề dày và mặt bốn ngón đo ở vành, không theo hộp bao 5,4", () => {
+    const disc = itemGeom(TOM).features.find((f) => f.kind === "disc")!;
+    const c = CONTACTS.sheet!.pinch(input(TOM, disc, 0, "top"));
+    // vật liệu 2,5 trong vành (r 32,5): y 3,76–5,4, lấy mẫu 24 điểm trên 5,4
+    expect(c.thick).toBeGreaterThan(1.4);
+    expect(c.thick).toBeLessThan(1.9);
+    expect(c.at[1]).toBeCloseTo(5.4 - c.thick! + 0.5, 9);
+    const box = CONTACTS.sheet!.pinch({ ...input(TOM, disc, 0, "top"), shape: undefined });
+    expect(box.thick).toBeCloseTo(5.4, 9);
+    const f = CONTACTS.sheet!.flat(input(TOM, disc, 0, "top"));
+    expect(f.at[1]).toBeCloseTo(5.4 - f.thick! / 2, 9);
+  });
+
+  it("tấm phẳng một khối: bề dày, tâm nắm như hộp bao", () => {
+    for (const spec of [BANG, THUC_DON, PHONE, BO_DA, PHIEU]) {
+      const f = slabOf(spec) as SlabFeature;
+      for (const variant of ["pinch", "flat"] as const)
+        for (const e of f.edges)
+          for (const thumb of f.faces.map((x) => x.name)) {
+            const x = input(spec, f, e.name, thumb);
+            const real = CONTACTS.sheet![variant](x);
+            const box = CONTACTS.sheet![variant]({ ...x, shape: undefined });
+            expect(real.thick).toBeCloseTo(f.t, 9);
+            close(real.at, box.at, 1e-9);
+          }
+    }
+  });
+
+  it("`flat` không áp trên tấm dày quá `FLAT_MAX · W` ở mép; `pinch`, `rim` vẫn áp", () => {
+    const dims = handDims(1.75, 1.68);
+    const f = slabOf(BO_DA);
+    for (const e of ["left", "right", "front", "back"] as const)
+      expect(tooThick(GRIP_GROUPS.sheet, "flat", f, e, dims, BO_DA.shape)).toBeGreaterThan(
+        FLAT_MAX * dims.W,
+      );
+    expect(tooThick(GRIP_GROUPS.sheet, "flat", f, undefined, dims, BO_DA.shape)).toBeCloseTo(
+      3.9,
+      0,
+    );
+    for (const v of ["pinch", "rim"])
+      expect(tooThick(GRIP_GROUPS.sheet, v, f, undefined, dims, BO_DA.shape)).toBeUndefined();
+    const phone = slabOf(PHONE);
+    expect(
+      tooThick(GRIP_GROUPS.sheet, "flat", phone, undefined, dims, PHONE.shape),
+    ).toBeUndefined();
+    const plate = slabOf(PLATE);
+    expect(tooThick(GRIP_GROUPS.sheet, "flat", plate, "right", dims, PLATE.shape)).toBeUndefined();
+    expect(tooThick(GRIP_GROUPS.sheet, "flat", plate, "right", dims)).toBe(6);
   });
 });
 

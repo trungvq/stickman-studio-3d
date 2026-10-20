@@ -6,6 +6,9 @@ import {
   groupNeeds,
   holdDefaults,
   longEdges,
+  SHEET_INSET,
+  spanAt,
+  tooThick,
   type GroupSpec,
   type PoseRef,
   type PoseSpec,
@@ -135,8 +138,6 @@ const unit = (a: V3): V3 => scale3(a, 1 / (len3(a) || 1));
 const perp = (v: V3, n: V3): V3 => sub3(v, scale3(n, dot3(v, n)));
 const mix2 = (a: V3, ca: number, b: V3, cb: number): V3 => add3(scale3(a, ca), scale3(b, cb));
 
-/** Thụt tâm nắm vào trong tấm, đơn vị món, cố định mọi cỡ tay (fixture của từng biến thể) */
-export const SHEET_INSET = { pinch: 2.5, flat: 5, rim: 3.2 } as const;
 /** `sheet` `pinch`: `n = a · F + b · f` (fixture `bang-gia#doc`) */
 const PINCH_PALM: readonly [number, number] = [0.7654, 0.6436];
 /** `pinch`: tâm nắm cách mặt bốn ngón (mặt kia của `F`) ngần này, mọi bề dày (giữa bề dày của `bang-gia#doc`, dày 1) */
@@ -181,19 +182,29 @@ function sheetEdge(x: ContactInput, inset: number) {
 const inward = (m: V3, e: V3, slant: number): V3 =>
   mix2(neg(m), Math.cos(slant * D2R), e, Math.sin(slant * D2R));
 
+/** Đoạn vật liệu dọc `F` ở `inset` vào trong mép, tính từ mặt giữa khối hình: hai mút và bề dày; không có hình thì hộp bao */
+function sheetSpan(x: ContactInput, inset: number) {
+  const t0 = (x.feature as SlabFeature | DiscFeature).t;
+  const { F, at } = sheetEdge(x, inset);
+  const [lo, hi] = (x.shape && spanAt(x.shape, at, F, t0)) ?? [-t0 / 2, t0 / 2];
+  return { lo, hi, t: hi - lo };
+}
+
 const pinch: ContactFn = (x) => {
-  const t = (x.feature as SlabFeature | DiscFeature).t;
+  const { lo, t } = sheetSpan(x, SHEET_INSET.pinch);
   const d = Math.max(0, SHEET_INSET.pinch - PINCH_OUT * (t - 2 * PINCH_BACK));
   const { m, e, F, at: mid, along } = sheetEdge(x, d);
   const f = inward(m, e, x.slant);
   const [a, b] = PINCH_PALM;
-  const at = sub3(mid, scale3(F, t / 2 - PINCH_BACK));
-  return { at, along, palm: unit(mix2(F, a, f, b)), fingers: unit(mix2(f, a, F, -b)) };
+  const at = add3(mid, scale3(F, lo + PINCH_BACK));
+  return { at, along, palm: unit(mix2(F, a, f, b)), fingers: unit(mix2(f, a, F, -b)), thick: t };
 };
 
 const flat: ContactFn = (x) => {
-  const { m, e, F, at, along } = sheetEdge(x, SHEET_INSET.flat);
-  return { at, along, palm: F, fingers: unit(inward(m, e, x.slant)) };
+  const { lo, hi, t } = sheetSpan(x, SHEET_INSET.flat);
+  const { m, e, F, at: mid, along } = sheetEdge(x, SHEET_INSET.flat);
+  const at = add3(mid, scale3(F, (lo + hi) / 2));
+  return { at, along, palm: F, fingers: unit(inward(m, e, x.slant)), thick: t };
 };
 
 /** Khung `nt`: `n = −m`, ngón cái về `F`, ngón dọc mép `side · (F × n)` chúc `slant` về phía `−F` */
@@ -905,6 +916,12 @@ export function chooseMissing(
         for (const variant of vars) {
           const v = (variant as string | undefined) ?? (defs.variant as string) ?? variants[0];
           if (v === "rim" && up !== undefined && thumb !== up) continue;
+          if (
+            given.variant === undefined &&
+            tooThick(group, v, f, edge as SideName | number | undefined, ctx.dims, spec.shape) !==
+              undefined
+          )
+            continue;
           const c = {
             ...given,
             ...cont(v),

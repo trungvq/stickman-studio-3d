@@ -326,9 +326,12 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
 
 - **Cần**: `slab` hay `disc` có bề dày `t ≤ 0,45 · A`; cạnh được cầm dài `≥ 0,6 · W`.
 - **Chỗ tiếp xúc**: một điểm trên cạnh, ở `along`; tâm nắm thụt vào trong tấm `d` và đặt theo bề dày `t` của tấm (đơn vị
-  rig của món, cố định ở mọi cỡ tay). `flat`: giữa bề dày, `d` = 5 (`SHEET_INSET.flat`). `pinch`: cách mặt bốn ngón
-  `PINCH_BACK` = 0,5, `d = max(0; 2,5 − 1,3 · (t − 1))` (`SHEET_INSET.pinch`, `PINCH_OUT`; tấm dày hơn 1 thì tâm nắm lùi
-  ra mép). `rim`: cách mặt ngón cái `F` `RIM_TOP` = 1,9 (tấm mỏng hơn 3,8 thì giữa bề dày), `d = max(1; 3,2 − 0,8 · t)`
+  rig của món, cố định ở mọi cỡ tay). `pinch`, `flat` lấy `t` và hai mặt **thật ở mép**: `spanAt` đo đoạn có vật liệu dọc
+  `F` ở `SHEET_INSET` của biến thể vào trong mép (24 mẫu trên bề dày hộp bao) — tấm có chân, đĩa vành mỏng đặt theo vật
+  liệu ở mép, không theo hộp bao; tấm phẳng một khối ra đúng hộp bao. `t` ấy cũng là `GraspContact.thick` mà dáng hoà theo.
+  `flat`: giữa bề dày thật, `d` = 5 (`SHEET_INSET.flat`). `pinch`: cách mặt bốn ngón thật `PINCH_BACK` = 0,5,
+  `d = max(0; 2,5 − 1,3 · (t − 1))` với `t` đo ở 2,5 trong mép (`SHEET_INSET.pinch`, `PINCH_OUT`; tấm dày hơn 1 thì tâm nắm
+  lùi ra mép). `rim`: cách mặt ngón cái `F` `RIM_TOP` = 1,9 (tấm mỏng hơn 3,8 thì giữa bề dày), `d = max(1; 3,2 − 0,8 · t)`
   (`SHEET_INSET.rim`, `RIM_OUT`, `RIM_MIN`).
 - **Biến thể**:
   - **`pinch`** (fixture `bang-gia#doc`, `frame: "nf"`): bốn ngón khép gập chừng 40° đè mặt kia, ngón cái đè mặt có ngón cái
@@ -339,7 +342,10 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
     mặt phẳng tấm vì lòng tay nghiêng 40°: vượt kẹp cổ tay 17–25° ở `slant` 30° (`bang-gia`, hai cỡ tay) — giới hạn khớp,
     `check` báo `wrist`; cầm bằng ngón cái mặt trước, `flat` hay `rim`.
   - `flat` (fixture `phieu-lien#cam`, `thuc-don#khoe`; `frame: "nf"`): lòng tay và ngón áp phẳng mặt kia, ngón cái vắt qua
-    mép đè mặt `F`; `n = F`, `f = −m` quay `slant`. Dáng `edge`.
+    mép đè mặt `F`; `n = F`, `f = −m` quay `slant`. Dáng `edge`. Chỉ áp khi bề dày thật ở mép (`edgeThick`: giữa cạnh, 5
+    vào trong) ≤ `FLAT_MAX · W` = 0,24 · W (`thickMax` của biến thể) — khe đệm ngón cái dáng `edge` tới mặt lòng tay (0,24 · W
+    ở cỡ k 1,75 dọc 1,545; 0,25 · W ở k 2 dọc 1,813): dày hơn thì ngón cái không vắt qua mép. `chooseMissing` không thử
+    `flat` ở cạnh quá dày; cảnh khai `variant: flat` thì `checkChoice` báo lỗi `choice` kèm bề dày và biến thể dùng được.
   - `rim` (fixture `tom-hum#nhac`, `bo-da#bung`, `bao#doc`; `frame: "nt"`): lòng tay áp mép, ngón cái trên mặt `F`, ngón dưới
     mặt kia — bê vành đĩa, cầm hai bên tờ báo; `n = −m`, `t = F`, ngón chúc `slant` quanh `m`. Dáng mở `edge`; dáng đóng
     `edge` cuộn thêm gốc ngón `PoseRef.knuckle` 45° và ngọn `PoseRef.tip` 65° (gập thêm đốt ngọn bốn ngón) với ngón cái
@@ -825,7 +831,7 @@ của một ranh giới lần cầm (`holdBlending` của `scene.ts`: vừa cầ
 | `up`, `face`, `reach` (tay phụ, `item:`) | tay dẫn | `AimReport.hold` như kiểu cầm v1 | như v1 |
 | `jump`, `seat`, `body`, cầm món không ai `provide` | cả hai | Như [03](03-scene.md#đồ-cầm-tay); `jump` có loại "đổi chỗ cầm" giữa hai lần cầm cùng món | như v1 |
 | lỗi `ref` `group` | `resolveScene` | Món không có khối hình nào cho nhóm với cỡ tay của người khai (`checkHolds` của `scene.ts`); dòng báo nêu khối hình món có, và phần khác còn vừa nếu có: `` `<món>` phần `than` (r 15) quá tầm nắm của tay `<người>` (0,95 · W = 14,0): khai `part: "vai"` hay hai tay `` | lỗi |
-| lỗi `ref` `choice` | `resolveScene` | Chỗ cầm không hợp lệ: trường không thuộc nhóm, `edge`/`thumb` không có trên khối hình, `part` không có hay `grip: false`, `along` ngoài 0–1, `both` với nhóm một tay, `both` mà tay kia cũng có `hold` ở cùng `t`, `on`/`yaw` ngoài `carry`, `carry` thiếu `on` hay món không có `seats[on]`, nhóm `later`; món có mốc ở `items` mà mốc tay khai đích (`to`, `at`, `offset`, `point`) hay ý định (`face`, `up`, `roll`, `keep`); mốc món ở `t` không tay nào cầm món ấy | lỗi |
+| lỗi `ref` `choice` | `resolveScene` | Chỗ cầm không hợp lệ: trường không thuộc nhóm, `edge`/`thumb` không có trên khối hình, biến thể quá bề dày ở mép (`flat` trên tấm dày hơn `FLAT_MAX · W`), `part` không có hay `grip: false`, `along` ngoài 0–1, `both` với nhóm một tay, `both` mà tay kia cũng có `hold` ở cùng `t`, `on`/`yaw` ngoài `carry`, `carry` thiếu `on` hay món không có `seats[on]`, nhóm `later`; món có mốc ở `items` mà mốc tay khai đích (`to`, `at`, `offset`, `point`) hay ý định (`face`, `up`, `roll`, `keep`); mốc món ở `t` không tay nào cầm món ấy | lỗi |
 | lỗi `ref` `item` | `resolveScene` | Mốc món có đích của trục phụ lệch đích của trục chính dưới 18° (cos tuyệt đối > 0,95): hướng món suy biến, dòng báo gợi `roll` khác; đích của một trục trùng chỗ món; `face` trần không có trục (mốc không khai, nhóm không có mặc định). Rig không tự đổi | lỗi |
 
 Ngưỡng số cấu hình ở `package.json` `stickman.held` ([05](05-repo-video.md#nhóm-luật)): `pierce`, `touch`, `wrap`, `grip`,

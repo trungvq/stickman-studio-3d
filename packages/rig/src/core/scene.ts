@@ -3927,9 +3927,14 @@ function checkHolds(
             later || !partOk
               ? []
               : checkGroup(geom, hg.group, dims(), { item, part: hg.part, anchors: spec.anchors });
-          const choiceLines = checkChoice(hg.group, geom, h.hold, dims(), spec.anchors).filter(
-            (l) => !groupLines.includes(l),
-          );
+          const choiceLines = checkChoice(
+            hg.group,
+            geom,
+            h.hold,
+            dims(),
+            spec.anchors,
+            spec.shape,
+          ).filter((l) => !groupLines.includes(l));
           const lines = [
             ...groupLines.map((l) => `lỗi \`group\`: ${l}`),
             ...choiceLines.map((l) => `lỗi \`choice\`: ${l}`),
