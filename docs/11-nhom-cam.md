@@ -873,10 +873,15 @@ v1 của `held/` và bỏ món v2; có `--nhom` thì chỉ món v2 (`--mon` mặ
 
 - Người đứng như chế độ kiểu cầm; món đặt trước ngực bằng `items` theo hướng mặc định của nhóm, chỗ cầm nhóm do rig giải
   (`món@nhóm`). Hai cỡ tay: người có bàn tay nhỏ nhất và lớn nhất trong `characters/` (`--ai` đổi người).
-- Hàng mẫu: chỗ cầm mặc định và từng biến thể của nhóm; `sheet` thêm ngón cái trước / sau, đọc ngang mặt, khoe một tay, khoe
-  hai tay hai cạnh bên, khoe hai tay trên dưới; `palmBox` thêm đọc ngang mặt, khoe một tay, áp tai (tay dẫn); `carry` chỉ hai
+- Hàng mẫu: chỗ cầm mặc định (nhãn in biến thể rig chọn) và từng biến thể của nhóm; `sheet` thêm ngón cái trước / sau, đọc
+  ngang mặt, khoe một tay, khoe hai tay hai cạnh bên, khoe hai tay trên dưới (bỏ khi hai cạnh cách nhau dưới 1,3·`W` của cỡ
+  tay đang vẽ), và với đĩa hay tấm nằm trong khung món thì bê hai tay hai vành (`rim`, `both`, tay phụ cạnh đối); `palmBox` thêm đọc ngang mặt, khoe một tay, áp tai (tay dẫn); `carry` chỉ hai
   hàng treo khuỷu và treo vai (cảnh khai `touch` cho vai), tay đặt như kiểu treo v1, món không đặt trước ngực, `do.json` giữ
   `seat`, `body`, `swing` (và `bend`, `rise` của khuỷu).
+- Hàng `sheet` khai `edge` hay `thumb` không có trên khối hình tấm hay đĩa của món, hay cần mốc món (`front`) mà món không có,
+  bị lọc trước khi giải; `do.json` (`loc`) và `index.md` kê hàng lọc kèm lý do.
+- Hàng giải ra cùng chỗ cầm, đặt món cùng vị trí với một hàng đứng trước nó thì bị bỏ; `do.json` (`trung`) và `index.md`
+  kê hàng bỏ.
 - Cặp (món, nhóm, người) mà món không có khối hình đạt `needs` của nhóm với cỡ tay ấy bị bỏ; lý do ở `do.json` (`bo`) và dòng
   in ra.
 - Nhãn in chỗ cầm rig chọn, `lún` trên da, `role` từng ngón (khe tới món, vai trò), cổ tay vượt kẹp, `size`; `do.json` giữ thêm

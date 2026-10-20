@@ -15,8 +15,11 @@
 //
 // Theo nhóm (`--nhom sheet,palmBox`, món v2 của `--mon`, mặc định mọi món v2 của `held/`): hàng là nhóm × món × chỗ cầm
 // mẫu × hai cỡ tay. Người đứng như trên, món đặt trước ngực bằng `items` theo hướng mặc định của nhóm, chỗ cầm nhóm
-// giải bằng rig (`món@nhóm`); hàng mẫu: chỗ cầm mặc định, từng biến thể của nhóm, và với `sheet` thêm ngón cái trước /
-// sau, đọc ngang mặt, khoe một tay, khoe hai tay hai cạnh bên, khoe hai tay trên dưới; với `palmBox` thêm đọc ngang mặt,
+// giải bằng rig (`món@nhóm`); hàng mẫu: chỗ cầm mặc định (nhãn in biến thể rig chọn), từng biến thể của nhóm, và với `sheet` thêm ngón cái
+// trước / sau, đọc ngang mặt, khoe một tay, khoe hai tay hai cạnh bên, khoe hai tay trên dưới (bỏ khi hai cạnh cách < 1,3·W),
+// bê hai tay hai vành (đĩa, tấm nằm); hàng khai `edge` / `thumb` không có trên khối hình tấm hay đĩa, hay cần mốc món
+// mà món không có, bị bỏ trước khi giải (`do.json` `loc`); hàng giải ra cùng chỗ cầm, cùng vị trí món với hàng trước nó bị bỏ
+// (`trung`); với `palmBox` thêm đọc ngang mặt,
 // khoe một tay, áp tai (tay dẫn); `carry` hai hàng treo khuỷu (`on: elbow`) và treo vai (`on: shoulder`, cảnh khai `touch`), tay
 // đặt như kiểu treo v1, món không đặt trước ngực. Cặp (món, nhóm, người) mà món không có khối hình đạt `needs` của nhóm với cỡ tay ấy
 // bị bỏ, lý do vào `do.json` (`bo`). Nhãn in chỗ cầm rig chọn, `lún` trên da, `role` từng ngón (khe tới món, vai trò),
@@ -329,6 +332,10 @@ function dungCanh(p, hands, marks = []) {
   };
 }
 
+/** Hàng mẫu bị lọc vì không áp được cho món */
+const loc = [];
+/** Vị trí đặt món (`items[]`) của mỗi hàng nhóm, để so hàng trùng sau khi giải */
+const viTri = new Map();
 if (!nhomXin) {
   for (const item of items) {
     const spec = data.held[item];
@@ -373,8 +380,32 @@ if (!nhomXin) {
     offset: [32, 0, 0],
     ...huong(spec, "back"),
   });
+  /** Khoảng giữa hai cạnh của khối tấm / đĩa (đơn vị rig); `undefined` khi tấm không có một trong hai cạnh */
+  const cachCanh = (f, a, b) => {
+    if (f.kind === "disc") return 2 * f.radius;
+    const ea = f.edges.find((e) => e.name === a);
+    const eb = f.edges.find((e) => e.name === b);
+    return ea && eb ? Math.hypot(...ea.at.map((v, i) => v - eb.at[i])) : undefined;
+  };
+  /** Lý do hàng `sheet` không áp được cho món (`undefined` khi áp được): `edge` / `thumb` không có trên khối hình, mốc không có */
+  const khongAp = (row, spec, fits) => {
+    const fs = fits.map((x) => x.feature).filter((f) => f.kind === "slab" || f.kind === "disc");
+    const tenCanh = fs.flatMap((f) => (f.kind === "slab" ? f.edges.map((e) => e.name) : f.rim));
+    const tenMat = fs.flatMap((f) => f.faces.map((m) => m.name));
+    const coSo = fs.some((f) => f.kind === "disc");
+    for (const { hold: h } of Object.values(row.hands)) {
+      if (h?.edge !== undefined && (typeof h.edge === "number" ? !coSo : !tenCanh.includes(h.edge)))
+        return `\`edge: ${h.edge}\` không có trên khối hình của món`;
+      if (h?.thumb !== undefined && !tenMat.includes(h.thumb))
+        return `\`thumb: ${h.thumb}\` không có trên khối hình của món`;
+    }
+    for (const k of ["face", "roll"]) {
+      const a = row.mark?.[k]?.axis;
+      if (typeof a === "string" && !spec.anchors?.[a]) return `món không có mốc \`${a}\``;
+    }
+  };
   /** Hàng mẫu của (món, nhóm): `mark` là mốc món (`items[]`, bỏ trống với tay dẫn), `hands` mốc tay, `lead` tay chụp */
-  const hangMau = (item, group, spec) => {
+  const hangMau = (item, group, spec, fits, dims) => {
     const gs = rig.GRIP_GROUPS[group];
     const H = (extra = {}) => ({ hold: { item, group, ...extra } });
     if (group === "carry")
@@ -397,8 +428,8 @@ if (!nhomXin) {
         },
       }));
     const rows = [{ ma: "mac-dinh", ten: "mặc định", mark: NGUC, hands: { right: H() } }];
-    for (const v of Object.keys(gs.variants))
-      if (Object.keys(gs.variants).length > 1 && v !== gs.choices.variant?.default)
+    if (Object.keys(gs.variants).length > 1)
+      for (const v of Object.keys(gs.variants))
         rows.push({
           ma: `bien-the-${v}`,
           ten: `biến thể ${v}`,
@@ -429,21 +460,41 @@ if (!nhomXin) {
         { ma: "khoe-1-tay", ten: "khoe một tay", mark: KHACH(spec), hands: { right: H(bottom) } },
       );
     }
-    if (group === "sheet" && gs.hands !== "one")
-      rows.push(
-        {
+    if (group === "sheet" && gs.hands !== "one") {
+      const feat = fits.map((x) => x.feature).find((f) => f.kind === "slab" || f.kind === "disc");
+      // hai cạnh gần nhau hơn 1,3·W thì hai bàn tay chồng nhau
+      const xa = (a, b) => {
+        const d = feat && cachCanh(feat, a, b);
+        return d === undefined || d >= 1.3 * dims.W;
+      };
+      if (xa("left", "right"))
+        rows.push({
           ma: "khoe-2-tay-ben",
           ten: "khoe hai tay hai bên",
           mark: KHACH(spec),
           hands: { right: H({ edge: "left" }), left: H({ edge: "right" }) },
-        },
-        {
+        });
+      if (xa("bottom", "top"))
+        rows.push({
           ma: "khoe-2-tay-tren-duoi",
           ten: "khoe hai tay trên dưới",
           mark: KHACH(spec),
           hands: { right: H({ edge: "bottom" }), left: H({ edge: "top", along: 0.3 }) },
-        },
-      );
+        });
+      if ((feat?.kind === "disc" || (feat?.kind === "slab" && feat.lying)) && xa("left", "right"))
+        rows.push({
+          ma: "be-2-vanh",
+          ten: "bê hai tay hai vành",
+          mark: {
+            ...NGUC,
+            face: { axis: spec.top ?? "top", toward: "up" },
+          },
+          hai: true,
+          hands: {
+            right: H({ variant: "rim", edge: feat.kind === "disc" ? 270 : "left", both: true }),
+          },
+        });
+    }
     if (group === "palmBox" && spec.anchors?.speaker)
       rows.push({
         ma: "ap-tai",
@@ -479,15 +530,21 @@ if (!nhomXin) {
           });
           continue;
         }
-        for (const row of hangMau(item, group, spec)) {
+        for (const row of hangMau(item, group, spec, fits, p.dims)) {
+          const why = group === "sheet" && khongAp(row, spec, fits);
+          if (why) {
+            loc.push({ item, group, person: p.file.replace(/\.json$/, ""), row: row.ten, why });
+            continue;
+          }
           const side = row.lead ?? "right";
-          const two = !!(row.hands.right && row.hands.left);
+          const two = !!(row.hands.right && row.hands.left) || !!row.hai;
           const person = p.file.replace(/\.json$/, "");
           const id = `bang-cam-${slug(item)}-${group}-${row.ma}-${two ? "H" : side === "right" ? "P" : "T"}-${slug(person)}`;
-          cells.push({
+          const cell = {
             id,
             item,
             group,
+            ma: row.ma,
             grip: row.ten,
             key: `${item}@${group} ${row.ten}`,
             side,
@@ -497,11 +554,14 @@ if (!nhomXin) {
             two,
             carry: group === "carry",
             scene: dungCanh(p, row.hands, row.mark ? [{ item, ...row.mark }] : []),
-          });
+          };
+          viTri.set(cell, JSON.stringify(row.mark ?? null));
+          cells.push(cell);
         }
       }
   }
   for (const b of bo) console.log(`  bỏ ${b.item}@${b.group} ${b.person}: ${b.why}`);
+  for (const b of loc) console.log(`  bỏ hàng ${b.item}@${b.group} ${b.row} ${b.person}: ${b.why}`);
 }
 if (!cells.length)
   throw new Error(
@@ -700,6 +760,29 @@ for (const c of cells) {
   if (!c.hands.length && !c.error) c.error = "không bàn tay nào cầm món ở giây chụp";
 }
 
+// ---- nhóm: nhãn hàng mặc định, bỏ hàng trùng hàng trước ----
+const trung = [];
+if (nhomXin) {
+  const dau = new Map();
+  const chon = (c) => JSON.stringify(c.hands.map((h) => [h.hand, h.raw.grasp?.choice]));
+  for (const c of [...cells]) {
+    const v = c.hands?.[0]?.raw.grasp?.choice.variant;
+    if (c.ma === "mac-dinh" && v) {
+      c.grip = `mặc định (${v})`;
+      c.key = `${c.item}@${c.group} ${c.grip}`;
+    }
+    if (c.error || !c.hands.every((h) => h.raw.grasp)) continue;
+    const k = [c.item, c.group, c.person, viTri.get(c), chon(c)].join("|");
+    const truoc = dau.get(k);
+    if (!truoc) dau.set(k, c);
+    else {
+      trung.push({ id: c.id, key: c.key, person: c.person, giong: truoc.id });
+      cells.splice(cells.indexOf(c), 1);
+    }
+  }
+  for (const t of trung) console.log(`  bỏ hàng trùng ${t.key} ${t.person}: giống ${t.giong}`);
+}
+
 // ---- ống kính sát bàn tay (như can-tay) ----
 const add = (a, b) => a.map((v, i) => v + b[i]);
 const sub = (a, b) => a.map((v, i) => v - b[i]);
@@ -832,6 +915,20 @@ const md = [
               "",
             ]
           : []),
+        ...(loc.length
+          ? [
+              "Bỏ (hàng mẫu không áp được cho món):",
+              ...loc.map((b) => `- \`${b.item}@${b.group} ${b.row}\` ${b.person}: ${b.why}`),
+              "",
+            ]
+          : []),
+        ...(trung.length
+          ? [
+              "Bỏ (giải ra cùng chỗ cầm, cùng vị trí món với hàng trước):",
+              ...trung.map((t) => `- \`${t.key}\` ${t.person}: giống \`${t.giong}\``),
+              "",
+            ]
+          : []),
       ]
     : []),
   "",
@@ -867,7 +964,7 @@ writeFileSync(
 const doJson = {
   t: T,
   people,
-  ...(nhomXin && { nhom: nhomXin, bo }),
+  ...(nhomXin && { nhom: nhomXin, bo, loc, trung }),
   // bỏ JSON cảnh dựng tạm: dựng lại được từ dữ liệu, `do.json` chỉ giữ số đo
   cells: cells.map((c) => ({ ...c, scene: undefined, tiles: c.tiles?.map((x) => x.file) })),
 };
