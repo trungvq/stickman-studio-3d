@@ -703,14 +703,15 @@ Cảnh thường khai đủ chỗ cầm. Thiếu trường nào:
 - **Món đặt trước**: rig giải **một lần cho mỗi lần cầm**, ở mốc bắt đầu, trên món đã đứng yên ở chỗ khai, với nhân vật
   thật của người cầm. Lựa chọn rig giải chỉ đọc ở `graspAtTime`; `ReachHold.grasp.choice` của `sceneAt` chỉ mang trường
   cảnh khai. Hai bậc: giải rời trước (`edge`, `thumb`, `variant`, `part`) với trường liên tục ở mặc định; rồi lưới liên
-  tục chỉ quanh ứng viên rời tốt nhất (`along` 3 điểm, `slant` 3, `around` 12, `tilt` 6 đều gồm hai đầu, `psi` 8). `slant`
-  lấy ba điểm `−½`, `0`, `+½` miền của biến thể (`pinch` ±30°, `flat` ±45°, `rim` ±22,5°). Giá của một ứng viên là `min_φ
-  E(φ)` cộng `(khe tầm với / AIM_GAP)²`, cộng ở mốc bắt đầu và các mốc món trong 1,5 s sau còn cùng người cầm, cùng cỡ
-  (tối đa 4, mốc sau trọng số 0,5); lệch khỏi mặc định nhóm cộng `0,05 · (số trường lệch mặc định) / (số trường thiếu có
-  mặc định)`. `palmBox` cộng thêm giá lún `(lún / HELD_SINK)²`: lún da (như luật `sink`) của bàn tay đúng khung cầm, ngón
-  ôm theo vai trò (`heldFit`), nhớ theo khung; ứng viên đã đắt hơn ứng viên tốt nhất thì không đo. Lấy ứng viên rẻ nhất;
-  hoà thì theo thứ tự ứng viên: `part`, khối hình theo `FeatureKind`, `edge`, `thumb`, `variant`, `along`, `slant`, rồi
-  `around`, `tilt`, `psi` (rời theo thứ tự miền khai, liên tục tăng dần). Giải 3–20 ứng viên mất 3–10 ms.
+  tục quanh ứng viên rời tốt nhất, và quanh ứng viên rời tốt nhất của `variant.default` khi rig giải `variant` (`along` 3
+  điểm, `slant` 3, `around` 12, `tilt` 6 đều gồm hai đầu, `psi` 8). `slant` lấy ba điểm `−½`, `0`, `+½` miền của biến thể
+  (`pinch` ±30°, `flat` ±45°, `rim` ±22,5°). Giá của một ứng viên là `min_φ E(φ)` cộng `(khe tầm với / AIM_GAP)²`, cộng ở
+  mốc bắt đầu và các mốc món trong 1,5 s sau còn cùng người cầm, cùng cỡ (tối đa 4, mốc sau trọng số 0,5); lệch khỏi mặc
+  định nhóm cộng `0,05 · (số trường lệch mặc định) / (số trường thiếu có mặc định)`, `variant` khác `variant.default` của
+  nhóm cộng thêm `0,5`. `palmBox` cộng thêm giá lún `(lún / HELD_SINK)²`: lún da (như luật `sink`) của bàn tay đúng khung
+  cầm, ngón ôm theo vai trò (`heldFit`), nhớ theo khung; ứng viên đã đắt hơn ứng viên tốt nhất thì không đo. Lấy ứng viên
+  rẻ nhất; hoà thì theo thứ tự ứng viên: `part`, khối hình theo `FeatureKind`, `edge`, `thumb`, `variant`, `along`,
+  `slant`, rồi `around`, `tilt`, `psi` (rời theo thứ tự miền khai, liên tục tăng dần). Giải 3–42 ứng viên mất 3–17 ms.
 - **`variant`** của tấm luôn có `flat` và `rim` trong miền giải: `pinch` ở cạnh dưới gãy cổ tay (bend 51°, dev 39°), `rim`
   đỡ được. Dáng `rim` cuộn ngón theo bề dày làm ở giai đoạn 4.
 - **Tay dẫn**: lấy mặc định của nhóm (mục 3), không giải; `thumb` của tấm theo mặt quay về người cầm ở mốc bắt đầu lần cầm,

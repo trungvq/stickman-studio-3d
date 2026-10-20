@@ -379,8 +379,51 @@ describe("chooseMissing: khối hình, mốc sau, cạnh", () => {
     expect(long).toHaveLength(2);
     const sol = chooseMissing(c2, "strip@sheet", pose, RIGHT);
     expect(long).toContain(sol.choice.edge);
-    // 2 cạnh × 2 mặt × 3 biến thể, rồi `along` 3 × `slant` 3
-    expect(sol.candidates).toBe(12 + 9);
+    // 2 cạnh × 2 mặt × 3 biến thể, rồi `along` 3 × `slant` 3 quanh ứng viên rời tốt nhất và quanh `pinch` tốt nhất
+    expect(sol.candidates).toBe(12 + 9 + 9);
+  });
+});
+
+describe("chooseMissing: giá biến thể", () => {
+  // mặt bảng quay về người cầm, mép trên ngửa `a` độ, bảng ở `P`
+  const reading = (P: V3, a: number): ItemPose => {
+    const r = (a * Math.PI) / 180;
+    const y: V3 = [0, -Math.sin(r), -Math.cos(r)];
+    const z: V3 = [0, Math.cos(r), -Math.sin(r)];
+    return { R: fromColumns(cross3(y, z), y, z), P, cast: "nguoi", s: 1 };
+  };
+  const at = (pose: ItemPose, variant?: string) =>
+    chooseMissing(
+      ctx,
+      { item: "bang-gia", group: "sheet", ...(variant && { variant }) },
+      pose,
+      RIGHT,
+    );
+
+  it.each([
+    ["đứng", [200, -230, 560], 0, 9],
+    ["ngửa 20°", [200, -300, 610], 20, 18],
+  ] as const)(
+    "đọc ngang ngực, bảng %s: `flat` rẻ hơn khi khai mà rig chọn `pinch`",
+    (_, P, a, grid) => {
+      const pose = reading([...P], a);
+      expect(at(pose, "flat").cost).toBeLessThan(at(pose, "pinch").cost);
+      const sol = at(pose);
+      expect(sol.choice.variant).toBe("pinch");
+      expect(sol.by.variant).toBe("rig");
+      expect(devOf(sol)).toBeLessThan(0.05);
+      // lưới liên tục quanh `pinch` tốt nhất khi ứng viên rời tốt nhất là biến thể khác
+      expect(sol.candidates).toBe(24 + grid);
+    },
+  );
+
+  it("biến thể khác mặc định cộng 0,5: khoe dưới–trên vẫn `rim`", () => {
+    const c4 = solveCase("c4");
+    for (const s of [c4.right, c4.left]) {
+      expect(s.choice.variant).toBe("rim");
+      expect(devOf(s)).toBeGreaterThanOrEqual(0.5);
+      expect(devOf(s)).toBeLessThanOrEqual(0.55 + 1e-9);
+    }
   });
 });
 

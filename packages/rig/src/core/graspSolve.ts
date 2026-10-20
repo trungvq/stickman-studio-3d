@@ -502,6 +502,8 @@ export interface GraspOpts {
 
 /** Giá lệch mặc định: `DEV_COST · (số trường lệch) / (số trường thiếu có mặc định)` */
 const DEV_COST = 0.05;
+/** Giá thêm khi rig chọn biến thể khác `variant.default` của nhóm */
+const VARIANT_COST = 0.5;
 /** Mốc món sau mốc bắt đầu lần cầm cộng vào giá của lựa chọn trong ngần này giây */
 export const LATER_SPAN = 1.5;
 const LATER_MAX = 4;
@@ -618,8 +620,9 @@ interface Cand {
 /**
  * Lựa chọn cảnh không khai của chỗ cầm `hold` trên món đứng yên ở `pose` (docs/11-nhom-cam.md § Lựa chọn cảnh không khai):
  * giải rời (`part`, khối hình, `edge`, `thumb`, `variant`) với trường liên tục ở mặc định, rồi lưới liên tục quanh nghiệm
- * rời tốt nhất. Giá `min_φ E + (khe / AIM_GAP)²` ở mốc bắt đầu cộng `LATER_W` lần ở các mốc sau, cộng giá lệch mặc định;
- * hoà thì ứng viên trước theo thứ tự trường. `by`: `scene` cảnh khai, `rig` giải trên miền nhiều giá trị, `default`
+ * rời tốt nhất và nghiệm rời tốt nhất của biến thể mặc định. Giá `min_φ E + (khe / AIM_GAP)²` ở mốc bắt đầu cộng `LATER_W`
+ * lần ở các mốc sau, cộng giá lệch mặc định và `VARIANT_COST` cho biến thể khác mặc định; hoà thì ứng viên trước theo thứ
+ * tự trường. `by`: `scene` cảnh khai, `rig` giải trên miền nhiều giá trị, `default`
  */
 export function chooseMissing(
   ctx: GraspCtx,
@@ -731,6 +734,8 @@ export function chooseMissing(
     const withDef = missing.filter((k) => defs[k] !== undefined);
     const off = withDef.filter((k) => c[k as Field] !== defs[k]).length;
     if (withDef.length) cost += (DEV_COST * off) / withDef.length;
+    if (missing.includes("variant") && defs.variant !== undefined && c.variant !== defs.variant)
+      cost += VARIANT_COST;
     // giá lún không âm: ứng viên đã đắt hơn ứng viên tốt nhất thì không cần đo
     if (solve && SINK_GROUPS.has(h.group) && (!best || cost <= best.cost + 1e-12)) {
       const sink = frameSink(spec, frame, sd, ctx.k, ctx.long, ctx.s) * pose.s;
@@ -739,13 +744,22 @@ export function chooseMissing(
     return { choice: frame.choice, feature: f, frame, high, Wp, Rw, arm: sol, cost };
   };
 
+  type Defs = Partial<Record<string, string | number>>;
   let best: Cand | undefined;
-  let bestDefs: Partial<Record<string, string | number>> = {};
-  const take = (x: Cand, defs: Partial<Record<string, string | number>>) => {
+  let bestDefs: Defs = {};
+  // ứng viên rời tốt nhất của biến thể mặc định: lưới liên tục chạy cả quanh nó
+  let home: [Cand, Defs] | undefined;
+  const take = (x: Cand, defs: Defs) => {
     if (!best || x.cost < best.cost - 1e-12) {
       best = x;
       bestDefs = defs;
     }
+    if (
+      missing.includes("variant") &&
+      x.choice.variant === defs.variant &&
+      (!home || x.cost < home[0].cost - 1e-12)
+    )
+      home = [x, defs];
   };
   const lead =
     !solve && h.group === "sheet"
@@ -819,27 +833,29 @@ export function chooseMissing(
 
   const rough: Cand = best;
   const free = solve ? CONTINUOUS.filter((k) => missing.includes(k)) : [];
-  let combos: GraspChoice[] = [{}];
-  for (const k of free) {
-    const ch = group.choices[k] as RangeChoice;
-    const vals = grid(k, ch, rough.choice.variant ?? "");
-    seen(k, vals.length);
-    combos = combos.flatMap((c) => vals.map((v) => ({ ...c, [k]: v })));
-  }
-  if (free.length) {
+  const roots: [Cand, Defs][] = [[rough, bestDefs]];
+  if (home && home[0] !== rough) roots.push(home);
+  // hoà thì giá trị liên tục nhỏ hơn trước, theo thứ tự trường (docs/11 mục 5)
+  const before = (a: GraspChoice, b: GraspChoice) => {
+    for (const k of free) if (a[k] !== b[k]) return (a[k] as number) < (b[k] as number);
+    return false;
+  };
+  for (const [root, defs] of free.length ? roots : []) {
+    let combos: GraspChoice[] = [{}];
+    for (const k of free) {
+      const ch = group.choices[k] as RangeChoice;
+      const vals = grid(k, ch, root.choice.variant ?? "");
+      seen(k, vals.length);
+      combos = combos.flatMap((c) => vals.map((v) => ({ ...c, [k]: v })));
+    }
     const base: GraspChoice = {
       ...given,
-      edge: rough.choice.edge,
-      thumb: rough.choice.thumb,
-      variant: rough.choice.variant,
-    };
-    // hoà thì giá trị liên tục nhỏ hơn trước, theo thứ tự trường (docs/11 mục 5)
-    const before = (a: GraspChoice, b: GraspChoice) => {
-      for (const k of free) if (a[k] !== b[k]) return (a[k] as number) < (b[k] as number);
-      return false;
+      edge: root.choice.edge,
+      thumb: root.choice.thumb,
+      variant: root.choice.variant,
     };
     for (const c of combos) {
-      const x = run(rough.feature, { ...base, ...c }, bestDefs);
+      const x = run(root.feature, { ...base, ...c }, defs);
       if (
         x.cost < best.cost - 1e-12 ||
         (x.cost <= best.cost + 1e-12 && before(x.choice, best.choice))
