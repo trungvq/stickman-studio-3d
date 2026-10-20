@@ -95,6 +95,7 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 | G4-47 hàng mẫu `cylinder` | xong: `along thấp/cao`, `ngón cái xuống`, `nắm phần <p>` (theo hình món, `along` giữa phần), `áp tai` (tay trái dẫn, `around 180`); lọc hàng `checkChoice`/`resolveScene` từ chối cho mọi nhóm. 26 hàng, 0 ô lỗi. Vai/cổ chai trúng chỗ. Áp tai: ống nghe NẰM NGANG, bàn tay xoè — kém v1 (dựng dọc má) → G4-47b. Commit `f3f07ad`, video `5d3e19b` | `g447/` |
 | G4-47b ống nghe áp tai | xong: nguyên nhân là `wrap` bắt trục vuông góc ngón, ở tai cần lệch cổ tay ~90° (giới hạn 20°) → ống nghe nằm ngang. Thêm biến thể `cylinder.flat` (`kinds: rod`, dáng `span`, `FLAT_THUMB`, ngón/lòng `press`, út `support`), `GroupSpec.variantOf` (thanh hộp, lòng áp mặt rộng ≥ `FLAT_WIDE`·W → `flat`), tiếp xúc `flatRod`; `checkChoice` báo `flat` trên trụ tiện. Áp tai dọc má, lún 0,06/0, cổ tay không kẹp, ngang v1 cả hai tay; ống nghe trước ngực cũng ra `flat` (cổ tay vượt 20 → 0,4/2,5°). Chai y số. Ngưỡng `grip` tay dẫn `cylinder` không khai `variant` thành 5 (dáng `span` trong `HELD_PINCHES`) | `g447b/`, `duyet/g4-cylinder-ap-tai.jpg` |
 | G4-48b docs `flat` + render tổng `cylinder` | xong: docs commit; render ở `ed39e0f`: 29 hàng, chai thân/vai/cổ trúng chỗ, lún ≤ 0,54, không xuyên; ống nghe áp tai lún ≤ 0,06; ống nghe trước ngực vượt cổ tay (hàng mẫu dựng đứng loa ra ngoài), chai đặc tuyến `size`. Mốc M4-4 | `g4-cylinder/` |
+| G4-53 `platform` `palm` | xong: `CONTACTS.platform.palm` (cạnh của mặt, thụt `platformInset(ψ)`, `n = −face.n`, ψ dương về đầu cao, món không hướng thì đầu cao về `−front`), da lòng cách mặt `PLATFORM_GAP` 0,15, kẹp `along` cho bàn tay nằm trong cạnh, chọn mặt theo rủi ro 6, lưới `psi` 5 điểm + lưới quanh nghiệm tốt nhất từng cạnh; bỏ `later`, `psi` mặc định 90, dáng `PLATFORM_FLAT` (flat + gốc 30°, ngọn 5°), `needs` mặt chứa 0,4·W × 0,6·L, trục hướng mặc định `support`; tay dẫn chọn mặt/cạnh; tay phụ cùng nhóm cạnh đối theo tên. Fixture `phieu#do` 0°/≤ 0,94; `khay#bung` 0° nhưng lệch 1,35/2,4 (sakura/kuroiwa) vì `inset₀` lớn theo tay và v1 gò lòng lún 1,2–1,5. Ảnh: khay lòng ngửa đỡ đáy, ngón duỗi, cái ngoài mép; phiếu phẳng trên lòng. Mọi ô hàng chung vượt cổ tay 3–18° (xoay cẳng tay cần 93–108°, món sát ngực) → G4-56 đẩy món ra; phiếu kuroiwa đầu ngón cái lộ chấm qua tờ (lún 0,5). t02 0 mới | `g453/`, `duyet/g4-platform-palm.jpg` |
 | G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
@@ -138,6 +139,8 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 - Chủ dự án (2026-10-20): món mỏng hở/lún chút không sao nếu không lộ. Đích job cầm đồ theo mức lộ: khe ngón cái ≲ 0,15·W, lún không xuyên món, mở ảnh kiểm; không viết lại `heldFit` để gỡ vài phần mười. G4-38b chỉ: bề dày thật ở mép cho `pinch`/`flat` (`spanAt`), `flat` không áp được trên tấm quá dày.
 
+- G4-53: fixture `khay#bung` không ép ≤ 1 đơn vị ở cỡ tay thật — v2 thụt `inset₀ = W/2` theo tay và da lòng vừa áp đáy (v1 thụt 6 cố định, gò lòng lún); ảnh v2 đỡ rõ hơn v1. `inset` chưa vào miền giải (chỉ mặc định).
+
 ## Cần chủ dự án
 - Có nới kẹp xoay cẳng tay quá ±90 không? Ca "khoe, một tay đỡ cạnh dưới" (bước 0 ca 4, `rim`) cần −103; hiện thành cảnh báo `wrist` và bàn tay lệch chỗ cầm chút ít. Ảnh: `tmp/nhom-cam/b0/hinh/vong2/to-2.jpg`.
 
@@ -163,6 +166,6 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 ## Bước kế
 0. Phiên tiếp tục (2026-10-20) sau khi chủ dự án chốt hướng G4-38b. Worktree sạch, mọi việc xanh đã commit và push. Studio xem `git log`, video `9b13333`.
-1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. Kế: platform G4-53 (52 xong).
+1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. Platform: 52, 53 xong → 54 (tay phụ khác nhóm) → 55 → 56 (hàng mẫu: đẩy món xa ngực để hết vượt cổ tay) → 57.
 3. Rồi platform 53–57, card 62–64, chopsticks 74–76 (nhớ `frameSink` truyền `curl`), pen 83–85, handle 92–95, bowl A2–A4, Z1, Z2 theo `gd4-ke-hoach.md`. Đã xong/gộp: 00, X1, 11–14, 22–25, 32–38b, 41–48, 52, 72, 73, 82.
 4. Giai đoạn 5 → 6.

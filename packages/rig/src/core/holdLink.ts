@@ -1,7 +1,14 @@
-import { GRIP_GROUPS, groupNeeds, holdDefaults, longEdges, type RoleMap } from "./graspGroups";
+import {
+  GRIP_GROUPS,
+  groupNeeds,
+  holdDefaults,
+  longEdges,
+  supportFaces,
+  type RoleMap,
+} from "./graspGroups";
 import { CONTACTS, edgeOk, graspFrame, type GraspChoice, type GraspFrame } from "./graspSolve";
 import { fingerVec, HAND_POSES, type HandVec } from "./hand";
-import { handDims, itemGeom, type Feature, type HandDims } from "./heldGeom";
+import { handDims, itemGeom, type FaceFeature, type Feature, type HandDims } from "./heldGeom";
 import {
   gripCenter,
   gripFrame,
@@ -71,8 +78,12 @@ const FIELDS = [
   "inset",
 ] as const;
 
-/** Cạnh mặc định của tấm cho tay dẫn: tấm đứng `bottom`, tấm nằm cạnh phía tay ấy (docs/11 mục 5) */
+/** Cạnh mặc định của tấm cho tay dẫn: tấm đứng `bottom`, tấm nằm và mặt đỡ cạnh phía tay ấy (docs/11 mục 5) */
 function leadEdge(f: Feature, side: number, dims: HandDims): GraspChoice["edge"] {
+  if (f.kind === "face") {
+    const l = side < 0 ? "right" : "left";
+    return f.edges.find((e) => e.name === l)?.name ?? f.edges[0]?.name;
+  }
   if (f.kind !== "slab" && f.kind !== "disc") return undefined;
   const l = f.lying ? (side < 0 ? "right" : "left") : "bottom";
   if (f.kind === "disc") return Math.max(0, 90 * f.rim.indexOf(l));
@@ -96,10 +107,20 @@ function fillChoice(
     (given.part === undefined || f.part === given.part) &&
     (given.feature === undefined || f.kind === given.feature) &&
     edgeOk(f, given.edge);
+  const fits = groupNeeds(geom, gs, dims, spec.anchors).filter(ok);
+  // mặt đỡ của tay dẫn: gần `−top`, hoà thì gần `−front`
+  const faces =
+    group === "platform"
+      ? supportFaces(
+          fits.filter((x): x is FaceFeature => x.kind === "face"),
+          geom.U.map((v) => -v) as V3,
+          geom.F.map((v) => -v) as V3,
+        )
+      : [];
   const f =
     given.featureIndex !== undefined
       ? geom.features[given.featureIndex]
-      : (groupNeeds(geom, gs, dims, spec.anchors).find(ok) ?? geom.features.find(ok));
+      : (faces[0] ?? fits[0] ?? geom.features.find(ok));
   // không có khối hình: `graspFrame` ném lỗi có tên
   if (!f) return { ...given, group };
   const c: Record<string, unknown> = { ...given };
@@ -162,7 +183,7 @@ function oppositeEdge(fr: GraspFrame): GraspChoice["edge"] {
 
 /**
  * Tay phụ của `both` (v2): chỗ mặc định của nhóm (`support` của `GRIP_GROUPS`) — cùng nhóm thì giữ `keep` của tay dẫn
- * và cạnh theo `edge` — rồi object của cảnh đè từng phần. Nhóm chưa có chỗ tiếp xúc thì không có tay phụ
+ * và cạnh theo `edge` — rồi object của cảnh đè từng phần. Nhóm chưa có chỗ tiếp xúc hay khác nhóm tay dẫn thì không có tay phụ
  */
 function supportOf(
   spec: HeldItemSpec,
@@ -177,7 +198,7 @@ function supportOf(
   const sup = GRIP_GROUPS[g.hold.group].support;
   const o = g.hold.both === true ? {} : (g.hold.both ?? {});
   const group = o.group ?? sup?.group;
-  if (!group || !CONTACTS[group]) return undefined;
+  if (!group || !CONTACTS[group] || group !== g.hold.group) return undefined;
   const c: Record<string, unknown> = {};
   if (group === g.hold.group) {
     const lc = lead.choice as Record<string, unknown>;

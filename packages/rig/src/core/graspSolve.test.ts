@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { FLAT_MAX, GRIP_GROUPS, SHEET_INSET, tooThick } from "./graspGroups";
-import { CONTACTS, edgeHigh, graspFrame, type ContactInput, type GraspChoice } from "./graspSolve";
+import {
+  CONTACTS,
+  edgeHigh,
+  graspFrame,
+  platformInset,
+  type ContactInput,
+  type GraspChoice,
+} from "./graspSolve";
 import { HAND_DOF, HAND_PIECES, handFrames, handVec } from "./hand";
 import { handSkin, skinHand } from "./handMesh";
 import { HELD_PIERCE_FIT, HELD_SINK, HELD_WRAP } from "./heldAudit";
@@ -22,6 +29,7 @@ import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
 import ongNghe from "./__fixtures__/held-v2/ong-nghe-ban.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import tomHum from "./__fixtures__/held-v2/tom-hum.json";
+import khay from "./__fixtures__/held-v2/khay.json";
 
 const item = (json: unknown): HeldItemSpec => {
   const r = parseHeldItem(json);
@@ -905,6 +913,204 @@ describe("`sheet` `rim` trên da", () => {
   });
 });
 
+describe("`platform` `palm`", () => {
+  const KHAY = item(khay);
+  // phiếu của fixture `phieu#do`: nằm, mặt trước lên, đầu trên ra xa
+  const SLIP = sheet([40, 1.1, 68], [0, 0.65, 0], [0, 1, 0], [0, 0, -1]);
+  const palmOf = (G: GripFrame, side: number): V3 => matVec(tr(G.R), [-side, 0, 0]);
+  const fingersOf = (G: GripFrame): V3 => matVec(tr(G.R), [0, -1, 0]);
+  const BIG = ["t01-sakura", "kuroiwa"] as const;
+
+  /** Lòng tay, ngón, tâm nắm của khung dựng lại so với fixture: góc quay, khoảng tâm nắm theo mặt đỡ và theo pháp tuyến */
+  function vsFixture(fixture: string, spec: HeldItemSpec, size: string, side: Side, pick: Pick) {
+    const fx = FIX[fixture][size];
+    const n = side === "right" ? -1 : 1;
+    const g = graspFrame(spec, itemGeom(spec), pick, n, handDims(fx.k, fx.long), fx.k, fx.long);
+    const F = fx[side];
+    const q = F.centre.item;
+    const d = matVec(
+      tr(g.G.R),
+      [0, 1, 2].map((i) => gripPoint(g.G, q)[i] - gripPoint(F, q)[i]) as V3,
+    );
+    const up = Math.abs(d[1]) / g.G.u;
+    return { g, rot: rotDeg(g.G.R, F.R), plane: Math.hypot(d[0], d[2]) / g.G.u, up };
+  }
+
+  it("`khay#bung` (`ψ` 90, cạnh trái / phải): hướng trong 5° mọi cỡ, hai tay; tâm nắm trong mặt đáy khớp `inset` 6 của fixture", () => {
+    for (const size of SIZES)
+      for (const [side] of SIDES) {
+        const edge = side === "right" ? "right" : "left";
+        const pick: Pick = { group: "platform", edge, psi: 90, inset: 6 };
+        const r = vsFixture("khay#bung", KHAY, size, side, pick);
+        expect(r.rot, `${size} ${side}`).toBeLessThanOrEqual(5);
+        expect(r.plane, `${size} ${side}`).toBeLessThanOrEqual(1);
+      }
+  });
+
+  // fixture đặt tâm nắm trên mặt đáy (gò lòng tay lún 1,2–1,5); v2 hạ tâm nắm tới khi da lòng tay vừa áp mặt
+  it("`khay#bung` mặc định `inset₀ = W/2`: khớp tâm nắm cách vành 6 ở cỡ 1,61; tâm nắm dưới mặt đáy theo da lòng tay", () => {
+    const r = vsFixture("khay#bung", KHAY, "1.61", "right", { group: "platform", edge: "right" });
+    expect(r.rot).toBeLessThan(1e-6);
+    expect(r.plane).toBeLessThanOrEqual(1);
+    for (const size of BIG) {
+      const fx = FIX["khay#bung"][size];
+      const W = handDims(fx.k, fx.long).W;
+      const x = vsFixture("khay#bung", KHAY, size, "right", { group: "platform", edge: "right" });
+      expect(x.plane).toBeCloseTo(W / 2 - 6, 6);
+      expect(x.up).toBeGreaterThan(1);
+      expect(x.up).toBeLessThan(2.2);
+    }
+  });
+
+  it("`phieu#do` (đỡ mặt sau, ngón về đầu trên, tâm nắm giữa phiếu): trong 5° và 1 đơn vị mọi cỡ, hai tay", () => {
+    for (const size of SIZES)
+      for (const [side] of SIDES) {
+        const pick: Pick = { group: "platform", edge: "bottom", psi: 0, inset: 34 };
+        const r = vsFixture("phieu#do", SLIP, size, side, pick);
+        expect(r.rot, `${size} ${side}`).toBeLessThanOrEqual(5);
+        expect(Math.hypot(r.plane, r.up), `${size} ${side}`).toBeLessThanOrEqual(1);
+      }
+  });
+
+  it("mặt đỡ mặc định gần `−top`, hoà thì gần `−front`: khay mặt đáy, phiếu mặt sau", () => {
+    const dims = handDims(1.75, 1.545);
+    const a = graspFrame(KHAY, itemGeom(KHAY), { group: "platform", edge: "left" }, 1, dims);
+    expect(a.feature).toMatchObject({ kind: "face", part: "day", name: "bottom" });
+    const b = graspFrame(SLIP, itemGeom(SLIP), { group: "platform", edge: "left" }, 1, dims);
+    expect(b.feature).toMatchObject({ kind: "face", name: "back" });
+  });
+
+  it("lòng tay ngược pháp tuyến mặt; `ψ` 0 ngón vào trong, ±90 dọc cạnh; thụt `inset₀(ψ)` theo pháp tuyến trong", () => {
+    const k = 1.75;
+    const long = 1.545;
+    const dims = handDims(k, long);
+    expect(platformInset(90, dims)).toBeCloseTo(dims.W / 2, 9);
+    expect(platformInset(0, dims)).toBeCloseTo(dims.P / 2, 9);
+    expect(platformInset(45, dims)).toBeCloseTo(((dims.W + dims.P) / 2) * Math.SQRT1_2, 9);
+    for (const [, side] of SIDES)
+      for (const psi of [-90, -45, 0, 45, 90]) {
+        const g = graspFrame(
+          KHAY,
+          itemGeom(KHAY),
+          { group: "platform", edge: "right", psi },
+          side,
+          dims,
+          k,
+          long,
+        );
+        expect(det(g.G.R)).toBeCloseTo(1, 9);
+        close(palmOf(g.G, side), [0, 1, 0], 1e-9);
+        const c = Math.cos(psi * D2R);
+        const sn = Math.sin(psi * D2R);
+        // không có hướng món: đầu cao của cạnh về `−front` (xa người)
+        close(fingersOf(g.G), [-c, 0, -sn], 1e-9);
+        close([(g.hand.at as V3)[0]], [46 - platformInset(psi, dims)], 1e-9);
+      }
+  });
+
+  it("`along` kẹp cho bàn tay nằm trong cạnh: gót lòng `P` sau tâm nắm, đầu ngón `L − P` trước, ngang `W / 2`", () => {
+    const dims = handDims(1.75, 1.545);
+    const at = (psi: number, along: number) =>
+      graspFrame(KHAY, itemGeom(KHAY), { group: "platform", edge: "right", psi, along }, -1, dims)
+        .hand.at as V3;
+    // cạnh phải dài 52 từ z = 26 (đầu thấp, `−front` là đầu cao) tới z = −26
+    expect(at(90, 0)[2]).toBeCloseTo(26 - dims.P, 9);
+    expect(at(90, 1)[2]).toBeCloseTo(-26 + (dims.L - dims.P), 9);
+    expect(at(-90, 0)[2]).toBeCloseTo(26 - (dims.L - dims.P), 9);
+    expect(at(0, 0)[2]).toBeCloseTo(26 - dims.W / 2, 9);
+    expect(at(90, 0.5)[2]).toBeCloseTo(0, 9);
+  });
+
+  it("hai tay hai cạnh trái / phải cùng `ψ` 90: ngón cùng chĩa ra xa, ngón cái ra ngoài vành", () => {
+    const dims = handDims(2, 1.813);
+    const thumbOf = (G: GripFrame): V3 => matVec(tr(G.R), [0, 0, 1]);
+    for (const [edge, side, out] of [
+      ["right", -1, 1],
+      ["left", 1, -1],
+    ] as const) {
+      const g = graspFrame(KHAY, itemGeom(KHAY), { group: "platform", edge }, side, dims, 2, 1.813);
+      expect(g.choice.psi).toBe(90);
+      close(fingersOf(g.G), [0, 0, -1], 1e-9);
+      expect(thumbOf(g.G)[0] * out).toBeCloseTo(1, 9);
+    }
+  });
+
+  /** Khe da từng phần bàn tay tới món sau ngón ôm theo vai trò, lún sâu nhất */
+  function platformSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long: number) {
+    const g = graspFrame(spec, itemGeom(spec), pick, side, handDims(k, long), k, long);
+    const skin = handSkin(side, k, long);
+    const fit = heldFit({
+      v: g.pose,
+      side,
+      k,
+      long,
+      shape: spec.shape!,
+      G: g.G,
+      roles: g.roles,
+      bulge: skinBulge(skin, g.pose),
+    });
+    const pos = new Float32Array(skin.pos.length);
+    skinHand(skin, [...g.pose, ...fit], pos);
+    const { gaps } = skinDepth(pos, skinPieces(skin), g.G, spec.shape!);
+    return { gaps, sink: Math.max(0, -Math.min(...Object.values(gaps))) };
+  }
+
+  it("trên da: lòng tay áp mặt (khe 0,15), bốn ngón đỡ chạm (khe ≤ 0,5), lún ≤ 0,3 — khay, phiếu, hai cỡ, hai tay", () => {
+    for (const size of BIG)
+      for (const [side, n] of SIDES)
+        for (const [spec, pick] of [
+          [KHAY, { group: "platform", edge: side === "right" ? "right" : "left" }],
+          [SLIP, { group: "platform", edge: "bottom", psi: 0, inset: 34 }],
+        ] as const) {
+          const fx = FIX["khay#bung"][size];
+          const r = platformSkin(spec, pick, n, fx.k, fx.long);
+          expect(r.gaps.palm, `${size} ${side}`).toBeCloseTo(0.15, 1);
+          for (const f of ["index", "middle", "ring", "pinky"] as const)
+            expect(r.gaps[f], `${size} ${side} ${f}`).toBeLessThanOrEqual(0.5);
+          expect(r.sink, `${size} ${side}`).toBeLessThanOrEqual(0.3);
+        }
+  });
+
+  it("vai trò: lòng tay `press`, bốn ngón `support`, ngón cái `free`; dáng phẳng gập gốc 30, ngọn 5", () => {
+    const g = graspFrame(
+      KHAY,
+      itemGeom(KHAY),
+      { group: "platform", edge: "right" },
+      -1,
+      handDims(1.75),
+    );
+    expect(g.roles).toMatchObject({
+      palm: "press",
+      thumb: "free",
+      index: "support",
+      pinky: "support",
+    });
+    const flat = handVec("flat");
+    const i = HAND_DOF.indexOf("indexBase");
+    expect(g.pose[i] - flat[i]).toBeCloseTo(30, 9);
+    expect(g.pose[i + 1] - flat[i + 1]).toBeCloseTo(5, 9);
+  });
+
+  it("mặt không có cạnh khai là lỗi có tên; thiếu `edge` là lỗi", () => {
+    const geom = itemGeom(KHAY);
+    const bottom = geom.features.findIndex(
+      (f) => f.kind === "face" && f.part === "day" && f.name === "bottom",
+    );
+    expect(() =>
+      graspFrame(
+        KHAY,
+        geom,
+        { group: "platform", featureIndex: bottom, edge: "top" },
+        -1,
+        handDims(1.75),
+      ),
+    ).toThrow(/không có cạnh `top`/);
+    expect(() =>
+      graspFrame(KHAY, itemGeom(KHAY), { group: "platform" }, -1, handDims(1.75)),
+    ).toThrow(/edge/);
+  });
+});
+
 describe("edgeHigh", () => {
   // bảng đứng trong thế giới rig: `top` của món (−z) lên (−y), mặt trước về −z
   const R: M3 = [1, 0, 0, 0, 0, 1, 0, -1, 0];
@@ -982,8 +1188,8 @@ describe("graspFrame", () => {
     expect(run()).toBe(a);
   });
 
-  it("chỉ `sheet`, `palmBox`, `cylinder` có chỗ tiếp xúc; thiếu `edge` của tấm là lỗi", () => {
-    expect(Object.keys(CONTACTS)).toEqual(["sheet", "palmBox", "cylinder"]);
+  it("chỉ `sheet`, `palmBox`, `cylinder`, `platform` có chỗ tiếp xúc; thiếu `edge` của tấm là lỗi", () => {
+    expect(Object.keys(CONTACTS)).toEqual(["sheet", "palmBox", "cylinder", "platform"]);
     expect(() => graspFrame(BANG, itemGeom(BANG), { group: "bowl" }, -1, dims)).toThrow(/bowl/);
     expect(() => graspFrame(BANG, itemGeom(BANG), { group: "sheet" }, -1, dims)).toThrow(/edge/);
   });

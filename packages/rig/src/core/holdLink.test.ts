@@ -22,6 +22,7 @@ import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import tomHum from "./__fixtures__/held-v2/tom-hum.json";
 import ongNgheBan from "./__fixtures__/held-v2/ong-nghe-ban.json";
+import khay from "./__fixtures__/held-v2/khay.json";
 
 const spec = (j: unknown): HeldItemSpec => {
   const r = parseHeldItem(j);
@@ -178,6 +179,34 @@ describe("lớp liên kết tay ↔ món", () => {
     expect(rep.L.reach).toMatchObject({ hold: "support" });
     expect(rep.L.reach!.gap).toBeLessThanOrEqual(1);
     expect(Object.keys(actHeld(NGUOI, sp))).toEqual(["R"]);
+  });
+
+  it("`khay@platform` với `both: true`: mặt đáy, tay phải cạnh phải, tay phụ cạnh trái, ngón cùng chĩa ra xa", () => {
+    const KHAY = spec(khay);
+    const rt = runtime(
+      [
+        {
+          t: 0,
+          right: {
+            to: "chest",
+            offset: [30, 20, 0],
+            point: "grip",
+            hold: { item: "khay", group: "platform", both: true },
+          },
+        },
+      ],
+      { khay: KHAY },
+    );
+    const sp = poseAt(rt, 0.5);
+    const x = holdHand(rightHold(sp), -1, handDims(1))!;
+    expect(x.frame!.choice).toMatchObject({ edge: "right", psi: 90, part: "day" });
+    const lead = heldPoint(KHAY, x.hand.at as V3);
+    const other = heldPoint(KHAY, x.both!.other.at as V3);
+    expect(lead[0]).toBeGreaterThan(30);
+    expect(other[0]).toBeLessThan(-30);
+    expect(Math.abs(lead[0] + other[0])).toBeLessThan(1e-9);
+    for (const h of [x.hand, x.both!.other])
+      expect(angle(h.fingers as V3, [0, 0, -1])).toBeLessThan(1e-6);
   });
 
   it("đĩa với `both: true`: tay phụ ở vành đối diện, góc +180", () => {

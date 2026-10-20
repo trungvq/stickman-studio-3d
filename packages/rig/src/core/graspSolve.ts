@@ -8,6 +8,7 @@ import {
   longEdges,
   SHEET_INSET,
   spanAt,
+  supportFaces,
   tooThick,
   type GroupSpec,
   type PoseRef,
@@ -40,6 +41,7 @@ import {
   type AlongName,
   type BoxFeature,
   type DiscFeature,
+  type FaceFeature,
   type Feature,
   type FeatureKind,
   type HandDims,
@@ -184,6 +186,8 @@ const WRAP_TILT_MAX = 45;
 const WRAP_GAP = 0.7;
 /** `wrap`: ngón cái tra bảng theo bán kính nhỏ hơn của chỗ cầm và chỗ cách ngần này lần `W` về phía ngón cái (vai chai thắt) */
 const WRAP_THUMB_AHEAD = 0.5;
+/** `platform`: da lòng tay cách mặt đỡ ngần này, đơn vị món */
+const PLATFORM_GAP = 0.15;
 /** Dò mặt hình: coi là chạm khi cách dưới ngần này, đơn vị món */
 const TOUCH = 0.01;
 
@@ -302,15 +306,22 @@ function outerAt(shape: readonly HeldShape[], o: V3, dir: V3, far: number): numb
   return undefined;
 }
 
-/** Tâm nắm ở `o + u · S` với các điểm da `pts` (khung món, tính từ tâm nắm): `S` lớn nhất mà da còn cách hình `WRAP_GAP` */
-function skinTouch(shape: readonly HeldShape[], o: V3, u: V3, pts: readonly V3[], far: number) {
+/** Tâm nắm ở `o + u · S` với các điểm da `pts` (khung món, tính từ tâm nắm): `S` lớn nhất mà da còn cách hình `gap` */
+function skinTouch(
+  shape: readonly HeldShape[],
+  o: V3,
+  u: V3,
+  pts: readonly V3[],
+  far: number,
+  gap = WRAP_GAP,
+) {
   let S = far;
   for (let i = 0; i < 96; i++) {
     const c = add3(o, scale3(u, S));
     let d = Infinity;
     for (const q of pts) d = Math.min(d, heldDistance(shape, add3(c, q)));
-    if (d < WRAP_GAP + TOUCH) return S;
-    S -= d - WRAP_GAP;
+    if (d < gap + TOUCH) return S;
+    S -= d - gap;
     if (S < -far) break;
   }
   return undefined;
@@ -375,11 +386,56 @@ const flatRod: ContactFn = (x) => {
   return { at: add3(p0.at, scale3(rho, S)), along: p0.along, palm, fingers };
 };
 
+/** Thụt mặc định của `platform`: bàn tay nằm trọn trong mặt, `½ · (W · |sin ψ| + P · |cos ψ|)` */
+export const platformInset = (psi: number, dims: HandDims) =>
+  0.5 * (dims.W * Math.abs(Math.sin(psi * D2R)) + dims.P * Math.abs(Math.cos(psi * D2R)));
+
+/**
+ * `platform` `palm`: lòng tay ngửa áp mặt `face` (`n = −face.n`), tay tới từ cạnh `edge`, tâm nắm thụt `inset` (mặc định
+ * `platformInset`) theo pháp tuyến trong của cạnh, ở `along` (kẹp cho bàn tay nằm trong cạnh); ngón quay `psi` từ pháp
+ * tuyến trong về đầu cao của cạnh.
+ * Tâm nắm hạ xuống tới khi da lòng tay còn cách hình `PLATFORM_GAP`
+ */
+const platformPalm: ContactFn = (x) => {
+  const f = x.feature as FaceFeature;
+  const ed = f.edges.find((e) => e.name === x.edge);
+  if (!ed)
+    throw new Error(
+      `mặt \`${f.name}\` của \`${f.part}\` không có cạnh \`${x.edge}\`; cạnh: ${f.edges.map((e) => e.name).join(", ") || "không"}`,
+    );
+  const e0 = unit(cross3(neg(ed.inward), f.n));
+  // không có hướng món trong thế giới: đầu cao về `−front`, cạnh vuông góc `front` thì về `top`
+  const ref = x.high ?? (Math.abs(dot3(e0, x.geom.F)) > EPS ? neg(x.geom.F) : x.geom.U);
+  const e = dot3(e0, ref) < 0 ? neg(e0) : e0;
+  const psi = x.psi ?? 0;
+  const inset = x.inset ?? platformInset(psi, x.dims);
+  // dọc cạnh: bàn tay (gót lòng `P` sau tâm nắm, đầu ngón `L − P` trước, ngang `W`) nằm trong cạnh; cạnh ngắn quá thì giữa
+  const { W, L, P } = x.dims;
+  const sn = Math.sin(psi * D2R);
+  const half = (Math.abs(Math.cos(psi * D2R)) * W) / 2;
+  const back = Math.max(sn * P, -sn * (L - P)) + half;
+  const ahead = Math.max(sn * (L - P), -sn * P) + half;
+  const s0 = alongFrac(x.along, ed.len, W) * ed.len;
+  const along =
+    (back <= ed.len - ahead ? Math.min(ed.len - ahead, Math.max(back, s0)) : ed.len / 2) / ed.len;
+  const o = add3(add3(ed.at, scale3(e, (along - 0.5) * ed.len)), scale3(ed.inward, inset));
+  const palm = neg(f.n);
+  const fingers = unit(mix2(ed.inward, Math.cos(psi * D2R), e, Math.sin(psi * D2R)));
+  const z = cross3(palm, fingers);
+  const pts = (x.palmSkin?.({}) ?? []).map((c) =>
+    add3(add3(scale3(palm, c[0]), scale3(fingers, c[1])), scale3(z, c[2])),
+  );
+  const S =
+    (x.shape && pts.length && skinTouch(x.shape, o, f.n, pts, reachOf(x.geom), PLATFORM_GAP)) || 0;
+  return { at: add3(o, scale3(f.n, S)), along, palm, fingers };
+};
+
 /** Chỗ tiếp xúc theo nhóm và biến thể; nhóm chưa có ở đây thì `graspFrame` báo lỗi */
 export const CONTACTS: Partial<Record<GroupId, Record<string, ContactFn>>> = {
   sheet: { pinch, flat, rim },
   palmBox: { default: palmBox },
   cylinder: { wrap, flat: flatRod },
+  platform: { palm: platformPalm },
 };
 
 /**
@@ -401,7 +457,7 @@ export function edgeHigh(e: V3, R: M3, side: number, across: V3, up: V3 = [0, -1
 /** Khối hình `f` có cạnh `edge`: tấm theo tên, đĩa theo tên vành hay góc */
 export const edgeOk = (f: Feature, edge: GraspChoice["edge"]) =>
   edge === undefined ||
-  (f.kind === "slab"
+  (f.kind === "slab" || f.kind === "face"
     ? f.edges.some((x) => x.name === edge)
     : f.kind === "disc"
       ? typeof edge === "number" || f.rim.includes(edge)
@@ -411,8 +467,8 @@ const faceOk = (f: Feature, thumb: GraspChoice["thumb"]) =>
   (f.kind === "slab" || f.kind === "disc" ? f.faces.some((x) => x.name === thumb) : true);
 
 /**
- * Khối hình của chỗ cầm: `featureIndex` nếu khai, không thì ưu tiên khối đạt `needs` ở cỡ tay này, không có thì khối cùng
- * loại đầu tiên
+ * Khối hình của chỗ cầm: `featureIndex` nếu khai, không thì ưu tiên khối đạt `needs` ở cỡ tay này (`platform`: mặt đỡ),
+ * không có thì khối cùng loại đầu tiên
  */
 function pickFeature(
   spec: HeldItemSpec,
@@ -437,7 +493,17 @@ function pickFeature(
     (c.feature === undefined || f.kind === c.feature) &&
     edgeOk(f, c.edge) &&
     faceOk(f, c.thumb);
-  const f = groupNeeds(geom, group, dims, spec.anchors).find(ok) ?? geom.features.find(ok);
+  const fits = groupNeeds(geom, group, dims, spec.anchors).filter(ok);
+  // mặt đỡ mặc định: gần `−top`, hoà thì gần `−front`
+  const faces =
+    group.id === "platform"
+      ? supportFaces(
+          fits.filter((x): x is FaceFeature => x.kind === "face"),
+          neg(geom.U),
+          neg(geom.F),
+        )
+      : [];
+  const f = faces[0] ?? fits[0] ?? geom.features.find(ok);
   if (!f)
     throw new Error(
       `món không có khối hình cho nhóm \`${group.id}\`${c.part ? ` ở phần \`${c.part}\`` : ""}`,
@@ -572,7 +638,11 @@ export function graspFrame(
     );
   if (!vs.pose) throw new Error(`biến thể \`${variant}\` của nhóm \`${group.id}\` chưa có dáng`);
   const edge = choice.edge;
-  if ((feature.kind === "slab" || feature.kind === "disc") && edge === undefined)
+  if (
+    (feature.kind === "slab" || feature.kind === "disc" || feature.kind === "face") &&
+    group.choices.edge &&
+    edge === undefined
+  )
     throw new Error(`nhóm \`${group.id}\` cần \`edge\``);
   const thumb = choice.thumb ?? (def.thumb as string | undefined);
   const slantC = group.choices.slant;
@@ -849,14 +919,14 @@ function specOf(ctx: GraspCtx, item: string): HeldItemSpec {
   return s;
 }
 
-/** Lưới của trường liên tục: `along` 3 điểm, `slant` ½ miền hai phía và 0, `around` 12, `tilt` 6 điểm đều gồm hai đầu, `psi` 8 */
+/** Lưới của trường liên tục: `along` 3 điểm, `slant` ½ miền hai phía và 0, `around` 12, `tilt` 6, `psi` 5 điểm đều gồm hai đầu */
 function grid(key: Field, c: RangeChoice, variant: string): number[] {
   const [lo, hi] = c.byVariant?.[variant] ?? [c.min, c.max];
   const ring = (n: number) => Array.from({ length: n }, (_, i) => lo + ((hi - lo) * i) / n);
   if (key === "along") return [0.25, 0.5, 0.75];
   if (key === "slant") return [lo / 2, 0, hi / 2];
   if (key === "around") return ring(12);
-  if (key === "psi") return ring(8);
+  if (key === "psi") return ring(4).concat(hi);
   if (key === "tilt") return ring(5).concat(hi);
   return [lo, hi];
 }
@@ -875,7 +945,11 @@ function highOf(
     if (c.edge === undefined || c.thumb === undefined) return undefined;
     e = edgeFrame(f, c.edge, c.thumb as SideName).e;
   } else if (f.kind === "box") e = boxAxes(f, geom).e;
-  else return undefined;
+  else if (f.kind === "face") {
+    const ed = f.edges.find((x) => x.name === c.edge);
+    if (!ed) return undefined;
+    e = cross3(neg(ed.inward), f.n);
+  } else return undefined;
   return edgeHigh(e, R, side, across);
 }
 
@@ -949,6 +1023,16 @@ export function chooseMissing(
     edgeOk(f, given.edge);
   let feats = groupNeeds(geom, group, ctx.dims, spec.anchors).filter(fit);
   if (!feats.length) feats = geom.features.filter(fit);
+  // mặt đỡ: món đặt trước mặt chúc xuống nhất ở mốc bắt đầu, tay dẫn mặt gần `−top`; hoà thì gần `−front`
+  if (h.group === "platform" && given.featureIndex === undefined) {
+    const down = solve ? matVec(tr(pose.R), [0, 1, 0]) : neg(geom.U);
+    const faces = supportFaces(
+      feats.filter((f): f is FaceFeature => f.kind === "face"),
+      down,
+      neg(geom.F),
+    );
+    if (faces.length) feats = faces;
+  }
   if (!feats.length)
     throw new Error(
       `món không có khối hình cho nhóm \`${group.id}\`${given.part ? ` ở phần \`${given.part}\`` : ""}`,
@@ -1025,7 +1109,13 @@ export function chooseMissing(
   let bestDefs: Defs = {};
   // ứng viên rời tốt nhất của biến thể mặc định: lưới liên tục chạy cả quanh nó
   let home: [Cand, Defs] | undefined;
+  // `platform`: hướng ngón gắn với cạnh, lưới liên tục chạy quanh ứng viên rời tốt nhất của từng cạnh
+  const byEdge = new Map<GraspChoice["edge"], [Cand, Defs]>();
   const take = (x: Cand, defs: Defs) => {
+    if (h.group === "platform") {
+      const e = byEdge.get(x.choice.edge);
+      if (!e || x.cost < e[0].cost - 1e-12) byEdge.set(x.choice.edge, [x, defs]);
+    }
     if (!best || x.cost < best.cost - 1e-12) {
       best = x;
       bestDefs = defs;
@@ -1044,7 +1134,9 @@ export function chooseMissing(
           const l = f.lying ? (sd < 0 ? "right" : "left") : "bottom";
           return f.kind === "disc" ? 90 * f.rim.indexOf(l) : l;
         }
-      : undefined;
+      : !solve && h.group === "platform"
+        ? () => (sd < 0 ? "right" : "left")
+        : undefined;
   // món khai `top` và tấm nằm: mặt `top`; không thì mặt hướng lên trong thế giới (y rig hướng xuống) khi tấm nằm
   const upFace = (f: Feature) => {
     if (f.kind !== "slab" && f.kind !== "disc") return undefined;
@@ -1082,6 +1174,7 @@ export function chooseMissing(
         vals = (long.length ? long : f.edges).map((e) => e.name);
       } else if (k === "edge" && f.kind === "disc")
         vals = Array.from({ length: 360 / DISC_STEP }, (_, i) => i * DISC_STEP);
+      else if (k === "edge" && f.kind === "face") vals = f.edges.map((e) => e.name);
       else if (k === "thumb" && (f.kind === "slab" || f.kind === "disc"))
         vals = f.faces.map((x) => x.name);
       if (!solve || !vals.length) {
@@ -1143,6 +1236,7 @@ export function chooseMissing(
   const free = solve ? CONTINUOUS.filter((k) => missing.includes(k)) : [];
   const roots: [Cand, Defs][] = [[rough, bestDefs]];
   if (home && home[0] !== rough) roots.push(home);
+  for (const r of byEdge.values()) if (r[0] !== rough) roots.push(r);
   // hoà thì giá trị liên tục nhỏ hơn trước, theo thứ tự trường (docs/11 mục 5)
   const before = (a: GraspChoice, b: GraspChoice) => {
     for (const k of free) if (a[k] !== b[k]) return (a[k] as number) < (b[k] as number);

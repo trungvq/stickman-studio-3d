@@ -18,6 +18,7 @@ import { handDims, itemGeom } from "./heldGeom";
 import { GROUP_IDS, HeldItemSchema, parseHeldItem, type HeldItemSpec } from "./heldItem";
 import type { V3 } from "./lens";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
+import khay from "./__fixtures__/held-v2/khay.json";
 import bienLai from "./__fixtures__/held-v2/bien-lai.json";
 import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
@@ -47,11 +48,12 @@ describe("bảng GRIP_GROUPS", () => {
     }
   });
 
-  it("chỉ `sheet`, `cylinder`, `palmBox` và `carry` không `later`", () => {
+  it("chỉ `sheet`, `cylinder`, `palmBox`, `platform` và `carry` không `later`", () => {
     expect(GROUP_IDS.filter((g) => !GRIP_GROUPS[g].later)).toEqual([
       "sheet",
       "cylinder",
       "palmBox",
+      "platform",
       "carry",
     ]);
   });
@@ -100,23 +102,24 @@ describe("bảng GRIP_GROUPS", () => {
 });
 
 describe("groupNeeds trên tám món", () => {
-  it("bảng giá ra `sheet`", () => {
-    expect(ids(bangGia)).toEqual(["sheet"]);
+  // `platform`: mặt hộp bao chứa được 0,4·W × 0,6·L (đũa: hộp bao hai que), đáy chai
+  it("bảng giá ra `sheet`, `platform`", () => {
+    expect(ids(bangGia)).toEqual(["sheet", "platform"]);
   });
 
-  it("điện thoại ra `sheet` và `palmBox`", () => {
-    expect(ids(dienThoai)).toEqual(["sheet", "palmBox"]);
+  it("điện thoại ra `sheet`, `palmBox` và `platform`", () => {
+    expect(ids(dienThoai)).toEqual(["sheet", "palmBox", "platform"]);
   });
 
-  it("biên lai ra `sheet`, không ra `palmBox`", () => {
-    expect(ids(bienLai)).toEqual(["sheet"]);
+  it("biên lai ra `sheet`, `platform`, không ra `palmBox`", () => {
+    expect(ids(bienLai)).toEqual(["sheet", "platform"]);
   });
 
   it("đũa, chai, quai túi ra `cylinder` (đũa không ra `sheet`); túi hiệu có `seats` mới ra `carry`", () => {
-    expect(ids(dua)).toEqual(["cylinder"]);
-    expect(ids(chaiDia)).toEqual(["cylinder"]);
-    expect(ids(tuiHieu)).toEqual(["cylinder", "carry"]);
-    expect(ids({ ...tuiHieu, seats: undefined })).toEqual(["cylinder"]);
+    expect(ids(dua)).toEqual(["cylinder", "platform"]);
+    expect(ids(chaiDia)).toEqual(["cylinder", "platform"]);
+    expect(ids(tuiHieu)).toEqual(["cylinder", "platform", "carry"]);
+    expect(ids({ ...tuiHieu, seats: undefined })).toEqual(["cylinder", "platform"]);
   });
 
   it("đĩa tôm hùm ra `sheet` bằng cả tấm lẫn đĩa", () => {
@@ -237,6 +240,25 @@ describe("groupIntent", () => {
       groupIntent("sheet", { ...base, roll: { axis: [1, 0, 0], toward: "up" } }, g).roll,
     ).toEqual({ axis: [1, 0, 0], toward: "up" });
     expect(groupIntent("sheet", { ...base, keep: true }, g)).toEqual({});
+  });
+
+  it("`platform`: trục ngược pháp tuyến mặt đỡ lên — khay `top`, phiếu đỡ mặt sau `front`", () => {
+    const tray = geomOf(khay);
+    expect(groupIntent("platform", "khay@platform", tray).face).toEqual({
+      axis: [0, 1, 0],
+      toward: "up",
+    });
+    const slip = geomOf({
+      schemaVersion: 2,
+      size: [40, 1.1, 68],
+      front: [0, 1, 0],
+      top: [0, 0, -1],
+      anchors: {},
+      shape: [{ box: [40, 1.1, 68], at: [0, 0.65, 0] }],
+    });
+    const f = groupIntent("platform", "phieu@platform", slip).face!;
+    expect(f.toward).toBe("up");
+    expect((f.axis as number[]).map((x) => x + 0)).toEqual([0, 1, 0]);
   });
 
   it("nhóm không có trục mặc định mà `face` khai đích trần thì ném lỗi", () => {

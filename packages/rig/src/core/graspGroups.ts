@@ -8,6 +8,7 @@ import {
   faceRho,
   gripSpan,
   type DiscFeature,
+  type FaceFeature,
   type Feature,
   type FeatureKind,
   type HandDims,
@@ -135,12 +136,13 @@ export interface SupportSpec {
   keep?: ChoiceKey[];
 }
 
+/** `support`: ngược pháp tuyến mặt đỡ của `platform` (`supportAxis`) */
 export interface IntentAxis {
-  axis: "front" | "top";
+  axis: "front" | "top" | "support";
   toward: IntentTarget;
 }
 
-/** Hướng món mặc định theo `front` / `top` (đã gồm miệng) của món */
+/** Hướng món mặc định theo `front` / `top` (đã gồm miệng) của món, hay mặt đỡ */
 export interface GroupIntent {
   face?: IntentAxis;
   roll?: IntentAxis;
@@ -189,6 +191,9 @@ const WRAP_THUMB = [
   [0.4, [90, 40, -10, 0]],
   [0.42, [50, 20, 0, 10]],
 ] as const satisfies readonly (readonly [number, ThumbAngles])[];
+
+/** `platform` `palm`: ngón gập gốc, ngọn để đệm ngón chạm mặt đỡ ngang gò lòng tay (da lòng dày hơn ngón) */
+const PLATFORM_FLAT: PoseRef = { pose: "flat", knuckle: 30, tip: 5 };
 
 /** `cylinder` `flat`: ngón cái khép dọc cạnh trỏ, nằm trên mặt rộng (dáng `span` dạng ra ngoài mép) */
 const FLAT_THUMB = [20, 6, 0, 10] as const;
@@ -710,16 +715,19 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
     needs: [
       {
         kinds: ["face"],
-        test: (f, h) => f.kind === "face" && 4 * f.half[0] * f.half[1] >= 0.4 * h.W * 0.6 * h.L,
-        text: "mặt có diện tích ≥ 0,4·W × 0,6·L",
+        test: (f, h) =>
+          f.kind === "face" &&
+          2 * Math.min(...f.half) >= 0.4 * h.W &&
+          2 * Math.max(...f.half) >= 0.6 * h.L,
+        text: "mặt chứa được 0,4·W × 0,6·L",
       },
     ],
     variants: {
       palm: {
         frame: "nf",
         pose: {
-          open: { pose: "flat" },
-          closed: { pose: "flat" },
+          open: PLATFORM_FLAT,
+          closed: PLATFORM_FLAT,
           by: "width",
           unit: "W",
           range: [0, 1],
@@ -732,13 +740,12 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
       part: PART,
       edge: EDGE,
       along: ALONG,
-      psi: range(-90, 90),
+      psi: range(-90, 90, { default: 90 }),
       inset: range(0, Infinity),
     },
     hands: "either",
     support: { group: "platform", edge: "opposite" },
-    intent: { face: { axis: "top", toward: "up" } },
-    later: true,
+    intent: { face: { axis: "support", toward: "up" } },
   },
 
   hug: {
@@ -916,10 +923,44 @@ export function holdDefaults(
   return out;
 }
 
-const axisOf = (a: IntentAxis, geom: Pick<ItemGeom, "U" | "F">): AxisIntent => ({
-  axis: [...(a.axis === "front" ? geom.F : geom.U)] as V3,
+type IntentGeom = Pick<ItemGeom, "U" | "F"> & Partial<Pick<ItemGeom, "features">>;
+
+const axisOf = (a: IntentAxis, geom: IntentGeom): AxisIntent => ({
+  axis: [...(a.axis === "front" ? geom.F : a.axis === "top" ? geom.U : supportAxis(geom))] as V3,
   toward: a.toward,
 });
+
+/**
+ * Mặt đỡ trong `faces`: pháp tuyến ngoài gần `down` nhất, hoà (lệch dưới 1e-6) thì gần `back`; các mặt hoà nhau giữ thứ tự
+ * (docs/11 mục 3 nhóm 10)
+ */
+export function supportFaces(faces: readonly FaceFeature[], down: V3, back: V3): FaceFeature[] {
+  const score = (f: FaceFeature): [number, number] => [dot3(f.n, down), dot3(f.n, back)];
+  let best: [number, number] | undefined;
+  for (const f of faces) {
+    const s = score(f);
+    if (!best || s[0] > best[0] + 1e-6 || (s[0] > best[0] - 1e-6 && s[1] > best[1] + 1e-6))
+      best = s;
+  }
+  return faces.filter((f) => {
+    const s = score(f);
+    return best && Math.abs(s[0] - best[0]) <= 1e-6 && Math.abs(s[1] - best[1]) <= 1e-6;
+  });
+}
+
+/** Mặt lớn (diện tích ≥ ½ mặt lớn nhất) mà món dựng theo `top` đặt lên lòng tay: gần `−top`, hoà thì gần `−front` */
+const SUPPORT_AREA = 0.5;
+function supportAxis(geom: IntentGeom): V3 {
+  const faces = (geom.features ?? []).filter((f): f is FaceFeature => f.kind === "face");
+  const area = (f: FaceFeature) => f.half[0] * f.half[1];
+  const big = Math.max(0, ...faces.map(area));
+  const pick = supportFaces(
+    faces.filter((f) => area(f) >= SUPPORT_AREA * big),
+    scale3(geom.U, -1),
+    scale3(geom.F, -1),
+  )[0];
+  return pick ? scale3(pick.n, -1) : geom.U;
+}
 
 /**
  * Hướng món của chỗ cầm: mặc định của nhóm (trục `front` / `top` của món) bị `up`, `face`, `roll` của `hold` đè; `keep`
@@ -928,7 +969,7 @@ const axisOf = (a: IntentAxis, geom: Pick<ItemGeom, "U" | "F">): AxisIntent => (
 export function groupIntent(
   group: GroupId | GroupSpec,
   hold: SceneHold,
-  geom: Pick<ItemGeom, "U" | "F">,
+  geom: IntentGeom,
 ): { face?: AxisIntent; roll?: AxisIntent } {
   const spec = specOf(group);
   const h = groupHold(hold);
@@ -1025,9 +1066,9 @@ const CHOICE_KEYS: ChoiceKey[] = [
   "yaw",
 ];
 
-/** Tên mặt, cạnh mà khối hình tấm hay đĩa nhận */
+/** Tên mặt, cạnh mà khối hình tấm, đĩa hay mặt nhận */
 const slabEdgeOk = (f: Feature, edge: string | number): boolean =>
-  f.kind === "slab"
+  f.kind === "slab" || f.kind === "face"
     ? typeof edge === "string" && f.edges.some((e) => e.name === edge)
     : f.kind === "disc"
       ? typeof edge === "number" || f.rim.includes(edge as never)
