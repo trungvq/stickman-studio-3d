@@ -8,7 +8,7 @@ import {
   type ContactInput,
   type GraspChoice,
 } from "./graspSolve";
-import { HAND_DOF, HAND_PIECES, handFrames, handVec } from "./hand";
+import { HAND_BONES, HAND_DOF, HAND_PIECES, handFrames, handVec } from "./hand";
 import { handSkin, skinHand } from "./handMesh";
 import { HELD_PIERCE_FIT, HELD_SINK, HELD_WRAP } from "./heldAudit";
 import { capsuleClearance, heldFit, skinBulge, skinDepth, skinPieces, toItem } from "./heldFit";
@@ -33,6 +33,7 @@ import khay from "./__fixtures__/held-v2/khay.json";
 import dua from "./__fixtures__/held-v2/dua.json";
 import but from "./__fixtures__/held-v2/but.json";
 import tui from "./__fixtures__/held-v2/tui.json";
+import chen from "./__fixtures__/held-v2/chen.json";
 
 const item = (json: unknown): HeldItemSpec => {
   const r = parseHeldItem(json);
@@ -607,6 +608,7 @@ function wrapSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long:
     pierce,
     gaps,
     thumbUp: (d[0] * a.a[0] + d[1] * a.a[1] + d[2] * a.a[2]) / Math.hypot(...d),
+    thumbTip: toItem(g.G, tip),
   };
 }
 
@@ -1315,7 +1317,7 @@ describe("graspFrame", () => {
     expect(run()).toBe(a);
   });
 
-  it("chỉ `sheet`, `card`, `palmBox`, `cylinder`, `platform`, `chopsticks`, `pen`, `handle` có chỗ tiếp xúc; thiếu `edge` của tấm là lỗi", () => {
+  it("chỉ `sheet`, `card`, `palmBox`, `cylinder`, `platform`, `chopsticks`, `pen`, `handle`, `bowl` có chỗ tiếp xúc; thiếu `edge` của tấm là lỗi", () => {
     expect(Object.keys(CONTACTS)).toEqual([
       "sheet",
       "card",
@@ -1325,8 +1327,9 @@ describe("graspFrame", () => {
       "chopsticks",
       "pen",
       "handle",
+      "bowl",
     ]);
-    expect(() => graspFrame(BANG, itemGeom(BANG), { group: "bowl" }, -1, dims)).toThrow(/bowl/);
+    expect(() => graspFrame(BANG, itemGeom(BANG), { group: "round" }, -1, dims)).toThrow(/round/);
     expect(() => graspFrame(BANG, itemGeom(BANG), { group: "sheet" }, -1, dims)).toThrow(/edge/);
   });
 
@@ -1611,3 +1614,72 @@ function gripSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long:
   );
   return { gaps, fit, v: g.pose, sink: Math.max(0, -Math.min(...Object.values(gaps))), pierce };
 }
+
+describe("`bowl` `side`", () => {
+  const CHEN = item(chen);
+  const geom = itemGeom(CHEN);
+  const thumbOf = (G: GripFrame): V3 => matVec(tr(G.R), [0, 0, 1]);
+  const fingersOf = (G: GripFrame): V3 => matVec(tr(G.R), [0, -1, 0]);
+  const REAL = [
+    [1.75, 1.545],
+    [2, 1.813],
+  ] as const;
+
+  // fixture lún lòng tay 1,4–2,0: tâm nắm dời ra tới da lòng cách `BOWL_GAP`, lệch 0,8 (kuroiwa) – 1,5 (sakura)
+  it("ra lại fixture `chen#kep` ở hai cỡ tay, hai tay trong 5° và 1,5 đơn vị", () => {
+    const fix: Case = {
+      fixture: "chen#kep",
+      spec: CHEN,
+      pick: both({ group: "bowl", along: 1.5 / 9, around: 180 }, {}, {}),
+      pos: 1.5,
+    };
+    for (const size of ["t01-sakura", "kuroiwa"])
+      for (const [side, n] of SIDES) {
+        const r = residual(fix, size, side, n);
+        expect(r.rot, `${size} ${side}`).toBeLessThanOrEqual(5);
+        expect(r.pos, `${size} ${side}`).toBeLessThanOrEqual(1.5);
+      }
+  });
+
+  it("lòng tay `−ρ(around)` ngả theo thành ≤ 4°, ngón cái về miệng, tay trái ngón quấn ngược chiều; `along` mặc định 0,25", () => {
+    const dims = handDims(1.75, 1.545);
+    for (const around of [0, 90, 200]) {
+      const [r, l] = [-1, 1].map((s) =>
+        graspFrame(CHEN, geom, { group: "bowl", around }, s, dims, 1.75, 1.545),
+      );
+      expect(det(r.G.R)).toBeCloseTo(1, 9);
+      expect(det(l.G.R)).toBeCloseTo(1, 9);
+      close(r.hand.palm as V3, l.hand.palm as V3);
+      close(
+        fingersOf(r.G),
+        fingersOf(l.G).map((x) => -x),
+      );
+      const palm = r.hand.palm as V3;
+      // `ρ(0)` là `b0` (+z) khi món không khai `front`
+      const rho: V3 = [Math.sin(around * D2R), 0, Math.cos(around * D2R)];
+      const tilt = Math.acos(-(palm[0] * rho[0] + palm[2] * rho[2])) / D2R;
+      expect(tilt).toBeLessThanOrEqual(4 + 1e-9);
+      for (const g of [r, l]) expect(thumbOf(g.G)[1]).toBeGreaterThan(0.99);
+      expect(r.choice).toMatchObject({ feature: "lathe", along: 0.25, variant: "side", around });
+    }
+  });
+
+  it("trên da: không lún quá `HELD_SINK`, không xuyên, cái – trỏ – giữa chạm (khe ≤ 0,15·W), ngón cái gác trên miệng — hai cỡ tay, hai tay", () => {
+    for (const [k, long] of REAL)
+      for (const [, side] of SIDES)
+        for (const pick of [
+          { group: "bowl", around: 0 },
+          { group: "bowl", around: 120, along: 0.5 },
+        ] as Pick[]) {
+          const at = `${k} ${side} ${pick.around}`;
+          const m = wrapSkin(CHEN, pick, side, k, long);
+          expect(m.sink, at).toBeLessThanOrEqual(HELD_SINK);
+          expect(m.pierce, at).toBeLessThanOrEqual(0);
+          for (const f of ["thumb", "index", "middle"] as const)
+            expect(m.gaps[f], `${at} ${f}`).toBeLessThanOrEqual(0.15 * handDims(k, long).W);
+          // đầu ngón cái cao hơn miệng (y 4,5), không quá hai bán kính ngón
+          expect(m.thumbTip[1], at).toBeGreaterThan(4.5);
+          expect(m.thumbTip[1], at).toBeLessThan(4.5 + 2 * HAND_BONES.thumb.r * k * 100);
+        }
+  });
+});

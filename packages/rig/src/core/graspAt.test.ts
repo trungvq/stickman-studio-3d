@@ -40,6 +40,7 @@ import khay from "./__fixtures__/held-v2/khay.json";
 import dua from "./__fixtures__/held-v2/dua.json";
 import but from "./__fixtures__/held-v2/but.json";
 import tui from "./__fixtures__/held-v2/tui.json";
+import chen from "./__fixtures__/held-v2/chen.json";
 
 // người mẫu đứng cầm bảng ở t = 1; mốc món và số đối chiếu của prototype bước 0 (docs/11-nhom-cam.md mục 5)
 const item = (json: unknown): HeldItemSpec => {
@@ -497,6 +498,33 @@ describe("chooseMissing `handle`", () => {
       expect(
         chooseMissing(tc, "tui@handle", poseOf(ITEMS.c3), side, { solve: false }).choice.along,
       ).toBe(0.5);
+  });
+});
+
+describe("chooseMissing `bowl`", () => {
+  const bc = graspCtx(T, { chen: item(chen) });
+  // chén trước ngực, miệng ngửa (y rig xuống)
+  const upright: ItemPose = {
+    R: fromColumns([1, 0, 0], [0, -1, 0], [0, 0, -1]),
+    P: [240, -200, 560],
+    cast: "nguoi",
+    s: 1,
+  };
+
+  it("đủ thiếu: rig giải `part`, `along`, `around`, biến thể `side`; hai tay không lỗi", () => {
+    for (const side of [RIGHT, LEFT]) {
+      const sol = graspAt(bc, "chen@bowl", upright, side);
+      expect(sol.choice).toMatchObject({ part: "body", feature: "lathe", variant: "side" });
+      for (const k of ["along", "around"] as const) expect(sol.by[k]).toBe("rig");
+      expect(Number.isFinite(sol.cost)).toBe(true);
+    }
+  });
+
+  it("tay dẫn lấy `along` mặc định 0,25", () => {
+    for (const side of [RIGHT, LEFT])
+      expect(chooseMissing(bc, "chen@bowl", upright, side, { solve: false }).choice.along).toBe(
+        0.25,
+      );
   });
 });
 

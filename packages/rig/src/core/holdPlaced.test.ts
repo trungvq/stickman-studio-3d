@@ -31,6 +31,7 @@ import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import ongNghe from "./__fixtures__/held-v2/ong-nghe-ban.json";
 import khay from "./__fixtures__/held-v2/khay.json";
 import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
+import chen from "./__fixtures__/held-v2/chen.json";
 
 vi.mock("./graspArm", async (orig) => {
   const m = await orig<typeof import("./graspArm")>();
@@ -356,11 +357,13 @@ describe("`both` trên món đặt trước: tay phụ giải như tay dẫn", (
   };
   const KHAY = parse(khay);
   const CHAI = parse(chaiDia);
-  // chai đứng hơi nghiêng: cả hai cổ tay trong giới hạn; khay nằm ngang sát kẹp xoay cẳng tay
+  const CHEN = parse(chen);
+  // chai, chén đứng hơi nghiêng: cả hai cổ tay trong giới hạn; khay nằm ngang sát kẹp xoay cẳng tay
   type Case = [string, HeldItemSpec, string, number[], number[], number[] | undefined];
   const cases: Case[] = [
     ["khay", KHAY, "platform", [30, 20, 0], [45, 10, 0], undefined],
     ["chai-dia", CHAI, "cylinder", [25, 20, 10], [25, 10, 15], [0.3, 1, 0.3]],
+    ["chen", CHEN, "bowl", [35, 20, 10], [40, 15, 15], [0.2, 1, 0.2]],
   ];
   const scene = (c: Case, lead: "right" | "left") => {
     const [item, S, group, o1, o2, up] = c;
@@ -438,8 +441,13 @@ describe("`both` trên món đặt trước: tay phụ giải như tay dẫn", (
           const n = (sup.frame.feature as { n: V3 }).n;
           expect(n[1]).toBeCloseTo(-1, 9);
           expect(sup.by.psi).toBe("rig");
-          // miệng chai hướng lên: tay phụ đỡ từ dưới
-          expect(matVec(itemAt(rt, "chai-dia", t, { chars })!.R, [0, 1, 0])[1]).toBeLessThan(-0.8);
+          // miệng hướng lên: tay phụ đỡ từ dưới
+          expect(matVec(itemAt(rt, c[0], t, { chars })!.R, [0, 1, 0])[1]).toBeLessThan(-0.8);
+          // tay dẫn ôm thành chén không đẩy tay phụ khỏi giữa đáy
+          if (c[0] === "chen") {
+            const at = sup.frame.hand.at as V3;
+            expect(Math.hypot(at[0], at[2])).toBeLessThan(2);
+          }
         }
         if (prev) {
           expect(Math.abs(wrap(lead.arm.phi - prev.right))).toBeLessThanOrEqual(2.5 + 1e-9);

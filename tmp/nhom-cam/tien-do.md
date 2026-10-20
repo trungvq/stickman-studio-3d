@@ -110,6 +110,7 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 | G4-84+85 `pen` hàng mẫu + docs + render | xong: món đặt trước `offset [44,16,25]`, ngòi ra trước-xuống (`[0,5,0,866,0]` của Phụ lục A còn lệch cổ tay 14–20° với món đặt trước), `along` 0,15/0,45, tay dẫn hai tay ngòi xuống bàn. 10 hàng, 0 luật báo; lún ≤ 0,25, khe ≤ v1 + 0,3. Docs nhóm 3, banner tám nhóm chạy, `THIN_CURL`; `docs/01` `tripod`. Tay dẫn trái cẳng tay vắt chéo bụng, hơi gượng. Mốc M4-8 | `g4-pen/` |
 | G4-92+93 `handle` `hook` | xong: `RodFeature.gap` (khe sau thanh, hẹp nhất quanh thanh × thoáng nhất dọc đoạn bám; nhập `heldDistance` từ `heldFit` — vòng import chỉ trong hàm); `handle.needs` khe ≥ `HOOK_GAP`·W (≈ 0,357) + thanh nghiêng ≥ `HOOK_TILT` 45° khỏi `top` (không thì quai đeo túi đạt); bỏ `later`; dáng `HOOK` (hook, gốc −40, ngọn −10; không sửa `hand.ts` vì v1 dùng); `CONTACTS.handle.hook` (`nf`, ngón về `−top`, lòng về `front`). Fixture `tui#xach` 0°/0 cỡ thật. Tay buông xách: lún 0 (v1 0,9/0,6), khe ≤ 0,25, lệch cổ tay −18,8° (sát ±20). Ảnh ngang v1, ngón móc rõ hơn. Hàng chung (túi trước ngực) vượt cổ tay 35–46°. `vali` quai trên không đạt (khe 0), `ly-bia` quai đứng bị loại. t02 0 mới | `g492/`, `duyet/g4-handle.jpg` |
 | G4-94+95 `handle` hàng mẫu + docs + render | xong: túi đặt ngang hông `offset [0,65,30]`, `along` 0,2/0,7 (0,85 áp út lún 1,14 vào dây quai), tay buông xách hai tay. 10 hàng, 0 luật báo, lún ≤ 0,18. Docs nhóm 8, mục 2 "Khe sau thanh", banner chín nhóm chạy. Hàng đặt hông túi quay mặt ra trước (quay ngang thì cẳng tay xoay quá). Mốc M4-9 | `g4-handle/` |
+| G4-A2 `bowl` `side` | xong: `CONTACTS.bowl.side` (`nt`, `axialAt`, lòng `−ρ(around)`, nghiêng theo thành ≤ `BOWL_TILT_MAX` 4°, da lòng `BOWL_GAP` −0,6, cái về miệng), `slopeAt` dùng chung với `wrap`, `BOWL_THUMB` (cái gác qua vành); `along` 0–0,5 mặc định 0,25; bỏ `later`; `placeChoice` chỉ né tay dẫn khi lòng tay dẫn úp lên mặt ấy (không thì tay phụ lệch đáy 17,8). Lún 0,4/0,3 (v1 1,7/1,2), khe ≤ 0,4. Fixture `chen#kep` 4,0°, 1,45/0,79 (≤ 1,5: v1 lòng lún 2,0/1,4). Ảnh: lòng ôm thành, cái gác miệng, miệng ngửa; hai tay tay trái ngửa đỡ đáy. `around 90` khai vượt cổ tay 86–96°. t02 0 mới | `gA2/`, `duyet/g4-bowl.jpg` |
 | G3-21 cảnh thử ở repo video (soạn sớm) | dữ liệu xong, commit video; `check` 0 lỗi, 5 cảnh báo do `cli/lib.mjs` ~:2257 còn gọi `heldGrip` (G3-18 sửa) | `scenes/thu-nhom-cam.json` |
 | G3-05 khuỷu tự nhiên `graspArm.ts` | xong: ca 1, 2, chuỗi ca 5 khớp prototype; 0,24 ms/mẫu; fixture `core/__fixtures__/takumi-bang-gia.json` | `graspArm.ts` |
 | G3-06 ngón theo vai trò `heldFit.ts` | xong: đường cũ y hệt trên 1 170 ca ngẫu nhiên; `skinBulge` khớp `do-a.md`; `skinDepth` | `heldFit.ts`, `heldFitRoles.test.ts` | `docs/11-nhom-cam.md` |
@@ -165,6 +166,8 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 - G4-92: thêm luật `handle` thanh nghiêng ≥ 45° khỏi `top` (spec không có) để quai đeo/quai đứng không thành chỗ cầm mặc định.
 
+- G4-A2: fixture `chen#kep` cho lệch ≤ 1,5 đơn vị (không ép ≤ 1) — ép thì lòng tay lún ≥ 0,86; `bowl` `along` thu 0–0,5 (0,75 tay che miệng chén).
+
 ## Cần chủ dự án
 - Có nới kẹp xoay cẳng tay quá ±90 không? Ca "khoe, một tay đỡ cạnh dưới" (bước 0 ca 4, `rim`) cần −103; hiện thành cảnh báo `wrist` và bàn tay lệch chỗ cầm chút ít. Ảnh: `tmp/nhom-cam/b0/hinh/vong2/to-2.jpg`.
 
@@ -195,6 +198,6 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 ## Bước kế
 0. Phiên tiếp tục (2026-10-20) sau khi chủ dự án chốt hướng G4-38b. Worktree sạch, mọi việc xanh đã commit và push. Studio xem `git log`, video `9b13333`.
-1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. `platform` (M4-5) xong. `card` (M4-6) xong. `chopsticks` (M4-7) xong. `pen` (M4-8) xong. `handle` (M4-9) xong. Bowl: A2 đang chạy → A3+A4 gộp → Z1, Z2.
+1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. `platform` (M4-5) xong. `card` (M4-6) xong. `chopsticks` (M4-7) xong. `pen` (M4-8) xong. `handle` (M4-9) xong. Bowl: A2 xong → A3+A4+Z1 gộp → Z2.
 3. Rồi bowl A2–A4, Z1, Z2 theo `gd4-ke-hoach.md`. Đã xong/gộp: 00, X1, 11–14, 22–25, 32–38b, 41–48, 52, 72, 73, 82.
 4. Giai đoạn 5 → 6.

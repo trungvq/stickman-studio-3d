@@ -51,13 +51,14 @@ describe("bảng GRIP_GROUPS", () => {
     }
   });
 
-  it("chỉ `sheet`, `card`, `pen`, `chopsticks`, `cylinder`, `handle`, `palmBox`, `platform` và `carry` không `later`", () => {
+  it("chỉ `sheet`, `card`, `pen`, `chopsticks`, `cylinder`, `bowl`, `handle`, `palmBox`, `platform` và `carry` không `later`", () => {
     expect(GROUP_IDS.filter((g) => !GRIP_GROUPS[g].later)).toEqual([
       "sheet",
       "card",
       "pen",
       "chopsticks",
       "cylinder",
+      "bowl",
       "handle",
       "palmBox",
       "platform",

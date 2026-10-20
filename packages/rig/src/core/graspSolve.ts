@@ -189,6 +189,10 @@ const WRAP_TILT_MAX = 45;
 const WRAP_GAP = 0.7;
 /** `wrap`: ngón cái tra bảng theo bán kính nhỏ hơn của chỗ cầm và chỗ cách ngần này lần `W` về phía ngón cái (vai chai thắt) */
 const WRAP_THUMB_AHEAD = 0.5;
+/** `bowl` `side`: lòng tay ngả theo dốc thành tối đa ngần này độ (fixture `chen#kep` lòng song song trục) */
+const BOWL_TILT_MAX = 4;
+/** `bowl` `side`: da lòng tay cách thành ngần này, đơn vị món (âm là áp lún nhẹ; fixture `chen#kep` lún 2) */
+const BOWL_GAP = -0.6;
 /** `card` `pad`: tâm nắm thụt vào trong tấm ngần này lần `W` */
 const PAD_INSET = 0.15;
 /** `pad`: đệm trỏ cách tâm nắm của dáng `pinch` về phía ngược ngón cái, lần `W` */
@@ -370,6 +374,20 @@ function skinTouch(
 }
 
 /**
+ * Góc dốc mặt món (độ, dương khi mặt thu vào về `+a`): bán kính ngoài theo `rho` đo ở `WRAP_STEPS` điểm trên
+ * `±WRAP_HALF · W` dọc trục quanh `at`; không có hình thì `0`
+ */
+function slopeAt(x: ContactInput, at: V3, a: V3, rho: V3, far: number): number {
+  if (!x.shape) return 0;
+  const h = WRAP_HALF * x.dims.W;
+  const rs = Array.from({ length: WRAP_STEPS }, (_, i) => h * ((2 * i) / (WRAP_STEPS - 1) - 1))
+    .map((w) => [w, outerAt(x.shape!, add3(at, scale3(a, w)), rho, far)] as const)
+    .filter((q): q is readonly [number, number] => q[1] !== undefined);
+  if (rs.length < 2) return 0;
+  return Math.atan((rs[0][1] - rs[rs.length - 1][1]) / (rs[rs.length - 1][0] - rs[0][0])) / D2R;
+}
+
+/**
  * `cylinder` `wrap` (khung `nt`): lòng tay áp mặt trụ ở `along` của đoạn bám liền, phía `ρ(around)` (thanh hộp: mặt gần
  * nhất), ngón cái về `±a`. `along` kẹp cho tâm nắm cách phần `grip: false` `clear · W` (`alongRoom`).
  * Lòng tay ngả theo dốc mặt món (`WRAP_GAIN`); tâm nắm dời ra theo `ρ` tới khi da lòng tay (`palmSkin`) còn cách hình
@@ -382,16 +400,8 @@ const wrap: ContactFn = (x) => {
   const along = p0.along;
   const p = { ...p0, rho: faceRho(f, p0.rho) };
   const far = reachOf(x.geom);
-  let slope = 0;
-  if (x.shape) {
-    const h = WRAP_HALF * x.dims.W;
-    const rs = Array.from({ length: WRAP_STEPS }, (_, i) => h * ((2 * i) / (WRAP_STEPS - 1) - 1))
-      .map((w) => [w, outerAt(x.shape!, add3(p.at, scale3(p.a, w)), p.rho, far)] as const)
-      .filter((q): q is readonly [number, number] => q[1] !== undefined);
-    if (rs.length > 1)
-      slope = (rs[0][1] - rs[rs.length - 1][1]) / (rs[rs.length - 1][0] - rs[0][0]);
-  }
-  const b = Math.max(-WRAP_TILT_MAX, Math.min(WRAP_TILT_MAX, (WRAP_GAIN * Math.atan(slope)) / D2R));
+  const slope = slopeAt(x, p.at, p.a, p.rho, far);
+  const b = Math.max(-WRAP_TILT_MAX, Math.min(WRAP_TILT_MAX, WRAP_GAIN * slope));
   const palm = neg(mix2(p.rho, Math.cos(b * D2R), p.a, Math.sin(b * D2R)));
   const t = unit(perp(scale3(p.a, x.thumb === "down" ? -1 : 1), palm));
   const fingers = unit(scale3(cross3(t, palm), x.side));
@@ -426,6 +436,28 @@ const flatRod: ContactFn = (x) => {
   );
   const S = (x.shape && pts.length && skinTouch(x.shape, p0.at, rho, pts, reachOf(x.geom))) || p0.r;
   return { at: add3(p0.at, scale3(rho, S)), along: p0.along, palm, fingers };
+};
+
+/**
+ * `bowl` `side` (khung `nt`): lòng tay áp thành chén ở `along` (từ đáy), phía `ρ(around)`, ngón cái về miệng; lòng tay
+ * ngả theo dốc thành tối đa `BOWL_TILT_MAX`, tâm nắm dời ra theo `ρ` tới khi da lòng tay cách hình `BOWL_GAP`
+ */
+const bowlSide: ContactFn = (x) => {
+  const f = x.feature as LatheFeature;
+  const p = axialAt(x.geom, f, alongFrac(x.along, 1, x.dims.W), x.around ?? 0);
+  const up = f.mouth === "lo" ? neg(p.a) : p.a;
+  const far = reachOf(x.geom);
+  const slope = slopeAt(x, p.at, up, p.rho, far);
+  const b = Math.max(-BOWL_TILT_MAX, Math.min(BOWL_TILT_MAX, slope));
+  const palm = neg(mix2(p.rho, Math.cos(b * D2R), up, Math.sin(b * D2R)));
+  const t = unit(perp(up, palm));
+  const fingers = unit(scale3(cross3(t, palm), x.side));
+  const z = cross3(palm, fingers);
+  const pts = (x.palmSkin?.({ radius: p.r }) ?? []).map((c) =>
+    add3(add3(scale3(palm, c[0]), scale3(fingers, c[1])), scale3(z, c[2])),
+  );
+  const S = (x.shape && pts.length && skinTouch(x.shape, p.at, p.rho, pts, far, BOWL_GAP)) || p.r;
+  return { at: add3(p.at, scale3(p.rho, S)), along: p.along, palm, fingers, radius: p.r };
 };
 
 /** Thụt mặc định của `platform`: bàn tay nằm trọn trong mặt, `½ · (W · |sin ψ| + P · |cos ψ|)` */
@@ -556,6 +588,7 @@ export const CONTACTS: Partial<Record<GroupId, Record<string, ContactFn>>> = {
   chopsticks: { grip: chopGrip },
   pen: { grip: penGrip },
   handle: { hook },
+  bowl: { side: bowlSide },
 };
 
 /**

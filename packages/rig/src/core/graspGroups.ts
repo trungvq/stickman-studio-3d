@@ -201,6 +201,9 @@ const HOOK: PoseRef = { pose: "hook", knuckle: -40, tip: -10 };
 /** `cylinder` `flat`: ngón cái khép dọc cạnh trỏ, nằm trên mặt rộng (dáng `span` dạng ra ngoài mép) */
 const FLAT_THUMB = [20, 6, 0, 10] as const;
 
+/** `bowl` `side`: ngón cái ít dạng, đối nhiều, gốc duỗi ngược: nằm vắt trên vành chén phía lòng tay */
+const BOWL_THUMB = [15, 50, -30, 20] as const;
+
 export const SIZE_WARN = 0.8;
 export const SIZE_MAX = 0.95;
 
@@ -628,8 +631,8 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
       side: {
         frame: "nt",
         pose: {
-          open: { pose: "clasp" },
-          closed: { pose: "clasp" },
+          open: { pose: "clasp", thumb: BOWL_THUMB },
+          closed: { pose: "clasp", thumb: BOWL_THUMB },
           by: "radius",
           unit: "W",
           range: [0, 1.3],
@@ -641,12 +644,12 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
     choices: {
       part: PART,
       around: range(0, 360),
-      along: range(0, 1, { default: 0.25, names: ["low", "mid", "high"] }),
+      // nửa dưới thành: cao hơn thì lòng tay trùm miệng, áp út – út không còn đỡ dưới
+      along: range(0, 0.5, { default: 0.25, names: ["low", "mid"] }),
     },
     hands: "either",
     support: { group: "platform", place: "bottom" },
     intent: { face: { axis: "top", toward: "up" } },
-    later: true,
   },
 
   handle: {

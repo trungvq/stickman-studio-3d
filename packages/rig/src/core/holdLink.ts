@@ -185,13 +185,13 @@ function oppositeEdge(fr: GraspFrame): GraspChoice["edge"] {
 /**
  * Chỗ của tay phụ khác nhóm (`support.place`) trên mặt hộp có pháp tuyến `−top` (`bottom`) hay `−front` (`back`), xa nhất
  * theo hướng ấy, ở phần cầm được: ngón theo `top` chiếu lên mặt (mặt vuông `top` thì theo `front`), tay tới từ cạnh sau
- * ngón (`psi` 0), tâm nắm giữa mặt; tay dẫn nằm trên mặt ấy thì tâm nắm dời theo ngón tới khi gót lòng qua bàn tay dẫn.
+ * ngón (`psi` 0), tâm nắm giữa mặt; tay dẫn úp lòng lên mặt ấy thì tâm nắm dời theo ngón tới khi gót lòng qua bàn tay dẫn.
  * Không có mặt thì mặc định của nhóm
  */
 function placeChoice(
   spec: HeldItemSpec,
   place: "bottom" | "back",
-  lead: V3,
+  lead: { at: V3; palm: V3 },
   dims: HandDims,
 ): GraspChoice {
   const geom = itemGeom(spec);
@@ -212,8 +212,8 @@ function placeChoice(
   const g = Math.hypot(...u) > 0.5 ? u : flat(geom.F);
   const ed = f.edges.reduce((a, b) => (dot3(b.inward, g) > dot3(a.inward, g) ? b : a));
   let s = dot3(sub3(f.c, ed.at), ed.inward);
-  if (Math.abs(dot3(sub3(lead, f.c), f.n)) <= dims.W)
-    s = Math.max(s, dot3(sub3(lead, ed.at), ed.inward) + (dims.W + dims.P) / 2);
+  if (dot3(lead.palm, f.n) < -0.5 && Math.abs(dot3(sub3(lead.at, f.c), f.n)) <= dims.W)
+    s = Math.max(s, dot3(sub3(lead.at, ed.at), ed.inward) + (dims.W + dims.P) / 2);
   return {
     part: f.part,
     feature: "face",
@@ -254,7 +254,7 @@ export function supportChoice(
   const same = group === hold.group;
   const place = !same && sup?.group === group ? sup.place : undefined;
   const c: Record<string, unknown> = place
-    ? { ...placeChoice(spec, place, lead.hand.at as V3, dims) }
+    ? { ...placeChoice(spec, place, { at: lead.hand.at as V3, palm: lead.hand.palm as V3 }, dims) }
     : {};
   // cảnh đổi phần hay cạnh: cạnh, thụt, chỗ dọc cạnh và hướng ngón lại theo mặc định của nhóm
   if (place && o.part !== undefined && o.part !== c.part) delete c.edge;
