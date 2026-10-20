@@ -1,0 +1,59 @@
+diff --git i/packages/rig/src/core/graspGroups.ts w/packages/rig/src/core/graspGroups.ts
+index beab82b..f2f354e 100644
+--- i/packages/rig/src/core/graspGroups.ts
++++ w/packages/rig/src/core/graspGroups.ts
+@@ -196,7 +196,7 @@ export const longEdges = (f: SlabFeature, h: HandDims) =>
+   f.edges.filter((e) => e.len >= EDGE_MIN * h.W);
+ 
+ /** Ngón cái `pinch`: khép theo trỏ, ngọn duỗi ngược để đầu ngón đè mặt trước mà đốt gốc (da phình to) tránh mép */
+-const PINCH_THUMB = [0, 10, 10, -20] as const;
++const PINCH_THUMB = ((globalThis as any).process.env.PT ? (globalThis as any).process.env.PT.split(",").map(Number) : [0, 10, 10, -20]) as unknown as readonly [number, number, number, number];
+ /** Ngón cái `rim`: khép về cạnh trỏ, đè mặt `F` lên trỏ đã cuộn; góc chọn để `handGripOf` của dáng đóng còn ở kẽ cái–trỏ */
+ const RIM_THUMB = [25, 20, 10, 25] as const;
+ 
+diff --git i/packages/rig/src/core/graspSolve.ts w/packages/rig/src/core/graspSolve.ts
+index 53b62fb..4d971c8 100644
+--- i/packages/rig/src/core/graspSolve.ts
++++ w/packages/rig/src/core/graspSolve.ts
+@@ -182,13 +182,17 @@ const inward = (m: V3, e: V3, slant: number): V3 =>
+   mix2(neg(m), Math.cos(slant * D2R), e, Math.sin(slant * D2R));
+ 
+ const pinch: ContactFn = (x) => {
+-  const t = (x.feature as SlabFeature | DiscFeature).t;
++  const t0 = (x.feature as SlabFeature | DiscFeature).t;
++  const edge = sheetEdge(x, SHEET_INSET.pinch);
++  const [lo, hi] = (x.shape && spanAt(x.shape, edge.at, edge.F, t0)) ?? [-t0 / 2, t0 / 2];
++  const t = hi - lo;
+   const d = Math.max(0, SHEET_INSET.pinch - PINCH_OUT * (t - 2 * PINCH_BACK));
+   const { m, e, F, at: mid, along } = sheetEdge(x, d);
+   const f = inward(m, e, x.slant);
+   const [a, b] = PINCH_PALM;
+-  const at = sub3(mid, scale3(F, t / 2 - PINCH_BACK));
+-  return { at, along, palm: unit(mix2(F, a, f, b)), fingers: unit(mix2(f, a, F, -b)) };
++  const lam = Number((globalThis as any).process.env.LAM ?? 0);
++  const at = add3(mid, scale3(F, lo + PINCH_BACK + lam * (t - 1)));
++  return { at, along, palm: unit(mix2(F, a, f, b)), fingers: unit(mix2(f, a, F, -b)), thick: t };
+ };
+ 
+ const flat: ContactFn = (x) => {
+@@ -222,6 +226,20 @@ function thickAt(shape: readonly HeldShape[], c: V3, F: V3, t: number): number {
+   return (n / RIM_STEPS) * t;
+ }
+ 
++/** Đoạn có vật liệu dọc `F` trong `[−t/2, t/2]` quanh `c` (khung món), `RIM_STEPS` mẫu: mép dưới, mép trên tính từ `c` */
++function spanAt(shape: readonly HeldShape[], c: V3, F: V3, t: number): [number, number] | undefined {
++  const h = t / RIM_STEPS;
++  let lo = Infinity;
++  let hi = -Infinity;
++  for (let i = 0; i < RIM_STEPS; i++) {
++    const s = (i + 0.5) * h - t / 2;
++    if (heldDistance(shape, add3(c, scale3(F, s))) >= 0) continue;
++    lo = Math.min(lo, s - h / 2);
++    hi = Math.max(hi, s + h / 2);
++  }
++  return lo < hi ? [lo, hi] : undefined;
++}
++
+ /** Trục mỏng, trục dài của hộp (chỉ số), trục dài lấy dấu về `top` */
+ function boxAxes(b: BoxFeature, g: Pick<ItemGeom, "U" | "F" | "R">) {
+   const [it, , il] = [0, 1, 2].sort((i, j) => b.half[i] - b.half[j] || i - j);
