@@ -1,0 +1,2165 @@
+{
+ "t": 0.5,
+ "people": [
+  {
+   "file": "t01-sakura.json",
+   "size": 1.61,
+   "dims": {
+    "W": 14.700000000000003,
+    "A": 16.44858224639421,
+    "L": 30.06267922061609,
+    "P": 16.957368421052635
+   }
+  },
+  {
+   "file": "kuroiwa.json",
+   "size": 2.16,
+   "dims": {
+    "W": 16.8,
+    "A": 16.659942296600185,
+    "L": 30.177341709067022,
+    "P": 16.957368421052635
+   }
+  }
+ ],
+ "nhom": [
+  "sheet"
+ ],
+ "bo": [],
+ "cells": [
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-mac-dinh-P-t01-sakura",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "mặc định",
+   "key": "thu-tom-hum@sheet mặc định",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -125.31,
+      -253.71,
+      253.33
+     ],
+     "text": "variant pinch part dia edge 60 along 0.5 thumb bottom slant 0\n   lún 0 · xuyên -2.1 · nắm -0.1\n   cái(press) 1.4 trỏ(press) 0.2 giữa(press) 0.2\n   áp út(press) 0.4 út(press) 0.1 lòng(free) 2.6",
+     "raw": {
+      "pierce": {
+       "depth": -0.054033527712651616,
+       "core": -2.07765850296343,
+       "piece": "pinky1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "press",
+       "palm": "free",
+       "index": "press",
+       "middle": "press",
+       "ring": "press",
+       "pinky": "press"
+      },
+      "gaps": {
+       "thumb": 1.4062670056119657,
+       "index": 0.23097729682129214,
+       "fingers": 0.054033527712651616,
+       "palm": 2.5872783837669444
+      },
+      "hold": "thu-tom-hum@sheet////",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "disc",
+        "featureIndex": 1,
+        "edge": 60,
+        "along": 0.5,
+        "thumb": "bottom",
+        "variant": "pinch",
+        "slant": 0
+       },
+       "by": {
+        "part": "default",
+        "feature": "rig",
+        "edge": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "rig",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 70,
+        "wrist": {
+         "turn": -16.25544011488883,
+         "bend": 2.095559168916223,
+         "dev": -1.3655846139737626,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 1.4062670056119657,
+       "index": 0.23097729682129214,
+       "middle": 0.16642277964649482,
+       "ring": 0.3746748127341634,
+       "pinky": 0.054033527712651616
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.05408136998788791,
+      "palm": {
+       "gap": 7.824379306603944,
+       "angle": 100.46256879030327
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 150,
+   "tiles": [
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-mac-dinh-P-t01-sakura-truoc.png",
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-mac-dinh-P-t01-sakura-cheo.png",
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-mac-dinh-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-bien-the-flat-P-t01-sakura",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "biến thể flat",
+   "key": "thu-tom-hum@sheet biến thể flat",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -120.98,
+      -250.39,
+      253.12
+     ],
+     "text": "variant flat part dia edge 60 along 0.5 thumb bottom slant 0\n   lún 0.3 · xuyên -1.7 · nắm -0.6\n   cái(press) 0.3 trỏ(support) 0.3 giữa(support) 0\n   áp út(support) 0.1 út(support) 0 lòng(press) -0.3",
+     "raw": {
+      "pierce": {
+       "depth": 0.020896327495548383,
+       "core": -1.666272383660498,
+       "piece": "pinky1"
+      },
+      "sink": 0.3291771382093168,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": 0.3476363865088307,
+       "index": 0.3084826648235584,
+       "fingers": -0.031726491451236745,
+       "palm": -0.3291771382093168
+      },
+      "hold": "thu-tom-hum@sheet/flat///",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "disc",
+        "featureIndex": 1,
+        "edge": 60,
+        "along": 0.5,
+        "thumb": "bottom",
+        "variant": "flat",
+        "slant": 0
+       },
+       "by": {
+        "part": "default",
+        "feature": "rig",
+        "edge": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "scene",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 97.5,
+        "wrist": {
+         "turn": -31.010092351199543,
+         "bend": 17.934067343275565,
+         "dev": 5.991185722502253,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 0.3476363865088307,
+       "index": 0.3084826648235584,
+       "middle": -0.031726491451236745,
+       "ring": 0.06021032035353473,
+       "pinky": -0.020896327495548383
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.6000157172400787,
+      "palm": {
+       "gap": 1.4147901003423569,
+       "angle": 63.783513952976456
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 150,
+   "tiles": [
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-bien-the-flat-P-t01-sakura-truoc.png",
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-bien-the-flat-P-t01-sakura-cheo.png",
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-bien-the-flat-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-bien-the-rim-P-t01-sakura",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "biến thể rim",
+   "key": "thu-tom-hum@sheet biến thể rim",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -120.22,
+      -226.59,
+      229.73
+     ],
+     "text": "variant rim part dia edge 120 along 0.5 thumb top slant -22.5\n   lún 0 · xuyên -2.2 · nắm 0\n   cái(press) 1.2 trỏ(wrap) 0 giữa(press) 0.7\n   áp út(support) 4.6 út(support) 9.1 lòng(press) 4.5",
+     "raw": {
+      "pierce": {
+       "depth": 0.039146653331316186,
+       "core": -2.192321883335966,
+       "piece": "index1"
+      },
+      "sink": 0.039146653331316186,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "press",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": 1.199731414935947,
+       "index": -0.039146653331316186,
+       "fingers": 0.7462392232097691,
+       "palm": 4.477813118465845
+      },
+      "hold": "thu-tom-hum@sheet/rim///",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "disc",
+        "featureIndex": 1,
+        "edge": 120,
+        "along": 0.5,
+        "thumb": "top",
+        "variant": "rim",
+        "slant": -22.5
+       },
+       "by": {
+        "part": "default",
+        "feature": "rig",
+        "edge": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "scene",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 72.5,
+        "wrist": {
+         "turn": -75.3791335011955,
+         "bend": -10.360131439052639,
+         "dev": -4.732498292503176,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 1.199731414935947,
+       "index": -0.039146653331316186,
+       "middle": 0.7462392232097691,
+       "ring": 4.6452880375664565,
+       "pinky": 9.143717607118578
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.01691450152366877,
+      "palm": {
+       "gap": 9.111949027410175,
+       "angle": 58.34351533654391
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0.0000012074182697257333,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 150,
+   "tiles": [
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-bien-the-rim-P-t01-sakura-truoc.png",
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-bien-the-rim-P-t01-sakura-cheo.png",
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-bien-the-rim-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-pinch-cai-truoc-P-t01-sakura",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "pinch · cái trước",
+   "key": "thu-tom-hum@sheet pinch · cái trước",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-tom-hum@sheet`: `thumb: front` không có trên khối hình (tấm `dia` (dày 5,4), đĩa `dia` (r 35,0))"
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-pinch-cai-sau-P-t01-sakura",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "pinch · cái sau",
+   "key": "thu-tom-hum@sheet pinch · cái sau",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-tom-hum@sheet`: `thumb: back` không có trên khối hình (tấm `dia` (dày 5,4), đĩa `dia` (r 35,0))"
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-doc-mat-P-t01-sakura",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "đọc ngang mặt",
+   "key": "thu-tom-hum@sheet đọc ngang mặt",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-tom-hum@sheet`: `edge: bottom` không có trên khối hình (tấm `dia` (dày 5,4), đĩa `dia` (r 35,0))"
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-khoe-1-tay-P-t01-sakura",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "khoe một tay",
+   "key": "thu-tom-hum@sheet khoe một tay",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-tom-hum@sheet`: `edge: bottom` không có trên khối hình (tấm `dia` (dày 5,4), đĩa `dia` (r 35,0))"
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-khoe-2-tay-ben-H-t01-sakura",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "khoe hai tay hai bên",
+   "key": "thu-tom-hum@sheet khoe hai tay hai bên",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": true,
+   "carry": false,
+   "error": "resolveScene: scene: `items[0]` thu-tom-hum t=0: không có mốc `front`"
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-khoe-2-tay-tren-duoi-H-t01-sakura",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "khoe hai tay trên dưới",
+   "key": "thu-tom-hum@sheet khoe hai tay trên dưới",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": true,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-tom-hum@sheet`: `edge: bottom` không có trên khối hình (tấm `dia` (dày 5,4), đĩa `dia` (r 35,0))"
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-mac-dinh-P-kuroiwa",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "mặc định",
+   "key": "thu-tom-hum@sheet mặc định",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "ngón không chạm món — `cam` tay phải cầm thu-tom-hum: ngón cái (`press`) cách món 1.5 (chỗ cầm `thu-tom-hum@sheet` (part dia (mặc định), edge 60 (rig chọn), along 0.5 (rig chọn), thumb bottom (rig chọn), variant pinch (rig chọn), slant 0 (rig chọn))); dáng ngón của nhóm chưa khép tới món — đổi `variant` hay `edge`, không thì là việc của dáng nhóm ở rig ở giây 0.70 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-tom-hum@sheet` (part dia (mặc định), edge 60 (rig chọn), along 0.5 (rig chọn), thumb bottom (rig chọn), variant pinch (rig chọn), slant 0 (rig chọn)) (dáng sheet) · da lún 0.0 ở đầu ngón út · ôm 2/3 (trỏ, giữa–út) · ngón cái (press) 1.5, trỏ (press) 0.3, giữa (press) 0.2, áp út (press) 0.3, út (press) 0.0, lòng (free) 3.1 · tâm nắm trong món 0.1 · lòng tay cách 9.5 góc 98° · cổ tay xoay -11°, gập -4°, lệch -10° · khuỷu φ 70°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "role"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -125.31,
+      -294.34,
+      252.05
+     ],
+     "text": "variant pinch part dia edge 60 along 0.5 thumb bottom slant 0\n   lún 0 · xuyên -2.1 · nắm -0.1\n   hở cái 1.5\n   cái(press) 1.5 trỏ(press) 0.3 giữa(press) 0.2\n   áp út(press) 0.3 út(press) 0 lòng(free) 3.1",
+     "raw": {
+      "pierce": {
+       "depth": 0.012136860969871112,
+       "core": -2.1412129796484995,
+       "piece": "pinky1"
+      },
+      "sink": 0.012136860969871112,
+      "roles": {
+       "thumb": "press",
+       "palm": "free",
+       "index": "press",
+       "middle": "press",
+       "ring": "press",
+       "pinky": "press"
+      },
+      "gaps": {
+       "thumb": 1.548338835561547,
+       "index": 0.3440258984364261,
+       "fingers": -0.012136860969871112,
+       "palm": 3.054272116820428
+      },
+      "hold": "thu-tom-hum@sheet////",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "disc",
+        "featureIndex": 1,
+        "edge": 60,
+        "along": 0.5,
+        "thumb": "bottom",
+        "variant": "pinch",
+        "slant": 0
+       },
+       "by": {
+        "part": "default",
+        "feature": "rig",
+        "edge": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "rig",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 70,
+        "wrist": {
+         "turn": -11.545306993796627,
+         "bend": -3.6922215820381137,
+         "dev": -10.630692224405793,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 1.548338835561547,
+       "index": 0.3440258984364261,
+       "middle": 0.20874884474135533,
+       "ring": 0.26465140377335994,
+       "pinky": -0.012136860969871112
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.054081369759540095,
+      "palm": {
+       "gap": 9.466814312666658,
+       "angle": 97.92820168494609
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 150,
+   "tiles": [
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-mac-dinh-P-kuroiwa-truoc.png",
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-mac-dinh-P-kuroiwa-cheo.png",
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-mac-dinh-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-bien-the-flat-P-kuroiwa",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "biến thể flat",
+   "key": "thu-tom-hum@sheet biến thể flat",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "da lún vào món — `cam` tay phải cầm thu-tom-hum: lún 0.8 (quá 0.7) (chỗ cầm `thu-tom-hum@sheet` (part dia (mặc định), edge 60 (rig chọn), along 0.5 (rig chọn), thumb bottom (rig chọn), variant flat, slant 0 (rig chọn))); ngón ôm không gỡ được — đổi `variant` / `slant`, không thì là việc của dáng nhóm ở rig ở giây 0.30 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-tom-hum@sheet` (part dia (mặc định), edge 60 (rig chọn), along 0.5 (rig chọn), thumb bottom (rig chọn), variant flat, slant 0 (rig chọn)) (dáng edge) · da lún 0.8 ở đầu ngón trỏ · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (press) 0.4, trỏ (support) -0.8, giữa (support) 0.4, áp út (support) -0.2, út (support) 0.2, lòng (press) -0.3 · tâm nắm trong món 0.6 · lòng tay cách 3.0 góc 69° · cổ tay xoay -35°, gập 8°, lệch 0° · khuỷu φ 103°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "sink"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -120.98,
+      -291.01,
+      251.84
+     ],
+     "text": "variant flat part dia edge 60 along 0.5 thumb bottom slant 0\n   lún 0.8 · xuyên -1.7 · nắm -0.6\n   cái(press) 0.4 trỏ(support) -0.8 giữa(support) 0.4\n   áp út(support) -0.2 út(support) 0.2 lòng(press) -0.3",
+     "raw": {
+      "pierce": {
+       "depth": 0.8385793387888917,
+       "core": -1.6859837858988147,
+       "piece": "index1"
+      },
+      "sink": 0.8385793387888917,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": 0.3729885478073652,
+       "index": -0.8385793387888917,
+       "fingers": -0.15705983042707566,
+       "palm": -0.2927649223852732
+      },
+      "hold": "thu-tom-hum@sheet/flat///",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "disc",
+        "featureIndex": 1,
+        "edge": 60,
+        "along": 0.5,
+        "thumb": "bottom",
+        "variant": "flat",
+        "slant": 0
+       },
+       "by": {
+        "part": "default",
+        "feature": "rig",
+        "edge": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "scene",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 102.5,
+        "wrist": {
+         "turn": -35.28500700648028,
+         "bend": 7.8477184301171485,
+         "dev": -0.19547721947418864,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 0.3729885478073652,
+       "index": -0.8385793387888917,
+       "middle": 0.36783804297456674,
+       "ring": -0.15705983042707566,
+       "pinky": 0.18427361845979445
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.6000179625601527,
+      "palm": {
+       "gap": 3.0065755861255172,
+       "angle": 68.53912799155687
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 150,
+   "tiles": [
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-bien-the-flat-P-kuroiwa-truoc.png",
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-bien-the-flat-P-kuroiwa-cheo.png",
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-bien-the-flat-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-bien-the-rim-P-kuroiwa",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "biến thể rim",
+   "key": "thu-tom-hum@sheet biến thể rim",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "ngón không chạm món — `cam` tay phải cầm thu-tom-hum: ngón cái (`press`) cách món 1.8 (chỗ cầm `thu-tom-hum@sheet` (part dia (mặc định), edge 150 (rig chọn), along 0.5 (rig chọn), thumb top (rig chọn), variant rim, slant -22.5 (rig chọn))); dáng ngón của nhóm chưa khép tới món — đổi `variant` hay `edge`, không thì là việc của dáng nhóm ở rig ở giây 0.20 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-tom-hum@sheet` (part dia (mặc định), edge 150 (rig chọn), along 0.5 (rig chọn), thumb top (rig chọn), variant rim, slant -22.5 (rig chọn)) (dáng edge) · da lún 0.0 ở đầu ngón trỏ · ôm 1/3 (trỏ) · ngón cái (press) 1.8, trỏ (wrap) 0.0, giữa (press) 1.0, áp út (support) 5.9, út (support) 11.0, lòng (press) 5.6 · tâm nắm cách món 0.7 · lòng tay cách 8.7 góc 78° · cổ tay xoay -80°, gập 11°, lệch -3° · khuỷu φ 60°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "role"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -110.81,
+      -267.6,
+      218.86
+     ],
+     "text": "variant rim part dia edge 150 along 0.5 thumb top slant -22.5\n   lún 0 · xuyên -2.8 · nắm 0.7\n   hở cái 1.8\n   cái(press) 1.8 trỏ(wrap) 0 giữa(press) 1\n   áp út(support) 5.9 út(support) 11 lòng(press) 5.6",
+     "raw": {
+      "pierce": {
+       "depth": 0.013422663727135062,
+       "core": -2.7921077741262943,
+       "piece": "index1"
+      },
+      "sink": 0.013422663727135062,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "press",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": 1.789669309874938,
+       "index": -0.013422663727135062,
+       "fingers": 1.0442582403205103,
+       "palm": 5.577638328699157
+      },
+      "hold": "thu-tom-hum@sheet/rim///",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "disc",
+        "featureIndex": 1,
+        "edge": 150,
+        "along": 0.5,
+        "thumb": "top",
+        "variant": "rim",
+        "slant": -22.5
+       },
+       "by": {
+        "part": "default",
+        "feature": "rig",
+        "edge": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "scene",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 60,
+        "wrist": {
+         "turn": -79.7667318139794,
+         "bend": 11.161990552866975,
+         "dev": -2.5413604112730135,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 1.789669309874938,
+       "index": -0.013422663727135062,
+       "middle": 1.0442582403205103,
+       "ring": 5.855810574816786,
+       "pinky": 11.022454092574385
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 0.6750711172045966,
+      "palm": {
+       "gap": 8.729452433363795,
+       "angle": 78.49102875511163
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 150,
+   "tiles": [
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-bien-the-rim-P-kuroiwa-truoc.png",
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-bien-the-rim-P-kuroiwa-cheo.png",
+    "o/thu-tom-hum/bang-cam-thu-tom-hum-sheet-bien-the-rim-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-pinch-cai-truoc-P-kuroiwa",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "pinch · cái trước",
+   "key": "thu-tom-hum@sheet pinch · cái trước",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-tom-hum@sheet`: `thumb: front` không có trên khối hình (tấm `dia` (dày 5,4), đĩa `dia` (r 35,0))"
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-pinch-cai-sau-P-kuroiwa",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "pinch · cái sau",
+   "key": "thu-tom-hum@sheet pinch · cái sau",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-tom-hum@sheet`: `thumb: back` không có trên khối hình (tấm `dia` (dày 5,4), đĩa `dia` (r 35,0))"
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-doc-mat-P-kuroiwa",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "đọc ngang mặt",
+   "key": "thu-tom-hum@sheet đọc ngang mặt",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-tom-hum@sheet`: `edge: bottom` không có trên khối hình (tấm `dia` (dày 5,4), đĩa `dia` (r 35,0))"
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-khoe-1-tay-P-kuroiwa",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "khoe một tay",
+   "key": "thu-tom-hum@sheet khoe một tay",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-tom-hum@sheet`: `edge: bottom` không có trên khối hình (tấm `dia` (dày 5,4), đĩa `dia` (r 35,0))"
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-khoe-2-tay-ben-H-kuroiwa",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "khoe hai tay hai bên",
+   "key": "thu-tom-hum@sheet khoe hai tay hai bên",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": true,
+   "carry": false,
+   "error": "resolveScene: scene: `items[0]` thu-tom-hum t=0: không có mốc `front`"
+  },
+  {
+   "id": "bang-cam-thu-tom-hum-sheet-khoe-2-tay-tren-duoi-H-kuroiwa",
+   "item": "thu-tom-hum",
+   "group": "sheet",
+   "grip": "khoe hai tay trên dưới",
+   "key": "thu-tom-hum@sheet khoe hai tay trên dưới",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": true,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-tom-hum@sheet`: `edge: bottom` không có trên khối hình (tấm `dia` (dày 5,4), đĩa `dia` (r 35,0))"
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-mac-dinh-P-t01-sakura",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "mặc định",
+   "key": "thu-bo-da@sheet mặc định",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "cổ tay sát giới hạn — `cam` tay phải cầm thu-bo-da: xoay -8°/±90, gập 11°/±50, lệch 19°/±20 — còn 1.1° tới kẹp (chỗ cầm `thu-bo-da@sheet` (part dia (mặc định), edge right (rig chọn), along 0.75 (rig chọn), thumb bottom (rig chọn), variant pinch (rig chọn), slant -30 (rig chọn))); đổi `edge` / `thumb` hay hướng món (`face` / `roll` của mốc món `thu-bo-da` ở `items`) ở giây 1.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-bo-da@sheet` (part dia (mặc định), edge right (rig chọn), along 0.75 (rig chọn), thumb bottom (rig chọn), variant pinch (rig chọn), slant -30 (rig chọn)) (dáng sheet) · khe 0.3 · ôm 2/3 (trỏ, giữa–út) · ngón cái (press) 1.6, trỏ (press) 0.2, giữa (press) 0.2, áp út (press) 0.3, út (press) 2.3, lòng (free) 1.4 · tâm nắm cách món 2.7 · lòng tay cách 8.2 góc 70° · cổ tay xoay -8°, gập 11°, lệch 19° · khuỷu φ 70°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "ngón không chạm món — `cam` tay phải cầm thu-bo-da: ngón cái (`press`) cách món 1.6, ngón út (`press`) cách món 2.3 (chỗ cầm `thu-bo-da@sheet` (part dia (mặc định), edge right (rig chọn), along 0.75 (rig chọn), thumb bottom (rig chọn), variant pinch (rig chọn), slant -30 (rig chọn))); dáng ngón của nhóm chưa khép tới món — đổi `variant` hay `edge`, không thì là việc của dáng nhóm ở rig ở giây 0.00 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-bo-da@sheet` (part dia (mặc định), edge right (rig chọn), along 0.75 (rig chọn), thumb bottom (rig chọn), variant pinch (rig chọn), slant -30 (rig chọn)) (dáng sheet) · khe 0.3 · ôm 2/3 (trỏ, giữa–út) · ngón cái (press) 1.6, trỏ (press) 0.2, giữa (press) 0.2, áp út (press) 0.3, út (press) 2.3, lòng (free) 1.4 · tâm nắm cách món 2.7 · lòng tay cách 8.2 góc 70° · cổ tay xoay -9°, gập 11°, lệch 18° · khuỷu φ 70°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "wrist",
+    "role"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -139.32,
+      -241.57,
+      258.71
+     ],
+     "text": "variant pinch part dia edge right along 0.8 thumb bottom slant -30\n   lún 0 · xuyên -2.5 · nắm 2.7\n   hở cái 1.6, út 2.3\n   cái(press) 1.6 trỏ(press) 0.2 giữa(press) 0.2\n   áp út(press) 0.3 út(press) 2.3 lòng(free) 1.4",
+     "raw": {
+      "pierce": {
+       "depth": -0.30439623927374276,
+       "core": -2.4586200917804177,
+       "piece": "ring1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "press",
+       "palm": "free",
+       "index": "press",
+       "middle": "press",
+       "ring": "press",
+       "pinky": "press"
+      },
+      "gaps": {
+       "thumb": 1.6291273743457917,
+       "index": 0.22526290347326342,
+       "fingers": 0.22717082616209822,
+       "palm": 1.404599622731631
+      },
+      "hold": "thu-bo-da@sheet////",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "slab",
+        "featureIndex": 0,
+        "edge": "right",
+        "along": 0.75,
+        "thumb": "bottom",
+        "variant": "pinch",
+        "slant": -30
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "rig",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 70,
+        "wrist": {
+         "turn": -8.722021141026657,
+         "bend": 10.872828212093104,
+         "dev": 18.47990904837554,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 1.6291273743457917,
+       "index": 0.22526290347326342,
+       "middle": 0.22717082616209822,
+       "ring": 0.30439623927374276,
+       "pinky": 2.2701591483474006
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 2.7236000873210666,
+      "palm": {
+       "gap": 8.181237638058725,
+       "angle": 69.60680320627294
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0.0000012074182697257333,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 125,
+   "tiles": [
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-mac-dinh-P-t01-sakura-truoc.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-mac-dinh-P-t01-sakura-cheo.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-mac-dinh-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-bien-the-flat-P-t01-sakura",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "biến thể flat",
+   "key": "thu-bo-da@sheet biến thể flat",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "ngón xuyên đồ — `cam` tay phải cầm thu-bo-da: trục đầu ngón trỏ vào trong món 1.9 (da lún 2.6) (chỗ cầm `thu-bo-da@sheet` (part dia (mặc định), edge front (rig chọn), along 0.25 (rig chọn), thumb bottom (rig chọn), variant flat, slant 45 (rig chọn))); đổi `variant` / `edge` / `slant` ở giây 0.20 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-bo-da@sheet` (part dia (mặc định), edge front (rig chọn), along 0.25 (rig chọn), thumb bottom (rig chọn), variant flat, slant 45 (rig chọn)) (dáng edge) · xương đầu ngón trỏ vào trong món 1.9 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (press) -1.9, trỏ (support) -2.6, giữa (support) -3.1, áp út (support) -1.9, út (support) -0.8, lòng (press) -1.6 · tâm nắm trong món 0.7 · lòng tay cách 0.1 góc 0° · cổ tay xoay -40°, gập -10°, lệch -7° · khuỷu φ 123°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)",
+    "da lún vào món — `cam` tay phải cầm thu-bo-da: lún 3.1 (quá 0.7) (chỗ cầm `thu-bo-da@sheet` (part dia (mặc định), edge front (rig chọn), along 0.25 (rig chọn), thumb bottom (rig chọn), variant flat, slant 45 (rig chọn))); ngón ôm không gỡ được — đổi `variant` / `slant`, không thì là việc của dáng nhóm ở rig ở giây 0.90 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-bo-da@sheet` (part dia (mặc định), edge front (rig chọn), along 0.25 (rig chọn), thumb bottom (rig chọn), variant flat, slant 45 (rig chọn)) (dáng edge) · xương đầu ngón trỏ vào trong món 1.9 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (press) -1.9, trỏ (support) -2.6, giữa (support) -3.1, áp út (support) -1.9, út (support) -0.8, lòng (press) -1.6 · tâm nắm trong món 0.7 · lòng tay cách 0.1 góc 0° · cổ tay xoay -39°, gập -11°, lệch -7° · khuỷu φ 123°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "pierce",
+    "sink"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -115.8,
+      -249.26,
+      265.21
+     ],
+     "text": "variant flat part dia edge front along 0.3 thumb bottom slant 45\n   lún 3.1 · xuyên 1.9 · nắm -0.7\n   cái(press) -1.9 trỏ(support) -2.6 giữa(support) -3.1\n   áp út(support) -1.9 út(support) -0.8 lòng(press) -1.6",
+     "raw": {
+      "pierce": {
+       "depth": 2.6387221501529865,
+       "core": 1.949694717527639,
+       "piece": "index1"
+      },
+      "sink": 3.1122143715620334,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -1.874458104371995,
+       "index": -2.6387221501529865,
+       "fingers": -3.1122143715620334,
+       "palm": -1.6225580681267964
+      },
+      "hold": "thu-bo-da@sheet/flat///",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "slab",
+        "featureIndex": 0,
+        "edge": "front",
+        "along": 0.25,
+        "thumb": "bottom",
+        "variant": "flat",
+        "slant": 45
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "scene",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 122.5,
+        "wrist": {
+         "turn": -39.82217521694629,
+         "bend": -10.211172444820814,
+         "dev": -7.095074038568243,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -1.874458104371995,
+       "index": -2.6387221501529865,
+       "middle": -3.1122143715620334,
+       "ring": -1.9429356455802613,
+       "pinky": -0.8396052420139009
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.650015717240082,
+      "palm": {
+       "gap": 0.07498832364837708,
+       "angle": 0
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 125,
+   "tiles": [
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-bien-the-flat-P-t01-sakura-truoc.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-bien-the-flat-P-t01-sakura-cheo.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-bien-the-flat-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-bien-the-rim-P-t01-sakura",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "biến thể rim",
+   "key": "thu-bo-da@sheet biến thể rim",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -135.6,
+      -224.1,
+      238.15
+     ],
+     "text": "variant rim part dia edge right along 0.3 thumb top slant -22.5\n   lún 0 · xuyên -2.2 · nắm -1\n   cái(press) 0.4 trỏ(wrap) 0.4 giữa(press) 0.1\n   áp út(support) 2.5 út(support) 6.7 lòng(press) 2.5",
+     "raw": {
+      "pierce": {
+       "depth": -0.13232216238977657,
+       "core": -2.2424935245072177,
+       "piece": "middle1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "press",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": 0.44201746582987056,
+       "index": 0.4086276888847564,
+       "fingers": 0.13232216238977657,
+       "palm": 2.5490915775299285
+      },
+      "hold": "thu-bo-da@sheet/rim///",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "slab",
+        "featureIndex": 0,
+        "edge": "right",
+        "along": 0.25,
+        "thumb": "top",
+        "variant": "rim",
+        "slant": -22.5
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "scene",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 75,
+        "wrist": {
+         "turn": -55.03069345921602,
+         "bend": -31.983979821472335,
+         "dev": -10.467144697830667,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 0.44201746582987056,
+       "index": 0.4086276888847564,
+       "middle": 0.13232216238977657,
+       "ring": 2.531722156277629,
+       "pinky": 6.716405404580304
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.9999842827599252,
+      "palm": {
+       "gap": 6.983154446993164,
+       "angle": 70.55248146612891
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 125,
+   "tiles": [
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-bien-the-rim-P-t01-sakura-truoc.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-bien-the-rim-P-t01-sakura-cheo.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-bien-the-rim-P-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-pinch-cai-truoc-P-t01-sakura",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "pinch · cái trước",
+   "key": "thu-bo-da@sheet pinch · cái trước",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-bo-da@sheet`: `thumb: front` không có trên khối hình (tấm `dia` (dày 6,5))"
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-pinch-cai-sau-P-t01-sakura",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "pinch · cái sau",
+   "key": "thu-bo-da@sheet pinch · cái sau",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-bo-da@sheet`: `thumb: back` không có trên khối hình (tấm `dia` (dày 6,5))"
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-doc-mat-P-t01-sakura",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "đọc ngang mặt",
+   "key": "thu-bo-da@sheet đọc ngang mặt",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-bo-da@sheet`: `edge: bottom` không có trên khối hình (tấm `dia` (dày 6,5))"
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-khoe-1-tay-P-t01-sakura",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "khoe một tay",
+   "key": "thu-bo-da@sheet khoe một tay",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-bo-da@sheet`: `edge: bottom` không có trên khối hình (tấm `dia` (dày 6,5))"
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-khoe-2-tay-ben-H-t01-sakura",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "khoe hai tay hai bên",
+   "key": "thu-bo-da@sheet khoe hai tay hai bên",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": true,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -135.6,
+      -228.38,
+      235.39
+     ],
+     "text": "variant rim part dia edge left along 0.5 thumb top slant 0\n   lún 0.2 · xuyên -2.2 · nắm -1\n   cái(press) -0.2 trỏ(wrap) 0.1 giữa(press) 0.2\n   áp út(support) 6.2 út(support) 9.4 lòng(press) 0",
+     "raw": {
+      "pierce": {
+       "depth": -0.22815629243851276,
+       "core": -2.2457199158339693,
+       "piece": "middle1"
+      },
+      "sink": 0.15179678797721152,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "press",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.15179678797721152,
+       "index": 0.12755975127220864,
+       "fingers": 0.22815629243851276,
+       "palm": 0.04454463720322366
+      },
+      "hold": "thu-bo-da@sheet///left/",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "slab",
+        "featureIndex": 0,
+        "edge": "left",
+        "along": 0.5,
+        "thumb": "top",
+        "variant": "rim",
+        "slant": 0
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "scene",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "rig",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 27.5,
+        "wrist": {
+         "turn": -20.762549513162817,
+         "bend": -0.6059143270356917,
+         "dev": -0.9070308118737129,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.15179678797721152,
+       "index": 0.12755975127220864,
+       "middle": 0.22815629243851276,
+       "ring": 6.24632613046194,
+       "pinky": 9.430608289151506
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.9999842827599323,
+      "palm": {
+       "gap": 4.735105253202882,
+       "angle": 60.59286875496594
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0.0000012074182697257333,
+       "clamped": []
+      }
+     }
+    },
+    {
+     "hand": "L",
+     "at": [
+      -54.4,
+      -228.38,
+      235.39
+     ],
+     "text": "variant rim part dia edge right along 0.5 thumb top slant 0\n   lún 0.2 · xuyên -2.2 · nắm -1\n   cái(press) -0.2 trỏ(wrap) 0.1 giữa(press) 0.2\n   áp út(support) 6.2 út(support) 9.4 lòng(press) 0",
+     "raw": {
+      "pierce": {
+       "depth": -0.22815629243849855,
+       "core": -2.2457199158339654,
+       "piece": "middle1"
+      },
+      "sink": 0.15179678797722573,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "press",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.15179678797722573,
+       "index": 0.12755975127219443,
+       "fingers": 0.22815629243849855,
+       "palm": 0.04454463720320945
+      },
+      "hold": "thu-bo-da@sheet///right/",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "slab",
+        "featureIndex": 0,
+        "edge": "right",
+        "along": 0.5,
+        "thumb": "top",
+        "variant": "rim",
+        "slant": 0
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "scene",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "rig",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 27.5,
+        "wrist": {
+         "turn": -20.76254951316282,
+         "bend": -0.6059143270357017,
+         "dev": -0.9070308118737113,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.15179678797722573,
+       "index": 0.12755975127219443,
+       "middle": 0.22815629243849855,
+       "ring": 6.246326130461974,
+       "pinky": 9.43060828915153
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.9999842827599537,
+      "palm": {
+       "gap": 4.735107009200309,
+       "angle": 60.59283105695151
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 160,
+   "tiles": [
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-khoe-2-tay-ben-H-t01-sakura-truoc.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-khoe-2-tay-ben-H-t01-sakura-cheo.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-khoe-2-tay-ben-H-t01-sakura-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-khoe-2-tay-tren-duoi-H-t01-sakura",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "khoe hai tay trên dưới",
+   "key": "thu-bo-da@sheet khoe hai tay trên dưới",
+   "side": "right",
+   "person": "t01-sakura",
+   "size": 1.61,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": true,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-bo-da@sheet`: `edge: bottom` không có trên khối hình (tấm `dia` (dày 6,5))"
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-mac-dinh-P-kuroiwa",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "mặc định",
+   "key": "thu-bo-da@sheet mặc định",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "ngón không chạm món — `cam` tay phải cầm thu-bo-da: ngón cái (`press`) cách món 1.7, ngón út (`press`) cách món 2.2 (chỗ cầm `thu-bo-da@sheet` (part dia (mặc định), edge right (rig chọn), along 0.75 (rig chọn), thumb bottom (rig chọn), variant pinch (rig chọn), slant -30 (rig chọn))); dáng ngón của nhóm chưa khép tới món — đổi `variant` hay `edge`, không thì là việc của dáng nhóm ở rig ở giây 0.30 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-bo-da@sheet` (part dia (mặc định), edge right (rig chọn), along 0.75 (rig chọn), thumb bottom (rig chọn), variant pinch (rig chọn), slant -30 (rig chọn)) (dáng sheet) · khe 0.2 · ôm 2/3 (trỏ, giữa–út) · ngón cái (press) 1.7, trỏ (press) 0.6, giữa (press) 0.3, áp út (press) 0.2, út (press) 2.2, lòng (free) 1.6 · tâm nắm cách món 0.0 · lòng tay cách 9.7 góc 73° · cổ tay xoay -6°, gập 6°, lệch 10° · khuỷu φ 70°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "role"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -136.6,
+      -285.48,
+      255.64
+     ],
+     "text": "variant pinch part dia edge right along 0.8 thumb bottom slant -30\n   lún 0 · xuyên -2.8 · nắm 0\n   hở cái 1.7, út 2.2\n   cái(press) 1.7 trỏ(press) 0.6 giữa(press) 0.3\n   áp út(press) 0.2 út(press) 2.2 lòng(free) 1.6",
+     "raw": {
+      "pierce": {
+       "depth": -0.2292716384867291,
+       "core": -2.8110084363879304,
+       "piece": "ring1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "press",
+       "palm": "free",
+       "index": "press",
+       "middle": "press",
+       "ring": "press",
+       "pinky": "press"
+      },
+      "gaps": {
+       "thumb": 1.7411709698515676,
+       "index": 0.585962492462737,
+       "fingers": 0.2292716384867291,
+       "palm": 1.6054485826800335
+      },
+      "hold": "thu-bo-da@sheet////",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "slab",
+        "featureIndex": 0,
+        "edge": "right",
+        "along": 0.75,
+        "thumb": "bottom",
+        "variant": "pinch",
+        "slant": -30
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "rig",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 70,
+        "wrist": {
+         "turn": -5.8141005618888855,
+         "bend": 5.827215455870712,
+         "dev": 9.70780356673757,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 1.7411709698515676,
+       "index": 0.585962492462737,
+       "middle": 0.2563954157187401,
+       "ring": 0.2292716384867291,
+       "pinky": 2.2330835896682304
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": 6.181721801112873e-13,
+      "palm": {
+       "gap": 9.726968043909334,
+       "angle": 72.96220601152129
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 125,
+   "tiles": [
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-mac-dinh-P-kuroiwa-truoc.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-mac-dinh-P-kuroiwa-cheo.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-mac-dinh-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-bien-the-flat-P-kuroiwa",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "biến thể flat",
+   "key": "thu-bo-da@sheet biến thể flat",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [
+    "da lún vào món — `cam` tay phải cầm thu-bo-da: lún 1.0 (quá 0.7) (chỗ cầm `thu-bo-da@sheet` (part dia (mặc định), edge right (rig chọn), along 0.25 (rig chọn), thumb bottom (rig chọn), variant flat, slant -45 (rig chọn))); ngón ôm không gỡ được — đổi `variant` / `slant`, không thì là việc của dáng nhóm ở rig ở giây 0.90 · giây 0.00–1.00. Lúc ấy: chỗ cầm `thu-bo-da@sheet` (part dia (mặc định), edge right (rig chọn), along 0.25 (rig chọn), thumb bottom (rig chọn), variant flat, slant -45 (rig chọn)) (dáng edge) · khe 0.1 · ôm 3/3 (cái, trỏ, giữa–út, lòng) · ngón cái (press) -1.0, trỏ (support) 0.1, giữa (support) 0.1, áp út (support) 0.1, út (support) 0.6, lòng (press) -0.9 · tâm nắm trong món 0.7 · lòng tay cách 6.3 góc 85° · cổ tay xoay -16°, gập 6°, lệch 0° · khuỷu φ 105°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)"
+   ],
+   "rules": [
+    "sink"
+   ],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -131.6,
+      -263.77,
+      237.82
+     ],
+     "text": "variant flat part dia edge right along 0.3 thumb bottom slant -45\n   lún 1 · xuyên -2.4 · nắm -0.7\n   cái(press) -1 trỏ(support) 0.1 giữa(support) 0.1\n   áp út(support) 0.1 út(support) 0.6 lòng(press) -0.9",
+     "raw": {
+      "pierce": {
+       "depth": -0.13024678215904892,
+       "core": -2.3750522456632175,
+       "piece": "ring1"
+      },
+      "sink": 0.9938877365697678,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "support",
+       "middle": "support",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.9938877365697678,
+       "index": 0.14480639994147304,
+       "fingers": 0.13024678215904892,
+       "palm": -0.8864796541533977
+      },
+      "hold": "thu-bo-da@sheet/flat///",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "slab",
+        "featureIndex": 0,
+        "edge": "right",
+        "along": 0.25,
+        "thumb": "bottom",
+        "variant": "flat",
+        "slant": -45
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "scene",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 105,
+        "wrist": {
+         "turn": -16.699180259141045,
+         "bend": 5.9903718231688945,
+         "dev": 0.16431313051246768,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.9938877365697678,
+       "index": 0.14480639994147304,
+       "middle": 0.13096471130850973,
+       "ring": 0.13024678215904892,
+       "pinky": 0.6280201096996363
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.6500179625600901,
+      "palm": {
+       "gap": 6.320461955323197,
+       "angle": 85.0079103859883
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 125,
+   "tiles": [
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-bien-the-flat-P-kuroiwa-truoc.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-bien-the-flat-P-kuroiwa-cheo.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-bien-the-flat-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-bien-the-rim-P-kuroiwa",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "biến thể rim",
+   "key": "thu-bo-da@sheet biến thể rim",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -74.2,
+      -255.55,
+      227.69
+     ],
+     "text": "variant rim part dia edge back along 0.8 thumb top slant -22.5\n   lún 0.4 · xuyên -2.6 · nắm -1\n   cái(press) -0.4 trỏ(wrap) 0.4 giữa(press) 0.2\n   áp út(support) 3 út(support) 7.2 lòng(press) 1.5",
+     "raw": {
+      "pierce": {
+       "depth": -0.18857884407037062,
+       "core": -2.5853237195509315,
+       "piece": "middle1"
+      },
+      "sink": 0.38381052017218664,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "press",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": -0.38381052017218664,
+       "index": 0.36356619361137604,
+       "fingers": 0.18857884407037062,
+       "palm": 1.520044479871538
+      },
+      "hold": "thu-bo-da@sheet/rim///",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "slab",
+        "featureIndex": 0,
+        "edge": "back",
+        "along": 0.75,
+        "thumb": "top",
+        "variant": "rim",
+        "slant": -22.5
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "rig",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "scene",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 35,
+        "wrist": {
+         "turn": -75.11000318388926,
+         "bend": 31.211084569217782,
+         "dev": 0.03794297654611025,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": -0.38381052017218664,
+       "index": 0.36356619361137604,
+       "middle": 0.18857884407037062,
+       "ring": 2.9989483236255063,
+       "pinky": 7.1505966291212175
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.9999820374400095,
+      "palm": {
+       "gap": 8.38341023094912,
+       "angle": 70.4886418130762
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 125,
+   "tiles": [
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-bien-the-rim-P-kuroiwa-truoc.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-bien-the-rim-P-kuroiwa-cheo.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-bien-the-rim-P-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-pinch-cai-truoc-P-kuroiwa",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "pinch · cái trước",
+   "key": "thu-bo-da@sheet pinch · cái trước",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-bo-da@sheet`: `thumb: front` không có trên khối hình (tấm `dia` (dày 6,5))"
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-pinch-cai-sau-P-kuroiwa",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "pinch · cái sau",
+   "key": "thu-bo-da@sheet pinch · cái sau",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-bo-da@sheet`: `thumb: back` không có trên khối hình (tấm `dia` (dày 6,5))"
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-doc-mat-P-kuroiwa",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "đọc ngang mặt",
+   "key": "thu-bo-da@sheet đọc ngang mặt",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-bo-da@sheet`: `edge: bottom` không có trên khối hình (tấm `dia` (dày 6,5))"
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-khoe-1-tay-P-kuroiwa",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "khoe một tay",
+   "key": "thu-bo-da@sheet khoe một tay",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": false,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-bo-da@sheet`: `edge: bottom` không có trên khối hình (tấm `dia` (dày 6,5))"
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-khoe-2-tay-ben-H-kuroiwa",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "khoe hai tay hai bên",
+   "key": "thu-bo-da@sheet khoe hai tay hai bên",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": true,
+   "carry": false,
+   "lines": [],
+   "rules": [],
+   "hands": [
+    {
+     "hand": "R",
+     "at": [
+      -135.6,
+      -267.84,
+      248.59
+     ],
+     "text": "variant rim part dia edge left along 0.3 thumb top slant 0\n   lún 0 · xuyên -2.6 · nắm -1\n   cái(press) 0 trỏ(wrap) 0.1 giữa(press) 0.2\n   áp út(support) 7.4 út(support) 11 lòng(press) 0.1",
+     "raw": {
+      "pierce": {
+       "depth": -0.24447413682939612,
+       "core": -2.5905153311508133,
+       "piece": "middle1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "press",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": 0.03406199812891231,
+       "index": 0.10781082510950313,
+       "fingers": 0.24447413682939612,
+       "palm": 0.0923002064228271
+      },
+      "hold": "thu-bo-da@sheet///left/",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "slab",
+        "featureIndex": 0,
+        "edge": "left",
+        "along": 0.25,
+        "thumb": "top",
+        "variant": "rim",
+        "slant": 0
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "scene",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "rig",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 27.5,
+        "wrist": {
+         "turn": -15.428386217916982,
+         "bend": -4.165547787453103,
+         "dev": -4.6921524041562925,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 0.03406199812891231,
+       "index": 0.10781082510950313,
+       "middle": 0.24447413682939612,
+       "ring": 7.367513253643031,
+       "pinky": 11.004512788821655
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.9999820374399206,
+      "palm": {
+       "gap": 5.730615015702214,
+       "angle": 60.751212961528076
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    },
+    {
+     "hand": "L",
+     "at": [
+      -54.4,
+      -267.84,
+      248.59
+     ],
+     "text": "variant rim part dia edge right along 0.3 thumb top slant 0\n   lún 0 · xuyên -2.6 · nắm -1\n   cái(press) 0 trỏ(wrap) 0.1 giữa(press) 0.2\n   áp út(support) 7.4 út(support) 11 lòng(press) 0.1",
+     "raw": {
+      "pierce": {
+       "depth": -0.24447413682939617,
+       "core": -2.5905153311508395,
+       "piece": "middle1"
+      },
+      "sink": 0,
+      "roles": {
+       "thumb": "press",
+       "palm": "press",
+       "index": "wrap",
+       "middle": "press",
+       "ring": "support",
+       "pinky": "support"
+      },
+      "gaps": {
+       "thumb": 0.034061998128912314,
+       "index": 0.10781082510950316,
+       "fingers": 0.24447413682939617,
+       "palm": 0.09230020642282712
+      },
+      "hold": "thu-bo-da@sheet///right/",
+      "grasp": {
+       "group": "sheet",
+       "mode": "item",
+       "choice": {
+        "part": "dia",
+        "feature": "slab",
+        "featureIndex": 0,
+        "edge": "right",
+        "along": 0.25,
+        "thumb": "top",
+        "variant": "rim",
+        "slant": 0
+       },
+       "by": {
+        "part": "default",
+        "feature": "default",
+        "edge": "scene",
+        "along": "rig",
+        "thumb": "rig",
+        "variant": "rig",
+        "slant": "rig"
+       },
+       "arm": {
+        "phi": 27.5,
+        "wrist": {
+         "turn": -15.428386217916982,
+         "bend": -4.165547787453105,
+         "dev": -4.692152404156298,
+         "over": 0,
+         "off": 0
+        },
+        "body": 0,
+        "gap": 0,
+        "bodyRatio": 0
+       }
+      },
+      "fingers": {
+       "thumb": 0.034061998128912314,
+       "index": 0.10781082510950316,
+       "middle": 0.24447413682939617,
+       "ring": 7.367513253643069,
+       "pinky": 11.004512788821687
+      },
+      "wrap": [
+       "thumb",
+       "index",
+       "middle",
+       "ring",
+       "pinky"
+      ],
+      "grip": -0.9999820374399209,
+      "palm": {
+       "gap": 5.730616763082731,
+       "angle": 60.751181763925864
+      },
+      "intent": {
+       "rule": "face",
+       "err": 0,
+       "clamped": []
+      }
+     }
+    }
+   ],
+   "khung": 160,
+   "tiles": [
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-khoe-2-tay-ben-H-kuroiwa-truoc.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-khoe-2-tay-ben-H-kuroiwa-cheo.png",
+    "o/thu-bo-da/bang-cam-thu-bo-da-sheet-khoe-2-tay-ben-H-kuroiwa-ngang.png"
+   ]
+  },
+  {
+   "id": "bang-cam-thu-bo-da-sheet-khoe-2-tay-tren-duoi-H-kuroiwa",
+   "item": "thu-bo-da",
+   "group": "sheet",
+   "grip": "khoe hai tay trên dưới",
+   "key": "thu-bo-da@sheet khoe hai tay trên dưới",
+   "side": "right",
+   "person": "kuroiwa",
+   "size": 2.16,
+   "from": "hàng mẫu (món đặt trước ngực)",
+   "two": true,
+   "carry": false,
+   "error": "resolveScene: scene: cam: `world.hands` right t=0: lỗi `choice`: `thu-bo-da@sheet`: `edge: bottom` không có trên khối hình (tấm `dia` (dày 6,5))"
+  }
+ ]
+}

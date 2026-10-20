@@ -59,6 +59,7 @@ import {
 } from "./graspGroups";
 import {
   chooseMissing,
+  edgeOk,
   graspCtx,
   graspFrame,
   handFromItem,
@@ -3569,7 +3570,8 @@ function handChoice(
   const geom = itemGeom(spec);
   const group = GRIP_GROUPS[g.group];
   const kinds = new Set<string>(group.needs.flatMap((n) => n.kinds));
-  const ok = (f: Feature) => kinds.has(f.kind) && (g.part === undefined || f.part === g.part);
+  const ok = (f: Feature) =>
+    kinds.has(f.kind) && (g.part === undefined || f.part === g.part) && edgeOk(f, g.edge);
   const f =
     groupNeeds(geom, group, holderDims(height), spec.anchors).find(ok) ?? geom.features.find(ok);
   const defs = holdDefaults(group, geom, {

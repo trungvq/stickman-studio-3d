@@ -1,5 +1,5 @@
 import { GRIP_GROUPS, groupNeeds, holdDefaults, longEdges, type RoleMap } from "./graspGroups";
-import { CONTACTS, graspFrame, type GraspChoice, type GraspFrame } from "./graspSolve";
+import { CONTACTS, edgeOk, graspFrame, type GraspChoice, type GraspFrame } from "./graspSolve";
 import { fingerVec, HAND_POSES, type HandVec } from "./hand";
 import { handDims, itemGeom, type Feature, type HandDims } from "./heldGeom";
 import {
@@ -75,10 +75,8 @@ const FIELDS = [
 function leadEdge(f: Feature, side: number, dims: HandDims): GraspChoice["edge"] {
   if (f.kind !== "slab" && f.kind !== "disc") return undefined;
   const l = f.lying ? (side < 0 ? "right" : "left") : "bottom";
-  const vals: string[] =
-    f.kind === "slab"
-      ? (longEdges(f, dims).length ? longEdges(f, dims) : f.edges).map((e) => e.name)
-      : [...f.rim];
+  if (f.kind === "disc") return Math.max(0, 90 * f.rim.indexOf(l));
+  const vals = (longEdges(f, dims).length ? longEdges(f, dims) : f.edges).map((e) => e.name);
   return (vals.includes(l) ? l : vals[0]) as GraspChoice["edge"];
 }
 
@@ -96,7 +94,8 @@ function fillChoice(
   const ok = (f: Feature) =>
     kinds.has(f.kind) &&
     (given.part === undefined || f.part === given.part) &&
-    (given.feature === undefined || f.kind === given.feature);
+    (given.feature === undefined || f.kind === given.feature) &&
+    edgeOk(f, given.edge);
   const f =
     given.featureIndex !== undefined
       ? geom.features[given.featureIndex]
@@ -150,7 +149,7 @@ function oppositeEdge(fr: GraspFrame): GraspChoice["edge"] {
   const e = fr.choice.edge;
   if (e === undefined) return undefined;
   const f = fr.feature;
-  if (typeof e === "number") return (e + 180) % 360;
+  if (typeof e === "number") return (((e + 180) % 360) + 360) % 360;
   if (f.kind === "slab") {
     const own = f.edges.find((x) => x.name === e);
     if (!own) return OPPOSITE[e] as GraspChoice["edge"];

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { actAim, actHeld, actPalms, holdRoles, leadGrip, type ActInput } from "./act3";
 import { body3 } from "./figure3d";
-import { handDims, itemGeom } from "./heldGeom";
+import { handDims, itemGeom, radialDir, type DiscFeature } from "./heldGeom";
 import {
   gripCenter,
   gripFrame,
@@ -20,6 +20,7 @@ import fx from "./__fixtures__/nguoi-cam-bang.json";
 import grip from "./__fixtures__/grip-frames.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
+import tomHum from "./__fixtures__/held-v2/tom-hum.json";
 
 const spec = (j: unknown): HeldItemSpec => {
   const r = parseHeldItem(j);
@@ -32,6 +33,7 @@ const NGUOI = parsed.data;
 const H = NGUOI.rig.height;
 const BANG = spec(bangGia);
 const PHONE = spec(dienThoai);
+const TOM = spec(tomHum);
 
 const D2R = Math.PI / 180;
 const tr = (R: M3): M3 => [R[0], R[3], R[6], R[1], R[4], R[7], R[2], R[5], R[8]];
@@ -174,5 +176,39 @@ describe("lớp liên kết tay ↔ món", () => {
     expect(rep.L.reach).toMatchObject({ hold: "support" });
     expect(rep.L.reach!.gap).toBeLessThanOrEqual(1);
     expect(Object.keys(actHeld(NGUOI, sp))).toEqual(["R"]);
+  });
+
+  it("đĩa với `both: true`: tay phụ ở vành đối diện, góc +180", () => {
+    for (const [edge, opp] of [
+      [60, 240],
+      [300, 120],
+    ]) {
+      const rt = runtime(
+        [
+          {
+            t: 0,
+            right: {
+              to: "chest",
+              offset: [30, 20, 0],
+              point: "grip",
+              hold: { item: "tom-hum", group: "sheet", edge, both: true },
+            },
+          },
+        ],
+        { "tom-hum": TOM },
+      );
+      const x = holdHand(rightHold(poseAt(rt, 0.5)), -1, handDims(1))!;
+      expect(x.frame!.choice.edge).toBe(edge);
+      const d = itemGeom(TOM).features[x.frame!.choice.featureIndex!] as DiscFeature;
+      expect(d.kind).toBe("disc");
+      // hướng bán kính tới tâm nắm của hai tay, trong mặt đĩa
+      const dir = (at: V3) => {
+        const p = heldPoint(TOM, at);
+        const v = [0, 1, 2].map((i) => p[i] - d.c[i]);
+        return v.map((x, i) => x - d.a[i] * (v[0] * d.a[0] + v[1] * d.a[1] + v[2] * d.a[2]));
+      };
+      expect(angle(dir(x.hand.at as V3), radialDir(d, edge))).toBeLessThan(5);
+      expect(angle(dir(x.both!.other.at as V3), radialDir(d, opp))).toBeLessThan(5);
+    }
   });
 });

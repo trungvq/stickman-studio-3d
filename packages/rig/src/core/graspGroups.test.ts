@@ -250,6 +250,7 @@ describe("checkChoice", () => {
     );
     expect(check(sheet, "sheet", { edge: 30 })[0]).toMatch(/`edge: 30`/);
     expect(check(geomOf(tomHum), "sheet", { edge: 30 })).toEqual([]);
+    expect(check(geomOf(tomHum), "sheet", { edge: "right" })).toEqual([]);
   });
 
   it("`thumb` không có trên khối hình hay ngoài miền", () => {

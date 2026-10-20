@@ -264,7 +264,8 @@ export function edgeHigh(e: V3, R: M3, side: number, across: V3, up: V3 = [0, -1
   return f > 0 ? e : neg(e);
 }
 
-const edgeOk = (f: Feature, edge: GraspChoice["edge"]) =>
+/** Khối hình `f` có cạnh `edge`: tấm theo tên, đĩa theo tên vành hay góc */
+export const edgeOk = (f: Feature, edge: GraspChoice["edge"]) =>
   edge === undefined ||
   (f.kind === "slab"
     ? f.edges.some((x) => x.name === edge)
@@ -570,6 +571,10 @@ const SINK_GROUPS: ReadonlySet<GroupId> = new Set(["palmBox"]);
 /** Giá lún `SINK_W · (lún / SINK_REF)²`; `SINK_REF` là ngưỡng luật `sink` (`HELD_SINK` của `heldAudit.ts`) */
 const SINK_W = 1;
 const SINK_REF = Math.abs(HELD_FIT.touch) + 0.5;
+/** Vành đĩa giải trên lưới góc bước này, độ (`0` ở `front`, hay `top` với đĩa đứng, về `right`) */
+const DISC_STEP = 30;
+/** `rim` không khai `thumb`, món không khai `top`: ngón cái ở mặt hướng lên quá ngần này (cos 45°: tấm nằm trong thế giới) */
+const RIM_UP = Math.SQRT1_2;
 const KIND_ORDER: FeatureKind[] = ["slab", "disc", "rod", "lathe", "box", "face"];
 const DISCRETE = ["edge", "thumb", "variant"] as const;
 const CONTINUOUS = ["along", "slant", "around", "tilt", "psi"] as const;
@@ -729,7 +734,8 @@ export function chooseMissing(
   const fit = (f: Feature) =>
     kinds.has(f.kind) &&
     (given.part === undefined || f.part === given.part) &&
-    (given.feature === undefined || f.kind === given.feature);
+    (given.feature === undefined || f.kind === given.feature) &&
+    edgeOk(f, given.edge);
   let feats = groupNeeds(geom, group, ctx.dims, spec.anchors).filter(fit);
   if (!feats.length) feats = geom.features.filter(fit);
   if (!feats.length)
@@ -820,15 +826,20 @@ export function chooseMissing(
   };
   const lead =
     !solve && h.group === "sheet"
-      ? (f: Feature) =>
-          f.kind === "slab" || f.kind === "disc"
-            ? f.lying
-              ? sd < 0
-                ? "right"
-                : "left"
-              : "bottom"
-            : undefined
+      ? (f: Feature) => {
+          if (f.kind !== "slab" && f.kind !== "disc") return undefined;
+          const l = f.lying ? (sd < 0 ? "right" : "left") : "bottom";
+          return f.kind === "disc" ? 90 * f.rim.indexOf(l) : l;
+        }
       : undefined;
+  // món khai `top` và tấm nằm: mặt `top`; không thì mặt hướng lên trong thế giới (y rig hướng xuống) khi tấm nằm
+  const upFace = (f: Feature) => {
+    if (f.kind !== "slab" && f.kind !== "disc") return undefined;
+    if (spec.top !== undefined && f.lying) return "top";
+    const up = f.faces.map((x) => -matVec(pose.R, x.n)[1]);
+    const i = up[1] > up[0] ? 1 : 0;
+    return up[i] > RIM_UP ? f.faces[i].name : undefined;
+  };
 
   for (const f of feats) {
     const defs = holdDefaults(group, geom, {
@@ -846,7 +857,8 @@ export function chooseMissing(
       else if (k === "edge" && f.kind === "slab") {
         const long = longEdges(f, ctx.dims);
         vals = (long.length ? long : f.edges).map((e) => e.name);
-      } else if (k === "edge" && f.kind === "disc") vals = [...f.rim];
+      } else if (k === "edge" && f.kind === "disc")
+        vals = Array.from({ length: 360 / DISC_STEP }, (_, i) => i * DISC_STEP);
       else if (k === "thumb" && (f.kind === "slab" || f.kind === "disc"))
         vals = f.faces.map((x) => x.name);
       if (!solve || !vals.length) {
@@ -872,10 +884,12 @@ export function chooseMissing(
     seen("edge", edges.length);
     seen("thumb", thumbs.length);
     seen("variant", vars.length);
+    const up = solve && given.thumb === undefined ? upFace(f) : undefined;
     for (const edge of edges)
       for (const thumb of thumbs)
         for (const variant of vars) {
           const v = (variant as string | undefined) ?? (defs.variant as string) ?? variants[0];
+          if (v === "rim" && up !== undefined && thumb !== up) continue;
           const c = {
             ...given,
             ...cont(v),

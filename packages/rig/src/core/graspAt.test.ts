@@ -22,6 +22,7 @@ import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
+import tomHum from "./__fixtures__/held-v2/tom-hum.json";
 
 // người mẫu đứng cầm bảng ở t = 1; mốc món và số đối chiếu của prototype bước 0 (docs/11-nhom-cam.md mục 5)
 const item = (json: unknown): HeldItemSpec => {
@@ -44,7 +45,8 @@ const LONG = item({
 const parsed = parseCharacter(fx.character);
 if (!parsed.success) throw new Error("nguoi");
 const T = trunk3(parsed.data, { pose: fx.pose, world: fx.world } as unknown as ActInput)!;
-const ctx = graspCtx(T, { "bang-gia": BANG, "tam-dai": LONG });
+const TOM = item(tomHum);
+const ctx = graspCtx(T, { "bang-gia": BANG, "tam-dai": LONG, "tom-hum": TOM });
 const RIGHT = -1;
 const LEFT = 1;
 
@@ -429,6 +431,67 @@ describe("chooseMissing: giá biến thể", () => {
 
 /** Phần giá lệch mặc định của nghiệm (giá trừ E và khe ở mốc bắt đầu) */
 const devOf = (s: GraspSolution) => s.cost - s.arm.E - (s.arm.gap / 6) ** 2;
+
+describe("chooseMissing: vành đĩa", () => {
+  // đĩa tôm hùm nằm ngửa trước ngực; `ngua: false` là úp (mặt `bottom` của món hướng lên)
+  const dish = (ngua = true): ItemPose => ({
+    R: ngua
+      ? fromColumns([1, 0, 0], [0, -1, 0], [0, 0, -1])
+      : fromColumns([1, 0, 0], [0, 1, 0], [0, 0, 1]),
+    P: [250, -240, 590],
+    cast: "nguoi",
+    s: 1,
+  });
+  const at = (pose: ItemPose, side: number, more: Record<string, unknown> = {}, solve = true) =>
+    chooseMissing(ctx, { item: "tom-hum", group: "sheet", ...more } as never, pose, side, {
+      solve,
+    });
+
+  it("rig giải vành theo góc, lưới 0–330 bước 30", () => {
+    for (const side of [RIGHT, LEFT]) {
+      const s = at(dish(), side, { variant: "rim" });
+      expect(s.choice.feature).toBe("disc");
+      expect(typeof s.choice.edge).toBe("number");
+      expect((s.choice.edge as number) % 30).toBe(0);
+      expect(s.choice.edge).toBeGreaterThanOrEqual(0);
+      expect(s.choice.edge).toBeLessThan(360);
+      expect(s.by.edge).toBe("rig");
+    }
+    // tay phải vành phải (`90`), tay trái vành trái (`270`)
+    expect(at(dish(), RIGHT, { variant: "rim" }).choice.edge).toBe(90);
+    expect(at(dish(), LEFT, { variant: "rim" }).choice.edge).toBe(270);
+  });
+
+  it("`rim` không khai `thumb`: ngón cái ở mặt hướng lên; `pinch` vẫn thử hai mặt", () => {
+    const up = at(dish(), RIGHT, { variant: "rim" });
+    expect(up.choice.thumb).toBe("top");
+    // món khai `top`: mặt `top` cả khi úp; món không khai `top` thì mặt hướng lên trong thế giới
+    expect(at(dish(false), RIGHT, { variant: "rim" }).choice.thumb).toBe("top");
+    const bare = graspCtx(T, { "tom-hum": item({ ...tomHum, top: undefined }) });
+    const rim = (pose: ItemPose) =>
+      chooseMissing(bare, { item: "tom-hum", group: "sheet", variant: "rim" }, pose, RIGHT).choice
+        .thumb;
+    expect(rim(dish())).toBe("top");
+    expect(rim(dish(false))).toBe("bottom");
+    // tấm 4 cạnh + đĩa 12 góc, một mặt; rồi `along` 3 × `slant` 3
+    expect(up.candidates).toBe(16 + 9);
+    expect(at(dish(), RIGHT, { variant: "pinch" }).candidates).toBe(16 * 2 + 9);
+    expect(at(dish(), RIGHT, { variant: "rim", thumb: "bottom" }).choice.thumb).toBe("bottom");
+    expect(at(dish(), RIGHT).choice.thumb).toBe("top");
+  });
+
+  it("tên vành vẫn nhận; tay dẫn không khai `edge` lấy góc vành phía tay ấy", () => {
+    const named = at(dish(), RIGHT, { variant: "rim", edge: "right", feature: "disc" });
+    const deg = at(dish(), RIGHT, { variant: "rim", edge: 90, feature: "disc" });
+    expect(named.choice.edge).toBe("right");
+    expect(named.frame.G).toEqual(deg.frame.G);
+    // góc chỉ có ở đĩa: tấm cùng phần bị bỏ
+    const sixty = at(dish(), RIGHT, { edge: 60 });
+    expect(sixty.choice).toMatchObject({ feature: "disc", edge: 60 });
+    expect(at(dish(), RIGHT, { feature: "disc" }, false).choice.edge).toBe(90);
+    expect(at(dish(), LEFT, { feature: "disc" }, false).choice.edge).toBe(270);
+  });
+});
 
 describe("tay trượt", () => {
   it("`along` 0,2 → 0,8 trên tấm dài: khuỷu đổi ≤ 2,5° mỗi mẫu", () => {
