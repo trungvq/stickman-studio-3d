@@ -12,8 +12,20 @@ Worktree video: `~/Work/Dev/youtube-video/jp-sukatto-nhom-cam` (nhánh `auto/nho
 - Ảnh duyệt: `duyet/g3-thu-nhom-cam-frames.jpg`, `duyet/g3-thu-nhom-cam-can-tay.jpg`, `duyet/g3-bang-cam-nhom-thu-{bang-gia,dien-thoai}.jpg`.
 - Hình t02 không đổi ở giai đoạn 3 (chỉ đường v2 mới vẽ khác); baseline đổi vì thước da, xem "Đã tự quyết".
 
+## Giai đoạn 4 — XONG (2026-10-21)
+- Mười nhóm chạy (`sheet`, `card`, `pen`, `chopsticks`, `cylinder` (`wrap`, `flat`), `bowl`, `handle`, `palmBox`, `platform`, `carry`); bốn `later` (`round`, `hug`, `clamp`, `soft`).
+- Mỗi nhóm có chỗ tiếp xúc khớp fixture v1 (lệch đã ghi ở "Đã tự quyết": `khay#bung` 1,35–2,4, `chen#kep` ≤ 1,5), hàng mẫu `bang-cam --nhom`, docs/11 mục 3 và tóm tắt mục 9.
+- Dùng chung: `axialAt`, bề dày thật ở mép (`spanAt`), tay phụ khác nhóm (`placeChoice`), `both` món đặt trước, `RodFeature.gap`, giá lún da khi chọn (`SINK_GROUPS`), lọc `bang-cam` theo `checkChoice`.
+- Ảnh duyệt: `duyet/g4-*.jpg`. Lún v2 ≤ v1 ở hầu hết ô; ô vượt chỉ ở hàng mẫu đặt món sát giới hạn cổ tay (ghi "Việc dồn").
+- Kiểm cuối (`g4-z2/`): t02 `ref,held,clash` 0 mới, 0 nặng hơn, 0 đã hết so `g315`; `thu-nhom-cam` 1 lỗi (`wrist` đã biết) 1 cảnh báo. Rig 1123 test, sketch 245, fx 44, cli 70 — xanh; video `pnpm test` xanh.
+- Cách làm từ 19:10: commit theo log xanh của agent con, không render "trước", gộp hàng mẫu + docs + render mỗi nhóm.
+
+## Giai đoạn 5 — XONG (chạy song song giai đoạn 4)
+- 35 món v2 ở thư mục chờ video `held-v2/` (nhãn Phụ lục A); `held-moc` kiểm nhãn, mốc, khối hình theo nhóm, khớp lưới ↔ `shape` (lệch đã biết ghi `LECH_BIET`). `held/` thay ở G6-3 cùng lúc chuyển cảnh.
+- `bang-cam --nhom` đủ mười nhóm. Ảnh "trước" chụp lại (T0b). `migrate-held` có sẵn (G6-1).
+
 ## Đang làm
-Giai đoạn 4 — từng nhóm theo docs/11 mục 9 (palmBox → carry → sheet → cylinder → platform → card → chopsticks → pen → handle → bowl). Kế hoạch: `tmp/nhom-cam/gd4-ke-hoach.md`.
+Giai đoạn 6 — chuyển cảnh t02, xoá v1 (`gd6-ke-hoach.md`). (Giai đoạn 4 theo docs/11 mục 9 (palmBox → carry → sheet → cylinder → platform → card → chopsticks → pen → handle → bowl). Kế hoạch: `tmp/nhom-cam/gd4-ke-hoach.md`.
 Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 
 ## Tóm tắt bước 0 (xong)
@@ -197,7 +209,4 @@ Chủ dự án (2026-10-20): KHÔNG cần review Fable nữa.
 - `rim` `slant` âm: ngón nghiêng về mặt cái, tấm kẹp giữa trỏ và giữa (khoe báo). Út hở hơn v1 0,5–1,8 ở `slant` ±22,5.
 
 ## Bước kế
-0. Phiên tiếp tục (2026-10-20) sau khi chủ dự án chốt hướng G4-38b. Worktree sạch, mọi việc xanh đã commit và push. Studio xem `git log`, video `9b13333`.
-1. Nhóm `sheet` (M4-3), `cylinder` (M4-4) xong. `platform` (M4-5) xong. `card` (M4-6) xong. `chopsticks` (M4-7) xong. `pen` (M4-8) xong. `handle` (M4-9) xong. Bowl: A2 xong → A3+A4+Z1 gộp → Z2.
-3. Rồi bowl A2–A4, Z1, Z2 theo `gd4-ke-hoach.md`. Đã xong/gộp: 00, X1, 11–14, 22–25, 32–38b, 41–48, 52, 72, 73, 82.
-4. Giai đoạn 5 → 6.
+0. Giai đoạn 4, 5 xong. Giai đoạn 6 theo `tmp/nhom-cam/gd6-ke-hoach.md`: G6-2 chạy `migrate-held` thật trên t02 → G6-3 thay `held/` → G6-4 ảnh sau + `shot-doi-hinh.md` → G6-5 xoá v1 + `SCENE_VERSION` → G6-6 baseline mới.
