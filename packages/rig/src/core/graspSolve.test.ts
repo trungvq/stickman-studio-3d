@@ -22,7 +22,15 @@ import {
   type ContactInput,
   type GraspChoice,
 } from "./graspSolve";
-import { HAND_BONES, HAND_DOF, HAND_PIECES, handFrames, handGripOf, handVec } from "./hand";
+import {
+  HAND_BONES,
+  HAND_DOF,
+  HAND_FINGERS,
+  HAND_PIECES,
+  handFrames,
+  handGripOf,
+  handVec,
+} from "./hand";
 import { handSkin, skinHand } from "./handMesh";
 import {
   groupGripMax,
@@ -1529,7 +1537,6 @@ describe("graspFrame", () => {
 describe("`chopsticks` `grip`", () => {
   const DUA = item(dua);
   const geom = itemGeom(DUA);
-  const FIXC: Case = { fixture: "dua#cam", spec: DUA, pick: both({ group: "chopsticks" }, {}, {}) };
   // sakura, kuroiwa
   const REAL = [
     [1.75, 1.545],
@@ -1537,59 +1544,112 @@ describe("`chopsticks` `grip`", () => {
   ] as const;
   const tip: V3 = [0, -35.68, 67.1];
   const end: V3 = [0, 2.82, -5.3];
+  const sticks = DUA.shape!.filter((x) => "cyl" in x);
+  const at = (side: number, k: number, long: number, c: Partial<GraspChoice> = {}) =>
+    graspFrame(DUA, geom, { group: "chopsticks", ...c }, side, handDims(k, long), k, long);
+  /** Tay cầm trên da như người 3D vẽ; khe từng phần tới que trên (que đang xét) và que dưới, đơn vị món */
+  const skinOf = (side: number, k: number, long: number, featureIndex: number) => {
+    const g = at(side, k, long, { featureIndex });
+    const skin = handSkin(side, k, long);
+    const fit = heldFit({
+      v: g.pose,
+      side,
+      k,
+      long,
+      shape: DUA.shape!,
+      G: g.G,
+      roles: g.roles,
+      bulge: skinBulge(skin, g.pose),
+      curl: GRIP_GROUPS.chopsticks.variants.grip.curl,
+    });
+    const pos = new Float32Array(skin.pos.length);
+    skinHand(skin, [...g.pose, ...fit], pos);
+    const pieces = skinPieces(skin);
+    const fc = (g.feature as { c: V3 }).c;
+    const up = sticks.findIndex((x) => "from" in x && Math.sign(x.from[0]) === Math.sign(fc[0]));
+    const all = skinDepth(pos, pieces, g.G, DUA.shape!);
+    // đốt ngọn ngón trỏ tới que dưới (trên nang): đệm trỏ chỉ ở que trên
+    const F = handFrames([...g.pose, ...fit], side, k, long).index1;
+    const tipLo = capsuleClearance(
+      [sticks[1 - up]],
+      g.G,
+      F.o,
+      add3(F.o, matVec(F.R, [0, -F.len, 0])),
+      HAND_BONES.index.r * k,
+    ).gap;
+    return {
+      g,
+      tipLo,
+      fit,
+      all,
+      up: skinDepth(pos, pieces, g.G, [sticks[up]]).gaps,
+      lo: skinDepth(pos, pieces, g.G, [sticks[1 - up]]).gaps,
+      oppose: heldOppose(DUA.shape!, all.near, all.gaps, g.roles),
+    };
+  };
 
-  it("ra lại fixture `dua#cam` ở mọi cỡ, hai tay trong 5° và 1 đơn vị với `along` mặc định 0,25", () => {
-    for (const size of SIZES)
-      for (const [side, n] of SIDES) {
-        const r = residual(FIXC, size, side, n);
-        expect(r.g.choice.along, `${size} ${side}`).toBe(0.25);
-        expect(r.rot, `${size} ${side}`).toBeLessThanOrEqual(5);
-        expect(r.pos, `${size} ${side}`).toBeLessThanOrEqual(1);
-      }
-  });
-
-  it("ngón dọc que về ngọn; `along` từ đầu cầm; hai tay đổi que kề ngón cái, det +1, cùng một khung từ que nào", () => {
-    const dims = handDims(1.75, 1.545);
-    const axis = [tip[0] - end[0], tip[1] - end[1], tip[2] - end[2]] as V3;
-    const at = (along: number, side: number, featureIndex?: number) =>
-      graspFrame(
-        DUA,
-        geom,
-        { group: "chopsticks", along, ...(featureIndex !== undefined && { featureIndex }) },
-        side,
-        dims,
-        1.75,
-        1.545,
-      );
-    for (const side of [-1, 1]) {
-      const g = at(0.25, side);
-      expect(det(g.G.R)).toBeCloseTo(1, 9);
-      const f = g.hand.fingers as V3;
-      expect(f[1] * axis[1] + f[2] * axis[2]).toBeGreaterThan(0.99 * Math.hypot(...axis));
-      // dời theo `along`: tâm nắm đi dọc đường giữa về ngọn
-      const step = sub3(at(0.4, side).hand.at as V3, g.hand.at as V3);
-      expect(Math.hypot(...step)).toBeCloseTo(0.15 * 82.0157, 2);
-      expect(step[1] * axis[1] + step[2] * axis[2]).toBeGreaterThan(0);
-      // tâm nắm `pinch` của fixture về que phía tay (tay phải `+x`)
-      close(at(0.25, side, 0).G.R, at(0.25, side, 1).G.R, 1e-12);
-    }
-    expect(Math.sign((at(0.25, -1).hand.at as V3)[0])).toBe(
-      -Math.sign((at(0.25, 1).hand.at as V3)[0]),
-    );
-  });
-
-  it("trên da: ngón cái, trỏ chạm hay hở dưới 0,15·W, không lún quá `HELD_SINK`, không xuyên; ngón cuộn thêm ≤ 15° — hai cỡ tay, hai tay", () => {
+  it("chiều đũa: ngọn (`tip`) ra phía áp út, út ngoài bàn tay; đầu cầm ở phía ngón cái sau kẽ cái–trỏ — hai cỡ tay, hai tay", () => {
     for (const [k, long] of REAL)
       for (const [, side] of SIDES) {
-        const r = gripSkin(DUA, { group: "chopsticks" }, side, k, long);
-        const at = `${k} ${side}`;
-        const W = handDims(k, long).W;
-        expect(r.gaps.thumb, at).toBeLessThanOrEqual(0.9);
-        expect(r.gaps.index, at).toBeLessThanOrEqual(0.15 * W);
-        expect(r.sink, at).toBeLessThanOrEqual(HELD_SINK);
-        expect(r.pierce, at).toBeLessThan(0);
-        for (const x of r.fit) expect(x, at).toBeLessThanOrEqual(15);
+        const G = at(side, k, long).G;
+        const [t, e] = [gripPoint(G, tip), gripPoint(G, end)];
+        const w = `${k} ${side}`;
+        // khung bàn tay: z về phía ngón cái; út ở z âm, trỏ ở z dương
+        expect(t[2], w).toBeLessThan(HAND_FINGERS.pinky.dz * k - 0.05);
+        expect(e[2], w).toBeGreaterThan(HAND_BONES.index.at[2] * k + 0.03);
+        // ngọn ra xa cổ tay hơn đầu cầm, và về phía lòng tay
+        expect(-t[1], w).toBeGreaterThan(-e[1]);
+        expect(-side * t[0], w).toBeGreaterThan(-side * e[0]);
       }
+  });
+
+  it("`along` từ đầu cầm dọc đường giữa về ngọn; tay trái soi gương tay phải qua mặt hai que, det +1", () => {
+    const axis = sub3(tip, end);
+    for (const [, side] of SIDES) {
+      const g = at(side, 1.75, 1.545, { along: 0.35 });
+      expect(det(g.G.R)).toBeCloseTo(1, 9);
+      const step = sub3(at(side, 1.75, 1.545, { along: 0.5 }).hand.at as V3, g.hand.at as V3);
+      expect(Math.hypot(...step)).toBeCloseTo(0.15 * 82.0157, 2);
+      expect(step[1] * axis[1] + step[2] * axis[2]).toBeGreaterThan(0);
+    }
+    const r = at(-1, 1.75, 1.545).hand;
+    const l = at(1, 1.75, 1.545).hand;
+    const d = r.fingers as V3;
+    const u = sub3(tip, end);
+    const n = cross3([1, 0, 0], scale3(u, 1 / Math.hypot(...u)));
+    const mirror = (v: V3): V3 => sub3(v, scale3(n, 2 * (v[0] * n[0] + v[1] * n[1] + v[2] * n[2])));
+    close(l.at as V3, r.at as V3, 1e-9);
+    close(l.palm as V3, mirror(r.palm as V3), 1e-9);
+    close(l.fingers as V3, mirror(d), 1e-9);
+    // que đang xét là que trên: đổi que là quay bàn tay nửa vòng quanh đường giữa
+    const half = (v: V3): V3 => {
+      const a = scale3(u, 1 / Math.hypot(...u));
+      return sub3(scale3(a, 2 * (v[0] * a[0] + v[1] * a[1] + v[2] * a[2])), v);
+    };
+    const q = at(-1, 1.75, 1.545, { featureIndex: 1 }).hand;
+    close(q.palm as V3, half(r.palm as V3), 1e-3);
+  });
+
+  it("trên da: que trên kẹp giữa ngón cái, trỏ và giữa; que dưới tựa gốc ngón cái và áp út; trỏ không chạm que dưới, áp út không chạm que trên; không lún quá `HELD_SINK`, có lực đối — hai cỡ tay, hai tay, hai que", () => {
+    for (const [k, long] of REAL)
+      for (const [, side] of SIDES)
+        for (const fi of [0, 1]) {
+          const r = skinOf(side, k, long, fi);
+          const w = `${k} ${side} que ${fi}`;
+          expect(r.up.thumb, w).toBeLessThanOrEqual(0.6);
+          expect(r.up.index, w).toBeLessThanOrEqual(0.6);
+          expect(r.up.middle, w).toBeLessThanOrEqual(HELD_WRAP);
+          expect(r.lo.ring, w).toBeLessThanOrEqual(0.6);
+          // đuôi que dưới ở kẽ cái–trỏ: gốc ngón cái, gốc trỏ hay lòng tay
+          expect(Math.min(r.lo.thumb, r.lo.index, r.lo.palm), w).toBeLessThanOrEqual(0.6);
+          expect(r.tipLo, w).toBeGreaterThan(1);
+          expect(r.up.ring, w).toBeGreaterThan(2);
+          expect(r.up.pinky, w).toBeGreaterThan(2);
+          expect(r.up.palm, w).toBeGreaterThan(2);
+          expect(-r.all.depth, w).toBeGreaterThanOrEqual(-HELD_SINK);
+          expect(r.oppose?.angle, w).toBeGreaterThanOrEqual(120);
+          for (const x of r.fit) expect(x, w).toBeLessThanOrEqual(15);
+        }
   });
 });
 
