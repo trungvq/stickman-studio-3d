@@ -460,7 +460,8 @@ hai, hoặc không có cái nào, là lỗi schema.
 | `keys[].t` | **Tỉ lệ chu kỳ, không phải giây.** Tăng dần trong `[0, 1]` |
 | `keys[].pose` | Tên một pose trong thư viện, hoặc object chỉ đè vài khớp. Tay ba số `[vai, khuỷu, cổ tay]`, chân hai số `[hông, gối]`, `head` ba số (số nào `null` là không ghi góc ấy — [Đầu và nét mặt](#đầu-và-nét-mặt)), `torso` một số, `stretch` bốn hoặc tám số — [Vươn chi](#vươn-chi). Tay thêm được số dang thứ tư, chân số dang thứ ba, `torso` thành `[cúi, nghiêng]` — [Dang và nghiêng ngang](#dang-và-nghiêng-ngang); tay thêm số xoắn vai thứ năm — [Xoắn tay](#xoắn-tay) |
 | `keys[].reach` | Đích cổ tay hệ thân cho `armNear` / `armFar`: `{ "at": [tiến, y, ra ngoài], "elbow"?: [...] }`. Người 3D giải IK hai đoạn; người 2D vẽ góc dự phòng — [Đích bàn tay](#đích-bàn-tay) |
-| `keys[].ease` | Áp cho đoạn **từ mốc này tới mốc sau**: `linear` đều, `smooth` chậm vào chậm ra (`smoothstep`, cùng đường với đoạn hoà, không vọt qua mốc sau), `spring` vọt qua rồi nảy về |
+| `keys[].ease` | Áp cho đoạn **từ mốc này tới mốc sau**, mặc định `linear`: `linear` đều; `smooth` chậm vào chậm ra (`smoothstep`, cùng đường với đoạn hoà) — vận tốc về `0` ở mọi mốc nên mốc giữa nhìn khựng; `auto` bậc ba đơn điệu, liền vận tốc qua mốc giữa của chuỗi mốc `auto`, không vọt; `bezier` theo `keys[].bezier`; `spring` vọt qua rồi nảy về. Xem [Đường giữa hai mốc](#đường-giữa-hai-mốc) |
+| `keys[].bezier` | `[x1, y1, x2, y2]` của `cubic-bezier` CSS, bốn số trong `[0, 1]` nên không vọt; chỉ ăn khi `ease: "bezier"`, bỏ trống là `[0.42, 0, 0.58, 1]` |
 | `keys[].face` | Nét mặt kể từ mốc này: `{ "mouth": …, "brow": …, "eyes": …, "blush": … }`, khai trường nào thì ghi trường đó. Ba kiểu nét **không nội suy**, `blush` (`0..1`) nội suy như góc — [Má ửng](#má-ửng); chỉ ăn khi `face` nằm trong `mask` — xem [Đầu và nét mặt](#đầu-và-nét-mặt) |
 | `keys[].hand` | Bàn tay người 3D kể từ mốc này theo kênh tay: `{ "armNear": "point", "armFar": { "pose": "fist", "w": 0.5, "turn": 80, "bend": -10 } }` — một trong bốn dáng (bỏ trống `pose` là dáng nghỉ), xoay cẳng tay, gập cổ tay, **nội suy** như góc; chỉ ăn khi `hand` nằm trong `mask` — [Bàn tay](#bàn-tay) |
 | `keys[].equip` | Đổi đồ kể từ mốc này: `{ "crown": "hat", "handFar": null }`. **Công tắc**, không nội suy, không hoà và **không đi qua `mask`** — xem [Đổi đồ giữa chừng](#đổi-đồ-giữa-chừng) |
@@ -487,6 +488,28 @@ thân đổi chiều ở giữa, góc gật chỉ có mốc đầu và mốc cu�
 `POSES` còn được tinh chỉnh, mà file hành động thì nằm ở repo video — trỏ theo
 tên là mỗi lần rig chỉnh `idle`, mọi hành động cũ đổi hình mà không qua
 `ACTION_VERSION` nào.
+
+### Đường giữa hai mốc
+
+`ease` của một mốc quyết định đoạn từ nó tới mốc sau (trong các mốc có nhắc kênh). `linear`,
+`smooth`, `spring`, `bezier` chỉ nhìn đoạn của mình. `auto` nhìn thêm hai mốc ngoài:
+
+- **Bậc ba Hermite đơn điệu (PCHIP), từng thành phần số.** Tiếp tuyến ở mốc giữa là trung bình
+  điều hoà của hai độ dốc kề, trọng số `2h₊ + h₋` và `h₊ + 2h₋` theo độ dài hai đoạn; hai độ dốc
+  trái dấu hay một bên bằng `0` thì tiếp tuyến `0` — mốc đổi chiều dừng hẳn. Giá trị không ra khỏi
+  khoảng của hai mốc kẹp. Thành phần thiếu (dang, nghiêng ngang) là `0` như khi nội suy thẳng.
+- **Chuỗi `auto`.** Hai mốc liền nhau cùng `auto` nối liền vận tốc. Đầu và cuối chuỗi — mốc đầu,
+  mốc cuối của `hold`, hay mốc kề có `ease` khác — tiếp tuyến `0`, chậm vào chậm ra từ nghỉ. Hai mốc
+  đơn lẻ là đúng `smoothstep`. `end: "wrap"` nối chuỗi qua đường vòng (đoạn cuối → đầu dài
+  `t đầu + 1 − t cuối`); mốc `t: 1` trùng pha mốc `t: 0` tính là một.
+- **Góc đầu từng góc một.** Chuỗi của mỗi góc `head` chỉ gồm các mốc ghi số ở góc ấy; mốc `null` không
+  thuộc chuỗi.
+- **Kiểu không phải số lùi về `smoothstep`**: đích cổ tay (`keys[].reach`, cả hoà số hạng) và lòng tay
+  theo ý định (`palm` / `fingers`). Góc (kể cả góc dự phòng người 2D suy từ đích), `stretch`, `blush`,
+  số bàn tay (`keys[].hand`) và góc động vật đi đường bậc ba.
+
+`auto` chậm lại trước mốc cuối chuỗi: đoạn lao vào mốc va chạm (rìu chạm gỗ, tay đập bàn) dùng
+`linear` hoặc `bezier` tăng tốc (`y` dưới đường chéo, như `[0.5, 0, 1, 1]`). Cú nảy giữ `spring`.
 
 ### Đầu và nét mặt
 

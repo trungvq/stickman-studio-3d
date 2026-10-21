@@ -191,7 +191,7 @@ const WAVE = {
 describe("kênh `hand` của hành động", () => {
   it(`đời ${ACTION_VERSION}: nội suy góc khớp giữa hai mốc theo \`ease\``, () => {
     const a = action(WAVE);
-    expect(ACTION_VERSION).toBe(19);
+    expect(ACTION_VERSION).toBe(20);
     const mid = actionHand(a, 0.3).an!;
     const f = smoothstep(0.3);
     const want = vec("rest").map((v, i) => v + ((i === 0 ? 80 : vec("fist")[i]) - v) * f);

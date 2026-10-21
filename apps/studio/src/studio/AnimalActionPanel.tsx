@@ -38,6 +38,7 @@ import {
 import { LayoutGrid } from "lucide-react";
 import { useState } from "react";
 import type { MutateAction } from "./ActionPanel";
+import { BezierRow } from "./BezierRow";
 import { download } from "./bundle";
 import { FacePicker } from "./FacePicker";
 import type { ViewState } from "./view";
@@ -332,10 +333,19 @@ export function AnimalActionPanel(p: AnimalActionPanelProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="linear">linear — đều tới mốc sau</SelectItem>
+              <SelectItem value="auto">auto — liền vận tốc qua chuỗi mốc auto</SelectItem>
               <SelectItem value="smooth">smooth — chậm vào, chậm ra</SelectItem>
+              <SelectItem value="bezier">bezier — đường tự khai</SelectItem>
               <SelectItem value="spring">spring — nảy tới mốc sau</SelectItem>
             </SelectContent>
           </Select>
+          {key.ease === "bezier" && (
+            <BezierRow
+              key={sel}
+              value={key.bezier}
+              onChange={(b) => mutate((d) => (d.keys![sel].bezier = b))}
+            />
+          )}
           {rows.map(([c, j]) => (
             <SliderRow
               key={`${c}${j}`}

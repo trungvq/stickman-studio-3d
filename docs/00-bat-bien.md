@@ -345,6 +345,10 @@ góc để trống nằm đó dưới dạng `NaN`. Xem [01](01-rig.md#đầu-v�
 `wrap`, không `spring` cho điệu bộ khi nói — tay nhấp theo nhịp đều nhìn giật. Buông bằng clip
 rỗng. Xem [01](01-rig.md#điệu-bộ-khi-nói).
 
+**`auto` và `smooth` hãm lại trước mốc cuối chuỗi.** Đoạn lao vào mốc va chạm (mốc trùng `events[]`)
+để `auto` hay `smooth` là cú đập chậm dần rồi mới chạm; dùng `linear` hoặc `bezier` tăng tốc. Xem
+[01](01-rig.md#đường-giữa-hai-mốc).
+
 **Thời lượng và số lần lặp thuộc scene, không thuộc file hành động.** `t` trong
 file là tỉ lệ chu kỳ `0 → 1`, `duration` chỉ là nhịp mặc định. Thứ *phải* nằm
 trong file là `end` (`wrap`/`hold`) — đó là ngữ nghĩa lấy mẫu qua mốc cuối, chỉ
