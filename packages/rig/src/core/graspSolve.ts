@@ -33,8 +33,16 @@ import {
   type HandPose,
   type HandVec,
 } from "./hand";
-import { handSkin, skinHand } from "./handMesh";
-import { HELD_FIT, heldDistance, heldFit, skinBulge, skinDepth, skinPieces } from "./heldFit";
+import { handSkin, skinHand, type HandSkin } from "./handMesh";
+import {
+  HELD_FIT,
+  heldDistance,
+  heldFit,
+  skinBulge,
+  skinDepth,
+  skinPieces,
+  skinUnder,
+} from "./heldFit";
 import {
   alongFrac,
   aroundOf,
@@ -1222,6 +1230,11 @@ export interface GraspSolution {
   /** Giá của lựa chọn (mục 5) và số ứng viên đã thử */
   cost: number;
   candidates: number;
+  /**
+   * Lần cầm theo mốc trước mốc món đầu hay sau mốc món cuối khi mốc ấy là mốc món nằm (`rest`): món vẽ đứng ở mốc ấy, không
+   * theo bàn tay (bàn tay đang tới hay vừa rời món)
+   */
+  still?: ItemPose;
 }
 
 /** Báo của một chỗ cầm (`AimReport.hold.grasp`): `wrist.over` độ vượt kẹp, `wrist.off` lệch bàn tay vẽ (rig) */
@@ -1295,6 +1308,12 @@ const SINK_GROUPS: ReadonlySet<GroupId> = new Set(["palmBox", "cylinder"]);
 /** Giá lún `SINK_W · (lún / SINK_REF)²`; `SINK_REF` là ngưỡng luật `sink` (`HELD_SINK` của `heldAudit.ts`) */
 const SINK_W = 1;
 const SINK_REF = Math.abs(HELD_FIT.touch) + 0.5;
+/**
+ * Giá mặt đỡ `REST_W · (da dưới mặt / REST_REF)²` ở mốc món nằm; `REST_REF` là ngưỡng luật `rest` (`HELD_REST` của
+ * `heldAudit.ts`). docs/11-nhom-cam.md § Mặt đỡ
+ */
+const REST_W = 1;
+export const REST_REF = 0.65;
 /** `thumbToward`: hướng ngoài miền quanh thân chỉ thắng khi cổ tay vượt ít hơn ngần này độ */
 const THUMB_OVER = 1;
 /** Trụ: `around` mà phần `grip: false` kề đoạn bám nhô khỏi mặt quá ngần này lần `W` về phía lòng tay thì rig không chọn */
@@ -1341,25 +1360,77 @@ function frameSink(
   if (!m) sinks.set(spec, (m = new Map()));
   let d = m.get(key);
   if (d === undefined) {
-    const skin = handSkin(side, k, long);
-    const fit = heldFit({
-      v: f.pose,
-      side,
-      k,
-      long,
-      shape: spec.shape,
-      G,
-      roles: f.roles,
-      bulge: skinBulge(skin, f.pose),
-      ...(curl !== undefined && { curl }),
-    });
-    const pos = new Float32Array(skin.pos.length);
-    skinHand(skin, [...f.pose, ...fit], pos);
+    const { pos, skin } = fittedSkin(spec, f, G, side, k, long, key, curl);
     const { gaps } = skinDepth(pos, skinPieces(skin), G, spec.shape);
     d = Math.max(0, -Math.min(...Object.values(gaps)));
     m.set(key, d);
   }
   return d;
+}
+
+/** Da bàn tay đã ôm theo vai trò ở khung cầm, nhớ theo món và khoá của `frameSink`; giữ `SKIN_KEEP` bàn tay mỗi món */
+const fitSkins = new WeakMap<HeldItemSpec, Map<string, { pos: Float32Array; skin: HandSkin }>>();
+const SKIN_KEEP = 64;
+
+function fittedSkin(
+  spec: HeldItemSpec,
+  f: GraspFrame,
+  G: GripFrame,
+  side: number,
+  k: number,
+  long: number,
+  key: string,
+  curl?: number,
+) {
+  let m = fitSkins.get(spec);
+  if (!m) fitSkins.set(spec, (m = new Map()));
+  const hit = m.get(key);
+  if (hit) return hit;
+  const skin = handSkin(side, k, long);
+  const fit = heldFit({
+    v: f.pose,
+    side,
+    k,
+    long,
+    shape: spec.shape!,
+    G,
+    roles: f.roles,
+    bulge: skinBulge(skin, f.pose),
+    ...(curl !== undefined && { curl }),
+  });
+  const pos = new Float32Array(skin.pos.length);
+  skinHand(skin, [...f.pose, ...fit], pos);
+  if (m.size >= SKIN_KEEP) m.delete(m.keys().next().value!);
+  const out = { pos, skin };
+  m.set(key, out);
+  return out;
+}
+
+/**
+ * Da dưới mặt đỡ của món nằm ở `pose` (`ItemPose.rest`): đơn vị rig thế giới, `0` khi cả bàn tay ở trên mặt. Bàn tay ở đúng
+ * khung cầm `f`, ngón ôm theo vai trò như `frameSink`. docs/11-nhom-cam.md § Mặt đỡ
+ */
+export function restUnder(
+  spec: HeldItemSpec,
+  f: GraspFrame,
+  side: number,
+  k: number,
+  long: number,
+  s: number,
+  pose: Pick<ItemPose, "R" | "s">,
+  curl?: number,
+): number {
+  if (!spec.shape?.length) return 0;
+  const G = { R: f.G.R, p: scale3(f.G.p, 1 / s), u: f.G.u / s };
+  const key = [side, k, long, ...G.R, ...G.p, G.u, ...f.pose]
+    .map((x) => x.toFixed(6))
+    .concat(JSON.stringify(f.roles), String(curl))
+    .join();
+  const { pos } = fittedSkin(spec, f, G, side, k, long, key, curl);
+  // hướng xuống thế giới (y rig) trong khung món: hàng giữa của `R`
+  const R = pose.R;
+  const down = unit([R[3], R[4], R[5]]);
+  return Math.max(0, skinUnder(pos, G, spec.shape, down)) * pose.s;
 }
 
 function specOf(ctx: GraspCtx, item: string): HeldItemSpec {
@@ -1567,6 +1638,16 @@ export function chooseMissing(
       const sink = frameSink(spec, frame, sd, ctx.k, ctx.long, ctx.s, curl) * pose.s;
       cost += SINK_W * (sink / SINK_REF) ** 2;
     }
+    // món nằm trên một mặt (`ItemPose.rest`): da dưới mặt ngang qua điểm thấp nhất của món là lún vào mặt đỡ
+    const rests = [
+      ...(pose.rest ? [{ p: pose, w: 1 }] : []),
+      ...later.filter((x) => x.pose.rest).map((x) => ({ p: x.pose, w: LATER_W })),
+    ];
+    if (solve && rests.length && (!best || cost <= best.cost + 1e-12))
+      for (const r of rests) {
+        const under = restUnder(spec, frame, sd, ctx.k, ctx.long, ctx.s, r.p, vs?.curl);
+        cost += r.w * REST_W * (under / REST_REF) ** 2;
+      }
     return { choice: frame.choice, feature: f, frame, high, Wp, Rw, arm: sol, cost };
   };
 

@@ -11,6 +11,7 @@ import {
   HELD_GRIP,
   HELD_GRIP_PINCH,
   HELD_OPPOSE,
+  HELD_REST,
   HELD_SINK,
   HELD_UP,
   HELD_WRIST,
@@ -346,6 +347,39 @@ describe("sceneHeld: chỗ cầm nhóm", () => {
     expect(issues).toEqual([]);
     const late = sceneHeld(rt, { frame: (t) => (t >= 1 && t < 1.65 ? [far] : []) });
     expect(late.map((i) => [i.rule, i.runs])).toEqual([["grip", [[1.3, 1.6]]]]);
+  });
+
+  it("`rest`: ở mốc món nằm, da dưới mặt đỡ quá `HELD_REST` là cảnh báo kèm số đo; ngoài mốc ấy thì im", () => {
+    const r = parseScene({
+      duration: 2,
+      lens: { eye: [0, -300, -900], yaw: 0, pitch: 10, f: 800, cx: 0, cy: 0 },
+      cast: [
+        {
+          id: "a",
+          world: { at: [0, 0, 0], hands: [{ t: 0, right: { hold: "bang-gia@sheet" } }] },
+          tracks: [],
+        },
+      ],
+      items: [
+        { t: 0.55, cast: "a", item: "bang-gia", at: [0, -150, 40], rest: true },
+        { t: 1.2, cast: "a", item: "bang-gia", at: [0, -180, 40] },
+      ],
+    });
+    if (!r.success) throw new Error(r.error.message);
+    const rt = resolveScene(r.data, {}, {}, {}, {}, {}, { "bang-gia": BANG });
+    const deep = sample({ under: HELD_REST + 2 });
+    const at = (t0: number) => sceneHeld(rt, { frame: (t) => (t === t0 ? [deep] : []) });
+    const issues = at(0.55);
+    expect(issues.map((i) => [i.rule, i.worst, i.error])).toEqual([
+      ["rest", HELD_REST + 2, undefined],
+    ]);
+    expect(heldLine(issues[0])).toMatch(
+      /^tay lún vào mặt đỡ — .*xuống dưới mặt ngang qua đáy món 2\.7/,
+    );
+    expect(at(1.2)).toEqual([]);
+    expect(sceneHeld(rt, { frame: (t) => (t === 0.55 ? [sample({ under: 0.3 })] : []) })).toEqual(
+      [],
+    );
   });
 
   it("dòng báo `oppose` nêu phần đối tốt nhất, góc và ngưỡng", () => {

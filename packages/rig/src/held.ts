@@ -5,7 +5,7 @@ import { carryClearance, carryShape } from './core/heldCarry';
 import { handGripOf, handPoint } from './core/hand';
 import { HAND_CAPSULE_PIECES } from './core/handMesh';
 import { angleBetween, capsuleDepth, heldOppose, heldSize, meshBox, meshSigned, type HeldCarry, type HeldGroup, type HeldHand, type HeldIntent } from './core/heldAudit';
-import { capsuleClearance, heldDistance, skinDepth, skinPieces, toItem } from './core/heldFit';
+import { capsuleClearance, heldDistance, skinDepth, skinPieces, skinUnder, toItem } from './core/heldFit';
 import { handDims } from './core/heldGeom';
 import { heldPoint, type GripFrame, type HeldFinger } from './core/heldItem';
 import type { V3 } from './core/lens';
@@ -146,6 +146,9 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
     const size = group && grasp && entry.spec ? heldSize(entry.spec, grasp, handDims(h.scale, h.long)) : undefined;
     // lực đối: pháp tuyến món ở chỗ chạm của ngón cái và phần đối (docs/11 mục 7)
     const oppose = group && skin && entry.roles ? heldOppose(shape!, skin.near, { ...each, palm: gaps.palm } as Record<HeldFinger | 'palm', number>, entry.roles) : undefined;
+    // da dưới mặt ngang qua điểm thấp nhất của món (luật `rest` đọc ở mốc món nằm)
+    const down = group && IF ? new THREE.Vector3(0, -1, 0).applyQuaternion(entry.object.getWorldQuaternion(new THREE.Quaternion()).invert()) : undefined;
+    const under = down && skinUnder(h.geo.attributes.position.array, IF!, shape!, [down.x, down.y, down.z]) * sc;
     out.push({
       id, hand: side < 0 ? 'R' : 'L',
       item: entry.item ?? nameOf(entry.object),
@@ -156,6 +159,7 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
       ...(grasp && { grasp }),
       ...(group && entry.roles && { roles: entry.roles }),
       ...(oppose && { oppose }),
+      ...(under !== undefined && { under }),
       ...(group && entry.curl !== undefined && { curl: entry.curl }),
       ...(size && { size }),
       ...(reach && { reach: { kind: reach.hold!, gap: reach.gap, s: k, point: reach.point, to: reach.to } }),

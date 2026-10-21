@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { act } from './act';
 import { carry as carryOn, fitHolding, grip as gripPose, hold, type Held, type Holding } from './attach';
-import { actHeld, holdRoles, leadGrip } from './core/act3';
+import { holdRoles, leadGrip } from './core/act3';
 import type { GraspHand, GripFrame, HeldItemSpec, HoldAim, ReachHold } from './core/heldItem';
 import type { GraspFrame } from './core/graspSolve';
 import type { FingerRoles } from './core/heldFit';
@@ -12,7 +12,7 @@ import type { HandPose } from './core/hand';
 import type { HeldIntent } from './core/heldAudit';
 import { PAPER } from './core/constants';
 import type { Body3 } from './core/figure3d';
-import { cameraAt, castCharacter, itemAt, sceneAt, type CastMember, type SceneData, type ScenePose, type SceneRuntime } from './core/scene';
+import { cameraAt, castCharacter, itemAt, itemReleased, sceneAt, type CastMember, type SceneData, type ScenePose, type SceneRuntime } from './core/scene';
 import { equipCharacter, type CharacterData } from './core/schema';
 import { seatCrowd } from './crowd';
 import { loadFonts } from './decal';
@@ -184,6 +184,8 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
   const acting = (id: string, t: number) => sceneAt(rt, id, t, heights[id], bodies[id]);
   const base = (c: CastMember) => castCharacter(c, characters[c.character!]);
   const cast = rt.cast.filter((c) => c.world && c.character && characters[c.character]);
+  // mốc món `rest` không khai chỗ dựng bàn tay người thả từ nhân vật thật của người ấy
+  rt.chars = { ...Object.fromEntries(cast.map((c) => [c.id, base(c)])), ...rt.chars };
   const frozen = (c: CastMember) => (still ? still.includes(c.id) : !!c.world?.sit);
   const seats = cast.filter(frozen).map((c) => ({ c, ac: acting(c.id, 0) }));
   s.group.add(seatCrowd(
@@ -252,8 +254,6 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
       }
     return undefined;
   };
-  // giây các mốc `hold` của mọi người: chỗ một món có thể đổi người mang
-  const holdTimes = [...new Set(cast.flatMap((c) => (c.world!.hands ?? []).filter((k) => k.right?.hold !== undefined || k.left?.hold !== undefined).map((k) => k.t as number)))].sort((a, b) => b - a);
   cast3.provide = (item, object, owner) => {
     if (entry(item, owner)) throw new Error(`\`provide\`: món \`${item}\`${owner ? ` của \`${owner}\`` : ''} đã đăng ký`);
     provided.push({ item, object, owner, home: { position: object.position.clone(), quaternion: object.quaternion.clone(), ...(object.parent && { parent: object.parent }) } });
@@ -263,26 +263,17 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     const h = carrying(entry(item, owner), t);
     return h && { id: h.id, side: h.side };
   };
+  // lần thả và chỗ món lúc ấy: cùng nguồn với mốc món `rest` không khai chỗ (`itemReleased` của lõi)
   cast3.released = (item, t, owner) => {
     const p = entry(item, owner);
     if (!p) return undefined;
-    for (const tr of holdTimes) {
-      if (tr > t || carrying(p, tr)) continue;
-      const before = tr - 1e-3;
-      const h = carrying(p, before);
-      // món treo: chỗ lúc thả cần cả người three đã đặt dáng, không suy được từ scene
-      if (!h || h.carry) continue;
-      const c = cast.find((m) => m.id === h.id)!;
-      const ac = seeing(h.ac, before);
-      const held = actHeld(equipCharacter(base(c), ac.equip), ac)[h.side < 0 ? 'R' : 'L'];
-      if (!held) continue;
-      const R = held.R;
-      const m = new THREE.Matrix4().set(R[0], R[1], R[2], 0, R[3], R[4], R[5], 0, R[6], R[7], R[8], 0, 0, 0, 0, 1);
-      m.scale(new THREE.Vector3().copy(p.object.scale).multiplyScalar(held.s));
-      m.setPosition(held.at[0] * U, -held.at[1] * U, -held.at[2] * U);
-      return { id: h.id, side: h.side, t: tr, matrix: m };
-    }
-    return undefined;
+    const r = itemReleased(rt, item, t, { who: (id) => pick(item, id) === p, pose: (id, at) => seeing(acting(id, at), at) });
+    if (!r) return undefined;
+    const R = r.pose.R;
+    const m = new THREE.Matrix4().set(R[0], R[1], R[2], 0, -R[3], -R[4], -R[5], 0, -R[6], -R[7], -R[8], 0, 0, 0, 0, 1);
+    m.scale(new THREE.Vector3().copy(p.object.scale).multiplyScalar(r.pose.s));
+    m.setPosition(r.pose.P[0] * U, -r.pose.P[1] * U, -r.pose.P[2] * U);
+    return { id: r.id, side: r.side === 'right' ? -1 : 1, t: r.t, matrix: m };
   };
   /**
    * Món đặt trước: lần cầm mang khung cầm đã giải trên người `fig` (`ReachHold.solve`), như bàn tay `act` đặt; lần cầm cũ
@@ -354,13 +345,14 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
   /**
    * Món trong khung mang dựng lúc gắn (`Held.link`): liên kết của khung này lệch khỏi nó (đang hoà từ kiểu cũ `hold.from`,
    * trường số của chỗ cầm nhóm trượt) thì đặt lệch đúng phần ấy. Món đặt trước ngồi ở `itemAt` của cảnh, không theo bàn tay;
-   * lần cầm theo mốc (`grasp.keyed`) thì món theo bàn tay đã vẽ, như tay dẫn
+   * lần cầm theo mốc (`grasp.keyed`) thì món theo bàn tay đã vẽ, như tay dẫn — trừ lúc tay tới hay rời món nằm ở mốc `rest`
+   * (`grasp.rest`): món đứng ở mốc ấy
    */
   const regrip = (p: Provided, w: Want, t: number) => {
     const o = p.object;
     o.position.set(0, 0, 0);
     o.quaternion.identity();
-    if (w.hold.grasp?.mode === 'item' && !w.hold.grasp.keyed) return putItem(p, w, t);
+    if (w.hold.grasp?.mode === 'item' && (!w.hold.grasp.keyed || w.hold.grasp.rest)) return putItem(p, w, t);
     const link = p.on?.held.link;
     if (!link || !w.hand || (!w.hold.from && !w.hold.grasp)) return;
     const h = w.fig.hands?.[w.side];
@@ -374,9 +366,9 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     m4(own(link.G, link.center)).invert().multiply(m4(own(G1, c1))).decompose(o.position, o.quaternion, v3);
   };
   const _M = new THREE.Matrix4(), _R = new THREE.Matrix4(), _Q = new THREE.Quaternion(), _P = new THREE.Vector3(), _S = new THREE.Vector3();
-  /** Món đặt trước ở `itemAt` của cảnh (thế giới rig → `root`), cỡ theo người cầm */
+  /** Món đặt trước ở `itemAt` của cảnh (thế giới rig → `root`), cỡ theo người cầm; món nằm chờ tay ở mốc `rest` của nghiệm */
   const putItem = (p: Provided, w: Want, t: number) => {
-    const ip = itemAt(rt, w.hold.item, t, { chars: { [w.id]: w.fig.body } });
+    const ip = w.hold.grasp?.rest ? w.hold.solve?.(w.fig.body)?.still : itemAt(rt, w.hold.item, t, { chars: { [w.id]: w.fig.body } });
     const parent = p.object.parent;
     if (!ip || !parent) return;
     const R = ip.R;

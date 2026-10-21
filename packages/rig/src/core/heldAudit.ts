@@ -1,6 +1,6 @@
 import { AIM_BEND, AIM_DEV } from "./act3";
 import { TURN_MAX } from "./arm3";
-import type { GraspChoice, GraspReport } from "./graspSolve";
+import { REST_REF, type GraspChoice, type GraspReport } from "./graspSolve";
 import { GRIP_GROUPS, SIZE_WARN } from "./graspGroups";
 import { fingerVec, HAND_POSES, HAND_RELAXED, type HandPose, type HandVec } from "./hand";
 import { HELD_FIT, heldNormal, type FingerRoles } from "./heldFit";
@@ -93,6 +93,8 @@ export const HELD_OPPOSE = 120;
 
 /** Chỗ cầm nhóm: da lún quá ngần này (đơn vị rig, đo trên da), `heldFit` đã nhắm khe `HELD_FIT.touch` trên da */
 export const HELD_SINK = Math.abs(HELD_FIT.touch) + 0.5;
+/** Mốc món nằm (`rest`): da bàn tay xuống dưới mặt ngang qua điểm thấp nhất của món quá ngần này (đơn vị rig) — `rest` */
+export const HELD_REST = REST_REF;
 /** Món đặt trước: cổ tay vượt kẹp là lỗi `wrist`; còn cách giới hạn dưới ngần này độ là cảnh báo */
 export const HELD_WRIST = 5;
 /** Món đặt trước: bắp tay, cẳng tay lấn thân, đầu, tay kia quá ngần này lần bán kính tay ở chỗ lấn (`arm`) */
@@ -169,6 +171,11 @@ export interface HeldHand {
    * chạm của ngón cái và của phần đối ấy (`heldOppose`)
    */
   oppose?: { angle: number; part: RolePart };
+  /**
+   * Chỗ cầm nhóm có hình va chạm: da sâu nhất dưới mặt ngang qua điểm thấp nhất của món (đơn vị rig thế giới, âm là cả bàn
+   * tay ở trên) — luật `rest` đọc ở mốc món nằm
+   */
+  under?: number;
   /** Chỗ cầm nhóm: tầm cuộn của biến thể (`VariantSpec.curl`), độ */
   curl?: number;
   /** Tâm nắm của dáng đang vẽ tới mặt món (chỗ cầm nhóm: tới hình va chạm): dương ở ngoài, âm ở trong món */
@@ -565,6 +572,7 @@ export type HeldRule =
   | "role"
   | "oppose"
   | "sink"
+  | "rest"
   | "size";
 
 export interface HeldOptions {
@@ -596,6 +604,8 @@ export interface HeldOptions {
   arm?: number;
   /** Chỗ cầm nhóm: khuỷu lệch vào trong quá ngần này lần cánh tay trên (`HELD_ELBOW`) */
   elbow?: number;
+  /** Mốc món nằm: da dưới mặt đỡ quá ngần này (`HELD_REST`) */
+  rest?: number;
   /** Chỗ cầm nhóm: góc lực đối nhỏ nhất (`HELD_OPPOSE`, độ) */
   oppose?: number;
   hold?: number;
@@ -832,6 +842,32 @@ export function carryHits(
 }
 
 /** Món đăng ký nhảy (dời quá `drift`, xoay quá `turn`) qua một mốc `hold` của scene: so hai bên mốc, `HELD_JUMP_EPS` giây */
+/**
+ * Mốc món nằm (`items[].rest`): ở chính giây mốc, bàn tay của người cầm (`cast` của mốc) đang mang món mà da xuống dưới mặt
+ * ngang qua điểm thấp nhất của món quá `rest` (`HeldHand.under`). docs/11-nhom-cam.md mục 7
+ */
+function heldRests(rt: SceneRuntime, o: HeldOptions, seen: (t: number, at: V3) => boolean) {
+  const max = o.rest ?? HELD_REST;
+  const out: {
+    rule: HeldRule;
+    s: HeldSample;
+    t: number;
+    worst: number;
+    from: number;
+    to: number;
+    last: number;
+  }[] = [];
+  for (const k of rt.items ?? []) {
+    if (!k.rest) continue;
+    for (const s of o.frame(k.t) ?? []) {
+      if (isHeldCarry(s) || s.id !== k.cast || s.item !== k.item || s.under === undefined) continue;
+      if (s.under > max && seen(k.t, s.at))
+        out.push({ rule: "rest", s, t: k.t, worst: s.under, from: k.t, to: k.t, last: -1 });
+    }
+  }
+  return out;
+}
+
 function heldJumps(
   rt: SceneRuntime,
   o: HeldOptions,
@@ -987,6 +1023,7 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
     for (const k of [...open.keys()]) if (!seen.has(k)) close(k);
   });
   for (const k of [...open.keys()]) close(k);
+  done.push(...heldRests(rt, o, inView));
   if (o.items) done.push(...heldJumps(rt, o, o.items, inView));
   const merged = new Map<string, HeldIssue>();
   for (const r of done.sort((a, b) => a.from - b.from)) {
@@ -1017,6 +1054,7 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
     "wrist",
     "pierce",
     "sink",
+    "rest",
     "pose",
     "grip",
     "loose",
@@ -1232,7 +1270,17 @@ export function heldLine(s: HeldIssue): string {
   const head: Record<
     Exclude<
       HeldRule,
-      "seat" | "body" | "wrist" | "arm" | "elbow" | "role" | "oppose" | "sink" | "size" | "reach"
+      | "seat"
+      | "body"
+      | "wrist"
+      | "arm"
+      | "elbow"
+      | "role"
+      | "oppose"
+      | "sink"
+      | "rest"
+      | "size"
+      | "reach"
     >,
     () => string
   > = {
@@ -1252,7 +1300,7 @@ export function heldLine(s: HeldIssue): string {
       const j = s.jump!;
       const fix =
         j.kind === "take"
-          ? 'đặt món (`extra`) đúng chỗ tay sẽ cầm, hay đưa tay tới chỗ món nằm (`point: "item:<mốc>"` + `at`)'
+          ? "đặt món (`extra`) đúng chỗ tay sẽ cầm, hay nhặt bằng lần cầm theo mốc với mốc món nằm (`items[].rest`, không khai chỗ: món ở chỗ thả)"
           : j.kind === "release"
             ? 'giữ món ở chỗ thả bằng `cast.released(món, t)` trong `extra`, hay đặt món xuống (`point: "item:<mốc>"` tới mặt bàn) trước mốc thả'
             : "cho hai tay cùng khai `hold` một món một quãng chồng để tay mới tới đúng mốc trước khi tay cũ buông";
@@ -1300,6 +1348,8 @@ function groupLine(s: HeldIssue, x: HeldHand, who: string, when: string): string
         return `món không chạm bàn tay — ${who}: không ngón, lòng tay nào của vai trò \`press\` / \`wrap\` / \`tip\` chạm món (khe nhỏ nhất ${r1(s.worst)}) (${place})`;
       case "sink":
         return `da lún vào món — ${who}: lún ${r1(s.worst)} (quá ${r1(HELD_SINK)}) (${place}); ngón ôm không gỡ được — đổi \`variant\` / \`slant\`, không thì là việc của dáng nhóm ở rig`;
+      case "rest":
+        return `tay lún vào mặt đỡ — ${who}: ở mốc món nằm (\`rest\`) da bàn tay xuống dưới mặt ngang qua đáy món ${r1(s.worst)} (quá ${r1(HELD_REST)}) (${place}); đổi \`variant\` / \`thumb\` / \`edge\` cho bàn tay ở phía trên món, không thì dời món ra xa mép mặt đỡ`;
       case "size":
         return `món quá cỡ tay — ${who}: khối hình đã chọn cỡ ${r1(x.size!.of)} = ${x.size!.ratio.toFixed(2)} · W (W ${r1(x.size!.W)}, từ ${SIZE_WARN} · W nắm không kín) (${place}); khai \`part\` khác hay cầm hai tay (\`both\`)`;
       case "grip":

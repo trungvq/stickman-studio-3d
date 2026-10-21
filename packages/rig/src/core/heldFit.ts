@@ -542,3 +542,45 @@ export function heldNormal(shape: readonly HeldShape[], q: V3): V3 {
   const n = Math.hypot(g[0], g[1], g[2]) || 1;
   return [g[0] / n, g[1] / n, g[2] / n];
 }
+
+/** Hàm tựa của hình món theo hướng đơn vị `d` (khung món): `max q · d` trên mọi khối, kể cả khối `detail` */
+export function shapeSupport(shape: readonly HeldShape[], d: V3): number {
+  let h = -Infinity;
+  for (const b of shape) {
+    if ("box" in b) {
+      const c = (b.at ?? [0, 0, 0]) as V3;
+      const r = b.round ?? 0;
+      const ext = [0, 1, 2].reduce((s, i) => s + Math.abs(d[i]) * (b.box[i] / 2 - r), 0);
+      h = Math.max(h, dot(c, d) + ext + r);
+    } else if ("ball" in b) h = Math.max(h, dot((b.at ?? [0, 0, 0]) as V3, d) + b.ball);
+    else {
+      const a = b.from as V3;
+      const e = b.to as V3;
+      const ax = sub(e, a);
+      const c = dot(ax, d) / (Math.hypot(ax[0], ax[1], ax[2]) || 1);
+      const rim = Math.sqrt(Math.max(0, 1 - c * c));
+      h = Math.max(h, dot(a, d) + b.cyl * rim, dot(e, d) + (b.r2 ?? b.cyl) * rim);
+    }
+  }
+  return h;
+}
+
+/**
+ * Da dưới mặt đỡ của món nằm: mặt vuông góc `down` (hướng xuống của thế giới trong khung món, đơn vị) qua điểm thấp nhất
+ * của hình món. `pos` đỉnh da đang vẽ (khung bàn tay), `IF` món trong khung bàn tay; trả độ sâu lớn nhất của da dưới mặt
+ * ấy, đơn vị món — âm là cả bàn tay ở trên mặt. docs/11-nhom-cam.md § Mặt đỡ
+ */
+export function skinUnder(
+  pos: ArrayLike<number>,
+  IF: GripFrame,
+  shape: readonly HeldShape[],
+  down: V3,
+): number {
+  const h = shapeSupport(shape, down);
+  let under = -Infinity;
+  for (let i = 0; i + 2 < pos.length; i += 3) {
+    const q = toItem(IF, [pos[i], pos[i + 1], pos[i + 2]]);
+    under = Math.max(under, dot(q, down) - h);
+  }
+  return under;
+}

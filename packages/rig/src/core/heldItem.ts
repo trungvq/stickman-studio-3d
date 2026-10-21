@@ -383,6 +383,8 @@ export interface HoldGrasp {
    * giải của lần cầm ấy trên nhân vật `c`; `inheritHold` điền vào `choice`, `high`
    */
   inherit?: (c: ActCharacter) => { choice: GraspChoice; high?: V3 } | undefined;
+  /** Lần cầm theo mốc trước mốc nằm đầu hay sau mốc nằm cuối (`rest`): món đứng ở mốc ấy (`GraspSolution.still`), không theo tay */
+  rest?: true;
 }
 
 /** Tên file của món cho tên thể hiện `món:<tên>` (`vali:2` → `vali`); tên không có `:` là chính nó */
