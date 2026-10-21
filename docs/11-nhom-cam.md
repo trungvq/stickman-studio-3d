@@ -378,7 +378,9 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
   `press`.
 - **Lựa chọn**: `edge` (cạnh dài ≥ 0,6 · W trong bốn cạnh; đĩa: góc `0..330` bước 30° (`DISC_STEP`), `0` ở `front` — hay
   `top` với đĩa đứng — tăng về `right`; tay dẫn: tấm đứng `bottom` (đĩa đứng 180), tấm nằm cạnh phía tay ấy
-  `right`/`left` (đĩa nằm 90 tay phải, 270 tay trái)); `along` ∈ [0, 1], **0,5**; `thumb` — mặt có ngón cái: tấm đứng
+  `right`/`left` (đĩa nằm 90 tay phải, 270 tay trái)); `along` ∈ [0, 1], **0,5** — tấm đứng cầm một tay (không `both`) thì
+  góc cùng bên tay (tay phải góc phải người đọc): tay dẫn cách giữa cạnh ngang `SIDE_ALONG` = 0,25 lần dài cạnh về phía tay ấy
+  nhìn từ mặt `front` (`sideAlong`; cạnh đứng giữ 0,5), món đặt trước cộng giá góc (mục 5); `thumb` — mặt có ngón cái: tấm đứng
   {`front`, `back`}, tấm nằm {`top`, `bottom`}; đổi bằng quay π quanh `m` (giữ chiều bàn tay). `rim` không khai `thumb` thì
   ngón cái ở mặt trên: món khai `top` và tấm nằm trong khung món thì mặt `top`, không thì mặt hướng lên trong thế giới khi
   lệch phương thẳng đứng dưới 45°; tấm đứng (cả trong thế giới) thì rig thử hai mặt. Mặc định (tay dẫn): mặt của
@@ -1012,7 +1014,7 @@ Cảnh thường khai đủ chỗ cầm. Thiếu trường nào:
   mốc bắt đầu và các mốc món sau còn cùng người cầm, cùng cỡ, mốc sau trọng số 0,5 (`LATER_W`): lần cầm theo mốc xét mọi mốc
   của lần cầm, tối đa 8 mốc sau mốc đầu (`KEYED_MAX`); lần cầm hai tay xét các mốc trong 1,5 s sau (`LATER_SPAN`, tối đa 4); lệch khỏi mặc
   định nhóm cộng `0,05 · (số trường lệch mặc định) / (số trường thiếu có mặc định)`, `variant` khác `variant.default` của
-  nhóm cộng thêm `VARIANT_COST` = 0,5. Biến thể có `upright` (`card` `lateral`) cộng `UPRIGHT_W · s²` (`UPRIGHT_W` = 4, `s = (1 − u) / 2`, `u` là sin góc ngẩng của hướng từ tâm nắm tới tâm khối hình): thân món ở trên bàn tay rẻ nhất, ngang tay cộng ¼, treo dưới tay cộng đủ. `palmBox`, `cylinder` (`SINK_GROUPS`) và biến thể có `sink` (`card` `edges`) cộng thêm giá lún `(lún / HELD_SINK)²`: lún da (như luật
+  nhóm cộng thêm `VARIANT_COST` = 0,5. Biến thể có `upright` (`card` `lateral`) cộng `UPRIGHT_W · s²` (`UPRIGHT_W` = 4, `s = (1 − u) / 2`, `u` là sin góc ngẩng của hướng từ tâm nắm tới tâm khối hình): thân món ở trên bàn tay rẻ nhất, ngang tay cộng ¼, treo dưới tay cộng đủ. Tấm đứng `sheet` không `both`, thiếu `edge` hay `along`, cộng `SIDE_W · ((1 − x) / 2)²` (`SIDE_W` = 2, `x` ∈ [−1, 1] là tâm nắm theo ngang thân người cầm về phía tay ấy, lần nửa bề ngang tấm): góc cùng bên tay rẻ nhất, giữa cạnh cộng ¼, góc bên kia cộng đủ — một tay không với sang góc bên kia, hai tay cùng tấm không bắt chéo. `palmBox`, `cylinder` (`SINK_GROUPS`) và biến thể có `sink` (`card` `edges`) cộng thêm giá lún `(lún / HELD_SINK)²`: lún da (như luật
   `sink`) của bàn tay đúng khung cầm, ngón ôm theo vai trò (`heldFit`), nhớ theo khung; ứng viên đã đắt hơn ứng viên tốt nhất thì
   không đo. Ở `cylinder` giá ấy bắt ngón cái áp thân đâm vào khối `grip: false` nhô ra. Mốc món nằm cộng giá mặt đỡ
   ([bên dưới](#mặt-đỡ)). Lấy ứng viên
@@ -1035,7 +1037,7 @@ Cảnh thường khai đủ chỗ cầm. Thiếu trường nào:
   (`edgeOk`), nên phần ra cả `slab` (hộp bao) lẫn `disc` thì khai góc chọn `disc`. `rim` không khai `thumb` chỉ thử mặt
   trên (mục 3, nhóm 1).
 - **Tay dẫn**: lấy mặc định của nhóm (mục 3), không giải; `thumb` của tấm và thẻ (`sheet`, `card`) theo mặt quay về người cầm ở mốc bắt đầu
-  lần cầm, `edge` `bottom` (tấm đứng) hay cạnh phía tay ấy (tấm nằm) (mục 3, nhóm 1, 2).
+  lần cầm, `edge` `bottom` (tấm đứng) hay cạnh phía tay ấy (tấm nằm), tấm đứng một tay `along` về góc phía tay (mục 3, nhóm 1, 2).
 - **Tay dẫn nối ngay sau lần cầm theo mốc** cùng món, cùng nhóm, cùng tay (`regrip`, đổi trường số): trường không khai lấy lựa
   chọn rig đã giải của lần cầm theo mốc ngay trước ranh giới (`graspAtTime`, kể cả `featureIndex` và đầu cao `high`), không lấy
   mặc định nhóm, nên món không xoay trong tay khi sang tay dẫn. Trường cảnh khai thắng; khai `part`, `edge` hay `thumb` khác thì

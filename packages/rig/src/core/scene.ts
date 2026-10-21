@@ -3841,6 +3841,8 @@ function handChoice(
   }) as Record<string, unknown>;
   const out: Record<string, unknown> = {};
   for (const k of GRASP_FIELDS) if (defs[k] !== undefined) out[k] = defs[k];
+  // tấm một tay: `along` theo cạnh và bên tay, điền lúc dựng khung (`holdLink`)
+  if (g.group === "sheet" && !g.both) delete out.along;
   if (f) Object.assign(out, { part: f.part, feature: f.kind });
   return { ...(out as GraspChoice), ...declared(g) };
 }

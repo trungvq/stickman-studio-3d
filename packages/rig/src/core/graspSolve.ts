@@ -879,6 +879,36 @@ export function edgeHigh(e: V3, R: M3, side: number, across: V3, up: V3 = [0, -1
   return f > 0 ? e : neg(e);
 }
 
+/** `sheet` một tay, tấm đứng: tay dẫn cầm cách giữa cạnh ngang ngần này lần dài cạnh, về góc phía tay */
+export const SIDE_ALONG = 0.25;
+/**
+ * `sheet` một tay, tấm đứng, món đặt trước: giá `SIDE_W · ((1 − x) / 2)²`, `x` ∈ [−1, 1] là tâm nắm theo ngang thân về phía
+ * tay, lần nửa bề ngang tấm — góc phía tay 0, giữa ¼, góc bên kia đủ
+ */
+export const SIDE_W = 2;
+
+/**
+ * `along` của tay dẫn cầm tấm đứng một tay (`sheet`): góc phía tay ấy nhìn từ mặt `front` (hướng mặc định của nhóm quay
+ * `front` về người cầm, `R` của món là bên phải người đọc); `high` như `edgeFrame`. Cạnh không chạy ngang (`|e · R| < 0,5`)
+ * thì `undefined`
+ */
+export function sideAlong(
+  geom: ItemGeom,
+  f: Feature,
+  edge: GraspChoice["edge"],
+  thumb: GraspChoice["thumb"],
+  side: number,
+  high?: V3,
+): number | undefined {
+  if (f.kind !== "slab" || f.lying || typeof edge !== "string" || typeof thumb !== "string")
+    return undefined;
+  if (!f.faces.some((x) => x.name === thumb) || !f.edges.some((x) => x.name === edge))
+    return undefined;
+  const k = dot3(edgeFrame(f, edge as SideName, thumb as SideName, high).e, geom.R);
+  if (Math.abs(k) < 0.5) return undefined;
+  return 0.5 - SIDE_ALONG * Math.sign(side) * Math.sign(k);
+}
+
 /** Khối hình `f` có cạnh `edge`: tấm theo tên, đĩa theo tên vành hay góc */
 export const edgeOk = (f: Feature, edge: GraspChoice["edge"]) =>
   edge === undefined ||
@@ -1555,6 +1585,12 @@ export function chooseMissing(
   );
   const toHolder = (c: V3) =>
     matVec(tr(pose.R), sub3(ctx.face, add3(pose.P, scale3(matVec(pose.R, c), pose.s))));
+  // tấm cầm một tay: góc cùng bên tay (docs/11 mục 3 nhóm 1)
+  const sided =
+    solve &&
+    h.group === "sheet" &&
+    !h.both &&
+    (missing.includes("edge") || missing.includes("along"));
 
   const kinds = new Set<string>(group.needs.flatMap((n) => n.kinds));
   const fit = (f: Feature) =>
@@ -1673,6 +1709,15 @@ export function chooseMissing(
     if (group.variants[frame.choice.variant ?? ""]?.upright && "c" in f) {
       const u = -unit(matVec(pose.R, sub3(f.c, frame.hand.at)))[1];
       cost += UPRIGHT_W * ((1 - u) / 2) ** 2;
+    }
+    if (sided && f.kind === "slab" && !f.lying) {
+      const hw = AXES.reduce(
+        (s, a, i) => s + Math.abs(dot3(matVec(pose.R, a), ctx.across)) * f.half[i],
+        0,
+      );
+      const off = dot3(matVec(pose.R, sub3(frame.hand.at, f.c)), ctx.across) * -sd;
+      const x = Math.max(-1, Math.min(1, off / (hw || 1)));
+      cost += SIDE_W * ((1 - x) / 2) ** 2;
     }
     // giá lún không âm: ứng viên đã đắt hơn ứng viên tốt nhất thì không cần đo
     const vs = group.variants[frame.choice.variant ?? ""];
@@ -1865,6 +1910,16 @@ export function chooseMissing(
             ...(thumb !== undefined && { thumb }),
             ...(v !== undefined && { variant: v }),
           } as GraspChoice;
+          if (!solve && h.group === "sheet" && !h.both && given.along === undefined)
+            c.along =
+              sideAlong(
+                geom,
+                f,
+                c.edge,
+                c.thumb,
+                sd,
+                opts.high ?? highOf(geom, f, c, pose.R, sd, ctx.across),
+              ) ?? c.along;
           if (keepRel(f, c) < 2) {
             // trùng trường rời của lựa chọn đang giữ: trường liên tục của nó; đầu cao khác đầu cao đang giữ là cách cầm khác
             take(run(f, { ...c, ...keepCont }, defs), defs);

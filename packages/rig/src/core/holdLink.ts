@@ -7,7 +7,14 @@ import {
   type RoleMap,
 } from "./graspGroups";
 import type { ActCharacter } from "./arm3";
-import { CONTACTS, edgeOk, graspFrame, type GraspChoice, type GraspFrame } from "./graspSolve";
+import {
+  CONTACTS,
+  edgeOk,
+  graspFrame,
+  sideAlong,
+  type GraspChoice,
+  type GraspFrame,
+} from "./graspSolve";
 import type { HandVec } from "./hand";
 import { handDims, itemGeom, type FaceFeature, type Feature, type HandDims } from "./heldGeom";
 import {
@@ -76,13 +83,17 @@ function leadEdge(f: Feature, side: number, dims: HandDims): GraspChoice["edge"]
   return (vals.includes(l) ? l : vals[0]) as GraspChoice["edge"];
 }
 
-/** Lựa chọn đủ để dựng khung: trường của `grasp.choice`, trường thiếu lấy mặc định của nhóm trên khối hình của chỗ cầm */
+/**
+ * Lựa chọn đủ để dựng khung: trường của `grasp.choice`, trường thiếu lấy mặc định của nhóm trên khối hình của chỗ cầm;
+ * `one`: tay dẫn cầm tấm một tay, `along` thiếu về góc phía tay (`sideAlong`)
+ */
 function fillChoice(
   spec: HeldItemSpec,
   group: GroupId,
   given: GraspChoice,
   side: number,
   dims: HandDims,
+  one = false,
 ): GraspChoice & { group: GroupId } {
   const geom = itemGeom(spec);
   const gs = GRIP_GROUPS[group];
@@ -112,6 +123,10 @@ function fillChoice(
   const defs = holdDefaults(gs, geom, { feature: f, side: side < 0 ? -1 : 1 });
   for (const k of FIELDS) if (c[k] === undefined && defs[k] !== undefined) c[k] = defs[k];
   if (c.edge === undefined && gs.choices.edge) c.edge = leadEdge(f, side, dims);
+  if (one && group === "sheet" && given.along === undefined)
+    c.along =
+      sideAlong(geom, f, c.edge as GraspChoice["edge"], c.thumb as GraspChoice["thumb"], side) ??
+      c.along;
   return {
     ...(c as GraspChoice),
     group,
@@ -301,7 +316,7 @@ function groupHand(
     g.frame ??
     frameOf(
       h.spec,
-      fillChoice(h.spec, g.hold.group, g.choice, side, dims),
+      fillChoice(h.spec, g.hold.group, g.choice, side, dims, !g.hold.both),
       side,
       dims,
       k,

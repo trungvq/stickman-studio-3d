@@ -10,6 +10,7 @@ import {
   graspFrame,
   graspReport,
   handFromItem,
+  SIDE_W,
   type GraspCtx,
   type GraspSolution,
 } from "./graspSolve";
@@ -89,9 +90,11 @@ type Choose = Record<
   }
 >;
 // ca 2: prototype chọn `slant −30` với khuỷu gập ngược vào trong (φ −80, `inward` 0,52); `W_IN` đổi sang `slant 30`,
-// khuỷu ra ngoài, đổi lại xoay cẳng tay vượt kẹp 5,6° (docs/11-nhom-cam.md § Khuỷu tự nhiên)
+// khuỷu ra ngoài, đổi lại xoay cẳng tay vượt kẹp 5,6° (docs/11-nhom-cam.md § Khuỷu tự nhiên). Ca 4: prototype cầm cạnh dưới
+// ở `along` 0,75 (góc bên kia tay phải); giá góc cùng bên (`SIDE_W`) kéo về giữa cạnh
+const choose = fx.ca.choose as unknown as Choose;
 const CHOOSE: Choose = {
-  ...(fx.ca.choose as unknown as Choose),
+  ...choose,
   c2: {
     item: "c2",
     hands: [
@@ -101,6 +104,17 @@ const CHOOSE: Choose = {
         rig: { variant: "pinch", thumb: "front", along: 0.25, slant: 30 },
         wrist: [-95.6, -17.7, -1.0],
       },
+    ],
+  },
+  c4: {
+    ...choose.c4,
+    hands: [
+      {
+        ...choose.c4.hands[0],
+        rig: { ...choose.c4.hands[0].rig, along: 0.5 },
+        wrist: [-108.5, 14.1, -17.1],
+      },
+      choose.c4.hands[1],
     ],
   },
 };
@@ -657,10 +671,14 @@ describe("chooseMissing: giá biến thể", () => {
 
   it("biến thể khác mặc định cộng 0,5: khoe dưới–trên vẫn `rim`", () => {
     const c4 = solveCase("c4");
-    for (const s of [c4.right, c4.left]) {
+    // tay phải không khai `along`: giữa cạnh dưới cộng giá góc cùng bên ¼ · `SIDE_W`
+    for (const [s, side] of [
+      [c4.right, SIDE_W / 4],
+      [c4.left, 0],
+    ] as const) {
       expect(s.choice.variant).toBe("rim");
-      expect(devOf(s)).toBeGreaterThanOrEqual(0.5);
-      expect(devOf(s)).toBeLessThanOrEqual(0.55 + 1e-9);
+      expect(devOf(s) - side).toBeGreaterThanOrEqual(0.5);
+      expect(devOf(s) - side).toBeLessThanOrEqual(0.55 + 1e-9);
     }
   });
 });
@@ -700,6 +718,82 @@ describe("chooseMissing: `flat` theo bề dày ở mép", () => {
       expect(n).toBe(0);
     } finally {
       CONTACTS.sheet!.flat = keep;
+    }
+  });
+});
+
+describe("chooseMissing: tấm đứng, góc cùng bên tay", () => {
+  // bảng đứng trước mặt, mặt `front` quay về người cầm
+  const pose = (P: V3): ItemPose => ({
+    R: fromColumns([1, 0, 0], [0, 0, -1], [0, 1, 0]),
+    P,
+    cast: "nguoi",
+    s: 1,
+  });
+  /** Tâm nắm theo ngang thân về phía tay, lần nửa bề ngang bảng */
+  const toward = (sol: GraspSolution, p: ItemPose) => {
+    const f = sol.frame.feature as { c: V3 };
+    const off = matVec(p.R, sub3(sol.frame.hand.at as V3, f.c));
+    return (
+      (-sol.side * (off[0] * ctx.across[0] + off[1] * ctx.across[1] + off[2] * ctx.across[2])) / 22
+    );
+  };
+  // đọc ngang mắt, trước ngực, lệch hai bên
+  const spots: V3[] = [
+    [250, -389, 621],
+    [250, -300, 600],
+    [225, -350, 610],
+    [275, -350, 610],
+  ];
+
+  it("một tay không khai `along`: tâm nắm ở nửa phía tay ấy, cả khi khai `edge: bottom`", () => {
+    for (const P of spots)
+      for (const side of [RIGHT, LEFT])
+        for (const hold of [
+          "bang-gia@sheet",
+          { item: "bang-gia", group: "sheet", edge: "bottom" },
+        ] as const) {
+          const p = pose(P);
+          const sol = chooseMissing(ctx, hold, p, side);
+          expect(toward(sol, p)).toBeGreaterThan(0.2);
+        }
+  });
+
+  it("hai tay cùng tấm không khai `along`: mỗi tay nửa bên mình, không bắt chéo", () => {
+    for (const P of spots) {
+      const p = pose(P);
+      const hold = { item: "bang-gia", group: "sheet", edge: "bottom" } as const;
+      const r = chooseMissing(ctx, hold, p, RIGHT);
+      const l = chooseMissing(ctx, hold, p, LEFT, { other: seg(r, ctx) });
+      expect(toward(r, p)).toBeGreaterThan(0.2);
+      expect(toward(l, p)).toBeGreaterThan(0.2);
+    }
+  });
+
+  it("khai `along` hay `both`: không cộng giá góc", () => {
+    const p = pose(spots[0]);
+    const hold = { item: "bang-gia", group: "sheet", edge: "bottom", along: 0.5 } as const;
+    expect(Math.abs(toward(chooseMissing(ctx, hold, p, RIGHT), p))).toBeLessThan(0.05);
+    const both = chooseMissing(ctx, { ...hold, along: undefined, both: true }, p, RIGHT);
+    const free = chooseMissing(ctx, { ...hold, along: undefined }, p, RIGHT);
+    expect(both.cost).toBeLessThanOrEqual(free.cost + 1e-9);
+  });
+
+  it("tay dẫn (`solve: false`): góc phía tay của cạnh dưới; cạnh đứng giữ giữa cạnh", () => {
+    const p = pose(spots[0]);
+    for (const side of [RIGHT, LEFT]) {
+      const sol = chooseMissing(ctx, "bang-gia@sheet", p, side, { solve: false });
+      expect(sol.choice.edge).toBe("bottom");
+      expect(toward(sol, p)).toBeGreaterThan(0.4);
+      const both = chooseMissing(ctx, { item: "bang-gia", group: "sheet", both: true }, p, side, {
+        solve: false,
+      });
+      expect(both.choice.along).toBe(0.5);
+      const edge = side === RIGHT ? "right" : "left";
+      const v = chooseMissing(ctx, { item: "bang-gia", group: "sheet", edge }, p, side, {
+        solve: false,
+      });
+      expect(v.choice.along).toBe(0.5);
     }
   });
 });

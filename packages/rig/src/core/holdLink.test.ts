@@ -158,6 +158,36 @@ describe("lớp liên kết tay ↔ món", () => {
     expect(Object.keys(actHeld(NGUOI, sp))).toEqual(["R"]);
   });
 
+  it("tay dẫn `bang-gia@sheet` một tay: góc phía tay của cạnh dưới; hai tay dẫn mỗi tay góc bên mình; `both` giữa cạnh", () => {
+    const lead = (side: "right" | "left", hold: object = {}) => ({
+      to: "chest",
+      offset: [30, 20, side === "right" ? 10 : -10],
+      point: "grip",
+      hold: { item: "bang-gia", group: "sheet", ...hold },
+    });
+    // `x` khung món là bên phải người đọc (mặt `front` quay về người cầm)
+    const across = (hands: object, side: "right" | "left") => {
+      const sp = poseAt(runtime([{ t: 0, ...hands }], { "bang-gia": BANG }), 0.5);
+      const w = sp.world!;
+      const near = w.flip ? side === "left" : side === "right";
+      const h = (near ? w.hands!.near : w.hands!.far)!.hold!;
+      const x = holdHand(h, side === "right" ? -1 : 1, handDims(1))!;
+      expect(x.frame!.choice.edge).toBe("bottom");
+      return { along: x.frame!.choice.along, x: heldPoint(BANG, x.hand.at as V3)[0] };
+    };
+    const r = across({ right: lead("right") }, "right");
+    const l = across({ left: lead("left") }, "left");
+    expect(r.x).toBeGreaterThan(8);
+    expect(l.x).toBeLessThan(-8);
+    const two = { right: lead("right"), left: lead("left") };
+    expect(across(two, "right").x).toBeGreaterThan(8);
+    expect(across(two, "left").x).toBeLessThan(-8);
+    expect(across({ right: lead("right", { along: 0.5 }) }, "right").x).toBeCloseTo(0, 6);
+    const both = across({ right: lead("right", { both: true }) }, "right");
+    expect(both.along).toBe(0.5);
+    expect(both.x).toBeCloseTo(0, 6);
+  });
+
   it("`khay@platform` với `both: true`: mặt đáy, tay phải cạnh phải, tay phụ cạnh trái, ngón cùng chĩa ra xa", () => {
     const KHAY = spec(khay);
     const rt = runtime(
