@@ -18,6 +18,7 @@
 //   --three   — như --stage nhưng mỗi ô là ảnh three thật mà video vẽ (Chromium headless): cảnh
 //               `worldOf` của `stickman.world`, không có thì `plainRoom()`; [--size 1280x720] [--software]
 //               và cờ vệt của --stage vẽ đè; từng khung PNG nằm ở thư mục cùng tên --out
+//   có cờ vệt hay --skeleton thì stdout là phần chữ kèm ảnh, đường dẫn PNG in ra stderr
 // Xem docs/02-trang-phuc.md và docs/03-scene.md.
 import { basename, relative, resolve } from "node:path";
 import * as rig from "@stickman3d/sketch";
@@ -96,12 +97,13 @@ const motionFlags = () => {
     if (!ok(v)) die(`--${name} không hợp lệ: ${flag(name)}`);
     return v;
   };
-  let fps = 30;
+  let snap;
   try {
-    fps = readJson(resolve(CWD, "package.json"))?.stickman?.snap?.fps ?? 30;
+    snap = readJson(resolve(CWD, "package.json"))?.stickman?.snap;
   } catch {
     /* không có package.json */
   }
+  const fps = snap?.fps ?? 30;
   return {
     trails: flag("trails"),
     relative: has("relative"),
@@ -110,6 +112,8 @@ const motionFlags = () => {
     span: num("span", 1, (v) => v > 0),
     fps: num("fps", fps, (v) => v > 0 && v <= 240),
     cast: flag("cast"),
+    // ngưỡng giật của `check`, `stickman.snap` — docs/03-scene.md#giật-trên-hình
+    snap: { px: snap?.px, k: snap?.k },
   };
 };
 
@@ -155,6 +159,14 @@ async function threeInput(scene) {
     characters[m.character] = c.data;
   }
   return { characters, actions, animals, props, held };
+}
+
+// Có lớp phủ thì stdout chỉ là phần chữ kèm ảnh (cách đọc, bảng sự kiện, số đo), đường dẫn PNG sang stderr —
+// docs/04-mcp.md#người-3d
+function printOut(r) {
+  if (!r.guide) return console.log(r.out);
+  console.error(r.out);
+  console.log(r.guide);
 }
 
 // Xoè tay để hai mảnh vai áo tách khỏi thân; xa dương, gần âm
@@ -247,7 +259,7 @@ try {
       console.error(
         `three: ${r.gpu} — mở trang ${r.ms.boot} ms, ${r.ms.frame} ms/khung; từng khung ở ${relative(CWD, r.frames[0] ?? r.out)}`,
       );
-      console.log(r.out);
+      printOut(r);
       process.exit(0);
     }
     if (has("stage") && parsed.data.lens && worldEntry(CWD) && (await worldOn(parsed.data, rt)))
@@ -277,7 +289,7 @@ try {
           crop: flag("crop", "full"),
         });
     for (const w of r.warnings ?? []) console.error(w);
-    console.log(r.out);
+    printOut(r);
   } else {
     const charPath = args.find((a) => !a.startsWith("--") && a.endsWith(".json"));
     if (!charPath)

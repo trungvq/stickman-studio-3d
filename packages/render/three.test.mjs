@@ -84,7 +84,11 @@ describe("ảnh three", { skip }, () => {
       loadCharacter: () => ({ character: characters["code.json"], urls: {} }),
     });
     assert.equal(r.frames.length, 2);
-    assert.deepEqual(pngSize(readFileSync(out)), { w: 2 * size.w, h: size.h });
+    // dải nhãn phía trên khung three: nhãn ô không đè lên người
+    const png = pngSize(readFileSync(out));
+    assert.equal(png.w, 2 * size.w);
+    assert.ok(png.h > size.h && png.h < 1.2 * size.h, `${png.h}`);
+    assert.match(r.guide, /\| ô \(cửa sổ\) \| khớp \|/);
     const svg = readFileSync(out.replace(/\.png$/, ".svg"), "utf8");
     assert.equal(svg.split("<image").length - 1, 2);
     assert.match(svg, /href="dai\/0\.5s\.png"/);

@@ -259,6 +259,19 @@ function snapFps() {
   }
 }
 
+/** Ngưỡng giật `{ px, k }` của `stickman.snap` cho sự kiện giật trên vệt; không đo hay khai sai thì ngưỡng của rig */
+function snapThresholds() {
+  const o = cli.snapOptions?.(WS);
+  return o && !o.off && !o.error ? { px: o.px, k: o.k } : undefined;
+}
+
+/** Hướng dẫn đọc lớp phủ và bảng số đo của ảnh (`guide` của `renderFrames`) — docs/04-mcp.md#người-3d */
+const guideOf = (results) =>
+  results
+    .filter((r) => r.guide)
+    .map((r) => `\n\n${r.guide}`)
+    .join("");
+
 /** Tay chân giật trên hình của cả cảnh (hay của một người), cùng phép đo và ngưỡng với `check` (`stickman.snap`) */
 function sceneSnapLines(rt, character, cast) {
   const opts = cli.snapOptions?.(WS);
@@ -1131,7 +1144,7 @@ server.registerTool(
   "render_scene",
   {
     description:
-      'Dải ảnh một scene (tên file hoặc object inline): mỗi cột một mốc thời gian, mỗi hàng một người. Bỏ chỗ đứng và trôi ngang để soi thân người; xem vị trí thì dùng scene_probe. `stage: true` thì ngược lại — mỗi ô là cả khung, có nền, camera, hiệu ứng và lớp vẽ code của repo, để soi bố cục. Mốc lấy đều bằng `from`/`to`/`cols`/`every`, hay chỉ đích danh bằng `times`. `around` cắt mỗi ô quanh một mốc trên người (đơn vị sân khấu, không qua camera) — soi bàn tay đang cầm mà không đoán pixel. Người 3D (cast[].world) chiếu qua scene.lens; stage xếp họ chung với solids của lớp vẽ code. `trails` / `ghosts` vẽ đè vệt khớp và bóng que xương của người 3D để soi chuyển động trong một ô: chấm mỗi khung, dày là chậm, thưa là nhanh, màu xanh → đỏ theo tốc độ. `skeleton: true` bỏ người, nền và lớp vẽ code, chỉ vẽ que xương người 3D hai màu bên trên lưới sàn chiếu qua lens (soi nhịp, chân nào bước, chiều sâu); `views: ["top"]` thêm ô nhìn từ trên xuống. Các ảnh trên vẽ người 3D bằng người que 2.5D; `three` vẽ mỗi ô bằng three thật trong Chromium như video (cảnh `worldOf` của stickman.world: bàn tay năm ngón, áo dựng khối, bóng, phòng, đồ riêng, món cầm tay), mặc định bật khi soi khung một cảnh mà worldOf dựng — cảnh 3D thì soi bằng `three`.',
+      'Dải ảnh một scene (tên file hoặc object inline): mỗi cột một mốc thời gian, mỗi hàng một người. Bỏ chỗ đứng và trôi ngang để soi thân người; xem vị trí thì dùng scene_probe. `stage: true` thì ngược lại — mỗi ô là cả khung, có nền, camera, hiệu ứng và lớp vẽ code của repo, để soi bố cục. Mốc lấy đều bằng `from`/`to`/`cols`/`every`, hay chỉ đích danh bằng `times`. `around` cắt mỗi ô quanh một mốc trên người (đơn vị sân khấu, không qua camera) — soi bàn tay đang cầm mà không đoán pixel. Người 3D (cast[].world) chiếu qua scene.lens; stage xếp họ chung với solids của lớp vẽ code. `trails` / `ghosts` vẽ đè vệt khớp và bóng que xương của người 3D để soi chuyển động trong một ô: chấm mỗi khung (dồn là chậm, thưa là nhanh), đuôi mảnh nét đứt là đã qua, đầu mập nét liền là sắp tới, mũi tên chỉ chiều đi, màu theo bên người, vòng đứt kèm số n là sự kiện máy đo (khựng, giật, quay gắt, vào / dừng gắt); phần chữ kèm ảnh có cách đọc ngắn, bảng sự kiện #n (clip, giây và `t` trong hành động, `keys[i]` kẹp quanh, số góc đổi kèm tên, gợi ý sửa) và số đo từng vệt. `skeleton: true` bỏ người, nền và lớp vẽ code, chỉ vẽ que xương người 3D hai màu bên trên lưới sàn chiếu qua lens (soi nhịp, chân nào bước, chiều sâu); `views: ["top"]` thêm ô nhìn từ trên xuống. Các ảnh trên vẽ người 3D bằng người que 2.5D; `three` vẽ mỗi ô bằng three thật trong Chromium như video (cảnh `worldOf` của stickman.world: bàn tay năm ngón, áo dựng khối, bóng, phòng, đồ riêng, món cầm tay), mặc định bật khi soi khung một cảnh mà worldOf dựng — cảnh 3D thì soi bằng `three`.',
     inputSchema: {
       scene: Spec,
       stage: z
@@ -1181,7 +1194,7 @@ server.registerTool(
         .min(0)
         .max(12)
         .default(0)
-        .describe("Số bóng que xương mỗi phía (trước xanh, sau đỏ), kéo theo stage: true"),
+        .describe("Số bóng que xương mỗi phía (trước nét đứt, sau nét liền), kéo theo stage: true"),
       ghostStep: z.number().positive().default(0.1).describe("Giây giữa hai bóng que xương"),
       skeleton: z
         .boolean()
@@ -1241,6 +1254,7 @@ server.registerTool(
             ghosts,
             ghostStep,
             cast,
+            snap: snapThresholds(),
           }
         : undefined;
     const stage = input.stage || !!around || !!motion;
@@ -1284,7 +1298,7 @@ server.registerTool(
       });
       notes.push(threeNote(r), ...r.warnings);
       return text(
-        `duration ${rt.duration}s, mốc: ${times.join(", ")}\n${report([r])}${notes.map((n) => `\n${n}`).join("")}`,
+        `duration ${rt.duration}s, mốc: ${times.join(", ")}\n${report([r])}${notes.map((n) => `\n${n}`).join("")}${guideOf([r])}`,
       );
     }
     if (stage && !skeleton && s.lens && input.three === false)
@@ -1333,7 +1347,7 @@ server.registerTool(
         );
     notes.push(...results.flatMap((r) => r.warnings ?? []));
     return text(
-      `duration ${rt.duration}s, mốc: ${times.join(", ")}\n${report(results)}${notes.map((n) => `\n${n}`).join("")}`,
+      `duration ${rt.duration}s, mốc: ${times.join(", ")}\n${report(results)}${notes.map((n) => `\n${n}`).join("")}${guideOf(results)}`,
     );
   }),
 );

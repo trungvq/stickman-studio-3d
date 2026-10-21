@@ -3,10 +3,9 @@
 import React from "react";
 import * as rig from "@stickman3d/sketch";
 import * as FX from "@stickman3d/fx";
-import { BONE_SEGS } from "./trails.mjs";
+import { BONE_SEGS, SIDE_COLOR } from "./trails.mjs";
 
-/** Màu bên giải phẫu: phải, trái, giữa */
-export const SIDE_COLOR = { R: "#c2185b", L: "#00838f", C: "#333" };
+export { SIDE_COLOR };
 const GRID = "#b4ad9c";
 const AXIS = "#7a7262";
 const BOX = "#6d6658";
@@ -268,13 +267,18 @@ export function floorOverlay({ grid, boxes, lens }, u) {
   return React.createElement("g", { key: "floor", "data-floor": "" }, kids);
 }
 
-/** Chú giải hai màu bên, đặt ở góc dưới ô `box` */
-export function sideLegend(box) {
-  const fs = Math.min(30, box.w / 14);
-  const y = box.y + box.h - fs * 0.8;
+/** Hai màu bên của que xương, canh phải trên dải nhãn của ô: `y` là đường chân chữ */
+export function sideLegend(box, y, fs) {
   return React.createElement(
     "text",
-    { key: "legend", x: box.x + 16, y, fontSize: fs, fontFamily: "monospace" },
+    {
+      key: "legend",
+      x: box.x + box.w - 16,
+      y,
+      fontSize: fs,
+      fontFamily: "monospace",
+      textAnchor: "end",
+    },
     React.createElement("tspan", { fill: SIDE_COLOR.R }, "━ phải"),
     React.createElement("tspan", { fill: SIDE_COLOR.L, dx: fs }, "━ trái"),
   );

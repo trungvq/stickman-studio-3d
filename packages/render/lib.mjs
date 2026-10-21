@@ -9,7 +9,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import * as rig from "@stickman3d/sketch";
 import * as FX from "@stickman3d/fx";
-import { jointSampler, motionData, motionOverlay } from "./trails.mjs";
+import { jointSampler, motionData, motionOverlay, motionText, numberEvents } from "./trails.mjs";
 import { threeData, threeShots, threeSize } from "./three.mjs";
 import {
   floorGrid,
@@ -36,7 +36,11 @@ export {
   jointSampler,
   motionData,
   motionOverlay,
+  motionText,
+  numberEvents,
+  TRAIL_EVENT,
   TRAIL_NAMES,
+  trailEvents,
   trailJoints,
 } from "./trails.mjs";
 export { findChrome, threeData, threeShots, threeSize } from "./three.mjs";
@@ -747,12 +751,36 @@ export function renderFrames({
       }
     return out;
   };
+  const fontSize = Math.min(34, box.w / 12);
+  // Lớp phủ chuyển động: nhãn ô nằm trên một dải riêng phía trên khung, không đè lên người
+  const band = motion || skeleton ? Math.round(fontSize * 1.6) : 0;
+  const cell = band ? { ...box, y: box.y - band, h: box.h + band } : box;
+  const baseline = box.y - band * 0.3;
+  // số sự kiện đánh cho cả tờ trước khi vẽ ô nào: cùng sự kiện ở nhiều ô cùng số
+  const moves = motion
+    ? times.map((t) => ({ t, data: motionData(rt, { ...motion, t, sampler, only: motion.cast }) }))
+    : [];
+  if (motion) numberEvents(moves, motion.fps);
   const cells = times.flatMap((t, i) => {
     const cam = rig.cameraAt(rt, t);
     const f = focus?.(t);
     const u = box.w / 300 / (f ? 1 : cam.zoom);
+    const data = moves[i]?.data;
+    const bounds = f
+      ? { x: f.x + box.x, y: f.y + box.y, w: box.w, h: box.h }
+      : {
+          x: cam.x + box.x / cam.zoom,
+          y: cam.y + box.y / cam.zoom,
+          w: box.w / cam.zoom,
+          h: box.h / cam.zoom,
+        };
     const overlay =
-      motion && motionOverlay(motionData(rt, { ...motion, t, sampler, only: motion.cast }), t, u);
+      data &&
+      motionOverlay(data, t, u, {
+        fps: motion.fps,
+        px: (opt.scale ?? 1) * (f ? 1 : cam.zoom),
+        bounds,
+      });
     const boxes = skeleton && rt.lens ? boxesAt(t) : [];
     const paper = React.createElement("rect", {
       key: "paper",
@@ -762,10 +790,31 @@ export function renderFrames({
       height: box.h,
       fill: bg,
     });
-    const fontSize = Math.min(34, box.w / 12);
+    const spanTag = data?.some((P) => P.lines.length)
+      ? `  vệt ${data[0].window.map((v) => +v.toFixed(2)).join("→")}s`
+      : "";
     const tag = f
-      ? `${t}s  ${around.cast}.${around.anchor ?? "root"}`
-      : `${t}s${cam.zoom === 1 && !cam.x && !cam.y ? "" : `  ×${cam.zoom.toFixed(2)}`}`;
+      ? `${t}s  ${around.cast}.${around.anchor ?? "root"}${spanTag}`
+      : `${t}s${cam.zoom === 1 && !cam.x && !cam.y ? "" : `  ×${cam.zoom.toFixed(2)}`}${spanTag}`;
+    const label = (key, text, fill) =>
+      React.createElement(
+        "text",
+        {
+          key,
+          x: box.x + 16,
+          y: band ? baseline : box.y + 46,
+          // dải nhãn: chữ co cho vừa bề ngang ô, chừa chỗ cho hai màu bên của que xương
+          fontSize: band
+            ? +Math.min(fontSize, (box.w * (skeleton ? 0.6 : 0.95)) / (0.62 * text.length)).toFixed(
+                2,
+              )
+            : fontSize,
+          fontFamily: "monospace",
+          fill,
+        },
+        text,
+      );
+    const legend = skeleton ? [sideLegend(box, baseline, fontSize * 0.8)] : [];
     // Ảnh three đã qua ống kính và khung cắt `cameraAt`: phủ cả ô, lớp phủ vẫn vẽ trong hệ chỗ vẽ như ô 2.5D
     if (three)
       return [
@@ -788,27 +837,20 @@ export function renderFrames({
                 ),
               ]
             : []),
-          React.createElement("rect", {
-            key: "tag",
-            x: box.x + 8,
-            y: box.y + 10,
-            width: fontSize * 0.62 * tag.length + 16,
-            height: fontSize * 1.35,
-            fill: bg,
-            opacity: 0.8,
-          }),
-          React.createElement(
-            "text",
-            {
-              key: "t",
-              x: box.x + 16,
-              y: box.y + 46,
-              fontSize,
-              fontFamily: "monospace",
-              fill: "#555",
-            },
-            tag,
-          ),
+          ...(band
+            ? []
+            : [
+                React.createElement("rect", {
+                  key: "tag",
+                  x: box.x + 8,
+                  y: box.y + 10,
+                  width: fontSize * 0.62 * tag.length + 16,
+                  height: fontSize * 1.35,
+                  fill: bg,
+                  opacity: 0.8,
+                }),
+              ]),
+          label("t", tag, "#555"),
         ],
       ];
     const main = [
@@ -831,19 +873,8 @@ export function renderFrames({
         ...(overlay ? [overlay] : []),
       ),
       // Ô rộng bằng cả khung sân khấu nên nhãn phải to hơn nhãn của dải ảnh thân người
-      React.createElement(
-        "text",
-        {
-          key: "t",
-          x: box.x + 16,
-          y: box.y + 46,
-          fontSize,
-          fontFamily: "monospace",
-          fill: "#999",
-        },
-        tag,
-      ),
-      ...(skeleton ? [sideLegend(box)] : []),
+      label("t", tag, band ? "#555" : "#999"),
+      ...legend,
     ];
     if (!top) return [main];
     const view = topView({
@@ -856,15 +887,16 @@ export function renderFrames({
       fps: motion?.fps,
       only: skeleton.cast,
     });
-    const label = React.createElement(
-      "text",
-      { key: "t", x: box.x + 16, y: box.y + 46, fontSize, fontFamily: "monospace", fill: "#999" },
-      `${t}s  từ trên: x →, z ↑`,
-    );
-    return [main, [paper, view, label, sideLegend(box)]];
+    return [main, [paper, view, label("t", `${t}s  từ trên: x →, z ↑`, "#555"), ...legend]];
   });
   const cols = (opt.cols ?? times.length) * (top ? 2 : 1);
-  return { ...sheet(cells, { ...opt, bg, box, cols }), warnings: [...warnings] };
+  const guide =
+    motion && motionText(moves, { ...motion, rt, skeleton: !!skeleton, video: rt.frame.video.w });
+  return {
+    ...sheet(cells, { ...opt, bg, box: cell, cols }),
+    warnings: [...warnings],
+    ...(guide ? { guide } : {}),
+  };
 }
 
 const median = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
