@@ -287,6 +287,69 @@ describe("lần cầm một tay theo mốc", () => {
     expect(rotDeg(late, lead(2.5))).toBe(0);
   });
 
+  it("tay dẫn → theo mốc cùng món, cùng nhóm: giữ lựa chọn đang có khi nó còn với tới", () => {
+    const PHONE = { item: "dien-thoai", group: "palmBox" };
+    const phone = (t: number, to: string, offset: number[]) => ({
+      t,
+      cast: "nguoi",
+      item: "dien-thoai",
+      to,
+      offset,
+    });
+    const hands = (back: object = {}) => [
+      { t: 0, right: { hold: PHONE } },
+      {
+        t: 1.6,
+        right: {
+          to: "chest",
+          offset: [34, 20, 18],
+          point: "grip",
+          hold: { ...PHONE, regrip: true },
+        },
+      },
+      { t: 2.8, right: { hold: { ...PHONE, regrip: true, ...back } } },
+    ];
+    // mốc 3,3 s gần mặt: giải lại từ đầu thì rig chọn ngón cái mặt khác (xoay món trong tay ~43°)
+    const items = [
+      phone(0.5, "chest", [40, -6, 6]),
+      phone(1.2, "chest", [34, 0, 10]),
+      phone(3.3, "eye", [30, 16, -15]),
+    ];
+    const rt = runtime(hands(), items);
+    const lead = holdLinkFrame(inheritHold(rightHold(rt, 2.8 - 1e-4), NGUOI), -1).G.R;
+    const first = graspAtTime(rt, "nguoi", "right", 1.6 - 1e-4, { chars })!;
+    for (const t of [2.8 + 1e-4, 2.8 + HOLD_BLEND / 2, 3.3]) {
+      const sol = graspAtTime(rt, "nguoi", "right", t, { chars })!;
+      expect(sol.choice.thumb).toBe(first.choice.thumb);
+      expect(rotDeg(sol.frame.G.R, lead)).toBeLessThan(3);
+    }
+    // trường cảnh khai vẫn thắng
+    const other = first.choice.thumb === "left" ? "right" : "left";
+    const said = runtime(hands({ thumb: other }), items);
+    expect(graspAtTime(said, "nguoi", "right", 3.3, { chars })!.choice.thumb).toBe(other);
+    // lựa chọn cũ gãy cổ tay ở mốc (giá hơn `KEEP_COST`): rig đổi
+    const far = runtime(hands(), [...items.slice(0, 2), phone(3.3, "eye", [30, 8, 4])]);
+    expect(graspAtTime(far, "nguoi", "right", 3.3, { chars })!.choice.thumb).toBe(other);
+  });
+
+  it("mốc tay chỉ mang chỗ cầm theo mốc: tay tự do giữ đích của mốc trước, không về hành động", () => {
+    const AIM = [300, -250, 560];
+    const rt = runtime(
+      [
+        { t: 0.4, right: { at: AIM, point: "grip" } },
+        { t: 1.0, right: { hold: SHEET } },
+      ],
+      [mark(1.4)],
+    );
+    // trước mốc cầm và lúc bàn tay đang hoà tới món: đích tay tự do vẫn là đích của mốc 0,4 s
+    for (const t of [0.7, 0.99, 1.15]) {
+      const W = poseAt(rt, t).world!;
+      const h = (W.flip ? W.hands!.far : W.hands!.near)!;
+      expect(h.w).toBe(1);
+      expect(dist(h.at, AIM)).toBeLessThan(1e-9);
+    }
+  });
+
   it("tất định: mẫu nhảy cóc ra cùng số với mẫu theo thứ tự", () => {
     const ts = [0.7, 1.9, 2.8, 1.1];
     const a = runtime([{ t: 0, right: { hold: SHEET } }], MARKS);

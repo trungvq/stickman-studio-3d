@@ -1290,7 +1290,17 @@ export interface GraspOpts {
   high?: V3;
   /** `false`: không giải, trường thiếu lấy mặc định của nhóm (tay dẫn); `edge` của tấm: đứng `bottom`, nằm cạnh phía tay */
   solve?: boolean;
+  /**
+   * Lựa chọn của lần cầm liền trước cùng món, cùng nhóm, cùng tay (và đầu cao của nó): ứng viên khác nó ở trường rời
+   * cộng `KEEP_COST`, chỉ khác trường liên tục cộng `KEEP_SLIDE`. docs/11-nhom-cam.md § Lựa chọn cảnh không khai
+   */
+  keep?: { choice: GraspChoice; high?: V3 };
 }
+
+/** Giá đổi trường rời (`part`, khối hình, `edge`, `thumb`, `variant`) khỏi lựa chọn đang giữ (`GraspOpts.keep`) */
+export const KEEP_COST = 2;
+/** Giá đổi trường liên tục khỏi lựa chọn đang giữ khi trường rời giữ nguyên */
+export const KEEP_SLIDE = 1;
 
 /** Giá lệch mặc định: `DEV_COST · (số trường lệch) / (số trường thiếu có mặc định)` */
 const DEV_COST = 0.05;
@@ -1488,6 +1498,8 @@ interface Cand {
   Rw: M3;
   arm: ArmSol;
   cost: number;
+  /** Trùng trường rời của lựa chọn đang giữ mà lấy đầu cao của chính nó, khác đầu cao đang giữ */
+  own?: boolean;
 }
 
 /**
@@ -1587,13 +1599,43 @@ export function chooseMissing(
   const seen = (k: keyof GraspChoice, n: number) => (sizes[k] = Math.max(sizes[k] ?? 0, n));
   let tried = 0;
 
+  // lựa chọn đang giữ: chỉ trường cảnh không khai
+  const keep = solve ? opts.keep : undefined;
+  const kc = keep?.choice;
+  const keepCont: GraspChoice = {};
+  for (const k of CONTINUOUS)
+    if (kc?.[k] !== undefined && missing.includes(k))
+      (keepCont as Record<string, unknown>)[k] = kc[k];
+  /** `0` trùng lựa chọn đang giữ, `1` chỉ khác trường liên tục, `2` khác trường rời */
+  const keepRel = (f: Feature, c: GraspChoice): number => {
+    if (!kc) return 0;
+    if (given.part === undefined && fixed === undefined) {
+      if (kc.featureIndex !== undefined) {
+        if (geom.features.indexOf(f) !== kc.featureIndex) return 2;
+      } else if (
+        (kc.part !== undefined && f.part !== kc.part) ||
+        (kc.feature !== undefined && f.kind !== kc.feature)
+      )
+        return 2;
+    }
+    for (const k of DISCRETE)
+      if (missing.includes(k) && kc[k] !== undefined && c[k] !== kc[k]) return 2;
+    for (const k of CONTINUOUS)
+      if (keepCont[k] !== undefined && Math.abs((c[k] as number) - (keepCont[k] as number)) > 1e-6)
+        return 1;
+    return 0;
+  };
+
   const run = (
     f: Feature,
     c: GraspChoice,
     defs: Partial<Record<string, string | number>>,
+    own = false,
   ): Cand => {
     tried++;
-    const high = opts.high ?? highOf(geom, f, c, pose.R, sd, ctx.across);
+    const rel = own ? 2 : keepRel(f, c);
+    const high =
+      opts.high ?? (rel < 2 ? keep?.high : undefined) ?? highOf(geom, f, c, pose.R, sd, ctx.across);
     const choice = {
       ...c,
       group: h.group,
@@ -1626,6 +1668,7 @@ export function chooseMissing(
     if (withDef.length) cost += (DEV_COST * off) / withDef.length;
     if (missing.includes("variant") && defs.variant !== undefined && c.variant !== defs.variant)
       cost += VARIANT_COST;
+    if (rel) cost += rel === 2 ? KEEP_COST : KEEP_SLIDE;
     // thân món nên ở trên bàn tay: `u` là sin góc ngẩng của hướng tâm nắm → tâm khối hình (y rig hướng xuống)
     if (group.variants[frame.choice.variant ?? ""]?.upright && "c" in f) {
       const u = -unit(matVec(pose.R, sub3(f.c, frame.hand.at)))[1];
@@ -1648,7 +1691,17 @@ export function chooseMissing(
         const under = restUnder(spec, frame, sd, ctx.k, ctx.long, ctx.s, r.p, vs?.curl);
         cost += r.w * REST_W * (under / REST_REF) ** 2;
       }
-    return { choice: frame.choice, feature: f, frame, high, Wp, Rw, arm: sol, cost };
+    return {
+      choice: frame.choice,
+      feature: f,
+      frame,
+      high,
+      Wp,
+      Rw,
+      arm: sol,
+      cost,
+      ...(own && { own }),
+    };
   };
 
   type Defs = Partial<Record<string, string | number>>;
@@ -1658,7 +1711,16 @@ export function chooseMissing(
   let home: [Cand, Defs] | undefined;
   // `platform`: hướng ngón gắn với cạnh, lưới liên tục chạy quanh ứng viên rời tốt nhất của từng cạnh
   const byEdge = new Map<GraspChoice["edge"], [Cand, Defs]>();
+  // ứng viên rời tốt nhất trùng trường rời của lựa chọn đang giữ: lưới liên tục chạy cả quanh nó
+  let kept: [Cand, Defs] | undefined;
   const take = (x: Cand, defs: Defs) => {
+    if (
+      kc &&
+      !x.own &&
+      keepRel(x.feature, x.choice) < 2 &&
+      (!kept || x.cost < kept[0].cost - 1e-12)
+    )
+      kept = [x, defs];
     if (h.group === "platform") {
       const e = byEdge.get(x.choice.edge);
       if (!e || x.cost < e[0].cost - 1e-12) byEdge.set(x.choice.edge, [x, defs]);
@@ -1803,7 +1865,12 @@ export function chooseMissing(
             ...(thumb !== undefined && { thumb }),
             ...(v !== undefined && { variant: v }),
           } as GraspChoice;
-          take(run(f, c, defs), defs);
+          if (keepRel(f, c) < 2) {
+            // trùng trường rời của lựa chọn đang giữ: trường liên tục của nó; đầu cao khác đầu cao đang giữ là cách cầm khác
+            take(run(f, { ...c, ...keepCont }, defs), defs);
+            const oh = keep?.high && !opts.high && highOf(geom, f, c, pose.R, sd, ctx.across);
+            if (oh && dot3(oh, keep!.high!) < 1 - 1e-6) take(run(f, c, defs, true), defs);
+          } else take(run(f, c, defs), defs);
         }
   }
   if (!best) throw new Error(`\`${h.item}@${h.group}\`: không có ứng viên`);
@@ -1814,6 +1881,7 @@ export function chooseMissing(
   const free = solve ? CONTINUOUS.filter((k) => missing.includes(k)) : [];
   const roots: [Cand, Defs][] = [[rough, bestDefs]];
   if (home && home[0] !== rough) roots.push(home);
+  if (kept && kept[0] !== rough) roots.push(kept);
   for (const r of byEdge.values()) if (r[0] !== rough) roots.push(r);
   // hoà thì giá trị liên tục nhỏ hơn trước, theo thứ tự trường (docs/11 mục 5)
   const before = (a: GraspChoice, b: GraspChoice) => {
@@ -1834,6 +1902,13 @@ export function chooseMissing(
         seen(k, vals.length);
         out = out.flatMap((c) => vals.map((v) => ({ ...c, [k]: v })));
       }
+      if (
+        kc &&
+        !root.own &&
+        free.every((k) => keepCont[k] !== undefined) &&
+        keepRel(root.feature, root.choice) < 2
+      )
+        out.push(Object.fromEntries(free.map((k) => [k, keepCont[k]])) as GraspChoice);
       return out;
     };
     const base: GraspChoice = {
@@ -1843,7 +1918,7 @@ export function chooseMissing(
       ...(!auto && { variant: root.choice.variant }),
     };
     for (const c of combosOf(true)) {
-      const x = run(root.feature, { ...base, ...c }, defs);
+      const x = run(root.feature, { ...base, ...c }, defs, root.own);
       if (
         x.cost < best.cost - 1e-12 ||
         (x.cost <= best.cost + 1e-12 && before(x.choice, best.choice))
@@ -1854,7 +1929,7 @@ export function chooseMissing(
     if (a0 !== undefined && overOf(best) > 0) {
       let alt: Cand | undefined;
       for (const c of combosOf(false)) {
-        const x = run(root.feature, { ...base, ...c }, defs);
+        const x = run(root.feature, { ...base, ...c }, defs, root.own);
         if (overOf(x) < overOf(best) - THUMB_OVER && (!alt || x.cost < alt.cost - 1e-12)) alt = x;
       }
       if (alt) best = alt;

@@ -824,7 +824,10 @@ const SceneHoldSchema = z.union([
 ```
 
 - **Món đặt trước**: mốc tay của lần cầm có mốc món không khai đích (`to`, `at`, `offset`, `point`), không khai ý định (`face`,
-  `up`, `roll`, `keep`) — chỗ bàn tay suy từ món; lần cầm tay dẫn của cùng món thì khai như tay dẫn. Được khai `elbow` để đè hướng khuỷu tự nhiên. Mỗi tay khai chỗ cầm của nó; `both` là viết
+  `up`, `roll`, `keep`) — chỗ bàn tay suy từ món; lần cầm tay dẫn của cùng món thì khai như tay dẫn. Được khai `elbow` để đè hướng khuỷu tự nhiên. Mốc ấy (chỉ
+  `hold`, không `at`/`to`/`palm`/`fingers`) không phải mốc đích của tay tự do: đích tay tự do ở mốc ấy lấy của mốc có đích gần
+  nhất trước nó (`lend` trong `handAt` của `scene.ts`), nên trước mốc cầm và trong quãng hoà `enter` bàn tay đi từ đích đã khai
+  tới món, không rơi về tư thế của hành động (nhặt món trên quầy: tay lên qua mép quầy bằng mốc đích trước mốc cầm). Mỗi tay khai chỗ cầm của nó; `both` là viết
   tắt cho tay kia. `both` mà tay kia cũng có `hold` ở cùng `t` là lỗi `choice`. Tay có `both` giải trước (lead), tay phụ giải
   sau với số hạng lấn của tay lead.
 - **Tay trượt**: các trường số (`along`, `slant`, `around`, `tilt`, `psi`, `inset`) hoà theo `ease` giữa hai mốc tay của cùng lần
@@ -976,7 +979,8 @@ E(φ) = ½ (turn/90)² + (bend/AIM_BEND)² + ½ (dev/AIM_DEV)²         cổ tay
 Lần cầm một tay có mốc món (mục 4) không giải từng khung trên `itemAt`:
 
 1. **Lựa chọn một lần** (`graspStart`): `chooseMissing` giải ở mốc món đầu của lần cầm, cộng các mốc món sau trong cả lần cầm
-   (mục [Lựa chọn cảnh không khai](#lựa-chọn-cảnh-không-khai)).
+   (mục [Lựa chọn cảnh không khai](#lựa-chọn-cảnh-không-khai)); nối ngay sau lần cầm cùng món, cùng nhóm, cùng tay thì ưu tiên
+   giữ lựa chọn của lần cầm ấy (`keep`).
 2. **Ở mỗi mốc `t_k`**: khung cầm, `Wp`, `Rw` từ món ở mốc (thân người cầm ở `t_k`); `φ` bằng `solvePhi` với `φ_trước` là mốc
    trước (mốc đầu: `φ` cuối của lần cầm theo món liền trước trên cùng tay) và `elbow` của mốc tay nếu có. Nghiệm lưu **trong
    hệ thân**: cổ tay so với vai bên ấy và khung bàn tay, cả hai qua `Rr` của thân; `φ`; góc cổ tay đã kẹp và phần vượt kẹp.
@@ -1037,6 +1041,18 @@ Cảnh thường khai đủ chỗ cầm. Thiếu trường nào:
   mặc định nhóm, nên món không xoay trong tay khi sang tay dẫn. Trường cảnh khai thắng; khai `part`, `edge` hay `thumb` khác thì
   khối hình và đầu cao tìm lại theo trường khai. Lựa chọn ấy giải trên nhân vật thật: `ReachHold.grasp.inherit` mang hàm giải,
   `act3` và `world.ts` điền vào `grasp.choice` (`inheritHold`), nhớ theo runtime và nhân vật. Đổi nhóm thì lấy mặc định nhóm.
+- **Lần cầm theo mốc nối ngay sau lần cầm** cùng món, cùng nhóm, cùng tay (tay dẫn hay theo mốc, `regrip`): bộ giải vẫn chạy
+  đủ hai bậc nhưng **ưu tiên giữ lựa chọn đang có** ngay trước ranh giới (`GraspOpts.keep`, `priorChoice` của `scene.ts`) — lần
+  cầm trước theo món thì lựa chọn đã giải (`graspAtTime`) và đầu cao `high`; tay dẫn thì lựa chọn kế thừa (`inherit`), không có
+  thì trường khai cộng mặc định nhóm. Ứng viên khác nó ở trường rời (`part`, khối hình, `edge`, `thumb`, `variant`) cộng
+  `KEEP_COST` = 2; trùng trường rời mà lấy đầu cao của chính nó khác đầu cao đang giữ cũng tính là khác (món quay nửa vòng
+  trong tay); trùng trường rời chỉ khác trường liên tục cộng `KEEP_SLIDE` = 1. Ứng viên trùng trường rời thử luôn trường liên
+  tục đang giữ (cả ở bậc rời lẫn trong lưới liên tục), và lưới liên tục chạy cả quanh ứng viên giữ tốt nhất. `KEEP_COST` = 2 là
+  cỡ giá cổ tay vượt kẹp chừng 45% giới hạn (`10 · 0,45²`) hay khe tầm với 1,4 `AIM_GAP`: rig chỉ đổi khi lựa chọn cũ không với
+  tới hay gãy cổ tay rõ ở các mốc của lần cầm mới, khi ấy món vẫn xoay trong tay suốt `HOLD_BLEND` (điện thoại ngang mắt cầm
+  `thumb` cũ lệch cổ tay 91°: đổi mặt ngón cái, món quay 140°; cảnh muốn khác thì hạ mốc món hay khai `thumb`). Không ép giữ:
+  ép thì bàn tay vượt kẹp và món theo bàn tay đã kẹp, lệch chỗ khai ở mốc. Trường cảnh khai thắng (không xét ở `keep`).
+  Lần cầm từ giây 0, tay phụ của `both`, khác món hay khác nhóm thì giải như thường.
 
 ### Mặt đỡ
 

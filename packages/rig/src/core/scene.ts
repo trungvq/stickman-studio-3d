@@ -80,6 +80,7 @@ import {
   type GraspChoice,
   type GraspCtx,
   type GraspLater,
+  type GraspOpts,
   type GraspSolution,
 } from "./graspSolve";
 import { axialAt, handDims, itemGeom, type Feature, type HandDims } from "./heldGeom";
@@ -3419,9 +3420,26 @@ function handAt(
     }
     return undefined;
   };
-  const one = (h: typeof ra, kt: number): Reach | undefined => {
+  /** Mốc tay chỉ mang chỗ cầm món đặt trước: đích tay tự do lấy của mốc có đích gần nhất trước nó */
+  const bare = (k: HandKey): boolean => {
+    const h = k[side];
+    if (!h?.hold || h.at || h.to || h.palm || h.fingers) return false;
+    const run = host && holdRun(keys, side, k.t);
+    return !!run && placedRun(host!.rt, keys, side, run);
+  };
+  const lend = (h: NonNullable<typeof ra>, kt: number): NonNullable<typeof ra> => {
+    let i = ks.findIndex((k) => k.t === kt);
+    if (i < 0 || !bare(ks[i])) return h;
+    while (i > 0 && bare(ks[i])) i--;
+    const d = ks[i][side];
+    if (bare(ks[i]) || !d || !(d.at || d.to)) return h;
+    const { at, to, offset, point, elbow } = d;
+    return { ...h, at, to, offset, point, ...(!h.elbow && elbow && { elbow }) };
+  };
+  const one = (h0: typeof ra, kt: number): Reach | undefined => {
     const intent = intentAt(kt);
-    if (!h) return intent && { w: 0, at: [0, 0, 0], aim: intent };
+    if (!h0) return intent && { w: 0, at: [0, 0, 0], aim: intent };
+    const h = lend(h0, kt);
     const placed = !!(h.at || h.to);
     const term = placed ? reachTerm({ ...h, ...(h.to && { at: undefined }) }) : undefined;
     // lòng tay theo ý định của mốc; mốc không khai giữ bàn tay của hành động
@@ -4016,10 +4034,12 @@ function graspStart(
   });
   const { elbow } = slideHold(keys, side, ts, run, {});
   const other = placedOther(rt, id, side, ts, o);
+  const keep = marks && !run.lead ? priorChoice(rt, id, side, run, o) : undefined;
   const sol = chooseMissing(ctx, g, poseAt(ts), sideSign(side), {
     t0: ts,
     later,
     ...(marks && { span: Infinity, laterMax: KEYED_MAX }),
+    ...(keep && { keep }),
     ...(phiPrev !== undefined && { phiPrev }),
     ...(elbow && { elbow }),
     ...(other && { other }),
@@ -4049,6 +4069,34 @@ function graspStart(
   }
   m.set(key, out);
   return out;
+}
+
+/**
+ * Lựa chọn ngay trước lần cầm theo mốc `run` của lần cầm liền trước cùng món, cùng nhóm, cùng tay (`GraspOpts.keep`):
+ * món đặt trước thì lựa chọn đã giải và đầu cao; tay dẫn thì lựa chọn kế thừa (`inherit`) hay trường khai cộng mặc định nhóm
+ */
+function priorChoice(
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  run: HoldRun,
+  o: ItemOptions,
+): GraspOpts["keep"] {
+  if (run.since <= 0) return undefined;
+  const keys = handKeys(rt, id);
+  const t = run.since - 1e-6;
+  const prev = holdRun(keys, side, t);
+  if (!prev || prev.since === run.since) return undefined;
+  const pg = groupHold(prev.hold);
+  const g = groupHold(run.hold);
+  if (pg.item !== g.item || pg.group !== g.group) return undefined;
+  if (placedRun(rt, keys, side, prev)) {
+    const s = graspAtTime(rt, id, side, t, o);
+    return s && { choice: s.choice, ...(s.high && { high: s.high }) };
+  }
+  const hg = holdGraspAt({ rt, id, height: rt.heights[id] ?? 1 }, keys, side, t, prev);
+  const c = o.chars?.[id];
+  return (c && hg.inherit?.(c)) || { choice: hg.choice };
 }
 
 const clampTo = (v: number, L: number) => Math.max(-L, Math.min(L, v));

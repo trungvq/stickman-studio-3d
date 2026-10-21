@@ -1339,7 +1339,9 @@ vật three của món.
   bàn tay của hành động (`ReachHold.enter`).
 - **Hai món cùng loại**: tên thể hiện `món:<tên>` (`"vali:2@handle"`) dùng chung `held/vali.json` mà là món riêng —
   `provide("vali:2", …)`, `holder`, đổi tay đều theo tên đủ; cùng tên trần thì rig coi là một món (đổi tay).
-- Mốc chỉ có `hold` (không `at` / `to`) thì chỗ tay theo hành động, rig chỉ giải hướng. `hold` không đi cùng `palm`,
+- Mốc chỉ có `hold` (không `at` / `to`) thì chỗ tay theo hành động, rig chỉ giải hướng — trừ mốc mở hay nối lần cầm món đặt
+  trước (có mốc món ở `items`): bàn tay suy từ món, đích tay tự do ở mốc ấy lấy của mốc có đích gần nhất trước nó
+  ([11](11-nhom-cam.md#chỗ-cầm-castworldhandshold)). `hold` không đi cùng `palm`,
   `fingers`, `bend` ở cùng mốc: hướng bàn tay do ý định quyết.
 - `point: "item:<mốc>"` đặt mốc ấy của món vào đích: loa vào tai, miệng chén vào mồm, ngòi bút xuống giấy, đáy chén
   xuống mặt bàn. Tay chưa cầm thì lùi về `grip`. Món đã sát mặt thì ý định nhắm `{ "mark": "head" }` (tâm đầu): hướng từ
