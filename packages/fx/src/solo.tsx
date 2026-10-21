@@ -73,6 +73,8 @@ export interface Solo {
   floor: [number, number];
   /** Ghế chuẩn khi người đang ngồi */
   furniture?: SolidItem[];
+  /** `cast[].world` của cảnh tối thiểu dựng khung này (ngồi thì `sit` trên mặt ghế) */
+  place: { at: V3; yaw: number; sit?: boolean; floor?: number };
 }
 
 export interface SoloSpec {
@@ -134,13 +136,15 @@ export function soloStage({ character, yaw, pitch = 16, action }: SoloSpec) {
     return rt;
   };
   return (time: number): Solo => {
-    let s = sceneAt(runtime({ at: [0, 0, 0], yaw }), "a", time, h, body);
+    let place: Solo["place"] = { at: [0, 0, 0], yaw };
+    let s = sceneAt(runtime(place), "a", time, h, body);
     let furniture: SolidItem[] | undefined;
     if (acts.length && Math.min(s.pose.lf[0], s.pose.ln[0]) > SOLO_SIT_THIGH) {
       // Hông trên mặt ngồi cách đúng nửa nét chân; bàn chân thấp hơn chạm sàn
       const drop = Math.max(...feet(s.pose, h).map((q) => q[1]));
       const top: V3 = [0, body.legHalf - drop, 0];
-      s = sceneAt(runtime({ at: top, yaw, sit: true, floor: 0 }), "a", time, h, body);
+      place = { at: top, yaw, sit: true, floor: 0 };
+      s = sceneAt(runtime(place), "a", time, h, body);
       furniture = [soloChair(top, yaw, -top[1], h)];
     }
     const world = s.world!;
@@ -156,6 +160,7 @@ export function soloStage({ character, yaw, pitch = 16, action }: SoloSpec) {
       spot: { x: s.x, groundY: s.groundY, scale: s.scale, root: s.root },
       floor: project(world.lens, [world.hip[0], 0, world.hip[2]]),
       ...(furniture && { furniture }),
+      place,
     };
   };
 }

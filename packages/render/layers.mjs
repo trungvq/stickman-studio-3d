@@ -209,9 +209,10 @@ const cliDirs = () => {
 
 /**
  * Rig, sketch, fx là bản repo video cài (không có thì bản của CLI); `three` và `zod` là bản mà rig
- * ấy nạp, nên `collide` của rig nhận đúng vật repo dựng. Mọi gói này để ngoài, đường dẫn tuyệt đối
+ * ấy nạp, nên `collide` của rig nhận đúng vật repo dựng. Mọi gói này để ngoài, đường dẫn tuyệt đối;
+ * `inline` thì gói vào luôn (trang trình duyệt), vẫn một bản
  */
-const sharedWithRepo = (root) => ({
+const sharedWithRepo = (root, inline = false) => ({
   name: "stickman-world-shared",
   setup(b) {
     const SKIP = Symbol("stickman-world-shared");
@@ -231,7 +232,7 @@ const sharedWithRepo = (root) => ({
         dirs.unshift(rigDir);
       }
       const path = await find(a.path, dirs, a.kind);
-      if (path) return { path, external: true };
+      if (path) return inline ? { path } : { path, external: true };
       return {
         errors: [{ text: `không tìm thấy gói "${a.path}" — repo video phải cài nó` }],
       };
@@ -303,5 +304,32 @@ module.exports = m;`,
       },
     ],
   });
+  return code;
+}
+
+const pageCache = new Map();
+
+/**
+ * Trang trình duyệt vẽ cảnh three của repo video cho `stickman-render --three`: rig, `three` và module
+ * `stickman.world` (nếu khai) gói chung một bản, rồi `boot(rig, world)` của `three-page.mjs`. Gói lại
+ * khi file nguồn đổi
+ */
+export async function bundleThreePage(root = process.cwd()) {
+  const entry = worldEntry(root);
+  const key = `${root}:${entry}`;
+  const hit = pageCache.get(key);
+  if (hit && stampOf(root, hit.inputs) === hit.stamp) return hit.code;
+  const page = join(HERE, "three-page.mjs");
+  const { code, inputs } = await bundle(root, entry ?? page, {
+    platform: "browser",
+    plugins: [hollowReact, sharedWithRepo(root, true)],
+    stdin: `import * as rig from "@stickman3d/rig";
+${entry ? `import * as world from ${JSON.stringify(entry)};` : "const world = {};"}
+import { boot } from ${JSON.stringify(page)};
+boot(rig, world);`,
+    resolveExtensions: [".ts", ".tsx", ".mts", ".mjs", ".js", ".jsx", ".cjs", ".json"],
+    loader: { ".css": "empty" },
+  });
+  pageCache.set(key, { code, inputs, stamp: stampOf(root, inputs) });
   return code;
 }

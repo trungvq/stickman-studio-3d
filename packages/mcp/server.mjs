@@ -249,6 +249,16 @@ async function probeWorld(id, scene, runtime) {
   }
 }
 
+/** Nhịp chấm của vệt khớp: `stickman.snap.fps` của workspace, không khai thì 30 */
+function snapFps() {
+  try {
+    const v = R.readJson(join(WS, "package.json"))?.stickman?.snap?.fps;
+    return typeof v === "number" && v > 0 ? v : 30;
+  } catch {
+    return 30;
+  }
+}
+
 /** Tay chân giật trên hình của cả cảnh (hay của một người), cùng phép đo và ngưỡng với `check` (`stickman.snap`) */
 function sceneSnapLines(rt, character, cast) {
   const opts = cli.snapOptions?.(WS);
@@ -378,6 +388,41 @@ const YawSpec = z
     "Có thì vẽ người 3D giữa sân khấu trống: hướng mặt, độ quanh trục đứng (0 = +x phải khung, 90 = −z về ống kính); bỏ qua view/headView/flip. Hành động gập hai đùi (sit-3d) thì người ngồi trên ghế chuẩn, bàn chân chạm sàn",
   );
 const PitchSpec = z.number().min(0).max(80).default(16).describe("Góc cúi ống kính khi có yaw, độ");
+const SizeSpec = z
+  .string()
+  .regex(/^\d+(x\d+)?$/)
+  .optional()
+  .describe(
+    "Cỡ khung three pixel `1280x720` hay `1280` (cao suy từ tỉ lệ khung cảnh); mặc định 1280 ngang",
+  );
+const SoftwareSpec = z
+  .boolean()
+  .default(false)
+  .describe("Cho Chromium vẽ three bằng SwiftShader khi máy không có GPU — chậm hơn nhiều");
+
+/** Dòng báo của ảnh three: GPU, thời gian, thư mục từng khung */
+const threeNote = (r) =>
+  `three: ${r.gpu} — mở trang ${r.ms.boot} ms, ${r.ms.frame} ms/khung; từng khung: ${dirname(r.frames[0] ?? r.out)}`;
+
+/** Người 3D một mình bằng three: chỉ ô `{ action, t }` (tư thế rời là kênh 2D, `act` không đọc) */
+async function soloThreeTool({ character, cells, yaw, pitch, size, software, cols, scale, out }) {
+  if (yaw === undefined) throw new Error("`three` cần `yaw`: ảnh three là người 3D");
+  if (cells.some((c) => !c.action))
+    throw new Error("`three` chỉ vẽ ô `{ action, t }` — tư thế rời là kênh 2D, người 3D không đọc");
+  const r = await R.soloThree({
+    root: WS,
+    character,
+    cells,
+    yaw,
+    pitch,
+    size,
+    software,
+    cols,
+    scale,
+    out,
+  });
+  return text(`${report([r])}\n${threeNote(r)}`);
+}
 
 /** Ô người 3D: hành động thì diễn trong cảnh tối thiểu của `solo3d`, tư thế rời thì giữ kênh 2D */
 function cell3d(c, cell, yaw, pitch, action, t) {
@@ -893,12 +938,20 @@ server.registerTool(
       headView: HeadViewSpec,
       yaw: YawSpec,
       pitch: PitchSpec,
+      three: z
+        .boolean()
+        .default(false)
+        .describe(
+          "Với yaw: vẽ người 3D thật bằng three (Chromium headless) như video — dựng khối, bàn tay năm ngón, vật liệu NPR, bóng, trong plainRoom(); chỉ nhận ô { action, t }, bỏ qua crops",
+        ),
+      size: SizeSpec,
+      software: SoftwareSpec,
       boxes: z.boolean().default(false),
       name: z.string().optional(),
     },
   },
   guard(
-    ({
+    async ({
       character,
       poses,
       crops,
@@ -912,6 +965,9 @@ server.registerTool(
       headView,
       yaw,
       pitch,
+      three,
+      size,
+      software,
       boxes,
       name,
     }) => {
@@ -927,6 +983,28 @@ server.registerTool(
           ]),
         );
       const actions = allActions();
+      if (three) {
+        const cells = poses.map((p) => {
+          const a =
+            p.action &&
+            (typeof p.action === "string" ? actions[p.action] : loadSpec("actions", p.action));
+          if (p.action && !a) throw new Error(`không có hành động ${p.action}`);
+          return a
+            ? { action: a, time: (p.t ?? 0) * a.duration, label: `${a.name} ${p.t ?? 0}` }
+            : {};
+        });
+        return soloThreeTool({
+          character: equip ? rig.equipCharacter(c, equip) : c,
+          cells,
+          yaw,
+          pitch,
+          size,
+          software,
+          cols,
+          scale,
+          out: outPath(tag, "three"),
+        });
+      }
       const cells = poses.map((p) => {
         let cell = R.poseOf(p, actions);
         if (yaw !== undefined) {
@@ -975,11 +1053,19 @@ server.registerTool(
       headView: HeadViewSpec,
       yaw: YawSpec,
       pitch: PitchSpec,
+      three: z
+        .boolean()
+        .default(false)
+        .describe(
+          "Với yaw: vẽ người 3D thật bằng three (Chromium headless) như video, trong plainRoom(); bỏ qua crops",
+        ),
+      size: SizeSpec,
+      software: SoftwareSpec,
       name: z.string().optional(),
     },
   },
   guard(
-    ({
+    async ({
       action,
       character,
       frames,
@@ -991,12 +1077,30 @@ server.registerTool(
       headView,
       yaw,
       pitch,
+      three,
+      size,
+      software,
       name,
     }) => {
       const a = loadSpec("actions", action);
       const { character: c, urls } = character
         ? loadCharacter(character)
         : { character: rig.defaultCharacter(), urls: {} };
+      if (three)
+        return soloThreeTool({
+          character: c,
+          cells: Array.from({ length: frames }, (_, i) => {
+            const t = +(i / (frames - 1)).toFixed(3);
+            return { action: a, time: t * a.duration, label: `${t}` };
+          }),
+          yaw,
+          pitch,
+          size,
+          software,
+          cols: Math.min(frames, 4),
+          scale: 0.5,
+          out: outPath(slug(name ?? (typeof action === "string" ? action : a.name)), "three"),
+        });
       const cells = Array.from({ length: frames }, (_, i) => {
         const t = +(i / (frames - 1)).toFixed(3);
         let cell = R.poseOf({ action: a, t });
@@ -1027,7 +1131,7 @@ server.registerTool(
   "render_scene",
   {
     description:
-      "Dải ảnh một scene (tên file hoặc object inline): mỗi cột một mốc thời gian, mỗi hàng một người. Bỏ chỗ đứng và trôi ngang để soi thân người; xem vị trí thì dùng scene_probe. `stage: true` thì ngược lại — mỗi ô là cả khung, có nền, camera, hiệu ứng và lớp vẽ code của repo, để soi bố cục. Mốc lấy đều bằng `from`/`to`/`cols`/`every`, hay chỉ đích danh bằng `times`. `around` cắt mỗi ô quanh một mốc trên người (đơn vị sân khấu, không qua camera) — soi bàn tay đang cầm mà không đoán pixel. Người 3D (cast[].world) chiếu qua scene.lens; stage xếp họ chung với solids của lớp vẽ code.",
+      'Dải ảnh một scene (tên file hoặc object inline): mỗi cột một mốc thời gian, mỗi hàng một người. Bỏ chỗ đứng và trôi ngang để soi thân người; xem vị trí thì dùng scene_probe. `stage: true` thì ngược lại — mỗi ô là cả khung, có nền, camera, hiệu ứng và lớp vẽ code của repo, để soi bố cục. Mốc lấy đều bằng `from`/`to`/`cols`/`every`, hay chỉ đích danh bằng `times`. `around` cắt mỗi ô quanh một mốc trên người (đơn vị sân khấu, không qua camera) — soi bàn tay đang cầm mà không đoán pixel. Người 3D (cast[].world) chiếu qua scene.lens; stage xếp họ chung với solids của lớp vẽ code. `trails` / `ghosts` vẽ đè vệt khớp và bóng que xương của người 3D để soi chuyển động trong một ô: chấm mỗi khung, dày là chậm, thưa là nhanh, màu xanh → đỏ theo tốc độ. `skeleton: true` bỏ người, nền và lớp vẽ code, chỉ vẽ que xương người 3D hai màu bên trên lưới sàn chiếu qua lens (soi nhịp, chân nào bước, chiều sâu); `views: ["top"]` thêm ô nhìn từ trên xuống. Các ảnh trên vẽ người 3D bằng người que 2.5D; `three` vẽ mỗi ô bằng three thật trong Chromium như video (cảnh `worldOf` của stickman.world: bàn tay năm ngón, áo dựng khối, bóng, phòng, đồ riêng, món cầm tay), mặc định bật khi soi khung một cảnh mà worldOf dựng — cảnh 3D thì soi bằng `three`.',
     inputSchema: {
       scene: Spec,
       stage: z
@@ -1054,6 +1158,49 @@ server.registerTool(
         })
         .optional()
         .describe("Cắt mỗi ô quanh mốc `anchorAt` của một người; kéo theo stage: true"),
+      trails: z
+        .array(z.string())
+        .optional()
+        .describe(
+          "Vệt khớp vẽ đè mỗi ô (kéo theo stage: true): tên khớp như `check` đo (wristR, footL, head, hip…) hay `hands`, `feet`, `all`; lọc người bằng `cast`",
+        ),
+      span: z.number().positive().default(1).describe("Vệt lấy trong ± ngần này giây quanh mỗi ô"),
+      fps: z
+        .number()
+        .positive()
+        .max(240)
+        .optional()
+        .describe("Nhịp chấm của vệt; mặc định `stickman.snap.fps` của package.json hay 30"),
+      relative: z
+        .boolean()
+        .default(false)
+        .describe("Trừ phần dời của hông so với khung của ô: người đang đi vẫn thấy cung tay chân"),
+      ghosts: z
+        .number()
+        .int()
+        .min(0)
+        .max(12)
+        .default(0)
+        .describe("Số bóng que xương mỗi phía (trước xanh, sau đỏ), kéo theo stage: true"),
+      ghostStep: z.number().positive().default(0.1).describe("Giây giữa hai bóng que xương"),
+      skeleton: z
+        .boolean()
+        .default(false)
+        .describe(
+          "Chỉ người 3D, không nền: lưới sàn chiếu qua lens, viền hộp đồ khối, que xương (phải hồng, trái xanh lục lam, đoạn gần ống kính nét to); đi chung trails / ghosts",
+        ),
+      views: z
+        .array(z.enum(["top"]))
+        .optional()
+        .describe("Với skeleton: `top` thêm ô nhìn từ trên xuống mặt sàn x–z mỗi mốc"),
+      three: z
+        .boolean()
+        .optional()
+        .describe(
+          "Mỗi ô là ảnh three thật mà video vẽ (Chromium headless): người 3D dựng khối, bàn tay năm ngón, vật liệu NPR, bóng, phòng và đồ riêng của cảnh từ `worldOf` của stickman.world (cảnh repo không dựng thì plainRoom()); trails / ghosts vẽ đè. Bỏ trống: bật khi soi khung (stage, trails, ghosts) một cảnh mà worldOf của repo dựng — cảnh video vẽ bằng three; `false` ép về người que 2.5D",
+        ),
+      size: SizeSpec,
+      software: SoftwareSpec,
       cast: z.string().optional(),
       character: z.string().optional(),
       crops: Crops,
@@ -1075,9 +1222,30 @@ server.registerTool(
       name,
       times: picked,
       around,
+      trails,
+      span,
+      fps,
+      relative,
+      ghosts,
+      ghostStep,
+      skeleton,
+      views,
     } = input;
-    const stage = input.stage || !!around;
+    const motion =
+      trails?.length || ghosts || skeleton
+        ? {
+            trails,
+            span,
+            fps: fps ?? snapFps(),
+            relative,
+            ghosts,
+            ghostStep,
+            cast,
+          }
+        : undefined;
+    const stage = input.stage || !!around || !!motion;
     const s = loadSpec("scenes", scene);
+    const id = typeof scene === "string" ? basename(scene).replace(/\.json$/, "") : s.name;
     // Đo `aspect` từng lớp nền trước `resolveScene` — số khai trong JSON chỉ là cái đệm lần trước
     const bgUrls = R.mountBg(s, LAYERS.bg);
     const { rt } = loadScene(s);
@@ -1085,6 +1253,49 @@ server.registerTool(
       picked?.map((x) => rig.markTime(x, rt.marks, "times")) ??
       R.sampleTimes({ from, to: to ?? rt.duration, cols, every });
     const tag = slug(name ?? (typeof scene === "string" ? scene : s.name));
+    const notes = [];
+    let bones;
+    if (input.three && (skeleton || around))
+      return fail("`three` không đi với `skeleton` hay `around`");
+    // Mặc định: khung của cảnh mà video vẽ bằng three (worldOf của repo dựng nó) thì soi bằng three
+    let three = input.three;
+    if (three === undefined && stage && !skeleton && !around && s.lens) {
+      const { world } = await probeWorld(id, s, rt);
+      three = !!world;
+    }
+    if (three) {
+      const data = cli.worldData(WS);
+      const px = R.threeSize(input.size, rt.frame);
+      const r = await R.renderThree({
+        root: WS,
+        id,
+        scene: s,
+        data,
+        rt,
+        times,
+        size: input.size,
+        software: input.software,
+        motion,
+        cols: Math.min(cols, times.length, 4),
+        scale: (scale * px.w) / rt.frame.w,
+        fallback: character,
+        loadCharacter: (f) => loadCharacter(f),
+        out: outPath(tag, "three"),
+      });
+      notes.push(threeNote(r), ...r.warnings);
+      return text(
+        `duration ${rt.duration}s, mốc: ${times.join(", ")}\n${report([r])}${notes.map((n) => `\n${n}`).join("")}`,
+      );
+    }
+    if (stage && !skeleton && s.lens && input.three === false)
+      notes.push(
+        "ảnh người que 2.5D — video vẽ cảnh có trong worldOf bằng three, soi đúng hình bằng `three`",
+      );
+    if (skeleton) {
+      const { world, warn } = await probeWorld(id, s, rt);
+      if (warn) notes.push(`${warn} — bỏ hộp vật của cảnh three`);
+      bones = { cast, views, world: world ?? undefined };
+    }
     const cache = {};
     const common = {
       rt,
@@ -1103,10 +1314,12 @@ server.registerTool(
             // Lớp vẽ code của repo — docs/10-lop-ve-code.md; dải ảnh thân người không có bối cảnh nên không cần
             codeLayers: await R.loadLayers(WS),
             around,
+            motion,
+            skeleton: bones,
             // Ô cắt quanh mốc nhỏ như ô zoom của dải thân người nên phóng lên như ô zoom
             scale: around ? scale * 2 : scale * 0.6,
             cols: Math.min(cols, times.length),
-            out: outPath(tag, around ? `around-${around.anchor}` : "stage"),
+            out: outPath(tag, around ? `around-${around.anchor}` : skeleton ? "skeleton" : "stage"),
           }),
         ]
       : crops.map((crop) =>
@@ -1118,7 +1331,10 @@ server.registerTool(
             out: outPath(tag, crop),
           }),
         );
-    return text(`duration ${rt.duration}s, mốc: ${times.join(", ")}\n${report(results)}`);
+    notes.push(...results.flatMap((r) => r.warnings ?? []));
+    return text(
+      `duration ${rt.duration}s, mốc: ${times.join(", ")}\n${report(results)}${notes.map((n) => `\n${n}`).join("")}`,
+    );
   }),
 );
 

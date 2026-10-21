@@ -597,7 +597,9 @@ rõ, vì rig vẽ bằng đường có bề dày cố định chứ không phả
 
 Soi bố cục: `stickman-render --scene … --stage` (hay `render_scene` với
 `stage: true`) — mỗi ô là **cả khung** tại một mốc, có nền, đã đi qua camera. Dải
-ảnh thường thì ngược lại, nó cố ý bỏ chỗ đứng và khung đi để soi thân người.
+ảnh thường thì ngược lại, nó cố ý bỏ chỗ đứng và khung đi để soi thân người. Cảnh
+3D mà video vẽ bằng three thì `--stage` là người que 2.5D; soi bằng `--three`
+([04](04-mcp.md#ảnh-three-thật)).
 
 ## Nền
 
@@ -1183,6 +1185,10 @@ Ngưỡng ở `package.json` của repo video, trường thiếu lấy mặc đ�
 Mức cảnh báo, như người lồng vào đồ: hình vẫn ra, chỉ nhìn mới thấy. Cảnh khớp `stickman.frozen`
 không đo; `--scene` chỉ đo cảnh khớp.
 
+Nhìn tận mắt quanh một dòng báo: `render_scene` với `trails` và `times` ở giây ấy (hay
+`stickman-render --stage --trails`) vẽ vệt chính các khớp này, lấy bằng `stageJoints` của lõi; thêm
+`skeleton` chỉ còn que xương trên lưới sàn — xem [04](04-mcp.md#người-3d).
+
 ## Lòng bàn tay
 
 Bàn tay người 3D mặc đồ nhỏ trên hình, mu và lòng tay cùng màu da: lòng tay quay sai không ai nhìn ra.
@@ -1732,6 +1738,7 @@ bản — người, đồ, người nền, đồ riêng của cảnh:
 ```ts
 buildWorld(scene, rt, spec: WorldSpec, data: WorldData, set?: Set3D): World3D          // Node trần được
 buildStage(scene, rt, spec, data, { size, aa?, software? }): Promise<{ stage, world }>  // cần WebGL
+stageOf(world, { size, aa?, software? }): Promise<{ stage, world }>                    // cảnh đã dựng, cần WebGL
 ```
 
 `rt` là `resolveScene` của `scene`; `data` là `{ characters, heights, bodies }` — JSON nhân vật theo tên file
@@ -1777,9 +1784,12 @@ phải đích tay của scene), `arm(id, side, "shoulder" | "elbow" | "wrist")`,
   đứng / ngồi một bản. Bản mở màn của mỗi dáng có trong `path` dựng sẵn; bản khác (`keys[].equip` giữa cảnh) dựng lần
   đầu cần tới, tự thêm vào `root`. Mỗi khung chỉ một bản hiện. Người nền mặc `equip` của giây 0.
 - `cast[].fade` ở 3D là bật tắt: mờ quá nửa thì tắt người.
-- `buildStage` dựng `set()`, nạp `set.fonts`, `buildWorld`, chờ `world.ready`, rồi `createStage` với `update` là
-  `pose(t)`, `room.cull(camera)`, `setLights(lights(t))`. Chromium vẽ phần mềm (`SwiftShader`) thì ném, trừ khi
-  `software: true`. Vẽ một khung là `stage.draw(t, world.view(t))`.
+- `buildStage` dựng `set()`, nạp `set.fonts`, `buildWorld`, rồi `stageOf`. `stageOf` nhận một `World3D` đã dựng
+  (của `buildWorld`, hay `worldOf` của repo), chờ `world.ready`, rồi `createStage` với ống kính `scene.lens`, `update`
+  là `pose(t)`, `room.cull(camera)`, `setLights(lights(t))`; phông decal phải nạp trước khi dựng `world`. Chromium vẽ
+  phần mềm (`SwiftShader`) thì ném, trừ khi `software: true`. Vẽ một khung là `stage.draw(t, world.view(t))`.
+- Soi đúng hình video ngoài Remotion: `stickman-render --scene … --three` hay `render_scene` với `three`
+  ([04](04-mcp.md#ảnh-three-thật)) — `worldOf` của `stickman.world`, `stageOf`, Chromium headless.
 - `plainRoom({ time, shell })` là phòng trơn mẫu; `roomLights(add)` đổi `LightAdd` thành tham số của `room().lights`
   cho bối cảnh tự viết `lights: (t, add) => r.lights(roomLights(add))`.
 

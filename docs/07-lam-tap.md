@@ -32,7 +32,7 @@ Mỗi bước kết thúc bằng một cổng kiểm tra:
 
 | | Thấy gì | Của ai |
 |---|---|---|
-| `render_scene` / `render_action` | Dải ảnh tĩnh, mỗi ô một mốc; `stage: true` là cả khung, có nền, camera và hiệu ứng | **Agent** — nó không tua được, chỉ đọc được ảnh |
+| `render_scene` / `render_action` | Dải ảnh tĩnh, mỗi ô một mốc; `stage: true` là cả khung, có nền, camera và hiệu ứng; `three` là khung three thật của cảnh 3D | **Agent** — nó không tua được, chỉ đọc được ảnh |
 | `stickman-video` | mp4 nháp nửa cỡ bản chốt (`960×540`, khung dọc `540×960`), có nền, camera và hiệu ứng, không tiếng | Agent, để kiểm chuyển động |
 | `remotion studio` | Cả cảnh, có nền có tiếng, tua được | **Người** |
 | `remotion render` | mp4 chốt | Cuối |
