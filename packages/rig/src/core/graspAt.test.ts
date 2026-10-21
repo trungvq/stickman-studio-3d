@@ -27,7 +27,7 @@ import { gripPoint, HOLD_SLEW_STEP, parseHeldItem, type HeldItemSpec } from "./h
 import { handSkin, skinHand } from "./handMesh";
 import { HELD_SINK } from "./heldAudit";
 import { heldFit, skinBulge, skinDepth, skinPieces } from "./heldFit";
-import { add3, cross3, fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
+import { add3, cross3, fromColumns, matMul, matVec, scale3, sub3, type M3, type V3 } from "./lens";
 import type { ItemPose } from "./scene";
 import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
@@ -76,7 +76,7 @@ const poseOf = (m: Mark, s = 1): ItemPose => ({
   s,
 });
 const ITEMS = fx.ca.items as Record<string, Mark>;
-const CHOOSE = fx.ca.choose as unknown as Record<
+type Choose = Record<
   string,
   {
     item: string;
@@ -88,6 +88,22 @@ const CHOOSE = fx.ca.choose as unknown as Record<
     }[];
   }
 >;
+// ca 2: prototype chọn `slant −30` với khuỷu gập ngược vào trong (φ −80, `inward` 0,52); `W_IN` đổi sang `slant 30`,
+// khuỷu ra ngoài, đổi lại xoay cẳng tay vượt kẹp 5,6° (docs/11-nhom-cam.md § Khuỷu tự nhiên)
+const CHOOSE: Choose = {
+  ...(fx.ca.choose as unknown as Choose),
+  c2: {
+    item: "c2",
+    hands: [
+      {
+        hand: "right",
+        given: { edge: "bottom" },
+        rig: { variant: "pinch", thumb: "front", along: 0.25, slant: 30 },
+        wrist: [-95.6, -17.7, -1.0],
+      },
+    ],
+  },
+};
 
 const tr = (R: M3): M3 => [R[0], R[3], R[6], R[1], R[4], R[7], R[2], R[5], R[8]];
 const dist = (a: V3, b: V3) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
@@ -228,6 +244,7 @@ describe("graspAt: bốn ca `sheet` của bước 0", () => {
           off: 0,
         },
         body: sol.arm.body,
+        inward: sol.arm.inward,
         gap: sol.arm.gap,
       },
     });
@@ -417,12 +434,30 @@ describe("chooseMissing `card`", () => {
     });
   const c2 = graspCtx(T, { the: card([0, 1, 0], [0, 0, -1]), nam: card([0, 0, 1], [0, 1, 0]) });
 
-  it("đủ thiếu: rig giải `edge`, `thumb`, `along`, `slant`, biến thể `pad`; hai tay không lỗi", () => {
+  it("đủ thiếu: rig giải `edge`, `thumb`, `along`, `slant` trong lưới ±40°, biến thể `lateral`; hai tay không lỗi", () => {
     for (const side of [RIGHT, LEFT]) {
       const sol = graspAt(c2, "the@card", pose, side);
-      expect(sol.choice.variant).toBe("pad");
+      expect(sol.choice.variant).toBe("lateral");
       for (const k of ["edge", "thumb", "along", "slant"] as const) expect(sol.by[k]).toBe("rig");
+      expect(Math.abs(sol.choice.slant as number)).toBeLessThanOrEqual(40);
       expect(Number.isFinite(sol.cost)).toBe(true);
+    }
+  });
+
+  it("thẻ dựng quay mặt ra trước, thấp và lệch về phía tay cầm: rig không chọn chỗ cầm mà thẻ treo dưới bàn tay (`upright`)", () => {
+    const P0 = ITEMS.c3.P as V3;
+    let fwd = cross3(c2.across, [0, 1, 0]);
+    const toFace = sub3(c2.face, P0);
+    if (fwd[0] * toFace[0] + fwd[2] * toFace[2] > 0) fwd = scale3(fwd, -1);
+    const x = scale3(c2.across, -1);
+    const y = scale3(fwd, 1 / Math.hypot(...fwd));
+    const R = fromColumns(x, y, cross3(x, y));
+    // `across` dương về tay phải người cầm
+    for (const side of [RIGHT, LEFT]) {
+      const P = add3(P0, add3([0, 20, 0], scale3(c2.across, -20 * side)));
+      const sol = graspAt(c2, "the@card", { R, P, cast: "nguoi", s: 1 }, side);
+      const c = matVec(R, sub3([0, 0.4, 0], sol.frame.hand.at as V3));
+      expect(c[1] / Math.hypot(...c), `${side}`).toBeLessThan(0.5);
     }
   });
 
@@ -572,14 +607,16 @@ describe("chooseMissing: giá biến thể", () => {
       RIGHT,
     );
 
+  // bảng ngửa 20°: `flat` rẻ nhất chỉ nhờ khuỷu chĩa lên ra ngoài (`inward` 0,17); `W_IN` phạt khuỷu ấy nên `flat` khai
+  // đắt hơn `pinch`
   it.each([
-    ["đứng", [200, -230, 560], 0, 9],
-    ["ngửa 20°", [200, -300, 610], 20, 18],
+    ["đứng", [200, -230, 560], 0, 9, true],
+    ["ngửa 20°", [200, -300, 610], 20, 18, false],
   ] as const)(
-    "đọc ngang ngực, bảng %s: `flat` rẻ hơn khi khai mà rig chọn `pinch`",
-    (_, P, a, grid) => {
+    "đọc ngang ngực, bảng %s: rig chọn `pinch` (biến thể khác cộng 0,5)",
+    (_, P, a, grid, flatCheaper) => {
       const pose = reading([...P], a);
-      expect(at(pose, "flat").cost).toBeLessThan(at(pose, "pinch").cost);
+      expect(at(pose, "flat").cost < at(pose, "pinch").cost).toBe(flatCheaper);
       const sol = at(pose);
       expect(sol.choice.variant).toBe("pinch");
       expect(sol.by.variant).toBe("rig");

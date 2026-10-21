@@ -256,8 +256,12 @@ const viTri = new Map();
   const NGHIENG = { to: "chest", offset: [25, 20, 10], up: [0.3, 1, 0.3] };
   /** Tay dẫn chạm món ở ngực, ngón theo món (`point: grip`): tay phụ `both` đặt theo tay này */
   const TAY_DAN = { to: "chest", offset: [40, 10, 30], point: "grip" };
-  /** Tay dẫn đưa ra trước (trao cho người đối diện), ngón theo món */
-  const DUA = { to: "chest", offset: [60, 0, 25], point: "grip" };
+  /** Tay dẫn giơ thẻ trước ngực cho người đối diện xem: cầm mép dưới, mặt cần khoe quay ra ngoài */
+  const KHOE = { to: "chest", offset: [45, -20, 25], point: "grip" };
+  /** Thẻ cầm xem: trước ngực, bàn tay giữa ngực như ảnh mẫu `the-phong-xem`, hướng mặc định của nhóm */
+  const XEM = { to: "chest", offset: [55, -25, 15] };
+  /** Tay dẫn duỗi ra trước qua quầy */
+  const DUA_XA = { to: "chest", offset: [95, -20, 15], point: "grip" };
   /** Đũa không có hướng mặc định: ngọn ra trước chúc 30°, hai que xếp chéo xuống trái để cổ tay và khuỷu không vượt kẹp */
   const NGON = { face: { axis: "tip", toward: "forward", tilt: -30 } };
   const DUA_DAT = {
@@ -464,35 +468,51 @@ const viTri = new Map();
       }
     }
     if (group === "card") {
-      const huongThe = (roll) => ({
-        face: { axis: spec.front ?? "front", toward: "up" },
-        roll: { axis: roll, toward: "forward" },
+      const front = spec.front ?? "front";
+      /** Đưa qua quầy: thẻ ngửa, mép ngắn xa nhất chĩa ra trước */
+      const ngua = (axis) => ({
+        face: { axis: front, toward: "up" },
+        roll: { axis, toward: "forward" },
       });
+      const khoe = (edge, thumb) =>
+        H({
+          edge,
+          thumb,
+          face: { axis: front, toward: "forward" },
+          roll: { axis: spec.top ?? "top", toward: "up" },
+        });
       rows.push(
-        { ma: "canh-tren", ten: "edge top", mark: NGUC, hands: { right: H({ edge: "top" }) } },
+        { ma: "xem", ten: "cầm xem (rig chọn)", mark: XEM, hands: { right: H() } },
         {
-          ma: "cai-truoc",
-          ten: "ngón cái mặt trước",
-          mark: NGUC,
-          hands: { right: H({ thumb: "front" }) },
+          ma: "xem-trai",
+          ten: "cầm xem, tay trái (rig chọn)",
+          mark: XEM,
+          lead: "left",
+          hands: { left: H() },
         },
         {
-          ma: "cai-sau",
-          ten: "ngón cái mặt sau",
-          mark: NGUC,
-          hands: { right: H({ thumb: "back" }) },
+          ma: "khoe-dat",
+          ten: "khoe: thẻ quay ra trước (rig chọn)",
+          mark: { ...XEM, ...huong(spec, "forward") },
+          hands: { right: H() },
         },
-        { ma: "tay-dan", ten: "tay dẫn", hands: { right: { ...TAY_DAN, ...H() } } },
         {
-          ma: "tay-dan-len",
-          ten: "tay dẫn, mặt trước lên",
-          hands: { right: { ...TAY_DAN, ...H(huongThe(spec.top ?? "top")) } },
+          ma: "khoe-the",
+          ten: "khoe thẻ (tay dẫn, mép dưới)",
+          hands: { right: { ...KHOE, ...khoe("bottom", "back") } },
+        },
+        {
+          ma: "khoe-trai",
+          ten: "khoe thẻ, tay trái (tay dẫn, mép dưới)",
+          lead: "left",
+          hands: { left: { ...KHOE, offset: [45, -20, -25], ...khoe("bottom", "back") } },
         },
         {
           ma: "dua-the",
-          ten: "đưa thẻ ra trước",
-          hands: { right: { ...DUA, ...H({ edge: "top", ...huongThe("bottom") }) } },
+          ten: "đưa thẻ qua quầy (tay dẫn, mép ngắn)",
+          hands: { right: { ...DUA_XA, ...H({ edge: "left", thumb: front, ...ngua("edgeR") }) } },
         },
+        { ma: "tay-dan", ten: "tay dẫn", hands: { right: { ...TAY_DAN, ...H() } } },
       );
     }
     if (group === "chopsticks")
@@ -753,6 +773,7 @@ const RULE = {
   jump: "nhảy",
   wrist: "cổ tay",
   arm: "tay lấn",
+  elbow: "khuỷu ngược",
   role: "ngón hở",
   sink: "lún",
   size: "cỡ",

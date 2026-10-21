@@ -81,6 +81,7 @@ export const HELD_PINCHES: readonly HandPose[] = [
   "sheet",
   "tripod",
   "chopsticks",
+  "card",
 ];
 
 /**
@@ -95,6 +96,11 @@ export const HELD_SINK = Math.abs(HELD_FIT.touch) + 0.5;
 export const HELD_WRIST = 5;
 /** Món đặt trước: bắp tay, cẳng tay lấn thân, đầu, tay kia quá ngần này lần bán kính tay ở chỗ lấn (`arm`) */
 export const HELD_ARM = 0.3;
+/**
+ * Chỗ cầm nhóm: khuỷu lệch khỏi đường vai → cổ tay vào giữa thân hay lên trên quá ngần này lần cánh tay trên (`inward`)
+ * là khuỷu gập ngược, lỗi `elbow`
+ */
+export const HELD_ELBOW = 0.3;
 
 /**
  * Chỗ cầm nhóm: tâm nắm ngoài hình món quá ngần này là món không nằm trong tay — nhóm (hay biến thể) có dáng kẹp đầu ngón
@@ -552,6 +558,7 @@ export type HeldRule =
   | "body"
   | "wrist"
   | "arm"
+  | "elbow"
   | "role"
   | "oppose"
   | "sink"
@@ -584,6 +591,8 @@ export interface HeldOptions {
   sink?: number;
   wrist?: number;
   arm?: number;
+  /** Chỗ cầm nhóm: khuỷu lệch vào trong quá ngần này lần cánh tay trên (`HELD_ELBOW`) */
+  elbow?: number;
   /** Chỗ cầm nhóm: góc lực đối nhỏ nhất (`HELD_OPPOSE`, độ) */
   oppose?: number;
   hold?: number;
@@ -742,13 +751,18 @@ function groupHits(s: HeldHand, o: Omit<HeldOptions, "frame">, blend: boolean): 
     const min = o.oppose ?? HELD_OPPOSE;
     if (s.oppose && s.oppose.angle < min) out.push({ rule: "oppose", worst: min - s.oppose.angle });
   }
+  // tay lấn đầu là lỗi ở cả tay dẫn; lấn thân, tay kia chỉ xét món đặt trước
+  const head = !!g?.arm.bodyPart?.endsWith(".head");
+  if (g && (placed || head) && (g.arm.bodyRatio ?? 0) > (o.arm ?? HELD_ARM))
+    out.push({ rule: "arm", worst: g.arm.body, ...(head && { error: true as const }) });
+  if (g?.arm.inward !== undefined && g.arm.inward > (o.elbow ?? HELD_ELBOW))
+    out.push({ rule: "elbow", worst: g.arm.inward, error: true });
   if (placed) {
     if (g.arm.gap > (o.reach ?? AIM_GAP) * (s.s ?? 1))
       out.push({ rule: "reach", worst: g.arm.gap, error: true });
     const m = heldWristMargin(g.arm.wrist);
     if (m > -(o.wrist ?? HELD_WRIST))
       out.push({ rule: "wrist", worst: m, ...(m > 0 && { error: true as const }) });
-    if ((g.arm.bodyRatio ?? 0) > (o.arm ?? HELD_ARM)) out.push({ rule: "arm", worst: g.arm.body });
   } else {
     const i = s.intent;
     if (i && i.err > (i.rule === "up" ? (o.up ?? HELD_UP) : (o.face ?? HELD_FACE)))
@@ -1006,6 +1020,7 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
     "role",
     "oppose",
     "reach",
+    "elbow",
     "arm",
     "size",
     "face",
@@ -1214,7 +1229,7 @@ export function heldLine(s: HeldIssue): string {
   const head: Record<
     Exclude<
       HeldRule,
-      "seat" | "body" | "wrist" | "arm" | "role" | "oppose" | "sink" | "size" | "reach"
+      "seat" | "body" | "wrist" | "arm" | "elbow" | "role" | "oppose" | "sink" | "size" | "reach"
     >,
     () => string
   > = {
@@ -1266,6 +1281,8 @@ function groupLine(s: HeldIssue, x: HeldHand, who: string, when: string): string
         const over = s.worst > 0;
         return `cổ tay ${over ? "vượt giới hạn" : "sát giới hạn"} — ${who}: xoay ${Math.round(w.turn)}°/±${TURN_MAX}, gập ${Math.round(w.bend)}°/±${AIM_BEND}, lệch ${Math.round(w.dev)}°/±${AIM_DEV}${over ? ` — vượt ${r1(w.over)}°, bàn tay vẽ lệch chỗ cầm ${r1(w.off)}` : ` — còn ${r1(-s.worst)}° tới kẹp`} (${place}); đổi \`edge\` / \`thumb\` hay hướng món (\`face\` / \`roll\` của ${item})`;
       }
+      case "elbow":
+        return `khuỷu gập ngược — ${who}: khuỷu lệch khỏi đường vai → cổ tay vào giữa thân hay lên trên ${Math.round(s.worst * 100)}% cánh tay trên (quá ${HELD_ELBOW * 100}%), cẳng tay chạy ra ngoài hay xuống tới bàn tay (${place}); đổi \`edge\` / \`thumb\` hay hướng món (\`face\` / \`roll\` của ${item}), không thì khai \`elbow\` ở mốc tay`;
       case "arm":
         return `tay lấn người — ${who}: ${a?.bodyPart ? armPartLabel(a.bodyPart) : "tay"} lấn ${r1(s.worst)} (quá ${HELD_ARM} lần bán kính tay) (${place}); dời ${item} ra xa người, đổi \`edge\` hay cầm bằng tay kia`;
       case "role": {

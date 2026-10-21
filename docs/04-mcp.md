@@ -193,7 +193,8 @@ không có tool riêng.
   `variant`, `slant`, `around`, `tilt`, `psi`, `inset` — trường nhóm dùng, đã điền), `by` (nguồn từng trường của `choice`:
   `scene` cảnh khai, `rig` rig giải, `default` mặc định nhóm; tay dẫn chỉ có `scene` và `default`), `arm` (`phi` góc khuỷu
   quanh trục vai–cổ tay, độ; `wrist` {`turn`, `bend`, `dev`, `over` độ vượt kẹp, `off` lệch bàn tay vẽ khỏi chỗ cầm, tay dẫn
-  luôn `0`}; `body` lấn thân, kèm `bodyPart`, `bodyRatio` khi có; `gap` khe tầm với).
+  luôn `0`}; `body` lấn thân, kèm `bodyPart`, `bodyRatio` khi có; `inward` khuỷu lệch vào giữa thân hay lên trên, phần cánh tay trên; `gap`
+  khe tầm với).
   Món treo trên cánh tay (`món@carry`, [01](01-rig.md#món-treo)) ở `carry.right` / `carry.left`: `item`, `hold`, `on`
   (`elbow` / `shoulder`), `seat` (đỉnh quai tới chỗ treo), `bend` / `rise` (khuỷu: góc gập, độ ngóc cẳng tay), `body`
   (`gap` khe thân món tới phần người gần nhất — âm là lồng —, `part`, `allow` phần `touch` cho lấn), `swing` (độ đẩy khỏi

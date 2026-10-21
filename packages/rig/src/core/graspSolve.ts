@@ -13,6 +13,7 @@ import {
   THUMB_TOWARD_SPAN,
   THUMB_TOWARD_STEP,
   tooThick,
+  UPRIGHT_W,
   type GroupSpec,
   type PoseRef,
   type PoseSpec,
@@ -22,7 +23,6 @@ import {
 import {
   HAND_BONES,
   HAND_DOF,
-  HAND_GRIPS,
   HAND_PIECES,
   HAND_POSES,
   handVec,
@@ -217,13 +217,14 @@ const PINCH_STEP = 0.1;
 const PINCH_MOVE = 2;
 /** `pinch`: da lòng tay cách thành ít nhất ngần này, đơn vị món */
 const CUP_PALM_MIN = 1;
-/** `card` `pad`: tâm nắm thụt vào trong tấm ngần này lần `W` */
-const PAD_INSET = 0.15;
-/** `pad`: đệm trỏ cách tâm nắm của dáng `pinch` về phía ngược ngón cái, lần `W` */
-const PAD_SHIFT = (HAND_GRIPS.pinch[2] - HAND_BONES.index.at[2]) / (2 * HAND_BONES.palm.half[1]);
-/** `pad`: đệm trỏ đi trước tâm nắm theo hướng ngón ngần này lần `W`; cách đầu cạnh ít nhất `PAD_END` lần `W` */
-const PAD_AHEAD = 0.4;
-const PAD_END = 0.2;
+/**
+ * `card` `lateral` (dáng `card`), khung bàn tay (lòng, ngón, phía ngón cái): pháp tuyến thẻ từ mặt sườn ngón trỏ sang mặt
+ * đệm ngón cái (ngược hướng gập của đốt ngọn ngón cái), và hướng thẻ chạy ra khỏi chỗ kẹp — ra ngoài nắm tay
+ */
+export const CARD_NORMAL: V3 = [0.111, -0.687, 0.718];
+export const CARD_OUT: V3 = [0.546, 0.646, 0.533];
+/** `lateral`: chỗ kẹp (`HAND_GRIPS.card`) thụt vào trong mép ngần này lần `W` */
+export const CARD_INSET = 0.12;
 /**
  * `chopsticks` (fixture `dua#cam`): lòng tay `n = CHOP_PALM[0] · b + CHOP_PALM[1] · c`, tâm nắm cách đường giữa hai que
  * `CHOP_OFF` về phía `b` (trên que kề ngón cái), đơn vị món
@@ -292,22 +293,29 @@ const flat: ContactFn = (x) => {
 };
 
 /**
- * Lòng tay `n = F` (đệm trỏ mặt kia, ngón cái phía `F`; fixture `the-phong#kep`), ngón vào trong tấm, tâm nắm giữa bề dày
- * thật; `along` kẹp cho đệm trỏ nằm trong cạnh, cạnh ngắn quá thì đệm trỏ ở giữa
+ * Kẹp bên (Feix #16): đệm ngón cái một mặt thẻ (`F`), mặt kia tựa sườn ngón trỏ; chỗ kẹp giữa bề dày thật, thụt
+ * `CARD_INSET · W` vào trong mép; thẻ chạy vào trong (`−m` quay `slant`) theo `CARD_OUT`
  */
-const pad: ContactFn = (x) => {
-  const { W } = x.dims;
-  const { m, e, F, len, along: a0 } = sheetEdge(x, 0);
-  const f = unit(inward(m, e, x.slant));
-  const thumb = scale3(cross3(F, f), x.side);
-  const o = dot3(add3(scale3(thumb, -PAD_SHIFT * W), scale3(f, PAD_AHEAD * W)), e);
-  const end = PAD_END * W;
-  const s = (len > 2 * end ? Math.min(len - end, Math.max(end, a0 * len + o)) : len / 2) - o;
-  const along = Math.min(1, Math.max(0, s / len));
-  const y = { ...x, along };
-  const { lo, hi, t } = sheetSpan(y, PAD_INSET * W);
-  const { at: mid } = sheetEdge(y, PAD_INSET * W);
-  return { at: add3(mid, scale3(F, (lo + hi) / 2)), along, palm: F, fingers: f, thick: t };
+const lateral: ContactFn = (x) => {
+  const { m, e, F, at: mid, along } = sheetEdge(x, CARD_INSET * x.dims.W);
+  const { lo, hi, t } = sheetSpan(x, CARD_INSET * x.dims.W);
+  const d = unit(inward(m, e, x.slant));
+  // khung bàn tay của `HandFrame` → lòng, ngón, `lòng × ngón` (phía ngón cái nhân `side`)
+  const toHand = (v: V3): V3 => [v[0], v[1], x.side * v[2]];
+  const N = unit(toHand(CARD_NORMAL));
+  const D = unit(perp(toHand(CARD_OUT), N));
+  const C = cross3(N, D);
+  const Fd = cross3(F, d);
+  // quay khung bàn tay về khung món: `N` → `F`, `D` → `d`
+  const map = (v: V3): V3 =>
+    add3(add3(scale3(F, dot3(v, N)), scale3(d, dot3(v, D))), scale3(Fd, dot3(v, C)));
+  return {
+    at: add3(mid, scale3(F, (lo + hi) / 2)),
+    along,
+    palm: map([1, 0, 0]),
+    fingers: map([0, 1, 0]),
+    thick: t,
+  };
 };
 
 /** Khung `nt`: `n = −m`, ngón cái về `F`, ngón dọc mép `side · (F × n)` chúc `slant` về phía `−F` */
@@ -763,7 +771,7 @@ const hook: ContactFn = (x) => {
 /** Chỗ tiếp xúc theo nhóm và biến thể; nhóm chưa có ở đây thì `graspFrame` báo lỗi */
 export const CONTACTS: Partial<Record<GroupId, Record<string, ContactFn>>> = {
   sheet: { pinch, flat, rim },
-  card: { pad },
+  card: { lateral },
   palmBox: { default: palmBox },
   cylinder: { wrap, flat: flatRod },
   platform: { palm: platformPalm },
@@ -1157,6 +1165,8 @@ export interface GraspReport {
     /** Lấn chia bán kính tay ở chỗ lấn và chỗ ấy (`ArmSol.bodyRatio`, `bodyPart`): `act` điền khi tay vẽ theo nghiệm */
     bodyRatio?: number;
     bodyPart?: string;
+    /** Khuỷu lệch vào phía giữa thân, phần `l₁` (`ArmSol.inward`); `act` điền như `bodyRatio` */
+    inward?: number;
     gap: number;
   };
 }
@@ -1279,8 +1289,9 @@ function specOf(ctx: GraspCtx, item: string): HeldItemSpec {
   return s;
 }
 
-/** Lưới của trường liên tục: `along` 3 điểm giữa miền, `slant` ½ miền hai phía và 0, `around` 12, `tilt` 6, `psi` 5 điểm đều gồm hai đầu */
+/** Lưới của trường liên tục (`RangeChoice.grid` nếu nhóm khai): `along` 3 điểm giữa miền, `slant` ½ miền hai phía và 0, `around` 12, `tilt` 6, `psi` 5 điểm đều gồm hai đầu */
 function grid(key: Field, c: RangeChoice, variant: string): number[] {
+  if (c.grid) return [...c.grid];
   const [lo, hi] = c.byVariant?.[variant] ?? [c.min, c.max];
   const ring = (n: number) => Array.from({ length: n }, (_, i) => lo + ((hi - lo) * i) / n);
   if (key === "along") return [0.25, 0.5, 0.75].map((x) => lo + (hi - lo) * x);
@@ -1460,6 +1471,11 @@ export function chooseMissing(
     if (withDef.length) cost += (DEV_COST * off) / withDef.length;
     if (missing.includes("variant") && defs.variant !== undefined && c.variant !== defs.variant)
       cost += VARIANT_COST;
+    // thân món nên ở trên bàn tay: `u` là sin góc ngẩng của hướng tâm nắm → tâm khối hình (y rig hướng xuống)
+    if (group.variants[frame.choice.variant ?? ""]?.upright && "c" in f) {
+      const u = -unit(matVec(pose.R, sub3(f.c, frame.hand.at)))[1];
+      cost += UPRIGHT_W * ((1 - u) / 2) ** 2;
+    }
     // giá lún không âm: ứng viên đã đắt hơn ứng viên tốt nhất thì không cần đo
     if (solve && SINK_GROUPS.has(h.group) && (!best || cost <= best.cost + 1e-12)) {
       const curl = group.variants[frame.choice.variant ?? ""]?.curl;
@@ -1725,7 +1741,7 @@ export function graspReport(
       sol.arm.fore,
       wristTurn(cl(w.turn, TURN_MAX), cl(w.bend, AIM_BEND), cl(w.dev, AIM_DEV), sol.side),
     );
-    const c = gripPoint(sol.frame.G, sol.frame.hand.at as V3);
+    const c = gripPoint(sol.frame.G, sol.frame.hand.at);
     off = Math.hypot(...sub3(matVec(sol.Rw, c), matVec(drawn, c))) * 100;
   }
   return {
@@ -1739,6 +1755,7 @@ export function graspReport(
       phi: sol.arm.phi,
       wrist: { turn: w.turn, bend: w.bend, dev: w.dev, over, off },
       body: sol.arm.body,
+      inward: sol.arm.inward,
       gap: sol.arm.gap,
     },
   };

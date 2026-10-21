@@ -8,6 +8,9 @@ import {
   tooThick,
 } from "./graspGroups";
 import {
+  CARD_INSET,
+  CARD_NORMAL,
+  CARD_OUT,
   CONTACTS,
   edgeHigh,
   graspFrame,
@@ -38,7 +41,7 @@ import {
   type GroupId,
   type HeldItemSpec,
 } from "./heldItem";
-import { add3, fromColumns, matMul, matVec, sub3, type M3, type V3 } from "./lens";
+import { add3, cross3, fromColumns, matMul, matVec, scale3, sub3, type M3, type V3 } from "./lens";
 import grip from "./__fixtures__/grip-frames.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
@@ -937,94 +940,74 @@ describe("`sheet` `rim` trên da", () => {
   });
 });
 
-describe("`card` `pad`", () => {
-  // fixture `the-phong#kep`: cạnh dưới, thụt 2,5, giữa bề dày, lòng tay hướng `−front`
-  const KEP: Case = {
-    fixture: "the-phong#kep",
-    spec: THE,
-    pick: both({ group: "card", edge: "bottom", thumb: "back" }, {}, {}),
-  };
-  const SIZES2 = ["1.61", "2.16", "t01-sakura", "kuroiwa"] as const;
+describe("`card` `lateral`", () => {
+  const dims = handDims(1.75, 1.68);
+  const F: V3 = [0, 1, 0];
+  const unitV = (v: V3) => scale3(v, 1 / Math.hypot(...v));
 
-  it("ra lại fixture `the-phong#kep` ở cỡ tay thật, hai tay trong 5° và 1 đơn vị", () => {
-    for (const size of SIZES2)
-      for (const [side, n] of SIDES) {
-        const r = residual(KEP, size, side, n);
-        expect(r.rot, `${size} ${side}`).toBeLessThanOrEqual(5);
-        expect(r.pos, `${size} ${side}`).toBeLessThanOrEqual(1);
+  it("pháp tuyến thẻ của bàn tay (`CARD_NORMAL`) về mặt có ngón cái, thẻ chạy vào trong theo `CARD_OUT`, chỗ kẹp thụt `CARD_INSET · W` giữa bề dày", () => {
+    for (const side of [-1, 1])
+      for (const slant of [-40, 0, 40]) {
+        const g = graspFrame(
+          THE,
+          itemGeom(THE),
+          { group: "card", edge: "bottom", thumb: "front", slant },
+          side,
+          dims,
+        );
+        const n = g.hand.palm as V3;
+        const f = g.hand.fingers as V3;
+        const t = scale3(cross3(n, f), side);
+        const hand = (v: V3) => add3(add3(scale3(n, v[0]), scale3(f, v[1])), scale3(t, v[2]));
+        close(unitV(hand(CARD_NORMAL)), F, 1e-9);
+        const out = unitV(hand(CARD_OUT));
+        const d: V3 = [-Math.sin(slant * D2R), 0, -Math.cos(slant * D2R)];
+        const inPlane = unitV(sub3(out, scale3(F, out[1])));
+        close(inPlane, d, 1e-9);
+        expect((g.hand.at as V3)[2]).toBeCloseTo(8.8 - CARD_INSET * dims.W, 9);
+        expect((g.hand.at as V3)[1]).toBeCloseTo(0.4, 9);
+        expect(g.pose).toEqual(handVec("card"));
       }
   });
 
-  it("ngón cái của fixture ở phía mặt `back`: lòng tay `n = F` của mặt có ngón cái", () => {
-    for (const size of SIZES2)
-      for (const [side, n] of SIDES) {
-        const fx = FIX["the-phong#kep"][size];
-        const F = handFrames(handVec("pinch"), n, fx.k, fx.long).thumb1;
-        const tip = toItem(fx[side], add3(F.o, matVec(F.R, [0, -F.len, 0])));
-        expect(tip[1], `${size} ${side}`).toBeLessThan(0.4);
-        close(residual(KEP, size, side, n).g.hand.palm as V3, [0, -1, 0], 1e-12);
-      }
-  });
-
-  it("tâm nắm thụt 0,15·W giữa bề dày, ngón vào trong tấm quay `slant`", () => {
-    const dims = handDims(1.75, 1.68);
-    for (const slant of [-30, 0, 30]) {
-      const g = graspFrame(
-        THE,
-        itemGeom(THE),
-        { group: "card", edge: "bottom", thumb: "front", slant },
-        -1,
-        dims,
-      );
-      close(g.hand.palm as V3, [0, 1, 0], 1e-12);
-      close(g.hand.fingers as V3, [-Math.sin(slant * D2R), 0, -Math.cos(slant * D2R)], 1e-12);
-      expect((g.hand.at as V3)[2]).toBeCloseTo(8.8 - 0.15 * dims.W, 9);
-      expect((g.hand.at as V3)[1]).toBeCloseTo(0.4, 9);
-      expect(g.pose).toEqual(handVec("pinch"));
-    }
-  });
-
-  it("trên da: đệm trỏ áp mặt kia, ngón cái ở mép phía `F`, không lún, không xuyên — hai cỡ tay, hai tay", () => {
+  it("trên da: đệm ngón cái chạm mặt có ngón cái, sườn trỏ đỡ mặt kia (lực đối ≥ 150°), nắm tay che ≤ 20% mặt thẻ, không lún quá `HELD_SINK`, không xuyên — hai cỡ tay, hai tay, hai mặt", () => {
     for (const [k, long] of HANDS)
       for (const [, side] of SIDES)
-        for (const slant of [-22.5, 0, 22.5]) {
-          const pick: Pick = { group: "card", edge: "bottom", thumb: "back", slant };
-          const r = cardSkin(THE, pick, side, k, long);
-          const at = `${k} ${side} ${slant}`;
-          expect(r.gaps.index, at).toBeLessThanOrEqual(0.7);
-          expect(r.gaps.thumb, at).toBeLessThanOrEqual(1.7);
-          expect(r.sink, at).toBeLessThanOrEqual(0.1);
-          expect(r.pierce, at).toBeLessThan(0);
-        }
+        for (const thumb of ["front", "back"] as const)
+          for (const slant of [-40, 0, 40]) {
+            const r = cardSkin(THE, { group: "card", edge: "bottom", thumb, slant }, side, k, long);
+            const at = `${k} ${side} ${thumb} ${slant}`;
+            if (thumb === "front") expect(r.thumbTip[1], at).toBeGreaterThan(0.8);
+            else expect(r.thumbTip[1], at).toBeLessThan(0);
+            expect(r.gaps.thumb, at).toBeLessThanOrEqual(0.3);
+            expect(r.gaps.index, at).toBeLessThanOrEqual(1);
+            expect(r.oppose?.part, at).toBe("index");
+            expect(r.oppose!.angle, at).toBeGreaterThanOrEqual(150);
+            expect(r.cover, at).toBeLessThanOrEqual(0.2);
+            expect(r.sink, at).toBeLessThanOrEqual(HELD_SINK);
+            expect(r.pierce, at).toBeLessThan(0);
+          }
   });
 
-  it("`along` kẹp cho đệm trỏ nằm trong cạnh; cạnh dài thì giữ `along` khai", () => {
-    for (const [k, long] of HANDS)
-      for (const [, side] of SIDES)
-        for (const along of [0, 0.25, 0.5, 0.75, 1]) {
-          const r = cardSkin(
-            THE,
-            { group: "card", edge: "right", thumb: "back", along },
-            side,
-            k,
-            long,
-          );
-          expect(r.gaps.index, `${k} ${side} ${along}`).toBeLessThanOrEqual(0.7);
-        }
+  it("`along` khai thì giữ", () => {
     const g = graspFrame(
       THE,
       itemGeom(THE),
-      { group: "card", edge: "bottom", thumb: "back", along: 0.5 },
+      { group: "card", edge: "bottom", thumb: "back", along: 0.3 },
       -1,
-      handDims(1.75, 1.68),
+      dims,
     );
-    expect(g.choice.along).toBe(0.5);
+    expect(g.choice.along).toBe(0.3);
   });
 });
 
-/** Ngón theo vai trò rồi đo trên da: khe từng ngón, lún sâu nhất, trục nang sâu nhất vào món */
+/**
+ * Ngón theo vai trò rồi đo trên da: khe từng ngón, lún sâu nhất, trục nang sâu nhất vào món, đầu ngón cái trong khung món,
+ * lực đối, phần mặt thẻ (`THE`) mà da ngoài ngón cái chiếu vuông góc lên
+ */
 function cardSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long: number) {
   const g = graspFrame(spec, itemGeom(spec), pick, side, handDims(k, long), k, long);
+  const curl = GRIP_GROUPS.card.variants.lateral!.curl;
   const skin = handSkin(side, k, long);
   const v = [
     ...g.pose,
@@ -1037,12 +1020,22 @@ function cardSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long:
       G: g.G,
       roles: g.roles,
       bulge: skinBulge(skin, g.pose),
+      ...(curl !== undefined && { curl }),
     }),
   ];
   const pos = new Float32Array(skin.pos.length);
   skinHand(skin, v, pos);
-  const { gaps } = skinDepth(pos, skinPieces(skin), g.G, spec.shape!);
+  const dom = skinPieces(skin);
+  const { gaps, near } = skinDepth(pos, dom, g.G, spec.shape!);
+  const cells = new Set<number>();
+  for (let i = 0; i < dom.length; i++) {
+    if (HAND_PIECES[dom[i]].startsWith("thumb")) continue;
+    const q = toItem(g.G, [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]]);
+    if (Math.abs(q[0]) < 14 && Math.abs(q[2]) < 8.8)
+      cells.add(Math.floor(q[0] + 14) * 100 + Math.floor(q[2] + 8.8));
+  }
   const F = handFrames(v, side, k, long);
+  const thumbTip = toItem(g.G, add3(F.thumb1.o, matVec(F.thumb1.R, [0, -F.thumb1.len, 0])));
   const pierce = Math.max(
     ...HAND_PIECES.filter((n) => n !== "palm").map(
       (n) =>
@@ -1055,7 +1048,14 @@ function cardSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long:
         ).core,
     ),
   );
-  return { gaps, sink: Math.max(0, -Math.min(...Object.values(gaps))), pierce };
+  return {
+    gaps,
+    sink: Math.max(0, -Math.min(...Object.values(gaps))),
+    pierce,
+    thumbTip,
+    oppose: heldOppose(spec.shape!, near, gaps, g.roles),
+    cover: cells.size / (28 * 18),
+  };
 }
 
 describe("`platform` `palm`", () => {

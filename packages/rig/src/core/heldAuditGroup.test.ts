@@ -6,6 +6,7 @@ import type { GraspReport } from "./graspSolve";
 import { handVec } from "./hand";
 import {
   HELD_ARM,
+  HELD_ELBOW,
   HELD_FACE,
   HELD_GRIP,
   HELD_GRIP_PINCH,
@@ -117,6 +118,29 @@ describe("heldHits: chỗ cầm nhóm", () => {
     expect(
       rules({ grasp: grasp({}, { body: 4, bodyRatio: HELD_ARM + 0.2, bodyPart: "fore.torso" }) }),
     ).toEqual(["arm"]);
+  });
+
+  it("`arm` vào đầu là lỗi, cả ở tay dẫn; lấn thân ở tay dẫn thì im", () => {
+    const head = { body: 4, bodyRatio: HELD_ARM + 0.2, bodyPart: "upper.head" };
+    expect(heldHits(sample({ grasp: grasp({}, head) }))).toEqual([
+      { rule: "arm", worst: 4, error: true },
+    ]);
+    expect(heldHits(sample({ grasp: grasp({ mode: "hand" }, head) }))).toEqual([
+      { rule: "arm", worst: 4, error: true },
+    ]);
+    const torso = { ...head, bodyPart: "fore.torso" };
+    expect(rules({ grasp: grasp({ mode: "hand" }, torso) })).toEqual([]);
+  });
+
+  it("`elbow`: khuỷu lệch vào trong quá `HELD_ELBOW` là lỗi, cả ở tay dẫn; khuỷu phía ngoài thì im", () => {
+    const at = (inward: number, mode: "item" | "hand" = "item") =>
+      heldHits(sample({ grasp: grasp({ mode }, { inward }) })).filter((h) => h.rule === "elbow");
+    expect(at(HELD_ELBOW + 0.15)).toEqual([
+      { rule: "elbow", worst: HELD_ELBOW + 0.15, error: true },
+    ]);
+    expect(at(HELD_ELBOW + 0.15, "hand")).toHaveLength(1);
+    expect(at(HELD_ELBOW - 0.05)).toEqual([]);
+    expect(at(-0.6)).toEqual([]);
   });
 
   it("`role`: ngón `press` hở quá `HELD_WRAP`; ngón `free` hở thì không xét", () => {

@@ -34,6 +34,10 @@ export const W_BODY = 10;
 export const W_CONT = 2;
 /** Dải `|xuống⊥|` (sin góc trục vai → cổ tay với phương đứng) mà gốc `φ` hoà từ `−tiến` sang hình chiếu hướng xuống */
 export const PHI_DOWN = [0.1, 0.3] as const;
+/** Trọng số khuỷu gập ngược: khuỷu lệch khỏi đường vai → cổ tay vào giữa thân hay lên trên quá `IN_FREE` (phần `l₁`) */
+export const W_IN = 20;
+/** `inward` từ đó `W_IN` bắt đầu phạt */
+export const IN_FREE = 0;
 /** Phạt phần cổ tay vượt giới hạn */
 const W_OVER = 10;
 /** Số mẫu dọc mỗi đoạn tay khi đo lấn */
@@ -103,8 +107,10 @@ export interface ArmSol {
   bodyPart?: string;
   /** Khe từ cổ tay với tới tới `Wp` khi ngoài tầm với, rig */
   gap: number;
+  /** Khuỷu lệch khỏi đường vai → cổ tay về phía giữa thân hay lên trên, phần `l₁` (dương là khuỷu gập ngược, `elbowInward`) */
+  inward: number;
   E: number;
-  terms: { wrist: number; over: number; down: number; body: number; cont: number };
+  terms: { wrist: number; over: number; down: number; body: number; cont: number; inward: number };
   /** Số lần thử `φ` */
   tries: number;
 }
@@ -254,6 +260,21 @@ function phiBasis(inp: ArmInput, Wp: V3) {
   return { d0, o0: unit(scale3(cross3(n, d0), inp.side)) };
 }
 
+/**
+ * Khuỷu `El` lệch khỏi đường vai → cổ tay `Wp` (phần vuông góc đường ấy) về phía giữa thân (ngược `Rr·[side, 0, 0]`) hay
+ * lên trên, phần `l₁` — lấy phía lệch nhiều hơn. Phía giữa thân nhân sin góc trục với phương đứng (tay buông thõng, cẳng
+ * tay ra ngoài là góc tự nhiên) rồi trừ phần khuỷu nằm dưới đường ấy (khuỷu thấp trước ngực khi áp tai, xem điện thoại).
+ * Dương là khuỷu gập ngược (nằm phía trong hay chĩa lên, cẳng tay chạy ra ngoài hay xuống tới bàn tay); khuỷu thõng, ra
+ * ngoài là âm
+ */
+export function elbowInward(inp: ArmInput, Wp: V3, El: V3): number {
+  const n = unit(sub3(Wp, inp.S));
+  const e = perp(sub3(El, inp.S), n);
+  const medial = matVec(inp.Rr, [-inp.side, 0, 0]);
+  const tilt = Math.hypot(n[0], n[2]);
+  return Math.max(dot3(e, medial) * tilt + Math.min(0, e[1]), e[1]) / inp.l1;
+}
+
 /** `φ` (độ) của khuỷu `El` quanh trục vai → `Wp`, cùng gốc với `evalPhi` */
 export function phiOf(inp: ArmInput, Wp: V3, El: V3): number {
   const B = phiBasis(inp, Wp);
@@ -299,6 +320,8 @@ export function evalPhi(
   const body = intrusion(inp, S, El, Wr, other);
   const bodyE = W_BODY * body.sum;
   const cont = phiPrev === undefined ? 0 : W_CONT * (wrap(phi - phiPrev) / 30) ** 2;
+  const inward = elbowInward(inp, Wp, El);
+  const inE = W_IN * Math.max(0, inward - IN_FREE) ** 2;
   return {
     phi: wrap(phi),
     phi0,
@@ -311,8 +334,9 @@ export function evalPhi(
     bodyRatio: body.q,
     ...(body.part && { bodyPart: body.part }),
     gap: Math.max(0, (len(sub3(Wp, S)) - (inp.l1 + inp.l2)) * 100),
-    E: wristE + overE + down + bodyE + cont,
-    terms: { wrist: wristE, over: overE, down, body: bodyE, cont },
+    inward,
+    E: wristE + overE + down + bodyE + cont + inE,
+    terms: { wrist: wristE, over: overE, down, body: bodyE, cont, inward: inE },
     tries: 1,
   };
 }

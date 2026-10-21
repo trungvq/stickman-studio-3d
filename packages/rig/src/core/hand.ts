@@ -52,6 +52,7 @@ export const HAND_POSES = {
   thumbsUp: { thumb: [80, 4, 0, 0], index: [90, 85], fingers: [90, 85], spread: 0 },
   tripod: { thumb: [28, 45, 0, 0], index: [40, 40], fingers: [48, 76], spread: 0 },
   chopsticks: { thumb: [36, 52, 6, 0], index: [50, 35], fingers: [45, 50], spread: 2 },
+  card: { thumb: [48, 75, -20, 0], index: [28, 110], fingers: [90, 40], spread: 0, thumbRoll: 45 },
   cupPinch: {
     thumb: [60, 103, -8, -15],
     index: [32, 25],
@@ -80,6 +81,7 @@ export const HAND_POSE_LABELS: Record<HandPose, string> = {
   thumbsUp: "giơ ngón cái",
   tripod: "cầm bút",
   chopsticks: "cầm đũa",
+  card: "kẹp thẻ",
   cupPinch: "kẹp chén",
 };
 
@@ -106,6 +108,8 @@ export const HAND_GRIPS: Record<HandPose | "rest", V3> = {
   tripod: [0.063, -0.104, 0.033],
   // trùng `pinch`: khung `chopsticks` dựng từ fixture dáng `pinch` (`graspSolve.ts`)
   chopsticks: [0.07, -0.106, 0.072],
+  // giữa bề dày thẻ dưới đệm ngón cái, thẻ đè lên sườn ngón trỏ (`card` `lateral`, `CARD_TILT`)
+  card: [0.053, -0.1, 0.042],
   // trục chén giữa đệm ngón cái và đệm trỏ – giữa, ngang tầm đệm (`bowl` `pinch`)
   cupPinch: [0.063, -0.121, 0.024],
 };

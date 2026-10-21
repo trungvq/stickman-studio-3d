@@ -3,7 +3,9 @@ import { markShape, trunk3, type ActInput } from "./act3";
 import {
   armInput,
   armSeg,
+  elbowInward,
   evalPhi,
+  IN_FREE,
   phiAt,
   phiChain,
   solvePhi,
@@ -11,8 +13,10 @@ import {
   type ArmInput,
   type ArmSeg,
   type ArmSol,
+  W_IN,
 } from "./graspArm";
 import { wristTurn } from "./hand";
+import { HELD_ELBOW } from "./heldAudit";
 import { HOLD_SLEW_STEP } from "./heldItem";
 import { fromColumns, matMul, matVec, rotZ, type V3 } from "./lens";
 import { parseCharacter } from "./schema";
@@ -87,10 +91,7 @@ describe("graspArm", () => {
     expect(b).toEqual(a);
   });
 
-  it.each([
-    ["c1", fx.ca.c1],
-    ["c2", fx.ca.c2],
-  ] as const)("ra lại ca %s của bước 0", (_, c) => {
+  it.each([["c1", fx.ca.c1]] as const)("ra lại ca %s của bước 0", (_, c) => {
     const { Wp, Rw } = handOf(c, RIGHT);
     const x = solvePhi(inR, Wp, Rw);
     expect(Math.abs(wrapD(x.phi - c.phi))).toBeLessThanOrEqual(2.5);
@@ -100,6 +101,13 @@ describe("graspArm", () => {
     expect(Math.abs(x.wrist.dev - dev)).toBeLessThanOrEqual(3);
     expect(x.gap).toBe(0);
     expect(x.body).toBe(0);
+  });
+
+  it("ca c2 của bước 0: khung bàn tay ấy chỉ với tới bằng khuỷu gập ngược, `check` báo `elbow`", () => {
+    const { Wp, Rw } = handOf(fx.ca.c2, RIGHT);
+    const x = solvePhi(inR, Wp, Rw);
+    expect(x.inward).toBeGreaterThan(HELD_ELBOW);
+    expect(evalPhi(inR, Wp, Rw, fx.ca.c2.phi).inward).toBeGreaterThan(HELD_ELBOW);
   });
 
   it("ngoài tầm với: khe dương, cánh tay duỗi thẳng về cổ tay", () => {
@@ -221,5 +229,19 @@ describe("chuỗi φ và gốc φ", () => {
         prev = p;
       }
     }
+  });
+
+  it("khuỷu gập ngược: `inward` dương khi khuỷu lệch vào giữa thân hay lên trên, phạt `W_IN` từ `IN_FREE`", () => {
+    const { Wp, Rw } = handOf(fx.ca.c1, RIGHT);
+    for (let p = -180; p < 180; p += 5) {
+      const x = evalPhi(inR, Wp, Rw, p);
+      expect(x.inward).toBeCloseTo(elbowInward(inR, Wp, x.elbow), 9);
+      expect(x.terms.inward).toBeCloseTo(W_IN * Math.max(0, x.inward - IN_FREE) ** 2, 9);
+    }
+    // `φ` âm là vào trong, `±180` là chĩa lên; thõng và ra ngoài thì âm
+    expect(evalPhi(inR, Wp, Rw, -90).inward).toBeGreaterThan(0.3);
+    expect(evalPhi(inR, Wp, Rw, 180).inward).toBeGreaterThan(0.3);
+    expect(evalPhi(inR, Wp, Rw, 0).inward).toBeLessThanOrEqual(0.05);
+    expect(evalPhi(inR, Wp, Rw, 60).inward).toBeLessThan(0);
   });
 });

@@ -849,7 +849,12 @@ function placeArm(
 /** Báo chỗ cầm kèm độ lấn theo bán kính tay của cánh tay đã vẽ (luật `arm` của `check`) */
 const withBody = (r: GraspReport, a: ArmSol): GraspReport => ({
   ...r,
-  arm: { ...r.arm, bodyRatio: a.bodyRatio, ...(a.bodyPart && { bodyPart: a.bodyPart }) },
+  arm: {
+    ...r.arm,
+    bodyRatio: a.bodyRatio,
+    ...(a.bodyPart && { bodyPart: a.bodyPart }),
+    inward: a.inward,
+  },
 });
 
 /**
@@ -892,6 +897,7 @@ function handGrasp(
       body: a.body,
       bodyRatio: a.bodyRatio,
       ...(a.bodyPart && { bodyPart: a.bodyPart }),
+      inward: a.inward,
       gap: a.gap,
     },
   };

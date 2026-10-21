@@ -89,7 +89,15 @@ export interface VariantSpec {
    * cầm dọc hướng mặt người)
    */
   thumbToward?: "back";
+  /**
+   * Món đặt trước: rig chuộng chỗ cầm mà thân món ở trên bàn tay — giá thêm `UPRIGHT_W · ((1 − u) / 2)²` với `u` là sin góc
+   * ngẩng của hướng từ tâm nắm tới tâm khối hình
+   */
+  upright?: boolean;
 }
+
+/** `upright`: trọng số giá thân món không ở trên bàn tay */
+export const UPRIGHT_W = 4;
 
 /** `thumbToward`: nửa miền `around` (độ) rig thử quanh hướng đích, và bước lưới */
 export const THUMB_TOWARD_SPAN = 60;
@@ -133,6 +141,8 @@ export interface RangeChoice {
   default?: number;
   names?: readonly string[];
   byVariant?: Record<string, [number, number]>;
+  /** Lưới rig thử khi cảnh không khai, thay lưới mặc định của trường (`chooseMissing`) */
+  grid?: readonly number[];
 }
 
 export type Choice = NamesChoice | RangeChoice;
@@ -185,6 +195,15 @@ export interface GroupSpec {
   motion?: "write" | "pick";
   later?: true;
 }
+
+/** Góc ngửa mặc định của mặt thẻ (`card`) về người cầm, độ: thẻ dựng xiên, cầm xem khuỷu thấp sát sườn */
+export const CARD_RISE = 20;
+/** Hướng mặt thẻ mặc định ở hệ thân người cầm `[tiến, y xuống, ra ngoài]` (`PALM_DIRS`): lùi về người cầm, ngửa `CARD_RISE` */
+const CARD_FACE: [number, number, number] = [
+  -Math.cos((CARD_RISE * Math.PI) / 180),
+  -Math.sin((CARD_RISE * Math.PI) / 180),
+  0,
+];
 
 /** `cylinder` `wrap`: gập gốc, gập ngọn thêm của bốn ngón — mở hơn chỗ chạm để `heldFit` cuộn tới; đóng hơn thì đốt ngọn lún */
 const WRAP_OPEN = [-20, -80] as const;
@@ -451,17 +470,18 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
     label: "Tấm nhỏ kẹp đầu ngón",
     needs: [{ kinds: ["slab"], test: (f, h) => thick(f) <= 0.2 * h.W, text: "tấm dày ≤ 0,2·W" }],
     variants: {
-      pad: {
+      lateral: {
         frame: "nf",
         pose: {
-          open: { pose: "pinch" },
-          closed: { pose: "pinch" },
+          open: { pose: "card" },
+          closed: { pose: "card" },
           by: "thick",
           unit: "W",
           range: [0, 0.2],
         },
-        roles: roles("tip", "free", "free", { index: "tip" }),
-        fixture: "the-phong#kep",
+        roles: roles("press", "support", "free"),
+        curl: 15,
+        upright: true,
       },
     },
     choices: {
@@ -469,11 +489,12 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
       edge: EDGE,
       along: ALONG,
       thumb: names(undefined, { from: "holder" }),
-      slant: range(-45, 45, { default: 0, names: ["in", "low", "high"] }),
+      slant: range(-90, 90, { default: 0, names: ["in", "low", "high"], grid: [-40, 0, 40] }),
     },
     hands: "one",
+    // mặt thẻ về người cầm, ngửa `CARD_RISE`: ngửa hơn thì kẹp bên chỉ tới được bằng khuỷu gập ngược hay cổ tay vượt kẹp
     intent: {
-      face: { axis: "front", toward: "holderFace" },
+      face: { axis: "front", toward: CARD_FACE },
       roll: { axis: "top", toward: "up" },
     },
   },
