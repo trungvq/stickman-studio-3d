@@ -90,7 +90,7 @@ const ITEMS: Record<string, string[]> = {
   "tom-hum": ["dia", "mon-an"],
   "ong-nghe-ban": ["tay", "mic", "loa"],
   "chai-dia": ["than", "vai", "co", "mieng"],
-  "tui-hieu": [],
+  "tui-hieu": ["quai"],
 };
 
 describe("tám món mẫu", () => {

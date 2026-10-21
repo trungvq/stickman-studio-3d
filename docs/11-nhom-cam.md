@@ -88,7 +88,7 @@ dùng**: mười nhóm chạy, bốn nhóm `round`, `hug`, `clamp`, `soft` là `
 |---|---|---|
 | Nhóm | `sheet` (`pinch`, `flat`, `rim`), `card` (`lateral`), `pen` (`grip`), `chopsticks` (`grip`), `cylinder` (`wrap`, `flat`), `bowl` (`pinch`, `side`), `handle` (`hook`), `palmBox`, `platform` (`palm`), `carry` | `round`, `hug`, `clamp`, `soft`; biến thể `card.between`, `cylinder.index`, `handle.wrap`, `handle.ring`, `platform.tips`, `bowl.base`; cầm đũa thật (khung chuẩn riêng cho `chopsticks`) |
 | Khối hình | `slab`, `disc`, `rod`, `lathe`, `box`, `face` | `path` (quai cong), `ball` |
-| Món | `shape` + `part` + `detail`, `parts`, `front`, `top`, `anchors`, `seats`, `touch`, `hang` | `joints` (que trên của đũa), `soft`; `seats` thay bằng khai hình quai |
+| Món | `shape` + `part` + `detail`, `parts` (kể cả quai `strap`), `front`, `top`, `anchors`, `seats`, `touch`, `hang` | `joints` (que trên của đũa), `soft`; `seats` thay bằng điểm treo rig chọn trên quai |
 | Cảnh | `items`; `hold` có chỗ cầm, `"món@nhóm"`, `both`, `touch`, `regrip`; tay dẫn với ý định, `keep` | `write`, `pick`, lớp không cầm (`contact`) |
 | Rig | Bàn tay từ món, khuỷu tự nhiên, giải lựa chọn thiếu, `heldFit` theo vai trò và tự hiệu chỉnh da, đo lún trên da, nhớ `heldFit` theo lần cầm | Thân người nghiêng, với theo khi món ngoài tầm |
 
@@ -106,7 +106,7 @@ theo món): zod báo lỗi kèm lệnh `stickman migrate-held` (mục [8](#8-chu
 | `front` | Mặt trước: tên mốc có `dir` (màn, mặt chữ, nhãn) hay vectơ khung món. Bỏ trống là `+z` |
 | `top` | Đầu trên: tên mốc có `dir` hay vectơ. Bỏ trống là `+y`; món có miệng (`lathe` có `wall`) thì bỏ trống là hướng miệng |
 | `anchors` | Mốc có tên `{ at, dir? }`: trục ý định (`screen`, `nhan`, `mouth`, `speaker`, `tip`) và điểm `item:<mốc>` |
-| `parts` | Thuộc tính phần (các khối cùng nhãn `part`): `grip: false` (không được cầm), `as` + `axis` (ép kiểu khối hình khi rig suy sai) |
+| `parts` | Thuộc tính phần (các khối cùng nhãn `part`): `grip: false` (không được cầm), `as` + `axis` (ép kiểu khối hình khi rig suy sai), `strap: true` (quai của món treo: không thuộc thân món, không vào khối hình; rig dời món tới khi quai tựa lên người — [01](01-rig.md#món-treo)) |
 | `seats` | Chỗ treo của nhóm `carry`: `{ "elbow"?: mốc, "shoulder"?: mốc }` (đỉnh quai, mặt trong) |
 | `touch` | Phần người được lấn vào món khi cầm, cộng với bàn tay, cẳng tay cầm (mặc định); `touch` của chỗ cầm ở cảnh cộng thêm |
 | `hang` | Nhóm con thõng theo trọng lực |
@@ -699,12 +699,12 @@ Món gắn vào **cẳng tay** — cần thêm chỗ gắn cẳng tay ở rig (n
 #### 13. `carry` — treo (bản đầu)
 
 Món treo trên cánh tay, không nằm trong bàn tay — túi khoác khuỷu, túi đeo vai. Cảnh khai `group: "carry"` với `on`
-(`elbow` | `shoulder`), `yaw?`, `touch?`; món khai `seats` và `shape` (thân, không gồm quai). Không có lòng tay, ngón, ý
+(`elbow` | `shoulder`), `yaw?`, `touch?`; món khai `seats` và `shape` (thân; quai cứng khai thành phần `strap`). Không có lòng tay, ngón, ý
 định; bàn tay theo hành động. Món áp được nhóm khi có ít nhất một chỗ treo trong `seats`; `on` bắt buộc và `seats[on]`
 phải có. `carrySpecOf` đổi chỗ cầm ra spec treo `{ on, at: seats[on], yaw, touch }` (`touch` của món cộng của cảnh) mà
-`carryFrame` (`heldCarry.ts`) nhận; cách treo mỗi khung ở [01](01-rig.md#món-treo). **Để sau**: thay `seats` bằng khai hình
-quai (phần `quai`, khối `path`) và để rig chọn điểm treo trên quai theo `on` (mặt trong quai cho khuỷu, đỉnh quai cho vai),
-một mốc cho mọi cách treo.
+`carryFrame` (`heldCarry.ts`) nhận; cách treo mỗi khung ở [01](01-rig.md#món-treo). Quai `strap` tựa lên người: rig dời
+món tới khi không viên quai nào trong cẳng tay, cánh tay trên, vỏ thân áo. **Để sau**: bỏ `seats`, rig chọn điểm treo
+trên quai `strap` theo `on` (mặt trong quai cho khuỷu, đỉnh quai cho vai), một mốc cho mọi cách treo.
 
 #### 14. `soft` — vật mềm (để sau)
 
@@ -1216,7 +1216,7 @@ của `held/`.
   hơn hàng chung (`offset [80, 20, 0]`) và thêm `ψ` 0 / 90 và tay dẫn; `chopsticks` đặt đũa trước ngực (`offset [45, −3, 0]`) có hướng (`face: tip → forward, tilt −30`, `roll` hai que chéo xuống trái), thêm `along` 0,15 / 0,45, tay dẫn phải và trái (cùng `face`); `pen` đặt bút trước ngực (`offset [44, 16, 25]`) ngòi ra trước chúc xuống (`face: tip → [0,8, 0,6, −0,2]`), thêm `along` 0,15 / 0,45, tay dẫn phải và trái (`offset [40, 30, ±25]`, `point: item:tip`, `face: tip → [0,5, 0,866, 0]`); `handle` đặt túi ngang hông (`to: hip`, `offset [0, 65, 30]`: quai ngang tầm tay buông, cách thân ra phía tay phải để cẳng tay không vào thân), thêm `along` 0,2 / 0,7 và tay buông xách phải / trái (tay dẫn không khai đích, món theo bàn tay); `bowl` đặt chén trước ngực, thêm `along` 0,4 / 0,5 (`pinch`: cao nhất, sâu nhất), `side` `along` giữa (0,5), `around` 180 và 90 (`pinch`: ngón cái về thân, hàng giới hạn cổ tay), tay dẫn phải và trái (miệng ngửa) và tay dẫn hai tay đỡ đáy;
   `platform`, `cylinder` (chai đứng hơi nghiêng), `bowl` (chén nghiêng nhẹ) và `palmBox` thêm hàng hai
   tay `both` món đặt trước (tay phụ cạnh đối, đỡ đáy, đỡ mặt sau); `carry` chỉ hai
-  hàng treo khuỷu (khuỷu gập chữ V, cổ tay trước vai) và treo vai (tay dang ngoài túi, cảnh khai `touch` cho vai), món không
+  hàng treo khuỷu (khuỷu gập chữ V, cổ tay trước vai) và treo vai (cổ tay theo vai `offset [0, 95, 65]` — tay dang ngoài túi, co giãn theo người —, cảnh khai `touch` cho vai), món không
   đặt trước ngực, ô ảnh lấy cả món và đoạn tay, `do.json` giữ
   `seat`, `body`, `swing` (và `bend`, `rise` của khuỷu).
 - Hàng `sheet` hay `card` khai `edge` hay `thumb` không có trên khối hình tấm hay đĩa của món, hay cần mốc món (`front`, `bottom`) mà món không có,

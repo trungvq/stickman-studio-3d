@@ -4,7 +4,7 @@ import type { HeldItemSpec, HeldSeats, HeldShape } from "./heldItem";
 import { add3, cross3, dot3, scale3, sub3, type V3 } from "./lens";
 
 /**
- * Khối hình rig suy từ hình va chạm của món (`held/<món>.json` v2): mỗi phần (bỏ khối `detail`) ra tấm, đĩa, trụ tiện,
+ * Khối hình rig suy từ hình va chạm của món (`held/<món>.json` v2): mỗi phần (bỏ khối `detail` và quai `strap`) ra tấm, đĩa, trụ tiện,
  * thanh, hộp, mặt; nhóm cầm lấy loại nó cần. Khung món, đơn vị rig của món. docs/11-nhom-cam.md mục 2
  */
 
@@ -508,8 +508,8 @@ function mouthDir(spec: GeomSpec): V3 | undefined {
 function partsOf(spec: GeomSpec): PartGeom[] {
   const by = new Map<string, number[]>();
   (spec.shape ?? []).forEach((b, i) => {
-    if (b.detail) return;
     const name = b.part ?? "body";
+    if (b.detail || spec.parts?.[name]?.strap) return;
     by.set(name, [...(by.get(name) ?? []), i]);
   });
   return [...by].map(([name, blocks]) => {

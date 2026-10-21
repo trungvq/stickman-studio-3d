@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { faded, handCaps, meshTris } from './collide';
 import { carryBody, carrySeat } from './attach';
-import { carryClearance } from './core/heldCarry';
+import { carryClearance, carryShape } from './core/heldCarry';
 import { handGripOf, handPoint } from './core/hand';
 import { HAND_CAPSULE_PIECES } from './core/handMesh';
 import { angleBetween, capsuleDepth, heldOppose, heldSize, meshBox, meshSigned, type HeldCarry, type HeldGroup, type HeldHand, type HeldIntent } from './core/heldAudit';
@@ -205,6 +205,10 @@ export function heldCarries(fig: Figure, id: string, o: { U?: number } = {}): He
     const name = `${e.item}@carry`;
     const seat = carrySeat(fig, side, e.carry.on);
     const top = e.object.localToWorld(new THREE.Vector3(...heldPoint(e.spec, e.carry.at).map((v) => v * 0.01)));
+    // quai tựa lên người: chỗ treo nâng theo món
+    const shift = new THREE.Vector3(...(e.fit?.shift ?? [0, 0, 0]));
+    const rest = seat.pivot.clone().addScaledVector(shift, u);
+    const shape = carryShape(e.spec).body;
     // món trong thế giới three dạng liên kết của lõi: khe đo bằng cùng hình va chạm như ngón ôm
     const IF = itemFrame(new THREE.Matrix4(), e.object);
     const skip = e.carry.on === 'elbow' ? [`upperArm${t}`, `foreArm${t}`] : [];
@@ -212,7 +216,7 @@ export function heldCarries(fig: Figure, id: string, o: { U?: number } = {}): He
     for (const c of parts) {
       const part = c.part;
       if (skip.includes(part)) continue;
-      const gap = carryClearance(e.spec.shape, IF, c) * (IF.u / u);
+      const gap = carryClearance(shape, IF, c) * (IF.u / u);
       const allow = carryAllow(e.carry.touch ?? [], part);
       if (gap + allow < body.gap + body.allow) body = { gap, part, allow };
     }
@@ -221,7 +225,8 @@ export function heldCarries(fig: Figure, id: string, o: { U?: number } = {}): He
       hold: name, on: e.carry.on,
       key: `${e.object.id}|${name}|${e.carry.on}`,
       at: [seat.pivot.x / u, -seat.pivot.y / u, -seat.pivot.z / u],
-      seat: top.distanceTo(seat.pivot) / u,
+      seat: top.distanceTo(rest) / u,
+      ...(shift.lengthSq() > 0 && { shift: shift.length() }),
       ...(seat.bend !== undefined && { bend: seat.bend, rise: seat.rise! }),
       body: { gap: body.gap, part: body.part, ...(body.allow > 0 && { allow: body.allow }) },
       swing: e.fit?.swing ?? 0,

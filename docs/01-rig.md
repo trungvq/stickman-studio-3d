@@ -1681,13 +1681,16 @@ Món treo trên cánh tay chứ không nằm trong bàn tay — túi khoác khu�
 
 | Trường | Nghĩa |
 |---|---|
-| `on` (cảnh) | `elbow`: quai vắt ở mặt trong chỗ gập khuỷu, thanh quai vắt qua là cẳng tay. `shoulder`: quai trên đỉnh vai, phía trong khớp vai hơn nửa bán kính cánh tay (trên mặt thân áo), tay luồn ra ngoài quai — món nằm giữa cánh tay và thân |
+| `on` (cảnh) | `elbow`: quai vắt ở mặt trong chỗ gập khuỷu, thanh quai vắt qua là cẳng tay. `shoulder`: quai trên đầu vai, ngoài khớp vai `0,75` bán kính cánh tay (`SHOULDER_OUT`, chỗ vai mỏng nhất theo chiều trước – sau), cánh tay luồn qua quai — dang tay thì món thõng giữa cánh tay và thân |
 | `seats[on]` (món) | Mốc của món đặt đúng vào chỗ treo: đỉnh quai, mặt trong (mặt áp lên tay, lên vai) |
+| `parts.<phần>.strap` (món) | `true`: các khối `shape` của phần ấy là **quai** — không tính vào thân món, không vào khối hình của nhóm cầm (`itemGeom`); rig dời món tới khi quai tựa lên người |
 | `yaw` (cảnh) | Quay thân món quanh phương đứng (độ, dương là ngược chiều kim đồng hồ nhìn từ trên xuống) |
 | `touch` (món, cảnh) | Phần người được lấn vào thân món; `{ part, max }` cho lấn tới `max` (đeo vai: `{ "part": "upperArm", "max": 2 }`) |
 
-Món treo không có lòng tay, ngón, ý định (`face`, `up`, `roll`, `both` là lỗi), và món phải có `shape` — hình
-**thân** món, không gồm quai: quai nằm trên tay, trên vai theo cách dựng.
+Món treo không có lòng tay, ngón, ý định (`face`, `up`, `roll`, `both` là lỗi), và món phải có `shape`. Thân món là
+các khối không thuộc phần `strap`. Quai cứng (túi hiệu: dải da cong) khai thành phần `strap` — chuỗi trụ `cyl` dọc dải
+quai — để rig đặt quai **trên** tay, trên vai; món không khai quai thì đỉnh quai nằm đúng chỗ treo, quai vẽ ra có thể
+lún vào người.
 
 **Treo mỗi khung** (`carry` của `attach.ts`, `carryFrame` của `core/heldCarry.ts`):
 
@@ -1695,11 +1698,16 @@ Món treo không có lòng tay, ngón, ý định (`face`, `up`, `roll`, `both` 
    cẳng tay (tay gần thẳng thì về phía trên cẳng tay), kèm góc khuỷu `bend` (`180` thẳng) và độ ngóc cẳng tay `rise`. Vai:
    điểm cố định trong hệ thân, tính một lần từ tia dọi xuống mặt thân áo.
 2. Món thõng: đỉnh quai (`seats[on]`) trùng chỗ treo, trục y của món lên thẳng, mặt trước (+z) theo hướng nằm ngang của thanh quai — cẳng tay
-   ở khuỷu (túi chĩa mặt theo cẳng tay), trục vai ra ngoài ở vai (túi áp mặt vào sườn) —, quay thêm `yaw`.
+   ở khuỷu (túi chĩa mặt theo cẳng tay), trục vai ra ngoài ở vai (túi áp mặt vào sườn) —, quay thêm `yaw`. Vai: điểm
+   ngoài khớp vai `SHOULDER_OUT` bán kính cánh tay, trên mặt thân áo hay mặt cầu khớp vai, lấy chỗ cao hơn.
 3. Thân món lồng vào thân áo, khối hông, váy (đám điểm trên mặt lưới, `carryBody`) hay nang đùi thì đẩy ra quanh chỗ treo
    theo hướng nằm ngang từ trục thân ra, lấy góc nhỏ nhất vừa hết lồng (tới `CARRY.swing` `80°`). Đeo vai: cánh tay trên
    cùng bên ở phía ngoài món; góc ấy mà món lồng vào cánh tay thì lùi về chỗ hai bên lồng bằng nhau — túi kẹp giữa tay và
    sườn, `check` báo để dang tay ra.
+4. Món có quai (`strap`): quai thành chuỗi viên (`strapBalls`), món dời theo từng luật tựa tới khi không viên nào trong
+   người, rồi đẩy thân món lại như bước 3 (`carryFrame`, `rest`). Khuỷu: nâng thẳng đứng khỏi cẳng tay, trượt ngang dọc
+   cẳng tay ra khỏi cánh tay trên. Vai: nâng thẳng đứng khỏi vỏ thân áo (lưới cột dọc trong hệ thân, tính một lần mỗi
+   người) và cánh tay trên. Đoạn dời ghi ở `Carrying.fit.shift`; `check` đo `seat` tới chỗ treo đã dời.
 
 Mọi bước chỉ đọc tư thế của khung đang vẽ: Remotion vẽ khung nhảy cóc vẫn ra cùng hình. Món không đung đưa theo quán tính.
 

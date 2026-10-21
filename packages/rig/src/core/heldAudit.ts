@@ -226,8 +226,10 @@ export interface HeldCarry {
   key: string;
   /** Chỗ treo, thế giới rig: để bỏ món ngoài khung camera */
   at: V3;
-  /** Đỉnh quai (`seats[on]` của món) cách chỗ treo */
+  /** Đỉnh quai (`seats[on]` của món) cách chỗ treo (đã dời theo `shift`) */
   seat: number;
+  /** Món có quai: món dời khỏi chỗ treo ngần này để quai tựa lên người */
+  shift?: number;
   /** Khuỷu: góc giữa cánh tay trên và cẳng tay (`180` thẳng), cẳng tay ngóc khỏi phương ngang (âm là chúc xuống) */
   bend?: number;
   rise?: number;

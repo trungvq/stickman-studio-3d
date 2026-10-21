@@ -196,7 +196,7 @@ không có tool riêng.
   luôn `0`}; `body` lấn thân, kèm `bodyPart`, `bodyRatio` khi có; `inward` khuỷu lệch vào giữa thân hay lên trên, phần cánh tay trên; `gap`
   khe tầm với).
   Món treo trên cánh tay (`món@carry`, [01](01-rig.md#món-treo)) ở `carry.right` / `carry.left`: `item`, `hold`, `on`
-  (`elbow` / `shoulder`), `seat` (đỉnh quai tới chỗ treo), `bend` / `rise` (khuỷu: góc gập, độ ngóc cẳng tay), `body`
+  (`elbow` / `shoulder`), `seat` (đỉnh quai tới chỗ treo đã dời), `shift` (món có quai `strap`: đoạn dời để quai tựa lên người), `bend` / `rise` (khuỷu: góc gập, độ ngóc cẳng tay), `body`
   (`gap` khe thân món tới phần người gần nhất — âm là lồng —, `part`, `allow` phần `touch` cho lấn), `swing` (độ đẩy khỏi
   phương đứng), `issues` (`seat`, `body`).
   Cảnh có `lens` và người 3D kèm `clashes`: mỗi mốc hỏi, các chỗ phần người lồng vào đồ khối hay vào

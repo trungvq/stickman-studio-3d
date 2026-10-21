@@ -4,10 +4,13 @@ import { body3 } from "./figure3d";
 import { carryHits, heldLine, type HeldCarry, type HeldIssue } from "./heldAudit";
 import {
   CARRY,
+  capsuleExit,
   carryFrame,
+  carryShape,
   carrySpecOf,
   cloudClearance,
   elbowSeat,
+  strapBalls,
   type CarryCapsule,
   type CarryRef,
 } from "./heldCarry";
@@ -123,6 +126,60 @@ describe("elbowSeat, carryFrame", () => {
     // thân hộp 30 × 26 × 10 ở y 0–26 (đơn vị rig), tâm ở gốc
     expect(cloudClearance(TUI.shape!, G, [0, 0.13, 0])).toBeLessThan(-4);
     expect(cloudClearance(TUI.shape!, G, [0, 0.13, 0.1, 0.5, 0.13, 0])).toBeCloseTo(5, 4);
+  });
+});
+
+describe("quai tựa lên người (phần `strap`)", () => {
+  const HIEU = spec(tuiHieuJson);
+
+  it("`carryShape` tách quai khỏi thân; `strapBalls` phủ trụ quai bằng viên cách nhau nửa bán kính", () => {
+    const { body, strap } = carryShape(HIEU);
+    expect(strap.length).toBe(16);
+    expect(body.length + strap.length).toBe(HIEU.shape!.length);
+    expect(carryShape(TUI).strap).toEqual([]);
+    const balls = strapBalls([{ cyl: 1, from: [0, 0, 0], to: [0, 4, 0] }]);
+    expect(balls.map((b) => b.c[1])).toEqual([0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4]);
+    expect(balls.every((b) => b.r === 1)).toBe(true);
+    // hộp: lưới trên hai cạnh dài, bán kính nửa cạnh ngắn
+    const box = strapBalls([{ box: [2, 6, 10], at: [0, 0, 0] }]);
+    expect(box.every((b) => b.r === 1)).toBe(true);
+    expect(Math.max(...box.map((b) => b.c[2]))).toBeCloseTo(4);
+  });
+
+  it("`capsuleExit`: đoạn dời vừa ra khỏi nang, không chạm là 0", () => {
+    const c: CarryCapsule = { a: [-1, 0, 0], b: [1, 0, 0], r: 0.5, part: "foreArmR" };
+    expect(capsuleExit(c, [0, 0, 0], 0.1, [0, 1, 0])).toBeCloseTo(0.6, 6);
+    expect(capsuleExit(c, [0, -0.3, 0], 0.1, [0, 1, 0])).toBeCloseTo(0.9, 6);
+    expect(capsuleExit(c, [0, 1, 0], 0.1, [0, 1, 0])).toBe(0);
+  });
+
+  it("`carryFrame` với `rest`: món nâng thẳng đứng tới khi quai vừa ra khỏi thanh nằm ngang dưới chỗ treo", () => {
+    const grip = carrySpecOf(HIEU, carry("tui-hieu", { on: "shoulder" }))!;
+    // thanh ngang dọc trục x của món (mặt trước +z là +x) ngay dưới đỉnh quai: quai lồng vào nó
+    const bar: CarryCapsule = { a: [0, 1.85, -0.3], b: [0, 1.85, 0.3], r: 0.1, part: "upperArmR" };
+    const base = {
+      item: HIEU,
+      grip,
+      pivot: [0, 2, 0] as V3,
+      bar: [1, 0, 0] as V3,
+      away: [1, 0, 0] as V3,
+      u: 0.01,
+      body: [],
+    };
+    const rest = [
+      { dir: [0, 1, 0] as V3, need: (p: V3, r: number) => capsuleExit(bar, p, r, [0, 1, 0]) },
+    ];
+    const free = carryFrame(base);
+    expect(free.shift).toEqual([0, 0, 0]);
+    const f = carryFrame({ ...base, rest });
+    expect(f.shift[0]).toBe(0);
+    expect(f.shift[1]).toBeGreaterThan(1);
+    for (const b of strapBalls(carryShape(HIEU).strap)) {
+      const p = matVec(f.G.R, b.c.map((x) => x * f.G.u) as V3).map((x, i) => x + f.G.p[i]) as V3;
+      expect(capsuleExit(bar, p, b.r * f.G.u, [0, 1, 0])).toBeLessThan(1e-6);
+    }
+    // đỉnh quai cao hơn chỗ treo đúng đoạn dời
+    expect(gripPoint(f.G, heldPoint(HIEU, "quai") as V3)[1]).toBeCloseTo(2 + f.shift[1] * 0.01, 6);
   });
 });
 

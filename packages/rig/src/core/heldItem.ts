@@ -83,9 +83,13 @@ const FrameDirSchema = z.union([z.string().min(1), v3]);
 /** Loại khối hình ép cho một phần khi rig suy sai */
 export const PART_AS = ["slab", "disc", "rod", "lathe", "box"] as const;
 
-/** Thuộc tính một phần: `grip: false` không được cầm; `as` (+ `axis`) ép loại khối hình, `rod` cần `axis` */
+/**
+ * Thuộc tính một phần: `grip: false` không được cầm; `as` (+ `axis`) ép loại khối hình, `rod` cần `axis`; `strap: true` là
+ * quai của món treo — không tính vào thân món, rig nâng món tới khi quai tựa lên tay, vai
+ */
 export const HeldPartSchema = z.strictObject({
   grip: z.boolean().optional(),
+  strap: z.literal(true).optional(),
   as: z.enum(PART_AS).optional(),
   axis: FrameDirSchema.optional(),
 });

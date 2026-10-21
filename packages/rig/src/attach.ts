@@ -5,7 +5,7 @@ import { gripShift, type HandPose } from './core/hand';
 import { type CarrySpec, type GraspHand, type GripFrame, type HeldItemSpec, type ReachHold } from './core/heldItem';
 import { holdHand, holdLinkFrame, isCarryHold } from './core/holdLink';
 import { handDims } from './core/heldGeom';
-import { carryFrame, carrySpecOf, elbowSeat, type CarryBody } from './core/heldCarry';
+import { capsuleExit, carryFrame, carrySpecOf, elbowSeat, type CarryBody, type CarryCapsule, type CarryRest } from './core/heldCarry';
 import { bodyCapsules } from './collide';
 import type { V3 } from './core/lens';
 import { heldFit, skinBulge, type FingerRoles } from './core/heldFit';
@@ -409,8 +409,11 @@ export interface Carrying {
   grip: string;
   spec: HeldItemSpec;
   carry: CarrySpec;
-  /** Lần đặt gần nhất: góc đẩy khỏi phương đứng (độ), khe thân món tới thân, đùi (đơn vị rig thế giới, âm là lồng) */
-  fit?: { swing: number; gap: number; part?: string };
+  /**
+   * Lần đặt gần nhất: góc đẩy khỏi phương đứng (độ), khe thân món tới thân, đùi (đơn vị rig thế giới, âm là lồng), món dời
+   * khỏi chỗ treo để quai tựa lên người (thế giới three chia `U`)
+   */
+  fit?: { swing: number; gap: number; shift: V3; part?: string };
 }
 
 /** Chỗ treo của món treo trên người đã đặt dáng, thế giới three: điểm, thanh quai vắt qua, hướng từ thân ra; khuỷu kèm góc */
@@ -427,9 +430,26 @@ const tag = (s: Side) => (s < 0 ? 'R' : 'L');
 const limbR = (j: THREE.Object3D) => ((j.children.find((c) => c.userData.limb) as THREE.Mesh | undefined)?.userData.r as number | undefined) ?? 0;
 const shoulderMemo = new WeakMap<Figure, Partial<Record<Side, THREE.Vector3>>>();
 
+/** Chỗ treo vai ra ngoài khớp vai ngần này bán kính cánh tay: đầu vai, chỗ vai mỏng nhất theo chiều trước – sau */
+const SHOULDER_OUT = 0.75;
+
+/** Các vỏ thân của người (hệ thân `spine`): không phải chi, có bóng */
+const shells = (fig: Figure) =>
+  fig.spine.children.filter((c): c is THREE.Mesh => (c as THREE.Mesh).isMesh && !c.userData.noShadow && !c.userData.limb);
+
+/** Tia dọc trên lưới `m` (hệ cha của nó): mọi độ cao cắt mặt lưới, từ cao xuống */
+function columnHits(m: THREE.Mesh, x: number, z: number, top: number): number[] {
+  const probe = columnProbe;
+  probe.geometry = m.geometry;
+  const inv = m.matrix.clone().invert();
+  const o = new THREE.Vector3(x, top, z).applyMatrix4(inv), d = new THREE.Vector3(0, -1, 0).transformDirection(inv);
+  return new THREE.Raycaster(o, d).intersectObject(probe).map((h) => h.point.applyMatrix4(m.matrix).y);
+}
+const columnProbe = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+
 /**
- * Điểm đặt quai trên đỉnh vai, hệ thân (`spine`): phía trong khớp vai hơn nửa bán kính cánh tay, trên mặt thân áo (tia
- * dọi từ trên xuống); thân không có lưới thì trên khớp vai một bán kính tay. Đứng yên trong hệ thân nên tính một lần
+ * Điểm đặt quai trên đỉnh vai, hệ thân (`spine`): ra ngoài khớp vai `SHOULDER_OUT` bán kính cánh tay, trên mặt thân áo (tia
+ * dọi từ trên xuống) hay mặt cầu khớp vai, lấy chỗ cao hơn. Đứng yên trong hệ thân nên tính một lần
  */
 function shoulderTop(fig: Figure, side: Side): THREE.Vector3 {
   const memo = shoulderMemo.get(fig) ?? {};
@@ -437,26 +457,88 @@ function shoulderTop(fig: Figure, side: Side): THREE.Vector3 {
   const hit = memo[side];
   if (hit) return hit;
   const sh = fig.arms[side].shoulder, r = limbR(sh);
-  const x = sh.position.x - side * r * 0.6, z = sh.position.z;
-  let y = sh.position.y + r;
-  const shells = fig.spine.children.filter((c): c is THREE.Mesh => (c as THREE.Mesh).isMesh && !c.userData.noShadow && !c.userData.limb);
-  const probe = new THREE.Mesh(undefined, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
-  let top = -Infinity;
-  for (const mesh of shells) {
-    const inv = mesh.matrix.clone().invert();
-    const o = new THREE.Vector3(x, y + 5, z).applyMatrix4(inv), d = new THREE.Vector3(0, -1, 0).transformDirection(inv);
-    probe.geometry = mesh.geometry;
-    const h = new THREE.Raycaster(o, d).intersectObject(probe)[0];
-    if (h) top = Math.max(top, h.point.applyMatrix4(mesh.matrix).y);
-  }
-  if (top > -Infinity) y = top;
+  const x = sh.position.x + side * r * SHOULDER_OUT, z = sh.position.z;
+  let y = sh.position.y + r * Math.sqrt(1 - SHOULDER_OUT ** 2);
+  for (const mesh of shells(fig)) y = Math.max(y, columnHits(mesh, x, z, sh.position.y + r + 5)[0] ?? -Infinity);
   return (memo[side] = new THREE.Vector3(x, y, z));
+}
+
+/** Lưới cột dọc của vỏ thân (hệ thân): mỗi cột là các khoảng `[dưới, trên]` nằm trong vỏ */
+interface Columns { x0: number; z0: number; step: number; nx: number; nz: number; cells: number[][][] }
+const columnMemo = new WeakMap<Figure, Columns>();
+const COLUMN_STEP = 0.015;
+
+function torsoColumns(fig: Figure): Columns {
+  const hit = columnMemo.get(fig);
+  if (hit) return hit;
+  const list = shells(fig);
+  const box = new THREE.Box3();
+  for (const m of list) {
+    m.geometry.computeBoundingBox();
+    box.union(m.geometry.boundingBox!.clone().applyMatrix4(m.matrix));
+  }
+  const step = COLUMN_STEP;
+  const nx = box.isEmpty() ? 0 : Math.ceil((box.max.x - box.min.x) / step) + 1;
+  const nz = box.isEmpty() ? 0 : Math.ceil((box.max.z - box.min.z) / step) + 1;
+  const cells: number[][][] = [];
+  for (let i = 0; i < nx; i++)
+    for (let j = 0; j < nz; j++) {
+      const x = box.min.x + i * step, z = box.min.z + j * step;
+      const spans: number[][] = [];
+      for (const m of list) {
+        const ys = columnHits(m, x, z, box.max.y + 1);
+        for (let k = 0; k + 1 < ys.length; k += 2) spans.push([ys[k + 1], ys[k]]);
+      }
+      cells.push(spans);
+    }
+  const out = { x0: box.min.x, z0: box.min.z, step, nx, nz, cells };
+  columnMemo.set(fig, out);
+  return out;
+}
+
+/** Đoạn nâng thẳng đứng (thế giới three) để viên tâm `p` bán kính `r` ra khỏi vỏ thân của người */
+function torsoLift(fig: Figure): (p: V3, r: number) => number {
+  const col = torsoColumns(fig);
+  const m = fig.spine.matrixWorld, inv = m.clone().invert();
+  const s = new THREE.Vector3().setFromMatrixScale(m).x;
+  const up = new THREE.Vector3(0, 1, 0).transformDirection(inv);
+  return (p, r) => {
+    if (!col.nx) return 0;
+    const q = new THREE.Vector3(...p).applyMatrix4(inv), rl = r / s;
+    let local = 0;
+    for (const [dx, dz] of [[0, 0], [rl, 0], [-rl, 0], [0, rl], [0, -rl]]) {
+      const i = Math.round((q.x + dx - col.x0) / col.step), j = Math.round((q.z + dz - col.z0) / col.step);
+      if (i < 0 || j < 0 || i >= col.nx || j >= col.nz) continue;
+      for (const [lo, hi] of col.cells[i * col.nz + j]) if (q.y - rl < hi && q.y + rl > lo) local = Math.max(local, hi - (q.y - rl));
+    }
+    // cột đứng theo trục thân: đổi đoạn nâng dọc trục thân ra đoạn nâng thẳng đứng
+    return (local * s) / Math.max(0.5, up.y);
+  };
+}
+
+/**
+ * Luật tựa quai của món treo (`carryFrame` của lõi), thế giới three. Khuỷu: quai nâng lên khỏi cẳng tay, trượt dọc cẳng tay
+ * (`bar` nằm ngang) ra khỏi cánh tay trên. Vai: quai nâng lên khỏi vỏ thân và cánh tay trên
+ */
+function carryRest(fig: Figure, side: Side, seat: CarrySeat, on: CarrySpec['on']): CarryRest[] {
+  const caps = carryBody(fig, ['upperArm', 'foreArm']).filter((b): b is CarryCapsule => 'a' in b);
+  const cap = (part: string) => caps.find((c) => c.part === `${part}${tag(side)}`)!;
+  const UP: V3 = [0, 1, 0];
+  const exit = (c: CarryCapsule, dir: V3): CarryRest => ({ dir, need: (p, r) => capsuleExit(c, p, r, dir) });
+  if (on === 'elbow') {
+    const b = new THREE.Vector3(seat.bar.x, 0, seat.bar.z);
+    const rests = [exit(cap('foreArm'), UP)];
+    if (b.lengthSq() > 1e-6) rests.push(exit(cap('upperArm'), b.normalize().toArray() as V3));
+    return rests;
+  }
+  const torso = torsoLift(fig), arm = cap('upperArm');
+  return [{ dir: UP, need: (p, r) => Math.max(torso(p, r), capsuleExit(arm, p, r, UP)) }];
 }
 
 /**
  * Chỗ treo `on` trên tay `side` của người ở dáng đang đặt (thế giới three; gọi sau khi ma trận thế giới của
- * người đã tính). Khuỷu: mặt trong chỗ gập (`elbowSeat` của lõi). Vai: đỉnh vai phía trong khớp vai, thanh quai là trục vai
- * ra ngoài. `away` từ trục thân (hông → cổ) ra chỗ treo
+ * người đã tính). Khuỷu: mặt trong chỗ gập (`elbowSeat` của lõi). Vai: đầu vai ngoài khớp vai (`shoulderTop`), thanh quai là
+ * trục vai ra ngoài. `away` từ trục thân (hông → cổ) ra chỗ treo
  */
 export function carrySeat(fig: Figure, side: Side, on: CarrySpec['on']): CarrySeat {
   const w = (o: THREE.Object3D) => o.getWorldPosition(new THREE.Vector3());
@@ -575,11 +657,12 @@ export function carry(fig: Figure, object: THREE.Object3D, o: { hand: Side; grip
       u: 0.01 * k, body: carryBody(fig, ['torso', 'thigh']),
       // tay luồn ngoài túi đeo vai: cánh tay trên cùng bên ép túi vào thân
       ...(spec.on === 'shoulder' && { outer: carryBody(fig, ['upperArm']).filter((b) => b.part === `upperArm${tag(side)}`) }),
+      rest: carryRest(fig, side, seat, spec.on),
     });
     const { R, p } = fit.G;
     _cm.set(R[0] * k, R[1] * k, R[2] * k, p[0], R[3] * k, R[4] * k, R[5] * k, p[1], R[6] * k, R[7] * k, R[8] * k, p[2], 0, 0, 0, 1);
     _ci.copy(root.matrixWorld).invert().multiply(_cm).decompose(c.position, c.quaternion, c.scale);
-    entry.fit = { swing: fit.swing, gap: fit.gap * k, ...(fit.part && { part: fit.part }) };
+    entry.fit = { swing: fit.swing, gap: fit.gap * k, shift: fit.shift.map((v) => v * k) as V3, ...(fit.part && { part: fit.part }) };
   });
   const t = tag(side);
   rig.userData.touch = [`self.upperArm${t}`, `self.foreArm${t}`, ...(spec.on === 'shoulder' ? ['self.torso'] : []), ...(spec.touch ?? [])];

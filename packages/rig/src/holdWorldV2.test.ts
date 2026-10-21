@@ -6,7 +6,9 @@ import { holdLinkFrame } from './core/holdLink';
 import { actHeld, type ActInput } from './core/act3';
 import { itemAt, parseScene, resolveScene, sceneAt } from './core/scene';
 import { defaultCharacter, parseCharacter } from './core/schema';
-import { fitHolding } from './attach';
+import { carrySeat, fitHolding } from './attach';
+import { bodyCapsules } from './collide';
+import { carryShape, strapBalls } from './core/heldCarry';
 import { heldCarries } from './held';
 import { U } from './khoi';
 import { buildWorld, plainRoom, type Cast3D } from './world';
@@ -243,7 +245,7 @@ describe('treo (`món@carry`)', () => {
   const c = defaultCharacter();
   c.palette.clad = true;
   const ELBOW = { to: 'shoulder', offset: [36, 30, 0], point: 'wrist', elbow: [-0.7, 1, -0.2] };
-  const OUT = { at: [-90, -185, -10], point: 'wrist', elbow: [-0.6, 1, 0] };
+  const OUT = { to: 'shoulder', offset: [0, 95, 65], point: 'wrist', elbow: [-1, 1, 0] };
 
   function carryWorld(item: HeldItemSpec, hands: unknown[]) {
     const sc = parseScene({
@@ -287,6 +289,37 @@ describe('treo (`món@carry`)', () => {
         expect(fig.holding?.[-1]).toBeUndefined();
         const [m] = heldCarries(fig, 'a');
         expect(m).toMatchObject({ hold: 'tui-hieu@carry', on: P.on, key: `${x.bag.id}|tui-hieu@carry|${P.on}` });
+      }
+    });
+
+  for (const P of CASES)
+    it(`\`on: ${P.on}\`: quai (phần \`strap\`) tựa lên người — không viên quai nào trong thân áo hay cánh tay, món dời lên khỏi chỗ treo`, () => {
+      const x = carryWorld(TUI, [{ t: 0, right: P.hand }]);
+      const fig = at(x, 0.5);
+      const k = fig.root.getWorldScale(new THREE.Vector3()).x;
+      const [m] = heldCarries(fig, 'a');
+      expect(m.seat).toBeLessThan(1e-6);
+      expect(m.shift!).toBeGreaterThan(1);
+      const seat = carrySeat(fig, -1, P.on as 'elbow' | 'shoulder');
+      const top = x.bag.localToWorld(new THREE.Vector3(0, 0.911, 0));
+      expect(top.y).toBeGreaterThan(seat.pivot.y);
+      const torso = fig.spine.children.find((c) => c.userData.torso) as THREE.Mesh;
+      const probe = new THREE.Mesh(torso.geometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+      probe.matrixWorld.copy(torso.matrixWorld);
+      probe.matrixAutoUpdate = false;
+      const arms = bodyCapsules(fig, ['upperArm', 'foreArm']).filter((c) => c.side === -1);
+      // `localToWorld` đặt lại món treo mỗi lần gọi: lấy ma trận một lần
+      const M = x.bag.matrixWorld.clone();
+      for (const b of strapBalls(carryShape(TUI).strap)) {
+        const p = new THREE.Vector3(...b.c).multiplyScalar(0.01).applyMatrix4(M);
+        const r = b.r * 0.01 * k;
+        // trong vỏ thân: tia lên cắt mặt lưới số lẻ lần
+        const above = (y: number) => new THREE.Raycaster(new THREE.Vector3(p.x, p.y + y, p.z), new THREE.Vector3(0, 1, 0)).intersectObject(probe, false).length % 2;
+        expect(above(-r * 0.9)).toBe(0);
+        for (const c of arms) {
+          const ab = c.b.clone().sub(c.a), f = THREE.MathUtils.clamp(p.clone().sub(c.a).dot(ab) / ab.lengthSq(), 0, 1);
+          expect(p.distanceTo(c.a.clone().addScaledVector(ab, f)) - c.r - r).toBeGreaterThan(-0.002 * k);
+        }
       }
     });
 

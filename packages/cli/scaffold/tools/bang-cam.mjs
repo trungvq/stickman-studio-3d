@@ -172,7 +172,10 @@ const moveDir = (d, yaw0, yaw1) => {
   const r = dot(d, rgt(yaw0));
   return fwd(yaw1).map((v, i) => r2(v * f + rgt(yaw1)[i] * r + (i === 1 ? d[1] : 0)));
 };
-/** Cách đặt cánh tay cho chỗ treo: khuỷu gập chữ V (cổ tay trước vai), hay tay dang ngoài túi đeo vai; `hold` là chỗ cầm */
+/**
+ * Cách đặt cánh tay cho chỗ treo: khuỷu gập chữ V (cổ tay trước vai), hay tay dang ngoài túi đeo vai (cổ tay theo vai nên co
+ * giãn theo người); `hold` là chỗ cầm
+ */
 const treoTay = (side, on, hold) => {
   const lr = side === "right" ? -1 : 1;
   return on === "elbow"
@@ -184,9 +187,10 @@ const treoTay = (side, on, hold) => {
         hold,
       }
     : {
-        at: moveDir([90 * lr, -185, -10], 90, YAW).map((v, i) => r2(v + AT[i])),
+        to: "shoulder",
+        offset: [0, 95, -65 * lr],
         point: "wrist",
-        elbow: moveDir([0.6 * lr, 1, 0], 90, YAW),
+        elbow: moveDir([lr, 1, 0], 90, YAW),
         hold,
       };
 };
@@ -869,6 +873,7 @@ const tomTat = (s) =>
     ? [
         `treo ${s.on === "elbow" ? "khuỷu" : "vai"}`,
         `quai ${r1(s.seat)}`,
+        ...(s.shift ? [`nâng ${r1(s.shift)}`] : []),
         ...(s.bend !== undefined ? [`khuỷu ${Math.round(s.bend)}°/${Math.round(s.rise)}°`] : []),
         `thân ${r1(s.body.gap)} ${s.body.part}`,
         `đẩy ${Math.round(s.swing)}°`,
@@ -941,7 +946,15 @@ for (const c of cells) {
       ),
       text: tomTat(s),
       raw: s.on
-        ? { on: s.on, seat: s.seat, bend: s.bend, rise: s.rise, body: s.body, swing: s.swing }
+        ? {
+            on: s.on,
+            seat: s.seat,
+            shift: s.shift,
+            bend: s.bend,
+            rise: s.rise,
+            body: s.body,
+            swing: s.swing,
+          }
         : {
             pierce: s.pierce,
             sink: lunDa(s),
@@ -1120,7 +1133,7 @@ const md = [
   "# Bảng duyệt nhóm cầm",
   "",
   `Rig \`${rig.RIG_VERSION ?? JSON.parse(readFileSync(join(root, "node_modules/@stickman3d/rig/package.json"), "utf8")).version}\` · giây ${T} · người: ${people.map((p) => `\`${p.file}\` (tay ${r2(p.size)})`).join(", ")} · ${cells.length} hàng × ${GOC.length} góc.`,
-  "Số đo (đơn vị rig, góc độ). Chỗ cầm nhóm: dòng đầu là lựa chọn rig giải (`variant`, `edge`, `along`, `thumb`…), dòng hai `lún` da lún sâu nhất vào món, `xuyên` trục nang tới mặt món (âm là còn ngoài), `nắm` tâm nắm tới hình, `cỡ` khối hình / `W` tay, `cổ tay vượt` độ vượt kẹp, `hở` ngón có vai trò chạm mà còn cách món; dòng ba là khe từng ngón tới món (âm là lún) và vai trò (`press`, `wrap`, `tip`, `support`, `free`). Món treo: `quai` đỉnh quai tới chỗ treo, `khuỷu` góc gập/độ ngóc cẳng tay, `thân` khe thân món tới phần người gần nhất, `đẩy` góc lệch khỏi phương đứng. `!!` là luật `held` của `check` báo trên cảnh này.",
+  "Số đo (đơn vị rig, góc độ). Chỗ cầm nhóm: dòng đầu là lựa chọn rig giải (`variant`, `edge`, `along`, `thumb`…), dòng hai `lún` da lún sâu nhất vào món, `xuyên` trục nang tới mặt món (âm là còn ngoài), `nắm` tâm nắm tới hình, `cỡ` khối hình / `W` tay, `cổ tay vượt` độ vượt kẹp, `hở` ngón có vai trò chạm mà còn cách món; dòng ba là khe từng ngón tới món (âm là lún) và vai trò (`press`, `wrap`, `tip`, `support`, `free`). Món treo: `quai` đỉnh quai tới chỗ treo, `nâng` món có quai `strap` dời ngần ấy để quai tựa lên người, `khuỷu` góc gập/độ ngóc cẳng tay, `thân` khe thân món tới phần người gần nhất, `đẩy` góc lệch khỏi phương đứng. `!!` là luật `held` của `check` báo trên cảnh này.",
   "",
   ...(bo.length
     ? [
