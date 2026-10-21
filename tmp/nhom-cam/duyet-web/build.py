@@ -50,7 +50,26 @@ for i, r in enumerate(rows):
 
 prog = [l for l in open(f'{R}/tien-do.md') if l.startswith('| G4-')]
 docs = [(p, l) for p in glob.glob(f'{R}/g*/so*.md') for l in open(p)]
+
+# video: `duyet/g4-<tên>.mp4` một mục; `g4-<tên>--<nhãn>.mp4` cùng tên gộp một mục, mỗi file một khung có nhãn.
+# Tờ ảnh `duyet/g4-<tên>*.jpg` cùng tên gắn vào mục video (ảnh tĩnh), không thành mục riêng
+vids, taken = {}, set()
+for p in sorted(glob.glob(f'{R}/duyet/g4-*.mp4')):
+    stem = os.path.basename(p)[:-4]
+    name, _, label = stem.partition('--')
+    vids.setdefault(name, []).append({'label': label.replace('-', ' '), 'src': os.path.relpath(p, R)})
+for name, vs in vids.items():
+    imgs = sorted(q for q in glob.glob(f'{R}/duyet/{name}*.jpg') if os.path.basename(q)[len(name):len(name) + 1] in ('', '-', '.'))
+    taken.update(imgs)
+    title = name[3:]
+    note = next((l for l in prog if f'duyet/{name}' in l and '.mp4' in l), '')
+    note = ' | '.join(c.strip() for c in note.strip().strip('|').split('|')[:2])
+    hint = [l.strip().lstrip('- ') for _, l in docs if f'{name}.mp4' in l or f'{name}--' in l]
+    items.append({'id': name, 'kind': 'video', 'title': title, 'group': title.split('-')[0], 'fps': 30, 'videos': vs,
+        'images': [os.path.relpath(q, R) for q in imgs], 'note': note, 'hint': hint})
+
 for p in sorted(glob.glob(f'{R}/duyet/g4-*.jpg')):
+    if p in taken: continue
     base = os.path.basename(p)
     name = base[3:-4]
     pre = 'duyet/g4-' + name.split('-')[0] + '-*'

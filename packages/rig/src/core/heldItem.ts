@@ -376,6 +376,13 @@ export interface HoldGrasp {
   frame?: GraspFrame;
   /** Lần cầm một tay theo mốc: bàn tay giải ở từng mốc món, hoà trong hệ thân; món vẽ theo bàn tay đã vẽ */
   keyed?: true;
+  /** Đầu cao của cạnh hay trục dài (khung món) cho khung cầm của tay dẫn */
+  high?: V3;
+  /**
+   * Tay dẫn nối ngay sau lần cầm theo mốc cùng món, cùng nhóm, cùng tay: lựa chọn (trường cảnh khai đè) và đầu cao rig đã
+   * giải của lần cầm ấy trên nhân vật `c`; `inheritHold` điền vào `choice`, `high`
+   */
+  inherit?: (c: ActCharacter) => { choice: GraspChoice; high?: V3 } | undefined;
 }
 
 /** Tên file của món cho tên thể hiện `món:<tên>` (`vali:2` → `vali`); tên không có `:` là chính nó */

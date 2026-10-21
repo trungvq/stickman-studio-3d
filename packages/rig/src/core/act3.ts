@@ -41,7 +41,7 @@ import {
   type GraspSolution,
 } from "./graspSolve";
 import { handDims, type HandDims } from "./heldGeom";
-import { holdFrom, holdHand, holdLinkFrame, type HoldLinkHand } from "./holdLink";
+import { holdFrom, holdHand, holdLinkFrame, inheritHold, type HoldLinkHand } from "./holdLink";
 import { armInput, evalPhi, phiOf, type ArmSol } from "./graspArm";
 import { REACH_ELBOW } from "./ik";
 import {
@@ -740,7 +740,12 @@ function placedHolds(T: Trunk3, hands: ActHands | undefined) {
   const sols: Partial<Record<number, PlacedSol>> = {};
   let out = hands;
   for (const wk of ["near", "far"] as const) {
-    const r = hands?.[wk];
+    const r0 = hands?.[wk];
+    const h0 = r0?.hold;
+    // tay dẫn kế thừa lựa chọn của lần cầm theo mốc liền trước
+    const hi = h0 && inheritHold(h0, canon(T.c));
+    if (hi && hi !== h0) out = { ...out, [wk]: { ...r0, hold: hi } };
+    const r = out?.[wk];
     const h = r?.hold;
     const fg = h?.from?.grasp;
     if (h?.was && fg?.mode === "item" && !fg.frame && !h.released) {
@@ -751,8 +756,8 @@ function placedHolds(T: Trunk3, hands: ActHands | undefined) {
       }
     }
     if (h?.grasp?.mode !== "item" || !h.solve || h.released) continue;
-    let m = placedMemo.get(h);
-    if (!m || !sameC(m.c, T.c)) placedMemo.set(h, (m = { c: T.c, sol: h.solve(canon(T.c), T) }));
+    let m = placedMemo.get(h0!);
+    if (!m || !sameC(m.c, T.c)) placedMemo.set(h0!, (m = { c: T.c, sol: h.solve(canon(T.c), T) }));
     if (!m.sol) continue;
     sols[wk === "near" ? T.near : -T.near] = m.sol;
     const cur = out?.[wk]?.hold ?? h;

@@ -6,6 +6,7 @@ import {
   supportFaces,
   type RoleMap,
 } from "./graspGroups";
+import type { ActCharacter } from "./arm3";
 import { CONTACTS, edgeOk, graspFrame, type GraspChoice, type GraspFrame } from "./graspSolve";
 import type { HandVec } from "./hand";
 import { handDims, itemGeom, type FaceFeature, type Feature, type HandDims } from "./heldGeom";
@@ -131,12 +132,13 @@ function frameOf(
   k: number,
   long: number,
   s: number,
+  high?: V3,
 ): GraspFrame {
   let m = frames.get(spec);
   if (!m) frames.set(spec, (m = new Map()));
-  const key = JSON.stringify([c, side, dims, k, long, s]);
+  const key = JSON.stringify([c, side, dims, k, long, s, high]);
   let fr = m.get(key);
-  if (!fr) m.set(key, (fr = graspFrame(spec, itemGeom(spec), c, side, dims, k, long, s)));
+  if (!fr) m.set(key, (fr = graspFrame(spec, itemGeom(spec), c, side, dims, k, long, s, high)));
   return fr;
 }
 
@@ -297,7 +299,16 @@ function groupHand(
   if (!g || g.hold.group === "carry") return undefined;
   const fr =
     g.frame ??
-    frameOf(h.spec, fillChoice(h.spec, g.hold.group, g.choice, side, dims), side, dims, k, long, s);
+    frameOf(
+      h.spec,
+      fillChoice(h.spec, g.hold.group, g.choice, side, dims),
+      side,
+      dims,
+      k,
+      long,
+      s,
+      g.high,
+    );
   const both = g.hold.both ? supportOf(h.spec, g, fr, side, dims, k, long, s) : undefined;
   return {
     hand: fr.hand,
@@ -336,6 +347,25 @@ export function holdLinkFrame(
   const x = groupHand(h, side, handDims(k / s, long / s), k, long, s);
   if (!x?.frame) throw new Error(`\`${h.item}\`: lần cầm \`${h.grip}\` không cầm bằng bàn tay`);
   return { G: x.frame.G, center: gripCenter(x.frame.hand.pose, side, k, long) };
+}
+
+/** Chỗ cầm tay dẫn `g` với lựa chọn kế thừa (`inherit`) đã giải trên nhân vật `c` */
+function inheritGrasp(g: HoldGrasp, c: ActCharacter): HoldGrasp {
+  const x = g.inherit!(c);
+  const out: HoldGrasp = { ...g, ...(x && { choice: x.choice, ...(x.high && { high: x.high }) }) };
+  delete out.inherit;
+  return out;
+}
+
+/**
+ * Lần cầm `h` (cả lần cầm cũ còn hoà, `from`) với lựa chọn tay dẫn kế thừa từ lần cầm theo mốc liền trước
+ * (`HoldGrasp.inherit`) đã giải trên nhân vật `c`. docs/11-nhom-cam.md § Lựa chọn cảnh không khai
+ */
+export function inheritHold(h: ReachHold, c: ActCharacter): ReachHold {
+  const g = h.grasp?.inherit && inheritGrasp(h.grasp, c);
+  const fg = h.from?.grasp?.inherit && inheritGrasp(h.from.grasp, c);
+  if (!g && !fg) return h;
+  return { ...h, ...(g && { grasp: g }), ...(fg && { from: { ...h.from!, grasp: fg } }) };
 }
 
 /** Lần cầm trước của cùng món (`h.from`) còn đang hoà, dạng `ReachHold`; lần cầm cũ không chiếm bàn tay thì không có */

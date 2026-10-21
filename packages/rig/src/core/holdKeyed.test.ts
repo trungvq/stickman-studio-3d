@@ -10,12 +10,13 @@ import {
   type HeldItemSpec,
   type ReachHold,
 } from "./heldItem";
-import { holdHand } from "./holdLink";
+import { holdHand, holdLinkFrame, inheritHold } from "./holdLink";
 import { matMul, matVec, type M3, type V3 } from "./lens";
 import { graspAtTime, itemAt, parseScene, resolveScene, sceneAt, type SceneRuntime } from "./scene";
 import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
+import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 
 // Lần cầm một tay theo mốc: bàn tay giải ở từng mốc món, giữa hai mốc hoà trong hệ thân, món theo bàn tay
 // (docs/11-nhom-cam.md § Lần cầm theo mốc)
@@ -23,6 +24,9 @@ import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 const r0 = parseHeldItem(bangGia);
 if (!r0.success) throw new Error(r0.error.message);
 const BANG: HeldItemSpec = r0.data;
+const r1 = parseHeldItem(dienThoai);
+if (!r1.success) throw new Error(r1.error.message);
+const PHONE_SPEC: HeldItemSpec = r1.data;
 const parsed = parseCharacter(fx.character);
 if (!parsed.success) throw new Error("nguoi");
 const NGUOI = parsed.data;
@@ -39,7 +43,18 @@ function runtime(hands: unknown[], items: unknown[], world: object = { at: AT, y
     items,
   });
   if (!r.success) throw new Error(r.error.message);
-  return resolveScene(r.data, {}, {}, {}, { nguoi: H }, { nguoi: DIMS }, { "bang-gia": BANG });
+  return resolveScene(
+    r.data,
+    {},
+    {},
+    {},
+    { nguoi: H },
+    { nguoi: DIMS },
+    {
+      "bang-gia": BANG,
+      "dien-thoai": PHONE_SPEC,
+    },
+  );
 }
 
 const poseAt = (rt: SceneRuntime, t: number) => sceneAt(rt, "nguoi", t, H, DIMS) as ActInput;
@@ -215,6 +230,61 @@ describe("lần cầm một tay theo mốc", () => {
       expect(s.joint).toBeLessThanOrEqual(0.25 * s.path);
       expect(s.item).toBeLessThanOrEqual(0.25 * s.itemPath);
     }
+  });
+
+  it("theo mốc → tay dẫn cùng món, cùng nhóm: món không xoay trong tay ở ranh giới", () => {
+    const PHONE = { item: "dien-thoai", group: "palmBox" };
+    const phone = (t: number, to: string, offset: number[]) => ({
+      t,
+      cast: "nguoi",
+      item: "dien-thoai",
+      to,
+      offset,
+    });
+    const hands = [
+      { t: 0, right: { hold: PHONE } },
+      {
+        t: 1.6,
+        right: {
+          to: "chest",
+          offset: [34, 20, 18],
+          point: "grip",
+          hold: { ...PHONE, regrip: true },
+        },
+      },
+      { t: 2.8, right: { hold: { ...PHONE, regrip: true } } },
+    ];
+    const items = [
+      phone(0.5, "chest", [40, -6, 6]),
+      phone(1.2, "chest", [34, 0, 10]),
+      phone(3.3, "eye", [30, 4, 2]),
+    ];
+    const rt = runtime(hands, items);
+    const keyed = graspAtTime(rt, "nguoi", "right", 1.6 - 1e-4, { chars })!;
+    // liên kết của tay dẫn trên nhân vật thật, sau quãng hoà và ngay ranh giới
+    const lead = (t: number) => {
+      const h = inheritHold(rightHold(rt, t), NGUOI);
+      expect(h.grasp?.mode).toBe("hand");
+      return holdLinkFrame(h, -1).G.R;
+    };
+    for (const t of [1.6 + 1e-4, 1.6 + HOLD_BLEND + 0.05, 2.5])
+      expect(rotDeg(keyed.frame.G.R, lead(t))).toBeLessThan(3);
+    // lựa chọn rời giữ nguyên, trường cảnh khai vẫn thắng
+    const said = runtime(
+      hands.map((k) =>
+        k.t === 1.6
+          ? { ...k, right: { ...k.right, hold: { ...PHONE, regrip: true, tilt: 0 } } }
+          : k,
+      ),
+      items,
+    );
+    const h = inheritHold(rightHold(said, 2), NGUOI);
+    expect(h.grasp!.choice.tilt).toBe(0);
+    expect(h.grasp!.choice.thumb).toBe(keyed.choice.thumb);
+    // tất định: hỏi nhảy cóc ra cùng số
+    const again = runtime(hands, items);
+    const late = holdLinkFrame(inheritHold(rightHold(again, 2.5), NGUOI), -1).G.R;
+    expect(rotDeg(late, lead(2.5))).toBe(0);
   });
 
   it("tất định: mẫu nhảy cóc ra cùng số với mẫu theo thứ tự", () => {

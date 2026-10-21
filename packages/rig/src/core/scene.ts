@@ -3810,12 +3810,62 @@ function holdGraspAt(
   const mode = rm.marks.length ? "item" : "hand";
   const base = mode === "item" ? {} : handChoice(host.rt.held, g, side, host.height);
   const { hold } = slideHold(keys, side, time, run, base);
+  const inherit = mode === "hand" ? keyedInherit(host, keys, side, run, hold) : undefined;
   return {
     hold,
     mode,
     choice: { ...base, ...declared(hold) },
     t0: run.since,
     ...(rm.keyed && { keyed: true as const }),
+    ...(inherit && { inherit }),
+  };
+}
+
+const inherits = new WeakMap<
+  SceneRuntime,
+  Map<string, ReturnType<NonNullable<HoldGrasp["inherit"]>>>
+>();
+
+/**
+ * Tay dẫn `run` nối ngay sau lần cầm theo mốc cùng món, cùng nhóm, cùng tay (`regrip`, đổi trường số): lựa chọn và đầu cao
+ * rig đã giải của lần cầm ấy ngay trước ranh giới, trường cảnh khai của `hold` đè; khác thì `undefined`
+ */
+function keyedInherit(
+  host: GraspHost,
+  keys: HandKey[],
+  side: HandSide,
+  run: HoldRun,
+  hold: SceneHoldGroup,
+): HoldGrasp["inherit"] {
+  if (run.lead || run.since <= 0) return undefined;
+  const { rt, id } = host;
+  const t0 = run.since - 1e-6;
+  const prev = holdRun(keys, side, t0);
+  if (!prev || !runMarks(rt, keys, side, prev).keyed) return undefined;
+  const pg = groupHold(prev.hold);
+  if (pg.item !== hold.item || pg.group !== hold.group) return undefined;
+  const said = declared(hold);
+  return (c) => {
+    let m = inherits.get(rt);
+    if (!m) inherits.set(rt, (m = new Map()));
+    const key = `${id}|${side}|${run.since}|${charId(c)}|${JSON.stringify(said)}`;
+    if (m.has(key)) return m.get(key);
+    const sol = graspAtTime(rt, id, side, t0, { chars: { [id]: c } });
+    let out: ReturnType<NonNullable<HoldGrasp["inherit"]>>;
+    if (sol) {
+      const choice: GraspChoice = { ...sol.choice, ...said };
+      // khai phần, cạnh hay mặt ngón cái khác: khối hình và đầu cao tìm lại theo trường khai
+      const moved = (["part", "edge", "thumb"] as const).some(
+        (k) => said[k] !== undefined && said[k] !== sol.choice[k],
+      );
+      if (moved) {
+        delete choice.featureIndex;
+        delete choice.feature;
+      }
+      out = { choice, ...(sol.high && !moved && { high: sol.high }) };
+    }
+    m.set(key, out);
+    return out;
   };
 }
 

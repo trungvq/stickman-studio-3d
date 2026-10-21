@@ -62,6 +62,12 @@
   .sheet img { max-width: 100%; cursor: zoom-in; }
   .sheet.big img { max-width: none; cursor: zoom-out; }
   .empty { color: var(--dim); }
+  .vbox { flex: 1; height: 100%; min-height: 0; display: flex; flex-direction: column; gap: 8px; overflow: auto; }
+  .vids { flex: 1; min-height: 0; display: flex; gap: 8px; }
+  .vids .pane video { max-width: 100%; max-height: 100%; display: block; }
+  .vbox .under { text-align: center; }
+  .vbox .under img { max-width: 100%; }
+  #vtime { font: 12px ui-monospace, monospace; color: var(--dim); min-width: 150px; }
 
   /* nhận xét */
   #right { border-left: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 14px; display: flex; flex-direction: column; gap: 14px; }
@@ -96,7 +102,8 @@
     <kbd>j</kbd>/<kbd>k</kbd> dòng · <kbd>←</kbd>/<kbd>→</kbd> giây · <kbd>a</kbd> góc ·
     <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> kiểu xem · <kbd>z</kbd> phóng ·
     giữ <kbd>Space</kbd> xem bản trước (kiểu Nháy) · <kbd>d</kbd> duyệt · <kbd>x</kbd> cần sửa · <kbd>q</kbd> hỏi lại ·
-    <kbd>c</kbd> ghi khung · <kbd>Esc</kbd> thoát ô chữ
+    <kbd>c</kbd> ghi khung · <kbd>Esc</kbd> thoát ô chữ ·
+    video: <kbd>Space</kbd> chạy/dừng · <kbd>←</kbd>/<kbd>→</kbd> từng khung · <kbd>s</kbd> tốc độ
   </div>
 </aside>
 
@@ -123,12 +130,13 @@ const SECS = [['ro', 'Khác thấy rõ'], ['it', 'Khác ít'], ['kh', 'Gần nh�
 const FILTERS = [['all', 'Tất cả'], ['todo', 'Chưa quyết'], ['flag', 'Cần sửa / hỏi'], ['note', 'Có ghi chú']];
 const LS = 'duyet-nhom-cam';
 
-const S = { items: [], db: {}, cur: 0, frame: 0, mode: 'sbs', angle: null, zoom: 1, ox: 50, oy: 50, wipe: 50, flip: false, filter: 'all', extra: false, auto: null };
+const S = { items: [], db: {}, cur: 0, frame: 0, mode: 'sbs', angle: null, zoom: 1, ox: 50, oy: 50, wipe: 50, flip: false, filter: 'all', extra: false, auto: null, speed: 1, still: false };
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const md = (s) => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 const url = (p) => '/' + p.split('/').map(encodeURIComponent).join('/');
-const sec = (it) => it.kind === 'sheet' ? 'g4' : /^khác thấy rõ/i.test(it.verdict) ? 'ro' : /^gần như/i.test(it.verdict) ? 'kh' : 'it';
+const SPEEDS = [0.25, 0.5, 1];
+const sec = (it) => it.kind === 'sheet' || it.kind === 'video' ? 'g4' : /^khác thấy rõ/i.test(it.verdict) ? 'ro' : /^gần như/i.test(it.verdict) ? 'kh' : 'it';
 const fkey = (f) => `${f.t} s`;
 const rec = (it) => (S.db[it.id] ??= { status: '', text: '', frames: {} });
 const hasNote = (it) => { const c = S.db[it.id]; return !!c && (!!c.text || Object.values(c.frames || {}).some(Boolean)); };
@@ -163,7 +171,7 @@ function renderList() {
     const c = S.db[it.id];
     const i = S.items.indexOf(it);
     const title = it.kind === 'shot' ? `#${it.n} ${it.scene.replace('t02-', '')}` : it.title;
-    const sub = it.kind === 'shot' ? `${it.cast} · tay ${it.side} · ${it.item}@${it.group}` : 'tờ ghép';
+    const sub = it.kind === 'shot' ? `${it.cast} · tay ${it.side} · ${it.item}@${it.group}` : it.kind === 'video' ? 'video' : 'tờ ghép';
     html += `<div class="it${i === S.cur ? ' cur' : ''}" data-i="${i}"><span class="dot ${c?.status || ''}"></span>
       <div><div class="t">${esc(title)}</div><div class="s">${esc(sub)}</div></div>${hasNote(it) ? '<span class="pen">✎</span>' : ''}</div>`;
   }
@@ -186,6 +194,13 @@ function renderBar() {
   grp('#zooms', ZOOMS.map((z) => [z, z + '×']), S.zoom, 'zoom', () => shot);
   $('#extra').checked = S.extra;
   const c = S.db[it.id];
+  if (it.kind === 'video') {
+    $('#frames').innerHTML = `<button data-v="play">▶︎ / ❚❚</button><button data-v="-1">◀ khung</button><button data-v="1">khung ▶</button>
+      <div class="grp"><span>Tốc độ</span>${SPEEDS.map((r) => `<button data-speed="${r}" class="${S.speed === r ? 'on' : ''}">${String(r).replace('.', ',')}×</button>`).join('')}</div>
+      <span id="vtime"></span>${it.images?.length ? `<label style="font-size:12px;color:var(--dim)"><input type="checkbox" id="still" ${S.still ? 'checked' : ''}> hiện ảnh tĩnh</label>` : ''}`;
+    $('#still')?.addEventListener('change', (e) => { S.still = e.target.checked; renderStage(); });
+    return;
+  }
   $('#frames').innerHTML = shot
     ? frames(it).map((f, i) => `<button data-fr="${i}" class="${i === S.frame ? 'on' : ''} ${f.picked ? '' : 'extra'} ${c?.frames?.[fkey(f)] ? 'has' : ''}">${f.t} s</button>`).join('') +
       (frames(it).length < it.frames.length ? `<span style="font-size:12px;color:var(--dim)">+${it.frames.length - frames(it).length} giây khác</span>` : '')
@@ -206,6 +221,13 @@ function renderStage() {
   const it = S.items[S.cur];
   const st = $('#stage');
   if (it.kind === 'sheet') { st.innerHTML = `<div class="sheet"><img src="${url(it.src)}"></div>`; return; }
+  if (it.kind === 'video') {
+    st.innerHTML = `<div class="vbox"><div class="vids">${it.videos.map((v) => `<div class="pane">${v.label ? `<span class="tag sau">${esc(v.label)}</span>` : ''}
+      <video src="${url(v.src)}" controls loop muted playsinline preload="auto"></video></div>`).join('')}</div>
+      ${S.still && it.images?.length ? `<div class="under">${it.images.map((p) => `<img src="${url(p)}">`).join('')}</div>` : ''}</div>`;
+    hookVideos(it);
+    return;
+  }
   const f = frames(it)[S.frame];
   if (!f) { st.innerHTML = '<div class="empty">Không có khung.</div>'; return; }
   const v = f.views[angleOf(f)];
@@ -245,7 +267,7 @@ function renderRight() {
       <div class="meta">lệch <b>${it.angle}°</b> / <b>${it.shift}</b> đơn vị</div></div>
       <div class="lab">${esc(it.label)}</div>
       <div class="note n-${k}">${md(it.note)}</div>`;
-  } else head = `<div><h2>${esc(it.title)}</h2><div class="meta">Tờ ghép nhóm <b>${esc(it.group)}</b> · <code>${esc(it.src)}</code></div></div>
+  } else head = `<div><h2>${esc(it.title)}</h2><div class="meta">${it.kind === 'video' ? 'Video' : 'Tờ ghép'} nhóm <b>${esc(it.group)}</b> · ${(it.kind === 'video' ? it.videos.map((v) => v.src) : [it.src]).map((p) => `<code>${esc(p)}</code>`).join(' ')}</div></div>
       ${it.hint.length ? `<div class="note n-it">${it.hint.map(md).join('<br>')}</div>` : '<div class="note">Không có ghi chú bố cục — đọc theo nhãn trên ảnh.</div>'}
       ${it.note ? `<div class="note">${md(it.note)}</div>` : ''}`;
   const others = it.kind === 'shot' ? Object.entries(c.frames).filter(([k, v]) => v && (!f || k !== fkey(f))) : [];
@@ -265,6 +287,46 @@ function markFrame() {
   const f = frames(it)[S.frame];
   $(`#frames [data-fr="${S.frame}"]`)?.classList.toggle('has', !!S.db[it.id]?.frames?.[fkey(f)]);
 }
+
+/** Video của mục đang xem: chạy, dừng, tua, tốc độ đồng bộ theo video vừa đổi */
+const vids = () => [...document.querySelectorAll('#stage video')];
+let syncing = false;
+function hookVideos(it) {
+  const fps = it.fps ?? 30;
+  const show = (v) => { const el = $('#vtime'); if (el) el.textContent = `${v.currentTime.toFixed(2).replace('.', ',')} s · khung ${Math.round(v.currentTime * fps)}`; };
+  for (const v of vids()) {
+    v.defaultPlaybackRate = v.playbackRate = S.speed;
+    v.addEventListener('loadedmetadata', () => { v.playbackRate = S.speed; });
+    v.addEventListener('ratechange', () => {
+      if (v.playbackRate === S.speed) return;
+      S.speed = v.playbackRate;
+      for (const o of vids()) o.playbackRate = S.speed;
+      renderBar();
+    });
+    v.addEventListener('timeupdate', () => show(v));
+    v.addEventListener('seeked', () => show(v));
+    for (const ev of ['play', 'pause', 'seeked']) v.addEventListener(ev, () => {
+      if (syncing) return;
+      syncing = true;
+      for (const o of vids()) if (o !== v) {
+        if (ev === 'play') { o.currentTime = v.currentTime; o.play(); }
+        else if (ev === 'pause') { o.pause(); o.currentTime = v.currentTime; }
+        else if (Math.abs(o.currentTime - v.currentTime) > 0.5 / fps) o.currentTime = v.currentTime;
+      }
+      setTimeout(() => { syncing = false; }, 0);
+    });
+  }
+}
+function vplay() { const vs = vids(); if (!vs.length) return; const go = vs[0].paused; for (const v of vs) go ? v.play() : v.pause(); }
+function vstep(d) {
+  const it = S.items[S.cur];
+  const vs = vids();
+  if (!vs.length) return;
+  const fps = it.fps ?? 30;
+  const f = Math.max(0, Math.round(vs[0].currentTime * fps) + d);
+  for (const v of vs) { v.pause(); v.currentTime = Math.min(v.duration || Infinity, (f + 0.5) / fps); }
+}
+function vspeed(r) { S.speed = r; for (const v of vids()) v.defaultPlaybackRate = v.playbackRate = r; renderBar(); }
 
 function render() { renderList(); renderBar(); renderStage(); renderRight(); location.hash = S.items[S.cur].id; }
 
@@ -311,7 +373,7 @@ function cycleAngle() {
 }
 
 document.addEventListener('click', (e) => {
-  const t = e.target.closest('[data-i],[data-f],[data-mode],[data-angle],[data-zoom],[data-fr],[data-st],[data-goto],.sheet img');
+  const t = e.target.closest('[data-i],[data-f],[data-mode],[data-angle],[data-zoom],[data-fr],[data-st],[data-goto],[data-v],[data-speed],.sheet img');
   if (!t) return;
   const d = t.dataset;
   if (d.i) go(+d.i);
@@ -320,6 +382,8 @@ document.addEventListener('click', (e) => {
   else if (d.angle) { S.angle = d.angle; renderBar(); renderStage(); }
   else if (d.zoom) { S.zoom = +d.zoom; renderBar(); renderStage(); }
   else if (d.fr) setFrame(+d.fr);
+  else if (d.v) d.v === 'play' ? vplay() : vstep(+d.v);
+  else if (d.speed) vspeed(+d.speed);
   else if (d.st) setStatus(d.st);
   else if (d.goto) {
     const it = S.items[S.cur];
@@ -367,7 +431,12 @@ document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'TEXTAREA') { if (e.key === 'Escape') e.target.blur(); return; }
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   const k = e.key;
-  if (k === 'j' || k === 'ArrowDown') step(1);
+  const video = S.items[S.cur].kind === 'video';
+  if (video && (k === 'ArrowRight' || k === 'l' || k === '.')) vstep(1);
+  else if (video && (k === 'ArrowLeft' || k === 'h' || k === ',')) vstep(-1);
+  else if (video && k === ' ') vplay();
+  else if (video && k === 's') vspeed(SPEEDS[(SPEEDS.indexOf(S.speed) + 1) % SPEEDS.length]);
+  else if (k === 'j' || k === 'ArrowDown') step(1);
   else if (k === 'k' || k === 'ArrowUp') step(-1);
   else if (k === 'ArrowRight' || k === 'l') setFrame(S.frame + 1);
   else if (k === 'ArrowLeft' || k === 'h') setFrame(S.frame - 1);
@@ -384,7 +453,7 @@ document.addEventListener('keydown', (e) => {
   e.preventDefault();
 });
 document.addEventListener('keyup', (e) => {
-  if (e.key === ' ' && S.flip && !S.auto && e.target.tagName !== 'TEXTAREA') { S.flip = false; renderStage(); }
+  if (e.key === ' ' && S.items[S.cur].kind !== 'video' && S.flip && !S.auto && e.target.tagName !== 'TEXTAREA') { S.flip = false; renderStage(); }
 });
 
 (async () => {
