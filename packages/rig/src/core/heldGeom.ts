@@ -1107,6 +1107,15 @@ export function axialAt(
   return { at, a: f.a, rho, r, seg, along: u };
 }
 
+/** `around` (độ, `[0, 360)`) mà `ρ` của `axialAt` trên `f` chỉ về `dir` chiếu lên mặt vuông góc trục */
+export function aroundOf(geom: ItemGeom, f: RodFeature | LatheFeature, dir: V3): number {
+  const pf = perp(geom.F, f.a);
+  const r0 = geom.hasFront && len3(pf) > 1e-3 ? unit(pf) : f.b0;
+  const b90 = unit(cross3(f.a, r0));
+  const deg = (Math.atan2(dot3(dir, b90), dot3(dir, r0)) * 180) / Math.PI;
+  return ((deg % 360) + 360) % 360;
+}
+
 /** Hướng lòng tay áp của thanh hộp: mặt tiết diện gần `rho` nhất; thanh tròn, trụ tiện giữ `rho` */
 export function faceRho(f: RodFeature | LatheFeature, rho: V3): V3 {
   if (f.kind !== "rod" || !f.wide) return rho;

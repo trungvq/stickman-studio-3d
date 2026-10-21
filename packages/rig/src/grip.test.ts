@@ -157,7 +157,7 @@ describe('ngón ôm theo đồ: món có hình va chạm', () => {
         const h = hold(p, rod(), { hand: side, grip: lead('gay', ROD, 'cylinder') });
         const H = p.hands![side];
         expect(H.fit).toHaveLength(10);
-        expect(H.shown).toHaveLength(19);
+        expect(H.shown).toHaveLength(20);
         p.root.updateMatrixWorld(true);
         const [m] = heldHands(p, 'a').filter((x) => x.hand === (side < 0 ? 'R' : 'L'));
         expect(m.roles).toBeDefined();

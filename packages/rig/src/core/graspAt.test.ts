@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { trunk3, type ActInput } from "./act3";
 import { phiChain } from "./graspArm";
-import { FLAT_MAX, GRIP_CLEAR } from "./graspGroups";
+import { FLAT_MAX, GRIP_CLEAR, PINCH_ALONG, THUMB_TOWARD_SPAN } from "./graspGroups";
 import {
   chooseMissing,
   CONTACTS,
@@ -511,19 +511,47 @@ describe("chooseMissing `bowl`", () => {
     s: 1,
   };
 
-  it("đủ thiếu: rig giải `part`, `along`, `around`, biến thể `side`; hai tay không lỗi", () => {
+  it("đủ thiếu: rig giải `part`, `along`, `around`; chén nhỏ ra biến thể `pinch`, `along` trong miền của nó; hai tay không lỗi", () => {
     for (const side of [RIGHT, LEFT]) {
       const sol = graspAt(bc, "chen@bowl", upright, side);
-      expect(sol.choice).toMatchObject({ part: "body", feature: "lathe", variant: "side" });
+      expect(sol.choice).toMatchObject({ part: "body", feature: "lathe", variant: "pinch" });
+      expect(sol.choice.along).toBeGreaterThanOrEqual(PINCH_ALONG[0]);
+      expect(sol.choice.along).toBeLessThanOrEqual(PINCH_ALONG[1]);
       for (const k of ["along", "around"] as const) expect(sol.by[k]).toBe("rig");
       expect(Number.isFinite(sol.cost)).toBe(true);
     }
   });
 
-  it("tay dẫn lấy `along` mặc định 0,25", () => {
+  it("`pinch` không khai `around`: phía ngón cái (`ρ(around)`) về thân người cầm trong `THUMB_TOWARD_SPAN`, cổ tay không vượt hơn hướng tốt nhất của cả vòng; khai thì giữ", () => {
+    const geom = itemGeom(item(chen));
+    const f = geom.features.find((x) => x.kind === "lathe")!;
+    if (f.kind !== "lathe") throw new Error("không có trụ tiện");
+    const ahead = cross3(bc.across, [0, 1, 0]);
+    const toBody = [0, 1, 2].map((i) => bc.face[i] - upright.P[i]) as V3;
+    const sgn = ahead[0] * toBody[0] + ahead[2] * toBody[2] < 0 ? -1 : 1;
+    const back: V3 = [sgn * ahead[0], 0, sgn * ahead[2]];
+    for (const side of [RIGHT, LEFT]) {
+      const sol = graspAt(bc, "chen@bowl", upright, side);
+      const t = matVec(upright.R, axialAt(geom, f, 0.5, sol.choice.around!).rho);
+      const cos =
+        (t[0] * back[0] + t[2] * back[2]) / Math.hypot(t[0], t[2]) / Math.hypot(back[0], back[2]);
+      expect((Math.acos(cos) * 180) / Math.PI).toBeLessThanOrEqual(THUMB_TOWARD_SPAN + 1e-6);
+      // cổ tay không vượt hơn hướng tốt nhất của cả vòng `around` (chén ở đây đặt lệch: mọi hướng đều vượt chút ít)
+      const over = (x: typeof sol) =>
+        Math.max(...(["turn", "bend", "dev"] as const).map((k) => Math.abs(x.arm.wrist.over[k])));
+      const ring = Array.from({ length: 12 }, (_, i) =>
+        over(graspAt(bc, { item: "chen", group: "bowl", around: 30 * i }, upright, side)),
+      );
+      expect(over(sol)).toBeLessThanOrEqual(Math.min(...ring) + 1);
+      const given = graspAt(bc, { item: "chen", group: "bowl", around: 300 }, upright, side);
+      expect(given.choice.around).toBe(300);
+    }
+  });
+
+  it("tay dẫn lấy `along` mặc định 0,25, `pinch` kẹp vào miền `PINCH_ALONG`", () => {
     for (const side of [RIGHT, LEFT])
       expect(chooseMissing(bc, "chen@bowl", upright, side, { solve: false }).choice.along).toBe(
-        0.25,
+        PINCH_ALONG[0],
       );
   });
 });

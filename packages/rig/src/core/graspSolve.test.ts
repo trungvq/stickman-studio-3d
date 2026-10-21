@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { FLAT_MAX, GRIP_GROUPS, SHEET_INSET, tooThick } from "./graspGroups";
+import {
+  BOWL_PINCH_MAX,
+  FLAT_MAX,
+  GRIP_GROUPS,
+  PINCH_ALONG,
+  SHEET_INSET,
+  tooThick,
+} from "./graspGroups";
 import {
   CONTACTS,
   edgeHigh,
@@ -10,8 +17,17 @@ import {
 } from "./graspSolve";
 import { HAND_BONES, HAND_DOF, HAND_PIECES, handFrames, handVec } from "./hand";
 import { handSkin, skinHand } from "./handMesh";
-import { HELD_PIERCE_FIT, HELD_SINK, HELD_WRAP } from "./heldAudit";
-import { capsuleClearance, heldFit, skinBulge, skinDepth, skinPieces, toItem } from "./heldFit";
+import { HELD_PIERCE_FIT, HELD_SINK, HELD_WRAP, heldOppose } from "./heldAudit";
+import {
+  capsuleClearance,
+  heldDistance,
+  heldFit,
+  heldNormal,
+  skinBulge,
+  skinDepth,
+  skinPieces,
+  toItem,
+} from "./heldFit";
 import { edgeFrame, handDims, itemGeom, type Feature, type SlabFeature } from "./heldGeom";
 import {
   gripCenter,
@@ -1615,6 +1631,108 @@ function gripSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long:
   return { gaps, fit, v: g.pose, sink: Math.max(0, -Math.min(...Object.values(gaps))), pierce };
 }
 
+describe("`bowl` `pinch`", () => {
+  const CHEN = item(chen);
+  const geom = itemGeom(CHEN);
+  const REAL = [
+    [1.75, 1.545],
+    [2, 1.813],
+  ] as const;
+  // tay cầm trên da như người 3D vẽ: dáng gốc, ngón ôm theo vai trò và tầm cuộn của biến thể
+  const skinOf = (pick: Pick, side: number, k: number, long: number) => {
+    const g = graspFrame(CHEN, geom, pick, side, handDims(k, long), k, long);
+    const skin = handSkin(side, k, long);
+    const fit = heldFit({
+      v: g.pose,
+      side,
+      k,
+      long,
+      shape: CHEN.shape!,
+      G: g.G,
+      roles: g.roles,
+      bulge: skinBulge(skin, g.pose),
+      curl: GRIP_GROUPS.bowl.variants[g.choice.variant!].curl,
+    });
+    const v = [...g.pose, ...fit];
+    const pos = new Float32Array(skin.pos.length);
+    skinHand(skin, v, pos);
+    const d = skinDepth(pos, skinPieces(skin), g.G, CHEN.shape!);
+    return { g, v, ...d, oppose: heldOppose(CHEN.shape!, d.near, d.gaps, g.roles) };
+  };
+
+  it("chén nhỏ (bán kính ≤ `BOWL_PINCH_MAX · W`) mặc định `pinch`, bát to `side`; cảnh khai `side` thì giữ", () => {
+    for (const [k, long] of REAL) {
+      const dims = handDims(k, long);
+      expect(graspFrame(CHEN, geom, { group: "bowl" }, -1, dims, k, long).choice.variant).toBe(
+        "pinch",
+      );
+      expect(
+        graspFrame(CHEN, geom, { group: "bowl", variant: "side" }, -1, dims, k, long).choice
+          .variant,
+      ).toBe("side");
+      const r = (BOWL_PINCH_MAX + 0.1) * dims.W;
+      const big = item({
+        schemaVersion: 2,
+        size: [2 * r, 10, 2 * r],
+        anchors: {},
+        shape: [{ cyl: r - 1, from: [0, -5, 0], to: [0, 5, 0], r2: r, wall: 1 }],
+      });
+      expect(
+        graspFrame(big, itemGeom(big), { group: "bowl" }, -1, dims, k, long).choice.variant,
+      ).toBe("side");
+    }
+  });
+
+  it("trên da: ngón cái và trỏ – giữa ôm hai phía thành, đệm ngón cái quay vào thành, lực đối ≥ 150°, lòng tay cách ≥ 1, không lún quá `HELD_SINK`, da ngón cái quanh chén dưới miệng — hai cỡ tay, hai tay, `along` cả miền", () => {
+    // vùng da cách thành ≤ 0,5, dài nhất theo một hướng
+    const span = (P: readonly V3[]) => {
+      let best = 0;
+      for (const a of P) for (const b of P) best = Math.max(best, dist(a, b));
+      return best;
+    };
+    for (const [k, long] of REAL)
+      for (const [, side] of SIDES)
+        for (const along of [PINCH_ALONG[0], (PINCH_ALONG[0] + PINCH_ALONG[1]) / 2, PINCH_ALONG[1]])
+          for (const around of [0, 120]) {
+            const at = `${k} ${side} ${along} ${around}`;
+            const m = skinOf({ group: "bowl", along, around }, side, k, long);
+            expect(m.g.choice.variant, at).toBe("pinch");
+            expect(m.depth, at).toBeLessThanOrEqual(HELD_SINK);
+            for (const f of ["thumb", "index", "middle"] as const)
+              expect(m.gaps[f], `${at} ${f}`).toBeLessThanOrEqual(0.5);
+            expect(m.gaps.palm, at).toBeGreaterThanOrEqual(1);
+            expect(m.oppose!.angle, at).toBeGreaterThanOrEqual(150);
+            // vùng chạm (da trong `SKIN_NEAR` của khe nhỏ nhất) so đốt ngọn của chính ngón, cỡ tay `long`
+            const d1 = (f: "thumb" | "index" | "middle") =>
+              (f === "middle" ? HAND_BONES.fingers.len[1] * 1.06 : HAND_BONES[f].len[1]) *
+              long *
+              100;
+            const touching = (f: "thumb" | "index" | "middle") =>
+              span(m.near[f]!.filter((q) => heldDistance(CHEN.shape!, q) <= 0.5)) / d1(f);
+            expect(touching("thumb"), at).toBeGreaterThan(0.6);
+            expect(Math.max(touching("index"), touching("middle")), at).toBeGreaterThan(0.55);
+            // da ngón cái quanh chén (cách trục ≤ r + 3) dưới miệng (y 4,5)
+            for (const q of m.near.thumb!)
+              if (Math.hypot(q[0], q[2]) <= 11) expect(q[1], at).toBeLessThanOrEqual(4.5);
+            // đệm đốt ngọn ngón cái (phía gập) lệch pháp tuyến vào trong của thành ≤ 50°
+            const F = handFrames(m.v, side, k, long).thumb1;
+            const pad = matVec(tr(m.g.G.R), matVec(F.R, [-side, 0, 0]));
+            const q = m.near.thumb!.reduce((a, b) =>
+              heldDistance(CHEN.shape!, b) < heldDistance(CHEN.shape!, a) ? b : a,
+            );
+            const n = heldNormal(CHEN.shape!, q);
+            expect(-(n[0] * pad[0] + n[1] * pad[1] + n[2] * pad[2]), at).toBeGreaterThan(
+              Math.cos((50 * Math.PI) / 180),
+            );
+          }
+  });
+
+  it("`side` của cùng chén: lòng tay áp thành (khác `pinch`)", () => {
+    const m = skinOf({ group: "bowl", variant: "side" }, -1, 1.75, 1.545);
+    expect(m.gaps.palm).toBeLessThan(0.5);
+  });
+});
+
 describe("`bowl` `side`", () => {
   const CHEN = item(chen);
   const geom = itemGeom(CHEN);
@@ -1630,7 +1748,7 @@ describe("`bowl` `side`", () => {
     const fix: Case = {
       fixture: "chen#kep",
       spec: CHEN,
-      pick: both({ group: "bowl", along: 1.5 / 9, around: 180 }, {}, {}),
+      pick: both({ group: "bowl", variant: "side", along: 1.5 / 9, around: 180 }, {}, {}),
       pos: 1.5,
     };
     for (const size of ["t01-sakura", "kuroiwa"])
@@ -1645,7 +1763,7 @@ describe("`bowl` `side`", () => {
     const dims = handDims(1.75, 1.545);
     for (const around of [0, 90, 200]) {
       const [r, l] = [-1, 1].map((s) =>
-        graspFrame(CHEN, geom, { group: "bowl", around }, s, dims, 1.75, 1.545),
+        graspFrame(CHEN, geom, { group: "bowl", variant: "side", around }, s, dims, 1.75, 1.545),
       );
       expect(det(r.G.R)).toBeCloseTo(1, 9);
       expect(det(l.G.R)).toBeCloseTo(1, 9);
@@ -1668,8 +1786,8 @@ describe("`bowl` `side`", () => {
     for (const [k, long] of REAL)
       for (const [, side] of SIDES)
         for (const pick of [
-          { group: "bowl", around: 0 },
-          { group: "bowl", around: 120, along: 0.5 },
+          { group: "bowl", variant: "side", around: 0 },
+          { group: "bowl", variant: "side", around: 120, along: 0.5 },
         ] as Pick[]) {
           const at = `${k} ${side} ${pick.around}`;
           const m = wrapSkin(CHEN, pick, side, k, long);

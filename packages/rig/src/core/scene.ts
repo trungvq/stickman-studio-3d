@@ -70,7 +70,7 @@ import {
   type GraspLater,
   type GraspSolution,
 } from "./graspSolve";
-import { handDims, itemGeom, type Feature, type HandDims } from "./heldGeom";
+import { axialAt, handDims, itemGeom, type Feature, type HandDims } from "./heldGeom";
 import {
   AimDirSchema,
   BODY_MARKS,
@@ -3240,14 +3240,46 @@ const towardLabel = (t: AxisIntent["toward"]): string =>
         ? `${t.cast}.${t.mark ?? "eye"}`
         : t.mark;
 
-/** Ý định của một lần cầm ra số hạng bàn tay (`AimTerm.hold`) */
+/**
+ * Ý định `roll` của tay dẫn khi biến thể có `thumbToward`: phía ngón cái (`ρ(around)` của chỗ cầm) quay về đích; cảnh khai
+ * `roll` hay `keep` thì không có
+ */
+function thumbRoll(
+  spec: HeldItemSpec,
+  h: SceneHold,
+  choice: GraspChoice,
+  height: number,
+): AxisIntent | undefined {
+  const g = groupHold(h);
+  if (g.roll || g.keep) return undefined;
+  const group = GRIP_GROUPS[g.group];
+  const geom = itemGeom(spec);
+  const f = geom.features.find(
+    (x) =>
+      (x.kind === "lathe" || x.kind === "rod") &&
+      (choice.part === undefined || x.part === choice.part) &&
+      (choice.feature === undefined || x.kind === choice.feature),
+  );
+  if (!f || (f.kind !== "lathe" && f.kind !== "rod")) return undefined;
+  const variant =
+    choice.variant ??
+    group.variantOf?.(f, geom, choice.around, holderDims(height)) ??
+    Object.keys(group.variants)[0];
+  const to = group.variants[variant]?.thumbToward;
+  return to && { axis: axialAt(geom, f, 0.5, choice.around ?? 0).rho, toward: to };
+}
+
+/** Ý định của một lần cầm ra số hạng bàn tay (`AimTerm.hold`); `thumb` đè `roll` của nhóm (`thumbRoll`) */
 function holdAim(
   spec: HeldItemSpec,
   h: SceneHold,
   castAt: (id: string, mark: BodyMark | undefined) => V3,
+  thumb?: AxisIntent,
 ): HoldAim {
   const { item, grip } = sceneHoldRef(h);
-  const { face, roll } = groupIntent(groupHold(h).group, h, itemGeom(spec));
+  const intent = groupIntent(groupHold(h).group, h, itemGeom(spec));
+  const face = intent.face;
+  const roll = thumb ?? intent.roll;
   const axis = (a: AxisIntent): HoldAxis => ({
     axis: heldAxis(spec, a.axis),
     target: holdTarget(a.toward, castAt),
@@ -3344,8 +3376,14 @@ function handAt(
     if (!hold || carried || placedItem) return undefined;
     for (const run of [holdRun(keys, side, kt), holdRun(keys, side, kt - 1e-6)]) {
       const r = run && sceneHoldRef(run.hold);
-      if (r && r.item === hold.item && r.grip === hold.grip)
-        return { terms: [{ k: 1, hold: holdAim(hold.spec, run!.hold, castAt) } as AimTerm] };
+      if (r && r.item === hold.item && r.grip === hold.grip) {
+        const thumb = grasp && host && thumbRoll(hold.spec, run!.hold, grasp.choice, host.height);
+        return {
+          terms: [
+            { k: 1, hold: holdAim(hold.spec, run!.hold, castAt, thumb || undefined) } as AimTerm,
+          ],
+        };
+      }
     }
     return undefined;
   };
@@ -3381,7 +3419,20 @@ function handAt(
     if (hold?.from && hold.from.grasp?.mode !== "item") {
       // ý định của kiểu cũ nhường dần cho kiểu mới
       const old: Aim = {
-        terms: [{ k: 1, hold: holdAim(hold.spec, prev!.hold, castAt) } as AimTerm],
+        terms: [
+          {
+            k: 1,
+            hold: holdAim(
+              hold.spec,
+              prev!.hold,
+              castAt,
+              (prevGrasp &&
+                host &&
+                thumbRoll(hold.spec, prev!.hold, prevGrasp.choice, host.height)) ||
+                undefined,
+            ),
+          } as AimTerm,
+        ],
       };
       aim = mixAim(old, aim ?? keep, 1 - hold.from.k);
     } else if (hold?.enter !== undefined && aim) aim = mixAim(keep, aim, hold.enter);

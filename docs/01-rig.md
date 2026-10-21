@@ -1466,17 +1466,27 @@ Người 3D mặc đồ (`palette.clad`) có bàn tay năm ngón tròn mập ki�
 | `thumbsUp` | Giơ ngón cái: ngón cái dạng hẳn, dựng lên, bốn ngón nắm — khen, đồng ý; tâm nắm như `fist` |
 | `tripod` | Cầm bút ba điểm theo khung `but#viet`: ngón cái (dạng 28°, đối 45°, gốc và ngọn thẳng) khép sát ngón trỏ, thân bút tựa khe ngón cái – ngón trỏ, kẹp giữa đệm ngón cái, đệm ngón trỏ (gập 40° ở gốc và 40° ở đốt ngọn) và cạnh đốt ngọn ngón giữa; giữa, áp út, út cuộn chung 48° và 76°, xoè 0. Khe giữa nang ngón cái và nang ngón trỏ ≤ 1,5 đơn vị rig, ngón cái không lún vào ngón nào; thân bút bán kính 1,3 tựa vào khe ấy ở bàn tay cỡ `1,61` và `2,16`. Cổ tay hơi duỗi là `bend` âm của mốc, không nằm trong dáng |
 | `chopsticks` | Nắm đũa theo khung `dua#cam`: ngón cái (dạng 36°, đối 52°, gập gốc 6°, ngọn thẳng) khép đè lên hai que, ngón trỏ gập 50° ở gốc và 35° ở đốt ngọn, giữa, áp út, út cuộn chung 45° và 50°, xoè 2°. Tâm nắm trùng `pinch` (`HAND_GRIPS.chopsticks`): khung cầm dựng từ dáng `pinch`. Hai que gần song song (lệch chừng 7°), cách nhau chừng 3 đơn vị rig ở chỗ tay cầm |
+| `cupPinch` | Kẹp chén nhỏ (nhóm `bowl` `pinch`): ngón cái dạng 60°, đối 103°, gốc duỗi ngược 8°, ngọn duỗi ngược 15°, xoay sấp 45° — nằm ngang trước lòng tay, đệm quay vào thành chén phía cổ tay; trỏ gập 32° ở gốc và 25° ở đốt ngọn, giữa, áp út, út 45° và 12°, xoè 0 — trỏ, giữa ôm thành phía xa. Chén nằm trong vòng cái – trỏ – giữa, lòng tay cách chén; tâm nắm (`HAND_GRIPS.cupPinch`) ở trục chén ngang tầm chỗ chạm |
 
 **Dáng nghỉ không nằm trong bảng**: ngón cong nhẹ, ngón cái khép sát cạnh ngón trỏ, đầu ngón cái tới gần giữa đốt gốc ngón trỏ — bàn tay không ai đặt dáng, và
 gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` (`{}`). Thêm một dáng là thêm một dòng vào
 `HAND_POSES`; `HandPose` và `HAND_POSE_KINDS` lấy từ khoá của bảng.
 
-- **Số của một bàn tay** (`HAND_DOF`, `HandVec`, bên trong rig): xoay cẳng tay, gập cổ tay, rồi chín góc ngón — ngón cái
-  `[dạng, đối, gập gốc, gập ngọn]`, trỏ `[gập gốc, gập ngọn]`, ba ngón còn lại chung `[gập gốc, gập ngọn]`, độ xoè.
+- **Số của một bàn tay** (`HAND_DOF`, `HandVec`, bên trong rig): xoay cẳng tay, gập cổ tay, rồi mười góc ngón — ngón cái
+  `[dạng, đối, gập gốc, gập ngọn]`, trỏ `[gập gốc, gập ngọn]`, ba ngón còn lại chung `[gập gốc, gập ngọn]`, độ xoè, rồi
+  xoay ngón cái (`thumbRoll`, trường `Fingers.thumbRoll`, bỏ trống là `0`).
   Giữa, áp út, út lấy góc chung cộng độ lệch cố định của từng ngón (`HAND_FINGERS`: gốc, độ dài, xoè theo độ xoè,
   gập thêm về phía ngón út): xoè thì toả nhẹ, nắm thì ngón út cuộn sâu nhất. Mọi
   ngón gập về phía lòng tay; ngón cái dạng ra phía trước bàn tay rồi đối về lòng tay, nên đối nhiều thì gập
   là vắt ngang lòng tay.
+- **Xoay ngón cái quanh trục của chính nó** (`thumbRoll`, kẹp trong `THUMB_ROLL` = [−15°, 45°]): phần xoay trục của động
+  tác đối ở khớp thang – bàn ngón cái. Thứ tự quay của đốt gốc: đối (quanh trục dọc bàn tay), dạng, gập gốc, rồi xoay quanh
+  trục đốt — đốt gốc không đổi chỗ, chỉ mặt đệm (phía gập) và mặt gập của đốt ngọn quay theo. Dương là sấp: đệm quay về
+  phía đầu các ngón (gặp đệm trỏ – giữa khi đối); âm là ngửa. `0` ra đúng khung không có bậc này. Tầm theo giải phẫu: khớp
+  thang – bàn xoay trục chừng 17° khi đo X quang (Cooney và cộng sự, *J Bone Joint Surg Am* 1981;63:1371); đo CT 3D trên 30
+  người khoẻ, đốt bàn ngón cái sấp chừng 42° khi dạng quay ra, 91° khi dạng gan tay, 99° khi đối (IFSSH 2019, đo theo
+  Cheema) — cung chừng 57°. `đối` của rig đã mang một phần độ sấp ấy, nên phần thêm lấy sấp tới 45°, ngửa tới 15°.
+  `handPoseOff` cộng lệch xoay vào tổng bình phương mà vẫn chia chín, nên dáng không khai xoay đo y như trước.
 - **Ngón cái dài như tay người.** Gốc ngón cái (`HAND_BONES.thumb.at`) ở chừng một phần ba lòng bàn tay tính từ cổ tay,
   chỗ khớp gốc ngón cái của tay người, lệch về phía ngón cái; hai đốt `0,048` và `0,040` (ngón trỏ `0,04`, `0,037`):
   khép sát (dáng nghỉ, `cup`, `flat`, `hook`) thì đầu ngón cái vượt khớp gốc ngón trỏ, tới gần giữa đốt gốc (0,4–0,45 đốt), da ngón cái không lún vào nó (dáng nghỉ hở chừng 0,1 đơn vị ở cỡ `1`). Dáng áp
@@ -1505,7 +1515,7 @@ gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` 
   `face` mặt phải quay về `faceToward` — `"holderFace"` mặt người cầm, `"camera"` ống kính; món nghiêng cố ý (rót) thì không
   khai `up`. `grip` gọi riêng (không qua `hold`) không ghi gì. `act` giữ độ lệch còn lại của từng tay ở
   `Figure.aim` (`AimReport` của `actAim`) cho `check` đọc lý do.
-- **Tâm nắm theo góc ngón** (`handGripOf`): hoà `HAND_GRIPS` theo độ gần của chín góc ngón với từng dáng, nên đúng bảng khi
+- **Tâm nắm theo góc ngón** (`handGripOf`): hoà `HAND_GRIPS` theo độ gần của mười góc ngón với từng dáng, nên đúng bảng khi
   đúng dáng và đổi liền khi dáng hoà — `point: "grip"` của đích bàn tay đọc nó ([Đích theo mốc](#đích-theo-mốc)).
 - **Một mặt da liền.** `handSkin` dựng một lưới kín từ hợp trơn (smooth-min) các khối của khung xương ở dáng gốc
   `HAND_BIND` (ngón duỗi, ngón cái dạng, các ngón xoè rộng cho khỏi dính nhau), đa giác hoá bằng surface nets, kéo về

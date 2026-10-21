@@ -486,25 +486,59 @@ export function skinBulge(skin: HandSkin, v: HandVec): Record<HandPiece, number>
 /**
  * Lún của da bàn tay vào món, đơn vị rig: `pos` đỉnh da đang vẽ (khung bàn tay, `skinHand`), `piece` đốt của từng đỉnh
  * (`skinPieces`), `IF` món trong khung bàn tay. `depth` đỉnh sâu nhất trong hình (âm là khe nhỏ nhất khi không đỉnh nào
- * chạm); `gaps` khe nhỏ nhất theo ngón và lòng tay
+ * chạm); `gaps` khe nhỏ nhất theo ngón và lòng tay; `near` các đỉnh (khung món) cách hình không quá khe ấy cộng
+ * `SKIN_NEAR` — vùng da chạm món của từng phần
  */
 export function skinDepth(
   pos: ArrayLike<number>,
   piece: ArrayLike<number>,
   IF: GripFrame,
   shape: readonly HeldShape[],
-): { depth: number; gaps: Record<HeldFinger | "palm", number> } {
+): {
+  depth: number;
+  gaps: Record<HeldFinger | "palm", number>;
+  near: Partial<Record<HeldFinger | "palm", V3[]>>;
+} {
   const owner = HAND_PIECES.map((n) => (n === "palm" ? "palm" : (n.slice(0, -1) as HeldFinger)));
   const gaps = Object.fromEntries(["palm", ...HELD_FINGERS].map((f) => [f, Infinity])) as Record<
     HeldFinger | "palm",
     number
   >;
+  const pts: V3[] = [];
+  const ds: number[] = [];
   let depth = -Infinity;
   for (let i = 0; i < piece.length; i++) {
-    const d = heldDistance(shape, toItem(IF, [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]]));
+    const q = toItem(IF, [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]]);
+    const d = heldDistance(shape, q);
+    pts.push(q);
+    ds.push(d);
     if (-d > depth) depth = -d;
     const o = owner[piece[i]];
     if (d < gaps[o]) gaps[o] = d;
   }
-  return { depth, gaps };
+  const near: Partial<Record<HeldFinger | "palm", V3[]>> = {};
+  for (let i = 0; i < piece.length; i++) {
+    const o = owner[piece[i]];
+    if (ds[i] <= Math.max(gaps[o], 0) + SKIN_NEAR) (near[o] ??= []).push(pts[i]);
+  }
+  return { depth, gaps, near };
+}
+
+/** Vùng da chạm của một phần: đỉnh cách hình không quá khe nhỏ nhất của phần ấy (hay `0`) cộng ngần này, đơn vị món */
+export const SKIN_NEAR = 0.3;
+
+/** Bước sai phân tính pháp tuyến hình món, đơn vị món */
+const NORMAL_STEP = 0.05;
+
+/** Pháp tuyến ngoài của hình món ở gần `q` (khung món): građien của `heldDistance` */
+export function heldNormal(shape: readonly HeldShape[], q: V3): V3 {
+  const g = [0, 1, 2].map((i) => {
+    const a: V3 = [q[0], q[1], q[2]];
+    const b: V3 = [q[0], q[1], q[2]];
+    a[i] += NORMAL_STEP;
+    b[i] -= NORMAL_STEP;
+    return heldDistance(shape, a) - heldDistance(shape, b);
+  }) as V3;
+  const n = Math.hypot(g[0], g[1], g[2]) || 1;
+  return [g[0] / n, g[1] / n, g[2] / n];
 }

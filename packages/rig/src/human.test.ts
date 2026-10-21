@@ -10,7 +10,7 @@ import { parseScene, resolveScene, sceneAt } from './core/scene';
 import { defaultCharacter, GarmentSchema, SculptSchema, SkirtSchema } from './core/schema';
 import { GARMENT_STYLES } from './core/torso';
 import { handScale, openLength } from './human';
-import { handGrip, HAND_POSE_KINDS, HAND_POSES, HAND_REST } from './core/hand';
+import { fingerVec, handGrip, HAND_POSE_KINDS, HAND_POSES, HAND_REST } from './core/hand';
 import { handCapsules } from './core/handMesh';
 import { fromCharacter, R, type CharacterJson, type Figure } from './stickman';
 import sitJson from '../../../apps/studio/public/actions/sit-3d.json';
@@ -108,7 +108,7 @@ describe('người 3D mặc đồ', () => {
     const held = hold(f, cup, { hand: -1 });
     expect(h.held).toBe('grip');
     act(f, stand(), 0);
-    expect(h.shown).toEqual([...HAND_POSES.grip.thumb, ...HAND_POSES.grip.index, ...HAND_POSES.grip.fingers, 0]);
+    expect(h.shown).toEqual(fingerVec(HAND_POSES.grip));
     const hits = collide([f], colliders(cup)).filter((c) => c.part === 'hand' || c.part === 'foreArm');
     expect(hits).toEqual([]);
     held.release();
@@ -164,7 +164,7 @@ describe('người 3D mặc đồ', () => {
       return m;
     };
     for (const k of [...HAND_POSE_KINDS, 'rest'] as const) {
-      const v = k === 'rest' ? HAND_REST : [0, 0, ...HAND_POSES[k].thumb, ...HAND_POSES[k].index, ...HAND_POSES[k].fingers, HAND_POSES[k].spread];
+      const v = k === 'rest' ? HAND_REST : [0, 0, ...fingerVec(HAND_POSES[k])];
       act(f, { ...stand(), pose: { ...stand().pose, hand: { an: [40, -15, ...v.slice(2)] } } }, 0);
       expect(outside()).toBeLessThan(1e-6);
     }

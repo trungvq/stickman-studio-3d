@@ -564,22 +564,33 @@ const viTri = new Map();
       rows.push(
         {
           ma: "along-thap",
-          ten: "along thấp (0,1)",
+          ten: "along 0,4 (pinch: cao nhất)",
           mark: NGUC,
-          hands: { right: H({ along: 0.1 }) },
+          hands: { right: H({ along: 0.4 }) },
         },
         {
           ma: "along-giua",
-          ten: "along giữa (0,5)",
+          ten: "along 0,5 (pinch: sâu nhất)",
           mark: NGUC,
-          hands: { right: H({ along: "mid" }) },
+          hands: { right: H({ along: 0.5 }) },
         },
-        { ma: "around-0", ten: "around 0", mark: NGUC, hands: { right: H({ around: 0 }) } },
         {
-          ma: "around-45",
-          ten: "around 45 (giới hạn cổ tay)",
+          ma: "side-along-giua",
+          ten: "side, along giữa (0,5)",
           mark: NGUC,
-          hands: { right: H({ around: 45 }) },
+          hands: { right: H({ variant: "side", along: "mid" }) },
+        },
+        {
+          ma: "around-180",
+          ten: "around 180 (pinch: ngón cái về sau món)",
+          mark: NGUC,
+          hands: { right: H({ around: 180 }) },
+        },
+        {
+          ma: "around-90",
+          ten: "around 90 (pinch: giới hạn cổ tay)",
+          mark: NGUC,
+          hands: { right: H({ around: 90 }) },
         },
         { ma: "tay-dan", ten: "tay dẫn, miệng ngửa", hands: { right: { ...TAY_DAN, ...H() } } },
         {

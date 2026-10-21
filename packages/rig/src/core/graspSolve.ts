@@ -4,11 +4,14 @@ import { armInput, solvePhi, type ArmInput, type ArmSeg, type ArmSol } from "./g
 import {
   GRIP_GROUPS,
   groupNeeds,
+  PINCH_ALONG,
   holdDefaults,
   longEdges,
   SHEET_INSET,
   spanAt,
   supportFaces,
+  THUMB_TOWARD_SPAN,
+  THUMB_TOWARD_STEP,
   tooThick,
   type GroupSpec,
   type PoseRef,
@@ -32,6 +35,7 @@ import { handSkin, skinHand } from "./handMesh";
 import { HELD_FIT, heldDistance, heldFit, skinBulge, skinDepth, skinPieces } from "./heldFit";
 import {
   alongFrac,
+  aroundOf,
   axialAt,
   bulgeToward,
   edgeFrame,
@@ -120,7 +124,14 @@ export interface ContactInput {
    * ở chỗ tiếp xúc như `GraspContact`
    */
   palmSkin?: (at?: Pick<GraspContact, "thick" | "radius" | "thumbRadius">) => readonly V3[];
+  /** Đỉnh da đốt ngọn của ngón cái, trỏ hay giữa ở dáng gốc, như `palmSkin` */
+  fingerSkin?: (
+    finger: SkinFinger,
+    at?: Pick<GraspContact, "thick" | "radius" | "thumbRadius">,
+  ) => readonly V3[];
 }
+
+export type SkinFinger = "thumb" | "index" | "middle";
 
 /** Tâm nắm `at`, lòng tay `palm` và ngón `fingers` (trực giao với lòng tay) trong khung món; `along` là tỉ lệ đã giải */
 export interface GraspContact {
@@ -193,6 +204,19 @@ const WRAP_THUMB_AHEAD = 0.5;
 const BOWL_TILT_MAX = 4;
 /** `bowl` `side`: da lòng tay cách thành ngần này, đơn vị món (âm là áp lún nhẹ; fixture `chen#kep` lún 2) */
 const BOWL_GAP = -0.6;
+/** `bowl` `pinch`: da ngón cái và da trỏ – giữa ở dáng gốc cách thành ngần này, đơn vị món (âm là ép nhẹ); số vòng dò */
+const PINCH_GAP = -0.2;
+const PINCH_ITER = 6;
+/** `pinch` trên hình: số vòng Newton, sai số khe, bước sai phân, bước dời lớn nhất — đơn vị món */
+const PINCH_NEWTON = 12;
+const PINCH_ROUNDS = 2;
+/** `pinch`: trục chén nghiêng khỏi trục `n × f` của bàn tay tối đa ngần này độ để chỗ chạm ngón cái, ngón trỏ ngang nhau */
+const PINCH_TILT_MAX = 25;
+const PINCH_TOL = 0.02;
+const PINCH_STEP = 0.1;
+const PINCH_MOVE = 2;
+/** `pinch`: da lòng tay cách thành ít nhất ngần này, đơn vị món */
+const CUP_PALM_MIN = 1;
 /** `card` `pad`: tâm nắm thụt vào trong tấm ngần này lần `W` */
 const PAD_INSET = 0.15;
 /** `pad`: đệm trỏ cách tâm nắm của dáng `pinch` về phía ngược ngón cái, lần `W` */
@@ -460,6 +484,164 @@ const bowlSide: ContactFn = (x) => {
   return { at: add3(p.at, scale3(p.rho, S)), along: p.along, palm, fingers, radius: p.r };
 };
 
+/**
+ * `bowl` `pinch` (khung `nt`, ngón cái về miệng): da ngón cái một phía thành, da trỏ – giữa phía đối diện, ở `along` tính
+ * từ miệng, dáng gốc; trục chén ở phía xa lòng tay — lòng tay không chạm chén. Dựng với lòng tay `−ρ(around)` rồi quay quanh
+ * trục chén cho phía ngón cái nằm ở `ρ(around)`
+ */
+const bowlPinch: ContactFn = (x) => {
+  const f = x.feature as LatheFeature;
+  const along = Math.min(PINCH_ALONG[1], Math.max(PINCH_ALONG[0], alongFrac(x.along, 1, x.dims.W)));
+  const p = axialAt(x.geom, f, f.mouth === "lo" ? along : 1 - along, x.around ?? 0);
+  const up = f.mouth === "lo" ? neg(p.a) : p.a;
+  const A = neg(p.rho);
+  const B = cross3(up, A);
+  const fingers0 = unit(scale3(B, x.side));
+  const T0 = x.fingerSkin?.("thumb", { radius: p.r }) ?? [];
+  const I0 = x.fingerSkin?.("index", { radius: p.r }) ?? [];
+  const M0 = x.fingerSkin?.("middle", { radius: p.r }) ?? [];
+  if (!T0.length || !I0.length)
+    return { at: add3(p.at, scale3(p.rho, p.r)), along, palm: A, fingers: fingers0, radius: p.r };
+  // hệ bàn tay (lòng, ngón, `n × f`) → hệ món: lòng tay chiếu vuông góc trục `u` về `−ρ`, `u` về miệng
+  const zs = dot3(cross3(A, fingers0), up) < 0 ? -1 : 1;
+  let u: V3 = [0, 0, zs];
+  let c: V3 = [0, 0, 0];
+  const basis = (w: V3) => {
+    const a = unit(perp([1, 0, 0], w));
+    return { a, b: cross3(w, a), w };
+  };
+  const toItem = (h: ReturnType<typeof basis>, v: V3): V3 =>
+    add3(add3(scale3(A, dot3(v, h.a)), scale3(B, dot3(v, h.b))), scale3(up, dot3(v, h.w)));
+  const dist2 = (h: ReturnType<typeof basis>, v: V3, q: V3) =>
+    Math.hypot(dot3(sub3(v, q), h.a), dot3(sub3(v, q), h.b));
+  const near = (h: ReturnType<typeof basis>, P: readonly V3[], q: V3) =>
+    P.reduce((m, v) => (dist2(h, v, q) < dist2(h, m, q) ? v : m));
+  const O0 = [...I0, ...M0];
+  const R = p.r + PINCH_GAP;
+  const mean = (P: readonly V3[]) =>
+    scale3(
+      P.reduce((m, v) => add3(m, v), [0, 0, 0] as V3),
+      1 / P.length,
+    );
+  for (let round = 0; round < PINCH_ROUNDS; round++) {
+    const h = basis(u);
+    // mặt cắt vuông góc trục chén: trục cách đỉnh da gần nhất của đốt ngọn ngón cái và của trỏ – giữa đúng `r + PINCH_GAP`,
+    // phía xa lòng tay
+    if (round === 0) c = add3(scale3(add3(mean(T0), mean(O0)), 0.5), scale3(h.a, R));
+    for (let i = 0; i < PINCH_ITER; i++) {
+      const t = near(h, T0, c);
+      const o = near(h, O0, c);
+      const d3 = sub3(o, t);
+      const da = dot3(d3, h.a);
+      const db = dot3(d3, h.b);
+      const d = Math.hypot(da, db) || 1;
+      const k = Math.sqrt(Math.max(0, R * R - (d / 2) ** 2)) / d;
+      const m = scale3(add3(t, o), 0.5);
+      // pháp tuyến dây cung trong mặt cắt, chiều ra xa lòng tay (`+a`)
+      const s = -db >= 0 ? k : -k;
+      c = add3(
+        sub3(m, scale3(h.w, dot3(sub3(m, c), h.w))),
+        add3(scale3(h.a, -db * s), scale3(h.b, da * s)),
+      );
+    }
+    // trên hình thật (thành thuôn, miệng): Newton hai ẩn cho khe da đúng `PINCH_GAP` cả hai phía
+    if (x.shape) {
+      const shape = x.shape;
+      const touch = (P: readonly V3[], q: V3): [number, V3] => {
+        let best: [number, V3] = [Infinity, P[0]];
+        for (const v of P) {
+          const g = heldDistance(shape, add3(p.at, toItem(h, sub3(v, q))));
+          if (g < best[0]) best = [g, v];
+        }
+        return best;
+      };
+      const F = (q: V3) => [touch(T0, q)[0] - PINCH_GAP, touch(O0, q)[0] - PINCH_GAP];
+      for (let i = 0; i < PINCH_NEWTON; i++) {
+        const f0 = F(c);
+        if (Math.abs(f0[0]) < PINCH_TOL && Math.abs(f0[1]) < PINCH_TOL) break;
+        const fa = F(add3(c, scale3(h.a, PINCH_STEP)));
+        const fb = F(add3(c, scale3(h.b, PINCH_STEP)));
+        const [j00, j10] = [(fa[0] - f0[0]) / PINCH_STEP, (fa[1] - f0[1]) / PINCH_STEP];
+        const [j01, j11] = [(fb[0] - f0[0]) / PINCH_STEP, (fb[1] - f0[1]) / PINCH_STEP];
+        const det = j00 * j11 - j01 * j10;
+        if (Math.abs(det) < EPS) break;
+        let ea = (j11 * f0[0] - j01 * f0[1]) / det;
+        let eb = (j00 * f0[1] - j10 * f0[0]) / det;
+        const n = Math.hypot(ea, eb);
+        if (n > PINCH_MOVE) [ea, eb] = [(ea * PINCH_MOVE) / n, (eb * PINCH_MOVE) / n];
+        c = sub3(c, add3(scale3(h.a, ea), scale3(h.b, eb)));
+      }
+      // tầm: giữa chỗ chạm thật của ngón cái và của trỏ – giữa; trục chén nghiêng trong bàn tay cho hai chỗ ấy ngang nhau
+      const t = touch(T0, c)[1];
+      const i1 = M0.length ? scale3(add3(touch(I0, c)[1], touch(M0, c)[1]), 0.5) : touch(I0, c)[1];
+      c = add3(c, scale3(h.w, dot3(sub3(scale3(add3(t, i1), 0.5), c), h.w)));
+      const D = unit(sub3(i1, t));
+      const tilted = unit(perp(u, D));
+      const lim = Math.cos(PINCH_TILT_MAX * D2R);
+      u =
+        zs * tilted[2] >= lim
+          ? tilted
+          : unit(mix2([0, 0, zs], lim, unit([tilted[0], tilted[1], 0]), Math.sqrt(1 - lim * lim)));
+    } else break;
+  }
+  const h = basis(u);
+  // lòng tay không chạm chén: còn sát thì đẩy trục chén ra xa lòng tay, rồi lùi khỏi ngón cái nếu da cái lún quá `PINCH_GAP`
+  const P0 = x.palmSkin?.({ radius: p.r }) ?? [];
+  if (x.shape && P0.length) {
+    const shape = x.shape;
+    const nearest = (P: readonly V3[], q: V3): [number, V3] => {
+      let best: [number, V3] = [Infinity, P[0]];
+      for (const v of P) {
+        const g = heldDistance(shape, add3(p.at, toItem(h, sub3(v, q))));
+        if (g < best[0]) best = [g, v];
+      }
+      return best;
+    };
+    for (let i = 0; i < PINCH_ITER; i++) {
+      const m = nearest(P0, c)[0];
+      if (m < CUP_PALM_MIN - PINCH_TOL) c = add3(c, scale3(h.a, CUP_PALM_MIN - m));
+      const [g, v] = nearest(T0, c);
+      if (g < PINCH_GAP - PINCH_TOL) {
+        const away = sub3(c, v);
+        const w = unit(sub3(away, scale3(h.w, dot3(away, h.w))));
+        c = add3(c, scale3(w, PINCH_GAP - g));
+      } else if (m >= CUP_PALM_MIN - PINCH_TOL) break;
+    }
+  }
+  let at = scale3(toItem(h, c), -1);
+  let palm = toItem(h, [1, 0, 0]);
+  let fingers = toItem(h, [0, 1, 0]);
+  // quay cả chỗ cầm quanh trục chén (trụ tiện tròn xoay) cho phía ngón cái — chỗ chạm cái trừ trung điểm chỗ chạm trỏ – giữa —
+  // nằm đúng `ρ(around)`
+  if (x.shape) {
+    const shape = x.shape;
+    const nearest = (P: readonly V3[]) => {
+      let best: [number, V3] = [Infinity, P[0]];
+      for (const v of P) {
+        const q = add3(p.at, toItem(h, sub3(v, c)));
+        const g = heldDistance(shape, q);
+        if (g < best[0]) best = [g, q];
+      }
+      return best[1];
+    };
+    const o = M0.length ? scale3(add3(nearest(I0), nearest(M0)), 0.5) : nearest(I0);
+    const g = perp(sub3(nearest(T0), o), up);
+    if (len3(g) > EPS) {
+      const ang = Math.atan2(dot3(cross3(g, p.rho), up), dot3(g, p.rho));
+      const turn = (v: V3) => rotAround(v, up, ang);
+      [at, palm, fingers] = [turn(at), turn(palm), turn(fingers)];
+    }
+  }
+  return { at: add3(p.at, at), along, palm, fingers, radius: p.r };
+};
+
+/** `v` quay góc `a` (radian) quanh trục đơn vị `u` (Rodrigues) */
+function rotAround(v: V3, u: V3, a: number): V3 {
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  return add3(add3(scale3(v, c), scale3(cross3(u, v), s)), scale3(u, dot3(u, v) * (1 - c)));
+}
+
 /** Thụt mặc định của `platform`: bàn tay nằm trọn trong mặt, `½ · (W · |sin ψ| + P · |cos ψ|)` */
 export const platformInset = (psi: number, dims: HandDims) =>
   0.5 * (dims.W * Math.abs(Math.sin(psi * D2R)) + dims.P * Math.abs(Math.cos(psi * D2R)));
@@ -588,7 +770,7 @@ export const CONTACTS: Partial<Record<GroupId, Record<string, ContactFn>>> = {
   chopsticks: { grip: chopGrip },
   pen: { grip: penGrip },
   handle: { hook },
-  bowl: { side: bowlSide },
+  bowl: { side: bowlSide, pinch: bowlPinch },
 };
 
 /**
@@ -727,15 +909,23 @@ function thumbAt(tab: NonNullable<PoseSpec["thumb"]>, x: number): readonly numbe
   return tab[tab.length - 1][1];
 }
 
-const palms = new Map<string, V3[]>();
+const skins = new Map<string, V3[]>();
 
 /**
- * Đỉnh da lòng tay (đốt trọng số lớn nhất là lòng tay) của bàn tay bên `side` cỡ `k`, cỡ dọc `long` ở dáng `v`, tính từ
- * tâm nắm của dáng `pose`: toạ độ theo pháp tuyến lòng tay, hướng ngón, phía ngón cái của khung bàn tay, đơn vị rig
+ * Đỉnh da của các đốt `pieces` (chỉ số `HAND_PIECES`, đốt trọng số lớn nhất của đỉnh) của bàn tay bên `side` cỡ `k`, cỡ dọc
+ * `long` ở dáng `v`, tính từ tâm nắm của dáng `pose`: toạ độ theo pháp tuyến lòng tay, hướng ngón, `n × f` của khung bàn
+ * tay (`handAxes`), đơn vị rig
  */
-function palmPoints(side: number, k: number, long: number, v: HandVec, pose: HandPose): V3[] {
-  const key = [side, k, long, ...v].map((x) => x.toFixed(4)).join() + pose;
-  let out = palms.get(key);
+function skinPoints(
+  side: number,
+  k: number,
+  long: number,
+  v: HandVec,
+  pose: HandPose,
+  pieces: readonly number[],
+): V3[] {
+  const key = [side, k, long, ...v].map((x) => x.toFixed(4)).join() + pose + pieces.join();
+  let out = skins.get(key);
   if (out) return out;
   const skin = handSkin(side, k, long);
   const pos = new Float32Array(skin.pos.length);
@@ -746,13 +936,19 @@ function palmPoints(side: number, k: number, long: number, v: HandVec, pose: Han
   const z = cross3(n, f);
   out = [];
   for (let i = 0; i < dom.length; i++) {
-    if (dom[i] !== PALM) continue;
+    if (!pieces.includes(dom[i])) continue;
     const d = sub3([pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]], c);
     out.push([dot3(d, n) * 100, dot3(d, f) * 100, dot3(d, z) * 100]);
   }
-  palms.set(key, out);
+  skins.set(key, out);
   return out;
 }
+
+const PIECES_OF: Record<SkinFinger, number[]> = {
+  thumb: [HAND_PIECES.indexOf("thumb1")],
+  index: [HAND_PIECES.indexOf("index1")],
+  middle: [HAND_PIECES.indexOf("middle1")],
+};
 
 /**
  * Khung cầm của chỗ cầm `choice` (nhóm `group`) trên món `spec` (`geom = itemGeom(spec)`) cho tay bên `side`: chỗ tiếp xúc
@@ -810,6 +1006,18 @@ export function graspFrame(
   const around = choice.around ?? (def.around as number | undefined);
   const psi = choice.psi ?? (def.psi as number | undefined);
   const inset = choice.inset ?? (def.inset as number | undefined);
+  const skinOf = (
+    at: Pick<GraspContact, "thick" | "radius" | "thumbRadius"> | undefined,
+    pieces: readonly number[],
+  ) =>
+    skinPoints(
+      side,
+      dims.W / (200 * HAND_BONES.palm.half[1]),
+      dims.P / (100 * HAND_BONES.palm.len),
+      basePose(vs.pose!, feature, dims, at),
+      vs.pose!.closed.pose as HandPose,
+      pieces,
+    );
   const ct = contact({
     geom,
     feature,
@@ -826,14 +1034,8 @@ export function graspFrame(
     high: eHigh,
     shape: spec.shape,
     tip: spec.anchors?.tip?.at,
-    palmSkin: (at) =>
-      palmPoints(
-        side,
-        dims.W / (200 * HAND_BONES.palm.half[1]),
-        dims.P / (100 * HAND_BONES.palm.len),
-        basePose(vs.pose!, feature, dims, at),
-        vs.pose!.closed.pose as HandPose,
-      ),
+    palmSkin: (at) => skinOf(at, [PALM]),
+    fingerSkin: (finger, at) => skinOf(at, PIECES_OF[finger]),
   });
   const name = vs.pose.closed.pose as HandPose;
   const hand: GraspHand = {
@@ -1004,6 +1206,8 @@ const SINK_GROUPS: ReadonlySet<GroupId> = new Set(["palmBox", "cylinder"]);
 /** Giá lún `SINK_W · (lún / SINK_REF)²`; `SINK_REF` là ngưỡng luật `sink` (`HELD_SINK` của `heldAudit.ts`) */
 const SINK_W = 1;
 const SINK_REF = Math.abs(HELD_FIT.touch) + 0.5;
+/** `thumbToward`: hướng ngoài miền quanh thân chỉ thắng khi cổ tay vượt ít hơn ngần này độ */
+const THUMB_OVER = 1;
 /** Trụ: `around` mà phần `grip: false` kề đoạn bám nhô khỏi mặt quá ngần này lần `W` về phía lòng tay thì rig không chọn */
 const BULGE = 0.1;
 /** Vành đĩa giải trên lưới góc bước này, độ (`0` ở `front`, hay `top` với đĩa đứng, về `right`) */
@@ -1316,6 +1520,22 @@ export function chooseMissing(
     return grid("around", ch, "").some(ok) ? ok : () => true;
   };
 
+  // biến thể có `thumbToward`: `around` cho phía ngón cái về thân người cầm, rig chỉ thử quanh đó
+  const thumbAround = (f: Feature, variant: string | undefined): number | undefined => {
+    if (!group.variants[variant ?? ""]?.thumbToward || given.around !== undefined) return undefined;
+    if (f.kind !== "lathe" && f.kind !== "rod") return undefined;
+    // về thân người cầm dọc hướng mặt người (ngang, vuông góc `across`), khung món
+    const ahead = unit(cross3(ctx.across, [0, 1, 0]));
+    const toBody = sub3(ctx.face, add3(pose.P, scale3(matVec(pose.R, f.c), pose.s)));
+    const back = scale3(ahead, dot3(toBody, ahead) < 0 ? -1 : 1);
+    return aroundOf(geom, f, matVec(tr(pose.R), back));
+  };
+  const thumbGrid = (a0: number) =>
+    Array.from(
+      { length: (2 * THUMB_TOWARD_SPAN) / THUMB_TOWARD_STEP + 1 },
+      (_, i) => (((a0 - THUMB_TOWARD_SPAN + i * THUMB_TOWARD_STEP) % 360) + 360) % 360,
+    );
+
   for (const f of feats) {
     const okAround = aroundOk(f);
     const defs = holdDefaults(group, geom, {
@@ -1351,6 +1571,12 @@ export function chooseMissing(
         if (!ch) continue;
         const v =
           given[k] ??
+          (k === "around"
+            ? thumbAround(
+                f,
+                variant || (auto ? group.variantOf?.(f, geom, undefined, ctx.dims) : ""),
+              )
+            : undefined) ??
           defs[k] ??
           (ch.kind === "range"
             ? grid(k, ch, variant).filter((x) => k !== "around" || okAround(x))[0]
@@ -1394,6 +1620,8 @@ export function chooseMissing(
   if (!best) throw new Error(`\`${h.item}@${h.group}\`: không có ứng viên`);
 
   const rough: Cand = best;
+  const overOf = (x: Cand) =>
+    Math.max(...(["turn", "bend", "dev"] as const).map((k) => Math.abs(x.arm.wrist.over[k])));
   const free = solve ? CONTINUOUS.filter((k) => missing.includes(k)) : [];
   const roots: [Cand, Defs][] = [[rough, bestDefs]];
   if (home && home[0] !== rough) roots.push(home);
@@ -1405,28 +1633,42 @@ export function chooseMissing(
   };
   for (const [root, defs] of free.length ? roots : []) {
     const okAround = aroundOk(root.feature);
-    let combos: GraspChoice[] = [{}];
-    for (const k of free) {
-      const ch = group.choices[k] as RangeChoice;
-      const vals = grid(k, ch, root.choice.variant ?? "").filter(
-        (x) => k !== "around" || okAround(x),
-      );
-      seen(k, vals.length);
-      combos = combos.flatMap((c) => vals.map((v) => ({ ...c, [k]: v })));
-    }
+    const a0 = thumbAround(root.feature, root.choice.variant);
+    const combosOf = (window: boolean) => {
+      let out: GraspChoice[] = [{}];
+      for (const k of free) {
+        const ch = group.choices[k] as RangeChoice;
+        const vals =
+          k === "around" && window && a0 !== undefined
+            ? thumbGrid(a0)
+            : grid(k, ch, root.choice.variant ?? "").filter((x) => k !== "around" || okAround(x));
+        seen(k, vals.length);
+        out = out.flatMap((c) => vals.map((v) => ({ ...c, [k]: v })));
+      }
+      return out;
+    };
     const base: GraspChoice = {
       ...given,
       edge: root.choice.edge,
       thumb: root.choice.thumb,
       ...(!auto && { variant: root.choice.variant }),
     };
-    for (const c of combos) {
+    for (const c of combosOf(true)) {
       const x = run(root.feature, { ...base, ...c }, defs);
       if (
         x.cost < best.cost - 1e-12 ||
         (x.cost <= best.cost + 1e-12 && before(x.choice, best.choice))
       )
         best = x;
+    }
+    // hướng ngón cái về thân vượt cổ tay mà cả vòng `around` có hướng vượt ít hơn hẳn: lấy hướng ấy
+    if (a0 !== undefined && overOf(best) > 0) {
+      let alt: Cand | undefined;
+      for (const c of combosOf(false)) {
+        const x = run(root.feature, { ...base, ...c }, defs);
+        if (overOf(x) < overOf(best) - THUMB_OVER && (!alt || x.cost < alt.cost - 1e-12)) alt = x;
+      }
+      if (alt) best = alt;
     }
   }
   const win: Cand = best;

@@ -9,12 +9,14 @@ import {
   HELD_FACE,
   HELD_GRIP,
   HELD_GRIP_PINCH,
+  HELD_OPPOSE,
   HELD_SINK,
   HELD_UP,
   HELD_WRIST,
   groupGripMax,
   heldHits,
   heldLine,
+  heldOppose,
   heldPlace,
   heldSize,
   sceneHeld,
@@ -219,6 +221,13 @@ describe("heldHits: chỗ cầm nhóm", () => {
     expect(rules({ ...lead, reach: { ...reach, gap: AIM_GAP + 2, s: 2 } })).toEqual([]);
   });
 
+  it("`oppose`: ngón cái chạm mà phần đối tốt nhất lệch dưới `HELD_OPPOSE`; không có số đo thì im", () => {
+    expect(rules({ oppose: { angle: 175, part: "index" } })).toEqual([]);
+    const h = heldHits(sample({ oppose: { angle: 80, part: "middle" } }));
+    expect(h).toEqual([{ rule: "oppose", worst: HELD_OPPOSE - 80 }]);
+    expect(rules({ oppose: { angle: 80, part: "middle" } }, true)).toEqual([]);
+  });
+
   it("trong cửa sổ hoà lần cầm: không `grip`, `loose`, `role`; `sink` vẫn xét", () => {
     const far = {
       fingers: fingers(80),
@@ -228,6 +237,43 @@ describe("heldHits: chỗ cầm nhóm", () => {
     expect(rules(far)).toEqual(["loose", "grip"]);
     expect(rules(far, true)).toEqual([]);
     expect(rules({ fingers: { ...fingers(), index: -1.2 } }, true)).toEqual(["sink"]);
+  });
+});
+
+describe("heldOppose", () => {
+  // trụ r 5 dọc y: pháp tuyến ở chỗ chạm là hướng bán kính
+  const CYL = [{ cyl: 5, from: [0, -5, 0] as V3, to: [0, 5, 0] as V3 }];
+  const gaps = { thumb: 0, index: 0, middle: 0, ring: 5, pinky: 5, palm: 5 };
+  const ang = (d: number): V3 => [
+    5 * Math.cos((d * Math.PI) / 180),
+    0,
+    5 * Math.sin((d * Math.PI) / 180),
+  ];
+
+  it("góc lớn nhất giữa pháp tuyến ở vùng chạm của ngón cái và của phần đối; ngón cái không vai trò chạm, không chạm, hay không phần đối nào chạm thì không có", () => {
+    const near = { thumb: [ang(0), ang(10)], index: [ang(100)], middle: [ang(160), ang(200)] };
+    const o = heldOppose(CYL, near, gaps, PINCH)!;
+    expect(o.part).toBe("middle");
+    expect(o.angle).toBeCloseTo(170, 0);
+    expect(heldOppose(CYL, near, { ...gaps, middle: 3 }, PINCH)!.angle).toBeCloseTo(100, 0);
+    expect(heldOppose(CYL, near, gaps, { ...PINCH, middle: "free" })!.part).toBe("index");
+    expect(heldOppose(CYL, near, gaps, { ...PINCH, thumb: "free" })).toBeUndefined();
+    expect(heldOppose(CYL, near, { ...gaps, thumb: 2 }, PINCH)).toBeUndefined();
+    expect(heldOppose(CYL, { thumb: [ang(0)] }, gaps, PINCH)).toBeUndefined();
+  });
+
+  it("lòng tay chỉ đối được khi vai trò `press`; ngón `support` đối được", () => {
+    const near = { thumb: [ang(0)], palm: [ang(180)] };
+    const g = { ...gaps, palm: 0 };
+    expect(heldOppose(CYL, near, g, PINCH)).toBeUndefined();
+    expect(heldOppose(CYL, near, g, { ...PINCH, palm: "press" })!.angle).toBeCloseTo(180, 0);
+    const sup = heldOppose(
+      CYL,
+      { thumb: [ang(0)], ring: [ang(150)] },
+      { ...gaps, ring: 0 },
+      { ...PINCH, ring: "support" },
+    )!;
+    expect(sup.part).toBe("ring");
   });
 });
 
@@ -276,6 +322,12 @@ describe("sceneHeld: chỗ cầm nhóm", () => {
     expect(issues).toEqual([]);
     const late = sceneHeld(rt, { frame: (t) => (t >= 1 && t < 1.65 ? [far] : []) });
     expect(late.map((i) => [i.rule, i.runs])).toEqual([["grip", [[1.3, 1.6]]]]);
+  });
+
+  it("dòng báo `oppose` nêu phần đối tốt nhất, góc và ngưỡng", () => {
+    const s = sample({ oppose: { angle: 80, part: "middle" } });
+    const line = heldLine(sceneHeld(scene([]), { frame: () => [s] })[0]);
+    expect(line).toMatch(/^không có lực đối — .*ngón giữa \(`press`\).*lệch 80° \(cần ≥ 120°/);
   });
 
   it("dòng báo trỏ về chỗ cầm ở cảnh (`món@nhóm` và trường), không về `held/<món>.json`; lỗi mang `error`", () => {

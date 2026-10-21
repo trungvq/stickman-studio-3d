@@ -3,7 +3,7 @@ import { TURN_MAX } from "./arm3";
 import type { GraspChoice, GraspReport } from "./graspSolve";
 import { GRIP_GROUPS, SIZE_WARN } from "./graspGroups";
 import { fingerVec, HAND_POSES, HAND_RELAXED, type HandPose, type HandVec } from "./hand";
-import { HELD_FIT, type FingerRoles } from "./heldFit";
+import { HELD_FIT, heldNormal, type FingerRoles } from "./heldFit";
 import { itemGeom, type HandDims } from "./heldGeom";
 import { depthAt, project, type V3 } from "./lens";
 import {
@@ -12,6 +12,7 @@ import {
   type GroupId,
   type HeldFinger,
   type HeldItemSpec,
+  type HeldShape,
 } from "./heldItem";
 import { CARRY } from "./heldCarry";
 import { AIM_GAP } from "./constants";
@@ -82,6 +83,12 @@ export const HELD_PINCHES: readonly HandPose[] = [
   "chopsticks",
 ];
 
+/**
+ * Chỗ cầm nhóm có ngón cái vai trò chạm: góc giữa pháp tuyến hình món ở chỗ chạm của ngón cái và của ngón (hay lòng tay
+ * `press`) đối diện tốt nhất phải từ ngần này độ — dưới là không có gì kẹp món phía bên kia ngón cái
+ */
+export const HELD_OPPOSE = 120;
+
 /** Chỗ cầm nhóm: da lún quá ngần này (đơn vị rig, đo trên da), `heldFit` đã nhắm khe `HELD_FIT.touch` trên da */
 export const HELD_SINK = Math.abs(HELD_FIT.touch) + 0.5;
 /** Món đặt trước: cổ tay vượt kẹp là lỗi `wrist`; còn cách giới hạn dưới ngần này độ là cảnh báo */
@@ -150,6 +157,11 @@ export interface HeldHand {
   fingers?: Record<HeldFinger, number>;
   /** Chỗ cầm nhóm: vai trò ngón và lòng tay của biến thể (docs/11 mục 6) */
   roles?: FingerRoles;
+  /**
+   * Chỗ cầm nhóm có ngón cái vai trò chạm, đang chạm, có phần đối đang chạm: góc lớn nhất giữa pháp tuyến hình món ở vùng
+   * chạm của ngón cái và của phần đối ấy (`heldOppose`)
+   */
+  oppose?: { angle: number; part: RolePart };
   /** Chỗ cầm nhóm: tầm cuộn của biến thể (`VariantSpec.curl`), độ */
   curl?: number;
   /** Tâm nắm của dáng đang vẽ tới mặt món (chỗ cầm nhóm: tới hình va chạm): dương ở ngoài, âm ở trong món */
@@ -495,11 +507,14 @@ export function capsuleDepth(
 
 // ── Dáng tay ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** Góc ngón (trung bình bình phương trên chín góc ngón, độ) giữa số bàn tay `v` (`HAND_DOF`) và dáng `pose` */
+/**
+ * Góc ngón (căn trung bình bình phương, độ) giữa số bàn tay `v` (`HAND_DOF`) và dáng `pose`: tổng mười góc ngón chia chín —
+ * xoay ngón cái `thumbRoll` cộng vào như phần của ngón cái, không đổi mẫu số
+ */
 export function handPoseOff(v: HandVec, pose: HandPose | "rest"): number {
   const ref = fingerVec(pose === "rest" ? HAND_RELAXED : HAND_POSES[pose]);
   const f = v.slice(2);
-  return Math.sqrt(ref.reduce((s, r, i) => s + (r - (f[i] ?? 0)) ** 2, 0) / ref.length);
+  return Math.sqrt(ref.reduce((s, r, i) => s + (r - (f[i] ?? 0)) ** 2, 0) / (ref.length - 1));
 }
 
 /** Dáng có tên gần số bàn tay `v` nhất (kể cả dáng nghỉ) và góc lệch tới nó */
@@ -538,6 +553,7 @@ export type HeldRule =
   | "wrist"
   | "arm"
   | "role"
+  | "oppose"
   | "sink"
   | "size";
 
@@ -568,6 +584,8 @@ export interface HeldOptions {
   sink?: number;
   wrist?: number;
   arm?: number;
+  /** Chỗ cầm nhóm: góc lực đối nhỏ nhất (`HELD_OPPOSE`, độ) */
+  oppose?: number;
   hold?: number;
   every?: number;
 }
@@ -627,6 +645,46 @@ export function heldRoleOpen(
   );
 }
 
+/** Phần đối được ngón cái: ngón vai trò chạm hay `support`, lòng tay `press` */
+const OPPOSE_ROLES = new Set(["press", "wrap", "tip", "support"]);
+
+/** Lực đối: số pháp tuyến lấy mẫu nhiều nhất trên vùng da chạm của mỗi phần */
+const OPPOSE_SAMPLES = 24;
+
+/**
+ * Lực đối của chỗ cầm nhóm (docs/11 mục 7): ngón cái vai trò `press` / `wrap` / `tip` đang chạm (khe ≤ `touch`) thì góc lớn
+ * nhất giữa pháp tuyến hình món (`heldNormal`) ở vùng da chạm của nó (`near`, khung món) và ở vùng da chạm của từng phần đối
+ * đang chạm. Ngón cái không vai trò chạm, không chạm, hay không phần đối nào chạm (việc của `loose`, `role`) thì không có
+ */
+export function heldOppose(
+  shape: readonly HeldShape[],
+  near: Partial<Record<RolePart, readonly V3[]>>,
+  gaps: Record<RolePart, number>,
+  roles: FingerRoles,
+  touch = HELD_TOUCH,
+): HeldHand["oppose"] {
+  if (!MUST_TOUCH.has(roles.thumb ?? "") || !near.thumb?.length || gaps.thumb > touch)
+    return undefined;
+  const normals = (P: readonly V3[]) => {
+    const step = Math.max(1, Math.ceil(P.length / OPPOSE_SAMPLES));
+    return P.filter((_, i) => i % step === 0).map((q) => heldNormal(shape, q));
+  };
+  const nt = normals(near.thumb);
+  let best: HeldHand["oppose"];
+  for (const part of ROLE_PARTS) {
+    const role = roles[part] ?? "";
+    const P = near[part];
+    if (part === "thumb" || !P?.length || gaps[part] > touch) continue;
+    if (part === "palm" ? role !== "press" : !OPPOSE_ROLES.has(role)) continue;
+    for (const n of normals(P))
+      for (const m of nt) {
+        const angle = angleBetween(m, n);
+        if (!best || angle > best.angle) best = { angle, part };
+      }
+  }
+  return best;
+}
+
 /** Cổ tay so với kẹp (`TURN_MAX`, `AIM_BEND`, `AIM_DEV`): độ của khớp sát kẹp nhất, dương là vượt */
 export const heldWristMargin = (w: GraspReport["arm"]["wrist"]) =>
   Math.max(Math.abs(w.turn) - TURN_MAX, Math.abs(w.bend) - AIM_BEND, Math.abs(w.dev) - AIM_DEV);
@@ -681,6 +739,8 @@ function groupHits(s: HeldHand, o: Omit<HeldOptions, "frame">, blend: boolean): 
         ? o.grip
         : group && groupGripMax(group, variant || undefined);
     if (max !== undefined && s.grip > max) out.push({ rule: "grip", worst: s.grip });
+    const min = o.oppose ?? HELD_OPPOSE;
+    if (s.oppose && s.oppose.angle < min) out.push({ rule: "oppose", worst: min - s.oppose.angle });
   }
   if (placed) {
     if (g.arm.gap > (o.reach ?? AIM_GAP) * (s.s ?? 1))
@@ -944,6 +1004,7 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
     "grip",
     "loose",
     "role",
+    "oppose",
     "reach",
     "arm",
     "size",
@@ -1151,7 +1212,10 @@ export function heldLine(s: HeldIssue): string {
   const x = s.sample;
   if (isGroupHeld(x)) return groupLine(s, x, who, `ở giây ${sec(s.t)} · giây ${runs}${more}`);
   const head: Record<
-    Exclude<HeldRule, "seat" | "body" | "wrist" | "arm" | "role" | "sink" | "size" | "reach">,
+    Exclude<
+      HeldRule,
+      "seat" | "body" | "wrist" | "arm" | "role" | "oppose" | "sink" | "size" | "reach"
+    >,
     () => string
   > = {
     pose: () =>
@@ -1207,6 +1271,10 @@ function groupLine(s: HeldIssue, x: HeldHand, who: string, when: string): string
       case "role": {
         const open = heldRoleOpen(x);
         return `ngón không chạm món — ${who}: ${open.map((f) => `ngón ${FINGER_LABELS[f]} (\`${x.roles?.[f]}\`) cách món ${r1(x.fingers![f])}`).join(", ")} (${place}); dáng ngón của nhóm chưa khép tới món — đổi \`variant\` hay \`edge\`, không thì là việc của dáng nhóm ở rig`;
+      }
+      case "oppose": {
+        const op = x.oppose!;
+        return `không có lực đối — ${who}: phần đối ngón cái tốt nhất là ${op.part === "palm" ? "lòng tay" : `ngón ${PART_LABELS[op.part]}`} (\`${x.roles?.[op.part]}\`), pháp tuyến món ở hai vùng chạm lệch ${Math.round(op.angle)}° (cần ≥ ${HELD_OPPOSE}°: món phải kẹp giữa ngón cái và một phần phía bên kia) (${place}); đổi \`variant\` hay \`around\` / \`edge\`, không thì là việc của chỗ tiếp xúc của nhóm ở rig`;
       }
       case "loose":
         return `món không chạm bàn tay — ${who}: không ngón, lòng tay nào của vai trò \`press\` / \`wrap\` / \`tip\` chạm món (khe nhỏ nhất ${r1(s.worst)}) (${place})`;

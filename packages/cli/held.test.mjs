@@ -107,9 +107,10 @@ describe("check: đồ cầm tay chỗ cầm nhóm", () => {
     assert.equal(two[0].grasp.choice.edge, "right");
   });
 
-  it("`heldOptions`: `sink`, `wrist`, `arm` lấy hằng của rig, `package.json` đè; `grip` khai thì đánh dấu", () => {
+  it("`heldOptions`: `sink`, `wrist`, `arm`, `oppose` lấy hằng của rig, `package.json` đè; `grip` khai thì đánh dấu", () => {
     const d = heldOptions(pkg());
     assert.equal(d.sink, rig.HELD_SINK);
+    assert.equal(d.oppose, rig.HELD_OPPOSE);
     assert.equal(d.wrist, rig.HELD_WRIST);
     assert.equal(d.arm, rig.HELD_ARM);
     assert.equal(d.gripDeclared, undefined);

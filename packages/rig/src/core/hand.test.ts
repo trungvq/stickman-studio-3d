@@ -32,9 +32,11 @@ import {
   parseScene,
   POSES,
   resolveScene,
+  THUMB_ROLL,
   sceneAt,
   smoothstep,
   type ActionData,
+  type Fingers,
   type HandPiece,
   type HandPose,
   type V3,
@@ -57,12 +59,13 @@ const vec = (p: keyof typeof HAND_POSES | "rest") => [
 ];
 
 describe("bảng dáng tay", () => {
-  it("mười lăm dáng soạn được, mỗi dáng đủ chín góc ngón, có nhãn và tâm nắm; dáng nghỉ ngoài bảng; `HAND_DOF` là xoay, gập cổ tay rồi chín góc ngón", () => {
+  it("mười sáu dáng soạn được, mỗi dáng đủ mười góc ngón, có nhãn và tâm nắm; dáng nghỉ ngoài bảng; `HAND_DOF` là xoay, gập cổ tay rồi mười góc ngón, xoay ngón cái cuối", () => {
     expect(HAND_POSE_KINDS).toEqual(Object.keys(HAND_POSES));
     expect([...HAND_POSE_KINDS].sort()).toEqual([
       "chopsticks",
       "clasp",
       "cup",
+      "cupPinch",
       "edge",
       "fist",
       "flat",
@@ -78,13 +81,46 @@ describe("bảng dáng tay", () => {
     ]);
     expect(Object.keys(HAND_GRIPS).sort()).toEqual([...HAND_POSE_KINDS, "rest"].sort());
     for (const k of HAND_POSE_KINDS) {
-      expect(fingerVec(HAND_POSES[k]).length).toBe(9);
+      expect(fingerVec(HAND_POSES[k]).length).toBe(10);
+      const roll = (HAND_POSES[k] as Fingers).thumbRoll ?? 0;
+      expect(roll).toBeGreaterThanOrEqual(THUMB_ROLL[0]);
+      expect(roll).toBeLessThanOrEqual(THUMB_ROLL[1]);
       expect(fingerVec(HAND_POSES[k]).every(Number.isFinite)).toBe(true);
       expect(HAND_POSE_LABELS[k]).toBeTruthy();
     }
-    expect(HAND_DOF.length).toBe(11);
+    expect(HAND_DOF.length).toBe(12);
+    expect(HAND_DOF[HAND_DOF.length - 1]).toBe("thumbRoll");
     expect(HAND_REST).toEqual(vec("rest"));
-    expect(fingerVec(HAND_RELAXED).length).toBe(9);
+    expect(fingerVec(HAND_RELAXED).length).toBe(10);
+  });
+
+  it("xoay ngón cái `thumbRoll`: `0` và bỏ trống ra đúng khung cũ; đốt gốc không đổi chỗ, chỉ quay quanh trục của nó; dương quay đệm về phía đầu các ngón; kẹp trong `THUMB_ROLL`", () => {
+    const base = [0, 0, 65, 100, 10, 20, 20, 15, 30, 15, 0];
+    for (const side of [-1, 1]) {
+      const a = handFrames(base, side, 1.3, 1.2);
+      expect(handFrames([...base, 0], side, 1.3, 1.2)).toEqual(a);
+      const b = handFrames([...base, 30], side, 1.3, 1.2);
+      for (const n of HAND_PIECES) if (!n.startsWith("thumb")) expect(b[n]).toEqual(a[n]);
+      // đốt gốc: cùng gốc, cùng trục; đốt ngọn gập trong mặt đã xoay nên đầu ngón dời
+      expect(b.thumb0.o).toEqual(a.thumb0.o);
+      for (const i of [1, 4, 7]) expect(b.thumb0.R[i]).toBeCloseTo(a.thumb0.R[i], 12);
+      expect(
+        dist(tipOf([...base, 30], "thumb1", side), tipOf(base, "thumb1", side)),
+      ).toBeGreaterThan(0.005);
+      // đệm (phía gập, `−side · x` của đốt) quay về phía đầu ngón (−y khung bàn tay)
+      const pad = (v: number[]) => {
+        const R = handFrames(v, side).thumb0.R;
+        return -side * R[3] * -1;
+      };
+      expect(pad([...base, 30])).toBeGreaterThan(pad(base) + 0.3);
+      // trái là phải soi gương qua mặt phẳng giữa (x)
+      const r = handFrames([...base, 30], -1).thumb1;
+      const l = handFrames([...base, 30], 1).thumb1;
+      expect(l.o[0]).toBeCloseTo(-r.o[0], 12);
+      expect(l.o[1]).toBeCloseTo(r.o[1], 12);
+    }
+    expect(handFrames([...base, 500], -1)).toEqual(handFrames([...base, THUMB_ROLL[1]], -1));
+    expect(handFrames([...base, -500], -1)).toEqual(handFrames([...base, THUMB_ROLL[0]], -1));
   });
 
   it("dáng đọc ra đúng: chỉ thì trỏ duỗi còn các ngón khác cuộn, nắm thì mọi đầu ngón về lòng tay, xoè thì mọi ngón duỗi", () => {

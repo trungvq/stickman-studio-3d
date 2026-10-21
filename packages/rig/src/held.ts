@@ -4,7 +4,7 @@ import { carryBody, carrySeat } from './attach';
 import { carryClearance } from './core/heldCarry';
 import { handGripOf, handPoint } from './core/hand';
 import { HAND_CAPSULE_PIECES } from './core/handMesh';
-import { angleBetween, capsuleDepth, heldSize, meshBox, meshSigned, type HeldCarry, type HeldGroup, type HeldHand, type HeldIntent } from './core/heldAudit';
+import { angleBetween, capsuleDepth, heldOppose, heldSize, meshBox, meshSigned, type HeldCarry, type HeldGroup, type HeldHand, type HeldIntent } from './core/heldAudit';
 import { capsuleClearance, heldDistance, skinDepth, skinPieces, toItem } from './core/heldFit';
 import { handDims } from './core/heldGeom';
 import { heldPoint, type GripFrame, type HeldFinger } from './core/heldItem';
@@ -144,6 +144,8 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
     const grasp = ih?.grasp;
     const reach = entry.grip !== undefined && rep?.reach?.hold ? rep.reach : undefined;
     const size = group && grasp && entry.spec ? heldSize(entry.spec, grasp, handDims(h.scale, h.long)) : undefined;
+    // lực đối: pháp tuyến món ở chỗ chạm của ngón cái và phần đối (docs/11 mục 7)
+    const oppose = group && skin && entry.roles ? heldOppose(shape!, skin.near, { ...each, palm: gaps.palm } as Record<HeldFinger | 'palm', number>, entry.roles) : undefined;
     out.push({
       id, hand: side < 0 ? 'R' : 'L',
       item: entry.item ?? nameOf(entry.object),
@@ -153,6 +155,7 @@ export function heldHands(fig: Figure, id: string, o: { U?: number; eye?: THREE.
       ...(ih && { intent: { rule: ih.toward === 'up' ? 'up' as const : 'face' as const, err: ih.err, clamped: ih.clamped, ...(ih.toward && { toward: ih.toward }), want: ih.want, got: ih.got } }),
       ...(grasp && { grasp }),
       ...(group && entry.roles && { roles: entry.roles }),
+      ...(oppose && { oppose }),
       ...(group && entry.curl !== undefined && { curl: entry.curl }),
       ...(size && { size }),
       ...(reach && { reach: { kind: reach.hold!, gap: reach.gap, s: k, point: reach.point, to: reach.to } }),

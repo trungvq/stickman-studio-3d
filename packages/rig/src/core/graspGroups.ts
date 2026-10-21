@@ -83,7 +83,17 @@ export interface VariantSpec {
   thickMax?: number;
   /** Khối hình biến thể áp được; bỏ trống là mọi khối hình của nhóm */
   kinds?: FeatureKind[];
+  /**
+   * Phía ngón cái (`ρ(around)` của chỗ tiếp xúc) quay về đích này: tay dẫn thì là ý định `roll` của lần cầm; món đặt trước
+   * mà cảnh không khai `around` thì rig chỉ thử `around` trong `THUMB_TOWARD_SPAN` quanh hướng ấy (`back`: về thân người
+   * cầm dọc hướng mặt người)
+   */
+  thumbToward?: "back";
 }
+
+/** `thumbToward`: nửa miền `around` (độ) rig thử quanh hướng đích, và bước lưới */
+export const THUMB_TOWARD_SPAN = 60;
+export const THUMB_TOWARD_STEP = 15;
 
 export interface FeatureNeed {
   kinds: NeedKind[];
@@ -203,6 +213,14 @@ const FLAT_THUMB = [20, 6, 0, 10] as const;
 
 /** `bowl` `side`: ngón cái ít dạng, đối nhiều, gốc duỗi ngược: nằm vắt trên vành chén phía lòng tay */
 const BOWL_THUMB = [15, 50, -30, 20] as const;
+/** `bowl`: chén có bán kính lớn nhất tới ngần này lần `W` thì mặc định kẹp đầu ngón `pinch`, lớn hơn thì `side` */
+export const BOWL_PINCH_MAX = 0.7;
+/** `bowl` `pinch`: miền `along` (tính từ miệng) */
+export const PINCH_ALONG = [0.4, 0.5] as const;
+/** `bowl` `pinch`: ngón chỉ cuộn thêm ngần này độ để khép khe, gỡ lún — chỗ tiếp xúc đã đặt đệm ngón lên thành */
+const PINCH_CURL = 10;
+/** `bowl` `pinch`: dáng mở (thành to): gốc trỏ – út duỗi thêm 40°, ngọn 18° */
+const PINCH_OPEN: PoseRef = { pose: "cupPinch", knuckle: -40, tip: -18 };
 
 export const SIZE_WARN = 0.8;
 export const SIZE_MAX = 0.95;
@@ -640,16 +658,35 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
         roles: roles("wrap", "wrap", "press", { ring: "support", pinky: "support" }),
         fixture: "chen#kep",
       },
+      pinch: {
+        frame: "nt",
+        pose: {
+          open: PINCH_OPEN,
+          closed: { pose: "cupPinch" },
+          by: "radius",
+          unit: "W",
+          range: [0.3, BOWL_PINCH_MAX],
+        },
+        roles: roles("press", "support", "free", { index: "press", middle: "press" }),
+        curl: PINCH_CURL,
+        thumbToward: "back",
+      },
     },
     choices: {
       part: PART,
       around: range(0, 360),
-      // nửa dưới thành: cao hơn thì lòng tay trùm miệng, áp út – út không còn đỡ dưới
-      along: range(0, 0.5, { default: 0.25, names: ["low", "mid"] }),
+      // `side` tính từ đáy, nửa dưới thành: cao hơn thì lòng tay trùm miệng; `pinch` tính từ miệng, sâu hơn thì lòng tay chạm thân
+      along: range(0, 0.5, {
+        default: 0.25,
+        names: ["low", "mid"],
+        byVariant: { pinch: [PINCH_ALONG[0], PINCH_ALONG[1]] },
+      }),
     },
     hands: "either",
     support: { group: "platform", place: "bottom" },
     intent: { face: { axis: "top", toward: "up" } },
+    variantOf: (f, _g, _around, h) =>
+      f.kind === "lathe" && f.rMax <= BOWL_PINCH_MAX * h.W ? "pinch" : "side",
   },
 
   handle: {

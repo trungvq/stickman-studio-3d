@@ -66,7 +66,7 @@ describe("bảng GRIP_GROUPS", () => {
     ]);
   });
 
-  it("mặc định nằm trong miền", () => {
+  it("mặc định nằm trong miền; miền theo biến thể nằm trong miền chung (mặc định ngoài miền biến thể thì chỗ tiếp xúc kẹp vào)", () => {
     for (const id of GROUP_IDS) {
       const g = GRIP_GROUPS[id];
       for (const [key, c] of Object.entries(g.choices)) {
@@ -77,8 +77,8 @@ describe("bảng GRIP_GROUPS", () => {
           expect(c.default, `${id}.${key}`).toBeGreaterThanOrEqual(c.min);
           expect(c.default, `${id}.${key}`).toBeLessThanOrEqual(c.max);
           for (const [lo, hi] of Object.values(c.byVariant ?? {})) {
-            expect(c.default).toBeGreaterThanOrEqual(lo);
-            expect(c.default).toBeLessThanOrEqual(hi);
+            expect(lo, `${id}.${key}`).toBeGreaterThanOrEqual(c.min);
+            expect(hi, `${id}.${key}`).toBeLessThanOrEqual(c.max);
           }
         }
       }

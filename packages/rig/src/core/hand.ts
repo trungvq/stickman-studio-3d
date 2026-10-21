@@ -10,14 +10,22 @@ import type { AimDirJson } from "./bodyMark";
 
 /**
  * Góc ngón, độ: ngón cái `[dạng, đối, gập gốc, gập ngọn]`, trỏ `[gập gốc, gập ngọn]`, `fingers` chung cho giữa, áp út, út
- * (`HAND_FINGERS` cộng độ lệch từng ngón), `spread` độ xoè: trỏ tách ra, áp út và út toả theo
+ * (`HAND_FINGERS` cộng độ lệch từng ngón), `spread` độ xoè: trỏ tách ra, áp út và út toả theo; `thumbRoll` xoay ngón cái
+ * quanh trục đốt gốc (`THUMB_ROLL`), bỏ trống là `0`
  */
 export interface Fingers {
   thumb: readonly [number, number, number, number];
   index: readonly [number, number];
   fingers: readonly [number, number];
   spread: number;
+  thumbRoll?: number;
 }
+
+/**
+ * Tầm xoay ngón cái quanh trục đốt gốc, độ: dương là sấp (đệm ngón cái quay về phía các ngón), âm là ngửa.
+ * docs/01-rig.md#bàn-tay
+ */
+export const THUMB_ROLL = [-15, 45] as const;
 
 /** Dáng nghỉ: ngón cong nhẹ, ngón cái khép sát ngón trỏ — bàn tay không ai đặt dáng, và gốc mà `w` hoà từ đó. Không soạn được */
 export const HAND_RELAXED: Fingers = {
@@ -44,6 +52,13 @@ export const HAND_POSES = {
   thumbsUp: { thumb: [80, 4, 0, 0], index: [90, 85], fingers: [90, 85], spread: 0 },
   tripod: { thumb: [28, 45, 0, 0], index: [40, 40], fingers: [48, 76], spread: 0 },
   chopsticks: { thumb: [36, 52, 6, 0], index: [50, 35], fingers: [45, 50], spread: 2 },
+  cupPinch: {
+    thumb: [60, 103, -8, -15],
+    index: [32, 25],
+    fingers: [45, 12],
+    spread: 0,
+    thumbRoll: 45,
+  },
 } as const satisfies Record<string, Fingers>;
 
 export type HandPose = keyof typeof HAND_POSES;
@@ -65,6 +80,7 @@ export const HAND_POSE_LABELS: Record<HandPose, string> = {
   thumbsUp: "giơ ngón cái",
   tripod: "cầm bút",
   chopsticks: "cầm đũa",
+  cupPinch: "kẹp chén",
 };
 
 /**
@@ -90,11 +106,13 @@ export const HAND_GRIPS: Record<HandPose | "rest", V3> = {
   tripod: [0.063, -0.104, 0.033],
   // trùng `pinch`: khung `chopsticks` dựng từ fixture dáng `pinch` (`graspSolve.ts`)
   chopsticks: [0.07, -0.106, 0.072],
+  // trục chén giữa đệm ngón cái và đệm trỏ – giữa, ngang tầm đệm (`bowl` `pinch`)
+  cupPinch: [0.063, -0.121, 0.024],
 };
 
 /**
  * Số của một bàn tay, theo thứ tự này: xoay cẳng tay (`turn`, dương là sấp — lòng tay úp khi cẳng tay chĩa ra trước),
- * gập cổ tay (`bend`, dương về phía lòng tay), rồi chín góc ngón của `Fingers`
+ * gập cổ tay (`bend`, dương về phía lòng tay), rồi mười góc ngón của `Fingers` (`thumbRoll` cuối)
  */
 export const HAND_DOF = [
   "turn",
@@ -108,7 +126,9 @@ export const HAND_DOF = [
   "fingersBase",
   "fingersTip",
   "spread",
+  "thumbRoll",
 ] as const;
+const ROLL = HAND_DOF.indexOf("thumbRoll");
 
 export type HandVec = readonly number[];
 
@@ -129,7 +149,13 @@ export const HAND_FIT = [
   "pinky1",
 ] as const;
 
-export const fingerVec = (f: Fingers): number[] => [...f.thumb, ...f.index, ...f.fingers, f.spread];
+export const fingerVec = (f: Fingers): number[] => [
+  ...f.thumb,
+  ...f.index,
+  ...f.fingers,
+  f.spread,
+  f.thumbRoll ?? 0,
+];
 
 /** Bàn tay không ai ghi: cẳng tay trung tính (lòng tay quay vào thân), cổ tay thẳng, ngón thả lỏng */
 export const HAND_REST: HandVec = [0, 0, ...fingerVec(HAND_RELAXED)];
@@ -212,7 +238,8 @@ const I3: M3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 /**
  * Khung từng đốt của bàn tay bên `side` (`-1` tay phải) cỡ `k`, cỡ dọc `long`, theo góc ngón của `v` (`HAND_DOF`; hai số
  * đầu là của cổ tay, không đọc ở đây). Mọi ngón gập về phía lòng tay; ngón cái đặt gốc bằng dạng (ra +z) rồi đối (về lòng
- * tay), nên gập nó là vắt ngang lòng tay khi đối nhiều.
+ * tay), nên gập nó là vắt ngang lòng tay khi đối nhiều; `thumbRoll` xoay đốt gốc ngón cái quanh trục của chính nó sau
+ * gập gốc: đốt gốc không đổi chỗ, mặt đệm và mặt gập của đốt ngọn xoay theo.
  */
 export function handFrames(
   v: HandVec,
@@ -221,7 +248,8 @@ export function handFrames(
   long = k,
 ): Record<HandPiece, HandFrame> {
   const p = -side;
-  const [abd, opp, tb0, tt0, ib0, it0, fb, ft, sp] = v.slice(2).map((x) => (x ?? 0) * D);
+  const [abd, opp, tb0, tt0, ib0, it0, fb, ft, sp] = v.slice(2, ROLL).map((x) => (x ?? 0) * D);
+  const roll = Math.min(THUMB_ROLL[1], Math.max(THUMB_ROLL[0], v[ROLL] ?? 0)) * D;
   const fit = (i: number) => (v[HAND_DOF.length + i] ?? 0) * D;
   const [tb, tt, ib, it] = [tb0 + fit(0), tt0 + fit(1), ib0 + fit(2), it0 + fit(3)];
   const B = HAND_BONES;
@@ -234,9 +262,10 @@ export function handFrames(
       { o: add3(o, matVec(R0, [0, -l0, 0])), R: R1, len: len[1] * long },
     ] as const;
   };
+  const base = matMul(matMul(rotY(p * opp), rotX(-abd)), rotZ(p * tb));
   const [thumb0, thumb1] = chain(
     at(B.thumb.at),
-    matMul(matMul(rotY(p * opp), rotX(-abd)), rotZ(p * tb)),
+    roll ? matMul(base, rotY(p * roll)) : base,
     B.thumb.len,
     tt,
   );
@@ -268,7 +297,7 @@ export const handGrip = (side: number, k = 1, long = k): V3 => {
   return [-side * x * k, y * long, z * k];
 };
 
-/** Độ rộng (độ, trên chín góc ngón) của phép hoà tâm nắm theo dáng gần nhất: dáng soạn đúng gần như trùng bảng */
+/** Độ rộng (độ, trên mười góc ngón) của phép hoà tâm nắm theo dáng gần nhất: dáng soạn đúng gần như trùng bảng */
 const GRIP_SPREAD = 12;
 
 /**

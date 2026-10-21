@@ -10,7 +10,7 @@ import {
 } from "./act3";
 import { trunk3 } from "./arm3";
 import { body3 } from "./figure3d";
-import { handDims } from "./heldGeom";
+import { axialAt, handDims, itemGeom } from "./heldGeom";
 import { parseHeldItem, type HeldItemSpec } from "./heldItem";
 import { holdHand } from "./holdLink";
 import { matVec, type M3, type V3 } from "./lens";
@@ -22,6 +22,7 @@ import cocJson from "../../../../apps/studio/public/held/coc.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import khay from "./__fixtures__/held-v2/khay.json";
 import butJson from "./__fixtures__/held-v2/but.json";
+import chenJson from "./__fixtures__/held-v2/chen.json";
 
 const C = CharacterSchema.parse({ head: { form: "human" }, palette: { clad: true } });
 const spec = (j: unknown): HeldItemSpec => {
@@ -52,6 +53,7 @@ const HELD = {
   khay: KHAY,
   "khay-dai": LONG,
   but: spec(butJson),
+  chen: spec(chenJson),
 };
 
 /** Điện thoại cầm lòng tay (`palmBox`), trường cảnh khai đè lên */
@@ -208,6 +210,23 @@ describe("`world.hands[].hold` trong scene", () => {
     // màn hướng lên trên, không ra ống kính
     expect(rep.got[1]).toBeLessThan(0);
     expect(deg(rep.got, sub(LENS.eye, [-25, -270, -90]))).toBeGreaterThan(60);
+  });
+
+  it("tay dẫn kẹp chén (`bowl` `pinch`): phía ngón cái về thân người cầm (`thumbToward: back`), miệng ngửa; khai `around` vẫn thế", () => {
+    const geom = itemGeom(HELD.chen);
+    const f = geom.features.find((x) => x.kind === "lathe")!;
+    if (f.kind !== "lathe") throw new Error("không có trụ tiện");
+    for (const around of [undefined, 180])
+      for (const side of ["right", "left"] as const) {
+        const x = side === "right" ? -25 : 25;
+        const hold = { item: "chen", group: "bowl", ...(around !== undefined && { around }) };
+        const sp = at([{ t: 0, [side]: { at: [x, -250, -70], point: "grip", hold } }]);
+        const held = actHeld(C, sp)[side === "right" ? "R" : "L"]!;
+        expect(deg(axisW(held.R, [0, 1, 0]), [0, -1, 0])).toBeLessThan(10);
+        // người quay `yaw` 90 về −z: thân ở phía +z của chén
+        const t = axisW(held.R, axialAt(geom, f, 0.5, around ?? 0).rho);
+        expect(deg([t[0], 0, t[2]], [0, 0, 1])).toBeLessThan(10);
+      }
   });
 
   it("chén đứng (`up: rim`) với cả hai tay, đổi tay vẫn đứng", () => {
