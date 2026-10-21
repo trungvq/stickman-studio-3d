@@ -151,3 +151,11 @@ hình học ở `core/`, `apps/viewer`) thì hỏi trước; được phép thì
 `--vs`, `--only` các khung liên quan khi sửa một vùng hẹp, rồi **mở tờ gộp `tmp/shots/<tên>.png` và
 thật sự nhìn** — typecheck đúng không có nghĩa là hình đúng. Đụng tới giao diện studio thì chụp
 nó ở hai bề ngang `390x844`, `1400x900`.
+
+## Giao việc cho agent con
+
+- **Agent con đã chạy lâu, context lớn thì không nhắn thêm việc.** Dừng nó, giao agent mới với bản giao gọn:
+  lỗi cần sửa, gốc lỗi đã tìm ra, phần đã làm còn trong working tree, đúng danh sách việc còn lại.
+- **Chủ dự án gửi ảnh báo lỗi mà chưa hiểu rõ lỗi là gì thì hỏi lại cho chắc trước khi sửa hay giao việc** —
+  nhất là lỗi tư thế không tự nhiên (khuỷu, vai, cổ tay, hướng bàn tay), chỗ dễ hiểu sai ý nhau. Giao cho agent
+  con thì chuyển nguyên văn lời chủ dự án kèm ảnh, cách hiểu riêng ghi rõ là cách hiểu.
