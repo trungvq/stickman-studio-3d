@@ -211,7 +211,7 @@ bảng so với mức v1 (`sink`, khe từng ngón, nắm, cổ tay vượt, lu�
 | G4-A1 | Món thử | video `held/thu-chen.json`, `luoi-mon.ts` | `lathe` có miệng | held-moc | — | S |
 | G4-A2 | Chỗ tiếp xúc chén | `graspSolve.ts` `CONTACTS.bowl.side` (trục G4-42, cái về miệng), `graspGroups.ts` (bỏ `later`) | fixture `chen#kep` ≤ 5° / 1; khe cái–giữa ≤ v1 + 0,3 | `graspSolve.test.ts` | 42, 54 | O |
 | G4-A3 | Hàng mẫu | `bang-cam.mjs`: mặc định, `around`, hai tay đỡ đáy; chép | | chạy | A2 | S |
-| G4-A4 | Docs + render | `docs/11` nhóm 7; `g4-bowl/` | `so-v1.md` | — | A1, A3 | S |
+| G4-A4 | Docs + render | `docs/11` nhóm 7 | `so-v1.md` | — | A1, A3 | S |
 | **cuối** | | | | | | |
 | G4-Z1 | Docs tổng | `docs/11` dòng đầu (mười nhóm chạy, bốn nhóm để sau), mục 1 "Phạm vi", mục 9 giai đoạn 4 thành trạng thái; `docs/04` nếu `describe_held` đổi | không còn câu "`later`" sai, không câu lịch sử | `pnpm format:check` | mọi job | S |
 | G4-Z2 | Kiểm cuối | — | mục 3 đủ; `thu-nhom-cam` ≤ 1 lỗi; MCP `describe_held` trên 13 món `thu-*` không còn `later` ở mười nhóm | — | Z1 | S |

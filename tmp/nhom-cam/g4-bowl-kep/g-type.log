@@ -1,0 +1,66 @@
+$ pnpm --filter @stickman3d/rig build && pnpm --filter @stickman3d/sketch build && pnpm --filter @stickman3d/fx build && pnpm -r typecheck
+$ tsup
+CLI Building entry: {"index":"src/index.ts","core/index":"src/core/index.ts"}
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/packages/rig/tsup.config.ts
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+ESM dist/index.js              323.26 KB
+ESM dist/core/index.js         24.32 KB
+ESM dist/core/index.js.map     71.00 B
+ESM dist/chunk-YPR5V5I3.js     1022.30 KB
+ESM dist/index.js.map          717.66 KB
+ESM dist/chunk-YPR5V5I3.js.map 2.22 MB
+ESM ⚡️ Build success in 221ms
+DTS Build start
+DTS ⚡️ Build success in 7274ms
+DTS dist/index.d.ts          113.72 KB
+DTS dist/core/index.d.ts     21.17 KB
+DTS dist/index-DN-B3lR_.d.ts 689.91 KB
+$ tsup
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/packages/sketch/tsup.config.ts
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+DTS Build start
+ESM dist/index.js     428.16 KB
+ESM dist/index.js.map 684.07 KB
+ESM ⚡️ Build success in 416ms
+DTS ⚡️ Build success in 2516ms
+DTS dist/index.d.ts 21.17 KB
+$ tsup
+CLI Building entry: src/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/packages/fx/tsup.config.ts
+CLI Target: es2022
+CLI Cleaning output folder
+ESM Build start
+DTS Build start
+ESM dist/index.js     117.83 KB
+ESM dist/index.js.map 365.02 KB
+ESM ⚡️ Build success in 345ms
+DTS ⚡️ Build success in 2470ms
+DTS dist/index.d.ts 88.00 KB
+packages/rig typecheck$ tsc --noEmit
+packages/rig typecheck: Done
+packages/sketch typecheck$ tsc --noEmit
+packages/sketch typecheck: Done
+packages/fx typecheck$ tsc --noEmit
+packages/fx typecheck: Done
+apps/studio typecheck$ tsc --noEmit
+packages/render typecheck$ echo skip
+packages/render typecheck: skip
+packages/render typecheck: Done
+packages/cli typecheck$ echo skip
+packages/cli typecheck: skip
+packages/cli typecheck: Done
+packages/mcp typecheck$ echo skip
+packages/mcp typecheck: skip
+packages/mcp typecheck: Done
+apps/studio typecheck: Done

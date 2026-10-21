@@ -1,0 +1,7 @@
+$ eslint .
+
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/packages/cli/scaffold/src/khoi3d/Scene3D.tsx
+  77:6  warning  React Hook useLayoutEffect has missing dependencies: 'scene', 't', and 'wait'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+✖ 1 problem (0 errors, 1 warning)
+
