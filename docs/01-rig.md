@@ -1601,7 +1601,7 @@ không nâng thì lệch cổ tay giữ `0` —: không đạt thì món lệch 
 còn lệch và khớp kẹp, `check` báo ([03](03-scene.md#đồ-cầm-tay)). Vị trí tay (`at`, `to`, `point`) luôn thắng ý định. Cổ tay
 và khuỷu của tay mang món, tay phụ đi từ nghiệm của mẫu trước với tốc độ có hạn (`HOLD_SLEW`, `HOLD_SWIVEL_SLEW`): ý định
 vượt tầm thì cổ tay sang nghiệm mới trong vài khung chứ không lật trong một khung ([03](03-scene.md#đồ-cầm-tay)). Món đặt
-trước (món có mốc ở `items`) không giải ý định: hướng món do cảnh khai, bàn tay theo món
+trước (lần cầm có mốc món ở `items`) không giải ý định: hướng món do cảnh khai, bàn tay theo món
 ([11](11-nhom-cam.md#5-giải-tay-theo-món)).
 
 **Hai tay.** Chỗ cầm khai `both`: món cứng theo tay dẫn, tay kia là tay phụ đặt ở chỗ cầm mặc định của nhóm trên món

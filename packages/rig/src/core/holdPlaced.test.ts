@@ -148,8 +148,9 @@ describe("món đặt trước trong act3", () => {
       expect(g.by.variant).toBeDefined();
       expect(g.arm.phi).toBeCloseTo(sol.arm.phi, 9);
       expect(rep.reach!.gap).toBeLessThan(0.01);
-      // bàn tay không vượt giới hạn: món ở đúng mốc món
-      if (!rep.hold!.clamped.length) {
+      // lần cầm theo mốc: ở mốc (và sau mốc cuối, thân đứng yên) bàn tay không vượt giới hạn thì món ở đúng mốc món;
+      // giữa hai mốc món theo bàn tay đã hoà, không theo `itemAt`
+      if (!rep.hold!.clamped.length && (t === 0 || t >= 1)) {
         expect(rep.hold!.err).toBeLessThan(0.1);
         const P = itemAt(rt, "bang-gia", t, { chars })!.P;
         expect(dist(actHeld(NGUOI, sp).R!.at, P)).toBeLessThanOrEqual(0.01);

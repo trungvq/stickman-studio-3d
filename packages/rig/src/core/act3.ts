@@ -36,6 +36,7 @@ import {
   graspReport,
   type GraspBy,
   type GraspChoice,
+  type GraspFrame,
   type GraspReport,
   type GraspSolution,
 } from "./graspSolve";
@@ -77,6 +78,7 @@ import {
   type HoldGrasp,
   type HoldTarget,
   type ReachHold,
+  type WasHand,
 } from "./heldItem";
 import { defaultCharacter, type CharacterData } from "./schema";
 
@@ -531,7 +533,7 @@ export function leadGrip(
   s: number,
 ): { G: GripFrame; center: V3 } {
   const { G, center } = holdLinkFrame(h, side, k, long, s);
-  const p = h.grasp?.mode === "item" ? undefined : holdFrom(h);
+  const p = h.grasp?.mode === "item" && !h.grasp.keyed ? undefined : holdFrom(h);
   if (!p) return { G, center };
   const b = holdLinkFrame(p, side, k, long, s);
   const f = 1 - h.from!.k;
@@ -723,9 +725,16 @@ const canon = (c: ActCharacter) => {
   return x;
 };
 
+/** Bàn tay của lần cầm đang hoà ra (`ReachHold.was`) trên nhân vật của thân `T` */
+function wasHand(T: Trunk3, was: NonNullable<ReachHold["was"]>): WasHand | undefined {
+  let m = wasMemo.get(was);
+  if (!m || !sameC(m.c, T.c)) wasMemo.set(was, (m = { c: T.c, sol: was.solve(canon(T.c), T) }));
+  return m.sol;
+}
+
 /**
  * Tay cầm món đặt trước (`ReachHold.solve`) của thân `T`: nghiệm `graspAtTime` theo bên (`-1` phải), và `world.hands` với
- * khung cầm đã giải gắn vào lần cầm (`grasp.frame`)
+ * khung cầm đã giải gắn vào lần cầm (`grasp.frame`); lần cầm cũ theo món còn hoà (`from`) mang khung của nghiệm cũ (`was`)
  */
 function placedHolds(T: Trunk3, hands: ActHands | undefined) {
   const sols: Partial<Record<number, PlacedSol>> = {};
@@ -733,12 +742,21 @@ function placedHolds(T: Trunk3, hands: ActHands | undefined) {
   for (const wk of ["near", "far"] as const) {
     const r = hands?.[wk];
     const h = r?.hold;
+    const fg = h?.from?.grasp;
+    if (h?.was && fg?.mode === "item" && !fg.frame && !h.released) {
+      const old = wasHand(T, h.was);
+      if (old && "G" in old.frame) {
+        const from = { ...h.from!, grasp: { ...fg, frame: old.frame as GraspFrame } };
+        out = { ...out, [wk]: { ...r, hold: { ...h, from } } };
+      }
+    }
     if (h?.grasp?.mode !== "item" || !h.solve || h.released) continue;
     let m = placedMemo.get(h);
     if (!m || !sameC(m.c, T.c)) placedMemo.set(h, (m = { c: T.c, sol: h.solve(canon(T.c), T) }));
     if (!m.sol) continue;
     sols[wk === "near" ? T.near : -T.near] = m.sol;
-    out = { ...out, [wk]: { ...r, hold: { ...h, grasp: { ...h.grasp, frame: m.sol.frame } } } };
+    const cur = out?.[wk]?.hold ?? h;
+    out = { ...out, [wk]: { ...r, hold: { ...cur, grasp: { ...h.grasp, frame: m.sol.frame } } } };
   }
   return { hands: out, sols };
 }
@@ -750,8 +768,8 @@ type Solved = {
   wrist: Partial<Record<"R" | "L", WristTbd>>;
 };
 
-/** Nghiệm của lần cầm món đặt trước đang hoà ra (`ReachHold.was`) theo khung và nhân vật */
-const wasMemo = new WeakMap<object, { c: ActCharacter; sol: PlacedSol | undefined }>();
+/** Bàn tay của lần cầm đang hoà ra (`ReachHold.was`) theo khung và nhân vật */
+const wasMemo = new WeakMap<object, { c: ActCharacter; sol: WasHand | undefined }>();
 
 /** Cánh tay vẽ ra để hoà: cổ tay, khung bàn tay, khuỷu (three) và ngón */
 type ArmState = { Wp: V3; Rw: M3; El: V3; fingers: readonly number[] };
@@ -764,7 +782,7 @@ type ArmState = { Wp: V3; Rw: M3; El: V3; fingers: readonly number[] };
 function solveActing(T: Trunk3, sp: ActInput): Solved {
   const hands = sp.world?.hands;
   if (!hands || !needsSolve(sp)) return solveCore(T, sp);
-  const plan: { wk: "near" | "far"; side: number; f: number; old: PlacedSol | "free" }[] = [];
+  const plan: { wk: "near" | "far"; side: number; f: number; old: WasHand | "free" }[] = [];
   let main: ActHands = hands;
   for (const wk of ["near", "far"] as const) {
     const r = hands[wk];
@@ -772,13 +790,7 @@ function solveActing(T: Trunk3, sp: ActInput): Solved {
     if (!r || !h) continue;
     const side = wk === "near" ? T.near : -T.near;
     if (h.released) main = { ...main, [wk]: { ...r, hold: undefined } };
-    let old: PlacedSol | undefined;
-    if (h.was) {
-      let m = wasMemo.get(h.was);
-      if (!m || !sameC(m.c, T.c))
-        wasMemo.set(h.was, (m = { c: T.c, sol: h.was.solve(canon(T.c), T) }));
-      old = m.sol;
-    }
+    const old = h.was && wasHand(T, h.was);
     if (old) plan.push({ wk, side, f: 1 - h.was!.k, old });
     else if (h.grasp?.mode === "item" && h.solve && h.enter !== undefined && h.enter < 1)
       plan.push({ wk, side, f: h.enter, old: "free" });
@@ -990,7 +1002,13 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
           got: front(A.Rw),
           err: Math.acos(Math.max(-1, Math.min(1, (off[0] + off[4] + off[8] - 1) / 2))) / D,
           clamped,
-          grasp: withBody(graspReport(item, item.t0, "item"), item.arm),
+          grasp: withBody(
+            {
+              ...graspReport(item, item.t0, "item"),
+              ...(W0.hands?.[wk]?.hold?.grasp?.keyed && { keyed: true as const }),
+            },
+            item.arm,
+          ),
         },
       };
       done[side] = state(A, side);
@@ -1470,6 +1488,15 @@ export function actAim(
 ): { input: ActInput; report: Record<"R" | "L", AimReport> } | undefined {
   const T0 = trunk3(c, sp);
   return T0 && solveActing(T0, sp);
+}
+
+/** Bàn tay bên `side` (`-1` phải) người 3D vẽ ở `sp`: cổ tay, khung bàn tay, khuỷu (three) và dáng — cho `ReachHold.was` */
+export function actHandAt(c: ActCharacter, sp: ActInput, side: number): WasHand | undefined {
+  const T = trunk3(c, sp);
+  if (!T) return undefined;
+  const x = solveActing(T, sp).input;
+  const A = arm3(T, x.pose, x.world?.hands, side);
+  return { Wp: A.wr, Rw: A.Rw, arm: { elbow: A.elbow }, frame: { pose: A.v } };
 }
 
 const rigOf = (p: V3): V3 => [p[0] * 100, -p[1] * 100, -p[2] * 100];
