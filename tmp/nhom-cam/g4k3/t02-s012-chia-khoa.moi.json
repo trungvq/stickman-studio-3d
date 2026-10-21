@@ -1,0 +1,486 @@
+{
+  "schemaVersion": 26,
+  "name": "t02-s012-chia-khoa",
+  "frame": "wide",
+  "duration": 7.515,
+  "marks": {
+    "loi": 0.1,
+    "kochira": 5.45,
+    "dat": 6.05,
+    "nhan": 6.7
+  },
+  "camera": [
+    {
+      "t": 0,
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  ],
+  "lens": {
+    "eye": [
+      0,
+      -400,
+      -900
+    ],
+    "yaw": 0,
+    "pitch": 0,
+    "f": 1000,
+    "cx": 0,
+    "cy": 0
+  },
+  "cast": [
+    {
+      "id": "yota",
+      "character": "yota.json",
+      "world": {
+        "at": [
+          250,
+          0,
+          790
+        ],
+        "yaw": 90,
+        "hands": [
+          {
+            "t": 5,
+            "left": null
+          },
+          {
+            "t": 5.4,
+            "left": {
+              "at": [
+                292,
+                -258,
+                704
+              ],
+              "point": "grip",
+              "elbow": [
+                -0.4,
+                0.6,
+                1
+              ]
+            }
+          },
+          {
+            "t": 5.45,
+            "left": {
+              "hold": {
+                "item": "the-phong",
+                "group": "card",
+                "part": "body"
+              }
+            }
+          },
+          {
+            "t": 6.08,
+            "left": {
+              "at": [
+                256,
+                -205,
+                651
+              ],
+              "point": "grip",
+              "elbow": [
+                -0.4,
+                0.6,
+                1
+              ],
+              "hold": null
+            }
+          },
+          {
+            "t": 6.25,
+            "left": {
+              "at": [
+                262,
+                -236,
+                664
+              ],
+              "point": "grip",
+              "elbow": [
+                -0.4,
+                0.6,
+                1
+              ],
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": 6.55,
+            "left": {
+              "at": [
+                262,
+                -245,
+                714
+              ],
+              "point": "grip",
+              "elbow": [
+                -0.4,
+                0.6,
+                1
+              ]
+            }
+          },
+          {
+            "t": 6.95,
+            "left": null
+          }
+        ]
+      },
+      "tracks": [
+        {
+          "name": "than",
+          "clips": [
+            {
+              "action": "stand-3d",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "name": "tay",
+          "clips": [
+            {
+              "action": "dung-tay-bung-3d",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "name": "nguc",
+          "clips": [
+            {
+              "action": "eshaku-tay-bung-3d",
+              "start": 0.1,
+              "blend": 0.35
+            },
+            {
+              "start": 1.05,
+              "blend": 0.45
+            },
+            {
+              "action": "voi-quay-3d",
+              "start": "@dat-0.6"
+            },
+            {
+              "start": "@dat+0.5",
+              "blend": 0.4
+            }
+          ]
+        },
+        {
+          "name": "mat",
+          "clips": [
+            {
+              "action": "face-kind",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "name": "moi",
+          "clips": [
+            {
+              "action": "lip-t02-d-yota-03",
+              "start": "@loi",
+              "cycle": 7.315,
+              "blend": 0
+            },
+            {
+              "start": "@loi+7.315",
+              "blend": 0
+            }
+          ]
+        }
+      ],
+      "equip": {
+        "torso": "ao-khong-la"
+      }
+    },
+    {
+      "id": "takumi",
+      "character": "takumi.json",
+      "world": {
+        "at": [
+          250,
+          0,
+          506
+        ],
+        "yaw": 270,
+        "hands": [
+          {
+            "t": 0,
+            "left": {
+              "at": [
+                198,
+                -203,
+                586
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward",
+              "elbow": [
+                -0.1,
+                1,
+                0.9
+              ]
+            }
+          },
+          {
+            "t": 6.1,
+            "right": null
+          },
+          {
+            "t": 6.26,
+            "right": {
+              "at": [
+                306,
+                -192,
+                540
+              ],
+              "point": "grip",
+              "elbow": [
+                -0.4,
+                1,
+                0.5
+              ]
+            }
+          },
+          {
+            "t": 6.38,
+            "right": {
+              "at": [
+                270,
+                -232,
+                600
+              ],
+              "point": "grip",
+              "elbow": [
+                -0.4,
+                1,
+                0.5
+              ]
+            }
+          },
+          {
+            "t": 6.4,
+            "right": {
+              "hold": {
+                "item": "the-phong",
+                "group": "card",
+                "part": "body"
+              }
+            }
+          }
+        ]
+      },
+      "tracks": [
+        {
+          "name": "than",
+          "clips": [
+            {
+              "action": "stand-3d",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "name": "tay",
+          "clips": [
+            {
+              "action": "tay-dat-xa-3d",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "name": "nguc",
+          "clips": [
+            {
+              "action": "nga-nhe-3d",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "name": "mat",
+          "clips": [
+            {
+              "action": "face-smug",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "name": "voi",
+          "clips": [
+            {
+              "action": "voi-quay-3d",
+              "start": "@nhan-0.5"
+            },
+            {
+              "start": "@nhan+0.4",
+              "blend": 0.4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "erika",
+      "character": "erika.json",
+      "world": {
+        "at": [
+          110,
+          0,
+          310
+        ],
+        "yaw": 280,
+        "hands": [
+          {
+            "t": 0,
+            "left": {
+              "to": "chin",
+              "offset": [
+                42,
+                62,
+                10
+              ],
+              "point": "grip",
+              "elbow": [
+                -0.3,
+                1,
+                1
+              ],
+              "hold": {
+                "item": "dien-thoai",
+                "group": "palmBox",
+                "part": "body",
+                "along": 0.419,
+                "thumb": "left",
+                "tilt": 20.6
+              }
+            },
+            "right": {
+              "to": "shoulder",
+              "offset": [
+                38,
+                18,
+                34
+              ],
+              "point": "wrist",
+              "elbow": [
+                -0.5,
+                1,
+                1
+              ],
+              "hold": {
+                "item": "tui-hieu",
+                "group": "carry",
+                "on": "elbow"
+              }
+            }
+          }
+        ]
+      },
+      "tracks": [
+        {
+          "name": "than",
+          "clips": [
+            {
+              "action": "stand-3d",
+              "start": 0
+            }
+          ]
+        },
+        {
+          "name": "mat",
+          "clips": [
+            {
+              "action": "face-smug",
+              "start": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "items": [
+    {
+      "t": 5.45,
+      "cast": "yota",
+      "item": "the-phong",
+      "at": [
+        290,
+        -262,
+        700
+      ],
+      "point": "back",
+      "up": "front",
+      "roll": {
+        "axis": "bottom",
+        "toward": "forward"
+      }
+    },
+    {
+      "t": 5.8,
+      "cast": "yota",
+      "item": "the-phong",
+      "at": [
+        258,
+        -214,
+        650
+      ],
+      "point": "back",
+      "up": "front",
+      "roll": {
+        "axis": "bottom",
+        "toward": "forward"
+      }
+    },
+    {
+      "t": 6.02,
+      "cast": "yota",
+      "item": "the-phong",
+      "at": [
+        256,
+        -200,
+        644
+      ],
+      "point": "back",
+      "up": "front",
+      "roll": {
+        "axis": "bottom",
+        "toward": "forward"
+      },
+      "rest": true
+    },
+    {
+      "t": 6.7,
+      "cast": "takumi",
+      "item": "the-phong",
+      "rest": true
+    },
+    {
+      "t": 7.2,
+      "cast": "takumi",
+      "item": "the-phong",
+      "to": "chest",
+      "offset": [
+        36,
+        -10,
+        4
+      ],
+      "face": {
+        "axis": "front",
+        "toward": "holderFace",
+        "tilt": 25
+      },
+      "roll": {
+        "axis": "top",
+        "toward": "forward"
+      }
+    }
+  ]
+}
