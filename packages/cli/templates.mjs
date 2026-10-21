@@ -77,7 +77,7 @@ vừa làm gì.
   \`docs 11\`, \`docs 03\` § Đồ cầm tay. Ngón có ôm món không thì soi \`pnpm can-tay\`. Thêm hay sửa món thì soi bảng
   \`pnpm bang-cam\` (nhóm × món × chỗ cầm mẫu × tay nhỏ nhất, lớn nhất × ba góc, kèm số đo \`held\`); nâng rig xong thì
   \`pnpm bang-cam --so\` so từng ô với bảng chuẩn đã duyệt — \`docs 03\` § Bảng duyệt nhóm cầm. Món treo trên cánh tay
-  (túi khoác khuỷu, đeo vai) là \`món@carry\` với \`"on": "elbow" | "shoulder"\`, món khai \`seats\` và \`shape\` thân món,
+  (túi khoác khuỷu, đeo vai) là \`món@carry\` với \`"on": "elbow" | "shoulder"\`, món khai \`seats\`, \`shape\` thân món và quai cứng là phần \`strap\`,
   bàn tay ấy để tự do; khuỷu phải gập, tay phải dang ngoài túi — \`docs 01\` § Món treo.
 - Đặt tay lên một mặt (quầy, sách, bàn phím, bàn) hay đổi \`turn\` / \`elbow\` xong thì
   đọc \`world.palms\` của \`scene_probe\` (lòng tay \`úp\`, \`down\` dưới 45; \`aim\` là khe tới

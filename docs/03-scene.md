@@ -1355,8 +1355,8 @@ vật three của món.
 - **Món treo** (nhóm `carry`, `on: elbow | shoulder`, [01](01-rig.md#món-treo)) khai cùng chỗ:
   `"right": { "hold": { "item": "tui", "group": "carry", "on": "elbow" } }`, `hold: null` thì gỡ. Món treo trên cánh tay ấy, không hoà (`HOLD_BLEND` không áp), không có ý định (đè `face` / `up` / `roll`
   là lỗi), không nhận `point: "item:<mốc>"`. Chỗ tay vẫn theo `at` / `to` / hành động: túi khoác khuỷu cần khuỷu gập —
-  cổ tay trước vai (`"to": "shoulder"`, `offset` ra trước, xuống), `elbow` chĩa xuống ra ngoài —; túi đeo vai cần cánh tay
-  dang ra ngoài túi. Mốc khai `hold` vẫn không đi cùng `palm`, `fingers`, `bend`: lòng tay của tay treo món khai ở mốc khác
+  cổ tay trước vai (`"to": "shoulder"`, `offset` ra trước, xuống), `elbow` chĩa xuống ra ngoài —; túi đeo vai thõng dưới
+  đầu vai nên cánh tay cần dang ra ngoài túi (`"to": "shoulder"`, `offset` xuống, ra ngang chừng 65). Mốc khai `hold` vẫn không đi cùng `palm`, `fingers`, `bend`: lòng tay của tay treo món khai ở mốc khác
   (lần treo không có ý định nên mốc ấy giữ được `palm`).
 - **Một `hold` mỗi tay**: tay treo món không cầm thêm món bằng bàn tay ấy — bàn tay tự do nhưng chỗ khai đã là lần treo;
   món thứ hai cầm ở tay kia (túi khoác khuỷu trái, điện thoại tay phải). Cùng một món vừa khai treo ở tay này vừa cầm trong
@@ -1473,8 +1473,8 @@ hàng lọc, cặp bỏ: [11](11-nhom-cam.md#bang-cam-theo-nhóm).
   `rig.height`); `--ai a,b` chỉ định người khác.
 - **Người đứng** `stand-3d` ở `--at`, quay `--yaw`; món đặt bằng `items` theo hướng mặc định của nhóm, chỗ cầm do rig giải.
   Món treo (`carry`): khuỷu gập chữ V (cổ tay trước vai) hay tay dang ngoài túi đeo vai, ô ảnh lấy cả món và đoạn tay, nhãn
-  in `quai` (đỉnh quai tới chỗ treo), `khuỷu` (góc gập/độ ngóc), `thân` (khe thân món tới phần người gần nhất), `đẩy` (góc
-  lệch khỏi phương đứng).
+  in `quai` (đỉnh quai tới chỗ treo), `nâng` (món có quai `strap`: đoạn dời để quai tựa lên người), `khuỷu` (góc gập/độ
+  ngóc), `thân` (khe thân món tới phần người gần nhất), `đẩy` (góc lệch khỏi phương đứng).
 - **Cảnh dựng tạm** mang tên `bang-cam`, không có file trong `scenes/`: repo khai `CANH_3D["bang-cam"]` đăng ký lưới cho
   mọi món người trong cảnh khai `hold` (`cast.provide(món, lưới, id người)`), cùng lưới các cảnh thật dùng. `tools/soi.tsx`
   nhận cảnh dựng tạm qua `inputProps.scenes`.

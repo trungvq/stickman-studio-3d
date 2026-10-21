@@ -39,7 +39,7 @@ const lens = { eye: [0, -250, -1400] as [number, number, number], yaw: 0, pitch:
 /** Khuỷu gập chữ V: cổ tay trước vai, khuỷu chĩa xuống ra ngoài */
 const ELBOW = { to: 'shoulder', offset: [36, 30, 0], point: 'wrist', elbow: [-0.7, 1, -0.2] };
 /** Tay phải dang ngoài túi đeo vai */
-const OUT = { at: [-90, -185, -10], point: 'wrist', elbow: [-0.6, 1, 0] };
+const OUT = { to: 'shoulder', offset: [0, 95, 65], point: 'wrist', elbow: [-1, 1, 0] };
 /** Túi khoác khuỷu, đeo vai */
 const KHUYU = { item: 'tui', group: 'carry', on: 'elbow' };
 const VAI = { item: 'tui', group: 'carry', on: 'shoulder' };
@@ -105,22 +105,21 @@ describe('món treo: rig treo món trên cánh tay', () => {
     expect(Math.abs(Math.acos(up.y) * (180 / Math.PI) - m.swing)).toBeLessThan(0.5);
   });
 
-  it('đeo vai: đỉnh quai trên đỉnh vai phía trong khớp vai, thân món đẩy khỏi thân áo, tay dang ngoài túi thì không lồng', () => {
+  it('đeo vai: đỉnh quai trên đầu vai ngoài khớp vai, tay dang ngoài túi thì không lồng', () => {
     const { w, bag } = world([{ t: 0, right: { ...OUT, hold: VAI } }]);
     const fig = posed(w, 0.5);
     const seat = carrySeat(fig, -1, 'shoulder');
     const sh = fig.arms[-1].shoulder.getWorldPosition(new THREE.Vector3());
-    // phía trong khớp vai (tay phải ở −x), cao hơn khớp
-    expect(seat.pivot.x).toBeGreaterThan(sh.x);
+    // ngoài khớp vai (tay phải ở −x), cao hơn khớp
+    expect(seat.pivot.x).toBeLessThan(sh.x);
     expect(seat.pivot.y).toBeGreaterThan(sh.y);
     const top = bag.localToWorld(new THREE.Vector3(...heldPoint(TUI, 'quai').map((v) => v * 0.01)));
     expect(top.distanceTo(seat.pivot)).toBeLessThan(1e-6);
     const [m] = heldCarries(fig, 'a');
     expect(m.on).toBe('shoulder');
     expect(m.body.gap + (m.body.allow ?? 0)).toBeGreaterThan(-CARRY.body);
-    // thân túi ở dưới vai, ngoài thân
+    // thân túi ở dưới vai
     const mid = bag.localToWorld(new THREE.Vector3(0, 0.13, 0));
-    expect(mid.x).toBeLessThan(seat.pivot.x);
     expect(mid.y).toBeLessThan(sh.y);
   });
 
@@ -156,7 +155,7 @@ describe('món treo: luật `held`', () => {
     const issues = sceneHeld(out.rt!, { frame: frame(w) });
     const body = issues.find((i) => i.rule === 'body')!;
     expect(body).toBeDefined();
-    expect((body.sample as HeldCarry).body.part).toMatch(/^(upperArmR|torso)$/);
+    expect((body.sample as HeldCarry).body.part).toMatch(/^(upperArmR|foreArmR|torso)$/);
     expect(heldLine(body)).toMatch(/món treo lồng vào người/);
     const ok: { rt?: ReturnType<typeof resolveScene> } = {};
     const good = world([{ t: 0, right: { ...OUT, hold: VAI } }], ok);

@@ -31,6 +31,18 @@ export const CARRY = {
   body: 1.5,
 } as const;
 
+/** Thân và quai của món treo: khối `shape` thuộc phần `strap: true` là quai, còn lại là thân */
+const splitMemo = new WeakMap<HeldItemSpec, { body: HeldShape[]; strap: HeldShape[] }>();
+export function carryShape(item: HeldItemSpec): { body: HeldShape[]; strap: HeldShape[] } {
+  const hit = splitMemo.get(item);
+  if (hit) return hit;
+  const isStrap = (b: HeldShape) => b.part !== undefined && item.parts?.[b.part]?.strap === true;
+  const shape = item.shape ?? [];
+  const out = { body: shape.filter((b) => !isStrap(b)), strap: shape.filter(isStrap) };
+  splitMemo.set(item, out);
+  return out;
+}
+
 /** Lần cầm: chỗ cầm nhóm của cảnh (`grasp.hold`) */
 export type CarryRef = { grasp?: Pick<HoldGrasp, "hold"> };
 
@@ -109,6 +121,82 @@ export function elbowSeat(
   return { pivot: add(elbow, mul(unit(n), r)), bar: b, bend, rise };
 }
 
+/** Một viên dọc quai: tâm (khung món, đơn vị rig), bán kính */
+export interface StrapBall {
+  c: V3;
+  r: number;
+}
+
+/**
+ * Quai thành chuỗi viên: trụ dọc trục cách nhau nửa bán kính, hộp lưới trên hai cạnh dài cách nhau cạnh ngắn (bán kính nửa
+ * cạnh ngắn), cầu là chính nó
+ */
+const ballMemo = new WeakMap<readonly HeldShape[], StrapBall[]>();
+export function strapBalls(strap: readonly HeldShape[]): StrapBall[] {
+  const hit = ballMemo.get(strap);
+  if (hit) return hit;
+  const out: StrapBall[] = [];
+  for (const b of strap) {
+    if ("ball" in b) out.push({ c: (b.at ?? [0, 0, 0]) as V3, r: b.ball });
+    else if ("cyl" in b) {
+      const [f, t] = [b.from as V3, b.to as V3];
+      const r2 = b.r2 ?? b.cyl;
+      const n = Math.max(1, Math.ceil(len(sub(t, f)) / (0.5 * Math.min(b.cyl, r2))));
+      for (let i = 0; i <= n; i++)
+        out.push({ c: add(f, mul(sub(t, f), i / n)), r: b.cyl + ((r2 - b.cyl) * i) / n });
+    } else {
+      const c = (b.at ?? [0, 0, 0]) as V3;
+      const k = [0, 1, 2].sort((i, j) => b.box[i] - b.box[j]);
+      const r = b.box[k[0]] / 2;
+      const steps = (L: number) => {
+        const n = Math.max(0, Math.ceil((L - 2 * r) / (2 * r)));
+        return Array.from({ length: n + 1 }, (_, i) =>
+          n ? -(L / 2 - r) + ((L - 2 * r) * i) / n : 0,
+        );
+      };
+      for (const a of steps(b.box[k[1]]))
+        for (const d of steps(b.box[k[2]])) {
+          const p: V3 = [...c];
+          p[k[1]] += a;
+          p[k[2]] += d;
+          out.push({ c: p, r });
+        }
+    }
+  }
+  ballMemo.set(strap, out);
+  return out;
+}
+
+/** Khoảng cách từ `p` tới đoạn `a`–`b` */
+function segDist(p: V3, a: V3, b: V3): number {
+  const ab = sub(b, a);
+  const f = Math.max(0, Math.min(1, dot(sub(p, a), ab) / (dot(ab, ab) || 1)));
+  return len(sub(p, add(a, mul(ab, f))));
+}
+
+/** Đoạn dời theo `dir` (đơn vị) để viên tâm `p` bán kính `r` ra khỏi nang `c`; không chạm là 0 */
+export function capsuleExit(c: CarryCapsule, p: V3, r: number, dir: V3): number {
+  const R = c.r + r;
+  const d = (t: number) => segDist(add(p, mul(dir, t)), c.a, c.b);
+  if (d(0) >= R) return 0;
+  // khe tới đoạn lồi theo t nên phần còn lồng là một khoảng chứa 0: chia đôi lấy đầu trên
+  let hi = R;
+  while (d(hi) < R) hi *= 2;
+  let lo = 0;
+  for (let i = 0; i < 24; i++) {
+    const m = (lo + hi) / 2;
+    if (d(m) < R) lo = m;
+    else hi = m;
+  }
+  return hi;
+}
+
+/** Luật tựa của quai: viên tâm `p` bán kính `r` (hệ của chỗ treo) phải dời theo `dir` (đơn vị) ngần `need(p, r)` để ra khỏi người */
+export interface CarryRest {
+  dir: V3;
+  need: (p: V3, r: number) => number;
+}
+
 /** Cầu bao của hình va chạm (khung món, đơn vị rig): tâm hộp bao các khối, bán kính tới khối xa nhất */
 const boundMemo = new WeakMap<readonly HeldShape[], [V3, number]>();
 export function shapeBound(shape: readonly HeldShape[]): [V3, number] {
@@ -176,6 +264,8 @@ export function carryClearance(shape: readonly HeldShape[], G: GripFrame, b: Car
 /** Khung món treo, `R · q · u + p` ra hệ của chỗ treo (như `GripFrame`), góc đẩy khỏi phương đứng, khe thân món tới người */
 export interface CarryFit {
   G: GripFrame;
+  /** Món dời khỏi chỗ treo để quai tựa lên người (hệ của chỗ treo, đơn vị rig của món) */
+  shift: V3;
   /** Độ lệch thân món khỏi phương đứng (độ) để không lồng vào thân, đùi */
   swing: number;
   /** Khe nhỏ nhất từ thân món tới các nang đẩy, đơn vị rig của món (âm là lồng); phần gần nhất */
@@ -189,7 +279,7 @@ export interface CarryFit {
  * `grip.yaw` quanh phương đứng. Thân món (hình va chạm `shape`) lồng vào các nang `body` thì đẩy ra quanh `pivot` về phía
  * `away` (nằm ngang, từ thân ra), lấy góc nhỏ nhất vừa hết lồng, tới `CARRY.swing`. `outer` là phần người ở phía ngoài
  * món (cánh tay buông ngoài túi đeo vai): góc ấy mà món lồng vào chúng thì lùi về chỗ hai bên lồng bằng nhau — món kẹp giữa. `u` là đơn vị của một đơn vị rig của
- * món ở hệ ấy
+ * món ở hệ ấy. Món có quai (phần `strap`) và `rest` thì dời món theo từng luật tựa tới khi mọi viên quai ra khỏi người
  */
 export function carryFrame(o: {
   item: HeldItemSpec;
@@ -200,6 +290,7 @@ export function carryFrame(o: {
   u: number;
   body: readonly CarryBody[];
   outer?: readonly CarryBody[];
+  rest?: readonly CarryRest[];
 }): CarryFit {
   let z = flat(o.bar);
   if (len(z) < 0.2) z = flat(o.away);
@@ -210,65 +301,96 @@ export function carryFrame(o: {
   let w = flat(o.away);
   w = len(w) < 1e-6 ? z : unit(w);
   const k = cross(w, UP);
-  const frame = (th: number): GripFrame => {
-    const R = th ? matMul(rotAxis(k, th / DEG), R0) : R0;
-    return { R, p: sub(o.pivot, mul(matVec(R, top), o.u)), u: o.u };
+  const { body: shape, strap } = carryShape(o.item);
+  const balls = o.rest && strap.length ? strapBalls(strap) : [];
+  /** Đoạn dời để mọi viên quai của khung `G` ra khỏi người: lần lượt từng luật, dò lại vì dời theo luật này có thể chạm luật kia */
+  const settle = (G: GripFrame): V3 => {
+    let off: V3 = [0, 0, 0];
+    const at = balls.map((b) => ({ p: add(matVec(G.R, mul(b.c, G.u)), G.p), r: b.r * G.u }));
+    for (let i = 0; i < 6; i++) {
+      let moved = false;
+      for (const rule of o.rest!) {
+        let need = 0;
+        for (const b of at) need = Math.max(need, rule.need(add(b.p, off), b.r));
+        if (need < 1e-9) continue;
+        off = add(off, mul(rule.dir, need));
+        moved = true;
+      }
+      if (!moved) break;
+    }
+    return off;
   };
-  const shape = o.item.shape;
   const clear = (G: GripFrame, list: readonly CarryBody[]) => {
     let gap = Infinity;
     let part: string | undefined;
-    if (shape)
+    if (shape.length)
       for (const c of list) {
         const g = carryClearance(shape, G, c);
         if (g < gap) [gap, part] = [g, c.part];
       }
     return { gap, part };
   };
-  const at = (th: number): CarryFit => {
-    const G = frame(th);
-    return { G, swing: th, ...clear(G, o.body) };
-  };
-  /** Góc nhỏ nhất thân món hết lồng vào `body`; không có thì góc lồng ít nhất */
-  const push = (): CarryFit => {
-    const rest = at(0);
-    if (rest.gap >= 0 || !o.body.length) return rest;
-    // dò thô từng bước, rồi chia đôi giữa bước cuối còn lồng và bước đầu hết lồng
-    const N = 16;
-    let lo = rest;
-    let best = rest;
-    for (let i = 1; i <= N; i++) {
-      const hi = at((CARRY.swing * i) / N);
-      if (hi.gap > best.gap) best = hi;
-      if (hi.gap < 0) {
-        lo = hi;
-        continue;
+  const solve = (pivot: V3): Omit<CarryFit, "shift"> => {
+    const frame = (th: number): GripFrame => {
+      const R = th ? matMul(rotAxis(k, th / DEG), R0) : R0;
+      return { R, p: sub(pivot, mul(matVec(R, top), o.u)), u: o.u };
+    };
+    const at = (th: number) => {
+      const G = frame(th);
+      return { G, swing: th, ...clear(G, o.body) };
+    };
+    /** Góc nhỏ nhất thân món hết lồng vào `body`; không có thì góc lồng ít nhất */
+    const push = () => {
+      const rest = at(0);
+      if (rest.gap >= 0 || !o.body.length) return rest;
+      // dò thô từng bước, rồi chia đôi giữa bước cuối còn lồng và bước đầu hết lồng
+      const N = 16;
+      let lo = rest;
+      let best = rest;
+      for (let i = 1; i <= N; i++) {
+        const hi = at((CARRY.swing * i) / N);
+        if (hi.gap > best.gap) best = hi;
+        if (hi.gap < 0) {
+          lo = hi;
+          continue;
+        }
+        let [a, b] = [lo, hi];
+        for (let j = 0; j < 10; j++) {
+          const m = at((a.swing + b.swing) / 2);
+          if (m.gap < 0) a = m;
+          else b = m;
+        }
+        return b;
       }
-      let [a, b] = [lo, hi];
-      for (let j = 0; j < 10; j++) {
-        const m = at((a.swing + b.swing) / 2);
-        if (m.gap < 0) a = m;
-        else b = m;
-      }
-      return b;
+      return best;
+    };
+    const fit = push();
+    if (!o.outer?.length) return fit;
+    const out = (f: { G: GripFrame }) => clear(f.G, o.outer!);
+    const o1 = out(fit);
+    if (o1.gap >= Math.min(0, fit.gap) || fit.swing <= 0)
+      return o1.gap < fit.gap ? { ...fit, ...o1 } : fit;
+    // phía ngoài lồng sâu hơn: lùi về chỗ hai bên lồng bằng nhau (thân lồng tăng, ngoài lồng giảm khi góc nhỏ đi)
+    let [a, b] = [0, fit.swing];
+    for (let j = 0; j < 12; j++) {
+      const m = (a + b) / 2;
+      const f = at(m);
+      if (f.gap < out(f).gap) a = m;
+      else b = m;
     }
-    return best;
+    const f = at(b);
+    const g = out(f);
+    return g.gap < f.gap ? { ...f, ...g } : f;
   };
-  const fit = push();
-  if (!o.outer?.length) return fit;
-  const out = (f: CarryFit) => clear(f.G, o.outer!);
-  const o1 = out(fit);
-  if (o1.gap >= Math.min(0, fit.gap) || fit.swing <= 0)
-    return o1.gap < fit.gap ? { ...fit, ...o1 } : fit;
-  // phía ngoài lồng sâu hơn: lùi về chỗ hai bên lồng bằng nhau (thân lồng tăng, ngoài lồng giảm khi góc nhỏ đi)
-  let [a, b] = [0, fit.swing];
-  for (let j = 0; j < 12; j++) {
-    const m = (a + b) / 2;
-    const f = at(m);
-    if (f.gap < out(f).gap) a = m;
-    else b = m;
+  if (!balls.length) return { ...solve(o.pivot), shift: [0, 0, 0] };
+  // quai tựa: dời ở dáng thõng, đẩy thân món, rồi dời thêm nếu góc đẩy đưa quai vào người
+  let shift: V3 = [0, 0, 0];
+  let fit = solve(o.pivot);
+  for (let i = 0; i < 3; i++) {
+    const more = settle(fit.G);
+    if (len(more) < 1e-6) break;
+    shift = add(shift, more);
+    fit = solve(add(o.pivot, shift));
   }
-  const f = at(b);
-  const g = out(f);
-  return g.gap < f.gap ? { ...f, ...g } : f;
+  return { ...fit, shift: mul(shift, 1 / o.u) };
 }
