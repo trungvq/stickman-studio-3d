@@ -126,6 +126,19 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
   hand: "bàn tay",
 };
 
+/**
+ * Tên từng số của kênh góc trong `keys[].pose`, theo thứ tự; khớp với schema dưới.
+ * docs/01-rig.md#hành-động
+ */
+export const CHANNEL_PARTS = {
+  armFar: ["vai", "khuỷu", "cổ tay", "dang", "xoắn vai"],
+  armNear: ["vai", "khuỷu", "cổ tay", "dang", "xoắn vai"],
+  legFar: ["hông", "gối", "dang"],
+  legNear: ["hông", "gối", "dang"],
+  torso: ["cúi", "nghiêng"],
+  head: ["nghiêng", "lắc", "gật"],
+} as const satisfies Partial<Record<JointChannel, readonly string[]>>;
+
 const limb = z.tuple([z.number(), z.number()]);
 /**
  * Chân `[hông, gối, dang]`, tay `[vai, khuỷu, cổ tay, dang, xoắn vai]`: cổ tay xoay đồ cầm, rig không vẽ
