@@ -665,7 +665,8 @@ export function carry(fig: Figure, object: THREE.Object3D, o: { hand: Side; grip
     entry.fit = { swing: fit.swing, gap: fit.gap * k, shift: fit.shift.map((v) => v * k) as V3, ...(fit.part && { part: fit.part }) };
   });
   const t = tag(side);
-  rig.userData.touch = [`self.upperArm${t}`, `self.foreArm${t}`, ...(spec.on === 'shoulder' ? ['self.torso'] : []), ...(spec.touch ?? [])];
+  // thân: luật `body` đo thân món trên mặt thân áo, sát hơn nang thân của `collide`
+  rig.userData.touch = [`self.upperArm${t}`, `self.foreArm${t}`, 'self.torso', ...(spec.touch ?? [])];
   rig.add(object);
   fig.root.add(rig);
   (fig.carrying ??= {})[side] = entry;

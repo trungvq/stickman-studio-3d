@@ -417,7 +417,7 @@ cha xuống), hay `touch` của món `Item`. Mỗi mục là `'[<người>.]<b�
 - `<người>` là `id` trong `cast` (khoá của `pose(t)`), thiếu là mọi người; `self` là người đang mang
   vật — vật nằm dưới `root` của người ấy (cầm, đội, gắn trên thân);
 - `hold` tự khai cẳng tay cầm (`hand: 'both'` là cả hai), `carry` (món treo, `món@carry`) khai cánh tay trên và cẳng tay
-  quai vắt qua, thêm thân khi đeo vai, `wear` khai đầu (`crown`, `face`) hay thân (`chest`), `wearDecal` khai thân;
+  quai vắt qua, và thân, `wear` khai đầu (`crown`, `face`) hay thân (`chest`), `wearDecal` khai thân;
 - mục không phải phần người, cũng không phải tên vật nào dưới `root` (tên vật cho
   [đồ lồng vào đồ](#đồ-lồng-vào-đồ)), thì bỏ qua và `check` cảnh báo một lần cho mỗi mục:
 

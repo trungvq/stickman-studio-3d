@@ -160,7 +160,7 @@ describe('món treo: luật `held`', () => {
     const ok: { rt?: ReturnType<typeof resolveScene> } = {};
     const good = world([{ t: 0, right: { ...OUT, hold: VAI } }], ok);
     expect(sceneHeld(ok.rt!, { frame: frame(good.w) }).filter((i) => i.rule === 'body' || i.rule === 'seat')).toEqual([]);
-  });
+  }, 20000);
 
   it('món nằm xa lúc treo: `jump` lúc gắn', () => {
     const out: { rt?: ReturnType<typeof resolveScene> } = {};

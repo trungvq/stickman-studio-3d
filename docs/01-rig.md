@@ -1714,7 +1714,7 @@ Mọi bước chỉ đọc tư thế của khung đang vẽ: Remotion vẽ khung
 **Bàn tay tự do.** Bàn tay của tay treo món theo hành động (hay `world.hands`): không dáng nắm, không ý định, không vai trò
 với bộ giải (`holdRoles` bỏ qua lần treo), `Figure.holding` không ghi gì; món treo ghi ở `Figure.carrying[side]`. Tay kia
 cầm món khác, kể cả kiểu hai tay (`both`): lần treo không chiếm bàn tay. Nhóm mang món treo khai `userData.touch` cánh tay
-trên và cẳng tay của tay ấy (quai vắt qua), thêm thân khi đeo vai (quai nằm trên vai), cộng `touch` của món và của chỗ
+trên và cẳng tay của tay ấy (quai vắt qua) và thân (luật `body` đo thân món trên mặt thân áo, sát hơn nang thân của `clash`), cộng `touch` của món và của chỗ
 cầm. Cảnh khai ở `world.hands[].hold` ([03](03-scene.md#đồ-cầm-tay)); gọi tay thì `carry(fig, vật, { hand, grip })`, `hold`
 nhận `món@carry` thì chuyển sang `carry`.
 
