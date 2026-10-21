@@ -7,7 +7,7 @@ import type { GraspFrame } from './core/graspSolve';
 import type { FingerRoles } from './core/heldFit';
 import { handDims } from './core/heldGeom';
 import { carrySpecOf } from './core/heldCarry';
-import { isCarryHold } from './core/holdLink';
+import { inheritHold, isCarryHold } from './core/holdLink';
 import type { HandPose } from './core/hand';
 import type { HeldIntent } from './core/heldAudit';
 import { PAPER } from './core/constants';
@@ -290,6 +290,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
    */
   const placed = (fig: Figure, h: ReachHold | undefined) => {
     if (!h) return h;
+    h = inheritHold(h, fig.body);
     const fg = h.from?.grasp;
     if (h.was && fg?.mode === 'item' && !fg.frame) {
       const old = h.was.solve(fig.body);

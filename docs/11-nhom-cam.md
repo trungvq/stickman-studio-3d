@@ -1011,6 +1011,11 @@ Cảnh thường khai đủ chỗ cầm. Thiếu trường nào:
   trên (mục 3, nhóm 1).
 - **Tay dẫn**: lấy mặc định của nhóm (mục 3), không giải; `thumb` của tấm và thẻ (`sheet`, `card`) theo mặt quay về người cầm ở mốc bắt đầu
   lần cầm, `edge` `bottom` (tấm đứng) hay cạnh phía tay ấy (tấm nằm) (mục 3, nhóm 1, 2).
+- **Tay dẫn nối ngay sau lần cầm theo mốc** cùng món, cùng nhóm, cùng tay (`regrip`, đổi trường số): trường không khai lấy lựa
+  chọn rig đã giải của lần cầm theo mốc ngay trước ranh giới (`graspAtTime`, kể cả `featureIndex` và đầu cao `high`), không lấy
+  mặc định nhóm, nên món không xoay trong tay khi sang tay dẫn. Trường cảnh khai thắng; khai `part`, `edge` hay `thumb` khác thì
+  khối hình và đầu cao tìm lại theo trường khai. Lựa chọn ấy giải trên nhân vật thật: `ReachHold.grasp.inherit` mang hàm giải,
+  `act3` và `world.ts` điền vào `grasp.choice` (`inheritHold`), nhớ theo runtime và nhân vật. Đổi nhóm thì lấy mặc định nhóm.
 
 ### Tay phụ (`both`)
 
@@ -1046,7 +1051,9 @@ Hai đường, theo lần cầm:
   góc cổ tay (xoay, gập, lệch, đã kẹp) và dáng ngón hoà tuyến tính. Lần cầm từ giây 0 không hoà.
 - **Tay dẫn.** Liên kết tay ↔ món hoà từ cũ sang mới (`ReachHold.from`, `mixGrip`: quay đường ngắn nhất, dời
   thẳng); ý định hoà theo. Lần cầm cũ theo món của cùng món thì bàn tay còn hoà từ nghiệm cũ (`was`), và liên kết cũ là khung
-  cầm của nghiệm ấy (`from.grasp.frame`, `act3` và `world.ts` điền từ `was`).
+  cầm của nghiệm ấy (`from.grasp.frame`, `act3` và `world.ts` điền từ `was`). Lần cầm cũ theo mốc cùng nhóm thì liên kết mới
+  dựng trên lựa chọn kế thừa của nó ([Lựa chọn cảnh không khai](#lựa-chọn-cảnh-không-khai)): hai liên kết trùng, món đứng yên
+  trong tay suốt quãng hoà.
 - **Món theo bàn tay ở cả hai phía** của ranh giới theo mốc ↔ tay dẫn: lần cầm theo mốc mới cũng hoà liên kết từ tay dẫn
   (`leadGrip`), nên món trong khung bàn tay đi liền qua ranh giới.
 
