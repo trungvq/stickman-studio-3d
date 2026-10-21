@@ -51,7 +51,13 @@ export const HAND_POSES = {
   sheet: { thumb: [12, 40, 16, 20], index: [40, 0], fingers: [43, 2], spread: 0 },
   thumbsUp: { thumb: [80, 4, 0, 0], index: [90, 85], fingers: [90, 85], spread: 0 },
   tripod: { thumb: [28, 45, 0, 0], index: [40, 40], fingers: [48, 76], spread: 0 },
-  chopsticks: { thumb: [36, 52, 6, 0], index: [50, 35], fingers: [45, 50], spread: 2 },
+  chopsticks: {
+    thumb: [41, 30, -10, 5],
+    index: [30, 46],
+    fingers: [35, 55],
+    spread: 0,
+    thumbRoll: 15,
+  },
   card: { thumb: [48, 75, -20, 0], index: [28, 110], fingers: [90, 40], spread: 0, thumbRoll: 45 },
   edgePinch: {
     thumb: [55, 55, 5, 15],
@@ -114,8 +120,8 @@ export const HAND_GRIPS: Record<HandPose | "rest", V3> = {
   sheet: [0.031, -0.112, 0.013],
   thumbsUp: [0.03, -0.085, 0],
   tripod: [0.063, -0.104, 0.033],
-  // trùng `pinch`: khung `chopsticks` dựng từ fixture dáng `pinch` (`graspSolve.ts`)
-  chopsticks: [0.07, -0.106, 0.072],
+  // giữa que trên (đệm cái – trỏ) và que dưới (sườn áp út) ở dáng `chopsticks` (`CHOP_D`, `CHOP_B` của `graspSolve.ts`)
+  chopsticks: [0.0567, -0.1167, 0.0179],
   // giữa bề dày thẻ dưới đệm ngón cái, thẻ đè lên sườn ngón trỏ (`card` `lateral`, `CARD_TILT`)
   card: [0.053, -0.1, 0.042],
   // giữa đầu ngón cái và đầu trỏ – giữa (`card` `edges`)

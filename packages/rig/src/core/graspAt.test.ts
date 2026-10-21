@@ -502,22 +502,22 @@ describe("chooseMissing `card`", () => {
 describe("chooseMissing `chopsticks`", () => {
   const dc = graspCtx(T, { dua: item(dua) });
 
-  it("đủ thiếu: rig giải `part`, `along` trong miền 0,15–0,45, biến thể `grip`; hai tay không lỗi", () => {
+  it("đủ thiếu: rig giải `part`, `along` trong miền 0,15–0,5, biến thể `grip`; hai tay không lỗi", () => {
     for (const side of [RIGHT, LEFT]) {
       const sol = graspAt(dc, "dua@chopsticks", poseOf(ITEMS.c3), side);
       expect(sol.choice).toMatchObject({ part: "que", variant: "grip" });
       expect(sol.by.along).toBe("rig");
       expect(sol.choice.along).toBeGreaterThanOrEqual(0.15);
-      expect(sol.choice.along).toBeLessThanOrEqual(0.45);
+      expect(sol.choice.along).toBeLessThanOrEqual(0.5);
       expect(Number.isFinite(sol.cost)).toBe(true);
     }
   });
 
-  it("tay dẫn lấy `along` mặc định 0,25", () => {
+  it("tay dẫn lấy `along` mặc định 0,35", () => {
     for (const side of [RIGHT, LEFT])
       expect(
         chooseMissing(dc, "dua@chopsticks", poseOf(ITEMS.c3), side, { solve: false }).choice.along,
-      ).toBe(0.25);
+      ).toBe(0.35);
   });
 });
 

@@ -244,11 +244,12 @@ export const EDGES_LIFT = 0.1;
 const EDGES_PROBE = 0.5;
 const EDGES_ITER = 4;
 /**
- * `chopsticks` (fixture `dua#cam`): lòng tay `n = CHOP_PALM[0] · b + CHOP_PALM[1] · c`, tâm nắm cách đường giữa hai que
- * `CHOP_OFF` về phía `b` (trên que kề ngón cái), đơn vị món
+ * `chopsticks` (dáng `chopsticks`, ảnh mẫu `dua-an-can`): khung tay phải — que trên kẹp giữa đệm ngón cái và đệm trỏ, tựa đốt
+ * ngọn ngón giữa; que dưới tựa gốc ngón cái ở kẽ cái–trỏ và sườn đốt ngọn áp út. `CHOP_D` hướng que về ngọn, `CHOP_B` từ que
+ * dưới sang que trên; tâm nắm (`HAND_GRIPS.chopsticks`) giữa hai que ở đệm ngón
  */
-const CHOP_PALM: readonly [number, number] = [-0.5, -Math.sqrt(3) / 2];
-const CHOP_OFF = 2.4;
+export const CHOP_D: V3 = [0.6387, -0.171, -0.7502];
+export const CHOP_B: V3 = [0.6252, -0.4531, 0.6355];
 /**
  * `pen` (fixture `but#viet`): lòng tay, ngón và tâm nắm (lần `W`, tính từ điểm trục ở `along`) theo `d` trục từ ngòi về đuôi,
  * `ρ` (`around` 0), `σ = d × ρ` của tay phải (tay trái soi gương qua mặt `d`, `ρ`)
@@ -777,8 +778,9 @@ const platformPalm: ContactFn = (x) => {
 };
 
 /**
- * `chopsticks`: hai que mảnh cùng phần, `along` từ đầu cầm (xa mốc `tip`) dọc cả hai que. Khung fixture dời theo đường giữa
- * hai que: ngón dọc que về ngọn (`d`), `b` từ que này sang que kia (tay phải về `R` của món), `c` hoàn chỉnh theo bên tay
+ * `chopsticks`: hai que mảnh cùng phần; que đang xét là que trên (ngón cái, trỏ), que bạn gần nhất là que dưới. `along` đo từ
+ * đầu cầm (xa mốc `tip`) dọc cả hai que. Khung tay phải `CHOP_D`, `CHOP_B` đặt lên đường giữa hai que (`d` về ngọn, `b` từ
+ * que dưới sang que trên); tay trái soi gương qua mặt hai que
  */
 const chopGrip: ContactFn = (x) => {
   const f = x.feature as RodFeature;
@@ -802,11 +804,13 @@ const chopGrip: ContactFn = (x) => {
   const q = pair ? axis(pair) : p;
   const d = unit(add3(p.d, q.d));
   const mid = scale3(add3(p.at, q.at), 0.5);
-  const b0 = len3(perp(sub3(q.at, p.at), d)) > EPS ? unit(perp(sub3(q.at, p.at), d)) : x.geom.R;
-  const b = scale3(signed(b0, [x.geom.R, x.geom.U, x.geom.F]), -x.side);
+  const b0 = perp(sub3(p.at, q.at), d);
+  const b = len3(b0) > EPS ? unit(b0) : unit(perp(x.geom.R, d));
   const c = scale3(cross3(d, b), -x.side);
-  const palm = mix2(b, CHOP_PALM[0], c, CHOP_PALM[1]);
-  return { at: add3(mid, scale3(b, CHOP_OFF)), along, palm, fingers: d };
+  const C = cross3(CHOP_D, CHOP_B);
+  const map = (v: V3): V3 =>
+    add3(add3(scale3(d, dot3(v, CHOP_D)), scale3(b, dot3(v, CHOP_B))), scale3(c, dot3(v, C)));
+  return { at: mid, along, palm: map([1, 0, 0]), fingers: map([0, -1, 0]) };
 };
 
 /**
