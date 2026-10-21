@@ -16,6 +16,7 @@ import {
   THUMB_TOWARD_STEP,
   tooThick,
   UPRIGHT_W,
+  type ChoiceKey,
   type GroupSpec,
   type PoseRef,
   type PoseSpec,
@@ -51,6 +52,7 @@ import {
   edgeFrame,
   edgePoint,
   faceRho,
+  ownAlong,
   handDims,
   itemGeom,
   type AlongName,
@@ -200,8 +202,11 @@ const RIM_TOP = 1.9;
 /** `rim`: dáng hoà theo bề dày thật của tấm ở ngần này vào trong tâm nắm (vành đĩa mỏng hơn hộp bao), đo `RIM_STEPS` điểm */
 const RIM_PROBE = 1;
 const RIM_STEPS = 24;
-/** `palmBox` (fixture `dien-thoai#doc`): ngón chếch về đầu trên trong mặt máy, độ; tâm nắm lệch về cạnh đầu ngón và sau mặt sau, đơn vị món */
-const BOX_RISE = 20;
+/**
+ * `palmBox` (fixture `dien-thoai#doc`), `cylinder` `flat`: ngón chếch về đầu trên trong mặt máy, độ; tâm nắm lệch về cạnh đầu
+ * ngón và sau mặt sau, đơn vị món
+ */
+export const BOX_RISE = 20;
 const BOX_SHIFT = 2;
 const BOX_GAP = 2.8;
 const SLOPE = Math.sin(30 * D2R);
@@ -214,6 +219,8 @@ const WRAP_TILT_MAX = 45;
 const WRAP_GAP = 0.7;
 /** `wrap`: ngón cái tra bảng theo bán kính nhỏ hơn của chỗ cầm và chỗ cách ngần này lần `W` về phía ngón cái (vai chai thắt) */
 const WRAP_THUMB_AHEAD = 0.5;
+/** `wrap`: độ chếch (`slant`) có hiệu lực đủ từ số đo ngón cái `WRAP_BIG[1] · W`, hoà từ `WRAP_BIG[0]`; trụ mảnh hơn không chếch */
+const WRAP_BIG = [0.36, 0.42] as const;
 /** `bowl` `side`: lòng tay ngả theo dốc thành tối đa ngần này độ (fixture `chen#kep` lòng song song trục) */
 const BOWL_TILT_MAX = 4;
 /** `bowl` `side`: da lòng tay cách thành ngần này, đơn vị món (âm là áp lún nhẹ; fixture `chen#kep` lún 2) */
@@ -517,15 +524,20 @@ const wrap: ContactFn = (x) => {
   const slope = slopeAt(x, p.at, p.a, p.rho, far);
   const b = Math.max(-WRAP_TILT_MAX, Math.min(WRAP_TILT_MAX, WRAP_GAIN * slope));
   const palm = neg(mix2(p.rho, Math.cos(b * D2R), p.a, Math.sin(b * D2R)));
-  const t = unit(perp(scale3(p.a, x.thumb === "down" ? -1 : 1), palm));
-  const fingers = unit(scale3(cross3(t, palm), x.side));
-  const z = cross3(palm, fingers);
   const radius = f.kind === "lathe" ? p.r : undefined;
   const ahead = along + ((x.thumb === "down" ? -1 : 1) * WRAP_THUMB_AHEAD * x.dims.W) / p.seg.len;
   const thumbRadius =
     radius === undefined
       ? undefined
       : Math.min(radius, axialAt(x.geom, f, Math.min(1, Math.max(0, ahead)), x.around ?? 0).r);
+  const t = unit(perp(scale3(p.a, x.thumb === "down" ? -1 : 1), palm));
+  const f0 = unit(scale3(cross3(t, palm), x.side));
+  const big =
+    ((thumbRadius ?? (f.kind === "rod" ? f.R : p.r)) / x.dims.W - WRAP_BIG[0]) /
+    (WRAP_BIG[1] - WRAP_BIG[0]);
+  const sl = x.slant * Math.min(1, Math.max(0, big)) * D2R;
+  const fingers = unit(mix2(f0, Math.cos(sl), t, Math.sin(sl)));
+  const z = cross3(palm, fingers);
   const pts = (x.palmSkin?.({ radius, thumbRadius }) ?? []).map((c) =>
     add3(add3(scale3(palm, c[0]), scale3(fingers, c[1])), scale3(z, c[2])),
   );
@@ -534,8 +546,9 @@ const wrap: ContactFn = (x) => {
 };
 
 /**
- * `cylinder` `flat` (thanh hộp mặt rộng hơn lòng tay): lòng tay áp phẳng mặt gần `ρ(around)`, ngón dọc trục về phía
- * `thumb` (`up` là `+a`); `along` như `wrap`, tâm nắm dời ra tới khi da lòng tay còn cách hình `WRAP_GAP`
+ * `cylinder` `flat` (thanh hộp mặt rộng hơn lòng tay, cầm như điện thoại): lòng tay áp mặt gần `ρ(around)`, ngón cái dọc
+ * một cạnh về phía `thumb` (`up` là `+a`), ngón ngang thân sang cạnh kia, chếch `BOX_RISE` về phía ngón cái; `along` như
+ * `wrap`, tâm nắm lệch `BOX_SHIFT` về cạnh đầu ngón, dời ra tới khi da lòng tay còn cách hình `WRAP_GAP`
  */
 const flatRod: ContactFn = (x) => {
   const f = x.feature as RodFeature;
@@ -543,13 +556,16 @@ const flatRod: ContactFn = (x) => {
   const p0 = axialAt(x.geom, f, alongFrac(x.along, 1, x.dims.W), x.around ?? 0, { clear });
   const rho = faceRho(f, p0.rho);
   const palm = neg(rho);
-  const fingers = scale3(p0.a, x.thumb === "down" ? -1 : 1);
+  const t = unit(perp(scale3(p0.a, x.thumb === "down" ? -1 : 1), palm));
+  const f0 = unit(scale3(cross3(t, palm), x.side));
+  const fingers = unit(mix2(f0, Math.cos(BOX_RISE * D2R), t, Math.sin(BOX_RISE * D2R)));
   const z = cross3(palm, fingers);
   const pts = (x.palmSkin?.({}) ?? []).map((c) =>
     add3(add3(scale3(palm, c[0]), scale3(fingers, c[1])), scale3(z, c[2])),
   );
-  const S = (x.shape && pts.length && skinTouch(x.shape, p0.at, rho, pts, reachOf(x.geom))) || p0.r;
-  return { at: add3(p0.at, scale3(rho, S)), along: p0.along, palm, fingers };
+  const o = add3(p0.at, scale3(f0, BOX_SHIFT));
+  const S = (x.shape && pts.length && skinTouch(x.shape, o, rho, pts, reachOf(x.geom))) || p0.r;
+  return { at: add3(o, scale3(rho, S)), along: p0.along, palm, fingers };
 };
 
 /**
@@ -1579,6 +1595,12 @@ export function chooseMissing(
     throw new Error(
       `món không có khối hình cho nhóm \`${group.id}\`${given.part ? ` ở phần \`${given.part}\`` : ""}`,
     );
+  // `part` mặc định theo khối (`from: "longest"`, trụ): cảnh không khai `part` thì rig chỉ cầm phần ấy (thân chai)
+  const pch = group.choices.part;
+  if (given.part === undefined && pch?.kind === "names" && pch.from === "longest") {
+    const lp = holdDefaults(group, geom).part;
+    if (feats.some((f) => f.part === lp)) feats = feats.filter((f) => f.part === lp);
+  }
   const partIx = (p: string) => geom.parts.findIndex((x) => x.name === p);
   feats = [...feats].sort(
     (a, b) =>
@@ -1664,10 +1686,14 @@ export function chooseMissing(
       cost += LATER_W * (s.E + gapCost(s, x.pose.s));
     }
     const withDef = missing.filter((k) => defs[k] !== undefined);
-    const off = withDef.filter((k) => c[k as Field] !== defs[k]).length;
+    const off = withDef.filter((k) => choice[k as Field] !== defs[k]).length;
     if (withDef.length) cost += (DEV_COST * off) / withDef.length;
     if (missing.includes("variant") && defs.variant !== undefined && c.variant !== defs.variant)
       cost += VARIANT_COST;
+    for (const k of missing) {
+      const ch = group.choices[k as ChoiceKey];
+      if (ch?.cost && defs[k] !== undefined && choice[k as Field] !== defs[k]) cost += ch.cost;
+    }
     if (rel) cost += rel === 2 ? KEEP_COST : KEEP_SLIDE;
     // thân món nên ở trên bàn tay: `u` là sin góc ngẩng của hướng tâm nắm → tâm khối hình (y rig hướng xuống)
     if (group.variants[frame.choice.variant ?? ""]?.upright && "c" in f) {
@@ -1713,7 +1739,16 @@ export function chooseMissing(
   const byEdge = new Map<GraspChoice["edge"], [Cand, Defs]>();
   // ứng viên rời tốt nhất trùng trường rời của lựa chọn đang giữ: lưới liên tục chạy cả quanh nó
   let kept: [Cand, Defs] | undefined;
+  // ứng viên rời tốt nhất giữ mọi trường có giá lệch (`NamesChoice.cost`) ở mặc định: lưới liên tục chạy cả quanh nó
+  let plain: [Cand, Defs] | undefined;
+  const costed = missing.filter((k) => !!group.choices[k as ChoiceKey]?.cost);
   const take = (x: Cand, defs: Defs) => {
+    if (
+      costed.length &&
+      costed.every((k) => defs[k] === undefined || x.choice[k as Field] === defs[k]) &&
+      (!plain || x.cost < plain[0].cost - 1e-12)
+    )
+      plain = [x, defs];
     if (
       kc &&
       !x.own &&
@@ -1762,6 +1797,14 @@ export function chooseMissing(
       return () => true;
     const ok = (v: number) => !bulgeToward(geom, f, v, BULGE * ctx.dims.W).length;
     return grid("around", ch, "").some(ok) ? ok : () => true;
+  };
+
+  // nhóm có `clear` (trụ), rig giải: `along` cảnh không khai kẹp vào chính khối hình của ứng viên (`ownAlong`; thân chai
+  // không trượt sang vai, cổ cùng đoạn bám)
+  const alongIn = (f: Feature, v: number) => {
+    if (!solve || !group.clear || (f.kind !== "rod" && f.kind !== "lathe")) return v;
+    const [lo, hi] = ownAlong(geom, f, { clear: group.clear * ctx.dims.W });
+    return Math.min(hi, Math.max(lo, v));
   };
 
   // biến thể có `thumbToward`: `around` cho phía ngón cái về thân người cầm, rig chỉ thử quanh đó
@@ -1825,7 +1868,8 @@ export function chooseMissing(
           (ch.kind === "range"
             ? grid(k, ch, variant).filter((x) => k !== "around" || okAround(x))[0]
             : undefined);
-        if (v !== undefined) o[k] = v;
+        if (v !== undefined)
+          o[k] = k === "along" && given.along === undefined ? alongIn(f, v as number) : v;
       }
       return o as GraspChoice;
     };
@@ -1882,6 +1926,7 @@ export function chooseMissing(
   const roots: [Cand, Defs][] = [[rough, bestDefs]];
   if (home && home[0] !== rough) roots.push(home);
   if (kept && kept[0] !== rough) roots.push(kept);
+  if (plain && plain[0] !== rough && plain[0] !== home?.[0]) roots.push(plain);
   for (const r of byEdge.values()) if (r[0] !== rough) roots.push(r);
   // hoà thì giá trị liên tục nhỏ hơn trước, theo thứ tự trường (docs/11 mục 5)
   const before = (a: GraspChoice, b: GraspChoice) => {
@@ -1898,7 +1943,9 @@ export function chooseMissing(
         const vals =
           k === "around" && window && a0 !== undefined
             ? thumbGrid(a0)
-            : grid(k, ch, root.choice.variant ?? "").filter((x) => k !== "around" || okAround(x));
+            : k === "along"
+              ? grid(k, ch, root.choice.variant ?? "").map((x) => alongIn(root.feature, x))
+              : grid(k, ch, root.choice.variant ?? "").filter((x) => k !== "around" || okAround(x));
         seen(k, vals.length);
         out = out.flatMap((c) => vals.map((v) => ({ ...c, [k]: v })));
       }

@@ -510,7 +510,12 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
 - **Chỗ tiếp xúc** `wrap` (`frame: "nt"`, fixture `chai-dia#co` — kiểu này nắm ở mốc `shoulder`, tức **vai**). Điểm trên trục
   là `axialAt` ở `along`, `around` (mục 2) với `clear = GRIP_CLEAR · W`, nên `along` khai sát phần `grip: false` bị kẹp về miền
   `alongRoom`. Lòng tay `n = −ρ`: `ρ` là hướng bán kính tại điểm, thanh hộp áp **mặt tiết diện gần `ρ` nhất** (`faceRho`; ống nghe
-  `around` 150–210 cùng áp mặt lưng như 180). Phía ngón cái `t = ±a` (`thumb` `up` là `+a`, về đầu cao), hướng ngón `t × n` (đổi dấu theo tay).
+  `around` 150–210 cùng áp mặt lưng như 180). Phía ngón cái `t = ±a` (`thumb` `up` là `+a`, về đầu cao), hướng ngón `f₀ = t × n` (đổi dấu theo tay).
+  - **Trụ to nằm chéo lòng tay**: hướng ngón chếch `slant` độ về phía ngón cái (`f = f₀ · cos + t · sin`), đủ khi số đo ngón cái
+    (bên dưới) từ `0,42 · W`, hoà tuyến tính từ `0,36 · W` (`WRAP_BIG`); trụ mảnh hơn giữ `f = f₀`. Trục món đi từ gò út sang gốc
+    ngón trỏ như tay người nắm chai: chỉ khi ấy mặt gập của ngón cái mới vòng quanh thân (trục vuông góc ngón thì ngón cái gập dọc
+    trục). Chai đứng thì cẳng tay chếch lên tới bàn tay (ảnh mẫu `chai-than`). Mặc định `WRAP_SLANT` = 25°; cổ tay lệch quá kẹp
+    (tay dẫn thấp trước bụng, cẳng tay ngang) thì cảnh khai `slant: 0`; rig giải thử cả `0` (`gridByVariant`), có giá lệch.
   - Lòng tay ngả theo **dốc mặt món**: đo bán kính ngoài ở 5 điểm (`WRAP_STEPS`) trên `±WRAP_HALF · W` = 0,3·W dọc trục, lòng nghiêng
     `WRAP_GAIN` = 1,6 lần góc dốc về phía `a`, tối đa `WRAP_TILT_MAX` = 45° (vai chai nghiêng 16,8° ra 26,8°, khớp fixture).
   - Tâm nắm dời ra theo `ρ` tới khi **da lòng tay** của dáng gốc (`palmSkin`, đỉnh có trọng số lớn nhất ở lòng tay, dáng đã hoà theo
@@ -521,35 +526,48 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
   `WRAP_CLOSED` = `[−35, −85]` ở dáng đóng (`PoseRef.knuckle`, `tip`); đóng hơn thì đốt ngọn lún vào thân.
 - **Ngón cái** (`PoseSpec.thumb`): tra bảng góc `[dạng, đối, gập gốc, gập ngọn]` theo số đo, nội suy tuyến tính, ngoài bảng lấy đầu
   gần; đè ngón cái của dáng hoà. Số đo của `cylinder` là bán kính **nhỏ hơn** của chỗ cầm và của chỗ cách `WRAP_THUMB_AHEAD` = 0,5·W
-  về phía ngón cái (vai chai thắt lại; `thumbRadius`); `rod` dùng `R`. Hai họ, đổi qua dạng hết ở `0,36–0,42 · W` (đối giữa chừng thì
-  ngón cái cắt vào trụ):
+  về phía ngón cái (vai chai thắt lại; `thumbRadius`); `rod` dùng `R`. Hai họ, hoà ở `0,36–0,42 · W` cùng với độ chếch:
   - **Mảnh** (`r ≤ 0,36 · W`): đối hết, nằm dọc trục chồng lên trỏ–giữa về phía út.
-  - **To** (`r ≥ 0,42 · W`): dạng, ít đối, áp dọc thân về đầu cao.
+  - **To** (`r ≥ 0,42 · W`): dạng hết, đối, vòng quanh thân về phía đối các ngón — đầu ngón cái và đầu ngón trỏ ở hai phía mặt phẳng
+    qua trục và lòng tay, kẹp thân giữa ngón cái và các ngón (luật `oppose` ≥ `HELD_OPPOSE` tới `r` 0,7·W; trụ từ `SIZE_WARN · W`
+    nắm không kín).
 
-  | `WRAP_THUMB` (`r / W`) | 0,17 | 0,30 | 0,36 | 0,38 | 0,40 | 0,42 |
-  |---|---|---|---|---|---|---|
-  | `[dạng, đối, gập gốc, gập ngọn]` | 60, 60, 45, 60 | 60, 90, 45, 10 | 60, 90, 45, 10 | 80, 90, 0, 0 | 90, 40, −10, 0 | 50, 20, 0, 10 |
+  | `WRAP_THUMB` (`r / W`) | 0,17 | 0,30 | 0,36 | 0,42 |
+  |---|---|---|---|---|
+  | `[dạng, đối, gập gốc, gập ngọn]` | 60, 60, 45, 60 | 60, 90, 45, 10 | 60, 90, 45, 10 | 100, 90, 0, 30 |
 
 - **Vai trò** `wrap`: mọi ngón `wrap`, lòng tay `press`. Để sau: `index` (ngón trỏ duỗi dọc thân, #17).
-- **Biến thể `flat`** (`kinds: ["rod"]`, `frame: "nt"`, fixture `ong-nghe-ban#tai`): thanh hộp rộng hơn lòng tay thì ngón không ôm
-  quanh được, lòng tay áp phẳng lên mặt rộng và ngón nằm dọc thân (ống nghe áp tai dựng dọc má).
+- **Biến thể `flat`** (`kinds: ["rod"]`, `frame: "nf"`, fixture `dien-thoai#doc`): thanh hộp rộng hơn lòng tay thì cầm như điện
+  thoại — thân trong lòng tay, ngón cái dọc một cạnh, bốn ngón ngang thân tì cạnh kia, kẹp giữa ngón cái và bốn ngón (ảnh mẫu
+  `ong-nghe-tai`: ngón trỏ cao nhất ngay dưới loa).
   - **Khi nào rig chọn**: chỗ cầm không khai `variant` thì `variantOf` (`cylinderVariant`) trả `flat` khi khối hình là `rod` hộp có
     mặt rộng `2R ≥ FLAT_WIDE · W` (`FLAT_WIDE` = 1) và lòng tay áp đúng mặt rộng ấy: mặt gần `ρ(around)` nhất (`faceRho`) có
     pháp tuyến có `|cos|` với trục cạnh dài dưới 0,5 (ống nghe mặt lưng hay mặt trước ra `flat`, mặt hông ra `wrap`).
     Thanh tròn, trụ tiện (chai) và thanh hộp hẹp hơn lòng tay luôn `wrap`. `around` lấy của cảnh, không khai thì mặc định của
     nhóm. Cảnh khai `variant` thì giữ nguyên.
-  - **Chỗ tiếp xúc** (`flatRod`): lòng tay `n = −ρ` với `ρ` là pháp tuyến mặt rộng áp (`faceRho`), hướng ngón là trục `a` (`thumb`
-    `up` về `+a`, `down` ngược), không ngả theo dốc. Điểm trên trục và kẹp `along` như `wrap` (`axialAt`, `clear = GRIP_CLEAR · W`);
-    tâm nắm dời ra theo `ρ` tới khi da lòng tay còn cách hình `WRAP_GAP` = 0,7 (không có hình thì dời tới `r`).
-  - **Dáng**: `span` ở cả hai đầu (không hoà theo bán kính), ngón cái `FLAT_THUMB` = `[20, 6, 0, 10]` (khép dọc cạnh ngón trỏ, nằm
-    trên mặt rộng); `by: "radius"` trong `[0,06, 0,95] · W` như `wrap`. Dáng kẹp đầu ngón nên `grip` dùng `HELD_GRIP_PINCH` (mục 7).
+  - **Chỗ tiếp xúc** (`flatRod`): lòng tay `n = −ρ` với `ρ` là pháp tuyến mặt rộng áp (`faceRho`), phía ngón cái `t = ±a` (`thumb`
+    `up` về `+a`, `down` ngược) như `wrap`, hướng ngón `f₀ = t × n` ngang thân chếch `BOX_RISE` = 20° về phía ngón cái như
+    `palmBox`; không ngả theo dốc. Điểm trên trục và kẹp `along` như `wrap` (`axialAt`, `clear = GRIP_CLEAR · W`), dời
+    `BOX_SHIFT` = 2 theo `f₀` về cạnh đầu ngón, rồi dời ra theo `ρ` tới khi da lòng tay còn cách hình `WRAP_GAP` = 0,7 (không có
+    hình thì dời tới `r`).
+  - **Dáng**: `span` ở cả hai đầu (không hoà theo bán kính; ngón cái dạng dọc cạnh); `by: "radius"` trong `[0,06, 0,95] · W` như
+    `wrap`. Dáng kẹp đầu ngón nên `grip` dùng `HELD_GRIP_PINCH` (mục 7).
   - **Vai trò**: ngón cái, trỏ, giữa, áp út và lòng tay `press`, út `support`.
-- **Lựa chọn**: `part` (phần có khối trụ, bám được), `along` ∈ {`low`, **`mid`**, `high`} hay số, `around` ∈ [0°, 360°) (mục 2; tay dẫn
-  không khai thì `0`), `thumb` ∈ {**`up`**, `down`}, `variant` ∈ {`wrap`, `flat`} (không khai thì rig suy theo `around`, xem `flat`). `along` trải **cả đoạn bám liền**, nên `part` chọn khối cho đặc trưng (số đo,
+- **Lựa chọn**: `part` (phần có khối trụ, bám được; mặc định **phần có khối hình dài nhất**, `from: "longest"` — thân chai, không
+  phải vai hay cổ), `along` ∈ {`low`, **`mid`**, `high`} hay số, `around` ∈ [0°, 360°) (mục 2; tay dẫn
+  không khai thì `0`), `thumb` ∈ {**`up`**, `down`}, `slant` ∈ [0°, 25°] (**25**, `wrap`), `variant` ∈ {`wrap`, `flat`} (không khai thì rig suy theo `around`, xem `flat`). `along` trải **cả đoạn bám liền**, nên `part` chọn khối cho đặc trưng (số đo,
   mặt) còn `along` chạy qua mọi khối nối nhau. Tay trượt dọc thanh đổi `along` giữa hai mốc tay (mục 4).
+  - Cảnh không khai `part`: rig chỉ giải trên phần mặc định (cầm vai, cổ chai thì cảnh khai). Rig giải `along`: lưới ¼, ½, ¾ của
+    đoạn bám kẹp vào **chính khối hình** của ứng viên (`ownAlong`, giao miền `alongRoom`), nên thân chai không trượt sang vai cùng
+    đoạn bám; tay dẫn lấy `along` 0,5 của đoạn bám.
+  - Rig giải `thumb: "down"` (bàn tay ngược với món: ngón trỏ về đầu dưới) hay `slant` khác 25 cộng `OFF_COST` = 1 (`cost` của
+    lựa chọn, mục [5](#lựa-chọn-cảnh-không-khai)): ống nghe ngón cái về loa, chai ngón cái ôm thân trừ khi cổ tay không theo được.
   - `along` khai sát phần `grip: false` quá `GRIP_CLEAR · W` thì rig kẹp tâm nắm về miền `alongRoom` và `check` báo **cảnh báo**
     `choice` (mục 7): nêu phần cắt, khoảng cách và `along` rig kẹp về.
-  - Ống nghe máy bàn, máy tường, bộ đàm: `rod` của tay cầm. Áp tai là lòng tay áp mặt lưng của thân (`around 180`; mặt trước nhô loa, mic), rig suy ra `flat`; ý định loa vào tai ở cảnh.
+  - Ống nghe máy bàn, máy tường, bộ đàm: `rod` của tay cầm, đầu cao là loa (`top`). Áp tai là lòng tay áp mặt lưng của thân
+    (`around 180`; mặt trước nhô loa, mic), rig suy ra `flat`: ngón cái dọc cạnh về loa, ngón ngang thân; cổ tay kẹp thì ống nghe
+    nghiêng theo bàn tay, chếch theo đường tai – miệng. Ý định loa vào tai ở cảnh. Trước ngực rig giải `wrap` ở mặt hông, ngón cái
+    về loa (ảnh mẫu `ong-nghe-cam`).
 - **Tay**: một hay hai. Tay phụ mặc định: `platform` ở mặt đáy (`place: "bottom"`; rót có tay đỡ, mục [5](#tay-phụ-both)). Chai đứng
   thẳng thì lòng ngửa của tay đỡ đáy cần xoay cẳng tay quá ±90°: đặt chai nghiêng nhẹ (`up` lệch về trước và về phía tay đỡ).
 - **Hướng mặc định**: `up: <top>`. Rót không có chỗ nắm riêng: mốc món đặt miệng chai, nghiêng trục miệng về cốc; cảnh khai
@@ -1007,7 +1025,7 @@ Cảnh thường khai đủ chỗ cầm. Thiếu trường nào:
   yên ở chỗ khai, với nhân vật thật của người cầm. Lựa chọn rig giải chỉ đọc ở `graspAtTime`; `ReachHold.grasp.choice` của `sceneAt` chỉ mang trường
   cảnh khai. Hai bậc: giải rời trước (`edge`, `thumb`, `variant`, `part`) với trường liên tục ở mặc định; rồi lưới liên
   tục quanh ứng viên rời tốt nhất, và quanh ứng viên rời tốt nhất của `variant.default` khi rig giải `variant` (`along` 3
-  điểm ở ¼, ½, ¾ miền của nhóm (đũa, bút: 0,225, 0,3, 0,375; chén: 0,125, 0,25, 0,375; `pinch` 0,425, 0,45, 0,475), `slant` 3 (hay `RangeChoice.grid` / `gridByVariant` của nhóm, giá trị trùng gộp một), `around` 12 (biến thể có `thumbToward`: 9 điểm ±60° quanh hướng ngón cái về thân, nhóm 7), `tilt` 6 đều gồm hai đầu, `psi` 5 điểm đều gồm hai đầu). `slant` lấy ba điểm `−½`, `0`, `+½` miền của biến thể
+  điểm ở ¼, ½, ¾ miền của nhóm (đũa, bút: 0,225, 0,3, 0,375; chén: 0,125, 0,25, 0,375; `pinch` 0,425, 0,45, 0,475; trụ: trên chính khối hình, mục 3 nhóm 5), `slant` 3 (hay `RangeChoice.grid` / `gridByVariant` của nhóm, giá trị trùng gộp một), `around` 12 (biến thể có `thumbToward`: 9 điểm ±60° quanh hướng ngón cái về thân, nhóm 7), `tilt` 6 đều gồm hai đầu, `psi` 5 điểm đều gồm hai đầu). `slant` lấy ba điểm `−½`, `0`, `+½` miền của biến thể
   (`pinch` ±30°, `flat` ±45°, `rim` ±22,5°). Giá của một ứng viên là `min_φ E(φ)` cộng `(khe tầm với / AIM_GAP)²`, cộng ở
   mốc bắt đầu và các mốc món sau còn cùng người cầm, cùng cỡ, mốc sau trọng số 0,5 (`LATER_W`): lần cầm theo mốc xét mọi mốc
   của lần cầm, tối đa 8 mốc sau mốc đầu (`KEYED_MAX`); lần cầm hai tay xét các mốc trong 1,5 s sau (`LATER_SPAN`, tối đa 4); lệch khỏi mặc
@@ -1018,7 +1036,11 @@ Cảnh thường khai đủ chỗ cầm. Thiếu trường nào:
   ([bên dưới](#mặt-đỡ)). Lấy ứng viên
   rẻ nhất; hoà thì theo thứ tự ứng viên: `part`, khối hình theo `FeatureKind`, `edge`, `thumb`, `variant`, `along`,
   `slant`, rồi `around`, `tilt`, `psi` (rời theo thứ tự miền khai, liên tục tăng dần). Giải 3–42 ứng viên mất 3–17 ms; `cylinder`
-  (29–42 ứng viên, có đo lún) mất 80–140 ms mỗi tay.
+  (29–146 ứng viên, có đo lún) mất 40–200 ms mỗi tay.
+- **Trường có giá lệch** (`cost` của lựa chọn; `cylinder` `thumb`, `slant`): ứng viên lấy giá trị khác mặc định (`default`, hay
+  `from` của trường) cộng giá ấy. Lưới liên tục chạy cả quanh ứng viên rời tốt nhất giữ mọi trường ấy ở mặc định khi nó khác ứng
+  viên rời tốt nhất: ở bậc rời trường liên tục còn ở mặc định, nên một giá trị mặc định có thể đắt chỉ vì `around` mặc định
+  (ống nghe đứng trước ngực, ngón cái về loa chỉ rẻ ở mặt hông).
 - **`variant` của trụ** (`cylinder`, không có `choices.variant`) không giải thành một ô riêng: `chooseMissing` để `graspFrame` suy
   biến thể của từng ứng viên theo khối hình và `around` của nó (`variantOf`, mục 3 nhóm 5), nên lưới `around` của ống nghe đi qua cả
   `flat` (mặt rộng) lẫn `wrap` (mặt hông). Cảnh khai `variant` thì giữ nguyên, kể cả `wrap` trên mặt trước.

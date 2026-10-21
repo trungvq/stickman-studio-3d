@@ -4,6 +4,7 @@ import {
   acrossOf,
   BOWL_PINCH_MAX,
   checkChoice,
+  WRAP_SLANT,
   EDGES_ACROSS,
   FLAT_MAX,
   GRIP_GROUPS,
@@ -19,6 +20,7 @@ import {
   edgeHigh,
   graspFrame,
   platformInset,
+  BOX_RISE,
   type ContactInput,
   type GraspChoice,
 } from "./graspSolve";
@@ -27,6 +29,8 @@ import { handSkin, skinHand } from "./handMesh";
 import {
   groupGripMax,
   HELD_GRIP_PINCH,
+  HELD_OPPOSE,
+  HELD_TOUCH,
   HELD_PIERCE_FIT,
   HELD_SINK,
   HELD_WRAP,
@@ -374,7 +378,7 @@ describe("`cylinder` `wrap`", () => {
       }
   });
 
-  it("tay trái det +1, cùng lòng tay, ngón quấn ngược chiều; ngón cái về đầu trên, `down` về đầu dưới", () => {
+  it("tay trái det +1, cùng lòng tay, ngón quấn ngược chiều, cùng chếch về đầu ngón cái; ngón cái về đầu trên, `down` về đầu dưới", () => {
     const dims = handDims(1.75, 1.545);
     for (const thumb of ["up", "down"] as const) {
       const pick: Pick = { group: "cylinder", along: 0.5, around: 30, thumb };
@@ -383,21 +387,26 @@ describe("`cylinder` `wrap`", () => {
       expect(det(l.G.R)).toBeCloseTo(1, 9);
       close(r.hand.palm as V3, l.hand.palm as V3);
       close(r.hand.at as V3, l.hand.at as V3);
-      close(
-        fingersOf(r.G),
-        fingersOf(l.G).map((x) => -x),
-      );
+      // gương qua mặt chứa trục (y) và pháp tuyến lòng tay: phần dọc trục giữ, phần quanh trục đổi dấu
+      const [fr, fl] = [fingersOf(r.G), fingersOf(l.G)];
+      close(fr, [-fl[0], fl[1], -fl[2]]);
+      expect(fr[1] * (thumb === "up" ? 1 : -1)).toBeCloseTo(Math.sin(WRAP_SLANT * D2R), 9);
       for (const g of [r, l])
-        expect(thumbOf(g.G)[1] * (thumb === "up" ? 1 : -1)).toBeGreaterThan(0.99);
+        expect(thumbOf(g.G)[1] * (thumb === "up" ? 1 : -1)).toBeCloseTo(
+          Math.cos(WRAP_SLANT * D2R),
+          9,
+        );
     }
   });
 
-  it("thân thẳng: lòng tay `−ρ(around)`, ngón vuông góc trục, tâm nắm ngoài trục theo `ρ`; vai: lòng tay ngả theo dốc", () => {
+  it("thân thẳng: lòng tay `−ρ(around)`, ngón chếch `WRAP_SLANT` về đầu ngón cái (cổ mảnh: vuông góc trục), tâm nắm ngoài trục theo `ρ`; vai: lòng tay ngả theo dốc", () => {
     const dims = handDims(1.75, 1.545);
     const body = graspFrame(CHAI, geom, { group: "cylinder", along: 0.4, around: 90 }, -1, dims);
     // `ρ(0)` là `front` (nhãn, +z), `ρ(90) = a × ρ(0)` = +x
     close(body.hand.palm as V3, [-1, 0, 0], 1e-9);
-    expect(Math.abs((body.hand.fingers as V3)[1])).toBeLessThan(1e-9);
+    expect((body.hand.fingers as V3)[1]).toBeCloseTo(Math.sin(WRAP_SLANT * D2R), 9);
+    const neck = graspFrame(CHAI, geom, { group: "cylinder", part: "co", along: 0.95 }, -1, dims);
+    expect(Math.abs((neck.hand.fingers as V3)[1])).toBeLessThan(1e-9);
     const at = body.hand.at as V3;
     expect(at[1]).toBeCloseTo(0.4 * 68.5, 9);
     expect(at[0]).toBeGreaterThan(10.2);
@@ -439,6 +448,27 @@ describe("`cylinder` `wrap`", () => {
     close(at(150), [0, -1, 0], 1e-9);
     close(at(330), [0, 1, 0], 1e-9);
     close(at(80), [-1, 0, 0], 1e-9);
+  });
+
+  it("`flat` cầm như điện thoại: ngón ngang thân chếch `BOX_RISE` về đầu ngón cái, ngón cái dọc một cạnh về loa, kẹp với các ngón ở cạnh kia", () => {
+    const ONG = item(ongNghe);
+    for (const [k, long] of HANDS)
+      for (const side of [-1, 1])
+        for (const thumb of ["up", "down"] as const) {
+          const at = `k ${k} side ${side} ${thumb}`;
+          const pick: Pick = { group: "cylinder", around: 180, thumb };
+          const g = graspFrame(ONG, itemGeom(ONG), pick, side, handDims(k, long), k, long);
+          expect(g.choice.variant, at).toBe("flat");
+          // trục thân là `+z` (loa): ngón gần vuông góc trục, chếch về phía ngón cái
+          const up = thumb === "up" ? 1 : -1;
+          expect((g.hand.fingers as V3)[2] * up, at).toBeCloseTo(Math.sin(BOX_RISE * D2R), 9);
+          const m = wrapSkin(ONG, pick, side, k, long);
+          expect(m.sink, at).toBeLessThanOrEqual(HELD_SINK);
+          expect(m.gaps.thumb, at).toBeLessThanOrEqual(HELD_TOUCH);
+          expect(m.oppose?.angle ?? 0, at).toBeGreaterThanOrEqual(HELD_OPPOSE);
+          // đầu ngón cái về loa hơn tâm nắm
+          expect((m.thumbTip[2] - (g.hand.at as V3)[2]) * up, at).toBeGreaterThan(0);
+        }
   });
 });
 
@@ -619,7 +649,7 @@ function wrapSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long:
   const v = [...g.pose, ...fit];
   const pos = new Float32Array(skin.pos.length);
   skinHand(skin, v, pos);
-  const { gaps } = skinDepth(pos, skinPieces(skin), g.G, spec.shape!);
+  const { gaps, near } = skinDepth(pos, skinPieces(skin), g.G, spec.shape!);
   const F = handFrames(v, side, k, long);
   const end = (n: (typeof HAND_PIECES)[number]): V3 => {
     const d = matVec(F[n].R, [0, -F[n].len, 0]);
@@ -639,6 +669,9 @@ function wrapSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long:
     gaps,
     thumbUp: (d[0] * a.a[0] + d[1] * a.a[1] + d[2] * a.a[2]) / Math.hypot(...d),
     thumbTip: toItem(g.G, tip),
+    indexTip: toItem(g.G, end("index1")),
+    oppose: heldOppose(spec.shape!, near, gaps, g.roles),
+    choice: g.choice,
   };
 }
 
@@ -666,19 +699,25 @@ describe("`cylinder` `wrap` trên da", () => {
         }
   });
 
-  it("ngón cái: trụ mảnh nằm dọc trục về phía út (chồng lên trỏ–giữa), trụ to dọc thân về đầu trên", () => {
+  it("ngón cái: trụ mảnh nằm dọc trục về phía út (chồng lên trỏ–giữa), trụ to vòng quanh thân phía đối các ngón — kẹp được (`heldOppose`)", () => {
     for (const [k, long] of HANDS)
       for (const side of [-1, 1]) {
         for (const r of [2.5, 5])
           expect(wrapSkin(rod(r), { group: "cylinder" }, side, k, long).thumbUp).toBeLessThan(-0.8);
-        for (const r of [10, 13])
-          expect(wrapSkin(rod(r), { group: "cylinder" }, side, k, long).thumbUp).toBeGreaterThan(
-            0.7,
-          );
+        for (const r of [8, 10, 13]) {
+          const at = `r ${r} k ${k} side ${side}`;
+          const m = wrapSkin(rod(r), { group: "cylinder" }, side, k, long);
+          // ngang thân, không dựng dọc trục; đầu ngón cái sang phía bên kia trục so với đầu các ngón
+          expect(Math.abs(m.thumbUp), at).toBeLessThan(0.5);
+          expect(m.thumbTip[0] * m.indexTip[0], at).toBeLessThan(0);
+          expect(m.gaps.thumb, at).toBeLessThanOrEqual(HELD_WRAP);
+          // trụ từ `SIZE_WARN · W` (r 13) nắm không kín: chỉ đòi hướng
+          if (r < 13) expect(m.oppose?.angle ?? 0, at).toBeGreaterThanOrEqual(HELD_OPPOSE);
+        }
       }
   });
 
-  it("`chai-dia`: thân và chỗ fixture `#co` lún dưới `HELD_SINK`, không xuyên", () => {
+  it("`chai-dia`: thân và chỗ fixture `#co` lún dưới `HELD_SINK`, không xuyên; ở thân ngón cái ôm thân đối các ngón", () => {
     const CHAI = item(chaiDia);
     for (const [k, long] of HANDS)
       for (const side of [-1, 1])
@@ -689,6 +728,8 @@ describe("`cylinder` `wrap` trên da", () => {
           const m = wrapSkin(CHAI, pick, side, k, long);
           expect(m.sink, `${k} ${side} ${pick.along}`).toBeLessThanOrEqual(HELD_SINK);
           expect(m.pierce).toBeLessThanOrEqual(HELD_PIERCE_FIT);
+          if (pick.part === "than")
+            expect(m.oppose?.angle ?? 0, `${k} ${side}`).toBeGreaterThanOrEqual(HELD_OPPOSE);
         }
   });
 

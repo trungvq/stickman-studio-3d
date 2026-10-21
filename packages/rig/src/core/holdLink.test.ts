@@ -10,6 +10,7 @@ import {
   type HeldItemSpec,
   type ReachHold,
 } from "./heldItem";
+import { BOX_RISE } from "./graspSolve";
 import { holdHand, holdLinkFrame, isCarryHold } from "./holdLink";
 import { matMul, matVec, type M3, type V3 } from "./lens";
 import { parseScene, resolveScene, sceneAt, type SceneRuntime } from "./scene";
@@ -247,12 +248,12 @@ describe("lớp liên kết tay ↔ món", () => {
       const h = (side === nearSide(sp) ? w.hands!.near : w.hands!.far)!.hold!;
       const x = holdHand(h, side, handDims(1))!;
       expect(x.frame!.choice.variant).toBe("flat");
-      // lòng tay áp mặt lưng, ngón dọc trục về đầu loa (khung món)
+      // lòng tay áp mặt lưng, ngón ngang thân chếch `BOX_RISE` về đầu loa (khung món)
       expect(angle(x.hand.palm as V3, [0, -1, 0])).toBeLessThan(1);
-      expect(angle(x.hand.fingers as V3, [0, 0, 1])).toBeLessThan(1);
+      expect(angle(x.hand.fingers as V3, [0, 0, 1])).toBeCloseTo(90 - BOX_RISE, 6);
       const held = actHeld(NGUOI, sp)[key === "right" ? "R" : "L"]!;
-      // trục món (loa ở trên) gần phương đứng: `R` ở thế giới three, y lên
-      expect(angle(matVec(held.R, [0, 0, 1]), [0, 1, 0])).toBeLessThan(35);
+      // trục món (loa ở trên) chếch theo đường tai – miệng: `R` ở thế giới three, y lên
+      expect(angle(matVec(held.R, [0, 0, 1]), [0, 1, 0])).toBeLessThan(70);
     }
   });
   it("`both` tay dẫn: chai đỡ đáy, điện thoại đỡ mặt sau (`place`), khay cạnh đối; tay phụ tới chỗ, lòng và ngón theo khung", () => {
@@ -267,7 +268,14 @@ describe("lớp liên kết tay ↔ món", () => {
         [
           {
             t: 0,
-            right: { to: "chest", offset, point: "grip", hold: { item, group, both: true } },
+            right: {
+              to: "chest",
+              offset,
+              point: "grip",
+              // tay dẫn thấp trước bụng, cẳng tay ngang: thân chai nằm chéo lòng tay (`slant` mặc định) cần cổ tay lệch quá
+              // kẹp, chai nghiêng theo bàn tay — cảnh khai `slant: 0`
+              hold: { item, group, both: true, ...(group === "cylinder" && { slant: 0 }) },
+            },
           },
         ],
         { [item]: S },
