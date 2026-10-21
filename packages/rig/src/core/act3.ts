@@ -1596,12 +1596,27 @@ export function actHeld(c: ActCharacter, sp: ActInput): Partial<Record<"R" | "L"
   if (!p) return {};
   const T = p.T;
   const dims = T.hand ? handDims(T.hand.k, T.hand.long) : handDims(1 / T.s);
-  const roles = holdRoles(placedHolds(T, sp.world?.hands).hands, T.near, dims);
+  const placed = placedHolds(T, sp.world?.hands);
+  const roles = holdRoles(placed.hands, T.near, dims);
   const out: Partial<Record<"R" | "L", ActHeld>> = {};
   for (const side of [-1, 1]) {
     const r = roles[side];
     if (r?.role !== "lead") continue;
     const tag = T.tag(side);
+    // món nằm ở mốc `rest` trong lúc bàn tay tới hay rời: món đứng ở mốc, không theo bàn tay
+    const still = r.hold.grasp?.rest ? placed.sols[side]?.still : undefined;
+    if (still) {
+      const Q = still.R;
+      const R3: M3 = [Q[0], Q[1], Q[2], -Q[3], -Q[4], -Q[5], -Q[6], -Q[7], -Q[8]];
+      out[tag] = {
+        item: r.hold.item,
+        grip: r.hold.grip,
+        at: [...still.P] as V3,
+        R: R3,
+        s: still.s,
+      };
+      continue;
+    }
     const W = p.wrists?.[tag];
     const { at, R } = p.frames[tag];
     const k = W?.k ?? 1;

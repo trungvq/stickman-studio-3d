@@ -1384,6 +1384,8 @@ extra: (_marks, cast) => {
 - `cast.holder(món, t, owner?)` cho biết ai, tay nào đang mang món ở giây `t` (cầm trong bàn tay hay treo trên cánh tay).
   `cast.released(món, t, owner?)` trả lần thả gần nhất — người, tay, giây, ma trận thế giới của món lúc thả — để `extra` giữ
   món đúng chỗ thả; lần gỡ món treo thì không trả (chỗ món treo cần người three đã đặt dáng), `extra` tự đặt món từ mốc gỡ.
+  Chỗ thả tính ở lõi (`itemReleased` của `scene.ts`: bàn tay người thả đã vẽ ngay trước mốc thả · khung cầm), cùng nguồn với
+  mốc món nằm không khai chỗ ([11](11-nhom-cam.md#mốc-món-items)): người nhặt cầm món lên đúng chỗ `extra` giữ.
   `cast.provided()` kể các món đã đăng ký.
 - `owner` bỏ trống là món chung: người nào khai `hold` món ấy cũng cầm được. Có `owner` thì chỉ người ấy.
 - Món có hình va chạm (`shape`, [01](01-rig.md#hình-va-chạm-của-món)): sau khi gắn, mỗi khung rig cho ngón của mọi bàn
@@ -1415,7 +1417,7 @@ bỏ bàn tay ngoài khung camera:
 | **Món trôi** (`drift`, đường cũ) | Món dời quá `HELD_DRIFT` hay xoay quá `HELD_TURN` trong khung bàn tay so với lúc bắt đầu cầm (một lần cầm: cùng món, dáng, `follow`, `offset`, `rotate`, liền mạch) — `follow: "level"` đứng theo người nên cổ tay xoay là món trôi. Món cứng không trôi theo cách dựng | `3`, `20°` |
 | **Quai không nằm trên chỗ treo** (`seat`, món treo) | Đỉnh quai (`seats[on]`) cách chỗ treo quá `CARRY.seat` (`extra` đặt món đang treo, mốc `seats[on]` không phải đỉnh quai); khoác khuỷu mà khuỷu mở quá `CARRY.bend` (`150°`, không còn chỗ gập giữ quai) hay cẳng tay chúc quá `CARRY.rise` (`10°` dưới phương ngang, quai tuột về cổ tay) | `3` |
 | **Món treo lồng vào người** (`body`, món treo) | Thân món (`shape`) lồng vào một phần người — mặt thân áo, hông, váy (đám điểm trên lưới), nang đầu, chi, bàn tay; trừ cánh tay trên và cẳng tay mà quai khoác khuỷu vắt qua — sâu hơn phần `touch` của món và chỗ cầm cho lấn cộng `CARRY.body`. Thường là cánh tay buông sát sườn mà túi đeo vai kẹp giữa: dang tay ra | `1,5` |
-| **Món nhảy** (`jump`) | Món đăng ký (`cast.provide`) dời quá `HELD_DRIFT` hay xoay quá `HELD_TURN` trong thế giới qua một mốc `hold` (so `HELD_JUMP_EPS` giây hai bên mốc): lúc gắn (món nằm xa chỗ tay sẽ cầm), lúc thả (món về chỗ `provide` mà `extra` không giữ ở chỗ thả), lúc đổi tay (tay mới chưa tới đúng mốc, hay không xoay kịp) | `3`, `20°` |
+| **Món nhảy** (`jump`) | Món đăng ký (`cast.provide`) dời quá `HELD_DRIFT` hay xoay quá `HELD_TURN` trong thế giới qua một mốc `hold` (so `HELD_JUMP_EPS` giây hai bên mốc): lúc gắn (món nằm xa chỗ tay sẽ cầm; nhặt món vừa thả thì khai mốc món nằm `rest` không khai chỗ, [11](11-nhom-cam.md#mốc-món-items)), lúc thả (món về chỗ `provide` mà `extra` không giữ ở chỗ thả), lúc đổi tay (tay mới chưa tới đúng mốc, hay không xoay kịp) | `3`, `20°` |
 
 ```
 scenes/canh-05.json: mặt món quay sai — `nguoi-a` tay trái cầm dien-thoai: trục ý định còn lệch 72° khỏi `khach.eye` (chỗ cầm `dien-thoai@palmBox` (…)); đổi `face` / `up` của mốc tay, `elbow`, hay `edge` / `thumb` ở giây 1.20 · giây 0.90–1.60. Lúc ấy: … (docs/11-nhom-cam.md#7-luật-check-nhóm-held)

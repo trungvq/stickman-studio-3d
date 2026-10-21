@@ -1561,6 +1561,7 @@ export function heldOptions(dir = ".") {
     arm: rig.HELD_ARM,
     elbow: rig.HELD_ELBOW,
     oppose: rig.HELD_OPPOSE,
+    rest: rig.HELD_REST,
     hold: rig.HELD_HOLD,
   };
   if (raw === undefined) return out;

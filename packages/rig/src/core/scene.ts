@@ -40,6 +40,7 @@ import {
 import type { Root } from "./types";
 import {
   actHandAt,
+  actHeld,
   bones3,
   cladHand,
   head3,
@@ -174,6 +175,7 @@ import {
   EquipSchema,
   composeEquip,
   defaultCharacter,
+  equipCharacter,
   equipSteps,
   limbWidths,
   wornPalette,
@@ -442,7 +444,8 @@ const HandKeySchema = z.object({
  * Mốc món đặt trước (`scene.items[]`): món `item` ở giây `t`, người cầm `cast`. Chỗ là mốc thân `to` của người cầm dời
  * `offset` `[tiến, y, ngang]` (ngang dương về phía tay phải người cầm), hay toạ độ thế giới `at`; `point` là mốc của món đặt
  * vào chỗ ấy, bỏ trống là tâm hộp bao. `face` / `up` (trục chính) và `roll` (trục phụ) cho trọn hướng món, vectơ ở hệ thân
- * người cầm `[tiến, y, ngang phải]`; thiếu trục nào lấy của nhóm. `ease` là đường hoà vào mốc này.
+ * người cầm `[tiến, y, ngang phải]`; thiếu trục nào lấy của nhóm. `ease` là đường hoà vào mốc này. `rest`: món nằm trên
+ * một mặt ở mốc này (rig suy mặt đỡ từ món); không khai `at` / `to` thì chỗ và hướng món là lúc thả gần nhất (`itemReleased`).
  * docs/11-nhom-cam.md#mốc-món-items
  */
 export const SceneItemMarkSchema = z
@@ -458,10 +461,22 @@ export const SceneItemMarkSchema = z
     up: z.union([z.string().min(1), V3Schema]).optional(),
     roll: AxisIntentSchema.optional(),
     ease: z.enum(EASE_NAMES).optional(),
+    rest: z.literal(true).optional(),
   })
-  .refine((k) => !!k.at !== !!k.to, {
-    message: "chỗ món cần đúng một trong `at` (toạ độ thế giới) hay `to` (mốc thân)",
+  .refine((k) => !!k.at !== !!k.to || (k.rest && !k.at && !k.to), {
+    message:
+      "chỗ món cần đúng một trong `at` (toạ độ thế giới) hay `to` (mốc thân); bỏ cả hai chỉ với `rest` (món nằm ở chỗ thả)",
   })
+  .refine(
+    (k) =>
+      !k.rest ||
+      !!(k.at || k.to) ||
+      (k.point === undefined && k.face === undefined && k.up === undefined && k.roll === undefined),
+    {
+      message:
+        "`rest` không khai chỗ: chỗ và hướng món lấy từ lúc thả gần nhất — bỏ `point`, `face`, `up`, `roll` hay khai `at` / `to`",
+    },
+  )
   .refine((k) => !!k.to || k.offset === undefined, { message: "`offset` chỉ đi với `to`" })
   .refine((k) => !isOtherHand(k.to), {
     message: "mốc món không đặt theo bàn tay: bàn tay suy từ món",
@@ -1028,6 +1043,11 @@ export interface SceneRuntime {
   held: Record<string, HeldItemSpec>;
   /** `scene.items`, `@mốc` đã thành số; `itemAt` đọc */
   items?: SceneItemMark[];
+  /**
+   * JSON nhân vật (`castCharacter`) của từng người trong `cast`, do chỗ dựng cảnh đưa vào (`buildWorld` điền): mốc món `rest`
+   * không khai chỗ dựng bàn tay người thả từ đây khi `ItemOptions.chars` không có người ấy
+   */
+  chars?: Record<string, CharacterData>;
 }
 
 /** Khung camera lúc `time`; `view` là hộp cắt trong hệ toạ độ sân khấu */
@@ -3615,6 +3635,19 @@ function runMarks(rt: SceneRuntime, keys: HandKey[], side: HandSide, run: HoldRu
   return out;
 }
 
+/**
+ * Lần cầm theo mốc trước mốc món đầu hay sau mốc món cuối mà mốc ấy là mốc nằm (`rest`): món đứng ở mốc ấy, bàn tay đang
+ * tới hay vừa rời món. docs/11-nhom-cam.md § Lần cầm theo mốc
+ */
+function restingMark(rm: RunMarks, time: number): SceneItemMark | undefined {
+  if (!rm.keyed) return undefined;
+  const first = rm.marks[0];
+  const last = rm.marks[rm.marks.length - 1];
+  if (first.rest && time < first.t) return first;
+  if (last.rest && time > last.t) return last;
+  return undefined;
+}
+
 /** Lần cầm nhóm theo món: có mốc món trong lần cầm (docs/11-nhom-cam.md mục 4) */
 const placedRun = (rt: SceneRuntime, keys: HandKey[], side: HandSide, run: HoldRun): boolean =>
   runMarks(rt, keys, side, run).marks.length > 0;
@@ -3816,6 +3849,7 @@ function holdGraspAt(
     choice: { ...base, ...declared(hold) },
     t0: run.since,
     ...(rm.keyed && { keyed: true as const }),
+    ...(restingMark(rm, time) && { rest: true as const }),
   };
 }
 
@@ -4182,6 +4216,8 @@ function graspArmAt(
   const r = graspStart(rt, id, side, run, at);
   if (r.keyed) {
     const k = keyedArm(rt, id, side, run, r, time, o);
+    const rest = restingMark(runMarks(rt, handKeys(rt, id), side, run), time);
+    const still = rest && itemAt(rt, rest.item, rest.t, at);
     return {
       sol: {
         ...r.sol,
@@ -4191,6 +4227,7 @@ function graspArmAt(
         Rw: k.Rw,
         arm: k.arm,
         t0: r.t0,
+        ...(still && { still }),
       },
       inp: k.inp,
     };
@@ -4428,6 +4465,8 @@ export interface ItemPose {
   degenerate?: true;
   /** Đích của một trục trùng chỗ món: trục ấy không cho hướng */
   coincident?: true;
+  /** Món nằm trên một mặt (mốc `rest`, không hoà giữa hai mốc): mặt đỡ ngang qua điểm thấp nhất của món */
+  rest?: true;
 }
 
 const toThree = (p: readonly number[]): V3 => [p[0] / 100, -p[1] / 100, -p[2] / 100];
@@ -4566,11 +4605,166 @@ const itemSpec = (rt: SceneRuntime, item: string): HeldItemSpec =>
 const itemCentre = (spec: HeldItemSpec): V3 =>
   spec.shape ? [...shapeBound(spec.shape)[0]] : [0, 0, 0];
 
+/** Mốc món nằm không khai chỗ: chỗ và hướng món lấy từ lúc thả gần nhất */
+const restFromRelease = (k: SceneItemMark): boolean => !!k.rest && !k.at && !k.to;
+
+/** Mốc món `rest` không khai chỗ mà trước nó không có lần thả nào của món */
+export class ItemRestError extends Error {
+  readonly item: string;
+  readonly t: number;
+  constructor(k: SceneItemMark) {
+    super(
+      `\`items\` ${k.item} t=${k.t}: \`rest\` không khai chỗ mà trước mốc không ai thả \`${k.item}\` — khai \`at\` / \`to\` hay thêm mốc thả (\`hold: null\`) trước mốc (docs/11-nhom-cam.md#mốc-món-items)`,
+    );
+    this.name = "ItemRestError";
+    this.item = k.item;
+    this.t = k.t;
+  }
+}
+
+/** Giây trước mốc thả mà bàn tay người thả còn mang món: chỗ món lúc thả đọc ở đó */
+export const RELEASE_EPS = 1e-3;
+
+/** Người, tay đang mang món `item` ở `time` theo mốc tay: cầm trong bàn tay trước, treo (`carry`) sau; `who` lọc người */
+function itemCarrier(
+  rt: SceneRuntime,
+  item: string,
+  time: number,
+  who?: (id: string) => boolean,
+): { id: string; side: HandSide; carry: boolean } | undefined {
+  let hung: { id: string; side: HandSide; carry: boolean } | undefined;
+  for (const m of rt.cast) {
+    if (!m.world?.hands || (who && !who(m.id))) continue;
+    for (const side of ["right", "left"] as const) {
+      const run = holdRun(m.world.hands, side, time);
+      if (!run || sceneHoldRef(run.hold).item !== item) continue;
+      if (!isCarryHold(carryRef(run.hold))) return { id: m.id, side, carry: false };
+      hung ??= { id: m.id, side, carry: true };
+    }
+  }
+  return hung;
+}
+
+/**
+ * Các lần thả món `item` không sau `time`, gần nhất trước: mốc tay mà không ai mang món, ngay trước đó (`RELEASE_EPS`) có
+ * người cầm trong bàn tay; lần gỡ món treo bỏ qua. Thuần, chỉ đọc mốc tay
+ */
+export function itemReleases(
+  rt: SceneRuntime,
+  item: string,
+  time: number,
+  who?: (id: string) => boolean,
+): { id: string; side: HandSide; t: number }[] {
+  const ts = [
+    ...new Set(rt.cast.flatMap((m) => (m.world?.hands ?? []).filter(holdKey).map((k) => k.t))),
+  ].sort((a, b) => b - a);
+  const out: { id: string; side: HandSide; t: number }[] = [];
+  for (const tr of ts) {
+    if (tr > time + 1e-9 || itemCarrier(rt, item, tr, who)) continue;
+    const h = itemCarrier(rt, item, tr - RELEASE_EPS, who);
+    if (h && !h.carry) out.push({ id: h.id, side: h.side, t: tr });
+  }
+  return out;
+}
+
+/** Lần thả một món: ai, tay nào, giây nào, món ở đâu lúc thả (bàn tay đã vẽ · khung cầm, thế giới rig) */
+export interface ItemRelease {
+  id: string;
+  side: HandSide;
+  t: number;
+  pose: ItemPose;
+}
+
+export interface ReleaseOptions extends ItemOptions {
+  /** Người được tính là người mang món (`cast.released` lọc theo chủ món) */
+  who?: (id: string) => boolean;
+  /** Tư thế người thả ở giây ấy; bỏ trống là `sceneAt` */
+  pose?: (id: string, time: number) => ScenePose;
+}
+
+const releaseMemo = new WeakMap<SceneRuntime, Map<string, ItemRelease | null>>();
+const releasing = new Set<string>();
+
+/**
+ * Lần thả gần nhất (không sau `time`) của món `item` và chỗ món lúc ấy: bàn tay người thả đã vẽ ngay trước mốc thả nhân khung
+ * cầm (`actHeld`) — tay dẫn hay lần cầm theo mốc như nhau. Nhân vật người thả lấy ở `rt.chars` (mặc theo `equip` lúc thả),
+ * không có thì `o.chars`; thiếu cả hai là `HolderCharError`. Nhớ theo runtime, nhân vật. Mốc món `rest` không khai chỗ và
+ * `cast.released` của cảnh three cùng đọc ở đây. docs/11-nhom-cam.md#mốc-món-items
+ */
+export function itemReleased(
+  rt: SceneRuntime,
+  item: string,
+  time: number,
+  o: ReleaseOptions = {},
+): ItemRelease | undefined {
+  for (const r of itemReleases(rt, item, time, o.who)) {
+    const base = rt.chars?.[r.id];
+    const given = o.chars?.[r.id];
+    if (!base && !given) throw new HolderCharError(r.id);
+    const key = `${item}|${r.t}|${r.id}|${charId(base ?? given)}`;
+    let memo = releaseMemo.get(rt);
+    if (!memo) releaseMemo.set(rt, (memo = new Map()));
+    let hit = o.pose ? undefined : memo.get(key);
+    if (hit === undefined) {
+      if (releasing.has(key))
+        throw new Error(
+          `\`items\` ${item}: chỗ thả lúc ${r.t} lại cần chính nó — mốc món \`rest\` không khai chỗ đọc vòng (docs/11-nhom-cam.md#mốc-món-items)`,
+        );
+      releasing.add(key);
+      try {
+        const t = r.t - RELEASE_EPS;
+        const sp =
+          o.pose?.(r.id, t) ??
+          sceneAt(rt, r.id, t, rt.heights[r.id] ?? 1, rt.bodies[r.id] ?? BODY3);
+        const c = base ? equipCharacter(base, sp.equip) : given!;
+        const held = actHeld(c, sp as ActInput);
+        const h = [held.R, held.L].find((x) => x?.item === item);
+        const R = h?.R;
+        hit =
+          h && R
+            ? {
+                ...r,
+                pose: {
+                  R: [R[0], R[1], R[2], -R[3], -R[4], -R[5], -R[6], -R[7], -R[8]],
+                  P: [...h.at] as V3,
+                  cast: r.id,
+                  s: h.s,
+                },
+              }
+            : null;
+      } finally {
+        releasing.delete(key);
+      }
+      if (!o.pose) memo.set(key, hit);
+    }
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
+/** Mốc món nằm không khai chỗ (three, như `solveItemMark`): chỗ và hướng món lúc thả gần nhất trước mốc */
+function restMark(rt: SceneRuntime, k: SceneItemMark, o: ItemOptions) {
+  const rel = itemReleased(rt, k.item, k.t, o);
+  if (!rel) throw new ItemRestError(k);
+  const { R: Rr, P, s } = rel.pose;
+  const R: M3 = [Rr[0], Rr[1], Rr[2], -Rr[3], -Rr[4], -Rr[5], -Rr[6], -Rr[7], -Rr[8]];
+  const pt = itemCentre(itemSpec(rt, k.item));
+  return { R, at: add3(toThree(P), scale3(matVec(R, pt), 0.01 * s)), pt, s } as {
+    R: M3;
+    at: V3;
+    pt: V3;
+    s: number;
+    gap?: number;
+    same?: "face" | "roll";
+  };
+}
+
 /**
  * Một mốc món giải ở `time` (three): hướng `R`, chỗ `at` của điểm món `pt`; `gap` là góc độ giữa đích hai trục, `same` là
  * trục có đích trùng chỗ món (không cho hướng: trục chính thì món giữ hướng thân người cầm, trục phụ thì bỏ)
  */
 function solveItemMark(rt: SceneRuntime, k: SceneItemMark, time: number, o: ItemOptions) {
+  if (restFromRelease(k)) return restMark(rt, k, o);
   const spec = itemSpec(rt, k.item);
   const T = holderTrunk(rt, k.cast, time, o);
   const at = k.at ? toThree(k.at) : itemMarkPoint(T, k.to!, k.offset);
@@ -4622,7 +4816,8 @@ function solveItemMark(rt: SceneRuntime, k: SceneItemMark, time: number, o: Item
  * Món đặt trước `item` ở `time` theo `scene.items`: giữa hai mốc thì chỗ món hoà theo `ease` của mốc sau, mỗi mốc đọc
  * trong khung mốc thân ở chính `time`, hướng hoà cầu giữa hai phép quay giải ở hai mốc; trước mốc đầu, sau mốc cuối giữ
  * mốc gần nhất. Món không có mốc thì `undefined`. Trục phụ suy biến không ném, trả `degenerate`; đích trùng chỗ món
- * trả `coincident`. `o.chars` bắt buộc (`HolderCharError`); `face` trần không trục thì `ItemAxisError`.
+ * trả `coincident`. `o.chars` bắt buộc (`HolderCharError`); `face` trần không trục thì `ItemAxisError`. Mốc `rest` không khai
+ * chỗ đọc lúc thả (`itemReleased`; không có thì `ItemRestError`), món không hoà tới nó; ở mốc `rest` (không hoà) trả `rest`.
  * docs/11-nhom-cam.md#mốc-món-items
  */
 export function itemAt(
@@ -4636,7 +4831,9 @@ export function itemAt(
   let i = 0;
   while (i + 1 < ks.length && ks[i + 1].t <= time) i++;
   const a = ks[i];
-  const b = time > a.t ? ks[i + 1] : undefined;
+  // món không hoà tới mốc nằm lấy chỗ thả: trước mốc ấy món còn trong tay người thả hay đã rời tay
+  const next = ks[i + 1];
+  const b = time > a.t && next && !restFromRelease(next) ? next : undefined;
   const A = solveItemMark(rt, a, time, o);
   const B = b && solveItemMark(rt, b, time, o);
   const f = b ? EASES[b.ease ?? "smooth"]((time - a.t) / (b.t - a.t)) : 0;
@@ -4652,6 +4849,7 @@ export function itemAt(
     s,
     ...(bad && { degenerate: true as const }),
     ...((A.same || B?.same) && { coincident: true as const }),
+    ...(!B && a.rest && { rest: true as const }),
   };
 }
 
@@ -4663,6 +4861,8 @@ export function itemAt(
 export function sceneItemProblems(rt: SceneRuntime, o: ItemOptions = {}): string[] {
   const out: string[] = [];
   for (const k of rt.items ?? []) {
+    // mốc nằm không khai chỗ: hướng từ lúc thả, không có trục khai (`sceneItemHoldProblems` báo khi không có lần thả)
+    if (restFromRelease(k)) continue;
     const where = `${k.cast}: \`items\` ${k.item} t=${k.t}`;
     let m: ReturnType<typeof solveItemMark>;
     try {
@@ -4685,7 +4885,8 @@ export function sceneItemProblems(rt: SceneRuntime, o: ItemOptions = {}): string
 }
 
 /**
- * Mốc món ở giây không tay nào của người cầm (`cast` của mốc) cầm món ấy: `check` (nhóm `ref`, lỗi `choice`) báo.
+ * Mốc món ở giây không tay nào của người cầm (`cast` của mốc) cầm món ấy, mốc nằm không khai chỗ mà trước nó không có lần
+ * thả: `check` (nhóm `ref`, lỗi `choice`) báo.
  * docs/11-nhom-cam.md#mốc-món-items
  */
 export function sceneItemHoldProblems(rt: SceneRuntime): string[] {
@@ -4700,6 +4901,8 @@ export function sceneItemHoldProblems(rt: SceneRuntime): string[] {
       out.push(
         `${k.cast}: \`items\` ${k.item} t=${k.t}: không tay nào của \`${k.cast}\` cầm \`${k.item}\` ở giây này — khai \`hold\` ở \`world.hands\` hay bỏ mốc (docs/11-nhom-cam.md#mốc-món-items)`,
       );
+    if (restFromRelease(k) && !itemReleases(rt, k.item, k.t).length)
+      out.push(`${k.cast}: ${new ItemRestError(k).message}`);
   }
   return out;
 }

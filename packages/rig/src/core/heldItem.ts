@@ -376,6 +376,8 @@ export interface HoldGrasp {
   frame?: GraspFrame;
   /** Lần cầm một tay theo mốc: bàn tay giải ở từng mốc món, hoà trong hệ thân; món vẽ theo bàn tay đã vẽ */
   keyed?: true;
+  /** Lần cầm theo mốc trước mốc nằm đầu hay sau mốc nằm cuối (`rest`): món đứng ở mốc ấy (`GraspSolution.still`), không theo tay */
+  rest?: true;
 }
 
 /** Tên file của món cho tên thể hiện `món:<tên>` (`vali:2` → `vali`); tên không có `:` là chính nó */
