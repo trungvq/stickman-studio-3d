@@ -322,8 +322,9 @@ export interface HoldAim {
  * hoà dần từ chỗ cầm cũ sang chỗ mới), `enter` là phần đã vào của lần cầm (tay phụ hoà dần tới mốc của nó trên món). `prior`
  * là mẫu trước của tay ấy (`HOLD_SLEW_STEP`): cách bao nhiêu giây và tư thế của người ở đó — cổ tay mang món đi từ nghiệm
  * ở đó với tốc độ có hạn. `grasp` là chỗ cầm nhóm (`món@nhóm`); `from.grasp` của lần cầm trước. `solve`: món đặt trước,
- * bàn tay của khung này giải trên nhân vật `c` (thân `T` đã dựng) — `graspAtTime` của scene. `was`: lần cầm món đặt trước
- * liền trước trên tay này còn hoà ra (`HOLD_BLEND`), phần còn lại `k` và bàn tay của nó ở khung này. `released`: tay đã
+ * bàn tay của khung này giải trên nhân vật `c` (thân `T` đã dựng) — `graspAtTime` của scene. `was`: lần cầm liền trước trên
+ * tay này còn hoà ra (`HOLD_BLEND`) — món đặt trước, hay tay dẫn của cùng món khi lần cầm mới theo món —, phần còn lại `k`
+ * và bàn tay đã vẽ của nó ngay trước ranh giới. `released`: tay đã
  * buông, lần cầm chỉ mang `was` — không vai trò, không món, không dáng ngón
  */
 export interface ReachHold {
@@ -336,9 +337,20 @@ export interface ReachHold {
   prior?: { dt: number; pose: () => object };
   grasp?: HoldGrasp;
   solve?: PlacedSolve;
-  was?: { k: number; solve: PlacedSolve };
+  was?: { k: number; solve: WasSolve };
   released?: true;
 }
+
+/** Bàn tay đã vẽ của lần cầm đang hoà ra, đứng yên ở ngay trước ranh giới: cổ tay, khung bàn tay, khuỷu (three), dáng */
+export interface WasHand {
+  Wp: V3;
+  Rw: M3;
+  arm: { elbow: V3 };
+  frame: { pose: readonly number[] };
+}
+
+/** Bàn tay của lần cầm đang hoà ra (`ReachHold.was`), dựng trên nhân vật `c` */
+export type WasSolve = (c: ActCharacter, T?: Trunk3) => WasHand | undefined;
 
 /** Bàn tay cầm món đặt trước ở một khung, giải trên nhân vật `c` (thân `T` đã dựng) */
 export type PlacedSolve = (
@@ -358,6 +370,8 @@ export interface HoldGrasp {
   t0: number;
   /** Khung cầm đã giải của món đặt trước (`ReachHold.solve`) */
   frame?: GraspFrame;
+  /** Lần cầm một tay theo mốc: bàn tay giải ở từng mốc món, hoà trong hệ thân; món vẽ theo bàn tay đã vẽ */
+  keyed?: true;
 }
 
 /** Tên file của món cho tên thể hiện `món:<tên>` (`vali:2` → `vali`); tên không có `:` là chính nó */

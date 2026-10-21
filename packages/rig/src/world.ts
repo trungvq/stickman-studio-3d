@@ -3,6 +3,7 @@ import { act } from './act';
 import { carry as carryOn, fitHolding, grip as gripPose, hold, type Held, type Holding } from './attach';
 import { actHeld, holdRoles, leadGrip } from './core/act3';
 import type { GraspHand, GripFrame, HeldItemSpec, HoldAim, ReachHold } from './core/heldItem';
+import type { GraspFrame } from './core/graspSolve';
 import type { FingerRoles } from './core/heldFit';
 import { handDims } from './core/heldGeom';
 import { carrySpecOf } from './core/heldCarry';
@@ -283,9 +284,18 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     }
     return undefined;
   };
-  /** Món đặt trước: lần cầm mang khung cầm đã giải trên người `fig` (`ReachHold.solve`), như bàn tay `act` đặt */
+  /**
+   * Món đặt trước: lần cầm mang khung cầm đã giải trên người `fig` (`ReachHold.solve`), như bàn tay `act` đặt; lần cầm cũ
+   * theo món còn hoà (`from`) mang khung của nghiệm cũ (`was`)
+   */
   const placed = (fig: Figure, h: ReachHold | undefined) => {
-    if (h?.grasp?.mode !== 'item' || h.grasp.frame || !h.solve) return h;
+    if (!h) return h;
+    const fg = h.from?.grasp;
+    if (h.was && fg?.mode === 'item' && !fg.frame) {
+      const old = h.was.solve(fig.body);
+      if (old && 'G' in old.frame) h = { ...h, from: { ...h.from!, grasp: { ...fg, frame: old.frame as GraspFrame } } };
+    }
+    if (h.grasp?.mode !== 'item' || h.grasp.frame || !h.solve) return h;
     const sol = h.solve(fig.body);
     return sol ? { ...h, grasp: { ...h.grasp, frame: sol.frame } } : h;
   };
@@ -342,20 +352,25 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
   };
   /**
    * Món trong khung mang dựng lúc gắn (`Held.link`): liên kết của khung này lệch khỏi nó (đang hoà từ kiểu cũ `hold.from`,
-   * trường số của chỗ cầm nhóm trượt) thì đặt lệch đúng phần ấy. Món đặt trước ngồi ở `itemAt` của cảnh, không theo bàn tay
+   * trường số của chỗ cầm nhóm trượt) thì đặt lệch đúng phần ấy. Món đặt trước ngồi ở `itemAt` của cảnh, không theo bàn tay;
+   * lần cầm theo mốc (`grasp.keyed`) thì món theo bàn tay đã vẽ, như tay dẫn
    */
   const regrip = (p: Provided, w: Want, t: number) => {
     const o = p.object;
     o.position.set(0, 0, 0);
     o.quaternion.identity();
-    if (w.hold.grasp?.mode === 'item') return putItem(p, w, t);
+    if (w.hold.grasp?.mode === 'item' && !w.hold.grasp.keyed) return putItem(p, w, t);
     const link = p.on?.held.link;
     if (!link || !w.hand || (!w.hold.from && !w.hold.grasp)) return;
     const h = w.fig.hands?.[w.side];
     const [k, long] = [h?.scale ?? 1, h?.long ?? h?.scale ?? 1];
     const own = (G: GripFrame, c: readonly number[]): GripFrame => (h ? G : { ...G, p: [G.p[0] - c[0], G.p[1] - c[1], G.p[2] - c[2]] });
-    const b = leadGrip(w.hold, w.side, k, long, 1);
-    m4(own(link.G, link.center)).invert().multiply(m4(own(b.G, b.center))).decompose(o.position, o.quaternion, v3);
+    // khung đã giải của món đặt trước theo cỡ người `s` (như `act`): đưa về cỡ 1, cỡ người đã ở `fig.root`
+    const s = w.fig.root.scale.x;
+    const b = leadGrip(w.hold, w.side, k * s, long * s, s);
+    const G1: GripFrame = { R: b.G.R, p: [b.G.p[0] / s, b.G.p[1] / s, b.G.p[2] / s], u: b.G.u / s };
+    const c1 = [b.center[0] / s, b.center[1] / s, b.center[2] / s];
+    m4(own(link.G, link.center)).invert().multiply(m4(own(G1, c1))).decompose(o.position, o.quaternion, v3);
   };
   const _M = new THREE.Matrix4(), _R = new THREE.Matrix4(), _Q = new THREE.Quaternion(), _P = new THREE.Vector3(), _S = new THREE.Vector3();
   /** Món đặt trước ở `itemAt` của cảnh (thế giới rig → `root`), cỡ theo người cầm */

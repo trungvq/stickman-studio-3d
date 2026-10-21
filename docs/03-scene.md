@@ -1320,18 +1320,20 @@ vật three của món.
   trí và ý định giữa các mốc trong một quãng cầm thì hoà êm như mọi trường khác: đổi ý định là cổ tay xoay dần.
 - **Chỗ cầm nhóm và món đặt trước** ([11](11-nhom-cam.md#4-schema-cảnh)): `hold` là `"món@nhóm"` hay `{ item, group, … }`
   (`edge`, `along`, `thumb`, `variant`, `around`, … tuỳ nhóm; trường không khai thì rig giải hay lấy mặc định nhóm, và
-  `scene_probe` trả lựa chọn đã giải cùng nguồn của nó). Hai đường, theo món có mốc ở **`items[]`** hay không.
+  `scene_probe` trả lựa chọn đã giải cùng nguồn của nó). Hai đường, theo **từng lần cầm** có mốc món ở **`items[]`** hay không.
   `items[]` nằm ở cấp cảnh cạnh `cast`: mỗi mốc `{ t, cast, item, to | at, offset?, point?, face?, up?, roll?, ease? }` nói món
-  ở đâu, quay về đâu theo thời gian, mốc tay của người `cast` cầm nó. Món có mốc là **món đặt trước**: mốc tay chỉ khai
+  ở đâu, quay về đâu theo thời gian, mốc tay của người `cast` cầm nó. Lần cầm có mốc món (cùng món, cùng người cầm) trong
+  khoảng của nó là **món đặt trước**: mốc tay chỉ khai
   `hold` (không `to`, `at`, `offset`, `point`, `face`, `up`, `roll`, `keep` — lỗi `choice`), bàn tay, cổ tay, khuỷu và ngón do
-  rig suy từ món và chỗ cầm; các trường số của chỗ cầm (`along`, `slant`, `around`, …) hoà giữa hai mốc tay. Món không có mốc
-  là **tay dẫn**: mốc tay đặt bàn tay như mọi mốc `world.hands` (`to`/`at`, `point`), món theo bàn tay, ý định `face`/`up`/`roll`
+  rig suy từ món và chỗ cầm; các trường số của chỗ cầm (`along`, `slant`, `around`, …) hoà giữa hai mốc tay. Cầm một tay thì
+  bàn tay giải ở từng mốc món, giữa hai mốc hoà trong hệ thân người cầm và món đi theo bàn tay; cầm hai tay thì món ở đúng
+  chỗ khai mỗi khung ([11](11-nhom-cam.md#lần-cầm-theo-mốc)). Lần cầm không có mốc món là **tay dẫn**: mốc tay đặt bàn tay như mọi mốc `world.hands` (`to`/`at`, `point`), món theo bàn tay, ý định `face`/`up`/`roll`
   hay mặc định của nhóm. Một chỗ cầm nhóm hợp lệ khi món có khối hình cho nhóm với cỡ tay người cầm; `hold` dạng khác là lỗi
   zod kèm lệnh `stickman migrate-held` ([11](11-nhom-cam.md#8-chuyển-đổi)). Luật, hoà vào/ra lần cầm, báo `grasp` và `check` nhóm ở
   [11](11-nhom-cam.md#5-giải-tay-theo-món), [11](11-nhom-cam.md#7-luật-check-nhóm-held).
 - **Quãng hoà của lần cầm** (`HOLD_BLEND`, `0,3 s` sau mốc khai `hold`; lần cầm từ giây 0 thì không hoà). Món đặt trước hoà
-  bàn tay từ nghiệm cũ đóng băng ngay trước ranh giới (đổi chỗ cầm, buông) hay từ tay tự do (vừa cầm) sang nghiệm mới
-  ([11](11-nhom-cam.md#đổi-lần-cầm)). Tay dẫn đổi chỗ cầm trên cùng tay, cùng món: liên kết tay–món, tâm nắm và ý định hoà
+  bàn tay từ nghiệm cũ đóng băng ngay trước ranh giới (đổi chỗ cầm, buông, hay tay dẫn của cùng món chuyển sang theo món)
+  hay từ tay tự do (vừa cầm) sang nghiệm mới ([11](11-nhom-cam.md#đổi-lần-cầm)). Tay dẫn đổi chỗ cầm trên cùng tay, cùng món: liên kết tay–món, tâm nắm và ý định hoà
   từ chỗ cầm cũ sang chỗ mới, món xoay dần trong tay chứ không nhảy (`ReachHold.from`). Cầm món mới: tay phụ (`both`, đổi
   tay) đi từ chỗ nó đang ở (đích của nó hay hành động) tới chỗ cầm của nó trên món, và ý định của tay mang món vào dần từ
   bàn tay của hành động (`ReachHold.enter`).

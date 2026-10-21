@@ -1155,6 +1155,8 @@ export interface GraspReport {
   item: string;
   group: GroupId;
   mode: "item" | "hand";
+  /** Lần cầm một tay theo mốc: món theo bàn tay đã vẽ */
+  keyed?: true;
   t0: number;
   choice: GraspChoice;
   by: GraspBy;
@@ -1192,8 +1194,11 @@ export interface GraspOpts {
   phiPrev?: number;
   /** Giây bắt đầu lần cầm */
   t0?: number;
-  /** Mốc món sau `t0`: giá cộng ở các mốc trong `LATER_SPAN` giây, tối đa `LATER_MAX`, trọng số `LATER_W` */
+  /** Mốc món sau `t0`: giá cộng ở các mốc trong `span` giây, tối đa `laterMax`, trọng số `LATER_W` */
   later?: readonly GraspLater[];
+  /** Giây sau `t0` còn xét mốc món, mặc định `LATER_SPAN`; số mốc tối đa, mặc định `LATER_MAX` */
+  span?: number;
+  laterMax?: number;
   /** Đầu cao của cạnh đã xét ở mốc bắt đầu lần cầm; nhóm có `edge` thì cảnh phải khai `edge` */
   high?: V3;
   /** `false`: không giải, trường thiếu lấy mặc định của nhóm (tay dẫn); `edge` của tấm: đứng `bottom`, nằm cạnh phía tay */
@@ -1378,11 +1383,11 @@ export function chooseMissing(
     .filter(
       (x) =>
         x.t > t0 &&
-        x.t <= t0 + LATER_SPAN + 1e-9 &&
+        x.t <= t0 + (opts.span ?? LATER_SPAN) + 1e-9 &&
         x.pose.cast === pose.cast &&
         Math.abs(x.pose.s - pose.s) < 1e-9,
     )
-    .slice(0, LATER_MAX);
+    .slice(0, opts.laterMax ?? LATER_MAX);
   const missing = Object.keys(group.choices).filter(
     (k) => (FIELDS as readonly string[]).includes(k) && given[k as Field] === undefined,
   );

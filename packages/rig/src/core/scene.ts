@@ -38,7 +38,18 @@ import {
   type Channel,
 } from "./action";
 import type { Root } from "./types";
-import { bones3, cladHand, head3, markAt, trunk3, type ActCharacter, type Trunk3 } from "./act3";
+import {
+  actHandAt,
+  bones3,
+  cladHand,
+  head3,
+  markAt,
+  trunk3,
+  type ActCharacter,
+  type ActInput,
+  type Trunk3,
+} from "./act3";
+import { AIM_BEND, AIM_DEV, TURN_MAX } from "./arm3";
 import {
   armInput,
   armSeg,
@@ -102,6 +113,7 @@ import {
   type HoldTarget,
   type IntentTarget,
   type PlacedSolve,
+  type WasSolve,
   type ReachHold,
   type SceneHold,
   type SceneHoldGroup,
@@ -3507,7 +3519,10 @@ function supportRuns(rt: SceneRuntime, keys: HandKey[], side: HandSide): HoldRun
   for (const k of keys) {
     if (!holdKey(k)) continue;
     const L = holdRun(keys, lead, k.t);
-    const g = L && !holdRun(keys, side, k.t) && placedRun(rt, L) ? groupHold(L.hold) : undefined;
+    const g =
+      L && !holdRun(keys, side, k.t) && placedRun(rt, keys, lead, L)
+        ? groupHold(L.hold)
+        : undefined;
     const group = g && supportGroup(g);
     const key = group ? `${L!.since}|${group}` : undefined;
     if (cur && key === cur.key) continue;
@@ -3553,25 +3568,69 @@ function declared(g: SceneHoldGroup): GraspChoice {
   return out as GraspChoice;
 }
 
-/** Món có mốc ở `scene.items`: món đặt trước */
-const itemMarked = (rt: SceneRuntime, item: string): boolean =>
-  !!rt.items?.some((k) => k.item === item);
+/** Người mang chuỗi mốc tay `keys` */
+function ownerOf(rt: SceneRuntime, keys: HandKey[]): string | undefined {
+  return rt.cast.find((m) => m.world?.hands === keys)?.id;
+}
 
-/** Lần cầm nhóm của món đặt trước */
-const placedRun = (rt: SceneRuntime, run: HoldRun): boolean =>
-  itemMarked(rt, groupHold(run.hold).item);
+/** Mốc món của lần cầm và lần cầm ấy có theo mốc không (một tay, không tay nào khác cầm cùng món) */
+type RunMarks = { marks: SceneItemMark[]; keyed: boolean };
+const runMarksMemo = new WeakMap<HandKey[], Map<string, RunMarks>>();
 
 /**
- * Lần cầm món đặt trước vừa xong trên tay `side`, còn hoà ra ở `time` (`HOLD_BLEND` từ ranh giới): phần còn lại và bàn tay
- * của nó ngay trước ranh giới — nghiệm cũ đứng yên, không giải tiếp qua ranh giới (chuỗi `φ` của lần cầm đã xong có thể
- * nhảy nhánh khi món đi tiếp). docs/11-nhom-cam.md § Đổi lần cầm
+ * Mốc món (`scene.items`) của lần cầm `run`: cùng món, cùng người cầm, trong `[since, runEnd)`; tay phụ lấy của lần cầm tay
+ * dẫn. `keyed`: lần cầm một tay — không `both`, tay kia không cầm cùng món trong lần cầm — có mốc: bàn tay giải ở từng mốc,
+ * giữa hai mốc hoà trong hệ thân, món theo bàn tay vẽ. docs/11-nhom-cam.md § Lần cầm theo mốc
+ */
+function runMarks(rt: SceneRuntime, keys: HandKey[], side: HandSide, run: HoldRun): RunMarks {
+  if (run.lead) {
+    const L = holdRun(keys, run.lead, run.since);
+    return { marks: L ? runMarks(rt, keys, run.lead, L).marks : [], keyed: false };
+  }
+  let m = runMarksMemo.get(keys);
+  if (!m) runMarksMemo.set(keys, (m = new Map()));
+  const key = `${side}|${run.since}`;
+  const hit = m.get(key);
+  if (hit) return hit;
+  const id = ownerOf(rt, keys);
+  const item = groupHold(run.hold).item;
+  const end = runEnd(keys, side, run);
+  const marks = (rt.items ?? []).filter(
+    (k) => k.item === item && k.cast === id && k.t >= run.since - 1e-9 && k.t < end,
+  );
+  const inRun = keys.filter(
+    (k) => k.t >= run.since && k.t < end && holdRun(keys, side, k.t)?.since === run.since,
+  );
+  const other = otherSide(side);
+  const both = inRun.some((k) => {
+    const h = k[side]?.hold;
+    return !!h && !!groupHold(h).both;
+  });
+  const shared = [run.since, ...inRun.map((k) => k.t)].some((t) => {
+    const o = holdRun(keys, other, t);
+    return !!o && sceneHoldRef(o.hold).item === item;
+  });
+  const out = { marks, keyed: marks.length > 0 && !both && !shared };
+  m.set(key, out);
+  return out;
+}
+
+/** Lần cầm nhóm theo món: có mốc món trong lần cầm (docs/11-nhom-cam.md mục 4) */
+const placedRun = (rt: SceneRuntime, keys: HandKey[], side: HandSide, run: HoldRun): boolean =>
+  runMarks(rt, keys, side, run).marks.length > 0;
+
+/**
+ * Lần cầm vừa xong trên tay `side`, còn hoà ra ở `time` (`HOLD_BLEND` từ ranh giới): phần còn lại và bàn tay của nó ngay
+ * trước ranh giới — nghiệm cũ đứng yên, không giải tiếp qua ranh giới (chuỗi `φ` của lần cầm đã xong có thể nhảy nhánh khi
+ * món đi tiếp). Lần cầm theo món, hay lần cầm tay dẫn khi lần cầm mới theo món của cùng món. docs/11-nhom-cam.md § Đổi lần
+ * cầm
  */
 function placedWas(
   host: GraspHost,
   keys: HandKey[],
   side: HandSide,
   time: number,
-): { run: HoldRun; was: { k: number; solve: PlacedSolve } } | undefined {
+): { run: HoldRun; was: { k: number; solve: WasSolve } } | undefined {
   const { rt, id } = host;
   for (let i = keys.length - 1; i >= 0; i--) {
     const k = keys[i];
@@ -3579,8 +3638,25 @@ function placedWas(
     if (time - k.t >= HOLD_BLEND) return undefined;
     const prev = effRun(rt, keys, side, k.t - 1e-6);
     if (sameRun(prev, effRun(rt, keys, side, k.t))) continue;
-    if (!prev || !placedRun(rt, prev)) return undefined;
+    if (!prev) return undefined;
     const t0 = k.t - 1e-6;
+    if (!placedRun(rt, keys, side, prev)) {
+      // tay dẫn sang lần cầm theo món của cùng món: hoà từ bàn tay đã vẽ ngay trước ranh giới
+      const now = effRun(rt, keys, side, k.t);
+      if (
+        !now ||
+        !placedRun(rt, keys, side, now) ||
+        sceneHoldRef(now.hold).item !== sceneHoldRef(prev.hold).item
+      )
+        return undefined;
+      const solve: WasSolve = (c) =>
+        actHandAt(
+          c,
+          sceneAt(rt, id, t0, rt.heights[id] ?? 1, rt.bodies[id] ?? BODY3) as ActInput,
+          sideSign(side),
+        );
+      return { run: prev, was: { k: 1 - smoothstep((time - k.t) / HOLD_BLEND), solve } };
+    }
     // hướng món của tay phụ theo nhóm tay dẫn
     const g = groupHold(prev.lead ? holdRun(keys, prev.lead, t0)!.hold : prev.hold);
     const solve: PlacedSolve = (c) => {
@@ -3730,10 +3806,17 @@ function holdGraspAt(
   run: HoldRun,
 ): HoldGrasp {
   const g = groupHold(run.hold);
-  const mode = itemMarked(host.rt, g.item) ? "item" : "hand";
+  const rm = runMarks(host.rt, keys, side, run);
+  const mode = rm.marks.length ? "item" : "hand";
   const base = mode === "item" ? {} : handChoice(host.rt.held, g, side, host.height);
   const { hold } = slideHold(keys, side, time, run, base);
-  return { hold, mode, choice: { ...base, ...declared(hold) }, t0: run.since };
+  return {
+    hold,
+    mode,
+    choice: { ...base, ...declared(hold) },
+    t0: run.since,
+    ...(rm.keyed && { keyed: true as const }),
+  };
 }
 
 /** Một lần cầm món đặt trước của một tay: lựa chọn giải ở `t0`, chuỗi `φ` mẫu cách `HOLD_SLEW_STEP` từ `t0` */
@@ -3743,7 +3826,24 @@ interface GraspRun {
   t0: number;
   phiPrev?: number;
   chain: { t: number; sol: ArmSol }[];
+  /** Lần cầm theo mốc: nghiệm ở từng mốc món, thay cho chuỗi `φ` */
+  keyed?: KeyedMark[];
 }
+
+/** Lần cầm theo mốc ở một mốc món: cổ tay `W` (so với vai bên ấy) và khung bàn tay `R` trong hệ thân (`Rr`), `φ`, góc cổ tay */
+interface KeyedMark {
+  t: number;
+  ease?: SceneItemMark["ease"];
+  W: V3;
+  R: M3;
+  phi: number;
+  /** Xoay, gập, lệch đã kẹp; phần vượt kẹp */
+  wrist: number[];
+  over: number[];
+}
+
+/** Lần cầm theo mốc: số mốc sau mốc đầu cộng vào giá của lựa chọn (`chooseMissing`) */
+const KEYED_MAX = 8;
 
 /** Lần cầm món đặt trước đã giải, theo runtime: Remotion vẽ khung nhảy cóc thì chuỗi vẫn tính từ `t0`, ra cùng số */
 const graspRuns = new WeakMap<SceneRuntime, Map<string, GraspRun>>();
@@ -3789,8 +3889,9 @@ function itemGroupDefaults(
 }
 
 /**
- * Lựa chọn của lần cầm `run` món đặt trước, giải một lần ở mốc bắt đầu (`chooseMissing`, cộng các mốc món trong
- * `LATER_SPAN` giây còn trong lần cầm); `φ_trước` là mẫu cuối của lần cầm món đặt trước liền trước trên cùng tay
+ * Lựa chọn của lần cầm `run` món đặt trước, giải một lần (`chooseMissing`): lần cầm theo mốc ở mốc món đầu, cộng các mốc
+ * sau của lần cầm (tối đa `KEYED_MAX`), rồi giải bàn tay ở từng mốc (`KeyedMark`); lần cầm khác ở mốc bắt đầu, cộng các mốc
+ * món trong `LATER_SPAN` giây còn trong lần cầm. `φ_trước` là `φ` cuối của lần cầm món đặt trước liền trước trên cùng tay
  */
 function graspStart(
   rt: SceneRuntime,
@@ -3805,35 +3906,121 @@ function graspStart(
   const hit = m.get(key);
   if (hit) return hit;
   const keys = handKeys(rt, id);
+  const rm = runMarks(rt, keys, side, run);
+  const marks = rm.keyed ? rm.marks : undefined;
   const t0 = run.since;
   const holder = (t: number) => graspCtx(holderTrunk(rt, id, t, o), rt.held);
-  const ctx = holder(t0);
+  // lần cầm theo mốc giải lựa chọn ở mốc món đầu: trước mốc ấy bàn tay giữ nghiệm của nó
+  const ts = marks ? marks[0].t : t0;
+  const ctx = holder(ts);
   const g = run.lead
     ? supportAt(rt, id, run, ctx, o)
     : groupHold((holdRun(keys, side, t0) ?? run).hold);
   const before = effRun(rt, keys, side, t0 - 1e-6);
   const phiPrev =
-    before && placedRun(rt, before) ? lastPhi(rt, id, side, before, t0, o) : undefined;
+    before && placedRun(rt, keys, side, before) ? lastPhi(rt, id, side, before, t0, o) : undefined;
   const poseAt = (t: number) => itemAt(rt, g.item, t, o)!;
   const end = runEnd(keys, side, run);
-  const later: GraspLater[] = (rt.items ?? [])
-    .filter((k) => k.item === g.item && k.t > t0 && k.t <= t0 + LATER_SPAN + 1e-9 && k.t < end)
-    .map((k) => {
-      const other = placedOther(rt, id, side, k.t, o);
-      return { t: k.t, pose: poseAt(k.t), ctx: holder(k.t), ...(other && { other }) };
-    });
-  const { elbow } = slideHold(keys, side, t0, run, {});
-  const other = placedOther(rt, id, side, t0, o);
-  const sol = chooseMissing(ctx, g, poseAt(t0), sideSign(side), {
-    t0,
+  const after = marks
+    ? marks.slice(1, 1 + KEYED_MAX)
+    : (rt.items ?? []).filter(
+        (k) => k.item === g.item && k.t > t0 && k.t <= t0 + LATER_SPAN + 1e-9 && k.t < end,
+      );
+  const later: GraspLater[] = after.map((k) => {
+    const other = placedOther(rt, id, side, k.t, o);
+    return { t: k.t, pose: poseAt(k.t), ctx: holder(k.t), ...(other && { other }) };
+  });
+  const { elbow } = slideHold(keys, side, ts, run, {});
+  const other = placedOther(rt, id, side, ts, o);
+  const sol = chooseMissing(ctx, g, poseAt(ts), sideSign(side), {
+    t0: ts,
     later,
+    ...(marks && { span: Infinity, laterMax: KEYED_MAX }),
     ...(phiPrev !== undefined && { phiPrev }),
     ...(elbow && { elbow }),
     ...(other && { other }),
   });
   const out: GraspRun = { sol, ctx, t0, ...(phiPrev !== undefined && { phiPrev }), chain: [] };
+  if (marks) {
+    // mỗi mốc: bàn tay trên món ở mốc, `φ` liền với mốc trước; lưu trong hệ thân (vai bên ấy, `Rr`)
+    const keyed: KeyedMark[] = [];
+    let prev = phiPrev;
+    for (const k of marks) {
+      const q = graspSample(rt, id, side, run, out, k.t, o);
+      const a = solvePhi(q.inp, q.Wp, q.Rw, prev, placedOther(rt, id, side, k.t, o), q.elbow);
+      const Rt = tr3(q.inp.Rr);
+      const w = a.wrist;
+      keyed.push({
+        t: k.t,
+        ease: k.ease,
+        W: matVec(Rt, sub3(q.Wp, q.inp.S)),
+        R: matMul(Rt, q.Rw),
+        phi: a.phi,
+        wrist: [clampTo(w.turn, TURN_MAX), clampTo(w.bend, AIM_BEND), clampTo(w.dev, AIM_DEV)],
+        over: [w.over.turn, w.over.bend, w.over.dev],
+      });
+      prev = a.phi;
+    }
+    out.keyed = keyed;
+  }
   m.set(key, out);
   return out;
+}
+
+const clampTo = (v: number, L: number) => Math.max(-L, Math.min(L, v));
+const wrapDeg = (a: number) => ((((a + 180) % 360) + 360) % 360) - 180;
+const lerpN = (a: readonly number[], b: readonly number[], f: number) =>
+  a.map((x, i) => x + (b[i] - x) * f);
+
+/** Hai mốc kề `time` của lần cầm theo mốc và hệ số hoà theo `ease` của mốc sau; ngoài khoảng mốc thì mốc gần nhất */
+function keyedSpan(ks: readonly KeyedMark[], time: number) {
+  let i = 0;
+  while (i + 1 < ks.length && ks[i + 1].t <= time) i++;
+  const a = ks[i];
+  const b = time > a.t ? ks[i + 1] : undefined;
+  const f = b ? EASES[b.ease ?? "smooth"]((time - a.t) / (b.t - a.t)) : 0;
+  return { a, b: b ?? a, f };
+}
+
+/** `φ` của lần cầm theo mốc ở `time`: đường ngắn nhất giữa hai mốc kề */
+function keyedPhi(ks: readonly KeyedMark[], time: number): number {
+  const { a, b, f } = keyedSpan(ks, time);
+  return wrapDeg(a.phi + wrapDeg(b.phi - a.phi) * f);
+}
+
+/**
+ * Bàn tay của lần cầm theo mốc ở `time` (như `solveActing` của `act3.ts`): cổ tay dời thẳng và bàn tay quay đường ngắn nhất
+ * trong hệ thân, đổi ra thế giới bằng thân ở chính `time`; `φ` đường ngắn nhất; góc cổ tay đã kẹp hoà thẳng
+ */
+function keyedArm(
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  run: HoldRun,
+  r: GraspRun,
+  time: number,
+  o: ItemOptions,
+) {
+  const { a, b, f } = keyedSpan(r.keyed!, time);
+  const T = holderTrunk(rt, id, time, o);
+  const { elbow, frame } = graspFrameAt(rt, id, side, run, r, time, T, T.s);
+  const inp = armInput(T, sideSign(side));
+  const Wp = add3(inp.S, matVec(inp.Rr, lerpN(a.W, b.W, f) as V3));
+  const Rw = matMul(inp.Rr, mixRotation(a.R, b.R, f));
+  const other = placedOther(rt, id, side, time, o);
+  const arm = evalPhi(inp, Wp, Rw, keyedPhi(r.keyed!, time), undefined, other, elbow);
+  const [turn, bend, dev] = lerpN(a.wrist, b.wrist, f);
+  const over = lerpN(a.over, b.over, f);
+  return {
+    inp,
+    Wp,
+    Rw,
+    frame,
+    arm: {
+      ...arm,
+      wrist: { turn, bend, dev, over: { turn: over[0], bend: over[1], dev: over[2] } },
+    },
+  };
 }
 
 /**
@@ -3857,7 +4044,7 @@ function supportAt(
   return { ...c, item: g.item, group: sc.group } as SceneHoldGroup;
 }
 
-/** `φ` mẫu cuối (không trước `t1`) của lần cầm `run` */
+/** `φ` mẫu cuối (không trước `t1`) của lần cầm `run`; lần cầm theo mốc thì `φ` ở `t1` */
 function lastPhi(
   rt: SceneRuntime,
   id: string,
@@ -3867,9 +4054,38 @@ function lastPhi(
   o: ItemOptions,
 ): number {
   const r = graspStart(rt, id, side, run, o);
+  if (r.keyed) return keyedPhi(r.keyed, t1);
   const n = Math.max(0, Math.ceil((t1 - r.t0) / HOLD_SLEW_STEP - 1e-9));
   chainTo(rt, id, side, run, r, n, o);
   return r.chain[n].sol.phi;
+}
+
+/** Khung cầm ở `time` của lần cầm đã giải `r` (trường số đã hoà) trên thân `T`, món cỡ `s`, kèm hướng khuỷu của mốc tay */
+function graspFrameAt(
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  run: HoldRun,
+  r: GraspRun,
+  time: number,
+  T: Trunk3,
+  s: number,
+) {
+  const { hold, elbow } = slideHold(handKeys(rt, id), side, time, run, r.sol.choice);
+  const choice = { ...r.sol.choice, ...declared(hold) };
+  const spec = itemSpec(rt, hold.item);
+  const frame = graspFrame(
+    spec,
+    itemGeom(spec),
+    { ...choice, group: hold.group },
+    sideSign(side),
+    r.ctx.dims,
+    r.ctx.k * T.s,
+    r.ctx.long * T.s,
+    s,
+    r.sol.high,
+  );
+  return { elbow, frame };
 }
 
 /** Món, khung cầm, cổ tay, khung bàn tay và tay ở `time` của lần cầm đã giải `r` */
@@ -3882,25 +4098,11 @@ function graspSample(
   time: number,
   o: ItemOptions,
 ) {
-  const { hold, elbow } = slideHold(handKeys(rt, id), side, time, run, r.sol.choice);
-  const choice = { ...r.sol.choice, ...declared(hold) };
-  const spec = itemSpec(rt, hold.item);
-  const pose = itemAt(rt, hold.item, time, o)!;
+  const pose = itemAt(rt, groupHold(run.hold).item, time, o)!;
   const T = holderTrunk(rt, id, time, o);
-  const sd = sideSign(side);
-  const frame = graspFrame(
-    spec,
-    itemGeom(spec),
-    { ...choice, group: hold.group },
-    sd,
-    r.ctx.dims,
-    r.ctx.k * T.s,
-    r.ctx.long * T.s,
-    pose.s,
-    r.sol.high,
-  );
+  const { elbow, frame } = graspFrameAt(rt, id, side, run, r, time, T, pose.s);
   const { Wp, Rw } = handFromItem(pose.R, pose.P, pose.s, frame.G);
-  return { inp: armInput(T, sd), Wp, Rw, elbow, frame };
+  return { inp: armInput(T, sideSign(side)), Wp, Rw, elbow, frame };
 }
 
 /** Chuỗi `φ` của `r` tới mẫu `n`: mẫu `i` ở `t0 + i · HOLD_SLEW_STEP` lấy `φ_trước` là mẫu `i − 1` (như `phiChain`) */
@@ -3974,10 +4176,25 @@ function graspArmAt(
   o: ItemOptions,
   run = effRun(rt, handKeys(rt, id), side, time),
 ): { sol: GraspAtTime; inp: ArmInput } | undefined {
-  if (!run || !placedRun(rt, run)) return undefined;
+  if (!run || !placedRun(rt, handKeys(rt, id), side, run)) return undefined;
   // `trunks` là thân ở đúng `time`: mẫu của chuỗi ở giây khác dựng thân riêng
   const at = { ...o, trunks: undefined };
   const r = graspStart(rt, id, side, run, at);
+  if (r.keyed) {
+    const k = keyedArm(rt, id, side, run, r, time, o);
+    return {
+      sol: {
+        ...r.sol,
+        choice: k.frame.choice,
+        frame: k.frame,
+        Wp: k.Wp,
+        Rw: k.Rw,
+        arm: k.arm,
+        t0: r.t0,
+      },
+      inp: k.inp,
+    };
+  }
   chainTo(rt, id, side, run, r, Math.max(0, Math.floor((time - r.t0) / HOLD_SLEW_STEP)) + 1, at);
   const q = graspSample(rt, id, side, run, r, time, o);
   const other = placedOther(rt, id, side, time, o);
@@ -4042,7 +4259,14 @@ function checkHolds(
   items: SceneItemMark[] = [],
   dims: () => HandDims = () => holderDims(1),
 ) {
-  const marked = (item: string) => items.some((m) => m.item === item);
+  // lần cầm có mốc món của chính người ấy: bàn tay suy từ món
+  const marked = (side: HandSide, run: HoldRun) => {
+    const item = groupHold(run.hold).item;
+    const end = runEnd(keys, side, run);
+    return items.some(
+      (m) => m.item === item && m.cast === who && m.t >= run.since - 1e-9 && m.t < end,
+    );
+  };
   for (const k of keys)
     for (const side of ["right", "left"] as const) {
       const h = k[side];
@@ -4054,7 +4278,7 @@ function checkHolds(
           `${where} (lỗi \`choice\`): \`${g.item}@${g.group}\` khai \`both\` mà tay kia cũng cầm ở giây này — bỏ \`both\` hay \`hold\` của tay kia`,
         );
       if (!h) continue;
-      if (g && marked(g.item)) {
+      if (g && marked(side, cur!)) {
         const bad = [
           ...PLACED_TARGET.filter((f) => h[f] !== undefined),
           ...(h.hold && typeof h.hold === "object"
@@ -4063,7 +4287,7 @@ function checkHolds(
         ];
         if (bad.length)
           fail(
-            `${where} (lỗi \`choice\`): \`${g.item}\` có mốc ở \`items\` — bàn tay suy từ món, mốc tay không khai ${bad.map((f) => `\`${f}\``).join(", ")} (docs/11-nhom-cam.md#chỗ-cầm)`,
+            `${where} (lỗi \`choice\`): lần cầm \`${g.item}\` có mốc ở \`items\` — bàn tay suy từ món, mốc tay không khai ${bad.map((f) => `\`${f}\``).join(", ")} (docs/11-nhom-cam.md#chỗ-cầm)`,
           );
       }
       if (h.hold) {

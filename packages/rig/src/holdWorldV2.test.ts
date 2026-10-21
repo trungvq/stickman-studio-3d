@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { body3 } from './core/figure3d';
 import { parseHeldItem, type HeldItemSpec, type ReachHold } from './core/heldItem';
 import { holdLinkFrame } from './core/holdLink';
+import { actHeld, type ActInput } from './core/act3';
 import { itemAt, parseScene, resolveScene, sceneAt } from './core/scene';
 import { defaultCharacter, parseCharacter } from './core/schema';
 import { fitHolding } from './attach';
@@ -14,7 +15,8 @@ import bangGia from './core/__fixtures__/held-v2/bang-gia.json';
 import dienThoai from './core/__fixtures__/held-v2/dien-thoai.json';
 import tuiHieu from './core/__fixtures__/held-v2/tui-hieu.json';
 
-// Chỗ cầm nhóm (`món@nhóm`) gắn món three qua `holdLink`: món đặt trước ngồi ở `itemAt`, tay dẫn mang món theo bàn tay
+// Chỗ cầm nhóm (`món@nhóm`) gắn món three qua `holdLink`: món đặt trước hai tay ngồi ở `itemAt`; cầm một tay theo mốc và
+// tay dẫn thì món theo bàn tay
 
 beforeAll(() => {
   const ctx = new Proxy({}, { get: (_t, k) => (k === 'measureText' ? () => ({ width: 0 }) : () => undefined), set: () => true });
@@ -88,20 +90,63 @@ function inWrist(o: THREE.Object3D, wrist: THREE.Object3D) {
 }
 
 describe('món đặt trước (`mode: "item"`)', () => {
-  it('món ngồi đúng `itemAt` của cảnh (≤ 0,01 đv rig), cả khi tay không với tới', () => {
+  it('cầm một tay theo mốc: món theo bàn tay đã vẽ (`actHeld`), ở mốc trùng `itemAt`; ngoài tầm thì món theo tay', () => {
     const { w, rt, objects } = world([{ t: 0, right: { hold: SHEET } }], [mark(0), mark(1, [34, -8, 4]), mark(2, [140, -8, 4])]);
     const o = objects['bang-gia'];
-    for (const t of [0, 0.4, 1.2, 2.5]) {
+    const rel0 = inWrist(o, w.pose(0).nguoi.arms[-1].wrist);
+    for (const t of [0, 0.4, 1, 1.5, 2.5]) {
       const fig = w.pose(t).nguoi;
       expect(fig.holding?.[-1]?.object).toBe(o);
-      const want = itemAt(rt, 'bang-gia', t, { chars: { nguoi: fig.body } })!;
+      const sp = sceneAt(rt, 'nguoi', t, H, bodies.nguoi);
+      const drawn = actHeld(fig.body, sp as ActInput).R!;
       const got = rigPose(o);
-      expect(dist(got.P, want.P)).toBeLessThanOrEqual(0.01);
-      for (const i of [0, 1, 2]) expect(dist(got.axes[i], col(want.R, i))).toBeLessThan(1e-6);
+      expect(dist(got.P, drawn.at)).toBeLessThanOrEqual(0.01);
+      // `actHeld.R` là khung three: trục rig đảo y, z
+      for (const i of [0, 1, 2]) {
+        const c = col(drawn.R, i);
+        expect(dist(got.axes[i], [c[0], -c[1], -c[2]])).toBeLessThan(1e-6);
+      }
+      // món dính tay: cùng chỗ trong khung cổ tay suốt lần cầm
+      const rel = inWrist(o, fig.arms[-1].wrist);
+      expect(rel.p.distanceTo(rel0.p)).toBeLessThan(1e-6);
+      expect(rel.q.angleTo(rel0.q)).toBeLessThan(1e-6);
+      if (t === 0 || t === 1) {
+        const want = itemAt(rt, 'bang-gia', t, { chars: { nguoi: fig.body } })!;
+        expect(dist(got.P, want.P)).toBeLessThanOrEqual(0.01);
+      }
     }
-    // ngoài tầm: bàn tay hở khỏi món, món vẫn ở chỗ khai
+    // ngoài tầm: món theo bàn tay duỗi, không ở chỗ khai; `check` báo `reach` theo khe
     const fig = w.pose(2.5).nguoi;
     expect(fig.aim?.R.hold?.grasp?.arm.gap ?? 0).toBeGreaterThan(1);
+    expect(dist(rigPose(o).P, itemAt(rt, 'bang-gia', 2.5, { chars: { nguoi: fig.body } })!.P)).toBeGreaterThan(1);
+  });
+
+  it('đổi đường theo mốc ↔ tay dẫn của cùng món: món vẽ trùng `actHeld` cả trong quãng hoà', () => {
+    const hands = [
+      { t: 0, right: { hold: SHEET } },
+      { t: 1.5, right: { to: 'chest', offset: [36, -20, 10], point: 'grip', hold: { ...SHEET, regrip: true } } },
+      { t: 3, right: { hold: { ...SHEET, regrip: true } } },
+    ];
+    const { w, rt, objects } = world(hands, [mark(0.5), mark(1.2, [36, -10, 6]), mark(3.4, [28, 4, -4])]);
+    const o = objects['bang-gia'];
+    for (const t of [1.4, 1.55, 1.7, 2.2, 3.05, 3.2, 3.5]) {
+      const fig = w.pose(t).nguoi;
+      const drawn = actHeld(fig.body, sceneAt(rt, 'nguoi', t, H, bodies.nguoi) as ActInput).R!;
+      expect(dist(rigPose(o).P, drawn.at)).toBeLessThanOrEqual(0.01);
+    }
+  });
+
+  it('hai tay trên món đặt trước: món ngồi đúng `itemAt` của cảnh', () => {
+    const { w, rt, objects } = world(
+      [{ t: 0, right: { hold: { ...SHEET, edge: 'left', along: 0.5 } }, left: { hold: { ...SHEET, edge: 'right', along: 0.5 } } }],
+      [mark(0, [35, 0, 0]), mark(1, [38, -6, 2])],
+    );
+    const o = objects['bang-gia'];
+    for (const t of [0.4, 1.2]) {
+      const fig = w.pose(t).nguoi;
+      const want = itemAt(rt, 'bang-gia', t, { chars: { nguoi: fig.body } })!;
+      expect(dist(rigPose(o).P, want.P)).toBeLessThanOrEqual(0.01);
+    }
   });
 
   it('hai tay trên một món đặt trước: món gắn một lần, cả hai tay ghi lần cầm của mình', () => {
