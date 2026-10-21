@@ -82,6 +82,7 @@ export const HELD_PINCHES: readonly HandPose[] = [
   "tripod",
   "chopsticks",
   "card",
+  "edgePinch",
 ];
 
 /**

@@ -260,6 +260,13 @@ const viTri = new Map();
   const KHOE = { to: "chest", offset: [45, -20, 25], point: "grip" };
   /** Thẻ cầm xem: trước ngực, bàn tay giữa ngực như ảnh mẫu `the-phong-xem`, hướng mặc định của nhóm */
   const XEM = { to: "chest", offset: [55, -25, 15] };
+  /** Thẻ nằm phẳng trên mặt ngang trước bụng (mặt bàn đứng ngang hông), mặt trước ngửa, mép trên ra xa */
+  const BAN = (spec) => ({
+    to: "hip",
+    offset: [55, 5, 0],
+    face: { axis: spec.front ?? "front", toward: "up" },
+    roll: { axis: spec.top ?? "top", toward: "forward" },
+  });
   /** Tay dẫn duỗi ra trước qua quầy */
   const DUA_XA = { to: "chest", offset: [95, -20, 15], point: "grip" };
   /** Đũa không có hướng mặc định: ngọn ra trước chúc 30°, hai que xếp chéo xuống trái để cổ tay và khuỷu không vượt kẹp */
@@ -513,6 +520,20 @@ const viTri = new Map();
           hands: { right: { ...DUA_XA, ...H({ edge: "left", thumb: front, ...ngua("edgeR") }) } },
         },
         { ma: "tay-dan", ten: "tay dẫn", hands: { right: { ...TAY_DAN, ...H() } } },
+        { ma: "ban", ten: "nhặt trên bàn (rig chọn)", mark: BAN(spec), hands: { right: H() } },
+        {
+          ma: "ban-trai",
+          ten: "nhặt trên bàn, tay trái (rig chọn)",
+          mark: BAN(spec),
+          lead: "left",
+          hands: { left: H() },
+        },
+        {
+          ma: "ban-lateral",
+          ten: "nhặt trên bàn, kẹp bên (lateral)",
+          mark: BAN(spec),
+          hands: { right: H({ variant: "lateral" }) },
+        },
       );
     }
     if (group === "chopsticks")

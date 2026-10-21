@@ -94,6 +94,13 @@ export interface VariantSpec {
    * ngẩng của hướng từ tâm nắm tới tâm khối hình
    */
   upright?: boolean;
+  /**
+   * Bề rộng tấm từ cạnh được cầm sang cạnh đối diện (`acrossOf`), lần `W`: ngoài miền thì biến thể không áp ở cạnh ấy
+   * (kẹp đầu ngón qua hai mép không mở tới, hay không khép đủ)
+   */
+  across?: readonly [number, number];
+  /** Món đặt trước: `chooseMissing` cộng giá lún da của bàn tay đúng khung cầm (như nhóm `SINK_GROUPS`) */
+  sink?: boolean;
 }
 
 /** `upright`: trọng số giá thân món không ở trên bàn tay */
@@ -143,6 +150,8 @@ export interface RangeChoice {
   byVariant?: Record<string, [number, number]>;
   /** Lưới rig thử khi cảnh không khai, thay lưới mặc định của trường (`chooseMissing`) */
   grid?: readonly number[];
+  /** Lưới theo biến thể, đè `grid` */
+  gridByVariant?: Record<string, readonly number[]>;
 }
 
 export type Choice = NamesChoice | RangeChoice;
@@ -326,6 +335,32 @@ export const EDGE_MIN = 0.6;
 export const longEdges = (f: SlabFeature, h: HandDims) =>
   f.edges.filter((e) => e.len >= EDGE_MIN * h.W);
 
+/** Bề rộng tấm từ cạnh `edge` sang cạnh có pháp tuyến ngoài ngược nhất, đo theo pháp tuyến cạnh; không có cạnh thì `undefined` */
+export function acrossOf(f: SlabFeature, edge: SideName): number | undefined {
+  const ed = f.edges.find((x) => x.name === edge);
+  if (!ed) return undefined;
+  const op = f.edges.reduce((a, b) => (dot3(b.m, ed.m) < dot3(a.m, ed.m) ? b : a));
+  return dot3(sub3(ed.at, op.at), ed.m);
+}
+
+/**
+ * Bề rộng ở cạnh `edge` khi biến thể `variant` có `across` mà bề rộng ngoài miền (cạnh không có trên tấm: `NaN`); áp được
+ * hay biến thể không có `across` thì `undefined`
+ */
+export function acrossMiss(
+  group: GroupSpec,
+  variant: string,
+  f: Feature,
+  edge: SideName | number | undefined,
+  dims: HandDims,
+): number | undefined {
+  const r = group.variants[variant]?.across;
+  if (!r || f.kind !== "slab" || edge === undefined) return undefined;
+  const w = typeof edge === "string" ? acrossOf(f, edge) : undefined;
+  if (w === undefined) return NaN;
+  return w >= r[0] * dims.W && w <= r[1] * dims.W ? undefined : w;
+}
+
 /** Thụt tâm nắm vào trong tấm, đơn vị món, cố định mọi cỡ tay (fixture của từng biến thể) */
 export const SHEET_INSET = { pinch: 2.5, flat: 5, rim: 3.2 } as const;
 /** `flat`: khe đệm ngón cái dáng `edge` – mặt lòng tay, lần `W` (0,24 ở cỡ k 1,75 dọc 1,545; 0,25 ở k 2 dọc 1,813) */
@@ -387,6 +422,17 @@ export function tooThick(
   const t = Math.min(...edges.map((e) => edgeThick(f, e, inset, shape)));
   return t > max * dims.W ? t : undefined;
 }
+
+/**
+ * `card` `edges`: dáng `edgePinch` (khép) ở bề rộng `EDGES_RANGE[0]` lần `W` hoà sang dáng mở (gốc trỏ – út duỗi bớt, ngón cái
+ * dạng rộng) ở `EDGES_RANGE[1]`: khe da đệm cái – đệm trỏ dọc đường kẹp theo bề rộng, khớp ở 1,05 và 1,2·W (cỡ tay 1,75 – 2)
+ */
+const EDGES_OPEN: PoseRef = { pose: "edgePinch", knuckle: -25, tip: -5, thumb: [85, 25, 0, 5] };
+export const EDGES_RANGE: [number, number] = [-0.07, 1.38];
+/** `edges`: bề rộng tấm qua hai mép được kẹp, lần `W` */
+export const EDGES_ACROSS = [0.9, 1.35] as const;
+/** `edges`: ngón ép chỉ cuộn thêm ngần này độ để khép khe tới mép */
+const EDGES_CURL = 20;
 
 /** Ngón cái `pinch`: khép theo trỏ, ngọn duỗi ngược để đầu ngón đè mặt trước mà đốt gốc (da phình to) tránh mép */
 const PINCH_THUMB = [0, 10, 10, -20] as const;
@@ -483,13 +529,45 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
         curl: 15,
         upright: true,
       },
+      edges: {
+        frame: "nf",
+        pose: {
+          open: EDGES_OPEN,
+          closed: { pose: "edgePinch" },
+          by: "width",
+          unit: "W",
+          range: EDGES_RANGE,
+        },
+        roles: roles("press", "support", "free", { index: "press" }),
+        curl: EDGES_CURL,
+        across: EDGES_ACROSS,
+        sink: true,
+      },
     },
     choices: {
       part: PART,
       edge: EDGE,
-      along: ALONG,
+      // `edges`: ngón cái ở trung điểm cạnh trừ khi cảnh khai
+      along: range(0, 1, {
+        default: 0.5,
+        names: ["corner", "low", "mid", "high"],
+        gridByVariant: { edges: [0.5] },
+      }),
       thumb: names(undefined, { from: "holder" }),
-      slant: range(-90, 90, { default: 0, names: ["in", "low", "high"], grid: [-40, 0, 40] }),
+      variant: names(["lateral", "edges"], { default: "lateral" }),
+      slant: range(-90, 90, {
+        default: 0,
+        names: ["in", "low", "high"],
+        grid: [-40, 0, 40],
+        byVariant: { lateral: [-90, 90], edges: [-30, 30] },
+        gridByVariant: { edges: [-15, 0, 15] },
+      }),
+      // `edges`: phía ngón cái nâng quá 0 thì áp út, út và mép lòng tay hạ xuống mặt thẻ
+      tilt: range(-30, 15, {
+        default: 0,
+        byVariant: { lateral: [0, 0], edges: [-30, 15] },
+        gridByVariant: { edges: [-20, -10, 0] },
+      }),
     },
     hands: "one",
     // mặt thẻ về người cầm, ngửa `CARD_RISE`: ngửa hơn thì kẹp bên chỉ tới được bằng khuỷu gập ngược hay cổ tay vượt kẹp
@@ -1245,6 +1323,24 @@ export function checkChoice(
     bad(
       `biến thể \`${v}\` chỉ áp trên ${kinds.map((k) => `\`${k}\``).join(", ")} (${byEdge.map(describe).join(", ")})`,
     );
+  const across = v !== undefined ? spec.variants[v]?.across : undefined;
+  if (v !== undefined && across && byEdge.length) {
+    const slabs = byEdge.filter((f): f is SlabFeature => f.kind === "slab");
+    const names = (f: SlabFeature) =>
+      h.edge !== undefined ? [h.edge as SideName] : f.edges.map((e) => e.name);
+    const fit = slabs.flatMap((f) =>
+      names(f).filter((e) => acrossMiss(spec, v, f, e, dims) === undefined),
+    );
+    if (!fit.length) {
+      const ws = slabs.flatMap((f) => names(f).map((e) => acrossOf(f, e) ?? NaN));
+      bad(
+        `biến thể \`${v}\` cần tấm rộng ${String(across[0]).replace(".", ",")}–${String(across[1]).replace(".", ",")}·W (${fmt(across[0] * dims.W)}–${fmt(across[1] * dims.W)}) qua hai mép được kẹp${h.edge !== undefined ? ` ở cạnh \`${h.edge}\`` : ""}, tấm rộng ${ws
+          .filter(Number.isFinite)
+          .map(fmt)
+          .join(", ")}`,
+      );
+    }
+  }
   const max = v !== undefined ? spec.variants[v]?.thickMax : undefined;
   if (v !== undefined && max !== undefined && byEdge.length) {
     const thick = byEdge.map((f) => tooThick(spec, v, f, h.edge, dims, shape));

@@ -461,6 +461,35 @@ describe("chooseMissing `card`", () => {
     }
   });
 
+  it("thẻ nằm phẳng trên mặt ngang trước bụng: rig chọn `edges`, bàn tay phía mặt trên, ngón cái ở mép gần, `along` 0,5, cổ tay không vượt kẹp; `lateral` đắt hơn cả khi cộng `VARIANT_COST` cho `edges`", () => {
+    // mặt trước ngửa, mép trên ra xa người cầm; hông người mẫu ở [250, −180, 506]
+    const R = fromColumns([1, 0, 0], [0, -1, 0], [0, 0, -1]);
+    for (const P of [
+      [250, -175, 560],
+      [250, -200, 580],
+    ] as V3[])
+      for (const side of [RIGHT, LEFT]) {
+        const flat: ItemPose = { R, P, cast: "nguoi", s: 1 };
+        const sol = graspAt(c2, "the@card", flat, side);
+        const at = `${P} ${side}`;
+        expect(sol.choice, at).toMatchObject({
+          variant: "edges",
+          thumb: "front",
+          edge: "bottom",
+          along: 0.5,
+        });
+        expect(sol.by.variant, at).toBe("rig");
+        expect(sol.arm.gap, at).toBe(0);
+        const w = sol.arm.wrist.over;
+        expect(Math.max(w.turn, w.bend, w.dev), at).toBe(0);
+        // lòng tay úp: pháp tuyến lòng tay chúc xuống (y rig hướng xuống)
+        expect(matVec(R, sol.frame.hand.palm as V3)[1], at).toBeGreaterThan(0.8);
+        const lat = graspAt(c2, { item: "the", group: "card", variant: "lateral" }, flat, side);
+        expect(lat.choice.variant, at).toBe("lateral");
+        expect(lat.cost, at).toBeGreaterThan(sol.cost);
+      }
+  });
+
   it("tay dẫn không khai `edge`: tấm đứng `bottom`, tấm nằm cạnh phía tay ấy", () => {
     const lead = { solve: false } as const;
     for (const side of [RIGHT, LEFT])

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  acrossMiss,
+  acrossOf,
   BOWL_PINCH_MAX,
+  checkChoice,
+  EDGES_ACROSS,
   FLAT_MAX,
   GRIP_GROUPS,
   PINCH_ALONG,
@@ -18,9 +22,16 @@ import {
   type ContactInput,
   type GraspChoice,
 } from "./graspSolve";
-import { HAND_BONES, HAND_DOF, HAND_PIECES, handFrames, handVec } from "./hand";
+import { HAND_BONES, HAND_DOF, HAND_PIECES, handFrames, handGripOf, handVec } from "./hand";
 import { handSkin, skinHand } from "./handMesh";
-import { HELD_PIERCE_FIT, HELD_SINK, HELD_WRAP, heldOppose } from "./heldAudit";
+import {
+  groupGripMax,
+  HELD_GRIP_PINCH,
+  HELD_PIERCE_FIT,
+  HELD_SINK,
+  HELD_WRAP,
+  heldOppose,
+} from "./heldAudit";
 import {
   capsuleClearance,
   heldDistance,
@@ -1000,6 +1011,121 @@ describe("`card` `lateral`", () => {
     expect(g.choice.along).toBe(0.3);
   });
 });
+
+describe("`card` `edges`", () => {
+  const dims = handDims(1.75, 1.68);
+  const pick = (extra: Partial<Pick> = {}): Pick => ({
+    group: "card",
+    variant: "edges",
+    edge: "bottom",
+    thumb: "front",
+    ...extra,
+  });
+
+  it("lòng tay úp về mặt `thumb`, đường kẹp ngang thẻ; `tilt` dương nâng phía ngón cái; dáng hoà theo bề rộng qua hai mép", () => {
+    for (const side of [-1, 1]) {
+      const at = (tilt: number) => graspFrame(THE, itemGeom(THE), pick({ tilt }), side, dims);
+      const g = at(0);
+      expect(-(g.hand.palm as V3)[1], `${side}`).toBeGreaterThan(Math.cos(25 * D2R));
+      const thumbUp = (x: ReturnType<typeof at>) =>
+        scale3(cross3(x.hand.palm as V3, x.hand.fingers as V3), side)[1];
+      expect(thumbUp(at(10))).toBeGreaterThan(thumbUp(at(0)));
+      expect(thumbUp(at(-20))).toBeLessThan(thumbUp(at(0)));
+      expect(g.pose).not.toEqual(handVec("edgePinch"));
+      expect(g.choice).toMatchObject({ variant: "edges", along: 0.5, slant: 0, tilt: 0 });
+    }
+  });
+
+  it("bề rộng qua hai mép ngoài `EDGES_ACROSS · W` thì biến thể không áp: kẹp cạnh ngắn của thẻ dài là lỗi `choice`", () => {
+    const f = itemGeom(THE).features.find((x) => x.kind === "slab")!;
+    expect(acrossOf(f as SlabFeature, "bottom")).toBeCloseTo(17.6, 9);
+    expect(acrossOf(f as SlabFeature, "right")).toBeCloseTo(28, 9);
+    const card = GRIP_GROUPS.card;
+    expect(acrossMiss(card, "edges", f, "bottom", dims)).toBeUndefined();
+    expect(acrossMiss(card, "edges", f, "right", dims)).toBeCloseTo(28, 9);
+    expect(acrossMiss(card, "lateral", f, "right", dims)).toBeUndefined();
+    const hold = { item: "the", group: "card" as const, variant: "edges", edge: "right" as const };
+    expect(checkChoice("card", itemGeom(THE), hold, dims).join()).toMatch(/rộng/);
+    expect(checkChoice("card", itemGeom(THE), { ...hold, edge: "bottom" }, dims)).toEqual([]);
+    expect(EDGES_ACROSS[0] * dims.W).toBeLessThan(17.6);
+  });
+
+  it("trên da: đầu ngón cái và trỏ chạm hai mép (khe ≤ 0,6), lực đối ≥ 120°, lòng tay cách mặt thẻ ≥ 5, đầu ngón không xuống dưới mặt bàn quá 0,2, không lún quá `HELD_SINK`, không xuyên, tâm nắm trong `HELD_GRIP_PINCH` — hai cỡ tay, hai tay, hai mặt, hai cạnh, `tilt` −20 / −10 / 0", () => {
+    expect(groupGripMax("card", "edges")).toBe(HELD_GRIP_PINCH);
+    for (const [k, long] of HANDS)
+      for (const [, side] of SIDES)
+        for (const thumb of ["front", "back"] as const)
+          for (const edge of ["bottom", "top"] as const)
+            for (const tilt of [-20, -10, 0]) {
+              const r = edgesSkin(THE, pick({ thumb, edge, tilt }), side, k, long);
+              const at = `${k} ${side} ${thumb} ${edge} ${tilt}`;
+              expect(r.gaps.thumb, at).toBeLessThanOrEqual(0.6);
+              expect(r.gaps.index, at).toBeLessThanOrEqual(0.6);
+              expect(r.oppose?.part, at).toBe("index");
+              expect(r.oppose!.angle, at).toBeGreaterThanOrEqual(120);
+              expect(r.gaps.palm, at).toBeGreaterThanOrEqual(5);
+              expect(r.table, at).toBeGreaterThanOrEqual(-0.2);
+              expect(r.sink, at).toBeLessThanOrEqual(HELD_SINK);
+              expect(r.pierce, at).toBeLessThan(0);
+              expect(r.grip, at).toBeLessThanOrEqual(HELD_GRIP_PINCH);
+            }
+  });
+});
+
+/**
+ * `card` `edges`: ngón theo vai trò rồi đo trên da như `cardSkin`; `table` là điểm da thấp nhất tính từ mặt thẻ không có bàn
+ * tay (mặt bàn), dương là trên mặt bàn; `grip` khoảng tâm nắm (`handGripOf`) tới thẻ
+ */
+function edgesSkin(spec: HeldItemSpec, pick: Pick, side: number, k: number, long: number) {
+  const g = graspFrame(spec, itemGeom(spec), pick, side, handDims(k, long), k, long);
+  const skin = handSkin(side, k, long);
+  const v = [
+    ...g.pose,
+    ...heldFit({
+      v: g.pose,
+      side,
+      k,
+      long,
+      shape: spec.shape!,
+      G: g.G,
+      roles: g.roles,
+      bulge: skinBulge(skin, g.pose),
+      curl: GRIP_GROUPS.card.variants.edges!.curl,
+    }),
+  ];
+  const pos = new Float32Array(skin.pos.length);
+  skinHand(skin, v, pos);
+  const dom = skinPieces(skin);
+  const { gaps, near } = skinDepth(pos, dom, g.G, spec.shape!);
+  // `THE` dày 0,8 từ y 0 tới 0,8: mặt bàn ở mặt không có bàn tay
+  const up = pick.thumb === "back" ? -1 : 1;
+  let table = Infinity;
+  for (let i = 0; i < dom.length; i++) {
+    const q = toItem(g.G, [pos[3 * i], pos[3 * i + 1], pos[3 * i + 2]]);
+    table = Math.min(table, up > 0 ? q[1] : 0.8 - q[1]);
+  }
+  const F = handFrames(v, side, k, long);
+  const pierce = Math.max(
+    ...HAND_PIECES.filter((n) => n !== "palm").map(
+      (n) =>
+        capsuleClearance(
+          spec.shape!,
+          g.G,
+          F[n].o,
+          add3(F[n].o, matVec(F[n].R, [0, -F[n].len, 0])),
+          0,
+        ).core,
+    ),
+  );
+  return {
+    gaps,
+    sink: Math.max(0, -Math.min(...Object.values(gaps))),
+    pierce,
+    table,
+    grip: heldDistance(spec.shape!, toItem(g.G, handGripOf(v, side, k, long))),
+    oppose: heldOppose(spec.shape!, near, gaps, g.roles),
+  };
+}
 
 /**
  * Ngón theo vai trò rồi đo trên da: khe từng ngón, lún sâu nhất, trục nang sâu nhất vào món, đầu ngón cái trong khung món,
