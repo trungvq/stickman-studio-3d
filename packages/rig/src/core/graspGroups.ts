@@ -137,7 +137,13 @@ export interface NamesChoice {
   kind: "names";
   values?: readonly string[];
   default?: string;
-  from?: "holder" | "side";
+  /**
+   * Mặc định theo người cầm (`holder`), bên tay (`side`) hay phần có khối hình của nhóm dài nhất (`longest`, cho `part`: cảnh
+   * không khai thì rig chỉ giải trên phần ấy)
+   */
+  from?: "holder" | "side" | "longest";
+  /** Giá thêm khi rig chọn giá trị khác mặc định (`chooseMissing`) */
+  cost?: number;
 }
 
 /** Bậc liên tục (độ hay tỉ lệ); `names` là tên gọi thay số; `byVariant` đè miền theo biến thể */
@@ -152,6 +158,8 @@ export interface RangeChoice {
   grid?: readonly number[];
   /** Lưới theo biến thể, đè `grid` */
   gridByVariant?: Record<string, readonly number[]>;
+  /** Giá thêm khi rig chọn giá trị khác `default` (`chooseMissing`) */
+  cost?: number;
 }
 
 export type Choice = NamesChoice | RangeChoice;
@@ -225,9 +233,7 @@ const WRAP_THUMB = [
   [0.17, [60, 60, 45, 60]],
   [0.3, [60, 90, 45, 10]],
   [0.36, [60, 90, 45, 10]],
-  [0.38, [80, 90, 0, 0]],
-  [0.4, [90, 40, -10, 0]],
-  [0.42, [50, 20, 0, 10]],
+  [0.42, [100, 90, 0, 30]],
 ] as const satisfies readonly (readonly [number, ThumbAngles])[];
 
 /** `platform` `palm`: ngón gập gốc, ngọn để đệm ngón chạm mặt đỡ ngang gò lòng tay (da lòng dày hơn ngón) */
@@ -235,9 +241,6 @@ const PLATFORM_FLAT: PoseRef = { pose: "flat", knuckle: 30, tip: 5 };
 
 /** `handle` `hook`: gốc ngón duỗi, ngọn gập ~90° móc dưới quai (dáng `hook` gập gốc 28–32° đẩy đốt gốc vào quai dày) */
 const HOOK: PoseRef = { pose: "hook", knuckle: -40, tip: -10 };
-
-/** `cylinder` `flat`: ngón cái khép dọc cạnh trỏ, nằm trên mặt rộng (dáng `span` dạng ra ngoài mép) */
-const FLAT_THUMB = [20, 6, 0, 10] as const;
 
 /** `bowl` `side`: ngón cái ít dạng, đối nhiều, gốc duỗi ngược: nằm vắt trên vành chén phía lòng tay */
 const BOWL_THUMB = [15, 50, -30, 20] as const;
@@ -315,6 +318,16 @@ const pairOf = (f: Feature, g: ItemGeom, R = Infinity) =>
 export const HOOK_GAP = (2 * HAND_BONES.index.r) / (2 * HAND_BONES.palm.half[1]);
 /** `handle`: thanh lệch `top` từ ngần này độ trở lên (món treo dưới tay) */
 export const HOOK_TILT = 45;
+/**
+ * `cylinder`: rig chọn ngón cái về đầu dưới (`thumb: "down"`, bàn tay ngược với món) hay `slant` khác mặc định cộng giá ngần
+ * này — cỡ cổ tay vượt kẹp 30%
+ */
+const OFF_COST = 1;
+/**
+ * `cylinder` `wrap`: trụ to nằm chéo lòng tay, hướng ngón chếch ngần này độ về phía ngón cái (trục món từ gò út sang gốc
+ * ngón trỏ) — mặc định của `slant`; rig thử cả `0` khi cổ tay không theo được
+ */
+export const WRAP_SLANT = 25;
 /** `cylinder`: tâm nắm cách phần `grip: false` ít nhất ngần này lần `W` dọc trục */
 export const GRIP_CLEAR = 0.3;
 /** `cylinder`: thanh hộp áp mặt rộng ít nhất ngần này lần `W` thì lòng áp phẳng, ngón dọc thân (`flat`) */
@@ -666,24 +679,29 @@ const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
         fixture: "chai-dia#co",
       },
       flat: {
-        frame: "nt",
+        frame: "nf",
         pose: {
-          open: { pose: "span", thumb: FLAT_THUMB },
-          closed: { pose: "span", thumb: FLAT_THUMB },
+          open: { pose: "span" },
+          closed: { pose: "span" },
           by: "radius",
           unit: "W",
           range: [0.06, 0.95],
         },
         roles: roles("press", "press", "press", { pinky: "support" }),
-        fixture: "ong-nghe-ban#tai",
+        fixture: "dien-thoai#doc",
         kinds: ["rod"],
       },
     },
     choices: {
-      part: PART,
+      part: names(undefined, { from: "longest" }),
       along: range(0, 1, { default: 0.5, names: ["low", "mid", "high"] }),
       around: range(0, 360),
-      thumb: names(["up", "down"], { default: "up" }),
+      thumb: names(["up", "down"], { default: "up", cost: OFF_COST }),
+      slant: range(0, WRAP_SLANT, {
+        default: WRAP_SLANT,
+        cost: OFF_COST,
+        gridByVariant: { wrap: [0, WRAP_SLANT], flat: [WRAP_SLANT] },
+      }),
     },
     hands: "either",
     support: { group: "platform", place: "bottom" },
@@ -1060,7 +1078,18 @@ export function holdDefaults(
     if (c.default !== undefined) out[key] = c.default;
     else if (c.kind === "names" && c.from === "side")
       out[key] = (opts.side ?? -1) === -1 ? "right" : "left";
-    else if (c.kind === "names" && c.from === "holder") {
+    else if (c.kind === "names" && c.from === "longest") {
+      const kinds = new Set<string>(spec.needs.flatMap((n) => n.kinds));
+      let best: Feature | undefined;
+      for (const f of geom.features)
+        if (
+          kinds.has(f.kind) &&
+          "len" in f &&
+          (!best || f.len > (best as { len: number }).len + 1e-9)
+        )
+          best = f;
+      if (best) out[key] = best.part;
+    } else if (c.kind === "names" && c.from === "holder") {
       const f =
         opts.feature ??
         geom.features.find(

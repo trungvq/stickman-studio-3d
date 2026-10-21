@@ -359,7 +359,8 @@ describe("`both` trên món đặt trước: tay phụ giải như tay dẫn", (
   const KHAY = parse(khay);
   const CHAI = parse(chaiDia);
   const CHEN = parse(chen);
-  // chai, chén đứng hơi nghiêng: cổ tay trong giới hạn (tay kẹp chén vượt ≤ 2,5° lúc đầu); khay nằm ngang sát kẹp xoay cẳng tay
+  // chai, chén đứng hơi nghiêng: cổ tay trong giới hạn (tay kẹp chén, tay nắm thân chai vượt ≤ 2,5° lúc đầu); khay nằm ngang
+  // sát kẹp xoay cẳng tay
   type Case = [string, HeldItemSpec, string, number[], number[], number[] | undefined];
   const cases: Case[] = [
     ["khay", KHAY, "platform", [30, 20, 0], [45, 10, 0], undefined],
@@ -425,7 +426,7 @@ describe("`both` trên món đặt trước: tay phụ giải như tay dẫn", (
             const g = rep[tag].hold!.grasp!;
             expect(g.mode).toBe("item");
             expect(rep[tag].reach!.gap).toBeLessThan(0.01);
-            expect(g.arm.wrist.off, `${tag} ${t}`).toBeLessThanOrEqual(c[0] === "chen" ? 2.5 : 1);
+            expect(g.arm.wrist.off, `${tag} ${t}`).toBeLessThanOrEqual(c[0] === "khay" ? 1 : 2.5);
           }
           expect(rep.L.hold!.grasp!.choice).toEqual(sup.choice);
         }

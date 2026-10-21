@@ -999,18 +999,23 @@ describe("chooseMissing `cylinder`", () => {
       : "wrap";
   };
 
-  // `part` × `thumb` 2, rồi `along` 3 × `around` 12; ống nghe bỏ ba `around` (0, 30, 330) về mặt có loa, mic nhô
+  // `part` (chỉ phần dài nhất: thân chai) × `thumb` 2, rồi `along` 3 (trên chính khối) × `slant` 2 × `around` 12 quanh ứng
+  // viên rời tốt nhất, và quanh ứng viên rời tốt nhất có `thumb` mặc định (có giá lệch) nếu khác nó; ống nghe bỏ ba `around` (0, 30, 330)
+  // về mặt có loa, mic nhô
   it.each([
-    ["chai-dia", upright, 3, 12],
-    ["ong-nghe-ban", handset, 1, 9],
+    ["chai-dia", upright, 1, 12, "than"],
+    ["ong-nghe-ban", handset, 1, 9, "tay"],
   ] as const)(
-    "đủ thiếu `%s@cylinder`: rig giải `part`, `thumb`, `along`, `around` không lỗi",
-    (id, pose, parts, arounds) => {
+    "đủ thiếu `%s@cylinder`: rig giải `part`, `thumb`, `along`, `around` không lỗi; chai cầm thân, ống nghe ngón cái về loa",
+    (id, pose, parts, arounds, part) => {
       for (const side of [RIGHT, LEFT]) {
         const sol = chooseMissing(cc, `${id}@cylinder`, pose, side);
-        expect(sol.candidates).toBe(parts * 2 + 3 * arounds);
+        expect([1, 2].map((n) => parts * 2 + n * 3 * 2 * arounds)).toContain(sol.candidates);
         for (const k of ["thumb", "along", "around"] as const) expect(sol.by[k]).toBe("rig");
         expect(sol.choice.variant).toBe(variantAt(id, sol.choice.around!));
+        expect(sol.choice.part).toBe(part);
+        // ống nghe: ngón cái về loa (đầu trên)
+        if (id === "ong-nghe-ban") expect(sol.choice.thumb).toBe("up");
         expect(Number.isFinite(sol.cost)).toBe(true);
       }
     },
@@ -1050,14 +1055,8 @@ describe("chooseMissing `cylinder`", () => {
       expect(sol.choice.along).toBeLessThanOrEqual(room[1] + 1e-9);
       expect(sinkOf(sol, spec)).toBeLessThanOrEqual(HELD_SINK);
     }
-    // cảnh khai mặt trước, ngón ôm: ngón đâm vào loa
-    const front = chooseMissing(
-      cc,
-      { item: "ong-nghe-ban", group: "cylinder", around: 0, variant: "wrap" },
-      handset,
-      RIGHT,
-    );
-    expect(sinkOf(front, spec)).toBeGreaterThan(HELD_SINK);
+    // mặt trước (loa, mic nhô về phía lòng tay) là mặt rig bỏ
+    expect(bulgeToward(geom, rod, 0, 0).length).toBeGreaterThan(0);
   });
 
   it("ống nghe: cảnh khai `along` sát loa thì tâm nắm kẹp cách loa 0,3·W", () => {

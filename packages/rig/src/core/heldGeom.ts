@@ -1063,6 +1063,37 @@ function rodGap(geom: ItemGeom, f: RodFeature, shape: readonly HeldShape[]): num
   return best;
 }
 
+/** Đoạn bám liền chồng nhiều nhất lên khối `f` (`gripSpan`); không còn đoạn thì ném lỗi */
+function spanOf(geom: ItemGeom, f: RodFeature | LatheFeature, opts: { pad?: number } = {}) {
+  const over = (g: GripSegment) =>
+    Math.min(dot3(sub3(g.hi, f.lo), f.a), f.len) - Math.max(dot3(sub3(g.lo, f.lo), f.a), 0);
+  const seg = gripSpan(geom, f, opts).reduce<GripSegment | undefined>(
+    (b, g) => (!b || over(g) > over(b) + EPS ? g : b),
+    undefined,
+  );
+  if (!seg) throw new Error(`\`${f.part}\` không còn đoạn bám (phần \`grip: false\` che hết)`);
+  return seg;
+}
+
+/**
+ * Miền `along` (của đoạn bám liền, như `axialAt`) nằm trên chính khối `f`, giao miền `alongRoom` của `clear`; khối nằm ngoài
+ * miền ấy thì cả miền `alongRoom`
+ */
+export function ownAlong(
+  geom: ItemGeom,
+  f: RodFeature | LatheFeature,
+  opts: { pad?: number; clear?: number } = {},
+): [number, number] {
+  const seg = spanOf(geom, f, opts);
+  const L = Math.max(seg.len, EPS);
+  const s0 = dot3(sub3(f.lo, seg.lo), f.a) / L;
+  const own: [number, number] = [Math.max(0, s0), Math.min(1, s0 + f.len / L)];
+  const room = (opts.clear ? alongRoom(seg, opts.clear) : undefined) ?? [0, 1];
+  const lo = Math.max(own[0], room[0]);
+  const hi = Math.min(own[1], room[1]);
+  return lo <= hi ? [lo, hi] : room;
+}
+
 /**
  * Điểm ở `along` (0 đầu thấp, 1 đầu cao) của đoạn bám liền quanh thanh hay trụ tiện `f` (`gripSpan`, `pad` như ở đó), quay
  * `around` độ quanh trục: `ρ(0)` là `F` chiếu lên mặt vuông góc trục (món không khai `front`, hay `F` dọc trục: `b0`),
@@ -1076,14 +1107,7 @@ export function axialAt(
   around: number,
   opts: { pad?: number; clear?: number } = {},
 ): AxialPoint {
-  const segs = gripSpan(geom, f, opts);
-  const over = (g: GripSegment) =>
-    Math.min(dot3(sub3(g.hi, f.lo), f.a), f.len) - Math.max(dot3(sub3(g.lo, f.lo), f.a), 0);
-  const seg = segs.reduce<GripSegment | undefined>(
-    (b, g) => (!b || over(g) > over(b) + EPS ? g : b),
-    undefined,
-  );
-  if (!seg) throw new Error(`\`${f.part}\` không còn đoạn bám (phần \`grip: false\` che hết)`);
+  const seg = spanOf(geom, f, opts);
   let u = Math.min(1, Math.max(0, along));
   if (opts.clear) {
     const room = alongRoom(seg, opts.clear);
