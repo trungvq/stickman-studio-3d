@@ -442,7 +442,7 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
 - **Nhặt thẻ nằm trên bàn** (`edges`): thẻ ngửa trước bụng (mốc món `face: front → up`, `roll: top → forward`), cảnh không khai
   gì: rig chọn `edges` (`lateral` đắt hơn nó cả khi `edges` mang `VARIANT_COST`: kẹp bên ở thẻ nằm cộng giá `upright` chừng 1),
   bàn tay phía mặt trên, ngón cái ở mép gần người, `along` 0,5, cổ tay không vượt kẹp (người mẫu `nguoi-cam-bang`, thẻ ngang
-  hông, cách hông 55–75). Thẻ dựng (*xem*, *khoe*) rig vẫn chọn `lateral`. Rig chưa biết mặt bàn: không có mặt đỡ trong giá
+  hông, cách hông 55–75; `bang-cam` hàng nhặt trên bàn: cả hai cỡ tay, hai tay, không luật nào báo). Thẻ dựng (*xem*, *khoe*) rig vẫn chọn `lateral`. Rig chưa biết mặt bàn: không có mặt đỡ trong giá
   thì không gì cấm bàn tay ở phía dưới thẻ; ở các chỗ đã thử (thẻ cao từ hông tới ngực, cách hông 35–115) `edges` luôn chọn mặt
   trên, còn `lateral` (thẻ sát người) có khi kẹp ngón cái ở mặt dưới.
 - **Tay**: một. **Hướng mặc định**: `face: { axis: <front>, toward: [−cos 20°, −sin 20°, 0] }` (hệ thân người cầm: mặt thẻ lùi
@@ -1165,9 +1165,8 @@ của `held/`.
   ngang mặt, khoe một tay, khoe hai tay hai cạnh bên, khoe hai tay trên dưới (bỏ khi hai cạnh cách nhau dưới 1,3·`W` của cỡ
   tay đang vẽ), và với đĩa hay tấm nằm trong khung món thì bê hai tay hai vành (`rim`, `both`, tay phụ cạnh đối); `palmBox` thêm đọc ngang mặt, khoe một tay, áp tai (tay dẫn); `card` thêm cầm xem (thẻ trước ngực trên, `offset [70, −70, 15]`, rig chọn, tay phải và tay trái), khoe đặt trước (thẻ
   ấy quay mặt ra trước, rig chọn), khoe thẻ (tay dẫn phải và trái, `edge: bottom`, `thumb: back`, `face: front → forward`),
-  đưa thẻ qua quầy (tay dẫn duỗi `offset [95, −20, 15]`, mép ngắn `left`, thẻ ngửa, mép `edgeR` ra trước), tay dẫn, và nhặt trên
-  bàn (thẻ nằm ngửa trước bụng `to: hip`, `offset [55, 5, 0]`, `face: front → up`, `roll: top → forward`: rig chọn tay phải,
-  tay trái, và khai `lateral` để so); `platform` đặt món ngang bụng, xa ngực
+  đưa thẻ qua quầy (tay dẫn duỗi `offset [95, −20, 15]`, mép ngắn `left`, thẻ ngửa, mép `edgeR` ra trước), tay dẫn, và nhặt trên bàn (thẻ nằm ngửa trước bụng `to: belly`, `offset [40, 20, ±10]` lệch về tay cầm, `face: front → up`,
+  `roll: top → forward`: rig chọn, khai `edges`, khai `lateral` để so — tay phải và tay trái); `platform` đặt món ngang bụng, xa ngực
   hơn hàng chung (`offset [80, 20, 0]`) và thêm `ψ` 0 / 90 và tay dẫn; `chopsticks` đặt đũa trước ngực (`offset [45, −3, 0]`) có hướng (`face: tip → forward, tilt −30`, `roll` hai que chéo xuống trái), thêm `along` 0,15 / 0,45, tay dẫn phải và trái (cùng `face`); `pen` đặt bút trước ngực (`offset [44, 16, 25]`) ngòi ra trước chúc xuống (`face: tip → [0,8, 0,6, −0,2]`), thêm `along` 0,15 / 0,45, tay dẫn phải và trái (`offset [40, 30, ±25]`, `point: item:tip`, `face: tip → [0,5, 0,866, 0]`); `handle` đặt túi ngang hông (`to: hip`, `offset [0, 65, 30]`: quai ngang tầm tay buông, cách thân ra phía tay phải để cẳng tay không vào thân), thêm `along` 0,2 / 0,7 và tay buông xách phải / trái (tay dẫn không khai đích, món theo bàn tay); `bowl` đặt chén trước ngực, thêm `along` 0,4 / 0,5 (`pinch`: cao nhất, sâu nhất), `side` `along` giữa (0,5), `around` 180 và 90 (`pinch`: ngón cái về thân, hàng giới hạn cổ tay), tay dẫn phải và trái (miệng ngửa) và tay dẫn hai tay đỡ đáy;
   `platform`, `cylinder` (chai đứng hơi nghiêng), `bowl` (chén nghiêng nhẹ) và `palmBox` thêm hàng hai
   tay `both` món đặt trước (tay phụ cạnh đối, đỡ đáy, đỡ mặt sau); `carry` chỉ hai

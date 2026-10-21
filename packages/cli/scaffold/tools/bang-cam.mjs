@@ -260,10 +260,10 @@ const viTri = new Map();
   const KHOE = { to: "chest", offset: [45, -20, 25], point: "grip" };
   /** Thẻ cầm xem: trước ngực, bàn tay giữa ngực như ảnh mẫu `the-phong-xem`, hướng mặc định của nhóm */
   const XEM = { to: "chest", offset: [55, -25, 15] };
-  /** Thẻ nằm phẳng trên mặt ngang trước bụng (mặt bàn đứng ngang hông), mặt trước ngửa, mép trên ra xa */
-  const BAN = (spec) => ({
-    to: "hip",
-    offset: [55, 5, 0],
+  /** Thẻ nằm phẳng trên mặt ngang trước bụng, lệch về tay cầm (`ben` ±1), mặt trước ngửa, mép trên ra xa */
+  const BAN = (spec, ben = 1) => ({
+    to: "belly",
+    offset: [40, 20, 10 * ben],
     face: { axis: spec.front ?? "front", toward: "up" },
     roll: { axis: spec.top ?? "top", toward: "forward" },
   });
@@ -524,15 +524,35 @@ const viTri = new Map();
         {
           ma: "ban-trai",
           ten: "nhặt trên bàn, tay trái (rig chọn)",
-          mark: BAN(spec),
+          mark: BAN(spec, -1),
           lead: "left",
           hands: { left: H() },
+        },
+        {
+          ma: "ban-edges",
+          ten: "nhặt trên bàn, kẹp hai mép (edges)",
+          mark: BAN(spec),
+          hands: { right: H({ variant: "edges" }) },
+        },
+        {
+          ma: "ban-edges-trai",
+          ten: "nhặt trên bàn, kẹp hai mép, tay trái (edges)",
+          mark: BAN(spec, -1),
+          lead: "left",
+          hands: { left: H({ variant: "edges" }) },
         },
         {
           ma: "ban-lateral",
           ten: "nhặt trên bàn, kẹp bên (lateral)",
           mark: BAN(spec),
           hands: { right: H({ variant: "lateral" }) },
+        },
+        {
+          ma: "ban-lateral-trai",
+          ten: "nhặt trên bàn, kẹp bên, tay trái (lateral)",
+          mark: BAN(spec, -1),
+          lead: "left",
+          hands: { left: H({ variant: "lateral" }) },
         },
       );
     }
