@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { createReadStream } from 'node:fs';
 import { readFile, writeFile, stat } from 'node:fs/promises';
 import { dirname, join, extname, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,7 +9,7 @@ const ROOT = dirname(HERE);
 const DB = join(HERE, 'nhan-xet.json');
 const MD = join(HERE, 'nhan-xet.md');
 const PORT = Number(process.env.PORT || 4791);
-const TYPE = { '.html': 'text/html; charset=utf-8', '.json': 'application/json; charset=utf-8', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.css': 'text/css' };
+const TYPE = { '.html': 'text/html; charset=utf-8', '.json': 'application/json; charset=utf-8', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.css': 'text/css', '.mp4': 'video/mp4', '.webm': 'video/webm' };
 const STATUS = { ok: 'Duyệt', sua: 'Cần sửa', hoi: 'Hỏi lại' };
 
 const load = async () => JSON.parse(await readFile(DB, 'utf8').catch(() => '{}'));
@@ -44,9 +45,27 @@ createServer(async (req, res) => {
     }
     const rel = url.pathname === '/' ? 'duyet-web/index.html' : decodeURIComponent(url.pathname).slice(1);
     const file = normalize(join(ROOT, rel));
-    if (!file.startsWith(ROOT) || !(await stat(file)).isFile()) throw 0;
-    res.writeHead(200, { 'content-type': TYPE[extname(file)] || 'application/octet-stream', 'cache-control': /\.(png|jpg)$/.test(file) ? 'max-age=3600' : 'no-cache' });
-    res.end(await readFile(file));
+    const st = await stat(file);
+    if (!file.startsWith(ROOT) || !st.isFile()) throw 0;
+    const type = TYPE[extname(file)] || 'application/octet-stream';
+    const cache = /\.(png|jpg)$/.test(file) ? 'max-age=3600' : 'no-cache';
+    // video: trình duyệt tua bằng `Range`
+    const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+    if (range && (range[1] || range[2])) {
+      const size = st.size;
+      let a = range[1] ? Number(range[1]) : size - Number(range[2]);
+      let b = range[1] && range[2] ? Math.min(Number(range[2]), size - 1) : size - 1;
+      a = Math.max(0, a);
+      if (a > b || a >= size) {
+        res.writeHead(416, { 'content-range': `bytes */${size}` }).end();
+        return;
+      }
+      res.writeHead(206, { 'content-type': type, 'cache-control': cache, 'accept-ranges': 'bytes', 'content-range': `bytes ${a}-${b}/${size}`, 'content-length': b - a + 1 });
+      createReadStream(file, { start: a, end: b }).pipe(res);
+      return;
+    }
+    res.writeHead(200, { 'content-type': type, 'cache-control': cache, 'accept-ranges': 'bytes', 'content-length': st.size });
+    createReadStream(file).pipe(res);
   } catch {
     res.writeHead(404).end('không có');
   }
