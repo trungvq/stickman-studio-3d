@@ -1,0 +1,252 @@
+{
+ "the-card-moi-2": {
+  "status": "",
+  "text": "",
+  "frames": {}
+ },
+ "the-card-moi-3": {
+  "status": "",
+  "text": "",
+  "frames": {}
+ },
+ "g4-bowl": {
+  "status": "sua",
+  "text": "chén rượu v1 vẫn chuẩn hơn. Chén nhỏ nên cầm bằng 2 ngón là chính. Kiểu cầm của v2 không có cái gì kẹp cái chén nên chắc chắn sẽ rơi",
+  "frames": {}
+ },
+ "g4-card-pad": {
+  "status": "sua",
+  "text": "cái này tệ quá. Nhưng hình như sửa v3/v4 rồi thì phải",
+  "frames": {}
+ },
+ "g4-carry-thu-tui-hieu": {
+  "status": "sua",
+  "text": "cái này cũng tính kiểu cầm à? Sao quai túi lấn vào người nhiều thế?",
+  "frames": {}
+ },
+ "g4-chopsticks": {
+  "status": "sua",
+  "text": "v2 đầu tiên sao tay vắt ra sau cổ? dị dạng à?\nv2 sau cũng chưa chuẩn: sao lại cầm đũa bằng đầu ngón tay. Phải dùng tay kẹp đũa chứ. V1 dáng đúng chỉ có vị trí sai. V2 thì sai cả.\nVới lại 3 hình thì đũa đều ngược đầu (cái đơn giản này cũng sai à?)",
+  "frames": {}
+ },
+ "g4-cylinder-ap-tai": {
+  "status": "sua",
+  "text": "ống nghe phải theo kiểu cầm vật thon hoặc giống cầm điện thoại chứ? Cầm trong lòng bàn tay, kẹp bở ngón cái và 4 ngón còn lại ",
+  "frames": {}
+ },
+ "g4-cylinder-cai-truoc-sau": {
+  "status": "",
+  "text": "",
+  "frames": {}
+ },
+ "mau-bang-gia-doc-cheo": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-bang-gia-doc-ngang": {
+  "status": "sua",
+  "text": "tay cầm cạnh dưới bên phải",
+  "frames": {}
+ },
+ "mau-bang-gia-doc-truoc": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-bang-gia-khoe": {
+  "status": "sua",
+  "text": "",
+  "frames": {}
+ },
+ "mau-bat-com": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-but-cam-2": {
+  "status": "sua",
+  "text": "tay bị ngược",
+  "frames": {}
+ },
+ "mau-but-cam-can": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-but-viet": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-chai-co": {
+  "status": "sua",
+  "text": "Kiểu này đúng nhưng ít khi cầm như thế này lắm vì dễ tuột ",
+  "frames": {}
+ },
+ "mau-chai-rot": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-chai-than": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-chen-ruou": {
+  "status": "sua",
+  "text": "cầm không chắc chắn gì cả, dùng mỗi 1 tí đầu ngón tay không đúng thực tế. Thực tế cầm phải dùng ít nhất 1 đốt ngón tay ",
+  "frames": {}
+ },
+ "mau-dia-thuc-an-hai-tay": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-dia-thuc-an-mot-tay": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-dien-thoai-doc": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-dien-thoai-khoe": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-dien-thoai-tai": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-dua-an-2": {
+  "status": "sua",
+  "text": "tay bị ngược ",
+  "frames": {}
+ },
+ "mau-dua-an-can": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-giay-tren-tay": {
+  "status": "sua",
+  "text": "vật cứng và nặng mới cầm kiểu này chứ, giấy cầm thế này dễ rơi hoặc bay mất lắm ",
+  "frames": {}
+ },
+ "mau-khay-hai-tay": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-khay-mot-tay": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-ong-nghe-cam": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-ong-nghe-tai": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-the-phong-dua": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-the-phong-khoe": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-the-phong-xem": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-tui-xach-khuyu": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-tui-xach-vai": {
+  "status": "sua",
+  "text": "ảnh 3 túi ra sau mông, mất quai ",
+  "frames": {}
+ },
+ "mau-tui-xach-xach": {
+  "status": "sua",
+  "text": "ảnh 3 lỗi bàn tay, vali cũng sai hướng",
+  "frames": {}
+ },
+ "mau-bang-gia-doc-ngang-2": {
+  "status": "sua",
+  "text": "ảnh này đểu ơn ảnh cũ vì mặt giấy không song song với mặt. Dùng ảnh cũ nhưng khi làm nhớ cầm cùng bên với tay là được (tay phải cầm góc phải, tay trái cầm góc trái)",
+  "frames": {}
+ },
+ "mau-tui-xach-xach-2": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-tui-xach-vai-2": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-giay-khoe-hai-tay": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-giay-khoe-hai-tay-3goc": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-giay-dua": {
+  "status": "ok",
+  "text": "ảnh 3 sai. Không cần gen lại nhưng đừng dùng nó để so",
+  "frames": {}
+ },
+ "mau-dua-an-3": {
+  "status": "ok",
+  "text": "không cần cái này (tay sai), dùng mẫu đũa ăn cận là được rồi mà",
+  "frames": {}
+ },
+ "mau-chen-ruou-2": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "mau-but-cam-3": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "g6-4": {
+  "status": "",
+  "text": "",
+  "frames": {}
+ },
+ "g4-bowl-kep": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "g4-bowl-kep-s033": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ }
+}
