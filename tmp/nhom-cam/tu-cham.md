@@ -10,8 +10,12 @@ Tiêu chí: **đối** (ngón cái ép đối ngón khác / đỡ dưới trọn
 | `g4-carry` treo khuỷu | Tạm | Túi sát thân (khe 0) | bằng |
 | `g4-cylinder-wrap` (chai) | Tạm | Nắm thân chai, ngón cái không thấy ôm sang phía đối | khác chỗ (v1 nắm vai chai) |
 | `g4-palmBox` mặc định, áp tai | Tạm | Cầm điện thoại được | bằng |
+| `g4-card-lateral` khoe (tay dẫn, rig chọn), đưa qua quầy, cầm xem sakura | Đạt (chờ chủ dự án) | Thẻ dựng trên nắm tay / chìa ra trước nắm tay, cái đối sườn trỏ qua thẻ (180°), nắm tay chỉ chạm góc gần mép | tốt hơn |
+| `g4-card-lateral` cầm xem kuroiwa, cầm xem tay trái, khoe tay trái, mặc định ngang ngực | Tạm | Kuroiwa: rig kẹp mép bên, thẻ nằm cạnh nắm tay (cổ tay rẻ hơn); khoe tay trái thẻ nghiêng chừng 25° (cổ tay kẹp `dev`); thẻ ngang ngực nhìn nghiêng mỏng | tốt hơn |
+| `g4-card-lateral-t02` | Tạm | Thẻ thấy rõ ở mọi ô; s012 thẻ bật xoay lúc 拓海 nhặt (6,70), nắm tay lún vào quầy lúc đặt thẻ (s012 6,0, s028 4,3) | tốt hơn |
 | `g4-bowl` | Hỏng (chủ dự án) | Không **đối**: lòng, ngón, ngón cái cùng một phía | tệ hơn |
 | `g4-chopsticks` | Hỏng (chủ dự án) | **Chiều** ngược đầu; **dáng** đầu ngón thay vì kẹp; **tay** cổ tay vượt 31°, vắt ra sau cổ; ngón hở 2–4 | tệ hơn |
+| `g4-card-pad` | Hỏng (chủ dự án) | Đã thay bằng `lateral` (`g4-card-lateral`) | — |
 | `g4-carry` treo vai | Hỏng (chủ dự án) | **Xuyên** quai vào vai/thân 5,2–5,7 | bằng |
 | `g4-pen` | Hỏng | **Dáng**: bút nằm trong nắm tay như cầm dao, không phải ba ngón (cái + trỏ kẹp, tựa ngón giữa) | bằng (v1 cũng sai) |
 | `g4-cylinder-ong-nghe-truoc-sau` | Hỏng | Trước: xuyên 1,5, lún 3,4; sau: nắm mặt lưng, cổ tay vượt 20° (`!!`) | — |

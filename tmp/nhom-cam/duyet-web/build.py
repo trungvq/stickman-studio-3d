@@ -59,11 +59,6 @@ for p in sorted(glob.glob(f'{R}/duyet/g4-*.jpg')):
     hint = [l.strip().lstrip('- ') for _, l in docs if base in l]
     items.append({'id': f'g4-{name}', 'kind': 'sheet', 'title': name, 'group': name.split('-')[0], 'src': os.path.relpath(p, R), 'note': note, 'hint': hint})
 
-for p in sorted(glob.glob(f'{R}/duyet/the-*.jpg')):
-    name = os.path.basename(p)[:-4]
-    items.append({'id': name, 'kind': 'sheet', 'title': name, 'group': 'card / sheet', 'src': os.path.relpath(p, R),
-        'note': 'Thẻ phòng cầm bằng `card pad` và `sheet` (pinch, rim) so với ảnh mẫu. Ảnh từng ô và số đo: `the-sheet/` (`index.html`, `do.json`).', 'hint': []})
-
 for md in sorted(glob.glob(f'{R}/mau/*.md')):
     name = os.path.basename(md)[:-3]
     pngs = sorted(glob.glob(f'{R}/mau/{name}.jpg')) or sorted(glob.glob(f'{R}/mau/{name}-*.jpg'))
