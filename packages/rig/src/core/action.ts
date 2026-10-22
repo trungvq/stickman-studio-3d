@@ -780,7 +780,7 @@ export function easeAt(k: Pick<ActionKey, "ease" | "bezier">, u: number) {
 }
 
 /** Tiếp tuyến PCHIP ở một mốc giữa hai độ dốc kề: trung bình điều hoà theo độ dài đoạn, trái dấu thì `0` */
-const pchipSlope = (d0: number, d1: number, h0: number, h1: number) => {
+export const pchipSlope = (d0: number, d1: number, h0: number, h1: number) => {
   if (!(d0 * d1 > 0)) return 0;
   const w1 = 2 * h1 + h0;
   const w2 = h1 + 2 * h0;
@@ -788,7 +788,7 @@ const pchipSlope = (d0: number, d1: number, h0: number, h1: number) => {
 };
 
 /** Hermite đơn điệu đoạn `p1 → p2` dài `h`; `p0` / `p3` vắng là đầu chuỗi, tiếp tuyến `0` */
-function hermite(
+export function hermite(
   p0: number | undefined,
   p1: number,
   p2: number,
@@ -810,6 +810,18 @@ function hermite(
     (f3 - f2) * h * m2
   );
 }
+
+/** `hermite` từng thành phần; `p0` / `p3` vắng là đầu chuỗi */
+export const hermiteN = (
+  p0: readonly number[] | undefined,
+  p1: readonly number[],
+  p2: readonly number[],
+  p3: readonly number[] | undefined,
+  h0: number,
+  h: number,
+  h2: number,
+  f: number,
+): number[] => p1.map((v, i) => hermite(p0?.[i], v, p2[i], p3?.[i], h0, h, h2, f));
 
 /** Bốn mốc quanh đoạn đang lấy mẫu cho `ease: "auto"`; mốc ngoài vắng khi chuỗi `auto` dừng ở đó */
 type Cubic<T> = (

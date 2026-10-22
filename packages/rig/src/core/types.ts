@@ -1,5 +1,5 @@
 import type { BROWS, EYES, MOUTHS } from "./face";
-import type { Aim, ReachTerm } from "./bodyMark";
+import type { Aim, ReachSpline, ReachTerm } from "./bodyMark";
 import type { ReachHold } from "./heldItem";
 
 /** [góc khớp cha, góc khớp con tương đối] */
@@ -59,6 +59,8 @@ export interface Reach {
    * khi ấy chỉ là chỗ ước lượng cho người 2D. docs/01-rig.md#đích-theo-mốc
    */
   terms?: ReachTerm[];
+  /** Đoạn `ease: "auto"` của `world.hands`: người 3D giải cổ tay theo đây, `terms` chỉ còn là đích ước lượng */
+  spline?: ReachSpline;
   /** Lòng tay theo ý định của `world.hands`: đè bàn tay của hành động theo phần `w` */
   aim?: Aim;
   /** Món đang cầm (`world.hands[].hold`): bậc thang, không nội suy */

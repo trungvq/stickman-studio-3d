@@ -131,6 +131,7 @@ export {
   type ReachIn,
   type Trunk3,
 } from "./arm3";
+import { hermiteN } from "./action";
 
 /**
  * Xoắn vai và lệch cổ tay (độ) người 3D vẽ cho một kênh tay: số thứ năm và thứ ba của tuple ở kênh nâng; kênh giữ 2D
@@ -457,7 +458,9 @@ export interface AimReport {
 const hasTerms = (r: ReachIn | undefined) => !!(r && r.w > 0 && r.terms?.length);
 const usesOther = (r: ReachIn | undefined, a: Aim | undefined) =>
   !!(
-    (r && r.w > 0 && r.terms?.some((t) => isOtherHand(t.to))) ||
+    (r &&
+      r.w > 0 &&
+      [r.terms, ...(r.spline?.keys ?? [])].some((ts) => ts?.some((t) => isOtherHand(t.to)))) ||
     a?.terms.some((t) => isOtherHand(t.palm?.to) || isOtherHand(t.fingers?.to))
   );
 
@@ -1123,6 +1126,13 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
       }
       return mul(acc, 1 / (sum || 1));
     };
+    /** Cổ tay của đích thế giới `r`: đoạn `auto` giải cổ tay từng mốc rồi nội suy bậc ba */
+    const worldWrist = (r: ReachIn, R: M3, v: readonly number[]): V3 => {
+      const s = r.spline;
+      if (!s) return hasTerms(r) ? wristFor(r.terms!, true, R, v) : fromRig(r.at as V3);
+      const [a, b, c, d] = s.keys.map((k) => k && wristFor(k, true, R, v));
+      return hermiteN(a, b!, c!, d, ...s.h, s.f) as V3;
+    };
     const toBody = (p: V3): [number, number, number] => {
       const v = mul(mv(tr(T.Rr), sub(p, T.root)), 1 / (s * 0.01 * T.B.height));
       return [v[2], -v[1], side * v[0]];
@@ -1310,7 +1320,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
       } else if (drive === "body" && el && wantsFingers)
         P = { ...P, reach: { ...P.reach, [ch]: { ...rb!, elbow: toBodyDir(T, side, el) } } };
       if (rw) {
-        const g = hasTerms(rw) ? wristFor(rw.terms!, true, R, v) : fromRig(rw.at);
+        const g = worldWrist(rw, R, v);
         const e =
           drive === "world" && el && (wantsFingers || rw.elbow)
             ? [el[0], -el[1], -el[2]]
@@ -1442,7 +1452,8 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
       const main = full.terms!.reduce((a, b) => (b.k > a.k ? b : a));
       const [want, pt] = goal(main, full === rw);
       let gap = len(sub(handAt(h, pt), want));
-      if (full.terms!.length > 1) {
+      if (full === rw && rw.spline) gap = Math.min(gap, len(sub(h.at, worldWrist(rw, h.R, h.v))));
+      else if (full.terms!.length > 1) {
         // đang hoà giữa hai đích: đo tới đích đã hoà (đúng chỗ bộ giải nhắm), không tới đích của số hạng nặng nhất
         let acc: V3 = ZERO3;
         let sum = 0;

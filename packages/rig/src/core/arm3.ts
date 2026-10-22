@@ -18,6 +18,7 @@ import {
   type HandPoint,
   type BodyMark,
   type ReachPoint,
+  type ReachSpline,
   type ReachTerm,
 } from "./bodyMark";
 import {
@@ -380,6 +381,7 @@ export interface ReachIn {
   elbow?: readonly number[];
   w: number;
   terms?: readonly ReachTerm[];
+  spline?: ReachSpline;
   aim?: Aim;
   /** Món đang cầm (`world.hands[].hold`): dáng ngón, điểm `item:<mốc>` và ý định theo chỗ cầm */
   hold?: ReachHold;
