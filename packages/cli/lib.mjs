@@ -2354,6 +2354,14 @@ function deepScene(ctx, name) {
           out.snap.push(
             row("move", rig.snapLine(s), { key: `snap|${s.id}|${s.joint}`, measure: s.px }),
           );
+        // khuỷu khoá xoay quá nhanh: rig không kẹp nó — docs/03-scene.md#giật-trên-hình
+        for (const s of rig.elbowLockSnaps(rt, { characterOf, spans: spans[name] }))
+          out.snap.push(
+            row("move", rig.elbowLockLine(s), {
+              key: `snap|${s.id}|elbowLock|${s.hand}`,
+              measure: s.deg,
+            }),
+          );
       } catch (e) {
         out.snap.push(row("move", `không đo được giật trên hình — ${e.message}`));
       }

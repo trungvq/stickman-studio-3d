@@ -992,6 +992,16 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
   `elbow` là hướng khuỷu trong thế giới, bỏ trống là `REACH_ELBOW` của hệ thân. Đoạn giữa hai mốc
   dùng `elbow` của mốc nào khai nó, nên một đoạn có, đoạn kề không là khuỷu đổi hướng ngay ở mốc
   chung — khai cùng `elbow` cho cả chuỗi mốc của một động tác.
+- **`elbowLock: true`** (chỉ đi với `elbow`): khuỷu ở mốc này nằm đúng hướng `elbow` — `φ` của khuỷu vẽ ra quanh trục vai →
+  cổ tay bằng `φ` của `elbow` chiếu lên vòng ấy ([11](11-nhom-cam.md#khuỷu-tự-nhiên)). Rig không dò khuỷu chỗ khoá: món đặt
+  trước bỏ `E(φ)`, tay mang món theo ý định và tay có lòng tay theo ý định bỏ dò xoay khuỷu. Phần khoá hoà giữa hai mốc như
+  phần đích — mốc khoá `1`, mốc không khoá hay `null` `0`, theo `ease` của mốc sau; trước mốc đầu, sau mốc cuối giữ phần
+  khoá của mốc ấy. Đoạn có mốc khoá thì hướng `elbow` đi đều trên mặt cầu giữa hai mốc (chuỗi `auto` vẫn bậc ba), nên giữa
+  hai mốc khoá `φ` đi đường ngắn trên vòng; từ mốc khoá sang mốc không khoá khuỷu rời dần hướng khoá về chỗ bộ giải chọn.
+  Khuỷu khoá không theo giới hạn tốc độ `HOLD_SWIVEL_SLEW`: hai mốc khoá sát nhau mà hướng lệch xa thì khuỷu vẫn tới đúng
+  chỗ ở mốc, `check` báo giật ([Giật trên hình](#giật-trên-hình)). Khoá vào chỗ xấu (lấn thân, gập ngược) rig không cứu,
+  `check` báo `arm` / `elbow` ([11](11-nhom-cam.md#7-luật-check-nhóm-held)). Lần cầm món đặt trước đọc khoá ở các mốc `hold`
+  của lần cầm; tay phụ của `both` không khoá.
 - **Đích là điểm bàn tay, không chỉ cổ tay.** `point` (`wrist`, `palm`, `back`, `grip`, `tip`; thiếu là cổ tay với `at`) đặt
   điểm ấy của bàn tay vào `at` — tay lên tay vịn, mặt bàn thì `point: "palm"` ở mặt trên. `to` / `side` / `offset` thay `at`
   bằng mốc thân của chính người ấy ([01](01-rig.md#đích-theo-mốc)). `palm`, `fingers`, `bend` khai lòng tay theo ý định
@@ -1187,6 +1197,17 @@ dùng, và `scene_probe` / `validate` (không biết tập), thì đo cả cản
   ghi, suốt lúc nó chạy, kể cả đoạn hoà vào và đoạn hoà ra sang clip sau;
 - mốc `world.hands[].snap`: tay ấy, đoạn từ mốc trước tới mốc này.
 
+**Khuỷu khoá xoay quá nhanh.** Rig không kẹp khuỷu khoá (`elbowLock`, [Đích bàn tay thế
+giới](#đích-bàn-tay-thế-giới)), nên `check` đo riêng nó (`elbowLockSnaps` của lõi): mỗi đoạn mốc `world.hands` có mốc khoá,
+mẫu cách nhau `HOLD_SLEW_STEP` (`1/30 s`), `φ` của khuỷu vẽ ra (`actArm`, `phiOf`) đổi quá `HOLD_SWIVEL_SLEW` (`5°`) giữa hai
+mẫu cùng có phần khoá (`elbowLockAt` dương) là giật. Các mẫu quá ngưỡng liền nhau gộp một dòng, cùng nhóm `move`:
+
+```
+scenes/canh-05.json: `lan` tay phải giây 1.00–1.10: khuỷu khoá xoay 46° mỗi 1/30 s (quá 5°) trên đoạn mốc `world.hands` giây 1.00 → 1.10 — rig không kẹp khuỷu khoá (`elbowLock`): dời hai mốc xa nhau hơn, cho `elbow` hai mốc gần hướng nhau hơn, hay bỏ `elbowLock` ở một mốc. Cố ý nhanh thì khai `snap: true` ở mốc sau
+```
+
+Mốc sau khai `snap` và quãng không lên hình thì không đo. `scene_probe` không trả dòng này trong `snaps`.
+
 Ngưỡng ở `package.json` của repo video, trường thiếu lấy mặc định; `false` là không đo:
 
 ```json
@@ -1368,7 +1389,7 @@ vật three của món.
 - **Cổ tay mang món đi liền mạch.** Tay mang món theo ý định và tay phụ giải từ nghiệm của mẫu trước: một chuỗi mẫu cách
   nhau `HOLD_SLEW_STEP` (`1/30 s`) tính từ mốc `world.hands` gần nhất của tay ấy (`ReachHold.prior`), mẫu đầu là mốc
   đầu. Xoay, gập, lệch cổ tay đi tối đa `HOLD_SLEW` (`15°`) một mẫu, xoay khuỷu `HOLD_SWIVEL_SLEW` (`5°`) — tính theo
-  phần mẫu đã trôi, nên khung dày hơn mẫu vẫn đi đều. Nghiệm riêng của khung đi chậm hơn thế thì giữ y nguyên; nhảy xa
+  phần mẫu đã trôi, nên khung dày hơn mẫu vẫn đi đều; phần khuỷu khoá (`elbowLock`) không bị giới hạn ấy. Nghiệm riêng của khung đi chậm hơn thế thì giữ y nguyên; nhảy xa
   hơn (ý định vượt tầm cổ tay: xoay qua `±90`, gập gần 90, món xoay nửa vòng lúc đổi chỗ cầm) thì cổ tay, khuỷu đi dần
   sang nghiệm mới trong vài khung thay vì lật trong một khung. Chuỗi chỉ phụ thuộc scene, mỗi mẫu giải một lần cho một
   runtime: Remotion vẽ khung theo thứ tự nào cũng ra cùng hình. Trong lúc cổ tay đang đi, lệch của ý định

@@ -62,6 +62,7 @@ import {
   phiAt,
   phiBasis,
   phiOf,
+  phiToward,
   solvePhi,
   type ArmInput,
   type ArmQuery,
@@ -222,7 +223,7 @@ import {
 } from "./types";
 
 /** Bump khi đổi hình dạng JSON scene; `migrateScene` phải có nhánh tương ứng. */
-export const SCENE_VERSION = 31;
+export const SCENE_VERSION = 32;
 
 /** `"@ten"` hay `"@ten+0.4"` / `"@ten-1"`: một mốc có tên trong `scene.marks` cộng phần lệch giây */
 export const MARK_REF = /^@([A-Za-z0-9_-]+)(?:\s*([+-])\s*(\d+(?:\.\d+)?))?$/;
@@ -412,8 +413,8 @@ const WorldKeySchema = z.object({
 /**
  * Đích một bàn tay trong thế giới: `at` toạ độ thế giới, hay mốc thân `to` trên chính người ấy (`side`, `offset` như đích
  * của hành động); `point` là điểm bàn tay đặt vào đích (thiếu là cổ tay với `at`, lòng tay với `to`; `item:<mốc>` là mốc
- * của món đang cầm); `elbow` hướng khuỷu (bỏ trống là mặc định hệ thân). `palm` / `fingers` / `bend` khai lòng tay theo ý
- * định, đè bàn tay của hành động theo phần đích. `hold` là chỗ cầm từ mốc này (`món@nhóm` hay `{ item, group, … }`,
+ * của món đang cầm); `elbow` hướng khuỷu (bỏ trống là mặc định hệ thân), `elbowLock` thì khuỷu ở mốc nằm đúng hướng ấy,
+ * không dò. `palm` / `fingers` / `bend` khai lòng tay theo ý định, đè bàn tay của hành động theo phần đích. `hold` là chỗ cầm từ mốc này (`món@nhóm` hay `{ item, group, … }`,
  * `null` là buông): mốc chỉ có `hold` thì vị trí lấy từ hành động. `ease` là đường hoà vào mốc này từ mốc trước của tay
  * ấy (bỏ trống là `smooth`), `bezier` đi với `ease: "bezier"`. docs/03-scene.md#đích-bàn-tay-thế-giới
  */
@@ -425,6 +426,7 @@ const HandSchema = z
     offset: V3Schema.optional(),
     point: ReachPointSchema.optional(),
     elbow: V3Schema.optional(),
+    elbowLock: z.literal(true).optional(),
     palm: AimDirSchema.optional(),
     fingers: AimDirSchema.optional(),
     bend: z.number().min(-90).max(90).optional(),
@@ -440,6 +442,9 @@ const HandSchema = z
   })
   .refine((h) => !!h.to || (h.side === undefined && h.offset === undefined), {
     message: "`side`, `offset` chỉ đi với `to`",
+  })
+  .refine((h) => !h.elbowLock || !!h.elbow, {
+    message: "`elbowLock` chỉ đi với `elbow`: khoá khuỷu vào hướng nào thì khai hướng ấy",
   });
 
 /**
@@ -945,6 +950,7 @@ export function migrateScene(json: unknown): unknown {
   // v29 → v30 `hold` chỉ nhận chỗ cầm nhóm (`món@nhóm`, `{ item, group, … }`); `món#kiểu` và `{ item, grip }` để zod báo kèm
   // lệnh chuyển `stickman migrate-held` — chuyển cần món bản 1 nên không tự đổi ở đây
   // v30 → v31 `world.hands[]` nhận `ease` / `bezier`, `items[]` nhận `bezier`; thiếu `ease` là `smooth` như cũ
+  // v31 → v32 `world.hands[]` nhận `elbowLock`; thiếu là khuỷu dò như cũ
   o.schemaVersion = SCENE_VERSION;
   return o;
 }
@@ -3516,7 +3522,11 @@ function handAt(
   };
   if (!b) {
     const p = one(ra, a.t);
-    return finish(p && p.w > 0 ? { ...p, aim: undefined } : undefined, p);
+    const lock = p && p.w > 0 ? keyLock(ks, side, time) : 0;
+    return finish(
+      p && p.w > 0 ? { ...p, aim: undefined, ...(lock > 0 && { elbowLock: lock }) } : undefined,
+      p,
+    );
   }
   const pa = one(ra, a.t);
   const pb = one(rb, b.t);
@@ -3546,7 +3556,46 @@ function handAt(
           ...(r.terms && { terms: r.terms }),
           ...("spline" in r && r.spline && { spline: r.spline }),
         });
-  return finish(out, pa, pb);
+  const lock = keyLock(ks, side, time);
+  if (!(out && lock > 0)) return finish(out, pa, pb);
+  // khuỷu khoá đi đều trên mặt cầu giữa hai hướng (`auto` giữ bậc ba): khuỷu xoay đều tốc độ, không vọt giữa đoạn
+  const elbow = !near && pa?.elbow && pb?.elbow ? slerpDir(pa.elbow, pb.elbow, fk) : out.elbow;
+  return finish({ ...out, ...(elbow && { elbow }), elbowLock: lock }, pa, pb);
+}
+
+/** Hướng đi đều trên mặt cầu từ `a` tới `b` (độ dài bỏ qua); hai hướng ngược nhau thì hoà thẳng */
+function slerpDir(a: readonly number[], b: readonly number[], f: number): V3 {
+  const [p, q] = [unit3(a as V3), unit3(b as V3)];
+  const w = Math.acos(Math.max(-1, Math.min(1, dot3(p, q))));
+  if (w < 1e-9 || Math.PI - w < 1e-6) return lerpN(p, q, f) as V3;
+  const [x, y] = [Math.sin((1 - f) * w) / Math.sin(w), Math.sin(f * w) / Math.sin(w)];
+  return [0, 1, 2].map((i) => p[i] * x + q[i] * y) as V3;
+}
+
+/** Mốc tay khoá khuỷu: có `elbowLock` và `elbow` */
+const lockOf = (h: HandKey["right"]) => (h?.elbowLock && h.elbow ? 1 : 0);
+
+/**
+ * Phần khoá khuỷu của tay `side` ở `time` trên các mốc nhắc tay ấy: mốc khoá ra `1`, mốc không khoá hay `null` ra `0`, hoà
+ * giữa hai mốc theo `ease` của mốc sau như phần đích; trước mốc đầu và sau mốc cuối giữ nguyên
+ */
+function keyLock(keys: readonly HandKey[], side: HandSide, time: number): number {
+  const ks = keys.filter((k) => k[side] !== undefined);
+  if (!ks.length) return 0;
+  let i = 0;
+  while (i + 1 < ks.length && ks[i + 1].t <= time) i++;
+  const a = ks[i];
+  const b = time > a.t ? ks[i + 1] : undefined;
+  const la = lockOf(a[side]);
+  if (!b) return la;
+  const lb = lockOf(b[side]);
+  if (la === lb) return la;
+  const rb = b[side];
+  return (
+    la +
+    (lb - la) *
+      easeAt({ ease: rb?.ease ?? "smooth", bezier: rb?.bezier }, (time - a.t) / (b.t - a.t))
+  );
 }
 
 /**
@@ -3942,6 +3991,57 @@ function slideHold(
   return { hold: out, ...(elbow && { elbow }) };
 }
 
+/**
+ * Khuỷu khoá của lần cầm `run` ở `time` (món đặt trước): phần khoá `k` hoà giữa hai mốc `hold` kề theo `ease` của mốc sau
+ * (mốc `elbowLock` ra `1`, mốc không khoá ra `0`), hướng khuỷu `elbow` (thế giới rig) như đích tay có khoá — đều trên mặt
+ * cầu, một mốc không khai thì lấy của mốc kia, `auto` bậc ba qua chuỗi mốc `hold`. Không mốc nào kẹp `time` khoá thì
+ * `undefined`
+ */
+function runLock(
+  keys: HandKey[],
+  side: HandSide,
+  time: number,
+  run: HoldRun,
+): { k: number; elbow: readonly number[] } | undefined {
+  let a: HandKey | undefined;
+  let b: HandKey | undefined;
+  for (const k of keys) {
+    if (!k[side]?.hold || k.t < run.since) continue;
+    if (holdRun(keys, side, k.t)?.since !== run.since) break;
+    if (k.t <= time) a = k;
+    else {
+      b = k;
+      break;
+    }
+  }
+  const ha = a?.[side];
+  if (!a || !ha) return undefined;
+  const la = lockOf(ha);
+  if (!b) return la ? { k: 1, elbow: ha.elbow! } : undefined;
+  const hb = b[side]!;
+  const lb = lockOf(hb);
+  if (!la && !lb) return undefined;
+  const u = (time - a.t) / (b.t - a.t);
+  const f = easeAt({ ease: hb.ease ?? "smooth", bezier: hb.bezier }, u);
+  const k = la + (lb - la) * f;
+  if (!(k > 0)) return undefined;
+  const [ea, eb] = [ha.elbow ?? hb.elbow!, hb.elbow ?? ha.elbow!];
+  if (hb.ease === "auto" && ha.elbow && hb.elbow) {
+    const chain = runHoldKeys(keys, side, run);
+    const n = autoNear(chain, chain.indexOf(a), (x) => x[side]?.ease === "auto");
+    const e0 = n.p0?.[side]?.elbow;
+    const e3 = n.p3?.[side]?.elbow;
+    return { k, elbow: hermiteN(e0, ea, eb, e3, n.h0, n.h, n.h2, u) };
+  }
+  return { k, elbow: slerpDir(ea, eb, f) };
+}
+
+/** `φ` đã khoá phần `L.k` về hướng khuỷu `L.elbow`, đường ngắn trên vòng; `L.k` từ `1` là đúng hướng ấy */
+function lockPhi(phi: number, inp: ArmInput, Wp: V3, L: { k: number; elbow: readonly number[] }) {
+  const want = phiToward(inp, Wp, L.elbow);
+  return L.k >= 1 ? want : wrapDeg(phi + wrapDeg(want - phi) * L.k);
+}
+
 /** Các mốc tay khai `hold` của lần cầm `run`, theo thời gian */
 function runHoldKeys(keys: HandKey[], side: HandSide, run: HoldRun): HandKey[] {
   const out: HandKey[] = [];
@@ -4202,7 +4302,19 @@ function graspStart(
     let prev = phiPrev;
     for (const k of marks) {
       const q = graspSample(rt, id, side, run, out, k.t, o);
-      const a = solvePhi(q.inp, q.Wp, q.Rw, prev, placedOther(rt, id, side, k.t, o), q.elbow);
+      const L = runLock(keys, side, k.t, run);
+      const a =
+        L && L.k >= 1
+          ? evalPhi(
+              q.inp,
+              q.Wp,
+              q.Rw,
+              lockPhi(0, q.inp, q.Wp, L),
+              prev,
+              placedOther(rt, id, side, k.t, o),
+              q.elbow,
+            )
+          : solvePhi(q.inp, q.Wp, q.Rw, prev, placedOther(rt, id, side, k.t, o), q.elbow);
       const Rt = tr3(q.inp.Rr);
       const w = a.wrist;
       keyed.push({
@@ -4325,7 +4437,8 @@ function keyedArm(
   const Wp = add3(inp.S, matVec(inp.Rr, k.W as V3));
   const Rw = matMul(inp.Rr, k.R);
   const other = placedOther(rt, id, side, time, o);
-  const arm = evalPhi(inp, Wp, Rw, k.phi, undefined, other, elbow);
+  const L = runLock(handKeys(rt, id), side, time, run);
+  const arm = evalPhi(inp, Wp, Rw, L ? lockPhi(k.phi, inp, Wp, L) : k.phi, undefined, other, elbow);
   const [turn, bend, dev] = k.wrist;
   const over = k.over;
   return {
@@ -4439,7 +4552,14 @@ function chainTo(
     const q = graspSample(rt, id, side, run, r, t, o);
     const prev = i ? r.chain[i - 1].sol.phi : r.phiPrev;
     const other = placedOther(rt, id, side, t, o);
-    r.chain.push({ t, sol: solvePhi(q.inp, q.Wp, q.Rw, prev, other, q.elbow) });
+    const L = runLock(handKeys(rt, id), side, t, run);
+    r.chain.push({
+      t,
+      sol:
+        L && L.k >= 1
+          ? evalPhi(q.inp, q.Wp, q.Rw, lockPhi(0, q.inp, q.Wp, L), prev, other, q.elbow)
+          : solvePhi(q.inp, q.Wp, q.Rw, prev, other, q.elbow),
+    });
   }
 }
 
@@ -4521,7 +4641,17 @@ function graspArmAt(
   chainTo(rt, id, side, run, r, Math.max(0, Math.floor((time - r.t0) / HOLD_SLEW_STEP)) + 1, at);
   const q = graspSample(rt, id, side, run, r, time, o);
   const other = placedOther(rt, id, side, time, o);
-  const arm = evalPhi(q.inp, q.Wp, q.Rw, phiAt(r.chain, time), undefined, other, q.elbow);
+  const L = runLock(handKeys(rt, id), side, time, run);
+  const phi = phiAt(r.chain, time);
+  const arm = evalPhi(
+    q.inp,
+    q.Wp,
+    q.Rw,
+    L ? lockPhi(phi, q.inp, q.Wp, L) : phi,
+    undefined,
+    other,
+    q.elbow,
+  );
   const sol = {
     ...r.sol,
     choice: q.frame.choice,
@@ -4640,6 +4770,17 @@ export function holdRuns(rt: SceneRuntime, id: string): Record<HandSide, HoldRun
   return out;
 }
 
+/**
+ * Phần khoá khuỷu (`elbowLock`) của tay `side` người `id` ở `time`: `1` là khuỷu nằm đúng hướng `elbow` của mốc, `0` là
+ * khuỷu tự do. Món đặt trước theo mốc `hold` của lần cầm, còn lại theo mọi mốc nhắc tay ấy; tay phụ của `both` không khoá
+ */
+export function elbowLockAt(rt: SceneRuntime, id: string, side: HandSide, time: number): number {
+  const keys = handKeys(rt, id);
+  const run = effRun(rt, keys, side, time);
+  if (run && placedRun(rt, keys, side, run)) return runLock(keys, side, time, run)?.k ?? 0;
+  return keyLock(keys, side, time);
+}
+
 /** Xoay, gập, lệch cổ tay, độ */
 export interface WristAngles {
   turn: number;
@@ -4658,7 +4799,7 @@ export interface HandReport {
   phi: number;
   /** `φ` của hướng khuỷu khởi đầu (`elbow` của mốc, không khai là `REACH_ELBOW`); tay không đích thì `null` */
   phi0: number | null;
-  /** Khuỷu khoá ở hướng `elbow` của mốc; schema chưa có nên luôn `false` */
+  /** Khuỷu nằm đúng hướng `elbow` của mốc khoá (`elbowLock`): ở mốc khoá, và giữa hai mốc khoá */
   elbowLock: boolean;
   wrist: {
     /**
@@ -4726,6 +4867,7 @@ export function handReport(
     : runs.find((r) => r.lead && r.since <= time && (time < r.until || r.until >= rt.duration));
   const sol = trace?.placed;
   const q = sol && armQueries.get(sol);
+  const lock = elbowLockAt(rt, id, side, time);
   const elbow0 = trace?.elbow0 && rigVec(trace.elbow0);
   const at = (phi: number) =>
     q
@@ -4743,7 +4885,7 @@ export function handReport(
     blending: holdBlending(rt, id, side === "right" ? "R" : "L", time),
     phi: phiOf(inp, a.W, a.E),
     phi0: sol ? sol.arm.phi0 : elbow0 ? at(0).phi0 : null,
-    elbowLock: false,
+    elbowLock: lock >= 1,
     wrist: {
       raw: raw ? { turn: raw.turn, bend: raw.bend, dev: raw.dev } : null,
       drawn,
