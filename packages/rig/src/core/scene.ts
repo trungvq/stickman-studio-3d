@@ -4485,10 +4485,17 @@ function lastPhi(
   o: ItemOptions,
 ): number {
   const r = graspStart(rt, id, side, run, o);
-  if (r.keyed) return keyedAt(r.keyed, t1).phi;
+  if (r.keyed) {
+    const L = runLock(handKeys(rt, id), side, t1, run);
+    return L ? keyedArm(rt, id, side, run, r, t1, o).arm.phi : keyedAt(r.keyed, t1).phi;
+  }
   const n = Math.max(0, Math.ceil((t1 - r.t0) / HOLD_SLEW_STEP - 1e-9));
   chainTo(rt, id, side, run, r, n, o);
-  return r.chain[n].sol.phi;
+  const t = r.t0 + n * HOLD_SLEW_STEP;
+  const L = runLock(handKeys(rt, id), side, t, run);
+  if (!L) return r.chain[n].sol.phi;
+  const q = graspSample(rt, id, side, run, r, t, o);
+  return lockPhi(r.chain[n].sol.phi, q.inp, q.Wp, L);
 }
 
 /** Khung cầm ở `time` của lần cầm đã giải `r` (trường số đã hoà) trên thân `T`, món cỡ `s`, kèm hướng khuỷu của mốc tay */
@@ -4771,15 +4778,72 @@ export function holdRuns(rt: SceneRuntime, id: string): Record<HandSide, HoldRun
 }
 
 /**
- * Phần khoá khuỷu (`elbowLock`) của tay `side` người `id` ở `time`: `1` là khuỷu nằm đúng hướng `elbow` của mốc, `0` là
- * khuỷu tự do. Món đặt trước theo mốc `hold` của lần cầm, còn lại theo mọi mốc nhắc tay ấy; tay phụ của `both` không khoá
+ * Phần khoá khuỷu (`elbowLock`) thật sự áp lên tay `side` người `id` ở `time`: `1` là khuỷu nằm đúng hướng `elbow` của mốc,
+ * `0` là khuỷu tự do. Món đặt trước theo mốc `hold` của lần cầm (`runLock`); còn lại phần khoá của mốc nhân phần đích thế
+ * giới `w` (đích `w` dưới `1` thì khuỷu còn hoà với hành động); tay phụ của `both` không khoá
  */
 export function elbowLockAt(rt: SceneRuntime, id: string, side: HandSide, time: number): number {
   const keys = handKeys(rt, id);
+  if (!keys.some((k) => lockOf(k[side]))) return 0;
   const run = effRun(rt, keys, side, time);
   if (run && placedRun(rt, keys, side, run)) return runLock(keys, side, time, run)?.k ?? 0;
-  return keyLock(keys, side, time);
+  if (!(keyLock(keys, side, time) > 0)) return 0;
+  const w = sceneAt(rt, id, time, rt.heights[id] ?? 1).world;
+  const r = (side === "right") === !w?.flip ? w?.hands?.near : w?.hands?.far;
+  return r && r.w > 0 ? Math.min(1, r.elbowLock ?? 0) * Math.min(1, r.w) : 0;
 }
+
+/** Một mốc khai `elbowLock` mà khoá không có tác dụng ở chính mốc ấy (`elbowLockIdle`) */
+export interface ElbowLockIdle {
+  id: string;
+  hand: HandSide;
+  /** Giây của mốc, chỉ số mốc trong `world.hands` */
+  t: number;
+  key: number;
+  /** `place`: tay không theo món mà mốc không có `at` / `to`; `support`: tay phụ của `both` trên món đặt trước */
+  why: "place" | "support";
+}
+
+/**
+ * Mốc `world.hands` khai `elbowLock` mà khuỷu ở mốc ấy không khoá được (`elbowLockAt` ra `0`): tay không theo món mà mốc
+ * không có `at` / `to` (đích tay `w` 0, tay theo hành động), hay tay phụ của `both` trên món đặt trước.
+ * docs/03-scene.md#đích-bàn-tay-thế-giới
+ */
+export function elbowLockIdle(rt: SceneRuntime): ElbowLockIdle[] {
+  const out: ElbowLockIdle[] = [];
+  for (const m of rt.cast) {
+    const keys = m.world?.hands;
+    if (!keys) continue;
+    keys.forEach((k, key) => {
+      for (const hand of ["right", "left"] as const) {
+        const h = k[hand];
+        if (!lockOf(h)) continue;
+        const run = effRun(rt, keys, hand, k.t);
+        // lần cầm món đặt trước đọc khoá ở mốc `hold` của nó; mốc tay trong lần cầm ấy luôn có `hold`
+        const why =
+          run && placedRun(rt, keys, hand, run)
+            ? run.lead
+              ? "support"
+              : undefined
+            : h!.at || h!.to
+              ? undefined
+              : "place";
+        if (why) out.push({ id: m.id, hand, t: k.t, key, why });
+      }
+    });
+  }
+  return out;
+}
+
+/** Dòng báo của một mốc khoá khuỷu không có tác dụng, như `check` in */
+export const elbowLockIdleLine = (s: ElbowLockIdle): string => {
+  const at = `${s.id}: \`world.hands\` ${s.hand} t=${s.t}`;
+  const why =
+    s.why === "place"
+      ? "mốc không có `at` / `to`: ở mốc ấy tay theo hành động (đích tay `w` 0), khuỷu không theo `elbow` — khai `at` hay `to` ở mốc ấy, hay bỏ `elbowLock`"
+      : "tay ấy là tay phụ của `both`: tay phụ không khoá — bỏ `elbowLock`, hay khoá ở tay dẫn";
+  return `${at}: khoá khuỷu bị bỏ qua — ${why} (docs/03-scene.md#đích-bàn-tay-thế-giới)`;
+};
 
 /** Xoay, gập, lệch cổ tay, độ */
 export interface WristAngles {
@@ -4799,7 +4863,7 @@ export interface HandReport {
   phi: number;
   /** `φ` của hướng khuỷu khởi đầu (`elbow` của mốc, không khai là `REACH_ELBOW`); tay không đích thì `null` */
   phi0: number | null;
-  /** Khuỷu nằm đúng hướng `elbow` của mốc khoá (`elbowLock`): ở mốc khoá, và giữa hai mốc khoá */
+  /** Khuỷu nằm đúng hướng `elbow` của mốc khoá: phần khoá thật sự áp lên tay (`elbowLockAt`) là `1` */
   elbowLock: boolean;
   wrist: {
     /**

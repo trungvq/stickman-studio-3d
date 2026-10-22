@@ -1,11 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { actAim, type ActInput } from "./act3";
+import { actAim, HOLD_SWIVEL_SLEW, type ActInput } from "./act3";
+import { armLine, sceneArms } from "./armAudit";
 import { body3 } from "./figure3d";
-import { HELD_ARM } from "./heldAudit";
+import type { GraspReport } from "./graspSolve";
+import { handVec } from "./hand";
+import {
+  ELBOW_LOCK_FIX,
+  HELD_ARM,
+  HELD_ELBOW,
+  heldLine,
+  sceneHeld,
+  type HeldHand,
+} from "./heldAudit";
 import { parseHeldItem, type HeldItemSpec } from "./heldItem";
-import { handReport, parseScene, resolveScene, SCENE_VERSION, sceneAt } from "./scene";
+import {
+  elbowLockAt,
+  elbowLockIdle,
+  elbowLockIdleLine,
+  handReport,
+  parseScene,
+  resolveScene,
+  SCENE_VERSION,
+  sceneAt,
+} from "./scene";
 import { parseCharacter } from "./schema";
-import { elbowLockSnaps } from "./snap";
+import { elbowLockLine, elbowLockSnaps } from "./snap";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
@@ -99,6 +118,8 @@ const unwrapped = (phis: number[]) => {
 };
 const grid = (a: number, b: number, n: number) =>
   Array.from({ length: n + 1 }, (_, i) => a + ((b - a) * i) / n);
+/** `ease` mặc định của mốc (`smooth`) */
+const smooth = (u: number) => u * u * (3 - 2 * u);
 
 /** Giữa hai mốc khoá: `φ` đi một chiều, tổng đúng cung ngắn từ mốc trước tới mốc sau */
 function shortPath(rt: ReturnType<typeof runtime>, t0: number, t1: number, e0: V3, e1: V3) {
@@ -259,6 +280,46 @@ describe("lần cầm theo mốc (`keyed`)", () => {
     expect(arm.bodyRatio).toBeGreaterThan(HELD_ARM);
     expect(Math.abs(wrap(report(rt, 1).phi - phiOfDir(rt, 1, into)))).toBeLessThan(0.5);
   });
+
+  it("mốc khoá rồi mốc không khoá: `φ` = `φ` theo mốc kéo về hướng khoá theo phần khoá, đường ngắn qua ±180", () => {
+    // khoá gần ngược khuỷu tự do: `φ` theo mốc và hướng khoá nằm hai bên ±180 ở giữa đoạn
+    const e = dirAt(free, 0, report(free, 1).phi + 120);
+    const rt = runtime(withElbow(HANDS, [e]), ITEMS);
+    const [pa, pb] = [report(rt, 0).phi, report(rt, 1).phi];
+    expect(Math.abs(wrap(pa - phiOfDir(rt, 0, e)))).toBeLessThan(1e-6);
+    let seam = false;
+    for (const t of grid(0, 1, 10).slice(1, -1)) {
+      const f = smooth(t);
+      const lin = wrap(pa + wrap(pb - pa) * f);
+      const want = phiOfDir(rt, t, e);
+      seam ||= Math.abs(want - lin) > 180;
+      const phi = wrap(lin + wrap(want - lin) * (1 - f));
+      expect(Math.abs(wrap(report(rt, t).phi - phi))).toBeLessThan(1e-6);
+      expect(report(rt, t).elbowLock).toBe(false);
+    }
+    expect(seam).toBe(true);
+  });
+
+  it("lần cầm sau nối `φ` từ khuỷu khoá của lần cầm trước", () => {
+    const S2 = { ...SHEET, along: 0.6, regrip: true };
+    const base: Hands = [
+      { t: 0, right: { hold: SHEET } },
+      { t: 0.5, right: { hold: SHEET } },
+      { t: 1, right: { hold: S2 } },
+      { t: 2, right: { hold: S2 } },
+    ];
+    const loose = runtime(base, ITEMS);
+    // mốc khoá giữa hai mốc món: `φ` cuối của lần cầm đầu là hướng khoá, không phải `φ` của mốc món
+    const mid = dirAt(loose, 0.5, report(loose, 0.5).phi + 60);
+    const hands = base.map((k, i) =>
+      i === 1 ? { ...k, right: { hold: SHEET, elbow: mid, elbowLock: true } } : k,
+    );
+    const rt = runtime(hands, ITEMS);
+    const want = phiOfDir(rt, 0.999, mid);
+    const first = (r: ReturnType<typeof runtime>) => wrap(report(r, 1).grasp!.arm.phi - want);
+    expect(report(rt, 1).mode).toBe("keyed");
+    expect(Math.abs(first(rt))).toBeLessThan(Math.abs(first(loose)) - 20);
+  });
 });
 
 describe("hai tay (`both`)", () => {
@@ -293,6 +354,19 @@ describe("hai tay (`both`)", () => {
     const hands = withElbow(HANDS, [e0, e1]).map((k, i) => (i === 1 ? { ...k, t: 1.015 } : k));
     const rt = runtime(hands, ITEMS);
     expect(Math.abs(wrap(report(rt, 1.015).phi - phiOfDir(rt, 1.015, e1)))).toBeLessThan(1e-6);
+  });
+
+  it("sau mốc khoá, chuỗi `φ` đi tiếp từ hướng khoá", () => {
+    for (const off of [40, 70]) {
+      const e = dirAt(free, 0, report(free, 0).phi + off);
+      const rt = runtime(withElbow(HANDS, [e]), ITEMS);
+      // mẫu đầu sau mốc khoá: gỡ phần khoá (`lockPhi`) khỏi `φ` vẽ ra để lấy `φ` của chuỗi
+      const t = 1 / 30;
+      const want = phiOfDir(rt, t, e);
+      const chain = wrap(report(rt, t).phi - want) / smooth(t);
+      const own = wrap(report(free, t).phi - want);
+      expect(Math.abs(chain)).toBeLessThan(Math.abs(own) - 10);
+    }
   });
 });
 
@@ -330,5 +404,185 @@ describe("`check`: khuỷu khoá xoay quá nhanh", () => {
     expect(
       elbowLockSnaps(runtime(withElbow(slow, [e0, e0, e1], [false, true, true])), { characterOf }),
     ).toEqual([]);
+  });
+});
+
+describe("`check`: khuỷu khoá xoay quá nhanh — đo", () => {
+  const characterOf = () => NGUOI;
+
+  it("xoay vừa quá `HOLD_SWIVEL_SLEW` mỗi 1/30 s là báo", () => {
+    const HANDS: Hands = [
+      { t: 0, right: { at: PHONE, point: "grip", hold: "dien-thoai@palmBox" } },
+      { t: 1, right: { at: PHONE, point: "grip" } },
+      { t: 1.5, right: { at: PHONE, point: "grip" } },
+    ];
+    const free = runtime(HANDS);
+    const at = (d: number) => {
+      const e0 = dirAt(free, 1, 30);
+      const e1 = dirAt(free, 1.5, 30 - d);
+      return elbowLockSnaps(runtime(withElbow(HANDS, [e0, e0, e1], [false, true, true])), {
+        characterOf,
+      });
+    };
+    const s = at(80);
+    expect(s).toHaveLength(1);
+    expect(s[0].keys).toEqual([1, 1.5]);
+    expect(s[0].deg).toBeGreaterThan(HOLD_SWIVEL_SLEW);
+    expect(s[0].deg).toBeLessThan(20);
+    expect(at(30)).toEqual([]);
+  });
+
+  it("sau mốc cuối phần khoá vẫn `1`: khuỷu khoá lật khi trục vai → cổ tay đi qua hướng khoá", () => {
+    const HANDS: Hands = [{ t: 0, right: { hold: SHEET } }];
+    const ITEMS = [bang(0), bang(1, [10, -30, 30]), bang(2, [-20, -50, 40])];
+    const free = runtime(HANDS, ITEMS, 2);
+    const rt = runtime(withElbow(HANDS, [report(free, 0.5).axis as V3]), ITEMS, 2);
+    const s = elbowLockSnaps(rt, { characterOf });
+    expect(s).toHaveLength(1);
+    expect(s[0].keys).toEqual([0, null]);
+    expect(s[0].from).toBeGreaterThan(0.3);
+    expect(elbowLockLine(s[0])).toMatch(/sau mốc `world.hands` cuối \(giây 0.00\)/);
+  });
+
+  it("đo khuỷu xoay quanh trục, không đo `φ`: trục qua phương đứng làm `φ` nhảy mà khuỷu không xoay", () => {
+    const hands: Hands = [
+      { t: 0, right: { at: [284, -300, 420], elbow: [1, 0, 0], elbowLock: true } },
+      { t: 0.6, right: { at: [284, -405, 560], elbow: [1, 0, 0], elbowLock: true } },
+    ];
+    const rt = runtime(hands, [], 1);
+    const phis = grid(0, 0.6, 18).map((t) => report(rt, t).phi);
+    const step = Math.max(...phis.slice(1).map((p, i) => Math.abs(wrap(p - phis[i]))));
+    expect(step).toBeGreaterThan(30);
+    expect(elbowLockSnaps(rt, { characterOf })).toEqual([]);
+  });
+});
+
+describe("phần khoá thật sự áp lên khuỷu (`elbowLockAt`)", () => {
+  const HANDS: Hands = [
+    { t: 0, right: { at: PHONE, point: "palm", palm: "down", fingers: "forward" } },
+    { t: 1, right: { at: PHONE2, point: "palm", palm: "down", fingers: "forward" } },
+  ];
+  const free = runtime(HANDS);
+  const e0 = dirAt(free, 0, 70);
+
+  it("hoà giữa mốc khoá và mốc không khoá theo `ease` của mốc sau", () => {
+    const lock = (ease?: string) => {
+      const hands = withElbow(HANDS, [e0]).map((k, i) =>
+        i === 1 && ease ? { ...k, right: { ...(k.right as object), ease } } : k,
+      );
+      return elbowLockAt(runtime(hands), "nguoi", "right", 0.25);
+    };
+    expect(lock()).toBeCloseTo(1 - smooth(0.25), 12);
+    expect(lock("linear")).toBeCloseTo(0.75, 12);
+  });
+
+  it("mốc khoá không có `at` / `to`: khoá bị bỏ ở mốc ấy, `elbowLock` của báo là `false`, `check` báo một dòng", () => {
+    const hands: Hands = [
+      {
+        t: 0,
+        right: { at: PHONE, point: "grip", hold: "dien-thoai@palmBox", elbow: e0, elbowLock: true },
+      },
+      { t: 1, right: { hold: "dien-thoai@palmBox", elbow: e0, elbowLock: true } },
+    ];
+    const rt = runtime(hands);
+    expect(elbowLockAt(rt, "nguoi", "right", 0)).toBe(1);
+    // đích tay `w` đi từ `1` về `0`: phần khoá theo `w`
+    expect(elbowLockAt(rt, "nguoi", "right", 0.5)).toBeCloseTo(0.5, 12);
+    expect(elbowLockAt(rt, "nguoi", "right", 1)).toBe(0);
+    expect(report(rt, 1).elbowLock).toBe(false);
+    const idle = elbowLockIdle(rt);
+    expect(idle).toEqual([{ id: "nguoi", hand: "right", t: 1, key: 1, why: "place" }]);
+    expect(elbowLockIdleLine(idle[0])).toMatch(
+      /^nguoi: `world.hands` right t=1: khoá khuỷu bị bỏ qua — mốc không có `at` \/ `to`/,
+    );
+    expect(elbowLockIdle(runtime(withElbow(HANDS, [e0, e0])))).toEqual([]);
+  });
+
+  it("tay phụ của `both` không khoá", () => {
+    const hands: Hands = [
+      { t: 0, right: { hold: { ...SHEET, both: true } } },
+      { t: 0.5, left: { at: PHONE, elbow: e0, elbowLock: true } },
+      { t: 1, right: { hold: { ...SHEET, both: true } } },
+    ];
+    const rt = runtime(hands, [bang(0), bang(1, [38, -14, 8])]);
+    expect(elbowLockAt(rt, "nguoi", "left", 0.5)).toBe(0);
+    expect(elbowLockIdle(rt).map((s) => [s.hand, s.why])).toEqual([["left", "support"]]);
+  });
+});
+
+describe("`check`: khuỷu khoá vào chỗ xấu", () => {
+  it("tay tự do khoá khuỷu vào thân: luật `body` của tay, quãng ngắn cũng báo", () => {
+    const at = [300, -280, 460];
+    const HANDS: Hands = [
+      { t: 0, right: { at, point: "palm", palm: "down", fingers: "forward" } },
+      { t: 1, right: { at, point: "palm", palm: "down", fingers: "forward" } },
+    ];
+    const free = runtime(HANDS);
+    const body = (phi: number, lock = true) =>
+      sceneArms(runtime(withElbow(HANDS, [undefined, dirAt(free, 1, phi)], lock)), {
+        characterOf: () => NGUOI,
+      }).filter((s) => s.rule === "body");
+    const s = body(60);
+    expect(s).toHaveLength(1);
+    expect(s[0]).toMatchObject({ id: "nguoi", hand: "R", on: "upper.torso" });
+    expect(s[0].amount).toBeGreaterThan(HELD_ARM);
+    expect(armLine(s[0])).toContain(ELBOW_LOCK_FIX);
+    expect(body(-90)).toEqual([]);
+    expect(body(60, false)).toEqual([]);
+  });
+
+  it("tay dẫn khoá khuỷu vào thân: luật `arm` của đồ cầm tay nêu khuỷu khoá, quãng ngắn cũng báo; không khoá thì im", () => {
+    const HANDS: Hands = [
+      { t: 0, right: { at: PHONE, point: "grip", hold: "dien-thoai@palmBox" } },
+      { t: 1, right: { at: PHONE2, point: "grip" } },
+    ];
+    const e = dirAt(runtime(HANDS), 0, 0);
+    const lead = (o: Partial<GraspReport["arm"]>): HeldHand => ({
+      id: "nguoi",
+      hand: "R",
+      item: "dien-thoai",
+      key: "1|@palmBox",
+      hold: "dien-thoai@palmBox////",
+      pose: "grip",
+      follow: "wrist",
+      acted: handVec({}),
+      pierce: { depth: 0, core: -2, piece: "palm" },
+      gaps: { thumb: -0.1, index: -0.1, fingers: -0.1, palm: -0.1 },
+      grip: -0.5,
+      palm: { gap: 3, angle: 20 },
+      rel: { p: [0, 0, 0], q: [0, 0, 0, 1] },
+      at: PHONE as V3,
+      obj: 1,
+      s: 1,
+      grasp: {
+        item: "dien-thoai",
+        group: "palmBox",
+        mode: "hand",
+        t0: 0,
+        choice: {},
+        by: {},
+        arm: {
+          phi: 0,
+          wrist: { turn: 0, bend: 0, dev: 0, over: 0, off: 0 },
+          body: 0,
+          bodyRatio: 0,
+          gap: 0,
+          ...o,
+        },
+      } as GraspReport,
+    });
+    const issues = (lock: boolean, o: Partial<GraspReport["arm"]>) =>
+      sceneHeld(runtime(withElbow(HANDS, [e, e], lock)), {
+        frame: (t) => (t === 0.5 ? [lead(o)] : []),
+      }).filter((i) => i.rule === "arm" || i.rule === "elbow");
+    const into = { body: 5, bodyRatio: 1, bodyPart: "upper.torso" };
+    const arm = issues(true, into);
+    expect(arm.map((i) => [i.rule, i.lock, i.runs])).toEqual([["arm", true, [[0.5, 0.5]]]]);
+    expect(heldLine(arm[0])).toContain(ELBOW_LOCK_FIX);
+    expect(issues(false, into)).toEqual([]);
+    const back = issues(true, { inward: HELD_ELBOW + 0.2 });
+    expect(back.map((i) => i.rule)).toEqual(["elbow"]);
+    expect(heldLine(back[0])).toContain(ELBOW_LOCK_FIX);
+    expect(heldLine(back[0])).not.toContain("khai `elbow` ở mốc tay");
   });
 });

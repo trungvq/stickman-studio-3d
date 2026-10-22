@@ -1,4 +1,4 @@
-import { actArm, actJoints, bones3, HOLD_SWIVEL_SLEW, type ActJoint } from "./act3";
+import { actArm, actJoints, bones3, HOLD_SWIVEL_SLEW, type ActArm, type ActJoint } from "./act3";
 import {
   actionKind,
   actionMask,
@@ -9,10 +9,9 @@ import {
 } from "./action";
 import { D, RIG } from "./constants";
 import { body3 } from "./figure3d";
-import { phiOf } from "./graspArm";
 import { HOLD_SLEW_STEP } from "./heldItem";
 import { computeFigure } from "./geometry";
-import { depthAt, project, type Lens, type V3 } from "./lens";
+import { depthAt, dot3, project, scale3, sub3, type Lens, type V3 } from "./lens";
 import {
   cameraAt,
   castCharacter,
@@ -758,16 +757,50 @@ export interface ElbowLockSnap {
   /** Quãng giây xoay quá ngưỡng */
   from: number;
   to: number;
-  /** Độ xoay khuỷu (`φ`) lớn nhất mỗi `HOLD_SLEW_STEP` trong quãng */
+  /** Độ xoay khuỷu quanh trục vai → cổ tay lớn nhất mỗi `HOLD_SLEW_STEP` trong quãng */
   deg: number;
-  /** Hai mốc `world.hands` kẹp quãng */
-  keys: [number, number];
+  /** Hai mốc `world.hands` kẹp quãng; trước mốc đầu, sau mốc cuối thì một đầu là `null` */
+  keys: [number | null, number | null];
+}
+
+const unitOf = (v: V3): V3 => scale3(v, 1 / (Math.hypot(...v) || 1));
+const crossOf = (a: V3, b: V3): V3 => [
+  a[1] * b[2] - a[2] * b[1],
+  a[2] * b[0] - a[0] * b[2],
+  a[0] * b[1] - a[1] * b[0],
+];
+
+/**
+ * Xoay của khuỷu quanh trục vai → cổ tay giữa hai mẫu, độ: khuỷu (so với vai) của mẫu trước quay theo phép quay ngắn nhất
+ * đưa trục trước về trục sau (khung trôi theo trục), rồi đo góc với khuỷu mẫu sau trên mặt phẳng vuông góc trục. Không đọc
+ * `φ`: gốc của `φ` quay theo trục (trục gần thẳng đứng thì gốc đổi hẳn) dù khuỷu không xoay, và trục lắc theo cổ tay không
+ * tính là xoay khuỷu. Tay gần thẳng (khuỷu cách trục dưới `0,1` bắp tay) ra `0`
+ */
+function swivel(a: ActArm, b: ActArm): number {
+  const [n0, n1] = [unitOf(sub3(a.W, a.S)), unitOf(sub3(b.W, b.S))];
+  const k = crossOf(n0, n1);
+  const s = Math.hypot(...k);
+  const c = dot3(n0, n1);
+  let e = sub3(a.E, a.S);
+  if (s > 1e-12) {
+    // Rodrigues: quay `e` quanh `k` một góc từ `n0` tới `n1`
+    const u = scale3(k, 1 / s);
+    const kx = crossOf(u, e);
+    e = [0, 1, 2].map((i) => e[i] * c + kx[i] * s + u[i] * dot3(u, e) * (1 - c)) as V3;
+  }
+  const flat = (v: V3) => sub3(v, scale3(n1, dot3(v, n1)));
+  const [p, q] = [flat(e), flat(sub3(b.E, b.S))];
+  // tay gần thẳng: khuỷu sát trục, góc xoay không đo được
+  if (Math.min(Math.hypot(...p), Math.hypot(...q)) < 0.1 * Math.hypot(...e)) return 0;
+  const cos = dot3(p, q) / (Math.hypot(...p) * Math.hypot(...q) || 1);
+  return Math.acos(Math.max(-1, Math.min(1, cos))) / D;
 }
 
 /**
- * Khuỷu khoá xoay quá nhanh: rig không kẹp khuỷu khoá (`elbowLock`), nên đoạn mốc `world.hands` có mốc khoá mà `φ` của khuỷu
- * vẽ ra (`actArm`, `phiOf`) đổi quá `HOLD_SWIVEL_SLEW` mỗi `HOLD_SLEW_STEP` là một cú giật. Chỉ đo cặp mẫu cùng có phần khoá
- * (`elbowLockAt`); bỏ đoạn tới mốc `snap`, cặp mẫu ngoài `spans`. docs/03-scene.md#giật-trên-hình
+ * Khuỷu khoá xoay quá nhanh: rig không kẹp khuỷu khoá (`elbowLock`), nên quãng có phần khoá (`elbowLockAt` dương) mà khuỷu vẽ
+ * ra (`actArm`) xoay quanh trục vai → cổ tay (`swivel`) quá `HOLD_SWIVEL_SLEW` mỗi `HOLD_SLEW_STEP` là một cú giật. Đo mọi
+ * đoạn giữa hai mốc nhắc tay ấy, cả trước mốc đầu và sau mốc cuối (phần khoá của mốc ấy giữ nguyên); chỉ cặp mẫu cùng có
+ * phần khoá. Bỏ đoạn tới mốc `snap`, cặp mẫu ngoài `spans`. docs/03-scene.md#giật-trên-hình
  */
 export function elbowLockSnaps(
   rt: SceneRuntime,
@@ -786,31 +819,46 @@ export function elbowLockSnaps(
     const b = body3(c);
     for (const hand of ["right", "left"] as const) {
       const ks = keys.filter((k) => k[hand] !== undefined);
-      const locked = (k: (typeof ks)[number]) => !!(k[hand]?.elbowLock && k[hand]?.elbow);
+      if (!ks.some((k) => k[hand]?.elbowLock)) continue;
       // mẫu khuỷu tự do (phần khoá `0`) không tính: khuỷu ở đó theo bộ giải, không theo khoá
-      const phiAt = (t: number) => {
+      const armAt = (t: number) => {
         if (!(elbowLockAt(rt, m.id, hand, t) > 0)) return undefined;
-        const a = actArm(c, sceneAt(rt, m.id, t, c.rig.height, b), hand === "right" ? -1 : 1);
-        return a && phiOf(a.inp, a.W, a.E);
+        return actArm(c, sceneAt(rt, m.id, t, c.rig.height, b), hand === "right" ? -1 : 1);
       };
-      for (let j = 1; j < ks.length; j++) {
-        const [k0, k1] = [ks[j - 1], ks[j]];
-        if (k1.snap || !(locked(k0) || locked(k1))) continue;
-        const n = Math.max(1, Math.ceil((k1.t - k0.t) / HOLD_SLEW_STEP - 1e-9));
-        const dt = (k1.t - k0.t) / n;
-        let prev = phiAt(k0.t);
+      const spans: { from: number; to: number; keys: ElbowLockSnap["keys"] }[] = [
+        ...(ks[0].t > E
+          ? [{ from: 0, to: ks[0].t, keys: [null, ks[0].t] as ElbowLockSnap["keys"] }]
+          : []),
+        ...ks
+          .slice(1)
+          .flatMap((k1, j) =>
+            k1.snap
+              ? []
+              : [{ from: ks[j].t, to: k1.t, keys: [ks[j].t, k1.t] as ElbowLockSnap["keys"] }],
+          ),
+        ...(rt.duration - ks[ks.length - 1].t > E
+          ? [
+              {
+                from: ks[ks.length - 1].t,
+                to: rt.duration,
+                keys: [ks[ks.length - 1].t, null] as ElbowLockSnap["keys"],
+              },
+            ]
+          : []),
+      ];
+      for (const span of spans) {
+        const n = Math.max(1, Math.ceil((span.to - span.from) / HOLD_SLEW_STEP - 1e-9));
+        const dt = (span.to - span.from) / n;
+        let prev = armAt(span.from);
         let cur: ElbowLockSnap | undefined;
         for (let i = 1; i <= n; i++) {
-          const [t0, t1] = [k0.t + (i - 1) * dt, k0.t + i * dt];
-          const phi = phiAt(t1);
-          const deg =
-            prev === undefined || phi === undefined
-              ? 0
-              : (Math.abs(((((phi - prev + 180) % 360) + 360) % 360) - 180) * HOLD_SLEW_STEP) / dt;
-          prev = phi;
+          const [t0, t1] = [span.from + (i - 1) * dt, span.from + i * dt];
+          const a = armAt(t1);
+          const deg = prev && a ? (swivel(prev, a) * HOLD_SLEW_STEP) / dt : 0;
+          prev = a;
           if (deg > HOLD_SWIVEL_SLEW + 1e-6 && shown(t0, t1)) {
             if (cur && cur.to >= t0 - E) [cur.to, cur.deg] = [t1, Math.max(cur.deg, deg)];
-            else out.push((cur = { id: m.id, hand, from: t0, to: t1, deg, keys: [k0.t, k1.t] }));
+            else out.push((cur = { id: m.id, hand, from: t0, to: t1, deg, keys: span.keys }));
           }
         }
       }
@@ -820,5 +868,17 @@ export function elbowLockSnaps(
 }
 
 /** Dòng báo của một quãng khuỷu khoá xoay quá nhanh, như `check` in */
-export const elbowLockLine = (s: ElbowLockSnap): string =>
-  `\`${s.id}\` ${s.hand === "right" ? "tay phải" : "tay trái"} giây ${sec(s.from)}–${sec(s.to)}: khuỷu khoá xoay ${s.deg.toFixed(0)}° mỗi 1/30 s (quá ${HOLD_SWIVEL_SLEW}°) trên đoạn mốc \`world.hands\` giây ${sec(s.keys[0])} → ${sec(s.keys[1])} — rig không kẹp khuỷu khoá (\`elbowLock\`): dời hai mốc xa nhau hơn, cho \`elbow\` hai mốc gần hướng nhau hơn, hay bỏ \`elbowLock\` ở một mốc. Cố ý nhanh thì khai \`snap: true\` ở mốc sau`;
+export const elbowLockLine = (s: ElbowLockSnap): string => {
+  const [a, b] = s.keys;
+  const span =
+    a === null
+      ? `trước mốc \`world.hands\` đầu (giây ${sec(b!)})`
+      : b === null
+        ? `sau mốc \`world.hands\` cuối (giây ${sec(a)})`
+        : `trên đoạn mốc \`world.hands\` giây ${sec(a)} → ${sec(b)}`;
+  const fix =
+    a === null || b === null
+      ? "khuỷu khoá theo hướng `elbow` của mốc ấy trong khi người và tay đi — thêm mốc tay khoá hướng khác cho quãng ấy, hay bỏ `elbowLock`"
+      : "dời hai mốc xa nhau hơn, cho `elbow` hai mốc gần hướng nhau hơn, hay bỏ `elbowLock` ở một mốc. Cố ý nhanh thì khai `snap: true` ở mốc sau";
+  return `\`${s.id}\` ${s.hand === "right" ? "tay phải" : "tay trái"} giây ${sec(s.from)}–${sec(s.to)}: khuỷu khoá xoay ${s.deg.toFixed(0)}° mỗi 1/30 s (quá ${HOLD_SWIVEL_SLEW}°) ${span} — rig không kẹp khuỷu khoá (\`elbowLock\`): ${fix}`;
+};

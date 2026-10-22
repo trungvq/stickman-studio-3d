@@ -2944,6 +2944,9 @@ export async function checkWorkspace({
             // Hai tay của món cầm hai tay khai hai món khác nhau — docs/03-scene.md#đồ-cầm-tay
             for (const problem of rt && rig.sceneHoldProblems ? rig.sceneHoldProblems(rt) : [])
               refWarn(`scenes/${f}: ${problem}`);
+            // Mốc khoá khuỷu mà khoá không có tác dụng — docs/03-scene.md#đích-bàn-tay-thế-giới
+            for (const s of rt && rig.elbowLockIdle ? rig.elbowLockIdle(rt) : [])
+              refWarn(`scenes/${f}: ${rig.elbowLockIdleLine(s)}`);
             // Mốc món suy biến hay không tay nào cầm — docs/11-nhom-cam.md#mốc-món-items
             if (rt?.items && rig.sceneItemProblems) {
               try {
