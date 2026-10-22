@@ -279,7 +279,7 @@ describe("`world.hands[].hold` trong scene", () => {
       },
     ]);
     const rep = actAim(C, sp)!.report.R.hold!;
-    expect(rep.err).toBeGreaterThan(30);
+    expect(rep.err).toBeGreaterThan(15);
     expect(rep.clamped).toContain("bend");
   });
 

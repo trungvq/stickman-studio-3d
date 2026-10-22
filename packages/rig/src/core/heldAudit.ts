@@ -1,5 +1,5 @@
 import { AIM_BEND, AIM_DEV } from "./act3";
-import { TURN_MAX } from "./arm3";
+import { rangeMargin, TURN_MAX } from "./arm3";
 import { REST_REF, type GraspChoice, type GraspReport } from "./graspSolve";
 import { GRIP_GROUPS, SIZE_WARN } from "./graspGroups";
 import { fingerVec, HAND_POSES, HAND_RELAXED, type HandPose, type HandVec } from "./hand";
@@ -709,7 +709,7 @@ export function heldOppose(
 
 /** Cổ tay so với kẹp (`TURN_MAX`, `AIM_BEND`, `AIM_DEV`): độ của khớp sát kẹp nhất, dương là vượt */
 export const heldWristMargin = (w: GraspReport["arm"]["wrist"]) =>
-  Math.max(Math.abs(w.turn) - TURN_MAX, Math.abs(w.bend) - AIM_BEND, Math.abs(w.dev) - AIM_DEV);
+  Math.max(Math.abs(w.turn) - TURN_MAX, rangeMargin(w.bend, AIM_BEND), rangeMargin(w.dev, AIM_DEV));
 
 /**
  * Chỗ cầm nhóm có `size` (docs/11 mục 3): số đo của khối hình đã chọn (`choice.featureIndex`) so với `W` của tay `dims`;
@@ -1330,7 +1330,7 @@ function groupLine(s: HeldIssue, x: HeldHand, who: string, when: string): string
       case "wrist": {
         const w = a!.wrist;
         const over = s.worst > 0;
-        return `cổ tay ${over ? "vượt giới hạn" : "sát giới hạn"} — ${who}: xoay ${Math.round(w.turn)}°/±${TURN_MAX}, gập ${Math.round(w.bend)}°/±${AIM_BEND}, lệch ${Math.round(w.dev)}°/±${AIM_DEV}${over ? ` — vượt ${r1(w.over)}°, bàn tay vẽ lệch chỗ cầm ${r1(w.off)}` : ` — còn ${r1(-s.worst)}° tới kẹp`} (${place}); đổi \`edge\` / \`thumb\` hay hướng món (\`face\` / \`roll\` của ${item})`;
+        return `cổ tay ${over ? "vượt giới hạn" : "sát giới hạn"} — ${who}: xoay ${Math.round(w.turn)}°/±${TURN_MAX}, gập ${Math.round(w.bend)}°/${AIM_BEND[0]}..${AIM_BEND[1]}, lệch ${Math.round(w.dev)}°/${AIM_DEV[0]}..${AIM_DEV[1]}${over ? ` — vượt ${r1(w.over)}°, bàn tay vẽ lệch chỗ cầm ${r1(w.off)}` : ` — còn ${r1(-s.worst)}° tới kẹp`} (${place}); đổi \`edge\` / \`thumb\` hay hướng món (\`face\` / \`roll\` của ${item})`;
       }
       case "elbow":
         return `khuỷu gập ngược — ${who}: khuỷu lệch khỏi đường vai → cổ tay vào giữa thân hay lên trên ${Math.round(s.worst * 100)}% cánh tay trên (quá ${HELD_ELBOW * 100}%), cẳng tay chạy ra ngoài hay xuống tới bàn tay (${place}); đổi \`edge\` / \`thumb\` hay hướng món (\`face\` / \`roll\` của ${item}), không thì khai \`elbow\` ở mốc tay`;

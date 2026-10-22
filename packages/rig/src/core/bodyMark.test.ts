@@ -342,8 +342,8 @@ describe("hướng lòng tay theo ý định", () => {
       const side = r() < 0.5 ? -1 : 1;
       const [t, b, d] = [
         (r() * 2 - 1) * 85,
-        (r() * 2 - 1) * (AIM_BEND - 5),
-        (r() * 2 - 1) * (AIM_DEV - 5),
+        AIM_BEND[0] + 5 + r() * (AIM_BEND[1] - AIM_BEND[0] - 10),
+        AIM_DEV[0] + 5 + r() * (AIM_DEV[1] - AIM_DEV[0] - 10),
       ];
       const want = matVec(matMul(Re, wristTurn(t, b, d, side)), [-side, 0, 0]);
       const fing = matVec(matMul(Re, wristTurn(t, b, d, side)), [0, -1, 0]);

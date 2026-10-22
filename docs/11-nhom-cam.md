@@ -677,7 +677,8 @@ nắp; dáng mới `claw`). Lựa chọn: hướng tiếp cận, biến thể. M
   `thumb` khác bên tay, `tilt` 25°, `along` 1) — giới hạn khớp, `check` báo `wrist`; khoe bằng hai tay hay nhóm `sheet`.
 - **Tay**: một; `both` được vì nhóm có `support: { group: "platform", place: "back" }`: tay phụ đặt lòng tay lên mặt sau (pháp tuyến
   `−front`) của máy, tay tới từ cạnh sau ngón (mục [5](#tay-phụ-both)). Hai tay ôm điện thoại trước ngực, màn về người cầm.
-- **Hướng mặc định**: `face: { axis: <front>, toward: "holderFace" }`. Áp tai: cùng nhóm, cùng chỗ bám, ý định màn vào má
+- **Hướng mặc định**: `face: { axis: <front>, toward: "holderFace" }`, không có `roll`: xem màn hình trước mặt thì cảnh khai
+  `roll` và đặt máy ngang cằm ([mốc món](#mốc-món-items)). Áp tai: cùng nhóm, cùng chỗ bám, ý định màn vào má
   (`toward: { mark: "head" }`), cảnh đặt tay cạnh tai.
 
 #### 10. `platform` — đỡ dưới (bản đầu: `palm`)
@@ -794,6 +795,10 @@ const SceneItemMarkSchema = z.strictObject({
   (`HoldTarget` của `heldItem.ts`); `at` là thế giới rig.
 - **`holderFace`** là hướng từ chỗ món về người cầm: hướng ngang về tâm sọ, ngẩng tới tầm giữa hai mắt, góc ngẩng kẹp ở 45°
   so với mặt ngang hệ thân (người chibi, món ngang ngực mà không kẹp thì mặt bảng gần ngửa); nghiêng khác thì `tilt`.
+- **Món giơ trước mặt** (xem điện thoại, đọc thẻ): đầu người que to so với tay, món ngang mắt thì tay duỗi thẳng và cổ tay
+  vặn tới kẹp. Đặt món ngang cằm, lệch về phía tay cầm — `to: "eye"`, `offset` chừng `[45, 45, 10]` —, khuỷu gập, `holderFace`
+  ngửa mặt món lên về mắt. Nhóm không có `roll` mặc định (`palmBox`) thì khai `roll: { axis: "top", toward: "up" }`, bỏ trống
+  là đầu món có thể chúc xuống.
 - **Giữa hai mốc** (`itemAt`): chỗ món hoà theo `ease` trong khung mốc thân ở chính `t` (người cúi thì món đi theo người),
   hướng món hoà cầu (`slerp`) giữa hai phép quay giải ở hai mốc. Đích của `face` (người khác, mốc thân) đọc ở `t`. Trước mốc
   món đầu và sau mốc cuối, món giữ ở mốc gần nhất (kẹp như `world.hands`). Lần cầm một tay theo mốc không vẽ món ở `itemAt`
@@ -956,8 +961,8 @@ mang trường cảnh khai; lựa chọn rig giải chỉ ở `graspAtTime`.
 ### Khuỷu tự nhiên
 
 ```
-E(φ) = ½ (turn/90)² + (bend/AIM_BEND)² + ½ (dev/AIM_DEV)²         cổ tay ứng với cẳng tay ở φ
-     + 10 · Σ (vượt giới hạn / giới hạn)²                           phạt nặng phần vượt `AIM_BEND`, `AIM_DEV`, xoay cẳng tay
+E(φ) = ½ (turn/90)² + (bend/50)² + ½ (dev/20)²                     cổ tay ứng với cẳng tay ở φ (thang thoải mái, không phải kẹp)
+     + 10 · Σ (vượt giới hạn / nửa tầm phía ấy)²                    phạt nặng phần vượt `AIM_BEND`, `AIM_DEV`, xoay cẳng tay
      + w_down · (1 − cos(φ − φ₀)) / 2                               khuỷu thõng: φ₀ từ `REACH_ELBOW` hay `elbow` của mốc tay
      + w_body · Σ (lấn / r_tay)²                                    bắp tay, cẳng tay lấn vào thân (`across`, `front` của
                                                                     `markShape`, arm3.ts), đầu, tay kia
@@ -989,7 +994,7 @@ E(φ) = ½ (turn/90)² + (bend/AIM_BEND)² + ½ (dev/AIM_DEV)²         cổ tay
 - **Ngoài tầm với** (`|vai → cổ tay| > l₁ + l₂`): cánh tay duỗi thẳng về cổ tay đã giải, bàn tay vẽ ở đầu cẳng tay với hướng
   `Rw` đã giải và dáng ngón của lần cầm (ngón không `heldFit` lại). Cầm hai tay thì món vẫn ở chỗ khai — khe lộ trên hình; lần
   cầm theo mốc thì món theo bàn tay duỗi. `check` báo `reach` với khe. Rig không kéo món lại gần.
-- **Cổ tay vượt giới hạn** ở `φ` tốt nhất: rig giữ kẹp hiện có (xoay cẳng tay ±90°, ±`AIM_BEND`, ±`AIM_DEV`); bàn tay vẽ
+- **Cổ tay vượt giới hạn** ở `φ` tốt nhất: rig giữ kẹp hiện có (xoay cẳng tay ±90°, gập `AIM_BEND` `−60..70`, lệch `AIM_DEV` `−30..20`); bàn tay vẽ
   theo kẹp, khuỷu giữ `φ` đã giải; cầm hai tay thì món vẫn ở chỗ khai, lần cầm theo mốc thì món theo bàn tay đã kẹp. `check`
   báo `wrist` kèm độ vượt và độ lệch giữa bàn tay và chỗ cầm.
 - Hai tay giải trên cùng `itemPose`: tay có `both` (lead) trước, tay kia sau; không có `both` thì tay phải trước. Tay giải sau

@@ -1,4 +1,4 @@
-import { AIM_BEND, AIM_DEV, markShape, TURN_MAX, type Trunk3 } from "./arm3";
+import { AIM_BEND, AIM_DEV, clampRange, markShape, TURN_MAX, type Trunk3 } from "./arm3";
 import { AIM_GAP } from "./constants";
 import { armInput, solvePhi, type ArmInput, type ArmSeg, type ArmSol } from "./graspArm";
 import {
@@ -2093,7 +2093,12 @@ export function graspReport(
     const cl = (v: number, L: number) => Math.max(-L, Math.min(L, v));
     const drawn = matMul(
       sol.arm.fore,
-      wristTurn(cl(w.turn, TURN_MAX), cl(w.bend, AIM_BEND), cl(w.dev, AIM_DEV), sol.side),
+      wristTurn(
+        cl(w.turn, TURN_MAX),
+        clampRange(w.bend, AIM_BEND),
+        clampRange(w.dev, AIM_DEV),
+        sol.side,
+      ),
     );
     const c = gripPoint(sol.frame.G, sol.frame.hand.at);
     off = Math.hypot(...sub3(matVec(sol.Rw, c), matVec(drawn, c))) * 100;

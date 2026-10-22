@@ -1,6 +1,8 @@
 import {
   AIM_BEND,
   AIM_DEV,
+  overRange,
+  rangeHalf,
   armFrame,
   BONES3,
   markShape,
@@ -33,6 +35,9 @@ export const W_BODY = 10;
 /** Trọng số liền với mẫu trước của lần cầm */
 export const W_CONT = 2;
 /** Dải `|xuống⊥|` (sin góc trục vai → cổ tay với phương đứng) mà gốc `φ` hoà từ `−tiến` sang hình chiếu hướng xuống */
+/** Thang gập, lệch cổ tay của giá thoải mái `E(φ)`, độ — không phải kẹp (`AIM_BEND`, `AIM_DEV`) */
+const EASE_BEND = 50;
+const EASE_DEV = 20;
 export const PHI_DOWN = [0.1, 0.3] as const;
 /** Trọng số khuỷu gập ngược: khuỷu lệch khỏi đường vai → cổ tay vào giữa thân hay lên trên quá `IN_FREE` (phần `l₁`) */
 export const W_IN = 20;
@@ -302,17 +307,18 @@ export function evalPhi(
   const f = armFrame(S, El, Wr, hinge);
   const fore = matMul(f.R, rotX(-f.b));
   const a = wristAngles(matMul(tr(fore), Rw), side);
-  const lim = (v: number, L: number) => Math.max(0, Math.abs(v) - L);
   const over = {
-    turn: lim(a.turn, TURN_MAX),
-    bend: lim(a.bend, AIM_BEND),
-    dev: lim(a.dev, AIM_DEV),
+    turn: Math.max(0, Math.abs(a.turn) - TURN_MAX),
+    bend: overRange(a.bend, AIM_BEND),
+    dev: overRange(a.dev, AIM_DEV),
   };
   const wristE =
-    0.5 * (a.turn / TURN_MAX) ** 2 + (a.bend / AIM_BEND) ** 2 + 0.5 * (a.dev / AIM_DEV) ** 2;
+    0.5 * (a.turn / TURN_MAX) ** 2 + (a.bend / EASE_BEND) ** 2 + 0.5 * (a.dev / EASE_DEV) ** 2;
   const overE =
     W_OVER *
-    ((over.turn / TURN_MAX) ** 2 + (over.bend / AIM_BEND) ** 2 + (over.dev / AIM_DEV) ** 2);
+    ((over.turn / TURN_MAX) ** 2 +
+      (over.bend / rangeHalf(a.bend, AIM_BEND)) ** 2 +
+      (over.dev / rangeHalf(a.dev, AIM_DEV)) ** 2);
   const e = elbow ?? REACH_ELBOW;
   const p0: V3 = elbow ? [e[0], -e[1], -e[2]] : matVec(inp.Rr, [side * e[2], -e[1], e[0]]);
   const phi0 = Math.atan2(dot3(p0, B.o0), dot3(p0, B.d0)) / D;

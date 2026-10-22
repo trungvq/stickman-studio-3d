@@ -10,6 +10,7 @@ import {
   trunk3,
   type ActInput,
 } from "./act3";
+import { clampRange } from "./arm3";
 import { body3 } from "./figure3d";
 import * as arm from "./graspArm";
 import { wristTurn } from "./hand";
@@ -113,7 +114,12 @@ function drawnRw(sol: GraspAtTime): M3 {
   const cl = (v: number, L: number) => Math.max(-L, Math.min(L, v));
   return matMul(
     sol.arm.fore,
-    wristTurn(cl(w.turn, TURN_MAX), cl(w.bend, AIM_BEND), cl(w.dev, AIM_DEV), sol.side),
+    wristTurn(
+      cl(w.turn, TURN_MAX),
+      clampRange(w.bend, AIM_BEND),
+      clampRange(w.dev, AIM_DEV),
+      sol.side,
+    ),
   );
 }
 

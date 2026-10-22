@@ -109,9 +109,10 @@ describe("heldHits: chỗ cầm nhóm", () => {
       heldHits(
         sample({ grasp: grasp({}, { wrist: { turn: 0, bend, dev: 0, over, off: over && 3 } }) }),
       );
-    expect(at(AIM_BEND - HELD_WRIST - 1)).toEqual([]);
-    expect(at(AIM_BEND - 2)).toEqual([{ rule: "wrist", worst: -2 }]);
-    expect(at(AIM_BEND + 8, 8)).toEqual([{ rule: "wrist", worst: 8, error: true }]);
+    expect(at(AIM_BEND[1] - HELD_WRIST - 1)).toEqual([]);
+    expect(at(AIM_BEND[1] - 2)).toEqual([{ rule: "wrist", worst: -2 }]);
+    expect(at(AIM_BEND[1] + 8, 8)).toEqual([{ rule: "wrist", worst: 8, error: true }]);
+    expect(at(AIM_BEND[0] + 2)).toEqual([{ rule: "wrist", worst: -2 }]);
   });
 
   it("`arm`: tay lấn quá `HELD_ARM` lần bán kính tay", () => {

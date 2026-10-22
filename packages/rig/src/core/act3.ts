@@ -2,6 +2,9 @@ import {
   actAngles,
   AIM_BEND,
   AIM_DEV,
+  clampRange,
+  overRange,
+  rangeMargin,
   armFrame,
   BONES3,
   handAt,
@@ -297,12 +300,14 @@ function solvePose3(c: ActCharacter, sp0: ActInput) {
 
 /** Lặp giải đích theo điểm bàn tay và hướng lòng tay: chỗ bàn tay và hướng cổ tay phụ thuộc nhau, hội tụ trong vài vòng */
 const AIM_ITER = 8;
-/** Lưới gập cổ tay của bước dò `aimWrist`: bội `15` nằm trong `±AIM_BEND` cộng hai biên */
-const AIM_BEND_N = Math.ceil(AIM_BEND / 15);
+/** Lưới gập cổ tay của bước dò `aimWrist`: bội `15` nằm trong tầm `AIM_BEND` cộng hai biên */
 const AIM_BEND_GRID = [
-  -AIM_BEND,
-  ...Array.from({ length: 2 * AIM_BEND_N - 1 }, (_, i) => (i + 1 - AIM_BEND_N) * 15),
-  AIM_BEND,
+  AIM_BEND[0],
+  ...Array.from(
+    { length: Math.ceil(AIM_BEND[1] / 15) - Math.floor(AIM_BEND[0] / 15) + 1 },
+    (_, i) => (Math.floor(AIM_BEND[0] / 15) + i) * 15,
+  ).filter((b) => b > AIM_BEND[0] && b < AIM_BEND[1]),
+  AIM_BEND[1],
 ];
 
 const ZERO3: V3 = [0, 0, 0];
@@ -318,7 +323,7 @@ const bodyDir = (T: Trunk3, hand: number, [f, y, o]: readonly number[]): V3 =>
  * Xoay cẳng tay `turn`, gập cổ tay `bend` và lệch cổ tay `dev` (độ) cho khung cẳng tay `Re` của tay bên `side`: lòng tay
  * quay về `palm`, ngón chĩa về `fingers` (three). Lòng tay chỉ phụ thuộc xoay và gập (khung bàn tay: lòng tay `−side · x`
  * không đổi theo lệch), nên giải đúng hai góc ấy rồi lấy lệch cho ngón; `dev` thiếu là lệch cố định ở số ấy. `bend` khai
- * thì giữ. Ngoài giới hạn (`−90..90`, `±AIM_BEND`, `±AIM_DEV`) thì tinh chỉnh trong hộp giới hạn. Trả cả góc lệch còn lại
+ * thì giữ. Ngoài giới hạn (`−90..90`, `AIM_BEND`, `AIM_DEV`) thì tinh chỉnh trong hộp giới hạn. Trả cả góc lệch còn lại
  */
 export function aimWrist(
   Re: M3,
@@ -350,10 +355,8 @@ export function aimWrist(
   const n = (t: number, b: number) => mv(R(t, b, 0), [-side, 0, 0]);
   const fi = (t: number, b: number, d: number) => mv(R(t, b, d), [0, -1, 0]);
   const clampT = (t: number) => Math.max(-TURN_MAX, Math.min(TURN_MAX, t));
-  const clampB = (b: number) =>
-    o.bend !== undefined ? o.bend : Math.max(-AIM_BEND, Math.min(AIM_BEND, b));
-  const clampD = (d: number) =>
-    freeDev ? Math.max(-AIM_DEV, Math.min(AIM_DEV, d)) : (o.fixedDev as number);
+  const clampB = (b: number) => (o.bend !== undefined ? o.bend : clampRange(b, AIM_BEND));
+  const clampD = (d: number) => (freeDev ? clampRange(d, AIM_DEV) : (o.fixedDev as number));
   /** Lệch cổ tay tốt nhất cho ngón ở xoay, gập đã chọn */
   const bestDev = (t: number, b: number) => {
     if (!df || !freeDev) return clampD(o.dev ?? 0);
@@ -894,7 +897,6 @@ function handGrasp(
   for (const k of Object.keys(choice) as (keyof GraspChoice)[])
     if (k !== "featureIndex") by[k] = said[k] !== undefined ? "scene" : "default";
   const [turn, bend, dev] = [A.v[0] ?? 0, A.v[1] ?? 0, A.dev];
-  const lim = (v: number, L: number) => Math.max(0, Math.abs(v) - L);
   return {
     item: g.hold.item,
     group: g.hold.group,
@@ -908,7 +910,12 @@ function handGrasp(
         turn,
         bend,
         dev,
-        over: Math.max(lim(turn, TURN_MAX), lim(bend, AIM_BEND), lim(dev, AIM_DEV)),
+        over: Math.max(
+          Math.abs(turn) - TURN_MAX,
+          overRange(bend, AIM_BEND),
+          overRange(dev, AIM_DEV),
+          0,
+        ),
         off: 0,
       },
       body: a.body,
@@ -924,8 +931,8 @@ const clampTo = (v: number, L: number) => Math.max(-L, Math.min(L, v));
 /** Xoay, gập, lệch cổ tay của cánh tay đã giải, kẹp ở giới hạn như người 3D vẽ */
 const wristOf = ({ wrist: w }: ArmSol): number[] => [
   clampTo(w.turn, TURN_MAX),
-  clampTo(w.bend, AIM_BEND),
-  clampTo(w.dev, AIM_DEV),
+  clampRange(w.bend, AIM_BEND),
+  clampRange(w.dev, AIM_DEV),
 ];
 
 function solveCore(T: Trunk3, sp: ActInput): Solved {
@@ -1200,9 +1207,9 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
       const err = sol.axisErr?.[0] ?? 0;
       const clamped: ("turn" | "bend" | "dev")[] = [];
       if (Math.abs(sol.turn) >= 90 - 0.05) clamped.push("turn");
-      if (Math.abs(sol.bend) >= AIM_BEND - 0.05) clamped.push("bend");
+      if (rangeMargin(sol.bend, AIM_BEND) >= -0.05) clamped.push("bend");
       // kênh giữ 2D không có lệch cổ tay: lệch bị giữ ở 0
-      if (lifted ? Math.abs(sol.dev) >= AIM_DEV - 0.05 : err > 1) clamped.push("dev");
+      if (lifted ? rangeMargin(sol.dev, AIM_DEV) >= -0.05 : err > 1) clamped.push("dev");
       const got = mv(mm(A.Re, wristTurn(sol.turn, sol.bend, sol.dev, side)), aH);
       return {
         sol,

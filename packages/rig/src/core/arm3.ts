@@ -600,12 +600,20 @@ export function trunk3(c: ActCharacter, sp: ActInput) {
 export type Trunk3 = NonNullable<ReturnType<typeof trunk3>>;
 
 /**
- * Giới hạn gập cổ tay khi rig tự giải lòng tay (độ); xoay cẳng tay giữ `−90..90` như JSON. Quá chừng `50°` cổ tay khối
- * của người que trông gãy: ý định vượt thì món lệch thật và `check` báo khớp kẹp
+ * Tầm gập cổ tay khi rig tự giải lòng tay, độ: `[ngửa, gập]`, dương về phía lòng tay. Hẹp hơn tầm khớp người thật chút ít:
+ * quá đó cổ tay khối của người que trông gãy; ý định vượt thì món lệch thật và `check` báo khớp kẹp
  */
-export const AIM_BEND = 50;
-/** Giới hạn lệch cổ tay (số thứ ba của tay) khi rig tự giải hướng ngón, độ; cùng lý do với `AIM_BEND` */
-export const AIM_DEV = 20;
+export const AIM_BEND = [-60, 70] as const;
+/** Tầm lệch cổ tay (số thứ ba của tay) khi rig tự giải hướng ngón, độ: `[về ngón út, về ngón cái]`, dương về ngón cái */
+export const AIM_DEV = [-30, 20] as const;
+export type AimRange = readonly [number, number];
+export const clampRange = (v: number, [lo, hi]: AimRange) => Math.max(lo, Math.min(hi, v));
+/** Độ vượt khỏi tầm, `0` khi trong tầm */
+export const overRange = (v: number, r: AimRange) => Math.max(0, rangeMargin(v, r));
+/** Cách mép gần nhất của tầm, dương là vượt */
+export const rangeMargin = (v: number, [lo, hi]: AimRange) => Math.max(lo - v, v - hi);
+/** Nửa tầm về phía `v`: chia góc hay độ vượt cho nó để chuẩn hoá giá cổ tay */
+export const rangeHalf = (v: number, [lo, hi]: AimRange) => (v < 0 ? -lo : hi);
 /** Giới hạn xoay cẳng tay khi rig tự giải cổ tay, độ: `−TURN_MAX..TURN_MAX` như JSON */
 export const TURN_MAX = 90;
 

@@ -1425,8 +1425,8 @@ bỏ bàn tay ngoài khung camera:
 scenes/canh-05.json: mặt món quay sai — `nguoi-a` tay trái cầm dien-thoai: trục ý định còn lệch 72° khỏi `khach.eye` (chỗ cầm `dien-thoai@palmBox` (…)); đổi `face` / `up` của mốc tay, `elbow`, hay `edge` / `thumb` ở giây 1.20 · giây 0.90–1.60. Lúc ấy: … (docs/11-nhom-cam.md#7-luật-check-nhóm-held)
 ```
 
-Dòng `up` / `face` của tay dẫn kể đích, góc còn lệch, khớp cổ tay kẹp (xoay cẳng tay `±90`, gập `±AIM_BEND` `50`, lệch
-`±AIM_DEV` `20`) hay khuỷu hết xoay, và gợi ý: đổi `face` / `up` của mốc tay, `elbow` (khung cẳng tay quay theo hướng
+Dòng `up` / `face` của tay dẫn kể đích, góc còn lệch, khớp cổ tay kẹp (xoay cẳng tay `±90`, gập `AIM_BEND` `−60..70`, lệch
+`AIM_DEV` `−30..20`) hay khuỷu hết xoay, và gợi ý: đổi `face` / `up` của mốc tay, `elbow` (khung cẳng tay quay theo hướng
 khuỷu), đổi chỗ cầm (`edge`, `thumb`). Rig không tự đổi chỗ cầm — đó là việc của cảnh. Thêm hai dòng một lần mỗi cảnh,
 không theo giây:
 

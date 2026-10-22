@@ -1596,7 +1596,7 @@ nói món quay về đâu; trục là tên mốc (lấy `dir`) hay vectơ khung 
 - `roll`, trục phụ chốt độ lăn (đầu máy lên trên). Không có thì giữ độ lăn gần bàn tay đang có.
 
 Rig giải ý định trên cổ tay (`aimWrist`): trục chính trọng số `1`, `roll` `0,3`, khuỷu xoay trong `±AIM_SWIVEL` quanh
-`elbow` đã khai. Giới hạn cổ tay giữ nguyên — xoay `±90`, gập `±AIM_BEND` (`50`), lệch `±AIM_DEV` (`20`), kênh tay
+`elbow` đã khai. Giới hạn cổ tay giữ nguyên — xoay `±90`, gập `AIM_BEND` (ngửa `60`, gập `70`), lệch `AIM_DEV` (về ngón út `30`, về ngón cái `20`), kênh tay
 không nâng thì lệch cổ tay giữ `0` —: không đạt thì món lệch thật, `AimReport.hold` ghi trục, hướng muốn, hướng đạt, góc
 còn lệch và khớp kẹp, `check` báo ([03](03-scene.md#đồ-cầm-tay)). Vị trí tay (`at`, `to`, `point`) luôn thắng ý định. Cổ tay
 và khuỷu của tay mang món, tay phụ đi từ nghiệm của mẫu trước với tốc độ có hạn (`HOLD_SLEW`, `HOLD_SWIVEL_SLEW`): ý định
@@ -2090,9 +2090,10 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 | `bend` | Khai kèm thì giữ cố định, rig chỉ giải phần còn lại |
 
 - **Rig giải mỗi khung** (`aimWrist`): lòng tay chỉ phụ thuộc xoay và gập cổ tay (lệch cổ tay không đổi pháp tuyến lòng tay)
-  nên hai góc ấy giải đúng; ngón lấy thêm lệch cổ tay (số thứ ba của tay, kênh nâng, `±AIM_DEV` `20`) và, khi tay theo đích,
+  nên hai góc ấy giải đúng; ngón lấy thêm lệch cổ tay (số thứ ba của tay, kênh nâng, `AIM_DEV` `−30..20`, dương về phía ngón cái) và, khi tay theo đích,
   xoay khuỷu quanh trục vai → cổ tay tới `±AIM_SWIVEL` (`90`), ưu tiên gần hướng khuỷu đã khai. Kẹp trong `turn` `−90..90`,
-  `bend` `±AIM_BEND` (`50`) — quá chừng `50°` cổ tay khối của người que trông gãy —; ngoài tầm thì lấy chỗ gần nhất trong
+  `bend` `AIM_BEND` `−60..70` (âm là ngửa) — hẹp hơn tầm khớp người thật chút ít, quá đó cổ tay khối của người que trông
+  gãy —; ngoài tầm thì lấy chỗ gần nhất trong
   hộp giới hạn.
 - **`palm` / `fingers` thắng `turn`.** Mốc khai cả hai thì `turn` bị bỏ qua — `validate` và `check` kêu (`aimProblems`).
 - **Hoà là hoà góc đã giải.** Mốc thô sang mốc ý định: từng số hạng giải riêng rồi cộng góc theo phần, nên cổ tay xoay dần,

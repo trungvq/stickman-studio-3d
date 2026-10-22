@@ -50,7 +50,7 @@ import {
   type ActInput,
   type Trunk3,
 } from "./act3";
-import { AIM_BEND, AIM_DEV, TURN_MAX } from "./arm3";
+import { AIM_BEND, AIM_DEV, clampRange, TURN_MAX } from "./arm3";
 import {
   armInput,
   armSeg,
@@ -4062,7 +4062,11 @@ function graspStart(
         W: matVec(Rt, sub3(q.Wp, q.inp.S)),
         R: matMul(Rt, q.Rw),
         phi: a.phi,
-        wrist: [clampTo(w.turn, TURN_MAX), clampTo(w.bend, AIM_BEND), clampTo(w.dev, AIM_DEV)],
+        wrist: [
+          clampTo(w.turn, TURN_MAX),
+          clampRange(w.bend, AIM_BEND),
+          clampRange(w.dev, AIM_DEV),
+        ],
         over: [w.over.turn, w.over.bend, w.over.dev],
       });
       prev = a.phi;

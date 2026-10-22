@@ -481,7 +481,7 @@ export function aimLine(s: AimIssue): string {
   const head =
     s.rule === "reach"
       ? `bàn tay không tới mốc — ${who}: ${s.point === "wrist" ? "cổ tay" : `\`${s.point}\``} còn cách \`${s.to}\` ${s.amount.toFixed(1)} ở giây ${sec(s.t)} · giây ${runs}${more}. Tay không với tới: dời người hay đổi \`offset\`, nới \`stretch\`, hay chọn mốc gần hơn`
-      : `${s.rule === "palm" ? "lòng tay" : "ngón tay"} không quay được về hướng đã khai — ${who}: còn lệch ${Math.round(s.amount)}° ở giây ${sec(s.t)} · giây ${runs}${more}. Ngoài tầm xoay cẳng tay ±90 và gập cổ tay ±${AIM_BEND}: đổi \`elbow\` (khung cẳng tay quay theo hướng khuỷu) hay hướng đã khai`;
+      : `${s.rule === "palm" ? "lòng tay" : "ngón tay"} không quay được về hướng đã khai — ${who}: còn lệch ${Math.round(s.amount)}° ở giây ${sec(s.t)} · giây ${runs}${more}. Ngoài tầm xoay cẳng tay ±90 và gập cổ tay ${AIM_BEND[0]}..${AIM_BEND[1]}: đổi \`elbow\` (khung cẳng tay quay theo hướng khuỷu) hay hướng đã khai`;
   return `${head}${clips} (docs/01-rig.md#hướng-lòng-tay-theo-ý)`;
 }
 
