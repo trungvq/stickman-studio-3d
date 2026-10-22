@@ -2,7 +2,13 @@
 // [--frames 120] [--total 41000]`. Mỗi khung vẽ đồng bộ qua `window.__drawAt` rồi đọc một pixel để chờ GPU xong; cột
 // `chụp` là `Page.captureScreenshot` JPEG như Remotion chụp mỗi khung. `--gl` dùng đúng cờ Chromium mà Remotion đặt cho
 // `chromiumOptions.gl` (bản 4.0.x); `CHROME=` để chạy trình duyệt khác, như chrome-headless-shell của Remotion.
-import { existsSync } from 'node:fs';
+//
+// `pnpm build && node --expose-gc tools/bench.mjs --refresh <repo video> --scene a,b [--at 0.25,0.5,0.9]`: đo trong Node
+// (không vẽ GPU) cảnh three của repo video dựng bằng mã nguồn rig của repo này — `resolveScene`, dựng lưới (`worldOf`),
+// khung đầu, rồi dời 2 px mốc tay gần nhất trước giây đo và `world.refresh` (docs/03-scene.md#làm-mới-runtime) so với
+// dựng lại. `--at` là phần của `duration`. Khung = `pose(t)` + 5 lần `updateMatrixWorld` như `stage.draw`.
+import { existsSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import puppeteer from 'puppeteer-core';
@@ -21,13 +27,19 @@ const GL = {
 
 const { values: o } = parseArgs({
   options: {
-    scene: { type: 'string', default: 'cast,walk,camera' },
+    scene: { type: 'string' },
     aa: { type: 'string', default: 'off,ss1.5,ss2' },
     gl: { type: 'string', default: 'vulkan' },
     frames: { type: 'string', default: '120' },
     total: { type: 'string', default: '41000' },
+    refresh: { type: 'string' },
+    at: { type: 'string', default: '0.25,0.5,0.9' },
   },
 });
+if (o.refresh) {
+  await refreshBench(resolve(o.refresh));
+  process.exit(0);
+}
 const N = Number(o.frames), TOTAL = Number(o.total);
 const chrome = process.env.CHROME ?? ['/usr/bin/chromium', '/usr/bin/google-chrome-stable'].find(existsSync);
 
@@ -49,7 +61,7 @@ try {
       let fail;
       page.on('pageerror', (e) => (fail ??= e.message));
       await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 });
-      for (const scene of o.scene.split(',')) {
+      for (const scene of (o.scene ?? 'cast,walk,camera').split(',')) {
         for (const aa of o.aa.split(',')) {
           await page.goto(`${url}?nohud&aa=${aa}&t=0.5&${SCENES[scene] ?? `demo=${scene}`}`, { waitUntil: 'load' });
           await page.waitForFunction(() => window.__frames >= 4, { timeout: 60000 }).catch((e) => (fail ??= e.message));
@@ -96,3 +108,76 @@ for (const r of rows)
   if (r.error) console.log(`| ${r.gl} | — | — | ${r.error} | | | | |`);
   else console.log(`| ${r.gl} | ${r.scene} | ${r.aa} | ${r.mean.toFixed(2)} | ${r.p95.toFixed(2)} | ${r.shot.toFixed(1)} | ${min(r.mean)} | ${min(r.mean + r.shot)} |`);
 console.log(`\nGPU: ${[...new Set(rows.filter((r) => r.gpu).map((r) => r.gpu))].join(' · ')}`);
+
+/** Làm mới so với dựng lại trên cảnh repo video `repo` (mục `--refresh` ở đầu file) */
+async function refreshBench(repo) {
+  if (!o.scene) throw new Error('--refresh cần --scene <tên cảnh,…>');
+  const req = createRequire(join(ROOT, 'packages/render/package.json'));
+  const rigReq = createRequire(join(ROOT, 'packages/rig/package.json'));
+  const entry = JSON.parse(readFileSync(join(repo, 'package.json'), 'utf8')).stickman?.world;
+  if (!entry) throw new Error(`${repo}: package.json không khai stickman.world`);
+  const out = join(ROOT, 'tmp/bench/world.mjs');
+  const src = (p) => join(ROOT, 'packages', p, 'src/index.ts');
+  await req('esbuild').build({
+    stdin: { contents: `export * as world from ${JSON.stringify(join(repo, entry))};\nexport * as rig from "@stickman3d/rig";`, resolveDir: ROOT, loader: 'ts' },
+    bundle: true, platform: 'node', format: 'esm', outfile: out, logLevel: 'error',
+    resolveExtensions: ['.ts', '.tsx', '.mts', '.mjs', '.js', '.jsx', '.json'], loader: { '.css': 'empty', '.png': 'empty', '.jpg': 'empty' },
+    plugins: [{
+      name: 'rig-src',
+      setup(b) {
+        b.onResolve({ filter: /^@stickman3d\/rig\/core$/ }, () => ({ path: join(ROOT, 'packages/rig/src/core/index.ts') }));
+        b.onResolve({ filter: /^@stickman3d\/(rig|sketch|fx)$/ }, (a) => ({ path: src(a.path.split('/')[1]) }));
+        b.onResolve({ filter: /^(three|zod)(\/.*)?$/ }, (a) => ({ path: rigReq.resolve(a.path) }));
+        b.onResolve({ filter: /^(remotion|@remotion\/[^/]+|react|react-dom)(\/|$)/ }, (a) => ({ path: a.path, namespace: 'hollow' }));
+        b.onLoad({ filter: /.*/, namespace: 'hollow' }, () => ({ contents: 'const h=()=>new Proxy(function(){},{get:(_,k)=>k==="toString"||k==="valueOf"?()=>"":typeof k==="symbol"||k==="then"||k==="__esModule"?undefined:h(),getPrototypeOf:()=>h(),apply:()=>h(),construct:()=>h()});module.exports=h();', loader: 'js' }));
+      },
+    }],
+  });
+  globalThis.Path2D ??= class { constructor() { return new Proxy(this, { get: (t, k) => (k in t ? t[k] : () => undefined) }); } };
+  const { world, rig } = await import(out);
+  const { worldData } = await import(join(ROOT, 'packages/cli/lib.mjs'));
+  const data = worldData(repo);
+  const ms = (f) => { globalThis.gc?.(); const a = performance.now(); const r = f(); return [performance.now() - a, r]; };
+  const frame = (w, t) => { w.pose(t); for (let i = 0; i < 5; i++) w.root.updateMatrixWorld(); };
+  const parse = (j) => { const r = rig.parseScene(j); if (!r.success) throw new Error(r.error.message); return r.data; };
+  const f1 = (x) => x.toFixed(1);
+  const rows = [];
+  for (const name of o.scene.split(',')) {
+    const raw = JSON.parse(readFileSync(join(repo, 'scenes', `${name}.json`), 'utf8'));
+    const sc = parse(raw);
+    const played = sc.cast.flatMap((m) => (m.character && data.characters[m.character] ? [[m.id, data.characters[m.character]]] : []));
+    const heights = Object.fromEntries(played.map(([id, c]) => [id, c.rig.height]));
+    const bodies = Object.fromEntries(played.map(([id, c]) => [id, rig.body3(c)]));
+    const resolveRt = (s) => rig.resolveScene(s, data.actions, data.animals, data.props, heights, bodies, data.held);
+    const worldOf = (s, rt) => world.worldOf(name, { ...data, id: name, scene: s, runtime: rt, heights, bodies });
+    const tOf = (k) => typeof k.t === 'number' ? k.t : rig.markTime(k.t, raw.marks ?? {});
+    for (const at of o.at.split(',').map(Number)) {
+      const T = sc.duration * at;
+      // mốc tay khai `at`/`offset` gần nhất không sau `T`: dời 2 px
+      const j = structuredClone(raw);
+      let pick;
+      for (const c of j.cast) for (const k of c.world?.hands ?? []) for (const side of ['right', 'left']) {
+        const r = k[side];
+        if (r && (r.at || r.offset) && tOf(k) <= T && (!pick || tOf(k) >= pick.t)) pick = { t: tOf(k), what: `${c.id} ${side} ${f1(tOf(k))} s`, r };
+      }
+      if (!pick) { rows.push({ name, T, what: 'không có mốc tay để dời' }); continue; }
+      (pick.r.at ?? pick.r.offset)[0] += 2;
+      const next = parse(j);
+      const [resolveMs, rt] = ms(() => resolveRt(sc));
+      const [buildMs, w] = ms(() => worldOf(sc, rt));
+      if (!w?.refresh) { rows.push({ name, T, what: 'worldOf không trả World3D có refresh' }); continue; }
+      const [firstMs] = ms(() => frame(w, T));
+      const [sameMs] = ms(() => frame(w, T));
+      const [refreshMs, ok] = ms(() => w.refresh(next));
+      const [afterMs] = ms(() => frame(w, T));
+      const [nextMs] = ms(() => frame(w, T + 1 / 30));
+      rows.push({ name, T, what: pick.what, resolveMs, buildMs, firstMs, sameMs, ok, refreshMs, afterMs, nextMs });
+      console.log(`${name} ${f1(T)} s: ${ok ? 'làm mới' : 'phải dựng lại'} ${f1(refreshMs)} + khung ${f1(afterMs)} ms; dựng lại ${f1(resolveMs + buildMs)} + khung ${f1(firstMs)} ms`);
+    }
+  }
+  console.log('\n| cảnh | giây | mốc dời | resolveScene | dựng lưới | khung đầu | khung cùng t | refresh | khung sau refresh | khung kế |');
+  console.log('|---|---:|---|---:|---:|---:|---:|---:|---:|---:|');
+  for (const r of rows)
+    if (r.resolveMs === undefined) console.log(`| ${r.name} | ${f1(r.T)} | ${r.what} | | | | | | | |`);
+    else console.log(`| ${r.name} | ${f1(r.T)} | ${r.what} | ${f1(r.resolveMs)} | ${f1(r.buildMs)} | ${f1(r.firstMs)} | ${f1(r.sameMs)} | ${r.ok ? f1(r.refreshMs) : 'false'} | ${f1(r.afterMs)} | ${f1(r.nextMs)} |`);
+}

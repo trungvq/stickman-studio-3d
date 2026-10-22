@@ -1565,7 +1565,7 @@ export function resolveScene(
   }
   if (scene.items) checkItems(scene.items, held, scene.cast);
   const duration = scene.duration ?? sceneEnd(cast, beasts);
-  return {
+  const rt: SceneRuntime = {
     name: scene.name,
     marks: scene.marks,
     duration,
@@ -1600,6 +1600,55 @@ export function resolveScene(
       };
     }),
   };
+  sources.set(rt, {
+    shape: sceneShape(raw),
+    args: [actions, animals, propSpecs, heights, bodies, held0],
+  });
+  return rt;
+}
+
+/** Đầu vào của `resolveScene` theo runtime, cho `refreshRuntime`: dạng cảnh (`sceneShape`) và các bảng đã nạp */
+const sources = new WeakMap<
+  SceneRuntime,
+  {
+    shape: string;
+    args: [
+      Record<string, ActionData>,
+      Record<string, AnimalData>,
+      Record<string, PropData>,
+      Record<string, number>,
+      Record<string, Body3>,
+      Record<string, HeldItemSpec>,
+    ];
+  }
+>();
+
+/** Cảnh bỏ mốc tay (`cast[].world.hands`) và mốc món (`items`) */
+const sceneShape = (s: SceneData): string =>
+  JSON.stringify({
+    ...s,
+    items: undefined,
+    cast: s.cast.map((m) => (m.world ? { ...m, world: { ...m.world, hands: undefined } } : m)),
+  });
+
+/**
+ * Làm mới `rt` tại chỗ theo `scene` chỉ khác cảnh đã dựng nó ở mốc tay (`cast[].world.hands`) và mốc món (`items`): giải
+ * lại bằng các bảng lúc dựng, thay mốc của từng người và bảng món, xoá mọi nhớ theo runtime — `sceneAt`, `itemAt`,
+ * `holdRuns`, `handReport` ra như runtime `resolveScene` dựng mới. Khác chỗ khác thì không đổi gì và trả `false`: dựng lại
+ * bằng `resolveScene`. Cảnh sai thì ném như `resolveScene`, `rt` giữ nguyên. docs/03-scene.md#làm-mới-runtime
+ */
+export function refreshRuntime(rt: SceneRuntime, scene: SceneData): boolean {
+  const src = sources.get(rt);
+  if (!src || sceneShape(scene) !== src.shape) return false;
+  const next = resolveScene(scene, ...src.args);
+  // giữ object người: dáng đi đã nướng (`walkerOf`) nhớ theo nó, không đổi theo mốc tay
+  rt.cast.forEach((m, i) => (m.world = next.cast[i].world));
+  rt.held = next.held;
+  if (next.items) rt.items = next.items;
+  else delete rt.items;
+  // thân người cầm (`trunks`) dựng trước khi giải tay: giữ
+  for (const memo of [keyPoses, inherits, graspRuns, runInfos, releaseMemo]) memo.delete(rt);
+  return true;
 }
 
 /** Như `resolveTrack` cho động vật: τ đo trên các kênh hoà được, nền là tư thế đứng của chính con ấy. */

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { act } from './act';
 import { carry as carryOn, fitHolding, grip as gripPose, hold, type Held, type Holding } from './attach';
 import { holdRoles, leadGrip } from './core/act3';
-import type { GraspHand, GripFrame, HeldItemSpec, HoldAim, ReachHold } from './core/heldItem';
+import { sceneHoldRef, type GraspHand, type GripFrame, type HeldItemSpec, type HoldAim, type ReachHold } from './core/heldItem';
 import type { GraspFrame } from './core/graspSolve';
 import type { FingerRoles } from './core/heldFit';
 import { handDims } from './core/heldGeom';
@@ -12,7 +12,7 @@ import type { HandPose } from './core/hand';
 import type { HeldIntent } from './core/heldAudit';
 import { PAPER } from './core/constants';
 import type { Body3 } from './core/figure3d';
-import { cameraAt, castCharacter, itemAt, itemReleased, sceneAt, type CastMember, type SceneData, type ScenePose, type SceneRuntime } from './core/scene';
+import { cameraAt, castCharacter, itemAt, itemReleased, refreshRuntime, sceneAt, type CastMember, type SceneData, type ScenePose, type SceneRuntime } from './core/scene';
 import { equipCharacter, type CharacterData } from './core/schema';
 import { seatCrowd } from './crowd';
 import { loadFonts } from './decal';
@@ -131,6 +131,12 @@ export interface World3D {
   lights(t: number): LightRig;
   /** Khung cắt, ống kính và hậu kỳ cho `stage.draw(t, view)` */
   view(t: number): FrameView;
+  /**
+   * Đổi sang `scene` chỉ khác cảnh đang dựng ở mốc tay và mốc món mà không dựng lại lưới (`refreshRuntime`): món đang cầm
+   * gỡ về chỗ cũ, khung sau gắn lại. `false` là phải dựng lại cả cảnh: khác chỗ khác, đổi mốc tay của người nền, hay đổi
+   * món một người cầm (đồ riêng đăng ký món lúc dựng)
+   */
+  refresh?(scene: SceneData): boolean;
 }
 
 const v3 = new THREE.Vector3();
@@ -409,6 +415,9 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
   };
   const x = extra?.(rt.marks, cast3);
   if (x) s.group.add(x.group);
+  const handsOf = (sc: SceneData, id: string) => JSON.stringify(sc.cast.find((c) => c.id === id)?.world?.hands);
+  /** Món mỗi người cầm trong cảnh: đồ riêng đăng ký món theo đó lúc dựng */
+  const heldBy = (sc: SceneData) => JSON.stringify(sc.cast.map((c) => [c.id, [...new Set((c.world?.hands ?? []).flatMap((k) => [k.right?.hold, k.left?.hold].flatMap((h) => (h ? [sceneHoldRef(h).item] : []))))].sort()]));
   return {
     root, set: s, extra: x, cast: cast3,
     ready: Promise.resolve(x?.ready),
@@ -433,6 +442,14 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     },
     lights: (t) => s.lights(t, x?.light?.(t)),
     view: (t) => ({ crop: cameraAt(rt, t), lens: spec.lens?.(t) ?? scene.lens, ...(spec.grade && { render: { t, grade: spec.grade(t) } }) }),
+    refresh(next) {
+      // người nền đã đóng băng ở dáng giây 0 trong một lưới gộp
+      if (seats.some(({ c }) => handsOf(next, c.id) !== handsOf(cast3.scene, c.id)) || heldBy(next) !== heldBy(cast3.scene)) return false;
+      if (!refreshRuntime(rt, next)) return false;
+      for (const p of provided) if (p.on) letGo(p);
+      cast3.scene = next;
+      return true;
+    },
   };
 }
 

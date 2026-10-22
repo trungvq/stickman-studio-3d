@@ -277,6 +277,17 @@ pnpm bench --scene walk --aa ss2 --gl vulkan,angle --frames 200 --total 41000
 Mở app xem thử ở 1920×1080, vẽ từng khung đồng bộ rồi đọc một pixel để chờ GPU xong. `chụp` là
 `Page.captureScreenshot` JPEG như Remotion chụp mỗi khung. Bảng cuối ước số phút cho `--total` khung: chỉ phần vẽ
 3D, và vẽ cộng chụp trên một tab — các tab của `--concurrency` chia nhau phần chụp, GPU thì dùng chung.
+
+Làm mới runtime khi đổi mốc tay ([docs/03](docs/03-scene.md#làm-mới-runtime)) đo trong Node, không GPU, trên cảnh của
+một repo video, cảnh three của repo ấy gói cùng mã nguồn rig của repo này:
+
+```bash
+pnpm build && node --expose-gc tools/bench.mjs --refresh ../repo-video --scene ten-canh-a,ten-canh-b [--at 0.25,0.5,0.9]
+```
+
+Mỗi giây đo (`--at`, phần của `duration`): `resolveScene`, dựng lưới (`worldOf`), khung đầu, khung cùng giây, rồi dời
+2 px mốc tay gần nhất trước giây ấy, `world.refresh` và khung sau đó. Khung là `pose(t)` cộng 5 lần
+`updateMatrixWorld` như `stage.draw`.
 ## Đèn trong nhà
 
 Đèn lấy từ hai chỗ: giờ trong ngày `setPalette(name)` (màu nắng, đèn trần, bóng, trời) và bộ đèn
