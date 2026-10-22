@@ -754,8 +754,9 @@ function groupHits(s: HeldHand, o: Omit<HeldOptions, "frame">, blend: boolean): 
         out.push({ rule: "role", worst: Math.max(...open.map((f) => s.fingers![f])) });
     }
     const group = g?.group ?? groupOfKey(s.hold!);
-    // tay dẫn: biến thể như khoá lần cầm (cảnh khai), không theo mặc định đã điền
-    const variant = (placed ? g.choice.variant : undefined) ?? s.hold!.split("/")[1];
+    // tay dẫn: biến thể như khoá lần cầm (cảnh khai), không theo mặc định đã điền; kiểu cầm có tên theo biến thể gốc
+    const said = (placed ? g.choice.variant : undefined) ?? s.hold!.split("/")[1];
+    const variant = g?.base && said === g.choice.variant ? g.base : said;
     const max =
       o.gripDeclared && o.grip !== undefined
         ? o.grip

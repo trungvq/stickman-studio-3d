@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { frameCurl, graspFrame, type GraspChoice } from "./graspSolve";
+import { trunk3, type ActInput } from "./act3";
+import { body3 } from "./figure3d";
+import { checkChoice, GRIP_GROUPS, namedVariants, variantOf } from "./graspGroups";
+import {
+  chooseMissing,
+  frameCurl,
+  graspCtx,
+  graspFrame,
+  graspReport,
+  type GraspChoice,
+} from "./graspSolve";
 import { HAND_DOF, HAND_FIT, handVec } from "./hand";
 import {
   AUTHORED_CURL,
@@ -12,8 +22,21 @@ import {
 } from "./heldAuthored";
 import { heldFit } from "./heldFit";
 import { handDims, itemGeom } from "./heldGeom";
-import { parseHeldItem, type GroupId, type HeldItemSpec } from "./heldItem";
-import { cross3, dot3, type V3 } from "./lens";
+import {
+  GROUP_IDS,
+  GROUP_VARIANTS,
+  groupHold,
+  holdRunKey,
+  parseHeldItem,
+  SceneHoldSchema,
+  sceneHoldRef,
+  type GroupId,
+  type HeldItemSpec,
+} from "./heldItem";
+import { cross3, dot3, fromColumns, type V3 } from "./lens";
+import { parseScene, resolveScene, type ItemPose } from "./scene";
+import { parseCharacter } from "./schema";
+import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dua from "./__fixtures__/held-v2/dua.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
@@ -226,5 +249,315 @@ describe("kiểu cầm soạn tay (`authored`)", () => {
     const pick: Pick = { group: "sheet", variant: "pinch", edge: "bottom", thumb: "front" };
     const { spec } = withAuthored(BANG, pick);
     expect(graspFrame(spec, itemGeom(spec), pick, -1, dims, K, LONG).curl).toBe(AUTHORED_CURL);
+  });
+});
+
+/** Món kèm kiểu cầm có tên `name` (mượn biến thể của `pick`), bàn tay dựng từ khung bộ giải của `pick` cộng `fit` */
+function withNamed(spec: HeldItemSpec, pick: Pick, name: string, fit?: number[]) {
+  const { spec: atBase, variant } = withAuthored(spec, pick, fit);
+  const au = atBase.authored![pick.group]![variant];
+  const named = item({
+    ...structuredClone(spec),
+    authored: { [pick.group]: { [name]: { base: variant, note: "thử", ...au } } },
+  });
+  return { named, atBase, base: variant };
+}
+
+describe("kiểu cầm có tên (`authored.<nhóm>.<tên>`, `base`, `note`)", () => {
+  const BANG = item(bangGia);
+  const au = {
+    item: { p: [0.03, -0.11, 0.01], q: [0, 0, 0, 1] },
+    anchor: "edge",
+    fingers: [46, 46, 6, 22, 45, 35, 70, 70, 0, 0],
+  };
+  const withKey = (key: string, a: object) => ({ ...bangGia, authored: { sheet: { [key]: a } } });
+  const errs = (j: unknown) => {
+    const r = parseHeldItem(j);
+    expect(r.success).toBe(false);
+    return r.error!.issues.map((i) => i.message).join("; ");
+  };
+
+  it("schema: tên cần `base` là biến thể gốc; khoá biến thể gốc không khai `base`; tên `[a-z0-9-]+`", () => {
+    const ok = item(withKey("kep-mep-doc", { ...au, base: "flat", note: "kẹp mép dọc" }));
+    expect(ok.authored!.sheet!["kep-mep-doc"]).toMatchObject({ base: "flat", note: "kẹp mép dọc" });
+    expect(item(withKey("flat", { ...au, note: "mặc định" })).authored!.sheet!.flat.note).toBe(
+      "mặc định",
+    );
+    expect(errs(withKey("kep-mep-doc", { ...au, base: "kep" }))).toMatch(
+      /`base: kep` không phải biến thể gốc của nhóm `sheet` \(pinch, flat, rim\)/,
+    );
+    expect(errs(withKey("kep-mep-doc", au))).toMatch(/`kep-mep-doc` cần `base`/);
+    // tên trùng biến thể gốc là khoá biến thể gốc: không khai `base`
+    expect(errs(withKey("flat", { ...au, base: "pinch" }))).toMatch(
+      /`flat` là biến thể gốc của nhóm `sheet`, không khai `base`/,
+    );
+    expect(errs(withKey("Kep_Doc", { ...au, base: "flat" }))).toMatch(/a–z, 0–9/);
+    expect(errs(withKey("kep", { ...au, base: "flat", note: "" }))).toBeTruthy();
+    // món bản 2 có kiểu cầm có tên: nạp như bản 3
+    expect(
+      item({ ...withKey("kep", { ...au, base: "flat" }), schemaVersion: 2 }).schemaVersion,
+    ).toBe(3);
+  });
+
+  it("`variantOf`, `namedVariants`: tên ra biến thể gốc và bản soạn của chính tên ấy; `GROUP_VARIANTS` khớp `GRIP_GROUPS`", () => {
+    const m = item({
+      ...bangGia,
+      authored: {
+        sheet: { flat: au, "kep-mep-doc": { ...au, base: "flat", note: "đưa thực đơn" } },
+      },
+    });
+    const r = variantOf(m, "sheet", "kep-mep-doc")!;
+    expect(r.base).toBe("flat");
+    expect(r.authored).toBe(m.authored!.sheet!["kep-mep-doc"]);
+    expect(variantOf(m, "sheet", "flat")!.authored).toBe(m.authored!.sheet!.flat);
+    expect(variantOf(m, "sheet", "pinch")).toMatchObject({ base: "pinch" });
+    expect(variantOf(m, "sheet", "pinch")!.authored).toBeUndefined();
+    expect(variantOf(m, "sheet", "kep")).toBeUndefined();
+    expect(variantOf(m, "card", "kep-mep-doc")).toBeUndefined();
+    expect(namedVariants(m, "sheet")).toEqual([
+      { name: "kep-mep-doc", base: "flat", note: "đưa thực đơn" },
+    ]);
+    expect(namedVariants(BANG, "sheet")).toEqual([]);
+    for (const g of GROUP_IDS)
+      expect(Object.keys(GRIP_GROUPS[g].variants)).toEqual(GROUP_VARIANTS[g]);
+  });
+
+  it("tên mượn đúng `base`: khung cầm trùng bản soạn ấy đặt ở khoá biến thể gốc — cả tay trái, cỡ tay khác, `along` khác", () => {
+    const pick: Pick = {
+      group: "sheet",
+      variant: "flat",
+      edge: "bottom",
+      thumb: "front",
+      along: 0.3,
+    };
+    const fit = [0, 0, 4, 6, 0, 0, 8, 12, 0, 0];
+    const { named, atBase, base } = withNamed(BANG, pick, "kep-mep-doc", fit);
+    expect(base).toBe("flat");
+    for (const side of [-1, 1])
+      for (const [k, along] of [
+        [K, 0.3],
+        [K * 1.2, 0.3],
+        [K, 0.6],
+      ]) {
+        const at = (s: HeldItemSpec, variant: string) =>
+          graspFrame(s, itemGeom(s), { ...pick, along, variant }, side, dims, k, k * 0.9, 1.3);
+        const a = at(named, "kep-mep-doc");
+        const b = at(atBase, "flat");
+        expect(a.authored).toBe(true);
+        expect(a.base).toBe("flat");
+        expect(b.base).toBeUndefined();
+        expect(a.choice).toEqual({ ...b.choice, variant: "kep-mep-doc" });
+        expect({ ...a, base: undefined, choice: undefined }).toEqual({
+          ...b,
+          choice: undefined,
+        });
+        // biến thể gốc của món có tên không đổi: bộ giải như món không có bản soạn
+        expect(at(named, "flat")).toEqual(at(BANG, "flat"));
+      }
+    expect(frameCurl("sheet", { choice: { variant: "kep-mep-doc" }, base: "flat" })).toBe(
+      frameCurl("sheet", { choice: { variant: "flat" } }),
+    );
+  });
+
+  it("tay trái gương: kiểu cầm có tên trùng bộ giải tay phải thì tay trái trùng bộ giải tay trái (ống nghe `around` 150)", () => {
+    const ONG = item(ongNghe);
+    const pick: Pick = {
+      group: "cylinder",
+      variant: "flat",
+      part: "tay",
+      along: 0.32,
+      around: 150,
+      thumb: "up",
+    };
+    const { named } = withNamed(ONG, pick, "ap-tai");
+    const rig = graspFrame(ONG, itemGeom(ONG), pick, 1, dims, K, LONG);
+    const au = graspFrame(named, itemGeom(named), { ...pick, variant: "ap-tai" }, 1, dims, K, LONG);
+    expect(au.authored).toBe(true);
+    close(au.G.R, rig.G.R, 1e-4);
+    close(au.G.p, rig.G.p, 2e-5);
+  });
+
+  describe("`chooseMissing`", () => {
+    const parsed = parseCharacter(fx.character);
+    if (!parsed.success) throw new Error("nguoi");
+    const T = trunk3(parsed.data, { pose: fx.pose, world: fx.world } as unknown as ActInput)!;
+    const m = fx.ca.items.c1;
+    const pose: ItemPose = {
+      R: fromColumns(m.x as V3, m.y as V3, m.z as V3),
+      P: m.P as V3,
+      cast: "nguoi",
+      s: 1,
+    };
+    const PHONE = item(dienThoai);
+    const ONG = item(ongNghe);
+    // kiểu cầm có tên lệch hẳn bộ giải (ngón gập thêm): rig mà chọn nó thì kết quả khác
+    const fit = [0, 0, 20, 20, 0, 0, 20, 20, 0, 0];
+    const cases: [string, HeldItemSpec, Pick][] = [
+      [
+        "bang-gia@sheet",
+        BANG,
+        { group: "sheet", variant: "pinch", edge: "bottom", thumb: "front" },
+      ],
+      ["bang-gia@sheet", BANG, { group: "sheet", variant: "rim", edge: "bottom", thumb: "front" }],
+      ["dien-thoai@palmBox", PHONE, { group: "palmBox" }],
+      [
+        "ong-nghe-ban@cylinder",
+        ONG,
+        { group: "cylinder", variant: "wrap", part: "tay", around: 90 },
+      ],
+    ];
+
+    it("không bao giờ chọn tên: cảnh không khai `variant` thì trùng từng số như món không có kiểu cầm có tên", () => {
+      for (const [hold, spec, pick] of cases) {
+        const name = hold.split("@")[0];
+        const { named } = withNamed(spec, pick, "kieu-rieng", fit);
+        for (const side of [-1, 1]) {
+          const a = chooseMissing(graspCtx(T, { [name]: named }), hold, pose, side);
+          const b = chooseMissing(graspCtx(T, { [name]: spec }), hold, pose, side);
+          expect(a).toEqual(b);
+          expect(a.choice.variant).not.toBe("kieu-rieng");
+        }
+      }
+    });
+
+    it("cảnh khai tên (dạng tắt `món@nhóm/tên`): giữ tên, khung cầm theo bản soạn, báo kèm `base`", () => {
+      const pick: Pick = { group: "sheet", variant: "flat", edge: "bottom", thumb: "front" };
+      const { named, atBase } = withNamed(BANG, pick, "kep-mep-doc", fit);
+      const ctx = graspCtx(T, { "bang-gia": named });
+      const sol = chooseMissing(ctx, "bang-gia@sheet/kep-mep-doc", pose, -1);
+      expect(sol.choice.variant).toBe("kep-mep-doc");
+      expect(sol.by.variant).toBe("scene");
+      expect(sol.frame.authored).toBe(true);
+      expect(sol.frame.base).toBe("flat");
+      expect(graspReport(sol, 0).base).toBe("flat");
+      const obj = chooseMissing(
+        ctx,
+        { item: "bang-gia", group: "sheet", variant: "kep-mep-doc" },
+        pose,
+        -1,
+      );
+      expect(obj).toEqual(sol);
+      // cùng lựa chọn, món có bản soạn ấy ở khoá `flat`: cùng khung cầm
+      const flat = graspFrame(
+        atBase,
+        itemGeom(atBase),
+        { ...sol.choice, group: "sheet", variant: "flat" },
+        -1,
+        ctx.dims,
+        ctx.k * ctx.s,
+        ctx.long * ctx.s,
+        pose.s,
+        sol.high,
+      );
+      close(sol.frame.G.R, flat.G.R, 1e-9);
+      close(sol.frame.G.p, flat.G.p, 1e-9);
+    });
+  });
+
+  it("`variant` lạ là lỗi `choice`: nêu món, tên, biến thể gốc và kiểu cầm có tên của món — ở `checkChoice` và lúc `resolveScene`", () => {
+    const { named } = withNamed(
+      BANG,
+      { group: "sheet", variant: "flat", edge: "bottom" },
+      "kep-mep-doc",
+    );
+    const geom = itemGeom(named);
+    const hold = {
+      item: "bang-gia",
+      group: "sheet",
+      edge: "bottom",
+      variant: "kep-ngang",
+    } as const;
+    const lines = checkChoice(
+      "sheet",
+      geom,
+      hold,
+      dims,
+      named.anchors,
+      named.shape,
+      named.authored,
+    );
+    expect(lines.join()).toMatch(
+      /`bang-gia@sheet`: biến thể `kep-ngang` không có ở nhóm `sheet` \(gốc: pinch, flat, rim; kiểu cầm của món: kep-mep-doc\)/,
+    );
+    const ok = { ...hold, variant: "kep-mep-doc" };
+    expect(
+      checkChoice("sheet", geom, ok, dims, named.anchors, named.shape, named.authored),
+    ).toEqual([]);
+    // không đưa `authored` của món: tên ấy là lạ
+    expect(checkChoice("sheet", geom, ok, dims, named.anchors, named.shape).join()).toMatch(
+      /biến thể `kep-mep-doc` không có/,
+    );
+
+    const parsed = parseCharacter(fx.character);
+    if (!parsed.success) throw new Error("nguoi");
+    const run = (h: unknown) => {
+      const r = parseScene({
+        duration: 2,
+        lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
+        cast: [
+          {
+            id: "nguoi",
+            world: {
+              at: [250, 0, 506],
+              yaw: 270,
+              hands: [
+                { t: 0, right: { to: "chest", offset: [30, 20, 20], point: "grip", hold: h } },
+              ],
+            },
+          },
+        ],
+      });
+      if (!r.success) throw new Error(r.error.message);
+      return resolveScene(
+        r.data,
+        {},
+        {},
+        {},
+        { nguoi: parsed.data.rig.height },
+        { nguoi: body3(parsed.data) },
+        { "bang-gia": named },
+      );
+    };
+    expect(() => run("bang-gia@sheet/kep-ngang")).toThrow(
+      /lỗi `choice`: `bang-gia@sheet`: biến thể `kep-ngang` không có/,
+    );
+    expect(() => run("bang-gia@sheet/kep-mep-doc")).not.toThrow();
+  });
+
+  it("dạng tắt `món@nhóm/tên`", () => {
+    expect(groupHold("thuc-don@sheet/kep-mep-doc")).toEqual({
+      item: "thuc-don",
+      group: "sheet",
+      variant: "kep-mep-doc",
+    });
+    expect(groupHold("thuc-don@sheet")).toEqual({ item: "thuc-don", group: "sheet" });
+    expect(groupHold("coc@cylinder/wrap")).toEqual({
+      item: "coc",
+      group: "cylinder",
+      variant: "wrap",
+    });
+    expect(holdRunKey("thuc-don@sheet/kep-mep-doc")).toBe(
+      holdRunKey({ item: "thuc-don", group: "sheet", variant: "kep-mep-doc" }),
+    );
+    expect(sceneHoldRef("thuc-don@sheet/kep-mep-doc").grip).toBe("@sheet/kep-mep-doc///");
+    expect(SceneHoldSchema.safeParse("thuc-don@sheet/kep-mep-doc").success).toBe(true);
+    for (const bad of [
+      "thuc-don@sheet/Kep",
+      "thuc-don@sheet/",
+      "a/b@sheet",
+      "a@sheet/x/y",
+      "a@sheet/x_y",
+    ]) {
+      const r = SceneHoldSchema.safeParse(bad);
+      expect(r.success, bad).toBe(false);
+      expect(r.error!.issues[0].message).toMatch(/món@nhóm\/kiểu/);
+      expect(() => groupHold(bad)).toThrow(/món@nhóm\/kiểu/);
+    }
+    expect(SceneHoldSchema.safeParse("thuc-don@cam/kep").error!.issues[0].message).toMatch(
+      /`cam` không phải nhóm cầm/,
+    );
+    expect(SceneHoldSchema.safeParse("dien-thoai#doc").error!.issues[0].message).toMatch(
+      /stickman migrate-held/,
+    );
   });
 });

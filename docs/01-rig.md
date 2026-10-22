@@ -1571,7 +1571,7 @@ Món cầm tay là **dữ liệu**, không phải code three: `held/<món>.json`
 file ấy, nên mốc và lưới có một nguồn số.
 
 **Món khai hình, không khai cách cầm**: hình va chạm `shape` (bắt buộc), mốc, mặt trước `front`, đầu trên `top`, phần có tên,
-chỗ treo `seats` — schema đủ ở [11](11-nhom-cam.md#2-schema-món-heldmónjson-held_version-2). Cảnh khai chỗ cầm theo **nhóm
+chỗ treo `seats` — schema đủ ở [11](11-nhom-cam.md#2-schema-món-heldmónjson-held_version-3). Cảnh khai chỗ cầm theo **nhóm
 hình dáng** (`món@nhóm`, [03](03-scene.md#đồ-cầm-tay)); rig suy khối hình từ `shape`, tự dựng chỗ tiếp xúc, cổ tay, khuỷu
 và ngón — [11](11-nhom-cam.md). Phần lõi: `core/heldGeom.ts` (khối hình), `graspGroups.ts` (bảng nhóm), `graspSolve.ts`
 (chỗ tiếp xúc, giải lựa chọn), `graspArm.ts` (khuỷu tự nhiên; `W_DOWN` `0,3`, `W_BODY` `10`, `W_CONT` `2`), `holdLink.ts`
@@ -1581,7 +1581,7 @@ và ngón — [11](11-nhom-cam.md). Phần lõi: `core/heldGeom.ts` (khối hìn
 ```jsonc
 // held/dien-thoai.json — khung món: y lên, +z mặt trước, đơn vị rig (×0,01 ra three của người cao 4,3)
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "size": [18, 36, 3.5],
   "front": "screen",
   "top": "top",
@@ -1692,7 +1692,7 @@ Món treo trên cánh tay chứ không nằm trong bàn tay — túi khoác khu�
 ```jsonc
 // held/tui.json (món mẫu của lớp chung): thân túi 30 × 26 × 10 ở y 0–26, hai quai, mép dưới thanh ngang của quai ở y 74
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "size": [30, 74, 10],
   "front": "mat",
   "top": "quai",

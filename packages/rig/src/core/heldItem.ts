@@ -12,8 +12,8 @@ import { fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
  * món), đơn vị rig (`× 0,01` ra three của người cao 4,3). docs/11-nhom-cam.md mục 2
  */
 
-/** Bản schema món rig hiểu; món không khai `schemaVersion` là bản 1, zod báo lỗi kèm cách chuyển */
-export const HELD_VERSION = 2;
+/** Bản schema món rig hiểu; món không khai `schemaVersion` là bản 1, zod báo lỗi kèm cách chuyển; bản 2 nâng thẳng lên */
+export const HELD_VERSION = 3;
 
 const v3 = z.tuple([z.number(), z.number(), z.number()]);
 
@@ -137,9 +137,15 @@ const ten = z.tuple([num, num, num, num, num, num, num, num, num, num]);
  * (`HAND_GRIPS`) như `graspLink`; tay trái là gương theo khung của biến thể. `fingers` mười góc ngón (`HAND_DOF` bỏ `turn`,
  * `bend`), `fit` độ gập thêm từng đốt (`HAND_FIT`); `heldFit` còn cuộn thêm tới `curl` độ (bỏ trống `AUTHORED_CURL`, `0`
  * là giữ đúng dáng soạn) và gỡ đốt lún. `choice` là lựa chọn cầm lúc soạn: cảnh cầm ở lựa chọn khác (`along`, cạnh…) thì
- * bàn tay dời theo chỗ tiếp xúc của bộ giải từ lựa chọn này sang lựa chọn kia. docs/11-nhom-cam.md § Kiểu cầm soạn tay
+ * bàn tay dời theo chỗ tiếp xúc của bộ giải từ lựa chọn này sang lựa chọn kia. Khoá không phải biến thể gốc của nhóm là
+ * kiểu cầm có tên: khai `base` (biến thể gốc nó mượn chỗ tiếp xúc, dáng, vai trò, miền), cảnh gọi bằng `variant`.
+ * docs/11-nhom-cam.md § Kiểu cầm soạn tay
  */
 export const AuthoredGraspSchema = z.strictObject({
+  /** Biến thể gốc của kiểu cầm có tên; khoá là biến thể gốc thì không khai */
+  base: z.string().min(1).optional(),
+  /** Mô tả cho người và agent đọc (`list held`, `describe_held` của MCP) */
+  note: z.string().min(1).optional(),
   item: z.strictObject({ p: v3, q: z.tuple([num, num, num, num]) }),
   anchor: z.enum(HAND_POSE_KINDS),
   fingers: ten,
@@ -230,16 +236,40 @@ export const HeldItemSchema = z
     )
       bad(["shape"], "mọi khối đều là `detail` hay thuộc phần `grip: false` — không còn gì để cầm");
     for (const msg of topProblems(m)) bad(["top"], msg);
-    for (const g of Object.keys(m.authored ?? {}))
-      if (!(GROUP_IDS as readonly string[]).includes(g)) bad(["authored", g], groupName(g));
+    for (const [g, byName] of Object.entries(m.authored ?? {})) {
+      if (!(GROUP_IDS as readonly string[]).includes(g)) {
+        bad(["authored", g], groupName(g));
+        continue;
+      }
+      const roots: readonly string[] = GROUP_VARIANTS[g as GroupId];
+      for (const [name, a] of Object.entries(byName)) {
+        const at = ["authored", g, name];
+        if (roots.includes(name)) {
+          if (a.base !== undefined)
+            bad(
+              [...at, "base"],
+              `\`${name}\` là biến thể gốc của nhóm \`${g}\`, không khai \`base\``,
+            );
+        } else if (!VARIANT_NAME.test(name))
+          bad(at, `tên kiểu cầm \`${name}\` chỉ gồm a–z, 0–9, \`-\``);
+        else if (a.base === undefined)
+          bad(at, `kiểu cầm có tên \`${name}\` cần \`base\` (biến thể gốc: ${roots.join(", ")})`);
+        else if (!roots.includes(a.base))
+          bad(
+            [...at, "base"],
+            `\`base: ${a.base}\` không phải biến thể gốc của nhóm \`${g}\` (${roots.join(", ")})`,
+          );
+      }
+    }
   });
 export type HeldItemSpec = z.infer<typeof HeldItemSchema>;
 
-/** Thiếu `schemaVersion` thì là bản 1 (zod báo lỗi kèm cách chuyển); số đã khai giữ nguyên */
+/** Thiếu `schemaVersion` thì là bản 1 (zod báo lỗi kèm cách chuyển); bản 2 lên `HELD_VERSION` (chỉ thêm trường); số khác giữ nguyên */
 export function migrateHeldItem(json: unknown): unknown {
   if (!json || typeof json !== "object" || Array.isArray(json)) return json;
   const o = structuredClone(json) as Record<string, unknown>;
   if (typeof o.schemaVersion !== "number") o.schemaVersion = 1;
+  else if (o.schemaVersion === 2) o.schemaVersion = HELD_VERSION;
   return o;
 }
 
@@ -512,6 +542,28 @@ export const GROUP_IDS = [
 ] as const;
 export type GroupId = (typeof GROUP_IDS)[number];
 
+/** Biến thể gốc của từng nhóm, đúng thứ tự khoá `GRIP_GROUPS[g].variants`; tên kiểu cầm có tên của món không trùng chúng */
+export const GROUP_VARIANTS = {
+  sheet: ["pinch", "flat", "rim"],
+  card: ["lateral", "edges"],
+  pen: ["grip"],
+  chopsticks: ["grip"],
+  cylinder: ["wrap", "flat"],
+  round: ["palm", "top"],
+  bowl: ["side", "pinch"],
+  handle: ["hook"],
+  palmBox: ["default"],
+  platform: ["palm"],
+  hug: ["default"],
+  clamp: ["default"],
+  carry: ["default"],
+  soft: ["default"],
+} as const satisfies Record<GroupId, readonly string[]>;
+export type GroupVariant<G extends GroupId> = (typeof GROUP_VARIANTS)[G][number];
+
+/** Tên kiểu cầm có tên (`authored.<nhóm>.<tên>`), cũng là phần `/tên` của dạng tắt `món@nhóm/tên` */
+const VARIANT_NAME = /^[a-z0-9-]+$/;
+
 const HOLD_EDGES = ["top", "bottom", "left", "right", "front", "back"] as const;
 const HOLD_ALONG = ["corner", "low", "mid", "high"] as const;
 const HOLD_THUMB = ["front", "back", "top", "bottom", "left", "right", "up", "down"] as const;
@@ -536,10 +588,10 @@ export const SupportOverrideSchema = z.strictObject({
 });
 export type SupportOverride = z.infer<typeof SupportOverrideSchema>;
 
-const groupOf = (s: string): string => s.slice(s.indexOf("@") + 1);
+const groupOf = (s: string): string => s.slice(s.indexOf("@") + 1).split("/")[0];
 const groupName = (g: string) => `\`${g}\` không phải nhóm cầm (${GROUP_IDS.join(", ")})`;
 
-const HOLD_STRING = /^[^#@]+@[a-zA-Z]+$/;
+const HOLD_STRING = /^[^@#/]+@[a-zA-Z]+(\/[a-z0-9-]+)?$/;
 const HoldString = z
   .string()
   .refine((s) => HOLD_STRING.test(s) && (GROUP_IDS as readonly string[]).includes(groupOf(s)), {
@@ -562,6 +614,8 @@ const HoldObject = z.strictObject({
   yaw: z.number().optional(),
 });
 
+const HOLD_FORM =
+  "cần dạng `món@nhóm` hay `món@nhóm/kiểu` (kiểu: biến thể gốc hay tên kiểu cầm của món, a–z, 0–9, `-`)";
 const MIGRATE_HINT = "chuyển cảnh cũ bằng `stickman migrate-held` (docs/11-nhom-cam.md mục 8)";
 
 /** Lời báo của `SceneHoldSchema` khi không nhánh nào khớp: nêu đúng dạng người viết đang khai */
@@ -577,9 +631,9 @@ function holdFormError(iss: {
       const g = groupOf(x);
       return HOLD_STRING.test(x) && !(GROUP_IDS as readonly string[]).includes(g)
         ? `\`${x}\`: ${groupName(g)}`
-        : `\`${x}\`: cần dạng \`món@nhóm\``;
+        : `\`${x}\`: ${HOLD_FORM}`;
     }
-    return `\`${x}\`: cần dạng \`món@nhóm\``;
+    return `\`${x}\`: ${HOLD_FORM}`;
   }
   if (x && typeof x === "object" && !Array.isArray(x)) {
     const o = x as Record<string, unknown>;
@@ -593,23 +647,22 @@ function holdFormError(iss: {
   return "`hold` cần chuỗi `món@nhóm` hay object `{ item, group, … }`";
 }
 
-/** Chỗ cầm của mốc `hold` trong scene: `món@nhóm` hay `{ item, group, … }` (docs/11-nhom-cam.md mục 4) */
+/** Chỗ cầm của mốc `hold` trong scene: `món@nhóm`, `món@nhóm/kiểu` hay `{ item, group, … }` (docs/11-nhom-cam.md mục 4) */
 export const SceneHoldSchema = z.union([HoldString, HoldObject], {
   error: (iss) => (iss.code === "invalid_union" ? holdFormError(iss as never) : undefined),
 });
 export type SceneHold = z.infer<typeof SceneHoldSchema>;
 export type SceneHoldGroup = z.infer<typeof HoldObject>;
 
-/** Chỗ cầm dạng object: chuỗi `món@nhóm` đổi ra `{ item, group }` */
+/** Chỗ cầm dạng object: chuỗi `món@nhóm` đổi ra `{ item, group }`, `món@nhóm/kiểu` ra `{ item, group, variant }` */
 export function groupHold(h: SceneHold): SceneHoldGroup {
   if (typeof h === "object") return h;
+  if (!HOLD_STRING.test(h)) throw new Error(`\`${h}\`: ${HOLD_FORM}`);
   const i = h.indexOf("@");
-  if (i <= 0 || i === h.length - 1 || h.includes("#"))
-    throw new Error(`\`${h}\`: cần dạng \`món@nhóm\``);
-  const group = h.slice(i + 1);
+  const [group, variant] = h.slice(i + 1).split("/");
   if (!(GROUP_IDS as readonly string[]).includes(group))
     throw new Error(`\`${h}\`: ${groupName(group)}`);
-  return { item: h.slice(0, i), group: group as GroupId };
+  return { item: h.slice(0, i), group: group as GroupId, ...(variant && { variant }) };
 }
 
 /** Khoá lần cầm: `@nhóm/biến thể/phần/cạnh/ngón cái` (trường thiếu để trống); trường số trượt không vào khoá */

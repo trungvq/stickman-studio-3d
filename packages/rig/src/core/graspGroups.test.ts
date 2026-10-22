@@ -541,7 +541,7 @@ describe("`cylinder`: biên phần `grip: false`", () => {
 describe("`checkV2` nối `topProblems`", () => {
   it("món có miệng mà `top` lệch quá 10° bị báo ở đường `top`", () => {
     const cup = (top: V3) => ({
-      schemaVersion: 2,
+      schemaVersion: 3,
       size: [10, 12, 10],
       anchors: {},
       top,

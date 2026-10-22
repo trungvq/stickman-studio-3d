@@ -883,13 +883,14 @@ export class GraspEditor {
   private anchor(): HandPose {
     const t = this.t;
     return (rig.authoredOf(t.spec, t.group, t.variant)?.anchor ??
-      rig.GRIP_GROUPS[t.group].variants[t.variant].pose!.closed.pose) as HandPose;
+      rig.variantOf(t.spec, t.group, t.variant)!.spec.pose!.closed.pose) as HandPose;
   }
 
-  /** Bản soạn từ món, ngón đang thấy */
+  /** Bản soạn từ món, ngón đang thấy; kiểu cầm có tên giữ `base`, `note` của bản đã có */
   authored(): AuthoredGrasp {
     const t = this.t;
-    return rig.authoredFrom(
+    const was = rig.authoredOf(t.spec, t.group, t.variant);
+    const au = rig.authoredFrom(
       this.gripNow(),
       this.anchor(),
       t.k,
@@ -898,6 +899,7 @@ export class GraspEditor {
       rig.authoredChoice(t.choice, t.high),
       this.curl,
     );
+    return { ...(was?.base && { base: was.base }), ...(was?.note && { note: was.note }), ...au };
   }
 
   /** Món kèm bản soạn tạm (chưa lưu) */

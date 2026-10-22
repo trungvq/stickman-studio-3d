@@ -69,9 +69,9 @@ tay: `act3.ts` và `attach.ts` đọc liên kết qua nó. Code dựng lưới m
 
 | File lõi (`packages/rig/src/core/`) | Việc |
 |---|---|
-| `heldItem.ts` | Schema món (`HELD_VERSION` 2), `SceneHoldSchema` hai dạng, `graspLink` (bàn tay cầm → `GripFrame`), `ReachHold`, `HoldGrasp`, `HOLD_BLEND` |
+| `heldItem.ts` | Schema món (`HELD_VERSION` 3), `SceneHoldSchema` hai dạng, `graspLink` (bàn tay cầm → `GripFrame`), `ReachHold`, `HoldGrasp`, `HOLD_BLEND` |
 | `heldGeom.ts` | `itemGeom`: phần, khối hình, miền bám, tên cạnh và mặt; `handDims` |
-| `graspGroups.ts` | `GRIP_GROUPS`: điều kiện, biến thể, lựa chọn, tay phụ, hướng mặc định |
+| `graspGroups.ts` | `GRIP_GROUPS`: điều kiện, biến thể, lựa chọn, tay phụ, hướng mặc định; `variantOf` (biến thể gốc hay kiểu cầm có tên của món) |
 | `graspSolve.ts` | `graspFrame`, `chooseMissing` (giải lựa chọn thiếu), `graspAt`, `GraspReport`; `CONTACTS` là chỗ tiếp xúc của từng nhóm |
 | `graspArm.ts` | Khuỷu tự nhiên `E(φ)` (`W_DOWN`, `W_BODY`, `W_CONT`), chuỗi `φ` |
 | `arm3.ts` | Khung xương, luật đọc góc, IK, thân `Trunk3` — mô-đun lá mà `act3.ts` và các file trên cùng đọc; `act3.ts` xuất lại |
@@ -92,10 +92,11 @@ dùng**: mười nhóm chạy, bốn nhóm `round`, `hug`, `clamp`, `soft` là `
 | Cảnh | `items` (cả mốc món nằm `rest`); `hold` có chỗ cầm, `"món@nhóm"`, `both`, `touch`, `regrip`; tay dẫn với ý định, `keep` | `write`, `pick`, lớp không cầm (`contact`) |
 | Rig | Bàn tay từ món, khuỷu tự nhiên, giải lựa chọn thiếu, `heldFit` theo vai trò và tự hiệu chỉnh da, đo lún trên da, nhớ `heldFit` theo lần cầm | Thân người nghiêng, với theo khi món ngoài tầm |
 
-## 2. Schema món (`held/<món>.json`, `HELD_VERSION` 2)
+## 2. Schema món (`held/<món>.json`, `HELD_VERSION` 3)
 
-`schemaVersion` bắt buộc và là `2` (`HELD_VERSION`). File thiếu `schemaVersion` hay khai `1` là món bản 1 (kiểu cầm khai
-theo món): zod báo lỗi kèm lệnh `stickman migrate-held` (mục [8](#8-chuyển-đổi)); số mới hơn rig cũng là lỗi zod.
+`schemaVersion` bắt buộc và là `3` (`HELD_VERSION`). Bản `2` nạp như bản `3` (`migrateHeldItem` chỉ nâng số; bản 3 thêm
+`base`, `note` của [kiểu cầm có tên](#kiểu-cầm-có-tên)). File thiếu `schemaVersion` hay khai `1` là món bản 1 (kiểu cầm
+khai theo món): zod báo lỗi kèm lệnh `stickman migrate-held` (mục [8](#8-chuyển-đổi)); số mới hơn rig cũng là lỗi zod.
 
 ### Trường
 
@@ -111,7 +112,7 @@ theo món): zod báo lỗi kèm lệnh `stickman migrate-held` (mục [8](#8-chu
 | `touch` | Phần người được lấn vào món khi cầm, cộng với bàn tay, cẳng tay cầm (mặc định); `touch` của chỗ cầm ở cảnh cộng thêm |
 | `hang` | Nhóm con thõng theo trọng lực |
 | `joints`, `soft` | Que xoay được trong tay (gắp); vật mềm — để sau |
-| `authored` | Kiểu cầm soạn tay theo `nhóm` rồi `biến thể`: bàn tay, dáng ngón người chỉnh bằng mắt trong studio 3D, rig dùng thay chỗ tiếp xúc của nhóm ([bên dưới](#kiểu-cầm-soạn-tay-authored)). Ngoại lệ duy nhất của "món không khai cách cầm" |
+| `authored` | Kiểu cầm soạn tay theo `nhóm` rồi `biến thể` hay tên kiểu cầm: bàn tay, dáng ngón người chỉnh bằng mắt trong studio 3D, rig dùng thay chỗ tiếp xúc của nhóm ([bên dưới](#kiểu-cầm-soạn-tay-authored)). Ngoại lệ duy nhất của "món không khai cách cầm" |
 
 - Khối không gắn nhãn thuộc phần ngầm `body`. Món đều (điện thoại, phiếu, thẻ) không cần nhãn phần.
 - **`detail: true`** đánh dấu khối chi tiết (nút sườn, cụm camera, kẹp bút): rig **bỏ khi suy khối hình**, nhưng vẫn tính
@@ -176,7 +177,7 @@ quay hướng bán kính `ρ` quanh trục `a` (về phía `U`):
 ```jsonc
 // held/dien-thoai.json — món đều: không nhãn phần; cụm camera, hai nút sườn là chi tiết
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "size": [18.45, 37.8, 2.88],
   "front": "screen",
   "top": "top",
@@ -206,7 +207,7 @@ quay hướng bán kính `ρ` quanh trục `a` (về phía `U`):
 ```jsonc
 // held/chai-dia.json — món không đều: thân, vai, cổ là phần; miệng không được cầm
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "size": [20.4, 76, 20.4],
   "front": "nhan",
   "top": "mouth",
@@ -234,7 +235,7 @@ quay hướng bán kính `ρ` quanh trục `a` (về phía `U`):
 ```jsonc
 // held/tui-hieu.json — món treo: chỗ treo theo `on`; `shape` là thân túi, không gồm quai
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "size": [65.6, 94.1, 23],
   "front": "mat",
   "top": "quai",
@@ -249,7 +250,8 @@ quay hướng bán kính `ρ` quanh trục `a` (về phía `U`):
 ```
 
 `parseHeldItem` báo: `front`/`top`/`seats` trỏ mốc không có hay không `dir`, `top` lệch miệng, `as: "rod"` thiếu `axis`,
-mọi khối đều `grip: false` hay `detail`, khoá `authored` không phải nhóm cầm.
+mọi khối đều `grip: false` hay `detail`, khoá `authored` không phải nhóm cầm; kiểu cầm có tên sai tên, thiếu `base`, `base`
+không phải biến thể gốc của nhóm, hay `base` khai ở khoá là biến thể gốc ([bên dưới](#kiểu-cầm-có-tên)).
 
 ### Kiểu cầm soạn tay (`authored`)
 
@@ -293,8 +295,53 @@ Bản soạn lưu vào chính món, dùng cho **mọi cảnh** cầm món ấy b
 - Món không có `authored` cho nhóm × biến thể đang dùng thì `graspFrame` như cũ (`raw` bỏ qua bản soạn). Khung cầm từ bản soạn
   mang `authored: true`.
 
+#### Kiểu cầm có tên
+
+Khoá của `authored.<nhóm>` là biến thể gốc của nhóm (`GRIP_GROUPS[nhóm].variants`, cũng là `GROUP_VARIANTS` của
+`heldItem.ts`) hay **tên** một kiểu cầm riêng của món. Bản soạn ở khoá biến thể gốc là mặc định của nhóm × biến thể ấy cho
+mọi cảnh; kiểu cầm có tên chỉ dùng khi cảnh gọi tên nó.
+
+```jsonc
+// held/thuc-don.json
+"authored": {
+  "sheet": {
+    "flat": { "item": { … }, "anchor": "edge", "fingers": [ … ], "choice": { … } },   // mặc định của sheet × flat
+    "kep-mep-doc": {
+      "base": "flat",
+      "note": "Kẹp mép dọc giữa ngón cái và ngón trỏ, tấm đứng thẳng, mặt về khách — đưa thực đơn",
+      "item": { "p": [ … ], "q": [ … ] }, "anchor": "edge", "fingers": [ … ], "curl": 6,
+      "choice": { "part": "body", "featureIndex": 0, "edge": "left", "along": 0.31, "thumb": "front", "slant": 70 }
+    }
+  }
+}
+```
+
+- **Tên** viết `[a-z0-9-]+`, không trùng biến thể gốc của nhóm. **`base`** là biến thể gốc nó mượn: bắt buộc ở khoá có tên,
+  cấm ở khoá là biến thể gốc, nên tên trùng một biến thể gốc (cả biến thể rig thêm sau) là lỗi `parseHeldItem`: đổi tên kiểu
+  cầm. **`note`** (mọi khoá, tuỳ chọn) là mô tả cho người và agent; `list({ kind: "held" })` (`named`) và `describe_held` của
+  MCP trả nó cùng tên và `base`.
+- **Cảnh gọi** bằng `variant` sẵn có của chỗ cầm, hay dạng tắt `"món@nhóm/tên"`:
+
+  ```jsonc
+  "right": { "at": [-388, -240, 568], "point": "grip",
+             "hold": { "item": "thuc-don", "group": "sheet", "variant": "kep-mep-doc",
+                       "face": { "axis": "front", "toward": { "cast": "yoshie" } } } }
+  ```
+
+- **Mượn biến thể gốc.** Mọi chỗ tra bảng biến thể theo `variant` (`graspFrame`, `chooseMissing`, `checkChoice`, ý định
+  `thumbToward` của tay dẫn, ngưỡng `grip`) đi qua `variantOf(món, nhóm, variant)` → `{ base, spec, authored }`: chỗ tiếp xúc,
+  dáng, vai trò, `choices` và miền theo `base`; khung cầm theo bản soạn của chính tên ấy. Tay trái, cỡ tay khác, trượt theo
+  chỗ tiếp xúc như mọi bản soạn (`mirrorHand`, `slideHand` qua chỗ tiếp xúc của `base`). `choice.variant` của khung cầm và
+  của `GraspReport` là tên cảnh gọi, `base` mang biến thể gốc.
+- **Rig không tự chọn kiểu cầm có tên.** `chooseMissing` chỉ thử biến thể gốc; cảnh không khai `variant` thì như món không có
+  kiểu cầm có tên.
+- **Tên lạ** (không phải biến thể gốc, không có trong `authored.<nhóm>` của món) là lỗi `choice` của `checkHolds` lúc
+  `resolveScene` (và của `check`): dòng báo nêu món, nhóm, tên, biến thể gốc và các kiểu cầm có tên của món.
+- Mỗi kiểu cầm thuộc một món; chép sang món khác là việc của studio.
+
 Code ở `core/heldAuthored.ts` (`authoredFrom` dựng bản soạn từ khung cầm studio đang thấy, `authoredHand`, `mirrorHand`,
-`slideHand`, `authoredPose`), nối vào `graspFrame` (`authoredPlace`); test `heldAuthored.test.ts`.
+`slideHand`, `authoredPose`), nối vào `graspFrame` (`authoredPlace`); `variantOf`, `namedVariants` ở `core/graspGroups.ts`;
+test `heldAuthored.test.ts`.
 
 ## 3. Schema nhóm (rig, `GRIP_GROUPS`)
 
@@ -870,7 +917,7 @@ const SceneItemMarkSchema = z.strictObject({
 
 ```ts
 const SceneHoldSchema = z.union([
-  z.string().regex(/^[^@#]+@[a-zA-Z]+$/),          // viết tắt "món@nhóm": mọi lựa chọn rig giải hay lấy mặc định
+  z.string().regex(/^[^@#/]+@[a-zA-Z]+(\/[a-z0-9-]+)?$/),   // viết tắt "món@nhóm" (mọi lựa chọn rig giải hay lấy mặc định), "món@nhóm/kiểu" (= variant)
   z.strictObject({
     item: z.string(),
     group: z.enum(GROUP_IDS),
@@ -883,7 +930,7 @@ const SceneHoldSchema = z.union([
     around: z.number().optional(),                  // độ, quanh trục trụ
     tilt: z.number().optional(),                    // palmBox
     psi: z.number().optional(), inset: z.number().optional(),   // platform
-    variant: z.string().optional(),
+    variant: z.string().optional(),                 // biến thể gốc hay tên kiểu cầm của món (mục 2)
     // chỉ đường tay dẫn — ý định của món (01 § Món cầm tay)
     face: z.union([AxisIntentSchema, IntentTargetSchema]).optional(),
     up: z.union([z.string(), v3]).optional(),
@@ -919,8 +966,9 @@ const SceneHoldSchema = z.union([
 - **Đổi tay**, **đưa người khác**: mốc món đổi `cast` khi tay người nhận đã cầm; tay người đưa `hold: null` sau đó. Tay dẫn giữ luật
   hiện có (`holdRoles` của `act3.ts`).
 - **Buông**: `hold: null`. `right: null` vẫn chỉ thả đích. `point: "item:<mốc>"` của tay dẫn giữ nguyên.
-- **Hai dạng `hold`** (`SceneHoldSchema`): `"món@nhóm"` và `{ item, group, … }`. Dạng khác (chuỗi có `#`, object có
-  `grip`) là lỗi zod kèm lệnh `stickman migrate-held` (mục [8](#8-chuyển-đổi)); `migrateScene` không tự chuyển.
+- **Hai dạng `hold`** (`SceneHoldSchema`): chuỗi `"món@nhóm"` hay `"món@nhóm/kiểu"` (`kiểu` là `variant`: biến thể gốc
+  hay [kiểu cầm có tên](#kiểu-cầm-có-tên) của món) và `{ item, group, … }`. Dạng khác (chuỗi có `#`, object có `grip`) là
+  lỗi zod kèm lệnh `stickman migrate-held` (mục [8](#8-chuyển-đổi)); `migrateScene` không tự chuyển.
 
 ### Ví dụ
 
@@ -1106,6 +1154,8 @@ Cảnh thường khai đủ chỗ cầm. Thiếu trường nào:
   kề đoạn bám nhô khỏi mặt khối quá `0,1 · W` về phía lòng tay (`bulgeToward`, đo bằng điểm xa nhất của từng khối; thanh hộp:
   mặt lòng tay áp là mặt gần `ρ` nhất). Ống nghe loại mặt trước (0°, 30°, 330°: loa, mic nhô); 60°, 90°, 180°, 270° giữ. Mọi `around`
   của lưới đều nhô thì không loại. Cảnh khai `around` thì giữ nguyên.
+- **`variant`** rig giải chỉ trên biến thể gốc của nhóm, không bao giờ ra [kiểu cầm có tên](#kiểu-cầm-có-tên) của món; cảnh
+  gọi tên thì tên ấy giữ nguyên, các trường khác giải trên bàn tay soạn của nó.
 - **`variant`** của tấm giải trên cả `pinch`, `flat`, `rim`: `flat` và `rim` mất `VARIANT_COST`, nên chỉ thắng khi `pinch`
   đắt hơn chúng quá 0,5 — ở cạnh dưới `pinch` gãy cổ tay (bend 51°, dev 39°), `rim` đỡ được.
 - **`edges` của thẻ**: ở bậc rời rig bỏ cặp (`edge`, `edges`) mà bề rộng tấm qua hai mép ngoài `across` của biến thể, trừ khi
@@ -1306,7 +1356,7 @@ Chi phí (cỡ `1,61`): 0,3–1,7 ms một bàn tay, mỗi `0,1 s` của `check`
 
 ## 8. Chuyển đổi
 
-Rig chỉ nạp món `HELD_VERSION` 2 và `hold` dạng nhóm. Repo còn món bản 1 (kiểu cầm khai theo món) hay
+Rig chỉ nạp món bản 2, 3 (`HELD_VERSION` 3) và `hold` dạng nhóm. Repo còn món bản 1 (kiểu cầm khai theo món) hay
 `hold` dạng `món#kiểu` / `{ item, grip }` thì zod báo lỗi kèm lệnh `stickman migrate-held`: tool chuyển món bản 1 sang món
 v2 và `hold` của cảnh sang chỗ cầm nhóm `{ item, group, … }`.
 
@@ -1384,10 +1434,11 @@ của `held/`.
 Mỗi nhóm chạy có chỗ tiếp xúc (`CONTACTS`), dáng mở/đóng, vai trò, khung chuẩn khớp fixture
 (`core/__fixtures__/grip-frames.json`), test và hàng `bang-cam` (mục 8); chi tiết từng nhóm ở mục 3. Theo file:
 
-1. `core/heldItem.ts` — `HeldItemSchema`, `SceneHoldSchema`, `graspLink`, `ReachHold` (`grasp`, `solve`, `was`, `released`,
+1. `core/heldItem.ts` — `HeldItemSchema`, `GROUP_VARIANTS`, `SceneHoldSchema`, `graspLink`, `ReachHold` (`grasp`, `solve`, `was`, `released`,
    `from`, `enter`), `HoldGrasp`.
 2. `core/heldGeom.ts` — `itemGeom`, `handDims`.
-3. `core/graspGroups.ts` — `GRIP_GROUPS` đủ 14 nhóm; mười nhóm chạy, bốn nhóm kia `later` (`check` báo "chưa làm").
+3. `core/graspGroups.ts` — `GRIP_GROUPS` đủ 14 nhóm; mười nhóm chạy, bốn nhóm kia `later` (`check` báo "chưa làm");
+   `variantOf`, `namedVariants` (kiểu cầm có tên).
 4. `core/graspSolve.ts`, `core/graspArm.ts` — `graspFrame`, bàn tay từ món, khuỷu `E(φ)` và chuỗi mẫu, giải lựa chọn thiếu,
    `GraspReport`, giá mặt đỡ (`restUnder`).
 5. `core/scene.ts` — `items`, `itemAt`, đường theo lần cầm (`runMarks`), lần cầm theo mốc (`keyedArm`), `graspAtTime` (nhớ
@@ -1400,7 +1451,7 @@ Mỗi nhóm chạy có chỗ tiếp xúc (`CONTACTS`), dáng mở/đóng, vai tr
 8. `src/attach.ts`, `src/world.ts` — gắn món qua `holdLink`, `fitHolding` nhớ theo lần cầm; `Hand.heldV` (`human.ts`) mang dáng
    nhóm đã hoà.
 9. `core/heldAudit.ts`, `src/held.ts` — luật mục 7 (`heldOppose`), `skinDepth` cho mọi chỗ cầm có `shape`, `HeldHand.grasp`, `HeldHand.oppose`, `HeldHand.under` (luật `rest`).
-10. `packages/mcp/server.mjs` — `schema(held)`, `list(held)` (`groups`), `describe_held`, `scene_probe` `grasp`; `packages/cli` —
+10. `packages/mcp/server.mjs` — `schema(held)`, `list(held)` (`groups`, `named`), `describe_held`, `scene_probe` `grasp`; `packages/cli` —
     `heldOptions` (`sink`, `wrist`, `arm`, `oppose`, `rest`, `grip`), `heldRows` đọc lỗi `reach`/`wrist`, `bang-cam`, `migrate-held` (mục 8).
 
 Phần "để sau" (mục 1) làm khi có cảnh cần.
@@ -1418,7 +1469,9 @@ Chủ dự án chốt:
    đất: tay trượt dọc cán).
 5. **Hướng món mặc định theo nhóm** (tấm, thẻ, hộp cỡ lòng tay: mặt trước về mặt người cầm; trụ, chén, quai, đỡ dưới: đứng);
    tay dẫn tắt bằng `keep: true`.
-6. **Có viết tắt `"món@nhóm"`**.
+6. **Có viết tắt `"món@nhóm"`**, và `"món@nhóm/kiểu"` khi cảnh gọi một biến thể hay kiểu cầm có tên.
 7. **Món to so với tay**: nhận tới `0,95 · W`, cảnh báo `size` từ `0,8 · W`; quá nữa là lỗi `group`, dòng lỗi gợi phần khác
    còn vừa hay hai tay.
 8. **Đũa**: dáng `chopsticks` và chỗ tiếp xúc `grip` cầm đũa thật theo ảnh mẫu `dua-an-can`; `pick` và tách que trên làm khi có shot cần gắp.
+9. **Kiểu cầm có tên nằm trong món** (`authored.<nhóm>.<tên>`, có `base` và `note`); cảnh gọi qua `variant`. Bản theo nhóm ×
+   biến thể gốc vẫn là mặc định; rig không tự chọn kiểu cầm có tên.

@@ -304,7 +304,7 @@ Lớp dưới **không nằm trong repo video**: nó là
 `template/` trong package `@stickman3d/cli` (chạy từ cây nguồn thì là
 `apps/studio/public`), hằng `COMMON` trong `lib.mjs`. Đọc thì tìm lớp trên
 trước, không có mới xuống lớp dưới; file **trùng đường dẫn** thì lớp trên đè. Món của `held/` ở cả hai lớp là món nhóm cầm
-(`schemaVersion: 2`, [11](11-nhom-cam.md)).
+(`schemaVersion: 3`, [11](11-nhom-cam.md)).
 Danh mục cũng gộp như thế (`mergePieceCatalogs` trong rig, đè theo `file`).
 Ghi thì luôn vào lớp trên.
 

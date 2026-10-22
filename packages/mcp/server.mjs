@@ -606,11 +606,12 @@ function world3Notes() {
     hand: `keys[].hand.armNear / armFar (kênh mask "hand"): tên dáng (${rig.HAND_POSE_KINDS.join(", ")}) hay { pose, w, turn, bend, palm, fingers } — dáng hoà từ dáng nghỉ (ngón cong nhẹ, bàn tay không ai đặt dáng) theo w (0..1), bỏ trống pose (hay {}) là dáng nghỉ, turn xoay cẳng tay (−90..90, dương sấp: cẳng tay chĩa ra trước thì lòng tay úp, âm ngửa), bend gập cổ tay (−90..90, dương về phía lòng tay). Dáng: cup khum (che miệng, che tai), pinch kẹp vật nhỏ bằng đầu ngón (chén), clasp nắm quanh cổ tay tay kia, flat duỗi phẳng chịu lực (tay vịn, mặt bàn), hook móc (quai túi, cán vali), edge kẹp cạnh vật dẹt — ngón cái mặt trước, các ngón mặt sau (điện thoại ngang hai tay). ĐỪNG đoán turn: khai palm (lòng tay quay về) và fingers (ngón chĩa về) bằng tên hệ thân (${rig.PALM_DIR_NAMES.join(", ")}; in là về đường giữa thân, out ra phía tay ấy), vectơ [tiến, y, ra ngoài], hay { toward: mốc thân, side?, offset? } — rig tự giải xoay, gập, lệch cổ tay (và xoay khuỷu quanh trục vai → cổ tay khi có fingers), kẹp trong giới hạn khớp (gập cổ tay ${rig.AIM_BEND[0]}..${rig.AIM_BEND[1]}, âm là ngửa; lệch ${rig.AIM_DEV[0]}..${rig.AIM_DEV[1]}, dương về ngón cái); có palm thì turn bị bỏ qua, bend khai kèm thì giữ cố định; không đạt thì check và scene_probe (world.palms.*.aim) báo độ lệch. Không soạn từng ngón. Nội suy góc khớp giữa các mốc theo ease và hoà dần giữa hai clip; track không ghi một bên thì giữ bàn tay bên ấy của track dưới. Chỉ người 3D mặc đồ (palette.clad) vẽ ngón; turn, bend xoay cả đồ cầm ở mọi người 3D. Người đang cầm đồ (equip ở handNear/handFar) giữ dáng grip ở ngón. docs/01-rig.md#bàn-tay`,
     hands:
       '`cast[].world.hands` [{t, right: {at | to, side?, offset?, point?, elbow?, palm?, fingers?, bend?, hold?} | null, left: …}]: đích bàn tay THẾ GIỚI theo tay phải / trái giải phẫu (tay phải là tay gần khi không lật), đè đích hệ thân và góc tay của mọi hành động; `null` thả tay về góc của hành động. `at` toạ độ thế giới, hay `to` mốc thân của chính người ấy như keys[].reach; `point: "palm"` đặt giữa lòng tay (không phải cổ tay) vào điểm ấy — tay lên tay vịn, mặt bàn; `palm`/`fingers` như keys[].hand, đè bàn tay của hành động theo phần đích. Tay đặt lên mặt bàn thì tính bằng `handsOn` của rig — docs/03-scene.md#đích-bàn-tay-thế-giới. Cầm đồ: xem `held`.',
-    held: 'Món cầm tay là file `held/<món>.json` (schema(held), list(held), describe_held(món)): `schemaVersion: 2`, `size`, `shape` (bắt buộc: hợp {box:[w,h,d], at?, round?} | {cyl: r, from, to, r2?, wall?} | {ball: r, at?}, nhãn `part`, `detail`), `front`, `top`, `anchors` {tên: {at, dir?}} (khung món: đơn vị rig, y lên, +z mặt trước), `parts` (`grip: false`, `as`, `axis`, `strap: true` là quai của món treo — rig đặt quai tựa lên tay, vai), `seats` (chỗ treo `elbow` / `shoulder`), `touch`, `hang`. File bản 1 (không `schemaVersion`) bị từ chối: chuyển bằng `stickman migrate-held`. Rig suy khối hình (tấm, đĩa, thanh, trụ tiện, hộp) từ `shape`; nhóm cầm (`GRIP_GROUPS`) áp được theo khối hình ấy và cỡ tay — describe_held trả khối hình, nhóm áp được, trường lựa chọn và mặc định. Scene khai chỗ cầm ở `world.hands[].right|left.hold` = "món@nhóm" hay {item, group, part?, edge?, along?, thumb?, slant?, around?, tilt?, psi?, inset?, variant?, face?, up?, roll?, keep?, both?, touch?, regrip?, on?, yaw?} — BẬC THANG từ mốc khai tới mốc có `hold` khác hay `hold: null` (buông); trường không khai thì rig giải, scene_probe trả lựa chọn đã giải và nguồn của nó ở `world.held.<tay>.grasp`. Lần cầm có mốc món (`scene.items`, cùng người cầm) trong khoảng của nó là món đặt trước: bàn tay suy từ món — cầm một tay thì bàn tay giải ở từng mốc, giữa hai mốc hoà trong hệ thân và món theo bàn tay (grasp.keyed), cầm hai tay thì món ở đúng mốc; lần cầm không có mốc thì tay dẫn: mốc tay đặt bàn tay, ý định `face` {axis: mốc|vectơ, toward: camera|holderFace|up|down|tên hệ thân|vectơ|{cast, mark?}|{mark}, tilt?}, `up`, `roll` giải qua cổ tay trong giới hạn khớp. `point: "item:<mốc>"` đặt một mốc của món vào đích. Món TREO trên cánh tay (`món@carry`, `on: "elbow"|"shoulder"`, `yaw?`; đỉnh quai là `seats[on]`; bộ chung có `tui`): món thõng theo trọng lực, đẩy khỏi thân áo/hông/váy/đùi; bàn tay ấy theo hành động; check đo `seat` và `body`, scene_probe trả ở `world.carry`. Hai tay: `both` (tay phụ theo mặc định của nhóm, object đè từng trường), hay hai tay cùng khai một món để đổi tay. Món phải được `cast.provide(món, vật three, chủ?)` trong `extra` của cảnh three — docs/11-nhom-cam.md, docs/03-scene.md#đồ-cầm-tay.',
+    held: 'Món cầm tay là file `held/<món>.json` (schema(held), list(held), describe_held(món)): `schemaVersion: 3` (bản 2 nạp như bản 3), `size`, `shape` (bắt buộc: hợp {box:[w,h,d], at?, round?} | {cyl: r, from, to, r2?, wall?} | {ball: r, at?}, nhãn `part`, `detail`), `front`, `top`, `anchors` {tên: {at, dir?}} (khung món: đơn vị rig, y lên, +z mặt trước), `parts` (`grip: false`, `as`, `axis`, `strap: true` là quai của món treo — rig đặt quai tựa lên tay, vai), `seats` (chỗ treo `elbow` / `shoulder`), `touch`, `hang`, `authored` (kiểu cầm soạn tay theo nhóm rồi biến thể; khoá không phải biến thể gốc là kiểu cầm có tên, khai `base` là biến thể gốc nó mượn và `note` mô tả — list(held) và describe_held trả ở `named`). File bản 1 (không `schemaVersion`) bị từ chối: chuyển bằng `stickman migrate-held`. Rig suy khối hình (tấm, đĩa, thanh, trụ tiện, hộp) từ `shape`; nhóm cầm (`GRIP_GROUPS`) áp được theo khối hình ấy và cỡ tay — describe_held trả khối hình, nhóm áp được, trường lựa chọn và mặc định. Scene khai chỗ cầm ở `world.hands[].right|left.hold` = "món@nhóm", "món@nhóm/<biến thể hay tên kiểu cầm của món>" hay {item, group, part?, edge?, along?, thumb?, slant?, around?, tilt?, psi?, inset?, variant?, face?, up?, roll?, keep?, both?, touch?, regrip?, on?, yaw?} — `variant` nhận biến thể gốc hay tên kiểu cầm của món; rig không tự chọn kiểu cầm có tên. BẬC THANG từ mốc khai tới mốc có `hold` khác hay `hold: null` (buông); trường không khai thì rig giải, scene_probe trả lựa chọn đã giải và nguồn của nó ở `world.held.<tay>.grasp`. Lần cầm có mốc món (`scene.items`, cùng người cầm) trong khoảng của nó là món đặt trước: bàn tay suy từ món — cầm một tay thì bàn tay giải ở từng mốc, giữa hai mốc hoà trong hệ thân và món theo bàn tay (grasp.keyed), cầm hai tay thì món ở đúng mốc; lần cầm không có mốc thì tay dẫn: mốc tay đặt bàn tay, ý định `face` {axis: mốc|vectơ, toward: camera|holderFace|up|down|tên hệ thân|vectơ|{cast, mark?}|{mark}, tilt?}, `up`, `roll` giải qua cổ tay trong giới hạn khớp. `point: "item:<mốc>"` đặt một mốc của món vào đích. Món TREO trên cánh tay (`món@carry`, `on: "elbow"|"shoulder"`, `yaw?`; đỉnh quai là `seats[on]`; bộ chung có `tui`): món thõng theo trọng lực, đẩy khỏi thân áo/hông/váy/đùi; bàn tay ấy theo hành động; check đo `seat` và `body`, scene_probe trả ở `world.carry`. Hai tay: `both` (tay phụ theo mặc định của nhóm, object đè từng trường), hay hai tay cùng khai một món để đổi tay. Món phải được `cast.provide(món, vật three, chủ?)` trong `extra` của cảnh three — docs/11-nhom-cam.md, docs/03-scene.md#đồ-cầm-tay.',
 
     heldItems: listFiles("held").flatMap(({ file }) => {
       try {
-        return [{ file: file.replace(/\.json$/, ""), ...heldListRow(load("held", file)) }];
+        const name = file.replace(/\.json$/, "");
+        return [{ file: name, ...heldListRow(load("held", file), name) }];
       } catch {
         return [];
       }
@@ -779,7 +780,7 @@ server.registerTool(
   "list",
   {
     description:
-      "Liệt kê file: characters, actions, scenes, props, animals (kèm name), held (kèm `groups`: nhóm cầm áp được cho cỡ tay 1, chi tiết ở describe_held) hoặc pieces (PNG kèm kích thước; kèm name/description/config nếu có trong pieces/catalog.json — studio chỉ liệt kê mảnh có trong danh mục đó). characters, actions, animals, held và pieces gồm cả bộ chung của studio, `layer` cho biết file nằm ở workspace hay common; file cùng tên thì workspace đè.",
+      "Liệt kê file: characters, actions, scenes, props, animals (kèm name), held (kèm `groups`: nhóm cầm áp được cho cỡ tay 1, chi tiết ở describe_held; `named`: kiểu cầm có tên của món {group, name, base, note, hold} — gọi bằng `variant` hay dạng tắt `hold`) hoặc pieces (PNG kèm kích thước; kèm name/description/config nếu có trong pieces/catalog.json — studio chỉ liệt kê mảnh có trong danh mục đó). characters, actions, animals, held và pieces gồm cả bộ chung của studio, `layer` cho biết file nằm ở workspace hay common; file cùng tên thì workspace đè.",
 
     inputSchema: { kind: z.enum([...KINDS, "pieces"]) },
   },
@@ -803,7 +804,9 @@ server.registerTool(
         ? {
             file: f,
             ...at,
-            ...(kind === "held" ? heldListRow(r.data) : { name: r.data.name }),
+            ...(kind === "held"
+              ? heldListRow(r.data, f.replace(/\.json$/, ""))
+              : { name: r.data.name }),
             ...(kind === "actions" ? { mask: rig.actionMask(r.data) } : {}),
           }
         : { file: f, ...at, error: issues(r.error) };
@@ -1644,7 +1647,7 @@ server.registerTool(
 
 /** Món tối thiểu (một tấm) cho `schema(held)` */
 const HELD_V2_EXAMPLE = {
-  schemaVersion: 2,
+  schemaVersion: rig.HELD_VERSION,
   size: [44, 1.1, 58],
   front: "front",
   top: "top",
@@ -1774,6 +1777,7 @@ function heldGroupsOf(data, geom, dims) {
       hold: `<tên món>@${id}`,
       hands: spec.hands,
       variants: Object.keys(spec.variants),
+      ...named(data, id),
       features: fits.map((x) => ({
         ...featureBrief(x.feature),
         ...(x.ratio !== undefined ? { ratio: r2(x.ratio), warn: x.warn } : {}),
@@ -1806,14 +1810,24 @@ function heldGroupTable() {
   });
 }
 
-/** Hàng `list(held)`: nhóm áp được cho cỡ tay 1 */
-function heldListRow(data) {
+/** Kiểu cầm có tên của món cho nhóm `id` (`{ name, base, note? }`), rỗng thì không có trường */
+function named(data, id) {
+  const list = rig.namedVariants(data, id);
+  return list.length ? { named: list } : {};
+}
+
+/** Hàng `list(held)` của món `item`: nhóm áp được cho cỡ tay 1, kiểu cầm có tên của món */
+function heldListRow(data, item) {
+  const all = rig.GROUP_IDS.flatMap((id) =>
+    rig.namedVariants(data, id).map((x) => ({ group: id, ...x, hold: `${item}@${id}/${x.name}` })),
+  );
+  const named = all.length ? { named: all } : {};
   try {
     const geom = rig.itemGeom(data);
     const { groups } = heldGroupsOf(data, geom, rig.handDims(1));
-    return { schemaVersion: 2, groups: groups.map((g) => g.group) };
+    return { schemaVersion: rig.HELD_VERSION, groups: groups.map((g) => g.group), ...named };
   } catch (e) {
-    return { schemaVersion: 2, groups: [], error: e.message };
+    return { schemaVersion: rig.HELD_VERSION, groups: [], ...named, error: e.message };
   }
 }
 
@@ -1821,7 +1835,7 @@ server.registerTool(
   "describe_held",
   {
     description:
-      "Mô tả một món cầm tay (file trong `held/` hay object inline): phần (`parts`, nhãn `part` của `shape`, `grip`, `as`), khối hình rig suy ra (`features`: tấm, đĩa, thanh, trụ tiện, hộp — kích thước, tên mặt và cạnh), khung (`front`, `top`, `right`, miệng), mốc, `seats`, và các nhóm cầm áp được ở cỡ tay `scale`/`long` (mặc định 1): khối hình khớp (kèm `ratio` so với bề ngang lòng tay, `warn` từ 0,8), trường lựa chọn với miền, mặc định rig và dòng `hold` viết tắt cho `world.hands[].hold`. `unfit` nêu nhóm không áp được và điều kiện của nó, `later` là nhóm chưa làm. docs/11-nhom-cam.md, docs/04-mcp.md.",
+      "Mô tả một món cầm tay (file trong `held/` hay object inline): phần (`parts`, nhãn `part` của `shape`, `grip`, `as`), khối hình rig suy ra (`features`: tấm, đĩa, thanh, trụ tiện, hộp — kích thước, tên mặt và cạnh), khung (`front`, `top`, `right`, miệng), mốc, `seats`, và các nhóm cầm áp được ở cỡ tay `scale`/`long` (mặc định 1): khối hình khớp (kèm `ratio` so với bề ngang lòng tay, `warn` từ 0,8), trường lựa chọn với miền, mặc định rig, dòng `hold` viết tắt cho `world.hands[].hold` và `named` — kiểu cầm có tên của món ở nhóm ấy (`name`, `base`, `note`; gọi bằng `variant: <name>` hay `món@nhóm/<name>`). `unfit` nêu nhóm không áp được và điều kiện của nó, `later` là nhóm chưa làm. docs/11-nhom-cam.md, docs/04-mcp.md.",
     inputSchema: {
       item: z.union([z.string(), z.object({}).passthrough()]),
       scale: z.number().positive().optional(),

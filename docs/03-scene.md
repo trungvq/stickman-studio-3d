@@ -1325,7 +1325,8 @@ vật three của món.
   `hold: null`. Mốc nhắc tay mà không khai `hold` giữ lần cầm đang có; `right: null` thả đích chứ không buông món. Vị
   trí và ý định giữa các mốc trong một quãng cầm thì hoà êm như mọi trường khác: đổi ý định là cổ tay xoay dần.
 - **Chỗ cầm nhóm và món đặt trước** ([11](11-nhom-cam.md#4-schema-cảnh)): `hold` là `"món@nhóm"` hay `{ item, group, … }`
-  (`edge`, `along`, `thumb`, `variant`, `around`, … tuỳ nhóm; trường không khai thì rig giải hay lấy mặc định nhóm, và
+  (`edge`, `along`, `thumb`, `variant` — biến thể gốc hay [kiểu cầm có tên](11-nhom-cam.md#kiểu-cầm-có-tên) của món, viết
+  tắt `"món@nhóm/kiểu"` —, `around`, … tuỳ nhóm; trường không khai thì rig giải hay lấy mặc định nhóm, và
   `scene_probe` trả lựa chọn đã giải cùng nguồn của nó). Hai đường, theo **từng lần cầm** có mốc món ở **`items[]`** hay không.
   `items[]` nằm ở cấp cảnh cạnh `cast`: mỗi mốc `{ t, cast, item, to | at, offset?, point?, face?, up?, roll?, ease? }` nói món
   ở đâu, quay về đâu theo thời gian, mốc tay của người `cast` cầm nó. Lần cầm có mốc món (cùng món, cùng người cầm) trong
