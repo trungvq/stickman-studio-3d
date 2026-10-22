@@ -398,6 +398,14 @@ const viTri = new Map();
           mark: NGUC,
           hands: { right: H({ variant: v }) },
         });
+    for (const n of rig.namedVariants(spec, group))
+      rows.push({
+        ma: `ten-${slug(n.name)}`,
+        ten: `kiểu ${n.name} (gốc ${n.base})`,
+        ...(n.note && { note: n.note }),
+        mark: dat,
+        hands: { right: H({ variant: n.name }) },
+      });
     if (group === "sheet") {
       const pinch = { variant: "pinch", edge: "right", along: 0.33 };
       rows.push(
@@ -769,6 +777,7 @@ const viTri = new Map();
             ma: row.ma,
             grip: row.ten,
             key: `${item}@${group} ${row.ten}`,
+            ...(row.note && { note: row.note }),
             side,
             person,
             size: r2(p.size),
@@ -1088,8 +1097,19 @@ try {
 
 // ---- bảng mỗi món ----
 const tay = (c) => `${c.two ? "hai tay" : c.side === "right" ? "tay phải" : "tay trái"}`;
+/** `note` của kiểu cầm có tên, ngắt dòng cho vừa bề ngang ô */
+const ngat = (s, n = 60) =>
+  s
+    .split(" ")
+    .reduce((ls, w) => {
+      const last = ls[ls.length - 1];
+      if (last !== undefined && `${last} ${w}`.length <= n) ls[ls.length - 1] = `${last} ${w}`;
+      else ls.push(w);
+      return ls;
+    }, [])
+    .join("\n");
 const nhanHang = (c) =>
-  `${c.key}\n${tay(c)} · ${c.person} (tay ${c.size})` +
+  `${c.key}${c.note ? `\n${ngat(c.note)}` : ""}\n${tay(c)} · ${c.person} (tay ${c.size})` +
   (c.error
     ? `\nLỖI ${c.error}`
     : `\n${c.hands.map((h) => `${h.hand === "R" ? "P" : "T"}: ${h.text}`).join("\n")}`) +
@@ -1162,7 +1182,7 @@ const md = [
   "|---|---|---|---|---|---|",
   ...cells.map(
     (c) =>
-      `| \`${c.key}\` | ${tay(c)} | ${c.person} | ${c.from} | ${c.error ? `LỖI ${c.error}` : c.hands.map((h) => `${h.hand === "R" ? "P" : "T"}: ${h.text}`).join("<br>")} | ${(c.lines ?? []).map((l) => l.replace(/\|/g, "\\|")).join("<br>") || "—"} |`,
+      `| \`${c.key}\`${c.note ? `<br>${c.note.replace(/\|/g, "\\|")}` : ""} | ${tay(c)} | ${c.person} | ${c.from} | ${c.error ? `LỖI ${c.error}` : c.hands.map((h) => `${h.hand === "R" ? "P" : "T"}: ${h.text}`).join("<br>")} | ${(c.lines ?? []).map((l) => l.replace(/\|/g, "\\|")).join("<br>") || "—"} |`,
   ),
   "",
   "## Bảng ảnh",
@@ -1181,7 +1201,7 @@ writeFileSync(
     cells
       .map(
         (c) =>
-          `<tr><td>${esc(c.key)}</td><td>${tay(c)}</td><td>${esc(c.person)}</td><td>${esc(c.from)}</td><td>${c.error ? `<span class=bad>LỖI ${esc(c.error)}</span>` : c.hands.map((h) => `${h.hand === "R" ? "P" : "T"}: ${esc(h.text)}`).join("<br>")}</td><td class=bad>${(c.lines ?? []).map(esc).join("<br>")}</td></tr>`,
+          `<tr><td>${esc(c.key)}${c.note ? `<br><i>${esc(c.note)}</i>` : ""}</td><td>${tay(c)}</td><td>${esc(c.person)}</td><td>${esc(c.from)}</td><td>${c.error ? `<span class=bad>LỖI ${esc(c.error)}</span>` : c.hands.map((h) => `${h.hand === "R" ? "P" : "T"}: ${esc(h.text)}`).join("<br>")}</td><td class=bad>${(c.lines ?? []).map(esc).join("<br>")}</td></tr>`,
       )
       .join("") +
     `</table>` +

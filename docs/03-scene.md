@@ -1008,7 +1008,8 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
 - **`auto`** nối các mốc liền nhau của một tay cùng mang `auto` thành một chuỗi; đầu, cuối chuỗi và mốc kề không phải
   `auto` có tiếp tuyến `0`, hai mốc đơn lẻ là đúng `smoothstep`. Vị trí đích bậc ba từng thành phần qua bốn mốc kề; có mốc
   thân (`to`) hay điểm bàn tay khác cổ tay thì người 3D giải cổ tay của từng mốc trong cùng khung ở `t` rồi mới nội suy,
-  nên người đi hay cúi thì tay vẫn theo thân. `elbow` bậc ba từng thành phần khi hai mốc kẹp đoạn cùng khai. Phần đích và
+  nên người đi hay cúi thì tay vẫn theo thân; tay phụ của `both` đang hoà vào chỗ cầm trên món tay kia mang thì mỗi mốc
+  của chuỗi hoà cùng phần với chỗ cầm, cổ tay vẫn theo chuỗi. `elbow` bậc ba từng thành phần khi hai mốc kẹp đoạn cùng khai. Phần đích và
   lòng tay theo ý định (`palm`, `fingers`, ý định của `hold`) vẫn hoà `smoothstep`; đoạn mà một mốc kẹp không có đích (`null`,
   mốc chỉ khai lòng tay) cũng thế. Trường số của chỗ cầm trượt (`along`, `slant`, …) theo `ease` của mốc `hold` sau, `auto`
   trên chuỗi mốc `hold` của lần cầm ([11](11-nhom-cam.md#chỗ-cầm-castworldhandshold)).
@@ -1293,8 +1294,8 @@ cầm đồ và chỉ đo người mặc đồ (`palette.clad`).
 
 - `snap` ([Giật trên hình](#giật-trên-hình)) miễn khuỷu thẳng và chạm đầu `ARM_SNAP` (`0,5 s`) từ đầu clip `snap`, và quanh
   mốc `world.hands` `snap` (`0,5 s` trước và sau mốc) — cú dứ, cú vung là một khoảnh khắc, giữ tay thẳng sau đó vẫn là lỗi.
-- Hai tay khai đích tới tay kia (`otherWrist`, `otherPalm`, `otherBack`, `otherGrip`) hay khai `fingers`, lòng hai tay cùng
-  quay vào đường giữa thân (vỗ, chắp, xoa tay): ngón chụm vào nhau là cố ý.
+- Hai tay khai đích tới tay kia (`otherWrist`, `otherPalm`, `otherBack`, `otherGrip`; đoạn `auto` tính cả mốc kề của chuỗi)
+  hay khai `fingers`, lòng hai tay cùng quay vào đường giữa thân (vỗ, chắp, xoa tay): ngón chụm vào nhau là cố ý.
 - Tay khai `palm` theo ý định ([01](01-rig.md#hướng-lòng-tay-theo-ý)): lòng tay ngửa là cố ý.
 
 Rig không có đích tới người khác, nên tay chạm đầu người khác luôn kêu trừ quãng `snap`. Mỗi người, mỗi tay, mỗi luật (và
@@ -1488,8 +1489,9 @@ cận cảnh đúng giây ấy.
 Dáng nhóm sai thì sai ở mọi cảnh cầm món bằng nhóm ấy, và nâng rig (bộ giải, ngón ôm, `HAND_GRIPS`) đổi hình của mọi chỗ
 cầm một lượt. `pnpm bang-cam [--nhom <nhóm,…>] [--mon <món,…>]` (`tools/bang-cam.mjs`) soi cả thư viện một lần: mỗi nhóm
 chạy được × mỗi món của `held/` (của repo, không lớp chung) đạt điều kiện của nhóm × chỗ cầm mẫu × hai cỡ tay × ba góc
-(trước, chéo, ngang), mỗi ô là ảnh cận bàn tay như `pnpm can-tay`, nhãn in số đo luật `held` ở đúng khung ấy. Hàng mẫu,
-hàng lọc, cặp bỏ: [11](11-nhom-cam.md#bang-cam-theo-nhóm).
+(trước, chéo, ngang), mỗi ô là ảnh cận bàn tay như `pnpm can-tay`, nhãn in số đo luật `held` ở đúng khung ấy. Chỗ cầm mẫu
+gồm cả từng [kiểu cầm có tên](11-nhom-cam.md#kiểu-cầm-có-tên) của món, `note` của nó in dưới tên hàng. Hàng mẫu, hàng lọc,
+cặp bỏ: [11](11-nhom-cam.md#bang-cam-theo-nhóm).
 
 - **Hai cỡ tay**: người có bàn tay nhỏ nhất và lớn nhất trong `characters/` của repo (bề ngang `cladHand(…).k` nhân
   `rig.height`); `--ai a,b` chỉ định người khác.

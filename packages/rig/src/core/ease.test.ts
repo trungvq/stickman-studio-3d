@@ -12,7 +12,15 @@ import { resolveActing, type ActInput } from "./act3";
 import { body3 } from "./figure3d";
 import { parseHeldItem, type ReachHold } from "./heldItem";
 import { matMul, type M3 } from "./lens";
-import { graspAtTime, itemAt, parseScene, resolveScene, sceneAt, type SceneRuntime } from "./scene";
+import {
+  graspAtTime,
+  itemAt,
+  parseScene,
+  resolveScene,
+  sceneAt,
+  SCENE_VERSION,
+  type SceneRuntime,
+} from "./scene";
 import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
@@ -465,5 +473,123 @@ describe("`ease` của mốc món", () => {
     const a = itemAt(rt, "bang-gia", 0.5 + u, { chars })!.P;
     const b = itemAt(lin, "bang-gia", 0.5 + f, { chars })!.P;
     expect(vlen(vsub(a, b))).toBeLessThan(1e-6);
+  });
+});
+
+describe(`scene đời ${SCENE_VERSION}`, () => {
+  const json = (v: number) => ({
+    schemaVersion: v,
+    duration: 2,
+    lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
+    cast: [{ id: "nguoi", world: { at: AT, yaw: 270, hands: chain() } }],
+    items: [{ t: 0, cast: "nguoi", item: "bang-gia", to: "chest", offset: [30, 0, 0] }],
+  });
+
+  it("scene bản 30 nạp y như bản hiện hành; bản mới hơn rig là lỗi phiên bản", () => {
+    const old = parseScene(json(30));
+    expect(old.success).toBe(true);
+    expect(old.data).toStrictEqual(parseScene(json(SCENE_VERSION)).data);
+    expect(old.data!.schemaVersion).toBe(SCENE_VERSION);
+    const next = parseScene(json(SCENE_VERSION + 1));
+    expect(next.success).toBe(false);
+    expect(next.error!.message).toMatch(/phiên bản schema/);
+  });
+});
+
+describe("`auto` của lần cầm theo mốc: `φ` qua `±180°`", () => {
+  // bốn mốc món, `φ` ở mốc ≈ 160, 172,5, −57,5 (= 302,5), −40 (= 320): tăng đều, đoạn giữa đi qua `180°`
+  const AT4 = [
+    [260, -350, 380],
+    [380, -380, 520],
+    [300, -300, 520],
+    [270, -340, 520],
+  ];
+  const rt = scene(
+    [
+      {
+        t: 0,
+        right: {
+          hold: { item: "bang-gia", group: "sheet", edge: "right", along: 0.33, thumb: "front" },
+          elbow: [-1, 0, 0],
+        },
+      },
+    ],
+    AT4.map((at, i) => ({
+      t: 0.5 + i,
+      cast: "nguoi",
+      item: "bang-gia",
+      at,
+      face: { axis: "front", toward: [-1, 0, 0] },
+      roll: { axis: "top", toward: "up" },
+      ...(i && { ease: "auto" }),
+    })),
+  );
+  const phi = (t: number) => graspAtTime(rt, "nguoi", "right", t, { chars })!.arm.phi;
+  const wrap = (a: number) => ((((a + 180) % 360) + 360) % 360) - 180;
+  const dphi = (t: number) => [wrap(phi(t) - phi(t - D)) / D, wrap(phi(t + D) - phi(t)) / D];
+
+  it("đi đường ngắn qua `180°`, liền vận tốc ở hai mốc kẹp đoạn ấy", () => {
+    const [a, b] = [phi(1.5), phi(2.5)];
+    expect(Math.abs(b - a)).toBeGreaterThan(180);
+    let run = 0;
+    for (let i = 1; i <= 100; i++) {
+      const d = wrap(phi(1.5 + i / 100) - phi(1.5 + (i - 1) / 100));
+      expect(d).toBeGreaterThanOrEqual(-1e-9);
+      run += d;
+    }
+    expect(run).toBeCloseTo(wrap(b - a), 6);
+    for (const t of [1.5, 2.5]) {
+      const [l, r] = dphi(t);
+      expect(l).toBeGreaterThan(5);
+      expect(Math.abs(l - r)).toBeLessThan(0.02 * l);
+    }
+  });
+});
+
+describe("tay phụ vào chỗ cầm giữa chuỗi `auto`", () => {
+  const lead = (hold?: object) => ({
+    to: "chest",
+    offset: [30, 20, 10],
+    point: "grip",
+    ...(hold && { hold }),
+  });
+  const own = (ease?: string) =>
+    [
+      [10, 20, -10],
+      [24, 10, -14],
+      [60, -20, -24],
+      [70, -40, -20],
+    ].map((offset, i) => ({
+      t: i,
+      left: { to: "chest", offset, point: "wrist", ...(i && ease && { ease }) },
+    }));
+  const run = (grab: boolean, ease?: string) => {
+    const [k0, k1, ...rest] = own(ease);
+    return scene([
+      { ...k0, right: lead() },
+      k1,
+      {
+        t: 1.2,
+        right: lead(grab ? { item: "bang-gia", group: "sheet", both: true } : undefined),
+      },
+      ...rest,
+    ]);
+  };
+  /** Cổ tay trái người 3D giải ra ở `t` */
+  const left = (rt: SceneRuntime, t: number) => {
+    const W = resolveActing(NGUOI, poseAt(rt, t)).world!;
+    return (W.flip ? W.hands!.near : W.hands!.far)!.at;
+  };
+
+  it("vừa cầm, cổ tay tay phụ còn trên chuỗi `auto` của nó, không nhảy sang đích ước lượng", () => {
+    const free = run(false, "auto");
+    const grab = run(true, "auto");
+    const t = 1.2 + 1e-3;
+    // trên đoạn giữa, chuỗi `auto` và `smoothstep` cách nhau đủ xa để thấy nhảy
+    const gap = vlen(vsub(left(free, t), left(run(false), t)));
+    expect(gap).toBeGreaterThan(2);
+    expect(vlen(vsub(left(grab, t), left(free, t)))).toBeLessThan(0.02 * gap);
+    // xong quãng hoà: tay phụ ở chỗ cầm, không theo chuỗi nữa
+    expect(vlen(vsub(left(grab, 2), left(free, 2)))).toBeGreaterThan(5);
   });
 });

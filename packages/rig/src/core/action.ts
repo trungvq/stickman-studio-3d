@@ -327,6 +327,8 @@ export const reachTerm = (
       : undefined;
 
 const unit = z.number().min(0).max(1);
+/** `[x1, y1, x2, y2]` của `ease: "bezier"`, bốn số trong `[0, 1]`; bỏ trống là `BEZIER_DEFAULT` */
+export const BezierSchema = z.tuple([unit, unit, unit, unit]);
 
 const KeySchema = z.object({
   /** Tỉ lệ chu kỳ, không phải giây */
@@ -340,8 +342,7 @@ const KeySchema = z.object({
   reach: z.object({ armFar: ReachSchema.optional(), armNear: ReachSchema.optional() }).optional(),
   /** Áp cho đoạn từ mốc này tới mốc sau */
   ease: z.enum(EASE_NAMES).default("linear"),
-  /** `[x1, y1, x2, y2]` của `ease: "bezier"`, bốn số trong `[0, 1]`; bỏ trống là `BEZIER_DEFAULT` */
-  bezier: z.tuple([unit, unit, unit, unit]).optional(),
+  bezier: BezierSchema.optional(),
   /** Đổi lớp vẽ kể từ mốc này; không nội suy */
   layer: LayerSchema.optional(),
   /** Đổi nét mặt kể từ mốc này; không nội suy, chỉ ăn khi `face` nằm trong mặt nạ */

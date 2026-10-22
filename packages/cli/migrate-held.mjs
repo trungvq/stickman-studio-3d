@@ -522,7 +522,7 @@ export function migrateItem(v1, labels) {
       else seats[g.on] = g.at;
     }
   const { common } = touchSplit(v1);
-  const out = { ...structuredClone(labels ?? v1), schemaVersion: 2 };
+  const out = { ...structuredClone(labels ?? v1), schemaVersion: rig.HELD_VERSION };
   delete out.grips;
   if (Object.keys(seats).length) out.seats = { ...(labels?.seats ?? {}), ...seats };
   if (common.length) out.touch = common;

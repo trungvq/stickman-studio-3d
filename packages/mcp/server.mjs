@@ -749,7 +749,7 @@ server.registerTool(
           : kind === "props"
             ? rig.defaultProp()
             : kind === "held"
-              ? HELD_V2_EXAMPLE
+              ? HELD_EXAMPLE
               : {
                   schemaVersion: rig.SCENE_VERSION,
                   name: "scene",
@@ -1646,7 +1646,7 @@ server.registerTool(
 );
 
 /** Món tối thiểu (một tấm) cho `schema(held)` */
-const HELD_V2_EXAMPLE = {
+const HELD_EXAMPLE = {
   schemaVersion: rig.HELD_VERSION,
   size: [44, 1.1, 58],
   front: "front",

@@ -456,13 +456,13 @@ export interface AimReport {
 }
 
 const hasTerms = (r: ReachIn | undefined) => !!(r && r.w > 0 && r.terms?.length);
+/** Đích `r` nhắm mốc trên tay kia, kể cả ở mốc kề của đoạn `auto` (`spline`) */
+export const reachesOther = (r: ReachIn | undefined): boolean =>
+  !!r &&
+  r.w > 0 &&
+  [r.terms, ...(r.spline?.keys ?? [])].some((ts) => !!ts?.some((t) => isOtherHand(t.to)));
 const usesOther = (r: ReachIn | undefined, a: Aim | undefined) =>
-  !!(
-    (r &&
-      r.w > 0 &&
-      [r.terms, ...(r.spline?.keys ?? [])].some((ts) => ts?.some((t) => isOtherHand(t.to)))) ||
-    a?.terms.some((t) => isOtherHand(t.palm?.to) || isOtherHand(t.fingers?.to))
-  );
+  reachesOther(r) || !!a?.terms.some((t) => isOtherHand(t.palm?.to) || isOtherHand(t.fingers?.to));
 
 /** Có gì phải giải: đích có số hạng, bàn tay theo ý định */
 export function needsSolve(sp: ActInput): boolean {
@@ -1066,13 +1066,26 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
             ? rw.terms
             : [{ k: 1, at: [...rw.at] as V3, point: "wrist" }]
           : undefined;
+      const fade = (ts: readonly ReachTerm[]) => ts.map((t) => ({ ...t, k: t.k * (1 - e) }));
+      const grab = (ts: readonly ReachTerm[]) => [...fade(ts), { ...item, k: e }];
+      const spline = entering ? rw?.spline : undefined;
       rw = {
         w: entering ? (was ? rw!.w + (1 - rw!.w) * e : e) : 1,
         at,
         ...(rw?.elbow && { elbow: rw.elbow }),
-        terms: entering
-          ? [...(was ?? []).map((t) => ({ ...t, k: t.k * (1 - e) })), { ...item, k: was ? e : 1 }]
-          : [item],
+        terms: entering ? [...fade(was ?? []), { ...item, k: was ? e : 1 }] : [item],
+        // đoạn `auto`: mỗi mốc của chuỗi hoà cùng phần với chỗ cầm, cổ tay vẫn đi theo `spline`
+        ...(spline && {
+          spline: {
+            ...spline,
+            keys: [
+              spline.keys[0] && grab(spline.keys[0]),
+              grab(spline.keys[1]),
+              grab(spline.keys[2]),
+              spline.keys[3] && grab(spline.keys[3]),
+            ],
+          },
+        }),
         aim: {
           terms: entering
             ? [

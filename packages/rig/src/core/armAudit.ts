@@ -1,5 +1,12 @@
-import { actHand, actJoints, actPalms, type ActInput, type ActJoint, type ActPalm } from "./act3";
-import { isOtherHand } from "./bodyMark";
+import {
+  actHand,
+  actJoints,
+  actPalms,
+  reachesOther,
+  type ActInput,
+  type ActJoint,
+  type ActPalm,
+} from "./act3";
 import { body3 } from "./figure3d";
 import { depthAt, project, type V3 } from "./lens";
 import {
@@ -114,15 +121,13 @@ const reachW = (sp: ActInput, hand: PalmHand) => {
 function meant(sp: ActInput): boolean {
   const P = sp.pose;
   const h = sp.world?.hands;
-  const other = (r?: { w: number; terms?: readonly { to?: string }[] }) =>
-    !!r && r.w > 0 && !!r.terms?.some((t) => isOtherHand(t.to as never));
   const fingers = (a?: { terms: readonly { fingers?: unknown; k: number }[] }) =>
     !!a?.terms.some((t) => t.fingers && t.k > 0);
   return (
-    other(P.reach?.an) ||
-    other(P.reach?.af) ||
-    other(h?.near) ||
-    other(h?.far) ||
+    reachesOther(P.reach?.an) ||
+    reachesOther(P.reach?.af) ||
+    reachesOther(h?.near) ||
+    reachesOther(h?.far) ||
     fingers(P.aim?.an) ||
     fingers(P.aim?.af) ||
     fingers(h?.near?.aim) ||

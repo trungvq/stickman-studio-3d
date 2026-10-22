@@ -1565,7 +1565,7 @@ gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` 
 ### Món cầm tay
 
 Món cầm tay là **dữ liệu**, không phải code three: `held/<món>.json` của repo video, qua `HeldItemSchema` /
-`parseHeldItem` (`core/heldItem.ts`, `schemaVersion` là `HELD_VERSION` `2`). Lớp chung có món mẫu `coc` (cốc quai) và `tui`
+`parseHeldItem` (`core/heldItem.ts`, `schemaVersion` là `HELD_VERSION` `3`, bản `2` nạp như bản `3`). Lớp chung có món mẫu `coc` (cốc quai) và `tui`
 (túi xách, [món treo](#món-treo)), repo trùng tên thì đè ([05](05-repo-video.md#hai-lớp)). Bộ giải tay, `check`,
 `scene_probe` và MCP cùng đọc file ấy, và bộ giải chạy trước code dựng cảnh của repo; code dựng lưới món đọc mốc từ chính
 file ấy, nên mốc và lưới có một nguồn số.
