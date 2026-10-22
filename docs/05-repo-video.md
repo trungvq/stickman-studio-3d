@@ -103,6 +103,9 @@ mảnh không có; shot trỏ vào cảnh hay cue trỏ vào file tiếng không
 và **công cụ ngoài thiếu trên `PATH`**: `rsvg-convert`, `ffmpeg`, `ffprobe`,
 `magick`. Không cái nào là dependency npm; `check` là cửa kiểm tra chúng.
 
+Lệnh nào của `stickman` cũng nhận `--help` / `-h`: in cách dùng và cờ của lệnh ấy rồi thoát, không chạy gì. Cờ lệnh không
+nhận hay cờ thiếu giá trị thì báo lỗi kèm danh sách cờ của lệnh, thoát mã `1`, cũng không chạy.
+
 ### Soi một cảnh
 
 Soi cả workspace phải dựng runtime và đo người 3D với đồ khối cho mọi cảnh, nên repo nhiều

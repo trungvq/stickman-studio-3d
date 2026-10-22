@@ -140,6 +140,8 @@ export interface HoldModeRow {
   clamped: { before: Partial<Record<HandSide, Clamp>>; after: Partial<Record<HandSide, Clamp>> };
   /** `φ` khuỷu tay dẫn trước và sau, độ: hai chế độ chọn khuỷu khác nhau thì cổ tay có thể kẹp */
   phi?: { before: number; after: number };
+  /** Bản vá khoá khuỷu tay dẫn ở mốc này (`elbow` hướng khuỷu đang vẽ, `elbowLock`) */
+  elbowLock?: true;
   /** Trước hay sau phép đổi, một tay đang hoà giữa hai lần cầm (`HOLD_BLEND`): hai chế độ hoà khác nhau, lệch là bình thường */
   blending?: true;
 }
@@ -191,8 +193,13 @@ export interface HoldModeOptions {
 
 /** Bước lấy mẫu độ lệch ngoài quãng đổi, giây */
 export const HOLD_MODE_STEP = 0.1;
-/** Số lượt chỉnh đích tay dẫn theo chỗ món đo được (đồ theo tay) */
+/** Số lượt chỉnh đích tay dẫn theo chỗ món đo được (đồ theo tay), số lượt thêm mốc khoá khuỷu */
 const HOLD_MODE_FIX = 2;
+/** Ngưỡng món ở mốc giữ chỗ qua phép đổi: dời (đơn vị rig), quay (độ) */
+export const HOLD_MODE_POS = 0.5;
+export const HOLD_MODE_ANGLE = 1;
+/** Khuỷu tay dẫn sau phép đổi lệch quá chừng này (độ, `φ`) so với khuỷu đang vẽ thì thử khoá khuỷu ở mốc ấy */
+const HOLD_MODE_PHI = 0.5;
 
 const EPS = 1e-6;
 const sideSign = (s: HandSide) => (s === "right" ? -1 : 1);
@@ -216,6 +223,7 @@ const trVec = (R: M3, v: V3): V3 => [
 ];
 const dist = (a: V3, b: V3) => Math.hypot(...sub3(a, b));
 const unit3 = (v: V3): V3 => scale3(v, 1 / (Math.hypot(...v) || 1));
+const wrapDeg = (a: number) => ((((a + 180) % 360) + 360) % 360) - 180;
 
 /** Góc quay giữa hai khung, độ */
 function angleBetween(A: M3, B: M3): number {
@@ -362,23 +370,47 @@ type Grasp = Seen["grasp"][HandSide];
 export type HoldPin = "all" | "discrete" | "none";
 const DISCRETE = new Set(["part", "edge", "thumb", "variant"]);
 /**
- * Cách ghi chỗ cầm của một lượt dựng bản vá: `pin`; `flip` đo `along` từ đầu kia của cạnh — đầu cao của cạnh (`high`) không
- * khai được trong cảnh, hai chế độ có thể lấy hai đầu khác nhau
+ * Đo chỗ cầm từ đầu kia của cạnh — đầu cao của cạnh (`high`) không khai được trong cảnh, hai chế độ có thể lấy hai đầu khác
+ * nhau: `along` chỉ đổi `along`; `mirror` đổi cả các trường theo chiều cạnh (`mirrorEdge`)
  */
-type Way = { pin: HoldPin; flip: Partial<Record<"lead" | "partner", boolean>> };
+type Flip = "along" | "mirror";
+/** Cách ghi chỗ cầm của một lượt dựng bản vá: `pin`; `flip` của tay dẫn, tay kia */
+type Way = { pin: HoldPin; flip: Partial<Record<"lead" | "partner", Flip>> };
 const FLIP_ALONG: Record<string, string> = { low: "high", high: "low", mid: "mid" };
+const FLIP_SLANT: Record<string, string> = { low: "high", high: "low", in: "in" };
+const FLIP_THUMB: Record<string, string> = { left: "right", right: "left" };
+
+/**
+ * Chỗ cầm đo từ đầu kia của cạnh: `along` → `1 − along`; `mirror` thêm `slant` (quay về đầu cao) đổi dấu và `thumb` của
+ * `palmBox` (bên ngón cái dựng từ chiều cạnh) đổi bên — độ ngón chúc dọc hộp `BOX_RISE` vẫn theo chiều cạnh, không bù được
+ */
+function mirrorEdge(o: Obj, flip: Flip) {
+  if (o.along !== undefined)
+    o.along =
+      typeof o.along === "number" ? r4(1 - o.along) : (FLIP_ALONG[o.along as string] ?? o.along);
+  if (flip === "along") return;
+  if (o.slant !== undefined)
+    o.slant =
+      typeof o.slant === "number" ? -o.slant + 0 : (FLIP_SLANT[o.slant as string] ?? o.slant);
+  if (o.group === "palmBox" && typeof o.thumb === "string")
+    o.thumb = FLIP_THUMB[o.thumb] ?? o.thumb;
+}
 
 /**
  * `hold` dạng object, bỏ ý định, ghi các trường lựa chọn rig đã dùng mà cảnh chưa khai (theo `pin`); bỏ qua `variant` của
  * nhóm một biến thể và `part` của món một phần cầm được
  */
-function pinnedHold(h: SceneHold, g: Grasp, pin: HoldPin, flip: boolean, spec: HeldItemSpec): Obj {
+function pinnedHold(
+  h: SceneHold,
+  g: Grasp,
+  pin: HoldPin,
+  flip: Flip | undefined,
+  spec: HeldItemSpec,
+): Obj {
   const o: Obj = { ...groupHold(h) };
   for (const k of INTENT) delete o[k];
   if (g && pin !== "none") pinChoice(o, g, pin, spec);
-  if (flip && o.along !== undefined)
-    o.along =
-      typeof o.along === "number" ? r4(1 - o.along) : (FLIP_ALONG[o.along as string] ?? o.along);
+  if (flip) mirrorEdge(o, flip);
   return o;
 }
 
@@ -397,7 +429,7 @@ function pinChoice(o: Obj, g: NonNullable<Grasp>, pin: HoldPin, spec: HeldItemSp
 
 /** `both` của tay dẫn từ chỗ cầm tay kia: nhóm khi khác nhóm tay phụ mặc định, các trường chỗ cầm đã dùng */
 function bothOf(lead: SceneHoldGroup, h: SceneHold, g: Grasp, way: Way, spec: HeldItemSpec): Obj {
-  const p = pinnedHold(h, g, way.pin, !!way.flip.partner, spec);
+  const p = pinnedHold(h, g, way.pin, way.flip.partner, spec);
   const o: Obj = {};
   if (p.group !== supportGroup(lead)) o.group = p.group;
   for (const k of BOTH_PIN) if (p[k] !== undefined) o[k] = p[k];
@@ -468,8 +500,11 @@ function holdIn(keys: RawKey[], side: HandSide, t: number): SceneHold | null {
 
 type Mode = "item" | "hand";
 
-/** Một lượt dựng bản vá; `shift` dời đích tay dẫn ở từng giây (lượt chỉnh theo chỗ món đo được) */
-type Compose = (shift: Map<number, V3>, way: Way) => JsonPatchOp[];
+/**
+ * Một lượt dựng bản vá; `shift` dời đích tay dẫn ở từng giây (lượt chỉnh theo chỗ món đo được), `lock` khoá khuỷu tay dẫn
+ * ở các giây ấy vào hướng khuỷu đang vẽ
+ */
+type Compose = (shift: Map<number, V3>, way: Way, lock: ReadonlySet<number>) => JsonPatchOp[];
 
 interface Ctx {
   to: Mode;
@@ -595,7 +630,15 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
       aims.set(t, { want: pt ? at : v.grip[lead]!, pt, q, at });
     }
 
-  const compose: Compose = (shift, way) => {
+  /** Mốc tay dẫn ở giây khoá: `elbow` là hướng khuỷu đang vẽ, `elbowLock` */
+  const lockKey = (x: Obj, t: number, lock: ReadonlySet<number>) => {
+    const e = src.get(t)!.elbow[lead];
+    if (!lock.has(t) || !e) return;
+    x.elbow = e;
+    x.elbowLock = true;
+  };
+
+  const compose: Compose = (shift, way, lock) => {
     const hands: Slot[] = rawHands.map((k, j) => ({ from: j, value: structuredClone(k) }));
     const keyAt = (t: number, ref = refOf.get(times.find((x) => near(x, t))!)): Obj => {
       const i = hands.findIndex((s) => near(tOf(s.value.t), t));
@@ -639,18 +682,19 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
         items.splice(at < 0 ? items.length : at, 0, { value: mark });
         // tay dẫn chỉ còn chỗ cầm; mỗi mốc của quãng đổi mang `hold` để giữ `elbow`, `ease` và trường lạ
         const has = leadKeys.some((k) => near(k.t, t));
-        if (!has && !atCut(t)) continue;
+        if (!has && !atCut(t) && !lock.has(t)) continue;
         const k = keyAt(t);
         if (k[lead] === null) continue;
         const h = pinnedHold(
           holdIn(keys, lead, t) ?? fail(`tay ${lead} không cầm ở ${t}s`),
           v.grasp[lead],
           way.pin,
-          !!way.flip.lead,
+          way.flip.lead,
           spec,
         );
         if (atCut(t)) h.regrip = true;
         strip(k, lead, h);
+        lockKey(k[lead] as Obj, t, lock);
       }
       if (partner)
         for (const t of times) {
@@ -660,7 +704,7 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
           if (!has && !split) continue;
           const h = holdIn(keys, partner, t);
           if (!h) continue;
-          const ph = pinnedHold(h, src.get(t)!.grasp[partner], way.pin, !!way.flip.partner, spec);
+          const ph = pinnedHold(h, src.get(t)!.grasp[partner], way.pin, way.flip.partner, spec);
           if (split) ph.regrip = true;
           strip(keyAt(t), partner, ph);
         }
@@ -685,7 +729,7 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
         const want = add3(aim.want, shift.get(t) ?? [0, 0, 0]);
         const h = holdIn(keys, lead, t) ?? fail(`tay ${lead} không cầm ở ${t}s`);
         const lh: Obj = {
-          ...pinnedHold(h, v.grasp[lead], way.pin, !!way.flip.lead, spec),
+          ...pinnedHold(h, v.grasp[lead], way.pin, way.flip.lead, spec),
           ...itemAxes(v, sideSign(lead)),
         };
         if (partner) {
@@ -709,6 +753,7 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
         Object.assign(x, spot, { point: aim.pt ? `item:${aim.pt}` : "grip", hold: lh });
         // khuỷu đang vẽ làm cực khởi đầu của bộ giải ý định; mốc đã khai `elbow` thì giữ
         if (x.elbow === undefined && v.elbow[lead]) x.elbow = v.elbow[lead];
+        lockKey(x, t, lock);
         if (fresh) x.ease = "auto";
         k[lead] = x;
       }
@@ -842,12 +887,13 @@ function convert(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode): 
   // lựa chọn rig dùng có thể không khai được (trường số ngoài miền của biến thể, phần không cầm được): lùi dần cách ghi
   // chỗ cầm tới khi cảnh dựng được
   let shift = new Map<number, V3>();
+  let lock: ReadonlySet<number> = new Set();
   let way: Way = { pin: "all", flip: {} };
   let ops: JsonPatchOp[] = [];
   let built: SceneRuntime | string = "";
   for (const pin of PINS) {
     way = { pin, flip: {} };
-    ops = compose(shift, way);
+    ops = compose(shift, way, lock);
     built = apply(raw, ops, o);
     if (typeof built !== "string") break;
   }
@@ -869,30 +915,102 @@ function convert(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode): 
         .filter((r) => !r.blend)
         .map((r) => (r.item?.pos ?? 0) + Math.max(0, ...Object.values(r.hand))),
     );
-  const itemScore = (rows: typeof keyed) =>
-    Math.max(0, ...rows.filter((r) => !r.blend).map((r) => r.item?.pos ?? 0));
-  /** Thử một lượt dựng khác, giữ nếu lệch ở mốc (`by`) nhỏ hơn */
-  const attempt = (sh: Map<number, V3>, w: Way, by = score) => {
-    const ops2 = compose(sh, w);
+  type Rows = typeof keyed;
+  /** Thử một lượt dựng khác, giữ nếu lệch ở mốc nhỏ hơn: theo `by`, hay `better(mới, cũ)` */
+  const attempt = (
+    sh: Map<number, V3>,
+    w: Way,
+    by: (rows: Rows) => number = score,
+    lk = lock,
+    better = (a: Rows, b: Rows) => by(a) < by(b) - 1e-6,
+  ) => {
+    const ops2 = compose(sh, w, lk);
     const rt3 = apply(raw, ops2, o);
     if (typeof rt3 === "string") return false;
     const k2 = tryMeasure(rt3);
-    if (typeof k2 === "string" || by(k2) >= by(keyed) - 1e-6) return false;
-    [shift, way, ops, rt2, keyed] = [sh, w, ops2, rt3, k2];
+    if (typeof k2 === "string" || !better(k2, keyed)) return false;
+    [shift, way, lock, ops, rt2, keyed] = [sh, w, lk, ops2, rt3, k2];
     return true;
   };
-  const flips = partner
-    ? [{ lead: true }, { partner: true }, { lead: true, partner: true }]
-    : [{ lead: true }];
-  if (score(keyed) > 1) {
+  // món ở mốc so bằng lệch dời và quay theo ngưỡng của phép đổi (`HOLD_MODE_POS`, `HOLD_MODE_ANGLE`)
+  const itemDrift = (r: Rows[number]) =>
+    (r.item?.pos ?? 0) / HOLD_MODE_POS + (r.item?.angle ?? 0) / HOLD_MODE_ANGLE;
+  const still = (x: Rows) => x.filter((r) => !r.blend);
+  const itemMax = (x: Rows) => Math.max(0, ...still(x).map(itemDrift));
+  const itemSum = (x: Rows) => still(x).reduce((n, r) => n + itemDrift(r), 0);
+  /** Tâm nắm tay dẫn dời: bàn tay đứng chỗ khác trên món */
+  const handMax = (x: Rows) => Math.max(0, ...still(x).map((r) => r.hand[lead] ?? 0));
+  /** Khuỷu tay dẫn lệch khuỷu đang vẽ, độ (`φ`) */
+  const phiGap = (x: Rows) =>
+    Math.max(
+      0,
+      ...still(x).map((r) => {
+        const [p, q] = [r.a.phi[lead], r.b.phi[lead]];
+        return p === undefined || q === undefined ? 0 : Math.abs(wrapDeg(q - p));
+      }),
+    );
+  /**
+   * `a` hơn `b`: món lệch ít hơn (lớn nhất rồi tổng); món ngang nhau thì tâm nắm tay dẫn dời ít hơn; cả hai ngang nhau thì,
+   * khi `phi`, khuỷu gần khuỷu đang vẽ hơn
+   */
+  const ranks =
+    (phi: boolean) =>
+    (a: Rows, b: Rows): boolean => {
+      for (const [f, tol] of [
+        [itemMax, 0.02],
+        [itemSum, 0.02],
+        [handMax, 0.05],
+      ] as const) {
+        const d = f(a) - f(b);
+        if (d < -tol) return true;
+        if (d > tol) return false;
+      }
+      return phi && phiGap(a) < phiGap(b) - HOLD_MODE_PHI;
+    };
+  const itemBetter = ranks(false);
+  const lockBetter = ranks(true);
+  /** `along` đo từ đầu kia của cạnh ở tay dẫn, tay kia hay cả hai: thử lần lượt, giữ cách lệch ít hơn */
+  const FLIPS = [undefined, "along", "mirror"] as const;
+  const flips: Way["flip"][] = FLIPS.flatMap((l) =>
+    (partner ? FLIPS : [undefined]).map((p) => ({
+      ...(l && { lead: l }),
+      ...(p && { partner: p }),
+    })),
+  ).filter((f) => f.lead || f.partner);
+  const tryFlips = (lk: ReadonlySet<number>, better?: (a: Rows, b: Rows) => boolean) => {
     const base = keyed;
-    for (const flip of flips)
-      if (keyed === base || score(keyed) > 1) attempt(shift, { ...way, flip });
-    if (keyed !== base)
-      ctx.notes.push(
-        `\`along\` tay ${[way.flip.lead && lead, way.flip.partner && partner].filter(Boolean).join(", ")} đo từ đầu kia của cạnh: hai chế độ lấy đầu cao của cạnh khác nhau`,
-      );
-  }
+    const w0 = way;
+    for (const flip of [{}, ...flips]) {
+      if (lk === lock && same(flip, way.flip)) continue;
+      if (better || keyed === base || score(keyed) > 1)
+        attempt(shift, { ...w0, flip }, score, lk, better);
+    }
+  };
+  /**
+   * Mốc mà chế độ mới chọn khuỷu khác khuỷu đang vẽ: khoá khuỷu tay dẫn vào hướng đang vẽ ở đó, giữ khi lệch món giảm; mốc
+   * khoá đổi khung cầm nên thử lại cả `along` hai đầu. Tay phụ của món đặt trước không khoá
+   */
+  const relock = () => {
+    for (let pass = 0; pass < HOLD_MODE_FIX; pass++) {
+      const add = keyed.filter((r) => {
+        const [a, b] = [r.a.phi[lead], r.b.phi[lead]];
+        return (
+          !r.blend &&
+          !lock.has(r.t) &&
+          a !== undefined &&
+          b !== undefined &&
+          Math.abs(wrapDeg(b - a)) > HOLD_MODE_PHI
+        );
+      });
+      if (!add.length) return;
+      const base = keyed;
+      tryFlips(new Set([...lock, ...add.map((r) => r.t)]), lockBetter);
+      if (keyed === base) return;
+    }
+  };
+  const flip0 = way.flip;
+  if (score(keyed) > 1) tryFlips(lock);
+  relock();
   if (to === "hand")
     for (let pass = 0; pass < HOLD_MODE_FIX; pass++) {
       const next = new Map(shift);
@@ -905,8 +1023,20 @@ function convert(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode): 
         if (Math.hypot(...d) >= 0.05) next.set(r.t, add3(shift.get(r.t) ?? [0, 0, 0], d));
       }
       if (next.size === shift.size && [...next].every(([t, v]) => shift.get(t) === v)) break;
-      if (!attempt(next, way, itemScore)) break;
+      if (!attempt(next, way, score, lock, itemBetter)) break;
     }
+  if (!same(way.flip, flip0))
+    ctx.notes.push(
+      `chỗ cầm ${(["lead", "partner"] as const)
+        .filter((k) => way.flip[k])
+        .map(
+          (k) =>
+            `tay ${k === "lead" ? lead : partner} đo từ đầu kia của cạnh (${way.flip[k] === "along" ? "`along`" : `\`along\`, \`slant\`${run.group === "palmBox" ? ", `thumb`" : ""}`})`,
+        )
+        .join(
+          ", ",
+        )}: hai chế độ lấy đầu cao của cạnh khác nhau (docs/11-nhom-cam.md § Đổi chế độ lần cầm)`,
+    );
 
   const row = (r: ReturnType<typeof compare>, kind: HoldModeRow["kind"]): HoldModeRow => ({
     t: r.t,
@@ -917,6 +1047,7 @@ function convert(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode): 
     clamped: { before: pick(r.a.clamped, r.use), after: pick(r.b.clamped, r.use) },
     ...(r.a.phi[lead] !== undefined &&
       r.b.phi[lead] !== undefined && { phi: { before: r.a.phi[lead]!, after: r.b.phi[lead]! } }),
+    ...(kind === "key" && lock.has(r.t) && { elbowLock: true as const }),
     ...(r.blend && { blending: true as const }),
   });
   const rows: HoldModeRow[] = [];
@@ -933,6 +1064,13 @@ function convert(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode): 
     out.push(compare(rt2, t));
   }
 
+  if (lock.size)
+    ctx.notes.push(
+      `khuỷu tay ${lead} khoá (\`elbowLock\`) vào hướng đang vẽ ở ${[...lock]
+        .sort((a, b) => a - b)
+        .map((t) => `${r3(t)}s`)
+        .join(", ")}: chế độ mới tự chọn khuỷu khác khuỷu đang vẽ`,
+    );
   const now = holdRuns(rt2, o.id)[lead].find((r) => !r.lead && holdsAt(r, cut, rt2.duration));
   if (!now) ctx.notes.push(`sau phép đổi tay ${lead} không cầm \`${item}\` ở ${cut}s`);
   else if (Math.abs(now.since - cut) > EPS || Math.abs(now.until - run.until) > EPS)
@@ -951,7 +1089,6 @@ function convert(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode): 
         ? `lần cầm mở ở ${run.since}s: tay theo đồ hoà từ tay tự do trong \`HOLD_BLEND\` sau mốc, trước mốc tay tự do theo đích của mốc trước; đồ theo tay tới đích đúng ở mốc`
         : `lần cầm mở ở ${run.since}s: mốc tay ở đó lấy món ở mốc món (lúc đã hoà xong), không lấy bàn tay đang hoà từ tay tự do`,
     );
-  const still = (xs: ReturnType<typeof compare>[]) => xs.filter((r) => !r.blend);
   const changed = still(out).filter(
     (r) =>
       (r.item?.pos ?? 0) > 0.5 ||

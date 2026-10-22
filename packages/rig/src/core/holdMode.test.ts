@@ -7,6 +7,8 @@ import {
   applyJsonPatch,
   holdToHandLed,
   holdToItemLed,
+  HOLD_MODE_ANGLE,
+  HOLD_MODE_POS,
   type HoldModeResult,
   type JsonPatchOp,
 } from "./holdMode";
@@ -186,15 +188,23 @@ describe("applyJsonPatch", () => {
   });
 });
 
-/** Tâm hộp bao của bảng như người 3D vẽ ở `t`: hai tay trên mốc món thì `itemAt`, còn lại món theo bàn tay (`actHeld`) */
-function drawnBoard(rt: SceneRuntime, t: number, both: boolean) {
-  const c = itemCentre(HELD["bang-gia"]);
+/**
+ * Tâm hộp bao của món (bảng mặc định) như người 3D vẽ ở `t`: hai tay trên mốc món thì `itemAt`, còn lại món theo bàn tay
+ * (`actHeld`)
+ */
+function drawnBoard(
+  rt: SceneRuntime,
+  t: number,
+  both: boolean,
+  item: keyof typeof HELD = "bang-gia",
+) {
+  const c = itemCentre(HELD[item]);
   if (both) {
-    const p = itemAt(rt, "bang-gia", t, { chars: { nguoi: NGUOI } })!;
+    const p = itemAt(rt, item, t, { chars: { nguoi: NGUOI } })!;
     return { P: add3(p.P, matVec(p.R, scale3(c, p.s))), R: p.R };
   }
   const h = Object.values(actHeld(NGUOI, sceneAt(rt, "nguoi", t, H, DIMS) as ActInput)).find(
-    (x) => x?.item === "bang-gia",
+    (x) => x?.item === item,
   )!;
   const R: M3 = [h.R[0], h.R[1], h.R[2], -h.R[3], -h.R[4], -h.R[5], -h.R[6], -h.R[7], -h.R[8]];
   return { P: add3(h.at, matVec(R, scale3(c, h.s))), R };
@@ -236,15 +246,28 @@ describe("đồ theo tay → tay theo đồ", () => {
       "bang-gia",
       "bang-gia",
     ]);
-    // mốc tay chỉ còn đúng chỗ cầm như mốc trước nó là thừa (`@cam`, giây 2): mốc món thay chúng
+    // mốc món chọn khuỷu khác khuỷu đang vẽ ở cả ba mốc: mốc tay giữ chỗ cầm và khoá khuỷu vào hướng đang vẽ
     const hands = keysOf(next);
-    expect(hands.map((k) => k.t)).toEqual([0, 2.5, 4.6]);
-    const right = hands[0].right as Record<string, unknown>;
-    expect(Object.keys(right).sort()).toEqual(["hand", "hold"]);
-    expect(right.hand).toEqual({ palm: "in" });
-    expect(right.hold).toMatchObject({ item: "dien-thoai", group: "palmBox" });
-    expect(right.hold).not.toHaveProperty("face");
-    expect(hands.slice(1)).toEqual(keysOf(raw).slice(3));
+    expect(hands.map((k) => k.t)).toEqual([0, "@cam", 2, 2.5, 4.6]);
+    const right = hands.slice(0, 3).map((k) => k.right as Record<string, unknown>);
+    expect(Object.keys(right[0]).sort()).toEqual(["elbow", "elbowLock", "hand", "hold"]);
+    expect(right[0].hand).toEqual({ palm: "in" });
+    for (const x of right) {
+      expect(Object.keys(x)).not.toContain("at");
+      expect(Object.keys(x)).not.toContain("to");
+      expect(x.hold).toMatchObject({ item: "dien-thoai", group: "palmBox" });
+      expect(x.hold).not.toHaveProperty("face");
+      expect(x.elbowLock).toBe(true);
+    }
+    expect(hands.slice(3)).toEqual(keysOf(raw).slice(3));
+  });
+
+  it("khuỷu khoá: `elbow` là hướng khuỷu đang vẽ, `φ` sau trùng trước", () => {
+    for (const x of keyRows(r)) {
+      expect(x.elbowLock).toBe(true);
+      expect(Math.abs(x.phi!.after - x.phi!.before)).toBeLessThan(0.5);
+    }
+    expect(r.notes.join(" ")).toMatch(/khoá \(`elbowLock`\)/);
   });
 
   it("món ở mốc lệch dưới 0,5 đơn vị rig và 1°; ngoài quãng đổi không đổi", () => {
@@ -264,9 +287,9 @@ describe("đồ theo tay → tay theo đồ", () => {
       rebuild: build,
     });
     expect(back.scope.mode).toEqual({ before: "keyed", after: "hand" });
-    // tay dẫn tự dò khuỷu: ở giây 2 cổ tay kẹp `dev` như bản đầu, món lệch vài độ (báo ở `rows`)
-    expect(back.max.item.pos).toBeLessThan(1);
-    expect(back.rows.find((x) => x.t === 2)?.clamped.after.right).toContain("dev");
+    // khuỷu còn khoá ở các mốc tay: tay dẫn không dò khuỷu, món về đúng chỗ
+    expect(back.max.item.pos).toBeLessThan(HOLD_MODE_POS);
+    expect(back.max.item.angle).toBeLessThan(HOLD_MODE_ANGLE);
     const last = applyJsonPatch(next, back.ops);
     expect(last.items).toEqual(raw.items);
     const hands = keysOf(last);
@@ -274,8 +297,13 @@ describe("đồ theo tay → tay theo đồ", () => {
     expect(hands.slice(3)).toEqual(keysOf(raw).slice(3));
     const right = hands.map((k) => k.right as Record<string, unknown>);
     const orig = keysOf(raw).map((k) => k.right as Record<string, unknown>);
-    expect(right[0]).toMatchObject({ to: "chest", point: "grip", hand: { palm: "in" } });
-    expect(right[1]).toMatchObject({ point: "grip", ease: "auto" });
+    expect(right[0]).toMatchObject({
+      to: "chest",
+      point: "grip",
+      hand: { palm: "in" },
+      elbowLock: true,
+    });
+    expect(right[1]).toMatchObject({ point: "grip", elbowLock: true });
     expect(right[2]).toMatchObject({ to: "chest", point: "grip" });
     const near = (a: unknown, b: unknown, d: number) =>
       (a as number[]).forEach((x, i) => expect(Math.abs(x - (b as number[])[i])).toBeLessThan(d));
@@ -328,6 +356,83 @@ describe("đồ theo tay → tay theo đồ", () => {
     expect(() =>
       holdToHandLed(rt, raw, { id: "nguoi", side: "right", at: 0, rebuild: build }),
     ).toThrow(/đã là đồ theo tay/);
+  });
+});
+
+/** Cảnh: tay phải dẫn điện thoại, `elbow` khai chĩa ra sau, cổ tay kẹp `dev` */
+const sceneC = (): Raw => ({
+  duration: 2,
+  lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
+  cast: [
+    {
+      id: "nguoi",
+      base: { torso: 9, head: [0, 0, -6] },
+      world: {
+        at: [250, 0, 506],
+        yaw: 270,
+        hands: [
+          {
+            t: 0,
+            right: {
+              to: "chest",
+              offset: [0, -60, 30],
+              point: "grip",
+              elbow: [0, 1, -1],
+              hold: {
+                item: "dien-thoai",
+                group: "palmBox",
+                face: { axis: "screen", toward: "holderFace" },
+              },
+            },
+          },
+        ],
+      },
+    },
+  ],
+});
+
+describe("đồ theo tay → tay theo đồ: khoá khuỷu", () => {
+  const raw = sceneC();
+  const rt = build(raw);
+  const r = holdToItemLed(rt, raw, { id: "nguoi", side: "right", at: 0, rebuild: build });
+  const next = applyJsonPatch(raw, r.ops);
+  const right = keysOf(next)[0].right as Record<string, unknown>;
+  const angle = (A: M3, B: M3) =>
+    Math.acos(Math.min(1, (A.reduce((n, x, i) => n + x * B[i], 0) - 1) / 2)) / (Math.PI / 180);
+
+  it("mốc tay khoá khuỷu vào hướng đang vẽ; món ở mốc lệch dưới ngưỡng", () => {
+    expect(r.scope.mode).toEqual({ before: "hand", after: "keyed" });
+    expect(right).toMatchObject({ elbowLock: true, hold: { item: "dien-thoai" } });
+    expect(right.elbow).not.toEqual([0, 1, -1]);
+    expect(r.rows[0]).toMatchObject({ elbowLock: true, clamped: { before: { right: ["dev"] } } });
+    expect(r.max.item.pos).toBeLessThan(HOLD_MODE_POS);
+    expect(r.max.item.angle).toBeLessThan(HOLD_MODE_ANGLE);
+    const a = drawnBoard(rt, 0, false, "dien-thoai");
+    const b = drawnBoard(build(next), 0, false, "dien-thoai");
+    expect(Math.abs(r.rows[0].item!.pos - Math.hypot(...sub3(a.P, b.P)))).toBeLessThan(1e-6);
+  });
+
+  it("bỏ khoá thì mốc món tự chọn khuỷu khác, cổ tay kẹp khác, món lệch xa", () => {
+    const free = structuredClone(next);
+    delete (keysOf(free)[0].right as Record<string, unknown>).elbowLock;
+    const a = drawnBoard(rt, 0, false, "dien-thoai");
+    const b = drawnBoard(build(free), 0, false, "dien-thoai");
+    expect(Math.hypot(...sub3(a.P, b.P))).toBeGreaterThan(5);
+    expect(angle(a.R, b.R)).toBeGreaterThan(10);
+  });
+
+  it("vòng về: đồ theo tay giữ khoá, món về chỗ cũ", () => {
+    const back = holdToHandLed(build(next), next, {
+      id: "nguoi",
+      side: "right",
+      at: 0,
+      rebuild: build,
+    });
+    expect(back.max.item.pos).toBeLessThan(HOLD_MODE_POS);
+    expect(back.max.item.angle).toBeLessThan(HOLD_MODE_ANGLE);
+    const last = keysOf(applyJsonPatch(next, back.ops))[0].right as Record<string, unknown>;
+    expect(last).toMatchObject({ to: "chest", point: "grip", elbowLock: true });
+    expect(last.elbow).toEqual(right.elbow);
   });
 });
 
