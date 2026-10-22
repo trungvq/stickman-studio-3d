@@ -17,7 +17,7 @@ import {
 import { CARRY } from "./heldCarry";
 import { AIM_GAP } from "./constants";
 import { handClips, PALM_HAND_LABELS, type PalmHand } from "./palm";
-import { cameraAt, holdBlending, type SceneRuntime } from "./scene";
+import { cameraAt, elbowLockAt, holdBlending, type SceneRuntime } from "./scene";
 
 /**
  * Đo đồ cầm tay của người 3D mặc đồ: dáng tay vẽ so với dáng khai, ngón lún vào món, ngón ôm món, món xoay đúng ý,
@@ -623,6 +623,8 @@ export interface HeldIssue {
   worst: number;
   /** Lỗi, không chỉ cảnh báo: món đặt trước ngoài tầm với (`reach`), cổ tay vượt kẹp (`wrist`) */
   error?: true;
+  /** `arm`, `elbow` khi khuỷu đang khoá (`elbowLock`): rig không dời khuỷu khoá, báo cả quãng ngắn hơn `hold` */
+  lock?: true;
   sample: HeldSample;
   /** Dáng hành động khai (dáng gần nhất của `acted`); món treo thì `rest` */
   declared: { pose: HandPose | "rest"; off: number };
@@ -728,13 +730,18 @@ export function heldSize(
   return { of, W: dims.W, ratio: of / dims.W };
 }
 
-type Hit = { rule: HeldRule; worst: number; error?: true };
+type Hit = { rule: HeldRule; worst: number; error?: true; lock?: true };
 
 /**
  * Luật của chỗ cầm nhóm (docs/11 mục 7). `blend`: tay còn trong `HOLD_BLEND` của ranh giới lần cầm — đang đi tới món, không
- * xét `grip`, `loose`, `role`
+ * xét `grip`, `loose`, `role`. `lock`: phần khoá khuỷu (`elbowLockAt`) — khuỷu khoá thì tay dẫn cũng xét lấn thân
  */
-function groupHits(s: HeldHand, o: Omit<HeldOptions, "frame">, blend: boolean): Hit[] {
+function groupHits(
+  s: HeldHand,
+  o: Omit<HeldOptions, "frame">,
+  blend: boolean,
+  lock: number,
+): Hit[] {
   const out: Hit[] = [];
   const g = s.grasp;
   const placed = g?.mode === "item";
@@ -765,12 +772,18 @@ function groupHits(s: HeldHand, o: Omit<HeldOptions, "frame">, blend: boolean): 
     const min = o.oppose ?? HELD_OPPOSE;
     if (s.oppose && s.oppose.angle < min) out.push({ rule: "oppose", worst: min - s.oppose.angle });
   }
-  // tay lấn đầu là lỗi ở cả tay dẫn; lấn thân, tay kia chỉ xét món đặt trước
+  // tay lấn đầu là lỗi ở cả tay dẫn; lấn thân, tay kia chỉ xét món đặt trước và khuỷu khoá
   const head = !!g?.arm.bodyPart?.endsWith(".head");
-  if (g && (placed || head) && (g.arm.bodyRatio ?? 0) > (o.arm ?? HELD_ARM))
-    out.push({ rule: "arm", worst: g.arm.body, ...(head && { error: true as const }) });
+  const locked = lock > 0 ? ({ lock: true } as const) : undefined;
+  if (g && (placed || head || locked) && (g.arm.bodyRatio ?? 0) > (o.arm ?? HELD_ARM))
+    out.push({
+      rule: "arm",
+      worst: g.arm.body,
+      ...(head && { error: true as const }),
+      ...locked,
+    });
   if (g?.arm.inward !== undefined && g.arm.inward > (o.elbow ?? HELD_ELBOW))
-    out.push({ rule: "elbow", worst: g.arm.inward, error: true });
+    out.push({ rule: "elbow", worst: g.arm.inward, error: true, ...locked });
   if (placed) {
     if (g.arm.gap > (o.reach ?? AIM_GAP) * (s.s ?? 1))
       out.push({ rule: "reach", worst: g.arm.gap, error: true });
@@ -797,10 +810,15 @@ const groupOfKey = (hold: string): GroupId | undefined => {
 
 /**
  * Các luật một bàn tay phạm ở một giây (trừ `drift`, đo trên cả lần cầm). Chỗ cầm nhóm theo docs/11 mục 7; `blend` là tay
- * còn trong `HOLD_BLEND` của ranh giới lần cầm (`holdBlending`)
+ * còn trong `HOLD_BLEND` của ranh giới lần cầm (`holdBlending`), `lock` phần khoá khuỷu (`elbowLockAt`)
  */
-export function heldHits(s: HeldHand, o: Omit<HeldOptions, "frame"> = {}, blend = false): Hit[] {
-  if (isGroupHeld(s)) return groupHits(s, o, blend);
+export function heldHits(
+  s: HeldHand,
+  o: Omit<HeldOptions, "frame"> = {},
+  blend = false,
+  lock = 0,
+): Hit[] {
+  if (isGroupHeld(s)) return groupHits(s, o, blend, lock);
   const out: Hit[] = [];
   const decl = nearestHandPose(s.acted);
   const off = handPoseOff(s.acted, s.pose);
@@ -954,13 +972,14 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
     drift?: HeldIssue["drift"];
     jump?: HeldIssue["jump"];
     error?: true;
+    lock?: true;
   };
   const open = new Map<string, Run>();
   const done: Run[] = [];
   const close = (k: string) => {
     const r = open.get(k)!;
     open.delete(k);
-    if (r.rule === "drift" || r.to - r.from + every >= hold - 1e-9) done.push(r);
+    if (r.rule === "drift" || r.lock || r.to - r.from + every >= hold - 1e-9) done.push(r);
   };
   // lần cầm đang chạy của từng bàn tay: khoá, món trong khung bàn tay lúc đầu
   const firsts = new Map<string, { key: string; s: HeldHand; t: number }>();
@@ -969,6 +988,7 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
     if (r && r.last === i - 1) {
       r.to = t;
       r.last = i;
+      if (run.lock) r.lock = true;
       if (run.worst > r.worst) Object.assign(r, run);
     } else {
       if (r) close(k);
@@ -1003,10 +1023,18 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
         continue;
       }
       const blend = isGroupHeld(s) && holdBlending(rt, s.id, s.hand, t);
-      for (const h of heldHits(s, o, blend)) {
+      const lock = isGroupHeld(s) ? elbowLockAt(rt, s.id, s.hand === "R" ? "right" : "left", t) : 0;
+      for (const h of heldHits(s, o, blend, lock)) {
         const k = `${base}|${h.rule}`;
         seen.add(k);
-        hit(k, i, t, { rule: h.rule, s, t, worst: h.worst, ...(h.error && { error: h.error }) });
+        hit(k, i, t, {
+          rule: h.rule,
+          s,
+          t,
+          worst: h.worst,
+          ...(h.error && { error: h.error }),
+          ...(h.lock && { lock: h.lock }),
+        });
       }
       // chỗ cầm nhóm: món không trôi trong tay theo cách dựng, chỗ hở là ở mốc gắn, thả, đổi tay (`jump`)
       if (s.hold !== undefined) continue;
@@ -1043,6 +1071,7 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
       t: r.t,
       worst: r.worst,
       ...((r.error || prev?.error) && { error: true as const }),
+      ...((r.lock || prev?.lock) && { lock: true as const }),
       sample: r.s,
       declared: isHeldCarry(r.s) ? { pose: "rest", off: 0 } : nearestHandPose(r.s.acted),
       ...(r.drift && { drift: r.drift }),
@@ -1199,7 +1228,7 @@ function groupSummary(s: HeldHand, wrap: HeldGroup[]): string {
 const ARM_SEG_LABELS: Record<string, string> = { upper: "bắp tay", fore: "cẳng tay" };
 const ARM_HIT_LABELS: Record<string, string> = { torso: "thân", head: "đầu", other: "tay kia" };
 /** `upper.torso` → "bắp tay vào thân" */
-const armPartLabel = (k: string) => {
+export const armPartLabel = (k: string) => {
   const [seg, to] = k.split(".");
   return `${ARM_SEG_LABELS[seg] ?? seg} vào ${ARM_HIT_LABELS[to] ?? to}`;
 };
@@ -1314,6 +1343,10 @@ export function heldLine(s: HeldIssue): string {
   return `${head[s.rule as keyof typeof head]()} ở giây ${sec(s.t)} · giây ${runs}${more}. Lúc ấy: ${heldSummary(x)}${clips} (docs/03-scene.md#đồ-cầm-tay)`;
 }
 
+/** Cách sửa khi khuỷu khoá vào chỗ xấu: rig không dời khuỷu khoá */
+export const ELBOW_LOCK_FIX =
+  "khuỷu đang khoá (`elbowLock`) đúng hướng `elbow` của mốc tay, rig không dời nó — đổi hướng `elbow` của mốc khoá (ra ngoài, xuống dưới), hay bỏ `elbowLock` cho rig dò khuỷu";
+
 /** Dòng báo của một mục chỗ cầm nhóm: trỏ về chỗ cầm ở cảnh (`món@nhóm` và trường), docs/11-nhom-cam.md mục 7 */
 function groupLine(s: HeldIssue, x: HeldHand, who: string, when: string): string {
   const place = `chỗ cầm ${heldPlace(x)}`;
@@ -1334,9 +1367,9 @@ function groupLine(s: HeldIssue, x: HeldHand, who: string, when: string): string
         return `cổ tay ${over ? "vượt giới hạn" : "sát giới hạn"} — ${who}: xoay ${Math.round(w.turn)}°/±${TURN_MAX}, gập ${Math.round(w.bend)}°/${AIM_BEND[0]}..${AIM_BEND[1]}, lệch ${Math.round(w.dev)}°/${AIM_DEV[0]}..${AIM_DEV[1]}${over ? ` — vượt ${r1(w.over)}°, bàn tay vẽ lệch chỗ cầm ${r1(w.off)}` : ` — còn ${r1(-s.worst)}° tới kẹp`} (${place}); đổi \`edge\` / \`thumb\` hay hướng món (\`face\` / \`roll\` của ${item})`;
       }
       case "elbow":
-        return `khuỷu gập ngược — ${who}: khuỷu lệch khỏi đường vai → cổ tay vào giữa thân hay lên trên ${Math.round(s.worst * 100)}% cánh tay trên (quá ${HELD_ELBOW * 100}%), cẳng tay chạy ra ngoài hay xuống tới bàn tay (${place}); đổi \`edge\` / \`thumb\` hay hướng món (\`face\` / \`roll\` của ${item}), không thì khai \`elbow\` ở mốc tay`;
+        return `khuỷu gập ngược — ${who}: khuỷu lệch khỏi đường vai → cổ tay vào giữa thân hay lên trên ${Math.round(s.worst * 100)}% cánh tay trên (quá ${HELD_ELBOW * 100}%), cẳng tay chạy ra ngoài hay xuống tới bàn tay (${place}); ${s.lock ? ELBOW_LOCK_FIX : `đổi \`edge\` / \`thumb\` hay hướng món (\`face\` / \`roll\` của ${item}), không thì khai \`elbow\` ở mốc tay`}`;
       case "arm":
-        return `tay lấn người — ${who}: ${a?.bodyPart ? armPartLabel(a.bodyPart) : "tay"} lấn ${r1(s.worst)} (quá ${HELD_ARM} lần bán kính tay) (${place}); dời ${item} ra xa người, đổi \`edge\` hay cầm bằng tay kia`;
+        return `tay lấn người — ${who}: ${a?.bodyPart ? armPartLabel(a.bodyPart) : "tay"} lấn ${r1(s.worst)} (quá ${HELD_ARM} lần bán kính tay) (${place}); ${s.lock ? ELBOW_LOCK_FIX : `dời ${item} ra xa người, đổi \`edge\` hay cầm bằng tay kia`}`;
       case "role": {
         const open = heldRoleOpen(x);
         return `ngón không chạm món — ${who}: ${open.map((f) => `ngón ${FINGER_LABELS[f]} (\`${x.roles?.[f]}\`) cách món ${r1(x.fingers![f])}`).join(", ")} (${place}); dáng ngón của nhóm chưa khép tới món — đổi \`variant\` hay \`edge\`, không thì là việc của dáng nhóm ở rig`;

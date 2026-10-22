@@ -1328,6 +1328,8 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
         : drive === "body"
           ? T.frame.dir(body(rb!.elbow ?? REACH_ELBOW))
           : undefined;
+    // khuỷu khoá (`elbowLock` của `world.hands`): phần ấy của khuỷu nằm đúng `elbow`, không dò, không `HOLD_SWIVEL_SLEW`
+    const lock = drive === "world" ? Math.min(1, rw!.elbowLock ?? 0) : 0;
     // hướng ngón khai trong ý định: khuỷu được xoay quanh trục vai → cổ tay để ngón theo kịp
     const wantsFingers =
       !!elbow0 &&
@@ -1377,7 +1379,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
     let last: V3 | undefined;
     for (let i = 0; i < AIM_ITER; i++) {
       const R = handR(A, tbd);
-      if (wantsFingers && elbow0) {
+      if (wantsFingers && elbow0 && lock < 1) {
         // thử xoay khuỷu quanh trục vai → đích: chọn góc cho ngón lệch ít nhất, ưu tiên gần hướng khuỷu đã khai
         place(R, tbd, elbow0);
         const S = arm3(T, P, hands, side).sh;
@@ -1419,8 +1421,13 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
         let best = search(-AIM_SWIVEL, AIM_SWIVEL, false);
         // khuỷu mang món nhảy xa mẫu trước: dò lại trong tầm đi được
         if (best.a < lo - 1e-9 || best.a > hi + 1e-9) best = search(lo, hi, true);
-        elbow = best.el;
-        swivel = best.a;
+        if (lock > 0) {
+          swivel = best.a * (1 - lock);
+          elbow = spin(elbow0, u, swivel * D);
+        } else {
+          elbow = best.el;
+          swivel = best.a;
+        }
       }
       place(R, tbd, elbow);
       A = arm3(T, P, hands, side);

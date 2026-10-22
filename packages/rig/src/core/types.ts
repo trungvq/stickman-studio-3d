@@ -53,6 +53,8 @@ export type Lift = Partial<Record<(typeof LIFT_CHANNELS)[number], boolean>>;
 export interface Reach {
   at: [number, number, number];
   elbow?: [number, number, number];
+  /** Phần khoá khuỷu của `world.hands` (`elbowLock`): `1` là khuỷu nằm đúng hướng `elbow`, không dò xoay khuỷu */
+  elbowLock?: number;
   w: number;
   /**
    * Đích theo mốc hay theo điểm khác cổ tay (`ReachTerm`): người 3D giải thành cổ tay mỗi khung (`resolveActing`), `at`
