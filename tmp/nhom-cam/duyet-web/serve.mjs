@@ -29,7 +29,7 @@ async function toMd(db) {
   return out.join('\n');
 }
 
-createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://x');
     if (url.pathname === '/api/nhan-xet') {
@@ -69,4 +69,6 @@ createServer(async (req, res) => {
   } catch {
     res.writeHead(404).end('không có');
   }
-}).listen(PORT, '127.0.0.1', () => console.log(`http://127.0.0.1:${PORT}/`));
+});
+const HOSTS = (process.env.HOST || '127.0.0.1').split(',');
+for (const h of HOSTS) createServer(server.listeners('request')[0]).listen(PORT, h, () => console.log(`http://${h}:${PORT}/`));
