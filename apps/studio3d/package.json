@@ -1,0 +1,22 @@
+{
+  "name": "studio3d",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@stickman3d/rig": "workspace:*",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "three": "0.186.0",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@stickman3d/cli": "workspace:*",
+    "@types/three": "^0.186.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.3"
+  }
+}
