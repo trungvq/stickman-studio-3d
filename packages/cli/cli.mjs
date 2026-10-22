@@ -5,7 +5,10 @@ import { createInterface } from "node:readline/promises";
 import {
   CHECK_GROUPS,
   CHECK_TIMES,
+  CLI_FLAGS,
   checkWorkspace,
+  cliArgs,
+  cliFlagList,
   initWorkspace,
   listDocs,
   parseCheckArgs,
@@ -79,10 +82,25 @@ Nội dung của repo — characters, actions, scenes, props, pieces — upgrade
 chỉ reseat, migrate-held và Lưu của studio ghi vào scenes/, và chỉ khi gọi chúng.
 `;
 
+/** Phần của lệnh `c` trong `USAGE` cộng danh sách cờ */
+const usageOf = (c) => {
+  const lines = USAGE.split("\n");
+  const i = lines.findIndex((l) => l.startsWith(`  ${c} `));
+  let j = i + 1;
+  while (j < lines.length && /^ {3,}\S/.test(lines[j])) j++;
+  const head = lines[i].trim().split(/\s{2,}/)[0];
+  return `stickman ${head}${head === c ? " [thư mục]" : ""} [cờ]\n\n${lines.slice(i, j).join("\n")}\n\nCờ: ${cliFlagList(c)}`;
+};
+
 const list = (label, files) =>
   files.length ? `${label} (${files.length}):\n  ${files.join("\n  ")}` : "";
 
-if (cmd === "init") {
+const parsed = cliArgs(args);
+if (parsed.help) console.log(Object.hasOwn(CLI_FLAGS, cmd) ? usageOf(cmd) : USAGE);
+else if (parsed.error) {
+  console.error(parsed.error);
+  process.exitCode = 1;
+} else if (cmd === "init") {
   const r = initWorkspace({ dir, force: flag("force"), name: value("name") });
   console.log(`Workspace: ${r.dir}`);
   console.log(`Rig: @stickman3d/rig@${r.versions.rig} — spec đọc bằng \`stickman docs\`.`);

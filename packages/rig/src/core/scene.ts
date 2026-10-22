@@ -5237,7 +5237,7 @@ const trunks = new WeakMap<SceneRuntime, Map<string, Trunk3>>();
 const TRUNK_KEEP = 64;
 
 /** Thân 3D của người cầm `id` ở `time` (chưa giải tay, nên mốc món không vòng qua bàn tay) */
-function holderTrunk(rt: SceneRuntime, id: string, time: number, o: ItemOptions): Trunk3 {
+export function holderTrunk(rt: SceneRuntime, id: string, time: number, o: ItemOptions): Trunk3 {
   const given = o.trunks?.[id];
   if (given) return given;
   const c = o.chars?.[id];
@@ -5269,7 +5269,7 @@ const eyeMid = (T: Trunk3): V3 =>
   );
 
 /** Chỗ mốc thân `to` dời `offset` của người cầm (three); `eye` là giữa hai mắt */
-function itemMarkPoint(T: Trunk3, to: BodyMark, offset?: readonly number[]): V3 {
+export function itemMarkPoint(T: Trunk3, to: BodyMark, offset?: readonly number[]): V3 {
   if (to !== "eye") return markAt(T, { to, offset }, ITEM_SIDE, undefined);
   if (!offset) return eyeMid(T);
   const moved = sub3(
@@ -5344,7 +5344,7 @@ const itemSpec = (rt: SceneRuntime, item: string): HeldItemSpec =>
   fail(`không có món \`${item}\` (\`held/${heldBase(item)}.json\`)`);
 
 /** Tâm hộp bao của món (khung món) */
-const itemCentre = (spec: HeldItemSpec): V3 =>
+export const itemCentre = (spec: HeldItemSpec): V3 =>
   spec.shape ? [...shapeBound(spec.shape)[0]] : [0, 0, 0];
 
 /** Mốc món nằm không khai chỗ: chỗ và hướng món lấy từ lúc thả gần nhất */

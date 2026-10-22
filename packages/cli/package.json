@@ -26,7 +26,7 @@
   },
   "scripts": {
     "typecheck": "echo skip",
-    "test": "node --test reseat.test.mjs upgrade.test.mjs clash.test.mjs snap.test.mjs palm.test.mjs groups.test.mjs sweep.test.mjs scope.test.mjs held.test.mjs migrate.test.mjs rawjson.test.mjs studio3d.test.mjs",
+    "test": "node --test args.test.mjs reseat.test.mjs upgrade.test.mjs clash.test.mjs snap.test.mjs palm.test.mjs groups.test.mjs sweep.test.mjs scope.test.mjs held.test.mjs migrate.test.mjs rawjson.test.mjs studio3d.test.mjs",
     "build": "echo skip",
     "prepack": "node prepack.mjs",
     "postpack": "node prepack.mjs --clean"

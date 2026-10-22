@@ -2569,6 +2569,60 @@ export function parseCheckArgs(args) {
   return out;
 }
 
+/** Cờ của từng lệnh `stickman`: bật tắt (`bool`) và nhận một giá trị (`value`); lệnh nào cũng nhận `--dir <thư mục>` */
+export const CLI_FLAGS = {
+  init: { bool: ["force"], value: ["name"] },
+  upgrade: { bool: ["yes", "skip-modified", "dry-run"], value: [] },
+  docs: { bool: [], value: [] },
+  check: { bool: ["held", "time"], value: Object.keys(CHECK_VALUE_FLAGS) },
+  retime: { bool: ["dry-run"], value: ["mark"] },
+  reseat: { bool: ["dry-run"], value: ["before"] },
+  "migrate-held": { bool: ["dry-run"], value: ["scene", "held-dir", "map", "out"] },
+  studio: { bool: [], value: ["port", "host"] },
+  studio2d: { bool: [], value: ["port"] },
+};
+
+/** Danh sách cờ của lệnh `cmd` để in */
+export const cliFlagList = (cmd) => {
+  const f = CLI_FLAGS[cmd];
+  return [...f.bool.map((x) => `--${x}`), ...[...f.value, "dir"].map((x) => `--${x} <…>`)].join(
+    ", ",
+  );
+};
+
+/**
+ * Soát dòng lệnh `stickman <lệnh> …` trước khi chạy: có `--help` / `-h` thì `{ cmd, help: true }`; lệnh không có thì
+ * `{ cmd, unknown: true }`; cờ lệnh ấy không nhận hay cờ thiếu giá trị thì `{ cmd, error }` kèm danh sách cờ của lệnh
+ */
+export function cliArgs(args) {
+  const cmd = args[0];
+  if (args.includes("--help") || args.includes("-h")) return { cmd, help: true };
+  const spec = Object.hasOwn(CLI_FLAGS, cmd) ? CLI_FLAGS[cmd] : undefined;
+  if (!spec) return { cmd, unknown: true };
+  const value = new Set([...spec.value, "dir"]);
+  for (let i = 1; i < args.length; i++) {
+    const a = args[i];
+    if (!a.startsWith("-")) continue;
+    const name = a.startsWith("--") ? a.slice(2) : undefined;
+    if (name !== undefined && spec.bool.includes(name)) continue;
+    if (name !== undefined && value.has(name)) {
+      const v = args[i + 1];
+      if (v === undefined || v.startsWith("--"))
+        return {
+          cmd,
+          error: `--${name} cần một giá trị. Cờ của \`stickman ${cmd}\`: ${cliFlagList(cmd)}`,
+        };
+      i++;
+      continue;
+    }
+    return {
+      cmd,
+      error: `\`stickman ${cmd}\` không nhận \`${a}\`. Cờ của lệnh này: ${cliFlagList(cmd)}`,
+    };
+  }
+  return { cmd };
+}
+
 /** Số đứng riêng trong dòng báo — không dính vào tên (`t01-s005`, `03-scene`, `#3`) */
 const LOOSE_NUM = /(?<![\p{L}\p{N}_#./-])-?\d+(?:\.\d+)?(?![\p{L}\p{N}_/-])/gu;
 

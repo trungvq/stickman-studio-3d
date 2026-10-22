@@ -46,6 +46,8 @@ const KINDS = ["characters", "actions", "scenes", "props", "animals", "held"];
  * và hai bảng suy từ chúng là `let` vì thế — mọi tool đọc chúng lúc gọi, không giữ riêng.
  */
 let rig, R, cli, P;
+/** Vá JSON thô giữ chữ của `@stickman3d/cli` (`rawjson.mjs`); bản cli không có thì `null` */
+let RAW;
 /** Nơi đọc: trừ `scenes/` và `props/`, mỗi loại có bộ chung của studio làm lớp dưới, file trùng tên thì workspace đè */
 let LAYERS;
 let SCHEMAS;
@@ -102,6 +104,7 @@ async function bind(version) {
   R = nR;
   cli = ncli;
   P = nP;
+  RAW = await load(join(dirname(resolveFrom("@stickman3d/cli")), "rawjson.mjs")).catch(() => null);
   LAYERS = {
     ...Object.fromEntries(Object.entries(DIRS).map(([k, d]) => [k, [d]])),
     actions: R.layers(DIRS.actions, cli.COMMON.actions),
@@ -2079,6 +2082,78 @@ function palms3(c, at) {
   };
   return { palms: { right: one(P.R, "R"), left: one(P.L, "L") } };
 }
+
+/** Một hàng độ lệch của `hold_mode`, số làm tròn để đọc */
+const holdModeRow = (r) => {
+  const n = (x) => +x.toFixed(2);
+  return {
+    t: n(r.t),
+    ...(r.ref !== undefined && { ref: r.ref }),
+    kind: r.kind,
+    item: r.item && { pos: n(r.item.pos), angle: n(r.item.angle) },
+    hand: Object.fromEntries(Object.entries(r.hand).map(([k, v]) => [k, n(v)])),
+    ...(r.phi && { phi: { before: n(r.phi.before), after: n(r.phi.after) } }),
+    clamped: r.clamped,
+    ...(r.elbowLock && { elbowLock: true }),
+    ...(r.blending && { blending: true }),
+  };
+};
+
+server.registerTool(
+  "hold_mode",
+  {
+    description:
+      'Đổi chế độ một lần cầm giữa đồ theo tay (mốc tay dẫn: `at`/`to`, `point`, ý định) và tay theo đồ (mốc món `items[]`, mốc tay chỉ còn `hold`) — docs/11-nhom-cam.md § Đổi chế độ lần cầm. `to: "item"`: mỗi mốc tay của lần cầm sinh một mốc món ở cùng `t` (giữ `@mốc±Δ`) từ món đang vẽ, `to` + `offset` khi mốc tay dùng `to`, hướng bằng `face`/`roll` vectơ hệ thân, `ease: "auto"`; mốc tay bỏ đích, ý định, ghi các trường chỗ cầm rig đã dùng mà cảnh chưa khai. Mốc mà chế độ mới chọn khuỷu khác khuỷu đang vẽ nhận `elbow` hướng khuỷu đang vẽ + `elbowLock: true` (cả hai chiều), giữ khi món lệch ít hơn. `to: "hand"`: ngược lại — mốc tay nhận đích ở tâm nắm đang vẽ (`point: "grip"`, mốc món có `point` thì `item:<mốc>`), ý định `face`+`roll` vectơ hệ thân, `elbow` theo khuỷu đang vẽ; mốc món của lần cầm bị xoá; tay kia cầm cùng món thành `both` của tay dẫn. `from` giữa lần cầm: chèn mốc `regrip` ở đó, chỉ đổi phần sau. Trả `ops` (JSON Patch RFC 6902 trên JSON thô của cảnh, áp theo thứ tự), `rows` (từng mốc và giữa hai mốc: món dời `item.pos` đơn vị rig, quay `item.angle` độ, tâm nắm dời `hand`, `phi` khuỷu trước/sau, khớp cổ tay kẹp trước/sau, `elbowLock` ở mốc khoá khuỷu, `blending` khi đang hoà giữa hai lần cầm), `max` (lệch lớn nhất ở mốc, trừ lúc hoà), `outside` (ngoài quãng đổi), `blend`, `notes`. Phép đổi không khớp tuyệt đối: hai chế độ chọn khuỷu khác nhau, cổ tay kẹp thì món lệch — đọc `rows` trước khi ghi. `write: true` (cảnh là file) vá thẳng chữ của file (giữ thứ tự, trường lạ, định dạng), bản cũ ở `<file>.json.bak`.',
+    inputSchema: {
+      scene: Spec,
+      cast: z.string().describe("Người cầm (`cast[].id`)"),
+      side: z
+        .enum(["right", "left"])
+        .describe("Tay của lần cầm; tay phụ hay tay kia cầm cùng món thì quy về tay dẫn"),
+      at: z.union([z.number(), z.string()]).describe("Một giây trong lần cầm, hay `@mốc±Δ`"),
+      to: z.enum(["item", "hand"]).describe("`item`: tay theo đồ; `hand`: đồ theo tay"),
+      from: z
+        .union([z.number(), z.string()])
+        .optional()
+        .describe("Chỉ đổi từ giây này tới hết lần cầm; giữa lần cầm thì chèn mốc `regrip`"),
+      write: z.boolean().default(false),
+    },
+  },
+  guard(async ({ scene, cast, side, at, to, from, write }) => {
+    const file = typeof scene === "string" ? findOf("scenes", scene) : null;
+    if (typeof scene === "string" && !file) return fail(`không có scenes/${withJson(scene)}`);
+    const before = file ? readFileSync(file, "utf8") : null;
+    const raw = before ? JSON.parse(before) : scene;
+    const rebuild = (json) => {
+      const r = rig.parseScene(json);
+      if (!r.success) throw new Error(issues(r.error));
+      const { rt } = loadScene(r.data);
+      // người không khai `character` vẽ bằng nhân vật mặc định, như `check`
+      for (const m of r.data.cast) rt.chars[m.id] ??= rig.castCharacter(m, rig.defaultCharacter());
+      return rt;
+    };
+    const run = to === "item" ? rig.holdToItemLed : rig.holdToHandLed;
+    const r = run(rebuild(raw), raw, { id: cast, side, at, from, rebuild });
+    const out = {
+      scope: r.scope,
+      max: r.max,
+      outside: r.outside,
+      blend: r.blend,
+      notes: r.notes,
+      rows: r.rows.map(holdModeRow),
+      ops: r.ops,
+    };
+    if (!write) return text(out);
+    if (!file) return fail("`write` cần cảnh là tên file trong `scenes/`");
+    if (!RAW)
+      return fail("@stickman3d/cli của workspace không có `rawjson.mjs`: không vá chữ được");
+    const next = rig.applyJsonPatch(raw, r.ops);
+    const body = await RAW.formatLike(before, next);
+    writeFileSync(`${file}.bak`, before);
+    writeFileSync(file, body);
+    return text({ wrote: file, ...out });
+  }),
+);
 
 server.registerTool(
   "describe_pieces",
