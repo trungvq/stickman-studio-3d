@@ -885,7 +885,7 @@ function handGrasp(
   T: Trunk3,
   side: number,
   g: HoldGrasp,
-  choice: GraspChoice,
+  fr: Pick<GraspFrame, "choice" | "base">,
   A: ReturnType<typeof arm3>,
   B?: ReturnType<typeof arm3>,
 ): GraspReport {
@@ -894,6 +894,7 @@ function handGrasp(
   const a = evalPhi(inp, A.wr, A.Rw, phiOf(inp, A.wr, A.elbow), undefined, other);
   const said = g.hold as Partial<Record<keyof GraspChoice, unknown>>;
   const by: GraspBy = {};
+  const choice = fr.choice;
   for (const k of Object.keys(choice) as (keyof GraspChoice)[])
     if (k !== "featureIndex") by[k] = said[k] !== undefined ? "scene" : "default";
   const [turn, bend, dev] = [A.v[0] ?? 0, A.v[1] ?? 0, A.dev];
@@ -903,6 +904,7 @@ function handGrasp(
     mode: "hand",
     t0: g.t0,
     choice,
+    ...(fr.base && { base: fr.base }),
     by,
     arm: {
       phi: a.phi,
@@ -1422,7 +1424,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
     const lg = role?.role === "lead" ? role.hold.grasp : undefined;
     const fr = lg?.mode === "hand" && h.G ? holdHand(role!.hold, side, dims)?.frame : undefined;
     if (lg && fr) {
-      const grasp = handGrasp(T, side, lg, fr.choice, A, done[-side] && arm3(T, P, hands, -side));
+      const grasp = handGrasp(T, side, lg, fr, A, done[-side] && arm3(T, P, hands, -side));
       if (rep.hold) rep.hold = { ...rep.hold, grasp };
       else {
         // không ý định: trục là mặt trước của món, muốn và đạt theo bàn tay vẽ

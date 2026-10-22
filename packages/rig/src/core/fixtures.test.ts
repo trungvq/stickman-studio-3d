@@ -99,7 +99,7 @@ describe("tám món mẫu", () => {
       const r = parseHeldItem(JSON_OF[name]);
       if (!r.success) throw new Error(r.error.issues.map((i) => i.message).join("; "));
       const item = r.data;
-      expect(item.schemaVersion).toBe(2);
+      expect(item.schemaVersion).toBe(3);
       expect(item.shape?.length).toBeGreaterThan(0);
       const used = new Set(item.shape?.flatMap((b) => (b.part ? [b.part] : [])));
       expect([...used].sort()).toEqual([...labels].sort());

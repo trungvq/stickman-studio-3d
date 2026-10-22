@@ -4,11 +4,13 @@ import { armInput, solvePhi, type ArmInput, type ArmSeg, type ArmSol } from "./g
 import {
   acrossMiss,
   acrossOf,
+  baseVariant,
   GRIP_GROUPS,
   groupNeeds,
   PINCH_ALONG,
   holdDefaults,
   longEdges,
+  namedVariants,
   SHEET_INSET,
   spanAt,
   supportFaces,
@@ -16,6 +18,7 @@ import {
   THUMB_TOWARD_STEP,
   tooThick,
   UPRIGHT_W,
+  variantOf,
   type ChoiceKey,
   type GroupSpec,
   type PoseRef,
@@ -38,7 +41,6 @@ import { handSkin, skinHand, type HandSkin } from "./handMesh";
 import {
   AUTHORED_CURL,
   authoredHand,
-  authoredOf,
   authoredPose,
   mirrorHand,
   slideHand,
@@ -185,13 +187,15 @@ export interface GraspFrame {
   choice: GraspChoice;
   /** Bàn tay theo kiểu cầm soạn tay (`authored` của món), không theo chỗ tiếp xúc của nhóm */
   authored?: true;
+  /** Biến thể gốc khi `choice.variant` là kiểu cầm có tên của món (`variantOf`) */
+  base?: string;
   /** Tầm cuộn `heldFit` của bản soạn; không có thì của biến thể (`frameCurl`) */
   curl?: number;
 }
 
 /** Tầm cuộn `heldFit` của khung cầm: của bản soạn tay, không thì `curl` của biến thể; không khai thì `undefined` */
-export const frameCurl = (group: GroupId, fr: Pick<GraspFrame, "curl" | "choice">) =>
-  fr.curl ?? GRIP_GROUPS[group].variants[fr.choice.variant ?? ""]?.curl;
+export const frameCurl = (group: GroupId, fr: Pick<GraspFrame, "curl" | "choice" | "base">) =>
+  fr.curl ?? GRIP_GROUPS[group].variants[fr.base ?? fr.choice.variant ?? ""]?.curl;
 
 const D2R = Math.PI / 180;
 const EPS = 1e-6;
@@ -1140,13 +1144,19 @@ export function graspFrame(
     (def.variant as string | undefined) ??
     group.variantOf?.(feature, geom, choice.around ?? (def.around as number | undefined), dims) ??
     Object.keys(group.variants)[0];
-  const vs = group.variants[variant];
-  const contact = byVariant[variant];
+  const ref = variantOf(spec, group, variant);
+  const base = ref?.base ?? variant;
+  const vs = ref?.spec;
+  const contact = byVariant[base];
   if (!vs || !contact)
     throw new Error(
-      `biến thể \`${variant}\` không có ở nhóm \`${group.id}\` (${Object.keys(byVariant).join(", ")})`,
+      `biến thể \`${variant}\` không có ở nhóm \`${group.id}\` (gốc: ${Object.keys(byVariant).join(", ")}; kiểu cầm của món: ${
+        namedVariants(spec, group)
+          .map((x) => x.name)
+          .join(", ") || "không có"
+      })`,
     );
-  if (!vs.pose) throw new Error(`biến thể \`${variant}\` của nhóm \`${group.id}\` chưa có dáng`);
+  if (!vs.pose) throw new Error(`biến thể \`${base}\` của nhóm \`${group.id}\` chưa có dáng`);
   const edge = choice.edge;
   if (
     (feature.kind === "slab" || feature.kind === "disc" || feature.kind === "face") &&
@@ -1158,7 +1168,7 @@ export function graspFrame(
   const slantC = group.choices.slant;
   const half =
     slantC?.kind === "range"
-      ? (slantC.byVariant?.[variant] ?? [slantC.min, slantC.max]).map((v) => v / 2)
+      ? (slantC.byVariant?.[base] ?? [slantC.min, slantC.max]).map((v) => v / 2)
       : [0, 0];
   const sl = choice.slant ?? (def.slant as number | undefined) ?? 0;
   const slant = typeof sl === "number" ? sl : sl === "low" ? half[0] : sl === "high" ? half[1] : 0;
@@ -1198,9 +1208,9 @@ export function graspFrame(
     palmSkin: (at) => skinOf(at, [PALM]),
     fingerSkin: (finger, at) => skinOf(at, PIECES_OF[finger]),
   });
-  const au = raw ? undefined : authoredOf(spec, group.id, variant);
+  const au = raw ? undefined : ref!.authored;
   const place: HandPlace = au
-    ? authoredPlace(spec, geom, au, choice.group, variant, vs.frame, side, dims, k, long, s, ct)
+    ? authoredPlace(spec, geom, au, choice.group, base, vs.frame, side, dims, k, long, s, ct)
     : ct;
   const name = au ? au.anchor : (vs.pose.closed.pose as HandPose);
   const hand: GraspHand = {
@@ -1217,6 +1227,7 @@ export function graspFrame(
     // bản soạn: ngón `free` giữ dáng soạn (`extend`: không cuộn, chỉ mở khi lún) thay vì hoà về dáng nghỉ
     roles: au ? authoredRoles(vs.roles) : vs.roles,
     ...(au && { authored: true as const, curl: au.curl ?? AUTHORED_CURL }),
+    ...(base !== variant && { base }),
     feature,
     choice: {
       part: feature.part,
@@ -1385,6 +1396,8 @@ export interface GraspReport {
   keyed?: true;
   t0: number;
   choice: GraspChoice;
+  /** Biến thể gốc khi `choice.variant` là kiểu cầm có tên của món */
+  base?: string;
   by: GraspBy;
   arm: {
     phi: number;
@@ -1825,7 +1838,7 @@ export function chooseMissing(
     }
     if (rel) cost += rel === 2 ? KEEP_COST : KEEP_SLIDE;
     // thân món nên ở trên bàn tay: `u` là sin góc ngẩng của hướng tâm nắm → tâm khối hình (y rig hướng xuống)
-    if (group.variants[frame.choice.variant ?? ""]?.upright && "c" in f) {
+    if (group.variants[frame.base ?? frame.choice.variant ?? ""]?.upright && "c" in f) {
       const u = -unit(matVec(pose.R, sub3(f.c, frame.hand.at)))[1];
       cost += UPRIGHT_W * ((1 - u) / 2) ** 2;
     }
@@ -1839,7 +1852,7 @@ export function chooseMissing(
       cost += SIDE_W * ((1 - x) / 2) ** 2;
     }
     // giá lún không âm: ứng viên đã đắt hơn ứng viên tốt nhất thì không cần đo
-    const vs = group.variants[frame.choice.variant ?? ""];
+    const vs = group.variants[frame.base ?? frame.choice.variant ?? ""];
     if (solve && (SINK_GROUPS.has(h.group) || vs?.sink) && (!best || cost <= best.cost + 1e-12)) {
       const curl = frame.curl ?? vs?.curl;
       const sink = frameSink(spec, frame, sd, ctx.k, ctx.long, ctx.s, curl) * pose.s;
@@ -2034,24 +2047,26 @@ export function chooseMissing(
             (variant as string | undefined) ??
             (defs.variant as string | undefined) ??
             (auto ? undefined : variants[0]);
-          if (v === "rim" && up !== undefined && thumb !== up) continue;
+          // kiểu cầm có tên (cảnh khai `variant`): bảng của biến thể gốc
+          const vb = v !== undefined ? baseVariant(spec, group, v) : undefined;
+          if (vb === "rim" && up !== undefined && thumb !== up) continue;
           if (
-            v !== undefined &&
+            vb !== undefined &&
             given.variant === undefined &&
-            tooThick(group, v, f, edge as SideName | number | undefined, ctx.dims, spec.shape) !==
+            tooThick(group, vb, f, edge as SideName | number | undefined, ctx.dims, spec.shape) !==
               undefined
           )
             continue;
           // biến thể kẹp qua hai mép: bỏ cạnh mà bề rộng tấm ngoài tầm, trừ khi cảnh khai cả biến thể lẫn cạnh
           if (
-            v !== undefined &&
+            vb !== undefined &&
             (given.variant === undefined || given.edge === undefined) &&
-            acrossMiss(group, v, f, edge as SideName | number | undefined, ctx.dims) !== undefined
+            acrossMiss(group, vb, f, edge as SideName | number | undefined, ctx.dims) !== undefined
           )
             continue;
           const c = {
             ...given,
-            ...cont(v ?? ""),
+            ...cont(vb ?? ""),
             ...(edge !== undefined && { edge }),
             ...(thumb !== undefined && { thumb }),
             ...(v !== undefined && { variant: v }),
@@ -2092,7 +2107,8 @@ export function chooseMissing(
   };
   for (const [root, defs] of free.length ? roots : []) {
     const okAround = aroundOk(root.feature);
-    const a0 = thumbAround(root.feature, root.choice.variant);
+    const rootV = root.frame.base ?? root.choice.variant;
+    const a0 = thumbAround(root.feature, rootV);
     const combosOf = (window: boolean) => {
       let out: GraspChoice[] = [{}];
       for (const k of free) {
@@ -2101,8 +2117,8 @@ export function chooseMissing(
           k === "around" && window && a0 !== undefined
             ? thumbGrid(a0)
             : k === "along"
-              ? grid(k, ch, root.choice.variant ?? "").map((x) => alongIn(root.feature, x))
-              : grid(k, ch, root.choice.variant ?? "").filter((x) => k !== "around" || okAround(x));
+              ? grid(k, ch, rootV ?? "").map((x) => alongIn(root.feature, x))
+              : grid(k, ch, rootV ?? "").filter((x) => k !== "around" || okAround(x));
         seen(k, vals.length);
         out = out.flatMap((c) => vals.map((v) => ({ ...c, [k]: v })));
       }
@@ -2207,6 +2223,7 @@ export function graspReport(
     mode,
     t0,
     choice: sol.choice,
+    ...(sol.frame.base && { base: sol.frame.base }),
     by: sol.by,
     arm: {
       phi: sol.arm.phi,

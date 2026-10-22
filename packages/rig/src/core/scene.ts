@@ -69,6 +69,7 @@ import {
   groupIntent,
   groupNeeds,
   holdDefaults,
+  variantOf,
 } from "./graspGroups";
 import {
   chooseMissing,
@@ -3298,7 +3299,7 @@ function thumbRoll(
     choice.variant ??
     group.variantOf?.(f, geom, choice.around, holderDims(height)) ??
     Object.keys(group.variants)[0];
-  const to = group.variants[variant]?.thumbToward;
+  const to = variantOf(spec, group, variant)?.spec.thumbToward;
   return to && { axis: axialAt(geom, f, 0.5, choice.around ?? 0).rho, toward: to };
 }
 
@@ -4452,6 +4453,7 @@ function checkHolds(
           dims(),
           spec.anchors,
           spec.shape,
+          spec.authored,
         ).filter((l) => !groupLines.includes(l));
         const lines = [
           ...groupLines.map((l) => `lỗi \`group\`: ${l}`),

@@ -340,7 +340,9 @@ const viTri = new Map();
   const loiChon = (row, group, spec, geom, dims) => {
     if (group === "carry") return;
     const errs = Object.values(row.hands).flatMap(({ hold: h }) =>
-      h?.group === group ? rig.checkChoice(group, geom, h, dims, spec.anchors, spec.shape) : [],
+      h?.group === group
+        ? rig.checkChoice(group, geom, h, dims, spec.anchors, spec.shape, spec.authored)
+        : [],
     );
     return errs.length ? [...new Set(errs)].join(" ").replace(/`[^`]*@[^`]*`: /g, "") : undefined;
   };

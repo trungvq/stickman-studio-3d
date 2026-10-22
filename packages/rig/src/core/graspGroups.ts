@@ -21,8 +21,11 @@ import {
   GROUP_IDS,
   groupHold,
   HELD_FINGERS,
+  type AuthoredGrasp,
   type AxisIntent,
   type GroupId,
+  type GroupVariant,
+  type HeldItemSpec,
   type HeldFinger,
   type HeldShape,
   type IntentTarget,
@@ -452,7 +455,11 @@ const PINCH_THUMB = [0, 10, 10, -20] as const;
 /** Ngón cái `rim`: khép về cạnh trỏ, đè mặt `F` lên trỏ đã cuộn; góc chọn để `handGripOf` của dáng đóng còn ở kẽ cái–trỏ */
 const RIM_THUMB = [25, 20, 10, 25] as const;
 
-const SPECS: Record<GroupId, Omit<GroupSpec, "id">> = {
+const SPECS: {
+  [G in GroupId]: Omit<GroupSpec, "id" | "variants"> & {
+    variants: Record<GroupVariant<G>, VariantSpec>;
+  };
+} = {
   sheet: {
     label: "Tấm kẹp mép",
     needs: [
@@ -1013,6 +1020,49 @@ export const GRIP_GROUPS = Object.fromEntries(
 
 const specOf = (g: GroupId | GroupSpec): GroupSpec => (typeof g === "string" ? GRIP_GROUPS[g] : g);
 
+/** Biến thể của một chỗ cầm: biến thể gốc `base` (tên, bảng) và bản soạn tay của món cho chính tên đã gọi, nếu có */
+export interface VariantRef {
+  base: string;
+  spec: VariantSpec;
+  authored?: AuthoredGrasp;
+}
+
+/**
+ * Biến thể `v` của nhóm trên món `item`: biến thể gốc, hay kiểu cầm có tên của món (`authored.<nhóm>.<tên>`) — mượn chỗ
+ * tiếp xúc, dáng, vai trò, miền của `base`, khung cầm theo bản soạn của tên ấy. Không có thì `undefined`. Mọi chỗ tra
+ * bảng biến thể theo `variant` của cảnh đi qua đây (docs/11-nhom-cam.md § Kiểu cầm soạn tay)
+ */
+export function variantOf(
+  item: Pick<HeldItemSpec, "authored"> | undefined,
+  group: GroupId | GroupSpec,
+  v: string,
+): VariantRef | undefined {
+  const g = specOf(group);
+  const au = item?.authored?.[g.id]?.[v];
+  if (Object.hasOwn(g.variants, v))
+    return { base: v, spec: g.variants[v], ...(au && { authored: au }) };
+  if (!au?.base || !Object.hasOwn(g.variants, au.base)) return undefined;
+  return { base: au.base, spec: g.variants[au.base], authored: au };
+}
+
+/** Biến thể gốc của biến thể `v` (tên kiểu cầm của món ra `base` của nó); không có thì chính `v` */
+export const baseVariant = (
+  item: Pick<HeldItemSpec, "authored"> | undefined,
+  group: GroupId | GroupSpec,
+  v: string,
+): string => variantOf(item, group, v)?.base ?? v;
+
+/** Kiểu cầm có tên của món cho nhóm (khoá `authored` không phải biến thể gốc): tên, biến thể gốc, mô tả */
+export function namedVariants(
+  item: Pick<HeldItemSpec, "authored"> | undefined,
+  group: GroupId | GroupSpec,
+): { name: string; base: string; note?: string }[] {
+  const g = specOf(group);
+  return Object.entries(item?.authored?.[g.id] ?? {})
+    .filter(([name, a]) => !Object.hasOwn(g.variants, name) && a.base)
+    .map(([name, a]) => ({ name, base: a.base!, ...(a.note && { note: a.note }) }));
+}
+
 export interface GroupFit {
   feature: Feature;
   /** Số đo / `W` khi nhóm có `size` */
@@ -1263,7 +1313,8 @@ const faceOk = (f: Feature, thumb: string): boolean =>
  * Lỗi `group` và `choice` của một chỗ cầm v2 (docs/11 mục 7): nhóm `later`, trường không thuộc nhóm, `on` / `yaw` ngoài
  * `carry`, `carry` thiếu `on` hay món không có `seats[on]`, `both` với nhóm một tay không có tay phụ (`support`), biến thể,
  * số ngoài miền, `part` / `edge` / `thumb` không có trên khối hình, biến thể quá bề dày ở mép (`thickMax`, đo trên `shape`),
- * và món không có khối hình cho nhóm. Mảng rỗng là hợp lệ
+ * và món không có khối hình cho nhóm. `variant` là biến thể gốc hay tên kiểu cầm trong `authored` của món (`variantOf`).
+ * Mảng rỗng là hợp lệ
  */
 export function checkChoice(
   group: GroupId | GroupSpec,
@@ -1272,6 +1323,7 @@ export function checkChoice(
   dims: HandDims,
   anchors?: Record<string, { dir?: unknown }>,
   shape?: readonly HeldShape[],
+  authored?: HeldItemSpec["authored"],
 ): string[] {
   const spec = specOf(group);
   const h: SceneHoldGroup = groupHold(hold);
@@ -1285,10 +1337,12 @@ export function checkChoice(
     if (v === undefined) continue;
     const c = spec.choices[key];
     if (key === "variant") {
-      if (!((v as string) in spec.variants))
+      if (!variantOf({ authored }, spec, v as string)) {
+        const named = namedVariants({ authored }, spec).map((x) => x.name);
         bad(
-          `biến thể \`${v}\` không có ở nhóm \`${spec.id}\` (${Object.keys(spec.variants).join(", ")})`,
+          `biến thể \`${v}\` không có ở nhóm \`${spec.id}\` (gốc: ${Object.keys(spec.variants).join(", ")}; kiểu cầm của món: ${named.join(", ") || "không có"})`,
         );
+      }
       continue;
     }
     if (!c) {
@@ -1303,7 +1357,10 @@ export function checkChoice(
       if (c.values && !c.values.includes(v as string))
         bad(`\`${key}: ${v}\` ngoài miền (${c.values.join(", ")})`);
     } else if (typeof v === "number") {
-      const variant = h.variant ?? spec.choices.variant?.default;
+      const variant =
+        h.variant !== undefined
+          ? baseVariant({ authored }, spec, h.variant)
+          : spec.choices.variant?.default;
       const [lo, hi] = (variant && c.byVariant?.[variant]) || [c.min, c.max];
       if (!(v >= lo && v <= hi)) bad(`\`${key}: ${v}\` ngoài miền [${lo}, ${hi}]`);
     } else if (!c.names?.includes(v as string)) {
@@ -1345,13 +1402,14 @@ export function checkChoice(
     !byEdge.some((f) => faceOk(f, h.thumb!))
   )
     bad(`\`thumb: ${h.thumb}\` không có trên khối hình (${byEdge.map(describe).join(", ")})`);
-  const v = h.variant;
-  const kinds = v !== undefined ? spec.variants[v]?.kinds : undefined;
+  const v = h.variant !== undefined ? variantOf({ authored }, spec, h.variant)?.base : undefined;
+  const vl = h.variant === v ? `\`${v}\`` : `\`${h.variant}\` (gốc \`${v}\`)`;
+  const kinds = v !== undefined ? spec.variants[v].kinds : undefined;
   if (kinds && byEdge.length && !byEdge.some((f) => kinds.includes(f.kind)))
     bad(
-      `biến thể \`${v}\` chỉ áp trên ${kinds.map((k) => `\`${k}\``).join(", ")} (${byEdge.map(describe).join(", ")})`,
+      `biến thể ${vl} chỉ áp trên ${kinds.map((k) => `\`${k}\``).join(", ")} (${byEdge.map(describe).join(", ")})`,
     );
-  const across = v !== undefined ? spec.variants[v]?.across : undefined;
+  const across = v !== undefined ? spec.variants[v].across : undefined;
   if (v !== undefined && across && byEdge.length) {
     const slabs = byEdge.filter((f): f is SlabFeature => f.kind === "slab");
     const names = (f: SlabFeature) =>
@@ -1362,20 +1420,20 @@ export function checkChoice(
     if (!fit.length) {
       const ws = slabs.flatMap((f) => names(f).map((e) => acrossOf(f, e) ?? NaN));
       bad(
-        `biến thể \`${v}\` cần tấm rộng ${String(across[0]).replace(".", ",")}–${String(across[1]).replace(".", ",")}·W (${fmt(across[0] * dims.W)}–${fmt(across[1] * dims.W)}) qua hai mép được kẹp${h.edge !== undefined ? ` ở cạnh \`${h.edge}\`` : ""}, tấm rộng ${ws
+        `biến thể ${vl} cần tấm rộng ${String(across[0]).replace(".", ",")}–${String(across[1]).replace(".", ",")}·W (${fmt(across[0] * dims.W)}–${fmt(across[1] * dims.W)}) qua hai mép được kẹp${h.edge !== undefined ? ` ở cạnh \`${h.edge}\`` : ""}, tấm rộng ${ws
           .filter(Number.isFinite)
           .map(fmt)
           .join(", ")}`,
       );
     }
   }
-  const max = v !== undefined ? spec.variants[v]?.thickMax : undefined;
+  const max = v !== undefined ? spec.variants[v].thickMax : undefined;
   if (v !== undefined && max !== undefined && byEdge.length) {
     const thick = byEdge.map((f) => tooThick(spec, v, f, h.edge, dims, shape));
     if (thick.every((t) => t !== undefined)) {
       const others = Object.keys(spec.variants).filter((x) => !spec.variants[x].thickMax);
       bad(
-        `biến thể \`${v}\` cần bề dày ở mép ≤ ${String(max).replace(".", ",")}·W (${fmt(max * dims.W)}), mép dày ${fmt(Math.min(...(thick as number[])))}: ngón cái không vắt qua mép — dùng ${others.map((x) => `\`${x}\``).join(" hay ")}`,
+        `biến thể ${vl} cần bề dày ở mép ≤ ${String(max).replace(".", ",")}·W (${fmt(max * dims.W)}), mép dày ${fmt(Math.min(...(thick as number[])))}: ngón cái không vắt qua mép — dùng ${others.map((x) => `\`${x}\``).join(" hay ")}`,
       );
     }
   }
