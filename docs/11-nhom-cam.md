@@ -824,7 +824,8 @@ const SceneItemMarkSchema = z.strictObject({
   face: z.union([AxisIntentSchema, IntentTargetSchema]).optional(),   // trục món quay về đích, `tilt` nghiêng khỏi đích
   up: z.union([z.string(), v3]).optional(),
   roll: AxisIntentSchema.optional(),
-  ease: EaseSchema.optional(),
+  ease: z.enum(EASE_NAMES).optional(),              // đường hoà vào mốc này; bỏ trống là `smooth`
+  bezier: z.tuple([unit, unit, unit, unit]).optional(),   // điểm điều khiển của `ease: "bezier"`
   rest: z.literal(true).optional(),                  // món nằm trên một mặt ở mốc này; bỏ `at`/`to` là chỗ thả gần nhất
 });
 ```
@@ -845,9 +846,13 @@ const SceneItemMarkSchema = z.strictObject({
   vặn tới kẹp. Đặt món ngang cằm, lệch về phía tay cầm — `to: "eye"`, `offset` chừng `[45, 45, 10]` —, khuỷu gập, `holderFace`
   ngửa mặt món lên về mắt. Nhóm không có `roll` mặc định (`palmBox`) thì khai `roll: { axis: "top", toward: "up" }`, bỏ trống
   là đầu món có thể chúc xuống.
-- **Giữa hai mốc** (`itemAt`): chỗ món hoà theo `ease` của mốc sau (bỏ trống và `auto` là `smooth`; mốc món không có
-  `bezier` nên `ease: "bezier"` là `BEZIER_DEFAULT`) trong khung mốc thân ở chính `t` (người cúi thì món đi theo người),
-  hướng món hoà cầu (`slerp`) giữa hai phép quay giải ở hai mốc. Đích của `face` (người khác, mốc thân) đọc ở `t`. Trước mốc
+- **Giữa hai mốc** (`itemAt`): chỗ món hoà theo `ease` của mốc sau (bỏ trống là `smooth`; `bezier` theo `bezier` của mốc,
+  bỏ trống là `BEZIER_DEFAULT`) trong khung mốc thân ở chính `t` (người cúi thì món đi theo người), hướng món hoà cầu
+  (`slerp`) giữa hai phép quay giải ở hai mốc. Đích của `face` (người khác, mốc thân) đọc ở `t`.
+- **`auto`** nối các mốc liền nhau của món cùng mang `auto` thành một chuỗi (mốc nằm không khai chỗ không thuộc chuỗi); đầu,
+  cuối chuỗi và mốc kề không phải `auto` có tiếp tuyến `0`, hai mốc đơn lẻ là đúng `smoothstep`. Chỗ món, mốc đặt của món và
+  cỡ bậc ba đơn điệu từng thành phần qua bốn mốc kề, mỗi mốc giải ở chính `t`. Hướng món: góc trắc địa giữa hai mốc kề
+  cộng dồn dọc chuỗi, nội suy bậc ba ra phần của đoạn, rồi `slerp` trong đoạn — vận tốc góc liền qua mốc giữa. Trước mốc
   món đầu và sau mốc cuối, món giữ ở mốc gần nhất (kẹp như `world.hands`). Lần cầm một tay theo mốc không vẽ món ở `itemAt`
   giữa hai mốc: bộ giải chỉ đọc `itemAt` ở chính các mốc, món vẽ theo bàn tay (mục [5](#lần-cầm-theo-mốc)).
 - Mốc món chỉ hợp lệ khi có tay cầm món ấy ở `t` (`check` lỗi `ref`). Món rời tay mà cảnh còn cần thì là đồ của cảnh, như nay.
@@ -906,8 +911,8 @@ const SceneHoldSchema = z.union([
   tới món, không rơi về tư thế của hành động (nhặt món trên quầy: tay lên qua mép quầy bằng mốc đích trước mốc cầm). Mỗi tay khai chỗ cầm của nó; `both` là viết
   tắt cho tay kia. `both` mà tay kia cũng có `hold` ở cùng `t` là lỗi `choice`. Tay có `both` giải trước (lead), tay phụ giải
   sau với số hạng lấn của tay lead.
-- **Tay trượt**: các trường số (`along`, `slant`, `around`, `tilt`, `psi`, `inset`) hoà theo `ease` giữa hai mốc tay của cùng lần
-  cầm — tay trượt dọc cạnh, dọc cán, xoay quanh trụ. **Một lần cầm** là chuỗi mốc cùng món, cùng nhóm, cùng các trường rời (`part`,
+- **Tay trượt**: các trường số (`along`, `slant`, `around`, `tilt`, `psi`, `inset`) hoà theo `ease` của mốc tay sau giữa hai mốc
+  `hold` của cùng lần cầm (`auto` bậc ba trên chuỗi mốc `hold` của lần cầm) — tay trượt dọc cạnh, dọc cán, xoay quanh trụ. **Một lần cầm** là chuỗi mốc cùng món, cùng nhóm, cùng các trường rời (`part`,
   `edge`, `thumb`, `variant`), không `regrip`; đổi trường rời là lần cầm mới, liên kết tay ↔ món hoà trong `HOLD_BLEND`.
 - **Vị trí dọc cạnh**: tên (`corner` ≈ nửa bàn tay từ đầu thấp, `low` 0,25, `mid` 0,5, `high` 0,75) hay tỉ lệ 0–1 từ đầu thấp. Đầu thấp
   của cạnh xét một lần ở mốc bắt đầu lần cầm: cạnh dốc ≥ 30° so với mặt ngang thì là đầu dưới; cạnh gần ngang chạy ngang
@@ -1062,7 +1067,8 @@ Lần cầm một tay có mốc món (mục 4) không giải từng khung trên 
    hệ thân**: cổ tay so với vai bên ấy và khung bàn tay, cả hai qua `Rr` của thân; `φ`; góc cổ tay đã kẹp và phần vượt kẹp.
 3. **Giữa hai mốc**: hệ số `f` theo `ease` của mốc sau (như `itemAt`); cổ tay dời thẳng và bàn tay quay đường ngắn nhất
    (`mixRotation`) trong hệ thân, đổi ra thế giới bằng thân ở chính `t` — người cúi, đi giữa hai mốc thì tay theo thân; `φ` đi
-   đường ngắn nhất trên vòng; góc cổ tay đã kẹp hoà thẳng (như `solveActing` hoà hai nghiệm). Trước mốc đầu và sau mốc cuối giữ
+   đường ngắn nhất trên vòng; góc cổ tay đã kẹp hoà thẳng (như `solveActing` hoà hai nghiệm). `auto` thì bậc ba đơn điệu qua
+   bốn mốc kề như `itemAt`: cổ tay và góc cổ tay từng thành phần, `φ` đã mở vòng, bàn tay theo góc trắc địa cộng dồn. Trước mốc đầu và sau mốc cuối giữ
    mốc gần nhất trong hệ thân. Khung cầm đọc ở `t` (trường số của tay trượt hoà như mục 4); dáng ngón theo khung cầm.
 4. **Món** vẽ ở `bàn tay đã vẽ · GripFrame`: dính tay suốt lần cầm, ở mốc trùng chỗ khai (trừ khi ngoài tầm hay vượt kẹp).
 5. **Món nằm chờ tay**: trước mốc món đầu khi mốc ấy là mốc nằm (`rest`), và sau mốc món cuối khi mốc ấy là mốc nằm, món đứng ở

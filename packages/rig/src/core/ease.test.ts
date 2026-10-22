@@ -1,6 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { actionDelta, ACTION_VERSION, cubicBezier, parseAction, smoothstep } from "./index";
+import {
+  actionDelta,
+  ACTION_VERSION,
+  cubicBezier,
+  hermiteN,
+  parseAction,
+  smoothstep,
+} from "./index";
+import { resolveActing, type ActInput } from "./act3";
+import { body3 } from "./figure3d";
+import { parseHeldItem, type ReachHold } from "./heldItem";
+import { matMul, type M3 } from "./lens";
+import { graspAtTime, itemAt, parseScene, resolveScene, sceneAt, type SceneRuntime } from "./scene";
+import { parseCharacter } from "./schema";
+import fx from "./__fixtures__/nguoi-cam-bang.json";
+import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 
 type Key = { t: number; v: number; ease?: string; bezier?: number[] };
 
@@ -210,5 +225,245 @@ describe(`đời ${ACTION_VERSION}`, () => {
     expect(r.data?.keys?.[0].ease).toBe("linear");
     expect(r.data?.keys?.[0].bezier).toBeUndefined();
     expect(actionDelta(r.data!, 0.3).torso).toBeCloseTo(3, 10);
+  });
+});
+
+// Mốc tay và mốc món của scene: `ease` là đường hoà vào mốc (docs/03-scene.md#đích-bàn-tay-thế-giới, docs/11-nhom-cam.md)
+const held = parseHeldItem(bangGia);
+if (!held.success) throw new Error(held.error.message);
+const NG = parseCharacter(fx.character);
+if (!NG.success) throw new Error("nguoi");
+const NGUOI = NG.data;
+const H = NGUOI.rig.height;
+const DIMS = body3(NGUOI);
+const chars = { nguoi: NGUOI };
+const AT = [250, 0, 506];
+
+function scene(hands: unknown[], items: unknown[] = [], world: object = { at: AT, yaw: 270 }) {
+  const r = parseScene({
+    duration: 4,
+    lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
+    cast: [{ id: "nguoi", base: { torso: 9, head: [0, 0, -6] }, world: { ...world, hands } }],
+    items,
+  });
+  if (!r.success) throw new Error(r.error.message);
+  return resolveScene(
+    r.data,
+    {},
+    {},
+    {},
+    { nguoi: H },
+    { nguoi: DIMS },
+    { "bang-gia": held.data! },
+  );
+}
+
+const poseAt = (rt: SceneRuntime, t: number) => sceneAt(rt, "nguoi", t, H, DIMS) as ActInput;
+/** Đích tay phải (tay gần khi không lật) ở `t` */
+const right = (rt: SceneRuntime, t: number) => {
+  const W = poseAt(rt, t).world!;
+  return (W.flip ? W.hands!.far : W.hands!.near)!;
+};
+/** Cổ tay phải người 3D giải ra ở `t`, toạ độ thế giới rig */
+const wristOf = (rt: SceneRuntime, t: number) => {
+  const W = resolveActing(NGUOI, poseAt(rt, t)).world!;
+  return (W.flip ? W.hands!.far : W.hands!.near)!.at;
+};
+const vsub = (a: readonly number[], b: readonly number[]) => a.map((v, i) => v - b[i]);
+const vlen = (a: readonly number[]) => Math.hypot(...a);
+const D = 1e-4;
+/** Vận tốc trái và phải của một đường vectơ tại `t` */
+const vel = (g: (t: number) => readonly number[], t: number) => [
+  vsub(g(t), g(t - D)).map((v) => v / D),
+  vsub(g(t + D), g(t)).map((v) => v / D),
+];
+const tr = (R: M3): M3 => [R[0], R[3], R[6], R[1], R[4], R[7], R[2], R[5], R[8]];
+const rotRad = (A: M3, B: M3) => {
+  const M = matMul(tr(A), B);
+  return Math.acos(Math.max(-1, Math.min(1, (M[0] + M[4] + M[8] - 1) / 2)));
+};
+
+const P0 = [210, -200, 470];
+const P1 = [235, -240, 500];
+const P2 = [300, -300, 520];
+const chain = (ease?: string, extra: object = {}) => [
+  { t: 0, right: { at: P0 } },
+  { t: 0.8, right: { at: P1, ...extra, ...(ease && { ease }) } },
+  { t: 2, right: { at: P2, ...extra, ...(ease && { ease }) } },
+];
+
+describe("`ease` của mốc tay scene", () => {
+  it("chuỗi `auto` ba mốc: liền vận tốc ở mốc giữa, đi qua mốc, `smooth` dừng ở mốc", () => {
+    const rt = scene(chain("auto"));
+    const at = (t: number) => right(rt, t).at;
+    expect(vlen(vsub(at(0.8), P1))).toBeLessThan(1e-9);
+    const [l, r] = vel(at, 0.8);
+    expect(vlen(l)).toBeGreaterThan(20);
+    expect(vlen(vsub(l, r))).toBeLessThan(0.02 * vlen(l));
+    const sm = scene(chain());
+    for (const v of vel((t) => right(sm, t).at, 0.8)) expect(vlen(v)).toBeLessThan(0.1);
+  });
+
+  it("dữ liệu đơn điệu thì không vọt qua mốc", () => {
+    const rt = scene(chain("auto"));
+    let last = right(rt, 0).at;
+    for (let i = 1; i <= 600; i++) {
+      const t = (2 * i) / 600;
+      const p = right(rt, t).at;
+      const [a, b] = t <= 0.8 ? [P0, P1] : [P1, P2];
+      for (let k = 0; k < 3; k++) {
+        expect(p[k]).toBeGreaterThanOrEqual(Math.min(a[k], b[k]) - 1e-9);
+        expect(p[k]).toBeLessThanOrEqual(Math.max(a[k], b[k]) + 1e-9);
+        expect((p[k] - last[k]) * (P2[k] - P0[k])).toBeGreaterThanOrEqual(-1e-12);
+      }
+      last = p;
+    }
+  });
+
+  it("thiếu `ease` là `smooth`; `bezier` theo `cubic-bezier` của mốc", () => {
+    const plain = scene(chain());
+    const smooth = scene(chain("smooth"));
+    const bez = scene(chain("bezier", { bezier: [0.5, 0, 1, 1] }));
+    for (const t of [0.1, 0.4, 0.7]) {
+      expect(right(plain, t).at).toStrictEqual(right(smooth, t).at);
+      const u = t / 0.8;
+      const s = smoothstep(u);
+      right(plain, t).at.forEach((v, k) => expect(v).toBeCloseTo(P0[k] + (P1[k] - P0[k]) * s, 9));
+      const b = cubicBezier(0.5, 0, 1, 1)(u);
+      right(bez, t).at.forEach((v, k) => expect(v).toBeCloseTo(P0[k] + (P1[k] - P0[k]) * b, 9));
+    }
+  });
+
+  it("mốc thân theo thân đang đi: mỗi mốc giải trong cùng khung ở `t` rồi mới nội suy", () => {
+    const path = [
+      { t: 0, at: AT, yaw: 270 },
+      { t: 3, at: [AT[0] + 160, 0, AT[2] + 60], yaw: 300, ease: true },
+    ];
+    const keys = [
+      { t: 0, offset: [20, 10, 6] },
+      { t: 0.8, offset: [34, 0, 10] },
+      { t: 1.6, offset: [44, -14, 16] },
+      { t: 2.4, offset: [50, -30, 20] },
+    ];
+    const hand = (o: number[], ease?: string) => ({
+      to: "chest",
+      offset: o,
+      point: "wrist",
+      ...(ease && { ease }),
+    });
+    const rt = scene(
+      keys.map((k, i) => ({ t: k.t, right: hand(k.offset, i ? "auto" : undefined) })),
+      [],
+      { path },
+    );
+    const one = keys.map((k) => scene([{ t: 0, right: hand(k.offset) }], [], { path }));
+    for (const t of [1, 1.2, 1.5]) {
+      const w = one.map((r) => wristOf(r, t));
+      const want = hermiteN(w[0], w[1], w[2], w[3], 0.8, 0.8, 0.8, (t - 0.8) / 0.8);
+      expect(vlen(vsub(wristOf(rt, t), want))).toBeLessThan(1e-6);
+    }
+    expect(vlen(vsub(wristOf(rt, 1.6), wristOf(one[2], 1.6)))).toBeLessThan(1e-6);
+    // thân đã đi: cùng mốc thân ở hai giây là hai chỗ thế giới
+    expect(vlen(vsub(wristOf(one[1], 0), wristOf(one[1], 2)))).toBeGreaterThan(50);
+    const [l, r] = vel((t) => wristOf(rt, t), 1.6);
+    expect(vlen(vsub(l, r))).toBeLessThan(0.02 * vlen(l));
+  });
+
+  it("trường số của chỗ cầm trượt theo `auto` của mốc `hold`", () => {
+    const sheet = { item: "bang-gia", group: "sheet", edge: "right", thumb: "front" };
+    const k = (t: number, along: number, ease?: string) => ({
+      t,
+      right: {
+        to: "chest",
+        offset: [30, 20, -20],
+        point: "grip",
+        hold: { ...sheet, along },
+        ...(ease && { ease }),
+      },
+    });
+    const along = (rt: SceneRuntime) => (t: number) => [
+      (right(rt, t).hold as ReachHold).grasp!.hold.along as number,
+    ];
+    const auto = along(scene([k(0, 0.1), k(1, 0.4, "auto"), k(2, 0.9, "auto")]));
+    const [l, r] = vel(auto, 1);
+    expect(l[0]).toBeGreaterThan(0.2);
+    expect(Math.abs(l[0] - r[0])).toBeLessThan(0.02 * l[0]);
+    const smooth = along(scene([k(0, 0.1), k(1, 0.4), k(2, 0.9)]));
+    for (const v of vel(smooth, 1)) expect(Math.abs(v[0])).toBeLessThan(1e-3);
+  });
+});
+
+describe("`ease` của mốc món", () => {
+  const mark = (t: number, at: number[], toward: number[], ease?: string) => ({
+    t,
+    cast: "nguoi",
+    item: "bang-gia",
+    at,
+    face: { axis: "front", toward },
+    roll: { axis: "top", toward: "up" },
+    ...(ease && { ease }),
+  });
+  const SHEET = { item: "bang-gia", group: "sheet", edge: "right", along: 0.33, thumb: "front" };
+  const marks = (ease?: string) => [
+    mark(0.5, [300, -260, 420], [-1, 0, 0]),
+    mark(1.5, [320, -280, 440], [-1, 0, 0.6], ease),
+    mark(2.5, [360, -300, 450], [-0.3, 0, 1], ease),
+  ];
+  const hold = [{ t: 0, right: { hold: SHEET } }];
+
+  it("`itemAt`: chỗ và hướng món liền vận tốc ở mốc giữa; `smooth` dừng", () => {
+    const rt = scene(hold, marks("auto"));
+    const P = (t: number) => itemAt(rt, "bang-gia", t, { chars })!.P;
+    const [l, r] = vel(P, 1.5);
+    expect(vlen(l)).toBeGreaterThan(10);
+    expect(vlen(vsub(l, r))).toBeLessThan(0.02 * vlen(l));
+    const R = (t: number) => itemAt(rt, "bang-gia", t, { chars })!.R;
+    const wl = rotRad(R(1.5 - D), R(1.5)) / D;
+    const wr = rotRad(R(1.5), R(1.5 + D)) / D;
+    expect(wl).toBeGreaterThan(0.1);
+    expect(Math.abs(wl - wr)).toBeLessThan(0.02 * wl);
+    const sm = scene(hold, marks());
+    const Rs = (t: number) => itemAt(sm, "bang-gia", t, { chars })!.R;
+    expect(rotRad(Rs(1.5), Rs(1.5 + D)) / D).toBeLessThan(1e-3);
+  });
+
+  it("`itemAt`: góc quay đơn điệu dọc đoạn, không vọt qua hướng của mốc", () => {
+    const rt = scene(hold, marks("auto"));
+    const R = (t: number) => itemAt(rt, "bang-gia", t, { chars })!.R;
+    const R1 = R(1.5);
+    const total = rotRad(R1, R(2.5));
+    let last = 0;
+    for (let i = 1; i <= 100; i++) {
+      const g = rotRad(R1, R(1.5 + i / 100));
+      expect(g).toBeGreaterThanOrEqual(last - 1e-9);
+      expect(g).toBeLessThanOrEqual(total + 1e-9);
+      last = g;
+    }
+  });
+
+  it("lần cầm một tay theo mốc: cổ tay và bàn tay liền vận tốc ở mốc giữa", () => {
+    const rt = scene(hold, marks("auto"));
+    const sol = (t: number) => graspAtTime(rt, "nguoi", "right", t, { chars })!;
+    const [l, r] = vel((t) => sol(t).Wp, 1.5);
+    expect(vlen(l)).toBeGreaterThan(0.05);
+    expect(vlen(vsub(l, r))).toBeLessThan(0.02 * vlen(l));
+    const wl = rotRad(sol(1.5 - D).Rw, sol(1.5).Rw) / D;
+    const wr = rotRad(sol(1.5).Rw, sol(1.5 + D).Rw) / D;
+    expect(wl).toBeGreaterThan(0.1);
+    expect(Math.abs(wl - wr)).toBeLessThan(0.02 * wl);
+  });
+
+  it("`bezier` của mốc món: phần hoà ở `u` là `cubic-bezier(u)`", () => {
+    const bz = [0.2, 0.7, 0.4, 1];
+    const rt = scene(
+      hold,
+      marks("bezier").map((m, i) => (i ? { ...m, bezier: bz } : m)),
+    );
+    const lin = scene(hold, marks("linear"));
+    const u = 0.3;
+    const f = cubicBezier(0.2, 0.7, 0.4, 1)(u);
+    const a = itemAt(rt, "bang-gia", 0.5 + u, { chars })!.P;
+    const b = itemAt(lin, "bang-gia", 0.5 + f, { chars })!.P;
+    expect(vlen(vsub(a, b))).toBeLessThan(1e-6);
   });
 });

@@ -168,6 +168,17 @@ export interface ReachTerm {
 }
 
 /**
+ * Đích `ease: "auto"` của `world.hands`: số hạng của bốn mốc kề (mốc ngoài vắng khi chuỗi `auto` dừng ở đó), độ dài ba
+ * đoạn và phần `f` của đoạn giữa. Người 3D giải cổ tay của từng mốc trong cùng khung ở `t` rồi nội suy bậc ba đơn điệu
+ * từng thành phần (`hermiteN`). docs/03-scene.md#đích-bàn-tay-thế-giới
+ */
+export interface ReachSpline {
+  keys: [ReachTerm[] | undefined, ReachTerm[], ReachTerm[], ReachTerm[] | undefined];
+  h: [number, number, number];
+  f: number;
+}
+
+/**
  * Một số hạng của bàn tay đã lấy mẫu: phần `k`, và hoặc xoay / gập cổ tay thô (`raw`), hoặc ý định — lòng tay (`palm`),
  * ngón (`fingers`) quay về đâu, `bend` khai kèm thì giữ cố định. `keep` (chỉ ở `world.hands`): giữ bàn tay của hành động
  */

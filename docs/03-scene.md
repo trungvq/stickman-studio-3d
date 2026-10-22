@@ -1000,9 +1000,18 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
   [Đồ cầm tay](#đồ-cầm-tay). Đang cầm thì `point` nhận thêm `item:<mốc>`: mốc ấy của món vào đích.
 - `snap: true` trên một mốc: đoạn từ mốc trước của tay ấy tới mốc này cố ý nhanh (chộp, giật tay),
   `check` không đo giật tay ở đoạn ấy — [Giật trên hình](#giật-trên-hình).
-- Mỗi tay nội suy riêng giữa hai mốc gần nhất **có nhắc tay ấy**, êm (`smoothstep`); `null` là phần
-  đích `0`, nên đi từ mốc có đích sang mốc `null` là tay nhả dần về góc. Trước mốc đầu và sau mốc
-  cuối giữ nguyên.
+- Mỗi tay nội suy riêng giữa hai mốc gần nhất **có nhắc tay ấy**, theo `ease` của tay ấy ở mốc sau — đường hoà **vào**
+  mốc, như `ease` của `items[]`: bỏ trống là `smooth` (`smoothstep`, vận tốc về `0` ở mọi mốc), `linear`, `spring`,
+  `bezier` theo `bezier` `[x1, y1, x2, y2]` của mốc (bỏ trống là `BEZIER_DEFAULT`), `auto` bậc ba đơn điệu liền vận tốc
+  qua mốc giữa ([01](01-rig.md#đường-giữa-hai-mốc)). `null` là phần đích `0`, nên đi từ mốc có đích sang mốc `null` là tay
+  nhả dần về góc. Trước mốc đầu và sau mốc cuối giữ nguyên.
+- **`auto`** nối các mốc liền nhau của một tay cùng mang `auto` thành một chuỗi; đầu, cuối chuỗi và mốc kề không phải
+  `auto` có tiếp tuyến `0`, hai mốc đơn lẻ là đúng `smoothstep`. Vị trí đích bậc ba từng thành phần qua bốn mốc kề; có mốc
+  thân (`to`) hay điểm bàn tay khác cổ tay thì người 3D giải cổ tay của từng mốc trong cùng khung ở `t` rồi mới nội suy,
+  nên người đi hay cúi thì tay vẫn theo thân. `elbow` bậc ba từng thành phần khi hai mốc kẹp đoạn cùng khai. Phần đích và
+  lòng tay theo ý định (`palm`, `fingers`, ý định của `hold`) vẫn hoà `smoothstep`; đoạn mà một mốc kẹp không có đích (`null`,
+  mốc chỉ khai lòng tay) cũng thế. Trường số của chỗ cầm trượt (`along`, `slant`, …) theo `ease` của mốc `hold` sau, `auto`
+  trên chuỗi mốc `hold` của lần cầm ([11](11-nhom-cam.md#chỗ-cầm-castworldhandshold)).
 - Đích thế giới **đè** đích hệ thân và góc tay của mọi hành động ở tay ấy, khi phần đích là `1`.
 - `handsOn(nhân vật, pose, world, { y, poly })` trả đích hai tay đặt trên một mặt ngang lồi (mặt bàn)
   trước người: cổ tay cao hơn mặt nửa bề dày tay, trước vai, vào trong mép `20`, đủ xa để khuỷu cao

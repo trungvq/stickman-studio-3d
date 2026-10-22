@@ -5,6 +5,8 @@ import {
   CHANNELS,
   easeAt,
   EASE_NAMES,
+  hermite,
+  hermiteN,
   JOINT_CHANNELS,
   PoseDeltaSchema,
   actionDelta,
@@ -88,11 +90,13 @@ import {
   AimDirSchema,
   BODY_MARKS,
   isOtherHand,
+  mixTerms,
   PALM_DIRS,
   ReachPointSchema,
   type Aim,
   type AimTerm,
   type BodyMark,
+  type ReachTerm,
 } from "./bodyMark";
 import {
   AxisIntentSchema,
@@ -382,6 +386,10 @@ const CarrySchema = z.object({
 
 const V3Schema = z.tuple([z.number(), z.number(), z.number()]);
 
+const Unit01 = z.number().min(0).max(1);
+/** `[x1, y1, x2, y2]` của `ease: "bezier"`, bốn số trong `[0, 1]`; bỏ trống là `BEZIER_DEFAULT` */
+const BezierSchema = z.tuple([Unit01, Unit01, Unit01, Unit01]);
+
 /**
  * Mốc chỗ đặt người 3D: `at` toạ độ thế giới — ngồi (`sit`) thì là điểm trên mặt ngồi ngay dưới
  * khớp hông, không thì điểm sàn dưới hông —, `yaw` độ quanh trục đứng (0 là mặt hướng +x, 90 là
@@ -403,7 +411,8 @@ const WorldKeySchema = z.object({
  * của hành động); `point` là điểm bàn tay đặt vào đích (thiếu là cổ tay với `at`, lòng tay với `to`; `item:<mốc>` là mốc
  * của món đang cầm); `elbow` hướng khuỷu (bỏ trống là mặc định hệ thân). `palm` / `fingers` / `bend` khai lòng tay theo ý
  * định, đè bàn tay của hành động theo phần đích. `hold` là chỗ cầm từ mốc này (`món@nhóm` hay `{ item, group, … }`,
- * `null` là buông): mốc chỉ có `hold` thì vị trí lấy từ hành động. docs/03-scene.md#đích-bàn-tay-thế-giới
+ * `null` là buông): mốc chỉ có `hold` thì vị trí lấy từ hành động. `ease` là đường hoà vào mốc này từ mốc trước của tay
+ * ấy (bỏ trống là `smooth`), `bezier` đi với `ease: "bezier"`. docs/03-scene.md#đích-bàn-tay-thế-giới
  */
 const HandSchema = z
   .object({
@@ -417,6 +426,8 @@ const HandSchema = z
     fingers: AimDirSchema.optional(),
     bend: z.number().min(-90).max(90).optional(),
     hold: SceneHoldSchema.nullable().optional(),
+    ease: z.enum(EASE_NAMES).optional(),
+    bezier: BezierSchema.optional(),
   })
   .refine((h) => (h.hold !== undefined ? !(h.at && h.to) : !!h.at !== !!h.to), {
     message: "đích bàn tay cần đúng một trong `at` (toạ độ thế giới) hay `to` (mốc thân)",
@@ -445,8 +456,9 @@ const HandKeySchema = z.object({
  * Mốc món đặt trước (`scene.items[]`): món `item` ở giây `t`, người cầm `cast`. Chỗ là mốc thân `to` của người cầm dời
  * `offset` `[tiến, y, ngang]` (ngang dương về phía tay phải người cầm), hay toạ độ thế giới `at`; `point` là mốc của món đặt
  * vào chỗ ấy, bỏ trống là tâm hộp bao. `face` / `up` (trục chính) và `roll` (trục phụ) cho trọn hướng món, vectơ ở hệ thân
- * người cầm `[tiến, y, ngang phải]`; thiếu trục nào lấy của nhóm. `ease` là đường hoà vào mốc này. `rest`: món nằm trên
- * một mặt ở mốc này (rig suy mặt đỡ từ món); không khai `at` / `to` thì chỗ và hướng món là lúc thả gần nhất (`itemReleased`).
+ * người cầm `[tiến, y, ngang phải]`; thiếu trục nào lấy của nhóm. `ease` là đường hoà vào mốc này (bỏ trống là `smooth`),
+ * `bezier` đi với `ease: "bezier"`. `rest`: món nằm trên một mặt ở mốc này (rig suy mặt đỡ từ món); không khai `at` / `to`
+ * thì chỗ và hướng món là lúc thả gần nhất (`itemReleased`).
  * docs/11-nhom-cam.md#mốc-món-items
  */
 export const SceneItemMarkSchema = z
@@ -462,6 +474,7 @@ export const SceneItemMarkSchema = z
     up: z.union([z.string().min(1), V3Schema]).optional(),
     roll: AxisIntentSchema.optional(),
     ease: z.enum(EASE_NAMES).optional(),
+    bezier: BezierSchema.optional(),
     rest: z.literal(true).optional(),
   })
   .refine((k) => !!k.at !== !!k.to || (k.rest && !k.at && !k.to), {
@@ -3346,7 +3359,10 @@ function handAt(
   const a = ks[i];
   const b = time > a.t ? ks[i + 1] : undefined;
   const ra = a[side];
-  const fk = b ? smoothstep((time - a.t) / (b.t - a.t)) : 0;
+  const rb = b?.[side];
+  const u = b ? (time - a.t) / (b.t - a.t) : 0;
+  // `auto` hoà vị trí bậc ba (`autoReach`); ý định và phần đích vẫn hoà `smoothstep`
+  const fk = b ? easeAt({ ease: rb?.ease ?? "smooth", bezier: rb?.bezier }, u) : 0;
   const nowRef = now && sceneHoldRef(now.hold);
   // mẫu trước khung này, trên lưới `HOLD_SLEW_STEP` từ mốc gần nhất: cổ tay mang món nối từ đó
   const key = ks[i].t < time - 1e-9 ? ks[i] : ks[i - 1];
@@ -3497,15 +3513,112 @@ function handAt(
     const p = one(ra, a.t);
     return finish(p && p.w > 0 ? { ...p, aim: undefined } : undefined, p);
   }
-  const rb = b[side];
   const pa = one(ra, a.t);
   const pb = one(rb, b.t);
   // hai mốc cùng có đích mà một bên không khai hướng khuỷu: giữ hướng của bên kia, không nội suy
   if (pa && pb && !!pa.elbow !== !!pb.elbow) pa.elbow = pb.elbow = pa.elbow ?? pb.elbow;
-  const r = mixReach(pa, pb, fk);
+  const near =
+    rb?.ease === "auto" && pa && pa.w > 0 && pb && pb.w > 0
+      ? autoNear(ks, i, (k) => k[side]?.ease === "auto")
+      : undefined;
+  const r = near
+    ? autoReach(
+        near.p0 && one(near.p0[side], near.p0.t),
+        pa!,
+        pb!,
+        near.p3 && one(near.p3[side], near.p3.t),
+        near,
+        u,
+      )
+    : mixReach(pa, pb, fk);
   const out =
-    r && (pa?.elbow || pb?.elbow ? r : { w: r.w, at: r.at, ...(r.terms && { terms: r.terms }) });
+    r &&
+    (pa?.elbow || pb?.elbow
+      ? r
+      : {
+          w: r.w,
+          at: r.at,
+          ...(r.terms && { terms: r.terms }),
+          ...("spline" in r && r.spline && { spline: r.spline }),
+        });
   return finish(out, pa, pb);
+}
+
+/**
+ * Mốc kề của đoạn `i → i + 1` có mốc sau `ease: "auto"`: `p0` khi mốc `i` cũng hoà vào bằng `auto` (`auto(k)`), `p3` khi
+ * mốc `i + 2` cũng thế; vắng là đầu, cuối chuỗi, tiếp tuyến `0`. `h0`, `h`, `h2` là độ dài ba đoạn
+ */
+function autoNear<K extends { t: number }>(ks: readonly K[], i: number, auto: (k: K) => boolean) {
+  const [a, b] = [ks[i], ks[i + 1]];
+  const p0 = i > 0 && auto(a) && ks[i - 1].t < a.t ? ks[i - 1] : undefined;
+  const p3 = i + 2 < ks.length && auto(ks[i + 2]) && ks[i + 2].t > b.t ? ks[i + 2] : undefined;
+  return { p0, p3, h0: p0 ? a.t - p0.t : 1, h: b.t - a.t, h2: p3 ? p3.t - b.t : 1 };
+}
+
+/** Số hạng của một đích: đích chỉ có toạ độ cổ tay là một số hạng thô */
+const termsOf = (r: Reach): ReachTerm[] => r.terms ?? [{ k: 1, at: [...r.at] }];
+
+/**
+ * Đích `ease: "auto"` giữa hai mốc có đích `p1 → p2`, mốc kề `p0` / `p3` (thiếu hay không có đích là đầu chuỗi): toạ độ thô
+ * và hướng khuỷu bậc ba từng thành phần. Có mốc thân hay điểm bàn tay thì kèm `spline` để người 3D giải cổ tay từng mốc
+ * trong cùng khung ở `t` rồi mới nội suy; `terms` hoà `smoothstep` là đích ước lượng cho chỗ không giải
+ */
+function autoReach(
+  q0: Reach | undefined,
+  p1: Reach,
+  p2: Reach,
+  q3: Reach | undefined,
+  n: { h0: number; h: number; h2: number },
+  u: number,
+): Reach {
+  const p0 = q0 && q0.w > 0 ? q0 : undefined;
+  const p3 = q3 && q3.w > 0 ? q3 : undefined;
+  const raw = (r: Reach | undefined) => (r && !r.terms?.some((t) => t.to) ? r.at : undefined);
+  const cubic = (
+    a: readonly number[] | undefined,
+    b: readonly number[],
+    c: readonly number[],
+    d: readonly number[] | undefined,
+  ) => hermiteN(a, b, c, d, n.h0, n.h, n.h2, u) as V3;
+  const elbow = p1.elbow && p2.elbow && cubic(p0?.elbow, p1.elbow, p2.elbow, p3?.elbow);
+  const marked = [p0, p1, p2, p3].some((r) => r?.terms);
+  return {
+    w: 1,
+    at: cubic(raw(p0), p1.at, p2.at, raw(p3)),
+    ...(elbow && { elbow }),
+    ...(marked && {
+      terms: mixTerms(termsOf(p1), termsOf(p2), smoothstep(u)),
+      spline: {
+        keys: [p0 && termsOf(p0), termsOf(p1), termsOf(p2), p3 && termsOf(p3)],
+        h: [n.h0, n.h, n.h2],
+        f: u,
+      },
+    }),
+  };
+}
+
+/** Góc quay (radian) giữa hai khung */
+function rotGap(a: M3, b: M3): number {
+  const D = matMul(tr3(a), b);
+  return Math.acos(Math.max(-1, Math.min(1, (D[0] + D[4] + D[8] - 1) / 2)));
+}
+
+/**
+ * `auto` của phép quay `R1 → R2`, mốc kề `R0` / `R3`: góc trắc địa cộng dồn dọc chuỗi nội suy bậc ba đơn điệu ra phần của
+ * đoạn, rồi quay đường ngắn nhất trong đoạn — vận tốc góc liền qua mốc giữa
+ */
+function autoRotation(
+  R0: M3 | undefined,
+  R1: M3,
+  R2: M3,
+  R3: M3 | undefined,
+  n: { h0: number; h: number; h2: number },
+  u: number,
+): M3 {
+  const g = rotGap(R1, R2);
+  if (!(g > 1e-9)) return R1;
+  const s = hermite(R0 && -rotGap(R0, R1), 0, g, R3 && g + rotGap(R2, R3), n.h0, n.h, n.h2, u);
+  return mixRotation(R1, R2, s / g);
 }
 
 /** Gắn đích cổ tay thế giới vào chỗ đặt: tay phải là tay gần khi không lật */
@@ -3770,8 +3883,9 @@ function supportHold(
 const sideSign = (side: HandSide) => (side === "right" ? -1 : 1);
 
 /**
- * Chỗ cầm nhóm của lần cầm `run` ở `time`: mốc tay khai `hold` gần nhất của lần cầm, trường số hoà (`smoothstep`, như đích
- * tay) tới mốc `hold` sau của cùng lần cầm; trường mốc không khai lấy của `fill`. Kèm hướng khuỷu của mốc ấy
+ * Chỗ cầm nhóm của lần cầm `run` ở `time`: mốc tay khai `hold` gần nhất của lần cầm, trường số hoà theo `ease` của mốc sau
+ * (như đích tay; `auto` trên chuỗi mốc `hold` của lần cầm) tới mốc `hold` sau của cùng lần cầm; trường mốc không khai lấy
+ * của `fill`. Kèm hướng khuỷu của mốc ấy
  */
 function slideHold(
   keys: HandKey[],
@@ -3794,15 +3908,44 @@ function slideHold(
   const ga = groupHold(a?.[side]?.hold ?? run.hold);
   const elbow = a?.[side]?.elbow;
   if (!a || !b) return { hold: ga, ...(elbow && { elbow }) };
-  const gb = groupHold(b[side]!.hold!);
-  const f = smoothstep((time - a.t) / (b.t - a.t));
+  const hb = b[side]!;
+  const gb = groupHold(hb.hold!);
+  const u = (time - a.t) / (b.t - a.t);
+  const f = easeAt({ ease: hb.ease ?? "smooth", bezier: hb.bezier }, u);
+  const chain = hb.ease === "auto" ? runHoldKeys(keys, side, run) : undefined;
+  const n = chain && autoNear(chain, chain.indexOf(a), (k) => k[side]?.ease === "auto");
+  const g0 = n?.p0 && groupHold(n.p0[side]!.hold!);
+  const g3 = n?.p3 && groupHold(n.p3[side]!.hold!);
   const out: SceneHoldGroup = { ...ga };
   for (const key of SLIDE_FIELDS) {
     const x = slideNum(key, ga[key] ?? fill[key]);
     const y = slideNum(key, gb[key] ?? fill[key]);
-    if (x !== undefined && y !== undefined && x !== y) out[key] = x + (y - x) * f;
+    if (x === undefined || y === undefined || x === y) continue;
+    out[key] = n
+      ? hermite(
+          g0 && slideNum(key, g0[key] ?? fill[key]),
+          x,
+          y,
+          g3 && slideNum(key, g3[key] ?? fill[key]),
+          n.h0,
+          n.h,
+          n.h2,
+          u,
+        )
+      : x + (y - x) * f;
   }
   return { hold: out, ...(elbow && { elbow }) };
+}
+
+/** Các mốc tay khai `hold` của lần cầm `run`, theo thời gian */
+function runHoldKeys(keys: HandKey[], side: HandSide, run: HoldRun): HandKey[] {
+  const out: HandKey[] = [];
+  for (const k of keys) {
+    if (!k[side]?.hold || k.t < run.since) continue;
+    if (holdRun(keys, side, k.t)?.since !== run.since) break;
+    out.push(k);
+  }
+  return out;
 }
 
 const handSizes = new Map<number, HandDims>();
@@ -3938,6 +4081,7 @@ interface GraspRun {
 interface KeyedMark {
   t: number;
   ease?: SceneItemMark["ease"];
+  bezier?: SceneItemMark["bezier"];
   W: V3;
   R: M3;
   phi: number;
@@ -4059,6 +4203,7 @@ function graspStart(
       keyed.push({
         t: k.t,
         ease: k.ease,
+        ...(k.bezier && { bezier: k.bezier }),
         W: matVec(Rt, sub3(q.Wp, q.inp.S)),
         R: matMul(Rt, q.Rw),
         phi: a.phi,
@@ -4110,20 +4255,49 @@ const wrapDeg = (a: number) => ((((a + 180) % 360) + 360) % 360) - 180;
 const lerpN = (a: readonly number[], b: readonly number[], f: number) =>
   a.map((x, i) => x + (b[i] - x) * f);
 
-/** Hai mốc kề `time` của lần cầm theo mốc và hệ số hoà theo `ease` của mốc sau; ngoài khoảng mốc thì mốc gần nhất */
-function keyedSpan(ks: readonly KeyedMark[], time: number) {
+/**
+ * Lần cầm theo mốc ở `time`, hệ thân: cổ tay, khung bàn tay, `φ`, góc cổ tay đã kẹp và phần vượt kẹp. Theo `ease` của mốc
+ * sau: cổ tay dời thẳng, bàn tay quay đường ngắn nhất, `φ` đường ngắn nhất trên vòng, góc cổ tay hoà thẳng; `auto` thì bậc
+ * ba đơn điệu qua bốn mốc kề — bàn tay theo góc cộng dồn (`autoRotation`), `φ` đã mở vòng. Ngoài khoảng mốc thì mốc gần nhất
+ */
+function keyedAt(ks: readonly KeyedMark[], time: number) {
   let i = 0;
   while (i + 1 < ks.length && ks[i + 1].t <= time) i++;
   const a = ks[i];
   const b = time > a.t ? ks[i + 1] : undefined;
-  const f = b ? easeAt({ ease: b.ease ?? "smooth" }, (time - a.t) / (b.t - a.t)) : 0;
-  return { a, b: b ?? a, f };
-}
-
-/** `φ` của lần cầm theo mốc ở `time`: đường ngắn nhất giữa hai mốc kề */
-function keyedPhi(ks: readonly KeyedMark[], time: number): number {
-  const { a, b, f } = keyedSpan(ks, time);
-  return wrapDeg(a.phi + wrapDeg(b.phi - a.phi) * f);
+  const u = b ? (time - a.t) / (b.t - a.t) : 0;
+  if (b?.ease === "auto") {
+    const n = autoNear(ks, i, (k) => k.ease === "auto");
+    const cubic = (g: (k: KeyedMark) => readonly number[]) =>
+      hermiteN(n.p0 && g(n.p0), g(a), g(b), n.p3 && g(n.p3), n.h0, n.h, n.h2, u);
+    const b1 = a.phi + wrapDeg(b.phi - a.phi);
+    const phi = hermite(
+      n.p0 && a.phi - wrapDeg(a.phi - n.p0.phi),
+      a.phi,
+      b1,
+      n.p3 && b1 + wrapDeg(n.p3.phi - b.phi),
+      n.h0,
+      n.h,
+      n.h2,
+      u,
+    );
+    return {
+      W: cubic((k) => k.W),
+      R: autoRotation(n.p0?.R, a.R, b.R, n.p3?.R, n, u),
+      phi: wrapDeg(phi),
+      wrist: cubic((k) => k.wrist),
+      over: cubic((k) => k.over),
+    };
+  }
+  const f = b ? easeAt({ ease: b.ease ?? "smooth", bezier: b.bezier }, u) : 0;
+  const c = b ?? a;
+  return {
+    W: lerpN(a.W, c.W, f),
+    R: mixRotation(a.R, c.R, f),
+    phi: wrapDeg(a.phi + wrapDeg(c.phi - a.phi) * f),
+    wrist: lerpN(a.wrist, c.wrist, f),
+    over: lerpN(a.over, c.over, f),
+  };
 }
 
 /**
@@ -4139,16 +4313,16 @@ function keyedArm(
   time: number,
   o: ItemOptions,
 ) {
-  const { a, b, f } = keyedSpan(r.keyed!, time);
+  const k = keyedAt(r.keyed!, time);
   const T = holderTrunk(rt, id, time, o);
   const { elbow, frame } = graspFrameAt(rt, id, side, run, r, time, T, T.s);
   const inp = armInput(T, sideSign(side));
-  const Wp = add3(inp.S, matVec(inp.Rr, lerpN(a.W, b.W, f) as V3));
-  const Rw = matMul(inp.Rr, mixRotation(a.R, b.R, f));
+  const Wp = add3(inp.S, matVec(inp.Rr, k.W as V3));
+  const Rw = matMul(inp.Rr, k.R);
   const other = placedOther(rt, id, side, time, o);
-  const arm = evalPhi(inp, Wp, Rw, keyedPhi(r.keyed!, time), undefined, other, elbow);
-  const [turn, bend, dev] = lerpN(a.wrist, b.wrist, f);
-  const over = lerpN(a.over, b.over, f);
+  const arm = evalPhi(inp, Wp, Rw, k.phi, undefined, other, elbow);
+  const [turn, bend, dev] = k.wrist;
+  const over = k.over;
   return {
     inp,
     Wp,
@@ -4192,7 +4366,7 @@ function lastPhi(
   o: ItemOptions,
 ): number {
   const r = graspStart(rt, id, side, run, o);
-  if (r.keyed) return keyedPhi(r.keyed, t1);
+  if (r.keyed) return keyedAt(r.keyed, t1).phi;
   const n = Math.max(0, Math.ceil((t1 - r.t0) / HOLD_SLEW_STEP - 1e-9));
   chainTo(rt, id, side, run, r, n, o);
   return r.chain[n].sol.phi;
@@ -4918,8 +5092,8 @@ function solveItemMark(rt: SceneRuntime, k: SceneItemMark, time: number, o: Item
 
 /**
  * Món đặt trước `item` ở `time` theo `scene.items`: giữa hai mốc thì chỗ món hoà theo `ease` của mốc sau, mỗi mốc đọc
- * trong khung mốc thân ở chính `time`, hướng hoà cầu giữa hai phép quay giải ở hai mốc; trước mốc đầu, sau mốc cuối giữ
- * mốc gần nhất. Món không có mốc thì `undefined`. Trục phụ suy biến không ném, trả `degenerate`; đích trùng chỗ món
+ * trong khung mốc thân ở chính `time`, hướng hoà cầu giữa hai phép quay giải ở hai mốc (`auto`: bậc ba qua bốn mốc kề,
+ * hướng theo góc cộng dồn `autoRotation`); trước mốc đầu, sau mốc cuối giữ mốc gần nhất. Món không có mốc thì `undefined`. Trục phụ suy biến không ném, trả `degenerate`; đích trùng chỗ món
  * trả `coincident`. `o.chars` bắt buộc (`HolderCharError`); `face` trần không trục thì `ItemAxisError`. Mốc `rest` không khai
  * chỗ đọc lúc thả (`itemReleased`; không có thì `ItemRestError`), món không hoà tới nó; ở mốc `rest` (không hoà) trả `rest`.
  * docs/11-nhom-cam.md#mốc-món-items
@@ -4940,11 +5114,26 @@ export function itemAt(
   const b = time > a.t && next && !restFromRelease(next) ? next : undefined;
   const A = solveItemMark(rt, a, time, o);
   const B = b && solveItemMark(rt, b, time, o);
-  const f = b ? easeAt({ ease: b.ease ?? "smooth" }, (time - a.t) / (b.t - a.t)) : 0;
+  const u = b ? (time - a.t) / (b.t - a.t) : 0;
+  const f = b ? easeAt({ ease: b.ease ?? "smooth", bezier: b.bezier }, u) : 0;
   const mix = (p: V3, q: V3 | undefined) => (q ? add3(p, scale3(sub3(q, p), f)) : p);
-  const R = B ? mixRotation(A.R, B.R, f) : A.R;
-  const s = B ? A.s + (B.s - A.s) * f : A.s;
-  const P = sub3(mix(A.at, B?.at), scale3(matVec(R, mix(A.pt, B?.pt)), 0.01 * s));
+  let R = B ? mixRotation(A.R, B.R, f) : A.R;
+  let s = B ? A.s + (B.s - A.s) * f : A.s;
+  let at = mix(A.at, B?.at);
+  let pt = mix(A.pt, B?.pt);
+  if (B && b.ease === "auto") {
+    // mốc kề đọc ở chính `time` như hai mốc kẹp; mốc nằm không khai chỗ không thuộc chuỗi
+    const n = autoNear(ks, i, (k) => k.ease === "auto" && !restFromRelease(k));
+    const A0 = n.p0 && solveItemMark(rt, n.p0, time, o);
+    const B3 = n.p3 && solveItemMark(rt, n.p3, time, o);
+    const cubic = (g: (m: typeof A) => readonly number[]) =>
+      hermiteN(A0 && g(A0), g(A), g(B), B3 && g(B3), n.h0, n.h, n.h2, u) as V3;
+    R = autoRotation(A0?.R, A.R, B.R, B3?.R, n, u);
+    s = cubic((m) => [m.s])[0];
+    at = cubic((m) => m.at);
+    pt = cubic((m) => m.pt);
+  }
+  const P = sub3(at, scale3(matVec(R, pt), 0.01 * s));
   const bad = [A, B].some((m) => m?.gap !== undefined && Math.cos(m.gap * D) > ITEM_AXIS_COS);
   return {
     R: [R[0], R[1], R[2], -R[3], -R[4], -R[5], -R[6], -R[7], -R[8]],
