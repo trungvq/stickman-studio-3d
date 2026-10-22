@@ -1,7 +1,7 @@
 // `stickman studio`: Studio 3D (`apps/studio3d`) chạy trên dev server Vite, gốc là repo video. Đọc cảnh, món và `worldData`;
 // ghi `scenes/` (`POST /api/scene`) và `held/` (`POST /api/held`), cả hai kiểm hash lúc nạp, vá JSON thô, giữ `.bak`.
 // apps/studio3d/README.md.
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
@@ -90,9 +90,19 @@ class HttpError extends Error {
 function writeWithBak(file, text, old) {
   if (old) writeFileSync(`${file}.bak`, old);
   mkdirSync(dirname(file), { recursive: true });
-  const tmp = join(dirname(file), `.${basename(file)}.${process.pid}.tmp`);
+  const tmp = join(dirname(file), `.${basename(file)}.${randomUUID()}.tmp`);
   writeFileSync(tmp, text);
   renameSync(tmp, file);
+}
+
+/** Hàng ghi theo từng file: mỗi lượt đọc – vá – ghi của một file chạy xong mới tới lượt sau */
+const queues = new Map();
+function serial(key, fn) {
+  const run = (queues.get(key) ?? Promise.resolve()).then(fn);
+  const tail = run.catch(() => {});
+  queues.set(key, tail);
+  tail.then(() => queues.get(key) === tail && queues.delete(key));
+  return run;
 }
 
 /** Bỏ những chỗ studio được ghi (`cast[*].world.hands`, `items`) để so phần còn lại */
@@ -104,7 +114,10 @@ const outsideHands = (s) => ({
     : s?.cast,
 });
 
-/** Cảnh trên đĩa `disk` nhận `cast[*].world.hands` và `items` của bản studio `edited`; phần khác phải trùng */
+/**
+ * Cảnh trên đĩa `disk` nhận `cast[*].world.hands` và `items` của bản studio `edited`; phần khác phải trùng. Bản studio
+ * thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên; xoá hết là gửi mảng rỗng.
+ */
 export function sceneWithHands(disk, edited) {
   const clean = (v) => JSON.parse(JSON.stringify(v));
   if (!isDeepStrictEqual(clean(outsideHands(disk)), clean(outsideHands(edited))))
@@ -116,10 +129,8 @@ export function sceneWithHands(disk, edited) {
   next.cast.forEach((c, i) => {
     const hands = edited.cast[i].world?.hands;
     if (hands !== undefined) c.world.hands = hands;
-    else if (c.world) delete c.world.hands;
   });
   if (edited.items !== undefined) next.items = edited.items;
-  else delete next.items;
   return next;
 }
 
@@ -164,9 +175,9 @@ export function studio3dConfig({
   const readBody = async (req) => {
     if (!/^application\/json\b/.test(req.headers["content-type"] ?? ""))
       throw new HttpError(415, "gửi JSON (`content-type: application/json`)");
-    let s = "";
-    for await (const c of req) s += c;
-    return JSON.parse(s);
+    const chunks = [];
+    for await (const c of req) chunks.push(c);
+    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
   };
   const route = (fn) => async (req, res) => {
     try {
@@ -178,11 +189,11 @@ export function studio3dConfig({
   /** Bytes trên đĩa phải đúng hash lúc nạp */
   const fresh = (buf, hash, what) => {
     if (typeof hash !== "string") throw new HttpError(400, "thiếu `hash` của bản lúc nạp");
-    if (sha(buf) !== hash)
+    if (buf === null || sha(buf) !== hash)
       throw new HttpError(
         409,
         `${what} đã đổi trên đĩa từ lúc nạp — nạp lại (R) rồi sửa lại, hay giữ bản mình để so`,
-        { conflict: true, hash: sha(buf) },
+        { conflict: true, hash: buf && sha(buf) },
       );
   };
 
@@ -225,16 +236,24 @@ export function studio3dConfig({
           if (req.method !== "POST") throw new HttpError(405, "chỉ GET, POST");
           // ghi `cast[*].world.hands` và `items` của bản studio vào JSON thô trên đĩa
           const { hash, scene } = await readBody(req);
-          const buf = readFileSync(file);
-          fresh(buf, hash, "cảnh");
-          const text = buf.toString("utf8");
-          const next = sceneWithHands(JSON.parse(text), scene);
-          const parsed = (await core()).parseScene(next);
-          if (!parsed.success)
-            throw new HttpError(400, `cảnh sau khi ghi không qua schema: ${parsed.error.message}`);
-          const out = await formatLike(text, next, (await format)(file));
-          writeWithBak(file, out, buf);
-          return { file, raw: next, hash: sha(out) };
+          return serial(file, async () => {
+            const buf = readFileSync(file);
+            fresh(buf, hash, "cảnh");
+            const text = buf.toString("utf8");
+            const next = sceneWithHands(JSON.parse(text), scene);
+            const parsed = (await core()).parseScene(next);
+            if (!parsed.success)
+              throw new HttpError(
+                400,
+                `cảnh sau khi ghi không qua schema: ${parsed.error.message}`,
+              );
+            const out = await formatLike(text, next, (await format)(file));
+            // đọc lại, so, ghi liền một mạch không `await`: người khác ghi trong lúc định dạng thì 409
+            const now = readFileSync(file);
+            fresh(now, hash, "cảnh");
+            writeWithBak(file, out, now);
+            return { file, raw: next, hash: sha(out) };
+          });
         }),
       );
 
@@ -243,34 +262,41 @@ export function studio3dConfig({
         "/api/held",
         route(async (req, name) => {
           if (req.method !== "POST") throw new HttpError(405, "chỉ POST");
-          const src =
-            NAME.test(name) &&
+          const source = () =>
             [HELD_OUT, HELD]
               .map((d) => d && join(d, `${name}.json`))
               .find((f) => f && existsSync(f));
-          if (!src) throw new HttpError(404, `không có held/${name}.json`);
+          if (!NAME.test(name) || !source()) throw new HttpError(404, `không có held/${name}.json`);
           const { group, variant, authored, hash } = await readBody(req);
           if (typeof group !== "string" || typeof variant !== "string")
             throw new HttpError(400, "thiếu `group` / `variant`");
-          const buf = readFileSync(src);
-          fresh(buf, hash, `held/${name}.json`);
-          const text = buf.toString("utf8");
-          const raw = JSON.parse(text);
-          const all = { ...raw.authored };
-          const byVariant = { ...all[group] };
-          if (authored) byVariant[variant] = authored;
-          else delete byVariant[variant];
-          if (Object.keys(byVariant).length) all[group] = byVariant;
-          else delete all[group];
-          if (Object.keys(all).length) raw.authored = all;
-          else delete raw.authored;
-          const parsed = (await core()).parseHeldItem(raw);
-          if (!parsed.success)
-            throw new HttpError(400, `món sau khi ghi không qua schema: ${parsed.error.message}`);
           const out = join(HELD_OUT ?? HELD, `${name}.json`);
-          const body = await formatLike(text, raw, (await format)(join(HELD, `${name}.json`)));
-          writeWithBak(out, body, existsSync(out) ? readFileSync(out) : null);
-          return { file: out, item: raw, hash: sha(body) };
+          const what = `held/${name}.json`;
+          return serial(out, async () => {
+            const src = source();
+            const buf = src ? readFileSync(src) : null;
+            fresh(buf, hash, what);
+            const text = buf.toString("utf8");
+            const raw = JSON.parse(text);
+            const all = { ...raw.authored };
+            const byVariant = { ...all[group] };
+            if (authored) byVariant[variant] = authored;
+            else delete byVariant[variant];
+            if (Object.keys(byVariant).length) all[group] = byVariant;
+            else delete all[group];
+            if (Object.keys(all).length) raw.authored = all;
+            else delete raw.authored;
+            const parsed = (await core()).parseHeldItem(raw);
+            if (!parsed.success)
+              throw new HttpError(400, `món sau khi ghi không qua schema: ${parsed.error.message}`);
+            const body = await formatLike(text, raw, (await format)(join(HELD, `${name}.json`)));
+            // như cảnh: đọc lại nguồn, so, ghi liền một mạch
+            const at = source();
+            const now = at ? readFileSync(at) : null;
+            fresh(now, hash, what);
+            writeWithBak(out, body, at === out ? now : null);
+            return { file: out, item: raw, hash: sha(body) };
+          });
         }),
       );
     },

@@ -61,6 +61,16 @@ describe("patchJsonText", () => {
     check({ list: old.list });
     check([1, 2]);
   });
+  it("đoạn chèn theo xuống dòng CRLF và thụt tab của file", () => {
+    const v = { a: [{ t: 0 }], b: 1 };
+    const n = { a: [{ t: 0 }, { t: 1, x: [2] }], b: 1, c: { d: true } };
+    const tab = `${JSON.stringify(v, null, "\t")}\n`;
+    assert.equal(patchJsonText(tab, n), `${JSON.stringify(n, null, "\t")}\n`);
+    const crlf = `${JSON.stringify(v, null, 4)}\n`.replaceAll("\n", "\r\n");
+    const out = patchJsonText(crlf, n);
+    assert.equal(out, `${JSON.stringify(n, null, 4)}\n`.replaceAll("\n", "\r\n"));
+    assert.ok(!/[^\r]\n/.test(out));
+  });
   it("mảng một dòng thêm phần tử vẫn một dòng", () => {
     const out = check({ ...old, keep: [1, 2, 3, 4] });
     assert.ok(out.includes('"keep": [1,2,3, 4]'));

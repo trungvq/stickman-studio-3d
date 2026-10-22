@@ -34,16 +34,20 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
   một bản mỗi gói. `remotion` nhận bản rỗng (`src/hollow.ts`). Bản dựng của ba gói chỉ cho phía Node (`worldData`).
 - **Ghi.** Hai đường, cả hai kiểm hash, vá JSON thô và giữ `<file>.json.bak`:
   - `POST /api/scene?name=<cảnh>` `{ hash, scene }`: `scene` là JSON thô của cảnh đã sửa; server lấy `cast[*].world.hands`
-    và `items` của nó vá vào file trên đĩa. Phần khác của `scene` khác đĩa thì 400. Trả `{ file, raw, hash }`.
+    và `items` của nó vá vào file trên đĩa; `scene` thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên, xoá hết là gửi mảng
+    rỗng (`items: []`, `hands: []` ghi thành mảng rỗng). Phần khác của `scene` khác đĩa thì 400. Trả `{ file, raw, hash }`.
   - `POST /api/held?name=<món>` `{ hash, group, variant, authored }`: **Lưu** của khung soạn kiểu cầm ghi `authored` của
     món × nhóm × biến thể (`authored: null` là xoá). `STUDIO3D_HELD_OUT=<thư mục>` đổi hướng ghi sang thư mục ấy và đọc nó
     phủ lên `held/` — thử mà không đụng repo video.
 - **Hash.** `GET /api/scene` trả `hash` của file cảnh và `heldHash` của từng món, là sha256 của byte trên đĩa lúc nạp. Lưu
-  gửi kèm hash ấy; file đã đổi từ lúc nạp thì server trả 409 (`{ error, conflict: true, hash }`) và không ghi.
+  gửi kèm hash ấy; file đã đổi từ lúc nạp thì server trả 409 (`{ error, conflict: true, hash }`) và không ghi. Lượt ghi
+  của một file xếp hàng; ngay trước khi ghi server đọc lại file và so hash lần nữa, `.bak` lấy từ đúng byte vừa đọc lại —
+  hai lần lưu cùng hash thì lần sau 409, ai ghi file trong lúc server đang vá cũng làm lần lưu ấy 409.
 - **Vá JSON thô.** Server không ghi lại object đã parse (zod bỏ trường schema không biết, như `hand` trong mốc tay của vài
   cảnh): nó viết lại đúng những giá trị đổi trên chữ của file (`rawjson.mjs`), giữ mọi trường khác và thứ tự khoá. File đúng
   lối `JSON.stringify(…, null, 2)` giữ lối ấy, file đúng lối prettier (cấu hình của repo video) thì chạy prettier sau khi vá,
-  file khác chỉ đổi chỗ vá. Kết quả phải qua `parseScene` / `parseHeldItem` của rig trang dùng; hỏng thì 400, không ghi.
+  file khác chỉ đổi chỗ vá (đoạn chèn theo kiểu xuống dòng và bậc thụt của file). Kết quả phải qua `parseScene` /
+  `parseHeldItem` của rig trang dùng; hỏng thì 400, không ghi.
 
 ## Phím
 

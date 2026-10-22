@@ -76,12 +76,16 @@ const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
 
 /**
  * `next` viết lên `text` (JSON của một giá trị khác): khoá, phần tử nào giữ nguyên thì giữ nguyên chữ; khoá thêm vào cuối
- * object, phần tử thêm vào chỗ của nó trong mảng; giá trị mới viết theo lối `JSON.stringify(v, null, 2)` thụt theo chỗ đặt
+ * object, phần tử thêm vào chỗ của nó trong mảng; giá trị mới viết theo lối `JSON.stringify` với xuống dòng (LF/CRLF) và
+ * bậc thụt (tab hay số dấu cách của dòng thụt đầu tiên) của `text`, thụt theo chỗ đặt
  */
 export function patchJsonText(text, next) {
   const edits = [];
+  const eol = text.includes("\r\n") ? "\r\n" : "\n";
+  const step = /\n([ \t]+)\S/.exec(text)?.[1] ?? "  ";
+  const unit = step[0] === "\t" ? "\t" : step;
   const lineIndent = (pos) => /^[ \t]*/.exec(text.slice(text.lastIndexOf("\n", pos - 1) + 1))[0];
-  const frag = (v, ind) => JSON.stringify(v, null, 2).replaceAll("\n", `\n${ind}`);
+  const frag = (v, ind) => JSON.stringify(v, null, unit).replaceAll("\n", `${eol}${ind}`);
   const put = (start, end, s) => edits.push({ start, end, text: s });
   const replace = (node, v) => put(node.start, node.end, frag(v, lineIndent(node.start)));
   /** Lối của các con: một dòng mỗi con (`sep`, `ind`) hay cùng dòng */
@@ -91,7 +95,7 @@ export function patchJsonText(text, next) {
     const ind = multi ? lineIndent(first.start) : "";
     return {
       ind,
-      sep: multi ? `,\n${ind}` : ", ",
+      sep: multi ? `,${eol}${ind}` : ", ",
       write: (v) => (multi ? frag(v, ind) : JSON.stringify(v)),
     };
   };

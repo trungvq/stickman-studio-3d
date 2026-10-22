@@ -11,7 +11,7 @@ CLI và render. Không chứa nhân vật, phòng hay cảnh của tập phim n�
 | `@stickman3d/fx` | Hiệu ứng SVG theo `t` và `<SceneWorld>` vẽ cả cảnh 2D |
 | `@stickman3d/render` | `stickman-render` (PNG), `stickman-video` (mp4 xem thử) |
 | `@stickman3d/mcp` | MCP server stdio cho agent |
-| `@stickman3d/cli` | `stickman init / upgrade / check / reseat / studio / docs` cho repo video |
+| `@stickman3d/cli` | `stickman init / upgrade / check / reseat / studio / studio2d / docs` cho repo video |
 
 ## Cài
 

@@ -519,14 +519,16 @@ của `scenes/` (cùng `stickman.world` mà Remotion vẽ), soạn kiểu cầm.
   repo video, nên trang và cảnh của repo chung một bản mỗi gói.
 - **Ghi thẳng repo.** **Lưu** ghi `scenes/<cảnh>.json` (`POST /api/scene`) và `held/<món>.json` (`POST /api/held`;
   `STUDIO3D_HELD_OUT=<thư mục>` đổi hướng ghi món sang thư mục ấy và đọc nó phủ lên `held/`). Cảnh chỉ nhận
-  `cast[*].world.hands` và `items` của bản studio; bản gửi lên đổi phần khác thì bị từ chối.
+  `cast[*].world.hands` và `items` của bản studio; bản gửi lên đổi phần khác thì bị từ chối, thiếu khoá nào thì khoá ấy
+  trên đĩa giữ nguyên (xoá hết là gửi mảng rỗng).
 - **Kiểm hash.** Mỗi lần nạp, trang nhận hash của file trên đĩa; lưu gửi kèm hash ấy. File đã đổi từ lúc nạp (agent,
-  `retime`, sửa tay) thì server trả 409 và không ghi: nạp lại rồi sửa lại.
+  `retime`, sửa tay) thì server trả 409 và không ghi: nạp lại rồi sửa lại. Server so hash cả ngay trước lệnh ghi, lượt
+  ghi của một file xếp hàng: hai lần lưu cùng một bản nạp thì lần sau 409.
 - **Vá JSON thô.** Server viết lại đúng những giá trị đổi trên chữ của file, giữ mọi trường khác, kể cả trường schema
   không biết (zod bỏ chúng khi parse), và thứ tự khoá. File đúng lối `JSON.stringify(…, null, 2)` giữ lối ấy; file đúng
-  lối prettier (cấu hình của repo, thiếu thì mặc định) thì chạy prettier sau khi vá; file khác chỉ đổi chỗ vá. Kết quả qua
-  `parseScene` / `parseHeldItem` của rig trang dùng, hỏng thì không ghi. Bản cũ ở `<file>.json.bak` (`.gitignore` mẫu đã
-  bỏ qua); git là lưới an toàn.
+  lối prettier (cấu hình của repo, thiếu thì mặc định) thì chạy prettier sau khi vá; file khác chỉ đổi chỗ vá (đoạn chèn
+  theo kiểu xuống dòng và bậc thụt của file). Kết quả qua `parseScene` / `parseHeldItem` của rig trang dùng, hỏng thì
+  không ghi. Bản cũ ở `<file>.json.bak` (`.gitignore` mẫu đã bỏ qua); git là lưới an toàn.
 - **Chỉ nghe `localhost`.** `--host <địa chỉ>` mở trang ra mạng ấy, cùng hai đường ghi; chỉ dùng trên mạng tin được.
 
 ### Studio 2D
