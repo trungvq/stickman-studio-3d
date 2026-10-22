@@ -34,7 +34,7 @@ phòng trơn `plainRoom` của rig, `ChanDung.tsx` chân dung người 3D cho l�
 `remotion.config.ts`, `tsconfig.json`, `pnpm-workspace.yaml`, và `package.json` có sẵn
 `pnpm remotion` / `render` / `still` / `frames` / `can-tay` / `bang-cam` / `thumbnails` / `srt` / `tts` /
 `tts-blocks` / `lipsync` / `sfx` / `sfx-el` / `sfx-loop` / `cut-torso` (`pnpm studio` là
-character studio) và `stickman.world` trỏ `src/khoi3d/world.ts`. Bảng riêng của tập cho các tool ấy — `sfx/*.json`, bản lời có tag —
+Studio 3D, `pnpm studio2d` là character studio 2D) và `stickman.world` trỏ `src/khoi3d/world.ts`. Bảng riêng của tập cho các tool ấy — `sfx/*.json`, bản lời có tag —
 không có mẫu nào: tool đọc thấy thiếu thì báo cú pháp. `package.json` pin cả `three`; `scenes/vi-du-3d.json`
 là cảnh 3D mẫu, `khoi3d/canh.ts` nối tên nó với `plainRoom` (`CANH_3D`: tên cảnh → `WorldSpec`) — `Scene.tsx` gặp
 cảnh có trong `CANH_3D` thì vẽ người 3D thay người que 2D (`REMOTION_FLAT=1` vẽ bản 2D để so); `THU_3D` cùng file là composition thử bối cảnh
@@ -320,7 +320,7 @@ Nhờ vậy:
 
 
 Bốn đường đọc đều đi hai lớp — studio (`layeredWorkspace` khi mở thư mục,
-`serve.mjs` khi chạy `stickman studio`), `stickman-render` / `stickman-video` và
+`serve.mjs` khi chạy `stickman studio2d`), `stickman-render` / `stickman-video` và
 MCP (`layers` + `findIn`), và app Remotion (`remotion.config.ts` trỏ alias
 `@stickman-common` vào `COMMON`, `data.ts` `require.context` cả hai, `tools/srt.mjs`
 đọc cùng hai thư mục). Thêm đường đọc mới thì cũng phải đi hai lớp. Món cầm tay đến `resolveScene` ở **tham số thứ
@@ -499,21 +499,45 @@ ngưỡng lệch: [11](11-nhom-cam.md#8-chuyển-đổi).
 
 ## Studio đọc repo video
 
-`@stickman3d/cli` gói cả app studio đã build, nên repo video mở studio tại chỗ:
+`@stickman3d/cli` mang hai studio, cả hai mở tại chỗ trong repo video:
 
 ```bash
-pnpm exec stickman studio               # = pnpm studio, --port đổi cổng
+pnpm studio      # = pnpm exec stickman studio: Studio 3D, http://localhost:5180
+pnpm studio2d    # = pnpm exec stickman studio2d: character studio 2D, http://localhost:5173
 ```
 
-Đó là một static server: phục vụ app, và đè `characters/` `actions/` `props/`
+`--port` đổi cổng của cả hai.
+
+### Studio 3D
+
+Dev server Vite (Vite đi theo `@stickman3d/cli`) chạy app `apps/studio3d` với gốc là thư mục đang đứng: xem cảnh three
+của `scenes/` (cùng `stickman.world` mà Remotion vẽ), soạn kiểu cầm. Phím, panel, cách soạn ở README của
+`apps/studio3d` trong repo rig.
+
+- **Rig của trang là rig repo video đang nạp.** `@stickman3d/rig`, `sketch`, `fx` trỏ `link:` tới một cây nguồn thì trang
+  lấy `src/` của cây ấy (sửa rig là trang nạp lại); cài từ registry thì lấy `dist`. `three`, `react`, `zod` lấy bản của
+  repo video, nên trang và cảnh của repo chung một bản mỗi gói.
+- **Ghi thẳng repo.** **Lưu** ghi `scenes/<cảnh>.json` (`POST /api/scene`) và `held/<món>.json` (`POST /api/held`;
+  `STUDIO3D_HELD_OUT=<thư mục>` đổi hướng ghi món sang thư mục ấy và đọc nó phủ lên `held/`). Cảnh chỉ nhận
+  `cast[*].world.hands` và `items` của bản studio; bản gửi lên đổi phần khác thì bị từ chối.
+- **Kiểm hash.** Mỗi lần nạp, trang nhận hash của file trên đĩa; lưu gửi kèm hash ấy. File đã đổi từ lúc nạp (agent,
+  `retime`, sửa tay) thì server trả 409 và không ghi: nạp lại rồi sửa lại.
+- **Vá JSON thô.** Server viết lại đúng những giá trị đổi trên chữ của file, giữ mọi trường khác, kể cả trường schema
+  không biết (zod bỏ chúng khi parse), và thứ tự khoá. File đúng lối `JSON.stringify(…, null, 2)` giữ lối ấy; file đúng
+  lối prettier (cấu hình của repo, thiếu thì mặc định) thì chạy prettier sau khi vá; file khác chỉ đổi chỗ vá. Kết quả qua
+  `parseScene` / `parseHeldItem` của rig trang dùng, hỏng thì không ghi. Bản cũ ở `<file>.json.bak` (`.gitignore` mẫu đã
+  bỏ qua); git là lưới an toàn.
+- **Chỉ nghe `localhost`.** `--host <địa chỉ>` mở trang ra mạng ấy, cùng hai đường ghi; chỉ dùng trên mạng tin được.
+
+### Studio 2D
+
+Static server: phục vụ app studio 2D đã build, và đè `characters/` `actions/` `props/`
 `animals/` `pieces/` của workspace lên đường dẫn bộ mẫu (`index.json` sinh lúc chạy,
 `/workspace.json` cho nhãn; `characters/`, `actions/`, `animals/` và `pieces/` gộp với lớp chung,
-
-`catalog.json` gộp) — mở lên là thấy nhân vật của repo này, **chỉ đọc**. Ghi vẫn
-đi qua **Mở thư mục** (File System Access API, chỉ có ở `localhost`) trỏ vào
-chính thư mục ấy: studio ghi JSON thẳng vào `characters/` và `actions/`, bản cũ
-giữ ở `<file>.json.bak`. Không có endpoint ghi nào phía server, đúng bất biến
-của studio. Studio đi cùng cli nên nó luôn khớp bản rig đã pin.
+`catalog.json` gộp) — mở lên là thấy nhân vật của repo này, **chỉ đọc**. Ghi đi qua **Mở thư
+mục** (File System Access API, chỉ có ở `localhost`) trỏ vào chính thư mục ấy: studio ghi JSON
+thẳng vào `characters/` và `actions/`, bản cũ giữ ở `<file>.json.bak`. Studio 2D không có endpoint
+ghi nào phía server. Hai studio đi cùng cli nên luôn khớp bản rig đã pin.
 
 Muốn đổi hành vi rig thì đổi ở repo studio rồi publish và `upgrade` bên này,
 đừng vá `node_modules/@stickman3d/`.

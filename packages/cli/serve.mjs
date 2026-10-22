@@ -1,4 +1,4 @@
-// `stickman studio`: phục vụ app studio đã build như một app tĩnh, đè `characters/`,
+// `stickman studio2d`: phục vụ app studio 2D đã build như một app tĩnh, đè `characters/`,
 // `actions/`, `props/`, `animals/`, `pieces/` của workspace lên đường dẫn bộ mẫu để mở lên
 // là thấy repo này; trừ `props/`, các thư mục ấy có bộ chung của studio làm lớp dưới, như
 // studio làm khi mở thư mục. `/parts.mjs` là `CODE_PARTS` của repo gói cho trình duyệt.

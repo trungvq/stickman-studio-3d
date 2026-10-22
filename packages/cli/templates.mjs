@@ -202,14 +202,20 @@ Với pnpm 11, token nằm ở \`~/.config/pnpm/auth.ini\`. Không ghi token và
 ## Chỉnh bằng studio
 
 \`\`\`bash
-pnpm studio                              # http://localhost:5173, đọc sẵn repo này
+pnpm studio                              # Studio 3D, http://localhost:5180
+pnpm studio2d                            # studio 2D, http://localhost:5173
 \`\`\`
 
-Mở lên là thấy nhân vật của repo này (chỉ đọc). Muốn **ghi** thì bấm **Mở thư
-mục** và trỏ vào chính thư mục này — studio ghi JSON thẳng vào \`characters/\` và
-\`actions/\` qua File System Access API (bản cũ giữ ở \`<file>.json.bak\`), không
-có endpoint ghi nào phía server. Nút ấy chỉ có ở \`localhost\`, mở từ điện thoại
-thì xem thôi.
+**Studio 3D** xem cảnh three của \`scenes/\` và soạn kiểu cầm; **Lưu** ghi thẳng
+\`scenes/\` và \`held/\` của repo này. File đã đổi trên đĩa từ lúc nạp (agent,
+\`retime\`, sửa tay) thì studio từ chối ghi, nạp lại rồi sửa lại. Bản cũ giữ ở
+\`<file>.json.bak\`. Chỉ nghe \`localhost\` (\`--host\` mở ra mạng, cùng đường ghi).
+
+**Studio 2D** chỉnh nhân vật, hành động, mảnh. Mở lên là thấy nhân vật của repo
+này (chỉ đọc). Muốn **ghi** thì bấm **Mở thư mục** và trỏ vào chính thư mục này —
+studio ghi JSON thẳng vào \`characters/\` và \`actions/\` qua File System Access
+API (bản cũ giữ ở \`<file>.json.bak\`). Nút ấy chỉ có ở \`localhost\`, mở từ
+điện thoại thì xem thôi.
 
 ## Chỉnh bằng agent
 
@@ -316,6 +322,7 @@ export const packageJson = ({ name, versions }) =>
       stickman: { layers: "src/lop.tsx", parts: "src/parts.tsx", world: "src/khoi3d/world.ts" },
       scripts: {
         studio: "stickman studio",
+        studio2d: "stickman studio2d",
         remotion: "remotion studio",
         // React production: cảnh 3D nặng nhanh hơn, mất fast refresh — `remotion.config.ts`
         "remotion-prod": "STUDIO_FAST=1 remotion studio",

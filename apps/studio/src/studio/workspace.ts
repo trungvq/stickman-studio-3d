@@ -44,7 +44,7 @@ function readCatalog(text: string): PieceCatalog {
 
 /**
  * Bộ mẫu nằm trong `public/` của chính studio; chỉ để chạy thử và chụp hình kiểm tra.
- * `stickman studio` đè workspace thật lên cùng đường dẫn và đặt nhãn qua `/workspace.json`.
+ * `stickman studio2d` đè workspace thật lên cùng đường dẫn và đặt nhãn qua `/workspace.json`.
  */
 export function fixtureWorkspace(label = FIXTURES_LABEL): Workspace {
   return {
@@ -72,7 +72,7 @@ export function fixtureWorkspace(label = FIXTURES_LABEL): Workspace {
   };
 }
 
-/** Nhãn do `stickman studio` khai; bộ mẫu tĩnh không có file này */
+/** Nhãn do `stickman studio2d` khai; bộ mẫu tĩnh không có file này */
 export async function servedLabel() {
   try {
     const r = await fetch("/workspace.json");

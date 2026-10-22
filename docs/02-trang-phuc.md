@@ -2300,7 +2300,7 @@ export const CODE_PARTS: Record<string, PartDef> = {
 
 | | |
 |---|---|
-| `stickman studio` | gói entry cho trình duyệt ở `/parts.mjs`, mỗi lần tải trang — sửa file rồi F5. Gói hỏng thì dải đỏ trên đầu trang kể lỗi |
+| `stickman studio2d` | gói entry cho trình duyệt ở `/parts.mjs`, mỗi lần tải trang — sửa file rồi F5. Gói hỏng thì dải đỏ trên đầu trang kể lỗi |
 | `stickman-render` / `stickman-video` / MCP | gói bằng esbuild như lớp vẽ code ([10](10-lop-ve-code.md)), gói lại khi file đổi |
 | App Remotion | `src/index.ts` gọi `registerParts` trước `registerRoot` |
 | `stickman check` | gói thử |
@@ -2319,7 +2319,7 @@ Luật:
   `outline` nếu có, mảnh treo trên thân ở thân `rear` vẽ như ở `back`. Mảnh treo
   trên thân nhận `yaw` là góc quay thật của khối thân (`torsoYaw`) để bám bề ngang thân.
 - Studio chạy bằng `pnpm dev` ở repo này, hay mở thư mục bằng bộ mẫu tĩnh, thì
-  không có `/parts.mjs` — chỉ `stickman studio` mới thấy bộ phận của repo.
+  không có `/parts.mjs` — chỉ `stickman studio2d` mới thấy bộ phận của repo.
 
 ### Áo vẽ lại từ mảnh ảnh
 

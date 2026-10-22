@@ -164,6 +164,12 @@ importers:
       '@stickman3d/sketch':
         specifier: workspace:*
         version: link:../sketch
+      prettier:
+        specifier: ^3.6.2
+        version: 3.9.9
+      vite:
+        specifier: ^8.3.3
+        version: 8.3.3(@types/node@24.19.1)(esbuild@0.27.7)(jiti@2.7.0)
 
   packages/fx:
     dependencies:

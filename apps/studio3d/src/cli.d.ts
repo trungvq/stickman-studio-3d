@@ -1,6 +1,10 @@
 // `@stickman3d/cli` là JS thuần: chỉ khai phần vite.config.ts dùng
-declare module "@stickman3d/cli" {
-  export function worldData(dir?: string): Record<string, Record<string, unknown>>;
-  /** Ngưỡng luật `held` của `package.json` `stickman.held` (thiếu thì mặc định của rig); `off` khi repo tắt nhóm luật */
-  export function heldOptions(dir?: string): Record<string, unknown>;
+declare module "@stickman3d/cli/studio3d" {
+  /** Cấu hình Vite của Studio 3D cho repo video `dir`; `tree` là monorepo rig trang lấy mã nguồn */
+  export function studio3dConfig(o: {
+    dir?: string;
+    tree?: string;
+    heldOut?: string;
+    app?: string;
+  }): import("vite").InlineConfig;
 }
