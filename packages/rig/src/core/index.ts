@@ -36,6 +36,7 @@ export * from "./heldFit";
 export * from "./heldGeom";
 export * from "./heldItem";
 export * from "./holdLink";
+export * from "./holdMode";
 export * from "./idle";
 export * from "./ik";
 export * from "./lens";

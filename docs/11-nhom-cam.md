@@ -1310,6 +1310,70 @@ Hai hàm đọc của `scene.ts` (cửa `@stickman3d/rig/core`), không đổi h
     trước (`ReachHold.prior`, nhớ theo khung): gọi theo `t` tăng thì mỗi khung chỉ giải một mẫu. Lún, khe, món vẽ đọc ở
     three (`heldHands`).
 
+### Đổi chế độ lần cầm
+
+`holdToItemLed` (đồ theo tay → tay theo đồ) và `holdToHandLed` (ngược lại) của `core/holdMode.ts` (cửa `@stickman3d/rig/core`)
+viết lại JSON của một lần cầm sang chế độ kia. MCP mở thành tool `hold_mode` ([04](04-mcp.md#tool)). Thuần: nhận runtime, JSON
+thô của cảnh (chưa parse, còn trường lạ, mốc tên) và `rebuild` dựng runtime từ JSON thô (có `chars` như runtime vào); trả bản
+vá và độ lệch, không ghi gì.
+
+- **Lần cầm** như mục 4, chọn bằng tay `side` và một giây `at` trong lần cầm. Tay phụ của `both`, hay tay cầm cùng món mà lần
+  cầm nằm trong lần cầm của tay kia, quy về tay dẫn (tay có lần cầm bao lần cầm kia). Không đổi được: món treo (`carry`), lần
+  cầm có mốc món nằm (`rest`), hai tay cầm cùng món mà hai lần cầm không lồng nhau, lần cầm đã ở chế độ đích.
+- **Bản vá** là JSON Patch (RFC 6902: `add`, `replace`, `remove`; `path` là JSON Pointer) trên JSON thô, áp theo thứ tự bằng
+  `applyJsonPatch`: sửa tại chỗ theo chỉ số cũ, xoá từ cuối mảng lên, rồi chèn theo chỗ mới tăng dần; mốc chèn đứng theo giây.
+  Toạ độ và `offset` làm tròn 0,01, vectơ 0,0001. Áp lên chữ của file bằng `formatLike` (`packages/cli/rawjson.mjs`): chỉ các mốc
+  của lần cầm đổi chữ.
+- **Đồ theo tay → tay theo đồ.** Mỗi mốc tay của lần cầm sinh một mốc món ở cùng `t` (giữ `@mốc±Δ`) từ món đang vẽ (`actHeld`):
+  - chỗ là tâm hộp bao của món; mốc tay `point: "item:<mốc>"` thì mốc ấy của món, viết `point`;
+  - `to` + `offset` khi mốc tay dùng `to` (mốc không có đích lấy mốc có đích gần nhất của lần cầm; mốc trên tay kia thì `at`),
+    không thì `at`;
+  - hướng là `face: { axis: [0, 0, 1], toward }` và `roll: { axis: [0, 1, 0], toward }`, `toward` vectơ hệ thân
+    `[tiến, y xuống, ngang phải]` — món giữ hướng dù người quay; `ease: "auto"`.
+
+  Mốc tay bỏ `at`, `to`, `side`, `offset`, `point`, `palm`, `fingers`, `bend` và ý định (`face`, `up`, `roll`, `keep`); giữ `elbow`,
+  `ease` và mọi trường khác, cả trường lạ. Mốc chỉ còn đúng `hold` như mốc trước và mốc sau của lần cầm thì bỏ.
+- **Tay theo đồ → đồ theo tay.** Mỗi mốc tay và mốc món của lần cầm thành một mốc tay có đích:
+  - tâm nắm của bàn tay đang vẽ với `point: "grip"`; mốc món có `point` thì điểm ấy của món với `point: "item:<mốc>"`;
+  - `to` + `offset` khi mốc món (ở giây ấy, hay gần nhất) dùng `to`, không thì `at`;
+  - `hold` nhận `face` + `roll` như trên, vectơ hệ thân với trục ngang ra ngoài phía tay ấy (như ý định tay dẫn);
+  - mốc chưa khai `elbow` nhận hướng khuỷu đang vẽ (thế giới): cực khởi đầu của bộ giải ý định;
+  - mốc tay mới có `ease: "auto"`, mốc có sẵn giữ `ease` của nó.
+
+  Mốc món của lần cầm bị xoá; hết mốc thì bỏ cả `items`. Tay kia cầm cùng món thành `both` của tay dẫn từ lúc nó cầm (`group` khi
+  khác nhóm tay phụ mặc định, các trường chỗ cầm nó đang dùng), `hold` ở mốc của nó bị bỏ. Lần cầm mở giữa cảnh mà tay dẫn chưa
+  có mốc nào trước đó thì chèn `null` ở `since − HOLD_BLEND`: đích đầu tiên của tay dẫn giữ từ giây 0. Mốc mở lần cầm đang hoà từ
+  tay tự do thì lấy món ở mốc món và tâm nắm trong món của lúc đã hoà xong.
+- **Chỗ cầm** ghi dạng object và ghi thêm các trường lựa chọn rig đang dùng mà cảnh chưa khai (`GraspReport.choice`, `by` khác
+  `scene`; bỏ `variant` của nhóm một biến thể, `part` của món một phần cầm được), để chế độ mới không chọn lại. Cảnh sau phép đổi
+  không dựng hay không giải được thì lùi: chỉ trường rời (`part`, `edge`, `thumb`, `variant`), rồi không ghi thêm (`notes` báo).
+- **Đầu cao của cạnh** (`high`) không khai được trong cảnh, hai chế độ có thể đo `along` từ hai đầu khác nhau. Lệch ở mốc quá 1
+  đơn vị rig thì thử `along` → `1 − along` (tên: `low` ↔ `high`) ở tay dẫn, tay kia, cả hai, giữ cách lệch ít nhất.
+- **Đồ theo tay: món giữ chỗ.** Sau phép đổi, đích tay dẫn dời theo chỗ món đo được (`HOLD_MODE_FIX` = 2 lượt, giữ lượt nào món
+  ở mốc gần hơn): khung cầm hai chế độ khác nhau thì bàn tay dời, món đứng yên.
+- **Đổi giữa chừng** (`from`): chèn mốc ở `from` (hay dùng mốc có sẵn ở giây ấy) mang `hold` của lần cầm cộng `regrip: true`,
+  rồi chỉ đổi phần sau. Tay kia đang cầm qua giây ấy: sang tay theo đồ thì nó cũng `regrip` ở đó, sang đồ theo tay thì nó
+  `hold: null` ở đó.
+
+**Độ lệch** đo trên runtime trước và sau, như người 3D vẽ: hai tay trên mốc món vẽ món ở `itemAt`, còn lại món theo bàn tay
+(`actHeld`), nhân vật mặc theo `equip`. `HoldModeResult`:
+
+- `rows`: mỗi mốc của quãng đổi (`kind: "key"`, `ref` là `t` như JSON) và giữa hai mốc kề (`mid`) — `item.pos` tâm hộp bao dời
+  (đơn vị rig), `item.angle` món quay (độ), `hand` tâm nắm từng tay cầm món dời, `phi` khuỷu tay dẫn trước/sau, `clamped` khớp cổ
+  tay ở giới hạn trước/sau, `blending` khi một tay đang trong `HOLD_BLEND`.
+- `max` lệch lớn nhất ở các mốc, `outside` ngoài quãng đổi (mẫu mỗi `HOLD_MODE_STEP` = 0,1 s), cả hai trừ chỗ đang hoà; `blend`
+  lệch ở chỗ đang hoà; `notes`; `scope` (món, nhóm, tay dẫn, tay kia, quãng `[from, until)`, chế độ trước và sau); `ops`.
+
+Phép đổi không khớp tuyệt đối; studio và agent đọc `rows` trước khi áp:
+
+- Tay theo đồ giải khuỷu bằng `E(φ)`, tay dẫn dò khuỷu từ cực khởi đầu: cùng chỗ và hướng món, hai chế độ có thể chọn `φ` khác
+  nhau; cổ tay kẹp ở một bên thì món lệch theo (`phi`, `clamped`).
+- Ranh giới lần cầm hoà khác nhau: tay theo đồ hoà từ tay tự do trong `HOLD_BLEND` sau mốc mở, tay dẫn tới đích đúng ở mốc
+  (`blending`, `outside` quanh mốc mở).
+- Giữa hai mốc: tay dẫn hoà đích và ý định với tốc độ có hạn (`HOLD_SLEW`), tay theo đồ hoà bàn tay trong hệ thân (hàng `mid`).
+- Đổi giữa chừng: phần trước `from` không còn đi về đích hay mốc món sau `from` (`outside`).
+- Tay phụ của `both` đặt khác nhau ở hai chế độ: theo khung tay dẫn đã vẽ, hay giải `supportChoice` (`hand` của tay kia).
+
 ## 6. Ngón
 
 1. **Dáng gốc**: `hoà(open, closed, w)` của biến thể đã chọn, `w` theo số đo của khối hình trong `range` của nhóm (`mixHand`,
@@ -1487,6 +1551,7 @@ Mỗi nhóm chạy có chỗ tiếp xúc (`CONTACTS`), dáng mở/đóng, vai tr
 5. `core/scene.ts` — `items`, `itemAt`, đường theo lần cầm (`runMarks`), lần cầm theo mốc (`keyedArm`), `graspAtTime` (nhớ
    theo runtime và nhân vật), `ReachHold.solve`, hoà vào/ra lần cầm (`placedWas`), `holdBlending`, `checkHolds`, `sceneItemProblems`,
    lần thả và mốc món nằm (`itemReleases`, `itemReleased`, `restingMark`), báo cho studio (`holdRuns`, `handReport`).
+   `core/holdMode.ts` — đổi chế độ lần cầm (`holdToItemLed`, `holdToHandLed`, `applyJsonPatch`).
 6. `core/arm3.ts` (lá), `core/act3.ts`, `core/holdLink.ts` — đường món đặt trước (`solveActing`), tay dẫn qua `holdLink`,
    `AimReport.hold.grasp`; `actJoints` khớp `act` (`act3.test.ts`); `actArm` (tay vẽ kèm vết bộ giải, `ArmTrace`).
 7. `core/heldFit.ts` — `roles`, `skinBulge`, `skinDepth`, `heldNormal`, `shapeSupport`, `skinUnder`; `core/heldCarry.ts` — `carrySpecOf`, `carryFrame`;
@@ -1494,7 +1559,7 @@ Mỗi nhóm chạy có chỗ tiếp xúc (`CONTACTS`), dáng mở/đóng, vai tr
 8. `src/attach.ts`, `src/world.ts` — gắn món qua `holdLink`, `fitHolding` nhớ theo lần cầm; `Hand.heldV` (`human.ts`) mang dáng
    nhóm đã hoà.
 9. `core/heldAudit.ts`, `src/held.ts` — luật mục 7 (`heldOppose`), `skinDepth` cho mọi chỗ cầm có `shape`, `HeldHand.grasp`, `HeldHand.oppose`, `HeldHand.under` (luật `rest`).
-10. `packages/mcp/server.mjs` — `schema(held)`, `list(held)` (`groups`, `named`), `describe_held`, `scene_probe` `grasp`; `packages/cli` —
+10. `packages/mcp/server.mjs` — `schema(held)`, `list(held)` (`groups`, `named`), `describe_held`, `scene_probe` `grasp`, `hold_mode`; `packages/cli` —
     `heldOptions` (`sink`, `wrist`, `arm`, `oppose`, `rest`, `grip`), `heldRows` đọc lỗi `reach`/`wrist`, `bang-cam`, `migrate-held` (mục 8).
 
 Phần "để sau" (mục 1) làm khi có cảnh cần.
