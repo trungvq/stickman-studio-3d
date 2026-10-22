@@ -211,3 +211,48 @@ describe("sceneArms: tay sai dáng", () => {
     expect(sceneArms(one([STICK], 0.15), { characterOf })).toEqual([]);
   });
 });
+
+describe("sceneArms: đích `world.hands` tới tay kia", () => {
+  /** `VEE` cả cảnh, tay trái theo mốc `world.hands` */
+  const veeWith = (hands?: unknown[]) => {
+    const r = parseScene({
+      duration: 4,
+      lens: { eye: [0, -300, -900], yaw: 0, pitch: 10, f: 800, cx: 0, cy: 0 },
+      cast: [
+        {
+          id: "a",
+          world: { at: [0, 0, 0], yaw: 0, ...(hands && { hands }) },
+          tracks: [
+            { clips: [{ action: "stand-3d", start: 0 }] },
+            { clips: [{ action: "vee", start: 0 }] },
+          ],
+        },
+      ],
+    });
+    if (!r.success) throw new Error(r.error.message);
+    return resolveScene(r.data, { "stand-3d": STAND, vee: VEE });
+  };
+  const converge = (rt: ReturnType<typeof veeWith>) =>
+    sceneArms(rt, { characterOf }).filter((s) => s.rule === "converge");
+
+  it("đoạn `auto` mà mốc kề tới tay kia: chụm tay là cố ý, không báo", () => {
+    const sp = sceneAt(veeWith(), "a", 0.5, 1, body3(clad));
+    const L = actJoints(clad, sp as never)!.wristL;
+    // điểm bàn tay đặt ở đúng chỗ cổ tay trái của `VEE`: bàn tay vẫn chụm, đích có số hạng nên đoạn `auto` mang `spline`
+    const at = (t: number, ease?: string) => ({
+      t,
+      left: { at: L, point: "back", ...(ease && { ease }) },
+    });
+    const keys = [
+      at(0),
+      at(1.2, "auto"),
+      { t: 3, left: { to: "otherBack", offset: [1, -3, 0], point: "palm", ease: "auto" } },
+    ];
+    // tới mốc chạm tay kia bằng `smooth`: đoạn đầu không có gì nói cố ý nên vẫn báo
+    const plain = keys.map((k, i) =>
+      i === 2 ? { ...k, left: { ...k.left, ease: undefined } } : i === 1 ? at(1.2) : k,
+    );
+    expect(converge(veeWith(plain)).length).toBe(1);
+    expect(converge(veeWith(keys))).toEqual([]);
+  });
+});

@@ -319,7 +319,7 @@ mọi cảnh; kiểu cầm có tên chỉ dùng khi cảnh gọi tên nó.
 - **Tên** viết `[a-z0-9-]+`, không trùng biến thể gốc của nhóm. **`base`** là biến thể gốc nó mượn: bắt buộc ở khoá có tên,
   cấm ở khoá là biến thể gốc, nên tên trùng một biến thể gốc (cả biến thể rig thêm sau) là lỗi `parseHeldItem`: đổi tên kiểu
   cầm. **`note`** (mọi khoá, tuỳ chọn) là mô tả cho người và agent; `list({ kind: "held" })` (`named`) và `describe_held` của
-  MCP trả nó cùng tên và `base`.
+  MCP trả nó cùng tên và `base`, [`bang-cam`](#bang-cam-theo-nhóm) in nó dưới tên hàng.
 - **Cảnh gọi** bằng `variant` sẵn có của chỗ cầm, hay dạng tắt `"món@nhóm/tên"`:
 
   ```jsonc
@@ -1411,7 +1411,9 @@ của `held/`.
 
 - Người đứng `stand-3d` ở `--at`, quay `--yaw`; món đặt trước ngực bằng `items` theo hướng mặc định của nhóm, chỗ cầm nhóm
   do rig giải (`món@nhóm`). Hai cỡ tay: người có bàn tay nhỏ nhất và lớn nhất trong `characters/` (`--ai` đổi người).
-- Hàng mẫu: chỗ cầm mặc định (nhãn in biến thể rig chọn) và từng biến thể của nhóm; `sheet` thêm ngón cái trước / sau, đọc
+- Hàng mẫu: chỗ cầm mặc định (nhãn in biến thể rig chọn), từng biến thể của nhóm và từng [kiểu cầm có
+  tên](#kiểu-cầm-có-tên) của món ở nhóm ấy (`namedVariants`; hàng `kiểu <tên> (gốc <biến thể>)`, món đặt như hàng mặc định,
+  `note` in dưới tên hàng ở nhãn ô, `index.md` và `index.html`); `sheet` thêm ngón cái trước / sau, đọc
   ngang mặt, khoe một tay, khoe hai tay hai cạnh bên, khoe hai tay trên dưới (bỏ khi hai cạnh cách nhau dưới 1,3·`W` của cỡ
   tay đang vẽ), và với đĩa hay tấm nằm trong khung món thì bê hai tay hai vành (`rim`, `both`, tay phụ cạnh đối); `palmBox` thêm đọc ngang mặt, khoe một tay, áp tai (tay dẫn); `card` thêm cầm xem (thẻ trước ngực trên, `offset [70, −70, 15]`, rig chọn, tay phải và tay trái), khoe đặt trước (thẻ
   ấy quay mặt ra trước, rig chọn), khoe thẻ (tay dẫn phải và trái, `edge: bottom`, `thumb: back`, `face: front → forward`),

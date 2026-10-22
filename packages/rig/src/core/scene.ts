@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   ACTION_VERSION,
   ARM_CHANNELS,
+  BezierSchema,
   CHANNELS,
   easeAt,
   EASE_NAMES,
@@ -216,7 +217,7 @@ import {
 } from "./types";
 
 /** Bump khi đổi hình dạng JSON scene; `migrateScene` phải có nhánh tương ứng. */
-export const SCENE_VERSION = 30;
+export const SCENE_VERSION = 31;
 
 /** `"@ten"` hay `"@ten+0.4"` / `"@ten-1"`: một mốc có tên trong `scene.marks` cộng phần lệch giây */
 export const MARK_REF = /^@([A-Za-z0-9_-]+)(?:\s*([+-])\s*(\d+(?:\.\d+)?))?$/;
@@ -386,10 +387,6 @@ const CarrySchema = z.object({
 });
 
 const V3Schema = z.tuple([z.number(), z.number(), z.number()]);
-
-const Unit01 = z.number().min(0).max(1);
-/** `[x1, y1, x2, y2]` của `ease: "bezier"`, bốn số trong `[0, 1]`; bỏ trống là `BEZIER_DEFAULT` */
-const BezierSchema = z.tuple([Unit01, Unit01, Unit01, Unit01]);
 
 /**
  * Mốc chỗ đặt người 3D: `at` toạ độ thế giới — ngồi (`sit`) thì là điểm trên mặt ngồi ngay dưới
@@ -942,6 +939,7 @@ export function migrateScene(json: unknown): unknown {
   // v28 → v29 `world.hands[]` nhận món cầm (`hold`) và điểm `item:<mốc>`; dạng cũ vẫn hợp lệ
   // v29 → v30 `hold` chỉ nhận chỗ cầm nhóm (`món@nhóm`, `{ item, group, … }`); `món#kiểu` và `{ item, grip }` để zod báo kèm
   // lệnh chuyển `stickman migrate-held` — chuyển cần món bản 1 nên không tự đổi ở đây
+  // v30 → v31 `world.hands[]` nhận `ease` / `bezier`, `items[]` nhận `bezier`; thiếu `ease` là `smooth` như cũ
   o.schemaVersion = SCENE_VERSION;
   return o;
 }
