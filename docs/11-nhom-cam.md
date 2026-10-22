@@ -1275,6 +1275,41 @@ chính chỗ đã vẽ). `by` của tay dẫn chỉ có `scene` (cảnh khai) v�
 thân, mục 5). `check` (dòng `reach`, `wrist`, `arm`, `elbow`),
 `scene_probe` (`world.held.<tay>.grasp`) và MCP đọc nó.
 
+### Báo tay cho studio
+
+Hai hàm đọc của `scene.ts` (cửa `@stickman3d/rig/core`), không đổi hình:
+
+- **`holdRuns(rt, id)`** → `{ right, left }`: mỗi tay giải phẫu một danh sách lần cầm theo thời gian,
+  `{ since, until, item, group, variant?, mode, handKeys, itemKeys, lead? }`. Nhớ theo runtime.
+  - Lần cầm như mục 4 (cùng món, cùng nhóm, cùng trường rời, không `regrip`). `since`, `until` là giây đã giải (mốc tên quy
+    ra số); `until` là mốc mở lần cầm khác hay buông (không gồm nó), tới hết cảnh là `rt.duration`.
+  - `mode`: `hand` (tay dẫn, món theo bàn tay), `keyed` (một tay theo mốc món), `both` (hai tay trên mốc món).
+  - `handKeys`: chỉ số vào `cast[].world.hands` của JSON — mốc trong `[since, until)` khai tay ấy, cả mốc chỉ có đích hay
+    `null`. `itemKeys`: chỉ số vào `scene.items` của JSON. `resolveScene` giữ thứ tự hai mảng, nên chỉ số vá thẳng JSON gốc.
+  - Tay phụ của `both` là một lần cầm riêng có `lead` (tay dẫn): `mode` theo lần cầm tay dẫn, `handKeys` là mốc tay dẫn khai
+    `hold`, `variant` lấy ở object `both`.
+- **`handReport(rt, id, side, t, o?)`**: tay `side` (`right` / `left` giải phẫu) như người 3D vẽ ở `t`, cùng lần giải với
+  `act` và `actJoints` (`actArm` của `act3.ts`). Toạ độ thế giới rig. `o.char` là nhân vật như vẽ (`Figure.body`), thiếu
+  thì `rt.chars[id]`; `o.eye` là mắt ống kính cho ý định `camera`.
+  - `mode` (`free` khi không cầm), `run` (phần tử của `holdRuns`), `blending` (trong `HOLD_BLEND`, như `holdBlending`).
+  - `phi`: `φ` của khuỷu đang vẽ (`phiOf`). `phi0`: `φ` của hướng khuỷu khởi đầu — món đặt trước là `φ₀` của `E(φ)`; tay
+    dẫn và tay tự do là hướng bộ giải xuất phát (`elbow` của mốc, không khai là `REACH_ELBOW`); tay không đích là `null`.
+    `elbowLock` luôn `false`: schema chưa có trường ấy.
+  - `wrist.drawn`: xoay, gập, lệch như vẽ (sau kẹp). `wrist.raw` (trước kẹp): món đặt trước là góc bàn tay của nghiệm trên
+    cẳng tay (theo mốc: bàn tay đã hoà giữa hai mốc); tay dẫn, tay tự do là nghiệm ý định trước `HOLD_SLEW` — ý định giải
+    trong miền khớp nên không vượt; không ý định là `null`. `wrist.over`: phần vượt miền, món đặt trước lấy của bộ giải, còn
+    lại đo trên góc vẽ. `wrist.clamped`: khớp ở giới hạn. `wrist.err`: tay dẫn có ý định, góc lệch còn lại của trục món.
+  - `joints` (vai, khuỷu, cổ tay), `axis` (vai → cổ tay), `ring`: khuỷu ở `φ` là `center + radius · (cos φ · d0 + sin φ · o0)`.
+  - `cost`: `E(φ)` ở `φ` = −180, −170 … 170 (`evalPhi`, không số hạng liền mẫu trước). Món đặt trước: đúng đầu vào bộ giải
+    dùng ở giây ấy (đầu vào nhớ theo nghiệm của `graspAtTime`); tay dẫn: cổ tay, bàn tay, tay kia như vẽ và hướng khuỷu khởi
+    đầu. Tay tự do: `null`.
+  - `grip`: tâm nắm, điểm `grip` của bàn tay đang vẽ (chỗ đích `point: "grip"` đặt vào). `grasp`: `GraspReport` của tay ấy.
+  - Ngoài `HOLD_BLEND`, góc cổ tay và phần vượt trùng `AimReport.hold.grasp` (`heldHands` đọc nó): tay dẫn và theo mốc ở
+    `drawn`, hai tay ở `raw`. Trong quãng hoà `drawn` là góc đang vẽ, `grasp` là nghiệm đích.
+  - Mỗi lần gọi là `sceneAt`, một lần giải như `act` và 36 `evalPhi`, không dựng lại runtime. Tay dẫn mang món đi từ mẫu
+    trước (`ReachHold.prior`, nhớ theo khung): gọi theo `t` tăng thì mỗi khung chỉ giải một mẫu. Lún, khe, món vẽ đọc ở
+    three (`heldHands`).
+
 ## 6. Ngón
 
 1. **Dáng gốc**: `hoà(open, closed, w)` của biến thể đã chọn, `w` theo số đo của khối hình trong `range` của nhóm (`mixHand`,
@@ -1451,9 +1486,9 @@ Mỗi nhóm chạy có chỗ tiếp xúc (`CONTACTS`), dáng mở/đóng, vai tr
    `GraspReport`, giá mặt đỡ (`restUnder`).
 5. `core/scene.ts` — `items`, `itemAt`, đường theo lần cầm (`runMarks`), lần cầm theo mốc (`keyedArm`), `graspAtTime` (nhớ
    theo runtime và nhân vật), `ReachHold.solve`, hoà vào/ra lần cầm (`placedWas`), `holdBlending`, `checkHolds`, `sceneItemProblems`,
-   lần thả và mốc món nằm (`itemReleases`, `itemReleased`, `restingMark`).
+   lần thả và mốc món nằm (`itemReleases`, `itemReleased`, `restingMark`), báo cho studio (`holdRuns`, `handReport`).
 6. `core/arm3.ts` (lá), `core/act3.ts`, `core/holdLink.ts` — đường món đặt trước (`solveActing`), tay dẫn qua `holdLink`,
-   `AimReport.hold.grasp`; `actJoints` khớp `act` (`act3.test.ts`).
+   `AimReport.hold.grasp`; `actJoints` khớp `act` (`act3.test.ts`); `actArm` (tay vẽ kèm vết bộ giải, `ArmTrace`).
 7. `core/heldFit.ts` — `roles`, `skinBulge`, `skinDepth`, `heldNormal`, `shapeSupport`, `skinUnder`; `core/heldCarry.ts` — `carrySpecOf`, `carryFrame`;
    `core/heldAuthored.ts` — kiểu cầm soạn tay (mục [2](#kiểu-cầm-soạn-tay-authored)).
 8. `src/attach.ts`, `src/world.ts` — gắn món qua `holdLink`, `fitHolding` nhớ theo lần cầm; `Hand.heldV` (`human.ts`) mang dáng

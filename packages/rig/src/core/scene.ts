@@ -42,6 +42,7 @@ import {
 } from "./action";
 import type { Root } from "./types";
 import {
+  actArm,
   actHandAt,
   actHeld,
   bones3,
@@ -53,14 +54,17 @@ import {
   type ActInput,
   type Trunk3,
 } from "./act3";
-import { AIM_BEND, AIM_DEV, clampRange, TURN_MAX } from "./arm3";
+import { AIM_BEND, AIM_DEV, clampRange, overRange, rangeMargin, TURN_MAX } from "./arm3";
 import {
   armInput,
   armSeg,
   evalPhi,
   phiAt,
+  phiBasis,
+  phiOf,
   solvePhi,
   type ArmInput,
+  type ArmQuery,
   type ArmSeg,
   type ArmSol,
 } from "./graspArm";
@@ -85,6 +89,7 @@ import {
   type GraspCtx,
   type GraspLater,
   type GraspOpts,
+  type GraspReport,
   type GraspSolution,
 } from "./graspSolve";
 import { axialAt, handDims, itemGeom, type Feature, type HandDims } from "./heldGeom";
@@ -3141,7 +3146,8 @@ function worldAt(
 }
 
 type HandKey = NonNullable<WorldSpec["hands"]>[number];
-type HandSide = "right" | "left";
+/** Tay giải phẫu của mốc scene */
+export type HandSide = "right" | "left";
 
 /** Mốc thân trên người khác trong `cast` được ước ở chỗ này: mặt (giữa hai mắt), mồm, ngực, bụng */
 const CAST_MARKS = ["eye", "mouth", "chest", "belly"] as const;
@@ -4327,6 +4333,7 @@ function keyedArm(
     Wp,
     Rw,
     frame,
+    query: { inp, Wp, Rw, ...(other && { other }), ...(elbow && { elbow }) },
     arm: {
       ...arm,
       wrist: { turn, bend, dev, over: { turn: over[0], bend: over[1], dev: over[2] } },
@@ -4479,6 +4486,9 @@ function placedOther(
   return r && armSeg(r.inp, r.sol.arm);
 }
 
+/** Đầu vào `E(φ)` của từng nghiệm `graspArmAt` (`handReport` đọc): `evalPhi` trên nó ở `arm.phi` ra cánh tay của khung */
+const armQueries = new WeakMap<GraspSolution, ArmQuery>();
+
 function graspArmAt(
   rt: SceneRuntime,
   id: string,
@@ -4495,27 +4505,275 @@ function graspArmAt(
     const k = keyedArm(rt, id, side, run, r, time, o);
     const rest = restingMark(runMarks(rt, handKeys(rt, id), side, run), time);
     const still = rest && itemAt(rt, rest.item, rest.t, at);
-    return {
-      sol: {
-        ...r.sol,
-        choice: k.frame.choice,
-        frame: k.frame,
-        Wp: k.Wp,
-        Rw: k.Rw,
-        arm: k.arm,
-        t0: r.t0,
-        ...(still && { still }),
-      },
-      inp: k.inp,
+    const sol: GraspAtTime = {
+      ...r.sol,
+      choice: k.frame.choice,
+      frame: k.frame,
+      Wp: k.Wp,
+      Rw: k.Rw,
+      arm: k.arm,
+      t0: r.t0,
+      ...(still && { still }),
     };
+    armQueries.set(sol, k.query);
+    return { sol, inp: k.inp };
   }
   chainTo(rt, id, side, run, r, Math.max(0, Math.floor((time - r.t0) / HOLD_SLEW_STEP)) + 1, at);
   const q = graspSample(rt, id, side, run, r, time, o);
   const other = placedOther(rt, id, side, time, o);
   const arm = evalPhi(q.inp, q.Wp, q.Rw, phiAt(r.chain, time), undefined, other, q.elbow);
-  return {
-    sol: { ...r.sol, choice: q.frame.choice, frame: q.frame, Wp: q.Wp, Rw: q.Rw, arm, t0: r.t0 },
+  const sol = {
+    ...r.sol,
+    choice: q.frame.choice,
+    frame: q.frame,
+    Wp: q.Wp,
+    Rw: q.Rw,
+    arm,
+    t0: r.t0,
+  };
+  armQueries.set(sol, {
     inp: q.inp,
+    Wp: q.Wp,
+    Rw: q.Rw,
+    ...(other && { other }),
+    ...(q.elbow && { elbow: q.elbow }),
+  });
+  return { sol, inp: q.inp };
+}
+
+/** Chế độ một lần cầm: `hand` món theo bàn tay (tay dẫn), `keyed` một tay theo mốc món, `both` hai tay trên mốc món */
+export type HoldMode = "hand" | "keyed" | "both";
+
+/** Một lần cầm của một tay (`holdRuns`); giây đã giải, mốc tên đã quy ra số */
+export interface HoldRunInfo {
+  since: number;
+  /** Giây mốc mở lần cầm khác hay buông (không gồm mốc ấy); tới hết cảnh là `rt.duration` */
+  until: number;
+  item: string;
+  group: SceneHoldGroup["group"];
+  variant?: string;
+  mode: HoldMode;
+  /** Chỉ số vào `cast[].world.hands` của JSON: mốc trong `[since, until)` khai tay ấy; tay phụ thì mốc tay dẫn khai `hold` */
+  handKeys: number[];
+  /** Chỉ số vào `scene.items` của JSON: mốc món của lần cầm (tay phụ: của tay dẫn) */
+  itemKeys: number[];
+  /** Tay phụ của `both`: tay dẫn */
+  lead?: HandSide;
+}
+
+const runInfos = new WeakMap<SceneRuntime, Map<string, Record<HandSide, HoldRunInfo[]>>>();
+
+/**
+ * Tay phụ của `both` trên lần cầm tay dẫn (không mốc món): tay `side` không khai `hold` mà tay kia khai `both` có tay phụ
+ * (`supportGroup`); lần cầm mới khi tay dẫn mở lần cầm mới. Như `supportRuns` của món đặt trước
+ */
+function handSupportRuns(rt: SceneRuntime, keys: HandKey[], side: HandSide): HoldRun[] {
+  const lead = otherSide(side);
+  const out: HoldRun[] = [];
+  let cur: { run: HoldRun; key: string } | undefined;
+  for (const k of keys) {
+    if (!holdKey(k)) continue;
+    const L = holdRun(keys, lead, k.t);
+    const g =
+      L && !holdRun(keys, side, k.t) && !placedRun(rt, keys, lead, L)
+        ? groupHold(L.hold)
+        : undefined;
+    const group = g && supportGroup(g);
+    const key = group ? `${L!.since}|${group}` : undefined;
+    if (cur && key === cur.key) continue;
+    if (cur) cur.run.end = k.t;
+    cur = undefined;
+    if (!group) continue;
+    cur = { run: { hold: { item: g!.item, group }, since: k.t, lead }, key: key! };
+    out.push(cur.run);
+  }
+  return out;
+}
+
+/**
+ * Các lần cầm của người `id` theo từng tay giải phẫu (docs/11-nhom-cam.md § Báo tay cho studio): lần cầm tay ấy khai và
+ * lần cầm tay phụ của `both`, theo thời gian. Chỉ số mốc trỏ vào mảng của JSON cảnh. Nhớ theo runtime
+ */
+export function holdRuns(rt: SceneRuntime, id: string): Record<HandSide, HoldRunInfo[]> {
+  let m = runInfos.get(rt);
+  if (!m) runInfos.set(rt, (m = new Map()));
+  const hit = m.get(id);
+  if (hit) return hit;
+  const keys = handKeys(rt, id);
+  const items = rt.items ?? [];
+  const info = (side: HandSide, run: HoldRun): HoldRunInfo => {
+    const rm = placedRun(rt, keys, side, run) ? runMarks(rt, keys, side, run) : undefined;
+    const end = run.lead ? (run.end ?? Infinity) : runEnd(keys, side, run);
+    const until = end === Infinity ? Math.max(rt.duration, run.since) : end;
+    const g = groupHold(run.hold);
+    const both = run.lead && groupHold(holdRun(keys, run.lead, run.since)!.hold).both;
+    const variant = run.lead ? (typeof both === "object" ? both.variant : undefined) : g.variant;
+    const own: number[] = [];
+    keys.forEach((k, i) => {
+      const said = run.lead ? k[run.lead]?.hold != null : k[side] !== undefined;
+      if (said && k.t >= run.since && k.t < until) own.push(i);
+    });
+    return {
+      since: run.since,
+      until,
+      item: g.item,
+      group: g.group,
+      ...(variant && { variant }),
+      mode: rm ? (rm.keyed ? "keyed" : "both") : "hand",
+      handKeys: own,
+      itemKeys: (rm?.marks ?? []).map((k) => items.indexOf(k)),
+      ...(run.lead && { lead: run.lead }),
+    };
+  };
+  const out = {} as Record<HandSide, HoldRunInfo[]>;
+  for (const side of ["right", "left"] as const) {
+    const runs: HoldRun[] = [];
+    for (const k of keys) {
+      if (k[side]?.hold == null) continue;
+      const r = holdRun(keys, side, k.t)!;
+      if (r.since === k.t) runs.push(r);
+    }
+    runs.push(...supportRuns(rt, keys, side), ...handSupportRuns(rt, keys, side));
+    out[side] = runs.map((r) => info(side, r)).sort((a, b) => a.since - b.since);
+  }
+  m.set(id, out);
+  return out;
+}
+
+/** Xoay, gập, lệch cổ tay, độ */
+export interface WristAngles {
+  turn: number;
+  bend: number;
+  dev: number;
+}
+
+/** Báo một tay ở một giây cho studio (`handReport`), toạ độ thế giới rig */
+export interface HandReport {
+  /** `free`: tay không cầm gì */
+  mode: HoldMode | "free";
+  run?: HoldRunInfo;
+  /** Trong `HOLD_BLEND` của một ranh giới lần cầm (`holdBlending`): tay vẽ đang hoà giữa hai nghiệm */
+  blending: boolean;
+  /** `φ` của khuỷu đang vẽ quanh trục vai → cổ tay, độ (gốc như `evalPhi`) */
+  phi: number;
+  /** `φ` của hướng khuỷu khởi đầu (`elbow` của mốc, không khai là `REACH_ELBOW`); tay không đích thì `null` */
+  phi0: number | null;
+  /** Khuỷu khoá ở hướng `elbow` của mốc; schema chưa có nên luôn `false` */
+  elbowLock: boolean;
+  wrist: {
+    /**
+     * Trước kẹp. Món đặt trước: góc bàn tay của nghiệm trên cẳng tay (lần cầm theo mốc: bàn tay đã hoà giữa hai mốc); tay
+     * dẫn, tay tự do: nghiệm ý định trước giới hạn tốc độ `HOLD_SLEW`, đã trong miền khớp; không ý định: `null`
+     */
+    raw: WristAngles | null;
+    /** Sau kẹp, như vẽ */
+    drawn: WristAngles;
+    /** Phần vượt miền (≥ 0): món đặt trước của bộ giải, còn lại đo trên góc vẽ */
+    over: WristAngles;
+    /** Khớp đang ở giới hạn */
+    clamped: ("turn" | "bend" | "dev")[];
+    /** Tay dẫn có ý định: góc lệch còn lại của trục món, độ (`AimReport.hold.err`) */
+    err?: number;
+  };
+  joints: { shoulder: V3; elbow: V3; wrist: V3 };
+  /** Hướng đơn vị vai → cổ tay */
+  axis: V3;
+  /** Đường tròn khuỷu quanh trục: khuỷu ở `φ` là `center + radius · (cos φ · d0 + sin φ · o0)` */
+  ring: { center: V3; radius: number; d0: V3; o0: V3 };
+  /**
+   * `E(φ)` ở `φ` = −180, −170 … 170 (`evalPhi`, không số hạng liền mẫu trước). Món đặt trước: đúng đầu vào bộ giải dùng ở
+   * giây này; tay dẫn: cổ tay, bàn tay và tay kia như vẽ, khuỷu thõng theo hướng khởi đầu. Tay tự do: `null`
+   */
+  cost: { phi: number[]; E: number[] } | null;
+  /** Tâm nắm: điểm `grip` của bàn tay đang vẽ */
+  grip: V3;
+  grasp?: GraspReport;
+}
+
+const PHI_GRID = Array.from({ length: 36 }, (_, i) => -180 + 10 * i);
+const rigPoint = (p: V3): V3 => [p[0] * 100, -p[1] * 100, -p[2] * 100];
+const rigVec = (p: V3): V3 => [p[0], -p[1], -p[2]];
+const angles = (w: readonly number[]): WristAngles => ({ turn: w[0], bend: w[1], dev: w[2] });
+const unit3 = (v: V3): V3 => scale3(v, 1 / (Math.hypot(...v) || 1));
+const WRIST_KEYS = ["turn", "bend", "dev"] as const;
+
+/**
+ * Tay `side` của người `id` ở `time` như người 3D vẽ (cùng lần giải với `act`, `actJoints`): chế độ và lần cầm, `φ`, `φ₀`,
+ * góc cổ tay trước và sau kẹp, khớp, đường tròn khuỷu và `E(φ)` trên nó, tâm nắm. `o.char`: nhân vật như vẽ
+ * (`Figure.body`), bỏ trống là `rt.chars[id]`; `o.eye`: mắt ống kính (thế giới rig) cho ý định `camera`. Người không có
+ * `world` thì `undefined`. docs/11-nhom-cam.md § Báo tay cho studio
+ */
+export function handReport(
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  time: number,
+  o: { char?: ActCharacter; eye?: readonly number[] } = {},
+): HandReport | undefined {
+  const c =
+    o.char ?? rt.chars?.[id] ?? fail(`\`handReport\`: thiếu nhân vật của \`${id}\` (\`o.char\`)`);
+  const sp0 = sceneAt(rt, id, time, rt.heights[id] ?? 1, rt.bodies[id] ?? BODY3);
+  if (!sp0.world) return undefined;
+  const sp = (o.eye ? { ...sp0, world: { ...sp0.world, eye: [...o.eye] } } : sp0) as ActInput;
+  const a = actArm(c, sp, sideSign(side));
+  if (!a) return undefined;
+  const { inp, trace } = a;
+  const eff = effRun(rt, handKeys(rt, id), side, time);
+  const runs = holdRuns(rt, id)[side];
+  // lần cầm tới hết cảnh còn ở giây `rt.duration`; tay phụ của tay dẫn không có ở `effRun`
+  const run = eff
+    ? runs.find((r) => r.since === eff.since && r.lead === eff.lead)
+    : runs.find((r) => r.lead && r.since <= time && (time < r.until || r.until >= rt.duration));
+  const sol = trace?.placed;
+  const q = sol && armQueries.get(sol);
+  const elbow0 = trace?.elbow0 && rigVec(trace.elbow0);
+  const at = (phi: number) =>
+    q
+      ? evalPhi(q.inp, q.Wp, q.Rw, phi, undefined, q.other, q.elbow)
+      : evalPhi(inp, a.W, a.Rw, phi, undefined, a.other, elbow0);
+  const B = phiBasis(inp, a.W);
+  const n = unit3(sub3(a.W, a.S));
+  const center = add3(a.S, scale3(n, dot3(sub3(a.E, a.S), n)));
+  const hold = a.report.hold;
+  const drawn = angles(a.wrist);
+  const raw = q ? at(sol!.arm.phi).wrist : trace?.aim && angles(trace.aim);
+  return {
+    mode: run?.mode ?? "free",
+    ...(run && { run }),
+    blending: holdBlending(rt, id, side === "right" ? "R" : "L", time),
+    phi: phiOf(inp, a.W, a.E),
+    phi0: sol ? sol.arm.phi0 : elbow0 ? at(0).phi0 : null,
+    elbowLock: false,
+    wrist: {
+      raw: raw ? { turn: raw.turn, bend: raw.bend, dev: raw.dev } : null,
+      drawn,
+      over: sol
+        ? { ...sol.arm.wrist.over }
+        : {
+            turn: Math.max(0, Math.abs(drawn.turn) - TURN_MAX),
+            bend: overRange(drawn.bend, AIM_BEND),
+            dev: overRange(drawn.dev, AIM_DEV),
+          },
+      clamped:
+        hold?.clamped ??
+        WRIST_KEYS.filter((k) =>
+          k === "turn"
+            ? Math.abs(drawn.turn) >= TURN_MAX - 0.05
+            : rangeMargin(drawn[k], k === "bend" ? AIM_BEND : AIM_DEV) >= -0.05,
+        ),
+      ...(!sol && hold && { err: hold.err }),
+    },
+    joints: { shoulder: rigPoint(a.S), elbow: rigPoint(a.E), wrist: rigPoint(a.W) },
+    axis: rigVec(n),
+    ring: {
+      center: rigPoint(center),
+      radius: Math.hypot(...sub3(a.E, center)) * 100,
+      d0: rigVec(B.d0),
+      o0: rigVec(B.o0),
+    },
+    cost: sol || run ? { phi: [...PHI_GRID], E: PHI_GRID.map((p) => at(p).E) } : null,
+    grip: rigPoint(a.grip),
+    ...(hold?.grasp && { grasp: hold.grasp }),
   };
 }
 

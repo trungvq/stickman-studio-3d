@@ -45,7 +45,7 @@ import {
 } from "./graspSolve";
 import { handDims, type HandDims } from "./heldGeom";
 import { holdFrom, holdHand, holdLinkFrame, inheritHold, type HoldLinkHand } from "./holdLink";
-import { armInput, evalPhi, phiOf, type ArmSol } from "./graspArm";
+import { armInput, evalPhi, phiOf, type ArmInput, type ArmSeg, type ArmSol } from "./graspArm";
 import { REACH_ELBOW } from "./ik";
 import {
   fromColumns,
@@ -772,11 +772,23 @@ function placedHolds(T: Trunk3, hands: ActHands | undefined) {
   return { hands: out, sols };
 }
 
+/**
+ * Một tay trong lần giải của `solveCore`, cho `actArm`: nghiệm của món đặt trước; hay hướng khuỷu khởi đầu (three) và
+ * xoay, gập, lệch cổ tay theo ý định trước giới hạn `HOLD_SLEW`; tâm nắm của dáng chỗ cầm trong khung bàn tay
+ */
+export interface ArmTrace {
+  placed?: PlacedSol;
+  elbow0?: V3;
+  aim?: readonly number[];
+  gripAt?: V3;
+}
+
 type Solved = {
   input: ActInput;
   report: Record<"R" | "L", AimReport>;
   /** Xoay, gập, lệch cổ tay của tay mang món theo ý định: cho mẫu sau (`ReachHold.prior`) */
   wrist: Partial<Record<"R" | "L", WristTbd>>;
+  trace: Partial<Record<"R" | "L", ArmTrace>>;
 };
 
 /** Bàn tay của lần cầm đang hoà ra (`ReachHold.was`) theo khung và nhân vật */
@@ -943,7 +955,8 @@ const wristOf = ({ wrist: w }: ArmSol): number[] => [
 function solveCore(T: Trunk3, sp: ActInput): Solved {
   const report = { R: {}, L: {} } as Record<"R" | "L", AimReport>;
   const wrist: Partial<Record<"R" | "L", WristTbd>> = {};
-  if (!needsSolve(sp)) return { input: sp, report, wrist };
+  const trace: Partial<Record<"R" | "L", ArmTrace>> = {};
+  if (!needsSolve(sp)) return { input: sp, report, wrist, trace };
   const P0 = sp.pose;
   const W0 = sp.world!;
   let P: PoseIn = { ...P0, reach: { ...P0.reach }, hand: { ...P0.hand }, aim: undefined };
@@ -1029,6 +1042,8 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
         },
       };
       done[side] = state(A, side);
+      const gripAt = extras[side]?.gripAt;
+      trace[T.tag(side)] = { placed: item, ...(gripAt && { gripAt }) };
       continue;
     }
     let rw = W0.hands?.[wk];
@@ -1487,6 +1502,12 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
       };
     }
     report[T.tag(side)] = rep;
+    const gripAt = extras[side]?.gripAt;
+    trace[T.tag(side)] = {
+      ...(elbow0 && { elbow0 }),
+      ...((aimB || aimW) && { aim: solved }),
+      ...(gripAt && { gripAt }),
+    };
     done[side] = h;
   }
   return {
@@ -1496,6 +1517,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
     },
     report,
     wrist,
+    trace,
   };
 }
 
@@ -1535,6 +1557,61 @@ export function actHandAt(c: ActCharacter, sp: ActInput, side: number): WasHand 
   const x = solveActing(T, sp).input;
   const A = arm3(T, x.pose, x.world?.hands, side);
   return { Wp: A.wr, Rw: A.Rw, arm: { elbow: A.elbow }, frame: { pose: A.v } };
+}
+
+/** Tay một bên người 3D vẽ ra (three) kèm cái bộ giải đã dùng cho nó: `actArm` */
+export interface ActArm {
+  inp: ArmInput;
+  /** Vai, khuỷu, cổ tay, khung bàn tay như vẽ */
+  S: V3;
+  E: V3;
+  W: V3;
+  Rw: M3;
+  /** Xoay, gập, lệch cổ tay như vẽ */
+  wrist: [number, number, number];
+  /** Tâm nắm như điểm `grip` của đích tay */
+  grip: V3;
+  /** Tay kia như vẽ */
+  other: ArmSeg;
+  report: AimReport;
+  trace?: ArmTrace;
+}
+
+/**
+ * Tay bên `side` (`-1` phải) người 3D vẽ ở `sp`, cùng lần giải với `actAim` / `actJoints`: khớp, góc cổ tay, tâm nắm,
+ * báo của tay ấy và vết bộ giải (`ArmTrace`) — `handReport` của scene đọc
+ */
+export function actArm(c: ActCharacter, sp: ActInput, side: number): ActArm | undefined {
+  const T = trunk3(c, sp);
+  if (!T) return undefined;
+  const r = solveActing(T, sp);
+  const x = r.input;
+  const A = arm3(T, x.pose, x.world?.hands, side);
+  const B = arm3(T, x.pose, x.world?.hands, -side);
+  const tag = T.tag(side);
+  const trace = r.trace[tag];
+  const h: HandState = {
+    at: A.wr,
+    R: A.Rw,
+    k: T.hand ? T.hand.k * T.s : 1,
+    long: T.hand ? T.hand.long * T.s : 1,
+    v: A.v,
+    side,
+    ...(!T.hand && { stick: mul(A.grip, T.s) }),
+    ...(trace?.gripAt && { gripAt: trace.gripAt }),
+  };
+  return {
+    inp: armInput(T, side),
+    S: A.sh,
+    E: A.elbow,
+    W: A.wr,
+    Rw: A.Rw,
+    wrist: [A.v[0] ?? 0, A.v[1] ?? 0, A.dev],
+    grip: handAt(h, "grip"),
+    other: { S: B.sh, E: B.elbow, W: B.wr },
+    report: r.report[tag],
+    ...(trace && { trace }),
+  };
 }
 
 const rigOf = (p: V3): V3 => [p[0] * 100, -p[1] * 100, -p[2] * 100];

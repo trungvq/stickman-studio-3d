@@ -253,7 +253,7 @@ export function armInput(T: Trunk3, side: number, shape = markShape(T)): ArmInpu
  * Khung quanh trục vai → cổ tay: `d0` hình chiếu của hướng xuống, trục gần đứng (`|xuống⊥|` từ `PHI_DOWN[1]` về
  * `PHI_DOWN[0]`) hoà dần sang `−tiến`; `o0` ra ngoài phía tay ấy
  */
-function phiBasis(inp: ArmInput, Wp: V3) {
+export function phiBasis(inp: ArmInput, Wp: V3) {
   const n = unit(sub3(Wp, inp.S));
   const down: V3 = [0, -1, 0];
   const [lo, hi] = PHI_DOWN;
