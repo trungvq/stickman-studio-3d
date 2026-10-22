@@ -400,7 +400,7 @@ describe("scene: `cast[].view`", () => {
   it("JSON đời 17 lên mới, thiếu `view` là `quarter`", () => {
     const data = parsed({ schemaVersion: 17, cast: [{ id: "a" }] });
     expect(data.schemaVersion).toBe(SCENE_VERSION);
-    expect(SCENE_VERSION).toBe(31);
+    expect(SCENE_VERSION).toBe(32);
     expect(viewsAt(resolveScene(data, {}, {}, {}), "a", 0)).toStrictEqual(QUARTER);
   });
 

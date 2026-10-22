@@ -1073,7 +1073,13 @@ E(φ) = ½ (turn/90)² + (bend/50)² + ½ (dev/20)²                     cổ ta
 - **`φ`** quanh trục vai → cổ tay: `0` là khuỷu thõng (hình chiếu của hướng xuống lên mặt phẳng vuông góc trục), dương ra
   ngoài phía tay ấy; trục gần thẳng đứng thì gốc hoà sang hình chiếu của `−tiến`: chiếu `k · xuống + (1 − k) · (−tiến)` với
   `k` đi từ 0 tới 1 khi `|xuống⊥|` (sin góc trục với phương đứng) đi từ 0,1 tới 0,3 (`PHI_DOWN`). `elbow` của mốc tay đổi ra
-  `φ₀` bằng cùng phép chiếu.
+  `φ₀` bằng cùng phép chiếu (`phiToward`).
+- **Khuỷu khoá** (`elbowLock` của mốc `hold`, [03](03-scene.md#đích-bàn-tay-thế-giới)): mẫu có phần khoá `1` không tìm `φ`
+  mà lấy `φ = φ(elbow)` — hướng `elbow` của lần cầm ở giây ấy (`runLock`: đều trên mặt cầu giữa hai mốc `hold` kề, mốc không
+  khai lấy của mốc kia) chiếu như `φ₀`; `E(φ)` chỉ còn để báo. Phần khoá giữa `0` và `1` (từ mốc khoá sang mốc không khoá) thì
+  mẫu giải như thường. Khung vẽ lấy `φ` của chuỗi (hay của lần cầm theo mốc) rồi kéo về `φ(elbow)` theo phần khoá, đường ngắn
+  trên vòng (`lockPhi`): phần khoá `1` là đúng hướng khoá dù giây ấy không trùng mẫu hay mốc món. Lựa chọn chỗ cầm
+  (`chooseMissing`) vẫn giải với khuỷu tự do.
 - Hằng số: `w_down 0,3`, `w_body 10`, `w_cont 2` (khuỷu của tay trượt đổi ≤ 2,5° mỗi mẫu), `w_in 20`, `IN_FREE 0`.
 - **`inward`** (`elbowInward`): khuỷu lệch khỏi đường vai → cổ tay, chiếu vuông góc đường ấy, chia `l₁`; lấy số lớn hơn
   của hai phần: phần lên trên `u`, và phần về giữa thân (ngược hướng ra ngoài phía tay ấy của hông) nhân sin góc trục với
@@ -1100,7 +1106,8 @@ E(φ) = ½ (turn/90)² + (bend/50)² + ½ (dev/20)²                     cổ ta
 - Hai tay giải trên cùng `itemPose`: tay có `both` (lead) trước, tay kia sau; không có `both` thì tay phải trước. Tay giải sau
   tính tay đã đặt vào số hạng lấn: ở phía cảnh (`scene.ts`, `placedOther`) tay trái tính tay phải đã đặt trên món.
 - Tay dẫn giữ đường giải hiện có (`aimWrist`, `HOLD_SLEW`, dò khuỷu của `act3.ts`, không có số hạng `inward`; khuỷu ngược ở tay
-  dẫn do đích tay hay `elbow` cảnh khai, `check` báo `elbow`) và cũng có `grasp` (`mode: "hand"`, mục
+  dẫn do đích tay hay `elbow` cảnh khai, `check` báo `elbow`; mốc khoá khuỷu thì phần khoá bỏ dò khuỷu và không theo
+  `HOLD_SWIVEL_SLEW`: góc dò nhân `1 − phần khoá`, khuỷu khoá lấn thân thì `check` báo `arm`) và cũng có `grasp` (`mode: "hand"`, mục
   [Báo](#báo)): lựa chọn là trường cảnh khai cộng mặc định nhóm, cánh tay đọc trên bàn tay đã vẽ.
 
 ### Lần cầm theo mốc
@@ -1111,7 +1118,8 @@ Lần cầm một tay có mốc món (mục 4) không giải từng khung trên 
    (mục [Lựa chọn cảnh không khai](#lựa-chọn-cảnh-không-khai)); nối ngay sau lần cầm cùng món, cùng nhóm, cùng tay thì ưu tiên
    giữ lựa chọn của lần cầm ấy (`keep`).
 2. **Ở mỗi mốc `t_k`**: khung cầm, `Wp`, `Rw` từ món ở mốc (thân người cầm ở `t_k`); `φ` bằng `solvePhi` với `φ_trước` là mốc
-   trước (mốc đầu: `φ` cuối của lần cầm theo món liền trước trên cùng tay) và `elbow` của mốc tay nếu có. Nghiệm lưu **trong
+   trước (mốc đầu: `φ` cuối như vẽ, kể cả phần khoá, của lần cầm theo món liền trước trên cùng tay) và `elbow` của mốc tay nếu có — phần khoá `1`
+   (`elbowLock`) thì `φ = φ(elbow)`, không tìm. Nghiệm lưu **trong
    hệ thân**: cổ tay so với vai bên ấy và khung bàn tay, cả hai qua `Rr` của thân; `φ`; góc cổ tay đã kẹp và phần vượt kẹp.
 3. **Giữa hai mốc**: hệ số `f` theo `ease` của mốc sau (như `itemAt`); cổ tay dời thẳng và bàn tay quay đường ngắn nhất
    (`mixRotation`) trong hệ thân, đổi ra thế giới bằng thân ở chính `t` — người cúi, đi giữa hai mốc thì tay theo thân; `φ` đi
@@ -1294,7 +1302,9 @@ Hai hàm đọc của `scene.ts` (cửa `@stickman3d/rig/core`), không đổi h
   - `mode` (`free` khi không cầm), `run` (phần tử của `holdRuns`), `blending` (trong `HOLD_BLEND`, như `holdBlending`).
   - `phi`: `φ` của khuỷu đang vẽ (`phiOf`). `phi0`: `φ` của hướng khuỷu khởi đầu — món đặt trước là `φ₀` của `E(φ)`; tay
     dẫn và tay tự do là hướng bộ giải xuất phát (`elbow` của mốc, không khai là `REACH_ELBOW`); tay không đích là `null`.
-    `elbowLock` luôn `false`: schema chưa có trường ấy.
+    `elbowLock`: khuỷu nằm đúng hướng `elbow` của mốc khoá — phần khoá thật sự áp lên tay (`elbowLockAt`) là `1`: ở mốc khoá,
+    giữa hai mốc khoá, trước mốc đầu, sau mốc cuối khi mốc ấy khoá. Tay không theo món đặt trước thì phần khoá nhân phần đích
+    `w`: mốc khoá không có `at` / `to` (đích `w` `0`) không khoá.
   - `wrist.drawn`: xoay, gập, lệch như vẽ (sau kẹp). `wrist.raw` (trước kẹp): món đặt trước là góc bàn tay của nghiệm trên
     cẳng tay (theo mốc: bàn tay đã hoà giữa hai mốc); tay dẫn, tay tự do là nghiệm ý định trước `HOLD_SLEW` — ý định giải
     trong miền khớp nên không vượt; không ý định là `null`. `wrist.over`: phần vượt miền, món đặt trước lấy của bộ giải, còn
@@ -1360,7 +1370,7 @@ trong cùng lần cầm (`regrip` cùng khoá), như `scene_probe`.
 | `grip` | mọi chỗ cầm nhóm | Tâm nắm cách **hình** (`shape`) quá ngưỡng của nhóm (`groupGripMax`: nhóm hay biến thể có dáng kẹp đầu ngón `HELD_PINCHES` dùng `HELD_GRIP_PINCH` `5`, còn lại `HELD_GRIP` `3`; tay dẫn lấy biến thể cảnh khai: `cylinder` không khai `variant` lấy `5` vì `flat` có dáng `span`, `wrap` khai rõ lấy `3`). `grip` khai ở `package.json` thì thắng ngưỡng nhóm, cả khi nhỏ hơn (`gripDeclared`) | cảnh báo |
 | `reach` | món đặt trước | Tay duỗi hết vẫn không tới chỗ cầm: khe tầm với `arm.gap` quá `AIM_GAP · s` | **lỗi** |
 | `wrist` | món đặt trước | Ở khuỷu tốt nhất cổ tay vượt `TURN_MAX`, `AIM_BEND` hay `AIM_DEV` (`heldWristMargin` dương) — lỗi, kèm độ vượt và độ lệch bàn tay – chỗ cầm; còn cách giới hạn dưới `HELD_WRIST` (`5°`) — cảnh báo. Dòng báo gợi đổi `edge`/`thumb` hay hướng món | lỗi / cảnh báo |
-| `arm` | món đặt trước; lấn đầu: mọi chỗ cầm nhóm | Bắp tay, cẳng tay lấn vào thân, đầu hay tay kia quá `HELD_ARM` (`0,3`) lần bán kính tay ở chỗ lấn (`bodyRatio`). Lấn đầu (`bodyPart` `*.head`) là lỗi, cả ở tay dẫn | cảnh báo / **lỗi** |
+| `arm` | món đặt trước; tay dẫn có phần khoá khuỷu; lấn đầu: mọi chỗ cầm nhóm | Bắp tay, cẳng tay lấn vào thân, đầu hay tay kia quá `HELD_ARM` (`0,3`) lần bán kính tay ở chỗ lấn (`bodyRatio`). Lấn đầu (`bodyPart` `*.head`) là lỗi, cả ở tay dẫn. Tay dẫn chỉ xét lấn thân khi khuỷu khoá (`elbowLockAt` dương) | cảnh báo / **lỗi** |
 | `elbow` | mọi chỗ cầm nhóm | Khuỷu gập ngược: `arm.inward` (mục 5) quá `HELD_ELBOW` (`0,3` lần cánh tay trên) — khuỷu nằm phía giữa thân hay chĩa lên so với đường vai → cổ tay, cẳng tay chạy ra ngoài hay xuống tới bàn tay. Dòng báo gợi đổi `edge` / `thumb`, hướng món hay khai `elbow` | **lỗi** |
 | `size` | món đặt trước | Số đo khối hình đã chọn từ `SIZE_WARN · W` (`0,8`) trở lên (thân `chai-dac-tuyen` `r 13,2` với tay `W 14,7`: `0,90 · W`) | cảnh báo |
 | `up`, `face`, `reach` (tay phụ, `item:`) | tay dẫn | Ý định trục chính còn lệch quá `HELD_UP` (`up`) hay `HELD_FACE` (`face`) (`AimReport.hold`); tay phụ hay điểm `item:<mốc>` còn cách đích quá `AIM_GAP · s` | cảnh báo |
@@ -1369,6 +1379,12 @@ trong cùng lần cầm (`regrip` cùng khoá), như `scene_probe`.
 | lỗi `ref` `choice` | `resolveScene` | Chỗ cầm không hợp lệ: trường không thuộc nhóm, `edge`/`thumb` không có trên khối hình, biến thể quá bề dày ở mép (`flat` trên tấm dày hơn `FLAT_MAX · W`), biến thể kẹp qua hai mép mà bề rộng tấm ở cạnh khai (hay mọi cạnh) ngoài `across` (`card` `edges`), biến thể không áp trên loại khối hình (`flat` của `cylinder` chỉ trên `rod`; chai, trụ tiện báo lỗi kèm khối hình món có), `part` không có hay `grip: false`, `along` ngoài 0–1, `both` với nhóm một tay không có `support`, `both` mà tay kia cũng có `hold` ở cùng `t`, `on`/`yaw` ngoài `carry`, `carry` thiếu `on` hay món không có `seats[on]`, nhóm `later`; lần cầm có mốc món ở `items` mà mốc tay khai đích (`to`, `at`, `offset`, `point`) hay ý định (`face`, `up`, `roll`, `keep`); mốc món ở `t` không tay nào cầm món ấy | lỗi |
 | cảnh báo `ref` `choice` | `sceneHoldProblems` (`choiceWarnings`) | Chỗ cầm hợp lệ mà `along` cảnh khai sát phần `grip: false` quá `clear · W` của nhóm (`cylinder`: `GRIP_CLEAR` = 0,3): tâm nắm cách phần ấy dưới ngưỡng. Dòng báo nêu phần cắt, khoảng cách dọc trục, `along` rig kẹp về (`alongRoom`) và `along` nên khai; cỡ tay lấy theo người cầm. Không chặn | cảnh báo |
 | lỗi `ref` `item` | `resolveScene` | Mốc món có đích của trục phụ lệch đích của trục chính dưới 18° (cos tuyệt đối > 0,95): hướng món suy biến, dòng báo gợi `roll` khác; đích của một trục trùng chỗ món; `face` trần không có trục (mốc không khai, nhóm không có mặc định). Rig không tự đổi | lỗi |
+
+Khuỷu khoá (`elbowLock`) đi qua cùng các luật `arm`, `elbow`, `wrist` ở chỗ khoá: rig không dời khuỷu khoá ra khỏi thân hay
+khỏi thế gập ngược. Mẫu có phần khoá (`elbowLockAt` dương, `sceneHeld` truyền vào `heldHits`) thì `arm` xét cả tay dẫn,
+`arm` / `elbow` mang `lock`, kêu cả quãng ngắn hơn `hold` (khuỷu nằm đúng chỗ cảnh khai, không phải chớp của bộ giải) và dòng
+báo gợi đổi hướng `elbow` của mốc khoá hay bỏ `elbowLock` (`ELBOW_LOCK_FIX`). Tay không cầm gì khoá khuỷu vào thân báo ở luật
+`body` của [03](03-scene.md#tay-và-khuỷu). Khuỷu khoá xoay quá nhanh báo ở nhóm `move` ([03](03-scene.md#giật-trên-hình)).
 
 Ngưỡng số cấu hình ở `package.json` `stickman.held` ([05](05-repo-video.md#nhóm-luật)): `pierce`, `touch`, `wrap`, `grip`,
 `reach`, `sink`, `wrist`, `arm`, `elbow`, `oppose`, `rest`, `hold`.

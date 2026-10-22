@@ -1622,7 +1622,8 @@ Rig giải ý định trên cổ tay (`aimWrist`): trục chính trọng số `1
 `elbow` đã khai. Giới hạn cổ tay giữ nguyên — xoay `±90`, gập `AIM_BEND` (ngửa `60`, gập `70`), lệch `AIM_DEV` (về ngón út `30`, về ngón cái `20`), kênh tay
 không nâng thì lệch cổ tay giữ `0` —: không đạt thì món lệch thật, `AimReport.hold` ghi trục, hướng muốn, hướng đạt, góc
 còn lệch và khớp kẹp, `check` báo ([03](03-scene.md#đồ-cầm-tay)). Vị trí tay (`at`, `to`, `point`) luôn thắng ý định. Cổ tay
-và khuỷu của tay mang món, tay phụ đi từ nghiệm của mẫu trước với tốc độ có hạn (`HOLD_SLEW`, `HOLD_SWIVEL_SLEW`): ý định
+và khuỷu của tay mang món, tay phụ đi từ nghiệm của mẫu trước với tốc độ có hạn (`HOLD_SLEW`, `HOLD_SWIVEL_SLEW`; khuỷu khoá
+`elbowLock` không dò, không giới hạn): ý định
 vượt tầm thì cổ tay sang nghiệm mới trong vài khung chứ không lật trong một khung ([03](03-scene.md#đồ-cầm-tay)). Món đặt
 trước (lần cầm có mốc món ở `items`) không giải ý định: hướng món do cảnh khai, bàn tay theo món
 ([11](11-nhom-cam.md#5-giải-tay-theo-món)).
@@ -2117,7 +2118,8 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 
 - **Rig giải mỗi khung** (`aimWrist`): lòng tay chỉ phụ thuộc xoay và gập cổ tay (lệch cổ tay không đổi pháp tuyến lòng tay)
   nên hai góc ấy giải đúng; ngón lấy thêm lệch cổ tay (số thứ ba của tay, kênh nâng, `AIM_DEV` `−30..20`, dương về phía ngón cái) và, khi tay theo đích,
-  xoay khuỷu quanh trục vai → cổ tay tới `±AIM_SWIVEL` (`90`), ưu tiên gần hướng khuỷu đã khai. Kẹp trong `turn` `−90..90`,
+  xoay khuỷu quanh trục vai → cổ tay tới `±AIM_SWIVEL` (`90`), ưu tiên gần hướng khuỷu đã khai — mốc `world.hands` khoá khuỷu
+  (`elbowLock`, [03](03-scene.md#đích-bàn-tay-thế-giới)) thì không xoay phần khoá. Kẹp trong `turn` `−90..90`,
   `bend` `AIM_BEND` `−60..70` (âm là ngửa) — hẹp hơn tầm khớp người thật chút ít, quá đó cổ tay khối của người que trông
   gãy —; ngoài tầm thì lấy chỗ gần nhất trong
   hộp giới hạn.

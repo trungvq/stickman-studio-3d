@@ -379,6 +379,7 @@ export type Limb3 = "af" | "an" | "lf" | "ln";
 export interface ReachIn {
   at: readonly number[];
   elbow?: readonly number[];
+  elbowLock?: number;
   w: number;
   terms?: readonly ReachTerm[];
   spline?: ReachSpline;

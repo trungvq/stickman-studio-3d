@@ -1,4 +1,5 @@
 import {
+  actArm,
   actHand,
   actJoints,
   actPalms,
@@ -8,6 +9,8 @@ import {
   type ActPalm,
 } from "./act3";
 import { body3 } from "./figure3d";
+import { evalPhi, phiOf } from "./graspArm";
+import { armPartLabel, ELBOW_LOCK_FIX, HELD_ARM } from "./heldAudit";
 import { depthAt, project, type V3 } from "./lens";
 import {
   handClips,
@@ -22,7 +25,14 @@ import {
   type PalmFrame,
   type PalmHand,
 } from "./palm";
-import { cameraAt, castCharacter, sceneAt, type CastMember, type SceneRuntime } from "./scene";
+import {
+  cameraAt,
+  castCharacter,
+  elbowLockAt,
+  sceneAt,
+  type CastMember,
+  type SceneRuntime,
+} from "./scene";
 import { equipMap, type CharacterData } from "./schema";
 import { snapWindows } from "./snap";
 
@@ -51,7 +61,7 @@ const ARM_OPEN = 30;
 /** Bán kính khối đầu người 3D để đo tay chạm đầu người khác, rig nhân `world.s`: dưới `bones3().head` · 100 (`64`) vì sọ người dẹt hai bên */
 export const ARM_HEAD_R = 60;
 
-export type ArmRule = "straight" | "converge" | "upturn" | "hover" | "head";
+export type ArmRule = "straight" | "converge" | "upturn" | "hover" | "head" | "body";
 /** Khuỷu thẳng vì đâu: `reach` đích xa quá tầm, `hang` tay buông, `pose` góc của hành động */
 export type ArmStraight = "reach" | "hang" | "pose";
 
@@ -76,7 +86,7 @@ export interface ArmIssue {
   rule: ArmRule;
   kind?: ArmStraight;
   /** Giây đo tệ nhất và số đo lúc ấy: góc khuỷu (`straight`), tổng góc ngón lệch vào nhau (`converge`), góc lòng tay lệch hướng
-   *  lên / ra trước (`upturn`), khe tới mặt (`hover`), độ lấn vào khối đầu (`head`) */
+   *  lên / ra trước (`upturn`), khe tới mặt (`hover`), độ lấn vào khối đầu (`head`), lấn chia bán kính tay (`body`) */
   t: number;
   amount: number;
   /** `converge`: góc ngón phải, trái lệch vào; khoảng hai cổ tay; bề ngang hai vai */
@@ -85,7 +95,7 @@ export interface ArmIssue {
   shoulders?: number;
   /** `upturn`: lòng tay ngửa hay ra trước */
   face?: "up" | "front";
-  /** `hover`: vật dưới bàn tay. `head`: người bị chạm */
+  /** `hover`: vật dưới bàn tay. `head`: người bị chạm. `body`: chỗ lấn (`ArmSol.bodyPart`) */
   on?: string;
   other?: string;
   runs: [number, number][];
@@ -165,11 +175,14 @@ interface State {
   sp: ReturnType<typeof sceneAt>;
   J: Record<ActJoint, V3>;
   P?: Record<PalmHand, ActPalm>;
+  /** Phần khoá khuỷu (`elbowLockAt`) của từng tay */
+  lock?: Partial<Record<PalmHand, number>>;
 }
 
 /**
  * Tay sai dáng của một người ở một tư thế: khuỷu thẳng, ngón hai tay chĩa vào nhau, lòng tay ngửa khi buông, bàn tay lơ lửng
- * trên mặt nó nhắm tới, bàn tay lấn vào đầu người khác (`others`). `seen(p)` là điểm ấy lên hình
+ * trên mặt nó nhắm tới, bàn tay lấn vào đầu người khác (`others`), tay không cầm đồ khoá khuỷu (`s.lock`) mà lấn người.
+ * `seen(p)` là điểm ấy lên hình
  */
 export function armHits(
   s: State,
@@ -203,6 +216,14 @@ export function armHits(
             ? "hang"
             : "pose";
       out.push({ id, hand, rule: "straight", kind, t, amount: el });
+    }
+    // Khuỷu khoá lấn người: tay cầm đồ thì luật `arm` của đồ cầm tay đo
+    const r = chOf(sp, hand) === "an" ? w.hands?.near : w.hands?.far;
+    if (s.lock?.[hand] && !r?.hold) {
+      const a = actArm(p.c, sp as ActInput, hand === "R" ? -1 : 1);
+      const b = a && evalPhi(a.inp, a.W, a.Rw, phiOf(a.inp, a.W, a.E), undefined, a.other);
+      if (b && b.bodyRatio > HELD_ARM)
+        out.push({ id, hand, rule: "body", t, amount: b.bodyRatio, on: b.bodyPart });
     }
     const q = P?.[hand];
     if (!q || held(hand)) continue;
@@ -294,7 +315,8 @@ export function sceneArms(rt: SceneRuntime, o: ArmOptions): ArmIssue[] {
   const close = (k: string) => {
     const r = open.get(k)!;
     open.delete(k);
-    if (r.to - r.from + every < hold - 1e-9) return;
+    // khuỷu khoá nằm đúng chỗ cảnh khai: báo cả quãng ngắn
+    if (r.hit.rule !== "body" && r.to - r.from + every < hold - 1e-9) return;
     const prev = done.get(k);
     if (prev) {
       prev.runs.push([r.from, r.to]);
@@ -322,7 +344,16 @@ export function sceneArms(rt: SceneRuntime, o: ArmOptions): ArmIssue[] {
       if (!sp.world || !(sp.opacity > 0.5)) continue;
       const J = actJoints(p.c, sp);
       if (!J) continue;
-      states.push({ p, sp, J, P: p.c.palette.clad ? actPalms(p.c, sp) : undefined });
+      const lock = (["R", "L"] as const).map((h) =>
+        frame?.frozen?.(p.m.id) ? 0 : elbowLockAt(rt, p.m.id, h === "R" ? "right" : "left", t),
+      );
+      states.push({
+        p,
+        sp,
+        J,
+        P: p.c.palette.clad ? actPalms(p.c, sp) : undefined,
+        ...((lock[0] > 0 || lock[1] > 0) && { lock: { R: lock[0], L: lock[1] } }),
+      });
     }
     const hit = new Set<string>();
     for (const s of states)
@@ -388,6 +419,9 @@ export function armLine(s: ArmIssue): string {
       break;
     case "hover":
       body = `bàn tay lơ lửng trên mặt — ${who} theo đích trên ${s.on}: điểm thấp nhất của bàn tay còn cách mặt ${s.amount.toFixed(1)} ${when}. Đích không chạm mặt: hạ đích (\`world.hands[].at\`) xuống chừng ấy, hay đặt \`point\` (\`"tip"\` ngón chạm, \`"palm"\` lòng tay áp) vào đúng mặt trên`;
+      break;
+    case "body":
+      body = `tay lấn người khi khuỷu khoá — ${who}: ${s.on ? armPartLabel(s.on) : "tay"} lấn ${s.amount.toFixed(2)} lần bán kính tay (quá ${HELD_ARM}) ${when}. Đích \`world.hands\` không cầm đồ: ${ELBOW_LOCK_FIX}`;
       break;
     case "head":
       body = `bàn tay lấn vào đầu người khác — ${who} vào đầu \`${s.other}\` sâu ${s.amount.toFixed(1)} ${when}. Tay giữ đích khi người kia cúi, dời hay tay vung qua đầu: rút tay (\`world.hands\` mốc \`null\`) hay dời đích trước lúc ấy; cố ý (cốc đầu) thì khai \`snap\` ở clip hay mốc \`world.hands\``;

@@ -992,6 +992,26 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
   `elbow` là hướng khuỷu trong thế giới, bỏ trống là `REACH_ELBOW` của hệ thân. Đoạn giữa hai mốc
   dùng `elbow` của mốc nào khai nó, nên một đoạn có, đoạn kề không là khuỷu đổi hướng ngay ở mốc
   chung — khai cùng `elbow` cho cả chuỗi mốc của một động tác.
+- **`elbowLock: true`** (chỉ đi với `elbow`): khuỷu ở mốc này nằm đúng hướng `elbow` — `φ` của khuỷu vẽ ra quanh trục vai →
+  cổ tay bằng `φ` của `elbow` chiếu lên vòng ấy ([11](11-nhom-cam.md#khuỷu-tự-nhiên)). Rig không dò khuỷu chỗ khoá: món đặt
+  trước bỏ `E(φ)`, tay mang món theo ý định và tay có lòng tay theo ý định bỏ dò xoay khuỷu. Phần khoá hoà giữa hai mốc như
+  phần đích — mốc khoá `1`, mốc không khoá hay `null` `0`, theo `ease` của mốc sau; trước mốc đầu, sau mốc cuối giữ phần
+  khoá của mốc ấy. Đoạn có mốc khoá thì hướng `elbow` đi đều trên mặt cầu giữa hai mốc (chuỗi `auto` vẫn bậc ba), nên giữa
+  hai mốc khoá `φ` đi đường ngắn trên vòng; từ mốc khoá sang mốc không khoá khuỷu rời dần hướng khoá về chỗ bộ giải chọn.
+  Khuỷu khoá không theo giới hạn tốc độ `HOLD_SWIVEL_SLEW`: hai mốc khoá sát nhau mà hướng lệch xa thì khuỷu vẫn tới đúng
+  chỗ ở mốc, `check` báo giật ([Giật trên hình](#giật-trên-hình)). Khoá vào chỗ xấu (lấn thân, gập ngược) rig không cứu:
+  tay cầm đồ thì `check` báo `arm` / `elbow` ([11](11-nhom-cam.md#7-luật-check-nhóm-held)), kể cả tay dẫn; tay không cầm gì
+  báo ở [Tay và khuỷu](#tay-và-khuỷu). Lần cầm món đặt trước đọc khoá ở các mốc `hold` của lần cầm; tay phụ của `both` không
+  khoá.
+- **Khoá chỉ có tác dụng khi tay theo đích.** Tay không theo món đặt trước thì phần khoá áp lên khuỷu là phần khoá của mốc
+  nhân phần đích `w` (`elbowLockAt`): mốc khoá chỉ có `hold` mà không có `at` / `to` cho đích `w` `0` ở mốc ấy, tay theo hành
+  động, khuỷu không theo `elbow`. `handReport` và `check` đọc phần khoá này. Mốc khai `elbowLock` mà khoá không có tác dụng ở
+  chính mốc ấy (không có `at` / `to`, hay tay phụ của `both`) thì `check` (nhóm `ref`) và `validate` báo một dòng
+  (`elbowLockIdle`):
+
+  ```
+  scenes/canh-05.json: lan: `world.hands` right t=4: khoá khuỷu bị bỏ qua — mốc không có `at` / `to`: ở mốc ấy tay theo hành động (đích tay `w` 0), khuỷu không theo `elbow` — khai `at` hay `to` ở mốc ấy, hay bỏ `elbowLock` (docs/03-scene.md#đích-bàn-tay-thế-giới)
+  ```
 - **Đích là điểm bàn tay, không chỉ cổ tay.** `point` (`wrist`, `palm`, `back`, `grip`, `tip`; thiếu là cổ tay với `at`) đặt
   điểm ấy của bàn tay vào `at` — tay lên tay vịn, mặt bàn thì `point: "palm"` ở mặt trên. `to` / `side` / `offset` thay `at`
   bằng mốc thân của chính người ấy ([01](01-rig.md#đích-theo-mốc)). `palm`, `fingers`, `bend` khai lòng tay theo ý định
@@ -1187,6 +1207,22 @@ dùng, và `scene_probe` / `validate` (không biết tập), thì đo cả cản
   ghi, suốt lúc nó chạy, kể cả đoạn hoà vào và đoạn hoà ra sang clip sau;
 - mốc `world.hands[].snap`: tay ấy, đoạn từ mốc trước tới mốc này.
 
+**Khuỷu khoá xoay quá nhanh.** Rig không kẹp khuỷu khoá (`elbowLock`, [Đích bàn tay thế
+giới](#đích-bàn-tay-thế-giới)), nên `check` đo riêng nó (`elbowLockSnaps` của lõi): mẫu cách nhau `HOLD_SLEW_STEP` (`1/30 s`)
+trên mọi đoạn giữa hai mốc `world.hands` của tay có mốc khoá, cả trước mốc đầu và sau mốc cuối (phần khoá của mốc ấy giữ
+nguyên ở đó), khuỷu vẽ ra (`actArm`) xoay quanh trục vai → cổ tay quá `HOLD_SWIVEL_SLEW` (`5°`) giữa hai mẫu cùng có phần
+khoá (`elbowLockAt` dương) là giật. Độ xoay đo trên khuỷu, không trên `φ`: khuỷu mẫu trước quay theo phép quay ngắn nhất
+đưa trục trước về trục sau, rồi lấy góc với khuỷu mẫu sau quanh trục ấy — gốc của `φ` quay theo trục (trục gần thẳng đứng
+thì gốc đổi hẳn) dù khuỷu không xoay. Tay gần thẳng (khuỷu cách trục dưới `0,1` bắp tay) không đo. Trục vai → cổ tay đi
+qua hướng khoá thì khuỷu khoá lật thật: báo. Các mẫu quá ngưỡng liền nhau gộp một dòng, cùng nhóm `move`:
+
+```
+scenes/canh-05.json: `lan` tay phải giây 1.00–1.10: khuỷu khoá xoay 46° mỗi 1/30 s (quá 5°) trên đoạn mốc `world.hands` giây 1.00 → 1.10 — rig không kẹp khuỷu khoá (`elbowLock`): dời hai mốc xa nhau hơn, cho `elbow` hai mốc gần hướng nhau hơn, hay bỏ `elbowLock` ở một mốc. Cố ý nhanh thì khai `snap: true` ở mốc sau
+```
+
+Mốc sau khai `snap` và quãng không lên hình thì không đo. Quãng trước mốc đầu, sau mốc cuối thì dòng báo nêu mốc ấy và gợi
+thêm mốc khoá hướng khác. `scene_probe` không trả dòng này trong `snaps`.
+
 Ngưỡng ở `package.json` của repo video, trường thiếu lấy mặc định; `false` là không đo:
 
 ```json
@@ -1279,6 +1315,7 @@ cầm đồ và chỉ đo người mặc đồ (`palette.clad`).
 | **Lòng tay ngửa khi buông** | Bàn tay dưới hông hay sát đùi (cách đùi không quá `60 · s`), không phải tay buông bên đùi ngón chĩa xuống (luật tay buông của [Lòng bàn tay](#lòng-bàn-tay) đo nó), mà pháp tuyến lòng tay lệch hướng lên không quá `ARM_UPTURN` — hay lệch hướng mặt không quá `ARM_FRONT` (lòng tay ra trước) | `60°`, `35°` |
 | **Bàn tay lơ lửng trên mặt** | Tay đặt bằng đích (phần đích từ `0,9`), ngón trỏ duỗi (đặt, chỉ, gõ), điểm thấp nhất của bàn tay cách mặt ngang dưới nó quá `ARM_HOVER_GAP` mà không quá `ARM_HOVER_MAX` — đích nhắm chạm mặt mà không tới. Cần [`stickman.world`](05-repo-video.md#cảnh-three-cho-check) như luật bàn tay đặt trên mặt ngang | `4`, `15` (rig nhân `world.s`) |
 | **Bàn tay lấn vào đầu người khác** | Một điểm của bàn tay (`skin`, người que: cổ tay và tâm nắm) vào trong khối đầu người 3D khác, bán kính `ARM_HEAD_R` quanh tâm đầu | `60` (rig nhân `world.s` của người bị chạm) |
+| **Tay lấn người khi khuỷu khoá** (`body`) | Tay không cầm đồ có phần khoá khuỷu (`elbowLock`, `elbowLockAt` dương) mà bắp tay, cẳng tay lấn thân, đầu hay tay kia quá `HELD_ARM` lần bán kính tay ở chỗ lấn — đo như luật `arm` của [đồ cầm tay](11-nhom-cam.md#7-luật-check-nhóm-held). Khuỷu khoá nằm đúng chỗ cảnh khai nên kêu cả quãng ngắn hơn `0,3 s`; gợi đổi hướng `elbow` hay bỏ `elbowLock`. Tay cầm đồ thì luật `arm` của đồ cầm tay đo | `0,3` |
 
 **Khuỷu thẳng chia ba kiểu, gợi ý sửa khác nhau:**
 
@@ -1368,7 +1405,7 @@ vật three của món.
 - **Cổ tay mang món đi liền mạch.** Tay mang món theo ý định và tay phụ giải từ nghiệm của mẫu trước: một chuỗi mẫu cách
   nhau `HOLD_SLEW_STEP` (`1/30 s`) tính từ mốc `world.hands` gần nhất của tay ấy (`ReachHold.prior`), mẫu đầu là mốc
   đầu. Xoay, gập, lệch cổ tay đi tối đa `HOLD_SLEW` (`15°`) một mẫu, xoay khuỷu `HOLD_SWIVEL_SLEW` (`5°`) — tính theo
-  phần mẫu đã trôi, nên khung dày hơn mẫu vẫn đi đều. Nghiệm riêng của khung đi chậm hơn thế thì giữ y nguyên; nhảy xa
+  phần mẫu đã trôi, nên khung dày hơn mẫu vẫn đi đều; phần khuỷu khoá (`elbowLock`) không bị giới hạn ấy. Nghiệm riêng của khung đi chậm hơn thế thì giữ y nguyên; nhảy xa
   hơn (ý định vượt tầm cổ tay: xoay qua `±90`, gập gần 90, món xoay nửa vòng lúc đổi chỗ cầm) thì cổ tay, khuỷu đi dần
   sang nghiệm mới trong vài khung thay vì lật trong một khung. Chuỗi chỉ phụ thuộc scene, mỗi mẫu giải một lần cho một
   runtime: Remotion vẽ khung theo thứ tự nào cũng ra cùng hình. Trong lúc cổ tay đang đi, lệch của ý định

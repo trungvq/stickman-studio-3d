@@ -287,6 +287,13 @@ export function phiOf(inp: ArmInput, Wp: V3, El: V3): number {
   return Math.atan2(dot3(e, B.o0), dot3(e, B.d0)) / D;
 }
 
+/** `φ` (độ) của hướng khuỷu `elbow` (thế giới rig) chiếu lên vòng quanh trục vai → `Wp`: `φ₀` của `evalPhi` */
+export function phiToward(inp: ArmInput, Wp: V3, elbow: readonly number[]): number {
+  const B = phiBasis(inp, Wp);
+  const p0: V3 = [elbow[0], -elbow[1], -elbow[2]];
+  return Math.atan2(dot3(p0, B.o0), dot3(p0, B.d0)) / D;
+}
+
 /**
  * `E(φ)` của tay `inp` với cổ tay `Wp`, khung bàn tay `Rw` (three) ở góc khuỷu `phi` (độ): dựng hai đoạn tay, đọc góc
  * cổ tay. `elbow` là hướng khuỷu của mốc tay (thế giới rig), thiếu thì `REACH_ELBOW`

@@ -2354,6 +2354,14 @@ function deepScene(ctx, name) {
           out.snap.push(
             row("move", rig.snapLine(s), { key: `snap|${s.id}|${s.joint}`, measure: s.px }),
           );
+        // khuỷu khoá xoay quá nhanh: rig không kẹp nó — docs/03-scene.md#giật-trên-hình
+        for (const s of rig.elbowLockSnaps(rt, { characterOf, spans: spans[name] }))
+          out.snap.push(
+            row("move", rig.elbowLockLine(s), {
+              key: `snap|${s.id}|elbowLock|${s.hand}`,
+              measure: s.deg,
+            }),
+          );
       } catch (e) {
         out.snap.push(row("move", `không đo được giật trên hình — ${e.message}`));
       }
@@ -2936,6 +2944,9 @@ export async function checkWorkspace({
             // Hai tay của món cầm hai tay khai hai món khác nhau — docs/03-scene.md#đồ-cầm-tay
             for (const problem of rt && rig.sceneHoldProblems ? rig.sceneHoldProblems(rt) : [])
               refWarn(`scenes/${f}: ${problem}`);
+            // Mốc khoá khuỷu mà khoá không có tác dụng — docs/03-scene.md#đích-bàn-tay-thế-giới
+            for (const s of rt && rig.elbowLockIdle ? rig.elbowLockIdle(rt) : [])
+              refWarn(`scenes/${f}: ${rig.elbowLockIdleLine(s)}`);
             // Mốc món suy biến hay không tay nào cầm — docs/11-nhom-cam.md#mốc-món-items
             if (rt?.items && rig.sceneItemProblems) {
               try {
