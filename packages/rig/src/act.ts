@@ -105,6 +105,15 @@ function blinking(t: number, seed: number) {
  * mặt. `t` (giây) bật chớp mắt khi mắt đang `open`. Chi gần là bên phải người khi không lật.
  */
 export function act(p: Figure, sp0: Acting, t?: number) {
+  p.posing = true;
+  try {
+    placePose(p, sp0, t);
+  } finally {
+    p.posing = false;
+  }
+}
+
+function placePose(p: Figure, sp0: Acting, t?: number) {
   // đích theo mốc thân, lòng tay theo ý định: quy về số trên chính người này, như `actJoints` của lõi
   // độ lệch còn lại từng tay giữ ở `p.aim` cho `heldHands` (ý định của món, tay phụ) — như `resolveActing`
   let sp = sp0;

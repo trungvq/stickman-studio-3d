@@ -72,6 +72,8 @@ export interface Figure {
   holding?: Partial<Record<Side, Holding>>;
   /** Món treo trên từng cánh tay (`món@carry`: khuỷu, vai — `carry` ghi, `release` xoá); bàn tay ấy vẫn tự do */
   carrying?: Partial<Record<Side, Carrying>>;
+  /** `act` đang đặt dáng: dáng dở, món treo (`carry`) chưa đặt lại theo nó */
+  posing?: boolean;
   /** Độ lệch còn lại từng tay (`R` phải, `L` trái người) ở lần `act` gần nhất, khi có gì phải giải (`actAim` của lõi) */
   aim?: Record<'R' | 'L', AimReport>;
   /** Khung xương theo `rig.height` (`bones3` của lõi): `act` đặt đoạn chi bằng nó */

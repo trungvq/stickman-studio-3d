@@ -138,6 +138,54 @@ describe('món treo: rig treo món trên cánh tay', () => {
   });
 });
 
+describe('món treo: nhớ lời giải theo dáng người', () => {
+  /** Khuỷu gập đổi dần theo giây */
+  const MOVING = [{ t: 0, right: { ...ELBOW, hold: KHUYU } }, { t: 1, right: { ...ELBOW, offset: [30, 10, 24], hold: KHUYU } }];
+  const meshes = (root: THREE.Object3D) => {
+    const m: number[] = [];
+    root.updateMatrixWorld();
+    root.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) m.push(...o.matrixWorld.elements);
+    });
+    return m;
+  };
+
+  it('cùng dáng thì không giải lại dù tính ma trận nhiều lần hay `pose` lại cùng giây; giây khác, khớp xoay tay thì giải lại', () => {
+    const { w, bag } = world(MOVING);
+    const fig = posed(w, 0.3);
+    const fit = () => fig.carrying![-1]!.fit;
+    const a = fit();
+    const at = bag.getWorldPosition(new THREE.Vector3());
+    expect(a).toBeDefined();
+    w.root.updateMatrixWorld(true);
+    w.root.updateMatrixWorld(true);
+    expect(fit()).toBe(a);
+    expect(posed(w, 0.3)).toBe(fig);
+    expect(fit()).toBe(a);
+    posed(w, 0.6);
+    const b = fit();
+    expect(b).not.toBe(a);
+    expect(bag.getWorldPosition(new THREE.Vector3()).distanceTo(at)).toBeGreaterThan(0.01);
+    // dáng đổi ở cùng giây (cảnh sửa tại chỗ): không giữ lời giải cũ
+    fig.arms[-1].elbow.rotation.x += 0.2;
+    w.root.updateMatrixWorld(true);
+    expect(fit()).not.toBe(b);
+  });
+
+  it('lời giải nhớ trùng từng số với cảnh dựng mới ở từng giây, đi tới đi lui', { timeout: 30_000 }, () => {
+    const { w } = world(MOVING);
+    for (const t of [0.2, 0.7, 0.7, 0.2, 1.5, 0.7]) {
+      posed(w, t);
+      w.root.updateMatrixWorld(true);
+      const fresh = world(MOVING).w;
+      posed(fresh, t);
+      const [x, y] = [meshes(w.root), meshes(fresh.root)];
+      expect(x.length).toBe(y.length);
+      expect(Math.max(...x.map((v, i) => Math.abs(v - y[i])))).toBe(0);
+    }
+  });
+});
+
 describe('món treo: luật `held`', () => {
   it('tay buông thẳng mà khai khoác khuỷu: `seat` (khuỷu không gập giữ quai)', () => {
     const out: { rt?: ReturnType<typeof resolveScene> } = {};
