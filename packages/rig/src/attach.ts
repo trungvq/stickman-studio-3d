@@ -568,25 +568,31 @@ const front = (o: THREE.Object3D): o is THREE.Mesh => {
   return !!m.isMesh && !m.userData.noShadow && !(Array.isArray(m.material) ? m.material : [m.material]).every((x) => x.side === THREE.BackSide);
 };
 
+/** Lưới mặt thân áo, khối hông và váy đang hiện mà `torsoCloud` lấy điểm */
+function cloudMeshes(fig: Figure): THREE.Mesh[] {
+  const out: THREE.Mesh[] = [];
+  const torso = fig.spine.children.find((c) => c.userData.torso);
+  if (torso && front(torso)) out.push(torso);
+  for (const g of [fig.hips.children.find((c) => c.userData.pelvis), fig.skirt?.group])
+    g?.traverse((o) => {
+      if (front(o) && o.visible) out.push(o);
+    });
+  return out;
+}
+
 /** Đám điểm mặt thân áo, khối hông và váy (thế giới three): sát hơn nang dựng từ hộp thân, eo hẹp hơn vai */
 function torsoCloud(fig: Figure): number[] {
   const out: number[] = [];
   const v = new THREE.Vector3();
-  const take = (m: THREE.Mesh) => {
+  for (const m of cloudMeshes(fig)) {
     const a = m.geometry.attributes.position;
-    if (!a) return;
+    if (!a) continue;
     m.updateWorldMatrix(true, false);
     for (let i = 0; i < a.count; i++) {
       v.fromBufferAttribute(a, i).applyMatrix4(m.matrixWorld);
       out.push(v.x, v.y, v.z);
     }
-  };
-  const torso = fig.spine.children.find((c) => c.userData.torso);
-  if (torso && front(torso)) take(torso);
-  for (const g of [fig.hips.children.find((c) => c.userData.pelvis), fig.skirt?.group])
-    g?.traverse((o) => {
-      if (front(o) && o.visible) take(o);
-    });
+  }
   return out;
 }
 
@@ -605,17 +611,26 @@ export function carryBody(fig: Figure, parts?: readonly string[]): CarryBody[] {
   return out;
 }
 
-/** Nhóm mang món treo: mỗi lần three tính ma trận thì đặt lại theo chỗ treo, trọng lực và thân, đùi của người */
+/**
+ * Nhóm mang món treo: lần three tính ma trận nào mà dáng người khác lần giải trước (`poseKey`) thì đặt lại theo chỗ treo,
+ * trọng lực và thân, đùi của người; `act` đang đặt dáng dở (`Figure.posing`) thì để nguyên
+ */
 class CarryRig extends THREE.Group {
   private busy = false;
-  constructor(private place: (g: THREE.Group) => void) {
+  private key: number[] = [];
+  constructor(private fig: Figure, private place: (g: THREE.Group) => void) {
     super();
   }
   private run() {
-    if (this.busy || !this.parent) return;
+    if (this.busy || !this.parent || this.fig.posing) return;
     this.busy = true;
     try {
+      // ma trận thế giới của cả người (nhóm này đang bận nên không tự đặt lại giữa chừng)
+      this.fig.root.updateWorldMatrix(true, true);
+      const key = poseKey(this.fig);
+      if (key.length === this.key.length && key.every((v, i) => v === this.key[i])) return;
       this.place(this);
+      this.key = key;
     } finally {
       this.busy = false;
     }
@@ -631,13 +646,33 @@ class CarryRig extends THREE.Group {
   }
 }
 
+/**
+ * Mọi thứ của người mà lời giải món treo đọc: ma trận thế giới và cờ hiện của mọi nút (trừ nhóm mang món treo), độ dài và
+ * bán kính đoạn chi, lưới thân, hông, váy cùng số lần sửa đỉnh của chúng. Cùng khoá là cùng lời giải
+ */
+function poseKey(fig: Figure): number[] {
+  const out: number[] = [];
+  const walk = (o: THREE.Object3D) => {
+    if (o instanceof CarryRig) return;
+    out.push(...o.matrixWorld.elements, o.visible ? 1 : 0);
+    if (o.userData.limb) out.push(o.userData.len, o.userData.r);
+    for (const c of o.children) walk(c);
+  };
+  walk(fig.root);
+  for (const m of cloudMeshes(fig)) {
+    const a = m.geometry.attributes.position;
+    out.push(m.id, m.geometry.id, a ? ('data' in a ? a.data : a).version : -1);
+  }
+  return out;
+}
+
 const _cm = new THREE.Matrix4(), _ci = new THREE.Matrix4();
 
 /**
  * Treo `object` trên cánh tay theo `món@carry` (`carrySpecOf`, `on: elbow | shoulder`): đỉnh quai (`at`) ở chỗ treo (`carrySeat`), thân
- * món thõng theo trọng lực, đẩy khỏi thân và đùi (`carryFrame` của lõi) — đặt lại mỗi lần three tính ma trận. Bàn tay của tay
- * ấy không đổi dáng, `Figure.holding` không đổi; `Figure.carrying[side]` ghi lần treo. Vật dựng ở gốc khung món như món
- * cầm. docs/11-nhom-cam.md mục 3
+ * món thõng theo trọng lực, đẩy khỏi thân và đùi (`carryFrame` của lõi) — đặt lại lần three tính ma trận nào mà dáng người
+ * đã đổi. Bàn tay của tay ấy không đổi dáng, `Figure.holding` không đổi; `Figure.carrying[side]` ghi lần treo. Vật dựng ở
+ * gốc khung món như món cầm. docs/11-nhom-cam.md mục 3
  */
 export function carry(fig: Figure, object: THREE.Object3D, o: { hand: Side; grip: HoldGrip }): Held {
   const side = o.hand, g = o.grip, grasp = g.hold?.grasp;
@@ -646,10 +681,8 @@ export function carry(fig: Figure, object: THREE.Object3D, o: { hand: Side; grip
   if (!spec) throw new Error(`\`carry\`: \`${name}\` không phải \`món@carry\` — cầm bằng bàn tay thì dùng \`hold\``);
   if (!g.spec.shape) throw new Error(`\`carry\`: \`${g.item}\` cần \`shape\` cho món treo`);
   const entry: Carrying = { object, item: g.item, grip: g.grip, spec: g.spec, carry: spec };
-  const rig = new CarryRig((c) => {
+  const rig = new CarryRig(fig, (c) => {
     const root = fig.root;
-    // ma trận thế giới của cả người (nhóm này đang bận nên không tự đặt lại giữa chừng)
-    root.updateWorldMatrix(true, true);
     const k = root.getWorldScale(new THREE.Vector3()).x;
     const seat = carrySeat(fig, side, spec.on);
     const fit = carryFrame({

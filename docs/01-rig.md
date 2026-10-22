@@ -1733,6 +1733,9 @@ lún vào người.
    người) và cánh tay trên. Đoạn dời ghi ở `Carrying.fit.shift`; `check` đo `seat` tới chỗ treo đã dời.
 
 Mọi bước chỉ đọc tư thế của khung đang vẽ: Remotion vẽ khung nhảy cóc vẫn ra cùng hình. Món không đung đưa theo quán tính.
+Nhóm mang món chỉ giải lại khi người khác lần giải trước (`poseKey`: ma trận thế giới mọi nút của người, độ dài đoạn chi,
+lưới thân, hông, váy): vẽ lại cùng khung (camera quay, các lượt bóng) không giải; dáng đổi ở cùng giây (cảnh sửa tại chỗ)
+thì giải lại, không có nhớ nào phải xoá tay. Lúc `act` đang đặt dáng (`Figure.posing`) thì không giải.
 
 **Bàn tay tự do.** Bàn tay của tay treo món theo hành động (hay `world.hands`): không dáng nắm, không ý định, không vai trò
 với bộ giải (`holdRoles` bỏ qua lần treo), `Figure.holding` không ghi gì; món treo ghi ở `Figure.carrying[side]`. Tay kia
