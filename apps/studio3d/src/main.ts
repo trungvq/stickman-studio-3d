@@ -198,8 +198,12 @@ const patched: Record<string, HeldItemSpec> = {};
 
 interface Scene3Json {
   raw: unknown;
+  /** Hash của file cảnh lúc nạp: lưu gửi kèm, file trên đĩa đã đổi thì server trả 409 */
+  hash: string;
   data: Data;
   heldRaw?: Record<string, unknown>;
+  /** Hash của từng file `held/` lúc nạp, như `hash` */
+  heldHash?: Record<string, string>;
   heldOpts?: Record<string, unknown> & { off?: true; error?: string };
   heldOut?: string | null;
   error?: string;
@@ -646,12 +650,20 @@ function openEditor() {
         const res = await fetch(`/api/held?name=${encodeURIComponent(t.base)}`, {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ group: t.group, variant: t.variant, authored: au }),
+          body: JSON.stringify({
+            group: t.group,
+            variant: t.variant,
+            authored: au,
+            hash: fetched?.j.heldHash?.[t.base],
+          }),
         });
         const j = await res.json();
         if (j.error) throw new Error(j.error);
         // bản đã lưu thành bản đọc: cảnh dựng lại từ nó, không còn áp tạm
-        if (fetched) fetched.j.heldRaw = { ...fetched.j.heldRaw, [t.base]: j.item };
+        if (fetched) {
+          fetched.j.heldRaw = { ...fetched.j.heldRaw, [t.base]: j.item };
+          fetched.j.heldHash = { ...fetched.j.heldHash, [t.base]: j.hash };
+        }
         delete patched[t.base];
         if (cur) await load(cur.name, true, true);
         return j.file as string;

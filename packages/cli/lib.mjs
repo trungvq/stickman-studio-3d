@@ -39,6 +39,8 @@ export const SOURCES = {
   sample: pick("template", "apps/studio/public"),
   prompts: pick("prompts", "assets/sheets/prompts"),
   studio: pick("studio", "apps/studio/dist"),
+  // Studio 3D chạy bằng Vite từ mã nguồn của app (`stickman studio`)
+  studio3d: pick("studio3d", "apps/studio3d"),
   // Nguồn duy nhất của app Remotion; nằm trong chính package nên không phải `pick`
   scaffold: join(HERE, "scaffold"),
 };

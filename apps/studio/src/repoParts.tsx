@@ -13,7 +13,7 @@ const SHARED = {
 };
 
 /**
- * `CODE_PARTS` của repo mà `stickman studio` đang phục vụ, đăng ký vào `PARTS` trước lần vẽ
+ * `CODE_PARTS` của repo mà `stickman studio2d` đang phục vụ, đăng ký vào `PARTS` trước lần vẽ
  * đầu. Trả lời lỗi để hiện lên trang; bộ mẫu tĩnh không có `/workspace.json` thì bỏ qua.
  */
 export async function loadRepoParts(): Promise<string | null> {

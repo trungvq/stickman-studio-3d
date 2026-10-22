@@ -1,28 +1,53 @@
-# Studio 3D (thử)
+# Studio 3D
 
 Trang xem cảnh three của một repo video: cùng `worldOf` / `buildWorld` mà Remotion vẽ (`Scene3D` của repo), tua giây,
-camera cảnh hay camera tự do, soi bàn tay và số đo cầm đồ, soạn kiểu cầm bằng mắt. Thay dần `apps/studio` (studio 2D cũ).
+camera cảnh hay camera tự do, soi bàn tay và số đo cầm đồ, soạn kiểu cầm bằng mắt. Studio 2D (`apps/studio`: nhân vật,
+hành động, mảnh) chạy bằng `stickman studio2d`.
+
+## Chạy
+
+Trong repo video (lệnh `stickman studio` của `@stickman3d/cli`, cùng Vite đi theo CLI):
+
+```bash
+pnpm studio                       # http://localhost:5180/?scene=t02-s036-lay-het
+pnpm studio --port 5190           # cổng khác
+pnpm studio --host 0.0.0.0        # nghe cả mạng: cùng hai đường ghi dưới đây, chỉ dùng trên mạng tin được
+```
+
+Trong repo này, xem một repo video bằng mã nguồn rig của chính repo này:
 
 ```bash
 pnpm --filter @stickman3d/rig build && pnpm --filter @stickman3d/sketch build && pnpm --filter @stickman3d/fx build
 STICKMAN_ROOT=~/Work/Dev/youtube-video/jp-sukatto-nhom-cam pnpm --filter studio3d dev
-# http://localhost:5180/?scene=t02-s036-lay-het
 ```
 
-- `STICKMAN_ROOT` là repo video (bỏ trống: `../youtube-video/jp-sukatto-nhom-cam` cạnh repo này). Trang đọc cảnh ở
-  `scenes/`, dữ liệu qua `worldData` của CLI (đọc lại mỗi lần nạp cảnh), cảnh three qua `stickman.world` của
-  `package.json` repo. Cảnh không có trong `worldOf` thì dựng `plainRoom()`. Món `held/` đọc thêm bản JSON thô, parse bằng mã
-  nguồn rig (bản dựng của CLI có thể cắt mất trường mới như `authored`).
-- Chỗ duy nhất trang ghi: **Lưu** của khung soạn kiểu cầm ghi `authored` vào `held/<món>.json` (`POST /api/held`, giữ nguyên
-  phần còn lại, kiểm bằng `parseHeldItem` của mã nguồn rig, định dạng bằng prettier). `STUDIO3D_HELD_OUT=<thư mục>` đổi hướng
-  ghi sang thư mục ấy và đọc nó phủ lên `held/` — thử mà không đụng repo video:
+Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`); `vite.config.ts` ở đây chỉ gọi nó.
 
-  ```bash
-  STUDIO3D_HELD_OUT=/tmp/studio3d/held-out STICKMAN_ROOT=~/Work/Dev/youtube-video/jp-sukatto-nhom-cam pnpm --filter studio3d dev
-  ```
-- Bản dựng (`build` ba gói ở trên) chỉ cho phía Node (`worldData`). Trang lấy rig, sketch, fx từ **mã nguồn** của repo
-  này qua alias Vite, kể cả khi file của repo video nạp chúng: sửa rig là trang nạp lại, và chỉ có một bản rig, một bản
-  `three` trên trang. `remotion` nhận bản rỗng (`src/hollow.ts`).
+- **Gốc là repo video** (thư mục đang đứng; `STICKMAN_ROOT` khi chạy trong repo này, bỏ trống là
+  `../youtube-video/jp-sukatto-nhom-cam` cạnh repo này). Trang đọc cảnh ở `scenes/`, dữ liệu qua `worldData` của CLI (đọc
+  lại mỗi lần nạp cảnh), cảnh three qua `stickman.world` của `package.json` repo. Cảnh không có trong `worldOf` thì dựng
+  `plainRoom()`. Món `held/` đọc thêm bản JSON thô, parse bằng rig của trang (`worldData` dùng rig bản dựng của CLI, có
+  thể cắt mất trường mới như `authored`).
+- **Rig của trang.** `stickman studio` lấy `@stickman3d/rig`, `sketch`, `fx` mà repo video nạp: gói `link:` tới một cây
+  nguồn thì trang lấy `src/` (sửa rig là trang nạp lại), cài từ registry thì `dist`. Chạy trong repo này thì luôn là `src/`
+  của repo này. `three`, `react`, `zod` lấy bản của repo video (thiếu thì bản của app): trang và file của repo video chung
+  một bản mỗi gói. `remotion` nhận bản rỗng (`src/hollow.ts`). Bản dựng của ba gói chỉ cho phía Node (`worldData`).
+- **Ghi.** Hai đường, cả hai kiểm hash, vá JSON thô và giữ `<file>.json.bak`:
+  - `POST /api/scene?name=<cảnh>` `{ hash, scene }`: `scene` là JSON thô của cảnh đã sửa; server lấy `cast[*].world.hands`
+    và `items` của nó vá vào file trên đĩa; `scene` thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên, xoá hết là gửi mảng
+    rỗng (`items: []`, `hands: []` ghi thành mảng rỗng). Phần khác của `scene` khác đĩa thì 400. Trả `{ file, raw, hash }`.
+  - `POST /api/held?name=<món>` `{ hash, group, variant, authored }`: **Lưu** của khung soạn kiểu cầm ghi `authored` của
+    món × nhóm × biến thể (`authored: null` là xoá). `STUDIO3D_HELD_OUT=<thư mục>` đổi hướng ghi sang thư mục ấy và đọc nó
+    phủ lên `held/` — thử mà không đụng repo video.
+- **Hash.** `GET /api/scene` trả `hash` của file cảnh và `heldHash` của từng món, là sha256 của byte trên đĩa lúc nạp. Lưu
+  gửi kèm hash ấy; file đã đổi từ lúc nạp thì server trả 409 (`{ error, conflict: true, hash }`) và không ghi. Lượt ghi
+  của một file xếp hàng; ngay trước khi ghi server đọc lại file và so hash lần nữa, `.bak` lấy từ đúng byte vừa đọc lại —
+  hai lần lưu cùng hash thì lần sau 409, ai ghi file trong lúc server đang vá cũng làm lần lưu ấy 409.
+- **Vá JSON thô.** Server không ghi lại object đã parse (zod bỏ trường schema không biết, như `hand` trong mốc tay của vài
+  cảnh): nó viết lại đúng những giá trị đổi trên chữ của file (`rawjson.mjs`), giữ mọi trường khác và thứ tự khoá. File đúng
+  lối `JSON.stringify(…, null, 2)` giữ lối ấy, file đúng lối prettier (cấu hình của repo video) thì chạy prettier sau khi vá,
+  file khác chỉ đổi chỗ vá (đoạn chèn theo kiểu xuống dòng và bậc thụt của file). Kết quả phải qua `parseScene` /
+  `parseHeldItem` của rig trang dùng; hỏng thì 400, không ghi.
 
 ## Phím
 

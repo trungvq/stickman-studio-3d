@@ -62,7 +62,8 @@ còn thiếu.
 
 ```bash
 pnpm exec stickman check
-pnpm studio      # character studio tại http://localhost:5173
+pnpm studio      # Studio 3D tại http://localhost:5180
+pnpm studio2d    # character studio 2D tại http://localhost:5173
 pnpm remotion    # Remotion Studio
 ```
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// stickman init | upgrade | check | docs | retime | reseat | migrate-held | studio — dựng, nâng, soi và mở workspace của một repo video.
+// stickman init | upgrade | check | docs | retime | reseat | migrate-held | studio | studio2d — dựng, nâng, soi và mở workspace của một repo video.
 import { readFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import {
@@ -16,6 +16,7 @@ import {
 } from "./lib.mjs";
 import { migrateHeld, migrateTable, writeMigrateReport } from "./migrate-held.mjs";
 import { serveStudio } from "./serve.mjs";
+import { serveStudio3d } from "./studio3d.mjs";
 
 const args = process.argv.slice(2);
 const cmd = args[0];
@@ -61,17 +62,21 @@ const USAGE = `stickman <lệnh> [thư mục]
                 --map <file> JSON \`{ "món#kiểu": { group, part?, variant? } }\` đè bảng ánh xạ
                 --out <file.md> ghi bảng và kết quả JSON (cùng tên, đuôi .json)
                 --dry-run chỉ in, không ghi cảnh hay món
-  studio        mở character studio (app tĩnh) đọc sẵn workspace này; ghi thì bấm Mở thư mục
+  studio        mở Studio 3D trên repo này (dev server Vite): xem cảnh three, soạn kiểu cầm;
+                ghi thẳng scenes/ và held/ (kiểm hash lúc nạp, bản cũ ở <file>.json.bak)
+  studio2d      mở character studio 2D (app tĩnh) đọc sẵn workspace này: nhân vật, hành động, mảnh;
+                ghi thì bấm Mở thư mục
 
   --force       đè file có sẵn (chỉ init)
-  --port <số>   studio: cổng (mặc định 5173)
+  --port <số>   studio: cổng (mặc định 5180); studio2d: cổng (mặc định 5173)
+  --host <địa chỉ>  studio: nghe địa chỉ ấy thay cho localhost — mở cả đường ghi scenes/, held/ ra mạng ấy
   --name <tên>  tên project trong package.json (mặc định: tên thư mục)
   --yes         upgrade: đè hết, không hỏi
   --skip-modified  upgrade: giữ nguyên mọi file đã sửa tay, không hỏi
   --dry-run     upgrade / retime / reseat / migrate-held: chỉ in ra sẽ làm gì
 
 Nội dung của repo — characters, actions, scenes, props, pieces — upgrade không đụng tới;
-chỉ reseat và migrate-held ghi vào scenes/, và chỉ khi gọi chúng.
+chỉ reseat, migrate-held và Lưu của studio ghi vào scenes/, và chỉ khi gọi chúng.
 `;
 
 const list = (label, files) =>
@@ -254,6 +259,15 @@ if (cmd === "init") {
   for (const p of r.problems) console.log(`lỗi: ${p}`);
   if (s.error || r.problems.length) process.exitCode = 1;
 } else if (cmd === "studio") {
+  const r = await serveStudio3d({
+    dir,
+    port: Number(value("port", 5180)),
+    host: value("host", "localhost"),
+  });
+  console.log(`Studio 3D đọc ${r.root}, ghi scenes/ và held/`);
+  for (const u of r.urls?.local ?? []) console.log(`  Local:   ${u}`);
+  for (const u of r.urls?.network ?? []) console.log(`  Network: ${u}`);
+} else if (cmd === "studio2d") {
   const r = await serveStudio({ dir, port: Number(value("port", 5173)) });
   console.log(`Studio đọc ${r.root}
   Local:   ${r.local}`);

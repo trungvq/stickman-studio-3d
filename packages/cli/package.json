@@ -9,13 +9,16 @@
     "check-worker.mjs",
     "lib.mjs",
     "migrate-held.mjs",
+    "rawjson.mjs",
     "serve.mjs",
+    "studio3d.mjs",
     "templates.mjs",
     "scaffold",
     "docs",
     "prompts",
     "template",
     "studio",
+    "studio3d",
     "versions.json"
   ],
   "bin": {
@@ -23,7 +26,7 @@
   },
   "scripts": {
     "typecheck": "echo skip",
-    "test": "node --test reseat.test.mjs upgrade.test.mjs clash.test.mjs snap.test.mjs palm.test.mjs groups.test.mjs sweep.test.mjs scope.test.mjs held.test.mjs migrate.test.mjs",
+    "test": "node --test reseat.test.mjs upgrade.test.mjs clash.test.mjs snap.test.mjs palm.test.mjs groups.test.mjs sweep.test.mjs scope.test.mjs held.test.mjs migrate.test.mjs rawjson.test.mjs studio3d.test.mjs",
     "build": "echo skip",
     "prepack": "node prepack.mjs",
     "postpack": "node prepack.mjs --clean"
@@ -31,10 +34,13 @@
   "dependencies": {
     "@stickman3d/fx": "workspace:*",
     "@stickman3d/render": "workspace:*",
-    "@stickman3d/sketch": "workspace:*"
+    "@stickman3d/sketch": "workspace:*",
+    "prettier": "^3.6.2",
+    "vite": "^8.3.3"
   },
   "exports": {
-    ".": "./lib.mjs"
+    ".": "./lib.mjs",
+    "./studio3d": "./studio3d.mjs"
   },
   "publishConfig": {
     "registry": "https://gitlab.com/api/v4/projects/87383859/packages/npm/"

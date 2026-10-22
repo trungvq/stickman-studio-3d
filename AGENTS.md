@@ -15,9 +15,10 @@ chúng ở repo của từng video, repo đó nhập bộ `@stickman3d/*` như d
 | `packages/fx/` | `@stickman3d/fx` — hiệu ứng SVG theo `t` cho `scene.fx[]` và `<SceneWorld>` vẽ cả cảnh 2D. [docs/09](docs/09-hieu-ung.md), [docs/10](docs/10-lop-ve-code.md). |
 | `packages/render/` | `@stickman3d/render` — bin `stickman-render` (PNG), `stickman-video` (mp4 xem thử). Cần `rsvg-convert`, mp4 cần thêm `ffmpeg`. |
 | `packages/mcp/` | `@stickman3d/mcp` — MCP server stdio cho agent. [docs/04](docs/04-mcp.md). |
-| `packages/cli/` | `@stickman3d/cli` — bin `stickman`: `init`, `upgrade`, `check`, `reseat`, `retime`, `studio`, `docs`. Scaffold app Remotion ở `scaffold/`. [docs/05](docs/05-repo-video.md). |
+| `packages/cli/` | `@stickman3d/cli` — bin `stickman`: `init`, `upgrade`, `check`, `reseat`, `retime`, `studio` (Studio 3D), `studio2d` (studio 2D), `docs`. Scaffold app Remotion ở `scaffold/`, server Studio 3D ở `studio3d.mjs`. [docs/05](docs/05-repo-video.md). |
 | `apps/viewer/` | App xem thử 3D: hai người que mẫu nói chuyện trên sàn phẳng; `demo=` là cảnh diễn hành động. Tham số URL ở [README](README.md#xem-thử). |
-| `apps/studio/` | Studio chỉnh nhân vật; tham số URL, bố cục và cách chụp ở [README của nó](apps/studio/README.md). `public/` là bộ mẫu chung (nhân vật, hành động, mảnh). |
+| `apps/studio3d/` | Studio 3D: xem cảnh three của một repo video, soạn kiểu cầm, ghi `scenes/` và `held/`; `stickman studio` chạy nó bằng Vite. [README của nó](apps/studio3d/README.md). |
+| `apps/studio/` | Studio 2D chỉnh nhân vật (`stickman studio2d`); tham số URL, bố cục và cách chụp ở [README của nó](apps/studio/README.md). `public/` là bộ mẫu chung (nhân vật, hành động, mảnh). |
 | `docs/` | Spec rig, nguồn sự thật cho hành vi của lõi và người que SVG. Đọc file liên quan **trước** khi sửa; bắt đầu ở [docs/README.md](docs/README.md), bẫy theo vùng ở [docs/00](docs/00-bat-bien.md). |
 | `assets/` | Sheet ảnh gốc của bộ mẫu trang phục (`sheets/`), SVG nguồn của đồ vật (`props/`) và mảnh vẽ lại (`pieces/`). |
 | `tools/` | `shots.mjs` chụp app xem thử, `bench.mjs` đo ms/khung — [README](README.md). |
@@ -39,9 +40,12 @@ qua `stickman docs` và tool `docs` của MCP.
 **Thứ chỉ đúng ở repo này thì không nằm trong `docs/`** — registry, token, `pnpm release`, vòng
 `link:` ở `README.md`, các bước dựng repo video ở `QUICKSTART.md`.
 
-**Studio đọc ghi một thư mục bất kỳ** có `characters/`, `actions/`, `pieces/` qua File System
-Access API, bản cũ ở `<file>.json.bak`. Không thêm endpoint ghi file phía server — studio phải
-chạy được như một app tĩnh rời.
+**Studio 2D (`apps/studio`) đọc ghi một thư mục bất kỳ** có `characters/`, `actions/`, `pieces/` qua
+File System Access API, bản cũ ở `<file>.json.bak`. Không thêm endpoint ghi file phía server cho
+`apps/studio` — nó phải chạy được như một app tĩnh rời. **Studio 3D (`apps/studio3d`) là dev server
+chạy trên máy** trong repo video: ghi `scenes/`, `held/` qua endpoint của `packages/cli/studio3d.mjs`,
+lưu kèm hash lúc nạp (file đã đổi trên đĩa thì 409), vá JSON thô thay vì ghi lại object đã parse,
+bản cũ ở `<file>.json.bak`, chỉ nghe `localhost` trừ khi gọi `--host`.
 
 **Đừng ngại breaking change.** Video đang làm thì đã pin version. Nhưng đổi hằng số hình học,
 tỉ lệ người (`R`), hệ toạ độ hay cách đặt người thì **nói rõ trong commit** — mọi JSON nhân vật
