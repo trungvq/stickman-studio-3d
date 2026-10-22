@@ -1,0 +1,10 @@
+$ node tools/can-tay.mjs t02-s039-dat-lai-1 0.3,2.75 --ai yoshie,erika --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/truoc --tab 2
+t02-s039-dat-lai-1 0.3s yoshie tay phải: vào thân 90° gap 3.4
+t02-s039-dat-lai-1 0.3s yoshie tay trái: vào thân 90° gap 3.4
+t02-s039-dat-lai-1 2.75s yoshie tay phải: vào thân 90° gap 3.4
+t02-s039-dat-lai-1 2.75s yoshie tay trái: vào thân 90° gap 3.4
+t02-s039-dat-lai-1 0.3s erika tay phải: ngửa 155°
+t02-s039-dat-lai-1 0.3s erika tay trái: úp 0° gap 3.6
+t02-s039-dat-lai-1 2.75s erika tay phải: ngửa 156°
+t02-s039-dat-lai-1 2.75s erika tay trái: ra trước 90°
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/truoc/t02-s039-dat-lai-1.jpg

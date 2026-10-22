@@ -20,7 +20,7 @@ async function toMd(db) {
   for (const it of items) {
     const c = db[it.id];
     if (!c || (!c.status && !c.text && !Object.values(c.frames || {}).some(Boolean))) continue;
-    const head = it.kind === 'shot' ? `#${it.n} ${it.scene} · ${it.cast} · tay ${it.side} · ${it.old} → ${it.item}@${it.group}` : `G4 ${it.title}`;
+    const head = it.kind === 't02' ? `Soát t02 ${it.scene.replace('t02-', '')} · ${it.cast} · tay ${it.side} · ${it.item}@${it.group} (${it.status})` : it.kind === 'shot' ? `#${it.n} ${it.scene} · ${it.cast} · tay ${it.side} · ${it.old} → ${it.item}@${it.group}` : `G4 ${it.title}`;
     out.push(`## ${head}`, '', `- Trạng thái: ${STATUS[c.status] || '—'}`);
     if (c.text) out.push(`- Nhận xét: ${c.text.replace(/\n/g, '\n  ')}`);
     for (const [k, v] of Object.entries(c.frames || {})) if (v) out.push(`- ${k}: ${v.replace(/\n/g, '\n  ')}`);

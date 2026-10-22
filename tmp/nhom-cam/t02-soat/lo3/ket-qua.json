@@ -1,0 +1,305 @@
+[
+ {
+  "scene": "t02-s029-mong-cho",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   0.3,
+   1.45,
+   2.36,
+   3.48
+  ],
+  "status": "da-sua",
+  "change": "offset mốc quay 陽太 [58,4,10]→[46,4,10]; mốc 0 thêm roll top→up",
+  "note": "Giơ máy quay 陽太 giờ khuỷu còn gập, hết duỗi thẳng tay lúc nghiêng đầu (2,2–2,4 s). Lúc cầm thấp trước bụng (0,3 s) máy vẫn nằm hơi ngang, roll chỉ xoay được một phần."
+ },
+ {
+  "scene": "t02-s029-mong-cho",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "group": "carry",
+  "secs": [
+   0.3,
+   2.36
+  ],
+  "status": "da-sua",
+  "change": "Tay phải: offset [38,18,34|42], elbow [-0.5,1,1] → [48,50,50], elbow [0,1,1.5] (theo lô 2), cả các mốc 1.05/1.4/@ha",
+  "note": "Quai khoác nếp khuỷu, cẳng tay đưa ra trước gần ngang, lòng ngửa; túi treo ngoài hông, không lấn người. Trước đó tay giơ tới vai, túi treo trước bụng."
+ },
+ {
+  "scene": "t02-s029-mong-cho",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "the-phong",
+  "group": "card",
+  "secs": [
+   0.3,
+   2.36
+  ],
+  "status": "dung",
+  "change": "—",
+  "note": "Thẻ kẹp bên thõng cạnh hông, chĩa ra trước xuống, đúng kiểu cầm buông."
+ },
+ {
+  "scene": "t02-s030-khai-vi",
+  "cast": "yoshie-di",
+  "side": "hai tay",
+  "item": "khay-suat",
+  "group": "sheet",
+  "secs": [
+   0,
+   0.3,
+   0.4
+  ],
+  "status": "da-sua",
+  "change": "platform (ngửa lòng, psi 90) → sheet rim hai cạnh ngắn, thumb top, up top; offset [40,50,30]→[50,50,44]",
+  "note": "Khay giờ nằm ngang trước bụng, ngón cái trên vành, bốn ngón dưới đáy như ảnh khay-hai-tay; hết nghiêng lệch và hết lấn vào thân. Ngón cái hơi dựng lên trên vành, ngón giữa chưa khép sát đáy (dáng rim của rig)."
+ },
+ {
+  "scene": "t02-s030-khai-vi",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   0.3,
+   3.76
+  ],
+  "status": "dung",
+  "change": "—",
+  "note": "Máy nằm ngửa trên tầm khay, màn chếch về mặt, camera soi món như kịch bản."
+ },
+ {
+  "scene": "t02-s031-bong-tay",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   0.3,
+   4.04
+  ],
+  "status": "dung",
+  "change": "—",
+  "note": "Như S30: giơ máy soi món, ngón ôm thân máy, không xuyên."
+ },
+ {
+  "scene": "t02-s032-sach",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dua",
+  "group": "chopsticks",
+  "secs": [
+   0.3,
+   2.5,
+   3.12,
+   3.52
+  ],
+  "status": "da-sua",
+  "change": "at [-215,-180,640]→[-212,-198,652] (mốc 0 và @dat)",
+  "note": "Bàn tay và cẳng tay hết đè lên bát canh (check clash từ 3 cảnh báo về 0); đầu đũa đúng chiều, ngọn ra trước chúc xuống."
+ },
+ {
+  "scene": "t02-s033-ruou-tang",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "chen",
+  "group": "bowl",
+  "secs": [
+   0.3,
+   0.65,
+   0.9,
+   1.2
+  ],
+  "status": "dung",
+  "change": "—",
+  "note": "Chén kẹp ngón cái đối trỏ–giữa, lòng tay không áp, như chen-ruou-2."
+ },
+ {
+  "scene": "t02-s033-ruou-tang",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "chai-dia",
+  "group": "cylinder",
+  "secs": [
+   2.6,
+   4.27,
+   5.71,
+   8.44
+  ],
+  "status": "da-sua",
+  "change": "part vai along 0.82 → than along 0.5; hạ đích tay 20–22 ở các mốc cầm; thêm mốc @nhac+0.55 nhấc chai lên khỏi khay",
+  "note": "Giờ nắm thân chai, ngón cái ôm vòng thân (mặc định chai-than), cổ chai không chạm mặt. Còn cảnh báo cũ 'món nhảy lúc gắn vào tay' ở 2,3 s (dời 10→32, xoay 122→126°), khoá face ở mốc nhặt không đổi được."
+ },
+ {
+  "scene": "t02-s034-goi-them",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "dua",
+  "group": "chopsticks",
+  "secs": [
+   0.3,
+   2.14,
+   2.34,
+   4.66
+  ],
+  "status": "da-sua",
+  "change": "nâng đích tay 12 ở mọi mốc cầm đũa",
+  "note": "Cẳng tay hết đè lên bát canh. Đũa đúng chiều; check còn lún 0,8 ở đầu ngón cái (dáng chopsticks của rig)."
+ },
+ {
+  "scene": "t02-s034-goi-them",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "thuc-don",
+  "group": "sheet",
+  "secs": [
+   4.98,
+   5.5,
+   7.27,
+   8.51
+  ],
+  "status": "da-sua",
+  "change": "flat edge left slant 70.3 thumb front → pinch edge bottom thumb back, roll top→up (rig đặt góc cùng bên tay)",
+  "note": "Hết áp phẳng lòng tay sau tờ; giờ kẹp góc dưới bên phải, bốn ngón mặt trước, ngón cái mặt sau như khoe giấy. Ngón trước che một chút dòng giá cuối."
+ },
+ {
+  "scene": "t02-s035-gia",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "thuc-don",
+  "group": "sheet",
+  "secs": [
+   0.3,
+   3.3,
+   6
+  ],
+  "status": "da-sua",
+  "change": "như S34",
+  "note": "Như S34: kẹp góc dưới phải, よし江 chỉ vào dòng không vướng tay."
+ },
+ {
+  "scene": "t02-s036-lay-het",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   0.3,
+   2.7
+  ],
+  "status": "dung",
+  "change": "—",
+  "note": "Như S31."
+ },
+ {
+  "scene": "t02-s036-lay-het",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "thuc-don",
+  "group": "sheet",
+  "secs": [
+   0.3,
+   2.7,
+   3.45,
+   4.05
+  ],
+  "status": "dung",
+  "change": "trả về dáng cũ (người soi: dáng sửa xòe phẳng tay như vẫy, thực đơn chạm hờ đầu ngón, lơ lửng)",
+  "note": "Tay phải dựng sau mép trái thực đơn, ngón cái phía trước kẹp mép, mặt thực đơn hướng Yoshie như bản cũ. Góc ngang bị đầu Yoshie che phần lớn."
+ },
+ {
+  "scene": "t02-s038-tom",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "group": "sheet",
+  "secs": [
+   0.3,
+   0.85,
+   1
+  ],
+  "status": "dung",
+  "change": "—",
+  "note": "Hai tay kẹp vành đĩa, ngón cái trên vành, ngón dưới đáy như dia-thuc-an-hai-tay. Check báo ngón giữa cách vành 3,4 (dáng rim của rig chưa khép)."
+ },
+ {
+  "scene": "t02-s038-tom",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   1.3,
+   1.35,
+   1.5,
+   1.9
+  ],
+  "status": "dung",
+  "change": "—",
+  "note": "Giơ máy soi đĩa; đúng khung 1,0 s lúc nhặt máy còn dựng đứng một khung."
+ },
+ {
+  "scene": "t02-s039-dat-lai-1",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "group": "sheet",
+  "secs": [
+   0.3,
+   2.75
+  ],
+  "status": "dung",
+  "change": "—",
+  "note": "Như S38."
+ },
+ {
+  "scene": "t02-s039-dat-lai-1",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   0.3,
+   2.75
+  ],
+  "status": "dung",
+  "change": "—",
+  "note": "Như S30."
+ },
+ {
+  "scene": "t02-s040-dat-lai-2",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "group": "sheet",
+  "secs": [
+   0.2,
+   0.6,
+   0.8,
+   2.35
+  ],
+  "status": "dung",
+  "change": "—",
+  "note": "Như S38, cả lúc nhấc lên đặt lại."
+ },
+ {
+  "scene": "t02-s040-dat-lai-2",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   0.3,
+   2.15,
+   2.35,
+   2.85
+  ],
+  "status": "dung",
+  "change": "—",
+  "note": "Như S30, nghiêng máy ở 角度が違う tự nhiên."
+ }
+]

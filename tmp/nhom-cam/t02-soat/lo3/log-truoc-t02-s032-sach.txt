@@ -1,0 +1,10 @@
+$ node tools/can-tay.mjs t02-s032-sach 0.3,2.5,3.12,3.52 --ai erika --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/truoc --tab 2
+t02-s032-sach 0.3s erika tay phải: vào thân 60° gap 2.7
+t02-s032-sach 0.3s erika tay trái: úp 0° gap 3.6
+t02-s032-sach 2.5s erika tay phải: vào thân 58° gap 3.5
+t02-s032-sach 2.5s erika tay trái: úp 0° gap 3.6
+t02-s032-sach 3.12s erika tay phải: vào thân 60° gap 2.1
+t02-s032-sach 3.12s erika tay trái: úp 0° gap 3.6
+t02-s032-sach 3.52s erika tay phải: úp 34° gap 16.7
+t02-s032-sach 3.52s erika tay trái: úp 0° gap 3.6
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/truoc/t02-s032-sach.jpg

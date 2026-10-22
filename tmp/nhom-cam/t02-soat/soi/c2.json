@@ -1,0 +1,109 @@
+[
+ {
+  "scene": "t02-s061-sang",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "ghi": "Q5 đối chiếu s001 (lo1/sau): cùng dáng cẳng tay dựng, quai túi tựa nếp khuỷu, góc đo trùng s001 trong 2° (trái: ra 31, trước 35, khuỷu 48) — không lỗi; cheo/ngang/tren sạch, túi treo ngoài hông trái, không lấn váy hay quầy (truoc bị quầy che)"
+ },
+ {
+  "scene": "t02-s061-sang",
+  "cast": "ong-khach",
+  "side": "hai tay",
+  "item": "bao",
+  "ket_qua": "loi",
+  "loi": [
+   "Q1 0.3s/1.3s (cùng tham số ở s062/s063/s066) cheo+ngang+tren, đo goc-tay: cánh tay trên PHẢI nâng gần ngang (ra 86°, trước 77° ⇒ hướng ~73° sang ngang), khuỷu chĩa ra ngoài sườn ngang tầm ngực như cánh gà; tay trái cũng dạng (ra 61°, cẳng tay lệch ra ngoài 40°) — người đọc báo ngồi để khuỷu sát sườn"
+  ],
+  "ghi": "Q3 đạt: hai tay kẹp hai cạnh bên ở nửa dưới, bốn ngón mặt ngoài, ngón cái phía người đọc, không còn nắm đấm; Q2: mép dưới báo chạm nhẹ đùi ở ngang trái (nhẹ)"
+ },
+ {
+  "scene": "t02-s062-hoa-don",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "ghi": "Q5 đối chiếu s001 (lo1/sau): cùng dáng cẳng tay dựng, quai túi tựa nếp khuỷu, góc đo trùng s001 trong 2° (trái: ra 31, trước 35, khuỷu 48) — không lỗi; cheo/ngang/tren sạch, túi treo ngoài hông trái, không lấn váy hay quầy (truoc bị quầy che)"
+ },
+ {
+  "scene": "t02-s062-hoa-don",
+  "cast": "ong-khach",
+  "side": "hai tay",
+  "item": "bao",
+  "ket_qua": "loi",
+  "loi": [
+   "Q1 0.3s/2.94s (cùng tham số ở s062/s063/s066) cheo+ngang+tren, đo goc-tay: cánh tay trên PHẢI nâng gần ngang (ra 86°, trước 77° ⇒ hướng ~73° sang ngang), khuỷu chĩa ra ngoài sườn ngang tầm ngực như cánh gà; tay trái cũng dạng (ra 61°, cẳng tay lệch ra ngoài 40°) — người đọc báo ngồi để khuỷu sát sườn"
+  ],
+  "ghi": "Q3 đạt: hai tay kẹp hai cạnh bên ở nửa dưới, bốn ngón mặt ngoài, ngón cái phía người đọc, không còn nắm đấm; Q2: mép dưới báo chạm nhẹ đùi ở ngang trái (nhẹ)"
+ },
+ {
+  "scene": "t02-s063-hoa-don",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "ghi": "Q5 đối chiếu s001 (lo1/sau): cùng dáng cẳng tay dựng, quai túi tựa nếp khuỷu, góc đo trùng s001 trong 2° (trái: ra 31, trước 35, khuỷu 48) — không lỗi; cheo/ngang/tren sạch, túi treo ngoài hông trái, không lấn váy hay quầy (truoc bị quầy che)"
+ },
+ {
+  "scene": "t02-s063-hoa-don",
+  "cast": "ong-khach",
+  "side": "hai tay",
+  "item": "bao",
+  "ket_qua": "loi",
+  "loi": [
+   "Q1 0.3s/1.8s (cùng tham số ở s062/s063/s066) cheo+ngang+tren, đo goc-tay: cánh tay trên PHẢI nâng gần ngang (ra 86°, trước 77° ⇒ hướng ~73° sang ngang), khuỷu chĩa ra ngoài sườn ngang tầm ngực như cánh gà; tay trái cũng dạng (ra 61°, cẳng tay lệch ra ngoài 40°) — người đọc báo ngồi để khuỷu sát sườn"
+  ],
+  "ghi": "Q3 đạt: hai tay kẹp hai cạnh bên ở nửa dưới, bốn ngón mặt ngoài, ngón cái phía người đọc, không còn nắm đấm; Q2: mép dưới báo chạm nhẹ đùi ở ngang trái (nhẹ)"
+ },
+ {
+  "scene": "t02-s064-tat-ca",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "ghi": "Q5 đối chiếu s001 (lo1/sau): cùng dáng cẳng tay dựng, quai túi tựa nếp khuỷu, góc đo trùng s001 trong 2° (trái: ra 31, trước 35, khuỷu 48) — không lỗi; cheo/ngang/tren sạch, túi treo ngoài hông trái, không lấn váy hay quầy (truoc bị quầy che)"
+ },
+ {
+  "scene": "t02-s064-tat-ca",
+  "cast": "takumi",
+  "side": "hai tay",
+  "item": "hoa-don",
+  "ket_qua": "dat",
+  "loi": [],
+  "ghi": "0.3/1.22/2s cheo+ngang+tren (+tren/cheo rộng ở c2-anh): kẹp hai cạnh bên, ngón cái mặt trên phía người đọc, bốn ngón dưới, không đỡ lòng tay; tờ ngả về mặt để đọc; không chạm Erika (tren cách ~70px); truoc ô đen, thay bằng tren"
+ },
+ {
+  "scene": "t02-s065-ghi-ro",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "ghi": "Q5 đối chiếu s001 (lo1/sau): cùng dáng cẳng tay dựng, quai túi tựa nếp khuỷu, góc đo trùng s001 trong 2° (trái: ra 31, trước 35, khuỷu 48) — không lỗi; cheo/ngang/tren sạch, túi treo ngoài hông trái, không lấn váy hay quầy (truoc bị quầy che)"
+ },
+ {
+  "scene": "t02-s066-day-lai",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "ghi": "Q5 đối chiếu s001 (lo1/sau): cùng dáng cẳng tay dựng, quai túi tựa nếp khuỷu, góc đo trùng s001 trong 2° (trái: ra 31, trước 35, khuỷu 48) — không lỗi; cheo/ngang/tren sạch, túi treo ngoài hông trái, không lấn váy hay quầy (truoc bị quầy che)"
+ },
+ {
+  "scene": "t02-s066-day-lai",
+  "cast": "ong-khach",
+  "side": "hai tay",
+  "item": "bao",
+  "ket_qua": "loi",
+  "loi": [
+   "Q1 0.3s/4.02s (cùng tham số ở s062/s063/s066) cheo+ngang+tren, đo goc-tay: cánh tay trên PHẢI nâng gần ngang (ra 86°, trước 77° ⇒ hướng ~73° sang ngang), khuỷu chĩa ra ngoài sườn ngang tầm ngực như cánh gà; tay trái cũng dạng (ra 61°, cẳng tay lệch ra ngoài 40°) — người đọc báo ngồi để khuỷu sát sườn"
+  ],
+  "ghi": "Q3 đạt: hai tay kẹp hai cạnh bên ở nửa dưới, bốn ngón mặt ngoài, ngón cái phía người đọc, không còn nắm đấm; Q2: mép dưới báo chạm nhẹ đùi ở ngang trái (nhẹ)"
+ }
+]

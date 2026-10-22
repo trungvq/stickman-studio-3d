@@ -1,0 +1,33 @@
+$ node tools/can-tay.mjs t02-s041-nguoi 0,0.15,0.3,0.45 t02-s042-lam-lai 1.84,1.86,2.0,2.15,2.55,2.77,3.1 t02-s045-cui 0,0.24,0.47,0.62 --ai yoshie --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/sua/v1-anh --tab 2
+t02-s041-nguoi 0s yoshie tay phải: vào thân 90° gap 5.2
+t02-s041-nguoi 0s yoshie tay trái: vào thân 90° gap 5.2
+t02-s041-nguoi 0.15s yoshie tay phải: vào thân 90° gap 0.6
+t02-s041-nguoi 0.15s yoshie tay trái: vào thân 90° gap 0.6
+t02-s041-nguoi 0.3s yoshie tay phải: vào thân 90° gap -1.1
+t02-s041-nguoi 0.3s yoshie tay trái: vào thân 90° gap -7.5
+t02-s041-nguoi 0.45s yoshie tay phải: vào thân 90°
+t02-s041-nguoi 0.45s yoshie tay trái: vào thân 90°
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/sua/v1-anh/t02-s041-nguoi.jpg
+t02-s042-lam-lai 1.84s yoshie hai tay: P vào thân 82° gap -8 · T vào thân 73° gap -7.8
+t02-s042-lam-lai 1.86s yoshie tay phải: vào thân 73° gap 5.9
+t02-s042-lam-lai 1.86s yoshie tay trái: vào thân 72° gap -3.8
+t02-s042-lam-lai 2s yoshie tay phải: vào thân 81° gap 1.2
+t02-s042-lam-lai 2s yoshie tay trái: vào thân 85° gap -4.8
+t02-s042-lam-lai 2.15s yoshie tay phải: vào thân 90° gap -3.7
+t02-s042-lam-lai 2.15s yoshie tay trái: vào thân 90° gap -2.9
+t02-s042-lam-lai 2.55s yoshie tay phải: vào thân 90° gap 11.5
+t02-s042-lam-lai 2.55s yoshie tay trái: vào thân 90° gap 11.5
+t02-s042-lam-lai 2.77s yoshie tay phải: vào thân 90°
+t02-s042-lam-lai 2.77s yoshie tay trái: vào thân 90°
+t02-s042-lam-lai 3.1s yoshie tay phải: vào thân 90°
+t02-s042-lam-lai 3.1s yoshie tay trái: vào thân 90°
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/sua/v1-anh/t02-s042-lam-lai.jpg
+t02-s045-cui 0s yoshie tay phải: vào thân 90°
+t02-s045-cui 0s yoshie tay trái: vào thân 90°
+t02-s045-cui 0.24s yoshie tay phải: vào thân 90°
+t02-s045-cui 0.24s yoshie tay trái: vào thân 90° gap 28.7
+t02-s045-cui 0.47s yoshie tay phải: vào thân 90° gap -1.1
+t02-s045-cui 0.47s yoshie tay trái: vào thân 90° gap -7.5
+t02-s045-cui 0.62s yoshie tay phải: vào thân 90°
+t02-s045-cui 0.62s yoshie tay trái: vào thân 90°
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/sua/v1-anh/t02-s045-cui.jpg

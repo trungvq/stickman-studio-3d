@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 26,
+  "name": "t02-s022-cup",
+  "frame": "wide",
+  "duration": 2.605,
+  "marks": {
+    "loi": 0.1,
+    "chao": 0.92,
+    "ha": 1.65,
+    "cup": 2.2
+  },
+  "camera": [
+    {
+      "t": 0,
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  ],
+  "lens": {
+    "eye": [
+      0,
+      -400,
+      -900
+    ],
+    "yaw": 0,
+    "pitch": 0,
+    "f": 1000,
+    "cx": 0,
+    "cy": 0
+  },
+  "cast": [
+    {
+      "id": "yota",
+      "character": "yota.json",
+      "world": {
+        "at": [
+          735,
+          0,
+          1185
+        ],
+        "yaw": 270,
+        "hands": [
+          {
+            "t": 0,
+            "left": {
+              "to": "ear",
+              "point": "item:speaker",
+              "offset": [
+                0,
+                0,
+                3
+              ],
+              "elbow": [
+                0.4,
+                1,
+                -0.4
+              ],
+              "hold": {
+                "item": "ong-nghe-ban",
+                "group": "cylinder",
+                "part": "tay",
+                "along": 0.319,
+                "thumb": "up",
+                "variant": "flat",
+                "around": 150,
+                "face": {
+                  "axis": "front",
+                  "toward": {
+                    "mark": "head"
+                  }
+                },
+                "touch": [
+                  "self.head"
+                ],
+                "roll": {
+                  "axis": "top",
+                  "toward": [
+                    -0.3,
+                    -1,
+                    0
+                  ]
+                }
+              }
+            },
+            "right": {
+              "at": [
+                770,
+                -205,
+                1240
+              ],
+              "elbow": [
+                0,
+                1,
+                1
+              ]
+            }
+          },
+          {
+            "t": 1.15,
+            "left": {
+              "to": "ear",
+              "point": "item:speaker",
+              "offset": [
+                0,
+                0,
+                3
+              ],
+              "elbow": [
+                0.4,
+                1,
+                -0.4
+              ],
+              "hold": {
+                "item": "ong-nghe-ban",
+                "group": "cylinder",
+                "part": "tay",
+                "along": 0.319,
+                "thumb": "up",
+                "variant": "flat",
+                "around": 150,
+                "face": {
+                  "axis": "front",
+                  "toward": {
+                    "mark": "head"
+                  }
+                },
+                "touch": [
+                  "self.head"
+                ],
+                "roll": {
+                  "axis": "top",
+                  "toward": [
+                    -0.3,
+                    -1,
+                    0
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "t": 1.3,
+            "left": {
+              "at": [
+                668,
+                -305,
+                1235
+              ],
+              "elbow": [
+                0,
+                1,
+                0.3
+              ],
+              "hold": {
+                "item": "ong-nghe-ban",
+                "group": "cylinder",
+                "part": "tay",
+                "along": 0.319,
+                "thumb": "up",
+                "variant": "flat",
+                "around": 150,
+                "face": {
+                  "axis": "front",
+                  "toward": {
+                    "mark": "head"
+                  }
+                },
+                "touch": [
+                  "self.head"
+                ]
+              }
+            }
+          },
+          {
+            "t": 1.7,
+            "left": {
+              "at": [
+                683,
+                -265,
+                1250
+              ],
+              "elbow": [
+                -0.5,
+                1,
+                1
+              ],
+              "hold": {
+                "item": "ong-nghe-ban",
+                "group": "cylinder",
+                "part": "tay",
+                "along": 0.319,
+                "thumb": "up",
+                "variant": "flat",
+                "around": 150,
+                "face": {
+                  "axis": "front",
+                  "toward": "down"
+                },
+                "roll": {
+                  "axis": "top",
+                  "toward": "forward"
+                },
+                "touch": [
+                  "self.head"
+                ]
+              }
+            }
+          },
+          {
+            "t": "@cup",
+            "left": {
+              "at": [
+                713,
+                -164,
+                1292
+              ],
+              "elbow": [
+                -0.5,
+                1,
+                1
+              ]
+            }
+          },
+          {
+            "t": "@cup+0.04",
+            "left": {
+              "at": [
+                713,
+                -164,
+                1292
+              ],
+              "elbow": [
+                -0.5,
+                1,
+                1
+              ],
+              "hold": null,
+              "palm": "down"
+            }
+          },
+          {
+            "t": 2.59,
+            "left": {
+              "at": [
+                710,
+                -190,
+                1275
+              ],
+              "elbow": [
+                -0.5,
+                1,
+                1
+              ],
+              "palm": "down"
+            }
+          }
+        ]
+      },
+      "tracks": [
+        {
+          "name": "than",
+          "clips": [
+            {
+              "start": 0,
+              "action": "stand-3d"
+            }
+          ]
+        },
+        {
+          "name": "mat",
+          "clips": [
+            {
+              "start": 0,
+              "action": "face-calm"
+            }
+          ]
+        },
+        {
+          "name": "dau",
+          "clips": [
+            {
+              "start": "@chao",
+              "action": "gat-nhe-3d",
+              "cycle": 0.7
+            },
+            {
+              "start": 1.6,
+              "blend": 0.2
+            }
+          ]
+        },
+        {
+          "name": "moi",
+          "clips": [
+            {
+              "start": "@loi",
+              "action": "lip-t02-d-yota-07",
+              "cycle": 1.705,
+              "blend": 0
+            },
+            {
+              "start": "@loi+1.705",
+              "blend": 0
+            }
+          ]
+        },
+        {
+          "name": "cui",
+          "clips": [
+            {
+              "action": "t02-cui-cup-3d",
+              "start": 1.25,
+              "blend": 0.5
+            }
+          ]
+        }
+      ],
+      "equip": {
+        "torso": "ao-khong-la"
+      }
+    }
+  ]
+}

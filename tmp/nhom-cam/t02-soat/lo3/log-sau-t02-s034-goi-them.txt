@@ -1,0 +1,14 @@
+$ node tools/can-tay.mjs t02-s034-goi-them 0.3,2.14,2.34,4.66,4.98,5.5,7.27,8.51 --ai takumi --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/sau --tab 2
+t02-s034-goi-them 0.3s takumi tay phải: vào thân 69°
+t02-s034-goi-them 0.3s takumi tay trái: úp 0° gap 3.5
+t02-s034-goi-them 2.14s takumi tay phải: vào thân 61°
+t02-s034-goi-them 2.14s takumi tay trái: úp 0° gap 3.5
+t02-s034-goi-them 2.34s takumi tay phải: vào thân 59°
+t02-s034-goi-them 2.34s takumi tay trái: úp 0° gap 3.5
+t02-s034-goi-them 4.66s takumi tay phải: vào thân 59°
+t02-s034-goi-them 4.66s takumi tay trái: úp 0° gap 6.3
+t02-s034-goi-them 4.98s takumi hai tay: P ra sau 100° · T úp 0°
+t02-s034-goi-them 5.5s takumi hai tay: P ra sau 100° · T úp 0°
+t02-s034-goi-them 7.27s takumi hai tay: P ra sau 100° · T úp 0°
+t02-s034-goi-them 8.51s takumi hai tay: P ra sau 100° · T úp 4°
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/sau/t02-s034-goi-them.jpg

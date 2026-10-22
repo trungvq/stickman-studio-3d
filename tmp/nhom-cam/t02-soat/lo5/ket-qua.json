@@ -1,0 +1,385 @@
+[
+  {
+    "scene": "t02-s054-xin-loi",
+    "cast": "yota",
+    "side": "hai tay",
+    "item": "khay",
+    "group": "platform",
+    "secs": [
+      0.3,
+      3.41
+    ],
+    "status": "dung",
+    "change": "",
+    "note": "Khay ngang trước bụng, hai lòng tay ngửa đỡ dưới hai cạnh ngắn, ngón chĩa ra trước; không xuyên, cổ tay tự nhiên."
+  },
+  {
+    "scene": "t02-s054-xin-loi",
+    "cast": "erika",
+    "side": "trái",
+    "item": "dien-thoai",
+    "group": "palmBox",
+    "secs": [
+      0.3,
+      3.41
+    ],
+    "status": "dung",
+    "change": "",
+    "note": "Erika cầm điện thoại dọc ngang cằm/ngực, lưng máy (camera) hướng về người bị quay, ngón cái dọc cạnh, bốn ngón ôm lưng phía dưới — đúng kiểu quay lén."
+  },
+  {
+    "scene": "t02-s055-nhan-viec",
+    "cast": "yota",
+    "side": "hai tay",
+    "item": "khay",
+    "group": "platform",
+    "secs": [
+      0.3,
+      2.72
+    ],
+    "status": "dung",
+    "change": "",
+    "note": "Khay ngang trước bụng, hai lòng tay ngửa đỡ dưới hai cạnh ngắn, ngón chĩa ra trước; không xuyên, cổ tay tự nhiên."
+  },
+  {
+    "scene": "t02-s055-nhan-viec",
+    "cast": "chiaki-nhan",
+    "side": "hai tay",
+    "item": "khay",
+    "group": "platform",
+    "secs": [
+      0.3,
+      2.72
+    ],
+    "status": "dung",
+    "change": "",
+    "note": "Khay ngang trước bụng, hai lòng tay ngửa đỡ dưới hai cạnh ngắn, ngón chĩa ra trước; không xuyên, cổ tay tự nhiên."
+  },
+  {
+    "scene": "t02-s055-nhan-viec",
+    "cast": "erika",
+    "side": "trái",
+    "item": "dien-thoai",
+    "group": "palmBox",
+    "secs": [
+      0.3,
+      2.72
+    ],
+    "status": "dung",
+    "change": "",
+    "note": "Erika cầm điện thoại dọc ngang cằm/ngực, lưng máy (camera) hướng về người bị quay, ngón cái dọc cạnh, bốn ngón ôm lưng phía dưới — đúng kiểu quay lén."
+  },
+  {
+    "scene": "t02-s056-bieu",
+    "cast": "chiaki-nhan",
+    "side": "hai tay",
+    "item": "khay",
+    "group": "platform",
+    "secs": [
+      0.3,
+      2.75
+    ],
+    "status": "dung",
+    "change": "",
+    "note": "Khay ngang trước bụng, hai lòng tay ngửa đỡ dưới hai cạnh ngắn, ngón chĩa ra trước; không xuyên, cổ tay tự nhiên. Lúc cúi chào tay trái còn lệch ngửa 26° (cảnh báo check), nhìn vẫn đỡ khay."
+  },
+  {
+    "scene": "t02-s056-bieu",
+    "cast": "erika",
+    "side": "trái",
+    "item": "dien-thoai",
+    "group": "palmBox",
+    "secs": [
+      0.3,
+      2.75
+    ],
+    "status": "dung",
+    "change": "",
+    "note": "Erika cầm điện thoại dọc ngang cằm/ngực, lưng máy (camera) hướng về người bị quay, ngón cái dọc cạnh, bốn ngón ôm lưng phía dưới — đúng kiểu quay lén."
+  },
+  {
+    "scene": "t02-s057-moi",
+    "cast": "chiaki-nhan",
+    "side": "hai tay",
+    "item": "khay",
+    "group": "platform",
+    "secs": [
+      0.3,
+      3.54
+    ],
+    "status": "dung",
+    "change": "",
+    "note": "Khay ngang trước bụng, hai lòng tay ngửa đỡ dưới hai cạnh ngắn, ngón chĩa ra trước; không xuyên, cổ tay tự nhiên."
+  },
+  {
+    "scene": "t02-s057-moi",
+    "cast": "erika",
+    "side": "trái",
+    "item": "dien-thoai",
+    "group": "palmBox",
+    "secs": [
+      0.3,
+      0.35,
+      3.54
+    ],
+    "status": "dung",
+    "change": "",
+    "note": "Điện thoại hạ xuống trước ngực khi đi (quay lén), lưng máy ra trước; sát vòng cổ nhưng không xuyên."
+  },
+  {
+    "scene": "t02-s058-quan-truoc",
+    "cast": "chiaki-nhan",
+    "side": "hai tay",
+    "item": "khay",
+    "group": "platform",
+    "secs": [
+      0.3,
+      5.36
+    ],
+    "status": "dung",
+    "change": "",
+    "note": "Khay ngang trước bụng, hai lòng tay ngửa đỡ dưới hai cạnh ngắn, ngón chĩa ra trước; không xuyên, cổ tay tự nhiên."
+  },
+  {
+    "scene": "t02-s058-quan-truoc",
+    "cast": "erika",
+    "side": "trái",
+    "item": "dien-thoai",
+    "group": "palmBox",
+    "secs": [
+      0.3,
+      5.36
+    ],
+    "status": "dung",
+    "change": "",
+    "note": "Erika cầm điện thoại dọc ngang cằm/ngực, lưng máy (camera) hướng về người bị quay, ngón cái dọc cạnh, bốn ngón ôm lưng phía dưới — đúng kiểu quay lén."
+  },
+  {
+    "scene": "t02-s059-gia-da-bao",
+    "cast": "chiaki-nhan",
+    "side": "hai tay",
+    "item": "khay",
+    "group": "platform",
+    "secs": [
+      0.3,
+      3.85
+    ],
+    "status": "dung",
+    "change": "",
+    "note": "Khay ngang trước bụng, hai lòng tay ngửa đỡ dưới hai cạnh ngắn, ngón chĩa ra trước; không xuyên, cổ tay tự nhiên. Lúc cúi chào tay trái còn lệch ngửa 26° (cảnh báo check), nhìn vẫn đỡ khay."
+  },
+  {
+    "scene": "t02-s059-gia-da-bao",
+    "cast": "erika",
+    "side": "trái",
+    "item": "dien-thoai",
+    "group": "palmBox",
+    "secs": [
+      0.3,
+      3.85
+    ],
+    "status": "dung",
+    "change": "",
+    "note": "Erika cầm điện thoại dọc ngang cằm/ngực, lưng máy (camera) hướng về người bị quay, ngón cái dọc cạnh, bốn ngón ôm lưng phía dưới — đúng kiểu quay lén."
+  },
+  {
+    "scene": "t02-s060-mot-dem",
+    "cast": "chiaki-nhan",
+    "side": "hai tay",
+    "item": "khay",
+    "group": "platform",
+    "secs": [
+      0.3,
+      3.79
+    ],
+    "status": "dung",
+    "change": "",
+    "note": "Khay ngang trước bụng, hai lòng tay ngửa đỡ dưới hai cạnh ngắn, ngón chĩa ra trước; không xuyên, cổ tay tự nhiên. Lúc cúi chào tay trái còn lệch ngửa 26° (cảnh báo check), nhìn vẫn đỡ khay."
+  },
+  {
+    "scene": "t02-s060-mot-dem",
+    "cast": "takumi",
+    "side": "phải",
+    "item": "chai-dac-tuyen",
+    "group": "cylinder",
+    "secs": [
+      1.05,
+      1.2,
+      2.4,
+      4.17
+    ],
+    "status": "da-sua",
+    "change": "thêm mốc tay @hito-0.25 (giữ chỗ cầm) và @hito+0.6 với elbow [0.93,1,0.38] → [-0.93,1,-0.38] (khuỷu theo thân sau khi quay 158°)",
+    "note": "Cầm chai lớn ở vai chai, chai treo thõng bên hông khi đi; hết khuỷu gập ngược sau lúc quay người (lỗi check 5.2–7.5 s đã hết)."
+  },
+  {
+    "scene": "t02-s060-mot-dem",
+    "cast": "erika",
+    "side": "trái",
+    "item": "dien-thoai",
+    "group": "palmBox",
+    "secs": [
+      0.3,
+      0.65,
+      3.79
+    ],
+    "status": "da-sua",
+    "change": "mốc tay trái t 0.25: at [134,-288,-160] → [134,-272,-182] (đưa máy ra trước, xuống)",
+    "note": "Điện thoại hạ từ ngang ngực xuống tay khoanh; máy không còn xuyên thân/vòng cổ lúc 0.31–0.41 s."
+  },
+  {
+    "scene": "t02-s061-sang",
+    "cast": "erika",
+    "side": "trái",
+    "item": "tui-hieu",
+    "group": "carry",
+    "secs": [
+      0.3,
+      1.3
+    ],
+    "status": "da-sua",
+    "change": "Trả về dáng cũ như s001–s013: tay trái offset [48,34,50], elbow [0,1,1.5] → [38,18,34], elbow [-0.5,1,1] (chủ dự án duyệt dáng s001).",
+    "note": "Cẳng tay trái dựng, bàn tay mở ngang ngực, quai khoác trên cẳng tay, túi treo trước hông như s001–s013. Góc trước bị quầy che, xem góc chéo, ngang và trên (s064)."
+  },
+  {
+    "scene": "t02-s061-sang",
+    "cast": "ong-khach",
+    "side": "hai tay",
+    "item": "bao",
+    "group": "sheet",
+    "secs": [
+      0.3,
+      1.3
+    ],
+    "status": "da-sua",
+    "change": "Hai tay: sheet pinch cạnh phải/trái slant 45 → rim cạnh dưới (along 0.1 / 0.9, thumb front, slant 40); tay phải at [-1600,-200,-320] → [-1575,-185,-328], elbow [0,1,-1] → [0,1,0].",
+    "note": "Ông khách ngồi đọc báo, khuỷu thả sát sườn, cẳng tay chếch lên, hai tay cầm hai góc dưới tờ báo (ngón cái phía mình, bốn ngón mặt ngoài), mép dưới cách đùi xa. Bàn tay kiểu rim cuộn ngón trông hơi như nắm — dáng ngón do rig."
+  },
+  {
+    "scene": "t02-s062-hoa-don",
+    "cast": "erika",
+    "side": "trái",
+    "item": "tui-hieu",
+    "group": "carry",
+    "secs": [
+      0.3,
+      2.94
+    ],
+    "status": "da-sua",
+    "change": "Trả về dáng cũ như s001–s013: tay trái offset [48,34,50], elbow [0,1,1.5] → [38,18,34], elbow [-0.5,1,1] (chủ dự án duyệt dáng s001).",
+    "note": "Cẳng tay trái dựng, bàn tay mở ngang ngực, quai khoác trên cẳng tay, túi treo trước hông như s001–s013. Góc trước bị quầy che, xem góc chéo, ngang và trên (s064)."
+  },
+  {
+    "scene": "t02-s062-hoa-don",
+    "cast": "ong-khach",
+    "side": "hai tay",
+    "item": "bao",
+    "group": "sheet",
+    "secs": [
+      0.3,
+      2.94
+    ],
+    "status": "da-sua",
+    "change": "Hai tay: sheet pinch cạnh phải/trái slant 45 → rim cạnh dưới (along 0.1 / 0.9, thumb front, slant 40); tay phải at [-1600,-200,-320] → [-1575,-185,-328], elbow [0,1,-1] → [0,1,0].",
+    "note": "Ông khách ngồi đọc báo, khuỷu thả sát sườn, cẳng tay chếch lên, hai tay cầm hai góc dưới tờ báo (ngón cái phía mình, bốn ngón mặt ngoài), mép dưới cách đùi xa. Bàn tay kiểu rim cuộn ngón trông hơi như nắm — dáng ngón do rig."
+  },
+  {
+    "scene": "t02-s063-hoa-don",
+    "cast": "erika",
+    "side": "trái",
+    "item": "tui-hieu",
+    "group": "carry",
+    "secs": [
+      0.3,
+      1.8
+    ],
+    "status": "da-sua",
+    "change": "Trả về dáng cũ như s001–s013: tay trái offset [48,34,50], elbow [0,1,1.5] → [38,18,34], elbow [-0.5,1,1] (chủ dự án duyệt dáng s001).",
+    "note": "Cẳng tay trái dựng, bàn tay mở ngang ngực, quai khoác trên cẳng tay, túi treo trước hông như s001–s013. Góc trước bị quầy che, xem góc chéo, ngang và trên (s064)."
+  },
+  {
+    "scene": "t02-s063-hoa-don",
+    "cast": "ong-khach",
+    "side": "hai tay",
+    "item": "bao",
+    "group": "sheet",
+    "secs": [
+      0.3,
+      1.8
+    ],
+    "status": "da-sua",
+    "change": "Hai tay: sheet pinch cạnh phải/trái slant 45 → rim cạnh dưới (along 0.1 / 0.9, thumb front, slant 40); tay phải at [-1600,-200,-320] → [-1575,-185,-328], elbow [0,1,-1] → [0,1,0].",
+    "note": "Ông khách ngồi đọc báo, khuỷu thả sát sườn, cẳng tay chếch lên, hai tay cầm hai góc dưới tờ báo (ngón cái phía mình, bốn ngón mặt ngoài), mép dưới cách đùi xa. Bàn tay kiểu rim cuộn ngón trông hơi như nắm — dáng ngón do rig."
+  },
+  {
+    "scene": "t02-s064-tat-ca",
+    "cast": "takumi",
+    "side": "hai tay",
+    "item": "hoa-don",
+    "group": "sheet",
+    "secs": [
+      0.3,
+      1.22,
+      2
+    ],
+    "status": "da-sua",
+    "change": "Hai tay: sheet flat cùng cạnh bottom → pinch hai cạnh right/left along 0.6, thumb front, slant 0; tay phải offset [50,-22,22] → [50,-12,22] (hạ tay, tránh cẳng tay chạm đầu Erika ở 1.25–2.25s).",
+    "note": "Takumi kẹp hai cạnh bên hoá đơn, ngón cái trên mặt chữ, bốn ngón đỡ dưới, tờ ngửa về mặt để đọc; hết lòng tay đỡ giấy. Góc trước đen (máy kẹt sau quầy), xem góc trên."
+  },
+  {
+    "scene": "t02-s064-tat-ca",
+    "cast": "erika",
+    "side": "trái",
+    "item": "tui-hieu",
+    "group": "carry",
+    "secs": [
+      0.3,
+      1.22
+    ],
+    "status": "da-sua",
+    "change": "Trả về dáng cũ như s001–s013: tay trái offset [48,34,50], elbow [0,1,1.5] → [38,18,34], elbow [-0.5,1,1] (chủ dự án duyệt dáng s001).",
+    "note": "Cẳng tay trái dựng, bàn tay mở ngang ngực, quai khoác trên cẳng tay, túi treo trước hông như s001–s013. Góc trước bị quầy che, xem góc chéo, ngang và trên (s064)."
+  },
+  {
+    "scene": "t02-s065-ghi-ro",
+    "cast": "erika",
+    "side": "trái",
+    "item": "tui-hieu",
+    "group": "carry",
+    "secs": [
+      0.3,
+      3.45
+    ],
+    "status": "da-sua",
+    "change": "Trả về dáng cũ như s001–s013: tay trái offset [48,34,50], elbow [0,1,1.5] → [38,18,34], elbow [-0.5,1,1] (chủ dự án duyệt dáng s001).",
+    "note": "Cẳng tay trái dựng, bàn tay mở ngang ngực, quai khoác trên cẳng tay, túi treo trước hông như s001–s013. Góc trước bị quầy che, xem góc chéo, ngang và trên (s064)."
+  },
+  {
+    "scene": "t02-s066-day-lai",
+    "cast": "erika",
+    "side": "trái",
+    "item": "tui-hieu",
+    "group": "carry",
+    "secs": [
+      0.3,
+      4.02
+    ],
+    "status": "da-sua",
+    "change": "Trả về dáng cũ như s001–s013: tay trái offset [48,34,50], elbow [0,1,1.5] → [38,18,34], elbow [-0.5,1,1] (chủ dự án duyệt dáng s001).",
+    "note": "Cẳng tay trái dựng, bàn tay mở ngang ngực, quai khoác trên cẳng tay, túi treo trước hông như s001–s013. Góc trước bị quầy che, xem góc chéo, ngang và trên (s064)."
+  },
+  {
+    "scene": "t02-s066-day-lai",
+    "cast": "ong-khach",
+    "side": "hai tay",
+    "item": "bao",
+    "group": "sheet",
+    "secs": [
+      0.3,
+      4.02
+    ],
+    "status": "da-sua",
+    "change": "Hai tay: sheet pinch cạnh phải/trái slant 45 → rim cạnh dưới (along 0.1 / 0.9, thumb front, slant 40); tay phải at [-1600,-200,-320] → [-1575,-185,-328], elbow [0,1,-1] → [0,1,0].",
+    "note": "Ông khách ngồi đọc báo, khuỷu thả sát sườn, cẳng tay chếch lên, hai tay cầm hai góc dưới tờ báo (ngón cái phía mình, bốn ngón mặt ngoài), mép dưới cách đùi xa. Bàn tay kiểu rim cuộn ngón trông hơi như nắm — dáng ngón do rig."
+  }
+]

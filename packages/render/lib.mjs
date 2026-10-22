@@ -443,9 +443,15 @@ export function loadScene(
   for (const p of scene.props) props[p.prop] ??= maybe(propsDirs, p.prop, rig.parseProp);
   const heights = {};
   const bodies = {};
+  const chars = {};
   for (const m of scene.cast) {
     const c = m.character && maybe(charactersDirs, m.character, rig.parseCharacter);
-    if (c) [heights[m.id], bodies[m.id]] = [c.rig.height, rig.body3(c)];
+    if (c)
+      [heights[m.id], bodies[m.id], chars[m.id]] = [
+        c.rig.height,
+        rig.body3(c),
+        rig.castCharacter(m, c),
+      ];
   }
   // món cầm tay mà `world.hands[].hold` nhắc tới; thiếu thì `resolveScene` báo
   const held = {};
@@ -457,6 +463,8 @@ export function loadScene(
         held[item] ??= maybe(heldDirs, `${item}.json`, rig.parseHeldItem);
       }
   const rt = rig.resolveScene(scene, actions, animals, props, heights, bodies, held);
+  // mốc món `rest` tra tay người thả ở `rt.chars`
+  rt.chars = { ...chars, ...rt.chars };
   // `scene.fx` qua zod của @stickman3d/fx ngay lúc nạp — rig chỉ mang nó theo
   FX.sceneFx(rt);
   return { actions, animals, props, rt };

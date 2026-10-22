@@ -1,0 +1,404 @@
+[
+ {
+  "scene": "t02-s054-xin-loi",
+  "cast": "yota",
+  "side": "hai tay",
+  "item": "khay",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/3.41s cheo+ngang: hai bàn tay xoè phẳng như mái chèo đỡ dưới đáy khay, ngón cái cũng ở dưới đáy, không ngón nào ôm vành — lệch mẫu khay-hai-tay (ngón cái trên vành, bốn ngón luồn dưới), khay chở chai 1.8L chỉ đặt hờ trên lòng tay (nhẹ: hợp dáng dâng quà, nhưng chấm lỗi vì nghi)"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s054-xin-loi",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/3.41s truoc+cheo+ngang: nắm tay kiểu giơ ngón cái chỉ kẹp mép đáy máy, ngón cái dựng thẳng cạnh máy, các ngón không tì lưng máy, hơn nửa trên máy không có gì đỡ — sai mẫu dien-thoai-doc (ba ngón tì lưng, út đỡ đáy, ngón cái phía màn hình)"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s055-nhan-viec",
+  "cast": "yota",
+  "side": "hai tay",
+  "item": "khay",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/2.72s cheo+ngang: hai bàn tay xoè phẳng như mái chèo đỡ dưới đáy khay, ngón cái cũng ở dưới đáy, không ngón nào ôm vành — lệch mẫu khay-hai-tay (ngón cái trên vành, bốn ngón luồn dưới), khay chở chai 1.8L chỉ đặt hờ trên lòng tay (nhẹ: hợp dáng dâng quà, nhưng chấm lỗi vì nghi)"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s055-nhan-viec",
+  "cast": "chiaki-nhan",
+  "side": "hai tay",
+  "item": "khay",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 (theo s056, cùng tham số) cheo+ngang: hai bàn tay xoè phẳng như mái chèo đỡ dưới đáy khay, ngón cái cũng ở dưới đáy, không ngón nào ôm vành — lệch mẫu khay-hai-tay (ngón cái trên vành, bốn ngón luồn dưới), khay chở chai 1.8L chỉ đặt hờ trên lòng tay (nhẹ: hợp dáng dâng quà, nhưng chấm lỗi vì nghi)",
+   "Q4 0.3s/2.72s: chiaki-nhan còn ẩn tới 3.725s nên ảnh chụp trúng Yota cùng chỗ — chưa có ảnh chính chiaki-nhan cảnh này, cần chụp lại ở giây ≥3.73"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s055-nhan-viec",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/2.72s truoc+cheo+ngang: nắm tay kiểu giơ ngón cái chỉ kẹp mép đáy máy, ngón cái dựng thẳng cạnh máy, các ngón không tì lưng máy, hơn nửa trên máy không có gì đỡ — sai mẫu dien-thoai-doc (ba ngón tì lưng, út đỡ đáy, ngón cái phía màn hình)"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s056-bieu",
+  "cast": "chiaki-nhan",
+  "side": "hai tay",
+  "item": "khay",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/1.9s/2.75s cheo+ngang: hai bàn tay xoè phẳng như mái chèo đỡ dưới đáy khay, ngón cái cũng ở dưới đáy, không ngón nào ôm vành — lệch mẫu khay-hai-tay (ngón cái trên vành, bốn ngón luồn dưới), khay chở chai 1.8L chỉ đặt hờ trên lòng tay (nhẹ: hợp dáng dâng quà, nhưng chấm lỗi vì nghi)"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s056-bieu",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/2.75s truoc+cheo+ngang: nắm tay kiểu giơ ngón cái chỉ kẹp mép đáy máy, ngón cái dựng thẳng cạnh máy, các ngón không tì lưng máy, hơn nửa trên máy không có gì đỡ — sai mẫu dien-thoai-doc (ba ngón tì lưng, út đỡ đáy, ngón cái phía màn hình)"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s057-moi",
+  "cast": "chiaki-nhan",
+  "side": "hai tay",
+  "item": "khay",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.35s/3.54s cheo+ngang: hai bàn tay xoè phẳng như mái chèo đỡ dưới đáy khay, ngón cái cũng ở dưới đáy, không ngón nào ôm vành — lệch mẫu khay-hai-tay (ngón cái trên vành, bốn ngón luồn dưới), khay chở chai 1.8L chỉ đặt hờ trên lòng tay (nhẹ: hợp dáng dâng quà, nhưng chấm lỗi vì nghi)"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s057-moi",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/0.35s truoc+cheo+ngang: nắm tay kiểu giơ ngón cái chỉ kẹp mép đáy máy, ngón cái dựng thẳng cạnh máy, các ngón không tì lưng máy, hơn nửa trên máy không có gì đỡ — sai mẫu dien-thoai-doc (ba ngón tì lưng, út đỡ đáy, ngón cái phía màn hình)",
+   "Q1 3.54s truoc: khuỷu nâng dang ngang tầm ngực, cẳng tay vắt ngang thân như cánh gà",
+   "Q2 3.54s truoc+cheo: lưng máy úp sát ngực trái, mép dưới lấn vào áo/chuỗi ngọc",
+   "Q4 3.54s: ép máy dẹt vào ngực không hợp việc nào (không quay, không xem màn hình)",
+   "Q5 3.54s: nhảy hẳn khỏi dáng quay phim dưới cằm ở các cảnh trước"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s058-quan-truoc",
+  "cast": "chiaki-nhan",
+  "side": "hai tay",
+  "item": "khay",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/5.36s cheo+ngang: hai bàn tay xoè phẳng như mái chèo đỡ dưới đáy khay, ngón cái cũng ở dưới đáy, không ngón nào ôm vành — lệch mẫu khay-hai-tay (ngón cái trên vành, bốn ngón luồn dưới), khay chở chai 1.8L chỉ đặt hờ trên lòng tay (nhẹ: hợp dáng dâng quà, nhưng chấm lỗi vì nghi)"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s058-quan-truoc",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/5.36s truoc+cheo+ngang: nắm tay kiểu giơ ngón cái chỉ kẹp mép đáy máy, ngón cái dựng thẳng cạnh máy, các ngón không tì lưng máy, hơn nửa trên máy không có gì đỡ — sai mẫu dien-thoai-doc (ba ngón tì lưng, út đỡ đáy, ngón cái phía màn hình)",
+   "Q2 0.3s/5.36s truoc+cheo: máy dí sát xương quai xanh, đè lên chuỗi ngọc",
+   "Q4 0.3s/5.36s: máy sát cổ, không xem được màn hình, như ôm máy vào cổ",
+   "Q1 0.3s/5.36s truoc+ngang: khuỷu giạng ngang tầm ngực, cẳng tay chĩa chéo ra ngoài"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s059-gia-da-bao",
+  "cast": "chiaki-nhan",
+  "side": "hai tay",
+  "item": "khay",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/3.85s cheo+ngang: hai bàn tay xoè phẳng như mái chèo đỡ dưới đáy khay, ngón cái cũng ở dưới đáy, không ngón nào ôm vành — lệch mẫu khay-hai-tay (ngón cái trên vành, bốn ngón luồn dưới), khay chở chai 1.8L chỉ đặt hờ trên lòng tay (nhẹ: hợp dáng dâng quà, nhưng chấm lỗi vì nghi)"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s059-gia-da-bao",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/3.85s truoc+cheo+ngang: nắm tay kiểu giơ ngón cái chỉ kẹp mép đáy máy, ngón cái dựng thẳng cạnh máy, các ngón không tì lưng máy, hơn nửa trên máy không có gì đỡ — sai mẫu dien-thoai-doc (ba ngón tì lưng, út đỡ đáy, ngón cái phía màn hình)",
+   "Q2 0.3s/3.85s truoc+cheo: máy dí sát xương quai xanh, đè chuỗi ngọc",
+   "Q1 0.3s/3.85s truoc: khuỷu giạng ngang, cẳng tay chĩa chéo ra ngoài"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s060-mot-dem",
+  "cast": "chiaki-nhan",
+  "side": "hai tay",
+  "item": "khay",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3–4.17s cheo+ngang: hai bàn tay xoè phẳng như mái chèo đỡ dưới đáy khay, ngón cái cũng ở dưới đáy, không ngón nào ôm vành — lệch mẫu khay-hai-tay (ngón cái trên vành, bốn ngón luồn dưới), khay chở chai 1.8L chỉ đặt hờ trên lòng tay (nhẹ: hợp dáng dâng quà, nhưng chấm lỗi vì nghi)",
+   "Q4: không có ảnh lúc cúi chào (@dong+0.1 ≈ 6.6s) — chưa kiểm khay khi cúi"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s060-mot-dem",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "chai-dac-tuyen",
+  "hien": "dat",
+  "hien_loi": [],
+  "cu": "loi",
+  "cu_loi": [
+   "Q3 5.5s/7.2s truoc: tay buông, chai nằm gần ngang, cổ chai chĩa ra sau, không treo theo trọng lực",
+   "Q2 5.5s cheo+ngang: thân chai khuất sau hông/đè qua đùi, như xuyên người",
+   "Q5 5.5s: từ dáng ôm chai ở hông (2.4–4.17s) nhảy sang buông tay chai ngang khi bắt đầu đi"
+  ],
+  "de_xuat": "giu"
+ },
+ {
+  "scene": "t02-s060-mot-dem",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q2 0.3s cheo+truoc: máy áp phẳng vào ngực, màn hình úp vào người; 0.4s cheo: áp phẳng vào bụng",
+   "Q1 0.3s/0.4s cheo: cẳng tay vắt ngang thân, khuỷu giạng hẳn ra ngoài",
+   "Q5 0.3s: s059 máy ở xương quai xanh, sang s060 đột ngột ép phẳng giữa ngực"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q2 0.3s cheo+ngang: máy lún vào ngực, chuỗi ngọc vẽ đè lên máy",
+   "Q1 0.3s ngang: khuỷu giơ cao giạng ngang, cẳng tay chĩa thẳng về máy quay",
+   "Q3 0.3s: cùng kiểu nắm giơ ngón cái kẹp mép đáy như s054–s059"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s061-sang",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 0.3s/1.3s cheo+ngang: cẳng tay trái chĩa chéo ra ngoài thân (scene: cổ tay cách vai 50 ra ngoài, khuỷu [0,1,1.5] chĩa ra ngoài), ở góc ngang nắm tay chĩa gần thẳng vào máy — cùng kiểu lỗi s001, mẫu tui-xach-khuyu là cẳng tay đưa ra trước",
+   "Q2 0.3s/1.3s cheo (nghi): thân túi treo sát hông, nửa trong chồng lên váy, có thể lấn vào váy"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q1 0.3s/1.3s cheo+ngang: cẳng tay dựng đứng, bàn tay giơ trước ngực, không phải dáng khoác túi ở khuỷu",
+   "Q3 0.3s/1.3s cheo+ngang: quai treo ở cổ tay trên cẳng tay dựng đứng, không có chỗ tựa, phải tuột xuống khuỷu",
+   "Q2 0.3s/1.3s ngang: túi treo trước bụng, quai và thân túi lấn vào bụng (lỗi chủ dự án đã chê 'quai túi lấn vào người')"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s061-sang",
+  "cast": "ong-khach",
+  "side": "hai tay",
+  "item": "bao",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/1.3s truoc+cheo+ngang: hai tay siết nắm đấm quanh mép tờ báo như cầm gậy, ngón cái dựng kiểu 'like' — giấy mỏng phải kẹp mép giữa ngón cái và các ngón, bàn tay thả lỏng"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s062-hoa-don",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 0.3s/2.94s cheo+ngang: cẳng tay trái chĩa chéo ra ngoài thân (scene: cổ tay cách vai 50 ra ngoài, khuỷu [0,1,1.5] chĩa ra ngoài), ở góc ngang nắm tay chĩa gần thẳng vào máy — cùng kiểu lỗi s001, mẫu tui-xach-khuyu là cẳng tay đưa ra trước",
+   "Q2 0.3s/2.94s cheo (nghi): thân túi treo sát hông, nửa trong chồng lên váy, có thể lấn vào váy"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q1 0.3s/2.94s cheo+ngang: cẳng tay dựng đứng, bàn tay giơ trước ngực, không phải dáng khoác túi ở khuỷu",
+   "Q3 0.3s/2.94s cheo+ngang: quai treo ở cổ tay trên cẳng tay dựng đứng, không có chỗ tựa, phải tuột xuống khuỷu",
+   "Q2 0.3s/2.94s ngang: túi treo trước bụng, quai và thân túi lấn vào bụng (lỗi chủ dự án đã chê 'quai túi lấn vào người')"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s062-hoa-don",
+  "cast": "ong-khach",
+  "side": "hai tay",
+  "item": "bao",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/2.94s truoc+cheo+ngang: hai tay siết nắm đấm quanh mép tờ báo như cầm gậy, ngón cái dựng kiểu 'like' — giấy mỏng phải kẹp mép giữa ngón cái và các ngón, bàn tay thả lỏng"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s063-hoa-don",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 0.3s/1.8s cheo+ngang: cẳng tay trái chĩa chéo ra ngoài thân (scene: cổ tay cách vai 50 ra ngoài, khuỷu [0,1,1.5] chĩa ra ngoài), ở góc ngang nắm tay chĩa gần thẳng vào máy — cùng kiểu lỗi s001, mẫu tui-xach-khuyu là cẳng tay đưa ra trước",
+   "Q2 0.3s/1.8s cheo (nghi): thân túi treo sát hông, nửa trong chồng lên váy, có thể lấn vào váy"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q1 0.3s/1.8s cheo+ngang: cẳng tay dựng đứng, bàn tay giơ trước ngực, không phải dáng khoác túi ở khuỷu",
+   "Q3 0.3s/1.8s cheo+ngang: quai treo ở cổ tay trên cẳng tay dựng đứng, không có chỗ tựa, phải tuột xuống khuỷu",
+   "Q2 0.3s/1.8s ngang: túi treo trước bụng, quai và thân túi lấn vào bụng (lỗi chủ dự án đã chê 'quai túi lấn vào người')"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s063-hoa-don",
+  "cast": "ong-khach",
+  "side": "hai tay",
+  "item": "bao",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/1.8s truoc+cheo+ngang: hai tay siết nắm đấm quanh mép tờ báo như cầm gậy, ngón cái dựng kiểu 'like' — giấy mỏng phải kẹp mép giữa ngón cái và các ngón, bàn tay thả lỏng"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s064-tat-ca",
+  "cast": "takumi",
+  "side": "hai tay",
+  "item": "hoa-don",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/1.22s cheo+ngang: mép dưới hoá đơn nằm trong lòng tay ngửa, bốn ngón úp mặt sau như đỡ khay, không kẹp mép — trái chốt 'giấy mỏng không đặt trên lòng tay'",
+   "Q1 0.3s ngang: cổ tay bẻ ngửa nhiều để lòng tay đỡ mép giấy, gượng",
+   "Q? 0.3s/1.22s truoc: ô đen hoàn toàn, không kiểm được ngón cái"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s064-tat-ca",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 0.3s/1.22s cheo+ngang: cẳng tay trái chĩa chéo ra ngoài thân (scene: cổ tay cách vai 50 ra ngoài, khuỷu [0,1,1.5] chĩa ra ngoài), ở góc ngang nắm tay chĩa gần thẳng vào máy — cùng kiểu lỗi s001, mẫu tui-xach-khuyu là cẳng tay đưa ra trước",
+   "Q2 0.3s/1.22s cheo (nghi): thân túi treo sát hông, nửa trong chồng lên váy, có thể lấn vào váy"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q1 0.3s/1.22s cheo+ngang: cẳng tay dựng đứng, bàn tay giơ trước ngực, không phải dáng khoác túi ở khuỷu",
+   "Q3 0.3s/1.22s cheo+ngang: quai treo ở cổ tay trên cẳng tay dựng đứng, không có chỗ tựa, phải tuột xuống khuỷu",
+   "Q2 0.3s/1.22s ngang: túi treo trước bụng, quai và thân túi lấn vào bụng (lỗi chủ dự án đã chê 'quai túi lấn vào người')"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s065-ghi-ro",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 0.3s/3.45s cheo+ngang: cẳng tay trái chĩa chéo ra ngoài thân (scene: cổ tay cách vai 50 ra ngoài, khuỷu [0,1,1.5] chĩa ra ngoài), ở góc ngang nắm tay chĩa gần thẳng vào máy — cùng kiểu lỗi s001, mẫu tui-xach-khuyu là cẳng tay đưa ra trước",
+   "Q2 0.3s/3.45s cheo (nghi): thân túi treo sát hông, nửa trong chồng lên váy, có thể lấn vào váy"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q1 0.3s/3.45s cheo+ngang: cẳng tay dựng đứng, bàn tay giơ trước ngực, không phải dáng khoác túi ở khuỷu",
+   "Q3 0.3s/3.45s cheo+ngang: quai treo ở cổ tay trên cẳng tay dựng đứng, không có chỗ tựa, phải tuột xuống khuỷu",
+   "Q2 0.3s/3.45s ngang: túi treo trước bụng, quai và thân túi lấn vào bụng (lỗi chủ dự án đã chê 'quai túi lấn vào người')"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s066-day-lai",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 0.3s/4.02s cheo+ngang: cẳng tay trái chĩa chéo ra ngoài thân (scene: cổ tay cách vai 50 ra ngoài, khuỷu [0,1,1.5] chĩa ra ngoài), ở góc ngang nắm tay chĩa gần thẳng vào máy — cùng kiểu lỗi s001, mẫu tui-xach-khuyu là cẳng tay đưa ra trước",
+   "Q2 0.3s/4.02s cheo (nghi): thân túi treo sát hông, nửa trong chồng lên váy, có thể lấn vào váy"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q1 0.3s/4.02s cheo+ngang: cẳng tay dựng đứng, bàn tay giơ trước ngực, không phải dáng khoác túi ở khuỷu",
+   "Q3 0.3s/4.02s cheo+ngang: quai treo ở cổ tay trên cẳng tay dựng đứng, không có chỗ tựa, phải tuột xuống khuỷu",
+   "Q2 0.3s/4.02s ngang: túi treo trước bụng, quai và thân túi lấn vào bụng (lỗi chủ dự án đã chê 'quai túi lấn vào người')"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s066-day-lai",
+  "cast": "ong-khach",
+  "side": "hai tay",
+  "item": "bao",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/4.02s truoc+cheo+ngang: hai tay siết nắm đấm quanh mép tờ báo như cầm gậy, ngón cái dựng kiểu 'like' — giấy mỏng phải kẹp mép giữa ngón cái và các ngón, bàn tay thả lỏng"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ }
+]

@@ -1,0 +1,8 @@
+$ node tools/can-tay.mjs t02-s030-khai-vi 0,0.3,0.4 --ai yoshie-di --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/sau --tab 2
+t02-s030-khai-vi 0s yoshie-di tay phải: vào thân 90°
+t02-s030-khai-vi 0s yoshie-di tay trái: vào thân 90°
+t02-s030-khai-vi 0.3s yoshie-di tay phải: vào thân 90°
+t02-s030-khai-vi 0.3s yoshie-di tay trái: vào thân 90°
+t02-s030-khai-vi 0.4s yoshie-di tay phải: vào thân 90°
+t02-s030-khai-vi 0.4s yoshie-di tay trái: vào thân 90°
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/sau/t02-s030-khai-vi.jpg

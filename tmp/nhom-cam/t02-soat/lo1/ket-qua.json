@@ -1,0 +1,348 @@
+[
+ {
+  "scene": "t02-s001-tham-thi",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "group": "carry",
+  "secs": [
+   0.3,
+   4.71
+  ],
+  "status": "dung",
+  "change": "trả về dáng cũ (người soi: dáng sửa bẻ cẳng tay ngang ra ngoài)",
+  "note": "Quai túi khoác nếp khuỷu trái, cẳng tay dựng lên, bàn tay xòe ngang vai; túi treo sát trước hông. Góc trước bị quầy che."
+ },
+ {
+  "scene": "t02-s002-day",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "group": "carry",
+  "secs": [
+   0.3,
+   1.2
+  ],
+  "status": "dung",
+  "change": "trả về dáng cũ (người soi: dáng sửa bẻ cẳng tay ngang ra ngoài)",
+  "note": "Quai túi khoác nếp khuỷu trái, cẳng tay dựng lên, bàn tay xòe ngang vai; túi treo sát trước hông. Góc trước bị quầy che."
+ },
+ {
+  "scene": "t02-s003-khung",
+  "cast": "takumi",
+  "side": "trái",
+  "item": "tui",
+  "group": "handle",
+  "secs": [
+   0.3,
+   1.29
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Bốn ngón móc dưới quai túi boston, cổ tay thẳng, túi treo ngoài chân — đúng mẫu handle đã duyệt."
+ },
+ {
+  "scene": "t02-s003-khung",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "group": "carry",
+  "secs": [
+   0.3,
+   1.29
+  ],
+  "status": "can-rig",
+  "change": "Tay trái: offset [38,18,34], elbow [-0.5,1,1] → [48,50,50], elbow [0,1,1.5]",
+  "note": "Cẳng tay đã ra trước, túi treo ngoài hông, nhưng lòng tay quay vào thân (63°) và quai nằm gần cổ tay. Cùng khoá, đổi yaw 100→280 thì ngửa 146° — giải xoay cẳng tay của carry phụ thuộc hướng người, việc của rig."
+ },
+ {
+  "scene": "t02-s006a-bai-xe",
+  "cast": "takumi",
+  "side": "trái",
+  "item": "tui",
+  "group": "handle",
+  "secs": [
+   0.3,
+   4.88,
+   6.15,
+   6.65
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Bốn ngón móc dưới quai túi boston, cổ tay thẳng, túi treo ngoài chân — đúng mẫu handle đã duyệt. 0.3/4.88 người còn khuất trong xe nên ảnh không thấy tay."
+ },
+ {
+  "scene": "t02-s006a-bai-xe",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   0.3,
+   4.88,
+   7.45,
+   8.45
+  ],
+  "status": "da-sua",
+  "change": "mốc @cua+2.9: offset [50,-28,50] → [60,-8,50] (to chin)",
+  "note": "Trước: máy áp sát má như đang gọi điện; nay máy đưa ra trước mặt, dựng đứng, màn về cô để quay toà nhà. Nhìn chính diện máy vẫn chồng lên má (đầu to), góc ngang thấy rõ khe."
+ },
+ {
+  "scene": "t02-s006a-bai-xe",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "group": "carry",
+  "secs": [
+   0.3,
+   4.88
+  ],
+  "status": "dung",
+  "change": "trả về dáng cũ (người soi: dáng sửa bẻ cẳng tay ngang ra ngoài)",
+  "note": "Trong xe (0.3–6.65s) tay và túi bị thân xe che; ra khỏi xe (7.45, 8.45s) quai khoác khuỷu phải, cẳng tay dựng, bàn tay xòe sát mép tóc."
+ },
+ {
+  "scene": "t02-s008-truoc-cua",
+  "cast": "takumi",
+  "side": "trái",
+  "item": "tui",
+  "group": "handle",
+  "secs": [
+   0.3,
+   0.8
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Bốn ngón móc dưới quai túi boston, cổ tay thẳng, túi treo ngoài chân — đúng mẫu handle đã duyệt."
+ },
+ {
+  "scene": "t02-s008-truoc-cua",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   0.3,
+   0.8
+  ],
+  "status": "da-sua",
+  "change": "mốc 0: offset [50,-28,50] → [60,-8,50] (to chin)",
+  "note": "Trước: máy dí sát má/mắt; nay máy giơ trước mặt chếch trái để quay toà nhà, khuỷu còn gập (thử 72 thì tay thẳng đuột). Từ sau lưng cần chủ dự án xem máy còn ló khỏi tóc không."
+ },
+ {
+  "scene": "t02-s008-truoc-cua",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "group": "carry",
+  "secs": [
+   0.3,
+   0.8
+  ],
+  "status": "dung",
+  "change": "trả về dáng cũ (người soi: dáng sửa bẻ cẳng tay ngang ra ngoài)",
+  "note": "Quai túi khoác nếp khuỷu phải, cẳng tay dựng lên, bàn tay xòe ngang vai; túi treo sát trước hông, không lấn người. Góc trước bị che tối."
+ },
+ {
+  "scene": "t02-s009-nhan-khach",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   0.3,
+   3.29
+  ],
+  "status": "da-sua",
+  "change": "Tay trái: to chin [42,62,10], elbow [-0.3,1,1] → to eye [45,45,-10], elbow [-0.3,1,-0.2], thêm roll top→up (theo lô 2)",
+  "note": "Máy dựng dọc ngang cằm, màn về mặt, lòng tay ôm lưng máy, ngón cái và bốn ngón kẹp hai cạnh — liền với s015. Trước đó máy nằm ngang ngửa trên lòng tay ngang bụng."
+ },
+ {
+  "scene": "t02-s009-nhan-khach",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "group": "carry",
+  "secs": [
+   0.3,
+   3.29
+  ],
+  "status": "dung",
+  "change": "trả về dáng cũ (người soi: dáng sửa bẻ cẳng tay ngang ra ngoài)",
+  "note": "Quai túi khoác nếp khuỷu phải, cẳng tay dựng lên, bàn tay xòe ngang vai; túi treo sát trước hông, không lấn người. Góc trước bị che tối."
+ },
+ {
+  "scene": "t02-s010-xac-nhan",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   0.3,
+   3.79
+  ],
+  "status": "da-sua",
+  "change": "Tay trái: to chin [42,62,10], elbow [-0.3,1,1] → to eye [45,45,-10], elbow [-0.3,1,-0.2], thêm roll top→up (theo lô 2)",
+  "note": "Máy dựng dọc ngang cằm, màn về mặt, lòng tay ôm lưng máy, ngón cái và bốn ngón kẹp hai cạnh — liền với s015. Trước đó máy nằm ngang ngửa trên lòng tay ngang bụng."
+ },
+ {
+  "scene": "t02-s010-xac-nhan",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "group": "carry",
+  "secs": [
+   0.3,
+   3.79
+  ],
+  "status": "dung",
+  "change": "trả về dáng cũ (người soi: dáng sửa bẻ cẳng tay ngang ra ngoài)",
+  "note": "Quai túi khoác nếp khuỷu phải, cẳng tay dựng lên, bàn tay xòe ngang vai; túi treo sát trước hông, không lấn người. Góc trước bị che tối."
+ },
+ {
+  "scene": "t02-s011-quay-sanh",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   0.3,
+   0.4,
+   3.14
+  ],
+  "status": "da-sua",
+  "change": "Mốc 0: Tay trái: to chin [42,62,10], elbow [-0.3,1,1] → to eye [45,45,-10], elbow [-0.3,1,-0.2], thêm roll top→up (theo lô 2)",
+  "note": "Từ đầu cảnh máy dựng ngang cằm, màn về mặt (liền s010), tới 0,35 s xoay lưng máy ra trước để quay sảnh như cũ. Trước đó mốc 0 máy nằm ngửa ngang bụng."
+ },
+ {
+  "scene": "t02-s011-quay-sanh",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "group": "carry",
+  "secs": [
+   0.3,
+   3.14
+  ],
+  "status": "dung",
+  "change": "trả về dáng cũ (người soi: dáng sửa bẻ cẳng tay ngang ra ngoài)",
+  "note": "Quai túi khoác nếp khuỷu phải, cẳng tay dựng lên, bàn tay xòe ngang vai; túi treo sát trước hông, không lấn người. Góc trước bị che tối."
+ },
+ {
+  "scene": "t02-s012-chia-khoa",
+  "cast": "yota",
+  "side": "trái",
+  "item": "the-phong",
+  "group": "card",
+  "secs": [
+   5.75,
+   5.77,
+   5.85,
+   6.07
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Kẹp hai mép thẻ từ trên (edges) rồi đặt nằm phẳng lên quầy trước khách — đúng việc đặt thẻ, check không kêu."
+ },
+ {
+  "scene": "t02-s012-chia-khoa",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "the-phong",
+  "group": "card",
+  "secs": [
+   6.7,
+   6.75,
+   6.96,
+   7.25
+  ],
+  "status": "da-sua",
+  "change": "thêm mốc tay 7.0 `variant: lateral` (lần cầm mới sau khi nhấc); bỏ face/roll của mốc món 7.2 (dùng hướng mặc định của card: thẻ dựng xiên về mắt)",
+  "note": "Nhặt thẻ trên quầy bằng kẹp hai mép (giữ nguyên), nhấc lên thì đổi sang kẹp bên ngón cái – sườn trỏ, thẻ dựng trước ngực mặt về anh như mẫu the-phong-xem. Hết hai cảnh báo \"không có lực đối\" và \"cổ tay sát giới hạn\"."
+ },
+ {
+  "scene": "t02-s012-chia-khoa",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   0.3,
+   3.76
+  ],
+  "status": "da-sua",
+  "change": "Tay trái: to chin [42,62,10], elbow [-0.3,1,1] → to eye [45,45,-10], elbow [-0.3,1,-0.2], thêm roll top→up (theo lô 2)",
+  "note": "Máy dựng dọc ngang cằm, màn về mặt, lòng tay ôm lưng máy, ngón cái và bốn ngón kẹp hai cạnh — liền với s015. Trước đó máy nằm ngang ngửa trên lòng tay ngang bụng."
+ },
+ {
+  "scene": "t02-s012-chia-khoa",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "group": "carry",
+  "secs": [
+   0.3,
+   3.76
+  ],
+  "status": "dung",
+  "change": "trả về dáng cũ (người soi: dáng sửa bẻ cẳng tay ngang ra ngoài)",
+  "note": "Quai túi khoác nếp khuỷu phải, cẳng tay dựng lên, bàn tay xòe ngang vai; túi treo sát trước hông, không lấn người. Góc trước bị che tối."
+ },
+ {
+  "scene": "t02-s013-khoe",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "the-phong",
+  "group": "card",
+  "secs": [
+   0.3,
+   0.55,
+   0.85
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Thẻ gần ngang ở eo, ngón cái trên mặt thẻ, rồi hạ xuống túi quần ở @cat-chia — tự nhiên."
+ },
+ {
+  "scene": "t02-s013-khoe",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   1.4,
+   3.35
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Rút máy ở hông rồi giơ dọc trước ngực, màn quay về Yota, ngón cái tì cạnh, bốn ngón ôm lưng — đúng mẫu dien-thoai-khoe."
+ },
+ {
+  "scene": "t02-s013-khoe",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   0.3,
+   2.8
+  ],
+  "status": "da-sua",
+  "change": "Tay trái: to chin [42,62,10], elbow [-0.3,1,1] → to eye [45,45,-10], elbow [-0.3,1,-0.2], thêm roll top→up (theo lô 2)",
+  "note": "Máy dựng dọc ngang cằm, màn về mặt, lòng tay ôm lưng máy, ngón cái và bốn ngón kẹp hai cạnh — liền với s015. Trước đó máy nằm ngang ngửa trên lòng tay ngang bụng."
+ },
+ {
+  "scene": "t02-s013-khoe",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "group": "carry",
+  "secs": [
+   0.3,
+   2.8
+  ],
+  "status": "dung",
+  "change": "trả về dáng cũ (người soi: dáng sửa bẻ cẳng tay ngang ra ngoài)",
+  "note": "Quai túi khoác nếp khuỷu phải, cẳng tay dựng lên, bàn tay xòe ngang vai; túi treo sát trước hông, không lấn người. Góc trước bị che tối."
+ }
+]

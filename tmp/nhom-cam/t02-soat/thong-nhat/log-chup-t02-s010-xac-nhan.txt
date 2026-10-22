@@ -1,0 +1,6 @@
+$ node tools/can-tay.mjs t02-s010-xac-nhan 0.3,3.79 --ai erika --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo1/sau --tab 2
+t02-s010-xac-nhan 0.3s erika tay phải: ngửa 145°
+t02-s010-xac-nhan 0.3s erika tay trái: ngửa 134°
+t02-s010-xac-nhan 3.79s erika tay phải: ngửa 145°
+t02-s010-xac-nhan 3.79s erika tay trái: ngửa 134°
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo1/sau/t02-s010-xac-nhan.jpg

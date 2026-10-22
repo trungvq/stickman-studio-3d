@@ -69,6 +69,24 @@
   .vbox .under img { max-width: 100%; }
   #vtime { font: 12px ui-monospace, monospace; color: var(--dim); min-width: 150px; }
 
+  #stage.t02 { display: block; overflow: auto; }
+  .row { border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin-bottom: 10px; cursor: pointer; background: var(--panel); }
+  .row.cur { border-color: var(--acc); }
+  .row h4 { margin: 0 0 6px; font-size: 13px; display: flex; gap: 8px; align-items: center; }
+  .row h4 small { color: var(--dim); font-weight: 400; }
+  .angs { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; }
+  .cell { display: flex; flex-direction: column; gap: 6px; }
+  .cell .pane { height: auto; min-height: 120px; }
+  .cell .pane img { width: 100%; max-height: 70vh; object-fit: contain; }
+  .cell .pane.bef { opacity: .92; outline: 1px dashed var(--truoc); }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; color: #111; }
+  .badge.dung { background: var(--ok); } .badge.da-sua { background: var(--sau); } .badge.can-rig { background: var(--sua); } .badge.can-chu { background: var(--hoi); }
+  @media (max-width: 800px) {
+    body { grid-template-columns: 1fr; grid-template-rows: 45vh 100vh auto; height: auto; overflow: auto; }
+    #side, #main, #right { max-height: none; border: 0; }
+    #keys { display: none; } #side { height: 45vh; overflow: hidden; } #main { overflow: hidden; } #main { height: 100vh; } #stage { overflow: auto; } #stage { padding: 4px; }
+  }
+
   /* nhận xét */
   #right { border-left: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 14px; display: flex; flex-direction: column; gap: 14px; }
   #right h2 { font-size: 16px; margin: 0; }
@@ -112,6 +130,7 @@
     <div class="grp" id="modes"><span>Xem</span></div>
     <div class="grp" id="angles"><span>Góc</span></div>
     <div class="grp" id="zooms"><span>Phóng</span></div>
+    <label id="bef-l" style="font-size:12px;color:var(--dim);display:none"><input type="checkbox" id="bef"> hiện ảnh trước sửa</label>
     <label style="font-size:12px;color:var(--dim)"><input type="checkbox" id="extra"> hiện cả giây ngoài danh sách chọn</label>
     <label style="font-size:12px;color:var(--dim)"><input type="checkbox" id="auto"> tự nháy</label>
   </div>
@@ -126,22 +145,24 @@ const MODES = [['sbs', 'Cạnh nhau'], ['wipe', 'Trượt'], ['blink', 'Nháy']]
 const ANGLES = [['cheo', 'chéo'], ['truoc', 'trước'], ['ngang', 'ngang']];
 const ZOOMS = [1, 2, 3];
 const STATUS = [['ok', 'Duyệt'], ['sua', 'Cần sửa'], ['hoi', 'Hỏi lại']];
-const SECS = [['ro', 'Khác thấy rõ'], ['it', 'Khác ít'], ['kh', 'Gần như không khác'], ['g4', 'Tờ nhóm cầm G4']];
+const SECS = [['ro', 'Khác thấy rõ'], ['it', 'Khác ít'], ['kh', 'Gần như không khác'], ['g4', 'Tờ nhóm cầm G4'], ['t02', 'Soát t02']];
 const FILTERS = [['all', 'Tất cả'], ['todo', 'Chưa quyết'], ['flag', 'Cần sửa / hỏi'], ['note', 'Có ghi chú']];
+const T02ST = [['dung', 'Đúng sẵn'], ['da-sua', 'Đã sửa'], ['can-rig', 'Cần rig'], ['can-chu', 'Cần chủ dự án']];
 const LS = 'duyet-nhom-cam';
 
-const S = { items: [], db: {}, cur: 0, frame: 0, mode: 'sbs', angle: null, zoom: 1, ox: 50, oy: 50, wipe: 50, flip: false, filter: 'all', extra: false, auto: null, speed: 1, still: false };
+const S = { items: [], db: {}, cur: 0, frame: 0, mode: 'sbs', angle: null, zoom: 1, ox: 50, oy: 50, wipe: 50, flip: false, filter: 'all', extra: false, tst: { dung: 1, 'da-sua': 1, 'can-rig': 1, 'can-chu': 1 }, before: true, auto: null, speed: 1, still: false };
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const md = (s) => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 const url = (p) => '/' + p.split('/').map(encodeURIComponent).join('/');
 const SPEEDS = [0.25, 0.5, 1];
-const sec = (it) => it.kind === 'sheet' || it.kind === 'video' ? 'g4' : /^khác thấy rõ/i.test(it.verdict) ? 'ro' : /^gần như/i.test(it.verdict) ? 'kh' : 'it';
+const sec = (it) => it.kind === 't02' ? 't02' : it.kind === 'sheet' || it.kind === 'video' ? 'g4' : /^khác thấy rõ/i.test(it.verdict) ? 'ro' : /^gần như/i.test(it.verdict) ? 'kh' : 'it';
 const fkey = (f) => `${f.t} s`;
 const rec = (it) => (S.db[it.id] ??= { status: '', text: '', frames: {} });
 const hasNote = (it) => { const c = S.db[it.id]; return !!c && (!!c.text || Object.values(c.frames || {}).some(Boolean)); };
 
 function frames(it) {
+  if (it.kind === 't02') return it.frames;
   if (it.kind !== 'shot') return [];
   const c = S.db[it.id];
   return it.frames.filter((f) => S.extra || f.picked || c?.frames?.[fkey(f)]);
@@ -155,6 +176,7 @@ function order() {
 
 function visible(it) {
   const c = S.db[it.id];
+  if (it.kind === 't02' && !S.tst[it.status]) return false;
   if (S.filter === 'todo') return !c?.status;
   if (S.filter === 'flag') return c?.status === 'sua' || c?.status === 'hoi';
   if (S.filter === 'note') return hasNote(it);
@@ -170,17 +192,19 @@ function renderList() {
     if (k !== last) { html += `<div class="sec">${SECS.find((s) => s[0] === k)[1]}</div>`; last = k; }
     const c = S.db[it.id];
     const i = S.items.indexOf(it);
-    const title = it.kind === 'shot' ? `#${it.n} ${it.scene.replace('t02-', '')}` : it.title;
-    const sub = it.kind === 'shot' ? `${it.cast} · tay ${it.side} · ${it.item}@${it.group}` : it.kind === 'video' ? 'video' : 'tờ ghép';
+    const title = it.kind === 't02' ? `${it.scene.replace('t02-', '')} · ${it.cast}` : it.kind === 'shot' ? `#${it.n} ${it.scene.replace('t02-', '')}` : it.title;
+    const sub = it.kind === 't02' ? `tay ${it.side} · ${it.item}@${it.group} · ${T02ST.find((x) => x[0] === it.status)?.[1] || it.status}` : it.kind === 'shot' ? `${it.cast} · tay ${it.side} · ${it.item}@${it.group}` : it.kind === 'video' ? 'video' : 'tờ ghép';
     html += `<div class="it${i === S.cur ? ' cur' : ''}" data-i="${i}"><span class="dot ${c?.status || ''}"></span>
       <div><div class="t">${esc(title)}</div><div class="s">${esc(sub)}</div></div>${hasNote(it) ? '<span class="pen">✎</span>' : ''}</div>`;
   }
   list.innerHTML = html;
-  list.querySelector('.cur')?.scrollIntoView({ block: 'nearest' });
+  const cu = list.querySelector('.cur');
+  if (cu) list.scrollTop = Math.max(0, cu.offsetTop - list.offsetTop - list.clientHeight / 3);
   const done = S.items.filter((it) => S.db[it.id]?.status);
   const n = (s) => done.filter((it) => S.db[it.id].status === s).length;
   $('#prog').textContent = `Đã quyết ${done.length}/${S.items.length} · duyệt ${n('ok')} · cần sửa ${n('sua')} · hỏi lại ${n('hoi')}`;
-  $('#filters').innerHTML = FILTERS.map(([k, l]) => `<button data-f="${k}" class="${S.filter === k ? 'on' : ''}">${l}</button>`).join('');
+  $('#filters').innerHTML = FILTERS.map(([k, l]) => `<button data-f="${k}" class="${S.filter === k ? 'on' : ''}">${l}</button>`).join('') +
+    `<div class="sec" style="width:100%;padding:6px 0 0">Soát t02</div>` + T02ST.map(([k, l]) => `<button data-t02="${k}" class="${S.tst[k] ? 'on' : ''}">${l} ${S.items.filter((x) => x.kind === 't02' && x.status === k).length}</button>`).join('');
 }
 
 function renderBar() {
@@ -189,8 +213,11 @@ function renderBar() {
   const grp = (id, opts, cur, attr, ok = () => true) =>
     ($(id).innerHTML = $(id).firstElementChild.outerHTML + opts.map(([k, l]) => `<button data-${attr}="${k}" class="${cur == k ? 'on' : ''}" ${ok(k) ? '' : 'disabled style="opacity:.3"'}>${l}</button>`).join(''));
   const shot = it.kind === 'shot';
+  const t02 = it.kind === 't02';
+  $('#bef-l').style.display = t02 ? '' : 'none';
+  $('#bef').checked = S.before;
   grp('#modes', MODES, S.mode, 'mode', () => shot);
-  grp('#angles', ANGLES, angleOf(f), 'angle', (k) => !!f?.views[k]);
+  grp('#angles', ANGLES, angleOf(f), 'angle', (k) => !t02 && !!f?.views[k]);
   grp('#zooms', ZOOMS.map((z) => [z, z + '×']), S.zoom, 'zoom', () => shot);
   $('#extra').checked = S.extra;
   const c = S.db[it.id];
@@ -201,7 +228,8 @@ function renderBar() {
     $('#still')?.addEventListener('change', (e) => { S.still = e.target.checked; renderStage(); });
     return;
   }
-  $('#frames').innerHTML = shot
+  $('#frames').innerHTML = t02 ? it.frames.map((f, i) => `<button data-fr="${i}" class="${i === S.frame ? 'on' : ''} ${f.picked ? '' : 'extra'} ${c?.frames?.[fkey(f)] ? 'has' : ''}">${f.t} s</button>`).join('') || '<span class="empty">Chưa có ảnh.</span>'
+    : shot
     ? frames(it).map((f, i) => `<button data-fr="${i}" class="${i === S.frame ? 'on' : ''} ${f.picked ? '' : 'extra'} ${c?.frames?.[fkey(f)] ? 'has' : ''}">${f.t} s</button>`).join('') +
       (frames(it).length < it.frames.length ? `<span style="font-size:12px;color:var(--dim)">+${it.frames.length - frames(it).length} giây khác</span>` : '')
     : '<span class="empty">Tờ ghép sẵn — bấm ảnh để xem cỡ thật.</span>';
@@ -220,6 +248,16 @@ function img(src, extra = '') {
 function renderStage() {
   const it = S.items[S.cur];
   const st = $('#stage');
+  st.classList.toggle('t02', it.kind === 't02');
+  if (it.kind === 't02') {
+    const AN = { truoc: 'trước', cheo: 'chéo', ngang: 'ngang', sau: 'sau' };
+    st.innerHTML = it.frames.map((f, i) => `<div class="row${i === S.frame ? ' cur' : ''}" data-fr="${i}"><h4>${f.t} s${f.picked ? '' : ' <small>(giây thêm)</small>'}</h4><div class="angs">` +
+      Object.entries(f.views).map(([a, v]) => `<div class="cell"><div class="pane"><span class="tag sau">${AN[a]}${v.truoc ? ' · SAU SỬA' : ''}</span><img src="${url(v.hien)}" loading="lazy" draggable="false"></div>` +
+        (S.before && v.truoc ? `<div class="pane bef"><span class="tag truoc">${AN[a]} · TRƯỚC SỬA</span><img src="${url(v.truoc)}" loading="lazy" draggable="false"></div>` : '') + '</div>').join('') + '</div></div>').join('') || '<div class="empty">Chưa có ảnh cho mục này.</div>';
+    const cr = st.querySelector('.row.cur');
+    if (cr) st.scrollTop = cr.offsetTop - st.offsetTop - 10;
+    return;
+  }
   if (it.kind === 'sheet') { st.innerHTML = `<div class="sheet"><img src="${url(it.src)}"></div>`; return; }
   if (it.kind === 'video') {
     st.innerHTML = `<div class="vbox"><div class="vids">${it.videos.map((v) => `<div class="pane">${v.label ? `<span class="tag sau">${esc(v.label)}</span>` : ''}
@@ -259,7 +297,13 @@ function renderRight() {
   const c = rec(it);
   const f = frames(it)[S.frame];
   let head;
-  if (it.kind === 'shot') {
+  if (it.kind === 't02') {
+    head = `<div><h2>${esc(it.scene)}</h2>
+      <div class="meta"><b>${esc(it.cast)}</b> · tay <b>${esc(it.side)}</b> · <code>${esc(it.item)}@${esc(it.group)}</code></div>
+      <div class="meta"><span class="badge ${esc(it.status)}">${esc(T02ST.find((x) => x[0] === it.status)?.[1] || it.status)}</span> · lô ${it.lo}</div></div>
+      ${it.note ? `<div class="note">${md(it.note)}</div>` : ''}
+      ${it.change ? `<div class="note n-it"><b>Đã đổi:</b> ${md(it.change)}</div>` : ''}`;
+  } else if (it.kind === 'shot') {
     const k = sec(it);
     head = `<div><h2>#${it.n} ${esc(it.scene)}</h2>
       <div class="meta"><b>${esc(it.cast)}</b> · tay <b>${it.side}</b> · ${esc(it.role)}</div>
@@ -270,7 +314,7 @@ function renderRight() {
   } else head = `<div><h2>${esc(it.title)}</h2><div class="meta">${it.kind === 'video' ? 'Video' : 'Tờ ghép'} nhóm <b>${esc(it.group)}</b> · ${(it.kind === 'video' ? it.videos.map((v) => v.src) : [it.src]).map((p) => `<code>${esc(p)}</code>`).join(' ')}</div></div>
       ${it.hint.length ? `<div class="note n-it">${it.hint.map(md).join('<br>')}</div>` : '<div class="note">Không có ghi chú bố cục — đọc theo nhãn trên ảnh.</div>'}
       ${it.note ? `<div class="note">${md(it.note)}</div>` : ''}`;
-  const others = it.kind === 'shot' ? Object.entries(c.frames).filter(([k, v]) => v && (!f || k !== fkey(f))) : [];
+  const others = it.kind === 'shot' || it.kind === 't02' ? Object.entries(c.frames).filter(([k, v]) => v && (!f || k !== fkey(f))) : [];
   $('#right').innerHTML = `${head}
     <div class="box"><h3>Quyết định</h3><div id="status">${STATUS.map(([k, l]) => `<button data-st="${k}" class="${k} ${c.status === k ? 'on' : ''}">${l}</button>`).join('')}</div></div>
     ${f ? `<div class="box"><h3>Nhận xét khung ${f.t} s</h3><textarea id="tf" rows="4" placeholder="Chỗ sai thấy ở giây này…">${esc(c.frames[fkey(f)] || '')}</textarea>
@@ -373,10 +417,11 @@ function cycleAngle() {
 }
 
 document.addEventListener('click', (e) => {
-  const t = e.target.closest('[data-i],[data-f],[data-mode],[data-angle],[data-zoom],[data-fr],[data-st],[data-goto],[data-v],[data-speed],.sheet img');
+  const t = e.target.closest('[data-i],[data-f],[data-t02],[data-mode],[data-angle],[data-zoom],[data-fr],[data-st],[data-goto],[data-v],[data-speed],.sheet img');
   if (!t) return;
   const d = t.dataset;
   if (d.i) go(+d.i);
+  else if (d.t02) { S.tst[d.t02] = S.tst[d.t02] ? 0 : 1; renderList(); }
   else if (d.f) { S.filter = d.f; renderList(); }
   else if (d.mode) { S.mode = d.mode; renderBar(); renderStage(); }
   else if (d.angle) { S.angle = d.angle; renderBar(); renderStage(); }
@@ -400,6 +445,7 @@ $('#extra').addEventListener('change', (e) => {
   S.frame = Math.max(0, frames(it).indexOf(f));
   renderBar(); renderStage(); renderRight();
 });
+$('#bef').addEventListener('change', (e) => { S.before = e.target.checked; renderStage(); });
 $('#auto').addEventListener('change', (e) => {
   clearInterval(S.auto);
   if (e.target.checked) { S.mode = 'blink'; renderBar(); S.auto = setInterval(() => { S.flip = !S.flip; renderStage(); }, 700); }
@@ -463,7 +509,7 @@ document.addEventListener('keyup', (e) => {
   const local = JSON.parse(localStorage.getItem(LS) || '{}');
   S.db = Object.keys(server).length ? server : local;
   if (!Object.keys(server).length && Object.keys(local).length) save();
-  const h = location.hash.slice(1);
+  const h = decodeURIComponent(location.hash.slice(1));
   const i = S.items.findIndex((it) => it.id === h);
   S.cur = i >= 0 ? i : S.items.indexOf(order()[0]);
   render();

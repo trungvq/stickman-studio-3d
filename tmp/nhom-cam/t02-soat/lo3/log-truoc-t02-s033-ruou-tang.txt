@@ -1,0 +1,20 @@
+$ node tools/can-tay.mjs t02-s033-ruou-tang 0.3,0.65,0.9,1.2,2.3,2.6,4.27,5.71,8.44 --ai takumi --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/truoc --tab 2
+t02-s033-ruou-tang 0.3s takumi tay phải: vào thân 88°
+t02-s033-ruou-tang 0.3s takumi tay trái: úp 0° gap 3.5
+t02-s033-ruou-tang 0.65s takumi tay phải: vào thân 87°
+t02-s033-ruou-tang 0.65s takumi tay trái: úp 0° gap 3.5
+t02-s033-ruou-tang 0.9s takumi tay phải: vào thân 87°
+t02-s033-ruou-tang 0.9s takumi tay trái: úp 0° gap 3.5
+t02-s033-ruou-tang 1.2s takumi tay phải: vào thân 96° gap 1.6
+t02-s033-ruou-tang 1.2s takumi tay trái: úp 0° gap 3.5
+t02-s033-ruou-tang 2.3s takumi tay phải: vào thân 62°
+t02-s033-ruou-tang 2.3s takumi tay trái: úp 0° gap 3.5
+t02-s033-ruou-tang 2.6s takumi tay phải: ra sau 53°
+t02-s033-ruou-tang 2.6s takumi tay trái: úp 0° gap 3.5
+t02-s033-ruou-tang 4.27s takumi tay phải: vào thân 64°
+t02-s033-ruou-tang 4.27s takumi tay trái: úp 0° gap 3.5
+t02-s033-ruou-tang 5.71s takumi tay phải: vào thân 63°
+t02-s033-ruou-tang 5.71s takumi tay trái: úp 0° gap 3.5
+t02-s033-ruou-tang 8.44s takumi tay phải: vào thân 68°
+t02-s033-ruou-tang 8.44s takumi tay trái: úp 0° gap 3.5
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/truoc/t02-s033-ruou-tang.jpg

@@ -1,5 +1,13 @@
 # Nhận xét duyệt nhóm cầm
 
+## #1 t02-s013-khoe · takumi · tay phải · dien-thoai#khoe → dien-thoai@palmBox
+
+- Trạng thái: Duyệt
+
+## #4 t02-s033-ruou-tang · takumi · tay phải · chen#kep → chen@bowl
+
+- Trạng thái: Duyệt
+
 ## G4 bowl-kep-s033
 
 - Trạng thái: Duyệt
@@ -8,20 +16,34 @@
 
 - Trạng thái: Duyệt
 
-## G4 bowl
+## G4 card-edges-truoc-sau
 
-- Trạng thái: Cần sửa
-- Nhận xét: chén rượu v1 vẫn chuẩn hơn. Chén nhỏ nên cầm bằng 2 ngón là chính. Kiểu cầm của v2 không có cái gì kẹp cái chén nên chắc chắn sẽ rơi
+- Trạng thái: Duyệt
 
-## G4 card-pad
+## G4 card-lateral-t02
 
-- Trạng thái: Cần sửa
-- Nhận xét: cái này tệ quá. Nhưng hình như sửa v3/v4 rồi thì phải
+- Trạng thái: Duyệt
+
+## G4 card-lateral
+
+- Trạng thái: Duyệt
+
+## G4 carry-thu-tui-hieu-quai
+
+- Trạng thái: Duyệt
+
+## G4 carry-thu-tui-hieu-truoc-sau
+
+- Trạng thái: Duyệt
 
 ## G4 carry-thu-tui-hieu
 
 - Trạng thái: Cần sửa
 - Nhận xét: cái này cũng tính kiểu cầm à? Sao quai túi lấn vào người nhiều thế?
+
+## G4 chopsticks-truoc-sau
+
+- Trạng thái: Duyệt
 
 ## G4 chopsticks
 
@@ -30,10 +52,41 @@
   v2 sau cũng chưa chuẩn: sao lại cầm đũa bằng đầu ngón tay. Phải dùng tay kẹp đũa chứ. V1 dáng đúng chỉ có vị trí sai. V2 thì sai cả.
   Với lại 3 hình thì đũa đều ngược đầu (cái đơn giản này cũng sai à?)
 
+## G4 cylinder-ap-tai-truoc-sau
+
+- Trạng thái: Duyệt
+
 ## G4 cylinder-ap-tai
 
 - Trạng thái: Cần sửa
 - Nhận xét: ống nghe phải theo kiểu cầm vật thon hoặc giống cầm điện thoại chứ? Cầm trong lòng bàn tay, kẹp bở ngón cái và 4 ngón còn lại 
+
+## G4 cylinder-cai-truoc-sau
+
+- Trạng thái: Cần sửa
+- Nhận xét: điện thoại cầm ngược?
+
+## G4 cylinder-ong-nghe-truoc-sau
+
+- Trạng thái: Cần sửa
+- Nhận xét: điện thoại cầm ngược?
+
+## G4 cylinder-wrap-cai-truoc-sau
+
+- Trạng thái: Duyệt
+
+## G4 cylinder-wrap
+
+- Trạng thái: Cần sửa
+- Nhận xét: ngón cái bị quặp à? nếu ngòn cái ôm thân chai thì là ok, không thì là sai 
+
+## G4 handle
+
+- Trạng thái: Duyệt
+
+## G4 keyed-dien-thoai-ba-moc-truoc-sau
+
+- Trạng thái: Duyệt
 
 ## G4 mẫu · bang-gia-doc-cheo
 
@@ -155,5 +208,25 @@
 - Trạng thái: Duyệt
 
 ## G4 mẫu · tui-xach-xach-2
+
+- Trạng thái: Duyệt
+
+## G4 undefined
+
+- Trạng thái: Duyệt
+
+## G4 undefined
+
+- Trạng thái: Duyệt
+
+## G4 undefined
+
+- Trạng thái: Duyệt
+
+## G4 undefined
+
+- Trạng thái: Duyệt
+
+## G4 undefined
 
 - Trạng thái: Duyệt

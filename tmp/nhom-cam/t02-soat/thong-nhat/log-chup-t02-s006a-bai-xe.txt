@@ -1,0 +1,14 @@
+$ node tools/can-tay.mjs t02-s006a-bai-xe 0.3,4.88,6.15,6.65,7.45,8.45 --ai erika --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo1/sau --tab 2
+t02-s006a-bai-xe 0.3s erika tay phải: ra trước 122°
+t02-s006a-bai-xe 0.3s erika tay trái: ngửa 148° gap 26.2
+t02-s006a-bai-xe 4.88s erika tay phải: ra trước 123°
+t02-s006a-bai-xe 4.88s erika tay trái: ngửa 147° gap 26
+t02-s006a-bai-xe 6.15s erika tay phải: ra trước 125°
+t02-s006a-bai-xe 6.15s erika tay trái: ngửa 140° gap 26.1
+t02-s006a-bai-xe 6.65s erika tay phải: ra trước 126°
+t02-s006a-bai-xe 6.65s erika tay trái: ngửa 127°
+t02-s006a-bai-xe 7.45s erika tay phải: ra trước 133°
+t02-s006a-bai-xe 7.45s erika tay trái: ngửa 144°
+t02-s006a-bai-xe 8.45s erika tay phải: ra trước 109°
+t02-s006a-bai-xe 8.45s erika tay trái: ra sau 100°
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo1/sau/t02-s006a-bai-xe.jpg

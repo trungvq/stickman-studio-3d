@@ -86,8 +86,45 @@ for md in sorted(glob.glob(f'{R}/mau/*.md')):
         items.append({'id': f'mau-{sub}', 'kind': 'sheet', 'title': f'mẫu · {sub}', 'group': 'ảnh mẫu', 'src': os.path.relpath(p, R),
             'note': open(md).read().strip(), 'hint': []})
 
+# Soát t02: mỗi lần cầm một mục, ảnh ở t02-soat/lo<N>/{truoc,sau}/<cảnh>/<giây>-<người>-<tay>-<góc>.png
+T02ANG = ['truoc', 'cheo', 'ngang', 'sau']
+TAY = {'phải': 'tay-phải', 'trái': 'tay-trái', 'hai tay': 'hai-tay'}
+def t02index(d, cast, hand):
+    pat = re.compile(r'^([\d.]+)-' + re.escape(cast) + '-' + re.escape(hand) + r'-(' + '|'.join(T02ANG) + r')\.png$')
+    out = {}
+    for p in glob.glob(f'{d}/*.png'):
+        m = pat.match(os.path.basename(p))
+        if m: out[(round(float(m[1]), 3), m[2])] = os.path.relpath(p, R)
+    return out
+
+t02ids = set()
+for lo in sorted(glob.glob(f'{R}/t02-soat/lo*/ket-qua.json'), key=lambda p: int(re.search(r'lo(\d+)', p)[1])):
+    n = int(re.search(r'lo(\d+)', lo)[1])
+    ld = os.path.dirname(lo)
+    for r in json.load(open(lo)):
+        hand = TAY.get(r['side'], 'hai-tay')
+        tr = t02index(f"{ld}/truoc/{r['scene']}", r['cast'], hand)
+        sau = t02index(f"{ld}/sau/{r['scene']}", r['cast'], hand)
+        secs = [round(float(s), 3) for s in r.get('secs', [])]
+        ts = sorted({k[0] for k in tr} | {k[0] for k in sau} | set(secs))
+        frames = []
+        for s in ts:
+            views = {}
+            for a in T02ANG:
+                b, f = tr.get((s, a)), sau.get((s, a))
+                if f: views[a] = {'hien': f, 'truoc': b} if b else {'hien': f}
+                elif b: views[a] = {'hien': b}
+            if views: frames.append({'t': s, 'picked': s in secs, 'goc': next(a for a in T02ANG if a in views), 'views': views})
+        base = f"t02-{r['scene'].replace('t02-', '', 1)}-{r['cast']}-{hand.replace('tay-', '').replace('hai-tay', 'hai')}-{r['item']}"
+        iid, k = base, 2
+        while iid in t02ids: iid, k = f'{base}-{k}', k + 1
+        t02ids.add(iid)
+        items.append({'id': iid, 'kind': 't02', 'scene': r['scene'], 'cast': r['cast'], 'side': r['side'], 'item': r['item'],
+            'group': r['group'], 'status': r['status'], 'change': r.get('change', ''), 'note': r.get('note', ''), 'lo': n, 'frames': frames})
+
 json.dump(items, open(f'{R}/duyet-web/data.json', 'w'), ensure_ascii=False)
 print(len(items), 'mục;', sum(len(x.get('frames', [])) for x in items), 'khung')
 for x in items:
     if x['kind'] == 'shot':
         print(x['n'], x['scene'], x['cast'], x['side'], 'khung', len(x['frames']), 'chọn', sum(f['picked'] for f in x['frames']))
+print(sum(x['kind'] == 't02' for x in items), 'mục t02')

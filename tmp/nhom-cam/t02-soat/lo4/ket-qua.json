@@ -1,0 +1,325 @@
+[
+ {
+  "scene": "t02-s041-nguoi",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "group": "sheet",
+  "secs": [
+   0,
+   0.15,
+   0.3,
+   0.45,
+   0.75
+  ],
+  "status": "da-sua",
+  "change": "slant 21.6 → 45 (mốc 0, 0.25); mốc rút tay 0.55 [-262,-230,512]/[-340,-233,520]; src: đĩa hạ về mặt khăn Y_KHAN",
+  "note": "Đĩa phẳng khi hạ, đáy nằm trên khăn, không còn chìm; ngón cái trên vành, bốn ngón dưới đĩa."
+ },
+ {
+  "scene": "t02-s041-nguoi",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   0.3,
+   1.38,
+   1.65,
+   2.75
+  ],
+  "status": "can-rig",
+  "change": "tilt 20.6 → 5",
+  "note": "Máy giờ nằm trong lòng tay, ngón ôm cạnh, không còn kê trên nắm đấm; nhưng ba ngón press vẫn hở lưng máy 5–6 — dáng span của palmBox chưa khép tới, việc của rig."
+ },
+ {
+  "scene": "t02-s041-nguoi",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dua",
+  "group": "chopsticks",
+  "secs": [
+   3.6,
+   4.45,
+   4.65,
+   5.58
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Đầu vuông sau bàn tay, đầu nhọn ra trước chúc xuống đĩa, đúng chiều. Bàn tay ôm hai que từ trên, đọc được là cầm đũa; góc trước bị đầu che."
+ },
+ {
+  "scene": "t02-s042-lam-lai",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "group": "sheet",
+  "secs": [
+   1.84,
+   1.86,
+   2.0,
+   2.15,
+   2.55,
+   2.77,
+   3.1
+  ],
+  "status": "da-sua",
+  "change": "slant 45 (1.85, 2.2) → 36 (2.5) → 21.6 (3.05); y mốc 1.85 −143.2, 2.2 −144.5; src: chỗ đĩa nằm CHO_DIA trên mặt khăn",
+  "note": "Đĩa nằm và được nhấc lên phẳng trên khăn, không chìm. Lúc kẹp (1,85 s) đĩa còn xoay 28° một khung (trước 38°) do rig hoà cổ tay khi bắt đầu cầm: cần sửa rig."
+ },
+ {
+  "scene": "t02-s043-bep-2",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "group": "sheet",
+  "secs": [
+   0,
+   0.28,
+   0.55
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Bưng đĩa hai vành đặt lên quầy, dáng đúng."
+ },
+ {
+  "scene": "t02-s044-cham",
+  "cast": "yoshie-di",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "group": "sheet",
+  "secs": [
+   0.3,
+   2.69
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Bưng đĩa trước bụng khi đi, ngón cái trên vành, ngón dưới đáy."
+ },
+ {
+  "scene": "t02-s044-cham",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "group": "sheet",
+  "secs": [
+   0.3,
+   2.69
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Như trên, đĩa có khe với áo."
+ },
+ {
+  "scene": "t02-s045-cui",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "group": "sheet",
+  "secs": [
+   0,
+   0.24,
+   0.47,
+   0.62,
+   0.85,
+   1.25
+  ],
+  "status": "da-sua",
+  "change": "đứng 452 → 472 cả cảnh; mốc 0 z 545 → 565; thêm mốc 0.2 [-300,-175,575] slant 36; mốc đặt 0.42 slant 45; mốc rút tay 0.7 [-262,-230,512]; tay cúi offset [12,18,0] → [12,30,0]; src: hạ về Y_KHAN",
+  "note": "Hạ đĩa phẳng xuống khăn, đáy không chìm; lúc cúi chào tay đặt trước bụng, không lấn râu tôm."
+ },
+ {
+  "scene": "t02-s048-vo-tom",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dua",
+  "group": "chopsticks",
+  "secs": [
+   0.3,
+   1.23,
+   1.36,
+   2.21
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Đũa đúng chiều (đầu vuông sau tay, đầu nhọn gõ vỏ tôm), tay kẹp hai que."
+ },
+ {
+  "scene": "t02-s049-da-trong",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dua",
+  "group": "chopsticks",
+  "secs": [
+   0.3,
+   2.38,
+   4.37,
+   4.77
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Cầm đũa trước ngực đúng chiều; 4,77 s là lúc buông đặt đũa xuống."
+ },
+ {
+  "scene": "t02-s050-them-bo",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "dua",
+  "group": "chopsticks",
+  "secs": [
+   0.3,
+   1.16,
+   1.31,
+   3.92
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Đũa đúng chiều, gõ đầu đũa lên đá trống; dáng kẹp nhất quán với các cảnh khác."
+ },
+ {
+  "scene": "t02-s050-them-bo",
+  "cast": "yoshie",
+  "side": "trái",
+  "item": "phieu",
+  "group": "platform",
+  "secs": [
+   1.1,
+   1.65,
+   4.32
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Tay trái đỡ tập phiếu (dày, cứng) để ghi — kiểu đỡ lòng tay hợp với tập phiếu đang viết; tay khuất dưới phiếu ở góc trước."
+ },
+ {
+  "scene": "t02-s050-them-bo",
+  "cast": "yoshie",
+  "side": "phải",
+  "item": "but",
+  "group": "pen",
+  "secs": [
+   1.3,
+   4.93,
+   5.15,
+   7.69
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Ngòi chạm phiếu, trục bút nghiêng ~60° so với mặt phiếu, đuôi về phía tay. Bàn tay lơ trên giấy chứ không tì mé tay như ảnh mẫu."
+ },
+ {
+  "scene": "t02-s051-bep-3",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "bo-da",
+  "group": "sheet",
+  "secs": [
+   0,
+   0.28,
+   0.55
+  ],
+  "status": "can-rig",
+  "change": "đã thử variant rim → flat: lỗi choice (mép dày 6,5 > 3,5); trả về rim",
+  "note": "Hai bàn tay xoè mở chữ C ở mép khay geta, ngón cái không đè mặt trên, ngón không khép dưới đáy. Mép dày 6,5 (ván + chân) vượt miền khép của rim, flat không cho — cần rig."
+ },
+ {
+  "scene": "t02-s051-bep-3",
+  "cast": "yoshie",
+  "side": "phải",
+  "item": "phieu-lien",
+  "group": "sheet",
+  "secs": [
+   1.6,
+   1.73,
+   1.8,
+   2.15
+  ],
+  "status": "da-sua",
+  "change": "variant flat → pinch",
+  "note": "Trước: tờ phiếu mỏng nằm ngửa trên lòng tay (loại theo chốt). Sau: úp tay kẹp mép giữa ngón cái và ngón trỏ như ảnh `giay-dua`, đặt xuống quầy."
+ },
+ {
+  "scene": "t02-s052-o1-sofa",
+  "cast": "erika",
+  "side": "phải",
+  "item": "ong-nghe",
+  "group": "cylinder",
+  "secs": [
+   0.3,
+   1.27
+  ],
+  "status": "da-sua",
+  "change": "thêm roll {axis top, toward [-0.4,-0.92,0]}",
+  "note": "Trước: ống nghe nằm ngang dọc thái dương. Sau: loa ở tai, đầu dưới chếch xuống hàm, thân trong lòng tay, ngón ôm ngang thân."
+ },
+ {
+  "scene": "t02-s052-o2-giuong",
+  "cast": "erika",
+  "side": "trái",
+  "item": "ong-nghe",
+  "group": "cylinder",
+  "secs": [
+   0.3,
+   2
+  ],
+  "status": "da-sua",
+  "change": "thêm roll {axis top, toward [-0.4,-0.92,0]}",
+  "note": "Như ô 1, tay trái: ống nghe theo đường tai – hàm, kẹp trong lòng tay."
+ },
+ {
+  "scene": "t02-s052-o3-chi-be",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "ong-nghe",
+  "group": "cylinder",
+  "secs": [
+   0.3,
+   2.05
+  ],
+  "status": "da-sua",
+  "change": "thêm roll {axis top, toward [-0.4,-0.92,0]}",
+  "note": "Ống nghe gần đứng áp má, loa ở tai; đầu dưới còn hơi xa miệng nhưng hết nằm ngang."
+ },
+ {
+  "scene": "t02-s052-o4-ben-kinh",
+  "cast": "erika",
+  "side": "trái",
+  "item": "ong-nghe",
+  "group": "cylinder",
+  "secs": [
+   0.3,
+   1.75
+  ],
+  "status": "da-sua",
+  "change": "thêm roll {axis top, toward [-0.4,-0.92,0]}",
+  "note": "Như ô 2: loa ở tai, thân chếch xuống hàm, kẹp trong lòng tay."
+ },
+ {
+  "scene": "t02-s053-hanh-lang",
+  "cast": "yota",
+  "side": "hai tay",
+  "item": "khay",
+  "group": "platform",
+  "secs": [
+   0.3,
+   3.49
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Hai lòng tay ngửa đỡ dưới hai đầu khay, khay ngang trước bụng; ngón cái không móc vành như ảnh mẫu nhưng đúng kiểu đỡ."
+ },
+ {
+  "scene": "t02-s053-hanh-lang",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "group": "palmBox",
+  "secs": [
+   0.3,
+   3.49
+  ],
+  "status": "dung",
+  "change": "",
+  "note": "Giơ máy đứng quay phim, camera sau về 陽太, ngón cái dọc cạnh, ngón sau lưng máy."
+ }
+]

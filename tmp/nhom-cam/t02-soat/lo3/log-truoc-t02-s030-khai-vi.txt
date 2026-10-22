@@ -1,0 +1,18 @@
+$ node tools/can-tay.mjs t02-s030-khai-vi 0,0.3,0.4,3.76 --ai yoshie-di,erika --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/truoc --tab 2
+t02-s030-khai-vi 0s yoshie-di tay phải: ngửa 159°
+t02-s030-khai-vi 0s yoshie-di tay trái: ngửa 168°
+t02-s030-khai-vi 0.3s yoshie-di tay phải: ngửa 158°
+t02-s030-khai-vi 0.3s yoshie-di tay trái: ngửa 169°
+t02-s030-khai-vi 0.4s yoshie-di tay phải: ngửa 158°
+t02-s030-khai-vi 0.4s yoshie-di tay trái: ngửa 169°
+t02-s030-khai-vi 3.76s yoshie-di tay phải: ngửa 159°
+t02-s030-khai-vi 3.76s yoshie-di tay trái: ngửa 168°
+t02-s030-khai-vi 0s erika tay phải: ngửa 155°
+t02-s030-khai-vi 0s erika tay trái: úp 0° gap 3.6
+t02-s030-khai-vi 0.3s erika tay phải: ngửa 155°
+t02-s030-khai-vi 0.3s erika tay trái: úp 0° gap 3.6
+t02-s030-khai-vi 0.4s erika tay phải: ngửa 155°
+t02-s030-khai-vi 0.4s erika tay trái: úp 0° gap 3.6
+t02-s030-khai-vi 3.76s erika tay phải: ngửa 155°
+t02-s030-khai-vi 3.76s erika tay trái: úp 0° gap 3.6
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/truoc/t02-s030-khai-vi.jpg

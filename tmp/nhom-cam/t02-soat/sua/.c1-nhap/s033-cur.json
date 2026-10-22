@@ -1,0 +1,814 @@
+{
+  "schemaVersion": 26,
+  "name": "t02-s033-ruou-tang",
+  "frame": "wide",
+  "duration": 9.124,
+  "marks": {
+    "loi": 1.6,
+    "kore": 2.337,
+    "nhac": 2,
+    "jizake": 4.217,
+    "toreru": 8.137
+  },
+  "camera": [
+    {
+      "t": 0,
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  ],
+  "lens": {
+    "eye": [
+      0,
+      -400,
+      -900
+    ],
+    "yaw": 0,
+    "pitch": 0,
+    "f": 1000,
+    "cx": 0,
+    "cy": 0
+  },
+  "cast": [
+    {
+      "id": "takumi",
+      "character": "takumi.json",
+      "world": {
+        "at": [
+          -470,
+          -92,
+          620
+        ],
+        "yaw": 0,
+        "sit": true,
+        "floor": 0,
+        "hands": [
+          {
+            "t": 0,
+            "right": {
+              "to": "mouth",
+              "offset": [
+                10,
+                6.5,
+                0
+              ],
+              "point": "grip",
+              "hold": {
+                "item": "chen",
+                "group": "bowl",
+                "part": "body",
+                "around": 180
+              }
+            },
+            "left": {
+              "at": [
+                -420,
+                -147,
+                716
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": 0.5,
+            "right": {
+              "to": "mouth",
+              "offset": [
+                10,
+                6.5,
+                0
+              ],
+              "point": "grip",
+              "hold": {
+                "item": "chen",
+                "group": "bowl",
+                "part": "body",
+                "around": 180
+              }
+            },
+            "left": {
+              "at": [
+                -420,
+                -147,
+                716
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": 0.85,
+            "right": {
+              "at": [
+                -420,
+                -205.5,
+                560
+              ],
+              "point": "grip",
+              "hold": {
+                "item": "chen",
+                "group": "bowl",
+                "part": "body",
+                "around": 180
+              }
+            },
+            "left": {
+              "at": [
+                -420,
+                -147,
+                716
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": 1.15,
+            "right": {
+              "at": [
+                -412,
+                -156.5,
+                545
+              ],
+              "point": "grip",
+              "hold": {
+                "item": "chen",
+                "group": "bowl",
+                "part": "body",
+                "around": 180
+              }
+            },
+            "left": {
+              "at": [
+                -420,
+                -147,
+                716
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": 1.3,
+            "right": {
+              "at": [
+                -412,
+                -156.5,
+                545
+              ],
+              "point": "grip",
+              "hold": null
+            },
+            "left": {
+              "at": [
+                -420,
+                -147,
+                716
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": 1.5,
+            "right": {
+              "at": [
+                -408,
+                -190,
+                540
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            },
+            "left": {
+              "at": [
+                -420,
+                -147,
+                716
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": "@nhac",
+            "right": {
+              "at": [
+                -330,
+                -190,
+                580
+              ],
+              "point": "palm",
+              "palm": "in",
+              "fingers": "forward"
+            },
+            "left": {
+              "at": [
+                -420,
+                -147,
+                716
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": "@nhac+0.3",
+            "right": {
+              "at": [
+                -300,
+                -143,
+                575
+              ],
+              "point": "item:base",
+              "hold": {
+                "item": "chai-dia",
+                "group": "cylinder",
+                "part": "than",
+                "along": 0.5,
+                "thumb": "up",
+                "variant": "wrap",
+                "around": 90,
+                "face": {
+                  "axis": "nhan",
+                  "toward": "out"
+                },
+                "roll": {
+                  "axis": "mouth",
+                  "toward": "up"
+                }
+              }
+            },
+            "left": {
+              "at": [
+                -420,
+                -147,
+                716
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": "@nhac+0.55",
+            "right": {
+              "at": [
+                -330,
+                -215,
+                575
+              ],
+              "point": "grip",
+              "hold": {
+                "item": "chai-dia",
+                "group": "cylinder",
+                "part": "than",
+                "along": 0.5,
+                "thumb": "up",
+                "variant": "wrap",
+                "around": 90,
+                "face": {
+                  "axis": "nhan",
+                  "toward": "out"
+                },
+                "roll": {
+                  "axis": "mouth",
+                  "toward": "up"
+                }
+              }
+            },
+            "left": {
+              "at": [
+                -420,
+                -147,
+                716
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": "@nhac+0.8",
+            "right": {
+              "at": [
+                -410,
+                -212,
+                566
+              ],
+              "point": "grip",
+              "hold": {
+                "item": "chai-dia",
+                "group": "cylinder",
+                "part": "than",
+                "along": 0.5,
+                "thumb": "up",
+                "variant": "wrap",
+                "around": 90,
+                "face": {
+                  "axis": "nhan",
+                  "toward": "out"
+                },
+                "roll": {
+                  "axis": "mouth",
+                  "toward": "up"
+                }
+              }
+            },
+            "left": {
+              "at": [
+                -420,
+                -147,
+                716
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": "@jizake-0.6",
+            "right": {
+              "at": [
+                -410,
+                -212,
+                566
+              ],
+              "point": "grip",
+              "hold": {
+                "item": "chai-dia",
+                "group": "cylinder",
+                "part": "than",
+                "along": 0.5,
+                "thumb": "up",
+                "variant": "wrap",
+                "around": 90,
+                "face": {
+                  "axis": "nhan",
+                  "toward": "out"
+                },
+                "roll": {
+                  "axis": "mouth",
+                  "toward": "up"
+                }
+              }
+            },
+            "left": {
+              "at": [
+                -420,
+                -147,
+                716
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": "@jizake",
+            "right": {
+              "at": [
+                -402,
+                -240,
+                595
+              ],
+              "point": "grip",
+              "hold": {
+                "item": "chai-dia",
+                "group": "cylinder",
+                "part": "than",
+                "along": 0.5,
+                "thumb": "up",
+                "variant": "wrap",
+                "around": 90,
+                "face": {
+                  "axis": "nhan",
+                  "toward": "back"
+                },
+                "roll": {
+                  "axis": "mouth",
+                  "toward": "up"
+                }
+              }
+            },
+            "left": {
+              "at": [
+                -420,
+                -147,
+                716
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": "@toreru-0.2",
+            "right": {
+              "at": [
+                -402,
+                -240,
+                595
+              ],
+              "point": "grip",
+              "hold": {
+                "item": "chai-dia",
+                "group": "cylinder",
+                "part": "than",
+                "along": 0.5,
+                "thumb": "up",
+                "variant": "wrap",
+                "around": 90,
+                "face": {
+                  "axis": "nhan",
+                  "toward": "back"
+                },
+                "roll": {
+                  "axis": "mouth",
+                  "toward": "up"
+                }
+              }
+            },
+            "left": {
+              "at": [
+                -420,
+                -147,
+                716
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": "@toreru+0.25",
+            "right": {
+              "at": [
+                -372,
+                -180,
+                572
+              ],
+              "point": "grip",
+              "hold": {
+                "item": "chai-dia",
+                "group": "cylinder",
+                "part": "than",
+                "along": 0.5,
+                "thumb": "up",
+                "variant": "wrap",
+                "around": 90,
+                "face": {
+                  "axis": "nhan",
+                  "toward": "back"
+                },
+                "roll": {
+                  "axis": "mouth",
+                  "toward": "up"
+                }
+              }
+            },
+            "snap": true,
+            "left": {
+              "at": [
+                -420,
+                -147,
+                716
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          }
+        ]
+      },
+      "tracks": [
+        {
+          "name": "than",
+          "clips": [
+            {
+              "start": 0,
+              "action": "sit-3d"
+            }
+          ]
+        },
+        {
+          "name": "mat",
+          "clips": [
+            {
+              "start": 0,
+              "action": "face-kind"
+            },
+            {
+              "start": "@kore-0.2",
+              "action": "face-displeased",
+              "blend": 0.25
+            }
+          ]
+        },
+        {
+          "name": "dau",
+          "clips": [
+            {
+              "start": 0,
+              "action": "uong-3d",
+              "blend": 0,
+              "mask": [
+                "head"
+              ]
+            },
+            {
+              "start": 0.9,
+              "blend": 0.4
+            }
+          ]
+        },
+        {
+          "name": "nga",
+          "clips": [
+            {
+              "start": "@nhac",
+              "action": "nga-toi-3d",
+              "blend": 0.3
+            },
+            {
+              "start": "@nhac+0.9",
+              "blend": 0.4
+            },
+            {
+              "start": "@toreru",
+              "action": "nga-toi-3d",
+              "blend": 0.1,
+              "snap": true
+            },
+            {
+              "start": "@toreru+0.9",
+              "blend": 0.4
+            }
+          ]
+        },
+        {
+          "name": "moi",
+          "clips": [
+            {
+              "start": "@loi",
+              "action": "lip-t02-d-takumi-08",
+              "cycle": 7.424,
+              "blend": 0
+            },
+            {
+              "start": "@loi+7.424",
+              "blend": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "erika",
+      "character": "erika.json",
+      "world": {
+        "at": [
+          -130,
+          -92,
+          620
+        ],
+        "yaw": 180,
+        "sit": true,
+        "floor": 0,
+        "hands": [
+          {
+            "t": 0,
+            "right": {
+              "at": [
+                -180,
+                -147,
+                722
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            },
+            "left": {
+              "at": [
+                -179,
+                -147,
+                552
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          }
+        ]
+      },
+      "tracks": [
+        {
+          "name": "than",
+          "clips": [
+            {
+              "start": 0,
+              "action": "sit-3d"
+            }
+          ]
+        },
+        {
+          "name": "mat",
+          "clips": [
+            {
+              "start": 0,
+              "action": "face-smug"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "doan-w2-a",
+      "character": "khach-nam-hoi.json",
+      "world": {
+        "at": [
+          390,
+          -92,
+          833.75
+        ],
+        "yaw": 0,
+        "sit": true,
+        "floor": 0,
+        "hands": [
+          {
+            "t": 0,
+            "right": {
+              "at": [
+                485,
+                -147,
+                775.75
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            },
+            "left": {
+              "at": [
+                485,
+                -147.5,
+                863.75
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          }
+        ]
+      },
+      "tracks": [
+        {
+          "name": "than",
+          "clips": [
+            {
+              "start": 0,
+              "action": "sit-3d"
+            }
+          ]
+        },
+        {
+          "name": "mat",
+          "clips": [
+            {
+              "start": 0,
+              "action": "face-calm"
+            }
+          ]
+        },
+        {
+          "name": "song-dau",
+          "clips": [
+            {
+              "action": "ngo-quanh-3d",
+              "start": 0.48,
+              "cycle": 2.34,
+              "blend": 0.25
+            },
+            {
+              "start": 2.82,
+              "blend": 0.3
+            },
+            {
+              "action": "gat-nhe-3d",
+              "start": 3.65,
+              "cycle": 0.95,
+              "blend": 0.25
+            },
+            {
+              "start": 4.6,
+              "blend": 0.3
+            },
+            {
+              "action": "ngo-quanh-gan-3d",
+              "start": 5.65,
+              "cycle": 1.84,
+              "blend": 0.25
+            },
+            {
+              "start": 7.49,
+              "blend": 0.3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "doan-w2-b",
+      "character": "khach-nu-ngang-vai.json",
+      "world": {
+        "at": [
+          730,
+          -92,
+          833.75
+        ],
+        "yaw": 180,
+        "sit": true,
+        "floor": 0,
+        "hands": [
+          {
+            "t": 0,
+            "right": {
+              "at": [
+                635,
+                -147,
+                891.75
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            },
+            "left": {
+              "at": [
+                635,
+                -147.5,
+                803.75
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          }
+        ]
+      },
+      "tracks": [
+        {
+          "name": "than",
+          "clips": [
+            {
+              "start": 0,
+              "action": "sit-3d"
+            }
+          ]
+        },
+        {
+          "name": "mat",
+          "clips": [
+            {
+              "start": 0,
+              "action": "face-kind"
+            }
+          ]
+        },
+        {
+          "name": "song-dau",
+          "clips": [
+            {
+              "action": "ngo-quanh-3d",
+              "start": 1.18,
+              "cycle": 2.23,
+              "blend": 0.25
+            },
+            {
+              "start": 3.41,
+              "blend": 0.3
+            },
+            {
+              "action": "ngo-quanh-gan-3d",
+              "start": 5.04,
+              "cycle": 2.76,
+              "blend": 0.25
+            },
+            {
+              "start": 7.8,
+              "blend": 0.3
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

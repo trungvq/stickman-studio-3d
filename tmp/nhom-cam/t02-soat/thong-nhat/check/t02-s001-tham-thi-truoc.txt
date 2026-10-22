@@ -1,0 +1,8 @@
+/home/trungvq/Work/Dev/youtube-video/jp-sukatto-nhom-cam
+0 parts, 22 characters, 348 actions, 0 props, 0 animals, 53 held, 418 scenes, 57 layers
+pin @7.15.0, rig @7.15.0
+chỉ soi 1 cảnh: t02-s001-tham-thi
+cảnh báo: scenes/t02-s001-tham-thi.json: tay xuyên thân — erika.armNear lấn vào erika.torso 6.3 ở giây 0.63 · giây 0.19–3.22
+cảnh báo: scenes/t02-s001-tham-thi.json: tay xuyên thân — erika.forearmNear lấn vào erika.torso 6.3 ở giây 0.63 · giây 0.53–3.22
+cảnh báo: scenes/t02-s001-tham-thi.json: bàn tay lơ lửng trên mặt — `erika` tay phải theo đích trên dien-thoai-tay: điểm thấp nhất của bàn tay còn cách mặt 9.9 ở giây 0.40 · giây 0.20–0.40. Đích không chạm mặt: hạ đích (`world.hands[].at`) xuống chừng ấy, hay đặt `point` (`"tip"` ngón chạm, `"palm"` lòng tay áp) vào đúng mặt trên. Clip đang chạy: stand-3d (than), tay-tro-gan-3d (tay) (docs/03-scene.md#tay-và-khuỷu)
+0 lỗi, 3 cảnh báo.

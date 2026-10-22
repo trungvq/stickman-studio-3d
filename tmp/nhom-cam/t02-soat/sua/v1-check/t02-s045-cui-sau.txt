@@ -1,0 +1,23 @@
+/home/trungvq/Work/Dev/youtube-video/jp-sukatto-nhom-cam
+0 parts, 22 characters, 348 actions, 0 props, 0 animals, 53 held, 418 scenes, 57 layers
+pin @7.15.0, rig @7.15.0
+chỉ soi 1 cảnh: t02-s045-cui
+cảnh báo: scenes/t02-s045-cui.json: người lồng vào đồ — takumi.foreArmR ↔ kaiseki-bat-canh-a lấn 14.6 ở giây 2.41 · giây 2.22–2.50
+cảnh báo: scenes/t02-s045-cui.json: người lồng vào đồ — takumi.foreArmR ↔ kaiseki-chen-hap-a lấn 12.0 ở giây 2.50 · giây 2.44–2.50
+cảnh báo: scenes/t02-s045-cui.json: người lồng vào đồ — takumi.foreArmR ↔ kaiseki-nap-canh-a lấn 9.9 ở giây 2.50 · giây 2.47–2.50
+cảnh báo: scenes/t02-s045-cui.json: người lồng vào đồ — takumi.handR ↔ kaiseki-chen-hap-a lấn 9.3 ở giây 2.47 · giây 2.44–2.50
+cảnh báo: scenes/t02-s045-cui.json: người lồng vào đồ — yoshie.handR ↔ ban-cap lấn 8.4 ở giây 0.50 · giây 0.38–0.50
+cảnh báo: scenes/t02-s045-cui.json: người lồng vào đồ — takumi.foreArmR ↔ kaiseki-xi-dau-a lấn 5.8 ở giây 2.41 · giây 2.25–2.44
+cảnh báo: scenes/t02-s045-cui.json: người lồng vào đồ — takumi.foreArmR ↔ kaiseki-khay-a lấn 5.2 ở giây 2.25 · giây 2.25–2.50
+cảnh báo: scenes/t02-s045-cui.json: người lồng vào đồ — yoshie.handL ↔ ban-cap lấn 4.9 ở giây 0.44 · giây 0.38–0.50
+cảnh báo: scenes/t02-s045-cui.json: tay xuyên thân — yoshie.forearmNear lấn vào yoshie.torso 4.6 ở giây 2.50 · giây 2.22–2.50
+cảnh báo: scenes/t02-s045-cui.json: người lồng vào đồ — yoshie.handL ↔ kaiseki-khay-a lấn 4.6 ở giây 0.50 · giây 0.50
+cảnh báo: scenes/t02-s045-cui.json: người lồng vào đồ — takumi.handR ↔ kaiseki-khay-a lấn 4.3 ở giây 2.31 · giây 2.25–2.50
+cảnh báo: scenes/t02-s045-cui.json: tay xuyên thân — yoshie.forearmFar lấn vào yoshie.torso 4.1 ở giây 2.25 · giây 2.22–2.25
+cảnh báo: scenes/t02-s045-cui.json: người lồng vào đồ — yoshie.handR ↔ kaiseki-khay-b lấn 3.6 ở giây 0.47 · giây 0.44–0.50
+cảnh báo: scenes/t02-s045-cui.json: người lồng vào đồ — takumi.handR ↔ kaiseki-xi-dau-a lấn 3.6 ở giây 2.34 · giây 2.25–2.41
+cảnh báo: scenes/t02-s045-cui.json: người lồng vào đồ — yoshie.handR ↔ tom-hum lấn 2.1 ở giây 0.50 · giây 0.50
+cảnh báo: scenes/t02-s045-cui.json: ngón hai tay chĩa vào nhau — `yoshie`: hai cổ tay cách nhau 12 (vai 61), ngón phải lệch vào 31°, ngón trái 31° ở giây 1.30 · giây 1.20–1.80. Hai bàn tay gần nhau mà ngón chụm vào nhau đọc như chữ V ngược, như lưỡi dao: khai `fingers` (`"down"`, `"forward"`) ở `keys[].hand` cho ngón xuôi, hay chồng tay hẳn bằng đích `otherBack` / nắm `otherWrist` — khai `fingers` hay đích `other*` là cố ý, không báo. Clip đang chạy: stand-3d (than) (docs/03-scene.md#tay-và-khuỷu)
+cảnh báo: scenes/t02-s045-cui.json: ngón không chạm món — `yoshie` tay trái cầm tom-hum: ngón cái (`press`) cách món 1.6, ngón giữa (`press`) cách món 4.1 (chỗ cầm `tom-hum@sheet` (variant rim, part dia, edge left, thumb top)); dáng ngón của nhóm chưa khép tới món — đổi `variant` hay `edge`, không thì là việc của dáng nhóm ở rig ở giây 0.20 · giây 0.00–0.30. Lúc ấy: chỗ cầm `tom-hum@sheet` (variant rim, part dia, edge left, thumb top) (dáng edge) · khe 0.3 · ôm 1/3 (trỏ) · ngón cái (press) 1.6, trỏ (wrap) 0.3, giữa (press) 4.1, áp út (support) 6.9, út (support) 9.3, lòng (press) 1.6 · tâm nắm cách món 3.3 · lòng tay cách 4.5 góc 48°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)
+cảnh báo: scenes/t02-s045-cui.json: ngón không chạm món — `yoshie` tay phải cầm tom-hum: ngón cái (`press`) cách món 2.0, ngón giữa (`press`) cách món 3.5 (chỗ cầm `tom-hum@sheet` (part dia, edge left, along 0.5, thumb top, variant rim, slant 36)); dáng ngón của nhóm chưa khép tới món — đổi `variant` hay `edge`, không thì là việc của dáng nhóm ở rig ở giây 0.20 · giây 0.00–0.40. Lúc ấy: chỗ cầm `tom-hum@sheet` (part dia, edge left, along 0.5, thumb top, variant rim, slant 36) (dáng edge) · khe 0.3 · ôm 1/3 (trỏ) · ngón cái (press) 2.0, trỏ (wrap) 0.3, giữa (press) 3.5, áp út (support) 6.2, út (support) 8.5, lòng (press) 2.2 · tâm nắm cách món 2.8 · lòng tay cách 3.8 góc 37° · ý định trục lên lệch 0°. Clip đang chạy: stand-3d (than) (docs/11-nhom-cam.md#7-luật-check-nhóm-held)
+0 lỗi, 18 cảnh báo.

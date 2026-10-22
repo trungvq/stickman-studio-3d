@@ -1,0 +1,6 @@
+$ node tools/can-tay.mjs t02-s061-sang 0.3,1.3 --ai erika --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo5/sau --tab 2
+t02-s061-sang 0.3s erika tay phải: vào thân 76°
+t02-s061-sang 0.3s erika tay trái: ngửa 144°
+t02-s061-sang 1.3s erika tay phải: vào thân 76°
+t02-s061-sang 1.3s erika tay trái: ngửa 145°
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo5/sau/t02-s061-sang.jpg

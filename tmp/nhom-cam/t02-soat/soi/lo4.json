@@ -1,0 +1,255 @@
+[
+  {
+    "scene": "t02-s041-nguoi",
+    "cast": "yoshie",
+    "side": "hai tay",
+    "item": "tom-hum",
+    "hien": "loi",
+    "hien_loi": [
+      "2: 0.15 và 0.3, góc trước — đặt đĩa xuống, đĩa và đuôi tôm hùm chìm dưới mặt khăn trải bàn (mép đĩa bị khăn che mất)"
+    ],
+    "cu": "giong",
+    "cu_loi": [],
+    "de_xuat": "sua-moi"
+  },
+  {
+    "scene": "t02-s041-nguoi",
+    "cast": "erika",
+    "side": "phải",
+    "item": "dien-thoai",
+    "hien": "dat",
+    "hien_loi": [],
+    "cu": "dat",
+    "cu_loi": [],
+    "de_xuat": "giu"
+  },
+  {
+    "scene": "t02-s041-nguoi",
+    "cast": "erika",
+    "side": "phải",
+    "item": "dua",
+    "hien": "dat",
+    "hien_loi": [],
+    "cu": "giong",
+    "cu_loi": [],
+    "de_xuat": "giu"
+  },
+  {
+    "scene": "t02-s042-lam-lai",
+    "cast": "yoshie",
+    "side": "hai tay",
+    "item": "tom-hum",
+    "hien": "loi",
+    "hien_loi": [
+      "2: 2.15, góc trước — lúc nhấc đĩa lên, đĩa và đuôi tôm hùm chìm trong mặt bàn (khăn trải bàn cắt ngang đĩa)"
+    ],
+    "cu": "giong",
+    "cu_loi": [],
+    "de_xuat": "sua-moi"
+  },
+  {
+    "scene": "t02-s043-bep-2",
+    "cast": "yoshie",
+    "side": "hai tay",
+    "item": "tom-hum",
+    "hien": "dat",
+    "hien_loi": [],
+    "cu": "giong",
+    "cu_loi": [],
+    "de_xuat": "giu"
+  },
+  {
+    "scene": "t02-s044-cham",
+    "cast": "yoshie-di",
+    "side": "hai tay",
+    "item": "tom-hum",
+    "hien": "dat",
+    "hien_loi": [],
+    "cu": "giong",
+    "cu_loi": [],
+    "de_xuat": "giu"
+  },
+  {
+    "scene": "t02-s044-cham",
+    "cast": "yoshie",
+    "side": "hai tay",
+    "item": "tom-hum",
+    "hien": "dat",
+    "hien_loi": [],
+    "cu": "giong",
+    "cu_loi": [],
+    "de_xuat": "giu"
+  },
+  {
+    "scene": "t02-s045-cui",
+    "cast": "yoshie",
+    "side": "hai tay",
+    "item": "tom-hum",
+    "hien": "loi",
+    "hien_loi": [
+      "2: 0.47, góc trước — đặt đĩa xuống bàn, mép dưới đĩa chìm dưới khăn trải bàn"
+    ],
+    "cu": "giong",
+    "cu_loi": [],
+    "de_xuat": "sua-moi"
+  },
+  {
+    "scene": "t02-s048-vo-tom",
+    "cast": "erika",
+    "side": "phải",
+    "item": "dua",
+    "hien": "dat",
+    "hien_loi": [],
+    "cu": "giong",
+    "cu_loi": [],
+    "de_xuat": "giu"
+  },
+  {
+    "scene": "t02-s049-da-trong",
+    "cast": "erika",
+    "side": "phải",
+    "item": "dua",
+    "hien": "loi",
+    "hien_loi": [
+      "1: 4.77, góc chéo và ngang — cổ tay gập mạnh, ngón chúc thẳng xuống bát, đầu vuông của đũa áp vào cổ tay, đũa gần như dựng đứng; khác hẳn dáng ở 2.38 và 4.37 (5)"
+    ],
+    "cu": "giong",
+    "cu_loi": [],
+    "de_xuat": "sua-moi"
+  },
+  {
+    "scene": "t02-s050-them-bo",
+    "cast": "takumi",
+    "side": "phải",
+    "item": "dua",
+    "hien": "dat",
+    "hien_loi": [],
+    "cu": "giong",
+    "cu_loi": [],
+    "de_xuat": "giu"
+  },
+  {
+    "scene": "t02-s050-them-bo",
+    "cast": "yoshie",
+    "side": "trái",
+    "item": "phieu",
+    "hien": "dat",
+    "hien_loi": [],
+    "cu": "giong",
+    "cu_loi": [],
+    "de_xuat": "giu"
+  },
+  {
+    "scene": "t02-s050-them-bo",
+    "cast": "yoshie",
+    "side": "phải",
+    "item": "but",
+    "hien": "dat",
+    "hien_loi": [],
+    "cu": "giong",
+    "cu_loi": [],
+    "de_xuat": "giu"
+  },
+  {
+    "scene": "t02-s051-bep-3",
+    "cast": "yoshie",
+    "side": "hai tay",
+    "item": "bo-da",
+    "hien": "loi",
+    "hien_loi": [
+      "3: 0 đến 0.55, góc chéo và ngang — bếp đá nặng chỉ tựa vào kẽ ngón cái và ngón trỏ, bốn ngón xoè ra không vòng xuống đỡ đáy (mẫu khay-hai-tay: bốn ngón luồn dưới đáy)"
+    ],
+    "cu": "giong",
+    "cu_loi": [],
+    "de_xuat": "sua-moi"
+  },
+  {
+    "scene": "t02-s051-bep-3",
+    "cast": "yoshie",
+    "side": "phải",
+    "item": "phieu-lien",
+    "hien": "dat",
+    "hien_loi": [],
+    "cu": "loi",
+    "cu_loi": [
+      "3: 1.6, góc chéo và ngang — tờ phiếu mỏng nằm ngửa trên lòng tay, ngón cái không kẹp mép (chot: giấy không đỡ bằng lòng tay)"
+    ],
+    "de_xuat": "giu"
+  },
+  {
+    "scene": "t02-s052-o1-sofa",
+    "cast": "erika",
+    "side": "phải",
+    "item": "ong-nghe",
+    "hien": "dat",
+    "hien_loi": [],
+    "cu": "loi",
+    "cu_loi": [
+      "3: 0.3 và 1.27, góc chéo và ngang — ống nghe nằm ngang, đầu nói chĩa ra sau gáy thay vì xuôi theo đường tai xuống miệng"
+    ],
+    "de_xuat": "giu"
+  },
+  {
+    "scene": "t02-s052-o2-giuong",
+    "cast": "erika",
+    "side": "trái",
+    "item": "ong-nghe",
+    "hien": "dat",
+    "hien_loi": [],
+    "cu": "loi",
+    "cu_loi": [
+      "3: 0.3 và 2, góc chéo và ngang — ống nghe nằm ngang, đầu nói chĩa ra sau gáy"
+    ],
+    "de_xuat": "giu"
+  },
+  {
+    "scene": "t02-s052-o3-chi-be",
+    "cast": "takumi",
+    "side": "phải",
+    "item": "ong-nghe",
+    "hien": "dat",
+    "hien_loi": [],
+    "cu": "loi",
+    "cu_loi": [
+      "3: 0.3 và 2.05, góc chéo và ngang — ống nghe nằm ngang ngang thái dương, đầu nói không ở cạnh miệng"
+    ],
+    "de_xuat": "giu"
+  },
+  {
+    "scene": "t02-s052-o4-ben-kinh",
+    "cast": "erika",
+    "side": "trái",
+    "item": "ong-nghe",
+    "hien": "dat",
+    "hien_loi": [],
+    "cu": "loi",
+    "cu_loi": [
+      "3: 0.3 và 1.75, góc chéo và ngang — ống nghe nằm ngang, đầu nói chĩa ra sau gáy"
+    ],
+    "de_xuat": "giu"
+  },
+  {
+    "scene": "t02-s053-hanh-lang",
+    "cast": "yota",
+    "side": "hai tay",
+    "item": "khay",
+    "hien": "dat",
+    "hien_loi": [],
+    "cu": "giong",
+    "cu_loi": [],
+    "de_xuat": "giu"
+  },
+  {
+    "scene": "t02-s053-hanh-lang",
+    "cast": "erika",
+    "side": "trái",
+    "item": "dien-thoai",
+    "hien": "loi",
+    "hien_loi": [
+      "3: 0.3 và 3.49, góc chéo và ngang — máy chỉ kẹp ở cạnh đáy giữa ngón cái dựng đứng và nắm tay, bốn ngón nằm hẳn dưới máy, không đỡ lưng máy; máy như đặt trên nắm tay (mẫu dien-thoai-doc: ba ngón tì lưng máy, ngón út đỡ đáy)"
+    ],
+    "cu": "giong",
+    "cu_loi": [],
+    "de_xuat": "sua-moi"
+  }
+]

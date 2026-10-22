@@ -1,0 +1,306 @@
+[
+ {
+  "scene": "t02-s029-mong-cho",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "hien": "dat",
+  "hien_loi": [],
+  "cu": "loi",
+  "cu_loi": [
+   "Q2 0.3s chéo: tay nắm máy nằm ngang ép sát vào eo, đốt ngón và đầu máy lấn vào thắt lưng váy",
+   "Q1/Q4 2.36s chéo+ngang: cả cánh tay trái duỗi thẳng ngang vai, chìa máy ra xa trên quầy mà màn hình quay về mình, gượng và không hợp việc",
+   "Q2/Q3/Q5 3.48s trước+chéo: máy nằm ngang áp vào ngực, màn hình úp vào áo, bàn tay úp chụp lên máy; nhảy dáng vô lý so với 2.36s"
+  ],
+  "de_xuat": "giu"
+ },
+ {
+  "scene": "t02-s029-mong-cho",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "hien": "dat",
+  "hien_loi": [],
+  "cu": "loi",
+  "cu_loi": [
+   "Q1 0.3s trước+ngang: cẳng tay phải dựng gần thẳng đứng, bàn tay ngang cằm chạm tóc; quai túi treo sát nách, khác mẫu tui-xach-khuyu",
+   "Q2 2.36s chéo: thân túi áp lên mặt trước váy"
+  ],
+  "de_xuat": "giu"
+ },
+ {
+  "scene": "t02-s029-mong-cho",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "the-phong",
+  "hien": "loi",
+  "hien_loi": [
+   "Q2 0.3s/2.36s ngang: thẻ chìa chéo xuống ra trước từ bàn tay buông, đầu thẻ chạm/lấn vào song gỗ mặt trước quầy",
+   "Q3 0.3s/2.36s trước+chéo (nghi): tay buông cạnh hông mà thẻ nằm gần ngang, kẹp mép bằng hai đầu ngón chìa ra trước như cố tình giơ, không phải cầm thả lỏng"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s030-khai-vi",
+  "cast": "yoshie-di",
+  "side": "hai tay",
+  "item": "khay-suat",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3/Q2 0s/0.3s/0.4s mọi góc: hai bàn tay nắm kiểu 'like', ngón cái dựng thẳng không đặt trên vành, bốn ngón cuộn vào lòng ở ngoài mép khay không luồn dưới đáy; khay như lơ lửng",
+   "Q1 0s chéo: nắm tay xoay ngang chĩa ra ngoài cạnh khay, cổ tay không ôm theo cạnh như mẫu khay-hai-tay"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q1/Q4 0s/0.3s/0.4s chéo+ngang: khay hạ thấp ngang hông, hai tay buông thõng đỡ ngửa dưới đáy, khác mẫu khay-hai-tay (khuỷu 90°, khay trước bụng)",
+   "Q2 0s ngang+chéo: mép sau khay và bát canh khuất vào thân/tạp dề, khay lấn vào bụng"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s030-khai-vi",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/3.76s chéo+ngang: máy nằm phẳng, màn hình ngửa, bị nắm tay kẹp một đầu cạnh ngắn như cầm que, phần còn lại chìa hẫng; không ngón nào đỡ lưng máy",
+   "Q4 0.3s/3.76s: đang mở camera nhưng máy chĩa xuống sàn ngoài mép bàn, không vào món ăn, màn hình không quay về mắt Erika",
+   "Q2 3.76s chéo+ngang (nghi): đầu máy sát bàn tay đang mời món của Yoshie"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s031-bong-tay",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/4.04s chéo+ngang: như s030, máy phẳng ngửa, nắm kẹp một đầu cạnh ngắn, chìa hẫng",
+   "Q2 0.3s/4.04s ngang: đầu kia của máy lấn vào vùng obi/bụng của Yoshie đang cúi bên bàn",
+   "Q4 0.3s/4.04s: Erika cúi nhìn xuống mà màn hình không hướng về mắt; camera chĩa xuống sàn ngoài bàn"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s032-sach",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dua",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3/2.5/3.12s mọi góc: nắm cả đôi đũa trong nắm đấm như cầm dao găm, không kẹp kiểu dua-an-can",
+   "Q1 0.3–3.12s trước: đũa dựng gần thẳng đứng, nắm đấm dựng dọc, như đâm xuống chứ không gắp",
+   "Q2 3.52s trước/chéo: sau khi đặt, đũa cắm xuyên qua nồi đất đỏ, ló ra dưới thân nồi"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q3 0.3/2.5/3.12s mọi góc: cũng nắm đấm kiểu dao găm",
+   "Q2 0.3–3.12s ngang/chéo: các ngón tì lên nắp nồi đất đỏ, đầu đũa chạm mép khay",
+   "Q2 3.52s trước/chéo: đũa xuyên qua nồi đất"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s033-ruou-tang",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "chen",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 0.65s trước/chéo: lúc nhấp rượu ngang cằm, cánh tay trên nâng ngang vai, khuỷu chĩa ngang ra ngoài, không sát sườn như chen-ruou-2",
+   "Q3 0.3–1.2s ngang/chéo (nghi): nắm tay bao kín chén, lòng tay như áp thành chén (chốt: lòng tay không áp)"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s033-ruou-tang",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "chai-dia",
+  "hien": "loi",
+  "hien_loi": [
+   "Q2 8.44s chéo/ngang/trước: chai đặt xuống đứng lên đĩa nước chấm nhỏ và lấn vào nồi đất đỏ trên khay",
+   "Q2 4.27/5.71s ngang (nghi): đáy chai treo sát/lấn các ngón tay trái đang úp trên bàn"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q3 2.6–8.44s mọi góc: nắm cổ/vai chai từ trên xuống, không phải cầm thân (mặc định đã chốt)",
+   "Q1 4.27/5.71s chéo/ngang: cánh tay trên nâng ngang vai, khuỷu chĩa ngang, chai lủng lẳng dưới nắm tay",
+   "Q2 8.44s ngang: chai lấn vào nồi đất đỏ"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s034-goi-them",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "dua",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3/2.14/2.34/4.66s mọi góc: nắm đấm kiểu dao găm, cả đôi đũa trong lòng tay, không kẹp như dua-an-can",
+   "Q1 0.3s trước: đũa dựng thẳng đứng chĩa xuống khay, nắm đấm dựng dọc"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q3 0.3–4.66s mọi góc: cũng nắm đấm kiểu dao găm",
+   "Q2 0.3s ngang: nắm tay tì/lấn lên nắp nồi đất đỏ"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s034-goi-them",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "thuc-don",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 4.98/5.5/7.27/8.51s ngang: bàn tay duỗi phẳng, ngón thẳng xòe, thực đơn chỉ áp vào bàn tay, không kẹp mép cái–ngón",
+   "Q4 4.98–8.51s ngang: ngón trỏ tay kia chỉ ra ngoài mép thực đơn vào khoảng không, không trúng món đang gọi (góc trước/chéo bị che)"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q3 4.98–8.51s ngang: bàn tay mở phẳng, ngón thẳng, áp sau thực đơn, không kẹp mép",
+   "Q4 4.98–8.51s ngang: ngón trỏ chỉ lướt sau thực đơn, không trúng dòng nào"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s035-gia",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "thuc-don",
+  "hien": "loi",
+  "hien_loi": [
+   "Q2 0.3/3.3/6s ngang/chéo: nắm tay Yoshie đang chỉ dí vào khớp ngón tay Takumi ở góc dưới thực đơn, hai bàn tay chạm/lấn nhau",
+   "Q4 0.3–6s ngang/chéo: Yoshie chỉ vào giá nhưng ngón chỉ rơi vào tay Takumi, không trúng dòng giá (góc trước bị che)"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q3 0.3/3.3/6s ngang: bàn tay mở phẳng, bốn ngón thẳng áp lưng thực đơn, ngón cái thò lên mặt trước; không kẹp mép, ngược mẫu"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s036-lay-het",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3s/2.7s chéo+ngang: nắm đấm quanh đầu gần của máy, ngón cái đè lên màn hình, máy phẳng như cái xẻng, màn hình ngửa lên trần",
+   "Q1 0.3s/2.7s chéo: cánh tay đưa thẳng ra trước gần ngang vai, khuỷu gần duỗi, gượng",
+   "Q2 0.3s/2.7s ngang (nghi): đầu xa của máy sát chạm hai tay Yoshie chắp ở bụng"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s036-lay-het",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "thuc-don",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 0.3–4.05s trước+ngang: bàn tay xòe phẳng dựng đứng như vẫy chào, thực đơn chỉ chạm đầu ngón ở một góc, không có kẹp cái–ngón",
+   "Q2 4.05s trước, 0.3s/2.7s ngang: thực đơn lơ lửng phía trên-trái bàn tay, mép dưới chạm hờ đầu ngón, không có chỗ đỡ"
+  ],
+  "cu": "dat",
+  "cu_loi": [],
+  "de_xuat": "tra-ve-cu"
+ },
+ {
+  "scene": "t02-s038-tom",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "hien": "loi",
+  "hien_loi": [
+   "Q2 0.3s/1s tay-trái ngang (nghi): râu tôm hùm cong lên chui vào cẳng tay trái, như xuyên tay",
+   "Q4 1s trước (nghi): đã qua mốc đặt 0.8s mà đĩa vẫn giữ lơ lửng trên bàn"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s038-tom",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 1.3–1.9s chéo+ngang: nắm đấm ôm đầu gần của máy, ngón cái vắt qua màn hình, máy phẳng ngửa",
+   "Q2 1.9s ngang: đầu xa của máy chạm râu tôm hùm Yoshie đang bưng",
+   "Q5 1.0s→1.3s: máy đang dựng đứng lưng ra trước, 0.3s sau lật nằm phẳng ngửa"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s039-dat-lai-1",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "hien": "loi",
+  "hien_loi": [
+   "Q2 0.3s/2.75s tay-trái chéo (nghi): râu tôm hùm vòng lên lẫn vào cẳng tay trái như xuyên tay; thế cầm vành thì đạt"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s039-dat-lai-1",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q2 0.3s/2.75s ngang: đầu xa của máy đè lên râu tôm hùm",
+   "Q3 0.3s/2.75s chéo+ngang: nắm đấm ở đầu máy, ngón cái trên màn hình, máy phẳng như cái xẻng",
+   "Q1 0.3s chéo: tay duỗi gần thẳng ra trước ngang vai, gượng"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s040-dat-lai-2",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "hien": "loi",
+  "hien_loi": [
+   "Q2 0.6s tay-trái chéo (nghi): râu tôm hùm cong lên chồng vào cẳng tay trái như xuyên tay; thế cầm vành đạt ở 0.2/0.6/0.8/2.35s"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s040-dat-lai-2",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q2 0.2s/2.15s/2.35s ngang: đầu xa của máy đè lên râu tôm hùm",
+   "Q3 0.2–2.85s chéo+ngang: nắm đấm ở đầu máy, ngón cái trên màn hình, máy phẳng; 2.85s chỉ nghiêng thêm"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ }
+]

@@ -1,0 +1,196 @@
+[
+ {
+  "scene": "t02-s038-tom",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "ket_qua": "loi",
+  "loi": [
+   "2: 1.9, góc chéo tay trái (v1-anh) — đầu râu tôm quét xuống sát/chạm mu bàn tay trái Erika đang tì cạnh khay; đĩa đang cầm hạ trên khăn, không chìm không lơ lửng"
+  ]
+ },
+ {
+  "scene": "t02-s038-tom",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "ket_qua": "dat",
+  "loi": [
+   "không chụp lại: đĩa không tới gần máy (lô 3)"
+  ]
+ },
+ {
+  "scene": "t02-s039-dat-lai-1",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "ket_qua": "dat",
+  "loi": []
+ },
+ {
+  "scene": "t02-s039-dat-lai-1",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "ket_qua": "dat",
+  "loi": [
+   "không chụp lại: đĩa không tới gần máy (lô 3)"
+  ]
+ },
+ {
+  "scene": "t02-s040-dat-lai-2",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "ket_qua": "loi",
+  "loi": [
+   "2: 0.6 và 0.8, góc chéo tay trái (v1-anh) — ngón tay trái Erika chạm đuôi tôm ở mép đĩa; đĩa không chìm"
+  ]
+ },
+ {
+  "scene": "t02-s040-dat-lai-2",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "ket_qua": "dat",
+  "loi": [
+   "không chụp lại: đĩa không tới gần máy (lô 3)"
+  ]
+ },
+ {
+  "scene": "t02-s041-nguoi",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "ket_qua": "loi",
+  "loi": [
+   "2: 0.75, góc ngang (lo4/sau) — hai tay đặt ở bụng sát vòng râu tôm; bàn tay người áo xanh nằm trong vòng râu, râu xuyên qua tay",
+   "2: 0.75, góc trước/trên (v1-anh/rong) — tay cầm máy của Erika chìa sát khuỷu phải Yoshie và vòng râu",
+   "lỗi cũ (đĩa chìm khăn ở 0.15, 0.3) đã hết; đứng giữa đầu bàn, đạt"
+  ]
+ },
+ {
+  "scene": "t02-s041-nguoi",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dien-thoai",
+  "ket_qua": "loi",
+  "loi": [
+   "2: 2.75, góc chéo (lo4/sau) — râu tôm xuyên thẳng qua bàn tay phải đang cầm máy",
+   "2: 1.38 và 1.65, góc trước tay trái — vòng râu quét sát qua tay trái tì bàn"
+  ]
+ },
+ {
+  "scene": "t02-s041-nguoi",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dua",
+  "ket_qua": "dat",
+  "loi": [
+   "3.6–5.58 (v1-anh): đũa chọc vào tôm đúng nhịp 'poke', không lỗi mới"
+  ]
+ },
+ {
+  "scene": "t02-s042-lam-lai",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "ket_qua": "loi",
+  "loi": [
+   "2: 1.84, góc trước và chéo (lo4/sau) — tay phải úp đè lên mình tôm trong lòng đĩa trước khi nắm vành (khoá 1.75 đặt tay ở [-258,…] trong lòng đĩa)",
+   "2: 1.86 và 2, góc trước tay trái — râu tôm chạy xuyên qua bàn tay trái đang nắm vành",
+   "2: 1.84, góc chéo — râu tôm đè qua bàn tay người áo xanh tì bàn",
+   "lỗi cũ (đĩa chìm khăn ở 2.15) đã hết"
+  ]
+ },
+ {
+  "scene": "t02-s043-bep-2",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "ket_qua": "loi",
+  "loi": [
+   "2: 0.55, góc ngang và trước (v1-anh) — đặt đĩa ép sát ống đũa: râu tôm cắm vào ống, đầu ngón tay phải chạm thành ống"
+  ]
+ },
+ {
+  "scene": "t02-s044-cham",
+  "cast": "yoshie-di",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "ket_qua": "dat",
+  "loi": []
+ },
+ {
+  "scene": "t02-s044-cham",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "ket_qua": "dat",
+  "loi": []
+ },
+ {
+  "scene": "t02-s045-cui",
+  "cast": "yoshie",
+  "side": "hai tay",
+  "item": "tom-hum",
+  "ket_qua": "loi",
+  "loi": [
+   "2: 0.85, góc ngang (lo4/sau) — hai tay thu về bụng chạm vòng râu tôm",
+   "2: 1.25, góc chéo (lo4/sau) — cúi chào, thân đè xuống qua vòng râu tôm; góc ngang: nắm tay người áo xanh nằm trong vòng râu",
+   "5: s044 kết ở [-300,0,452], s045 mở ở [-300,0,472] và đĩa ra trước ~47 — người và đĩa nhảy 20 px qua cắt cảnh (nghi)",
+   "lỗi cũ (đĩa chìm khăn ở 0.47) đã hết; đứng giữa đầu bàn, cúi chào rõ, đạt"
+  ]
+ },
+ {
+  "scene": "t02-s048-vo-tom",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dua",
+  "ket_qua": "loi",
+  "loi": [
+   "2: 0.3, 1.23, 2.21, góc chéo (v1-anh) — râu vỏ tôm (DIA_GIUA) quét vào khay Erika: đầu râu cắm vào đĩa nước chấm, cắt qua đôi đũa và tay trái; đĩa nằm đúng trên khăn"
+  ]
+ },
+ {
+  "scene": "t02-s049-da-trong",
+  "cast": "erika",
+  "side": "phải",
+  "item": "dua",
+  "ket_qua": "loi",
+  "loi": [
+   "2: 2.38 và 4.37, góc trước (v1-anh) — râu vỏ tôm vắt ngang khay, chạm bát xanh của Erika; khay bò đá ở đầu bàn nằm đúng trên khăn",
+   "4.77: đặt đũa nằm ngang lên bàn, lỗi đũa dựng đứng của lô 4 không còn thấy"
+  ]
+ },
+ {
+  "scene": "t02-s050-them-bo",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "dua",
+  "ket_qua": "loi",
+  "loi": [
+   "2: 1.16 và 3.92, góc trước tay trái (v1-anh) — râu vỏ tôm vắt qua mép khay và bát của Takumi (nghi chạm); khay bò đá nằm đúng trên khăn"
+  ]
+ },
+ {
+  "scene": "t02-s050-them-bo",
+  "cast": "yoshie",
+  "side": "trái",
+  "item": "phieu",
+  "ket_qua": "dat",
+  "loi": [
+   "không chụp lại: xa đĩa"
+  ]
+ },
+ {
+  "scene": "t02-s050-them-bo",
+  "cast": "yoshie",
+  "side": "phải",
+  "item": "but",
+  "ket_qua": "dat",
+  "loi": [
+   "không chụp lại: xa đĩa"
+  ]
+ }
+]

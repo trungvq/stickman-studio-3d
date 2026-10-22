@@ -1,0 +1,7 @@
+/home/trungvq/Work/Dev/youtube-video/jp-sukatto-nhom-cam
+0 parts, 22 characters, 348 actions, 0 props, 0 animals, 53 held, 418 scenes, 57 layers
+pin @7.15.0, rig @7.15.0
+chỉ soi 1 cảnh: t02-s057-moi
+cảnh báo: scenes/t02-s057-moi.json: `erika` giây 0.12–1.32: thân quay 23° rồi quay lại trong 1.20 s — thường là hông trượt quá mốc dừng `path` (clip đi kết thúc trễ) hay hướng thân lái về chỗ hông chưa tới; dời `start` của clip sau clip đi, hay giãn mốc `path` ra
+cảnh báo: scenes/t02-s057-moi.json: người lồng vào đồ — takumi.head ↔ erika.head lấn 6.2 ở giây 0.53 · giây 0.50–0.78
+0 lỗi, 2 cảnh báo.

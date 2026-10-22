@@ -1,0 +1,6 @@
+$ node tools/can-tay.mjs t02-s064-tat-ca 0.3,1.22 --ai erika --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo5/sau --tab 2
+t02-s064-tat-ca 0.3s erika tay phải: vào thân 76°
+t02-s064-tat-ca 0.3s erika tay trái: ngửa 144°
+t02-s064-tat-ca 1.22s erika tay phải: vào thân 76°
+t02-s064-tat-ca 1.22s erika tay trái: ngửa 145°
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo5/sau/t02-s064-tat-ca.jpg

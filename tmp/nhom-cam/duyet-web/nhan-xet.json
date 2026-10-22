@@ -35,8 +35,8 @@
   "frames": {}
  },
  "g4-cylinder-cai-truoc-sau": {
-  "status": "",
-  "text": "",
+  "status": "sua",
+  "text": "điện thoại cầm ngược?",
   "frames": {}
  },
  "mau-bang-gia-doc-cheo": {
@@ -235,7 +235,7 @@
   "frames": {}
  },
  "g6-4": {
-  "status": "",
+  "status": "ok",
   "text": "",
   "frames": {}
  },
@@ -245,6 +245,146 @@
   "frames": {}
  },
  "g4-bowl-kep-s033": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "g4-card-lateral-t02": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "g4-card-lateral": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "g4-card-edges-truoc-sau": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "g4-palmBox-thu-dien-thoai": {
+  "status": "",
+  "text": "",
+  "frames": {}
+ },
+ "g4-cylinder-ong-nghe-truoc-sau": {
+  "status": "sua",
+  "text": "điện thoại cầm ngược?",
+  "frames": {}
+ },
+ "g4-cylinder-wrap": {
+  "status": "sua",
+  "text": "ngón cái bị quặp à? nếu ngòn cái ôm thân chai thì là ok, không thì là sai ",
+  "frames": {}
+ },
+ "g4-handle": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "g4-keyed-dien-thoai-ba-moc-truoc-sau": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "g4-keyed-doi-duong-sau": {
+  "status": "sua",
+  "text": "sao ở 2 mốc cuối tay xoay dị vậy?",
+  "frames": {}
+ },
+ "g4-keyed-doi-duong": {
+  "status": "",
+  "text": "",
+  "frames": {}
+ },
+ "g4-s012-nhat-the": {
+  "status": "",
+  "text": "",
+  "frames": {}
+ },
+ "g4-carry-thu-tui-hieu-quai": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "g4-carry-thu-tui-hieu-truoc-sau": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "g4-chopsticks-truoc-sau": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "g4-cylinder-wrap-cai-truoc-sau": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "g4-cylinder-ong-nghe-chieu-truoc-sau": {
+  "status": "",
+  "text": "",
+  "frames": {}
+ },
+ "g4-cylinder-ap-tai-truoc-sau": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "g6-25": {
+  "status": "",
+  "text": "",
+  "frames": {}
+ },
+ "g6-29": {
+  "status": "",
+  "text": "",
+  "frames": {}
+ },
+ "g6-1": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "t02-s001-tham-thi-erika-trái-tui-hieu": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "t02-s002-day-erika-trái-tui-hieu": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "t02-s003-khung-takumi-trái-tui": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "t02-s003-khung-erika-trái-tui-hieu": {
+  "status": "",
+  "text": "",
+  "frames": {}
+ },
+ "t02-s006a-bai-xe-takumi-trái-tui": {
+  "status": "ok",
+  "text": "",
+  "frames": {}
+ },
+ "t02-s006a-bai-xe-erika-trái-dien-thoai": {
+  "status": "",
+  "text": "",
+  "frames": {}
+ },
+ "t02-s006a-bai-xe-erika-phải-tui-hieu": {
+  "status": "",
+  "text": "",
+  "frames": {}
+ },
+ "t02-s008-truoc-cua-takumi-trái-tui": {
   "status": "ok",
   "text": "",
   "frames": {}

@@ -1,0 +1,7 @@
+/home/trungvq/Work/Dev/youtube-video/jp-sukatto-nhom-cam
+0 parts, 22 characters, 348 actions, 0 props, 0 animals, 53 held, 418 scenes, 57 layers
+pin @7.15.0, rig @7.15.0
+chỉ soi 1 cảnh: t02-s027-doi-ca
+cảnh báo: scenes/t02-s027-doi-ca.json: người lồng vào đồ — takumi.handR ↔ quay lấn 5.6 ở giây 6.63 · giây 6.59–6.63
+cảnh báo: scenes/t02-s027-doi-ca.json: người lồng vào đồ — takumi.handL ↔ quay lấn 2.6 ở giây 0.50 · giây 0.00–8.25
+0 lỗi, 2 cảnh báo.

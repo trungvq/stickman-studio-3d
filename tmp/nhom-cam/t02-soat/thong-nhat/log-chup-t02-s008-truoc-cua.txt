@@ -1,0 +1,6 @@
+$ node tools/can-tay.mjs t02-s008-truoc-cua 0.3,0.8 --ai erika --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo1/sau --tab 2
+t02-s008-truoc-cua 0.3s erika tay phải: ngửa 146°
+t02-s008-truoc-cua 0.3s erika tay trái: ra sau 99°
+t02-s008-truoc-cua 0.8s erika tay phải: ngửa 146°
+t02-s008-truoc-cua 0.8s erika tay trái: ra sau 99°
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo1/sau/t02-s008-truoc-cua.jpg

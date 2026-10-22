@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 26,
+  "name": "t02-s032-sach",
+  "frame": "wide",
+  "duration": 5.003,
+  "marks": {
+    "loi": 0.6,
+    "mitame": 2.931,
+    "dat": 3.069
+  },
+  "camera": [
+    {
+      "t": 0,
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  ],
+  "lens": {
+    "eye": [
+      0,
+      -400,
+      -900
+    ],
+    "yaw": 0,
+    "pitch": 0,
+    "f": 1000,
+    "cx": 0,
+    "cy": 0
+  },
+  "cast": [
+    {
+      "id": "erika",
+      "character": "erika.json",
+      "world": {
+        "at": [
+          -130,
+          -92,
+          620
+        ],
+        "yaw": 180,
+        "sit": true,
+        "floor": 0,
+        "hands": [
+          {
+            "t": 0,
+            "right": {
+              "at": [
+                -215,
+                -180,
+                640
+              ],
+              "point": "grip",
+              "hold": {
+                "item": "dua",
+                "group": "chopsticks",
+                "part": "que",
+                "along": 0.245,
+                "face": {
+                  "axis": "tip",
+                  "toward": "forward",
+                  "tilt": -30
+                }
+              }
+            },
+            "left": {
+              "at": [
+                -179,
+                -147,
+                552
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": "@dat",
+            "right": {
+              "at": [
+                -215,
+                -180,
+                640
+              ],
+              "point": "grip",
+              "hold": {
+                "item": "dua",
+                "group": "chopsticks",
+                "part": "que",
+                "along": 0.245,
+                "face": {
+                  "axis": "tip",
+                  "toward": "forward",
+                  "tilt": -30
+                }
+              }
+            },
+            "left": {
+              "at": [
+                -179,
+                -147,
+                552
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          },
+          {
+            "t": "@dat+0.4",
+            "right": {
+              "at": [
+                -186,
+                -166,
+                640
+              ],
+              "point": "grip",
+              "hold": {
+                "item": "dua",
+                "group": "chopsticks",
+                "part": "que",
+                "along": 0.245,
+                "face": {
+                  "axis": "tip",
+                  "toward": "forward",
+                  "tilt": -30
+                }
+              }
+            },
+            "left": {
+              "at": [
+                -179,
+                -147,
+                552
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          }
+        ]
+      },
+      "tracks": [
+        {
+          "name": "than",
+          "clips": [
+            {
+              "start": 0,
+              "action": "sit-3d"
+            }
+          ]
+        },
+        {
+          "name": "mat",
+          "clips": [
+            {
+              "start": 0,
+              "action": "face-smug"
+            }
+          ]
+        },
+        {
+          "name": "moi",
+          "clips": [
+            {
+              "start": "@loi",
+              "action": "lip-t02-d-erika-06",
+              "cycle": 3.812,
+              "blend": 0
+            },
+            {
+              "start": "@loi+3.812",
+              "blend": 0
+            }
+          ]
+        },
+        {
+          "name": "dau",
+          "clips": [
+            {
+              "start": "@dat+0.2",
+              "action": "t02-nghieng-dau-3d",
+              "blend": 0.3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "takumi",
+      "character": "takumi.json",
+      "world": {
+        "at": [
+          -470,
+          -92,
+          620
+        ],
+        "yaw": 0,
+        "sit": true,
+        "floor": 0,
+        "hands": [
+          {
+            "t": 0,
+            "right": {
+              "at": [
+                -408,
+                -147,
+                549
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            },
+            "left": {
+              "at": [
+                -420,
+                -147,
+                716
+              ],
+              "point": "palm",
+              "palm": "down",
+              "fingers": "forward"
+            }
+          }
+        ]
+      },
+      "tracks": [
+        {
+          "name": "than",
+          "clips": [
+            {
+              "start": 0,
+              "action": "sit-3d"
+            }
+          ]
+        },
+        {
+          "name": "mat",
+          "clips": [
+            {
+              "start": 0,
+              "action": "face-smug"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

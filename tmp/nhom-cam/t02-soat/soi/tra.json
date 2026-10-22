@@ -1,0 +1,185 @@
+[
+ {
+  "scene": "t02-s001-tham-thi",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "trùng từng byte với truoc (mọi góc)",
+  "ghi_chu": "cẳng tay dựng, túi treo ở khuỷu; góc ngang thấy túi hở mặt quầy; góc chéo quầy chỉ che phía trước, không lấn; góc trước bị quầy che hết"
+ },
+ {
+  "scene": "t02-s002-day",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "trùng từng byte với truoc (mọi góc)",
+  "ghi_chu": "giống hệt s001, không lấn quầy. Liền mạch: s003 (ngay sau, không thuộc danh sách) cẳng tay nằm ngang ra trước, quai treo ở cẳng tay — dáng nhảy ở chỗ cắt s002→s003; cần sửa s003 cho khớp, không sửa s002"
+ },
+ {
+  "scene": "t02-s006a-bai-xe",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "tay cầm túi trùng truoc; ảnh cheo/ngang chỉ khác ở tay trái (tay kia), không thuộc lần cầm này",
+  "ghi_chu": "0.3/4.88/6.15 mọi góc bị che; 6.65–8.45 cẳng tay dựng, túi ở khuỷu. 7.45 truoc: mép cửa xe che khuỷu và nửa túi, góc ngang thấy túi hở trước thân xe, check không báo tay/túi lấn cửa → chỉ là che khuất. 7.45/8.45 truoc: bàn tay chồng hình lên đuôi tóc, nhưng góc ngang/chéo thấy tay ở trước ngực, tóc phía sau có khe → không lấn tóc"
+ },
+ {
+  "scene": "t02-s008-truoc-cua",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "tay cầm túi trùng truoc; ảnh cheo/ngang chỉ khác ở tay trái (tay kia), không thuộc lần cầm này",
+  "ghi_chu": "cẳng tay dựng, túi treo ở khuỷu, không lấn thân/quầy; góc trước bị che (đen) trừ s008, s011 3.14 — ở đó tay chỉ chồng hình lên đuôi tóc. Liền mạch với cảnh trước/sau"
+ },
+ {
+  "scene": "t02-s009-nhan-khach",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "tay cầm túi trùng truoc; ảnh cheo/ngang chỉ khác ở tay trái (tay kia), không thuộc lần cầm này",
+  "ghi_chu": "cẳng tay dựng, túi treo ở khuỷu, không lấn thân/quầy; góc trước bị che (đen) trừ s008, s011 3.14 — ở đó tay chỉ chồng hình lên đuôi tóc. Liền mạch với cảnh trước/sau"
+ },
+ {
+  "scene": "t02-s010-xac-nhan",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "tay cầm túi trùng truoc; ảnh cheo/ngang chỉ khác ở tay trái (tay kia), không thuộc lần cầm này",
+  "ghi_chu": "cẳng tay dựng, túi treo ở khuỷu, không lấn thân/quầy; góc trước bị che (đen) trừ s008, s011 3.14 — ở đó tay chỉ chồng hình lên đuôi tóc. Liền mạch với cảnh trước/sau"
+ },
+ {
+  "scene": "t02-s011-quay-sanh",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "tay cầm túi trùng truoc; ảnh cheo/ngang chỉ khác ở tay trái (tay kia), không thuộc lần cầm này",
+  "ghi_chu": "cẳng tay dựng, túi treo ở khuỷu, không lấn thân/quầy; góc trước bị che (đen) trừ s008, s011 3.14 — ở đó tay chỉ chồng hình lên đuôi tóc. Liền mạch với cảnh trước/sau"
+ },
+ {
+  "scene": "t02-s012-chia-khoa",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "tay cầm túi trùng truoc; ảnh cheo/ngang chỉ khác ở tay trái (tay kia), không thuộc lần cầm này",
+  "ghi_chu": "cẳng tay dựng, túi treo ở khuỷu, không lấn thân/quầy; góc trước bị che (đen) trừ s008, s011 3.14 — ở đó tay chỉ chồng hình lên đuôi tóc. Liền mạch với cảnh trước/sau"
+ },
+ {
+  "scene": "t02-s013-khoe",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "tay cầm túi trùng truoc; ảnh cheo/ngang chỉ khác ở tay trái (tay kia), không thuộc lần cầm này",
+  "ghi_chu": "cẳng tay dựng, túi treo ở khuỷu, không lấn thân/quầy; góc trước bị che (đen) trừ s008, s011 3.14 — ở đó tay chỉ chồng hình lên đuôi tóc. Liền mạch với cảnh trước/sau"
+ },
+ {
+  "scene": "t02-s015-tot-nhat",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "tay cầm túi trùng truoc; ảnh cheo/ngang chỉ khác ở tay trái (tay kia), không thuộc lần cầm này",
+  "ghi_chu": "cùng dáng với lô 1, túi hở thân và lan can quầy, góc trước bị che. Liền mạch"
+ },
+ {
+  "scene": "t02-s016-xin-phep",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "tay cầm túi trùng truoc; ảnh cheo/ngang chỉ khác ở tay trái (tay kia), không thuộc lần cầm này",
+  "ghi_chu": "cùng dáng với lô 1, túi hở thân và lan can quầy, góc trước bị che. Liền mạch"
+ },
+ {
+  "scene": "t02-s023-bang-gia",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "tay cầm túi trùng truoc; ảnh cheo/ngang chỉ khác ở tay trái (tay kia), không thuộc lần cầm này",
+  "ghi_chu": "cùng dáng với lô 1, túi hở thân và lan can quầy, góc trước bị che. Liền mạch"
+ },
+ {
+  "scene": "t02-s024-tang",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "tay cầm túi trùng truoc; ảnh cheo/ngang chỉ khác ở tay trái (tay kia), không thuộc lần cầm này",
+  "ghi_chu": "cùng dáng với lô 1, túi hở thân và lan can quầy, góc trước bị che. Liền mạch"
+ },
+ {
+  "scene": "t02-s025-chi-the",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "tay cầm túi trùng truoc; ảnh cheo/ngang chỉ khác ở tay trái (tay kia), không thuộc lần cầm này",
+  "ghi_chu": "cùng dáng với lô 1, túi hở thân và lan can quầy, góc trước bị che. Liền mạch"
+ },
+ {
+  "scene": "t02-s026-tra-ten",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "tay cầm túi trùng truoc; ảnh cheo/ngang chỉ khác ở tay trái (tay kia), không thuộc lần cầm này",
+  "ghi_chu": "cùng dáng với lô 1, túi hở thân và lan can quầy, góc trước bị che. Liền mạch"
+ },
+ {
+  "scene": "t02-s027-doi-ca",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "tay cầm túi trùng truoc; ảnh cheo/ngang chỉ khác ở tay trái (tay kia), không thuộc lần cầm này",
+  "ghi_chu": "cùng dáng với lô 1, túi hở thân và lan can quầy, góc trước bị che. Liền mạch"
+ },
+ {
+  "scene": "t02-s028-doi-chia",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "ket_qua": "dat",
+  "loi": [],
+  "dang_cu": "tay cầm túi trùng truoc; ảnh cheo/ngang chỉ khác ở tay trái (tay kia), không thuộc lần cầm này",
+  "ghi_chu": "dáng đạt. Liền mạch: s029 (ngay sau, không thuộc danh sách) túi treo thấp ở hông thay vì ở khuỷu — dáng nhảy ở chỗ cắt s028→s029; cần sửa s029, không sửa s028"
+ },
+ {
+  "scene": "t02-s036-lay-het",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "thuc-don",
+  "ket_qua": "loi",
+  "loi": [
+   "Q5 · 0.3s · ngang: s035 (6s) nắm mép thực đơn bằng nắm tay, thẻ nghiêng ~45° mặt chữ ra ngoài; s036 đổi hẳn sang lòng tay áp phẳng sau thẻ, thẻ dựng đứng — đổi cách cầm ngay chỗ cắt",
+   "Q3 · 0.3–4.05s · ngang+truoc: bốn ngón duỗi thẳng áp phẳng lên lưng thẻ, không thấy ngón cái kẹp mặt bên kia; nhìn như thẻ dán vào lòng tay (nghi, chấm lỗi theo luật)"
+  ],
+  "dang_cu": "trùng từng byte với truoc (mọi góc)",
+  "ghi_chu": "không lấn đồ ăn hay quầy; Mai che góc chéo"
+ }
+]

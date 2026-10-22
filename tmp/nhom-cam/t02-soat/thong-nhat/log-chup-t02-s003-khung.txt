@@ -1,0 +1,6 @@
+$ node tools/can-tay.mjs t02-s003-khung 0.3,1.29 --ai erika --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo1/sau --tab 2
+t02-s003-khung 0.3s erika tay phải: vào thân 76°
+t02-s003-khung 0.3s erika tay trái: vào thân 63°
+t02-s003-khung 1.29s erika tay phải: vào thân 76°
+t02-s003-khung 1.29s erika tay trái: vào thân 63°
+/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo1/sau/t02-s003-khung.jpg

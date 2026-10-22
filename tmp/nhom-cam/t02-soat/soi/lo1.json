@@ -1,0 +1,325 @@
+[
+ {
+  "scene": "t02-s001-tham-thi",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 · 0.3s, 4.71s · truoc+ngang: cẳng tay phải/trái chĩa ngang ra ngoài thân (~90° so với hướng trước mặt; góc trước thấy cẳng tay nằm ngang sang bên, góc ngang thấy bàn tay chĩa thẳng vào máy) — cùng lỗi đã bắt ở s001, mẫu tui-xach-khuyu là cẳng tay ra TRƯỚC",
+   "Q2 · 0.3s, 4.71s · ngang: đáy túi lấn vào mặt quầy (mép quầy cắt ngang thân túi)"
+  ],
+  "cu": "dat",
+  "cu_loi": [],
+  "de_xuat": "tra-ve-cu"
+ },
+ {
+  "scene": "t02-s002-day",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 · 0.3s, 1.2s · truoc+ngang: cẳng tay phải/trái chĩa ngang ra ngoài thân (~90° so với hướng trước mặt; góc trước thấy cẳng tay nằm ngang sang bên, góc ngang thấy bàn tay chĩa thẳng vào máy) — cùng lỗi đã bắt ở s001, mẫu tui-xach-khuyu là cẳng tay ra TRƯỚC",
+   "Q2 · 0.3s, 1.2s · ngang: góc dưới túi lấn vào mặt quầy"
+  ],
+  "cu": "dat",
+  "cu_loi": [],
+  "de_xuat": "tra-ve-cu"
+ },
+ {
+  "scene": "t02-s003-khung",
+  "cast": "takumi",
+  "side": "trái",
+  "item": "tui",
+  "hien": "dat",
+  "hien_loi": [],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "giu"
+ },
+ {
+  "scene": "t02-s003-khung",
+  "cast": "erika",
+  "side": "trái",
+  "item": "tui-hieu",
+  "hien": "dat",
+  "hien_loi": [
+   "(ghi chú, không tính lỗi) cẳng tay ra trước đúng mẫu nhưng lòng tay khép vào thân (63°) chứ không ngửa, túi treo trước đùi hơn là ngoài hông"
+  ],
+  "cu": "dat",
+  "cu_loi": [],
+  "de_xuat": "giu"
+ },
+ {
+  "scene": "t02-s006a-bai-xe",
+  "cast": "takumi",
+  "side": "trái",
+  "item": "tui",
+  "hien": "loi",
+  "hien_loi": [
+   "Q2 · 5.5–6.5s (mẫu 6.15s) · truoc: lúc bước ra khỏi xe túi lấn vào ống chân/đùi trái (check đo lấn tới 34 ở 5.72s); 0.3s, 4.88s ngồi trong xe — mọi góc bị che, không chấm được"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s006a-bai-xe",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q2 · 6.15s · truoc+cheo: góc điện thoại xuyên qua bậu cửa xe trong khi bàn tay còn khuất trong xe",
+   "Q4 · 8.45s · cả ba góc: máy giơ sát má trái ngang tầm má trong khi đầu ngửa nhìn lên (look-up) — không đọc, không nghe",
+   "0.3s, 4.88s ngồi trong xe — mọi góc bị che, không chấm được"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "giống hệt hiện hành ở 6.15s và 8.45s (ảnh trước/sau trùng)"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s006a-bai-xe",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 · 6.65s, 7.45s · truoc+ngang: cẳng tay phải/trái chĩa ngang ra ngoài thân (~90° so với hướng trước mặt; góc trước thấy cẳng tay nằm ngang sang bên, góc ngang thấy bàn tay chĩa thẳng vào máy) — cùng lỗi đã bắt ở s001, mẫu tui-xach-khuyu là cẳng tay ra TRƯỚC",
+   "Q2 · 6.65s, 7.45s · truoc: bàn tay chĩa ngang ép/lấn vào thân cửa xe; 7.45s, 8.45s · ngang/truoc: túi và nắm tay nằm sau/lấn mép cửa xe đang mở",
+   "0.3s, 4.88s, 6.15s mọi góc bị che"
+  ],
+  "cu": "dat",
+  "cu_loi": [],
+  "de_xuat": "tra-ve-cu"
+ },
+ {
+  "scene": "t02-s008-truoc-cua",
+  "cast": "takumi",
+  "side": "trái",
+  "item": "tui",
+  "hien": "dat",
+  "hien_loi": [],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "giu"
+ },
+ {
+  "scene": "t02-s008-truoc-cua",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q4 · 0.3s, 0.8s · truoc+cheo: máy dựng sát má trái ngang tầm má, lệch sang bên mặt, trong khi đầu ngửa nhìn lên toà nhà — không ra thế đọc (quá sát, lệch) cũng không ra thế nghe (không ở tai)",
+   "Q5: nhảy sang s009 (máy ở giữa trước cằm)"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "giống hiện hành (ảnh trước/sau gần trùng, ra sau 101° vs 99°)"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s008-truoc-cua",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 · 0.3s, 0.8s · truoc+ngang: cẳng tay phải/trái chĩa ngang ra ngoài thân (~90° so với hướng trước mặt; góc trước thấy cẳng tay nằm ngang sang bên, góc ngang thấy bàn tay chĩa thẳng vào máy) — cùng lỗi đã bắt ở s001, mẫu tui-xach-khuyu là cẳng tay ra TRƯỚC"
+  ],
+  "cu": "dat",
+  "cu_loi": [],
+  "de_xuat": "tra-ve-cu"
+ },
+ {
+  "scene": "t02-s009-nhan-khach",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 · 0.3s, 3.29s · truoc: máy ở trước cằm nhưng lăn nghiêng ~35° (đỉnh máy ngả sang phải người), mẫu dien-thoai-doc là máy gần đứng; Q5: s011 cùng chỗ đứng cầm máy đứng thẳng — nhảy góc lăn giữa các cảnh liền nhau"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q5: cũ cầm máy nằm ngang trước bụng (lòng ngửa đỡ) ở s009/s010/s012/s013 nhưng s011 (cảnh giữa, cùng chỗ đứng, cùng cuộc nói chuyện) lại dựng máy trước cằm — dáng nhảy qua lại ngang bụng ↔ trước cằm"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s009-nhan-khach",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 · 0.3s, 3.29s · truoc+ngang: cẳng tay phải/trái chĩa ngang ra ngoài thân (~90° so với hướng trước mặt; góc trước thấy cẳng tay nằm ngang sang bên, góc ngang thấy bàn tay chĩa thẳng vào máy) — cùng lỗi đã bắt ở s001, mẫu tui-xach-khuyu là cẳng tay ra TRƯỚC"
+  ],
+  "cu": "dat",
+  "cu_loi": [],
+  "de_xuat": "tra-ve-cu"
+ },
+ {
+  "scene": "t02-s010-xac-nhan",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 · 0.3s, 3.79s · truoc: máy ở trước cằm nhưng lăn nghiêng ~35° (đỉnh máy ngả sang phải người), mẫu dien-thoai-doc là máy gần đứng; Q5: s011 cùng chỗ đứng cầm máy đứng thẳng — nhảy góc lăn giữa các cảnh liền nhau"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q5: cũ cầm máy nằm ngang trước bụng (lòng ngửa đỡ) ở s009/s010/s012/s013 nhưng s011 (cảnh giữa, cùng chỗ đứng, cùng cuộc nói chuyện) lại dựng máy trước cằm — dáng nhảy qua lại ngang bụng ↔ trước cằm"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s010-xac-nhan",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 · 0.3s, 3.79s · truoc+ngang: cẳng tay phải/trái chĩa ngang ra ngoài thân (~90° so với hướng trước mặt; góc trước thấy cẳng tay nằm ngang sang bên, góc ngang thấy bàn tay chĩa thẳng vào máy) — cùng lỗi đã bắt ở s001, mẫu tui-xach-khuyu là cẳng tay ra TRƯỚC"
+  ],
+  "cu": "dat",
+  "cu_loi": [],
+  "de_xuat": "tra-ve-cu"
+ },
+ {
+  "scene": "t02-s011-quay-sanh",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "hien": "dat",
+  "hien_loi": [
+   "(ghi chú) 3.14s sau khi xoay người máy hơi nghiêng, chấp nhận được"
+  ],
+  "cu": "dat",
+  "cu_loi": [],
+  "de_xuat": "giu"
+ },
+ {
+  "scene": "t02-s011-quay-sanh",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 · 0.3s, 0.4s, 3.14s · truoc+ngang: cẳng tay phải/trái chĩa ngang ra ngoài thân (~90° so với hướng trước mặt; góc trước thấy cẳng tay nằm ngang sang bên, góc ngang thấy bàn tay chĩa thẳng vào máy) — cùng lỗi đã bắt ở s001, mẫu tui-xach-khuyu là cẳng tay ra TRƯỚC"
+  ],
+  "cu": "dat",
+  "cu_loi": [],
+  "de_xuat": "tra-ve-cu"
+ },
+ {
+  "scene": "t02-s012-chia-khoa",
+  "cast": "yota",
+  "side": "trái",
+  "item": "the-phong",
+  "hien": "dat",
+  "hien_loi": [],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "giu"
+ },
+ {
+  "scene": "t02-s012-chia-khoa",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "the-phong",
+  "hien": "dat",
+  "hien_loi": [],
+  "cu": "loi",
+  "cu_loi": [
+   "Q3 · 7.25s · cheo+ngang: thẻ nằm ngang dưới các đầu ngón úp từ trên, không có ngón đối kẻp (check: pháp tuyến hai vùng chạm lệch 70°, không có lực đối 6.80–7.50s), cổ tay lệch chạm giới hạn -30°"
+  ],
+  "de_xuat": "giu"
+ },
+ {
+  "scene": "t02-s012-chia-khoa",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 · 0.3s, 3.76s, 6.7–7.25s · truoc: máy ở trước cằm nhưng lăn nghiêng ~35° (đỉnh máy ngả sang phải người), mẫu dien-thoai-doc là máy gần đứng; Q5: s011 cùng chỗ đứng cầm máy đứng thẳng — nhảy góc lăn giữa các cảnh liền nhau"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q5: cũ cầm máy nằm ngang trước bụng (lòng ngửa đỡ) ở s009/s010/s012/s013 nhưng s011 (cảnh giữa, cùng chỗ đứng, cùng cuộc nói chuyện) lại dựng máy trước cằm — dáng nhảy qua lại ngang bụng ↔ trước cằm"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s012-chia-khoa",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 · 0.3s, 3.76s, 6.7–7.25s · truoc+ngang: cẳng tay phải/trái chĩa ngang ra ngoài thân (~90° so với hướng trước mặt; góc trước thấy cẳng tay nằm ngang sang bên, góc ngang thấy bàn tay chĩa thẳng vào máy) — cùng lỗi đã bắt ở s001, mẫu tui-xach-khuyu là cẳng tay ra TRƯỚC"
+  ],
+  "cu": "dat",
+  "cu_loi": [],
+  "de_xuat": "tra-ve-cu"
+ },
+ {
+  "scene": "t02-s013-khoe",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "the-phong",
+  "hien": "loi",
+  "hien_loi": [
+   "Q5 · 0.3s · nhảy so với cuối s012 hiện hành: s012 7.25s thẻ kẹp bên dựng xiên trước bụng, sang s013 0.3s thành thẻ nằm ngang kẹp từ trên ở hông (cảnh liền, cùng chỗ đứng)"
+  ],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s013-khoe",
+  "cast": "takumi",
+  "side": "phải",
+  "item": "dien-thoai",
+  "hien": "dat",
+  "hien_loi": [],
+  "cu": "giong",
+  "cu_loi": [],
+  "de_xuat": "giu"
+ },
+ {
+  "scene": "t02-s013-khoe",
+  "cast": "erika",
+  "side": "trái",
+  "item": "dien-thoai",
+  "hien": "loi",
+  "hien_loi": [
+   "Q3 · 0.3s, 2.8s · truoc: máy ở trước cằm nhưng lăn nghiêng ~35° (đỉnh máy ngả sang phải người), mẫu dien-thoai-doc là máy gần đứng; Q5: s011 cùng chỗ đứng cầm máy đứng thẳng — nhảy góc lăn giữa các cảnh liền nhau"
+  ],
+  "cu": "loi",
+  "cu_loi": [
+   "Q5: cũ cầm máy nằm ngang trước bụng (lòng ngửa đỡ) ở s009/s010/s012/s013 nhưng s011 (cảnh giữa, cùng chỗ đứng, cùng cuộc nói chuyện) lại dựng máy trước cằm — dáng nhảy qua lại ngang bụng ↔ trước cằm"
+  ],
+  "de_xuat": "sua-moi"
+ },
+ {
+  "scene": "t02-s013-khoe",
+  "cast": "erika",
+  "side": "phải",
+  "item": "tui-hieu",
+  "hien": "loi",
+  "hien_loi": [
+   "Q1 · 0.3s, 2.8s · truoc+ngang: cẳng tay phải/trái chĩa ngang ra ngoài thân (~90° so với hướng trước mặt; góc trước thấy cẳng tay nằm ngang sang bên, góc ngang thấy bàn tay chĩa thẳng vào máy) — cùng lỗi đã bắt ở s001, mẫu tui-xach-khuyu là cẳng tay ra TRƯỚC"
+  ],
+  "cu": "dat",
+  "cu_loi": [],
+  "de_xuat": "tra-ve-cu"
+ }
+]
