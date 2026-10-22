@@ -1852,6 +1852,7 @@ phải đích tay của scene), `arm(id, side, "shoulder" | "elbow" | "wrist")`,
 | `pose(t)` | Đặt cả cảnh ở giây `t`: diễn người (`act` của `sceneAt`), rồi `set.update`, rồi `extra.update`, rồi gắn, gỡ món đã `provide` theo `world.hands[].hold`; trả người đang hiện theo `id`. Đặt lại đủ mọi thứ, không dựa vào giây gọi trước |
 | `lights(t)` | `set.lights(t, extra.light(t))` |
 | `view(t)` | `{ crop: cameraAt(rt, t), lens, render }` cho `stage.draw(t, view)` |
+| `refresh(scene)` | Đổi mốc tay, mốc món mà không dựng lại lưới — [Làm mới runtime](#làm-mới-runtime) |
 | `set`, `extra`, `cast`, `ready` | Bối cảnh, đồ riêng, `Cast3D`, promise của `extra.ready` |
 
 - **Người diễn mặc đồ qua `wardrobe`** ([01](01-rig.md#đồ-thay-được-items-và-equip)): mỗi bộ mảnh dựng khối và mỗi dáng
@@ -1876,3 +1877,28 @@ export const CANH_3D: Record<string, WorldSpec> = {
   "s05-ban": { set: () => myRoom({ time: "night" }), still: [], extra: (m, cast) => heldCup(m, cast, "a") },
 };
 ```
+
+### Làm mới runtime
+
+Studio sửa mốc tay (`cast[].world.hands`) và mốc món (`items`) liên tục khi kéo; dựng lại cả cảnh thì dựng lại mọi lưới.
+Hai hàm đổi mốc tại chỗ:
+
+```ts
+refreshRuntime(rt, scene): boolean   // lõi
+world.refresh(scene): boolean        // World3D của buildWorld
+```
+
+- `refreshRuntime` nhận `scene` đã parse, chỉ khác cảnh đã dựng `rt` ở mốc tay và mốc món. Nó giải lại bằng các bảng
+  `resolveScene` đã nhận (hành động, đạo cụ, `held`, cỡ người), thay mốc của từng người và bảng món trên chính `rt`, xoá
+  mọi nhớ theo runtime: mẫu của chuỗi cổ tay mang món, lần cầm món đặt trước và chuỗi `φ`, lựa chọn kế thừa, `holdRuns`,
+  lần thả. Sau đó `sceneAt`, `actJoints`, `itemAt`, `handReport` ra đúng từng số như runtime `resolveScene` dựng mới
+  từ `scene`. Object người trong `rt.cast` giữ nguyên, nên dáng đi đã nướng theo `path` không nướng lại.
+- Khác chỗ khác (người, `path`, clip, mốc có tên, ống kính…) thì trả `false`, `rt` không đổi: dựng lại bằng
+  `resolveScene`. `scene` sai thì ném như `resolveScene`, `rt` cũng không đổi.
+- `world.refresh` gọi `refreshRuntime`, gỡ mọi món đang cầm về chỗ cũ (khung sau gắn lại theo mốc mới), thay
+  `cast.scene`; lưới giữ nguyên. Trả `false` khi phải dựng lại cả cảnh: `refreshRuntime` trả `false`, đổi mốc tay của
+  người nền (đã đóng băng ở giây 0 trong một lưới gộp), hay đổi món một người cầm (đồ riêng thường đăng ký món theo
+  `world.hands` lúc dựng). Đồ riêng không dựng lại: đồ riêng đọc mốc tay lúc dựng thì chỉ thấy bản cũ.
+- Khung đầu sau khi làm mới giải lại chuỗi cổ tay mang món và chuỗi `φ` từ đầu lần cầm tới giây đang vẽ, như khung
+  đầu của cảnh dựng mới; khung kế tiếp nhanh như thường.
+

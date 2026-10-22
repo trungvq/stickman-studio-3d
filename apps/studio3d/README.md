@@ -56,7 +56,7 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
 | Space | Phát / dừng |
 | ← → | Lùi / tới một khung (1/30 s); giữ Shift: 10 khung |
 | C | Đổi camera cảnh ↔ camera tự do |
-| R | Nạp lại cảnh từ đĩa, giữ giây đang xem |
+| R | Nạp lại cảnh từ đĩa, giữ giây đang xem; chỉ đổi mốc tay, mốc món thì làm mới tại chỗ, không dựng lại lưới (`world.refresh`) |
 | W S · A D · Q E | Camera tự do: tiến / lùi, sang trái / phải, xuống / lên (theo hướng camera); giữ Shift: nhanh gấp 3 |
 | Esc | Bỏ chọn bàn tay |
 

@@ -93,6 +93,8 @@ let cur: {
   posed: Record<string, Figure>;
   /** Dữ liệu đã dựng cảnh (`held` đã parse, kể cả món áp tạm) */
   data: Data;
+  /** `data` dạng chuỗi: cùng chuỗi thì đổi mốc tay, mốc món làm mới được (`restage`) */
+  key: string;
   /** `STUDIO3D_HELD_OUT` của server: bản soạn lưu vào đây thay `held/` */
   heldOut: string | null;
 } | null = null;
@@ -240,6 +242,11 @@ async function load(name: string, keepTime = false, reuse = false) {
     const parsed = rig.parseScene(j.raw);
     if (!parsed.success) throw new Error(`scene JSON sai: ${parsed.error.message}`);
     const scene = parsed.data;
+    const key = JSON.stringify(data);
+    if (cur?.name === name && cur.key === key && restage(scene)) {
+      say(warnings.join("\n"));
+      return;
+    }
     let { w, dur, from, rt } = build(name, scene, data);
     const fonts = w.set.fonts;
     if (fonts?.specs?.length) {
@@ -268,6 +275,7 @@ async function load(name: string, keepTime = false, reuse = false) {
       rt,
       held,
       data,
+      key,
       heldOut: j.heldOut ?? null,
       get posed() {
         return box.posed;
@@ -291,6 +299,16 @@ async function load(name: string, keepTime = false, reuse = false) {
     if (my !== loading) return;
     say(`${name}: ${(e as Error).stack ?? e}`, true);
   }
+}
+
+/** Đổi mốc tay, mốc món của cảnh đang mở mà không dựng lại lưới (`World3D.refresh`); `false` là phải dựng lại */
+function restage(scene: SceneData): boolean {
+  if (!cur?.w.refresh?.(scene)) return false;
+  cur.scene = scene;
+  rowsT = NaN;
+  drawMarks(scene, cur.dur);
+  dirty = true;
+  return true;
 }
 
 function dispose() {
@@ -883,5 +901,6 @@ Object.assign(window, {
     get editor() {
       return editor;
     },
+    restage,
   },
 });
