@@ -111,6 +111,7 @@ theo món): zod báo lỗi kèm lệnh `stickman migrate-held` (mục [8](#8-chu
 | `touch` | Phần người được lấn vào món khi cầm, cộng với bàn tay, cẳng tay cầm (mặc định); `touch` của chỗ cầm ở cảnh cộng thêm |
 | `hang` | Nhóm con thõng theo trọng lực |
 | `joints`, `soft` | Que xoay được trong tay (gắp); vật mềm — để sau |
+| `authored` | Kiểu cầm soạn tay theo `nhóm` rồi `biến thể`: bàn tay, dáng ngón người chỉnh bằng mắt trong studio 3D, rig dùng thay chỗ tiếp xúc của nhóm ([bên dưới](#kiểu-cầm-soạn-tay-authored)). Ngoại lệ duy nhất của "món không khai cách cầm" |
 
 - Khối không gắn nhãn thuộc phần ngầm `body`. Món đều (điện thoại, phiếu, thẻ) không cần nhãn phần.
 - **`detail: true`** đánh dấu khối chi tiết (nút sườn, cụm camera, kẹp bút): rig **bỏ khi suy khối hình**, nhưng vẫn tính
@@ -248,7 +249,52 @@ quay hướng bán kính `ρ` quanh trục `a` (về phía `U`):
 ```
 
 `parseHeldItem` báo: `front`/`top`/`seats` trỏ mốc không có hay không `dir`, `top` lệch miệng, `as: "rod"` thiếu `axis`,
-mọi khối đều `grip: false` hay `detail`.
+mọi khối đều `grip: false` hay `detail`, khoá `authored` không phải nhóm cầm.
+
+### Kiểu cầm soạn tay (`authored`)
+
+Bộ giải đặt bàn tay theo chỗ tiếp xúc của nhóm; có kiểu cầm nó giải sai mà người nhìn là thấy (đũa ngược đầu, chén không có
+gì kẹp). `apps/studio3d` cho người soạn kiểu cầm bằng mắt: món × nhóm × biến thể, tay phải, ở cỡ tay của một người trong cảnh.
+Bản soạn lưu vào chính món, dùng cho **mọi cảnh** cầm món ấy bằng nhóm × biến thể ấy, cả hai tay, mọi cỡ tay.
+
+```jsonc
+// held/thuc-don.json — thêm vào món, phần còn lại giữ nguyên
+"authored": {
+  "sheet": {                                   // nhóm
+    "flat": {                                  // biến thể (`palmBox`: `default`)
+      "item": { "p": [0.038, -0.18654, 0.17496], "q": [-0.52583, -0.52583, -0.47277, 0.47277] },
+      "anchor": "edge",                        // tâm nắm neo (`HAND_GRIPS`)
+      "fingers": [72, 29, 5, 5, 58.5, 6, 55.5, 8, 1, 0],   // `HAND_DOF` bỏ `turn`, `bend`
+      "fit": [0, 0, 4, 6, 0, 0, 8, 12, 0, 0],  // tuỳ chọn: `HAND_FIT` từng đốt
+      "curl": 10,                              // tuỳ chọn: tầm `heldFit` thêm, mặc định `AUTHORED_CURL` = 10
+      "choice": { "part": "body", "featureIndex": 0, "edge": "left", "along": 0.306, "thumb": "front", "slant": 70.3 }
+    }
+  }
+}
+```
+
+- **`item`** là món trong khung bàn tay **phải** cỡ `1` (`k = long = 1`), người cỡ `1`: `GripFrame` với `u = 0,01`, `p` three,
+  `q` quaternion `[x, y, z, w]` của `R`. Tay cỡ khác giãn quanh tâm nắm của dáng `anchor` như `graspLink` (điểm món ở tâm nắm
+  ấy đứng yên trên món), món không đổi cỡ. `anchor` mặc định là dáng đóng của biến thể, nên tâm nắm mà `act3`, `holdLinkFrame`
+  đọc (`gripCenter(hand.pose)`) khớp khung.
+- **Dáng gốc** của khung cầm là `[0, 0, …fingers, …fit]` (`HandVec` kèm `HAND_FIT`, `authoredPose`). `heldFit` tính độ gập thêm
+  **từ** `fit` và trả kết quả gồm nó; `Hand.heldV` mang cả mười số ấy, `poseHand` lấy `fit` của `heldFit` khi có. Vai trò ngón
+  của biến thể giữ nguyên cho luật `check`, trừ `free` đổi sang `extend` (không hoà về dáng nghỉ, chỉ mở khi lún); tầm cuộn là
+  `curl` của bản soạn (`GraspFrame.curl`, `frameCurl`), đủ để ngón chạm khít ở tay cỡ khác mà không phá dáng soạn.
+- **Neo theo chỗ tiếp xúc.** `choice` là lựa chọn lúc soạn (trường cảnh khai cộng trường rig giải, cả `high` khi khác mặc
+  định). Cảnh cầm ở lựa chọn khác (`along`, cạnh, `around`…) thì bàn tay đi theo chỗ tiếp xúc của bộ giải từ lựa chọn lúc soạn
+  sang lựa chọn ấy (`slideHand`): giữ nguyên bàn tay trong khung (tâm nắm, lòng tay, ngón) của chỗ tiếp xúc. Cùng lựa chọn thì
+  đúng bản soạn, không phụ thuộc hằng số của chỗ tiếp xúc. Bộ giải lựa chọn thiếu (`chooseMissing`) chấm giá trên chính bàn tay
+  soạn.
+- **Tay trái** là gương của độ lệch giữa bản soạn và chỗ tiếp xúc tay phải của bộ giải ở lựa chọn lúc soạn, đặt lên chỗ tiếp
+  xúc tay trái (`mirrorHand`): phản xạ qua mặt (lòng tay, ngón) của chỗ tiếp xúc — mặt đối xứng cục bộ của món mà nhóm dùng.
+  Bản soạn trùng bộ giải tay phải thì tay trái trùng bộ giải tay trái. Lựa chọn lúc soạn không dựng lại được (món đã đổi hình)
+  thì gương theo khung `nf` / `nt` của biến thể và không dời.
+- Món không có `authored` cho nhóm × biến thể đang dùng thì `graspFrame` như cũ (`raw` bỏ qua bản soạn). Khung cầm từ bản soạn
+  mang `authored: true`.
+
+Code ở `core/heldAuthored.ts` (`authoredFrom` dựng bản soạn từ khung cầm studio đang thấy, `authoredHand`, `mirrorHand`,
+`slideHand`, `authoredPose`), nối vào `graspFrame` (`authoredPlace`); test `heldAuthored.test.ts`.
 
 ## 3. Schema nhóm (rig, `GRIP_GROUPS`)
 
@@ -1348,7 +1394,8 @@ Mỗi nhóm chạy có chỗ tiếp xúc (`CONTACTS`), dáng mở/đóng, vai tr
    lần thả và mốc món nằm (`itemReleases`, `itemReleased`, `restingMark`).
 6. `core/arm3.ts` (lá), `core/act3.ts`, `core/holdLink.ts` — đường món đặt trước (`solveActing`), tay dẫn qua `holdLink`,
    `AimReport.hold.grasp`; `actJoints` khớp `act` (`act3.test.ts`).
-7. `core/heldFit.ts` — `roles`, `skinBulge`, `skinDepth`, `heldNormal`, `shapeSupport`, `skinUnder`; `core/heldCarry.ts` — `carrySpecOf`, `carryFrame`.
+7. `core/heldFit.ts` — `roles`, `skinBulge`, `skinDepth`, `heldNormal`, `shapeSupport`, `skinUnder`; `core/heldCarry.ts` — `carrySpecOf`, `carryFrame`;
+   `core/heldAuthored.ts` — kiểu cầm soạn tay (mục [2](#kiểu-cầm-soạn-tay-authored)).
 8. `src/attach.ts`, `src/world.ts` — gắn món qua `holdLink`, `fitHolding` nhớ theo lần cầm; `Hand.heldV` (`human.ts`) mang dáng
    nhóm đã hoà.
 9. `core/heldAudit.ts`, `src/held.ts` — luật mục 7 (`heldOppose`), `skinDepth` cho mọi chỗ cầm có `shape`, `HeldHand.grasp`, `HeldHand.oppose`, `HeldHand.under` (luật `rest`).

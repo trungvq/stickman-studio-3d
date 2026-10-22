@@ -36,6 +36,15 @@ import {
 } from "./hand";
 import { handSkin, skinHand, type HandSkin } from "./handMesh";
 import {
+  AUTHORED_CURL,
+  authoredHand,
+  authoredOf,
+  authoredPose,
+  mirrorHand,
+  slideHand,
+  type HandPlace,
+} from "./heldAuthored";
+import {
   HELD_FIT,
   heldDistance,
   heldFit,
@@ -76,6 +85,7 @@ import {
   handAxes,
   heldBase,
   HELD_FINGERS,
+  type AuthoredGrasp,
   type GraspHand,
   type GripFrame,
   type GroupId,
@@ -168,12 +178,20 @@ export type ContactFn = (x: ContactInput) => GraspContact;
 export interface GraspFrame {
   G: GripFrame;
   hand: GraspHand;
-  /** Dáng gốc (`HAND_DOF`): dáng đóng hoà sang dáng mở theo số đo món */
+  /** Dáng gốc (`HAND_DOF`): dáng đóng hoà sang dáng mở theo số đo món; kiểu cầm soạn tay kèm `HAND_FIT` của bản soạn */
   pose: HandVec;
   roles: RoleMap;
   feature: Feature;
   choice: GraspChoice;
+  /** Bàn tay theo kiểu cầm soạn tay (`authored` của món), không theo chỗ tiếp xúc của nhóm */
+  authored?: true;
+  /** Tầm cuộn `heldFit` của bản soạn; không có thì của biến thể (`frameCurl`) */
+  curl?: number;
 }
+
+/** Tầm cuộn `heldFit` của khung cầm: của bản soạn tay, không thì `curl` của biến thể; không khai thì `undefined` */
+export const frameCurl = (group: GroupId, fr: Pick<GraspFrame, "curl" | "choice">) =>
+  fr.curl ?? GRIP_GROUPS[group].variants[fr.choice.variant ?? ""]?.curl;
 
 const D2R = Math.PI / 180;
 const EPS = 1e-6;
@@ -1093,7 +1111,9 @@ const PIECES_OF: Record<SkinFinger, number[]> = {
 /**
  * Khung cầm của chỗ cầm `choice` (nhóm `group`) trên món `spec` (`geom = itemGeom(spec)`) cho tay bên `side`: chỗ tiếp xúc
  * của nhóm, bàn tay tổng hợp có điểm nắm là toạ độ khung món, `G` như `graspLink` (`k`, `long`, `s` như ở đó), dáng gốc
- * theo `dims` (cỡ tay, đơn vị món). Trường thiếu lấy mặc định của nhóm; `eHigh` là đầu cao của cạnh (`edgeHigh`)
+ * theo `dims` (cỡ tay, đơn vị món). Trường thiếu lấy mặc định của nhóm; `eHigh` là đầu cao của cạnh (`edgeHigh`). Món có
+ * kiểu cầm soạn tay cho nhóm × biến thể (`authored`) thì bàn tay, dáng gốc theo bản soạn, dời theo chỗ tiếp xúc
+ * (`authoredPlace`); `raw` bỏ qua bản soạn — chỗ tiếp xúc của nhóm như khi món không có bản soạn
  */
 export function graspFrame(
   spec: HeldItemSpec,
@@ -1105,6 +1125,7 @@ export function graspFrame(
   long = k,
   s = 1,
   eHigh?: V3,
+  raw = false,
 ): GraspFrame {
   const group = GRIP_GROUPS[choice.group];
   const byVariant = CONTACTS[choice.group];
@@ -1177,19 +1198,25 @@ export function graspFrame(
     palmSkin: (at) => skinOf(at, [PALM]),
     fingerSkin: (finger, at) => skinOf(at, PIECES_OF[finger]),
   });
-  const name = vs.pose.closed.pose as HandPose;
+  const au = raw ? undefined : authoredOf(spec, group.id, variant);
+  const place: HandPlace = au
+    ? authoredPlace(spec, geom, au, choice.group, variant, vs.frame, side, dims, k, long, s, ct)
+    : ct;
+  const name = au ? au.anchor : (vs.pose.closed.pose as HandPose);
   const hand: GraspHand = {
     pose: name,
-    at: ct.at,
-    palm: ct.palm,
-    fingers: ct.fingers,
+    at: place.at,
+    palm: place.palm,
+    fingers: place.fingers,
     wrap: HELD_FINGERS.filter((f) => vs.roles[f] !== "free" && vs.roles[f] !== "extend"),
   };
   return {
     G: graspLink(hand, side, k, long, s),
     hand,
-    pose: basePose(vs.pose, feature, dims, ct),
-    roles: vs.roles,
+    pose: au ? authoredPose(au) : basePose(vs.pose, feature, dims, ct),
+    // bản soạn: ngón `free` giữ dáng soạn (`extend`: không cuộn, chỉ mở khi lún) thay vì hoà về dáng nghỉ
+    roles: au ? authoredRoles(vs.roles) : vs.roles,
+    ...(au && { authored: true as const, curl: au.curl ?? AUTHORED_CURL }),
     feature,
     choice: {
       part: feature.part,
@@ -1206,6 +1233,68 @@ export function graspFrame(
       ...(group.choices.inset && inset !== undefined && { inset }),
     },
   };
+}
+
+const authoredRoles = (r: RoleMap): RoleMap =>
+  Object.fromEntries(
+    Object.entries(r).map(([k, v]) => [k, v === "free" ? "extend" : v]),
+  ) as RoleMap;
+
+/** Chỗ tiếp xúc của nhóm ở lựa chọn lúc soạn, theo bản soạn, bên tay và cỡ tay; `null` khi lựa chọn ấy không còn dựng được */
+const authoredAt = new WeakMap<AuthoredGrasp, Map<string, HandPlace | null>>();
+
+/**
+ * Bàn tay của kiểu cầm soạn tay `au` trong khung món cho tay bên `side`, ở lựa chọn đang dựng (chỗ tiếp xúc `ct`). Bản soạn
+ * là tay phải ở lựa chọn lúc soạn (`au.choice`); tay trái lấy gương qua chỗ tiếp xúc hai tay của bộ giải ở lựa chọn ấy
+ * (`mirrorHand`); rồi bàn tay dời theo chỗ tiếp xúc từ lựa chọn lúc soạn sang `ct` (`slideHand`) — cùng lựa chọn thì
+ * không dời. Lựa chọn lúc soạn không dựng lại được (món đã đổi) thì gương theo khung `frame` của biến thể, không dời
+ */
+function authoredPlace(
+  spec: HeldItemSpec,
+  geom: ItemGeom,
+  au: AuthoredGrasp,
+  group: GroupId,
+  variant: string,
+  frame: "nf" | "nt",
+  side: number,
+  dims: HandDims,
+  k: number,
+  long: number,
+  s: number,
+  ct: HandPlace,
+): HandPlace {
+  let m = authoredAt.get(au);
+  if (!m) authoredAt.set(au, (m = new Map()));
+  const at = (sd: number) => {
+    const key = [sd, k, long, ...Object.values(dims)].join();
+    let x = m.get(key);
+    if (x === undefined) {
+      const { high, ...c } = au.choice ?? {};
+      try {
+        x = graspFrame(
+          spec,
+          geom,
+          { ...(c as GraspChoice), group, variant },
+          sd,
+          dims,
+          k,
+          long,
+          s,
+          high as V3 | undefined,
+          true,
+        ).hand;
+      } catch {
+        x = null;
+      }
+      m.set(key, x);
+    }
+    return x;
+  };
+  const right = at(-1);
+  const from = side < 0 ? right : at(1);
+  if (!right || !from) return authoredHand(au, side, frame);
+  const h = authoredHand(au, -1, frame);
+  return slideHand(side < 0 ? h : mirrorHand(h, right, from), from, ct);
 }
 
 /** Người cầm của `graspAt` ở một tư thế thân */
@@ -1459,7 +1548,7 @@ function fittedSkin(
     ...(curl !== undefined && { curl }),
   });
   const pos = new Float32Array(skin.pos.length);
-  skinHand(skin, [...f.pose, ...fit], pos);
+  skinHand(skin, [...f.pose.slice(0, HAND_DOF.length), ...fit], pos);
   if (m.size >= SKIN_KEEP) m.delete(m.keys().next().value!);
   const out = { pos, skin };
   m.set(key, out);
@@ -1752,7 +1841,7 @@ export function chooseMissing(
     // giá lún không âm: ứng viên đã đắt hơn ứng viên tốt nhất thì không cần đo
     const vs = group.variants[frame.choice.variant ?? ""];
     if (solve && (SINK_GROUPS.has(h.group) || vs?.sink) && (!best || cost <= best.cost + 1e-12)) {
-      const curl = vs?.curl;
+      const curl = frame.curl ?? vs?.curl;
       const sink = frameSink(spec, frame, sd, ctx.k, ctx.long, ctx.s, curl) * pose.s;
       cost += SINK_W * (sink / SINK_REF) ** 2;
     }
@@ -1763,7 +1852,16 @@ export function chooseMissing(
     ];
     if (solve && rests.length && (!best || cost <= best.cost + 1e-12))
       for (const r of rests) {
-        const under = restUnder(spec, frame, sd, ctx.k, ctx.long, ctx.s, r.p, vs?.curl);
+        const under = restUnder(
+          spec,
+          frame,
+          sd,
+          ctx.k,
+          ctx.long,
+          ctx.s,
+          r.p,
+          frame.curl ?? vs?.curl,
+        );
         cost += r.w * REST_W * (under / REST_REF) ** 2;
       }
     return {

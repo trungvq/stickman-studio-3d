@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { HUMAN_HEAD, humanEar, humanSkull } from './core/humanHead';
-import { fingerVec, HAND_POSES, HAND_REST, type HandPose } from './core/hand';
+import { fingerVec, HAND_DOF, HAND_POSES, HAND_REST, type HandPose } from './core/hand';
 import { handSkin, skinHand, smoothNormals, type HandSkin } from './core/handMesh';
 import { newCanvas } from './canvas';
 import { G } from './npr';
@@ -256,7 +256,8 @@ export function handRig(side: -1 | 1, k: number, long: number, low = false): Han
  */
 export function poseHand(h: Hand, v?: readonly number[]) {
   if (v) h.acted = v;
-  const want = h.held ? [0, 0, ...(h.heldV?.slice(2) ?? fingerVec(HAND_POSES[h.held])), ...(h.fit ?? [])] : h.acted;
+  // `heldV` của kiểu cầm soạn tay kèm `HAND_FIT`: `fit` của `heldFit` đã gồm nó
+  const want = h.held ? [0, 0, ...(h.heldV?.slice(2, HAND_DOF.length) ?? fingerVec(HAND_POSES[h.held])), ...(h.fit ?? h.heldV?.slice(HAND_DOF.length) ?? [])] : h.acted;
   if (h.shown.length === want.length - 2 && h.shown.every((x, i) => Math.abs(x - want[i + 2]) < 1e-3)) return;
   h.shown = want.slice(2);
   const P = h.geo.attributes.position as THREE.BufferAttribute, N = h.geo.attributes.normal as THREE.BufferAttribute;

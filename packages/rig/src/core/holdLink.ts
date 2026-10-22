@@ -10,6 +10,7 @@ import type { ActCharacter } from "./arm3";
 import {
   CONTACTS,
   edgeOk,
+  frameCurl,
   graspFrame,
   sideAlong,
   type GraspChoice,
@@ -47,9 +48,9 @@ export interface HoldLinkHand {
   frame?: GraspFrame;
 }
 
-/** `curl` của biến thể khung `fr` trong nhóm `group`, không khai thì không có trường */
+/** `curl` của khung `fr` (bản soạn tay, hay biến thể trong nhóm `group`), không khai thì không có trường */
 const curlOf = (group: GroupId, fr: GraspFrame) => {
-  const curl = GRIP_GROUPS[group].variants[fr.choice.variant ?? ""]?.curl;
+  const curl = frameCurl(group, fr);
   return curl === undefined ? {} : { curl };
 };
 

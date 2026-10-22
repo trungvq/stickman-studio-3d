@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { BODY_MARKS, PALM_DIR_NAMES, type BodyMark, type PalmDir } from "./bodyMark";
-import { HAND_GRIPS, type HandPose } from "./hand";
+import { HAND_GRIPS, HAND_POSE_KINDS, type HandPose } from "./hand";
 import type { ActCharacter, Trunk3 } from "./arm3";
 import type { GraspChoice, GraspFrame, GraspSolution } from "./graspSolve";
 import { topProblems } from "./heldGeom";
@@ -127,6 +127,44 @@ export const HeldShapeSchema = z.union([
 ]);
 export type HeldShape = z.infer<typeof HeldShapeSchema>;
 
+const num = z.number();
+const ten = z.tuple([num, num, num, num, num, num, num, num, num, num]);
+
+/**
+ * Kiểu cầm soạn tay của một món × nhóm × biến thể (`authored` của món): người chỉnh bằng mắt trong studio, rig dùng thay
+ * chỗ tiếp xúc của bộ giải. `item` là món trong khung bàn tay **phải** cỡ `1` (`k = long = 1`), người cỡ `1` — `GripFrame`
+ * với `u = 0,01`: `p` (three) và quaternion `q` `[x, y, z, w]` của `R`. Tay cỡ khác giãn quanh tâm nắm của dáng `anchor`
+ * (`HAND_GRIPS`) như `graspLink`; tay trái là gương theo khung của biến thể. `fingers` mười góc ngón (`HAND_DOF` bỏ `turn`,
+ * `bend`), `fit` độ gập thêm từng đốt (`HAND_FIT`); `heldFit` còn cuộn thêm tới `curl` độ (bỏ trống `AUTHORED_CURL`, `0`
+ * là giữ đúng dáng soạn) và gỡ đốt lún. `choice` là lựa chọn cầm lúc soạn: cảnh cầm ở lựa chọn khác (`along`, cạnh…) thì
+ * bàn tay dời theo chỗ tiếp xúc của bộ giải từ lựa chọn này sang lựa chọn kia. docs/11-nhom-cam.md § Kiểu cầm soạn tay
+ */
+export const AuthoredGraspSchema = z.strictObject({
+  item: z.strictObject({ p: v3, q: z.tuple([num, num, num, num]) }),
+  anchor: z.enum(HAND_POSE_KINDS),
+  fingers: ten,
+  fit: ten.optional(),
+  curl: z.number().min(0).optional(),
+  choice: z
+    .strictObject({
+      part: z.string().min(1),
+      featureIndex: z.number().int().min(0),
+      edge: z.union([z.string(), num]),
+      along: z.union([z.string(), num]),
+      thumb: z.string(),
+      slant: z.union([z.string(), num]),
+      tilt: num,
+      around: num,
+      psi: num,
+      inset: num,
+      /** Đầu cao của cạnh lúc soạn, khung món (`edgeHigh`) */
+      high: v3,
+    })
+    .partial()
+    .optional(),
+});
+export type AuthoredGrasp = z.infer<typeof AuthoredGraspSchema>;
+
 export const HeldItemSchema = z
   .object({
     schemaVersion: z
@@ -154,6 +192,8 @@ export const HeldItemSchema = z
     hang: z.array(z.string().min(1)).optional(),
     /** Hình va chạm: hợp các khối (`HeldShapeSchema`) — ngón ôm theo đồ, nhóm cầm và luật `held` đo trên nó */
     shape: z.array(HeldShapeSchema).min(1).optional(),
+    /** Kiểu cầm soạn tay theo nhóm rồi biến thể (`AuthoredGraspSchema`); thiếu thì bộ giải đặt bàn tay như cũ */
+    authored: z.record(z.string(), z.record(z.string(), AuthoredGraspSchema)).optional(),
   })
   .superRefine((m, ctx) => {
     const bad = (path: (string | number)[], message: string) =>
@@ -190,6 +230,8 @@ export const HeldItemSchema = z
     )
       bad(["shape"], "mọi khối đều là `detail` hay thuộc phần `grip: false` — không còn gì để cầm");
     for (const msg of topProblems(m)) bad(["top"], msg);
+    for (const g of Object.keys(m.authored ?? {}))
+      if (!(GROUP_IDS as readonly string[]).includes(g)) bad(["authored", g], groupName(g));
   });
 export type HeldItemSpec = z.infer<typeof HeldItemSchema>;
 

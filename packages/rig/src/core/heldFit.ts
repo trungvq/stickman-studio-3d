@@ -290,11 +290,14 @@ export function fingerClearance(
  * khi một đốt chạm (`HELD_FIT.touch`), rồi cuộn riêng đốt ngọn tới khi nó chạm; `tip` chỉ cuộn đốt ngọn; không chạm trong
  * tầm `HELD_ROLE_CURL` thì giữ dáng. `free` hoà nửa về dáng nghỉ. Rồi mọi ngón: đốt gốc lún quá `HELD_FIT.sink` thì mở
  * (hay gập, phía nào gần hơn; `extend` chỉ mở) tới vừa chạm, đốt ngọn cũng thế. Cuối cùng đốt ngọn của ngón `wrap` còn hở
- * thì cuộn tiếp tới mặt kế. `curl` chặn mọi độ gập thêm (cả khi gỡ lún)
+ * thì cuộn tiếp tới mặt kế. `curl` chặn mọi độ gập thêm (cả khi gỡ lún). `v` kèm `HAND_FIT` (kiểu cầm soạn tay) thì độ gập
+ * thêm tính từ đó và kết quả gồm cả nó
  */
 export function heldFit(inp: HeldFitInput): number[] {
   const n = HAND_DOF.length;
   const out = new Array<number>(HAND_FIT.length).fill(0);
+  // độ gập thêm sẵn có của dáng gốc (bản soạn tay); dáng chỉ có `HAND_DOF` thì không
+  const given = Array.from({ length: HAND_FIT.length }, (_, i) => inp.v[n + i] ?? 0);
   const roles: FingerRoles =
     inp.roles ?? Object.fromEntries((inp.wrap ?? []).map((f) => [f, "wrap"]));
   const bulge = inp.roles ? (inp.bulge ?? {}) : {};
@@ -302,8 +305,8 @@ export function heldFit(inp: HeldFitInput): number[] {
   HELD_FINGERS.forEach((f, j) => {
     const role = roles[f] ?? "support";
     const cap = HELD_ROLE_CURL[role];
-    const base = inp.v[BASE_DOF[f]] ?? 0;
-    const tip = inp.v[BASE_DOF[f] + 1] ?? 0;
+    const base = (inp.v[BASE_DOF[f]] ?? 0) + given[2 * j];
+    const tip = (inp.v[BASE_DOF[f] + 1] ?? 0) + given[2 * j + 1];
     const lim = LIMITS[f];
     // góc tuyệt đối của mỗi đốt cộng phần `curl` riêng của ngón (giữa–út)
     const extra = f === "thumb" || f === "index" ? 0 : HAND_FINGERS[f as HandFinger].curl;
@@ -314,9 +317,9 @@ export function heldFit(inp: HeldFitInput): number[] {
     const vec = (a: number, b: number) => {
       const v = [...inp.v.slice(0, n)];
       while (v.length < n) v.push(0);
-      const fit = new Array<number>(HAND_FIT.length).fill(0);
-      fit[2 * j] = a;
-      fit[2 * j + 1] = b;
+      const fit = [...given];
+      fit[2 * j] += a;
+      fit[2 * j + 1] += b;
       return [...v, ...fit];
     };
     /** Khe hai đốt; `root` khe ở gốc mỗi đốt — gập đốt ấy không đổi được nó */
@@ -416,8 +419,8 @@ export function heldFit(inp: HeldFitInput): number[] {
       const t = seek(d1, Math.min(d1 + curl, hi(1)), (x) => gap(d0, x)[1] <= touch);
       if (t !== undefined) d1 = t;
     }
-    out[2 * j] = d0;
-    out[2 * j + 1] = d1;
+    out[2 * j] = given[2 * j] + d0;
+    out[2 * j + 1] = given[2 * j + 1] + d1;
   });
   return out;
 }
