@@ -10,7 +10,7 @@ import {
 import { D, RIG } from "./constants";
 import { body3 } from "./figure3d";
 import { computeFigure } from "./geometry";
-import { depthAt, project } from "./lens";
+import { depthAt, project, type Lens, type V3 } from "./lens";
 import {
   cameraAt,
   castCharacter,
@@ -343,16 +343,47 @@ const SKIPPED: Sample = {
 const LIFT_BITS = ["an", "af", "ln", "lf"] as const;
 const SIDES = ["R", "L"] as const;
 
+/** Khớp người 3D mà `sceneSnaps` đo, theo bên giải phẫu */
+export const SNAP_JOINTS_3D: readonly ActJoint[] = J3;
+
+const ALL3: ActJoint[] = [...J3, "hip", "shoulderR", "shoulderL", "neck"];
+
+/** Khớp người 3D trên một khung: chỗ vẽ, độ sâu theo trục nhìn và điểm thế giới rig */
+export interface StageJoints {
+  pts: Record<string, Pt>;
+  depth: Record<string, number>;
+  world: Record<string, V3>;
+  /** Sai khi một khớp đo hay hông nằm sau mặt phẳng ống kính */
+  front: boolean;
+}
+
+/**
+ * Khớp của một người 3D tại một khung, đúng phép tính `sceneSnaps` đo: `actJoints` chiếu qua `scene.lens`,
+ * kèm hông, vai, cổ. Người không có `world` thì `undefined`.
+ */
+export function stageJoints(c: CharacterData, sp: ScenePose): StageJoints | undefined {
+  const w = sp.world;
+  const J = w && actJoints(c, sp);
+  return w && J ? onLens(w.lens, J) : undefined;
+}
+
+function onLens(lens: Lens, J: Record<ActJoint, V3>): StageJoints {
+  const pts: Record<string, Pt> = {};
+  const depth: Record<string, number> = {};
+  let front = true;
+  for (const k of ALL3) {
+    depth[k] = depthAt(lens, J[k]);
+    if (k !== "shoulderR" && k !== "shoulderL" && k !== "neck" && !(depth[k] > 1)) front = false;
+    pts[k] = project(lens, J[k]);
+  }
+  return { pts, depth, world: J, front };
+}
+
 function sample(c: CharacterData, sp: ScenePose): Sample {
   const w = sp.world;
   const J = w && actJoints(c, sp);
   if (w && J) {
-    const pts: Record<string, Pt> = {};
-    let front = true;
-    for (const k of [...J3, "hip"] as ActJoint[]) {
-      if (!(depthAt(w.lens, J[k]) > 1)) front = false;
-      pts[k] = project(w.lens, J[k]);
-    }
+    const { pts, front } = onLens(w.lens, J);
     const near = w.flip ? "L" : "R";
     const P = sp.pose;
     const ik = SIDES.map((t) =>

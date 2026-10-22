@@ -845,7 +845,8 @@ const SceneItemMarkSchema = z.strictObject({
   vặn tới kẹp. Đặt món ngang cằm, lệch về phía tay cầm — `to: "eye"`, `offset` chừng `[45, 45, 10]` —, khuỷu gập, `holderFace`
   ngửa mặt món lên về mắt. Nhóm không có `roll` mặc định (`palmBox`) thì khai `roll: { axis: "top", toward: "up" }`, bỏ trống
   là đầu món có thể chúc xuống.
-- **Giữa hai mốc** (`itemAt`): chỗ món hoà theo `ease` trong khung mốc thân ở chính `t` (người cúi thì món đi theo người),
+- **Giữa hai mốc** (`itemAt`): chỗ món hoà theo `ease` của mốc sau (bỏ trống và `auto` là `smooth`; mốc món không có
+  `bezier` nên `ease: "bezier"` là `BEZIER_DEFAULT`) trong khung mốc thân ở chính `t` (người cúi thì món đi theo người),
   hướng món hoà cầu (`slerp`) giữa hai phép quay giải ở hai mốc. Đích của `face` (người khác, mốc thân) đọc ở `t`. Trước mốc
   món đầu và sau mốc cuối, món giữ ở mốc gần nhất (kẹp như `world.hands`). Lần cầm một tay theo mốc không vẽ món ở `itemAt`
   giữa hai mốc: bộ giải chỉ đọc `itemAt` ở chính các mốc, món vẽ theo bàn tay (mục [5](#lần-cầm-theo-mốc)).

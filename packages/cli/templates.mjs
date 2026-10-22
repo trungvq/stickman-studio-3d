@@ -64,7 +64,9 @@ vừa làm gì.
 - Kiểm bằng \`shrug\`, đừng kiểm bằng \`walk\`: sai dấu góc không lộ ra ở góc nhỏ.
 - Cảnh thì \`render_scene\` để xem và \`scene_probe\` để **đo** toạ độ bàn tay,
   đừng suy điểm gặp bằng mắt. Soi bố cục và khung thì \`render_scene\` với
-  \`stage: true\` — mỗi ô là cả khung, có nền, đã đi qua camera.
+  \`stage: true\` — mỗi ô là cả khung, có nền, đã đi qua camera. Cảnh 3D trong
+  \`CANH_3D\` thì khung ấy là ảnh three thật như video (\`three\`, mặc định bật cho cảnh
+  ấy); người que 2.5D không phải hình video — \`docs 04\` § Ảnh three thật.
 - Tay chạm người (che miệng, áp tai, vỗ tay, chắp tay sau, tay lên đùi) thì khai mốc thân
   \`reach: { "to": "mouth" }\`, đừng đoán toạ độ — nó đúng với mọi cỡ người, cúi hay ngồi; lòng tay
   thì khai \`hand: { "palm": "down" }\` (hay \`{ "toward": "mouth" }\`), đừng đoán \`turn\` —
@@ -259,6 +261,7 @@ package manager của hệ điều hành. Soi một cảnh thành dải ảnh t�
 \`\`\`bash
 pnpm strip scenes/<ten>.json --out tmp/strip.png --cols 12
 pnpm strip scenes/<ten>.json --stage --out tmp/khung.png   # cả khung: nền + camera
+pnpm strip scenes/<ten>.json --three --out tmp/three.png   # cảnh 3D: khung three thật, cần Chromium
 pnpm video --scene scenes/<ten>.json --out tmp/<ten>.mp4
 \`\`\`
 `;

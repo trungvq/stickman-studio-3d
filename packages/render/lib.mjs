@@ -1,14 +1,26 @@
 // Vẽ bằng chính @stickman3d/sketch ra PNG, không cần trình duyệt. CLI và MCP server cùng gọi vào đây.
 // Mọi đường dẫn tính từ `cwd`, nên chạy được trong repo video.
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import * as rig from "@stickman3d/sketch";
 import * as FX from "@stickman3d/fx";
+import { jointSampler, motionData, motionOverlay, motionText, numberEvents } from "./trails.mjs";
+import { threeData, threeShots, threeSize } from "./three.mjs";
+import {
+  floorGrid,
+  floorOverlay,
+  sideLegend,
+  skeletonData,
+  skeletonOverlay,
+  solidBoxes,
+  topView,
+  worldBoxes,
+} from "./skeleton.mjs";
 
 export {
   bundlePartsForBrowser,
@@ -19,6 +31,27 @@ export {
   partsEntry,
   worldEntry,
 } from "./layers.mjs";
+export {
+  BONE_SEGS,
+  jointSampler,
+  motionData,
+  motionOverlay,
+  motionText,
+  numberEvents,
+  TRAIL_EVENT,
+  TRAIL_NAMES,
+  trailEvents,
+  trailJoints,
+} from "./trails.mjs";
+export { findChrome, threeData, threeShots, threeSize } from "./three.mjs";
+export {
+  floorGrid,
+  skeletonData,
+  skeletonOverlay,
+  solidBoxes,
+  topView,
+  worldBoxes,
+} from "./skeleton.mjs";
 
 // 1x1 PNG xám, rig tự kéo giãn ra đúng hộp của mảnh
 const BLOCK =
@@ -52,6 +85,11 @@ const HERE = dirname(fileURLToPath(import.meta.url));
  * repo video hay nằm cạnh trong monorepo. Không thấy cli thì `null`: chỉ có lớp workspace.
  */
 export async function commonLayer(cwd = process.cwd()) {
+  return (await cliModule(cwd))?.COMMON ?? null;
+}
+
+/** Module `lib.mjs` của `@stickman3d/cli`, cài cùng repo video hay nằm cạnh trong monorepo; không thấy thì `null` */
+export async function cliModule(cwd = process.cwd()) {
   const found = [];
   try {
     found.push(createRequire(join(cwd, "noop.js")).resolve("@stickman3d/cli"));
@@ -60,7 +98,7 @@ export async function commonLayer(cwd = process.cwd()) {
   }
   const sibling = resolve(HERE, "../cli/lib.mjs");
   if (existsSync(sibling)) found.push(sibling);
-  for (const f of found) return (await import(pathToFileURL(f).href)).COMMON;
+  for (const f of found) return await import(pathToFileURL(f).href);
   return null;
 }
 
@@ -467,7 +505,7 @@ export function loadScene(
   rt.chars = { ...chars, ...rt.chars };
   // `scene.fx` qua zod của @stickman3d/fx ngay lúc nạp — rig chỉ mang nó theo
   FX.sceneFx(rt);
-  return { actions, animals, props, rt };
+  return { actions, animals, props, held, rt };
 }
 
 /** Đỉnh con vật tính từ mặt đất: lưng cộng cổ và nửa đầu — đủ cho cả voi lẫn gà ngẩng */
@@ -666,8 +704,23 @@ export function sceneFrame({ rt, t, canvas = rt.frame, bg = PAPER, bgUrls, ...wo
  * Dải **khung thật**: mỗi ô là cả khung tại một mốc, có nền và có camera — thứ mà
  * `renderScene` cố ý bỏ đi. Camera vào bằng `scale(zoom) translate(−tâm)` nên ô nào cũng
  * cùng một hộp, zoom khác nhau vẫn xếp thẳng hàng. docs/03-scene.md#camera
+ *
+ * `skeleton: { cast?, views?, world? }` thay người, nền và lớp vẽ code bằng que xương người 3D trên lưới
+ * sàn (`views: ["top"]` thêm ô nhìn từ trên xuống, `world` là `worldScene` của cli để vẽ hộp vật cảnh
+ * three). Kết quả kèm `warnings`. docs/04-mcp.md#người-3d
  */
-export function renderFrames({ rt, times, canvas = rt.frame, around, ...opt }) {
+export function renderFrames({
+  rt,
+  times,
+  canvas = rt.frame,
+  around,
+  motion,
+  skeleton,
+  three,
+  ...opt
+}) {
+  if (three && (around || skeleton))
+    throw new Error("ảnh three không đi với `around` hay `skeleton`");
   // `around`: ô là hộp `±pad` đơn vị sân khấu quanh một mốc `anchorAt` của một người, không
   // qua camera — soi bàn tay đang cầm mà không phải đoán toạ độ pixel rồi cắt lại
   const focus = around
@@ -684,18 +737,132 @@ export function renderFrames({ rt, times, canvas = rt.frame, around, ...opt }) {
     ? { x: -pad, y: -pad, w: 2 * pad, h: 2 * pad }
     : { x: -canvas.w / 2, y: -canvas.h / 2, w: canvas.w, h: canvas.h };
   const bg = opt.bg ?? PAPER;
-  const cells = times.map((t) => {
+  // `motion`: vệt khớp và bóng que xương vẽ đè trong cùng hệ chỗ vẽ, nét giữ cỡ trên ô dù zoom
+  const sampler =
+    (motion || skeleton) &&
+    jointSampler(rt, (m) => {
+      const file = m.character ?? opt.fallback;
+      return file ? opt.loadCharacter(file).character : rig.defaultCharacter();
+    });
+  const warnings = new Set(sampler?.warnings);
+  if (skeleton && !rt.lens)
+    warnings.add("cảnh không có `scene.lens` — không có người 3D để vẽ que xương");
+  const grid = skeleton ? floorGrid(rt) : [];
+  const top = skeleton?.views?.includes("top");
+  const boxesAt = (t) => {
+    const out = solidBoxes(rt, t, { codeLayers: opt.codeLayers, url: opt.loadPiece });
+    if (skeleton.world)
+      try {
+        out.push(...worldBoxes(skeleton.world, t));
+      } catch (e) {
+        warnings.add(`cảnh three ném lỗi ở giây ${t} — ${e.message}; bỏ hộp vật của nó`);
+      }
+    return out;
+  };
+  const fontSize = Math.min(34, box.w / 12);
+  // Lớp phủ chuyển động: nhãn ô nằm trên một dải riêng phía trên khung, không đè lên người
+  const band = motion || skeleton ? Math.round(fontSize * 1.6) : 0;
+  const cell = band ? { ...box, y: box.y - band, h: box.h + band } : box;
+  const baseline = box.y - band * 0.3;
+  // số sự kiện đánh cho cả tờ trước khi vẽ ô nào: cùng sự kiện ở nhiều ô cùng số
+  const moves = motion
+    ? times.map((t) => ({ t, data: motionData(rt, { ...motion, t, sampler, only: motion.cast }) }))
+    : [];
+  if (motion) numberEvents(moves, motion.fps);
+  const cells = times.flatMap((t, i) => {
     const cam = rig.cameraAt(rt, t);
     const f = focus?.(t);
-    return [
-      React.createElement("rect", {
-        key: "paper",
-        x: box.x,
-        y: box.y,
-        width: box.w,
-        height: box.h,
-        fill: bg,
-      }),
+    const u = box.w / 300 / (f ? 1 : cam.zoom);
+    const data = moves[i]?.data;
+    const bounds = f
+      ? { x: f.x + box.x, y: f.y + box.y, w: box.w, h: box.h }
+      : {
+          x: cam.x + box.x / cam.zoom,
+          y: cam.y + box.y / cam.zoom,
+          w: box.w / cam.zoom,
+          h: box.h / cam.zoom,
+        };
+    const overlay =
+      data &&
+      motionOverlay(data, t, u, {
+        fps: motion.fps,
+        px: (opt.scale ?? 1) * (f ? 1 : cam.zoom),
+        bounds,
+      });
+    const boxes = skeleton && rt.lens ? boxesAt(t) : [];
+    const paper = React.createElement("rect", {
+      key: "paper",
+      x: box.x,
+      y: box.y,
+      width: box.w,
+      height: box.h,
+      fill: bg,
+    });
+    const spanTag = data?.some((P) => P.lines.length)
+      ? `  vệt ${data[0].window.map((v) => +v.toFixed(2)).join("→")}s`
+      : "";
+    const tag = f
+      ? `${t}s  ${around.cast}.${around.anchor ?? "root"}${spanTag}`
+      : `${t}s${cam.zoom === 1 && !cam.x && !cam.y ? "" : `  ×${cam.zoom.toFixed(2)}`}${spanTag}`;
+    const label = (key, text, fill) =>
+      React.createElement(
+        "text",
+        {
+          key,
+          x: box.x + 16,
+          y: band ? baseline : box.y + 46,
+          // dải nhãn: chữ co cho vừa bề ngang ô, chừa chỗ cho hai màu bên của que xương
+          fontSize: band
+            ? +Math.min(fontSize, (box.w * (skeleton ? 0.6 : 0.95)) / (0.62 * text.length)).toFixed(
+                2,
+              )
+            : fontSize,
+          fontFamily: "monospace",
+          fill,
+        },
+        text,
+      );
+    const legend = skeleton ? [sideLegend(box, baseline, fontSize * 0.8)] : [];
+    // Ảnh three đã qua ống kính và khung cắt `cameraAt`: phủ cả ô, lớp phủ vẫn vẽ trong hệ chỗ vẽ như ô 2.5D
+    if (three)
+      return [
+        [
+          React.createElement("image", {
+            key: "three",
+            href: three.href[i],
+            x: box.x,
+            y: box.y,
+            width: box.w,
+            height: box.h,
+            preserveAspectRatio: "none",
+          }),
+          ...(overlay
+            ? [
+                React.createElement(
+                  "g",
+                  { key: "world", transform: `scale(${cam.zoom}) translate(${-cam.x} ${-cam.y})` },
+                  overlay,
+                ),
+              ]
+            : []),
+          ...(band
+            ? []
+            : [
+                React.createElement("rect", {
+                  key: "tag",
+                  x: box.x + 8,
+                  y: box.y + 10,
+                  width: fontSize * 0.62 * tag.length + 16,
+                  height: fontSize * 1.35,
+                  fill: bg,
+                  opacity: 0.8,
+                }),
+              ]),
+          label("t", tag, "#555"),
+        ],
+      ];
+    const main = [
+      paper,
       React.createElement(
         "g",
         {
@@ -704,24 +871,226 @@ export function renderFrames({ rt, times, canvas = rt.frame, around, ...opt }) {
             ? `translate(${(-f.x).toFixed(2)} ${(-f.y).toFixed(2)})`
             : `scale(${cam.zoom}) translate(${-cam.x} ${-cam.y})`,
         },
-        sceneWorld({ rt, t, cam, ...opt }),
+        ...(skeleton
+          ? [
+              floorOverlay({ grid, boxes, lens: rt.lens }, u),
+              skeletonOverlay(skeletonData(rt, { t, sampler, only: skeleton.cast }), u),
+            ]
+          : [sceneWorld({ rt, t, cam, ...opt })]),
+        // thêm con chỉ khi có lớp phủ: đổi cấu trúc cây là đổi `useId` của SVG
+        ...(overlay ? [overlay] : []),
       ),
       // Ô rộng bằng cả khung sân khấu nên nhãn phải to hơn nhãn của dải ảnh thân người
+      label("t", tag, band ? "#555" : "#999"),
+      ...legend,
+    ];
+    if (!top) return [main];
+    const view = topView({
+      rt,
+      t,
+      sampler,
+      boxes,
+      box,
+      span: motion?.span,
+      fps: motion?.fps,
+      only: skeleton.cast,
+    });
+    return [main, [paper, view, label("t", `${t}s  từ trên: x →, z ↑`, "#555"), ...legend]];
+  });
+  const cols = (opt.cols ?? times.length) * (top ? 2 : 1);
+  const guide =
+    motion && motionText(moves, { ...motion, rt, skeleton: !!skeleton, video: rt.frame.video.w });
+  return {
+    ...sheet(cells, { ...opt, bg, box: cell, cols }),
+    warnings: [...warnings],
+    ...(guide ? { guide } : {}),
+  };
+}
+
+const median = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
+
+/** Món cầm tay mà `world.hands[].hold` của cảnh nhắc tới */
+const heldItems = (scene) =>
+  new Set(
+    scene.cast.flatMap((m) =>
+      (m.world?.hands ?? []).flatMap((k) =>
+        [k.right?.hold, k.left?.hold]
+          .filter(Boolean)
+          .map((h) => rig.heldBase(rig.sceneHoldRef(h).item)),
+      ),
+    ),
+  );
+
+/**
+ * Dải khung thật vẽ bằng three trong Chromium (`threeShots`): mỗi ô là ảnh của sân khấu mà Remotion vẽ — cảnh
+ * `worldOf` của repo, không có thì `plainRoom()`. Vệt và bóng que xương (`motion`) đè lên như `renderFrames`.
+ * Từng khung ghi ở thư mục cùng tên `out`; kết quả kèm `frames`, `gpu`, `from`, `ms` ({ boot, frame } trung vị)
+ * và `warnings`. `data` là JSON đã parse của `threeData`. docs/04-mcp.md#ảnh-three-thật
+ */
+export async function renderThree({
+  root = process.cwd(),
+  id,
+  scene,
+  data,
+  rt,
+  times,
+  size,
+  software = false,
+  out,
+  scale,
+  ...opt
+}) {
+  const px = threeSize(size, rt.frame);
+  const shots = await threeShots({
+    root,
+    size: px,
+    software,
+    jobs: [{ id, scene, data: threeData(scene, data), times }],
+  });
+  const job = shots.jobs[0];
+  const dir = out.replace(/\.png$/, "");
+  mkdirSync(dir, { recursive: true });
+  for (const f of readdirSync(dir)) if (f.endsWith(".png")) rmSync(join(dir, f));
+  const files = job.frames.map((f) => {
+    const file = join(dir, `${f.t}s.png`);
+    writeFileSync(file, f.png);
+    return file;
+  });
+  const r = renderFrames({
+    ...opt,
+    rt,
+    times,
+    out,
+    scale: scale ?? px.w / rt.frame.w,
+    three: { href: files.map((f) => relative(dirname(out), f)) },
+  });
+  const warnings = [...job.warnings];
+  if (job.from === "plain")
+    warnings.push(
+      "cảnh không có trong `worldOf` của `stickman.world` — vẽ trong `plainRoom()`; video chỉ vẽ cảnh three cho cảnh khai trong `CANH_3D`",
+    );
+  for (const m of scene.cast)
+    if (m.world && !data.characters[m.character])
+      warnings.push(
+        `\`${m.id}\` không có nhân vật trong characters/ (\`${m.character ?? "—"}\`) — cảnh three không vẽ người này`,
+      );
+  const missing = [...heldItems(scene)].filter((x) => !job.provided.includes(x));
+  if (missing.length)
+    warnings.push(
+      `món cầm tay không ai \`provide\` trong cảnh three: ${missing.join(", ")} — tay vẫn nắm, món không hiện (docs/03-scene.md#đồ-cầm-tay)`,
+    );
+  return {
+    ...r,
+    frames: files,
+    gpu: shots.gpu,
+    from: job.from,
+    ms: { boot: Math.round(shots.boot), frame: Math.round(median(job.frames.map((f) => f.ms))) },
+    warnings: [...warnings, ...r.warnings],
+  };
+}
+
+/**
+ * Người 3D một mình vẽ bằng three (`render_action` / `render_character` với `yaw`): mỗi ô `{ action, time, label }`
+ * là cảnh tối thiểu của `solo3d` — cùng ống kính cúi `pitch`, người ở gốc quay `yaw`, ngồi thì trên ghế chuẩn — trong
+ * `plainRoom()`, không qua `worldOf` của repo. `action` là một hay mảng hành động đã parse. Từng khung ghi ở thư mục
+ * cùng tên `out`; kết quả như `sheet`, kèm `frames`, `gpu`, `ms`. docs/04-mcp.md#ảnh-three-thật
+ */
+export async function soloThree({
+  root = process.cwd(),
+  character,
+  cells,
+  yaw,
+  pitch = 16,
+  size,
+  software = false,
+  out,
+  cols,
+  scale = 0.5,
+}) {
+  const jobs = new Map();
+  for (const [i, cell] of cells.entries()) {
+    const acts = [cell.action].flat();
+    const s = FX.solo3d({ character, yaw, pitch, action: acts, time: cell.time });
+    const key = JSON.stringify([acts.map((a) => a.name), s.place]);
+    let job = jobs.get(key);
+    if (!job) {
+      const scene = rig.parseScene({
+        schemaVersion: rig.SCENE_VERSION,
+        name: "solo3d",
+        lens: s.world.lens,
+        cast: [
+          {
+            id: "a",
+            character: "solo.json",
+            world: s.place,
+            tracks: acts.map((a, k) => ({
+              clips: [{ action: `a${k}`, start: 0, cycle: a.duration }],
+            })),
+          },
+        ],
+      });
+      if (!scene.success) throw new Error(`solo3d: ${scene.error.message}`);
+      const data = {
+        characters: { "solo.json": character },
+        actions: Object.fromEntries(acts.map((a, k) => [`a${k}`, a])),
+      };
+      job = {
+        cells: [],
+        run: {
+          id: "solo3d",
+          scene: scene.data,
+          data: threeData(scene.data, data),
+          plain: true,
+          furniture: s.furniture ?? [],
+          times: [],
+        },
+      };
+      jobs.set(key, job);
+    }
+    job.cells.push(i);
+    job.run.times.push(cell.time);
+  }
+  const frame = rig.FRAMES.wide;
+  const px = threeSize(size, frame);
+  const list = [...jobs.values()];
+  const shots = await threeShots({ root, size: px, software, jobs: list.map((j) => j.run) });
+  const pngs = [];
+  list.forEach((j, k) => shots.jobs[k].frames.forEach((f, n) => (pngs[j.cells[n]] = f)));
+  const dir = out.replace(/\.png$/, "");
+  mkdirSync(dir, { recursive: true });
+  for (const f of readdirSync(dir)) if (f.endsWith(".png")) rmSync(join(dir, f));
+  const files = pngs.map((f, i) => {
+    const file = join(dir, `${String(i).padStart(2, "0")}.png`);
+    writeFileSync(file, f.png);
+    return file;
+  });
+  const box = { x: 0, y: 0, w: px.w, h: px.h };
+  const fontSize = Math.max(14, px.w / 40);
+  const r = sheet(
+    files.map((file, i) => [
+      React.createElement("image", {
+        key: "three",
+        href: relative(dirname(out), file),
+        x: 0,
+        y: 0,
+        width: px.w,
+        height: px.h,
+      }),
       React.createElement(
         "text",
-        {
-          key: "t",
-          x: box.x + 16,
-          y: box.y + 46,
-          fontSize: Math.min(34, box.w / 12),
-          fontFamily: "monospace",
-          fill: "#999",
-        },
-        f
-          ? `${t}s  ${around.cast}.${around.anchor ?? "root"}`
-          : `${t}s${cam.zoom === 1 && !cam.x && !cam.y ? "" : `  ×${cam.zoom.toFixed(2)}`}`,
+        { key: "t", x: 12, y: 12 + fontSize, fontSize, fontFamily: "monospace", fill: "#555" },
+        cells[i].label,
       ),
-    ];
-  });
-  return sheet(cells, { ...opt, bg, box, cols: opt.cols ?? times.length });
+    ]),
+    { cols, box, scale, out },
+  );
+  return {
+    ...r,
+    frames: files,
+    gpu: shots.gpu,
+    ms: {
+      boot: Math.round(shots.boot),
+      frame: Math.round(median(pngs.map((f) => f.ms))),
+    },
+  };
 }

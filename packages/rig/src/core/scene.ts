@@ -3,7 +3,7 @@ import {
   ACTION_VERSION,
   ARM_CHANNELS,
   CHANNELS,
-  EASES,
+  easeAt,
   EASE_NAMES,
   JOINT_CHANNELS,
   PoseDeltaSchema,
@@ -4116,7 +4116,7 @@ function keyedSpan(ks: readonly KeyedMark[], time: number) {
   while (i + 1 < ks.length && ks[i + 1].t <= time) i++;
   const a = ks[i];
   const b = time > a.t ? ks[i + 1] : undefined;
-  const f = b ? EASES[b.ease ?? "smooth"]((time - a.t) / (b.t - a.t)) : 0;
+  const f = b ? easeAt({ ease: b.ease ?? "smooth" }, (time - a.t) / (b.t - a.t)) : 0;
   return { a, b: b ?? a, f };
 }
 
@@ -4940,7 +4940,7 @@ export function itemAt(
   const b = time > a.t && next && !restFromRelease(next) ? next : undefined;
   const A = solveItemMark(rt, a, time, o);
   const B = b && solveItemMark(rt, b, time, o);
-  const f = b ? EASES[b.ease ?? "smooth"]((time - a.t) / (b.t - a.t)) : 0;
+  const f = b ? easeAt({ ease: b.ease ?? "smooth" }, (time - a.t) / (b.t - a.t)) : 0;
   const mix = (p: V3, q: V3 | undefined) => (q ? add3(p, scale3(sub3(q, p), f)) : p);
   const R = B ? mixRotation(A.R, B.R, f) : A.R;
   const s = B ? A.s + (B.s - A.s) * f : A.s;

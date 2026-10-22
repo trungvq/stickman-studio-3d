@@ -45,9 +45,9 @@ Dựng và soi repo video: [05 — Dựng một repo video](05-repo-video.md).
 | `patch` | `kind`, `file`, `patch` | Deep-merge rồi parse rồi ghi; `null` xoá khoá, mảng thay cả mảng. Vá một nhân vật, hành động hay con vật của lớp chung là tạo bản đè trong thư mục cùng tên của workspace (`from` cho biết nguồn). |
 
 | `delete` | `kind`, `file` | Xoá file nháp. |
-| `render_character` | `character`, `poses?`, `crops?`, `cols?`, `scale?`, `flip?`, `face?`, `layers?`, `equip?`, `view?`, `headView?`, `yaw?`, `pitch?`, `boxes?` | Một PNG mỗi crop, mỗi ô một tư thế. `equip` chọn vật trong `items` — không có nó thì nhân vật chỉ mặc mảnh nền. `view` / `headView` đổi [góc nhìn](01-rig.md#góc-nhìn) cả dải; `headView` bỏ trống là theo thân. `yaw` vẽ [người 3D](#người-3d) một mình. |
-| `render_action` | `action`, `character?`, `frames?`, `crops?`, `layers?`, `view?`, `headView?`, `yaw?`, `pitch?` | Dải frames đều nhau trong một chu kỳ; `view` / `headView` đổi góc nhìn cả dải, `yaw` vẽ người 3D. |
-| `render_scene` | `scene`, `stage?`, `from?`, `to?`, `cols?`, `every?`, `times?`, `around?`, `cast?`, `crops?` | Mỗi cột một mốc, mỗi hàng một người; bỏ chỗ đứng, trôi ngang và `rotate` (người nằm dựng đứng lại). Đạo cụ theo ai vẽ chung ô với người ấy — cảnh có xe thì `crops: ["wide"]`, ô `full` chỉ vừa một người. `stage: true` thì mỗi ô là **cả khung**: giữ chỗ đứng, vẽ nền, hiệu ứng và lớp vẽ code, đã qua camera. `times: [1, "@nui-dang", "@nui-dang+0.5"]` chỉ đích danh mốc thay cho lấy đều. `around: { cast, anchor, pad }` cắt mỗi ô `±pad` đơn vị sân khấu quanh một mốc `anchorAt` của người ấy (không qua camera, chưa cộng phần lệch của lớp vẽ code) — soi bàn tay đang cầm mà không đoán pixel. Góc nhìn lấy ở `cast[].view` / `cast[].headView` của chính cảnh, không có tham số riêng. Người 3D vẽ qua `scene.lens`, xem [Người 3D](#người-3d). |
+| `render_character` | `character`, `poses?`, `crops?`, `cols?`, `scale?`, `flip?`, `face?`, `layers?`, `equip?`, `view?`, `headView?`, `yaw?`, `pitch?`, `three?`, `size?`, `software?`, `boxes?` | Một PNG mỗi crop, mỗi ô một tư thế. `equip` chọn vật trong `items` — không có nó thì nhân vật chỉ mặc mảnh nền. `view` / `headView` đổi [góc nhìn](01-rig.md#góc-nhìn) cả dải; `headView` bỏ trống là theo thân. `yaw` vẽ [người 3D](#người-3d) một mình, thêm `three` là [ảnh three thật](#ảnh-three-thật). |
+| `render_action` | `action`, `character?`, `frames?`, `crops?`, `layers?`, `view?`, `headView?`, `yaw?`, `pitch?`, `three?`, `size?`, `software?` | Dải frames đều nhau trong một chu kỳ; `view` / `headView` đổi góc nhìn cả dải, `yaw` vẽ người 3D, thêm `three` là [ảnh three thật](#ảnh-three-thật). |
+| `render_scene` | `scene`, `stage?`, `from?`, `to?`, `cols?`, `every?`, `times?`, `around?`, `trails?`, `span?`, `fps?`, `relative?`, `ghosts?`, `ghostStep?`, `skeleton?`, `views?`, `three?`, `size?`, `software?`, `cast?`, `crops?` | Mỗi cột một mốc, mỗi hàng một người; bỏ chỗ đứng, trôi ngang và `rotate` (người nằm dựng đứng lại). Đạo cụ theo ai vẽ chung ô với người ấy — cảnh có xe thì `crops: ["wide"]`, ô `full` chỉ vừa một người. `stage: true` thì mỗi ô là **cả khung**: giữ chỗ đứng, vẽ nền, hiệu ứng và lớp vẽ code, đã qua camera. `times: [1, "@nui-dang", "@nui-dang+0.5"]` chỉ đích danh mốc thay cho lấy đều. `around: { cast, anchor, pad }` cắt mỗi ô `±pad` đơn vị sân khấu quanh một mốc `anchorAt` của người ấy (không qua camera, chưa cộng phần lệch của lớp vẽ code) — soi bàn tay đang cầm mà không đoán pixel. Góc nhìn lấy ở `cast[].view` / `cast[].headView` của chính cảnh, không có tham số riêng. Người 3D vẽ qua `scene.lens`, xem [Người 3D](#người-3d). `trails` / `ghosts` vẽ đè chuyển động lên ô sân khấu, `skeleton` chỉ vẽ que xương người 3D trên lưới sàn, xem [Người 3D](#người-3d). `three` thay mỗi ô bằng khung three thật mà video vẽ, mặc định bật cho khung của cảnh mà repo dựng bằng three — [Ảnh three thật](#ảnh-three-thật). |
 | `describe_pieces` | – | Hộp ảnh từng socket (tính từ hằng số rig), mốc treo, hình dáng phải vẽ, khung sheet đã gen, ràng buộc lúc gen. |
 | `piece_prompt` | `socket`, `styles?`, `cols?`, `rows?`, `extra?` | Prompt tiếng Anh cho một lượt gen sheet. |
 | `add_piece` | `file`, `socket`, `name`, `description?`, `config?`, `as?` | Chép PNG vào `pieces/<socket>/` rồi ghi mục vào `catalog.json` của workspace; `file` trùng tên một mảnh chung là đè nó. |
@@ -121,7 +121,8 @@ dưới đây không bao giờ lộ ra ở dải, dù nhìn kỹ đến đâu:
   Nghi ngờ thì render mỗi tư thế một ô, hoặc lấy số bàn tay bằng `scene_probe`.
 
 Ngược lại, khung thật thì đắt: mỗi `remotion still` là một lượt bundle 20–30
-giây. Cần vài khung rời nhau ở hai bên một chỗ nối thì dùng
+giây. Cảnh 3D thì `render_scene` với `three` ra đúng khung three của video trong
+vài giây ([Ảnh three thật](#ảnh-three-thật)). Cần vài khung rời nhau ở hai bên một chỗ nối thì dùng
 `pnpm frames <cảnh> 316,317,349-351 [<cảnh-2> …]` của repo video — một lượt bundle, bao nhiêu
 khung, bao nhiêu cảnh cũng được.
 
@@ -141,10 +142,107 @@ Cảnh có `scene.lens` và người có `cast[].world` ([03](03-scene.md#ngư�
 không có tool riêng.
 
 - **`render_scene` với `stage: true`** vẽ bằng `<SceneWorld>` như `stickman-render --scene --stage`,
-  `stickman-video` và Remotion: người 3D chiếu qua ống kính, xếp lớp chung với `solids` của lớp vẽ
-  code ([10](10-lop-ve-code.md#đồ-khối)). Cùng tham số thì PNG trùng từng pixel với
+  `stickman-video` và Remotion vẽ cảnh 2D: người 3D là người que 2.5D chiếu qua ống kính, xếp lớp chung
+  với `solids` của lớp vẽ code ([10](10-lop-ve-code.md#đồ-khối)). Cảnh repo khai trong `CANH_3D` thì
+  video vẽ bằng three, khác hẳn ảnh này — soi nó bằng [ảnh three thật](#ảnh-three-thật). Cùng tham số thì PNG trùng từng pixel với
   `stickman-render`. Dải thân người (không `stage`) vẫn vẽ chi chiếu thật nhưng bỏ chỗ đứng và cỡ,
   hạ bàn chân thấp nhất xuống đất của ô — người ngồi lơ lửng, không có ghế.
+- **Vệt chuyển động** — soi nhịp, cung đường và tốc độ trong một ô thay cho dải nhiều ô. `render_scene`
+  với `trails` (kéo theo `stage: true`) vẽ đè đường gấp khúc của từng khớp trong `±span` giây quanh mỗi
+  ô (mặc định `1`), một chấm mỗi khung theo `fps` (mặc định `stickman.snap.fps` của `package.json`, không
+  khai thì `30`). Khớp lấy đúng như [đo giật](03-scene.md#giật-trên-hình) — `actJoints` chiếu qua
+  `scene.lens` —, tên như `check` báo (`wristR`, `footL`, `handR`, `head`, thêm `hip`, `neck`,
+  `shoulderR`/`L`) hay từ khoá `hands`, `feet`, `all`. Chỉ người 3D có vệt: người không có `world`
+  bị bỏ, kèm một dòng cảnh báo trong kết quả. `cast` lọc một người.
+
+  **Bản vẽ tự nói nghĩa, không có chú giải trên ảnh:**
+
+  | Ký hiệu | Nghĩa |
+  |---|---|
+  | Chấm | Chỗ khớp ở một khung, cách nhau `1/fps` giây; khoảng cách hai chấm là quãng đi trong một khung — dồn là chậm, thưa là nhanh |
+  | Đuôi mảnh → đầu mập | Chiều thời gian: chấm nhỏ dần về phía đã qua, to dần về phía sắp tới; mũi tên dọc vệt mỗi `¼ s` và mũi tên lớn ở đầu cuối chỉ chiều đi; tên khớp (`wristR`) ghi cạnh mũi tên cuối |
+  | Nét đứt, chấm rỗng / nét liền, chấm đặc | Phần trước / sau giây của ô |
+  | Vòng đen | Chỗ khớp ở đúng giây của ô — chỗ nét đứt chuyển sang nét liền |
+  | Màu | Bên người như que xương: hồng phải, xanh lục lam trái, xám đậm giữa (đầu, cổ, hông). Màu không mang tốc độ — tốc độ đã nằm ở khoảng cách chấm, thang màu thì không đoán được chiều nếu thiếu chú giải |
+  | Gạch ngang vệt | Chỗ một clip bắt đầu (clip mở đầu cảnh thì không); tên hành động ghi cạnh gạch trên vệt đầu tiên của người ấy |
+  | Vòng đứt kèm số trong nhãn tròn đen | Sự kiện máy đo số `n`, tra ở bảng sự kiện của phần chữ (`#n`); giật thêm nét đen đậm trên bước vọt. Số đánh liên tục cả tờ theo giây: cùng người, cùng loại, quãng giây chạm nhau (lệch tới 1,5 khung) là một sự kiện — hiện ở nhiều ô, nhiều khớp vẫn một số. Hai sự kiện cùng chỗ chung một vòng, nhãn ghi `2,3`. Ảnh không ghi chữ giải thích nào |
+
+  Số sự kiện đặt cạnh vòng của nó, tránh thân người ở khung của ô (que xương nới dày, đầu tròn), tránh số khác
+  và mép ô; xa vòng thì có nét dẫn. Chữ không nhỏ dưới `10` px trên PNG. Vệt gần đứng yên (chạy dưới `200` px video mỗi giây, không sự kiện) chỉ
+  còn vòng đen; người có hơn bốn vệt đang chạy thì bỏ cả vòng ấy và tên khớp, để không chồng chữ. Có lớp phủ thì
+  mỗi ô thêm một **dải nhãn phía trên khung**: giây của ô, `×zoom`, mốc `around`, cửa sổ vệt `vệt 0.2→2.2s` —
+  nhãn không đè lên người. `relative: true` trừ phần dời của hông so với khung của ô — người đang đi vẫn thấy
+  cung tay chân tại chỗ. `ghosts: n` vẽ que xương xám (hông – gối – bàn chân, cổ – vai – khuỷu – cổ tay – bàn
+  tay, hông – cổ – đầu) ở `n` khung trước (nét đứt) và `n` khung sau (nét liền), cách nhau `ghostStep` giây
+  (mặc định `0.1`), mờ dần theo khoảng cách. Lớp phủ chỉ là nét vẽ đè, người không render lại; không bật thì PNG
+  trùng từng pixel với không có.
+
+  **Phần chữ đi kèm ảnh.** Có `trails`, `ghosts` hay `skeleton` thì MCP trả phần chữ này sau dòng đường dẫn ảnh,
+  mọi lần gọi (nó ngắn, không có tham số tắt); CLI in nó ra stdout và đưa đường dẫn PNG sang stderr — `stickman-render
+  … > ghi-chu.txt` ra đúng phần chữ. Ba đoạn:
+
+  1. **Cách đọc** — dưới tám dòng: chấm, chiều thời gian, màu, gạch clip, số sự kiện, `keys[i]` và `t`; thêm một dòng
+     cho bóng que xương, que xương, `relative` khi bật. Ngưỡng không lặp ở đây — chúng ở bảng dưới.
+  2. **Sự kiện** — mỗi số một khối, đủ để đi thẳng tới dòng JSON cần sửa:
+     - dòng `#n loại — người: khớp và độ lớn` (giật: px trên bước vọt và nền; khựng: thời lượng; quay gắt: độ), giây
+       cảnh, các ô có nó;
+     - mỗi clip chạy trong quãng ấy (mọi track): track, tên hành động, giây bắt đầu trong cảnh, `blend` thật (khai hay
+       rig tự tính), giây trong hành động và `t` = giây hành động / `duration` (clip đổi nhịp thì ghi chu kỳ; hết hành
+       động `hold` thì ghi đang giữ mốc cuối). Quãng chạm đoạn hoà thì ghi rõ: sự kiện trong đoạn hoà vào clip này,
+       ở chỗ nối không hoà (`blend` 0), hay clip đang nhường cho clip sau;
+     - `mốc kẹp`: các phần tử `keys[i]` bao quanh quãng sự kiện nới một khung mỗi phía, kèm `t` đúng như trong file,
+       giây hành động và `ease` (bỏ trống là `linear`);
+     - tới bốn số đổi từ `5°` giữa các mốc **có ghi kênh ấy** quanh sự kiện, lớn nhất trước, kèm tên số theo
+       `CHANNEL_PARTS` của lõi (`armNear[3]` dang, `torso[0]` cúi, `head[1]` lắc …) và giá trị ở từng mốc. Clip không
+       đổi kênh góc nào thì ghi một dòng như vậy; hành động `gen` hay clip đi theo nhịp `path` thì không tra mốc;
+     - `gợi ý` — theo dấu hiệu, thận trọng: khựng mà hai mốc liền của một kênh lệch tới `3°` cách nhau hơn `0,1 s`
+       giữa đoạn đang đi → mốc thừa; khựng quanh mốc `smooth` → vận tốc về 0 ở mốc giữa; giật ở chỗ nối clip `blend`
+       dưới hai khung → nối gắt, tăng `blend`; giật mà một mốc cách mốc kề tới 2,5 khung lệch từ `10°` khỏi đường nối
+       hai mốc kề → mốc lạc; giật mà hai mốc trong hai khung đổi từ `15°` → cắt cứng; vào / dừng gắt (hay quay gắt) ở
+       mốc mở / đóng một đoạn `linear` → cân nhắc `auto`. Không thấy dấu nào thì `không rõ` (giật trong đoạn hoà dài
+       thì kèm tên đoạn hoà).
+  3. **Số đo** — mỗi ô × mỗi vệt một dòng `| ô (cửa sổ) | khớp | min | trung vị | max | sự kiện |`, tốc độ là pixel
+     trên video bản chốt (`frame.video`) mỗi khung theo khung cắt `cameraAt`, cột cuối là các `#n`. Người dời quá `60`
+     px trong cửa sổ mà không `relative` thì thêm một dòng gợi ý `relative`.
+
+  Mẫu một khối sự kiện:
+
+  ```text
+  #3 giật — `a`: wristR 178 px (nền 26.8), head 215 px (nền 1.1); giây cảnh 2.9→2.93; ô 2.2s, 2.9s, 3.4s
+    · track 1 `reach-shelf-3d` bắt đầu 0.4 s, blend 0.25 s; giây hành động 2.5→2.53 / duration 3.6 s = t 0.6944→0.7037
+      mốc kẹp: keys[5] t 0.55556 (2 s, linear) · keys[6] t 0.69444 (2.5 s, auto) · keys[7] t 0.7037 (2.53 s, auto) · …
+      `torso[0]` cúi: keys[3] -5 · keys[6] -3 · keys[7] 22 · keys[8] -2.9 · keys[10] 0
+    gợi ý: keys[7] (t 0.7037, 2.53 s) của `reach-shelf-3d` chỉ cách mốc kề 0.03 s mà `torso[0]` cúi lệch 24.9° khỏi đường nối hai mốc kề — giật do mốc lạc; xoá mốc ấy
+  ```
+
+  **Sự kiện** đo trên chính vệt (`trailEvents`, ngưỡng ở `TRAIL_EVENT` của `@stickman3d/render`). Tốc độ chạy
+  của vệt là bước nhanh nhất của nó, bỏ bước giật:
+
+  | Sự kiện | Khi nào |
+  |---|---|
+  | Giật | Đúng phép đo giật trên hình của `check` ([03](03-scene.md#giật-trên-hình)) — `sceneSnaps` cả cảnh ở nhịp chấm của vệt, ngưỡng `px`, `k` của `stickman.snap` (mặc định `12` px, `2` lần nền) — báo trên vệt của khớp nhảy nhiều nhất và các khớp cùng nhảy; khớp `check` không đo (`hip`, `neck`, vai) không có giật. Bảng ghi giây, cỡ bước vọt trên vệt và nền (trung vị ±2 khung) |
+  | Khựng | Các khung liền chậm dưới `0.15` lần tốc độ chạy, dài tới `0.6 s` (dài hơn là giữ tư thế), có khung từ `0.4` lần trong `0.3 s` mỗi bên, và hướng đi trước, sau chỗ dừng lệch dưới `60°` — dừng giữa một đường đang đi tiếp. Dừng rồi quay lại là đổi chiều tự nhiên, không báo |
+  | Quay gắt | Hai bước liền đều từ `0.4` lần tốc độ chạy (và từ `2` px) mà đổi hướng quá `120°` — đổi chiều không chậm lại |
+  | Vào / dừng gắt | Từ bước dưới `0.1` lần sang bước từ `0.5` lần trong một khung (hai khung khi khung đầu chỉ chạy một phần), rồi giữ tốc độ — bước sau không nhanh thêm quá `8%`; đang tăng tốc êm thì không báo. Dấu của nội suy `linear` |
+
+  Vệt chạy dưới `200` px/s chỉ xét giật. Bàn chân không xét vào / dừng gắt (chạm, rời sàn vốn gắt); bàn chân
+  người đi theo `path` chỉ xét giật — đứng yên lúc chạm đất là nhịp bước. Không sự kiện nào ở mép cửa sổ khi
+  thiếu bước để kết luận. Chuyển động `auto` trơn ([01](01-rig.md#đường-giữa-hai-mốc)) không ra sự kiện nào;
+  `linear` ra vào / dừng gắt ở mỗi đoạn, `smooth` ở mốc giữa thường ra khựng (tuỳ khung rơi sát mốc). CLI: `stickman-render --scene … --stage
+  --trails hands,feet,head [--span 1] [--fps 30] [--relative] [--ghosts 3] [--ghost-step 0.1] [--cast id]`.
+- **Que xương** — `render_scene` với `skeleton: true` (CLI `--skeleton`) vẫn lấy cả khung qua
+  `cameraAt` như `stage`, nhưng bỏ người, nền và lớp vẽ code: chỉ vẽ lưới sàn ô `100` chiếu qua
+  `scene.lens` ở độ cao sàn của cảnh (`at` của mốc đứng, `floor` của người ngồi; trục `x = 0`, `z = 0`
+  đậm hơn), viền mờ từng khối đồ khối của lớp vẽ code (`solids`) và hộp bao từng vật cản của cảnh three
+  `stickman.world` khi repo khai, rồi que xương người 3D ở khung của ô — cùng khớp với vệt
+  (`stageJoints`), bên phải giải phẫu màu hồng, bên trái xanh lục lam, cột sống và đầu xám đậm; đoạn
+  càng gần ống kính hơn hông thì nét càng to và đậm, đoạn xa vẽ trước. Đầu là vòng tròn, gạch từ tâm
+  đầu là hướng mặt (`yaw` vẽ). Dải nhãn trên mỗi ô ghi giây và hai màu bên `━ phải ━ trái`; vệt cùng màu
+  bên ấy. Phần chữ kèm ảnh có cách đọc que xương như vệt. Đi chung `trails`, `ghosts`, `relative`, `span`, `fps`, `cast`, `around`.
+  `views: ["top"]` (CLI `--views top`) thêm sau mỗi ô một ô nhìn từ trên xuống mặt sàn (x sang phải,
+  z sâu lên trên): lưới, đáy hộp đồ, hai mép góc nhìn của ống kính, vệt hông và hai bàn chân cả cảnh
+  (mờ) và trong `±span` (chấm mỗi khung), que xương và hướng mặt ở khung của ô. CLI: `stickman-render
+  --scene … --skeleton [--views top] [--times 0,1.5] [--trails feet] [--ghosts 3] [--cast id]`.
 - **`scene_probe`** trả các khoá khung 2D như người 2D (vai, khuỷu, cổ tay, bàn chân, đầu,
   `anchors`, đều qua chính phép chiếu), `root` là `hip`, `travel` là `null`, `pose` mang cả `lift`
   và `reach` của hành động. Thêm `world`:
@@ -234,6 +332,58 @@ không có tool riêng.
   nhau theo thứ tự như trong cảnh (`type-3d` chỉ có tay, phải chồng lên `sit-3d` mới ngồi). Không
   `--action` thì `--pose` vẽ kênh 2D như MCP; `--view` / `--head-view` không đi với `--yaw`.
 
+## Ảnh three thật
+
+Ảnh của `render_scene` (`stage`, `trails`, `skeleton`) và `render_action` / `render_character` có `yaw` vẽ người
+3D bằng **người que SVG 2.5D**: thân chiếu thật qua ống kính, nhưng không có bàn tay năm ngón, áo / váy / tóc dựng
+khối, vật liệu NPR, bóng, phòng `room()` hay đồ riêng của cảnh. Video vẽ cảnh có trong `CANH_3D` bằng three
+([03](03-scene.md#cảnh-3d)), nên ảnh 2.5D của cảnh ấy **không phải hình video**. Ảnh three thật vẽ đúng sân khấu
+ấy trong Chromium headless:
+
+| | Ảnh | Đúng hình video |
+|---|---|---|
+| `render_scene` với `three` (CLI `--three`) | Sân khấu three: `worldOf` của `stickman.world` (bối cảnh, người diễn mặc đồ, người nền, đồ riêng, món cầm tay đã `provide`), ống kính, khung cắt `cameraAt`, đèn, hậu kỳ `grade` | Có, với cảnh trong `CANH_3D` |
+| `render_scene` với `three`, cảnh `worldOf` trả `null` | Cùng người diễn trong `plainRoom()`, kèm cảnh báo | Không — video vẽ cảnh ấy 2.5D |
+| `render_action` / `render_character` với `yaw` và `three` | Một người trong `plainRoom()`, ống kính cúi `pitch` của `solo3d`; ngồi thì trên ghế chuẩn | Người three thật, bối cảnh mẫu |
+| `stage`, `trails`, `skeleton`, `yaw` không `three` | Người que 2.5D, lớp vẽ code, `fx[]` | Có với cảnh 2D, không với cảnh trong `CANH_3D` |
+
+**Agent làm cảnh 3D soi bằng `three`**: tay cầm đồ, ngón, áo phủ, người lồng vào bàn ghế, bóng và đèn chỉ thấy
+đúng ở đây. Que xương, vệt và dải thân người vẫn soi nhịp và tư thế nhanh hơn.
+
+- **Mặc định**: `render_scene` không khai `three` mà soi khung (`stage`, `trails`, `ghosts`, không `skeleton` hay
+  `around`) của một cảnh có `scene.lens` mà `worldOf` của repo dựng — cảnh video vẽ bằng three — thì vẽ three. Lý
+  do: ảnh agent soi phải là hình video; cảnh không trong `CANH_3D` video vẽ 2.5D nên mặc định giữ 2.5D. `three:
+  false` ép về 2.5D, kết quả kèm một dòng nhắc. CLI không đổi mặc định: `--stage` trên cảnh như thế in một dòng
+  nhắc `--three`.
+- **Tham số**: cùng `times` / `from` / `to` / `every` / `cols` như `stage`; `size` là cỡ khung pixel `1280x720` hay
+  `1280` (mặc định `1280` ngang, cao suy từ khung cảnh; khác tỉ lệ khung cảnh thì báo lỗi, vì ống kính và vệt sẽ
+  lệch); `software: true` (CLI `--software`) cho Chromium vẽ bằng SwiftShader. `three` không đi với `skeleton`,
+  `around`; `render_character` với `three` chỉ nhận ô `{ action, t }` — tư thế rời là kênh 2D, người 3D không đọc.
+- **Vệt**: `trails`, `ghosts`, `relative` vẽ đè lên ảnh three bằng đúng lớp SVG của `stage` (`stageJoints` sau
+  `cameraAt`); ảnh three đã qua cùng ống kính và khung cắt nên chấm rơi đúng khớp của hình — test giữ hai bên trùng.
+- **Ra**: tờ gộp có nhãn giây như dải `stage`, từng khung PNG cỡ `size` trong thư mục cùng tên tờ gộp (CLI:
+  `tmp/scene-three/<giây>s.png`). Kết quả kèm GPU, thời gian và cảnh báo: cảnh vẽ trong `plainRoom()`, thiếu phông
+  decal, món cầm tay mà `world.hands[].hold` nhắc tới nhưng cảnh three không `provide` (tay vẫn nắm, món không
+  hiện), người không có nhân vật.
+- **Cần Chromium**: biến `CHROME`, không thì chỗ cài thường gặp (`/usr/bin/chromium`, Chrome trên macOS, Windows);
+  `puppeteer-core` đi theo `@stickman3d/render`. Không thấy Chromium, Chromium không tạo được WebGL, hay chỉ có
+  SwiftShader mà không `software` thì báo lỗi — không lùi về 2.5D.
+- **Thời gian** (GPU RX 570, `1280x720`, khử răng cưa `ss2` như Remotion): mở trang `~1–1,3 s` (gói trang bằng
+  esbuild, mở Chromium), khung đầu `~0,3 s` (dịch shader), mỗi khung sau `~0,14 s` kể cả mã PNG; `1920` ngang `~0,45
+  s/khung`. SwiftShader `~2,4 s/khung` ở `1280`. Một Chromium cho mọi khung của một lượt gọi.
+- **Tất định**: cùng `t`, cùng tham số, cùng máy và driver thì cùng ảnh từng byte — vẽ giây khác ở giữa hay mở
+  Chromium lần nữa không đổi. GPU hay driver khác thì có thể lệch vài mức xám.
+
+Cách vẽ: esbuild gói một trang gồm rig và module `stickman.world` của repo — `three`, `zod`, `@stickman3d/*` lấy
+như `check` ([10](10-lop-ve-code.md#đo-trên-cảnh-three)) nhưng gói chung một bản; `remotion`, `react` thành vỏ rỗng —
+rồi trang gọi `worldOf(scene.name, ctx)` với cùng `ctx` của `check`, dựng lại sau khi nạp `set.fonts`, `stageOf`
+(`size`, `software`) và `stage.draw(t, world.view(t))` cho từng mốc; Node lấy PNG của canvas qua puppeteer-core.
+
+```bash
+pnpm exec stickman-render --scene scenes/s05.json --three --times 0,1.2,2 --trails hands [--size 1280x720] [--cols 3] [--software]
+pnpm exec stickman-render characters/an.json --yaw 60 --action sit-3d,type-3d --at 1 --three
+```
+
 ## Rig nạp theo đĩa, nạp lại khi version đổi
 
 Server nạp `@stickman3d/sketch` / `render` / `cli` từ `node_modules` của **chính
@@ -264,6 +414,7 @@ pnpm exec stickman-video --scene scenes/canh.json --out tmp/canh.mp4 --fps 24
 
 `@stickman3d/render` (`lib.mjs`) là phần chung của CLI và MCP: `mount`, `blocks`,
 `sheet`, `poseOf`, `renderPoses`, `renderBoxes`, `solo3d`, `soloChair` (nhập lại từ `@stickman3d/fx`), `loadScene`, `sampleTimes`,
-`renderScene`, `sceneFrame`, và bảng `CROPS`. `renderScene` là dải ảnh để soi thân
+`renderScene`, `sceneFrame`, `renderThree`, `soloThree` (ảnh three, qua `threeShots`, `threeData`, `threeSize`,
+`findChrome` của `three.mjs`), và bảng `CROPS`. `renderScene` là dải ảnh để soi thân
 người nên bỏ chỗ đứng và `scale`; `sceneFrame` là một frame đầy khung nên giữ cả
 hai. Thêm khung cắt là thêm một mục vào `CROPS`.

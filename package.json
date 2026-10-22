@@ -9,7 +9,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "pnpm --filter @stickman3d/rig build && pnpm --filter @stickman3d/sketch build && pnpm --filter @stickman3d/fx build && pnpm -r typecheck",
-    "test": "pnpm --filter @stickman3d/rig build && pnpm --filter @stickman3d/rig --filter @stickman3d/sketch test && pnpm --filter @stickman3d/rig --filter @stickman3d/sketch --filter @stickman3d/fx build && pnpm --filter @stickman3d/fx test && pnpm --filter @stickman3d/cli test",
+    "test": "pnpm --filter @stickman3d/rig build && pnpm --filter @stickman3d/rig --filter @stickman3d/sketch test && pnpm --filter @stickman3d/rig --filter @stickman3d/sketch --filter @stickman3d/fx build && pnpm --filter @stickman3d/fx test && pnpm --filter @stickman3d/cli test && pnpm --filter @stickman3d/render test",
     "shots": "pnpm --filter @stickman3d/rig build && node tools/shots.mjs",
     "bench": "pnpm --filter @stickman3d/rig build && node tools/bench.mjs",
     "release": "pnpm build && pnpm -r publish --no-git-checks"

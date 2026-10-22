@@ -54,6 +54,7 @@ import {
 } from "@stickman3d/sketch";
 import { LayoutGrid } from "lucide-react";
 import { Fragment, useState } from "react";
+import { BezierRow } from "./BezierRow";
 import { download } from "./bundle";
 import { FacePicker } from "./FacePicker";
 import { HIDDEN_PIECES, PIECE_LABELS } from "./pieces";
@@ -551,10 +552,19 @@ export function ActionPanel(p: ActionPanelProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="linear">linear — đều tới mốc sau</SelectItem>
+              <SelectItem value="auto">auto — liền vận tốc qua chuỗi mốc auto</SelectItem>
               <SelectItem value="smooth">smooth — chậm vào, chậm ra</SelectItem>
+              <SelectItem value="bezier">bezier — đường tự khai</SelectItem>
               <SelectItem value="spring">spring — nảy tới mốc sau</SelectItem>
             </SelectContent>
           </Select>
+          {key.ease === "bezier" && (
+            <BezierRow
+              key={sel}
+              value={key.bezier}
+              onChange={(b) => live((d) => (d.keys![sel].bezier = b))}
+            />
+          )}
           {reachEl}
           {reachEl.length > 0 && (
             <Hint>

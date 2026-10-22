@@ -437,7 +437,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
 }
 
 /**
- * Sân khấu WebGL của `scene` (`buildWorld` cộng `createStage`): trả khi phông decal và đồ riêng đã sẵn, chưa vẽ khung nào.
+ * Sân khấu WebGL của `scene` (`buildWorld` cộng `stageOf`): trả khi phông decal và đồ riêng đã sẵn, chưa vẽ khung nào.
  * Mỗi khung `stage.draw(t, world.view(t))`. Chromium vẽ phần mềm (SwiftShader) thì ném, trừ khi `software`.
  */
 export async function buildStage(
@@ -447,10 +447,20 @@ export async function buildStage(
   const s = spec.set();
   const missing = await loadFonts(s.fonts?.specs ?? [], s.fonts?.text);
   if (missing.length) throw new Error(`thiếu phông: ${missing}`);
-  const world = buildWorld(scene, rt, spec, data, s);
+  return stageOf(buildWorld(scene, rt, spec, data, s), o);
+}
+
+/**
+ * Sân khấu WebGL cho một cảnh three đã dựng (`buildWorld`, hay `worldOf` của repo): chờ `world.ready`, camera theo
+ * `scene.lens`. Phông decal phải nạp trước khi dựng `world`. SwiftShader thì ném, trừ khi `software`.
+ */
+export async function stageOf(
+  world: World3D, o: { size: { w: number; h: number }; aa?: AaMode; software?: boolean },
+): Promise<{ stage: Stage; world: World3D }> {
+  const s = world.set;
   await world.ready;
   const stage = createStage({
-    size: o.size, aa: o.aa ?? 'ss2', lens: scene.lens,
+    size: o.size, aa: o.aa ?? 'ss2', lens: world.cast.scene.lens,
     light: () => setPalette(s.palette),
     update: (t, st) => {
       world.pose(t);

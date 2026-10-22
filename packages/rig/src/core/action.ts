@@ -75,7 +75,7 @@ import {
 } from "./animalGait";
 
 /** Bump khi đổi hình dạng JSON hành động; `migrateAction` phải có nhánh tương ứng. */
-export const ACTION_VERSION = 19;
+export const ACTION_VERSION = 20;
 
 /** Kênh khớp: thứ có số trong `Pose`; `stretch` là hệ số dài chi, không phải góc */
 export const JOINT_CHANNELS = [
@@ -102,8 +102,14 @@ export const GEN_CHANNELS = JOINT_CHANNELS.filter((c) => c !== "head");
 /** Hình dạng đường hoà và của `ease: "smooth"`. Một chỗ duy nhất, để studio và Remotion không lệch nhau. */
 export const smoothstep = (u: number) => u * u * (3 - 2 * u);
 
-/** Đường đi từ một mốc tới mốc sau; `smooth` chậm vào chậm ra, không vọt qua mốc. docs/01-rig.md#hành-động */
-export const EASE_NAMES = ["linear", "spring", "smooth"] as const;
+/**
+ * Đường đi từ một mốc tới mốc sau; `smooth` chậm vào chậm ra, `auto` bậc ba đơn điệu liền vận tốc qua chuỗi mốc `auto`,
+ * `bezier` theo `keys[].bezier`. docs/01-rig.md#hành-động
+ */
+export const EASE_NAMES = ["linear", "spring", "smooth", "auto", "bezier"] as const;
+
+/** Đường `cubic-bezier` của CSS khi `bezier` bỏ trống */
+export const BEZIER_DEFAULT = [0.42, 0, 0.58, 1] as const;
 
 /** Hai kênh có lớp vẽ riêng cho cẳng tay */
 export const ARM_CHANNELS = ["armFar", "armNear"] as const satisfies readonly Channel[];
@@ -119,6 +125,19 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
   face: "mặt",
   hand: "bàn tay",
 };
+
+/**
+ * Tên từng số của kênh góc trong `keys[].pose`, theo thứ tự; khớp với schema dưới.
+ * docs/01-rig.md#hành-động
+ */
+export const CHANNEL_PARTS = {
+  armFar: ["vai", "khuỷu", "cổ tay", "dang", "xoắn vai"],
+  armNear: ["vai", "khuỷu", "cổ tay", "dang", "xoắn vai"],
+  legFar: ["hông", "gối", "dang"],
+  legNear: ["hông", "gối", "dang"],
+  torso: ["cúi", "nghiêng"],
+  head: ["nghiêng", "lắc", "gật"],
+} as const satisfies Partial<Record<JointChannel, readonly string[]>>;
 
 const limb = z.tuple([z.number(), z.number()]);
 /**
@@ -307,6 +326,8 @@ export const reachTerm = (
       ? { k: 1, at: [...r.at!] as [number, number, number], point: r.point }
       : undefined;
 
+const unit = z.number().min(0).max(1);
+
 const KeySchema = z.object({
   /** Tỉ lệ chu kỳ, không phải giây */
   t: z.number().min(0).max(1),
@@ -319,6 +340,8 @@ const KeySchema = z.object({
   reach: z.object({ armFar: ReachSchema.optional(), armNear: ReachSchema.optional() }).optional(),
   /** Áp cho đoạn từ mốc này tới mốc sau */
   ease: z.enum(EASE_NAMES).default("linear"),
+  /** `[x1, y1, x2, y2]` của `ease: "bezier"`, bốn số trong `[0, 1]`; bỏ trống là `BEZIER_DEFAULT` */
+  bezier: z.tuple([unit, unit, unit, unit]).optional(),
   /** Đổi lớp vẽ kể từ mốc này; không nội suy */
   layer: LayerSchema.optional(),
   /** Đổi nét mặt kể từ mốc này; không nội suy, chỉ ăn khi `face` nằm trong mặt nạ */
@@ -598,6 +621,7 @@ export function migrateAction(json: unknown): unknown {
   // v16 → v17 thêm `keys[].face.blush`; thiếu là má không ửng thêm, không phải viết gì
   // v17 → v18 thêm số xoắn vai của tay, `keys[].hand` và kênh `hand`; thiếu là `0` và bàn tay thả lỏng, không phải viết gì
   // v18 → v19 `keys[].reach` nhận mốc thân (`to`) và điểm bàn tay (`point`), `keys[].hand` nhận `palm` / `fingers`, sáu dáng tay mới; file cũ không dùng, không phải viết gì
+  // v19 → v20 thêm `ease: "auto"`, `ease: "bezier"` và `keys[].bezier`; file cũ không dùng, không phải viết gì
   // v4 → v5 tay thành ba số; file cũ cầm đồ thẳng trục cẳng tay, tức cổ tay 0
   if (from < 5)
     for (const k of (o.keys ?? []) as Record<string, unknown>[]) {
@@ -710,12 +734,113 @@ export function animalActionMask(a: ActionData): AnimalChannel[] {
 
 const spring = (u: number) => 1 - Math.exp(-6 * u) * Math.cos(9 * u);
 
-/** Đường hoà theo tên `ease` (`EASE_NAMES`): phần đã đi `u` 0–1 ra phần hoà */
-export const EASES: Record<ActionKey["ease"], (u: number) => number> = {
+/** `cubic-bezier(x1, y1, x2, y2)` của CSS: giải `x(s) = u` bằng Newton, chia đôi khi Newton không hội tụ, trả `y(s)` */
+export function cubicBezier(x1: number, y1: number, x2: number, y2: number) {
+  const at = (p1: number, p2: number, s: number) =>
+    3 * (1 - s) * (1 - s) * s * p1 + 3 * (1 - s) * s * s * p2 + s * s * s;
+  const slope = (p1: number, p2: number, s: number) =>
+    3 * (1 - s) * (1 - s) * p1 + 6 * (1 - s) * s * (p2 - p1) + 3 * s * s * (1 - p2);
+  return (u: number): number => {
+    if (u <= 0) return 0;
+    if (u >= 1) return 1;
+    let s = u;
+    for (let i = 0; i < 8; i++) {
+      const e = at(x1, x2, s) - u;
+      if (Math.abs(e) < 1e-7) return at(y1, y2, s);
+      const d = slope(x1, x2, s);
+      if (Math.abs(d) < 1e-6) break;
+      s -= e / d;
+    }
+    let lo = 0;
+    let hi = 1;
+    s = u;
+    for (let i = 0; i < 40; i++) {
+      if (at(x1, x2, s) < u) lo = s;
+      else hi = s;
+      s = (lo + hi) / 2;
+    }
+    return at(y1, y2, s);
+  };
+}
+
+const EASES: Record<Exclude<ActionKey["ease"], "bezier">, (u: number) => number> = {
   linear: (u) => u,
   // Chuẩn hoá để vẫn chạm đúng mốc sau ở u = 1
   spring: (u) => spring(u) / spring(1),
   smooth: smoothstep,
+  // Kiểu không nội suy bằng số thì `auto` lùi về smoothstep — đúng `auto` của hai mốc đơn lẻ
+  auto: smoothstep,
+};
+
+/** Phần hoà ở `u` 0–1 theo `ease` của mốc; `bezier` thiếu điểm điều khiển thì lấy `BEZIER_DEFAULT` */
+export function easeAt(k: Pick<ActionKey, "ease" | "bezier">, u: number) {
+  if (k.ease !== "bezier") return EASES[k.ease](u);
+  const [x1, y1, x2, y2] = k.bezier ?? BEZIER_DEFAULT;
+  return cubicBezier(x1, y1, x2, y2)(u);
+}
+
+/** Tiếp tuyến PCHIP ở một mốc giữa hai độ dốc kề: trung bình điều hoà theo độ dài đoạn, trái dấu thì `0` */
+const pchipSlope = (d0: number, d1: number, h0: number, h1: number) => {
+  if (!(d0 * d1 > 0)) return 0;
+  const w1 = 2 * h1 + h0;
+  const w2 = h1 + 2 * h0;
+  return (w1 + w2) / (w1 / d0 + w2 / d1);
+};
+
+/** Hermite đơn điệu đoạn `p1 → p2` dài `h`; `p0` / `p3` vắng là đầu chuỗi, tiếp tuyến `0` */
+function hermite(
+  p0: number | undefined,
+  p1: number,
+  p2: number,
+  p3: number | undefined,
+  h0: number,
+  h: number,
+  h2: number,
+  f: number,
+) {
+  const d = (p2 - p1) / h;
+  const m1 = p0 === undefined ? 0 : pchipSlope((p1 - p0) / h0, d, h0, h);
+  const m2 = p3 === undefined ? 0 : pchipSlope(d, (p3 - p2) / h2, h, h2);
+  const f2 = f * f;
+  const f3 = f2 * f;
+  return (
+    (2 * f3 - 3 * f2 + 1) * p1 +
+    (f3 - 2 * f2 + f) * h * m1 +
+    (3 * f2 - 2 * f3) * p2 +
+    (f3 - f2) * h * m2
+  );
+}
+
+/** Bốn mốc quanh đoạn đang lấy mẫu cho `ease: "auto"`; mốc ngoài vắng khi chuỗi `auto` dừng ở đó */
+type Cubic<T> = (
+  p0: T | undefined,
+  p1: T,
+  p2: T,
+  p3: T | undefined,
+  h0: number,
+  h: number,
+  h2: number,
+  f: number,
+) => T;
+
+/** `auto` cho số và dãy, từng thành phần; phần thiếu là `0` như `mixAngles` */
+const cubicAngles: Cubic<Angles> = (p0, p1, p2, p3, h0, h, h2, f) => {
+  if (typeof p1 === "number" && typeof p2 === "number")
+    return hermite(
+      p0 === undefined ? undefined : typeof p0 === "number" ? p0 : (p0[0] ?? 0),
+      p1,
+      p2,
+      p3 === undefined ? undefined : typeof p3 === "number" ? p3 : (p3[0] ?? 0),
+      h0,
+      h,
+      h2,
+      f,
+    );
+  const arr = (v: Angles) => (typeof v === "number" ? [v] : v);
+  const [w, x, y, z] = [p0 && arr(p0), arr(p1), arr(p2), p3 && arr(p3)];
+  return Array.from({ length: Math.max(x.length, y.length) }, (_, i) =>
+    hermite(w && (w[i] ?? 0), x[i] ?? 0, y[i] ?? 0, z && (z[i] ?? 0), h0, h, h2, f),
+  );
 };
 
 type Angles = number | readonly number[];
@@ -740,43 +865,57 @@ export const phaseOf = (a: ActionData, t: number): number =>
 
 /** Nội suy một kênh giữa hai mốc gần nhất *có nhắc tới nó*, không phải hai mốc kề nhau. */
 const sampleChannel = (a: ActionData, pick: (k: ActionKey) => Angles | undefined, u: number) =>
-  sampleWith(a, pick, u, mix);
+  sampleWith(a, pick, u, mix, cubicAngles);
 
+/**
+ * `cubic` cho `ease: "auto"` trên kiểu số; thiếu nó thì `auto` là smoothstep. Chuỗi `auto` gồm các mốc *có nhắc tới
+ * kênh*, nối qua đường vòng khi `end: "wrap"`; mốc trùng pha qua đường vòng (`t: 1` với `t: 0`) tính là một.
+ */
 function sampleWith<T>(
   a: ActionData,
   pick: (k: ActionKey) => T | undefined,
   u: number,
   mix: (a: T, b: T, f: number) => T,
+  cubic?: Cubic<T>,
 ): T | undefined {
-  const s: { t: number; v: T; ease: ActionKey["ease"] }[] = [];
+  const s: { t: number; v: T; key: ActionKey }[] = [];
   for (const k of a.keys!) {
     const v = pick(k);
-    if (v !== undefined) s.push({ t: k.t, v, ease: k.ease });
+    if (v !== undefined) s.push({ t: k.t, v, key: k });
   }
   if (!s.length) return undefined;
   if (s.length === 1) return s[0].v;
 
-  const last = s[s.length - 1];
-  let from = s[0];
-  let to = s[1];
-  let span = to.t - from.t;
-  let at = u - from.t;
-  if (u < s[0].t || u >= last.t) {
-    if (a.end === "hold") return u < s[0].t ? s[0].v : last.v;
-    from = last;
-    to = s[0];
-    span = to.t + 1 - last.t;
-    at = u < s[0].t ? u + 1 - last.t : u - last.t;
-  } else {
-    for (let i = 0; i < s.length - 1; i++)
-      if (s[i].t <= u && u < s[i + 1].t) {
-        from = s[i];
-        to = s[i + 1];
-        span = to.t - from.t;
-        at = u - from.t;
-      }
-  }
-  return mix(from.v, to.v, span > 0 ? EASES[from.ease](at / span) : 0);
+  const n = s.length;
+  const wrap = a.end !== "hold";
+  let i = n - 1;
+  if (u < s[0].t || u >= s[n - 1].t) {
+    if (!wrap) return u < s[0].t ? s[0].v : s[n - 1].v;
+  } else for (let k = 0; k < n - 1; k++) if (s[k].t <= u) i = k;
+  const j = (i + 1) % n;
+  const gap = (x: number, y: number) => s[y].t - s[x].t + (y <= x ? 1 : 0);
+  const span = gap(i, j);
+  const f = span > 0 ? (u - s[i].t + (u < s[i].t ? 1 : 0)) / span : 0;
+  if (s[i].key.ease !== "auto" || !cubic || !(span > 0))
+    return mix(s[i].v, s[j].v, span > 0 ? easeAt(s[i].key, f) : 0);
+
+  // Mốc kề có đoạn dài hơn 0 về một phía; `ease` là của mốc mở đoạn ấy
+  const step = (x: number, dir: 1 | -1) => {
+    for (let y = x, m = 0; m < n; m++) {
+      const z = y + dir;
+      if (!wrap && (z < 0 || z >= n)) return undefined;
+      const w = (z + n) % n;
+      const h = dir > 0 ? gap(x, w) : gap(w, x);
+      if (h > 0 && w !== x) return { w, h, ease: s[dir > 0 ? y : w].key.ease };
+      y = w;
+    }
+    return undefined;
+  };
+  const prev = step(i, -1);
+  const next = step(j, 1);
+  const p0 = prev?.ease === "auto" ? prev : undefined;
+  const p3 = next?.ease === "auto" ? next : undefined;
+  return cubic(p0 && s[p0.w].v, s[i].v, s[j].v, p3 && s[p3.w].v, p0?.h ?? 1, span, p3?.h ?? 1, f);
 }
 
 /** Giá trị không nội suy được tại pha `u`: mốc gần nhất *trước* `u` có nhắc tới nó. */
@@ -828,6 +967,7 @@ export function actionFace(a: ActionData, t: number): Partial<FaceState> {
     (k) => keyFace(k).blush,
     u,
     (x, y, f) => x + (y - x) * f,
+    hermite,
   );
   if (blush !== undefined) o.blush = blush;
   return o;
@@ -851,6 +991,7 @@ export function actionHand(a: ActionData, t: number): HandMap {
       },
       u,
       mixHand,
+      cubicAngles as Cubic<readonly number[]>,
     );
     if (v) o[ch] = v;
   }

@@ -45,6 +45,6 @@ export {
   type AlongOptions, type AppearOptions, type Ease, type Key, type PathKey, type PathPose,
 } from './motion';
 export {
-  buildStage, buildWorld, combineExtras, plainRoom, roomLights,
+  buildStage, buildWorld, combineExtras, plainRoom, roomLights, stageOf,
   type Cast3D, type Extra3D, type LightAdd, type Released, type Set3D, type World3D, type WorldCtx, type WorldData, type WorldSpec,
 } from './world';
