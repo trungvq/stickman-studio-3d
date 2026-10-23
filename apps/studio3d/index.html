@@ -10,35 +10,63 @@
     <header>
       <input id="scene" list="scenes" placeholder="Cảnh… (gõ để lọc)" spellcheck="false" />
       <datalist id="scenes"></datalist>
-      <button id="reload" title="Nạp lại cảnh từ đĩa (R)">Nạp lại</button>
-      <div class="seg" id="cam" title="Camera (C)">
-        <button data-mode="scene" class="on">Camera cảnh</button>
-        <button data-mode="free">Camera tự do</button>
+      <button id="reload" title="Nạp lại cảnh từ đĩa (R); Shift+R dựng lại cả cảnh">Nạp lại</button>
+      <div class="seg" id="edMode" title="Xem cảnh hay sửa mốc tay, mốc món trên thanh tua">
+        <button data-m="view" class="on">Xem</button>
+        <button data-m="hands">Dáng tay</button>
       </div>
-      <label title="Khử răng cưa: siêu mẫu càng cao càng nét, càng chậm">
-        AA
-        <select id="aa">
-          <option value="off">tắt</option>
-          <option value="ss1.5" selected>1.5×</option>
-          <option value="ss2">2× (như render)</option>
-        </select>
-      </label>
-      <label
-        title="Lăn chuột / hai ngón trên touchpad ở camera tự do; Ctrl + lăn hay chụm hai ngón luôn là tiến lùi"
-      >
-        Lăn
-        <select id="wheel">
-          <option value="auto">tự nhận</option>
-          <option value="zoom">tiến lùi</option>
-          <option value="pan">dời</option>
-        </select>
-      </label>
+      <span id="saveBox">
+        <span id="dirty" title="Có thay đổi chưa lưu" hidden>●</span>
+        <button id="undo" title="Hoàn tác (Ctrl+Z)" disabled>↶</button>
+        <button id="redo" title="Làm lại (Ctrl+Shift+Z)" disabled>↷</button>
+        <button id="save" title="Lưu mốc tay, mốc món vào scenes/ (Ctrl+S)" disabled>Lưu</button>
+        <button id="discard" title="Bỏ mọi thay đổi chưa lưu (hoàn tác được)" disabled>
+          Bỏ thay đổi
+        </button>
+      </span>
+      <button id="more" title="Camera, khử răng cưa, lăn chuột">⋯</button>
+      <span id="hdrMore">
+        <div class="seg" id="cam" title="Camera (C)">
+          <button data-mode="scene" class="on">Camera cảnh</button>
+          <button data-mode="free">Camera tự do</button>
+        </div>
+        <label title="Khử răng cưa: siêu mẫu càng cao càng nét, càng chậm">
+          AA
+          <select id="aa">
+            <option value="off">tắt</option>
+            <option value="ss1.5" selected>1.5×</option>
+            <option value="ss2">2× (như render)</option>
+          </select>
+        </label>
+        <label
+          title="Lăn chuột / hai ngón trên touchpad ở camera tự do; Ctrl + lăn hay chụm hai ngón luôn là tiến lùi"
+        >
+          Lăn
+          <select id="wheel">
+            <option value="auto">tự nhận</option>
+            <option value="zoom">tiến lùi</option>
+            <option value="pan">dời</option>
+          </select>
+        </label>
+      </span>
       <span id="status"></span>
     </header>
     <div id="mid">
       <main id="view">
         <div id="frame"></div>
         <div id="msg"></div>
+        <div id="conflict" hidden>
+          <b>Cảnh đã đổi trên đĩa từ lúc nạp — chưa ghi.</b>
+          <span class="dim"
+            >Tải bản đĩa về (thành một bước mới: Ctrl+Z quay lại bản của mình để so), chép mốc của
+            mình, hay giữ bản mình.</span
+          >
+          <span class="row">
+            <button id="cfLoad">Tải bản đĩa về</button>
+            <button id="cfCopy">Chép mốc của mình</button>
+            <button id="cfKeep">Giữ bản mình</button>
+          </span>
+        </div>
       </main>
       <aside id="side">
         <div class="sidehead">
@@ -47,6 +75,7 @@
           <span id="handsAt" class="dim"></span>
         </div>
         <div class="sidebody">
+          <section id="keyCard" hidden></section>
           <div id="handList"></div>
           <section id="selBox" hidden>
             <div id="selName"></div>
@@ -62,12 +91,23 @@
       </aside>
     </div>
     <footer>
-      <button id="play" title="Phát / dừng (Space)">▶</button>
-      <div id="track">
-        <input id="time" type="range" min="0" max="1" step="0.001" value="0" />
-        <div id="marks"></div>
+      <div id="tlLeft">
+        <div class="tlhead"><button id="play" title="Phát / dừng (Space)">▶</button></div>
+        <div id="laneLabels" hidden></div>
       </div>
-      <span id="clock">0.00 / 0.00 s</span>
+      <div id="tlScroll">
+        <div id="track">
+          <div class="tlhead">
+            <input id="time" type="range" min="0" max="1" step="0.001" value="0" />
+            <div id="marks"></div>
+          </div>
+          <div id="lanes" hidden><div id="playhead" hidden></div></div>
+        </div>
+      </div>
+      <div id="tlRight">
+        <div class="tlhead"><span id="clock">0.00 / 0.00 s</span></div>
+        <div id="laneAdds" hidden></div>
+      </div>
     </footer>
     <script type="module" src="/src/main.ts"></script>
   </body>

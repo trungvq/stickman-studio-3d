@@ -133,8 +133,8 @@ export interface World3D {
   view(t: number): FrameView;
   /**
    * Đổi sang `scene` chỉ khác cảnh đang dựng ở mốc tay và mốc món mà không dựng lại lưới (`refreshRuntime`): món đang cầm
-   * gỡ về chỗ cũ, khung sau gắn lại. `false` là phải dựng lại cả cảnh: khác chỗ khác, đổi mốc tay của người nền, hay đổi
-   * món một người cầm (đồ riêng đăng ký món lúc dựng)
+   * gỡ về chỗ cũ, khung sau gắn lại. `false` là phải dựng lại cả cảnh: khác chỗ khác, đổi mốc tay hay mốc món của người
+   * nền, hay đổi món một người cầm (đồ riêng đăng ký món lúc dựng)
    */
   refresh?(scene: SceneData): boolean;
 }
@@ -417,7 +417,10 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
   if (x) s.group.add(x.group);
   const handsOf = (sc: SceneData, id: string) => JSON.stringify(sc.cast.find((c) => c.id === id)?.world?.hands);
   /** Món mỗi người cầm trong cảnh: đồ riêng đăng ký món theo đó lúc dựng */
-  const heldBy = (sc: SceneData) => JSON.stringify(sc.cast.map((c) => [c.id, [...new Set((c.world?.hands ?? []).flatMap((k) => [k.right?.hold, k.left?.hold].flatMap((h) => (h ? [sceneHoldRef(h).item] : []))))].sort()]));
+  const itemsOf = (sc: SceneData, id: string) => (sc.cast.find((c) => c.id === id)?.world?.hands ?? []).flatMap((k) => [k.right?.hold, k.left?.hold].flatMap((h) => (h ? [sceneHoldRef(h).item] : [])));
+  const heldBy = (sc: SceneData) => JSON.stringify(sc.cast.map((c) => [c.id, [...new Set(itemsOf(sc, c.id))].sort()]));
+  /** Mốc món người nền cầm hay của món người nền cầm */
+  const seatMarks = (sc: SceneData, ids: Set<string>, items: Set<string>) => JSON.stringify((sc.items ?? []).filter((k) => ids.has(k.cast) || items.has(k.item)));
   return {
     root, set: s, extra: x, cast: cast3,
     ready: Promise.resolve(x?.ready),
@@ -445,6 +448,9 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     refresh(next) {
       // người nền đã đóng băng ở dáng giây 0 trong một lưới gộp
       if (seats.some(({ c }) => handsOf(next, c.id) !== handsOf(cast3.scene, c.id)) || heldBy(next) !== heldBy(cast3.scene)) return false;
+      const ids = new Set(seats.map(({ c }) => c.id));
+      const items = new Set([...ids].flatMap((id) => itemsOf(cast3.scene, id)));
+      if (seatMarks(next, ids, items) !== seatMarks(cast3.scene, ids, items)) return false;
       if (!refreshRuntime(rt, next)) return false;
       for (const p of provided) if (p.on) letGo(p);
       cast3.scene = next;

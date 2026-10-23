@@ -4,8 +4,9 @@
     "noEmit": true,
     "types": ["vite/client"],
     "paths": {
-      "@stickman3d/rig": ["../../packages/rig/src/index.ts"]
+      "@stickman3d/rig": ["../../packages/rig/src/index.ts"],
+      "@stickman3d/rig/core": ["../../packages/rig/src/core/index.ts"]
     }
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "vite.config.ts", "vitest.config.ts"]
 }

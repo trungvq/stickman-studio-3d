@@ -1897,8 +1897,7 @@ world.refresh(scene): boolean        // World3D của buildWorld
   `resolveScene`. `scene` sai thì ném như `resolveScene`, `rt` cũng không đổi.
 - `world.refresh` gọi `refreshRuntime`, gỡ mọi món đang cầm về chỗ cũ (khung sau gắn lại theo mốc mới), thay
   `cast.scene`; lưới giữ nguyên. Trả `false` khi phải dựng lại cả cảnh: `refreshRuntime` trả `false`, đổi mốc tay của
-  người nền (đã đóng băng ở giây 0 trong một lưới gộp), hay đổi món một người cầm (đồ riêng thường đăng ký món theo
+  người nền (đã đóng băng ở giây 0 trong một lưới gộp) hay mốc món người nền cầm, hay đổi món một người cầm (đồ riêng thường đăng ký món theo
   `world.hands` lúc dựng). Đồ riêng không dựng lại: đồ riêng đọc mốc tay lúc dựng thì chỉ thấy bản cũ.
 - Khung đầu sau khi làm mới giải lại chuỗi cổ tay mang món và chuỗi `φ` từ đầu lần cầm tới giây đang vẽ, như khung
   đầu của cảnh dựng mới; khung kế tiếp nhanh như thường.
-

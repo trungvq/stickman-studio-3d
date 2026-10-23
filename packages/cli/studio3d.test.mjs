@@ -1,12 +1,20 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import * as rig from "@stickman3d/sketch";
 import { COMMON } from "./lib.mjs";
-import { sceneWithHands, serveStudio3d } from "./studio3d.mjs";
+import { sceneWithHands, serveStudio3d, writeWithBak } from "./studio3d.mjs";
 import * as T from "./templates.mjs";
 
 const git = (dir, ...a) =>
@@ -53,6 +61,31 @@ function fixture() {
   git(dir, "commit", "-qm", "init");
   return dir;
 }
+
+describe("writeWithBak", () => {
+  it("đổi tên file tạm hỏng: ném lỗi, không để lại `.tmp`", () => {
+    const dir = mkdtempSync(join(tmpdir(), "studio3d-tmp-"));
+    try {
+      // đích là thư mục có file: `renameSync` của file tạm vào đó hỏng
+      mkdirSync(join(dir, "canh.json"));
+      writeFileSync(join(dir, "canh.json/x"), "");
+      assert.throws(() => writeWithBak(join(dir, "canh.json"), "{}"));
+      assert.deepEqual(
+        readdirSync(dir).filter((f) => f.endsWith(".tmp")),
+        [],
+      );
+      writeWithBak(join(dir, "moi.json"), "{}", "cu");
+      assert.equal(readFileSync(join(dir, "moi.json"), "utf8"), "{}");
+      assert.equal(readFileSync(join(dir, "moi.json.bak"), "utf8"), "cu");
+      assert.deepEqual(
+        readdirSync(dir).filter((f) => f.endsWith(".tmp")),
+        [],
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
 
 describe("sceneWithHands", () => {
   const disk = { a: 1, cast: [{ id: "x", world: { at: [0, 0, 0], hands: [{ t: 0 }] } }] };
@@ -220,6 +253,46 @@ describe("stickman studio: /api/scene, /api/held", { timeout: 120_000 }, () => {
       assert.equal(readFileSync(file("thu-tab"), "utf8"), theirs);
     } finally {
       delete globalThis.__formatGate;
+    }
+  });
+
+  it("món đổi trên đĩa trong lúc server định dạng: 409, bản của bên kia còn nguyên", async () => {
+    const j = await load();
+    let entered;
+    const inFormat = new Promise((r) => (entered = r));
+    let release;
+    const gate = new Promise((r) => (release = r));
+    globalThis.__formatGate = () => (entered(), gate);
+    const held = join(dir, "held/coc.json");
+    try {
+      const pending = post("/api/held?name=coc", {
+        group: "khong-co",
+        variant: "x",
+        authored: null,
+        hash: j.heldHash.coc,
+      });
+      await inFormat;
+      const theirs = `${readFileSync(held, "utf8").trimEnd()}\n\n`;
+      writeFileSync(held, theirs);
+      release();
+      const r = await pending;
+      assert.equal(r.status, 409);
+      assert.equal((await r.json()).conflict, true);
+      assert.equal(readFileSync(held, "utf8"), theirs);
+    } finally {
+      delete globalThis.__formatGate;
+    }
+  });
+
+  it("thân yêu cầu không phải JSON: 400", async () => {
+    for (const path of ["/api/scene?name=thu-tay", "/api/held?name=coc"]) {
+      const r = await fetch(`${base}${path}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: '{"hash": ',
+      });
+      assert.equal(r.status, 400);
+      assert.match((await r.json()).error, /không phải JSON/);
     }
   });
 
