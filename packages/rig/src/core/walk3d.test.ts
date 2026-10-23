@@ -686,7 +686,7 @@ describe("bảng `travel` chỉ nướng cho người trôi theo chân", () => {
   });
 });
 
-describe("hành động `sides: \"anatomical\"`", () => {
+describe('hành động `sides: "anatomical"`', () => {
   const reachNear = (sides?: "anatomical") =>
     action({
       name: "hip",
