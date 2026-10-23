@@ -60,7 +60,7 @@ export type CarryOn = (typeof CARRY_ON)[number];
 
 /**
  * Lần treo của nhóm `carry` đã quy: món không nằm trong bàn tay mà treo ở `on` — mốc `at` của món (đỉnh quai, `seats[on]`)
- * đặt vào chỗ treo, thân món thõng theo trọng lực mỗi khung, đẩy khỏi thân và đùi theo hình va chạm. Bàn tay của tay ấy
+ * đặt vào chỗ treo, thân món thõng đứng theo trọng lực mỗi khung. Bàn tay của tay ấy
  * theo hành động. `yaw` quay thân món quanh phương đứng (độ), `touch` là phần người được lấn. docs/11-nhom-cam.md mục 3
  */
 export interface CarrySpec {
