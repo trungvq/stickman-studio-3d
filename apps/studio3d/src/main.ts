@@ -26,6 +26,7 @@ import { renderCard, type CardModel } from "./card";
 import { drawnHand, drawnItem } from "./drawn";
 import { GraspEditor, sceneHigh, type EditScene, type EditTarget } from "./editor";
 import { freeCam, type WheelMode } from "./freecam";
+import { HandGrab } from "./gizmo";
 import {
   ANGLES,
   anglePose,
@@ -179,6 +180,8 @@ const isDirty = () => !!work && JSON.stringify(work.raw) !== work.saved;
 let edMode: "view" | "hands" = localStorage.getItem("studio3d.mode") === "hands" ? "hands" : "view";
 /** Mốc đang mở thẻ */
 let picked: KeyRef | null = null;
+/** Mốc đang mở thẻ khi rời mỗi bản của lịch sử (chữ JSON thô): hoàn tác / làm lại mở lại đúng mốc ấy */
+const picks = new Map<string, KeyRef | null>();
 /** Dòng nhắc của lần thêm mốc gần nhất (chỗ mốc mới chỉ gần đúng), hiện trên thẻ của mốc ấy */
 let added: { key: KeyRef; notes: string[] } | null = null;
 
@@ -352,6 +355,7 @@ async function load(name: string, o: LoadOptions = {}): Promise<boolean> {
         redo: [],
       };
       picked = null;
+      picks.clear();
       ui.conflict.hidden = true;
     }
     const warnings: string[] = [];
@@ -492,6 +496,7 @@ function attachOrbit() {
   orbit.enabled = mode === "free";
   fc.attach(orbit);
   orbit.addEventListener("change", () => (dirty = true));
+  grab.attach(cur.stage.canvas);
 }
 
 function setMode(m: "scene" | "free") {
@@ -515,14 +520,15 @@ function draw() {
   const camera = mode === "free" ? free : stage.camera;
   if (mode === "free") w.set.room.cull(free);
   stage.pipeline.render(stage.scene, camera, view.render);
-  // lớp phủ của bàn tay đã chọn: vẽ đè, không qua pipeline
-  if (overlay.active) {
+  // lớp phủ của bàn tay đã chọn, tay nắm, vòng khuỷu, nón cổ tay: vẽ đè, không qua pipeline
+  if (overlay.active || grab.active) {
     const r = stage.renderer;
     const auto = r.autoClear;
     r.autoClear = false;
     r.setRenderTarget(null);
     r.clearDepth();
-    r.render(overlay.scene, camera);
+    if (overlay.active) r.render(overlay.scene, camera);
+    grab.render(r, camera);
     r.autoClear = auto;
   }
   // `readPixels` một điểm: chờ GPU vẽ xong thật, để số ms vẽ không chỉ là thời gian đẩy lệnh
@@ -553,6 +559,22 @@ let fly: {
 } | null = null;
 const FLY = 0.6;
 const overlay = new HandOverlay();
+/** Tay nắm, vòng khuỷu, nón cổ tay của bàn tay đang chọn (Dáng tay) */
+const grab = new HandGrab(ui.frame, {
+  ctx: () =>
+    work && cur && edMode === "hands" && !editor
+      ? {
+          raw: work.raw,
+          rt: cur.rt,
+          t,
+          opts: (id: string) => ({ ...charOf(id), rebuild: rebuildRaw, fps: FPS, dur: cur!.dur }),
+        }
+      : null,
+  apply: (raw, key) => apply(raw, { key }),
+  say,
+  orbit: () => orbit,
+  redraw: () => (dirty = true),
+});
 const selRow = () => (sel ? rows.find((r) => r.id === sel!.id && r.side === sel!.side) : undefined);
 
 /** Sau khi đặt người ở `t`: đo bàn tay (khi tua tới giây mới), camera bám tay đã chọn, lớp phủ, panel */
@@ -589,6 +611,7 @@ function afterPose() {
       wrap: cur.held.wrap ?? rig.HELD_WRAP,
     });
     if (!playing || fresh) panel();
+    grab.sync(edMode === "hands" && !playing && !editor ? r : undefined);
   }
 }
 
@@ -834,6 +857,7 @@ function openEditor() {
   closeEditor();
   ui.selBox.hidden = true;
   ui.editor.hidden = false;
+  rowsT = NaN;
   editor = new GraspEditor(
     target,
     {
@@ -1176,7 +1200,7 @@ function apply(next: Json, o: { key?: KeyRef | null; history?: boolean } = {}): 
     return false;
   }
   const stacks = { undo: [...work.undo], redo: [...work.redo] };
-  if (o.history !== false) record(work, prev, JSON.stringify(next));
+  if (o.history !== false && record(work, prev, JSON.stringify(next))) picks.set(prev, picked);
   work.raw = next;
   if (o.key !== undefined) picked = o.key;
   say("");
@@ -1202,8 +1226,13 @@ function apply(next: Json, o: { key?: KeyRef | null; history?: boolean } = {}): 
 function step(back: boolean) {
   if (!work || editor) return;
   const w = work;
-  if (travel(w, back, JSON.stringify(w.raw), (to) => apply(JSON.parse(to), { history: false })))
+  const now = JSON.stringify(w.raw);
+  const was = picked;
+  const go = (to: string) => apply(JSON.parse(to), { history: false, key: picks.get(to) ?? null });
+  if (travel(w, back, now, go)) {
+    picks.set(now, was);
     say(back ? "đã hoàn tác" : "đã làm lại");
+  }
   syncEdit();
 }
 
@@ -1508,6 +1537,8 @@ function deletePicked() {
 function setEdMode(m: "view" | "hands") {
   edMode = m;
   localStorage.setItem("studio3d.mode", m);
+  rowsT = NaN;
+  dirty = true;
   syncEdit();
 }
 
@@ -1616,7 +1647,7 @@ ui.redo.onclick = () => step(false);
 ui.save.onclick = () => void save();
 ui.discard.onclick = () => {
   if (!work || !isDirty() || !confirm("Bỏ mọi thay đổi chưa lưu? (hoàn tác được)")) return;
-  if (apply(JSON.parse(work.saved))) say("đã bỏ thay đổi");
+  if (apply(JSON.parse(work.saved), { key: null })) say("đã bỏ thay đổi");
 };
 ui.more.onclick = () => ui.header.classList.toggle("open");
 ui.cfLoad.onclick = () => void takeDisk();
@@ -1804,5 +1835,6 @@ Object.assign(window, {
     },
     step,
     save,
+    grab,
   },
 });

@@ -2,6 +2,7 @@
 // tua) để mốc mới ghi đúng thứ đang vẽ.
 import {
   actHeld,
+  actPalms,
   BODY3,
   equipCharacter,
   handReport,
@@ -77,6 +78,39 @@ export function drawnHand(
   };
 }
 
+/** Nhân vật của `id` như vẽ ở `t`: `char` nếu có, không thì `rt.chars[id]` mặc theo `equip` lúc ấy */
+export function charAt(
+  rt: SceneRuntime,
+  id: string,
+  t: number,
+  char?: ActCharacter,
+): ActCharacter | undefined {
+  if (char) return char;
+  const base = rt.chars?.[id] as CharacterData | undefined;
+  return base && equipCharacter(base, poseOf(rt, id, t).equip);
+}
+
+/** Lòng tay và hướng ngón (thế giới rig) của tay `side` như vẽ ở `t` (`actPalms`) */
+export function palmAt(
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  t: number,
+  char?: ActCharacter,
+): { palm: V3; finger: V3 } | undefined {
+  const c = charAt(rt, id, t, char);
+  const p = c && actPalms(c, poseOf(rt, id, t))?.[side === "right" ? "R" : "L"];
+  return p && { palm: [...p.palm] as V3, finger: [...p.finger] as V3 };
+}
+
+/** Thân người `id` ở `t` (`holderTrunk`): `Rr` (three) cho vectơ hệ thân, `s` là `world.s` */
+export function trunkAt(rt: SceneRuntime, id: string, t: number, char?: ActCharacter) {
+  const c = charAt(rt, id, t, char);
+  if (!c) return undefined;
+  const T = holderTrunk(rt, id, t, { chars: { [id]: c as CharacterData } });
+  return { c, Rr: T.Rr as M3, s: T.s };
+}
+
 /**
  * Món `item` tay `side` của `id` đang cầm ở `t`, như vẽ: hai tay trên mốc món ở `itemAt`, còn lại theo bàn tay
  * (`actHeld`). `at` tâm hộp bao (thế giới rig); `face`, `roll` là trục `+z`, `+y` của khung món ra vectơ hệ thân người
@@ -92,8 +126,7 @@ export function drawnItem(
   o: { char?: ActCharacter; out?: number } = {},
 ): { at: V3; face: V3; roll: V3 } | undefined {
   const sp = poseOf(rt, id, t);
-  const base = rt.chars?.[id] as CharacterData | undefined;
-  const c = o.char ?? (base && equipCharacter(base, sp.equip));
+  const c = charAt(rt, id, t, o.char);
   const spec = rt.held[item] ?? rt.held[heldBase(item)];
   if (!c || !spec) return undefined;
   const both = holdRuns(rt, id)[side].some(

@@ -793,11 +793,12 @@ header {
   height: 11px;
 }
 
+/* `clip`, không `hidden`: nhãn dính (`sticky`) bám mép trái khung cuộn của thanh tua */
 .band {
   position: absolute;
   top: 0;
   bottom: 0;
-  overflow: hidden;
+  overflow: clip;
   border-radius: 2px;
   font-size: 9px;
   line-height: 11px;
@@ -807,7 +808,9 @@ header {
 
 /* nhãn nổi trên sọc `HOLD_BLEND`: nền cùng màu dải sau chữ, sọc còn lộ dưới nhãn */
 .band span {
-  position: relative;
+  position: sticky;
+  left: 0;
+  display: inline-block;
   z-index: 1;
   padding: 0 3px;
   border-radius: 2px;
@@ -994,6 +997,64 @@ button.key.diamond .keytip {
 }
 
 /* hẹp: phần phụ thanh trên gập sau ⋯, panel bàn tay xuống dưới khung vẽ, thanh tua cuộn ngang */
+/* tay nắm, vòng khuỷu, nón cổ tay (Dáng tay) */
+.grabhud {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  align-items: center;
+  max-width: calc(100% - 12px);
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: rgb(22 23 26 / 78%);
+  color: var(--text);
+  font-size: 11px;
+}
+
+.grabhud[hidden],
+.grabtag[hidden] {
+  display: none;
+}
+
+.grabhud button {
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: none;
+  color: var(--dim);
+  font-size: 11px;
+}
+
+.grabhud button.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.grabhud .dim {
+  color: var(--dim);
+}
+
+.grabtag {
+  position: absolute;
+  z-index: 2;
+  transform: translate(8px, -50%);
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgb(22 23 26 / 78%);
+  color: #fff;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.grabtag.bad {
+  color: #ff8a80;
+}
+
 @media (max-width: 760px) {
   header {
     gap: 6px;
@@ -1057,5 +1118,9 @@ button.key.diamond .keytip {
   #clock {
     min-width: 0;
     font-size: 11px;
+  }
+
+  .grabhud .dim {
+    display: none;
   }
 }
