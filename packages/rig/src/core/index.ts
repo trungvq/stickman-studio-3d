@@ -5,7 +5,6 @@ export * from "./action";
 export * from "./animalGait";
 export * from "./animalGeometry";
 export * from "./animals";
-export * from "./armAudit";
 export * from "./beard";
 export * from "./blend";
 export * from "./chinViews";

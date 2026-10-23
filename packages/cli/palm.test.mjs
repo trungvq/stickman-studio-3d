@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { describe, it } from "node:test";
-import { armOptions, palmFrame, palmOptions } from "./lib.mjs";
+import { palmFrame } from "./lib.mjs";
 
 const v = (x, y, z) => ({ x, y, z });
 /** Hộp lồi (three) `[x0, x1] × [y0, y1] × [z0, z1]`, mặt trên nghiêng theo `slope` (dy / dx) */
@@ -79,36 +76,5 @@ describe("palmFrame: mặt ngang dưới bàn tay trên cảnh three", () => {
     assert.equal(fr.held("b", "R"), undefined);
     assert.equal(fr.frozen("a"), false);
     assert.equal(fr.frozen("b"), true);
-  });
-});
-
-describe("palmOptions: ngưỡng `stickman.palm`", () => {
-  const ws = (palm) => {
-    const dir = mkdtempSync(join(tmpdir(), "stickman-palm-"));
-    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "thu", stickman: { palm } }));
-    return dir;
-  };
-  it("mặc định, tắt, đè từng trường, sai kiểu", () => {
-    assert.deepEqual(palmOptions(ws(undefined)), { down: 45, hang: 60, hold: 0.3 });
-    assert.deepEqual(palmOptions(ws(false)), { off: true });
-    assert.deepEqual(palmOptions(ws({ down: 60 })), { down: 60, hang: 60, hold: 0.3 });
-    assert.ok(palmOptions(ws({ down: -1 })).error);
-    assert.ok(palmOptions(ws({ tay: 1 })).error);
-  });
-});
-
-describe("armOptions: ngưỡng `stickman.arms`", () => {
-  const ws = (arms) => {
-    const dir = mkdtempSync(join(tmpdir(), "stickman-arms-"));
-    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "thu", stickman: { arms } }));
-    return dir;
-  };
-  const base = { straight: 170, converge: 30, upturn: 60, hover: 4, hold: 0.3 };
-  it("mặc định, tắt, đè từng trường, sai kiểu", () => {
-    assert.deepEqual(armOptions(ws(undefined)), base);
-    assert.deepEqual(armOptions(ws(false)), { off: true });
-    assert.deepEqual(armOptions(ws({ straight: 175 })), { ...base, straight: 175 });
-    assert.ok(armOptions(ws({ hover: -1 })).error);
-    assert.ok(armOptions(ws({ khuyu: 1 })).error);
   });
 });

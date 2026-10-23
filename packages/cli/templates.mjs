@@ -90,11 +90,10 @@ vừa làm gì.
 - Sửa xong một cảnh thì \`check\` đúng cảnh ấy: MCP \`check({ scene: "<ten>" })\` hay
   \`pnpm exec stickman check --scene <ten>\` (regex trên id cảnh) — cỡ chục giây, lâu hơn khi cảnh dài và
   đông người; sửa nhiều cảnh thì gom chung một regex (\`'^t01-s0(16|21|35)'\`), các cảnh đo song song. Nó bắt người
-  lồng vào đồ, chân trượt, hành động 2D trên người 3D, tay chân giật trên hình, lòng bàn tay quay sai,
-  tay thẳng đuột, ngón hai tay chụm vào nhau, tay lơ lửng trên mặt, tay lấn vào đầu người khác. Sửa gì thì chỉ chạy
-  nhóm luật của thứ ấy, nhóm không chạy thì không dựng: \`--only move,clash\` (chỗ đứng, \`path\`), \`--only hands,clash\`
-  (tay), \`--only held,clash\` (đồ cầm, chỗ cầm; thêm \`ref\` khi sửa \`held/\`), \`--uses <hành động> --only
-  ref,move,hands,held\` (hành động chung) — bảng đủ ở \`docs 05\` § Nhóm luật. Cuối lô: đủ nhóm trên các cảnh của lô với
+  lồng vào đồ, chân trượt, hành động 2D trên người 3D, tay chân giật trên hình, tay xuyên thân, đồ cầm sai. Dáng
+  bàn tay soi và sửa ở Studio 3D. Sửa gì thì chỉ chạy nhóm luật của thứ ấy, nhóm không chạy thì không dựng:
+  \`--only move,clash\` (chỗ đứng, \`path\`, tay), \`--only held,clash\` (đồ cầm, chỗ cầm; thêm \`ref\` khi sửa \`held/\`), \`--uses <hành động> --only
+  ref,move,held\` (hành động chung) — bảng đủ ở \`docs 05\` § Nhóm luật. Cuối lô: đủ nhóm trên các cảnh của lô với
   \`--baseline <file>\` để chỉ thấy cảnh báo mới. \`check\` cả workspace chậm: chỉ chạy ở cuối tập hay sau khi nâng rig.
   Nhóm \`legacy\` kể đồ cầm còn đi đường cũ (\`hold\` không có chỗ cầm nhóm); cảnh cũ chưa chuyển thì \`--skip legacy\`.
 - Người 3D (\`cast[].world\`) chỉ diễn hành động soạn ở \`side\` ở kênh tay chân
@@ -253,7 +252,7 @@ cho cue có \`loop\`, \`pnpm lipsync\` sinh khẩu hình từ file lời, \`pnpm
 \`\`\`bash
 pnpm check                              # cả workspace
 pnpm exec stickman check --scene <ten>  # chỉ một cảnh vừa sửa (regex trên id cảnh)
-pnpm exec stickman check --scene <ten> --only hands,clash  # chỉ nhóm luật của thứ vừa sửa
+pnpm exec stickman check --scene <ten> --only move,clash  # chỉ nhóm luật của thứ vừa sửa
 \`\`\`
 
 Thay một file tiếng thì \`pnpm retime\`: nó đo lại file rồi ghi số vào cue khai

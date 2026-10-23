@@ -1804,11 +1804,7 @@ tay ấy — và góc lệch khỏi úp (`down`, độ).
 - **Sửa bằng `palm`, không bằng `turn`.** Khai `palm: "down"` ở `keys[].hand` (hay ở `world.hands`) là lòng tay úp ở mọi
   hướng khuỷu ([Hướng lòng tay theo ý](#hướng-lòng-tay-theo-ý)). Còn giữ `turn` thô thì sửa hướng khuỷu trước: khai `elbow`
   ra ngoài như `arms-on-table-3d` (`[-0.3, 0.3, 1]`) rồi chỉnh `turn` (dương là sấp, lòng tay úp thêm khi cẳng tay chĩa ra trước).
-- `check` kêu bàn tay đặt trên mặt ngang mà không úp và tay buông mà lòng tay không quay vào đùi, kèm `turn` gợi ý —
-  [03](03-scene.md#lòng-bàn-tay).
-- `check` còn kêu tay thẳng đuột (khuỷu từ `170°`: đích xa quá tầm, tay buông, góc của hành động), ngón hai tay gần nhau
-  chĩa vào nhau, lòng tay ngửa khi bàn tay thấp, bàn tay đặt bằng đích lơ lửng trên mặt và bàn tay lấn vào đầu người khác —
-  [03](03-scene.md#tay-và-khuỷu).
+- `check` không đo dáng bàn tay: soi và sửa ở Studio 3D — [03](03-scene.md#lòng-bàn-tay).
 
 ### Khớp người 3D vẽ ra
 
@@ -2123,8 +2119,7 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 - **Hoà mốc với toạ độ, mốc với mốc là hoà trên vị trí đã giải**: đích lấy mẫu mang các số hạng (`Reach.terms`), giữa hai mốc
   cổ tay là tổng có trọng số của từng số hạng đã giải, nên đi liền từ toạ độ thô sang mốc, từ mốc này sang mốc kia, kể cả lúc
   `blendPose` hoà hai clip. `Reach.at` khi ấy là chỗ ước lượng trên người mẫu (`reachEstimate`) cho người 2D và góc dự phòng.
-- **Với không tới thì nói ra.** Tay duỗi về phía mốc như đích toạ độ; `check` báo mốc còn cách điểm bàn tay quá `AIM_GAP` (`6`)
-  ([03](03-scene.md#bàn-tay-theo-ý-định)), `scene_probe` trả khe ở `world.palms.*.aim`. Ở `stretch` 1 trán, đỉnh đầu, má bên
+- **Với không tới thì nói ra.** Tay duỗi về phía mốc như đích toạ độ; `scene_probe` trả khe tới mốc ở `world.palms.*.aim`. Ở `stretch` 1 trán, đỉnh đầu, má bên
   kia của người chibi và đùi lúc đứng thẳng ngoài tầm.
 - `bodyMarkAt(nhân vật, scenePose, { to, side, offset }, "R" | "L")` trả chỗ của một mốc (thế giới rig) — cùng điểm đích nhắm tới.
 - **Đồ cầm chưa là mốc.** Rig không biết hình của đồ repo video dựng; tay thứ hai đặt lên đồ tay kia đang cầm thì nhắm
@@ -2158,8 +2153,7 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 - **Hoà là hoà góc đã giải.** Mốc thô sang mốc ý định: từng số hạng giải riêng rồi cộng góc theo phần, nên cổ tay xoay dần,
   không lật nửa vòng (góc nằm trong `±90`, nội suy thẳng). `world.hands` nhận cùng `palm`, `fingers`, `bend`, đè bàn tay của
   hành động theo phần đích; mốc `world.hands` không khai thì giữ bàn tay của hành động.
-- **Không đạt thì nói ra**: lòng tay còn lệch quá `AIM_ANGLE` (`25°`), ngón quá `AIM_FINGERS` (`40°`) quá `0,3 s` là `check`
-  báo; `scene_probe` trả `palmOff`, `fingersOff`.
+- **Không đạt thì nói ra**: `scene_probe` trả độ lệch còn lại của lòng tay và ngón (`palmOff`, `fingersOff`).
 
 ### Bộ hành động 3D
 

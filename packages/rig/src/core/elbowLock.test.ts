@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { actAim, HOLD_SWIVEL_SLEW, type ActInput } from "./act3";
-import { armLine, sceneArms } from "./armAudit";
 import { body3 } from "./figure3d";
 import type { GraspReport } from "./graspSolve";
 import { handVec } from "./hand";
@@ -510,26 +509,6 @@ describe("phần khoá thật sự áp lên khuỷu (`elbowLockAt`)", () => {
 });
 
 describe("`check`: khuỷu khoá vào chỗ xấu", () => {
-  it("tay tự do khoá khuỷu vào thân: luật `body` của tay, quãng ngắn cũng báo", () => {
-    const at = [300, -280, 460];
-    const HANDS: Hands = [
-      { t: 0, right: { at, point: "palm", palm: "down", fingers: "forward" } },
-      { t: 1, right: { at, point: "palm", palm: "down", fingers: "forward" } },
-    ];
-    const free = runtime(HANDS);
-    const body = (phi: number, lock = true) =>
-      sceneArms(runtime(withElbow(HANDS, [undefined, dirAt(free, 1, phi)], lock)), {
-        characterOf: () => NGUOI,
-      }).filter((s) => s.rule === "body");
-    const s = body(60);
-    expect(s).toHaveLength(1);
-    expect(s[0]).toMatchObject({ id: "nguoi", hand: "R", on: "upper.torso" });
-    expect(s[0].amount).toBeGreaterThan(HELD_ARM);
-    expect(armLine(s[0])).toContain(ELBOW_LOCK_FIX);
-    expect(body(-90)).toEqual([]);
-    expect(body(60, false)).toEqual([]);
-  });
-
   it("tay dẫn khoá khuỷu vào thân: luật `arm` của đồ cầm tay nêu khuỷu khoá, quãng ngắn cũng báo; không khoá thì im", () => {
     const HANDS: Hands = [
       { t: 0, right: { at: PHONE, point: "grip", hold: "dien-thoai@palmBox" } },

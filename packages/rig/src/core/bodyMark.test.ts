@@ -20,6 +20,7 @@ import {
   type ActionData,
 } from "./action";
 import { blendPose } from "./blend";
+import { AIM_GAP } from "./constants";
 import { body3 } from "./figure3d";
 import {
   gripShift,
@@ -31,7 +32,6 @@ import {
   type HandPose,
 } from "./hand";
 import { matMul, matVec, rotX, rotY, rotZ, type M3, type V3 } from "./lens";
-import { sceneAims } from "./palm";
 import { POSES } from "./poses";
 import { parseScene, resolveScene, sceneAt } from "./scene";
 import { CharacterSchema, type CharacterData } from "./schema";
@@ -486,7 +486,7 @@ describe("đích thế giới theo mốc và lòng tay trong scene", () => {
     expect(deg(P.palm, [0, 1, 0])).toBeLessThan(5);
   });
 
-  it("`check` báo mốc không với tới và lòng tay không xoay tới", () => {
+  it("mốc ngoài tầm: `AimReport.reach` báo khe tới mốc", () => {
     const c = PEOPLE[2][1];
     const rt = resolveScene(
       scene([{ t: 0, right: { to: "knee", side: "other", offset: [160, 0, 0], palm: "up" } }]),
@@ -496,8 +496,10 @@ describe("đích thế giới theo mốc và lòng tay trong scene", () => {
       { a: c.rig.height },
       { a: body3(c) },
     );
-    const issues = sceneAims({ ...rt, duration: 1 }, { characterOf: () => c });
-    expect(issues.some((s) => s.rule === "reach" && s.to === "knee")).toBe(true);
+    const sp = sceneAt(rt, "a", 0.5, c.rig.height, body3(c));
+    const reach = actAim(c, sp)!.report.R.reach!;
+    expect(reach.to).toBe("knee");
+    expect(reach.gap).toBeGreaterThan(AIM_GAP * sp.world!.s);
     expect(
       parseScene({
         name: "y",

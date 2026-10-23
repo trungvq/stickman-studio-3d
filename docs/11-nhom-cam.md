@@ -1476,8 +1476,8 @@ trong cùng lần cầm (`regrip` cùng khoá), như `scene_probe`.
 Khuỷu khoá (`elbowLock`) đi qua cùng các luật `arm`, `elbow`, `wrist` ở chỗ khoá: rig không dời khuỷu khoá ra khỏi thân hay
 khỏi thế gập ngược. Mẫu có phần khoá (`elbowLockAt` dương, `sceneHeld` truyền vào `heldHits`) thì `arm` xét cả tay dẫn,
 `arm` / `elbow` mang `lock`, kêu cả quãng ngắn hơn `hold` (khuỷu nằm đúng chỗ cảnh khai, không phải chớp của bộ giải) và dòng
-báo gợi đổi hướng `elbow` của mốc khoá hay bỏ `elbowLock` (`ELBOW_LOCK_FIX`). Tay không cầm gì khoá khuỷu vào thân báo ở luật
-`body` của [03](03-scene.md#tay-và-khuỷu). Khuỷu khoá xoay quá nhanh báo ở nhóm `move` ([03](03-scene.md#giật-trên-hình)).
+báo gợi đổi hướng `elbow` của mốc khoá hay bỏ `elbowLock` (`ELBOW_LOCK_FIX`). Tay không cầm gì khoá khuỷu vào thân thì `check` không
+đo — soi ở Studio 3D. Khuỷu khoá xoay quá nhanh báo ở nhóm `move` ([03](03-scene.md#giật-trên-hình)).
 
 Ngưỡng số cấu hình ở `package.json` `stickman.held` ([05](05-repo-video.md#nhóm-luật)): `pierce`, `touch`, `wrap`, `grip`,
 `reach`, `sink`, `wrist`, `arm`, `elbow`, `oppose`, `rest`, `hold`.

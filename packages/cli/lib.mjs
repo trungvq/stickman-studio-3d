@@ -1564,50 +1564,6 @@ export function snapOptions(dir = ".") {
 }
 
 /**
- * Ngưỡng đo lòng bàn tay: `stickman.palm` trong `package.json` — `{ down, hang, hold }` (độ, độ, giây),
- * trường thiếu lấy `PALM_DOWN` / `PALM_HANG` / `PALM_HOLD` của rig; `false` là không đo. Sai kiểu thì trả
- * `{ error }`. docs/03-scene.md#lòng-bàn-tay
- */
-export function palmOptions(dir = ".") {
-  const raw = readPkg(resolve(dir))?.stickman?.palm;
-  if (raw === false) return { off: true };
-  const out = { down: rig.PALM_DOWN, hang: rig.PALM_HANG, hold: rig.PALM_HOLD };
-  if (raw === undefined) return out;
-  const bad = `package.json: stickman.palm phải là false hay { down, hang, hold } số dương, đang là ${JSON.stringify(raw)}`;
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { error: bad };
-  for (const [key, v] of Object.entries(raw)) {
-    if (!(key in out) || typeof v !== "number" || !(v > 0)) return { error: bad };
-    out[key] = v;
-  }
-  return out;
-}
-
-/**
- * Ngưỡng đo tay sai dáng: `stickman.arms` trong `package.json` — `{ straight, converge, upturn, hover, hold }` (độ, độ,
- * độ, đơn vị rig, giây), trường thiếu lấy `ARM_STRAIGHT` / `ARM_CONVERGE` / `ARM_UPTURN` / `ARM_HOVER_GAP` / `PALM_HOLD`
- * của rig; `false` là không đo. Sai kiểu thì trả `{ error }`. docs/03-scene.md#tay-và-khuỷu
- */
-export function armOptions(dir = ".") {
-  const raw = readPkg(resolve(dir))?.stickman?.arms;
-  if (raw === false) return { off: true };
-  const out = {
-    straight: rig.ARM_STRAIGHT,
-    converge: rig.ARM_CONVERGE,
-    upturn: rig.ARM_UPTURN,
-    hover: rig.ARM_HOVER_GAP,
-    hold: rig.PALM_HOLD,
-  };
-  if (raw === undefined) return out;
-  const bad = `package.json: stickman.arms phải là false hay { straight, converge, upturn, hover, hold } số dương, đang là ${JSON.stringify(raw)}`;
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { error: bad };
-  for (const [key, v] of Object.entries(raw)) {
-    if (!(key in out) || typeof v !== "number" || !(v > 0)) return { error: bad };
-    out[key] = v;
-  }
-  return out;
-}
-
-/**
  * Ngưỡng đo đồ cầm tay: `stickman.held` trong `package.json` — `{ pose, pierce, touch, wrap, grip, up, face, drift,
  * turn, reach, seat, body, sink, wrist, arm, elbow, oppose, hold }` (độ, rồi đơn vị rig bốn trường, độ, độ, đơn vị rig, độ,
  * đơn vị rig ba trường, đơn vị rig, độ, tỉ lệ bán kính tay, phần cánh tay trên, độ, giây), trường thiếu lấy các hằng `HELD_*` (`reach`: `AIM_GAP`; `seat`,
@@ -1956,7 +1912,7 @@ function topUnder(cols, p, sink, skip) {
 }
 
 /**
- * Cảnh three ở giây `t` cho phép đo lòng bàn tay (`PalmFrame` của rig): `pose(t)` một lần; mặt ngang
+ * Cảnh three ở giây `t` cho `scene_probe` đo mặt dưới bàn tay: `pose(t)` một lần; mặt ngang
  * dưới một điểm trong mọi vật của cảnh trừ đồ người ấy mang và người nền đóng băng (`userData.crowd`);
  * tay đang cầm đồ theo bàn tay three; người không có trong `pose(t)` là người đóng băng ở dáng giây 0.
  * docs/03-scene.md#lòng-bàn-tay
@@ -2128,11 +2084,11 @@ function itemClashRows(
 const moveProblems = (rt) => [...rig.sceneSlideProblems(rt), ...rig.sceneTurnProblems(rt)];
 
 /**
- * Nhóm luật của `check`, xếp theo thứ nó cần dựng: `ref` chỉ đọc JSON, `move` đo khớp người theo runtime, `hands`
- * và `held` cần cảnh three, `clash` cần cả cảnh three lẫn mẫu khối người, `episode` là tập, tiếng, git —
+ * Nhóm luật của `check`, xếp theo thứ nó cần dựng: `ref` chỉ đọc JSON, `move` đo khớp người theo runtime, `held`
+ * và `legacy` cần cảnh three, `clash` cần cả cảnh three lẫn mẫu khối người, `episode` là tập, tiếng, git —
  * docs/05-repo-video.md#nhóm-luật
  */
-export const CHECK_GROUPS = ["ref", "move", "hands", "held", "legacy", "clash", "episode"];
+export const CHECK_GROUPS = ["ref", "move", "held", "legacy", "clash", "episode"];
 
 /**
  * Nhóm luật `check` chạy: `only` (mảng hay chuỗi phẩy ngăn, trống là mọi nhóm) trừ `skip`. Trả `{ groups, all }`,
@@ -2188,7 +2144,6 @@ export const CHECK_TIMES = {
   three: "dựng cảnh three",
   ref: "ref",
   move: "move",
-  hands: "hands",
   held: "held",
   legacy: "legacy",
   clash: "clash",
@@ -2254,15 +2209,15 @@ function legacyCollector(world) {
 
 /**
  * Đo sâu một cảnh theo nhóm `ctx.groups`: trượt chân, thân quay gắt, giật trên hình (`move`); người lồng vào đồ, tay
- * xuyên thân, đồ lồng vào đồ (`clash`); tay sai dáng, lòng tay, đích theo mốc (`hands`); đồ cầm tay (`held`). Nhóm không
- * chạy thì không dựng thứ nó cần: cảnh three chỉ dựng cho `clash`, `hands`, `held`, mẫu khối người chỉ cho `clash`. Mỗi
+ * xuyên thân, đồ lồng vào đồ (`clash`); đồ cầm tay (`held`). Nhóm không chạy thì không dựng thứ nó cần: cảnh three
+ * chỉ dựng cho `clash`, `held`, `legacy`, mẫu khối người chỉ cho `clash`. Mỗi
  * mục `{ msg, group, key?, measure? }` (`key`, `measure` cho baseline), `error: true` là lỗi; mục `touch` lạ kèm `touch`
  * (tên mục) vì `check` chỉ báo nó ở cảnh đầu tiên gặp. `time` là ms từng phần. `ctx` là dữ liệu đã nạp của workspace
  * cùng ngưỡng đã kiểm
  */
 function deepScene(ctx, name) {
   const { scenesByName, sceneRuntime, charactersByName, codeLayers, world, worldRel } = ctx;
-  const { clash, arm, palm, snap, spans, held, groups } = ctx;
+  const { clash, snap, spans, held, groups } = ctx;
   const has = (g) => groups.includes(g);
   const time = {};
   const out = { move: [], clash: [], snap: [], time };
@@ -2286,7 +2241,6 @@ function deepScene(ctx, name) {
     });
   const people = !!data.lens && data.cast.some((m) => m.world);
   const doClash = has("clash") && !!clash && people;
-  const doHands = has("hands") && people;
   const doHeld = has("held") && !!held && !held.off && !held.error && people;
   const doLegacy = has("legacy") && people;
   const warn = (group, msg, extra) => out.clash.push(row(group, msg, extra));
@@ -2296,7 +2250,7 @@ function deepScene(ctx, name) {
   };
   // Cảnh three dựng một lần cho mọi nhóm cần nó; `ctx` là dữ liệu `check` đã nạp và resolve, cùng khoá như `data.ts`
   let on;
-  if (world && (doClash || doHands || doHeld || doLegacy)) {
+  if (world && (doClash || doHeld || doLegacy)) {
     const scene = lap(time, "three", () =>
       worldScene(
         world,
@@ -2312,8 +2266,7 @@ function deepScene(ctx, name) {
         worldRel,
       ),
     );
-    if (scene?.error)
-      warn(doClash ? "clash" : doHands ? "hands" : doHeld ? "held" : "legacy", scene.error);
+    if (scene?.error) warn(doClash ? "clash" : doHeld ? "held" : "legacy", scene.error);
     on = scene && !scene.error ? scene : undefined;
   }
   if (doClash)
@@ -2346,49 +2299,6 @@ function deepScene(ctx, name) {
         return warn("clash", `không đo được người 3D với đồ khối — ${e.message}`);
       }
       for (const r of rows) warn("clash", r.msg, { key: r.key, measure: r.measure });
-    });
-  if (doHands)
-    lap(time, "hands", () => {
-      const who = (m) => characterOf(m)?.character;
-      const frame = on && ((t) => palmFrame(t, on));
-      const each = (what, issues, line, key, measure) => {
-        let list;
-        try {
-          list = issues();
-        } catch (e) {
-          return warn("hands", `không đo được ${what} — ${e.message}`);
-        }
-        for (const s of list) warn("hands", line(s), { key: key(s), measure: measure(s) });
-      };
-      // Tay sai dáng: khuỷu thẳng, ngón chĩa vào nhau, lòng tay ngửa, lơ lửng trên mặt, chạm đầu người khác —
-      // docs/03-scene.md#tay-và-khuỷu
-      if (!arm.error && !arm.off)
-        each(
-          "tay sai dáng",
-          () => rig.sceneArms(rt, { ...arm, characterOf: who, frame }),
-          rig.armLine,
-          (s) =>
-            `arm:${s.rule}${s.kind ? `:${s.kind}` : ""}|${s.id}|${s.hand}|${s.on ?? s.other ?? ""}`,
-          (s) => s.amount,
-        );
-      if (!palm.error && !palm.off) {
-        // Lòng bàn tay quay sai — docs/03-scene.md#lòng-bàn-tay
-        each(
-          "lòng bàn tay",
-          () => rig.scenePalms(rt, { ...palm, characterOf: who, frame }),
-          rig.palmLine,
-          (s) => `palm:${s.rule}|${s.id}|${s.hand}|${s.on ?? ""}`,
-          (s) => s.angle,
-        );
-        // Đích theo mốc thân, lòng tay theo ý định không đạt — docs/03-scene.md#bàn-tay-theo-ý-định
-        each(
-          "đích theo mốc",
-          () => rig.sceneAims(rt, { hold: palm.hold, characterOf: who }),
-          rig.aimLine,
-          (s) => `aim:${s.rule}|${s.id}|${s.hand}|${s.to ?? ""}`,
-          (s) => s.amount,
-        );
-      }
     });
   // Đồ cầm tay: dáng, ngón xuyên đồ, độ ôm, món xoay, món trôi, món nhảy, tay phụ — docs/03-scene.md#đồ-cầm-tay
   const legacy = doLegacy && on ? legacyCollector(on) : null;
@@ -2446,7 +2356,7 @@ function deepScene(ctx, name) {
 /**
  * Dữ liệu `deepScene` của một luồng phụ: nạp lại workspace như `checkWorkspace` (hai lớp nhân vật,
  * hành động, động vật, đạo cụ của repo, bộ phận, và lớp vẽ code, cảnh three khi nhóm cần) cho các cảnh `names`;
- * ngưỡng (`clash`, `arm`, `palm`, `snap`, `held`), `spans` và `groups` lấy từ luồng chính đã kiểm. `setup` là ms nạp
+ * ngưỡng (`clash`, `snap`, `held`), `spans` và `groups` lấy từ luồng chính đã kiểm. `setup` là ms nạp
  */
 export async function deepContext({ dir, names, ...opts }) {
   const t0 = performance.now();
@@ -2516,7 +2426,7 @@ export async function deepContext({ dir, names, ...opts }) {
 }
 
 /** Nhóm cần cảnh three của repo (`stickman.world`) */
-const WORLD_GROUPS = ["clash", "hands", "held", "legacy"];
+const WORLD_GROUPS = ["clash", "held", "legacy"];
 
 /** RAM một luồng đo sâu cần, ước chừng */
 const JOB_RAM = 1e9;
@@ -2534,7 +2444,7 @@ async function deepScenes(root, names, ctx, jobs = checkJobs(names.length), time
   const out = new Map();
   const n = Math.min(jobs, names.length);
   if (n > 1) {
-    const { clash, arm, palm, snap, spans, held, groups } = ctx;
+    const { clash, snap, spans, held, groups } = ctx;
     // cảnh nặng (dài, đông người) đi trước để không cảnh nào kéo đuôi
     const weight = (name) => {
       const d = ctx.scenesByName[name];
@@ -2547,7 +2457,7 @@ async function deepScenes(root, names, ctx, jobs = checkJobs(names.length), time
         () =>
           new Promise((done) => {
             const w = new Worker(new URL("./check-worker.mjs", import.meta.url), {
-              workerData: { dir: root, names, clash, arm, palm, snap, spans, held, groups },
+              workerData: { dir: root, names, clash, snap, spans, held, groups },
             });
             const next = () => {
               const name = queue.shift();
@@ -3272,10 +3182,6 @@ export async function checkWorkspace({
   const tol = clashTol(root);
   const ratio = itemRatio(root);
   const self = selfTol(root);
-  const palm = palmOptions(root);
-  if (has("hands") && palm.error) bad(palm.error);
-  const arm = armOptions(root);
-  if (has("hands") && arm.error) bad(arm.error);
   let clash = null;
   if (typeof tol !== "number" || !(tol >= 0)) {
     if (has("clash"))
@@ -3299,7 +3205,7 @@ export async function checkWorkspace({
   if (has("held") && held.error) bad(held.error);
   if (nameList(only).includes("held") && held.off)
     bad("nhóm `held`: rig đang cài chưa có luật đồ cầm, hay stickman.held là false");
-  const deep = ["move", "hands", "held", "legacy", "clash"].some(has)
+  const deep = ["move", "held", "legacy", "clash"].some(has)
     ? Object.keys(scenesByName).filter(
         (name) => !frozen.test(name) && (!focusing || focused.has(name)),
       )
@@ -3311,7 +3217,7 @@ export async function checkWorkspace({
       : lap(times, "move", () =>
           Object.fromEntries(shotSpans(root, scenesByName, sceneRuntime, (n) => wanted.has(n))),
         );
-  const opts = { clash, arm, palm, snap, spans, held, groups };
+  const opts = { clash, snap, spans, held, groups };
   const results = deep.length
     ? await deepScenes(
         root,

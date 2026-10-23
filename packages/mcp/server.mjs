@@ -1643,7 +1643,7 @@ server.registerTool(
       clashes = Object.fromEntries(
         times.map((time) => [time, cli.clashesAt(rt, time, { ...opts, world, onWorld })]),
       );
-      // Mặt ngang dưới bàn tay: khe từ điểm thấp nhất của bàn tay, như luật bàn tay đặt trên mặt ngang của `check`
+      // Mặt ngang dưới bàn tay: khe từ điểm thấp nhất của bàn tay
       if (world && cli.palmFrame)
         for (const time of times) {
           const fr = cli.palmFrame(time, world);
@@ -2389,7 +2389,7 @@ server.registerTool(
   "check",
   {
     description:
-      "Soi workspace: version đã pin so với @stickman3d/sketch đang cài, JSON hỏng, socket trỏ tới mảnh không có, PNG thiếu alpha, mảnh không có trong danh mục, lớp vẽ code gói được không và `scenes` của nó có trỏ đúng tên cảnh, và công cụ ngoài (rsvg-convert / ffmpeg / ffprobe / magick) thiếu trên PATH. Soi cả workspace chậm: sửa xong một cảnh thì truyền `scene` — chỉ soi cảnh khớp (cảnh báo của chúng, người lồng vào đồ, kèm mọi lỗi), bỏ tập, tiếng, mảnh, git. Sửa gì thì chỉ chạy nhóm luật của thứ ấy (`only`): chỗ đứng, path → move,clash; tay → hands,clash (+held nếu đang cầm); đồ cầm, chỗ cầm, `held/` → held,clash (+ref khi sửa `held/<món>.json`); bối cảnh, đồ khối → clash,hands; hành động chung → `uses` tên ấy + ref,move,hands,held. Nhóm `legacy` kể đồ cầm còn đi đường cũ (`hold` không có chỗ cầm nhóm), bỏ bằng `skip`. Nhóm không chạy thì không dựng thứ nó cần. Cuối lô thì đủ nhóm trên các cảnh vừa đổi với `baseline` để chỉ thấy cảnh báo mới; cả workspace chỉ ở cuối tập hay sau khi nâng rig. Kết quả kèm `time` (ms từng nhóm, cộng dồn mọi luồng).",
+      "Soi workspace: version đã pin so với @stickman3d/sketch đang cài, JSON hỏng, socket trỏ tới mảnh không có, PNG thiếu alpha, mảnh không có trong danh mục, lớp vẽ code gói được không và `scenes` của nó có trỏ đúng tên cảnh, và công cụ ngoài (rsvg-convert / ffmpeg / ffprobe / magick) thiếu trên PATH. Soi cả workspace chậm: sửa xong một cảnh thì truyền `scene` — chỉ soi cảnh khớp (cảnh báo của chúng, người lồng vào đồ, kèm mọi lỗi), bỏ tập, tiếng, mảnh, git. Sửa gì thì chỉ chạy nhóm luật của thứ ấy (`only`): chỗ đứng, path → move,clash; tay → move,clash (+held nếu đang cầm); đồ cầm, chỗ cầm, `held/` → held,clash (+ref khi sửa `held/<món>.json`); bối cảnh, đồ khối → clash; hành động chung → `uses` tên ấy + ref,move,held. Nhóm `legacy` kể đồ cầm còn đi đường cũ (`hold` không có chỗ cầm nhóm), bỏ bằng `skip`. Nhóm không chạy thì không dựng thứ nó cần. Cuối lô thì đủ nhóm trên các cảnh vừa đổi với `baseline` để chỉ thấy cảnh báo mới; cả workspace chỉ ở cuối tập hay sau khi nâng rig. Kết quả kèm `time` (ms từng nhóm, cộng dồn mọi luồng).",
     inputSchema: {
       scene: z
         .string()
@@ -2405,7 +2405,7 @@ server.registerTool(
         .union([z.string(), z.array(z.string())])
         .optional()
         .describe(
-          "Chỉ chạy các nhóm luật: ref, move, hands, held, legacy, clash, episode (phẩy ngăn hay mảng)",
+          "Chỉ chạy các nhóm luật: ref, move, held, legacy, clash, episode (phẩy ngăn hay mảng)",
         ),
       skip: z
         .union([z.string(), z.array(z.string())])

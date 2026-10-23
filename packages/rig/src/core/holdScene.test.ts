@@ -15,7 +15,6 @@ import { parseHeldItem, type HeldItemSpec } from "./heldItem";
 import { holdHand } from "./holdLink";
 import { matVec, type M3, type V3 } from "./lens";
 import { heldUnprovided } from "./heldAudit";
-import { sceneAims } from "./palm";
 import { parseScene, resolveScene, sceneAt, sceneHoldProblems } from "./scene";
 import { CharacterSchema } from "./schema";
 import cocJson from "../../../../apps/studio/public/held/coc.json";
@@ -471,7 +470,7 @@ describe("cổ tay mang món nối từ mẫu trước", () => {
 });
 
 describe("báo cho `check`", () => {
-  it("ý định: đích như scene khai; đích do món đặt mang nhãn, `sceneAims` để luật `held:reach` báo", () => {
+  it("ý định: đích như scene khai; đích do món đặt mang nhãn để luật `held:reach` báo", () => {
     const down = at([
       {
         t: 0,
@@ -513,12 +512,9 @@ describe("báo cho `check`", () => {
     const hands = [
       { t: 0, right: { at: [-30, -260, -80], point: "grip", hold: { ...BUNG, item: "khay-dai" } } },
     ];
-    expect(actAim(C, at(hands))!.report.L.reach!.gap).toBeGreaterThan(6);
-    expect(
-      sceneAims({ ...runtime(hands), duration: 0.5 }, { characterOf: () => C }).filter(
-        (i) => i.rule === "reach" && i.hand === "L",
-      ),
-    ).toEqual([]);
+    const far = actAim(C, at(hands))!.report.L.reach!;
+    expect(far.gap).toBeGreaterThan(6);
+    expect(far.hold).toBe("support");
   });
 
   it("khai `hold` mà không ai đăng ký món: `held` báo", () => {

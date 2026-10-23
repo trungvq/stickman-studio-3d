@@ -134,8 +134,8 @@ lòng tay, giật trên hình — chia cho nhiều luồng: mặc định nửa 
 
 ### Nhóm luật
 
-Luật của `check` chia bảy nhóm theo thứ chúng cần dựng. `--only <nhóm,…>` chỉ chạy các nhóm ấy, `--skip <nhóm,…>` bỏ
-chúng; không cờ nào là đủ bảy nhóm. Tên sai là lỗi kèm danh sách nhóm. `--held` là tên tắt của `--only held`. MCP:
+Luật của `check` chia sáu nhóm theo thứ chúng cần dựng. `--only <nhóm,…>` chỉ chạy các nhóm ấy, `--skip <nhóm,…>` bỏ
+chúng; không cờ nào là đủ sáu nhóm. Tên sai là lỗi kèm danh sách nhóm. `--held` là tên tắt của `--only held`. MCP:
 `check({ only, skip })`. Nhóm không chạy thì thứ chỉ nó cần không dựng — không gói module cảnh three, không dựng cảnh
 three của từng cảnh, không lấy mẫu khối người, không mở luồng phụ — nên lượt hẹp nhanh thật chứ không chỉ in ít dòng hơn.
 
@@ -143,7 +143,6 @@ three của từng cảnh, không lấy mẫu khối người, không mở luồ
 |---|---|---|
 | `ref` | tham chiếu chéo (nhân vật, hành động, đạo cụ, động vật, nền, `fx`, `equip`), version pin, file giống bộ chung, bộ đồ của nhân vật; công tắc `equip` một chiều, hai track cùng ghi một socket, khuỷu gập ngược khi giơ tay, mốc ngoài `mask`, hành động tự giật, mốc khai không ai neo, người 3D diễn hành động 2D; tay cầm hai tay (`both`) trong khi tay kia cầm món khác; lớp vẽ code bật cho cảnh không có, thư mục sidebar | JSON, runtime, gói lớp vẽ code |
 | `move` | người 3D trượt, không tới mốc dừng, thân quay gắt; tay chân giật trên hình | runtime, khớp người theo thời gian |
-| `hands` | tay sai dáng, lòng bàn tay quay sai, đích theo mốc và lòng tay theo ý định không đạt | runtime, cảnh three (mặt ngang dưới bàn tay) |
 | `held` | đồ cầm tay sai: ngón xuyên, món hở, tâm nắm xa, ý định không đạt, tay phụ hay `item:` không tới, món nhảy qua mốc `hold`, cầm món không ai `provide`; chỗ cầm nhóm (`món@nhóm`) thêm da lún, ngón vai trò hở, cổ tay vượt kẹp hay sát kẹp, tay lấn thân, món to so với tay; đường cũ thêm dáng khác dáng khai, món trôi | runtime, cảnh three |
 | `legacy` | đồ cầm còn đi đường cũ (`hold` gọi tay không có chỗ cầm nhóm), một dòng mỗi cảnh | runtime, cảnh three |
 | `clash` | người lồng vào đồ, vào người khác, tay xuyên thân, đồ lồng vào đồ, `touch` lạ | runtime, cảnh three, lớp vẽ code, mẫu khối người mỗi `0,25 s` |
@@ -153,9 +152,8 @@ Nhóm nào cũng báo JSON hỏng theo zod, lỗi của `resolveScene` (mốc kh
 `package.json` của nhóm đang chạy: không parse được thì không đo được gì. Runtime (`resolveScene`) dựng cho mọi nhóm vì
 chính nó là phép kiểm tham chiếu chéo của `ref`, và nó rẻ so với các phép đo. **Tay xuyên thân nằm ở `clash`** dù là
 luật của tay: nó đo chung một lượt với người lồng vào đồ (`sceneClashes` trên khối người, giây lấy mẫu chia nhỏ theo vật
-của cảnh three dời), ngưỡng ở `stickman.clash.self`; tách sang `hands` thì hoặc `hands` phải chạy cả lượt va chạm, hoặc
-số đo lệch lượt đủ. Cảnh three dựng một lần cho mọi nhóm cần nó; dựng hỏng thì dòng báo mang nhóm đầu tiên trong
-`clash`, `hands`, `held`, `legacy` đang chạy. `held/<món>.json` và `hands/<tên>.json` hỏng là lỗi zod như mọi JSON; tên
+của cảnh three dời), ngưỡng ở `stickman.clash.self`. Dáng bàn tay (khuỷu, lòng tay, hướng ngón) `check` không đo — soi và sửa ở Studio 3D. Cảnh three dựng một lần cho mọi nhóm cần nó; dựng hỏng thì dòng báo mang nhóm đầu tiên trong
+`clash`, `held`, `legacy` đang chạy. `held/<món>.json` và `hands/<tên>.json` hỏng là lỗi zod như mọi JSON; tên
 dáng tay ngoài `[a-z0-9-]` hay trùng dáng có sẵn của rig cũng là lỗi, và dáng ấy không vào thư viện. Món, mốc, dáng tay
 mà scene trỏ tới không có, chỗ cầm không hợp lệ là lỗi `resolveScene`. `legacy` chạy cùng `held` thì đọc chung các tư thế đã đặt, chạy riêng thì
 chỉ đặt cảnh mỗi `0,1 s` mà không đo.
@@ -165,12 +163,12 @@ Sửa gì chạy nhóm nào:
 | Sửa | Chạy |
 |---|---|
 | Chỗ đứng, đường đi (`world.at`, `path`) | `move,clash` |
-| Tay (`world.hands`, `reach`, dáng tay, `hands/<tên>.json`) | `hands,clash` (+`held` nếu tay đang cầm) |
+| Tay (`world.hands`, `reach`, dáng tay, `hands/<tên>.json`) | `move,clash` (+`held` nếu tay đang cầm) |
 | Đồ cầm trong cảnh (`world.hands[].hold`, ý định, `point: item:`), `cast.provide` | `held,clash` |
 | Món cầm tay: mốc, hình va chạm, phần (`held/<món>.json`) | `ref,held,clash` trên mọi cảnh có món ấy (`--scene`); repo tự kiểm hình khớp lưới |
 | Thời gian, retime, audio | `move` + lượt toàn bộ cho `episode` |
-| Bối cảnh, đồ khối | `clash,hands` |
-| Hành động chung | `--uses <tên> --only ref,move,hands,held` |
+| Bối cảnh, đồ khối | `clash` |
+| Hành động chung | `--uses <tên> --only ref,move,held` |
 | Cuối lô | đủ nhóm trên các cảnh của lô, `--baseline` |
 | Cuối tập, nâng rig | đủ, toàn workspace (`--baseline` nếu có) |
 
@@ -178,8 +176,8 @@ Sửa một cảnh thì chỉ chạy nhóm theo bảng; cả workspace chậm, c
 đường cũ thì thêm `--skip legacy`.
 
 ```bash
-pnpm exec stickman check --scene '^t01-s04[0-5]' --only hands,clash
-pnpm exec stickman check --uses ngoi-nga-3d --only ref,move,hands,held
+pnpm exec stickman check --scene '^t01-s04[0-5]' --only move,clash
+pnpm exec stickman check --uses ngoi-nga-3d --only ref,move,held
 ```
 
 `--time` in thời gian từng nhóm và từng phần dựng chung — nạp workspace, dựng runtime, gói lớp vẽ code, gói module
@@ -243,10 +241,8 @@ Các kiểm tra sau bắt lỗi hợp lệ theo schema nhưng làm thiếu hình
 | **Tay xuyên thân** | `clash` | `sceneClashProblems` của cli (`armPierce` của lõi, tay và thân đúng như three vẽ): cánh tay, cẳng tay (bỏ quãng sát vai và sát cổ tay) lấn vào thân áo của chính người ấy quá `4` (`stickman.clash.self`, `false` là tắt) — [10](10-lop-ve-code.md#tay-xuyên-thân) |
 | **Đồ lồng vào đồ** | `clash` | `sceneItemClashProblems` của cli (`solidItemClashes` của fx): hai món của lớp vẽ code lấn nhau quá `stickman.clash.tol` **và** phần thể tích món nhỏ nằm trong món kia quá `0,1` (`stickman.clash.items`, `false` là tắt), mỗi cặp một dòng; món khai tên món kia trong `touch` thì bỏ — [10](10-lop-ve-code.md#đồ-lồng-vào-đồ) |
 | **Người 3D diễn hành động 2D** | `ref` | `sceneSideProblems` của rig, **mức lỗi**: người có `world` mà clip ghi kênh tay chân của hành động không soạn ở `side` — sân khấu three vẽ kênh ấy ở dáng nghỉ, hoà với hành động `side` là giật một khung. Mỗi người, mỗi clip một dòng kèm bản `-3d` có sẵn — [03](03-scene.md#hành-động-cho-người-3d) |
-| **Lòng bàn tay quay sai** | `hands` | `scenePalmProblems` của rig (`actPalms`, bàn tay đúng như three vẽ), mặt ngang dưới bàn tay lấy từ cảnh three [`stickman.world`](#cảnh-three-cho-check) (`palmFrame` của cli): bàn tay duỗi đặt trên mặt ngang mà lòng tay lệch khỏi úp quá `45°`, tay buông bên đùi mà lòng tay lệch hướng vào đùi quá `60°`, kéo dài từ `0,3 s` (`stickman.palm`, `false` là tắt) — [03](03-scene.md#lòng-bàn-tay) |
 | **Đồ cầm tay sai** | `held` | `sceneHeld` của rig trên cảnh three [`stickman.world`](#cảnh-three-cho-check) (`heldFrame`, `heldItemsFrame` của cli, `heldHands` của người 3D): trục ngón vào trong món quá `1,25`, món không chạm tay, tâm nắm ngoài món quá `3`, ý định không đạt (tay dẫn: `AimReport.hold` kèm khớp kẹp; đường cũ: `userData.hold`), tay phụ hay `item:` không tới, món nhảy qua mốc gắn / thả / đổi tay, món khai `hold` mà cảnh không `provide`; chỗ cầm nhóm đi bộ luật riêng ([11](11-nhom-cam.md#7-luật-check-nhóm-held)): `sink` (da lún), `rest` (da dưới mặt đỡ ở mốc món nằm), `role`, `oppose` (không có lực đối), `grip` theo nhóm, và với món đặt trước `reach` (ngoài tầm — lỗi), `wrist` (vượt kẹp — lỗi, sát kẹp — cảnh báo), `arm`, `size`, cả hai đường `elbow` (khuỷu gập ngược vào trong hay chĩa lên — lỗi) và tay lấn đầu (lỗi); món treo (`món@carry`, `heldCarries`) quai rời chỗ treo hay khuỷu không gập giữ quai, thân món lồng vào người; đường cũ thêm dáng `hold` khác dáng khai, món trôi trong khung bàn tay; kéo dài từ `0,3 s` (`stickman.held`: `pierce`, `touch`, `wrap`, `grip`, `up`, `face`, `drift`, `turn`, `reach`, `sink`, `wrist`, `arm`, `elbow`, `oppose`, `rest`, `seat`, `body`, `hold` — số dương, thiếu thì lấy mặc định của rig; `grip` khai thì thắng ngưỡng theo nhóm; `false` là tắt) — [03](03-scene.md#đồ-cầm-tay) |
 | **Đồ cầm còn đi đường cũ** | `legacy` | `legacyHolds` của người 3D: lần cầm qua `hold` gọi tay không có chỗ cầm nhóm, một dòng mỗi cảnh — [01](01-rig.md#món-cầm-tay) |
-| **Tay sai dáng** | `hands` | `sceneArmProblems` của rig (`actJoints`, `actPalms`, đúng như three vẽ): khuỷu thẳng từ `170°` (đích xa quá tầm, tay buông, góc của hành động), ngón hai tay gần nhau chĩa vào nhau quá `30°`, lòng tay ngửa hay ra trước khi bàn tay thấp, bàn tay đặt bằng đích lơ lửng `4–15` trên mặt ngang (cần [`stickman.world`](#cảnh-three-cho-check)), bàn tay lấn vào đầu người khác; kéo dài từ `0,3 s` (`stickman.arms`, `false` là tắt) — [03](03-scene.md#tay-và-khuỷu) |
 | **Tay chân giật trên hình** | `move` | `sceneSnapProblems` của rig: lấy mẫu theo fps bản chốt, khớp đúng như hình vẽ ra (`actJoints` cho người 3D, `joints2` cho người 2D) qua khung cắt camera, khung nào một khớp nhảy vượt nền chuyển động quanh nó quá ngưỡng (`stickman.snap`) thì kêu, kèm lý do đọc từ timeline; chỗ khai `snap` thì bỏ — [03](03-scene.md#giật-trên-hình) |
 | **Hành động tự giật** | `ref` | `actionSnapProblems` của rig: `wrap` mà mốc cuối ở `t: 1` lệch mốc đầu, hay hai mốc sát nhau đổi góc lớn hơn hẳn hai đoạn kề; file khai `snap` thì bỏ — [01](01-rig.md#hành-động-giật-có-chủ-ý) |
 | **Mốc khai mà không ai neo** | `ref` | Chỉ khi khai `stickman.marks.unused: "warn"`: mốc trong `marks` không chỗ nào trong JSON viết `"@tên"`. Mặc định tắt, vì lớp vẽ code đọc mốc qua `ctx.marks` mà `check` không thấy — [03](03-scene.md#mốc-có-tên) |

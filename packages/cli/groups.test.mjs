@@ -24,9 +24,9 @@ import {
 
 describe("check: tham số và nhóm luật", () => {
   it("`--only`, `--skip` phẩy ngăn, lặp thì cộng dồn; `--held` là `--only held`", () => {
-    const o = parseCheckArgs(["--only", "move,hands", "--skip", "hands", "--only", "clash"]);
-    assert.deepEqual(o.only, ["move", "hands", "clash"]);
-    assert.deepEqual(o.skip, ["hands"]);
+    const o = parseCheckArgs(["--only", "move,legacy", "--skip", "legacy", "--only", "clash"]);
+    assert.deepEqual(o.only, ["move", "legacy", "clash"]);
+    assert.deepEqual(o.skip, ["legacy"]);
     assert.deepEqual(checkGroups(o).groups, ["move", "clash"]);
     assert.deepEqual(parseCheckArgs(["--held"]).only, ["held"]);
     assert.deepEqual(checkGroups(parseCheckArgs(["--held", "--only", "ref"])).groups, [
@@ -67,10 +67,10 @@ describe("check: tham số và nhóm luật", () => {
   it("tên nhóm sai, bỏ hết nhóm, thiếu giá trị, `--jobs` không dương là lỗi kèm danh sách nhóm", () => {
     assert.match(
       parseCheckArgs(["--only", "hand,move"]).error,
-      /không có nhóm `hand` — nhóm của check: ref, move, hands, held, legacy, clash, episode/,
+      /không có nhóm `hand` — nhóm của check: ref, move, held, legacy, clash, episode/,
     );
     assert.match(
-      parseCheckArgs(["--skip", "ref,move,hands,held,legacy,clash,episode"]).error,
+      parseCheckArgs(["--skip", "ref,move,held,legacy,clash,episode"]).error,
       /không còn nhóm/,
     );
     assert.match(parseCheckArgs(["--only"]).error, /--only cần một giá trị/);
@@ -100,8 +100,8 @@ describe("check: baseline", () => {
     { scene: "a", group: "clash", key: "lấn", count: 1, measure: 3, msg: "lấn" },
     { scene: "a", group: "clash", key: "nhẹ", count: 1, measure: 0.5, msg: "nhẹ" },
     { scene: "a", group: "move", key: "giật", count: 1, measure: 40, msg: "giật" },
-    { scene: "a", group: "hands", key: "hết", count: 1, msg: "hết" },
-    { scene: "b", group: "hands", key: "cảnh khác", count: 1, msg: "cảnh khác" },
+    { scene: "a", group: "held", key: "hết", count: 1, msg: "hết" },
+    { scene: "b", group: "held", key: "cảnh khác", count: 1, msg: "cảnh khác" },
   ];
   const inScope = (e) => e.scene === "a";
 
@@ -143,7 +143,7 @@ describe("check: baseline", () => {
       [
         ["a", "clash", "lấn", 2, 3.04],
         ["a", "clash", "mới", 1, 2],
-        ["b", "hands", "cảnh khác", 1, undefined],
+        ["b", "held", "cảnh khác", 1, undefined],
       ],
     );
   });
@@ -273,13 +273,13 @@ describe("check: chạy theo nhóm", () => {
     }
     const dir = space();
     const ref = await checkWorkspace({ dir, jobs: 1, only: "ref" });
-    for (const k of ["move", "hands", "held", "clash", "threads", "three"])
+    for (const k of ["move", "held", "clash", "threads", "three"])
       assert.equal(ref.time[k], undefined, k);
     const held = await checkWorkspace({ dir, jobs: 1, only: "held" });
     assert.ok(held.time.three > 0);
     assert.equal(held.time.clash, undefined);
     assert.equal(held.time.move, undefined);
-    const skip = await checkWorkspace({ dir, jobs: 1, skip: "clash,hands,held,legacy" });
+    const skip = await checkWorkspace({ dir, jobs: 1, skip: "clash,held,legacy" });
     assert.equal(skip.time.three, undefined);
     assert.ok(skip.time.move > 0);
   });
