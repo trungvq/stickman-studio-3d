@@ -827,7 +827,8 @@ Món treo trên cánh tay, không nằm trong bàn tay — túi khoác khuỷu, 
 định; bàn tay theo hành động. Món áp được nhóm khi có ít nhất một chỗ treo trong `seats`; `on` bắt buộc và `seats[on]`
 phải có. `carrySpecOf` đổi chỗ cầm ra spec treo `{ on, at: seats[on], yaw, touch }` (`touch` của món cộng của cảnh) mà
 `carryFrame` (`heldCarry.ts`) nhận; cách treo mỗi khung ở [01](01-rig.md#món-treo). Quai `strap` tựa lên người: rig dời
-món tới khi không viên quai nào trong cẳng tay, cánh tay trên, vỏ thân áo. **Để sau**: bỏ `seats`, rig chọn điểm treo
+món tới khi không viên quai nào trong cẳng tay, cánh tay trên, vỏ thân áo. Thân món thõng đứng, không đẩy khỏi người: lồng
+thì `check` báo `body`. **Để sau**: bỏ `seats`, rig chọn điểm treo
 trên quai `strap` theo `on` (mặt trong quai cho khuỷu, đỉnh quai cho vai), một mốc cho mọi cách treo.
 
 #### 14. `soft` — vật mềm (để sau)
@@ -1567,7 +1568,7 @@ của `held/`.
   tay `both` món đặt trước (tay phụ cạnh đối, đỡ đáy, đỡ mặt sau); `carry` chỉ hai
   hàng treo khuỷu (khuỷu gập chữ V, cổ tay trước vai) và treo vai (cổ tay theo vai `offset [0, 95, 65]` — tay dang ngoài túi, co giãn theo người —, cảnh khai `touch` cho vai), món không
   đặt trước ngực, ô ảnh lấy cả món và đoạn tay, `do.json` giữ
-  `seat`, `body`, `swing` (và `bend`, `rise` của khuỷu).
+  `seat`, `body` (và `bend`, `rise` của khuỷu).
 - Hàng `sheet` hay `card` khai `edge` hay `thumb` không có trên khối hình tấm hay đĩa của món, hay cần mốc món (`front`, `bottom`) mà món không có,
   bị lọc trước khi giải; hàng `both` mà món không có mặt đáy / sau có cạnh cho tay phụ cũng bị lọc; `do.json` (`loc`) và `index.md`
   kê hàng lọc kèm lý do. Cặp (món, `platform`) mà mặt đỡ chọn ra (chúc xuống nhất) không có cạnh (đáy chai tròn) bị bỏ cả cặp (`bo`).

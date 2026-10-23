@@ -1472,7 +1472,7 @@ bỏ bàn tay ngoài khung camera:
 | **Tay phụ, `item:` không tới** (`reach`) | Tay dẫn cầm cứng: tay phụ (`both`, đổi tay) còn cách chỗ cầm của nó trên món, hay điểm `item:<mốc>` còn cách đích, quá `AIM_GAP` nhân `world.s`; đang hoà giữa hai mốc thì đo tới đích đã hoà, trong quãng tay phụ vào món thì không đo. Luật đích theo mốc của `hands` không báo hai ca này | `6` |
 | **Món trôi** (`drift`, đường cũ) | Món dời quá `HELD_DRIFT` hay xoay quá `HELD_TURN` trong khung bàn tay so với lúc bắt đầu cầm (một lần cầm: cùng món, dáng, `follow`, `offset`, `rotate`, liền mạch) — `follow: "level"` đứng theo người nên cổ tay xoay là món trôi. Món cứng không trôi theo cách dựng | `3`, `20°` |
 | **Quai không nằm trên chỗ treo** (`seat`, món treo) | Đỉnh quai (`seats[on]`) cách chỗ treo quá `CARRY.seat` (`extra` đặt món đang treo, mốc `seats[on]` không phải đỉnh quai); khoác khuỷu mà khuỷu mở quá `CARRY.bend` (`150°`, không còn chỗ gập giữ quai) hay cẳng tay chúc quá `CARRY.rise` (`10°` dưới phương ngang, quai tuột về cổ tay) | `3` |
-| **Món treo lồng vào người** (`body`, món treo) | Thân món (`shape`) lồng vào một phần người — mặt thân áo, hông, váy (đám điểm trên lưới), nang đầu, chi, bàn tay; trừ cánh tay trên và cẳng tay mà quai khoác khuỷu vắt qua — sâu hơn phần `touch` của món và chỗ cầm cho lấn cộng `CARRY.body`. Thường là cánh tay buông sát sườn mà túi đeo vai kẹp giữa: dang tay ra | `1,5` |
+| **Món treo lồng vào người** (`body`, món treo) | Thân món (`shape`) lồng vào một phần người — mặt thân áo, hông, váy (đám điểm trên lưới), nang đầu, chi, bàn tay; trừ cánh tay trên và cẳng tay mà quai khoác khuỷu vắt qua — sâu hơn phần `touch` của món và chỗ cầm cho lấn cộng `CARRY.body`. Rig không đẩy thân món ra: túi khoác khuỷu lồng vào sườn thì đưa khuỷu ra ngoài, túi đeo vai kẹp giữa cánh tay buông sát sườn thì dang tay ra | `1,5` |
 | **Món nhảy** (`jump`) | Món đăng ký (`cast.provide`) dời quá `HELD_DRIFT` hay xoay quá `HELD_TURN` trong thế giới qua một mốc `hold` (so `HELD_JUMP_EPS` giây hai bên mốc): lúc gắn (món nằm xa chỗ tay sẽ cầm; nhặt món vừa thả thì khai mốc món nằm `rest` không khai chỗ, [11](11-nhom-cam.md#mốc-món-items)), lúc thả (món về chỗ `provide` mà `extra` không giữ ở chỗ thả), lúc đổi tay (tay mới chưa tới đúng mốc, hay không xoay kịp) | `3`, `20°` |
 
 ```
@@ -1511,7 +1511,7 @@ không hợp lệ) và `item` (mốc `items[]` có hướng suy biến).
 
 Chỉ đo đồ cầm, nhanh (vài giây một cảnh): `stickman check --only held --scene <regex>` (tên tắt `--held`) — nhóm `held`, [05](05-repo-video.md#nhóm-luật). `scene_probe` trả cùng số đo ở
 `world.held` ([04](04-mcp.md#người-3d)), kèm `hold`, `intent`, `reach`, `grasp` của chỗ cầm nhóm (món đặt trước và tay dẫn); món treo ở `world.carry` (`seat`,
-`bend`, `rise`, `body`, `swing`, luật phạm). Ngưỡng ở `package.json` của repo
+`bend`, `rise`, `body`, luật phạm). Ngưỡng ở `package.json` của repo
 video, trường thiếu lấy mặc định; `false` là không đo:
 
 ```json

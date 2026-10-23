@@ -296,8 +296,7 @@ không có tool riêng.
   khe tầm với).
   Món treo trên cánh tay (`món@carry`, [01](01-rig.md#món-treo)) ở `carry.right` / `carry.left`: `item`, `hold`, `on`
   (`elbow` / `shoulder`), `seat` (đỉnh quai tới chỗ treo đã dời), `shift` (món có quai `strap`: đoạn dời để quai tựa lên người), `bend` / `rise` (khuỷu: góc gập, độ ngóc cẳng tay), `body`
-  (`gap` khe thân món tới phần người gần nhất — âm là lồng —, `part`, `allow` phần `touch` cho lấn), `swing` (độ đẩy khỏi
-  phương đứng), `issues` (`seat`, `body`).
+  (`gap` khe thân món tới phần người gần nhất — âm là lồng —, `part`, `allow` phần `touch` cho lấn), `issues` (`seat`, `body`).
   Cảnh có `lens` và người 3D kèm `clashes`: mỗi mốc hỏi, các chỗ phần người lồng vào đồ khối hay vào
   người khác sâu quá ngưỡng của `check`, sâu trước —
   `{ "0.5": [{ "who": "haru.head", "with": "hoc (mảnh 0)", "depth": 33 }] }`

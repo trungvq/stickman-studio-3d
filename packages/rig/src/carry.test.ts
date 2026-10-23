@@ -100,9 +100,9 @@ describe('món treo: rig treo món trên cánh tay', () => {
     const [m] = heldCarries(fig, 'a');
     expect(m).toMatchObject({ hold: 'tui@carry', on: 'elbow', hand: 'R', obj: bag.id });
     expect(m.body.gap).toBeGreaterThan(-CARRY.body);
-    // thân món thẳng đứng trừ góc đẩy khỏi thân
+    // thân món thẳng đứng, không đẩy khỏi thân
     const up = new THREE.Vector3(0, 1, 0).transformDirection(bag.matrixWorld);
-    expect(Math.abs(Math.acos(up.y) * (180 / Math.PI) - m.swing)).toBeLessThan(0.5);
+    expect(up.y).toBeCloseTo(1, 6);
   });
 
   it('đeo vai: đỉnh quai trên đầu vai ngoài khớp vai, tay dang ngoài túi thì không lồng', () => {

@@ -1912,7 +1912,6 @@ function carryProbe(h) {
       part: h.body.part,
       ...(h.body.allow ? { allow: h.body.allow } : {}),
     },
-    swing: Math.round(h.swing),
     issues: rig.carryHits ? rig.carryHits(h).map((x) => x.rule) : [],
   };
 }
