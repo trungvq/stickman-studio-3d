@@ -971,7 +971,8 @@ mô tả bằng số trên bề mặt một khối thân, chiếu ra theo góc n
 ```
 
 Khối thân là chồng các tiết diện ngang ellipse đồng dạng, bề dày trước–sau bằng
-`TORSO_DEPTH` lần bề ngang. Mặt cắt dọc đi từ mép trên (cao hơn khớp cổ `rise`, nửa rộng
+`TORSO_DEPTH` lần bề ngang; người 3D tách bề sâu khỏi bề ngang ở nửa trên
+([ngực và lưng nhìn nghiêng](#ngực-và-lưng-nhìn-nghiêng)). Mặt cắt dọc đi từ mép trên (cao hơn khớp cổ `rise`, nửa rộng
 `NECK_TOP · neck`) vát xuống vành vai (nửa rộng `rig.shoulderHalf + ease`, thấp hơn mép
 trên `slope` px mỗi px vát ra ngang, không thấp hơn khớp vai), bo góc `round`, rồi thon
 xuống gấu (nửa rộng `rig.hipHalf + fit · (shoulderHalf − hipHalf) + ease`, thấp hơn hông
@@ -1302,6 +1303,25 @@ nổi khối (`shirt`, `polo`, `bowShirt`, `suit`, `blazer`, `blouse`), chỉ ng
   `COLLAR_POP_FLARE[0]` (`0.25`) lần ở sau gáy, tới `[1]` (`1.5`) lần ở giữa ngực: sau gáy là vành đứng ôm cổ, hai mũi
   cổ trước ngực xoè ra hai bên cằm thay vì đâm lên.
 - `0` là lá cổ gập đúng như không khai. Lá cổ dựng cao bằng chân cổ cộng bề rộng lá cổ; tóc dài rủ gáy có thể lấn vào.
+
+### Ngực và lưng nhìn nghiêng
+
+Người 3D (`torsoMesh`, `torsoSection` của lõi) không lấy bề sâu thân theo bề ngang ở nửa trên: vành vai rộng mà
+mỏng, từ chân cổ mặt trước đi xuống ngực theo một dốc dài, lưng đầy sớm hơn ngực.
+
+| Hằng số | Giá trị | Nghĩa |
+|---|---:|---|
+| `CHEST.at` | 0.7 | Ngang ngực cao hơn hông bấy nhiêu phần thân (nhân `rig.height`): nửa trước đầy nhất ở đây; mốc `chest` cũng ở đây |
+| `CHEST.back` | 0.6 | Nửa sau đầy sau bấy nhiêu phần quãng từ mép trên xuống ngang ngực |
+| `CHEST.step` | 3 | Trên ngang ngực, hàng mặt cắt cách nhau không quá bấy nhiêu px |
+
+- `chestDepth` nhận nửa bề sâu theo bề ngang (`TORSO_DEPTH` lần nửa rộng, người mặc đồ theo `cladProfile`) và trả
+  nửa sau (`depth`) và nửa trước (`front`): từ ngang ngực xuống giữ nguyên; trên đó mỗi nửa đi từ bề sâu ở mép trên tới
+  bề sâu ở đích theo dốc Hermite `u + u² − u³` — ở mép trên dốc bằng dốc trung bình, tới đích thì đứng —, đích của nửa
+  trước là ngang ngực, của nửa sau là `CHEST.back` quãng ấy. Không nửa nào sâu hơn bề sâu theo bề ngang ở cùng độ cao.
+- Nửa trước cộng [bụng phệ](#bụng-phệ). Mọi chỗ đọc mặt thân 3D đi qua `torsoSection`: khối thân, nét, mảng, cổ áo, khăn,
+  kính gài nẹp, dây chuyền, mốc người (`markAt`), lấn thân của bộ giải khuỷu, `armPierce`.
+- 2D, 2.5D (`torsoPaths`) giữ ellipse `TORSO_DEPTH`.
 
 ### Bụng phệ
 

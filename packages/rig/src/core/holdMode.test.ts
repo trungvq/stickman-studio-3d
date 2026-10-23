@@ -509,8 +509,8 @@ describe("hai tay trên mốc món → đồ theo tay", () => {
 
   it("cổ tay tay dẫn kẹp khi còn hai tay: độ lệch báo đúng món như vẽ", { timeout: 30_000 }, () => {
     const b = sceneB("camera", [
-      [35, 0, 0],
-      [35, 0, 0],
+      [35, -10, 0],
+      [35, -10, 0],
     ]);
     const rb = build(b);
     const k = holdToHandLed(rb, b, { id: "nguoi", side: "right", at: 0, rebuild: build });

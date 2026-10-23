@@ -1292,7 +1292,7 @@ dựng — hình bao của mái chính diện, cộng một chỏm sọ phủ t�
 | `SIDE_SHOULDER` | 0.2 | Nửa rộng vai còn bấy nhiêu ở thân `side`; thân áo dựng khối không dùng |
 | `SIDE_HIP` | 0.4 | Nửa rộng hông còn bấy nhiêu ở thân `side`; thân áo dựng khối không dùng |
 | `SIDE_TORSO` | 0.78 | Thân áo chưa có hình `side` thì bóp ngang còn bấy nhiêu |
-| `TORSO_DEPTH` | 0.78 | Thân áo dựng khối: bề dày trước–sau của khối bằng bấy nhiêu lần bề ngang ở cùng độ cao |
+| `TORSO_DEPTH` | 0.78 | Thân áo dựng khối: bề dày trước–sau của khối bằng bấy nhiêu lần bề ngang ở cùng độ cao; người 3D từ ngang ngực xuống, nửa trên theo `chestDepth` ([02](02-trang-phuc.md#ngực-và-lưng-nhìn-nghiêng)) |
 | `TORSO_TILT` | 0.25 | Thân áo dựng khối của người 2D nhìn từ hơi cao: điểm quay ra người xem `z` px thì thấp xuống bấy nhiêu lần `z`. Người 3D chiếu thật ([Người 3D](#người-3d)) |
 | `SIDE_EYE` | 0.74 | Mắt cách tâm đầu bấy nhiêu lần nửa trục ngang, về `+x` |
 | `SIDE_EYE_OVAL` | 0.7 | Hình tròn của mắt (con ngươi, `wide`, lòng trắng `bulge`, `squint`) bóp ngang còn bấy nhiêu |
@@ -1850,8 +1850,8 @@ cùng phép tính ấy cho hướng lòng bàn tay ([Hướng lòng bàn tay](#h
 
 `armPierce(nhân vật, scenePose)` (`core/pierce.ts`) đo tay xuyên thân áo trên các khớp ấy: thân là
 khối tròn xoay dẹt của `torsoMesh` dựng lại không cần `three` — nửa rộng theo `profile` của áo, tiết
-diện ngang ellipse dẹt `TORSO_DEPTH` (người mặc đồ: sườn áo lùi cho tay và dày `CLAD_DEPTH`, `cladProfile` trên
-chỗ trống `roots3`), gắn ở hông theo trục hông → cổ, cả người nhân `world.s`
+diện ngang hai nửa ellipse của `torsoSection` (nửa trước ngực, bụng phệ, nửa sau lưng; người mặc đồ: sườn áo lùi
+cho tay và dày `CLAD_DEPTH`, `cladProfile` trên chỗ trống `roots3`), gắn ở hông theo trục hông → cổ, cả người nhân `world.s`
 ([10](10-lop-ve-code.md#tay-xuyên-thân)). Đổi cách `torsoMesh` dựng thân thì đổi cùng `armPierce`.
 
 `figure3d` là hình học của người que SVG, không phải của three: hai đường trùng nhau ở kênh nâng
@@ -1966,8 +1966,8 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   mép trong cẳng tay (`armSide`, `armInner`), nên áo suông hay hông rộng thành dáng quả lê mà không lấn
   vào tay. `roots3` trả chỗ ấy ở `room`; thân áo, nét, khuy, khối hông và va chạm dựng theo mặt cắt đã lùi.
   Góc vai giữ nguyên nên nắp tay vẫn ôm góc vai. Nửa bề sâu từng hàng là `CLAD_DEPTH` (`0,95`) lần nửa
-  rộng — dày hơn `TORSO_DEPTH` của người que — nhưng không quá `CLAD_DEPTH · armSide`, nên vai rộng mà
-  mỏng, ngực và lưng phẳng một mạch, nhìn ngang không gù. Từ khớp hông (gấu cao hơn thì từ gấu) xuống gấu, sườn áo
+  rộng — dày hơn `TORSO_DEPTH` của người que — nhưng không quá `CLAD_DEPTH · armSide`, nên dưới vai ngực và lưng
+  phẳng một mạch; trên ngang ngực bề sâu theo `chestDepth` như người que ([02](02-trang-phuc.md#ngực-và-lưng-nhìn-nghiêng)). Từ khớp hông (gấu cao hơn thì từ gấu) xuống gấu, sườn áo
   không hẹp hơn mép ngoài gốc đùi ở độ cao ấy cộng `THIGH_CLEAR` (`1` px), kể cả ở góc bo gấu, nở dần trong `THIGH_RAMP`
   (`12` px) phía trên: tay buông sát hông đặt sườn áo đúng mép đùi, mặt đùi trùng mặt thân thì lòi qua góc gấu thành chấm
   mực; tay buông vẫn cách sườn áo ít nhất `CLAD_GAP − THIGH_CLEAR`. Áo hẹp hơn mép ấy quá `THIGH_REACH` (`3` px)
@@ -2107,7 +2107,7 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 | `head` | Tâm sọ, trong đầu. Đích hướng của món cầm (`face: { axis, toward: { mark: "head" } }`): loa áp tai, miệng chén kề môi — hướng từ món tới tâm đầu không lật khi món đã sát mặt. Không dùng làm chỗ đặt tay | Đầu |
 | `ear` | Mặt ngoài tai (`humanEar`); tóc phủ tai thì cộng `offset` ra ngoài | Đầu |
 | `nape`, `shoulder` | Gáy cổ; đỉnh nắp vai (`roots3`) | Thân |
-| `chest`, `belly`, `back`, `hip` | Mặt áo giữa ngực, đỉnh bụng (gồm bụng phệ), giữa lưng ngang thắt lưng, sườn ngang hông — `profile` của áo, người mặc đồ theo `cladProfile` | Thân (đã cúi, nghiêng) |
+| `chest`, `belly`, `back`, `hip` | Mặt áo giữa ngực (ngang `CHEST.at`), đỉnh bụng (gồm bụng phệ), giữa lưng ngang thắt lưng, sườn ngang hông — mặt thân 3D của `torsoSection` | Thân (đã cúi, nghiêng) |
 | `thigh`, `knee` | Giữa mặt đùi, mặt gối, phía trên-trước của đùi theo dáng chân | Hướng mặt nằm ngang |
 | `otherWrist`, `otherPalm`, `otherBack`, `otherGrip` | Cổ tay, giữa lòng tay, giữa mu tay, tâm nắm của **tay kia** đúng như nó vẽ | Hướng mặt nằm ngang |
 

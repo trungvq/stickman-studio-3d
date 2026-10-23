@@ -181,7 +181,8 @@ describe('khăn vắt vai', () => {
     }
   });
 
-  it('tay buông và khoanh tay trước ngực không chạm khăn', () => {
+  // khoanh tay khuỷu chĩa ra trước thì gốc cánh tay đẩy vào mép khăn: khăn tĩnh chỉ tránh nắp vai, nên dáng khoanh chỉ đo cẳng tay, bàn tay
+  it('tay buông và cẳng tay khoanh trước ngực không chạm khăn', () => {
     const f = dressed((c) => {
       c.pieces.torso.garment = { style: 'wrap' };
     });
@@ -193,7 +194,7 @@ describe('khăn vắt vai', () => {
     for (const pose of [stand(), fold]) {
       act(f, pose, 0);
       f.root.updateMatrixWorld(true);
-      const arms = bodyCapsules(f, ['upperArm', 'foreArm', 'hand']);
+      const arms = bodyCapsules(f, pose === fold ? ['foreArm', 'hand'] : ['upperArm', 'foreArm', 'hand']);
       let near = Infinity;
       for (const [x, y, z] of towel.pts) {
         const p = new THREE.Vector3(x / 100, -y / 100, z / 100).applyMatrix4(f.spine.matrixWorld);
@@ -213,13 +214,14 @@ describe('kính gài nẹp', () => {
     const parts = (side: 'left' | 'right') => torsoMesh({ style: 'polo' }, rig, undefined, { shades: { side }, color: '#000' }).solids.slice(plain);
     const t = torsoMesh({ style: 'polo' }, rig);
     const aAt = (y: number) => lerpAt(t.profile, y, 1, 0);
+    const dAt = (y: number, z: number) => lerpAt(t.profile.map(([, py], i) => [(z > 0 ? t.front : t.depth)[i], py]), y, 1, 0);
     const mid = (p: { pts: number[][] }, k: number) => p.pts.reduce((m, q) => m + q[k], 0) / p.pts.length;
     for (const side of ['left', 'right'] as const) {
       const [near, far, , arm] = parts(side);
       expect(parts(side).length).toBe(4);
       for (const p of parts(side)) {
         expect(signedVolume(p.pts, p.tris)).toBeGreaterThan(0);
-        for (const [x, y, z] of p.pts) expect(Math.hypot(x / aAt(y), z / (0.78 * aAt(y)))).toBeGreaterThan(1);
+        for (const [x, y, z] of p.pts) expect(Math.hypot(x / aAt(y), z / dAt(y, z))).toBeGreaterThan(1);
       }
       expect(Math.min(...arm.pts.map((p) => p[1]))).toBeLessThan(Math.min(...near.pts.map((p) => p[1])) - 3);
       const sx = side === 'left' ? 1 : -1;

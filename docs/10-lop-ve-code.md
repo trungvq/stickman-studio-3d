@@ -440,7 +440,8 @@ bên kia người là cẳng tay hay cánh tay xuyên qua thân. `stickman check
 
 - tay và thân đúng như three vẽ, không theo khối người của `<SceneWorld>`: tay là khớp `actJoints`
   (cùng khung xương, cùng IK với `act`), thân là khối tròn xoay dẹt của `torsoMesh` — nửa rộng theo
-  `profile` của áo, tiết diện ngang ellipse dẹt `TORSO_DEPTH`, dựng theo trục hông → cổ; người mặc đồ
+  `profile` của áo, tiết diện ngang hai nửa ellipse của `torsoSection` (ngực, lưng, bụng phệ), dựng theo trục hông →
+  cổ; người mặc đồ
   (`palette.clad`) thì sườn áo lùi nhường chỗ cho tay và dày `CLAD_DEPTH` như `torsoMesh` (`cladProfile`), nên tay
   buông dọc sườn không bị báo; cánh tay người mặc đồ bỏ thêm quãng trong hai lần bán kính nắp vai quanh khớp vai,
   nơi tay choãi rộng (bụng phệ) còn nằm trong thân. Khối hộp của
