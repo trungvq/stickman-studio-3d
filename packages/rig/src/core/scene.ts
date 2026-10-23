@@ -1028,6 +1028,11 @@ export interface CastMember extends Omit<
   headView?: ViewKey[];
   /** Trôi ngang cho `height = 1`, chưa nhân `scale` và chưa lật */
   travel: TravelTable;
+  /**
+   * Người 3D đứng ở `world.at` (không `path`) có tay phải ở phía xa ống kính (`facing().flip`): clip của hành động
+   * `sides: "anatomical"` đổi kênh gần ↔ xa. docs/03-scene.md#hành-động-theo-tay-phải-trái
+   */
+  rightFar?: boolean;
 }
 
 export interface PropMember extends Omit<Unmarked<PropCastData>, "path"> {
@@ -1212,7 +1217,19 @@ function clockPhase(
 
 const inMask = (c: Clip, k: Channel) => !c.mask || c.mask.includes(k);
 
-function clipPose(c: Clip, time: number, clock?: Clock): Partial<Pose> {
+/**
+ * `farRight`: tay phải của người 3D đang là tay xa ống kính (`rightFar`) — clip của hành động `sides: "anatomical"` đổi
+ * kênh gần ↔ xa của riêng nó để kênh gần vẫn là tay chân phải. docs/03-scene.md#hành-động-theo-tay-phải-trái
+ */
+const anatomicalSwap = (c: Clip, farRight?: boolean) => !!farRight && c.action?.sides === "anatomical";
+
+function clipPose(c: Clip, time: number, clock?: Clock, farRight?: boolean): Partial<Pose> {
+  if (!c.action) return {};
+  const p = clipPoseRaw(c, time, clock);
+  return anatomicalSwap(c, farRight) ? swapPartial(p) : p;
+}
+
+function clipPoseRaw(c: Clip, time: number, clock?: Clock): Partial<Pose> {
   if (!c.action) return {};
   const d = actionDelta(c.action, phaseAt(c, time, clock));
   for (const k of JOINT_CHANNELS) if (!inMask(c, k)) delete d[k];
@@ -1232,11 +1249,11 @@ function clipPose(c: Clip, time: number, clock?: Clock): Partial<Pose> {
   return p;
 }
 
-function clipLayers(c: Clip, time: number, clock?: Clock): Partial<ArmLayers> {
+function clipLayers(c: Clip, time: number, clock?: Clock, farRight?: boolean): Partial<ArmLayers> {
   if (!c.action) return {};
   const l = actionLayers(c.action, phaseAt(c, time, clock));
   for (const k of ARM_CHANNELS) if (!inMask(c, k)) delete l[k];
-  return l;
+  return anatomicalSwap(c, farRight) ? swapLayers(l) : l;
 }
 
 const clipFace = (c: Clip, time: number, clock?: Clock): Partial<FaceState> =>
@@ -1254,20 +1271,42 @@ const clipEquip = (c: Clip, time: number, clock?: Clock): EquipStep[] =>
  * Clip cũ **vẫn chạy** trong lúc hoà — đóng băng nó là chân đứng chết nửa giây.
  * Đệ quy vì clip mới chen vào khi chỗ nối cũ chưa xong là chuyện thường.
  */
-function poseUpTo(tr: Track, i: number, time: number, base: Pose, clock?: Clock): Partial<Pose> {
+function poseUpTo(
+  tr: Track,
+  i: number,
+  time: number,
+  base: Pose,
+  clock?: Clock,
+  farRight?: boolean,
+): Partial<Pose> {
   const c = tr.clips[i];
-  const p = clipPose(c, time, clock);
+  const p = clipPose(c, time, clock, farRight);
   const s = time - c.start;
   if (s >= c.tau) return p;
-  return blendPose(base, i === 0 ? {} : poseUpTo(tr, i - 1, time, base, clock), p, s / c.tau);
+  return blendPose(
+    base,
+    i === 0 ? {} : poseUpTo(tr, i - 1, time, base, clock, farRight),
+    p,
+    s / c.tau,
+  );
 }
 
-function layersUpTo(tr: Track, i: number, time: number, clock?: Clock): Partial<ArmLayers> {
+function layersUpTo(
+  tr: Track,
+  i: number,
+  time: number,
+  clock?: Clock,
+  farRight?: boolean,
+): Partial<ArmLayers> {
   const c = tr.clips[i];
-  const l = clipLayers(c, time, clock);
+  const l = clipLayers(c, time, clock, farRight);
   const s = time - c.start;
   if (s >= c.tau) return l;
-  return blendLayers(i === 0 ? {} : layersUpTo(tr, i - 1, time, clock), l, s / c.tau);
+  return blendLayers(
+    i === 0 ? {} : layersUpTo(tr, i - 1, time, clock, farRight),
+    l,
+    s / c.tau,
+  );
 }
 
 function faceUpTo(tr: Track, i: number, time: number, clock?: Clock): Partial<FaceState> {
@@ -1603,6 +1642,11 @@ export function resolveScene(
   }
   if (scene.items) checkItems(scene.items, held, scene.cast);
   const duration = scene.duration ?? sceneEnd(cast, beasts);
+  const lens = scene.lens && {
+    ...scene.lens,
+    yaw: scene.lens.yaw * D,
+    pitch: scene.lens.pitch * D,
+  };
   const rt: SceneRuntime = {
     name: scene.name,
     marks: scene.marks,
@@ -1613,13 +1657,17 @@ export function resolveScene(
     camera: scene.camera,
     groups: scene.groups,
     fx: scene.fx,
-    ...(scene.lens && {
-      lens: { ...scene.lens, yaw: scene.lens.yaw * D, pitch: scene.lens.pitch * D },
+    ...(lens && { lens }),
+    cast: cast.map((m) => {
+      const w = m.world;
+      const rightFar =
+        lens && w?.at && !w.path ? facing(lens, w.at, (w.yaw ?? 0) * D).flip : undefined;
+      return {
+        ...m,
+        ...(rightFar && { rightFar }),
+        travel: drifts(m) ? bakeTravel((t) => poseAt(m, t), duration) : STILL,
+      };
     }),
-    cast: cast.map((m) => ({
-      ...m,
-      travel: drifts(m) ? bakeTravel((t) => poseAt(m, t), duration) : STILL,
-    })),
     props,
     heights,
     bodies,
@@ -1831,7 +1879,7 @@ export function sceneAt(
   for (const tr of m.tracks) {
     const i = activeClip(tr, time);
     if (i < 0) continue;
-    layers.push(layersUpTo(tr, i, time, clock));
+    layers.push(layersUpTo(tr, i, time, clock, rightFarOf(m, walk)));
     faces.push(faceUpTo(tr, i, time, clock));
     equips.push(equipUpTo(tr, i, time, clock));
   }
@@ -5867,11 +5915,17 @@ function pathAt(path: PathKey[], time: number): Spot {
 type Acting = Omit<CastMember, "travel">;
 
 /** `turn` sửa tư thế trước khi đổi kênh gần ↔ xa: kênh còn là chi gần lúc đầu cảnh */
-function poseAt(m: Acting, time: number, clock?: Clock, turn?: (p: Pose) => Pose): Pose {
+function poseAt(
+  m: Acting,
+  time: number,
+  clock?: Clock,
+  turn?: (p: Pose) => Pose,
+  farRight?: boolean,
+): Pose {
   let pose: Pose = m.base;
   for (const tr of m.tracks) {
     const i = activeClip(tr, time);
-    if (i >= 0) pose = composePose(pose, poseUpTo(tr, i, time, pose, clock));
+    if (i >= 0) pose = composePose(pose, poseUpTo(tr, i, time, pose, clock, farRight));
   }
   // Người đi theo `path` đọc chân như soạn ở `side`: bàn chân trụ phải nằm trên sàn thế giới, và
   // hoà từ chân nâng sang chân 2D là bàn chân nhảy giữa chừng
@@ -5888,11 +5942,15 @@ function worldPoseAt(
   height: number,
   hipHalf: number,
 ): Pose {
-  if (!walk) return poseAt(m, time);
+  if (!walk) return poseAt(m, time, undefined, undefined, m.rightFar);
   const yaw = sampleAt(walk.yaw, walk.step, time);
   const flip = walk.flip[stepIndex(walk, time)];
-  return poseAt(m, time, clockOf(walk), (p) =>
-    turnStep(m, time, p, yaw, walk.flip[0], flip, height, hipHalf),
+  return poseAt(
+    m,
+    time,
+    clockOf(walk),
+    (p) => turnStep(m, time, p, yaw, walk.flip[0], flip, height, hipHalf),
+    rightFarOf(m, walk),
   );
 }
 
@@ -5987,6 +6045,42 @@ const swapLayers = (l: Partial<ArmLayers>): Partial<ArmLayers> => ({
   ...(l.armFar && { armNear: l.armFar }),
   ...(l.armNear && { armFar: l.armNear }),
 });
+
+/** Đổi khoá gần ↔ xa của một map theo kênh (`an`/`af`, `ln`/`lf`), giữ khoá khác; khoá thiếu vẫn thiếu */
+function swapKeys<T extends object>(o: T): T {
+  const r = { ...o } as Record<string, unknown>;
+  const src = o as Record<string, unknown>;
+  for (const [a, b] of [
+    ["an", "af"],
+    ["ln", "lf"],
+  ]) {
+    delete r[a];
+    delete r[b];
+    if (src[b] !== undefined) r[a] = src[b];
+    if (src[a] !== undefined) r[b] = src[a];
+  }
+  return r as T;
+}
+
+/** `swapSides` cho tư thế một clip ghi: kênh clip không ghi vẫn không có, để `composePose` giữ của track dưới */
+function swapPartial(p: Partial<Pose>): Partial<Pose> {
+  const st = p.stretch;
+  return {
+    ...swapKeys(p),
+    ...(st && { stretch: [st[2], st[3], st[0], st[1], st[6], st[7], st[4], st[5]] as typeof st }),
+    ...(p.lift && { lift: swapKeys(p.lift) }),
+    ...(p.reach && { reach: swapKeys(p.reach) }),
+    ...(p.hand && { hand: swapKeys(p.hand) }),
+    ...(p.aim && { aim: swapKeys(p.aim) }),
+  };
+}
+
+/**
+ * Tay phải của người 3D là tay xa ống kính, theo nghĩa kênh của hành động: người đi `path` lấy lúc đầu cảnh (`poseAt`
+ * giữ mỗi kênh là chính chi ấy qua các lần lật), người đứng ở `world.at` lấy `rightFar` đã suy lúc dựng cảnh
+ */
+const rightFarOf = (m: Acting, walk?: Walker): boolean | undefined =>
+  walk ? walk.flip[0] : m.rightFar;
 
 /** Đổi kênh gần ↔ xa: thân vừa lật qua chính diện hay quay lưng thì chi gần là chi kia */
 function swapSides(p: Pose): Pose {

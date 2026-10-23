@@ -524,6 +524,12 @@ export const ActionSchema = z
      */
     authoredAt: z.enum(["side"]).optional(),
     /**
+     * Tay chân theo giải phẫu: `anatomical` thì kênh gần (`armNear`, `legNear`) luôn là tay chân **phải**, kênh xa là
+     * trái, dù ống kính ở phía nào của người 3D — rig đổi kênh của riêng clip ấy khi tay phải đang ở phía xa. Bỏ trống là
+     * gần / xa theo ống kính. Người 2D không đọc. docs/03-scene.md#hành-động-theo-tay-phải-trái
+     */
+    sides: z.enum(["anatomical"]).optional(),
+    /**
      * Cố ý giật (giật mình, đập bàn): `check` không đo giật tay chân ở kênh hành động này ghi suốt lúc
      * clip của nó chạy, kể cả đoạn hoà vào và ra. docs/03-scene.md#giật-trên-hình
      */

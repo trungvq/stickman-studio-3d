@@ -1149,6 +1149,25 @@ từ góc đang hoà về dáng nghỉ trong một khung.
   `sit-3d`) ở track thân từ giây `0` và thay clip rỗng bằng nó. Lỗi này không có dòng tĩnh — cú
   giật đo được trên hình kêu ở [Giật trên hình](#giật-trên-hình) kèm lý do cờ `lift`.
 
+### Hành động theo tay phải trái
+
+Kênh tay chân của hành động (`armNear`, `legNear` … ở `keys[].pose`, `reach`, `hand`, `layer`, `mask`) gọi theo **gần /
+xa ống kính**. Người 3D đứng yên ở hai cảnh có ống kính ở hai phía thì cùng một hành động rơi vào hai tay khác nhau:
+chống nạnh tay phải ở cảnh này là tay trái ở cảnh kia. Dáng riêng của nhân vật mà dùng lại nhiều cảnh thì khai
+`"sides": "anatomical"` ở hành động: **kênh gần là tay chân phải, kênh xa là trái**, ở mọi góc máy.
+
+```jsonc
+{ "name": "chong-nanh-phai-3d", "authoredAt": "side", "sides": "anatomical", "mask": ["armNear", "hand"],
+  "keys": [{ "t": 0, "pose": {}, "reach": { "armNear": { "to": "hip", "point": "palm", "elbow": [0.1, 0.2, 1] } } }] }
+```
+
+- Rig đổi kênh gần ↔ xa của **riêng clip ấy** khi tay phải đang ở phía xa ống kính (`facing().flip`); clip khác trên
+  cùng người vẫn theo gần / xa. `mask` của clip đọc theo tên kênh của hành động, trước khi đổi: `armNear` là tay phải.
+- Người đứng ở `world.at` suy phía một lần lúc dựng cảnh (`CastMember.rightFar`). Người đi `path` lấy phía lúc đầu cảnh;
+  thân lật qua chính diện thì rig vẫn giữ mỗi kênh là chính chi ấy như mọi hành động ([Quay tại chỗ](#quay-tại-chỗ)).
+- `ra ngoài` của `reach` và `elbow` đã theo phía chính tay ấy, nên một bộ số đúng cho cả hai trường hợp.
+- Người 2D không đọc `sides`.
+
 ### `check` cho người 3D
 
 `sceneSlideProblems` đo trên mặt sàn thế giới, cửa sổ `0,4 s`: bàn chân chịu lực dịch quá nửa

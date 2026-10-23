@@ -685,3 +685,45 @@ describe("bảng `travel` chỉ nướng cho người trôi theo chân", () => {
     expect(Math.abs(tb.xs[tb.xs.length - 1])).toBeGreaterThan(0.1);
   });
 });
+
+describe("hành động `sides: \"anatomical\"`", () => {
+  const reachNear = (sides?: "anatomical") =>
+    action({
+      name: "hip",
+      duration: 1,
+      end: "hold",
+      authoredAt: "side",
+      ...(sides && { sides }),
+      mask: ["armNear"],
+      keys: [{ t: 0, pose: {}, reach: { armNear: { at: [0.1, -0.5, 0.3] } } }],
+    });
+  const run = (yaw: number, sides?: "anatomical") => {
+    const r = parseScene({
+      lens: LENS,
+      duration: 1,
+      cast: [
+        {
+          id: "a",
+          world: { at: [0, 0, 500], yaw },
+          tracks: [{ clips: [{ action: "hip", start: 0 }] }],
+        },
+      ],
+    });
+    if (!r.success) throw new Error(r.error.message);
+    const rt = resolveScene(r.data, { ...ACTIONS, hip: reachNear(sides) });
+    return { rt, pose: sceneAt(rt, "a", 0.5, h, dims).pose };
+  };
+
+  it("kênh gần là tay phải: tay phải ở phía xa ống kính thì clip đổi sang kênh xa", () => {
+    for (const yaw of [90, 270]) {
+      const { rt, pose } = run(yaw, "anatomical");
+      const far = rt.cast[0].rightFar === true;
+      expect(Object.keys(pose.reach ?? {})).toEqual([far ? "af" : "an"]);
+    }
+    expect([90, 270].map((y) => run(y, "anatomical").rt.cast[0].rightFar === true)).toContain(true);
+  });
+
+  it("bỏ trống `sides` thì vẫn theo gần / xa ống kính", () => {
+    for (const yaw of [90, 270]) expect(Object.keys(run(yaw).pose.reach ?? {})).toEqual(["an"]);
+  });
+});

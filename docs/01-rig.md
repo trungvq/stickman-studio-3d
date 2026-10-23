@@ -470,6 +470,7 @@ hai, hoặc không có cái nào, là lỗi schema.
 | `keys[].layer` | Lớp vẽ cẳng tay kể từ mốc này, đè lên lớp thừa hưởng từ pose được gọi tên: `{ "armFar": "back" \| "mid" \| "front", "armNear": ... }`. **Không nội suy**; mốc sau không khai thì giữ nguyên. Chỉ ăn ở kênh nằm trong `mask`. [02 — Trang phục](02-trang-phuc.md#cẳng-tay-đổi-lớp-được-cánh-tay-trên-xa-thì-không) |
 | `note` | Ghi chú cách dùng cho người soạn cảnh, tiếng Việt. Rig không đọc; studio giữ nguyên khi xuất |
 | `authoredAt` | `"side"`: góc tay chân soạn ở nhìn nghiêng, người 3D đọc như trong mặt phẳng dọc của thân — [Người 3D](#người-3d) |
+| `sides` | `"anatomical"`: kênh gần là tay chân phải, kênh xa là trái, ở mọi góc máy (người 3D) — [03](03-scene.md#hành-động-theo-tay-phải-trái) |
 | `snap` | `true`: chuyển động cố ý giật (giật mình, đập bàn) — `check` không đo giật ở kênh hành động ghi lúc nó chạy — [Hành động giật có chủ ý](#hành-động-giật-có-chủ-ý) |
 
 **Ghép nhiều hành động là việc của scene, không phải của file.** `actionPose()`
