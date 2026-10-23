@@ -16,6 +16,7 @@ const lost: HandSource = {
   channel: "af",
   flip: true,
   stepSwap: false,
+  rest: 0,
   arm: { ...clip, track: 0, trackName: "than", action: "stand-3d" },
   hand: {
     ...clip,
@@ -51,6 +52,20 @@ describe("nguồn dáng", () => {
     });
     expect(m.rows[1].warn).toBeUndefined();
     expect(m.rows[2]).toMatchObject({ what: "#0 đích", where: "0.00 s", detail: "đích w 1" });
+  });
+
+  it("mốc rest buông hẳn: bàn tay về dáng nghỉ, không tô vàng", () => {
+    const m = sourceModel("takumi", {
+      ...lost,
+      rest: 1,
+      mark: { index: 1, t: 0, kind: "rest" },
+    });
+    expect(m.rows[1]).toMatchObject({
+      what: "—",
+      detail: "dáng nghỉ: mốc rest huỷ tay-dat-xa-3d (track tay)",
+    });
+    expect(m.rows[1].warn).toBeUndefined();
+    expect(m.rows[2].what).toBe("#1 rest");
   });
 
   it("mốc bàn tay một dòng", () => {

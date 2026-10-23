@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   clipSides,
+  HAND_REST,
   handSources,
   parseAction,
   parseScene,
   resolveScene,
+  sceneAt,
+  sideChannel,
   type ActionData,
 } from "./index";
 
@@ -149,5 +152,78 @@ describe("clipSides", () => {
       expect(s.right.hand).toBe(true);
       expect(s.left.hand).toBe(false);
     }
+  });
+});
+
+describe("mốc `rest`", () => {
+  const both = action({
+    name: "both",
+    duration: 1,
+    end: "hold",
+    authoredAt: "side",
+    mask: ["hand"],
+    keys: [
+      {
+        t: 0,
+        pose: {},
+        hand: { armFar: { pose: "open", palm: "down" }, armNear: { pose: "open", palm: "down" } },
+      },
+    ],
+  });
+  const at = (hands: unknown[], time: number) => {
+    const r = parseScene({
+      lens: LENS,
+      duration: 3,
+      cast: [
+        {
+          id: "a",
+          world: { at: [0, 0, 500], yaw: 270, hands },
+          tracks: [
+            { name: "than", clips: [{ action: "stand", start: 0 }] },
+            { name: "tay", clips: [{ action: "both", start: 0 }] },
+          ],
+        },
+      ],
+    });
+    if (!r.success) throw new Error(r.error.message);
+    const rt = resolveScene(r.data, { ...ACTIONS, both });
+    const sp = sceneAt(rt, "a", time);
+    const flip = !!sp.world?.flip;
+    return { rt, sp, ch: (s: "right" | "left") => sideChannel(s, flip) };
+  };
+
+  it("huỷ bàn tay và ý định của hành động ở đúng tay ấy, từ mốc", () => {
+    const { sp, ch } = at([{ t: 1, right: { rest: true } }], 2);
+    expect(sp.pose.hand?.[ch("right")]).toEqual(HAND_REST);
+    expect(sp.pose.aim?.[ch("right")]).toBeUndefined();
+    expect(sp.pose.aim?.[ch("left")]).toBeDefined();
+    expect(sp.pose.hand?.[ch("left")]).not.toEqual(HAND_REST);
+  });
+
+  it("hoà như mốc thường: mốc `null` rồi mốc `rest` thì giữa hai mốc buông một phần", () => {
+    const half = at(
+      [
+        { t: 0, right: null },
+        { t: 2, right: { rest: true } },
+      ],
+      1,
+    );
+    const src = handSources(half.rt, "a", 1)!;
+    expect(src.right.rest).toBeCloseTo(0.5, 5);
+    expect(src.right.mark).toMatchObject({ kind: "null", next: { kind: "rest" } });
+    expect(src.left.rest).toBe(0);
+    expect(half.sp.pose.aim?.[half.ch("right")]?.terms.length).toBeGreaterThan(1);
+    expect(handSources(half.rt, "a", 2.5)!.right.rest).toBe(1);
+  });
+
+  it("chỉ đi với `ease`, `bezier`", () => {
+    const scene = (right: unknown) =>
+      parseScene({
+        lens: LENS,
+        cast: [{ id: "a", world: { at: [0, 0, 0], hands: [{ t: 0, right }] } }],
+      });
+    expect(scene({ rest: true, pose: "fist" }).success).toBe(false);
+    expect(scene({ rest: true, at: [0, 0, 0] }).success).toBe(false);
+    expect(scene({ rest: true, ease: "auto" }).success).toBe(true);
   });
 });

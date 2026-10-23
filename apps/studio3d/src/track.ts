@@ -2,11 +2,11 @@
 // (dải clip); dải lần cầm dưới hàng, nhấp / kéo mốc, nút ＋ từng hàng. Chỉ vẽ và báo thao tác; sửa JSON ở `keys.ts`, `main.ts` nối hai bên.
 import type { KeyRef } from "./keys";
 
-/** Một mốc trên hàng: tròn mốc tay, vòng rỗng mốc chỉ có `hold`, chấm xám mốc `null`, thoi mốc món */
+/** Một mốc trên hàng: tròn mốc tay, vòng rỗng mốc chỉ có `hold`, chấm xám mốc `null`, tam giác mốc `rest`, thoi mốc món */
 export interface Glyph {
   key: KeyRef;
   t: number;
-  shape: "dot" | "ring" | "pose" | "null" | "diamond";
+  shape: "dot" | "ring" | "pose" | "null" | "rest" | "diamond";
   title: string;
   on: boolean;
   lock?: boolean;

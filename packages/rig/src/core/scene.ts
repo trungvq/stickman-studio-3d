@@ -31,6 +31,7 @@ import {
   keyAim,
   keyHand,
   mixAim,
+  rawAim,
   reachTerm,
   actionLayers,
   actionPose,
@@ -424,9 +425,10 @@ const WorldKeySchema = z.object({
  * của món đang cầm); `elbow` hướng khuỷu (bỏ trống là mặc định hệ thân), `elbowLock` thì khuỷu ở mốc nằm đúng hướng ấy,
  * không dò. `palm` / `fingers` / `bend` khai lòng tay theo ý định, đè bàn tay của hành động theo phần đích. `hold` là chỗ cầm từ mốc này (`món@nhóm` hay `{ item, group, … }`,
  * `null` là buông): mốc chỉ có `hold` thì vị trí lấy từ hành động. `pose` là dáng ngón (dáng có sẵn hay tên trong thư viện
- * `hands/`), hoà từ dáng nghỉ theo `w`, đè ngón của hành động; mốc chỉ có `pose` không đụng tới đích và khuỷu. `ease` là
- * đường hoà vào mốc này từ mốc trước của tay ấy (bỏ trống là `smooth`), `bezier` đi với `ease: "bezier"`.
- * docs/03-scene.md#đích-bàn-tay-thế-giới
+ * `hands/`), hoà từ dáng nghỉ theo `w`, đè ngón của hành động; mốc chỉ có `pose` không đụng tới đích và khuỷu. `rest` là
+ * tay buông: thả đích như `null` và huỷ bàn tay của hành động (xoay, gập cổ tay, ngón, `palm` / `fingers`) ở tay này về
+ * dáng nghỉ, tới mốc sau của tay ấy; chỉ đi với `ease`, `bezier`. `ease` là đường hoà vào mốc này từ mốc trước của tay ấy
+ * (bỏ trống là `smooth`), `bezier` đi với `ease: "bezier"`. docs/03-scene.md#đích-bàn-tay-thế-giới
  */
 const HandSchema = z
   .object({
@@ -443,12 +445,20 @@ const HandSchema = z
     hold: SceneHoldSchema.nullable().optional(),
     pose: z.string().min(1).optional(),
     w: z.number().min(0).max(1).optional(),
+    rest: z.literal(true).optional(),
     ease: z.enum(EASE_NAMES).optional(),
     bezier: BezierSchema.optional(),
   })
   .refine(
+    (h) => !h.rest || Object.keys(h).every((k) => k === "rest" || k === "ease" || k === "bezier"),
+    {
+      message:
+        "mốc `rest` (tay buông) chỉ đi với `ease`, `bezier` — không đích, không `hold`, không hướng tay hay dáng ngón",
+    },
+  )
+  .refine(
     (h) =>
-      h.hold !== undefined || (h.pose !== undefined && !h.at && !h.to)
+      h.rest || h.hold !== undefined || (h.pose !== undefined && !h.at && !h.to)
         ? !(h.at && h.to)
         : !!h.at !== !!h.to,
     { message: "đích bàn tay cần đúng một trong `at` (toạ độ thế giới) hay `to` (mốc thân)" },
@@ -2035,7 +2045,15 @@ export function sceneAt(
         )
       : placed;
   const pose =
-    world && m.world?.hands ? shapeHands(acted, m.world.hands, time, world.flip, rt.hands) : acted;
+    world && m.world?.hands
+      ? shapeHands(
+          restHands(acted, m.world.hands, time, world.flip),
+          m.world.hands,
+          time,
+          world.flip,
+          rt.hands,
+        )
+      : acted;
   const body = world ? viewOfTheta(world.theta) : stepOf(m.view, time);
   const views = clampViews({ body, head: m.headView && !world ? stepOf(m.headView, time) : body });
   const spot3 = world && {
@@ -3998,6 +4016,45 @@ function shapeAt(
 /** Kênh tư thế của tay giải phẫu `side` ở người 3D: tay phải là kênh gần (`an`) khi không lật */
 export const sideChannel = (side: HandSide, flip: boolean): "an" | "af" =>
   (side === "right") === !flip ? "an" : "af";
+
+/**
+ * Phần `0..1` của tay buông (mốc `rest`) ở tay `side` lúc `time`: mốc `rest` là `1`, mốc khác nhắc tay ấy là `0` (mốc chỉ có
+ * `pose` không tính); giữa hai mốc hoà theo `ease` của mốc sau, trước mốc đầu và sau mốc cuối giữ nguyên, như phần đích
+ */
+export function restAt(keys: readonly HandKey[], side: HandSide, time: number): number {
+  const ks = keys.filter((k) => k[side] !== undefined && !shapeOnly(k[side]));
+  if (!ks.some((k) => k[side]?.rest)) return 0;
+  let i = 0;
+  while (i + 1 < ks.length && ks[i + 1].t <= time) i++;
+  const a = ks[i];
+  const b = time > a.t ? ks[i + 1] : undefined;
+  const va = a[side]?.rest ? 1 : 0;
+  if (!b) return va;
+  const rb = b[side];
+  const f = easeAt({ ease: rb?.ease ?? "smooth", bezier: rb?.bezier }, (time - a.t) / (b.t - a.t));
+  return va + ((rb?.rest ? 1 : 0) - va) * f;
+}
+
+/** `pose` với bàn tay của hành động huỷ theo phần tay buông (`restAt`): xoay, gập cổ tay, ngón về `HAND_REST`, bỏ ý định */
+function restHands(pose: Pose, keys: readonly HandKey[], time: number, flip: boolean): Pose {
+  let { hand, aim } = pose;
+  for (const side of ["right", "left"] as const) {
+    const r = restAt(keys, side, time);
+    if (r <= 0) continue;
+    const ch = sideChannel(side, flip);
+    hand = { ...hand, [ch]: mixHand(pose.hand?.[ch] ?? HAND_REST, HAND_REST, r) };
+    const a = aim?.[ch];
+    if (!a) continue;
+    const rest = { ...aim };
+    delete rest[ch];
+    aim = r < 1 ? { ...rest, [ch]: mixAim(a, rawAim([HAND_REST[0], HAND_REST[1]]), r) } : rest;
+  }
+  if (hand === pose.hand) return pose;
+  const out: Pose = { ...pose, hand };
+  if (aim && Object.keys(aim).length) out.aim = aim;
+  else delete out.aim;
+  return out;
+}
 
 /** `pose` với ngón của hành động đè theo `pose` của mốc tay (`shapeAt`): tay phải là kênh gần khi không lật */
 function shapeHands(
@@ -6506,11 +6563,19 @@ export interface PoseSourceClip {
   anatomical: boolean;
 }
 
-/** Loại mốc `world.hands` của một tay: đích (`at` / `to` / hướng tay), chỉ `hold`, chỉ `pose`, `null` */
-export type HandMarkKind = "target" | "hold" | "pose" | "null";
+/** Loại mốc `world.hands` của một tay: đích (`at` / `to` / hướng tay), chỉ `hold`, chỉ `pose`, `null`, tay buông `rest` */
+export type HandMarkKind = "target" | "hold" | "pose" | "null" | "rest";
 
 export const handMarkKind = (h: HandMark | null | undefined): HandMarkKind =>
-  !h ? "null" : h.hold !== undefined && !h.at && !h.to ? "hold" : shapeOnly(h) ? "pose" : "target";
+  !h
+    ? "null"
+    : h.rest
+      ? "rest"
+      : h.hold !== undefined && !h.at && !h.to
+        ? "hold"
+        : shapeOnly(h)
+          ? "pose"
+          : "target";
 
 /** Thứ đang điều khiển một tay giải phẫu của người 3D ở một giây (`handSources`) */
 export interface HandSource {
@@ -6536,6 +6601,8 @@ export interface HandSource {
   };
   /** Đích thế giới của `world.hands` đang áp lên tay (phần `w` hay đang cầm): đè góc tay, ý định đè bàn tay của hành động */
   world?: { w: number; aim: boolean; hold?: string };
+  /** Phần tay buông của mốc `rest` (`restAt`): bàn tay của hành động huỷ theo phần này */
+  rest: number;
 }
 
 const otherChannel = (ch: "an" | "af") => (ch === "an" ? "af" : "an");
@@ -6661,6 +6728,7 @@ export function handSources(
       ...(g.hand && { hand: g.hand }),
       ...(g.reach && { reach: g.reach }),
       ...(mark && { mark }),
+      rest: restAt(keys, side, time),
       ...(rw &&
         (rw.w > 0 || rw.hold) && {
           world: { w: rw.w, aim: !!rw.aim, ...(rw.hold && { hold: rw.hold.item }) },

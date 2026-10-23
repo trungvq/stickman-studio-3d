@@ -143,6 +143,13 @@ dòng hay nhấp lên bàn tay / món trên hình (cả camera cảnh) để ch�
   forward`), **mốc tay** `world.hands` đang áp (chỉ số, loại, giây, mốc sau, phần đích `w`, món). Dòng bàn tay tô vàng khi
   hành động khai ý định hướng tay (`palm` / `fingers`) mà tay không có mốc `world.hands` đang áp: clip soạn cho tay khác rơi
   vào tay này hay gặp nhất ở đây.
+- **Về tư thế buông** (tay không cầm, không treo món): bỏ bàn tay của hành động ở tay ấy để tay rơi về dáng của track ghi
+  góc cánh tay, không ghim chỗ. Mỗi track có clip đang chạy ghi bàn tay của tay ấy (`clipSides`): clip chỉ chạm tay ấy thì
+  xoá (track hết clip thì bỏ track, như **Xoá clip** ở [Dáng tay](#dáng-tay)); clip chạm cả tay kia thì thêm mốc
+  `{ "rest": true }` cho tay ấy ở giây đang xem (docs/03-scene.md#đích-bàn-tay-thế-giới) và mở thẻ của nó. Một bước lịch sử
+  chung; lưu bằng **Lưu**. Nút tắt kèm lý do khi không clip nào ghi bàn tay ấy, tay đã buông hay cảnh đang dựng lại. Mốc
+  `rest` buông cả quãng trước nó khi tay ấy chưa có mốc nào trước (trước mốc đầu tay giữ mốc đầu, như mọi mốc tay). Nguồn
+  dáng ghi phần buông của mốc `rest` ở dòng bàn tay.
 - số đo cầm đồ ở giây đang xem bằng chính phép đo của `check` nhóm `held` (`heldHands`, `heldHits`, `heldSummary` của rig,
   ngưỡng `stickman.held` của `package.json` repo): lựa chọn cầm của bộ giải kèm nguồn (`·rig` rig giải, `·mđ` mặc định nhóm),
   luật phạm (`!! pierce`, `sink`, `loose`, `role`, `oppose`, `grip`, `wrist`, `reach`, `elbow`, `arm`, `size`, `up`/`face` — món
@@ -253,7 +260,8 @@ Công tắc **Xem / Dáng tay** trên thanh trên (nhớ trong `localStorage`). 
 panel) là chọn người × tay: thanh tua thêm một hàng cho mỗi tay của người ấy và một hàng **Món** cho các mốc `items[]` của
 món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi track của người ấy một hàng. Nhấp nhãn hàng tay là chọn tay ấy.
 
-- **Ký hiệu.** Mốc tay tròn, mốc chỉ có `hold` vòng rỗng, mốc chỉ có `pose` vuông rỗng, mốc `null` chấm xám, mốc món thoi; viền tím là mốc khoá khuỷu
+- **Ký hiệu.** Mốc tay tròn, mốc chỉ có `hold` vòng rỗng, mốc chỉ có `pose` vuông rỗng, mốc `null` chấm xám, mốc `rest` (tay
+  buông) tam giác chúc xuống, mốc món thoi; viền tím là mốc khoá khuỷu
   (`elbowLock`), viền cam là mốc đang mở thẻ. Rê lên mốc: trường `t` như JSON (`@tra+0.6 = 4.000 s`), loại mốc, `ease`.
 - **Dải dưới hàng tay là lần cầm** (`holdRuns`), nhãn `món@nhóm/biến thể` (tay phụ của `both` ghi `(phụ)`): xanh lá tay theo
   đồ (theo mốc, hai tay), xanh dương đồ theo tay, xám tay tự do; sọc là `HOLD_BLEND` ở đầu lần cầm (trừ lần cầm từ giây 0)
@@ -344,7 +352,7 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi trac
     mới. Dòng trạng thái ghi số mẫu, giây tính vệt và giây đo giật (một vệt ±2 s chừng 1–2 s, đo giật cả cảnh chừng 1–1,5 s
     với cảnh t02).
 - **Thẻ mốc**: `ease` (ô 4 số khi `bezier`, mặc định `BEZIER_DEFAULT`); `hold` (không khai / buông `null` / cầm: món,
-  nhóm, biến thể — kiểu có tên hiện kèm `note`; `hold` dạng chuỗi ghi lại chuỗi, dạng object đổi `item`, `group`,
+  nhóm, biến thể — kiểu có tên hiện kèm `note`; mốc `rest` chỉ có `ease` và nút xoá; `hold` dạng chuỗi ghi lại chuỗi, dạng object đổi `item`, `group`,
   `variant`, đổi món hay nhóm thì bỏ trường chỗ cầm cũ `part`, `edge`, `along`…, giữ ý định và trường lạ; đổi món thì
   trang thử nhóm đang chọn rồi lần lượt các nhóm khác, áp nhóm đầu tiên mà cảnh giải được tay ở mốc, không nhóm nào được
   thì không áp và báo lỗi); **dáng ngón** `pose` (theo hành động / dáng của thư viện / dáng có sẵn) kèm ô `w` (bỏ trống là

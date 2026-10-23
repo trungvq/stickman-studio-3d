@@ -450,9 +450,13 @@ export function touch(m: Json | null) {
   if (m && m.ease === undefined) m.ease = "auto";
 }
 
-/** Ký hiệu mốc tay trên thanh tua: `null` chấm xám, chỉ có `hold` vòng rỗng, chỉ có `pose` vuông rỗng, còn lại tròn */
-export function handShape(v: unknown): "null" | "ring" | "pose" | "dot" {
+/**
+ * Ký hiệu mốc tay trên thanh tua: `null` chấm xám, tay buông `rest` tam giác, chỉ có `hold` vòng rỗng, chỉ có `pose` vuông
+ * rỗng, còn lại tròn
+ */
+export function handShape(v: unknown): "null" | "rest" | "ring" | "pose" | "dot" {
   if (!isObj(v)) return "null";
+  if (v.rest === true) return "rest";
   const placed = ["at", "to", "palm", "fingers"].some((f) => v[f] !== undefined);
   if (placed) return "dot";
   return v.hold !== undefined ? "ring" : v.pose !== undefined ? "pose" : "dot";

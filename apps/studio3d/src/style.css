@@ -1031,6 +1031,27 @@ button.key.null {
   background: #8a8f99;
 }
 
+/* mốc `rest` (tay buông): tam giác chúc xuống, vùng chạm vẫn là ô vuông của nút */
+button.key.rest,
+button.key.rest.on {
+  border-color: transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+button.key.rest::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: #9ad0c2;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+button.key.rest.on::after {
+  background: var(--accent);
+}
+
 button.key.diamond {
   border-radius: 1px;
   transform: translateX(-50%) rotate(45deg) scale(0.85);

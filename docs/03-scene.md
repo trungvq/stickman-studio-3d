@@ -985,7 +985,8 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
   { "t": 9, "right": { "to": "ear", "point": "item:speaker",                                  // loa vào tai
                        "hold": { "item": "dien-thoai", "group": "palmBox", "face": { "axis": "screen", "toward": { "mark": "head" } } } } },
   { "t": 11, "right": { "hold": null } },                                     // buông món
-  { "t": 12, "right": { "pose": "peace" } }                                   // chỉ đổi ngón: chữ V của thư viện hands/
+  { "t": 12, "right": { "pose": "peace" } },                                  // chỉ đổi ngón: chữ V của thư viện hands/
+  { "t": 13, "left": { "rest": true } }                                       // tay buông: bỏ bàn tay của hành động
 ]
 ```
 
@@ -1047,6 +1048,14 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
   ```
   lan: `world.hands` right t=2: không có dáng tay `chu-v` — dáng có sẵn của rig (`HAND_POSES`) hay `hands/chu-v.json` của thư viện (docs/03-scene.md#đích-bàn-tay-thế-giới)
   ```
+- **`rest: true`** — tay buông: mốc không đích, chỉ đi với `ease`, `bezier`. Với đích nó là `null` (tay nhả về góc của
+  hành động), và từ mốc ấy nó huỷ **bàn tay** của mọi hành động ở tay ấy — xoay cẳng tay, gập cổ tay, ngón và ý định
+  `palm` / `fingers` về dáng nghỉ (`HAND_REST`), nên tay rơi về dáng của track ghi góc cánh tay mà không ghim chỗ. Góc cánh
+  tay của hành động giữ nguyên. Phần buông hoà như phần đích: mốc `rest` `1`, mốc khác nhắc tay ấy `0` (mốc chỉ có `pose`
+  không tính, mốc `pose` kề sau vẫn đặt ngón), theo `ease` của mốc sau; trước mốc đầu, sau mốc cuối giữ nguyên. Dùng khi
+  một clip ghi bàn tay của cả hai tay mà chỉ một tay cần buông; clip chỉ chạm tay ấy thì xoá clip gọn hơn. Mốc `rest`
+  không buông món: đang cầm thì ngón, hướng tay do kiểu cầm quyết — buông món là `hold: null`. `handSources` báo phần
+  buông ở `rest`.
 - **`hold`** cầm món của `held/` theo chỗ cầm nhóm (`"món@nhóm"`, hay `{ item, group, edge?, along?, thumb?, face?, … }`) —
   [Đồ cầm tay](#đồ-cầm-tay). Đang cầm thì `point` nhận thêm `item:<mốc>`: mốc ấy của món vào đích.
 - `snap: true` trên một mốc: đoạn từ mốc trước của tay ấy tới mốc này cố ý nhanh (chộp, giật tay),

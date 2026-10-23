@@ -1,7 +1,8 @@
 // Sửa clip của track (`cast[].tracks`) trên JSON thô của cảnh: hàm thuần, trả bản mới, giữ mọi trường lạ. Thanh tua của
 // studio (hàng track ở Dáng tay) gọi chúng; README.md § Dáng tay.
 import { actionKind, actionMask, type ActionData } from "@stickman3d/rig/core";
-import type { Json } from "./keys";
+import { insertHandKey, type Json } from "./keys";
+import type { HandSide } from "@stickman3d/rig/core";
 
 /** Một clip trên thanh tua: chỉ số track trong `cast[].tracks` của người `id`, chỉ số clip trong track */
 export interface ClipRef {
@@ -68,4 +69,31 @@ export function compatibleActions(
     .filter(([n, a]) => n !== current && actionKind(a) !== "animal" && same(a))
     .map(([n]) => n)
     .sort();
+}
+
+/** Clip đang ghi bàn tay của tay cần buông; `other` là clip chạm cả tay kia (góc hay bàn tay) */
+export interface RestHit {
+  track: number;
+  clip: number;
+  action?: string;
+  other: boolean;
+}
+
+/**
+ * **Về tư thế buông** cho tay `side` của `id` ở giây `t`: clip chỉ chạm tay ấy thì xoá (track hết clip thì bỏ track), clip
+ * chạm cả tay kia thì thêm mốc `{ rest: true }` ở giây ấy (tay đã có mốc ở giây ấy thì lỗi)
+ */
+export function restHand(
+  raw: Json,
+  id: string,
+  side: HandSide,
+  t: number,
+  hits: readonly RestHit[],
+): { raw: Json; deleted: RestHit[]; rest: boolean } {
+  let out = raw;
+  const deleted = hits.filter((h) => !h.other).sort((a, b) => b.track - a.track || b.clip - a.clip);
+  for (const h of deleted) out = deleteClip(out, { id, track: h.track, clip: h.clip });
+  const rest = hits.some((h) => h.other);
+  if (rest) out = insertHandKey(out, id, side, t, { rest: true }).raw;
+  return { raw: out === raw ? structuredClone(raw) : out, deleted, rest };
 }

@@ -29,9 +29,11 @@ import {
   clipOf,
   compatibleActions,
   deleteClip,
+  restHand,
   setClipAction,
   tracksOf,
   type ClipRef,
+  type RestHit,
 } from "./clips";
 import { drawnHand, drawnItem } from "./drawn";
 import { GraspEditor, sceneHigh, type EditScene, type EditTarget } from "./editor";
@@ -145,6 +147,7 @@ const ui = {
   source: $<HTMLDivElement>("source"),
   editGrasp: $<HTMLButtonElement>("editGrasp"),
   editShape: $<HTMLButtonElement>("editShape"),
+  restHand: $<HTMLButtonElement>("restHand"),
   styles: $<HTMLElement>("styles"),
   editor: $<HTMLElement>("editor"),
 };
@@ -738,6 +741,11 @@ function panel() {
   ui.editGrasp.hidden = free;
   ui.editShape.hidden = !free;
   ui.editShape.disabled = !work;
+  const why = restBlock(r);
+  ui.restHand.disabled = !!why;
+  ui.restHand.title =
+    why ??
+    "Bỏ bàn tay của hành động ở tay này: clip chỉ chạm tay này thì xoá, clip chạm cả hai tay thì thêm mốc rest ở giây đang xem";
   ui.editGrasp.disabled = !editable(r);
   ui.editGrasp.title = editable(r)
     ? "Soạn kiểu cầm món × nhóm × biến thể này bằng mắt"
@@ -749,6 +757,79 @@ function panel() {
     rowsT === t ? measureHtml(r, cur.held) : `<div class="dim">dừng phát để đo</div>`;
   const run = runOf(r.id, r.side, t);
   renderStyles(ui.styles, run ? styleModel(run, r) : null, (v) => pickStyle(run!, v));
+}
+
+/** Clip đang ghi bàn tay của tay `side` người `id` ở giây đang xem (`clipSides`), mỗi track clip đang chạy */
+function restHits(id: string, side: HandSide): RestHit[] {
+  const m = cur!.rt.cast.find((x) => x.id === id);
+  const other: HandSide = side === "right" ? "left" : "right";
+  const out: RestHit[] = [];
+  m?.tracks.forEach((tr, track) => {
+    let clip = -1;
+    tr.clips.forEach((c, j) => {
+      if (c.start <= t) clip = j;
+    });
+    const s = clip >= 0 ? rig.clipSides(cur!.rt, id, track, clip, t) : undefined;
+    if (!s?.[side].hand) return;
+    out.push({
+      track,
+      clip,
+      ...(tr.clips[clip].file && { action: tr.clips[clip].file }),
+      other: s[other].arm || s[other].hand,
+    });
+  });
+  return out;
+}
+
+/** Lý do nút Về tư thế buông tắt; `undefined` là bấm được */
+function restBlock(r: HandRow): string | undefined {
+  if (!work || !cur) return "chưa mở cảnh";
+  if (cur.src !== work.raw) return "đang dựng lại cảnh";
+  if (r.hold || r.carry) return "tay đang cầm / treo món: buông món là `hold: null` ở thẻ mốc";
+  const src = rig.handSources(cur.rt, r.id, t)?.[sideOf(r.side)];
+  if (!src) return "người không có `world`";
+  if (src.rest >= 1 - 1e-6) return "tay đã buông (mốc rest)";
+  if (!restHits(r.id, sideOf(r.side)).length)
+    return "không clip nào ghi bàn tay này ở giây đang xem: tay đã theo dáng của track ghi góc cánh tay";
+  return undefined;
+}
+
+/** **Về tư thế buông**: bỏ bàn tay của hành động ở tay đang chọn — xoá clip chỉ chạm tay ấy, chạm cả hai tay thì mốc `rest` */
+function goRest() {
+  const r = selRow();
+  if (!r || !work || !cur) return;
+  const why = restBlock(r);
+  if (why) return say(why, true);
+  const side = sideOf(r.side);
+  try {
+    const before = tracksOf(work.raw, r.id)?.length ?? 0;
+    const plan = restHand(work.raw, r.id, side, t, restHits(r.id, side));
+    const after = tracksOf(plan.raw, r.id)?.length ?? 0;
+    const at = plan.rest ? insertedAt(plan.raw, r.id, side) : null;
+    if (!apply(plan.raw, { key: at })) return;
+    clipSel = null;
+    syncEdit();
+    const parts = [
+      ...plan.deleted.map((h) => `xoá clip ${h.action ?? "rỗng"} (track #${h.track})`),
+      ...(after < before ? [`bỏ ${before - after} track hết clip`] : []),
+      ...(plan.rest
+        ? [`thêm mốc rest tay ${SIDE_NAME[side]} ở ${t.toFixed(2)} s (clip chạm cả hai tay)`]
+        : []),
+    ];
+    say(`về tư thế buông: ${parts.join("; ")}`);
+  } catch (e) {
+    say((e as Error).message, true);
+  }
+}
+
+/** Mốc `rest` vừa thêm của tay `side` ở giây đang xem */
+function insertedAt(raw: Json, id: string, side: HandSide): KeyRef | null {
+  const marks = marksOf(raw);
+  const i = (handsOf(raw, id) ?? []).findIndex(
+    (k) =>
+      Math.abs(timeOf(k.t, marks) - t) < 5e-4 && isObj(k[side]) && (k[side] as Json).rest === true,
+  );
+  return i < 0 ? null : { kind: "hand", id, side, index: i };
 }
 
 /** Nguồn dáng của bàn tay `r` ở giây đang xem (`handSources` của rig trên runtime đang vẽ) */
@@ -1341,11 +1422,13 @@ function lanesOf(id: string, on: HandSide): Lane[] {
       const what =
         shape === "null"
           ? "null — thả đích"
-          : shape === "ring"
-            ? "chỉ `hold`"
-            : shape === "pose"
-              ? "chỉ `pose`"
-              : "đích";
+          : shape === "rest"
+            ? "rest — tay buông, bỏ bàn tay của hành động"
+            : shape === "ring"
+              ? "chỉ `hold`"
+              : shape === "pose"
+                ? "chỉ `pose`"
+                : "đích";
       const pose = isObj(v) && typeof v.pose === "string" ? ` · dáng ${v.pose}` : "";
       return [
         {
@@ -1762,6 +1845,7 @@ function cardOf(k: KeyRef): CardModel | null {
   const pick = holdPickOf(m?.hold);
   const placed = !!run && run.mode !== "hand" && !run.lead;
   const lockOn = m?.elbowLock === true;
+  const rest = m?.rest === true;
   const idle = !lockOn
     ? undefined
     : run?.lead
@@ -1786,35 +1870,43 @@ function cardOf(k: KeyRef): CardModel | null {
     ease: (m?.ease as Ease | undefined) ?? "",
     bezier: (m?.bezier as number[] | undefined) ?? rig.BEZIER_DEFAULT,
     ...(!m && { noEase: "mốc `null` không có `ease`: đoạn tới nó hoà `smooth`" }),
-    ...(k.kind === "hand" && {
-      hold: {
-        mode: m?.hold === null ? "null" : m?.hold === undefined ? "none" : "set",
-        item: pick?.item ?? run?.item ?? items[0] ?? "",
-        group: pick?.group ?? run?.group ?? "sheet",
-        variant: pick?.variant ?? "",
-      },
-      shape: {
-        pose: typeof m?.pose === "string" ? m.pose : "",
-        ...(typeof m?.w === "number" && { w: m.w }),
-        options: shapeEntries().map((e) => ({
-          v: e.name,
-          label: `${e.builtin ? `${e.name} (${e.label})` : `${e.name} · hands/`}${e.note ? ` — ${e.note}` : ""}`,
-        })),
-        ...(!m
-          ? { disabled: "mốc `null` (thả đích) không có dáng ngón: thêm `pose` ở mốc khác" }
-          : m.hold !== undefined && { disabled: "mốc có `hold`: dáng ngón do kiểu cầm quyết" }),
-      },
-      lock: {
-        on: lockOn,
-        ...(!m && { disabled: "mốc `null` không có khuỷu" }),
-        ...(idle && { idle }),
-      },
-    }),
+    ...(k.kind === "hand" &&
+      !rest && {
+        hold: {
+          mode: m?.hold === null ? "null" : m?.hold === undefined ? "none" : "set",
+          item: pick?.item ?? run?.item ?? items[0] ?? "",
+          group: pick?.group ?? run?.group ?? "sheet",
+          variant: pick?.variant ?? "",
+        },
+        shape: {
+          pose: typeof m?.pose === "string" ? m.pose : "",
+          ...(typeof m?.w === "number" && { w: m.w }),
+          options: shapeEntries().map((e) => ({
+            v: e.name,
+            label: `${e.builtin ? `${e.name} (${e.label})` : `${e.name} · hands/`}${e.note ? ` — ${e.note}` : ""}`,
+          })),
+          ...(!m
+            ? { disabled: "mốc `null` (thả đích) không có dáng ngón: thêm `pose` ở mốc khác" }
+            : m.hold !== undefined && { disabled: "mốc có `hold`: dáng ngón do kiểu cầm quyết" }),
+        },
+        lock: {
+          on: lockOn,
+          ...(!m && { disabled: "mốc `null` không có khuỷu" }),
+          ...(idle && { idle }),
+        },
+      }),
     items,
     groups: rig.GROUP_IDS,
     variants: variantsOf,
     json: JSON.stringify(json, null, 2),
-    notes: added && sameKey(added.key, k) ? added.notes : [],
+    notes: [
+      ...(rest
+        ? [
+            "mốc `rest`: tay buông — thả đích, bỏ bàn tay (ngón, xoay, gập cổ tay, palm / fingers) của hành động ở tay này tới mốc sau; xoá mốc là trả lại",
+          ]
+        : []),
+      ...(added && sameKey(added.key, k) ? added.notes : []),
+    ],
   };
 }
 
@@ -2147,6 +2239,7 @@ ui.edMode.onclick = (e) => {
 ui.undo.onclick = () => step(true);
 ui.redo.onclick = () => step(false);
 ui.save.onclick = () => void save();
+ui.restHand.onclick = () => goRest();
 ui.discard.onclick = () => {
   if (!work || !isDirty() || !confirm("Bỏ mọi thay đổi chưa lưu? (hoàn tác được)")) return;
   if (apply(JSON.parse(work.saved), { key: null })) say("đã bỏ thay đổi");

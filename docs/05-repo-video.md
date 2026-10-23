@@ -543,7 +543,7 @@ pnpm studio2d    # = pnpm exec stickman studio2d: character studio 2D, http://lo
 Dev server Vite (Vite đi theo `@stickman3d/cli`) chạy app `apps/studio3d` với gốc là thư mục đang đứng: xem cảnh three
 của `scenes/` (cùng `stickman.world` mà Remotion vẽ), soạn kiểu cầm, chỉnh dáng ngón của tay không cầm đồ thành dáng có
 tên của `hands/` ([01](01-rig.md#dáng-tay-có-tên)), sửa mốc tay và mốc món trên thanh tua (chế độ
-**Dáng tay**: thêm, dời giữ mốc tên `@tên±Δ`, xoá, `ease`, `hold`, `pose`, `elbowLock`, một lịch sử hoàn tác chung, **Lưu**). Phím,
+**Dáng tay**: thêm, dời giữ mốc tên `@tên±Δ`, xoá, `ease`, `hold`, `pose`, `elbowLock`, xoá clip và đổi hành động của track, **Về tư thế buông** (mốc `rest`), một lịch sử hoàn tác chung, **Lưu**). Phím,
 panel, cách soạn ở README của `apps/studio3d` trong repo rig.
 
 - **Rig của trang là rig repo video đang nạp.** `@stickman3d/rig`, `sketch`, `fx` trỏ `link:` tới một cây nguồn thì trang

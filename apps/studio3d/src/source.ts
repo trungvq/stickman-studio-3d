@@ -23,6 +23,7 @@ const KIND: Record<HandMarkKind, string> = {
   hold: "chỉ hold",
   pose: "chỉ pose",
   null: "null",
+  rest: "rest",
 };
 
 const dir = (v: unknown) => (typeof v === "string" ? v : JSON.stringify(v));
@@ -77,8 +78,10 @@ export function sourceModel(id: string, src: HandSource): SourceModel {
         },
   );
   const h = src.hand;
+  const rest = src.rest;
+  const gone = rest >= 1 - 1e-6;
   rows.push(
-    h
+    h && !gone
       ? {
           label: "bàn tay",
           what: clipOf(h),
@@ -87,12 +90,18 @@ export function sourceModel(id: string, src: HandSource): SourceModel {
             handKeyText(h.key),
             ...flags(h),
             ...(w?.aim && h.aim ? ["ý định của mốc tay đè"] : []),
+            ...(rest > 0 ? [`mốc rest đang buông ${Math.round(rest * 100)}%`] : []),
           ]
             .filter(Boolean)
             .join(" · "),
           ...(h.aim && !w && { warn: true }),
         }
-      : { label: "bàn tay", what: "—", where: "", detail: "dáng nghỉ" },
+      : {
+          label: "bàn tay",
+          what: "—",
+          where: "",
+          detail: h ? `dáng nghỉ: mốc rest huỷ ${clipOf(h)} (${trackOf(h)})` : "dáng nghỉ",
+        },
   );
   const m = src.mark;
   rows.push({

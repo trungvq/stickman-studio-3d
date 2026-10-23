@@ -1,6 +1,6 @@
 import { parseAction, type ActionData } from "@stickman3d/rig/core";
 import { describe, expect, it } from "vitest";
-import { compatibleActions, deleteClip, setClipAction, tracksOf } from "./clips";
+import { compatibleActions, deleteClip, restHand, setClipAction, tracksOf } from "./clips";
 
 const raw = () => ({
   cast: [
@@ -51,5 +51,24 @@ describe("sửa clip", () => {
     };
     expect(compatibleActions(actions, "farHand")).toEqual(["nearHand"]);
     expect(compatibleActions(actions, "farHand", ["hand"])).toEqual(["both", "nearHand"]);
+  });
+});
+
+describe("Về tư thế buông", () => {
+  it("clip chỉ chạm tay ấy: xoá clip, track hết clip thì bỏ; không thêm mốc", () => {
+    const r = restHand(raw(), "a", "right", 0.5, [{ track: 1, clip: 1, other: false }]);
+    expect(r.rest).toBe(false);
+    expect(tracksOf(r.raw, "a")![1].clips).toHaveLength(1);
+    expect((r.raw.cast as { world?: unknown }[])[0].world).toBeUndefined();
+  });
+
+  it("clip chạm cả hai tay: thêm mốc `rest` ở giây ấy, clip giữ", () => {
+    const base = { ...raw(), cast: [{ ...raw().cast[0], world: { at: [0, 0, 0] } }] };
+    const r = restHand(base, "a", "left", 1.25, [{ track: 1, clip: 0, other: true }]);
+    expect(r.rest).toBe(true);
+    expect(tracksOf(r.raw, "a")![1].clips).toHaveLength(2);
+    expect((r.raw.cast as { world: { hands: unknown[] } }[])[0].world.hands).toEqual([
+      { t: 1.25, left: { rest: true } },
+    ]);
   });
 });
