@@ -1,0 +1,75 @@
+// Công tắc chế độ lần cầm (tay theo đồ ↔ đồ theo tay): chạy `holdToItemLed` / `holdToHandLed` của rig trên JSON thô của
+// cảnh, áp bản vá, đọc độ lệch. Hàm thuần; README.md § Đổi chế độ lần cầm, docs/11-nhom-cam.md § Đổi chế độ lần cầm.
+import {
+  applyJsonPatch,
+  HOLD_MODE_ANGLE,
+  HOLD_MODE_POS,
+  holdToHandLed,
+  holdToItemLed,
+  type HandSide,
+  type HoldModeMax,
+  type HoldModeResult,
+  type HoldModeRow,
+  type HoldRunInfo,
+  type SceneRuntime,
+} from "@stickman3d/rig/core";
+import type { Json } from "./keys";
+
+/** Chế độ đích của phép đổi: `item` tay theo đồ, `hand` đồ theo tay */
+export type ModeTarget = "item" | "hand";
+
+export const modeTarget = (m: HoldRunInfo["mode"]): ModeTarget => (m === "hand" ? "item" : "hand");
+
+/** Lần cầm chứa giây `at` (lần cầm tới hết cảnh còn ở chính giây cuối) */
+export const runAt = (runs: readonly HoldRunInfo[], at: number, dur: number) =>
+  runs.find(
+    (r) =>
+      r.since <= at + 1e-9 &&
+      (at < r.until - 1e-9 || (r.until >= dur - 1e-9 && at <= r.until + 1e-9)),
+  );
+
+/** Giây `t` nằm hẳn trong lần cầm, sau mốc mở: "chỉ từ đây" mới có nghĩa */
+export const midRun = (run: Pick<HoldRunInfo, "since" | "until">, t: number) =>
+  t > run.since + 1e-3 && t < run.until - 1e-3;
+
+export interface ModeAsk {
+  id: string;
+  side: HandSide;
+  /** Một giây trong lần cầm */
+  at: number;
+  to: ModeTarget;
+  /** Chỉ đổi từ giây này (số hay `@mốc±Δ`); giữa lần cầm thì rig chèn mốc `regrip` ở đó */
+  from?: number | string;
+}
+
+/** Phép đổi của rig trên `raw` (runtime `rt` dựng từ chính `raw`) và JSON thô sau bản vá; `raw` không đổi */
+export function convertRun(
+  rt: SceneRuntime,
+  raw: Json,
+  ask: ModeAsk,
+  rebuild: (raw: unknown) => SceneRuntime,
+): { res: HoldModeResult; raw: Json } {
+  const fn = ask.to === "item" ? holdToItemLed : holdToHandLed;
+  const res = fn(rt, raw, {
+    id: ask.id,
+    side: ask.side,
+    at: ask.at,
+    ...(ask.from !== undefined && { from: ask.from }),
+    rebuild,
+  });
+  return { res, raw: applyJsonPatch(raw, res.ops) };
+}
+
+/** Lệch vượt ngưỡng giữ chỗ (`HOLD_MODE_POS` đơn vị rig, `HOLD_MODE_ANGLE` độ) */
+export const overPos = (x: number | undefined) => (x ?? 0) > HOLD_MODE_POS;
+export const overAngle = (x: number | undefined) => (x ?? 0) > HOLD_MODE_ANGLE;
+
+/** Tâm nắm dời nhiều nhất trong các tay của hàng */
+export const handMax = (r: Pick<HoldModeRow, "hand">) => Math.max(0, ...Object.values(r.hand));
+
+/** Hàng có lệch vượt ngưỡng (món dời, món quay hay tâm nắm dời) */
+export const rowOver = (r: Pick<HoldModeRow, "item" | "hand">) =>
+  overPos(r.item?.pos) || overAngle(r.item?.angle) || overPos(handMax(r));
+
+export const maxOver = (m: HoldModeMax) =>
+  overPos(m.item.pos) || overAngle(m.item.angle) || overPos(m.hand);

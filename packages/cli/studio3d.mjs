@@ -121,8 +121,30 @@ const outsideHands = (s) => ({
 });
 
 /**
+ * Món `raw` (JSON thô của `held/`) với bản soạn `authored` ở khoá `authored.<group>.<variant>` (`null` là xoá). Món còn kiểu
+ * cầm có tên (`base` / `note`, trường của bản `version`) mà `schemaVersion` cũ hơn thì lên `version`
+ */
+export function heldWithAuthored(raw, group, variant, authored, version) {
+  const out = { ...raw };
+  const all = { ...out.authored };
+  const byVariant = { ...all[group] };
+  if (authored) byVariant[variant] = authored;
+  else delete byVariant[variant];
+  if (Object.keys(byVariant).length) all[group] = byVariant;
+  else delete all[group];
+  if (Object.keys(all).length) out.authored = all;
+  else delete out.authored;
+  const named = Object.values(all).some((g) =>
+    Object.values(g).some((a) => a && (a.base !== undefined || a.note !== undefined)),
+  );
+  if (named && typeof out.schemaVersion === "number" && out.schemaVersion < version)
+    out.schemaVersion = version;
+  return out;
+}
+
+/**
  * Cảnh trên đĩa `disk` nhận `cast[*].world.hands` và `items` của bản studio `edited`; phần khác phải trùng. Bản studio
- * thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên; xoá hết là gửi mảng rỗng.
+ * thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên; xoá hết là gửi mảng rỗng, `items: null` bỏ cả khoá `items`.
  */
 export function sceneWithHands(disk, edited) {
   const clean = (v) => JSON.parse(JSON.stringify(v));
@@ -136,7 +158,8 @@ export function sceneWithHands(disk, edited) {
     const hands = edited.cast[i].world?.hands;
     if (hands !== undefined) c.world.hands = hands;
   });
-  if (edited.items !== undefined) next.items = edited.items;
+  if (edited.items === null) delete next.items;
+  else if (edited.items !== undefined) next.items = edited.items;
   return next;
 }
 
@@ -287,16 +310,15 @@ export function studio3dConfig({
             const buf = src ? readFileSync(src) : null;
             fresh(buf, hash, what);
             const text = buf.toString("utf8");
-            const raw = JSON.parse(text);
-            const all = { ...raw.authored };
-            const byVariant = { ...all[group] };
-            if (authored) byVariant[variant] = authored;
-            else delete byVariant[variant];
-            if (Object.keys(byVariant).length) all[group] = byVariant;
-            else delete all[group];
-            if (Object.keys(all).length) raw.authored = all;
-            else delete raw.authored;
-            const parsed = (await core()).parseHeldItem(raw);
+            const rig = await core();
+            const raw = heldWithAuthored(
+              JSON.parse(text),
+              group,
+              variant,
+              authored,
+              rig.HELD_VERSION,
+            );
+            const parsed = rig.parseHeldItem(raw);
             if (!parsed.success)
               throw new HttpError(400, `món sau khi ghi không qua schema: ${parsed.error.message}`);
             const body = await formatLike(text, raw, (await format)(join(HELD, `${name}.json`)));

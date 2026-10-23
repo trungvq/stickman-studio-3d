@@ -36,9 +36,11 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
 - **Ghi.** Hai đường, cả hai kiểm hash, vá JSON thô và giữ `<file>.json.bak`:
   - `POST /api/scene?name=<cảnh>` `{ hash, scene }`: `scene` là JSON thô của cảnh đã sửa; server lấy `cast[*].world.hands`
     và `items` của nó vá vào file trên đĩa; `scene` thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên, xoá hết là gửi mảng
-    rỗng (`items: []`, `hands: []` ghi thành mảng rỗng). Phần khác của `scene` khác đĩa thì 400. Trả `{ file, raw, hash }`.
+    rỗng (`items: []`, `hands: []` ghi thành mảng rỗng), `items: null` bỏ cả khoá `items` (trang gửi khi bản đang sửa không còn
+    khoá ấy mà bản đã lưu có). Phần khác của `scene` khác đĩa thì 400. Trả `{ file, raw, hash }`.
   - `POST /api/held?name=<món>` `{ hash, group, variant, authored }`: **Lưu** của khung soạn kiểu cầm ghi `authored` của
-    món × nhóm × biến thể (`authored: null` là xoá). `STUDIO3D_HELD_OUT=<thư mục>` đổi hướng ghi sang thư mục ấy và đọc nó
+    món × nhóm × biến thể (`authored: null` là xoá). Món còn kiểu cầm có tên (`base` / `note`) mà `schemaVersion` cũ hơn
+    `HELD_VERSION` của rig thì ghi lên `HELD_VERSION`. `STUDIO3D_HELD_OUT=<thư mục>` đổi hướng ghi sang thư mục ấy và đọc nó
     phủ lên `held/` — thử mà không đụng repo video.
 - **Hash.** `GET /api/scene` trả `hash` của file cảnh và `heldHash` của từng món, là sha256 của byte trên đĩa lúc nạp. Lưu
   gửi kèm hash ấy; file đã đổi từ lúc nạp thì server trả 409 (`{ error, conflict: true, hash }`) và không ghi. Lượt ghi
@@ -64,7 +66,7 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
 | Del, Backspace | Xoá mốc đang mở thẻ (Dáng tay) |
 | T · Y | Tay nắm của bàn tay đang chọn: dời · xoay (Dáng tay) |
 | W S · A D · Q E | Camera tự do: tiến / lùi, sang trái / phải, xuống / lên (theo hướng camera); giữ Shift: nhanh gấp 3 |
-| Esc | Đóng thẻ mốc; không có thẻ thì bỏ chọn bàn tay |
+| Esc | Đóng thẻ lần cầm, thẻ mốc; không có thẻ thì bỏ chọn bàn tay |
 
 Khung soạn kiểu cầm có phím, chuột riêng ([bên dưới](#soạn-kiểu-cầm)).
 
@@ -90,19 +92,24 @@ Panel bên phải (nút ⇆ gập / mở) liệt kê mọi bàn tay của ngư�
 dòng hay nhấp lên bàn tay / món trên hình (cả camera cảnh) để chọn tay:
 
 - camera tự do bay tới cận bàn tay (tâm xoay ở tâm nắm, khung vừa bàn tay + món); nút **Trước**, **Chéo**, **Ngang** như
-  `can-tay` của repo video, **Sau lưng** khi tay ở sau thân. **Camera bám theo tay khi tua** dời camera theo tâm nắm khi đổi giây.
+  `can-tay` của repo video (ngang: ra ngoài phía tay ấy, theo hai vai), **Sau lưng** khi tay ở sau thân. Đường từ bàn tay tới
+  camera vướng một lưới của cảnh (đầu, thân người khác, tường) thì hướng xoay quanh trục đứng tới ±50°, rồi camera kéo vào
+  trước chỗ vướng. **Camera bám theo tay khi tua** dời camera theo tâm nắm khi đổi giây.
 - số đo cầm đồ ở giây đang xem bằng chính phép đo của `check` nhóm `held` (`heldHands`, `heldHits`, `heldSummary` của rig,
   ngưỡng `stickman.held` của `package.json` repo): lựa chọn cầm của bộ giải kèm nguồn (`·rig` rig giải, `·mđ` mặc định nhóm),
   luật phạm (`!! pierce`, `sink`, `loose`, `role`, `oppose`, `grip`, `wrist`, `reach`, `elbow`, `arm`, `size`, `up`/`face` — món
   quay sai ý định), khe da từng ngón và lòng tay theo vai trò, dòng tóm tắt như `check`. Luật đo trên cả lần cầm (`drift`,
   `jump`) và cửa sổ hoà `HOLD_BLEND` không xét ở đây. Đang phát thì không đo; dừng là đo.
 - trên hình: vòng cam ở tâm nắm; đốt lún quá `sink` tô đỏ, ngón vai trò (`press`/`wrap`/`tip`) còn hở quá `wrap` tô vàng.
-- **Kiểu cầm** của lần cầm ở giây đang xem (`holdRuns`; món treo `carry` không có): **rig chọn** (không khai `variant`, kèm
-  biến thể rig đang ra), các biến thể gốc của nhóm (`đã soạn` khi món có bản soạn), rồi kiểu cầm có tên của món kèm `base`
-  và `note`; viền cam là kiểu cảnh đang khai. Nhấp một kiểu là đổi `variant` ở mọi mốc `hold` của lần cầm ấy, một bước của
-  lịch sử chung, giữ dạng mốc: chuỗi tắt `món@nhóm` thành `món@nhóm/tên`, object thêm / đổi `variant`, trường lạ giữ; tay phụ
-  của `both` đổi `variant` của `both` ở mốc tay dẫn. **rig chọn** bỏ `variant`. `ease` của mốc không đổi. Kiểu không áp được
-  (lựa chọn của cảnh ngoài miền của biến thể…) thì không áp, thanh trạng thái báo lý do.
+- **Kiểu cầm** của lần cầm ở giây đang xem (`holdRuns`): **rig chọn** (cảnh không khai `variant` thì kèm biến thể gốc rig
+  đang ra; cảnh khai thì nhấp là bỏ `variant`), các biến thể gốc của nhóm (`đã soạn` khi món có bản soạn), rồi kiểu cầm có
+  tên của món kèm `base` và `note`; viền cam là kiểu cảnh đang khai. Lần cầm không có kiểu để chọn — món treo `carry`, bàn
+  tay không giải chỗ cầm nhóm ở giây ấy, nhóm một biến thể mà món chưa có kiểu có tên — thì một dòng nêu lý do. Nhấp một
+  kiểu là đổi `variant` ở mọi mốc `hold` của lần cầm ấy, một bước của lịch sử chung, giữ dạng mốc: chuỗi tắt `món@nhóm`
+  thành `món@nhóm/tên`, object thêm / đổi `variant`, trường lạ giữ; tay phụ của `both` đổi `variant` của `both` ở mốc tay
+  dẫn. `ease` của mốc không đổi. `variant` nằm trong khoá lần cầm: lần cầm kề trước / sau (cùng món × nhóm, mốc `hold` liền
+  trước / liền sau) thành cùng khoá thì mốc mở lần cầm sau nhận `regrip: true`, hai lần cầm không nhập làm một. Kiểu không
+  áp được (lựa chọn của cảnh ngoài miền của biến thể…) thì không áp, thanh trạng thái báo lý do.
 
 ## Soạn kiểu cầm
 
@@ -143,7 +150,8 @@ cỡ tay của người ấy (`k`, `long` như rig) và bản sao lưới món c
 | Ctrl+Z · Ctrl+Shift+Z | Hoàn tác · làm lại |
 
 Lăn theo ô **Lăn** của thanh trên như camera tự do. Khi khung soạn đang hiện, Space, ← →, C, R, WASD/QE không tới cảnh và
-camera ngầm phía sau; thả một thanh kéo (hay nhấp vào khung) là thanh ấy thôi nhận phím mũi tên.
+camera ngầm phía sau; thả một thanh kéo (hay nhấp vào khung) là thanh ấy thôi nhận phím mũi tên. Hộp thoại đang mở (Lưu thành
+kiểu mới, Chép sang món) thì không phím nào của trang tới cảnh.
 - **Khung cảnh (áp tạm)** dựng lại cảnh ở giây ấy với bản soạn chưa lưu để xem cổ tay, khuỷu; **Khung soạn** quay lại.
 - Khung soạn mở đúng khoá `authored.<nhóm>.<khoá>` cảnh đang dùng: biến thể gốc hay kiểu cầm có tên (đầu panel ghi `base` và
   `note`). **Lưu** ghi đè đúng khoá ấy (kiểu có tên giữ `base`, `note`); **Xoá bản soạn** bỏ nó; **Thoát** bỏ phần áp tạm
@@ -160,6 +168,9 @@ camera ngầm phía sau; thả một thanh kéo (hay nhấp vào khung) là than
   hay không dựng được lựa chọn ấy thì tắt kèm lý do. Tên mặc định là khoá đang mở: tên biến thể gốc ghi bản soạn mặc định
   của món đích, tên khác là kiểu cầm có tên (`base` như khoá đang mở); món đích đã có khoá ấy thì không chép. Ghi
   `held/<món đích>.json` (`POST /api/held`, hash lúc nạp).
+- **Xoá bản soạn** của kiểu cầm có tên mà cảnh đang mở còn gọi kiểu ấy: hỏi lại, nêu người, tay và mốc gọi.
+- Màn hẹp: thanh góc nhìn xuống dòng trong bề ngang khung, nút hoàn tác chỉ còn mũi tên; thẻ ngón và dòng nhắc chuột ẩn
+  (panel bên dưới có đủ mọi thanh).
 
 Rê chuột lên đồng hồ góc phải: ms tính tư thế (`stage.pose`) và ms vẽ của khung vừa vẽ.
 
@@ -174,6 +185,7 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hà
 - **Dải dưới hàng tay là lần cầm** (`holdRuns`), nhãn `món@nhóm/biến thể` (tay phụ của `both` ghi `(phụ)`): xanh lá tay theo
   đồ (theo mốc, hai tay), xanh dương đồ theo tay, xám tay tự do; sọc là `HOLD_BLEND` ở đầu lần cầm (trừ lần cầm từ giây 0)
   và lúc nhả món đặt trước, nhãn nằm trên nền màu dải, không bị sọc che.
+- **Nhấp dải lần cầm**: mở thẻ lần cầm ([Đổi chế độ lần cầm](#đổi-chế-độ-lần-cầm)); dải đang mở thẻ có viền sáng.
 - **Nhấp mốc**: tua tới mốc, mở thẻ mốc ở đầu panel. Vùng chạm của mốc rộng ít nhất 16 px; hai mốc gần nhau thì mốc có
   tâm gần con trỏ nhất nhận. **Kéo mốc**: dời `t`, bám lưới khung (1/30 s) tính từ mốc tên của
   mốc; mốc tên giữ dạng `@tên±Δ` (`@tra` kéo 0,2 s là `@tra+0.2`), mốc số giữ số. Giữ **Alt** khi thả: bắt vào mốc tên gần
@@ -250,6 +262,26 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hà
 - **Màn hẹp** (≤ 760 px): camera, AA, Lăn gập sau nút ⋯; panel bàn tay xuống dưới khung vẽ. Ở Xem thanh tua vừa bề ngang;
   ở Dáng tay thanh tua rộng 720 px, cuộn ngang, luôn tự cuộn theo giây đang xem (cả khi chưa chọn tay); nhãn dải lần cầm
   bám mép trái khung cuộn. HUD tay nắm bỏ dòng nhắc.
+
+### Đổi chế độ lần cầm
+
+Thẻ lần cầm (nhấp dải dưới hàng tay) ghi món, người, tay, quãng và chế độ, cùng công tắc **Tay theo đồ** ↔ **Đồ theo tay**
+(nút sáng là chế độ đang có). Phép đổi viết lại JSON của lần cầm bằng `holdToItemLed` / `holdToHandLed` của rig
+(docs/11-nhom-cam.md § Đổi chế độ lần cầm), như tool `hold_mode` của MCP:
+
+- **Phạm vi**: **cả lần cầm**, hay **chỉ từ đây** khi giây đang xem nằm giữa lần cầm (sau mốc mở): rig chèn mốc `regrip` ở
+  giây ấy (giây trùng mốc tên thì ghi `@tên`), chỉ đổi phần sau. Tua sang giây khác thì bảng của "chỉ từ đây" bỏ, tính lại.
+- **Bấm công tắc**: trang dựng lại cảnh vài lần để đo ("đang tính…", vài trăm ms tới vài giây), rồi hiện bảng độ lệch từng
+  mốc của quãng đổi và giữa hai mốc kề: món dời, món quay, tâm nắm từng tay dời, `φ` khuỷu tay dẫn trước → sau, khớp cổ tay
+  ở giới hạn trước → sau (`x` xoay, `g` gập, `l` lệch), `khoá` (bản vá khoá khuỷu ở mốc), `hoà` (đang trong `HOLD_BLEND`,
+  không tính vào lệch lớn nhất). Đơn vị rig (người cao ~430) và độ; ô dời quá `HOLD_MODE_POS` (0,5), quay quá
+  `HOLD_MODE_ANGLE` (1°) tô đỏ, hàng có ô ấy nền đỏ. Trên bảng: lệch lớn nhất ở mốc, ngoài quãng đổi, lúc hoà; dưới bảng:
+  `notes` của phép đổi và bản vá JSON Patch.
+- **Áp**: bản vá vào cảnh đang sửa, một bước của lịch sử chung (chưa ghi đĩa: **Lưu**); Ctrl+Z về đúng chữ JSON trước khi áp.
+  Dải lần cầm đổi màu; thẻ ở lại trên lần cầm (đổi giữa chừng: phần sau). **Thôi** bỏ bảng, cảnh không đổi. Bản đang sửa
+  đổi trong lúc bảng đang hiện thì bảng bỏ.
+- Không đổi được (món treo, lần cầm có mốc món nằm `rest`, hai tay cầm cùng món không lồng nhau…): thẻ nêu lý do của rig.
+  Tay phụ của `both` đổi lần cầm của tay dẫn.
 
 ## Lưu ý khi xem bằng camera tự do
 

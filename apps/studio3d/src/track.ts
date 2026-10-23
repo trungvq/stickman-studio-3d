@@ -19,6 +19,9 @@ export interface Band {
   kind: "item" | "hand" | "free";
   label?: string;
   title?: string;
+  /** Lần cầm nhấp được (mở thẻ lần cầm); `on` là lần cầm đang mở thẻ */
+  run?: { since: number; until: number };
+  on?: boolean;
 }
 
 export interface Lane {
@@ -45,6 +48,8 @@ export interface TrackHost {
   snap(k: KeyRef, t: number): number;
   add(lane: string): void;
   lane(lane: string): void;
+  /** Nhấp dải lần cầm */
+  band(lane: string, b: Band): void;
 }
 
 /** Bắt đầu nhấp / kéo của từng nút mốc */
@@ -140,6 +145,11 @@ export class KeyTrack {
     for (const b of l.bands) {
       const d = document.createElement("div");
       d.className = `band ${b.kind}`;
+      d.classList.toggle("on", !!b.on);
+      if (b.run) {
+        d.classList.add("pick");
+        d.onclick = () => this.host.band(l.id, b);
+      }
       d.style.left = pct(b.from, this.dur);
       d.style.width = `calc(${pct(b.to, this.dur)} - ${pct(b.from, this.dur)})`;
       d.title = b.title ?? "";

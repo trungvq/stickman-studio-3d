@@ -1,0 +1,116 @@
+/* thẻ lần cầm: công tắc chế độ, bảng độ lệch (modeUi.ts) */
+#runCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #6fa8dc;
+  border-radius: 8px;
+}
+
+#runCard[hidden] {
+  display: none;
+}
+
+#runCard .cardhead b {
+  color: #6fa8dc;
+}
+
+#runCard .seg button:disabled {
+  opacity: 1;
+}
+
+#runCard .seg button:not(.on):not(:disabled) {
+  border-color: #6fa8dc;
+}
+
+#runCard .warn {
+  color: #ffcc66;
+  font-size: 12px;
+}
+
+#runCard .error {
+  color: #ff8a80;
+}
+
+#runCard .over {
+  color: #ff8a80;
+  font-weight: 600;
+}
+
+#runCard .msum {
+  font-size: 12px;
+}
+
+#runCard .mhead {
+  font-size: 12px;
+}
+
+.mtable {
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.mtable table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mtable th {
+  position: sticky;
+  top: 0;
+  padding: 2px 3px;
+  background: var(--panel);
+  color: var(--dim);
+  font-weight: normal;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.mtable td {
+  padding: 2px 3px;
+  border-top: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.mtable td.clamp {
+  white-space: normal;
+  color: var(--dim);
+}
+
+.mtable tr.mid td:first-child {
+  color: var(--dim);
+}
+
+.mtable tr.rowover {
+  background: rgb(255 138 128 / 14%);
+}
+
+.mtable tr.mixing td {
+  color: var(--dim);
+}
+
+.mtable .tag {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgb(160 120 220 / 30%);
+  color: var(--text);
+}
+
+/* dải lần cầm nhấp được: mở thẻ lần cầm */
+.band.pick {
+  cursor: pointer;
+}
+
+.band.pick:hover {
+  filter: brightness(1.15);
+}
+
+.band.on {
+  outline: 2px solid var(--text);
+  outline-offset: -1px;
+}

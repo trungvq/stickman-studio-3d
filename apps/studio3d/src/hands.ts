@@ -136,27 +136,58 @@ export function handRadius(r: HandRow, center: THREE.Vector3): number {
   return rad;
 }
 
+/** Khoảng trống từ `c` theo `dir` tới lưới đầu tiên đang hiện của `world` (bỏ phần trong `near`); không chạm là `far` */
+function clearance(
+  world: THREE.Object3D,
+  c: THREE.Vector3,
+  dir: THREE.Vector3,
+  near: number,
+  far: number,
+) {
+  const ray = new THREE.Raycaster(c, dir, near, far);
+  for (const h of ray.intersectObject(world, true))
+    if ((h.object as THREE.Mesh).isMesh && !h.object.userData.noCollide && shown(h.object))
+      return h.distance;
+  return far;
+}
+
+const UP = new THREE.Vector3(0, 1, 0);
+
 /**
- * Chỗ đặt camera cận tay theo góc: hướng từ bàn tay ra mắt như `can-tay` (`F` mặt người hướng tới, `R` bên phải người;
- * chéo, ngang về phía tay ấy), ngẩng lên một chút
+ * Chỗ đặt camera cận tay theo góc: hướng từ bàn tay ra mắt như `can-tay` (`F` mặt người hướng tới, `S` ngang ra ngoài phía
+ * tay ấy, từ vai bên kia sang vai bên này), ngẩng lên một chút. Có `world`: đường từ bàn tay tới camera vướng lưới (đầu, thân
+ * người khác, tường) thì xoay hướng quanh trục đứng tới ±50°, rồi kéo camera vào trước chỗ vướng — camera không nằm trong vật
  */
-export function anglePose(r: HandRow, angle: Angle, fov: number) {
+export function anglePose(r: HandRow, angle: Angle, fov: number, world?: THREE.Object3D) {
   const c = gripWorld(r.fig, r.side);
   const m = r.fig.root.matrixWorld;
   const F = new THREE.Vector3().setFromMatrixColumn(m, 2).setY(0).normalize();
-  const R = new THREE.Vector3().setFromMatrixColumn(m, 0).negate().setY(0).normalize();
-  const ben = r.side < 0 ? 1 : -1;
+  const S = r.fig.arms[r.side].shoulder
+    .getWorldPosition(new THREE.Vector3())
+    .sub(r.fig.arms[-r.side as Side].shoulder.getWorldPosition(_v))
+    .setY(0)
+    .normalize();
   const dir =
     angle === "truoc"
       ? F.clone()
       : angle === "cheo"
-        ? F.clone().addScaledVector(R, ben).normalize()
+        ? F.clone().add(S).normalize()
         : angle === "ngang"
-          ? R.clone().multiplyScalar(ben)
+          ? S.clone()
           : F.clone().negate();
-  dir.addScaledVector(new THREE.Vector3(0, 1, 0), 0.35).normalize();
-  const dist = (handRadius(r, c) / Math.sin(((fov / 2) * Math.PI) / 180)) * 1.15;
-  return { target: c, position: c.clone().addScaledVector(dir, dist) };
+  dir.addScaledVector(UP, 0.35).normalize();
+  const rad = handRadius(r, c);
+  const dist = (rad / Math.sin(((fov / 2) * Math.PI) / 180)) * 1.15;
+  if (!world) return { target: c, position: c.clone().addScaledVector(dir, dist) };
+  let best = { dir, free: -1 };
+  for (const deg of [0, 25, -25, 50, -50]) {
+    const d = dir.clone().applyAxisAngle(UP, (deg * Math.PI) / 180);
+    const free = Math.min(dist, clearance(world, c, d, rad, dist));
+    if (free > best.free + 1e-6) best = { dir: d, free };
+    if (free >= dist) break;
+  }
+  const at = best.free >= dist ? dist : Math.max(rad * 1.2, best.free * 0.9);
+  return { target: c, position: c.clone().addScaledVector(best.dir, at) };
 }
 
 /** Bàn tay ở sau thân người (góc "sau lưng" mới có ích) */

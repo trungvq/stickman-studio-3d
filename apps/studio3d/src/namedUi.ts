@@ -9,22 +9,28 @@ const esc = (s: string) =>
 export interface StyleModel {
   /** `món@nhóm` của lần cầm (tay phụ ghi thêm) */
   label: string;
-  /** `variant` cảnh khai; không khai thì rig chọn (`solved`) */
+  /** `variant` cảnh khai */
   current?: string;
+  /** Biến thể rig đang ra khi cảnh không khai `variant` */
   solved?: string;
   entries: StyleEntry[];
   /** Số mốc `hold` của lần cầm sẽ đổi */
   keys: number;
 }
 
-/** Danh sách kiểu trong `el`; nhấp một kiểu là `pick(tên)`, "rig chọn" là `pick(undefined)` */
+/**
+ * Danh sách kiểu trong `el`; nhấp một kiểu là `pick(tên)`, "rig chọn" là `pick(undefined)`. Chuỗi: lần cầm không có kiểu
+ * để chọn, một dòng nêu lý do
+ */
 export function renderStyles(
   el: HTMLElement,
-  m: StyleModel | null,
+  m: StyleModel | string | null,
   pick: (variant: string | undefined) => void,
 ) {
   el.hidden = !m;
   if (!m) return el.replaceChildren();
+  if (typeof m === "string")
+    return void (el.innerHTML = `<div class="sthead"><b>Kiểu cầm</b> <span class="dim">${esc(m)}</span></div>`);
   el.innerHTML = `<div class="sthead"><b>Kiểu cầm</b> <span class="dim">${esc(m.label)} · ${m.keys} mốc \`hold\` của lần cầm</span></div>`;
   const row = (v: string | undefined, name: string, tag: string, note?: string) => {
     const b = document.createElement("button");
@@ -36,7 +42,13 @@ export function renderStyles(
     return b;
   };
   el.append(
-    row(undefined, "rig chọn", m.solved ? `không khai · đang ra ${m.solved}` : "không khai"),
+    row(
+      undefined,
+      "rig chọn",
+      m.current
+        ? "bỏ `variant`, rig chọn biến thể gốc"
+        : `không khai${m.solved ? ` · rig đang ra ${m.solved}` : ""}`,
+    ),
     ...m.entries.map((e) =>
       row(
         e.name,

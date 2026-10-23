@@ -567,6 +567,32 @@ button:disabled {
   border-radius: 6px;
 }
 
+/* hẹp: thanh góc nhìn xuống dòng trong bề ngang khung, chữ nút hoàn tác gập; thẻ ngón và dòng nhắc nhường chỗ cho bàn
+   tay (panel bên dưới có đủ mọi thanh) */
+@media (max-width: 760px) {
+  .edbar {
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    transform: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .edbar button,
+  .edbar label {
+    padding: 2px 6px;
+    font-size: 11px;
+  }
+
+  .edbar .lbl,
+  .edhud .edcard,
+  .edhud .edhint {
+    display: none;
+  }
+}
+
 .edcard {
   position: absolute;
   top: 48px;
