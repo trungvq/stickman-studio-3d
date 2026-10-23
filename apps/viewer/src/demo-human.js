@@ -51,7 +51,7 @@ const models = () => ({
   GIRL: character('vay', {
     palette: { garment: '#7893ae', sleeve: '#7893ae', sleeveLength: 0.45, trouserLength: 0, shoe: '#7a3b2e', trouserWidth: 21 },
     face: { blush: 0.5 },
-    garment: { style: 'blouse', hem: -18 }, hair: 'bob', hairColor: '#3b3038',
+    garment: { style: 'blouse', hem: -18, bust: 6 }, hair: 'bob', hairColor: '#3b3038',
     skirt: { color: '#3a3f4a', shape: {} },
   }),
   /** Nam len cổ tròn, đeo kính, tóc gọn; vạm vỡ: vai rộng, tay chân to, bắp tay nở */
@@ -65,7 +65,7 @@ const models = () => ({
     rig: { height: 0.94, shoulderHalf: 34, hipHalf: 18 },
     palette: { skin: '#9a6648', garment: '#e0b23a', sleeve: '#e0b23a', trouser: '#34466e', sleeveWidth: 12, trouserWidth: 14 },
     face: { blush: 0.6 },
-    garment: { style: 'sweater', hem: -10 }, hair: 'ponyLow', hairColor: '#3b2a22',
+    garment: { style: 'sweater', hem: -10, bust: 5 }, hair: 'ponyLow', hairColor: '#3b2a22',
   }),
   /** Nữ áo len, váy, chân trần cùng màu da với tay */
   KNIT: character('len-vay', {
@@ -77,7 +77,7 @@ const models = () => ({
   KIMONO: character('co-cheo-nu', {
     rig: { shoulderHalf: 36, hipHalf: 22 },
     palette: { garment: '#2b3a67', sleeve: '#2b3a67', sleeveWidth: 17, trouser: '#2b3a67', shoe: '#fff8ec', trouserWidth: 17 },
-    garment: { style: 'wrap', hem: -36, neckBack: 8, wrap: { band: 5, under: 3, underColor: '#fff8ec', obi: { color: '#efe4cf', y: 56, width: 34, cord: 3, cordColor: '#d9573b', clasp: 7, claspColor: '#d9573b', knot: 'taiko' } } },
+    garment: { style: 'wrap', hem: -36, neckBack: 8, bust: 5, wrap: { band: 5, under: 3, underColor: '#fff8ec', obi: { color: '#efe4cf', y: 56, width: 34, cord: 3, cordColor: '#d9573b', clasp: 7, claspColor: '#d9573b', knot: 'taiko' } } },
     hair: 'bun', hairColor: '#2e2420',
     skirt: { color: '#2b3a67', shape: { rise: 46, length: 190, flare: 4, pleats: 0 } },
   }),

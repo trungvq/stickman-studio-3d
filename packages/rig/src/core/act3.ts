@@ -123,6 +123,7 @@ export {
   THIGH_RAMP,
   THIGH_REACH,
   THIGH_ROOT,
+  torsoSection,
   trunk3,
   TURN_MAX,
   twoBone3,

@@ -1,22 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { TORSO_DEPTH } from './core/constants';
 import { BadgeSchema, defaultCharacter, GarmentSchema, LettersSchema, OBI_KNOTS, ObiSchema, OpenSchema, PanelSchema, PatternSchema, PRINT_SHAPE_NAMES, PrintSchema, WrapSchema } from './core/schema';
 import { flattenPath, PANEL_LIFT } from './core/panel';
-import { CLOTH, GARMENT_STYLES, garmentOf, lerpAt, torsoPaths, type Surface } from './core/torso';
-import { cladThigh, roots3, THIGH_CLEAR } from './core/act3';
+import { TORSO_DEPTH } from './core/constants';
+import { CHEST, CLOTH, GARMENT_STYLES, garmentOf, lerpAt, profile, torsoPaths, type Surface } from './core/torso';
+import { cladProfile, cladThigh, roots3, THIGH_CLEAR } from './core/act3';
 import { signedVolume, wrapEdge } from './core/wrap';
 import { PRINT_SHAPES, WAKABA } from './core/print';
-import { torsoMesh } from './torso';
+import { torsoMesh, type TorsoMesh } from './torso';
+
+/** Mặt khối cách điểm bao nhiêu, quy về nửa rộng (âm là trong ruột): nửa trước bề sâu `front`, nửa sau `depth` */
+const surfaceOf = (t: TorsoMesh) => ([x, y, z]: number[]) => {
+  const a = lerpAt(t.profile, y, 1, 0);
+  const d = lerpAt(t.profile.map(([, py], i) => [(z > 0 ? t.front : t.depth)[i], py]), y, 1, 0);
+  return (Math.hypot(x / a, z / d) - 1) * a;
+};
 
 describe('thân áo dựng khối', () => {
   it('mảng tô nằm trên mặt khối, không tam giác nào cắt vào ruột', () => {
     const { rig } = defaultCharacter();
     for (const style of Object.keys(GARMENT_STYLES)) {
       const t = torsoMesh({ style } as Parameters<typeof torsoMesh>[0], rig);
-      const depth = ([x, y, z]: number[]) => {
-        const a = lerpAt(t.profile, y, 1, 0);
-        return (Math.hypot(x / a, z / (TORSO_DEPTH * a)) - 1) * a;
-      };
+      const depth = surfaceOf(t);
       for (const f of t.fills)
         for (let i = 0; i < f.tris.length; i += 3) {
           const [A, B, C] = [0, 1, 2].map((k) => f.pts[f.tris[i + k]]);
@@ -25,6 +29,39 @@ describe('thân áo dựng khối', () => {
         }
     }
   });
+
+  it('nhìn nghiêng: ngực dốc liền từ mép trên tới ngang ngực, lưng đầy sớm hơn, vai mỏng; dưới ngang ngực theo bề rộng', () => {
+    const { rig } = defaultCharacter();
+    const yB = -CHEST.at * 120 * rig.height;
+    for (const style of Object.keys(GARMENT_STYLES))
+      for (const clad of [false, true]) {
+        const g = { style } as Parameters<typeof torsoMesh>[0];
+        const room = clad ? roots3(g, rig, { clad: true, sleeve: 15, trouser: 17 }).room : undefined;
+        const t = torsoMesh(g, rig, room);
+        const flat = clad
+          ? cladProfile(profile(garmentOf(g, true), rig, rig.stroke / 2).pts, room!)
+          : { pts: t.profile, depth: t.profile.map(([a]) => TORSO_DEPTH * a) };
+        const flatAt = (y: number) => lerpAt(flat.pts.map(([, py], i) => [flat.depth[i], py]), y, 1, 0);
+        const yS = t.profile.reduce((m, p) => (p[0] > m[0] ? p : m))[1];
+        t.profile.forEach(([a, y], i) => {
+          const at = `${style} ${clad} y ${y.toFixed(1)}`;
+          if (y >= yB) {
+            expect(t.front[i], at).toBeCloseTo(flatAt(y), 6);
+            expect(t.depth[i], at).toBeCloseTo(flatAt(y), 6);
+            return;
+          }
+          expect(t.profile[i + 1][1] - y, at).toBeLessThanOrEqual(CHEST.step + 1e-9);
+          expect(t.front[i], at).toBeLessThanOrEqual(flatAt(y) + 1e-9);
+          expect(t.depth[i], at).toBeGreaterThanOrEqual(t.front[i] - 1e-9);
+          // mặt trước không gãy: không lùi quá dốc của bề rộng, không vát ra trước quá một px mỗi px xuống
+          const dy = t.profile[i + 1][1] - y;
+          const lean = (flatAt(t.profile[i + 1][1]) - flatAt(y)) / dy;
+          expect((t.front[i + 1] - t.front[i]) / dy, at).toBeGreaterThanOrEqual(Math.min(0, lean) - 1e-6);
+          expect((t.front[i + 1] - t.front[i]) / dy, at).toBeLessThan(1);
+          if (Math.abs(y - yS) < 1e-9) expect(t.front[i] / a, at).toBeLessThan(0.75);
+        });
+      }
+  });
 });
 
 describe('áo cổ chéo dựng khối', () => {
@@ -32,10 +69,7 @@ describe('áo cổ chéo dựng khối', () => {
   const full = { band: 6, under: 3, obi: { cord: 3, clasp: 6, knot: 'taiko' as const } };
   const mesh = (wrap: Record<string, unknown> = full, extra: Record<string, unknown> = {}) =>
     torsoMesh({ style: 'wrap', wrap, ...extra } as Parameters<typeof torsoMesh>[0], rig);
-  const surface = (t: ReturnType<typeof mesh>) => ([x, y, z]: number[]) => {
-    const a = lerpAt(t.profile, y, 1, 0);
-    return (Math.hypot(x / a, z / (TORSO_DEPTH * a)) - 1) * a;
-  };
+  const surface = surfaceOf;
 
   it('mép vạt trên đi từ bên cổ +x qua giữa ngực xuống −overlap rồi thẳng đứng', () => {
     const t = torsoMesh({ style: 'wrap' }, rig);
@@ -123,10 +157,7 @@ describe('áo khoác vạt mở dựng khối', () => {
   const { rig } = defaultCharacter();
   const mesh = (wrap: Record<string, unknown>, extra: Record<string, unknown> = {}) =>
     torsoMesh({ style: 'wrap', wrap, ...extra } as Parameters<typeof torsoMesh>[0], rig);
-  const surface = (t: ReturnType<typeof mesh>) => ([x, y, z]: number[]) => {
-    const a = lerpAt(t.profile, y, 1, 0);
-    return (Math.hypot(x / a, z / (TORSO_DEPTH * a)) - 1) * a;
-  };
+  const surface = surfaceOf;
   const coat = { band: 8, bandColor: '#3a2a22', open: { gap: 10 } };
 
   it('dải cổ chạy suốt hai mép vạt, đối xứng, không chéo nhau: khe giữa rộng `gap` ở gấu', () => {
@@ -274,10 +305,7 @@ describe('hình in và thẻ tên', () => {
 describe('mảng áo, hoạ tiết, áo trong', () => {
   const { rig } = defaultCharacter();
   const mesh = (g: Record<string, unknown>) => torsoMesh(GarmentSchema.parse(g), rig);
-  const depth = (t: ReturnType<typeof mesh>) => ([x, y, z]: number[]) => {
-    const a = lerpAt(t.profile, y, 1, 0);
-    return (Math.hypot(x / a, z / (TORSO_DEPTH * a)) - 1) * a;
-  };
+  const depth = surfaceOf;
 
   it('JSON không khai trường mới ra y hệt; mảng chỉ là lưới decal thêm vào', () => {
     for (const style of Object.keys(GARMENT_STYLES)) {

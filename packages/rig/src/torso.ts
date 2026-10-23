@@ -1,9 +1,9 @@
 import { ShapeUtils, Vector2 } from 'three';
-import { cladProfile, type ArmRoom } from './core/act3';
-import { D, TORSO_DEPTH } from './core/constants';
+import { torsoSection, type ArmRoom } from './core/act3';
+import { D } from './core/constants';
 import type { Garment } from './core/schema';
 import {
-  bellyAt, COLLAR_LEAN, COLLAR_LINE, curve, GARMENT_STYLES, garmentOf, lerp, lerpAt, lipOf, profile, RIB_FRONT, spline,
+  COLLAR_LEAN, COLLAR_LINE, curve, GARMENT_STYLES, garmentOf, lerp, lerpAt, lipOf, profile, RIB_FRONT, spline,
   type MarkFill, type P2, type Rig, type SP, type Surface,
 } from './core/torso';
 import { WrapSchema, type Drape, type Necklace, type Shades } from './core/schema';
@@ -23,9 +23,9 @@ type Vec3 = [number, number, number];
 export interface TorsoMesh {
   /** Mặt cắt dọc `[nửa rộng, y]` từ mép trên xuống gấu; tiết diện ngang là ellipse nửa rộng ấy, nửa sâu `depth` cùng hàng */
   profile: P2[];
-  /** Nửa bề sâu từng hàng của `profile`: `TORSO_DEPTH` lần nửa rộng, người mặc đồ theo `cladProfile` */
+  /** Nửa bề sâu nửa sau từng hàng của `profile` (`torsoSection`): theo bề rộng, trên ngang ngực lưng đi dốc ngắn từ mép trên */
   depth: number[];
-  /** Nửa bề sâu nửa trước từng hàng: `depth` cộng bụng phệ (`garment.belly`) */
+  /** Nửa bề sâu nửa trước từng hàng: từ mép trên dốc dài tới ngang ngực, cộng bụng phệ (`garment.belly`) */
   front: number[];
   /** Nét trên mặt khối, `k` lần nét thân */
   lines: { pts: Vec3[]; k: number }[];
@@ -99,9 +99,8 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
   const g = garmentOf(raw, !!arm);
   const def = GARMENT_STYLES[g.style];
   const pr = profile(g, rig, rig.stroke / 2);
-  const { pts, depth } = arm ? cladProfile(pr.pts, arm) : { pts: pr.pts, depth: pr.pts.map(([a]) => TORSO_DEPTH * a) };
+  const { pts, back: depth, front } = torsoSection(pr.pts, g, rig.height, arm);
   const aAt = (y: number) => lerpAt(pts, y, 1, 0);
-  const front = pts.map(([, y], i) => depth[i] + (g.belly ?? 0) * bellyAt(y, rig.height));
   const deep: P2[] = pts.map(([, y], i) => [depth[i], y]);
   const ahead: P2[] = pts.map(([, y], i) => [front[i], y]);
   const dAt = (y: number) => lerpAt(deep, y, 1, 0);

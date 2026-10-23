@@ -33,6 +33,8 @@ import { profileAt, skirtSide, wornSkirt } from "./skirtShape";
 import {
   BELLY,
   bellyAt,
+  CHEST,
+  chestDepth,
   garmentOf,
   garmentShoulder,
   garmentSocket,
@@ -157,10 +159,10 @@ export const armSide = (room: ArmRoom, y: number) => Math.max(room.side, armInne
 /**
  * Mặt cắt thân áo của người mặc đồ: dưới tâm gốc vai sườn áo lùi về `armSide`, chuyển êm trong bán kính nắp vai — tay
  * buông theo `roots3` nằm ngoài thân, không lấn vào; dưới khuỷu thân được nở theo tay nên hông rộng thành dáng quả lê.
- * `depth` là nửa bề sâu từng hàng: `CLAD_DEPTH` lần nửa rộng nhưng không quá `CLAD_DEPTH · armSide`, nên vai rộng mà
- * mỏng, ngực và lưng phẳng một mạch, nhìn ngang không gù. Từ khớp hông (gấu cao hơn thì từ gấu) xuống gấu sườn áo không
- * hẹp hơn mép ngoài gốc đùi (`room.thigh`) ở độ cao ấy cộng `THIGH_CLEAR`, kể cả ở góc bo gấu; nở dần trong `THIGH_RAMP` px
- * phía trên
+ * `depth` là nửa bề sâu từng hàng theo bề rộng, trước `chestDepth`: `CLAD_DEPTH` lần nửa rộng nhưng không quá
+ * `CLAD_DEPTH · armSide`, nên dưới vai ngực và lưng phẳng một mạch. Từ khớp hông (gấu cao hơn thì từ gấu) xuống gấu
+ * sườn áo không hẹp hơn mép ngoài gốc đùi (`room.thigh`) ở độ cao ấy cộng `THIGH_CLEAR`, kể cả ở góc bo gấu; nở dần
+ * trong `THIGH_RAMP` px phía trên
  */
 export function cladProfile(pts: readonly P2[], room: ArmRoom): { pts: P2[]; depth: number[] } {
   const side = ([a, y]: P2): P2 => {
@@ -203,6 +205,22 @@ export function cladProfile(pts: readonly P2[], room: ArmRoom): { pts: P2[]; dep
     ];
   });
   return { pts: out, depth: out.map(([a, y]) => CLAD_DEPTH * Math.min(a, armSide(room, y))) };
+}
+
+/**
+ * Mặt cắt và nửa bề sâu hai nửa của khối thân 3D (`torsoMesh`): nửa bề sâu theo bề rộng — người mặc đồ theo `cladProfile`,
+ * người que `TORSO_DEPTH` lần nửa rộng — rồi ngực, lưng, bụng phệ, ngực nở theo `chestDepth`
+ */
+export function torsoSection(
+  pts: readonly P2[],
+  g: { belly?: number; bust?: number },
+  height: number,
+  room?: ArmRoom,
+) {
+  const flat = room
+    ? cladProfile(pts, room)
+    : { pts: [...pts], depth: pts.map(([a]) => TORSO_DEPTH * a) };
+  return chestDepth(flat.pts, flat.depth, g, height);
 }
 
 /** Bàn tay xoè cỡ `1` dài chừng này, đơn vị three; xoè không dài quá `OPEN_REACH` cẳng tay */
@@ -661,12 +679,19 @@ export function markShape(T: Trunk3) {
   const onFace = (px: number, py: number) => sk(faceSurface(px, py, r, human));
   const onSkull = (u: V3) => sk(mul(human ? humanSkull(unit(u)) : unit(u), r));
   const g = garmentOf(c.pieces.torso.garment, !!T.pal.clad);
-  let { pts } = profile(g, c.rig, c.rig.stroke / 2);
-  let depth = pts.map(([a]) => TORSO_DEPTH * a);
-  if (T.pal.clad && T.roots.room) ({ pts, depth } = cladProfile(pts, T.roots.room));
   const h = c.rig.height;
-  const across = (y: number) => profileAt(pts, depth, y);
-  const front = (y: number) => across(y)[1] + (g.belly ?? 0) * bellyAt(y, h);
+  const {
+    pts,
+    back,
+    front: ahead,
+  } = torsoSection(
+    profile(g, c.rig, c.rig.stroke / 2).pts,
+    g,
+    h,
+    T.pal.clad ? T.roots.room : undefined,
+  );
+  const across = (y: number) => profileAt(pts, back, y);
+  const front = (y: number) => profileAt(pts, ahead, y)[1];
   // nửa bề dày gốc đùi như `body3` của `figure3d.ts`
   const leg = (T.pal.clad ? cladThigh(T.w.trouser, c.rig.stroke) : T.w.trouser / 2) / 100;
   return { human, face, r, onFace, onSkull, across, front, h, leg };
@@ -753,7 +778,7 @@ export function markAt(
       break;
     }
     case "chest": {
-      const y = -0.7 * torsoLen;
+      const y = -CHEST.at * torsoLen;
       p = at(T.hips, T.Rs, px(0, y, S.front(y)));
       R = T.Rs;
       break;

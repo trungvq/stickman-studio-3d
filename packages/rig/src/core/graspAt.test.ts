@@ -90,7 +90,7 @@ type Choose = Record<
   }
 >;
 // ca 2: prototype chọn `slant −30` với khuỷu gập ngược vào trong (φ −80, `inward` 0,52); `W_IN` đổi sang `slant 30`,
-// khuỷu ra ngoài, đổi lại xoay cẳng tay vượt kẹp 5,6° (docs/11-nhom-cam.md § Khuỷu tự nhiên). Ca 4: prototype cầm cạnh dưới
+// khuỷu ra ngoài (docs/11-nhom-cam.md § Khuỷu tự nhiên). Ca 4: prototype cầm cạnh dưới
 // ở `along` 0,75 (góc bên kia tay phải); giá góc cùng bên (`SIDE_W`) kéo về giữa cạnh
 const choose = fx.ca.choose as unknown as Choose;
 const CHOOSE: Choose = {
@@ -102,7 +102,7 @@ const CHOOSE: Choose = {
         hand: "right",
         given: { edge: "bottom" },
         rig: { variant: "pinch", thumb: "front", along: 0.25, slant: 30 },
-        wrist: [-95.6, -17.7, -1.0],
+        wrist: [-88.3, -17.9, -6.1],
       },
     ],
   },
@@ -650,11 +650,10 @@ describe("chooseMissing: giá biến thể", () => {
       RIGHT,
     );
 
-  // bảng ngửa 20°: `flat` rẻ nhất chỉ nhờ khuỷu chĩa lên ra ngoài (`inward` 0,17); `W_IN` phạt khuỷu ấy nên `flat` khai
-  // đắt hơn `pinch`
+  // `flat` rẻ hơn `pinch` một chút ở cả hai thế bảng; biến thể khác cộng 0,5 nên rig vẫn chọn `pinch`
   it.each([
     ["đứng", [200, -230, 560], 0, 9, true],
-    ["ngửa 20°", [200, -300, 610], 20, 18, false],
+    ["ngửa 20°", [200, -300, 610], 20, 18, true],
   ] as const)(
     "đọc ngang ngực, bảng %s: rig chọn `pinch` (biến thể khác cộng 0,5)",
     (_, P, a, grid, flatCheaper) => {

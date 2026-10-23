@@ -1,5 +1,4 @@
-import { actJoints, BONES3, cladProfile, roots3, type ActInput, type ActJoint } from "./act3";
-import { TORSO_DEPTH } from "./constants";
+import { actJoints, BONES3, roots3, torsoSection, type ActInput, type ActJoint } from "./act3";
 import { limbWidths, wornPalette, type CharacterData } from "./schema";
 import { profileAt, wornSkirt } from "./skirtShape";
 import { garmentOf, profile } from "./torso";
@@ -45,9 +44,9 @@ const unit = (a: V3): V3 => {
 /**
  * Đoạn tay người 3D xuyên vào thân áo của chính người ấy ở tư thế `sp`, đúng như three vẽ: tay là khớp
  * của `actJoints` (cùng khung xương, cùng IK), thân là khối tròn xoay dẹt của `torsoMesh` — nửa rộng
- * theo `profile` của áo, tiết diện ngang ellipse dẹt `TORSO_DEPTH`, gắn ở hông, dựng theo trục hông →
- * cổ; người mặc đồ (`palette.clad`) thì sườn áo lùi nhường chỗ cho tay và dày `CLAD_DEPTH` như `torsoMesh`
- * (`cladProfile` trên chỗ trống `roots3` cho tay), và cánh tay bỏ thêm quãng trong hai lần bán kính nắp vai quanh khớp
+ * theo `profile` của áo, tiết diện ngang hai nửa ellipse của `torsoSection` (ngực, lưng, bụng phệ), gắn ở hông, dựng
+ * theo trục hông → cổ; người mặc đồ (`palette.clad`) thì sườn áo lùi nhường chỗ cho tay và dày `CLAD_DEPTH` như
+ * `torsoMesh` (`cladProfile` trên chỗ trống `roots3` cho tay), và cánh tay bỏ thêm quãng trong hai lần bán kính nắp vai quanh khớp
  * vai (tay choãi rộng vì bụng phệ còn nằm trong thân ở đó). Đo trên đoạn tay đã bỏ hai đầu (`PIERCE_TRIM`) với lõi tay bằng `PIERCE_CORE` bán kính. Trả các
  * đoạn lấn quá `tol`, sâu trước. docs/10-lop-ve-code.md#tay-xuyên-thân
  */
@@ -61,36 +60,37 @@ export function armPierce(
   if (!j || !W) return [];
   const s = W.s;
   const pal = wornPalette(c);
-  let pts = profile(garmentOf(c.pieces.torso.garment, pal.clad), c.rig, c.rig.stroke / 2).pts;
-  let depths = pts.map(([a]) => TORSO_DEPTH * a);
+  const g = garmentOf(c.pieces.torso.garment, pal.clad);
+  const w = limbWidths(pal);
+  const room = pal.clad
+    ? roots3(c.pieces.torso.garment, c.rig, {
+        clad: true,
+        sleeve: w.sleeve,
+        trouser: w.trouser,
+        bicep: pal.bicep,
+        skirt: wornSkirt(c.pieces.hem),
+        flare: pal.sleeveFlare,
+        sleeveLength: pal.sleeveLength,
+      }).room
+    : undefined;
+  const { pts, back, front } = torsoSection(
+    profile(g, c.rig, c.rig.stroke / 2).pts,
+    g,
+    c.rig.height,
+    room,
+  );
   /** Người mặc đồ: quanh khớp vai trong bán kính này (px) là nắp vai, cánh tay choãi rộng (bụng phệ) còn nằm trong thân */
-  let capZone = 0;
-  if (pal.clad) {
-    const w = limbWidths(pal);
-    const { room } = roots3(c.pieces.torso.garment, c.rig, {
-      clad: true,
-      sleeve: w.sleeve,
-      trouser: w.trouser,
-      bicep: pal.bicep,
-      skirt: wornSkirt(c.pieces.hem),
-      flare: pal.sleeveFlare,
-      sleeveLength: pal.sleeveLength,
-    });
-    if (room) {
-      ({ pts, depth: depths } = cladProfile(pts, room));
-      capZone = 2 * room.cap;
-    }
-  }
+  const capZone = room ? 2 * room.cap : 0;
   const [yTop, yBot] = [pts[0][1], pts[pts.length - 1][1]];
-  // hệ thân: trục lên từ hông tới cổ, trục ngang qua hai vai; tiết diện đối xứng nên chiều tiến tuỳ dấu
+  // hệ thân: trục lên từ hông tới cổ, trục ngang qua hai vai (trái trừ phải), chiều tiến ra trước ngực
   const hip = j.hip;
   const up = unit(sub(j.neck, hip));
   const across = sub(j.shoulderL, j.shoulderR);
   const side = unit(sub(across, up.map((u) => u * dot(across, up)) as V3));
   const fwd: V3 = [
-    up[1] * side[2] - up[2] * side[1],
-    up[2] * side[0] - up[0] * side[2],
-    up[0] * side[1] - up[1] * side[0],
+    side[1] * up[2] - side[2] * up[1],
+    side[2] * up[0] - side[0] * up[2],
+    side[0] * up[1] - side[1] * up[0],
   ];
   const r = ((BONES3.limb * 100 * limbWidths(c.palette).sleeve) / 10) * s * PIERCE_CORE;
   /** Lõi tay ở `p` vào trong mặt áo bao nhiêu (âm là còn cách) */
@@ -98,9 +98,9 @@ export function armPierce(
     const d = sub(p, hip);
     const y = -dot(d, up) / s;
     if (y < yTop || y > yBot) return -Infinity;
-    const [a, dz] = profileAt(pts, depths, y);
-    if (!(a > 0) || !(dz > 0)) return -Infinity;
     const [x, z] = [dot(d, side) / s, dot(d, fwd) / s];
+    const [a, dz] = profileAt(pts, z > 0 ? front : back, y);
+    if (!(a > 0) || !(dz > 0)) return -Infinity;
     const q = Math.hypot(x / a, z / dz);
     // quãng tới mặt áo dọc bán kính elip, quy về trục ngắn: đủ để xếp nặng nhẹ, không cần đúng tuyệt đối
     return (1 - q) * Math.min(a, dz) * s + r;
