@@ -5,7 +5,7 @@ import { bodyCapsules } from './collide';
 import { armSide, cladArm, CLAD_TAPER, roots3, SLEEVE_EASE } from './core/act3';
 import { DRAPE_GAP, drapeSolid } from './core/drape';
 import { defaultCharacter } from './core/schema';
-import { bellyAt, garmentOf, lerpAt, profile, type Surface } from './core/torso';
+import { bellyAt, BUST, bustAt, CHEST, garmentOf, lerpAt, profile, type Surface } from './core/torso';
 import { signedVolume } from './core/wrap';
 import { fromCharacter, R, wardrobe, type CharacterJson, type Figure } from './stickman';
 import { torsoMesh } from './torso';
@@ -50,6 +50,35 @@ describe('polo cổ dựng', () => {
     const tip = up[Math.round(down.length / 9)];
     const [f, e] = [tip[0], tip[tip.length - 1]];
     expect(Math.hypot(e[0], e[2])).toBeGreaterThan(Math.hypot(f[0], f[2]) + 3);
+  });
+});
+
+describe('ngực nở', () => {
+  const room = roots3({ style: 'blouse' }, rig, build).room;
+  const at = (rows: number[][], vals: number[], y: number) => lerpAt(rows.map(([, py], i) => [vals[i], py]) as [number, number][], y, 1, 0);
+
+  it('`bust` 0 dựng y hệt khi không khai', () => {
+    for (const arm of [undefined, room]) expect(torsoMesh({ style: 'blouse', bust: 0 }, rig, arm)).toEqual(torsoMesh({ style: 'blouse' }, rig, arm));
+    expect(roots3({ style: 'blouse', bust: 8 }, rig, build)).toEqual(roots3({ style: 'blouse' }, rig, build));
+  });
+
+  it('`bust` chỉ phồng nửa trước quanh ngang ngực: bề ngang, nửa sau, tay buông giữ nguyên', () => {
+    const yB = -CHEST.at * 120 * rig.height;
+    for (const arm of [undefined, room]) {
+      const [plain, full] = [torsoMesh({ style: 'blouse' }, rig, arm), torsoMesh({ style: 'blouse', bust: 8 }, rig, arm)];
+      expect(at(full.profile, full.front, yB) - at(plain.profile, plain.front, yB)).toBeCloseTo(8, 1);
+      for (let i = 0; i < full.profile.length; i++) {
+        const y = full.profile[i][1];
+        expect(full.profile[i][0]).toBeCloseTo(lerpAt(plain.profile, y, 1, 0), 6);
+        expect(full.depth[i]).toBeCloseTo(at(plain.profile, plain.depth, y), 6);
+        const grow = full.front[i] - at(plain.profile, plain.front, y);
+        expect(grow).toBeCloseTo(8 * bustAt(y, rig.height), 6);
+        // dưới ngang ngực thu nhanh hơn phía trên: hết phồng sau hai lần `BUST.down`
+        if (y > yB + 2 * BUST.down * 120) expect(grow).toBeLessThan(0.2);
+      }
+      // trong quãng phồng hàng mặt cắt dày như quãng dốc cổ–ngực
+      for (let i = 0; full.profile[i][1] < yB + 2 * BUST.down * 120; i++) expect(full.profile[i + 1][1] - full.profile[i][1]).toBeLessThanOrEqual(CHEST.step + 1e-9);
+    }
   });
 });
 

@@ -209,11 +209,11 @@ export function cladProfile(pts: readonly P2[], room: ArmRoom): { pts: P2[]; dep
 
 /**
  * Mặt cắt và nửa bề sâu hai nửa của khối thân 3D (`torsoMesh`): nửa bề sâu theo bề rộng — người mặc đồ theo `cladProfile`,
- * người que `TORSO_DEPTH` lần nửa rộng — rồi ngực, lưng, bụng phệ theo `chestDepth`
+ * người que `TORSO_DEPTH` lần nửa rộng — rồi ngực, lưng, bụng phệ, ngực nở theo `chestDepth`
  */
 export function torsoSection(
   pts: readonly P2[],
-  g: { belly?: number },
+  g: { belly?: number; bust?: number },
   height: number,
   room?: ArmRoom,
 ) {

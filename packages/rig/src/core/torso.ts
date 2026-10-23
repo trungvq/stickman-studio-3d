@@ -21,6 +21,7 @@ export type Dims = Required<
     | "collarUp"
     | "belly"
     | "bellySide"
+    | "bust"
     | "neckline"
     | "marks"
     | "panels"
@@ -158,28 +159,39 @@ export const bellyAt = (y: number, height: number) =>
  * xuống ngang ngực; trong quãng ấy hàng mặt cắt cách nhau không quá `step` px
  */
 export const CHEST = { at: 0.7, back: 0.6, step: 3 } as const;
+/** Ngực nở (`garment.bust`): đỉnh ở ngang ngực, nhạt theo hình chuông rộng `up` phần thân phía trên, `down` phía dưới */
+export const BUST = { up: 0.25, down: 0.15 } as const;
+
+/** Phần của `bust` ở độ cao `y` (hệ thân, px): `1` ở ngang ngực */
+export const bustAt = (y: number, height: number) => {
+  const t = RIG.torso * height;
+  const u = (y + CHEST.at * t) / ((y < -CHEST.at * t ? BUST.up : BUST.down) * t);
+  return Math.exp(-u * u);
+};
 
 /**
  * Nửa bề sâu nửa sau (`back`) và nửa trước (`front`) từng hàng của mặt cắt `pts`, từ nửa bề sâu `depth` theo bề rộng
  * (`TORSO_DEPTH` hay `cladProfile`): dưới ngang ngực giữ `depth`; trên đó nửa trước đi từ bề sâu mép trên tới bề sâu ngang
  * ngực theo một dốc dài, đứng dần ở ngang ngực, nửa sau tới sớm hơn (`CHEST.back`) nên lưng phẳng hơn ngực — vai rộng mà
- * mỏng. Không sâu hơn `depth`. Nửa trước cộng bụng phệ. Hàng thêm trong quãng dốc đi kèm `pts` trả ra
+ * mỏng. Không sâu hơn `depth`. Nửa trước cộng bụng phệ và ngực nở. Hàng thêm trong quãng dốc và quãng ngực nở đi kèm `pts`
+ * trả ra
  */
 export function chestDepth(
   pts: readonly P2[],
   depth: readonly number[],
-  g: { belly?: number },
+  g: { belly?: number; bust?: number },
   height: number,
 ): { pts: P2[]; back: number[]; front: number[] } {
   const t = RIG.torso * height;
   const yC = pts[0][1];
   const yB = Math.max(yC + 1, -CHEST.at * t);
   const yK = yC + (yB - yC) * CHEST.back;
+  const end = g.bust ? yB + 2 * BUST.down * t : yB;
   const rows: P2[] = [pts[0]];
   const flat = [depth[0]];
   for (let i = 1; i < pts.length; i++) {
     const [[a0, y0], [a1, y1]] = [pts[i - 1], pts[i]];
-    const n = y0 < yB ? Math.ceil((y1 - y0) / CHEST.step) : 1;
+    const n = y0 < end ? Math.ceil((y1 - y0) / CHEST.step) : 1;
     for (let k = 1; k <= n; k++) {
       rows.push([lerp(a0, a1, k / n), lerp(y0, y1, k / n)]);
       flat.push(lerp(depth[i - 1], depth[i], k / n));
@@ -198,7 +210,9 @@ export function chestDepth(
   const back = rows.map(([, y], i) => (y < yK ? Math.min(flat[i], rb(y)) : flat[i]));
   const front = rows.map(
     ([, y], i) =>
-      (y < yB ? Math.min(flat[i], rf(y)) : flat[i]) + (g.belly ?? 0) * bellyAt(y, height),
+      (y < yB ? Math.min(flat[i], rf(y)) : flat[i]) +
+      (g.belly ?? 0) * bellyAt(y, height) +
+      (g.bust ?? 0) * bustAt(y, height),
   );
   return { pts: rows, back, front };
 }

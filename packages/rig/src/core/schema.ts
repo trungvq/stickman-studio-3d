@@ -606,6 +606,8 @@ export const GarmentSchema = z.object({
   belly: z.number().min(0).optional(),
   /** Bụng phệ ra hai bên bấy nhiêu lần `belly`; bỏ trống là `BELLY.side` (`0.45`), `0` là chỉ nhô ra trước. docs/02-trang-phuc.md#bụng-phệ */
   bellySide: z.number().min(0).optional(),
+  /** Ngực nở: nửa trước phồng thêm nhiều nhất bấy nhiêu px ở ngang ngực, liền một khối; chỉ người 3D. docs/02-trang-phuc.md#ngực-nở */
+  bust: z.number().min(0).optional(),
 });
 
 /**

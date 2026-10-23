@@ -1005,8 +1005,8 @@ góc, eo co nhẹ, tay mọc ra từ viền thân. Góc quay là nấc của th�
 lớp vải ngoài thân ấy: cởi áo phông ra, người mặc đồ hẹp đi chừng `1`–`2` px, gốc vai lùi vào chừng `2` px, cổ lộ ra bằng
 nhau. Kiểu khác (`blazer` `ease` `8`, `cardigan` `12`…) là áo rộng, chật hơn áo phông bấy nhiêu.
 
-Trường bỏ trống lấy số của kiểu ở bảng `GARMENT_STYLES`; `garmentOf` trả bộ số đã đủ. `collarUp` ([cổ dựng](#cổ-dựng)) và `belly`
-([bụng phệ](#bụng-phệ)) không thuộc bảng kiểu: bỏ trống là `0` ở mọi kiểu. `neckline`, `marks`
+Trường bỏ trống lấy số của kiểu ở bảng `GARMENT_STYLES`; `garmentOf` trả bộ số đã đủ. `collarUp` ([cổ dựng](#cổ-dựng)), `belly`
+([bụng phệ](#bụng-phệ)) và `bust` ([ngực nở](#ngực-nở)) không thuộc bảng kiểu: bỏ trống là `0` ở mọi kiểu. `neckline`, `marks`
 ([dáng cổ và đặc điểm của kiểu](#dáng-cổ-và-đặc-điểm-của-kiểu)), `panels` ([mảng áo và hoạ tiết](#mảng-áo-và-hoạ-tiết)) và
 `inner` ([áo trong và cà vạt](#áo-trong-và-cà-vạt)) cũng không thuộc bảng kiểu.
 Kiểu mang cả những đặc điểm không có số, đặt theo số đo đã đủ nên đè `neck`, `hem`… thì
@@ -1319,7 +1319,7 @@ mỏng, từ chân cổ mặt trước đi xuống ngực theo một dốc dài,
   nửa sau (`depth`) và nửa trước (`front`): từ ngang ngực xuống giữ nguyên; trên đó mỗi nửa đi từ bề sâu ở mép trên tới
   bề sâu ở đích theo dốc Hermite `u + u² − u³` — ở mép trên dốc bằng dốc trung bình, tới đích thì đứng —, đích của nửa
   trước là ngang ngực, của nửa sau là `CHEST.back` quãng ấy. Không nửa nào sâu hơn bề sâu theo bề ngang ở cùng độ cao.
-- Nửa trước cộng [bụng phệ](#bụng-phệ). Mọi chỗ đọc mặt thân 3D đi qua `torsoSection`: khối thân, nét, mảng, cổ áo, khăn,
+- Nửa trước cộng [bụng phệ](#bụng-phệ) và [ngực nở](#ngực-nở). Mọi chỗ đọc mặt thân 3D đi qua `torsoSection`: khối thân, nét, mảng, cổ áo, khăn,
   kính gài nẹp, dây chuyền, mốc người (`markAt`), lấn thân của bộ giải khuỷu, `armPierce`.
 - 2D, 2.5D (`torsoPaths`) giữ ellipse `TORSO_DEPTH`.
 
@@ -1351,6 +1351,22 @@ mỏng, từ chân cổ mặt trước đi xuống ngực theo một dốc dài,
 - Khối hông, váy, vạt dài, tạp dề đọc nửa sau (`depth`) như cũ: phối bụng phệ với quần là đủ; váy, vạt dài dưới bụng thì
   gấu áo nhô ra trước cạp.
 - Đặt cùng `belly` cho mọi thân áo của một người (`items` thay áo): bụng là số của thân áo, không của `rig`.
+
+### Ngực nở
+
+`garment.bust` (px, mặc định `0`) phồng nửa trước của thân 3D quanh ngang ngực — nhìn nghiêng đọc ra dáng người nữ:
+
+```json
+"garment": { "style": "blouse", "bust": 6 }
+```
+
+- Phần phồng theo độ cao là hình chuông `bustAt`: đỉnh `1` ở ngang ngực (`CHEST.at`), rộng `BUST.up` (`0.25`) thân phía
+  trên, `BUST.down` (`0.15`) thân phía dưới, nhân `rig.height` — phía trên liền vào dốc cổ–ngực, phía dưới thu về thân gọn
+  hơn. Cộng vào nửa trước (`front`) như [bụng phệ](#bụng-phệ): một khối liền ngang ngực, không chia hai bầu, tắt dần ra hai
+  sườn theo nửa ellipse trước; bề ngang và nửa sau không đổi, tay buông không choãi thêm.
+- Mức hợp người que là `4..8`; khối thân, nét, mảng, cổ áo, khăn, mốc `chest`, lấn thân của bộ giải khuỷu và `armPierce`
+  đọc cùng mặt ấy ([ngực và lưng nhìn nghiêng](#ngực-và-lưng-nhìn-nghiêng)), nên tay ôm đồ trước ngực không xuyên thân.
+- Chỉ người 3D; 2D, 2.5D bỏ qua.
 
 ## Khăn vắt vai và kính gài nẹp
 

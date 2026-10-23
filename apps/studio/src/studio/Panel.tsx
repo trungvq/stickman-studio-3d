@@ -179,6 +179,7 @@ type GarmentNum = Exclude<
   | "collarUp"
   | "belly"
   | "bellySide"
+  | "bust"
   | "neckline"
   | "marks"
   | "panels"
