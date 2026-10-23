@@ -456,6 +456,22 @@ dialog.named .error {
   min-height: 1.4em;
 }
 
+dialog.named.note {
+  width: min(720px, calc(100vw - 24px));
+}
+
+dialog.note textarea {
+  font:
+    12px ui-monospace,
+    monospace;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+  resize: vertical;
+}
+
 dialog.named .row {
   display: flex;
   gap: 6px;

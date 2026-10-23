@@ -393,6 +393,27 @@ describe("stickman studio: /api/scene, /api/held, /api/hands", { timeout: 120_00
     assert.ok(!existsSync(join(dir, "hands/hong.json")));
   });
 
+  it("/api/snap: ảnh PNG vào tmp/studio3d/<cảnh>-<giây>s.png, ghi đè; cảnh lạ 404, không phải PNG 400", async () => {
+    const png = (tail) =>
+      Buffer.concat([Buffer.from("89504e470d0a1a0a", "hex"), Buffer.from(tail)]).toString("base64");
+    let r = await post("/api/snap?name=thu-tay", { png: png("a"), t: 1.234 });
+    assert.equal(r.status, 200);
+    const { file: out } = await r.json();
+    assert.equal(out, join(dir, "tmp/studio3d/thu-tay-1.23s.png"));
+    r = await post("/api/snap?name=thu-tay", { png: png("b"), t: 1.234 });
+    assert.equal(r.status, 200);
+    assert.equal(readFileSync(out).subarray(8).toString(), "b");
+    r = await post("/api/snap?name=khong-co", { png: png("a"), t: 0 });
+    assert.equal(r.status, 404);
+    r = await post("/api/snap?name=..%2Fscenes%2Fthu-tay", { png: png("a"), t: 0 });
+    assert.equal(r.status, 404);
+    r = await post("/api/snap?name=thu-tay", { png: Buffer.from("x").toString("base64"), t: 0 });
+    assert.equal(r.status, 400);
+    r = await post("/api/snap?name=thu-tay", { png: png("a") });
+    assert.equal(r.status, 400);
+    assert.deepEqual(readdirSync(join(dir, "tmp/studio3d")), ["thu-tay-1.23s.png"]);
+  });
+
   it("thân yêu cầu lớn có chữ nhiều byte: ghi đúng từng ký tự", async () => {
     const j = await load();
     const note = "chữ Việt — 日本語の手、ồ ạ ".repeat(40_000);

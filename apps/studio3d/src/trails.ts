@@ -224,6 +224,11 @@ export class Trails {
       : "";
   }
 
+  /** Lớp 2D đang hiện (ghép vào ảnh của **Chép view**); ẩn thì `null` */
+  get layer(): HTMLCanvasElement | null {
+    return this.canvas.hidden ? null : this.canvas;
+  }
+
   /** Vẽ lên lớp 2D theo camera đang xem (sau khi khung three đã vẽ) */
   render(camera: THREE.Camera) {
     this.camera = camera;

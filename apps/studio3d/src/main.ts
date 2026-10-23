@@ -73,6 +73,7 @@ import { plusHand, plusItem } from "./plus";
 import { PoseEditor, type PoseHost, type PoseTarget, type ShapeEntry } from "./poseEditor";
 import { runtimeOf, type Data } from "./runtime";
 import { SceneList } from "./sceneList";
+import { readView, viewNote, writeView, type V3, type ViewState } from "./share";
 import { Solo } from "./solo";
 import { KeyTrack, type Band, type Lane } from "./track";
 import { Trails } from "./trails";
@@ -91,6 +92,7 @@ const ui = {
   sceneFilter: $<HTMLInputElement>("sceneFilter"),
   sceneList: $<HTMLDivElement>("sceneList"),
   reload: $<HTMLButtonElement>("reload"),
+  copyView: $<HTMLButtonElement>("copyView"),
   edMode: $<HTMLDivElement>("edMode"),
   dirty: $<HTMLSpanElement>("dirty"),
   undo: $<HTMLButtonElement>("undo"),
@@ -175,6 +177,8 @@ let playing = false;
 let mode: "scene" | "free" = "scene";
 let dirty = true;
 let loading = 0;
+/** Gốc repo video (`/api/scenes`) */
+let repoRoot = "";
 
 /**
  * Bản đang sửa của cảnh: JSON thô (giữ trường lạ, mốc tên), chữ của bản đã lưu, hash lúc nạp và một lịch sử chung (mỗi bước
@@ -208,13 +212,22 @@ const say = (text: string, error = false) => {
 };
 
 const params = () => new URLSearchParams(location.search);
-const remember = () => {
-  const p = params();
-  if (cur) p.set("scene", cur.name);
-  p.set("t", t.toFixed(3));
-  p.set("cam", mode);
-  history.replaceState(null, "", `?${p}`);
-};
+/** View đang xem: cảnh, giây, camera (camera tự do kèm chỗ đứng, tâm xoay, fov), bàn tay đang chọn */
+function viewState(): ViewState {
+  return {
+    scene: cur?.name ?? params().get("scene") ?? undefined,
+    t,
+    cam: mode,
+    ...(mode === "free" &&
+      orbit && {
+        free: { pos: free.position.toArray(), at: orbit.target.toArray() as V3, fov: free.fov },
+      }),
+    ...(sel && { hand: { id: sel.id, side: sel.side < 0 ? "right" : "left" } }),
+    solo: ui.solo.checked,
+    ed: edMode,
+  };
+}
+const remember = () => history.replaceState(null, "", `?${writeView(params(), viewState())}`);
 
 /** Cỡ khung vẽ: 16:9 lớn nhất vừa vùng giữa, pixel thật theo màn hình (tối đa 2) */
 function frameSize() {
@@ -516,6 +529,7 @@ function attachOrbit() {
   orbit.enabled = mode === "free";
   fc.attach(orbit);
   orbit.addEventListener("change", () => (dirty = true));
+  orbit.addEventListener("end", remember);
   grab.attach(cur.stage.canvas);
 }
 
@@ -618,6 +632,7 @@ function applySolo() {
 function toggleSolo() {
   applySolo();
   dirty = true;
+  remember();
   say(
     !ui.solo.checked
       ? "hiện cả cảnh"
@@ -770,6 +785,7 @@ function select(r: HandRow | undefined, go: boolean) {
   else dirty = true;
   rowsT = NaN;
   syncEdit();
+  remember();
 }
 
 /** Camera tự do bay mượt tới cận bàn tay đã chọn ở góc `a` */
@@ -1155,7 +1171,10 @@ function flyStep(now: number) {
   const e = k * k * (3 - 2 * k);
   free.position.lerpVectors(fly.p0, fly.p1, e);
   orbit.target.lerpVectors(fly.t0, fly.t1, e);
-  if (k >= 1) fly = null;
+  if (k >= 1) {
+    fly = null;
+    remember();
+  }
   return true;
 }
 let cost = { pose: 0, render: 0 };
@@ -1848,6 +1867,7 @@ function setEdMode(m: "view" | "hands") {
   rowsT = NaN;
   dirty = true;
   syncEdit();
+  remember();
 }
 
 /** Lưu mốc tay, mốc món vào `scenes/` kèm hash lúc nạp; file đã đổi trên đĩa thì 409, hiện hộp chọn */
@@ -1960,6 +1980,7 @@ ui.sceneToggle.onclick = () => {
 };
 if (localStorage.getItem("studio3d.sceneSide") === "shut") ui.sceneSide.classList.add("shut");
 ui.reload.onclick = (e) => reload(e.shiftKey);
+ui.copyView.onclick = () => void copyView();
 ui.edMode.onclick = (e) => {
   const m = (e.target as HTMLElement).dataset.m;
   if (m === "view" || m === "hands") setEdMode(m);
@@ -2110,16 +2131,159 @@ async function start() {
     ...j.names.map((n: string) => Object.assign(document.createElement("option"), { value: n })),
   );
   sceneList.set(j.names);
+  repoRoot = j.root;
   if (!j.world) say(`${j.root}: package.json không khai stickman.world — mọi cảnh đi plainRoom()`);
-  const p = params();
-  const name = p.get("scene");
-  if (p.get("cam") === "free") mode = "free";
-  if (name) {
-    t = Number(p.get("t") ?? 0) || 0;
-    await load(name, { keepTime: true });
-    if (mode === "free") setMode("free");
+  const v = readView(params());
+  mode = v.cam;
+  if (v.ed) edMode = v.ed;
+  if (v.scene) {
+    t = v.t;
+    if ((await load(v.scene, { keepTime: true })) && cur) restoreView(v);
   } else say(`${j.names.length} cảnh ở ${j.root}. Gõ tên cảnh ở trên để mở.`);
   requestAnimationFrame(loop);
+}
+
+/** Bàn tay, Chỉ người này và camera tự do của view trong URL (`readView`), sau khi cảnh đã nạp */
+function restoreView(v: ViewState) {
+  if (mode === "free") setMode("free");
+  if (v.hand && cur?.scene.cast.some((m) => m.id === v.hand!.id)) {
+    selectSide(v.hand.id, v.hand.side);
+    syncEdit();
+  }
+  ui.solo.checked = !!v.solo;
+  applySolo();
+  if (v.free && orbit) {
+    free.position.fromArray(v.free.pos);
+    free.fov = v.free.fov;
+    free.updateProjectionMatrix();
+    orbit.target.fromArray(v.free.at);
+    orbit.update();
+  }
+  dirty = true;
+  remember();
+}
+
+/** Khung vẽ đúng như trên màn hình (three, lớp phủ bàn tay, vệt), PNG data URL; gọi ngay sau `draw()` */
+function snapshot(): string {
+  const src = cur!.stage.canvas;
+  const layer = trails.layer;
+  if (!layer) return src.toDataURL("image/png");
+  const c = document.createElement("canvas");
+  [c.width, c.height] = [src.width, src.height];
+  const g = c.getContext("2d")!;
+  g.drawImage(src, 0, 0);
+  g.drawImage(layer, 0, 0, c.width, c.height);
+  return c.toDataURL("image/png");
+}
+
+/** Dòng chữ của HTML số đo bàn tay (`measureHtml`): mỗi khối một dòng, bảng ngón mỗi hàng một dòng */
+function htmlLines(html: string): string[] {
+  const d = document.createElement("div");
+  d.innerHTML = html;
+  const text = (e: Element) => (e.textContent ?? "").replace(/\s+/g, " ").trim();
+  return [...d.children]
+    .flatMap((e) =>
+      e.tagName === "TABLE"
+        ? [...e.querySelectorAll("tr")].map((tr) => [...tr.children].map(text).join(" · "))
+        : [text(e)],
+    )
+    .filter(Boolean);
+}
+
+/**
+ * **Chép view**: dừng phát, vẽ lại và đo ở giây đang xem, lưu ảnh khung vẽ vào `tmp/studio3d/` của repo (`/api/snap`),
+ * chép đoạn chữ cho agent (`viewNote`) vào clipboard
+ */
+async function copyView() {
+  if (!cur) return say("chưa mở cảnh");
+  if (playing) togglePlay();
+  // camera đang bay tới cận tay: chụp ở chỗ đến
+  if (fly) flyStep(fly.at + FLY * 1000);
+  try {
+    draw();
+  } catch (e) {
+    return say(`vẽ hỏng ở ${t.toFixed(2)} s: ${(e as Error).message}`, true);
+  }
+  dirty = false;
+  const png = snapshot();
+  remember();
+  const c = cur;
+  const view = viewState();
+  const cam = mode === "free" ? free : c.stage.camera;
+  let file: string | undefined;
+  let pngError: string | undefined;
+  try {
+    const res = await fetch(`/api/snap?name=${encodeURIComponent(c.name)}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ png: png.slice(png.indexOf(",") + 1), t }),
+    });
+    const j = await res.json();
+    if (j.error) pngError = j.error;
+    else file = j.file;
+  } catch (e) {
+    pngError = (e as Error).message;
+  }
+  const r = selRow();
+  const hits = (h: HandRow) =>
+    h.hits?.length
+      ? ` — ${h.hits.map((x) => `${x.error ? "!!" : "!"}${x.rule} ${x.worst.toFixed(1)}`).join(", ")}`
+      : "";
+  const note = viewNote({
+    root: repoRoot,
+    scene: c.name,
+    from: c.from,
+    t,
+    fps: FPS,
+    dur: c.dur,
+    marks: (c.scene as { marks?: Record<string, number> }).marks ?? {},
+    url: location.href,
+    png: file,
+    pngError,
+    view,
+    camera: {
+      pos: cam.position.toArray(),
+      dir: new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion).toArray(),
+      fov: cam.fov,
+    },
+    ...(r && {
+      hand: {
+        label: `${r.id} · tay ${sideName(r.side)} · ${heldLabel(r)}`,
+        measure: rowsT === t ? htmlLines(measureHtml(r, c.held)) : [],
+      },
+    }),
+    hands: rows
+      .filter((h) => h.hold || h.carry)
+      .map((h) => `${h.id} tay ${sideName(h.side)}: ${heldLabel(h)}${hits(h)}`),
+    ...(edMode === "hands" &&
+      picked &&
+      work && { picked: `${JSON.stringify(picked)} ở ${keyTime(work.raw, picked).toFixed(2)} s` }),
+    ...(editor?.shown && {
+      editor: editor instanceof GraspEditor ? "khung soạn kiểu cầm" : "khung chỉnh dáng tay",
+    }),
+    dirty: isDirty(),
+  });
+  try {
+    await navigator.clipboard.writeText(note);
+    say(
+      `đã chép view${file ? ` · ảnh ở ${file}` : ""}${pngError ? ` · ảnh không lưu được: ${pngError}` : ""}`,
+    );
+  } catch {
+    showNote(note);
+  }
+}
+
+/** Clipboard không dùng được (trang không ở `localhost` / https): hiện đoạn chữ để chép tay */
+function showNote(note: string) {
+  const d = document.createElement("dialog");
+  d.className = "named note";
+  d.innerHTML = `<form method="dialog"><b>Chép đoạn này cho agent</b><textarea readonly rows="16"></textarea><div class="row"><button value="ok">Đóng</button></div></form>`;
+  const ta = d.querySelector("textarea")!;
+  ta.value = note;
+  d.onclose = () => d.remove();
+  document.body.append(d);
+  d.showModal();
+  ta.select();
 }
 
 start();

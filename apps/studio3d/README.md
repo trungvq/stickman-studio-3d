@@ -45,6 +45,8 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
   - `POST /api/hands?name=<dáng>` `{ hash, shape }`: khung chỉnh dáng tay ghi `hands/<dáng>.json` của repo. `hash: null` là
     tạo mới — file đã có thì 409; tên sai (`handShapeNameProblem`: chữ thường, số, gạch nối, không trùng `HAND_POSES`) hay
     `shape` không qua `parseHandShape` thì 400. Trả `{ file, shape, hash }`.
+- **Ảnh.** `POST /api/snap?name=<cảnh>` `{ png, t }`: `png` là PNG base64 của **Chép view**, ghi vào
+  `tmp/studio3d/<cảnh>-<giây>s.png` của repo, trả `{ file }`. Cảnh không có thì 404, không phải PNG thì 400.
 - **Hash.** `GET /api/scene` trả `hash` của file cảnh, `heldHash` của từng món và `handsHash` của từng dáng trong `hands/`, là sha256 của byte trên đĩa lúc nạp. Lưu
   gửi kèm hash ấy; file đã đổi từ lúc nạp thì server trả 409 (`{ error, conflict: true, hash }`) và không ghi. Lượt ghi
   của một file xếp hàng; ngay trước khi ghi server đọc lại file và so hash lần nữa, `.bak` lấy từ đúng byte vừa đọc lại —
@@ -87,7 +89,31 @@ Camera tự do bắt đầu ở chỗ camera cảnh đang đứng.
 | Nhấp (không kéo) lên bàn tay hay món đang cầm | Chọn bàn tay ấy, camera tự do bay tới cận tay |
 
 Ô **Lăn** trên thanh trên: `tự nhận` (lần lăn có `deltaX`, số lẻ hay nhỏ là touchpad → dời; bánh xe chuột → tiến lùi), `tiến
-lùi`, `dời`; nhớ trong `localStorage`. URL giữ cảnh, giây và kiểu camera (`?scene=…&t=…&cam=free`).
+lùi`, `dời`; nhớ trong `localStorage`. URL giữ view đang xem ([Chép view](#chép-view)).
+
+## Chép view
+
+Nút **Chép view** trên thanh trên dừng phát, vẽ lại và đo bàn tay ở giây đang xem, rồi:
+
+- lưu ảnh khung vẽ đúng như trên màn hình (three, lớp phủ bàn tay, tay nắm, vệt) vào `tmp/studio3d/<cảnh>-<giây>s.png`
+  của repo video, ghi đè ảnh cùng tên;
+- chép vào clipboard một đoạn chữ cho agent: repo, file cảnh, giây và số khung, mốc gần, đường ảnh, link mở lại đúng view,
+  camera (hệ three; camera tự do kèm tâm xoay ở hệ rig), bàn tay đang chọn và số đo của nó, các tay đang cầm / treo đồ kèm
+  luật phạm, cảnh báo khi có thay đổi chưa lưu (link và lệnh mở bản trên đĩa). Camera cảnh thì kèm lệnh
+  `stickman-render --three` vẽ lại khung ấy không cần trình duyệt.
+
+Trang không ở `localhost` / https (`--host`) thì clipboard không dùng được: đoạn chữ hiện trong hộp để chép tay.
+
+URL luôn giữ view đang xem, mở link là về đúng view ấy:
+
+| Tham số | Nghĩa |
+|---|---|
+| `scene`, `t` | Cảnh, giây |
+| `cam` | `scene` hay `free` |
+| `pos`, `at`, `fov` | Camera tự do: chỗ đứng, tâm xoay (hệ three, `x,y,z`), fov dọc (độ); thiếu thì bắt đầu ở chỗ camera cảnh |
+| `hand` | Bàn tay đang chọn, `<người>:right` / `<người>:left` |
+| `solo=1` | Chỉ người này |
+| `ed=hands` | Chế độ Dáng tay |
 
 ## Cảnh
 

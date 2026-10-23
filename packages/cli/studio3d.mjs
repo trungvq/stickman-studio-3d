@@ -1,6 +1,6 @@
 // `stickman studio`: Studio 3D (`apps/studio3d`) chạy trên dev server Vite, gốc là repo video. Đọc cảnh, món, dáng tay và
 // `worldData`; ghi `scenes/` (`POST /api/scene`), `held/` (`POST /api/held`) và `hands/` (`POST /api/hands`), cả ba kiểm
-// hash lúc nạp, vá JSON thô, giữ `.bak`.
+// hash lúc nạp, vá JSON thô, giữ `.bak`; ảnh **Chép view** vào `tmp/studio3d/` (`POST /api/snap`).
 // apps/studio3d/README.md.
 import { createHash, randomUUID } from "node:crypto";
 import {
@@ -182,6 +182,7 @@ export function studio3dConfig({
   const ROOT = resolve(dir);
   const HELD = join(ROOT, "held");
   const HANDS = join(ROOT, "hands");
+  const SNAPS = join(ROOT, "tmp", "studio3d");
   const HELD_OUT = heldOut ? resolve(heldOut) : null;
   const ENTRY = worldEntry(ROOT);
   const R = rigSources(ROOT, tree);
@@ -362,6 +363,26 @@ export function studio3dConfig({
             writeWithBak(out, body, at === out ? now : null);
             return { file: out, item: raw, hash: sha(body) };
           });
+        }),
+      );
+
+      // ảnh khung vẽ của **Chép view**: `tmp/studio3d/<cảnh>-<giây>s.png` của repo, ghi đè
+      server.middlewares.use(
+        "/api/snap",
+        route(async (req, name) => {
+          if (req.method !== "POST") throw new HttpError(405, "chỉ POST");
+          if (!NAME.test(name) || !existsSync(join(ROOT, "scenes", `${name}.json`)))
+            throw new HttpError(404, `không có cảnh ${name}`);
+          const { png, t } = await readBody(req);
+          if (typeof png !== "string" || !Number.isFinite(t))
+            throw new HttpError(400, "thiếu `png` (base64) / `t`");
+          const buf = Buffer.from(png, "base64");
+          if (buf.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a")
+            throw new HttpError(400, "`png` không phải ảnh PNG");
+          const file = join(SNAPS, `${name}-${t.toFixed(2)}s.png`);
+          mkdirSync(SNAPS, { recursive: true });
+          writeFileSync(file, buf);
+          return { file };
         }),
       );
 
