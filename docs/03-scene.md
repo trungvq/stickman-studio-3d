@@ -1492,7 +1492,7 @@ không theo giây:
 Nhóm `ref` báo thêm: `held/<món>.json` hỏng theo zod, và mốc mà một tay cầm hai tay (`both`) trong khi tay kia cầm
 món khác (`sceneHoldProblems`).
 
-Đơn vị rig, thế giới (người cao ~430). Mỗi người, mỗi tay, mỗi món, mỗi luật một dòng, kèm giây tệ nhất, quãng giây, các số đo
+Đơn vị rig, thế giới (người cao ~430 ≈ 1,7 m). Mỗi người, mỗi tay, mỗi món, mỗi luật một dòng, kèm giây tệ nhất, quãng giây, các số đo
 lúc ấy (dáng, trục ngón vào trong món, độ ôm — mấy nhóm ngón chạm, tâm nắm, lòng tay tới món và góc) và clip đang chạy:
 
 ```

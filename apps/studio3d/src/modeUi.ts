@@ -11,6 +11,7 @@ import {
 } from "@stickman3d/rig/core";
 import { marksOf, refAt, type Json } from "./keys";
 import {
+  cmText,
   convertRun,
   maxOver,
   midMax,
@@ -18,6 +19,7 @@ import {
   modeTarget,
   overAngle,
   overPos,
+  POS_LIMIT_CM,
   rowOver,
   runAt,
   type ModeAsk,
@@ -51,7 +53,6 @@ const CLAMP: Record<string, string> = { turn: "x", bend: "g", dev: "l" };
 
 const esc = (s: string) =>
   s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
-const n2 = (x: number) => (Math.abs(x) < 0.005 ? "0" : x.toFixed(2));
 const n1 = (x: number) => (Math.abs(x) < 0.05 ? "0" : x.toFixed(1));
 const bad = (on: boolean, s: string) => (on ? `<span class="over">${s}</span>` : s);
 const label = (r: Pick<HoldRunInfo, "item" | "group" | "variant">) =>
@@ -59,7 +60,7 @@ const label = (r: Pick<HoldRunInfo, "item" | "group" | "variant">) =>
 
 /** Lệch lớn nhất: món dời, món quay, tâm nắm dời */
 function maxText(m: HoldModeMax) {
-  return `món dời ${bad(overPos(m.item.pos), n2(m.item.pos))} · quay ${bad(overAngle(m.item.angle), `${n1(m.item.angle)}°`)} · tâm nắm ${bad(overPos(m.hand), n2(m.hand))}${m.t !== undefined ? ` <span class="dim">(ở ${m.t.toFixed(2)} s)</span>` : ""}`;
+  return `món dời ${bad(overPos(m.item.pos), `${cmText(m.item.pos)} cm`)} · quay ${bad(overAngle(m.item.angle), `${n1(m.item.angle)}°`)} · tâm nắm ${bad(overPos(m.hand), `${cmText(m.hand)} cm`)}${m.t !== undefined ? ` <span class="dim">(ở ${m.t.toFixed(2)} s)</span>` : ""}`;
 }
 
 /** Khớp cổ tay kẹp trước → sau của các tay */
@@ -90,7 +91,7 @@ function rowHtml(r: HoldModeRow) {
   const hands = Object.entries(r.hand)
     .map(
       ([s, v]) =>
-        `${Object.keys(r.hand).length > 1 ? `${SIDE[s as HandSide][0].toUpperCase()} ` : ""}${bad(overPos(v), n2(v))}`,
+        `${Object.keys(r.hand).length > 1 ? `${SIDE[s as HandSide][0].toUpperCase()} ` : ""}${bad(overPos(v), cmText(v))}`,
     )
     .join(" ");
   const tags = [r.elbowLock && "khoá", r.blending && "hoà"].filter(Boolean) as string[];
@@ -104,7 +105,7 @@ function rowHtml(r: HoldModeRow) {
     .map((x) => ` · ${x}`)
     .join("")}">
     <td>${when}${tags.map((x) => ` <span class="tag">${x}</span>`).join("")}</td>
-    <td>${r.item ? bad(overPos(r.item.pos), n2(r.item.pos)) : "—"}</td>
+    <td>${r.item ? bad(overPos(r.item.pos), cmText(r.item.pos)) : "—"}</td>
     <td>${r.item ? bad(overAngle(r.item.angle), n1(r.item.angle)) : "—"}</td>
     <td>${hands || "—"}</td>
     <td>${r.phi ? `${n1(r.phi.before)}→${n1(r.phi.after)}` : "—"}</td>
@@ -239,13 +240,13 @@ export class ModeCard {
     const mid = midMax(p.res.rows);
     return `
       <div class="mhead">${esc(s.item)}@${esc(s.group)} · tay dẫn ${SIDE[s.lead]}${s.partner ? ` + tay ${SIDE[s.partner]}` : ""} · ${s.from.toFixed(2)}–${s.until.toFixed(2)} s · ${MODE[s.mode.before]} → <b>${MODE[s.mode.after]}</b></div>
-      <div class="dim">Đơn vị rig (người cao ~430) và độ; tô đỏ: dời &gt; 0,5, quay &gt; 1°; kẹp (cổ tay ở giới hạn, trước → sau): x xoay, g gập, l lệch; khoá: bản vá khoá khuỷu ở mốc. ${keyed.length} mốc, ${p.res.ops.length} thao tác JSON Patch, ${Math.round(p.ms)} ms.</div>
+      <div class="dim">Đơn vị: cm, độ; tô đỏ: dời &gt; ${POS_LIMIT_CM} cm, quay &gt; 1°; kẹp (cổ tay ở giới hạn, trước → sau): x xoay, g gập, l lệch; khoá: bản vá khoá khuỷu ở mốc. ${keyed.length} mốc, ${p.res.ops.length} thao tác JSON Patch, ${Math.round(p.ms)} ms.</div>
       <div class="msum${maxOver(p.res.max) ? " bad" : ""}">Ở mốc: ${maxText(p.res.max)}</div>
       ${mid ? `<div class="msum${maxOver(mid) ? " bad" : ""}" title="hàng giữa hai mốc kề, trừ hàng đang hoà">Giữa mốc: ${maxText(mid)}</div>` : ""}
       <div class="msum${maxOver(p.res.outside) ? " bad" : ""}">Ngoài quãng đổi: ${maxText(p.res.outside)}</div>
       ${p.res.rows.some((r) => r.blending) ? `<div class="msum dim">Lúc hoà (<code>HOLD_BLEND</code>, không tính ở trên): ${maxText(p.res.blend)}</div>` : ""}
       <div class="mtable"><table>
-        <thead><tr><th>Mốc</th><th title="tâm hộp bao của món dời, đơn vị rig">Món dời</th><th title="món quay, độ">Quay °</th><th title="tâm nắm từng tay dời, đơn vị rig">Tâm nắm</th><th title="góc khuỷu φ tay dẫn trước → sau, độ">φ °</th><th title="khớp cổ tay ở giới hạn trước → sau: x xoay, g gập, l lệch">Kẹp</th></tr></thead>
+        <thead><tr><th>Mốc</th><th title="tâm hộp bao của món dời, cm">Món dời cm</th><th title="món quay, độ">Quay °</th><th title="tâm nắm từng tay dời, cm">Tâm nắm cm</th><th title="góc khuỷu φ tay dẫn trước → sau, độ">φ °</th><th title="khớp cổ tay ở giới hạn trước → sau: x xoay, g gập, l lệch">Kẹp</th></tr></thead>
         <tbody>${p.res.rows.map(rowHtml).join("")}</tbody>
       </table></div>
       ${p.res.notes.map((n) => `<div class="warn">${esc(n)}</div>`).join("")}

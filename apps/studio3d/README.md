@@ -300,10 +300,11 @@ Thẻ lần cầm (nhấp dải dưới hàng tay) ghi món, người, tay, quã
 - **Bấm công tắc**: trang dựng lại cảnh vài lần để đo ("đang tính…", vài trăm ms tới vài giây), rồi hiện bảng độ lệch từng
   mốc của quãng đổi và giữa hai mốc kề: món dời, món quay, tâm nắm từng tay dời, `φ` khuỷu tay dẫn trước → sau, khớp cổ tay
   ở giới hạn trước → sau (`x` xoay, `g` gập, `l` lệch), `khoá` (bản vá khoá khuỷu ở mốc), `hoà` (đang trong `HOLD_BLEND`,
-  không tính vào lệch lớn nhất). Đơn vị rig (người cao ~430) và độ; ô dời quá `HOLD_MODE_POS` (0,5), quay quá
-  `HOLD_MODE_ANGLE` (1°) tô đỏ, hàng có ô ấy nền đỏ. Trên bảng: lệch lớn nhất ở mốc, giữa mốc (hàng giữa hai mốc kề, trừ
-  hàng đang hoà), ngoài quãng đổi, lúc hoà; dưới bảng: `notes` của phép đổi và bản vá JSON Patch. Trang đang dựng lại cảnh
-  (sau một lần áp không làm mới tại chỗ được) thì thẻ chờ, không tính trên runtime cũ.
+  không tính vào lệch lớn nhất). Dời hiện cm (đơn vị rig chia `RIG_PER_METRE` = 250 ra mét), quay hiện độ; ô dời quá
+  `HOLD_MODE_POS` (0,5 đơn vị rig = 0,2 cm), quay quá `HOLD_MODE_ANGLE` (1°) tô đỏ, hàng có ô ấy nền đỏ. Trên bảng: lệch
+  lớn nhất ở mốc, giữa mốc (hàng giữa hai mốc kề, trừ hàng đang hoà), ngoài quãng đổi, lúc hoà; dưới bảng: `notes` của phép
+  đổi và bản vá JSON Patch. Trang đang dựng lại cảnh (sau một lần áp không làm mới tại chỗ được) thì thẻ chờ, không tính
+  trên runtime cũ.
 - **Áp**: bản vá vào cảnh đang sửa, một bước của lịch sử chung (chưa ghi đĩa: **Lưu**); Ctrl+Z về đúng chữ JSON trước khi áp.
   Dải lần cầm đổi màu; thẻ ở lại trên lần cầm (đổi giữa chừng: phần sau). **Thôi** bỏ bảng, cảnh không đổi. Bản đang sửa
   đổi trong lúc bảng đang hiện thì bảng bỏ.
