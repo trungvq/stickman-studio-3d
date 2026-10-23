@@ -94,6 +94,38 @@ describe('người 3D mặc đồ', () => {
     expect(Math.abs(toe().y)).toBeGreaterThan(0.3);
   });
 
+  it('mút ống chân dưới cổ chân, cả vỏ viền, nằm trong giày khi đứng và khi nhấc chân, mọi bề dày quần', () => {
+    const ray = new THREE.Raycaster(), dirs = [[0.31, 0.83, 0.47], [-0.62, 0.21, -0.75], [0.12, -0.4, 0.91]].map((d) => new THREE.Vector3(...d).normalize()), p = new THREE.Vector3(), n = new THREE.Vector3();
+    for (const w of [8, 13, 17, 24])
+      for (const legs of [[0, 0], [30, -70]] as [number, number][]) {
+        const f = dressed((c) => (c.palette.trouserWidth = w));
+        act(f, stand(legs), 0);
+        f.root.updateWorldMatrix(true, true);
+        for (const s of [-1, 1] as const) {
+          const shin = f.legs[s].knee.children.find((m) => m.userData.limb) as THREE.Mesh;
+          shin.userData.bend();
+          shin.updateWorldMatrix(true, false);
+          const ankle = f.legs[s].ankle!;
+          const shoe = new THREE.Mesh((ankle.children[0].children[0] as THREE.Mesh).geometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+          shoe.geometry.computeBoundingBox();
+          const local = ankle.matrixWorld.clone().invert().multiply(shin.matrixWorld), nm = new THREE.Matrix3().getNormalMatrix(local);
+          const pos = shin.geometry.attributes.position, nor = shin.geometry.attributes.normal;
+          let out = 0;
+          for (let i = 0; i < pos.count; i++) {
+            p.fromBufferAttribute(pos, i).applyMatrix4(local);
+            if (p.y >= 0) continue;
+            // vỏ viền `limbHull` nở 0,018
+            p.addScaledVector(n.fromBufferAttribute(nor, i).applyMatrix3(nm).normalize(), 0.018);
+            // sát mặt đế là sàn che
+            if (p.y < shoe.geometry.boundingBox!.min.y + 0.004) continue;
+            const inside = dirs.filter((d) => (ray.set(p, d), ray.intersectObject(shoe).length % 2 === 1)).length;
+            if (inside < 2) out++;
+          }
+          expect(out, `trouserWidth ${w}, chân ${legs}, bên ${s}`).toBe(0);
+        }
+      }
+  });
+
   it('dày chi theo nửa bề dày của lõi (gồm viền): người ngồi đúng trên mặt ghế', () => {
     const f = dressed();
     const thigh = f.legs[-1].hip.children.find((m) => m.userData.limb)!;

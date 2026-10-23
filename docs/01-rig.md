@@ -2011,6 +2011,8 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   lần three tính ma trận: bàn chân nằm ngang trong hệ người khi ống chân lệch khỏi phương đứng dưới
   `0,5` rad, quá thì nghiêng theo phần dư (quỳ, đá chân). Phần ống chân và ống quần dưới cổ chân ép dẹt theo phương
   đứng của bàn chân, sâu nhất `0,6` độ sâu đế (`TUCK` của `stickman.ts`): mút tròn to hơn đế không lòi dưới giày khi nhấc chân.
+  Nửa dưới giày có mặt cắt siêu elip, gần đủ rộng tới sát đế, gót lùi đủ xa (`SHOE` của `human.ts`): mút ống
+  chân ép dẹt cùng vỏ viền nằm gọn trong giày, không lòi sau gót hay hai bên.
 - **Khối hông** là bao lồi của vành thân áo thu vào, hai khối cầu cỡ gốc đùi quanh khớp hông và hai khối
   cầu mông lùi sau, thấp hơn khớp hông (`BUTT`), trong nhóm thân, màu quần — màu váy khi có váy, trừ tạp dề. Tới nửa
   bán kính đùi dưới gấu, khối hông lùi hẳn vào trong thân áo: mông chỉ phồng ra dưới gấu, không lồi qua

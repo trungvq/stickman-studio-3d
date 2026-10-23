@@ -11,7 +11,7 @@ import { G } from './npr';
 // hông. Chỉ hình học; `stickman.ts` gắn vào khớp và tô màu. docs/01-rig.md#người-3d-mặc-đồ
 
 /** Giày trong khung cổ chân (y lên, z mũi giày), đo bằng bán kính cổ chân: gót, mũi, nửa rộng, cao trên cổ chân */
-export const SHOE = { heel: -1.25, toe: 3.3, half: 1.22, top: 1.15 };
+export const SHOE = { heel: -1.7, toe: 3.3, half: 1.5, top: 1.15 };
 
 const _v = new THREE.Vector3(), _s = new THREE.Vector3(), _qk = new THREE.Quaternion(), _qb = new THREE.Quaternion(), _e = new THREE.Euler();
 /** Ống chân lệch khỏi phương đứng dưới góc này thì bàn chân vẫn nằm ngang, quá thì nghiêng theo phần dư (radian) */
@@ -267,15 +267,23 @@ export function poseHand(h: Hand, v?: readonly number[]) {
 }
 
 /**
- * Giày trong khung cổ chân, cỡ theo bán kính cổ chân `ra`: đế phẳng cách cổ chân `sole` xuống, gót tròn trùm mút ống
- * chân, mũi thấp dần về trước.
+ * Giày trong khung cổ chân, cỡ theo bán kính cổ chân `ra`: đế phẳng cách cổ chân `sole` xuống, nửa dưới gần đủ rộng
+ * tới sát đế, gót trùm mút ống chân, mũi thấp dần về trước.
  */
 export function shoeGeometry(sole: number, ra: number) {
   const heel = SHOE.heel * ra, toe = SHOE.toe * ra, half = SHOE.half * ra, top = SHOE.top * ra + sole;
   const g = new THREE.SphereGeometry(1, 22, 14), p = g.attributes.position;
   const cz = (heel + toe) / 2, rz = (toe - heel) / 2, mid = top / 2;
   for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    let x = p.getX(i), z = p.getZ(i);
+    const y = p.getY(i);
+    // nửa dưới mặt cắt siêu elip bậc 4: sát đế vẫn gần đủ rộng, mút ống chân ép dẹt dưới cổ chân nằm gọn trong giày
+    const rho = Math.hypot(x, z);
+    if (y < 0 && rho > 1e-6) {
+      const k = Math.pow(1 - y ** 4, 0.25) / rho;
+      x *= k;
+      z *= k;
+    }
     let Y = mid + y * mid * (y > 0 ? 1 - 0.45 * Math.max(0, z) : 1.05);
     if (Y < 0.003) Y = 0.003 - (0.003 - Y) * 0.15;
     p.setXYZ(i, x * half * (1 - 0.12 * Math.max(0, z)), Y - sole, cz + z * rz);
