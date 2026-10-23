@@ -24,6 +24,15 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import * as world0 from "virtual:stickman-world";
 import { renderCard, type CardModel } from "./card";
+import { renderClipCard, type ClipCardModel } from "./clipCard";
+import {
+  clipOf,
+  compatibleActions,
+  deleteClip,
+  setClipAction,
+  tracksOf,
+  type ClipRef,
+} from "./clips";
 import { drawnHand, drawnItem } from "./drawn";
 import { GraspEditor, sceneHigh, type EditScene, type EditTarget } from "./editor";
 import { freeCam, type WheelMode } from "./freecam";
@@ -107,6 +116,7 @@ const ui = {
   cfKeep: $<HTMLButtonElement>("cfKeep"),
   keyCard: $<HTMLElement>("keyCard"),
   runCard: $<HTMLElement>("runCard"),
+  clipCard: $<HTMLElement>("clipCard"),
   laneLabels: $<HTMLDivElement>("laneLabels"),
   lanes: $<HTMLDivElement>("lanes"),
   laneAdds: $<HTMLDivElement>("laneAdds"),
@@ -199,6 +209,8 @@ const isDirty = () => !!work && JSON.stringify(work.raw) !== work.saved;
 let edMode: "view" | "hands" = localStorage.getItem("studio3d.mode") === "hands" ? "hands" : "view";
 /** Mốc đang mở thẻ */
 let picked: KeyRef | null = null;
+/** Clip đang mở thẻ (hàng track của Dáng tay) */
+let clipSel: ClipRef | null = null;
 /** Mốc đang mở thẻ khi rời mỗi bản của lịch sử (chữ JSON thô): hoàn tác / làm lại mở lại đúng mốc ấy */
 const picks = new Map<string, KeyRef | null>();
 /** Dòng nhắc của lần thêm mốc gần nhất (chỗ mốc mới chỉ gần đúng), hiện trên thẻ của mốc ấy */
@@ -1375,7 +1387,7 @@ function lanesOf(id: string, on: HandSide): Lane[] {
       },
     ];
   });
-  lanes.push({
+  const itemLane: Lane = {
     id: "item",
     label: "Món",
     title: `Mốc \`items[]\` của món tay ${SIDE_NAME[on]} cầm`,
@@ -1383,8 +1395,64 @@ function lanesOf(id: string, on: HandSide): Lane[] {
     bands: [],
     blends: [],
     keys,
-  });
+  };
+  lanes.push(itemLane, ...trackLanes(id, on));
   return lanes;
+}
+
+const ARM_PART = (s: { arm: boolean; hand: boolean }) =>
+  [s.arm && "cánh tay", s.hand && "bàn tay"].filter(Boolean).join(", ");
+
+/** Tay clip chạm ở giây đang xem, một dòng: `tay phải (bàn tay)` */
+function touchText(id: string, k: ClipRef): string {
+  const s = rig.clipSides(cur!.rt, id, k.track, k.clip, t);
+  if (!s) return "không đo được (cảnh đang dựng lại)";
+  const parts = (["right", "left"] as HandSide[])
+    .filter((x) => s[x].arm || s[x].hand)
+    .map((x) => `tay ${SIDE_NAME[x]} (${ARM_PART(s[x])})`);
+  return parts.length ? parts.join(", ") : "không chạm tay nào";
+}
+
+/** Mỗi track của người `id` một hàng: dải clip, sáng khi clip chạm tay `on` (`clipSides` của rig), sọc là `blend` */
+function trackLanes(id: string, on: HandSide): Lane[] {
+  const raw = work!.raw;
+  const marks = marksOf(raw);
+  const live = cur!.src === raw ? cur!.rt.cast.find((m) => m.id === id) : undefined;
+  return (tracksOf(raw, id) ?? []).map((tr, ti) => {
+    const clips = (tr.clips as Json[] | undefined) ?? [];
+    const starts = clips.map((c) => timeOf(c.start, marks));
+    const bands: Band[] = [];
+    const blends: [number, number][] = [];
+    clips.forEach((c, ci) => {
+      const from = starts[ci];
+      const to = starts[ci + 1] ?? cur!.dur;
+      const s = live && rig.clipSides(cur!.rt, id, ti, ci, t);
+      const touch = s?.[on];
+      const act = typeof c.action === "string" ? c.action : undefined;
+      bands.push({
+        from,
+        to,
+        kind: "clip",
+        label: act ?? "(rỗng)",
+        title: `${act ?? "clip rỗng"} · start ${c.start}${typeof c.start === "string" ? ` = ${from.toFixed(2)} s` : " s"}${touch && (touch.arm || touch.hand) ? ` · chạm tay ${SIDE_NAME[on]}: ${ARM_PART(touch)}` : ` · không chạm tay ${SIDE_NAME[on]}`} · nhấp: thẻ clip`,
+        clip: ci,
+        dim: !(touch?.arm || touch?.hand),
+        on: clipSel?.id === id && clipSel.track === ti && clipSel.clip === ci,
+      });
+      const tau = live?.tracks[ti]?.clips[ci]?.tau ?? 0;
+      if (tau > 0) blends.push([from, Math.min(from + tau, to)]);
+    });
+    const name = typeof tr.name === "string" ? tr.name : `#${ti}`;
+    return {
+      id: `track:${ti}`,
+      kind: "track" as const,
+      label: `track ${name}`,
+      title: `Track \`${name}\` của ${id}: dải sáng là clip chạm tay ${SIDE_NAME[on]}; nhấp dải mở thẻ clip`,
+      bands,
+      blends,
+      keys: [],
+    };
+  });
 }
 
 const track = new KeyTrack(
@@ -1400,6 +1468,7 @@ const track = new KeyTrack(
       if (!work) return;
       if (k.kind === "hand") selectSide(k.id, k.side);
       modeCard.sel = null;
+      clipSel = null;
       picked = k;
       seek(keyTime(work.raw, k));
       syncEdit();
@@ -1439,7 +1508,15 @@ const track = new KeyTrack(
       syncEdit();
     },
     band(lane, b) {
+      if (sel && b.clip !== undefined && lane.startsWith("track:")) {
+        clipSel = { id: sel.id, track: Number(lane.slice(6)), clip: b.clip };
+        picked = null;
+        modeCard.close();
+        syncEdit();
+        return;
+      }
       if (!sel || !b.run || (lane !== "right" && lane !== "left")) return;
+      clipSel = null;
       selectSide(sel.id, lane);
       picked = null;
       modeCard.open(sel.id, lane, (b.run.since + b.run.until) / 2);
@@ -1551,9 +1628,12 @@ function syncEdit() {
   ui.footer.classList.toggle("hands", edMode === "hands");
   if (picked && (!work || keyValue(work.raw, picked) === undefined)) picked = null;
   if (picked?.kind === "hand" && sel && picked.id !== sel.id) picked = null;
+  if (clipSel && (!work || !sel || clipSel.id !== sel.id || !clipOf(work.raw, clipSel)))
+    clipSel = null;
   if (!cur || !work || edMode !== "hands") {
     track.render(null, cur?.dur ?? 1);
     renderCard(ui.keyCard, null, cardHost);
+    renderClipCard(ui.clipCard, null, clipHost);
     modeCard.render();
     return;
   }
@@ -1566,8 +1646,75 @@ function syncEdit() {
   else track.render(lanesOf(sel.id, sideOf(sel.side)), cur.dur);
   track.playhead(t, cur.dur);
   renderCard(ui.keyCard, picked && cardOf(picked), cardHost);
+  renderClipCard(ui.clipCard, clipSel && clipCardOf(clipSel), clipHost);
   modeCard.render();
 }
+
+/** Thẻ clip: hành động, `start`, `blend`, `mask`, `note`, tay clip chạm, hành động thay được */
+function clipCardOf(k: ClipRef): ClipCardModel | null {
+  if (!work || !cur) return null;
+  const raw = work.raw;
+  const c = clipOf(raw, k);
+  const tr = tracksOf(raw, k.id)?.[k.track];
+  if (!c || !tr) return null;
+  const actions = cur.data.actions as Record<string, rig.ActionData>;
+  const act = typeof c.action === "string" ? c.action : "";
+  const a = act ? actions[act] : undefined;
+  const at = timeOf(c.start, marksOf(raw));
+  const live = cur.src === raw ? cur.rt.cast.find((m) => m.id === k.id) : undefined;
+  const tau = live?.tracks[k.track]?.clips[k.clip]?.tau;
+  const mask = c.mask as string[] | undefined;
+  return {
+    title: `Clip · track ${typeof tr.name === "string" ? tr.name : `#${k.track}`} #${k.clip} · ${k.id}`,
+    action: act,
+    start: `${c.start}${typeof c.start === "string" ? ` = ${at.toFixed(3)} s` : " s"}`,
+    blend:
+      c.blend !== undefined
+        ? `${c.blend} s`
+        : `tự suy${tau !== undefined ? `: ${tau.toFixed(2)} s` : ""}`,
+    mask: mask
+      ? `clip: ${mask.join(", ")}`
+      : a
+        ? `theo hành động: ${rig.actionMask(a).join(", ") || "—"}`
+        : "—",
+    touch: live ? touchText(k.id, k) : "đang dựng lại cảnh",
+    ...(a?.note && { note: a.note }),
+    options: compatibleActions(actions, act || undefined, mask),
+    last: ((tr.clips as Json[] | undefined)?.length ?? 0) <= 1,
+  };
+}
+
+const clipHost = {
+  del() {
+    if (!work || !clipSel) return;
+    const k = clipSel;
+    const tr = tracksOf(work.raw, k.id)?.[k.track];
+    const last = ((tr?.clips as Json[] | undefined)?.length ?? 0) <= 1;
+    const act = clipOf(work.raw, k)?.action ?? "clip rỗng";
+    try {
+      const next = deleteClip(work.raw, k);
+      clipSel = null;
+      if (apply(next, { key: null }))
+        say(
+          `đã xoá clip ${act}${last ? ` — track ${tr?.name ?? `#${k.track}`} hết clip, bỏ cả track` : ""}`,
+        );
+    } catch (e) {
+      say((e as Error).message, true);
+    }
+  },
+  swap(action: string) {
+    if (!work || !clipSel) return;
+    try {
+      if (apply(setClipAction(work.raw, clipSel, action))) say(`clip đổi sang ${action}`);
+    } catch (e) {
+      say((e as Error).message, true);
+    }
+  },
+  close() {
+    clipSel = null;
+    syncEdit();
+  },
+};
 
 /** Mốc kế (cùng tay, cùng món) mà sửa mốc `k` còn đổi hình tới: mốc sau, chuỗi `auto` thì mốc sau nữa */
 function reach(raw: Json, k: KeyRef): number | undefined {
@@ -1882,7 +2029,7 @@ function setEdMode(m: "view" | "hands") {
   remember();
 }
 
-/** Lưu mốc tay, mốc món vào `scenes/` kèm hash lúc nạp; file đã đổi trên đĩa thì 409, hiện hộp chọn */
+/** Lưu mốc tay, mốc món, track vào `scenes/` kèm hash lúc nạp; file đã đổi trên đĩa thì 409, hiện hộp chọn */
 let saving = false;
 async function save() {
   if (!work || !isDirty() || saving) return;
@@ -2012,6 +2159,7 @@ ui.cfCopy.onclick = async () => {
   const cast = ((work.raw.cast as Json[]) ?? []).map((c) => ({
     id: c.id,
     hands: (c.world as Json | undefined)?.hands,
+    tracks: c.tracks,
   }));
   await navigator.clipboard?.writeText(JSON.stringify({ cast, items: work.raw.items }, null, 2));
   ui.cfCopy.textContent = "Đã chép";
@@ -2131,6 +2279,7 @@ addEventListener("keydown", (e) => {
     ui.solo.checked = !ui.solo.checked;
     toggleSolo();
   } else if ((e.key === "r" || e.key === "R") && !mod && cur) reload(e.shiftKey);
+  else if (e.key === "Escape" && clipSel) clipHost.close();
   else if (e.key === "Escape" && modeCard.sel) modeCard.close();
   else if (e.key === "Escape" && picked) cardHost.close();
   else if (e.key === "Escape" && sel) select(undefined, false);
@@ -2329,6 +2478,15 @@ Object.assign(window, {
     get picked() {
       return picked;
     },
+    get clipSel() {
+      return clipSel;
+    },
+    openClip(k: ClipRef) {
+      clipSel = k;
+      picked = null;
+      syncEdit();
+    },
+    clipHost,
     restage,
     apply,
     seek,

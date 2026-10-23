@@ -552,7 +552,7 @@ panel, cách soạn ở README của `apps/studio3d` trong repo rig.
 - **Ghi thẳng repo.** **Lưu** ghi `scenes/<cảnh>.json` (`POST /api/scene`), `held/<món>.json` (`POST /api/held`;
   `STUDIO3D_HELD_OUT=<thư mục>` đổi hướng ghi món sang thư mục ấy và đọc nó phủ lên `held/`) và `hands/<dáng>.json`
   (`POST /api/hands`; dáng chung lưu lại thì thành bản của repo, đè dáng chung cùng tên). Cảnh chỉ nhận
-  `cast[*].world.hands` và `items` của bản studio; bản gửi lên đổi phần khác thì bị từ chối, thiếu khoá nào thì khoá ấy
+  `cast[*].world.hands`, `cast[*].tracks` và `items` của bản studio; bản gửi lên đổi phần khác thì bị từ chối, thiếu khoá nào thì khoá ấy
   trên đĩa giữ nguyên (xoá hết là gửi mảng rỗng).
 - **Kiểm hash.** Mỗi lần nạp, trang nhận hash của file trên đĩa; lưu gửi kèm hash ấy. File đã đổi từ lúc nạp (agent,
   `retime`, sửa tay) thì server trả 409 và không ghi: tải bản đĩa về (thành một bước mới của lịch sử, hoàn tác về bản

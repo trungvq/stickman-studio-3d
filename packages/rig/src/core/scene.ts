@@ -29,6 +29,7 @@ import {
   actionHand,
   actionHandKey,
   keyAim,
+  keyHand,
   mixAim,
   reachTerm,
   actionLayers,
@@ -6537,6 +6538,62 @@ export interface HandSource {
   world?: { w: number; aim: boolean; hold?: string };
 }
 
+const otherChannel = (ch: "an" | "af") => (ch === "an" ? "af" : "an");
+
+/** Cách kênh của clip đi vào tay của người 3D `id` ở `time`, như `sceneAt`: phía tay phải lúc dựng, nhịp đi, lật */
+function channelsAt(rt: SceneRuntime, id: string, time: number) {
+  const m = member(rt, id);
+  if (!m.world) return undefined;
+  const height = rt.heights[id] ?? 1;
+  const dims = rt.bodies[id] ?? BODY3;
+  const walk = walkerOf(rt, m, height, dims.hipHalf);
+  const clock = walk && clockOf(walk);
+  const sp = keyPose(rt, id, time, height, dims);
+  return {
+    m,
+    clock,
+    farRight: rightFarOf(m, walk),
+    stepSwap: !!(clock && clock(time).half % 2),
+    flip: !!sp.world?.flip,
+    sp,
+  };
+}
+
+/**
+ * Tay giải phẫu mà clip `clip` của track `track` (chỉ số trong `cast[].tracks`) của người 3D `id` ghi vào, ở `time`:
+ * `arm` góc cánh tay (cả `reach`), `hand` bàn tay (kênh `hand`, kênh tay có mốc bàn tay) — theo `mask` của clip và của
+ * hành động, `sides: "anatomical"`, nhịp đi và lật như `sceneAt`. Người không có `world` thì `undefined`
+ */
+export function clipSides(
+  rt: SceneRuntime,
+  id: string,
+  track: number,
+  clip: number,
+  time: number,
+): Record<HandSide, { arm: boolean; hand: boolean }> | undefined {
+  const k = channelsAt(rt, id, time);
+  const c = k?.m.tracks[track]?.clips[clip];
+  if (!k || !c) return undefined;
+  const out = { right: { arm: false, hand: false }, left: { arm: false, hand: false } };
+  const a = c.action;
+  if (!a) return out;
+  const mask = actionMask(a);
+  const swap = anatomicalSwap(c, k.farRight);
+  for (const own of REACH_CHANNELS) {
+    const name = own === "an" ? "armNear" : "armFar";
+    const ch = swap !== k.stepSwap ? otherChannel(own) : own;
+    const side: HandSide = ch === sideChannel("right", k.flip) ? "right" : "left";
+    if (mask.includes(name) && inMask(c, name)) out[side].arm = true;
+    if (
+      mask.includes("hand") &&
+      inMask(c, "hand") &&
+      a.keys?.some((key) => keyHand(key)[name] !== undefined)
+    )
+      out[side].hand = true;
+  }
+  return out;
+}
+
 /**
  * Thứ đang điều khiển từng tay giải phẫu của người 3D `id` ở `time`, tính đúng như `sceneAt`: clip đang chạy của từng track
  * (`mask`, `sides: "anatomical"`, đổi kênh theo nhịp đi), kênh gần / xa theo `facing().flip`, mốc `world.hands` và đích
@@ -6547,19 +6604,11 @@ export function handSources(
   id: string,
   time: number,
 ): Record<HandSide, HandSource> | undefined {
-  const m = member(rt, id);
-  if (!m.world) return undefined;
-  const height = rt.heights[id] ?? 1;
-  const dims = rt.bodies[id] ?? BODY3;
-  const walk = walkerOf(rt, m, height, dims.hipHalf);
-  const clock = walk && clockOf(walk);
-  const farRight = rightFarOf(m, walk);
-  const stepSwap = !!(clock && clock(time).half % 2);
-  const sp = keyPose(rt, id, time, height, dims);
-  const flip = !!sp.world?.flip;
+  const k = channelsAt(rt, id, time);
+  if (!k) return undefined;
+  const { m, clock, farRight, stepSwap, flip, sp } = k;
   type Got = Pick<HandSource, "arm" | "hand" | "reach">;
   const got: Record<"an" | "af", Got> = { an: {}, af: {} };
-  const other = (ch: "an" | "af") => (ch === "an" ? "af" : "an");
   let pose: Pose = m.base;
   m.tracks.forEach((tr, ti) => {
     const i = activeClip(tr, time);
@@ -6569,7 +6618,7 @@ export function handSources(
     const c = tr.clips[i];
     const swap = anatomicalSwap(c, farRight);
     for (const ch of REACH_CHANNELS) {
-      const own = swap ? other(ch) : ch;
+      const own = swap ? otherChannel(ch) : ch;
       const src: PoseSourceClip = {
         track: ti,
         ...(tr.name !== undefined && { trackName: tr.name }),
@@ -6589,11 +6638,11 @@ export function handSources(
       }
     }
   });
-  const keys = m.world.hands ?? [];
+  const keys = m.world?.hands ?? [];
   const out = {} as Record<HandSide, HandSource>;
   for (const side of ["right", "left"] as const) {
     const channel = sideChannel(side, flip);
-    const g = got[stepSwap ? other(channel) : channel];
+    const g = got[stepSwap ? otherChannel(channel) : channel];
     // trước mốc đầu tay giữ mốc đầu, như `handAt`
     const ks = keys.flatMap((k, index) =>
       k[side] === undefined ? [] : [{ index, t: k.t, kind: handMarkKind(k[side]) }],

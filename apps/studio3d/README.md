@@ -34,8 +34,8 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
   của repo này. `three`, `react`, `zod` lấy bản của repo video (thiếu thì bản của app): trang và file của repo video chung
   một bản mỗi gói. `remotion` nhận bản rỗng (`src/hollow.ts`). Bản dựng của ba gói chỉ cho phía Node (`worldData`).
 - **Ghi.** Ba đường, cả ba kiểm hash, vá JSON thô và giữ `<file>.json.bak`:
-  - `POST /api/scene?name=<cảnh>` `{ hash, scene }`: `scene` là JSON thô của cảnh đã sửa; server lấy `cast[*].world.hands`
-    và `items` của nó vá vào file trên đĩa; `scene` thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên, xoá hết là gửi mảng
+  - `POST /api/scene?name=<cảnh>` `{ hash, scene }`: `scene` là JSON thô của cảnh đã sửa; server lấy `cast[*].world.hands`,
+    `cast[*].tracks` và `items` của nó vá vào file trên đĩa; `scene` thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên, xoá hết là gửi mảng
     rỗng (`items: []`, `hands: []` ghi thành mảng rỗng), `items: null` bỏ cả khoá `items` (trang gửi khi bản đang sửa không còn
     khoá ấy mà bản đã lưu có). `schemaVersion` số lớn hơn đĩa thì lên theo: trang nạp cảnh đời trước mà `migrateScene` chỉ đổi số ấy thì nâng ngay trong bản sửa (`sceneVersionUp`), nên `elbow` hệ thân trang ghi lên mốc không có `at` đọc đúng nghĩa ở lần nạp sau. Phần khác của `scene` khác đĩa thì 400. Trả `{ file, raw, hash }`.
   - `POST /api/held?name=<món>` `{ hash, group, variant, authored }`: **Lưu** của khung soạn kiểu cầm ghi `authored` của
@@ -67,12 +67,12 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
 | R | Nạp lại cảnh từ đĩa, giữ giây đang xem (có thay đổi chưa lưu thì hỏi trước); chỉ đổi mốc tay, mốc món thì làm mới tại chỗ, không dựng lại lưới (`world.refresh`) |
 | Shift+R | Dựng lại cả cảnh, giữ bản đang sửa: đồ riêng của repo đọc `world.hands` lúc dựng |
 | Ctrl+Z · Ctrl+Shift+Z, Ctrl+Y | Hoàn tác · làm lại (lịch sử chung của cảnh) |
-| Ctrl+S | Lưu mốc tay, mốc món vào `scenes/` |
+| Ctrl+S | Lưu mốc tay, mốc món, track vào `scenes/` |
 | Del, Backspace | Xoá mốc đang mở thẻ (Dáng tay) |
 | T · Y | Tay nắm của bàn tay đang chọn: dời · xoay (Dáng tay) |
 | H | Bật / tắt **Chỉ người này** (panel Bàn tay) |
 | W S · A D · Q E | Camera tự do: tiến / lùi, sang trái / phải, xuống / lên (theo hướng camera); giữ Shift: nhanh gấp 3 |
-| Esc | Đóng thẻ lần cầm, thẻ mốc; không có thẻ thì bỏ chọn bàn tay |
+| Esc | Đóng thẻ clip, thẻ lần cầm, thẻ mốc; không có thẻ thì bỏ chọn bàn tay |
 
 Khung soạn kiểu cầm có phím, chuột riêng ([bên dưới](#soạn-kiểu-cầm)).
 
@@ -251,7 +251,7 @@ kéo), cùng thẻ ngón và panel đủ mọi thanh, lịch sử riêng (Ctrl+Z
 
 Công tắc **Xem / Dáng tay** trên thanh trên (nhớ trong `localStorage`). Ở Dáng tay, bấm một bàn tay (trên hình hay trong
 panel) là chọn người × tay: thanh tua thêm một hàng cho mỗi tay của người ấy và một hàng **Món** cho các mốc `items[]` của
-món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hàng tay là chọn tay ấy.
+món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi track của người ấy một hàng. Nhấp nhãn hàng tay là chọn tay ấy.
 
 - **Ký hiệu.** Mốc tay tròn, mốc chỉ có `hold` vòng rỗng, mốc chỉ có `pose` vuông rỗng, mốc `null` chấm xám, mốc món thoi; viền tím là mốc khoá khuỷu
   (`elbowLock`), viền cam là mốc đang mở thẻ. Rê lên mốc: trường `t` như JSON (`@tra+0.6 = 4.000 s`), loại mốc, `ease`.
@@ -285,6 +285,13 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hà
 
   Hình chỉ giữ ở đúng giây của mốc: quanh mốc, đường tay đổi theo mốc mới — mốc sau không phải `auto` thì đoạn từ mốc mới
   tới nó bắt đầu từ vận tốc `0` (bàn tay dừng ở mốc mới).
+- **Hàng track** (`track <tên>`, theo thứ tự `cast[].tracks`): mỗi clip một dải mang tên hành động, từ `start` tới clip sau
+  (hay hết cảnh), sọc là `blend` (τ rig đã suy). Dải sáng là clip chạm tay đang chọn ở giây đang xem — ghi góc cánh tay
+  hay bàn tay của tay ấy theo `mask` của clip và hành động, `sides: "anatomical"`, lật (`clipSides` của rig) —, mờ là
+  không chạm. **Nhấp dải** mở thẻ clip: hành động, `start` (mốc tên kèm giây), `blend` (khai hay tự suy), `mask` (của clip
+  hay của hành động), tay clip chạm, `note` của hành động; **Đổi hành động** với danh sách hành động cùng mask (clip khai
+  `mask` thì hành động ghi đủ các kênh ấy, không thì ghi đúng các kênh hành động đang có); **Xoá clip** — clip cuối của
+  track thì bỏ cả track. Mỗi thao tác là một bước lịch sử chung, sửa JSON thô, rồi dựng lại cả cảnh; lưu bằng **Lưu**.
 - **Tay nắm, vòng khuỷu, nón cổ tay** của bàn tay đang chọn (ẩn khi phát, khi khung soạn kiểu cầm mở). Thả chuột mới áp: trang
   dựng lại cảnh, đo, rồi làm mới tại chỗ (vài trăm ms); đang áp thì lần kéo mới không nhận. **Có mốc ở giây đang xem thì kéo
   sửa mốc ấy; không có thì lần kéo đầu chèn mốc mới ở giây ấy như ＋ rồi sửa nó**, thanh trạng thái báo "đã thêm mốc 1.23 s".
@@ -355,8 +362,8 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hà
 - **Lưu** (Ctrl+S): chấm cam là có thay đổi chưa lưu. Ghi `POST /api/scene` kèm hash lúc nạp; lưu xong lịch sử còn nguyên.
   **Bỏ thay đổi** về bản đã lưu (là một bước, hoàn tác được). File cảnh đổi trên đĩa từ lúc nạp thì server trả 409, không có cách ghi đè: hộp
   báo cho **Tải bản đĩa về** — bản đĩa vào thành một bước mới của lịch sử (hash mới, là bản đã lưu), Ctrl+Z quay lại bản
-  của mình để so; lưu lại bản ấy thì server chỉ nhận khi phần ngoài mốc tay, mốc món khớp đĩa —, **Chép mốc của mình**
-  (`hands` từng người và `items`, JSON) hay **Giữ bản mình**. Đổi cảnh, R, đóng trang đều hỏi trước khi bỏ thay đổi chưa lưu.
+  của mình để so; lưu lại bản ấy thì server chỉ nhận khi phần ngoài mốc tay, mốc món, track khớp đĩa —, **Chép mốc của mình**
+  (`hands`, `tracks` từng người và `items`, JSON) hay **Giữ bản mình**. Đổi cảnh, R, đóng trang đều hỏi trước khi bỏ thay đổi chưa lưu.
 - **File repo video đổi trên đĩa** (cảnh, món mà `src/` của repo nhập — kể cả lúc Lưu): trang nhận module cảnh three mới
   tại chỗ, không nạp lại trang; lần dựng cảnh sau (Shift+R) dùng bản mới.
 - **Màn hẹp** (≤ 760 px): camera, AA, Lăn gập sau nút ⋯; panel bàn tay xuống dưới khung vẽ. Ở Xem thanh tua vừa bề ngang;

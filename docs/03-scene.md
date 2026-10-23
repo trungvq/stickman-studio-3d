@@ -1188,7 +1188,9 @@ chống nạnh tay phải ở cảnh này là tay trái ở cảnh kia. Dáng ri
   sau khi đổi theo `facing().flip` và nhịp đi), clip ghi góc cánh tay, clip ghi bàn tay (kèm mốc bàn tay của hành động ở
   pha ấy và cờ ý định `palm` / `fingers`), clip ghi `reach`, mốc `world.hands` gần nhất và đích thế giới đang áp — cùng
   phép tính với `sceneAt`. Studio 3D hiện nó ở dòng **Nguồn dáng** của panel Bàn tay: clip soạn cho tay xa (`armFar`)
-  rơi vào tay phải đang buông khi người lật là thấy ngay ở đây.
+  rơi vào tay phải đang buông khi người lật là thấy ngay ở đây. Chiều ngược lại, `clipSides(rt, id, track, clip, t)` cho
+  biết một clip ghi góc cánh tay (`arm`) và bàn tay (`hand`) của tay giải phẫu nào — hàng track của Studio 3D tô sáng clip
+  chạm tay đang chọn bằng nó.
 
 ### `check` cho người 3D
 

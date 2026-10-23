@@ -1,5 +1,5 @@
-// Hàng mốc trên thanh tua (chế độ Dáng tay): mỗi tay của người đang chọn một hàng, thêm hàng Món; dải lần cầm dưới hàng,
-// nhấp / kéo mốc, nút ＋ từng hàng. Chỉ vẽ và báo thao tác; sửa JSON ở `keys.ts`, `main.ts` nối hai bên.
+// Hàng mốc trên thanh tua (chế độ Dáng tay): mỗi tay của người đang chọn một hàng, thêm hàng Món và mỗi track một hàng
+// (dải clip); dải lần cầm dưới hàng, nhấp / kéo mốc, nút ＋ từng hàng. Chỉ vẽ và báo thao tác; sửa JSON ở `keys.ts`, `main.ts` nối hai bên.
 import type { KeyRef } from "./keys";
 
 /** Một mốc trên hàng: tròn mốc tay, vòng rỗng mốc chỉ có `hold`, chấm xám mốc `null`, thoi mốc món */
@@ -12,20 +12,28 @@ export interface Glyph {
   lock?: boolean;
 }
 
-/** Một đoạn dải lần cầm: `item` tay theo đồ (theo mốc, hai tay), `hand` đồ theo tay, `free` tay tự do */
+/**
+ * Một đoạn dải: lần cầm (`item` tay theo đồ — theo mốc, hai tay —, `hand` đồ theo tay, `free` tay tự do) hay clip của track
+ * (`clip`, `dim` khi clip không chạm tay đang chọn)
+ */
 export interface Band {
   from: number;
   to: number;
-  kind: "item" | "hand" | "free";
+  kind: "item" | "hand" | "free" | "clip";
   label?: string;
   title?: string;
-  /** Lần cầm nhấp được (mở thẻ lần cầm); `on` là lần cầm đang mở thẻ */
+  /** Lần cầm nhấp được (mở thẻ lần cầm); `on` là lần cầm hay clip đang mở thẻ */
   run?: { since: number; until: number };
+  /** Clip nhấp được (mở thẻ clip): chỉ số clip trong track */
+  clip?: number;
+  dim?: boolean;
   on?: boolean;
 }
 
 export interface Lane {
   id: string;
+  /** Hàng track: dải clip cao cả hàng, không có mốc */
+  kind?: "track";
   label: string;
   title?: string;
   on?: boolean;
@@ -48,7 +56,7 @@ export interface TrackHost {
   snap(k: KeyRef, t: number): number;
   add(lane: string): void;
   lane(lane: string): void;
-  /** Nhấp dải lần cầm */
+  /** Nhấp dải lần cầm hay dải clip */
   band(lane: string, b: Band): void;
 }
 
@@ -114,6 +122,7 @@ export class KeyTrack {
       add.className = "laneadd";
       add.textContent = "＋";
       add.disabled = !l.add;
+      if (l.kind === "track") add.style.visibility = "hidden";
       add.title = l.add ?? "";
       add.onclick = () => this.host.add(l.id);
       adds.append(add);
@@ -140,13 +149,15 @@ export class KeyTrack {
     const row = document.createElement("div");
     row.className = "lane";
     row.classList.toggle("on", !!l.on);
+    row.classList.toggle("track", l.kind === "track");
     const band = document.createElement("div");
     band.className = "bands";
     for (const b of l.bands) {
       const d = document.createElement("div");
       d.className = `band ${b.kind}`;
       d.classList.toggle("on", !!b.on);
-      if (b.run) {
+      d.classList.toggle("dim", !!b.dim);
+      if (b.run || b.clip !== undefined) {
         d.classList.add("pick");
         d.onclick = () => this.host.band(l.id, b);
       }
@@ -161,7 +172,10 @@ export class KeyTrack {
       d.className = "blend";
       d.style.left = pct(a, this.dur);
       d.style.width = `calc(${pct(z, this.dur)} - ${pct(a, this.dur)})`;
-      d.title = "HOLD_BLEND: bàn tay hoà sang lần cầm mới";
+      d.title =
+        l.kind === "track"
+          ? "blend: hoà từ clip trước"
+          : "HOLD_BLEND: bàn tay hoà sang lần cầm mới";
       band.append(d);
     }
     row.append(band);

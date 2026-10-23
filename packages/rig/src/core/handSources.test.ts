@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { handSources, parseAction, parseScene, resolveScene, type ActionData } from "./index";
+import {
+  clipSides,
+  handSources,
+  parseAction,
+  parseScene,
+  resolveScene,
+  type ActionData,
+} from "./index";
 
 function action(json: unknown): ActionData {
   const r = parseAction(json);
@@ -117,5 +124,30 @@ describe("handSources", () => {
     // trước mốc đầu tay giữ mốc đầu
     expect(src.right.mark).toEqual({ index: 1, t: 1, kind: "pose" });
     expect(src.right.world).toBeUndefined();
+  });
+});
+
+describe("clipSides", () => {
+  it("clip chỉ ghi bàn tay xa: tay phải khi lật, tay trái khi không; clip thân ghi góc cả hai tay", () => {
+    for (const yaw of [90, 270]) {
+      const { rt } = run(yaw, "farHand");
+      const flip = rt.cast[0].rightFar === true;
+      const far = flip ? "right" : "left";
+      const near = flip ? "left" : "right";
+      const s = clipSides(rt, "a", 1, 0, 0.5)!;
+      expect(s[far]).toEqual({ arm: false, hand: true });
+      expect(s[near]).toEqual({ arm: false, hand: false });
+      const body = clipSides(rt, "a", 0, 0, 0.5)!;
+      expect(body.right).toEqual({ arm: true, hand: false });
+      expect(body.left).toEqual({ arm: true, hand: false });
+    }
+  });
+
+  it('hành động `sides: "anatomical"` ghi kênh gần vào tay phải ở mọi phía', () => {
+    for (const yaw of [90, 270]) {
+      const s = clipSides(run(yaw, "rightHand").rt, "a", 1, 0, 0.5)!;
+      expect(s.right.hand).toBe(true);
+      expect(s.left.hand).toBe(false);
+    }
   });
 });

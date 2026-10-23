@@ -149,6 +149,28 @@ describe("sceneWithHands", () => {
     assert.deepEqual(next, disk);
     assert.equal("items" in next, false);
   });
+  it("lấy `tracks` của bản studio: xoá clip, bỏ track, đổi hành động", () => {
+    const withTracks = {
+      a: 1,
+      cast: [
+        {
+          id: "x",
+          world: { at: [0, 0, 0], hands: [{ t: 0 }] },
+          tracks: [
+            { name: "than", clips: [{ action: "stand", start: 0 }] },
+            { name: "tay", clips: [{ action: "tay-xa", start: 0 }] },
+          ],
+        },
+      ],
+    };
+    const tracks = [{ name: "than", clips: [{ action: "ngoi", start: 0 }] }];
+    const edited = structuredClone(withTracks);
+    edited.cast[0].tracks = tracks;
+    assert.deepEqual(sceneWithHands(withTracks, edited).cast[0].tracks, tracks);
+    assert.equal(sceneWithHands(withTracks, edited).cast[0].world.hands.length, 1);
+    edited.cast[0].id = "y";
+    assert.throws(() => sceneWithHands(withTracks, edited), /chỉ ghi/);
+  });
   it("bản studio đổi phần khác thì từ chối", () => {
     assert.throws(() => sceneWithHands(disk, { ...disk, a: 2 }), /chỉ ghi/);
     assert.throws(() => sceneWithHands(disk, { a: 1, cast: [] }), /chỉ ghi/);
@@ -357,6 +379,24 @@ describe("stickman studio: /api/scene, /api/held, /api/hands", { timeout: 120_00
     r = await post("/api/scene?name=thu-tay", { hash: j.hash, scene: { ...j.raw, items: [] } });
     assert.equal(r.status, 200, (await r.json()).error);
     assert.deepEqual((await load()).raw.items, []);
+  });
+
+  it("xoá track của một người: chỉ track ấy mất khỏi chữ, phần khác giữ từng byte", async () => {
+    const was = JSON.parse(readFileSync(file("thu-tab"), "utf8"));
+    const T0 = `${JSON.stringify(was, null, "\t")}\n`;
+    const more = structuredClone(was);
+    const first = more.cast[0].tracks[0].clips[0];
+    more.cast[0].tracks.push({ name: "tay", clips: [{ action: first.action, start: 0 }] });
+    writeFileSync(file("thu-tab"), `${JSON.stringify(more, null, "\t")}\n`);
+    const j = await load("thu-tab");
+    j.raw.cast[0].tracks.pop();
+    const r = await post("/api/scene?name=thu-tab", { hash: j.hash, scene: j.raw });
+    assert.equal(r.status, 200, (await r.json()).error);
+    assert.equal(readFileSync(file("thu-tab"), "utf8"), T0);
+    const k = await load("thu-tab");
+    k.raw.cast[0].equip = { torso: "x" };
+    const bad = await post("/api/scene?name=thu-tab", { hash: k.hash, scene: k.raw });
+    assert.equal(bad.status, 400);
   });
 
   it("/api/hands: dáng mới (`hash: null`), trùng thì 409, sửa kiểm hash, tên và schema sai thì 400", async () => {
