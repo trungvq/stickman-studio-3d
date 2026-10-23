@@ -1101,7 +1101,7 @@ E(φ) = ½ (turn/90)² + (bend/50)² + ½ (dev/20)²                     cổ ta
   mẫu giải như thường. Khung vẽ lấy `φ` của chuỗi (hay của lần cầm theo mốc) rồi kéo về `φ(elbow)` theo phần khoá, đường ngắn
   trên vòng (`lockPhi`): phần khoá `1` là đúng hướng khoá dù giây ấy không trùng mẫu hay mốc món. Lựa chọn chỗ cầm
   (`chooseMissing`) vẫn giải với khuỷu tự do.
-- Hằng số: `w_down 0,3`, `w_body 10`, `w_cont 2` (khuỷu của tay trượt đổi ≤ 2,5° mỗi mẫu), `w_in 20`, `IN_FREE 0`.
+- Hằng số: `w_down 0,3`, `w_body 10`, `w_cont 2` (tay trượt ca 5 của bước 0: khuỷu đổi ≤ 3,2° mỗi mẫu, đều), `w_in 20`, `IN_FREE 0`.
 - **`inward`** (`elbowInward`): khuỷu lệch khỏi đường vai → cổ tay, chiếu vuông góc đường ấy, chia `l₁`; lấy số lớn hơn
   của hai phần: phần lên trên `u`, và phần về giữa thân (ngược hướng ra ngoài phía tay ấy của hông) nhân sin góc trục với
   phương đứng rồi cộng `min(0, u)`. Tay buông thõng mà cẳng tay chạy ra ngoài (viết ở bàn bên cạnh) không tính; khuỷu nằm dưới
@@ -1112,8 +1112,18 @@ E(φ) = ½ (turn/90)² + (bend/50)² + ½ (dev/20)²                     cổ ta
   vẫn chọn nghiệm rẻ nhất, `check` báo `elbow`.
 - **`w_body`** lấy mẫu dọc tay từ `1,5 · cap` của vai trở đi (`cap` là bán kính nắp vai, `ArmRoom.cap`). Lấn bắp tay trừ mức
   nền của tay buông thõng ở cùng phần dọc bắp tay (đo một lần mỗi người, mỗi tư thế thân; áo có thể tới 4,4).
-- Tìm `φ`: lưới 10° cả vòng, rồi chia đôi `±5°`, `±2,5°` (40 lần thử). Mỗi lần thử chỉ dựng hai đoạn tay và đọc góc cổ tay,
-  không giải lại cả người: 0,008 ms một lần thử, 0,38 ms giải `φ` một mẫu.
+- Tìm `φ`: lưới 10° cả vòng, rồi chia đôi `±5°`, `±2,5°`, rồi `refineMin` (`graspArm.ts`) cho góc liên tục giữa các nấc:
+  đi tiếp từng nấc `2,5°` tới khi hai lân cận không thấp hơn, thử đỉnh parabol qua ba điểm ấy (`parabolaMin`), nhận nếu
+  không tệ hơn. Giá thật ở đỉnh lệch giá parabol đoán dưới `PARABOLA_TRUST` (`0,25`) mức đoán bớt được thì xong (41 lần
+  thử); giá gãy khúc (lấn, phần vượt kẹp), cực tiểu ở mép hay ba điểm phẳng thì chia đôi tiếp từ `±1,25°` tới
+  `REFINE_TOL` (`1/8°`, mỗi nấc thử phía kia chỉ khi phía đầu không thấp hơn; tới chừng 50 lần thử). Món trôi chậm thì `φ`
+  trôi theo chứ không nhảy từng nấc lưới. Mỗi lần thử chỉ dựng hai đoạn tay và đọc góc cổ tay, không giải lại cả người:
+  0,008 ms một lần thử, chừng 0,4 ms giải `φ` một mẫu.
+- **Tay dẫn, tay đỡ** (món theo bàn tay, không có mốc món) không giải `E(φ)`: `act3` dò xoay khuỷu quanh trục vai → cổ tay
+  trong `±AIM_SWIVEL` (hay tầm `HOLD_SWIVEL_SLEW` quanh mẫu trước), giá là lệch ý định của món cộng giá xoay khỏi `elbow`
+  đã khai. Dò bằng lưới `SWIVEL_STEP` (`15°`), chia đôi tới `1,875°`, rồi cùng `refineMin` ấy (lân cận ngoài tầm thì lấy mép
+  tầm), nên đích tay trôi theo nhịp thở thì khuỷu, cổ tay và món trôi đều. Khuỷu khoá (`elbowLock`) lấy góc dò nhân phần
+  không khoá như thường; phần khoá `1` không dò.
 - **Tất định**: lần cầm hai tay giải `φ` ở các mẫu cách `HOLD_SLEW_STEP` (`heldItem.ts`) tính từ đầu lần cầm, `φ_trước` là mẫu
   liền trước; `φ(t)` hoà giữa hai mẫu kề. Lần cầm theo mốc giải `φ` ở từng mốc (mục [Lần cầm theo mốc](#lần-cầm-theo-mốc)). Mẫu đầu của một lần cầm lấy `φ_trước` là mẫu cuối của lần cầm liền trước trên cùng
   tay (nếu có; lần cầm trước theo mốc thì `φ` của nó ở ranh giới); lần cầm đầu tiên thì bỏ số hạng. Nhớ theo runtime (`graspRuns`, một `WeakMap<SceneRuntime, …>` trong `scene.ts`); Remotion

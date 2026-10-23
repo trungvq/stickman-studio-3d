@@ -2146,7 +2146,8 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 
 - **Rig giải mỗi khung** (`aimWrist`): lòng tay chỉ phụ thuộc xoay và gập cổ tay (lệch cổ tay không đổi pháp tuyến lòng tay)
   nên hai góc ấy giải đúng; ngón lấy thêm lệch cổ tay (số thứ ba của tay, kênh nâng, `AIM_DEV` `−30..20`, dương về phía ngón cái) và, khi tay theo đích,
-  xoay khuỷu quanh trục vai → cổ tay tới `±AIM_SWIVEL` (`90`), ưu tiên gần hướng khuỷu đã khai — mốc `world.hands` khoá khuỷu
+  xoay khuỷu quanh trục vai → cổ tay tới `±AIM_SWIVEL` (`90`; dò lưới `15°`, chia đôi, rồi đỉnh parabol hay chia đôi tiếp
+  tới `1/8°` — góc liên tục, [11](11-nhom-cam.md#khuỷu-tự-nhiên)), ưu tiên gần hướng khuỷu đã khai — mốc `world.hands` khoá khuỷu
   (`elbowLock`, [03](03-scene.md#đích-bàn-tay-thế-giới)) thì không xoay phần khoá. Kẹp trong `turn` `−90..90`,
   `bend` `AIM_BEND` `−60..70` (âm là ngửa) — hẹp hơn tầm khớp người thật chút ít, quá đó cổ tay khối của người que trông
   gãy —; ngoài tầm thì lấy chỗ gần nhất trong

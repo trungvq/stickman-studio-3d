@@ -382,7 +382,79 @@ export function evalPhi(
   };
 }
 
-/** `φ` tốt nhất: lưới 10° cả vòng, rồi chia đôi `±5°`, `±2,5°` (40 lần thử); hoà thì lấy lần thử trước */
+/**
+ * Đỉnh parabol qua `(x0, y0)`, `(x1, y1)`, `(x2, y2)` (`x0 < x1 < x2`) khi `y1` thấp nhất trong ba và parabol lồi: chỗ `x`
+ * trong `[x0, x2]` và giá parabol đoán ở đó `y`; ba điểm phẳng hay không kẹp cực tiểu thì `undefined`
+ */
+export function parabolaMin(
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+): { x: number; y: number } | undefined {
+  if (!(x0 < x1 && x1 < x2) || y1 > y0 || y1 > y2) return undefined;
+  const d0 = (y1 - y0) / (x1 - x0);
+  const c = ((y2 - y1) / (x2 - x1) - d0) / (x2 - x0);
+  if (!(c > 0)) return undefined;
+  const x = Math.max(x0, Math.min(x2, (x0 + x1) / 2 - d0 / (2 * c)));
+  return { x, y: y0 + d0 * (x - x0) + c * (x - x0) * (x - x1) };
+}
+
+/** Nấc nhỏ nhất (độ) của bước chia đôi trong `refineMin`: giá gãy khúc thì góc lệch chỗ gãy dưới hai lần ngần này */
+export const REFINE_TOL = 1 / 8;
+/** Giá thật ở đỉnh parabol lệch giá parabol đoán dưới phần này của mức đoán bớt được thì tin đỉnh, không chia đôi tiếp */
+const PARABOLA_TRUST = 0.25;
+
+/**
+ * Cực tiểu liên tục của `cost(f(x))` quanh `x` (chỗ tốt nhất của một lần dò lưới, nấc cuối `step`) trong `[l, h]`: đi tiếp
+ * từng nấc `step` tới khi hai lân cận không thấp hơn (lân cận ngoài tầm thì lấy mép tầm), rồi đỉnh parabol qua ba điểm
+ * ấy. Giá trơn thì đỉnh là xong; giá gãy khúc (giá thật ở đỉnh lệch mức parabol đoán quá `PARABOLA_TRUST`), cực tiểu
+ * ở mép hay ba điểm phẳng thì chia đôi tiếp từ `step / 2` tới `REFINE_TOL`. Đích trôi chậm thì góc trôi theo chứ không nhảy từng
+ * nấc lưới. `f` nên nhớ kết quả: lân cận thường đã thử ở lượt dò
+ */
+export function refineMin<T>(
+  f: (x: number) => T,
+  cost: (c: T) => number,
+  x: number,
+  step: number,
+  l = -Infinity,
+  h = Infinity,
+): { x: number; c: T } {
+  let best = { x, c: f(x) };
+  const take = (y: number) => {
+    if (y < l || y > h) return;
+    const c = f(y);
+    if (cost(c) < cost(best.c) - 1e-9) best = { x: y, c };
+  };
+  let was: typeof best | undefined;
+  for (let k = 0; k < 4 && was !== best; k++) {
+    was = best;
+    take(best.x - step);
+    take(best.x + step);
+  }
+  const x0 = Math.max(l, best.x - step);
+  const x2 = Math.min(h, best.x + step);
+  const y1 = cost(best.c);
+  const v = parabolaMin(x0, cost(f(x0)), best.x, y1, x2, cost(f(x2)));
+  if (v && v.x !== best.x) {
+    const c = f(v.x);
+    if (cost(c) <= y1) best = { x: v.x, c };
+    if (Math.abs(cost(c) - v.y) <= PARABOLA_TRUST * (y1 - v.y)) return best;
+  }
+  for (let s = step / 2; s >= REFINE_TOL; s /= 2) {
+    const at = best;
+    take(best.x - s);
+    if (best === at) take(best.x + s);
+  }
+  return best;
+}
+
+/**
+ * `φ` tốt nhất: lưới 10° cả vòng, rồi chia đôi `±5°`, `±2,5°`, rồi `refineMin` (41–50 lần thử); hoà thì lấy lần thử
+ * trước
+ */
 export function solvePhi(
   inp: ArmInput,
   Wp: V3,
@@ -392,7 +464,13 @@ export function solvePhi(
   elbow?: ElbowDir,
 ): ArmSol {
   let n = 0;
-  const ev = (p: number) => (n++, evalPhi(inp, Wp, Rw, p, phiPrev, other, elbow));
+  const seen = new Map<number, ArmSol>();
+  const ev = (p: number) => {
+    const k = Math.round(wrap(p) * 1e9);
+    let c = seen.get(k);
+    if (!c) seen.set(k, (c = (n++, evalPhi(inp, Wp, Rw, p, phiPrev, other, elbow))));
+    return c;
+  };
   let best = ev(-180);
   const take = (c: ArmSol) => {
     if (c.E < best.E - 1e-12) best = c;
@@ -403,6 +481,7 @@ export function solvePhi(
     take(ev(c0 - step));
     take(ev(c0 + step));
   }
+  best = refineMin(ev, (c) => c.E, best.phi, 2.5).c;
   return { ...best, tries: n };
 }
 

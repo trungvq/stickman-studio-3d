@@ -45,7 +45,15 @@ import {
 } from "./graspSolve";
 import { handDims, type HandDims } from "./heldGeom";
 import { holdFrom, holdHand, holdLinkFrame, inheritHold, type HoldLinkHand } from "./holdLink";
-import { armInput, evalPhi, phiOf, type ArmInput, type ArmSeg, type ArmSol } from "./graspArm";
+import {
+  armInput,
+  evalPhi,
+  refineMin,
+  phiOf,
+  type ArmInput,
+  type ArmSeg,
+  type ArmSol,
+} from "./graspArm";
 import { REACH_ELBOW } from "./ik";
 import {
   fromColumns,
@@ -505,6 +513,8 @@ export function plainActing<T extends ActInput>(sp: T): T {
 /** Khuỷu được xoay quanh trục vai → cổ tay tới ngần này độ khi hành động khai hướng ngón, để ngón theo được hướng ấy */
 export const AIM_SWIVEL = 90;
 const SWIVEL_STEP = 15;
+/** Nấc cuối của bước chia đôi khi dò xoay khuỷu, trước `refineMin` */
+const SWIVEL_FINE = SWIVEL_STEP / 8;
 /** Giá mỗi độ xoay khuỷu khỏi hướng đã khai, quy ra độ lệch của lòng tay */
 const SWIVEL_COST = 0.08;
 /**
@@ -1407,26 +1417,25 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
           for (const aim of [aimB, aimW]) if (aim) cost += solveAim(aim, tbd, B, h, true).cost;
           return { cost, a, el };
         };
-        /** Dò xoay khuỷu trong `[l, h]`: lưới `SWIVEL_STEP` rồi chia đôi quanh chỗ tốt nhất */
+        /** Dò xoay khuỷu trong `[l, h]`: lưới `SWIVEL_STEP`, chia đôi quanh chỗ tốt nhất tới `SWIVEL_FINE`, rồi `refineMin` */
         const search = (l: number, h: number, edges: boolean) => {
-          let best = tryAt(Math.max(l, Math.min(h, 0)));
-          for (let a = -AIM_SWIVEL; a <= AIM_SWIVEL; a += SWIVEL_STEP) {
-            if (a < l || a > h) continue;
-            const c = tryAt(a);
+          const seen = new Map<number, ReturnType<typeof tryAt>>();
+          const at = (a: number) => {
+            let c = seen.get(a);
+            if (!c) seen.set(a, (c = tryAt(a)));
+            return c;
+          };
+          let best = at(Math.max(l, Math.min(h, 0)));
+          const take = (a: number) => {
+            if (a < l || a > h) return;
+            const c = at(a);
             if (c.cost < best.cost - 1e-9) best = c;
-          }
-          if (edges)
-            for (const a of [l, h]) {
-              const c = tryAt(a);
-              if (c.cost < best.cost - 1e-9) best = c;
-            }
-          for (let step = SWIVEL_STEP / 2; step >= 1; step /= 2)
-            for (const a of [best.a - step, best.a + step])
-              if (a >= l && a <= h) {
-                const c = tryAt(a);
-                if (c.cost < best.cost - 1e-9) best = c;
-              }
-          return best;
+          };
+          for (let a = -AIM_SWIVEL; a <= AIM_SWIVEL; a += SWIVEL_STEP) take(a);
+          if (edges) [l, h].forEach(take);
+          for (let step = SWIVEL_STEP / 2; step >= SWIVEL_FINE; step /= 2)
+            [best.a - step, best.a + step].forEach(take);
+          return refineMin(at, (c) => c.cost, best.a, SWIVEL_FINE, l, h).c;
         };
         let best = search(-AIM_SWIVEL, AIM_SWIVEL, false);
         // khuỷu mang món nhảy xa mẫu trước: dò lại trong tầm đi được

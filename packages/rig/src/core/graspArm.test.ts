@@ -83,11 +83,11 @@ describe("graspArm", () => {
       }
   });
 
-  it("giải φ bằng đúng 40 lần thử, tất định", () => {
+  it("giải φ bằng 41 lần thử (lưới, chia đôi, đỉnh parabol), tất định", () => {
     const { Wp, Rw } = handOf(fx.ca.c1, RIGHT);
     const a = solvePhi(inR, Wp, Rw);
     const b = solvePhi(inR, Wp, Rw);
-    expect(a.tries).toBe(40);
+    expect(a.tries).toBe(41);
     expect(b).toEqual(a);
   });
 
@@ -142,7 +142,7 @@ describe("graspArm", () => {
     expect(evalPhi(bare, Wp, Rsh, x.phi).body).toBeCloseTo(fx.ca.restAllowMax, 1);
   });
 
-  it("tay trượt (ca 5, tay trái): hai mẫu liền lệch ≤ 2,5°, khớp bước 0", () => {
+  it("tay trượt (ca 5, tay trái): hai mẫu liền lệch ≤ 3,5°, đổi đều, khớp bước 0", () => {
     const L = fx.ca.c5Left;
     const at = (t: number) => {
       const i = Math.round(t / HOLD_SLEW_STEP);
@@ -152,8 +152,10 @@ describe("graspArm", () => {
     };
     const chain = phiChain(0, 0.6, at);
     expect(chain).toHaveLength(L.length);
+    const step = (i: number) => wrapD(chain[i].sol.phi - chain[i - 1].sol.phi);
     for (let i = 1; i < chain.length; i++) {
-      expect(Math.abs(wrapD(chain[i].sol.phi - chain[i - 1].sol.phi))).toBeLessThanOrEqual(2.5);
+      expect(Math.abs(step(i))).toBeLessThanOrEqual(3.5);
+      if (i > 1) expect(Math.abs(step(i) - step(i - 1))).toBeLessThanOrEqual(1.5);
       expect(chain[i].sol.terms.cont).toBeGreaterThanOrEqual(0);
     }
     expect(chain[0].sol.terms.cont).toBe(0);
