@@ -45,11 +45,7 @@ import {
   editKey,
   handShape,
   handsOf,
-  handValueAt,
   holdPickOf,
-  insertHandKey,
-  insertItemKey,
-  itemValueAt,
   keyTime,
   keyValue,
   marksOf,
@@ -64,6 +60,8 @@ import {
   type Json,
   type KeyRef,
 } from "./keys";
+import { record, travel } from "./history";
+import { plusHand, plusItem } from "./plus";
 import { KeyTrack, type Band, type Lane } from "./track";
 
 type Data = {
@@ -78,6 +76,7 @@ type WorldOf = (name: string, ctx: WorldCtx) => World3D | null;
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const ui = {
   header: document.querySelector("header") as HTMLElement,
+  footer: document.querySelector("footer") as HTMLElement,
   scene: $<HTMLInputElement>("scene"),
   scenes: $<HTMLDataListElement>("scenes"),
   reload: $<HTMLButtonElement>("reload"),
@@ -224,7 +223,8 @@ function castData(scene: SceneData, characters: Record<string, CharacterData>) {
   return { heights, bodies, chars };
 }
 
-function build(name: string, scene: SceneData, data: Data) {
+/** Runtime của cảnh (`resolveScene`), không dựng lưới */
+function runtimeOf(scene: SceneData, data: Data) {
   const { heights, bodies, chars } = castData(scene, data.characters);
   const runtime = rig.resolveScene(
     scene,
@@ -237,6 +237,11 @@ function build(name: string, scene: SceneData, data: Data) {
   );
   // mốc món `rest` tra tay người thả ở `rt.chars`, như `loadScene` của render
   runtime.chars = { ...chars, ...runtime.chars };
+  return { runtime, heights, bodies };
+}
+
+function build(name: string, scene: SceneData, data: Data) {
+  const { runtime, heights, bodies } = runtimeOf(scene, data);
   const ctx = { id: name, scene, runtime, characters: data.characters, heights, bodies };
   const worldOf = world.worldOf;
   const w = typeof worldOf === "function" ? worldOf(scene.name, ctx) : null;
@@ -310,6 +315,8 @@ interface LoadOptions {
   keepWork?: boolean;
   /** Dựng lại cả cảnh, không làm mới tại chỗ */
   full?: boolean;
+  /** Nạp xong thì giữ lời báo đang hiện (lời báo của thao tác vừa áp), cảnh báo nối thêm */
+  quiet?: boolean;
 }
 
 /** Nạp cảnh; `false` khi hỏng hay đã có lần nạp sau */
@@ -317,7 +324,13 @@ async function load(name: string, o: LoadOptions = {}): Promise<boolean> {
   const my = ++loading;
   playing = false;
   ui.play.textContent = "▶";
-  say(`Đang nạp ${name}…`);
+  const shown = ui.msg.textContent ?? "";
+  if (!o.quiet) say(`Đang nạp ${name}…`);
+  const done = (warnings: string[]) =>
+    o.quiet
+      ? warnings.length &&
+        say([ui.msg.textContent || shown, ...warnings].filter(Boolean).join("\n"))
+      : say(warnings.join("\n"));
   try {
     const j: Scene3Json =
       o.reuse && fetched?.name === name
@@ -350,7 +363,7 @@ async function load(name: string, o: LoadOptions = {}): Promise<boolean> {
     >;
     if (!o.full && cur?.name === name && cur.key === key && restage(scene)) {
       cur.held = held;
-      say(warnings.join("\n"));
+      done(warnings);
       syncEdit();
       return true;
     }
@@ -395,7 +408,7 @@ async function load(name: string, o: LoadOptions = {}): Promise<boolean> {
     if (mode === "free" && !o.keepTime) seedFree();
     const gpu = /SwiftShader/.test(stage.gpu) ? " · ⚠ vẽ phần mềm" : "";
     ui.status.textContent = `${from === "world" ? "cảnh của repo" : "plainRoom (cảnh không có trong worldOf)"} · ${scene.cast.length} người${gpu}`;
-    say(warnings.join("\n"));
+    done(warnings);
     dirty = true;
     remember();
     syncEdit();
@@ -1070,13 +1083,15 @@ const track = new KeyTrack(
 
 /**
  * Áp JSON thô mới của cảnh: parse, làm mới tại chỗ (`restage`; không được thì dựng lại cả cảnh). Hỏng thì giữ bản cũ, báo
- * lỗi. `history: false` là bước hoàn tác / làm lại
+ * lỗi (dựng lại cả cảnh hỏng thì về bản trước, lời báo lỗi còn lại). Không đổi gì thì không thành bước (`record`).
+ * `history: false` là bước hoàn tác / làm lại
  */
 function apply(next: Json, o: { key?: KeyRef | null; history?: boolean } = {}): boolean {
   if (!work || !cur) return false;
   // hết mốc món mà bản lưu không có `items`: bỏ khoá, như bản lưu
   if (Array.isArray(next.items) && !next.items.length && !("items" in JSON.parse(work.saved)))
     delete next.items;
+  const prev = JSON.stringify(work.raw);
   const parsed = rig.parseScene(next);
   if (!parsed.success) {
     const why = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
@@ -1092,22 +1107,23 @@ function apply(next: Json, o: { key?: KeyRef | null; history?: boolean } = {}): 
     syncEdit();
     return false;
   }
-  const prev = JSON.stringify(work.raw);
-  if (o.history !== false) {
-    work.undo.push(prev);
-    work.redo = [];
-  }
+  const stacks = { undo: [...work.undo], redo: [...work.redo] };
+  if (o.history !== false) record(work, prev, JSON.stringify(next));
   work.raw = next;
   if (o.key !== undefined) picked = o.key;
   say("");
   if (!fresh) {
     const name = work.name;
-    void load(name, { keepTime: true, reuse: true, full: true }).then((ok) => {
-      if (ok || !work || work.name !== name) return;
-      // cảnh dựng không được: về bản trước
+    void load(name, { keepTime: true, reuse: true, full: true, quiet: true }).then(async (ok) => {
+      if (ok || !work || work.name !== name || JSON.stringify(work.raw) !== JSON.stringify(next))
+        return;
+      // cảnh dựng không được: về bản trước, giữ lời báo lỗi của lần dựng hỏng
+      const why = (ui.msg.textContent ?? "").split(/\n\s+at /)[0];
       work.raw = JSON.parse(prev);
-      if (o.history !== false) work.undo.pop();
-      void load(name, { keepTime: true, reuse: true, full: true });
+      Object.assign(work, stacks);
+      await load(name, { keepTime: true, reuse: true, full: true });
+      say(`không áp được (dựng lại cảnh hỏng, đã về bản trước): ${why}`, true);
+      syncEdit();
     });
   }
   syncEdit();
@@ -1117,14 +1133,9 @@ function apply(next: Json, o: { key?: KeyRef | null; history?: boolean } = {}): 
 /** Hoàn tác (`back`) / làm lại một bước của lịch sử chung */
 function step(back: boolean) {
   if (!work || editor) return;
-  const from = back ? work.undo : work.redo;
-  const to = back ? work.redo : work.undo;
-  if (!from.length) return;
-  const now = JSON.stringify(work.raw);
-  if (!apply(JSON.parse(from[from.length - 1]), { history: false })) return;
-  from.pop();
-  to.push(now);
-  say(back ? "đã hoàn tác" : "đã làm lại");
+  const w = work;
+  if (travel(w, back, JSON.stringify(w.raw), (to) => apply(JSON.parse(to), { history: false })))
+    say(back ? "đã hoàn tác" : "đã làm lại");
   syncEdit();
 }
 
@@ -1139,6 +1150,7 @@ function syncEdit() {
   document.title = `${d ? "● " : ""}${work?.name ?? "Studio 3D"} — Studio 3D`;
   for (const b of ui.edMode.querySelectorAll<HTMLButtonElement>("button"))
     b.classList.toggle("on", b.dataset.m === edMode);
+  ui.footer.classList.toggle("hands", edMode === "hands");
   if (picked && (!work || keyValue(work.raw, picked) === undefined)) picked = null;
   if (picked?.kind === "hand" && sel && picked.id !== sel.id) picked = null;
   if (!cur || !work || edMode !== "hands") {
@@ -1278,7 +1290,8 @@ const cardHost = {
       say((err as Error).message, true);
     }
   },
-  hold(h: HoldPick | null | undefined) {
+  hold(h: HoldPick | null | undefined, what?: "item" | "group" | "variant") {
+    if (what === "item" && h) return pickGroup(h);
     editPicked((m) => {
       if (!m && h === undefined) return;
       const o = m ?? {};
@@ -1311,59 +1324,107 @@ const cardHost = {
   },
 };
 
+/**
+ * Đổi món của `hold` ở thẻ: thử nhóm đang chọn rồi lần lượt các nhóm khác, áp nhóm đầu tiên mà cảnh dựng và giải được tay
+ * ở mốc ấy; không nhóm nào được thì không áp, báo lỗi của nhóm đang chọn
+ */
+function pickGroup(h: HoldPick) {
+  if (!work || !cur || picked?.kind !== "hand") return;
+  const k = picked;
+  const at = keyTime(work.raw, k);
+  let first: string | undefined;
+  for (const group of [h.group, ...rig.GROUP_IDS.filter((g) => g !== h.group)]) {
+    try {
+      const next = editKey(work.raw, k, (m) => {
+        const o = m ?? {};
+        setHold(o, { item: h.item, group });
+        touch(o);
+        return o;
+      });
+      drawnHand(rebuildRaw(next), k.id, k.side, at, charOf(k.id));
+      if (apply(next, { key: k }) && group !== h.group)
+        say(`${h.item} không cầm được kiểu \`${h.group}\` (${first}): đã chọn nhóm \`${group}\``);
+      return;
+    } catch (e) {
+      first ??= (e as Error).message;
+    }
+  }
+  say(`không đổi được món sang ${h.item}: ${first}`, true);
+  syncEdit();
+}
+
 /** Nhân vật như vẽ và mắt ống kính (thế giới rig) cho `handReport` */
 function charOf(id: string) {
   const p = cur!.stage.camera.position;
   return { char: cur!.posed[id]?.body, eye: [p.x / rig.U, -p.y / rig.U, -p.z / rig.U] };
 }
 
-/** Nút ＋ của hàng: mốc mới ở giây đang xem, giá trị như đang vẽ (`handValueAt`, `itemValueAt`), `ease: "auto"` */
+/** Runtime của JSON thô `raw` trên dữ liệu đã dựng cảnh: để đo mốc mới trước khi áp */
+function rebuildRaw(raw: Json): SceneRuntime {
+  const p = rig.parseScene(raw);
+  if (!p.success) throw new Error(`scene JSON sai: ${p.error.message}`);
+  return runtimeOf(p.data, cur!.data).runtime;
+}
+
+/**
+ * Nút ＋ của hàng: mốc mới ở giây đang xem, `ease: "auto"`, hình ở giây ấy giữ nguyên (`plus.ts`: dựng lại, đo, bù `at`);
+ * không giữ được thì chặn kèm lời báo
+ */
 function addKey(lane: string) {
   if (!work || !cur || !sel) return;
   const id = sel.id;
   const at = t;
   const marks = marksOf(work.raw);
-  try {
-    if (lane === "item") {
-      const side = sideOf(sel.side);
-      const run = runAt(rig.holdRuns(cur.rt, id)[side], at, cur.dur);
-      if (!run) return say(`tay ${SIDE_NAME[side]} không cầm món ở ${at.toFixed(2)} s`, true);
-      if (run.mode === "hand")
-        return say("lần cầm đồ theo tay: món theo bàn tay, không có mốc món", true);
-      const have = ((work.raw.items as Json[] | undefined) ?? []).findIndex(
-        (m) => m.item === run.item && Math.abs(timeOf(m.t, marks) - at) < 5e-4,
-      );
-      if (have >= 0) {
-        picked = { kind: "item", index: have };
-        syncEdit();
-        return say("món đã có mốc ở giây này: sửa ở thẻ mốc");
-      }
-      const p = drawnItem(cur.rt, id, side, run.item, at, { char: charOf(id).char });
-      if (!p) return say(`không thấy ${run.item} đang vẽ ở ${at.toFixed(2)} s`, true);
-      const r = insertItemKey(work.raw, at, itemValueAt(id, run.item, p.at, p.face, p.roll));
-      if (apply(r.raw, { key: r.key })) say(`đã thêm mốc món ${run.item} ${at.toFixed(2)} s`);
-      return;
-    }
-    const side = lane as HandSide;
-    selectSide(id, side);
-    const have = (handsOf(work.raw, id) ?? []).findIndex(
-      (k) => k[side] !== undefined && Math.abs(timeOf(k.t, marks) - at) < 5e-4,
-    );
-    if (have >= 0) {
-      picked = { kind: "hand", id, side, index: have };
-      syncEdit();
-      return say("tay đã có mốc ở giây này: sửa ở thẻ mốc");
-    }
-    const d = drawnHand(cur.rt, id, side, at, charOf(id));
-    if (!d) return say(`${id} không có \`world\``, true);
-    const { value, notes } = handValueAt(work.raw, id, side, at, d);
-    const r = insertHandKey(work.raw, id, side, at, value);
-    added = { key: r.key, notes };
-    if (apply(r.raw, { key: r.key }))
-      say(`đã thêm mốc ${at.toFixed(2)} s${notes.length ? ` — ${notes.join("; ")}` : ""}`);
-  } catch (e) {
-    say((e as Error).message, true);
+  const side = lane === "item" ? sideOf(sel.side) : (lane as HandSide);
+  if (lane !== "item") selectSide(id, side);
+  const have =
+    lane === "item"
+      ? -1
+      : (handsOf(work.raw, id) ?? []).findIndex(
+          (k) => k[side] !== undefined && Math.abs(timeOf(k.t, marks) - at) < 5e-4,
+        );
+  if (have >= 0) {
+    picked = { kind: "hand", id, side, index: have };
+    syncEdit();
+    return say("tay đã có mốc ở giây này: sửa ở thẻ mốc");
   }
+  const run = runAt(rig.holdRuns(cur.rt, id)[side], at, cur.dur);
+  if (lane === "item") {
+    if (!run) return say(`tay ${SIDE_NAME[side]} không cầm món ở ${at.toFixed(2)} s`, true);
+    if (run.mode === "hand")
+      return say("lần cầm đồ theo tay: món theo bàn tay, không có mốc món", true);
+    const hit = ((work.raw.items as Json[] | undefined) ?? []).findIndex(
+      (m) => m.item === run.item && Math.abs(timeOf(m.t, marks) - at) < 5e-4,
+    );
+    if (hit >= 0) {
+      picked = { kind: "item", index: hit };
+      syncEdit();
+      return say("món đã có mốc ở giây này: sửa ở thẻ mốc");
+    }
+  }
+  say("đang thêm mốc: dựng lại cảnh để đo…");
+  const raw = work.raw;
+  const o = { ...charOf(id), rebuild: rebuildRaw, fps: FPS, dur: cur.dur };
+  // để thanh trạng thái kịp vẽ lời chờ: đo có thể mất vài trăm ms
+  setTimeout(() => {
+    if (!work || !cur || work.raw !== raw) return;
+    try {
+      const r =
+        lane === "item"
+          ? plusItem(raw, cur.rt, id, side, run!.item, at, o)
+          : plusHand(raw, cur.rt, id, side, at, o);
+      added = { key: r.key, notes: r.notes };
+      const gap = Object.entries(r.gap)
+        .map(([k, v]) => `${{ grip: "tâm nắm", wrist: "cổ tay", item: "món" }[k]} ${v!.toFixed(2)}`)
+        .join(", ");
+      if (apply(r.raw, { key: r.key }))
+        say(
+          `đã thêm mốc ${lane === "item" ? `món ${run!.item} ` : ""}${at.toFixed(2)} s (lệch ${gap} px)${r.notes.length ? ` — ${r.notes.join("; ")}` : ""}`,
+        );
+    } catch (e) {
+      say((e as Error).message, true);
+    }
+  }, 30);
 }
 
 function deletePicked() {
@@ -1416,6 +1477,48 @@ async function save() {
   }
 }
 
+/**
+ * Hộp 409, **Tải bản đĩa về**: bản đĩa thành một bước mới của lịch sử (hash mới, là bản đã lưu); Ctrl+Z quay lại bản của
+ * mình để so
+ */
+async function takeDisk() {
+  if (!work || !cur) return;
+  const w = work;
+  const name = w.name;
+  say(`Đang tải ${name} từ đĩa…`);
+  try {
+    const j: Scene3Json = await (await fetch(`/api/scene?name=${encodeURIComponent(name)}`)).json();
+    if (j.error) throw new Error(j.error);
+    if (work !== w) return;
+    const old = { raw: w.raw, hash: w.hash, saved: w.saved, undo: [...w.undo], redo: [...w.redo] };
+    const oldFetched = fetched;
+    record(w, JSON.stringify(w.raw), JSON.stringify(j.raw));
+    Object.assign(w, {
+      raw: structuredClone(j.raw) as Json,
+      hash: j.hash,
+      saved: JSON.stringify(j.raw),
+    });
+    fetched = { name, j };
+    ui.conflict.hidden = true;
+    // chỉ số mốc của bản đĩa khác bản mình
+    picked = null;
+    if (await load(name, { keepTime: true, reuse: true, full: true })) {
+      say("đã tải bản đĩa về (một bước mới): Ctrl+Z quay lại bản của mình để so");
+      return;
+    }
+    const why = ui.msg.textContent ?? "";
+    if (work !== w) return;
+    Object.assign(w, old);
+    fetched = oldFetched;
+    await load(name, { keepTime: true, reuse: true, full: true });
+    say(`bản đĩa không dựng được, giữ bản của mình: ${why}`, true);
+  } catch (e) {
+    say(`Tải bản đĩa không được: ${(e as Error).message}`, true);
+  } finally {
+    syncEdit();
+  }
+}
+
 /** Nạp lại từ đĩa (hỏi trước khi bỏ thay đổi chưa lưu); `full`: dựng lại cả cảnh, giữ bản đang sửa */
 function reload(full: boolean) {
   if (!cur) return;
@@ -1448,7 +1551,7 @@ ui.discard.onclick = () => {
   if (apply(JSON.parse(work.saved))) say("đã bỏ thay đổi");
 };
 ui.more.onclick = () => ui.header.classList.toggle("open");
-ui.cfLoad.onclick = () => cur && void load(cur.name, { keepTime: true });
+ui.cfLoad.onclick = () => void takeDisk();
 ui.cfKeep.onclick = () => (ui.conflict.hidden = true);
 ui.cfCopy.onclick = async () => {
   if (!work) return;
@@ -1614,6 +1717,7 @@ Object.assign(window, {
       return picked;
     },
     restage,
+    apply,
     seek,
     setEdMode,
     selectHand(id: string, side: HandSide) {
@@ -1623,6 +1727,8 @@ Object.assign(window, {
     addKey,
     drawn: (id: string, side: HandSide, at: number) =>
       cur && drawnHand(cur.rt, id, side, at, charOf(id)),
+    drawnItem: (id: string, side: HandSide, item: string, at: number) =>
+      cur && drawnItem(cur.rt, id, side, item, at, { char: charOf(id).char }),
     pick(k: KeyRef) {
       picked = k;
       seek(keyTime(work!.raw, k));

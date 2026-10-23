@@ -41,7 +41,10 @@ const poseOf = (rt: SceneRuntime, id: string, t: number) =>
     world?: { hands?: { near?: { w: number }; far?: { w: number } } };
   };
 
-/** Tay `side` của `id` ở `t` (`handReport`, phần đích của `sceneAt`); người không có `world` thì `undefined` */
+/**
+ * Tay `side` của `id` ở `t` (`handReport`, phần đích của `sceneAt`); đồ theo tay thì kèm hướng món đang vẽ (`axes`). Người
+ * không có `world` thì `undefined`
+ */
 export function drawnHand(
   rt: SceneRuntime,
   id: string,
@@ -56,8 +59,14 @@ export function drawnHand(
   const reach = sp.world?.hands?.[side === near ? "near" : "far"];
   const e = sub(r.joints.elbow, r.ring.center);
   const n = Math.hypot(...e);
+  const axes =
+    r.mode === "hand" && r.run
+      ? drawnItem(rt, id, side, r.run.item, t, { char: o.char, out: side === "right" ? -1 : 1 })
+      : undefined;
   return {
     mode: r.mode,
+    ...(axes && { axes: { face: axes.face, roll: axes.roll } }),
+    blending: r.blending,
     support: !!r.run?.lead,
     w: reach?.w ?? 0,
     grip: [...r.grip] as V3,
@@ -71,7 +80,8 @@ export function drawnHand(
 /**
  * Món `item` tay `side` của `id` đang cầm ở `t`, như vẽ: hai tay trên mốc món ở `itemAt`, còn lại theo bàn tay
  * (`actHeld`). `at` tâm hộp bao (thế giới rig); `face`, `roll` là trục `+z`, `+y` của khung món ra vectơ hệ thân người
- * cầm `[tiến, y xuống, ngang phải]` — như mốc món của `holdToItemLed`
+ * cầm `[tiến, y xuống, ngang]`, như `itemAxes` của `core/holdMode.ts`: `out` `-1` ngang phải (mốc món), ý định của `hold`
+ * thì ra ngoài phía tay cầm (`-1` phải, `1` trái)
  */
 export function drawnItem(
   rt: SceneRuntime,
@@ -79,7 +89,7 @@ export function drawnItem(
   side: HandSide,
   item: string,
   t: number,
-  o: { char?: ActCharacter } = {},
+  o: { char?: ActCharacter; out?: number } = {},
 ): { at: V3; face: V3; roll: V3 } | undefined {
   const sp = poseOf(rt, id, t);
   const base = rt.chars?.[id] as CharacterData | undefined;
@@ -103,9 +113,10 @@ export function drawnItem(
   const d = matVec(R, [q[0] * s, q[1] * s, q[2] * s]);
   const Rr = holderTrunk(rt, id, t, { chars: { [id]: c } }).Rr as M3;
   const R3 = flipRows(R);
+  const out = o.out ?? -1;
   const body = (v: V3): V3 => {
     const l = trVec(Rr, v);
-    return [l[2], -l[1], -l[0]];
+    return [l[2], -l[1], out * l[0]];
   };
   return {
     at: [P[0] + d[0], P[1] + d[1], P[2] + d[2]],

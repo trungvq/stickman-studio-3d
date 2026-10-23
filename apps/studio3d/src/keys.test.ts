@@ -14,6 +14,8 @@ import { describe, expect, it } from "vitest";
 import bangGia from "../../../packages/rig/src/core/__fixtures__/held-v2/bang-gia.json";
 import cocJson from "../../studio/public/held/coc.json";
 import { drawnHand, drawnItem } from "./drawn";
+import { record, travel } from "./history";
+import { plusHand } from "./plus";
 import {
   deleteKey,
   editKey,
@@ -28,6 +30,7 @@ import {
   retime,
   setEase,
   setHold,
+  timeOf,
   touch,
   type Json,
 } from "./keys";
@@ -310,6 +313,14 @@ describe("mốc mới ở giây đang xem (＋)", () => {
         expect(value).toMatchObject({ ease: "auto" });
         if (mode === "keyed")
           expect(value).toEqual({ hold: { ...SHEET, along: 0.45 }, ease: "auto" });
+        else if (mode === "hand")
+          // cùng chỗ cầm (lần cầm đi tiếp), ý định là hướng món đang vẽ
+          expect(value?.hold).toEqual({
+            item: "coc",
+            group: "cylinder",
+            face: { axis: [0, 0, 1], toward: d.axes!.face.map((x) => expect.closeTo(x, 3)) },
+            roll: { axis: [0, 1, 0], toward: d.axes!.roll.map((x) => expect.closeTo(x, 3)) },
+          });
         else expect(value && "hold" in value).toBe(false);
         const { raw: next } = insertHandKey(j, "a", side, t, value);
         const rt2 = runtime(next);
@@ -358,6 +369,15 @@ describe("hold của thẻ mốc", () => {
     const b: Json = { hold: { ...SHEET, variant: "pinch", lạ: 1 } };
     setHold(b, { item: "bang-gia", group: "sheet" });
     expect(b.hold).toEqual({ ...SHEET, lạ: 1 });
+    // đổi món: trường chỗ cầm của món cũ không còn nghĩa, ý định và trường lạ còn
+    const e: Json = { hold: { ...SHEET, part: "x", face: { axis: "front", toward: "up" }, lạ: 2 } };
+    setHold(e, { item: "coc", group: "cylinder" });
+    expect(e.hold).toEqual({
+      item: "coc",
+      group: "cylinder",
+      face: { axis: "front", toward: "up" },
+      lạ: 2,
+    });
     setHold(b, null);
     expect(b.hold).toBeNull();
     setHold(b, undefined);
@@ -372,5 +392,116 @@ describe("hold của thẻ mốc", () => {
       "ring",
       "dot",
     ]);
+  });
+});
+
+describe("＋ giữ hình ở giây đang xem (plus.ts)", () => {
+  const O = { rebuild: runtime, fps: 30, dur: 4 };
+  /** Lệch tâm nắm, cổ tay ở `t` giữa cảnh trước và sau khi thêm */
+  const gapAt = (before: Json, after: Json, side: HandSide, t: number) => {
+    const a = drawnHand(runtime(before), "a", side, t)!;
+    const b = drawnHand(runtime(after), "a", side, t)!;
+    return { grip: dist(a.grip, b.grip), wrist: dist(a.wrist, b.wrist) };
+  };
+  /** Tay phải buông ở 3,5 s về một đích: 3,5–3,8 s là `HOLD_BLEND` từ nghiệm cầm cũ */
+  const released = () => {
+    const j = scene();
+    hands(j)[6].right = { hold: null, at: [30, -260, -50], point: "grip" };
+    return j;
+  };
+
+  it(
+    "trong `HOLD_BLEND`: `at` bù phần hoà, tâm nắm và cổ tay không nhảy",
+    { timeout: 60_000 },
+    () => {
+      const j = released();
+      const rt = runtime(j);
+      for (const t of [3.5 + 1 / 30, 3.6, 3.7]) {
+        expect(drawnHand(rt, "a", "right", t)!.blending).toBe(true);
+        const r = plusHand(j, rt, "a", "right", t, O);
+        const g = gapAt(j, r.raw, "right", t);
+        expect(g.grip, `${t}`).toBeLessThan(0.5);
+        expect(g.wrist, `${t}`).toBeLessThan(0.5);
+        expect(r.notes.join()).toMatch(/HOLD_BLEND/);
+        // `at` không phải điểm đang vẽ: phần hoà kéo bàn tay về nghiệm cũ
+        const k = hands(r.raw).find((x) => Math.abs(timeOf(x.t, { m: 1.5 }) - t) < 1e-3)!;
+        const at = (k.right as Json).at as number[];
+        expect(dist(at, drawnHand(rt, "a", "right", t)!.grip)).toBeGreaterThan(5);
+      }
+    },
+  );
+
+  it(
+    "không giữ được hình thì chặn, báo lý do và giây gần nhất thêm được",
+    { timeout: 60_000 },
+    () => {
+      const j = released();
+      const rt = runtime(j);
+      expect(() => plusHand(j, rt, "a", "right", 3.6, { ...O, tol: 1e-4 })).toThrow(
+        /HOLD_BLEND.*Giây gần nhất thêm được: 3\.47 s/,
+      );
+      const r = plusHand(j, rt, "a", "right", 3.5 - 1 / 30, { ...O, tol: 1e-4 });
+      expect(r.gap.grip).toBeLessThan(1e-4);
+    },
+  );
+
+  it(
+    "đồ theo tay: ý định là hướng món đang vẽ, cổ tay không xoay khác",
+    { timeout: 60_000 },
+    () => {
+      const j = scene();
+      // hai mốc khác ý định: giữa chúng bàn tay đang hoà hai ý định
+      hands(j)[3].left = {
+        ...(hands(j)[3].left as Json),
+        hold: { item: "coc", group: "cylinder", face: { axis: "front", toward: [0.3, -0.9, 0.3] } },
+      };
+      const rt = runtime(j);
+      for (const t of [1.1, 1.25, 1.4]) {
+        const d = drawnHand(rt, "a", "left", t)!;
+        const { value, alts } = handValueAt(j, "a", "left", t, d);
+        expect(value?.hold).toMatchObject({ item: "coc", group: "cylinder" });
+        const old = alts[0];
+        const r = plusHand(j, rt, "a", "left", t, O);
+        const g = gapAt(j, r.raw, "left", t);
+        // ý định của `hold` trước: bàn tay xoay khác
+        const g0 = gapAt(j, insertHandKey(j, "a", "left", t, old).raw, "left", t);
+        if (t === 1.25) expect(g0.wrist).toBeGreaterThan(0.5);
+        expect(g.grip).toBeLessThan(0.5);
+        expect(g.wrist).toBeLessThan(0.5);
+        expect(runsOf(runtime(r.raw), "left")).toEqual(runsOf(rt, "left"));
+      }
+    },
+  );
+
+  it("mốc mới không chép `regrip`: lần cầm không bị cắt", { timeout: 60_000 }, () => {
+    const j = scene();
+    hands(j)[5].right = { hold: { ...SHEET, along: 0.6, regrip: true } };
+    const rt = runtime(j);
+    const d = drawnHand(rt, "a", "right", 3.2)!;
+    expect(d.mode).toBe("keyed");
+    const { value } = handValueAt(j, "a", "right", 3.2, d);
+    expect(value?.hold).not.toHaveProperty("regrip");
+    const r = plusHand(j, rt, "a", "right", 3.2, O);
+    expect(runsOf(runtime(r.raw), "right")).toEqual(runsOf(rt, "right"));
+  });
+});
+
+describe("lịch sử chung (history.ts)", () => {
+  it("bước không đổi gì thì không ghi; ghi bước mới xoá làm lại", () => {
+    const s = { undo: [] as string[], redo: ["x"] };
+    expect(record(s, "a", "a")).toBe(false);
+    expect(s).toEqual({ undo: [], redo: ["x"] });
+    expect(record(s, "a", "b")).toBe(true);
+    expect(s).toEqual({ undo: ["a"], redo: [] });
+  });
+  it("hoàn tác bỏ qua bước trùng bản đang có, áp hỏng thì giữ nguyên", () => {
+    const s = { undo: ["a", "b", "b"], redo: [] as string[] };
+    const seen: string[] = [];
+    expect(travel(s, true, "b", (to) => (seen.push(to), true))).toBe(true);
+    expect(seen).toEqual(["a"]);
+    expect(s).toEqual({ undo: [], redo: ["b"] });
+    expect(travel(s, false, "a", () => false)).toBe(false);
+    expect(s).toEqual({ undo: [], redo: ["b"] });
+    expect(travel(s, true, "a", () => true)).toBe(false);
   });
 });

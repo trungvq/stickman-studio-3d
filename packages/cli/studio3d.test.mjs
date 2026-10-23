@@ -1,12 +1,20 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import * as rig from "@stickman3d/sketch";
 import { COMMON } from "./lib.mjs";
-import { sceneWithHands, serveStudio3d } from "./studio3d.mjs";
+import { sceneWithHands, serveStudio3d, writeWithBak } from "./studio3d.mjs";
 import * as T from "./templates.mjs";
 
 const git = (dir, ...a) =>
@@ -53,6 +61,31 @@ function fixture() {
   git(dir, "commit", "-qm", "init");
   return dir;
 }
+
+describe("writeWithBak", () => {
+  it("đổi tên file tạm hỏng: ném lỗi, không để lại `.tmp`", () => {
+    const dir = mkdtempSync(join(tmpdir(), "studio3d-tmp-"));
+    try {
+      // đích là thư mục có file: `renameSync` của file tạm vào đó hỏng
+      mkdirSync(join(dir, "canh.json"));
+      writeFileSync(join(dir, "canh.json/x"), "");
+      assert.throws(() => writeWithBak(join(dir, "canh.json"), "{}"));
+      assert.deepEqual(
+        readdirSync(dir).filter((f) => f.endsWith(".tmp")),
+        [],
+      );
+      writeWithBak(join(dir, "moi.json"), "{}", "cu");
+      assert.equal(readFileSync(join(dir, "moi.json"), "utf8"), "{}");
+      assert.equal(readFileSync(join(dir, "moi.json.bak"), "utf8"), "cu");
+      assert.deepEqual(
+        readdirSync(dir).filter((f) => f.endsWith(".tmp")),
+        [],
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
 
 describe("sceneWithHands", () => {
   const disk = { a: 1, cast: [{ id: "x", world: { at: [0, 0, 0], hands: [{ t: 0 }] } }] };

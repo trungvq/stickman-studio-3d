@@ -153,44 +153,57 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hà
   (`elbowLock`), viền cam là mốc đang mở thẻ. Rê lên mốc: trường `t` như JSON (`@tra+0.6 = 4.000 s`), loại mốc, `ease`.
 - **Dải dưới hàng tay là lần cầm** (`holdRuns`), nhãn `món@nhóm/biến thể` (tay phụ của `both` ghi `(phụ)`): xanh lá tay theo
   đồ (theo mốc, hai tay), xanh dương đồ theo tay, xám tay tự do; sọc là `HOLD_BLEND` ở đầu lần cầm (trừ lần cầm từ giây 0)
-  và lúc nhả món đặt trước.
-- **Nhấp mốc**: tua tới mốc, mở thẻ mốc ở đầu panel. **Kéo mốc**: dời `t`, bám lưới khung (1/30 s) tính từ mốc tên của
+  và lúc nhả món đặt trước, nhãn nằm trên nền màu dải, không bị sọc che.
+- **Nhấp mốc**: tua tới mốc, mở thẻ mốc ở đầu panel. Vùng chạm của mốc rộng ít nhất 16 px; hai mốc gần nhau thì mốc có
+  tâm gần con trỏ nhất nhận. **Kéo mốc**: dời `t`, bám lưới khung (1/30 s) tính từ mốc tên của
   mốc; mốc tên giữ dạng `@tên±Δ` (`@tra` kéo 0,2 s là `@tra+0.2`), mốc số giữ số. Giữ **Alt** khi thả: bắt vào mốc tên gần
   nhất (`@tên`). Dòng mốc tay nhắc cả hai tay thì tay được kéo tách ra dòng mới; giây mới trùng một dòng mốc khác của người
   ấy thì gộp vào dòng ấy (`t` của dòng mốc tay, của mốc cùng món phải tăng hẳn). Tay đã có mốc ở giây ấy thì báo lỗi.
-- **＋** ở cuối hàng: thêm mốc ở giây đang xem, `ease: "auto"`, giá trị lấy thứ đang vẽ:
-  - tay theo đồ (theo mốc, hai tay): mốc chỉ có `hold` — chép `hold` có hiệu lực, trường số của chỗ cầm trượt (`along`,
-    `slant`…) lấy lựa chọn đang vẽ —, nên lần cầm không bị cắt và mốc không khai đích;
-  - đồ theo tay, tay tự do: phần đích đang là `0` thì `null`; không thì `at` là điểm bàn tay đang vẽ theo `point` của mốc kề
-    (tâm nắm hay cổ tay; điểm khác thì tâm nắm, `point: "grip"`), không `hold` (lần cầm đi tiếp). Tay tự do chép `palm`,
-    `fingers`, `bend` của mốc trước; `elbow` theo mốc kề (hai mốc kề khác nhau thì nội suy thẳng), khuỷu đang khoá hẳn thì
-    khoá vào hướng khuỷu đang vẽ. Điểm bàn tay về đúng chỗ, nhưng hướng bàn tay đồ theo tay theo ý định của mốc mới (ý định
-    của `hold` trước nó) và giới hạn tốc độ `HOLD_SLEW`: giữa hai mốc khác ý định bàn tay xoay khác lúc trước. Mốc kề đặt theo
-    mốc thân (`to`) thì mốc mới vẫn ghi `at` thế giới: người đi giữa hai mốc thì đoạn kề lệch. Thanh trạng thái và thẻ mốc
-    nêu những chỗ chỉ gần đúng này;
+- **＋** ở cuối hàng: thêm mốc ở giây đang xem, `ease: "auto"`, hình ở giây ấy giữ nguyên. Giá trị đầu lấy thứ đang vẽ, rồi
+  trang dựng lại cảnh với mốc mới, đo tâm nắm và cổ tay (mốc món: tâm món) ở giây ấy và bù `at` cho tới khi lệch không quá
+  0,5 px (`plus.ts`); không được thì **không thêm**, thanh trạng thái nêu lý do, độ lệch và giây gần nhất thêm được (tìm
+  trong ±1 s). Thanh trạng thái báo độ lệch còn lại của mốc vừa thêm.
+  - tay theo đồ (theo mốc, hai tay): mốc chỉ có `hold` — chép `hold` có hiệu lực (bỏ `regrip`), trường số của chỗ cầm trượt
+    (`along`, `slant`…) lấy lựa chọn đang vẽ —, nên lần cầm không bị cắt và mốc không khai đích;
+  - đồ theo tay, tay tự do: phần đích đang là `0` thì `null`; không thì `at` là điểm bàn tay theo `point` của mốc kề (tâm
+    nắm hay cổ tay; điểm khác thì tâm nắm, `point: "grip"`), lần cầm đi tiếp. Tay tự do chép `palm`, `fingers`, `bend` của
+    mốc trước; `elbow` theo mốc kề (hai mốc kề khác nhau thì nội suy thẳng), khuỷu đang khoá hẳn thì khoá vào hướng khuỷu
+    đang vẽ. Đồ theo tay ghi thêm `hold` cùng chỗ cầm với ý định là hướng món đang vẽ — `face`, `roll` trục khung món
+    `[0, 0, 1]`, `[0, 1, 0]` về vectơ hệ thân, ngang ra ngoài phía tay ấy, như `holdToHandLed` — và mốc kề không khai
+    `elbow` thì `elbow` là khuỷu đang vẽ, để bàn tay không xoay khác; bản ấy lệch hơn bản giữ ý định của `hold` trước thì
+    dùng bản sau. Mốc kề đặt theo mốc thân (`to`) thì mốc mới vẫn ghi `at` thế giới: người đi giữa hai mốc thì đoạn kề lệch;
+  - trong `HOLD_BLEND` (vừa buông, vừa đổi lần cầm) bàn tay đang hoà từ nghiệm cũ: `at` ghi đúng điểm đang vẽ thì phần hoà
+    kéo bàn tay đi chỗ khác, nên `at` được bù — dời khỏi điểm đang vẽ để sau phần hoà ra đúng chỗ ấy; hết quãng hoà bàn tay
+    tới đúng `at` đã bù. Thẻ mốc nêu khoảng dời;
   - hàng Món (chỉ lần cầm tay theo đồ): tâm hộp bao của món đang vẽ ở `at`, hướng bằng `face` / `roll` trục khung món
     `[0, 0, 1]`, `[0, 1, 0]` về vectơ hệ thân người cầm, như `holdToItemLed`.
+
+  Hình chỉ giữ ở đúng giây của mốc: quanh mốc, đường tay đổi theo mốc mới — mốc sau không phải `auto` thì đoạn từ mốc mới
+  tới nó bắt đầu từ vận tốc `0` (bàn tay dừng ở mốc mới).
 - **Thẻ mốc**: `ease` (ô 4 số khi `bezier`, mặc định `BEZIER_DEFAULT`); `hold` (không khai / buông `null` / cầm: món,
-  nhóm, biến thể — kiểu có tên hiện kèm `note`; `hold` dạng chuỗi ghi lại chuỗi, dạng object chỉ đổi `item`, `group`,
-  `variant`); `elbowLock` (mốc chưa có `elbow` thì lấy hướng khuỷu đang vẽ ở mốc; khoá không có tác dụng ở mốc thì thẻ
+  nhóm, biến thể — kiểu có tên hiện kèm `note`; `hold` dạng chuỗi ghi lại chuỗi, dạng object đổi `item`, `group`,
+  `variant`, đổi món hay nhóm thì bỏ trường chỗ cầm cũ `part`, `edge`, `along`…, giữ ý định và trường lạ; đổi món thì
+  trang thử nhóm đang chọn rồi lần lượt các nhóm khác, áp nhóm đầu tiên mà cảnh giải được tay ở mốc, không nhóm nào được
+  thì không áp và báo lỗi); `elbowLock` (mốc chưa có `elbow` thì lấy hướng khuỷu đang vẽ ở mốc; khoá không có tác dụng ở mốc thì thẻ
   báo); "ảnh hưởng tới …s" — ước: tới mốc kế của cùng tay, cùng món (chuỗi `auto` thêm một mốc), đồ theo tay còn kéo dài vài
-  khung do giới hạn tốc độ; JSON thô của mốc kèm nút chép; **Xoá mốc** (Del). Mốc tay cuối cùng của một người không xoá
+  khung do giới hạn tốc độ; JSON thô của mốc kèm nút chép (mở hay đóng giữ qua các lần vẽ lại thẻ); **Xoá mốc** (Del). Mốc tay cuối cùng của một người không xoá
   được (`world.hands` không rỗng).
 - **Mốc studio thêm hay sửa** (dời, đổi `hold`, `elbowLock`) mà chưa khai `ease` thì ghi `ease: "auto"`; mốc đã khai `ease`
   giữ nguyên. Đổi `ease` chỉ qua thẻ mốc.
 - **Sửa trên JSON thô.** Mọi thao tác sửa bản JSON thô của cảnh trong trang (giữ trường lạ như `hand` của vài mốc, giữ mốc
   tên), rồi parse và làm mới tại chỗ (`world.refresh`); không làm mới được thì dựng lại cả cảnh. Bản sửa hỏng schema hay
-  `resolveScene` ném thì không áp, thanh trạng thái báo lý do.
-- **Lịch sử chung** cho cảnh, mỗi bước là ảnh chụp JSON thô: ↶ ↷ trên thanh trên, Ctrl+Z / Ctrl+Shift+Z. Khung soạn kiểu cầm
+  `resolveScene` ném thì không áp, thanh trạng thái báo lý do; dựng lại cả cảnh hỏng thì về bản trước, lời báo lỗi còn lại.
+- **Lịch sử chung** cho cảnh, mỗi bước là ảnh chụp JSON thô; thao tác không đổi gì không thành bước: ↶ ↷ trên thanh trên, Ctrl+Z / Ctrl+Shift+Z. Khung soạn kiểu cầm
   đang mở thì giữ lịch sử riêng, lịch sử cảnh tạm khoá.
 - **Lưu** (Ctrl+S): chấm cam là có thay đổi chưa lưu. Ghi `POST /api/scene` kèm hash lúc nạp; lưu xong lịch sử còn nguyên.
-  **Bỏ thay đổi** về bản đã lưu (là một bước, hoàn tác được). File cảnh đổi trên đĩa từ lúc nạp thì server trả 409: hộp báo
-  cho **Tải bản đĩa về** (bỏ bản của mình), **Chép mốc của mình** (`hands` từng người và `items`, JSON) hay **Giữ bản
-  mình** để so. Đổi cảnh, R, đóng trang đều hỏi trước khi bỏ thay đổi chưa lưu.
+  **Bỏ thay đổi** về bản đã lưu (là một bước, hoàn tác được). File cảnh đổi trên đĩa từ lúc nạp thì server trả 409, không có cách ghi đè: hộp
+  báo cho **Tải bản đĩa về** — bản đĩa vào thành một bước mới của lịch sử (hash mới, là bản đã lưu), Ctrl+Z quay lại bản
+  của mình để so; lưu lại bản ấy thì server chỉ nhận khi phần ngoài mốc tay, mốc món khớp đĩa —, **Chép mốc của mình**
+  (`hands` từng người và `items`, JSON) hay **Giữ bản mình**. Đổi cảnh, R, đóng trang đều hỏi trước khi bỏ thay đổi chưa lưu.
 - **File repo video đổi trên đĩa** (cảnh, món mà `src/` của repo nhập — kể cả lúc Lưu): trang nhận module cảnh three mới
   tại chỗ, không nạp lại trang; lần dựng cảnh sau (Shift+R) dùng bản mới.
-- **Màn hẹp** (≤ 760 px): camera, AA, Lăn gập sau nút ⋯; panel bàn tay xuống dưới khung vẽ; thanh tua cuộn ngang, tự cuộn
-  theo giây đang xem.
+- **Màn hẹp** (≤ 760 px): camera, AA, Lăn gập sau nút ⋯; panel bàn tay xuống dưới khung vẽ. Ở Xem thanh tua vừa bề ngang;
+  ở Dáng tay thanh tua rộng 720 px, cuộn ngang, luôn tự cuộn theo giây đang xem (cả khi chưa chọn tay).
 
 ## Lưu ý khi xem bằng camera tự do
 

@@ -526,7 +526,8 @@ panel, cách soạn ở README của `apps/studio3d` trong repo rig.
   `cast[*].world.hands` và `items` của bản studio; bản gửi lên đổi phần khác thì bị từ chối, thiếu khoá nào thì khoá ấy
   trên đĩa giữ nguyên (xoá hết là gửi mảng rỗng).
 - **Kiểm hash.** Mỗi lần nạp, trang nhận hash của file trên đĩa; lưu gửi kèm hash ấy. File đã đổi từ lúc nạp (agent,
-  `retime`, sửa tay) thì server trả 409 và không ghi: nạp lại rồi sửa lại. Server so hash cả ngay trước lệnh ghi, lượt
+  `retime`, sửa tay) thì server trả 409 và không ghi: tải bản đĩa về (thành một bước mới của lịch sử, hoàn tác về bản
+  của mình để so) rồi sửa lại. Server so hash cả ngay trước lệnh ghi, lượt
   ghi của một file xếp hàng: hai lần lưu cùng một bản nạp thì lần sau 409.
 - **Vá JSON thô.** Server viết lại đúng những giá trị đổi trên chữ của file, giữ mọi trường khác, kể cả trường schema
   không biết (zod bỏ chúng khi parse), và thứ tự khoá. File đúng lối `JSON.stringify(…, null, 2)` giữ lối ấy; file đúng

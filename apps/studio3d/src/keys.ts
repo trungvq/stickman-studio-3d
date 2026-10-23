@@ -229,6 +229,10 @@ export function setEase(m: Json, ease: Ease | undefined, bezier?: readonly numbe
 /** Tay ở giây đang xem như người 3D vẽ — đầu vào của `handValueAt` (`drawnHand` của `drawn.ts`) */
 export interface DrawnHand {
   mode: "free" | "hand" | "keyed" | "both";
+  /** Đồ theo tay: hướng món đang vẽ, trục `+z`, `+y` của khung món ra vectơ hệ thân, ngang ra ngoài phía tay ấy */
+  axes?: { face: V3; roll: V3 };
+  /** Trong `HOLD_BLEND` của một ranh giới lần cầm (`holdBlending`) */
+  blending: boolean;
   /** Tay phụ của `both` */
   support: boolean;
   /** Phần đích (`Reach.w`) */
@@ -260,31 +264,31 @@ function around(raw: Json, id: string, side: HandSide, t: number) {
 
 const INTENT = ["face", "up", "roll", "keep"] as const;
 
-/** `hold` của mốc tay đầu tiên sau `t` có khai `hold` (không phải buông) */
-function holdAfter(raw: Json, id: string, side: HandSide, t: number): unknown {
-  const marks = marksOf(raw);
-  for (const k of handsOf(raw, id) ?? []) {
-    const v = k[side];
-    if (timeOf(k.t, marks) > t + 1e-9 && isObj(v) && v.hold !== undefined)
-      return v.hold ?? undefined;
-  }
-  return undefined;
-}
-
 const unit = (v: readonly number[]): V3 => {
   const n = Math.hypot(...v) || 1;
   return [v[0] / n, v[1] / n, v[2] / n];
 };
 
+/** `hold` của lần cầm đồ theo tay mang ý định là hướng món đang vẽ: chỗ cầm giữ nguyên (cùng lần cầm), ý định cũ bỏ */
+function intentHold(hold: unknown, axes: { face: V3; roll: V3 }): Json {
+  const pick = holdPickOf(hold);
+  const h: Json = isObj(hold) ? structuredClone(hold) : { ...pick };
+  for (const f of [...INTENT, "regrip"]) delete h[f];
+  h.face = { axis: [0, 0, 1], toward: axes.face.map(r4) };
+  h.roll = { axis: [0, 1, 0], toward: axes.roll.map(r4) };
+  return h;
+}
+
 /**
- * Giá trị mốc tay mới ở `t` để hình không nhảy (nút ＋), `ease: "auto"`; `notes` nêu chỗ chỉ gần đúng:
- * - tay theo đồ (`keyed`, `both`): chỉ `hold` — chép `hold` có hiệu lực, trường số của chỗ cầm trượt lấy lựa chọn đang
- *   vẽ — nên không cắt lần cầm, không thêm đích (mốc tay của lần cầm có mốc món không khai đích);
+ * Giá trị mốc tay mới ở `t` như đang vẽ (nút ＋), `ease: "auto"`; `notes` nêu chỗ chỉ gần đúng; `alts` là giá trị thay thế
+ * theo thứ tự. Đây là giá trị đầu: `plus.ts` dựng lại cảnh với từng giá trị, đo và bù `at`, giữ giá trị lệch ít nhất.
+ * - tay theo đồ (`keyed`, `both`): chỉ `hold` — chép `hold` có hiệu lực (bỏ `regrip`), trường số của chỗ cầm trượt lấy
+ *   lựa chọn đang vẽ — nên không cắt lần cầm, không thêm đích (mốc tay của lần cầm có mốc món không khai đích);
  * - đồ theo tay, tay tự do: phần đích `0` thì `null`; không thì đích `at` là điểm bàn tay đang vẽ theo `point` của mốc kề
- *   (`grip`, cổ tay; điểm khác thì tâm nắm, `point: "grip"`), không `hold` (lần cầm đi tiếp); tay tự do chép lòng tay
- *   (`palm`, `fingers`, `bend`) của mốc trước; `elbow` theo mốc kề, khuỷu khoá hẳn thì khoá vào hướng đang vẽ. Điểm bàn
- *   tay về đúng chỗ; hướng bàn tay đồ theo tay theo ý định của mốc mới (ý định của `hold` trước nó) và giới hạn tốc độ
- *   `HOLD_SLEW`, nên giữa hai mốc khác ý định thì bàn tay xoay khác.
+ *   (`grip`, cổ tay; điểm khác thì tâm nắm, `point: "grip"`); tay tự do chép lòng tay (`palm`, `fingers`, `bend`) của mốc
+ *   trước; `elbow` theo mốc kề, khuỷu khoá hẳn thì khoá vào hướng đang vẽ. Đồ theo tay ghi thêm `hold` cùng chỗ cầm (lần cầm
+ *   đi tiếp) với ý định là hướng món đang vẽ (`face`, `roll` vectơ hệ thân), mốc kề không khai `elbow` thì `elbow` là
+ *   khuỷu đang vẽ, để bàn tay ở `t` không xoay khác; `alts` là bản không đổi ý định (ý định của `hold` trước).
  */
 export function handValueAt(
   raw: Json,
@@ -292,7 +296,7 @@ export function handValueAt(
   side: HandSide,
   t: number,
   d: DrawnHand,
-): { value: Json | null; notes: string[] } {
+): { value: Json | null; notes: string[]; alts: Json[] } {
   const notes: string[] = [];
   if (d.support) fail("tay phụ của `both` theo tay dẫn: thêm mốc ở tay dẫn");
   const { prev, next, hold } = around(raw, id, side, t);
@@ -300,24 +304,15 @@ export function handValueAt(
     if (!hold) fail("tay theo đồ mà không thấy `hold` có hiệu lực");
     let h = structuredClone(hold);
     if (isObj(h)) {
+      delete h.regrip;
       for (const f of SLIDE) {
         const v = d.choice?.[f];
         if (h[f] !== undefined && typeof v === "number") h[f] = r4(v);
       }
     } else h = hold;
-    return { value: { hold: h as Json, ease: "auto" }, notes };
+    return { value: { hold: h as Json, ease: "auto" }, notes, alts: [] };
   }
-  if (d.mode === "hand") {
-    // ý định của món ở mốc lấy theo `hold` có hiệu lực ở mốc: giữa hai mốc khác ý định thì bàn tay đang hoà hai ý định
-    const intent = (h: unknown) =>
-      JSON.stringify(isObj(h) ? INTENT.map((f) => h[f]) : INTENT.map(() => undefined));
-    const later = holdAfter(raw, id, side, t);
-    if (later !== undefined && intent(later) !== intent(hold))
-      notes.push(
-        "ý định món ở mốc mới theo `hold` trước: giữa hai ý định khác nhau, bàn tay xoay khác lúc trước",
-      );
-  }
-  if (d.w < 1e-3) return { value: null, notes };
+  if (d.w < 1e-3) return { value: null, notes, alts: [] };
   if (d.w < 1 - 1e-3)
     notes.push(`tay đang hoà vào đích (phần đích ${d.w.toFixed(2)}): quanh mốc mới hình lệch`);
   const near = [prev?.v, next?.v].find(isObj);
@@ -347,7 +342,15 @@ export function handValueAt(
       notes.push("`elbow` lấy nội suy thẳng giữa hai mốc kề");
   } else if (ea ?? eb) value.elbow = [...(ea ?? eb)!];
   value.ease = "auto";
-  return { value, notes };
+  if (d.mode !== "hand") return { value, notes, alts: [] };
+  if (!d.axes || !hold) {
+    notes.push("không đọc được hướng món đang vẽ: ý định món ở mốc mới theo `hold` trước");
+    return { value, notes, alts: [] };
+  }
+  // khuỷu đang vẽ làm cực khởi đầu của bộ giải ý định (mốc kề không khai `elbow`), như `holdToHandLed`
+  const elbow = value.elbow ?? d.elbow?.map(r4);
+  const intent = { ...value, ...(elbow && { elbow }), hold: intentHold(hold, d.axes) };
+  return { value: intent, notes, alts: [value] };
 }
 
 /** Mốc món mới (chưa có `t`): tâm hộp bao ở `at`, hướng bằng hai trục khung món về vectơ hệ thân, `ease: "auto"` */
@@ -390,14 +393,32 @@ export function holdPickOf(hold: unknown): HoldPick | undefined {
   return undefined;
 }
 
+/** Trường chỗ cầm của một món × nhóm (`CHOICE_KEYS` của lõi trừ `variant`, cộng `both`): đổi món hay nhóm thì bỏ */
+const GRIP = [
+  "part",
+  "edge",
+  "along",
+  "thumb",
+  "slant",
+  "around",
+  "tilt",
+  "psi",
+  "inset",
+  "on",
+  "yaw",
+  "both",
+] as const;
+
 /**
- * Đổi `hold` của mốc tay: `undefined` bỏ khai, `null` buông. Chỗ cầm dạng object giữ mọi trường khác, chỉ đổi `item`,
- * `group`, `variant`; dạng chuỗi (hay chưa có) ghi chuỗi `món@nhóm/biến thể`
+ * Đổi `hold` của mốc tay: `undefined` bỏ khai, `null` buông. Chỗ cầm dạng object giữ ý định và trường lạ, đổi `item`,
+ * `group`, `variant`; đổi món hay nhóm thì bỏ trường chỗ cầm của món × nhóm cũ (`part`, `edge`, `along`…). Dạng chuỗi (hay
+ * chưa có) ghi chuỗi `món@nhóm/biến thể`
  */
 export function setHold(m: Json, h: HoldPick | null | undefined) {
   if (h === undefined) delete m.hold;
   else if (h === null) m.hold = null;
   else if (isObj(m.hold)) {
+    if (m.hold.item !== h.item || m.hold.group !== h.group) for (const f of GRIP) delete m.hold[f];
     Object.assign(m.hold, { item: h.item, group: h.group });
     if (h.variant) m.hold.variant = h.variant;
     else delete m.hold.variant;

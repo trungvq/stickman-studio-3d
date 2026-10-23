@@ -34,7 +34,8 @@ export interface CardModel {
 
 export interface CardHost {
   ease(e: Ease | undefined, bezier?: number[]): void;
-  hold(h: HoldPick | null | undefined): void;
+  /** `what`: ô vừa đổi (đổi món thì bên gọi chọn nhóm hợp lệ) */
+  hold(h: HoldPick | null | undefined, what?: "item" | "group" | "variant"): void;
   lock(on: boolean): void;
   del(): void;
   close(): void;
@@ -49,6 +50,9 @@ const opts = (xs: readonly { v: string; label: string }[], cur: string) =>
         `<option value="${esc(x.v)}"${x.v === cur ? " selected" : ""}>${esc(x.label)}</option>`,
     )
     .join("");
+
+/** Phần "JSON thô" mở hay đóng: giữ qua các lần vẽ lại thẻ */
+let jsonOpen = false;
 
 export function renderCard(el: HTMLElement, m: CardModel | null, host: CardHost) {
   el.hidden = !m;
@@ -103,9 +107,11 @@ export function renderCard(el: HTMLElement, m: CardModel | null, host: CardHost)
         : ""
     }
     ${m.notes.map((n) => `<div class="warn">${esc(n)}</div>`).join("")}
-    <details class="cjson"><summary>JSON thô của mốc</summary><pre>${esc(m.json)}</pre></details>
+    <details class="cjson"${jsonOpen ? " open" : ""}><summary>JSON thô của mốc</summary><pre>${esc(m.json)}</pre></details>
     <div class="crow"><button data-c="copy">Chép JSON</button><button data-c="del" title="Xoá mốc (Del)">Xoá mốc</button></div>`;
   const q = <T extends HTMLElement>(c: string) => el.querySelector<T>(`[data-c=${c}]`)!;
+  const det = el.querySelector<HTMLDetailsElement>(".cjson")!;
+  det.ontoggle = () => (jsonOpen = det.open);
   q("close").onclick = () => host.close();
   q("del").onclick = () => host.del();
   q("copy").onclick = async () => {
@@ -134,11 +140,11 @@ export function renderCard(el: HTMLElement, m: CardModel | null, host: CardHost)
       const v = (e.target as HTMLSelectElement).value;
       host.hold(v === "none" ? undefined : v === "null" ? null : pick());
     };
-    for (const c of ["item", "group", "variant"])
+    for (const c of ["item", "group", "variant"] as const)
       q<HTMLSelectElement>(c).onchange = () => {
         // đổi món hay nhóm thì biến thể cũ không còn nghĩa
         if (c !== "variant") q<HTMLSelectElement>("variant").value = "";
-        host.hold(pick());
+        host.hold(pick(), c);
       };
   }
   if (m.lock)

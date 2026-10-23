@@ -690,7 +690,11 @@ header {
   background: rgb(224 164 88 / 6%);
 }
 
+/* thanh tua cuộn ngang: lời nhắc đứng yên ở mép trái khung */
 .lanehint {
+  position: sticky;
+  left: 0;
+  width: max-content;
   height: var(--lane);
   line-height: var(--lane);
   color: var(--dim);
@@ -716,10 +720,13 @@ header {
   white-space: nowrap;
 }
 
+/* nhãn nổi trên sọc `HOLD_BLEND`: nền cùng màu dải sau chữ, sọc còn lộ dưới nhãn */
 .band span {
   position: relative;
   z-index: 1;
   padding: 0 3px;
+  border-radius: 2px;
+  background: inherit;
 }
 
 .band.item {
@@ -756,6 +763,13 @@ button.key {
   cursor: grab;
   touch-action: none;
   z-index: 2;
+}
+
+/* vùng chạm ≥ 16 px quanh ký hiệu nhỏ */
+button.key::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
 }
 
 button.key.ring {
@@ -941,8 +955,18 @@ button.key.diamond .keytip {
     gap: 0 6px;
   }
 
-  #track {
+  /* Dáng tay: hàng mốc cần bề ngang, thanh tua cuộn; Xem: vừa khung */
+  footer.hands #track {
     width: 720px;
+  }
+
+  .lanehint {
+    max-width: 60vw;
+    height: auto;
+    min-height: var(--lane);
+    padding: 4px 0;
+    line-height: 1.3;
+    white-space: normal;
   }
 
   #clock {

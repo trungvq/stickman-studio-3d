@@ -87,8 +87,8 @@ class HttpError extends Error {
   }
 }
 
-/** Ghi `text` vào `file` qua file tạm; bản cũ (`old`) giữ ở `<file>.bak` */
-function writeWithBak(file, text, old) {
+/** Ghi `text` vào `file` qua file tạm (hỏng giữa chừng thì xoá file tạm); bản cũ (`old`) giữ ở `<file>.bak` */
+export function writeWithBak(file, text, old) {
   if (old) writeFileSync(`${file}.bak`, old);
   mkdirSync(dirname(file), { recursive: true });
   const tmp = join(dirname(file), `.${basename(file)}.${randomUUID()}.tmp`);

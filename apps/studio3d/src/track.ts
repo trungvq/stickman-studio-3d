@@ -47,6 +47,20 @@ export interface TrackHost {
   lane(lane: string): void;
 }
 
+/** Bắt đầu nhấp / kéo của từng nút mốc */
+const starts = new WeakMap<HTMLElement, (e: PointerEvent) => void>();
+
+/** Nút mốc của hàng `row` có tâm gần `x` nhất */
+function nearest(row: HTMLElement, x: number): HTMLElement | undefined {
+  let best: { b: HTMLElement; d: number } | undefined;
+  for (const b of row.querySelectorAll<HTMLElement>(":scope > button.key")) {
+    const r = b.getBoundingClientRect();
+    const d = Math.abs(r.left + r.width / 2 - x);
+    if (!best || d < best.d) best = { b, d };
+  }
+  return best?.b;
+}
+
 const pct = (t: number, dur: number) => `${(Math.max(0, Math.min(dur, t)) / (dur || 1)) * 100}%`;
 const esc = (s: string) =>
   s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
@@ -102,12 +116,17 @@ export class KeyTrack {
     }
   }
 
-  /** Vạch giây đang xem; thanh tua cuộn ngang (màn hẹp) thì cuộn cho vạch lọt vào khung */
+  /**
+   * Vạch giây đang xem; thanh tua cuộn ngang (màn hẹp) thì cuộn cho giây ấy lọt vào khung, cả khi chưa có hàng mốc (vạch
+   * ẩn)
+   */
   playhead(t: number, dur: number) {
-    const { playhead, scroller } = this.els;
+    const { playhead, scroller, lanes } = this.els;
     playhead.style.left = pct(t, dur);
-    if (playhead.hidden || scroller.scrollWidth <= scroller.clientWidth) return;
-    const x = playhead.getBoundingClientRect().left - scroller.getBoundingClientRect().left;
+    if (lanes.hidden || scroller.scrollWidth <= scroller.clientWidth) return;
+    const box = lanes.getBoundingClientRect();
+    const k = Math.max(0, Math.min(1, t / (dur || 1)));
+    const x = box.left + k * box.width - scroller.getBoundingClientRect().left;
     if (x < 16 || x > scroller.clientWidth - 16)
       scroller.scrollLeft += x - scroller.clientWidth / 2;
   }
@@ -150,11 +169,17 @@ export class KeyTrack {
     let drag: { x: number; t: number; moved: boolean } | null = null;
     const tip = document.createElement("span");
     tip.className = "keytip";
-    b.onpointerdown = (e) => {
-      if (e.button !== 0) return;
+    const start = (e: PointerEvent) => {
       e.preventDefault();
       b.setPointerCapture(e.pointerId);
       drag = { x: e.clientX, t: g.t, moved: false };
+    };
+    starts.set(b, start);
+    b.onpointerdown = (e) => {
+      if (e.button !== 0) return;
+      // vùng chạm của hai mốc gần nhau chồng lên nhau: mốc có tâm gần con trỏ nhất nhận
+      const near = nearest(b.parentElement!, e.clientX) ?? b;
+      (starts.get(near) ?? start)(e);
     };
     b.onpointermove = (e) => {
       if (!drag) return;
