@@ -256,7 +256,8 @@ không phải biến thể gốc của nhóm, hay `base` khai ở khoá là bi�
 ### Kiểu cầm soạn tay (`authored`)
 
 Bộ giải đặt bàn tay theo chỗ tiếp xúc của nhóm; có kiểu cầm nó giải sai mà người nhìn là thấy (đũa ngược đầu, chén không có
-gì kẹp). `apps/studio3d` cho người soạn kiểu cầm bằng mắt: món × nhóm × biến thể, tay phải, ở cỡ tay của một người trong cảnh.
+gì kẹp). `apps/studio3d` cho người soạn kiểu cầm bằng mắt: món × nhóm × biến thể, trên đúng bàn tay (bên, cỡ tay) của một người
+trong cảnh.
 Bản soạn lưu vào chính món, dùng cho **mọi cảnh** cầm món ấy bằng nhóm × biến thể ấy, cả hai tay, mọi cỡ tay.
 
 ```jsonc
@@ -292,6 +293,9 @@ Bản soạn lưu vào chính món, dùng cho **mọi cảnh** cầm món ấy b
   xúc tay trái (`mirrorHand`): phản xạ qua mặt (lòng tay, ngón) của chỗ tiếp xúc — mặt đối xứng cục bộ của món mà nhóm dùng.
   Bản soạn trùng bộ giải tay phải thì tay trái trùng bộ giải tay trái. Lựa chọn lúc soạn không dựng lại được (món đã đổi hình)
   thì gương theo khung `nf` / `nt` của biến thể và không dời.
+- **Soạn ở tay trái** (`authoredFromSide`): bàn tay trái đang thấy đổi về bản tay phải bằng đúng nghịch của gương trên ở lựa
+  chọn lúc soạn (`mirrorHand` đổi vai hai chỗ tiếp xúc; dự phòng: nghịch của `nf` / `nt`), nên `graspFrame` tay trái với bản
+  ấy dựng lại đúng khung đã soạn, và soạn từ chính khung cầm tay trái của rig cho lại bản soạn cũ.
 - Món không có `authored` cho nhóm × biến thể đang dùng thì `graspFrame` như cũ (`raw` bỏ qua bản soạn). Khung cầm từ bản soạn
   mang `authored: true`.
 

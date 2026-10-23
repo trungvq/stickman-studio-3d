@@ -771,13 +771,9 @@ function editTarget(r: HandRow): EditTarget | undefined {
   };
 }
 
-/** Gương trái ↔ phải qua mặt phẳng `x = 0` (thế giới hay khung bàn tay) */
-const FLIP = new THREE.Matrix4().makeScale(-1, 1, 1);
-
 /**
  * Bàn tay `r` trong cảnh đổi sang khung soạn: hướng khung bàn tay trong thế giới, khuỷu trong khung bàn tay, hướng ra
- * camera đang xem và ra ba góc cận tay, vật liệu da, đèn và nét vẽ của cảnh ở giây ấy. Khung soạn là tay phải: tay trái
- * soi gương cả thế giới lẫn khung bàn tay (`FLIP · R · FLIP` vẫn là phép quay), như bàn tay phải đứng trước gương
+ * camera đang xem và ra ba góc cận tay, vật liệu da, đèn và nét vẽ của cảnh ở giây ấy. Khung soạn dựng đúng bên tay ấy
  */
 function editScene(r: HandRow): EditScene {
   const { stage, w } = cur!;
@@ -787,15 +783,12 @@ function editScene(r: HandRow): EditScene {
   const arm = r.fig.arms[r.side];
   arm.wrist.updateWorldMatrix(true, false);
   const R = new THREE.Matrix4().extractRotation(arm.wrist.matrixWorld);
-  const left = r.side > 0;
-  if (left) R.premultiply(FLIP).multiply(FLIP);
-  const mirror = (v: THREE.Vector3) => (left ? v.applyMatrix4(FLIP) : v);
-  const elbow = mirror(arm.wrist.worldToLocal(arm.elbow.getWorldPosition(new THREE.Vector3())));
+  const elbow = arm.wrist.worldToLocal(arm.elbow.getWorldPosition(new THREE.Vector3()));
   const c = gripWorld(r.fig, r.side);
   const cam = mode === "free" ? free : stage.camera;
   const dir = (a: Angle) => {
     const p = anglePose(r, a, free.fov, w.root);
-    return mirror(p.position.sub(p.target).normalize());
+    return p.position.sub(p.target).normalize();
   };
   const inked = arm.wrist.children.find((g) => g.userData.hand === r.side);
   const [skin, hull] = (inked?.children ?? []) as THREE.Mesh[];
@@ -804,7 +797,7 @@ function editScene(r: HandRow): EditScene {
     q: new THREE.Quaternion().setFromRotationMatrix(R),
     elbow,
     views: {
-      canh: mirror(cam.position.clone().sub(c).normalize()),
+      canh: cam.position.clone().sub(c).normalize(),
       truoc: dir("truoc"),
       cheo: dir("cheo"),
       ngang: dir("ngang"),

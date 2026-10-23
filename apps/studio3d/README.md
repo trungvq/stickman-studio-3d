@@ -113,16 +113,16 @@ dòng hay nhấp lên bàn tay / món trên hình (cả camera cảnh) để ch�
 
 ## Soạn kiểu cầm
 
-Từ bàn tay đang chọn (chỗ cầm nhóm `món@nhóm` của món có `shape`): **Chỉnh kiểu cầm này**. Khung soạn chỉ có bàn tay **phải**
-cỡ tay của người ấy (`k`, `long` như rig) và bản sao lưới món của cảnh, bàn tay đứng yên. Bắt đầu từ khung cầm cảnh đang dùng
+Từ bàn tay đang chọn (chỗ cầm nhóm `món@nhóm` của món có `shape`): **Chỉnh kiểu cầm này**. Khung soạn chỉ có chính bàn tay
+ấy — đúng bên tay, cỡ tay của người ấy (`k`, `long` như rig) — và bản sao lưới món của cảnh, bàn tay đứng yên. Bắt đầu từ khung cầm cảnh đang dùng
 (bản soạn nếu món đã có, không thì bộ giải); **Điểm đầu** chọn lại `Rig đoán` hay một dáng `HAND_POSES` (chỉ ngón).
 
 - **Vẽ như cảnh.** Khung soạn là một sân khấu riêng của rig (`createStage`, cùng pipeline): món giữ nguyên vật liệu của cảnh
   (NPR, decal chữ, màn hình, vỏ viền mực), bàn tay dùng da và vỏ nét của bàn tay trong cảnh, đèn theo giờ và đèn trần của cảnh
   ở giây ấy (bỏ đèn đặt chỗ: khung soạn không có phòng). Món trông khác cảnh là món trong cảnh đã khác — nhìn bằng **Khung cảnh**.
 - **Hướng như cảnh.** Bàn tay xoay đúng như trong cảnh, mở ra ở góc **Như trong cảnh**: nhìn bàn tay từ đúng hướng camera đang
-  xem (camera cảnh hay camera tự do). Bóng mờ **cẳng tay** đi từ cổ tay tới khuỷu của cảnh ở giây ấy. Tay trái soạn bằng tay
-  phải trong gương: cả bàn tay, cẳng tay và hướng nhìn soi gương. Nút **Như trong cảnh**, **Trước**, **Chéo**, **Ngang** (như
+  xem (camera cảnh hay camera tự do). Bóng mờ **cẳng tay** đi từ cổ tay tới khuỷu của cảnh ở giây ấy. Tay trái soạn bằng
+  chính tay trái, món nằm trong tay đúng như cảnh. Nút **Như trong cảnh**, **Trước**, **Chéo**, **Ngang** (như
   `can-tay`), **Lòng tay**, **Mu tay** (phím 1–6) bay mượt tới góc ấy.
 - **Ngón.** Nhấp lên một ngón trên hình để chọn (cam sáng); thẻ cạnh khung hiện đúng các thanh của ngón ấy, kể cả độ gập
   thêm từng đốt (`HAND_FIT`). Giữa, áp út, út chung góc gập (`fingers`): thanh "chung" gập cả ba, thanh "riêng" là `HAND_FIT`
@@ -131,7 +131,7 @@ cỡ tay của người ấy (`k`, `long` như rig) và bản sao lưới món c
 - **Món.** Gizmo nhỏ nằm lệch khỏi tâm nắm (đường cam nối về tâm nắm), không đè ngón: kéo nó là dời / xoay món **quanh tâm
   nắm**. T / Y dời / xoay, X đổi trục (món → bàn tay → thế giới), G ẩn / hiện; **bước nhỏ**: 0,1 đơn vị rig, 1°.
 - **Hoàn tác / Làm lại** (Ctrl+Z / Ctrl+Shift+Z, Ctrl+Y) cho mọi thao tác soạn: ngón, món, điểm đầu, `curl`.
-- Mỗi lần đổi, rig dựng lại khung cầm từ bản soạn đúng như cảnh sẽ dựng (`authoredFrom` → `graspFrame`), ngón ôm, đo lún / hở
+- Mỗi lần đổi, rig dựng lại khung cầm từ bản soạn đúng như cảnh sẽ dựng (`authoredFromSide` → `graspFrame`), ngón ôm, đo lún / hở
   / xương ngón / tâm nắm / lực đối (`heldHits`). Ngón lún quá `sink` tô đỏ, ngón vai trò còn hở quá `wrap` tô vàng — tô mỏng
   trên chính da, có che khuất. **hình va chạm**: khung dây `shape` của món. **tay nhỏ / lớn nhất**: bàn tay nhỏ nhất và lớn nhất
   của dàn nhân vật cầm cùng bản soạn, hai bên.
@@ -155,7 +155,9 @@ kiểu mới, Chép sang món) thì không phím nào của trang tới cảnh.
 - **Khung cảnh (áp tạm)** dựng lại cảnh ở giây ấy với bản soạn chưa lưu để xem cổ tay, khuỷu; **Khung soạn** quay lại.
 - Khung soạn mở đúng khoá `authored.<nhóm>.<khoá>` cảnh đang dùng: biến thể gốc hay kiểu cầm có tên (đầu panel ghi `base` và
   `note`). **Lưu** ghi đè đúng khoá ấy (kiểu có tên giữ `base`, `note`); **Xoá bản soạn** bỏ nó; **Thoát** bỏ phần áp tạm
-  chưa lưu. Tay trái lấy gương tự động; rig dùng bản soạn cho mọi cảnh cầm món × nhóm × khoá ấy (docs/11-nhom-cam.md § Kiểu
+  chưa lưu. Bản soạn luôn ghi tay phải: soạn ở tay trái thì lưu bản tay phải mà gương của rig dựng lại đúng tay trái đang
+  thấy (`authoredFromSide`), mở rồi lưu không đổi gì thì bản soạn không đổi; tay bên kia lấy gương tự động. Rig dùng bản soạn
+  cho mọi cảnh cầm món × nhóm × khoá ấy (docs/11-nhom-cam.md § Kiểu
   cầm soạn tay).
 - **Lưu thành kiểu mới…**: hộp gồm tên (`[a-z0-9-]+`, không trùng biến thể gốc của nhóm hay khoá của món — sai thì nút lưu
   tắt, hộp nêu lý do), mô tả (`note`) và **Dùng cho lần cầm này** (bật sẵn khi thấy lần cầm của bàn tay ở giây mở khung soạn).

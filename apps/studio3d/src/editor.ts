@@ -1,8 +1,9 @@
-// Soạn kiểu cầm bằng mắt: khung riêng chỉ có bàn tay phải (cỡ tay của người đang chọn) và món (bản sao lưới món của
-// cảnh, giữ vật liệu NPR), bàn tay đứng yên, xoay như trong cảnh, kèm bóng cẳng tay. Khung vẽ bằng sân khấu, pipeline
+// Soạn kiểu cầm bằng mắt: khung riêng chỉ có bàn tay đang chọn (đúng bên, cỡ tay của người ấy) và món (bản sao lưới món
+// của cảnh, giữ vật liệu NPR), bàn tay đứng yên, xoay như trong cảnh, kèm bóng cẳng tay. Khung vẽ bằng sân khấu, pipeline
 // riêng của rig (đèn, nét mực, bóng như cảnh). Món dời / xoay bằng TransformControls; ngón chọn bằng cách nhấp lên hình,
-// kéo để gập, hay theo thanh kéo; rig dựng lại khung cầm từ bản soạn (`authoredFrom` → `graspFrame`, như cảnh sẽ dựng)
-// rồi ngón ôm (`heldFit`) và đo lún / hở như `check`. Lưu là `authored` của `held/<món>.json` (`POST /api/held`).
+// kéo để gập, hay theo thanh kéo; rig dựng lại khung cầm từ bản soạn (`authoredFromSide` → `graspFrame`, như cảnh sẽ dựng)
+// rồi ngón ôm (`heldFit`) và đo lún / hở như `check`. Lưu là `authored` của `held/<món>.json` (`POST /api/held`), luôn
+// ghi tay phải: soạn ở tay trái thì đổi về tay phải bằng nghịch của gương mà rig dựng tay trái.
 // docs/11-nhom-cam.md § Kiểu cầm soạn tay
 import * as rig from "@stickman3d/rig";
 import type {
@@ -44,7 +45,7 @@ const VIEWS: Record<EditView, string> = {
   mu: "Mu tay",
 };
 
-/** Bàn tay ấy trong cảnh, đã đổi sang khung soạn (tay trái soi gương thành tay phải) */
+/** Bàn tay ấy trong cảnh: khung soạn đặt đúng bàn tay ấy (cả bên tay), không soi gương */
 export interface EditScene {
   /** Hướng khung bàn tay trong thế giới (khung soạn đặt bàn tay đúng hướng này) */
   q: THREE.Quaternion;
@@ -309,13 +310,13 @@ function shapeWire(spec: HeldItemSpec): THREE.Group {
   return g;
 }
 
-/** Lưới bàn tay phải cỡ `k`, `long` (`handSkin` của lõi), da dời trên CPU như bàn tay của người; vỏ nét như cảnh */
+/** Lưới bàn tay bên `side` cỡ `k`, `long` (`handSkin` của lõi), da dời trên CPU như bàn tay của người; vỏ nét như cảnh */
 class HandMesh {
   readonly skin: ReturnType<typeof rig.handSkin>;
   readonly mesh: THREE.Mesh;
   readonly group = new THREE.Group();
-  constructor(k: number, long: number, mat: THREE.Material, hull?: THREE.Material) {
-    this.skin = rig.handSkin(-1, k, long);
+  constructor(side: number, k: number, long: number, mat: THREE.Material, hull?: THREE.Material) {
+    this.skin = rig.handSkin(side, k, long);
     const n = this.skin.pos.length / 3;
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
@@ -446,11 +447,12 @@ function buildHand(
   held: Omit<HeldOptions, "frame">,
   skin: ReturnType<typeof rig.handSkin>,
 ): Omit<Built, "au"> {
+  const side = t.row.side;
   const fr = rig.graspFrame(
     spec,
     geom,
     { ...t.choice, group: t.group, variant: t.variant },
-    -1,
+    side,
     rig.handDims(k, long),
     k,
     long,
@@ -460,7 +462,7 @@ function buildHand(
   const shape = spec.shape!;
   const fitted = rig.heldFit({
     v: fr.pose,
-    side: -1,
+    side,
     k,
     long,
     shape,
@@ -485,12 +487,12 @@ function buildHand(
     palm: d.gaps.palm * sc,
   };
   let pierce = { depth: -Infinity, core: -Infinity, piece: "palm" };
-  rig.handCapsules(v, -1, k, long).forEach(([a, b, r], i) => {
+  rig.handCapsules(v, side, k, long).forEach(([a, b, r], i) => {
     const c = rig.capsuleClearance(shape, fr.G, a, b, r);
     if (c.core * sc > pierce.core)
       pierce = { depth: -c.gap * sc, core: c.core * sc, piece: rig.HAND_CAPSULE_PIECES[i] };
   });
-  const g0 = rig.handGripOf(v, -1, k, long);
+  const g0 = rig.handGripOf(v, side, k, long);
   const grip = rig.heldDistance(shape, rig.toItem(fr.G, g0 as V3)) * sc;
   const oppose = rig.heldOppose(shape, d.near, { ...fingers, palm: gaps.palm } as never, fr.roles);
   const sample = {
@@ -683,7 +685,7 @@ export class GraspEditor {
     this.root.quaternion.copy(sc.q);
     this.scene.add(this.root);
     const skin = sc.skin ?? rig.npr({ color: "#f2c9a4" });
-    this.hand = new HandMesh(t.k, t.long, skin, sc.hull);
+    this.hand = new HandMesh(t.row.side, t.k, t.long, skin, sc.hull);
     this.root.add(this.hand.group);
     this.pieces = vertexPieces(this.hand.skin);
     this.clone = sceneClone(t.object);
@@ -699,7 +701,7 @@ export class GraspEditor {
     t.sizes.forEach((z, i) => {
       const group = new THREE.Group();
       group.position.set(0, 0, (i ? -1 : 1) * gap);
-      const hand = new HandMesh(z.k, z.long, skin, sc.hull);
+      const hand = new HandMesh(t.row.side, z.k, z.long, skin, sc.hull);
       const item = sceneClone(t.object);
       item.matrixAutoUpdate = false;
       group.add(hand.group, item);
@@ -822,14 +824,14 @@ export class GraspEditor {
     this.handOver.add(arm, wrist, ring, line);
   }
 
-  /** Khung cầm của món cảnh (`raw`: bỏ bản soạn — rig đoán) cho tay phải cỡ đang soạn */
+  /** Khung cầm của món cảnh (`raw`: bỏ bản soạn — rig đoán) cho bàn tay đang soạn */
   private frameOf(raw: boolean) {
     const t = this.t;
     return rig.graspFrame(
       t.spec,
       this.geom,
       { ...t.choice, group: t.group, variant: t.variant },
-      -1,
+      t.row.side,
       rig.handDims(t.k, t.long),
       t.k,
       t.long,
@@ -893,7 +895,7 @@ export class GraspEditor {
    */
   private repivot() {
     const M = gripMatrix(this.gripNow());
-    const c = rig.gripCenter(this.anchor(), -1, this.t.k, this.t.long);
+    const c = rig.gripCenter(this.anchor(), this.t.row.side, this.t.k, this.t.long);
     this.pivot.position.set(...c);
     if (this.axes === "item")
       M.decompose(new THREE.Vector3(), this.pivot.quaternion, new THREE.Vector3());
@@ -914,17 +916,21 @@ export class GraspEditor {
       rig.variantOf(t.spec, t.group, t.variant)!.spec.pose!.closed.pose) as HandPose;
   }
 
-  /** Bản soạn từ món, ngón đang thấy; kiểu cầm có tên giữ `base`, `note` của bản đã có */
+  /** Bản soạn (tay phải) từ món, ngón đang thấy; kiểu cầm có tên giữ `base`, `note` của bản đã có */
   authored(): AuthoredGrasp {
     const t = this.t;
     const was = rig.authoredOf(t.spec, t.group, t.variant);
-    const au = rig.authoredFrom(
+    const au = rig.authoredFromSide(
+      t.spec,
+      this.geom,
+      { ...t.choice, group: t.group, variant: t.variant },
+      t.row.side,
       this.gripNow(),
       this.anchor(),
       t.k,
       t.long,
       [0, 0, ...this.fingers, ...this.fit],
-      rig.authoredChoice(t.choice, t.high),
+      t.high,
       this.curl,
     );
     return { ...(was?.base && { base: was.base }), ...(was?.note && { note: was.note }), ...au };
@@ -1038,18 +1044,20 @@ export class GraspEditor {
   /** Tâm nắm đang thấy (thế giới khung soạn) */
   private center() {
     const v = this.built?.v ?? [0, 0, ...this.fingers];
-    return new THREE.Vector3(...rig.handGripOf(v, -1, this.t.k, this.t.long)).applyQuaternion(
-      this.root.quaternion,
-    );
+    return new THREE.Vector3(
+      ...rig.handGripOf(v, this.t.row.side, this.t.k, this.t.long),
+    ).applyQuaternion(this.root.quaternion);
   }
 
   /** Hướng từ tâm nắm ra camera của góc `v` (thế giới khung soạn) */
   private viewDir(v: EditView): THREE.Vector3 {
     const q = this.root.quaternion;
     let d: THREE.Vector3;
-    // lòng tay quay về +x của khung bàn tay phải; nghiêng nhẹ về phía cổ tay cho khỏi nhìn dọc trục thẳng đứng
+    // lòng tay quay về `-side · x` của khung bàn tay (`handAxes`); nghiêng nhẹ về phía cổ tay cho khỏi nhìn dọc trục đứng
     if (v === "long" || v === "mu")
-      d = new THREE.Vector3(v === "long" ? 1 : -1, 0.25, 0.15).applyQuaternion(q);
+      d = new THREE.Vector3((v === "long" ? 1 : -1) * -this.t.row.side, 0.25, 0.15).applyQuaternion(
+        q,
+      );
     else d = this.t.scene.views[v].clone();
     d.normalize();
     if (Math.abs(d.y) > 0.985) d.add(new THREE.Vector3(0, 0, 0.2).applyQuaternion(q)).normalize();
@@ -1364,7 +1372,7 @@ export class GraspEditor {
     const has = !!was;
     const named = was?.base ? ` · kiểu có tên, gốc <code>${esc(was.base)}</code>` : "";
     this.ui.innerHTML = `
-      <div class="edhead"><b>${t.base}@${t.group}/${esc(t.variant)}</b>${named} · soạn tay phải (tay trái lấy gương) · cỡ tay ${t.k.toFixed(2)} / ${t.long.toFixed(2)}${has ? " · <span class='tag'>đã có bản soạn</span>" : ""}${was?.note ? `<div class="dim">${esc(was.note)}</div>` : ""}</div>
+      <div class="edhead"><b>${t.base}@${t.group}/${esc(t.variant)}</b>${named} · soạn tay ${t.row.side < 0 ? "phải" : "trái (lưu thành bản tay phải)"} · cỡ tay ${t.k.toFixed(2)} / ${t.long.toFixed(2)}${has ? " · <span class='tag'>đã có bản soạn</span>" : ""}${was?.note ? `<div class="dim">${esc(was.note)}</div>` : ""}</div>
       <div class="seg" data-k="view"><button data-v="edit" class="on">Khung soạn</button><button data-v="scene">Khung cảnh (áp tạm)</button></div>
       <label>Điểm đầu <select data-k="start"><option value="">—</option><option value="rig">Rig đoán (bộ giải)</option>${rig.HAND_POSE_KINDS.map((p) => `<option value="${p}">dáng ${p} (${rig.HAND_POSE_LABELS[p]})</option>`).join("")}</select></label>
       <div class="row"><div class="seg" data-k="mode"><button data-v="translate" class="on">Dời (T)</button><button data-v="rotate">Xoay (Y)</button></div>
