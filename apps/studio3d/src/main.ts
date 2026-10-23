@@ -62,7 +62,9 @@ import {
   type KeyRef,
 } from "./keys";
 import { record, travel } from "./history";
-import { runHoldKeys, setRunVariant, styleEntries, type RunRef } from "./named";
+import { runAt } from "./mode";
+import { ModeCard } from "./modeUi";
+import { runHoldKeys, setRunVariant, styleEntries, styleUses, type RunRef } from "./named";
 import { renderStyles } from "./namedUi";
 import { plusHand, plusItem } from "./plus";
 import { KeyTrack, type Band, type Lane } from "./track";
@@ -95,6 +97,7 @@ const ui = {
   cfCopy: $<HTMLButtonElement>("cfCopy"),
   cfKeep: $<HTMLButtonElement>("cfKeep"),
   keyCard: $<HTMLElement>("keyCard"),
+  runCard: $<HTMLElement>("runCard"),
   laneLabels: $<HTMLDivElement>("laneLabels"),
   lanes: $<HTMLDivElement>("lanes"),
   laneAdds: $<HTMLDivElement>("laneAdds"),
@@ -611,6 +614,7 @@ function afterPose() {
       wrap: cur.held.wrap ?? rig.HELD_WRAP,
     });
     if (!playing || fresh) panel();
+    if (fresh && !playing && modeCard.sel) modeCard.render();
     grab.sync(edMode === "hands" && !playing && !editor ? r : undefined);
   }
 }
@@ -646,9 +650,7 @@ function panel() {
   ui.measure.innerHTML =
     rowsT === t ? measureHtml(r, cur.held) : `<div class="dim">dừng phát để đo</div>`;
   const run = runOf(r.id, r.side, t);
-  renderStyles(ui.styles, run ? styleModel(run, r.report?.choice.variant) : null, (v) =>
-    pickStyle(run!, v),
-  );
+  renderStyles(ui.styles, run ? styleModel(run, r) : null, (v) => pickStyle(run!, v));
 }
 
 /** Lần cầm của tay `side` người `id` chứa giây `at` */
@@ -658,25 +660,40 @@ function runOf(id: string, side: Side, at: number): (RunRef & HoldRunInfo) | und
   return run && { ...run, id, side: sideOf(side) };
 }
 
-/** Danh sách kiểu cầm của món × nhóm của lần cầm (`solved`: biến thể rig đang ra) */
-function styleModel(run: RunRef & HoldRunInfo, solved?: string) {
-  if (!work || !cur || run.group === "carry") return null;
+/**
+ * Danh sách kiểu cầm của món × nhóm của lần cầm; lần cầm không có kiểu để chọn (món treo, tay không giải chỗ cầm nhóm,
+ * nhóm một kiểu mà món chưa có kiểu có tên) thì một dòng nêu lý do
+ */
+function styleModel(run: RunRef & HoldRunInfo, r: HandRow) {
+  if (!work || !cur) return null;
+  if (run.group === "carry") return "món treo (`carry`): không có kiểu cầm";
+  if (!r.report)
+    return "bàn tay không giải chỗ cầm nhóm ở giây này (món tựa, đang hoà, hay không khai nhóm): không có kiểu để chọn";
   const held = cur.data.held as Record<string, HeldItemSpec>;
+  const entries = styleEntries(held[run.item] ?? held[rig.heldBase(run.item)], run.group);
+  if (entries.length < 2 && !run.variant)
+    return `nhóm \`${run.group}\` chỉ có một kiểu, món chưa có kiểu có tên`;
   return {
     label: holdLabel({ ...run, variant: undefined }) + (run.lead ? " (tay phụ)" : ""),
     ...(run.variant && { current: run.variant }),
-    ...(solved && { solved }),
-    entries: styleEntries(held[run.item] ?? held[rig.heldBase(run.item)], run.group),
+    ...(!run.variant && r.report.choice.variant && { solved: r.report.choice.variant }),
+    entries,
     keys: runHoldKeys(work.raw, run).length,
   };
 }
 
+const keepEdge = (n: number) =>
+  n ? `, thêm \`regrip\` ở ${n} mốc để lần cầm không nhập vào lần cầm kề cùng kiểu` : "";
+
 /** Đổi `variant` của cả lần cầm (một bước lịch sử); `undefined` bỏ khai, rig chọn */
 function pickStyle(run: RunRef & HoldRunInfo, v: string | undefined) {
   if (!work) return;
-  const { raw, changed } = setRunVariant(work.raw, run, v);
+  const { raw, changed, regrip } = setRunVariant(work.raw, run, v);
   if (!changed) return say("lần cầm không có mốc `hold` nào đổi");
-  if (apply(raw)) say(`${run.item}@${run.group}: kiểu ${v ?? "rig chọn"} — đổi ${changed} mốc`);
+  if (apply(raw))
+    say(
+      `${run.item}@${run.group}: kiểu ${v ?? "rig chọn"} — đổi ${changed} mốc${keepEdge(regrip)}`,
+    );
 }
 
 /** Chọn bàn tay; `go` thì camera tự do bay tới cận tay ấy (góc trước) */
@@ -694,7 +711,7 @@ function view(a: Angle) {
   const r = selRow();
   if (!r || !orbit) return;
   if (mode !== "free") setMode("free");
-  const to = anglePose(r, a, free.fov);
+  const to = anglePose(r, a, free.fov, cur?.w.root);
   fly = {
     p0: free.position.clone(),
     t0: orbit.target.clone(),
@@ -788,7 +805,7 @@ function editScene(r: HandRow): EditScene {
   const c = gripWorld(r.fig, r.side);
   const cam = mode === "free" ? free : stage.camera;
   const dir = (a: Angle) => {
-    const p = anglePose(r, a, free.fov);
+    const p = anglePose(r, a, free.fov, w.root);
     return mirror(p.position.sub(p.target).normalize());
   };
   const inked = arm.wrist.children.find((g) => g.userData.hand === r.side);
@@ -879,7 +896,7 @@ function openEditor() {
             message: `${saved}; không thấy lần cầm: cảnh không đổi`,
             error: true,
           };
-        const { raw, changed } = setRunVariant(work.raw, run, name);
+        const { raw, changed, regrip } = setRunVariant(work.raw, run, name);
         if (!apply(raw))
           return {
             spec: spec.data,
@@ -888,7 +905,7 @@ function openEditor() {
           };
         return {
           spec: spec.data,
-          message: `${saved}; cảnh: \`variant\` ở ${changed} mốc của lần cầm — chưa lưu cảnh (Lưu, Ctrl+S)`,
+          message: `${saved}; cảnh: \`variant\` ở ${changed} mốc của lần cầm${keepEdge(regrip)} — chưa lưu cảnh (Lưu, Ctrl+S)`,
         };
       },
       copyTo: async (t, dst, name, au) => (await postHeld(dst, t.group, name, au)).file,
@@ -898,6 +915,12 @@ function openEditor() {
           ? { label: holdLabel(run), keys: runHoldKeys(work.raw, run).length }
           : undefined;
       },
+      uses: (t) =>
+        work && !(rig.GROUP_VARIANTS[t.group] as readonly string[]).includes(t.variant)
+          ? styleUses(work.raw, t.base, t.group, t.variant).map(
+              (u) => `${u.id} tay ${SIDE_NAME[u.side]} t=${u.t}`,
+            )
+          : [],
       held: () => cur?.data.held as Record<string, HeldItemSpec>,
       close: () => closeEditor(),
       wheel: () => fc.wheel,
@@ -996,13 +1019,6 @@ const sameKey = (a: KeyRef | null, b: KeyRef | null) => JSON.stringify(a) === JS
 const isObj = (v: unknown): v is Json => !!v && typeof v === "object" && !Array.isArray(v);
 const holdLabel = (r: Pick<HoldRunInfo, "item" | "group" | "variant">) =>
   `${r.item}@${r.group}${r.variant ? `/${r.variant}` : ""}`;
-/** Lần cầm chứa giây `at` (lần cầm tới hết cảnh còn ở chính giây cuối) */
-const runAt = (runs: HoldRunInfo[], at: number, dur: number) =>
-  runs.find(
-    (r) =>
-      r.since <= at + 1e-9 &&
-      (at < r.until - 1e-9 || (r.until >= dur - 1e-9 && at <= r.until + 1e-9)),
-  );
 const MODE_NAME = {
   hand: "đồ theo tay",
   keyed: "tay theo đồ, theo mốc",
@@ -1025,8 +1041,11 @@ function rowOf(raw: Json, k: KeyRef): Json | undefined {
     : handsOf(raw, k.id)?.[k.index];
 }
 
-/** Dải lần cầm của một tay: chế độ từng lần cầm, khoảng tay tự do, quãng `HOLD_BLEND` ở ranh giới */
-function bandsOf(runs: HoldRunInfo[], dur: number) {
+/**
+ * Dải lần cầm của một tay: chế độ từng lần cầm, khoảng tay tự do, quãng `HOLD_BLEND` ở ranh giới; `open` là giây của lần
+ * cầm đang mở thẻ lần cầm
+ */
+function bandsOf(runs: HoldRunInfo[], dur: number, open?: number) {
   const bands: Band[] = [];
   const blends: [number, number][] = [];
   let at = 0;
@@ -1040,7 +1059,9 @@ function bandsOf(runs: HoldRunInfo[], dur: number) {
       to: r.until,
       kind: r.mode === "hand" ? "hand" : "item",
       label: holdLabel(r) + (r.lead ? " (phụ)" : ""),
-      title: `${holdLabel(r)} · ${MODE_NAME[r.mode]}${lead} · ${r.since.toFixed(2)}–${r.until.toFixed(2)} s`,
+      title: `${holdLabel(r)} · ${MODE_NAME[r.mode]}${lead} · ${r.since.toFixed(2)}–${r.until.toFixed(2)} s · nhấp: thẻ lần cầm, đổi chế độ`,
+      run: { since: r.since, until: r.until },
+      on: open !== undefined && runAt([r], open, dur) === r,
     });
     if (r.since > 0) blends.push([r.since, Math.min(r.since + rig.HOLD_BLEND, r.until)]);
     // nhả món đặt trước: bàn tay hoà ra từ nghiệm cũ
@@ -1089,7 +1110,11 @@ function lanesOf(id: string, on: HandSide): Lane[] {
       title: `Mốc \`world.hands\` tay ${SIDE_NAME[side]} của ${id}; nhấp để chọn tay này`,
       on: side === on,
       add: `Thêm mốc tay ${SIDE_NAME[side]} ở giây đang xem, giá trị như đang vẽ`,
-      ...bandsOf(runs[side], cur!.dur),
+      ...bandsOf(
+        runs[side],
+        cur!.dur,
+        modeCard.sel?.id === id && modeCard.sel.side === side ? modeCard.sel.at : undefined,
+      ),
       keys,
     };
   });
@@ -1132,6 +1157,7 @@ const track = new KeyTrack(
     pick(k) {
       if (!work) return;
       if (k.kind === "hand") selectSide(k.id, k.side);
+      modeCard.sel = null;
       picked = k;
       seek(keyTime(work.raw, k));
       syncEdit();
@@ -1170,8 +1196,34 @@ const track = new KeyTrack(
       selectSide(sel.id, lane);
       syncEdit();
     },
+    band(lane, b) {
+      if (!sel || !b.run || (lane !== "right" && lane !== "left")) return;
+      selectSide(sel.id, lane);
+      picked = null;
+      modeCard.open(sel.id, lane, (b.run.since + b.run.until) / 2);
+      syncEdit();
+    },
   },
 );
+
+/** Thẻ lần cầm: công tắc chế độ, bảng độ lệch, Áp / Thôi */
+const modeCard = new ModeCard(ui.runCard, {
+  ctx: () =>
+    work && cur && edMode === "hands" && !editor
+      ? {
+          raw: work.raw,
+          rt: cur.rt,
+          t,
+          dur: cur.dur,
+          rebuild: (j: unknown) => rebuildRaw(j as Json),
+        }
+      : null,
+  apply(raw, message) {
+    if (!apply(raw, { key: null })) return false;
+    say(`đã đổi chế độ lần cầm ${message}`);
+    return true;
+  },
+});
 
 /**
  * Áp JSON thô mới của cảnh: parse, làm mới tại chỗ (`restage`; không được thì dựng lại cả cảnh). Hỏng thì giữ bản cũ, báo
@@ -1253,6 +1305,7 @@ function syncEdit() {
   if (!cur || !work || edMode !== "hands") {
     track.render(null, cur?.dur ?? 1);
     renderCard(ui.keyCard, null, cardHost);
+    modeCard.render();
     return;
   }
   if (!sel)
@@ -1264,6 +1317,7 @@ function syncEdit() {
   else track.render(lanesOf(sel.id, sideOf(sel.side)), cur.dur);
   track.playhead(t, cur.dur);
   renderCard(ui.keyCard, picked && cardOf(picked), cardHost);
+  modeCard.render();
 }
 
 /** Mốc kế (cùng tay, cùng món) mà sửa mốc `k` còn đổi hình tới: mốc sau, chuỗi `auto` thì mốc sau nữa */
@@ -1553,7 +1607,14 @@ async function save() {
     const res = await fetch(`/api/scene?name=${encodeURIComponent(name)}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ hash: work.hash, scene: work.raw }),
+      // bản đang sửa bỏ khoá `items` mà bản đã lưu có: `null` để server bỏ khoá ấy trên đĩa
+      body: JSON.stringify({
+        hash: work.hash,
+        scene:
+          !("items" in work.raw) && "items" in JSON.parse(work.saved)
+            ? { ...work.raw, items: null }
+            : work.raw,
+      }),
     });
     const j = await res.json();
     if (res.status === 409) {
@@ -1732,8 +1793,13 @@ ui.frame.addEventListener("dblclick", (e) => {
   }
 });
 addEventListener("keydown", (e) => {
-  // khung soạn đang hiện: phím của nó (`GraspEditor.onKey`), cảnh và camera ngầm không đổi
-  if ((e.target instanceof HTMLInputElement && e.target.type === "text") || editor?.shown) return;
+  // khung soạn đang hiện: phím của nó (`GraspEditor.onKey`), cảnh và camera ngầm không đổi; hộp thoại mở: phím của hộp
+  if (
+    (e.target instanceof HTMLInputElement && e.target.type === "text") ||
+    editor?.shown ||
+    document.querySelector("dialog[open]")
+  )
+    return;
   const typing =
     (e.target instanceof HTMLInputElement && !["range", "checkbox"].includes(e.target.type)) ||
     e.target instanceof HTMLSelectElement ||
@@ -1766,6 +1832,7 @@ addEventListener("keydown", (e) => {
     seek(t + (e.key === "ArrowLeft" ? -step : step));
   } else if (e.key === "c" || e.key === "C") setMode(mode === "scene" ? "free" : "scene");
   else if ((e.key === "r" || e.key === "R") && !mod && cur) reload(e.shiftKey);
+  else if (e.key === "Escape" && modeCard.sel) modeCard.close();
   else if (e.key === "Escape" && picked) cardHost.close();
   else if (e.key === "Escape" && sel) select(undefined, false);
 });
@@ -1836,5 +1903,6 @@ Object.assign(window, {
     step,
     save,
     grab,
+    modeCard,
   },
 });

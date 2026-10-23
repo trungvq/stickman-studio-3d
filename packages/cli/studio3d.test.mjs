@@ -14,7 +14,7 @@ import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import * as rig from "@stickman3d/sketch";
 import { COMMON } from "./lib.mjs";
-import { sceneWithHands, serveStudio3d, writeWithBak } from "./studio3d.mjs";
+import { heldWithAuthored, sceneWithHands, serveStudio3d, writeWithBak } from "./studio3d.mjs";
 import * as T from "./templates.mjs";
 
 const git = (dir, ...a) =>
@@ -87,6 +87,41 @@ describe("writeWithBak", () => {
   });
 });
 
+describe("heldWithAuthored", () => {
+  const au = {
+    item: { p: [0, 0, 0], q: [0, 0, 0, 1] },
+    anchor: "pinch",
+    fingers: Array(10).fill(0),
+  };
+  const v2 = JSON.parse(
+    readFileSync(
+      new URL("../rig/src/core/__fixtures__/held-v2/bang-gia.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  it("kiểu có tên (`base` / `note`) trên món bản cũ: `schemaVersion` lên bản của rig", () => {
+    const out = heldWithAuthored(v2, "sheet", "kep", { base: "flat", ...au }, 3);
+    assert.equal(out.schemaVersion, 3);
+    assert.deepEqual(out.authored, { sheet: { kep: { base: "flat", ...au } } });
+    assert.equal(v2.schemaVersion, 2);
+    assert.equal(heldWithAuthored(v2, "sheet", "flat", { note: "x", ...au }, 3).schemaVersion, 3);
+    assert.ok(rig.parseHeldItem(out).success);
+    assert.equal(rig.HELD_VERSION, 3);
+  });
+  it("chỉ bản soạn của biến thể gốc, hay xoá: giữ `schemaVersion`", () => {
+    assert.equal(heldWithAuthored(v2, "sheet", "flat", au, 3).schemaVersion, 2);
+    const named = { ...v2, authored: { sheet: { kep: { base: "flat", ...au } } } };
+    const out = heldWithAuthored(named, "sheet", "kep", null, 3);
+    assert.equal(out.schemaVersion, 2);
+    assert.equal(out.authored, undefined);
+    assert.equal(
+      heldWithAuthored({ ...v2, schemaVersion: 3 }, "sheet", "kep", { base: "flat", ...au }, 3)
+        .schemaVersion,
+      3,
+    );
+  });
+});
+
 describe("sceneWithHands", () => {
   const disk = { a: 1, cast: [{ id: "x", world: { at: [0, 0, 0], hands: [{ t: 0 }] } }] };
   it("lấy tay và `items` của bản studio, giữ phần còn lại của đĩa", () => {
@@ -108,6 +143,11 @@ describe("sceneWithHands", () => {
       cast: [{ id: "x", world: { at: [0, 0, 0] } }],
     });
     assert.deepEqual(next, withItems);
+  });
+  it("`items: null` bỏ khoá `items` trên đĩa", () => {
+    const next = sceneWithHands({ ...disk, items: [{ t: 1 }] }, { ...disk, items: null });
+    assert.deepEqual(next, disk);
+    assert.equal("items" in next, false);
   });
   it("bản studio đổi phần khác thì từ chối", () => {
     assert.throws(() => sceneWithHands(disk, { ...disk, a: 2 }), /chỉ ghi/);

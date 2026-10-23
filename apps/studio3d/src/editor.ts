@@ -105,6 +105,8 @@ export interface EditHost {
   /** Ghi `au` vào khoá `name` của món `dst` (cùng nhóm), trả file */
   copyTo(t: EditTarget, dst: string, name: string, au: AuthoredGrasp): Promise<string>;
   run(t: EditTarget): { label: string; keys: number } | undefined;
+  /** Mốc của cảnh đang mở còn gọi kiểu có tên đang soạn (để cảnh báo trước khi xoá bản soạn); biến thể gốc thì rỗng */
+  uses(t: EditTarget): string[];
   held(): Record<string, HeldItemSpec>;
   close(): void;
   wheel(): WheelMode;
@@ -1311,8 +1313,8 @@ export class GraspEditor {
     this.hud.innerHTML = `
       <div class="edbar">
         <div class="seg">${(Object.entries(VIEWS) as [EditView, string][]).map(([v, l], i) => `<button data-view="${v}" title="${l} (${i + 1})">${l}</button>`).join("")}</div>
-        <button data-undo="undo" title="Hoàn tác (Ctrl+Z)">↶ Hoàn tác</button>
-        <button data-undo="redo" title="Làm lại (Ctrl+Shift+Z)">↷ Làm lại</button>
+        <button data-undo="undo" title="Hoàn tác (Ctrl+Z)">↶<span class="lbl"> Hoàn tác</span></button>
+        <button data-undo="redo" title="Làm lại (Ctrl+Shift+Z)">↷<span class="lbl"> Làm lại</span></button>
         <label title="Hiện / ẩn gizmo dời, xoay món (G)"><input type="checkbox" data-hud="gizmo" checked /> gizmo</label>
       </div>
       <div class="edcard"></div>
@@ -1461,6 +1463,14 @@ export class GraspEditor {
     };
     if (this.els.drop)
       this.els.drop.onclick = async () => {
+        const uses = this.host.uses(this.t);
+        if (
+          uses.length &&
+          !confirm(
+            `Cảnh đang mở còn gọi kiểu ${this.t.variant} ở ${uses.join(", ")}: xoá bản soạn thì cảnh không dựng được các mốc ấy cho tới khi đổi kiểu. Vẫn xoá?`,
+          )
+        )
+          return;
         try {
           const file = await this.host.save(this.t, null);
           this.say(`đã xoá bản soạn khỏi ${file}`);

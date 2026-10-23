@@ -13,7 +13,14 @@ import { describe, expect, it } from "vitest";
 import bangGia from "../../../packages/rig/src/core/__fixtures__/held-v2/bang-gia.json";
 import dua from "../../../packages/rig/src/core/__fixtures__/held-v2/dua.json";
 import type { Json } from "./keys";
-import { copyAuthored, nameProblem, runVariant, setRunVariant, type RunRef } from "./named";
+import {
+  copyAuthored,
+  nameProblem,
+  runVariant,
+  setRunVariant,
+  styleUses,
+  type RunRef,
+} from "./named";
 
 const item = (json: unknown): HeldItemSpec => {
   const r = parseHeldItem(json);
@@ -149,6 +156,73 @@ describe("đổi `variant` của một lần cầm trên JSON thô", () => {
     const { raw: c } = setRunVariant(b, sup, undefined);
     expect(hands(c)[4].left).toEqual(hands(raw())[4].left);
     expect(hands(c)[5].left).toEqual(hands(raw())[5].left);
+  });
+});
+
+describe("đổi `variant` giữ ranh giới với lần cầm kề", () => {
+  /** Ba lần cầm liền nhau cùng món × nhóm, chỉ khác `variant`: 0–1 `flat`, 1–2 `pinch`, 2– `rim` */
+  const three = (): Json => ({
+    name: "x",
+    cast: [
+      {
+        id: "a",
+        world: {
+          hands: [
+            { t: 0, right: { hold: "thuc-don@sheet/flat" } },
+            { t: 0.5, right: { hold: "thuc-don@sheet/flat" } },
+            { t: 1, right: { hold: { item: "thuc-don", group: "sheet", variant: "pinch" } } },
+            { t: 2, right: { hold: "thuc-don@sheet/rim" } },
+          ],
+        },
+      },
+    ],
+  });
+  const mid: RunRef = { id: "a", side: "right", handKeys: [2], item: "thuc-don", group: "sheet" };
+
+  it("thành cùng kiểu với lần cầm trước: mốc mở lần cầm này nhận `regrip`", () => {
+    const { raw: b, regrip } = setRunVariant(three(), mid, "flat");
+    expect(regrip).toBe(1);
+    expect(hands(b)[2].right).toEqual({
+      hold: { item: "thuc-don", group: "sheet", variant: "flat", regrip: true },
+    });
+    expect(hands(b)[3]).toEqual(hands(three())[3]);
+  });
+
+  it("thành cùng kiểu với lần cầm sau: mốc mở lần cầm sau nhận `regrip`, chuỗi tắt thành object", () => {
+    const { raw: b, regrip } = setRunVariant(three(), mid, "rim");
+    expect(regrip).toBe(1);
+    expect(hands(b)[2].right).toEqual({
+      hold: { item: "thuc-don", group: "sheet", variant: "rim" },
+    });
+    expect(hands(b)[3].right).toEqual({
+      hold: { item: "thuc-don", group: "sheet", variant: "rim", regrip: true },
+    });
+    const first: RunRef = { ...mid, handKeys: [0, 1] };
+    const r = setRunVariant(three(), first, "pinch");
+    expect(r.regrip).toBe(1);
+    expect(hands(r.raw)[2].right).toMatchObject({ hold: { variant: "pinch", regrip: true } });
+    expect(hands(r.raw)[0].right).toEqual({ hold: "thuc-don@sheet/pinch" });
+  });
+
+  it("kiểu khác cả hai bên, hay mốc kề là buông: không thêm `regrip`", () => {
+    expect(setRunVariant(three(), mid, "kep").regrip).toBe(0);
+    const j = three();
+    hands(j)[1].right = { hold: null };
+    expect(setRunVariant(j, mid, "flat").regrip).toBe(0);
+  });
+});
+
+describe("mốc của cảnh gọi một kiểu", () => {
+  it("`hold` cùng món × nhóm × kiểu, và `both` của tay dẫn", () => {
+    const u = styleUses(raw(), "thuc-don", "sheet", "flat");
+    expect(u).toEqual([{ id: "a", side: "right", t: 1 }]);
+    const { raw: b } = setRunVariant(
+      raw(),
+      { id: "a", side: "right", lead: "left", handKeys: [4], item: "khay", group: "platform" },
+      "do-day",
+    );
+    expect(styleUses(b, "khay", "platform", "do-day")).toEqual([{ id: "a", side: "left", t: 4 }]);
+    expect(styleUses(b, "thuc-don", "sheet", "pinch")).toEqual([]);
   });
 });
 
