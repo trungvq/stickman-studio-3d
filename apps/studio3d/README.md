@@ -247,17 +247,20 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hà
   nhớ trong `localStorage`): cổ tay (chấm đặc màu bên tay: phải hồng, trái xanh), khuỷu (chấm rỗng) và tâm hộp bao của
   món tay ấy đang cầm (cam; theo mốc món hay theo bàn tay như vẽ, món treo `carry` không có) trong `±2` s quanh giây đang
   xem. Mỗi chấm là một khung 1/30 s, khoảng cách giữa hai chấm là tốc độ; chấm to ở giây của mốc tay (cổ tay, khuỷu) và
-  mốc món (tâm món), kể cả mốc lệch khung; chấm quanh giây đang xem bỏ đi để không che tay.
-  - Cổ tay, khuỷu là `actJoints` của nhân vật cảnh (`castCharacter`), đúng khớp `check` đo giật. **Vạch tím** ngang qua chấm
+  mốc món (tâm món), kể cả mốc lệch khung; chấm quanh giây đang xem (±1,5 khung) bỏ đi để không che tay, trừ chấm đỏ.
+  - Cổ tay, khuỷu là `actJoints` của nhân vật cảnh (`castCharacter`; người không khai `character` là `defaultCharacter()`
+    như `check`), đúng khớp `check` đo giật. **Vạch tím** ngang qua chấm
     cổ tay: cổ tay kẹp ở khung ấy (`clamped` như `handReport`).
   - **Chấm đỏ** viền đen là khung giật của `check` nhóm `move` cho người ấy, cùng phép đo và ngưỡng (`stickman.snap` của
     `package.json`, mặc định `SNAP_PX` / `SNAP_K` / `SNAP_FPS`), đo cả cảnh: `sceneSnaps` nhắc cổ tay hay bàn tay bên ấy đỏ ở
     vệt cổ tay, nhắc khuỷu đỏ ở vệt khuỷu — khung vệt chứa cú nhảy (`Snap.t` là khung sau cú nhảy ở nhịp đo); quãng khuỷu
     khoá xoay quá nhanh (`elbowLockSnaps`) bên ấy đỏ mọi khung trong quãng ở vệt khuỷu. Giật ở khớp khác trong cửa sổ ghi ở
-    dòng "giật khác". `check` của tập chỉ đo trong quãng shot dùng cảnh; vệt đo cả cảnh.
+    dòng "giật khác". Như `check`, chỉ đo trong quãng các shot của `episodes/` đưa cảnh lên hình (server gửi kèm
+    `snapSpans`, tính trên bản đĩa); cảnh không shot nào dùng thì đo cả cảnh.
   - Tính trong một luồng riêng (`trailWorker.ts`), không khoá trang: sau mỗi thao tác (đổi bản sửa, tay, giây, cửa sổ) chậm lại
     150 ms rồi dựng runtime của bản sửa, lấy mẫu theo giây tăng (đồ theo tay nhớ chuỗi cổ tay từ mốc gần nhất), nhường mỗi
-    20 ms để lượt mới thay lượt cũ; vệt cũ mờ đi tới khi có vệt mới. Mẫu và giật nhớ theo bản sửa: tua chỉ lấy thêm khung
+    20 ms để lượt mới thay lượt cũ; vệt cũ mờ đi tới khi có vệt mới. Đổi bản sửa hay tay thì lượt đang chạy bỏ ngay: kết
+    quả của nó không vẽ lên tay mới. Mẫu và giật nhớ theo bản sửa: tua chỉ lấy thêm khung
     mới. Dòng trạng thái ghi số mẫu, giây tính vệt và giây đo giật (một vệt ±2 s chừng 1–2 s, đo giật cả cảnh chừng 1–1,5 s
     với cảnh t02).
 - **Thẻ mốc**: `ease` (ô 4 số khi `bezier`, mặc định `BEZIER_DEFAULT`); `hold` (không khai / buông `null` / cầm: món,
@@ -298,8 +301,9 @@ Thẻ lần cầm (nhấp dải dưới hàng tay) ghi món, người, tay, quã
   mốc của quãng đổi và giữa hai mốc kề: món dời, món quay, tâm nắm từng tay dời, `φ` khuỷu tay dẫn trước → sau, khớp cổ tay
   ở giới hạn trước → sau (`x` xoay, `g` gập, `l` lệch), `khoá` (bản vá khoá khuỷu ở mốc), `hoà` (đang trong `HOLD_BLEND`,
   không tính vào lệch lớn nhất). Đơn vị rig (người cao ~430) và độ; ô dời quá `HOLD_MODE_POS` (0,5), quay quá
-  `HOLD_MODE_ANGLE` (1°) tô đỏ, hàng có ô ấy nền đỏ. Trên bảng: lệch lớn nhất ở mốc, ngoài quãng đổi, lúc hoà; dưới bảng:
-  `notes` của phép đổi và bản vá JSON Patch.
+  `HOLD_MODE_ANGLE` (1°) tô đỏ, hàng có ô ấy nền đỏ. Trên bảng: lệch lớn nhất ở mốc, giữa mốc (hàng giữa hai mốc kề, trừ
+  hàng đang hoà), ngoài quãng đổi, lúc hoà; dưới bảng: `notes` của phép đổi và bản vá JSON Patch. Trang đang dựng lại cảnh
+  (sau một lần áp không làm mới tại chỗ được) thì thẻ chờ, không tính trên runtime cũ.
 - **Áp**: bản vá vào cảnh đang sửa, một bước của lịch sử chung (chưa ghi đĩa: **Lưu**); Ctrl+Z về đúng chữ JSON trước khi áp.
   Dải lần cầm đổi màu; thẻ ở lại trên lần cầm (đổi giữa chừng: phần sau). **Thôi** bỏ bảng, cảnh không đổi. Bản đang sửa
   đổi trong lúc bảng đang hiện thì bảng bỏ.

@@ -1195,6 +1195,21 @@ button.key.diamond .keytip {
     display: none;
   }
 
+  /* khung vẽ sát trên, lời báo ở phần trống dưới khung: không đè nhãn trên khung */
+  #view {
+    place-items: start center;
+  }
+
+  #frame {
+    margin-top: 6px;
+  }
+
+  #msg {
+    inset: auto 8px 4px;
+    max-width: none;
+    font-size: 12px;
+  }
+
   #mid {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) auto;

@@ -13,6 +13,7 @@ import { marksOf, refAt, type Json } from "./keys";
 import {
   convertRun,
   maxOver,
+  midMax,
   midRun,
   modeTarget,
   overAngle,
@@ -28,6 +29,8 @@ export interface ModeHost {
   ctx(): {
     raw: Json;
     rt: SceneRuntime;
+    /** `rt` chưa dựng từ `raw` (trang đang dựng lại cảnh sau một lần áp): chờ */
+    building?: boolean;
     t: number;
     dur: number;
     rebuild: (raw: unknown) => SceneRuntime;
@@ -152,13 +155,20 @@ export class ModeCard {
   /** Lần cầm của thẻ trên bản đang sửa */
   run(): HoldRunInfo | undefined {
     const c = this.host.ctx();
-    if (!c || !this.sel) return undefined;
+    if (!c || c.building || !this.sel) return undefined;
     return runAt(holdRuns(c.rt, this.sel.id)[this.sel.side], this.sel.at, c.dur);
   }
 
   /** Vẽ lại theo bản đang sửa: lần cầm không còn thì đóng, bản đổi từ lúc tính thì bỏ bảng */
   render() {
     const c = this.host.ctx();
+    if (c?.building && this.sel) {
+      // runtime còn là của bản trước: không tra lần cầm trên nó; dựng xong trang vẽ lại thẻ
+      this.el.hidden = false;
+      this.el.innerHTML = `<div class="cardhead"><b>Lần cầm</b><button data-m="close" title="Đóng thẻ (Esc)">✕</button></div><div class="dim">đang dựng lại cảnh…</div>`;
+      this.el.querySelector<HTMLButtonElement>("[data-m=close]")!.onclick = () => this.close();
+      return;
+    }
     const run = this.run();
     if (!c || !this.sel || !run) {
       this.sel = null;
@@ -226,10 +236,12 @@ export class ModeCard {
   private table(p: Preview) {
     const s = p.res.scope;
     const keyed = p.res.rows.filter((r) => r.kind === "key");
+    const mid = midMax(p.res.rows);
     return `
       <div class="mhead">${esc(s.item)}@${esc(s.group)} · tay dẫn ${SIDE[s.lead]}${s.partner ? ` + tay ${SIDE[s.partner]}` : ""} · ${s.from.toFixed(2)}–${s.until.toFixed(2)} s · ${MODE[s.mode.before]} → <b>${MODE[s.mode.after]}</b></div>
       <div class="dim">Đơn vị rig (người cao ~430) và độ; tô đỏ: dời &gt; 0,5, quay &gt; 1°; kẹp (cổ tay ở giới hạn, trước → sau): x xoay, g gập, l lệch; khoá: bản vá khoá khuỷu ở mốc. ${keyed.length} mốc, ${p.res.ops.length} thao tác JSON Patch, ${Math.round(p.ms)} ms.</div>
       <div class="msum${maxOver(p.res.max) ? " bad" : ""}">Ở mốc: ${maxText(p.res.max)}</div>
+      ${mid ? `<div class="msum${maxOver(mid) ? " bad" : ""}" title="hàng giữa hai mốc kề, trừ hàng đang hoà">Giữa mốc: ${maxText(mid)}</div>` : ""}
       <div class="msum${maxOver(p.res.outside) ? " bad" : ""}">Ngoài quãng đổi: ${maxText(p.res.outside)}</div>
       ${p.res.rows.some((r) => r.blending) ? `<div class="msum dim">Lúc hoà (<code>HOLD_BLEND</code>, không tính ở trên): ${maxText(p.res.blend)}</div>` : ""}
       <div class="mtable"><table>
@@ -257,9 +269,11 @@ export class ModeCard {
     this.preview = null;
     this.error = "";
     this.render();
-    setTimeout(() => {
+    const go = () => {
       const now = this.host.ctx();
       if (!this.busy || this.busy.base !== base || !now || now.raw !== base) return;
+      // runtime chưa theo `base`: phép đổi trên runtime cũ sai, chờ trang dựng xong
+      if (now.building) return void setTimeout(go, 100);
       const t0 = performance.now();
       try {
         const { res, raw } = convertRun(now.rt, base, ask, now.rebuild);
@@ -269,7 +283,8 @@ export class ModeCard {
       }
       this.busy = null;
       this.render();
-    }, 30);
+    };
+    setTimeout(go, 30);
   }
 
   private apply() {

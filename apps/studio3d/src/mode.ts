@@ -73,3 +73,23 @@ export const rowOver = (r: Pick<HoldModeRow, "item" | "hand">) =>
 
 export const maxOver = (m: HoldModeMax) =>
   overPos(m.item.pos) || overAngle(m.item.angle) || overPos(m.hand);
+
+/**
+ * Lệch lớn nhất ở các hàng giữa hai mốc kề, trừ hàng đang hoà; giây là hàng lệch nặng nhất (tổng ba số, như `max` của rig).
+ * Không có hàng thì `null`
+ */
+export function midMax(rows: readonly HoldModeRow[]): HoldModeMax | null {
+  const mids = rows.filter((r) => r.kind === "mid" && !r.blending);
+  if (!mids.length) return null;
+  const m: HoldModeMax = { item: { pos: 0, angle: 0 }, hand: 0 };
+  let worst = -1;
+  for (const r of mids) {
+    const h = handMax(r);
+    m.item.pos = Math.max(m.item.pos, r.item?.pos ?? 0);
+    m.item.angle = Math.max(m.item.angle, r.item?.angle ?? 0);
+    m.hand = Math.max(m.hand, h);
+    const w = (r.item?.pos ?? 0) + (r.item?.angle ?? 0) + h;
+    if (w > worst) [worst, m.t] = [w, r.t];
+  }
+  return m;
+}

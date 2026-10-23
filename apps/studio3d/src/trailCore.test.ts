@@ -1,19 +1,24 @@
 import {
+  defaultCharacter,
   elbowLockSnaps,
   handReport,
   holdRuns,
   sceneSnaps,
   stageJoints,
   sceneAt,
+  parseScene,
   type ElbowLockSnap,
   type Snap,
 } from "@stickman3d/rig/core";
 import { describe, expect, it } from "vitest";
 import { drawnItem } from "./drawn";
 import { c, runtime, scene } from "./fixture";
+import { castData } from "./runtime";
 import type { Json } from "./keys";
 import {
+  personSnaps,
   runTrail,
+  TrailJobs,
   trailSample,
   trailSnaps,
   trailTimes,
@@ -196,5 +201,98 @@ describe("trailSample trên cảnh thử", () => {
     const steps = out.map(step);
     const top = out[steps.indexOf(Math.max(...steps))].frame;
     expect(marks.wrist).toContain(top);
+  });
+});
+
+describe("TrailJobs: lượt vệt", () => {
+  const raw = {};
+  const sig = (o: Partial<Parameters<TrailJobs["want"]>[0]> = {}) => ({
+    raw,
+    id: "a",
+    side: "right" as const,
+    t: 1,
+    span: 2,
+    ...o,
+  });
+
+  it("đổi tay trước khi kết quả về: kết quả cũ bị bỏ, lượt mới mang tay của việc đã gửi", () => {
+    const j = new TrailJobs();
+    expect(j.want(sig())).toBe("restart");
+    const g1 = j.send();
+    expect(j.take(g1)).toEqual({ id: "a", side: "right" });
+    // chọn tay trái trong lúc lượt tay phải còn chạy (chưa tới lượt gửi sau 150 ms)
+    expect(j.want(sig({ side: "left" }))).toBe("restart");
+    expect(j.take(g1)).toBeNull();
+    const g2 = j.send();
+    expect(j.take(g2)).toEqual({ id: "a", side: "left" });
+    expect(j.take(g1)).toBeNull();
+  });
+
+  it("đổi bản sửa cũng làm lượt cũ hết hạn; chỉ đổi giây hay cửa sổ thì không", () => {
+    const j = new TrailJobs();
+    j.want(sig());
+    const g1 = j.send();
+    expect(j.want(sig({ t: 1.5 }))).toBe("move");
+    expect(j.want(sig({ t: 1.5, span: 3 }))).toBe("move");
+    expect(j.want(sig({ t: 1.5, span: 3 }))).toBe("same");
+    expect(j.take(g1)).toEqual({ id: "a", side: "right" });
+    expect(j.want(sig({ raw: {}, t: 1.5, span: 3 }))).toBe("restart");
+    expect(j.take(g1)).toBeNull();
+  });
+
+  it("tắt vệt: lượt đang chạy hết hạn, bật lại là lượt mới", () => {
+    const j = new TrailJobs();
+    j.want(sig());
+    const g1 = j.send();
+    const stop = j.stop();
+    expect(stop).toBeGreaterThan(g1);
+    expect(j.take(g1)).toBeNull();
+    expect(j.want(sig())).toBe("restart");
+  });
+});
+
+describe("personSnaps: giật như `check`", () => {
+  /** Cảnh thử có tay phải nhảy 80 đơn vị trong một khung ở 1,4 s */
+  const jumpy = (cast: Json = {}) => {
+    const j = scene() as Json & { cast: { world: { hands: Json[] } }[] };
+    Object.assign(j.cast[0], cast);
+    const hands = j.cast[0].world.hands;
+    hands.splice(3, 0, { t: 1.4, right: { at: [30, -260, -50], point: "grip" } });
+    hands.splice(4, 0, { t: 1.4 + 1 / 30, right: { at: [110, -260, -50], point: "grip" } });
+    return runtime(j);
+  };
+  const o = { px: 6, k: 3, fps: 60 };
+
+  it("đo trong quãng lên hình `spans` như `check`; quãng không chứa cú nhảy thì không có", () => {
+    const rt = jumpy();
+    const all = personSnaps(rt, "a", { "a.json": c }, o);
+    expect(all.snaps.some((s) => s.joint.endsWith("R") && Math.abs(s.t - 1.43) < 0.05)).toBe(true);
+    const characterOf = () => c;
+    expect(all.snaps).toEqual(sceneSnaps(rt, { characterOf, ...o }));
+    const spans: [number, number][] = [[0, 1.2]];
+    const cut = personSnaps(rt, "a", { "a.json": c }, { ...o, spans });
+    expect(cut.snaps).toEqual(sceneSnaps(rt, { characterOf, ...o, spans }));
+    expect(cut.snaps.some((s) => s.t > 1.2)).toBe(false);
+    expect(cut.locks).toEqual(elbowLockSnaps(rt, { characterOf, spans }));
+  });
+
+  it("người không khai `character`: đo bằng nhân vật mặc định, như `check`", () => {
+    const rt = jumpy({ character: undefined });
+    const got = personSnaps(rt, "a", {}, o);
+    expect(got.snaps.length).toBeGreaterThan(0);
+    expect(got.snaps).toEqual(sceneSnaps(rt, { characterOf: () => defaultCharacter(), ...o }));
+  });
+});
+
+describe("castData", () => {
+  it("người không khai `character` có `chars` là nhân vật mặc định (vệt, món đặt trước), không có chiều cao, thân", () => {
+    const j = scene() as Json & { cast: Json[] };
+    delete j.cast[0].character;
+    const p = parseScene(j);
+    if (!p.success) throw new Error(p.error.message);
+    const d = castData(p.data, {});
+    expect(d.chars.a).toBeDefined();
+    expect(d.heights.a).toBeUndefined();
+    expect(d.bodies.a).toBeUndefined();
   });
 });

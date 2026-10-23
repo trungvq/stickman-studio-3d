@@ -911,10 +911,11 @@ const SceneItemMarkSchema = z.strictObject({
   - **Không khai chỗ**: chỗ và hướng món là **lúc thả gần nhất** không sau `t` của món ấy (`itemReleased` của `scene.ts`) — bất
     kỳ người nào, tay nào, tay dẫn hay theo mốc: món người thả đã vẽ ngay trước mốc thả (`RELEASE_EPS` = 0,001 s), tức bàn tay
     đã vẽ · khung cầm (`actHeld`). Lúc thả là mốc tay mà không ai mang món, ngay trước đó có người cầm trong bàn tay (gỡ món treo
-    không tính). Không khai được `point`, `face`, `up`, `roll` (zod). Nhân vật người thả lấy ở `rt.chars` (`buildWorld` điền từ
-    `cast`, mặc theo `equip` lúc thả), không có thì `chars` của lời gọi; thiếu cả hai là `HolderCharError`. Không có lần thả
-    nào trước mốc: `check` lỗi `ref` (`sceneItemHoldProblems`), `itemAt` ném `ItemRestError`. `cast.released` của cảnh three
-    ([03](03-scene.md#đồ-cầm-tay)) đọc cùng hàm, nên món `extra` giữ ở chỗ thả trùng món người nhặt cầm lên.
+    không tính). Không khai được `point`, `face`, `up`, `roll` (zod). Nhân vật người thả lấy ở `rt.chars` (`buildWorld`, runtime
+    của `check`, render và Studio 3D điền từ `cast`, mặc theo `equip` lúc thả), không có thì `chars` của lời gọi; thiếu cả
+    hai là `HolderCharError`. Không có lần thả nào trước mốc: `check` lỗi `ref` (`sceneItemHoldProblems`), `itemAt` ném
+    `ItemRestError`. `cast.released` của cảnh three ([03](03-scene.md#đồ-cầm-tay)) đọc cùng hàm, nên món `extra` giữ ở chỗ
+    thả trùng món người nhặt cầm lên.
   - Món không hoà **tới** mốc nằm không khai chỗ (giữa mốc trước và nó, `itemAt` giữ mốc trước): trước mốc ấy món còn trong tay
     người thả hay đã rời tay.
   - `rest` chỉ có nghĩa với lần cầm theo mốc (mục [5](#lần-cầm-theo-mốc)); lần cầm hai tay vẫn nhận giá mặt đỡ ở mốc nằm trong

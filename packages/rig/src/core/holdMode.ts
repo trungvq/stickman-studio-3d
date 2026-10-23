@@ -210,6 +210,8 @@ const fail = (m: string): never => {
 };
 const r2 = (x: number) => Math.round(x * 100) / 100 + 0;
 const r3 = (x: number) => Math.round(x * 1000) / 1000 + 0;
+/** Tên tay trong câu báo */
+const viSide = (s: HandSide) => (s === "right" ? "phải" : "trái");
 const r4 = (x: number) => Math.round(x * 1e4) / 1e4 + 0;
 const round = (v: readonly number[], f = r2) => v.map((x) => f(x)) as V3;
 const toThree = (p: readonly number[]): V3 => [p[0] / 100, -p[1] / 100, -p[2] / 100];
@@ -454,7 +456,8 @@ function planOf(rt: SceneRuntime, id: string, side: HandSide, t: number): Plan {
   const runs = holdRuns(rt, id);
   const end = rt.duration;
   let lead = side;
-  let run = runs[side].find((r) => holdsAt(r, t, end)) ?? fail(`tay ${side} không cầm gì ở ${t}s`);
+  let run =
+    runs[side].find((r) => holdsAt(r, t, end)) ?? fail(`tay ${viSide(side)} không cầm gì ở ${t}s`);
   if (run.lead) {
     lead = run.lead;
     run =
@@ -539,9 +542,9 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
 
   const { lead, partner, run, partners } = planOf(rt, o.id, o.side, tOf(o.at));
   if (to === "item" && run.mode !== "hand")
-    fail(`lần cầm \`${run.item}\` của tay ${lead} đã là tay theo đồ (\`${run.mode}\`)`);
+    fail(`lần cầm \`${run.item}\` của tay ${viSide(lead)} đã là tay theo đồ (\`${run.mode}\`)`);
   if (to === "hand" && run.mode === "hand")
-    fail(`lần cầm \`${run.item}\` của tay ${lead} đã là đồ theo tay`);
+    fail(`lần cầm \`${run.item}\` của tay ${viSide(lead)} đã là đồ theo tay`);
   const item = run.item;
   const spec: HeldItemSpec =
     rt.held[item] ?? rt.held[heldBase(item)] ?? fail(`không có món \`${item}\``);
@@ -686,7 +689,7 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
         const k = keyAt(t);
         if (k[lead] === null) continue;
         const h = pinnedHold(
-          holdIn(keys, lead, t) ?? fail(`tay ${lead} không cầm ở ${t}s`),
+          holdIn(keys, lead, t) ?? fail(`tay ${viSide(lead)} không cầm ở ${t}s`),
           v.grasp[lead],
           way.pin,
           way.flip.lead,
@@ -727,7 +730,7 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
         const ref = refAt(t);
         const aim = aims.get(t)!;
         const want = add3(aim.want, shift.get(t) ?? [0, 0, 0]);
-        const h = holdIn(keys, lead, t) ?? fail(`tay ${lead} không cầm ở ${t}s`);
+        const h = holdIn(keys, lead, t) ?? fail(`tay ${viSide(lead)} không cầm ở ${t}s`);
         const lh: Obj = {
           ...pinnedHold(h, v.grasp[lead], way.pin, way.flip.lead, spec),
           ...itemAxes(v, sideSign(lead)),
@@ -1031,7 +1034,7 @@ function convert(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode): 
         .filter((k) => way.flip[k])
         .map(
           (k) =>
-            `tay ${k === "lead" ? lead : partner} đo từ đầu kia của cạnh (${way.flip[k] === "along" ? "`along`" : `\`along\`, \`slant\`${run.group === "palmBox" ? ", `thumb`" : ""}`})`,
+            `tay ${viSide(k === "lead" ? lead : partner!)} đo từ đầu kia của cạnh (${way.flip[k] === "along" ? "`along`" : `\`along\`, \`slant\`${run.group === "palmBox" ? ", `thumb`" : ""}`})`,
         )
         .join(
           ", ",
@@ -1066,13 +1069,13 @@ function convert(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode): 
 
   if (lock.size)
     ctx.notes.push(
-      `khuỷu tay ${lead} khoá (\`elbowLock\`) vào hướng đang vẽ ở ${[...lock]
+      `khuỷu tay ${viSide(lead)} khoá (\`elbowLock\`) vào hướng đang vẽ ở ${[...lock]
         .sort((a, b) => a - b)
         .map((t) => `${r3(t)}s`)
         .join(", ")}: chế độ mới tự chọn khuỷu khác khuỷu đang vẽ`,
     );
   const now = holdRuns(rt2, o.id)[lead].find((r) => !r.lead && holdsAt(r, cut, rt2.duration));
-  if (!now) ctx.notes.push(`sau phép đổi tay ${lead} không cầm \`${item}\` ở ${cut}s`);
+  if (!now) ctx.notes.push(`sau phép đổi tay ${viSide(lead)} không cầm \`${item}\` ở ${cut}s`);
   else if (Math.abs(now.since - cut) > EPS || Math.abs(now.until - run.until) > EPS)
     ctx.notes.push(
       `lần cầm sau phép đổi là [${now.since}, ${now.until}), khác quãng đổi [${cut}, ${run.until})`,
@@ -1081,7 +1084,7 @@ function convert(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode): 
     for (const t of times)
       if (holding(rt, partner, t) && !holding(rt2, partner, t))
         ctx.notes.push(
-          `tay ${partner} không cầm \`${item}\` ở ${t}s sau phép đổi: \`both\` không có tay phụ`,
+          `tay ${viSide(partner)} không cầm \`${item}\` ở ${t}s sau phép đổi: \`both\` không có tay phụ`,
         );
   if (run.since > EPS && near(cut, run.since))
     ctx.notes.push(

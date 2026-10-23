@@ -7,9 +7,14 @@ import {
   AIM_BEND,
   AIM_DEV,
   BODY3,
+  defaultCharacter,
+  elbowLockSnaps,
   sceneAt,
+  sceneSnaps,
   TURN_MAX,
   type ActInput,
+  type CastMember,
+  type CharacterData,
   type ElbowLockSnap,
   type HandSide,
   type HoldRunInfo,
@@ -212,4 +217,82 @@ export function trailSnaps(
   }
   const sort = (x: Set<number>) => [...x].sort((p, q) => p - q);
   return { wrist: sort(wrist), elbow: sort(elbow), other: other.sort((p, q) => p.t - q.t) };
+}
+
+/** Ngưỡng giật `stickman.snap` của repo và quãng lên hình của cảnh (`episodes/`, như `check`) */
+export interface PersonSnapOptions {
+  px: number;
+  k: number;
+  fps: number;
+  spans?: [number, number][];
+}
+
+/**
+ * Giật cả cảnh của người `id` như `check` đo: `sceneSnaps`, `elbowLockSnaps` trong quãng lên hình `spans`; người không khai
+ * `character` đo bằng `defaultCharacter()`
+ */
+export function personSnaps(
+  rt: SceneRuntime,
+  id: string,
+  characters: Record<string, CharacterData>,
+  o: PersonSnapOptions,
+): { snaps: Snap[]; locks: ElbowLockSnap[] } {
+  const characterOf = (m: CastMember) =>
+    m.id !== id ? undefined : m.character ? characters[m.character] : defaultCharacter();
+  return {
+    snaps: sceneSnaps(rt, { characterOf, ...o }),
+    locks: elbowLockSnaps(rt, { characterOf, spans: o.spans }),
+  };
+}
+
+/** Tay của một lượt vệt */
+export interface TrailOf {
+  id: string;
+  side: HandSide;
+}
+
+/** Việc vệt ở một khung: bản sửa (JSON thô), tay, giây, cửa sổ */
+export interface TrailSig extends TrailOf {
+  raw: unknown;
+  t: number;
+  span: number;
+}
+
+/**
+ * Số hiệu lượt vệt: đổi bản sửa, người hay tay thì lượt đang chạy hết hạn ngay (kết quả của nó về sau đó bị bỏ, không vẽ lên
+ * tay mới); kết quả nhận được mang tay của lượt đã gửi, không phải tay đang chọn
+ */
+export class TrailJobs {
+  gen = 0;
+  private sig: TrailSig | null = null;
+  private sent: TrailOf | null = null;
+
+  /** `same`: không đổi gì; `move`: chỉ đổi giây hay cửa sổ; `restart`: lượt cũ hết hạn (`gen` đã tăng), vệt cũ mờ đi */
+  want(s: TrailSig): "same" | "move" | "restart" {
+    const o = this.sig;
+    this.sig = { ...s };
+    if (o && o.raw === s.raw && o.id === s.id && o.side === s.side)
+      return o.t === s.t && o.span === s.span ? "same" : "move";
+    this.gen++;
+    this.sent = null;
+    return "restart";
+  }
+
+  /** Bỏ việc (ẩn vệt, tắt vệt): lượt đang chạy hết hạn; trả số hiệu để báo luồng vệt */
+  stop() {
+    this.sig = null;
+    this.sent = null;
+    return ++this.gen;
+  }
+
+  /** Gửi việc của lần `want` cuối: số hiệu lượt mới */
+  send() {
+    this.sent = this.sig && { id: this.sig.id, side: this.sig.side };
+    return ++this.gen;
+  }
+
+  /** Tay của lượt `gen` nếu nó còn là lượt mới nhất, không thì `null` */
+  take(gen: number): TrailOf | null {
+    return gen === this.gen ? this.sent : null;
+  }
 }
