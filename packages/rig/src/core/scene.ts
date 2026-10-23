@@ -4998,7 +4998,8 @@ export function handReport(
     blending: holdBlending(rt, id, side === "right" ? "R" : "L", time),
     phi: phiOf(inp, a.W, a.E),
     phi0: sol ? sol.arm.phi0 : elbow0 ? at(0).phi0 : null,
-    elbowLock: lock >= 1,
+    // mốc ghi `t` 3 chữ số lẻ: đo ở giây lẻ hơn sát mốc thì phần khoá chỉ thiếu 1 chừng 1e-6
+    elbowLock: lock >= 1 - 1e-4,
     wrist: {
       raw: raw ? { turn: raw.turn, bend: raw.bend, dev: raw.dev } : null,
       drawn,
