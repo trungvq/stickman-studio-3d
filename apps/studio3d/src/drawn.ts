@@ -13,6 +13,7 @@ import {
   itemCentre,
   matVec,
   sceneAt,
+  yawFrame,
   type ActCharacter,
   type ActInput,
   type CharacterData,
@@ -39,7 +40,7 @@ const trVec = (R: M3, v: V3): V3 => [
 const poseOf = (rt: SceneRuntime, id: string, t: number) =>
   sceneAt(rt, id, t, rt.heights[id] ?? 1, rt.bodies[id] ?? BODY3) as unknown as ActInput & {
     equip?: Equip;
-    world?: { hands?: { near?: { w: number }; far?: { w: number } } };
+    world?: { yaw: number; hands?: { near?: { w: number }; far?: { w: number } } };
   };
 
 /**
@@ -73,6 +74,7 @@ export function drawnHand(
     grip: [...r.grip] as V3,
     wrist: [...r.joints.wrist] as V3,
     ...(n > 1e-6 && { elbow: e.map((x) => x / n) as V3 }),
+    ...(sp.world && { Rr: yawFrame(sp.world.yaw) }),
     locked: r.elbowLock,
     ...(r.grasp && { choice: r.grasp.choice as Record<string, unknown> }),
   };

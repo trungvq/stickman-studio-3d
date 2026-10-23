@@ -62,12 +62,16 @@ import {
   phiAt,
   phiBasis,
   phiOf,
+  elbowRig,
   phiToward,
+  rigElbowBody,
   solvePhi,
+  yawFrame,
   type ArmInput,
   type ArmQuery,
   type ArmSeg,
   type ArmSol,
+  type ElbowDir,
 } from "./graspArm";
 import {
   checkChoice,
@@ -225,7 +229,7 @@ import {
 } from "./types";
 
 /** Bump khi đổi hình dạng JSON scene; `migrateScene` phải có nhánh tương ứng. */
-export const SCENE_VERSION = 33;
+export const SCENE_VERSION = 34;
 
 /** `"@ten"` hay `"@ten+0.4"` / `"@ten-1"`: một mốc có tên trong `scene.marks` cộng phần lệch giây */
 export const MARK_REF = /^@([A-Za-z0-9_-]+)(?:\s*([+-])\s*(\d+(?:\.\d+)?))?$/;
@@ -486,14 +490,17 @@ const HandKeySchema = z.object({
   snap: z.boolean().optional(),
 });
 
+/** `as` của mốc món: `hand` nghiệm tay đang vẽ ngay trước lần cầm, `prev` giữ mốc món trước theo thân */
+export const ITEM_AS = ["hand", "prev"] as const;
+
 /**
  * Mốc món đặt trước (`scene.items[]`): món `item` ở giây `t`, người cầm `cast`. Chỗ là mốc thân `to` của người cầm dời
  * `offset` `[tiến, y, ngang]` (ngang dương về phía tay phải người cầm), hay toạ độ thế giới `at`; `point` là mốc của món đặt
  * vào chỗ ấy, bỏ trống là tâm hộp bao. `face` / `up` (trục chính) và `roll` (trục phụ) cho trọn hướng món, vectơ ở hệ thân
  * người cầm `[tiến, y, ngang phải]`; thiếu trục nào lấy của nhóm. `ease` là đường hoà vào mốc này (bỏ trống là `smooth`),
  * `bezier` đi với `ease: "bezier"`. `rest`: món nằm trên một mặt ở mốc này (rig suy mặt đỡ từ món); không khai `at` / `to`
- * thì chỗ và hướng món là lúc thả gần nhất (`itemReleased`).
- * docs/11-nhom-cam.md#mốc-món-items
+ * thì chỗ và hướng món là lúc thả gần nhất (`itemReleased`). `as` thay chỗ và hướng: `hand` là món và bàn tay như đang vẽ
+ * ngay trước lần cầm mở, `prev` là đứng yên theo thân ở mốc món trước. docs/11-nhom-cam.md#mốc-món-items
  */
 export const SceneItemMarkSchema = z
   .strictObject({
@@ -510,11 +517,27 @@ export const SceneItemMarkSchema = z
     ease: z.enum(EASE_NAMES).optional(),
     bezier: BezierSchema.optional(),
     rest: z.literal(true).optional(),
+    as: z.enum(ITEM_AS).optional(),
   })
-  .refine((k) => !!k.at !== !!k.to || (k.rest && !k.at && !k.to), {
+  .refine((k) => !!k.at !== !!k.to || ((k.rest || k.as) && !k.at && !k.to), {
     message:
-      "chỗ món cần đúng một trong `at` (toạ độ thế giới) hay `to` (mốc thân); bỏ cả hai chỉ với `rest` (món nằm ở chỗ thả)",
+      "chỗ món cần đúng một trong `at` (toạ độ thế giới) hay `to` (mốc thân); bỏ cả hai chỉ với `rest` (món nằm ở chỗ thả) hay `as`",
   })
+  .refine(
+    (k) =>
+      !k.as ||
+      (!k.at &&
+        !k.to &&
+        !k.rest &&
+        k.point === undefined &&
+        k.face === undefined &&
+        k.up === undefined &&
+        k.roll === undefined),
+    {
+      message:
+        "`as` lấy cả chỗ lẫn hướng món (`hand`: như đang vẽ trước lần cầm, `prev`: như mốc món trước) — bỏ `at`, `to`, `point`, `face`, `up`, `roll`, `rest`",
+    },
+  )
   .refine(
     (k) =>
       !k.rest ||
@@ -789,7 +812,10 @@ const GroupSchema = z.object({
 export const SceneSchema = z.object({
   schemaVersion: z
     .literal(SCENE_VERSION, {
-      error: "JSON scene thuộc phiên bản schema khác; cần bản @stickman3d/sketch khớp với nó",
+      error: (iss) =>
+        iss.input === ELBOW_LEGACY
+          ? "`world.hands`: `elbow` của mốc không có `at` khai theo thế giới (schema trước 34), bản này đọc theo hệ thân người ấy — chạy `stickman migrate-elbow` (docs/03-scene.md#đích-bàn-tay-thế-giới)"
+          : "JSON scene thuộc phiên bản schema khác; cần bản @stickman3d/sketch khớp với nó",
     })
     .default(SCENE_VERSION),
   name: z.string().default("scene"),
@@ -978,8 +1004,116 @@ export function migrateScene(json: unknown): unknown {
   // v30 → v31 `world.hands[]` nhận `ease` / `bezier`, `items[]` nhận `bezier`; thiếu `ease` là `smooth` như cũ
   // v31 → v32 `world.hands[]` nhận `elbowLock`; thiếu là khuỷu dò như cũ
   // v32 → v33 `world.hands[]` nhận dáng tay `pose` / `w` và mốc chỉ có `pose`; thiếu là ngón theo hành động như cũ
+  // v33 → v34 `elbow` của mốc `world.hands` không có `at` đọc theo hệ thân; mốc cũ khai thế giới. Đổi cần hướng thân lúc
+  // ấy (`sceneAt`) nên không tự đổi ở đây: zod báo kèm lệnh `stickman migrate-elbow`. JSON không ghi `schemaVersion` (cảnh
+  // dựng trong code) đọc theo nghĩa mới
+  // v33 → v34 `items[]` nhận `as` (`hand`: nghiệm tay đang vẽ, `prev`: giữ mốc trước); thiếu là mốc khai chỗ như cũ
+  if (typeof o.schemaVersion === "number" && from < 34 && legacyElbows(o).length) {
+    o.schemaVersion = ELBOW_LEGACY;
+    return o;
+  }
   o.schemaVersion = SCENE_VERSION;
   return o;
+}
+
+/** `schemaVersion` của cảnh đời trước 34 còn `elbow` thế giới trên mốc không có `at` (`migrateScene`) */
+const ELBOW_LEGACY = "elbow-world";
+
+/** Một `elbow` khai theo thế giới trên mốc không có `at` của JSON thô đời trước 34: người (chỉ số, `id`), mốc, tay */
+export interface LegacyElbow {
+  cast: number;
+  id: string;
+  key: number;
+  side: HandSide;
+}
+
+/**
+ * Các `elbow` của JSON scene thô mà schema 34 đọc khác nghĩa: mốc `world.hands` không có `at` (`to`, chỉ `hold`) khai
+ * `elbow` thế giới. `stickman migrate-elbow` quay chúng về hệ thân bằng hướng thân ở giây của mốc. Không đọc
+ * `schemaVersion`. docs/03-scene.md#đích-bàn-tay-thế-giới
+ */
+export function legacyElbows(json: unknown): LegacyElbow[] {
+  const out: LegacyElbow[] = [];
+  const cast = (json as { cast?: unknown })?.cast;
+  if (!Array.isArray(cast)) return out;
+  cast.forEach((m, ci) => {
+    const hands = m?.world?.hands;
+    if (!Array.isArray(hands)) return;
+    hands.forEach((k, key) => {
+      for (const side of ["right", "left"] as const) {
+        const h = k?.[side];
+        if (h && typeof h === "object" && Array.isArray(h.elbow) && h.at === undefined)
+          out.push({ cast: ci, id: String(m.id), key, side });
+      }
+    });
+  });
+  return out;
+}
+
+/**
+ * JSON thô đời trước mà `migrateScene` chỉ đổi `schemaVersion` (không `elbow` thế giới nào trên mốc không có `at`, không phép
+ * nâng nào khác): bản chép mang `schemaVersion` hiện hành, để mốc ghi thêm về sau (Studio 3D, `hold_mode`) đọc theo nghĩa
+ * mới. Không nâng thẳng được thì trả nguyên `json`
+ */
+export function sceneVersionUp<T>(json: T): T {
+  const o = json as Record<string, unknown>;
+  const v = o?.schemaVersion;
+  if (typeof v !== "number" || v >= SCENE_VERSION || legacyElbows(o).length) return json;
+  const up = { ...o, schemaVersion: SCENE_VERSION };
+  return JSON.stringify(migrateScene(o)) === JSON.stringify(up) ? (up as T) : json;
+}
+
+/** Bản chép của JSON thô bỏ các `elbow` (và `elbowLock` đi kèm) mà `legacyElbows` kể: nạp được để dựng runtime */
+export function stripLegacyElbows(json: unknown): unknown {
+  const o = structuredClone(json) as {
+    cast: { world: { hands: Record<string, Record<string, unknown>>[] } }[];
+  };
+  for (const e of legacyElbows(json)) {
+    const h = o.cast[e.cast].world.hands[e.key][e.side];
+    delete h.elbow;
+    delete h.elbowLock;
+  }
+  return o;
+}
+
+/** Một `elbow` đã quay về hệ thân: người, tay, giây của mốc, hướng thế giới cũ, hướng hệ thân mới */
+export interface ElbowMove extends LegacyElbow {
+  t: number;
+  from: V3;
+  to: V3;
+}
+
+/**
+ * Quay các `elbow` thế giới mà `legacyElbows` kể về hệ thân `[tiến, y, ra ngoài]` của tay ấy, bằng hướng thân người ấy ở
+ * giây của mốc (`sceneAt(…).world.yaw`, như khung `REACH_ELBOW`): ở chính mốc khuỷu như cũ. `rt` dựng từ
+ * `stripLegacyElbows(json)` (hướng thân không phụ thuộc tay). Trả JSON thô mới mang `schemaVersion` hiện hành và các dòng
+ * đổi; chỉ đụng `elbow` và `schemaVersion`. docs/03-scene.md#đích-bàn-tay-thế-giới
+ */
+export function migrateLegacyElbows(
+  json: unknown,
+  rt: SceneRuntime,
+): { json: unknown; moves: ElbowMove[] } {
+  const o = structuredClone(json) as {
+    schemaVersion?: unknown;
+    cast: { world: { hands: Record<string, Record<string, number[]>>[] } }[];
+  };
+  const moves: ElbowMove[] = [];
+  for (const e of legacyElbows(json)) {
+    const m = member(rt, e.id);
+    const t = m.world!.hands![e.key].t;
+    const w =
+      sceneAt(rt, e.id, t, rt.heights[e.id] ?? 1, rt.bodies[e.id] ?? BODY3).world ??
+      fail(`\`${e.id}\`: \`elbow\` của \`world.hands\` cần người 3D`);
+    const h = o.cast[e.cast].world.hands[e.key][e.side];
+    const from = [...h.elbow] as V3;
+    const to = rigElbowBody(yawFrame(w.yaw), sideSign(e.side), from).map(
+      (x) => Math.round(x * 1e4) / 1e4 + 0,
+    ) as V3;
+    h.elbow = to;
+    moves.push({ ...e, t, from, to });
+  }
+  o.schemaVersion = SCENE_VERSION;
+  return { json: o, moves };
 }
 
 export const parseScene = (json: unknown) => SceneSchema.safeParse(migrateScene(json));
@@ -1221,7 +1355,8 @@ const inMask = (c: Clip, k: Channel) => !c.mask || c.mask.includes(k);
  * `farRight`: tay phải của người 3D đang là tay xa ống kính (`rightFar`) — clip của hành động `sides: "anatomical"` đổi
  * kênh gần ↔ xa của riêng nó để kênh gần vẫn là tay chân phải. docs/03-scene.md#hành-động-theo-tay-phải-trái
  */
-const anatomicalSwap = (c: Clip, farRight?: boolean) => !!farRight && c.action?.sides === "anatomical";
+const anatomicalSwap = (c: Clip, farRight?: boolean) =>
+  !!farRight && c.action?.sides === "anatomical";
 
 function clipPose(c: Clip, time: number, clock?: Clock, farRight?: boolean): Partial<Pose> {
   if (!c.action) return {};
@@ -1302,11 +1437,7 @@ function layersUpTo(
   const l = clipLayers(c, time, clock, farRight);
   const s = time - c.start;
   if (s >= c.tau) return l;
-  return blendLayers(
-    i === 0 ? {} : layersUpTo(tr, i - 1, time, clock, farRight),
-    l,
-    s / c.tau,
-  );
+  return blendLayers(i === 0 ? {} : layersUpTo(tr, i - 1, time, clock, farRight), l, s / c.tau);
 }
 
 function faceUpTo(tr: Track, i: number, time: number, clock?: Clock): Partial<FaceState> {
@@ -3495,6 +3626,7 @@ function handAt(
   keys: HandKey[],
   side: HandSide,
   time: number,
+  yaw: number,
   held: Record<string, HeldItemSpec>,
   castAt: (id: string, mark: BodyMark | undefined) => V3,
   poseAt?: (t: number) => object,
@@ -3596,19 +3728,25 @@ function handAt(
     const run = host && holdRun(keys, side, k.t);
     return !!run && placedRun(host!.rt, keys, side, run);
   };
-  const lend = (h: NonNullable<typeof ra>, kt: number): NonNullable<typeof ra> => {
+  // hướng khuỷu của mốc ra thế giới rig bằng thân ở chính `time`: mốc không có `at` khai hệ thân
+  const Rr = yawFrame(yaw);
+  const elbowAt = (h: HandMark | null | undefined) => {
+    const e = markElbow(h);
+    return e && elbowRig(Rr, sideSign(side), e);
+  };
+  const lend = (h: HandMark, kt: number): { h: HandMark; elbow?: V3 } => {
     let i = ks.findIndex((k) => k.t === kt);
-    if (i < 0 || !bare(ks[i])) return h;
+    if (i < 0 || !bare(ks[i])) return { h, elbow: elbowAt(h) };
     while (i > 0 && bare(ks[i])) i--;
     const d = ks[i][side];
-    if (bare(ks[i]) || !d || !(d.at || d.to)) return h;
-    const { at, to, offset, point, elbow } = d;
-    return { ...h, at, to, offset, point, ...(!h.elbow && elbow && { elbow }) };
+    if (bare(ks[i]) || !d || !(d.at || d.to)) return { h, elbow: elbowAt(h) };
+    const { at, to, offset, point } = d;
+    return { h: { ...h, at, to, offset, point }, elbow: elbowAt(h) ?? elbowAt(d) };
   };
   const one = (h0: typeof ra, kt: number): Reach | undefined => {
     const intent = intentAt(kt);
     if (!h0) return intent && { w: 0, at: [0, 0, 0], aim: intent };
-    const h = lend(h0, kt);
+    const { h, elbow } = lend(h0, kt);
     const placed = !!(h.at || h.to);
     const term = placed ? reachTerm({ ...h, ...(h.to && { at: undefined }) }) : undefined;
     // lòng tay theo ý định của mốc; mốc không khai giữ bàn tay của hành động
@@ -3621,7 +3759,7 @@ function handAt(
     return {
       w: placed ? 1 : 0,
       at: (h.at ?? [0, 0, 0]) as [number, number, number],
-      ...(h.elbow && { elbow: h.elbow }),
+      ...(elbow && { elbow }),
       ...(term && { terms: [term] }),
       ...(aim && { aim }),
     };
@@ -3716,6 +3854,12 @@ function slerpDir(a: readonly number[], b: readonly number[], f: number): V3 {
 
 /** Mốc tay khoá khuỷu: có `elbowLock` và `elbow` */
 const lockOf = (h: HandKey["right"]) => (h?.elbowLock && h.elbow ? 1 : 0);
+
+type HandMark = NonNullable<HandKey["right"]>;
+
+/** `elbow` của mốc tay theo hệ của đích: mốc có `at` khai thế giới rig, mốc khác (`to`, chỉ `hold`) khai hệ thân */
+const markElbow = (h: HandMark | null | undefined): ElbowDir | undefined =>
+  h?.elbow ? { v: h.elbow, ...(!h.at && { body: true }) } : undefined;
 
 /**
  * Phần khoá khuỷu của tay `side` ở `time` trên các mốc nhắc tay ấy: mốc khoá ra `1`, mốc không khoá hay `null` ra `0`, hoà
@@ -3876,8 +4020,8 @@ function withHands(
   poseAt?: (t: number) => object,
   host?: GraspHost,
 ): World {
-  const right = handAt(keys, "right", time, held, castAt, poseAt, host);
-  const left = handAt(keys, "left", time, held, castAt, poseAt, host);
+  const right = handAt(keys, "right", time, w.yaw, held, castAt, poseAt, host);
+  const left = handAt(keys, "left", time, w.yaw, held, castAt, poseAt, host);
   if (!right && !left) return w;
   const [near, far] = w.flip ? [left, right] : [right, left];
   return { ...w, hands: { ...(near && { near }), ...(far && { far }) } };
@@ -4138,7 +4282,7 @@ function slideHold(
   time: number,
   run: HoldRun,
   fill: GraspChoice,
-): { hold: SceneHoldGroup; elbow?: readonly number[] } {
+): { hold: SceneHoldGroup; elbow?: ElbowDir } {
   let a: HandKey | undefined;
   let b: HandKey | undefined;
   for (const k of keys) {
@@ -4151,7 +4295,7 @@ function slideHold(
     }
   }
   const ga = groupHold(a?.[side]?.hold ?? run.hold);
-  const elbow = a?.[side]?.elbow;
+  const elbow = markElbow(a?.[side]);
   if (!a || !b) return { hold: ga, ...(elbow && { elbow }) };
   const hb = b[side]!;
   const gb = groupHold(hb.hold!);
@@ -4182,18 +4326,16 @@ function slideHold(
   return { hold: out, ...(elbow && { elbow }) };
 }
 
+/** Khuỷu khoá ở một giây: phần khoá `k`, hướng khuỷu trên tay `inp` ở chính giây ấy */
+type RunLock = { k: number; dir: (inp: ArmInput) => ElbowDir };
+
 /**
  * Khuỷu khoá của lần cầm `run` ở `time` (món đặt trước): phần khoá `k` hoà giữa hai mốc `hold` kề theo `ease` của mốc sau
- * (mốc `elbowLock` ra `1`, mốc không khoá ra `0`), hướng khuỷu `elbow` (thế giới rig) như đích tay có khoá — đều trên mặt
- * cầu, một mốc không khai thì lấy của mốc kia, `auto` bậc ba qua chuỗi mốc `hold`. Không mốc nào kẹp `time` khoá thì
- * `undefined`
+ * (mốc `elbowLock` ra `1`, mốc không khoá ra `0`), hướng khuỷu như đích tay có khoá — đều trên mặt cầu, một mốc không khai
+ * thì lấy của mốc kia, `auto` bậc ba qua chuỗi mốc `hold`; hai mốc khác hệ thì quy cả hai ra thế giới bằng thân của `inp`.
+ * Không mốc nào kẹp `time` khoá thì `undefined`
  */
-function runLock(
-  keys: HandKey[],
-  side: HandSide,
-  time: number,
-  run: HoldRun,
-): { k: number; elbow: readonly number[] } | undefined {
+function runLock(keys: HandKey[], side: HandSide, time: number, run: HoldRun): RunLock | undefined {
   let a: HandKey | undefined;
   let b: HandKey | undefined;
   for (const k of keys) {
@@ -4208,7 +4350,8 @@ function runLock(
   const ha = a?.[side];
   if (!a || !ha) return undefined;
   const la = lockOf(ha);
-  if (!b) return la ? { k: 1, elbow: ha.elbow! } : undefined;
+  const ma = markElbow(ha);
+  if (!b) return la ? { k: 1, dir: () => ma! } : undefined;
   const hb = b[side]!;
   const lb = lockOf(hb);
   if (!la && !lb) return undefined;
@@ -4216,20 +4359,30 @@ function runLock(
   const f = easeAt({ ease: hb.ease ?? "smooth", bezier: hb.bezier }, u);
   const k = la + (lb - la) * f;
   if (!(k > 0)) return undefined;
-  const [ea, eb] = [ha.elbow ?? hb.elbow!, hb.elbow ?? ha.elbow!];
-  if (hb.ease === "auto" && ha.elbow && hb.elbow) {
-    const chain = runHoldKeys(keys, side, run);
-    const n = autoNear(chain, chain.indexOf(a), (x) => x[side]?.ease === "auto");
-    const e0 = n.p0?.[side]?.elbow;
-    const e3 = n.p3?.[side]?.elbow;
-    return { k, elbow: hermiteN(e0, ea, eb, e3, n.h0, n.h, n.h2, u) };
-  }
-  return { k, elbow: slerpDir(ea, eb, f) };
+  const mb = markElbow(hb);
+  const [ea, eb] = [ma ?? mb!, mb ?? ma!];
+  const n =
+    hb.ease === "auto" && ma && mb
+      ? ((chain) => autoNear(chain, chain.indexOf(a), (x) => x[side]?.ease === "auto"))(
+          runHoldKeys(keys, side, run),
+        )
+      : undefined;
+  const e0 = n?.p0 && markElbow(n.p0[side]);
+  const e3 = n?.p3 && markElbow(n.p3[side]);
+  const dir = (inp: ArmInput): ElbowDir => {
+    const body = [e0, ea, eb, e3].every((e) => !e || e.body);
+    const v = (e: ElbowDir | undefined) => e && (body ? e.v : elbowRig(inp.Rr, inp.side, e));
+    const out = n
+      ? hermiteN(v(e0), v(ea)!, v(eb)!, v(e3), n.h0, n.h, n.h2, u)
+      : slerpDir(v(ea)!, v(eb)!, f);
+    return { v: out, ...(body && { body: true }) };
+  };
+  return { k, dir };
 }
 
-/** `φ` đã khoá phần `L.k` về hướng khuỷu `L.elbow`, đường ngắn trên vòng; `L.k` từ `1` là đúng hướng ấy */
-function lockPhi(phi: number, inp: ArmInput, Wp: V3, L: { k: number; elbow: readonly number[] }) {
-  const want = phiToward(inp, Wp, L.elbow);
+/** `φ` đã khoá phần `L.k` về hướng khuỷu của `L`, đường ngắn trên vòng; `L.k` từ `1` là đúng hướng ấy */
+function lockPhi(phi: number, inp: ArmInput, Wp: V3, L: RunLock) {
+  const want = phiToward(inp, Wp, L.dir(inp));
   return L.k >= 1 ? want : wrapDeg(phi + wrapDeg(want - phi) * L.k);
 }
 
@@ -4477,11 +4630,16 @@ function graspStart(
   const { elbow } = slideHold(keys, side, ts, run, {});
   const other = placedOther(rt, id, side, ts, o);
   const keep = marks && !run.lead ? priorChoice(rt, id, side, run, o) : undefined;
-  const sol = chooseMissing(ctx, g, poseAt(ts), sideSign(side), {
+  // mốc món đầu lấy nghiệm tay đang vẽ: tay ấy đang cầm chính món này; lựa chọn giữ đúng lựa chọn ngay trước ranh giới
+  // (khung cầm như lúc ấy, món không xoay trong tay)
+  const take =
+    !!marks?.[0].as && !!before && !before.lead && sceneHoldRef(before.hold).item === g.item;
+  const pin = take && keep ? ({ ...g, ...keep.choice } as SceneHoldGroup) : g;
+  const sol = chooseMissing(ctx, pin, poseAt(ts), sideSign(side), {
     t0: ts,
     later,
     ...(marks && { span: Infinity, laterMax: KEYED_MAX }),
-    ...(keep && { keep }),
+    ...(take && keep ? keep.high && { high: keep.high } : keep && { keep }),
     ...(phiPrev !== undefined && { phiPrev }),
     ...(elbow && { elbow }),
     ...(other && { other }),
@@ -4491,7 +4649,20 @@ function graspStart(
     // mỗi mốc: bàn tay trên món ở mốc, `φ` liền với mốc trước; lưu trong hệ thân (vai bên ấy, `Rr`)
     const keyed: KeyedMark[] = [];
     let prev = phiPrev;
-    for (const k of marks) {
+    for (const [j, k] of marks.entries()) {
+      const when = { t: k.t, ease: k.ease, ...(k.bezier && { bezier: k.bezier }) };
+      // `as` giữa lần cầm: nghiệm hệ thân của mốc trước, không giải lại
+      if (k.as && j > 0) {
+        const { W, R, phi, wrist, over } = keyed[j - 1];
+        keyed.push({ ...when, W, R, phi, wrist, over });
+        continue;
+      }
+      if (k.as && take) {
+        const d = drawnKeyed(rt, id, side, run, o);
+        keyed.push({ ...when, ...d });
+        prev = d.phi;
+        continue;
+      }
       const q = graspSample(rt, id, side, run, out, k.t, o);
       const L = runLock(keys, side, k.t, run);
       const a =
@@ -4528,6 +4699,35 @@ function graspStart(
   }
   m.set(key, out);
   return out;
+}
+
+/**
+ * Bàn tay `side` của `id` đã vẽ ngay trước khi lần cầm `run` mở (`RUN_EPS`, như `was`), ra nghiệm hệ thân của lần cầm theo
+ * mốc: cổ tay so với vai và khung bàn tay qua `Rr`, `φ` của khuỷu đang vẽ, góc cổ tay như vẽ (đã trong miền khớp). Không
+ * giải lại, nên ranh giới không nhảy. docs/11-nhom-cam.md § Lần cầm theo mốc
+ */
+function drawnKeyed(
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  run: HoldRun,
+  o: ItemOptions,
+): Omit<KeyedMark, "t" | "ease" | "bezier"> {
+  const c = o.chars?.[id];
+  if (!c) throw new HolderCharError(id);
+  const t = run.since - RUN_EPS;
+  const sp = sceneAt(rt, id, t, rt.heights[id] ?? 1, rt.bodies[id] ?? BODY3) as ActInput;
+  const a =
+    actArm(c, sp, sideSign(side)) ??
+    fail(`\`${id}\`: lần cầm theo mốc cần người 3D (\`cast[].world\`)`);
+  const Rt = tr3(a.inp.Rr);
+  return {
+    W: matVec(Rt, sub3(a.W, a.inp.S)),
+    R: matMul(Rt, a.Rw),
+    phi: phiOf(a.inp, a.W, a.E),
+    wrist: [...a.wrist],
+    over: [0, 0, 0],
+  };
 }
 
 /**
@@ -5127,7 +5327,7 @@ export function handReport(
   const at = (phi: number) =>
     q
       ? evalPhi(q.inp, q.Wp, q.Rw, phi, undefined, q.other, q.elbow)
-      : evalPhi(inp, a.W, a.Rw, phi, undefined, a.other, elbow0);
+      : evalPhi(inp, a.W, a.Rw, phi, undefined, a.other, elbow0 && { v: elbow0 });
   const B = phiBasis(inp, a.W);
   const n = unit3(sub3(a.W, a.S));
   const center = add3(a.S, scale3(n, dot3(sub3(a.E, a.S), n)));
@@ -5693,12 +5893,136 @@ function restMark(rt: SceneRuntime, k: SceneItemMark, o: ItemOptions) {
   };
 }
 
+/** Mốc món trước `k` của cùng món */
+function prevItemMark(rt: SceneRuntime, k: SceneItemMark): SceneItemMark | undefined {
+  const ks = (rt.items ?? []).filter((x) => x.item === k.item);
+  const i = ks.indexOf(k);
+  return i > 0 ? ks[i - 1] : undefined;
+}
+
+/** Mốc món lấy món như đang vẽ ngay trước lần cầm mở: `as: "hand"`, hay `as: "prev"` mà không có mốc món trước */
+const asHand = (rt: SceneRuntime, k: SceneItemMark): boolean =>
+  k.as === "hand" || (k.as === "prev" && !prevItemMark(rt, k));
+
+/** Giây trước ranh giới lần cầm mà bàn tay còn vẽ như lần cầm cũ: như `was` của `placedWas` */
+const RUN_EPS = 1e-6;
+
+/** Mốc món `as` mà không ai cầm món ngay trước lần cầm mở */
+export class ItemAsError extends Error {
+  readonly item: string;
+  readonly t: number;
+  constructor(k: SceneItemMark) {
+    super(
+      `\`items\` ${k.item} t=${k.t}: \`as: "hand"\` mà ngay trước lần cầm mở không bàn tay nào cầm \`${k.item}\` — khai \`at\` / \`to\` (docs/11-nhom-cam.md#mốc-món-items)`,
+    );
+    this.name = "ItemAsError";
+    this.item = k.item;
+    this.t = k.t;
+  }
+}
+
+/** Giây món của mốc `as: "hand"` được đọc: ngay trước lần cầm chứa mốc ấy mở (tay nào của người cầm đang cầm món ở mốc) */
+function asHandTime(rt: SceneRuntime, k: SceneItemMark): number {
+  const keys = handKeys(rt, k.cast);
+  for (const side of ["right", "left"] as const) {
+    const run = holdRun(keys, side, k.t);
+    if (run && sceneHoldRef(run.hold).item === k.item) return run.since - RUN_EPS;
+  }
+  return k.t - RUN_EPS;
+}
+
+const asMemo = new WeakMap<SceneRuntime, Map<string, ItemPose | null>>();
+const asking = new Set<string>();
+
+/**
+ * Món của mốc `as: "hand"` như đang vẽ (thế giới rig): bàn tay người đang cầm món ngay trước lần cầm mở nhân khung cầm
+ * (`actHeld`), như `itemReleased`. Không ai cầm thì `undefined`. Nhớ theo runtime, nhân vật
+ */
+function asHandPose(rt: SceneRuntime, k: SceneItemMark, o: ItemOptions): ItemPose | undefined {
+  const t = asHandTime(rt, k);
+  const h = itemCarrier(rt, k.item, t);
+  if (!h || h.carry) return undefined;
+  const base = rt.chars?.[h.id];
+  const given = o.chars?.[h.id];
+  if (!base && !given) throw new HolderCharError(h.id);
+  const key = `${k.item}|${t}|${h.id}|${charId(base ?? given)}`;
+  let memo = asMemo.get(rt);
+  if (!memo) asMemo.set(rt, (memo = new Map()));
+  const hit = memo.get(key);
+  if (hit !== undefined) return hit ?? undefined;
+  if (asking.has(key))
+    throw new Error(
+      `\`items\` ${k.item} t=${k.t}: món như đang vẽ lúc ${t} lại cần chính nó — mốc \`as\` đọc vòng (docs/11-nhom-cam.md#mốc-món-items)`,
+    );
+  asking.add(key);
+  let out: ItemPose | null = null;
+  try {
+    const sp = sceneAt(rt, h.id, t, rt.heights[h.id] ?? 1, rt.bodies[h.id] ?? BODY3);
+    const c = base ? equipCharacter(base, sp.equip) : given!;
+    const held = actHeld(c, sp as ActInput);
+    const x = [held.R, held.L].find((y) => y?.item === k.item);
+    const R = x?.R;
+    if (x && R)
+      out = {
+        R: [R[0], R[1], R[2], -R[3], -R[4], -R[5], -R[6], -R[7], -R[8]],
+        P: [...x.at] as V3,
+        cast: h.id,
+        s: x.s,
+      };
+  } finally {
+    asking.delete(key);
+  }
+  memo.set(key, out);
+  return out ?? undefined;
+}
+
+/** Món `pose` (thế giới rig) đứng yên theo thân người `id` từ giây `from` tới `to`: hông và hướng hông, ra three */
+function holderCarry(
+  rt: SceneRuntime,
+  id: string,
+  pose: ItemPose,
+  from: number,
+  to: number,
+  o: ItemOptions,
+) {
+  const Rp = pose.R;
+  let R: M3 = [Rp[0], Rp[1], Rp[2], -Rp[3], -Rp[4], -Rp[5], -Rp[6], -Rp[7], -Rp[8]];
+  let P = toThree(pose.P);
+  if (Math.abs(to - from) > 1e-9) {
+    const A = holderTrunk(rt, id, from, o);
+    const B = holderTrunk(rt, id, to, o);
+    const M = matMul(B.Rr, tr3(A.Rr));
+    R = matMul(M, R);
+    P = add3(B.hips, matVec(M, sub3(P, A.hips)));
+  }
+  return { R, P };
+}
+
+/** Mốc món `as` (three, như `solveItemMark`): món như đang vẽ trước lần cầm, hay như mốc món trước, theo thân tới `time` */
+function asMark(rt: SceneRuntime, k: SceneItemMark, time: number, o: ItemOptions) {
+  const prev = !asHand(rt, k) ? prevItemMark(rt, k) : undefined;
+  const from = prev ? prev.t : asHandTime(rt, k);
+  const pose = prev ? itemAt(rt, k.item, prev.t, o) : asHandPose(rt, k, o);
+  if (!pose) throw new ItemAsError(k);
+  const { R, P } = holderCarry(rt, k.cast, pose, from, time, o);
+  const pt = itemCentre(itemSpec(rt, k.item));
+  return { R, at: add3(P, scale3(matVec(R, pt), 0.01 * pose.s)), pt, s: pose.s } as {
+    R: M3;
+    at: V3;
+    pt: V3;
+    s: number;
+    gap?: number;
+    same?: "face" | "roll";
+  };
+}
+
 /**
  * Một mốc món giải ở `time` (three): hướng `R`, chỗ `at` của điểm món `pt`; `gap` là góc độ giữa đích hai trục, `same` là
  * trục có đích trùng chỗ món (không cho hướng: trục chính thì món giữ hướng thân người cầm, trục phụ thì bỏ)
  */
 function solveItemMark(rt: SceneRuntime, k: SceneItemMark, time: number, o: ItemOptions) {
   if (restFromRelease(k)) return restMark(rt, k, o);
+  if (k.as) return asMark(rt, k, time, o);
   const spec = itemSpec(rt, k.item);
   const T = holderTrunk(rt, k.cast, time, o);
   const at = k.at ? toThree(k.at) : itemMarkPoint(T, k.to!, k.offset);
@@ -5765,9 +6089,9 @@ export function itemAt(
   let i = 0;
   while (i + 1 < ks.length && ks[i + 1].t <= time) i++;
   const a = ks[i];
-  // món không hoà tới mốc nằm lấy chỗ thả: trước mốc ấy món còn trong tay người thả hay đã rời tay
+  // món không hoà tới mốc nằm lấy chỗ thả, mốc lấy món như đang vẽ: trước mốc ấy món còn trong tay người thả, người cầm
   const next = ks[i + 1];
-  const b = time > a.t && next && !restFromRelease(next) ? next : undefined;
+  const b = time > a.t && next && !restFromRelease(next) && !asHand(rt, next) ? next : undefined;
   const A = solveItemMark(rt, a, time, o);
   const B = b && solveItemMark(rt, b, time, o);
   const u = b ? (time - a.t) / (b.t - a.t) : 0;
@@ -5779,7 +6103,7 @@ export function itemAt(
   let pt = mix(A.pt, B?.pt);
   if (B && b.ease === "auto") {
     // mốc kề đọc ở chính `time` như hai mốc kẹp; mốc nằm không khai chỗ không thuộc chuỗi
-    const n = autoNear(ks, i, (k) => k.ease === "auto" && !restFromRelease(k));
+    const n = autoNear(ks, i, (k) => k.ease === "auto" && !restFromRelease(k) && !asHand(rt, k));
     const A0 = n.p0 && solveItemMark(rt, n.p0, time, o);
     const B3 = n.p3 && solveItemMark(rt, n.p3, time, o);
     const cubic = (g: (m: typeof A) => readonly number[]) =>
@@ -5810,8 +6134,8 @@ export function itemAt(
 export function sceneItemProblems(rt: SceneRuntime, o: ItemOptions = {}): string[] {
   const out: string[] = [];
   for (const k of rt.items ?? []) {
-    // mốc nằm không khai chỗ: hướng từ lúc thả, không có trục khai (`sceneItemHoldProblems` báo khi không có lần thả)
-    if (restFromRelease(k)) continue;
+    // mốc nằm không khai chỗ, mốc `as`: hướng lấy từ món đã vẽ, không có trục khai (`sceneItemHoldProblems` báo)
+    if (restFromRelease(k) || k.as) continue;
     const where = `${k.cast}: \`items\` ${k.item} t=${k.t}`;
     let m: ReturnType<typeof solveItemMark>;
     try {
@@ -5852,6 +6176,21 @@ export function sceneItemHoldProblems(rt: SceneRuntime): string[] {
       );
     if (restFromRelease(k) && !itemReleases(rt, k.item, k.t).length)
       out.push(`${k.cast}: ${new ItemRestError(k).message}`);
+    if (asHand(rt, k)) {
+      const h = itemCarrier(rt, k.item, asHandTime(rt, k));
+      if (!h || h.carry) out.push(`${k.cast}: ${new ItemAsError(k).message}`);
+    }
+    if (k.as === "hand" && holds) {
+      const side = (["right", "left"] as const).find((x) => {
+        const r = holdRun(keys, x, k.t);
+        return !!r && sceneHoldRef(r.hold).item === k.item;
+      });
+      const run = side && holdRun(keys, side, k.t);
+      if (side && run && runMarks(rt, keys, side, run).marks[0] !== k)
+        out.push(
+          `${k.cast}: \`items\` ${k.item} t=${k.t}: \`as: "hand"\` giữa lần cầm — chỉ mốc món đầu của lần cầm lấy món như đang vẽ trước khi cầm; giữ mốc trước là \`as: "prev"\` (docs/11-nhom-cam.md#mốc-món-items)`,
+        );
+    }
   }
   return out;
 }

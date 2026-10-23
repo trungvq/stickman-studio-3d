@@ -510,7 +510,7 @@ describe("`auto` của lần cầm theo mốc: `φ` qua `±180°`", () => {
         t: 0,
         right: {
           hold: { item: "bang-gia", group: "sheet", edge: "right", along: 0.33, thumb: "front" },
-          elbow: [-1, 0, 0],
+          elbow: [0, 0, -1],
         },
       },
     ],

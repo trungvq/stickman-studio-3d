@@ -990,9 +990,26 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
 ```
 
 - **Tay phải / trái theo giải phẫu**, không theo gần / xa: tay phải là tay gần khi người không lật.
-  `elbow` là hướng khuỷu trong thế giới, bỏ trống là `REACH_ELBOW` của hệ thân. Đoạn giữa hai mốc
-  dùng `elbow` của mốc nào khai nó, nên một đoạn có, đoạn kề không là khuỷu đổi hướng ngay ở mốc
-  chung — khai cùng `elbow` cho cả chuỗi mốc của một động tác.
+- **`elbow` theo hệ của đích.** Mốc có `at` (đích thế giới): `elbow` là hướng thế giới rig. Mốc khác — có `to`, hay chỉ có
+  `hold` (lần cầm theo mốc món) —: `elbow` là hệ thân `[tiến, y, ra ngoài]` của chính tay ấy, cùng quy ước với `elbow` của
+  `keys[].reach` và `REACH_ELBOW` `[-0,4, 1, 0,5]` (`y` xuống dương, `ra ngoài` dương về phía tay ấy nên một bộ số đúng cho
+  hai tay; hệ thân là hướng hông, không nghiêng theo `torso`). Bỏ trống là `REACH_ELBOW`. Mỗi khung rig quy `elbow` hệ thân ra
+  thế giới bằng hướng thân ở chính giây ấy (`sceneAt(…).world.yaw`), nên người quay, đi theo `path` thì khuỷu quay theo
+  người cùng đích mốc thân; `elbow` thế giới đứng yên dù người quay. Mốc chỉ có `hold` mượn đích của mốc trước
+  ([Đồ cầm tay](#đồ-cầm-tay)) mà không khai `elbow` thì mượn luôn `elbow` của mốc ấy theo hệ của nó. Đoạn giữa hai mốc dùng
+  `elbow` của mốc nào khai nó, nên một đoạn có, đoạn kề không là khuỷu đổi hướng ngay ở mốc chung — khai cùng `elbow` cho cả
+  chuỗi mốc của một động tác. Hai mốc kẹp đoạn khác hệ (một `at`, một `to`) thì cả hai quy ra thế giới ở chính `t` rồi mới
+  hoà (đều trên mặt cầu, `auto` bậc ba), như đoạn hai mốc cùng hệ.
+- **Bẫy: đích thế giới, khuỷu thế giới mà người quay.** Tay có đích `at` kèm `elbow` trong quãng người quay (`path` đổi
+  `yaw`): cổ tay và khuỷu đứng yên trong thế giới, vai quay theo người — đúng cho tay tì quầy, tay vịn. Tay phải đi theo
+  người (cầm máy trước mặt, khoanh trước ngực) thì đặt đích theo mốc thân (`to`), khuỷu hệ thân theo cùng.
+- **Cảnh đời trước schema 34.** `elbow` trên mốc không có `at` ở JSON ghi `schemaVersion` dưới 34 là hướng thế giới: `parseScene`
+  từ chối cả cảnh với dòng báo chỉ lệnh chuyển. `stickman migrate-elbow` ([05](05-repo-video.md#chuyển-elbow-sang-hệ-thân)) quay
+  từng hướng ấy về hệ thân bằng hướng thân người ấy ở giây của mốc (`legacyElbows`, `migrateLegacyElbows` của lõi), nên ở chính
+  mốc khuỷu như cũ; giữa hai mốc, trước mốc đầu và sau mốc cuối khuỷu theo thân. Hướng thân không phụ thuộc tay nên lệnh dựng
+  runtime trên cảnh đã bỏ các `elbow` ấy (`stripLegacyElbows`). JSON không ghi `schemaVersion` (cảnh dựng trong code) đọc theo
+  nghĩa mới. Studio 3D và `hold_mode` ghi `elbow` theo hệ của đích, và cảnh đời trước chỉ khác số `schemaVersion` thì nâng luôn số
+  ấy khi ghi (`sceneVersionUp`).
 - **`elbowLock: true`** (chỉ đi với `elbow`): khuỷu ở mốc này nằm đúng hướng `elbow` — `φ` của khuỷu vẽ ra quanh trục vai →
   cổ tay bằng `φ` của `elbow` chiếu lên vòng ấy ([11](11-nhom-cam.md#khuỷu-tự-nhiên)). Rig không dò khuỷu chỗ khoá: món đặt
   trước bỏ `E(φ)`, tay mang món theo ý định và tay có lòng tay theo ý định bỏ dò xoay khuỷu. Phần khoá hoà giữa hai mốc như

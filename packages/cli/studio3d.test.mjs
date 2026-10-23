@@ -153,6 +153,11 @@ describe("sceneWithHands", () => {
     assert.throws(() => sceneWithHands(disk, { ...disk, a: 2 }), /chỉ ghi/);
     assert.throws(() => sceneWithHands(disk, { a: 1, cast: [] }), /chỉ ghi/);
   });
+  it("`schemaVersion` lớn hơn đĩa thì lên theo, nhỏ hơn thì giữ của đĩa", () => {
+    const old = { ...disk, schemaVersion: 26 };
+    assert.equal(sceneWithHands(old, { ...old, schemaVersion: 34 }).schemaVersion, 34);
+    assert.equal(sceneWithHands(old, { ...old, schemaVersion: 20 }).schemaVersion, 26);
+  });
 });
 
 describe("stickman studio: /api/scene, /api/held, /api/hands", { timeout: 120_000 }, () => {

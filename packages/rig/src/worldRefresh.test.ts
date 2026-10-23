@@ -45,12 +45,12 @@ function json(o: { elbow?: number[]; cup?: number[]; mark?: number[]; b?: number
           hands: [
             {
               t: 0,
-              right: { to: 'shoulder', offset: [36, 30, 0], point: 'wrist', elbow: o.elbow ?? [-0.7, 1, -0.2], hold: { item: 'tui', group: 'carry', on: 'elbow' } },
+              right: { to: 'shoulder', offset: [36, 30, 0], point: 'wrist', elbow: o.elbow ?? [0.2, 1, 0.7], hold: { item: 'tui', group: 'carry', on: 'elbow' } },
               left: { at: [40, -250, -40], point: 'grip', ...(!o.noCup && { hold: `${cup0}@cylinder` }) },
             },
             { t: 1, left: { at: o.cup ?? [50, -270, -30], point: 'grip', ease: 'auto' } },
             { t: 1.5, left: { at: [45, -280, -20], point: 'grip', ease: 'auto', ...(o.cups && { hold: `${cup1}@cylinder` }) } },
-            { t: 2, right: { hold: { ...SHEET, ...(o.along !== undefined && { along: o.along }) }, elbow: [-0.3, 1, 0.4], elbowLock: true } },
+            { t: 2, right: { hold: { ...SHEET, ...(o.along !== undefined && { along: o.along }) }, elbow: [-0.4, 1, 0.3], elbowLock: true } },
             { t: 3.5, right: { hold: null } },
           ],
         },
@@ -118,7 +118,7 @@ describe('`World3D.refresh`', () => {
     const each = (f: (m: THREE.Mesh) => void) => w.root.traverse((o) => (o as THREE.Mesh).isMesh && f(o as THREE.Mesh));
     each((m) => meshes.add(m));
     for (const t of [2.6, 0.9, 3.2]) drawn(w, t);
-    const next = scene(json({ elbow: [-0.6, 1, -0.4], cup: [56, -262, -36], mark: [34, -6, 4] }));
+    const next = scene(json({ elbow: [0.4, 1, 0.6], cup: [56, -262, -36], mark: [34, -6, 4] }));
     expect(w.refresh!(next)).toBe(true);
     expect(w.cast.scene).toBe(next);
     const fresh = world(next);

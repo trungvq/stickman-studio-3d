@@ -21,6 +21,7 @@ import {
   matMul,
   matVec,
   rotX,
+  rotY,
   rotZ,
   scale3,
   sub3,
@@ -287,16 +288,43 @@ export function phiOf(inp: ArmInput, Wp: V3, El: V3): number {
   return Math.atan2(dot3(e, B.o0), dot3(e, B.d0)) / D;
 }
 
-/** `φ` (độ) của hướng khuỷu `elbow` (thế giới rig) chiếu lên vòng quanh trục vai → `Wp`: `φ₀` của `evalPhi` */
-export function phiToward(inp: ArmInput, Wp: V3, elbow: readonly number[]): number {
+/**
+ * Hướng khuỷu của mốc tay: `body` là hệ thân `[tiến, y, ra ngoài]` của chính tay ấy (như `REACH_ELBOW`), quay theo hông
+ * `Rr` lúc dùng; không `body` là thế giới rig. docs/03-scene.md#đích-bàn-tay-thế-giới
+ */
+export interface ElbowDir {
+  v: readonly number[];
+  body?: boolean;
+}
+
+/** `ElbowDir` ra thế giới rig trên hông `Rr` (three) của tay `side` (`-1` tay phải) */
+export function elbowRig(Rr: M3, side: number, e: ElbowDir): V3 {
+  if (!e.body) return [e.v[0], e.v[1], e.v[2]];
+  const [f, y, o] = e.v;
+  const v = matVec(Rr, [side * o, -y, f]);
+  return [v[0], -v[1], -v[2]];
+}
+
+/** Hướng thế giới rig `d` ra hệ thân `[tiến, y, ra ngoài]` của tay `side` trên hông `Rr` (three): nghịch của `elbowRig` */
+export function rigElbowBody(Rr: M3, side: number, d: readonly number[]): V3 {
+  const v = matVec(tr(Rr), [d[0], -d[1], -d[2]]);
+  return [v[2], -v[1], side * v[0]];
+}
+
+/** Hông `Rr` (three) của người 3D quay `yaw` (radian, như `World.yaw`): khung của `ActFrame` */
+export const yawFrame = (yaw: number): M3 => rotY(Math.PI / 2 - yaw);
+
+/** `φ` (độ) của hướng khuỷu `elbow` chiếu lên vòng quanh trục vai → `Wp`: `φ₀` của `evalPhi` */
+export function phiToward(inp: ArmInput, Wp: V3, elbow: ElbowDir): number {
   const B = phiBasis(inp, Wp);
-  const p0: V3 = [elbow[0], -elbow[1], -elbow[2]];
+  const e = elbowRig(inp.Rr, inp.side, elbow);
+  const p0: V3 = [e[0], -e[1], -e[2]];
   return Math.atan2(dot3(p0, B.o0), dot3(p0, B.d0)) / D;
 }
 
 /**
  * `E(φ)` của tay `inp` với cổ tay `Wp`, khung bàn tay `Rw` (three) ở góc khuỷu `phi` (độ): dựng hai đoạn tay, đọc góc
- * cổ tay. `elbow` là hướng khuỷu của mốc tay (thế giới rig), thiếu thì `REACH_ELBOW`
+ * cổ tay. `elbow` là hướng khuỷu của mốc tay, thiếu thì `REACH_ELBOW`
  */
 export function evalPhi(
   inp: ArmInput,
@@ -305,7 +333,7 @@ export function evalPhi(
   phi: number,
   phiPrev?: number,
   other?: ArmSeg,
-  elbow?: readonly number[],
+  elbow?: ElbowDir,
 ): ArmSol {
   const { side, S } = inp;
   const B = phiBasis(inp, Wp);
@@ -326,8 +354,8 @@ export function evalPhi(
     ((over.turn / TURN_MAX) ** 2 +
       (over.bend / rangeHalf(a.bend, AIM_BEND)) ** 2 +
       (over.dev / rangeHalf(a.dev, AIM_DEV)) ** 2);
-  const e = elbow ?? REACH_ELBOW;
-  const p0: V3 = elbow ? [e[0], -e[1], -e[2]] : matVec(inp.Rr, [side * e[2], -e[1], e[0]]);
+  const e = elbowRig(inp.Rr, side, elbow ?? { v: REACH_ELBOW, body: true });
+  const p0: V3 = [e[0], -e[1], -e[2]];
   const phi0 = Math.atan2(dot3(p0, B.o0), dot3(p0, B.d0)) / D;
   const down = (W_DOWN * (1 - Math.cos((phi - phi0) * D))) / 2;
   const body = intrusion(inp, S, El, Wr, other);
@@ -361,7 +389,7 @@ export function solvePhi(
   Rw: M3,
   phiPrev?: number,
   other?: ArmSeg,
-  elbow?: readonly number[],
+  elbow?: ElbowDir,
 ): ArmSol {
   let n = 0;
   const ev = (p: number) => (n++, evalPhi(inp, Wp, Rw, p, phiPrev, other, elbow));
@@ -391,7 +419,7 @@ export interface ArmQuery {
   Wp: V3;
   Rw: M3;
   other?: ArmSeg;
-  elbow?: readonly number[];
+  elbow?: ElbowDir;
 }
 
 /**

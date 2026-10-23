@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { actAim, HOLD_SWIVEL_SLEW, type ActInput } from "./act3";
 import { body3 } from "./figure3d";
 import type { GraspReport } from "./graspSolve";
+import { rigElbowBody, yawFrame } from "./graspArm";
 import { handVec } from "./hand";
 import {
   ELBOW_LOCK_FIX,
@@ -91,6 +92,9 @@ const dirAt = (rt: ReturnType<typeof runtime>, t: number, phi: number): V3 => {
   const { d0, o0 } = report(rt, t).ring;
   return [0, 1, 2].map((i) => Math.cos(phi * D) * d0[i] + Math.sin(phi * D) * o0[i]) as V3;
 };
+/** Hướng thế giới rig `e` ra `elbow` của mốc tay phải `h`: mốc không có `at` khai hệ thân (người quay 270°) */
+const elbowOf = (h: { at?: unknown } | undefined, e: V3): V3 =>
+  h?.at ? e : rigElbowBody(yawFrame(270 * (Math.PI / 180)), -1, e);
 /** Mốc tay có thêm `elbow` ở mỗi mốc khai tay phải, khoá ở mốc `lock` (mặc định mọi mốc có `elbow`) */
 const withElbow = (
   hands: Hands,
@@ -103,7 +107,7 @@ const withElbow = (
           ...k,
           right: {
             ...(k.right as object),
-            elbow: elbows[i],
+            elbow: elbowOf(k.right as { at?: unknown }, elbows[i]!),
             ...((Array.isArray(lock) ? lock[i] : lock) && { elbowLock: true }),
           },
         }
@@ -261,7 +265,7 @@ describe("lần cầm theo mốc (`keyed`)", () => {
     const mid = dirAt(free, 0.5, 80);
     const hands = [
       HANDS[0],
-      { t: 0.5, right: { hold: SHEET, elbow: mid, elbowLock: true } },
+      { t: 0.5, right: { hold: SHEET, elbow: elbowOf(undefined, mid), elbowLock: true } },
       ...HANDS.slice(1),
     ];
     const rt = runtime(hands, ITEMS);
@@ -310,7 +314,9 @@ describe("lần cầm theo mốc (`keyed`)", () => {
     // mốc khoá giữa hai mốc món: `φ` cuối của lần cầm đầu là hướng khoá, không phải `φ` của mốc món
     const mid = dirAt(loose, 0.5, report(loose, 0.5).phi + 60);
     const hands = base.map((k, i) =>
-      i === 1 ? { ...k, right: { hold: SHEET, elbow: mid, elbowLock: true } } : k,
+      i === 1
+        ? { ...k, right: { hold: SHEET, elbow: elbowOf(undefined, mid), elbowLock: true } }
+        : k,
     );
     const rt = runtime(hands, ITEMS);
     const want = phiOfDir(rt, 0.999, mid);
@@ -480,7 +486,10 @@ describe("phần khoá thật sự áp lên khuỷu (`elbowLockAt`)", () => {
         t: 0,
         right: { at: PHONE, point: "grip", hold: "dien-thoai@palmBox", elbow: e0, elbowLock: true },
       },
-      { t: 1, right: { hold: "dien-thoai@palmBox", elbow: e0, elbowLock: true } },
+      {
+        t: 1,
+        right: { hold: "dien-thoai@palmBox", elbow: elbowOf(undefined, e0), elbowLock: true },
+      },
     ];
     const rt = runtime(hands);
     expect(elbowLockAt(rt, "nguoi", "right", 0)).toBe(1);

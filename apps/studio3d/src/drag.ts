@@ -8,6 +8,7 @@ import {
   itemCentre,
   matMul,
   matVec,
+  rigElbowBody,
   type ActCharacter,
   type CharacterData,
   type HandSide,
@@ -350,9 +351,10 @@ export function dragItem(
 }
 
 /**
- * Vòng khuỷu: khoá khuỷu ở góc `phi` (độ) — `elbow` là hướng thế giới rig trên vòng, `elbowLock: true` — ở mốc tay `t`
- * (chèn như ＋ nếu chưa có). Tay không theo món đặt trước cần `at` / `to` ở mốc khoá: mốc chưa có thì ghi `at` ở tâm nắm
- * đang vẽ. Hướng chỉnh lại theo vòng của cảnh mới tới khi `φ` vẽ ra lệch dưới `PHI_TOL`
+ * Vòng khuỷu: khoá khuỷu ở góc `phi` (độ) — `elbow` là hướng trên vòng theo hệ của đích (mốc có `at` thế giới rig, mốc khác
+ * hệ thân), `elbowLock: true` — ở mốc tay `t` (chèn như ＋ nếu chưa có). Tay không theo món đặt trước cần `at` / `to` ở mốc
+ * khoá: mốc chưa có thì ghi `at` ở tâm nắm đang vẽ. Hướng chỉnh lại theo vòng của cảnh mới tới khi `φ` vẽ ra lệch dưới
+ * `PHI_TOL`
  */
 export function lockElbow(
   raw: Json,
@@ -391,11 +393,12 @@ export function lockElbow(
   // `φ` của khoá đo trên vòng của cảnh mới: cổ tay dời theo khuỷu (tâm nắm giữ chỗ) nên vòng cũng dời. Tìm góc `a` trên
   // vòng gốc cho `φ` vẽ ra bằng `phi` (cát tuyến, độ dốc kẹp), giữ lần thử lệch ít nhất
   const ring = rep.ring;
+  const Rr = trunkAt(b.rt, id, t, o.char)!.Rr;
   const tryAt = (a: number) => {
-    const e = ringDir(ring, a).map(r4);
+    const e = ringDir(ring, a);
     const raw2 = editKey(base, b.key, (m) => {
       const x = m ?? {};
-      x.elbow = e;
+      x.elbow = (x.at !== undefined ? e : rigElbowBody(Rr, outOf(side), e)).map(r4);
       x.elbowLock = true;
       touch(x);
       return x;

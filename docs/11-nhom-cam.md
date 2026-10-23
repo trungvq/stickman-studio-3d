@@ -881,6 +881,7 @@ const SceneItemMarkSchema = z.strictObject({
   ease: z.enum(EASE_NAMES).optional(),              // đường hoà vào mốc này; bỏ trống là `smooth`
   bezier: z.tuple([unit, unit, unit, unit]).optional(),   // điểm điều khiển của `ease: "bezier"`
   rest: z.literal(true).optional(),                  // món nằm trên một mặt ở mốc này; bỏ `at`/`to` là chỗ thả gần nhất
+  as: z.enum(["hand", "prev"]).optional(),           // không khai chỗ, hướng: như đang vẽ trước lần cầm / như mốc trước
 });
 ```
 
@@ -909,6 +910,17 @@ const SceneItemMarkSchema = z.strictObject({
   cộng dồn dọc chuỗi, nội suy bậc ba ra phần của đoạn, rồi `slerp` trong đoạn — vận tốc góc liền qua mốc giữa. Trước mốc
   món đầu và sau mốc cuối, món giữ ở mốc gần nhất (kẹp như `world.hands`). Lần cầm một tay theo mốc không vẽ món ở `itemAt`
   giữa hai mốc: bộ giải chỉ đọc `itemAt` ở chính các mốc, món vẽ theo bàn tay (mục [5](#lần-cầm-theo-mốc)).
+- **Mốc lấy chỗ từ món đã có** (`as`, không khai `at`, `to`, `point`, `face`, `up`, `roll`, `rest` — zod):
+  - **`as: "hand"`** — món như đang vẽ **ngay trước lần cầm chứa mốc mở** (`RUN_EPS` = 10⁻⁶ s trước mốc tay mở lần cầm, như
+    `was` của [Đổi lần cầm](#đổi-lần-cầm)): bàn tay người đang cầm món lúc ấy nhân khung cầm (`actHeld`), tay dẫn, theo mốc hay
+    hai tay như nhau. Dùng ở mốc món đầu của lần cầm; giữa lần cầm thì `check` lỗi `ref` (giữ mốc trước là `prev`). Ngay
+    trước đó không bàn tay nào cầm món (món treo không tính): `check` lỗi `ref`, `itemAt` ném `ItemAsError`. Món không hoà
+    **tới** mốc này (như mốc nằm không khai chỗ): trước nó món còn trong tay lần cầm cũ.
+  - **`as: "prev"`** — món đứng yên theo thân người cầm từ mốc món trước của cùng món: phép quay và chỗ của món ở mốc trước
+    (`itemAt` ở giây ấy) dời cứng theo hông người cầm (`Rr`, tâm hông) tới giây đang lấy mẫu. Mốc món đầu của món mà khai
+    `prev` thì hiểu như `hand`.
+  - Lần cầm theo mốc không giải lại ở hai loại mốc này mà lấy thẳng nghiệm hệ thân (mục [5](#lần-cầm-theo-mốc)); `itemAt` ở
+    chúng là cho lần cầm hai tay, `chooseMissing` và `check`.
 - Mốc món chỉ hợp lệ khi có tay cầm món ấy ở `t` (`check` lỗi `ref`). Món rời tay mà cảnh còn cần thì là đồ của cảnh, như nay.
 - **Món nằm** (`rest: true`): món nằm trên một mặt ở mốc này (quầy, bàn). Cảnh không khai mặt đỡ: rig lấy mặt ngang qua điểm
   thấp nhất của khối hình món ở mốc (mục [5](#mặt-đỡ)). Hai dạng:
@@ -1037,7 +1049,7 @@ const SceneHoldSchema = z.union([
 // tay dẫn: cầm bút, ngòi xuống giấy (đường viết do các mốc `at` khai, như nay)
 { "t": 2.0, "right": { "at": [708, -136, 1265], "point": "item:tip", "hold": { "item": "but", "group": "pen" } } }
 
-// túi khoác khuỷu
+// túi khoác khuỷu (`elbow` của mốc `to` là hệ thân: lùi, xuống, ra ngoài)
 { "t": 0, "left": { "to": "shoulder", "offset": [38, 18, 34], "point": "wrist", "elbow": [-0.5, 1, 1],
                     "hold": { "item": "tui-hieu", "group": "carry", "on": "elbow" } } }
 ```
@@ -1072,6 +1084,7 @@ mang trường cảnh khai; lựa chọn rig giải chỉ ở `graspAtTime`.
 E(φ) = ½ (turn/90)² + (bend/50)² + ½ (dev/20)²                     cổ tay ứng với cẳng tay ở φ (thang thoải mái, không phải kẹp)
      + 10 · Σ (vượt giới hạn / nửa tầm phía ấy)²                    phạt nặng phần vượt `AIM_BEND`, `AIM_DEV`, xoay cẳng tay
      + w_down · (1 − cos(φ − φ₀)) / 2                               khuỷu thõng: φ₀ từ `REACH_ELBOW` hay `elbow` của mốc tay
+                                                                    (mốc không có `at`: hệ thân, quay theo thân ở giây mẫu)
      + w_body · Σ (lấn / r_tay)²                                    bắp tay, cẳng tay lấn vào thân (`across`, `front` của
                                                                     `markShape`, arm3.ts), đầu, tay kia
      + w_cont · ((φ − φ_trước) / 30°)²                              liền với mẫu trước của lần cầm
@@ -1084,7 +1097,7 @@ E(φ) = ½ (turn/90)² + (bend/50)² + ½ (dev/20)²                     cổ ta
   `φ₀` bằng cùng phép chiếu (`phiToward`).
 - **Khuỷu khoá** (`elbowLock` của mốc `hold`, [03](03-scene.md#đích-bàn-tay-thế-giới)): mẫu có phần khoá `1` không tìm `φ`
   mà lấy `φ = φ(elbow)` — hướng `elbow` của lần cầm ở giây ấy (`runLock`: đều trên mặt cầu giữa hai mốc `hold` kề, mốc không
-  khai lấy của mốc kia) chiếu như `φ₀`; `E(φ)` chỉ còn để báo. Phần khoá giữa `0` và `1` (từ mốc khoá sang mốc không khoá) thì
+  khai lấy của mốc kia; mốc `hold` không có `at` nên `elbow` là hệ thân, quy ra thế giới bằng thân của chính mẫu) chiếu như `φ₀`; `E(φ)` chỉ còn để báo. Phần khoá giữa `0` và `1` (từ mốc khoá sang mốc không khoá) thì
   mẫu giải như thường. Khung vẽ lấy `φ` của chuỗi (hay của lần cầm theo mốc) rồi kéo về `φ(elbow)` theo phần khoá, đường ngắn
   trên vòng (`lockPhi`): phần khoá `1` là đúng hướng khoá dù giây ấy không trùng mẫu hay mốc món. Lựa chọn chỗ cầm
   (`chooseMissing`) vẫn giải với khuỷu tự do.
@@ -1140,6 +1153,40 @@ Lần cầm một tay có mốc món (mục 4) không giải từng khung trên 
    (`HoldGrasp.rest`, `GraspSolution.still`; `actHeld` và `world.ts` cùng đọc). Nhặt món người khác vừa thả: mốc tay mở lần
    cầm sớm hơn mốc nằm ít nhất `HOLD_BLEND` để bàn tay tới món đúng lúc mốc; món nằm ở chỗ thả suốt quãng ấy nên không nhảy
    lúc gắn. Đặt xuống: mốc nằm khai chỗ trước mốc thả; từ mốc nằm tới lúc thả món đứng ở chỗ khai, nên chỗ thả là chỗ khai.
+
+**Người quay thì tay và món quay cứng theo thân.** Nghiệm lưu trong hệ thân và đổi ra thế giới bằng thân ở chính `t`, nên
+người quay tại chỗ hay đi theo `path` giữa hai mốc (hay trước mốc đầu, sau mốc cuối) thì cổ tay, bàn tay, khuỷu và món đi
+theo người như một khối — không có chế độ nào phải tắt. Mốc món khai `to` cũng đọc trong khung mốc thân ở `t`; mốc khai `at`
+(thế giới) thì chỉ ở chính mốc ấy món đứng đúng chỗ thế giới.
+
+**Mốc đầu lấy nguyên tay đang vẽ** (`as: "hand"` ở mốc món đầu, [Mốc món](#mốc-món-items)): lần cầm mở ngay sau một lần cầm
+cùng món trên cùng tay (tay dẫn hay theo mốc, không phải tay phụ) thì mốc keyed đầu là bàn tay đã vẽ ngay trước ranh giới
+(`drawnKeyed`: `actArm` trên `sceneAt` ở `since − RUN_EPS`, cùng giây với `was`) đổi sang hệ thân — cổ tay so với vai, khung
+bàn tay, `φ` của khuỷu đang vẽ (`phiOf`), góc cổ tay như vẽ (đã trong miền khớp, phần vượt kẹp `0`) — không qua `solvePhi`,
+không qua khung cầm của món. Bước hoà `was` của ranh giới đi từ đúng nghiệm ấy tới chính nó, nên cổ tay, bàn tay, khuỷu
+không trượt; cổ tay tay dẫn đi từ chuỗi `HOLD_SLEW` như lúc vẽ nên cùng `t` ra cùng số dù hỏi theo thứ tự nào. Lựa chọn
+chỗ cầm của lần cầm mới **giữ đúng lựa chọn ngay trước ranh giới** (`priorChoice`, cả đầu cao `high` khi có): mọi trường
+của nó khai cho `chooseMissing` như cảnh khai, nên khung cầm như lúc ấy và món không xoay trong tay; khác nhóm (không có lựa
+chọn để giữ) thì giải như thường trên món ở mốc, món có thể xoay trong tay suốt `HOLD_BLEND` (`leadGrip`). Tay ấy không cầm
+món này ngay trước đó (đổi tay, nhận từ người khác) thì mốc giải như thường trên món như đang vẽ ở tay kia.
+
+**Mốc giữ** (`as: "prev"` giữa lần cầm): nghiệm hệ thân của mốc này là nghiệm của mốc món trước — chép, không giải lại, kể
+cả khi đầu, thân người ở giây này khác. Tay và món đứng yên theo thân tới đây, từ đây mới hoà sang mốc sau theo `ease` của
+mốc sau.
+
+```jsonc
+// giơ máy, quay người, hạ máy: tay dẫn cầm máy trước cằm tới 2,0 s, rồi theo mốc
+"hands": [{ "t": 0,   "left": { "to": "chin", "offset": [40, 50, 20], "point": "grip",
+                                "hold": { "item": "dien-thoai", "group": "palmBox", "face": { "axis": "back", "toward": "forward" } } } },
+          { "t": 2.0, "left": { "hold": { "item": "dien-thoai", "group": "palmBox", "regrip": true } } }],
+"items": [{ "t": 2.0, "cast": "erika", "item": "dien-thoai", "as": "hand" },                    // mốc đầu: tay như đang vẽ
+          { "t": 2.5, "cast": "erika", "item": "dien-thoai", "to": "eye", "offset": [32, 10, 8],  // giơ máy lên mắt
+            "face": { "axis": "screen", "toward": "holderFace" } },
+          { "t": 4.2, "cast": "erika", "item": "dien-thoai", "as": "prev" },                    // quay người 2,5 → 4,2: tay theo thân
+          { "t": 4.7, "cast": "erika", "item": "dien-thoai", "to": "chest", "offset": [30, 20, 10], // hạ máy
+            "face": { "axis": "screen", "toward": "holderFace" } }]
+// `world.path` quay `yaw` trong 2,5 → 4,2 s
+```
 
 `graspAtTime` trả nghiệm đã hoà, `act3` đọc như nghiệm của món đặt trước. Mỗi khung chỉ một `evalPhi`, không chuỗi mẫu: 0,3–0,5
 ms/khung cho `sceneAt` + `actAim`; khung nhảy cóc ở giây 2,9 dựng từ đầu mất chừng 10 ms. Nhớ theo runtime và nhân vật như
@@ -1256,7 +1303,9 @@ Hai đường, theo lần cầm:
   là nghiệm **đóng băng ngay trước ranh giới** của lần cầm trước, mang ở `ReachHold.was` (`{ k, solve }`, `k` phần còn lại của
   nghiệm cũ, giảm theo `smoothstep`): chạy tiếp chuỗi `φ` cũ qua ranh giới thì nhảy nhánh. Lần cầm món mới trên tay không có
   `was` hoà từ tay tự do (bàn tay của hành động, không cầm; `ReachHold.enter`). Lần cầm tay dẫn sang lần cầm theo món của
-  cùng món (`regrip`): `was` là bàn tay tay dẫn đã vẽ ngay trước ranh giới (`actHandAt` trên tư thế của `sceneAt` lúc ấy); nhả tay ra `hold: null` thì `sceneAt` mang một `ReachHold` chỉ có
+  cùng món (`regrip`): `was` là bàn tay tay dẫn đã vẽ ngay trước ranh giới (`actHandAt` trên tư thế của `sceneAt` lúc ấy) —
+  mốc món đầu `as: "hand"` thì nghiệm mới ở ranh giới chính là bàn tay ấy, quãng hoà không dời gì ([Lần cầm theo
+  mốc](#lần-cầm-theo-mốc)); nhả tay ra `hold: null` thì `sceneAt` mang một `ReachHold` chỉ có
   `was` và `released: true` (không vai trò, không món, không dáng ngón) cho tới hết quãng hoà. Từng thành phần hoà thẳng từ cũ
   sang mới (`solveActing` của `act3.ts`):
   cổ tay `Wp` dời thẳng; bàn tay `Rw` đi đường ngắn nhất (`mixRotation`); khuỷu `φ` đi đường ngắn nhất trên vòng;
@@ -1349,14 +1398,16 @@ vá và độ lệch, không ghi gì.
   - hướng là `face: { axis: [0, 0, 1], toward }` và `roll: { axis: [0, 1, 0], toward }`, `toward` vectơ hệ thân
     `[tiến, y xuống, ngang phải]` — món giữ hướng dù người quay; `ease: "auto"`.
 
-  Mốc tay bỏ `at`, `to`, `side`, `offset`, `point`, `palm`, `fingers`, `bend` và ý định (`face`, `up`, `roll`, `keep`); giữ `elbow`,
-  `ease` và mọi trường khác, cả trường lạ. Mốc chỉ còn đúng `hold` như mốc trước và mốc sau của lần cầm thì bỏ; mốc khoá khuỷu
+  Mốc tay bỏ `at`, `to`, `side`, `offset`, `point`, `palm`, `fingers`, `bend` và ý định (`face`, `up`, `roll`, `keep`); giữ `elbow`
+  (mốc bỏ `at` thì `elbow` quay từ thế giới về hệ thân bằng thân ở giây ấy, hướng không đổi), `ease` và mọi trường khác, cả
+  trường lạ. Mốc chỉ còn đúng `hold` như mốc trước và mốc sau của lần cầm thì bỏ; mốc khoá khuỷu
   (bên dưới) thì giữ, mốc món ở giây khoá mà tay dẫn chưa có mốc thì chèn mốc tay mang `hold`.
 - **Tay theo đồ → đồ theo tay.** Mỗi mốc tay và mốc món của lần cầm thành một mốc tay có đích:
   - tâm nắm của bàn tay đang vẽ với `point: "grip"`; mốc món có `point` thì điểm ấy của món với `point: "item:<mốc>"`;
   - `to` + `offset` khi mốc món (ở giây ấy, hay gần nhất) dùng `to`, không thì `at`;
   - `hold` nhận `face` + `roll` như trên, vectơ hệ thân với trục ngang ra ngoài phía tay ấy (như ý định tay dẫn);
-  - mốc chưa khai `elbow` nhận hướng khuỷu đang vẽ (thế giới): cực khởi đầu của bộ giải ý định (mốc khoá khuỷu: bên dưới);
+  - mốc chưa khai `elbow` nhận hướng khuỷu đang vẽ, theo hệ của đích mới (`at` thế giới, `to` hệ thân): cực khởi đầu của bộ
+    giải ý định (mốc khoá khuỷu: bên dưới); `elbow` đã khai đổi hệ khi đích của mốc đổi `at` ↔ không `at`, hướng không đổi;
   - mốc tay mới có `ease: "auto"`, mốc có sẵn giữ `ease` của nó.
 
   Mốc món của lần cầm bị xoá; hết mốc thì bỏ cả `items`. Tay kia cầm cùng món thành `both` của tay dẫn từ lúc nó cầm (`group` khi
@@ -1367,7 +1418,7 @@ vá và độ lệch, không ghi gì.
   `scene`; bỏ `variant` của nhóm một biến thể, `part` của món một phần cầm được), để chế độ mới không chọn lại. Cảnh sau phép đổi
   không dựng hay không giải được thì lùi: chỉ trường rời (`part`, `edge`, `thumb`, `variant`), rồi không ghi thêm (`notes` báo).
 - **Khoá khuỷu.** Sau phép đổi, mốc mà khuỷu tay dẫn lệch khuỷu đang vẽ quá `0,5°` (`φ`, `HOLD_MODE_PHI`) nhận `elbow` là hướng
-  khuỷu đang vẽ (thế giới rig, như `elbow` của mốc tay) cùng `elbowLock: true` ([03](03-scene.md#đích-bàn-tay-thế-giới)), đè
+  khuỷu đang vẽ (theo hệ của đích mốc ấy, như `elbow` của mốc tay) cùng `elbowLock: true` ([03](03-scene.md#đích-bàn-tay-thế-giới)), đè
   `elbow` cảnh khai ở mốc ấy: cùng khuỷu thì cổ tay không phải kẹp khác đi, món ở mốc về đúng chỗ. Tay theo đồ đọc khoá ở mốc
   tay mang `hold` cùng giây với mốc món; đồ theo tay ở mốc có đích. Khoá giữ khi bản vá có khoá hơn bản không khoá, so lần lượt:
   món ở mốc (lệch dời chia `HOLD_MODE_POS` `0,5` đơn vị rig cộng lệch quay chia `HOLD_MODE_ANGLE` `1°`; lớn nhất, rồi tổng các
@@ -1595,7 +1646,8 @@ Mỗi nhóm chạy có chỗ tiếp xúc (`CONTACTS`), dáng mở/đóng, vai tr
    `GraspReport`, giá mặt đỡ (`restUnder`).
 5. `core/scene.ts` — `items`, `itemAt`, đường theo lần cầm (`runMarks`), lần cầm theo mốc (`keyedArm`), `graspAtTime` (nhớ
    theo runtime và nhân vật), `ReachHold.solve`, hoà vào/ra lần cầm (`placedWas`), `holdBlending`, `checkHolds`, `sceneItemProblems`,
-   lần thả và mốc món nằm (`itemReleases`, `itemReleased`, `restingMark`), báo cho studio (`holdRuns`, `handReport`).
+   lần thả và mốc món nằm (`itemReleases`, `itemReleased`, `restingMark`), mốc `as` (`asMark`, `drawnKeyed`), báo cho studio
+   (`holdRuns`, `handReport`).
    `core/holdMode.ts` — đổi chế độ lần cầm (`holdToItemLed`, `holdToHandLed`, `applyJsonPatch`).
 6. `core/arm3.ts` (lá), `core/act3.ts`, `core/holdLink.ts` — đường món đặt trước (`solveActing`), tay dẫn qua `holdLink`,
    `AimReport.hold.grasp`; `actJoints` khớp `act` (`act3.test.ts`); `actArm` (tay vẽ kèm vết bộ giải, `ArmTrace`).

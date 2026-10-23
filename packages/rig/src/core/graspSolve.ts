@@ -1,6 +1,13 @@
 import { AIM_BEND, AIM_DEV, clampRange, markShape, TURN_MAX, type Trunk3 } from "./arm3";
 import { AIM_GAP } from "./constants";
-import { armInput, solvePhi, type ArmInput, type ArmSeg, type ArmSol } from "./graspArm";
+import {
+  armInput,
+  solvePhi,
+  type ArmInput,
+  type ArmSeg,
+  type ArmSol,
+  type ElbowDir,
+} from "./graspArm";
 import {
   acrossMiss,
   acrossOf,
@@ -1493,8 +1500,8 @@ export interface GraspLater {
 export interface GraspOpts {
   /** Tay đã đặt (số hạng lấn) */
   other?: ArmSeg;
-  /** Hướng khuỷu của mốc tay, thế giới rig */
-  elbow?: readonly number[];
+  /** Hướng khuỷu của mốc tay; hệ thân thì quay theo thân của từng mốc */
+  elbow?: ElbowDir;
   /** `φ` mẫu cuối của lần cầm trước trên cùng tay */
   phiPrev?: number;
   /** Giây bắt đầu lần cầm */

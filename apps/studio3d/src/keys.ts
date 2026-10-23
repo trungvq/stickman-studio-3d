@@ -2,10 +2,12 @@
 // lạ và dạng mốc tên `@tên±Δ`. Thanh tua của studio gọi chúng; README.md § Dáng tay.
 import {
   BEZIER_DEFAULT,
+  elbowRig,
   markTime,
   parseMarkRef,
   type EASE_NAMES,
   type HandSide,
+  type M3,
 } from "@stickman3d/rig/core";
 
 export type Json = Record<string, unknown>;
@@ -242,6 +244,8 @@ export interface DrawnHand {
   wrist: V3;
   /** Hướng khuỷu đang vẽ (thế giới rig, vuông góc trục vai → cổ tay) */
   elbow?: V3;
+  /** Hướng hông (three) ở giây ấy: `elbow` hệ thân của mốc kề ra thế giới */
+  Rr?: M3;
   /** Khuỷu khoá hẳn ở giây ấy (`elbowLockAt` = 1) */
   locked: boolean;
   /** Lựa chọn cầm đang vẽ (`GraspReport.choice`): trường số của chỗ cầm trượt */
@@ -338,8 +342,16 @@ export function handValueAt(
     notes.push(
       "dáng ngón (`pose`) lấy của mốc trước: giữa hai dáng khác nhau, ngón quanh mốc mới đổi",
     );
-  const ea = isObj(prev?.v) ? (prev.v.elbow as number[] | undefined) : undefined;
-  const eb = isObj(next?.v) ? (next.v.elbow as number[] | undefined) : undefined;
+  // mốc mới có `at`: `elbow` thế giới; mốc kề không có `at` khai hệ thân, quy ra thế giới bằng thân ở `t`
+  const world = (v: Json | null | undefined): number[] | undefined => {
+    if (!isObj(v) || !Array.isArray(v.elbow)) return undefined;
+    const e = v.elbow as number[];
+    return v.at !== undefined || !d.Rr
+      ? e
+      : elbowRig(d.Rr, side === "right" ? -1 : 1, { v: e, body: true });
+  };
+  const ea = world(prev?.v as Json | null | undefined);
+  const eb = world(next?.v as Json | null | undefined);
   if (d.locked && d.elbow) {
     value.elbow = d.elbow.map(r4);
     value.elbowLock = true;
@@ -348,7 +360,7 @@ export function handValueAt(
     value.elbow = unit(ea.map((x, i) => x + (eb[i] - x) * u)).map(r4);
     if (JSON.stringify(ea) !== JSON.stringify(eb))
       notes.push("`elbow` lấy nội suy thẳng giữa hai mốc kề");
-  } else if (ea ?? eb) value.elbow = [...(ea ?? eb)!];
+  } else if (ea ?? eb) value.elbow = [...(ea ?? eb)!].map(r4);
   value.ease = "auto";
   if (d.mode !== "hand") return { value, notes, alts: [] };
   if (!d.axes || !hold) {

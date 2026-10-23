@@ -37,7 +37,7 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
   - `POST /api/scene?name=<cảnh>` `{ hash, scene }`: `scene` là JSON thô của cảnh đã sửa; server lấy `cast[*].world.hands`
     và `items` của nó vá vào file trên đĩa; `scene` thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên, xoá hết là gửi mảng
     rỗng (`items: []`, `hands: []` ghi thành mảng rỗng), `items: null` bỏ cả khoá `items` (trang gửi khi bản đang sửa không còn
-    khoá ấy mà bản đã lưu có). Phần khác của `scene` khác đĩa thì 400. Trả `{ file, raw, hash }`.
+    khoá ấy mà bản đã lưu có). `schemaVersion` số lớn hơn đĩa thì lên theo: trang nạp cảnh đời trước mà `migrateScene` chỉ đổi số ấy thì nâng ngay trong bản sửa (`sceneVersionUp`), nên `elbow` hệ thân trang ghi lên mốc không có `at` đọc đúng nghĩa ở lần nạp sau. Phần khác của `scene` khác đĩa thì 400. Trả `{ file, raw, hash }`.
   - `POST /api/held?name=<món>` `{ hash, group, variant, authored }`: **Lưu** của khung soạn kiểu cầm ghi `authored` của
     món × nhóm × biến thể (`authored: null` là xoá). Món còn kiểu cầm có tên (`base` / `note`) mà `schemaVersion` cũ hơn
     `HELD_VERSION` của rig thì ghi lên `HELD_VERSION`. `STUDIO3D_HELD_OUT=<thư mục>` đổi hướng ghi sang thư mục ấy và đọc nó
@@ -240,7 +240,7 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hà
     (`along`, `slant`…) lấy lựa chọn đang vẽ —, nên lần cầm không bị cắt và mốc không khai đích;
   - đồ theo tay, tay tự do: phần đích đang là `0` thì `null`; không thì `at` là điểm bàn tay theo `point` của mốc kề (tâm
     nắm hay cổ tay; điểm khác thì tâm nắm, `point: "grip"`), lần cầm đi tiếp. Tay tự do chép `palm`, `fingers`, `bend`,
-    `pose`, `w` của mốc trước (mốc sau khai dáng khác thì thẻ nhắc ngón quanh mốc mới đổi); `elbow` theo mốc kề (hai mốc kề khác nhau thì nội suy thẳng), khuỷu đang khoá hẳn thì khoá vào hướng khuỷu
+    `pose`, `w` của mốc trước (mốc sau khai dáng khác thì thẻ nhắc ngón quanh mốc mới đổi); `elbow` theo mốc kề, quy ra thế giới ở giây mới (mốc kề không có `at` khai hệ thân; hai mốc kề khác nhau thì nội suy thẳng), khuỷu đang khoá hẳn thì khoá vào hướng khuỷu
     đang vẽ. Đồ theo tay ghi thêm `hold` cùng chỗ cầm với ý định là hướng món đang vẽ — `face`, `roll` trục khung món
     `[0, 0, 1]`, `[0, 1, 0]` về vectơ hệ thân, ngang ra ngoài phía tay ấy, như `holdToHandLed` — và mốc kề không khai
     `elbow` thì `elbow` là khuỷu đang vẽ, để bàn tay không xoay khác; bản ấy lệch hơn bản giữ ý định của `hold` trước thì
@@ -270,7 +270,7 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hà
   - **Vòng khuỷu**: đường tròn khuỷu quanh trục vai → cổ tay (đường xám) đi qua khuỷu đang vẽ (`handReport.ring`), tô theo
     `E(φ)` của `handReport.cost` (`evalPhi`): xanh ở chỗ rẻ nhất, đỏ từ rẻ nhất + 3 trở lên; tay tự do không có giá, vòng xám.
     Chấm trắng là khuỷu đang vẽ, tím khi khoá; nhãn cạnh khuỷu ghi `φ`, `E`. **Kéo** chấm hay bất kỳ chỗ nào trên vòng (bóng
-    cam theo con trỏ): thả là ghi `elbow` (hướng thế giới rig) và `elbowLock: true` vào mốc tay ở giây ấy. Cổ tay dời theo khuỷu
+    cam theo con trỏ): thả là ghi `elbow` (theo hệ của đích: mốc có `at` hướng thế giới rig, mốc khác hệ thân) và `elbowLock: true` vào mốc tay ở giây ấy. Cổ tay dời theo khuỷu
     (tâm nắm giữ chỗ) nên vòng của cảnh mới cũng dời: trang dò hướng `elbow` tới khi `handReport.phi` lệch góc thả dưới 0,25°.
     Tay không theo món đặt trước mà mốc chưa có `at` / `to` thì ghi thêm `at` ở tâm nắm đang vẽ — khoá chỉ có tác dụng ở mốc có
     đích; lần cầm theo mốc khoá ở mốc tay `hold` của lần cầm. Khoá vẫn không có tác dụng ở giây ấy (`handReport.elbowLock`

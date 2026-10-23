@@ -412,6 +412,7 @@ export async function upgradeWorkspace({ dir = ".", decide, dryRun = false } = {
       kept,
       agentsMd: agentsNote(moved),
       legs: legsNote(stamp),
+      elbows: elbowsNote(root),
     };
 
   const log = logger(root);
@@ -444,6 +445,7 @@ export async function upgradeWorkspace({ dir = ".", decide, dryRun = false } = {
     kept,
     agentsMd: agentsNote(moved),
     legs: legsNote(stamp),
+    elbows: elbowsNote(root),
     ...log.report(),
   };
 }
@@ -453,6 +455,24 @@ const legsNote = (stamp) =>
   stamp && !sameLegs(legsOf(stamp), legsNow())
     ? `Rig đổi chân ${legsLabel(legsOf(stamp))} → ${legsLabel(legsNow())}: người ngồi 2D nhô khỏi ghế — chạy \`stickman reseat --dry-run\` rồi \`stickman reseat\`.`
     : null;
+
+/** Cảnh đời trước còn `elbow` thế giới trên mốc không có `at`: `upgrade` không đụng `scenes/`, chỉ nhắc */
+function elbowsNote(root) {
+  const d = join(root, "scenes");
+  if (!existsSync(d)) return null;
+  const n = listJson(d).filter((f) => {
+    try {
+      const j = readJson(join(d, f));
+      const v = typeof j.schemaVersion === "number" ? j.schemaVersion : 0;
+      return v < rig.SCENE_VERSION && rig.legacyElbows(j).length > 0;
+    } catch {
+      return false;
+    }
+  }).length;
+  return n
+    ? `${n} cảnh còn \`elbow\` thế giới trên mốc không có \`at\` (schema cảnh trước ${rig.SCENE_VERSION}), rig mới đọc theo hệ thân — chạy \`stickman migrate-elbow --dry-run\` rồi \`stickman migrate-elbow\`.`
+    : null;
+}
 
 const agentsNote = (moved) =>
   !moved?.stale && !moved?.body
@@ -681,7 +701,7 @@ export const castChars = (scene, characters) =>
  * `resolveScene` của cảnh `check` đo, `rt.chars` của `castChars`: món đặt trước, mốc món `rest` tra nhân vật người cầm ở đó,
  * như `loadScene` của render và runtime của studio
  */
-const castRuntime = (scene, actions, animals, props, characters, held, hands) => {
+export const castRuntime = (scene, actions, animals, props, characters, held, hands) => {
   const rt = rig.resolveScene(
     scene,
     actions,
@@ -2564,6 +2584,7 @@ export const CLI_FLAGS = {
   retime: { bool: ["dry-run"], value: ["mark"] },
   reseat: { bool: ["dry-run"], value: ["before"] },
   "migrate-held": { bool: ["dry-run"], value: ["scene", "held-dir", "map", "out"] },
+  "migrate-elbow": { bool: ["dry-run"], value: ["scene"] },
   studio: { bool: [], value: ["port", "host"] },
   studio2d: { bool: [], value: ["port"] },
 };

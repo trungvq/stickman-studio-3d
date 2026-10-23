@@ -3,7 +3,7 @@ import type { ActCharacter, ActInput } from "./arm3";
 import { isOtherHand, type BodyMark } from "./bodyMark";
 import { D } from "./constants";
 import { BODY3 } from "./figure3d";
-import { phiOf } from "./graspArm";
+import { elbowRig, phiOf, rigElbowBody } from "./graspArm";
 import type { GraspBy, GraspChoice } from "./graspSolve";
 import { itemGeom } from "./heldGeom";
 import {
@@ -30,6 +30,8 @@ import {
   markTime,
   parseMarkRef,
   sceneAt,
+  sceneVersionUp,
+  SCENE_VERSION,
   type HandSide,
   type HoldRunInfo,
   type SceneRuntime,
@@ -259,7 +261,7 @@ interface Seen {
   grip: Partial<Record<HandSide, V3>>;
   grasp: Partial<Record<HandSide, { choice: GraspChoice; by: GraspBy }>>;
   clamped: Partial<Record<HandSide, Clamp>>;
-  /** Hướng khuỷu đang vẽ (thế giới rig, đơn vị): từ trục vai → cổ tay ra khuỷu, như `elbow` của mốc tay */
+  /** Hướng khuỷu đang vẽ (thế giới rig, đơn vị): từ trục vai → cổ tay ra khuỷu; ghi vào mốc qua `elbowFor` */
   elbow: Partial<Record<HandSide, V3>>;
   /** `φ` của khuỷu đang vẽ, độ (`phiOf`) */
   phi: Partial<Record<HandSide, number>>;
@@ -633,11 +635,23 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
       aims.set(t, { want: pt ? at : v.grip[lead]!, pt, q, at });
     }
 
+  /** Hướng khuỷu thế giới rig `e` ở `t` ra `elbow` của mốc `x` theo hệ của đích: mốc có `at` thế giới, mốc khác hệ thân */
+  const elbowFor = (x: Obj, e: readonly number[], t: number, side: HandSide): V3 =>
+    x.at !== undefined ? round(e, r4) : round(rigElbowBody(src.get(t)!.Rr, sideSign(side), e), r4);
+  /** `elbow` đã khai của mốc `x` ở `t`, quy ra thế giới rig (trước khi đích của mốc đổi) */
+  const elbowOf = (x: Obj, t: number, side: HandSide): V3 | undefined =>
+    Array.isArray(x.elbow)
+      ? elbowRig(src.get(t)!.Rr, sideSign(side), {
+          v: x.elbow as number[],
+          ...(x.at === undefined && { body: true }),
+        })
+      : undefined;
+
   /** Mốc tay dẫn ở giây khoá: `elbow` là hướng khuỷu đang vẽ, `elbowLock` */
   const lockKey = (x: Obj, t: number, lock: ReadonlySet<number>) => {
     const e = src.get(t)!.elbow[lead];
     if (!lock.has(t) || !e) return;
-    x.elbow = e;
+    x.elbow = elbowFor(x, e, t, lead);
     x.elbowLock = true;
   };
 
@@ -652,9 +666,11 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
       return k;
     };
     const items: Slot[] = rawItems.map((k, j) => ({ from: j, value: structuredClone(k) }));
-    const strip = (k: Obj, side: HandSide, hold: Obj) => {
+    const strip = (k: Obj, side: HandSide, hold: Obj, t: number) => {
       const x: Obj = isObj(k[side]) ? { ...(k[side] as Obj) } : {};
+      const [e, hadAt] = [elbowOf(x, t, side), x.at !== undefined];
       for (const f of TARGET) delete x[f];
+      if (e && hadAt) x.elbow = elbowFor(x, e, t, side);
       x.hold = hold;
       k[side] = x;
     };
@@ -696,7 +712,7 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
           spec,
         );
         if (atCut(t)) h.regrip = true;
-        strip(k, lead, h);
+        strip(k, lead, h, t);
         lockKey(k[lead] as Obj, t, lock);
       }
       if (partner)
@@ -709,7 +725,7 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
           if (!h) continue;
           const ph = pinnedHold(h, src.get(t)!.grasp[partner], way.pin, way.flip.partner, spec);
           if (split) ph.regrip = true;
-          strip(keyAt(t), partner, ph);
+          strip(keyAt(t), partner, ph, t);
         }
       // mốc chỉ còn đúng `hold` của mốc trước và mốc sau trong quãng đổi: thừa
       for (const side of partner ? [lead, partner] : [lead]) {
@@ -752,10 +768,12 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
         const k = keyAt(t);
         const fresh = !isObj(k[lead]);
         const x: Obj = fresh ? {} : { ...(k[lead] as Obj) };
+        const [e0, hadAt] = [elbowOf(x, t, lead), x.at !== undefined];
         for (const f of TARGET) delete x[f];
         Object.assign(x, spot, { point: aim.pt ? `item:${aim.pt}` : "grip", hold: lh });
-        // khuỷu đang vẽ làm cực khởi đầu của bộ giải ý định; mốc đã khai `elbow` thì giữ
-        if (x.elbow === undefined && v.elbow[lead]) x.elbow = v.elbow[lead];
+        // khuỷu đang vẽ làm cực khởi đầu của bộ giải ý định; mốc đã khai `elbow` thì giữ hướng ấy (đổi hệ khi đích đổi)
+        if (!e0 && v.elbow[lead]) x.elbow = elbowFor(x, v.elbow[lead]!, t, lead);
+        else if (e0 && hadAt !== (x.at !== undefined)) x.elbow = elbowFor(x, e0, t, lead);
         lockKey(x, t, lock);
         if (fresh) x.ease = "auto";
         k[lead] = x;
@@ -801,6 +819,9 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
       if (items.length) ops.push({ op: "add", path: "/items", value: items.map((s) => s.value) });
     } else if (!items.length && rawItems.length) ops.push({ op: "remove", path: "/items" });
     else arrayOps(["items"], rawItems, items, ops);
+    // cảnh đời trước: `elbow` vừa ghi theo nghĩa mới (hệ thân trên mốc không có `at`)
+    if (sceneVersionUp(scene) !== scene)
+      ops.push({ op: "replace", path: "/schemaVersion", value: SCENE_VERSION });
     return ops;
   };
 

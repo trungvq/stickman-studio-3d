@@ -116,6 +116,7 @@ function serial(key, fn) {
 const outsideHands = (s) => ({
   ...s,
   items: undefined,
+  schemaVersion: undefined,
   cast: Array.isArray(s?.cast)
     ? s.cast.map((c) => (c?.world ? { ...c, world: { ...c.world, hands: undefined } } : c))
     : s?.cast,
@@ -146,6 +147,7 @@ export function heldWithAuthored(raw, group, variant, authored, version) {
 /**
  * Cảnh trên đĩa `disk` nhận `cast[*].world.hands` và `items` của bản studio `edited`; phần khác phải trùng. Bản studio
  * thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên; xoá hết là gửi mảng rỗng, `items: null` bỏ cả khoá `items`.
+ * `schemaVersion` số lớn hơn đĩa thì lên theo (trang nâng cảnh đời trước chỉ khác số ấy, `sceneVersionUp`)
  */
 export function sceneWithHands(disk, edited) {
   const clean = (v) => JSON.parse(JSON.stringify(v));
@@ -161,6 +163,9 @@ export function sceneWithHands(disk, edited) {
   });
   if (edited.items === null) delete next.items;
   else if (edited.items !== undefined) next.items = edited.items;
+  const v = edited.schemaVersion;
+  if (typeof v === "number" && typeof disk.schemaVersion === "number" && v > disk.schemaVersion)
+    next.schemaVersion = v;
   return next;
 }
 

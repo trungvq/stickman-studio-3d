@@ -2009,7 +2009,8 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
 - **Giày ở cổ chân, hông không đổi.** `Leg.ankle` treo ở mút ống chân; đế giày nằm đúng mặt sàn ở
   chỗ mút nét người que chạm sàn, độ cao hông vẫn `thigh + shin + limb` của khung xương. Cổ chân tự xoay mỗi
   lần three tính ma trận: bàn chân nằm ngang trong hệ người khi ống chân lệch khỏi phương đứng dưới
-  `0,5` rad, quá thì nghiêng theo phần dư (quỳ, đá chân).
+  `0,5` rad, quá thì nghiêng theo phần dư (quỳ, đá chân). Phần ống chân và ống quần dưới cổ chân ép dẹt theo phương
+  đứng của bàn chân, sâu nhất `0,6` độ sâu đế (`TUCK` của `stickman.ts`): mút tròn to hơn đế không lòi dưới giày khi nhấc chân.
 - **Khối hông** là bao lồi của vành thân áo thu vào, hai khối cầu cỡ gốc đùi quanh khớp hông và hai khối
   cầu mông lùi sau, thấp hơn khớp hông (`BUTT`), trong nhóm thân, màu quần — màu váy khi có váy, trừ tạp dề. Tới nửa
   bán kính đùi dưới gấu, khối hông lùi hẳn vào trong thân áo: mông chỉ phồng ra dưới gấu, không lồi qua
@@ -2055,8 +2056,9 @@ thẳng về phía nó, không kéo dài. Hai nguồn đích, nguồn sau đè n
   người thì khai mốc thân `to` thay cho `at` ([Đích theo mốc](#đích-theo-mốc)).
   Hệ thân không nghiêng theo `torso`: cúi thân không dời tay khỏi bàn. `elbow` cùng hệ, bỏ trống là
   `REACH_ELBOW` `[-0,4, 1, 0,5]` (xuống, lùi, ra ngoài).
-- **Scene** — `cast[].world.hands`, toạ độ thế giới, theo tay phải / trái
-  ([03](03-scene.md#đích-bàn-tay-thế-giới)).
+- **Scene** — `cast[].world.hands`, toạ độ thế giới (hay mốc thân), theo tay phải / trái
+  ([03](03-scene.md#đích-bàn-tay-thế-giới)). `elbow` theo hệ của đích: mốc có `at` là thế giới rig, mốc khác là hệ thân
+  `[tiến, y, ra ngoài]` như `elbow` của hành động, quay theo hướng thân ở từng khung.
 
 `reachToWorld(world, kênh, at, height)` đổi đích hệ thân của một tay ra điểm thế giới — cùng công
 thức IK đọc —, `worldToReach` là chiều ngược; studio kéo đích trên sân khấu bằng cặp này.

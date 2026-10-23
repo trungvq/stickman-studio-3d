@@ -244,8 +244,8 @@ describe('treo (`món@carry`)', () => {
   const TUI = spec(bare);
   const c = defaultCharacter();
   c.palette.clad = true;
-  const ELBOW = { to: 'shoulder', offset: [36, 30, 0], point: 'wrist', elbow: [-0.7, 1, -0.2] };
-  const OUT = { to: 'shoulder', offset: [0, 95, 65], point: 'wrist', elbow: [-1, 1, 0] };
+  const ELBOW = { to: 'shoulder', offset: [36, 30, 0], point: 'wrist', elbow: [0.2, 1, 0.7] };
+  const OUT = { to: 'shoulder', offset: [0, 95, 65], point: 'wrist', elbow: [0, 1, 1] };
 
   function carryWorld(item: HeldItemSpec, hands: unknown[]) {
     const sc = parseScene({

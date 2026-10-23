@@ -37,9 +37,9 @@ c.palette.clad = true;
 const lens = { eye: [0, -250, -1400] as [number, number, number], yaw: 0, pitch: 0, f: 800, cx: 0, cy: 0 };
 
 /** Khuỷu gập chữ V: cổ tay trước vai, khuỷu chĩa xuống ra ngoài */
-const ELBOW = { to: 'shoulder', offset: [36, 30, 0], point: 'wrist', elbow: [-0.7, 1, -0.2] };
+const ELBOW = { to: 'shoulder', offset: [36, 30, 0], point: 'wrist', elbow: [0.2, 1, 0.7] };
 /** Tay phải dang ngoài túi đeo vai */
-const OUT = { to: 'shoulder', offset: [0, 95, 65], point: 'wrist', elbow: [-1, 1, 0] };
+const OUT = { to: 'shoulder', offset: [0, 95, 65], point: 'wrist', elbow: [0, 1, 1] };
 /** Túi khoác khuỷu, đeo vai */
 const KHUYU = { item: 'tui', group: 'carry', on: 'elbow' };
 const VAI = { item: 'tui', group: 'carry', on: 'shoulder' };

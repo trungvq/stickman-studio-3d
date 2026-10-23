@@ -351,8 +351,9 @@ async function load(name: string, o: LoadOptions = {}): Promise<boolean> {
     if (work?.name !== name || (!o.reuse && !(o.keepWork && isDirty()))) {
       work = {
         name,
-        raw: structuredClone(j.raw) as Json,
-        saved: JSON.stringify(j.raw),
+        // cảnh đời trước chỉ khác số `schemaVersion`: mốc soạn ở đây (`elbow` hệ thân) đọc theo nghĩa mới khi lưu
+        raw: rig.sceneVersionUp(structuredClone(j.raw)) as Json,
+        saved: JSON.stringify(rig.sceneVersionUp(j.raw)),
         hash: j.hash,
         undo: [],
         redo: [],
@@ -1685,7 +1686,13 @@ const cardHost = {
     const m = keyValue(work.raw, k);
     if (on && isObj(m) && !m.elbow) {
       const d = drawnHand(cur.rt, k.id, k.side, keyTime(work.raw, k), charOf(k.id));
-      elbow = d?.elbow?.map((x) => Math.round(x * 1e4) / 1e4);
+      // `elbow` theo hệ của đích: mốc có `at` thế giới rig, mốc khác hệ thân
+      const e =
+        d?.elbow &&
+        (m.at !== undefined || !d.Rr
+          ? d.elbow
+          : rig.rigElbowBody(d.Rr, k.side === "right" ? -1 : 1, d.elbow));
+      elbow = e?.map((x) => Math.round(x * 1e4) / 1e4);
       if (!elbow) return say("không lấy được hướng khuỷu đang vẽ ở mốc ấy", true);
     }
     editPicked((x) => {
@@ -1899,11 +1906,12 @@ async function takeDisk() {
     if (work !== w) return;
     const old = { raw: w.raw, hash: w.hash, saved: w.saved, undo: [...w.undo], redo: [...w.redo] };
     const oldFetched = fetched;
-    record(w, JSON.stringify(w.raw), JSON.stringify(j.raw));
+    const disk = rig.sceneVersionUp(structuredClone(j.raw)) as Json;
+    record(w, JSON.stringify(w.raw), JSON.stringify(disk));
     Object.assign(w, {
-      raw: structuredClone(j.raw) as Json,
+      raw: disk,
       hash: j.hash,
-      saved: JSON.stringify(j.raw),
+      saved: JSON.stringify(disk),
     });
     fetched = { name, j };
     ui.conflict.hidden = true;

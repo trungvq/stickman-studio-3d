@@ -119,7 +119,7 @@ export function renderCard(el: HTMLElement, m: CardModel | null, host: CardHost)
     }
     ${
       m.lock
-        ? `<label class="crow" title="${esc(m.lock.disabled ?? "Khuỷu ở mốc nằm đúng hướng `elbow` (thế giới); chưa có `elbow` thì lấy hướng khuỷu đang vẽ")}"><input type="checkbox" data-c="lock"${m.lock.on ? " checked" : ""}${m.lock.disabled ? " disabled" : ""} /> elbowLock</label>
+        ? `<label class="crow" title="${esc(m.lock.disabled ?? "Khuỷu ở mốc nằm đúng hướng `elbow` (mốc `at` thế giới, mốc khác hệ thân); chưa có `elbow` thì lấy hướng khuỷu đang vẽ")}"><input type="checkbox" data-c="lock"${m.lock.on ? " checked" : ""}${m.lock.disabled ? " disabled" : ""} /> elbowLock</label>
     ${m.lock.idle ? `<div class="warn">${esc(m.lock.idle)}</div>` : ""}`
         : ""
     }

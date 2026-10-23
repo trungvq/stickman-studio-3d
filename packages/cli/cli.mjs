@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// stickman init | upgrade | check | docs | retime | reseat | migrate-held | studio | studio2d — dựng, nâng, soi và mở workspace của một repo video.
+// stickman init | upgrade | check | docs | retime | reseat | migrate-held | migrate-elbow | studio | studio2d — dựng, nâng, soi và mở workspace của một repo video.
 import { readFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import {
@@ -17,6 +17,7 @@ import {
   retimeWorkspace,
   upgradeWorkspace,
 } from "./lib.mjs";
+import { migrateElbow, migrateElbowTable } from "./migrate-elbow.mjs";
 import { migrateHeld, migrateTable, writeMigrateReport } from "./migrate-held.mjs";
 import { serveStudio } from "./serve.mjs";
 import { serveStudio3d } from "./studio3d.mjs";
@@ -64,6 +65,11 @@ const USAGE = `stickman <lệnh> [thư mục]
                 --map <file> JSON \`{ "món#kiểu": { group, part?, variant? } }\` đè bảng ánh xạ
                 --out <file.md> ghi bảng và kết quả JSON (cùng tên, đuôi .json)
                 --dry-run chỉ in, không ghi cảnh hay món
+  migrate-elbow cảnh đời trước schema 34: \`elbow\` của mốc \`world.hands\` không có \`at\` (khai thế giới) quay về
+                hệ thân người ấy ở giây của mốc, dáng ở mốc không đổi; in từng hướng cũ → mới. Chuyển cả cảnh
+                khớp stickman.frozen (không chuyển thì không nạp được).
+                --scene <regex> chỉ cảnh có id khớp
+                --dry-run chỉ in, không ghi
   studio        mở Studio 3D trên repo này (dev server Vite): xem cảnh three, soạn kiểu cầm;
                 ghi thẳng scenes/ và held/ (kiểm hash lúc nạp, bản cũ ở <file>.json.bak)
   studio2d      mở character studio 2D (app tĩnh) đọc sẵn workspace này: nhân vật, hành động, mảnh;
@@ -75,10 +81,10 @@ const USAGE = `stickman <lệnh> [thư mục]
   --name <tên>  tên project trong package.json (mặc định: tên thư mục)
   --yes         upgrade: đè hết, không hỏi
   --skip-modified  upgrade: giữ nguyên mọi file đã sửa tay, không hỏi
-  --dry-run     upgrade / retime / reseat / migrate-held: chỉ in ra sẽ làm gì
+  --dry-run     upgrade / retime / reseat / migrate-held / migrate-elbow: chỉ in ra sẽ làm gì
 
 Nội dung của repo — characters, actions, scenes, props, pieces — upgrade không đụng tới;
-chỉ reseat, migrate-held và Lưu của studio ghi vào scenes/, và chỉ khi gọi chúng.
+chỉ reseat, migrate-held, migrate-elbow và Lưu của studio ghi vào scenes/, và chỉ khi gọi chúng.
 `;
 
 /** Phần của lệnh `c` trong `USAGE` cộng danh sách cờ */
@@ -139,6 +145,7 @@ else if (parsed.error) {
       if (r.kept.length) console.log(`${r.kept.length} file sửa tay, mẫu chưa đổi, giữ nguyên.`);
       if (r.agentsMd) console.log(r.agentsMd);
       if (r.legs) console.log(r.legs);
+      if (r.elbows) console.log(r.elbows);
       console.log(`${r.same.length} file đã đúng bản mới.`);
     }
   }
@@ -275,6 +282,19 @@ else if (parsed.error) {
   );
   for (const p of r.problems) console.log(`lỗi: ${p}`);
   if (s.error || r.problems.length) process.exitCode = 1;
+} else if (cmd === "migrate-elbow") {
+  const dryRun = flag("dry-run");
+  const r = migrateElbow({ dir, scene: value("scene"), dryRun });
+  const table = migrateElbowTable(r);
+  if (table) console.log(table);
+  const n = r.scenes.reduce((a, s) => a + s.moves.length, 0);
+  console.log(
+    r.scenes.length
+      ? `${r.scenes.length} cảnh, ${n} \`elbow\`${dryRun ? " sẽ đổi (chưa ghi)" : " đã ghi"}.`
+      : "Không cảnh nào còn `elbow` thế giới trên mốc không có `at`.",
+  );
+  for (const p of r.problems) console.log(`lỗi: ${p}`);
+  if (r.problems.length) process.exitCode = 1;
 } else if (cmd === "studio") {
   const r = await serveStudio3d({
     dir,

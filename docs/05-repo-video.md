@@ -369,7 +369,8 @@ rig mà đến; thiếu tuỳ chọn thì thêm ở studio, đừng sửa `Scene
 [Thư mục tạm](#thư-mục-tạm). Sửa
 được việc chung (lỗi, tuỳ chọn mới của tool) thì đưa về `packages/cli/scaffold` của studio.
 Rig mới đổi độ dài chân thì `upgrade` chỉ nhắc, cảnh dời bằng một lệnh riêng —
-[Đổi độ dài chân](#đổi-độ-dài-chân).
+[Đổi độ dài chân](#đổi-độ-dài-chân). Cảnh còn `elbow` thế giới trên mốc không có `at` (schema cảnh trước 34) cũng vậy: `upgrade`
+nhắc số cảnh, chuyển bằng [`migrate-elbow`](#chuyển-elbow-sang-hệ-thân).
 Repo có `held/` và đã lưu bảng chuẩn nhóm cầm thì nâng xong chạy `pnpm bang-cam --so`: nó so từng ô cận bàn tay (nhóm ×
 món × chỗ cầm mẫu × hai cỡ tay) với bảng đã duyệt và chỉ in ô đổi ([03](03-scene.md#bảng-duyệt-nhóm-cầm),
 [11](11-nhom-cam.md#bang-cam-theo-nhóm)).
@@ -501,6 +502,30 @@ pnpm exec stickman migrate-held --held-dir held-v2
 
 Chỉ ghi vào `scenes/` và `--held-dir`; cảnh còn lần cầm chưa chuyển được thì không ghi. Thứ tự các bước, cách đọc bảng và
 ngưỡng lệch: [11](11-nhom-cam.md#8-chuyển-đổi).
+
+## Chuyển `elbow` sang hệ thân
+
+Từ schema cảnh 34, `elbow` của mốc `world.hands` không có `at` (mốc `to`, mốc chỉ có `hold`) là hệ thân `[tiến, y, ra ngoài]`
+của tay ấy, quay theo người ([03](03-scene.md#đích-bàn-tay-thế-giới)). Cảnh ghi `schemaVersion` dưới 34 còn `elbow` như thế
+là hướng thế giới: zod từ chối cả cảnh kèm tên lệnh. Lệnh quay từng hướng về hệ thân bằng hướng thân người ấy ở giây của mốc
+(dựng runtime trên chính repo: nhân vật, hành động, đạo cụ qua hai lớp), nên dáng ở mốc không đổi; giữa các mốc và khi người
+quay thì khuỷu theo thân. Chạy khô trước, rồi ghi:
+
+```bash
+pnpm exec stickman migrate-elbow --dry-run
+pnpm exec stickman migrate-elbow
+```
+
+| Cờ | Làm gì |
+|---|---|
+| `--scene <regex>` | Chỉ cảnh có id khớp |
+| `--dry-run` | Chỉ in từng hướng cũ (thế giới) → mới (hệ thân); không ghi |
+
+Mỗi cảnh đổi được vá đúng các `elbow` và `schemaVersion` (lên 34), phần còn lại của file giữ từng byte; cảnh đời quá cũ còn phép
+nâng schema khác thì viết lại cả file đã nâng. Cảnh khớp `stickman.frozen` cũng chuyển — không chuyển thì không nạp được. Cảnh
+không có `elbow` nào như thế không bị đụng. Rig đọc JSON không ghi `schemaVersion` theo nghĩa mới (cảnh dựng trong code), còn
+lệnh coi file `scenes/` không ghi số là soạn trước bản này và chuyển như đời cũ — bảng của lệnh đánh dấu chúng; file soạn
+sau bản này mà không ghi số thì ghi `"schemaVersion": 34` trước khi chạy.
 
 ## Studio đọc repo video
 

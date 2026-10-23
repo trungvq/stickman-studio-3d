@@ -164,35 +164,16 @@ const people = (() => {
 const RAD = Math.PI / 180;
 const fwd = (yaw) => [Math.cos(yaw * RAD), 0, -Math.sin(yaw * RAD)];
 const rgt = (yaw) => [-Math.sin(yaw * RAD), 0, -Math.cos(yaw * RAD)];
-const dot = (a, b) => a.reduce((s, v, i) => s + v * b[i], 0);
 const r2 = (n) => Math.round(n * 100) / 100;
-/** Hướng thế giới của người quay `yaw0` sang người quay `yaw1` */
-const moveDir = (d, yaw0, yaw1) => {
-  const f = dot(d, fwd(yaw0));
-  const r = dot(d, rgt(yaw0));
-  return fwd(yaw1).map((v, i) => r2(v * f + rgt(yaw1)[i] * r + (i === 1 ? d[1] : 0)));
-};
 /**
  * Cách đặt cánh tay cho chỗ treo: khuỷu gập chữ V (cổ tay trước vai), hay tay dang ngoài túi đeo vai (cổ tay theo vai nên co
- * giãn theo người); `hold` là chỗ cầm
+ * giãn theo người); `hold` là chỗ cầm. `elbow` của mốc `to` là hệ thân `[tiến, y, ra ngoài]`, như nhau ở hai tay
  */
 const treoTay = (side, on, hold) => {
   const lr = side === "right" ? -1 : 1;
   return on === "elbow"
-    ? {
-        to: "shoulder",
-        offset: [36, 30, 0],
-        point: "wrist",
-        elbow: moveDir([0.7 * lr, 1, -0.2], 90, YAW),
-        hold,
-      }
-    : {
-        to: "shoulder",
-        offset: [0, 95, -65 * lr],
-        point: "wrist",
-        elbow: moveDir([lr, 1, 0], 90, YAW),
-        hold,
-      };
+    ? { to: "shoulder", offset: [36, 30, 0], point: "wrist", elbow: [0.2, 1, 0.7], hold }
+    : { to: "shoulder", offset: [0, 95, -65 * lr], point: "wrist", elbow: [0, 1, 1], hold };
 };
 const TREO_TU = {
   elbow: "mặc định (khuỷu gập, cổ tay trước vai)",

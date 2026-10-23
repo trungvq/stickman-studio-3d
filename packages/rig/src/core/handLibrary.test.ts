@@ -101,7 +101,7 @@ describe("`pose` của mốc tay", () => {
     expect(p({ pose: "fist", palm: "up" }).error!.message).toMatch(/chỉ có `pose`/);
     expect(p({ at: [0, -200, 450], w: 0.5 }).error!.message).toMatch(/`w` chỉ đi với `pose`/);
     expect(p({}).success).toBe(false);
-    expect(SCENE_VERSION).toBe(33);
+    expect(SCENE_VERSION).toBe(34);
   });
 
   it("tên không có trong thư viện: `resolveScene` báo rõ", () => {
