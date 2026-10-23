@@ -85,6 +85,13 @@ Camera tự do bắt đầu ở chỗ camera cảnh đang đứng.
 Ô **Lăn** trên thanh trên: `tự nhận` (lần lăn có `deltaX`, số lẻ hay nhỏ là touchpad → dời; bánh xe chuột → tiến lùi), `tiến
 lùi`, `dời`; nhớ trong `localStorage`. URL giữ cảnh, giây và kiểu camera (`?scene=…&t=…&cam=free`).
 
+## Cảnh
+
+Panel bên trái (nút ⇆ gập / mở, nhớ trong `localStorage`) liệt kê mọi cảnh ở `scenes/`, nhóm theo tập (`t01`, `t02`…;
+cảnh không theo tập vào nhóm `khác`), cảnh đang mở viền cam. Ô lọc nhận nhiều từ (mọi từ phải có trong tên), Enter mở cảnh
+đầu, Esc xoá lọc. Nhấp một cảnh là mở nó (có thay đổi chưa lưu thì hỏi trước). Màn hẹp (≤ 760 px) ẩn panel, chọn cảnh bằng ô
+trên thanh trên.
+
 ## Bàn tay
 
 Panel bên phải (nút ⇆ gập / mở) liệt kê mọi bàn tay của người mặc đồ đang hiện ở giây đang xem: người, tay, món đang cầm

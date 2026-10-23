@@ -53,6 +53,22 @@
       <span id="status"></span>
     </header>
     <div id="mid">
+      <aside id="sceneSide">
+        <div class="sidehead">
+          <button id="sceneToggle" title="Gập / mở danh sách cảnh">⇆</button>
+          <b>Cảnh</b>
+          <span id="sceneCount" class="dim"></span>
+        </div>
+        <div class="sidebody">
+          <input
+            id="sceneFilter"
+            type="search"
+            placeholder="Lọc… (Enter mở cảnh đầu)"
+            spellcheck="false"
+          />
+          <div id="sceneList"></div>
+        </div>
+      </aside>
       <main id="view">
         <div id="frame"></div>
         <div id="msg"></div>

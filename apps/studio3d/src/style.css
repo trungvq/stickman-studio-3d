@@ -228,8 +228,60 @@ body {
 
 #mid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   min-height: 0;
+}
+
+#sceneSide {
+  width: 230px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+}
+
+#sceneSide.shut {
+  width: auto;
+}
+
+#sceneSide.shut .sidebody,
+#sceneSide.shut .sidehead b,
+#sceneSide.shut .sidehead span {
+  display: none;
+}
+
+#sceneSide .sidebody {
+  flex: 1 1 0;
+  gap: 6px;
+}
+
+#sceneList summary {
+  padding: 3px 4px;
+  color: var(--dim);
+  cursor: pointer;
+  user-select: none;
+}
+
+#sceneList details[open] summary {
+  color: var(--text);
+}
+
+button.scene {
+  display: block;
+  width: 100%;
+  padding: 2px 6px 2px 18px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-color: transparent;
+  background: none;
+}
+
+button.scene.on {
+  border-color: var(--accent);
+  background: #2b2a26;
 }
 
 #side {
@@ -1213,6 +1265,11 @@ button.key.diamond .keytip {
   #mid {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  /* hẹp: chọn cảnh bằng ô trên thanh trên */
+  #sceneSide {
+    display: none;
   }
 
   #side {

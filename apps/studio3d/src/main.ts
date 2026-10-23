@@ -67,6 +67,7 @@ import { runHoldKeys, setRunVariant, styleEntries, styleUses, type RunRef } from
 import { renderStyles } from "./namedUi";
 import { plusHand, plusItem } from "./plus";
 import { runtimeOf, type Data } from "./runtime";
+import { SceneList } from "./sceneList";
 import { KeyTrack, type Band, type Lane } from "./track";
 import { Trails } from "./trails";
 
@@ -78,6 +79,11 @@ const ui = {
   footer: document.querySelector("footer") as HTMLElement,
   scene: $<HTMLInputElement>("scene"),
   scenes: $<HTMLDataListElement>("scenes"),
+  sceneSide: $<HTMLElement>("sceneSide"),
+  sceneToggle: $<HTMLButtonElement>("sceneToggle"),
+  sceneCount: $<HTMLSpanElement>("sceneCount"),
+  sceneFilter: $<HTMLInputElement>("sceneFilter"),
+  sceneList: $<HTMLDivElement>("sceneList"),
   reload: $<HTMLButtonElement>("reload"),
   edMode: $<HTMLDivElement>("edMode"),
   dirty: $<HTMLSpanElement>("dirty"),
@@ -382,6 +388,7 @@ async function load(name: string, o: LoadOptions = {}): Promise<boolean> {
     if (!o.keepTime) t = 0;
     t = Math.min(t, dur);
     ui.scene.value = name;
+    sceneList.mark(name);
     ui.time.max = String(dur);
     ui.time.step = String(1 / FPS);
     drawMarks(scene, dur);
@@ -1678,15 +1685,21 @@ function reload(full: boolean) {
 
 // --- giao diện ---
 
-ui.scene.addEventListener("change", () => {
-  const name = ui.scene.value.trim();
+function openScene(name: string) {
   if (!name || name === cur?.name) return;
   if (isDirty() && !confirm(`${work!.name} có thay đổi chưa lưu. Bỏ chúng và mở ${name}?`)) {
     ui.scene.value = cur?.name ?? "";
     return;
   }
   void load(name);
-});
+}
+ui.scene.addEventListener("change", () => openScene(ui.scene.value.trim()));
+const sceneList = new SceneList(ui.sceneList, ui.sceneFilter, ui.sceneCount, openScene);
+ui.sceneToggle.onclick = () => {
+  ui.sceneSide.classList.toggle("shut");
+  localStorage.setItem("studio3d.sceneSide", ui.sceneSide.classList.contains("shut") ? "shut" : "");
+};
+if (localStorage.getItem("studio3d.sceneSide") === "shut") ui.sceneSide.classList.add("shut");
 ui.reload.onclick = (e) => reload(e.shiftKey);
 ui.edMode.onclick = (e) => {
   const m = (e.target as HTMLElement).dataset.m;
@@ -1832,6 +1845,7 @@ async function start() {
   ui.scenes.replaceChildren(
     ...j.names.map((n: string) => Object.assign(document.createElement("option"), { value: n })),
   );
+  sceneList.set(j.names);
   if (!j.world) say(`${j.root}: package.json không khai stickman.world — mọi cảnh đi plainRoom()`);
   const p = params();
   const name = p.get("scene");
