@@ -367,6 +367,13 @@ async function load(name: string, o: LoadOptions = {}): Promise<boolean> {
     const parsed = rig.parseScene(src);
     if (!parsed.success) throw new Error(`scene JSON sai: ${parsed.error.message}`);
     const scene = parsed.data;
+    // bàn tay đang chọn của cảnh trước: người không có trong cảnh này thì bỏ chọn (vệt, thẻ món tra người theo `id`)
+    const has = (id: string) => scene.cast.some((m) => m.id === id);
+    if (sel && !has(sel.id)) {
+      sel = null;
+      lastCenter = null;
+    }
+    if (modeCard.sel && !has(modeCard.sel.id)) modeCard.close();
     const key = JSON.stringify(data);
     const held = (j.heldOpts && !j.heldOpts.off && !j.heldOpts.error ? j.heldOpts : {}) as Omit<
       HeldOptions,
