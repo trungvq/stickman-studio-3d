@@ -1,8 +1,0 @@
-/home/trungvq/Work/Dev/youtube-video/jp-sukatto-nhom-cam
-0 parts, 22 characters, 348 actions, 0 props, 0 animals, 53 held, 418 scenes, 57 layers
-pin @7.15.0, rig @7.15.0
-chỉ soi 1 cảnh: t02-s050-them-bo
-cảnh báo: scenes/t02-s050-them-bo.json: người lồng vào đồ — yoshie.torso ↔ phieu-bo-ghi lấn 3.7 ở giây 1.22 · giây 1.09–1.28
-cảnh báo: scenes/t02-s050-them-bo.json: người lồng vào đồ — takumi.upperArmR ↔ ghe-cap-0 lấn 2.0 ở giây 0.00 · giây 0.00
-cảnh báo: scenes/t02-s050-them-bo.json: ngón hai tay chĩa vào nhau — `yoshie`: hai cổ tay cách nhau 15 (vai 61), ngón phải lệch vào 33°, ngón trái 44° ở giây 0.00 · giây 0.00–0.40. Hai bàn tay gần nhau mà ngón chụm vào nhau đọc như chữ V ngược, như lưỡi dao: khai `fingers` (`"down"`, `"forward"`) ở `keys[].hand` cho ngón xuôi, hay chồng tay hẳn bằng đích `otherBack` / nắm `otherWrist` — khai `fingers` hay đích `other*` là cố ý, không báo. Clip đang chạy: stand-3d (than) (docs/03-scene.md#tay-và-khuỷu)
-0 lỗi, 3 cảnh báo.

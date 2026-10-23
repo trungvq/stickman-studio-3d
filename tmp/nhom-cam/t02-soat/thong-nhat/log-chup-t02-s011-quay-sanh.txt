@@ -1,8 +1,0 @@
-$ node tools/can-tay.mjs t02-s011-quay-sanh 0.3,0.4,3.14 --ai erika --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo1/sau --tab 2
-t02-s011-quay-sanh 0.3s erika tay phải: ngửa 145°
-t02-s011-quay-sanh 0.3s erika tay trái: ra sau 96°
-t02-s011-quay-sanh 0.4s erika tay phải: ngửa 145°
-t02-s011-quay-sanh 0.4s erika tay trái: ra sau 93°
-t02-s011-quay-sanh 3.14s erika tay phải: ngửa 138°
-t02-s011-quay-sanh 3.14s erika tay trái: ra sau 102°
-/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo1/sau/t02-s011-quay-sanh.jpg

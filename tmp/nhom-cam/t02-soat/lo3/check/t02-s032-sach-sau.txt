@@ -1,5 +1,0 @@
-/home/trungvq/Work/Dev/youtube-video/jp-sukatto-nhom-cam
-0 parts, 22 characters, 348 actions, 0 props, 0 animals, 53 held, 418 scenes, 57 layers
-pin @7.15.0, rig @7.15.0
-chỉ soi 1 cảnh: t02-s032-sach
-Không thấy vấn đề gì.

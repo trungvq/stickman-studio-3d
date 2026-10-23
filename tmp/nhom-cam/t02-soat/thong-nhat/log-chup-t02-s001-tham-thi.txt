@@ -1,6 +1,0 @@
-$ node tools/can-tay.mjs t02-s001-tham-thi 0.3,4.71 --ai erika --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo1/sau --tab 2
-t02-s001-tham-thi 0.3s erika tay phải: úp 0° gap 6.2
-t02-s001-tham-thi 0.3s erika tay trái: ngửa 144°
-t02-s001-tham-thi 4.71s erika tay phải: vào thân 76°
-t02-s001-tham-thi 4.71s erika tay trái: ngửa 145°
-/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo1/sau/t02-s001-tham-thi.jpg

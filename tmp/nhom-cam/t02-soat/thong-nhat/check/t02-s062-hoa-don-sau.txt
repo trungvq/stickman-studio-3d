@@ -1,6 +1,0 @@
-/home/trungvq/Work/Dev/youtube-video/jp-sukatto-nhom-cam
-0 parts, 22 characters, 348 actions, 0 props, 0 animals, 53 held, 418 scenes, 57 layers
-pin @7.15.0, rig @7.15.0
-chỉ soi 1 cảnh: t02-s062-hoa-don
-cảnh báo: scenes/t02-s062-hoa-don.json: bàn tay lơ lửng trên mặt — `yota` tay phải theo đích trên may-in: điểm thấp nhất của bàn tay còn cách mặt 13.8 ở giây 1.90 · giây 1.70–1.90. Đích không chạm mặt: hạ đích (`world.hands[].at`) xuống chừng ấy, hay đặt `point` (`"tip"` ngón chạm, `"palm"` lòng tay áp) vào đúng mặt trên. Clip đang chạy: stand-3d (than), dung-tay-bung-3d (tay), tay-dat-3d (tay2) (docs/03-scene.md#tay-và-khuỷu)
-0 lỗi, 1 cảnh báo.

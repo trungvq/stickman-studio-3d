@@ -1,8 +1,0 @@
-/home/trungvq/Work/Dev/youtube-video/jp-sukatto-nhom-cam
-0 parts, 22 characters, 348 actions, 0 props, 0 animals, 53 held, 418 scenes, 57 layers
-pin @7.15.0, rig @7.15.0
-chỉ soi 1 cảnh: t02-s035-gia
-cảnh báo: scenes/t02-s035-gia.json: tay thẳng đuột tới đích — `yoshie` tay trái: khuỷu 180° ở giây 0.00 · giây 0.00–0.20. Đích cổ tay (`world.hands` hay `reach`) xa quá tầm với nên IK duỗi thẳng tay: kéo đích về gần vai cho khuỷu còn gập 20–30° (cổ tay cách vai chừng 90% tầm với), hay dời người lại gần vật. Clip đang chạy: stand-3d (than), tay-chi-gan-3d (ngon) (docs/03-scene.md#tay-và-khuỷu)
-cảnh báo: scenes/t02-s035-gia.json: tay buông mà lòng tay không quay vào đùi — `yoshie` tay trái buông bên đùi, lòng tay vào thân, lệch 60° khỏi hướng vào đùi ở giây 11.90 · giây 11.50–11.90. `turn` lúc ấy -20, khoảng 35 thì lòng tay quay vào đùi (lệch 26°) — sửa `turn` ở `keys[].hand`, hay khai `palm` để rig tự giải. Clip đang chạy: stand-3d (than), tay-chi-gan-3d (ngon) (docs/01-rig.md#hướng-lòng-bàn-tay)
-cảnh báo: scenes/t02-s035-gia.json: tay buông mà lòng tay không quay vào đùi — `yoshie` tay phải buông bên đùi, lòng tay vào thân, lệch 60° khỏi hướng vào đùi ở giây 11.90 · giây 11.50–11.90. `turn` lúc ấy -20, khoảng 35 thì lòng tay quay vào đùi (lệch 26°) — sửa `turn` ở `keys[].hand`, hay khai `palm` để rig tự giải. Clip đang chạy: stand-3d (than), tay-chi-gan-3d (ngon) (docs/01-rig.md#hướng-lòng-bàn-tay)
-0 lỗi, 3 cảnh báo.

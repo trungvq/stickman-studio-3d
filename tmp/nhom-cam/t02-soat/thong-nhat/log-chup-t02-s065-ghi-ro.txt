@@ -1,6 +1,0 @@
-$ node tools/can-tay.mjs t02-s065-ghi-ro 0.3,3.45 --ai erika --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo5/sau --tab 2
-t02-s065-ghi-ro 0.3s erika tay phải: vào thân 76°
-t02-s065-ghi-ro 0.3s erika tay trái: ngửa 144°
-t02-s065-ghi-ro 3.45s erika tay phải: vào thân 76°
-t02-s065-ghi-ro 3.45s erika tay trái: ngửa 145°
-/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo5/sau/t02-s065-ghi-ro.jpg

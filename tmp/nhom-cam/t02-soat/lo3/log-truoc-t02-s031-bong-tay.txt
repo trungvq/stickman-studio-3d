@@ -1,6 +1,0 @@
-$ node tools/can-tay.mjs t02-s031-bong-tay 0.3,4.04 --ai erika --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/truoc --tab 2
-t02-s031-bong-tay 0.3s erika tay phải: ngửa 155°
-t02-s031-bong-tay 0.3s erika tay trái: úp 0° gap 3.6
-t02-s031-bong-tay 4.04s erika tay phải: ngửa 156°
-t02-s031-bong-tay 4.04s erika tay trái: úp 0° gap 3.6
-/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/truoc/t02-s031-bong-tay.jpg

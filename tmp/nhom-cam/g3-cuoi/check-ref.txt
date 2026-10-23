@@ -1,7 +1,0 @@
-/home/trungvq/Work/Dev/youtube-video/jp-sukatto-nhom-cam
-0 parts, 22 characters, 348 actions, 0 props, 0 animals, 37 held, 418 scenes, 57 layers
-pin @7.15.0, rig @7.15.0
-chỉ chạy nhóm: ref
-chỉ soi 74 cảnh: t02-s001-tham-thi, t02-s002-day, t02-s003-khung, t02-s004-tua, t02-s005-gioi-thieu, t02-s006a-bai-xe, t02-s007-genkan, t02-s008-truoc-cua, t02-s009-nhan-khach, t02-s010-xac-nhan, t02-s011-quay-sanh, t02-s012-chia-khoa, t02-s013-khoe, t02-s014-ho-so, t02-s015-tot-nhat, t02-s016-xin-phep, t02-s017-goi-xe, t02-s017-goi, t02-s018-goi-xe, t02-s018-goi, t02-s020-goi-xe, t02-s020-goi, t02-s021-goi-xe, t02-s021-goi, t02-s022-cup-xe, t02-s022-cup, t02-s023-bang-gia, t02-s024-tang, t02-s025-chi-the, t02-s026-tra-ten, t02-s027-doi-ca, t02-s028-doi-chia, t02-s029-mong-cho, t02-s030-khai-vi, t02-s031-bong-tay, t02-s032-sach, t02-s033-ruou-tang, t02-s034-goi-them, t02-s035-gia, t02-s036-lay-het, t02-s037-bep-1, t02-s038-tom, t02-s039-dat-lai-1, t02-s040-dat-lai-2, t02-s041-nguoi, t02-s042-lam-lai, t02-s043-bep-2, t02-s044-cham, t02-s045-cui, t02-s046-che-gieu, t02-s047-lung, t02-s048-vo-tom, t02-s049-da-trong, t02-s050-them-bo, t02-s051-bep-3, t02-s052-bon-o, t02-s052-o1-sofa, t02-s052-o2-giuong, t02-s052-o3-chi-be, t02-s052-o4-ben-kinh, t02-s053-hanh-lang, t02-s054-xin-loi, t02-s055-nhan-viec, t02-s056-bieu, t02-s057-moi, t02-s058-quan-truoc, t02-s059-gia-da-bao, t02-s060-mot-dem, t02-s061-sang, t02-s062-hoa-don, t02-s063-hoa-don, t02-s064-tat-ca, t02-s065-ghi-ro, t02-s066-day-lai
-Không thấy vấn đề gì.
-exit 0

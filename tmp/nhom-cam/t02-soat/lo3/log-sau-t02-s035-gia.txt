@@ -1,8 +1,0 @@
-$ node tools/can-tay.mjs t02-s035-gia 0.3,3.3,6 --ai takumi --out /home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/sau --tab 2
-t02-s035-gia 0.3s takumi tay phải: ra sau 96°
-t02-s035-gia 0.3s takumi tay trái: úp 0° gap 3.5
-t02-s035-gia 3.3s takumi tay phải: ra sau 94°
-t02-s035-gia 3.3s takumi tay trái: úp 0° gap 3.5
-t02-s035-gia 6s takumi tay phải: ra sau 94°
-t02-s035-gia 6s takumi tay trái: úp 0° gap 3.5
-/home/trungvq/Work/Dev/stickman-studio-3d-nhom-cam/tmp/nhom-cam/t02-soat/lo3/sau/t02-s035-gia.jpg

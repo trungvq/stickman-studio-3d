@@ -1,8 +1,0 @@
-/home/trungvq/Work/Dev/youtube-video/jp-sukatto-nhom-cam
-0 parts, 22 characters, 348 actions, 0 props, 0 animals, 53 held, 418 scenes, 57 layers
-pin @7.15.0, rig @7.15.0
-chỉ soi 1 cảnh: t02-s013-khoe
-cảnh báo: scenes/t02-s013-khoe.json: người lồng vào đồ — takumi.handL ↔ quay lấn 5.5 ở giây 0.50 · giây 0.00–5.50
-cảnh báo: scenes/t02-s013-khoe.json: người lồng vào đồ — takumi.foreArmL ↔ quay lấn 5.0 ở giây 0.00 · giây 0.00–5.50
-cảnh báo: scenes/t02-s013-khoe.json: `takumi` giây 0.90: cổ tay phải nhảy 14 px trong một khung (nền 1.6 px). Clip đang chạy: stand-3d (than), face-kind (mat), nga-nhe-3d (nguc), lip-t02-d-takumi-03 (moi). Cố ý giật thì khai `snap: true` ở hành động, clip hay mốc `world.hands`
-0 lỗi, 3 cảnh báo.

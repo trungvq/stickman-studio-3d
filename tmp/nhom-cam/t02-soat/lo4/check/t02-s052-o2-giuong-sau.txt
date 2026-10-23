@@ -1,6 +1,0 @@
-/home/trungvq/Work/Dev/youtube-video/jp-sukatto-nhom-cam
-0 parts, 22 characters, 348 actions, 0 props, 0 animals, 53 held, 418 scenes, 57 layers
-pin @7.15.0, rig @7.15.0
-chỉ soi 1 cảnh: t02-s052-o2-giuong
-cảnh báo: scenes/t02-s052-o2-giuong.json: lòng tay không quay được về hướng đã khai — `erika` tay phải: còn lệch 35° ở giây 1.80 · giây 1.10–1.30, 1.50–4.00. Ngoài tầm xoay cẳng tay ±90 và gập cổ tay -60..70: đổi `elbow` (khung cẳng tay quay theo hướng khuỷu) hay hướng đã khai. Clip đang chạy: sit-3d (than) (docs/01-rig.md#hướng-lòng-tay-theo-ý)
-0 lỗi, 1 cảnh báo.
