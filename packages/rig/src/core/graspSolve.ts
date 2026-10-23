@@ -40,8 +40,11 @@ import {
 import { handSkin, skinHand, type HandSkin } from "./handMesh";
 import {
   AUTHORED_CURL,
+  authoredChoice,
+  authoredFrom,
   authoredHand,
   authoredPose,
+  gripHand,
   mirrorHand,
   slideHand,
   type HandPlace,
@@ -1280,23 +1283,7 @@ function authoredPlace(
     const key = [sd, k, long, ...Object.values(dims)].join();
     let x = m.get(key);
     if (x === undefined) {
-      const { high, ...c } = au.choice ?? {};
-      try {
-        x = graspFrame(
-          spec,
-          geom,
-          { ...(c as GraspChoice), group, variant },
-          sd,
-          dims,
-          k,
-          long,
-          s,
-          high as V3 | undefined,
-          true,
-        ).hand;
-      } catch {
-        x = null;
-      }
+      x = authoredContact(spec, geom, au.choice, group, variant, sd, dims, k, long, s);
       m.set(key, x);
     }
     return x;
@@ -1306,6 +1293,85 @@ function authoredPlace(
   if (!right || !from) return authoredHand(au, side, frame);
   const h = authoredHand(au, -1, frame);
   return slideHand(side < 0 ? h : mirrorHand(h, right, from), from, ct);
+}
+
+/** Chỗ tiếp xúc của bộ giải (bỏ bản soạn) ở lựa chọn lúc soạn `ac`, biến thể gốc `variant`; `null` khi không dựng được */
+function authoredContact(
+  spec: HeldItemSpec,
+  geom: ItemGeom,
+  ac: AuthoredGrasp["choice"],
+  group: GroupId,
+  variant: string,
+  side: number,
+  dims: HandDims,
+  k: number,
+  long: number,
+  s: number,
+): HandPlace | null {
+  const { high, ...c } = ac ?? {};
+  try {
+    return graspFrame(
+      spec,
+      geom,
+      { ...(c as GraspChoice), group, variant },
+      side,
+      dims,
+      k,
+      long,
+      s,
+      high as V3 | undefined,
+      true,
+    ).hand;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Bản soạn từ khung cầm `G` mà người đang thấy ở tay bên `side` cỡ `k`, `long` (như `authoredFrom`), ở lựa chọn `choice`
+ * (`eHigh` như `graspFrame`). Tay trái đổi về tay phải mà bản soạn ghi bằng nghịch đúng của `authoredPlace` ở lựa chọn
+ * ấy: gương ngược qua chỗ tiếp xúc hai tay của bộ giải, không dựng được thì theo khung `frame` của biến thể. Nên
+ * `graspFrame` tay ấy với bản soạn này dựng lại đúng `G`
+ */
+export function authoredFromSide(
+  spec: HeldItemSpec,
+  geom: ItemGeom,
+  choice: GraspChoice & { group: GroupId; variant: string },
+  side: number,
+  G: GripFrame,
+  anchor: HandPose,
+  k: number,
+  long: number,
+  v: HandVec,
+  eHigh?: V3,
+  curl?: number,
+): AuthoredGrasp {
+  const ac = authoredChoice(choice, eHigh);
+  if (side < 0) return authoredFrom(G, anchor, k, long, v, ac, curl);
+  const ref = variantOf(spec, GRIP_GROUPS[choice.group], choice.variant);
+  const base = ref?.base ?? choice.variant;
+  const dims = handDims(k, long);
+  const at = (sd: number) =>
+    authoredContact(spec, geom, ac, choice.group, base, sd, dims, k, long, 1);
+  const h = gripHand(G, anchor, 1, k, long);
+  const right = at(-1);
+  const left = at(1);
+  const r =
+    right && left
+      ? mirrorHand(h, left, right)
+      : ref?.spec.frame === "nt"
+        ? { ...h, fingers: scale3(h.fingers, -1) }
+        : h;
+  const s = G.u / 0.01;
+  return authoredFrom(
+    graspLink({ pose: anchor, ...r }, -1, k, long, s),
+    anchor,
+    k,
+    long,
+    v,
+    ac,
+    curl,
+  );
 }
 
 /** Người cầm của `graspAt` ở một tư thế thân */

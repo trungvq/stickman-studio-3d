@@ -3,6 +3,7 @@ import { trunk3, type ActInput } from "./act3";
 import { body3 } from "./figure3d";
 import { checkChoice, GRIP_GROUPS, namedVariants, variantOf } from "./graspGroups";
 import {
+  authoredFromSide,
   chooseMissing,
   frameCurl,
   graspCtx,
@@ -33,7 +34,7 @@ import {
   type GroupId,
   type HeldItemSpec,
 } from "./heldItem";
-import { cross3, dot3, fromColumns, type V3 } from "./lens";
+import { cross3, dot3, fromColumns, matMul, type V3 } from "./lens";
 import { parseScene, resolveScene, type ItemPose } from "./scene";
 import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
@@ -242,6 +243,68 @@ describe("kiểu cầm soạn tay (`authored`)", () => {
     given[8] = 10;
     const out = heldFit({ ...inp, v: [...fr.pose, ...given], curl: 0 });
     expect(out[8]).toBeGreaterThanOrEqual(10 - 1e-9);
+  });
+
+  it("soạn ở tay trái (`authoredFromSide`): bản soạn ghi tay phải, tay trái dựng lại đúng khung đang thấy; mở rồi lưu không đổi", () => {
+    const PHONE = item(dienThoai);
+    const geom = itemGeom(PHONE);
+    const pick = { group: "palmBox", along: 0.419, thumb: "left", tilt: 20.6 } as Pick;
+    const raw = graspFrame(PHONE, geom, pick, 1, dims, K, LONG, 1.3);
+    const choice = { ...raw.choice, group: pick.group, variant: raw.choice.variant! };
+    const save = (G: typeof raw.G, curl?: number) =>
+      authoredFromSide(
+        PHONE,
+        geom,
+        choice,
+        1,
+        G,
+        raw.hand.pose,
+        K,
+        LONG,
+        raw.pose,
+        undefined,
+        curl,
+      );
+    const withAu = (au: ReturnType<typeof save>) =>
+      item({ ...structuredClone(dienThoai), authored: { palmBox: { [choice.variant]: au } } });
+    // chưa chỉnh: bản soạn trùng bộ giải tay phải, tay trái trùng bộ giải tay trái
+    const a0 = withAu(save(raw.G));
+    for (const side of [-1, 1]) {
+      const want = graspFrame(PHONE, geom, pick, side, dims, K, LONG, 1.3);
+      const got = graspFrame(a0, itemGeom(a0), pick, side, dims, K, LONG, 1.3);
+      expect(got.authored).toBe(true);
+      close(got.G.R, want.G.R, 1e-4);
+      close(got.G.p, want.G.p, 2e-5);
+    }
+    // đã chỉnh: món xoay, dời trong khung bàn tay trái; tay trái dựng lại đúng khung ấy
+    const turn = quatM3([0.12, -0.2, 0.07, 0.97]);
+    const G = {
+      R: matMul(turn, raw.G.R),
+      p: [raw.G.p[0] + 0.004, raw.G.p[1] - 0.006, raw.G.p[2] + 0.003] as V3,
+      u: raw.G.u,
+    };
+    const au = save(G, 4);
+    const a1 = withAu(au);
+    const left = graspFrame(a1, itemGeom(a1), pick, 1, dims, K, LONG, 1.3);
+    close(left.G.R, G.R, 1e-4);
+    close(left.G.p, G.p, 2e-5);
+    // mở lại ở tay trái rồi lưu không đổi gì: cùng bản soạn
+    const again = authoredFromSide(
+      a1,
+      itemGeom(a1),
+      choice,
+      1,
+      left.G,
+      left.hand.pose,
+      K,
+      LONG,
+      left.pose,
+      undefined,
+      4,
+    );
+    close(again.item.p, au.item.p, 2e-5);
+    close(again.item.q, au.item.q, 2e-5);
+    expect(again.choice).toEqual(au.choice);
   });
 
   it("`AUTHORED_CURL` khi bản soạn không khai `curl`", () => {

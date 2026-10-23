@@ -2,6 +2,7 @@ import { HAND_DOF, HAND_FIT, type HandPose, type HandVec } from "./hand";
 import {
   graspLink,
   gripCenter,
+  handAxes,
   type AuthoredGrasp,
   type GraspHand,
   type GripFrame,
@@ -98,6 +99,20 @@ export function authoredHand(a: AuthoredGrasp, side: number, frame: "nf" | "nt")
   return { at, palm, fingers: side > 0 && frame === "nt" ? neg(f) : f };
 }
 
+/**
+ * Bàn tay cầm (khung món, đơn vị rig) của khung cầm `G` ở tay bên `side` cỡ `k`, `long`: điểm món nằm ở tâm nắm dáng
+ * `anchor`, lòng tay, ngón. Nghịch của `graspLink`
+ */
+export function gripHand(G: GripFrame, anchor: HandPose, side: number, k = 1, long = k): HandPlace {
+  const Rt = tr(G.R);
+  const { n, f } = handAxes(side);
+  return {
+    at: scale3(matVec(Rt, sub3(gripCenter(anchor, side, k, long), G.p)), 1 / G.u),
+    palm: matVec(Rt, n),
+    fingers: matVec(Rt, f),
+  };
+}
+
 /** Khung trực giao (cột: lòng tay, ngón, lòng tay × ngón) của một bàn tay cầm */
 function basis(h: HandPlace): M3 {
   const n = unit(h.palm);
@@ -124,7 +139,8 @@ const MIRROR: M3 = [1, 0, 0, 0, 1, 0, 0, 0, -1];
 /**
  * Bàn tay soạn `h` của tay phải (khung món) đổi sang tay trái qua chỗ tiếp xúc của bộ giải ở cùng lựa chọn: `right`, `left`
  * là chỗ tiếp xúc của tay phải, tay trái. Độ lệch của `h` so với `right` (trong khung của `right`) soi gương rồi đặt lên
- * `left`, nên bản soạn trùng bộ giải thì tay trái trùng bộ giải, và lệch bao nhiêu thì tay trái lệch gương bấy nhiêu
+ * `left`, nên bản soạn trùng bộ giải thì tay trái trùng bộ giải, và lệch bao nhiêu thì tay trái lệch gương bấy nhiêu.
+ * Phép gương tự nghịch: `mirrorHand(mirrorHand(h, right, left), left, right)` là `h`
  */
 export function mirrorHand(h: HandPlace, right: HandPlace, left: HandPlace): HandPlace {
   const Br = basis(right);
@@ -179,13 +195,7 @@ export function authoredFrom(
   choice?: AuthoredGrasp["choice"],
   curl?: number,
 ): AuthoredGrasp {
-  const Rt = tr(G.R);
-  const hand: GraspHand = {
-    pose: anchor,
-    at: scale3(matVec(Rt, sub3(gripCenter(anchor, -1, k, long), G.p)), 1 / G.u),
-    palm: matVec(Rt, [1, 0, 0]),
-    fingers: matVec(Rt, [0, -1, 0]),
-  };
+  const hand: GraspHand = { pose: anchor, ...gripHand(G, anchor, -1, k, long) };
   const G1 = graspLink(hand, -1, 1, 1, 1);
   const n = HAND_DOF.length;
   const fit = Array.from({ length: HAND_FIT.length }, (_, i) => r5(v[n + i] ?? 0));
