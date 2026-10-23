@@ -660,6 +660,23 @@ export const castChars = (scene, characters) =>
     }),
   );
 
+/**
+ * `resolveScene` của cảnh `check` đo, `rt.chars` của `castChars`: món đặt trước, mốc món `rest` tra nhân vật người cầm ở đó,
+ * như `loadScene` của render và runtime của studio
+ */
+const castRuntime = (scene, actions, animals, props, characters, held) => {
+  const rt = rig.resolveScene(
+    scene,
+    actions,
+    animals,
+    props,
+    ...castBodies(scene, characters),
+    held,
+  );
+  rt.chars = { ...castChars(scene, characters), ...rt.chars };
+  return rt;
+};
+
 function loadByFile(layers, parse) {
   const out = {};
   for (const dir of [...layers].reverse())
@@ -1469,6 +1486,34 @@ function shotSpans(root, scenesByName, sceneRuntime, wanted = () => true) {
     }
   }
   return out;
+}
+
+/**
+ * Quãng lên hình của cảnh `name` như `check` đo giật (`shotSpans` trên bản đĩa), `data` là `worldData`; cảnh không shot nào
+ * dùng hay không dựng được thì `undefined` (đo cả cảnh)
+ */
+export function sceneShotSpans(dir, name, data = worldData(dir)) {
+  const root = resolve(dir);
+  let scene;
+  try {
+    const r = rig.parseScene(readJson(join(root, "scenes", `${name}.json`)));
+    if (!r.success) return undefined;
+    scene = r.data;
+  } catch {
+    return undefined;
+  }
+  let rt;
+  const sceneRuntime = (n) => {
+    if (n !== name) return null;
+    if (rt === undefined)
+      try {
+        rt = castRuntime(scene, data.actions, data.animals, data.props, data.characters, data.held);
+      } catch {
+        rt = null;
+      }
+    return rt;
+  };
+  return shotSpans(root, { [name]: scene }, sceneRuntime, (n) => n === name).get(name);
 }
 
 /**
@@ -2394,12 +2439,12 @@ export async function deepContext({ dir, names, ...opts }) {
     if (!runtimes.has(name)) {
       let rt = null;
       try {
-        rt = rig.resolveScene(
+        rt = castRuntime(
           scenesByName[name],
           actionsByName,
           animalsByName,
           props,
-          ...castBodies(scenesByName[name], charactersByName),
+          charactersByName,
           heldByName,
         );
       } catch {
@@ -2967,12 +3012,12 @@ export async function checkWorkspace({
         let rt = null;
         try {
           rt = lap(inner, "runtime", () =>
-            rig.resolveScene(
+            castRuntime(
               r.data,
               actionsByName,
               animalsByName,
               Object.fromEntries(props),
-              ...castBodies(r.data, charactersByName),
+              charactersByName,
               heldByName,
             ),
           );
@@ -3168,12 +3213,12 @@ export async function checkWorkspace({
     try {
       if (data)
         rt = lap(times, "runtime", () =>
-          rig.resolveScene(
+          castRuntime(
             data,
             actionsByName,
             animalsByName,
             Object.fromEntries(props),
-            ...castBodies(data, charactersByName),
+            charactersByName,
             heldByName,
           ),
         );

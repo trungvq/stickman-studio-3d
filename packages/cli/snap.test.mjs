@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { describe, it } from "node:test";
-import { checkWorkspace, snapOptions } from "./lib.mjs";
+import { fileURLToPath } from "node:url";
+import * as rig from "@stickman3d/sketch";
+import { checkWorkspace, sceneShotSpans, snapOptions } from "./lib.mjs";
 
 const LENS = { eye: [0, -300, -1500], yaw: 0, pitch: 6, f: 800, cx: 0, cy: 0 };
 const STAND = {
@@ -170,5 +172,127 @@ describe("check: hành động 2D trên người 3D và giật trên hình", () 
       ),
     );
     assert.deepEqual(snapOptions(workspace({ snap: { k: 3 } })), { px: 12, k: 3, fps: 60 });
+  });
+});
+
+const BANG = JSON.parse(
+  readFileSync(
+    resolve(
+      dirname(fileURLToPath(import.meta.url)),
+      "../rig/src/core/__fixtures__/held-v2/bang-gia.json",
+    ),
+    "utf8",
+  ),
+);
+const SHEET = { item: "bang-gia", group: "sheet", edge: "right", along: 0.33, thumb: "front" };
+/** Mốc món đặt ở chỗ thế giới (`at`): món đặt trước, rig tra nhân vật người cầm ở `rt.chars` */
+const card = (cast, t, at) => ({
+  t,
+  cast,
+  item: "bang-gia",
+  at,
+  up: "front",
+  roll: { axis: "top", toward: "up" },
+});
+
+/**
+ * `a` cầm bảng giá 2–3,5 s rồi đặt xuống (`rest`), `b` cầm lên từ 4,1 s: tay `b` giải tới chỗ `a` thả, rig tra nhân vật của
+ * `a` ở `rt.chars`. Tay phải `a` nhảy 80 đơn vị trong một khung ở 1,4 s
+ */
+const placed = (character) => ({
+  name: "cam",
+  duration: 5,
+  lens: LENS,
+  cast: [
+    {
+      id: "a",
+      ...(character && { character }),
+      world: {
+        at: [0, 0, 0],
+        yaw: 155,
+        hands: [
+          { t: 0, right: { at: [36, -250, -40], point: "grip" } },
+          { t: 1.4, right: { at: [30, -260, -50], point: "grip" } },
+          { t: 1.4 + 1 / 30, right: { at: [110, -260, -50], point: "grip" } },
+          { t: 2, right: { hold: { ...SHEET, along: 0.3 } } },
+          { t: 3, right: { hold: { ...SHEET, along: 0.6 } } },
+          { t: 3.5, right: { hold: null } },
+        ],
+      },
+      tracks: [{ clips: [{ action: "dung-3d", start: 0 }] }],
+    },
+    {
+      id: "b",
+      ...(character && { character }),
+      world: {
+        at: [90, 0, 20],
+        yaw: 200,
+        hands: [
+          { t: 3.9, left: { at: [40, -262, -40], point: "grip" } },
+          { t: 4.1, left: { hold: { ...SHEET, edge: "left" } } },
+        ],
+      },
+      tracks: [{ clips: [{ action: "dung-3d", start: 0 }] }],
+    },
+  ],
+  items: [
+    card("a", 2, [30, -255, -45]),
+    card("a", 3, [34, -262, -40]),
+    { ...card("a", 3.4, [36, -262, -40]), rest: true },
+    { t: 4.2, cast: "b", item: "bang-gia", rest: true },
+    card("b", 4.6, [40, -270, -30]),
+  ],
+});
+
+describe("check: giật trên cảnh có món đặt trước", () => {
+  const ws = () => {
+    const dir = workspace();
+    mkdirSync(join(dir, "held"));
+    const json = (rel, v) => writeFileSync(join(dir, rel), `${JSON.stringify(v, null, 2)}\n`);
+    json("held/bang-gia.json", BANG);
+    json("characters/nguoi.json", rig.defaultCharacter());
+    json("scenes/cam.json", placed("nguoi.json"));
+    json("scenes/cam-mau.json", { ...placed(), name: "cam-mau" });
+    return dir;
+  };
+
+  it("runtime của `check` có `rt.chars`: đo giật cả cảnh, không bỏ vì thiếu JSON nhân vật", async () => {
+    const r = await checkWorkspace({ dir: ws(), scene: "^cam", only: "move" });
+    for (const name of ["cam", "cam-mau"]) {
+      assert.deepEqual(
+        of(r, name).filter((p) => /không đo được|chars\./.test(p.msg)),
+        [],
+        JSON.stringify(of(r, name), null, 2),
+      );
+      assert.ok(
+        snaps(r, name).some((p) => /giây 1\.4\d: (bàn tay|cổ tay) phải nhảy/.test(p.msg)),
+        JSON.stringify(of(r, name), null, 2),
+      );
+    }
+  });
+});
+
+describe("sceneShotSpans: quãng lên hình cho vệt của studio", () => {
+  it("như `check`: shot của tập, shot nối tiếp gộp; cảnh không shot nào dùng thì đo cả cảnh", () => {
+    const shot = (id, from, to) => ({ id, scene: "cat", from, to });
+    assert.deepEqual(sceneShotSpans(workspace({}, { shots: [shot("a", 1.2, 2)] }), "cat"), [
+      [1.2, 2],
+    ]);
+    assert.deepEqual(
+      sceneShotSpans(workspace({}, { shots: [shot("a", 0, 1), shot("b", 1, 2)] }), "cat"),
+      [[0, 2]],
+    );
+    assert.deepEqual(
+      sceneShotSpans(
+        workspace({}, { shots: [shot("a", 0, 1), { id: "x", duration: 1 }, shot("b", 1, 2)] }),
+        "cat",
+      ),
+      [
+        [0, 1],
+        [1, 2],
+      ],
+    );
+    assert.equal(sceneShotSpans(workspace({}, { shots: [shot("a", 0, 1)] }), "loi"), undefined);
+    assert.equal(sceneShotSpans(workspace(), "cat"), undefined);
   });
 });
