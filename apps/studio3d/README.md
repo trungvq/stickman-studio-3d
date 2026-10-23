@@ -96,6 +96,12 @@ dòng hay nhấp lên bàn tay / món trên hình (cả camera cảnh) để ch�
   quay sai ý định), khe da từng ngón và lòng tay theo vai trò, dòng tóm tắt như `check`. Luật đo trên cả lần cầm (`drift`,
   `jump`) và cửa sổ hoà `HOLD_BLEND` không xét ở đây. Đang phát thì không đo; dừng là đo.
 - trên hình: vòng cam ở tâm nắm; đốt lún quá `sink` tô đỏ, ngón vai trò (`press`/`wrap`/`tip`) còn hở quá `wrap` tô vàng.
+- **Kiểu cầm** của lần cầm ở giây đang xem (`holdRuns`; món treo `carry` không có): **rig chọn** (không khai `variant`, kèm
+  biến thể rig đang ra), các biến thể gốc của nhóm (`đã soạn` khi món có bản soạn), rồi kiểu cầm có tên của món kèm `base`
+  và `note`; viền cam là kiểu cảnh đang khai. Nhấp một kiểu là đổi `variant` ở mọi mốc `hold` của lần cầm ấy, một bước của
+  lịch sử chung, giữ dạng mốc: chuỗi tắt `món@nhóm` thành `món@nhóm/tên`, object thêm / đổi `variant`, trường lạ giữ; tay phụ
+  của `both` đổi `variant` của `both` ở mốc tay dẫn. **rig chọn** bỏ `variant`. `ease` của mốc không đổi. Kiểu không áp được
+  (lựa chọn của cảnh ngoài miền của biến thể…) thì không áp, thanh trạng thái báo lý do.
 
 ## Soạn kiểu cầm
 
@@ -138,8 +144,21 @@ cỡ tay của người ấy (`k`, `long` như rig) và bản sao lưới món c
 Lăn theo ô **Lăn** của thanh trên như camera tự do. Khi khung soạn đang hiện, Space, ← →, C, R, WASD/QE không tới cảnh và
 camera ngầm phía sau; thả một thanh kéo (hay nhấp vào khung) là thanh ấy thôi nhận phím mũi tên.
 - **Khung cảnh (áp tạm)** dựng lại cảnh ở giây ấy với bản soạn chưa lưu để xem cổ tay, khuỷu; **Khung soạn** quay lại.
-- **Lưu** ghi bản soạn (xem trên); **Xoá bản soạn** bỏ nó; **Thoát** bỏ phần áp tạm chưa lưu. Tay trái lấy gương tự động; rig
-  dùng bản soạn cho mọi cảnh cầm món × nhóm × biến thể ấy (docs/11-nhom-cam.md § Kiểu cầm soạn tay).
+- Khung soạn mở đúng khoá `authored.<nhóm>.<khoá>` cảnh đang dùng: biến thể gốc hay kiểu cầm có tên (đầu panel ghi `base` và
+  `note`). **Lưu** ghi đè đúng khoá ấy (kiểu có tên giữ `base`, `note`); **Xoá bản soạn** bỏ nó; **Thoát** bỏ phần áp tạm
+  chưa lưu. Tay trái lấy gương tự động; rig dùng bản soạn cho mọi cảnh cầm món × nhóm × khoá ấy (docs/11-nhom-cam.md § Kiểu
+  cầm soạn tay).
+- **Lưu thành kiểu mới…**: hộp gồm tên (`[a-z0-9-]+`, không trùng biến thể gốc của nhóm hay khoá của món — sai thì nút lưu
+  tắt, hộp nêu lý do), mô tả (`note`) và **Dùng cho lần cầm này** (bật sẵn khi thấy lần cầm của bàn tay ở giây mở khung soạn).
+  Ghi bản đang thấy vào khoá mới của món, `base` là biến thể gốc của khoá đang mở, rồi khung soạn mở khoá mới. Chọn "dùng"
+  thì sau khi món đã lưu, `variant` của lần cầm đổi như nhấp kiểu ở panel bàn tay (một bước lịch sử chung, chưa ghi cảnh:
+  **Lưu** / Ctrl+S trên thanh trên). Món lưu được mà cảnh không áp được thì khung soạn báo đỏ cả hai phần.
+- **Chép sang món…**: bản đang thấy chép sang món khác cùng nhóm, bàn tay dựng lại từ chỗ tiếp xúc của bộ giải trên món đích
+  ở cùng lựa chọn lúc soạn (`slideHand` từ chỗ tiếp xúc trên món này sang món kia, tay phải cỡ 1); phần `part`,
+  `featureIndex` không có trên món đích thì để bộ giải chọn khối hình. Món không có hình va chạm, không có khối hình cho nhóm,
+  hay không dựng được lựa chọn ấy thì tắt kèm lý do. Tên mặc định là khoá đang mở: tên biến thể gốc ghi bản soạn mặc định
+  của món đích, tên khác là kiểu cầm có tên (`base` như khoá đang mở); món đích đã có khoá ấy thì không chép. Ghi
+  `held/<món đích>.json` (`POST /api/held`, hash lúc nạp).
 
 Rê chuột lên đồng hồ góc phải: ms tính tư thế (`stage.pose`) và ms vẽ của khung vừa vẽ.
 

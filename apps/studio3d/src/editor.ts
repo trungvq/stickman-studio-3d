@@ -30,6 +30,8 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { wheelPans, type WheelMode } from "./freecam";
 import { hitsHtml, fingerTable, type HandRow } from "./hands";
+import { copyAuthored, nameProblem } from "./named";
+import { copyDialog, saveAsDialog } from "./namedUi";
 
 /** Góc nhìn của khung soạn: như camera đang xem cảnh, ba góc `can-tay`, lòng tay, mu tay */
 export type EditView = "canh" | "truoc" | "cheo" | "ngang" | "long" | "mu";
@@ -84,10 +86,26 @@ export interface EditTarget {
   scene: EditScene;
 }
 
-/** Việc trang làm cho khung soạn: áp tạm bản soạn vào cảnh, lưu, thoát; kiểu lăn và khử răng cưa đang chọn */
+/** Kết quả "Lưu thành kiểu mới": món đã lưu (parse), lời báo; `error` khi món đã lưu mà cảnh không đổi được */
+export interface SavedAs {
+  spec: HeldItemSpec;
+  message: string;
+  error?: boolean;
+}
+
+/**
+ * Việc trang làm cho khung soạn: áp tạm bản soạn vào cảnh, lưu (khoá đang mở, kiểu mới, chép sang món khác), thoát; lần
+ * cầm của bàn tay đang soạn; các món của cảnh; kiểu lăn và khử răng cưa đang chọn
+ */
 export interface EditHost {
   preview(t: EditTarget, au: AuthoredGrasp | null): Promise<void>;
   save(t: EditTarget, au: AuthoredGrasp | null): Promise<string>;
+  /** Ghi `au` vào khoá `name` của món; `use` thì ghi `variant` vào lần cầm đang soạn (sau khi món đã lưu) */
+  saveAs(t: EditTarget, au: AuthoredGrasp, name: string, use: boolean): Promise<SavedAs>;
+  /** Ghi `au` vào khoá `name` của món `dst` (cùng nhóm), trả file */
+  copyTo(t: EditTarget, dst: string, name: string, au: AuthoredGrasp): Promise<string>;
+  run(t: EditTarget): { label: string; keys: number } | undefined;
+  held(): Record<string, HeldItemSpec>;
   close(): void;
   wheel(): WheelMode;
   aa(): AaMode;
@@ -540,6 +558,14 @@ const snapKey = (s: Snap) =>
 /** Trục gizmo: theo món, theo bàn tay, theo thế giới */
 type Axes = "item" | "hand" | "world";
 const AXES: Record<Axes, string> = { item: "món", hand: "bàn tay", world: "thế giới" };
+
+/** Bản soạn không `base`, `note` */
+function plain(au: AuthoredGrasp): AuthoredGrasp {
+  const o = { ...au };
+  delete o.base;
+  delete o.note;
+  return o;
+}
 
 const esc = (s: string) =>
   s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
@@ -1332,9 +1358,11 @@ export class GraspEditor {
   /** Panel soạn: điểm đầu, kiểu kéo, ngón theo nhóm, `curl`, số đo, lưu */
   private panel() {
     const t = this.t;
-    const has = !!rig.authoredOf(t.spec, t.group, t.variant);
+    const was = rig.authoredOf(t.spec, t.group, t.variant);
+    const has = !!was;
+    const named = was?.base ? ` · kiểu có tên, gốc <code>${esc(was.base)}</code>` : "";
     this.ui.innerHTML = `
-      <div class="edhead"><b>${t.base}@${t.group}/${t.variant}</b> · soạn tay phải (tay trái lấy gương) · cỡ tay ${t.k.toFixed(2)} / ${t.long.toFixed(2)}${has ? " · <span class='tag'>đã có bản soạn</span>" : ""}</div>
+      <div class="edhead"><b>${t.base}@${t.group}/${esc(t.variant)}</b>${named} · soạn tay phải (tay trái lấy gương) · cỡ tay ${t.k.toFixed(2)} / ${t.long.toFixed(2)}${has ? " · <span class='tag'>đã có bản soạn</span>" : ""}${was?.note ? `<div class="dim">${esc(was.note)}</div>` : ""}</div>
       <div class="seg" data-k="view"><button data-v="edit" class="on">Khung soạn</button><button data-v="scene">Khung cảnh (áp tạm)</button></div>
       <label>Điểm đầu <select data-k="start"><option value="">—</option><option value="rig">Rig đoán (bộ giải)</option>${rig.HAND_POSE_KINDS.map((p) => `<option value="${p}">dáng ${p} (${rig.HAND_POSE_LABELS[p]})</option>`).join("")}</select></label>
       <div class="row"><div class="seg" data-k="mode"><button data-v="translate" class="on">Dời (T)</button><button data-v="rotate">Xoay (Y)</button></div>
@@ -1346,7 +1374,7 @@ export class GraspEditor {
       <div data-k="groups"></div>
       <label class="slider"><span>ngón tự ôm thêm (heldFit) ≤</span><input type="range" min="0" max="45" step="1" data-k="curl" /><output></output></label>
       <div data-k="measure"></div>
-      <div class="row"><button data-k="save" class="primary">Lưu vào held/${t.base}.json</button>${has ? `<button data-k="drop">Xoá bản soạn</button>` : ""}<button data-k="close">Thoát</button></div>
+      <div class="row"><button data-k="save" class="primary" title="Ghi đè khoá đang mở: authored.${t.group}.${esc(t.variant)}">Lưu ${esc(t.variant)} vào held/${t.base}.json</button><button data-k="saveAs">Lưu thành kiểu mới…</button><button data-k="copy">Chép sang món…</button>${has ? `<button data-k="drop">Xoá bản soạn</button>` : ""}<button data-k="close">Thoát</button></div>
       <div data-k="status" class="dim"></div>`;
     for (const el of this.ui.querySelectorAll<HTMLElement>("[data-k]"))
       this.els[el.dataset.k!] = el;
@@ -1440,9 +1468,87 @@ export class GraspEditor {
           this.say(`không xoá được: ${(e as Error).message}`, true);
         }
       };
+    this.els.saveAs.onclick = () => void this.saveAs();
+    this.els.copy.onclick = () => void this.copy();
     this.els.close.onclick = () => this.host.close();
     this.sync();
     this.measure();
+  }
+
+  /** "Lưu thành kiểu mới…": khoá mới của món (`base` là biến thể gốc của khoá đang mở); khung soạn mở khoá mới */
+  private async saveAs() {
+    const t = this.t;
+    const base = rig.baseVariant(t.spec, t.group, t.variant);
+    const r = await saveAsDialog({
+      key: `${t.base}@${t.group}/${t.variant}`,
+      base,
+      problem: (n) => nameProblem(n, t.group, t.spec),
+      run: this.host.run(t),
+    });
+    if (!r) return;
+    const au = { base, ...(r.note && { note: r.note }), ...plain(this.authored()) };
+    this.say(`đang lưu kiểu ${r.name}…`);
+    try {
+      const res = await this.host.saveAs(t, au, r.name, r.use);
+      t.variant = r.name;
+      t.spec = res.spec;
+      this.panel();
+      this.show(true);
+      this.select(this.sel);
+      this.edited();
+      this.say(res.message, res.error);
+    } catch (e) {
+      this.say(`không lưu được: ${(e as Error).message}`, true);
+    }
+  }
+
+  /** "Chép sang món…": bản đang thấy dựng lại trên món khác cùng nhóm, ở cùng lựa chọn */
+  private async copy() {
+    const t = this.t;
+    const base = rig.baseVariant(t.spec, t.group, t.variant);
+    const au = this.authored();
+    const held = this.host.held();
+    const dims = rig.handDims(t.k, t.long);
+    const targets = Object.keys(held)
+      .filter((n) => n !== t.base)
+      .sort()
+      .map((name) => {
+        const s = held[name];
+        if (!s.shape) return { name, why: "không có hình va chạm" };
+        if (!rig.groupFits(rig.itemGeom(s), t.group, dims).length)
+          return { name, why: `không cầm được nhóm ${t.group}` };
+        try {
+          copyAuthored(t.spec, au, t.group, base, s);
+          return { name };
+        } catch (e) {
+          return { name, why: (e as Error).message.slice(0, 90) };
+        }
+      });
+    const r = await copyDialog({
+      key: `${t.base}@${t.group}/${t.variant}`,
+      name: t.variant,
+      note: au.note,
+      targets,
+      problem: (dst, n) =>
+        n === base
+          ? rig.authoredOf(held[dst], t.group, base)
+            ? `món đích đã có bản soạn ${base}`
+            : undefined
+          : nameProblem(n, t.group, held[dst]),
+    });
+    if (!r) return;
+    try {
+      const out = {
+        ...(r.name !== base && { base }),
+        ...(r.note && { note: r.note }),
+        ...plain(copyAuthored(t.spec, au, t.group, base, held[r.dst])),
+      };
+      this.say(`đang chép sang ${r.dst}…`);
+      const file = await this.host.copyTo(t, r.dst, r.name, out);
+      this.say(`đã chép thành ${r.dst}@${t.group}/${r.name} vào ${file}`);
+    } catch (e) {
+      this.say(`không chép được: ${(e as Error).message}`, true);
+    }
   }
 
   /** Khung soạn đang hiện (không thì khung cảnh đang hiện bản áp tạm) */
@@ -1497,7 +1603,7 @@ export class GraspEditor {
    * đụng cảnh / camera ngầm phía sau
    */
   private onKey = (e: KeyboardEvent) => {
-    if (!this.shown) return;
+    if (!this.shown || document.querySelector("dialog[open]")) return;
     if (e.target instanceof HTMLInputElement && e.target.type === "text") return;
     const k = e.key.toLowerCase();
     const mod = e.ctrlKey || e.metaKey;

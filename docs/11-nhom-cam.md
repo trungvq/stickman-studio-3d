@@ -337,7 +337,9 @@ mọi cảnh; kiểu cầm có tên chỉ dùng khi cảnh gọi tên nó.
   kiểu cầm có tên.
 - **Tên lạ** (không phải biến thể gốc, không có trong `authored.<nhóm>` của món) là lỗi `choice` của `checkHolds` lúc
   `resolveScene` (và của `check`): dòng báo nêu món, nhóm, tên, biến thể gốc và các kiểu cầm có tên của món.
-- Mỗi kiểu cầm thuộc một món; chép sang món khác là việc của studio.
+- Mỗi kiểu cầm thuộc một món. Studio 3D (`apps/studio3d` README § Soạn kiểu cầm) lưu kiểu mới từ khung soạn, đổi `variant`
+  của một lần cầm, và chép kiểu sang món khác cùng nhóm: bàn tay giữ nguyên trong khung chỗ tiếp xúc của bộ giải ở cùng
+  lựa chọn lúc soạn (`slideHand` từ món nguồn sang món đích).
 
 Code ở `core/heldAuthored.ts` (`authoredFrom` dựng bản soạn từ khung cầm studio đang thấy, `authoredHand`, `mirrorHand`,
 `slideHand`, `authoredPose`), nối vào `graspFrame` (`authoredPlace`); `variantOf`, `namedVariants` ở `core/graspGroups.ts`;

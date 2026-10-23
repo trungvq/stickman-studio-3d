@@ -325,6 +325,91 @@ button.hand .bad {
   font-weight: bold;
 }
 
+/* kiểu cầm của lần cầm */
+#styles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#styles[hidden] {
+  display: none;
+}
+
+#styles .sthead {
+  margin-bottom: 2px;
+}
+
+button.style {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 8px;
+  text-align: left;
+  padding: 3px 6px;
+  border-color: transparent;
+  background: none;
+}
+
+button.style.on {
+  border-color: var(--accent);
+  background: #2b2a26;
+}
+
+button.style .st {
+  color: var(--dim);
+  font-size: 12px;
+  text-align: right;
+}
+
+button.style .note {
+  grid-column: 1 / -1;
+  color: var(--dim);
+  font-size: 12px;
+}
+
+dialog.named {
+  width: min(460px, calc(100vw - 24px));
+  padding: 12px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+}
+
+dialog.named::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+
+dialog.named form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+dialog.named label:not(.use) {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+dialog.named input[type="text"],
+dialog.named select {
+  min-width: 0;
+  width: 100%;
+}
+
+dialog.named .error {
+  color: #ff8a80;
+  min-height: 1.4em;
+}
+
+dialog.named .row {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
 #measure .hit {
   color: #ffcc66;
   font-family: ui-monospace, monospace;
