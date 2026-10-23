@@ -223,6 +223,46 @@ describe("stickman studio: /api/scene, /api/held", { timeout: 120_000 }, () => {
     }
   });
 
+  it("món đổi trên đĩa trong lúc server định dạng: 409, bản của bên kia còn nguyên", async () => {
+    const j = await load();
+    let entered;
+    const inFormat = new Promise((r) => (entered = r));
+    let release;
+    const gate = new Promise((r) => (release = r));
+    globalThis.__formatGate = () => (entered(), gate);
+    const held = join(dir, "held/coc.json");
+    try {
+      const pending = post("/api/held?name=coc", {
+        group: "khong-co",
+        variant: "x",
+        authored: null,
+        hash: j.heldHash.coc,
+      });
+      await inFormat;
+      const theirs = `${readFileSync(held, "utf8").trimEnd()}\n\n`;
+      writeFileSync(held, theirs);
+      release();
+      const r = await pending;
+      assert.equal(r.status, 409);
+      assert.equal((await r.json()).conflict, true);
+      assert.equal(readFileSync(held, "utf8"), theirs);
+    } finally {
+      delete globalThis.__formatGate;
+    }
+  });
+
+  it("thân yêu cầu không phải JSON: 400", async () => {
+    for (const path of ["/api/scene?name=thu-tay", "/api/held?name=coc"]) {
+      const r = await fetch(`${base}${path}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: '{"hash": ',
+      });
+      assert.equal(r.status, 400);
+      assert.match((await r.json()).error, /không phải JSON/);
+    }
+  });
+
   it("bản gửi thiếu `items` hay `hands`: giữ của đĩa; `items: []` là xoá", async () => {
     let j = await load();
     const items = j.raw.items;

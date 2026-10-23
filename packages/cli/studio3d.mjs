@@ -9,6 +9,7 @@ import {
   readFileSync,
   realpathSync,
   renameSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import { createRequire } from "node:module";
@@ -91,8 +92,13 @@ function writeWithBak(file, text, old) {
   if (old) writeFileSync(`${file}.bak`, old);
   mkdirSync(dirname(file), { recursive: true });
   const tmp = join(dirname(file), `.${basename(file)}.${randomUUID()}.tmp`);
-  writeFileSync(tmp, text);
-  renameSync(tmp, file);
+  try {
+    writeFileSync(tmp, text);
+    renameSync(tmp, file);
+  } catch (e) {
+    rmSync(tmp, { force: true });
+    throw e;
+  }
 }
 
 /** Hàng ghi theo từng file: mỗi lượt đọc – vá – ghi của một file chạy xong mới tới lượt sau */
@@ -177,7 +183,11 @@ export function studio3dConfig({
       throw new HttpError(415, "gửi JSON (`content-type: application/json`)");
     const chunks = [];
     for await (const c of req) chunks.push(c);
-    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    try {
+      return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    } catch (e) {
+      throw new HttpError(400, `thân yêu cầu không phải JSON: ${e.message}`);
+    }
   };
   const route = (fn) => async (req, res) => {
     try {
@@ -348,7 +358,7 @@ export function studio3dConfig({
 
 /**
  * Chạy Studio 3D cho repo video `dir`. Chỉ nghe `localhost`: trang ghi thẳng `scenes/`, `held/` của repo; `host` khác
- * (`--host`) là mở cả hai đường ghi ra mạng ấy.
+ * (`--host`) là mở cả hai đường ghi ra mạng ấy. `heldOut` trả về là thư mục ghi món khi đổi hướng (`STUDIO3D_HELD_OUT`).
  */
 export async function serveStudio3d({ dir = ".", port = 5180, host = "localhost", heldOut } = {}) {
   const { createServer } = await import("vite");
@@ -359,5 +369,11 @@ export async function serveStudio3d({ dir = ".", port = 5180, host = "localhost"
     server: { ...config.server, port, host },
   });
   await server.listen();
-  return { server, root: resolve(dir), urls: server.resolvedUrls };
+  const out = heldOut ?? process.env.STUDIO3D_HELD_OUT;
+  return {
+    server,
+    root: resolve(dir),
+    heldOut: out ? resolve(out) : null,
+    urls: server.resolvedUrls,
+  };
 }

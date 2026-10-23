@@ -514,8 +514,9 @@ pnpm studio2d    # = pnpm exec stickman studio2d: character studio 2D, http://lo
 ### Studio 3D
 
 Dev server Vite (Vite đi theo `@stickman3d/cli`) chạy app `apps/studio3d` với gốc là thư mục đang đứng: xem cảnh three
-của `scenes/` (cùng `stickman.world` mà Remotion vẽ), soạn kiểu cầm. Phím, panel, cách soạn ở README của
-`apps/studio3d` trong repo rig.
+của `scenes/` (cùng `stickman.world` mà Remotion vẽ), soạn kiểu cầm, sửa mốc tay và mốc món trên thanh tua (chế độ
+**Dáng tay**: thêm, dời giữ mốc tên `@tên±Δ`, xoá, `ease`, `hold`, `elbowLock`, một lịch sử hoàn tác chung, **Lưu**). Phím,
+panel, cách soạn ở README của `apps/studio3d` trong repo rig.
 
 - **Rig của trang là rig repo video đang nạp.** `@stickman3d/rig`, `sketch`, `fx` trỏ `link:` tới một cây nguồn thì trang
   lấy `src/` của cây ấy (sửa rig là trang nạp lại); cài từ registry thì lấy `dist`. `three`, `react`, `zod` lấy bản của

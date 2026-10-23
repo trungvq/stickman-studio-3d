@@ -1,7 +1,8 @@
 # Studio 3D
 
 Trang xem cảnh three của một repo video: cùng `worldOf` / `buildWorld` mà Remotion vẽ (`Scene3D` của repo), tua giây,
-camera cảnh hay camera tự do, soi bàn tay và số đo cầm đồ, soạn kiểu cầm bằng mắt. Studio 2D (`apps/studio`: nhân vật,
+camera cảnh hay camera tự do, soi bàn tay và số đo cầm đồ, soạn kiểu cầm bằng mắt, sửa mốc tay và mốc món trên thanh tua
+([Dáng tay](#dáng-tay)). Studio 2D (`apps/studio`: nhân vật,
 hành động, mảnh) chạy bằng `stickman studio2d`.
 
 ## Chạy
@@ -56,9 +57,13 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
 | Space | Phát / dừng |
 | ← → | Lùi / tới một khung (1/30 s); giữ Shift: 10 khung |
 | C | Đổi camera cảnh ↔ camera tự do |
-| R | Nạp lại cảnh từ đĩa, giữ giây đang xem; chỉ đổi mốc tay, mốc món thì làm mới tại chỗ, không dựng lại lưới (`world.refresh`) |
+| R | Nạp lại cảnh từ đĩa, giữ giây đang xem (có thay đổi chưa lưu thì hỏi trước); chỉ đổi mốc tay, mốc món thì làm mới tại chỗ, không dựng lại lưới (`world.refresh`) |
+| Shift+R | Dựng lại cả cảnh, giữ bản đang sửa: đồ riêng của repo đọc `world.hands` lúc dựng |
+| Ctrl+Z · Ctrl+Shift+Z, Ctrl+Y | Hoàn tác · làm lại (lịch sử chung của cảnh) |
+| Ctrl+S | Lưu mốc tay, mốc món vào `scenes/` |
+| Del, Backspace | Xoá mốc đang mở thẻ (Dáng tay) |
 | W S · A D · Q E | Camera tự do: tiến / lùi, sang trái / phải, xuống / lên (theo hướng camera); giữ Shift: nhanh gấp 3 |
-| Esc | Bỏ chọn bàn tay |
+| Esc | Đóng thẻ mốc; không có thẻ thì bỏ chọn bàn tay |
 
 Khung soạn kiểu cầm có phím, chuột riêng ([bên dưới](#soạn-kiểu-cầm)).
 
@@ -137,6 +142,55 @@ camera ngầm phía sau; thả một thanh kéo (hay nhấp vào khung) là than
   dùng bản soạn cho mọi cảnh cầm món × nhóm × biến thể ấy (docs/11-nhom-cam.md § Kiểu cầm soạn tay).
 
 Rê chuột lên đồng hồ góc phải: ms tính tư thế (`stage.pose`) và ms vẽ của khung vừa vẽ.
+
+## Dáng tay
+
+Công tắc **Xem / Dáng tay** trên thanh trên (nhớ trong `localStorage`). Ở Dáng tay, bấm một bàn tay (trên hình hay trong
+panel) là chọn người × tay: thanh tua thêm một hàng cho mỗi tay của người ấy và một hàng **Món** cho các mốc `items[]` của
+món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hàng tay là chọn tay ấy.
+
+- **Ký hiệu.** Mốc tay tròn, mốc chỉ có `hold` vòng rỗng, mốc `null` chấm xám, mốc món thoi; viền tím là mốc khoá khuỷu
+  (`elbowLock`), viền cam là mốc đang mở thẻ. Rê lên mốc: trường `t` như JSON (`@tra+0.6 = 4.000 s`), loại mốc, `ease`.
+- **Dải dưới hàng tay là lần cầm** (`holdRuns`), nhãn `món@nhóm/biến thể` (tay phụ của `both` ghi `(phụ)`): xanh lá tay theo
+  đồ (theo mốc, hai tay), xanh dương đồ theo tay, xám tay tự do; sọc là `HOLD_BLEND` ở đầu lần cầm (trừ lần cầm từ giây 0)
+  và lúc nhả món đặt trước.
+- **Nhấp mốc**: tua tới mốc, mở thẻ mốc ở đầu panel. **Kéo mốc**: dời `t`, bám lưới khung (1/30 s) tính từ mốc tên của
+  mốc; mốc tên giữ dạng `@tên±Δ` (`@tra` kéo 0,2 s là `@tra+0.2`), mốc số giữ số. Giữ **Alt** khi thả: bắt vào mốc tên gần
+  nhất (`@tên`). Dòng mốc tay nhắc cả hai tay thì tay được kéo tách ra dòng mới; giây mới trùng một dòng mốc khác của người
+  ấy thì gộp vào dòng ấy (`t` của dòng mốc tay, của mốc cùng món phải tăng hẳn). Tay đã có mốc ở giây ấy thì báo lỗi.
+- **＋** ở cuối hàng: thêm mốc ở giây đang xem, `ease: "auto"`, giá trị lấy thứ đang vẽ:
+  - tay theo đồ (theo mốc, hai tay): mốc chỉ có `hold` — chép `hold` có hiệu lực, trường số của chỗ cầm trượt (`along`,
+    `slant`…) lấy lựa chọn đang vẽ —, nên lần cầm không bị cắt và mốc không khai đích;
+  - đồ theo tay, tay tự do: phần đích đang là `0` thì `null`; không thì `at` là điểm bàn tay đang vẽ theo `point` của mốc kề
+    (tâm nắm hay cổ tay; điểm khác thì tâm nắm, `point: "grip"`), không `hold` (lần cầm đi tiếp). Tay tự do chép `palm`,
+    `fingers`, `bend` của mốc trước; `elbow` theo mốc kề (hai mốc kề khác nhau thì nội suy thẳng), khuỷu đang khoá hẳn thì
+    khoá vào hướng khuỷu đang vẽ. Điểm bàn tay về đúng chỗ, nhưng hướng bàn tay đồ theo tay theo ý định của mốc mới (ý định
+    của `hold` trước nó) và giới hạn tốc độ `HOLD_SLEW`: giữa hai mốc khác ý định bàn tay xoay khác lúc trước. Mốc kề đặt theo
+    mốc thân (`to`) thì mốc mới vẫn ghi `at` thế giới: người đi giữa hai mốc thì đoạn kề lệch. Thanh trạng thái và thẻ mốc
+    nêu những chỗ chỉ gần đúng này;
+  - hàng Món (chỉ lần cầm tay theo đồ): tâm hộp bao của món đang vẽ ở `at`, hướng bằng `face` / `roll` trục khung món
+    `[0, 0, 1]`, `[0, 1, 0]` về vectơ hệ thân người cầm, như `holdToItemLed`.
+- **Thẻ mốc**: `ease` (ô 4 số khi `bezier`, mặc định `BEZIER_DEFAULT`); `hold` (không khai / buông `null` / cầm: món,
+  nhóm, biến thể — kiểu có tên hiện kèm `note`; `hold` dạng chuỗi ghi lại chuỗi, dạng object chỉ đổi `item`, `group`,
+  `variant`); `elbowLock` (mốc chưa có `elbow` thì lấy hướng khuỷu đang vẽ ở mốc; khoá không có tác dụng ở mốc thì thẻ
+  báo); "ảnh hưởng tới …s" — ước: tới mốc kế của cùng tay, cùng món (chuỗi `auto` thêm một mốc), đồ theo tay còn kéo dài vài
+  khung do giới hạn tốc độ; JSON thô của mốc kèm nút chép; **Xoá mốc** (Del). Mốc tay cuối cùng của một người không xoá
+  được (`world.hands` không rỗng).
+- **Mốc studio thêm hay sửa** (dời, đổi `hold`, `elbowLock`) mà chưa khai `ease` thì ghi `ease: "auto"`; mốc đã khai `ease`
+  giữ nguyên. Đổi `ease` chỉ qua thẻ mốc.
+- **Sửa trên JSON thô.** Mọi thao tác sửa bản JSON thô của cảnh trong trang (giữ trường lạ như `hand` của vài mốc, giữ mốc
+  tên), rồi parse và làm mới tại chỗ (`world.refresh`); không làm mới được thì dựng lại cả cảnh. Bản sửa hỏng schema hay
+  `resolveScene` ném thì không áp, thanh trạng thái báo lý do.
+- **Lịch sử chung** cho cảnh, mỗi bước là ảnh chụp JSON thô: ↶ ↷ trên thanh trên, Ctrl+Z / Ctrl+Shift+Z. Khung soạn kiểu cầm
+  đang mở thì giữ lịch sử riêng, lịch sử cảnh tạm khoá.
+- **Lưu** (Ctrl+S): chấm cam là có thay đổi chưa lưu. Ghi `POST /api/scene` kèm hash lúc nạp; lưu xong lịch sử còn nguyên.
+  **Bỏ thay đổi** về bản đã lưu (là một bước, hoàn tác được). File cảnh đổi trên đĩa từ lúc nạp thì server trả 409: hộp báo
+  cho **Tải bản đĩa về** (bỏ bản của mình), **Chép mốc của mình** (`hands` từng người và `items`, JSON) hay **Giữ bản
+  mình** để so. Đổi cảnh, R, đóng trang đều hỏi trước khi bỏ thay đổi chưa lưu.
+- **File repo video đổi trên đĩa** (cảnh, món mà `src/` của repo nhập — kể cả lúc Lưu): trang nhận module cảnh three mới
+  tại chỗ, không nạp lại trang; lần dựng cảnh sau (Shift+R) dùng bản mới.
+- **Màn hẹp** (≤ 760 px): camera, AA, Lăn gập sau nút ⋯; panel bàn tay xuống dưới khung vẽ; thanh tua cuộn ngang, tự cuộn
+  theo giây đang xem.
 
 ## Lưu ý khi xem bằng camera tự do
 

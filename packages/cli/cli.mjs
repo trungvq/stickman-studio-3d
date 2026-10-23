@@ -282,7 +282,7 @@ else if (parsed.error) {
     port: Number(value("port", 5180)),
     host: value("host", "localhost"),
   });
-  console.log(`Studio 3D đọc ${r.root}, ghi scenes/ và held/`);
+  console.log(`Studio 3D đọc ${r.root}, ghi scenes/ và ${r.heldOut ?? "held/"}`);
   for (const u of r.urls?.local ?? []) console.log(`  Local:   ${u}`);
   for (const u of r.urls?.network ?? []) console.log(`  Network: ${u}`);
 } else if (cmd === "studio2d") {
