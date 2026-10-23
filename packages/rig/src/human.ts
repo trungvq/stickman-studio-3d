@@ -4,6 +4,7 @@ import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { HUMAN_HEAD, humanEar, humanSkull } from './core/humanHead';
 import { fingerVec, HAND_DOF, HAND_POSES, HAND_REST, type HandPose } from './core/hand';
 import { handSkin, skinHand, smoothNormals, type HandSkin } from './core/handMesh';
+import { NECK_TUBE } from './core/torso';
 import { newCanvas } from './canvas';
 import { G } from './npr';
 
@@ -205,9 +206,9 @@ export function earGroup(side: -1 | 1, r: number, scale: THREE.Vector3, skin: TH
 }
 
 /** Cổ trong nhóm cổ: từ trong cổ áo lên tới trong đầu, hơi lùi sau trục */
-export function neckGeometry(top: number, radius: number) {
-  const g = new THREE.CylinderGeometry(radius, radius * 1.08, top + 0.04, 16, 1, true);
-  g.translate(0, top / 2 - 0.02, -0.03);
+export function neckGeometry(top: number, radius: number = NECK_TUBE.r) {
+  const g = new THREE.CylinderGeometry(radius, radius * NECK_TUBE.flare, top + 0.04, 16, 1, true);
+  g.translate(0, top / 2 - 0.02, -NECK_TUBE.back);
   return smooth(g);
 }
 

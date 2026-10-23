@@ -599,7 +599,7 @@ export function stickman(o: StickmanOptions): Figure {
       const ear = earGroup(s, R.head, skullScale, skullMat, INK);
       if (!hairCovers(head, ear.position)) head.add(ear);
     }
-    neck.add(inked(neckGeometry(head3(B, true) - R.head * 0.5, 0.135), skinMat, 0.022));
+    neck.add(inked(neckGeometry(head3(B, true) - R.head * 0.5), skinMat, 0.022));
   }
   const legs = { [-1]: leg(hips, -1, at.hip, B), [1]: leg(hips, 1, at.hip, B) } as Record<Side, Leg>;
   const arms = { [-1]: arm(spine, -1, sx, sy, B), [1]: arm(spine, 1, sx, sy, B) } as Record<Side, Arm>;

@@ -159,6 +159,15 @@ export const bellyAt = (y: number, height: number) =>
  * xuống ngang ngực; trong quãng ấy hàng mặt cắt cách nhau không quá `step` px
  */
 export const CHEST = { at: 0.7, back: 0.6, step: 3 } as const;
+/** Ống cổ người 3D (`neckGeometry`): bán kính trên, độ loe ở chân và quãng lùi sau trục, đơn vị three */
+export const NECK_TUBE = { r: 0.135, flare: 1.08, back: 0.03 } as const;
+/**
+ * Nửa sau thân không mỏng hơn mép sau ống cổ cộng ngần này px (ở hàng mà bề sâu theo bề rộng đã tới đó): lưng phẳng
+ * không kéo viền cổ áo sau gáy lọt vào trong ống cổ
+ */
+export const NAPE_CLEAR = 1;
+/** Nửa bề sâu nửa sau tối thiểu quanh lỗ cổ, px */
+export const NAPE = 100 * (NECK_TUBE.back + NECK_TUBE.r * NECK_TUBE.flare) + NAPE_CLEAR;
 /** Ngực nở (`garment.bust`): đỉnh ở ngang ngực, nhạt theo hình chuông rộng `up` phần thân phía trên, `down` phía dưới */
 export const BUST = { up: 0.25, down: 0.15 } as const;
 
@@ -173,8 +182,8 @@ export const bustAt = (y: number, height: number) => {
  * Nửa bề sâu nửa sau (`back`) và nửa trước (`front`) từng hàng của mặt cắt `pts`, từ nửa bề sâu `depth` theo bề rộng
  * (`TORSO_DEPTH` hay `cladProfile`): dưới ngang ngực giữ `depth`; trên đó nửa trước đi từ bề sâu mép trên tới bề sâu ngang
  * ngực theo một dốc dài, đứng dần ở ngang ngực, nửa sau tới sớm hơn (`CHEST.back`) nên lưng phẳng hơn ngực — vai rộng mà
- * mỏng. Không sâu hơn `depth`. Nửa trước cộng bụng phệ và ngực nở. Hàng thêm trong quãng dốc và quãng ngực nở đi kèm `pts`
- * trả ra
+ * mỏng, nhưng không mỏng hơn `NAPE` cho gáy khỏi thò qua cổ áo. Không sâu hơn `depth`. Nửa trước cộng bụng phệ và ngực
+ * nở. Hàng thêm trong quãng dốc và quãng ngực nở đi kèm `pts` trả ra
  */
 export function chestDepth(
   pts: readonly P2[],
@@ -207,7 +216,9 @@ export function chestDepth(
     };
   };
   const [rb, rf] = [ramp(yK), ramp(yB)];
-  const back = rows.map(([, y], i) => (y < yK ? Math.min(flat[i], rb(y)) : flat[i]));
+  const back = rows.map(([, y], i) =>
+    y < yK ? Math.max(Math.min(flat[i], rb(y)), Math.min(flat[i], NAPE)) : flat[i],
+  );
   const front = rows.map(
     ([, y], i) =>
       (y < yB ? Math.min(flat[i], rf(y)) : flat[i]) +
