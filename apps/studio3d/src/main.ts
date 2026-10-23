@@ -36,6 +36,7 @@ import {
   HandOverlay,
   measureHtml,
   pickHand,
+  shown,
   sideName,
   type Angle,
   type HandRow,
@@ -68,6 +69,7 @@ import { renderStyles } from "./namedUi";
 import { plusHand, plusItem } from "./plus";
 import { runtimeOf, type Data } from "./runtime";
 import { SceneList } from "./sceneList";
+import { Solo } from "./solo";
 import { KeyTrack, type Band, type Lane } from "./track";
 import { Trails } from "./trails";
 
@@ -121,6 +123,7 @@ const ui = {
   selName: $<HTMLDivElement>("selName"),
   angles: $<HTMLDivElement>("angles"),
   follow: $<HTMLInputElement>("follow"),
+  solo: $<HTMLInputElement>("solo"),
   measure: $<HTMLDivElement>("measure"),
   editGrasp: $<HTMLButtonElement>("editGrasp"),
   styles: $<HTMLElement>("styles"),
@@ -419,6 +422,7 @@ function restage(scene: SceneData): boolean {
 }
 
 function dispose() {
+  solo.show();
   if (!cur) return;
   cur.stage.dispose();
   cur.stage.canvas.remove();
@@ -453,14 +457,18 @@ function seek(v: number) {
 function seedFree() {
   if (!cur || !orbit) return;
   const { stage, w } = cur;
+  solo.show();
   stage.pose(t, w.view(t));
+  applySolo();
   const cam = stage.camera;
   free.position.copy(cam.position);
   free.quaternion.copy(cam.quaternion);
   free.fov = cam.fov;
   free.updateProjectionMatrix();
   const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion);
-  const hit = new THREE.Raycaster(cam.position, dir).intersectObject(w.root, true)[0];
+  const hit = new THREE.Raycaster(cam.position, dir)
+    .intersectObject(w.root, true)
+    .find((h) => shown(h.object));
   orbit.target.copy(cam.position).addScaledVector(dir, hit ? hit.distance : 3);
   orbit.update();
 }
@@ -495,11 +503,14 @@ function draw() {
   const { stage, w } = cur;
   const t0 = performance.now();
   const view = w.view(t);
+  // số đo bàn tay đo trên cảnh đủ người, chỉ lúc vẽ mới ẩn
+  solo.show();
   stage.pose(t, view);
   afterPose();
   const t1 = performance.now();
   const camera = mode === "free" ? free : stage.camera;
   if (mode === "free") w.set.room.cull(free);
+  applySolo();
   stage.pipeline.render(stage.scene, camera, view.render);
   // lớp phủ của bàn tay đã chọn, tay nắm, vòng khuỷu, nón cổ tay: vẽ đè, không qua pipeline
   if (overlay.active || grab.active) {
@@ -561,6 +572,29 @@ const grab = new HandGrab(ui.frame, {
 /** Vệt cổ tay, khuỷu, tâm món của bàn tay đang chọn (Dáng tay) */
 const trails = new Trails(ui.frame);
 const selRow = () => (sel ? rows.find((r) => r.id === sel!.id && r.side === sel!.side) : undefined);
+
+/** "Chỉ người này": khung vẽ chỉ còn người có bàn tay đang chọn và món người ấy cầm, treo */
+const solo = new Solo();
+function applySolo() {
+  const r = ui.solo.checked && cur ? selRow() : undefined;
+  if (!r || !cur) return solo.show();
+  const keep: THREE.Object3D[] = [r.fig.root];
+  for (const s of [-1, 1] as Side[])
+    for (const o of [r.fig.holding?.[s]?.object, r.fig.carrying?.[s]?.object]) if (o) keep.push(o);
+  solo.hide(cur.w.root, keep);
+}
+
+function toggleSolo() {
+  applySolo();
+  dirty = true;
+  say(
+    !ui.solo.checked
+      ? "hiện cả cảnh"
+      : sel
+        ? "chỉ hiện người đang chọn (H tắt)"
+        : "chỉ người này: chọn một bàn tay để ẩn cảnh và người khác",
+  );
+}
 
 /** Sau khi đặt người ở `t`: đo bàn tay (khi tua tới giây mới), camera bám tay đã chọn, lớp phủ, panel */
 function afterPose() {
@@ -696,6 +730,7 @@ function pickStyle(run: RunRef & HoldRunInfo, v: string | undefined) {
 function select(r: HandRow | undefined, go: boolean) {
   sel = r ? { id: r.id, side: r.side } : null;
   lastCenter = null;
+  applySolo();
   if (r && go) view("truoc");
   else dirty = true;
   rowsT = NaN;
@@ -785,6 +820,7 @@ function editTarget(r: HandRow): EditTarget | undefined {
 function editScene(r: HandRow): EditScene {
   const { stage, w } = cur!;
   const view = w.view(t);
+  solo.show();
   stage.pose(t, view);
   const lights = rig.currentLights();
   const arm = r.fig.arms[r.side];
@@ -1764,6 +1800,7 @@ ui.frame.addEventListener("pointerup", (e) => {
   if (hit) select(hit, true);
 });
 ui.editGrasp.onclick = openEditor;
+ui.solo.onchange = toggleSolo;
 ui.sideToggle.onclick = () => {
   ui.side.classList.toggle("shut");
   localStorage.setItem("studio3d.side", ui.side.classList.contains("shut") ? "shut" : "");
@@ -1788,7 +1825,7 @@ ui.frame.addEventListener("dblclick", (e) => {
   );
   const ray = new THREE.Raycaster();
   ray.setFromCamera(p, free);
-  const hit = ray.intersectObject(cur.w.root, true)[0];
+  const hit = ray.intersectObject(cur.w.root, true).find((h) => shown(h.object));
   if (hit) {
     orbit.target.copy(hit.point);
     dirty = true;
@@ -1833,7 +1870,10 @@ addEventListener("keydown", (e) => {
     const step = (e.shiftKey ? 10 : 1) / FPS;
     seek(t + (e.key === "ArrowLeft" ? -step : step));
   } else if (e.key === "c" || e.key === "C") setMode(mode === "scene" ? "free" : "scene");
-  else if ((e.key === "r" || e.key === "R") && !mod && cur) reload(e.shiftKey);
+  else if ((e.key === "h" || e.key === "H") && !mod) {
+    ui.solo.checked = !ui.solo.checked;
+    toggleSolo();
+  } else if ((e.key === "r" || e.key === "R") && !mod && cur) reload(e.shiftKey);
   else if (e.key === "Escape" && modeCard.sel) modeCard.close();
   else if (e.key === "Escape" && picked) cardHost.close();
   else if (e.key === "Escape" && sel) select(undefined, false);

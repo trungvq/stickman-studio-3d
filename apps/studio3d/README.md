@@ -65,6 +65,7 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
 | Ctrl+S | Lưu mốc tay, mốc món vào `scenes/` |
 | Del, Backspace | Xoá mốc đang mở thẻ (Dáng tay) |
 | T · Y | Tay nắm của bàn tay đang chọn: dời · xoay (Dáng tay) |
+| H | Bật / tắt **Chỉ người này** (panel Bàn tay) |
 | W S · A D · Q E | Camera tự do: tiến / lùi, sang trái / phải, xuống / lên (theo hướng camera); giữ Shift: nhanh gấp 3 |
 | Esc | Đóng thẻ lần cầm, thẻ mốc; không có thẻ thì bỏ chọn bàn tay |
 
@@ -102,6 +103,11 @@ dòng hay nhấp lên bàn tay / món trên hình (cả camera cảnh) để ch�
   `can-tay` của repo video (ngang: ra ngoài phía tay ấy, theo hai vai), **Sau lưng** khi tay ở sau thân. Đường từ bàn tay tới
   camera vướng một lưới của cảnh (đầu, thân người khác, tường) thì hướng xoay quanh trục đứng tới ±50°, rồi camera kéo vào
   trước chỗ vướng. **Camera bám theo tay khi tua** dời camera theo tâm nắm khi đổi giây.
+- **Chỉ người này** (phím H): khung vẽ chỉ còn người có bàn tay đang chọn và món người ấy đang cầm, treo; bối cảnh, người
+  khác, đồ riêng của cảnh ẩn khi vẽ — vẽ nhanh hơn, bóng của tường và đồ đạc mất theo. Chỉ là ẩn trên hình: cảnh, bản đang
+  sửa và lịch sử không đổi, số đo cầm đồ vẫn đo trên cảnh đủ người. Thứ đã ẩn không chặn nhấp chọn tay, nhấp đúp đặt tâm
+  xoay hay đường camera của các góc cận tay. Chọn tay người khác thì hình theo người ấy; chưa chọn tay thì hiện cả cảnh.
+  Công tắc giữ khi đổi cảnh, không nhớ qua lần mở trang. Khung soạn kiểu cầm không theo công tắc này.
 - số đo cầm đồ ở giây đang xem bằng chính phép đo của `check` nhóm `held` (`heldHands`, `heldHits`, `heldSummary` của rig,
   ngưỡng `stickman.held` của `package.json` repo): lựa chọn cầm của bộ giải kèm nguồn (`·rig` rig giải, `·mđ` mặc định nhóm),
   luật phạm (`!! pierce`, `sink`, `loose`, `role`, `oppose`, `grip`, `wrist`, `reach`, `elbow`, `arm`, `size`, `up`/`face` — món

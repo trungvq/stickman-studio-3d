@@ -106,7 +106,8 @@ export function handRows(
   return out;
 }
 
-const shown = (o: THREE.Object3D) => {
+/** Vật và mọi cha của nó đang hiện */
+export const shown = (o: THREE.Object3D) => {
   for (let p: THREE.Object3D | null = o; p; p = p.parent) if (!p.visible) return false;
   return true;
 };
@@ -228,6 +229,7 @@ export function pickHand(
   let best: HandRow | undefined;
   let bd = near;
   for (const r of rows) {
+    if (!shown(r.fig.root)) continue;
     const p = gripWorld(r.fig, r.side).project(camera);
     if (p.z > 1) continue;
     const d = Math.hypot(((p.x - ndc.x) * px.w) / 2, ((p.y - ndc.y) * px.h) / 2);
