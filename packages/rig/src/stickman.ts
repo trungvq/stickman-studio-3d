@@ -219,13 +219,13 @@ function tubes(m: THREE.Mesh, c: THREE.Vector3[]) {
  * Uốn hai đoạn chi như `limbCurves` của rig 2D: hai đoạn Bézier bậc ba qua gốc, khớp giữa, đầu chi; tiếp tuyến ở khớp
  * giữa song song gốc → đầu chi, `k` là `limbCurve`. Đặt vào `userData.bend` của hai đoạn; pipeline gọi trước mỗi lượt vẽ.
  */
-function bendLimb(upper: THREE.Mesh, mid: THREE.Object3D, lower: THREE.Mesh, k: number) {
+function bendLimb(upper: THREE.Mesh, mid: THREE.Object3D, lower: THREE.Mesh, k: number, ankle?: THREE.Object3D) {
   let key = '';
   const P0 = new THREE.Vector3(), P1 = new THREE.Vector3(), P2 = new THREE.Vector3(), inv = new THREE.Matrix4();
   const bend = () => {
     P1.copy(mid.position);
     P2.set(0, -lower.userData.len, 0).applyQuaternion(mid.quaternion).add(P1);
-    const now = [P1.x, P1.y, P1.z, P2.x, P2.y, P2.z, upper.userData.r, lower.userData.r].join();
+    const now = [P1.x, P1.y, P1.z, P2.x, P2.y, P2.z, upper.userData.r, lower.userData.r, ...(ankle ? ankle.quaternion.toArray() : [])].join();
     if (now === key) return;
     key = now;
     const f = k / 6;
@@ -233,9 +233,36 @@ function bendLimb(upper: THREE.Mesh, mid: THREE.Object3D, lower: THREE.Mesh, k: 
     tubes(upper, [P0, T0, P1.clone().sub(T1), P1]);
     inv.compose(mid.position, mid.quaternion, ONE).invert();
     tubes(lower, [P1.clone(), P1.clone().add(T1), P2.clone().sub(T2), P2].map((p) => p.applyMatrix4(inv)));
+    if (ankle) tuck(lower, ankle);
   };
   upper.userData.bend = lower.userData.bend = bend;
   bend();
+}
+
+/** Mút ống chân dưới cổ chân sâu nhất bấy nhiêu phần độ sâu đế giày (`R.limb`): mút tròn to hơn đế không lòi dưới giày */
+const TUCK = 0.6;
+const _tk = new THREE.Matrix4(), _ti = new THREE.Matrix4(), _tv = new THREE.Vector3();
+/** Ép dẹt phần ống chân và ống phủ dưới cổ chân theo phương đứng của bàn chân (hệ `ankle`), giữ trong giày */
+function tuck(lower: THREE.Mesh, ankle: THREE.Object3D) {
+  _tk.compose(ankle.position, ankle.quaternion, ONE);
+  _ti.copy(_tk).invert();
+  const d = TUCK * R.limb;
+  for (const geo of [lower.geometry, ...((lower.userData.covers ?? []) as Cover[]).map((c) => c.geo)]) {
+    const pos = geo.attributes.position as THREE.BufferAttribute;
+    let low = 0;
+    for (let i = 0; i < pos.count; i++) low = Math.min(low, _tv.fromBufferAttribute(pos, i).applyMatrix4(_ti).y);
+    if (low >= -d) continue;
+    for (let i = 0; i < pos.count; i++) {
+      _tv.fromBufferAttribute(pos, i).applyMatrix4(_ti);
+      if (_tv.y >= 0) continue;
+      _tv.y *= d / -low;
+      _tv.applyMatrix4(_tk);
+      pos.setXYZ(i, _tv.x, _tv.y, _tv.z);
+    }
+    pos.needsUpdate = true;
+    geo.computeBoundingSphere();
+    geo.computeBoundingBox();
+  }
 }
 
 function joint(parent: THREE.Object3D, x: number, y: number, z: number) {
@@ -617,11 +644,11 @@ export function stickman(o: StickmanOptions): Figure {
     }
   }
   for (const s of SIDES) {
-    for (const [a, b, w] of [[arms[s].shoulder, arms[s].elbow, sleeveWidth], [legs[s].hip, legs[s].knee, trouserWidth]] as const) {
+    for (const [a, b, w, ankle] of [[arms[s].shoulder, arms[s].elbow, sleeveWidth], [legs[s].hip, legs[s].knee, trouserWidth, legs[s].ankle]] as const) {
       seg(a).userData.r = seg(b).userData.r = limbR(w);
       // mép chi đè lên thân, hông cùng màu: nét theo khe sâu cỡ bán kính ống
       seg(a).userData.inkGap = limbR(w);
-      bendLimb(seg(a), b, seg(b), limbCurve);
+      bendLimb(seg(a), b, seg(b), limbCurve, ankle);
     }
   }
   const shell = head.children.flatMap((g) => g.children.filter((m) => m.userData.hair === 'shell' || m.userData.hair === 'hat').map((m) => ((m as THREE.Mesh).geometry.attributes.position.array)));
