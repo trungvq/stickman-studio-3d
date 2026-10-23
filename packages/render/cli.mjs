@@ -88,6 +88,7 @@ const actionsDirs = layers(resolve(CWD, flag("actions", "actions")), common?.act
 const animalsDirs = layers(resolve(CWD, flag("animals", "animals")), common?.animals);
 const charsDirs = layers(resolve(CWD, flag("characters", "characters")), common?.characters);
 const heldDirs = layers(resolve(CWD, flag("held", "held")), common?.held);
+const handsDirs = layers(resolve(CWD, flag("hands", "hands")), common?.hands);
 
 // Vệt khớp và bóng que xương của `--stage`; không cờ nào thì ảnh y như không có lớp phủ
 const motionFlags = () => {
@@ -143,13 +144,14 @@ async function worldOn(data, rt) {
 async function threeInput(scene) {
   const cli = await cliModule(CWD);
   if (cli?.worldData) return cli.worldData(CWD);
-  const { actions, animals, props, held } = loadScene(
+  const { actions, animals, props, held, hands } = loadScene(
     scene,
     actionsDirs,
     animalsDirs,
     [resolve(CWD, flag("props", "props"))],
     charsDirs,
     heldDirs,
+    handsDirs,
   );
   const characters = {};
   for (const m of scene.cast) {
@@ -158,7 +160,7 @@ async function threeInput(scene) {
     if (!c.success) die(`${m.character}: ${c.error.message}`);
     characters[m.character] = c.data;
   }
-  return { characters, actions, animals, props, held };
+  return { characters, actions, animals, props, held, hands };
 }
 
 // Có lớp phủ thì stdout chỉ là phần chữ kèm ảnh (cách đọc, bảng sự kiện, số đo), đường dẫn PNG sang stderr —
@@ -191,6 +193,7 @@ try {
       [propsDir],
       charsDirs,
       heldDirs,
+      handsDirs,
     );
 
     const three = has("three");

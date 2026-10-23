@@ -162,6 +162,8 @@ import {
   blendLayers,
   blendPose,
 } from "./blend";
+import { HAND_REST, mixHand } from "./hand";
+import { fingersOf, isHandShape, shapeFingers, withFingers, type HandShapes } from "./handLibrary";
 import { shapeBound, type CarryRef } from "./heldCarry";
 import { isCarryHold, supportChoice, supportGroup } from "./holdLink";
 import { D, FRAMES, RIG, type FrameName, type FrameSpec } from "./constants";
@@ -223,7 +225,7 @@ import {
 } from "./types";
 
 /** Bump khi đổi hình dạng JSON scene; `migrateScene` phải có nhánh tương ứng. */
-export const SCENE_VERSION = 32;
+export const SCENE_VERSION = 33;
 
 /** `"@ten"` hay `"@ten+0.4"` / `"@ten-1"`: một mốc có tên trong `scene.marks` cộng phần lệch giây */
 export const MARK_REF = /^@([A-Za-z0-9_-]+)(?:\s*([+-])\s*(\d+(?:\.\d+)?))?$/;
@@ -415,8 +417,10 @@ const WorldKeySchema = z.object({
  * của hành động); `point` là điểm bàn tay đặt vào đích (thiếu là cổ tay với `at`, lòng tay với `to`; `item:<mốc>` là mốc
  * của món đang cầm); `elbow` hướng khuỷu (bỏ trống là mặc định hệ thân), `elbowLock` thì khuỷu ở mốc nằm đúng hướng ấy,
  * không dò. `palm` / `fingers` / `bend` khai lòng tay theo ý định, đè bàn tay của hành động theo phần đích. `hold` là chỗ cầm từ mốc này (`món@nhóm` hay `{ item, group, … }`,
- * `null` là buông): mốc chỉ có `hold` thì vị trí lấy từ hành động. `ease` là đường hoà vào mốc này từ mốc trước của tay
- * ấy (bỏ trống là `smooth`), `bezier` đi với `ease: "bezier"`. docs/03-scene.md#đích-bàn-tay-thế-giới
+ * `null` là buông): mốc chỉ có `hold` thì vị trí lấy từ hành động. `pose` là dáng ngón (dáng có sẵn hay tên trong thư viện
+ * `hands/`), hoà từ dáng nghỉ theo `w`, đè ngón của hành động; mốc chỉ có `pose` không đụng tới đích và khuỷu. `ease` là
+ * đường hoà vào mốc này từ mốc trước của tay ấy (bỏ trống là `smooth`), `bezier` đi với `ease: "bezier"`.
+ * docs/03-scene.md#đích-bàn-tay-thế-giới
  */
 const HandSchema = z
   .object({
@@ -431,14 +435,36 @@ const HandSchema = z
     fingers: AimDirSchema.optional(),
     bend: z.number().min(-90).max(90).optional(),
     hold: SceneHoldSchema.nullable().optional(),
+    pose: z.string().min(1).optional(),
+    w: z.number().min(0).max(1).optional(),
     ease: z.enum(EASE_NAMES).optional(),
     bezier: BezierSchema.optional(),
   })
-  .refine((h) => (h.hold !== undefined ? !(h.at && h.to) : !!h.at !== !!h.to), {
-    message: "đích bàn tay cần đúng một trong `at` (toạ độ thế giới) hay `to` (mốc thân)",
-  })
+  .refine(
+    (h) =>
+      h.hold !== undefined || (h.pose !== undefined && !h.at && !h.to)
+        ? !(h.at && h.to)
+        : !!h.at !== !!h.to,
+    { message: "đích bàn tay cần đúng một trong `at` (toạ độ thế giới) hay `to` (mốc thân)" },
+  )
   .refine((h) => !h.hold || (!h.palm && !h.fingers && h.bend === undefined), {
     message: "mốc có `hold` thì hướng tay do ý định của món quyết — bỏ `palm`, `fingers`, `bend`",
+  })
+  .refine((h) => h.hold === undefined || h.pose === undefined, {
+    message: "mốc có `hold` thì dáng ngón do kiểu cầm quyết — bỏ `pose`",
+  })
+  .refine(
+    (h) =>
+      !!(h.at || h.to) ||
+      h.hold !== undefined ||
+      (!h.palm && !h.fingers && h.bend === undefined && !h.elbow && !h.point),
+    {
+      message:
+        "mốc chỉ có `pose` chỉ đổi dáng ngón — hướng tay, khuỷu, điểm bàn tay cần `at` hay `to`",
+    },
+  )
+  .refine((h) => h.w === undefined || h.pose !== undefined, {
+    message: "`w` chỉ đi với `pose`: phần hoà từ dáng nghỉ tới dáng ấy",
   })
   .refine((h) => !!h.to || (h.side === undefined && h.offset === undefined), {
     message: "`side`, `offset` chỉ đi với `to`",
@@ -951,6 +977,7 @@ export function migrateScene(json: unknown): unknown {
   // lệnh chuyển `stickman migrate-held` — chuyển cần món bản 1 nên không tự đổi ở đây
   // v30 → v31 `world.hands[]` nhận `ease` / `bezier`, `items[]` nhận `bezier`; thiếu `ease` là `smooth` như cũ
   // v31 → v32 `world.hands[]` nhận `elbowLock`; thiếu là khuỷu dò như cũ
+  // v32 → v33 `world.hands[]` nhận dáng tay `pose` / `w` và mốc chỉ có `pose`; thiếu là ngón theo hành động như cũ
   o.schemaVersion = SCENE_VERSION;
   return o;
 }
@@ -1065,6 +1092,8 @@ export interface SceneRuntime {
   lens?: Lens;
   /** Món cầm tay (`held/<món>.json`) theo tên, do chỗ nạp đưa vào; `world.hands[].hold` tra ở đây */
   held: Record<string, HeldItemSpec>;
+  /** Thư viện dáng tay (`hands/<tên>.json`) theo tên, do chỗ nạp đưa vào; `world.hands[].pose` không có sẵn tra ở đây */
+  hands: HandShapes;
   /** `scene.items`, `@mốc` đã thành số; `itemAt` đọc */
   items?: SceneItemMark[];
   /**
@@ -1383,6 +1412,7 @@ export function resolveScene(
   heights: Record<string, number> = {},
   bodies: Record<string, Body3> = {},
   held0: Record<string, HeldItemSpec> = {},
+  hands: HandShapes = {},
 ): SceneRuntime {
   // Mốc có tên giải ra số ở đây và chỉ ở đây: mọi thứ dưới đọc số
   const scene = unmarkScene(raw);
@@ -1467,6 +1497,14 @@ export function resolveScene(
     keyed(m.id, m.fade, "fade");
     keyed(m.id, m.world?.path, "world.path");
     keyed(m.id, m.world?.hands, "world.hands");
+    for (const k of m.world?.hands ?? [])
+      for (const side of ["right", "left"] as const) {
+        const name = k[side]?.pose;
+        if (name !== undefined && !isHandShape(name, hands))
+          fail(
+            `${m.id}: \`world.hands\` ${side} t=${k.t}: không có dáng tay \`${name}\` — dáng có sẵn của rig (\`HAND_POSES\`) hay \`hands/${name}.json\` của thư viện (docs/03-scene.md#đích-bàn-tay-thế-giới)`,
+          );
+      }
     if (m.world?.hands)
       checkHolds(m.id, m.world.hands, held, scene.cast, scene.items, () =>
         holderDims(heights[m.id] ?? 1),
@@ -1586,6 +1624,7 @@ export function resolveScene(
     heights,
     bodies,
     held,
+    hands,
     ...(scene.items && { items: scene.items }),
     animals: beasts.map((a) => {
       const host = hosts.get(a.id);
@@ -1602,7 +1641,7 @@ export function resolveScene(
   };
   sources.set(rt, {
     shape: sceneShape(raw),
-    args: [actions, animals, propSpecs, heights, bodies, held0],
+    args: [actions, animals, propSpecs, heights, bodies, held0, hands],
   });
   return rt;
 }
@@ -1619,6 +1658,7 @@ const sources = new WeakMap<
       Record<string, number>,
       Record<string, Body3>,
       Record<string, HeldItemSpec>,
+      HandShapes,
     ];
   }
 >();
@@ -1644,6 +1684,7 @@ export function refreshRuntime(rt: SceneRuntime, scene: SceneData): boolean {
   // giữ object người: dáng đi đã nướng (`walkerOf`) nhớ theo nó, không đổi theo mốc tay
   rt.cast.forEach((m, i) => (m.world = next.cast[i].world));
   rt.held = next.held;
+  rt.hands = next.hands;
   if (next.items) rt.items = next.items;
   else delete rt.items;
   // thân người cầm (`trunks`) dựng trước khi giải tay: giữ
@@ -1794,12 +1835,12 @@ export function sceneAt(
     faces.push(faceUpTo(tr, i, time, clock));
     equips.push(equipUpTo(tr, i, time, clock));
   }
-  const pose = worldPoseAt(m, time, walk, height, dims.hipHalf);
+  const acted = worldPoseAt(m, time, walk, height, dims.hipHalf);
   // Thân lật thì `poseAt` đổi kênh tay gần ↔ xa: lớp hành động khai theo cùng tay ấy; lớp mặc định
   // vẫn theo chỗ gần / xa nên đổi trước khi ghép với nó
   const own = clock && clock(time).half % 2 ? layers.map(swapLayers) : layers;
   const placed =
-    m.world && rt.lens && worldAt(rt.lens, m.world, time, pose, height, dims.legHalf, walk).world;
+    m.world && rt.lens && worldAt(rt.lens, m.world, time, acted, height, dims.legHalf, walk).world;
   const world =
     placed && m.world?.hands
       ? withHands(
@@ -1812,6 +1853,8 @@ export function sceneAt(
           { rt, height, id },
         )
       : placed;
+  const pose =
+    world && m.world?.hands ? shapeHands(acted, m.world.hands, time, world.flip, rt.hands) : acted;
   const body = world ? viewOfTheta(world.theta) : stepOf(m.view, time);
   const views = clampViews({ body, head: m.headView && !world ? stepOf(m.headView, time) : body });
   const spot3 = world && {
@@ -3409,7 +3452,9 @@ function handAt(
   poseAt?: (t: number) => object,
   host?: GraspHost,
 ): Reach | undefined {
-  const ks = keys.filter((k) => k[side] !== undefined) as (HandKey & { t: number })[];
+  const ks = keys.filter((k) => k[side] !== undefined && !shapeOnly(k[side])) as (HandKey & {
+    t: number;
+  })[];
   const now = holdRun(keys, side, time);
   // tay phụ của `both` trên món đặt trước, hay lần cầm ấy vừa xong
   const extra = host && !now ? supportHold(host, keys, side, time, held) : undefined;
@@ -3629,7 +3674,7 @@ const lockOf = (h: HandKey["right"]) => (h?.elbowLock && h.elbow ? 1 : 0);
  * giữa hai mốc theo `ease` của mốc sau như phần đích; trước mốc đầu và sau mốc cuối giữ nguyên
  */
 function keyLock(keys: readonly HandKey[], side: HandSide, time: number): number {
-  const ks = keys.filter((k) => k[side] !== undefined);
+  const ks = keys.filter((k) => k[side] !== undefined && !shapeOnly(k[side]));
   if (!ks.length) return 0;
   let i = 0;
   while (i + 1 < ks.length && ks[i + 1].t <= time) i++;
@@ -3722,6 +3767,55 @@ function autoRotation(
   if (!(g > 1e-9)) return R1;
   const s = hermite(R0 && -rotGap(R0, R1), 0, g, R3 && g + rotGap(R2, R3), n.h0, n.h, n.h2, u);
   return mixRotation(R1, R2, s / g);
+}
+
+/** Mốc chỉ đổi dáng ngón (`pose`, không `at` / `to` / `hold`): đích và khuỷu bỏ qua nó */
+const shapeOnly = (h: HandKey["right"]): boolean =>
+  !!h && h.pose !== undefined && !h.at && !h.to && h.hold === undefined;
+
+/**
+ * Ngón của tay `side` ở `time` theo dáng `pose` của các mốc nhắc tay ấy, trên số bàn tay của hành động `act` (xoay, gập
+ * cổ tay giữ của hành động): mốc có `pose` ra dáng ấy, mốc khác ra ngón của hành động; giữa hai mốc hoà theo `ease` của
+ * mốc sau, trước mốc đầu và sau mốc cuối giữ nguyên. Không mốc nào khai `pose` thì `undefined`
+ */
+function shapeAt(
+  keys: readonly HandKey[],
+  side: HandSide,
+  time: number,
+  lib: HandShapes,
+  act: readonly number[],
+): number[] | undefined {
+  const ks = keys.filter((k) => k[side] !== undefined);
+  if (!ks.some((k) => k[side]?.pose !== undefined)) return undefined;
+  let i = 0;
+  while (i + 1 < ks.length && ks[i + 1].t <= time) i++;
+  const a = ks[i];
+  const b = time > a.t ? ks[i + 1] : undefined;
+  const own = fingersOf(act);
+  const at = (h: HandKey["right"]) =>
+    (h?.pose !== undefined && shapeFingers(h.pose, lib, h.w ?? 1)) || own;
+  const fa = at(a[side]);
+  if (!b) return withFingers(act, fa);
+  const rb = b[side];
+  const f = easeAt({ ease: rb?.ease ?? "smooth", bezier: rb?.bezier }, (time - a.t) / (b.t - a.t));
+  return withFingers(act, mixHand(fa, at(rb), f));
+}
+
+/** `pose` với ngón của hành động đè theo `pose` của mốc tay (`shapeAt`): tay phải là kênh gần khi không lật */
+function shapeHands(
+  pose: Pose,
+  keys: readonly HandKey[],
+  time: number,
+  flip: boolean,
+  lib: HandShapes,
+): Pose {
+  let hand = pose.hand;
+  for (const side of ["right", "left"] as const) {
+    const ch = (side === "right") === !flip ? "an" : "af";
+    const v = shapeAt(keys, side, time, lib, pose.hand?.[ch] ?? HAND_REST);
+    if (v) hand = { ...hand, [ch]: v };
+  }
+  return hand === pose.hand ? pose : { ...pose, hand };
 }
 
 /** Gắn đích cổ tay thế giới vào chỗ đặt: tay phải là tay gần khi không lật */

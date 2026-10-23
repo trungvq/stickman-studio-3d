@@ -942,6 +942,11 @@ button.key.ring {
   background: var(--panel);
 }
 
+button.key.pose {
+  border-radius: 2px;
+  background: var(--panel);
+}
+
 button.key.null {
   width: 8px;
   height: 8px;
@@ -967,6 +972,7 @@ button.key.on {
 }
 
 button.key.on.ring,
+button.key.on.pose,
 button.key.on.null {
   background: var(--panel);
 }

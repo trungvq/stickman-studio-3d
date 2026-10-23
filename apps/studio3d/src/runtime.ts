@@ -16,6 +16,8 @@ export type Data = {
   animals: Record<string, unknown>;
   props: Record<string, unknown>;
   held: Record<string, unknown>;
+  /** Thư viện dáng tay (`hands/`, hai lớp) */
+  hands?: Record<string, unknown>;
 };
 
 /**
@@ -48,6 +50,7 @@ export function runtimeOf(scene: SceneData, data: Data) {
     heights,
     bodies,
     data.held as never,
+    (data.hands ?? {}) as never,
   );
   // mốc món `rest` tra tay người thả ở `rt.chars`, như `loadScene` của render
   runtime.chars = { ...chars, ...runtime.chars };

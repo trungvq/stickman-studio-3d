@@ -84,6 +84,7 @@ const { rt, animals } = loadScene(
   [propsDir],
   charsDirs,
   layers(resolve(CWD, flag("held", "held")), common?.held),
+  layers(resolve(CWD, flag("hands", "hands")), common?.hands),
 );
 
 const chars = {};

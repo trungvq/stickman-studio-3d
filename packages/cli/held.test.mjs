@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import * as rig from "@stickman3d/sketch";
-import { heldFrame, heldOptions, heldRows } from "./lib.mjs";
+import { COMMON, heldFrame, heldOptions, heldRows, loadHands } from "./lib.mjs";
 
 const FIXTURE = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -175,5 +175,26 @@ describe("check: đồ cầm tay chỗ cầm nhóm", () => {
       run([v2({ grip: 2 })], heldOptions(pkg({ grip: 1 }))).map((r) => r.key.split("|")[0]),
       ["held:grip"],
     );
+  });
+});
+
+describe("loadHands", () => {
+  it("hai lớp theo tên không đuôi, bản của repo đè bản chung; file hỏng hay tên sai thì bỏ", () => {
+    const dir = mkdtempSync(join(tmpdir(), "hands-"));
+    mkdirSync(join(dir, "hands"));
+    const own = { fingers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] };
+    const put = (f, o) => writeFileSync(join(dir, "hands", f), JSON.stringify(o));
+    put("peace.json", own);
+    put("vay.json", { ...own, note: "vẫy" });
+    put("hong.json", { fingers: [1, 2] });
+    put("Hoa.json", own);
+    put("fist.json", own);
+    const common = loadHands([COMMON.hands]);
+    assert.ok(common.peace.note);
+    const lib = loadHands([join(dir, "hands"), COMMON.hands]);
+    assert.equal(lib.vay.note, "vẫy");
+    for (const n of ["hong", "Hoa", "fist"]) assert.equal(lib[n], undefined, n);
+    assert.deepEqual(lib.peace.fingers, own.fingers);
+    assert.equal(lib.peace.schemaVersion, rig.HAND_SHAPE_VERSION);
   });
 });

@@ -29,6 +29,7 @@ import {
   ACTIONS,
   ANIMALS,
   CHARACTERS,
+  HANDS,
   HELD,
   PROPS,
   SCENES,
@@ -85,7 +86,17 @@ const LensStill = ({ scene, t, lens }: { scene: SceneData; t: number; lens: Lens
       `cảnh ${scene.name} không có trong CANH_3D (khoi3d/canh.ts) — không phải cảnh 3D`,
     );
   const rt = useMemo(
-    () => resolveScene(scene, ACTIONS, ANIMALS, PROPS, castHeights(scene), castBodies(scene), HELD),
+    () =>
+      resolveScene(
+        scene,
+        ACTIONS,
+        ANIMALS,
+        PROPS,
+        castHeights(scene),
+        castBodies(scene),
+        HELD,
+        HANDS,
+      ),
     [scene],
   );
   const fr = FRAMES[scene.frame];
@@ -175,7 +186,9 @@ const SoiRoot = () => {
               return [
                 s,
                 d
-                  ? Math.ceil(resolveScene(d, ACTIONS, ANIMALS, PROPS, {}, {}, HELD).duration * FPS)
+                  ? Math.ceil(
+                      resolveScene(d, ACTIONS, ANIMALS, PROPS, {}, {}, HELD, HANDS).duration * FPS,
+                    )
                   : 0,
               ];
             }),

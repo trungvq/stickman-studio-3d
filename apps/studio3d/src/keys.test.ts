@@ -297,11 +297,15 @@ describe("hold của thẻ mốc", () => {
     expect(c.ease).toBe("linear");
     touch(b);
     expect(b.ease).toBe("auto");
-    expect([null, { hold: "coc@cylinder" }, { hold: null, to: "hip" }].map(handShape)).toEqual([
-      "null",
-      "ring",
-      "dot",
-    ]);
+    expect(
+      [
+        null,
+        { hold: "coc@cylinder" },
+        { hold: null, to: "hip" },
+        { pose: "fist" },
+        { pose: "fist", at: [0, 0, 0] },
+      ].map(handShape),
+    ).toEqual(["null", "ring", "dot", "pose", "dot"]);
   });
 });
 

@@ -436,8 +436,8 @@ export function renderBoxes({ character, poseName = "idle", arms = 22, view, hea
  * Nạp mọi hành động, con vật và đạo cụ mà scene nhắc tới rồi `resolveScene`; mỗi `*Dirs` là
  * các lớp, xem `layers`. Trôi ngang của con vật nướng từ chính JSON của nó nên phải có mặt
  * ngay lúc này; đạo cụ có người ngồi cần chỗ ngồi; `charactersDirs` cho `rt.heights` và `rt.bodies` — đạo
- * cụ theo người cao thấp khác `1` trôi theo số ấy; `heldDirs` cho món cầm tay của `world.hands[].hold`. Thiếu file thì
- * để trống, chỗ vẽ báo sau.
+ * cụ theo người cao thấp khác `1` trôi theo số ấy; `heldDirs` cho món cầm tay của `world.hands[].hold`, `handsDirs` cho
+ * dáng tay của thư viện mà `world.hands[].right|left.pose` gọi. Thiếu file thì để trống, chỗ vẽ báo sau.
  */
 export function loadScene(
   scene,
@@ -446,6 +446,7 @@ export function loadScene(
   propsDirs = [],
   charactersDirs = [],
   heldDirs = [],
+  handsDirs = [],
 ) {
   const actions = {};
   const need = (name) => {
@@ -500,12 +501,21 @@ export function loadScene(
         const item = rig.heldBase(rig.sceneHoldRef(h).item);
         held[item] ??= maybe(heldDirs, `${item}.json`, rig.parseHeldItem);
       }
-  const rt = rig.resolveScene(scene, actions, animals, props, heights, bodies, held);
+  // dáng tay của thư viện mà `world.hands[].pose` gọi; dáng có sẵn của rig không cần file
+  const hands = {};
+  for (const m of scene.cast)
+    for (const k of m.world?.hands ?? [])
+      for (const name of [k.right?.pose, k.left?.pose]) {
+        if (!name || name in rig.HAND_POSES || name in hands) continue;
+        const shape = maybe(handsDirs, `${name}.json`, rig.parseHandShape);
+        if (shape) hands[name] = shape;
+      }
+  const rt = rig.resolveScene(scene, actions, animals, props, heights, bodies, held, hands);
   // mốc món `rest` tra tay người thả ở `rt.chars`
   rt.chars = { ...chars, ...rt.chars };
   // `scene.fx` qua zod của @stickman3d/fx ngay lúc nạp — rig chỉ mang nó theo
   FX.sceneFx(rt);
-  return { actions, animals, props, held, rt };
+  return { actions, animals, props, held, hands, rt };
 }
 
 /** Đỉnh con vật tính từ mặt đất: lưng cộng cổ và nửa đầu — đủ cho cả voi lẫn gà ngẩng */

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { after, describe, it } from "node:test";
@@ -99,5 +99,47 @@ describe("ảnh three", { skip }, () => {
   it("size lệch tỉ lệ khung cảnh thì báo", () => {
     assert.throws(() => threeSize("640x640", loaded.rt.frame), /tỉ lệ/);
     assert.deepEqual(threeSize("1280x720", loaded.rt.frame), { w: 1280, h: 720 });
+  });
+});
+
+describe("dáng tay của thư viện", () => {
+  const posed = (pose) =>
+    rig.parseScene({
+      ...SCENE,
+      cast: [
+        {
+          ...SCENE.cast[0],
+          world: { ...SCENE.cast[0].world, hands: [{ t: 0.5, right: { pose } }] },
+        },
+      ],
+    }).data;
+  const load = (scene, handsDirs) =>
+    loadScene(
+      scene,
+      [join(COMMON, "actions")],
+      [],
+      [],
+      [join(COMMON, "characters")],
+      [],
+      handsDirs,
+    );
+
+  it("nạp dáng cảnh gọi qua hai lớp, bản của repo đè bản chung", () => {
+    const repo = mkdtempSync(join(tmpdir(), "stickman-hands-"));
+    after(() => rmSync(repo, { recursive: true, force: true }));
+    mkdirSync(join(repo, "hands"));
+    const own = { fingers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] };
+    writeFileSync(join(repo, "hands", "peace.json"), JSON.stringify(own));
+    const common = load(posed("peace"), [join(COMMON, "hands")]);
+    assert.ok(common.hands.peace.note);
+    assert.equal(common.rt.hands.peace, common.hands.peace);
+    const mine = load(posed("peace"), [join(repo, "hands"), join(COMMON, "hands")]);
+    assert.deepEqual(mine.hands.peace.fingers, own.fingers);
+    // dáng có sẵn của rig không cần file
+    assert.deepEqual(load(posed("fist"), []).hands, {});
+  });
+
+  it("dáng không có ở lớp nào thì `resolveScene` báo", () => {
+    assert.throws(() => load(posed("peace"), []), /hands\/peace\.json/);
   });
 });

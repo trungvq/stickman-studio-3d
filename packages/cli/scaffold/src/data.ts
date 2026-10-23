@@ -3,16 +3,18 @@
 // Thêm file vào các thư mục ấy là Remotion Studio thấy ngay, khỏi sửa file này. `scenes/`, `episodes/` và `assets/audio/`
 // chỉ vào bundle phần thuộc phạm vi bundle (`tools/scope.mjs`, docs/03-scene.md#phạm-vi-bundle): plugin của
 // `tools/webpack.mjs` thu hẹp ba context ấy, nên `SCENES`, `EPISODES`, `AUDIO` chỉ có phần ấy.
-// `actions/`, `animals/`, `characters/`, `held/` và `pieces/` có bộ chung của studio làm lớp dưới: `@stickman-common` là alias
+// `actions/`, `animals/`, `characters/`, `held/`, `hands/` và `pieces/` có bộ chung của studio làm lớp dưới: `@stickman-common` là alias
 
 // `remotion.config.ts` trỏ vào `@stickman3d/cli`; file cùng tên thì bản của repo đè.
 import {
   animalFiles,
   body3,
   characterFiles,
+  handShapeNameProblem,
   parseAction,
   parseAnimal,
   parseCharacter,
+  parseHandShape,
   parseHeldItem,
   parseProp,
   parseScene,
@@ -21,6 +23,8 @@ import {
   type AnimalData,
   type Body3,
   type CharacterData,
+  type HandShape,
+  type HandShapes,
   type HeldItemSpec,
   type PieceUrls,
   type PropData,
@@ -38,6 +42,7 @@ const scenesCtx = require.context("../scenes", false, /\.json$/);
 const propsCtx = require.context("../props", false, /\.json$/);
 const animalsCtx = require.context("../animals", false, /\.json$/);
 const heldCtx = require.context("../held", false, /\.json$/);
+const handsCtx = require.context("../hands", false, /\.json$/);
 const piecesCtx = require.context("../pieces", true, /\.png$/);
 const episodesCtx = require.context("../episodes", false, /\.json$/);
 // Nền và tiếng nằm ở `assets/`, không phải `pieces/` — chúng không phải mảnh của ai
@@ -56,6 +61,11 @@ const commonAnimalsCtx = require.context(
 );
 const commonHeldCtx = require.context(
   "@stickman-common/held",
+  false,
+  /^\.\/(?!index\.json$).+\.json$/,
+);
+const commonHandsCtx = require.context(
+  "@stickman-common/hands",
   false,
   /^\.\/(?!index\.json$).+\.json$/,
 );
@@ -136,6 +146,13 @@ export const HELD: Record<string, HeldItemSpec> = Object.fromEntries(
     f.replace(/\.json$/, ""),
     h,
   ]),
+);
+
+/** Dáng tay có tên lấy khoá không đuôi — `world.hands[].right|left.pose` gọi bằng tên; `resolveScene` cần bảng này */
+export const HANDS: HandShapes = Object.fromEntries(
+  Object.entries(load<HandShape>([commonHandsCtx, handsCtx], parseHandShape))
+    .map(([f, h]) => [f.replace(/\.json$/, ""), h] as const)
+    .filter(([n]) => !handShapeNameProblem(n)),
 );
 
 /** Một composition cho mỗi file trong `episodes/` của phạm vi bundle, như `scenes/` */

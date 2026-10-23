@@ -4,6 +4,8 @@
 import * as rig from "@stickman3d/rig";
 import type {
   AuthoredGrasp,
+  HandShape,
+  HandShapes,
   HeldItemSpec,
   AaMode,
   CharacterData,
@@ -47,6 +49,7 @@ import {
   handShape,
   handsOf,
   holdPickOf,
+  insertHandKey,
   keyTime,
   keyValue,
   marksOf,
@@ -67,6 +70,7 @@ import { ModeCard } from "./modeUi";
 import { runHoldKeys, setRunVariant, styleEntries, styleUses, type RunRef } from "./named";
 import { renderStyles } from "./namedUi";
 import { plusHand, plusItem } from "./plus";
+import { PoseEditor, type PoseHost, type PoseTarget, type ShapeEntry } from "./poseEditor";
 import { runtimeOf, type Data } from "./runtime";
 import { SceneList } from "./sceneList";
 import { Solo } from "./solo";
@@ -126,6 +130,7 @@ const ui = {
   solo: $<HTMLInputElement>("solo"),
   measure: $<HTMLDivElement>("measure"),
   editGrasp: $<HTMLButtonElement>("editGrasp"),
+  editShape: $<HTMLButtonElement>("editShape"),
   styles: $<HTMLElement>("styles"),
   editor: $<HTMLElement>("editor"),
 };
@@ -269,6 +274,9 @@ interface Scene3Json {
   heldRaw?: Record<string, unknown>;
   /** Hash của từng file `held/` lúc nạp, như `hash` */
   heldHash?: Record<string, string>;
+  /** JSON thô và hash lúc nạp của dáng tay trong `hands/` của repo (lớp chung ở `data.hands`) */
+  handsRaw?: Record<string, unknown>;
+  handsHash?: Record<string, string>;
   heldOpts?: Record<string, unknown> & { off?: true; error?: string };
   /** `stickman.snap` của repo (ngưỡng giật của `check`) */
   snapOpts?: { px?: number; k?: number; fps?: number; off?: true; error?: string };
@@ -290,6 +298,21 @@ function heldOf(j: Scene3Json, warn: string[]) {
     else warn.push(`held/${k}.json: ${r.error.message.slice(0, 200)}`);
   }
   return { ...out, ...patched };
+}
+
+/**
+ * Thư viện dáng tay của cảnh: bản `worldData` (hai lớp, rig bản dựng của CLI parse), đè bằng JSON thô của `hands/` parse
+ * bằng mã nguồn rig
+ */
+function handsLib(j: Scene3Json, warn: string[]): HandShapes {
+  const out = { ...(j.data.hands ?? {}) } as HandShapes;
+  for (const [k, raw] of Object.entries(j.handsRaw ?? {})) {
+    const why = rig.handShapeNameProblem(k);
+    const r = rig.parseHandShape(raw);
+    if (!why && r.success) out[k] = r.data;
+    else warn.push(`hands/${k}.json: ${why ?? r.error!.message.slice(0, 200)}`);
+  }
+  return out;
 }
 
 interface LoadOptions {
@@ -339,7 +362,7 @@ async function load(name: string, o: LoadOptions = {}): Promise<boolean> {
       ui.conflict.hidden = true;
     }
     const warnings: string[] = [];
-    const data = { ...j.data, held: heldOf(j, warnings) };
+    const data = { ...j.data, held: heldOf(j, warnings), hands: handsLib(j, warnings) };
     const src = work.raw;
     const parsed = rig.parseScene(src);
     if (!parsed.success) throw new Error(`scene JSON sai: ${parsed.error.message}`);
@@ -670,6 +693,10 @@ function panel() {
   ui.selBox.hidden = !r || !!editor;
   if (!r || !cur) return;
   ui.selName.textContent = `${r.id} · tay ${sideName(r.side)}`;
+  const free = !r.hold && !r.carry;
+  ui.editGrasp.hidden = free;
+  ui.editShape.hidden = !free;
+  ui.editShape.disabled = !work;
   ui.editGrasp.disabled = !editable(r);
   ui.editGrasp.title = editable(r)
     ? "Soạn kiểu cầm món × nhóm × biến thể này bằng mắt"
@@ -755,7 +782,7 @@ function view(a: Angle) {
 
 // --- soạn kiểu cầm ---
 
-let editor: GraspEditor | null = null;
+let editor: GraspEditor | PoseEditor | null = null;
 
 const editable = (r: HandRow) =>
   !!(r.hold?.spec?.shape && r.report && r.report.group !== "carry" && r.report.choice.variant);
@@ -958,6 +985,149 @@ function openEditor() {
   syncEdit();
 }
 
+// --- chỉnh dáng tay không cầm đồ ---
+
+/** Dòng mốc của tay `side` người `id` đúng giây `at` trong `raw`; không có là `-1` */
+function keyIndexAt(raw: Json, id: string, side: HandSide, at: number): number {
+  const marks = marksOf(raw);
+  return (handsOf(raw, id) ?? []).findIndex(
+    (k) => k[side] !== undefined && Math.abs(timeOf(k.t, marks) - at) < 5e-4,
+  );
+}
+
+/** Dáng có sẵn của rig và dáng của thư viện (chung, của repo) cho khung dáng tay và thẻ mốc */
+function shapeEntries(): ShapeEntry[] {
+  const lib = (cur?.data.hands ?? {}) as HandShapes;
+  const own = fetched?.j.handsHash ?? {};
+  return [
+    ...Object.keys(lib)
+      .filter((n) => !(n in rig.HAND_POSES))
+      .sort()
+      .map((name) => ({
+        name,
+        label: name,
+        builtin: false,
+        own: name in own,
+        ...(lib[name].note && { note: lib[name].note }),
+      })),
+    ...rig.HAND_POSE_KINDS.map((name) => ({
+      name,
+      label: rig.HAND_POSE_LABELS[name],
+      builtin: true,
+      own: false,
+    })),
+  ];
+}
+
+/** Mốc của cảnh đang sửa gọi dáng `name` */
+function shapeUses(raw: Json, name: string): string[] {
+  const out: string[] = [];
+  for (const c of (raw.cast as Json[] | undefined) ?? [])
+    for (const k of handsOf(raw, c.id as string) ?? [])
+      for (const side of ["right", "left"] as HandSide[]) {
+        const v = k[side];
+        if (isObj(v) && v.pose === name) out.push(`${c.id} tay ${SIDE_NAME[side]} t=${k.t}`);
+      }
+  return out;
+}
+
+/**
+ * Ghi dáng `shape` vào `hands/<name>.json` kèm hash lúc nạp (`create`: dáng mới, file đã có thì 409); dáng đã lưu thành bản
+ * đọc, cảnh dựng lại từ nó
+ */
+async function postHands(name: string, shape: HandShape, create: boolean) {
+  const res = await fetch(`/api/hands?name=${encodeURIComponent(name)}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      shape,
+      hash: create ? null : (fetched?.j.handsHash?.[name] ?? null),
+    }),
+  });
+  const j = await res.json();
+  if (j.error) throw new Error(j.error);
+  if (fetched) {
+    fetched.j.handsRaw = { ...fetched.j.handsRaw, [name]: j.shape };
+    fetched.j.handsHash = { ...fetched.j.handsHash, [name]: j.hash };
+  }
+  if (cur) await load(cur.name, { keepTime: true, reuse: true, quiet: true });
+  return j as { file: string };
+}
+
+/**
+ * Ghi `pose: name` vào mốc tay của bàn tay `tg` ở giây đang chỉnh (không có mốc thì thêm mốc chỉ có `pose`), một bước của
+ * lịch sử chung; cảnh lưu bằng Lưu như mọi mốc
+ */
+function useShape(tg: PoseTarget, name: string): { message: string; error?: boolean } {
+  if (!work || !cur) return { message: "chưa mở cảnh", error: true };
+  const id = tg.row.id;
+  const side = sideOf(tg.row.side);
+  const at = tg.scene.t;
+  const i = keyIndexAt(work.raw, id, side, at);
+  let next: Json;
+  let key: KeyRef;
+  try {
+    if (i >= 0) {
+      key = { kind: "hand", id, side, index: i };
+      next = editKey(work.raw, key, (m) => {
+        if (!m) throw new Error("mốc ở giây này là `null` (thả đích): thêm `pose` ở mốc khác");
+        if (m.hold !== undefined)
+          throw new Error("mốc ở giây này khai `hold`: dáng ngón do kiểu cầm quyết");
+        m.pose = name;
+        delete m.w;
+      });
+    } else ({ raw: next, key } = insertHandKey(work.raw, id, side, at, { pose: name }));
+  } catch (e) {
+    return { message: (e as Error).message, error: true };
+  }
+  if (!apply(next, { key }))
+    return { message: `không ghi được \`pose\`: ${ui.msg.textContent}`, error: true };
+  return {
+    message: `${id} tay ${SIDE_NAME[side]} ${at.toFixed(2)} s: \`pose: "${name}"\`${i < 0 ? " (mốc mới chỉ có `pose`)" : ""} — chưa lưu cảnh (Lưu, Ctrl+S)`,
+  };
+}
+
+const shapeHost: PoseHost = {
+  shapes: shapeEntries,
+  fingers: (name) => rig.shapeFingers(name, (cur?.data.hands ?? {}) as HandShapes),
+  save: async (name, shape, create) => (await postHands(name, shape, create)).file,
+  use: useShape,
+  uses: (name) => (work ? shapeUses(work.raw, name) : []),
+  close: () => closeEditor(),
+  wheel: () => fc.wheel,
+  aa: () => ui.aa.value as AaMode,
+};
+
+/** Khung dáng tay cho bàn tay không cầm đồ đang chọn, ở giây đang xem */
+function openShapeEditor() {
+  const r = selRow();
+  if (!r || !cur || !work || r.hold || r.carry || !r.fig.hands) return;
+  closeEditor();
+  ui.selBox.hidden = true;
+  ui.editor.hidden = false;
+  rowsT = NaN;
+  const h = r.fig.hands[r.side];
+  const side = sideOf(r.side);
+  const i = keyIndexAt(work.raw, r.id, side, t);
+  const v = i >= 0 ? handsOf(work.raw, r.id)![i][side] : undefined;
+  const pose = isObj(v) && typeof v.pose === "string" ? v.pose : undefined;
+  editor = new PoseEditor(
+    {
+      row: r,
+      k: h.scale,
+      long: h.long,
+      scene: editScene(r),
+      drawn: Array.from({ length: 20 }, (_, j) => h.shown[j] ?? 0),
+      ...(pose && { pose }),
+      key: `mốc tay ${SIDE_NAME[side]} ${t.toFixed(2)} s${i < 0 ? " (mốc mới)" : ""}`,
+    },
+    shapeHost,
+    ui.editor,
+    ui.frame,
+  );
+  syncEdit();
+}
+
 function closeEditor() {
   if (!editor) return;
   editor.dispose();
@@ -1117,7 +1287,15 @@ function lanesOf(id: string, on: HandSide): Lane[] {
       const key: KeyRef = { kind: "hand", id, side, index };
       const tt = timeOf(row.t, marks);
       const shape = handShape(v);
-      const what = shape === "null" ? "null — thả đích" : shape === "ring" ? "chỉ `hold`" : "đích";
+      const what =
+        shape === "null"
+          ? "null — thả đích"
+          : shape === "ring"
+            ? "chỉ `hold`"
+            : shape === "pose"
+              ? "chỉ `pose`"
+              : "đích";
+      const pose = isObj(v) && typeof v.pose === "string" ? ` · dáng ${v.pose}` : "";
       return [
         {
           key,
@@ -1125,7 +1303,7 @@ function lanesOf(id: string, on: HandSide): Lane[] {
           shape,
           on: sameKey(picked, key),
           lock: isObj(v) && v.elbowLock === true,
-          title: `${at(row.t, tt)} · ${what}${isObj(v) && v.ease ? ` · ${v.ease}` : ""}`,
+          title: `${at(row.t, tt)} · ${what}${pose}${isObj(v) && v.ease ? ` · ${v.ease}` : ""}`,
         },
       ];
     });
@@ -1429,6 +1607,17 @@ function cardOf(k: KeyRef): CardModel | null {
         group: pick?.group ?? run?.group ?? "sheet",
         variant: pick?.variant ?? "",
       },
+      shape: {
+        pose: typeof m?.pose === "string" ? m.pose : "",
+        ...(typeof m?.w === "number" && { w: m.w }),
+        options: shapeEntries().map((e) => ({
+          v: e.name,
+          label: `${e.builtin ? `${e.name} (${e.label})` : `${e.name} · hands/`}${e.note ? ` — ${e.note}` : ""}`,
+        })),
+        ...(!m
+          ? { disabled: "mốc `null` (thả đích) không có dáng ngón: thêm `pose` ở mốc khác" }
+          : m.hold !== undefined && { disabled: "mốc có `hold`: dáng ngón do kiểu cầm quyết" }),
+      },
       lock: {
         on: lockOn,
         ...(!m && { disabled: "mốc `null` không có khuỷu" }),
@@ -1499,6 +1688,25 @@ const cardHost = {
         x.elbowLock = true;
       } else delete x.elbowLock;
     });
+  },
+  shape(pose: string | undefined, w: number | undefined) {
+    if (!work || picked?.kind !== "hand") return;
+    const k = picked;
+    const m = keyValue(work.raw, k);
+    // mốc chỉ có `pose` mà bỏ dáng thì không còn gì: xoá mốc
+    if (!pose && handShape(m) === "pose") return deletePicked();
+    try {
+      const next = editKey(work.raw, k, (x) => {
+        if (!x) throw new Error("mốc `null` không có dáng ngón");
+        if (pose) x.pose = pose;
+        else delete x.pose;
+        if (pose && w !== undefined && w < 1) x.w = w;
+        else delete x.w;
+      });
+      apply(next, { key: k });
+    } catch (e) {
+      say((e as Error).message, true);
+    }
   },
   del: () => deletePicked(),
   close() {
@@ -1800,6 +2008,7 @@ ui.frame.addEventListener("pointerup", (e) => {
   if (hit) select(hit, true);
 });
 ui.editGrasp.onclick = openEditor;
+ui.editShape.onclick = openShapeEditor;
 ui.solo.onchange = toggleSolo;
 ui.sideToggle.onclick = () => {
   ui.side.classList.toggle("shut");

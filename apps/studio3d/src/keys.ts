@@ -332,8 +332,12 @@ export function handValueAt(
     ...(p === undefined && !wrist && { point: "grip" }),
   };
   if (d.mode === "free" && isObj(prev?.v))
-    for (const f of ["palm", "fingers", "bend"] as const)
+    for (const f of ["palm", "fingers", "bend", "pose", "w"] as const)
       if (prev.v[f] !== undefined) value[f] = structuredClone(prev.v[f]);
+  if (d.mode === "free" && isObj(next?.v) && next.v.pose !== value.pose)
+    notes.push(
+      "dáng ngón (`pose`) lấy của mốc trước: giữa hai dáng khác nhau, ngón quanh mốc mới đổi",
+    );
   const ea = isObj(prev?.v) ? (prev.v.elbow as number[] | undefined) : undefined;
   const eb = isObj(next?.v) ? (next.v.elbow as number[] | undefined) : undefined;
   if (d.locked && d.elbow) {
@@ -434,9 +438,10 @@ export function touch(m: Json | null) {
   if (m && m.ease === undefined) m.ease = "auto";
 }
 
-/** Ký hiệu mốc tay trên thanh tua: `null` chấm xám, chỉ có `hold` vòng rỗng, còn lại tròn */
-export function handShape(v: unknown): "null" | "ring" | "dot" {
+/** Ký hiệu mốc tay trên thanh tua: `null` chấm xám, chỉ có `hold` vòng rỗng, chỉ có `pose` vuông rỗng, còn lại tròn */
+export function handShape(v: unknown): "null" | "ring" | "pose" | "dot" {
   if (!isObj(v)) return "null";
   const placed = ["at", "to", "palm", "fingers"].some((f) => v[f] !== undefined);
-  return v.hold !== undefined && !placed ? "ring" : "dot";
+  if (placed) return "dot";
+  return v.hold !== undefined ? "ring" : v.pose !== undefined ? "pose" : "dot";
 }

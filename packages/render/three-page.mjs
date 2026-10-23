@@ -11,8 +11,8 @@ export function boot(rig, world) {
 
   /** Cảnh three: `worldOf` của repo như `check`, cảnh repo không dựng thì `plainRoom()` */
   const build = ({ id, scene, data, plain }) => {
-    const { characters, actions, animals, props, held: items, heights, bodies } = data;
-    const runtime = rig.resolveScene(scene, actions, animals, props, heights, bodies, items);
+    const { characters, actions, animals, props, held: items, hands, heights, bodies } = data;
+    const runtime = rig.resolveScene(scene, actions, animals, props, heights, bodies, items, hands);
     const ctx = { id, scene, runtime, characters, actions, animals, props, heights, bodies };
     if (!plain && typeof world.worldOf === "function") {
       const w = world.worldOf(scene.name, ctx);

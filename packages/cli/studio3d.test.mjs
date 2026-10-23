@@ -155,7 +155,7 @@ describe("sceneWithHands", () => {
   });
 });
 
-describe("stickman studio: /api/scene, /api/held", { timeout: 120_000 }, () => {
+describe("stickman studio: /api/scene, /api/held, /api/hands", { timeout: 120_000 }, () => {
   let dir;
   let srv;
   let base;
@@ -352,6 +352,40 @@ describe("stickman studio: /api/scene, /api/held", { timeout: 120_000 }, () => {
     r = await post("/api/scene?name=thu-tay", { hash: j.hash, scene: { ...j.raw, items: [] } });
     assert.equal(r.status, 200, (await r.json()).error);
     assert.deepEqual((await load()).raw.items, []);
+  });
+
+  it("/api/hands: dáng mới (`hash: null`), trùng thì 409, sửa kiểm hash, tên và schema sai thì 400", async () => {
+    const shape = (x) => ({
+      schemaVersion: 1,
+      note: "thử",
+      fingers: [x, 10, 0, 0, 5, 5, 20, 20, 0, 0],
+    });
+    const path = join(dir, "hands/thu-dang.json");
+    let r = await post("/api/hands?name=thu-dang", { shape: shape(30), hash: null });
+    let out = await r.json();
+    assert.equal(r.status, 200, out.error);
+    assert.equal(JSON.parse(readFileSync(path, "utf8")).fingers[0], 30);
+    assert.equal((await load()).handsHash["thu-dang"], out.hash);
+    r = await post("/api/hands?name=thu-dang", { shape: shape(40), hash: null });
+    assert.equal(r.status, 409);
+    r = await post("/api/hands?name=thu-dang", { shape: shape(40), hash: "0".repeat(64) });
+    assert.equal(r.status, 409);
+    r = await post("/api/hands?name=thu-dang", { shape: shape(40), hash: out.hash });
+    out = await r.json();
+    assert.equal(r.status, 200, out.error);
+    assert.equal(JSON.parse(readFileSync(path, "utf8")).fingers[0], 40);
+    assert.equal(JSON.parse(readFileSync(`${path}.bak`, "utf8")).fingers[0], 30);
+    for (const name of ["Thu Dang", "fist"]) {
+      r = await post(`/api/hands?name=${encodeURIComponent(name)}`, {
+        shape: shape(1),
+        hash: null,
+      });
+      assert.equal(r.status, 400);
+    }
+    r = await post("/api/hands?name=hong", { shape: { fingers: [1] }, hash: null });
+    assert.equal(r.status, 400);
+    assert.match((await r.json()).error, /schema/);
+    assert.ok(!existsSync(join(dir, "hands/hong.json")));
   });
 
   it("thân yêu cầu lớn có chữ nhiều byte: ghi đúng từng ký tự", async () => {

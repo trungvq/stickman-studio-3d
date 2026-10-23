@@ -57,6 +57,7 @@ export const COMMON = {
   animals: join(SOURCES.sample, "animals"),
   characters: join(SOURCES.sample, "characters"),
   held: join(SOURCES.sample, "held"),
+  hands: join(SOURCES.sample, "hands"),
 };
 
 /** Chép một lần lúc `init` làm mẫu, từ đó là của repo video */
@@ -76,7 +77,7 @@ const KEEP_DIRS = [
  * `actions/` và `animals/` thường rỗng suốt cả tập (bộ chung của studio là đủ), mà git
  * không giữ thư mục rỗng — clone lại là bundle vỡ. Nên chúng cũng cần `.gitkeep`.
  */
-const CONTEXT_DIRS = ["characters", "actions", "animals", "held", "pieces"];
+const CONTEXT_DIRS = ["characters", "actions", "animals", "held", "hands", "pieces"];
 const DIRS = [...SEED_DIRS, ...CONTEXT_DIRS, ...KEEP_DIRS];
 /** Thư mục có thể rỗng mà vẫn phải sống qua git */
 const GITKEEP_DIRS = [...CONTEXT_DIRS, ...KEEP_DIRS];
@@ -636,6 +637,22 @@ export function loadHeld(layers) {
   return out;
 }
 
+/**
+ * Dáng tay có tên qua các lớp, khoá không đuôi như `world.hands[].right|left.pose`; bản của repo đè bản chung. File hỏng hay
+ * tên không dùng được thì bỏ, `check` báo ở vòng của nó
+ */
+export function loadHands(layers) {
+  const out = {};
+  for (const dir of [...layers].reverse())
+    for (const f of listJson(dir)) {
+      const name = f.replace(/\.json$/, "");
+      if (rig.handShapeNameProblem(name)) continue;
+      const r = rig.parseHandShape(readJson(join(dir, f)));
+      if (r.success) out[name] = r.data;
+    }
+  return out;
+}
+
 /** Nhân vật qua các lớp, khoá giữ cả đuôi như `scene.cast[].character` */
 const loadCharacters = (layers) => loadByFile(layers, rig.parseCharacter);
 
@@ -664,7 +681,7 @@ export const castChars = (scene, characters) =>
  * `resolveScene` của cảnh `check` đo, `rt.chars` của `castChars`: món đặt trước, mốc món `rest` tra nhân vật người cầm ở đó,
  * như `loadScene` của render và runtime của studio
  */
-const castRuntime = (scene, actions, animals, props, characters, held) => {
+const castRuntime = (scene, actions, animals, props, characters, held, hands) => {
   const rt = rig.resolveScene(
     scene,
     actions,
@@ -672,6 +689,7 @@ const castRuntime = (scene, actions, animals, props, characters, held) => {
     props,
     ...castBodies(scene, characters),
     held,
+    hands,
   );
   rt.chars = { ...castChars(scene, characters), ...rt.chars };
   return rt;
@@ -1154,6 +1172,7 @@ export async function planReseat({ dir = ".", before } = {}) {
   const characters = loadCharacters([join(root, "characters"), COMMON.characters]);
   const animals = loadAnimals([join(root, "animals"), COMMON.animals]);
   const held = loadHeld([join(root, "held"), COMMON.held]);
+  const hands = loadHands([join(root, "hands"), COMMON.hands]);
   const props = loadByFile([join(root, "props")], rig.parseProp);
   const frozen = frozenOf(root);
   if (frozen.error) plan.problems.push(frozen.error);
@@ -1170,6 +1189,7 @@ export async function planReseat({ dir = ".", before } = {}) {
           props,
           ...castBodies(r.data, characters),
           held,
+          hands,
         );
       } catch (e) {
         return e.message;
@@ -1194,14 +1214,14 @@ export async function planReseat({ dir = ".", before } = {}) {
     try {
       ({ scene, paces } = repace(
         r.data,
-        rig.resolveScene(r.data, actionsThen, animals, props, ...bodies, held),
+        rig.resolveScene(r.data, actionsThen, animals, props, ...bodies, held, hands),
         actionsNow,
         from,
         file,
       ));
       // Đời trước dựng trên cảnh đã giãn nhịp: hoà giữa đi và ngồi rơi đúng pha như bây giờ
-      then = rig.resolveScene(scene, actionsThen, animals, props, ...bodies, held);
-      now = rig.resolveScene(scene, actionsNow, animals, props, ...bodies, held);
+      then = rig.resolveScene(scene, actionsThen, animals, props, ...bodies, held, hands);
+      now = rig.resolveScene(scene, actionsNow, animals, props, ...bodies, held, hands);
     } catch (e) {
       plan.problems.push(`${file}: ${e.message}`);
       continue;
@@ -1507,7 +1527,15 @@ export function sceneShotSpans(dir, name, data = worldData(dir)) {
     if (n !== name) return null;
     if (rt === undefined)
       try {
-        rt = castRuntime(scene, data.actions, data.animals, data.props, data.characters, data.held);
+        rt = castRuntime(
+          scene,
+          data.actions,
+          data.animals,
+          data.props,
+          data.characters,
+          data.held,
+          data.hands,
+        );
       } catch {
         rt = null;
       }
@@ -1728,6 +1756,7 @@ export const worldData = (dir = ".") => {
     actions: loadActions([join(root, "actions"), COMMON.actions]),
     animals: loadAnimals([join(root, "animals"), COMMON.animals]),
     held: loadHeld([join(root, "held"), COMMON.held]),
+    hands: loadHands([join(root, "hands"), COMMON.hands]),
     props: loadByFile([join(root, "props")], rig.parseProp),
   };
 };
@@ -2427,6 +2456,7 @@ export async function deepContext({ dir, names, ...opts }) {
   const charactersByName = loadCharacters([join(root, "characters"), COMMON.characters]);
   const animalsByName = loadAnimals([join(root, "animals"), COMMON.animals]);
   const heldByName = loadHeld([join(root, "held"), COMMON.held]);
+  const handsByName = loadHands([join(root, "hands"), COMMON.hands]);
   const props = loadByFile([join(root, "props")], rig.parseProp);
   if (partsEntry(root)) rig.registerParts(await loadParts(root));
   const scenesByName = {};
@@ -2446,6 +2476,7 @@ export async function deepContext({ dir, names, ...opts }) {
           props,
           charactersByName,
           heldByName,
+          handsByName,
         );
       } catch {
         rt = null;
@@ -2915,12 +2946,14 @@ export async function checkWorkspace({
     props: rig.parseProp,
     animals: rig.parseAnimal,
     held: rig.parseHeldItem,
+    hands: rig.parseHandShape,
     scenes: rig.parseScene,
   };
   const characters = [];
   const props = [];
   const animalsByName = loadAnimals(animalsLayers);
   const heldByName = loadHeld([join(root, "held"), COMMON.held]);
+  const handsByName = loadHands([join(root, "hands"), COMMON.hands]);
   if (usesNames.length) {
     const known = new Set([
       ...Object.keys(actionsByName),
@@ -2951,6 +2984,8 @@ export async function checkWorkspace({
         bad(`${kind}/${f}: ${issues(r.error)}`);
         continue;
       }
+      const shapeName = kind === "hands" && rig.handShapeNameProblem(f.replace(/\.json$/, ""));
+      if (shapeName) bad(`hands/${f}: ${shapeName}`);
       if (kind === "characters") characters.push([f, r.data]);
       if (kind === "props") props.push([f, r.data]);
       if (kind === "scenes") scenesByName[f.replace(/\.json$/, "")] = r.data;
@@ -3019,6 +3054,7 @@ export async function checkWorkspace({
               Object.fromEntries(props),
               charactersByName,
               heldByName,
+              handsByName,
             ),
           );
           runtimes.set(owner, rt);
@@ -3220,6 +3256,7 @@ export async function checkWorkspace({
             Object.fromEntries(props),
             charactersByName,
             heldByName,
+            handsByName,
           ),
         );
     } catch {

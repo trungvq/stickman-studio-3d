@@ -984,7 +984,8 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
   { "t": 7, "right": { "at": [-90, -280, -60], "point": "grip", "hold": "dien-thoai@palmBox" } }, // cầm món, màn về mặt người cầm
   { "t": 9, "right": { "to": "ear", "point": "item:speaker",                                  // loa vào tai
                        "hold": { "item": "dien-thoai", "group": "palmBox", "face": { "axis": "screen", "toward": { "mark": "head" } } } } },
-  { "t": 11, "right": { "hold": null } }                                      // buông món
+  { "t": 11, "right": { "hold": null } },                                     // buông món
+  { "t": 12, "right": { "pose": "peace" } }                                   // chỉ đổi ngón: chữ V của thư viện hands/
 ]
 ```
 
@@ -1016,6 +1017,19 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
   điểm ấy của bàn tay vào `at` — tay lên tay vịn, mặt bàn thì `point: "palm"` ở mặt trên. `to` / `side` / `offset` thay `at`
   bằng mốc thân của chính người ấy ([01](01-rig.md#đích-theo-mốc)). `palm`, `fingers`, `bend` khai lòng tay theo ý định
   ([01](01-rig.md#hướng-lòng-tay-theo-ý)), đè bàn tay của hành động theo phần đích; mốc không khai giữ bàn tay của hành động.
+- **`pose`** đặt dáng ngón: tên dáng có sẵn (`HAND_POSES`, [01](01-rig.md#bàn-tay)) hay tên file `hands/<tên>.json` của
+  thư viện ([01](01-rig.md#dáng-tay-có-tên)); `w` (`0..1`, bỏ trống là `1`) hoà từ dáng nghỉ. Dáng mốc đè ngón của hành
+  động, giữ xoay và gập cổ tay của nó (hay của lòng tay theo ý định). Mỗi tay hoà ngón giữa hai mốc kề có nhắc tay ấy,
+  theo `ease` của mốc sau, cả mười góc ngón lẫn `fit`; mốc không khai `pose` (kể cả `null`) là ngón của hành động, nên đi
+  từ mốc có `pose` sang mốc không có là ngón nhả dần về hành động; trước mốc đầu, sau mốc cuối giữ nguyên. **Mốc chỉ có
+  `pose`** (không `at` / `to` / `hold`) chỉ đổi ngón: đích, khuỷu và khoá khuỷu bỏ qua nó như không có, nên chèn nó vào
+  giữa hai mốc đích không đổi đường tay; nó không nhận `palm`, `fingers`, `bend`, `elbow`, `point`. Mốc có `hold` không
+  nhận `pose` — đang cầm thì dáng ngón do kiểu cầm quyết. Tên không có ở cả hai thì `resolveScene` ném lỗi kèm tên file
+  phải có:
+
+  ```
+  lan: `world.hands` right t=2: không có dáng tay `chu-v` — dáng có sẵn của rig (`HAND_POSES`) hay `hands/chu-v.json` của thư viện (docs/03-scene.md#đích-bàn-tay-thế-giới)
+  ```
 - **`hold`** cầm món của `held/` theo chỗ cầm nhóm (`"món@nhóm"`, hay `{ item, group, edge?, along?, thumb?, face?, … }`) —
   [Đồ cầm tay](#đồ-cầm-tay). Đang cầm thì `point` nhận thêm `item:<mốc>`: mốc ấy của món vào đích.
 - `snap: true` trên một mốc: đoạn từ mốc trước của tay ấy tới mốc này cố ý nhanh (chộp, giật tay),

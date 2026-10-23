@@ -23,6 +23,7 @@ export * from "./hand";
 export * from "./drape";
 export * from "./hat";
 export * from "./jewelry";
+export * from "./handLibrary";
 export * from "./handMesh";
 export * from "./hairMigration";
 export * from "./hairstyles";

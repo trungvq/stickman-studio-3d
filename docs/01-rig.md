@@ -1563,6 +1563,34 @@ gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` 
   liền một đường, không gồ ở gốc ngón cái. Gốc bốn ngón so le theo độ dài (giữa xa nhất, út gần nhất) nên hàng đốt
   là vòng cung bốn gồ nhỏ; khớp ngọn chuyển trọng số qua gần hai bán kính ngón nên đốt ngọn cuộn tròn.
 
+#### Dáng tay có tên
+
+Dáng ngón soạn riêng, dùng lại được, là **dữ liệu**: `hands/<tên>.json` của repo video, qua `HandShapeSchema` /
+`parseHandShape` (`core/handLibrary.ts`, `schemaVersion` là `HAND_SHAPE_VERSION` `1`):
+
+```jsonc
+{
+  "schemaVersion": 1,
+  "note": "giơ hai ngón trỏ và giữa thành chữ V",
+  "fingers": [37, 78, 29, 31, 0, 0, 90, 100, 8, 0],  // mười góc ngón của HAND_DOF, bỏ turn, bend
+  "fit": [0, 0, 0, 0, -90, -100, 0, 0, 0, 0]         // độ gập thêm từng đốt (HAND_FIT), bỏ trống là 0
+}
+```
+
+- **Cùng nghĩa với kiểu cầm soạn tay** ([11](11-nhom-cam.md)): `fingers` mười góc ngón, `fit` gập thêm hai đốt mỗi ngón
+  (cái, trỏ, giữa, áp út, út) — chỗ duy nhất tách được giữa, áp út, út khỏi góc chung, như chữ V ở trên.
+- **Không phân bên.** Tay trái dùng cùng góc; bàn tay trái là gương của tay phải nên dáng ra đúng gương.
+- **Tên file là tên dáng**: chữ thường, số, gạch nối (`HAND_SHAPE_NAME`), không trùng khoá `HAND_POSES` —
+  `handShapeNameProblem` kiểm. Thư viện đi hai lớp như `held/`: lớp chung có dáng mẫu `peace`, repo trùng tên thì đè
+  ([05](05-repo-video.md#hai-lớp)).
+- **Lõi không đọc đĩa.** Chỗ nạp đưa thư viện vào `resolveScene` ở tham số thứ tám (`HandShapes`, theo tên không đuôi),
+  runtime giữ ở `rt.hands`. `shapeFingers(tên, thư viện, w)` ra hai mươi số ngón (mười góc rồi mười `fit`) của một dáng có
+  sẵn hay của thư viện, hoà từ dáng nghỉ theo `w`.
+- **Mốc tay của cảnh gọi dáng bằng `pose`** (`world.hands[].right|left.pose`, kèm `w`) — [03](03-scene.md#đích-bàn-tay-thế-giới).
+  Hành động không gọi dáng của thư viện: `keys[].hand` chỉ nhận dáng có sẵn.
+- **Studio 3D soạn dáng bằng mắt**: Dáng tay → chọn bàn tay không cầm đồ → **Chỉnh dáng tay này** (README của
+  `apps/studio3d`).
+
 ### Món cầm tay
 
 Món cầm tay là **dữ liệu**, không phải code three: `held/<món>.json` của repo video, qua `HeldItemSchema` /

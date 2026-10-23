@@ -1,5 +1,5 @@
 // Giao diện kiểu cầm có tên: danh sách kiểu của món × nhóm trong panel bàn tay, hộp "Lưu thành kiểu mới…" và
-// "Chép sang món…" của khung soạn. README.md § Kiểu cầm có tên
+// "Chép sang món…" của khung soạn; hộp "Lưu thành dáng mới…" của khung dáng tay. README.md § Kiểu cầm có tên
 import type { StyleEntry } from "./named";
 
 const esc = (s: string) =>
@@ -161,5 +161,30 @@ export function copyDialog(o: {
       field(d, "dst").value
         ? o.problem(field(d, "dst").value, field(d, "name").value.trim())
         : "không có món nào khác cầm được nhóm này ở cùng lựa chọn",
+  );
+}
+
+/** Hộp "Lưu thành dáng mới…" của khung dáng tay: tên (`problem` kiểm), mô tả, "dùng cho mốc này" (`key` là nhãn mốc) */
+export function shapeAsDialog(o: {
+  from: string;
+  note?: string;
+  key: string;
+  problem: (name: string) => string | undefined;
+}): Promise<{ name: string; note: string; use: boolean } | null> {
+  const body = `
+    <div class="dim">Từ ${esc(o.from)} đang chỉnh; ghi <code>hands/&lt;tên&gt;.json</code> của repo</div>
+    <label>Tên <input type="text" data-n="name" placeholder="vd: chu-v" spellcheck="false" autocomplete="off" /></label>
+    <label>Mô tả <input type="text" data-n="note" value="${esc(o.note ?? "")}" placeholder="cho người và agent đọc" /></label>
+    <label class="use"><input type="checkbox" data-n="use" checked /> Dùng cho mốc này <span class="dim">(${esc(o.key)}, ghi \`pose\`)</span></label>`;
+  return modal(
+    "Lưu thành dáng mới",
+    body,
+    "Lưu dáng mới",
+    (d) => ({
+      name: field(d, "name").value.trim(),
+      note: field(d, "note").value.trim(),
+      use: field(d, "use").checked,
+    }),
+    (d) => o.problem(field(d, "name").value.trim()),
   );
 }

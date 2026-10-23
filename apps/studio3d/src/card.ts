@@ -1,5 +1,5 @@
-// Thẻ mốc của thanh tua: `ease` (ô 4 số khi `bezier`), `hold` (món, nhóm, biến thể; kiểu có tên kèm `note`), `elbowLock`,
-// JSON thô của mốc chỉ đọc kèm nút chép, xoá mốc.
+// Thẻ mốc của thanh tua: `ease` (ô 4 số khi `bezier`), `hold` (món, nhóm, biến thể; kiểu có tên kèm `note`), dáng ngón
+// `pose` / `w`, `elbowLock`, JSON thô của mốc chỉ đọc kèm nút chép, xoá mốc.
 import type { Ease, HoldPick } from "./keys";
 
 export const EASES: { v: Ease | ""; label: string }[] = [
@@ -26,6 +26,13 @@ export interface CardModel {
   items: string[];
   groups: readonly string[];
   variants: (item: string, group: string) => { name: string; note?: string }[];
+  /** Mốc tay: dáng ngón (`""` là theo hành động), phần hoà `w`; `disabled` là lý do mốc không nhận `pose` */
+  shape?: {
+    pose: string;
+    w?: number;
+    options: { v: string; label: string }[];
+    disabled?: string;
+  };
   /** Mốc tay: khoá khuỷu; `idle` là lý do khoá không có tác dụng ở mốc */
   lock?: { on: boolean; disabled?: string; idle?: string };
   json: string;
@@ -37,6 +44,8 @@ export interface CardHost {
   /** `what`: ô vừa đổi (đổi món thì bên gọi chọn nhóm hợp lệ) */
   hold(h: HoldPick | null | undefined, what?: "item" | "group" | "variant"): void;
   lock(on: boolean): void;
+  /** `pose` bỏ trống là bỏ dáng; `w` bỏ trống là `1` */
+  shape(pose: string | undefined, w: number | undefined): void;
   del(): void;
   close(): void;
 }
@@ -101,6 +110,14 @@ export function renderCard(el: HTMLElement, m: CardModel | null, host: CardHost)
         : ""
     }
     ${
+      m.shape
+        ? `<div class="crow"${m.shape.disabled ? ` title="${esc(m.shape.disabled)}"` : ""}>dáng ngón <select data-c="pose"${m.shape.disabled ? " disabled" : ""}>${opts(
+            [{ v: "", label: "theo hành động" }, ...m.shape.options],
+            m.shape.pose,
+          )}</select><input data-c="w" type="number" step="0.05" min="0" max="1" title="w: phần hoà từ dáng nghỉ (bỏ trống là 1)" value="${m.shape.w ?? ""}" placeholder="w 1"${m.shape.pose && !m.shape.disabled ? "" : " hidden"} /></div>`
+        : ""
+    }
+    ${
       m.lock
         ? `<label class="crow" title="${esc(m.lock.disabled ?? "Khuỷu ở mốc nằm đúng hướng `elbow` (thế giới); chưa có `elbow` thì lấy hướng khuỷu đang vẽ")}"><input type="checkbox" data-c="lock"${m.lock.on ? " checked" : ""}${m.lock.disabled ? " disabled" : ""} /> elbowLock</label>
     ${m.lock.idle ? `<div class="warn">${esc(m.lock.idle)}</div>` : ""}`
@@ -146,6 +163,16 @@ export function renderCard(el: HTMLElement, m: CardModel | null, host: CardHost)
         if (c !== "variant") q<HTMLSelectElement>("variant").value = "";
         host.hold(pick(), c);
       };
+  }
+  if (m.shape && !m.shape.disabled) {
+    const w = () => {
+      const v = q<HTMLInputElement>("w").value;
+      return v === "" ? undefined : Math.max(0, Math.min(1, Number(v) || 0));
+    };
+    q<HTMLSelectElement>("pose").onchange = (e) =>
+      host.shape((e.target as HTMLSelectElement).value || undefined, w());
+    q<HTMLInputElement>("w").onchange = () =>
+      host.shape(q<HTMLSelectElement>("pose").value || undefined, w());
   }
   if (m.lock)
     q<HTMLInputElement>("lock").onchange = (e) => host.lock((e.target as HTMLInputElement).checked);

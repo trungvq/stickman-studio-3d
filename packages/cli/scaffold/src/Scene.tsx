@@ -19,6 +19,7 @@ import {
   ANIMALS,
   BACKGROUNDS,
   CHARACTERS,
+  HANDS,
   HELD,
   PROPS,
   animalUrls,
@@ -103,6 +104,7 @@ export const Scene = ({
         castHeights(scene),
         castBodies(scene),
         HELD,
+        HANDS,
       );
       RUNTIMES.set(scene, rt);
     }

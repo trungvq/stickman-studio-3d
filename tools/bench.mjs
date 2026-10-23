@@ -148,7 +148,7 @@ async function refreshBench(repo) {
     const played = sc.cast.flatMap((m) => (m.character && data.characters[m.character] ? [[m.id, data.characters[m.character]]] : []));
     const heights = Object.fromEntries(played.map(([id, c]) => [id, c.rig.height]));
     const bodies = Object.fromEntries(played.map(([id, c]) => [id, rig.body3(c)]));
-    const resolveRt = (s) => rig.resolveScene(s, data.actions, data.animals, data.props, heights, bodies, data.held);
+    const resolveRt = (s) => rig.resolveScene(s, data.actions, data.animals, data.props, heights, bodies, data.held, data.hands);
     const worldOf = (s, rt) => world.worldOf(name, { ...data, id: name, scene: s, runtime: rt, heights, bodies });
     const tOf = (k) => typeof k.t === 'number' ? k.t : rig.markTime(k.t, raw.marks ?? {});
     for (const at of o.at.split(',').map(Number)) {

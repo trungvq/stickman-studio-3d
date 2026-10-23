@@ -1,8 +1,8 @@
 # Studio 3D
 
 Trang xem cảnh three của một repo video: cùng `worldOf` / `buildWorld` mà Remotion vẽ (`Scene3D` của repo), tua giây,
-camera cảnh hay camera tự do, soi bàn tay và số đo cầm đồ, soạn kiểu cầm bằng mắt, sửa mốc tay và mốc món trên thanh tua
-([Dáng tay](#dáng-tay)). Studio 2D (`apps/studio`: nhân vật,
+camera cảnh hay camera tự do, soi bàn tay và số đo cầm đồ, soạn kiểu cầm bằng mắt, chỉnh dáng ngón của tay không cầm đồ
+thành dáng có tên dùng lại được, sửa mốc tay và mốc món trên thanh tua ([Dáng tay](#dáng-tay)). Studio 2D (`apps/studio`: nhân vật,
 hành động, mảnh) chạy bằng `stickman studio2d`.
 
 ## Chạy
@@ -28,12 +28,12 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
   `../youtube-video/jp-sukatto-nhom-cam` cạnh repo này). Trang đọc cảnh ở `scenes/`, dữ liệu qua `worldData` của CLI (đọc
   lại mỗi lần nạp cảnh), cảnh three qua `stickman.world` của `package.json` repo. Cảnh không có trong `worldOf` thì dựng
   `plainRoom()`. Món `held/` đọc thêm bản JSON thô, parse bằng rig của trang (`worldData` dùng rig bản dựng của CLI, có
-  thể cắt mất trường mới như `authored`).
+  thể cắt mất trường mới như `authored`); dáng tay `hands/` của repo cũng thế, đè lên thư viện hai lớp của `worldData`.
 - **Rig của trang.** `stickman studio` lấy `@stickman3d/rig`, `sketch`, `fx` mà repo video nạp: gói `link:` tới một cây
   nguồn thì trang lấy `src/` (sửa rig là trang nạp lại), cài từ registry thì `dist`. Chạy trong repo này thì luôn là `src/`
   của repo này. `three`, `react`, `zod` lấy bản của repo video (thiếu thì bản của app): trang và file của repo video chung
   một bản mỗi gói. `remotion` nhận bản rỗng (`src/hollow.ts`). Bản dựng của ba gói chỉ cho phía Node (`worldData`).
-- **Ghi.** Hai đường, cả hai kiểm hash, vá JSON thô và giữ `<file>.json.bak`:
+- **Ghi.** Ba đường, cả ba kiểm hash, vá JSON thô và giữ `<file>.json.bak`:
   - `POST /api/scene?name=<cảnh>` `{ hash, scene }`: `scene` là JSON thô của cảnh đã sửa; server lấy `cast[*].world.hands`
     và `items` của nó vá vào file trên đĩa; `scene` thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên, xoá hết là gửi mảng
     rỗng (`items: []`, `hands: []` ghi thành mảng rỗng), `items: null` bỏ cả khoá `items` (trang gửi khi bản đang sửa không còn
@@ -42,7 +42,10 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
     món × nhóm × biến thể (`authored: null` là xoá). Món còn kiểu cầm có tên (`base` / `note`) mà `schemaVersion` cũ hơn
     `HELD_VERSION` của rig thì ghi lên `HELD_VERSION`. `STUDIO3D_HELD_OUT=<thư mục>` đổi hướng ghi sang thư mục ấy và đọc nó
     phủ lên `held/` — thử mà không đụng repo video.
-- **Hash.** `GET /api/scene` trả `hash` của file cảnh và `heldHash` của từng món, là sha256 của byte trên đĩa lúc nạp. Lưu
+  - `POST /api/hands?name=<dáng>` `{ hash, shape }`: khung chỉnh dáng tay ghi `hands/<dáng>.json` của repo. `hash: null` là
+    tạo mới — file đã có thì 409; tên sai (`handShapeNameProblem`: chữ thường, số, gạch nối, không trùng `HAND_POSES`) hay
+    `shape` không qua `parseHandShape` thì 400. Trả `{ file, shape, hash }`.
+- **Hash.** `GET /api/scene` trả `hash` của file cảnh, `heldHash` của từng món và `handsHash` của từng dáng trong `hands/`, là sha256 của byte trên đĩa lúc nạp. Lưu
   gửi kèm hash ấy; file đã đổi từ lúc nạp thì server trả 409 (`{ error, conflict: true, hash }`) và không ghi. Lượt ghi
   của một file xếp hàng; ngay trước khi ghi server đọc lại file và so hash lần nữa, `.bak` lấy từ đúng byte vừa đọc lại —
   hai lần lưu cùng hash thì lần sau 409, ai ghi file trong lúc server đang vá cũng làm lần lưu ấy 409.
@@ -50,7 +53,7 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
   cảnh): nó viết lại đúng những giá trị đổi trên chữ của file (`rawjson.mjs`), giữ mọi trường khác và thứ tự khoá. File đúng
   lối `JSON.stringify(…, null, 2)` giữ lối ấy, file đúng lối prettier (cấu hình của repo video) thì chạy prettier sau khi vá,
   file khác chỉ đổi chỗ vá (đoạn chèn theo kiểu xuống dòng và bậc thụt của file). Kết quả phải qua `parseScene` /
-  `parseHeldItem` của rig trang dùng; hỏng thì 400, không ghi.
+  `parseHeldItem` / `parseHandShape` của rig trang dùng; hỏng thì 400, không ghi.
 
 ## Phím
 
@@ -189,13 +192,36 @@ kiểu mới, Chép sang món) thì không phím nào của trang tới cảnh.
 
 Rê chuột lên đồng hồ góc phải: ms tính tư thế (`stage.pose`) và ms vẽ của khung vừa vẽ.
 
+## Chỉnh dáng tay không cầm đồ
+
+Từ bàn tay đang chọn mà không cầm, không treo món: **Chỉnh dáng tay này** (chỗ nút **Chỉnh kiểu cầm này** của tay cầm
+đồ). Khung chỉnh giống khung soạn kiểu cầm mà không có món: chỉ có bàn tay ấy — đúng bên, cỡ tay của người ấy, đứng yên
+đúng hướng như trong cảnh ở giây đang xem — kèm bóng cẳng tay mờ; cùng sáu góc nhìn (1–6), cùng cách chọn ngón (nhấp lên
+ngón), kéo lên / xuống trên ngón đang chọn để gập (Shift chỉ đốt ngọn, Ctrl riêng ngón ấy qua `HAND_FIT`, Alt + lăn như
+kéo), cùng thẻ ngón và panel đủ mọi thanh, lịch sử riêng (Ctrl+Z / Ctrl+Shift+Z). Dáng ghi ra là file dáng tay có tên
+`hands/<tên>.json` (docs/01-rig.md § Dáng tay có tên): mười góc ngón và `fit`, không phân bên.
+
+- **Điểm đầu**: mốc tay của tay ấy đúng giây đang xem có `pose` thì mở dáng ấy, không thì dáng đang vẽ ở giây ấy. Ô
+  **Điểm đầu** nạp lại dáng đang vẽ, một dáng của thư viện (`hands/` của repo và dáng chung đi theo package) hay một dáng có
+  sẵn của rig; chọn dáng của thư viện là **mở** nó. Dòng dưới tiêu đề ghi dáng đang mở, nguồn của nó (`hands/` của repo,
+  dáng chung, dáng có sẵn) và "đã chỉnh, chưa lưu".
+- **Lưu dáng <tên>** (chỉ khi đang mở một dáng của thư viện và đã chỉnh): ghi đè `hands/<tên>.json` của repo
+  (`POST /api/hands`, kiểm hash lúc nạp như cảnh, `.bak`); dáng chung chưa có trong repo thì ghi bản của repo, đè dáng chung
+  cùng tên. **Mọi mốc gọi dáng ấy, ở mọi cảnh, đổi theo** — dòng cảnh báo dưới nút kể các mốc của cảnh đang mở gọi nó.
+- **Lưu thành dáng mới…**: tên (chữ thường, số, gạch nối; không trùng dáng có sẵn hay dáng đã có), mô tả, ô **Dùng cho mốc
+  này** (bật sẵn). Server từ chối tên đã có (409). Lưu xong khung mở dáng mới.
+- **Dùng <tên> cho mốc này** (khi dáng đang mở không có chỉnh chưa lưu): ghi `pose: "<tên>"` (bỏ `w`) vào mốc tay của tay ấy
+  ở giây đang xem; không có mốc thì thêm mốc chỉ có `pose` — mốc chỉ đổi ngón, đích và khuỷu bỏ qua nó. Một bước của lịch sử
+  chung; lưu cảnh bằng **Lưu** (Ctrl+S) như mọi mốc. Mốc có `hold` hay mốc `null` thì không nhận, thanh trạng thái báo.
+- Lưu dáng xong trang dựng lại cảnh với thư viện mới. Lưu cảnh mà tên dáng chưa có trên đĩa thì `resolveScene` báo lỗi.
+
 ## Dáng tay
 
 Công tắc **Xem / Dáng tay** trên thanh trên (nhớ trong `localStorage`). Ở Dáng tay, bấm một bàn tay (trên hình hay trong
 panel) là chọn người × tay: thanh tua thêm một hàng cho mỗi tay của người ấy và một hàng **Món** cho các mốc `items[]` của
 món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hàng tay là chọn tay ấy.
 
-- **Ký hiệu.** Mốc tay tròn, mốc chỉ có `hold` vòng rỗng, mốc `null` chấm xám, mốc món thoi; viền tím là mốc khoá khuỷu
+- **Ký hiệu.** Mốc tay tròn, mốc chỉ có `hold` vòng rỗng, mốc chỉ có `pose` vuông rỗng, mốc `null` chấm xám, mốc món thoi; viền tím là mốc khoá khuỷu
   (`elbowLock`), viền cam là mốc đang mở thẻ. Rê lên mốc: trường `t` như JSON (`@tra+0.6 = 4.000 s`), loại mốc, `ease`.
 - **Dải dưới hàng tay là lần cầm** (`holdRuns`), nhãn `món@nhóm/biến thể` (tay phụ của `both` ghi `(phụ)`): xanh lá tay theo
   đồ (theo mốc, hai tay), xanh dương đồ theo tay, xám tay tự do; sọc là `HOLD_BLEND` ở đầu lần cầm (trừ lần cầm từ giây 0)
@@ -213,8 +239,8 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hà
   - tay theo đồ (theo mốc, hai tay): mốc chỉ có `hold` — chép `hold` có hiệu lực (bỏ `regrip`), trường số của chỗ cầm trượt
     (`along`, `slant`…) lấy lựa chọn đang vẽ —, nên lần cầm không bị cắt và mốc không khai đích;
   - đồ theo tay, tay tự do: phần đích đang là `0` thì `null`; không thì `at` là điểm bàn tay theo `point` của mốc kề (tâm
-    nắm hay cổ tay; điểm khác thì tâm nắm, `point: "grip"`), lần cầm đi tiếp. Tay tự do chép `palm`, `fingers`, `bend` của
-    mốc trước; `elbow` theo mốc kề (hai mốc kề khác nhau thì nội suy thẳng), khuỷu đang khoá hẳn thì khoá vào hướng khuỷu
+    nắm hay cổ tay; điểm khác thì tâm nắm, `point: "grip"`), lần cầm đi tiếp. Tay tự do chép `palm`, `fingers`, `bend`,
+    `pose`, `w` của mốc trước (mốc sau khai dáng khác thì thẻ nhắc ngón quanh mốc mới đổi); `elbow` theo mốc kề (hai mốc kề khác nhau thì nội suy thẳng), khuỷu đang khoá hẳn thì khoá vào hướng khuỷu
     đang vẽ. Đồ theo tay ghi thêm `hold` cùng chỗ cầm với ý định là hướng món đang vẽ — `face`, `roll` trục khung món
     `[0, 0, 1]`, `[0, 1, 0]` về vectơ hệ thân, ngang ra ngoài phía tay ấy, như `holdToHandLed` — và mốc kề không khai
     `elbow` thì `elbow` là khuỷu đang vẽ, để bàn tay không xoay khác; bản ấy lệch hơn bản giữ ý định của `hold` trước thì
@@ -282,7 +308,8 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hà
   nhóm, biến thể — kiểu có tên hiện kèm `note`; `hold` dạng chuỗi ghi lại chuỗi, dạng object đổi `item`, `group`,
   `variant`, đổi món hay nhóm thì bỏ trường chỗ cầm cũ `part`, `edge`, `along`…, giữ ý định và trường lạ; đổi món thì
   trang thử nhóm đang chọn rồi lần lượt các nhóm khác, áp nhóm đầu tiên mà cảnh giải được tay ở mốc, không nhóm nào được
-  thì không áp và báo lỗi); `elbowLock` (mốc chưa có `elbow` thì lấy hướng khuỷu đang vẽ ở mốc; khoá không có tác dụng ở mốc thì thẻ
+  thì không áp và báo lỗi); **dáng ngón** `pose` (theo hành động / dáng của thư viện / dáng có sẵn) kèm ô `w` (bỏ trống là
+  `1`) — mốc có `hold` hay mốc `null` thì tắt, bỏ dáng của mốc chỉ có `pose` là xoá mốc; `elbowLock` (mốc chưa có `elbow` thì lấy hướng khuỷu đang vẽ ở mốc; khoá không có tác dụng ở mốc thì thẻ
   báo); "ảnh hưởng tới …s" — ước: tới mốc kế của cùng tay, cùng món (chuỗi `auto` thêm một mốc), đồ theo tay còn kéo dài vài
   khung do giới hạn tốc độ; JSON thô của mốc kèm nút chép (mở hay đóng giữ qua các lần vẽ lại thẻ); **Xoá mốc** (Del). Mốc tay cuối cùng của một người không xoá
   được (`world.hands` không rỗng).
@@ -292,7 +319,7 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hà
   tên), rồi parse và làm mới tại chỗ (`world.refresh`); không làm mới được thì dựng lại cả cảnh. Bản sửa hỏng schema hay
   `resolveScene` ném thì không áp, thanh trạng thái báo lý do; dựng lại cả cảnh hỏng thì về bản trước, lời báo lỗi còn lại.
 - **Lịch sử chung** cho cảnh, mỗi bước là ảnh chụp JSON thô; thao tác không đổi gì không thành bước: ↶ ↷ trên thanh trên, Ctrl+Z / Ctrl+Shift+Z. Khung soạn kiểu cầm
-  đang mở thì giữ lịch sử riêng, lịch sử cảnh tạm khoá. Hoàn tác / làm lại mở lại thẻ của mốc đang mở khi rời bản ấy.
+  hay khung chỉnh dáng tay đang mở thì giữ lịch sử riêng, lịch sử cảnh tạm khoá. Hoàn tác / làm lại mở lại thẻ của mốc đang mở khi rời bản ấy.
 - **Lưu** (Ctrl+S): chấm cam là có thay đổi chưa lưu. Ghi `POST /api/scene` kèm hash lúc nạp; lưu xong lịch sử còn nguyên.
   **Bỏ thay đổi** về bản đã lưu (là một bước, hoàn tác được). File cảnh đổi trên đĩa từ lúc nạp thì server trả 409, không có cách ghi đè: hộp
   báo cho **Tải bản đĩa về** — bản đĩa vào thành một bước mới của lịch sử (hash mới, là bản đã lưu), Ctrl+Z quay lại bản

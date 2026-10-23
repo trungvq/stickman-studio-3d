@@ -55,12 +55,12 @@ export function threeSize(spec, frame) {
 }
 
 /**
- * Dữ liệu cho trang: JSON đã parse (nhân vật theo tên file, hành động, động vật, đạo cụ, món cầm tay) kèm
+ * Dữ liệu cho trang: JSON đã parse (nhân vật theo tên file, hành động, động vật, đạo cụ, món cầm tay, dáng tay) kèm
  * `heights` và `bodies` của `cast` — đúng `ctx` mà `worldOf` nhận ở `check`
  */
 export function threeData(
   scene,
-  { characters, actions = {}, animals = {}, props = {}, held = {} },
+  { characters, actions = {}, animals = {}, props = {}, held = {}, hands = {} },
 ) {
   const heights = {};
   const bodies = {};
@@ -68,7 +68,7 @@ export function threeData(
     const c = m.character && characters[m.character];
     if (c) [heights[m.id], bodies[m.id]] = [c.rig.height, rig.body3(c)];
   }
-  return { characters, actions, animals, props, held, heights, bodies };
+  return { characters, actions, animals, props, held, hands, heights, bodies };
 }
 
 async function launch(software) {

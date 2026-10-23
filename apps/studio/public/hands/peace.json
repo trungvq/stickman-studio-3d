@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "note": "giơ hai ngón trỏ và giữa thành chữ V",
+  "fingers": [37, 78, 29, 31, 0, 0, 90, 100, 8, 0],
+  "fit": [0, 0, 0, 0, -90, -100, 0, 0, 0, 0]
+}

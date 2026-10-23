@@ -12,9 +12,9 @@ video sau khi nó đã đứng: nó gồm những gì, soi bằng gì, nâng ver
 ## `init` sinh ra gì
 
 Chép một lần làm mẫu, từ đó là của repo video: `scenes/`, `props/`,
-`episodes/`. **Mảnh ảnh, hành động, động vật, món cầm tay và nhân vật thì không chép** — chúng
+`episodes/`. **Mảnh ảnh, hành động, động vật, món cầm tay, dáng tay và nhân vật thì không chép** — chúng
 là lớp chung nằm trong package, xem [Hai lớp](#hai-lớp); `pieces/` chỉ có một
-`catalog.json` trống, `actions/`, `animals/`, `held/` và `characters/` trống.
+`catalog.json` trống, `actions/`, `animals/`, `held/`, `hands/` và `characters/` trống.
 
 
 Sinh mới: `stickman.md` — cách dùng rig cho agent, `AGENTS.md` trỏ vào đó và để
@@ -155,8 +155,9 @@ chính nó là phép kiểm tham chiếu chéo của `ref`, và nó rẻ so vớ
 luật của tay: nó đo chung một lượt với người lồng vào đồ (`sceneClashes` trên khối người, giây lấy mẫu chia nhỏ theo vật
 của cảnh three dời), ngưỡng ở `stickman.clash.self`; tách sang `hands` thì hoặc `hands` phải chạy cả lượt va chạm, hoặc
 số đo lệch lượt đủ. Cảnh three dựng một lần cho mọi nhóm cần nó; dựng hỏng thì dòng báo mang nhóm đầu tiên trong
-`clash`, `hands`, `held`, `legacy` đang chạy. `held/<món>.json` hỏng là lỗi zod như mọi JSON; món, mốc mà scene trỏ
-tới không có, chỗ cầm không hợp lệ là lỗi `resolveScene`. `legacy` chạy cùng `held` thì đọc chung các tư thế đã đặt, chạy riêng thì
+`clash`, `hands`, `held`, `legacy` đang chạy. `held/<món>.json` và `hands/<tên>.json` hỏng là lỗi zod như mọi JSON; tên
+dáng tay ngoài `[a-z0-9-]` hay trùng dáng có sẵn của rig cũng là lỗi, và dáng ấy không vào thư viện. Món, mốc, dáng tay
+mà scene trỏ tới không có, chỗ cầm không hợp lệ là lỗi `resolveScene`. `legacy` chạy cùng `held` thì đọc chung các tư thế đã đặt, chạy riêng thì
 chỉ đặt cảnh mỗi `0,1 s` mà không đo.
 
 Sửa gì chạy nhóm nào:
@@ -164,7 +165,7 @@ Sửa gì chạy nhóm nào:
 | Sửa | Chạy |
 |---|---|
 | Chỗ đứng, đường đi (`world.at`, `path`) | `move,clash` |
-| Tay (`world.hands`, `reach`, dáng tay) | `hands,clash` (+`held` nếu tay đang cầm) |
+| Tay (`world.hands`, `reach`, dáng tay, `hands/<tên>.json`) | `hands,clash` (+`held` nếu tay đang cầm) |
 | Đồ cầm trong cảnh (`world.hands[].hold`, ý định, `point: item:`), `cast.provide` | `held,clash` |
 | Món cầm tay: mốc, hình va chạm, phần (`held/<món>.json`) | `ref,held,clash` trên mọi cảnh có món ấy (`--scene`); repo tự kiểm hình khớp lưới |
 | Thời gian, retime, audio | `move` + lượt toàn bộ cho `episode` |
@@ -297,10 +298,11 @@ nên không đóng băng được.
 
 ## Hai lớp
 
-`pieces/`, `actions/`, `animals/`, `held/` và `characters/` của repo video là **lớp
+`pieces/`, `actions/`, `animals/`, `held/`, `hands/` và `characters/` của repo video là **lớp
 trên**; **lớp dưới** là bộ chung đi theo studio — mọi sheet đã cắt, `catalog.json`
 của chúng, các hành động mẫu (`walk`, `idle`, `wave`, …), bảy con vật mẫu
-([08](08-dong-vat.md#bộ-mẫu)), món cầm tay mẫu `coc`, `tui` ([01](01-rig.md#món-cầm-tay)) và các nhân vật mẫu, trong đó có nhân vật tác giả
+([08](08-dong-vat.md#bộ-mẫu)), món cầm tay mẫu `coc`, `tui` ([01](01-rig.md#món-cầm-tay)), dáng tay mẫu `peace` (chữ V,
+[01](01-rig.md#dáng-tay-có-tên)) và các nhân vật mẫu, trong đó có nhân vật tác giả
 `author.json` dùng ở mọi tập.
 Lớp dưới **không nằm trong repo video**: nó là
 
@@ -328,7 +330,10 @@ MCP (`layers` + `findIn`), và app Remotion (`remotion.config.ts` trỏ alias
 `@stickman-common` vào `COMMON`, `data.ts` `require.context` cả hai, `tools/srt.mjs`
 đọc cùng hai thư mục). Thêm đường đọc mới thì cũng phải đi hai lớp. Món cầm tay đến `resolveScene` ở **tham số thứ
 bảy** (`held`, bảng món theo tên không đuôi): `data.ts` xuất `HELD`, `Scene.tsx`, `Episode.tsx`, `Scene3D.tsx` truyền nó;
-file `src/` sửa tay mà gọi `resolveScene` thì cũng phải truyền `HELD`, thiếu là cảnh có `hold` ném lỗi "không có món". Cảnh, đạo
+file `src/` sửa tay mà gọi `resolveScene` thì cũng phải truyền `HELD`, thiếu là cảnh có `hold` ném lỗi "không có món".
+Dáng tay có tên (`hands/<tên>.json`, khoá là tên file không đuôi) đến `resolveScene` ở **tham số thứ tám** (`hands`):
+`data.ts` xuất `HANDS`, `Scene.tsx`, `Episode.tsx`, `Scene3D.tsx` truyền nó; file `src/` sửa tay mà gọi `resolveScene` thì
+cũng phải truyền `HANDS`, thiếu là cảnh có `world.hands[].pose` gọi dáng của thư viện ném lỗi "không có dáng tay". Cảnh, đạo
 cụ và tập **không** có lớp dưới — bộ mẫu của chúng chép một lần lúc `init` rồi
 thành của repo video.
 
@@ -348,13 +353,14 @@ pnpm exec stickman upgrade
 thì thêm vào, vì app Remotion vừa chép lại đã import nó; `three` và `@types/three` cũng vậy). Script cũng vậy: script đã có
 giữ nguyên, script của tool mới chép vào thì thêm.
 
-**`characters/`, `actions/`, `scenes/`, `episodes/`, `props/`, `animals/`, `held/`, `pieces/`, `sfx/` không bao giờ bị đụng** — đó
+**`characters/`, `actions/`, `scenes/`, `episodes/`, `props/`, `animals/`, `held/`, `hands/`, `pieces/`, `sfx/` không bao giờ bị đụng** — đó
 là nội dung của tập phim. Mảnh, hành động, con vật và nhân vật chung mới thì tự có
 theo package (xem [Hai lớp](#hai-lớp)), không cần chép; spec rig cũng vậy.
 `AGENTS.md` / `README.md` / `CLAUDE.md` / `.gitignore` và `src/lop.tsx` / `src/parts.tsx` /
 `src/scene-wrap.tsx` / `src/khoi3d/canh.ts` cũng không: `init` phát chúng một lần làm nền, từ đó là
 của repo video (`SEED_ONLY` trong `lib.mjs`), `stickman.json` không giữ băm của chúng. Thiếu thì
-`upgrade` dựng lại bản mẫu — app Remotion `import` cả bốn.
+`upgrade` dựng lại bản mẫu — app Remotion `import` cả bốn. Thư mục app Remotion `require.context` vào (`held/`, `hands/`,
+…) thiếu thì `upgrade` dựng rỗng kèm `.gitkeep`.
 
 **Đừng sửa file app Remotion và tool do studio phát.** Sửa rồi thì mỗi lần mẫu đổi là một lần
 trộn tay. Thứ của repo có chỗ riêng: lớp vẽ code ở `src/lop.tsx`, bộ phận vẽ bằng code ở
@@ -514,15 +520,17 @@ pnpm studio2d    # = pnpm exec stickman studio2d: character studio 2D, http://lo
 ### Studio 3D
 
 Dev server Vite (Vite đi theo `@stickman3d/cli`) chạy app `apps/studio3d` với gốc là thư mục đang đứng: xem cảnh three
-của `scenes/` (cùng `stickman.world` mà Remotion vẽ), soạn kiểu cầm, sửa mốc tay và mốc món trên thanh tua (chế độ
-**Dáng tay**: thêm, dời giữ mốc tên `@tên±Δ`, xoá, `ease`, `hold`, `elbowLock`, một lịch sử hoàn tác chung, **Lưu**). Phím,
+của `scenes/` (cùng `stickman.world` mà Remotion vẽ), soạn kiểu cầm, chỉnh dáng ngón của tay không cầm đồ thành dáng có
+tên của `hands/` ([01](01-rig.md#dáng-tay-có-tên)), sửa mốc tay và mốc món trên thanh tua (chế độ
+**Dáng tay**: thêm, dời giữ mốc tên `@tên±Δ`, xoá, `ease`, `hold`, `pose`, `elbowLock`, một lịch sử hoàn tác chung, **Lưu**). Phím,
 panel, cách soạn ở README của `apps/studio3d` trong repo rig.
 
 - **Rig của trang là rig repo video đang nạp.** `@stickman3d/rig`, `sketch`, `fx` trỏ `link:` tới một cây nguồn thì trang
   lấy `src/` của cây ấy (sửa rig là trang nạp lại); cài từ registry thì lấy `dist`. `three`, `react`, `zod` lấy bản của
   repo video, nên trang và cảnh của repo chung một bản mỗi gói.
-- **Ghi thẳng repo.** **Lưu** ghi `scenes/<cảnh>.json` (`POST /api/scene`) và `held/<món>.json` (`POST /api/held`;
-  `STUDIO3D_HELD_OUT=<thư mục>` đổi hướng ghi món sang thư mục ấy và đọc nó phủ lên `held/`). Cảnh chỉ nhận
+- **Ghi thẳng repo.** **Lưu** ghi `scenes/<cảnh>.json` (`POST /api/scene`), `held/<món>.json` (`POST /api/held`;
+  `STUDIO3D_HELD_OUT=<thư mục>` đổi hướng ghi món sang thư mục ấy và đọc nó phủ lên `held/`) và `hands/<dáng>.json`
+  (`POST /api/hands`; dáng chung lưu lại thì thành bản của repo, đè dáng chung cùng tên). Cảnh chỉ nhận
   `cast[*].world.hands` và `items` của bản studio; bản gửi lên đổi phần khác thì bị từ chối, thiếu khoá nào thì khoá ấy
   trên đĩa giữ nguyên (xoá hết là gửi mảng rỗng).
 - **Kiểm hash.** Mỗi lần nạp, trang nhận hash của file trên đĩa; lưu gửi kèm hash ấy. File đã đổi từ lúc nạp (agent,

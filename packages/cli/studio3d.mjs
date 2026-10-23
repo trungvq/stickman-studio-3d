@@ -1,5 +1,6 @@
-// `stickman studio`: Studio 3D (`apps/studio3d`) chạy trên dev server Vite, gốc là repo video. Đọc cảnh, món và `worldData`;
-// ghi `scenes/` (`POST /api/scene`) và `held/` (`POST /api/held`), cả hai kiểm hash lúc nạp, vá JSON thô, giữ `.bak`.
+// `stickman studio`: Studio 3D (`apps/studio3d`) chạy trên dev server Vite, gốc là repo video. Đọc cảnh, món, dáng tay và
+// `worldData`; ghi `scenes/` (`POST /api/scene`), `held/` (`POST /api/held`) và `hands/` (`POST /api/hands`), cả ba kiểm
+// hash lúc nạp, vá JSON thô, giữ `.bak`.
 // apps/studio3d/README.md.
 import { createHash, randomUUID } from "node:crypto";
 import {
@@ -175,6 +176,7 @@ export function studio3dConfig({
 } = {}) {
   const ROOT = resolve(dir);
   const HELD = join(ROOT, "held");
+  const HANDS = join(ROOT, "hands");
   const HELD_OUT = heldOut ? resolve(heldOut) : null;
   const ENTRY = worldEntry(ROOT);
   const R = rigSources(ROOT, tree);
@@ -192,6 +194,23 @@ export function studio3dConfig({
           raw[f.slice(0, -5)] = JSON.parse(buf.toString("utf8"));
           hash[f.slice(0, -5)] = sha(buf);
         }
+    return { raw, hash };
+  };
+
+  /** JSON thô và hash các dáng tay `hands/` của repo (lớp chung đã ở `worldData`) */
+  const handsRaw = () => {
+    const raw = {};
+    const hash = {};
+    if (existsSync(HANDS))
+      for (const f of readdirSync(HANDS).filter((f) => f.endsWith(".json"))) {
+        const buf = readFileSync(join(HANDS, f));
+        try {
+          raw[f.slice(0, -5)] = JSON.parse(buf.toString("utf8"));
+        } catch {
+          continue;
+        }
+        hash[f.slice(0, -5)] = sha(buf);
+      }
     return { raw, hash };
   };
 
@@ -256,6 +275,7 @@ export function studio3dConfig({
           if (req.method === "GET") {
             const buf = readFileSync(file);
             const held = heldRaw();
+            const hands = handsRaw();
             const data = worldData(ROOT);
             const snapOpts = snapOptions(ROOT);
             return {
@@ -264,6 +284,8 @@ export function studio3dConfig({
               data,
               heldRaw: held.raw,
               heldHash: held.hash,
+              handsRaw: hands.raw,
+              handsHash: hands.hash,
               heldOpts: heldOptions(ROOT),
               snapOpts,
               // quãng lên hình của `episodes/`: vệt đo giật như `check`
@@ -337,6 +359,44 @@ export function studio3dConfig({
           });
         }),
       );
+
+      // dáng tay của thư viện: ghi `hands/<tên>.json` của repo (`hash: null` là dáng mới — file đã có thì 409)
+      server.middlewares.use(
+        "/api/hands",
+        route(async (req, name) => {
+          if (req.method !== "POST") throw new HttpError(405, "chỉ POST");
+          const rig = await core();
+          const why = rig.handShapeNameProblem(name);
+          if (why) throw new HttpError(400, `tên dáng tay \`${name}\`: ${why}`);
+          const { shape, hash } = await readBody(req);
+          const file = join(HANDS, `${name}.json`);
+          const what = `hands/${name}.json`;
+          return serial(file, async () => {
+            const buf = existsSync(file) ? readFileSync(file) : null;
+            const check = (now) => {
+              if (hash === null) {
+                if (now !== null)
+                  throw new HttpError(409, `${what} đã có — mở dáng ấy để sửa, hay đặt tên khác`, {
+                    conflict: true,
+                    hash: sha(now),
+                  });
+              } else fresh(now, hash, what);
+            };
+            check(buf);
+            const parsed = rig.parseHandShape(shape);
+            if (!parsed.success)
+              throw new HttpError(400, `dáng tay không qua schema: ${parsed.error.message}`);
+            const fmt = (await format)(file);
+            const body = buf
+              ? await formatLike(buf.toString("utf8"), shape, fmt)
+              : await fmt(`${JSON.stringify(shape, null, 2)}\n`);
+            const now = existsSync(file) ? readFileSync(file) : null;
+            check(now);
+            writeWithBak(file, body, now);
+            return { file, shape, hash: sha(body) };
+          });
+        }),
+      );
     },
   };
 
@@ -385,8 +445,8 @@ export function studio3dConfig({
 }
 
 /**
- * Chạy Studio 3D cho repo video `dir`. Chỉ nghe `localhost`: trang ghi thẳng `scenes/`, `held/` của repo; `host` khác
- * (`--host`) là mở cả hai đường ghi ra mạng ấy. `heldOut` trả về là thư mục ghi món khi đổi hướng (`STUDIO3D_HELD_OUT`).
+ * Chạy Studio 3D cho repo video `dir`. Chỉ nghe `localhost`: trang ghi thẳng `scenes/`, `held/`, `hands/` của repo; `host`
+ * khác (`--host`) là mở cả ba đường ghi ra mạng ấy. `heldOut` trả về là thư mục ghi món khi đổi hướng (`STUDIO3D_HELD_OUT`).
  */
 export async function serveStudio3d({ dir = ".", port = 5180, host = "localhost", heldOut } = {}) {
   const { createServer } = await import("vite");

@@ -152,8 +152,7 @@ describe("schema", () => {
       lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
       cast: [{ id: "a", world: { at: [0, 0, 500], hands: [{ t: 0, right: { at: PHONE } }] } }],
     });
-    expect(SCENE_VERSION).toBe(32);
-    const old = parseScene(json(31));
+    const old = parseScene(json(SCENE_VERSION - 1));
     expect(old.data).toStrictEqual(parseScene(json(SCENE_VERSION)).data);
     expect(parseScene(json(SCENE_VERSION + 1)).error!.message).toMatch(/phiên bản schema/);
   });

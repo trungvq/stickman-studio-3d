@@ -49,3 +49,13 @@ describe("upgrade: file seed là của repo", () => {
     assert.equal(stamp(dir).files["src/parts.tsx"], undefined);
   });
 });
+
+describe("upgrade: thư mục app Remotion đọc", () => {
+  it("dựng `hands/` thiếu kèm `.gitkeep`", async () => {
+    const dir = fresh();
+    assert.ok(existsSync(join(dir, "hands/.gitkeep")));
+    rmSync(join(dir, "hands"), { recursive: true });
+    await upgradeWorkspace({ dir, decide: async () => "bỏ qua" });
+    assert.ok(existsSync(join(dir, "hands/.gitkeep")));
+  });
+});

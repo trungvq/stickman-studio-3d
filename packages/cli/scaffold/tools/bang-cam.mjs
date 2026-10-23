@@ -902,7 +902,16 @@ for (const c of cells) {
   const bodies = { cam: rig.body3(ch) };
   let rt;
   try {
-    rt = rig.resolveScene(sc, data.actions, data.animals, data.props, heights, bodies, data.held);
+    rt = rig.resolveScene(
+      sc,
+      data.actions,
+      data.animals,
+      data.props,
+      heights,
+      bodies,
+      data.held,
+      data.hands,
+    );
   } catch (e) {
     // `resolveScene` đo cỡ tay theo chiều cao người mẫu, có thể chặt hơn cỡ tay của nhân vật
     const loi = e.message.match(/lỗi `(?:choice|group)`: (.*)$/);

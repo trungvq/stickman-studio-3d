@@ -156,4 +156,30 @@ describe("hold_mode", () => {
       /đã là đồ theo tay/,
     );
   });
+
+  it("dáng tay: hai lớp, `write` từ chối tên sai, cảnh gọi dáng của thư viện", async () => {
+    const own = { fingers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] };
+    await assert.rejects(call("write", { kind: "hands", file: "fist", data: own }), /có sẵn/);
+    const wrote = await client.callTool({
+      name: "write",
+      arguments: { kind: "hands", file: "vay", data: own },
+    });
+    assert.ok(!wrote.isError, wrote.content[0].text);
+    const { files } = await call("list", { kind: "hands" });
+    assert.deepEqual(files.map((f) => [f.file, f.layer]).sort(), [
+      ["peace.json", "common"],
+      ["vay.json", "workspace"],
+    ]);
+    const hands = [{ t: 0.5, right: { pose: "peace" }, left: { pose: "vay", w: 0.5 } }];
+    const scene = {
+      ...SCENE,
+      cast: [{ ...SCENE.cast[1], world: { ...SCENE.cast[1].world, hands } }],
+    };
+    assert.equal((await call("validate", { kind: "scenes", data: scene })).ok, true);
+    hands[0].right.pose = "khong-co";
+    await assert.rejects(
+      call("validate", { kind: "scenes", data: scene }),
+      /hands\/khong-co\.json/,
+    );
+  });
 });

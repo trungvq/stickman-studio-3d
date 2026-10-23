@@ -6,7 +6,7 @@ import type { KeyRef } from "./keys";
 export interface Glyph {
   key: KeyRef;
   t: number;
-  shape: "dot" | "ring" | "null" | "diamond";
+  shape: "dot" | "ring" | "pose" | "null" | "diamond";
   title: string;
   on: boolean;
   lock?: boolean;

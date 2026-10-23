@@ -10,6 +10,7 @@ import { basename, join, resolve } from "node:path";
 import {
   parseAction,
   parseAnimal,
+  parseHandShape,
   parseHeldItem,
   parseProp,
   parseScene,
@@ -57,13 +58,14 @@ const SCENES = load([join(ROOT, "scenes")], parseScene);
 const ANIMALS = load([join(common, "animals"), join(ROOT, "animals")], parseAnimal, true);
 const PROPS = load([join(ROOT, "props")], parseProp, true);
 const HELD = load([join(common, "held"), join(ROOT, "held")], parseHeldItem);
+const HANDS = load([join(common, "hands"), join(ROOT, "hands")], parseHandShape);
 
 const SECONDS = {};
 const sceneSeconds = (name) => {
   if (!SCENES[name]) throw new Error(`không có scenes/${name}.json`);
   return (SECONDS[name] ??=
     SCENES[name].duration ??
-    resolveScene(SCENES[name], ACTIONS, ANIMALS, PROPS, {}, {}, HELD).duration);
+    resolveScene(SCENES[name], ACTIONS, ANIMALS, PROPS, {}, {}, HELD, HANDS).duration);
 };
 
 const run = (bin, args) => {
