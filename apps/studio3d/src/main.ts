@@ -61,6 +61,8 @@ import {
   type KeyRef,
 } from "./keys";
 import { record, travel } from "./history";
+import { runHoldKeys, setRunVariant, styleEntries, type RunRef } from "./named";
+import { renderStyles } from "./namedUi";
 import { plusHand, plusItem } from "./plus";
 import { KeyTrack, type Band, type Lane } from "./track";
 
@@ -117,6 +119,7 @@ const ui = {
   follow: $<HTMLInputElement>("follow"),
   measure: $<HTMLDivElement>("measure"),
   editGrasp: $<HTMLButtonElement>("editGrasp"),
+  styles: $<HTMLElement>("styles"),
   editor: $<HTMLElement>("editor"),
 };
 
@@ -619,6 +622,38 @@ function panel() {
     b.hidden = b.dataset.angle === "sau" && !back;
   ui.measure.innerHTML =
     rowsT === t ? measureHtml(r, cur.held) : `<div class="dim">dừng phát để đo</div>`;
+  const run = runOf(r.id, r.side, t);
+  renderStyles(ui.styles, run ? styleModel(run, r.report?.choice.variant) : null, (v) =>
+    pickStyle(run!, v),
+  );
+}
+
+/** Lần cầm của tay `side` người `id` chứa giây `at` */
+function runOf(id: string, side: Side, at: number): (RunRef & HoldRunInfo) | undefined {
+  if (!cur) return undefined;
+  const run = runAt(rig.holdRuns(cur.rt, id)[sideOf(side)], at, cur.dur);
+  return run && { ...run, id, side: sideOf(side) };
+}
+
+/** Danh sách kiểu cầm của món × nhóm của lần cầm (`solved`: biến thể rig đang ra) */
+function styleModel(run: RunRef & HoldRunInfo, solved?: string) {
+  if (!work || !cur || run.group === "carry") return null;
+  const held = cur.data.held as Record<string, HeldItemSpec>;
+  return {
+    label: holdLabel({ ...run, variant: undefined }) + (run.lead ? " (tay phụ)" : ""),
+    ...(run.variant && { current: run.variant }),
+    ...(solved && { solved }),
+    entries: styleEntries(held[run.item] ?? held[rig.heldBase(run.item)], run.group),
+    keys: runHoldKeys(work.raw, run).length,
+  };
+}
+
+/** Đổi `variant` của cả lần cầm (một bước lịch sử); `undefined` bỏ khai, rig chọn */
+function pickStyle(run: RunRef & HoldRunInfo, v: string | undefined) {
+  if (!work) return;
+  const { raw, changed } = setRunVariant(work.raw, run, v);
+  if (!changed) return say("lần cầm không có mốc `hold` nào đổi");
+  if (apply(raw)) say(`${run.item}@${run.group}: kiểu ${v ?? "rig chọn"} — đổi ${changed} mốc`);
 }
 
 /** Chọn bàn tay; `go` thì camera tự do bay tới cận tay ấy (góc trước) */
@@ -760,6 +795,27 @@ function editScene(r: HandRow): EditScene {
   };
 }
 
+/**
+ * Ghi bản soạn `au` (`null` xoá) vào khoá `authored.<group>.<variant>` của `held/<name>.json` kèm hash lúc nạp; bản đã lưu
+ * thành bản đọc, cảnh dựng lại từ nó (không còn áp tạm món ấy)
+ */
+async function postHeld(name: string, group: string, variant: string, au: AuthoredGrasp | null) {
+  const res = await fetch(`/api/held?name=${encodeURIComponent(name)}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ group, variant, authored: au, hash: fetched?.j.heldHash?.[name] }),
+  });
+  const j = await res.json();
+  if (j.error) throw new Error(j.error);
+  if (fetched) {
+    fetched.j.heldRaw = { ...fetched.j.heldRaw, [name]: j.item };
+    fetched.j.heldHash = { ...fetched.j.heldHash, [name]: j.hash };
+  }
+  delete patched[name];
+  if (cur) await load(cur.name, { keepTime: true, reuse: true });
+  return j as { file: string; item: unknown };
+}
+
 /** Món kèm bản soạn `au` (hay bỏ bản soạn, `null`) cho nhóm × biến thể của lần soạn */
 function withAuthored(t: EditTarget, au: AuthoredGrasp | null): HeldItemSpec {
   const all = structuredClone(t.spec.authored ?? {}) as NonNullable<HeldItemSpec["authored"]>;
@@ -785,28 +841,40 @@ function openEditor() {
         patched[t.base] = withAuthored(t, au);
         if (cur) await load(cur.name, { keepTime: true, reuse: true });
       },
-      save: async (t, au) => {
-        const res = await fetch(`/api/held?name=${encodeURIComponent(t.base)}`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            group: t.group,
-            variant: t.variant,
-            authored: au,
-            hash: fetched?.j.heldHash?.[t.base],
-          }),
-        });
-        const j = await res.json();
-        if (j.error) throw new Error(j.error);
-        // bản đã lưu thành bản đọc: cảnh dựng lại từ nó, không còn áp tạm
-        if (fetched) {
-          fetched.j.heldRaw = { ...fetched.j.heldRaw, [t.base]: j.item };
-          fetched.j.heldHash = { ...fetched.j.heldHash, [t.base]: j.hash };
-        }
-        delete patched[t.base];
-        if (cur) await load(cur.name, { keepTime: true, reuse: true });
-        return j.file as string;
+      save: async (t, au) => (await postHeld(t.base, t.group, t.variant, au)).file,
+      saveAs: async (t, au, name, use) => {
+        const j = await postHeld(t.base, t.group, name, au);
+        const spec = rig.parseHeldItem(j.item);
+        if (!spec.success) throw new Error(spec.error.message);
+        const saved = `đã lưu kiểu ${name} vào ${j.file}`;
+        if (!use) return { spec: spec.data, message: saved };
+        const run = runOf(t.row.id, t.row.side, t.scene.t);
+        if (!run || !work)
+          return {
+            spec: spec.data,
+            message: `${saved}; không thấy lần cầm: cảnh không đổi`,
+            error: true,
+          };
+        const { raw, changed } = setRunVariant(work.raw, run, name);
+        if (!apply(raw))
+          return {
+            spec: spec.data,
+            message: `${saved}, nhưng không ghi được \`variant\` vào cảnh: ${ui.msg.textContent}`,
+            error: true,
+          };
+        return {
+          spec: spec.data,
+          message: `${saved}; cảnh: \`variant\` ở ${changed} mốc của lần cầm — chưa lưu cảnh (Lưu, Ctrl+S)`,
+        };
       },
+      copyTo: async (t, dst, name, au) => (await postHeld(dst, t.group, name, au)).file,
+      run: (t) => {
+        const run = runOf(t.row.id, t.row.side, t.scene.t);
+        return run && work
+          ? { label: holdLabel(run), keys: runHoldKeys(work.raw, run).length }
+          : undefined;
+      },
+      held: () => cur?.data.held as Record<string, HeldItemSpec>,
       close: () => closeEditor(),
       wheel: () => fc.wheel,
       aa: () => ui.aa.value as AaMode,
