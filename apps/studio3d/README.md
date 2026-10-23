@@ -62,6 +62,7 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
 | Ctrl+Z · Ctrl+Shift+Z, Ctrl+Y | Hoàn tác · làm lại (lịch sử chung của cảnh) |
 | Ctrl+S | Lưu mốc tay, mốc món vào `scenes/` |
 | Del, Backspace | Xoá mốc đang mở thẻ (Dáng tay) |
+| T · Y | Tay nắm của bàn tay đang chọn: dời · xoay (Dáng tay) |
 | W S · A D · Q E | Camera tự do: tiến / lùi, sang trái / phải, xuống / lên (theo hướng camera); giữ Shift: nhanh gấp 3 |
 | Esc | Đóng thẻ mốc; không có thẻ thì bỏ chọn bàn tay |
 
@@ -180,6 +181,31 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hà
 
   Hình chỉ giữ ở đúng giây của mốc: quanh mốc, đường tay đổi theo mốc mới — mốc sau không phải `auto` thì đoạn từ mốc mới
   tới nó bắt đầu từ vận tốc `0` (bàn tay dừng ở mốc mới).
+- **Tay nắm, vòng khuỷu, nón cổ tay** của bàn tay đang chọn (ẩn khi phát, khi khung soạn kiểu cầm mở). Thả chuột mới áp: trang
+  dựng lại cảnh, đo, rồi làm mới tại chỗ (vài trăm ms); đang áp thì lần kéo mới không nhận. **Có mốc ở giây đang xem thì kéo
+  sửa mốc ấy; không có thì lần kéo đầu chèn mốc mới ở giây ấy như ＋ rồi sửa nó**, thanh trạng thái báo "đã thêm mốc 1.23 s".
+  Mốc vừa sửa mở thẻ; một lần kéo là một bước lịch sử.
+  - **Tay nắm** (TransformControls ở tâm nắm; HUD góc trên khung, **T** dời theo trục thế giới, **Y** xoay theo trục của
+    bàn tay hay món). Đồ theo tay, tay tự do sửa mốc tay: dời ghi `at` (mốc theo mốc thân `to` thì `offset`), bù tới khi tâm
+    nắm ở đúng chỗ thả; xoay quanh tâm nắm ghi ý định món `hold.face`, `hold.roll` (trục khung món `[0, 0, 1]`, `[0, 1, 0]` về
+    vectơ hệ thân, ngang ra ngoài phía tay ấy, như ＋) cho đồ theo tay, `palm` + `fingers` (vectơ hệ thân, bỏ `bend`) cho tay
+    tự do. Tay theo đồ (theo mốc, hai tay) sửa mốc món `items[]` ở giây ấy: dời, xoay **món** quanh tâm nắm, hướng ghi `face`,
+    `roll` trục khung món về vectơ hệ thân người cầm (ngang phải, bỏ `up`), chỗ ghi `at` hay `offset` bù tới khi tâm món ở
+    chỗ mới; bàn tay theo món. Tay phụ của `both` không có tay nắm: kéo ở tay dẫn. Tay đang hoà (`HOLD_BLEND`) mà đích ở
+    giây ấy chưa đổi được hình thì không sửa, thanh trạng thái báo.
+  - **Vòng khuỷu**: đường tròn khuỷu quanh trục vai → cổ tay (đường xám) đi qua khuỷu đang vẽ (`handReport.ring`), tô theo
+    `E(φ)` của `handReport.cost` (`evalPhi`): xanh ở chỗ rẻ nhất, đỏ từ rẻ nhất + 3 trở lên; tay tự do không có giá, vòng xám.
+    Chấm trắng là khuỷu đang vẽ, tím khi khoá; nhãn cạnh khuỷu ghi `φ`, `E`. **Kéo** chấm hay bất kỳ chỗ nào trên vòng (bóng
+    cam theo con trỏ): thả là ghi `elbow` (hướng thế giới rig) và `elbowLock: true` vào mốc tay ở giây ấy. Cổ tay dời theo khuỷu
+    (tâm nắm giữ chỗ) nên vòng của cảnh mới cũng dời: trang dò hướng `elbow` tới khi `handReport.phi` lệch góc thả dưới 0,25°.
+    Tay không theo món đặt trước mà mốc chưa có `at` / `to` thì ghi thêm `at` ở tâm nắm đang vẽ — khoá chỉ có tác dụng ở mốc có
+    đích; lần cầm theo mốc khoá ở mốc tay `hold` của lần cầm. **Nhấp đúp** lên vòng: bỏ `elbowLock` và `elbow` của mốc ở giây
+    ấy, về khuỷu tự nhiên. Tay nắm dưới con trỏ thắng vòng khi bấm kéo.
+  - **Nón cổ tay**, chỉ để xem: chóp ở cổ tay trong khung cẳng tay; cạnh chóp là miền `AIM_BEND` −60..70 × `AIM_DEV` −30..20 ở
+    xoay cẳng tay đang vẽ, vòng cung dưới chân là xoay cẳng tay ±90 (vạch là hướng lòng tay, đỏ khi xoay bị kẹp). Chấm là
+    hướng bàn tay đang vẽ: trắng trong miền, đỏ khi gập hay lệch bị kẹp. Món đặt trước vượt kẹp thì thêm chấm đỏ ở hướng
+    nghiệm, nhãn ghi số độ vượt; tay dẫn giải trong miền nên chỉ có khớp kẹp và độ lệch trục món (`wrist.err`). Cổ tay chỉnh qua
+    hướng món và khuỷu, không có trường góc cổ tay.
 - **Thẻ mốc**: `ease` (ô 4 số khi `bezier`, mặc định `BEZIER_DEFAULT`); `hold` (không khai / buông `null` / cầm: món,
   nhóm, biến thể — kiểu có tên hiện kèm `note`; `hold` dạng chuỗi ghi lại chuỗi, dạng object đổi `item`, `group`,
   `variant`, đổi món hay nhóm thì bỏ trường chỗ cầm cũ `part`, `edge`, `along`…, giữ ý định và trường lạ; đổi món thì
@@ -194,7 +220,7 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hà
   tên), rồi parse và làm mới tại chỗ (`world.refresh`); không làm mới được thì dựng lại cả cảnh. Bản sửa hỏng schema hay
   `resolveScene` ném thì không áp, thanh trạng thái báo lý do; dựng lại cả cảnh hỏng thì về bản trước, lời báo lỗi còn lại.
 - **Lịch sử chung** cho cảnh, mỗi bước là ảnh chụp JSON thô; thao tác không đổi gì không thành bước: ↶ ↷ trên thanh trên, Ctrl+Z / Ctrl+Shift+Z. Khung soạn kiểu cầm
-  đang mở thì giữ lịch sử riêng, lịch sử cảnh tạm khoá.
+  đang mở thì giữ lịch sử riêng, lịch sử cảnh tạm khoá. Hoàn tác / làm lại mở lại thẻ của mốc đang mở khi rời bản ấy.
 - **Lưu** (Ctrl+S): chấm cam là có thay đổi chưa lưu. Ghi `POST /api/scene` kèm hash lúc nạp; lưu xong lịch sử còn nguyên.
   **Bỏ thay đổi** về bản đã lưu (là một bước, hoàn tác được). File cảnh đổi trên đĩa từ lúc nạp thì server trả 409, không có cách ghi đè: hộp
   báo cho **Tải bản đĩa về** — bản đĩa vào thành một bước mới của lịch sử (hash mới, là bản đã lưu), Ctrl+Z quay lại bản
@@ -203,7 +229,8 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hà
 - **File repo video đổi trên đĩa** (cảnh, món mà `src/` của repo nhập — kể cả lúc Lưu): trang nhận module cảnh three mới
   tại chỗ, không nạp lại trang; lần dựng cảnh sau (Shift+R) dùng bản mới.
 - **Màn hẹp** (≤ 760 px): camera, AA, Lăn gập sau nút ⋯; panel bàn tay xuống dưới khung vẽ. Ở Xem thanh tua vừa bề ngang;
-  ở Dáng tay thanh tua rộng 720 px, cuộn ngang, luôn tự cuộn theo giây đang xem (cả khi chưa chọn tay).
+  ở Dáng tay thanh tua rộng 720 px, cuộn ngang, luôn tự cuộn theo giây đang xem (cả khi chưa chọn tay); nhãn dải lần cầm
+  bám mép trái khung cuộn. HUD tay nắm bỏ dòng nhắc.
 
 ## Lưu ý khi xem bằng camera tự do
 

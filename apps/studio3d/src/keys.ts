@@ -269,8 +269,12 @@ const unit = (v: readonly number[]): V3 => {
   return [v[0] / n, v[1] / n, v[2] / n];
 };
 
+/** `hold` có hiệu lực ở `t` của tay `side` (mốc nhắc `hold` gần nhất không sau `t`) */
+export const holdAt = (raw: Json, id: string, side: HandSide, t: number): unknown =>
+  around(raw, id, side, t).hold;
+
 /** `hold` của lần cầm đồ theo tay mang ý định là hướng món đang vẽ: chỗ cầm giữ nguyên (cùng lần cầm), ý định cũ bỏ */
-function intentHold(hold: unknown, axes: { face: V3; roll: V3 }): Json {
+export function intentHold(hold: unknown, axes: { face: V3; roll: V3 }): Json {
   const pick = holdPickOf(hold);
   const h: Json = isObj(hold) ? structuredClone(hold) : { ...pick };
   for (const f of [...INTENT, "regrip"]) delete h[f];
