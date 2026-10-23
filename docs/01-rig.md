@@ -9,7 +9,8 @@ Gốc toạ độ đặt ở **chậu hông** (pelvis). Trục y hướng xuốn
 
 | Kích thước | px | Ghi chú |
 |---|---:|---|
-| Tổng chiều cao | 428 | Đỉnh đầu tới gót |
+| Tổng chiều cao | 428 | Đỉnh đầu tới gót, ≈ 1,71 m |
+| Một mét | 250 | `RIG_PER_METRE`: quy đổi đơn vị rig ra mét, chung cho mọi repo |
 | Đầu (cao) | 130 | ~29% chiều cao — cố tình to, kiểu hoạt hình |
 | Cổ | 8 | |
 | Thân (hông → vai) | 120 | |

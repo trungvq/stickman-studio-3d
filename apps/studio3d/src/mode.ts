@@ -6,6 +6,7 @@ import {
   HOLD_MODE_POS,
   holdToHandLed,
   holdToItemLed,
+  RIG_PER_METRE,
   type HandSide,
   type HoldModeMax,
   type HoldModeResult,
@@ -59,6 +60,18 @@ export function convertRun(
   });
   return { res, raw: applyJsonPatch(raw, res.ops) };
 }
+
+/** Đơn vị rig → cm */
+export const toCm = (x: number) => (x * 100) / RIG_PER_METRE;
+
+/** Độ dời trên bảng, cm: hai chữ số thập phân dưới 1 cm, một chữ số từ 1 cm */
+export const cmText = (x: number) => {
+  const c = toCm(x);
+  return c < 0.005 ? "0" : c.toFixed(c < 0.995 ? 2 : 1);
+};
+
+/** Ngưỡng dời tô đỏ, cm, viết kiểu Việt (`0,2`) */
+export const POS_LIMIT_CM = String(toCm(HOLD_MODE_POS)).replace(".", ",");
 
 /** Lệch vượt ngưỡng giữ chỗ (`HOLD_MODE_POS` đơn vị rig, `HOLD_MODE_ANGLE` độ) */
 export const overPos = (x: number | undefined) => (x ?? 0) > HOLD_MODE_POS;

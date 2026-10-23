@@ -99,7 +99,7 @@ báo lỗi phiên bản — cố ý. `fromCharacter` nhận JSON đã qua `parse
 `packages/sketch/src/anchor.ts`** — `<Character>` vẽ bằng nó, `anchorAt` đọc lại nó. Mọi mảnh vẽ ra
 phải đi qua `piece()`: nó gắn `data-piece` / `data-box` / `data-spin` cho studio bấm trúng mảnh.
 
-**Hệ toạ độ.** Thế giới rig: x phải, y xuống, z sâu vào cảnh, px (người cao ~430). Sang three: đảo
+**Hệ toạ độ.** Thế giới rig: x phải, y xuống, z sâu vào cảnh, px (người cao ~430 ≈ 1,7 m, một mét là `RIG_PER_METRE` = 250). Sang three: đảo
 y và z, chia 100 (`toThree`, `U`). Hệ nhóm thân của áo và váy: gốc ở hông, y xuống, z ra trước
 ngực, cũng chia 100 nhưng chỉ đảo y. Sọ đơn vị của tóc và kính: y lên, z ra trước mặt. Người que
 nhìn +z local; bên `-1` là tay/chân phải.

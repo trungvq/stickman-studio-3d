@@ -13,6 +13,9 @@ export const RIG = {
   footY: 170,
 } as const;
 
+/** Đơn vị rig trong một mét: người cao 428 ≈ 1,71 m. docs/01-rig.md */
+export const RIG_PER_METRE = 250;
+
 export const PAPER = "#f4f1e8";
 /** Màu nét mặc định — `palette.line` khởi tạo từ đây; chỗ vẽ ngoài rig đừng gõ lại mã màu */
 export const INK = "#1a1a1a";

@@ -3,7 +3,18 @@ import { describe, expect, it } from "vitest";
 import { runtime, scene } from "./fixture";
 import { record, travel, type Steps } from "./history";
 import { handsOf, type Json } from "./keys";
-import { convertRun, maxOver, midMax, midRun, modeTarget, rowOver, runAt } from "./mode";
+import {
+  cmText,
+  convertRun,
+  maxOver,
+  midMax,
+  midRun,
+  modeTarget,
+  overPos,
+  POS_LIMIT_CM,
+  rowOver,
+  runAt,
+} from "./mode";
 
 /** Áp `next` như trang (một bước lịch sử chung, bản đang sửa là `now`), rồi hoàn tác: trả chữ JSON trước, sau áp, sau hoàn tác */
 function applyUndo(raw: Json, next: Json) {
@@ -134,5 +145,14 @@ describe("công tắc chế độ lần cầm (mode.ts)", { timeout: 120_000 }, 
     expect(rowOver({ item: { pos: 0.6, angle: 0 }, hand: {} })).toBe(true);
     expect(rowOver({ item: { pos: 0, angle: 1.2 }, hand: {} })).toBe(true);
     expect(rowOver({ item: null, hand: { left: 0.7 } })).toBe(true);
+  });
+
+  it("độ dời hiện cm (1 m = 250 đơn vị rig), tô đỏ quá 0,2 cm", () => {
+    expect(cmText(2.09)).toBe("0.84");
+    expect(cmText(5)).toBe("2.0");
+    expect(cmText(0.001)).toBe("0");
+    expect(POS_LIMIT_CM).toBe("0,2");
+    expect(overPos((0.19 * 250) / 100)).toBe(false);
+    expect(overPos((0.21 * 250) / 100)).toBe(true);
   });
 });
