@@ -75,6 +75,7 @@ import { runtimeOf, type Data } from "./runtime";
 import { SceneList } from "./sceneList";
 import { readView, viewNote, writeView, type V3, type ViewState } from "./share";
 import { Solo } from "./solo";
+import { sourceHtml, sourceLines, sourceModel } from "./source";
 import { KeyTrack, type Band, type Lane } from "./track";
 import { Trails } from "./trails";
 
@@ -131,6 +132,7 @@ const ui = {
   follow: $<HTMLInputElement>("follow"),
   solo: $<HTMLInputElement>("solo"),
   measure: $<HTMLDivElement>("measure"),
+  source: $<HTMLDivElement>("source"),
   editGrasp: $<HTMLButtonElement>("editGrasp"),
   editShape: $<HTMLButtonElement>("editShape"),
   styles: $<HTMLElement>("styles"),
@@ -716,6 +718,10 @@ function panel() {
   ui.selBox.hidden = !r || !!editor;
   if (!r || !cur) return;
   ui.selName.textContent = `${r.id} · tay ${sideName(r.side)}`;
+  const src = sourceOf(r);
+  ui.source.innerHTML = src
+    ? sourceHtml(src)
+    : `<div class="dim">người không có \`world\`: không có nguồn dáng 3D</div>`;
   const free = !r.hold && !r.carry;
   ui.editGrasp.hidden = free;
   ui.editShape.hidden = !free;
@@ -731,6 +737,12 @@ function panel() {
     rowsT === t ? measureHtml(r, cur.held) : `<div class="dim">dừng phát để đo</div>`;
   const run = runOf(r.id, r.side, t);
   renderStyles(ui.styles, run ? styleModel(run, r) : null, (v) => pickStyle(run!, v));
+}
+
+/** Nguồn dáng của bàn tay `r` ở giây đang xem (`handSources` của rig trên runtime đang vẽ) */
+function sourceOf(r: HandRow) {
+  const src = cur && rig.handSources(cur.rt, r.id, t)?.[sideOf(r.side)];
+  return src && sourceModel(r.id, src);
 }
 
 /** Lần cầm của tay `side` người `id` chứa giây `at` */
@@ -2249,6 +2261,10 @@ async function copyView() {
     ...(r && {
       hand: {
         label: `${r.id} · tay ${sideName(r.side)} · ${heldLabel(r)}`,
+        source: (() => {
+          const src = sourceOf(r);
+          return src ? sourceLines(src) : [];
+        })(),
         measure: rowsT === t ? htmlLines(measureHtml(r, c.held)) : [],
       },
     }),

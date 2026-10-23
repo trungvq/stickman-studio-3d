@@ -1017,6 +1017,19 @@ export function actionHand(a: ActionData, t: number): HandMap {
   return o;
 }
 
+/**
+ * Mốc bàn tay của hành động có hiệu lực ở pha `t` theo kênh tay, nguyên như file (tên dáng hay `{ pose, w, turn, bend,
+ * palm, fingers }`): mốc gần nhất không sau pha ấy có nhắc kênh ấy. Ngoài mặt nạ hay kênh không có mốc thì `undefined`
+ */
+export function actionHandKey(
+  a: ActionData,
+  t: number,
+  ch: (typeof REACH_CHANNELS)[number],
+): HandPose | HandKey | undefined {
+  if (!a.keys || actionKind(a) === "animal" || !actionMask(a).includes("hand")) return undefined;
+  return sampleStep(a, (k) => keyHand(k)[REACH_OF[ch]], phaseOf(a, t));
+}
+
 /** Mỏ và mắt mà hành động của động vật ghi tại pha `t`; kênh `face`, ngoài mặt nạ thì bỏ trống. */
 export function animalActionFace(a: ActionData, t: number): Partial<AnimalFace> {
   if (!a.keys || !animalActionMask(a).includes("face")) return {};

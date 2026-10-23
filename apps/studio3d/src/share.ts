@@ -77,7 +77,8 @@ export interface NoteInput {
   view: ViewState;
   /** Camera đang vẽ, hệ three */
   camera: { pos: V3; dir: V3; fov: number };
-  hand?: { label: string; measure: string[] };
+  /** Bàn tay đang chọn: nhãn, nguồn dáng (`sourceLines`), số đo */
+  hand?: { label: string; source?: string[]; measure: string[] };
   /** Bàn tay đang cầm, treo đồ ở giây này */
   hands: string[];
   /** Mốc đang mở thẻ (Dáng tay) */
@@ -135,6 +136,7 @@ export function viewNote(o: NoteInput): string {
     L.push(
       `- Bàn tay đang chọn: ${o.hand.label}${o.view.solo ? " · Chỉ người này: bật (ảnh chỉ có người ấy)" : ""}`,
     );
+    for (const m of o.hand.source ?? []) L.push(`  ${m}`);
     for (const m of o.hand.measure) L.push(`  ${m}`);
   }
   if (o.hands.length) {

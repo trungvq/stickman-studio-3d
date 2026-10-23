@@ -98,7 +98,7 @@ Nút **Chép view** trên thanh trên dừng phát, vẽ lại và đo bàn tay 
 - lưu ảnh khung vẽ đúng như trên màn hình (three, lớp phủ bàn tay, tay nắm, vệt) vào `tmp/studio3d/<cảnh>-<giây>s.png`
   của repo video, ghi đè ảnh cùng tên;
 - chép vào clipboard một đoạn chữ cho agent: repo, file cảnh, giây và số khung, mốc gần, đường ảnh, link mở lại đúng view,
-  camera (hệ three; camera tự do kèm tâm xoay ở hệ rig), bàn tay đang chọn và số đo của nó, các tay đang cầm / treo đồ kèm
+  camera (hệ three; camera tự do kèm tâm xoay ở hệ rig), bàn tay đang chọn kèm nguồn dáng và số đo của nó, các tay đang cầm / treo đồ kèm
   luật phạm, cảnh báo khi có thay đổi chưa lưu (link và lệnh mở bản trên đĩa). Camera cảnh thì kèm lệnh
   `stickman-render --three` vẽ lại khung ấy không cần trình duyệt.
 
@@ -137,6 +137,12 @@ dòng hay nhấp lên bàn tay / món trên hình (cả camera cảnh) để ch�
   sửa và lịch sử không đổi, số đo cầm đồ vẫn đo trên cảnh đủ người. Thứ đã ẩn không chặn nhấp chọn tay, nhấp đúp đặt tâm
   xoay hay đường camera của các góc cận tay. Chọn tay người khác thì hình theo người ấy; chưa chọn tay thì hiện cả cảnh.
   Công tắc giữ khi đổi cảnh, không nhớ qua lần mở trang. Khung soạn kiểu cầm không theo công tắc này.
+- **Nguồn dáng** (chỉ đọc): cái gì đang điều khiển tay ấy ở giây đang xem, tính bằng `handSources` của rig (cùng phép tính
+  với `sceneAt`) — tay gần hay xa ống kính và vì sao (`kênh xa → tay phải vì đang lật`), clip và track ghi góc **cánh tay**
+  (không clip nào là `base`), clip và track ghi **bàn tay** kèm mốc bàn tay của hành động (`open 0.75 · palm down · fingers
+  forward`), **mốc tay** `world.hands` đang áp (chỉ số, loại, giây, mốc sau, phần đích `w`, món). Dòng bàn tay tô vàng khi
+  hành động khai ý định hướng tay (`palm` / `fingers`) mà tay không có mốc `world.hands` đang áp: clip soạn cho tay khác rơi
+  vào tay này hay gặp nhất ở đây.
 - số đo cầm đồ ở giây đang xem bằng chính phép đo của `check` nhóm `held` (`heldHands`, `heldHits`, `heldSummary` của rig,
   ngưỡng `stickman.held` của `package.json` repo): lựa chọn cầm của bộ giải kèm nguồn (`·rig` rig giải, `·mđ` mặc định nhóm),
   luật phạm (`!! pierce`, `sink`, `loose`, `role`, `oppose`, `grip`, `wrist`, `reach`, `elbow`, `arm`, `size`, `up`/`face` — món

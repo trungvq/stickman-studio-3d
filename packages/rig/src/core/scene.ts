@@ -27,6 +27,7 @@ import {
   actionFace,
   actionAim,
   actionHand,
+  actionHandKey,
   keyAim,
   mixAim,
   reachTerm,
@@ -166,7 +167,7 @@ import {
   blendLayers,
   blendPose,
 } from "./blend";
-import { HAND_REST, mixHand } from "./hand";
+import { HAND_REST, mixHand, type HandKey as ActionHandKey, type HandPose } from "./hand";
 import { fingersOf, isHandShape, shapeFingers, withFingers, type HandShapes } from "./handLibrary";
 import { shapeBound, type CarryRef } from "./heldCarry";
 import { isCarryHold, supportChoice, supportGroup } from "./holdLink";
@@ -3993,6 +3994,10 @@ function shapeAt(
   return withFingers(act, mixHand(fa, at(rb), f));
 }
 
+/** Kênh tư thế của tay giải phẫu `side` ở người 3D: tay phải là kênh gần (`an`) khi không lật */
+export const sideChannel = (side: HandSide, flip: boolean): "an" | "af" =>
+  (side === "right") === !flip ? "an" : "af";
+
 /** `pose` với ngón của hành động đè theo `pose` của mốc tay (`shapeAt`): tay phải là kênh gần khi không lật */
 function shapeHands(
   pose: Pose,
@@ -4003,7 +4008,7 @@ function shapeHands(
 ): Pose {
   let hand = pose.hand;
   for (const side of ["right", "left"] as const) {
-    const ch = (side === "right") === !flip ? "an" : "af";
+    const ch = sideChannel(side, flip);
     const v = shapeAt(keys, side, time, lib, pose.hand?.[ch] ?? HAND_REST);
     if (v) hand = { ...hand, [ch]: v };
   }
@@ -6478,4 +6483,140 @@ function legShareUpTo(
   if (s >= c.tau) return own;
   const from = i === 0 ? under : legShareUpTo(tr, i - 1, time, under, pick);
   return from + (own - from) * (s <= 0 ? 0 : smoothstep(s / c.tau));
+}
+
+/** Clip của một track đang ghi một phần của tay ở giây đang xem (`handSources`) */
+export interface PoseSourceClip {
+  /** Chỉ số trong `cast[].tracks` và tên track */
+  track: number;
+  trackName?: string;
+  /** Chỉ số clip trong track */
+  clip: number;
+  action?: string;
+  start: number;
+  /** Giây hoà vào clip (τ đã suy) */
+  blend: number;
+  mask?: Channel[];
+  /** Còn trong đoạn hoà từ clip trước của track */
+  blending: boolean;
+  /** Kênh tay của file hành động đi vào tay này */
+  channel: (typeof ARM_CHANNELS)[number];
+  /** Hành động `sides: "anatomical"` đổi kênh gần ↔ xa của nó */
+  anatomical: boolean;
+}
+
+/** Loại mốc `world.hands` của một tay: đích (`at` / `to` / hướng tay), chỉ `hold`, chỉ `pose`, `null` */
+export type HandMarkKind = "target" | "hold" | "pose" | "null";
+
+export const handMarkKind = (h: HandMark | null | undefined): HandMarkKind =>
+  !h ? "null" : h.hold !== undefined && !h.at && !h.to ? "hold" : shapeOnly(h) ? "pose" : "target";
+
+/** Thứ đang điều khiển một tay giải phẫu của người 3D ở một giây (`handSources`) */
+export interface HandSource {
+  side: HandSide;
+  /** Kênh tư thế tay này đọc khi vẽ: `an` gần ống kính, `af` xa */
+  channel: "an" | "af";
+  /** Thân đang lật (`facing().flip`): tay phải là kênh xa */
+  flip: boolean;
+  /** Nhịp đi theo `path` đang đổi kênh gần ↔ xa của mọi clip, để mỗi kênh vẫn là chính chi ấy */
+  stepSwap: boolean;
+  /** Clip ghi góc cánh tay, track trên cùng có ghi; không có là `base` của người */
+  arm?: PoseSourceClip;
+  /** Clip ghi bàn tay (kênh `hand`): `key` là mốc bàn tay của hành động ở pha ấy, `aim` là bàn tay theo ý định (`palm` / `fingers`) */
+  hand?: PoseSourceClip & { key?: HandPose | ActionHandKey; aim: boolean };
+  /** Clip ghi đích của hành động (`reach`) — đi theo clip ghi góc cánh tay */
+  reach?: PoseSourceClip;
+  /** Mốc `world.hands` gần nhất không sau giây ấy nhắc tay này (`index` vào `world.hands`), và mốc sau */
+  mark?: {
+    index: number;
+    t: number;
+    kind: HandMarkKind;
+    next?: { index: number; t: number; kind: HandMarkKind };
+  };
+  /** Đích thế giới của `world.hands` đang áp lên tay (phần `w` hay đang cầm): đè góc tay, ý định đè bàn tay của hành động */
+  world?: { w: number; aim: boolean; hold?: string };
+}
+
+/**
+ * Thứ đang điều khiển từng tay giải phẫu của người 3D `id` ở `time`, tính đúng như `sceneAt`: clip đang chạy của từng track
+ * (`mask`, `sides: "anatomical"`, đổi kênh theo nhịp đi), kênh gần / xa theo `facing().flip`, mốc `world.hands` và đích
+ * thế giới đang áp. Người không có `world` thì `undefined`
+ */
+export function handSources(
+  rt: SceneRuntime,
+  id: string,
+  time: number,
+): Record<HandSide, HandSource> | undefined {
+  const m = member(rt, id);
+  if (!m.world) return undefined;
+  const height = rt.heights[id] ?? 1;
+  const dims = rt.bodies[id] ?? BODY3;
+  const walk = walkerOf(rt, m, height, dims.hipHalf);
+  const clock = walk && clockOf(walk);
+  const farRight = rightFarOf(m, walk);
+  const stepSwap = !!(clock && clock(time).half % 2);
+  const sp = keyPose(rt, id, time, height, dims);
+  const flip = !!sp.world?.flip;
+  type Got = Pick<HandSource, "arm" | "hand" | "reach">;
+  const got: Record<"an" | "af", Got> = { an: {}, af: {} };
+  const other = (ch: "an" | "af") => (ch === "an" ? "af" : "an");
+  let pose: Pose = m.base;
+  m.tracks.forEach((tr, ti) => {
+    const i = activeClip(tr, time);
+    if (i < 0) return;
+    const p = poseUpTo(tr, i, time, pose, clock, farRight);
+    pose = composePose(pose, p);
+    const c = tr.clips[i];
+    const swap = anatomicalSwap(c, farRight);
+    for (const ch of REACH_CHANNELS) {
+      const own = swap ? other(ch) : ch;
+      const src: PoseSourceClip = {
+        track: ti,
+        ...(tr.name !== undefined && { trackName: tr.name }),
+        clip: i,
+        ...(c.file && { action: c.file }),
+        start: c.start,
+        blend: c.tau,
+        ...(c.mask && { mask: c.mask }),
+        blending: time - c.start < c.tau,
+        channel: own === "an" ? "armNear" : "armFar",
+        anatomical: swap,
+      };
+      if (p[ch]) got[ch] = { ...got[ch], arm: src, reach: p.reach?.[ch] ? src : undefined };
+      if (p.hand?.[ch]) {
+        const key = c.action && actionHandKey(c.action, phaseAt(c, time, clock), own);
+        got[ch] = { ...got[ch], hand: { ...src, ...(key && { key }), aim: !!p.aim?.[ch] } };
+      }
+    }
+  });
+  const keys = m.world.hands ?? [];
+  const out = {} as Record<HandSide, HandSource>;
+  for (const side of ["right", "left"] as const) {
+    const channel = sideChannel(side, flip);
+    const g = got[stepSwap ? other(channel) : channel];
+    // trước mốc đầu tay giữ mốc đầu, như `handAt`
+    const ks = keys.flatMap((k, index) =>
+      k[side] === undefined ? [] : [{ index, t: k.t, kind: handMarkKind(k[side]) }],
+    );
+    let a = 0;
+    while (a + 1 < ks.length && ks[a + 1].t <= time) a++;
+    const next = ks[a] && ks[a].t <= time ? ks[a + 1] : undefined;
+    const mark: HandSource["mark"] = ks.length ? { ...ks[a], ...(next && { next }) } : undefined;
+    const rw = sp.world?.hands?.[channel === "an" ? "near" : "far"];
+    out[side] = {
+      side,
+      channel,
+      flip,
+      stepSwap,
+      ...(g.arm && { arm: g.arm }),
+      ...(g.hand && { hand: g.hand }),
+      ...(g.reach && { reach: g.reach }),
+      ...(mark && { mark }),
+      ...(rw &&
+        (rw.w > 0 || rw.hold) && {
+          world: { w: rw.w, aim: !!rw.aim, ...(rw.hold && { hold: rw.hold.item }) },
+        }),
+    };
+  }
+  return out;
 }

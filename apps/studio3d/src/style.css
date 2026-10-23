@@ -497,6 +497,41 @@ dialog.named .row {
   font-size: 12px;
 }
 
+#source .srchead {
+  font-weight: 600;
+}
+
+table.source {
+  border-collapse: collapse;
+  margin: 2px 0;
+  font-size: 12px;
+  width: 100%;
+}
+
+table.source td {
+  padding: 1px 6px 1px 0;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+table.source td:first-child {
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+table.source td:nth-child(2) {
+  font-family: ui-monospace, monospace;
+}
+
+table.source td:nth-child(3) {
+  white-space: nowrap;
+}
+
+table.source tr.warn td {
+  color: #ffcc66;
+  background: rgba(255, 204, 102, 0.1);
+}
+
 table.fingers {
   border-collapse: collapse;
   margin-top: 4px;

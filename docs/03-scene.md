@@ -1184,6 +1184,11 @@ chống nạnh tay phải ở cảnh này là tay trái ở cảnh kia. Dáng ri
   thân lật qua chính diện thì rig vẫn giữ mỗi kênh là chính chi ấy như mọi hành động ([Quay tại chỗ](#quay-tại-chỗ)).
 - `ra ngoài` của `reach` và `elbow` đã theo phía chính tay ấy, nên một bộ số đúng cho cả hai trường hợp.
 - Người 2D không đọc `sides`.
+- **Tay nào đang theo clip nào**: `handSources(rt, id, t)` trả cho từng tay giải phẫu kênh tư thế nó đọc (`an` / `af`
+  sau khi đổi theo `facing().flip` và nhịp đi), clip ghi góc cánh tay, clip ghi bàn tay (kèm mốc bàn tay của hành động ở
+  pha ấy và cờ ý định `palm` / `fingers`), clip ghi `reach`, mốc `world.hands` gần nhất và đích thế giới đang áp — cùng
+  phép tính với `sceneAt`. Studio 3D hiện nó ở dòng **Nguồn dáng** của panel Bàn tay: clip soạn cho tay xa (`armFar`)
+  rơi vào tay phải đang buông khi người lật là thấy ngay ở đây.
 
 ### `check` cho người 3D
 
