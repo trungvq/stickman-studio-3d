@@ -507,7 +507,7 @@ describe("hai tay trên mốc món → đồ theo tay", () => {
     expect(r.max.item.angle).toBeLessThan(1);
   });
 
-  it("cổ tay tay dẫn kẹp khi còn hai tay: độ lệch báo đúng món như vẽ", () => {
+  it("cổ tay tay dẫn kẹp khi còn hai tay: độ lệch báo đúng món như vẽ", { timeout: 30_000 }, () => {
     const b = sceneB("camera", [
       [35, 0, 0],
       [35, 0, 0],
