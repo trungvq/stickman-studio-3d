@@ -887,7 +887,6 @@ const tomTat = (s) =>
         ...(s.shift ? [`nâng ${r1(s.shift)}`] : []),
         ...(s.bend !== undefined ? [`khuỷu ${Math.round(s.bend)}°/${Math.round(s.rise)}°`] : []),
         `thân ${r1(s.body.gap)} ${s.body.part}`,
-        `đẩy ${Math.round(s.swing)}°`,
       ].join(" · ")
     : tomTatNhom(s);
 
@@ -964,7 +963,6 @@ for (const c of cells) {
             bend: s.bend,
             rise: s.rise,
             body: s.body,
-            swing: s.swing,
           }
         : {
             pierce: s.pierce,

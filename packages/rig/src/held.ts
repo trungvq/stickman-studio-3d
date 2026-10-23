@@ -191,8 +191,8 @@ function carryAllow(touch: readonly (string | { part: string; max: number })[], 
 
 /**
  * Số đo từng món treo trên cánh tay của người `fig` (tên `id`, `món@carry` của `Figure.carrying`) đang hiện trên hình: đỉnh quai
- * tới chỗ treo, góc khuỷu và độ ngóc cẳng tay (khuỷu), khe thân món (hình va chạm `shape`) tới từng phần người — trừ đoạn
- * tay quai vắt qua, cộng phần `touch` cho lấn —, góc đẩy khỏi phương đứng. Đơn vị rig thế giới. Gọi như `heldHands`.
+ * tới chỗ treo, góc khuỷu và độ ngóc cẳng tay (khuỷu), khe thân món (hình va chạm `shape`) tới từng phần người (trừ đoạn
+ * tay quai vắt qua, cộng phần `touch` cho lấn). Khe chỉ đo ở đây, lần đặt món không đo. Đơn vị rig thế giới. Gọi như `heldHands`.
  * docs/03-scene.md#đồ-cầm-tay
  */
 export function heldCarries(fig: Figure, id: string, o: { U?: number } = {}): HeldCarry[] {
@@ -201,7 +201,7 @@ export function heldCarries(fig: Figure, id: string, o: { U?: number } = {}): He
   if (!fig.carrying || !shown(fig.root)) return out;
   fig.root.updateWorldMatrix(true, true);
   const k = fig.root.getWorldScale(new THREE.Vector3()).x;
-  const parts = carryBody(fig);
+  let parts: ReturnType<typeof carryBody> | undefined;
   for (const side of [-1, 1] as Side[]) {
     const e = fig.carrying[side];
     if (!e || !shown(e.object) || !e.spec.shape) continue;
@@ -217,7 +217,7 @@ export function heldCarries(fig: Figure, id: string, o: { U?: number } = {}): He
     const IF = itemFrame(new THREE.Matrix4(), e.object);
     const skip = e.carry.on === 'elbow' ? [`upperArm${t}`, `foreArm${t}`] : [];
     let body = { gap: Infinity, part: '', allow: 0 };
-    for (const c of parts) {
+    for (const c of (parts ??= carryBody(fig))) {
       const part = c.part;
       if (skip.includes(part)) continue;
       const gap = carryClearance(shape, IF, c) * (IF.u / u);
@@ -233,7 +233,6 @@ export function heldCarries(fig: Figure, id: string, o: { U?: number } = {}): He
       ...(shift.lengthSq() > 0 && { shift: shift.length() }),
       ...(seat.bend !== undefined && { bend: seat.bend, rise: seat.rise! }),
       body: { gap: body.gap, part: body.part, ...(body.allow > 0 && { allow: body.allow }) },
-      swing: e.fit?.swing ?? 0,
       s: k,
     });
   }

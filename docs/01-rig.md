@@ -1725,18 +1725,19 @@ lún vào người.
 2. Món thõng: đỉnh quai (`seats[on]`) trùng chỗ treo, trục y của món lên thẳng, mặt trước (+z) theo hướng nằm ngang của thanh quai — cẳng tay
    ở khuỷu (túi chĩa mặt theo cẳng tay), trục vai ra ngoài ở vai (túi áp mặt vào sườn) —, quay thêm `yaw`. Vai: điểm
    ngoài khớp vai `SHOULDER_OUT` bán kính cánh tay, trên mặt thân áo hay mặt cầu khớp vai, lấy chỗ cao hơn.
-3. Thân món lồng vào thân áo, khối hông, váy (đám điểm trên mặt lưới, `carryBody`) hay nang đùi thì đẩy ra quanh chỗ treo
-   theo hướng nằm ngang từ trục thân ra, lấy góc nhỏ nhất vừa hết lồng (tới `CARRY.swing` `80°`). Đeo vai: cánh tay trên
-   cùng bên ở phía ngoài món; góc ấy mà món lồng vào cánh tay thì lùi về chỗ hai bên lồng bằng nhau — túi kẹp giữa tay và
-   sườn, `check` báo để dang tay ra.
-4. Món có quai (`strap`): quai thành chuỗi viên (`strapBalls`), món dời theo từng luật tựa tới khi không viên nào trong
-   người, rồi đẩy thân món lại như bước 3 (`carryFrame`, `rest`). Khuỷu: nâng thẳng đứng khỏi cẳng tay, trượt ngang dọc
-   cẳng tay ra khỏi cánh tay trên. Vai: nâng thẳng đứng khỏi vỏ thân áo (lưới cột dọc trong hệ thân, tính một lần mỗi
-   người) và cánh tay trên. Đoạn dời ghi ở `Carrying.fit.shift`; `check` đo `seat` tới chỗ treo đã dời.
+3. Món có quai (`strap`): quai thành chuỗi viên (`strapBalls`), món dời theo từng luật tựa tới khi không viên nào trong
+   người (`carryFrame`, `rest`); thân món vẫn đứng thẳng. Khuỷu: nâng thẳng đứng khỏi cẳng tay, trượt ngang dọc cẳng tay
+   ra khỏi cánh tay trên. Vai: nâng thẳng đứng khỏi vỏ thân áo (lưới cột dọc trong hệ thân, tính một lần mỗi người) và
+   cánh tay trên. Đoạn dời ghi ở `Carrying.fit.shift`; `check` đo `seat` tới chỗ treo đã dời.
+
+**Thân món không đẩy khỏi người.** Món luôn thõng đứng dưới chỗ treo; thân món lồng vào thân áo, hông, váy, đùi hay cánh
+tay thì `check` báo `body` và cảnh sửa dáng tay (khuỷu, cổ tay ra ngoài — [03](03-scene.md#đồ-cầm-tay)). Khe chỉ đo ở
+`heldCarries` (`check`, `scene_probe`): đám điểm trên mặt lưới thân áo, khối hông, váy và nang các chi (`carryBody`), đo một
+lần ở dáng của khung, lần đặt món mỗi khung không đo.
 
 Mọi bước chỉ đọc tư thế của khung đang vẽ: Remotion vẽ khung nhảy cóc vẫn ra cùng hình. Món không đung đưa theo quán tính.
-Nhóm mang món chỉ giải lại khi người khác lần giải trước (`poseKey`: ma trận thế giới mọi nút của người, độ dài đoạn chi,
-lưới thân, hông, váy): vẽ lại cùng khung (camera quay, các lượt bóng) không giải; dáng đổi ở cùng giây (cảnh sửa tại chỗ)
+Nhóm mang món chỉ giải lại khi người khác lần giải trước (`poseKey`: ma trận thế giới mọi nút của người, độ dài đoạn chi):
+vẽ lại cùng khung (camera quay, các lượt bóng) không giải; dáng đổi ở cùng giây (cảnh sửa tại chỗ)
 thì giải lại, không có nhớ nào phải xoá tay. Lúc `act` đang đặt dáng (`Figure.posing`) thì không giải.
 
 **Bàn tay tự do.** Bàn tay của tay treo món theo hành động (hay `world.hands`): không dáng nắm, không ý định, không vai trò

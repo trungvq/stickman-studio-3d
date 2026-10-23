@@ -9,18 +9,16 @@ import {
   type HeldShape,
   type HoldGrasp,
 } from "./heldItem";
-import { fromColumns, matMul, matVec, type V3 } from "./lens";
+import { fromColumns, matVec, type V3 } from "./lens";
 
 /**
- * Nhóm `carry` (`on` là `elbow` / `shoulder`): chỗ treo trên cánh tay và món thõng theo trọng lực quanh nó, đẩy
- * khỏi thân và đùi. Thuần: điểm và nang trong một hệ bất kỳ có y lên (thế giới three), người 3D đưa vào. Một khung chỉ phụ
- * thuộc tư thế ở khung ấy. docs/11-nhom-cam.md mục 3
+ * Nhóm `carry` (`on` là `elbow` / `shoulder`): chỗ treo trên cánh tay và món thõng đứng theo trọng lực dưới nó; thân
+ * món lồng vào người chỉ đo để báo (`carryClearance`), không đẩy. Thuần: điểm và nang trong một hệ bất kỳ có y lên (thế
+ * giới three), người 3D đưa vào. Một khung chỉ phụ thuộc tư thế ở khung ấy. docs/11-nhom-cam.md mục 3
  */
 
 /** Ngưỡng của món treo, góc độ, đơn vị rig */
 export const CARRY = {
-  /** Góc lệch xa nhất khỏi phương đứng mà thân món được đẩy ra khi lồng vào thân, đùi */
-  swing: 80,
   /** Khuỷu mở quá ngần này (góc giữa cánh tay trên và cẳng tay, `180` là thẳng) thì không còn chỗ gập giữ quai */
   bend: 150,
   /** Cẳng tay chúc xuống quá ngần này (độ dưới phương ngang, tính từ khuỷu) thì quai tuột về cổ tay */
@@ -80,7 +78,7 @@ export interface CarryCloud {
   part: string;
 }
 
-/** Một phần người mà thân món đẩy khỏi: viên nang (chi) hay đám điểm trên mặt (thân áo — sát hơn nang dựng từ hộp thân) */
+/** Một phần người mà khe thân món đo tới: viên nang (chi) hay đám điểm trên mặt (thân áo — sát hơn nang dựng từ hộp thân) */
 export type CarryBody = CarryCapsule | CarryCloud;
 
 const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -261,25 +259,19 @@ export function carryClearance(shape: readonly HeldShape[], G: GripFrame, b: Car
     : capsuleClearance(shape, G, b.a, b.b, b.r).gap;
 }
 
-/** Khung món treo, `R · q · u + p` ra hệ của chỗ treo (như `GripFrame`), góc đẩy khỏi phương đứng, khe thân món tới người */
+/** Khung món treo, `R · q · u + p` ra hệ của chỗ treo (như `GripFrame`), đoạn dời để quai tựa lên người */
 export interface CarryFit {
   G: GripFrame;
   /** Món dời khỏi chỗ treo để quai tựa lên người (hệ của chỗ treo, đơn vị rig của món) */
   shift: V3;
-  /** Độ lệch thân món khỏi phương đứng (độ) để không lồng vào thân, đùi */
-  swing: number;
-  /** Khe nhỏ nhất từ thân món tới các nang đẩy, đơn vị rig của món (âm là lồng); phần gần nhất */
-  gap: number;
-  part?: string;
 }
 
 /**
  * Món treo theo spec treo `grip` ở chỗ treo `pivot`: đỉnh quai (`grip.at`) trùng `pivot`, trục y của món về phương đứng,
- * mặt trước (+z) theo hướng nằm ngang của thanh quai vắt qua (`bar`: cẳng tay ở khuỷu, hướng ra ngoài vai ở vai), quay thêm
- * `grip.yaw` quanh phương đứng. Thân món (hình va chạm `shape`) lồng vào các nang `body` thì đẩy ra quanh `pivot` về phía
- * `away` (nằm ngang, từ thân ra), lấy góc nhỏ nhất vừa hết lồng, tới `CARRY.swing`. `outer` là phần người ở phía ngoài
- * món (cánh tay buông ngoài túi đeo vai): góc ấy mà món lồng vào chúng thì lùi về chỗ hai bên lồng bằng nhau — món kẹp giữa. `u` là đơn vị của một đơn vị rig của
- * món ở hệ ấy. Món có quai (phần `strap`) và `rest` thì dời món theo từng luật tựa tới khi mọi viên quai ra khỏi người
+ * mặt trước (+z) theo hướng nằm ngang của thanh quai vắt qua (`bar`: cẳng tay ở khuỷu, hướng ra ngoài vai ở vai; thanh gần
+ * đứng thì theo `away`, hướng từ thân ra), quay thêm `grip.yaw` quanh phương đứng. `u` là đơn vị của một đơn vị rig của
+ * món ở hệ ấy. Món có quai (phần `strap`) và `rest` thì dời món theo từng luật tựa tới khi mọi viên quai ra khỏi người.
+ * Thân món không đẩy khỏi người: lồng thì `check` báo (`body`), cảnh sửa dáng tay
  */
 export function carryFrame(o: {
   item: HeldItemSpec;
@@ -288,109 +280,32 @@ export function carryFrame(o: {
   bar: V3;
   away: V3;
   u: number;
-  body: readonly CarryBody[];
-  outer?: readonly CarryBody[];
   rest?: readonly CarryRest[];
 }): CarryFit {
   let z = flat(o.bar);
   if (len(z) < 0.2) z = flat(o.away);
   z = len(z) < 1e-6 ? [0, 0, 1] : unit(z);
   if (o.grip.yaw) z = matVec(rotAxis(UP, o.grip.yaw / DEG), z);
-  const R0 = fromColumns(cross(UP, z), UP, z);
+  const R = fromColumns(cross(UP, z), UP, z);
   const top = heldPoint(o.item, o.grip.at);
-  let w = flat(o.away);
-  w = len(w) < 1e-6 ? z : unit(w);
-  const k = cross(w, UP);
-  const { body: shape, strap } = carryShape(o.item);
+  const frame = (pivot: V3): GripFrame => ({ R, p: sub(pivot, mul(matVec(R, top), o.u)), u: o.u });
+  const { strap } = carryShape(o.item);
   const balls = o.rest && strap.length ? strapBalls(strap) : [];
-  /** Đoạn dời để mọi viên quai của khung `G` ra khỏi người: lần lượt từng luật, dò lại vì dời theo luật này có thể chạm luật kia */
-  const settle = (G: GripFrame): V3 => {
-    let off: V3 = [0, 0, 0];
-    const at = balls.map((b) => ({ p: add(matVec(G.R, mul(b.c, G.u)), G.p), r: b.r * G.u }));
-    for (let i = 0; i < 6; i++) {
-      let moved = false;
-      for (const rule of o.rest!) {
-        let need = 0;
-        for (const b of at) need = Math.max(need, rule.need(add(b.p, off), b.r));
-        if (need < 1e-9) continue;
-        off = add(off, mul(rule.dir, need));
-        moved = true;
-      }
-      if (!moved) break;
-    }
-    return off;
-  };
-  const clear = (G: GripFrame, list: readonly CarryBody[]) => {
-    let gap = Infinity;
-    let part: string | undefined;
-    if (shape.length)
-      for (const c of list) {
-        const g = carryClearance(shape, G, c);
-        if (g < gap) [gap, part] = [g, c.part];
-      }
-    return { gap, part };
-  };
-  const solve = (pivot: V3): Omit<CarryFit, "shift"> => {
-    const frame = (th: number): GripFrame => {
-      const R = th ? matMul(rotAxis(k, th / DEG), R0) : R0;
-      return { R, p: sub(pivot, mul(matVec(R, top), o.u)), u: o.u };
-    };
-    const at = (th: number) => {
-      const G = frame(th);
-      return { G, swing: th, ...clear(G, o.body) };
-    };
-    /** Góc nhỏ nhất thân món hết lồng vào `body`; không có thì góc lồng ít nhất */
-    const push = () => {
-      const rest = at(0);
-      if (rest.gap >= 0 || !o.body.length) return rest;
-      // dò thô từng bước, rồi chia đôi giữa bước cuối còn lồng và bước đầu hết lồng
-      const N = 16;
-      let lo = rest;
-      let best = rest;
-      for (let i = 1; i <= N; i++) {
-        const hi = at((CARRY.swing * i) / N);
-        if (hi.gap > best.gap) best = hi;
-        if (hi.gap < 0) {
-          lo = hi;
-          continue;
-        }
-        let [a, b] = [lo, hi];
-        for (let j = 0; j < 10; j++) {
-          const m = at((a.swing + b.swing) / 2);
-          if (m.gap < 0) a = m;
-          else b = m;
-        }
-        return b;
-      }
-      return best;
-    };
-    const fit = push();
-    if (!o.outer?.length) return fit;
-    const out = (f: { G: GripFrame }) => clear(f.G, o.outer!);
-    const o1 = out(fit);
-    if (o1.gap >= Math.min(0, fit.gap) || fit.swing <= 0)
-      return o1.gap < fit.gap ? { ...fit, ...o1 } : fit;
-    // phía ngoài lồng sâu hơn: lùi về chỗ hai bên lồng bằng nhau (thân lồng tăng, ngoài lồng giảm khi góc nhỏ đi)
-    let [a, b] = [0, fit.swing];
-    for (let j = 0; j < 12; j++) {
-      const m = (a + b) / 2;
-      const f = at(m);
-      if (f.gap < out(f).gap) a = m;
-      else b = m;
-    }
-    const f = at(b);
-    const g = out(f);
-    return g.gap < f.gap ? { ...f, ...g } : f;
-  };
-  if (!balls.length) return { ...solve(o.pivot), shift: [0, 0, 0] };
-  // quai tựa: dời ở dáng thõng, đẩy thân món, rồi dời thêm nếu góc đẩy đưa quai vào người
+  if (!balls.length) return { G: frame(o.pivot), shift: [0, 0, 0] };
+  // từng luật tựa lần lượt, dò lại vì dời theo luật này có thể chạm luật kia
+  const G = frame(o.pivot);
+  const at = balls.map((b) => ({ p: add(matVec(R, mul(b.c, o.u)), G.p), r: b.r * o.u }));
   let shift: V3 = [0, 0, 0];
-  let fit = solve(o.pivot);
-  for (let i = 0; i < 3; i++) {
-    const more = settle(fit.G);
-    if (len(more) < 1e-6) break;
-    shift = add(shift, more);
-    fit = solve(add(o.pivot, shift));
+  for (let i = 0; i < 18; i++) {
+    let moved = false;
+    for (const rule of o.rest!) {
+      let need = 0;
+      for (const b of at) need = Math.max(need, rule.need(add(b.p, shift), b.r));
+      if (need < 1e-9) continue;
+      shift = add(shift, mul(rule.dir, need));
+      moved = true;
+    }
+    if (!moved) break;
   }
-  return { ...fit, shift: mul(shift, 1 / o.u) };
+  return { G: frame(add(o.pivot, shift)), shift: mul(shift, 1 / o.u) };
 }

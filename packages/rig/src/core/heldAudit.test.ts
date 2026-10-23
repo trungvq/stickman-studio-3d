@@ -205,7 +205,6 @@ describe("đồ cầm theo `world.hands`", () => {
       at: [0, -150, 0],
       seat: 0,
       body: { gap: -9, part: "torso" },
-      swing: 0,
       s: 1,
       ...o,
     });

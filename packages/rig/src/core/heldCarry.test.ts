@@ -5,6 +5,7 @@ import { carryHits, heldLine, type HeldCarry, type HeldIssue } from "./heldAudit
 import {
   CARRY,
   capsuleExit,
+  carryClearance,
   carryFrame,
   carryShape,
   carrySpecOf,
@@ -69,9 +70,8 @@ describe("elbowSeat, carryFrame", () => {
       bar: [0.6, 0.8, 0],
       away: [1, 0, 0],
       u: 0.01,
-      body: [],
     });
-    expect(f.swing).toBe(0);
+    expect(f.shift).toEqual([0, 0, 0]);
     close(gripPoint(f.G, top as V3), [1, 2, 3]);
     close(matVec(f.G.R, [0, 1, 0]), [0, 1, 0]);
     close(matVec(f.G.R, [0, 0, 1]), [1, 0, 0]);
@@ -83,34 +83,26 @@ describe("elbowSeat, carryFrame", () => {
       bar: [1, 0, 0],
       away: [1, 0, 0],
       u: 0.01,
-      body: [],
     });
     close(matVec(y.G.R, [0, 0, 1]), [0, 0, -1]);
   });
 
-  it("thân món lồng vào thân: đẩy ra quanh chỗ treo vừa hết lồng; phía ngoài chật thì kẹp giữa", () => {
+  it("thân món lồng vào thân: món vẫn thõng đứng ở chỗ treo, không đẩy; `carryClearance` đo ra lồng", () => {
     // thân: nang dọc ngay dưới chỗ treo, phía −x
     const torso: CarryCapsule = { a: [-0.2, 0, 0], b: [-0.2, 2, 0], r: 0.22, part: "torso" };
-    const base = {
+    const f = carryFrame({
       item: TUI,
       grip,
-      pivot: [0, 2, 0] as V3,
-      bar: [0, 0, 1] as V3,
-      away: [1, 0, 0] as V3,
+      pivot: [0, 2, 0],
+      bar: [0, 0, 1],
+      away: [1, 0, 0],
       u: 0.01,
-    };
-    const f = carryFrame({ ...base, body: [torso] });
-    expect(f.swing).toBeGreaterThan(0);
-    expect(f.gap).toBeGreaterThanOrEqual(-1e-3);
-    expect(f.gap).toBeLessThan(0.2);
-    // lùi một chút là lồng: góc nhỏ nhất
-    const less = carryFrame({ ...base, body: [torso], outer: [] });
-    expect(less.swing).toBeCloseTo(f.swing, 6);
-    // cánh tay sát phía ngoài: hai bên lồng bằng nhau
-    const arm: CarryCapsule = { a: [0.12, 2, 0], b: [0.12, 0.8, 0], r: 0.05, part: "upperArmR" };
-    const s = carryFrame({ ...base, body: [torso], outer: [arm] });
-    expect(s.swing).toBeLessThan(f.swing);
-    expect(s.gap).toBeLessThan(0);
+    });
+    close(gripPoint(f.G, top as V3), [0, 2, 0]);
+    close(matVec(f.G.R, [0, 1, 0]), [0, 1, 0]);
+    expect(carryClearance(TUI.shape!, f.G, torso)).toBeLessThan(-1);
+    const far: CarryCapsule = { ...torso, a: [-1, 0, 0], b: [-1, 2, 0] };
+    expect(carryClearance(TUI.shape!, f.G, far)).toBeGreaterThan(0);
   });
 
   it("đám điểm: khe tới hình va chạm, điểm trong món là âm", () => {
@@ -121,7 +113,6 @@ describe("elbowSeat, carryFrame", () => {
       bar: [0, 0, 1],
       away: [1, 0, 0],
       u: 0.01,
-      body: [],
     }).G;
     // thân hộp 30 × 26 × 10 ở y 0–26 (đơn vị rig), tâm ở gốc
     expect(cloudClearance(TUI.shape!, G, [0, 0.13, 0])).toBeLessThan(-4);
@@ -164,7 +155,6 @@ describe("quai tựa lên người (phần `strap`)", () => {
       bar: [1, 0, 0] as V3,
       away: [1, 0, 0] as V3,
       u: 0.01,
-      body: [],
     };
     const rest = [
       { dir: [0, 1, 0] as V3, need: (p: V3, r: number) => capsuleExit(bar, p, r, [0, 1, 0]) },
@@ -196,7 +186,6 @@ describe("carryHits", () => {
     bend: 60,
     rise: 30,
     body: { gap: 0.5, part: "torso" },
-    swing: 5,
     s: 1,
   };
   const issue = (x: HeldCarry, rule: "seat" | "body"): HeldIssue => ({

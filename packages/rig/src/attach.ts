@@ -409,11 +409,8 @@ export interface Carrying {
   grip: string;
   spec: HeldItemSpec;
   carry: CarrySpec;
-  /**
-   * Lần đặt gần nhất: góc đẩy khỏi phương đứng (độ), khe thân món tới thân, đùi (đơn vị rig thế giới, âm là lồng), món dời
-   * khỏi chỗ treo để quai tựa lên người (thế giới three chia `U`)
-   */
-  fit?: { swing: number; gap: number; shift: V3; part?: string };
+  /** Lần đặt gần nhất: món dời khỏi chỗ treo để quai tựa lên người (thế giới three chia `U`) */
+  fit?: { shift: V3 };
 }
 
 /** Chỗ treo của món treo trên người đã đặt dáng, thế giới three: điểm, thanh quai vắt qua, hướng từ thân ra; khuỷu kèm góc */
@@ -613,7 +610,7 @@ export function carryBody(fig: Figure, parts?: readonly string[]): CarryBody[] {
 
 /**
  * Nhóm mang món treo: lần three tính ma trận nào mà dáng người khác lần giải trước (`poseKey`) thì đặt lại theo chỗ treo,
- * trọng lực và thân, đùi của người; `act` đang đặt dáng dở (`Figure.posing`) thì để nguyên
+ * trọng lực và luật tựa quai; `act` đang đặt dáng dở (`Figure.posing`) thì để nguyên
  */
 class CarryRig extends THREE.Group {
   private busy = false;
@@ -648,7 +645,7 @@ class CarryRig extends THREE.Group {
 
 /**
  * Mọi thứ của người mà lời giải món treo đọc: ma trận thế giới và cờ hiện của mọi nút (trừ nhóm mang món treo), độ dài và
- * bán kính đoạn chi, lưới thân, hông, váy cùng số lần sửa đỉnh của chúng. Cùng khoá là cùng lời giải
+ * bán kính đoạn chi. Cùng khoá là cùng lời giải
  */
 function poseKey(fig: Figure): number[] {
   const out: number[] = [];
@@ -659,10 +656,6 @@ function poseKey(fig: Figure): number[] {
     for (const c of o.children) walk(c);
   };
   walk(fig.root);
-  for (const m of cloudMeshes(fig)) {
-    const a = m.geometry.attributes.position;
-    out.push(m.id, m.geometry.id, a ? ('data' in a ? a.data : a).version : -1);
-  }
   return out;
 }
 
@@ -670,8 +663,8 @@ const _cm = new THREE.Matrix4(), _ci = new THREE.Matrix4();
 
 /**
  * Treo `object` trên cánh tay theo `món@carry` (`carrySpecOf`, `on: elbow | shoulder`): đỉnh quai (`at`) ở chỗ treo (`carrySeat`), thân
- * món thõng theo trọng lực, đẩy khỏi thân và đùi (`carryFrame` của lõi) — đặt lại lần three tính ma trận nào mà dáng người
- * đã đổi. Bàn tay của tay ấy không đổi dáng, `Figure.holding` không đổi; `Figure.carrying[side]` ghi lần treo. Vật dựng ở
+ * món thõng đứng theo trọng lực, quai tựa lên người (`carryFrame` của lõi) — đặt lại lần three tính ma trận nào mà dáng
+ * người đã đổi. Thân món không đẩy khỏi người: `heldCarries` đo khe để `check` báo. Bàn tay của tay ấy không đổi dáng, `Figure.holding` không đổi; `Figure.carrying[side]` ghi lần treo. Vật dựng ở
  * gốc khung món như món cầm. docs/11-nhom-cam.md mục 3
  */
 export function carry(fig: Figure, object: THREE.Object3D, o: { hand: Side; grip: HoldGrip }): Held {
@@ -687,15 +680,12 @@ export function carry(fig: Figure, object: THREE.Object3D, o: { hand: Side; grip
     const seat = carrySeat(fig, side, spec.on);
     const fit = carryFrame({
       item: g.spec, grip: spec, pivot: seat.pivot.toArray() as V3, bar: seat.bar.toArray() as V3, away: seat.away.toArray() as V3,
-      u: 0.01 * k, body: carryBody(fig, ['torso', 'thigh']),
-      // tay luồn ngoài túi đeo vai: cánh tay trên cùng bên ép túi vào thân
-      ...(spec.on === 'shoulder' && { outer: carryBody(fig, ['upperArm']).filter((b) => b.part === `upperArm${tag(side)}`) }),
-      rest: carryRest(fig, side, seat, spec.on),
+      u: 0.01 * k, rest: carryRest(fig, side, seat, spec.on),
     });
     const { R, p } = fit.G;
     _cm.set(R[0] * k, R[1] * k, R[2] * k, p[0], R[3] * k, R[4] * k, R[5] * k, p[1], R[6] * k, R[7] * k, R[8] * k, p[2], 0, 0, 0, 1);
     _ci.copy(root.matrixWorld).invert().multiply(_cm).decompose(c.position, c.quaternion, c.scale);
-    entry.fit = { swing: fit.swing, gap: fit.gap * k, shift: fit.shift.map((v) => v * k) as V3, ...(fit.part && { part: fit.part }) };
+    entry.fit = { shift: fit.shift.map((v) => v * k) as V3 };
   });
   const t = tag(side);
   // thân: luật `body` đo thân món trên mặt thân áo, sát hơn nang thân của `collide`

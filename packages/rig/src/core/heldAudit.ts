@@ -242,8 +242,6 @@ export interface HeldCarry {
   rise?: number;
   /** Phần người gần thân món nhất sau khi trừ phần cho lấn (`touch`): khe (âm là lồng), tên phần, độ được lấn */
   body: { gap: number; part: string; allow?: number };
-  /** Độ thân món bị đẩy khỏi phương đứng để khỏi lồng vào thân, đùi */
-  swing: number;
   /** Cỡ người (`world.s`) */
   s: number;
 }
@@ -1249,7 +1247,6 @@ export function carrySummary(s: HeldCarry): string {
         ]
       : []),
     `thân món ${s.body.gap < 0 ? `lồng ${r1(-s.body.gap)} vào` : `cách ${r1(s.body.gap)}`} ${s.body.part}${s.body.allow ? ` (cho lấn ${r1(s.body.allow)})` : ""}`,
-    `đẩy khỏi phương đứng ${Math.round(s.swing)}°`,
   ].join(" · ");
 }
 
