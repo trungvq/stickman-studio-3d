@@ -1,6 +1,6 @@
 import { handReport, itemAt, itemCentre, matVec, wristAngles, type M3 } from "@stickman3d/rig/core";
 import { describe, expect, it } from "vitest";
-import { dragHand, dragItem, lockElbow, unlockElbow } from "./drag";
+import { dragHand, dragItem, lockElbow, turnShort, unlockElbow } from "./drag";
 import { drawnHand, drawnItem, palmAt, trunkAt } from "./drawn";
 import { c, HELD, runtime, scene } from "./fixture";
 import {
@@ -231,4 +231,26 @@ describe("kéo tay nắm, vòng khuỷu (drag.ts)", () => {
       expect(() => unlockElbow(j, "a", "right", 1.2)).toThrow(/không có mốc khoá/);
     },
   );
+});
+
+describe("turnShort", () => {
+  const before = { palm: [1, 0, 0] as V3, finger: [0, 1, 0] as V3 };
+  const R = axisRotation([0, 0, 1], 40);
+  const turned = { palm: matVec(R, before.palm), finger: matVec(R, before.finger) };
+
+  it("xoay tới (lệch dưới 2° hay một phần mười góc) thì không báo", () => {
+    expect(turnShort(R, before, turned, [])).toBeUndefined();
+    const most = axisRotation([0, 0, 1], 37);
+    const part = { palm: matVec(most, before.palm), finger: matVec(most, before.finger) };
+    expect(turnShort(R, before, part, ["bend"])).toBeUndefined();
+  });
+
+  it("xoay không tới thì báo góc xoay được và khớp kẹp", () => {
+    const half = axisRotation([0, 0, 1], 15);
+    const part = { palm: matVec(half, before.palm), finger: matVec(half, before.finger) };
+    expect(turnShort(R, before, part, ["bend", "dev"])).toBe(
+      "bàn tay chỉ xoay được ~15° / 40° (lệch 25°), cổ tay kẹp gập, lệch",
+    );
+    expect(turnShort(R, before, before, [])).toMatch(/~0° \/ 40°.*hết miền khớp/);
+  });
 });

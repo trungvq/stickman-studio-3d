@@ -1022,7 +1022,6 @@ button.key.diamond .keytip {
   color: var(--dim);
 }
 
-/* hẹp: phần phụ thanh trên gập sau ⋯, panel bàn tay xuống dưới khung vẽ, thanh tua cuộn ngang */
 /* tay nắm, vòng khuỷu, nón cổ tay (Dáng tay) */
 .grabhud {
   position: absolute;
@@ -1081,6 +1080,92 @@ button.key.diamond .keytip {
   color: #ff8a80;
 }
 
+.grabtag.near {
+  color: #ffd54f;
+}
+
+/* vệt của bàn tay đang chọn (Dáng tay): lớp 2D phủ khung vẽ, ô bật / cửa sổ và chú thích ở góc dưới trái */
+#frame canvas.trails {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+#frame canvas.trails[hidden],
+.trailhud[hidden] {
+  display: none;
+}
+
+.trailhud {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  align-items: center;
+  max-width: calc(100% - 12px);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgb(22 23 26 / 78%);
+  color: #fff;
+  font-size: 11px;
+}
+
+.trailhud label {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.trailhud input[type="number"] {
+  width: 44px;
+  padding: 0 2px;
+  font-size: 11px;
+}
+
+.trailhud .d {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 2px;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  background: var(--c);
+  vertical-align: -1px;
+}
+
+.trailhud .d.o {
+  border: 1.5px solid var(--c);
+  background: #fff;
+}
+
+.trailhud .d.j {
+  border-color: #1a1a1a;
+}
+
+.trailhud .v {
+  display: inline-block;
+  width: 2px;
+  height: 10px;
+  margin-right: 3px;
+  background: #aa00ff;
+  vertical-align: -2px;
+}
+
+.trailhud .st,
+.trailhud .other {
+  color: var(--dim);
+}
+
+.trailhud .st.bad,
+.trailhud .other:not(:empty) {
+  color: #ff8a80;
+}
+
+/* hẹp: phần phụ thanh trên gập sau ⋯, panel bàn tay xuống dưới khung vẽ, thanh tua cuộn ngang */
 @media (max-width: 760px) {
   header {
     gap: 6px;
@@ -1146,7 +1231,8 @@ button.key.diamond .keytip {
     font-size: 11px;
   }
 
-  .grabhud .dim {
+  .grabhud .dim,
+  .trailhud .leg {
     display: none;
   }
 }

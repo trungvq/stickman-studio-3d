@@ -17,7 +17,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
-import { heldOptions, SOURCES, worldData } from "./lib.mjs";
+import { heldOptions, snapOptions, SOURCES, worldData } from "./lib.mjs";
 import { formatLike } from "./rawjson.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -263,6 +263,7 @@ export function studio3dConfig({
               heldRaw: held.raw,
               heldHash: held.hash,
               heldOpts: heldOptions(ROOT),
+              snapOpts: snapOptions(ROOT),
               heldOut: HELD_OUT,
             };
           }
