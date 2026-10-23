@@ -6,7 +6,6 @@ import type {
   AuthoredGrasp,
   HeldItemSpec,
   AaMode,
-  Body3,
   CharacterData,
   Figure,
   HandSide,
@@ -65,15 +64,10 @@ import { record, travel } from "./history";
 import { runHoldKeys, setRunVariant, styleEntries, type RunRef } from "./named";
 import { renderStyles } from "./namedUi";
 import { plusHand, plusItem } from "./plus";
+import { runtimeOf, type Data } from "./runtime";
 import { KeyTrack, type Band, type Lane } from "./track";
+import { Trails } from "./trails";
 
-type Data = {
-  characters: Record<string, CharacterData>;
-  actions: Record<string, unknown>;
-  animals: Record<string, unknown>;
-  props: Record<string, unknown>;
-  held: Record<string, unknown>;
-};
 type WorldOf = (name: string, ctx: WorldCtx) => World3D | null;
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -214,38 +208,6 @@ function frameSize() {
   return { w: Math.round(w * dpr), h: Math.round(h * dpr) };
 }
 
-/** `heights`, `bodies` của `cast` — như `threeData` của render */
-function castData(scene: SceneData, characters: Record<string, CharacterData>) {
-  const heights: Record<string, number> = {};
-  const bodies: Record<string, Body3> = {};
-  const chars: Record<string, ReturnType<typeof rig.castCharacter>> = {};
-  for (const m of scene.cast) {
-    const c = m.character ? characters[m.character] : undefined;
-    if (!c) continue;
-    heights[m.id] = c.rig.height;
-    bodies[m.id] = rig.body3(c);
-    chars[m.id] = rig.castCharacter(m, c);
-  }
-  return { heights, bodies, chars };
-}
-
-/** Runtime của cảnh (`resolveScene`), không dựng lưới */
-function runtimeOf(scene: SceneData, data: Data) {
-  const { heights, bodies, chars } = castData(scene, data.characters);
-  const runtime = rig.resolveScene(
-    scene,
-    data.actions as never,
-    data.animals as never,
-    data.props as never,
-    heights,
-    bodies,
-    data.held as never,
-  );
-  // mốc món `rest` tra tay người thả ở `rt.chars`, như `loadScene` của render
-  runtime.chars = { ...chars, ...runtime.chars };
-  return { runtime, heights, bodies };
-}
-
 function build(name: string, scene: SceneData, data: Data) {
   const { runtime, heights, bodies } = runtimeOf(scene, data);
   const ctx = { id: name, scene, runtime, characters: data.characters, heights, bodies };
@@ -294,6 +256,8 @@ interface Scene3Json {
   /** Hash của từng file `held/` lúc nạp, như `hash` */
   heldHash?: Record<string, string>;
   heldOpts?: Record<string, unknown> & { off?: true; error?: string };
+  /** `stickman.snap` của repo (ngưỡng giật của `check`) */
+  snapOpts?: { px?: number; k?: number; fps?: number; off?: true; error?: string };
   heldOut?: string | null;
   error?: string;
 }
@@ -531,6 +495,7 @@ function draw() {
     grab.render(r, camera);
     r.autoClear = auto;
   }
+  trails.render(camera);
   // `readPixels` một điểm: chờ GPU vẽ xong thật, để số ms vẽ không chỉ là thời gian đẩy lệnh
   stage.renderer.getContext().readPixels(0, 0, 1, 1, 0x1908, 0x1401, PIXEL);
   cost = { pose: t1 - t0, render: performance.now() - t1 };
@@ -574,7 +539,10 @@ const grab = new HandGrab(ui.frame, {
   say,
   orbit: () => orbit,
   redraw: () => (dirty = true),
+  wristWarn: () => cur?.held.wrist ?? rig.HELD_WRIST,
 });
+/** Vệt cổ tay, khuỷu, tâm món của bàn tay đang chọn (Dáng tay) */
+const trails = new Trails(ui.frame);
 const selRow = () => (sel ? rows.find((r) => r.id === sel!.id && r.side === sel!.side) : undefined);
 
 /** Sau khi đặt người ở `t`: đo bàn tay (khi tua tới giây mới), camera bám tay đã chọn, lớp phủ, panel */
@@ -613,6 +581,19 @@ function afterPose() {
     if (!playing || fresh) panel();
     grab.sync(edMode === "hands" && !playing && !editor ? r : undefined);
   }
+  trails.update(
+    edMode === "hands" && !playing && !editor && sel && work
+      ? {
+          raw: work.raw,
+          data: cur.data,
+          dataKey: cur.key,
+          snap: fetched?.j.snapOpts,
+          id: sel.id,
+          side: sideOf(sel.side),
+          t,
+        }
+      : null,
+  );
 }
 
 /** Panel bàn tay: danh sách mọi tay, rồi số đo của tay đã chọn */
@@ -1200,7 +1181,12 @@ function apply(next: Json, o: { key?: KeyRef | null; history?: boolean } = {}): 
     return false;
   }
   const stacks = { undo: [...work.undo], redo: [...work.redo] };
-  if (o.history !== false && record(work, prev, JSON.stringify(next))) picks.set(prev, picked);
+  if (o.history !== false && record(work, prev, JSON.stringify(next))) {
+    picks.set(prev, picked);
+    // nhánh làm lại vừa bị cắt: bỏ mốc mở của các bản không còn trong lịch sử
+    const live = new Set([...work.undo, ...work.redo]);
+    for (const k of picks.keys()) if (!live.has(k)) picks.delete(k);
+  }
   work.raw = next;
   if (o.key !== undefined) picked = o.key;
   say("");

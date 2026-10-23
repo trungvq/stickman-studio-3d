@@ -75,6 +75,61 @@ const fail = (m: string): never => {
 };
 const outOf = (side: HandSide) => (side === "right" ? -1 : 1);
 
+const D = 180 / Math.PI;
+/** Góc quay của phép quay `R`, độ */
+const turnOf = (R: M3) => Math.acos(Math.max(-1, Math.min(1, (R[0] + R[4] + R[8] - 1) / 2))) * D;
+const cross = (a: readonly number[], b: readonly number[]): V3 => [
+  a[1] * b[2] - a[2] * b[1],
+  a[2] * b[0] - a[0] * b[2],
+  a[0] * b[1] - a[1] * b[0],
+];
+/** Khung bàn tay (cột: lòng tay, ngón, tích), thế giới rig */
+const handFrame = (p: { palm: V3; finger: V3 }): M3 => {
+  const c = cross(p.palm, p.finger);
+  return [p.palm[0], p.finger[0], c[0], p.palm[1], p.finger[1], c[1], p.palm[2], p.finger[2], c[2]];
+};
+const transpose = (m: M3): M3 => [m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8]];
+const WRIST_NAME = { turn: "xoay", bend: "gập", dev: "lệch" } as const;
+
+/**
+ * Bàn tay xoay chưa tới: khung bàn tay sau khi áp (`after`) lệch khung muốn (`R` áp lên khung trước `before`) quá 2° và quá
+ * một phần mười góc muốn — cổ tay kẹp (`clamped`) hay món vượt kẹp. Trả dòng báo, tới thì `undefined`
+ */
+export function turnShort(
+  R: M3,
+  before: { palm: V3; finger: V3 },
+  after: { palm: V3; finger: V3 },
+  clamped: readonly ("turn" | "bend" | "dev")[],
+): string | undefined {
+  const want = turnOf(R);
+  const miss = turnOf(matMul(handFrame(after), transpose(matMul(R, handFrame(before)))));
+  if (miss <= Math.max(2, want * 0.1)) return undefined;
+  const why = clamped.length
+    ? `cổ tay kẹp ${clamped.map((k) => WRIST_NAME[k]).join(", ")}`
+    : "cổ tay hết miền khớp";
+  return `bàn tay chỉ xoay được ~${Math.max(0, want - miss).toFixed(0)}° / ${want.toFixed(0)}° (lệch ${miss.toFixed(0)}°), ${why}`;
+}
+
+/** Xoay chưa tới sau khi áp `raw`: so bàn tay trước (`rt0`) và sau, đọc khớp kẹp ở cảnh mới */
+function turnNote(
+  R: M3 | undefined,
+  rt0: SceneRuntime,
+  raw: Json,
+  id: string,
+  side: HandSide,
+  t: number,
+  o: PlusOptions,
+): string | undefined {
+  if (!R) return undefined;
+  const before = palmAt(rt0, id, side, t, o.char);
+  const rt1 = o.rebuild(raw);
+  const after = palmAt(rt1, id, side, t, o.char);
+  const rep = handReport(rt1, id, side, t, o);
+  if (!before || !after || !rep) return undefined;
+  const over = (["turn", "bend", "dev"] as const).filter((k) => rep.wrist.over[k] > 0.05);
+  return turnShort(R, before, after, [...new Set([...rep.wrist.clamped, ...over])]);
+}
+
 /** Mốc tay `side` của `id` ở đúng giây `t` */
 export function handKeyAt(raw: Json, id: string, side: HandSide, t: number): KeyRef | undefined {
   const marks = marksOf(raw);
@@ -224,6 +279,8 @@ export function dragHand(
     );
   if (fit.gap > PLUS_TOL)
     notes.push(`tâm nắm còn lệch chỗ thả ${fit.gap.toFixed(1)} px (ngoài tầm với hay cổ tay kẹp)`);
+  const short = turnNote(mv.R, b.rt, fit.raw, id, side, t, o);
+  if (short) notes.push(short);
   return { raw: fit.raw, key: b.key, added: b.added, notes, gap: fit.gap };
 }
 
@@ -287,6 +344,8 @@ export function dragItem(
   });
   const notes: string[] = [];
   if (fit.gap > PLUS_TOL) notes.push(`tâm món còn lệch chỗ thả ${fit.gap.toFixed(1)} px`);
+  const short = turnNote(mv.R, brt, fit.raw, id, side, t, o);
+  if (short) notes.push(short);
   return { raw: fit.raw, key, added, notes, gap: fit.gap };
 }
 
@@ -359,8 +418,11 @@ export function lockElbow(
   cur = best.raw;
   rep = best.rep;
   const got = rep.phi;
-  if (!rep.elbowLock) notes.push("khoá không có tác dụng ở giây này");
-  else if (Math.abs(wrapDeg(phi - got)) > 0.5)
+  if (!rep.elbowLock)
+    fail(
+      `không khoá khuỷu ở ${t.toFixed(2)} s: khoá không có tác dụng ở giây này (tay đang hoà giữa hai lần cầm hay theo hành động) — không áp`,
+    );
+  if (Math.abs(wrapDeg(phi - got)) > 0.5)
     notes.push(`khuỷu vẽ ra lệch chỗ thả ${Math.abs(wrapDeg(phi - got)).toFixed(1)}°`);
   return {
     raw: cur,

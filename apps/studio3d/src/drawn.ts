@@ -112,6 +112,51 @@ export function trunkAt(rt: SceneRuntime, id: string, t: number, char?: ActChara
 }
 
 /**
+ * Khung món `item` tay `side` của `id` đang cầm ở `t`, như vẽ, và tâm hộp bao (thế giới rig). `sp`: tư thế `sceneAt` đã
+ * có ở `t` (cùng `char` thì không giải lại tay)
+ */
+function itemFrame(
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  item: string,
+  t: number,
+  char?: ActCharacter,
+  sp?: ActInput,
+) {
+  const c = charAt(rt, id, t, char);
+  const spec = rt.held[item] ?? rt.held[heldBase(item)];
+  if (!c || !spec) return undefined;
+  const both = holdRuns(rt, id)[side].some(
+    (r) => r.item === item && r.mode === "both" && r.since <= t && t < r.until,
+  );
+  let R: M3, P: readonly number[], s: number;
+  if (both) {
+    const p = itemAt(rt, item, t, { chars: { [id]: c } });
+    if (!p) return undefined;
+    [R, P, s] = [p.R, p.P, p.s];
+  } else {
+    const h = Object.values(actHeld(c, sp ?? poseOf(rt, id, t))).find((x) => x?.item === item);
+    if (!h) return undefined;
+    [R, P, s] = [flipRows(h.R), h.at, h.s];
+  }
+  const q = itemCentre(spec);
+  const d = matVec(R, [q[0] * s, q[1] * s, q[2] * s]);
+  return { c, R, at: [P[0] + d[0], P[1] + d[1], P[2] + d[2]] as V3 };
+}
+
+/** Tâm hộp bao (thế giới rig) của món `item` tay `side` của `id` đang cầm ở `t`, như vẽ (`drawnItem`) */
+export const drawnItemAt = (
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  item: string,
+  t: number,
+  char?: ActCharacter,
+  sp?: ActInput,
+): V3 | undefined => itemFrame(rt, id, side, item, t, char, sp)?.at;
+
+/**
  * Món `item` tay `side` của `id` đang cầm ở `t`, như vẽ: hai tay trên mốc món ở `itemAt`, còn lại theo bàn tay
  * (`actHeld`). `at` tâm hộp bao (thế giới rig); `face`, `roll` là trục `+z`, `+y` của khung món ra vectơ hệ thân người
  * cầm `[tiến, y xuống, ngang]`, như `itemAxes` của `core/holdMode.ts`: `out` `-1` ngang phải (mốc món), ý định của `hold`
@@ -125,34 +170,17 @@ export function drawnItem(
   t: number,
   o: { char?: ActCharacter; out?: number } = {},
 ): { at: V3; face: V3; roll: V3 } | undefined {
-  const sp = poseOf(rt, id, t);
-  const c = charAt(rt, id, t, o.char);
-  const spec = rt.held[item] ?? rt.held[heldBase(item)];
-  if (!c || !spec) return undefined;
-  const both = holdRuns(rt, id)[side].some(
-    (r) => r.item === item && r.mode === "both" && r.since <= t && t < r.until,
-  );
-  let R: M3, P: readonly number[], s: number;
-  if (both) {
-    const p = itemAt(rt, item, t, { chars: { [id]: c } });
-    if (!p) return undefined;
-    [R, P, s] = [p.R, p.P, p.s];
-  } else {
-    const h = Object.values(actHeld(c, sp)).find((x) => x?.item === item);
-    if (!h) return undefined;
-    [R, P, s] = [flipRows(h.R), h.at, h.s];
-  }
-  const q = itemCentre(spec);
-  const d = matVec(R, [q[0] * s, q[1] * s, q[2] * s]);
-  const Rr = holderTrunk(rt, id, t, { chars: { [id]: c } }).Rr as M3;
-  const R3 = flipRows(R);
+  const f = itemFrame(rt, id, side, item, t, o.char);
+  if (!f) return undefined;
+  const Rr = holderTrunk(rt, id, t, { chars: { [id]: f.c } }).Rr as M3;
+  const R3 = flipRows(f.R);
   const out = o.out ?? -1;
   const body = (v: V3): V3 => {
     const l = trVec(Rr, v);
     return [l[2], -l[1], out * l[0]];
   };
   return {
-    at: [P[0] + d[0], P[1] + d[1], P[2] + d[2]],
+    at: f.at,
     face: body(matVec(R3, [0, 0, 1])),
     roll: body(matVec(R3, [0, 1, 0])),
   };

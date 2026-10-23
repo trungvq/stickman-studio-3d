@@ -211,20 +211,43 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy). Nhấp nhãn hà
     tự do. Tay theo đồ (theo mốc, hai tay) sửa mốc món `items[]` ở giây ấy: dời, xoay **món** quanh tâm nắm, hướng ghi `face`,
     `roll` trục khung món về vectơ hệ thân người cầm (ngang phải, bỏ `up`), chỗ ghi `at` hay `offset` bù tới khi tâm món ở
     chỗ mới; bàn tay theo món. Tay phụ của `both` không có tay nắm: kéo ở tay dẫn. Tay đang hoà (`HOLD_BLEND`) mà đích ở
-    giây ấy chưa đổi được hình thì không sửa, thanh trạng thái báo.
+    giây ấy chưa đổi được hình thì không sửa, thanh trạng thái báo. Bàn tay xoay chưa tới (khung bàn tay sau khi áp lệch
+    khung muốn quá 2° và quá một phần mười góc xoay — cổ tay kẹp, món xoay quá kẹp) thì vẫn áp, thanh trạng thái báo "bàn
+    tay chỉ xoay được ~…° / …°" kèm khớp kẹp.
   - **Vòng khuỷu**: đường tròn khuỷu quanh trục vai → cổ tay (đường xám) đi qua khuỷu đang vẽ (`handReport.ring`), tô theo
     `E(φ)` của `handReport.cost` (`evalPhi`): xanh ở chỗ rẻ nhất, đỏ từ rẻ nhất + 3 trở lên; tay tự do không có giá, vòng xám.
     Chấm trắng là khuỷu đang vẽ, tím khi khoá; nhãn cạnh khuỷu ghi `φ`, `E`. **Kéo** chấm hay bất kỳ chỗ nào trên vòng (bóng
     cam theo con trỏ): thả là ghi `elbow` (hướng thế giới rig) và `elbowLock: true` vào mốc tay ở giây ấy. Cổ tay dời theo khuỷu
     (tâm nắm giữ chỗ) nên vòng của cảnh mới cũng dời: trang dò hướng `elbow` tới khi `handReport.phi` lệch góc thả dưới 0,25°.
     Tay không theo món đặt trước mà mốc chưa có `at` / `to` thì ghi thêm `at` ở tâm nắm đang vẽ — khoá chỉ có tác dụng ở mốc có
-    đích; lần cầm theo mốc khoá ở mốc tay `hold` của lần cầm. **Nhấp đúp** lên vòng: bỏ `elbowLock` và `elbow` của mốc ở giây
-    ấy, về khuỷu tự nhiên. Tay nắm dưới con trỏ thắng vòng khi bấm kéo.
+    đích; lần cầm theo mốc khoá ở mốc tay `hold` của lần cầm. Khoá vẫn không có tác dụng ở giây ấy (`handReport.elbowLock`
+    sai) thì không áp, thanh trạng thái báo. **Nhấp đúp** lên vòng: bỏ `elbowLock` và `elbow` của mốc ở giây ấy, về khuỷu tự
+    nhiên. Tay nắm dưới con trỏ thắng vòng khi bấm kéo.
   - **Nón cổ tay**, chỉ để xem: chóp ở cổ tay trong khung cẳng tay; cạnh chóp là miền `AIM_BEND` −60..70 × `AIM_DEV` −30..20 ở
     xoay cẳng tay đang vẽ, vòng cung dưới chân là xoay cẳng tay ±90 (vạch là hướng lòng tay, đỏ khi xoay bị kẹp). Chấm là
-    hướng bàn tay đang vẽ: trắng trong miền, đỏ khi gập hay lệch bị kẹp. Món đặt trước vượt kẹp thì thêm chấm đỏ ở hướng
-    nghiệm, nhãn ghi số độ vượt; tay dẫn giải trong miền nên chỉ có khớp kẹp và độ lệch trục món (`wrist.err`). Cổ tay chỉnh qua
-    hướng món và khuỷu, không có trường góc cổ tay.
+    hướng bàn tay đang vẽ: trắng trong miền, hổ phách khi cách kẹp dưới `stickman.held.wrist` (mặc định `HELD_WRIST` 5°, nhãn
+    "sát giới hạn") và đỏ khi gập hay lệch bị kẹp hay vượt kẹp — cùng biên với luật `wrist` của `held`: món đặt trước đo trên
+    nghiệm của bộ giải (`heldWristMargin`), nên panel báo `!` thì nón hổ phách, `!!` thì đỏ. Món đặt trước vượt kẹp thì thêm
+    chấm đỏ ở hướng nghiệm, nhãn ghi số độ vượt; tay dẫn giải trong miền nên chỉ có khớp kẹp và độ lệch trục món
+    (`wrist.err`). Cổ tay chỉnh qua hướng món và khuỷu, không có trường góc cổ tay. Nhãn `φ`/`E` và nhãn nón ẩn khi điểm của
+    nó ra ngoài khung nhìn.
+- **Vệt** của bàn tay đang chọn (ẩn khi phát, khi khung soạn kiểu cầm mở; ô **Vệt** và cửa sổ **±… s** ở góc dưới khung,
+  nhớ trong `localStorage`): cổ tay (chấm đặc màu bên tay: phải hồng, trái xanh), khuỷu (chấm rỗng) và tâm hộp bao của
+  món tay ấy đang cầm (cam; theo mốc món hay theo bàn tay như vẽ, món treo `carry` không có) trong `±2` s quanh giây đang
+  xem. Mỗi chấm là một khung 1/30 s, khoảng cách giữa hai chấm là tốc độ; chấm to ở giây của mốc tay (cổ tay, khuỷu) và
+  mốc món (tâm món), kể cả mốc lệch khung; chấm quanh giây đang xem bỏ đi để không che tay.
+  - Cổ tay, khuỷu là `actJoints` của nhân vật cảnh (`castCharacter`), đúng khớp `check` đo giật. **Vạch tím** ngang qua chấm
+    cổ tay: cổ tay kẹp ở khung ấy (`clamped` như `handReport`).
+  - **Chấm đỏ** viền đen là khung giật của `check` nhóm `move` cho người ấy, cùng phép đo và ngưỡng (`stickman.snap` của
+    `package.json`, mặc định `SNAP_PX` / `SNAP_K` / `SNAP_FPS`), đo cả cảnh: `sceneSnaps` nhắc cổ tay hay bàn tay bên ấy đỏ ở
+    vệt cổ tay, nhắc khuỷu đỏ ở vệt khuỷu — khung vệt chứa cú nhảy (`Snap.t` là khung sau cú nhảy ở nhịp đo); quãng khuỷu
+    khoá xoay quá nhanh (`elbowLockSnaps`) bên ấy đỏ mọi khung trong quãng ở vệt khuỷu. Giật ở khớp khác trong cửa sổ ghi ở
+    dòng "giật khác". `check` của tập chỉ đo trong quãng shot dùng cảnh; vệt đo cả cảnh.
+  - Tính trong một luồng riêng (`trailWorker.ts`), không khoá trang: sau mỗi thao tác (đổi bản sửa, tay, giây, cửa sổ) chậm lại
+    150 ms rồi dựng runtime của bản sửa, lấy mẫu theo giây tăng (đồ theo tay nhớ chuỗi cổ tay từ mốc gần nhất), nhường mỗi
+    20 ms để lượt mới thay lượt cũ; vệt cũ mờ đi tới khi có vệt mới. Mẫu và giật nhớ theo bản sửa: tua chỉ lấy thêm khung
+    mới. Dòng trạng thái ghi số mẫu, giây tính vệt và giây đo giật (một vệt ±2 s chừng 1–2 s, đo giật cả cảnh chừng 1–1,5 s
+    với cảnh t02).
 - **Thẻ mốc**: `ease` (ô 4 số khi `bezier`, mặc định `BEZIER_DEFAULT`); `hold` (không khai / buông `null` / cầm: món,
   nhóm, biến thể — kiểu có tên hiện kèm `note`; `hold` dạng chuỗi ghi lại chuỗi, dạng object đổi `item`, `group`,
   `variant`, đổi món hay nhóm thì bỏ trường chỗ cầm cũ `part`, `edge`, `along`…, giữ ý định và trường lạ; đổi món thì

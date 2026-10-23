@@ -150,7 +150,10 @@ export class ElbowRing {
   clear() {
     for (const c of [...this.group.children]) {
       c.removeFromParent();
-      if (c !== this.ghost) (c as THREE.Mesh).geometry?.dispose();
+      if (c === this.ghost) continue;
+      const m = c as THREE.Mesh;
+      m.geometry?.dispose();
+      (m.material as THREE.Material | undefined)?.dispose();
     }
     this.ghost.visible = false;
   }

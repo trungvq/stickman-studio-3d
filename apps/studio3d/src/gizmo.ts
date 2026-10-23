@@ -20,6 +20,8 @@ export interface GrabHost {
   apply(raw: Json, key: KeyRef): boolean;
   say(text: string, error?: boolean): void;
   orbit(): { enabled: boolean } | null;
+  /** Ngưỡng "sát kẹp" cổ tay của luật `held` (`stickman.held.wrist`, độ) */
+  wristWarn(): number;
   redraw(): void;
 }
 
@@ -41,7 +43,7 @@ const rotationOf = (o: THREE.Object3D) => {
 export class HandGrab {
   readonly scene = new THREE.Scene();
   /** Lần khoá khuỷu: `φ` thả, `φ` vẽ ra sau khi áp (soi từ devtools) */
-  readonly log: { t: number; side: HandSide; want: number; got: number; lock: boolean }[] = [];
+  readonly log: { t: number; side: HandSide; want: number; got: number }[] = [];
   private ring = new ElbowRing();
   private cone = new WristCone();
   private handle = new THREE.Object3D();
@@ -118,7 +120,7 @@ export class HandGrab {
     this.rep = rep;
     this.ringPhi = null;
     this.ring.update(rep, rig.U);
-    this.cone.update(rep, this.row?.fig ?? null, row?.side ?? -1);
+    this.cone.update(rep, this.row?.fig ?? null, row?.side ?? -1, this.host.wristWarn());
     this.place();
   }
 
@@ -131,14 +133,15 @@ export class HandGrab {
     const r = this.frame.getBoundingClientRect();
     const put = (el: HTMLElement, at: THREE.Vector3 | undefined) => {
       const p = at?.clone().project(camera);
-      el.hidden = !p || p.z > 1 || Math.abs(p.x) > 1.2 || Math.abs(p.y) > 1.2;
+      el.hidden = !p || p.z > 1 || Math.abs(p.x) > 1 || Math.abs(p.y) > 1;
       if (!p || el.hidden) return;
       el.style.left = `${((p.x + 1) / 2) * r.width}px`;
       el.style.top = `${((1 - p.y) / 2) * r.height}px`;
     };
     const lab = this.cone.label;
     this.tagCone.textContent = lab?.text ?? "";
-    this.tagCone.classList.toggle("bad", !!lab?.bad);
+    this.tagCone.classList.toggle("bad", lab?.tone === "bad");
+    this.tagCone.classList.toggle("near", lab?.tone === "near");
     put(this.tagCone, lab?.at);
     const rep = this.rep!;
     const phi = this.ringPhi ?? rep.phi;
@@ -286,7 +289,8 @@ export class HandGrab {
     setTimeout(() => {
       try {
         const now = this.host.ctx();
-        if (!now || now.raw !== c.raw) return;
+        if (!now || now.raw !== c.raw)
+          return this.host.say(`bỏ thao tác ${what}: cảnh đã đổi trong lúc chờ áp`, true);
         const r = job(now);
         if (this.host.apply(r.raw, r.key)) this.host.say(r.say);
       } catch (e) {
@@ -364,13 +368,7 @@ export class HandGrab {
     this.run(`khoá khuỷu φ ${phi.toFixed(1)}°`, (c) => {
       const r = lockElbow(c.raw, c.rt, row.id, side, c.t, phi, c.opts(row.id));
       const got = r.phi!.got;
-      this.log.push({
-        t: c.t,
-        side,
-        want: phi,
-        got,
-        lock: !r.notes.includes("khoá không có tác dụng ở giây này"),
-      });
+      this.log.push({ t: c.t, side, want: phi, got });
       return {
         raw: r.raw,
         key: r.key,
