@@ -1,13 +1,9 @@
 // Luồng vệt: dựng runtime của bản đang sửa (cùng `runtimeOf` với trang), lấy mẫu vệt theo `t` tăng, nhường mỗi ~20 ms để
-// lượt mới thay lượt cũ, rồi đo giật của người ấy như `check` (`sceneSnaps`, `elbowLockSnaps` cả cảnh). Mẫu và giật nhớ theo
-// bản JSON: tua chỉ lấy thêm khung mới. `trails.ts` gửi việc và vẽ.
+// lượt mới thay lượt cũ, rồi đo giật của người ấy như `check` (`personSnaps`: cả cảnh, trong quãng lên hình). Mẫu và giật
+// nhớ theo bản JSON: tua chỉ lấy thêm khung mới. `trails.ts` gửi việc và vẽ.
 import {
-  defaultCharacter,
-  elbowLockSnaps,
   holdRuns,
   parseScene,
-  sceneSnaps,
-  type CastMember,
   type ElbowLockSnap,
   type HandSide,
   type HoldRunInfo,
@@ -17,6 +13,7 @@ import {
 import { handsOf, marksOf, timeOf, type Json } from "./keys";
 import { runtimeOf, type Data } from "./runtime";
 import {
+  personSnaps,
   runTrail,
   trailSample,
   trailSnaps,
@@ -42,6 +39,8 @@ export type TrailIn =
       t: number;
       span: number;
       fps: number;
+      /** Quãng lên hình của cảnh (`episodes/`), như `check` đo giật; bỏ trống là cả cảnh */
+      spans?: [number, number][];
     };
 
 export type TrailOut =
@@ -64,7 +63,7 @@ let rt: {
   rt: SceneRuntime;
   frames: Map<string, TrailSample>;
   runs: Map<string, Record<HandSide, HoldRunInfo[]>>;
-  /** Giật cả cảnh của từng người */
+  /** Giật cả cảnh của từng người × quãng lên hình */
   snaps: Map<string, { snaps: Snap[]; locks: ElbowLockSnap[] }>;
 } | null = null;
 let latest = 0;
@@ -132,22 +131,14 @@ async function work(job: Job) {
   const snap = data!.snap;
   if (!snap) return ctx.postMessage({ type: "snaps", gen: job.gen, snaps: null, ms: 0 });
   // cả cảnh, như `check` (nền trung vị ±2 khung, gộp khung sát nhau): tua không đo lại
-  let got = R.snaps.get(job.id);
+  const sk = `${job.id}|${JSON.stringify(job.spans ?? null)}`;
+  let got = R.snaps.get(sk);
   const s0 = performance.now();
   if (!got) {
     await pause();
     if (!alive()) return;
-    const characterOf = (m: CastMember) =>
-      m.id !== job.id
-        ? undefined
-        : m.character
-          ? data!.data.characters[m.character]
-          : defaultCharacter();
-    got = {
-      snaps: sceneSnaps(R.rt, { characterOf, ...snap }),
-      locks: elbowLockSnaps(R.rt, { characterOf }),
-    };
-    R.snaps.set(job.id, got);
+    got = personSnaps(R.rt, job.id, data!.data.characters, { ...snap, spans: job.spans });
+    R.snaps.set(sk, got);
   }
   if (alive())
     ctx.postMessage({

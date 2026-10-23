@@ -1,9 +1,9 @@
-import { holdRuns, holdToHandLed, holdToItemLed } from "@stickman3d/rig/core";
+import { holdRuns, holdToHandLed, holdToItemLed, type HoldModeRow } from "@stickman3d/rig/core";
 import { describe, expect, it } from "vitest";
 import { runtime, scene } from "./fixture";
 import { record, travel, type Steps } from "./history";
 import { handsOf, type Json } from "./keys";
-import { convertRun, midRun, modeTarget, rowOver, runAt } from "./mode";
+import { convertRun, maxOver, midMax, midRun, modeTarget, rowOver, runAt } from "./mode";
 
 /** Áp `next` như trang (một bước lịch sử chung, bản đang sửa là `now`), rồi hoàn tác: trả chữ JSON trước, sau áp, sau hoàn tác */
 function applyUndo(raw: Json, next: Json) {
@@ -36,6 +36,22 @@ describe("công tắc chế độ lần cầm (mode.ts)", { timeout: 120_000 }, 
     expect(midRun(sheet, 2)).toBe(false);
     expect(midRun(sheet, 2.5)).toBe(true);
     expect(midRun(sheet, 3.5)).toBe(false);
+  });
+
+  it("lần cầm ở giây cuối: quãng nửa mở `[since, until)`, lần cầm tới hết cảnh còn ở chính giây cuối", () => {
+    const rt = runtime(scene());
+    const runs = holdRuns(rt, "a");
+    // bảng giá thả ở 3,5: giây ấy không còn cầm, sát trước thì còn
+    expect(runAt(runs.right, 3.5 - 1e-6, 4)?.item).toBe("bang-gia");
+    expect(runAt(runs.right, 3.5, 4)).toBeUndefined();
+    // cốc cầm tới hết cảnh: giây cuối vẫn là lần cầm ấy
+    const cup = runAt(runs.left, 4, 4);
+    expect(cup).toMatchObject({ item: "coc", until: 4 });
+    const one = [{ ...cup!, since: 1, until: 2 }];
+    expect(runAt(one, 2, 4)).toBeUndefined();
+    expect(runAt(one, 2, 2)).toBe(one[0]);
+    expect(runAt(one, 1, 4)).toBe(one[0]);
+    expect(runAt(one, 1 - 1e-6, 4)).toBeUndefined();
   });
 
   it("đồ theo tay → tay theo đồ: số của rig như gọi thẳng, bản gốc không đổi, áp rồi hoàn tác trùng byte", () => {
@@ -91,6 +107,26 @@ describe("công tắc chế độ lần cầm (mode.ts)", { timeout: 120_000 }, 
     expect(runAt(runs, 3, 4)!.mode).toBe("hand");
     const u = applyUndo(raw, next);
     expect(u.undone).toBe(u.before);
+  });
+
+  it("lệch lớn nhất giữa mốc: chỉ hàng `mid` không hoà, giây của hàng nặng nhất", () => {
+    const row = (o: Partial<HoldModeRow>): HoldModeRow => ({
+      t: 0,
+      kind: "mid",
+      item: null,
+      hand: {},
+      clamped: { before: {}, after: {} },
+      ...o,
+    });
+    expect(midMax([row({ kind: "key", item: { pos: 9, angle: 9 } })])).toBeNull();
+    const m = midMax([
+      row({ t: 0.5, kind: "key", item: { pos: 5, angle: 5 } }),
+      row({ t: 0.75, item: { pos: 0.3, angle: 2 }, hand: { right: 0.1 } }),
+      row({ t: 1.25, item: { pos: 0.8, angle: 0.2 }, hand: { right: 0.6, left: 0.2 } }),
+      row({ t: 1.5, item: { pos: 7, angle: 7 }, blending: true }),
+    ])!;
+    expect(m).toEqual({ item: { pos: 0.8, angle: 2 }, hand: 0.6, t: 0.75 });
+    expect(maxOver(m)).toBe(true);
   });
 
   it("hàng vượt ngưỡng giữ chỗ: dời > 0,5 đơn vị rig, quay > 1°, tâm nắm > 0,5", () => {

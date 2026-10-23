@@ -6,7 +6,7 @@ import type { HandSide } from "@stickman3d/rig/core";
 import * as THREE from "three";
 import type { Json, V3 } from "./keys";
 import type { Data } from "./runtime";
-import type { TrailSample, TrailSnaps } from "./trailCore";
+import { TrailJobs, type TrailOf, type TrailSample, type TrailSnaps } from "./trailCore";
 import type { SnapOpts, TrailIn, TrailOut } from "./trailWorker";
 
 /** Việc vệt ở khung đang vẽ */
@@ -18,6 +18,8 @@ export interface TrailWant {
   dataKey: string;
   /** `stickman.snap` của repo; `off` là không đo giật */
   snap?: (Partial<NonNullable<SnapOpts>> & { off?: true; error?: string }) | null;
+  /** Quãng lên hình của cảnh (`episodes/`), như `check` đo giật; bỏ trống là cả cảnh */
+  spans?: [number, number][];
   id: string;
   side: HandSide;
   t: number;
@@ -39,14 +41,14 @@ export class Trails {
   private canvas = document.createElement("canvas");
   private hud = document.createElement("div");
   private worker: Worker | null = null;
-  private gen = 0;
+  private jobs = new TrailJobs();
   private timer = 0;
   /** Dữ liệu đã gửi luồng vệt: khoá `cur.key` và số hiệu ngắn gửi kèm mỗi việc */
   private data: { key: string; id: string } | null = null;
   /** Việc vừa gửi: không gửi lại việc trùng */
   private last = "";
   private want: TrailWant | null = null;
-  private sig: { raw: Json; id: string; side: HandSide; t: number; span: number } | null = null;
+  private live = false;
   private samples: TrailSample[] = [];
   private snaps: TrailSnaps | null = null;
   /** Bản sửa × người × tay của việc đang chờ, của giật đang có: giật của bản cũ không đè lên vệt mới */
@@ -54,7 +56,7 @@ export class Trails {
   private snapsKey = "";
   private trailMs = 0;
   private snapMs: number | undefined;
-  private of: { id: string; side: HandSide } | null = null;
+  private of: TrailOf | null = null;
   private stale = false;
   private busy = false;
   private note = "";
@@ -78,7 +80,7 @@ export class Trails {
     box.onchange = () => {
       this.on = box.checked;
       localStorage.setItem(ON_KEY, this.on ? "1" : "0");
-      this.sig = null;
+      if (this.live) this.stop();
       this.update(this.want);
       this.paint();
     };
@@ -102,22 +104,20 @@ export class Trails {
     this.hud.hidden = !w;
     this.canvas.hidden = !w || !this.on;
     if (!w || !this.on) {
-      if (this.sig) this.stop();
+      if (this.live) this.stop();
       return;
     }
     this.tNow = w.t;
-    const s = this.sig;
-    if (
-      s &&
-      s.raw === w.raw &&
-      s.id === w.id &&
-      s.side === w.side &&
-      s.t === w.t &&
-      s.span === this.span
-    )
-      return;
-    if (!s || s.raw !== w.raw || s.id !== w.id || s.side !== w.side) this.stale = true;
-    this.sig = { raw: w.raw, id: w.id, side: w.side, t: w.t, span: this.span };
+    this.live = true;
+    const go = this.jobs.want({ raw: w.raw, id: w.id, side: w.side, t: w.t, span: this.span });
+    if (go === "same") return;
+    if (go === "restart") {
+      // lượt của bản hay tay cũ còn chạy: báo luồng vệt bỏ, kết quả của nó không vẽ lên tay mới
+      this.stale = true;
+      this.busy = false;
+      this.last = "";
+      this.worker?.postMessage({ type: "stop", gen: this.jobs.gen } satisfies TrailIn);
+    }
     clearTimeout(this.timer);
     this.timer = window.setTimeout(() => this.post(), DELAY);
     this.status();
@@ -125,10 +125,10 @@ export class Trails {
 
   private stop() {
     clearTimeout(this.timer);
-    this.sig = null;
+    this.live = false;
     this.last = "";
     this.busy = false;
-    this.worker?.postMessage({ type: "stop", gen: ++this.gen } satisfies TrailIn);
+    this.worker?.postMessage({ type: "stop", gen: this.jobs.stop() } satisfies TrailIn);
   }
 
   private post() {
@@ -156,15 +156,16 @@ export class Trails {
       this.last = "";
     }
     const raw = JSON.stringify(w.raw);
-    const last = `${this.data.id}|${w.id}|${w.side}|${w.t}|${this.span}|${raw}`;
+    const spans = JSON.stringify(w.spans ?? null);
+    const last = `${this.data.id}|${w.id}|${w.side}|${w.t}|${this.span}|${spans}|${raw}`;
     if (last === this.last) return;
     this.last = last;
-    this.jobKey = `${this.data.id}|${w.id}|${w.side}|${raw}`;
+    this.jobKey = `${this.data.id}|${w.id}|${w.side}|${spans}|${raw}`;
     this.busy = true;
     this.note = "";
     this.worker.postMessage({
       type: "job",
-      gen: ++this.gen,
+      gen: this.jobs.send(),
       dataKey: this.data.id,
       raw,
       id: w.id,
@@ -172,19 +173,20 @@ export class Trails {
       t: w.t,
       span: this.span,
       fps: FPS,
+      ...(w.spans && { spans: w.spans }),
     } satisfies TrailIn);
     this.status();
   }
 
   private got(m: TrailOut) {
-    if (m.gen !== this.gen) return;
-    const w = this.want;
+    const of = this.jobs.take(m.gen);
+    if (!of) return;
     if (m.type === "error") {
       this.note = `vệt: ${m.message}`;
       this.busy = false;
     } else if (m.type === "trail") {
       this.samples = m.samples;
-      this.of = w && { id: w.id, side: w.side };
+      this.of = of;
       this.stale = false;
       this.trailMs = m.ms;
       this.snapMs = undefined;
@@ -293,12 +295,14 @@ export class Trails {
       // chấm khung, rồi chấm mốc, chấm giật đè lên: tay đứng yên thì các khung sau chồng đúng chỗ
       const dots = P.flatMap((p, i) => {
         const s = S[i];
-        if (!p || near(s)) return [];
+        if (!p) return [];
+        const jerk = s.frame !== undefined && red[kind].has(s.frame);
+        // quanh giây đang xem chỉ còn chấm giật: chấm thường che tay
+        if (near(s) && !jerk) return [];
         const key =
           s.key === "both" ||
           (s.key === "hand" && kind !== "item") ||
           (s.key === "item" && kind === "item");
-        const jerk = s.frame !== undefined && red[kind].has(s.frame);
         return [{ p, key, jerk, rank: jerk ? 2 : key ? 1 : 0 }];
       });
       dots.sort((a, b) => a.rank - b.rank);

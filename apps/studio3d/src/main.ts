@@ -143,6 +143,8 @@ let cur: {
   w: World3D;
   from: "world" | "plain";
   rt: SceneRuntime;
+  /** Bản JSON thô `rt` dựng từ: khác `work.raw` là cảnh đang dựng lại sau một lần áp */
+  src: Json;
   /** Ngưỡng luật `held` của repo (`package.json` `stickman.held`) */
   held: Omit<HeldOptions, "frame">;
   /** Người đang hiện ở khung vừa đặt (`w.pose`) */
@@ -261,6 +263,8 @@ interface Scene3Json {
   heldOpts?: Record<string, unknown> & { off?: true; error?: string };
   /** `stickman.snap` của repo (ngưỡng giật của `check`) */
   snapOpts?: { px?: number; k?: number; fps?: number; off?: true; error?: string };
+  /** Quãng lên hình của cảnh trong `episodes/` (`check` chỉ đo giật trong đó); không shot nào dùng thì không có */
+  snapSpans?: [number, number][];
   heldOut?: string | null;
   error?: string;
 }
@@ -327,7 +331,8 @@ async function load(name: string, o: LoadOptions = {}): Promise<boolean> {
     }
     const warnings: string[] = [];
     const data = { ...j.data, held: heldOf(j, warnings) };
-    const parsed = rig.parseScene(work.raw);
+    const src = work.raw;
+    const parsed = rig.parseScene(src);
     if (!parsed.success) throw new Error(`scene JSON sai: ${parsed.error.message}`);
     const scene = parsed.data;
     const key = JSON.stringify(data);
@@ -337,6 +342,7 @@ async function load(name: string, o: LoadOptions = {}): Promise<boolean> {
     >;
     if (!o.full && cur?.name === name && cur.key === key && restage(scene)) {
       cur.held = held;
+      cur.src = src;
       done(warnings);
       syncEdit();
       return true;
@@ -363,6 +369,7 @@ async function load(name: string, o: LoadOptions = {}): Promise<boolean> {
       w,
       from,
       rt,
+      src,
       held,
       data,
       key,
@@ -592,6 +599,7 @@ function afterPose() {
           data: cur.data,
           dataKey: cur.key,
           snap: fetched?.j.snapOpts,
+          ...(fetched?.j.snapSpans && { spans: fetched.j.snapSpans }),
           id: sel.id,
           side: sideOf(sel.side),
           t,
@@ -1194,6 +1202,7 @@ const modeCard = new ModeCard(ui.runCard, {
       ? {
           raw: work.raw,
           rt: cur.rt,
+          building: cur.src !== work.raw,
           t,
           dur: cur.dur,
           rebuild: (j: unknown) => rebuildRaw(j as Json),
@@ -1240,6 +1249,7 @@ function apply(next: Json, o: { key?: KeyRef | null; history?: boolean } = {}): 
     for (const k of picks.keys()) if (!live.has(k)) picks.delete(k);
   }
   work.raw = next;
+  if (fresh) cur.src = next;
   if (o.key !== undefined) picked = o.key;
   say("");
   if (!fresh) {

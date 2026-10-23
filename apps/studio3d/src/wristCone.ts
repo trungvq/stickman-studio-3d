@@ -84,7 +84,7 @@ export class WristCone {
       lineOf([base, base.clone().add(palmAt(drawn.turn))], turnBad ? BAD : OK, 0.95),
     );
     // cách kẹp như luật `held`: món đặt trước đo trên nghiệm của bộ giải (`heldWristMargin`), còn lại trên góc vẽ
-    const placed = (rep.mode === "keyed" || rep.mode === "both") && !rep.run?.lead && rep.grasp;
+    const placed = rep.grasp?.mode === "item" ? rep.grasp : undefined;
     const margin = placed
       ? rig.heldWristMargin(placed.arm.wrist)
       : Math.max(

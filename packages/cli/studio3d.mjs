@@ -17,7 +17,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
-import { heldOptions, snapOptions, SOURCES, worldData } from "./lib.mjs";
+import { heldOptions, sceneShotSpans, snapOptions, SOURCES, worldData } from "./lib.mjs";
 import { formatLike } from "./rawjson.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -256,14 +256,19 @@ export function studio3dConfig({
           if (req.method === "GET") {
             const buf = readFileSync(file);
             const held = heldRaw();
+            const data = worldData(ROOT);
+            const snapOpts = snapOptions(ROOT);
             return {
               raw: JSON.parse(buf.toString("utf8")),
               hash: sha(buf),
-              data: worldData(ROOT),
+              data,
               heldRaw: held.raw,
               heldHash: held.hash,
               heldOpts: heldOptions(ROOT),
-              snapOpts: snapOptions(ROOT),
+              snapOpts,
+              // quãng lên hình của `episodes/`: vệt đo giật như `check`
+              ...(!snapOpts.off &&
+                !snapOpts.error && { snapSpans: sceneShotSpans(ROOT, name, data) }),
               heldOut: HELD_OUT,
             };
           }
