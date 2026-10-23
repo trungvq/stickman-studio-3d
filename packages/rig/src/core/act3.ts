@@ -675,15 +675,10 @@ const UP3: V3 = [0, 1, 0];
 type WristTbd = [number, number, number, number];
 
 /** Xoay, gập, lệch cổ tay đã giải hai bên ở tư thế mẫu trước (`ReachHold.prior`), theo bên giải phẫu */
-const priorWrists = new WeakMap<
-  object,
-  { c: ActCharacter; wrist: Partial<Record<"R" | "L", WristTbd>> }
->();
+const priorWrists = new WeakMap<object, Map<string, Partial<Record<"R" | "L", WristTbd>>>>();
 
 /** Dấu vân của nhân vật: chỗ gọi dựng lại object nhân vật mỗi khung vẫn trúng bộ nhớ của chuỗi */
 const prints = new WeakMap<object, string>();
-const sameC = (a: ActCharacter | undefined, b: ActCharacter) =>
-  a === b || (!!a && printOf(a) === printOf(b));
 const printOf = (c: ActCharacter) => {
   let p = prints.get(c);
   if (p === undefined) prints.set(c, (p = JSON.stringify(c)));
@@ -691,34 +686,52 @@ const printOf = (c: ActCharacter) => {
 };
 
 /**
+ * Giá trị nhớ của `key` cho nhân vật `c`, mỗi dấu vân một ô: người 3D gọi bằng nhân vật rút gọn, lõi bằng JSON đủ, gọi xen
+ * nhau thì một ô mỗi khoá là đè nhau và giải lại cả chuỗi
+ */
+function byPrint<K extends object, V>(
+  m: WeakMap<K, Map<string, V>>,
+  key: K,
+  c: ActCharacter,
+  f: () => V,
+): V {
+  const p = printOf(c);
+  let at = m.get(key);
+  if (!at) m.set(key, (at = new Map()));
+  if (!at.has(p)) at.set(p, f());
+  return at.get(p)!;
+}
+
+/**
  * Cổ tay bên `tag` ở mẫu trước của lần cầm `h`. Mẫu ấy giải theo mẫu trước nó, tới mốc đầu — một chuỗi chỉ phụ thuộc
  * scene, nên khung nào giải trước cũng ra cùng số
  */
 function priorWrist(c: ActCharacter, h: ReachHold, tag: "R" | "L"): WristTbd | undefined {
   // lùi theo chuỗi tới mẫu đã giải rồi giải xuôi: mỗi lần giải chỉ hỏi mẫu ngay trước nó, đã có sẵn
+  const p = printOf(c);
   const chain: ActInput[] = [];
   for (let cur: ReachHold | undefined = h; cur?.prior;) {
     const sp = cur.prior.pose() as ActInput;
-    if (sameC(priorWrists.get(sp)?.c, c)) break;
+    if (priorWrists.get(sp)?.has(p)) break;
     chain.push(sp);
     const W = sp.world;
     const near = W && (tag === "R" ? -1 : 1) === (W.flip ? 1 : -1);
     const [own, other] = near ? [W?.hands?.near, W?.hands?.far] : [W?.hands?.far, W?.hands?.near];
     cur = own?.hold ?? other?.hold;
   }
-  for (let i = chain.length - 1; i >= 0; i--) {
-    const T = trunk3(c, chain[i]);
-    priorWrists.set(chain[i], { c, wrist: T ? solveActing(T, chain[i]).wrist : {} });
-  }
+  for (let i = chain.length - 1; i >= 0; i--)
+    byPrint(priorWrists, chain[i], c, () => {
+      const T = trunk3(c, chain[i]);
+      return T ? solveActing(T, chain[i]).wrist : {};
+    });
   const sp = h.prior?.pose();
-  const hit = sp && priorWrists.get(sp);
-  return hit && sameC(hit.c, c) ? hit.wrist[tag] : undefined;
+  return sp && priorWrists.get(sp)?.get(p)?.[tag];
 }
 
 type PlacedSol = GraspSolution & { t0: number };
 
 /** Nghiệm của tay cầm món đặt trước theo lần cầm của khung và nhân vật */
-const placedMemo = new WeakMap<ReachHold, { c: ActCharacter; sol: PlacedSol | undefined }>();
+const placedMemo = new WeakMap<ReachHold, Map<string, PlacedSol | undefined>>();
 /** Một object cho mỗi dấu vân nhân vật: bộ nhớ lần cầm của scene nhớ theo object nhân vật */
 const canons = new Map<string, ActCharacter>();
 const canon = (c: ActCharacter) => {
@@ -733,9 +746,7 @@ const canon = (c: ActCharacter) => {
 
 /** Bàn tay của lần cầm đang hoà ra (`ReachHold.was`) trên nhân vật của thân `T` */
 function wasHand(T: Trunk3, was: NonNullable<ReachHold["was"]>): WasHand | undefined {
-  let m = wasMemo.get(was);
-  if (!m || !sameC(m.c, T.c)) wasMemo.set(was, (m = { c: T.c, sol: was.solve(canon(T.c), T) }));
-  return m.sol;
+  return byPrint(wasMemo, was, T.c, () => was.solve(canon(T.c), T));
 }
 
 /**
@@ -762,12 +773,11 @@ function placedHolds(T: Trunk3, hands: ActHands | undefined) {
       }
     }
     if (h?.grasp?.mode !== "item" || !h.solve || h.released) continue;
-    let m = placedMemo.get(h0!);
-    if (!m || !sameC(m.c, T.c)) placedMemo.set(h0!, (m = { c: T.c, sol: h.solve(canon(T.c), T) }));
-    if (!m.sol) continue;
-    sols[wk === "near" ? T.near : -T.near] = m.sol;
+    const sol = byPrint(placedMemo, h0!, T.c, () => h.solve!(canon(T.c), T));
+    if (!sol) continue;
+    sols[wk === "near" ? T.near : -T.near] = sol;
     const cur = out?.[wk]?.hold ?? h;
-    out = { ...out, [wk]: { ...r, hold: { ...cur, grasp: { ...h.grasp, frame: m.sol.frame } } } };
+    out = { ...out, [wk]: { ...r, hold: { ...cur, grasp: { ...h.grasp, frame: sol.frame } } } };
   }
   return { hands: out, sols };
 }
@@ -792,7 +802,7 @@ type Solved = {
 };
 
 /** Bàn tay của lần cầm đang hoà ra (`ReachHold.was`) theo khung và nhân vật */
-const wasMemo = new WeakMap<object, { c: ActCharacter; sol: WasHand | undefined }>();
+const wasMemo = new WeakMap<object, Map<string, WasHand | undefined>>();
 
 /** Cánh tay vẽ ra để hoà: cổ tay, khung bàn tay, khuỷu (three) và ngón */
 type ArmState = { Wp: V3; Rw: M3; El: V3; fingers: readonly number[] };
