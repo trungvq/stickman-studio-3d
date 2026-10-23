@@ -89,7 +89,7 @@ export type Lod = 'full' | 'low';
 /** `limb`: vòng mỗi đầu tròn, cạnh quanh ống, đoạn dọc ống */
 interface Quality { skull: [number, number]; limb: [number, number, number] }
 const QUALITY: Record<Lod, Quality> = {
-  full: { skull: [36, 24], limb: [4, 10, 12] },
+  full: { skull: [36, 24], limb: [4, 16, 12] },
   low: { skull: [16, 11], limb: [2, 6, 5] },
 };
 let q = QUALITY.full;
@@ -604,6 +604,8 @@ export function stickman(o: StickmanOptions): Figure {
       // vỏ lùi sau mặt `HAND_INK_PUSH` dọc tia nhìn: không lòi qua kẽ ngón khép, ngón cái vắt trước nắm tay
       const g = inked(hands[s].geo, limbSkin, 0.014, HAND_INK_PUSH * hands[s].scale);
       g.userData.hand = s;
+      // cuối cẳng tay là da: bàn tay chung mã nét với ống tay, cổ tay không có nét
+      if (sleeveLength < 0.999 || flare) g.children[0].userData.inkChain = seg(arms[s].shoulder).id;
       arms[s].wrist.add(g);
       const ankle = new Ankle(root);
       ankle.position.y = -B.shin;
