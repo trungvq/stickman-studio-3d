@@ -432,8 +432,8 @@ truyền cả `world` của `sceneAt` (tham số thứ năm) — thiếu nó, m�
 Pha của clip có sải chân ở người ấy chạy
 theo đồng hồ riêng, không phải `(t − start) / cycle` — sự kiện hỏi qua `sceneEvents`, đừng tự giải
 ngược. **Hông người đi theo `path` suy từ bàn chân, không phải nội suy mốc**: mốc giữa đường là đích
-mềm, clip đi phải kết thúc lúc tới mốc dừng và clip ngồi bắt đầu đúng mốc đứng trước mốc ngồi, nếu
-không người dừng lệch chỗ hay chân đứng sững — `check` kêu. [03](03-scene.md#đi-theo-path)
+mềm, clip đi phải kết thúc từ nửa `cycle` trước tới một phần tư `cycle` sau mốc dừng (rig tự khép chân ở mốc) và clip ngồi
+bắt đầu đúng mốc đứng trước mốc ngồi, nếu không người dừng lệch chỗ hay chân đứng sững — `check` kêu. [03](03-scene.md#đi-theo-path)
 
 **Nhịp của clip khai bằng `cycle` hoặc `speed`, không cả hai.** `speed` là đơn vị
 scene mỗi giây cho người `height = 1`: rig lấy sải chân của chính hành động

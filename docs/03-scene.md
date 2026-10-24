@@ -1097,7 +1097,15 @@ qua cả một pha trụ thì phần hông văng ra và văng về bù nhau. Ng�
   `path` dọc hướng thân chia tốc độ tự nhiên của clip (`actionStride · height · s / cycle`), cộng
   phần bù cho hông tụt trước / sau `path` (bám lại trong `0,5 s`), kẹp `0…2,5` lần nhịp khai, đổi
   êm trong `0,15 s`. `cycle` / `speed` của clip chỉ là nhịp gốc. `sceneEvents` giải sự kiện (tiếng
-  bước) theo chính đồng hồ ấy.
+  bước) theo chính đồng hồ ấy. Quãng khởi hành của [quay rồi đi](#quay-tại-chỗ) có nhịp riêng.
+- **Sải chân theo tốc độ hông.** Quãng khởi hành của [quay rồi đi](#quay-tại-chỗ) và một bước trước
+  lúc hông giảm tốc của [dừng ở mốc](#dừng-ở-mốc) thì sải của clip đi co lại: bàn chân của tư thế co
+  dọc hướng thân quanh hông về phần sải ấy (bề ngang giữ nguyên), hai bàn chân cùng hạ sâu thêm dưới
+  hông cho chân chịu lực giữ đúng tầm hông – bàn chân của clip: gối chùng như clip, hông nâng theo,
+  bàn chân nhấc vẫn cao như clip. Góc chân giải lại. Sải ngắn thì nhịp chân nhanh lên đúng chừng ấy, hông vẫn đi đúng tốc độ, không có
+  chu kỳ đi phát chậm. Sải chỉ đổi khi một bàn chân chịu lực và bàn chân bay còn hơn `0,06 s` mới chạm
+  sàn, nhanh nhất `4` lần mỗi giây, và chậm lại khi bàn chân trụ xa hông (phần bàn chân trụ bị kéo quanh
+  hông không quá `15%` tốc độ tự nhiên của clip); đồng hồ chạy bù phần ấy nên bàn chân trụ không trượt.
 - **Thân nhìn về chỗ sẽ tới.** Đang bước thì hướng thân là hướng từ hông tới chỗ `path` sẽ ở sau
   `0,35 s` (clip đi lùi thì lưng quay về đó); chậm lại hay tới sát thì nhạt dần về `yaw` của mốc.
   Chỗ ấy lệch `yaw` của mốc quá `60°` thì cũng nhạt dần, tới `120°` thì thôi lái: hông trượt quá mốc
@@ -1106,6 +1114,10 @@ qua cả một pha trụ thì phần hông văng ra và văng về bù nhau. Ng�
 - **Mốc giữa đường là đích mềm.** Góc gấp của `path` thành đường cong (nhìn trước `0,35 s`, quay
   tối đa `150°/s`): hông có thể cách mốc giữa đường vài chục đơn vị (`thu-khoi-z`: tới `~40`) rồi
   bám lại. Chỉ mốc dừng và mốc ngồi là chỗ phải tới — muốn người đi qua đúng một điểm thì đặt mốc dày quanh đó và cho góc rẽ đủ thời gian.
+- **Bước cuối của chu kỳ đi là bước dừng.** Mốc dừng là mốc đứng sau một quãng dời chỗ mà sau nó
+  người đứng yên hay quay tại chỗ (không ngồi), hay hết `path`. Clip có sải chân đang lái chân
+  kết thúc — clip sau nó trên track bắt đầu — từ nửa `cycle` trước mốc dừng tới một phần tư `cycle`
+  sau mốc thì rig tự dừng, xem [Dừng ở mốc](#dừng-ở-mốc).
 - **Không clip nào có sải chân mà `path` vẫn dời** thì hông trượt theo `path` — `check` kêu. Clip
   có sải chân chạy mà `path` đứng yên thì chân đứng sững giữa bước.
 - **Đoạn có mốc ngồi** (mốc trước hay mốc sau `sit`) thì hông nội suy từ chỗ đang đứng tới mốc, cao
@@ -1113,13 +1125,60 @@ qua cả một pha trụ thì phần hông văng ra và văng về bù nhau. Ng�
 
 Nên soạn theo:
 
-- Cho clip đi kết thúc (sang `idle`, `blend` `0,3`) ngay trước mốc dừng — mốc mà sau nó `path` đứng
-  yên, ngồi xuống, hay là mốc cuối. Hai chân khép lại trong lúc hoà nên hông còn tiến nửa bước;
-  dừng sớm quá thì hụt, muộn quá thì chân đứng sững.
+- Cho clip đi kết thúc (sang `idle`, `blend` `0,3`) trong nửa `cycle` trước mốc dừng, muộn nhất
+  đúng mốc: rig tự giảm tốc và khép chân ở mốc ([Dừng ở mốc](#dừng-ở-mốc)), không phải canh pha.
+  Dừng sớm hơn thì hông trượt theo `path` khi chân đã khép, muộn quá thì chân đứng sững.
+- Đi tới rồi quay tại chỗ ngay ở mốc dừng thì rig khép chân xong rồi mới quay, cú quay dồn vào phần
+  sau ([Dừng ở mốc](#dừng-ở-mốc)): cho cú quay đủ dài để phần ấy vẫn dưới `300°/s`, không thì chèn
+  một mốc đứng cùng `yaw` sau mốc dừng (`0,3 s` trở lên) rồi mới quay.
 - Clip ngồi bắt đầu đúng ở mốc đứng ngay trước mốc ngồi. Chân co lại trong đoạn đứng là bàn chân
   trụ đẩy hông lùi.
 - Quay tại chỗ khi chân đã khép (`idle`), mỗi `90°` cho `0,8 s` trở lên; dưới `0,45 s` thân quay
   quá `300°/s`, `check` kêu.
+- Quay tại chỗ rồi đi thì cho clip đi bắt đầu trong nhịp cuối của cú quay (nhịp ấy dài từ `0,12 s`),
+  muộn nhất đúng mốc cuối, clip đi trước (nếu có) hết hẳn trước mốc đầu của cú quay, và để `yaw`
+  mốc cuối nhìn theo hướng quãng đi ([quay rồi đi](#quay-tại-chỗ)). Clip đi bắt đầu sau mốc cuối là
+  người đứng sững rồi bật đi.
+
+#### Dừng ở mốc
+
+Clip có sải chân hết trong khoảng từ nửa `cycle` trước mốc dừng tới một phần tư `cycle` sau mốc
+([mốc dừng](#đi-theo-path)), và người đứng yên ở mốc từ `0,1 s` trở lên, thì bước cuối của chu kỳ đi
+là bước dừng:
+
+- Một bước của clip đi (ở tốc độ của quãng tới, dài nhất `0,5 s`, không trước lúc clip đi bắt đầu)
+  trước lúc hông giảm tốc, [sải chân](#đi-theo-path) co êm xuống `65%` (`STRIDE_SHORT`), nhịp chân
+  nhanh lên: bước áp chót ngắn hơn bước đều, bước cuối chỉ đưa chân về cạnh chân kia.
+- Hông giảm tốc đều, từ nửa bước trước mốc tới đứng hẳn ở đúng mốc nửa bước sau mốc; nửa bước là
+  `actionStride · height · s / 4` chia tốc độ của quãng tới, nhiều nhất `0,4 s`, không quá lúc người
+  hết đứng yên ở mốc. Mốc dừng thành đích mềm như mốc cuối của [cú quay](#quay-tại-chỗ). Nhịp chân
+  theo đúng tốc độ hông, nên không có phần tụt lại hay vượt mốc để kéo về.
+- Từ lúc clip đi hết tới lúc hông giảm tốc chân vẫn theo clip đi; tay, thân hoà theo `blend`.
+- Từ lúc giảm tốc hai bàn chân đi trên sàn thế giới: chân đang bay (hai chân trên sàn thì chân sau)
+  đặt xuống chỗ của nó trong tư thế nền quanh mốc theo `yaw` của mốc, đúng lúc nó chạm sàn trong clip
+  đi (bay không nhanh hơn một bước của clip), nhưng không trước lúc chỗ đặt còn trước hông không quá
+  `35%` chiều dài chân (`STOP_LAND`); `0,05 s` sau chân kia bước khép về chỗ của nó. Bàn chân
+  bay chạm sàn đúng lúc hết bay, không sớm hơn; chân bước khép nhấc lên trong `20%` đầu thời gian bay
+  (`STOP_SET`) rồi mới dời, tới chỗ đặt trước `20%` cuối rồi hạ thẳng xuống. Bàn chân đứng không
+  trượt; chân sau không với tới sàn thì kiễng lên. Hông hạ, nâng theo gối chùng của chân đứng, gối
+  duỗi dần về tư thế nền; bàn chân trước hông từ `25%` tới `40%` chiều dài chân thì gối nó duỗi dần về
+  thẳng (`STOP_REACH`), nên chân đáp xa không kéo hông tụt; chân đứng lúc vào bước dừng duỗi như thế dần trong
+  `0,15 s` đầu (`STOP_REACH_IN`), gối nó không bật thẳng. Bước khép xong trước lúc người hết đứng yên ở mốc (thời gian co lại cho
+  vừa).
+- Thân ngả ra sau `3°` (`STOP_LEAN`, kênh `torso`) từ lúc hông giảm tốc tới lúc bước khép xong, lên
+  xuống êm.
+- Clip đi kết thúc lúc nào trong khoảng ấy cũng không đổi hông, không đổi chỗ hai bàn chân.
+- Ngay sau mốc dừng (hay sau quãng đứng yên ở mốc) là cú quay tại chỗ không [nối đi](#quay-tại-chỗ)
+  thì bước khép xong trong nửa đầu cú quay — ngắn hơn nếu cần để phần còn lại quay dưới `300°/s`
+  (đỉnh cú quay êm gấp `1,5` lần tốc trung bình, nên phần còn lại dài ít nhất `1,5 · |góc| / 300`
+  giây). Thân giữ `yaw` của mốc tới khi khép chân xong, rồi cú quay bước từ hai chân đã khép trong
+  phần còn lại. Phần cho bước khép là `min(nửa cú quay, độ dài cú quay − 1,5 · |góc| / 300)`, dưới
+  `0,1 s` thì không ghép: cú quay ngay ở mốc dừng phải dài ít nhất `1,5 · |góc| / 300 + 0,1` giây
+  (`90°` là `0,55 s`, `180°` là `1 s`); ngắn hơn thì bước khép phải xong trước cú quay — chèn một
+  mốc đứng cùng `yaw` trước nó.
+- Không ghép — như clip hết sớm — khi: mốc sau mốc dừng là ngồi hay cú quay nối đi, người đứng yên ở
+  mốc dưới `0,1 s` (mốc dời chỗ kế tiếp, hết cảnh, cú quay quá gấp), hay clip sau clip đi hoà xong
+  sau lúc ấy.
 
 #### Quay tại chỗ
 
@@ -1149,7 +1208,45 @@ luân phiên. Bỏ trống là `ceil(|góc| / 90°)`. Khai `steps` thì người
   nghiêng `3°` về chân xoay một lần mỗi nhịp (kênh `lean`).
 - `yaw` giữa hai mốc đi theo nhịp bước chứ không nội suy đều, kể cả với `worldFacingAt`.
 - Clip có sải chân còn lái chân lúc mốc đầu (kể cả lúc nó đang hoà ra) thì cú quay không bước: hai
-  bàn chân xoay quanh hông. Quay dưới `15°` không khai `steps` cũng vậy.
+  bàn chân xoay quanh hông — trừ cú quay ngay sau [dừng ở mốc](#dừng-ở-mốc), bắt đầu khi bước khép
+  xong. Quay dưới `15°` không khai `steps` cũng vậy.
+
+**Quay rồi đi.** Mốc ngay sau mốc cuối của cú quay dời chỗ (không ngồi), và một clip có sải chân
+(`walk`) bắt đầu trong nhịp cuối của cú quay — từ đầu nhịp cuối tới đúng mốc cuối — thì nhịp cuối
+là bước đầu của chu kỳ đi:
+
+- Cú quay bẻ tới hướng quãng đi: `yaw` mốc cuối lệch hướng quãng sau thì phần lệch rải đều qua các
+  nhịp quay, mỗi nhịp tới `90°` và không nhanh hơn `300°/s` — cú quay khai đã nhanh hơn thì không
+  nhanh hơn chính nó, chỉ bẻ được khi phần lệch quay ngược chiều cú quay. Thân quay không
+  chặn tốc trong cú quay ấy, nên lúc mốc cuối thân và bàn chân đã nhìn theo hướng đi và hông bám
+  `path` từ bước đầu. Quãng đi nối `yaw` từ hướng đã bẻ tới `yaw` mốc kế. Phần lệch không bẻ hết
+  (quá `10°`) thì thân lái dần theo `path` như người đang đi, hông lệch `path` một đoạn; `check` kêu
+  và gợi `yaw` nên đặt.
+- Hông rời mốc cuối sớm nửa nhịp (`TURN_GO`) và tăng tốc đều, tới tốc độ `path` của quãng sau nửa
+  nhịp sau mốc; mốc cuối của cú quay thành đích mềm. Mốc sau khai `ease` thì hông theo đúng `path`,
+  không rời mốc sớm.
+- Suốt quãng ấy [sải chân](#đi-theo-path) của clip đi là tốc độ hông dọc hướng đã bẻ chia tốc độ
+  `path`, không dưới `65%` (`STRIDE_SHORT`), lên êm tới đủ sải khi hông bắt kịp `path`; nhịp chân là
+  tốc độ hông chia sải ấy, nên tăng dần tới nhịp đi đều rồi giữ, không có phần tụt lại để đuổi. Bước
+  đầu (chân bước của nhịp cuối) dài cỡ `65%` bước đều, bước sau gần đủ. Sau lúc hông bắt kịp `path`
+  mà clip đi hết hay quãng hết trong chưa tới một bước của clip thì sải co ít đi, dưới nửa bước thì
+  không co: bước co dồn nhịp chân, pha lệch ở chỗ clip hết hay chỗ quãng rẽ làm hông tụt.
+- Thân ngả về trước `4°` (`LAUNCH_LEAN`, kênh `torso`), lên êm trong `0,18 s` đầu của quãng tăng tốc,
+  trả về khi hông đã quá `60%` tốc độ `path`, về hẳn lúc bắt kịp `path`.
+- Chân bước của nhịp cuối đặt xuống ở chỗ clip đi chạm gót chân ấy với sải đã co — phía trước theo
+  hướng cuối của cú quay, cỡ `65%` nửa sải của clip —, rồi nhích về chỗ của nó trong clip lúc mốc cuối
+  và đứng trụ; nó chạm sàn đúng lúc đặt xuống (chân xoay sâu hơn thì nâng lên phần ấy trong nhịp).
+  Chân xoay trượt trên sàn tới chỗ chân sau của clip đi lúc mốc cuối (sải đã co). Suốt nhịp cuối chân
+  trên sàn không chùng hơn gối chùng nhất của chân trụ trong clip đi: cần thì hai bàn chân cùng hạ sâu
+  thêm, hông nâng. Từ mốc cuối chân theo clip đi luôn, không chờ clip hoà xong; tay, thân vẫn hoà
+  theo `blend`.
+- Pha của clip đi tự căn: chân bước của nhịp cuối chạm gót đúng lúc nó đặt xuống. `phase` khai ở
+  clip cộng thêm vào pha đã căn. `sceneEvents` (tiếng bước) theo pha đã căn.
+- Clip đi bắt đầu sau mốc cuối thì không ghép: người đứng ở mốc tới khi clip bắt đầu, hông tụt sau
+  `path` rồi đuổi theo — `check` kêu khởi hành giật. Clip bắt đầu trước nhịp cuối thì cú quay
+  không bước từ lúc clip lái chân, như mọi cú quay đang có clip đi. Clip đi trước còn lái chân lúc
+  mốc đầu của cú quay (kể cả lúc hoà ra), hay nhịp cuối ngắn hơn `0,12 s` (`TURN_JOIN_BEAT` — chân
+  xoay không kịp hạ tới chỗ của clip đi), thì cũng không ghép.
 
 **Lật qua chính diện hay quay lưng đổi chân gần.** Chân gần (`ln`) là chân phía ống kính; thân quay
 qua `theta` 0 hay 180 thì chân gần là chân kia, nên từ lúc ấy `sceneAt` đổi chỗ các kênh gần ↔ xa
@@ -1207,7 +1304,35 @@ chống nạnh tay phải ở cảnh này là tay trái ở cảnh kia. Dáng ri
 quãng hông đi cộng `8 · s` đơn vị là trượt (`path` dời người mà chân không bước, hay chân bước khi
 đứng yên ở `world.at`). Đoạn có mốc ngồi không đo; cú [quay tại chỗ](#quay-tại-chỗ) bằng bước chân
 cũng không — chân xoay của nó trượt trên sàn là cố ý. Kèm hai lỗi của `path`: mốc dừng mà hông cách
-`at` quá `20 · s`, và clip có sải chân chạy khi `path` đã đứng yên quá `0,25 s`.
+`at` quá `20 · s` (đo ở mốc; [dừng ở mốc](#dừng-ở-mốc) thì đo lúc hông đứng hẳn), và clip có sải
+chân chạy khi `path` đã đứng yên quá `0,25 s` (trừ lúc bước khép của dừng ở mốc).
+
+`sceneLaunchProblems` đo hông vẽ ra từng khung (`1/60 s`) ở cú khởi hành sau
+[quay tại chỗ](#quay-tại-chỗ): hông rời chỗ đứng (yên từ `0,1 s`) cách mốc cuối của một cú quay tại
+chỗ dưới `0,6 s`, rồi trong `0,6 s` tăng tốc quá `5000 · s` đơn vị/s² hay nhanh hơn tốc độ hành
+trình (các quãng `path` ấy; quãng `ease` tính đỉnh `1,5` lần) quá `25%` thì kêu, mỗi cú một dòng.
+Thường là clip đi bắt đầu sau mốc cuối của cú quay: chân tụt sau `path` rồi đuổi bằng nhịp nhanh.
+Sửa bằng [quay rồi đi](#quay-tại-chỗ); lời báo nói vì sao cú quay ấy không ghép (clip đi bắt đầu
+ngoài nhịp cuối, clip đi trước chưa hết lúc mốc đầu, nhịp cuối ngắn hơn `0,12 s`) hay `yaw` mốc
+cuối nên đặt. Clip đi bắt đầu trong nhịp cuối mà nhịp cuối ngắn hơn `0,12 s` thì kêu cả khi hông
+không vọt. Quãng có mốc ngồi không đo. Cú quay đã ghép mà còn lệch hướng quãng đi quá `10°` sau khi bẻ thì kêu cả khi hông không
+vọt, kèm đoạn hông rời `path`: lời báo cho `yaw` theo hướng quãng đi, và độ dài ít nhất để cả góc tới
+hướng ấy quay dưới `300°/s` nếu cú quay đang ngắn hơn. Thân quay gắt trong một cú quay đã ghép thì
+`sceneTurnProblems` nói rig bẻ thêm bao nhiêu độ và cũng cho `yaw`, độ dài ấy.
+
+```
+`takumi` giây 5.30–5.37: hông khởi hành vọt lên 507 đơn vị/s (hành trình 286 đơn vị/s, gia tốc tới 15367 đơn vị/s²) — …
+```
+
+`sceneStopProblems` đo hông vẽ ra từng khung (`1/60 s`) quanh mỗi mốc dừng, từ `0,4 s` trước mốc
+(không trước giữa quãng tới) tới `0,6 s` sau mốc hay tới mốc kế: hông nhanh hơn tốc độ hành trình
+của quãng tới (quãng `ease` tính đỉnh `1,5` lần) quá `25%`, hay vượt mốc dọc hướng đi quá `8 · s`
+đơn vị, thì kêu, mỗi mốc một dòng. Thường là rig không [dừng ở mốc](#dừng-ở-mốc) được: clip đi hết
+ngoài khoảng ấy, không hết, hay cú quay tại chỗ ngay ở mốc dừng quá gấp. Mốc trước mốc ngồi không đo.
+
+```
+`takumi`: mốc dừng `world.path` giây 6.38 — hông vọt lên 497 đơn vị/s (hành trình 286 đơn vị/s), hông trượt qua mốc 42 đơn vị: …
+```
 
 `sceneTurnProblems` đo hướng thân thế giới từng khung (`1/60 s`) và kêu hai kiểu thân quay gắt:
 quay nhanh hơn `300°/s` (mỗi quãng một dòng), và quay đi từ `20°` rồi quay lại quá nửa cú ấy trong
@@ -1232,7 +1357,7 @@ Dáng bàn tay không cầm đồ — lòng tay, khuỷu, ngón, đích theo m�
 món lơ lửng ngoài tay, món xoay sai, món trôi trong bàn tay, món nhảy lúc gắn hay thả, tay phụ không với tới món:
 [Đồ cầm tay](#đồ-cầm-tay).
 
-Các luật này chạy riêng được theo nhóm: trượt, thân quay gắt và giật trên hình ở `move`, đồ cầm ở `held`, đồ cầm còn đi đường cũ ở `legacy`, người lồng vào đồ, vào người khác và tay xuyên thân ở
+Các luật này chạy riêng được theo nhóm: trượt, khởi hành giật, dừng giật, thân quay gắt và giật trên hình ở `move`, đồ cầm ở `held`, đồ cầm còn đi đường cũ ở `legacy`, người lồng vào đồ, vào người khác và tay xuyên thân ở
 `clash` — [05](05-repo-video.md#nhóm-luật).
 
 ## Giật trên hình

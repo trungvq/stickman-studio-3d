@@ -2100,8 +2100,13 @@ function itemClashRows(
   });
 }
 
-/** Người 3D trượt trên sàn, thân quay gắt: hợp lệ, chỉ nhìn là thấy — docs/03-scene.md#check-cho-người-3d */
-const moveProblems = (rt) => [...rig.sceneSlideProblems(rt), ...rig.sceneTurnProblems(rt)];
+/** Người 3D trượt trên sàn, khởi hành giật, dừng giật, thân quay gắt: hợp lệ, chỉ nhìn là thấy — docs/03-scene.md#check-cho-người-3d */
+const moveProblems = (rt) => [
+  ...rig.sceneSlideProblems(rt),
+  ...rig.sceneLaunchProblems(rt),
+  ...rig.sceneStopProblems(rt),
+  ...rig.sceneTurnProblems(rt),
+];
 
 /**
  * Nhóm luật của `check`, xếp theo thứ nó cần dựng: `ref` chỉ đọc JSON, `move` đo khớp người theo runtime, `held`

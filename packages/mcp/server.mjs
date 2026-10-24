@@ -898,6 +898,8 @@ server.registerTool(
       const warnings = [
         ...rig.sceneEquipProblems(r.data, actions),
         ...rig.sceneSlideProblems(rt),
+        ...rig.sceneLaunchProblems(rt),
+        ...rig.sceneStopProblems(rt),
         ...rig.sceneTurnProblems(rt),
         ...sceneSnapLines(rt),
         ...(rig.sceneHoldProblems?.(rt) ?? []),

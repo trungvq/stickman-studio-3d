@@ -1149,9 +1149,12 @@ interface Clip {
 
 /**
  * Đồng hồ của người 3D đi theo `path`: `at` là giây đã co giãn theo nhịp chân của clip có sải chân,
- * `half` là số lần thân đã lật qua chính diện / quay lưng — lẻ thì kênh gần và xa đổi chỗ.
+ * `half` là số lần thân đã lật qua chính diện / quay lưng — lẻ thì kênh gần và xa đổi chỗ. `shift`
+ * là pha rig tự cộng cho clip đi nối sau cú quay tại chỗ (`WalkJoin`).
  */
-type Clock = (t: number) => { at: number; half: number };
+type Clock = ((t: number) => { at: number; half: number }) & {
+  shift?: ReadonlyMap<object, number>;
+};
 
 interface Track {
   name?: string;
@@ -1358,7 +1361,7 @@ function clockPhase(
   time: number,
   clock: Clock,
 ) {
-  return (clock(time).at - clock(c.start).at) / c.cycle + c.phase;
+  return (clock(time).at - clock(c.start).at) / c.cycle + c.phase + (clock.shift?.get(c) ?? 0);
 }
 
 const inMask = (c: Clip, k: Channel) => !c.mask || c.mask.includes(k);
@@ -1377,20 +1380,25 @@ function clipPose(c: Clip, time: number, clock?: Clock, farRight?: boolean): Par
 }
 
 function clipPoseRaw(c: Clip, time: number, clock?: Clock): Partial<Pose> {
+  return c.action ? phasePose(c, phaseAt(c, time, clock)) : {};
+}
+
+/** Tư thế clip ghi ở pha `u` của nó, chưa đổi kênh theo `sides` */
+function phasePose(c: Clip, u: number): Partial<Pose> {
   if (!c.action) return {};
-  const d = actionDelta(c.action, phaseAt(c, time, clock));
+  const d = actionDelta(c.action, u);
   for (const k of JOINT_CHANNELS) if (!inMask(c, k)) delete d[k];
   const p = deltaPose(d);
   // Kênh tay chân hành động này ghi mang cờ nâng của nó: người 3D đọc góc soạn ở `side`
   if (c.action.authoredAt === "side")
     p.lift = Object.fromEntries(LIFT_CHANNELS.filter((k) => p[k]).map((k) => [k, true]));
-  const reach = actionReach(c.action, phaseAt(c, time, clock));
+  const reach = actionReach(c.action, u);
   for (const k of REACH_CHANNELS) if (!p[k]) delete reach[k];
   if (Object.keys(reach).length) p.reach = reach;
   if (inMask(c, "hand")) {
-    const hand = actionHand(c.action, phaseAt(c, time, clock));
+    const hand = actionHand(c.action, u);
     if (Object.keys(hand).length) p.hand = hand;
-    const aim = actionAim(c.action, phaseAt(c, time, clock));
+    const aim = actionAim(c.action, u);
     if (Object.keys(aim).length) p.aim = aim;
   }
   return p;
@@ -2380,7 +2388,7 @@ export function sceneEvents(rt: SceneRuntime, name?: string): SceneEvent[] {
             put(at(0));
             continue;
           }
-          let n = Math.ceil(c.phase - e.t);
+          let n = Math.ceil((clock ? clockPhase(c, c.start, clock) : c.phase) - e.t);
           for (let i = 0; i < EVENT_CAP && at(n) < end; i++, n++) put(at(n));
         }
       }),
@@ -2400,7 +2408,7 @@ function clockTime(
   clock: Clock,
 ): number {
   if (clockPhase(c, end, clock) < phase) return Infinity;
-  if (phase < c.phase) return -Infinity;
+  if (phase < clockPhase(c, c.start, clock)) return -Infinity;
   let [lo, hi] = [c.start, end];
   for (let i = 0; i < 40; i++) {
     const mid = (lo + hi) / 2;
@@ -2871,6 +2879,7 @@ function worldSlideProblems(rt: SceneRuntime, m: CastMember): string[] {
   const n = Math.max(1, Math.round(rt.duration / TRAVEL_STEP));
   const dt = rt.duration / n;
   const per = Math.max(1, Math.round(SLIDE_WINDOW / dt));
+  const walk = w.path && walkerOf(rt, m, h, dims.hipHalf);
   let prev: { ft: V3[]; fwd: number[]; hip: V3; flip: boolean } | undefined;
   let bearing: number[] = [];
   let slip: [number, number] = [0, 0];
@@ -2901,7 +2910,9 @@ function worldSlideProblems(rt: SceneRuntime, m: CastMember): string[] {
       );
       // chân xoay của cú quay tại chỗ trượt trên sàn là cố ý
       const both =
-        turnStepAt(m, t) || turnStepAt(m, t - dt) ? [] : bearing.filter((i) => was.includes(i));
+        turnStepAt(m, t, walk) || turnStepAt(m, t - dt, walk)
+          ? []
+          : bearing.filter((i) => was.includes(i));
       for (const i of both) {
         slip[0] += (ft[i][0] - prev.ft[i][0]) / both.length;
         slip[1] += (ft[i][2] - prev.ft[i][2]) / both.length;
@@ -2926,16 +2937,16 @@ function worldSlideProblems(rt: SceneRuntime, m: CastMember): string[] {
     }
     prev = { ft, fwd, hip: wd.hip, flip: wd.flip };
   }
-  if (!w.path) return bad;
-  const walk = walkerOf(rt, m, h, dims.hipHalf) as Walker;
+  if (!walk) return bad;
   keys.forEach((k, i) => {
     const next = keys[i + 1];
     if (k.sit || i === 0) return;
     const stops = !next || next.sit || (next.at[0] === k.at[0] && next.at[2] === k.at[2]);
     if (!stops) return;
+    const at = walk.stops.find((s) => s.b === k)?.t1 ?? k.t;
     const miss = Math.hypot(
-      sampleAt(walk.x, walk.step, k.t) - k.at[0],
-      sampleAt(walk.z, walk.step, k.t) - k.at[2],
+      sampleAt(walk.x, walk.step, at) - k.at[0],
+      sampleAt(walk.z, walk.step, at) - k.at[2],
     );
     if (miss > ARRIVE_MAX * unit)
       bad.push(
@@ -2948,7 +2959,14 @@ function worldSlideProblems(rt: SceneRuntime, m: CastMember): string[] {
     const c = strideClip(m, t, false);
     const a = keyAt(keys, t).xz;
     const b = keyAt(keys, t + dt).xz;
-    const idle = c && a[0] === b[0] && a[1] === b[1] && !legOf(keys, t).sit;
+    const closing = walk.stops.some((s) => t >= s.b.t && t <= (s.plan?.done ?? s.t1));
+    const idle =
+      c &&
+      a[0] === b[0] &&
+      a[1] === b[1] &&
+      !legOf(keys, t).sit &&
+      !turnStepAt(m, t, walk) &&
+      !closing;
     if (idle && still < 0) still = t;
     if ((!idle || k === n) && still >= 0) {
       if (t - still >= STALL_MIN)
@@ -2998,8 +3016,16 @@ export function sceneTurnProblems(rt: SceneRuntime): string[] {
       if (!jerk) return;
       const span =
         jerk.from === jerk.to ? `giây ${sec(jerk.from)}` : `giây ${sec(jerk.from)}–${sec(jerk.to)}`;
+      const { from, to } = jerk;
+      const w = turnWalks(m).find((j) => j.a.t < to && j.b.t + TURN_STEP > from);
+      const bent = w ? Math.round(Math.abs(w.bend)) : 0;
+      let fix =
+        "mốc `yaw` đổi gấp, hay hướng thân lái về chỗ hông chưa tới; giãn mốc `yaw` ra, hay cho clip đi kết thúc đúng lúc tới mốc dừng";
+      if (w && (bent || Math.abs(w.want - w.bend) > TURN_BEND_LEFT)) {
+        fix = `cú quay tại chỗ giây ${sec(w.a.t)}–${sec(w.b.t)} nối đi${bent ? `, rig bẻ thêm ${bent}° tới hướng quãng đi` : ""}: ở mốc cuối của cú quay ${aimFix(w.a, w.b, w.turn.delta - w.bend, w.want)}`;
+      }
       bad.push(
-        `\`${m.id}\` ${span}: thân quay ${Math.round(jerk.rate)}°/s (ngưỡng ${TURN_JERK}°/s) — mốc \`yaw\` đổi gấp, hay hướng thân lái về chỗ hông chưa tới; giãn mốc \`yaw\` ra, hay cho clip đi kết thúc đúng lúc tới mốc dừng`,
+        `\`${m.id}\` ${span}: thân quay ${Math.round(jerk.rate)}°/s (ngưỡng ${TURN_JERK}°/s) — ${fix}`,
       );
       jerk = undefined;
     };
@@ -3063,6 +3089,163 @@ export function sceneTurnProblems(rt: SceneRuntime): string[] {
         `\`${m.id}\` giây ${sec(keys[k - 1].t)}–${sec(keys[k].t)}: quay tại chỗ ${Math.round(Math.abs(turn.delta))}° trong ${turn.steps} nhịp, mỗi nhịp ${Math.round(Math.abs(turn.delta) / turn.steps)}° (nhiều nhất ${TURN_STEP_MAX}°) — bàn chân bước vòng quanh hông; tăng \`steps\` lên ${Math.ceil(Math.abs(turn.delta) / TURN_STEP_MAX)}, hay bỏ trống cho rig tự chia`,
       );
     }
+  }
+  return bad;
+}
+
+/** Hông chậm hơn ngần này (đơn vị rig mỗi giây) là đứng yên */
+const LAUNCH_STILL = 5;
+/** Hông đứng yên ít nhất ngần này giây rồi mới tính là khởi hành */
+const LAUNCH_REST = 0.1;
+/** Đo cú khởi hành trong ngần này giây kể từ lúc hông rời chỗ đứng */
+const LAUNCH_SPAN = 0.6;
+/** Hông tăng tốc nhanh hơn ngần này (đơn vị rig mỗi giây²) là vọt */
+const LAUNCH_ACCEL = 5000;
+/** Hông nhanh hơn tốc độ hành trình quá phần này là vọt */
+const LAUNCH_OVER = 0.25;
+
+/**
+ * Người 3D đi theo `path` quay tại chỗ rồi khởi hành giật: hông rời chỗ đứng (yên từ `LAUNCH_REST`
+ * giây) cách mốc cuối của một cú quay tại chỗ dưới `LAUNCH_SPAN` giây, và trong `LAUNCH_SPAN` giây, hông
+ * tăng tốc quá `LAUNCH_ACCEL` hay nhanh hơn tốc độ hành trình (`path` của các quãng ấy, quãng `ease`
+ * tính đỉnh `1,5` lần) quá `LAUNCH_OVER`. Đo hông vẽ ra từng khung `1/60 s`; quãng có mốc ngồi
+ * không đo. docs/03-scene.md#check-cho-người-3d
+ */
+export function sceneLaunchProblems(rt: SceneRuntime): string[] {
+  if (!rt.lens) return [];
+  const bad: string[] = [];
+  const n = Math.max(1, Math.round(rt.duration / TURN_STEP));
+  const dt = rt.duration / n;
+  for (const m of rt.cast) {
+    const w = m.world;
+    if (!w?.path) continue;
+    const h = rt.heights[m.id] ?? 1;
+    const keys = keysOf(w);
+    const hips: V3[] = [];
+    for (let k = 0; k <= n; k++) hips.push(sceneAt(rt, m.id, k * dt, h).world!.hip);
+    // khung đầu lấy tốc độ khung sau: người đang đi từ đầu cảnh không phải khởi hành
+    const v = hips.map((p, k) => {
+      const q = hips[k ? k - 1 : 1] ?? p;
+      return Math.hypot(p[0] - q[0], p[2] - q[2]) / dt;
+    });
+    const still = LAUNCH_STILL * w.s;
+    const pathSpeed = (t: number) => {
+      const { a, b, sit } = legOf(keys, t);
+      if (!b || sit) return 0;
+      const d = Math.hypot(b.at[0] - a.at[0], b.at[2] - a.at[2]) / (b.t - a.t);
+      return b.ease ? 1.5 * d : d;
+    };
+    const rest = Math.max(1, Math.round(LAUNCH_REST / dt));
+    const told = new Set<number>();
+    for (let k = rest; k <= n; k++) {
+      if (v[k] < still || v.slice(k - rest, k).some((x) => x >= still)) continue;
+      const ti = keys.findIndex(
+        (b, i) => i > 0 && turnOf(keys[i - 1], b) && Math.abs(b.t - k * dt) <= LAUNCH_SPAN,
+      );
+      if (ti < 0) continue;
+      const next = keys[ti + 1];
+      const why = next ? turnWalkWhy(m, keys[ti - 1], keys[ti], next).why : [];
+      const span = Math.min(n, k + Math.round(LAUNCH_SPAN / dt));
+      let ref = 0;
+      for (let i = k; i <= span; i++) ref = Math.max(ref, pathSpeed(i * dt));
+      let from = -1;
+      let to = -1;
+      let top = 0;
+      let acc = 0;
+      for (let i = k; i <= span; i++) {
+        if (legOf(keys, i * dt).sit) break;
+        const a = (v[i] - v[i - 1]) / dt;
+        const over = ref > 0 && v[i] > (1 + LAUNCH_OVER) * ref;
+        if (a <= LAUNCH_ACCEL * w.s && !over) continue;
+        if (from < 0) from = i - 1;
+        to = i;
+        top = Math.max(top, v[i]);
+        acc = Math.max(acc, a);
+      }
+      if (from < 0) continue;
+      told.add(ti);
+      bad.push(
+        `\`${m.id}\` giây ${(from * dt).toFixed(2)}–${(to * dt).toFixed(2)}: hông khởi hành vọt lên ${Math.round(top)} đơn vị/s (hành trình ${Math.round(ref)} đơn vị/s, gia tốc tới ${Math.round(acc)} đơn vị/s²) — chân tụt sau \`path\` rồi đuổi theo: ${why.length ? why.join("; ") : "cho clip đi bắt đầu trong nhịp cuối của cú quay (muộn nhất đúng mốc cuối), clip đi trước hết trước mốc đầu của cú quay, và `yaw` mốc cuối của cú quay nhìn theo hướng quãng đi"}`,
+      );
+      k = span;
+    }
+    // cú quay có nhịp cuối quá ngắn nên không ghép; khởi hành không vọt mà cú quay còn lệch hướng quãng đi
+    for (let i = 1; i + 1 < keys.length; i++) {
+      if (told.has(i)) continue;
+      const [a, b, next] = [keys[i - 1], keys[i], keys[i + 1]];
+      const { why, walk, short } = turnWalkWhy(m, a, b, next);
+      if (short) {
+        bad.push(
+          `\`${m.id}\` giây ${a.t.toFixed(2)}–${b.t.toFixed(2)}: quay tại chỗ rồi đi không ghép — ${why.join("; ")}`,
+        );
+        continue;
+      }
+      if (!walk || !why.length) continue;
+      const [dx, dz] = [next.at[0] - b.at[0], next.at[2] - b.at[2]];
+      const len = Math.hypot(dx, dz);
+      let off = 0;
+      for (let k = Math.ceil(b.t / dt); k <= Math.min(n, next.t / dt); k++) {
+        const p = hips[k];
+        off = Math.max(off, Math.abs(((p[0] - b.at[0]) * dz - (p[2] - b.at[2]) * dx) / len));
+      }
+      bad.push(
+        `\`${m.id}\` giây ${a.t.toFixed(2)}–${b.t.toFixed(2)}: quay tại chỗ rồi đi, thân chưa nhìn theo hướng quãng đi — thân lái dần theo \`path\`, hông rời \`path\` tới ${Math.round(off)} đơn vị: ${why.join("; ")}`,
+      );
+    }
+  }
+  return bad;
+}
+
+/** Đo chỗ dừng tới ngần này giây sau mốc dừng */
+const STOP_SPAN = 0.6;
+/** Hông vượt mốc dừng quá ngần này (đơn vị rig) dọc hướng đi là trượt qua mốc */
+const STOP_PAST = 8;
+
+/**
+ * Người 3D đi theo `path` dừng giật: quanh mốc dừng (mốc đứng sau quãng dời chỗ, sau nó đứng yên hay
+ * hết `path`), từ `STOP_GO_MAX` giây trước tới `STOP_SPAN` giây sau mốc, hông nhanh hơn tốc độ hành trình của quãng tới (quãng
+ * `ease` tính đỉnh `1,5` lần) quá `LAUNCH_OVER`, hay vượt mốc dọc hướng đi quá `STOP_PAST · s`. Đo hông
+ * vẽ ra từng khung `1/60 s`, không trước giữa quãng tới; mốc ngồi và mốc ngay trước mốc ngồi không đo. Hụt mốc là
+ * `sceneSlideProblems`. docs/03-scene.md#check-cho-người-3d
+ */
+export function sceneStopProblems(rt: SceneRuntime): string[] {
+  if (!rt.lens) return [];
+  const bad: string[] = [];
+  const dt = TURN_STEP;
+  for (const m of rt.cast) {
+    const w = m.world;
+    if (!w?.path) continue;
+    const h = rt.heights[m.id] ?? 1;
+    const keys = keysOf(w);
+    keys.forEach((b, i) => {
+      const [a, next] = [keys[i - 1], keys[i + 1]];
+      if (!a || a.sit || b.sit || next?.sit) return;
+      const len = Math.hypot(b.at[0] - a.at[0], b.at[2] - a.at[2]);
+      if (!len || (next && (next.at[0] !== b.at[0] || next.at[2] !== b.at[2]))) return;
+      const dir = [(b.at[0] - a.at[0]) / len, (b.at[2] - a.at[2]) / len];
+      const ref = (len / (b.t - a.t)) * (b.ease ? 1.5 : 1);
+      const t0 = Math.max((a.t + b.t) / 2, b.t - STOP_GO_MAX);
+      const t1 = Math.min(next?.t ?? rt.duration, b.t + STOP_SPAN, rt.duration);
+      let last: V3 | undefined;
+      let top = 0;
+      let past = 0;
+      for (let k = 0; t0 + k * dt <= t1 + 1e-9; k++) {
+        const hip = sceneAt(rt, m.id, t0 + k * dt, h).world!.hip;
+        if (last) top = Math.max(top, Math.hypot(hip[0] - last[0], hip[2] - last[2]) / dt);
+        past = Math.max(past, (hip[0] - b.at[0]) * dir[0] + (hip[2] - b.at[2]) * dir[1]);
+        last = hip;
+      }
+      const fast = top > (1 + LAUNCH_OVER) * ref;
+      const over = past > STOP_PAST * w.s;
+      if (!fast && !over) return;
+      const what = [
+        fast && `hông vọt lên ${Math.round(top)} đơn vị/s (hành trình ${Math.round(ref)} đơn vị/s)`,
+        over && `hông trượt qua mốc ${Math.round(past)} đơn vị`,
+      ].filter(Boolean);
+      bad.push(
+        `\`${m.id}\`: mốc dừng \`world.path\` giây ${+b.t.toFixed(3)} — ${what.join(", ")}: rig chỉ tự giảm tốc và khép chân ở mốc khi clip sau clip đi bắt đầu trong nửa \`cycle\` trước mốc dừng (muộn nhất một phần tư \`cycle\` sau mốc) và người đứng yên ở mốc từ ${STOP_GO_MIN} s; cú quay tại chỗ ngay ở mốc dừng quá gấp (nửa sau của nó không đủ quay dưới ${TURN_JERK}°/s) thì giãn nó ra hay chèn một mốc đứng cùng \`yaw\` trước nó`,
+      );
+    });
   }
   return bad;
 }
@@ -3139,6 +3322,8 @@ const TURN_LIFT = 0.07;
 const TURN_DIP = 0.015;
 /** Phần đầu và cuối cú quay mà hông hạ xuống, đứng lên */
 const TURN_DIP_RAMP = 0.2;
+/** Chỗ nối quay rồi đi: bàn chân nhấc cao ngần này phần chiều dài chân thì gối nó thôi giữ hông */
+const TURN_KNEE_LIFT = 0.01;
 /** Thân nghiêng về chân xoay khi chân kia nhấc, độ */
 const TURN_LEAN = 3;
 
@@ -3155,9 +3340,760 @@ function turnOf(a: WorldKey, b: WorldKey) {
 
 /** Phần góc đã quay ở `u` (0..1) của cú quay `steps` nhịp: mỗi nhịp thân quay êm một lượt, dừng giữa hai nhịp */
 function turnShare(steps: number, u: number): number {
+  const { v, j } = turnBeat(steps, u);
+  return (j + smoothstep(Math.max(0, v - j))) / steps;
+}
+
+/** Nhịp `j` và vị trí `v` (theo nhịp) ở `u` của cú quay `steps` nhịp; `u` tính bằng dấu phẩy động nên đầu nhịp có dung sai */
+function turnBeat(steps: number, u: number): { v: number; j: number } {
   const v = Math.min(1, Math.max(0, u)) * steps;
-  const j = Math.min(steps - 1, Math.floor(v));
-  return (j + smoothstep(v - j)) / steps;
+  return { v, j: Math.min(steps - 1, Math.floor(v + 1e-6)) };
+}
+
+/** Chân bước ở nhịp `j` của cú quay: nhịp đầu chân phía quay (quay phải — `delta` dương — là chân phải), nhịp sau đổi chân; kênh chưa đổi theo lật */
+function turnLead(delta: number, j: number, flip0: boolean): "ln" | "lf" {
+  const right = flip0 ? "lf" : "ln";
+  return delta > 0 === (j % 2 === 0) ? right : right === "ln" ? "lf" : "ln";
+}
+
+/** Chỗ nối quay rồi đi còn lệch hướng quãng đi quá ngần này độ sau khi bẻ cú quay thì `check` gợi ý `yaw` */
+const TURN_BEND_LEFT = 10;
+
+/** Quay rồi đi: nhịp cuối của cú quay ngắn hơn ngần này giây thì không ghép — chân xoay không kịp hạ tới chỗ của clip đi, hông giật ở mốc cuối */
+const TURN_JOIN_BEAT = 0.12;
+/** Quay rồi đi: hông rời mốc cuối của cú quay trước ngần này phần nhịp, bắt kịp `path` sau mốc cùng ngần ấy */
+const TURN_GO = 0.5;
+/** Khởi hành: sải chân của clip đi co theo tốc độ hông so với tốc độ hành trình, không ngắn hơn ngần này phần — bước đầu */
+const STRIDE_SHORT = 0.65;
+/**
+ * Sải chân của clip đi đổi nhanh nhất ngần này phần mỗi giây, chỉ khi một bàn chân chịu lực và bàn
+ * chân bay còn hơn `STRIDE_LAND` giây mới chạm sàn
+ */
+const STRIDE_RATE = 4;
+const STRIDE_LAND = 0.06;
+/** Sải đổi kéo bàn chân trụ quanh hông nhanh nhất ngần này phần tốc độ tự nhiên của clip đi */
+const STRIDE_PUSH = 0.15;
+/** Khởi hành: thân ngả về trước ngần này độ, lên êm trong `LAUNCH_LEAN_RISE` giây đầu của đoạn tăng tốc */
+const LAUNCH_LEAN = 4;
+const LAUNCH_LEAN_RISE = 0.18;
+/** Dừng: sải chân co dần trong một bước của clip đi trước lúc hông giảm tốc, dài nhất ngần này giây */
+const STOP_LEAD = 0.5;
+/** Dừng: bàn chân trước hông từ phần đầu tới phần sau chiều dài chân thì gối nó duỗi dần về `0` — chân đáp xa không kéo hông tụt */
+const STOP_REACH = [0.25, 0.4] as const;
+/** Dừng: chân trụ lúc `tp` duỗi theo `STOP_REACH` dần trong ngần này giây — gối nó liền với tư thế clip */
+const STOP_REACH_IN = 0.15;
+/** Dừng: chân bay đặt xuống khi chỗ đặt còn trước hông không quá ngần này phần chiều dài chân */
+const STOP_LAND = 0.35;
+/** Dừng: thân ngả ra sau ngần này độ trong bước dừng và bước khép rồi trả về */
+const STOP_LEAN = 3;
+
+/**
+ * Quay tại chỗ rồi đi: cú quay `a → b`, mốc `next` dời chỗ, và clip có sải chân `clip` bắt đầu
+ * trong nhịp cuối của cú quay (`from` tới đúng `b.t`). Nhịp cuối là bước đầu của chu kỳ đi.
+ * docs/03-scene.md#quay-tại-chỗ
+ */
+interface TurnWalk {
+  a: WorldKey;
+  b: WorldKey;
+  next: WorldKey;
+  /** Cú quay đã bẻ thêm `bend`: thân quay tới hướng quãng `b → next` */
+  turn: { delta: number; steps: number };
+  /** Độ lệch (độ, có dấu) từ `yaw` của `b` tới hướng quãng đi, rải đều qua các nhịp quay */
+  bend: number;
+  /** Độ lệch (độ, có dấu) từ `yaw` của `b` tới hướng quãng đi trước khi kẹp: phần `want − bend` không bẻ được */
+  want: number;
+  clip: Clip;
+  /** Đầu nhịp cuối, giây; độ dài một nhịp */
+  from: number;
+  beat: number;
+}
+
+const turnWalkCache = new WeakMap<Acting, TurnWalk[]>();
+
+/** Hướng (độ) của quãng `b → next` mà clip `clip` đi: clip đi lùi thì lưng về phía ấy */
+function legHeading(b: WorldKey, next: WorldKey, clip: Clip): number {
+  const head = Math.atan2(-(next.at[2] - b.at[2]), next.at[0] - b.at[0]) / D;
+  return head + ((clip.stride as number) < 0 ? 180 : 0);
+}
+
+/**
+ * Chỗ nối quay rồi đi của cú quay `a → b` có quãng dời chỗ `next` theo sau: `walk` khi ghép được,
+ * `why` là lời cho `check` — vì sao không ghép, hay `yaw` nên đặt khi cú quay không bẻ hết tới hướng
+ * quãng đi.
+ */
+function turnWalkWhy(
+  m: Acting,
+  a: WorldKey,
+  b: WorldKey,
+  next: WorldKey,
+): { why: string[]; walk?: TurnWalk; short?: boolean } {
+  const turn = turnOf(a, b);
+  if (!turn || next.sit || (next.at[0] === b.at[0] && next.at[2] === b.at[2])) return { why: [] };
+  const beat = (b.t - a.t) / turn.steps;
+  const from = b.t - beat;
+  const clip = strideClip(m, b.t, false);
+  const why: string[] = [];
+  if (strideClip(m, a.t)) why.push("clip đi trước phải hết trước mốc đầu của cú quay");
+  if (!clip || clip.start < from - 1e-9 || clip.start > b.t)
+    why.push(
+      `cho clip đi bắt đầu trong nhịp cuối của cú quay (giây ${+from.toFixed(3)}–${+b.t.toFixed(3)})`,
+    );
+  if (!clip) return { why };
+  const head = legHeading(b, next, clip);
+  const want = wrap180(head - b.yaw);
+  const short = beat < TURN_JOIN_BEAT - 1e-9;
+  if (short) {
+    // quay thẳng tới hướng quãng đi: cú quay dài thêm phần lệch ấy
+    const aim = Math.round(Math.abs(want))
+      ? `đặt \`yaw\` mốc cuối của cú quay ${Math.round(((head % 360) + 360) % 360)} (hướng quãng đi) và `
+      : "";
+    const need = Math.max(
+      TURN_JOIN_BEAT * turn.steps,
+      (1.5 * Math.abs(turn.delta + want)) / TURN_JERK,
+    );
+    why.push(
+      `nhịp cuối của cú quay chỉ ${+beat.toFixed(3)} s, dưới ${TURN_JOIN_BEAT} s nên rig không ghép quay rồi đi (chân xoay chưa kịp tới chỗ của clip đi): ${aim}giãn cú quay ra ít nhất ${+need.toFixed(2)} s`,
+    );
+  }
+  if (why.length) return { why, short };
+  // mỗi nhịp tới `TURN_STEP_MAX` và không nhanh hơn `TURN_JERK` (đỉnh `1,5` lần tốc trung bình), hay tốc của cú quay khai nếu nó đã nhanh hơn
+  const jerk = (TURN_JERK * beat) / 1.5;
+  const cap =
+    Math.max(Math.abs(turn.delta) / turn.steps, Math.min(TURN_STEP_MAX, jerk)) * turn.steps;
+  const delta = Math.min(cap, Math.max(-cap, turn.delta + want));
+  const bend = delta - turn.delta;
+  if (Math.abs(want - bend) > TURN_BEND_LEFT) {
+    const bent = Math.round(Math.abs(bend));
+    why.push(
+      `\`yaw\` mốc cuối của cú quay lệch hướng quãng đi ${Math.round(Math.abs(want))}°${bent ? ` (rig bẻ thêm ${bent}°)` : ""}: ${aimFix(a, b, turn.delta, want)}`,
+    );
+  }
+  return {
+    why,
+    walk: { a, b, next, turn: { delta, steps: turn.steps }, bend, want, clip, from, beat },
+  };
+}
+
+/** Lời gợi `yaw` cho cú quay `a → b` khai `delta`° mà quãng đi sau nó lệch `want`°: góc đủ tới hướng đi phải quay dưới `TURN_JERK` */
+function aimFix(a: WorldKey, b: WorldKey, delta: number, want: number): string {
+  const full = Math.abs(delta + want);
+  const need = (1.5 * full) / TURN_JERK;
+  const yaw = Math.round((((b.yaw + want) % 360) + 360) % 360);
+  const slow =
+    need > b.t - a.t + 1e-9
+      ? `, rồi giãn cú quay ra ít nhất ${+need.toFixed(2)} s cho ${Math.round(full)}° quay dưới ${TURN_JERK}°/s`
+      : "";
+  return `đặt \`yaw\` ${yaw}${slow}`;
+}
+
+function turnWalks(m: Acting): TurnWalk[] {
+  const hit = turnWalkCache.get(m);
+  if (hit) return hit;
+  const out: TurnWalk[] = [];
+  const keys = m.world?.path ?? [];
+  for (let i = 1; i + 1 < keys.length; i++) {
+    const { walk } = turnWalkWhy(m, keys[i - 1], keys[i], keys[i + 1]);
+    if (walk) out.push(walk);
+  }
+  turnWalkCache.set(m, out);
+  return out;
+}
+
+/** Chỗ nối quay rồi đi đã đo ở một `height`: hông rời `b` ở `t0`, bắt kịp `path` ở `t1` */
+interface WalkJoin extends TurnWalk {
+  t0: number;
+  t1: number;
+  /** Sai khi quãng `b → next` tự êm (`ease`): hông theo đúng `path`, không rời mốc sớm */
+  ramp: boolean;
+  /** Tốc độ (đơn vị thế giới mỗi giây) và hướng sàn `[x, z]` của quãng `b → next` */
+  speed: number;
+  dir: [number, number];
+  /** Tốc độ tự nhiên của clip đi, cùng đơn vị */
+  vNat: number;
+  /** Đồng hồ của người cộng dồn từ bước `k0`; nhịp chân các bước `k0 + 1 … k0 + cum.length - 1` là nhịp khởi hành */
+  k0: number;
+  cum: number[];
+  /** Phần sải chân của clip đi (`joinStride`) ở từng bước `k0 …`, cùng chỉ số với `cum` */
+  sigma: number[];
+  /** Sải ngắn nhất của quãng khởi hành (`joinShort`) */
+  short: number;
+  /** Chân bước của nhịp cuối đặt xuống lúc `land`; pha của clip đi lúc ấy và lúc `b.t` */
+  land: number;
+  landPhase: number;
+  phase: number;
+}
+
+/** Điểm sàn `[x, z]` hông đuổi theo: `path`, trừ quãng khởi hành của chỗ nối quay rồi đi */
+function chaseAt(keys: WorldKey[], joins: WalkJoin[], t: number): [number, number] {
+  const j = joins.find((j) => j.ramp && t > j.t0 && t < j.t1);
+  if (!j) return keyAt(keys, t).xz;
+  const d = (j.speed * (t - j.t0) ** 2) / (4 * (j.t1 - j.b.t));
+  return [j.b.at[0] + j.dir[0] * d, j.b.at[2] + j.dir[1] * d];
+}
+
+/** Tốc độ hông đuổi theo dọc hướng cuối của cú quay */
+function joinAlong(j: WalkJoin, V: [number, number]): number {
+  const F = dirOf((j.b.yaw + j.bend) * D);
+  return V[0] * F[0] + V[1] * F[2];
+}
+
+/**
+ * Phần sải chân của clip đi lúc `t` của quãng khởi hành: tốc độ hông chia tốc độ hành trình, từ
+ * `STRIDE_SHORT` lên êm tới `1` — đủ `1` khi hông bắt kịp `path` lúc `t1`
+ */
+function joinStride(j: WalkJoin, V: [number, number], t: number): number {
+  if (j.short >= 1) return 1;
+  const full = (t - j.b.t) / Math.max(1e-6, j.t1 - j.b.t);
+  const q = Math.max(Math.abs(joinAlong(j, V)) / j.speed, full);
+  return (
+    j.short + (1 - j.short) * smoothstep(Math.min(1, Math.max(0, (q - j.short) / (1 - j.short))))
+  );
+}
+
+/**
+ * Sải ngắn nhất của quãng khởi hành `b → next` hông bắt kịp lúc `t1`: `STRIDE_SHORT` khi sau `t1` clip
+ * đi và quãng còn ít nhất một bước của clip, dưới nửa bước thì `1` — bước co dồn nhịp chân, pha lệch ở
+ * chỗ clip hết hay chỗ quãng rẽ làm hông tụt
+ */
+function joinShort(m: Acting, tw: TurnWalk, t1: number): number {
+  const tr = m.tracks.find((tr) => tr.clips.includes(tw.clip));
+  const after = tr?.clips[tr.clips.indexOf(tw.clip) + 1];
+  const room = Math.min(after?.start ?? Infinity, tw.next.t) - t1;
+  const half = tw.clip.cycle / 4;
+  const f = smoothstep(Math.min(1, Math.max(0, (room - half) / half)));
+  return 1 - (1 - STRIDE_SHORT) * f;
+}
+
+/** Nhịp chân lúc khởi hành: sải `sigma` đi hết đúng quãng hông đuổi theo dọc hướng cuối của cú quay */
+function joinRate(j: WalkJoin, V: [number, number], sigma: number): number {
+  return Math.min(RATE_MAX, Math.max(0, joinAlong(j, V) / (sigma * j.vNat)));
+}
+
+const joinAt = (xs: number[], j: WalkJoin, step: number, t: number, clamp = false) => {
+  const u = t / step - j.k0;
+  const i = Math.min(xs.length - 2, Math.max(0, Math.floor(u)));
+  const f = clamp ? Math.min(1, Math.max(0, u - i)) : u - i;
+  return xs.length < 2 ? xs[0] : xs[i] + (xs[i + 1] - xs[i]) * f;
+};
+
+const joinClock = (j: WalkJoin, step: number, t: number) =>
+  j.cum.length < 2 ? 0 : joinAt(j.cum, j, step, t);
+
+/**
+ * Sải chân nhắm tới lúc `t` (phần sải của clip đi): quãng khởi hành của chỗ nối quay rồi đi theo
+ * `joinStride`, một bước trước lúc hông giảm tốc của chỗ dừng co êm xuống `STRIDE_SHORT`; ngoài ra `1`
+ */
+function strideAim(w: Walker, t: number): number {
+  const j = w.joins.find((j) => t > j.k0 * w.step && t < (j.k0 + j.sigma.length - 1) * w.step);
+  let k = j ? joinAt(j.sigma, j, w.step, t, true) : 1;
+  for (const s of w.stops)
+    if (t > s.tp - s.lead && t <= s.tp + 1e-9)
+      k = Math.min(k, 1 - (1 - STRIDE_SHORT) * smoothstep((t - s.tp + s.lead) / s.lead));
+  return k;
+}
+
+/**
+ * Phần sải chân của clip đi lúc `t` (`Walker.stride` đã nướng); tới mốc cuối của cú quay nối đi thì
+ * theo `strideAim` — `turnStep` cần nó trước khi nướng tới
+ */
+function strideAt(w: Walker, t: number): number {
+  const j = w.joins.find((j) => t > j.k0 * w.step && t <= j.b.t + 1e-9);
+  if (j) return joinAt(j.sigma, j, w.step, t, true);
+  return t / w.step <= w.stride.length - 1 + 1e-6 ? sampleAt(w.stride, w.step, t) : 1;
+}
+
+/** Tư thế clip ở pha `u`, đã đổi kênh theo `sides` như `clipPose` */
+function clipPhasePose(c: Clip, u: number, farRight?: boolean): Partial<Pose> {
+  const p = phasePose(c, u);
+  return anatomicalSwap(c, farRight) ? swapPartial(p) : p;
+}
+
+const strikeCache = new WeakMap<Clip, Map<string, number>>();
+
+/** Pha clip đi đặt gót chân `ch` xuống: lúc bàn chân ấy ra trước nhất */
+function clipStrike(c: Clip, ch: "ln" | "lf", farRight: boolean): number {
+  let byKey = strikeCache.get(c);
+  if (!byKey) strikeCache.set(c, (byKey = new Map()));
+  const key = `${ch}|${farRight}`;
+  const hit = byKey.get(key);
+  if (hit !== undefined) return hit;
+  let best = 0;
+  let front = -Infinity;
+  for (let i = 0; i < 240; i++) {
+    const leg = clipPhasePose(c, i / 240, farRight)[ch];
+    if (!leg) break;
+    const x = Math.sin(leg[0] * D) * RIG.thigh + Math.sin((leg[0] + leg[1]) * D) * RIG.shin;
+    if (x > front) [front, best] = [x, i / 240];
+  }
+  byKey.set(key, best);
+  return best;
+}
+
+/** Đi rồi dừng: hông giảm tốc lâu nhất ngần này giây mỗi bên mốc dừng */
+const STOP_GO_MAX = 0.4;
+/** Chỗ dừng hẹp hơn ngần này giây mỗi bên (mốc sau tới sớm, cảnh hết) thì không ghép, đi như clip */
+const STOP_GO_MIN = 0.1;
+/** Hai bàn chân cùng trên sàn ngần này giây giữa bước cuối và bước khép */
+const STOP_GAP = 0.05;
+/** Chỗ dừng: bàn chân nhấc từ sàn nhấc lên, hạ xuống thẳng đứng trong ngần này phần đầu, cuối thời gian bay */
+const STOP_SET = 0.2;
+/** Bàn chân cao hơn bàn chân thấp nhất dưới ngần này (đơn vị rig) là đang chạm sàn */
+const GROUND_TOL = 0.5;
+
+/**
+ * Dừng rồi quay tại chỗ: bước khép xong trong nhiều nhất ngần này phần đầu của cú quay, cú quay bước
+ * trong phần còn lại
+ */
+const STOP_TURN = 0.5;
+
+/**
+ * Đi rồi dừng: quãng `a → b` dời chỗ, sau `b` người đứng yên (không ngồi, có thể quay tại chỗ) hay
+ * hết `path`, và clip có sải chân `clip` đang lái chân hết lúc `end` — từ nửa `cycle` trước mốc dừng
+ * tới một phần tư `cycle` sau nó. `tail` là lúc nó hoà ra xong. docs/03-scene.md#dừng-ở-mốc
+ */
+interface StopWalk {
+  a: WorldKey;
+  b: WorldKey;
+  clip: Clip;
+  end: number;
+  tail: number;
+  /**
+   * Bước khép xong trước lúc này: mốc đầu của quãng dời chỗ, ngồi hay cú quay kế tiếp; cú quay tại
+   * chỗ không nối đi thì hết phần `STOP_TURN` đầu của nó, phần còn lại đủ quay dưới `TURN_JERK`; hết
+   * `path` là vô cùng
+   */
+  until: number;
+  /** Mốc cuối của cú quay tại chỗ ngay sau chỗ đứng: cú quay bắt đầu khi bước khép xong (`turnU`) */
+  turn?: WorldKey;
+}
+
+const stopWalkCache = new WeakMap<Acting, StopWalk[]>();
+
+function stopWalks(m: Acting): StopWalk[] {
+  const hit = stopWalkCache.get(m);
+  if (hit) return hit;
+  const out: StopWalk[] = [];
+  const keys = m.world?.path ?? [];
+  const same = (p: WorldKey, q: WorldKey) => p.at[0] === q.at[0] && p.at[2] === q.at[2];
+  for (let i = 1; i < keys.length; i++) {
+    const [a, b, next] = [keys[i - 1], keys[i], keys[i + 1]];
+    if (a.sit || b.sit || next?.sit || same(a, b)) continue;
+    if (next && !same(b, next)) continue;
+    let n = i + 1;
+    while (n < keys.length && same(b, keys[n]) && !keys[n].sit && !turnOf(keys[n - 1], keys[n]))
+      n++;
+    const [p, q] = [keys[n - 1], keys[n]];
+    const tq = q && !turnWalks(m).some((j) => j.b === q) ? turnOf(p, q) : undefined;
+    // cú quay dồn vào phần sau không vượt tốc `TURN_JERK` của `check` (đỉnh `1,5` lần tốc trung bình)
+    const room = tq ? q.t - p.t - (1.5 * Math.abs(tq.delta)) / TURN_JERK : 0;
+    const turn = room > 0 ? q : undefined;
+    const until = turn ? p.t + Math.min(STOP_TURN * (q.t - p.t), room) : q ? p.t : Infinity;
+    for (const tr of m.tracks)
+      tr.clips.forEach((c, j) => {
+        const e = tr.clips[j + 1];
+        if (!c.stride || !e || c.start >= b.t) return;
+        if (e.start < b.t - c.cycle / 2 - 1e-9 || e.start > b.t + c.cycle / 4 + 1e-9) return;
+        if (strideClip(m, e.start - 1e-6, false) !== c || strideClip(m, e.start, false)) return;
+        out.push({ a, b, clip: c, end: e.start, tail: e.start + e.tau, until, turn });
+      });
+  }
+  stopWalkCache.set(m, out);
+  return out;
+}
+
+/** Một bàn chân trong chỗ dừng: đứng ở `from` tới `t0`, bay tới `to` đặt xuống lúc `t1`, rồi đứng đó */
+interface StopFoot {
+  from: [number, number];
+  to: [number, number];
+  /** Vận tốc sàn (đơn vị thế giới mỗi giây), độ cao trên sàn và vận tốc lên (đơn vị rig) lúc `t0` */
+  v: [number, number];
+  h0: number;
+  vh: number;
+  bump: number;
+  t0: number;
+  t1: number;
+}
+
+/** Chỗ dừng đã đo ở một `height`: hông giảm tốc đều từ `tp` tới mốc dừng lúc `t1`, chân theo `feet` tới `done` */
+interface WalkStop extends StopWalk {
+  tp: number;
+  t1: number;
+  /** Sải chân co dần trong ngần này giây trước `tp`: một bước của clip đi ở tốc độ hành trình */
+  lead: number;
+  /** Bước nướng đầu tiên sau `tp` — lúc ấy rig đo hai bàn chân và lập `plan` */
+  k0: number;
+  vNat: number;
+  stepLen: number;
+  plan?: {
+    H0: [number, number];
+    V0: [number, number];
+    feet: Record<"ln" | "lf", StopFoot>;
+    /** Chân bước trước: chân đang bay lúc `tp` */
+    first: "ln" | "lf";
+    /** Gối chùng (độ) của chân đứng lúc `tp` và của tư thế nền: hông cao tới đâu thì gối chùng chừng ấy */
+    K0: number;
+    K1: number;
+    done: number;
+  };
+}
+
+/** Điểm sàn `[x, z]` của hông trong chỗ dừng: Hermite từ chỗ và vận tốc lúc `tp` tới mốc, dừng hẳn lúc `t1` */
+function stopHip(s: WalkStop, t: number): [number, number] {
+  return stopHipFrom(s, s.plan!, t);
+}
+
+function stopHipFrom(
+  s: WalkStop,
+  p: { H0: [number, number]; V0: [number, number] },
+  t: number,
+): [number, number] {
+  const T = s.t1 - s.tp;
+  const u = Math.min(1, Math.max(0, (t - s.tp) / T));
+  const [h00, h10, h01] = [
+    2 * u ** 3 - 3 * u * u + 1,
+    u ** 3 - 2 * u * u + u,
+    3 * u * u - 2 * u ** 3,
+  ];
+  return [0, 1].map((i) => p.H0[i] * h00 + p.V0[i] * T * h10 + s.b.at[i * 2] * h01) as [
+    number,
+    number,
+  ];
+}
+
+/** Vận tốc sàn của `stopHip` */
+function stopHipV(s: WalkStop, t: number): [number, number] {
+  const p = s.plan!;
+  const T = s.t1 - s.tp;
+  if (t <= s.tp || t >= s.t1) return t <= s.tp ? p.V0 : [0, 0];
+  const u = (t - s.tp) / T;
+  const [d00, d10, d01] = [6 * u * u - 6 * u, 3 * u * u - 4 * u + 1, 6 * u - 6 * u * u];
+  return [0, 1].map((i) => (p.H0[i] * d00) / T + p.V0[i] * d10 + (s.b.at[i * 2] * d01) / T) as [
+    number,
+    number,
+  ];
+}
+
+/**
+ * Bàn chân `f` lúc `t`: điểm sàn `[x, z]` thế giới và độ cao trên sàn (đơn vị rig). Bàn chân chạm sàn
+ * đúng `t1`, không sớm hơn; chân nhấc từ sàn thì nhấc lên trong phần `STOP_SET` đầu rồi mới dời, tới
+ * chỗ đặt trước phần `STOP_SET` cuối rồi hạ thẳng xuống
+ */
+function stopFootAt(f: StopFoot, t: number): { at: [number, number]; h: number } {
+  if (t <= f.t0) return { at: f.from, h: f.h0 };
+  if (t >= f.t1) return { at: f.to, h: 0 };
+  const T = f.t1 - f.t0;
+  const u = (t - f.t0) / T;
+  const a0 = f.h0 < GROUND_TOL && !f.v[0] && !f.v[1] ? STOP_SET : 0;
+  const a1 = a0 ? STOP_SET : 0;
+  const Th = T * (1 - a0 - a1);
+  const w = Math.min(1, Math.max(0, (u - a0) / (1 - a0 - a1)));
+  const [h00, h10, h01] = [
+    2 * w ** 3 - 3 * w * w + 1,
+    w ** 3 - 2 * w * w + w,
+    3 * w * w - 2 * w ** 3,
+  ];
+  const at = [0, 1].map((i) => f.from[i] * h00 + f.v[i] * Th * h10 + f.to[i] * h01) as [
+    number,
+    number,
+  ];
+  // Hermite tới `0` lúc `t1`, không chạm sàn sớm: tốc hạ đầu không quá `h0` mỗi `T`
+  const vh = Math.max(f.vh * T, -f.h0);
+  const h = (1 - u) ** 2 * (f.h0 * (1 + 2 * u) + vh * u) + f.bump * Math.sin(Math.PI * u) ** 2;
+  return { at, h };
+}
+
+const gaitCache = new WeakMap<Clip, Map<string, boolean[]>>();
+const GAIT_N = 240;
+
+const swingCache = new WeakMap<Clip, Map<boolean, number[]>>();
+
+/**
+ * Ở từng pha `i / GAIT_N` của clip đi: một bàn chân đang bay thì phần chu kỳ còn lại tới lúc nó chạm
+ * sàn, không thì `0`
+ */
+function clipSwing(c: Clip, farRight: boolean): number[] {
+  let byKey = swingCache.get(c);
+  if (!byKey) swingCache.set(c, (byKey = new Map()));
+  const hit = byKey.get(farRight);
+  if (hit) return hit;
+  const [a, b] = [clipGround(c, "ln", farRight), clipGround(c, "lf", farRight)];
+  const out = new Array<number>(GAIT_N).fill(0);
+  for (let i = 0; i < GAIT_N; i++) {
+    if (a[i] === b[i]) continue;
+    const air = a[i] ? b : a;
+    let n = 1;
+    while (n < GAIT_N && !air[(i + n) % GAIT_N]) n++;
+    out[i] = n / GAIT_N;
+  }
+  byKey.set(farRight, out);
+  return out;
+}
+
+const kneeCache = new WeakMap<Clip, Map<boolean, number>>();
+
+/** Gối chùng nhất (độ) của chân chạm sàn trong một chu kỳ của clip đi */
+function clipKnee(c: Clip, farRight: boolean): number {
+  let byKey = kneeCache.get(c);
+  if (!byKey) kneeCache.set(c, (byKey = new Map()));
+  const hit = byKey.get(farRight);
+  if (hit !== undefined) return hit;
+  const g = { ln: clipGround(c, "ln", farRight), lf: clipGround(c, "lf", farRight) };
+  let out = 0;
+  for (let i = 0; i < GAIT_N; i++) {
+    const p = clipPhasePose(c, i / GAIT_N, farRight);
+    for (const ch of ["ln", "lf"] as const)
+      if (g[ch][i] && p[ch]) out = Math.max(out, Math.abs(p[ch][1]));
+  }
+  byKey.set(farRight, out);
+  return out;
+}
+
+/** Chân `ch` của clip đi chạm sàn ở từng pha `i / GAIT_N` */
+function clipGround(c: Clip, ch: "ln" | "lf", farRight: boolean): boolean[] {
+  let byKey = gaitCache.get(c);
+  if (!byKey) gaitCache.set(c, (byKey = new Map()));
+  const key = `${ch}|${farRight}`;
+  const hit = byKey.get(key);
+  if (hit) return hit;
+  const out: boolean[] = [];
+  for (let i = 0; i < GAIT_N; i++) {
+    const p = clipPhasePose(c, i / GAIT_N, farRight);
+    const d = (k: "ln" | "lf") => (p[k] ? legFoot(p[k], 1, 0, RIG.thigh, RIG.shin).depth : 0);
+    out.push(d(ch) >= Math.max(d("ln"), d("lf")) - GROUND_TOL);
+  }
+  byKey.set(key, out);
+  return out;
+}
+
+/**
+ * Bàn chân của góc chân nâng `leg` so với tâm hông, hệ phẳng `[tiến, phải]` (`side` `1` là chân
+ * phải), và độ sâu dưới hông; cùng đơn vị với `l1`, `l2`
+ */
+function legFoot(leg: readonly number[], side: number, hipHalf: number, l1: number, l2: number) {
+  const [a0, b0, sp0 = 0] = leg;
+  const x = Math.sin(a0 * D) * l1 + Math.sin((a0 + b0) * D) * l2;
+  const y = Math.cos(a0 * D) * l1 + Math.cos((a0 + b0) * D) * l2;
+  return {
+    at: [x, side * (hipHalf + y * Math.sin(sp0 * D))] as [number, number],
+    depth: y * Math.cos(sp0 * D),
+  };
+}
+
+/** Điểm sàn thế giới của điểm `[tiến, phải]` (đơn vị rig) quanh hông `H` hướng `yaw` (độ), tỉ lệ `s` */
+function bodyToWorld(H: [number, number], yaw: number, s: number, q: [number, number]) {
+  const c = Math.cos(yaw * D);
+  const n = Math.sin(yaw * D);
+  return [H[0] + s * (q[0] * c - q[1] * n), H[1] + s * (-q[0] * n - q[1] * c)] as [number, number];
+}
+
+/** Ngược của `bodyToWorld` */
+function worldToBody(H: [number, number], yaw: number, s: number, p: [number, number]) {
+  const c = Math.cos(yaw * D);
+  const n = Math.sin(yaw * D);
+  const [dx, dz] = [p[0] - H[0], p[1] - H[1]];
+  return [(dx * c - dz * n) / s, (-dx * n - dz * c) / s] as [number, number];
+}
+
+/**
+ * Lập chỗ dừng `s` ở bước nướng `s.k0`: đo hai bàn chân lúc `tp` (tư thế clip đi đang vẽ), chân
+ * đang bay (hai chân trên sàn thì chân sau) đặt xuống chỗ của nó trong tư thế nền quanh mốc dừng, ở
+ * lúc chân ấy chạm sàn trong clip đi; chân kia bước khép về chỗ của nó sau `STOP_GAP`. Nhịp bước theo
+ * nhịp chân lúc `tp`, bàn chân bay không nhanh hơn một bước của clip đi.
+ */
+function planStop(m: Acting, s: WalkStop, w: Walker, height: number, hipHalf: number) {
+  const ws = m.world as WorldSpec;
+  const step = w.step;
+  const k = s.k0 - 1;
+  const clock = clockOf(w);
+  const flip0 = w.flip[0];
+  const len = lengths(height);
+  const unswapped = (t: number, raw = false) => {
+    let out = m.base;
+    poseAt(m, t, clock, (p) => (out = raw ? p : walkStep(m, t, p, w, height, hipHalf)), flip0);
+    return out;
+  };
+  const right: "ln" | "lf" = flip0 ? "lf" : "ln";
+  const chs = ["ln", "lf"] as const;
+  const lens = (p: Pose, ch: "ln" | "lf") => [
+    len.thigh * p.stretch[ch === "ln" ? 6 : 4],
+    len.shin * p.stretch[ch === "ln" ? 7 : 5],
+  ];
+  const measure = (i: number) => {
+    const p = unswapped(i * step);
+    const H: [number, number] = [w.x[i], w.z[i]];
+    const f = chs.map((ch) => {
+      const [l1, l2] = lens(p, ch);
+      return legFoot(p[ch], ch === right ? 1 : -1, hipHalf, l1, l2);
+    });
+    const D0 = Math.max(f[0].depth, f[1].depth);
+    return f.map((q, j) => ({
+      at: bodyToWorld(H, w.yaw[i], ws.s, q.at),
+      h: D0 - q.depth,
+      knee: Math.abs(p[chs[j]][1]),
+    }));
+  };
+  const now = measure(k);
+  const was = measure(Math.max(0, k - 1));
+  const tb = Math.max(s.tail, s.t1) + 1e-6;
+  const B = unswapped(tb, true);
+  const target = chs.map((ch) => {
+    const [l1, l2] = lens(B, ch);
+    return legFoot(B[ch], ch === right ? 1 : -1, hipHalf, l1, l2);
+  });
+  const to = target.map((q) => bodyToWorld([s.b.at[0], s.b.at[2]], s.b.yaw, ws.s, q.at));
+  // chân bay: chân đang nhấc, hai chân trên sàn thì chân sau theo hướng đi
+  const dir = dirOf(w.yaw[k] * D);
+  const ahead = (i: number) => (now[i].at[0] - w.x[k]) * dir[0] + (now[i].at[1] - w.z[k]) * dir[2];
+  const down = now.map((q) => q.h < GROUND_TOL);
+  const fly = down[0] !== down[1] ? (down[0] ? 1 : 0) : ahead(0) <= ahead(1) ? 0 : 1;
+  const rate = Math.min(RATE_MAX, Math.max(0.6, (w.clock[k] - w.clock[Math.max(0, k - 1)]) / step));
+  const g = clipGround(s.clip, chs[fly], flip0);
+  const swing = ((g.filter((x) => !x).length / GAIT_N) * s.clip.cycle) / rate;
+  let rest = 0;
+  if (!down[fly]) {
+    const u = clockPhase(s.clip, k * step, clock);
+    let n = 0;
+    while (n < GAIT_N && !g[(((Math.floor(u * GAIT_N) + n) % GAIT_N) + GAIT_N) % GAIT_N]) n++;
+    rest = ((n / GAIT_N) * s.clip.cycle) / rate;
+  }
+  const vFoot = (2 * s.stepLen) / Math.max(swing, 1e-3);
+  const L = len.thigh + len.shin;
+  const dist = (i: number) => Math.hypot(to[i][0] - now[i].at[0], to[i][1] - now[i].at[1]);
+  const t0 = k * step;
+  const d1 = dist(fly);
+  const H0: [number, number] = [w.x[k], w.z[k]];
+  const V0: [number, number] = [(w.x[k] - w.x[k - 1]) / step, (w.z[k] - w.z[k - 1]) / step];
+  const rem = Math.hypot(s.b.at[0] - H0[0], s.b.at[2] - H0[1]);
+  const sp = Math.hypot(V0[0], V0[1]);
+  const cap = (3 * rem) / (s.t1 - t0);
+  if (sp > cap) [V0[0], V0[1]] = [(V0[0] * cap) / sp, (V0[1] * cap) / sp];
+  let tL = t0 + Math.max(down[fly] ? 0.6 * swing : rest, d1 / vFoot, 1e-3);
+  // chân bay đặt xuống khi hông đã tới gần chỗ đặt
+  const reach = (t: number) => {
+    const H = stopHipFrom(s, { H0, V0 }, t);
+    return ((to[fly][0] - H[0]) * dir[0] + (to[fly][1] - H[1]) * dir[2]) / ws.s;
+  };
+  while (tL < s.t1 && reach(tL) > STOP_LAND * L) tL = Math.min(s.t1, tL + step);
+  const vel = (i: number): [number, number] => {
+    const v: [number, number] = [
+      (now[i].at[0] - was[i].at[0]) / step,
+      (now[i].at[1] - was[i].at[1]) / step,
+    ];
+    const cap = (3 * dist(i)) / (tL - t0);
+    const sp = Math.hypot(v[0], v[1]);
+    return sp > cap ? [(v[0] * cap) / sp, (v[1] * cap) / sp] : v;
+  };
+  const feetPlan = {} as Record<"ln" | "lf", StopFoot>;
+  const lift = (dd: number, h0: number) =>
+    Math.max(0, Math.min(TURN_LIFT * L, (0.25 * dd) / ws.s) - h0);
+  feetPlan[chs[fly]] = {
+    from: now[fly].at,
+    to: to[fly],
+    v: down[fly] ? [0, 0] : vel(fly),
+    h0: now[fly].h,
+    vh: down[fly] ? 0 : (now[fly].h - was[fly].h) / step,
+    bump: lift(d1, now[fly].h),
+    t0,
+    t1: tL,
+  };
+  const other = 1 - fly;
+  const d2 = dist(other);
+  const t2 = tL + STOP_GAP;
+  const t3 = t2 + Math.max(0.5 * swing, d2 / vFoot);
+  feetPlan[chs[other]] = {
+    from: now[other].at,
+    to: to[other],
+    v: [0, 0],
+    h0: 0,
+    vh: 0,
+    bump: lift(d2, 0),
+    t0: t2,
+    t1: t3,
+  };
+  // bước khép xong trước khi người quay, đi tiếp hay hết cảnh
+  if (t3 > s.until) {
+    const q = (s.until - t0) / (t3 - t0);
+    for (const f of Object.values(feetPlan))
+      [f.t0, f.t1] = [t0 + (f.t0 - t0) * q, t0 + (f.t1 - t0) * q];
+  }
+  s.plan = {
+    H0,
+    V0,
+    feet: feetPlan,
+    first: chs[fly],
+    K0: now[1 - fly].knee,
+    K1: Math.min(Math.abs(B.ln[1]), Math.abs(B.lf[1])),
+    done: Math.max(feetPlan[chs[other]].t1, s.t1, s.tail),
+  };
+}
+
+/**
+ * Chỗ dừng (`WalkStop`) trong tư thế: từ lúc clip đi hết tới `tp` chân vẫn theo clip đi; từ `tp` hai
+ * bàn chân đi theo `plan` trên sàn thế giới, góc chân giải lại theo hông `stopHip` và hướng thân
+ * đang vẽ. Hông cao theo gối chùng của chân đứng, gối duỗi dần về tư thế nền. `pose` chưa đổi kênh
+ * như `turnStep`. docs/03-scene.md#dừng-ở-mốc
+ */
+function stopStep(
+  m: Acting,
+  time: number,
+  pose: Pose,
+  walk: Walker,
+  height: number,
+  hipHalf: number,
+): Pose {
+  const s = walk.stops.find(
+    (s) => time >= Math.min(s.end, s.tp) - 1e-9 && time <= (s.plan?.done ?? s.t1) + 1e-9,
+  );
+  if (!s) return pose;
+  const p = s.plan;
+  if (!p || time <= s.tp + 1e-9) {
+    if (time < s.end) return pose;
+    const q = clipPose(s.clip, time, clockOf(walk), walk.flip[0]);
+    return { ...pose, ln: q.ln ?? pose.ln, lf: q.lf ?? pose.lf };
+  }
+  const ws = m.world as WorldSpec;
+  const len = lengths(height);
+  const right: "ln" | "lf" = walk.flip[0] ? "lf" : "ln";
+  const H = stopHip(s, time);
+  const yaw = sampleAt(walk.yaw, walk.step, time);
+  const u = smoothstep(Math.min(1, (time - s.tp) / (p.done - s.tp)));
+  const bend = p.K0 + (p.K1 - p.K0) * u;
+  const reachIn = smoothstep(Math.min(1, (time - s.tp) / STOP_REACH_IN));
+  const legs = (["ln", "lf"] as const).map((ch) => {
+    const l1 = len.thigh * pose.stretch[ch === "ln" ? 6 : 4];
+    const l2 = len.shin * pose.stretch[ch === "ln" ? 7 : 5];
+    const side = ch === right ? 1 : -1;
+    const f = stopFootAt(p.feet[ch], time);
+    const [fw, lat] = worldToBody(H, yaw, ws.s, f.at);
+    const o = side * lat - hipHalf;
+    const [r0, r1] = STOP_REACH;
+    const far =
+      (ch === p.first ? 1 : reachIn) *
+      smoothstep(Math.min(1, Math.max(0, (fw / (l1 + l2) - r0) / (r1 - r0))));
+    const knee = Math.cos(bend * (1 - far) * D);
+    const r2 = l1 * l1 + l2 * l2 + 2 * l1 * l2 * knee;
+    return { ch, fw, o, h: f.h, l1, l2, r2, c: f.h + Math.sqrt(Math.max(0, r2 - fw * fw - o * o)) };
+  });
+  // sàn dưới hông: chân thấp hơn quyết, gối chùng như `bend` (duỗi theo `STOP_REACH`); từ lúc chân bước trước đặt xuống, chân
+  // kia kiễng gót rời sàn nên chỉ chân trước quyết, tới giữa bước khép thì cả hai
+  const [A, B] = p.first === "ln" ? legs : [legs[1], legs[0]];
+  const sB = p.feet[B.ch];
+  const mid = (sB.t0 + sB.t1) / 2;
+  const both = Math.min(A.c, B.c);
+  const tA = p.feet[A.ch].t1;
+  const beta = smoothstep(Math.min(1, Math.max(0, (time - tA) / Math.max(1e-3, sB.t1 - tA))));
+  const [fB, lB] = worldToBody(H, yaw, ws.s, sB.from);
+  const oB = (B.ch === right ? 1 : -1) * lB - hipHalf;
+  const planted = Math.sqrt(Math.max(0, B.r2 - fB * fB - oB * oB));
+  const floor =
+    time < tA ? both : Math.min(A.c, planted) * (1 - beta) + (time >= mid ? both : A.c) * beta;
+  const out = { ...pose };
+  // chân không với tới sàn thì kiễng lên thẳng đứng, không trượt về phía hông
+  for (const g of legs) {
+    const reach = Math.sqrt(Math.max(0, (g.l1 + g.l2) ** 2 - g.fw * g.fw - g.o * g.o));
+    out[g.ch] = legTo(g.fw, Math.min(floor - g.h, reach), g.o, g.l1, g.l2);
+  }
+  return out;
 }
 
 /**
@@ -3176,6 +4112,12 @@ interface Walker {
   half: number[];
   clock: number[];
   lift: number[];
+  joins: WalkJoin[];
+  /** Pha cộng cho clip đi của mỗi chỗ nối (`Clock.shift`) */
+  shift: Map<object, number>;
+  stops: WalkStop[];
+  /** Phần sải chân của clip đi (`strideAim`, chỉ đổi khi một bàn chân chịu lực) */
+  stride: number[];
 }
 
 /** Clip có sải chân bám lại path trong ngần này giây khi tụt trước / sau mốc */
@@ -3212,9 +4154,11 @@ const sampleAt = (xs: number[], step: number, t: number) => {
 const stepIndex = (w: Walker, t: number) =>
   Math.min(w.half.length - 1, Math.max(0, Math.floor(t / w.step + 1e-6)));
 
-const clockOf =
-  (w: Walker): Clock =>
-  (t) => ({ at: sampleAt(w.clock, w.step, t), half: w.half[stepIndex(w, t)] ?? 0 });
+const clockOf = (w: Walker): Clock =>
+  Object.assign(
+    (t: number) => ({ at: sampleAt(w.clock, w.step, t), half: w.half[stepIndex(w, t)] ?? 0 }),
+    { shift: w.shift },
+  );
 
 /** Clip có sải chân đang lái chân lúc `time` (`tail`: kể cả lúc nó đang hoà ra), track sau đè track trước */
 function strideClip(m: Acting, time: number, tail = true): Clip | undefined {
@@ -3254,7 +4198,7 @@ function walkerOf(
  * trụ đứng yên cả lúc quay. `path` là chỗ người phải ở theo thời gian: nhịp chân của clip có sải
  * chân co giãn cho kịp nó (bám lại cả phần tụt trước / sau), lệch ngang thì lái yaw vài độ. Không
  * clip nào có sải chân mà `path` vẫn dời thì hông trượt theo `path`. Đoạn có mốc ngồi thì hông nội
- * suy từ chỗ đang đứng tới mốc. docs/03-scene.md#người-3d
+ * suy từ chỗ đang đứng tới mốc. Chỗ dừng (`WalkStop`) thì hông theo `stopHip`. docs/03-scene.md#người-3d
  */
 function bakeWalker(
   lens: Lens,
@@ -3278,7 +4222,67 @@ function bakeWalker(
     half: [],
     clock: [],
     lift: [],
+    joins: [],
+    shift: new Map(),
+    stops: [],
+    stride: [],
   };
+  const joins = out.joins;
+  for (const sw of stopWalks(m)) {
+    const speed = Math.hypot(sw.b.at[0] - sw.a.at[0], sw.b.at[2] - sw.a.at[2]) / (sw.b.t - sw.a.t);
+    const stepLen = (Math.abs(sw.clip.stride as number) * unit) / 2;
+    const until = Math.min(sw.until, duration);
+    const go = Math.min(stepLen / (2 * speed), STOP_GO_MAX, until - sw.b.t);
+    if (go < STOP_GO_MIN || sw.tail > until) continue;
+    const k0 = Math.max(2, Math.ceil((sw.b.t - go) / step - 1e-9));
+    out.stops.push({
+      ...sw,
+      until,
+      tp: (k0 - 1) * step,
+      t1: sw.b.t + go,
+      lead: Math.min(stepLen / speed, STOP_LEAD, (k0 - 1) * step - sw.clip.start),
+      k0,
+      vNat: ((sw.clip.stride as number) * unit) / sw.clip.cycle,
+      stepLen,
+    });
+  }
+  for (const tw of turnWalks(m)) {
+    const go = Math.min(TURN_GO * tw.beat, tw.next.t - tw.b.t);
+    const ramp = !tw.next.ease;
+    const dx = tw.next.at[0] - tw.b.at[0];
+    const dz = tw.next.at[2] - tw.b.at[2];
+    const len = Math.hypot(dx, dz);
+    const t0 = ramp ? tw.b.t - go : tw.b.t;
+    joins.push({
+      ...tw,
+      t0,
+      t1: tw.b.t + go,
+      ramp,
+      speed: len / (tw.next.t - tw.b.t),
+      dir: [dx / len, dz / len],
+      vNat: ((tw.clip.stride as number) * unit) / tw.clip.cycle,
+      k0: Math.max(0, Math.floor(Math.min(tw.clip.start, t0) / step + 1e-9)),
+      cum: [0],
+      sigma: [],
+      short: joinShort(m, tw, tw.b.t + go),
+      land: tw.from + (1 - TURN_LAG) * tw.beat,
+      landPhase: 0,
+      phase: 0,
+    });
+  }
+  for (const j of joins) {
+    const k1 = Math.min(n, Math.ceil(j.t1 / step - 1e-9));
+    let q = chaseAt(keys, joins, j.k0 * step);
+    j.sigma.push(joinStride(j, [0, 0], j.k0 * step));
+    for (let k = j.k0 + 1; k <= k1; k++) {
+      const P = chaseAt(keys, joins, k * step);
+      const V: [number, number] = [(P[0] - q[0]) / step, (P[1] - q[1]) / step];
+      const sigma = joinStride(j, V, k * step);
+      j.sigma.push(sigma);
+      j.cum.push(j.cum[j.cum.length - 1] + joinRate(j, V, sigma) * step);
+      q = P;
+    }
+  }
   let H: [number, number] = [keys[0].at[0], keys[0].at[2]];
   let from = H;
   let seg = -1;
@@ -3287,7 +4291,7 @@ function bakeWalker(
   let yawKey = keys[0].yaw;
   let yaw = yawKey;
   let lift = RIG.thigh + RIG.shin;
-  let prevP = keyAt(keys, 0).xz;
+  let prevP = chaseAt(keys, joins, 0);
   let prevO: [number, number][] = [];
   let prevF: number[] = [];
   let bearing: number[] = [];
@@ -3298,12 +4302,35 @@ function bakeWalker(
     const segId = leg.b ? leg.i : -1 - leg.i;
     if (segId !== seg) [seg, from] = [segId, H];
     const key = keyAt(keys, t);
-    const P = key.xz;
-    const V: [number, number] = k
-      ? [(P[0] - prevP[0]) / step, (P[1] - prevP[1]) / step]
-      : ((q) => [(q[0] - P[0]) / step, (q[1] - P[1]) / step])(keyAt(keys, step).xz);
-    yawKey += wrap180(key.yaw - yawKey);
-    const c = strideClip(m, t);
+    // đi rồi dừng: từ lúc clip đi hết tới `tp` chân vẫn đi; từ `tp` hông theo `stopHip`
+    const S = out.stops.find(
+      (s) => t >= Math.min(s.end, s.tp) - 1e-9 && t <= (s.plan?.done ?? s.t1) + 1e-9,
+    );
+    if (S && k === S.k0) planStop(m, S, out, height, hipHalf);
+    const stop = S && k >= S.k0 ? S : undefined;
+    const P = stop ? stopHip(stop, t) : chaseAt(keys, joins, t);
+    const V: [number, number] = stop
+      ? stopHipV(stop, t)
+      : k
+        ? [(P[0] - prevP[0]) / step, (P[1] - prevP[1]) / step]
+        : ((q) => [(q[0] - P[0]) / step, (q[1] - P[1]) / step])(chaseAt(keys, joins, step));
+    const tn = leg.b && turnOf(leg.a, leg.b);
+    // cú quay của chỗ nối bẻ dần tới hướng quãng đi, quãng đi nối tiếp từ hướng đã bẻ
+    const bent = joins.find((j) => t >= j.a.t - 1e-9 && t < j.next.t);
+    const yawNow =
+      tn && out.stops.some((s) => s.turn === leg.b)
+        ? leg.a.yaw + tn.delta * turnShare(tn.steps, turnU(out, leg.a, leg.b!, t))
+        : key.yaw +
+          (!bent
+            ? 0
+            : t <= bent.b.t
+              ? bent.bend * turnShare(bent.turn.steps, (t - bent.a.t) / (bent.b.t - bent.a.t))
+              : bent.bend * (1 - leg.u));
+    yawKey += wrap180(yawNow - yawKey);
+    const c = S ? S.clip : strideClip(m, t);
+    // quay rồi đi: suốt nhịp cuối hông theo đường khởi hành, thân theo nhịp quay, nhịp chân khai sẵn
+    const near = joins.some((j) => t >= j.from - 1e-9 && t <= j.b.t + 1e-9);
+    const J = joins.find((j) => k > j.k0 && k < j.k0 + j.cum.length);
     const vNat = c ? ((c.stride as number) * unit) / c.cycle : 0;
     let rT = 1;
     let sT = 0;
@@ -3327,14 +4354,45 @@ function bakeWalker(
       const behind = smoothstep(
         Math.min(1, Math.max(0, (STEER_BACK[1] - Math.abs(off)) / (STEER_BACK[1] - STEER_BACK[0]))),
       );
-      if (!leg.sit) sT = off * fade * behind;
+      if (!leg.sit && !near && !stop) sT = off * fade * behind;
     }
     const ease = k ? Math.min(1, step / RATE_TAU) : 1;
-    r += (rT - r) * ease;
+    if (J) r = joinRate(J, V, 1);
+    else if (stop) {
+      const F = dirOf((yawKey + steer) * D);
+      r = Math.min(RATE_MAX, Math.max(0, (V[0] * F[0] + V[1] * F[2]) / stop.vNat));
+    } else r += (rT - r) * ease;
     steer += (sT - steer) * ease;
-    out.clock.push(k ? out.clock[k - 1] + r * step : 0);
+    // sải co (`strideAt`) thì nhịp chân nhanh lên cho hông giữ tốc; sải đổi kéo bàn chân trụ quanh hông
+    // nên đồng hồ chạy bù phần ấy
+    // sải chỉ đổi khi một bàn chân chịu lực: chạm đất lúc sải đang đổi là bàn chân mới trượt
+    const aim = strideAim(out, t);
+    const s0 = k ? out.stride[k - 1] : 1;
+    // bàn chân trụ xa hông thì sải đổi chậm: phần đồng hồ chạy bù (dưới) không quá `STRIDE_PUSH` nhịp
+    const fx = bearing.length === 1 ? Math.abs(prevF[bearing[0]]) * unit : 0;
+    const ds = Math.min(STRIDE_RATE, (STRIDE_PUSH * Math.abs(vNat)) / Math.max(fx, 1e-6)) * step;
+    // bàn chân bay còn xa lúc chạm sàn: sải đổi lúc chạm sàn thì bàn chân mới đặt xuống đã trượt
+    const u = c && k ? clockPhase(c, t - step, clockOf(out)) : 0;
+    const i = ((Math.floor(u * GAIT_N) % GAIT_N) + GAIT_N) % GAIT_N;
+    const left = c ? (clipSwing(c, out.flip[0])[i] * c.cycle) / Math.max(r / s0, 1e-3) : 0;
+    const free = bearing.length === 1 && left > STRIDE_LAND;
+    const s1 = joins.some((j) => t > j.k0 * step && t <= j.b.t + 1e-9)
+      ? aim
+      : !k || !c || stop
+        ? 1
+        : free
+          ? s0 + Math.max(-ds, Math.min(ds, aim - s0))
+          : s0;
+    out.stride.push(s1);
+    let rate = r / s1;
+    if (s0 !== s1 && c && vNat && !near && !stop && !leg.sit && bearing.length) {
+      const f = (bearing.reduce((acc, i) => acc + prevF[i], 0) / bearing.length) * unit;
+      rate = Math.min(RATE_MAX, Math.max(0, rate + (((s1 - s0) / s0) * (f / (s1 * vNat))) / step));
+    }
+    out.clock.push(k ? out.clock[k - 1] + rate * step : 0);
     const hip: V3 = [H[0], key.y - w.s * lift, H[1]];
-    const turn = (c ? TURN_WALK : TURN_STAND) * step;
+    // cú quay của chỗ nối không chặn tốc: bàn chân đặt theo hướng cuối nhịp
+    const turn = (bent && t <= bent.b.t ? Infinity : c && !near ? TURN_WALK : TURN_STAND) * step;
     const dy = wrap180(yawKey + steer - yaw);
     yaw += k ? Math.max(-turn, Math.min(turn, dy)) : dy;
     out.yaw.push(yaw);
@@ -3344,6 +4402,17 @@ function bakeWalker(
     const turned = k > 0 && f.flip !== out.flip[k - 1];
     out.flip.push(f.flip);
     out.half.push(k ? out.half[k - 1] + (turned ? 1 : 0) : 0);
+    // pha clip đi tự căn: chân bước của nhịp cuối đặt xuống đúng lúc nó chạm gót trong chu kỳ đi
+    if (!k)
+      for (const j of joins) {
+        const lead = turnLead(j.turn.delta, j.turn.steps - 1, f.flip);
+        const s0 = joinClock(j, step, j.clip.start);
+        const strike = clipStrike(j.clip, lead, f.flip);
+        const shift = strike - (joinClock(j, step, j.land) - s0) / j.clip.cycle;
+        out.shift.set(j.clip, shift);
+        j.landPhase = strike + j.clip.phase;
+        j.phase = (joinClock(j, step, j.b.t) - s0) / j.clip.cycle + j.clip.phase + shift;
+      }
     if (turned) {
       bearing = bearing.map((i) => 1 - i);
       prevO = [prevO[1], prevO[0]];
@@ -3367,7 +4436,8 @@ function bakeWalker(
     if (leg.sit) {
       const to: [number, number] = leg.b ? [leg.b.at[0], leg.b.at[2]] : [leg.a.at[0], leg.a.at[2]];
       H = leg.b ? [from[0] + (to[0] - from[0]) * leg.u, from[1] + (to[1] - from[1]) * leg.u] : to;
-    } else if (k && c) {
+    } else if (stop) H = P;
+    else if (k && c && !near) {
       bearing = nextBearing(
         bearing,
         yn,
@@ -3379,7 +4449,7 @@ function bakeWalker(
         ) as [number, number];
       H = [H[0] - d[0], H[1] - d[1]];
     } else if (k) H = [H[0] + P[0] - prevP[0], H[1] + P[1] - prevP[1]];
-    if (leg.sit || !c) {
+    if (leg.sit || !c || near || stop) {
       bearing = standing(yn);
       d = [0, 0];
     }
@@ -6345,24 +7415,133 @@ function worldPoseAt(
   hipHalf: number,
 ): Pose {
   if (!walk) return poseAt(m, time, undefined, undefined, m.rightFar);
-  const yaw = sampleAt(walk.yaw, walk.step, time);
-  const flip = walk.flip[stepIndex(walk, time)];
   return poseAt(
     m,
     time,
     clockOf(walk),
-    (p) => turnStep(m, time, p, yaw, walk.flip[0], flip, height, hipHalf),
+    (p) => walkStep(m, time, p, walk, height, hipHalf),
     rightFarOf(m, walk),
   );
 }
 
-/** Cú quay tại chỗ đang bước lúc `time`: mốc đầu, mốc cuối và `turnOf` của chúng; clip có sải chân đang lái chân thì không */
-function turnStepAt(m: Acting, time: number) {
+/** Bước chân của người đi theo `path` cộng vào tư thế đã gom: quay tại chỗ, khởi hành, dừng, ngả thân */
+function walkStep(
+  m: Acting,
+  time: number,
+  pose: Pose,
+  walk: Walker,
+  height: number,
+  hipHalf: number,
+): Pose {
+  const p = stopStep(
+    m,
+    time,
+    turnStep(m, time, pose, walk, height, hipHalf),
+    walk,
+    height,
+    hipHalf,
+  );
+  return leanStep(time, strideStep(m, time, p, walk, height, hipHalf), walk);
+}
+
+/**
+ * Sải co (`strideAt`): bàn chân co dọc hướng thân quanh hông (`shortLegs`) — quãng khởi hành sau nhịp
+ * cuối của cú quay (trong nhịp cuối `turnStep` tự co), và bước trước lúc giảm tốc của chỗ dừng.
+ * `pose` chưa đổi kênh. docs/03-scene.md#đi-theo-path
+ */
+function strideStep(
+  m: Acting,
+  time: number,
+  pose: Pose,
+  walk: Walker,
+  height: number,
+  hipHalf: number,
+): Pose {
+  const k = strideAt(walk, time);
+  const planned = walk.stops.some((s) => s.plan && time > s.tp + 1e-9 && time <= s.plan.done);
+  if (k >= 1 || planned || turnStepAt(m, time, walk)) return pose;
+  return {
+    ...pose,
+    ...shortLegs(pose, pose.stretch, k, height, hipHalf, walk.flip[0] ? "lf" : "ln"),
+  };
+}
+
+/**
+ * Hai chân `ln`, `lf` (chưa đổi kênh, `right` là kênh chân phải) với bàn chân co dọc hướng thân về phần
+ * `k` quanh hông, giữ bề ngang: hai bàn chân cùng hạ sâu thêm một khoảng dưới hông (hông nâng theo) sao
+ * cho chân chịu lực giữ tầm hông – bàn chân, tức gối, của clip; bàn chân nhấc cao hơn ít quyết ít
+ */
+function shortLegs(
+  legs: Pick<Pose, "ln" | "lf">,
+  stretch: Pose["stretch"],
+  k: number,
+  height: number,
+  hipHalf: number,
+  right: "ln" | "lf",
+): Pick<Pose, "ln" | "lf"> {
+  const len = lengths(height);
+  const g = (["ln", "lf"] as const).map((ch) => {
+    const l1 = len.thigh * stretch[ch === "ln" ? 6 : 4];
+    const l2 = len.shin * stretch[ch === "ln" ? 7 : 5];
+    const side = ch === right ? 1 : -1;
+    const f = legFoot(legs[ch], side, hipHalf, l1, l2);
+    const o = side * f.at[1] - hipHalf;
+    const r2 = f.at[0] ** 2 + o * o + f.depth ** 2;
+    const sink = Math.sqrt(Math.max(0, r2 - (f.at[0] * k) ** 2 - o * o)) - f.depth;
+    return { ch, l1, l2, f, o, sink };
+  });
+  const deep = Math.max(g[0].f.depth, g[1].f.depth);
+  const sink = Math.max(0, Math.min(...g.map((q) => q.sink + deep - q.f.depth)));
+  const out = {} as Pick<Pose, "ln" | "lf">;
+  for (const q of g) out[q.ch] = legTo(q.f.at[0] * k, q.f.depth + sink, q.o, q.l1, q.l2);
+  return out;
+}
+
+/** Thân ngả về trước lúc khởi hành (chỗ nối quay rồi đi), ra sau lúc dừng (chỗ dừng): cộng vào kênh `torso` */
+function leanStep(time: number, pose: Pose, walk: Walker): Pose {
+  let d = 0;
+  for (const j of walk.joins) {
+    if (time <= j.t0 || time >= j.t1) continue;
+    const rise = smoothstep(Math.min(1, (time - j.t0) / LAUNCH_LEAN_RISE));
+    // trả về khi hông đã quá 60% tốc độ hành trình
+    const q = Math.min(1, Math.max(0, ((time - j.t0) / (j.t1 - j.t0) - 0.6) / 0.4));
+    d += LAUNCH_LEAN * Math.sign(j.clip.stride as number) * rise * (1 - smoothstep(q));
+  }
+  for (const s of walk.stops) {
+    const p = s.plan;
+    if (!p || time <= s.tp || time >= p.done) continue;
+    d -=
+      STOP_LEAN *
+      Math.sign(s.clip.stride as number) *
+      Math.sin((Math.PI * (time - s.tp)) / (p.done - s.tp)) ** 2;
+  }
+  return d ? { ...pose, torso: pose.torso + d } : pose;
+}
+
+/** Tiến độ (chưa kẹp) của cú quay `a → b` lúc `time`: cú quay ngay sau chỗ dừng bắt đầu khi bước khép xong */
+function turnU(walk: Walker | undefined, a: WorldKey, b: WorldKey, time: number): number {
+  const s = walk?.stops.find((s) => s.turn === b && s.plan);
+  const t0 = s ? Math.min(Math.max(a.t, s.plan!.done), b.t - walk!.step) : a.t;
+  return (time - t0) / (b.t - t0);
+}
+
+/**
+ * Cú quay tại chỗ đang bước lúc `time`: mốc đầu, mốc cuối và `turnOf` của chúng; clip có sải chân
+ * đang lái chân thì không, trừ nhịp cuối của chỗ nối quay rồi đi (`turnWalks`)
+ */
+function turnStepAt(m: Acting, time: number, walk?: Walker) {
   if (!m.world?.path) return;
   const { a, b } = legOf(keysOf(m.world as WorldSpec), time);
   const turn = b && turnOf(a, b);
-  if (!turn || strideClip(m, a.t) || strideClip(m, time)) return;
-  return { a, b, turn };
+  if (!turn) return;
+  const join = turnWalks(m).find((j) => j.b === b);
+  const after = walk?.stops.some((s) => s.turn === b && s.plan);
+  if (
+    !after &&
+    (strideClip(m, a.t) || (strideClip(m, time) && !(join && time >= join.from - 1e-9)))
+  )
+    return;
+  return { a, b, turn: join?.turn ?? turn };
 }
 
 /**
@@ -6370,26 +7549,36 @@ function turnStepAt(m: Acting, time: number) {
  * mới, chân kia xoay trên sàn tới chỗ của nó (không nhấc); nhịp đầu chân phía quay bước, các nhịp
  * sau đổi chân. Hông hạ chút cho gối chùng, thân nghiêng về chân xoay một lần mỗi nhịp. Chỗ hai bàn
  * chân lấy từ chân của `pose` ở hướng đầu và cuối nhịp; góc chân giải lại theo hướng thân đang vẽ
- * `yaw` (độ). `pose` chưa đổi kênh: `ln` là chi gần lúc đầu cảnh, tức chân phải khi `flip0` không
- * lật. docs/03-scene.md#quay-tại-chỗ
+ * vẽ. `pose` chưa đổi kênh: `ln` là chi gần lúc đầu cảnh, tức chân phải khi `walk.flip[0]` không
+ * lật. Nhịp cuối của chỗ nối quay rồi đi (`WalkJoin`) đặt hai bàn chân ở chỗ của clip đi lúc mốc
+ * cuối, tính cả quãng hông đã khởi hành; sau mốc chân theo clip đi tới khi nó hoà xong.
+ * docs/03-scene.md#quay-tại-chỗ
  */
 function turnStep(
   m: Acting,
   time: number,
   pose: Pose,
-  yaw: number,
-  flip0: boolean,
-  flip: boolean,
+  walk: Walker,
   height: number,
   hipHalf: number,
 ): Pose {
-  const at = turnStepAt(m, time);
-  if (!at) return pose;
+  const yaw = sampleAt(walk.yaw, walk.step, time);
+  const flip0 = walk.flip[0];
+  const flip = walk.flip[stepIndex(walk, time)];
+  const at = turnStepAt(m, time, walk);
+  if (!at) {
+    const join = walk.joins.find((j) => time >= j.b.t && time < j.clip.start + j.clip.tau);
+    if (!join) return pose;
+    const p = clipPose(join.clip, time, clockOf(walk), flip0);
+    return { ...pose, ln: p.ln ?? pose.ln, lf: p.lf ?? pose.lf };
+  }
   const { a, b, turn } = at;
-  const u = (time - a.t) / (b.t - a.t);
-  const v = Math.min(1, Math.max(0, u)) * turn.steps;
-  const j = Math.min(turn.steps - 1, Math.floor(v));
-  const w = v - j;
+  const u = turnU(walk, a, b, time);
+  const { v, j } = turnBeat(turn.steps, u);
+  const w = Math.max(0, v - j);
+  // chỗ nối chỉ ở nhịp cuối
+  const join =
+    j === turn.steps - 1 ? walk.joins.find((q) => q.b === b && time >= q.from - 1e-9) : undefined;
   const step = turn.delta / turn.steps;
   // hướng thân so với đầu nhịp; hệ phẳng `[tiến, phải]` của đầu nhịp
   const rel = wrap180(yaw - a.yaw - step * j) * D;
@@ -6399,29 +7588,115 @@ function turnStep(
   ];
   const len = lengths(height);
   const st = pose.stretch;
-  // nhịp đầu chân phía quay bước (quay phải — `delta` dương — là chân phải), nhịp sau đổi chân
-  const right: "ln" | "lf" = flip0 ? "lf" : "ln";
-  const left = right === "ln" ? "lf" : "ln";
-  const lead = turn.delta > 0 === (j % 2 === 0) ? right : left;
+  const lead = turnLead(turn.delta, j, flip0);
   const ramp = Math.min(1, u / TURN_DIP_RAMP, (1 - u) / TURN_DIP_RAMP);
+  // chỗ nối quay rồi đi: chân đầu nhịp lấy từ tư thế lúc ấy (clip đi đang hoà vào), chân cuối nhịp
+  // là chân của clip đi lúc mốc cuối; hông đã đi `gone` (hệ đầu nhịp) tới lúc này. Chân bước đặt
+  // xuống ở chỗ chạm gót của clip đi rồi nhích dần về chỗ của nó lúc mốc cuối
+  let base = pose;
+  if (join) poseAt(m, join.from, clockOf(walk), (p) => (base = p), flip0);
+  const right: "ln" | "lf" = flip0 ? "lf" : "ln";
+  // chân của clip đi co theo sải lúc ấy (`strideAt`) như sau mốc cuối
+  const short = (phase: number, t: number) => {
+    const p = clipPhasePose(join!.clip, phase, flip0);
+    const k = strideAt(walk, t);
+    return p.ln && p.lf && k < 1
+      ? { ...p, ...shortLegs(p as Pose, pose.stretch, k, height, hipHalf, right) }
+      : p;
+  };
+  const end = join ? short(join.phase, b.t) : undefined;
+  const strike = join ? short(join.landPhase, join.land) : undefined;
+  const ys = (a.yaw + step * j) * D;
+  const sc = (m.world as WorldSpec).s;
+  const toBeat = (q: [number, number]): [number, number] => {
+    const dx = q[0] - b.at[0];
+    const dz = q[1] - b.at[2];
+    return [
+      (dx * Math.cos(ys) - dz * Math.sin(ys)) / sc,
+      (-dx * Math.sin(ys) - dz * Math.cos(ys)) / sc,
+    ];
+  };
+  const keys = keysOf(m.world as WorldSpec);
+  const gone: [number, number] = join ? toBeat(chaseAt(keys, walk.joins, time)) : [0, 0];
+  const goneEnd: [number, number] = join ? toBeat(chaseAt(keys, walk.joins, b.t)) : [0, 0];
+  const goneLand: [number, number] = join ? toBeat(chaseAt(keys, walk.joins, join.land)) : [0, 0];
+  const settle = join
+    ? smoothstep(Math.min(1, Math.max(0, (time - join.land) / (b.t - join.land))))
+    : 0;
+  const foot = (leg: readonly number[], side: number, l1: number, l2: number) =>
+    legFoot(leg, side, hipHalf, l1, l2);
   const out: Partial<Record<"ln" | "lf", LegAngles>> = {};
-  for (const ch of ["ln", "lf"] as const) {
-    const l1 = len.thigh * st[ch === "ln" ? 6 : 4];
-    const l2 = len.shin * st[ch === "ln" ? 7 : 5];
-    const [a0, b0, sp0 = 0] = pose[ch];
-    const x = Math.sin(a0 * D) * l1 + Math.sin((a0 + b0) * D) * l2;
-    const y = Math.cos(a0 * D) * l1 + Math.cos((a0 + b0) * D) * l2;
+  const legs: { ch: "ln" | "lf"; f: number; depth: number; o: number; l1: number; l2: number }[] =
+    [];
+  const legLen = (ch: "ln" | "lf") => [
+    len.thigh * st[ch === "ln" ? 6 : 4],
+    len.shin * st[ch === "ln" ? 7 : 5],
+  ];
+  // chỗ nối: chân xoay sâu hơn chân bước lúc `land` thì nâng lên phần ấy trong nhịp, chân bước chạm
+  // sàn đúng lúc đặt xuống
+  let raise = 0;
+  const strikeLead = strike?.[lead];
+  if (join && end && strikeLead) {
+    const ch = lead === "ln" ? "lf" : "ln";
+    const [l1, l2] = legLen(ch);
     const side = ch === right ? 1 : -1;
-    const from: [number, number] = [x, side * (hipHalf + y * Math.sin(sp0 * D))];
-    const to = rot(from, step * D);
+    const d0 = foot(base[ch], side, l1, l2).depth;
+    const d1 = end[ch] ? foot(end[ch], side, l1, l2).depth : d0;
+    const wl = Math.min(1, Math.max(0, turnU(walk, a, b, join.land))) * turn.steps - j;
+    const pl = smoothstep(Math.min(1, Math.max(0, (wl - TURN_LAG) / (1 - TURN_LAG))));
+    const [m1, m2] = legLen(lead);
+    const hit = foot(strikeLead, lead === right ? 1 : -1, m1, m2).depth;
+    raise = Math.max(0, d0 + (d1 - d0) * pl - hit);
+  }
+  for (const ch of ["ln", "lf"] as const) {
+    const [l1, l2] = legLen(ch);
+    const side = ch === right ? 1 : -1;
+    const { at: from, depth: d0 } = foot(base[ch], side, l1, l2);
+    let to = rot(from, step * D);
+    let d1 = d0;
+    const last = end?.[ch];
+    if (last) {
+      const e = foot(last, side, l1, l2);
+      const q = rot(e.at, step * D);
+      to = [q[0] + goneEnd[0], q[1] + goneEnd[1]];
+      d1 = e.depth;
+      const hit = ch === lead && strike?.[ch];
+      if (hit) {
+        const h = foot(hit, side, l1, l2);
+        const g = rot(h.at, step * D);
+        to = [0, 1].map((i) => g[i] + goneLand[i] + (to[i] - g[i] - goneLand[i]) * settle) as [
+          number,
+          number,
+        ];
+        d1 = h.depth + (d1 - h.depth) * settle;
+      }
+    }
     // chân bước đi trước thân, đặt xuống trước khi thân dừng; chân xoay trượt theo sau
     const p = ch === lead ? w / (1 - TURN_LAG) : (w - TURN_LAG) / (1 - TURN_LAG);
     const s = smoothstep(Math.min(1, Math.max(0, p)));
     const lift = ch === lead && p > 0 && p < 1 ? TURN_LIFT * (l1 + l2) * Math.sin(Math.PI * p) : 0;
-    const [f, l] = rot([from[0] + (to[0] - from[0]) * s, from[1] + (to[1] - from[1]) * s], -rel);
-    const depth = y * Math.cos(sp0 * D) - TURN_DIP * (l1 + l2) * smoothstep(ramp) - lift;
-    out[ch] = legTo(f, depth, side * l - hipHalf, l1, l2);
+    const [f, l] = rot(
+      [from[0] + (to[0] - from[0]) * s - gone[0], from[1] + (to[1] - from[1]) * s - gone[1]],
+      -rel,
+    );
+    const up = ch === lead ? 0 : raise * smoothstep(Math.min(1, w / (1 - TURN_LAG))) * (1 - settle);
+    const depth = d0 + (d1 - d0) * s - TURN_DIP * (l1 + l2) * smoothstep(ramp) - lift - up;
+    legs.push({ ch, f, depth, o: side * l - hipHalf, l1, l2 });
   }
+  // nhịp cuối của chỗ nối quay rồi đi: chân trên sàn không chùng hơn chân trụ của clip đi — hai bàn
+  // chân cùng hạ sâu thêm (hông nâng); bàn chân nhấc lên `TURN_KNEE_LIFT` thì thôi quyết
+  let sink = 0;
+  if (join) {
+    const cos = Math.cos(clipKnee(join.clip, flip0) * D);
+    const deep = Math.max(...legs.map((g) => g.depth));
+    for (const g of legs) {
+      const r2 = g.l1 * g.l1 + g.l2 * g.l2 + 2 * g.l1 * g.l2 * cos;
+      const need = Math.sqrt(Math.max(0, r2 - g.f * g.f - g.o * g.o)) - g.depth;
+      const w = 1 - smoothstep(Math.min(1, (deep - g.depth) / (TURN_KNEE_LIFT * (g.l1 + g.l2))));
+      sink = Math.max(sink, need * w);
+    }
+  }
+  for (const g of legs) out[g.ch] = legTo(g.f, g.depth + sink, g.o, g.l1, g.l2);
   // thân nghiêng về chân xoay; `lean` dương là về chân đang xa
   const far = (lead !== right) === flip;
   const lean = TURN_LEAN * Math.sin(Math.PI * w) * (far ? 1 : -1);
