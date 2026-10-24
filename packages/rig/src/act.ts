@@ -4,7 +4,7 @@ import type { Aim, ReachTerm } from './core/bodyMark';
 import type { V3 } from './core/lens';
 import type { BrowKind, EyeKind, MouthKind } from './core/types';
 import { toThree, type Vec3 } from './khoi';
-import { fitSkirt, hangJewelry, type Figure, type Side } from './stickman';
+import { bendNeck, fitSkirt, hangJewelry, type Figure, type Side } from './stickman';
 import { poseHand } from './human';
 
 // Diễn theo tư thế đã lấy mẫu của @stickman3d/sketch (`sceneAt`, docs/01-rig.md#người-3d): package không đọc JSON hành
@@ -151,6 +151,7 @@ function placePose(p: Figure, sp0: Acting, t?: number) {
   const [tilt, turn, nod] = P.head;
   // lắc dương là quay mặt xa ống kính (về bên trái người khi không lật), nghiêng dương đưa đỉnh đầu về phía ấy
   p.neck.rotation.set(num(nod) * D, m * num(turn) * D, -m * num(tilt) * D, 'YXZ');
+  bendNeck(p);
 
   for (const side of [near, -near as Side]) {
     const ch = side === near ? 'an' : 'af';

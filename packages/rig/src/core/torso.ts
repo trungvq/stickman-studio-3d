@@ -162,6 +162,11 @@ export const CHEST = { at: 0.7, back: 0.6, step: 3 } as const;
 /** Ống cổ người 3D (`neckGeometry`): bán kính trên, độ loe ở chân và quãng lùi sau trục, đơn vị three */
 export const NECK_TUBE = { r: 0.135, flare: 1.08, back: 0.03 } as const;
 /**
+ * Ống cổ uốn (`bendNeck`): dưới mép cổ áo áo phông (cao hơn khớp cổ `bones.neck + collar`) ống đứng theo thân, lên thêm
+ * `span` thì theo trọn khớp cổ, giữa hai mức chuyển êm; `rows` đoạn dọc. Đơn vị three
+ */
+export const NECK_BEND = { collar: 0.06, span: 0.2, rows: 8 } as const;
+/**
  * Nửa sau thân không mỏng hơn mép sau ống cổ cộng ngần này px (ở hàng mà bề sâu theo bề rộng đã tới đó): lưng phẳng
  * không kéo viền cổ áo sau gáy lọt vào trong ống cổ
  */

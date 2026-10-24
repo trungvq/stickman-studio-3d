@@ -234,6 +234,31 @@ describe('người 3D mặc đồ', () => {
     expect(collide([f], touched).filter((c) => c.part === 'hand')).toEqual([]);
   });
 
+  it('ống cổ uốn: ngửa, nghiêng, quay đầu thì chân ống trong cổ áo vẫn đứng theo thân, ngọn ống theo khớp cổ', () => {
+    const f = dressed();
+    const t = f.neckTube!;
+    const tube = f.neck.children.find((o) => o.userData.neckTube)!;
+    const at = (head: [number, number, number]) => {
+      act(f, { ...stand(), pose: { ...stand().pose, torso: 20, head } }, 0);
+      f.root.updateMatrixWorld(true);
+      const pos = t.geo.attributes.position, toSpine = f.spine.matrixWorld.clone().invert().multiply(tube.children[0].matrixWorld);
+      return Array.from({ length: pos.count }, (_, i) => new THREE.Vector3().fromBufferAttribute(pos, i).applyMatrix4(toSpine));
+    };
+    const rest = at([0, 0, 0]);
+    for (const head of [[0, 0, -25], [15, 0, 0], [0, 40, -10]] as [number, number, number][]) {
+      const bent = at(head);
+      for (let i = 0; i < bent.length; i++) {
+        if (t.rest[3 * i + 1] <= t.from) expect(bent[i].distanceTo(rest[i])).toBeLessThan(1e-6);
+      }
+      // ngọn ống đi trọn với khớp cổ: trong hệ khớp cổ đúng lưới đứng thẳng
+      const pos = t.geo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        if (t.rest[3 * i + 1] >= t.to) expect(pos.getY(i)).toBeCloseTo(t.rest[3 * i + 1], 9);
+      }
+    }
+    expect(make((c) => ((c.palette.clad = true), (c.head.form = 'human')), { lod: 'low' }).neckTube).toBeUndefined();
+  });
+
   it('đầu human: tai ẩn dưới tóc rủ, hiện với tóc ngắn; đầu cao hơn đầu cầu một đoạn cổ', () => {
     const ears = (f: Figure) => f.head.children.filter((g) => g.position.x !== 0 && !g.userData.joint).length;
     const shortHair = dressed((c) => (c.pieces.hair = { ...c.pieces.hair, src: 'sculpt', sculpt: SculptSchema.parse({ style: 'neat' }) }));

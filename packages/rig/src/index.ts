@@ -6,7 +6,7 @@ export {
 export { currentLights, setLights, setPalette, type LightState } from './lighting';
 export { AA, createPipeline, type AaMode, type Grade, type Pipeline, type PipelineOptions, type RenderOptions, type Shade } from './pipeline';
 export {
-  BUILT_SOCKETS, characterOptions, fitSkirt, fromCharacter, hangJewelry, put, R, stickman, wardrobe,
+  BUILT_SOCKETS, bendNeck, characterOptions, fitSkirt, fromCharacter, hangJewelry, put, R, stickman, wardrobe,
   type Arm, type CharacterJson, type Figure, type Hand, type Leg, type Lod, type Side, type StickmanOptions,
 } from './stickman';
 export {

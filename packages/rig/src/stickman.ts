@@ -16,6 +16,7 @@ import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, SLEEVE_
 import { blushLevel, chibiShape } from './core/face';
 import { wornSkirt } from './core/skirtShape';
 import { hangsFromHip, matchWrap } from './core/hem';
+import { NECK_BEND } from './core/torso';
 import { humanHair, humanSkull, SKULL3 } from './core/humanHead';
 import { Ankle, earGroup, handRig, humanHeadGeometry, neckGeometry, pelvisGeometry, shoeCapsule, shoeGeometry, type Hand } from './human';
 import { handGrip } from './core/hand';
@@ -62,6 +63,8 @@ export interface Figure {
   /** Đồ gọi tên của người và thứ đang mặc; `dress` đổi */
   gear: Gear;
   lod: Lod;
+  /** Ống cổ người `human` (không có ở `lod` `low`): `act` gọi `bendNeck` uốn chân ống theo thân; `rest` là lưới đứng thẳng */
+  neckTube?: { geo: THREE.BufferGeometry; rest: Float32Array; from: number; to: number };
   /** Váy dựng khối: `act` gọi `fitSkirt` dựng lại theo đùi khi đùi đổi hướng; `hip` là vạt treo ở nhóm hông */
   skirt?: { opts: Omit<SkirtOptions, 'thighs'>; group: THREE.Group; key: string; hip?: boolean };
   /** Vạt áo người ngồi: `act` gọi `fitSkirt` gập lại theo đùi khi đùi đổi hướng trong hệ thân */
@@ -430,6 +433,29 @@ export function hangJewelry(p: Figure) {
   }
 }
 
+const qNeck = new THREE.Quaternion(), qBend = new THREE.Quaternion(), ID = new THREE.Quaternion(), vBend = new THREE.Vector3();
+/**
+ * Ống cổ uốn theo khớp cổ: chân ống trong cổ áo (dưới `neckTube.from`) đứng theo thân, từ `to` lên theo trọn khớp cổ,
+ * giữa hai mức quay dần — gật, ngửa, nghiêng, quay đầu không đẩy gáy và hai bên cổ xuyên cổ áo. `act` gọi sau khi đặt
+ * khớp cổ; cảnh tự đặt khớp thì gọi sau khi đặt `neck.rotation`
+ */
+export function bendNeck(p: Figure) {
+  const t = p.neckTube;
+  if (!t) return;
+  const pos = t.geo.attributes.position as THREE.BufferAttribute, rest = t.rest;
+  qNeck.copy(p.neck.quaternion).invert();
+  const span = t.to - t.from;
+  for (let i = 0; i < pos.count; i++) {
+    const u = Math.max(0, Math.min(1, (rest[3 * i + 1] - t.from) / span));
+    // hệ khớp cổ: chân ống quay ngược khớp cổ (đứng theo thân), ngọn giữ nguyên
+    qBend.slerpQuaternions(qNeck, ID, u * u * (3 - 2 * u));
+    vBend.fromArray(rest, 3 * i).applyQuaternion(qBend);
+    pos.setXYZ(i, vBend.x, vBend.y, vBend.z);
+  }
+  pos.needsUpdate = true;
+  t.geo.computeVertexNormals();
+}
+
 export interface StickmanOptions {
   /** `rig` của JSON nhân vật, px như JSON */
   rig: Rig;
@@ -564,6 +590,7 @@ export function stickman(o: StickmanOptions): Figure {
     } else skirtRig = { opts, group: sculptSkirt(spine, { ...opts, thighs }), key: '' };
   }
   const neck = joint(spine, 0, B.torso, 0);
+  let neckTube: Figure['neckTube'];
   const skullScale = new THREE.Vector3(...SKULL3);
   // đáy sọ trên mép cổ áo (khớp cổ của lõi + `rise` 6 của áo phông)
   const head = joint(neck, 0, head3(B, human), 0);
@@ -599,7 +626,15 @@ export function stickman(o: StickmanOptions): Figure {
       const ear = earGroup(s, R.head, skullScale, skullMat, INK);
       if (!hairCovers(head, ear.position)) head.add(ear);
     }
-    neck.add(inked(neckGeometry(head3(B, true) - R.head * 0.5), skinMat, 0.022));
+    const bend = lod !== 'low';
+    const geo = neckGeometry(head3(B, true) - R.head * 0.5, undefined, bend ? NECK_BEND.rows : 1);
+    const tube = inked(geo, skinMat, 0.022);
+    neck.add(tube);
+    if (bend) {
+      tube.userData.neckTube = true;
+      const from = B.neck + NECK_BEND.collar;
+      neckTube = { geo, rest: Float32Array.from(geo.attributes.position.array), from, to: from + NECK_BEND.span };
+    }
   }
   const legs = { [-1]: leg(hips, -1, at.hip, B), [1]: leg(hips, 1, at.hip, B) } as Record<Side, Leg>;
   const arms = { [-1]: arm(spine, -1, sx, sy, B), [1]: arm(spine, 1, sx, sy, B) } as Record<Side, Arm>;
@@ -672,7 +707,7 @@ export function stickman(o: StickmanOptions): Figure {
   root.userData.figure = true;
   const grip = (s: Side): Vec3 => (hands ? handGrip(s, hands[s].scale, hands[s].long) : [0, -(R.limb * sleeveWidth) / 10, 0]);
   const sockets = buildSockets({ root, spine, head, arms }, fit, grip, rig);
-  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig, bones: B, splay: at.splay, body: actCharacter(o), ...(hands && { hands }), ...(body.refold && lod !== 'low' && { lap: { refold: body.refold, key: '' } }) };
+  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig, bones: B, splay: at.splay, body: actCharacter(o), ...(hands && { hands }), ...(neckTube && { neckTube }), ...(body.refold && lod !== 'low' && { lap: { refold: body.refold, key: '' } }) };
   if (equip) dress(fig, equip);
   return fig;
 }

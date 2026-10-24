@@ -205,9 +205,9 @@ export function earGroup(side: -1 | 1, r: number, scale: THREE.Vector3, skin: TH
   return g;
 }
 
-/** Cổ trong nhóm cổ: từ trong cổ áo lên tới trong đầu, hơi lùi sau trục */
-export function neckGeometry(top: number, radius: number = NECK_TUBE.r) {
-  const g = new THREE.CylinderGeometry(radius, radius * NECK_TUBE.flare, top + 0.04, 16, 1, true);
+/** Cổ trong nhóm cổ: từ trong cổ áo lên tới trong đầu, hơi lùi sau trục; `rows` đoạn dọc cho `bendNeck` uốn */
+export function neckGeometry(top: number, radius: number = NECK_TUBE.r, rows = 1) {
+  const g = new THREE.CylinderGeometry(radius, radius * NECK_TUBE.flare, top + 0.04, 16, rows, true);
   g.translate(0, top / 2 - 0.02, -NECK_TUBE.back);
   return smooth(g);
 }
