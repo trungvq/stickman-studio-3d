@@ -61,13 +61,47 @@ export function readView(p: URLSearchParams): ViewState {
 /** Điểm hệ three ra hệ rig (px, y xuống, z sâu vào cảnh): ngược `toThree` */
 export const toRig = (p: V3): V3 => [p[0] * 100, -p[1] * 100, -p[2] * 100];
 
+/** `scene.lens` như trong JSON cảnh: hệ rig, góc độ, `f` px trên khung sân khấu */
+export interface LensJson {
+  eye: V3;
+  yaw: number;
+  pitch: number;
+  f: number;
+  cx?: number;
+  cy?: number;
+}
+
+const D = Math.PI / 180;
+
+/**
+ * Camera three (chỗ đứng, hướng nhìn, fov dọc của khung vẽ tỉ lệ `aspect`) thành `scene.lens` trên sân khấu `stage`:
+ * ngược `lensCamera`; khung cắt mặc định (x 0, y 0, zoom 1) thì camera cảnh thấy đúng khung vẽ
+ */
+export function lensOf(
+  pos: V3,
+  dir: V3,
+  fov: number,
+  stage: { w: number; h: number },
+  aspect: number,
+): LensJson {
+  const n = Math.hypot(...dir);
+  // khung vẽ rộng hơn sân khấu thì giữ bề cao, hẹp hơn thì giữ bề ngang (`viewRect`)
+  const h = Math.max(stage.h, stage.w / aspect);
+  const r = (v: number, d: number) => Number(v.toFixed(d));
+  return {
+    eye: toRig(pos).map((x) => r(x, 1)) as V3,
+    yaw: r(Math.atan2(dir[0], -dir[2]) / D, 2),
+    pitch: r(Math.asin(-dir[1] / n) / D, 2),
+    f: r(h / 2 / Math.tan((fov / 2) * D), 1),
+  };
+}
+
 export interface NoteInput {
   root: string;
   scene: string;
   /** Cảnh của repo (`worldOf`) hay `plainRoom()` */
   from: "world" | "plain";
   t: number;
-  fps: number;
   dur: number;
   marks: Record<string, number>;
   url: string;
@@ -75,8 +109,16 @@ export interface NoteInput {
   png?: string;
   pngError?: string;
   view: ViewState;
-  /** Camera đang vẽ, hệ three */
-  camera: { pos: V3; dir: V3; fov: number };
+  /** Camera tự do đã quy ra `scene.lens` (`lensOf`) */
+  freeLens?: LensJson;
+  /** Camera cảnh: ống kính và khung cắt `cameraAt` ở giây này; `lensFrom` `world` là ống kính do `worldOf` đặt theo giây */
+  shot?: {
+    lens?: LensJson;
+    lensFrom: "scene" | "world";
+    crop: { x: number; y: number; zoom: number };
+  };
+  /** Khung sân khấu (`rt.frame`) */
+  stage: { w: number; h: number };
   /** Bàn tay đang chọn: nhãn, nguồn dáng (`sourceLines`), số đo */
   hand?: { label: string; source?: string[]; measure: string[] };
   /** Bàn tay đang cầm, treo đồ ở giây này */
@@ -105,30 +147,39 @@ function nearMark(marks: Record<string, number>, t: number, win = 0.5) {
 /** Đoạn chữ dán cho agent: đủ để tìm file, tua đúng giây, dựng lại đúng góc nhìn và đọc ảnh */
 export function viewNote(o: NoteInput): string {
   const file = `scenes/${o.scene}.json`;
-  const frame = Math.round(o.t * o.fps);
   const mark = nearMark(o.marks, o.t);
   const L: string[] = [
     `Studio 3D — view đang xem`,
     `- Repo video: ${o.root}`,
     `- Cảnh: \`${o.scene}\` — ${file}${o.from === "plain" ? " (worldOf không dựng: plainRoom)" : ""}`,
-    `- Giây: ${o.t.toFixed(3)} s (khung ${frame} ở ${o.fps} fps) / ${o.dur.toFixed(2)} s${
+    `- Giây: ${o.t.toFixed(3)} s / ${o.dur.toFixed(2)} s${
       mark ? ` · mốc gần: @${mark[0]} = ${mark[1].toFixed(2)} s` : ""
     }`,
   ];
   if (o.png) L.push(`- Ảnh khung vẽ (đúng như trên màn hình): ${o.png}`);
   else if (o.pngError) L.push(`- Ảnh khung vẽ: không lưu được (${o.pngError})`);
   L.push(`- Mở lại đúng view trong Studio 3D đang chạy: ${o.url}`);
-  const c = o.camera;
+  const lens = (l: LensJson) => `\`"lens": ${JSON.stringify(l)}\``;
+  const stage = `khung sân khấu ${o.stage.w}×${o.stage.h}`;
   if (o.view.cam === "free" && o.view.free) {
     const f = o.view.free;
+    if (o.freeLens)
+      L.push(
+        `- Camera tự do, quy sẵn ra ống kính cảnh (hệ rig: px, y xuống, z sâu; góc độ; ${stage}): ${lens(o.freeLens)}` +
+          ` — dán làm \`scene.lens\` và để khung cắt \`camera[]\` ở x 0, y 0, zoom 1 thì camera cảnh thấy đúng ảnh`,
+      );
     L.push(
-      `- Camera tự do (hệ three, m, y lên): ở ${fmt(f.pos)} nhìn tới tâm xoay ${fmt(f.at)}, fov ${num(f.fov, 1)}°` +
-        ` — tâm xoay hệ rig ${fmt(toRig(f.at), 0)}`,
+      `  tâm xoay hệ rig ${fmt(toRig(f.at), 0)}; link mở lại giữ camera ở hệ three (m, y lên): ở ${fmt(f.pos)}, tâm xoay ${fmt(f.at)}, fov ${num(f.fov, 1)}°`,
     );
-  } else
+  } else if (o.shot) {
+    const c = o.shot.crop;
     L.push(
-      `- Camera cảnh (ống kính \`scene.lens\`, khung cắt \`cameraAt\`): ở ${fmt(c.pos)} hướng ${fmt(c.dir)}, fov ${num(c.fov, 1)}° (hệ three)`,
+      o.shot.lens
+        ? `- Camera cảnh: ${lens(o.shot.lens)}${o.shot.lensFrom === "world" ? " (do `worldOf` đặt theo giây, không phải `scene.lens`)" : " (`scene.lens`)"} (hệ rig: px, y xuống, z sâu; góc độ)`
+        : `- Camera cảnh: cảnh không có \`scene.lens\``,
+      `  khung cắt \`cameraAt\` ở giây này: x ${num(c.x, 1)}, y ${num(c.y, 1)}, zoom ${num(c.zoom)} (${stage})`,
     );
+  }
   if (o.view.ed === "hands")
     L.push(`- Chế độ: Dáng tay${o.picked ? ` · mốc đang mở: ${o.picked}` : ""}`);
   if (o.editor) L.push(`- Đang mở: ${o.editor} (ảnh là khung cảnh phía sau)`);

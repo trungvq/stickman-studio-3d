@@ -97,12 +97,17 @@ Nút **Chép view** trên thanh trên dừng phát, vẽ lại và đo bàn tay 
 
 - lưu ảnh khung vẽ đúng như trên màn hình (three, lớp phủ bàn tay, tay nắm, vệt) vào `tmp/studio3d/<cảnh>-<giây>s.png`
   của repo video, ghi đè ảnh cùng tên;
-- chép vào clipboard một đoạn chữ cho agent: repo, file cảnh, giây và số khung, mốc gần, đường ảnh, link mở lại đúng view,
-  camera (hệ three; camera tự do kèm tâm xoay ở hệ rig), bàn tay đang chọn kèm nguồn dáng và số đo của nó, các tay đang cầm / treo đồ kèm
-  luật phạm, cảnh báo khi có thay đổi chưa lưu (link và lệnh mở bản trên đĩa). Camera cảnh thì kèm lệnh
-  `stickman-render --three` vẽ lại khung ấy không cần trình duyệt.
+- chép vào clipboard một đoạn chữ cho agent: repo, file cảnh, giây, mốc gần, đường ảnh, link mở lại đúng view, camera,
+  bàn tay đang chọn kèm nguồn dáng và số đo của nó, các tay đang cầm / treo đồ kèm luật phạm, cảnh báo khi có thay đổi
+  chưa lưu (link và lệnh mở bản trên đĩa).
 
-Trang không ở `localhost` / https (`--host`) thì clipboard không dùng được: đoạn chữ hiện trong hộp để chép tay.
+Camera ghi ở hệ của JSON cảnh, agent không phải quy đổi: camera cảnh là ống kính đang vẽ (`scene.lens`, hay ống kính
+`worldOf` đặt theo giây) cùng khung cắt `cameraAt` ở giây ấy, kèm lệnh `stickman-render --three` vẽ lại khung không cần
+trình duyệt; camera tự do quy sẵn ra một `"lens"` dán thẳng vào cảnh — với khung cắt `camera[]` ở x 0, y 0, zoom 1 thì
+camera cảnh thấy đúng ảnh. Link mở lại giữ camera tự do ở hệ three (`pos`, `at`, `fov` dưới đây).
+
+Trang không ở `localhost` / https (`--host` mở từ điện thoại qua `http://`) thì không có clipboard: đoạn chữ hiện trong
+hộp, nút **Chép** trong hộp chép nó.
 
 URL luôn giữ view đang xem, mở link là về đúng view ấy:
 

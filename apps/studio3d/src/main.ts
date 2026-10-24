@@ -84,7 +84,7 @@ import { plusHand, plusItem } from "./plus";
 import { PoseEditor, type PoseHost, type PoseTarget, type ShapeEntry } from "./poseEditor";
 import { runtimeOf, type Data } from "./runtime";
 import { SceneList } from "./sceneList";
-import { readView, viewNote, writeView, type V3, type ViewState } from "./share";
+import { lensOf, readView, viewNote, writeView, type V3, type ViewState } from "./share";
 import { Solo } from "./solo";
 import { sourceHtml, sourceLines, sourceModel } from "./source";
 import { KeyTrack, type Band, type Lane } from "./track";
@@ -2468,24 +2468,55 @@ function htmlLines(html: string): string[] {
 
 /**
  * **Chép view**: dừng phát, vẽ lại và đo ở giây đang xem, lưu ảnh khung vẽ vào `tmp/studio3d/` của repo (`/api/snap`),
- * chép đoạn chữ cho agent (`viewNote`) vào clipboard
+ * chép đoạn chữ cho agent (`viewNote`) vào clipboard. `clipboard.write` gọi ngay trong lượt bấm, chữ đến sau: Safari
+ * bỏ lượt bấm sau `await`. Không có clipboard (http ngoài `localhost`) thì hiện hộp chép tay
  */
 async function copyView() {
   if (!cur) return say("chưa mở cảnh");
+  const job = viewJob();
+  let copied = false;
+  try {
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/plain": job.then((j) => new Blob([j.note], { type: "text/plain" })),
+      }),
+    ]);
+    copied = true;
+  } catch {
+    // trình duyệt không có `ClipboardItem` nhận promise
+  }
+  let j: Awaited<typeof job>;
+  try {
+    j = await job;
+  } catch (e) {
+    return say((e as Error).message, true);
+  }
+  if (!copied)
+    copied = await navigator.clipboard?.writeText(j.note).then(
+      () => true,
+      () => false,
+    );
+  if (!copied) return showNote(j.note);
+  say(
+    `đã chép view${j.file ? ` · ảnh ở ${j.file}` : ""}${j.pngError ? ` · ảnh không lưu được: ${j.pngError}` : ""}`,
+  );
+}
+
+/** Vẽ lại ở giây đang xem, lưu ảnh, dựng đoạn chữ của **Chép view** */
+async function viewJob() {
   if (playing) togglePlay();
   // camera đang bay tới cận tay: chụp ở chỗ đến
   if (fly) flyStep(fly.at + FLY * 1000);
   try {
     draw();
   } catch (e) {
-    return say(`vẽ hỏng ở ${t.toFixed(2)} s: ${(e as Error).message}`, true);
+    throw new Error(`vẽ hỏng ở ${t.toFixed(2)} s: ${(e as Error).message}`);
   }
   dirty = false;
   const png = snapshot();
   remember();
-  const c = cur;
+  const c = cur!;
   const view = viewState();
-  const cam = mode === "free" ? free : c.stage.camera;
   let file: string | undefined;
   let pngError: string | undefined;
   try {
@@ -2510,18 +2541,30 @@ async function copyView() {
     scene: c.name,
     from: c.from,
     t,
-    fps: FPS,
     dur: c.dur,
     marks: (c.scene as { marks?: Record<string, number> }).marks ?? {},
     url: location.href,
     png: file,
     pngError,
     view,
-    camera: {
-      pos: cam.position.toArray(),
-      dir: new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion).toArray(),
-      fov: cam.fov,
-    },
+    stage: c.rt.frame,
+    ...(mode === "free"
+      ? {
+          freeLens: lensOf(
+            free.position.toArray(),
+            new THREE.Vector3(0, 0, -1).applyQuaternion(free.quaternion).toArray(),
+            free.fov,
+            c.rt.frame,
+            free.aspect,
+          ),
+        }
+      : {
+          shot: {
+            lens: c.stage.lens,
+            lensFrom: c.stage.lens === c.scene.lens ? "scene" : "world",
+            crop: c.stage.crop,
+          },
+        }),
     ...(r && {
       hand: {
         label: `${r.id} · tay ${sideName(r.side)} · ${heldLabel(r)}`,
@@ -2543,27 +2586,32 @@ async function copyView() {
     }),
     dirty: isDirty(),
   });
-  try {
-    await navigator.clipboard.writeText(note);
-    say(
-      `đã chép view${file ? ` · ảnh ở ${file}` : ""}${pngError ? ` · ảnh không lưu được: ${pngError}` : ""}`,
-    );
-  } catch {
-    showNote(note);
-  }
+  return { note, file, pngError };
 }
 
-/** Clipboard không dùng được (trang không ở `localhost` / https): hiện đoạn chữ để chép tay */
+/**
+ * Clipboard không dùng được (trang không ở `localhost` / https): hiện đoạn chữ, nút **Chép** dùng `execCommand` (chạy cả
+ * trên http). Ô chữ không `readonly`: Safari iOS không chọn được chữ trong ô `readonly`
+ */
 function showNote(note: string) {
   const d = document.createElement("dialog");
   d.className = "named note";
-  d.innerHTML = `<form method="dialog"><b>Chép đoạn này cho agent</b><textarea readonly rows="16"></textarea><div class="row"><button value="ok">Đóng</button></div></form>`;
+  d.innerHTML = `<form method="dialog"><b>Chép đoạn này cho agent</b><textarea rows="16" inputmode="none" spellcheck="false"></textarea><div class="row"><span class="dim"></span><button type="button" value="copy">Chép</button><button value="ok">Đóng</button></div></form>`;
   const ta = d.querySelector("textarea")!;
+  const said = d.querySelector(".dim")!;
   ta.value = note;
+  d.querySelector<HTMLButtonElement>('[value="copy"]')!.onclick = () => {
+    ta.value = note;
+    ta.focus();
+    ta.setSelectionRange(0, note.length);
+    const ok = document.execCommand("copy");
+    ta.blur();
+    ta.scrollTop = 0;
+    said.textContent = ok ? "đã chép" : "không chép được: chọn hết chữ rồi chép tay";
+  };
   d.onclose = () => d.remove();
   document.body.append(d);
   d.showModal();
-  ta.select();
 }
 
 start();

@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { readView, toRig, viewNote, writeView, type NoteInput, type ViewState } from "./share";
+import * as THREE from "three";
+import { lensCamera } from "@stickman3d/rig";
+import {
+  lensOf,
+  readView,
+  toRig,
+  viewNote,
+  writeView,
+  type NoteInput,
+  type ViewState,
+} from "./share";
 
 describe("view trong URL", () => {
   it("ghi rồi đọc lại đủ: camera tự do, bàn tay, Chỉ người này, Dáng tay; giữ tham số khác", () => {
@@ -45,27 +55,58 @@ describe("view trong URL", () => {
   });
 });
 
+describe("lensOf: camera three ra `scene.lens`", () => {
+  const stage = { w: 1280, h: 720 };
+  it("ngược lensCamera: cùng mắt, hướng, fov", () => {
+    const pos: [number, number, number] = [1.5, 1.6, -4];
+    const dir = new THREE.Vector3(-0.3, -0.25, 1).normalize();
+    const l = lensOf(pos, dir.toArray(), 32, stage, 16 / 9);
+    const c = lensCamera(l, stage);
+    expect(c.eye.distanceTo(new THREE.Vector3(...pos))).toBeLessThan(0.002);
+    expect(c.fwd.angleTo(dir)).toBeLessThan(0.001);
+    expect(c.fov).toBeCloseTo(32, 1);
+    expect(l.pitch).toBeGreaterThan(0);
+  });
+
+  it("sân khấu dọc trong khung 16:9 giữ bề cao, sân khấu rộng hơn khung giữ bề ngang", () => {
+    const tall = { w: 405, h: 720 };
+    expect(lensCamera(lensOf([0, 1, 5], [0, 0, -1], 40, tall, 16 / 9), tall).fov).toBeCloseTo(
+      40,
+      1,
+    );
+    const f = lensOf([0, 1, 5], [0, 0, -1], 40, stage, 1).f;
+    expect(f).toBeCloseTo(1280 / 2 / Math.tan((20 * Math.PI) / 180), 0);
+  });
+});
+
 describe("viewNote", () => {
   const base: NoteInput = {
     root: "/repo",
     scene: "s1",
     from: "world",
     t: 1.2,
-    fps: 30,
     dur: 4,
     marks: { nam: 1.1, xa: 3 },
     url: "http://localhost:5180/?scene=s1",
     png: "/repo/tmp/studio3d/s1-1.20s.png",
     view: { scene: "s1", t: 1.2, cam: "scene" },
-    camera: { pos: [0, 1, 5], dir: [0, 0, -1], fov: 30 },
+    stage: { w: 1280, h: 720 },
+    shot: {
+      lens: { eye: [0, -150, -800], yaw: 0, pitch: 5, f: 1100, cx: 0, cy: 0 },
+      lensFrom: "scene",
+      crop: { x: 20, y: 0, zoom: 1.25 },
+    },
     hands: ["an tay phải: coc@grip/side — !!pierce 2.0"],
     dirty: false,
   };
 
-  it("camera cảnh: file, khung, mốc gần, ảnh, link, lệnh vẽ lại", () => {
+  it("camera cảnh: file, ống kính hệ rig, khung cắt, mốc gần, ảnh, link, lệnh vẽ lại", () => {
     const n = viewNote(base);
     expect(n).toContain("scenes/s1.json");
-    expect(n).toContain("khung 36 ở 30 fps");
+    expect(n).toContain(
+      '`"lens": {"eye":[0,-150,-800],"yaw":0,"pitch":5,"f":1100,"cx":0,"cy":0}` (`scene.lens`)',
+    );
+    expect(n).toContain("x 20, y 0, zoom 1.25 (khung sân khấu 1280×720)");
     expect(n).toContain("@nam = 1.10 s");
     expect(n).toContain(base.png);
     expect(n).toContain(base.url);
@@ -74,9 +115,11 @@ describe("viewNote", () => {
     expect(n).not.toContain("chưa lưu");
   });
 
-  it("camera tự do: chỗ đứng, tâm xoay hai hệ, không lệnh vẽ lại; bàn tay đang chọn, chưa lưu", () => {
+  it("camera tự do: ống kính quy sẵn, tâm xoay hai hệ, không lệnh vẽ lại; bàn tay đang chọn, chưa lưu", () => {
     const n = viewNote({
       ...base,
+      shot: undefined,
+      freeLens: { eye: [100, -200, -300], yaw: 180, pitch: 10, f: 1300 },
       marks: {},
       png: undefined,
       pngError: "hỏng",
@@ -89,8 +132,11 @@ describe("viewNote", () => {
       hand: { label: "an · tay phải · coc@grip/side", measure: ["dòng 1", "dòng 2"] },
       dirty: true,
     });
-    expect(n).toContain("ở (1.00, 2.00, 3.00) nhìn tới tâm xoay (0.50, 1.00, -0.20), fov 28°");
-    expect(n).toContain("hệ rig (50, -100, 20)");
+    expect(n).toContain('`"lens": {"eye":[100,-200,-300],"yaw":180,"pitch":10,"f":1300}`');
+    expect(n).toContain("dán làm `scene.lens`");
+    expect(n).toContain("ở (1.00, 2.00, 3.00), tâm xoay (0.50, 1.00, -0.20), fov 28°");
+    expect(n).toContain("tâm xoay hệ rig (50, -100, 20)");
+    expect(n).not.toContain("khung cắt `cameraAt`");
     expect(n).not.toContain("stickman-render");
     expect(n).not.toContain("mốc gần");
     expect(n).toContain("không lưu được (hỏng)");

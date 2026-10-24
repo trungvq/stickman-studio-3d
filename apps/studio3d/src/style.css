@@ -479,6 +479,11 @@ dialog.named .row {
   justify-content: flex-end;
 }
 
+dialog.note .row .dim {
+  margin-right: auto;
+  align-self: center;
+}
+
 #measure .hit {
   color: #ffcc66;
   font-family: ui-monospace, monospace;
@@ -1358,6 +1363,11 @@ button.key.diamond .keytip {
 
   #more {
     display: inline-block;
+  }
+
+  /* Safari iOS phóng to trang khi chọn chữ trong ô dưới 16 px */
+  dialog.note textarea {
+    font-size: 16px;
   }
 
   #hdrMore {
