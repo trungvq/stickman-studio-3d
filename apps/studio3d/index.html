@@ -9,6 +9,7 @@
   </head>
   <body>
     <header>
+      <button id="sceneOpen" title="Danh sách cảnh">☰</button>
       <input id="scene" list="scenes" placeholder="Cảnh… (gõ để lọc)" spellcheck="false" />
       <datalist id="scenes"></datalist>
       <button id="reload" title="Nạp lại cảnh từ đĩa (R); Shift+R dựng lại cả cảnh">Nạp lại</button>
@@ -134,6 +135,7 @@
         </div>
       </aside>
     </div>
+    <div id="scrim" hidden></div>
     <footer>
       <div id="tlLeft">
         <div class="tlhead"><button id="play" title="Phát / dừng (Space)">▶</button></div>

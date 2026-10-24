@@ -119,8 +119,8 @@ URL luôn giữ view đang xem, mở link là về đúng view ấy:
 
 Panel bên trái (nút ⇆ gập / mở, nhớ trong `localStorage`) liệt kê mọi cảnh ở `scenes/`, nhóm theo tập (`t01`, `t02`…;
 cảnh không theo tập vào nhóm `khác`), cảnh đang mở viền cam. Ô lọc nhận nhiều từ (mọi từ phải có trong tên), Enter mở cảnh
-đầu, Esc xoá lọc. Nhấp một cảnh là mở nó (có thay đổi chưa lưu thì hỏi trước). Màn hẹp (≤ 760 px) ẩn panel, chọn cảnh bằng ô
-trên thanh trên.
+đầu, Esc xoá lọc. Nhấp một cảnh là mở nó (có thay đổi chưa lưu thì hỏi trước). Màn hẹp (≤ 760 px, hay điện thoại ngang) panel
+thành ngăn kéo mở bằng nút ☰ đầu thanh trên, chọn cảnh xong tự đóng; ô cảnh trên thanh trên vẫn gõ được.
 
 ## Bàn tay
 
@@ -374,9 +374,13 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi trac
   (`hands`, `tracks` từng người và `items`, JSON) hay **Giữ bản mình**. Đổi cảnh, R, đóng trang đều hỏi trước khi bỏ thay đổi chưa lưu.
 - **File repo video đổi trên đĩa** (cảnh, món mà `src/` của repo nhập — kể cả lúc Lưu): trang nhận module cảnh three mới
   tại chỗ, không nạp lại trang; lần dựng cảnh sau (Shift+R) dùng bản mới.
-- **Màn hẹp** (≤ 760 px): camera, AA, Lăn gập sau nút ⋯; panel bàn tay xuống dưới khung vẽ. Ở Xem thanh tua vừa bề ngang;
-  ở Dáng tay thanh tua rộng 720 px, cuộn ngang, luôn tự cuộn theo giây đang xem (cả khi chưa chọn tay); nhãn dải lần cầm
-  bám mép trái khung cuộn. HUD tay nắm bỏ dòng nhắc.
+- **Màn hẹp** (≤ 760 px): camera, AA, Lăn gập sau nút ⋯; khung vẽ cao vừa khung 16:9 theo bề ngang, panel bàn tay lấy phần
+  dưới còn lại. Ở Xem thanh tua vừa bề ngang, mốc tên chỉ còn vạch (chạm để tới mốc), nhóm Lưu / hoàn tác ẩn trừ khi có
+  thay đổi chưa lưu; ở Dáng tay thanh tua rộng 720 px, cuộn ngang, luôn tự cuộn theo giây đang xem (cả khi chưa chọn tay);
+  nhãn dải lần cầm bám mép trái khung cuộn. HUD tay nắm bỏ dòng nhắc.
+- **Điện thoại ngang** (cao ≤ 500 px, màn cảm ứng): thanh trên một dòng, panel bàn tay giữ cột phải rộng 300 px. Gập / mở
+  panel bàn tay ở màn hẹp và điện thoại ngang nhớ riêng với màn rộng (`studio3d.sideNarrow`). Màn cảm ứng: nút, thanh tua
+  to hơn cho ngón tay; camera tự do một ngón xoay, hai ngón chụm tiến lùi và dời (OrbitControls).
 
 ### Đổi chế độ lần cầm
 

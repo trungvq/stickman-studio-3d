@@ -99,6 +99,8 @@ const ui = {
   scene: $<HTMLInputElement>("scene"),
   scenes: $<HTMLDataListElement>("scenes"),
   sceneSide: $<HTMLElement>("sceneSide"),
+  sceneOpen: $<HTMLButtonElement>("sceneOpen"),
+  scrim: $<HTMLDivElement>("scrim"),
   sceneToggle: $<HTMLButtonElement>("sceneToggle"),
   sceneCount: $<HTMLSpanElement>("sceneCount"),
   sceneFilter: $<HTMLInputElement>("sceneFilter"),
@@ -1709,6 +1711,8 @@ function syncEdit() {
   for (const b of ui.edMode.querySelectorAll<HTMLButtonElement>("button"))
     b.classList.toggle("on", b.dataset.m === edMode);
   ui.footer.classList.toggle("hands", edMode === "hands");
+  document.body.classList.toggle("hands", edMode === "hands");
+  document.body.classList.toggle("dirty", d);
   if (picked && (!work || keyValue(work.raw, picked) === undefined)) picked = null;
   if (picked?.kind === "hand" && sel && picked.id !== sel.id) picked = null;
   if (clipSel && (!work || !sel || clipSel.id !== sel.id || !clipOf(work.raw, clipSel)))
@@ -2224,8 +2228,20 @@ function openScene(name: string) {
   void load(name);
 }
 ui.scene.addEventListener("change", () => openScene(ui.scene.value.trim()));
-const sceneList = new SceneList(ui.sceneList, ui.sceneFilter, ui.sceneCount, openScene);
+/** Màn hẹp (điện thoại dọc, điện thoại ngang): danh sách cảnh là ngăn kéo mở bằng ☰, panel bàn tay nhớ gập riêng */
+const narrow = matchMedia("(max-width: 760px), (max-height: 500px) and (pointer: coarse)");
+function setScenesOpen(on: boolean) {
+  document.body.classList.toggle("scenesOpen", on);
+  ui.scrim.hidden = !on;
+}
+ui.sceneOpen.onclick = () => setScenesOpen(!document.body.classList.contains("scenesOpen"));
+ui.scrim.onclick = () => setScenesOpen(false);
+const sceneList = new SceneList(ui.sceneList, ui.sceneFilter, ui.sceneCount, (n) => {
+  setScenesOpen(false);
+  openScene(n);
+});
 ui.sceneToggle.onclick = () => {
+  if (narrow.matches) return setScenesOpen(false);
   ui.sceneSide.classList.toggle("shut");
   localStorage.setItem("studio3d.sceneSide", ui.sceneSide.classList.contains("shut") ? "shut" : "");
 };
@@ -2299,11 +2315,17 @@ ui.frame.addEventListener("pointerup", (e) => {
 ui.editGrasp.onclick = openEditor;
 ui.editShape.onclick = openShapeEditor;
 ui.solo.onchange = toggleSolo;
+const sideKey = () => (narrow.matches ? "studio3d.sideNarrow" : "studio3d.side");
+const syncSide = () => ui.side.classList.toggle("shut", localStorage.getItem(sideKey()) === "shut");
 ui.sideToggle.onclick = () => {
   ui.side.classList.toggle("shut");
-  localStorage.setItem("studio3d.side", ui.side.classList.contains("shut") ? "shut" : "");
+  localStorage.setItem(sideKey(), ui.side.classList.contains("shut") ? "shut" : "");
 };
-if (localStorage.getItem("studio3d.side") === "shut") ui.side.classList.add("shut");
+syncSide();
+narrow.addEventListener("change", () => {
+  syncSide();
+  if (!narrow.matches) setScenesOpen(false);
+});
 ui.angles.replaceChildren(
   ...(Object.entries(ANGLES) as [Angle, string][]).map(([a, label]) => {
     const b = document.createElement("button");
