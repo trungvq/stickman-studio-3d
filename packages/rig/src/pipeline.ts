@@ -417,7 +417,7 @@ function fitOrtho(cam: THREE.OrthographicCamera, dir: THREE.Vector3, region: THR
  * viền riêng: trang sức) không có nét hậu kỳ nào dò từ độ sâu, pháp tuyến, không nhận bóng tiếp xúc và nét bóng dáng của vật
  * khác; vật liệu `userData.ink` (`npr({ ink })`)
  * có nét bóng dáng dò ở hậu kỳ, cả khi tắt `outline` như vỏ ngược; các mesh cùng `userData.inkChain` và cùng vật liệu chung một
- * mã vật, chỗ nối không có nét. Mép vật đè lên vật khác cùng vật liệu có nét khi khe sâu qua `userData.inkGap` (three, cỡ bán
+ * mã vật, chỗ nối không có nét. Vật liệu chỉ khác `doubleSided` tính là cùng vật liệu. Mép vật đè lên vật khác cùng vật liệu có nét khi khe sâu qua `userData.inkGap` (three, cỡ bán
  * kính vật: nét đầy ở 0,8, mờ dần dưới 0,3), không có thì theo bề dày nét.
  */
 export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSize = 2048 }: PipelineOptions = {}): Pipeline {
@@ -661,7 +661,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       pu.uPaper.value = paper ? 1 : 0;
       // vỏ nét ngược không phải mặt thật, vật không ghi độ sâu (kính, lớp nét mặt) không có trong độ sâu: bỏ khỏi lượt pháp tuyến
       const shells: THREE.Object3D[] = [], swapped: [THREE.Mesh, THREE.Material | THREE.Material[]][] = [];
-      const slots = new Map<THREE.Material, number>(), f = (camera.projectionMatrix.elements[5] * rh) / 2;
+      const slots = new Map<string, number>(), f = (camera.projectionMatrix.elements[5] * rh) / 2;
       const boxes: THREE.Box2[] = [];
       let inks = 0, reach = 0, whole = false;
       const chains = new Map<string, number>();
@@ -673,10 +673,11 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
         let id = 0;
         const chain = m.userData.inkChain === undefined ? '' : `${m.userData.inkChain} ${m.material.uuid}`;
         if (w > 0 && (chains.has(chain) || inks < MAX_INK - 1)) {
-          if (!slots.has(m.material)) slots.set(m.material, slots.size + 1);
+          const slot: string = m.material.userData.inkKey ?? m.material.uuid;
+          if (!slots.has(slot)) slots.set(slot, slots.size + 1);
           id = chains.get(chain) ?? ++inks;
           const gap: number | undefined = m.userData.inkGap;
-          if (gap !== undefined || !chains.has(chain)) inkTable[id].set(w, slots.get(m.material)!, gap === undefined ? 0.1 * w : 0.3 * gap, gap === undefined ? 0.6 * w : 0.8 * gap);
+          if (gap !== undefined || !chains.has(chain)) inkTable[id].set(w, slots.get(slot)!, gap === undefined ? 0.1 * w : 0.3 * gap, gap === undefined ? 0.6 * w : 0.8 * gap);
           if (chain) chains.set(chain, id);
           if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
           const r = new THREE.Box2();

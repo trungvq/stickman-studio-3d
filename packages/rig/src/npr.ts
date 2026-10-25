@@ -392,6 +392,8 @@ export function npr(o: NprOptions = {}): THREE.ShaderMaterial {
   const defines: Record<string, string> = { ...(o.doubleSided ? { DOUBLE_SIDED: '' } : {}), ...(o.spread ? { KEY_SPREAD: '' } : {}), ...(o.flat ? { FLAT_KEY: '' } : {}), ...(o.tint ? { USE_TINT: '' } : {}) };
   const m = shaded(defines, o.doubleSided ? THREE.DoubleSide : THREE.FrontSide, ownUniforms(o));
   if (o.ink) m.userData.ink = o.ink;
+  // nét bóng dáng hậu kỳ coi hai vật liệu chỉ khác `doubleSided` là một: tay áo loe hai mặt liền vai thân áo
+  if (o.ink) m.userData.inkKey = JSON.stringify({ ...o, doubleSided: undefined });
   cache.set(key, m);
   return m;
 }

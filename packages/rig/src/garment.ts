@@ -31,7 +31,7 @@ export const sameColor = (a?: string, b?: string) => !!a && !!b && new THREE.Col
  * Vật liệu vải chung của thân áo và tay áo khác màu ở người mặc đồ: màu từng đỉnh (`tint`), nét bóng dáng `ink`. Một vật liệu
  * thì nét bóng dáng hậu kỳ coi thân và tay là một vật: vai liền không đường may như thân và tay cùng màu
  */
-export const clothMaterial = (ink: number) => npr({ color: '#ffffff', stipple: 0.05, stippleScale: 3, soft: 1, ink, tint: true });
+export const clothMaterial = (ink: number, doubleSided?: boolean) => npr({ color: '#ffffff', stipple: 0.05, stippleScale: 3, soft: 1, ink, tint: true, ...(doubleSided && { doubleSided }) });
 
 /** Tô cả lưới một màu cho vật liệu `tint` */
 export function paint(geo: THREE.BufferGeometry, color: string) {
