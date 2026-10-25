@@ -25,7 +25,7 @@ export interface GrabHost {
   redraw(): void;
 }
 
-type Job = (c: NonNullable<ReturnType<GrabHost["ctx"]>>) => {
+export type Job = (c: NonNullable<ReturnType<GrabHost["ctx"]>>) => {
   raw: Json;
   key: KeyRef;
   say: string;
@@ -279,11 +279,14 @@ export class HandGrab {
       .join(" · ");
   }
 
-  /** Chạy một thao tác (dựng lại, đo — vài trăm ms) rồi áp; đang chạy thì bỏ thao tác mới */
-  private run(what: string, job: Job) {
-    if (this.pending) return;
+  /** Chạy một thao tác (dựng lại, đo — vài trăm ms) rồi áp; đang chạy thì bỏ thao tác mới (trả `false`) */
+  run(what: string, job: Job): boolean {
+    if (this.pending) return false;
     const c = this.host.ctx();
-    if (!c) return this.place();
+    if (!c) {
+      this.place();
+      return false;
+    }
     this.pending = true;
     this.host.say(`đang áp: ${what}…`);
     setTimeout(() => {
@@ -302,6 +305,7 @@ export class HandGrab {
         this.host.redraw();
       }
     }, 30);
+    return true;
   }
 
   // --- vòng khuỷu ---

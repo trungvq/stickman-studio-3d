@@ -1163,6 +1163,28 @@ button.key.diamond .keytip {
   width: 64px;
 }
 
+.crow.place {
+  flex-wrap: nowrap;
+}
+
+.crow.place > span {
+  width: 38px;
+  flex: none;
+}
+
+.crow.place label {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  font-size: 11px;
+}
+
+.crow.place input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 #keyCard .warn,
 #clipCard .warn {
   color: #ffcc66;

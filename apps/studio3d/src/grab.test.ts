@@ -1,10 +1,30 @@
-import { handReport, itemAt, itemCentre, matVec, wristAngles, type M3 } from "@stickman3d/rig/core";
+import {
+  handReport,
+  itemAt,
+  itemCentre,
+  matMul,
+  matVec,
+  wristAngles,
+  type M3,
+} from "@stickman3d/rig/core";
 import { describe, expect, it } from "vitest";
-import { dragHand, dragItem, lockElbow, turnShort, unlockElbow } from "./drag";
+import {
+  dragHand,
+  dragItem,
+  heldPlace,
+  itemPlace,
+  lockElbow,
+  placeHand,
+  placeItem,
+  turnShort,
+  unlockElbow,
+} from "./drag";
 import { drawnHand, drawnItem, palmAt, trunkAt } from "./drawn";
 import { c, HELD, runtime, scene } from "./fixture";
 import {
+  angleFrame,
   axisRotation,
+  bodyAngles,
   coneRim,
   costAt,
   costRamp,
@@ -49,6 +69,26 @@ describe("phép đổi của tay nắm (grab.ts)", () => {
       const v: V3 = [0.3, -0.7, 0.2];
       close(fromBody(toBody(v, Rr, out), Rr, out), v, 1e-12);
     }
+  });
+
+  it("góc theo thân: khung thân tay phải, đi về, quay quanh trục đứng là `quay`", () => {
+    const det = (m: M3) =>
+      m[0] * (m[4] * m[8] - m[5] * m[7]) -
+      m[1] * (m[3] * m[8] - m[5] * m[6]) +
+      m[2] * (m[3] * m[7] - m[4] * m[6]);
+    expect(det(angleFrame([0, 0, 0], Rr))).toBeCloseTo(1, 12);
+    for (const a of [
+      [20, -35, 70],
+      [-150, 10, -5],
+      [0, 89.5, 30],
+    ] as V3[])
+      close(bodyAngles(angleFrame(a, Rr), Rr), a, 1e-6);
+    // gập 90°: `nghiêng` dồn vào `quay`, khung vẫn đúng
+    const R = angleFrame([10, 90, 25], Rr);
+    close(angleFrame(bodyAngles(R, Rr), Rr), R, 1e-6);
+    const down = fromBody([0, 1, 0], Rr, -1);
+    const turned = matMul(axisRotation(down, 40), angleFrame([15, 0, 0], Rr));
+    close(bodyAngles(turned, Rr), [55, 0, 0], 1e-6);
   });
 
   it("quay 30° quanh một trục: vectơ hệ thân ghi ra khớp tới 1e-6, quay ngược về chỗ cũ", () => {
@@ -203,6 +243,48 @@ describe("kéo tay nắm, vòng khuỷu (drag.ts)", () => {
       close(matVec(p2.R, a), matVec(R, matVec(p0.R, a)), 2e-3);
     expect(dist(centre(p2), movePoint(centre(p0), grip, R, [0, -5, 0]))).toBeLessThan(0.5);
     expect(r2.gap).toBeLessThan(0.5);
+  });
+
+  it(
+    "ô số của mốc món: tâm món tới đúng chỗ, góc đúng số, chỉ dời giữ hướng của mốc",
+    { timeout: 120_000 },
+    () => {
+      const j = scene();
+      const rt = runtime(j);
+      const t = 3;
+      const p0 = itemPlace(rt, "a", "bang-gia", t, c)!;
+      const at: V3 = [p0.at[0] + 6, p0.at[1], p0.at[2]];
+      const r = placeItem(j, rt, "a", "right", t, { at }, O);
+      expect(r.added).toBe(false);
+      expect((r.raw.items as Json[])[1]).toMatchObject({ to: "chest" });
+      const p1 = itemPlace(runtime(r.raw), "a", "bang-gia", t, c)!;
+      expect(dist(p1.at, at)).toBeLessThan(0.5);
+      // chỉ dời thì giữ ý định hướng của mốc (`face` hướng về mặt người cầm)
+      expect((r.raw.items as Json[])[1].face).toEqual((j.items as Json[])[1].face);
+      const angles: V3 = [p0.angles[0] + 20, p0.angles[1], p0.angles[2] - 10];
+      const r2 = placeItem(j, rt, "a", "right", t, { angles }, O);
+      const p2 = itemPlace(runtime(r2.raw), "a", "bang-gia", t, c)!;
+      close(p2.angles, angles, 0.05);
+      expect(dist(p2.at, p0.at)).toBeLessThan(0.5);
+    },
+  );
+
+  it("ô số của mốc tay đồ theo tay: món tới đúng chỗ, góc đúng số", { timeout: 120_000 }, () => {
+    const j = scene();
+    const rt = runtime(j);
+    const t = 1.25;
+    const p0 = heldPlace(rt, "a", "left", "coc", t, c)!;
+    const at: V3 = [p0.at[0] - 5, p0.at[1] + 4, p0.at[2]];
+    const r = placeHand(j, rt, "a", "left", t, { at }, O);
+    const p1 = heldPlace(runtime(r.raw), "a", "left", "coc", t, c)!;
+    expect(dist(p1.at, at)).toBeLessThan(0.6);
+    const angles: V3 = [p0.angles[0] + 6, p0.angles[1], p0.angles[2]];
+    const r2 = placeHand(j, rt, "a", "left", t, { angles }, O);
+    const p2 = heldPlace(runtime(r2.raw), "a", "left", "coc", t, c)!;
+    // so khung, không so số: góc có thể ra cách nhau 360°
+    const Rb = trunkAt(rt, "a", t, c)!.Rr;
+    close(angleFrame(p2.angles, Rb), angleFrame(angles, Rb), 0.02);
+    expect(dist(p2.at, p0.at)).toBeLessThan(0.6);
   });
 
   it(

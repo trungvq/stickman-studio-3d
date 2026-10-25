@@ -35,6 +35,7 @@ import {
   type ClipRef,
   type RestHit,
 } from "./clips";
+import { heldPlace, itemPlace, placeHand, placeItem } from "./drag";
 import { drawnHand, drawnItem } from "./drawn";
 import { GraspEditor, sceneHigh, type EditScene, type EditTarget } from "./editor";
 import { freeCam, type WheelMode } from "./freecam";
@@ -1820,6 +1821,12 @@ function reach(raw: Json, k: KeyRef): number | undefined {
   return timeOf((auto ? after : next).t, marks);
 }
 
+/** Bản `held/<món>.json` của món (tên thể hiện `vali:2` tra món gốc) */
+function heldSpec(item: string): HeldItemSpec | undefined {
+  const held = cur?.data.held as Record<string, HeldItemSpec> | undefined;
+  return held?.[item] ?? held?.[rig.heldBase(item)];
+}
+
 /** Món, nhóm, biến thể cho phần `hold` của thẻ */
 /** Bản `held/<món>.json` của món (tên thể hiện `vali:2` tra món gốc) */
 function heldSpec(item: string): HeldItemSpec | undefined {
@@ -1904,6 +1911,9 @@ function cardOf(k: KeyRef): CardModel | null {
           ...(idle && { idle }),
         },
       }),
+    ...(k.kind === "item"
+      ? placeOf(row, tt)
+      : m && !rest && run?.mode === "hand" && !run.lead && handPlaceOf(k.id, k.side, run.item, tt)),
     items,
     groups: rig.GROUP_IDS,
     variants: variantsOf,
@@ -1917,6 +1927,42 @@ function cardOf(k: KeyRef): CardModel | null {
       ...(added && sameKey(added.key, k) ? added.notes : []),
     ],
   };
+}
+
+/** Bàn tay cầm theo đồ (không phải tay phụ) món của mốc món `row` ở `tt` */
+function itemHand(row: Json, tt: number): HandSide | undefined {
+  const runs = rig.holdRuns(cur!.rt, row.cast as string);
+  return (["right", "left"] as const).find((s) => {
+    const r = runAt(runs[s], tt, cur!.dur);
+    return !!r && r.item === row.item && r.mode !== "hand" && !r.lead;
+  });
+}
+
+/** Ô số chỗ, hướng của thẻ mốc món: như vẽ ở giây của mốc */
+function placeOf(row: Json, tt: number): Pick<CardModel, "place"> {
+  const id = row.cast as string;
+  const p = itemPlace(cur!.rt, id, row.item as string, tt, charOf(id).char);
+  if (!p) return {};
+  return {
+    place: {
+      ...p,
+      ...(!itemHand(row, tt) && {
+        disabled:
+          "món không ở tay theo đồ ở giây của mốc (đồ theo tay, đã thả): sửa số khi tay theo đồ",
+      }),
+    },
+  };
+}
+
+/** Ô số chỗ, hướng của thẻ mốc tay đồ theo tay: món như vẽ ở giây của mốc */
+function handPlaceOf(
+  id: string,
+  side: HandSide,
+  item: string,
+  tt: number,
+): Pick<CardModel, "place"> {
+  const p = heldPlace(cur!.rt, id, side, item, tt, charOf(id).char);
+  return p ? { place: p } : {};
 }
 
 /** Sửa mốc đang mở thẻ bằng `fn`; mốc chưa khai `ease` thì ghi `auto` */
@@ -1936,6 +1982,33 @@ function editPicked(fn: (m: Json | null) => Json | null | void) {
 }
 
 const cardHost = {
+  place(to: { at?: V3; angles?: V3 }) {
+    if (!work || !picked) return;
+    const k = picked;
+    const row = rowOf(work.raw, k);
+    if (!row) return;
+    const tt = timeOf(row.t, marksOf(work.raw));
+    const side = k.kind === "hand" ? k.side : itemHand(row, tt);
+    const id = k.kind === "hand" ? k.id : (row.cast as string);
+    if (!side) return say("món không ở tay theo đồ ở giây của mốc", true);
+    const what = to.angles ? "xoay món" : "dời món";
+    const ok = grab.run(what, (c) => {
+      const r = (k.kind === "hand" ? placeHand : placeItem)(
+        c.raw,
+        c.rt,
+        id,
+        side,
+        tt,
+        to,
+        c.opts(id),
+      );
+      return { raw: r.raw, key: r.key, say: [`đã ${what} (số)`, ...r.notes].join(" · ") };
+    });
+    if (!ok) {
+      say("đang áp thao tác trước: thử lại", true);
+      syncEdit();
+    }
+  },
   ease(e: Ease | undefined, bezier?: number[]) {
     if (!work || !picked) return;
     const k = picked;

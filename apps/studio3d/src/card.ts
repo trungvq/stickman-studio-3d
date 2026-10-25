@@ -1,6 +1,6 @@
 // Thẻ mốc của thanh tua: `ease` (ô 4 số khi `bezier`), `hold` (món, nhóm, biến thể; kiểu có tên kèm `note`), dáng ngón
-// `pose` / `w`, `elbowLock`, JSON thô của mốc chỉ đọc kèm nút chép, xoá mốc.
-import type { Ease, HoldPick } from "./keys";
+// `pose` / `w`, `elbowLock`, chỗ và hướng của mốc món bằng số, JSON thô của mốc chỉ đọc kèm nút chép, xoá mốc.
+import type { Ease, HoldPick, V3 } from "./keys";
 
 export const EASES: { v: Ease | ""; label: string }[] = [
   { v: "", label: "smooth (bỏ trống)" },
@@ -35,6 +35,11 @@ export interface CardModel {
   };
   /** Mốc tay: khoá khuỷu; `idle` là lý do khoá không có tác dụng ở mốc */
   lock?: { on: boolean; disabled?: string; idle?: string };
+  /**
+   * Mốc món: tâm món (thế giới rig) và góc `[quay, chúc, nghiêng]` theo thân người cầm, như vẽ ở giây của mốc; `disabled`
+   * là lý do không sửa được
+   */
+  place?: { at: V3; angles: V3; disabled?: string };
   json: string;
   notes: string[];
 }
@@ -46,6 +51,8 @@ export interface CardHost {
   lock(on: boolean): void;
   /** `pose` bỏ trống là bỏ dáng; `w` bỏ trống là `1` */
   shape(pose: string | undefined, w: number | undefined): void;
+  /** Ô số của mốc món: chỗ hay góc mới (trường không đổi giữ số đúng của `place`) */
+  place(to: { at?: V3; angles?: V3 }): void;
   del(): void;
   close(): void;
 }
@@ -59,6 +66,14 @@ const opts = (xs: readonly { v: string; label: string }[], cur: string) =>
         `<option value="${esc(x.v)}"${x.v === cur ? " selected" : ""}>${esc(x.label)}</option>`,
     )
     .join("");
+
+const PLACE_AT = ["x", "y", "z"];
+const PLACE_ANGLE = [
+  ["quay", "quanh trục đứng của người cầm"],
+  ["chúc", "quanh trục ngang của người cầm"],
+  ["nghiêng", "quanh trục tiến của người cầm"],
+] as const;
+const fix = (x: number) => Math.round(x * 10) / 10 + 0;
 
 /** Phần "JSON thô" mở hay đóng: giữ qua các lần vẽ lại thẻ */
 let jsonOpen = false;
@@ -123,6 +138,19 @@ export function renderCard(el: HTMLElement, m: CardModel | null, host: CardHost)
     ${m.lock.idle ? `<div class="warn">${esc(m.lock.idle)}</div>` : ""}`
         : ""
     }
+    ${
+      m.place
+        ? `<div class="crow place"${m.place.disabled ? ` title="${esc(m.place.disabled)}"` : ""}><span>chỗ</span>${PLACE_AT.map(
+            (n, i) =>
+              `<label>${n} <input data-c="at" data-i="${i}" type="number" step="1" value="${fix(m.place!.at[i])}"${m.place!.disabled ? " disabled" : ""} /></label>`,
+          ).join("")}</div>
+    <div class="crow place"${m.place.disabled ? ` title="${esc(m.place.disabled)}"` : ""}><span>hướng</span>${PLACE_ANGLE.map(
+      ([n, tip], i) =>
+        `<label title="${tip}">${n} <input data-c="ang" data-i="${i}" type="number" step="1" value="${fix(m.place!.angles[i])}"${m.place!.disabled ? " disabled" : ""} /></label>`,
+    ).join("")}</div>
+    <div class="dim">${m.place.disabled ? esc(m.place.disabled) : "tâm món, thế giới rig (x phải, y xuống, z sâu; 250 = 1 m) · hướng: độ, theo thân người cầm"}</div>`
+        : ""
+    }
     ${m.notes.map((n) => `<div class="warn">${esc(n)}</div>`).join("")}
     <details class="cjson"${jsonOpen ? " open" : ""}><summary>JSON thô của mốc</summary><pre>${esc(m.json)}</pre></details>
     <div class="crow"><button data-c="copy">Chép JSON</button><button data-c="del" title="Xoá mốc (Del)">Xoá mốc</button></div>`;
@@ -176,4 +204,25 @@ export function renderCard(el: HTMLElement, m: CardModel | null, host: CardHost)
   }
   if (m.lock)
     q<HTMLInputElement>("lock").onchange = (e) => host.lock((e.target as HTMLInputElement).checked);
+  if (m.place && !m.place.disabled) {
+    // ô chưa sửa giữ số đúng (ô chỉ hiện một chữ số lẻ)
+    const read = (c: "at" | "ang", exact: V3): V3 | undefined => {
+      const ins = [...el.querySelectorAll<HTMLInputElement>(`[data-c=${c}]`)];
+      const v = ins.map((i, k) => {
+        const x = Number(i.value);
+        return i.value === "" || !Number.isFinite(x) || x === fix(exact[k]) ? exact[k] : x;
+      }) as V3;
+      return v.some((x, k) => x !== exact[k]) ? v : undefined;
+    };
+    for (const i of el.querySelectorAll<HTMLInputElement>("[data-c=at]"))
+      i.onchange = () => {
+        const at = read("at", m.place!.at);
+        if (at) host.place({ at });
+      };
+    for (const i of el.querySelectorAll<HTMLInputElement>("[data-c=ang]"))
+      i.onchange = () => {
+        const angles = read("ang", m.place!.angles);
+        if (angles) host.place({ angles });
+      };
+  }
 }

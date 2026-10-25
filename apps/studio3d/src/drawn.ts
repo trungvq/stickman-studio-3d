@@ -117,7 +117,7 @@ export function trunkAt(rt: SceneRuntime, id: string, t: number, char?: ActChara
  * Khung món `item` tay `side` của `id` đang cầm ở `t`, như vẽ, và tâm hộp bao (thế giới rig). `sp`: tư thế `sceneAt` đã
  * có ở `t` (cùng `char` thì không giải lại tay)
  */
-function itemFrame(
+export function itemFrame(
   rt: SceneRuntime,
   id: string,
   side: HandSide,

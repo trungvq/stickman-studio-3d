@@ -58,6 +58,39 @@ export function fromBody(b: readonly number[], Rr: M3, out: number): V3 {
   return [w[0], -w[1], -w[2]];
 }
 
+/**
+ * Khung thân để đọc góc món (cột: tiến, y xuống, ngang trái — hệ tay phải, thế giới rig). Góc `[quay, chúc, nghiêng]` độ
+ * quanh trục xuống, ngang trái, tiến: khung món ở hệ ấy là `Ry(quay)·Rz(chúc)·Rx(nghiêng)`, `0` là trục x, y, z của món theo
+ * tiến, xuống, ngang trái
+ */
+const bodyAxes = (Rr: M3): M3 => {
+  const [f, d, l] = [
+    fromBody([1, 0, 0], Rr, 1),
+    fromBody([0, 1, 0], Rr, 1),
+    fromBody([0, 0, 1], Rr, 1),
+  ];
+  return [f[0], d[0], l[0], f[1], d[1], l[1], f[2], d[2], l[2]];
+};
+
+/** Góc `[quay, chúc, nghiêng]` độ của khung món `R` (thế giới rig) theo thân `Rr` */
+export function bodyAngles(R: M3, Rr: M3): V3 {
+  const Q = matMul(tr(bodyAxes(Rr)), R);
+  const D = 180 / Math.PI;
+  const b = Math.asin(Math.max(-1, Math.min(1, Q[3])));
+  if (Math.abs(Q[3]) > 1 - 1e-9) return [Math.atan2(Q[2], Q[8]) * D + 0, b * D, 0];
+  return [Math.atan2(-Q[6], Q[0]) * D + 0, b * D, Math.atan2(-Q[5], Q[4]) * D + 0];
+}
+
+/** Chiều ngược của `bodyAngles`: khung món thế giới rig */
+export function angleFrame(a: readonly number[], Rr: M3): M3 {
+  const r = a.map((x) => (x * Math.PI) / 180);
+  const [ca, sa, cb, sb, cc, sc] = r.flatMap((x) => [Math.cos(x), Math.sin(x)]);
+  const Ry: M3 = [ca, 0, sa, 0, 1, 0, -sa, 0, ca];
+  const Rz: M3 = [cb, -sb, 0, sb, cb, 0, 0, 0, 1];
+  const Rx: M3 = [1, 0, 0, 0, cc, -sc, 0, sc, cc];
+  return matMul(bodyAxes(Rr), matMul(Ry, matMul(Rz, Rx)));
+}
+
 /** Vectơ hệ thân `b` quay theo phép quay thế giới rig `R` */
 export const turnBody = (b: readonly number[], R: M3, Rr: M3, out: number): V3 =>
   toBody(matVec(R, fromBody(b, Rr, out)), Rr, out);

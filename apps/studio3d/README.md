@@ -363,7 +363,14 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi trac
   thì không áp và báo lỗi); **dáng ngón** `pose` (theo hành động / dáng của thư viện / dáng có sẵn) kèm ô `w` (bỏ trống là
   `1`) — mốc có `hold` hay mốc `null` thì tắt, bỏ dáng của mốc chỉ có `pose` là xoá mốc; `elbowLock` (mốc chưa có `elbow` thì lấy hướng khuỷu đang vẽ ở mốc; khoá không có tác dụng ở mốc thì thẻ
   báo); "ảnh hưởng tới …s" — ước: tới mốc kế của cùng tay, cùng món (chuỗi `auto` thêm một mốc), đồ theo tay còn kéo dài vài
-  khung do giới hạn tốc độ; JSON thô của mốc kèm nút chép (mở hay đóng giữ qua các lần vẽ lại thẻ); **Xoá mốc** (Del). Mốc tay cuối cùng của một người không xoá
+  khung do giới hạn tốc độ; mốc món của lần cầm tay theo đồ và mốc tay của lần cầm đồ theo tay có ô số **chỗ** `x`, `y`, `z` (tâm hộp bao của món, thế giới
+  rig, như vẽ ở giây của mốc) và **hướng** `quay`, `chúc`, `nghiêng` (độ, quanh trục đứng, ngang, tiến của người cầm; `0` là
+  trục x, y, z của món theo tiến, xuống, ngang trái) — sửa một ô (Enter, rời ô, mũi tên) là áp như thả tay nắm, xoay quanh
+  tâm món. Mốc món: chỗ ghi `at` hay `offset` bù tới khi tâm món ở đúng số, góc ghi `face` / `roll`. Mốc tay đồ theo tay:
+  quy ra dời tâm nắm, xoay bàn tay, ghi như tay nắm (`at` / `offset`, ý định `hold.face` / `hold.roll`); cổ tay kẹp thì món
+  xoay chưa tới, thanh trạng thái báo như tay nắm. Chỉ dời thì giữ hướng mốc
+  đang khai (hướng nhắm một đích như `holderFace` thì góc đổi theo chỗ); mốc `as`, `rest` chưa khai chỗ thành mốc khai chỗ và
+  hướng đang vẽ. Món không ở tay theo đồ ở giây ấy thì ô chỉ để xem; JSON thô của mốc kèm nút chép (mở hay đóng giữ qua các lần vẽ lại thẻ); **Xoá mốc** (Del). Mốc tay cuối cùng của một người không xoá
   được (`world.hands` không rỗng).
 - **Mốc studio thêm hay sửa** (dời, đổi `hold`, `elbowLock`) mà chưa khai `ease` thì ghi `ease: "auto"`; mốc đã khai `ease`
   giữ nguyên. Đổi `ease` chỉ qua thẻ mốc.

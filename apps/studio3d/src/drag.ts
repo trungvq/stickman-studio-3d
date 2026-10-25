@@ -15,8 +15,8 @@ import {
   type M3,
   type SceneRuntime,
 } from "@stickman3d/rig/core";
-import { charAt, drawnHand, palmAt, trunkAt } from "./drawn";
-import { movePoint, ringDir, toBody, turnBody, wrapDeg } from "./grab";
+import { charAt, drawnHand, itemFrame, palmAt, trunkAt } from "./drawn";
+import { angleFrame, bodyAngles, movePoint, ringDir, toBody, turnBody, wrapDeg } from "./grab";
 import {
   editKey,
   handsOf,
@@ -295,17 +295,18 @@ function itemPose(rt: SceneRuntime, item: string, t: number, id: string, c: ActC
 }
 
 /**
- * Tay nắm trên bàn tay theo đồ: dời `d`, xoay `R` **món** quanh tâm nắm, ghi vào mốc `items[]` ở `t` (chèn như ＋ nếu
- * chưa có). Xoay ghi `face`, `roll` trục khung món về vectơ hệ thân người cầm (bỏ `up`); chỗ (`at`, `offset`) bù tới khi
- * tâm món ở chỗ mới
+ * Mốc món `items[]` ở `t` của món tay `side` của `id` đang cầm theo đồ (chèn như ＋ nếu chưa có): `target` cho phép quay
+ * thế giới `R` áp lên khung món và chỗ muốn của tâm món, từ tư thế món và tâm nắm đang vẽ. Xoay ghi `face`, `roll` trục
+ * khung món về vectơ hệ thân người cầm (bỏ `up`); chỗ (`at`, `offset`) bù tới khi tâm món ở chỗ muốn. Mốc `as` thành mốc
+ * khai chỗ
  */
-export function dragItem(
+function editItem(
   raw: Json,
   rt: SceneRuntime,
   id: string,
   side: HandSide,
   t: number,
-  mv: Move,
+  target: (p0: { R: M3; at: V3 }, grip: V3) => { R?: M3; want: V3 },
   o: PlusOptions,
 ): DragResult {
   const rep = handReport(rt, id, side, t, o) ?? fail(`\`${id}\` không có \`world\``);
@@ -325,10 +326,17 @@ export function dragItem(
   const tk = trunkAt(brt, id, t, c)!;
   const p0 = itemPose(brt, item, t, id, c) ?? fail(`không thấy ${item} ở ${t.toFixed(2)} s`);
   const grip = drawnHand(brt, id, side, t, o)!.grip;
-  const R = mv.R ?? I3;
-  const want = movePoint(p0.at, grip, R, mv.d);
+  const t0 = target(p0, grip);
+  const notes: string[] = [];
+  const m0 = keyValue(base, key);
+  if (isObj(m0) && m0.as !== undefined)
+    notes.push(`bỏ \`as: "${m0.as}"\` của mốc: mốc khai chỗ, hướng`);
+  // mốc chưa khai chỗ (`as`, `rest` lấy chỗ thả) lấy hướng theo chỗ: khai chỗ thì ghi cả hướng đang vẽ
+  const bare = isObj(m0) && m0.at === undefined && m0.to === undefined;
+  const R = t0.R ?? (bare ? I3 : undefined);
+  const want = t0.want;
   let cur = base;
-  if (mv.R) {
+  if (R) {
     const R1 = matMul(R, p0.R);
     const face = toBody(matVec(R1, [0, 0, 1]), tk.Rr, -1).map(r4);
     const roll = toBody(matVec(R1, [0, 1, 0]), tk.Rr, -1).map(r4);
@@ -342,12 +350,115 @@ export function dragItem(
   const fit = fitPlace(cur, key, p0.at, want, measure, { Rr: tk.Rr, s: tk.s, out: -1 }, (m) => {
     delete m.point;
     delete m.rest;
+    delete m.as;
   });
-  const notes: string[] = [];
   if (fit.gap > PLUS_TOL) notes.push(`tâm món còn lệch chỗ thả ${fit.gap.toFixed(1)} px`);
-  const short = turnNote(mv.R, brt, fit.raw, id, side, t, o);
+  const short = turnNote(R, brt, fit.raw, id, side, t, o);
   if (short) notes.push(short);
   return { raw: fit.raw, key, added, notes, gap: fit.gap };
+}
+
+/** Tay nắm trên bàn tay theo đồ: dời `d`, xoay `R` **món** quanh tâm nắm (`editItem`) */
+export function dragItem(
+  raw: Json,
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  t: number,
+  mv: Move,
+  o: PlusOptions,
+): DragResult {
+  return editItem(
+    raw,
+    rt,
+    id,
+    side,
+    t,
+    (p0, grip) => ({ R: mv.R, want: movePoint(p0.at, grip, mv.R ?? I3, mv.d) }),
+    o,
+  );
+}
+
+/** Chỗ, hướng của món tay theo đồ ở `t` như vẽ: tâm hộp bao (thế giới rig), góc theo thân người cầm (`bodyAngles`) */
+export function itemPlace(
+  rt: SceneRuntime,
+  id: string,
+  item: string,
+  t: number,
+  char?: ActCharacter,
+): { at: V3; angles: V3 } | undefined {
+  const c = charAt(rt, id, t, char);
+  const tk = c && trunkAt(rt, id, t, c);
+  const p = c && itemPose(rt, item, t, id, c);
+  return tk && p ? { at: p.at, angles: bodyAngles(p.R, tk.Rr) } : undefined;
+}
+
+/**
+ * Ô số của thẻ mốc món: tâm món về `at` (thế giới rig), khung món về góc `angles` theo thân người cầm (`angleFrame`);
+ * trường bỏ trống giữ như đang vẽ, không có `angles` thì hướng của mốc không đổi
+ */
+export function placeItem(
+  raw: Json,
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  t: number,
+  to: { at?: V3; angles?: V3 },
+  o: PlusOptions,
+): DragResult {
+  const c = charAt(rt, id, t, o.char) ?? fail(`không có nhân vật của \`${id}\``);
+  const Rr = trunkAt(rt, id, t, c)!.Rr;
+  return editItem(
+    raw,
+    rt,
+    id,
+    side,
+    t,
+    (p0) => ({
+      ...(to.angles && { R: matMul(angleFrame(to.angles, Rr), transpose(p0.R)) }),
+      want: to.at ?? p0.at,
+    }),
+    o,
+  );
+}
+
+/** Chỗ, hướng của món tay `side` của `id` đang cầm ở `t` như vẽ (đồ theo tay): như `itemPlace` */
+export function heldPlace(
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  item: string,
+  t: number,
+  char?: ActCharacter,
+): { at: V3; angles: V3 } | undefined {
+  const f = itemFrame(rt, id, side, item, t, char);
+  const tk = f && trunkAt(rt, id, t, f.c);
+  return f && tk ? { at: f.at, angles: bodyAngles(f.R, tk.Rr) } : undefined;
+}
+
+/**
+ * Ô số của thẻ mốc tay đồ theo tay: món về tâm `at`, khung về góc `angles` như `placeItem`, quy ra dời tâm nắm và xoay bàn
+ * tay quanh tâm món rồi áp như tay nắm (`dragHand`: ý định `hold.face`, `hold.roll`, chỗ `at` / `offset`)
+ */
+export function placeHand(
+  raw: Json,
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  t: number,
+  to: { at?: V3; angles?: V3 },
+  o: PlusOptions,
+): DragResult {
+  const rep = handReport(rt, id, side, t, o) ?? fail(`\`${id}\` không có \`world\``);
+  if (rep.mode !== "hand" || !rep.run) fail("tay không ở lần cầm đồ theo tay ở giây này");
+  const f =
+    itemFrame(rt, id, side, rep.run!.item, t, o.char) ??
+    fail(`không thấy ${rep.run!.item} ở ${t.toFixed(2)} s`);
+  const Rr = trunkAt(rt, id, t, f.c)!.Rr;
+  const R = to.angles && matMul(angleFrame(to.angles, Rr), transpose(f.R));
+  const grip = drawnHand(rt, id, side, t, o)!.grip;
+  const g1 = movePoint(grip, f.at, R ?? I3, sub(to.at ?? f.at, f.at));
+  return dragHand(raw, rt, id, side, t, { d: sub(g1, grip), ...(R && { R }) }, o);
 }
 
 /**
