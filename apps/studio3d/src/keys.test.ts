@@ -288,6 +288,17 @@ describe("hold của thẻ mốc", () => {
       face: { axis: "front", toward: "up" },
       lạ: 2,
     });
+    // đổi biến thể: trường số ngoài miền biến thể mới kẹp vào miền (`slant` của `flat` 70 → `pinch` 60, `rim` 45)
+    const f: Json = { hold: { ...SHEET, variant: "flat", slant: 70.3, along: 0.3 } };
+    setHold(f, { item: "bang-gia", group: "sheet" });
+    expect(f.hold).toEqual({ ...SHEET, slant: 60, along: 0.3 });
+    setHold(f, { item: "bang-gia", group: "sheet", variant: "rim" });
+    expect(f.hold).toEqual({ ...SHEET, variant: "rim", slant: 45, along: 0.3 });
+    // kiểu cầm có tên tra miền theo `base`
+    const n: Json = { hold: { ...SHEET, variant: "flat", slant: -80 } };
+    const authored = { sheet: { "kep-mep": { base: "pinch" } } } as never;
+    setHold(n, { item: "bang-gia", group: "sheet", variant: "kep-mep" }, { authored });
+    expect(n.hold).toEqual({ ...SHEET, variant: "kep-mep", slant: -60 });
     setHold(b, null);
     expect(b.hold).toBeNull();
     setHold(b, undefined);

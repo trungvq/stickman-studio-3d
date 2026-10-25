@@ -2,11 +2,15 @@
 // lạ và dạng mốc tên `@tên±Δ`. Thanh tua của studio gọi chúng; README.md § Dáng tay.
 import {
   BEZIER_DEFAULT,
+  baseVariant,
   elbowRig,
+  GRIP_GROUPS,
   markTime,
   parseMarkRef,
   type EASE_NAMES,
+  type GroupSpec,
   type HandSide,
+  type HeldItemSpec,
   type M3,
 } from "@stickman3d/rig/core";
 
@@ -430,11 +434,35 @@ const GRIP = [
 ] as const;
 
 /**
- * Đổi `hold` của mốc tay: `undefined` bỏ khai, `null` buông. Chỗ cầm dạng object giữ ý định và trường lạ, đổi `item`,
- * `group`, `variant`; đổi món hay nhóm thì bỏ trường chỗ cầm của món × nhóm cũ (`part`, `edge`, `along`…). Dạng chuỗi (hay
- * chưa có) ghi chuỗi `món@nhóm/biến thể`
+ * Trường số của chỗ cầm `hold` ngoài miền của biến thể đang khai (`byVariant`: `slant` của `sheet` `pinch` [−60, 60], `flat`
+ * [−90, 90]…) thì kẹp vào miền ấy. Biến thể có tên của món tra miền theo `base` của nó trong `authored`
  */
-export function setHold(m: Json, h: HoldPick | null | undefined) {
+function clampToVariant(hold: Json, item?: Pick<HeldItemSpec, "authored">) {
+  const spec = (GRIP_GROUPS as Record<string, GroupSpec | undefined>)[hold.group as string];
+  if (!spec) return;
+  const v =
+    typeof hold.variant === "string"
+      ? baseVariant(item, spec, hold.variant)
+      : spec.choices.variant?.default;
+  for (const [key, c] of Object.entries(spec.choices)) {
+    const x = hold[key];
+    if (c?.kind !== "range" || typeof x !== "number") continue;
+    const [lo, hi] = (v && c.byVariant?.[v]) || [c.min, c.max];
+    if (x < lo || x > hi) hold[key] = Math.min(hi, Math.max(lo, x));
+  }
+}
+
+/**
+ * Đổi `hold` của mốc tay: `undefined` bỏ khai, `null` buông. Chỗ cầm dạng object giữ ý định và trường lạ, đổi `item`,
+ * `group`, `variant`; đổi món hay nhóm thì bỏ trường chỗ cầm của món × nhóm cũ (`part`, `edge`, `along`…), đổi biến thể thì
+ * kẹp trường số vào miền của biến thể mới (`clampToVariant`; `item` là món, cho kiểu cầm có tên). Dạng chuỗi (hay chưa có)
+ * ghi chuỗi `món@nhóm/biến thể`
+ */
+export function setHold(
+  m: Json,
+  h: HoldPick | null | undefined,
+  item?: Pick<HeldItemSpec, "authored">,
+) {
   if (h === undefined) delete m.hold;
   else if (h === null) m.hold = null;
   else if (isObj(m.hold)) {
@@ -442,6 +470,7 @@ export function setHold(m: Json, h: HoldPick | null | undefined) {
     Object.assign(m.hold, { item: h.item, group: h.group });
     if (h.variant) m.hold.variant = h.variant;
     else delete m.hold.variant;
+    clampToVariant(m.hold, item);
   } else m.hold = `${h.item}@${h.group}${h.variant ? `/${h.variant}` : ""}`;
 }
 

@@ -1821,11 +1821,16 @@ function reach(raw: Json, k: KeyRef): number | undefined {
 }
 
 /** Món, nhóm, biến thể cho phần `hold` của thẻ */
+/** Bản `held/<món>.json` của món (tên thể hiện `vali:2` tra món gốc) */
+function heldSpec(item: string): HeldItemSpec | undefined {
+  const held = cur?.data.held as Record<string, HeldItemSpec> | undefined;
+  return held?.[item] ?? held?.[rig.heldBase(item)];
+}
+
 function variantsOf(item: string, group: string) {
-  const held = cur!.data.held as Record<string, HeldItemSpec>;
   const base: readonly string[] =
     (rig.GROUP_VARIANTS as Record<string, readonly string[]>)[group] ?? [];
-  const spec = held[item] ?? held[rig.heldBase(item)];
+  const spec = heldSpec(item);
   const named = Object.entries(spec?.authored?.[group] ?? {})
     .filter(([n]) => !base.includes(n))
     .map(([name, a]) => ({ name, ...(a.note && { note: a.note }) }));
@@ -1949,7 +1954,7 @@ const cardHost = {
     editPicked((m) => {
       if (!m && h === undefined) return;
       const o = m ?? {};
-      setHold(o, h);
+      setHold(o, h, h ? heldSpec(h.item) : undefined);
       return o;
     });
   },
