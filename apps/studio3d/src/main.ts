@@ -1828,12 +1828,6 @@ function heldSpec(item: string): HeldItemSpec | undefined {
 }
 
 /** Món, nhóm, biến thể cho phần `hold` của thẻ */
-/** Bản `held/<món>.json` của món (tên thể hiện `vali:2` tra món gốc) */
-function heldSpec(item: string): HeldItemSpec | undefined {
-  const held = cur?.data.held as Record<string, HeldItemSpec> | undefined;
-  return held?.[item] ?? held?.[rig.heldBase(item)];
-}
-
 function variantsOf(item: string, group: string) {
   const base: readonly string[] =
     (rig.GROUP_VARIANTS as Record<string, readonly string[]>)[group] ?? [];
