@@ -102,6 +102,8 @@ interface Rib {
   lift: [inner: number, outer: number];
   /** Nét viền, lần nét thân */
   line: number;
+  /** Nửa sau nâng lên bấy nhiêu px mỗi px lùi sau trục thân; bỏ trống là `COLLAR_LEAN` */
+  lean?: number;
   /** Vạch gân trên vòng, mỗi `step` độ quanh trục cổ, nét `k` */
   ticks?: { step: number; k: number };
 }
@@ -483,7 +485,7 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
     },
     neckline: "round",
     marks: () => [],
-    rib: { width: 6, stand: 2, lift: [3, 0.3], line: 0.8 },
+    rib: { width: 6, stand: 0, lift: [1.2, 0.3], line: 0.8, lean: 0 },
   },
   shirt: {
     label: "Sơ mi dựng khối",
@@ -1461,6 +1463,7 @@ function buildTorso(c: CharacterData, yaw: number, stroke: number, lens?: LocalL
         [lerp(i[0], o[0], v), lerp(i[1], o[1], v)],
         lerp(liftIn, liftOut, v) * lerp(RIB_FRONT, 1, back),
         rib.stand * back * (1 - v) ** 2,
+        rib.lean,
       );
     };
     const ticks = rib.ticks && {

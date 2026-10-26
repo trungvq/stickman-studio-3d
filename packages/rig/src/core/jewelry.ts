@@ -1,6 +1,14 @@
 import { HUMAN_HEAD, humanSkull, SKULL3 } from "./humanHead";
 import { EarringsSchema, NecklaceSchema, type Earrings, type Necklace } from "./schema";
-import { GARMENT_STYLES, RIB_FRONT, type MarkFill, type SP, type Surface } from "./torso";
+import {
+  GARMENT_STYLES,
+  NECK_TUBE,
+  RIB_FRONT,
+  type MarkFill,
+  type SP,
+  type Surface,
+} from "./torso";
+import { necklineAt } from "./panel";
 import { gridTris, signedVolume } from "./wrap";
 import type { Vec3 } from "./sphere";
 
@@ -157,23 +165,61 @@ export function necklaceSolids(
   const color = (n.color ?? (pearl ? "#f4ede0" : "#d9b44a")) as MarkFill;
   const gem = (n.gem ?? color) as MarkFill;
   const rib = GARMENT_STYLES[s.g.style].rib;
-  // viền gân nổi khỏi mặt khối ở mép cổ trước: dây vắt qua viền thì nổi theo
-  const lift = r + NECKLACE_LIFT + (rib ? rib.lift[0] * RIB_FRONT : 0);
+  const neckY = necklineAt(s);
+  // đoạn dây nằm trên viền gân nổi theo viền ở góc ấy như `ribAt`, đoạn trong miệng cổ nằm sát da
+  const liftAt = (phi: number, [lon, y]: SP) => {
+    if (!rib) return r + NECKLACE_LIFT;
+    const back = Math.cos((phi * Math.PI) / 180) <= 0 ? 1 : Math.sin((phi * Math.PI) / 180) ** 2;
+    const on = Math.min(1, Math.max(0, (y - neckY(lon) + r) / r));
+    return r + NECKLACE_LIFT + on * rib.lift[0] * (RIB_FRONT + (1 - RIB_FRONT) * back);
+  };
   const inset = NECKLACE_INSET + r;
   const y0 = s.top(-inset);
   const xw = s.g.neck - inset;
   const k = n.pendant === "none" ? 1.3 : 1.7;
+  // ống cổ lùi sau và nở ở chân: sau gáy nó nhô khỏi mặt khối, dây lùi vào trong viền cổ thì chui vào ống cổ
+  const clear = NECK_TUBE.r * NECK_TUBE.flare * 100 + r + NECKLACE_LIFT;
+  const outside = (sp: SP) => {
+    const p = b.raise(sp, 0);
+    return Math.hypot(p[0], p[2] + NECK_TUBE.back * 100) >= clear;
+  };
+  // không đủ chỗ trong viền cổ thì dây vắt lên viền gân, tối đa hết bề rộng viền
+  const floor = -(rib?.width ?? 0);
+  const need = (phi: number) => {
+    if (outside(s.neck(phi, -inset))) return inset;
+    let [lo, hi] = [floor, inset];
+    for (let i = 0; i < 16; i++) {
+      const m = (lo + hi) / 2;
+      if (outside(s.neck(phi, -m))) lo = m;
+      else hi = m;
+    }
+    return lo;
+  };
+  // độ lùi sau gáy trơn theo `(−cos)^p`, `p` lớn nhất mà mọi góc vẫn tránh được ống cổ
+  const backs = Array.from({ length: 37 }, (_, i) => 90 + i * 2.5);
+  const needs = backs.map(need);
+  const low = Math.min(...needs);
+  const dip = (phi: number, p: number) =>
+    inset - (inset - low) * Math.max(0, -Math.cos((phi * Math.PI) / 180)) ** p;
+  const pow =
+    [16, 12, 8, 6, 4, 3, 2, 1.5, 1, 0.5].find((p) =>
+      backs.every((phi, i) => dip(phi, p) <= needs[i] + 0.05),
+    ) ?? 0;
   const at = (phi: number): SP => {
     const c = Math.cos((phi * Math.PI) / 180);
-    if (c <= 0) return s.neck(phi, -inset);
+    if (c <= 0) return s.neck(phi, -(rib ? dip(phi, pow) : inset));
     return s.at(xw * Math.sin((phi * Math.PI) / 180), y0 + n.drop * c ** k);
   };
   const NP = 180;
-  const sps = Array.from({ length: NP }, (_, i) => at(-180 + (360 * i) / NP));
-  const path = sps.map((sp) => b.raise(sp, lift));
-  const normal = (sp: SP, p: Vec3) => unit(sub(b.raise(sp, lift + 1), p));
+  const phis = Array.from({ length: NP }, (_, i) => -180 + (360 * i) / NP);
+  const sps = phis.map(at);
+  const lifts = sps.map((sp, i) => liftAt(phis[i], sp));
+  const path = sps.map((sp, i) => b.raise(sp, lifts[i]));
+  const normal = (sp: SP, l: number, p: Vec3) => unit(sub(b.raise(sp, l + 1), p));
   const out: { pts: Vec3[]; tris: number[]; color: MarkFill; ink: number }[] = [];
   const bottom: SP = s.at(0, y0 + n.drop);
+  // mặt dây treo ở giữa ngực
+  const lift = liftAt(0, bottom);
   if (pearl) {
     const len = [0];
     for (let i = 1; i <= NP; i++)
@@ -191,7 +237,7 @@ export function necklaceSolids(
       const c = add(p, [sub(q, p), u]);
       const t = unit(sub(q, p));
       // pháp tuyến vuông góc hướng dây: chỗ dây gãy dốc (hai bên cổ) hạt vẫn tròn, không méo thành bầu dục lún vào vai
-      const n0 = normal(sps[i - 1], p);
+      const n0 = normal(sps[i - 1], lifts[i - 1], p);
       const nm = unit(add(n0, [t, -dot(n0, t)]));
       const side = cross(t, nm);
       beads.push(
@@ -208,7 +254,7 @@ export function necklaceSolids(
     out.push({ ...mergeSolids(beads), color, ink: NECKLACE_INK.pearl });
   } else {
     out.push({
-      ...tube(path, r, 6, true, (i) => normal(sps[i], path[i])),
+      ...tube(path, r, 6, true, (i) => normal(sps[i], lifts[i], path[i])),
       color,
       ink: NECKLACE_INK.chain,
     });
@@ -230,7 +276,7 @@ export function necklaceSolids(
     if (!pearl) {
       // khoen nối mặt dây vào dây
       const P = b.raise(bottom, lift);
-      const nm = normal(bottom, P);
+      const nm = normal(bottom, lift, P);
       const br = r * 1.5;
       out.push({ ...ball(P, [br, 0, 0], [0, br, 0], sc(nm, br)), color, ink: NECKLACE_INK.chain });
     }

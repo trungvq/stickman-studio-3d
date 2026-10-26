@@ -260,7 +260,7 @@ export function arcLon(a: number, d: number, s: number): { lon: number; edge: bo
 }
 
 /** Viền cổ trên mặt khối theo kinh độ: `y` của viền cổ ở kinh độ `lon` */
-function necklineAt(s: Surface) {
+export function necklineAt(s: Surface) {
   const tab = Array.from({ length: 721 }, (_, i) => s.neck(-180 + i / 2)).map(([lon, y]): P2 => [
     ((((lon + 180) % 360) + 360) % 360) - 180,
     y,

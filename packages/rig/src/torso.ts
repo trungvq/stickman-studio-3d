@@ -33,9 +33,9 @@ export interface TorsoMesh {
    * Mảng tô trên mặt khối: điểm 3D và chỉ số tam giác, cạnh không dài quá `FILL_EDGE` px. `decal`: mảng áo
    * (`garment.panels`), vẽ như hình in — không ghi độ sâu, không vào nét bóng dáng của thân, lớp trên vẽ sau theo `lift`.
    * `skin`: mảng da của người mặc đồ, vật liệu da tay trần, ghi độ sâu. `ink`: nét nhạt (`Mark.ink`), hình in màu `fill` pha
-   * về màu thân bấy nhiêu
+   * về màu thân bấy nhiêu. `neck`: da trong miệng cổ, cùng vật liệu ống cổ — chỗ nối với cổ không có nét
    */
-  fills: { pts: Vec3[]; tris: number[]; fill: MarkFill; decal?: { lift: number; normals: Vec3[] }; skin?: boolean; ink?: number }[];
+  fills: { pts: Vec3[]; tris: number[]; fill: MarkFill; decal?: { lift: number; normals: Vec3[] }; skin?: boolean; ink?: number; neck?: boolean }[];
   dots: { p: Vec3; k: number }[];
   /** Tấm nổi khối (cổ bẻ, viền gân, mũ trùm, dải cổ chéo): lưới cột × hàng, hàng `rims` có nét viền */
   sheets: { grid: Vec3[][]; rims: number[]; color: MarkFill; line: number }[];
@@ -90,6 +90,10 @@ function simplify(poly: P2[], tol: number): P2[] {
 
 /** Đồ dựng khối ở socket `neck` bám thân áo: khăn vắt vai màu `color`, kính gài nẹp, dây chuyền */
 export interface NeckWear { drape?: Partial<Drape>; shades?: Partial<Shades>; necklace?: Partial<Necklace>; color: string }
+
+/** Da trong miệng cổ: nổi khỏi mặt khối bấy nhiêu px (dưới mép trong viền gân), số hàng mặt bên và số vòng nắp */
+const NECK_SKIN = { lift: 0.3, rows: 6 } as const;
+const lerp3 = (p: Vec3, q: Vec3, t: number): Vec3 => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t, p[2] + (q[2] - p[2]) * t];
 
 /**
  * `arm` có là người `clad`: vát vai `cladSlope`, sườn áo lùi theo `cladProfile`. `neck`: khăn vắt vai, kính gài nẹp
@@ -352,9 +356,34 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
         [lerp(i[0], o[0], v), lerp(i[1], o[1], v)],
         lerp(liftIn, liftOut, v) * lerp(RIB_FRONT, 1, back),
         rib.stand * back * (1 - v) ** 2,
+        rib.lean,
       );
     };
     sheet(curve(NU, (u) => curve(NV, (v) => ribAt(360 * u, v))), [0, NV], "color", rib.line);
+  }
+
+  // miệng cổ viền gân của người mặc đồ lộ da: mặt khối từ viền cổ lên đỉnh và nắp đỉnh khối, dưới viền gân
+  if (arm && def.rib) {
+    const ring = curve(NU, (u) => surf.neck(360 * u - 180));
+    const yTop = pts[0][1];
+    const side = ring.map(([lon, y]) => curve(NECK_SKIN.rows, (v) => raise([lon, lerp(y, yTop, v)], NECK_SKIN.lift, 0, 0)));
+    const rim = side.map((col) => col[col.length - 1]);
+    const c: Vec3 = [0, Math.min(...rim.map((p) => p[1])), rim.reduce((z, p) => z + p[2], 0) / rim.length];
+    const grid = side.map((col, i) => [...col, ...curve(NECK_SKIN.rows, (v) => lerp3(rim[i], c, v)).slice(1)]);
+    const rows = grid[0].length;
+    const tris: number[] = [];
+    for (let i = 0; i < NU; i++)
+      for (let j = 0; j + 1 < rows; j++) {
+        const [a, b, d, e] = [i * rows + j, (i + 1) * rows + j, (i + 1) * rows + j + 1, i * rows + j + 1];
+        tris.push(a, b, d, a, d, e);
+      }
+    const flat = grid.flat();
+    // quấn ra ngoài khối như mảng da của `panels` (hệ thân `y` xuống): đo ở ô giữa ngực, hàng dưới
+    const [A, B, C] = [0, rows, rows + 1].map((k) => flat[(NU / 2) * rows + k]);
+    const u = [B[0] - A[0], B[1] - A[1], B[2] - A[2]], w = [C[0] - A[0], C[1] - A[1], C[2] - A[2]];
+    if ((u[1] * w[2] - u[2] * w[1]) * A[0] + (u[0] * w[1] - u[1] * w[0]) * A[2] > 0)
+      for (let k = 0; k < tris.length; k += 3) [tris[k + 1], tris[k + 2]] = [tris[k + 2], tris[k + 1]];
+    out.fills.push({ pts: flat, tris, fill: 'skin', skin: true, neck: true });
   }
 
   const hood = def.hood;

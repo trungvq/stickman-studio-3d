@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { act, type Acting } from './act';
 import { roots3 } from './core/act3';
 import { defaultCharacter, parseCharacter, type Garment } from './core/schema';
-import { garmentOf, lerpAt } from './core/torso';
+import { garmentOf, lerpAt, NECK_TUBE } from './core/torso';
 import { signedVolume } from './core/wrap';
 import { fromCharacter, hangJewelry, R, type CharacterJson, type Figure } from './stickman';
 import { torsoMesh } from './torso';
@@ -82,7 +82,16 @@ describe('dây chuyền', () => {
   it('chân cổ trong viền cổ áo: dây hai bên không ra ngoài viền', () => {
     for (const style of STYLES) {
       const { parts, g } = necklace(style, { pendant: 'none' });
-      expect(Math.max(...parts[0].pts.map((p) => Math.abs(p[0]))), style).toBeLessThan(g.neck);
+      const front = parts[0].pts.filter((p) => p[2] >= 0);
+      expect(Math.max(...front.map((p) => Math.abs(p[0]))), style).toBeLessThan(g.neck);
+    }
+  });
+
+  it('sau gáy dây viền gân không chui vào ống cổ: thiếu chỗ trong viền thì vắt lên viền', () => {
+    for (const style of ['tshirt', 'sweater'] as const) {
+      const { parts } = necklace(style, { pendant: 'none' });
+      const near = Math.min(...parts[0].pts.filter((p) => p[2] < 0).map((p) => Math.hypot(p[0], p[2] + NECK_TUBE.back * 100)));
+      expect(near, style).toBeGreaterThan(NECK_TUBE.r * NECK_TUBE.flare * 100);
     }
   });
 

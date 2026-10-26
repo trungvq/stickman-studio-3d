@@ -242,6 +242,14 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
     g.setIndex(f.tris);
     if (f.decal) g.setAttribute('normal', new THREE.Float32BufferAttribute(f.decal.normals.flatMap(([x, y, z]) => [x, -y, z]), 3));
     else g.computeVertexNormals();
+    // da trong miệng cổ cùng vật liệu ống cổ: không nét hậu kỳ ở chỗ nối với cổ, mép dưới nằm dưới viền gân
+    if (f.neck && skin) {
+      const sm = new THREE.Mesh(g, npr({ ...skinLook(skin), doubleSided: true }));
+      sm.userData.noShadow = true;
+      sm.userData.noCollide = true;
+      add(sm);
+      continue;
+    }
     if (f.skin && skinInk) {
       const sm = new THREE.Mesh(g, skinInk);
       sm.userData.noShadow = true;

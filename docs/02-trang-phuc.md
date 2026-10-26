@@ -1118,17 +1118,22 @@ Không có chỏm vai: tay áo là mảnh riêng bám que tay.
   tới `lift[1]` ở mép dưới: mép dưới là đường may sát mặt vải, nên chỗ vòng cắt viền bóng
   không thành nêm. Mép cổ dựng thêm `stand` px ở nửa sau; cả độ dựng lẫn độ nổi nhạt dần
   theo `sin²` về giữa ngực, độ dựng về `0`, độ nổi về `0.3` lần (`RIB_FRONT`) — mép cổ trước
-  nổi cao là bị đầu che; nhạt theo `|sin|` thì mép cổ gãy nhọn ở giữa ngực. Nửa sau nâng theo
-  `COLLAR_LEAN` như cổ bẻ: nhìn nghiêng mép vòng gồ lên sau gáy. Vòng chia hai lớp theo cả cột
+  nổi cao là bị đầu che; nhạt theo `|sin|` thì mép cổ gãy nhọn ở giữa ngực. Nửa sau nâng `lean` px mỗi px lùi sau
+  trục (bỏ trống là `COLLAR_LEAN` như cổ bẻ): nhìn nghiêng mép vòng gồ lên sau gáy. Áo phông viền nằm sát quanh chân cổ,
+  không dựng, không nâng. Vòng chia hai lớp theo cả cột
   quanh cổ, không theo từng ô, và không bỏ phần khuất trước ngực vì hai nửa đối xứng. Mép dưới là nét viền dày gấp đôi `line` dưới ruột;
   mép cổ ở nửa quay ra người xem là nét giữa `line` đè lên ruột, vì nửa nét phía trên nằm
   dưới đầu. Vạch gân (`ticks`) mỗi `step` độ quanh trục cổ, từ `0.2` tới `0.8` bề rộng vòng,
   chỉ vẽ ở chỗ quay ra người xem ít nhất `0.5`: sát viền bóng vòng chỉ còn một dải mỏng.
 
-  | Kiểu | `width` | `stand` | `lift` | `line` | Vạch gân |
-  |---|---:|---:|---|---:|---|
-  | `tshirt` | 6 | 2 | 3 → 0.3 | 0.8 | |
-  | `sweater` | 8 | 4 | 4.5 → 0.4 | 0.78 | mỗi 15°, nét 0.56 |
+  | Kiểu | `width` | `stand` | `lift` | `lean` | `line` | Vạch gân |
+  |---|---:|---:|---|---:|---:|---|
+  | `tshirt` | 6 | 0 | 1.2 → 0.3 | 0 | 0.8 | |
+  | `sweater` | 8 | 4 | 4.5 → 0.4 | `COLLAR_LEAN` | 0.78 | mỗi 15°, nét 0.56 |
+
+  **Da trong miệng cổ viền gân.** Người 3D mặc đồ (`palette.clad`) có lưới màu da phủ mặt khối từ viền cổ lên mép trên
+  khối và nắp đỉnh khối, nổi `0.3` px (`NECK_SKIN`, dưới mép cổ của viền gân): miệng cổ áo lộ da chứ không phải màu áo.
+  Lưới dùng chính vật liệu ống cổ, không nét hậu kỳ: chỗ nối với cổ liền, mép dưới khuất dưới nét mép cổ của viền gân.
 - **Mũ trùm nổi khối** (`hood` của kiểu) là một tấm lưới dải hở, từ đuôi vạt `+x` vòng qua
   lưng tới đuôi vạt `−x`. Mép cổ là viền cổ chữ V, nửa sau trễ xuống `neckBack`. Mỗi vạt
   vắt qua giữa ngực `tuck` độ quanh trục cổ: mép cổ chữ V đi thẳng tiếp xuống nên hai vạt
@@ -1442,11 +1447,16 @@ thấp nhất. Màu ở chính `necklace`, không đọc `neck.color` (màu khă
 | `gem` | màu dây | Màu mặt dây |
 
 - **Theo viền cổ áo đang mặc.** Sau gáy và hai bên, dây chạy theo viền cổ (`Surface.neck`) lùi vào trong `NECKLACE_INSET`
-  (`1.2` px cộng bán kính dây): nằm trên da giữa cổ và mép cổ, trong viền gân của áo phông, dưới chân cổ bẻ của sơ mi. Phía
+  (`1.2` px cộng bán kính dây): nằm trên da giữa cổ và mép cổ, trong viền gân của áo phông, dưới chân cổ bẻ của sơ mi. Ống
+  cổ (`NECK_TUBE`) lùi sau và nở ở chân nên sau gáy nó nhô khỏi mặt khối: với áo viền gân, chỗ nào tâm dây không cách trục
+  ống cổ được bán kính ống ở chân cộng bán kính dây và `NECKLACE_LIFT` thì dây lùi ít hơn, thiếu nữa thì vắt lên viền gân
+  (tối đa hết bề rộng viền). Độ lùi sau gáy đi trơn theo `(−cos φ)^p` với `p` lớn nhất mà mọi góc vẫn tránh được ống cổ,
+  nên dây võng nhẹ qua viền ở giữa lưng thay vì gãy khấc. Phía
   trước dây võng theo `cos^k` của góc quanh cổ (`k` `1.7` có mặt dây, `1.3` không), cùng một vòng cho cổ U, cổ V, cổ vuông:
   cổ vuông thì dây nằm trong khoảng hở, cổ V hẹp thì dây vắt qua vạt, cổ bẻ, lá sen che chỗ chúng phủ.
-- Mỗi điểm dây nổi khỏi mặt khối bán kính dây cộng `NECKLACE_LIFT` (`0.35` px), thêm độ nổi viền gân ở giữa ngực
-  (`rib.lift[0]·RIB_FRONT`) để dây vắt qua viền không chìm. Khối cứng trong nhóm thân: cúi chào thì dây theo thân, không
+- Mỗi điểm dây nổi khỏi mặt khối bán kính dây cộng `NECKLACE_LIFT` (`0.35` px). Đoạn dây nằm trên viền gân (tâm dây
+  thấp hơn viền cổ quá một bán kính dây về phía trong, chuyển dần trong một bán kính) nổi thêm độ nổi mép cổ của viền ở góc
+  ấy (`rib.lift[0]`, nhạt về `RIB_FRONT` ở giữa ngực như viền) để dây vắt qua viền không chìm. Khối cứng trong nhóm thân: cúi chào thì dây theo thân, không
   rủ khỏi ngực.
 - **Cỡ hơi to hơn thật**: dây thật một hai ly còn chưa tới một điểm ảnh ở trung cảnh; dây mặc định dày `1.5` px, mặt dây
   bán kính `3.6` px, hạt ngọc `1.9` px để đọc được như hoạt hình. Cận ngực muốn mảnh hơn thì hạ `thick`, `size`.
