@@ -4,6 +4,7 @@ import {
   actHeld,
   actPalms,
   BODY3,
+  bodyMarkAt,
   equipCharacter,
   handReport,
   heldBase,
@@ -16,6 +17,7 @@ import {
   yawFrame,
   type ActCharacter,
   type ActInput,
+  type BodyMark,
   type CharacterData,
   type Equip,
   type HandSide,
@@ -103,6 +105,30 @@ export function palmAt(
   const c = charAt(rt, id, t, char);
   const p = c && actPalms(c, poseOf(rt, id, t))?.[side === "right" ? "R" : "L"];
   return p && { palm: [...p.palm] as V3, finger: [...p.finger] as V3 };
+}
+
+/**
+ * Điểm đích theo mốc thân của tay `side` (`bodyMarkAt`, gồm `offset`) trên người `id` như vẽ ở `t`, thế giới rig: chỗ `point`
+ * của mốc nhắm tới
+ */
+export function markPoint(
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  t: number,
+  ref: { to: string; side?: "same" | "other"; offset?: readonly number[] },
+  char?: ActCharacter,
+): V3 | undefined {
+  const c = charAt(rt, id, t, char);
+  const p =
+    c &&
+    bodyMarkAt(
+      c,
+      poseOf(rt, id, t),
+      { ...ref, to: ref.to as BodyMark },
+      side === "right" ? "R" : "L",
+    );
+  return p && ([...p] as V3);
 }
 
 /** Thân người `id` ở `t` (`holderTrunk`): `Rr` (three) cho vectơ hệ thân, `s` là `world.s` */

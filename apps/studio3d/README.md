@@ -311,7 +311,9 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi trac
   Mốc vừa sửa mở thẻ; một lần kéo là một bước lịch sử.
   - **Tay nắm** (TransformControls ở tâm nắm; HUD góc trên khung, **T** dời theo trục thế giới, **Y** xoay theo trục của
     bàn tay hay món). Đồ theo tay, tay tự do sửa mốc tay: dời ghi `at` (mốc theo mốc thân `to` thì `offset`), bù tới khi tâm
-    nắm ở đúng chỗ thả; xoay quanh tâm nắm ghi ý định món `hold.face`, `hold.roll` (trục khung món `[0, 0, 1]`, `[0, 1, 0]` về
+    nắm ở đúng chỗ thả. Bộ bù (`fitPoint`) chặn mỗi bước ở `FIT_STEP` và kéo đích về sát chỗ bàn tay vẽ ra hết mức mà lệch
+    không tăng: thả sát hay quá tầm với thì đích là điểm bàn tay với tới, không chạy ra xa; đích còn cách tâm nắm quá 5 px
+    thì thanh trạng thái báo "ngoài tầm với"; xoay quanh tâm nắm ghi ý định món `hold.face`, `hold.roll` (trục khung món `[0, 0, 1]`, `[0, 1, 0]` về
     vectơ hệ thân, ngang ra ngoài phía tay ấy, như ＋) cho đồ theo tay, `palm` + `fingers` (vectơ hệ thân, bỏ `bend`) cho tay
     tự do. Tay theo đồ (theo mốc, hai tay) sửa mốc món `items[]` ở giây ấy: dời, xoay **món** quanh tâm nắm, hướng ghi `face`,
     `roll` trục khung món về vectơ hệ thân người cầm (ngang phải, bỏ `up`), chỗ ghi `at` hay `offset` bù tới khi tâm món ở
@@ -361,7 +363,10 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi trac
   `variant`, đổi món hay nhóm thì bỏ trường chỗ cầm cũ `part`, `edge`, `along`…, giữ ý định và trường lạ; đổi món thì
   trang thử nhóm đang chọn rồi lần lượt các nhóm khác, áp nhóm đầu tiên mà cảnh giải được tay ở mốc, không nhóm nào được
   thì không áp và báo lỗi); **dáng ngón** `pose` (theo hành động / dáng của thư viện / dáng có sẵn) kèm ô `w` (bỏ trống là
-  `1`) — mốc có `hold` hay mốc `null` thì tắt, bỏ dáng của mốc chỉ có `pose` là xoá mốc; `elbowLock` (mốc chưa có `elbow` thì lấy hướng khuỷu đang vẽ ở mốc; khoá không có tác dụng ở mốc thì thẻ
+  `1`) — mốc có `hold` hay mốc `null` thì tắt, bỏ dáng của mốc chỉ có `pose` là xoá mốc; mốc tay khai `at` (điểm thế
+  giới, đứng yên khi người dời) mà `world.path` đổi chỗ hay hướng trong quãng mốc còn hiệu lực (`worldAtMoves`: tới mốc
+  kế của tay ấy, hay hết cảnh) thì thẻ nhắc kèm giây người dời và nút **Đổi sang mốc thân (hip)**: ghi `to: "hip"` +
+  `offset`, `point: "grip"`, `elbow` quay về hệ thân, tâm nắm ở giây của mốc giữ nguyên (`anchorHand`); `elbowLock` (mốc chưa có `elbow` thì lấy hướng khuỷu đang vẽ ở mốc; khoá không có tác dụng ở mốc thì thẻ
   báo); "ảnh hưởng tới …s" — ước: tới mốc kế của cùng tay, cùng món (chuỗi `auto` thêm một mốc), đồ theo tay còn kéo dài vài
   khung do giới hạn tốc độ; mốc món của lần cầm tay theo đồ và mốc tay của lần cầm đồ theo tay có ô số **chỗ** `x`, `y`, `z` (tâm hộp bao của món, thế giới
   rig, như vẽ ở giây của mốc) và **hướng** `quay`, `chúc`, `nghiêng` (độ, quanh trục đứng, ngang, tiến của người cầm; `0` là

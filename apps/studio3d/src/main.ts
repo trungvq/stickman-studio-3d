@@ -35,7 +35,7 @@ import {
   type ClipRef,
   type RestHit,
 } from "./clips";
-import { heldPlace, itemPlace, placeHand, placeItem } from "./drag";
+import { anchorHand, heldPlace, itemPlace, placeHand, placeItem } from "./drag";
 import { drawnHand, drawnItem } from "./drawn";
 import { GraspEditor, sceneHigh, type EditScene, type EditTarget } from "./editor";
 import { freeCam, type WheelMode } from "./freecam";
@@ -71,6 +71,7 @@ import {
   setHold,
   timeOf,
   touch,
+  worldAtMoves,
   type Ease,
   type HoldPick,
   type Json,
@@ -1908,6 +1909,7 @@ function cardOf(k: KeyRef): CardModel | null {
     ...(k.kind === "item"
       ? placeOf(row, tt)
       : m && !rest && run?.mode === "hand" && !run.lead && handPlaceOf(k.id, k.side, run.item, tt)),
+    ...anchorOf(raw, k),
     items,
     groups: rig.GROUP_IDS,
     variants: variantsOf,
@@ -1920,6 +1922,15 @@ function cardOf(k: KeyRef): CardModel | null {
         : []),
       ...(added && sameKey(added.key, k) ? added.notes : []),
     ],
+  };
+}
+
+/** Mốc tay `at` còn hiệu lực lúc người dời, quay (`worldAtMoves`): lời nhắc của thẻ */
+function anchorOf(raw: Json, k: KeyRef): Pick<CardModel, "anchor"> {
+  const mv = worldAtMoves(raw, k);
+  if (!mv) return {};
+  return {
+    anchor: `đích \`at\` là điểm thế giới, đứng yên khi người dời (từ ${mv.t.toFixed(2)} s)${mv.turn === undefined ? "" : `, quay (từ ${mv.turn.toFixed(2)} s)`} trong lúc mốc còn hiệu lực: tay lệch khỏi thân — đổi sang đích theo mốc thân để tay đi theo người`,
   };
 }
 
@@ -1997,6 +2008,23 @@ const cardHost = {
         c.opts(id),
       );
       return { raw: r.raw, key: r.key, say: [`đã ${what} (số)`, ...r.notes].join(" · ") };
+    });
+    if (!ok) {
+      say("đang áp thao tác trước: thử lại", true);
+      syncEdit();
+    }
+  },
+  anchor() {
+    if (!work || picked?.kind !== "hand") return;
+    const k = picked;
+    const tt = keyTime(work.raw, k);
+    const ok = grab.run("đổi sang mốc thân", (c) => {
+      const r = anchorHand(c.raw, c.rt, k.id, k.side, tt, c.opts(k.id));
+      return {
+        raw: r.raw,
+        key: r.key,
+        say: ["đã đổi đích sang mốc thân hip", ...r.notes].join(" · "),
+      };
     });
     if (!ok) {
       say("đang áp thao tác trước: thử lại", true);

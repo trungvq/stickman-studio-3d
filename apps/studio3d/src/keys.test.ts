@@ -20,6 +20,7 @@ import {
   setHold,
   timeOf,
   touch,
+  worldAtMoves,
   type Json,
 } from "./keys";
 
@@ -428,5 +429,42 @@ describe("lịch sử chung (history.ts)", () => {
     expect(travel(s, false, "a", () => false)).toBe(false);
     expect(s).toEqual({ undo: [], redo: ["b"] });
     expect(travel(s, true, "a", () => true)).toBe(false);
+  });
+});
+
+describe("mốc `at` lúc người dời (worldAtMoves)", () => {
+  const raw = (): Json => ({
+    marks: { quay: 1.5 },
+    cast: [
+      {
+        id: "a",
+        world: {
+          path: [
+            { t: 0, at: [0, 0, 0], yaw: 112 },
+            { t: 0.45, at: [-26, 0, -65], yaw: 112 },
+            { t: "@quay", at: [-26, 0, -65], yaw: 112 },
+            { t: 1.85, at: [-26, 0, -65], yaw: 283 },
+          ],
+          hands: [
+            { t: 0, left: { at: [5, -170, 40], point: "grip" }, right: null },
+            { t: 0.6, right: { at: [5, -170, 40] } },
+            { t: 1, right: { to: "hip", offset: [0, 10, 20] } },
+            { t: 2, left: { at: [5, -170, 40] } },
+          ],
+        },
+      },
+    ],
+  });
+  const ref = (side: "left" | "right", index: number) =>
+    ({ kind: "hand", id: "a", side, index }) as const;
+
+  it("đi rồi quay trong quãng mốc: giây bắt đầu đi, giây bắt đầu quay (mốc tên)", () => {
+    expect(worldAtMoves(raw(), ref("left", 0))).toEqual({ t: 0, turn: 1.5 });
+  });
+
+  it("quãng mốc chỉ có người đứng yên, mốc theo mốc thân, mốc sau khi quay: không nhắc", () => {
+    expect(worldAtMoves(raw(), ref("right", 1))).toBeUndefined();
+    expect(worldAtMoves(raw(), ref("right", 2))).toBeUndefined();
+    expect(worldAtMoves(raw(), ref("left", 3))).toBeUndefined();
   });
 });

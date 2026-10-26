@@ -69,17 +69,22 @@ function solve3(J: number[][], b: V3): V3 {
   return [col(0) / d, col(1) / d, col(2) / d];
 }
 
+/** Bước dài nhất của `fitPoint` (đơn vị rig): đích ngoài tầm với làm Jacobian suy biến, bước không chặn thì nhảy ra xa vô cực */
+export const FIT_STEP = 200;
+
 /**
  * `x` để `got(x)` ra `want`, bắt đầu từ `x0`: Broyden, Jacobian đầu là đơn vị (đích về đúng chỗ), co lại theo phần hoà khi
- * tay đang hoà. Trả `x` tốt nhất đã thử
+ * tay đang hoà. `x` và `got(x)` cùng là một điểm (đích và chỗ nó vẽ ra). Trả `x` tốt nhất đã thử, kéo về phía `got(x)` hết
+ * mức mà lệch không tăng: đích ngoài tầm với thì về sát chỗ bàn tay với tới
  */
 export function fitPoint(
   x0: V3,
   want: V3,
   got: (x: V3) => V3 | undefined,
-  o: { steps?: number; tol?: number } = {},
+  o: { steps?: number; tol?: number; maxStep?: number } = {},
 ): V3 {
   const tol = o.tol ?? 0.02;
+  const cap = o.maxStep ?? FIT_STEP;
   const J = [
     [1, 0, 0],
     [0, 1, 0],
@@ -88,9 +93,11 @@ export function fitPoint(
   let x = x0;
   let f = got(x);
   if (!f) return x0;
-  let best = { x, e: dist(f, want) };
+  let best = { x, f, e: dist(f, want) };
   for (let i = 0; i < (o.steps ?? 8) && best.e > tol; i++) {
-    const dx = solve3(J, sub(want, f));
+    let dx = solve3(J, sub(want, f));
+    const len = Math.hypot(...dx);
+    if (len > cap) dx = dx.map((v) => (v * cap) / len) as V3;
     const x1 = [x[0] + dx[0], x[1] + dx[1], x[2] + dx[2]] as V3;
     const f1 = got(x1);
     if (!f1) break;
@@ -102,7 +109,28 @@ export function fitPoint(
       for (let c = 0; c < 3; c++) J[r][c] += ((df[r] - Jdx[r]) * dx[c]) / n;
     [x, f] = [x1, f1];
     const e = dist(f, want);
-    if (e < best.e) best = { x, e };
+    if (e < best.e) best = { x, f, e };
+  }
+  return pullBack(best, want, got, tol);
+}
+
+/**
+ * Đích `best.x` cách chỗ vẽ ra `best.f` quá `tol`: thử đích dời về phía `best.f` (hết, rồi nửa đường…), nhận bản gần `best.f`
+ * nhất mà lệch `want` không quá `max(best.e, tol) + tol`. Tay đang hoà thì đích phải lệch chỗ vẽ ra: các bản gần hơn lệch
+ * tăng, giữ `best.x`
+ */
+function pullBack(
+  best: { x: V3; f: V3; e: number },
+  want: V3,
+  got: (x: V3) => V3 | undefined,
+  tol: number,
+): V3 {
+  if (dist(best.x, best.f) <= tol) return best.x;
+  const limit = Math.max(best.e, tol) + tol;
+  for (const k of [0, 1 / 64, 1 / 16, 1 / 4, 1 / 2]) {
+    const x = best.f.map((v, i) => v + (best.x[i] - v) * k) as V3;
+    const f = got(x);
+    if (f && dist(f, want) <= limit) return x;
   }
   return best.x;
 }

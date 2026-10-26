@@ -15,7 +15,7 @@ import {
   type M3,
   type SceneRuntime,
 } from "@stickman3d/rig/core";
-import { charAt, drawnHand, itemFrame, palmAt, trunkAt } from "./drawn";
+import { charAt, drawnHand, itemFrame, markPoint, palmAt, trunkAt } from "./drawn";
 import { angleFrame, bodyAngles, movePoint, ringDir, toBody, turnBody, wrapDeg } from "./grab";
 import {
   editKey,
@@ -172,9 +172,110 @@ function handBase(
   return { raw: r.raw, rt: o.rebuild(r.raw), key: r.key, added: true, notes: r.notes };
 }
 
+/** Đích mốc tay cách tâm nắm vẽ ra quá chừng này (đơn vị rig) thì báo: bàn tay không với tới, chỉ duỗi về phía đích */
+const REACH_FAR = 5;
+
+/**
+ * Đích thật của mốc tay `key` ở `t` (thế giới rig) khi `point` là tâm nắm: `at`, hay mốc thân `to` + `offset`
+ * (`markPoint`); điểm khác hay mốc không có đích thì `undefined`
+ */
+function handTarget(
+  raw: Json,
+  key: KeyRef,
+  rt: SceneRuntime,
+  t: number,
+  char?: ActCharacter,
+): V3 | undefined {
+  const v = keyValue(raw, key);
+  if (key.kind !== "hand" || !isObj(v) || v.point !== "grip") return undefined;
+  if (Array.isArray(v.at)) return [...(v.at as number[])] as V3;
+  if (typeof v.to !== "string") return undefined;
+  return markPoint(
+    rt,
+    key.id,
+    key.side,
+    t,
+    {
+      to: v.to,
+      ...(v.side === "other" && { side: "other" as const }),
+      ...(Array.isArray(v.offset) && { offset: v.offset as number[] }),
+    },
+    char,
+  );
+}
+
+/** Đích mốc tay cách tâm nắm vẽ ra quá `REACH_FAR` (ngoài tầm với) mà tay không đang hoà: dòng báo */
+function reachNote(
+  raw: Json,
+  key: KeyRef,
+  t: number,
+  o: PlusOptions,
+  id: string,
+  side: HandSide,
+  blending: boolean,
+): string | undefined {
+  if (blending) return undefined;
+  const rt = o.rebuild(raw);
+  const at = handTarget(raw, key, rt, t, o.char);
+  const grip = drawnHand(rt, id, side, t, o)?.grip;
+  const d = at && grip ? dist(at, grip) : 0;
+  return d > REACH_FAR
+    ? `đích cách tâm nắm ${d.toFixed(1)} px: ngoài tầm với, bàn tay chỉ duỗi về phía đích — người dời, quay thì tay lệch`
+    : undefined;
+}
+
+/**
+ * Mốc tay khai `at` (thế giới) ở `t` thành đích theo mốc thân `to` (`mark`) + `offset`, tâm nắm ở `t` giữ như đang vẽ:
+ * đích đi theo người khi người dời, quay. `elbow` của mốc quay từ thế giới về hệ thân, `point` thành tâm nắm
+ */
+export function anchorHand(
+  raw: Json,
+  rt: SceneRuntime,
+  id: string,
+  side: HandSide,
+  t: number,
+  o: PlusOptions,
+  mark = "hip",
+): DragResult {
+  const key = handKeyAt(raw, id, side, t) ?? fail(`không có mốc tay ở ${t.toFixed(2)} s`);
+  const v = keyValue(raw, key);
+  if (!isObj(v) || !Array.isArray(v.at)) fail("mốc không khai `at`");
+  const d0 = drawnHand(rt, id, side, t, o) ?? fail(`\`${id}\` không có \`world\``);
+  const tk = trunkAt(rt, id, t, o.char) ?? fail(`không có nhân vật của \`${id}\``);
+  const out = outOf(side);
+  const cur = editKey(raw, key, (m) => {
+    const x = m!;
+    delete x.at;
+    x.to = mark;
+    x.offset = [0, 0, 0];
+    x.point = "grip";
+    if (Array.isArray(x.elbow)) x.elbow = rigElbowBody(tk.Rr, out, x.elbow as number[]).map(r4);
+    touch(x);
+  });
+  const origin =
+    handTarget(cur, key, o.rebuild(cur), t, o.char) ?? fail(`không tính được chỗ mốc \`${mark}\``);
+  const measure = (r: Json) => drawnHand(o.rebuild(r), id, side, t, o)?.grip;
+  const fit = fitPlace(
+    cur,
+    key,
+    origin,
+    d0.grip,
+    measure,
+    { Rr: tk.Rr, s: tk.s, out, origin },
+    () => {},
+  );
+  const notes =
+    fit.gap > PLUS_TOL
+      ? [`tâm nắm lệch hình cũ ${fit.gap.toFixed(1)} px (ngoài tầm với hay cổ tay kẹp)`]
+      : [];
+  return { raw: fit.raw, key, added: false, notes, gap: fit.gap };
+}
+
 /**
  * Bù trường chỗ của mốc `key` để `measure` ra `want`. Trường là `at` (mốc có `at`, hay chưa có chỗ) hay `offset` (mốc
- * theo mốc thân `to`); `x` là điểm thế giới rig, trường đổi theo `x − x0` (`offset` qua hệ thân `Rr`, chia `s`), rồi Broyden
+ * theo mốc thân `to`); `x` là điểm thế giới rig, trường đổi theo `x − origin` (`offset` qua hệ thân `Rr`, chia `s`), rồi
+ * Broyden. `origin` là điểm trường hiện có nhắm tới (đích thật của mốc), không biết thì `x0`: có nó thì `x` là đích thật
+ * và đích ngoài tầm với được kéo về sát chỗ vẽ ra (`fitPoint`)
  */
 function fitPlace(
   raw: Json,
@@ -182,7 +283,7 @@ function fitPlace(
   x0: V3,
   want: V3,
   measure: (raw: Json) => V3 | undefined,
-  basis: { Rr: M3; s: number; out: number },
+  basis: { Rr: M3; s: number; out: number; origin?: V3 },
   start: (m: Json) => void,
 ): { raw: Json; gap: number } {
   const m0 = keyValue(raw, key);
@@ -190,8 +291,9 @@ function fitPlace(
   const field = v0.at === undefined && v0.to !== undefined ? "offset" : "at";
   const fresh = v0.at === undefined && v0.to === undefined;
   const at0 = (v0[field] as number[] | undefined) ?? (fresh ? x0 : [0, 0, 0]);
+  const origin = fresh ? x0 : (basis.origin ?? x0);
   const value = (x: V3): V3 => {
-    const d = sub(x, x0);
+    const d = sub(x, origin);
     if (field === "at") return add(at0, d).map(r2) as V3;
     const b = toBody(d, basis.Rr, basis.out);
     return add(
@@ -271,15 +373,26 @@ export function dragHand(
     }
   }
   const measure = (r: Json) => drawnHand(o.rebuild(r), id, side, t, o)?.grip;
-  const fit = fitPlace(cur, b.key, d1.grip, want, measure, { Rr: tk.Rr, s: tk.s, out }, (m) => {
-    if (m.point === undefined) m.point = "grip";
-  });
+  const origin = handTarget(cur, b.key, b.rt, t, o.char);
+  const fit = fitPlace(
+    cur,
+    b.key,
+    d1.grip,
+    want,
+    measure,
+    { Rr: tk.Rr, s: tk.s, out, origin },
+    (m) => {
+      if (m.point === undefined) m.point = "grip";
+    },
+  );
   if (fit.gap > PLUS_TOL && d1.blending)
     fail(
       `không sửa ở ${t.toFixed(2)} s: tay đang hoà sang lần cầm mới (\`HOLD_BLEND\`), đích ở giây này chưa đổi được hình — tua ra sau quãng hoà`,
     );
   if (fit.gap > PLUS_TOL)
     notes.push(`tâm nắm còn lệch chỗ thả ${fit.gap.toFixed(1)} px (ngoài tầm với hay cổ tay kẹp)`);
+  const far = reachNote(fit.raw, b.key, t, o, id, side, d1.blending);
+  if (far) notes.push(far);
   const short = turnNote(mv.R, b.rt, fit.raw, id, side, t, o);
   if (short) notes.push(short);
   return { raw: fit.raw, key: b.key, added: b.added, notes, gap: fit.gap };

@@ -9,6 +9,7 @@ import {
 } from "@stickman3d/rig/core";
 import { describe, expect, it } from "vitest";
 import {
+  anchorHand,
   dragHand,
   dragItem,
   heldPlace,
@@ -39,7 +40,7 @@ import {
   wristDir,
   wrapDeg,
 } from "./grab";
-import { handsOf, keyValue, type Json, type V3 } from "./keys";
+import { handsOf, keyValue, worldAtMoves, type Json, type V3 } from "./keys";
 
 const dot = (a: readonly number[], b: readonly number[]) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const dist = (a: readonly number[], b: readonly number[]) =>
@@ -286,6 +287,84 @@ describe("kéo tay nắm, vòng khuỷu (drag.ts)", () => {
     close(angleFrame(p2.angles, Rb), angleFrame(angles, Rb), 0.02);
     expect(dist(p2.at, p0.at)).toBeLessThan(0.6);
   });
+
+  it(
+    "thả sát mép tầm với: `at` ghi ra nằm sát tâm nắm, không vượt tầm với",
+    { timeout: 120_000 },
+    () => {
+      const j = scene();
+      const rt = runtime(j);
+      const t = 1.2;
+      const r0 = handReport(rt, "a", "right", t, { char: c })!;
+      const { shoulder, elbow, wrist } = r0.joints;
+      const reach = dist(shoulder, elbow) + dist(elbow, wrist) + dist(wrist, r0.grip);
+      // tay ra ngoài và chúc xuống, tâm nắm ở 99,5% tầm với: tay gần duỗi thẳng, Jacobian theo trục cánh tay gần 0
+      const dir = [0.25, 0.94, 0.23].map((x) => x / Math.hypot(0.25, 0.94, 0.23));
+      const want = shoulder.map((x, i) => x + dir[i] * reach * 0.995) as V3;
+      const r = dragHand(
+        j,
+        rt,
+        "a",
+        "right",
+        t,
+        { d: want.map((x, i) => x - r0.grip[i]) as V3 },
+        O,
+      );
+      const at = (keyValue(r.raw, r.key) as Json).at as number[];
+      const d1 = drawnHand(runtime(r.raw), "a", "right", t)!;
+      expect(dist(at, d1.grip)).toBeLessThan(5);
+      expect(dist(at, shoulder)).toBeLessThan(reach + 5);
+    },
+  );
+
+  it(
+    "thả ngoài tầm với: `at` kéo về chỗ bàn tay với tới, thanh trạng thái báo",
+    { timeout: 120_000 },
+    () => {
+      const j = scene();
+      const rt = runtime(j);
+      const t = 1.2;
+      const r0 = handReport(rt, "a", "right", t, { char: c })!;
+      const r = dragHand(j, rt, "a", "right", t, { d: [60, 160, 40] }, O);
+      const at = (keyValue(r.raw, r.key) as Json).at as number[];
+      const d1 = drawnHand(runtime(r.raw), "a", "right", t)!;
+      expect(r.gap).toBeGreaterThan(0.5);
+      expect(r.notes.join(" ")).toMatch(/ngoài tầm với/);
+      expect(dist(at, d1.grip)).toBeLessThan(5);
+      expect(dist(at, r0.joints.shoulder)).toBeLessThan(200);
+    },
+  );
+
+  it(
+    "mốc `at` còn hiệu lực lúc người quay: báo, đổi sang mốc thân thì tay quay theo người",
+    { timeout: 120_000 },
+    () => {
+      const j = scene();
+      const w = (j.cast as Json[])[0].world as Json;
+      delete w.at;
+      w.path = [
+        { t: 0, at: [0, 0, 0], yaw: 90 },
+        { t: 1.6, at: [0, 0, 0], yaw: 90 },
+        { t: 2.2, at: [0, 0, 0], yaw: 270 },
+      ];
+      const rt = runtime(j);
+      const ref = { kind: "hand", id: "a", side: "left", index: 3 } as const;
+      expect(worldAtMoves(j, ref)).toEqual({ t: 1.6, turn: 1.6 });
+      const r = anchorHand(j, rt, "a", "left", 1.5, O);
+      const v = keyValue(r.raw, r.key) as Json;
+      expect(v.at).toBeUndefined();
+      expect(v).toMatchObject({ to: "hip", point: "grip" });
+      expect(worldAtMoves(r.raw, r.key)).toBeUndefined();
+      expect(r.gap).toBeLessThan(0.5);
+      const rt1 = runtime(r.raw);
+      const body = (rtx: typeof rt, t: number) =>
+        toBody(drawnHand(rtx, "a", "left", t)!.grip, trunkAt(rtx, "a", t, c)!.Rr, 1);
+      close(body(rt1, 1.5), body(rt, 1.5), 0.5);
+      // sau khi quay: đích theo mốc thân giữ chỗ trên thân, `at` thế giới thì không
+      close(body(rt1, 3), body(rt1, 1.5), 1.5);
+      expect(dist(body(rt, 3), body(rt, 1.5))).toBeGreaterThan(20);
+    },
+  );
 
   it(
     "vòng khuỷu: khoá ở góc thả, `handReport.phi` khớp; nhấp đúp bỏ khoá",

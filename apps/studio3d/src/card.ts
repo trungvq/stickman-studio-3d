@@ -1,5 +1,6 @@
 // Thẻ mốc của thanh tua: `ease` (ô 4 số khi `bezier`), `hold` (món, nhóm, biến thể; kiểu có tên kèm `note`), dáng ngón
-// `pose` / `w`, `elbowLock`, chỗ và hướng của mốc món bằng số, JSON thô của mốc chỉ đọc kèm nút chép, xoá mốc.
+// `pose` / `w`, `elbowLock`, chỗ và hướng của mốc món bằng số, nhắc mốc `at` còn hiệu lực lúc người dời kèm nút đổi sang
+// mốc thân, JSON thô của mốc chỉ đọc kèm nút chép, xoá mốc.
 import type { Ease, HoldPick, V3 } from "./keys";
 
 export const EASES: { v: Ease | ""; label: string }[] = [
@@ -40,6 +41,8 @@ export interface CardModel {
    * là lý do không sửa được
    */
   place?: { at: V3; angles: V3; disabled?: string };
+  /** Mốc tay `at` (thế giới) còn hiệu lực lúc người dời, quay: lời nhắc kèm nút đổi sang đích theo mốc thân */
+  anchor?: string;
   json: string;
   notes: string[];
 }
@@ -53,6 +56,8 @@ export interface CardHost {
   shape(pose: string | undefined, w: number | undefined): void;
   /** Ô số của mốc món: chỗ hay góc mới (trường không đổi giữ số đúng của `place`) */
   place(to: { at?: V3; angles?: V3 }): void;
+  /** Đổi mốc tay `at` sang đích theo mốc thân `hip` + `offset`, hình ở giây của mốc giữ nguyên */
+  anchor(): void;
   del(): void;
   close(): void;
 }
@@ -151,6 +156,12 @@ export function renderCard(el: HTMLElement, m: CardModel | null, host: CardHost)
     <div class="dim">${m.place.disabled ? esc(m.place.disabled) : "tâm món, thế giới rig (x phải, y xuống, z sâu; 250 = 1 m) · hướng: độ, theo thân người cầm"}</div>`
         : ""
     }
+    ${
+      m.anchor
+        ? `<div class="warn">${esc(m.anchor)}</div>
+    <div class="crow"><button data-c="anchor" title="Ghi \`to: &quot;hip&quot;\` + \`offset\` thay cho \`at\`, tâm nắm ở giây của mốc giữ nguyên">Đổi sang mốc thân (hip)</button></div>`
+        : ""
+    }
     ${m.notes.map((n) => `<div class="warn">${esc(n)}</div>`).join("")}
     <details class="cjson"${jsonOpen ? " open" : ""}><summary>JSON thô của mốc</summary><pre>${esc(m.json)}</pre></details>
     <div class="crow"><button data-c="copy">Chép JSON</button><button data-c="del" title="Xoá mốc (Del)">Xoá mốc</button></div>`;
@@ -159,6 +170,7 @@ export function renderCard(el: HTMLElement, m: CardModel | null, host: CardHost)
   det.ontoggle = () => (jsonOpen = det.open);
   q("close").onclick = () => host.close();
   q("del").onclick = () => host.del();
+  if (m.anchor) q("anchor").onclick = () => host.anchor();
   q("copy").onclick = async () => {
     await navigator.clipboard?.writeText(m.json);
     q("copy").textContent = "Đã chép";

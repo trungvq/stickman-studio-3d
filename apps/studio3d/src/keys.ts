@@ -490,3 +490,46 @@ export function handShape(v: unknown): "null" | "rest" | "ring" | "pose" | "dot"
   if (placed) return "dot";
   return v.hold !== undefined ? "ring" : v.pose !== undefined ? "pose" : "dot";
 }
+
+/** Hai mốc `world.path` khác chỗ (đơn vị rig) hay hướng (độ) quá chừng này là người dời */
+const MOVE_AT = 0.5;
+const MOVE_YAW = 0.5;
+
+/**
+ * Mốc tay `k` khai `at` (thế giới, đứng yên khi người dời) mà trong quãng nó còn hiệu lực — tới mốc kế của tay ấy, hay hết
+ * cảnh — `world.path` của người ấy đổi chỗ hay hướng: giây đầu tiên người dời trong quãng ấy, `turn` là giây đầu tiên quay
+ */
+export function worldAtMoves(raw: Json, k: KeyRef): { t: number; turn?: number } | undefined {
+  if (k.kind !== "hand") return undefined;
+  const v = keyValue(raw, k);
+  if (!isObj(v) || !Array.isArray(v.at)) return undefined;
+  const marks = marksOf(raw);
+  const hands = handsOf(raw, k.id) ?? [];
+  const t0 = timeOf(hands[k.index].t, marks);
+  const t1 = Math.min(
+    Infinity,
+    ...hands
+      .filter((x) => x[k.side] !== undefined)
+      .map((x) => timeOf(x.t, marks))
+      .filter((t) => t > t0 + SAME),
+  );
+  const c = (raw.cast as Json[] | undefined)?.find((m) => isObj(m) && m.id === k.id);
+  const path = isObj(c?.world) ? (c.world as Json).path : undefined;
+  if (!Array.isArray(path)) return undefined;
+  let first: number | undefined;
+  for (let j = 0; j + 1 < path.length; j++) {
+    const [a, b] = [path[j] as Json, path[j + 1] as Json];
+    const [ta, tb] = [timeOf(a.t, marks), timeOf(b.t, marks)];
+    if (tb <= t0 || ta >= t1) continue;
+    const ya = typeof a.yaw === "number" ? a.yaw : 0;
+    const yb = typeof b.yaw === "number" ? b.yaw : ya;
+    const turn = Math.abs(((((yb - ya) % 360) + 540) % 360) - 180) > MOVE_YAW;
+    const pa = (a.at as number[] | undefined) ?? [0, 0, 0];
+    const pb = (b.at as number[] | undefined) ?? pa;
+    const moved = Math.hypot(pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2]) > MOVE_AT;
+    const t = Math.max(ta, t0);
+    if (turn) return { t: first ?? t, turn: t };
+    if (moved) first ??= t;
+  }
+  return first === undefined ? undefined : { t: first };
+}
