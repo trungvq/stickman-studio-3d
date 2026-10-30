@@ -18,7 +18,7 @@ const SPARKS: [number, number][] = [
  */
 export function PausedThrow({ fx, url, t }: { fx: PausedThrowData; url?: string; t: number }) {
   const tau = pausedTau(fx.t0, fx.hold, t);
-  if (tau < 0 || (!url && !fx.part)) return null;
+  if (tau < 0 || !url) return null;
   const { x, y } = arcAt(
     { x: fx.x0, y: fx.y0 },
     { x: fx.x1, y: fx.y1 },
@@ -28,7 +28,7 @@ export function PausedThrow({ fx, url, t }: { fx: PausedThrowData; url?: string;
   if (tau < fx.flight)
     return (
       <g transform={`translate(${x} ${y}) rotate(${fx.deg0 + fx.spin * tau})`}>
-        <Piece part={fx.part} url={url} w={fx.w} h={fx.h} />
+        <Piece url={url} w={fx.w} h={fx.h} />
       </g>
     );
   const s = tau - fx.flight;
@@ -41,7 +41,7 @@ export function PausedThrow({ fx, url, t }: { fx: PausedThrowData; url?: string;
   return (
     <g>
       <g transform={`translate(${bx} ${by}) rotate(${deg})`}>
-        <Piece part={fx.part} url={url} w={fx.w} h={fx.h} />
+        <Piece url={url} w={fx.w} h={fx.h} />
       </g>
       {u < 1 &&
         SPARKS.map(([deg, len], i) => {

@@ -1596,3 +1596,532 @@ button.key.diamond .keytip {
     height: 28px;
   }
 }
+
+/* Thư viện (`body.library`): danh sách hành động thay danh sách cảnh, thẻ người, góc máy, thông tin thay panel bàn tay */
+#libTitle,
+#libCount,
+#libPlay,
+body.library #scene,
+body.library #copyView,
+body.library #edMode,
+body.library #saveBox,
+body.library #sceneCount,
+body.library #handsAt,
+body.library #sceneBody,
+body:not(.library) #libBody,
+body:not(.library) #libCard,
+body.library #side .sidebody > :not(#libCard, #genCard),
+body:not(.gen) #genBody,
+body:not(.gen) #genCard,
+body.gen #libBody,
+body.gen #libCount {
+  display: none !important;
+}
+
+body.library #libTitle {
+  display: inline !important;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+body.library #libCount {
+  display: inline !important;
+}
+
+body.library #libPlay {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+}
+
+#libPlay button {
+  flex-shrink: 0;
+  padding: 3px 7px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+#loop.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ô tìm và công tắc khẩu hình đứng yên, chỉ danh sách cuộn */
+#libBody {
+  overflow: hidden;
+}
+
+#libList {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#libList > * {
+  flex-shrink: 0;
+}
+
+#libList .lroot {
+  display: block;
+  width: 100%;
+  padding: 2px 6px;
+  border-color: transparent;
+  background: none;
+  color: #c9c5bd;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#libList .lroot:hover {
+  color: var(--text);
+}
+
+#libList .lroot.has {
+  color: var(--accent);
+}
+
+#libList .lcaret {
+  display: inline-block;
+  width: 14px;
+  color: var(--dim);
+  font-size: 10px;
+  vertical-align: 1px;
+}
+
+#libList .lmore {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+#libList .lmore u {
+  color: var(--accent);
+}
+
+#libBody .lmouth {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+  color: var(--dim);
+  font-size: 12px;
+}
+
+#libBody .lmouth[hidden] {
+  display: none;
+}
+
+#libList .lgroup:not(.many) button.scene {
+  padding-left: 6px;
+}
+
+#libList .lrepo {
+  margin-left: 6px;
+  color: var(--accent);
+  font-size: 11px;
+}
+
+#libCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#libCard .lrow {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+#libCard select {
+  min-width: 0;
+  width: 100%;
+}
+
+#libAngles button {
+  flex: 1 1 0;
+  padding: 4px 4px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+#libAngles button:not(:first-child) {
+  border-left: 0;
+}
+
+#libCard .lhead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+#libCard .lhead b {
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+#libCard .ltag {
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--dim);
+  font-size: 11px;
+}
+
+#libCard .ltag.repo {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+table.linfo {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+table.linfo td {
+  padding: 1px 8px 1px 0;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+table.linfo td:first-child {
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+#libCard .lnote {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+#libCard .lvars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+#libCard .lvars .dim {
+  flex-basis: 100%;
+  font-size: 12px;
+}
+
+#libCard .lvars button {
+  padding: 2px 7px;
+  font-size: 12px;
+}
+
+#libCard .lvars button.on {
+  border-color: var(--accent);
+  background: #2b2a26;
+}
+
+#libCard .lerr {
+  margin: 0;
+  color: #ff8a80;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 760px) {
+  #appMode {
+    order: 2;
+  }
+
+  /* dòng hai (công tắc Cảnh / Thư viện, nạp lại, chép view, chế độ) vừa một dòng ở 390 px */
+  header button {
+    padding-inline: 6px;
+  }
+
+  body.library #libTitle {
+    flex: 1 1 0;
+  }
+}
+
+/* Bộ sinh (`body.library.gen`): form tham số ở panel trái (ngăn kéo khi hẹp), người, góc máy, tự kiểm ở panel phải */
+body.gen #libCount {
+  display: none !important;
+}
+
+body.gen #sceneSide:not(.shut) {
+  width: 290px;
+}
+
+#genForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#genForm .gkinds button {
+  flex: 1 1 0;
+  white-space: nowrap;
+}
+
+#genForm .gkinds button:not(:first-child) {
+  border-left: 0;
+}
+
+.gfield {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 6px;
+  border-left: 2px solid transparent;
+}
+
+.gfield.changed {
+  border-left-color: var(--accent);
+}
+
+.gfield .glabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.gfield .glabel > span {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.gfield.bool .glabel {
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.gfield .gautol {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+  color: var(--dim);
+}
+
+.gfield select {
+  width: 100%;
+  min-width: 0;
+}
+
+.gfield .ginputs {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+}
+
+.gfield .ginputs input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0;
+}
+
+.gfield .ginputs input[type="number"] {
+  width: 70px;
+  min-width: 0;
+  padding: 3px 5px;
+}
+
+.gfield.point .ginputs input[type="number"] {
+  flex: 1 1 0;
+  width: 0;
+}
+
+.gfield .ginputs input:disabled {
+  opacity: 0.5;
+}
+
+.gfield .gunit {
+  font-size: 11px;
+}
+
+#genForm .greset {
+  align-self: flex-start;
+  font-size: 12px;
+}
+
+#genCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#genCard .lhead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#genCard .lhead b {
+  flex: 1 1 auto;
+  color: var(--accent);
+}
+
+#genCard .gclose {
+  font-size: 12px;
+}
+
+#genCard .gclose.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+.gstat {
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.gstat.ok {
+  border-color: #4f8a5b;
+}
+
+.gstat.bad {
+  border-color: #b5524a;
+}
+
+.gstat.busy,
+.gstat.stale {
+  color: var(--dim);
+}
+
+.gstat pre {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.gname {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.gchecks {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gchint {
+  font-size: 11px;
+}
+
+.gcheck {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  border-radius: 5px;
+  background: none;
+  font-size: 12px;
+  text-align: left;
+}
+
+.gcheck.sub {
+  margin-left: 14px;
+  width: calc(100% - 14px);
+}
+
+.gcheck.ok {
+  border-left-color: #4f8a5b;
+}
+
+.gcheck.warn {
+  border-left-color: var(--accent);
+}
+
+.gcheck.bad {
+  border-left-color: #e05a4f;
+}
+
+.gcheck.skip {
+  border-left-color: var(--dim);
+}
+
+button.gcheck.on {
+  border-color: var(--accent);
+  background: #2b2a26;
+}
+
+.gcheck .gcrow {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.gcheck .gclvl {
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+
+.gcheck.ok .gclvl {
+  color: #7fc48b;
+}
+
+.gcheck.warn .gclvl {
+  color: var(--accent);
+}
+
+.gcheck.bad .gclvl {
+  color: #ff8a80;
+}
+
+.gcheck .gclabel {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.gcheck .gct {
+  flex: 0 0 auto;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.gcheck .gcmsg {
+  color: #cfccc5;
+  overflow-wrap: anywhere;
+}
+
+.gcheck .gclim {
+  font-size: 11px;
+}
+
+.glines summary {
+  cursor: pointer;
+  color: var(--dim);
+}
+
+.glines pre {
+  margin: 4px 0 0;
+  font-size: 11px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.gfield.bad .ginputs input[type="number"] {
+  border-color: #e05a4f;
+}
+
+.gfield .gerr {
+  font-size: 11px;
+  color: #e88a80;
+}

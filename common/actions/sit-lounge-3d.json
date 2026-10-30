@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 18,
+  "name": "sit-lounge-3d",
+  "duration": 3.4,
+  "end": "wrap",
+  "authoredAt": "side",
+  "mask": ["armFar", "armNear", "legFar", "legNear", "torso", "head", "hand"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [20, 45, 0],
+        "armNear": [20, 45, 0],
+        "legFar": [81, -64, 12],
+        "legNear": [80, -60, 10],
+        "torso": -22,
+        "head": [0, 0, 16]
+      },
+      "reach": {
+        "armNear": { "at": [18, -58, 63], "elbow": [-1, 0.1, 0.3] },
+        "armFar": { "at": [18, -58, 63], "elbow": [-1, 0.1, 0.3] }
+      },
+      "hand": {
+        "armNear": { "pose": "open", "w": 0.5, "palm": "down", "fingers": "forward" },
+        "armFar": { "pose": "open", "w": 0.5, "palm": "down", "fingers": "forward" }
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armFar": [20, 45, 0],
+        "armNear": [20, 45, 0],
+        "legFar": [81, -64, 12],
+        "legNear": [80, -60, 10],
+        "torso": -20.5,
+        "head": [0, 0, 16]
+      },
+      "reach": {
+        "armNear": { "at": [18, -58, 63], "elbow": [-1, 0.1, 0.3] },
+        "armFar": { "at": [18, -58, 63], "elbow": [-1, 0.1, 0.3] }
+      },
+      "hand": {
+        "armNear": { "pose": "open", "w": 0.5, "palm": "down", "fingers": "forward" },
+        "armFar": { "pose": "open", "w": 0.5, "palm": "down", "fingers": "forward" }
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [20, 45, 0],
+        "armNear": [20, 45, 0],
+        "legFar": [81, -64, 12],
+        "legNear": [80, -60, 10],
+        "torso": -22,
+        "head": [0, 0, 16]
+      },
+      "reach": {
+        "armNear": { "at": [18, -58, 63], "elbow": [-1, 0.1, 0.3] },
+        "armFar": { "at": [18, -58, 63], "elbow": [-1, 0.1, 0.3] }
+      },
+      "hand": {
+        "armNear": { "pose": "open", "w": 0.5, "palm": "down", "fingers": "forward" },
+        "armFar": { "pose": "open", "w": 0.5, "palm": "down", "fingers": "forward" }
+      },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "Ngồi ngả chễm chệ trên ghế bành, thở: hông trượt ra trước trên mặt ngồi, lưng ngả −22° vào tựa, đầu gật 16 cho mặt vẫn nhìn ra trước, hai chân duỗi ra trước hơi dạng, hai cẳng tay nằm dọc tay vịn, lòng tay úp ở gần đầu trước (đích cổ tay hệ thân [18, −58, 63], khuỷu ra sau); thân −22 ↔ −20,5 mỗi 3,4 s (lặp). Ghi tay, chân, thân, đầu, bàn tay. Nền: `world.sit` trên ghế bành mặt ngồi 87,5, tay vịn cao hơn mặt ngồi 62, tâm cách giữa hông 63, điểm ngồi trước chỗ ngồi thẳng 34 (đơn vị rig ở `height` 1). Nối sau `sit-down-3d` thì thêm mốc `path` `sit` trượt hông ra trước 34 trong ~0,5 s; đứng dậy thì trượt về rồi `stand-up-3d`. Một tay cầm đồ thì chồng track tay (ghi một tay), tay kia vẫn trên tay vịn.",
+  "preview": { "stage": "armchair" }
+}

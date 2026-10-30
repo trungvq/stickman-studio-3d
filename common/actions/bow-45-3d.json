@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 20,
+  "name": "bow-45-3d",
+  "duration": 2.45,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": 0, "head": [0, 0, 0] }, "ease": "smooth" },
+    { "t": 0.2245, "pose": { "torso": 45, "head": [0, 0, 3] }, "ease": "smooth" },
+    { "t": 0.7143, "pose": { "torso": 45, "head": [0, 0, 3] }, "ease": "smooth" },
+    { "t": 1, "pose": { "torso": 0, "head": [0, 0, 0] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Cúi chào 45° một lần: thân cúi 45°, đầu gật thêm 3°, xuống trong 0,55 s, giữ 1,2 s, đứng thẳng lên lúc 2,45 s rồi giữ đứng. Chỉ ghi `torso`, `head`. Nền `stand-3d`. Đích tay hệ thân (`reach.at`) không theo thân cúi nên món giữ ngang; không chồng lên tay bưng khay, cầm món trước bụng: thân đổ lên cẳng tay — dùng góc 15° hay 30°. Tay chắp trước bụng theo thân cúi thì dùng `bow-hands-front-*`. Cùng họ: `bow-15-3d`, `bow-30-3d`, `bow-45-3d`, `-quick` cúi vội, `-snap` gập ngay rồi nảy, `-hold` giữ ở đáy. Sinh bằng `tools/actions/bow.mjs`.",
+  "preview": { "stage": "stand" }
+}

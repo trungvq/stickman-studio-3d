@@ -152,7 +152,7 @@ export function handAimDemo(q) {
   if (!scene.success) throw new Error(scene.error.message);
   const bodies = Object.fromEntries(cast.map((m) => [m.id, body3(m.c)]));
   const heights = Object.fromEntries(cast.map((m) => [m.id, m.c.rig.height]));
-  const rt = resolveScene(scene.data, ACTIONS, {}, {}, heights, bodies);
+  const rt = resolveScene(scene.data, ACTIONS, heights, bodies);
   const group = new THREE.Group();
   const people = cast.map((m, i) => ({ ...m, fig: fromCharacter(m.c, { seed: i, items: ITEMS, seated: !!m.world.sit }) }));
   for (const p of people) group.add(p.fig.root);

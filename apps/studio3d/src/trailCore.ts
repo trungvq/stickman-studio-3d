@@ -36,7 +36,7 @@ export interface TrailTime {
 }
 
 export interface TrailSample extends TrailTime {
-  /** Cổ tay, khuỷu như `actJoints` (thế giới rig); người không có `world` thì `null` */
+  /** Cổ tay, khuỷu như `actJoints` (thế giới rig); thiếu nhân vật thì `null` */
   wrist: V3 | null;
   elbow: V3 | null;
   /** Tâm hộp bao của món tay ấy đang cầm, như vẽ */
@@ -103,7 +103,6 @@ export function trailSample(
   const c = rt.chars?.[id];
   if (!c) return out;
   const sp = sceneAt(rt, id, x.t, rt.heights[id] ?? 1, rt.bodies[id] ?? BODY3) as ActInput;
-  if (!sp.world) return out;
   const tag = side === "right" ? "R" : "L";
   const J = actJoints(c, sp);
   if (J) [out.wrist, out.elbow] = [[...J[`wrist${tag}`]] as V3, [...J[`elbow${tag}`]] as V3];

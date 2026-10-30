@@ -1011,24 +1011,26 @@ function convert(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode): 
     }
   };
   /**
-   * Mốc mà chế độ mới chọn khuỷu khác khuỷu đang vẽ: khoá khuỷu tay dẫn vào hướng đang vẽ ở đó, giữ khi lệch món giảm; mốc
-   * khoá đổi khung cầm nên thử lại cả `along` hai đầu. Tay phụ của món đặt trước không khoá
+   * Mốc mà chế độ mới chọn khuỷu khác khuỷu đang vẽ: khoá khuỷu tay dẫn vào hướng đang vẽ ở đó và ở mốc ngay sau (không thì
+   * khoá kéo dài qua mốc sau), giữ khi lệch món giảm; mốc khoá đổi khung cầm nên thử lại cả `along` hai đầu. Tay phụ của món
+   * đặt trước không khoá
    */
   const relock = () => {
     for (let pass = 0; pass < HOLD_MODE_FIX; pass++) {
-      const add = keyed.filter((r) => {
+      const add = keyed.flatMap((r, i) => {
         const [a, b] = [r.a.phi[lead], r.b.phi[lead]];
-        return (
+        const off =
           !r.blend &&
           !lock.has(r.t) &&
           a !== undefined &&
           b !== undefined &&
-          Math.abs(wrapDeg(b - a)) > HOLD_MODE_PHI
-        );
+          Math.abs(wrapDeg(b - a)) > HOLD_MODE_PHI;
+        const next = keyed[i + 1];
+        return off ? [r.t, ...(next && !next.blend ? [next.t] : [])] : [];
       });
       if (!add.length) return;
       const base = keyed;
-      tryFlips(new Set([...lock, ...add.map((r) => r.t)]), lockBetter);
+      tryFlips(new Set([...lock, ...add]), lockBetter);
       if (keyed === base) return;
     }
   };

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { actHeld } from "./act3";
+import { actHeld, actJoints, type ActJoint } from "./act3";
 import type { ActInput } from "./arm3";
 import { body3 } from "./figure3d";
 import { parseHeldItem, type HeldItemSpec } from "./heldItem";
@@ -157,7 +157,7 @@ const sceneB = (
 function build(raw: unknown): SceneRuntime {
   const r = parseScene(raw);
   if (!r.success) throw new Error(r.error.message);
-  const rt = resolveScene(r.data, {}, {}, {}, { nguoi: H }, { nguoi: DIMS }, HELD);
+  const rt = resolveScene(r.data, {}, { nguoi: H }, { nguoi: DIMS }, HELD);
   rt.chars = { nguoi: NGUOI };
   return rt;
 }
@@ -359,7 +359,7 @@ describe("đồ theo tay → tay theo đồ", () => {
   });
 });
 
-/** Cảnh: tay phải dẫn điện thoại, `elbow` khai chĩa ra sau, cổ tay kẹp `dev` */
+/** Cảnh: tay phải dẫn điện thoại, `elbow` khai chĩa ra sau, cổ tay kẹp xoay và gập */
 const sceneC = (): Raw => ({
   duration: 2,
   lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
@@ -404,7 +404,10 @@ describe("đồ theo tay → tay theo đồ: khoá khuỷu", () => {
     expect(r.scope.mode).toEqual({ before: "hand", after: "keyed" });
     expect(right).toMatchObject({ elbowLock: true, hold: { item: "dien-thoai" } });
     expect(right.elbow).not.toEqual([0, 1, -1]);
-    expect(r.rows[0]).toMatchObject({ elbowLock: true, clamped: { before: { right: ["dev"] } } });
+    expect(r.rows[0]).toMatchObject({
+      elbowLock: true,
+      clamped: { before: { right: ["turn", "bend"] } },
+    });
     expect(r.max.item.pos).toBeLessThan(HOLD_MODE_POS);
     expect(r.max.item.angle).toBeLessThan(HOLD_MODE_ANGLE);
     const a = drawnBoard(rt, 0, false, "dien-thoai");
@@ -412,13 +415,13 @@ describe("đồ theo tay → tay theo đồ: khoá khuỷu", () => {
     expect(Math.abs(r.rows[0].item!.pos - Math.hypot(...sub3(a.P, b.P)))).toBeLessThan(1e-6);
   });
 
-  it("bỏ khoá thì mốc món tự chọn khuỷu khác, cổ tay kẹp khác, món lệch xa", () => {
+  it("bỏ khoá thì mốc món vẫn lấy `elbow` đã ghi làm khuỷu ưu tiên: món gần như không dời", () => {
     const free = structuredClone(next);
     delete (keysOf(free)[0].right as Record<string, unknown>).elbowLock;
     const a = drawnBoard(rt, 0, false, "dien-thoai");
     const b = drawnBoard(build(free), 0, false, "dien-thoai");
-    expect(Math.hypot(...sub3(a.P, b.P))).toBeGreaterThan(5);
-    expect(angle(a.R, b.R)).toBeGreaterThan(10);
+    expect(Math.hypot(...sub3(a.P, b.P))).toBeLessThan(HOLD_MODE_POS);
+    expect(angle(a.R, b.R)).toBeLessThan(HOLD_MODE_ANGLE);
   });
 
   it("vòng về: đồ theo tay giữ khoá, món về chỗ cũ", () => {
@@ -475,6 +478,27 @@ describe("tay theo đồ → đồ theo tay", () => {
     expect(r.notes.join(" ")).toMatch(/lần cầm mở ở 2.5s/);
     expect(r.max.item.pos).toBeLessThan(0.5);
     expect(r.max.item.angle).toBeLessThan(2);
+  });
+
+  it("tay theo đích mang món, mốc giữa không khai `elbow`: khuỷu liền quanh từng mốc tay (`t₀ ± 1e-4` s)", () => {
+    const bare = structuredClone(next);
+    const mid = keysOf(bare).find((k) => k.t === "@doi")!.left as Record<string, unknown>;
+    delete mid.elbow;
+    const rt3 = build(bare);
+    const J = (t: number) => actJoints(NGUOI, sceneAt(rt3, "nguoi", t, H, DIMS) as ActInput)!;
+    type Js = ReturnType<typeof J>;
+    const rel = (X: Js, k: ActJoint) => sub3(X[k], X.shoulderL);
+    const d = (a: Js, b: Js, k: ActJoint) => Math.hypot(...sub3(rel(a, k), rel(b, k)));
+    let w = 0;
+    for (const t0 of [2.5, 3.2, 4.2]) {
+      const [a, b, c] = [J(t0 - 1e-4), J(t0), J(t0 + 1e-4)];
+      for (const [x, y] of [
+        [a, b],
+        [b, c],
+      ])
+        w = Math.max(w, d(x, y, "elbowL") - 1.5 * d(x, y, "wristL"));
+    }
+    expect(w).toBeLessThan(0.05);
   });
 });
 

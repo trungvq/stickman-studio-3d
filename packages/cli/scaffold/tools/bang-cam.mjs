@@ -38,7 +38,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import * as rig from "@stickman3d/sketch";
+import * as rig from "@stickman3d/rig/core";
 import {
   deepContext,
   heldFrame,
@@ -217,13 +217,15 @@ function dungCanh(p, hands, marks = []) {
 const loc = [];
 /** Vị trí đặt món (`items[]`) của mỗi hàng nhóm, để so hàng trùng sau khi giải */
 const viTri = new Map();
+/** Mặt trước, đầu trên của món: trường khai, không thì mốc `front` / `top` có `dir`, không nữa thì `+z` / `+y` như rig */
+const frontOf = (spec) => spec.front ?? (spec.anchors.front?.dir ? "front" : [0, 0, 1]);
+const topOf = (spec) => spec.top ?? (spec.anchors.top?.dir ? "top" : [0, 1, 0]);
 // ---- hàng mẫu theo nhóm ----
 {
   const NGUC = { to: "chest", offset: [30, -3, 0] };
-  // trục `front` / `top` của món theo tên mốc món khai (`spec.front`, `spec.top`)
   const huong = (spec, to) => ({
-    face: { axis: spec.front ?? "front", toward: to },
-    roll: { axis: spec.top ?? "top", toward: "up" },
+    face: { axis: frontOf(spec), toward: to },
+    roll: { axis: topOf(spec), toward: "up" },
   });
   const KHACH = (spec) => ({
     to: "chest",
@@ -249,8 +251,8 @@ const viTri = new Map();
   const BAN = (spec, ben = 1) => ({
     to: "belly",
     offset: [40, 20, 10 * ben],
-    face: { axis: spec.front ?? "front", toward: "up" },
-    roll: { axis: spec.top ?? "top", toward: "forward" },
+    face: { axis: frontOf(spec), toward: "up" },
+    roll: { axis: topOf(spec), toward: "forward" },
   });
   /** Tay dẫn duỗi ra trước qua quầy */
   const DUA_XA = { to: "chest", offset: [95, -20, 15], point: "grip" };
@@ -438,7 +440,7 @@ const viTri = new Map();
           ten: "bê hai tay hai vành",
           mark: {
             ...NGUC,
-            face: { axis: spec.top ?? "top", toward: "up" },
+            face: { axis: topOf(spec), toward: "up" },
           },
           hai: true,
           hands: {
@@ -470,7 +472,7 @@ const viTri = new Map();
       }
     }
     if (group === "card") {
-      const front = spec.front ?? "front";
+      const front = frontOf(spec);
       /** Đưa qua quầy: thẻ ngửa, mép ngắn xa nhất chĩa ra trước */
       const ngua = (axis) => ({
         face: { axis: front, toward: "up" },
@@ -481,7 +483,7 @@ const viTri = new Map();
           edge,
           thumb,
           face: { axis: front, toward: "forward" },
-          roll: { axis: spec.top ?? "top", toward: "up" },
+          roll: { axis: topOf(spec), toward: "up" },
         });
       rows.push(
         { ma: "xem", ten: "cầm xem (rig chọn)", mark: XEM, hands: { right: H() } },
@@ -694,9 +696,9 @@ const viTri = new Map();
               group,
               ...(group === "cylinder" && {
                 around: 180,
-                roll: { axis: spec.top ?? "top", toward: "up" },
+                roll: { axis: topOf(spec), toward: "up" },
               }),
-              face: { axis: spec.front ?? "front", toward: { mark: "head" } },
+              face: { axis: frontOf(spec), toward: { mark: "head" } },
               touch: ["self.head"],
             },
           },
@@ -883,16 +885,7 @@ for (const c of cells) {
   const bodies = { cam: rig.body3(ch) };
   let rt;
   try {
-    rt = rig.resolveScene(
-      sc,
-      data.actions,
-      data.animals,
-      data.props,
-      heights,
-      bodies,
-      data.held,
-      data.hands,
-    );
+    rt = rig.resolveScene(sc, data.actions, heights, bodies, data.held, data.hands);
   } catch (e) {
     // `resolveScene` đo cỡ tay theo chiều cao người mẫu, có thể chặt hơn cỡ tay của nhân vật
     const loi = e.message.match(/lỗi `(?:choice|group)`: (.*)$/);
@@ -908,8 +901,6 @@ for (const c of cells) {
       runtime: rt,
       characters: data.characters,
       actions: data.actions,
-      animals: data.animals,
-      props: data.props,
     },
     "bang-cam",
   );

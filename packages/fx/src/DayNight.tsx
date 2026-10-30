@@ -1,7 +1,7 @@
 import type { DayNightData } from "./schema";
 import { clamp01, hash } from "./math";
 
-// Màn đêm phủ dư ra ngoài mọi khung, như vạch đất
+// Màn đêm phủ dư ra ngoài mọi khung: camera lia ra ngoài sân khấu thì nó vẫn phải kín
 const SPAN = 1e4;
 
 /**

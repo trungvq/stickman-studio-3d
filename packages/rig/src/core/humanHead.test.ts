@@ -60,12 +60,12 @@ describe("đầu human", () => {
 
 describe("nét mặt chibi", () => {
   it("dời mắt xuống, giãn hai mắt, mồm gần mắt; giữ trường khác", () => {
-    const s = chibiShape({ offsetY: 2, eyeGap: 26, mouthGap: 34, turn: 12 });
+    const s = chibiShape({ offsetY: 2, eyeGap: 26, mouthGap: 34, blush: 0 });
     expect(s).toEqual({
       offsetY: 2 + CHIBI.shift.offsetY,
       eyeGap: 26 + CHIBI.shift.eyeGap,
       mouthGap: 34 + CHIBI.shift.mouthGap,
-      turn: 12,
+      blush: 0,
     });
   });
 

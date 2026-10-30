@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 20,
+  "name": "hands-hips-left-3d",
+  "duration": 1,
+  "end": "hold",
+  "mask": ["armFar", "hand"],
+  "authoredAt": "side",
+  "sides": "anatomical",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "reach": {
+        "armFar": {
+          "to": "hip",
+          "offset": [-1.6, -24.01, 5.28],
+          "point": "palm",
+          "elbow": [-0.178, -0.136, 0.974]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armFar": { "palm": "in", "fingers": [0.6, 0.8, 0] } }
+    }
+  ],
+  "events": [],
+  "note": "Tay trái chống nạnh: lòng tay áp sườn trên mốc `hip` (offset [−1,6, −24, 5,3]), khuỷu chĩa ra ngoài, ngón rủ ra sau-xuống; một mốc, giữ suốt clip, vào bằng blend của clip. Chỉ ghi `armFar`, `hand`. Nền `stand-3d`; mốc theo áo nên đúng mọi cỡ người. `sides: \"anatomical\"`: ở mọi góc máy vẫn là tay ấy, liền qua các cú cắt; tay kia tự do. Bản cùng họ: `hands-hips-right-3d`, `hands-hips-left-3d`, `hands-hips-both-3d`. Buông bằng clip rỗng blend ~0,4, hay `world.hands` của tay ấy đè lên rồi `null` để về lại hông. Sinh bằng `tools/actions/hands-hips.mjs`.",
+  "preview": { "stage": "stand" }
+}

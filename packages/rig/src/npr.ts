@@ -384,7 +384,7 @@ const ownUniforms = (o: NprOptions & { opacity?: number; glow?: number }) => ({
   uGlow: { value: o.glow ?? 0 },
 });
 
-/** Vật liệu toon: `color`, `stipple` độ loang, `stippleScale` cỡ vết, `soft` 1 là hai tông như bóng 2D của nhân vật; `doubleSided` vẽ cả mặt sau. */
+/** Vật liệu toon: `color`, `stipple` độ loang, `stippleScale` cỡ vết, `soft` 1 là hai tông như bóng của nhân vật; `doubleSided` vẽ cả mặt sau. */
 export function npr(o: NprOptions = {}): THREE.ShaderMaterial {
   const key = JSON.stringify(o);
   const hit = cache.get(key);

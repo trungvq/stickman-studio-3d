@@ -2,7 +2,7 @@
 // người ấy ở giây của mốc, nên dáng ở mốc không đổi. docs/03-scene.md#đích-bàn-tay-thế-giới
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import * as rig from "@stickman3d/sketch";
+import * as rig from "@stickman3d/rig/core";
 import { castRuntime, worldData } from "./lib.mjs";
 import { patchJsonText } from "./rawjson.mjs";
 
@@ -44,15 +44,7 @@ export function migrateElbow({ dir = ".", scene, dryRun = false } = {}) {
     data ??= worldData(root);
     let moved;
     try {
-      const rt = castRuntime(
-        r.data,
-        data.actions,
-        data.animals,
-        data.props,
-        data.characters,
-        data.held,
-        data.hands,
-      );
+      const rt = castRuntime(r.data, data.actions, data.characters, data.held, data.hands);
       moved = rig.migrateLegacyElbows(raw, rt);
     } catch (e) {
       out.problems.push(`${file}: ${e.message}`);

@@ -38,6 +38,8 @@ export interface Collider {
   touch?: readonly Touch[];
   /** `root` của người mang vật (cầm, đội, gắn trên người): `self` trong `touch` */
   owner?: THREE.Object3D;
+  /** Số thứ tự `Item` trong `Batch` của `from` (`SolidTag.owner`): chủ của vai trò (`rolesOf`) */
+  item?: number;
 }
 
 /**
@@ -196,7 +198,7 @@ function objectColliders(src: THREE.Object3D, name?: string): Collider[] {
     if (solids?.length && !faded(o))
       batchHulls(o, solids).forEach((h, i) => {
         const s = solids[i];
-        if (h) tag({ ...h, name: s.name || label }, o, s.touch?.length ? [...touch, ...s.touch] : touch, owner);
+        if (h) tag({ ...h, name: s.name || label, ...(s.owner !== undefined && { item: s.owner }) }, o, s.touch?.length ? [...touch, ...s.touch] : touch, owner);
       });
     const m = o as THREE.Mesh;
     if (m.isMesh && !skipMesh(m)) tag(meshTris(m, label), m, touch, owner);

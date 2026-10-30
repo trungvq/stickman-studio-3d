@@ -1,4 +1,5 @@
 import { D, RIG, TORSO_DEPTH } from "./constants";
+import { softReach } from "./elbow";
 import { chibiShape } from "./face";
 import { lengths } from "./geometry";
 import { handPoint } from "./hand";
@@ -397,6 +398,7 @@ export type Limb3 = "af" | "an" | "lf" | "ln";
 export interface ReachIn {
   at: readonly number[];
   elbow?: readonly number[];
+  elbowW?: number;
   elbowLock?: number;
   w: number;
   terms?: readonly ReachTerm[];
@@ -429,7 +431,7 @@ const num = (v: number | undefined) => (Number.isFinite(v) ? (v as number) : 0);
 
 /**
  * Góc `[gốc, giữa, dang]` (độ) người 3D vẽ cho một kênh tay chân: kênh nâng (`pose.lift`) đọc góc soạn
- * ở `side` và số dang (số thứ tư của tay, thứ ba của chân), kênh giữ 2D về dáng nghỉ — tay buông, chân
+ * ở `side` và số dang (số thứ tư của tay, thứ ba của chân), kênh không nâng về dáng nghỉ — tay buông, chân
  * thẳng, người ngồi thì đùi ngang.
  */
 export function actAngles(
@@ -459,9 +461,10 @@ const DOWN3: V3 = [0, -1, 0];
 
 /**
  * IK hai đoạn trong hệ three: khớp giữa trong mặt phẳng qua trục gốc → đích và `pole`, về phía `pole`. Trả khớp giữa,
- * đầu chi và trục bản lề `n × u` (pháp tuyến mặt phẳng gập, `u` là phía khớp giữa): xác định cả khi chi duỗi thẳng
+ * đầu chi và trục bản lề `n × u` (pháp tuyến mặt phẳng gập, `u` là phía khớp giữa): xác định cả khi chi duỗi thẳng.
+ * `soft` là khoảng soft IK (`softReach`): gần duỗi hết thì đầu chi hụt dần khỏi đích thay vì bật thẳng
  */
-export function twoBone3(S: V3, T: V3, l1: number, l2: number, pole: V3): [V3, V3, V3] {
+export function twoBone3(S: V3, T: V3, l1: number, l2: number, pole: V3, soft = 0): [V3, V3, V3] {
   const d = sub(T, S);
   const dist = len(d);
   const n = dist > 1e-9 ? mul(d, 1 / dist) : DOWN3;
@@ -470,7 +473,7 @@ export function twoBone3(S: V3, T: V3, l1: number, l2: number, pole: V3): [V3, V
   if (dot(u, u) < 1e-18) u = across(DOWN3);
   if (dot(u, u) < 1e-18) u = across([1, 0, 0]);
   u = unit(u);
-  const reach = Math.min(Math.max(dist, Math.abs(l1 - l2)), l1 + l2);
+  const reach = softReach(Math.max(dist, Math.abs(l1 - l2)), l1 + l2, soft);
   const a = (l1 * l1 - l2 * l2 + reach * reach) / (2 * reach || 1);
   const h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
   return [add(add(S, mul(n, a)), mul(u, h)), add(S, mul(n, reach)), unit(cross(n, u))];

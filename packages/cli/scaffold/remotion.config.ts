@@ -41,7 +41,7 @@ const reactProd = (w: any) => ({
 });
 
 // Alias `@stickman-common` dùng chung với `tools/soi.mjs` — sửa ở `tools/webpack.mjs`.
-// Khi `@stickman3d/sketch` trỏ `link:` sang cây nguồn studio thì bỏ chú thích khối dưới: symlink
+// Khi `@stickman3d/rig` trỏ `link:` sang cây nguồn studio thì bỏ chú thích khối dưới: symlink
 // làm webpack tìm react ở repo kia, hai bản react là hook hỏng. Cài lại từ registry thì
 // chú thích lại.
 // const one = (m: string) => `${process.cwd()}/node_modules/${m}`;

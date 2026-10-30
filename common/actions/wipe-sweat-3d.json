@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 20,
+  "name": "wipe-sweat-3d",
+  "duration": 1.4,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": ["armNear", "head", "hand", "stretch"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armNear": [-6, 24, 0], "head": [0, 0, 0], "stretch": [1, 1, 1, 1] },
+      "hand": { "armNear": { "pose": "flat", "w": 0, "turn": 0, "bend": 0 } },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.25,
+      "pose": { "head": [-6, 0, 12], "stretch": [1, 1.3, 1, 1] },
+      "reach": {
+        "armNear": {
+          "to": "forehead",
+          "point": "palm",
+          "offset": [8, -14, 24],
+          "elbow": [0.3, 0, 1]
+        }
+      },
+      "hand": { "armNear": { "pose": "flat", "palm": "back", "fingers": "in", "w": 0.8 } },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.55,
+      "pose": { "head": [-6, 0, 12], "stretch": [1, 1.3, 1, 1] },
+      "reach": {
+        "armNear": {
+          "to": "forehead",
+          "point": "palm",
+          "offset": [4, -8, 32],
+          "elbow": [0.3, 0, 1]
+        }
+      },
+      "hand": { "armNear": { "pose": "flat", "palm": "back", "fingers": "in", "w": 0.8 } },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.7,
+      "pose": { "head": [-3, 0, 4], "stretch": [1, 1.3, 1, 1] },
+      "reach": {
+        "armNear": {
+          "to": "forehead",
+          "point": "palm",
+          "offset": [14, 0, 38],
+          "elbow": [0.3, 0, 1]
+        }
+      },
+      "hand": { "armNear": { "pose": "flat", "palm": "back", "fingers": "in", "w": 0.6 } },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.84,
+      "pose": { "armNear": [4, 70, 0, 12, 0], "head": [0, 0, 2], "stretch": [1, 1, 1, 1] },
+      "hand": { "armNear": { "pose": "flat", "w": 0.3, "turn": 0, "bend": 0 } },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": { "armNear": [-6, 24, 0], "head": [0, 0, 0], "stretch": [1, 1, 1, 1] },
+      "hand": { "armNear": { "pose": "flat", "w": 0, "turn": 0, "bend": 0 } },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "Lau mồ hôi trán một lần: tay gần lên trong 0,35 s, lòng tay áp mép trán bên tay (mốc `forehead`, offset [8, −14, 24]), ngón chĩa vào giữa trán, quệt ra thái dương ([4, −8, 32]) tới 0,77 s, rồi buông xuống cạnh thân, về dáng tay của `stand-3d` lúc 1,4 s và giữ; đầu cúi 12°, nghiêng 6° về phía tay. Cẳng tay dựng cạnh mặt chứ không quét ngang trán: trán người đầu to gần mút tầm với nên khuỷu không nâng ngang được; tay gần vươn 1,3 lúc ở trán. Chỉ ghi `armNear`, `head`, `hand`, `stretch`. Nền `stand-3d`. Đi với `face-tired`, `face-relieved`.",
+  "preview": { "stage": "stand" }
+}

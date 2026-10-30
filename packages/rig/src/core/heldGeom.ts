@@ -174,6 +174,8 @@ interface Cyl {
   r1: number;
   rMax: number;
   wall: boolean;
+  /** Bề dày thành ống (`wall`), `0` khi đặc */
+  wt: number;
 }
 
 const cylOf = (b: HeldShape, i: number): Cyl | undefined => {
@@ -191,6 +193,7 @@ const cylOf = (b: HeldShape, i: number): Cyl | undefined => {
     r1,
     rMax: Math.max(b.cyl, r1),
     wall: b.wall !== undefined,
+    wt: b.wall ?? 0,
   };
 };
 
@@ -427,7 +430,7 @@ interface RawLathe {
   lo: V3;
   len: number;
   /** Khúc của từng khối: `s` (từ `lo`) và bán kính hai đầu */
-  segs: { i: number; s0: number; r0: number; s1: number; r1: number; wall: boolean }[];
+  segs: { i: number; s0: number; r0: number; s1: number; r1: number; wall: boolean; wt: number }[];
 }
 
 function rawLathe(cyls: Cyl[], a0: V3): RawLathe {
@@ -442,8 +445,8 @@ function rawLathe(cyls: Cyl[], a0: V3): RawLathe {
     const sf = dot3(sub3(y.from, c), a);
     const st = dot3(sub3(y.to, c), a);
     return sf <= st
-      ? { i: y.i, s0: sf, r0: y.r0, s1: st, r1: y.r1, wall: y.wall }
-      : { i: y.i, s0: st, r0: y.r1, s1: sf, r1: y.r0, wall: y.wall };
+      ? { i: y.i, s0: sf, r0: y.r0, s1: st, r1: y.r1, wall: y.wall, wt: y.wt }
+      : { i: y.i, s0: st, r0: y.r1, s1: sf, r1: y.r0, wall: y.wall, wt: y.wt };
   });
   const sMin = Math.min(...raw.map((g) => g.s0));
   const sMax = Math.max(...raw.map((g) => g.s1));
@@ -503,6 +506,40 @@ function mouthDir(spec: GeomSpec): V3 | undefined {
     if (m) return m === "hi" ? l.a : neg(l.a);
   }
   return undefined;
+}
+
+/** Miệng của món suy từ hình: tâm đầu có `wall`, bán kính trong (bán kính ngoài trừ `wall`), hướng ra, phần mang nó */
+export interface ItemMouth {
+  part: string;
+  at: V3;
+  r: number;
+  dir: V3;
+}
+
+/** Mọi miệng suy được của món: mỗi phần có trụ tiện với khối `wall` ở đúng một đầu (docs/13 mục 3.2) */
+export function itemMouths(spec: GeomSpec): ItemMouth[] {
+  const out: ItemMouth[] = [];
+  for (const p of partsOf(spec)) {
+    const cyls = p.blocks.map((i) => cylOf(spec.shape![i], i)).filter((y): y is Cyl => !!y);
+    const g = latheBlocks(cyls);
+    if (!g.length) continue;
+    const l = rawLathe(g, g[0].d);
+    const m = mouthOf(l);
+    if (!m) continue;
+    const tol = touchTol(l);
+    const end = l.segs
+      .filter((s) => (m === "hi" ? s.s1 >= l.len - tol : s.s0 <= tol))
+      .map((s) => ({ r: m === "hi" ? s.r1 : s.r0, wt: s.wt }));
+    const outer = end.reduce((a, b) => (b.r > a.r ? b : a));
+    const wt = Math.max(...end.filter((e) => e.wt > 0).map((e) => e.wt));
+    out.push({
+      part: p.name,
+      at: add3(l.lo, scale3(l.a, m === "hi" ? l.len : 0)),
+      r: outer.r - (outer.wt || wt),
+      dir: m === "hi" ? l.a : neg(l.a),
+    });
+  }
+  return out;
 }
 
 function partsOf(spec: GeomSpec): PartGeom[] {

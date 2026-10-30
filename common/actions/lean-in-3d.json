@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 20,
+  "name": "lean-in-3d",
+  "duration": 0.4,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": 0, "head": [null, null, 0] }, "ease": "smooth" },
+    { "t": 1, "pose": { "torso": 11, "head": [null, null, -7] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Ngả tới (chú ý, dồn ép người đối diện): thân ngả 11° trong 0,4 s, đầu ngửa bù −7° để mắt vẫn nhìn người đối diện; giữ. Chỉ ghi `torso` và gật của `head`, nghiêng, lắc để trống; tay để cảnh. Nền `stand-3d`, ngồi thì `sit-3d`. Chồng được lên tay chống quầy, chắp, chỉ trỏ và `turn-head-*`; buông bằng clip rỗng blend ~0,4. Cùng họ: `lean-in-soft-3d` 7°, `lean-in-3d` 11°, `lean-in-firm-3d` 16°. Sinh bằng `tools/actions/lean-in.mjs`.",
+  "preview": { "stage": "stand" }
+}

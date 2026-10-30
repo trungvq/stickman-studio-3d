@@ -1,4 +1,4 @@
-import { SCENE_CANVAS, type FrameSpec } from "@stickman3d/sketch";
+import { SCENE_CANVAS, type FrameSpec } from "@stickman3d/rig/core";
 import type { IrisData } from "./schema";
 import { clamp01, easeInOut } from "./math";
 

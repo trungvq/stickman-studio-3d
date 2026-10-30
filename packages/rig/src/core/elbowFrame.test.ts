@@ -38,7 +38,7 @@ function runtime(scene: Record<string, unknown>) {
     ...scene,
   });
   if (!r.success) throw new Error(r.error.message);
-  const rt = resolveScene(r.data, {}, {}, {}, { nguoi: H }, { nguoi: DIMS });
+  const rt = resolveScene(r.data, {}, { nguoi: H }, { nguoi: DIMS });
   rt.chars = { nguoi: NGUOI };
   return rt;
 }
@@ -58,7 +58,7 @@ const gap = (a: readonly number[], b: readonly number[]) =>
 const TS = [0, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.2, 5];
 
 describe("`elbow` theo hệ của đích", () => {
-  it("mốc `to`: khuỷu đứng yên trong hệ thân suốt cú quay", () => {
+  it("mốc `to`: khuỷu đứng yên trong hệ thân suốt cú quay, chỉ nhích theo cằm khi đầu quay trước thân", () => {
     const rt = runtime({
       cast: cast([
         { t: 0, left: { to: "chin", offset: [30, 40, 15], point: "grip", elbow: [-0.3, 1, 1] } },
@@ -67,20 +67,24 @@ describe("`elbow` theo hệ của đích", () => {
     const ref = elbowAt(rt, 0);
     const yaws = TS.map((t) => elbowAt(rt, t).yaw);
     expect(Math.abs(yaws[0] - yaws[yaws.length - 1])).toBeGreaterThan(60 * (Math.PI / 180));
-    for (const t of TS) {
-      const e = elbowAt(rt, t);
-      expect(gap(e.body, ref.body)).toBeLessThan(0.08);
+    // đích là cằm: đầu quay trước thân (`HEAD_LEAD`) thì khuỷu nhích tỉ lệ với lệch đầu, không thì đứng yên
+    for (let k = 0; k <= 50; k++) {
+      const t = k / 10;
+      const lead = Math.abs(sceneAt(rt, "nguoi", t, H, DIMS).pose.head[1]);
+      expect(gap(elbowAt(rt, t).body, ref.body), `${t}`).toBeLessThanOrEqual(0.025 * lead + 1e-4);
     }
     // cùng lúc ấy khuỷu xoay theo người trong thế giới
     expect(gap(elbowAt(rt, 5).world, ref.world)).toBeGreaterThan(0.5);
   });
 
-  it("mốc `to` không khai `elbow` và mốc `to` khai đúng `REACH_ELBOW` ra cùng dáng", () => {
+  it("mốc `to` không khai `elbow`: khuỷu theo hướng ưu tiên của cổ tay (`elbowPref`), quay theo người", () => {
     const hand = { to: "chin", offset: [30, 40, 15], point: "grip" };
     const free = runtime({ cast: cast([{ t: 0, left: hand }]) });
+    const ref = elbowAt(free, 0);
+    for (const t of TS) expect(gap(elbowAt(free, t).body, ref.body)).toBeLessThan(0.08);
+    // khác hướng mặc định cố định cũ: khuỷu ưu tiên tính từ chỗ cổ tay
     const told = runtime({ cast: cast([{ t: 0, left: { ...hand, elbow: [-0.4, 1, 0.5] } }]) });
-    for (const t of TS)
-      expect(gap(elbowAt(told, t).world, elbowAt(free, t).world)).toBeLessThan(1e-6);
+    expect(gap(elbowAt(told, 0).body, ref.body)).toBeGreaterThan(0.05);
   });
 
   it("mốc `at`: khuỷu giữ hướng thế giới khi người quay", () => {
@@ -161,7 +165,7 @@ describe("chuyển cảnh đời trước (`migrate-elbow`)", () => {
     const old = legacy(e);
     const base = parseScene(stripLegacyElbows(old));
     expect(base.success).toBe(true);
-    const rt0 = resolveScene(base.data!, {}, {}, {}, { nguoi: H }, { nguoi: DIMS });
+    const rt0 = resolveScene(base.data!, {}, { nguoi: H }, { nguoi: DIMS });
     const { json, moves } = migrateLegacyElbows(old, rt0);
     expect((json as { schemaVersion: number }).schemaVersion).toBe(SCENE_VERSION);
     expect(moves).toHaveLength(1);

@@ -3,6 +3,7 @@
 // mốc món trên bản JSON thô của cảnh (`keys.ts`), một lịch sử chung, lưu qua `/api/scene`.
 import * as rig from "@stickman3d/rig";
 import type {
+  ActionData,
   AuthoredGrasp,
   HandShape,
   HandShapes,
@@ -78,6 +79,36 @@ import {
   type KeyRef,
 } from "./keys";
 import { record, travel } from "./history";
+import {
+  PARTNER_AT,
+  PREVIEW_ACTOR,
+  PREVIEW_ANGLES,
+  PREVIEW_PARTNER,
+  previewExtra,
+  previewLens,
+  previewScene,
+  previewSet,
+  previewStage,
+  type PreviewScene,
+} from "@stickman3d/rig";
+import {
+  SPEEDS,
+  groupActions,
+  isLibrary,
+  isMouthOnly,
+  orderCharacters,
+  readLibrary,
+  stepIn,
+  writeLibrary,
+  type ActionGroup,
+  type LibraryEntry,
+} from "./libraryList";
+import { LibraryPanel } from "./libraryUi";
+import { GEN_PAGES, paramProblems, type GenStage } from "@stickman3d/cli/gen-pages";
+import { genParams, isGen, readGen, setValue, writeGen } from "./genPage";
+import { GenQueue } from "./genQueue";
+import { GenPanel, type GenResult } from "./genUi";
+import { walkChart } from "./genWalkChart";
 import { runAt } from "./mode";
 import { ModeCard } from "./modeUi";
 import { runHoldKeys, setRunVariant, styleEntries, styleUses, type RunRef } from "./named";
@@ -102,6 +133,18 @@ const ui = {
   scenes: $<HTMLDataListElement>("scenes"),
   sceneSide: $<HTMLElement>("sceneSide"),
   sceneOpen: $<HTMLButtonElement>("sceneOpen"),
+  appMode: $<HTMLDivElement>("appMode"),
+  libTitle: $<HTMLSpanElement>("libTitle"),
+  libCount: $<HTMLSpanElement>("libCount"),
+  libFilter: $<HTMLInputElement>("libFilter"),
+  libList: $<HTMLDivElement>("libList"),
+  libCard: $<HTMLElement>("libCard"),
+  genForm: $<HTMLDivElement>("genForm"),
+  genCard: $<HTMLElement>("genCard"),
+  sceneTitle: $<HTMLElement>("sceneTitle"),
+  sideTitle: $<HTMLElement>("sideTitle"),
+  speed: $<HTMLSpanElement>("speed"),
+  loop: $<HTMLButtonElement>("loop"),
   scrim: $<HTMLDivElement>("scrim"),
   sceneToggle: $<HTMLButtonElement>("sceneToggle"),
   sceneCount: $<HTMLSpanElement>("sceneCount"),
@@ -194,10 +237,33 @@ let cur: {
 let t = 0;
 let playing = false;
 let mode: "scene" | "free" = "scene";
+/** Trang soi: sân khấu đang đặt trên khung vẽ; camera tự do đang ở cận vùng tương tác (nút **Cận**) */
+let genStage: GenStage | null = null;
+let genClose = false;
 let dirty = true;
 let loading = 0;
 /** Gốc repo video (`/api/scenes`) */
 let repoRoot = "";
+/** Trang mở trang soi bộ sinh (`?gen=<kiểu>`): như Thư viện, cảnh thử là sân khấu của bộ sinh. README.md#bộ-sinh */
+const GEN = isGen(new URLSearchParams(location.search));
+/**
+ * Trang mở chế độ Thư viện (`?library=1`) hay Bộ sinh: xem thử trên cảnh dựng trong bộ nhớ, không sửa gì.
+ * README.md#thư-viện
+ */
+const LIB = GEN || isLibrary(new URLSearchParams(location.search));
+document.body.classList.toggle("library", LIB);
+document.body.classList.toggle("gen", GEN);
+/** Chế độ của công tắc đầu thanh trên */
+const APP = GEN ? "gen" : LIB ? "library" : "scene";
+const APP_URL = {
+  scene: ["studio3d.sceneUrl", ""],
+  library: ["studio3d.libraryUrl", "?library=1"],
+  gen: ["studio3d.genUrl", "?gen=sit"],
+} as const;
+/** Bộ sinh và tham số của trang soi */
+const gv = readGen(new URLSearchParams(GEN ? location.search : ""), GEN_PAGES);
+/** Tốc độ phát, lặp khi hết cảnh: chỉ Thư viện đổi được */
+const lv = readLibrary(new URLSearchParams(LIB ? location.search : ""));
 
 /**
  * Bản đang sửa của cảnh: JSON thô (giữ trường lạ, mốc tên), chữ của bản đã lưu, hash lúc nạp và một lịch sử chung (mỗi bước
@@ -213,7 +279,8 @@ let work: {
 } | null = null;
 const isDirty = () => !!work && JSON.stringify(work.raw) !== work.saved;
 /** Xem cảnh hay sửa mốc tay (thanh tua có hàng mốc) */
-let edMode: "view" | "hands" = localStorage.getItem("studio3d.mode") === "hands" ? "hands" : "view";
+let edMode: "view" | "hands" =
+  !LIB && localStorage.getItem("studio3d.mode") === "hands" ? "hands" : "view";
 /** Mốc đang mở thẻ */
 let picked: KeyRef | null = null;
 /** Clip đang mở thẻ (hàng track của Dáng tay) */
@@ -236,7 +303,7 @@ const params = () => new URLSearchParams(location.search);
 /** View đang xem: cảnh, giây, camera (camera tự do kèm chỗ đứng, tâm xoay, fov), bàn tay đang chọn */
 function viewState(): ViewState {
   return {
-    scene: cur?.name ?? params().get("scene") ?? undefined,
+    scene: LIB ? undefined : (cur?.name ?? params().get("scene") ?? undefined),
     t,
     cam: mode,
     ...(mode === "free" &&
@@ -248,7 +315,20 @@ function viewState(): ViewState {
     ed: edMode,
   };
 }
-const remember = () => history.replaceState(null, "", `?${writeView(params(), viewState())}`);
+/** Ghi view vào URL; mỗi chế độ nhớ view cuối của nó để công tắc Cảnh / Thư viện / Bộ sinh mở lại đúng chỗ */
+function remember() {
+  const p = writeView(params(), viewState());
+  const q = `?${GEN ? genUrl(p) : LIB ? writeLibrary(p, lv) : p}`;
+  history.replaceState(null, "", q);
+  localStorage.setItem(APP_URL[APP][0], q);
+}
+
+/** URL của trang soi: người, góc máy, tốc độ, lặp như Thư viện (không hành động, không cờ `library`), rồi tham số */
+function genUrl(p: URLSearchParams) {
+  writeLibrary(p, { ...lv, action: undefined, mouth: false });
+  p.delete("library");
+  return writeGen(p, gv, GEN_PAGES);
+}
 
 /** Cỡ khung vẽ: 16:9 lớn nhất vừa vùng giữa, pixel thật theo màn hình (tối đa 2) */
 function frameSize() {
@@ -556,12 +636,14 @@ function attachOrbit() {
 
 function setMode(m: "scene" | "free") {
   mode = m;
+  genClose = false;
   for (const b of ui.cam.querySelectorAll("button")) b.classList.toggle("on", b.dataset.mode === m);
   ui.frame.classList.toggle("free", m === "free");
   if (orbit) orbit.enabled = m === "free";
   if (m === "free") seedFree();
   dirty = true;
-  remember();
+  if (GEN) syncGen();
+  else remember();
 }
 
 function draw() {
@@ -790,8 +872,7 @@ function restBlock(r: HandRow): string | undefined {
   if (!work || !cur) return "chưa mở cảnh";
   if (cur.src !== work.raw) return "đang dựng lại cảnh";
   if (r.hold || r.carry) return "tay đang cầm / treo món: buông món là `hold: null` ở thẻ mốc";
-  const src = rig.handSources(cur.rt, r.id, t)?.[sideOf(r.side)];
-  if (!src) return "người không có `world`";
+  const src = rig.handSources(cur.rt, r.id, t)[sideOf(r.side)];
   if (src.rest >= 1 - 1e-6) return "tay đã buông (mốc rest)";
   if (!restHits(r.id, sideOf(r.side)).length)
     return "không clip nào ghi bàn tay này ở giây đang xem: tay đã theo dáng của track ghi góc cánh tay";
@@ -1297,8 +1378,11 @@ function loop(now: number) {
   const dt = (now - last) / 1000;
   last = now;
   if (cur && playing) {
-    t += dt;
-    if (t > cur.dur) t = 0;
+    t += dt * lv.speed;
+    if (t > cur.dur) {
+      t = lv.loop ? 0 : cur.dur;
+      if (!lv.loop) togglePlay();
+    }
     dirty = true;
     frames++;
     if (now - since > 1000) {
@@ -2333,6 +2417,7 @@ const narrow = matchMedia("(max-width: 760px), (max-height: 500px) and (pointer:
 function setScenesOpen(on: boolean) {
   document.body.classList.toggle("scenesOpen", on);
   ui.scrim.hidden = !on;
+  if (on && LIB && !GEN) libPanel.reveal();
 }
 ui.sceneOpen.onclick = () => setScenesOpen(!document.body.classList.contains("scenesOpen"));
 ui.scrim.onclick = () => setScenesOpen(false);
@@ -2346,7 +2431,7 @@ ui.sceneToggle.onclick = () => {
   localStorage.setItem("studio3d.sceneSide", ui.sceneSide.classList.contains("shut") ? "shut" : "");
 };
 if (localStorage.getItem("studio3d.sceneSide") === "shut") ui.sceneSide.classList.add("shut");
-ui.reload.onclick = (e) => reload(e.shiftKey);
+ui.reload.onclick = (e) => (LIB ? void reloadLibrary() : reload(e.shiftKey));
 ui.copyView.onclick = () => void copyView();
 ui.edMode.onclick = (e) => {
   const m = (e.target as HTMLElement).dataset.m;
@@ -2398,7 +2483,13 @@ ui.frame.addEventListener("pointerdown", (e) => {
   down = e.button === 0 && !e.shiftKey && !e.ctrlKey ? { x: e.clientX, y: e.clientY } : null;
 });
 ui.frame.addEventListener("pointerup", (e) => {
-  if (!down || !cur || editor?.shown || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4)
+  if (
+    LIB ||
+    !down ||
+    !cur ||
+    editor?.shown ||
+    Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4
+  )
     return;
   down = null;
   const r = cur.stage.canvas.getBoundingClientRect();
@@ -2467,10 +2558,11 @@ addEventListener("keydown", (e) => {
   const k = e.key.toLowerCase();
   if (mod && k === "s") {
     e.preventDefault();
-    void save();
+    if (!LIB) void save();
     return;
   }
   if (typing) return;
+  if (LIB && libKey(e)) return;
   if (mod && (k === "z" || k === "y")) {
     e.preventDefault();
     if (editor) say("khung soạn kiểu cầm đang mở: hoàn tác ở khung soạn");
@@ -2502,6 +2594,8 @@ addEventListener("keydown", (e) => {
 new ResizeObserver(resize).observe(ui.view);
 
 async function start() {
+  if (GEN) return startGen();
+  if (LIB) return startLibrary();
   const j = await (await fetch("/api/scenes")).json();
   ui.scenes.replaceChildren(
     ...j.names.map((n: string) => Object.assign(document.createElement("option"), { value: n })),
@@ -2712,6 +2806,620 @@ function showNote(note: string) {
   d.onclose = () => d.remove();
   document.body.append(d);
   d.showModal();
+}
+
+// --- thư viện: xem thử một hành động trên một người, cảnh dựng trong bộ nhớ (`previewScene`) ---
+
+interface LibraryJson extends Scene3Json {
+  root: string;
+  actions: (LibraryEntry & { raw: unknown })[];
+  characters: LibraryEntry[];
+}
+
+let lib: {
+  data: Data;
+  actions: Record<string, ActionData>;
+  layers: Record<string, LibraryEntry["layer"]>;
+  groups: ActionGroup[];
+  /** Hành động chỉ nhép miệng (`isMouthOnly`): danh sách ẩn khi `lv.mouth` tắt */
+  mouth: Set<string>;
+  chars: LibraryEntry[];
+  held: Omit<HeldOptions, "frame">;
+  warn: string[];
+} | null = null;
+/** JSON cảnh xem thử đang dựng: đổi góc máy chỉ thay bản này, `WorldSpec.lens` đọc lại mỗi khung */
+let preview: PreviewScene | null = null;
+let libError = "";
+
+const libPanel = new LibraryPanel(ui.libList, ui.libFilter, ui.libCount, ui.libCard, {
+  pick: (n) => {
+    setScenesOpen(false);
+    void openAction(n);
+  },
+  who: (file) => {
+    lv.who = file.replace(/\.json$/, "") || undefined;
+    if (GEN) runGen(0);
+    else void loadPreview(true);
+  },
+  angle: setAngle,
+  mouthOn: () => lv.mouth,
+  mouth: (on) => {
+    lv.mouth = on;
+    syncLibrary();
+  },
+});
+
+/** Đọc thư viện hai lớp; hành động parse bằng mã nguồn rig của trang (bản `worldData` có thể cắt mất `preview`) */
+async function fetchLibrary() {
+  const j: LibraryJson = await (await fetch("/api/library")).json();
+  if (j.error) throw new Error(j.error);
+  const warn: string[] = [];
+  const actions: Record<string, ActionData> = {};
+  const layers: Record<string, LibraryEntry["layer"]> = {};
+  for (const e of j.actions) {
+    const r = rig.parseAction(e.raw);
+    if (r.success) actions[e.name] = r.data;
+    else warn.push(`actions/${e.name}.json: ${r.error.message.slice(0, 200)}`);
+    layers[e.name] = e.layer;
+  }
+  const people = Object.keys(actions);
+  lib = {
+    data: { ...j.data, actions, held: heldOf(j, warn), hands: handsLib(j, warn) },
+    actions,
+    layers,
+    groups: groupActions(people),
+    mouth: new Set(people.filter((n) => isMouthOnly(actions[n]))),
+    chars: orderCharacters(j.characters.filter((c) => j.data.characters[c.name])),
+    held: (j.heldOpts && !j.heldOpts.off && !j.heldOpts.error ? j.heldOpts : {}) as Omit<
+      HeldOptions,
+      "frame"
+    >,
+    warn,
+  };
+  repoRoot = j.root;
+  libPanel.set(lib.groups, layers, lib.mouth);
+  // hành động, người trong URL không còn thì về `stand-3d` và người đầu danh sách; khẩu hình đang ẩn vẫn mở được
+  const names = lib.groups.flatMap((g) => g.names);
+  if (!lv.action || !names.includes(lv.action))
+    lv.action = names.includes("stand-3d") ? "stand-3d" : names[0];
+  if (!lv.who || !lib.chars.some((c) => c.name === `${lv.who}.json`))
+    lv.who = lib.chars[0]?.name.replace(/\.json$/, "");
+}
+
+const whoFile = () => (lv.who ? `${lv.who}.json` : undefined);
+
+/** Cảnh xem thử của `name` trên `lv.who`; người thứ hai (`preview.partner`) là người đầu danh sách khác người diễn */
+function previewOf(name: string, angle: (typeof lv)["angle"]): PreviewScene {
+  const file = whoFile();
+  const c = file ? lib!.data.characters[file] : undefined;
+  const partner = lib!.chars.find((e) => e.name !== file)?.name;
+  return previewScene(name, lib!.actions[name], c && file, {
+    angle,
+    height: c?.rig.height ?? 1,
+    has: (n) => n in lib!.actions,
+    partner,
+    partnerHeight: partner ? lib!.data.characters[partner]?.rig.height : undefined,
+  });
+}
+
+/** Dựng cảnh xem thử của `lv.action` trên `lv.who`; `false` khi hỏng hay đã có lần dựng sau */
+async function loadPreview(keepTime = false): Promise<boolean> {
+  if (!lib || !lv.action) return false;
+  const my = ++loading;
+  playing = false;
+  ui.play.textContent = "▶";
+  const name = lv.action;
+  const file = whoFile();
+  const c = file ? lib.data.characters[file] : undefined;
+  try {
+    const json = previewOf(name, lv.angle);
+    const parsed = rig.parseScene(json);
+    if (!parsed.success) throw new Error(`scene JSON sai: ${parsed.error.message}`);
+    const scene = parsed.data;
+    const { runtime, heights, bodies } = runtimeOf(scene, lib.data);
+    const ctx = { characters: lib.data.characters, heights, bodies };
+    // `still: []`: người ngồi (`world.sit`) vẫn diễn, không đóng băng thành người nền
+    const w = rig.buildWorld(
+      scene,
+      runtime,
+      {
+        set: () =>
+          previewSet(previewStage(name, lib!.actions[name]), {
+            height: c?.rig.height ?? 1,
+          }),
+        still: [],
+        extra: previewExtra(json, lib.data.held as Record<string, HeldItemSpec>),
+        lens: (tt) => (preview ? previewLens(preview, tt) : undefined),
+      },
+      ctx,
+    );
+    await w.ready;
+    if (my !== loading) return false;
+    const gpu = mountPreview(json, scene, runtime, w, lib.data, keepTime);
+    libError = "";
+    ui.status.textContent = `plainRoom · ${lv.who ?? "người mặc định"} · ${previewStage(name, lib.actions[name])}${gpu}`;
+    say(lib.warn.join("\n"));
+    dirty = true;
+    return true;
+  } catch (e) {
+    if (my !== loading) return false;
+    libError = `${name}: ${(e as Error).message ?? e}`;
+    say(libError, true);
+    return false;
+  } finally {
+    if (my === loading) syncLibrary();
+  }
+}
+
+/** Đặt cảnh xem thử đã dựng (`w` của `json`) lên khung vẽ: `cur`, thanh tua, camera; trả ghi chú vẽ phần mềm */
+function mountPreview(
+  json: PreviewScene,
+  scene: SceneData,
+  runtime: SceneRuntime,
+  w: World3D,
+  data: Data,
+  keepTime: boolean,
+) {
+  const box = { posed: {} as Record<string, Figure> };
+  const stage = stageFor(w, scene, (p) => (box.posed = p ?? {}));
+  dispose();
+  ui.frame.append(stage.canvas);
+  preview = json;
+  cur = {
+    name: scene.name,
+    scene,
+    dur: runtime.duration,
+    stage,
+    w,
+    from: "plain",
+    rt: runtime,
+    src: json as unknown as Json,
+    held: lib!.held,
+    data,
+    key: "",
+    heldOut: null,
+    get posed() {
+      return box.posed;
+    },
+  };
+  rowsT = NaN;
+  t = keepTime ? Math.min(t, cur.dur) : 0;
+  ui.time.max = String(cur.dur);
+  ui.time.step = String(1 / FPS);
+  ui.marks.replaceChildren();
+  attachOrbit();
+  if (mode === "free" && !keepTime) seedFree();
+  return /SwiftShader/.test(stage.gpu) ? " · ⚠ vẽ phần mềm" : "";
+}
+
+/** Danh sách, thẻ, tiêu đề, URL theo `lv` */
+function syncLibrary() {
+  if (GEN) return syncGen();
+  if (!lib) return;
+  const name = lv.action ?? "";
+  const a = lib.actions[name];
+  libPanel.mark(name);
+  ui.libTitle.textContent = name;
+  ui.libTitle.title = name;
+  document.title = `${name} — Thư viện — Studio 3D`;
+  const tracks = preview?.cast[0].tracks ?? [];
+  const base = tracks
+    .filter((tr) => tr.name === "base")
+    .flatMap((tr) => tr.clips.map((c) => c.action))
+    .join(" → ");
+  libPanel.renderCard({
+    info: a
+      ? {
+          name,
+          layer: lib.layers[name],
+          stage: previewStage(name, a),
+          ...(base && { base }),
+          ...(a.preview?.hold && { hold: holdText(a.preview.hold) }),
+          ...(a.preview?.partner && { partner: partnerText(a.preview.partner) }),
+          duration: a.duration,
+          end: a.end,
+          ...(a.mask && { mask: a.mask }),
+          channels: rig.actionMask(a),
+          ...(a.note && { note: a.note }),
+          ...(a.authoredAt && { authoredAt: a.authoredAt }),
+          ...(a.gen && { gen: a.gen }),
+          variants: libPanel.siblings(name),
+          sceneDuration: preview?.duration ?? a.duration,
+        }
+      : null,
+    who: lib.chars,
+    whoOn: whoFile(),
+    angle: lv.angle,
+    ...(libError && { error: libError }),
+  });
+  for (const b of ui.speed.querySelectorAll<HTMLButtonElement>("button"))
+    b.classList.toggle("on", Number(b.dataset.s) === lv.speed);
+  ui.loop.classList.toggle("on", lv.loop);
+  remember();
+}
+
+const holdText = (h: NonNullable<NonNullable<ActionData["preview"]>["hold"]>) =>
+  (["right", "left"] as const)
+    .filter((s) => h[s])
+    .map((s) => {
+      const g = rig.groupHold(h[s]!);
+      return `${s === "right" ? "phải" : "trái"} ${g.item}@${g.group}${g.variant ? `/${g.variant}` : ""}${g.both ? " (hai tay)" : ""}`;
+    })
+    .join(" · ");
+
+function partnerText(p: NonNullable<NonNullable<ActionData["preview"]>["partner"]>) {
+  const [ahead, right] = p.at ?? PARTNER_AT;
+  const b = preview?.cast.find((c) => c.id === PREVIEW_PARTNER);
+  return [
+    b?.character?.replace(/\.json$/, "") ?? "người mặc định",
+    `trước ${ahead}, phải ${right}${p.yaw ? `, quay ${p.yaw}°` : ""}`,
+    p.action ?? "stand-3d",
+    ...(p.hold ? [`cầm ${holdText(p.hold)}`] : []),
+    ...(b?.fade ? ["ẩn ở góc này (che người diễn)"] : []),
+  ].join(" · ");
+}
+
+async function openAction(name: string) {
+  if (!lib?.actions[name] || name === lv.action) return;
+  lv.action = name;
+  await loadPreview();
+}
+
+function setAngle(a: (typeof lv)["angle"]) {
+  lv.angle = a;
+  // kênh gần là tay nào (`flip`) và người thứ hai ẩn khi che người diễn (`cast[].fade`) suy từ ống kính của cảnh: dựng lại;
+  // trang soi sinh lại (chân co `near` / `far` theo kênh gần)
+  if (GEN) runGen(0);
+  else if (preview && lib && lv.action) void loadPreview(true);
+  // camera tự do: góc máy mới là chỗ đứng mới của nó
+  if (mode === "free") setMode("scene");
+  dirty = true;
+  syncLibrary();
+}
+
+async function reloadLibrary() {
+  try {
+    say("Đang nạp lại thư viện…");
+    await fetchLibrary();
+    if (GEN) {
+      say("");
+      return runGen(0);
+    }
+    await loadPreview(true);
+  } catch (e) {
+    say(`${(e as Error).stack ?? e}`, true);
+  }
+}
+
+/** Phím riêng của Thư viện; `true` là đã dùng phím */
+function libKey(e: KeyboardEvent): boolean {
+  if (GEN) return genKey(e);
+  if (e.ctrlKey || e.metaKey || e.altKey || !lib || !lv.action) return false;
+  const k = e.key.toLowerCase();
+  const go = (n: string | undefined) => {
+    e.preventDefault();
+    if (n) void openAction(n);
+    return true;
+  };
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    const shown = libPanel.shown();
+    return go(
+      stepIn(shown.length ? shown : [lv.action], lv.action, e.key === "ArrowDown" ? 1 : -1),
+    );
+  }
+  if (k === "v") return go(stepIn(libPanel.siblings(lv.action), lv.action, e.shiftKey ? -1 : 1));
+  const n = Number(e.key);
+  if (n >= 1 && n <= PREVIEW_ANGLES.length) {
+    setAngle(PREVIEW_ANGLES[n - 1]);
+    return true;
+  }
+  if (k === "l") {
+    lv.loop = !lv.loop;
+    syncLibrary();
+    return true;
+  }
+  if (k === "r") {
+    void reloadLibrary();
+    return true;
+  }
+  // bàn tay, chỉ người này, xoá mốc: của chế độ Cảnh
+  return k === "h" || e.key === "Delete" || e.key === "Backspace";
+}
+
+ui.appMode.onclick = (e) => {
+  const a = (e.target as HTMLElement).closest("button")?.dataset.a as keyof typeof APP_URL;
+  if (!a || !(a in APP_URL) || a === APP) return;
+  const [key, empty] = APP_URL[a];
+  location.search = localStorage.getItem(key) ?? empty;
+};
+for (const b of ui.appMode.querySelectorAll<HTMLButtonElement>("button"))
+  b.classList.toggle("on", b.dataset.a === APP);
+ui.speed.onclick = (e) => {
+  const s = Number((e.target as HTMLElement).dataset.s);
+  if (!(SPEEDS as readonly number[]).includes(s)) return;
+  lv.speed = s;
+  syncLibrary();
+};
+ui.loop.onclick = () => {
+  lv.loop = !lv.loop;
+  syncLibrary();
+};
+if (GEN) {
+  ui.sceneTitle.textContent = "Tham số";
+  ui.sideTitle.textContent = "Tự kiểm";
+  ui.sceneOpen.title = "Tham số của bộ sinh";
+} else if (LIB) {
+  ui.sceneTitle.textContent = "Thư viện";
+  ui.sideTitle.textContent = "Hành động";
+  ui.sceneOpen.title = "Danh sách hành động";
+}
+
+async function startLibrary() {
+  const v = readView(params());
+  mode = v.cam;
+  t = v.t;
+  try {
+    await fetchLibrary();
+  } catch (e) {
+    say(`${(e as Error).stack ?? e}`, true);
+    return;
+  }
+  if ((await loadPreview(true)) && cur) restoreView(v);
+  requestAnimationFrame(loop);
+}
+
+// --- bộ sinh: tham số, sân khấu thử (`GEN_PAGES[kiểu].stage`), chạy khô trên server (`/api/gen`), tự kiểm ---
+
+/** Ngừng gõ ngần này (ms) thì chạy lại bộ sinh */
+const GEN_DEBOUNCE = 450;
+let genRes: GenResult = {};
+const genQueue = new GenQueue((stale) => genOnce(stale), {
+  set: (f, ms) => window.setTimeout(f, ms),
+  clear: (id) => clearTimeout(id),
+});
+const genPage = () => GEN_PAGES[gv.kind];
+
+const genPanel = new GenPanel(ui.genForm, ui.genCard, {
+  kind: (k) => {
+    if (k === gv.kind) return;
+    gv.kind = k;
+    gv.values = {};
+    genRes = {};
+    runGen(0);
+    syncGen(true);
+  },
+  set: (key, v) => {
+    gv.values = setValue(genPage().params, gv.values, key, v);
+    runGen(GEN_DEBOUNCE);
+    syncGen();
+  },
+  reset: () => {
+    gv.values = {};
+    runGen(0);
+    syncGen(true);
+  },
+  seek: (tt) => {
+    if (playing) togglePlay();
+    seek(tt);
+  },
+  close: genCloseUp,
+});
+
+/** Form, thẻ người và góc máy, thẻ kết quả, tiêu đề, URL theo `gv` và `lv` */
+function syncGen(force = false) {
+  if (!lib) return;
+  const page = genPage();
+  const file = whoFile();
+  genPanel.who = {
+    name: file,
+    character: file ? lib.data.characters[file] : undefined,
+    actions: lib.data.actions,
+  };
+  genPanel.renderForm(GEN_PAGES, gv, force);
+  libPanel.renderCard({ info: null, who: lib.chars, whoOn: whoFile(), angle: lv.angle });
+  genPanel.renderCard(genRes, page, gv.kind, genClose && mode === "free");
+  ui.libTitle.textContent = `${page.label} · gen ${gv.kind}`;
+  ui.libTitle.title = `stickman gen ${gv.kind}`;
+  document.title = `gen ${gv.kind} — Bộ sinh — Studio 3D`;
+  for (const b of ui.speed.querySelectorAll<HTMLButtonElement>("button"))
+    b.classList.toggle("on", Number(b.dataset.s) === lv.speed);
+  ui.loop.classList.toggle("on", lv.loop);
+  remember();
+}
+
+/** Đầu vào của trang đổi: kết quả đang hiện thành cũ, chạy lại sau `delay` ms */
+function runGen(delay: number) {
+  genRes = { ...genRes, busy: true };
+  genQueue.changed(delay);
+}
+
+/**
+ * Dựng sân khấu thử ngay, rồi gửi `/api/gen` và phát hành động sinh ra trên chính sân khấu ấy; `stale()` đúng là đầu vào đã
+ * đổi: lượt bỏ kết quả của nó
+ */
+async function genOnce(stale: () => boolean) {
+  if (!lib) return;
+  const page = genPage();
+  const kind = gv.kind;
+  const p = genParams(gv.values, lv.angle);
+  const file = whoFile();
+  const character = file ? lib.data.characters[file] : undefined;
+  const problems = paramProblems(page.params, p);
+  if (problems.length) {
+    genRes = { error: "Tham số sai", errorLines: problems };
+    return syncGen();
+  }
+  let st: GenStage;
+  try {
+    st = page.stage(p, { name: file, character, actions: lib.data.actions });
+    await showGen(st, st.scene, {}, stale);
+  } catch (e) {
+    if (stale()) return;
+    genRes = { error: `sân khấu thử: ${(e as Error).message ?? e}` };
+    return syncGen();
+  }
+  if (stale()) return;
+  genRes = { ...genRes, busy: true, error: undefined };
+  genPanel.unpick();
+  syncGen();
+  const t0 = performance.now();
+  try {
+    const r = await fetch("/api/gen", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kind, params: p, who: file }),
+    });
+    const j = await r.json();
+    if (stale()) return;
+    if (!r.ok) {
+      genRes = { error: j.error ?? `HTTP ${r.status}`, errorLines: j.lines };
+      return syncGen();
+    }
+    // `walk` ghi cảnh, không sinh hành động
+    const a = j.action ? rig.parseAction(j.action) : undefined;
+    if (a && !a.success) throw new Error(`hành động sinh ra không qua schema: ${a.error.message}`);
+    const shown = await showGen(st, j.scene, a ? { [j.name]: a.data } : {}, stale);
+    if (stale()) return;
+    const trace =
+      kind === "walk" && shown
+        ? rig.gaitTrace(
+            shown.runtime,
+            PREVIEW_ACTOR,
+            shown.heights[PREVIEW_ACTOR],
+            shown.bodies[PREVIEW_ACTOR],
+          )
+        : undefined;
+    genRes = {
+      ...(trace && {
+        chart: walkChart(trace, (tt) => {
+          if (playing) togglePlay();
+          seek(tt);
+        }),
+      }),
+      ok: j.ok,
+      name: j.name,
+      checks: j.checks,
+      lines: j.lines,
+      ms: performance.now() - t0,
+    };
+  } catch (e) {
+    if (stale()) return;
+    genRes = { error: `${(e as Error).message ?? e}` };
+  }
+  syncGen();
+}
+
+/**
+ * Dựng cảnh `json` của sân khấu `st` như Thư viện: `parseScene` → `resolveScene` → `buildWorld` với `propWorld(props)` làm
+ * `WorldSpec`, món thử (`st.held`) qua `previewExtra`; `actions` là hành động sinh ra. `stale()` đúng lúc dựng xong thì không đặt
+ */
+async function showGen(
+  st: GenStage,
+  json: unknown,
+  actions: Record<string, ActionData>,
+  stale: () => boolean,
+) {
+  if (!lib) return;
+  const my = ++loading;
+  const parsed = rig.parseScene(json);
+  if (!parsed.success) throw new Error(`cảnh thử sai: ${parsed.error.message}`);
+  const scene = parsed.data;
+  const held = { ...lib.data.held, ...st.held } as Record<string, HeldItemSpec>;
+  const data: Data = { ...lib.data, actions: { ...lib.data.actions, ...actions }, held };
+  const { runtime, heights, bodies } = runtimeOf(scene, data);
+  const w = rig.buildWorld(
+    scene,
+    runtime,
+    {
+      ...rig.propWorld(st.props, { h: st.h }),
+      still: [],
+      extra: previewExtra(json as PreviewScene, held),
+      lens: (tt) => previewLens(st.scene, tt),
+    },
+    { characters: data.characters, heights, bodies },
+  );
+  await w.ready;
+  if (my !== loading || stale()) return;
+  const gpu = mountPreview(st.scene, scene, runtime, w, data, true);
+  genStage = st;
+  ui.status.textContent = `sân khấu thử · ${lv.who ?? "người mặc định"} · ${st.props.map((x) => x.name).join(", ") || "không đồ"}${gpu}`;
+  dirty = true;
+  return { runtime, heights, bodies };
+}
+
+/**
+ * Nút **Cận**: camera tự do bay tới khung quanh vùng tương tác ở giây đang xem — hai cổ tay, hông, món đang cầm, chỗ chén —
+ * nhìn theo hướng của góc máy đang chọn; bấm lại về camera cảnh
+ */
+function genCloseUp() {
+  if (!cur || !orbit) return;
+  if (genClose && mode === "free") {
+    setMode("scene");
+    return syncGen();
+  }
+  const fig = cur.posed[PREVIEW_ACTOR];
+  if (!fig) return;
+  const box = new THREE.Box3();
+  const p = new THREE.Vector3();
+  for (const s of [-1, 1] as const) {
+    box.expandByPoint(fig.arms[s].wrist.getWorldPosition(p));
+    const held = fig.holding?.[s]?.object;
+    if (held) box.expandByObject(held);
+  }
+  box.expandByPoint(fig.hips.getWorldPosition(p));
+  if (genStage?.cup) box.expandByPoint(rig.toThree(genStage.cup));
+  const ball = box.getBoundingSphere(new THREE.Sphere());
+  const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(cur.stage.camera.quaternion);
+  if (mode !== "free") setMode("free");
+  const r = Math.max(ball.radius, 0.4);
+  const dist = (r / Math.sin(((free.fov / 2) * Math.PI) / 180)) * 1.1;
+  fly = {
+    p0: free.position.clone(),
+    t0: orbit.target.clone(),
+    p1: ball.center.clone().addScaledVector(dir, -dist),
+    t1: ball.center.clone(),
+    at: performance.now(),
+  };
+  genClose = true;
+  dirty = true;
+  syncGen();
+}
+
+/** Phím riêng của trang soi; `true` là đã dùng phím */
+function genKey(e: KeyboardEvent): boolean {
+  if (e.ctrlKey || e.metaKey || e.altKey || !lib) return false;
+  const k = e.key.toLowerCase();
+  const n = Number(e.key);
+  if (n >= 1 && n <= PREVIEW_ANGLES.length) {
+    setAngle(PREVIEW_ANGLES[n - 1]);
+    return true;
+  }
+  if (k === "l") {
+    lv.loop = !lv.loop;
+    syncGen();
+    return true;
+  }
+  if (k === "r") {
+    void reloadLibrary();
+    return true;
+  }
+  return k === "h" || k === "v" || e.key === "Delete" || e.key === "Backspace";
+}
+
+async function startGen() {
+  const v = readView(params());
+  mode = v.cam;
+  t = v.t;
+  try {
+    await fetchLibrary();
+  } catch (e) {
+    say(`${(e as Error).stack ?? e}`, true);
+    return;
+  }
+  syncGen(true);
+  requestAnimationFrame(loop);
+  await genQueue.go();
+  if (cur) restoreView(v);
 }
 
 start();

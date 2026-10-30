@@ -1,0 +1,397 @@
+{
+  "schemaVersion": 20,
+  "name": "pour-3d",
+  "duration": 3,
+  "end": "hold",
+  "mask": ["armNear", "hand", "torso"],
+  "authoredAt": "side",
+  "sides": "anatomical",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "torso": 2 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [45.86, 23.81, 33.3],
+          "point": "grip",
+          "elbow": [-0.4, 1, 0.6]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "grip", "palm": [0, 0, -1], "fingers": [1, 0, 0] } }
+    },
+    {
+      "t": 0.2,
+      "pose": { "torso": 2 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [45.86, 23.81, 33.3],
+          "point": "grip",
+          "elbow": [-0.4, 1, 0.6]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "grip", "palm": [0, 0, -1], "fingers": [1, 0, 0] } }
+    },
+    {
+      "t": 0.26,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [50.66, 22.01, 39.64],
+          "point": "grip",
+          "elbow": [-0.36, 0.92, 0.68]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "grip", "palm": [0, 0.64, -0.77], "fingers": [1, 0, 0] } }
+    },
+    {
+      "t": 0.3,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [51.36, 31.99, 33.64],
+          "point": "grip",
+          "elbow": [-0.3, 0.8, 0.8]
+        }
+      },
+      "ease": "linear",
+      "hand": { "armNear": { "pose": "grip", "palm": [0, 0.64, -0.77], "fingers": [1, 0, 0] } }
+    },
+    {
+      "t": 0.315,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [51.94, 30.27, 34.26],
+          "point": "grip",
+          "elbow": [-0.3, 0.79, 0.81]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [-0.01, 0.67, -0.74], "fingers": [1, 0, -0.02] }
+      }
+    },
+    {
+      "t": 0.33,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [53.68, 25.25, 35.58],
+          "point": "grip",
+          "elbow": [-0.29, 0.76, 0.83]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [-0.04, 0.75, -0.66], "fingers": [1, 0, -0.06] }
+      }
+    },
+    {
+      "t": 0.345,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [56.36, 17.52, 36.32],
+          "point": "grip",
+          "elbow": [-0.27, 0.71, 0.86]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [-0.07, 0.85, -0.52], "fingers": [0.99, 0, -0.13] }
+      }
+    },
+    {
+      "t": 0.36,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [59.32, 8.34, 35.26],
+          "point": "grip",
+          "elbow": [-0.25, 0.65, 0.9]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [-0.07, 0.94, -0.33], "fingers": [0.98, 0, -0.22] }
+      }
+    },
+    {
+      "t": 0.375,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [61.63, -0.53, 32.22],
+          "point": "grip",
+          "elbow": [-0.23, 0.59, 0.94]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [-0.04, 0.99, -0.14], "fingers": [0.95, 0, -0.3] }
+      }
+    },
+    {
+      "t": 0.39,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [62.8, -7.53, 28.27],
+          "point": "grip",
+          "elbow": [-0.21, 0.54, 0.97]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [0.01, 1, 0.02], "fingers": [0.93, 0, -0.36] }
+      }
+    },
+    {
+      "t": 0.405,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [63.07, -11.83, 25.04],
+          "point": "grip",
+          "elbow": [-0.2, 0.51, 0.99]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [0.05, 0.99, 0.12], "fingers": [0.91, 0, -0.41] }
+      }
+    },
+    {
+      "t": 0.42,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [63.06, -13.25, 23.81],
+          "point": "grip",
+          "elbow": [-0.2, 0.5, 1]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [0.07, 0.98, 0.16], "fingers": [0.91, 0, -0.42] }
+      }
+    },
+    {
+      "t": 0.75,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [63.06, -13.25, 23.81],
+          "point": "grip",
+          "elbow": [-0.2, 0.5, 1]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [0.07, 0.98, 0.16], "fingers": [0.91, 0, -0.42] }
+      }
+    },
+    {
+      "t": 0.7638,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [63.07, -11.83, 25.04],
+          "point": "grip",
+          "elbow": [-0.2, 0.51, 0.99]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [0.05, 0.99, 0.12], "fingers": [0.91, 0, -0.41] }
+      }
+    },
+    {
+      "t": 0.7775,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [62.8, -7.53, 28.27],
+          "point": "grip",
+          "elbow": [-0.21, 0.54, 0.97]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [0.01, 1, 0.02], "fingers": [0.93, 0, -0.36] }
+      }
+    },
+    {
+      "t": 0.7913,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [61.63, -0.53, 32.22],
+          "point": "grip",
+          "elbow": [-0.23, 0.59, 0.94]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [-0.04, 0.99, -0.14], "fingers": [0.95, 0, -0.3] }
+      }
+    },
+    {
+      "t": 0.805,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [59.32, 8.34, 35.26],
+          "point": "grip",
+          "elbow": [-0.25, 0.65, 0.9]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [-0.07, 0.94, -0.33], "fingers": [0.98, 0, -0.22] }
+      }
+    },
+    {
+      "t": 0.8188,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [56.36, 17.52, 36.32],
+          "point": "grip",
+          "elbow": [-0.27, 0.71, 0.86]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [-0.07, 0.85, -0.52], "fingers": [0.99, 0, -0.13] }
+      }
+    },
+    {
+      "t": 0.8325,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [53.68, 25.25, 35.58],
+          "point": "grip",
+          "elbow": [-0.29, 0.76, 0.83]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [-0.04, 0.75, -0.66], "fingers": [1, 0, -0.06] }
+      }
+    },
+    {
+      "t": 0.8463,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [51.94, 30.27, 34.26],
+          "point": "grip",
+          "elbow": [-0.3, 0.79, 0.81]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armNear": { "pose": "grip", "palm": [-0.01, 0.67, -0.74], "fingers": [1, 0, -0.02] }
+      }
+    },
+    {
+      "t": 0.86,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [51.36, 31.99, 33.64],
+          "point": "grip",
+          "elbow": [-0.3, 0.8, 0.8]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "grip", "palm": [0, 0.64, -0.77], "fingers": [1, 0, 0] } }
+    },
+    {
+      "t": 0.9,
+      "pose": { "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [50.66, 22.01, 39.64],
+          "point": "grip",
+          "elbow": [-0.36, 0.92, 0.68]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "grip", "palm": [0, 0.64, -0.77], "fingers": [1, 0, 0] } }
+    },
+    {
+      "t": 0.97,
+      "pose": { "torso": 2 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [45.86, 23.81, 33.3],
+          "point": "grip",
+          "elbow": [-0.4, 1, 0.6]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "grip", "palm": [0, 0, -1], "fingers": [1, 0, 0] } }
+    },
+    {
+      "t": 1,
+      "pose": { "torso": 2 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [45.86, 23.81, 33.3],
+          "point": "grip",
+          "elbow": [-0.4, 1, 0.6]
+        }
+      },
+      "ease": "linear",
+      "hand": { "armNear": { "pose": "grip", "palm": [0, 0, -1], "fingers": [1, 0, 0] } }
+    }
+  ],
+  "events": [{ "name": "pour", "t": 0.42 }],
+  "note": "Rót một tay (nước, bia, rượu): tay phải nắm thân bình trước ngực lệch phải (mốc `chest`), vòi quay vào giữa thân; 0,6 → 0,78 s đưa bình tới, vòi lướt trên miệng cốc; 0,78 → 0,9 s hạ miệng bình xuống ướm miệng cốc; 0,9 → 1,26 s nâng đuôi bình: bình xoay quanh chính miệng bình, miệng bình đứng yên; sự kiện `pour` lúc 1,26 s, giữ rót tới 2,25 s, dựng lại theo đường ấy tới 2,58 s, nhấc khỏi miệng cốc, rút bình về lúc 2,91 s rồi giữ. Cẳng tay sấp dần, khuỷu nhấc dần ra ngoài, bình nghiêng 40 → 100°; thân cúi 2 → 4°. Ghi tay phải, `hand`, `torso`; tay trái để cho nền; `sides: \"anatomical\"`. Nền `stand-3d`, `sit-3d`; món ở `world.hands[].hold` tay phải, nhóm `cylinder` với `keep` (hướng bình theo cổ tay của hành động), `slant: 0`, `along: 0.3` (thân thẳng dưới vai bình), `around: 180` (hướng vòi của `held/binh.json`); món khác hay chỗ nắm khác thì miệng bình không đứng yên khi rót. Miệng cốc hứng ở trước bụng gần giữa thân, thấp hơn mốc `chest` ~23. Rót mời khách hai tay là `pour-serve-3d`. Sinh bằng `tools/actions/pour.mjs`.",
+  "preview": {
+    "stage": "stand",
+    "hold": {
+      "right": {
+        "item": "binh",
+        "group": "cylinder",
+        "part": "than",
+        "along": 0.3,
+        "thumb": "up",
+        "slant": 0,
+        "variant": "wrap",
+        "around": 180,
+        "keep": true
+      }
+    }
+  }
+}

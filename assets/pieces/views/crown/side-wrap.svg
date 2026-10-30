@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
-<title>Khăn quấn đầu nhìn nghiêng</title>
-<g id="guide" fill="none" stroke="#9ac" stroke-width="1"><circle cx="160" cy="160" r="100"/></g>
-<g fill="white" stroke="black" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 61 143 C 37 88 70 47 124 42 C 163 19 225 47 244 80 Q 271 110 250 144 Q 153 121 61 143 Z" fill="white" stroke-width="9"/>
-<path d="M 66 130 Q 153 91 236 74 M 56 109 Q 151 89 215 51 M 92 55 Q 140 94 251 120" fill="none" stroke-width="5.85"/>
-</g>
-</svg>

@@ -2,7 +2,6 @@
 // vệt (`trailWorker.ts`) dùng chung một cách dựng.
 import {
   body3,
-  castCharacter,
   defaultCharacter,
   resolveScene,
   type Body3,
@@ -13,8 +12,6 @@ import {
 export type Data = {
   characters: Record<string, CharacterData>;
   actions: Record<string, unknown>;
-  animals: Record<string, unknown>;
-  props: Record<string, unknown>;
   held: Record<string, unknown>;
   /** Thư viện dáng tay (`hands/`, hai lớp) */
   hands?: Record<string, unknown>;
@@ -27,11 +24,11 @@ export type Data = {
 export function castData(scene: SceneData, characters: Record<string, CharacterData>) {
   const heights: Record<string, number> = {};
   const bodies: Record<string, Body3> = {};
-  const chars: Record<string, ReturnType<typeof castCharacter>> = {};
+  const chars: Record<string, CharacterData> = {};
   for (const m of scene.cast) {
     const c = m.character ? characters[m.character] : defaultCharacter();
     if (!c) continue;
-    chars[m.id] = castCharacter(m, c);
+    chars[m.id] = c;
     if (!m.character) continue;
     heights[m.id] = c.rig.height;
     bodies[m.id] = body3(c);
@@ -45,8 +42,6 @@ export function runtimeOf(scene: SceneData, data: Data) {
   const runtime = resolveScene(
     scene,
     data.actions as never,
-    data.animals as never,
-    data.props as never,
     heights,
     bodies,
     data.held as never,

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 20,
+  "name": "suitcase-pull-3d",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["armNear", "hand"],
+  "authoredAt": "side",
+  "sides": "anatomical",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "reach": { "armNear": { "at": [-40, 10, 66] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "grip", "w": 1 } }
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": { "armNear": { "at": [-40, 10, 66] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "grip", "w": 1 } }
+    }
+  ],
+  "events": [],
+  "note": "Kéo vali bằng tay phải: cổ tay sau hông, ra ngoài (hệ thân [−40, 10, 66]), nắm, giữ từ giây 0. Chỉ ghi `armNear`, `hand`; `sides: \"anatomical\"`. Chồng lên `walk` theo `world.path` (tay trái vẫn đánh theo bước) hay `stand-3d`; món ở `world.hands[].hold` tay phải, như `vali` nhóm `cylinder` kiểu `wrap` ở phần `can`, `face` đầu tay kéo ngả về trước-trên ([0,5, −0,87, 0]). Vào bằng blend ~0,3; hai vali thì `suitcase-pull-both-3d`.",
+  "preview": {
+    "stage": "stand",
+    "hold": {
+      "right": {
+        "item": "vali",
+        "group": "cylinder",
+        "part": "can",
+        "variant": "wrap",
+        "face": { "axis": "handleTop", "toward": [0.5, -0.87, 0] }
+      }
+    }
+  }
+}

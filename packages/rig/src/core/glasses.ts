@@ -1,8 +1,7 @@
 import { D } from "./constants";
-import { headPath, headWarp } from "./head";
 import { GlassesSchema, type Glasses } from "./schema";
-import { onSkull, turnPoint, type HeadTurn, type Vec3 } from "./sphere";
-import type { HeadShape, Pt } from "./types";
+import { onSkull, type Vec3 } from "./sphere";
+import type { Pt } from "./types";
 
 /** Mặt kính ngả về phía tai bấy nhiêu độ quanh trục dọc qua tâm mắt kính */
 const WRAP = 12;
@@ -18,7 +17,7 @@ const EAR = 96;
 const RECT = { w: 1.05, h: 0.78, n: 6 };
 const LENS_PTS = 48;
 
-/** Bộ số mẫu; áp mẫu là thay cả `glasses`. docs/02-trang-phuc.md#kính-dựng-khối */
+/** Bộ số mẫu; áp mẫu là thay cả `glasses`. docs/12-trang-phuc-3d.md#kính-dựng-khối */
 export const GLASSES_PRESETS = {
   round: { label: "Kính tròn", glasses: {} },
   rect: { label: "Kính chữ nhật", glasses: { shape: "rect" } },
@@ -37,22 +36,6 @@ export function glassesPresetOf(raw: Partial<Glasses> | undefined): GlassesPrese
   });
 }
 
-export interface GlassesPaths {
-  /** Càng kính trước mặt phẳng giữa */
-  arms: string;
-  /** Mắt kính trước mặt phẳng giữa: ruột cho kính râm, và gọng cùng cầu */
-  fill: string;
-  rim: string;
-  /** Mọi thứ sau mặt phẳng giữa: `SculptGlasses` cắt theo viền đầu */
-  back: string;
-  backFill: string;
-  head: (grow: number) => string;
-  /** Tâm hai mắt đã khớp, mắt `−x` trước */
-  eyes: [Pt, Pt];
-  tint: boolean;
-  thick: number;
-}
-
 /**
  * Chỗ nét mặt thật sự vẽ mắt: chính diện là tâm cụm mắt, `side` / `rear` là mắt gần. Chính diện
  * dời cả kính, nghiêng thì bóp ngang quanh tâm đầu; nét mặt chiếu từ sọ thì không đổi gì.
@@ -68,45 +51,8 @@ export interface GlassesFit {
   place?: (p: Pt) => Pt;
 }
 
-const f = (n: number) => String(Math.round(n * 10) / 10);
-
 /** Điểm dựng kính: toạ độ sọ đơn vị, cộng phần bám mặt `w` — `1` theo mắt, `0` bám sọ */
 export type Pt4 = [number, number, number, number];
-
-const lerp = (a: Pt4, b: Pt4, k: number) => a.map((v, d) => v + (b[d] - v) * k) as Pt4;
-
-/** Cắt đường gấp khúc ở mặt phẳng `z = 0` thành các đoạn trước và sau */
-function split(pts: Pt4[], closed: boolean) {
-  const out = { front: [] as Pt4[][], back: [] as Pt4[][] };
-  const ring = closed ? [...pts, pts[0]] : pts;
-  let run: Pt4[] = [ring[0]];
-  for (let i = 1; i < ring.length; i++) {
-    const a = ring[i - 1];
-    const b = ring[i];
-    if (a[2] >= 0 !== b[2] >= 0) {
-      const x = lerp(a, b, a[2] / (a[2] - b[2]));
-      run.push(x);
-      out[a[2] >= 0 ? "front" : "back"].push(run);
-      run = [x];
-    }
-    run.push(b);
-  }
-  out[ring[ring.length - 1][2] >= 0 ? "front" : "back"].push(run);
-  return out;
-}
-
-/** Phần đa giác phía `side` của mặt phẳng `z = 0` */
-function clip(pts: Pt4[], side: 1 | -1): Pt4[] {
-  const out: Pt4[] = [];
-  for (let i = 0; i < pts.length; i++) {
-    const a = pts[i];
-    const b = pts[(i + 1) % pts.length];
-    const ina = side * a[2] >= 0;
-    if (ina) out.push(a);
-    if (ina !== side * b[2] >= 0) out.push(lerp(a, b, a[2] / (a[2] - b[2])));
-  }
-  return out;
-}
 
 /**
  * Gọng kính trên sọ đơn vị (`y` lên, `z` ra trước mặt) quanh hai mắt ở kinh độ `±eye[0]`, vĩ độ
@@ -169,91 +115,4 @@ export function glassesFrame(g: Glasses, eye: [lon: number, lat: number]) {
     return b0.map((a, d) => (1 - v) ** 2 * a + 2 * v * (1 - v) * top[d] + v * v * b1[d]) as Pt4;
   });
   return { lenses, arms, bridge };
-}
-
-/**
- * Dựng kính quanh hai mắt ở kinh độ `±eye[0]`, vĩ độ `eye[1]` của sọ đơn vị, quay theo `t`, ra toạ
- * độ nhóm đầu quanh tâm `(cx, cy)`. Mắt kính không nắn theo viền đầu vì mắt cũng không nắn; càng
- * chuyển dần sang bám sọ: tới thái dương thì nắn theo viền như tóc và thôi dời theo nét mặt.
- */
-export function glassesPaths(
-  raw: Partial<Glasses> | undefined,
-  t: HeadTurn,
-  eye: [lon: number, lat: number],
-  shape: HeadShape,
-  cx: number,
-  cy: number,
-  rx: number,
-  ry: number,
-  fit?: GlassesFit,
-): GlassesPaths {
-  const g = GlassesSchema.parse(raw ?? {});
-  const [eLon, eLat] = eye;
-  const { lenses, arms, bridge } = glassesFrame(g, eye);
-
-  // Mắt kính quay theo góc của nét mặt, càng chuyển dần sang góc của sọ cùng nhịp bám sọ
-  const faceYaw = fit?.yaw ?? t.yaw;
-  const place = fit?.place;
-  const turnAt = (w: number) => ({
-    yaw: t.yaw + (faceYaw - t.yaw) * w,
-    pitch: place ? t.pitch * (1 - w) : t.pitch,
-    look: place ? (t.look ?? 0) * (1 - w) : t.look,
-  });
-  const turn = (pts: Pt4[]) =>
-    pts.map((p): Pt4 => [...turnPoint(turnAt(p[3]), [p[0], p[1], p[2]]), p[3]]);
-  const flat = (p: Vec3 | Pt4): Pt => [cx + rx * p[0], cy - ry * p[1]];
-  const warp = headWarp(shape, rx, ry);
-  const eyes = ([-1, 1] as const).map((s) => flat(turnPoint(turnAt(1), onSkull(s * eLon, eLat))));
-  let align = (q: Pt): Pt => q;
-  if (fit) {
-    const dy = fit.y - eyes[0][1];
-    if (fit.profile) {
-      const den = eyes[0][0] - cx;
-      const k = Math.abs(den) > 1e-6 ? (fit.x - cx) / den : 1;
-      align = ([x, y]) => [cx + (x - cx) * k, y + dy];
-    } else {
-      const dx = fit.x - (eyes[0][0] + eyes[1][0]) / 2;
-      align = ([x, y]) => [x + dx, y + dy];
-    }
-  }
-  const map = place ? (q: Pt) => place(align(q)) : align;
-  const screen = (p: Pt4): Pt => {
-    const [ax, ay] = map(flat(p));
-    const [bx, by] = warp(p[0], p[1]);
-    return [cx + bx + (ax - cx - bx) * p[3], cy + by + (ay - cy - by) * p[3]];
-  };
-  const d = (pts: Pt4[], closed = false) =>
-    pts.length < 2
-      ? ""
-      : pts
-          .map((p, i) => {
-            const [x, y] = screen(p);
-            return `${i ? "L" : "M"}${f(x)} ${f(y)}`;
-          })
-          .join("") + (closed ? "Z" : "");
-
-  const front: string[] = [];
-  const back: string[] = [];
-  const cut = (pts: Pt4[], closed: boolean, into: string[] = front) => {
-    const p = split(turn(pts), closed);
-    into.push(...p.front.map((q) => d(q)));
-    back.push(...p.back.map((q) => d(q)));
-  };
-  const armFront: string[] = [];
-  for (const a of arms) cut(a, false, armFront);
-  for (const l of lenses) cut(l, true);
-  cut(bridge, false);
-  const fill = (side: 1 | -1) => lenses.map((l) => d(clip(turn(l), side), true)).join("");
-
-  return {
-    arms: armFront.join(""),
-    fill: fill(1),
-    rim: front.join(""),
-    back: back.join(""),
-    backFill: fill(-1),
-    head: (grow) => headPath(shape, cx, cy, rx + grow, ry + grow),
-    eyes: eyes.map(map) as [Pt, Pt],
-    tint: g.tint,
-    thick: g.thick,
-  };
 }

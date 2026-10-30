@@ -37,8 +37,6 @@ function runtime(items: unknown[], base: object = { torso: 9, head: [0, 0, -6] }
   return resolveScene(
     r.data,
     {},
-    {},
-    {},
     { nguoi: NGUOI.rig.height },
     { nguoi: body3(NGUOI) },
     { "bang-gia": BANG },
@@ -71,7 +69,7 @@ const mark = (t: number, more: object = {}) => ({
 
 describe("mốc món (`items`)", () => {
   it("cảnh không có `items` giữ nguyên: parse không thêm trường, `itemAt` ra `undefined`", () => {
-    const r = parseScene({ cast: [{ id: "a" }] });
+    const r = parseScene({ duration: 1 });
     expect(r.success && "items" in r.data).toBe(false);
     const rt = resolveScene(r.data!, {});
     expect(rt.items).toBeUndefined();

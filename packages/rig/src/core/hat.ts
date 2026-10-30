@@ -33,7 +33,7 @@ const add = (p: Vec3, ...terms: [Vec3, number][]) =>
 /** Mũ đã đủ số: trường bỏ trống lấy theo dáng ở `HAT_SHAPE_DEFAULTS` */
 export type HatSpec = Hat & (typeof HAT_SHAPE_DEFAULTS)[keyof typeof HAT_SHAPE_DEFAULTS];
 
-/** Đọc mũ `raw` qua zod, trường bỏ trống lấy theo dáng. docs/02-trang-phuc.md#mũ-dựng-khối */
+/** Đọc mũ `raw` qua zod, trường bỏ trống lấy theo dáng. docs/12-trang-phuc-3d.md#mũ-dựng-khối */
 export function hatSpec(raw: Partial<Hat> | undefined): HatSpec {
   const h = HatSchema.parse(raw ?? {});
   const set = Object.fromEntries(Object.entries(h).filter(([, v]) => v !== undefined));
@@ -74,7 +74,7 @@ export function shellAt(s: Sculpt, lon: number, lat: number) {
 /**
  * Đo mũ `raw` trên đầu có tóc dựng khối `hair` (trống là đầu trọc): miệng là mặt phẳng qua vĩ độ `front` giữa trán và
  * `back` ở gáy; thân là ống elip nhỏ nhất cùng tâm ôm mọi điểm của sọ và vỏ tóc trên miệng, nở thêm `ease`; cao ít nhất
- * tới trên đỉnh tóc `ease`. docs/02-trang-phuc.md#mũ-dựng-khối
+ * tới trên đỉnh tóc `ease`. docs/12-trang-phuc-3d.md#mũ-dựng-khối
  */
 export function hatFit(raw: Partial<Hat> | undefined, hair?: Partial<Sculpt>): HatFit {
   const h = hatSpec(raw);
@@ -165,7 +165,7 @@ const quad = (list: Vec3[][], a: Vec3, b: Vec3, c: Vec3, d: Vec3, ref: Vec3) => 
   outward(list, [a, c, d], ref);
 };
 
-/** Lưới mũ `raw` đặt theo `fit` (`hatFit`). docs/02-trang-phuc.md#mũ-dựng-khối */
+/** Lưới mũ `raw` đặt theo `fit` (`hatFit`). docs/12-trang-phuc-3d.md#mũ-dựng-khối */
 export function hatMesh(raw: Partial<Hat> | undefined, fit: HatFit): HatMesh {
   const h = hatSpec(raw);
   const x: Vec3 = [1, 0, 0];
@@ -402,7 +402,7 @@ export interface PinMesh {
 
 /**
  * Trâm `raw` cắm qua khối buộc của tóc `hair` (`knotFrame`): que xuyên gần tâm khối, đầu có hạt chĩa theo `angle` trên
- * mặt búi rồi chếch ra `lean`. docs/02-trang-phuc.md#trâm-cài-búi
+ * mặt búi rồi chếch ra `lean`. docs/12-trang-phuc-3d.md#trâm-cài-búi
  */
 export function pinMesh(raw: Partial<Pin> | undefined, hair: Partial<Sculpt> | undefined): PinMesh {
   const p = PinSchema.parse(raw ?? {});

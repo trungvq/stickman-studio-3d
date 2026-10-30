@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 5,
+  "name": "sample-kimono",
+  "rig": {
+    "height": 0.95,
+    "shoulderHalf": 36,
+    "hipHalf": 24
+  },
+  "head": {
+    "form": "human"
+  },
+  "palette": {
+    "line": "#3A2A22",
+    "skin": "#FBE5D3",
+    "clad": true,
+    "garment": "#4F6487",
+    "sleeve": "#4F6487",
+    "sleeveLength": 0.92,
+    "sleeveFlare": 12,
+    "trouser": "#4F6487",
+    "shoe": "#F6F1E7"
+  },
+  "face": {
+    "blush": 0.5,
+    "wrinkle": {
+      "kind": "light",
+      "color": "#9A5A3466",
+      "width": 0.5
+    }
+  },
+  "pieces": {
+    "torso": {
+      "src": "sculpt",
+      "garment": {
+        "style": "wrap",
+        "hem": -36,
+        "neckBack": 8,
+        "bust": 4,
+        "wrap": {
+          "band": 5,
+          "under": 3,
+          "obi": {
+            "color": "#E9DCC0",
+            "y": 56,
+            "width": 34,
+            "cord": 3,
+            "cordColor": "#C8553D",
+            "clasp": 7,
+            "knot": "taiko"
+          }
+        }
+      }
+    },
+    "hair": {
+      "src": "sculpt",
+      "color": "#4A3428",
+      "sculpt": {
+        "style": "curly",
+        "front": 46,
+        "ear": 20,
+        "sideburn": 14,
+        "fringe": 0,
+        "volume": 0.14
+      }
+    },
+    "hem": {
+      "src": "sculpt",
+      "layer": "under",
+      "color": "#4F6487",
+      "skirt": {
+        "style": "wrap",
+        "rise": 46,
+        "length": 205,
+        "flare": -4,
+        "pleats": 0
+      }
+    }
+  }
+}

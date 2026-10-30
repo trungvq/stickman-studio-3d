@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 20,
+  "name": "tray-hold-3d",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["armNear", "armFar", "hand"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "reach": {
+        "armFar": {
+          "to": "otherGrip",
+          "offset": [0, 0, 88],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.45]
+        },
+        "armNear": {
+          "to": "belly",
+          "offset": [12, -12, 46],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.45]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "edge", "w": 1, "palm": "in" },
+        "armNear": { "pose": "edge", "w": 1, "palm": "in" }
+      }
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": {
+        "armFar": {
+          "to": "otherGrip",
+          "offset": [0, 0, 88],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.45]
+        },
+        "armNear": {
+          "to": "belly",
+          "offset": [12, -12, 46],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.45]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "edge", "w": 1, "palm": "in" },
+        "armNear": { "pose": "edge", "w": 1, "palm": "in" }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Ôm khay dựng đứng trước bụng: tay phải kẹp mép bên của khay (mốc `belly`, offset [12, −12, 46]), tay trái kẹp mép kia (mốc `otherGrip`, cách 88), dáng `edge`, lòng tay vào trong; giữ từ giây 0. Ghi hai tay, `hand`. Nền `stand-3d`, đi bộ; món ở `world.hands[].hold` tay phải với `both: true`, như `khay@sheet` biến thể `rim`, mặt khay ra trước. Vào bằng blend ~0,4; cúi chào chồng `bow-15-3d`.",
+  "preview": {
+    "stage": "stand",
+    "hold": {
+      "right": {
+        "item": "khay",
+        "group": "sheet",
+        "edge": "right",
+        "variant": "rim",
+        "face": { "axis": [0, 0, 1], "toward": "up" },
+        "roll": { "axis": "top", "toward": "forward" },
+        "both": true
+      }
+    }
+  }
+}

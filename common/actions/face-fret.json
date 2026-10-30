@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 20,
+  "name": "face-fret",
+  "duration": 0.4,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "wide",
+        "brow": "furrowed",
+        "mouth": "grit"
+      }
+    }
+  ],
+  "note": "Vừa tức vừa lo: mắt trợn, mày cau, nghiến răng; vào ngay rồi giữ. Chỉ ghi `face`, nên chồng lên mọi tư thế, đứng hay ngồi, và nằm dưới track khẩu hình (`talk-lips`): lời đè `mouth`, mắt và mày vẫn của lớp này. Tức không lo là `face-angry`.",
+  "preview": {
+    "stage": "stand"
+  }
+}

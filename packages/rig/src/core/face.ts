@@ -3,8 +3,7 @@ import type { BrowKind, EyeKind, MouthKind, WrinkleKind } from "./types";
 
 /**
  * Nét mặt — khẩu hình, mắt, mày, nếp nhăn — là một danh sách nét theo nghĩa SVG, px của đầu cao
- * 130. `<Mouth>`, `<Eyes>`, `<Brow>`, `<Wrinkle>` của sketch dựng thành phần tử SVG, `face.ts` của
- * người 3D vẽ lên canvas dán trên sọ. Thêm một kiểu là thêm một dòng vào `MOUTHS` / `EYES` / `BROWS`.
+ * 130. `face.ts` của người 3D vẽ chúng lên canvas dán trên sọ. Thêm một kiểu là thêm một dòng vào `MOUTHS` / `EYES` / `BROWS`.
  * docs/01-rig.md#khẩu-hình-và-mắt
  */
 
@@ -666,7 +665,7 @@ export function wrinkleMarks(
  * Nét mặt chibi của đầu `human` trên người 3D: mắt hạ `offsetY`, giãn `eyeGap`, mồm gần mắt `mouthGap` (cộng vào
  * `face` của JSON nhân vật); nét mắt phóng `eye` quanh tâm mắt và bóp ngang `squash` thành bầu dục đứng, con ngươi
  * `bulge` bán kính `pupil · EYE_R`, mồm phóng `mouth`, mày nhấc `brow` px. `FACE_REST` của nhân vật chỉnh `eye`,
- * `squash` và đốm sáng. 2D không đọc. docs/01-rig.md#người-3d-mặc-đồ
+ * `squash` và đốm sáng. docs/01-rig.md#người-3d-mặc-đồ
  */
 export const CHIBI = {
   shift: { offsetY: 10, eyeGap: 18, mouthGap: -10 },

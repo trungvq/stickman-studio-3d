@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
-<title>Buộc thấp — under</title>
-<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
-<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 141 229 Q 160 222 179 229 C 189 256 190 291 179 325 Q 159 334 141 325 C 130 291 131 256 141 229 Z"/>
-</g>
-</svg>

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { addItem, addLathe, Batch, bar, body3, box, buildWorld, parseCharacter, parseHeldItem, parseScene, resolveScene, SCULPT_PRESETS } from '@stickman3d/rig';
 import { ACTIONS } from './demos.js';
-import tuiJson from '../../studio/public/held/tui.json';
-import cocJson from '../../studio/public/held/coc.json';
+import tuiJson from '../../../common/held/tui.json';
+import cocJson from '../../../common/held/coc.json';
 
 // `?demo=carry`: món treo trên cánh tay (`món@carry`, `held/tui.json` của bộ chung) qua `world.hands[].hold` và
 // `cast.provide` như repo video. Trái: túi đeo vai phải, tay luồn ngoài quai, tay trái cầm cốc. Phải: túi khoác khuỷu
@@ -84,7 +84,7 @@ export function carryDemo() {
   if (!sc.success) throw new Error(sc.error.message);
   const heights = { a: 1, b: 1 };
   const bodies = { a: body3(people.a), b: body3(people.b) };
-  const rt = resolveScene(sc.data, ACTIONS, {}, {}, heights, bodies, { tui: held(tuiJson), coc: held(cocJson) });
+  const rt = resolveScene(sc.data, ACTIONS, heights, bodies, { tui: held(tuiJson), coc: held(cocJson) });
   const group = new THREE.Group();
   const set = { group, room: { cull() {} }, palette: 'day', lights: () => ({}) };
   const world = buildWorld(sc.data, rt, {

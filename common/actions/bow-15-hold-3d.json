@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 20,
+  "name": "bow-15-hold-3d",
+  "duration": 1,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": 15, "head": [0, 0, 6] }, "ease": "linear" },
+    { "t": 1, "pose": { "torso": 15, "head": [0, 0, 6] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Giữ ở đáy cái cúi chào 15° từ giây 0: thân 15°, đầu gật thêm 6°, như đáy của `bow-15-3d` — cho người nền, ảnh tĩnh, cảnh cắt vào giữa cái cúi; đứng lên bằng clip rỗng blend ~0,5. Chỉ ghi `torso`, `head`. Nền `stand-3d`. Đích tay hệ thân (`reach.at`) không theo thân cúi nên món giữ ngang; chồng được lên tay bưng khay, cầm món sát eo (đích cổ tay ~40 ra trước). Tay chắp trước bụng theo thân cúi thì dùng `bow-hands-front-*`. Cùng họ: `bow-15-3d`, `bow-30-3d`, `bow-45-3d`, `-quick` cúi vội, `-snap` gập ngay rồi nảy, `-hold` giữ ở đáy. Sinh bằng `tools/actions/bow.mjs`.",
+  "preview": { "stage": "stand" }
+}

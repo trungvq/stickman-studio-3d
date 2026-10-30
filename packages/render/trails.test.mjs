@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after } from "node:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import * as rig from "@stickman3d/sketch";
+import * as rig from "@stickman3d/rig/core";
 import { loadScene, renderFrames } from "./lib.mjs";
 import {
   BONE_SEGS,
@@ -27,7 +27,7 @@ import {
   topView,
 } from "./skeleton.mjs";
 
-const ACTIONS = resolve(import.meta.dirname, "../../apps/studio/public/actions");
+const ACTIONS = resolve(import.meta.dirname, "../../common/actions");
 const SCENE = rig.parseScene({
   name: "vet",
   lens: { eye: [0, -423, -1057], yaw: 0, pitch: 16, f: 800, cx: 0, cy: 120 },
@@ -45,10 +45,9 @@ const SCENE = rig.parseScene({
         },
       ],
     },
-    { id: "phang", tracks: [{ clips: [{ action: "stand-3d", start: 0 }] }] },
   ],
 }).data;
-const { rt } = loadScene(SCENE, [ACTIONS], []);
+const { rt } = loadScene(SCENE, [ACTIONS]);
 const character = rig.defaultCharacter();
 const sampler = () => jointSampler(rt, () => character);
 const markup = (el) => (el ? renderToStaticMarkup(el) : "");
@@ -78,7 +77,7 @@ describe("vệt khớp", () => {
 
   it("toạ độ trùng phép chiếu khớp của đo giật", () => {
     const [p] = motionData(rt, { t: 1, sampler: sampler(), trails: "all,hip", span: 0.2, fps: 10 });
-    const c = rig.castCharacter(rt.cast[0], character);
+    const c = character;
     for (const l of p.lines)
       for (const q of l.pts) {
         const sp = rig.sceneAt(rt, "a", q.t, c.rig.height, rig.body3(c));
@@ -105,23 +104,11 @@ describe("vệt khớp", () => {
     }
   });
 
-  it("từ khoá ra khớp người 3D, tên lạ hay tên khớp 2D thì báo", () => {
+  it("từ khoá ra khớp người 3D, tên lạ hay tên khớp gần / xa thì báo", () => {
     assert.deepEqual(trailJoints("feet,head"), ["footR", "footL", "head"]);
     assert.deepEqual(trailJoints("hands,hip"), ["wristR", "wristL", "hip"]);
     assert.throws(() => trailJoints("elbow"), /khớp lạ/);
     assert.throws(() => trailJoints("footN"), /khớp lạ/);
-  });
-
-  it("người không có world thì bỏ, kèm cảnh báo", () => {
-    const s = sampler();
-    assert.deepEqual(s.ids, ["a"]);
-    assert.equal(s.warnings.length, 1);
-    assert.match(s.warnings[0], /`phang`.*thiếu `world`/);
-    const d = motionData(rt, { t: 1, sampler: s, trails: "feet" });
-    assert.deepEqual(
-      d.map((p) => p.id),
-      ["a"],
-    );
   });
 
   it("không bật gì thì không có lớp phủ", () => {
@@ -159,7 +146,7 @@ describe("vệt khớp", () => {
 
 describe("que xương", () => {
   it("mỗi người đủ đoạn xương, toạ độ trùng stageJoints ở cùng t", () => {
-    const c = rig.castCharacter(rt.cast[0], character);
+    const c = character;
     for (const t of [0, 0.8, 1.7]) {
       const [p] = skeletonData(rt, { t, sampler: sampler() });
       assert.equal(p.segs.length, 14);
@@ -382,7 +369,7 @@ describe("đọc vệt trên cảnh thật", () => {
       ],
     }).data;
   const events = (name) => {
-    const { rt: r } = loadScene(scene(name), [dir, ACTIONS], []);
+    const { rt: r } = loadScene(scene(name), [dir, ACTIONS]);
     const s = jointSampler(r, () => character);
     const seen = new Map();
     for (const t of [0.5, 1.5, 2.5, 3.5]) {
@@ -406,7 +393,7 @@ describe("đọc vệt trên cảnh thật", () => {
 
   it("tất định: cùng tham số cùng số đo và cùng lớp phủ", () => {
     const one = () => {
-      const { rt: r } = loadScene(scene("loi"), [dir, ACTIONS], []);
+      const { rt: r } = loadScene(scene("loi"), [dir, ACTIONS]);
       const d = motionData(r, { t: 1, sampler: jointSampler(r, () => character), trails: "hands" });
       return [markup(motionOverlay(d, 1, 4)), motionText([{ t: 1, data: d }], { video: 1920 })];
     };
@@ -414,7 +401,7 @@ describe("đọc vệt trên cảnh thật", () => {
   });
 
   it("ảnh có vệt kèm hướng dẫn đọc và bảng số đo; không lớp phủ thì không có", () => {
-    const { rt: r } = loadScene(scene("loi"), [dir, ACTIONS], []);
+    const { rt: r } = loadScene(scene("loi"), [dir, ACTIONS]);
     const base = {
       rt: r,
       times: [1, 3],
@@ -487,7 +474,6 @@ describe("bảng sự kiện", () => {
         ],
       }).data,
       [dir, ACTIONS],
-      [],
     ).rt;
   const render = (r, name, times) =>
     renderFrames({

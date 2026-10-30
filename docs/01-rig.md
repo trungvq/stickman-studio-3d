@@ -1,7 +1,7 @@
 # 01 — Rig nhân vật
 
-Đầu, mặt và các đoạn chi vẽ bằng code; tóc, râu, trang phục và vật cầm tay là
-mảnh cắm vào socket — mảnh ảnh, bộ phận vẽ code, hay bản dựng khối chiếu theo góc.
+Người que 3D: khung xương, đầu và nét mặt dựng bằng code; tóc, mũ, kính và trang phục là
+đồ dựng khối cắm vào socket; đồ cầm tay là món của `held/`.
 
 ## Hệ toạ độ và tỉ lệ
 
@@ -21,23 +21,21 @@ Gốc toạ độ đặt ở **chậu hông** (pelvis). Trục y hướng xuốn
 | Nửa rộng vai | 40 | `rig.shoulderHalf`, xem ghi chú dưới bảng |
 | Vai tụt | 20 | `rig.shoulderDrop`, khớp vai nằm dưới đỉnh thân bấy nhiêu |
 | Nửa rộng hông | 22 | `rig.hipHalf` |
-| Độ dày nét | 6 | Viền đầu, viền chi khi bật `clad` |
+| Độ dày nét | 6 | `rig.stroke`: viền chi khi bật `clad` (`cladArm`, `cladThigh`) |
 | Độ dày chi | 10 | Mặc định đen, nét trần (`clad` tắt); bật `clad` thì tay `15`, chân `17` (`LIMB_WIDTH`), người 3D xem [Người 3D mặc đồ](#người-3d-mặc-đồ) |
 
 **`Chiều cao` nhân vào các đoạn dọc, không nhân vào bề ngang.** Sáu đoạn `cổ`,
 `thân`, `cánh tay trên`, `cẳng tay`, `đùi`, `cẳng chân` nhân với `rig.height`
 (mặc định `1`); `nửa rộng vai`, `nửa rộng hông`, các độ dày nét và **đầu** thì
-không. Đầu chỉnh riêng bằng `Rộng`/`Cao` ở mục Đầu — kéo `Chiều cao` xuống là ra
+không. Đầu chỉnh riêng bằng `head.scaleX` / `scaleY` — kéo `Chiều cao` xuống là ra
 người lùn đầu to, đúng kiểu hoạt hình, muốn khác thì bóp đầu lại. Bảng trên là
 số ở `height = 1`; mọi mốc `y` trong trang này cũng vậy.
 
-Hộp ảnh mảnh cũng chỉ **kéo dọc**: `boxH` lấy đoạn đã nhân chiều cao, `boxW` lấy
-đoạn gốc. Đổi `Chiều cao` xong không phải căn lại bề ngang thân áo hay tay áo.
-
-**Thân không vẽ.** Bộ xương có hai vai và hai hông; mọi nhân vật phải có mảnh
-`torso` — ảnh, bộ phận `PARTS`, hay [thân áo dựng khối](02-trang-phuc.md#thân-áo-dựng-khối). `rig.shoulderHalf`, `rig.shoulderDrop` và `rig.hipHalf` đặt trực tiếp
-bốn khớp gốc. Giá trị `0` đưa vai hoặc hông về trục giữa. Thân áo dựng khối thì vai nằm trên
-tâm nét viền áo, không ở `shoulderHalf` ([02](02-trang-phuc.md#thân-áo-dựng-khối)).
+Bộ xương có hai vai và hai hông; thân là [thân áo dựng khối](12-trang-phuc-3d.md#thân-áo-dựng-khối)
+dựng quanh chúng. `rig.shoulderHalf`, `rig.shoulderDrop` và `rig.hipHalf` đặt trực tiếp
+bốn khớp gốc. Giá trị `0` đưa vai hoặc hông về trục giữa. Gốc vai của người 3D nằm trên
+tâm nét viền thân áo (`roots3`, `garmentShoulder`), không ở `shoulderHalf`
+([12](12-trang-phuc-3d.md#thân-áo-dựng-khối)).
 
 Mốc quan trọng, tính từ gốc:
 
@@ -48,59 +46,6 @@ vai        y = -100   x = ±40   ← −120 + shoulderDrop
 hông       y =    0   x = ±22
 gót        y = +170
 ```
-
-Đặt nhân vật lên nền: `root.y = groundY - 170`.
-
-### Bóng tiếp đất
-
-Một ellipse ở đúng `groundY`, tâm trên trục hông. Bề ngang **suy ra từ hai bàn
-chân** — `rx = |chân gần.x − chân xa.x| / 2 + nửa rộng vai` — nên bước càng
-rộng bóng càng loe, không có tham số nào phải chỉnh. Tô bằng màu nét **trong
-suốt** (`SHADOW` là alpha ở tâm) với radial gradient mờ dần ra mép, nên đè lên
-nền ảnh hay nền màu nào cũng ăn — tô màu đặc tính từ `paper` thì chỉ khớp khi
-nền đúng là `PAPER`, ghép vào cảnh có nền riêng là lộ một vũng kem. `shadow={0}`
-để tắt. Người xoay cả thân (`rotate` khác `0`, [03](03-scene.md#nằm-và-xoay-cả-người))
-không có bóng này — chân không còn đứng trên đất.
-
-### Bóng khối
-
-Mảng tối bên trong hình, để khối đầu và thân áo không đọc ra thành mảng phẳng.
-Màu nét (`palette.line`) phủ lên phần mảnh **nằm ngoài vùng sáng**, alpha là
-`palette.shade` (mặc định `SHADE = 0.3` — mảnh tối còn 70 %). Mép cứng, không
-gradient, không blur: một lưỡi liềm ôm viền.
-
-Vùng sáng là **chính hình bao của mảnh**, lấy từ kênh alpha nên ảnh PNG, bộ phận
-vẽ code và đầu đi chung một đường. Nó bóp ngang quanh tâm hộp còn
-`1 − SHADE_RIM` rồi dịch ngang `SHADE_GAIN · faceDx`, với `faceDx` là độ trôi
-nét mặt so với tâm đầu (`A.face.cx − A.face.headCx`, `+x` là phía nhân vật
-nhìn). `SHADE_RIM = 0.06`, `SHADE_GAIN = 1`; `litTransform` và `shadeBands` ở
-`shade.ts`.
-
-Bóng nằm phía **gáy** (`−x`), dày lên theo `face.turn` và `head[lắc]`. Nhìn
-thẳng (`faceDx = 0`) hai bên đều một viền mỏng `0.06 × nửa rộng`, đỉnh và đáy
-không có bóng. Lắc âm thì viền gáy mỏng dần, cân hai bên rồi chuyển sang phía
-mặt — **liên tục, không có bước nhảy phía** khi liếc. Bề dày ở đầu nửa rộng
-`65`, `face.turn` mặc định `12`:
-
-| `lắc` | phía gáy | phía mặt |
-|---:|---:|---:|
-| −45 | 0 | 9.4 |
-| −20 | 7.5 | 0.3 |
-| 0 | 15.9 | 0 |
-| 20 | 24.3 | 0 |
-| 45 | 33.4 | 0 |
-
-Ở `lắc = 0` viền gáy chiếm khoảng `12 %` đường kính đầu, lắc mạnh lên tới `26 %`.
-Đầu [`side`](#góc-nhìn) ghim nét mặt ở `SIDE_EYE` nên bóng dày hẳn về phía gáy mà
-không cần chỉnh gì; đầu `back` không có nét mặt nên `faceDx = 0`, hai bên cân.
-
-Nhận bóng: **đầu, `torso` và `hem`** (tập `SHADED` trong `Character.tsx`). Tóc,
-râu, tay chân, đồ cầm tay, vai áo và khăn cổ thì không. Ở đầu thứ tự vẽ là
-**ruột → bóng → nét viền**, nên bóng nằm dưới nét như ở mọi mảnh. `flip` lật cả
-nhóm gốc nên bóng lật theo người.
-
-`shade: 0` để tắt. Đây **không phải ánh sáng theo cảnh**: một hướng duy nhất cho
-cả đầu lẫn thân, không có nguồn sáng, không đổi theo nền hay theo scene.
 
 ## Quy ước góc
 
@@ -114,26 +59,23 @@ Góc tính bằng độ, trong hệ toạ độ **cục bộ của nhân vật**
   [Dang và nghiêng ngang](#dang-và-nghiêng-ngang); tay thêm số thứ năm: **xoắn vai**, cũng chỉ người
   3D đọc — [Xoắn tay](#xoắn-tay)
 
-**Cổ tay xoay đồ cầm tay.** Rig 2D không vẽ bàn tay, nên với nhân vật tay không
-nó là số chết; nó tồn tại vì đồ cầm phải xoay được so với cẳng tay — xem
-[Đồ cầm tay](#đồ-cầm-tay). Người 3D đọc nó là lệch bàn tay trong mặt phẳng khuỷu
-([Xoắn tay](#xoắn-tay)). Chân không có số cổ chân vì rig cũng không vẽ bàn chân.
+**Cổ tay lệch bàn tay.** Người 3D đọc số thứ ba của tay là lệch bàn tay trong mặt phẳng khuỷu,
+đồ cầm quay theo ([Xoắn tay](#xoắn-tay)). Chân không có số cổ chân.
 
 **`torso` và `head[nghiêng]` đi theo chiều `rotate()` của SVG, ngược với mọi góc
-khác.** **Tay** nằm *trong* nhóm xoay theo `torso`, nên góc thấy trên màn hình
-của một đoạn tay là `vai + khuỷu − torso`. Gằn người tới trước `30°` mà quên trừ
+khác.** **Tay** nằm *trong* khung xoay theo `torso`, nên góc của một đoạn tay so với
+phương thẳng đứng là `vai + khuỷu − torso`. Gằn người tới trước `30°` mà quên trừ
 là cả cánh tay lệch `30°` so với chỗ định đặt.
 
-**Chân thì không.** Hai chân treo ở hông tại gốc toạ độ và vẽ ở nhánh riêng
-*ngoài* nhóm xoay thân (`Character.tsx`, `computeFigure` trong `geometry.ts`),
-nên góc trên màn hình của một đoạn chân đúng bằng `hông + gối`, không trừ
-`torso`. Trừ đi là ra người đứng khom mà chân duỗi thẳng chứ không quỳ: tư thế
+**Chân thì không.** Hai chân treo ở hông tại gốc toạ độ, *ngoài* khung xoay thân
+(`feet`, `computeFigure` trong `geometry.ts`), nên góc của một đoạn chân đúng bằng
+`hông + gối`, không trừ `torso`. Trừ đi là ra người đứng khom mà chân duỗi thẳng chứ không quỳ: tư thế
 quỳ cần gối gập hẳn (`−72`/`−82`) bất kể `torso` bao nhiêu. Nó phải như vậy —
 `F.lowest` suy chỗ chạm đất từ hai bàn chân, gằn người tới trước mà chân đi theo
 thì nhân vật lún xuống đất.
 
-Lật nhân vật (`flip`) là `scaleX(-1)` trên nhóm gốc — mọi góc giữ nguyên. Nhờ
-vậy một thư viện tư thế dùng được cho cả hai hướng.
+Người quay mặt sang trái khung (`flip`) giữ nguyên mọi góc. Nhờ vậy một thư viện tư thế dùng
+được cho cả hai hướng.
 
 Hướng vector của một đoạn dài `L` ở góc `θ`:
 
@@ -142,8 +84,8 @@ Hướng vector của một đoạn dài `L` ở góc `θ`:
 ```
 
 **Quy ước này ngược dấu với `rotate()` của SVG/CSS.** `rotate(φ)` đưa trục `+y`
-về `(−sin φ, cos φ)`, nên mảnh nằm dọc đoạn ở góc `θ` phải dùng
-**`rotate(−θ)`**. Kiểm dấu bằng pose góc lớn như `shrug`.
+về `(−sin φ, cos φ)`, nên hình vẽ đè nằm dọc đoạn ở góc `θ` phải dùng
+**`rotate(−θ)`** — `deg` của `anchorAt` đã là độ SVG. Kiểm dấu bằng pose góc lớn như `shrug`.
 
 ### Vươn chi
 
@@ -158,7 +100,7 @@ về `(−sin φ, cos φ)`, nên mảnh nằm dọc đoạn ở góc `θ` phải
 
 Bên trong rig luôn là tám số (`Stretch`): `stretchSegs` trải bốn số ra tám,
 `stretchJson` gọn lại bốn số khi chi nào cũng có hai đoạn bằng nhau — `poseDelta` và
-file xuất từ studio đi qua nó. Mốc bốn số và mốc tám số trong cùng một hành động nội
+file hành động ghi ra đi qua nó. Mốc bốn số và mốc tám số trong cùng một hành động nội
 suy chung được.
 
 Vị trí bàn tay trong hệ thân, `sU` và `sL` là hệ số cánh tay trên và cẳng tay của
@@ -183,11 +125,7 @@ Cột cuối là mức tối thiểu để **đường thẳng** vai→đích đ
 giữa: muốn khuỷu vòng ra **ngoài** khối đầu (bán kính `65`, tâm `(0, −193)`) chứ
 không cắt qua nó, tay lên đỉnh đầu cần khoảng `1.6`.
 
-Hộp mảnh: vai áo kéo **dọc** theo hệ số cánh tay trên của tay ấy
-(`upperArm · sU + cap`) để `sleeveFit.hideUpperArm` không hở khúc giữa vai áo và
-cẳng tay. Đồ cầm tay giữ nguyên cỡ hộp, chỉ đi theo cổ tay đã vươn; hộp `hem` không
-theo chân. Bảng trôi ngang (`feet`) và gốc `feet` (`F.lowest`, hông tính từ bàn chân
-chạm đất) đo đúng độ dài từng đoạn.
+Bảng sải chân (`bakeTravel`) và chỗ chạm đất `F.lowest` đo đúng độ dài từng đoạn.
 
 **Ghép theo chi.** Hệ số của một chi chỉ có hiệu lực khi hành động — hay clip, sau khi
 scene cắt `mask` — cũng ghi chính chi ấy; hành động chỉ ghi `stretch`, không ghi chi
@@ -204,57 +142,38 @@ khoảng `1.2`.
 Tay đặt lên đỉnh đầu:
 
 ```json
-{ "pose": { "armNear": [-157, -73, 0], "stretch": [1, 1.65, 1, 1] },
-  "layer": { "armNear": "front" } }
+{ "pose": { "armNear": [-157, -73, 0], "stretch": [1, 1.65, 1, 1] } }
 ```
 
 Vai âm quét cánh tay lên phía ngoài đầu, khuỷu cùng dấu âm cuộn cẳng tay về đỉnh
 đầu: khuỷu ra ngoài khối đầu ở khoảng `(−80, −194)`, bàn tay ở `(−7, −256)`.
 
-Ngồi nhìn từ sau — hành động chung `sit-rear`: đùi chạy sâu vào khung nên ngắn lại,
-cẳng chân đứng thẳng từ mép ghế xuống sàn nên dài ra:
-
-```json
-{ "pose": { "legFar": [82, -82], "legNear": [82, -82],
-            "stretch": [1, 1, 1, 1, 0.75, 1.19, 0.75, 1.19] } }
-```
-
-Hông cách sàn `78 · 0.75 · cos 82° + 92 · 1.19 ≈ 118`, bằng mặt ghế văn phòng; tay đặt
-trên đùi như hành động `sit`, `mask` gồm bốn chi, `torso` và `stretch`. Hành động `sit`
-(chân `[70, −70]`, `78 · cos 70° + 92 ≈ 119`) cho đùi dốc xuống `20°` dưới phương ngang: hợp nhìn
-nghiêng, nhìn từ sau thì đùi đâm xuyên đệm ghế. Dùng `sit-rear` với [thân `rear`](#thân-rear) và một track tay gõ phím đặt sau
-nó; cảnh có lớp ghế thì ghép `cast[].zParts` cho chân nằm sau đệm
-([03](03-scene.md#tách-người-theo-z)).
-
 ## Các bộ phận
 
-Đầu **không nhận ảnh**. Mặt sẽ chuyển động (quay, gật, nhép) nên đầu phải là
-hình code để biến đổi được cùng mặt. Tóc và râu thì ngược lại, là mảnh cắm vào
-socket trên đầu, kể cả [tóc](02-trang-phuc.md#tóc-dựng-khối) và
-[râu dựng khối](02-trang-phuc.md#râu-dựng-khối); riêng ria mép và nếp nhăn vẫn vẽ code
-vì chúng bám khẩu hình và tâm mặt. Ba dạng: `round` (ellipse), `square` (chữ nhật bo `0.35 × cạnh
-ngắn`), `trapezoid` (trán rộng, cằm `0.72` trán). `scaleX`/`scaleY` nhân lên
-`headH/2`, không có `scale` chung — muốn to đều thì kéo cả hai.
+Đầu dựng bằng code: khối sọ dáng `head.form` (`sphere` hay `human` — [Người 3D mặc
+đồ](#người-3d-mặc-đồ)), nét mặt vẽ lên canvas dán trên sọ nên quay, gật, nhép cùng đầu. Tóc,
+mũ, kính là đồ dựng khối cắm vào socket trên đầu ([tóc](12-trang-phuc-3d.md#tóc-dựng-khối),
+[mũ](12-trang-phuc-3d.md#mũ-dựng-khối)); nếp nhăn vẽ cùng nét mặt vì nó bám tâm mặt.
+`scaleX`/`scaleY` nhân lên `headH/2`, không có `scale` chung — muốn to đều thì kéo cả hai.
 
 | Bộ phận | Cấu tạo | Điều khiển bằng |
 |---|---|---|
-| `root` | Nhóm gốc chứa toàn bộ nhân vật | `x, y, scale, flip` |
-| `head` | **Vẽ bằng code**: ellipse / vuông bo / hình thang, `scaleX`, `scaleY`; nhận [bóng khối](#bóng-khối). Nét mặt vẽ hay không là do `headView` | `head.shape, scaleX, scaleY, dx, dy, follow, followBack`, `palette.shade`, `headView` |
-| `hair` | [Kiểu tóc](02-trang-phuc.md#kiểu-tóc) cắm ở `hair`, có hình riêng cho cả bốn góc; tóc ảnh thì mái ở `hair`, mảng sau gáy ở `hairBack` | `pieces.hair.*`, `pieces.hairBack.*` (chỉ tóc ảnh), `headView` |
-| `face` | SVG chồng lên đầu: mắt, lông mày, miệng | kênh `face` + `keys[].face` của hành động |
-| `wrinkle` | SVG dưới nét mặt: nếp trán, chân chim, túi mắt, pháp lệnh | `face.wrinkle.*` (hằng số của nhân vật) |
-| `torso` | Không vẽ; chỉ là đoạn hông→vai để cắm mảnh thân áo, mảnh ấy nhận [bóng khối](#bóng-khối) và có hình `side` / `back` riêng | `rotate`, `palette.shade`, `view` |
+| `head` | Khối sọ dựng code | `head.form, scaleX, scaleY` |
+| `hair` | [Tóc dựng khối](12-trang-phuc-3d.md#tóc-dựng-khối) | `pieces.hair.sculpt` |
+| `face` | Mắt, lông mày, miệng trên canvas nét mặt | kênh `face` + `keys[].face` của hành động |
+| `wrinkle` | Dưới nét mặt: nếp trán, chân chim, túi mắt, pháp lệnh | `face.wrinkle.*` (hằng số của nhân vật) |
+| `torso` | [Thân áo dựng khối](12-trang-phuc-3d.md#thân-áo-dựng-khối) quanh đoạn hông → cổ | `pieces.torso.garment`, góc `torso` |
 | `arm.near/far` | Hai đoạn: cánh tay trên + cẳng tay | `shoulder°, elbow°`, `stretch` |
 | `leg.near/far` | Hai đoạn: đùi + cẳng chân | `hip°, knee°`, `stretch` |
 
-**near / far** thay cho trái / phải, vì nó vừa xác định được thứ tự lớp vừa đúng
-ở mọi [góc nhìn](#góc-nhìn): `near` là chi bên `−x`, `far` là chi bên `+x` (phía
-nhân vật nhìn khi thân `front` hay `side`). Trái/phải trên màn hình là `flip` ở
-scene, không phải đổi tên chi.
+**near / far** thay cho trái / phải: `near` là chi gần ống kính — chi phải khi mặt hướng sang
+phải khung (không lật), chi trái khi lật ([Người 3D](#người-3d)). Trái/phải trên màn hình là
+`flip`, không phải đổi tên chi; hành động giữ tay phải / trái giải phẫu thì khai
+`sides: "anatomical"`.
 
 ## Socket
 
-Điểm cắm phụ kiện. Một nhân vật phụ = base + bảng màu + vài chuỗi tên mảnh.
+Điểm cắm đồ. Một nhân vật phụ = base + bảng màu + vài socket dựng khối.
 
 **Bảng này là *điểm neo*, không phải danh sách khoá cắm được.** Khoá thật nằm ở
 `PIECE_KEYS` của rig (`describe_rig` trả sẵn); dòng nào ghi *chưa dựng* là spec
@@ -262,118 +181,56 @@ chưa có khoá, cắm vào là zod báo lỗi. Dựng một socket mới chỉ 
 thì đọc mục [bước 1 không được sửa rig](07-lam-tap.md#bước-1-không-được-quyền-sửa-rig)
 trước.
 
+Socket nhận `src: "none"` (trống) hay `"sculpt"` (dựng khối, số đo ở trường riêng của socket);
+người 3D dựng bảy socket `BUILT_SOCKETS` (`torso`, `hem`, `hair`, `crown`, `headAcc`, `faceAcc`, `neck`).
+
 | Socket | Vị trí | Cắm được gì |
 |---|---|---|
-| `crown` | Đỉnh đầu | Khăn vấn, búi tóc, mũ — có `nonla` / `cap` / `khan` vẽ code; người 3D có [mũ dựng khối](02-trang-phuc.md#mũ-dựng-khối) |
-| `hairline` | Trán | Tóc |
-| `headAcc` | Đỉnh đầu, trên mũ | Phụ kiện đầu: sừng, tai, vòng hoa — `pieces.headAcc`, bám sọ, **không** trôi theo mặt; người 3D có [trâm cài búi](02-trang-phuc.md#trâm-cài-búi) và [bông tai](02-trang-phuc.md#bông-tai) |
-| `faceAcc` | Ngang mắt | Phụ kiện mặt: kính, sẹo, mặt nạ — `pieces.faceAcc`, trôi **đúng bằng** nét mặt |
-| `chin` | Cằm | Râu — `pieces.chin`: ảnh, bộ phận trong `PARTS`, hay [râu dựng khối](02-trang-phuc.md#râu-dựng-khối); `layer` chọn trên hay dưới nét mặt, râu dựng khối luôn dưới |
-| `neck` | Khớp cổ | Khăn quàng, cà vạt, yếm — có `khanco` vẽ code; người 3D có [khăn vắt vai và kính gài nẹp](02-trang-phuc.md#khăn-vắt-vai-và-kính-gài-nẹp), [dây chuyền](02-trang-phuc.md#dây-chuyền) |
-| `torso` | Thân | Thân áo; có các mẫu áo trong `PARTS` |
-| `pelvis` | Hông | Tà áo, váy — `pieces.hem`, có `skirt` / `ta` vẽ code, hay [váy dựng khối](02-trang-phuc.md#váy-dựng-khối); `layer` chọn trên hay dưới thân áo |
-| `handNear/handFar` | Bàn tay | Đồ cầm tay: công cụ, gậy, bó đồ — `pieces.handNear/handFar` |
+| `crown` | Đỉnh đầu | [Mũ dựng khối](12-trang-phuc-3d.md#mũ-dựng-khối) (`hat`) |
+| `hair` | Sọ | [Tóc dựng khối](12-trang-phuc-3d.md#tóc-dựng-khối) (`sculpt`) |
+| `headAcc` | Sọ | [Trâm cài búi](12-trang-phuc-3d.md#trâm-cài-búi) (`pin`) và [bông tai](12-trang-phuc-3d.md#bông-tai) (`earrings`), bám sọ |
+| `faceAcc` | Ngang mắt | [Kính dựng khối](12-trang-phuc-3d.md#kính-dựng-khối) (`glasses`) |
+| `neck` | Khớp cổ | [Khăn vắt vai và kính gài nẹp](12-trang-phuc-3d.md#khăn-vắt-vai-và-kính-gài-nẹp) (`drape`, `shades`), [dây chuyền](12-trang-phuc-3d.md#dây-chuyền) (`necklace`) |
+| `torso` | Thân | [Thân áo dựng khối](12-trang-phuc-3d.md#thân-áo-dựng-khối) (`garment`) |
+| `hem` | Hông | [Váy dựng khối](12-trang-phuc-3d.md#váy-dựng-khối) (`skirt`) |
+| `handNear/handFar` | Bàn tay gần, xa | Chỉ `src: "none"`: khoá có trong `PIECE_KEYS` để `equip` gọi tên, không dựng gì. Đồ cầm tay là [món cầm tay](#món-cầm-tay) hay vật three gắn bằng `dress` |
 | `back` | Giữa lưng | Đồ vác vai — **chưa dựng**, không có trong `PIECE_KEYS` |
-| `saddle` | *(nằm trên ngựa)* | Người cưỡi cắm vào đây — **chưa dựng**, xem dưới |
-
-### Mốc đặt mảnh
-
-Số dưới đây là hằng số trong `packages/rig/src/core`; bên tiêu thụ đọc từ đó chứ không
-chép lại. Bảng này để đối chiếu khi sửa hằng số. Công thức thật nằm ở
-`figureAnchors` (`anchor.ts`) — **một bảng duy nhất**, `<Character>` vẽ bằng nó và
-`anchorAt` đọc lại nó, xem [03 — Hỏi mốc trên người](03-scene.md#hỏi-mốc-trên-người).
-Muốn biết một mảnh đang ở đâu trên khung thì hỏi `anchorAt`, đừng chép bảng này ra
-tính tay.
-
-Mọi mảnh dùng chung một công thức: hộp ảnh cao `boxH × scale`, rộng
-`boxW × scale × aspect × widthScale`, mép trên đặt ở `anchorY + dy`, tâm ngang ở `dx`, rồi
-xoay `rotate` độ quanh **tâm hộp**. `boxW` là `boxH` ở `height = 1` — tức bề
-ngang không đổi khi kéo `Chiều cao`. Chỉ khác nhau `boxH` và `anchorY`, và hai
-socket treo vào khớp thì `rotate` xoay quanh chính cái khớp ấy chứ không quanh
-tâm hộp. Socket có hình theo [góc nhìn](#góc-nhìn) đi đường khác khi đang vẽ
-`side`, `rear` hay `back` — kiểu tóc thì ở mọi góc, kể cả chính diện: hộp suy từ
-khung `VIEW_FRAME` đặt theo xương, không từ `boxH`/`anchorY` dưới đây.
-
-| Socket | `boxH` | `anchorY` | Hệ toạ độ |
-|---|---|---|---|
-| `hairline` | `headH` | `−headH × scaleY(đầu)` — đỉnh đầu | trong nhóm đầu |
-| `crown` | `headH` | như `hairline`, vẽ sau nó | trong nhóm đầu |
-| `headAcc` | `headH` | như `hairline`, vẽ sau `crown` | trong nhóm đầu, **không** trôi theo mặt |
-| `faceAcc` | `headH` | như `hairline`, vẽ trước `hair` | trong nhóm đầu, trôi đúng bằng mặt |
-| `chin` | `headH` | `−headH × scaleY(đầu) × 0.10` — cằm | trong nhóm đầu |
-| `neck` | `torso × 0.6` | `−(torso + neck)` — khớp cổ | trong nhóm thân |
-| `pelvis` | `thigh + shin` | `0` — chậu hông | trong nhóm thân |
-| `sleeve.near/far` | `upperArm × stretch cánh tay trên + nét tay/2` — [vươn chi](#vươn-chi) | `−nét tay/2` | trong nhóm xoay theo `góc vai + rotate` |
-| `handNear/handFar` | `upperArm + foreArm` — **không** nhân `height`, **không** theo `stretch` | `−boxH/2` — hộp đặt **tâm** ở bàn tay | trong nhóm xoay theo `vai + khuỷu + cổ tay + rotate` |
-
-`pelvis` lấy `boxH = thigh + shin = 170` là cố ý: `scale = 1` thì gấu tà áo
-chạm đúng ground line, không phải căn tay. Tà áo **không ăn theo góc chân**, chỉ
-nghiêng theo thân — và khi có tà áo thì ẩn chân, theo
-[02 — Trang phục](02-trang-phuc.md). `pieces.hem.layer` = `under` thì tà
-vẽ trước thân áo, tức thân áo đè lên gấu tà.
-
-### Đồ cầm tay
-
-Đồ cầm tay lấy hộp vuông cạnh `120`, tâm ở bàn tay; hộp không kéo theo `Chiều
-cao` và không theo `stretch`, chỉ đi theo cổ tay. Điểm cầm nằm giữa ảnh, cán dọc
-trục ảnh, đầu xa ở mép dưới; `dx/dy` dời điểm cầm.
-
-**Hai góc, hai chủ sở hữu.** `pieces.hand*.rotate` là cách nắm cố định trong JSON
-nhân vật; số thứ ba của `armNear`/`armFar` là cổ tay thay đổi theo hành động. Vật
-cầm vẽ cùng lớp với cẳng tay, nên tay
-cầm rìu vung qua đầu phải khai `layer: front` như mọi tay đưa lên mặt.
-`pieces.hand*.layer: "under"` là ngoại lệ duy nhất: vật vẫn treo ở bàn tay nhưng
-vẽ sau cả chân lẫn thân — bó củi vác sau lưng, cái nón cầm buông thõng — và đó là
-hằng số của nhân vật hay của vật trong `items`, không phải của hành động. Đồ vật
-là **mảnh của nhân vật, không phải của hành động**: `chop.json` chỉ có góc
-khớp, cùng một file dùng cho rìu, cuốc hay búa — scene chọn nhân vật đã cắm
-đồ gì, hoặc đổi vật ở `handNear` giữa hai clip — xem
-[Đồ thay được](#đồ-thay-được-items-và-equip).
-
-`crown` dùng chung hộp với `hairline` — khăn và tóc là hai mảnh chồng nhau trên
-cùng một cái đầu, khác nhau ở `scale` và `dy`. Đầu rig là hình tròn nên vùng từ
-đỉnh đầu tới trên lông mày chỉ cao bằng **một phần ba** bề ngang đầu: mảnh khăn
-hay mái tóc phải là cung nông, rộng gấp ba lần cao.
-
-Tóc và râu vẽ **đè lên đầu**, sau mặt, theo đúng thứ tự lớp đã khoá. Hệ quả là
-mảnh tóc phải có lỗ khoét chỗ mặt và mảnh râu phải bắt đầu từ dưới miệng, không
-thì che mất khẩu hình — ràng buộc này thuộc về **prompt gen ảnh**.
 
 ### Đồ thay được: `items` và `equip`
 
-`pieces` là mảnh nền của nhân vật. `items` là danh mục vật có thể trang bị;
+`pieces` là đồ nền của nhân vật. `items` là danh mục vật có thể trang bị;
 scene và hành động gọi chúng theo tên:
 
 ```json
-"pieces": { "torso": { "src": "part", "part": "tunic-02" }, "hair": { … } },
+"pieces": { "torso": { "src": "sculpt", "garment": { "style": "polo" } }, "hair": { … } },
 "items": {
-  "axe":  { "handNear": { "src": "part", "part": "axe", "scale": 2.4, "rotate": -90 } },
-  "hat":  { "crown":    { "src": "part", "part": "crown-03", "dy": -85, "scale": 1.1 },
-            "handFar":  { "src": "part", "part": "crown-03", "scale": 0.7 } },
-  "armor": { "torso":   { "src": "image", "file": "torso/armor.png", "dy": -16, "scale": 1.36 } }
+  "yukata": { "torso":   { "src": "sculpt", "garment": { "style": "wrap" },
+                           "palette": { "sleeveFlare": 6 } } },
+  "kinh":   { "faceAcc": { "src": "sculpt", "glasses": { "shape": "round" } },
+              "neck":    { "src": "sculpt", "shades": {} } },
+  "mu":     { "crown":   { "src": "sculpt", "hat": { "shape": "peaked" } } }
 },
-"outfits": { "woods": { "handNear": "axe", "crown": "hat" } }
+"outfits": { "le-hoi": { "torso": "yukata", "crown": "mu" } }
 ```
 
-Một vật khai **nhiều socket là để nó đổi chỗ** — cái nón cầm ở tay rồi đội lên
-đầu vẫn là một vật, mỗi lúc chỉ một socket giữ nó. Đó cũng là chỗ khai **cách
-nắm**: `rotate`, `dx/dy`, `scale` của từng socket là hằng số của nhân vật, không
-phải của cảnh; xem [Đồ cầm tay](#đồ-cầm-tay).
+Một vật khai **nhiều socket là để nó đổi chỗ** — cái kính đeo trên mặt rồi gài lên nẹp áo
+vẫn là một vật, mỗi lúc chỉ một socket giữ nó. Số đo của từng socket là hằng số của nhân vật,
+không phải của cảnh.
 
 `equip` chọn vật cho socket, và nó là **công tắc**: socket không nhắc tới thì
 giữ nguyên thứ đang có.
 
 | Giá trị | Nghĩa |
 |---|---|
-| `"axe"` | vật ấy chiếm socket, đè cả mảnh nền — **thay áo** cũng chỉ là `{ "torso": "armor" }` |
+| `"kinh"` | vật ấy chiếm socket, đè cả đồ nền — **thay áo** cũng chỉ là `{ "torso": "yukata" }` |
 | `null` | socket trống — cởi kính, bỏ mũ |
-| `"base"` | về lại mảnh nền trong `pieces` |
+| `"base"` | về lại đồ nền trong `pieces` |
 | không có khoá | giữ nguyên thứ đang mặc |
 
 Giá trị của chính `equip` cũng nhận **tên một bộ đồ** trong `outfits`, hoặc một
 mảng nhiều bước (`["linh-gac", { "faceAcc": "kinh" }]`). `outfits` chỉ là cách
 viết gọn: mặc một bộ là đặt luôn từng socket của bộ ấy, không có khái niệm nào
-mới. Tên vật lạ hoặc vật không khai socket ấy thì **giữ mảnh nền** — giữa phim
+mới. Tên vật lạ hoặc vật không khai socket ấy thì **giữ đồ nền** — giữa phim
 không cởi đồ người ta ra vì một lỗi chính tả; `stickman check` và MCP là chỗ báo.
 
 Ba chỗ ghi `equip`, đọc theo thứ tự: `cast[].equip` lúc mở màn (xem
@@ -409,25 +266,17 @@ Pose là bộ góc khớp. Dấu tay đọc theo vị trí vai: vai gần ở `�
 | `shock` | 45 | 80 | −45 | −80 | −6 | Hoảng |
 | `think` | 10 | −6 | 60 | 135 | 4 | Chống cằm |
 | `hold` | 22 | −124 | −22 | 124 | 0 | Cầm đồ trước ngực |
-| `ride` | 34 | 48 | 40 | 44 | 4 | Ngồi trên lưng thú; chân `[76, −104]` / `[84, −98]`, mặc định khi `cast[].mount` |
-| `sit` | 26 | 38 | 30 | 42 | 2 | Ngồi ghế, tay đặt trên đùi; chân `[88, −92]` / `[92, −88]`, mặc định khi `cast[].sit` |
-| `lie` | 8 | −6 | −8 | 6 | 12 | Nằm ngửa gối đầu, dùng cùng `cast[].rotate: 90`; chân `[−10, 0]` / `[−11, 0]`, đầu cúi `18` — [03](03-scene.md#nằm-và-xoay-cả-người) |
+| `sit` | 26 | 38 | 30 | 42 | 2 | Ngồi ghế, tay đặt trên đùi; chân `[88, −92]` / `[92, −88]` |
 
 `POSES` chỉ chứa góc tay chân và thân; `head` và cổ tay mặc định bằng `0`.
-`POSE_LAYERS` chứa lớp đi kèm pose; `keys[].layer` đè lên nó.
 
 Ràng buộc hình học:
 
-- Tay xa có góc vai âm sẽ chui dưới thân; chỉ cẳng tay đổi lớp được.
-- Tay giơ cao phải mở ra ngoài. Tay gần có góc vai `117°`–`204°` dùng
-  `layer.armNear: "front"`; tay xa quá `155°` không còn thấy khúc trên.
-- Tay chạm mặt hoặc đi qua đầu dùng lớp `front`.
 - Chống cằm cần khuỷu lớn hơn `130°`.
 - Ở `stretch = 1` tay với tới vùng từ thái dương tới quai hàm; đỉnh đầu cần
   `stretch ≥ 1.36` — xem [Vươn chi](#vươn-chi).
 - Tay đưa lên đầu dùng góc vai âm. Gãi đầu dùng `[−132, −96]` rồi
   `[−110, −120]`.
-- Hai tay gặp nhau trước ngực phải giữ khuỷu rộng như `hold`.
 - Pose đứng dùng gối `0`, hông xa `+2°`, hông gần `−2°`; `shock` dùng `±6°`.
   Đổi `hipHalf` thì căn lại các góc này.
 
@@ -445,12 +294,16 @@ sinh dựng sẵn trong rig, config bằng `params`) hoặc `keys` (chuỗi mố
 hai, hoặc không có cái nào, là lỗi schema.
 
 ```json
-{ "schemaVersion": 18, "name": "wave", "duration": 0.63, "end": "hold",
-  "mask": ["armNear"],
-  "keys": [ { "t": 0, "pose": { "armNear": [-120, -30, 0] } },
-            { "t": 0.2857, "pose": { "armNear": [-120, -70, 0] } },
-            { "t": 0.5714, "pose": { "armNear": [-120, -30, 0] } },
-            { "t": 1, "pose": "idle" } ] }
+{ "schemaVersion": 20, "name": "wave-3d", "duration": 0.5, "end": "wrap",
+  "mask": ["armNear", "hand"], "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": {}, "reach": { "armNear": { "at": [22, -185, 100], "elbow": [0, 1, 0.6] } },
+      "ease": "smooth", "hand": { "armNear": { "pose": "open", "palm": "forward", "fingers": "up" } } },
+    { "t": 0.5, "pose": {}, "reach": { "armNear": { "at": [22, -178, 120], "elbow": [0, 1, 0.6] } },
+      "ease": "smooth", "hand": { "armNear": { "pose": "open", "palm": "forward", "fingers": "up" } } },
+    { "t": 1, "pose": {}, "reach": { "armNear": { "at": [22, -185, 100], "elbow": [0, 1, 0.6] } },
+      "ease": "smooth", "hand": { "armNear": { "pose": "open", "palm": "forward", "fingers": "up" } } }
+  ] }
 ```
 
 | Trường | Nghĩa |
@@ -460,25 +313,25 @@ hai, hoặc không có cái nào, là lỗi schema.
 | `mask` | Kênh mà hành động này ghi: bảy khớp `armFar / armNear / legFar / legNear / torso / head / stretch`, `face` (nét mặt, không có góc) và `hand` (bàn tay người 3D) — [Bàn tay](#bàn-tay). Bỏ trống thì suy ra từ các mốc |
 | `keys[].t` | **Tỉ lệ chu kỳ, không phải giây.** Tăng dần trong `[0, 1]` |
 | `keys[].pose` | Tên một pose trong thư viện, hoặc object chỉ đè vài khớp. Tay ba số `[vai, khuỷu, cổ tay]`, chân hai số `[hông, gối]`, `head` ba số (số nào `null` là không ghi góc ấy — [Đầu và nét mặt](#đầu-và-nét-mặt)), `torso` một số, `stretch` bốn hoặc tám số — [Vươn chi](#vươn-chi). Tay thêm được số dang thứ tư, chân số dang thứ ba, `torso` thành `[cúi, nghiêng]` — [Dang và nghiêng ngang](#dang-và-nghiêng-ngang); tay thêm số xoắn vai thứ năm — [Xoắn tay](#xoắn-tay) |
-| `keys[].reach` | Đích cổ tay hệ thân cho `armNear` / `armFar`: `{ "at": [tiến, y, ra ngoài], "elbow"?: [...] }`. Người 3D giải IK hai đoạn; người 2D vẽ góc dự phòng — [Đích bàn tay](#đích-bàn-tay) |
+| `keys[].reach` | Đích cổ tay hệ thân cho `armNear` / `armFar`: `{ "at": [tiến, y, ra ngoài], "elbow"?: [...] }`. Người 3D giải IK hai đoạn; mốc không ghi góc kênh ấy thì kênh nhận góc suy từ đích — [Đích bàn tay](#đích-bàn-tay) |
 | `keys[].ease` | Áp cho đoạn **từ mốc này tới mốc sau**, mặc định `linear`: `linear` đều; `smooth` chậm vào chậm ra (`smoothstep`, cùng đường với đoạn hoà) — vận tốc về `0` ở mọi mốc nên mốc giữa nhìn khựng; `auto` bậc ba đơn điệu, liền vận tốc qua mốc giữa của chuỗi mốc `auto`, không vọt; `bezier` theo `keys[].bezier`; `spring` vọt qua rồi nảy về. Xem [Đường giữa hai mốc](#đường-giữa-hai-mốc) |
 | `keys[].bezier` | `[x1, y1, x2, y2]` của `cubic-bezier` CSS, bốn số trong `[0, 1]` nên không vọt; chỉ ăn khi `ease: "bezier"`, bỏ trống là `[0.42, 0, 0.58, 1]` |
 | `keys[].face` | Nét mặt kể từ mốc này: `{ "mouth": …, "brow": …, "eyes": …, "blush": … }`, khai trường nào thì ghi trường đó. Ba kiểu nét **không nội suy**, `blush` (`0..1`) nội suy như góc — [Má ửng](#má-ửng); chỉ ăn khi `face` nằm trong `mask` — xem [Đầu và nét mặt](#đầu-và-nét-mặt) |
-| `keys[].hand` | Bàn tay người 3D kể từ mốc này theo kênh tay: `{ "armNear": "point", "armFar": { "pose": "fist", "w": 0.5, "turn": 80, "bend": -10 } }` — một trong bốn dáng (bỏ trống `pose` là dáng nghỉ), xoay cẳng tay, gập cổ tay, **nội suy** như góc; chỉ ăn khi `hand` nằm trong `mask` — [Bàn tay](#bàn-tay) |
+| `keys[].hand` | Bàn tay người 3D kể từ mốc này theo kênh tay: `{ "armNear": "point", "armFar": { "pose": "fist", "w": 0.5, "turn": 80, "bend": -10 } }` — một dáng có sẵn hay của thư viện `hands/` (bỏ trống `pose` là dáng nghỉ, [Dáng tay có tên](#dáng-tay-có-tên)), xoay cẳng tay, gập cổ tay, **nội suy** như góc; chỉ ăn khi `hand` nằm trong `mask` — [Bàn tay](#bàn-tay) |
 | `keys[].equip` | Đổi đồ kể từ mốc này: `{ "crown": "hat", "handFar": null }`. **Công tắc**, không nội suy, không hoà và **không đi qua `mask`** — xem [Đổi đồ giữa chừng](#đổi-đồ-giữa-chừng) |
 | `events[]` | Mốc `{ name, t }` đặt tên cho một pha va chạm; không ghi khớp nào — xem [Mốc sự kiện](#mốc-sự-kiện) |
-| `keys[].layer` | Lớp vẽ cẳng tay kể từ mốc này, đè lên lớp thừa hưởng từ pose được gọi tên: `{ "armFar": "back" \| "mid" \| "front", "armNear": ... }`. **Không nội suy**; mốc sau không khai thì giữ nguyên. Chỉ ăn ở kênh nằm trong `mask`. [02 — Trang phục](02-trang-phuc.md#cẳng-tay-đổi-lớp-được-cánh-tay-trên-xa-thì-không) |
-| `note` | Ghi chú cách dùng cho người soạn cảnh, tiếng Việt. Rig không đọc; studio giữ nguyên khi xuất |
+| `note` | Ghi chú cách dùng cho người soạn cảnh, tiếng Việt. Rig không đọc |
+| `preview` | Cách Thư viện Studio 3D và `pnpm bang-hanh-dong` xem thử (cảnh dựng bằng `previewScene` của lõi, `previewWorld` của rig): `{ "base": "stand-3d", "stage": "stand" }` — `base` là hành động nền chồng dưới, bỏ trống thì suy theo `stage`; `stage` là `stand` \| `chair` \| `floor` \| `sit-down` \| `stand-up` \| `counter` \| `armchair` (ghế có tay vịn `PREVIEW_ARMREST`; `sit-down`, `stand-up` cũng dựng ghế này) \| `desk` (ghế và bàn `PREVIEW_DESK` trước mặt). `path` là chỗ người diễn theo giây của clip cho hành động dời hông (nhổm, đứng dậy từ sàn, ngồi xổm): `[{ "t": 0, "at": [0, 14], "sit": true }, …]`, `at` là `[trước, cao]` so với chỗ đứng ban đầu theo hướng mặt, đơn vị rig ở `height = 1`, `sit` thì `cao` là mặt ngồi dưới khớp hông như `world.path[].sit`, `t` tăng dần; scene dùng hành động ấy dựng `world.path` cùng dạng; `path` không có mốc ngồi mà hành động có sải chân (bước tiến, lùi) thì hết lượt hành động thả về nền, như cảnh thật nối clip rỗng. `hold` là món mẫu cầm từ giây 0, `{ "right": "coc@cylinder", "left": … }` theo tay giải phẫu, cùng dạng `world.hands[].hold` ([03](03-scene.md#đồ-cầm-tay)): chỗ tay theo hành động, hành động không biết món. `partner` là người thứ hai đứng ở chỗ hành động vươn tới, `{ "at": [220, 0], "yaw": 0, "action": "receive-3d" }`: `at` là `[trước, phải]` so với hông người diễn theo hướng mặt, đơn vị rig ở `height = 1` (mặc định `[220, 0]`), người ấy nhìn vào người diễn, `yaw` lệch thêm (độ), `action` diễn trên nền `stand-3d`, `hold` là món người ấy cầm từ giây 0 cùng dạng `preview.hold`; người ấy thu phóng (`world.s`) cho cao bằng người diễn, nên chỗ hai tay gặp nhau đúng với hai người cùng cao. `sceneAt` không đọc |
 | `authoredAt` | `"side"`: góc tay chân soạn ở nhìn nghiêng, người 3D đọc như trong mặt phẳng dọc của thân — [Người 3D](#người-3d) |
 | `sides` | `"anatomical"`: kênh gần là tay chân phải, kênh xa là trái, ở mọi góc máy (người 3D) — [03](03-scene.md#hành-động-theo-tay-phải-trái) |
 | `snap` | `true`: chuyển động cố ý giật (giật mình, đập bàn) — `check` không đo giật ở kênh hành động ghi lúc nó chạy — [Hành động giật có chủ ý](#hành-động-giật-có-chủ-ý) |
 
 **Ghép nhiều hành động là việc của scene, không phải của file.** `actionPose()`
 chỉ trả các khớp hành động ghi; `composePose(nền, ...)` đè theo `mask`, không
-cộng góc, riêng `stretch` đè theo từng chi ([Vươn chi](#vươn-chi)). Vẫy tay trong lúc đi là hai file, file vẫy chỉ ghi `armNear`.
+cộng góc, riêng `stretch` đè theo từng chi ([Vươn chi](#vươn-chi)). Vẫy tay trong lúc đi là hai file, `wave-3d` chỉ ghi `armNear` và `hand`.
 
 **`mask` quyết định, kể cả khi mốc gọi tên pose.** Pose trong thư viện là đủ mọi
-kênh — `wave` mà không có `mask: ["armNear"]` thì nó ghi cả hai chân, chồng lên
+kênh — hành động vẫy có mốc gọi tên pose mà không có `mask: ["armNear"]` thì nó ghi cả hai chân, chồng lên
 `walk` là chân đứng im.
 
 **Nội suy theo từng kênh**, giữa hai mốc gần nhất *có nhắc tới kênh đó*, không
@@ -486,7 +339,7 @@ phải hai mốc kề nhau; ba góc của `head` nội suy riêng từng góc, m
 thì không tính cho góc ấy. Nhờ vậy một hành động có được hai nhịp khác nhau cho hai kênh:
 thân đổi chiều ở giữa, góc gật chỉ có mốc đầu và mốc cuối.
 
-**Xuất từ studio là đóng băng số.** Tên pose chỉ là tiện nghi lúc soạn: bảng
+**File hành động ghi số, không ghi tên pose.** Tên pose chỉ là tiện nghi lúc soạn: bảng
 `POSES` còn được tinh chỉnh, mà file hành động thì nằm ở repo video — trỏ theo
 tên là mỗi lần rig chỉnh `idle`, mọi hành động cũ đổi hình mà không qua
 `ACTION_VERSION` nào.
@@ -507,8 +360,8 @@ tên là mỗi lần rig chỉnh `idle`, mọi hành động cũ đổi hình m�
 - **Góc đầu từng góc một.** Chuỗi của mỗi góc `head` chỉ gồm các mốc ghi số ở góc ấy; mốc `null` không
   thuộc chuỗi.
 - **Kiểu không phải số lùi về `smoothstep`**: đích cổ tay (`keys[].reach`, cả hoà số hạng) và lòng tay
-  theo ý định (`palm` / `fingers`). Góc (kể cả góc dự phòng người 2D suy từ đích), `stretch`, `blush`,
-  số bàn tay (`keys[].hand`) và góc động vật đi đường bậc ba.
+  theo ý định (`palm` / `fingers`). Góc (kể cả góc suy từ đích), `stretch`, `blush`,
+  và số bàn tay (`keys[].hand`) đi đường bậc ba.
 
 `auto` chậm lại trước mốc cuối chuỗi: đoạn lao vào mốc va chạm (rìu chạm gỗ, tay đập bàn) dùng
 `linear` hoặc `bezier` tăng tốc (`y` dưới đường chéo, như `[0.5, 0, 1, 1]`). Cú nảy giữ `spring`.
@@ -517,47 +370,15 @@ tên là mỗi lần rig chỉnh `idle`, mọi hành động cũ đổi hình m�
 
 Kênh `head` là `[nghiêng, lắc, gật]`:
 
-| Góc | Vẽ ra thành |
+| Góc | Quay |
 |---|---|
-| `nghiêng` | `rotate()` quanh cổ; dương đưa đỉnh đầu về `+x` |
-| `lắc` | Dịch nét mặt ngang `sin(lắc) · nửa rộng đầu · 0.38`; khoảng mắt co theo `cos` |
-| `gật` | Dịch nét mặt dọc `sin(gật) · nửa cao đầu · 0.5`; khoảng mắt–mồm co theo `cos` |
+| `nghiêng` | Đầu quanh trục tiến; dương đưa đỉnh đầu về phía `lắc` dương |
+| `lắc` | Đầu quanh trục dọc; dương là quay mặt về bên trái người khi không lật |
+| `gật` | Đầu quanh trục ngang; dương là cúi |
 
-Chỉ `nghiêng` xoay khối đầu. `lắc` và `gật` biến đổi nét mặt, không xoay viền đầu.
-`faceAcc` đi đúng bằng nét mặt — [kính dựng khối](02-trang-phuc.md#kính-dựng-khối) thì
-quay theo đầu rồi khớp vào mắt; `headAcc` bám sọ. `hair` và `crown`
-theo `head.follow` (mặc định `0.1`), `hairBack` và lớp `under` của kiểu tóc theo
-`head.followBack` (mặc định `−0.2`), `chin` theo nét mặt — [râu dựng khối](02-trang-phuc.md#râu-dựng-khối)
-thì quay theo đầu rồi khớp khấc vào mồm.
-
-**Tóc [dựng khối](02-trang-phuc.md#tóc-dựng-khối) đổi cả hai dòng dưới bảng thành
-góc thật.** Tóc ấy quay theo đầu, nên nét mặt đầu `front` / `quarter` chiếu từ cùng khối sọ đơn
-vị với tóc, qua `headTurn` / `turnPoint` ở `sphere.ts`: `lắc` là góc quay quanh trục
-dọc, `gật` quanh trục ngang, `face.turn` đổi ra góc tĩnh `asin(turn / nửa rộng)`
-rồi cộng `lắc`. Mắt ở vĩ độ của `face.offsetY` và kinh độ `± asin(eyeGap / 2 /
-nửa rộng)`, mày cao hơn mắt `BROW_ABOVE`, mồm ở vĩ độ của `mouthGap`; cả ba chiếu
-tâm, hình vẽ giữ nguyên, chỉ bóp ngang theo `cos(lắc)` và không mỏng hơn
-`SIDE_EYE_OVAL`. Mắt xa quay ra sau viền thì không vẽ; mắt, mày, mồm cắt theo lòng
-viền đầu. Tóc phẳng (kiểu tóc, tóc ảnh) không quay, nên giữ đúng bảng trên — đổi
-công thức ấy là mắt chui dưới mái vẽ phẳng khi ngước.
-
-Đầu `side` / `rear` dưới tóc dựng khối thì nét mặt **gật như một khối cứng**: đặt như lúc
-không gật (ghim mép trước như mục [Đầu `side`](#đầu-side)), rồi cả cụm mắt, mày, mồm, ria,
-nếp nhăn, `chin` và `faceAcc` ảnh đi trong `frames.face` — nhóm con của nhóm đầu, đưa tâm
-mặt tới chỗ nó đi tới trên sọ đơn vị (`nodImage` ở `sphere.ts`) và xoay theo góc mà trục
-ngang của ảnh quay tới. Nhìn nghiêng trục gật chĩa vào ống kính nên đó đúng là phép xoay
-quanh tâm đầu, khớp tuyệt đối với tóc; ở `rear` góc xoay nhỏ hơn góc gật. Viền đầu và các
-clip theo viền đứng yên trong nhóm đầu. `joints.face` / `eyeNear` / `eyeFar` / `mouth` treo
-trong `frames.face`; `A.face.cx` / `cy` / `mouthCy` là chỗ đặt trước khi gật. Kính dựng khối ở
-lại nhóm đầu: mắt kính dựng ở gật 0 rồi đi theo `frames.face`, càng chuyển dần về góc gật thật
-của sọ tới tai. Râu dựng khối dựng ở gật 0 rồi đi theo `frames.face`. Tóc phẳng và đầu
-`front` / `quarter` thì `frames.face` chính là `frames.head`.
-
-`face.turn` là độ lệch tĩnh tính bằng px; `lắc` của hành động cộng thêm lên nó
-và không đổi `flip`. Góc lắc được kẹp trong `±90°`. `face.turn` chỉ ăn ở đầu `quarter`,
-đầu `front` coi nó là `0`; `lắc` ăn ở cả hai:
-đầu `side` ghim nét mặt ở mép trước, đầu `back` không có nét mặt nào để dịch —
-xem [Góc nhìn](#góc-nhìn).
+Cổ quay theo thứ tự `lắc` · `gật` · `nghiêng` (Euler `YXZ` ở `act`), lật thì `lắc` và `nghiêng` đổi dấu
+theo `flip`. Khối sọ, tóc, mũ, kính và đồ `headAcc` quay cùng đầu; nét mặt vẽ trên canvas dán trên sọ
+nên đi theo như một mặt thật. Mốc mặt của `anchorAt` thì đi đường riêng — [Mặt người 3D](#mặt-người-3d).
 
 `keys[].face` lấy mẫu bậc thang trên kênh `face` — kênh riêng trong `mask`, không
 phải góc đầu. Hành động chỉ đổi mặt tự thêm `face` vào `mask` và không đụng
@@ -575,15 +396,18 @@ Bộ mẫu có sẵn một thang nét mặt chỉ ghi `face`: `face-calm`, `face
 `face-curious`, `face-ponder`, `face-focus`, `face-displeased`, `face-angry`,
 `face-surprised`, `face-shocked`, `face-delighted`, `face-relieved`, `face-shy`,
 `face-smug`, `face-greedy`, `face-worried`, `face-sad`, `face-pain`, `face-wince`,
+`face-downcast`, `face-eyes-closed`, `face-bow` (nhắm mắt mỉm cười khi cúi chào),
+`face-bored`, `face-bitter`, `face-anguish`, `face-fret`, `face-menace`,
+`face-forced-smile`, `face-smirk`, `face-fake-tears`,
 cộng hai hành động có nhịp `face-effort` và `face-tired`. Cảnh xếp chúng thành một
 track cảm xúc riêng, nằm dưới track nhép (`talk-lips`, `talk-angry-lips`) và trên track
-thân; `look-camera` chỉ ghi góc lắc để quay mặt ra ống kính mà giữ nguyên cảm xúc.
+thân; `turn-head-*` chỉ ghi `head` nên quay mặt mà giữ nguyên cảm xúc.
 
 **Góc đầu `null` là không ghi.** `head` của một mốc là `[nghiêng, lắc, gật]`, số nào
 `null` thì hành động không ghi góc ấy: `composePose` và `blendPose` đè `head` theo từng góc
-(`headOver`), góc để trống lấy của track dưới. `look-camera` ghi `[null, −29, null]`,
-`talk-tilt` ghi `[10, null, null]`, `talk-nod` chỉ ghi gật — chồng ba track ấy theo thứ tự
-nào cũng ra đầu nghiêng, gật mà vẫn nhìn ống kính. Hành động ghi đủ ba số thì đè cả ba,
+(`headOver`), góc để trống lấy của track dưới. `shake-head-3d` chỉ ghi lắc,
+`tilt-head-near-3d` ghi `[10, null, null]`, `nod-once-3d` chỉ ghi gật — chồng ba track ấy theo
+thứ tự nào cũng ra đủ ba góc. Hành động ghi đủ ba số thì đè cả ba,
 kể cả lắc `0`: hành động đầu đi kèm lời nói để `null` ở góc lắc, không thì xoá hướng nhìn
 của track khác. `actionDelta` trả nguyên `null`; trong `Pose` một phần, góc để trống là
 `NaN` cho tới khi ghép.
@@ -594,12 +418,12 @@ của track khác. `actionDelta` trả nguyên `null`; trong `Pose` một phần
 ghi cả hai phía trong cùng mốc:
 
 ```json
-{ "t": 0,   "equip": { "handFar": "hat", "crown": null } }
-{ "t": 0.6, "equip": { "handFar": null, "crown": "hat" } }
+{ "t": 0,   "equip": { "faceAcc": "kinh", "neck": null } }
+{ "t": 0.6, "equip": { "faceAcc": null, "neck": "kinh" } }
 ```
 
 Mốc bật ở `t: 0` là bắt buộc: `end` giữ trạng thái mốc cuối sang lượt sau, nên
-chỉ có mốc tắt là mảnh không hiện ở frame nào — xem
+chỉ có mốc tắt là vật không hiện ở frame nào — xem
 [03 — Bốn bẫy của `equip`](03-scene.md#bốn-bẫy-của-equip).
 
 `equip` lấy mẫu bậc thang, không đi qua `mask` và không hoà. Socket không được
@@ -609,18 +433,18 @@ mốc khác đổi nó. `cast[].equip` đặt trạng thái mở màn; chi tiế
 
 ### Mốc sự kiện
 
-`events[]` đặt tên cho một **pha** trong chu kỳ: lưỡi rìu chạm gỗ, bàn chân chạm
+`events[]` đặt tên cho một **pha** trong chu kỳ: hai lòng bàn tay chạm nhau, bàn chân chạm
 đất. Nó không ghi khớp nào, không đi qua `mask`, không hoà và không đổi hình gì
 cả — chỉ là một con số **có tên**.
 
 ```json
-{ "name": "chop", "duration": 1.4, "events": [{ "name": "hit", "t": 0.445 }], "keys": [ … ] }
+{ "name": "clap-3d", "duration": 0.42, "end": "wrap", "events": [{ "name": "clap", "t": 0.5 }], "keys": [ … ] }
 ```
 
-Đo bằng chính rig: pha `hit` của `chop` là lúc **bàn tay gần
-xuống thấp nhất** (`computeFigure(c, actionPose(a, u))`, tìm `max y`), pha `step`
+Pha lấy từ chính hình của hành động: `clap` của `clap-3d` nằm giữa quãng **hai lòng bàn tay
+áp vào nhau** (hai mốc khép `0.45` và `0.55`), pha `step`
 của `walk` là lúc **một bàn chân mới nhận lực** — đúng luật `onGround` mà
-`bakeTravel` dùng, nên nó không lệch với trôi ngang được.
+`bakeTravel` dùng, nên nó không lệch với sải chân được.
 
 Scene đổi chúng ra giây bằng [`sceneEvents`](03-scene.md#hỏi-sự-kiện): clip lặp
 thì sự kiện lặp theo, `phase` và `cycle` của clip tính sẵn trong đó.
@@ -633,8 +457,8 @@ tay vào hình đầu tiên thuộc chỗ nối trong scene.
 
 **Nhịp và trạng thái.** Suy ra từ file, không phải trường mới: `end: "hold"` mà
 mốc cuối khác mốc đầu là **trạng thái** — nó đi tới một tư thế rồi giữ, scene
-phải có clip khác kéo ra (`point`, `think`, `facepalm`, `hold`, `hips`). Mốc cuối
-quay về `idle` là **nhịp**, tự dọn (`wave`, `shrug`).
+phải có clip khác kéo ra (`look-down-12-3d`, `tilt-head-near-3d`). Mốc cuối
+quay về tư thế nghỉ là **nhịp**, tự dọn (`nod-3d`).
 
 Mốc cuối được giữ theo `end`; tay hạ xuống sau khi vẫy phải nằm trong chính hành
 động nếu đó là một phần của chuyển động.
@@ -642,7 +466,7 @@ Mốc cuối được giữ theo `end`; tay hạ xuống sau khi vẫy phải n�
 **Hoà là đường thẳng trong không gian góc, không phải trong không gian hình.**
 Đường ngắn nhất về góc có thể quét bàn tay ngang qua mặt hoặc kéo khuỷu vào
 trong thân áo giữa chừng. Cặp nào bị thì scene chèn một clip trung gian, thường
-là `idle` ngắn — ngoại lệ vài cặp, không phải mặc định.
+là `stand-3d` ngắn — ngoại lệ vài cặp, không phải mặc định.
 
 Thuật toán hoà nhiều track, clip rỗng và chỗ nối chồng nhau nằm ở
 [03 — Chỗ nối](03-scene.md#chỗ-nối).
@@ -664,50 +488,29 @@ Chuyển động trên hình phải liền: `check` đo từng khớp mỗi khun
 
 ### Điệu bộ khi nói
 
-Hành động khi nói của bộ chung đều **giơ một lần rồi giữ**: `end: "hold"`, mốc `t: 0` gần tư
+Cú nhịp và cú đầu khi nói của bộ chung đều **đi một lần rồi giữ**: `end: "hold"`, mốc `t: 0` gần tư
 thế nghỉ, mốc cuối là đích, đoạn giữa `ease: "smooth"` — đơn điệu, chậm vào chậm ra, không vọt.
-Không cái nào lặp (`wrap`) hay nảy (`spring`): tay nhấp lên xuống theo nhịp đều nhìn giật. Mỗi
+Không cái nào lặp (`wrap`) hay nảy (`spring`): nhấp lên xuống theo nhịp đều nhìn giật. Mỗi
 cú là một trạng thái; scene vào bằng blend ~`0,3`, buông bằng clip rỗng blend ~`0,4` hoặc thay
-bằng cú khác.
+bằng cú khác. Dáng tay khi nói là bộ `talk-pose-*` của [bộ hành động 3D](#bộ-hành-động-3d).
 
 | Hành động | `mask` | Đích ở `t: 1` | Dùng khi |
 |---|---|---|---|
-| `talk` | `armNear` | tay gần `[42, 84]` ra trước thân ngang ngực dưới | nói thường |
-| `talk-hand` | `armNear`, `torso` | tay gần `[−24, −78]` chìa ra `−x`, thân `−4` | đưa ý, trình bày |
-| `talk-hand-far` | `armFar`, `torso` | tay xa `[26, 80]` lớp `front`, thân `+4` | đưa ý về phía người nghe |
-| `talk-hands` | `armNear`, `armFar`, `torso` | `[−24, −80]` / `[26, 80]`, thân `+2` | câu nhấn |
-| `talk-shrug` | `armNear`, `armFar`, `torso` | `[−34, −100]` / `[34, 100]`, thân `−3` | câu hỏi, "ai mà biết" |
-| `talk-chest` | `armNear`, `torso` | tay gần `[14, 128]` lên ngực, thân `−3` | nói về mình |
-| `talk-point-far` | `armFar`, `torso` | tay xa `[80, −6]`, thân `+4` | chỉ người nghe |
-| `hips-far` | `armFar` | tay xa `[36, −96]` chống hông | tay nền suốt đoạn nói |
-| `talk-beat`, `talk-beat-back` | `torso`, `head` | thân `±4`, gật `2` | cú nhịp khi tay giữ nguyên, người đứng |
-| `talk-beat-seated` | `torso`, `head` | thân `8`, nghiêng `−7`, gật `1` | cú nhịp người ngồi 2D, đầu bù gần thẳng đứng |
-| `talk-beat-seated-3d` | `torso`, `head` | thân `8`, gật `−6` | cú nhịp người 3D ngồi, đầu ngửa bù gần thẳng đứng |
-| `talk-sway` | `torso`, `head` | thân `+5` ở `t: 0,4` rồi `−4`, gật `2` | lắc qua rồi lắc lại, không về giữa |
-| `talk-tilt`, `talk-tilt-back` | `head` | nghiêng `±10` | câu hỏi, phản bác |
-| `talk-nod` | `head` | gật `5` ở `t: 0,4` rồi `2` | nói thẳng vào ống kính |
+| `talk-beat-3d` | `torso`, `head` | thân `5`, gật `−3` | cú nhịp khi tay giữ nguyên, người đứng |
+| `talk-beat-seated-3d` | `torso`, `head` | thân `8`, gật `−6` | cú nhịp người ngồi, đầu ngửa bù gần thẳng đứng |
+| `tilt-head-near-3d`, `-far-3d` | `head` | nghiêng `10` | câu hỏi, phản bác |
+| `nod-once-3d` | `head` | gật `9` ở `t: 0,4` rồi `2` | nhấn một ý |
 
-`duration` là `0,5 s` (`0,45` cho nhún vai, tay lên ngực, cú nhịp; `0,4` cho chỉ; `0,6`–`0,7`
-cho gật và lắc qua lại): 15 → 85% quãng mất ~`0,24 s`. Scene đè bằng `cycle`.
+`duration` là `0,45 s` cho cú nhịp đứng và nghiêng, `0,5 s` cho cú nhịp ngồi, `0,6 s` cho gật:
+15 → 85% quãng mất ~`0,24 s`. Scene đè bằng `cycle`.
 
-- **Thân ngả về phía bàn tay vừa đưa ra**; tay và thân khởi cùng lúc, tới cùng lúc. Người đứng
-  thì đầu đi cứng theo thân, nên hành động tay không ghi `head`.
-- **Ba track:** tay (`talk*`, `hips-far` ở track dưới nó), nhịp thân (`talk-beat*`, `talk-sway`),
-  đầu (`talk-tilt*`, `talk-nod`, `look-camera`). Mỗi hành động chỉ ghi góc đầu của nó, góc còn lại
-  `null` ([Đầu và nét mặt](#đầu-và-nét-mặt)). Ba hành động đầu ghi ba góc khác nhau nên chồng
-  theo thứ tự nào cũng được; cú nhịp cũng ghi gật (`talk-beat-seated` ghi cả nghiêng), nên khi
-  trùng góc thì track trên thắng — đặt track đầu trên track nhịp để `talk-tilt`, `talk-nod` giữ
-  góc của chúng. Track tay và track nhịp cùng ghi `torso`, track trên thắng: cú tay mới bắt đầu
-  thì clip nhịp đã nhả, và ngược lại.
-- **Người ngồi** dùng `talk-beat-seated` thay `talk-beat`. Thân ngả quanh hông, chân ở nhánh
-  riêng nên bàn chân đứng yên. **Người 3D:** `torso` là góc cúi trong mặt phẳng dọc, nên thân
-  `−4` của `talk-hand` là ngả lùi; các hành động tay này không khai `authoredAt`, nên trên người
-  3D là lỗi của `check` — repo video soạn bản `-3d` ở `side` cho điệu bộ nó dùng
-  ([03](03-scene.md#hành-động-cho-người-3d)); `talk-beat*`, `talk-sway`, `talk-tilt*`, `talk-nod`
-  chỉ ghi thân và đầu nên dùng thẳng được. Nghiêng đầu của người 3D vẫn xoay trên mặt khung, nên không bù được cái
-  cúi — nhìn chính diện nó thành ngoẹo cổ. Người 3D ngồi dùng `talk-beat-seated-3d`: bù bằng
-  gật, cùng trục với cái cúi, đúng ở mọi góc quay khi tóc dựng khối; tóc ảnh hay kiểu tóc phẳng
-  thì gật chỉ dời nét mặt, đầu đi theo thân như `talk-beat`.
+- **Hai track:** nhịp thân (`talk-beat-*`), đầu (`tilt-head-*`, `nod-once-3d`, `turn-head-*`). Mỗi
+  hành động chỉ ghi góc đầu của nó, góc còn lại `null` ([Đầu và nét mặt](#đầu-và-nét-mặt)); cú nhịp
+  cũng ghi gật, nên khi trùng góc thì track trên thắng — đặt track đầu trên track nhịp để
+  `nod-once-3d` giữ góc của nó.
+- **Bù cái cúi bằng gật:** nghiêng đầu quay quanh trục tiến, nên không bù được cái cúi —
+  nhìn chính diện nó thành ngoẹo cổ. `talk-beat-*` bù bằng gật, cùng trục với cái cúi, đúng ở mọi
+  góc quay.
 
 ### Chu kỳ đi
 
@@ -761,9 +564,8 @@ tới. Khuỷu thấp nhất của clip là một phần ba đỉnh, nên `elbow
 `crouch` không dùng quá `45°` vì rig không có cổ chân.
 
 **Thân cúi theo nhịp bước, hai lần mỗi chu kỳ**, theo clip. Đầu và tay đi theo thân, không bù: ở
-dưới `2°` không cần, và bù đầu thì người 2D (nghiêng) với người 3D (gật) phải tách hai đường như
-`talk-beat-seated`. Quá `2°` ở `walk` là gật gù. Lắc sang hai bên theo chân trụ không có: `torso` chỉ
-một góc, ở người 3D là góc cúi.
+dưới `2°` không cần, và bù đầu thì ghi gật như `talk-beat-seated-3d`. Quá `2°` ở `walk` là gật gù.
+Lắc sang hai bên theo chân trụ không có: `walk` chỉ ghi góc cúi của `torso`.
 
 **Gót nhấc trước khi chân rời đất.** `0,08` chu kỳ cuối pha trụ bàn chân sau được nâng dần tới `5`
 đơn vị trên chân kia — hơn dải chạm đất (`4`) — nên đúng lúc nhấc nó đã thôi là chân chịu lực. Nâng
@@ -775,18 +577,16 @@ pha vung), dốc lúc nhấc, thoải lúc đáp: bàn chân vung phải rời d
 chân chịu lực còn tính nó và kéo tốc độ người xuống. Đừng gập thêm gối để tránh đất: đùi đã ra trước
 mà gập gối thì bàn chân thấp xuống trước khi cao lên.
 
-Đổi `hip`, `knee` hay `stance` là đổi quãng một chu kỳ: `walk`, `walk-fast`, `run`, `sneak` chung
-đi `278`, `337`, `438`, `144` đơn vị rig mỗi chu kỳ (`actionStride`), cảnh có `path` phải viết theo
-quãng ấy kẻo trượt chân. Mốc `step` của `walk` / `walk-fast` đo bằng luật chân chịu lực (dưới),
+Đổi `hip`, `knee` hay `stance` là đổi quãng một chu kỳ: `walk`, `walk-short`, `run-3d` chung
+đi `278`, `140`, `277` đơn vị rig mỗi chu kỳ (`actionStride`), cảnh có `path` phải viết theo
+quãng ấy kẻo trượt chân. Mốc `step` của `walk` đo bằng luật chân chịu lực (dưới),
 không phải `t` chạm gót trên giấy: bàn chân đang đáp lọt vào dải chạm đất trễ hơn vài phần trăm chu
 kỳ.
 
-**Trôi ngang cũng là hệ quả, suy từ chính bàn chân đó.** Chân đang chạm ground
-line không được trượt: nó dịch bao nhiêu so với hông thì `root` dịch ngược lại
-bấy nhiêu. `bakeTravel` trong `travel.ts`
-tích phân một lần lúc nạp thành bảng theo bước `1/120 s` (`resolveScene` cho
-scene, studio cho một lượt hành động); lúc vẽ chỉ tra bảng, nên hàm vẫn thuần
-theo `t` và Remotion seek đâu cũng ra cùng một số. Tích luỹ trong rAF là sai.
+**Sải chân cũng là hệ quả, suy từ chính bàn chân đó.** Chân đang chạm sàn không được
+trượt: nó dịch bao nhiêu so với hông thì người đi bấy nhiêu. `bakeTravel` trong `travel.ts`
+tích phân thành bảng theo bước `1/120 s`; `actionStride` (quãng một lượt, nhịp của
+`clips[].speed`) đọc mốc cuối của bảng.
 
 Rig không có cổ chân, nên lúc hai chân mở ra, chân đang đáp xuống thấp ngang
 chân đang đẩy — về hình học nó giống hệt dang chân đứng tại chỗ. Ba luật để
@@ -798,8 +598,8 @@ phân biệt, đều nằm trong `bakeTravel`:
   nó là chân đang đáp, dù có thấp hơn.
 - Hai chân cùng chịu lực thì lấy trung bình: `idle → shock` dang chân ra hai bên
   cho `0`, không đẩy người sang một bên.
-- Không chân nào chịu lực (chân đẩy đã nhấc mà chân kia còn đang tiến, `run`
-  có vài frame như vậy) thì `root` giữ đà bước trước.
+- Không chân nào chịu lực (chân đẩy đã nhấc mà chân kia còn đang tiến — pha bay
+  khi chạy) thì người giữ đà bước trước.
 
 ### Đứng thở
 
@@ -819,14 +619,14 @@ vai.far   =   8 + A_arm · sin a
 
 Chân đứng yên ở `idle`; nhịp thở không có bob riêng.
 
-Muốn một tư thế `hold` tiếp tục thở, clip sau phải giữ cùng `mask`, pose, layer
+Muốn một tư thế `hold` tiếp tục thở, clip sau phải giữ cùng `mask`, pose
 và mặt; chỉ thay các kênh tạo nhịp thở.
 
 ## Khẩu hình và mắt
 
 Hình của khẩu hình, mắt, mày và nếp nhăn nằm ở một bảng của lõi, `core/face.ts`: mỗi kiểu là một
-danh sách nét theo nghĩa SVG (`path`, `line`, `ellipse`, `rect`, nhóm, vùng cắt `clip`). Người SVG
-dựng chúng thành phần tử, người 3D vẽ chúng lên canvas dán trên sọ — hai bên luôn cùng hình. Thêm một
+danh sách nét theo nghĩa SVG (`path`, `line`, `ellipse`, `rect`, nhóm, vùng cắt `clip`), người 3D vẽ
+chúng lên canvas dán trên sọ. Thêm một
 kiểu là thêm một dòng vào `MOUTHS` / `EYES` / `BROWS`; tên kiểu và `MOUTH_KINDS` / `EYE_KINDS` /
 `BROW_KINDS` lấy từ khoá của bảng.
 
@@ -924,7 +724,7 @@ Răng luôn là **một dải trắng liền**, không kẻ từng chiếc — k
 `grit` chỉ có một vạch giữa hai hàm, `fang` một chiếc nanh.
 
 `mouthExtent(kind)` trả mép trên / dưới của mỗi khẩu hình so với tâm miệng (`extent` của nó trong
-`MOUTHS`) — đây là số mà ria mép bám vào.
+`MOUTHS`) — đây là số mà lớp mồm `MOUTH_BOX` phải phủ.
 
 Mắt là hai chấm, đổi kiểu theo nét mặt; cỡ, mi và đốm sáng nghỉ là của nhân vật ([Nét mặt riêng](#nét-mặt-riêng)):
 
@@ -951,52 +751,15 @@ nhấc cao và cong rõ, dùng cho ngạc nhiên mạnh hơn.
 
 **Cả ba — khẩu hình, lông mày, kiểu mắt — vào được file hành động** qua
 `keys[].face`; xem [Đầu và nét mặt](#đầu-và-nét-mặt). Chớp mắt vu vơ thì không:
-đó là nhịp ngẫu nhiên của bên phát (studio và scene tự chớp), hành động
+đó là nhịp ngẫu nhiên của bên phát (scene tự chớp), hành động
 chỉ ghi cái nhắm mắt *có nghĩa*.
 
-Tâm miệng nằm dưới tâm mắt đúng `face.mouthGap` (mặc định `34`). Mỗi ảnh đầu
-một tỉ lệ mặt khác nhau nên kéo slider **Mắt → mồm** trong studio cho khớp; ria
-mép neo theo tâm miệng nên đi theo luôn.
-
-### Ria mép vẽ bằng code
-
-Râu là mảnh cắm ở socket `chin`: ảnh, bộ phận SVG ([02](02-trang-phuc.md)), hoặc
-[râu dựng khối](02-trang-phuc.md#râu-dựng-khối) quay theo đầu và khớp khấc vào mồm. Ria mép
-vẽ bằng code để co theo khẩu hình, kể cả khi râu dựng khối.
-
-`pieces.chin.layer` chọn chỗ vẽ mảnh râu trong khối đầu: `front` (mặc định) là
-trên cùng, `under` là trên khối đầu và nếp nhăn nhưng **dưới mắt, mày, ria và
-miệng**. `under` dành cho râu quai nón — mảnh cứ tô kín cả vùng mồm, miệng vẽ đè
-lên nên không phải khoét alpha chừa chỗ; đổi lại râu không che được nét mặt nào.
-
-`moustache = { kind, color, width, dx, dy, follow }`, vẽ **trước** miệng, cùng
-hệ toạ độ với miệng (`dx, dy` là độ lệch so với tâm miệng), tỉ lệ theo `scale`
-đầu:
-
-| `moustache.kind` | Hình |
-|---|---|
-| `none` | Không vẽ ria |
-| `short` | Hai múi ngắn, đầu thuôn, mép dưới tỉa nhọn và nét sợi xuôi sang hai bên |
-| `long` | Hai dải ria thuôn rủ xuống, tách ngọn và nét sợi cong theo dải |
-| `pencil` | Ria mảnh ôm môi, rẽ giữa, đuôi nhọn |
-| `chevron` | Ria chữ V dày, xoè chéo xuống hai bên, mép tỉa thành tép |
-| `handlebar` | Hai múi ria với đuôi cong vểnh cuộn lên |
-| `walrus` | Ria hải mã rậm, bản rộng rủ thấp, nhiều tép dọc |
-| `horseshoe` | Ria móng ngựa, hai nhánh dày thẳng xuống cạnh miệng |
-
-Số đo lấy theo mặt trong ảnh đầu (bán kính ~50, cằm ở `miệng + 22`), không
-theo `headH/2`; đầu khác cỡ thì chỉnh `width`, `dx`, `dy`.
-
-`follow`: mép sát môi bám khẩu hình, ria đặt ở `mép trên miệng − 5`. Tắt thì
-lấy mép của `closed`.
-
-Ràng buộc ảnh râu nằm ở [02 — Gen mảnh ảnh](02-trang-phuc.md#gen-mảnh-ảnh).
+Tâm miệng nằm dưới tâm mắt đúng `face.mouthGap` (mặc định `34`).
 
 ### Nếp nhăn vẽ bằng code
 
-Dấu hiệu tuổi tác. `wrinkle = { kind, color, width, dy }`, vẽ **ngay trên khối
-đầu**, dưới mắt / mày / mồm, cùng hệ toạ độ với mắt (`dy` dịch cả cụm; mỗi ảnh
-đầu một tỉ lệ trán khác nhau), tỉ lệ theo `scale` đầu như ria mép:
+Dấu hiệu tuổi tác. `wrinkle = { kind, color, width, dy }` (`wrinkleMarks`), vẽ trên canvas nét
+mặt **ngay trên da đầu**, dưới mắt / mày / mồm, cùng hệ toạ độ với mắt (`dy` dịch cả cụm):
 
 | `wrinkle.kind` | Hình |
 |---|---|
@@ -1008,21 +771,16 @@ Ràng buộc hình:
 - **Chân chim để nằm ngang thì thành ria mèo.** Nan quạt phải xoè xuống
   (`light` `12°`/`38°`, `deep` `−6°`/`18°`/`42°`) và ngắn — dài quá là râu mèo,
   không phải nếp nhăn.
-- **Nếp trán thò ra ngoài viền đầu khi quay mặt**: mặt dịch theo `face.turn` và
-  lắc, nên nếp trán cắt theo đường bao đầu (`0.97` bán kính) và mọi bề ngang
-  nhân thêm đúng hệ số hẹp `shrink(lắc)` mà khoảng mắt dùng.
 - Pháp lệnh phải **xoè ra ngoài rồi mới xuống**, không thì thành hai dấu ngoặc
   ôm sát mồm.
 
-Nếp trán nằm **dưới** mảnh `hair` và `crown` — có mái hay có mũ là bị che, đó là
-chủ ý. Nhân vật già thì dùng nó cùng tóc râu bạc (`pieces.*.color`), đừng gen
-nếp nhăn vào mảnh ảnh: mảnh ảnh không co theo khẩu hình và không đi theo lắc
-gật.
+Nếp trán nằm **dưới** tóc và mũ — có mái hay có mũ là bị che, đó là
+chủ ý. Nhân vật già thì dùng nó cùng tóc bạc (`pieces.hair.color`).
 
 ### Má ửng
 
 Hai vệt bầu dục dưới hai mắt, chếch ra ngoài (`blushMarks`), vẽ trên canvas nét mặt của người 3D ở
-mọi dáng đầu; 2D không vẽ. Mức ửng là `face.blush` của nhân vật (`0..1`, mặc định `0` — tắt) cộng
+mọi dáng đầu. Mức ửng là `face.blush` của nhân vật (`0..1`, mặc định `0` — tắt) cộng
 `blush` của nét mặt lúc ấy (`keys[].face.blush` qua `sceneAt`), kẹp ở `1`:
 
 | Trường | Mặc định | Nghĩa |
@@ -1043,7 +801,7 @@ mọi dáng đầu; 2D không vẽ. Mức ửng là `face.blush` của nhân v�
 
 Mọi nhân vật dùng chung bộ khẩu hình, mắt, mày; mỗi người khác nhau ở nét mặt **nghỉ** — sáu số trong `face`
 của JSON nhân vật, mặc định và khoảng ở `FACE_REST` (`core/face.ts`). Mặc định cho đúng nét chung, nên nhân
-vật không khai vẽ ra như cũ từng nét. Chọn 2–3 số cho mỗi người, đừng chỉnh cả sáu.
+vật không khai vẽ đúng nét chung từng nét. Chọn 2–3 số cho mỗi người, đừng chỉnh cả sáu.
 
 | Trường | Mặc định | Khoảng | Nghĩa | Ai đọc |
 |---|---|---|---|---|
@@ -1059,8 +817,8 @@ vật không khai vẽ ra như cũ từng nét. Chọn 2–3 số cho mỗi ngư
   Đốm sáng hạ xuống dưới mép mi và cắt theo hình mắt.
 - **`browTilt` cộng lên cả biểu cảm**: người rụt rè giận thì mày `angry` bớt dữ, người khó tính cười thì mày
   vẫn hơi chau. Đó là chủ ý — nét nghỉ đi theo người qua mọi nét mặt.
-- **2D và đầu cầu của người 3D** đọc `lid`, `browWidth`, `browTilt` (`<Eyes lid>`, `<Brow width tilt>`);
-  `eyeScale`, `eyeWidth`, `shine` thuộc nét chibi nên chỉ đầu `human` đọc.
+- **Đầu cầu** (`head.form: "sphere"`) đọc `lid`, `browWidth`, `browTilt`; `eyeScale`, `eyeWidth`, `shine`
+  thuộc nét chibi nên chỉ đầu `human` đọc.
 
 Công thức mẫu cho một dàn văn phòng:
 
@@ -1078,17 +836,8 @@ Phản diện vẫn cùng rig: dữ là ở vài nét — mi sụp không đốm
 
 ### Tóc
 
-Tóc là một [kiểu tóc](02-trang-phuc.md#kiểu-tóc) cắm ở `hair` (`src: "part"`):
-lớp `over` trên mặt, lớp `under` sau thân và chân, cùng màu và bộ chỉnh
-`pieces.hair`; `pieces.hairBack` khi ấy bị bỏ qua. Mọi góc đặt theo hộp sọ —
-khung `VIEW_FRAME` tâm sọ `(160, 160)` bán kính 100, `scale` / `widthScale` phóng
-quanh tâm sọ — nên bộ chỉnh mặc định là trung tính. Tóc ảnh thì mái ở `hair`,
-mảng rủ sau gáy ở `hairBack` (cao `HAIR_BACK_H` lần `headH`), hộp treo từ đỉnh
-đầu. Tóc trôi theo `head.follow` và `head.followBack`.
-
-[Tóc dựng khối](02-trang-phuc.md#tóc-dựng-khối) (`src: "sculpt"`) không có hộp: vỏ
-ôm sọ đơn vị quay theo đầu, tóc rủ buông theo trọng lực, phần sau tâm đầu vẽ ở vị trí
-`hairBack`.
+Tóc là [tóc dựng khối](12-trang-phuc-3d.md#tóc-dựng-khối) cắm ở `hair` (`src: "sculpt"`): vỏ
+ôm sọ đơn vị quay theo đầu, tóc rủ buông theo trọng lực.
 
 | Hằng số | Giá trị | Nghĩa |
 |---|---:|---|
@@ -1099,14 +848,9 @@ mảng rủ sau gáy ở `hairBack` (cao `HAIR_BACK_H` lần `headH`), hộp tre
 | `SCULPT_TEMPLE` | 0.45 | Tóc rủ: vỏ ở chỗ rời sọ co về mặt phẳng qua hai tai bấy nhiêu phần, hết co ở vĩ độ 40° |
 | `SCULPT_BANG_TIP` | 22 | Quá `bangTo` bấy nhiêu độ thì bề dày mép mái lệch mỏng hết |
 
-`headPoint(shape, cx, cy, rx, ry, deg)` trả điểm trên đường bao đầu theo hướng
-`deg` (`0` = thẳng lên, dương về `+x`, bỏ qua bo góc) — dành cho bộ phận nào
-cần neo vào viền đầu.
+### Lông mày
 
-Mắt và lông mày cũng vẽ bằng code — hai chấm và hai nét cong. Vì thế **mặt
-trong ảnh PNG phải để trống hoàn toàn**.
-
-Lông mày là prop của `<Character>` ngang hàng với `mouth`, không nằm trong JSON
+Lông mày là kênh biểu cảm (`keys[].face.brow`) ngang hàng với `mouth`, không nằm trong JSON
 nhân vật: nó là biểu cảm, tức chuyển động, không phải hình dáng. Mỗi nét đi từ
 đầu **ngoài** tới đầu **trong**; `tilt` nhấc đầu trong lên, `arch` uốn cung.
 
@@ -1127,288 +871,59 @@ thắc mắc. Kiểu bất đối xứng theo bên gần / xa của rig và lậ
 
 ## Vẽ chi
 
-Mặc định chi là một nét đặc dày `10`; viền mảnh và đầu dày `6`. Căn
-`rig.stroke`, `palette.sleeveWidth` và `palette.trouserWidth` theo nét của mảnh
-ảnh bằng studio.
-
-Cờ `clad` (mặc định **tắt**) thì chi vẽ hai lượt — viền màu nét dày `w + nét`,
-rồi ruột dày `w` — để thành tay áo hoặc ống quần. Mặc định chi là nét trần đen
-`#1a1a1a` dày `10`, màu da chỉ hiện ở mặt. `sleeveWidth`, `trouserWidth` bỏ trống thì
-`limbWidths` lấy theo cờ: `10` khi tắt, tay `15` chân `17` khi bật.
+Mặc định (`palette.clad` tắt) chi là ống đặc màu nét `#1a1a1a` dày `10` (`LIMB_WIDTH.stick`), màu da
+chỉ hiện ở mặt. Bật `clad` thì tay chân là ống màu tay áo, ống quần có vỏ viền theo `rig.stroke`
+([Người 3D mặc đồ](#người-3d-mặc-đồ)). `sleeveWidth`, `trouserWidth` bỏ trống thì `limbWidths` lấy
+theo cờ: `10` khi tắt, tay `15` chân `17` khi bật.
 
 `palette.limbCurve` (`0..1`, mặc định `1`) uốn chi thành nét kiểu rubber hose.
-`0` là hai đoạn thẳng gãy ở khuỷu / gối, cho nhân vật muốn nét gãy góc. Đường cong là Catmull-Rom đều qua ba
-khớp `[gốc, khớp giữa, ngọn]`, tách ở khớp giữa thành **hai cubic Bézier**
-(`limbCurves`, `limbPath` trong `geometry.ts`).
+`0` là hai đoạn thẳng gãy ở khuỷu / gối, cho nhân vật muốn nét gãy góc. Mỗi chi là **hai cubic
+Bézier** qua `[gốc, khớp giữa, ngọn]`, tiếp tuyến ở khớp giữa song song gốc → ngọn (`limbCurves`
+của lõi, `bendLimb` của `stickman.ts`).
 
 **Chỉ khuỷu và gối được làm tròn.** Điểm hai đầu và tiếp tuyến ở hai đầu y hệt
-đoạn thẳng: nét ra khỏi vai theo hướng cánh tay trên, vào cổ tay theo hướng cẳng
-tay. Vì thế mảnh vai áo (hộp cứng xoay quanh khớp vai) và đồ cầm tay (treo ở cổ
-tay) không phải biết gì tới độ cong. Ở `limbCurve` `1`, chỗ phình lớn nhất so
-với nét thẳng là `3,8px` trên tay (`hold`) và `6,1px` trên chân (`sit`, `ride`),
-trên nét dày `~26px` — nằm trong dấu chân của nét thẳng, vai áo không phải căn
-lại. Độ phình tỉ lệ thẳng với `limbCurve`.
-
-Tay vẽ làm **hai nửa** — cánh tay trên đi cùng vai áo, cẳng tay đổi lớp — nên
-`limbPath` nhận cả ba khớp kèm `seg` `0`/`1`; chân là một đường ba khớp liền. Độ
-cong áp cho cả bốn chi. Studio có slider **Cong chi** cạnh `Dày tay` / `Dày
-chân`; kiểm bằng mắt ở `shrug`, `shock`, `hold`, `think`.
-
-## Góc nhìn
-
-Năm nấc rời rạc cho thân (`view`) và cho đầu (`headView`, bỏ trống là theo
-thân): `front` (chính diện thật), `quarter` (chính diện 3/4, **mặc định**), `side`,
-`rear` (3/4 sau), `back`. **Không có tham số xoay liên tục** — thân áo và tóc là hình
-vẽ riêng cho từng nấc ([02](02-trang-phuc.md#góc-nhìn)), xoay liên tục chỉ bóp méo hình
-chính diện. Tóc, kính, râu, thân áo và váy dựng khối chiếu từ khối theo góc của nấc: đầu `front` /
-`quarter` / `side` / `rear` / `back` là lắc `0` / góc nghỉ / `90` / `REAR_YAW` / `180`
-(cộng `lắc` của hành động ở hai nấc đầu), thân áo và váy dựng khối quay đúng các góc ấy nhưng
-**không** cộng `lắc`. Đổi góc gọn trong một frame; hướng trái/phải vẫn là `flip`. Người 3D có
-tóc dựng khối thì nét mặt quay liên tục theo `theta`, không theo nấc ([Mặt người 3D](#mặt-người-3d)).
-
-`front` và `quarter` khác nhau ở góc nghỉ: `quarter` đổi `face.turn` ra góc
-`asin(turn / nửa rộng đầu)` (`restYaw`), mặt lệch sang `+x` như mọi mảnh chính diện vẽ
-tay; `front` coi `face.turn` là `0`, mặt nhìn thẳng ống kính. Mảnh vẽ tay (ảnh, bộ phận
-`PARTS`, kiểu tóc, râu, phụ kiện) ở cả hai nấc đều vẽ hình chính diện và đọc cùng bộ chỉnh
-`dx` … `rotate` — hình ấy vốn vẽ lệch tâm, nên ở `front` nó vẫn lệch, không có gì báo.
-
-Scene đè `face.turn` cho riêng một người bằng `cast[].turn` (cùng đơn vị px, chỉ có nghĩa
-ở `quarter`): `turn: 52` trên đầu nửa rộng `65` là ≈53°, 3/4 xoay gần ngang mà vẫn thấy
-chút mặt trước áo — người ngồi nghiêng bên bàn. `castCharacter(member, c)` trả nhân vật đã
-đè; `<SceneWorld>`, `anchorAt` và dải ảnh của render đều đi qua nó
-([03](03-scene.md#xoay-quarter-trong-một-cảnh)).
-
-Thân `rear` là nấc riêng chỉ khi thân áo dựng khối (`pieces.torso.src: "sculpt"`, theo
-nhân vật đã `equip`); thân ảnh hay bộ phận `PARTS` không có hình `rear`, nên
-`clampViews(v, solid)` đổi thân `rear` thành `back`. Rồi kẹp tổ hợp không vẽ được: thân
-quay lưng (`rear`, `back`) với đầu `front` / `quarter` thành đầu cùng nấc thân — thân `rear`
-ra đầu `rear`, thân `back` ra đầu `back` — và đầu `back` hay `rear` trên thân không quay lưng
-thành đầu `side`. Chưa biết nhân vật thì `clampViews(v)` giữ thân `rear` (`sceneAt` và
-studio kẹp như thế); `figureAnchors` kẹp lần cuối theo thân áo của nhân vật, và mọi chỗ vẽ
-đi qua nó. Mười lăm tổ hợp dùng được: ba thân `front` / `quarter` / `side` với ba đầu ấy,
-và hai thân `rear` / `back` với đầu `side` / `rear` / `back`. `front` và `quarter` thay
-nhau được ở mọi chỗ bảng dưới ghi `quarter`:
-
-| thân | đầu | Đọc ra |
-|---|---|---|
-| `quarter` | `quarter` | Đứng, mặt hơi lệch sang hướng nhìn — mặc định |
-| `front` | `front` | Đứng nhìn thẳng người xem |
-| `quarter` | `side` | Liếc sang bên, thân vẫn hướng ra trước |
-| `side` | `side` | Đi ngang, nhìn theo hướng đi |
-| `side` | `quarter` | Đi ngang mà quay mặt ra ống kính |
-| `rear` | `rear` | 3/4 sau: thấy lưng, vai xoay, một mắt nhỏ — người ngồi bàn nhìn từ sau chếch |
-| `rear` | `side` | 3/4 sau, ngoái đầu |
-| `rear` | `back` | 3/4 sau, đầu quay hẳn vào trong |
-| `back` | `side` | Quay lưng, ngoái đầu |
-| `back` | `rear` | Quay lưng, còn thấy một mắt và khoé mồm |
-| `back` | `back` | Quay lưng hẳn |
-
-Ba dòng thân `rear` cần thân áo dựng khối; thân khác vẽ ra đúng dòng thân `back` cùng đầu.
-
-### Thân `side`
-
-Nghiêng kiểu ăn gian, không phải phối cảnh thật: vai chập về trục giữa còn
-`SIDE_SHOULDER`, hông còn `SIDE_HIP` — hông giữ rộng hơn để đứng yên vẫn thấy hai
-chân. Thân áo dựng khối thì khác: vai và hông là hai điểm trên vành vai, vành hông của
-khối, quay `90` nên chập hẳn về trục giữa, hai chân đứng yên trùng nhau
-([02](02-trang-phuc.md#thân-áo-dựng-khối)). Lớp tay dưới đây khớp dấu `z` của gốc chi
-ấy: gốc xa quay ra sau khối. **Cả cẳng tay xa khoá dưới thân**, bất kể `layer` của hành động, và mảnh vai
-áo xa không vẽ nữa vì nó không còn chỗ lộ ra. Thân áo lấy hình `side` của mảnh ấy;
-chưa có hình thì bóp ngang hình chính diện còn `SIDE_TORSO`.
-
-### Thân `rear`
-
-Chỉ có ở thân áo dựng khối; thân khác vẽ như [`back`](#back). Khối thân quay `REAR_YAW`
-như đầu `rear` (`torsoYaw`) và nhìn từ hơi cao như mọi nấc (`TORSO_TILT`). Vai và hông là
-hai điểm kinh độ `±90` trên vành vai, vành hông của khối đã xoay (`limbSpread`): nửa
-khoảng cách bằng nửa rộng · `|cos 120°|`, tức một nửa. Gốc chi nằm đúng độ cao khớp, không
-hạ theo `TORSO_TILT`. Quay quá `90` thì gốc quay ra người xem (`z > 0`) nằm phía `+x` — phía
-mặt hướng tới — nên **chi gần (`armNear`, `legNear`) sang `+x`**, chi xa sang `−x`
-(`Figure.nearSide = +1`). "Gần" luôn là gần ống kính; tên kênh trong JSON giữ nguyên nghĩa
-ấy.
-
-Lớp tay chân theo dấu `z` của gốc chi, như thân `side`: **cả cẳng tay xa khoá dưới thân**
-bất kể `layer`, vai áo xa không vẽ; chân gần vẽ sau chân xa; cánh tay trên gần nằm trên
-thân. Tóc `overHead` đè cánh tay trên gần chỉ ở thân `side`. Mảnh treo trên thân (tay áo,
-`neck`, `hem`) chưa có hình `rear` riêng: chúng lấy hình và bộ chỉnh của `back`
-(`bodyArtView`); váy dựng khối thì chiếu ở `REAR_YAW` như thân. Người ngồi bàn nhìn từ sau: thân `rear`, đầu `rear`, hành động
-[`sit-rear`](#vươn-chi).
-
-### Đầu `side`
-
-Một mắt và một lông mày — **nét của bên gần** (`-1`), nên đầu trong của mắt và mày
-hướng về phía mũi ở `+x`, `wink` ra con mắt nháy và mày hai kiểu (`worried`,
-`skeptical`) lấy nét gần; lông mày lùi vào vừa đủ để nằm trọn trong viền đầu. Mắt ghim ở `SIDE_EYE` lần nửa trục ngang tính từ
-tâm đầu; hình tròn của mắt bóp ngang còn `SIDE_EYE_OVAL` thành oval đứng, các kiểu mắt
-vẽ bằng nét thì giữ nguyên. Nét mặt đã ghim nên kênh `lắc` **hết tác dụng**; `gật` vẫn chạy — tóc
-dựng khối thì cả cụm nét mặt xoay quanh tâm đầu, xem [Đầu và nét mặt](#đầu-và-nét-mặt). Mồm và
-ria giữ nguyên bề ngang, tâm ra sát viền đầu — đo ở đúng độ cao mồm — cách viền một
-khoảng `SIDE_MOUTH_INSET`, rồi **cắt theo lòng viền đầu**: chỉ nửa sau của khẩu hình
-lộ ra, mồm há thành một khoang mở ở mép mặt. Râu ở `chin` lấy hình `side` trong
-`chinViews.ts`: chỉ bên gần, tóc mai lên tới tai, mồm nằm trong khấc ở mép mặt. Râu
-không có hình `side` (mảnh PNG) thì vẽ **nửa gần** của hình chính diện, trục giữa
-lùi vào trong viền đầu `SIDE_CHIN_INSET`, vết cắt khép bằng một dải màu nét. Râu dựng
-khối không cắt nửa: nó chiếu ở lắc 90 và khớp khấc vào mồm ở mép mặt. Bộ phận
-`faceAcc` có `drawSide` thì vẽ nó trong chính hộp chính diện — kính còn một mắt
-kính ở tâm hộp, càng dài `SIDE_GLASSES_ARM` chạy về tai, cầu kính vẽ dư về trước. Cả
-`faceAcc` cắt theo viền đầu để không chìa ra ngoài má; hình `drawSide` cắt ở **lòng**
-viền nên cầu kính luôn dừng đúng mép trong của nét viền. [Bóng
-khối](#bóng-khối) đi theo độ trôi nét mặt nên tự dày hẳn về phía gáy, không phải
-chỉnh gì thêm. Kiểu tóc lấy hình `side`: một khối kín ôm sọ, vẽ trên đầu, dưới mũ;
-`overHead` đặt cánh tay trên gần đang thõng xuống dưới khối ấy. Tóc ảnh vẫn vẽ hình
-chính diện, `hairBack` ảnh dưới cả người.
-
-### Đầu `rear`
-
-Nét mặt như đầu `side` — một mắt, một lông mày, nét bên gần, `lắc` hết tác dụng —
-nhưng mắt ghim sát mép hơn, ở `REAR_EYE`, và mắt cùng lông mày thu nhỏ còn
-`REAR_FACE_SIZE` quanh chính chúng. Tâm mồm ở `REAR_MOUTH_INSET` tính từ viền đầu,
-cắt theo lòng viền nên chỉ khoé mồm lọt vào. Râu, kính và `faceAcc` đi đúng đường
-của đầu `side`. Đầu `rear` đi với [thân `rear`](#thân-rear) (thân áo dựng khối) hay thân
-`back`; lớp tay theo luật của thân ấy.
-
-Kiểu tóc lấy hình `rear`: một khối kín phủ gần hết đầu, chừa má và thái dương bên
-gần. Tóc ảnh thì rig dựng như ở `back` — hình bao của mái cộng chỏm sọ tới
-đường gáy — rồi khoét má: chân tóc ở `REAR_HAIRLINE` lần nửa trục dọc trên tâm đầu,
-mép tóc mai ở `REAR_TEMPLE` lần nửa trục ngang, mép khoét có nét viền tới đường gáy;
-phía mặt, tóc không chìa quá bao tóc `clipGrow`. `hairBack` ảnh phủ lưng áo, dưới
-khối đầu.
-
-### `back`
-
-Không mắt, mày, mồm, ria, nếp nhăn, `faceAcc` và `chin`. Thân áo lấy hình `back`;
-chưa có thì chỉ vẽ **hình bao** (`shapes[0]`, tức `outline` của mảnh) — lưng trơn
-còn hơn hàng khuy quay ra sau. Cả hai cánh tay trên cùng vai áo nằm dưới thân áo.
-Lớp cẳng tay đảo: `front` và `mid` thành `back`, `back` thành `mid` — trên lưng
-áo, dưới đầu. Kiểu tóc lấy hình `back`, một khối kín trên đầu. Tóc ảnh thì rig
-dựng — hình bao của mái chính diện, cộng một chỏm sọ phủ từ đỉnh xuống đường gáy ở
-`BACK_NAPE` lần nửa trục dọc dưới tâm đầu, cộng một nét gáy; `hairBack` ảnh vẽ
-**trên** đầu và trên lưng áo thay vì dưới cả người, và có nó thì nét gáy thôi vẽ.
-
-### Hằng số góc nhìn
-
-| Hằng số | Giá trị | Nghĩa |
-|---|---:|---|
-| `SIDE_SHOULDER` | 0.2 | Nửa rộng vai còn bấy nhiêu ở thân `side`; thân áo dựng khối không dùng |
-| `SIDE_HIP` | 0.4 | Nửa rộng hông còn bấy nhiêu ở thân `side`; thân áo dựng khối không dùng |
-| `SIDE_TORSO` | 0.78 | Thân áo chưa có hình `side` thì bóp ngang còn bấy nhiêu |
-| `TORSO_DEPTH` | 0.78 | Thân áo dựng khối: bề dày trước–sau của khối bằng bấy nhiêu lần bề ngang ở cùng độ cao; người 3D từ ngang ngực xuống, nửa trên theo `chestDepth` ([02](02-trang-phuc.md#ngực-và-lưng-nhìn-nghiêng)) |
-| `TORSO_TILT` | 0.25 | Thân áo dựng khối của người 2D nhìn từ hơi cao: điểm quay ra người xem `z` px thì thấp xuống bấy nhiêu lần `z`. Người 3D chiếu thật ([Người 3D](#người-3d)) |
-| `SIDE_EYE` | 0.74 | Mắt cách tâm đầu bấy nhiêu lần nửa trục ngang, về `+x` |
-| `SIDE_EYE_OVAL` | 0.7 | Hình tròn của mắt (con ngươi, `wide`, lòng trắng `bulge`, `squint`) bóp ngang còn bấy nhiêu |
-| `SIDE_MOUTH_INSET` | 0.08 | Tâm mồm cách viền đầu, tính bằng nửa trục ngang; nửa trước cắt theo viền |
-| `SIDE_CHIN_INSET` | 0.08 | Râu `chin` không có hình `side`: trục giữa cách viền đầu, tính bằng nửa trục ngang; nửa xa bị cắt |
-| `SIDE_GLASSES_ARM` | 0.61 | Càng kính `side` dài bấy nhiêu lần bề ngang hộp, từ tâm mắt kính tới tai |
-| `REAR_EYE` | 0.86 | Đầu `rear`: mắt cách tâm đầu bấy nhiêu lần nửa trục ngang, về `+x` |
-| `REAR_YAW` | 120 | Nấc `rear`: góc quay mà tóc, thân áo và váy dựng khối chiếu theo; `side` là 90, `back` là 180 |
-| `REAR_FACE_SIZE` | 0.8 | Đầu `rear`: mắt và lông mày thu nhỏ còn bấy nhiêu |
-| `REAR_MOUTH_INSET` | -0.02 | Đầu `rear`: tâm mồm cách viền đầu, tính bằng nửa trục ngang; âm là ra ngoài viền |
-| `REAR_HAIRLINE` | 0.52 | Đầu `rear` dựng tóc ảnh từ chỏm: chân tóc trên tâm đầu bấy nhiêu lần nửa trục dọc |
-| `REAR_TEMPLE` | 0.5 | Đầu `rear` dựng tóc ảnh từ chỏm: mép tóc mai cách tâm đầu bấy nhiêu lần nửa trục ngang |
-| `FACE_TRUE` | 40 | [Mặt người 3D](#mặt-người-3d): nét mặt chiếu thật tới góc quay này, quá nữa thì chạy chậm hơn đầu |
-| `FACE_REAL_FROM` | 95 | Mặt người 3D: từ góc quay này nét mặt trượt dần về chỗ chiếu thật |
-| `FACE_REAL_SPAN` | 25 | Mặt người 3D: đoạn trượt về chiếu thật dài bấy nhiêu độ |
-| `FACE_EYE_MIN` | 0.15 | Mặt người 3D: mắt lộ dưới phần này bề ngang mắt chính diện thì tắt cả mắt lẫn mày bên ấy |
-| `BACK_NAPE` | 0.62 | Đường gáy của tóc ảnh dựng từ chỏm, dưới tâm đầu bấy nhiêu lần nửa trục dọc |
-
-### Mốc ở góc nhìn khác
-
-Vẫn một bảng duy nhất: `figureAnchors(c, pose, views, mouth)`. `anchorAt` và `placeAnchor`
-(qua `Spot.views`) trả mốc của đúng góc đang vẽ; ở đầu `side` và `rear` thì `eyeNear` và
-`eyeFar` trùng nhau, còn `mouth` là tâm mồm ở sát viền đầu.
-
-### Bộ chỉnh theo góc
-
-Hình `side` / `rear` / `back` là **một hình vẽ khác**, không phải hình chính diện xoay đi,
-nên `dx`, `dy`, `scale`, `widthScale`, `rotate` của mảnh **không áp cho nó**. Mỗi
-góc có bộ chỉnh riêng ở `pieces.<socket>.views.side` / `.views.rear` / `.views.back` (và cùng chỗ
-ấy trong `items`), năm trường cùng tên, thiếu là trung tính `0, 0, 1, 1, 0`:
-
-```json
-"hair": { "src": "part", "part": "hair-long-blunt", "dy": 4,
-          "views": { "side": { "dx": -3, "scale": 1.06 } } }
-```
-
-Tay áo dùng hộp treo vai, xoay quanh vai và kéo theo `stretch` cánh tay trên; tay xa
-đồng bộ bộ chỉnh của tay gần khi bật `sleeveFit.syncFar`. Tà/váy phóng quanh hông,
-đồ đeo cổ quanh chân cổ. Mảnh treo trên thân (tay áo, `neck`, `hem`) ở thân `rear` đọc
-hình và bộ chỉnh của `back`, nên `views.rear` của chúng không ai đọc. Váy dựng khối không
-có bộ chỉnh nào.
-
-Trung tính là hình nằm đúng chỗ nó vẽ trong `VIEW_FRAME`, đặt theo xương; bộ chỉnh
-đo từ đó, **không** đo từ `preset` của mảnh chính diện. `scale` phóng quanh tâm
-đầu (thân áo: quanh khớp cổ). `dx` ở `side` là trước–sau, `+x` về phía mặt. Hình
-theo góc bám sọ: `head.follow` / `followBack` chỉ đẩy ngang hình chính diện, độ
-trôi dọc theo `gật` thì góc nào cũng nhận.
-
-`tuneOf(pieces, k, view)` trả bộ chỉnh đang có hiệu lực, `viewTuned` cho biết
-socket ấy ở góc ấy có đọc `views` không. Đọc `views` khi và chỉ khi socket **vẽ
-hình riêng của góc ấy**: các socket có `ViewArt` và kính ở `faceAcc` có `drawSide` — cái sau vẽ trong hộp `preset` của bộ phận,
-bộ chỉnh `side` cộng / nhân lên `preset`. Mảnh lùi về hình chính diện (PNG, bộ
-phận chưa khai trong `*_OF`, thân áo bóp `SIDE_TORSO`, râu cắt nửa) vẫn đọc bộ
-chỉnh chính diện, vì thứ vẽ ra vẫn là hình chính diện. Studio ghi qua
-`wornTune(c, equip, k, views, true)` — thanh trượt, kéo trên sân khấu và nút đặt
-lại đều sửa bộ chỉnh của góc đang xem.
-
-Thứ tự lớp không đổi theo góc nhìn trừ các chỗ nói trên — cẳng tay, cánh tay trên gần ở `back` và dưới tóc `overHead`, và `hairBack` ảnh.
-Bảng lớp đầy đủ ở [02 — Thứ tự lớp](02-trang-phuc.md#thứ-tự-lớp).
-
-Các đường xem và render nằm ở [04 — MCP server](04-mcp.md) và
-[07 — Làm một tập](07-lam-tap.md#bốn-tầng-xem-chia-theo-ai-đang-nhìn).
+đoạn thẳng: chi ra khỏi vai theo hướng cánh tay trên, vào cổ tay theo hướng cẳng
+tay. Vì thế đồ cầm tay (treo ở cổ tay) không phải biết gì tới độ cong. Độ phình tỉ lệ
+thẳng với `limbCurve`; độ cong áp cho cả bốn chi.
 
 ## Người 3D
 
 Người khai `cast[].world` trong cảnh có `scene.lens` ([03](03-scene.md#người-3d)) có **khớp 3D**:
 `figure3d(c, pose, world)` dựng hông, gối, bàn chân, vai, khuỷu, cổ tay, cổ, đầu trong thế giới,
-gốc là tâm hông, hệ thân là hướng mặt `F`, trục đứng và bên phải `R` của người. `figureAnchors`
-nhận thêm `world`: chiếu các khớp ấy qua `Lens` rồi quy về một tư thế 2D vẽ ra đúng chúng
-(`flatPose`: góc mỗi đoạn theo hướng đã chiếu, `stretch` theo độ dài đã chiếu — đoạn chĩa về ống
-kính co lại thật), nên mảnh vai áo, đồ cầm tay và mọi mốc `anchorAt` bám đúng nét. `fig3` của bảng
-mang khớp thế giới và khối từng phần người (`solids`) cho chỗ xếp lớp với đồ khối. `feet3(pose,
-world, height, hipHalf)` trả riêng hai bàn chân thế giới — cùng hình học chân của `figure3d` —,
-trôi ngang của người đi theo `path` tích phân trên nó ([03](03-scene.md#đi-theo-path)).
+gốc là tâm hông, hệ thân là hướng mặt `F`, trục đứng và bên phải `R` của người. `anchorAt` chiếu
+các khớp ấy qua `Lens` rồi quy về một tư thế phẳng đúng với chúng (`flatPose`: góc mỗi đoạn theo
+hướng đã chiếu, `stretch` theo độ dài đã chiếu — đoạn chĩa về ống kính co lại thật), nên mọi mốc
+bám đúng hình. `solids` của nó là khối từng phần người trong thế giới cho `check` đo lấn với đồ
+khối. `feet3(pose, world, height, hipHalf)` trả riêng hai bàn chân thế giới — cùng hình học chân
+của `figure3d` —, bước chân của người đi theo `path` tích phân trên nó ([03](03-scene.md#đi-theo-path)).
 
-- **Kênh nâng và kênh giữ 2D.** Kênh tay chân mà hành động `authoredAt: "side"` ghi mang cờ
+- **Kênh nâng và kênh không nâng.** Kênh tay chân mà hành động `authoredAt: "side"` ghi mang cờ
   `pose.lift`: góc đọc như soạn ở `side` — tiến theo hướng mặt, lên theo trục đứng, cùng phía
   với gốc chi. Chi gần là chi phải khi mặt hướng sang phải khung (không lật), chi trái khi lật.
-  Kênh không có cờ: người que SVG (`figure3d`) vẽ đúng như rig 2D (góc trên mặt khung, từ gốc chi
-  đã chiếu; khối của nó cho việc xếp lớp nằm trên mặt phẳng song song khung qua gốc chi), còn sân
-  khấu three (`act`) vẽ ở dáng nghỉ ([Khớp người 3D vẽ ra](#khớp-người-3d-vẽ-ra)). Hai đường khác
-  nhau ở đây, nên người 3D diễn hành động 2D ở kênh tay chân là lỗi của `check`
+  Kênh không có cờ: `figure3d` giữ góc trên mặt khung, từ gốc chi đã chiếu, còn sân khấu three
+  (`act`) vẽ ở dáng nghỉ ([Khớp người 3D vẽ ra](#khớp-người-3d-vẽ-ra)). Hai đường khác
+  nhau ở đây, nên người 3D diễn hành động không soạn ở `side` ở kênh tay chân là lỗi của `check`
   ([03](03-scene.md#hành-động-cho-người-3d)). `torso` của người 3D luôn là góc cúi trong mặt phẳng
   dọc của thân; nghiêng sang ngang là số thứ hai của nó ([Dang và nghiêng ngang](#dang-và-nghiêng-ngang)).
-- **Thân áo, váy dựng khối chiếu thật.** `fig3.torsoLens` là ống kính đặt trong hệ thân (x ngang,
-  y dọc trục thân xuống, z hướng mặt; gốc ở hông, đơn vị rig), đã tính góc cúi `torso`, soi gương khi
-  người lật và xoay theo khung thân (trục hông → cổ đã chiếu). `torsoPaths` / `skirtPaths` nhận nó
-  thì chiếu từng điểm của khối qua phối cảnh thật thay cho phép xiên `TORSO_TILT`: mỗi tiết diện nhìn
-  theo đúng tia tới nó, nên ống kính cúi thì thân co dọc, thấy mặt vai và vành gấu, ống kính gần thì
-  vai rộng ra theo phối cảnh. Không lấy một góc cúi chung cho cả thân: người ngồi gần ống kính có
-  tia tới hông và tia tới cổ chênh nhau tới ~15°. Mảnh vẽ theo nấc lấy nấc gần nhất (`viewOfTheta`:
-  `quarter` dưới 50°, `side` dưới 105°, `rear` dưới 150°, còn lại `back`); thân ảnh không quay, hộp
-  `torso` và `neck` chỉ co dọc theo trục thân đã chiếu.
-- **Cổ và đầu ở chỗ chiếu thật.** Mốc `collar` là cổ thật đã chiếu, tâm đầu là tâm đầu thật đã chiếu
-  (ống kính cúi thì đầu hạ xuống vai). Khối sọ nhận góc ống kính nhìn xuống đầu bằng trục riêng
-  `look` của `HeadTurn` — quay quanh trục ngang của ảnh sau cái lắc, không cộng vào `gật`: nhìn nghiêng
-  thì gật là xoay trong mặt phẳng khung còn ống kính cúi là lộ đỉnh đầu. Sọ chỉ nhận `HEAD_LOOK`
-  (`0,5`) phần góc ấy, đo trong hệ thân: nhận đủ thì ở ống kính cao mặt dồn xuống cằm như đang cúi
-  gằm. `look` đi vào tóc, kính, râu dựng khối và nét mặt của tóc dựng khối; đầu tóc ảnh vẽ như 2D.
+- **Cổ và đầu ở chỗ chiếu thật.** Mốc `collar` là cổ thật đã chiếu, `head` là tâm đầu thật đã chiếu
+  (ống kính cúi thì đầu hạ xuống vai). Mốc mặt nhận góc ống kính nhìn xuống đầu bằng trục riêng
+  `look` của `HeadTurn` — quay quanh trục ngang của ảnh sau cái lắc, không cộng vào `gật`. Nó chỉ
+  nhận `HEAD_LOOK` (`0,5`) phần góc ấy, đo trong hệ thân: nhận đủ thì ở ống kính cao mặt dồn xuống
+  cằm như đang cúi gằm.
 - **Gốc chi trên khung là khớp thật đã chiếu.** Gốc chân là gốc hông thật (hông `± R · hipHalf`) đã
   chiếu: trục hông dốc theo góc cúi và phối cảnh, nên hai chân tách ra hai bên đáy thân, không chụm
   về giữa. Gốc vai là vai thật (`± R ·` nửa rộng vai, ở thân áo dựng khối là tâm nét viền vai) đã
-  chiếu, nằm trên vành vai của thân áo chiếu thật. Ở mọi góc cúi tới 60° hai gốc vai và hai gốc chân
-  nằm trong viền thân áo dựng khối. Gốc sát mặt phẳng ống kính (độ sâu không quá nửa độ sâu tâm)
+  chiếu. Gốc sát mặt phẳng ống kính (độ sâu không quá nửa độ sâu tâm)
   chiếu ra vô cực, nên lấy nửa trục nằm ngang `∓ nửa rộng · cos theta`.
 - **Quay được mọi góc.** `facing` chỉ đo: `theta`, mặt sang trái hay phải khung (`flip`), `yaw`
   giữ nguyên — `yaw` khai là hướng vẽ, kể cả nhìn thẳng ống kính (`theta` 0) hay quay lưng thẳng
-  (`theta` 180). Người SVG 2.5D không ăn gian gì cho chi chĩa thẳng vào ống kính: đùi người ngồi
-  quay về ống kính chiếu ra chỉ còn hai cái gối nhú. Người 3D của three vẽ đúng ở mọi góc.
+  (`theta` 180).
 - **Ngồi đúng.** Người ngồi có hông cao hơn mặt ngồi đúng nửa bề dày đùi (`body3(c).legHalf`:
   `limbHalf(c).leg`, người mặc đồ là gốc đùi `cladThigh`): mông và mặt dưới đùi nằm trên mặt ngồi,
-  không xuyên ghế. Khối thân đáy nằm ngang ở mặt ngồi dù thân
-  cúi, chỉ vành vai nghiêng theo.
-- **Đầu chi vẽ đúng chỗ thật.** Chuỗi chi đã nâng (và tay có đích) vẽ từ gốc vẽ tới đúng chỗ chiếu
-  thật của bàn chân, cổ tay. Gốc vẽ trùng gốc thật nên cả chuỗi là hình chiếu thật; gốc dự phòng sát
-  mặt phẳng ống kính thì khớp giữa theo phép đồng dạng đưa gốc chiếu thật về gốc vẽ. Bàn chân đứng
+  không xuyên ghế.
+- **Đầu chi đúng chỗ thật.** Chuỗi chi đã nâng (và tay có đích) đi từ gốc tới đúng chỗ chiếu
+  thật của bàn chân, cổ tay. Gốc trùng gốc thật nên cả chuỗi là hình chiếu thật; gốc dự phòng sát
+  mặt phẳng ống kính thì khớp giữa theo phép đồng dạng đưa gốc chiếu thật về gốc ấy. Bàn chân đứng
   trên sàn, cổ tay nằm trên mặt bàn dù ống kính cúi cao.
 
 ### Dang và nghiêng ngang
@@ -1436,7 +951,7 @@ ngang, nghiêng người:
   xuống. Dang một chân mà muốn nó vẫn chạm sàn thì vươn chân ấy `1 / cos(dang)`. Mẫu `step-side-3d`
   bước ngang tại chỗ theo cách ấy. Quãng trôi của hành động `side` (`actionStride`) cũng đo bàn chân có tính dang: chân
   đang bước dang ra cao lên nên không bị nhận là chân trụ.
-- Người que SVG của người 3D (`figure3d`) dựng cùng ba góc; rig 2D phẳng không đọc chúng.
+- `figure3d` dựng cùng ba góc.
 
 ### Xoắn tay
 
@@ -1445,12 +960,12 @@ Ba góc quay tay của người 3D quanh chính nó, cho vẫy tay, ngửa tay, 
 | Ghi ở | Góc | Quay |
 |---|---|---|
 | Tay `[vai, khuỷu, cổ tay, dang, xoắn vai]` | `xoắn vai` | Cánh tay trên quanh chính nó, sau dang và gập: mặt phẳng gập khuỷu xoay theo. Dương là **xoay ngoài**: khuỷu gập ra trước thì cẳng tay quay ra phía chính tay ấy |
-| Tay, số thứ ba | `cổ tay` | Lệch bàn tay trong mặt phẳng khuỷu, dương ra phía ngón cái — cùng chiều với khuỷu, như cổ tay 2D xoay đồ cầm |
+| Tay, số thứ ba | `cổ tay` | Lệch bàn tay trong mặt phẳng khuỷu, dương ra phía ngón cái — cùng chiều với khuỷu |
 | `keys[].hand`: `turn` | xoay cẳng tay | Bàn tay quanh trục cẳng tay, `−90..90`; `0` lòng tay quay vào thân, dương là **sấp** (cẳng tay chĩa ra trước thì lòng tay úp), âm là ngửa |
 | `keys[].hand`: `bend` | gập cổ tay | Bàn tay về phía lòng tay khi dương, mu bàn tay khi âm, `−90..90` |
 
-- **Xoắn vai và lệch cổ tay đọc như số dang**: kênh nâng (`authoredAt: "side"`, `actTwist`); kênh giữ 2D về
-  `0`. Xoay và gập cổ tay ở kênh `hand` không cần cờ.
+- **Xoắn vai và lệch cổ tay đọc như số dang**: kênh nâng (`authoredAt: "side"`, `actTwist`); kênh không nâng
+  về `0`. Xoay và gập cổ tay ở kênh `hand` không cần cờ.
 - **Tay áo tròn nên xoay cẳng tay chỉ xoay bàn tay**: khớp `wrist` của `act` quay theo cả ba góc cổ tay (Euler
   `YZX`, `wristTurn` của lõi) — bàn tay, khung `hand` và đồ cầm đi theo. Người que không có bàn tay: đồ cầm vẫn
   quay.
@@ -1465,7 +980,7 @@ Ba góc quay tay của người 3D quanh chính nó, cho vẫy tay, ngửa tay, 
   hướng khuỷu này là sai với hướng khuỷu khác, nên đừng đoán `turn`: khai `palm` để rig tự giải
   ([Hướng lòng tay theo ý](#hướng-lòng-tay-theo-ý)), còn `turn` thô thì đổi xong đọc hướng lòng tay bằng số —
   [Hướng lòng bàn tay](#hướng-lòng-bàn-tay).
-- Người que SVG của người 3D (`figure3d`) dựng xoắn vai; rig 2D phẳng không đọc nó.
+- `figure3d` dựng xoắn vai.
 
 ### Bàn tay
 
@@ -1519,8 +1034,8 @@ gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` 
   khép sát (dáng nghỉ, `cup`, `flat`, `hook`) thì đầu ngón cái vượt khớp gốc ngón trỏ, tới gần giữa đốt gốc (0,4–0,45 đốt), da ngón cái không lún vào nó (dáng nghỉ hở chừng 0,1 đơn vị ở cỡ `1`). Dáng áp
   món lên lòng tay (`span`, `edge`) giữ đốt gốc ngón cái ngoài vùng lòng tay áp món (từ nửa lòng bàn tay tới hàng khớp
   gốc ngón); tâm nắm (`HAND_GRIPS`) không đổi.
-- **Mốc** (`keys[].hand.armNear` / `armFar`) là tên dáng, hay `{ pose, w, turn, bend, palm, fingers }`: dáng hoà từ dáng
-  nghỉ theo `w` (`0..1`, mặc định `1`); `turn`, `bend` là hai góc thô của cổ tay ([Xoắn tay](#xoắn-tay)); `palm`, `fingers`
+- **Mốc** (`keys[].hand.armNear` / `armFar`) là tên dáng (có sẵn hay của [thư viện](#dáng-tay-có-tên)), hay
+  `{ pose, w, turn, bend, palm, fingers }`: dáng hoà từ dáng nghỉ theo `w` (`0..1`, mặc định `1`); `turn`, `bend` là hai góc thô của cổ tay ([Xoắn tay](#xoắn-tay)); `palm`, `fingers`
   là hướng theo ý định, rig giải ra góc ([Hướng lòng tay theo ý](#hướng-lòng-tay-theo-ý)). `handVec` đổi một mốc ra số.
 - **Hoà là hoà góc khớp.** Giữa hai mốc số nội suy theo `ease` như góc tay; giữa hai clip `blendPose` hoà
   trên chính các số ấy suốt đoạn hoà — dáng tay đổi dần, không nhảy, không dựng lại hình học. Track ghi bàn
@@ -1556,7 +1071,7 @@ gốc mà `w` hoà từ đó; mốc chọn nó bằng cách bỏ trống `pose` 
   khép, ngón cái vắt trước nắm tay — vỏ nằm sau mặt da nên không lòi thành vạch mực bên trong bàn tay. Nét bóng dáng
   hậu kỳ (`LIMB_SIL`) chỉ vẽ ở chỗ đổi vật nên không vẽ trong lòng bàn tay. Da tay chân vẽ cả mặt sau: ngón cái lấn
   vào ngón khác lúc cầm thì nhìn qua chỗ lấn thấy da, không thấy vỏ viền đen phía trong. Người nền `lod: "low"` dùng lưới thưa
-  của cùng mặt ấy, `freeze` đóng băng dáng lúc ấy. Người que và 2D không vẽ ngón; xoay, gập, lệch cổ tay vẫn quay đồ
+  của cùng mặt ấy, `freeze` đóng băng dáng lúc ấy. Người que không vẽ ngón; xoay, gập, lệch cổ tay vẫn quay đồ
   cầm của người que 3D.
 - **Nắm lại tròn đầy.** Khi ngón giữa gập ở gốc, cả bàn tay phồng bề dày (x, `HAND_FIST` `1,25` lần lúc nắm hẳn) quanh
   trục giữa lòng bàn tay, bề ngang giữ nguyên: nắm đấm tròn, nhìn từ trước hay từ mu tay đều phủ kín miệng tay áo, không
@@ -1582,36 +1097,45 @@ Dáng ngón soạn riêng, dùng lại được, là **dữ liệu**: `hands/<t�
   (cái, trỏ, giữa, áp út, út) — chỗ duy nhất tách được giữa, áp út, út khỏi góc chung, như chữ V ở trên.
 - **Không phân bên.** Tay trái dùng cùng góc; bàn tay trái là gương của tay phải nên dáng ra đúng gương.
 - **Tên file là tên dáng**: chữ thường, số, gạch nối (`HAND_SHAPE_NAME`), không trùng khoá `HAND_POSES` —
-  `handShapeNameProblem` kiểm. Thư viện đi hai lớp như `held/`: lớp chung có dáng mẫu `peace`, repo trùng tên thì đè
-  ([05](05-repo-video.md#hai-lớp)).
-- **Lõi không đọc đĩa.** Chỗ nạp đưa thư viện vào `resolveScene` ở tham số thứ tám (`HandShapes`, theo tên không đuôi),
+  `handShapeNameProblem` kiểm. Thư viện đi hai lớp như `held/`, repo trùng tên thì đè ([05](05-repo-video.md#hai-lớp)).
+- **Dáng của lớp chung**: `peace` (chữ V, cũng là đếm hai), `count-3` (giơ trỏ, giữa, áp út), `tap` (ngón trỏ hơi cong
+  gõ hay chạm màn hình), `scratch` (bốn ngón cong như vuốt để gãi). Cử chỉ có dáng có sẵn thì gọi thẳng dáng ấy, lớp
+  chung không giữ bản trùng: giơ ngón cái `thumbsUp`, đếm một `point`, chỉ xuống là `point` với `fingers: "down"`, kẹp
+  đầu ngón `pinch`, kẹp chén `cupPinch`. Hướng chỉ là việc của cổ tay ở mốc (`palm`, `fingers`, `turn`, `bend`), không
+  phải dáng mới.
+- **Lõi không đọc đĩa.** Chỗ nạp đưa thư viện vào `resolveScene` ở tham số thứ bảy (`HandShapes`, theo tên không đuôi),
   runtime giữ ở `rt.hands`. `shapeFingers(tên, thư viện, w)` ra hai mươi số ngón (mười góc rồi mười `fit`) của một dáng có
   sẵn hay của thư viện, hoà từ dáng nghỉ theo `w`.
 - **Mốc tay của cảnh gọi dáng bằng `pose`** (`world.hands[].right|left.pose`, kèm `w`) — [03](03-scene.md#đích-bàn-tay-thế-giới).
-  Hành động không gọi dáng của thư viện: `keys[].hand` chỉ nhận dáng có sẵn.
+- **Mốc bàn tay của hành động gọi dáng bằng tên** (`keys[].hand.armNear` / `armFar`, tên hay `pose`, kèm `w`, `turn`,
+  `bend`) như dáng có sẵn: dáng của thư viện ra cả mười độ gập thêm, hoà sang mốc khác như góc (số gập thêm thiếu là
+  `0`). `actionHandShapes` liệt kê tên của thư viện mà một hành động gọi. Tên không có trong thư viện thì `check` báo lỗi
+  ở file hành động; `resolveScene` không ném mà cho dáng nghỉ — người que không vẽ ngón, chỗ nạp không có
+  thư viện vẫn chạy được.
 - **Studio 3D soạn dáng bằng mắt**: Dáng tay → chọn bàn tay không cầm đồ → **Chỉnh dáng tay này** (README của
   `apps/studio3d`).
 
 ### Món cầm tay
 
 Món cầm tay là **dữ liệu**, không phải code three: `held/<món>.json` của repo video, qua `HeldItemSchema` /
-`parseHeldItem` (`core/heldItem.ts`, `schemaVersion` là `HELD_VERSION` `3`, bản `2` nạp như bản `3`). Lớp chung có món mẫu `coc` (cốc quai) và `tui`
-(túi xách, [món treo](#món-treo)), repo trùng tên thì đè ([05](05-repo-video.md#hai-lớp)). Bộ giải tay, `check`,
+`parseHeldItem` (`core/heldItem.ts`, `schemaVersion` là `HELD_VERSION` `4`, bản `2`, `3` không có `roles` nạp như bản `4`). Lớp chung có món mẫu `coc` (cốc quai), `tui`
+(túi xách, [món treo](#món-treo)), `tui-du-lich` (túi có quai xách), `tui-deo` (túi quai cứng đeo vai, khoác khuỷu), `dien-thoai`, `khay`, `ly` (ly quai), `chen`, `binh` (bình rượu cổ thắt), `kep-ho-so` (kẹp hồ sơ, [kiểu cầm có tên](11-nhom-cam.md#kiểu-cầm-có-tên) `sheet/ap-bia`), `but`, `vali`, repo trùng tên thì đè ([05](05-repo-video.md#hai-lớp)). Bộ giải tay, `check`,
 `scene_probe` và MCP cùng đọc file ấy, và bộ giải chạy trước code dựng cảnh của repo; code dựng lưới món đọc mốc từ chính
 file ấy, nên mốc và lưới có một nguồn số.
 
 **Món khai hình, không khai cách cầm**: hình va chạm `shape` (bắt buộc), mốc, mặt trước `front`, đầu trên `top`, phần có tên,
-chỗ treo `seats` — schema đủ ở [11](11-nhom-cam.md#2-schema-món-heldmónjson-held_version-3). Cảnh khai chỗ cầm theo **nhóm
+chỗ treo `seats`, vai trò `roles` cho bộ sinh (`binh` khai `pourer`, `coc`, `ly` khai `vessel`, `chen` suy `vessel` từ
+hình — [13](13-vai-tro-do.md)) — schema đủ ở [11](11-nhom-cam.md#2-schema-món-heldmónjson-held_version-4). Cảnh khai chỗ cầm theo **nhóm
 hình dáng** (`món@nhóm`, [03](03-scene.md#đồ-cầm-tay)); rig suy khối hình từ `shape`, tự dựng chỗ tiếp xúc, cổ tay, khuỷu
 và ngón — [11](11-nhom-cam.md). Phần lõi: `core/heldGeom.ts` (khối hình), `graspGroups.ts` (bảng nhóm), `graspSolve.ts`
-(chỗ tiếp xúc, giải lựa chọn), `graspArm.ts` (khuỷu tự nhiên; `W_DOWN` `0,3`, `W_BODY` `10`, `W_CONT` `2`), `holdLink.ts`
+(chỗ tiếp xúc, giải lựa chọn), `graspArm.ts` (khuỷu tự nhiên `E(φ)`, [11](11-nhom-cam.md#khuỷu-tự-nhiên)), `holdLink.ts`
 (liên kết tay ↔ món cho `act3.ts` và `attach.ts`), `arm3.ts` (khung xương và luật đọc góc mà các file trên cùng đọc).
 `AIM_GAP` (`6`, `core/constants.ts`) là ngưỡng không tới của cả đích theo mốc, tay phụ và chỗ cầm nhóm.
 
 ```jsonc
 // held/dien-thoai.json — khung món: y lên, +z mặt trước, đơn vị rig (×0,01 ra three của người cao 4,3)
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "size": [18, 36, 3.5],
   "front": "screen",
   "top": "top",
@@ -1648,9 +1172,10 @@ nói món quay về đâu; trục là tên mốc (lấy `dir`) hay vectơ khung 
 - `up: "<mốc>"`, viết tắt `face: { axis, toward: "up" }`: chén, ly đứng.
 - `roll`, trục phụ chốt độ lăn (đầu máy lên trên). Không có thì giữ độ lăn gần bàn tay đang có.
 
-Rig giải ý định trên cổ tay (`aimWrist`): trục chính trọng số `1`, `roll` `0,3`, khuỷu xoay trong `±AIM_SWIVEL` quanh
-`elbow` đã khai. Giới hạn cổ tay giữ nguyên — xoay `±90`, gập `AIM_BEND` (ngửa `60`, gập `70`), lệch `AIM_DEV` (về ngón út `30`, về ngón cái `20`), kênh tay
-không nâng thì lệch cổ tay giữ `0` —: không đạt thì món lệch thật, `AimReport.hold` ghi trục, hướng muốn, hướng đạt, góc
+Rig giải ý định trên cổ tay (`aimWrist`): trục chính trọng số `1`, `roll` `0,3`; khuỷu giải bằng `E(φ)` quanh hướng ưu tiên
+hay `elbow` đã khai ([11](11-nhom-cam.md#khuỷu-tự-nhiên)). Giới hạn cổ tay giữ nguyên — xoay `±90`, gập `AIM_BEND` (ngửa
+`60`, gập `70`), lệch `AIM_DEV` (về ngón út `30`, về ngón cái `20`), kẹp liền trên vòng, kênh tay không nâng thì lệch cổ tay
+giữ `0` —: không đạt thì món lệch thật, `AimReport.hold` ghi trục, hướng muốn, hướng đạt, góc
 còn lệch và khớp kẹp, `check` báo ([03](03-scene.md#đồ-cầm-tay)). Vị trí tay (`at`, `to`, `point`) luôn thắng ý định. Cổ tay
 và khuỷu của tay mang món, tay phụ đi từ nghiệm của mẫu trước với tốc độ có hạn (`HOLD_SLEW`, `HOLD_SWIVEL_SLEW`; khuỷu khoá
 `elbowLock` không dò, không giới hạn): ý định
@@ -1723,7 +1248,7 @@ Món treo trên cánh tay chứ không nằm trong bàn tay — túi khoác khu�
 ```jsonc
 // held/tui.json (món mẫu của lớp chung): thân túi 30 × 26 × 10 ở y 0–26, hai quai, mép dưới thanh ngang của quai ở y 74
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "size": [30, 74, 10],
   "front": "mat",
   "top": "quai",
@@ -1781,8 +1306,7 @@ nhận `món@carry` thì chuyển sang `carry`.
 `actPalms(nhân vật, scenePose)` (`core/act3.ts`) trả hai bàn tay (`R` phải, `L` trái người) đúng như
 three vẽ, trong toạ độ thế giới rig: cùng khung `Rw = Re · wristTurn` của `actJoints`, `act3.test.ts` giữ
 trùng với khớp cổ tay three. Trong khung bàn tay của `handFrames`, ngón mọc theo −y và gập về phía
-`−side · x` — đó là pháp tuyến lòng tay. Chỉ người mặc đồ có bàn tay; người que và người không có
-`world` thì không có gì.
+`−side · x` — đó là pháp tuyến lòng tay. Chỉ người mặc đồ có bàn tay; người que thì không có gì.
 
 | Trường | Nghĩa |
 |---|---|
@@ -1804,7 +1328,8 @@ tay ấy — và góc lệch khỏi úp (`down`, độ).
 - **Sửa bằng `palm`, không bằng `turn`.** Khai `palm: "down"` ở `keys[].hand` (hay ở `world.hands`) là lòng tay úp ở mọi
   hướng khuỷu ([Hướng lòng tay theo ý](#hướng-lòng-tay-theo-ý)). Còn giữ `turn` thô thì sửa hướng khuỷu trước: khai `elbow`
   ra ngoài như `arms-on-table-3d` (`[-0.3, 0.3, 1]`) rồi chỉnh `turn` (dương là sấp, lòng tay úp thêm khi cẳng tay chĩa ra trước).
-- `check` không đo dáng bàn tay: soi và sửa ở Studio 3D — [03](03-scene.md#lòng-bàn-tay).
+- `check` không đo lòng tay và ngón: soi và sửa ở Studio 3D — [03](03-scene.md#lòng-bàn-tay). Khuỷu rung, lật, gập ngược
+  và bàn tay lật thì đo — [03](03-scene.md#khuỷu-và-cổ-tay-trên-hình).
 
 ### Khớp người 3D vẽ ra
 
@@ -1854,39 +1379,39 @@ diện ngang hai nửa ellipse của `torsoSection` (nửa trước ngực, bụ
 cho tay và dày `CLAD_DEPTH`, `cladProfile` trên chỗ trống `roots3`), gắn ở hông theo trục hông → cổ, cả người nhân `world.s`
 ([10](10-lop-ve-code.md#tay-xuyên-thân)). Đổi cách `torsoMesh` dựng thân thì đổi cùng `armPierce`.
 
-`figure3d` là hình học của người que SVG, không phải của three: hai đường trùng nhau ở kênh nâng
-(trừ tay choãi và độ nhấc hông nửa bề dày chi), khác nhau ở kênh không có cờ.
+`figure3d` là hình học cho mốc `anchorAt` và khối đo của `check`, không phải của three: hai đường trùng
+nhau ở kênh nâng (trừ tay choãi và độ nhấc hông nửa bề dày chi), khác nhau ở kênh không có cờ.
 
 ### Mặt người 3D
 
-Người 3D có tóc dựng khối (`hair.src: "sculpt"`) quay đầu liên tục: khối sọ, tóc, kính và râu dựng
-khối quay đúng `theta` cộng `lắc`, nét mặt chạy theo một đường cong ăn gian để luôn đọc ra mặt.
-`views.head` vẫn là nấc gần nhất (`viewOfTheta`) cho mảnh vẽ theo nấc; nét mặt không đọc nó mà đọc
-`A.face.free`.
+Nét mặt của người 3D vẽ trên canvas dán trên sọ nên quay đúng theo đầu. Mốc mặt của `anchorAt`
+(`face`, `eyeNear`, `eyeFar`, `mouth`) thì chạy theo một đường cong ăn gian để hiệu ứng bám vào
+mặt luôn đọc ra mặt, theo góc quay của đầu so với ống kính (`theta` cộng `lắc`):
 
-| `theta` | Nét mặt |
+| Góc quay | Mốc mặt |
 |---|---|
 | tới `FACE_TRUE` (40°) | Chiếu thật trên sọ, hai mắt |
-| 40°–95° | Chạy chậm hơn đầu (`faceYaw`): mắt gần tới đúng chỗ ghim của đầu `side` ở 90°, giữ oval `SIDE_EYE_OVAL`; mồm ra sát mép, cắt theo viền |
+| 40°–95° | Chạy chậm hơn đầu (`faceYaw`): mắt gần tới chỗ ghim `SIDE_EYE` ở 90°, `REAR_EYE` ở `REAR_YAW` |
 | `FACE_REAL_FROM` (95°) → +`FACE_REAL_SPAN` (120°) | Trượt dần về chỗ chiếu thật, tức là trôi ra mép đầu |
-| trên 120° | Chiếu thật; nét đã quá mép thì khuất hẳn |
+| trên 120° | Chiếu thật |
 
-- **Mắt xa mỏng theo góc thật của đầu**, không theo đường cong: nó co và bị viền che dần như trên
-  sọ thật.
-- **Mắt tắt theo phần còn lộ.** Bề ngang mắt còn lộ trong lòng viền đầu, đo bằng phần của mắt chính
-  diện mở thường, dưới `FACE_EYE_MIN` (15%) thì tắt cả mắt lẫn mày bên ấy: mắt xa tắt quanh 70°, mắt
-  gần quanh 108°. Mồm không tắt, nó trôi ra ngoài viền và bị cắt.
-- **Nét đã quay quá mép trôi tiếp ra ngoài viền** (`facePoint`) thay vì vòng ra sau, nên mắt và mồm
-  đi một chiều suốt vòng quay, không giật ngược.
-- **Kính và râu dựng khối** đặt phần trước theo góc của nét mặt (`free.yaw`), hai bên chuyển dần về
-  góc sọ, và khớp vào mắt, mồm trên sọ chứ không vào chỗ đã trôi quá mép: quay lưng thì chúng vòng ra
-  sau đầu như khối thật. Kính ảnh và `faceAcc` khác cắt theo viền đầu.
+Nét đã quay quá mép trôi tiếp ra ngoài viền (`facePoint`) thay vì vòng ra sau, nên mốc đi một
+chiều suốt vòng quay, không giật ngược.
 
-Đầu tóc ảnh hay kiểu tóc phẳng của người 3D vẫn theo nấc như người 2D.
+| Hằng số | Giá trị | Nghĩa |
+|---|---:|---|
+| `FACE_TRUE` | 40 | Mốc mặt chiếu thật tới góc quay này, quá nữa thì chạy chậm hơn đầu |
+| `FACE_REAL_FROM` | 95 | Từ góc quay này mốc mặt trượt dần về chỗ chiếu thật |
+| `FACE_REAL_SPAN` | 25 | Đoạn trượt về chiếu thật dài bấy nhiêu độ |
+| `SIDE_EYE` | 0.74 | Chỗ ghim ở 90°: mắt cách tâm đầu bấy nhiêu lần nửa trục ngang, về `+x` |
+| `REAR_EYE` | 0.86 | Chỗ ghim ở `REAR_YAW`: mắt cách tâm đầu bấy nhiêu lần nửa trục ngang, về `+x` |
+| `REAR_YAW` | 120 | Góc quay của chỗ ghim `REAR_EYE` |
+| `SIDE_EYE_OVAL` | 0.7 | `eyeMarks` vẽ một mắt (`only`) mà không truyền `squash` thì hình tròn của mắt bóp ngang còn bấy nhiêu |
+| `BROW_ABOVE` | 18 | Lông mày cao hơn mắt bấy nhiêu px |
 
 ### Chân dung
 
-`portrait(character, o)` của `@stickman3d/rig` chụp người 3D ra canvas cho lớp 2D: đầu trong bong bóng,
+`portrait(character, o)` của `@stickman3d/rig` chụp người 3D ra canvas cho lớp vẽ code: đầu trong bong bóng,
 icon trên slide giải thích, mặt dán lên đồ (`canvasTexture` / `decal`). Nó dựng một người riêng từ JSON đã
 qua `parseCharacter` trên sân khấu trống, không cần cảnh hay ống kính của cảnh.
 
@@ -1911,8 +1436,7 @@ App Remotion của repo video có sẵn `useChanDung` / `<ChanDung>` ở `src/kh
 
 Hai cờ độc lập của JSON nhân vật đổi người que three thành người hoạt hình đầu to đọc ra người thật:
 `head.form: "human"` cho dáng đầu, `palette.clad: true` cho tay chân có màu, bàn tay, giày và khối
-hông. Không khai thì người 3D là người que, từng điểm ảnh. 2D và 2.5D không đọc trường nào dưới đây
-ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-chi)).
+hông. Không khai thì người 3D là người que, từng điểm ảnh.
 
 ```json
 "head": { "form": "human" },
@@ -1946,16 +1470,16 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   sáng (`eyeShine`) — `wide` không có, lòng trắng giữa đã là chỗ sáng; con ngươi `bulge` và chấm con ngươi
   `wide` to hơn của người que (`pupil` `0,85` thay `0,7` lần `EYE_R`);
   mồm thu `0,8`, mày nhấc `3` px. Cỡ mắt, độ bóp và đốm sáng nhân theo [nét mặt riêng](#nét-mặt-riêng) của
-  nhân vật. 2D không vẽ các nét ấy. Má ửng theo `face.blush` của nhân vật,
+  nhân vật. Má ửng theo `face.blush` của nhân vật,
   không theo dáng đầu — [Má ửng](#má-ửng).
 - **Tóc dựng khối dời theo sọ.** Mỗi đỉnh tóc dời đúng bằng điểm sọ bên dưới nó (`humanHair`): tóc
   giữ bề dày, gáy thu thì tóc gáy thu theo, tóc rủ không xuyên quai hàm. Kính và `headFit` đọc nửa
   trên nên như đầu cầu. Tai ẩn khi tóc phủ chỗ tai (tia từ ngoài vào tâm tai chạm vỏ tóc hay tóc rủ).
-  [Mũ dựng khối](02-trang-phuc.md#mũ-dựng-khối), [trâm cài búi](02-trang-phuc.md#trâm-cài-búi) và
-  [bông tai](02-trang-phuc.md#bông-tai) chỉ có ở người 3D; bông tai bám dái tai, tóc phủ tai thì che nó.
+  [Mũ dựng khối](12-trang-phuc-3d.md#mũ-dựng-khối), [trâm cài búi](12-trang-phuc-3d.md#trâm-cài-búi) và
+  [bông tai](12-trang-phuc-3d.md#bông-tai) chỉ có ở người 3D; bông tai bám dái tai, tóc phủ tai thì che nó.
 - **Vai liền tay.** Khớp vai của người mặc đồ ở `garmentSocket` (`core/torso.ts`): tâm vòng tròn bán
   kính gốc ống cánh tay (`cladArm`) nội tiếp góc giữa vát vai và sườn áo của mặt khối; vát vai là
-  `cladSlope` của kiểu áo, thoải hơn `slope` của người que ([docs/02](02-trang-phuc.md)). Nắp ống tay
+  `cladSlope` của kiểu áo, thoải hơn `slope` của người que ([12](12-trang-phuc-3d.md#thân-áo-dựng-khối)). Nắp ống tay
   tiếp xúc cả hai, viền vai đi liền xuống mép ngoài cánh tay, không khấc. Khớp cao hơn và lùi vào so
   với người que (`shoulderDrop` không dùng) — `act` và `actJoints` cùng đọc `roots3` nên vẫn trùng.
   `bicep` nhân gốc ống tay `1 + bicep` và nở vòng ấy từ đúng điểm tiếp xúc vát vai: vai và bắp tay lồi
@@ -1967,21 +1491,21 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   vào tay. `roots3` trả chỗ ấy ở `room`; thân áo, nét, khuy, khối hông và va chạm dựng theo mặt cắt đã lùi.
   Góc vai giữ nguyên nên nắp tay vẫn ôm góc vai. Nửa bề sâu từng hàng là `CLAD_DEPTH` (`0,95`) lần nửa
   rộng — dày hơn `TORSO_DEPTH` của người que — nhưng không quá `CLAD_DEPTH · armSide`, nên dưới vai ngực và lưng
-  phẳng một mạch; trên ngang ngực bề sâu theo `chestDepth` như người que ([02](02-trang-phuc.md#ngực-và-lưng-nhìn-nghiêng)). Từ khớp hông (gấu cao hơn thì từ gấu) xuống gấu, sườn áo
+  phẳng một mạch; trên ngang ngực bề sâu theo `chestDepth` như người que ([12](12-trang-phuc-3d.md#ngực-và-lưng-nhìn-nghiêng)). Từ khớp hông (gấu cao hơn thì từ gấu) xuống gấu, sườn áo
   không hẹp hơn mép ngoài gốc đùi ở độ cao ấy cộng `THIGH_CLEAR` (`1` px), kể cả ở góc bo gấu, nở dần trong `THIGH_RAMP`
   (`12` px) phía trên: tay buông sát hông đặt sườn áo đúng mép đùi, mặt đùi trùng mặt thân thì lòi qua góc gấu thành chấm
   mực; tay buông vẫn cách sườn áo ít nhất `CLAD_GAP − THIGH_CLEAR`. Áo hẹp hơn mép ấy quá `THIGH_REACH` (`3` px)
   giữ dáng áo: đùi lòi rõ ra dưới gấu như quần rộng hơn áo.
 - **Cởi áo không đổi dáng người.** Thân trần (`bare`) là dáng thân chung, áo phông là nó nở thêm `CLOTH` (`2` px) mỗi bên
-  ([02](02-trang-phuc.md#thân-áo-dựng-khối)): gốc vai, sườn, cổ lộ ra gần như trùng nhau, đổi áo giữa cảnh tay chỉ dời chừng
+  ([12](12-trang-phuc-3d.md#thân-áo-dựng-khối)): gốc vai, sườn, cổ lộ ra gần như trùng nhau, đổi áo giữa cảnh tay chỉ dời chừng
   `2` px. Thân màu da (`pieces.torso.color` trùng `palette.skin`) và mảng da trên thân áo dùng chính vật liệu da tay trần:
   vai trần liền tay không nét.
 - **Tay buông thẳng.** Tay buông choãi khỏi thân `SPLAY3` (`0,08` rad) quanh trục tiến, người mặc đồ cũng
   thế: thân nhường chỗ chứ tay không xoè. Ngang hông, mép trong cẳng tay phải cách mép ngoài gốc đùi
   `hipHalf + cladThigh` một `CLAD_GAP`; hông hay đùi to hơn mức ấy thì tay choãi thêm (`roots3`). Thân bụng phệ
-  ([02](02-trang-phuc.md#bụng-phệ)) thì tay choãi thêm tới khi mép trong cách sườn áo không bụng đã lùi theo tay, cộng
+  ([12](12-trang-phuc-3d.md#bụng-phệ)) thì tay choãi thêm tới khi mép trong cách sườn áo không bụng đã lùi theo tay, cộng
   phần bụng nở hai bên (`bellySide`), một `CLAD_GAP` ở mọi độ cao dưới nắp vai. Mặc
-  [váy dựng khối](02-trang-phuc.md#váy-dựng-khối) thì từ ngang khuỷu tới đầu bàn tay xoè (`cladHand`; người
+  [váy dựng khối](12-trang-phuc-3d.md#váy-dựng-khối) thì từ ngang khuỷu tới đầu bàn tay xoè (`cladHand`; người
   que tới đầu nét tay), mép trong tay cũng cách hình bao váy đứng thẳng nhìn chính diện (`skirtSide`) một
   `CLAD_GAP`: váy xoè hơn thì tay choãi hơn — người mặc đồ với `flare` `12` choãi chừng `12°`, `30` thì
   `19..21°`; người que `6°` và `14°`. Cạp liền thân áo đã lùi theo tay nên độ choãi gần như chỉ theo độ
@@ -2018,9 +1542,9 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
   bán kính đùi dưới gấu, khối hông lùi hẳn vào trong thân áo: mông chỉ phồng ra dưới gấu, không lồi qua
   lưng áo. Váy dựng khối trùm đùi bằng ống thon như đùi, gốc `cladThigh`, gối `cladThigh · 0,9 / 1,35`; cạp
   liền mặt thân áo ở độ cao cạp, cả bề ngang lẫn bề sâu, thay `skirt.waist`: thân đi xuống váy không gờ — người que
-  cũng thế ([02](02-trang-phuc.md#váy-dựng-khối)). Khối thân áo
+  cũng thế ([12](12-trang-phuc-3d.md#váy-dựng-khối)). Khối thân áo
   dừng `1` px dưới cạp, trong váy: phần áo thừa nằm sát mặt váy là vệt áo lòi qua váy. Vạt dài
-  quấn và tạp dề ([02](02-trang-phuc.md#vạt-dài-quấn)) treo ở nhóm hông, trùm cả khối hông khi thân cúi.
+  quấn và tạp dề ([12](12-trang-phuc-3d.md#vạt-dài-quấn)) treo ở nhóm hông, trùm cả khối hông khi thân cúi.
 - **Nét tay chân trên thân.** Tay buông cách sườn áo `CLAD_GAP`, cẳng tay vắt trước bụng: vỏ viền chìm sau
   thân áo. Thân áo, khối hông, ống tay chân, bàn tay và giày có thêm nét bóng dáng dò ở hậu kỳ (`LIMB_SIL`,
   `npr({ ink })`). Thân áo và tay áo là cùng vật liệu nên nét chỉ hiện ở chỗ tay nằm hẳn trước thân, vai liền không
@@ -2050,21 +1574,23 @@ ngoài `clad`, mà ở 2D `clad` vẫn chỉ là viền chi ([Vẽ chi](#vẽ-ch
 
 Tay của người 3D đặt được bằng **đích cổ tay** thay cho góc: rig giải IK hai đoạn (`solveTwoBone`)
 từ vai thật, cánh tay `upperArm` và cẳng tay `foreArm` của nhân vật nhân `stretch`, khuỷu nằm trong
-mặt phẳng qua trục vai → đích và **hướng khuỷu**, về phía hướng ấy. Đích xa quá tầm thì tay duỗi
-thẳng về phía nó, không kéo dài. Hai nguồn đích, nguồn sau đè nguồn trước:
+mặt phẳng qua trục vai → đích và **hướng khuỷu**, về phía hướng ấy. Đích sát hay quá tầm thì tay duỗi
+gần thẳng về phía nó theo soft IK ([Khuỷu ưu tiên](#khuỷu-ưu-tiên)), không kéo dài. Hai nguồn đích, nguồn sau đè nguồn trước:
 
 - **Hành động** — `keys[].reach.armNear` / `armFar`, hệ thân: gốc tâm hông, `at` `[tiến, y, ra
   ngoài]` đơn vị rig ở `height = 1` (rig nhân `height`), `y` xuống là dương, **`ra ngoài` dương về
   phía chính tay ấy** — một bộ số cho hai tay đối xứng, đổi tay gần ↔ xa khi lật không đổi nghĩa. Chạm
   người thì khai mốc thân `to` thay cho `at` ([Đích theo mốc](#đích-theo-mốc)).
   Hệ thân không nghiêng theo `torso`: cúi thân không dời tay khỏi bàn. `elbow` cùng hệ, bỏ trống là
-  `REACH_ELBOW` `[-0,4, 1, 0,5]` (xuống, lùi, ra ngoài).
+  hướng khuỷu ưu tiên của cổ tay ([Khuỷu ưu tiên](#khuỷu-ưu-tiên)); hai mốc kẹp đoạn mà một mốc không khai thì đoạn dùng
+  `elbow` của mốc kia, nhạt dần về khuỷu ưu tiên phía mốc không khai theo cùng phần với đích (`elbowW`): khuỷu tới mốc ấy
+  đúng khuỷu ưu tiên, không nhảy ở mốc.
 - **Scene** — `cast[].world.hands`, toạ độ thế giới (hay mốc thân), theo tay phải / trái
   ([03](03-scene.md#đích-bàn-tay-thế-giới)). `elbow` theo hệ của đích: mốc có `at` là thế giới rig, mốc khác là hệ thân
   `[tiến, y, ra ngoài]` như `elbow` của hành động, quay theo hướng thân ở từng khung.
 
 `reachToWorld(world, kênh, at, height)` đổi đích hệ thân của một tay ra điểm thế giới — cùng công
-thức IK đọc —, `worldToReach` là chiều ngược; studio kéo đích trên sân khấu bằng cặp này.
+thức IK đọc —, `worldToReach` là chiều ngược.
 
 **Khuỷu là bản lề, cả khi giải IK.** `twoBone3` trả thêm trục bản lề — pháp tuyến mặt phẳng qua vai,
 đích và hướng khuỷu — và `armFrame` dựng hướng cánh tay trên từ trục ấy, khuỷu chỉ gập quanh nó: hướng
@@ -2076,11 +1602,54 @@ của chính chuỗi góc ấy, nên lúc đích bắt đầu kéo bàn tay khô
 Đích nội suy theo kênh như góc: mốc nhắc kênh tay mà không có đích là phần đích `0`. **Hoà trên vị
 trí, không trên góc**: rig lấy cổ tay của chuỗi góc, kéo về đích theo phần `w` (và hướng khuỷu theo
 cùng phần), rồi giải IK tới điểm ấy — cổ tay đi đường thẳng, hai đoạn giữ nguyên độ dài suốt đoạn
-hoà, `w` `0` ra đúng chuỗi góc. Hoà trên góc thì cổ tay đi vòng, chạm mặt bàn giữa đường.
+hoà, `w` `0` ra đúng chuỗi góc. Hoà trên góc thì cổ tay đi vòng, chạm mặt bàn giữa đường. Hai nguồn cùng kéo một tay
+(đích hành động và `world.hands` đang mờ dần) thì bộ giải khuỷu nhắm cổ tay đã hoà hai nguồn, hướng khai là hai hướng khai
+hoà theo phần, khuỷu đã giải đặt vào cả hai: nguồn này nhường nguồn kia mà khuỷu không đổi đường giải
+([11](11-nhom-cam.md#khuỷu-tự-nhiên)). Hướng khuỷu hoà trên mặt vuông góc trục vai → cổ tay (`poleMix`): đi đều trên vòng khi hai
+hướng chênh tới `120°`, gần đối nhau thì khuỷu đi qua phía ngoài của khuỷu ưu tiên, không lật theo dấu của một độ lệch nhỏ.
 
-Người 2D không đọc đích. Mốc có đích mà không ghi góc kênh ấy thì kênh nhận **góc dự phòng**
+### Khuỷu ưu tiên
+
+Tay theo đích không khai `elbow` thì khuỷu về **hướng ưu tiên**, một hàm trơn của chỗ cổ tay so với vai (`elbowPref`,
+`core/elbow.ts`): cổ tay dời một chút thì khuỷu dời một chút, không nhảy nhánh.
+
+- **Đầu vào**: cổ tay so với vai trong hệ thân của tay ấy `[tiến, xuống, ra ngoài]` (hệ hông như `elbow`), chia tầm với
+  `l₁ + l₂`. Ra: hướng khuỷu đơn vị cùng hệ, vuông góc hướng vai → cổ tay.
+- **Mẫu**: `ELBOW_POSES`, các cặp cổ tay → hướng khuỷu của tư thế hay gặp — buông, xách túi, tay trước bụng, lên ngực, ôm
+  sát ngực, bưng khay, đọc và bấm điện thoại, áp điện thoại vào tai, chén kề môi, chống cằm, chỉ trước, chỉ ngang, giơ tay,
+  vẫy, che mắt, gãi sau đầu, chống nạnh, chắp sau lưng, với chéo, đưa món qua quầy, viết, bấm máy tính tiền, khoác túi, kéo
+  cửa lùa, với kệ cao. Mẫu soạn cho người số đo thường; người bụng to, đầu to thì số hạng lấn của `E(φ)` đẩy khuỷu ra khỏi thân
+  ([11](11-nhom-cam.md#khuỷu-tự-nhiên)).
+- **Nội suy**: góc khuỷu quanh hướng cổ tay đo trong **khung chở** — khung của tay chỉ thẳng trước (khuỷu thõng) quay theo
+  cung ngắn nhất sang hướng cổ tay, trơn ở mọi hướng trừ thẳng sau lưng ngang vai (ngoài tầm). Nội suy Gauss trên `(cos, sin)`
+  của góc ấy, cổ tay xa mọi mẫu thì về trung bình các mẫu.
+- Hướng ưu tiên là gốc `φ = 0` của `E(φ)`: mọi đường giải khuỷu — đích không ý định, bàn tay theo ý định, tay mang món, món
+  đặt trước — đi từ nó. `elbow` khai ở đích đè nó. Soi các mẫu trên người nhỏ nhất và lớn nhất: `pnpm shots --only khuyu-01-truoc,…` (mười nhóm × `truoc`, `cheo`, `ngang`)
+  (cảnh `demo=elbows` của app xem thử, nhãn số mẫu trên từng người).
+
+**Soft IK.** Còn `ARM_SOFT · (l₁ + l₂)` tới duỗi hết thì cổ tay hụt dần khỏi đích (`softReach`, `twoBone3(…, soft)`): ở đúng
+tầm với khuỷu còn gập chừng 20°, cổ tay hụt chừng 1,5% tầm với; đích xa hơn thì tay càng gần thẳng mà không bao giờ bật
+thẳng — khuỷu không giật khi đích qua mép tầm với và hướng khuỷu luôn có nghĩa. `reach.gap` đo khe ấy. Khoảng soft IK
+nhân phần đích đã hoà: đích mờ về `w` `0` thì tay về đúng chuỗi góc, không bật ra khi đích tắt.
+
+**Cổ tay liền trên vòng.** Xoay, gập, lệch tách từ một khung bàn tay qua `gimbalBlend` — gập quá `70°` thì dồn dần lệch vào
+xoay theo đúng `xoay − dấu(gập) · lệch` (ở gập `90°` hai góc riêng lẻ nhảy nửa vòng) — rồi `wristClamp`: xoay và lệch kẹp
+liền trên vòng (`ringClamp`): ra ngoài tầm thì lùi dần về giữa tầm, tới hướng đối diện giữa tầm thì ở giữa tầm, hai phía gặp
+nhau nên bàn tay không lật từ mép này sang mép kia. Xoay `±90` với `WRIST_RAMP` `90`: xoay đòi `120°` vẽ `60°`, đòi
+`180°` vẽ `0`. Gập kẹp thường trong `AIM_BEND`.
+
+| Hằng số | Giá trị | Nghĩa |
+|---|---|---|
+| `ELBOW_POSES` | 28 mẫu, thêm mẫu `29` chỉ để soi | Cổ tay `[tiến, xuống, ra ngoài]` chia tầm với và hướng khuỷu `[tiến, xuống, ra ngoài]`, hệ thân của tay |
+| `ELBOW_SIGMA` | 0.4 | Bề rộng nhân Gauss của nội suy, phần tầm với |
+| `ELBOW_SMOOTH` | 0.1 | Cộng vào đường chéo: mẫu lệch nhau thì lấy trung bình, không bám từng mẫu |
+| `ARM_SOFT` | 0.04 | Khoảng soft IK, phần tầm với |
+| `WRIST_RAMP` | 90 | Cung cuối (độ) trước điểm đối diện giữa tầm mà xoay, lệch cổ tay về dần giữa tầm |
+
+Mốc có đích mà không ghi góc kênh ấy thì kênh nhận **góc suy từ đích**
 (`reachAngles`): IK trong mặt phẳng dọc với số đo mặc định, bỏ thành phần ngang, đo trong khung thân
-của `torso` tại pha của mốc ấy (mốc không ghi `torso` thì lấy mẫu từ các mốc khác) — studio và dải ảnh 2D vẫn thấy tay về phía đích.
+của `torso` tại pha của mốc ấy (mốc không ghi `torso` thì lấy mẫu từ các mốc khác) — tư thế góc của
+`sceneAt` vẫn có tay về phía đích, và đoạn hoà sang mốc ghi góc đi từ chuỗi góc ấy.
 
 ### Đích theo mốc
 
@@ -2115,7 +1684,11 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 | `otherWrist`, `otherPalm`, `otherBack`, `otherGrip` | Cổ tay, giữa lòng tay, giữa mu tay, tâm nắm của **tay kia** đúng như nó vẽ | Hướng mặt nằm ngang |
 
 - **Giải mỗi khung, trên người ấy** (`resolveActing`, `core/act3.ts`): mốc tính trên thân, cổ, đầu đã đặt rồi mới tới tay;
-  điểm bàn tay phụ thuộc hướng bàn tay mà hướng bàn tay phụ thuộc cổ tay, nên rig lặp vài vòng tới khi cổ tay đứng yên. Kết quả
+  điểm bàn tay phụ thuộc hướng bàn tay mà hướng bàn tay phụ thuộc cổ tay, nên rig lặp tới khi cổ tay đứng yên (dời dưới
+  `AIM_STILL` `0,01` đơn vị rig, tối đa `AIM_ITER` `8` vòng): bước của cổ tay đổi chiều thì giảm một nửa, nên vòng không dao động
+  giữa hai trạng thái; lòng tay, ngón hướng về một mốc thì đo từ chỗ điểm bàn tay sẽ nằm (đã trên đích), không từ chỗ đang thử —
+  điểm bàn tay sát mốc thì hướng ấy không lắc theo từng vòng; đích đang hoà nhiều số hạng hay hai nguồn thì chỗ ấy hoà theo
+  phần của từng số hạng. Số vòng không đổi kết quả. Kết quả
   là đích cổ tay số (hệ thân, thế giới) và `turn` / `bend` số — `act` của three, `actJoints`, `actPalms`, `figure3d` cùng đọc
   một phép giải, `act3.test.ts` giữ chúng trùng. Người que three dựng từ `stickman(o)` mang số đo ấy ở `Figure.body`.
 - **Tay bám vào tay kia giải sau tay kia**, dù đó là tay gần hay xa. Hai tay cùng bám nhau thì tay gần giải trước trên chỗ chưa
@@ -2123,7 +1696,7 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
   lòng áp lòng, không xuyên.
 - **Hoà mốc với toạ độ, mốc với mốc là hoà trên vị trí đã giải**: đích lấy mẫu mang các số hạng (`Reach.terms`), giữa hai mốc
   cổ tay là tổng có trọng số của từng số hạng đã giải, nên đi liền từ toạ độ thô sang mốc, từ mốc này sang mốc kia, kể cả lúc
-  `blendPose` hoà hai clip. `Reach.at` khi ấy là chỗ ước lượng trên người mẫu (`reachEstimate`) cho người 2D và góc dự phòng.
+  `blendPose` hoà hai clip. `Reach.at` khi ấy là chỗ ước lượng trên người mẫu (`reachEstimate`) cho góc suy từ đích.
 - **Với không tới thì nói ra.** Tay duỗi về phía mốc như đích toạ độ; `scene_probe` trả khe tới mốc ở `world.palms.*.aim`. Ở `stretch` 1 trán, đỉnh đầu, má bên
   kia của người chibi và đùi lúc đứng thẳng ngoài tầm.
 - `bodyMarkAt(nhân vật, scenePose, { to, side, offset }, "R" | "L")` trả chỗ của một mốc (thế giới rig) — cùng điểm đích nhắm tới.
@@ -2148,13 +1721,16 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 | `bend` | Khai kèm thì giữ cố định, rig chỉ giải phần còn lại |
 
 - **Rig giải mỗi khung** (`aimWrist`): lòng tay chỉ phụ thuộc xoay và gập cổ tay (lệch cổ tay không đổi pháp tuyến lòng tay)
-  nên hai góc ấy giải đúng; ngón lấy thêm lệch cổ tay (số thứ ba của tay, kênh nâng, `AIM_DEV` `−30..20`, dương về phía ngón cái) và, khi tay theo đích,
-  xoay khuỷu quanh trục vai → cổ tay tới `±AIM_SWIVEL` (`90`; dò lưới `15°`, chia đôi, rồi đỉnh parabol hay chia đôi tiếp
-  tới `1/8°` — góc liên tục, [11](11-nhom-cam.md#khuỷu-tự-nhiên)), ưu tiên gần hướng khuỷu đã khai — mốc `world.hands` khoá khuỷu
-  (`elbowLock`, [03](03-scene.md#đích-bàn-tay-thế-giới)) thì không xoay phần khoá. Kẹp trong `turn` `−90..90`,
-  `bend` `AIM_BEND` `−60..70` (âm là ngửa) — hẹp hơn tầm khớp người thật chút ít, quá đó cổ tay khối của người que trông
-  gãy —; ngoài tầm thì lấy chỗ gần nhất trong
-  hộp giới hạn.
+  nên hai góc ấy giải đúng; ngón lấy thêm lệch cổ tay (số thứ ba của tay, kênh nâng, `AIM_DEV` `−30..20`, dương về phía ngón
+  cái). Chỉ khai ngón thì lòng tay là hướng gần lòng tay trung tính nhất vuông góc với ngón. Lòng tay gần dọc cẳng tay (gập quá
+  `70°`) thì phương vị của nó không xác định, xoay kéo dần về xoay của bàn tay đang có. Góc ra kẹp liền trên vòng
+  (`wristClamp`, [Khuỷu ưu tiên](#khuỷu-ưu-tiên)) trong `turn` `−90..90`, `bend` `AIM_BEND` `−60..70` (âm là ngửa) — hẹp hơn
+  tầm khớp người thật chút ít, quá đó cổ tay khối của người que trông gãy —; trong tầm mà lòng tay, ngón không khớp nhau
+  (gập khai sẵn, lệch giữ `0` ở kênh không nâng) thì tối đa `AIM_REFINE` (24) bước Newton trong hộp giới hạn, dừng khi bước
+  dưới `0,001°`. Khi tay theo đích, khuỷu giải bằng
+  cùng `E(φ)` với món đặt trước ([11](11-nhom-cam.md#khuỷu-tự-nhiên)): giá cổ tay là bàn tay đã kẹp ở cẳng tay thử cộng lệch
+  còn lại của ý định — cẳng tay gánh hướng bàn tay trước, khuỷu chỉ rời hướng ưu tiên khi đáng; mốc `world.hands` khoá khuỷu
+  (`elbowLock`, [03](03-scene.md#đích-bàn-tay-thế-giới)) thì kéo phần khoá về đúng hướng khai.
 - **`palm` / `fingers` thắng `turn`.** Mốc khai cả hai thì `turn` bị bỏ qua — `validate` và `check` kêu (`aimProblems`).
 - **Hoà là hoà góc đã giải.** Mốc thô sang mốc ý định: từng số hạng giải riêng rồi cộng góc theo phần, nên cổ tay xoay dần,
   không lật nửa vòng (góc nằm trong `±90`, nội suy thẳng). `world.hands` nhận cùng `palm`, `fingers`, `bend`, đè bàn tay của
@@ -2163,30 +1739,264 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 
 ### Bộ hành động 3D
 
-Bộ chung soạn ở `side` (`authoredAt: "side"`) cho người 3D:
+Bộ chung soạn ở `side` (`authoredAt: "side"`) cho người 3D, đi theo package như mọi hành động chung
+([05](05-repo-video.md#hai-lớp)). Theo nhóm:
+
+- **Nền đứng, ngồi và chuyển thế**: `stand-3d`, `stand-relaxed-3d`, `stand-belly-3d`, `stand-attention-3d`, `sit-3d`,
+  `sit-3d-staggered`, `sit-lounge-3d`, `seiza-3d`, `seiza-hands-thighs-3d`; `sit-down-3d`, `stand-up-3d`, `kneel-*`,
+  `squat-3d`, `seiza-stand-3d`.
+- **Đi, bước**: `walk`, `walk-short`, `run-3d`, `steps-3d`, `steps-back-3d`, `step-side-3d`.
+- **Tay để yên**: `hands-front-*`, `hands-hips-*`, `hands-behind-3d`, `arms-on-table-3d`, `elbows-on-counter-3d`.
+- **Thân**: `weight-shift-*`, `lean-in-*`, `lean-back-*`, `slump-*`, `bend-place-*`, `reach-over-*`, `lean-type-3d`,
+  `sigh-*`.
+- **Cúi chào**: `bow-*`, `bow-hands-front-*`, `eshaku-3d`.
+- **Đầu**: `nod-*`, `shake-head-*`, `turn-head-*`, `look-around-*`, `head-lead-*`, `look-down-*`, `look-up-*`,
+  `glance-*`, `tilt-head-*`, `chin-up-*`, `look-up-down-3d`, `chew-3d`. Nét mặt là `face-*`
+  ([Đầu và nét mặt](#đầu-và-nét-mặt)).
+- **Lúc nói**: `talk-forward-3d`, `talk-chest-*`, `talk-hands-3d`, `talk-point-3d`, `lecture-3d`, `count-3d`,
+  `wave-off-*`, `chop-air-3d`, `talk-beat-*`, bộ dáng thoại `talk-pose-*`.
+- **Chào, mời, gọi**: `invite-*`, `thank-clasp-3d`, `wave-*`, `call-out-*`, `raise-hand-3d`.
+- **Cảm xúc, cử chỉ**: `cower-3d`, `flinch-*`, `startle-*`, `head-in-hands-3d`, `facepalm-3d`, `cover-mouth-*`,
+  `cheer-*`, `clap-*`, `shrug-3d`, `spread-arms-3d`, `rub-hands-3d`, `thumbs-up-3d`, `scratch-head-3d`, `think-3d`,
+  `cry-3d`, `despair-3d`, `wipe-sweat-3d`, `adjust-glasses-3d`.
+- **Cầm đồ**: `phone-*`, `tray-*`, `folder-*`, `toast-3d`, `drink-3d`, `offer-cup-3d`, `pour-*`, `suitcase-*`, `bag-*`,
+  `write-3d`, `type-3d`.
+- **Hai người**: `whisper-*`, `pat-shoulder-*`, `handshake-3d`, `give-3d`, `receive-3d`.
+
+Xem, chọn và đọc tên: [Xem và chọn](#xem-và-chọn), [Tên và hậu tố](#tên-và-hậu-tố). Từng file:
 
 | File | |
 |---|---|
 | `stand-3d` | Đứng thở: tay buông dọc thân, vai thả, cánh tay hơi ra sau (`−6°`) và khuỷu gập `24–27°` (góc khuỷu `153–156°`) — tay khỏi thẳng như que mà cổ tay vẫn ở chỗ cũ, không lấn vào quầy trước mặt; lòng tay quay vào đùi; thân nhích theo nhịp thở |
+| `stand-relaxed-3d` | Đứng thở vai thả: cánh tay hơi ra trước (`6–8°`), khuỷu `30–35°`, tay xa xoắn trong `20°` nên cẳng tay chéo vào thân |
+| `stand-belly-3d` | Đứng thở cho người bụng phệ: cánh tay hơi ra trước (`5–6°`), khuỷu `16–19°`, xoắn trong `6°` — cẳng tay ôm theo bụng |
+| `stand-attention-3d` | Đứng nghiêm: chân khép, tay duỗi dọc thân (khuỷu `6–7°`, dang `3°`), bàn tay `flat` áp đùi; thân thở `0,8°` |
+| `hands-front-3d` | Hai bàn tay chồng trước bụng dưới: tay gần lòng tay áp mốc `belly` (`[5, 28, −2]`), tay xa áp lên mu tay gần (`otherBack`), `flat` hờ, ngón vào đường giữa. Chỉ ghi hai tay. Người bụng phệ thì cánh tay lấn vào bụng — dùng `stand-belly-3d` |
+| `hands-front-robe-3d` | Như `hands-front-3d`, bàn tay cao hơn, ra trước hơn (`[20, 20, −2]`), nằm trên vạt áo ngay dưới đai, khuỷu mở hơn — kimono, tạp dề |
+| `hands-hips-right-3d`, `hands-hips-left-3d`, `hands-hips-both-3d` | Chống nạnh: lòng tay áp mốc `hip` (`[−1,6, −24, 5,3]`), khuỷu ra ngoài, ngón rủ ra sau-xuống. Một tay thì `sides: "anatomical"` |
+| `weight-shift-3d`, `weight-shift-soft-3d` | Nhún thân một nhịp của người đứng chờ: thân cúi `4°` / `2°` lúc `0,8 s`, đầu ngửa bù, về `0` lúc `2 s` rồi giữ. Chỉ ghi `torso`, `head` |
+| `lean-in-soft-3d`, `lean-in-3d`, `lean-in-firm-3d` | Ngả tới `7 / 11 / 16°` trong `0,5 / 0,4 / 0,3 s` rồi giữ, đầu ngửa bù `−5 / −7 / −10°` để mắt giữ hướng; `-firm` khai `snap` |
+| `lean-back-3d`, `lean-back-seated-3d` | Ưỡn ngực ngả sau `−7°`, đầu ngửa `−7°` (ngồi tựa: `−6°`, `−6°`) cho cằm hất, `0,5 s` rồi giữ |
+| `slump-3d`, `slump-big-3d` | Vai sụp: thân `7°`, đầu cúi `12°` trong `0,8 s`; cúi gằm: thân `6°`, đầu `32°` trong `1 s`; giữ. `-hold` là dáng cuối từ giây 0 |
+| `bend-place-3d`, `bend-place-hold-3d` | Cúi đặt đồ lên bàn trước mặt: thân `26°`, đầu gật thêm `10°`, xuống `0,6 s` rồi giữ; `-hold` từ giây 0 |
+| `reach-over-20-3d`, `reach-over-30-3d`, `reach-over-34-3d` | Cúi người với qua quầy `20 / 30 / 34°` trong `0,45 / 0,6 / 0,35 s` rồi giữ, đầu ngửa bù `−13 / −19 / −21°` |
+| `lean-type-3d` | Nghiêng tới gõ phím trên quầy: thân `5°`, đầu gật `8°` trong `0,35 s` rồi giữ |
 | `walk` | Chu kỳ đi, `walkCycle` đọc ở `side` |
-| `sit-3d` | Ngồi: đùi ngang, ống chân thõng, tay buông; ghép với người ngồi (`world.sit`) |
+| `walk-short`, `run-3d` | Chu kỳ đi `walkCycle` đọc ở `side`, chỉ khác `params`, sinh bởi `tools/actions/walk.mjs`: `walk-short` sải ngắn cho vạt dài quấn, váy dài ôm (đùi `14°`, chu kỳ `1 s`, `140` đơn vị rig mỗi chu kỳ — [12](12-trang-phuc-3d.md#vạt-dài-quấn)); `run-3d` chạy (đùi `26°`, gối `90°`, khuỷu gập `110°` đánh sát sườn, thân ngả `16°`, chu kỳ `0,38 s`, `277` đơn vị rig) — đùi vung quá `26°` hay `stance` dưới `0,55` (có pha bay) thì mũi giày người 3D lún sàn lúc chạm đất, nên chạy nhanh bằng nhịp ngắn và luôn có chân trụ. |
+| `steps-3d`, `steps-back-3d` | Tiến / lùi hai bước ngắn rồi khép chân, mặt giữ hướng, `1,1 s` rồi giữ, quãng `80` đơn vị rig ở `height` 1; người đi `world.path` đúng quãng ấy, vào clip và thả về nền (clip rỗng ngay khi `path` dừng) đều blend `~0,1`. Chỉ ghi chân, thân; sinh bởi `tools/actions/steps.mjs` |
+| `sit-3d` | Ngồi: đùi ngang, ống chân thõng, tay buông; ghép với người ngồi (`world.sit`) trên mặt ngồi cao bằng gối; ghế khác cao, người khác cỡ, tựa lưng ghế, tay trên bàn hay tay vịn thì `stickman gen sit` ([Bộ sinh chung](#bộ-sinh-chung)) |
 | `arms-on-table-3d` | Đặt tay lên bàn: đích cổ tay hệ thân `[100, −56, 22]`, thân cúi `5`, bàn tay dáng nghỉ úp (`turn` `20`, `bend` `−5`) nằm trên mặt bàn. Bàn khác cao thì scene đặt `world.hands` |
-| `type-3d` | Gõ phím, chồng lên `sit-3d`: cổ tay trên bàn phím `[95, −60…−65, ~12]`, hai tay so le, thân cúi `8` |
+| `type-3d` | Gõ phím, chồng lên `sit-3d` (`stage: desk`): cổ tay trên bàn phím `[105, −60…−65, ~32]`, hai tay so le, bàn tay úp ngón cong nhẹ (`turn` `70`, `bend` `−20`), thân cúi `8` |
 | `bow-3d` | お辞儀: thân cúi `38°` trong mặt phẳng dọc, tay dọc thân, giữ rồi đứng lên; một lượt `2,6 s`, lặp được |
+| `bow-15-3d`, `bow-30-3d`, `bow-45-3d` | Cúi chào một lần chỉ bằng thân, đầu: thân cúi `15 / 30 / 45°`, đầu gật thêm `6 / 5 / 3°`, xuống `0,3 / 0,4 / 0,55 s`, giữ `0,4 / 0,5 / 1,2 s`, đứng lên rồi giữ. Chỉ ghi `torso`, `head`, nên chồng được lên tay đang bưng khay, cầm món: đích tay hệ thân đứng yên khi thân cúi, nên `15°` chồng được lên tay sát eo, `30°` cần cổ tay ra trước `~65`, `45°` đổ lên cẳng tay |
+| `bow-15-quick-3d`, `bow-30-quick-3d` | Cúi vội: xuống `0,15 / 0,2 s`, giữ ngắn, đầu gật thêm `10 / 9°` |
+| `bow-30-snap-3d`, `bow-45-snap-3d` | Gập ngay xin lỗi: quá đà `+5°` lúc `0,14 s`, nảy về đáy lúc `0,3 s` rồi giữ ở đáy; khai `snap` |
+| `bow-15-hold-3d`, `bow-30-hold-3d`, `bow-45-hold-3d` | Đáy của `bow-15/30/45-3d` từ giây 0 |
+| `bow-hands-front-<15/30/45>[-robe][-hold]-3d` | Cúi chào trọn người như `bow-<15/30/45>-3d`, hai tay chồng trước bụng như `hands-front-3d` (`-robe`: như `hands-front-robe-3d`); mốc `belly` theo thân nên tay đi theo cái cúi. Ghi hai tay, `hand`, `torso`, `head`; `-hold` là đáy từ giây 0 |
 | `step-side-3d` | Bước ngang tại chỗ: chân gần nhấc, dang `16°` chạm sàn (vươn `1 / cos 16°`) rồi thu về, tới chân xa; thân nghiêng `4°` về chân trụ lúc nhấc; một lượt `1,8 s`, lặp được. Chỉ ghi chân, thân, vươn |
 | `sit-3d-staggered` | Như `sit-3d` nhưng hai chân so le: chân gần đưa bàn chân ra trước, chân xa gập cẳng ra sau dưới ghế — nhìn ngang và 3/4 vẫn thấy hai chân |
 | `eshaku-3d` | 会釈: thân cúi `16°`, đầu gật thêm `8°`, tay dọc thân nhích ra trước, giữ rồi đứng thẳng; chồng lên `stand-3d` |
 | `talk-forward-3d` | Tay gần đưa ra trước về phía người đối thoại, bàn tay mở dần và ngửa (`turn` `0 → −55`); giơ một lần rồi giữ, scene buông bằng clip rỗng |
+| `talk-chest-3d`, `talk-chest-pat-3d` | Đặt lòng tay gần lên ngực mình (mốc `chest`, lòng tay ra sau), thân ngả lùi `3°`, giữ; `-pat` vỗ hai nhịp (`snap`) rồi hạ về tay buông |
+| `talk-hands-3d` | Xoè hai tay ngửa hai bên ngang bụng (đích `[62, −50, 80]`, `turn` `−80`), thân ngả `2°`; giữ |
+| `talk-point-3d` | Tay gần duỗi chỉ vào người nghe trước mặt (`point`, đích `[122, −116, 28]`), thân ngả `4°`; giữ |
+| `lecture-3d` | Ngón trỏ dựng trước-ngoài vai, lòng tay ra trước, lắc vào-ra ba nhịp rồi giữ |
+| `count-3d` | Đếm ba vế: tay gần chấm ba nhịp, ngón đổi `point` → `peace` → `count-3` (dáng của lớp chung), lòng tay ra trước; giữ ba ngón |
+| `wave-off-near-3d`, `wave-off-far-3d` | Phẩy tay gạt đi: nhấc lên trước ngực, hất mu bàn tay ra ngoài-trước, khựng rồi giữ. Chỉ ghi một tay, `hand`; sinh bằng `tools/actions/wave-off.mjs` |
+| `chop-air-3d` | Vung mạnh tay gần quét ngang ra ngoài trong `0,1 s` (`snap`) tới tay duỗi chéo trước ngang vai, bàn tay xoè úp, thân nghiêng theo |
+| `talk-beat-3d`, `talk-beat-seated-3d` | Cú nhịp thân ở chữ nhấn: thân cúi `5°` / `8°` (ngồi), đầu ngửa bù `3°` / `6°`; giữ. Chỉ ghi `torso`, gật của `head`; sinh bằng `tools/actions/talk-beat.mjs` |
+| `talk-pose-<bộ>-<tính>-<n>[-soft\|-big][-nod]-3d`, `talk-pose-<bộ>-<tính>-chin-<n>-3d` | Bộ dáng thoại: mỗi cụm từ khi nói một dáng thân, đầu, cú gật `-nod` (đầu gật thêm `5°`, bộ `bossy` `7°`, `bent` `3°`) đặt `~0,1 s` ở chữ nhấn. Bộ theo dáng nền: `upright` đứng thẳng, `lean` ngả tới `~14°`, `reach` vói qua quầy `~20°`, `bent` cúi nhìn mặt bàn `~26°`; tính `polite` biên độ nhỏ, cằm ngang, `bossy` biên độ lớn, hất cằm — có `upright-polite`, `upright-bossy`, `lean-bossy`, `reach-bossy`, `bent-polite`. Sáu dáng mỗi bộ; `-soft` độ lệch khỏi dáng nền `×0,6` cho cận mặt, `-big` `×1,7` có trần cho đầu nhỏ trên hình; `chin` (bộ `lean`, `reach`, `bent`) thân giữ dáng nền, chỉ đổi cằm, cho máy cao nhìn xuống. Lặp `3,2 s` theo nhịp thở của `stand-3d`. Chỉ ghi `torso`, nghiêng và gật của `head`. Sinh bằng `tools/actions/talk-pose.mjs` |
+| `invite-near-3d`, `invite-far-3d` | Mời "xin mời lối này": từ hai bàn tay chồng trước bụng, một tay mở chéo sang ngang trên hông (`[55, −40, 95]`), bàn tay `open` ngửa; tay kia áp bụng; thân cúi `8°`, nghiêng `4°` về phía tay mời; `0,5 s` rồi giữ |
+| `thank-clasp-3d` | Chắp hai lòng tay trước ngực (mốc `chest`, tay kia `otherPalm`), cúi `18°`, đầu gật `8°`, đứng lên lại, tay vẫn chắp; giữ |
+| `wave-soft-3d`, `wave-3d`, `wave-big-3d` | Vẫy chào tay gần, lặp: bàn tay ngang vai / ngang tai, cẳng tay dựng / cả cánh tay quá đầu; lòng tay ra trước. Chỉ ghi tay gần, `hand` |
+| `call-out-3d`, `call-out-out-3d` | Giơ tay gần chếch ra ngoài ngang đỉnh đầu gọi người, lắc một nhịp, giữ; `-out` hạ về tay buông của `stand-3d`. Mốc giữa có khuỷu xuống-sau nên khuỷu không lật lúc hoà giữa góc và đích |
+| `raise-hand-3d` | Giơ tay xin phát biểu: tay gần gần thẳng đứng, bàn tay cạnh đỉnh đầu, lòng ra trước; giữ. Hạ bằng `call-out-out-3d` |
 | `cower-3d` | Co rúm: hai tay gập lên trước ngực, bàn tay xoè úp ra ngoài (`turn` `50`, `bend` `−25`). Chỉ ghi hai tay |
-| `cover-mouth-3d` | Che miệng: tay gần từ trước bụng lên, khuỷu ra ngoài, bàn tay `cup` (ngón gần thẳng, khép) áp ngang qua mồm, mu tay ra trước, ngón nằm ngang sang má kia; giữ. Chỉ ghi tay gần, chồng lên đứng, ngồi, quỳ |
-| `phone-ear-3d` | Áp điện thoại vào tai: tâm nắm (`point: "grip"`) sát mặt ngoài tai, lòng tay `in` áp vào đầu, ngón dựng lên, dáng `cup`; giữ. Chỉ ghi tay gần; đồ cầm ở `handNear` nằm chéo lòng bàn tay — dựng dọc bàn tay rồi `hold.rotate` `[−35, 0, 0]` (đầu mic về phía ngón cái, tức ra trước) và dời về cổ tay, thì máy chạy từ tai xuống phía mồm |
-| `clap-3d` | Vỗ tay lặp: tay gần trước ngực, tay xa áp `otherPalm`, hai lòng tay `in` đối nhau, dáng `flat`; sự kiện `clap` lúc chạm, `snap` |
+| `flinch-3d`, `flinch-soft-3d` | Rụt người sợ: trong `0,16 / 0,2 s` thân cúi `14 / 5°`, đầu gục `24 / 11°`, hai tay khép trước bụng nắm hờ (mốc `belly`), rồi lùi về và giữ; khai `snap`. Ghi hai tay, `hand`, `torso`, gật của `head`. Sinh bởi `tools/actions/flinch.mjs` |
+| `startle-3d`, `startle-step-back-3d` | Giật mình: trong `0,12 s` thân bật ra sau `9°`, đầu ngửa `14°`, hai tay vụt lên trước vai, lòng tay ra trước, rồi hạ một chút và giữ; khai `snap`. `-step-back` thêm chân gần rụt ra sau `42`, hông đứng yên. Sinh bởi `tools/actions/startle.mjs` |
+| `head-in-hands-3d` | Hai tay ôm đầu: lòng tay áp hai bên đầu ngang thái dương (mốc `ear`, offset `[15, −3, 3]`), ngón chĩa lên đỉnh sọ, thân gập `14°` → `18°`, đầu gật `16°` → `22°` lún dần tới `1,2 s`, giữ `17°` / `20°`. Ghi hai tay, `hand`, `torso`, gật của `head` |
+| `facepalm-3d` | Úp tay lên mặt: tay gần áp lòng tay lên trán và mắt (mốc `eye`, offset về phía giữa trán, `point: "palm"`), dáng `open`, ngón nằm ngang, đầu gục `14°` vào lòng tay, thân `4°`. Ghi tay gần, `hand`, `torso`, gật của `head` |
+| `cover-mouth-3d` | Che miệng: tay gần từ tay buông qua dưới cằm lên áp lòng tay lên mồm (mốc `mouth`), `flat` hờ, ngón chéo lên về phía má kia; lòng tay quay sẵn từ dưới cằm nên khuỷu không lật; giữ. Chỉ ghi tay gần, chồng lên đứng, ngồi, quỳ |
+| `cover-mouth-gasp-3d`, `cover-mouth-whisper-3d` | `-gasp`: tay gần che miệng như `cover-mouth-3d`, tay xa áp lòng lên mu tay gần (`otherBack`), thân ngả sau `4°`, đầu ngửa `6°`. `-whisper`: tay gần `cup` dựng cạnh khoé miệng phía tay ấy, lòng tay quay vào; chỉ ghi tay gần |
+| `sigh-3d` | Thở dài: hít vào (thân `−5°`, đầu `−10°`) tới `0,5 s`, thở ra tới `1,3 s` (thân `8°`, đầu `16°`), giữ. Chỉ ghi `torso`, gật của `head` |
+| `sigh-counter-3d`, `sigh-counter-out-3d` | Thở dài chống hai tay úp trên mép quầy (đích hệ thân `[86, −33, 36]`, `point: "palm"`, quầy `200`, mép cách hông `~78`), thân cúi `16°`, đầu gục `22°`; `-out` nhấc tay khỏi quầy về tay buông của `stand-3d` |
+| `phone-ear-3d`, `phone-ear-out-3d` | Áp điện thoại vào tai: tay phải vòng ra ngoài rồi áp tâm nắm (`point: "grip"`) sát mặt ngoài tai (mốc `ear`), lòng tay `in`, ngón dựng lên, dáng `cup`; giữ. `-out` đưa ra ngoài rồi hạ máy về trước bụng |
+| `phone-use-3d`, `phone-use-left-3d`, `phone-use-high-3d`, `phone-use-high-left-3d` | Cầm điện thoại xem trước ngực (`-high`: ngang ngực trên), ngón trỏ tay kia gõ màn theo mốc `otherGrip` (`point: "tip"`), ba cú mỗi lượt `1,4 s`, lặp. Sinh bởi `tools/actions/phone-use.mjs` |
+| `phone-show-3d` | Giơ màn điện thoại ra trước ngang ngực về người đối diện, dí thêm một nhịp, giữ |
+| `phone-film-3d` | Giơ điện thoại dọc lên ngang cằm quay phim, tay trái kẹp cạnh kia của máy (mốc `otherGrip`) |
+| `tray-hold-3d`, `tray-hold-carry-3d` | Ôm khay dựng đứng trước bụng, hai tay kẹp hai mép (mốc `belly`, tay trái `otherGrip` cách `88`); `-carry` bưng khay ngang eo, hai lòng tay ngửa đỡ dưới hai mép (cách `78`). Giữ từ giây `0` |
+| `folder-hold-3d`, `folder-hold-rim-3d`, `folder-hold-read-3d` | Ôm kẹp hồ sơ dựng trước ngực, hai tay kẹp hai mép (mốc `chest`, tay trái `otherGrip` cách `52`): bốn ngón gập ở gốc nằm áp phẳng mặt bìa, ngón cái mặt sau (kiểu cầm có tên `kep-ho-so@sheet/ap-bia`); `-rim` bốn ngón cuộn vòng qua mép (`rim`); `-read` cầm ra trước, đầu cúi `20°` đọc |
+| `toast-3d`, `drink-3d`, `offer-cup-3d` | Nâng ly chếch ra ngoài ngang miệng; đưa ly lên miệng (mốc `mouth`), đầu ngửa `14 → 18°`, hạ; chìa chén ra trước-ngoài nhận rót |
+| `pour-3d` | Rót một tay (nước, bia, rượu): tay phải nắm thân bình (mốc `chest`), ướm vòi vào miệng cốc giữa thân rồi nâng đuôi bình — bình xoay quanh chính miệng bình, cẳng tay sấp dần, khuỷu nhấc dần ra ngoài —, sự kiện `pour`, dựng lại; tay trái của nền. Bình theo cổ tay (`keep`, `slant: 0`, `along: 0.3`, `around` cho hướng vòi). Sinh bởi `tools/actions/pour.mjs`; cốc ở chỗ khác thì `stickman gen pour` ([Bộ sinh chung](#bộ-sinh-chung)) |
+| `pour-serve-3d`, `pour-serve-kneel-3d` | Rót mời khách hai tay: tay phải nắm thân bình (mốc `chest`), ướm vòi vào chén người nhận ở trước-phải rồi nâng đuôi bình quanh miệng bình, cẳng tay ngửa dần, khuỷu khép dần, thân cúi `3 → 5°`, sự kiện `pour`, dựng lại; tay trái đỡ đáy bằng `both: { group: "platform", psi: -90 }` của món. `-kneel` khi quỳ seiza. Sinh bởi `tools/actions/pour.mjs` |
+| `suitcase-pull-3d`, `suitcase-pull-both-3d` | Kéo vali: cổ tay sau hông, ra ngoài `[−40, 10, 66]`, nắm; `-both` hai tay hai vali. Giữ từ giây `0` |
+| `bag-carry-3d`, `bag-elbow-right-3d`, `bag-elbow-left-3d`, `bag-shoulder-3d` | Xách túi bên hông (khuỷu chùng `22°`, dang `12°`); khoác túi ở khuỷu (cổ tay trước vai, mốc `shoulder`, cẳng tay gập chữ V); đeo túi trên vai (cánh tay dang `18°`). `bag-elbow-*` sinh bởi `tools/actions/bag-elbow.mjs` |
+| `write-3d` | Đứng sau quầy viết vào sổ: tay phải cầm bút viết qua lại ba lượt, tay trái úp giữ trang, thân cúi `6°`, đầu gật `14°` |
+| `adjust-glasses-3d` | Đẩy gọng kính: ngón trỏ tay gần lên sống mũi giữa hai mắt (mốc `eye` dời về đường giữa, `point: "tip"`), đẩy lên `4`, hạ về tay buông |
+| `clap-soft-3d`, `clap-3d`, `clap-big-3d` | Vỗ tay lặp: tay gần trước ngực (mốc `chest`), tay xa áp `otherPalm`, hai lòng tay `in` đối nhau, dáng `flat`; sự kiện `clap` lúc chạm, `snap`. Hai tay cách nhau lúc mở `10 / 24 / 60`, lượt `0,55 / 0,42 / 0,36 s`; bản khẽ tay thấp hơn, bản to cao hơn |
+| `cheer-3d`, `cheer-both-3d` | Hò reo: nắm đấm giơ chếch ngoài đầu thành chữ V (dang `122°`) ↔ nắm đấm ngang đỉnh đầu, gối nhún `20°`, lượt `0,5 s` lặp. Một tay (tay gần) hay hai tay; ghi tay, chân, thân, đầu |
+| `shrug-3d` | Nhún vai bó tay một lần: khuỷu `~100°` sát sườn, cẳng tay xoè ra ngoài, bàn tay ngửa (`turn` `−90`), giữ rồi buông về dáng tay của `stand-3d` lúc `1,4 s` |
+| `spread-arms-3d` | Dang hai tay khoe chếch ra trước (dang `38°`), lòng tay ngửa, nảy một nhịp rồi giữ; thân ưỡn `−5°` |
+| `rub-hands-3d` | Xoa hai bàn tay trước ngực dưới, ngón chĩa ra trước: tay gần ở mốc `chest`, tay xa trượt tới-lui trên `otherPalm`, lượt `0,5 s` lặp. Chỉ ghi hai tay |
+| `thumbs-up-3d` | Giơ ngón cái: tay gần ra trước ngang ngực, dáng `thumbsUp`, nảy một nhịp rồi giữ. Chỉ ghi tay gần |
+| `scratch-head-3d` | Gãi đầu ngượng: lòng tay sau-trên tai (mốc `ear`), dáng `scratch`, gãi hai nhịp mỗi `1 s` lặp, đầu cúi, nghiêng về phía tay |
+| `think-3d` | Chống cằm: tâm nắm `fist` hờ dưới cằm (mốc `chin`, `point: "grip"`), giữ, đầu nghiêng nhẹ |
+| `cry-3d` | Khóc: hai nắm tay dụi mắt (mốc `eye`), thân, đầu nấc theo nhịp `0,6 s` lặp |
+| `despair-3d` | Tuyệt vọng: thân gục `15°`, đầu cúi `18°` và lắc chậm `±14°` hai nhịp, tay buông thõng; lượt `3,2 s` lặp |
+| `wipe-sweat-3d` | Lau mồ hôi trán một lần: lòng tay quệt từ mép trán bên tay ra thái dương (mốc `forehead`), cẳng tay dựng cạnh mặt, tay gần vươn `1,3` để người đầu to với tới, đầu cúi `12°`, buông xuống cạnh thân về dáng tay của `stand-3d` lúc `1,4 s` |
 | `hands-behind-3d` | Chắp tay sau lưng: tay gần mu tay áp lưng, tay xa `clasp` nắm cổ tay tay gần (`otherWrist`, `point: "grip"`) |
+| `whisper-near-3d`, `whisper-far-3d` | Ghé tai người đứng ngang hàng phía tay ấy thì thầm: thân cúi `6°`, nghiêng `12°`, đầu nghiêng `12°`, quay `28°` về phía ấy, tay ấy `cup` cạnh khoé miệng (mốc `mouth`) như `cover-mouth-whisper-3d`; `0,5 s` rồi giữ. Người nghe cách hông `~195`. Sinh bởi `tools/actions/whisper.mjs` |
+| `pat-shoulder-near-3d`, `pat-shoulder-far-3d` | Vỗ vai người đứng cạnh hai nhịp rồi buông: lòng tay áp mặt ngoài vai ngay dưới nắp vai (đầu chibi che nắp vai), nhấc ra về phía mình giữa hai nhịp; người kia trước `30`, ngang `165`. Sinh bởi `tools/actions/pat-shoulder.mjs` |
+| `handshake-3d` | Bắt tay phải (`sides: "anatomical"`): lòng tay `in` tới `[100, −74, 10]`, `grip` hờ, lắc hai nhịp rồi giữ. Hai người cùng diễn, hai hông cách `200`, lệch phải `27` thì hai lòng tay áp nhau |
+| `give-3d`, `receive-3d` | Đưa, nhận món bằng tay phải (`sides: "anatomical"`): người đưa chìa món từ trước bụng tới `[98, −74, 12]` (`point: "grip"`), sự kiện `handoff`; người nhận ngửa lòng tay đỡ dưới đáy món, sự kiện `take`, kéo về cạnh bụng. Hai hông cách `200`, lệch phải `30`; chuyển món ở `world.hands[].hold` lúc `take` |
+| `look-around-near-3d`, `-far-3d` | Ngó sang một bên `28°` rồi về, lượt `2,4 s`. Ghi lắc, gật của `head` |
+| `nod-soft-3d`, `nod-3d`, `nod-big-3d` | Gật hai nhịp `9 / 14 / 22°` rồi về; `nod-once-3d` một cú `9°` khi nói, giữ `2°`. Chỉ ghi gật |
+| `shake-head-soft-3d`, `shake-head-3d`, `shake-head-big-3d` | Lắc đầu "không" `±12 / 20 / 30°`, về thẳng. Chỉ ghi lắc |
+| `turn-head-<35·70·100>-<near·far>-3d` | Quay đầu rồi giữ; `100` là ngoảnh qua vai. Bản `-snap` (`70`, `100`) tới góc trong `0,1 s`, vượt `6°`, khai `snap`. Ghi nghiêng, lắc |
+| `head-lead-near-3d`, `-far-3d` | Đầu dẫn trước khi thân quay: lắc `35°` ở `0,35`, giữ, về thẳng ở `1`; lượt `0,9 s`. Ghi nghiêng, lắc |
+| `look-down-<12·20>-3d` | Cúi nhìn vật trong tay: gật `12°` / `20°` trong `0,5 s` rồi giữ; bản `-hold` cúi sẵn từ giây `0`. Chỉ ghi gật |
+| `look-up-near-3d`, `-far-3d` | Ngẩng nhìn người đứng cao: lắc `40°`, ngửa `14°`, giữ. Ghi lắc, gật |
+| `glance-near-3d`, `-far-3d` | Liếc xuống một bên rồi về: lắc `30°`, gật `14°`, lượt `1,4 s`. Ghi lắc, gật. `glance-up-<near·far>-3d` liếc lên rồi giữ (lắc `30°`, ngửa `6°`, nghiêng `8°`), ghi đủ ba góc |
+| `tilt-head-near-3d`, `-far-3d` | Nghiêng đầu `10°` rồi giữ. Chỉ ghi nghiêng |
+| `chin-up-3d` | Hất hàm hỏi: ngửa `12°` rồi lùi về `5°`, giữ. Chỉ ghi gật. `chin-up-side-<near·far>-3d` hất về một phía, lắc `15 → 10°`, ghi lắc, gật |
+| `look-up-down-3d` | Nhìn người đối diện từ đầu tới chân: ngửa `10°`, hạ xuống gật `22°`, giữ `6°`; lượt `1,8 s`. Chỉ ghi gật |
+| `chew-3d` | Nhai: gật `4°` ba nhịp mỗi lượt `0,9 s`, lặp. Chỉ ghi gật |
+| `sit-lounge-3d` | Ngồi ngả trên ghế bành: hông trượt ra trước `34`, lưng `−22°`, chân duỗi, cẳng tay nằm dọc tay vịn; lặp |
+| `seiza-3d`, `seiza-hands-thighs-3d` | Ngồi quỳ trên mặt ngồi `world.sit` cao hơn sàn `14` (ống chân, gối nằm trên đệm dày `6`): đùi dốc `10°`, cẳng chân nằm ngang ra sau; bản sau úp hai bàn tay trên đùi (mốc `thigh`) |
+| `elbows-on-counter-3d` | Chống hai khuỷu lên quầy cao `200`, thân cúi `40°`, nắm tay chụm, đầu ngửa |
+| `sit-down-3d`, `stand-up-3d`, `kneel-up-3d`, `kneel-up-out-3d`, `seiza-stand-3d`, `squat-3d`, `kneel-3d` | Dời hông giữa đứng, ngồi ghế bành, seiza, quỳ, ngồi xổm, sinh bởi `tools/actions/seat.mjs`: góc chân giải IK theo đúng đường hông rig nội suy giữa các mốc `path` (`preview.path`, hay hai mốc của `previewScene` cho `sit-down` / `stand-up`), nên bàn chân, gối đứng yên |
 
-Studio soạn hành động `authoredAt: "side"` trên người 3D quay được, kéo đích cổ tay ngay trên sân
-khấu.
+Hành động cầm đồ (`phone-*`, `tray-*`, `folder-*`, `toast-3d`, `drink-3d`, `offer-cup-3d`, `pour-*`, `suitcase-*`, `bag-*`,
+`write-3d`) chỉ đặt tay; món và chỗ cầm khai ở `world.hands[].hold` của cảnh ([11](11-nhom-cam.md#4-schema-cảnh)), xem thử
+ở `preview.hold`. Món một tay cầm thì `sides: "anatomical"` và món ở tay phải, bản `-left` ở tay trái. Hai tay cầm một món
+(`both`) thì tay trái đặt theo mốc `otherGrip` cách đúng bề ngang món, vì tay phụ chỉ bám món khi bàn tay đã tới gần chỗ của nó.
 
 Đích hệ thân giả định bàn cao hơn hông ngồi ~`51` (mặt ngồi `87,5` cao bằng gối); dàn cảnh khác
 cao thì đặt bàn phím, mặt bàn theo đích, hay đặt `world.hands`. Hai hành động tay trên bàn khai
 `elbow` `[-0,3, 0,3, 1]` (khuỷu ra ngoài nhiều hơn xuống): với hướng mặc định, đích gần vai kéo
 khuỷu xuống dưới mặt bàn và cẳng tay lẹm mép. Test giữ khuỷu, cổ tay trên mặt bàn chuẩn suốt chu kỳ.
+
+#### Tên và hậu tố
+
+Tên tiếng Anh, chữ thường nối gạch, đuôi `-3d` cho hành động soạn ở `side`. Hành động `gen` (bộ sinh, như `walk`)
+và hành động chỉ ghi nét mặt (`face-*`, `talk-lips`) không có đuôi. Tên, `note` và mọi trường khác không mang tên nhân vật, tập
+hay phòng nào. Hậu tố đứng theo thứ tự cố định, ô nào không dùng thì bỏ:
+
+```
+<gốc>[-<mức>][-<biến>][-<phía>][-<pha>]-3d
+```
+
+| Ô | Giá trị | Nghĩa |
+|---|---|---|
+| gốc | `bow`, `turn-head`, `hands-front` | Động tác, một hay vài từ |
+| mức | số độ (`15`, `30`, `45`) hay `soft` / `big` | Biên độ so với bản không hậu tố mức. Một họ chọn một trục: số độ (góc chính của động tác — thân cúi, đầu quay) hay `soft` / `big`, không trộn |
+| biến | `robe`, `seated`, `quick`, `snap`, `gasp`, `both`… | Kiểu khác của cùng động tác: khuỷu mở cho áo thụng, ngồi, nhịp nhanh, gập ngay rồi nảy, hai tay |
+| phía | `near` / `far`, `left` / `right` | Phía làm động tác — [Gần, xa và phải, trái](#gần-xa-và-phải-trái) |
+| pha | `hold`, `out` | Không hậu tố: vào dáng rồi giữ (`end: "hold"`), đi rồi về một lần như cúi chào (cũng `hold`), hay lặp (`end: "wrap"`). `hold`: dáng cuối — động tác đi rồi về như cúi chào thì dáng đỉnh — ngay từ `t: 0`, cho người nền và cảnh cắt vào giữa động tác. `out`: từ dáng cuối của bản không hậu tố về dáng nền (`stand-3d`, `sit-3d`), nối ngay sau nó |
+
+Ví dụ: `bow-30-3d`, `bow-hands-front-45-robe-hold-3d`, `turn-head-70-snap-near-3d`, `hands-hips-right-3d`,
+`cover-mouth-gasp-3d`, `call-out-out-3d`. Hai file trong bảng trên lệch quy ước — `eshaku-3d` tên Nhật,
+`sit-3d-staggered` hậu tố sau `-3d` — và giữ tên vì cảnh đang gọi; hành động mới không lấy chúng làm mẫu.
+
+#### Gần, xa và phải, trái
+
+Kênh tay chân gọi theo gần / xa ống kính ([03](03-scene.md#hành-động-theo-tay-phải-trái)). Chọn theo việc động tác gắn
+với cái gì:
+
+- **Gắn với khung hình — `-near` / `-far`.** Động tác về một phía mà cảnh chọn theo bố cục: quay đầu, ngó, mời tay, phẩy
+  tay. `-near` làm về phía ống kính (tay gần, mặt quay ra máy), `-far` về phía kia. Hai bản cùng có, cùng số, chỉ đổi kênh
+  gần ↔ xa (đầu thì đổi chiều lắc, nghiêng). Không khai `sides`. Người lật qua chính diện thì chi gần thành chi kia như
+  mọi hành động gần / xa.
+- **Gắn với một tay của người — `-left` / `-right`, `sides: "anatomical"`.** Dáng giữ qua nhiều cảnh, nhiều góc máy mà
+  tay phải liền mạch qua các cú cắt: chống nạnh một bên, khoác túi ở khuỷu, cầm món ở một tay nhất định. Kênh `armNear` là
+  tay phải nên `-right` ghi kênh gần, `-left` ghi kênh xa; `mask` cũng đọc theo tên ấy.
+- **Đối xứng hay hai tay như nhau** (vỗ tay, cúi chào, chắp tay sau lưng): không hậu tố phía, không `sides`.
+
+#### Kênh và nền
+
+Một hành động chỉ ghi kênh của chính động tác, khai `mask` rõ ràng, để scene chồng nhiều track. Nhóm chỉ đầu ghi
+`head`; nhóm thân ghi `torso` và gật của `head` (đầu bù cho mắt giữ hướng; nghiêng, lắc để trống cho `turn-head-*`
+chồng lên), tay để cảnh; cúi chào ghi `torso`, `head` nên chồng được lên tay đang cầm khay, đang chắp. Tay chân ghi ở `side` (`authoredAt: "side"`). Hành động nằm trên một nền — `stand-3d`, `sit-3d`
+với `world.sit`, `seiza-3d` — và khai nền ấy ở `preview` ([Hành động](#hành-động)), khớp với `note`.
+
+#### Mẫu `note`
+
+Tiếng Việt, một tới bốn câu, theo thứ tự:
+
+1. **Làm gì**: động tác, số chính (góc, nhịp, `duration`), pha — một lần rồi giữ, lặp, hay buông về nền.
+2. **Ghi kênh nào**: "Chỉ ghi …", khớp `mask`.
+3. **Cần nền gì**: track dưới, ghế hay bàn cao bao nhiêu, món ở `world.hands[].hold`, người kia đứng đâu.
+4. **Chồng với gì**: track nào chồng lên được, cách buông (bản `-out`, clip rỗng `blend` ~`0,4`), bản `-near` / `-far`
+   hay `-left` / `-right` cùng họ.
+
+```json
+"note": "Cúi chào 30° một lần: thân cúi 30°, đầu gật thêm 5°, xuống trong 0,4 s, giữ 0,5 s, đứng thẳng lên lúc 1,4 s rồi giữ đứng. Chỉ ghi `torso`, `head`. Nền `stand-3d`. Chồng lên tay bưng khay thì đích cổ tay ra trước ~65 trở lên; tay chắp trước bụng theo thân cúi thì dùng `bow-hands-front-*`."
+```
+
+`note` tả trạng thái của file: không "bản cũ", "đã chỉnh"; không nhắc nhân vật hay cảnh dùng nó.
+
+#### Biến thể sinh từ bảng
+
+Biến thể chỉ khác số của cùng một khuôn mốc — góc, nhịp, `duration`, bản `-far` của bản `-near` — sinh bằng script
+`tools/actions/<họ>.mjs`, mỗi họ một file, chạy `node tools/actions/<họ>.mjs`:
+
+- Script giữ bảng số, khuôn mốc và khuôn `note`; mỗi dòng bảng ra một file trong `common/actions/`, kèm
+  dòng `index.json`.
+- Mỗi file đi qua `parseAction` trước khi ghi, ghi `schemaVersion` bằng `ACTION_VERSION` và qua prettier, nên
+  `pnpm format:check` sạch. Tất định: chạy lại ra đúng từng byte.
+- File sinh là thứ cảnh gọi tới, nằm trong git cạnh file soạn tay. Đổi số thì sửa bảng rồi chạy lại; **không sửa tay
+  file sinh** — lần chạy sau ghi đè. `note` của file sinh nói nó sinh từ script nào.
+- Biến thể khác khuôn — thêm mốc, kênh khác, dáng tay khác — là file soạn tay.
+- `tools/actions/emit.mjs` là phần ghi chung (`parseAction`, prettier, `index.json`; `footfalls` đo pha `step` theo luật
+  chân chịu lực, [Mốc sự kiện](#mốc-sự-kiện)); nó đọc `dist` của rig, nên chạy `pnpm --filter @stickman3d/rig build` trước.
+
+#### Bộ sinh chung
+
+Họ hành động mà số đúng phụ thuộc **chỗ người và đồ trong cảnh** — rót vào một cốc ở đâu đó, ngồi trên một ghế cao thấp
+bất kỳ — có phép tính ở một module của `@stickman3d/cli` (`gen-<họ>.mjs`). Lệnh `stickman gen <kiểu>` của repo video sinh
+bản cho đúng một cảnh rồi tự kiểm trên chính cảnh ấy ([05](05-repo-video.md#sinh-hành-động-theo-cảnh)); họ có bản chung thì
+script `tools/actions/<họ>.mjs` gọi cùng phép tính với số mẫu. Sửa phép tính thì cả hai cùng đổi; bản chung chạy lại phải
+ra đúng từng byte.
+
+- **Rót** (`pour`): bộ chung `pour-3d`, `pour-serve-3d`, `pour-serve-kneel-3d` với miệng cốc ở điểm mẫu (`lip` của bảng
+  `SINGLE` / `SERVE`, hệ thân so với mốc `chest`) và bình trong tay đo trên bốn người mẫu (`BINH`: `gripR`, `mouth`);
+  `stickman gen pour` đọc bình và đích rót theo vai trò ([13](13-vai-tro-do.md#64-gen-pour): `pourer` của bình, `vessel` hay
+  điểm của đích), đo đích của cảnh và liên kết tay–bình trên chính người rót (`actHeld`, tâm nắm vẽ ra), dời `lip` tới khi
+  điểm rót trùng đích, nên bình nào khai `pourer` và cỡ tay nào cũng dùng được.
+- **Ngồi** (`sit`, `gen-sit.mjs`): chỉ có lệnh `stickman gen sit`, không có bản chung — bộ chung giữ `sit-3d`,
+  `sit-3d-staggered` cho ghế cao bằng gối. Bảng kiểu chân (`LEG_STYLES`: góc ống chân và tầm nới; `shinTries` thử trong
+  tầm rồi dựng ống chân co, duỗi về phương đứng tới biên tầm chân vuông), góc đùi (`THIGH_RANGE`
+  cận trên, cận dưới theo mép trước mặt ngồi: `thighLow`, `THIGH_SINK`, sàn `THIGH_FLOOR`), chân thõng (`dangleLeg`,
+  `DANGLE_MIN`), kiểu lưng (`BACK_STYLES` kèm tầm `band`, `RECLINE`), chỗ tay (`THIGH_REACH`, `THIGH_OUT`, `thighPalm`;
+  khuỷu trên tay vịn `ARMREST`, `FOREARM_REST`, `HAND_DROOP`; bàn tay chồng `FOLD`); góc chân giải từ độ cao hông trên mặt
+  đỡ, đùi, ống chân của `bones3(height)` và viên nang giày (`shoeAt`, khớp `SHOE` của người 3D mặc đồ). Hông không bao giờ
+  dời: đế giày chạm được thì chạm, không thì chân vuông thõng, chân co, duỗi là lỗi, chân so le đổi chân không chạm sang
+  vuông (`--feet floor` thì lỗi). Khuỷu trên tay vịn giải từ vai, cánh
+  tay trên của `bones3` và mặt tay vịn. Mặt ngồi, lưng ghế, tay vịn, để chân, mặt bàn đọc từ vai trò của đồ
+  ([13](13-vai-tro-do.md#65-gen-sit)).
+- **Đi** (`walk`, `gen-walk.mjs`): không sinh hành động — `stickman gen walk` ghi mốc `world.path` và clip đi / đứng vào
+  cảnh ([14](14-di-muot.md#5-gen-walk)); chuyển động do `sceneAt`. `parsePoints` đọc điểm, `planWalk` ra mốc và clip theo luật
+  thời gian (giây theo dây cung, `yaw` phân giác, cung bo `ARC_STEP`, bán kính nhỏ nhất `v / WALK_TURN_RATE`, cú quay tại
+  chỗ, quay rồi đi); không cần vai trò của đồ.
+- **Trang soi** (`gen-pages.mjs`, module thuần): `GEN_PAGES[kiểu]` mô tả form tham số, sân khấu thử (đồ thử chỉ bằng mục
+  vai trò, món cầm tay thử) và tham số gọi bộ sinh; tờ thử `gen sit --sheet` dựng ô bằng chính bản mô tả ấy
+  ([13](13-vai-tro-do.md#9-trang-soi-bộ-sinh)).
+
+#### Xem và chọn
+
+- **Đọc `note`**: MCP `list({ kind: "actions", match: "bow-*-3d,nod-*" })` trả mỗi hành động khớp kèm `mask`, `note`
+  ([Mẫu `note`](#mẫu-note): làm gì, ghi kênh nào, cần nền gì, chồng với gì) và `preview` ([04](04-mcp.md#tool)). Không
+  có `match` thì chỉ có tên và `mask` — cả bộ có vài trăm file. Lọc theo gốc của nhóm ở trên.
+- **Xem diễn**: Studio 3D (`pnpm studio`, `http://localhost:5180`) → công tắc **Cảnh / Thư viện** đầu thanh trên. Danh
+  sách gom biến thể theo gốc tên (nhóm gập, bấm dòng gốc để mở), ẩn hành động chỉ nhép miệng (công tắc **Hiện khẩu
+  hình**), bản của repo mang nhãn `repo`. Một trong bốn người mẫu (`sample-man`, `sample-woman`,
+  `sample-heavy`, `sample-kimono`) hay nhân vật của repo diễn trên nền, khối và món của `preview`. Panel phải có
+  `note`, kênh, nền; phím 1–5 đổi góc máy, V đổi biến thể cùng gốc. Mở thẳng một hành động:
+  `http://localhost:5180/?library=1&action=bow-30-3d&who=sample-woman&angle=near`.
+- **Soi cả lô**: `pnpm bang-hanh-dong --hanh-dong 'bow-*-3d'` vẽ mỗi hành động trên bốn người, ba góc máy, kèm dòng
+  `check` ([07](07-lam-tap.md#bảng-duyệt-hành-động)).
+- **Ghép trong cảnh**: track dưới là nền (`stand-3d`, `sit-3d` với `world.sit`, `seiza-3d`); track trên là hành động
+  kênh hẹp — thân, đầu, một tay — như phần "chồng với gì" của `note` ghi. Bản `-near` / `-far` chọn theo bố cục khung,
+  `-left` / `-right` theo tay của người ([Gần, xa và phải, trái](#gần-xa-và-phải-trái)).
+- **Hành động của repo** cùng tên với một file chung thì đè file ấy. Hành động mới của repo đặt theo
+  [Tên và hậu tố](#tên-và-hậu-tố) để Thư viện gom đúng biến thể, và khai `preview` để xem được trong Thư viện.

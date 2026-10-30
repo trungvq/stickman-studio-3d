@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 20,
+  "name": "slump-3d",
+  "duration": 0.8,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": 0, "head": [null, null, 0] }, "ease": "smooth" },
+    { "t": 1, "pose": { "torso": 7, "head": [null, null, 12] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Vai sụp, đầu gục nhẹ (vừa biết mình thua, thất vọng): thân đổ tới 7°, đầu cúi 12° trong 0,8 s; giữ. Chỉ ghi `torso` và gật của `head`, nghiêng, lắc để trống; tay để cảnh. Nền `stand-3d`, ngồi thì `sit-3d`. Chồng được lên tay buông, chắp trước bụng (`hands-front-3d`), bị nắm tay dẫn đi; buông bằng clip rỗng blend ~0,5. Cùng họ: `slump-3d` gục nhẹ, `slump-big-3d` cúi gằm, `-hold` giữ dáng từ giây 0. Sinh bằng `tools/actions/slump.mjs`.",
+  "preview": { "stage": "stand" }
+}

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 13,
+  "name": "sit-3d",
+  "duration": 3.4,
+  "end": "wrap",
+  "authoredAt": "side",
+  "mask": ["armFar", "armNear", "legFar", "legNear", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [11, 42, 0],
+        "armNear": [11, 42, 0],
+        "legFar": [90, -90],
+        "legNear": [90, -90],
+        "torso": 3
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armFar": [12, 42, 0],
+        "armNear": [12, 42, 0],
+        "legFar": [90, -90],
+        "legNear": [90, -90],
+        "torso": 4
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Ngồi ghế thở: đùi ngang, cẳng chân thõng, tay buông đặt hai bên đùi, thân 3 ↔ 4 mỗi 3,4 s (lặp). Ghi tay, chân, thân. Nền: `world.sit` trên mặt ngồi cao bằng gối (87,5 ở `height` 1). Là nền của mọi hành động ngồi: chồng track tay, đầu, thân lên trên; chân so le là `sit-3d-staggered`; ngồi xuống, đứng dậy là `sit-down-3d`, `stand-up-3d`.",
+  "preview": { "stage": "chair" }
+}

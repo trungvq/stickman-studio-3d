@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 20,
+  "name": "wave-big-3d",
+  "duration": 0.8,
+  "end": "wrap",
+  "mask": ["armNear", "hand", "stretch"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "stretch": [1, 1.2, 1, 1] },
+      "reach": { "armNear": { "at": [15, -250, 110], "elbow": [0, 1, 0.6] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "palm": "forward", "fingers": "up" } }
+    },
+    {
+      "t": 0.5,
+      "pose": { "stretch": [1, 1.2, 1, 1] },
+      "reach": { "armNear": { "at": [20, -215, 165], "elbow": [0, 1, 0.6] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "palm": "forward", "fingers": "up" } }
+    },
+    {
+      "t": 1,
+      "pose": { "stretch": [1, 1.2, 1, 1] },
+      "reach": { "armNear": { "at": [15, -250, 110], "elbow": [0, 1, 0.6] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "palm": "forward", "fingers": "up" } }
+    }
+  ],
+  "events": [],
+  "note": "Vẫy chào bằng tay gần, vẫy to: cả cánh tay giơ cao quá đầu (tay gần vươn 1,2 lần), quét rộng: cổ tay đi qua lại giữa đích hệ thân [15, -250, 110] và [20, -215, 165], một lượt 0,8 s, lặp; bàn tay `open`, lòng ra trước, ngón dựng. Chỉ ghi `armNear`, `hand`, `stretch`. Nền `stand-3d`, `sit-3d`. Vào và buông bằng blend của clip ~0,3. Bản cùng họ: `wave-soft-3d`, `wave-3d`, `wave-big-3d`. Sinh bằng `tools/actions/wave.mjs`.",
+  "preview": { "stage": "stand" }
+}

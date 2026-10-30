@@ -5,6 +5,8 @@ import type { ActCharacter, Trunk3 } from "./arm3";
 import type { GraspChoice, GraspFrame, GraspSolution } from "./graspSolve";
 import { topProblems } from "./heldGeom";
 import { fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
+import { heldRoleIssues } from "./heldRoles";
+import { RoleSchema } from "./roles";
 
 /**
  * Món cầm tay (`held/<món>.json`): hộp bao, mốc ngữ nghĩa (điểm và pháp tuyến ra ngoài), hình va chạm có nhãn phần, mặt
@@ -12,8 +14,11 @@ import { fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
  * món), đơn vị rig (`× 0,01` ra three của người cao 4,3). docs/11-nhom-cam.md mục 2
  */
 
-/** Bản schema món rig hiểu; món không khai `schemaVersion` là bản 1, zod báo lỗi kèm cách chuyển; bản 2 nâng thẳng lên */
-export const HELD_VERSION = 3;
+/**
+ * Bản schema món rig hiểu; món không khai `schemaVersion` là bản 1, zod báo lỗi kèm cách chuyển; bản 2, 3 không có `roles`
+ * nâng thẳng lên
+ */
+export const HELD_VERSION = 4;
 
 const v3 = z.tuple([z.number(), z.number(), z.number()]);
 
@@ -178,7 +183,9 @@ export const HeldItemSchema = z
         error: (iss) =>
           iss.input === 1
             ? "món cầm bản 1 (kiểu cầm khai theo món) không còn nạp: chuyển món và cảnh bằng `stickman migrate-held` (docs/11-nhom-cam.md mục 8)"
-            : "JSON món cầm thuộc phiên bản schema khác; cần bản @stickman3d/rig khớp với nó",
+            : iss.input === 2 || iss.input === 3
+              ? `\`roles\` cần \`schemaVersion\` ${HELD_VERSION}`
+              : "JSON món cầm thuộc phiên bản schema khác; cần bản @stickman3d/rig khớp với nó",
       })
       .default(HELD_VERSION),
     /** Hộp bao, đơn vị rig */
@@ -200,6 +207,8 @@ export const HeldItemSchema = z
     shape: z.array(HeldShapeSchema).min(1).optional(),
     /** Kiểu cầm soạn tay theo nhóm rồi biến thể (`AuthoredGraspSchema`); thiếu thì bộ giải đặt bàn tay như cũ */
     authored: z.record(z.string(), z.record(z.string(), AuthoredGraspSchema)).optional(),
+    /** Vai trò của món (`RoleSchema`, chỉ vai trò mang được trên món cầm tay): docs/13-vai-tro-do.md */
+    roles: z.array(RoleSchema).optional(),
   })
   .superRefine((m, ctx) => {
     const bad = (path: (string | number)[], message: string) =>
@@ -236,6 +245,7 @@ export const HeldItemSchema = z
     )
       bad(["shape"], "mọi khối đều là `detail` hay thuộc phần `grip: false` — không còn gì để cầm");
     for (const msg of topProblems(m)) bad(["top"], msg);
+    heldRoleIssues(m, ctx);
     for (const [g, byName] of Object.entries(m.authored ?? {})) {
       if (!(GROUP_IDS as readonly string[]).includes(g)) {
         bad(["authored", g], groupName(g));
@@ -264,13 +274,32 @@ export const HeldItemSchema = z
   });
 export type HeldItemSpec = z.infer<typeof HeldItemSchema>;
 
-/** Thiếu `schemaVersion` thì là bản 1 (zod báo lỗi kèm cách chuyển); bản 2 lên `HELD_VERSION` (chỉ thêm trường); số khác giữ nguyên */
+/**
+ * Thiếu `schemaVersion` thì là bản 1 (zod báo lỗi kèm cách chuyển); bản 2, 3 lên `HELD_VERSION` (chỉ thêm trường) trừ khi
+ * mang `roles` — trường của bản 4, giữ số để zod báo; số khác giữ nguyên
+ */
 export function migrateHeldItem(json: unknown): unknown {
   if (!json || typeof json !== "object" || Array.isArray(json)) return json;
   const o = structuredClone(json) as Record<string, unknown>;
   if (typeof o.schemaVersion !== "number") o.schemaVersion = 1;
-  else if (o.schemaVersion === 2) o.schemaVersion = HELD_VERSION;
+  else if ((o.schemaVersion === 2 || o.schemaVersion === 3) && o.roles === undefined)
+    o.schemaVersion = HELD_VERSION;
   return o;
+}
+
+/**
+ * Bản nhỏ nhất của món JSON thô theo trường nó mang: `roles` là 4, kiểu cầm có tên (`base` / `note` của `authored`) là 3,
+ * còn lại 2. Studio vá JSON thô nâng `schemaVersion` tới đây, không nâng thêm
+ */
+export function heldMinVersion(json: unknown): number {
+  const o = (json ?? {}) as { roles?: unknown; authored?: Record<string, Record<string, unknown>> };
+  if (o.roles !== undefined) return 4;
+  const named = Object.values(o.authored ?? {}).some((g) =>
+    Object.values(g ?? {}).some(
+      (a) => !!a && typeof a === "object" && ("base" in a || "note" in a),
+    ),
+  );
+  return named ? 3 : 2;
 }
 
 export const parseHeldItem = (json: unknown) => HeldItemSchema.safeParse(migrateHeldItem(json));

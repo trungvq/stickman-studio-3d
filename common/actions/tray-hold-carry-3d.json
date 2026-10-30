@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 20,
+  "name": "tray-hold-carry-3d",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["armNear", "armFar", "hand"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "reach": {
+        "armFar": {
+          "to": "otherGrip",
+          "offset": [0, 0, 78],
+          "point": "grip",
+          "elbow": [-0.2, 1, 0.6]
+        },
+        "armNear": {
+          "to": "belly",
+          "offset": [34, 8, 44],
+          "point": "grip",
+          "elbow": [-0.2, 1, 0.6]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "open", "w": 1, "palm": "up" },
+        "armNear": { "pose": "open", "w": 1, "palm": "up" }
+      }
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": {
+        "armFar": {
+          "to": "otherGrip",
+          "offset": [0, 0, 78],
+          "point": "grip",
+          "elbow": [-0.2, 1, 0.6]
+        },
+        "armNear": {
+          "to": "belly",
+          "offset": [34, 8, 44],
+          "point": "grip",
+          "elbow": [-0.2, 1, 0.6]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "open", "w": 1, "palm": "up" },
+        "armNear": { "pose": "open", "w": 1, "palm": "up" }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Bưng khay ngang eo bằng hai tay: hai bàn tay ngửa đỡ dưới hai mép bên của khay (tay phải mốc `belly`, offset [34, 8, 44], tay trái mốc `otherGrip`, cách 78), giữ từ giây 0. Ghi hai tay, `hand`. Nền `stand-3d`, đi bộ; món ở `world.hands[].hold` tay phải với `both: true`, như `khay@platform` cạnh `right`. Hệ thân không nghiêng theo thân nên `bow-15-3d`, `bow-30-3d` chồng lên được mà khay vẫn ngang. Vào bằng blend ~0,4.",
+  "preview": {
+    "stage": "stand",
+    "hold": { "right": { "item": "khay", "group": "platform", "edge": "right", "both": true } }
+  }
+}

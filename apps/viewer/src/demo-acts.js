@@ -141,7 +141,7 @@ export function actDemos({ member, track, clip, BOY, GIRL, CLAD }) {
     },
     heads: {
       cast: () => {
-        const list = ['lean-in', 'slump-sigh', 'glance-left', 'glance-right', 'look-down-small', 'look-up-head', 'nod-once', 'talk-tilt-back'];
+        const list = ['lean-in', 'slump-sigh', 'glance-left', 'glance-right', 'look-down-small', 'look-up-head', 'nod-once', 'talk-tilt'];
         const n = list.length;
         return list.map((a, i) =>
           member(`h${i}`, i % 2 ? GIRL : BOY, { at: [at(i, n) * 0.6, 0, 0], yaw: 60 }, [track(clip('stand-3d')), track(clip(a, START)), track(clip('face-calm'))], i));

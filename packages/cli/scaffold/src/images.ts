@@ -62,8 +62,8 @@ const giaiMa = (img: HTMLImageElement) =>
 
 /**
  * Gác `<image>` của SVG — thứ Remotion không tự chờ — và đo tỉ lệ khung của từng ảnh, đúng
- * như `mount()` của render và studio vẫn làm. Trả `null` khi chưa xong.
- * `files` khoá theo tên file mảnh, đúng khoá mà `applyAspects` cần.
+ * như `mount()` của render vẫn làm. Trả `null` khi chưa xong.
+ * `files` khoá theo tên file.
  */
 export const useImagesReady = (files: Readonly<Record<string, string>>) => {
   // `delayRender` phải gọi trong lượt render: tới lúc `useEffect` chạy thì Remotion đã chụp được rồi

@@ -6,8 +6,8 @@ import { parseHeldItem, type HeldItemSpec } from './core/heldItem';
 import { parseScene, resolveScene, type SceneData } from './core/scene';
 import { defaultCharacter } from './core/schema';
 import { buildWorld, plainRoom, type World3D } from './world';
-import tuiJson from '../../../apps/studio/public/held/tui.json';
-import cocJson from '../../../apps/studio/public/held/coc.json';
+import tuiJson from '../../../common/held/tui.json';
+import cocJson from '../../../common/held/coc.json';
 import bangGia from './core/__fixtures__/held-v2/bang-gia.json';
 
 // `World3D.refresh`: đổi mốc tay, mốc món mà không dựng lại lưới — vẽ ra như cảnh dựng mới (docs/03-scene.md#làm-mới-runtime)
@@ -74,7 +74,7 @@ const scene = (j: unknown): SceneData => {
 };
 
 function world(sc: SceneData): World3D {
-  const rt = resolveScene(sc, { still }, {}, {}, heights, bodies, HELD);
+  const rt = resolveScene(sc, { still }, heights, bodies, HELD);
   return buildWorld(sc, rt, {
     set: () => plainRoom(),
     still: ['b'],

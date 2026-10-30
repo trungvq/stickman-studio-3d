@@ -6,7 +6,7 @@ import { FACE_R, faceSurface } from './core/humanHead';
 import type { FaceState } from './core/types';
 
 // Nét mặt của `core/face.ts` vẽ lên canvas rồi dán lên mặt trước của sọ theo phép chiếu thẳng — điểm lệch `x` px khỏi
-// giữa mặt nằm ở kinh độ `asin(x / nửa rộng đầu)`, như nét mặt của đầu tóc dựng khối bên sketch.
+// giữa mặt nằm ở kinh độ `asin(x / nửa rộng đầu)`.
 
 /** `face.wrinkle` của JSON nhân vật */
 export type Wrinkle = WrinkleSpec;

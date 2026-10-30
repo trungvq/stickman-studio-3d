@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 20,
+  "name": "receive-3d",
+  "duration": 2,
+  "end": "hold",
+  "mask": ["armNear", "hand", "torso", "head"],
+  "authoredAt": "side",
+  "sides": "anatomical",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armNear": [-6, 24, 0], "torso": 0, "head": [null, null, 0] },
+      "ease": "smooth",
+      "hand": { "armNear": { "w": 0.3, "turn": 0, "bend": 0 } }
+    },
+    {
+      "t": 0.12,
+      "pose": { "armNear": [-6, 24, 0], "torso": 0, "head": [null, null, 0] },
+      "ease": "smooth",
+      "hand": { "armNear": { "w": 0.3, "turn": 0, "bend": 0 } }
+    },
+    {
+      "t": 0.25,
+      "pose": { "torso": 3, "head": [null, null, 4] },
+      "reach": { "armNear": { "at": [96, -33, 34], "point": "palm", "elbow": [-0.4, 1, 1.2] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "cup", "w": 0.5, "palm": "up" } }
+    },
+    {
+      "t": 0.32,
+      "pose": { "torso": 4, "head": [null, null, 6] },
+      "reach": { "armNear": { "at": [98, -47, 26], "point": "palm", "elbow": [-0.4, 1, 1.2] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "flat", "w": 0.6, "palm": "up" } }
+    },
+    {
+      "t": 0.66,
+      "pose": { "torso": 4, "head": [null, null, 6] },
+      "reach": { "armNear": { "at": [98, -47, 26], "point": "palm", "elbow": [-0.4, 1, 1.2] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "flat", "w": 0.6, "palm": "up" } }
+    },
+    {
+      "t": 0.9,
+      "pose": { "torso": 0, "head": [null, null, 2] },
+      "reach": {
+        "armNear": {
+          "to": "belly",
+          "offset": [-8, 22, 46],
+          "point": "palm",
+          "elbow": [-0.4, 1, 1.2]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "flat", "w": 0.6, "palm": "up" } }
+    },
+    {
+      "t": 1,
+      "pose": { "torso": 0, "head": [null, null, 2] },
+      "reach": {
+        "armNear": {
+          "to": "belly",
+          "offset": [-8, 22, 46],
+          "point": "palm",
+          "elbow": [-0.4, 1, 1.2]
+        }
+      },
+      "ease": "linear",
+      "hand": { "armNear": { "pose": "flat", "w": 0.6, "palm": "up" } }
+    }
+  ],
+  "events": [{ "name": "take", "t": 0.32 }],
+  "note": "Nhận món bằng tay phải: chờ 0,24 s, tay phải đưa ra dưới chỗ người đưa chìa món, ngửa lòng tay (`palm: \"up\"`, `flat` hờ) đỡ dưới đáy món (đích hệ thân [98, −47, 26], `point: \"palm\"`) lúc 0,64 s, giữ tới 1,32 s, kéo về xuống cạnh bụng (mốc `belly`, offset [−8, 22, 46]) lúc 1,8 s rồi giữ, lòng tay vẫn ngửa; thân cúi 4° lúc đỡ rồi về 0; sự kiện `take` lúc đỡ. Chỉ ghi tay phải (`sides: \"anatomical\"`, kênh `armNear`), `hand`, `torso`, gật của `head`. Nền `stand-3d`; người đưa cùng cao đứng đối diện, hai hông cách 200, lệch sang phải người diễn 30 ở `height` 1, diễn `give-3d` với món cao ~35 cầm giữa thân. Scene chuyển món sang tay này ở `world.hands[].hold` lúc `take`; món to hay cầm chỗ khác thì đặt `world.hands`.",
+  "preview": {
+    "stage": "stand",
+    "partner": {
+      "at": [200, 30],
+      "yaw": -10,
+      "action": "give-3d",
+      "hold": { "right": "ly@cylinder" }
+    }
+  }
+}

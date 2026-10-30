@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 20,
+  "name": "invite-near-3d",
+  "duration": 1.2,
+  "end": "hold",
+  "mask": ["armFar", "armNear", "hand", "torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "torso": 0, "head": [null, null, 0] },
+      "reach": {
+        "armFar": { "to": "belly", "offset": [5, 28, -2], "point": "palm", "elbow": [0, 0.4, 1.4] },
+        "armNear": {
+          "to": "otherBack",
+          "offset": [1, -3, 0],
+          "point": "palm",
+          "elbow": [0, 0.4, 1.4]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" },
+        "armNear": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" }
+      }
+    },
+    {
+      "t": 0.4167,
+      "pose": { "torso": [8, -4], "head": [null, null, 4] },
+      "reach": {
+        "armFar": { "to": "belly", "offset": [5, 28, -2], "point": "palm", "elbow": [0, 0.4, 1.4] },
+        "armNear": { "at": [55, -40, 95], "elbow": [-0.5, 0.8, 0.2] }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" },
+        "armNear": { "pose": "open", "w": 1, "palm": "up", "fingers": [0.3, 0, 1] }
+      }
+    },
+    {
+      "t": 1,
+      "pose": { "torso": [8, -4], "head": [null, null, 4] },
+      "reach": {
+        "armFar": { "to": "belly", "offset": [5, 28, -2], "point": "palm", "elbow": [0, 0.4, 1.4] },
+        "armNear": { "at": [55, -40, 95], "elbow": [-0.5, 0.8, 0.2] }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" },
+        "armNear": { "pose": "open", "w": 1, "palm": "up", "fingers": [0.3, 0, 1] }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Tay mời \"xin mời lối này\" về phía tay gần: từ hai bàn tay chồng trước bụng (tay gần ở trên), tay gần rời ra trước rồi mở chéo sang ngang tới đích hệ thân [55, -40, 95] (trên hông, khuỷu gập, rủ xuống), bàn tay `open` ngửa, ngón chĩa ra ngoài-trước theo lối đi; tay kia ở lại áp bụng (mốc `belly`); thân cúi 8°, nghiêng 4° về phía tay mời, đầu gật 4°. Tới trong 0,5 s rồi giữ. Chỉ ghi hai tay, `hand`, `torso`, gật của `head`. Nền `stand-3d`; người bụng phệ thì tay áp bụng lấn vào bụng. Lối đi phía bên kia thì `invite-far-3d`; buông bằng clip rỗng blend ~0,4, hay `hands-front-3d` blend ~0,5 để về tay chồng. Sinh bằng `tools/actions/invite.mjs`.",
+  "preview": { "stage": "stand" }
+}

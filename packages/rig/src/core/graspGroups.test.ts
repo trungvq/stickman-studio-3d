@@ -16,7 +16,13 @@ import {
 } from "./graspGroups";
 import { HAND_POSES } from "./hand";
 import { handDims, itemGeom } from "./heldGeom";
-import { GROUP_IDS, HeldItemSchema, parseHeldItem, type HeldItemSpec } from "./heldItem";
+import {
+  GROUP_IDS,
+  HELD_VERSION,
+  HeldItemSchema,
+  parseHeldItem,
+  type HeldItemSpec,
+} from "./heldItem";
 import type { V3 } from "./lens";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import khay from "./__fixtures__/held-v2/khay.json";
@@ -541,7 +547,7 @@ describe("`cylinder`: biên phần `grip: false`", () => {
 describe("`checkV2` nối `topProblems`", () => {
   it("món có miệng mà `top` lệch quá 10° bị báo ở đường `top`", () => {
     const cup = (top: V3) => ({
-      schemaVersion: 3,
+      schemaVersion: HELD_VERSION,
       size: [10, 12, 10],
       anchors: {},
       top,

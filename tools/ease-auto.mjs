@@ -1,5 +1,5 @@
 // Đề xuất đổi `ease` của các hành động mẫu mà người 3D đọc sang `auto` và đo độ lệch so với bản cũ.
-// node tools/ease-auto.mjs [--dir apps/studio/public/actions] [--write]
+// node tools/ease-auto.mjs [--dir common/actions] [--write]
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
@@ -9,7 +9,7 @@ import { createServer } from "vite";
 const ROOT = resolve(import.meta.dirname, "..");
 const { values: args } = parseArgs({
   options: {
-    dir: { type: "string", default: "apps/studio/public/actions" },
+    dir: { type: "string", default: "common/actions" },
     write: { type: "boolean", default: false },
   },
 });
@@ -29,16 +29,14 @@ const vite = await createServer({
   optimizeDeps: { noDiscovery: true, include: [] },
 });
 const rig = await vite.ssrLoadModule("/packages/rig/src/core/index.ts");
-const { ACTION_VERSION, actionKind, actionPose, animalActionDelta, parseAction } = rig;
+const { ACTION_VERSION, actionPose, parseAction } = rig;
 
 /** Người 3D đọc hành động này: soạn ở `side`, hay `mask` chỉ gồm kênh không phải tay chân */
 const readBy3d = (a) =>
-  actionKind(a) !== "animal" &&
-  (a.authoredAt === "side" || (!!a.mask?.length && a.mask.every((c) => WORLD_FREE.has(c))));
+  a.authoredAt === "side" || (!!a.mask?.length && a.mask.every((c) => WORLD_FREE.has(c)));
 
 /** Mọi số góc của tư thế tại pha `u`: tay chân, thân, đầu, bàn tay; đích cổ tay và `stretch` không phải góc */
 function angles(a, u) {
-  if (actionKind(a) === "animal") return flatten(animalActionDelta(a, u, undefined));
   const p = actionPose(a, u);
   for (const k of ["reach", "aim", "stretch", "lift"]) delete p[k];
   return flatten(p);
@@ -209,5 +207,5 @@ for (const r of rows)
 const touched = rows.filter((r) => r.diff !== undefined);
 const flagged = touched.filter((r) => r.flags.length);
 console.log(
-  `\n${rows.length} file người 3D đọc (bỏ ${skipped} file 2D), ${touched.length} file có mốc đổi sang auto, ${flagged.length} cần soi${args.write ? "" : " — chưa ghi gì, thêm --write để ghi"}`,
+  `\n${rows.length} file người 3D đọc (bỏ ${skipped} file không soạn ở \`side\`), ${touched.length} file có mốc đổi sang auto, ${flagged.length} cần soi${args.write ? "" : " — chưa ghi gì, thêm --write để ghi"}`,
 );

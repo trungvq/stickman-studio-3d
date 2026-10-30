@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 20,
+  "name": "talk-chest-3d",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["armNear", "hand", "torso"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armNear": [-6, 24, 0], "torso": 0 },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 0.3, "palm": "in" } }
+    },
+    {
+      "t": 0.45,
+      "pose": { "torso": -1.5 },
+      "reach": { "armNear": { "at": [62, -70, 44], "elbow": [-0.3, 1, 1] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 0.7, "palm": "back" } }
+    },
+    {
+      "t": 0.8,
+      "pose": { "torso": -3 },
+      "reach": {
+        "armNear": { "to": "chest", "offset": [0, 2, 10], "point": "palm", "elbow": [-0.3, 0.8, 1] }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 1, "palm": "back", "fingers": [0, -0.4, -1] } }
+    },
+    {
+      "t": 1,
+      "pose": { "torso": -3 },
+      "reach": {
+        "armNear": { "to": "chest", "offset": [0, 2, 10], "point": "palm", "elbow": [-0.3, 0.8, 1] }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 1, "palm": "back", "fingers": [0, -0.4, -1] } }
+    }
+  ],
+  "events": [],
+  "note": "Đặt lòng bàn tay gần lên ngực mình khi nói về mình (\"chính tôi\", \"của tôi\"): từ tay buông, tay qua trước bụng rồi áp lòng tay vào ngực bên cùng phía (mốc `chest`, `offset` [0, 2, 10], lòng tay ra sau, ngón chếch vào giữa) lúc 0,48 s, thân ngả lùi 3°, rồi giữ. Chỉ ghi `armNear`, `hand`, `torso`. Nền `stand-3d` hay `sit-3d`; mốc theo thân nên đúng cả người bụng phệ. Vỗ hai nhịp rồi hạ tay là `talk-chest-pat-3d`; buông bằng clip rỗng blend ~0,4.",
+  "preview": { "stage": "stand" }
+}

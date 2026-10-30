@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 190">
-<title>Khăn quàng nhìn nghiêng</title>
-<g id="guide" fill="none" stroke="#9ac" stroke-width="1"><path d="M 75 20 L 75 140"/></g>
-<g fill="white" stroke="black" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 61 10 Q 77 17 94 10 L 101 27 L 115 92 L 97 98 L 85 35 Q 64 36 55 26 Z" fill="white" stroke-width="6"/>
-<path d="M 57 25 Q 78 34 98 23 M 99 83 L 111 79" fill="none" stroke-width="3.9"/>
-</g>
-</svg>

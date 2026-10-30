@@ -55,8 +55,6 @@ function runtime(items: unknown[], hands?: unknown[]): SceneRuntime {
   return resolveScene(
     r.data,
     {},
-    {},
-    {},
     { nguoi: NGUOI.rig.height },
     { nguoi: body3(NGUOI) },
     { "bang-gia": BANG },

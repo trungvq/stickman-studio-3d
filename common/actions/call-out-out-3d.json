@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 20,
+  "name": "call-out-out-3d",
+  "duration": 0.7,
+  "end": "hold",
+  "mask": ["armNear", "hand", "stretch"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "stretch": [1, 1.25, 1, 1] },
+      "reach": { "armNear": { "at": [35, -220, 135], "elbow": [-0.6, 0.6, 1] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 1, "palm": "forward", "fingers": "up" } }
+    },
+    {
+      "t": 0.5,
+      "pose": { "stretch": [1, 1.1, 1, 1] },
+      "reach": { "armNear": { "at": [55, -150, 120], "elbow": [-0.6, 1, 0.2] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 0.5, "palm": "forward", "fingers": "up" } }
+    },
+    {
+      "t": 1,
+      "pose": { "armNear": [-6, 24, 0], "stretch": [1, 1, 1, 1] },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 0.3, "palm": "in" } }
+    }
+  ],
+  "events": [],
+  "note": "Hạ tay đang giơ của `call-out-3d` về tay buông của `stand-3d` trong 0,7 s: qua trước-ngoài vai, khuỷu đổi dần sang xuống-sau nên không lật, độ vươn về 1, rồi giữ. Chỉ ghi `armNear`, `hand`, `stretch`. Nối ngay sau `call-out-3d` (blend ~0,2), hạ được cả `raise-hand-3d`; nền `stand-3d` hay `sit-3d`; sau clip này nhả bằng clip rỗng blend ~0,3. Sinh bằng `tools/actions/call-out.mjs`.",
+  "preview": { "stage": "stand" }
+}

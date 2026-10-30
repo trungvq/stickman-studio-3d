@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 20,
+  "name": "bow-30-quick-3d",
+  "duration": 0.75,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": 0, "head": [0, 0, 0] }, "ease": "smooth" },
+    { "t": 0.2667, "pose": { "torso": 30, "head": [0, 0, 9] }, "ease": "smooth" },
+    { "t": 0.5333, "pose": { "torso": 30, "head": [0, 0, 9] }, "ease": "smooth" },
+    { "t": 1, "pose": { "torso": 0, "head": [0, 0, 0] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Cúi vội, gật nhanh 30° một lần: thân cúi 30°, đầu gật thêm 9°, xuống trong 0,2 s, giữ 0,2 s, đứng thẳng lên lúc 0,75 s rồi giữ đứng. Chỉ ghi `torso`, `head`. Nền `stand-3d`. Đích tay hệ thân (`reach.at`) không theo thân cúi nên món giữ ngang; chồng lên tay bưng khay, cầm món thì đích cổ tay phải ra trước ~65 trở lên, sát eo hơn thì thân đổ lên cẳng tay. Tay chắp trước bụng theo thân cúi thì dùng `bow-hands-front-*`. Cùng họ: `bow-15-3d`, `bow-30-3d`, `bow-45-3d`, `-quick` cúi vội, `-snap` gập ngay rồi nảy, `-hold` giữ ở đáy. Sinh bằng `tools/actions/bow.mjs`.",
+  "preview": { "stage": "stand" }
+}

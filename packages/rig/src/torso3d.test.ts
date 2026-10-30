@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BadgeSchema, defaultCharacter, GarmentSchema, LettersSchema, OBI_KNOTS, ObiSchema, OpenSchema, PanelSchema, PatternSchema, PRINT_SHAPE_NAMES, PrintSchema, WrapSchema } from './core/schema';
 import { flattenPath, PANEL_LIFT } from './core/panel';
 import { TORSO_DEPTH } from './core/constants';
-import { CHEST, CLOTH, GARMENT_STYLES, garmentOf, lerpAt, profile, torsoPaths, type Surface } from './core/torso';
+import { CHEST, CLOTH, GARMENT_STYLES, garmentOf, lerpAt, profile, type Surface } from './core/torso';
 import { cladProfile, cladThigh, roots3, THIGH_CLEAR } from './core/act3';
 import { signedVolume, wrapEdge } from './core/wrap';
 import { PRINT_SHAPES, WAKABA } from './core/print';
@@ -420,15 +420,6 @@ describe('mảng áo, hoạ tiết, áo trong', () => {
     expect(Math.max(...q.map((p) => p[1]))).toBeCloseTo(50, 0);
   });
 
-  it('2D bỏ qua mảng áo, không ném lỗi', () => {
-    const c = defaultCharacter();
-    const at = (garment: Record<string, unknown>) => {
-      const d = structuredClone(c);
-      d.pieces.torso = { ...d.pieces.torso, src: 'sculpt', garment: GarmentSchema.parse(garment) };
-      return torsoPaths(d, 20, 6).lines;
-    };
-    expect(at({ style: 'shirt', panels: [{ fill: 'skin', clip: 'neck', pattern: { kind: 'dots' } }] })).toEqual(at({ style: 'shirt' }));
-  });
 
   it('màu tô chỉ nhận từ khoá hay mã màu', () => {
     expect(PanelSchema.safeParse({ fill: 'red' }).success).toBe(false);
@@ -492,25 +483,6 @@ describe('dáng thân chung của thân trần và áo', () => {
     expect(Math.max(...lon) - Math.min(...lon)).toBeGreaterThan(10);
   });
 
-  it('nét ngực, lưng của thân trần là hình in nhạt, không phải ống nét đen', () => {
-    for (const r of [undefined, roots3(GarmentSchema.parse({ style: 'bare' }), base, { clad: true, sleeve: 15, trouser: 17 }).room]) {
-      const t = torsoMesh({ style: 'bare' }, base, r);
-      expect([t.lines.length, t.dots.length]).toEqual([0, 0]);
-      const faint = t.fills.filter((f) => f.ink !== undefined);
-      expect(faint).toHaveLength(7);
-      for (const f of faint) {
-        expect(f.ink).toBeLessThan(0.5);
-        expect(f.decal).toBeDefined();
-        expect(f.tris.length).toBeGreaterThan(0);
-      }
-    }
-    // người que: nét có độ mờ
-    const c = defaultCharacter();
-    c.pieces.torso = { ...c.pieces.torso, src: 'sculpt', garment: GarmentSchema.parse({ style: 'bare' }) };
-    const lines = torsoPaths(c, 20, 6).lines.filter((l) => !l.fill);
-    expect(lines.length).toBeGreaterThan(0);
-    for (const l of lines) expect(l.ink).toBeLessThan(0.5);
-  });
 
   it('sườn áo phủ gốc đùi từ khớp hông tới gấu; áo hẹp hẳn hơn hông giữ dáng', () => {
     const [sleeve, trouser] = [15, 17];

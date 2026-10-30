@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 20,
+  "name": "bend-place-hold-3d",
+  "duration": 1,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": 26, "head": [null, null, 10] }, "ease": "linear" },
+    { "t": 1, "pose": { "torso": 26, "head": [null, null, 10] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Giữ dáng cúi đặt đồ từ giây 0: thân 26°, đầu gật thêm 10° — cho ảnh tĩnh, cảnh cắt vào lúc tay đặt món. Chỉ ghi `torso` và gật của `head`, nghiêng, lắc để trống; tay và món đặt bằng `world.hands` hay track tay. Nền `stand-3d`, mặt bàn, quầy trước mặt cao ngang hông tới dưới khuỷu, mép gần cách hông ~80, người bụng phệ lùi thêm ~20 kẻo bụng lấn mép. Đứng lên bằng clip rỗng blend ~0,5. Cúi xuống rồi giữ là `bend-place-3d`, giữ từ giây 0 là `bend-place-hold-3d`. Sinh bằng `tools/actions/bend-place.mjs`.",
+  "preview": { "stage": "counter" }
+}

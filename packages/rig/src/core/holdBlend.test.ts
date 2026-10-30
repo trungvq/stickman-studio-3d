@@ -29,15 +29,7 @@ function runtime(hands: unknown[], items: unknown[]): SceneRuntime {
     items,
   });
   if (!r.success) throw new Error(r.error.message);
-  return resolveScene(
-    r.data,
-    {},
-    {},
-    {},
-    { nguoi: H },
-    { nguoi: body3(NGUOI) },
-    { "bang-gia": BANG },
-  );
+  return resolveScene(r.data, {}, { nguoi: H }, { nguoi: body3(NGUOI) }, { "bang-gia": BANG });
 }
 
 const joints = (rt: SceneRuntime, t: number) =>

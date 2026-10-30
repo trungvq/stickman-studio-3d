@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 20,
+  "name": "face-forced-smile",
+  "duration": 0.4,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "open",
+        "brow": "worried",
+        "mouth": "smirk"
+      }
+    }
+  ],
+  "note": "Cười gượng một bên khi bị dồn: mắt mở, mày nhíu lo, miệng nhếch (`smirk`); vào ngay rồi giữ. Chỉ ghi `face`, nên chồng lên mọi tư thế, đứng hay ngồi, và nằm dưới track khẩu hình (`talk-lips`): lời đè `mouth`, mắt và mày vẫn của lớp này. Cùng miệng mà mày thả là `face-smirk`, mày dựng ngược nhe răng là doạ `face-menace`.",
+  "preview": {
+    "stage": "stand"
+  }
+}

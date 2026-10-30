@@ -7,9 +7,9 @@ import { matVec } from "./lens";
 import { palmFace } from "./palm";
 import { parseScene, resolveScene, sceneAt } from "./scene";
 import { defaultCharacter } from "./schema";
-import onTableJson from "../../../../apps/studio/public/actions/arms-on-table-3d.json";
-import standJson from "../../../../apps/studio/public/actions/stand-3d.json";
-import talkJson from "../../../../apps/studio/public/actions/talk-forward-3d.json";
+import onTableJson from "../../../../common/actions/arms-on-table-3d.json";
+import standJson from "../../../../common/actions/stand-3d.json";
+import talkJson from "../../../../common/actions/talk-forward-3d.json";
 
 const SAMPLES: Record<string, { mask?: string[]; keys: object[] }> = {
   "arms-on-table-3d": onTableJson,

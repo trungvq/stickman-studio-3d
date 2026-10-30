@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { fingerVec, HAND_DOF, HAND_POSES, HAND_RELAXED } from "./hand";
+import { fingerVec, HAND_DOF, HAND_POSES, HAND_RELAXED, mixHand } from "./hand";
 import {
+  handKeyVec,
   handShapeNameProblem,
   parseHandShape,
   shapeFingers,
   type HandShape,
   type HandShapes,
 } from "./handLibrary";
-import { parseAction } from "./action";
+import { actionHand, actionHandShapeProblems, actionHandShapes, parseAction } from "./action";
 import { parseScene, resolveScene, SCENE_VERSION, sceneAt } from "./scene";
 
 // Dáng tay có tên (`hands/<tên>.json`) và `pose` của mốc tay (docs/01-rig.md#dáng-tay-có-tên)
@@ -49,7 +50,7 @@ function runtime(hands: unknown[], lib: HandShapes = LIB, clips = false) {
     ],
   });
   if (!chi.success) throw new Error(chi.error.message);
-  return resolveScene(r.data, clips ? { chi: chi.data } : {}, {}, {}, {}, {}, {}, lib);
+  return resolveScene(r.data, clips ? { chi: chi.data } : {}, {}, {}, {}, lib);
 }
 
 /** Số bàn tay phải, trái ở `t`: tay phải là kênh gần khi không lật */
@@ -101,7 +102,7 @@ describe("`pose` của mốc tay", () => {
     expect(p({ pose: "fist", palm: "up" }).error!.message).toMatch(/chỉ có `pose`/);
     expect(p({ at: [0, -200, 450], w: 0.5 }).error!.message).toMatch(/`w` chỉ đi với `pose`/);
     expect(p({}).success).toBe(false);
-    expect(SCENE_VERSION).toBe(34);
+    expect(SCENE_VERSION).toBe(36);
   });
 
   it("tên không có trong thư viện: `resolveScene` báo rõ", () => {
@@ -145,5 +146,88 @@ describe("`pose` của mốc tay", () => {
     for (const t of [0.5, 1, 1.5])
       expect(sceneAt(shaped, "a", t).world).toStrictEqual(sceneAt(plain, "a", t).world);
     expect(near(shaped, 1)?.slice(2, N)).toEqual(fingerVec(HAND_POSES.fist));
+  });
+});
+
+/** Hành động chỉ ghi bàn tay gần: mốc `k[i]` ở pha `i / (n - 1)`, nội suy thẳng */
+function handAction(...k: unknown[]) {
+  const r = parseAction({
+    name: "vay",
+    duration: 4,
+    end: "hold",
+    mask: ["hand"],
+    keys: k.map((armNear, i) => ({
+      t: i / Math.max(1, k.length - 1),
+      pose: {},
+      hand: { armNear },
+      ease: "linear",
+    })),
+  });
+  if (!r.success) throw new Error(r.error.message);
+  return r.data;
+}
+
+describe("dáng của thư viện ở `keys[].hand`", () => {
+  it("schema: tên dáng có sẵn hay tên file của thư viện, ở cả tên trần và `pose`; tên sai dạng là lỗi", () => {
+    const p = (armNear: unknown) =>
+      parseAction({ keys: [{ t: 0, pose: {}, hand: { armNear } }] }).success;
+    expect(p("peace")).toBe(true);
+    expect(p({ pose: "chu-v", w: 0.5, turn: 30 })).toBe(true);
+    expect(p("edgePinch")).toBe(true);
+    expect(p("Chu V")).toBe(false);
+    expect(p({ pose: "chu_v" })).toBe(false);
+  });
+
+  it("`actionHandShapes` chỉ kể tên của thư viện, mỗi tên một lần; thiếu trong thư viện thì có câu báo", () => {
+    const a = handAction("peace", { pose: "fist" }, { pose: "peace", w: 0.5 }, "khong-co");
+    expect(actionHandShapes(a)).toEqual(["peace", "khong-co"]);
+    expect(actionHandShapeProblems(a, LIB)).toEqual([
+      expect.stringMatching(/`khong-co`.*hands\/khong-co\.json/),
+    ]);
+    expect(actionHandShapeProblems(handAction("fist"), {})).toEqual([]);
+  });
+
+  it("giải: dáng của thư viện ra góc ngón kèm `fit`, giữ xoay và gập cổ tay; tên không có là dáng nghỉ", () => {
+    expect(handKeyVec({ pose: "peace", turn: 30, bend: -10 }, LIB)).toEqual([
+      30,
+      -10,
+      ...PEACE.fingers,
+      ...PEACE.fit!,
+    ]);
+    expect(handKeyVec("khong-co", LIB)).toEqual([0, 0, ...fingerVec(HAND_RELAXED)]);
+    expect(actionHand(handAction("peace"), 0, LIB).an).toEqual([
+      0,
+      0,
+      ...PEACE.fingers,
+      ...PEACE.fit!,
+    ]);
+    expect(actionHand(handAction("peace"), 0).an).toEqual([0, 0, ...fingerVec(HAND_RELAXED)]);
+  });
+
+  it("giữa dáng có sẵn và dáng của thư viện hoà cả góc ngón và `fit`", () => {
+    const mid = actionHand(handAction("fist", "peace"), 0.5, LIB).an!;
+    expect(mid[2]).toBeCloseTo((HAND_POSES.fist.thumb[0] + PEACE.fingers[0]) / 2);
+    expect(mid[N + 4]).toBeCloseTo(PEACE.fit![4] / 2);
+    expect(mixHand([1, 2], [3, 4, 5], 0.5)).toEqual([2, 3, 2.5]);
+  });
+
+  it("`sceneAt` dùng thư viện của `resolveScene`; tên không có thì dáng nghỉ, không ném", () => {
+    const r = parseScene({
+      duration: 4,
+      lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
+      cast: [
+        {
+          id: "a",
+          world: { at: [0, 0, 500], yaw: 270 },
+          tracks: [{ clips: [{ start: 0, action: "vay" }] }],
+        },
+      ],
+    });
+    if (!r.success) throw new Error(r.error.message);
+    const run = (a: ReturnType<typeof handAction>, lib: HandShapes) =>
+      sceneAt(resolveScene(r.data, { vay: a }, {}, {}, {}, lib), "a", 1).pose.hand?.an;
+    expect(run(handAction("peace"), LIB)).toEqual([0, 0, ...PEACE.fingers, ...PEACE.fit!]);
+    expect(run(handAction({ pose: "peace", w: 0.5 }), LIB)?.[N + 4]).toBeCloseTo(PEACE.fit![4] / 2);
+    expect(run(handAction("khong-co"), LIB)?.slice(2, N)).toEqual(fingerVec(HAND_RELAXED));
   });
 });

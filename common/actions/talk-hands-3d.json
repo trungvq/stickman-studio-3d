@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 20,
+  "name": "talk-hands-3d",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["armNear", "armFar", "hand", "torso"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armFar": [-6, 24, 0], "armNear": [-6, 24, 0], "torso": 0 },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "open", "w": 0.3, "palm": "in" },
+        "armNear": { "pose": "open", "w": 0.3, "palm": "in" }
+      }
+    },
+    {
+      "t": 1,
+      "pose": { "torso": 2 },
+      "reach": {
+        "armFar": { "at": [62, -50, 80], "elbow": [-0.4, 1, 0.9] },
+        "armNear": { "at": [62, -50, 80], "elbow": [-0.4, 1, 0.9] }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "open", "w": 1, "turn": -80, "bend": -10 },
+        "armNear": { "pose": "open", "w": 1, "turn": -80, "bend": -10 }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Xoè hai tay ngửa ra hai bên ngang bụng (câu nhấn, câu hỏi \"thế là sao?\"): từ tay buông, hai cổ tay ra trước-ngoài tới đích hệ thân [62, −50, 80], khuỷu gập sát sườn, bàn tay `open` ngửa (`turn` −80), thân ngả tới 2°; 0,5 s rồi giữ. Chỉ ghi hai tay, `hand`, `torso`. Nền `stand-3d` hay `sit-3d`. Buông bằng clip rỗng blend ~0,4.",
+  "preview": { "stage": "stand" }
+}

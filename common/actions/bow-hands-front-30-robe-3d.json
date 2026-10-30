@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 20,
+  "name": "bow-hands-front-30-robe-3d",
+  "duration": 1.4,
+  "end": "hold",
+  "mask": ["armFar", "armNear", "hand", "torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "torso": 0, "head": [0, 0, 0] },
+      "reach": {
+        "armFar": {
+          "to": "otherBack",
+          "offset": [1, -3, 0],
+          "point": "palm",
+          "elbow": [0, 0.4, 1.4]
+        },
+        "armNear": {
+          "to": "belly",
+          "offset": [20, 20, -2],
+          "point": "palm",
+          "elbow": [0, 0.4, 1.4]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" },
+        "armNear": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" }
+      }
+    },
+    {
+      "t": 0.2857,
+      "pose": { "torso": 30, "head": [0, 0, 5] },
+      "reach": {
+        "armFar": {
+          "to": "otherBack",
+          "offset": [1, -3, 0],
+          "point": "palm",
+          "elbow": [0, 0.4, 1.4]
+        },
+        "armNear": {
+          "to": "belly",
+          "offset": [20, 20, -2],
+          "point": "palm",
+          "elbow": [0, 0.4, 1.4]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" },
+        "armNear": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" }
+      }
+    },
+    {
+      "t": 0.6429,
+      "pose": { "torso": 30, "head": [0, 0, 5] },
+      "reach": {
+        "armFar": {
+          "to": "otherBack",
+          "offset": [1, -3, 0],
+          "point": "palm",
+          "elbow": [0, 0.4, 1.4]
+        },
+        "armNear": {
+          "to": "belly",
+          "offset": [20, 20, -2],
+          "point": "palm",
+          "elbow": [0, 0.4, 1.4]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" },
+        "armNear": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" }
+      }
+    },
+    {
+      "t": 1,
+      "pose": { "torso": 0, "head": [0, 0, 0] },
+      "reach": {
+        "armFar": {
+          "to": "otherBack",
+          "offset": [1, -3, 0],
+          "point": "palm",
+          "elbow": [0, 0.4, 1.4]
+        },
+        "armNear": {
+          "to": "belly",
+          "offset": [20, 20, -2],
+          "point": "palm",
+          "elbow": [0, 0.4, 1.4]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armFar": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" },
+        "armNear": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Cúi chào 30° trọn người, tay chồng trước bụng: thân cúi 30°, đầu gật thêm 5°, xuống trong 0,4 s, giữ 0,5 s, đứng thẳng lên lúc 1,4 s rồi giữ đứng tay chồng. Hai tay chồng như `hands-front-robe-3d`: tay gần áp lòng tay vào mốc `belly` (offset [20, 20, -2], cao hơn, ra trước hơn, nằm trên vạt áo ngay dưới đai — kimono, tạp dề, áo thụng), tay xa áp lòng lên mu tay gần (`otherBack`), `flat` hờ, ngón chĩa vào đường giữa; mốc theo thân nên tay đi theo cái cúi. Ghi `armNear`, `armFar`, `hand`, `torso`, `head`. Nền `stand-3d`; người bụng phệ thì cánh tay lấn vào bụng. Chồng được nét mặt; tay đang cầm món thì dùng `bow-*` chỉ ghi thân, đầu. Buông tay bằng clip rỗng blend ~0,4. Cùng họ: `bow-hands-front-15-3d`, `-30-`, `-45-`, `-robe` cho vạt áo, `-hold` giữ ở đáy. Sinh bằng `tools/actions/bow-hands-front.mjs`.",
+  "preview": { "stage": "stand" }
+}

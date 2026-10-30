@@ -1,7 +1,7 @@
 /**
  * Ống kính 3D của cảnh (`scene.lens`): thế giới trục như SVG — x phải, y xuống (sàn y 0, lên là
  * âm), z sâu vào cảnh. Khác `camera[]` / `cameraAt`: đó là khung cắt 2D (lia, zoom) đặt sau phép
- * chiếu này, zoom 2D không phải dolly. docs/03-scene.md#ống-kính-3d
+ * chiếu này, zoom 2D không phải dolly. docs/03-scene.md#người-3d
  */
 export type V3 = [number, number, number];
 
@@ -139,16 +139,6 @@ export function orbit({
   };
 }
 
-/** Phối cảnh một điểm tụ: mắt ở (0, `vy`, 0), nhìn thẳng theo +z */
-export const onePoint = (vy: number, f: number): Lens => ({
-  eye: [0, vy, 0],
-  yaw: 0,
-  pitch: 0,
-  f,
-  cx: 0,
-  cy: vy,
-});
-
 /** Điểm trên mặt sàn y = `floor` mà điểm khung (x, y) nhìn thấy */
 export function floorAt(c: Lens, [x, y]: [number, number], floor: number): V3 {
   const cy = Math.cos(c.yaw);
@@ -180,27 +170,4 @@ export function place3({ at, yaw = 0, s = 1 }: Place3, p: V3): V3 {
   const c = Math.cos(yaw);
   const n = Math.sin(yaw);
   return [at[0] + s * (p[0] * c + p[2] * n), at[1] + s * p[1], at[2] + s * (-p[0] * n + p[2] * c)];
-}
-
-/**
- * Ống kính đặt trong hệ riêng của một khối (thân người 3D): mắt, hai trục ảnh và trục nhìn trong hệ
- * ấy. Ảnh tính bằng đơn vị của hệ ở độ sâu của gốc, gốc chiếu về `(0, 0)`.
- */
-export interface LocalLens {
-  eye: V3;
-  right: V3;
-  down: V3;
-  fwd: V3;
-}
-
-/** Điểm hệ khối ra ảnh `[x, y, độ sâu]` của ống kính trong hệ ấy */
-export function localProject(L: LocalLens, p: V3): V3 {
-  const d = sub3(p, L.eye);
-  const dep = dot3(d, L.fwd);
-  const k = -dot3(L.eye, L.fwd) / Math.max(dep, 1e-6);
-  return [
-    dot3(d, L.right) * k + dot3(L.eye, L.right),
-    dot3(d, L.down) * k + dot3(L.eye, L.down),
-    dep,
-  ];
 }

@@ -1,13 +1,5 @@
 import { z } from "zod";
-import {
-  ANCHOR_NAMES,
-  ANIMAL_ANCHOR_NAMES,
-  INK,
-  JOINT_NAMES,
-  PAPER,
-  PARTS,
-  SCENE_Z,
-} from "@stickman3d/sketch";
+import { ANCHOR_NAMES, INK, PAPER, SCENE_Z } from "@stickman3d/rig/core";
 
 /**
  * Lớp vẽ của một hiệu ứng: `back` trước cả cast (nguồn sáng dưới nước, người trồi lên từ
@@ -107,14 +99,9 @@ const FizzSchema = z.object({
 
 const pieceSource = {
   piece: z.string().min(1).optional(),
-  part: z
-    .string()
-    .min(1)
-    .refine((name) => Object.hasOwn(PARTS, name), "Bộ phận không có trong PARTS")
-    .optional(),
 };
-const oneSource = (m: { piece?: string; part?: string }) => Boolean(m.piece) !== Boolean(m.part);
-const sourceError = { message: "Chọn đúng một nguồn: piece hoặc part" };
+const oneSource = (m: { piece?: string }) => Boolean(m.piece);
+const sourceError = { message: "Cần `piece`: file ảnh trong `pieces/`" };
 
 const ThrowSchema = z
   .object({
@@ -123,7 +110,7 @@ const ThrowSchema = z
     z: zField,
     frame: frameField,
     clip: clipField,
-    /** File trong `pieces/`, hoặc tên bộ phận trong `PARTS` */
+    /** File ảnh trong `pieces/` */
     ...pieceSource,
     /** Giây rời tay — khớp với mốc `equip` tắt socket ấy */
     t0: sec,
@@ -341,7 +328,7 @@ const BubbleItemSchema = z
     /** Tâm món, tính từ tâm hộp */
     x: z.number().default(0),
     y: z.number().default(0),
-    /** Nguồn hình `piece` / `part` cần `w` và `h`; chữ dùng `text` (`\n` xuống dòng) */
+    /** Nguồn hình `piece` cần `w` và `h`; chữ dùng `text` (`\n` xuống dòng) */
     ...pieceSource,
     w: z.number().positive().optional(),
     h: z.number().positive().optional(),
@@ -351,8 +338,8 @@ const BubbleItemSchema = z
     /** Màu chữ; bỏ trống là màu viền bong bóng */
     fill: z.string().optional(),
   })
-  .refine((m) => (m.piece || m.part ? oneSource(m) && !m.text && !!m.w && !!m.h : !!m.text), {
-    message: "Món bong bóng là piece hoặc part kèm w/h, hoặc text — chỉ một nguồn",
+  .refine((m) => (m.piece ? !m.text && !!m.w && !!m.h : !!m.text), {
+    message: "Món bong bóng là piece kèm w/h, hoặc text — chỉ một nguồn",
   });
 
 const GrawlixSchema = z.object({
@@ -384,9 +371,9 @@ const BubbleSchema = z
     fade: z.number().positive().optional(),
     /** Mũi đuôi, toạ độ scene; hay bỏ trống và bám người qua `cast` */
     tip: z.object({ x: z.number(), y: z.number() }).optional(),
-    /** `id` trong `cast[]` hay `animals[]`: mũi đuôi là mốc `anchor` cộng `dx` / `dy` đơn vị nhân vật */
+    /** `id` trong `cast[]`: mũi đuôi là mốc `anchor` cộng `dx` / `dy` đơn vị nhân vật */
     cast: z.string().min(1).optional(),
-    anchor: z.enum([...new Set([...ANCHOR_NAMES, ...ANIMAL_ANCHOR_NAMES])]).default("head"),
+    anchor: z.enum(ANCHOR_NAMES).default("head"),
     dx: z.number().default(0),
     dy: z.number().default(0),
     /** Đọc mốc mỗi frame thay vì một lần lúc `open` — bong bóng lắc theo đầu */
@@ -595,10 +582,10 @@ export const fxFiles = (list: FxData[]): string[] => [
   ),
 ];
 
-/** Mốc trên người mà `tears` bám: hai con mắt, tên như `JOINT_NAMES` của rig */
+/** Mốc trên người mà `tears` bám: hai con mắt, tên như `ANCHOR_NAMES` của rig */
 export const EYE_ANCHORS = [
   "eyeNear",
   "eyeFar",
-] as const satisfies readonly (typeof JOINT_NAMES)[number][];
+] as const satisfies readonly (typeof ANCHOR_NAMES)[number][];
 
 export { INK, PAPER };

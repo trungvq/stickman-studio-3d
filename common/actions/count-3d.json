@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 20,
+  "name": "count-3d",
+  "duration": 2,
+  "end": "hold",
+  "mask": ["armNear", "hand"],
+  "authoredAt": "side",
+  "snap": true,
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armNear": [-6, 24, 0] },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "point", "w": 0.3, "palm": "in" } }
+    },
+    {
+      "t": 0.15,
+      "pose": {},
+      "reach": { "armNear": { "at": [80, -120, 98], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "point", "w": 1, "palm": "forward", "fingers": [0, -1, 0] } }
+    },
+    {
+      "t": 0.225,
+      "pose": {},
+      "reach": { "armNear": { "at": [80, -120, 98], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "point", "w": 1, "palm": "forward", "fingers": [-0.125, -1, 0] }
+      }
+    },
+    {
+      "t": 0.285,
+      "pose": {},
+      "reach": { "armNear": { "at": [90, -110, 96], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "point", "w": 1, "palm": "forward", "fingers": [0.375, -1, 0] }
+      }
+    },
+    {
+      "t": 0.375,
+      "pose": {},
+      "reach": { "armNear": { "at": [90, -110, 96], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "point", "w": 1, "palm": "forward", "fingers": [0.25, -1, 0] }
+      }
+    },
+    {
+      "t": 0.475,
+      "pose": {},
+      "reach": { "armNear": { "at": [78, -122, 90], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "peace", "w": 1, "palm": "forward", "fingers": [-0.125, -1, 0] }
+      }
+    },
+    {
+      "t": 0.535,
+      "pose": {},
+      "reach": { "armNear": { "at": [88, -112, 88], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "peace", "w": 1, "palm": "forward", "fingers": [0.375, -1, 0] }
+      }
+    },
+    {
+      "t": 0.625,
+      "pose": {},
+      "reach": { "armNear": { "at": [88, -112, 88], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "peace", "w": 1, "palm": "forward", "fingers": [0.25, -1, 0] }
+      }
+    },
+    {
+      "t": 0.725,
+      "pose": {},
+      "reach": { "armNear": { "at": [76, -124, 82], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "count-3", "w": 1, "palm": "forward", "fingers": [-0.125, -1, 0] }
+      }
+    },
+    {
+      "t": 0.785,
+      "pose": {},
+      "reach": { "armNear": { "at": [86, -114, 80], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "count-3", "w": 1, "palm": "forward", "fingers": [0.375, -1, 0] }
+      }
+    },
+    {
+      "t": 0.875,
+      "pose": {},
+      "reach": { "armNear": { "at": [86, -114, 80], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "count-3", "w": 1, "palm": "forward", "fingers": [0.25, -1, 0] }
+      }
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": { "armNear": { "at": [82, -110, 80], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "count-3", "w": 1, "palm": "forward", "fingers": [0.125, -1, 0] }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Đếm từng vế bằng ngón (\"một, hai, ba\"): tay gần giơ lên trước-ngoài vai (đích hệ thân [80, −120, 98], 0,3 s), chấm ba nhịp tới-xuống ở 0,57 / 1,07 / 1,57 s, mỗi nhịp dời vào trong 8; ngón đổi theo nhịp: `point` (một), `peace` (hai), `count-3` (ba), lòng tay ra trước, ngón dựng; giữ ba ngón. `snap: true`. Chỉ ghi `armNear`, `hand`. Nền `stand-3d` hay `sit-3d`; dáng `peace`, `count-3` lấy ở `hands/` của lớp chung. Đếm ít vế hơn thì cắt clip sau nhịp cần, giữ bằng clip rỗng; buông bằng clip rỗng blend ~0,4. Góc 3/4 phía tay gần thấy bàn tay sát cằm: dùng góc thẳng mặt hay phía tay xa.",
+  "preview": { "stage": "stand" }
+}

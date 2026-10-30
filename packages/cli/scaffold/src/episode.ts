@@ -2,7 +2,7 @@
 // **thoại ↔ cảnh ↔ tiếng ↔ phụ đề** thì ở đây. Camera và nền thì không — chúng đã vào
 // scene, để ba đường render cùng thấy một khung. Xem docs/07-lam-tap.md.
 import { z } from "zod";
-import { MARK_REF } from "@stickman3d/sketch";
+import { MARK_REF } from "@stickman3d/rig/core";
 
 export const EPISODE_VERSION = 1;
 
@@ -102,15 +102,13 @@ const FontSchema = z.object({
 export const LAYER_HOOKS = ["bg", "back", "front", "shake", "place"] as const;
 
 /**
- * Thumbnail giữ lại gì của cảnh; trường bỏ trống là giữ nguyên. `cast` / `animals` / `props`
+ * Thumbnail giữ lại gì của cảnh; trường bỏ trống là giữ nguyên. `cast`
  * là danh sách `id` được ở lại (`[]` là bỏ hết), `bg: false` bỏ `scene.bg[]`, `fx: false` bỏ
  * `scene.fx[]`, `layers` là tên lớp vẽ code được ở lại, `hooks` là móc của chúng được chạy.
  */
 const KeepSchema = z
   .object({
     cast: z.array(z.string()),
-    animals: z.array(z.string()),
-    props: z.array(z.string()),
     bg: z.boolean(),
     fx: z.boolean(),
     layers: z.array(z.string()),

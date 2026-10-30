@@ -2,7 +2,7 @@
 // composition trong bundler, và công cụ sinh `.srt` chạy thẳng bằng node.
 // Xem docs/07-lam-tap.md § Bảng thời gian của cả tập.
 import type { CueData, EpisodeData, ShotData } from "./episode";
-import { markTime, screenTime, warpTable } from "@stickman3d/sketch";
+import { markTime, screenTime, warpTable } from "@stickman3d/rig/core";
 
 export interface LaidShot {
   shot: ShotData;

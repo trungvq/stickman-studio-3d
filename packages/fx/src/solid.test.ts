@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { D, depthAt, orbit } from "@stickman3d/sketch";
+import { D, depthAt, orbit } from "@stickman3d/rig/core";
 import { box, itemSolids, meets } from "./solid";
 
 const TONE = { top: "#a00", lit: "#0a0", side: "#00a" };

@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 20,
+  "name": "spread-arms-3d",
+  "duration": 1.2,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": ["armNear", "armFar", "torso", "head", "hand"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armNear": [-6, 24, 0], "armFar": [-6, 24, 0], "torso": 0, "head": [0, 0, 0] },
+      "hand": {
+        "armNear": { "pose": "open", "w": 0.3, "turn": 0, "bend": 0 },
+        "armFar": { "pose": "open", "w": 0.3, "turn": 0, "bend": 0 }
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.1667,
+      "pose": {
+        "torso": -2,
+        "head": [0, 0, -2],
+        "armNear": [12, 22, 0, 25, 30],
+        "armFar": [12, 22, 0, 25, 30]
+      },
+      "hand": {
+        "armNear": { "pose": "open", "w": 0.8, "turn": -60, "bend": 0 },
+        "armFar": { "pose": "open", "w": 0.8, "turn": -60, "bend": 0 }
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.375,
+      "pose": {
+        "torso": -5,
+        "head": [0, 0, -6],
+        "armNear": [25, 22, 0, 38, 60],
+        "armFar": [25, 22, 0, 38, 60]
+      },
+      "hand": {
+        "armNear": { "pose": "open", "w": 1, "turn": -90, "bend": -10 },
+        "armFar": { "pose": "open", "w": 1, "turn": -90, "bend": -10 }
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.5167,
+      "pose": {
+        "torso": -6,
+        "head": [0, 0, -8],
+        "armNear": [26, 20, 0, 42, 60],
+        "armFar": [26, 20, 0, 42, 60]
+      },
+      "hand": {
+        "armNear": { "pose": "open", "w": 1, "turn": -90, "bend": -10 },
+        "armFar": { "pose": "open", "w": 1, "turn": -90, "bend": -10 }
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "torso": -5,
+        "head": [0, 0, -6],
+        "armNear": [25, 22, 0, 38, 60],
+        "armFar": [25, 22, 0, 38, 60]
+      },
+      "hand": {
+        "armNear": { "pose": "open", "w": 1, "turn": -90, "bend": -10 },
+        "armFar": { "pose": "open", "w": 1, "turn": -90, "bend": -10 }
+      },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "Dang hai tay khoe: hai tay mở sang hai bên chếch ra trước (vai 25°, dang 38°, xoay ngoài 60°), khuỷu hơi gập, bàn tay `open` ngửa (`turn` −90); mở trong 0,45 s, nảy lên một nhịp lúc 0,62 s rồi giữ; thân ưỡn −5°, đầu ngửa 6°. Chỉ ghi hai tay, `torso`, `head`, `hand`. Nền `stand-3d`; hạ bằng `stand-3d` blend ~0,4, tay ở ngoài thân nên không xuyên. Hai người cạnh nhau cùng dang tay đứng cách ≥ 220.",
+  "preview": { "stage": "stand" }
+}

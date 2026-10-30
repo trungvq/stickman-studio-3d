@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 20,
+  "name": "bow-15-3d",
+  "duration": 1,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": 0, "head": [0, 0, 0] }, "ease": "smooth" },
+    { "t": 0.3, "pose": { "torso": 15, "head": [0, 0, 6] }, "ease": "smooth" },
+    { "t": 0.7, "pose": { "torso": 15, "head": [0, 0, 6] }, "ease": "smooth" },
+    { "t": 1, "pose": { "torso": 0, "head": [0, 0, 0] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Cúi chào 15° một lần: thân cúi 15°, đầu gật thêm 6°, xuống trong 0,3 s, giữ 0,4 s, đứng thẳng lên lúc 1 s rồi giữ đứng. Chỉ ghi `torso`, `head`. Nền `stand-3d`. Đích tay hệ thân (`reach.at`) không theo thân cúi nên món giữ ngang; chồng được lên tay bưng khay, cầm món sát eo (đích cổ tay ~40 ra trước). Tay chắp trước bụng theo thân cúi thì dùng `bow-hands-front-*`. Cùng họ: `bow-15-3d`, `bow-30-3d`, `bow-45-3d`, `-quick` cúi vội, `-snap` gập ngay rồi nảy, `-hold` giữ ở đáy. Sinh bằng `tools/actions/bow.mjs`.",
+  "preview": { "stage": "stand" }
+}

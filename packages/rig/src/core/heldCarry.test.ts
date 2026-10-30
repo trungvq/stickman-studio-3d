@@ -20,8 +20,8 @@ import { isCarryHold } from "./holdLink";
 import { matVec, type V3 } from "./lens";
 import { parseScene, resolveScene, sceneAt } from "./scene";
 import { CharacterSchema } from "./schema";
-import cocJson from "../../../../apps/studio/public/held/coc.json";
-import tuiJson from "../../../../apps/studio/public/held/tui.json";
+import cocJson from "../../../../common/held/coc.json";
+import tuiJson from "../../../../common/held/tui.json";
 import tuiHieuJson from "./__fixtures__/held-v2/tui-hieu.json";
 
 const spec = (j: unknown): HeldItemSpec => {
@@ -265,7 +265,7 @@ describe("treo: `món@carry` đọc `seats` của món", () => {
         cast: [{ id: "a", world: { at: [0, 0, 0], yaw: 90, hands }, tracks: [] }],
       });
       if (!sc.success) throw new Error(sc.error.message);
-      return resolveScene(sc.data, {}, {}, {}, { a: 1 }, { a: body3(C) }, items);
+      return resolveScene(sc.data, {}, { a: 1 }, { a: body3(C) }, items);
     };
     const hold = (h: object) => ({ hold: { item: "tui-hieu", group: "carry", ...h } });
 

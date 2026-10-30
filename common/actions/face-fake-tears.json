@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 20,
+  "name": "face-fake-tears",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "droopy",
+        "brow": "sad",
+        "mouth": "frown"
+      }
+    }
+  ],
+  "note": "Mắt rưng giả vờ: mắt rũ, mày cụp, miệng mếu kín — diễn buồn cho người xem chứ không buồn thật; vào ngay rồi giữ. Chỉ ghi `face`, nên chồng lên mọi tư thế, đứng hay ngồi, và nằm dưới track khẩu hình (`talk-lips`): lời đè `mouth`, mắt và mày vẫn của lớp này. Buồn thật thì `face-sad`.",
+  "preview": {
+    "stage": "stand"
+  }
+}

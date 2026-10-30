@@ -1,55 +1,56 @@
 # AGENTS.md
 
 Người que trên three.js và mọi thứ một repo video cần để dựng tập: lõi rig (JSON nhân vật,
-hành động, cảnh, `sceneAt`), người que 3D, người que vẽ SVG, hiệu ứng, render, MCP, CLI và
-studio chỉnh nhân vật. Repo này **không chứa nhân vật, phòng hay cảnh của tập phim nào** —
+hành động, cảnh, `sceneAt`), người que 3D, hiệu ứng, render, MCP, CLI và
+Studio 3D. Repo này **không chứa nhân vật, phòng hay cảnh của tập phim nào** —
 chúng ở repo của từng video, repo đó nhập bộ `@stickman3d/*` như dependency.
+
+## Nhánh `feat/khuyu` (xoá mục này trước khi squash merge)
+
+Đây là worktree `stickman-studio-3d-khuyu`, nhánh sửa khuỷu tay và làm thư viện hành động tương tác. **Đọc
+[`KHUYU.md`](KHUYU.md) trước khi làm gì**: luật nhánh (squash merge; file `KHUYU-*.md`, `khuyu-harness/` và mục này là file
+trung gian, xoá trước khi merge), kế hoạch, gốc lỗi. Tiến độ ghi ở [`KHUYU-TIEN-DO.md`](KHUYU-TIEN-DO.md) sau mỗi bước.
 
 ## Bố cục
 
 | | |
 |---|---|
-| `packages/rig/src/core/` | Lõi rig, không React, không `three`: hằng số và tư thế, chu kỳ đi, schema zod của nhân vật / hành động / cảnh / đạo cụ / động vật, `resolveScene` và `sceneAt`, IK, timewarp, ống kính scene, hình học thân áo, tóc, kính, râu, váy, đầu, nét mặt (`face.ts`), bàn tay năm ngón và dáng tay (`hand.ts`, mặt da `handMesh.ts`), khung xương và khớp người 3D mà three vẽ ra (`arm3.ts`, `act3.ts`), chỗ cầm theo nhóm (`graspSolve.ts`, `holdLink.ts`), đo giật trên hình (`snap.ts`), luật đồ cầm tay (`heldAudit.ts`), sổ bộ phận `PARTS`. Ra cửa `@stickman3d/rig/core` và cửa chính của `@stickman3d/rig`. |
+| `packages/rig/src/core/` | Lõi rig, không React, không `three`: hằng số và tư thế, chu kỳ đi, schema zod của nhân vật / hành động / cảnh, `resolveScene` và `sceneAt`, IK, timewarp, ống kính scene, hình học thân áo, tóc, kính, váy, đầu, nét mặt (`face.ts`), bàn tay năm ngón và dáng tay (`hand.ts`, mặt da `handMesh.ts`), khung xương và khớp người 3D mà three vẽ ra (`arm3.ts`, `act3.ts`), chỗ cầm theo nhóm (`graspSolve.ts`, `holdLink.ts`), đo giật trên hình (`snap.ts`), luật đồ cầm tay (`heldAudit.ts`). Ra cửa `@stickman3d/rig/core` và cửa chính của `@stickman3d/rig`. |
 | `packages/rig/src/*.ts` | `@stickman3d/rig` phần 3D — vật liệu NPR và giờ trong ngày (`npr.ts`), pipeline vẽ (`pipeline.ts`), người que và đặt người (`stickman.ts`), diễn theo tư thế của `sceneAt` (`act.ts`), nét mặt (`face.ts`), thân áo và váy (`garment.ts`, `torso.ts`), tóc (`sculpt.ts`), kính (`glasses.ts`), đồ khối (`khoi.ts`), vỏ phòng, cửa sổ, cửa đi và đèn tấm (`room.ts`), ống kính scene (`lens.ts`), chỗ gắn đồ, cầm đồ và đồ gọi tên (`attach.ts`), người nền đóng băng (`crowd.ts`), kiểm va chạm (`collide.ts`), số đo đồ cầm tay (`held.ts`), chữ và hình trên mặt vật (`decal.ts`), canvas 2D cho texture vẽ bằng code, chạy cả trong Node trần (`canvas.ts`), món chạy theo `t` — đồng hồ, lịch, màn hình (`parts.ts`), vật bay theo đường, hiện/tắt (`motion.ts`), cảnh three của một scene 3D dựng chung cho sân khấu Remotion và `stickman check` — bối cảnh, người diễn mặc đồ theo `equip`, người nền, đồ riêng của cảnh (`world.ts`). tsup ra `dist` hai cửa, `three` và `zod` để external. |
-| `packages/sketch/` | `@stickman3d/sketch` — người que vẽ SVG bằng React: `<Character>`, `<Prop>`, `<Animal>`, mảnh và bộ phận vẽ code, bảng mốc mảnh `figureAnchors` (`anchor.ts`). Xuất lại cả lõi, nên code 2D chỉ cần import một gói. |
-| `packages/fx/` | `@stickman3d/fx` — hiệu ứng SVG theo `t` cho `scene.fx[]` và `<SceneWorld>` vẽ cả cảnh 2D. [docs/09](docs/09-hieu-ung.md), [docs/10](docs/10-lop-ve-code.md). |
-| `packages/render/` | `@stickman3d/render` — bin `stickman-render` (PNG), `stickman-video` (mp4 xem thử). Cần `rsvg-convert`, mp4 cần thêm `ffmpeg`. |
+| `packages/fx/` | `@stickman3d/fx` — hiệu ứng SVG theo `t` cho `scene.fx[]`, lớp vẽ code và `<SceneWorld>` vẽ nền, lớp vẽ code, hiệu ứng của một cảnh; khối đặc của cảnh cho `check` đo. [docs/09](docs/09-hieu-ung.md), [docs/10](docs/10-lop-ve-code.md). |
+| `packages/render/` | `@stickman3d/render` — bin `stickman-render`: PNG của người 3D một mình hay dải khung một cảnh, vẽ bằng three trong Chromium headless. Cần `rsvg-convert` để ghép tờ. |
 | `packages/mcp/` | `@stickman3d/mcp` — MCP server stdio cho agent. [docs/04](docs/04-mcp.md). |
-| `packages/cli/` | `@stickman3d/cli` — bin `stickman`: `init`, `upgrade`, `check`, `reseat`, `retime`, `studio` (Studio 3D), `studio2d` (studio 2D), `docs`. Scaffold app Remotion ở `scaffold/`, server Studio 3D ở `studio3d.mjs`. [docs/05](docs/05-repo-video.md). |
+| `packages/cli/` | `@stickman3d/cli` — bin `stickman`: `init`, `upgrade`, `check`, `retime`, `studio` (Studio 3D), `docs`. Scaffold app Remotion ở `scaffold/`, server Studio 3D ở `studio3d.mjs`. [docs/05](docs/05-repo-video.md). |
 | `apps/viewer/` | App xem thử 3D: hai người que mẫu nói chuyện trên sàn phẳng; `demo=` là cảnh diễn hành động. Tham số URL ở [README](README.md#xem-thử). |
 | `apps/studio3d/` | Studio 3D: xem cảnh three của một repo video, soạn kiểu cầm, ghi `scenes/` và `held/`; `stickman studio` chạy nó bằng Vite. [README của nó](apps/studio3d/README.md). |
-| `apps/studio/` | Studio 2D chỉnh nhân vật (`stickman studio2d`); tham số URL, bố cục và cách chụp ở [README của nó](apps/studio/README.md). `public/` là bộ mẫu chung (nhân vật, hành động, mảnh). |
-| `docs/` | Spec rig, nguồn sự thật cho hành vi của lõi và người que SVG. Đọc file liên quan **trước** khi sửa; bắt đầu ở [docs/README.md](docs/README.md), bẫy theo vùng ở [docs/00](docs/00-bat-bien.md). |
-| `assets/` | Sheet ảnh gốc của bộ mẫu trang phục (`sheets/`), SVG nguồn của đồ vật (`props/`) và mảnh vẽ lại (`pieces/`). |
-| `tools/` | `shots.mjs` chụp app xem thử, `bench.mjs` đo ms/khung — [README](README.md). |
+| `common/` | Bộ chung đi theo package (lớp dưới của repo video): hành động, nhân vật mẫu, món cầm tay (`held/`), dáng tay (`hands/`). `prepack` gói nó vào `@stickman3d/cli` thành `template/`. |
+| `docs/` | Spec rig, nguồn sự thật cho hành vi của lõi và người que 3D. Đọc file liên quan **trước** khi sửa; bắt đầu ở [docs/README.md](docs/README.md), bẫy theo vùng ở [docs/00](docs/00-bat-bien.md). |
+| `tools/` | `shots.mjs` chụp app xem thử, `bench.mjs` đo ms/khung, `elbows.mjs` đo khuỷu và cổ tay theo khung trên một repo video — [README](README.md). |
 | `README.md` | Cài, chụp, vòng `link:` với repo video, registry, phát hành. `QUICKSTART.md` là các bước dựng một repo video. |
 
 ## Biên giới với repo video
 
-Repo video giữ nhân vật, hành động, cảnh, phòng, mảnh ảnh và app Remotion của nó. Chiều ngược
+Repo video giữ nhân vật, hành động, cảnh, phòng, nền, tiếng và app Remotion của nó. Chiều ngược
 lại không tồn tại — package và studio không biết tên tập phim nào, không có nhánh riêng cho
 một nhân vật hay một phòng nào.
 
-**Năm thứ đi theo package, không chép sang repo video: mảnh ảnh, hành động mẫu, động vật mẫu,
-nhân vật mẫu và `docs/`.** Mảnh, hành động, động vật và nhân vật là **lớp chung** (`COMMON`
-trong `packages/cli/lib.mjs`), `pieces/`, `actions/`, `animals/` và `characters/` của repo
-video đè lên — thêm đường đọc mới thì phải đi hai lớp, các đường hiện có liệt kê ở
+**Bộ chung (`common/`) và `docs/` đi theo package, không chép sang repo video.** Hành động,
+nhân vật, món cầm tay và dáng tay mẫu là **lớp chung** (`COMMON` trong `packages/cli/lib.mjs`),
+`actions/`, `characters/`, `held/` và `hands/` của repo video đè lên — thêm đường đọc mới thì phải đi hai lớp, các đường hiện có liệt kê ở
 [docs/05](docs/05-repo-video.md#hai-lớp). `docs/` gói vào `@stickman3d/cli` lúc `prepack`, đọc
 qua `stickman docs` và tool `docs` của MCP.
 
 **Thứ chỉ đúng ở repo này thì không nằm trong `docs/`** — registry, token, `pnpm release`, vòng
 `link:` ở `README.md`, các bước dựng repo video ở `QUICKSTART.md`.
 
-**Studio 2D (`apps/studio`) đọc ghi một thư mục bất kỳ** có `characters/`, `actions/`, `pieces/` qua
-File System Access API, bản cũ ở `<file>.json.bak`. Không thêm endpoint ghi file phía server cho
-`apps/studio` — nó phải chạy được như một app tĩnh rời. **Studio 3D (`apps/studio3d`) là dev server
+**Studio 3D (`apps/studio3d`) là dev server
 chạy trên máy** trong repo video: ghi `scenes/`, `held/` qua endpoint của `packages/cli/studio3d.mjs`,
 lưu kèm hash lúc nạp (file đã đổi trên đĩa thì 409), vá JSON thô thay vì ghi lại object đã parse,
-bản cũ ở `<file>.json.bak`, chỉ nghe `localhost` trừ khi gọi `--host`.
+bản cũ ở `<file>.json.bak`, chỉ trả lời localhost và tailnet (Tailscale) trừ khi gọi `--host`.
 
 **Đừng ngại breaking change.** Video đang làm thì đã pin version. Nhưng đổi hằng số hình học,
 tỉ lệ người (`R`), hệ toạ độ hay cách đặt người thì **nói rõ trong commit** — mọi JSON nhân vật
-và cảnh đã căn sẽ lệch. Cả sáu gói cùng một số version: [README](README.md#phát-hành-một-version).
+và cảnh đã căn sẽ lệch. Cả năm gói cùng một số version: [README](README.md#phát-hành-một-version).
 
 ## 3D là lối chính
 
@@ -61,26 +62,23 @@ Người 3D dựng thẳng từ chúng, không giữ bảng riêng.
 3D phải dựng nó — `sculptMesh`, `torsoMesh`, `glassesMesh` đọc đủ mọi trường (`sculpt.test.ts` kiểm
 cho tóc), và soi bằng `pnpm shots` khi chủ dự án cho phép.
 
-**2D phẳng và 2.5D giữ để render tập cũ và overlay.** Người 2D phẳng (mảnh PNG, bộ phận vẽ code) và
-2.5D (`sculptPaths`, `torsoPaths`, `glassesPaths`, `beardPaths`, `skirtPaths`) không bắt buộc theo mẫu
-mới. Gặp trường hay kiểu chúng chưa biết thì bỏ qua, không ném lỗi.
+**Người que chỉ vẽ bằng three.** Không có người vẽ SVG: mọi người trong `cast` khai `world`, cảnh chỉ có
+lớp vẽ code để `cast` rỗng. Lớp SVG (nền, `fx`, lớp vẽ code) bám người qua `anchorAt` — mốc của người 3D.
 
 ## Bất biến
 
-**Công thức rig chỉ có một chỗ: `packages/rig/src/core`.** Người 3D, người SVG, studio, render và
+**Công thức rig chỉ có một chỗ: `packages/rig/src/core`.** Người 3D, hiệu ứng, studio, render và
 Remotion đều nhập từ đó. Phần 3D dựng khối từ chính bảng kiểu và hàm của lõi (`core/torso.ts`,
 `core/sculpt.ts`, `glassesFrame` của `core/glasses.ts`), không chép lại. Đổi hằng số hay quy ước
 góc thì cập nhật bảng trong `docs/01-rig.md` cho khớp.
 
-**Lõi không import React hay `three`.** Code cần React vào `packages/sketch`, code cần `three` vào
+**Lõi không import React hay `three`.** Code cần React vào `packages/fx`, code cần `three` vào
 `packages/rig/src/*.ts`. `@stickman3d/rig/core` phải nạp được trong Node trần (cli, render, mcp).
 Ở cửa chính `@stickman3d/rig`, `Arm`, `Leg`, `Figure`, `BODY_PARTS`, `BodyPart` là của người 3D; bản
-lõi cùng tên lấy ở `@stickman3d/rig/core` hay `@stickman3d/sketch`.
+lõi cùng tên lấy ở `@stickman3d/rig/core`.
 
-**Một bản lõi trong một app.** Sketch để `@stickman3d/rig` external và lõi ra một chunk chung cho
-cả hai cửa, nên `PARTS` chỉ có một bảng. Bộ phận vẽ sẵn do sketch đăng ký lúc nạp
-(`definePartsBuiltin`): code tra `PARTS` (`propSeat`, hộp đạo cụ dựng từ bộ phận) mà không nạp
-sketch thì không thấy bộ phận vẽ sẵn.
+**Một bản lõi trong một app.** Lõi ra một chunk chung cho cả hai cửa của rig; fx để
+`@stickman3d/rig` external, nên mọi cache của lõi chỉ có một bản.
 
 **`three` là peer dependency** (tuỳ chọn, cho ai chỉ dùng lõi). Hai bản `three` trong một app là
 `instanceof` sai, vật liệu và geometry hỏng mà không báo gì. Repo video đi đường `link:` thì alias
@@ -95,9 +93,8 @@ toạ độ, nên cùng `t` cùng góc máy là cùng ảnh từng pixel.
 xuất ra là chính object đã parse. Không đọc JSON thô ở chỗ nào khác. File đời mới hơn rig thì zod
 báo lỗi phiên bản — cố ý. `fromCharacter` nhận JSON đã qua `parseCharacter`.
 
-**Hộp mảnh và nhóm treo của người SVG chỉ có một bảng: `figureAnchors` trong
-`packages/sketch/src/anchor.ts`** — `<Character>` vẽ bằng nó, `anchorAt` đọc lại nó. Mọi mảnh vẽ ra
-phải đi qua `piece()`: nó gắn `data-piece` / `data-box` / `data-spin` cho studio bấm trúng mảnh.
+**Mốc bám người chỉ có một chỗ: `anchorAt` trong `core/anchor.ts`** — hiệu ứng, lớp vẽ code
+(`ctx.anchor`), `scene_probe` đều hỏi qua nó.
 
 **Hệ toạ độ.** Thế giới rig: x phải, y xuống, z sâu vào cảnh, px (người cao ~430 ≈ 1,7 m, một mét là `RIG_PER_METRE` = 250). Sang three: đảo
 y và z, chia 100 (`toThree`, `U`). Hệ nhóm thân của áo và váy: gốc ở hông, y xuống, z ra trước
@@ -113,8 +110,8 @@ chân trượt khi đi theo `path`. Khung xương (`BONES3`, `roots3`) và luậ
 `actJoints`, `act3.test.ts` giữ hai bên trùng.
 
 **Nét mặt chỉ có một bảng: `core/face.ts`** — khẩu hình, mắt, mày, nếp nhăn là danh sách nét theo
-nghĩa SVG (`MOUTHS`, `EYES`, `BROWS`, `wrinkleMarks`). `<Mouth>`, `<Eyes>`, `<Brow>`, `<Wrinkle>` của
-sketch dựng chúng thành SVG, `face.ts` của người 3D vẽ chúng lên canvas dán trên sọ. Thêm một kiểu là
+nghĩa SVG (`MOUTHS`, `EYES`, `BROWS`, `wrinkleMarks`). `face.ts` của người 3D vẽ chúng lên canvas
+dán trên sọ. Thêm một kiểu là
 thêm một dòng vào bảng; `MouthKind` / `EyeKind` / `BrowKind` và `*_KINDS` lấy từ khoá của bảng.
 
 **Uniform chung `G`** (nắng, bóng, đèn, bản đồ bóng) là một object cho mọi vật liệu `npr`. Giờ trong
@@ -140,9 +137,16 @@ nhập tay `createPipeline({ shadow })` thì phải ôm hết vùng có bóng.
   Lịch sử thuộc git. Sửa tài liệu thì **xoá** câu lịch sử, đừng nối thêm đoạn mới.
 - **Comment ít.** Chỉ khi đọc code không tự suy ra được: một dấu dễ sai, một hệ số phải khớp chỗ
   khác, một con trỏ tới doc. Một dòng.
-- Code của lõi, sketch, fx, cli, render, mcp và studio theo prettier (`pnpm format`). Phần 3D
+- Code của lõi, fx, cli, render, mcp và studio theo prettier (`pnpm format`). Phần 3D
   (`packages/rig/src/*.ts`, `apps/viewer`, `tools/shots.mjs`, `tools/bench.mjs`) viết gọn theo
   lối sẵn có, ngoài prettier.
+
+- **Chờ lệnh chạy nền (render, shots, gate, dev server…) theo PID, không theo chuỗi lệnh**: chạy
+  `nohup <lệnh> > <log> 2>&1 & echo $! > <file.pid>`, chờ bằng
+  `while kill -0 "$(cat <file.pid>)" 2>/dev/null; do sleep 15; done` (hay `tail --pid=<PID> -f /dev/null`), dừng
+  bằng `kill "$(cat <file.pid>)"`. Không chờ hay dừng bằng `pgrep -f`, `pkill -f`, `ps … | grep` với chuỗi lệnh:
+  chuỗi ấy nằm luôn trong dòng lệnh của chính shell đang chạy, nó bắt trúng chính nó (vòng chờ không thoát, `pkill`
+  giết luôn shell, exit 144).
 
 ## Kiểm tra trước khi bảo là xong
 
@@ -153,8 +157,8 @@ pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build
 **`pnpm shots` chỉ chạy khi chủ dự án cho phép** — nó chậm. Đụng tới hình 3D (`packages/rig/src/*.ts`,
 hình học ở `core/`, `apps/viewer`) thì hỏi trước; được phép thì chụp cả bản trước thay đổi, ghép bằng
 `--vs`, `--only` các khung liên quan khi sửa một vùng hẹp, rồi **mở tờ gộp `tmp/shots/<tên>.png` và
-thật sự nhìn** — typecheck đúng không có nghĩa là hình đúng. Đụng tới giao diện studio thì chụp
-nó ở hai bề ngang `390x844`, `1400x900`.
+thật sự nhìn** — typecheck đúng không có nghĩa là hình đúng. Đụng tới giao diện Studio 3D thì
+chụp nó ở hai bề ngang `390x844`, `1400x900`.
 
 ## Giao việc cho agent con
 

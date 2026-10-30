@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 20,
+  "name": "face-eyes-closed",
+  "duration": 0.3,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "shut",
+        "brow": "sad",
+        "mouth": "closed"
+      }
+    }
+  ],
+  "note": "Nhắm mắt chịu thua: mắt nhắm, mày cụp, môi mím; vào ngay rồi giữ. Chỉ ghi `face`, nên chồng lên mọi tư thế, đứng hay ngồi, và nằm dưới track khẩu hình (`talk-lips`): lời đè `mouth`, mắt và mày vẫn của lớp này. Mở mắt mà vẫn cụp là `face-downcast`.",
+  "preview": {
+    "stage": "stand"
+  }
+}

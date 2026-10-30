@@ -9,15 +9,14 @@ import {
   SceneFx,
   sceneFx,
 } from "@stickman3d/fx";
-import { type CameraShot, castCharacter, SCENE_Z, type SceneRuntime } from "@stickman3d/rig";
+import { type CameraShot, SCENE_Z, type SceneRuntime } from "@stickman3d/rig";
 import { Fragment, type ReactNode } from "react";
 import { CHARACTERS } from "../data";
 
 /**
- * Lớp 2D đè lên canvas của cảnh 3D, vẽ trong cùng `viewBox` của `cameraAt`: `back`/`front` của các lớp code phủ cảnh và
+ * Lớp SVG đè lên canvas của cảnh 3D, vẽ trong cùng `viewBox` của `cameraAt`: `back`/`front` của các lớp code phủ cảnh và
  * `scene.fx` (bong bóng, thẻ giờ, chữ dán khung). Không vẽ người, đồ khối hay nền (`bg`) — phần ấy là của sân khấu three.
- * Lớp code trùng tên cảnh (phòng 2D của chính cảnh) bỏ hẳn. Mốc bám người (`ctx.anchor`) là `anchorAt` của người 2D:
- * cùng `lens`, cùng `world`, nên trùng chỗ người 3D.
+ * Lớp code trùng tên cảnh (phòng vẽ SVG của chính cảnh) bỏ hẳn. Mốc bám người (`ctx.anchor`) là `anchorAt` của người 3D.
  */
 export function Overlay3D({
   rt,
@@ -33,7 +32,7 @@ export function Overlay3D({
   codeLayers: readonly CodeLayer[];
 }) {
   const anchor = sceneAnchor(rt, (m) =>
-    m.character && CHARACTERS[m.character] ? castCharacter(m, CHARACTERS[m.character]) : undefined,
+    m.character && CHARACTERS[m.character] ? CHARACTERS[m.character] : undefined,
   );
   const on = codeLayers.filter((l) => l.name !== rt.name && layerCovers(l, rt.name));
   const ctx = { name: rt.name, t, cam, marks: rt.marks, url, lens: rt.lens, anchor };

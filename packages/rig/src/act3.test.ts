@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { act, type Acting } from './act';
-import { actJoints, actPalms, armInner, armSide, CLAD_DEPTH, CLAD_GAP, cladArm, cladProfile, cladThigh, roots3, SPLAY3, THIGH_CLEAR, THIGH_RAMP, type ActJoint } from './core/act3';
+import { actJoints, actPalms, actReach, armInner, armSide, CLAD_DEPTH, CLAD_GAP, cladArm, cladProfile, cladThigh, roots3, SPLAY3, THIGH_CLEAR, THIGH_RAMP, type ActJoint } from './core/act3';
 import { D } from './core/constants';
+import { prefPole } from './core/elbow';
 import { HAND_BONES } from './core/hand';
 import { defaultCharacter, limbWidths, SkirtSchema } from './core/schema';
 import { garmentOf, profile } from './core/torso';
@@ -195,7 +196,7 @@ describe('actJoints', () => {
     }
   });
 
-  it('kênh 2D của người 3D về dáng nghỉ: góc soạn trên mặt khung không đổi khớp', () => {
+  it('kênh không nâng của người 3D về dáng nghỉ: góc soạn trên mặt khung không đổi khớp', () => {
     const c = defaultCharacter();
     const base = { af: [0, 0, 0], an: [0, 0, 0], lf: [0, 0], ln: [0, 0], torso: 0, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1] };
     const world = { hip: [0, -170, 0], yaw: 0.4, s: 1, flip: false };
@@ -285,8 +286,9 @@ describe('actJoints', () => {
         for (const k of [`elbow${t}`, `wrist${t}`, `hand${t}`] as ActJoint[])
           for (let j = 0; j < 3; j++) expect(J[k][j]).toBeCloseTo(D3[k][j], 6);
       }
-      // mỗi bước đích dời chừng 2 đơn vị rig: bàn tay xoay không quá vài độ
-      expect(worst / D).toBeLessThan(8);
+      // mỗi bước đích dời chừng 2 đơn vị rig: bàn tay xoay không quá vài độ — nhiều nhất khi đích qua sau gáy ngang vai,
+      // gần điểm suy biến của hướng khuỷu ưu tiên (`elbowPref`)
+      expect(worst / D).toBeLessThan(15);
     }
   });
 
@@ -304,5 +306,183 @@ describe('actJoints', () => {
       // tay duỗi hẳn thì IK gập khuỷu nhanh theo đích (căn bậc hai), nhưng chỉ quanh bản lề cũ
       expect(x0.angleTo(up(p, -1, x)) / D, JSON.stringify(an)).toBeLessThan(0.05);
     }
+  });
+});
+
+describe('khuỷu qua ranh mốc tay', () => {
+  const H = defaultCharacter().rig.height;
+  const v3 = (x: readonly number[]) => new THREE.Vector3(x[0], x[1], x[2]);
+  /** Xoắn (độ) của khuỷu quanh trục vai → cổ tay từ khung `a` sang `b`, trục khung trước vận chuyển song song sang khung sau như `elbowTrack`; tay gần thẳng là `0` */
+  const swivel = (a: Record<ActJoint, number[]>, b: Record<ActJoint, number[]>, t: 'R' | 'L') => {
+    const n0 = v3(a[`wrist${t}`]).sub(v3(a[`shoulder${t}`])).normalize();
+    const n1 = v3(b[`wrist${t}`]).sub(v3(b[`shoulder${t}`])).normalize();
+    const e = v3(a[`elbow${t}`]).sub(v3(a[`shoulder${t}`])).applyQuaternion(new THREE.Quaternion().setFromUnitVectors(n0, n1));
+    const p = e.clone().projectOnPlane(n1);
+    const q = v3(b[`elbow${t}`]).sub(v3(b[`shoulder${t}`])).projectOnPlane(n1);
+    if (Math.min(p.length(), q.length()) < 0.1 * e.length()) return 0;
+    return Math.atan2(p.clone().cross(q).dot(n1), p.dot(q)) / D;
+  };
+  /** Khớp `actJoints` của người `a` theo `t` trong cảnh một người */
+  async function joints(cast: unknown, actions: Record<string, unknown>) {
+    const { parseScene, resolveScene, sceneAt } = await import('./core/scene');
+    const { parseAction } = await import('./core/action');
+    const { body3 } = await import('./core/figure3d');
+    const c = defaultCharacter();
+    const acts = Object.fromEntries(Object.entries(actions).map(([k, j]) => [k, parseAction(j).data!]));
+    const r = parseScene({ duration: 3, lens: { eye: [0, -300, -1500], yaw: 0, pitch: 6, f: 800 }, cast: [cast] });
+    if (!r.success) throw new Error(r.error.message);
+    const rt = resolveScene(r.data, acts, { a: H }, { a: body3(c) });
+    return (t: number) => actJoints(c, sceneAt(rt, 'a', t, H, body3(c)) as unknown as Acting)!;
+  }
+  const rel = (X: Record<ActJoint, number[]>, k: ActJoint, t: 'R' | 'L') => v3(X[k]).sub(v3(X[`shoulder${t}`]));
+  /** Khuỷu dời bao nhiêu quá `1,5 ×` cổ tay (so với vai) giữa hai tư thế */
+  const jump = (a: Record<ActJoint, number[]>, b: Record<ActJoint, number[]>, t: 'R' | 'L') =>
+    rel(b, `elbow${t}`, t).distanceTo(rel(a, `elbow${t}`, t)) - 1.5 * rel(b, `wrist${t}`, t).distanceTo(rel(a, `wrist${t}`, t));
+  /** Trong `[t0, t1]` của tay `t`, mỗi khung 60 fps cổ tay (so với vai) dời dưới 3 đơn vị rig: bước xoắn lớn nhất, bước khuỷu vượt `1,5 ×` bước cổ tay nhiều nhất bao nhiêu, số cặp khung đã đo */
+  async function worst(cast: unknown, actions: Record<string, unknown>, t: 'R' | 'L', t0: number, t1: number) {
+    const at = await joints(cast, actions);
+    const out = { swivel: 0, elbow: 0, pairs: 0 };
+    let prev: Record<ActJoint, number[]> | undefined;
+    for (let i = Math.round(t0 * 60); i <= Math.round(t1 * 60); i++) {
+      const J = at(i / 60);
+      if (prev && rel(J, `wrist${t}`, t).distanceTo(rel(prev, `wrist${t}`, t)) < 3) {
+        out.swivel = Math.max(out.swivel, Math.abs(swivel(prev, J, t)));
+        out.elbow = Math.max(out.elbow, jump(prev, J, t));
+        out.pairs++;
+      }
+      prev = J;
+    }
+    return out;
+  }
+  /** Quanh từng ranh `ts` của tay `t`: khuỷu ở `t₀ − ε`, `t₀`, `t₀ + ε` dời quá `1,5 ×` cổ tay nhiều nhất bao nhiêu */
+  async function edges(cast: unknown, actions: Record<string, unknown>, t: 'R' | 'L', ts: number[], eps = 1e-4) {
+    const at = await joints(cast, actions);
+    let w = 0;
+    for (const t0 of ts) {
+      const [a, b, c] = [at(t0 - eps), at(t0), at(t0 + eps)];
+      w = Math.max(w, jump(a, b, t), jump(b, c, t));
+    }
+    return w;
+  }
+
+  it('mốc cuối không khai `elbow` sau các mốc có `elbow`: khuỷu đi liền về khuỷu ưu tiên, không nhảy ở mốc cuối', async () => {
+    for (const intent of [{ palm: 'forward', fingers: 'up' }, {}]) {
+      const key = (t: number, at: number[], elbow?: number[]) => ({ t, right: { at, ...intent, ...(elbow && { elbow }) } });
+      const cast = {
+        id: 'a',
+        world: { at: [0, 0, 0], yaw: 155, hands: [key(0, [-60, -260, 80], [0, 0.5, 1]), key(0.5, [-80, -300, 60], [0, 0.5, 1]), key(1, [-78, -296, 62])] },
+      };
+      const w = await worst(cast, {}, 'R', 0.6, 1.4);
+      expect(w.pairs, JSON.stringify(intent)).toBeGreaterThan(40);
+      expect(w.swivel, JSON.stringify(intent)).toBeLessThan(5);
+      expect(w.elbow, JSON.stringify(intent)).toBeLessThan(3);
+      expect(await edges(cast, {}, 'R', [0.5, 1]), JSON.stringify(intent)).toBeLessThan(0.05);
+    }
+  });
+
+  it('đích thế giới mờ về `w` 0 nhường đích hệ thân theo mốc của hành động hay chuỗi góc: khuỷu liền qua chỗ `w` chạm 0', async () => {
+    // `yaw` 155 lật người: tay trái là tay gần (`armNear`); đích theo mốc và lòng tay theo ý định thì tay vẫn qua bộ giải khi
+    // đích thế giới đã hết
+    const hold = (elbow?: number[]) => ({
+      schemaVersion: 19,
+      name: 'giu',
+      duration: 1,
+      end: 'hold',
+      authoredAt: 'side',
+      mask: ['armNear', 'hand'],
+      keys: [{ t: 0, pose: {}, reach: { armNear: { to: 'chest', offset: [30, 30, 10], point: 'grip', ...(elbow && { elbow }) } }, hand: { armNear: { palm: 'down', fingers: 'forward' } } }],
+      events: [],
+    });
+    for (const elbow of [[-0.6, 1, 0.4], undefined, null]) {
+      const left = { to: 'hip', offset: [18, 0, 32], point: 'grip', palm: 'in', fingers: 'forward', elbow: [-0.6, 1, 0.4] };
+      const cast = {
+        id: 'a',
+        world: { at: [0, 0, 0], yaw: 155, hands: [{ t: 0, left }, { t: 0.5, left }, { t: 1, left: null }] },
+        ...(elbow !== null && { tracks: [{ clips: [{ action: 'giu', start: 0 }] }] }),
+      };
+      const acts = elbow === null ? {} : { giu: hold(elbow) };
+      const w = await worst(cast, acts, 'L', 0.6, 1.4);
+      expect(w.pairs, JSON.stringify(elbow)).toBeGreaterThan(25);
+      expect(w.swivel, JSON.stringify(elbow)).toBeLessThan(5);
+      expect(w.elbow, JSON.stringify(elbow)).toBeLessThan(3);
+      expect(await edges(cast, acts, 'L', [0.5, 1]), JSON.stringify(elbow)).toBeLessThan(0.05);
+    }
+  });
+
+  it('`ease: auto` và khoá khuỷu qua mốc có / không `elbow`: khuỷu liền ở từng ranh mốc', async () => {
+    const at = (x: number) => [-60 - x * 20, -280 + x * 10, 70];
+    for (const extra of [{ ease: 'auto' }, { elbowLock: true }, {}]) {
+      const lock = 'elbowLock' in extra;
+      const key = (t: number, x: number, elbow?: number[]) => ({
+        t,
+        right: { at: at(x), palm: 'forward', fingers: 'up', ...(elbow && { elbow, ...extra }), ...(!lock && extra) },
+      });
+      const cast = {
+        id: 'a',
+        world: { at: [0, 0, 0], yaw: 155, hands: [key(0, 0, [0, 0.5, 1]), key(0.5, 1, [0.4, 0.6, 0.6]), key(1, 2), key(1.5, 1, [-0.3, 0.4, 0.9]), key(2, 0)] },
+      };
+      expect(await edges(cast, {}, 'R', [0.5, 1, 1.5]), JSON.stringify(extra)).toBeLessThan(0.05);
+      const w = await worst(cast, {}, 'R', 0.2, 1.9);
+      expect(w.pairs, JSON.stringify(extra)).toBeGreaterThan(60);
+      expect(w.swivel, JSON.stringify(extra)).toBeLessThan(8);
+    }
+  });
+
+  it('ý định lòng tay hiện dần từ 0: khuỷu liền theo phần ý định, không bật ở ngưỡng nào', async () => {
+    // cổ tay đứng yên, chỉ ý định đổi: `smooth` ra phần ý định 0,01 ở `u` ≈ 0,0585, quét bước 1e-4 s quanh đó
+    for (const elbow of [undefined, [0, 0.5, 1]]) {
+      const right = { at: [-70, -270, 80], ...(elbow && { elbow }) };
+      const cast = { id: 'a', world: { at: [0, 0, 0], yaw: 155, hands: [{ t: 0, right }, { t: 1, right: { ...right, palm: 'forward', fingers: 'up' } }] } };
+      const at = await joints(cast, {});
+      let w = 0;
+      let prev = at(0.04);
+      for (let i = 1; i <= 400; i++) {
+        const J = at(0.04 + i * 1e-4);
+        w = Math.max(w, rel(J, 'elbowR', 'R').distanceTo(rel(prev, 'elbowR', 'R')));
+        prev = J;
+      }
+      // công tắc ý định 1% làm khuỷu bật chừng 0,01 rig ở đích không khai `elbow`; liền thì dưới 1e-4
+      expect(w, JSON.stringify(elbow)).toBeLessThan(1e-3);
+    }
+  });
+});
+
+describe('actReach: hướng khuỷu khai hoà với khuỷu ưu tiên theo `elbowW`', () => {
+  type V = [number, number, number];
+  const frame = { point: (v: V): V => v, dir: (v: V): V => v };
+  const chain: [V, V, V] = [[0, 0, 0], [0, -1, 0], [0, -1, 1]];
+  const I: number[] = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+  const dist = (a: readonly number[], b: readonly number[]) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  const elbow = (rb?: object, rw?: object) => actReach(frame, 1, chain, 1, 1, rb as never, rw as never)![0];
+
+  it('`elbowW` 1 − ε ↔ 1 và ε ↔ không khai: khuỷu không dời (đích thân hoà dở, hướng khai có phần dọc trục)', () => {
+    const rb = { w: 0.5, at: [50, 100, 50], elbow: [1, 2, 3] };
+    expect(dist(elbow({ ...rb, elbowW: 1 - 1e-8 }), elbow({ ...rb, elbowW: 1 })) * 100).toBeLessThan(1e-4);
+    expect(dist(elbow({ ...rb, elbowW: 1e-8 }), elbow({ w: 0.5, at: rb.at })) * 100).toBeLessThan(1e-4);
+  });
+
+  it('hướng khai ở hai phía sát hướng đối diện khuỷu ưu tiên: khuỷu không lật; quét `elbowW` 0 → 1 liền', () => {
+    const at: V = [40, 60, -30];
+    const T: V = [at[0] / 100, -at[1] / 100, -at[2] / 100];
+    const n = T.map((x) => x / Math.hypot(...T)) as V;
+    const p = prefPole(I as never, 1, [0, 0, 0], T, 2);
+    const d = p.map((x, i) => x - n[i] * (p[0] * n[0] + p[1] * n[1] + p[2] * n[2])) as V;
+    const o: V = [n[1] * d[2] - n[2] * d[1], n[2] * d[0] - n[0] * d[2], n[0] * d[1] - n[1] * d[0]];
+    // hướng đối diện khuỷu ưu tiên, nghiêng `ε` (radian) về hai phía; thế giới rig
+    const e = (eps: number) => d.map((x, i) => -x * Math.cos(eps) + o[i] * Math.sin(eps)).map((x, i) => (i ? -x : x));
+    for (const elbowW of [0.25, 0.5, 0.75]) {
+      const a = elbow(undefined, { w: 1, at, elbow: e(1e-8), elbowW });
+      const b = elbow(undefined, { w: 1, at, elbow: e(-1e-8), elbowW });
+      expect(dist(a, b) * 100, String(elbowW)).toBeLessThan(1e-3);
+    }
+    let prev: V | undefined;
+    let worst = 0;
+    for (let i = 0; i <= 1000; i++) {
+      const E = elbow(undefined, { w: 1, at, elbow: e(0), elbowW: i / 1000 });
+      if (prev) worst = Math.max(worst, dist(E, prev) * 100);
+      prev = E;
+    }
+    // khuỷu đi nửa vòng quanh trục vai → cổ tay (chừng 2 · 100 rig) qua 1000 bước
+    expect(worst).toBeLessThan(2);
   });
 });

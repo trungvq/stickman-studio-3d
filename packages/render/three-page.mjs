@@ -1,4 +1,4 @@
-// Trang Chromium của `stickman-render --three`: `boot(rig, world)` nhận rig và module `stickman.world` của repo
+// Trang Chromium của ảnh three (`threeShots`): `boot(rig, world)` nhận rig và module `stickman.world` của repo
 // video gói chung một bản (`bundleThreePage`), dựng sân khấu three như `Scene3D` của Remotion rồi vẽ từng mốc.
 // Node điều khiển qua `globalThis.__three` — three.mjs.
 
@@ -9,11 +9,37 @@ export function boot(rig, world) {
     held = null;
   };
 
-  /** Cảnh three: `worldOf` của repo như `check`, cảnh repo không dựng thì `plainRoom()` */
-  const build = ({ id, scene, data, plain }) => {
-    const { characters, actions, animals, props, held: items, hands, heights, bodies } = data;
-    const runtime = rig.resolveScene(scene, actions, animals, props, heights, bodies, items, hands);
-    const ctx = { id, scene, runtime, characters, actions, animals, props, heights, bodies };
+  /**
+   * Cảnh three: `worldOf` của repo như `check`, cảnh repo không dựng thì `plainRoom()`; `preview` là bối cảnh xem thử
+   * (`previewSet` của rig) thay cả hai; `props` là sân khấu thử của `stickman gen` (`propWorld` của rig, `{ list, h }`)
+   */
+  const build = ({ id, scene, data, plain, preview, props }) => {
+    const { characters, actions, held: items, hands, heights, bodies } = data;
+    const runtime = rig.resolveScene(scene, actions, heights, bodies, items, hands);
+    const ctx = { id, scene, runtime, characters, actions, heights, bodies };
+    if (props)
+      return {
+        w: rig.buildWorld(
+          scene,
+          runtime,
+          {
+            ...rig.propWorld(props.list, { h: props.h }),
+            extra: rig.previewExtra(scene, items),
+          },
+          ctx,
+        ),
+        from: "props",
+      };
+    if (preview)
+      return {
+        w: rig.buildWorld(
+          scene,
+          runtime,
+          { set: () => rig.previewSet(preview.stage, preview) },
+          ctx,
+        ),
+        from: "preview",
+      };
     if (!plain && typeof world.worldOf === "function") {
       const w = world.worldOf(scene.name, ctx);
       if (w) {

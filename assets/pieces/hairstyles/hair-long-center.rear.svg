@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
-<title>Dài rẽ ngôi giữa — rear</title>
-<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
-<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 56 162 C 52 100 96 50 162 50 C 206 48 234 58 246 70 Q 240 80 226 90 C 224 150 226 224 232 296 C 236 326 238 346 232 360 Q 200 372 160 364 Q 120 372 82 362 Q 44 370 24 356 C 14 342 22 322 32 296 C 46 254 56 200 56 162 Z"/>
-<path d="M 100 224 C 92 274 92 326 102 358" fill="none"/>
-<path d="M 190 234 C 186 284 188 336 196 358" fill="none"/>
-</g>
-</svg>

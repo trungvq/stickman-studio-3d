@@ -2,37 +2,43 @@
 
 Trang xem cảnh three của một repo video: cùng `worldOf` / `buildWorld` mà Remotion vẽ (`Scene3D` của repo), tua giây,
 camera cảnh hay camera tự do, soi bàn tay và số đo cầm đồ, soạn kiểu cầm bằng mắt, chỉnh dáng ngón của tay không cầm đồ
-thành dáng có tên dùng lại được, sửa mốc tay và mốc món trên thanh tua ([Dáng tay](#dáng-tay)). Studio 2D (`apps/studio`: nhân vật,
-hành động, mảnh) chạy bằng `stickman studio2d`.
+thành dáng có tên dùng lại được, sửa mốc tay và mốc món trên thanh tua ([Dáng tay](#dáng-tay)), xem thử từng hành động của
+hai lớp trên một người ([Thư viện](#thư-viện)), soi bộ sinh hành động trên sân khấu thử ([Bộ sinh](#bộ-sinh)).
 
 ## Chạy
 
 Trong repo video (lệnh `stickman studio` của `@stickman3d/cli`, cùng Vite đi theo CLI):
 
 ```bash
-pnpm studio                       # http://localhost:5180/?scene=t02-s036-lay-het
+pnpm studio                       # http://localhost:5180/?scene=t02-s036-lay-het, cả IP tailnet / *.ts.net
 pnpm studio --port 5190           # cổng khác
-pnpm studio --host 0.0.0.0        # nghe cả mạng: cùng hai đường ghi dưới đây, chỉ dùng trên mạng tin được
+pnpm studio --host 0.0.0.0        # nghe cả mạng, bỏ chặn: cùng hai đường ghi dưới đây, chỉ dùng trên mạng tin được
 ```
 
-Trong repo này, xem một repo video bằng mã nguồn rig của chính repo này:
+Trong repo này, bằng mã nguồn rig của chính repo này:
 
 ```bash
-pnpm --filter @stickman3d/rig build && pnpm --filter @stickman3d/sketch build && pnpm --filter @stickman3d/fx build
-STICKMAN_ROOT=~/Work/Dev/youtube-video/jp-sukatto-nhom-cam pnpm --filter studio3d dev
+pnpm --filter @stickman3d/rig build && pnpm --filter @stickman3d/fx build
+pnpm --filter studio3d dev                                                  # gốc là repo này: chỉ lớp chung, không có cảnh
+STICKMAN_ROOT=~/Work/Dev/youtube-video/<repo> pnpm --filter studio3d dev   # xem một repo video
 ```
 
 Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`); `vite.config.ts` ở đây chỉ gọi nó.
 
-- **Gốc là repo video** (thư mục đang đứng; `STICKMAN_ROOT` khi chạy trong repo này, bỏ trống là
-  `../youtube-video/jp-sukatto-nhom-cam` cạnh repo này). Trang đọc cảnh ở `scenes/`, dữ liệu qua `worldData` của CLI (đọc
+- **Gốc là repo video** (thư mục đang đứng; `STICKMAN_ROOT` khi chạy trong repo này, bỏ trống là gốc repo này: không có
+  `scenes/`, `actions/`, `characters/` nên chỉ có lớp chung). Trang đọc cảnh ở `scenes/`, dữ liệu qua `worldData` của CLI (đọc
   lại mỗi lần nạp cảnh), cảnh three qua `stickman.world` của `package.json` repo. Cảnh không có trong `worldOf` thì dựng
   `plainRoom()`. Món `held/` đọc thêm bản JSON thô, parse bằng rig của trang (`worldData` dùng rig bản dựng của CLI, có
   thể cắt mất trường mới như `authored`); dáng tay `hands/` của repo cũng thế, đè lên thư viện hai lớp của `worldData`.
-- **Rig của trang.** `stickman studio` lấy `@stickman3d/rig`, `sketch`, `fx` mà repo video nạp: gói `link:` tới một cây
+- **Rig của trang.** `stickman studio` lấy `@stickman3d/rig`, `fx` mà repo video nạp: gói `link:` tới một cây
   nguồn thì trang lấy `src/` (sửa rig là trang nạp lại), cài từ registry thì `dist`. Chạy trong repo này thì luôn là `src/`
   của repo này. `three`, `react`, `zod` lấy bản của repo video (thiếu thì bản của app): trang và file của repo video chung
-  một bản mỗi gói. `remotion` nhận bản rỗng (`src/hollow.ts`). Bản dựng của ba gói chỉ cho phía Node (`worldData`).
+  một bản mỗi gói. `remotion` nhận bản rỗng (`src/hollow.ts`). Bản dựng của hai gói chỉ cho phía Node (`worldData`).
+- **Thư viện.** `GET /api/library` trả `{ root, actions, characters, data, heldRaw, heldHash, handsRaw, handsHash, heldOpts,
+  heldOut }`: `actions` là `{ name, layer, raw }`, `characters` là `{ name, layer }`, xếp theo tên, khoá như `data` (hành
+  động không đuôi, nhân vật có `.json`); `layer` là `common` hay `repo`, trùng tên thì bản của repo đè; `raw` là JSON thô của
+  bản thắng để trang parse bằng rig của nó. File không qua schema của rig bản dựng thì không có mặt. Phần còn lại như
+  `GET /api/scene`. Gốc thiếu `package.json` hay `actions/`, `characters/` vẫn chạy.
 - **Ghi.** Ba đường, cả ba kiểm hash, vá JSON thô và giữ `<file>.json.bak`:
   - `POST /api/scene?name=<cảnh>` `{ hash, scene }`: `scene` là JSON thô của cảnh đã sửa; server lấy `cast[*].world.hands`,
     `cast[*].tracks` và `items` của nó vá vào file trên đĩa; `scene` thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên, xoá hết là gửi mảng
@@ -45,6 +51,10 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
   - `POST /api/hands?name=<dáng>` `{ hash, shape }`: khung chỉnh dáng tay ghi `hands/<dáng>.json` của repo. `hash: null` là
     tạo mới — file đã có thì 409; tên sai (`handShapeNameProblem`: chữ thường, số, gạch nối, không trùng `HAND_POSES`) hay
     `shape` không qua `parseHandShape` thì 400. Trả `{ file, shape, hash }`.
+- **Bộ sinh.** `POST /api/gen` `{ kind, params, who }`: chạy khô `stickman gen <kind>` trên sân khấu thử của trang soi
+  ([Bộ sinh](#bộ-sinh)), không ghi gì. Trả `{ kind, ok, name, action, scene, checks, lines }`, kèm `roles` (`sit`), `pourer`
+  (`pour`). Tham số sai (`paramProblems`), bộ sinh lạ, người lạ: 400; bộ sinh từ chối (lỗi tìm slot, ngoài tầm): 422; cả hai
+  kèm `{ error, lines }`.
 - **Ảnh.** `POST /api/snap?name=<cảnh>` `{ png, t }`: `png` là PNG base64 của **Chép view**, ghi vào
   `tmp/studio3d/<cảnh>-<giây>s.png` của repo, trả `{ file }`. Cảnh không có thì 404, không phải PNG thì 400.
 - **Hash.** `GET /api/scene` trả `hash` của file cảnh, `heldHash` của từng món và `handsHash` của từng dáng trong `hands/`, là sha256 của byte trên đĩa lúc nạp. Lưu
@@ -102,11 +112,11 @@ Nút **Chép view** trên thanh trên dừng phát, vẽ lại và đo bàn tay 
   chưa lưu (link và lệnh mở bản trên đĩa).
 
 Camera ghi ở hệ của JSON cảnh, agent không phải quy đổi: camera cảnh là ống kính đang vẽ (`scene.lens`, hay ống kính
-`worldOf` đặt theo giây) cùng khung cắt `cameraAt` ở giây ấy, kèm lệnh `stickman-render --three` vẽ lại khung không cần
+`worldOf` đặt theo giây) cùng khung cắt `cameraAt` ở giây ấy, kèm lệnh `stickman-render --scene` vẽ lại khung không cần
 trình duyệt; camera tự do quy sẵn ra một `"lens"` dán thẳng vào cảnh — với khung cắt `camera[]` ở x 0, y 0, zoom 1 thì
 camera cảnh thấy đúng ảnh. Link mở lại giữ camera tự do ở hệ three (`pos`, `at`, `fov` dưới đây).
 
-Trang không ở `localhost` / https (`--host` mở từ điện thoại qua `http://`) thì không có clipboard: đoạn chữ hiện trong
+Trang không ở `localhost` / https (mở từ máy khác qua `http://`) thì không có clipboard: đoạn chữ hiện trong
 hộp, nút **Chép** trong hộp chép nó.
 
 URL luôn giữ view đang xem, mở link là về đúng view ấy:
@@ -126,6 +136,106 @@ Panel bên trái (nút ⇆ gập / mở, nhớ trong `localStorage`) liệt kê 
 cảnh không theo tập vào nhóm `khác`), cảnh đang mở viền cam. Ô lọc nhận nhiều từ (mọi từ phải có trong tên), Enter mở cảnh
 đầu, Esc xoá lọc. Nhấp một cảnh là mở nó (có thay đổi chưa lưu thì hỏi trước). Màn hẹp (≤ 760 px, hay điện thoại ngang) panel
 thành ngăn kéo mở bằng nút ☰ đầu thanh trên, chọn cảnh xong tự đóng; ô cảnh trên thanh trên vẫn gõ được.
+
+## Thư viện
+
+Công tắc **Cảnh / Thư viện / Bộ sinh** đầu thanh trên đổi chế độ (tải lại trang; mỗi chế độ nhớ view cuối của nó trong
+`localStorage`). Thư viện chỉ xem: một người diễn một hành động trong cảnh dựng trong bộ nhớ (`previewScene` của rig,
+`core/preview.ts`, không ghi đĩa), đi đúng đường `parseScene` → `resolveScene` → `buildWorld` của cảnh thật, bối cảnh là
+phòng trống rộng cộng khối theo `stage` (`previewSet`, `packages/rig/src/preview.ts`). `pnpm bang-hanh-dong` của repo
+video dựng đúng cảnh ấy. Dữ liệu là `GET /api/library`: hành động và nhân vật của cả
+hai lớp, hành động parse bằng rig của trang.
+
+- **Danh sách** (panel trái, ngăn kéo ☰ khi hẹp): mọi hành động. Nhóm theo gốc tên
+  (`src/libraryList.ts`): bỏ đuôi `3d` và hậu tố mức, phía, pha (số, `soft`, `big`, `near`, `far`, `left`, `right`,
+  `hold`, `out`), rồi bỏ tiếp từng từ biến chừng nào phần còn lại là gốc của hành động khác (`bow-quick-3d` về `bow` khi có
+  `bow-3d`; `look-up-3d` giữ gốc `look-up` vì không có `look`). Trong nhóm, bản chỉ khác mức, phía, pha đứng trước. Bản
+  của repo ghi `repo`. Ô tìm nhận nhiều từ, Enter mở dòng đầu, Esc xoá.
+- **Gập nhóm**: nhóm nhiều bản chỉ hiện dòng gốc `▸ gốc · n`; bấm dòng gốc để mở / gập. Nhóm chứa hành động đang chọn tự
+  mở (dòng gốc tô màu), ô tìm có chữ thì mọi nhóm có bản khớp mở. Bấm tay thắng hai luật ấy và giữ trong phiên (không vào
+  URL), trừ: gõ tìm mở lại các nhóm đã bấm gập, chọn một hành động mở lại nhóm của nó.
+- **Ẩn khẩu hình**: hành động chỉ nhép miệng ẩn mặc định — theo nội dung, không theo tên: có mốc, chỉ ghi kênh `face`
+  (`mask` khai đúng `["face"]` hay không khai), mọi mốc có `pose` rỗng, không `reach`, `hand`, `layer`, `equip`, nét mặt
+  chỉ đổi `mouth` (`isMouthOnly`, `src/libraryList.ts`). Đó là các file `lip-*` của `pnpm lipsync` (docs/07) và vòng
+  nhép miệng như `talk-lips`. Công tắc **Hiện khẩu hình (n)** dưới ô tìm bật lại, `n` là số bị ẩn khớp ô tìm; đang tìm mà
+  có khẩu hình khớp bị ẩn thì cuối danh sách có thêm dòng `n khẩu hình khớp bị ẩn — hiện`. Hành động đang mở (từ URL) vẫn
+  hiện trong danh sách dù thuộc loại ẩn. Biến thể (V, nút ở panel phải) chỉ tính các bản đang hiện; hành động đang mở là khẩu hình thì tính
+  cả nhóm của nó.
+- **Panel phải**: người diễn (bốn người mẫu `sample-man`, `sample-woman`, `sample-heavy`, `sample-kimono` lên đầu, rồi
+  nhân vật của repo, rồi phần còn lại của lớp chung), góc máy, thẻ hành động: lớp chung hay repo, `duration` và `end`, kênh
+  (`mask`; không khai thì kênh suy từ mốc), nền và `stage`, món cầm và người kia (`preview.hold`, `preview.partner`), lối
+  soạn, giây của cảnh thử, `note`, các biến thể cùng gốc (nhấp để đổi).
+- **Món cầm và người kia** ([docs/01](../../docs/01-rig.md#hành-động)): `preview.hold` thành mốc `world.hands` giây 0 của
+  người diễn, món là khối dựng thẳng từ `shape` của `held/<món>.json` (món treo có `seats` mà hình không có quai thì thêm
+  hai sợi quai lên mốc treo). `preview.partner` thêm người thứ hai — người đầu danh sách khác người diễn, thu phóng cho
+  cao bằng người diễn, cầm món của `partner.hold` — đứng ở `at`, nhìn vào người diễn; máy nhìn vào giữa hai người (góc Trước: mắt máy ngay trước người diễn,
+  để người diễn không lật). Góc máy mà người kia đứng chắn giữa máy và người diễn thì người kia ẩn,
+  thẻ ghi "ẩn ở góc này".
+- **Góc máy** quanh người, theo hướng mặt: Trước, 3/4 gần (phía tay phải — kênh gần khi không lật), 3/4 xa (phía tay
+  trái, người lật), Nghiêng (phía tay phải), Sau. Bản `-near` và `-far` của cùng hành động thấy khác nhau ở 3/4 gần và 3/4
+  xa. Người đi (`walk`, `run-3d`…) thì máy bám hông. Camera tự do vẫn dùng được; đổi góc máy là về camera cảnh.
+- **Phát**: ▶ / Space, thanh tua, tốc độ `0,25×` / `1×`, **Lặp** (tắt thì dừng ở cuối). Cảnh thử: `end: "wrap"` lặp đủ
+  ≥ 3 s, `end: "hold"` một lượt rồi giữ 1 s.
+
+| Phím (Thư viện) | Việc |
+|---|---|
+| ↑ ↓ | Dòng trước / sau trong danh sách (theo ô tìm): bản trong nhóm đang mở; nhóm gập là một bước, mở bản đầu của nhóm |
+| V · Shift+V | Biến thể sau / trước cùng gốc |
+| 1 – 5 | Góc máy: Trước, 3/4 gần, 3/4 xa, Nghiêng, Sau |
+| L | Bật / tắt lặp |
+| R | Nạp lại thư viện từ đĩa, giữ giây đang xem |
+| Space, ← →, C | Như chế độ Cảnh |
+
+URL giữ trạng thái, tải lại trang vẫn về đúng chỗ: `?library=1&action=<hành động>&who=<nhân vật, không .json>&angle=<front
+| near | far | side | back>`, thêm `speed=0.25`, `loop=0`, `mouth=1` (hiện khẩu hình) khi khác mặc định, cùng `t`, `cam`, `pos`, `at`, `fov` như
+[Chép view](#chép-view). Hành động hay người không có thì về `stand-3d` và người đầu danh sách.
+
+## Bộ sinh
+
+Trang soi bộ sinh hành động (`stickman gen <kiểu>`, [docs/13](../../docs/13-vai-tro-do.md#9-trang-soi-bộ-sinh)): công tắc
+**Bộ sinh** đầu thanh trên. Một trang chung vẽ mọi bộ sinh từ bản mô tả `GEN_PAGES` của `@stickman3d/cli/gen-pages`
+(`packages/cli/gen-pages.mjs`): thêm bộ sinh là thêm bản mô tả, không viết trang. Trang chỉ xem: không ghi `actions/`.
+
+- **Tham số** (panel trái, ngăn kéo ☰ khi hẹp): nút chọn bộ sinh (`Ngồi · sit`, `Rót · pour`), rồi một ô cho mỗi tham số
+  của `params` — `enum` là ô chọn (tên tiếng Việt kèm id), `number` là thanh kéo cộng ô số trong `min`…`max`, `bool` là ô
+  đánh dấu, `point` là ba ô `x, y, z`; tham số mặc định `auto` có ô **tự động** (bật thì bộ sinh tự chọn, ô số hiện số tự
+  động của kiểu đang chọn, `GEN_PAGES[kiểu].auto`). Ô phụ ẩn khi `when` không đúng (chân co khi chân so le, số đo tay vịn
+  khi có tay vịn…). Ô số gõ sai (trống, không phải số, ngoài tầm) viền đỏ kèm dòng báo dưới ô, tham số giữ giá trị đang
+  dùng; rời ô thì ô về giá trị ấy. Ô khác mặc định có vạch cam bên trái; **Mặc định** đưa mọi ô về mặc định.
+- **Chạy.** Đổi tham số thì sau khi ngừng gõ (0,45 s) trang dựng ngay **sân khấu thử** từ `stage(p, who)` — cảnh qua
+  `parseScene` → `resolveScene` → `buildWorld` với `propWorld(props)` làm `WorldSpec` (ghế, bàn, để chân, chén thử dựng từ
+  mục vai trò), món thử (chai) qua `previewExtra`, như Thư viện — rồi gửi `POST /api/gen`; server dựng lại cùng sân khấu,
+  chạy khô bộ sinh, trang phát hành động sinh ra trên chính sân khấu ấy. Một lượt một lúc: đổi tham số giữa chừng thì kết
+  quả của lượt đang chạy bỏ đi, lượt mới chạy khi đã ngừng gõ và lượt cũ xong. Một lượt mất vài giây (`pour` lâu hơn
+  `sit`); lúc ấy server Vite bận.
+- **Panel phải**: người diễn và góc máy như Thư viện (đổi góc máy là sinh lại: chân, tay gần là bên nào theo ống kính), rồi
+  thẻ kết quả — đạt / không đạt, số lỗi, cảnh báo, tên hành động sinh ra, **bảng tự kiểm**: mỗi dòng một luật (cổ tay, tầm
+  với, đặt trên mặt, không lấn, mặt ngồi, điểm tiếp xúc, điểm rót trong miệng…) kèm mức, giây tệ nhất và ngưỡng; dòng
+  `check` mới hay nặng hơn nằm thụt dưới dòng tổng `check`. Bấm một dòng có giây: thanh tua nhảy tới giây ấy, dừng phát.
+  Nút **Cận** cạnh tên trang: camera tự do bay tới khung quanh vùng tương tác ở giây đang xem (hai cổ tay, món đang cầm,
+  chỗ chén, hông) theo hướng của góc máy đang chọn; đổi tham số vẫn giữ khung ấy, bấm lại hay chọn góc máy thì về camera cảnh.
+  **Dòng in của bộ sinh** (gập) là chữ `stickman gen` in ra. Bộ sinh từ chối (thiếu bàn cho tay đặt trên bàn, ngoài tầm…)
+  thì thẻ hiện dòng báo, sân khấu thử vẫn đứng.
+- **Phát**: ▶ / Space, thanh tua, tốc độ, **Lặp** như Thư viện.
+
+| Phím (Bộ sinh) | Việc |
+|---|---|
+| 1 – 5 | Góc máy: Trước, 3/4 gần, 3/4 xa, Nghiêng, Sau |
+| L | Bật / tắt lặp |
+| R | Nạp lại nhân vật, hành động từ đĩa rồi sinh lại |
+| Space, ← →, C | Như chế độ Cảnh |
+
+Hai trang của bản đầu ([docs/13 mục 9.4](../../docs/13-vai-tro-do.md#94-hai-trang-của-bản-đầu)):
+
+| Trang | Tham số |
+|---|---|
+| `sit` | `legs`, `tuck`, `back`, `hands`; độ cao mặt ngồi (`seat`), chỗ ngồi trên ghế (`depth`, hông tới mép sau); lưng ghế (`backrest`); tay vịn (`armrest`) cùng độ cao, khoảng ra ngoài, đầu trước (`armTop`, `armOut`, `armFront`); có bàn (`desk`) cùng mép gần, mặt bàn cao hơn mặt ngồi (`deskNear`, `deskTop`); để chân (`footrest`) cùng độ cao (`footY`) |
+| `pour` | `style`, `tilt`, `pourDir`; có chén (`cup`); chỗ chén (`cupAt`, hệ thân của người rót, `auto` là `lip` của kiểu); bán kính chén (`cupR`); chai: thân r, thân cao, cổ r, cổ cao (`bodyR`, `bodyH`, `neckR`, `neckH`) |
+
+URL giữ trạng thái, tải lại trang về đúng chỗ: `?gen=<kiểu>` cộng tham số khác mặc định (`?gen=sit&legs=bent&seat=95&desk=1`;
+bật / tắt là `1` / `0`, điểm là `x,y,z`, `auto` là chữ `auto`), `who`, `angle`, `speed`, `loop` như Thư viện, cùng `t`,
+`cam`, `pos`, `at`, `fov` như [Chép view](#chép-view). Tham số sai kiểu hay ngoài tầm thì về mặc định; bộ sinh lạ thì về bộ
+đầu tiên.
 
 ## Bàn tay
 
@@ -343,7 +453,7 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi trac
   món tay ấy đang cầm (cam; theo mốc món hay theo bàn tay như vẽ, món treo `carry` không có) trong `±2` s quanh giây đang
   xem. Mỗi chấm là một khung 1/30 s, khoảng cách giữa hai chấm là tốc độ; chấm to ở giây của mốc tay (cổ tay, khuỷu) và
   mốc món (tâm món), kể cả mốc lệch khung; chấm quanh giây đang xem (±1,5 khung) bỏ đi để không che tay, trừ chấm đỏ.
-  - Cổ tay, khuỷu là `actJoints` của nhân vật cảnh (`castCharacter`; người không khai `character` là `defaultCharacter()`
+  - Cổ tay, khuỷu là `actJoints` của nhân vật cảnh (người không khai `character` là `defaultCharacter()`
     như `check`), đúng khớp `check` đo giật. **Vạch tím** ngang qua chấm
     cổ tay: cổ tay kẹp ở khung ấy (`clamped` như `handReport`).
   - **Chấm đỏ** viền đen là khung giật của `check` nhóm `move` cho người ấy, cùng phép đo và ngưỡng (`stickman.snap` của

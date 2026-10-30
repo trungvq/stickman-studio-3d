@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import * as rig from "@stickman3d/sketch";
-import { COMMON, heldFrame, heldOptions, heldRows, loadHands } from "./lib.mjs";
+import * as rig from "@stickman3d/rig/core";
+import { checkWorkspace, COMMON, heldFrame, heldOptions, heldRows, loadHands } from "./lib.mjs";
 
 const FIXTURE = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -81,7 +81,7 @@ const scene = () => {
     lens: { eye: [0, -300, -900], yaw: 0, pitch: 10, f: 800, cx: 0, cy: 0 },
     cast: [{ id: "a", world: { at: [0, 0, 0] }, tracks: [] }],
   });
-  return rig.resolveScene(r.data, {}, {}, {}, {}, {}, { "bang-gia": BANG });
+  return rig.resolveScene(r.data, {}, {}, {}, { "bang-gia": BANG });
 };
 /** Cảnh three giả: mọi giây `a` hiện và `heldHands` trả `hands` */
 const world = (hands, spy) => ({
@@ -196,5 +196,54 @@ describe("loadHands", () => {
     for (const n of ["hong", "Hoa", "fist"]) assert.equal(lib[n], undefined, n);
     assert.deepEqual(lib.peace.fingers, own.fingers);
     assert.equal(lib.peace.schemaVersion, rig.HAND_SHAPE_VERSION);
+  });
+});
+
+describe("dáng tay của lớp chung", () => {
+  it("mọi `hands/*.json` của lớp chung đều nạp được", () => {
+    const files = readdirSync(COMMON.hands)
+      .filter((f) => f.endsWith(".json"))
+      .map((f) => f.slice(0, -5));
+    assert.deepEqual(Object.keys(loadHands([COMMON.hands])).sort(), files.sort());
+  });
+});
+
+describe("hành động của lớp chung", () => {
+  it("dáng tay của `keys[].hand` đều có sẵn hay ở `hands/` của lớp chung", () => {
+    const lib = loadHands([COMMON.hands]);
+    const bad = readdirSync(COMMON.actions)
+      .filter((f) => f.endsWith(".json") && f !== "index.json")
+      .flatMap((f) => {
+        const a = rig.parseAction(JSON.parse(readFileSync(join(COMMON.actions, f), "utf8")));
+        return a.success ? rig.actionHandShapeProblems(a.data, lib).map((p) => `${f}: ${p}`) : [];
+      });
+    assert.deepEqual(bad, []);
+  });
+});
+
+describe("check: dáng tay của thư viện ở `keys[].hand`", () => {
+  it("dáng của hai lớp qua; tên không có ở đâu là lỗi ở file hành động", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "hands-check-"));
+    for (const d of ["actions", "hands", "scenes", "characters", "pieces"]) mkdirSync(join(dir, d));
+    const json = (rel, v) => writeFileSync(join(dir, rel), JSON.stringify(v));
+    json("package.json", { name: "x" });
+    json("hands/chu-v.json", { fingers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] });
+    const act = (name, armNear) => ({
+      name,
+      end: "hold",
+      mask: ["hand"],
+      keys: [{ t: 0, pose: {}, hand: { armNear, armFar: "fist" } }],
+    });
+    json("actions/vay.json", act("vay", "peace"));
+    json("actions/chu.json", act("chu", { pose: "chu-v", w: 0.5 }));
+    json("actions/la.json", act("la", "khong-co"));
+    const r = await checkWorkspace({ dir, only: "ref" });
+    const errs = r.problems.filter((p) => p.level === "lỗi").map((p) => p.msg);
+    assert.deepEqual(
+      errs.filter((m) => m.startsWith("actions/")),
+      [
+        "actions/la.json: `keys[].hand` gọi dáng tay `khong-co` — không phải dáng có sẵn của rig (`HAND_POSES`), không có `hands/khong-co.json` (docs/01-rig.md#dáng-tay-có-tên)",
+      ],
+    );
   });
 });

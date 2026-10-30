@@ -364,11 +364,11 @@ function Item({
   fx: BubbleData;
 }) {
   let body: ReactNode = null;
-  if (m.piece || m.part) {
-    if ((!url && !m.part) || !m.w || !m.h) return null;
+  if (m.piece) {
+    if (!url || !m.w || !m.h) return null;
     body = (
       <g transform={m.deg ? `rotate(${m.deg})` : undefined}>
-        <Piece part={m.part} url={url} w={m.w} h={m.h} />
+        <Piece url={url} w={m.w} h={m.h} />
       </g>
     );
   } else if (m.text) {

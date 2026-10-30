@@ -6,7 +6,7 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { ACTION_VERSION, parseAction } from "@stickman3d/sketch";
+import { ACTION_VERSION, parseAction } from "@stickman3d/rig/core";
 
 /** Độ dài một mora ước cho phần chữ không đọc được âm (kanji), và nhịp chẻ tiếng Latin dài */
 const STEP = 0.13;

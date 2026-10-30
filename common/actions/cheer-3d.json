@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 20,
+  "name": "cheer-3d",
+  "duration": 0.5,
+  "end": "wrap",
+  "mask": ["armNear", "legNear", "legFar", "torso", "head", "hand"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armNear": [10, 10, 0, 122, 90],
+        "legFar": [1, 0],
+        "legNear": [-1, 0],
+        "torso": -3,
+        "head": [0, 0, -12]
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "fist", "w": 1, "turn": 0, "bend": 0 } }
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armNear": [10, 40, 0, 112, 90],
+        "legFar": [12, -22],
+        "legNear": [10, -20],
+        "torso": 2,
+        "head": [0, 0, -6]
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "fist", "w": 1, "turn": 0, "bend": 0 } }
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armNear": [10, 10, 0, 122, 90],
+        "legFar": [1, 0],
+        "legNear": [-1, 0],
+        "torso": -3,
+        "head": [0, 0, -12]
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "fist", "w": 1, "turn": 0, "bend": 0 } }
+    }
+  ],
+  "events": [],
+  "note": "Hò reo một tay: tay gần giơ nắm đấm nảy nhịp 0,5 s một lượt, lặp: lên chếch ngoài đầu thành chữ V (dang 122°) ↔ xuống nắm đấm ngang đỉnh đầu, khuỷu chếch trên vai; gối nhún 20° ở nhịp xuống, thân −3 ↔ 2°, đầu ngửa 12 ↔ 6°; bàn tay `fist`. Ghi `armNear`, hai chân, `torso`, `head`, `hand`. Tay xa để trống cho nền. Nền `stand-3d`; góc tay, không đích, nên vào blend ~0,25, ra blend ~0,45 về `stand-3d` không lật khuỷu. Nhịp khác thì đặt `cycle` 0,45–0,6; hai người hò reo cạnh nhau đứng cách ≥ 260. Cùng họ: `cheer-3d` một tay, `cheer-both-3d` hai tay. Sinh bằng `tools/actions/cheer.mjs`.",
+  "preview": { "stage": "stand" }
+}

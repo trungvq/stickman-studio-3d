@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseHeldItem } from "./heldItem";
+import { HELD_VERSION, parseHeldItem } from "./heldItem";
 import type { M3, V3 } from "./lens";
 import grip from "./__fixtures__/grip-frames.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
@@ -99,7 +99,7 @@ describe("tám món mẫu", () => {
       const r = parseHeldItem(JSON_OF[name]);
       if (!r.success) throw new Error(r.error.issues.map((i) => i.message).join("; "));
       const item = r.data;
-      expect(item.schemaVersion).toBe(3);
+      expect(item.schemaVersion).toBe(HELD_VERSION);
       expect(item.shape?.length).toBeGreaterThan(0);
       const used = new Set(item.shape?.flatMap((b) => (b.part ? [b.part] : [])));
       expect([...used].sort()).toEqual([...labels].sort());

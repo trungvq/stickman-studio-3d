@@ -55,8 +55,6 @@ function runtime(hands: unknown[], items?: unknown[]): SceneRuntime {
   return resolveScene(
     r.data,
     {},
-    {},
-    {},
     { nguoi: H },
     { nguoi: body3(NGUOI) },
     { "bang-gia": BANG, "dien-thoai": PHONE },

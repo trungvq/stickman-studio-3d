@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
-<title>Vuốt ngược — side</title>
-<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
-<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 66 194 C 54 164 58 128 78 100 C 98 72 126 54 160 52 C 194 48 224 58 240 78 Q 216 90 204 114 C 192 118 178 122 172 132 C 168 138 172 150 166 152 C 158 154 158 142 158 136 C 158 130 148 132 140 134 C 124 136 112 140 104 150 C 94 162 88 182 82 196 C 78 206 70 204 66 194 Z"/>
-<path d="M 218 76 C 186 64 150 70 122 90" fill="none"/>
-</g>
-</svg>

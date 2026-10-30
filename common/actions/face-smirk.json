@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 20,
+  "name": "face-smirk",
+  "duration": 0.4,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "squint",
+        "brow": "neutral",
+        "mouth": "smirk"
+      }
+    }
+  ],
+  "note": "Nhẹ nhõm, khoé môi nhếch: mắt nheo, mày thả, miệng nhếch một bên (`smirk`); vào ngay rồi giữ. Chỉ ghi `face`, nên chồng lên mọi tư thế, đứng hay ngồi, và nằm dưới track khẩu hình (`talk-lips`): lời đè `mouth`, mắt và mày vẫn của lớp này. Mắt mở, mày nhíu lo thì thành cười gượng `face-forced-smile`.",
+  "preview": {
+    "stage": "stand"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 20,
+  "name": "face-bored",
+  "duration": 0.4,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "squint",
+        "brow": "skeptical",
+        "mouth": "closed"
+      }
+    }
+  ],
+  "note": "Chán ngán, khinh khỉnh: mắt nheo, mày nhướng nghi ngờ, miệng khép — chưa giận; vào ngay rồi giữ. Chỉ ghi `face`, nên chồng lên mọi tư thế, đứng hay ngồi, và nằm dưới track khẩu hình (`talk-lips`): lời đè `mouth`, mắt và mày vẫn của lớp này. Khinh ra mặt, doạ thì `face-menace`.",
+  "preview": {
+    "stage": "stand"
+  }
+}

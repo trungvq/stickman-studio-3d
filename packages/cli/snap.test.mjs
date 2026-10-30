@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import * as rig from "@stickman3d/sketch";
+import * as rig from "@stickman3d/rig/core";
 import { checkWorkspace, sceneShotSpans, snapOptions } from "./lib.mjs";
 
 const LENS = { eye: [0, -300, -1500], yaw: 0, pitch: 6, f: 800, cx: 0, cy: 0 };
@@ -28,6 +28,7 @@ const COVER = { name: "che", end: "hold", duration: 0.6, keys: coverKeys };
 const COVER3D = { ...COVER, name: "che-3d", authoredAt: "side" };
 const RAISE = {
   name: "gio",
+  authoredAt: "side",
   end: "hold",
   mask: ["armNear"],
   keys: [{ t: 0, pose: { armNear: [-170, 0, 0] } }],
@@ -49,13 +50,15 @@ const person3d = (name, arms, clip = {}) => ({
     },
   ],
 });
-/** Người 2D cắt cứng sang `gio` ở giây 1 */
-const cut2d = (name, clip = {}) => ({
+/** Người 3D cắt cứng sang `gio` ở giây 1 */
+const cut = (name, clip = {}) => ({
   name,
   duration: 2,
+  lens: LENS,
   cast: [
     {
       id: "b",
+      world: { at: [0, 0, 0], yaw: 155 },
       tracks: [
         {
           clips: [
@@ -80,8 +83,8 @@ function workspace(stickman = {}, episode = null) {
   json("scenes/loi.json", person3d("loi", "che"));
   json("scenes/old-loi.json", person3d("old-loi", "che"));
   json("scenes/sua.json", person3d("sua", "che-3d"));
-  json("scenes/cat.json", cut2d("cat"));
-  json("scenes/cat-co-y.json", cut2d("cat-co-y", { snap: true }));
+  json("scenes/cat.json", cut("cat"));
+  json("scenes/cat-co-y.json", cut("cat-co-y", { snap: true }));
   if (episode) {
     mkdirSync(join(dir, "episodes"));
     json("episodes/tap.json", episode);
@@ -92,8 +95,8 @@ function workspace(stickman = {}, episode = null) {
 const of = (r, scene) => r.problems.filter((p) => p.msg.startsWith(`scenes/${scene}.json`));
 const snaps = (r, scene) => of(r, scene).filter((p) => p.msg.includes("trong một khung"));
 
-describe("check: hành động 2D trên người 3D và giật trên hình", () => {
-  it("người 3D hoà `side` → hành động 2D: lỗi tĩnh kèm bản `-3d`, và cú giật kèm lý do", async () => {
+describe("check: hành động không soạn ở `side` trên người 3D và giật trên hình", () => {
+  it("người 3D hoà `side` → hành động không soạn ở `side`: lỗi tĩnh kèm bản `-3d`, và cú giật kèm lý do", async () => {
     const r = await checkWorkspace({ dir: workspace() });
     const side = of(r, "loi").filter((p) => p.level === "lỗi");
     assert.equal(side.length, 1, JSON.stringify(r.problems, null, 2));
@@ -118,11 +121,11 @@ describe("check: hành động 2D trên người 3D và giật trên hình", () 
     assert.ok(r.frozen > 0);
   });
 
-  it("người 2D cắt cứng bị bắt; clip khai `snap` thì im", async () => {
+  it("cắt cứng bị bắt; clip khai `snap` thì im", async () => {
     const r = await checkWorkspace({ dir: workspace() });
     assert.equal(snaps(r, "cat").length, 1, JSON.stringify(r.problems, null, 2));
     assert.match(snaps(r, "cat")[0].msg, /`gio` \(track `#0`\) vào không hoà \(`blend` 0\)/);
-    assert.deepEqual(of(r, "cat-co-y"), []);
+    assert.deepEqual(snaps(r, "cat-co-y"), []);
   });
 
   it("hành động `wrap` nhảy ở đường nối vòng: cảnh báo ở file hành động", async () => {

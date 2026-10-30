@@ -5,7 +5,9 @@ import {
   HAND_FIT,
   HAND_POSES,
   HAND_RELAXED,
+  handVec,
   mixHand,
+  type HandKey,
   type HandPose,
 } from "./hand";
 
@@ -18,7 +20,8 @@ const ten = z.tuple([num, num, num, num, num, num, num, num, num, num]);
 /**
  * Dáng tay có tên của thư viện (`hands/<tên>.json`): `fingers` mười góc ngón (`HAND_DOF` bỏ `turn`, `bend`), `fit` độ gập
  * thêm từng đốt (`HAND_FIT`), cùng nghĩa với kiểu cầm soạn tay. Không phân bên: tay trái dùng cùng góc. Mốc tay của cảnh
- * gọi bằng tên file (`world.hands[].right|left.pose`). docs/01-rig.md#dáng-tay-có-tên
+ * (`world.hands[].right|left.pose`) và mốc bàn tay của hành động (`keys[].hand`) gọi bằng tên file.
+ * docs/01-rig.md#dáng-tay-có-tên
  */
 export const HandShapeSchema = z.object({
   schemaVersion: z
@@ -75,6 +78,17 @@ export const withFingers = (v: readonly number[], fingers: readonly number[]): n
   v[1] ?? 0,
   ...fingers,
 ];
+
+/**
+ * Số bàn tay của một mốc hành động (`keys[].hand`) với thư viện `lib`: dáng của thư viện ra cả mười độ gập thêm, dáng có
+ * sẵn như `handVec`. Tên không có ở đâu là dáng nghỉ — `resolveScene` và `check` báo trước khi tới đây
+ */
+export function handKeyVec(k: string | HandKey, lib: HandShapes = {}): number[] {
+  const o: HandKey = typeof k === "string" ? { pose: k } : k;
+  const own =
+    o.pose !== undefined && !(o.pose in HAND_POSES) && shapeFingers(o.pose, lib, o.w ?? 1);
+  return own ? withFingers([o.turn ?? 0, o.bend ?? 0], own) : handVec(o);
+}
 
 /** Hai mươi số ngón của số bàn tay `v`: mười góc ngón, mười độ gập thêm (thiếu là `0`) */
 export const fingersOf = (v: readonly number[]): number[] => [

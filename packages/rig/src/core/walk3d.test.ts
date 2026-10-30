@@ -19,7 +19,7 @@ import {
   type ScenePose,
   type SceneRuntime,
 } from "./index";
-import { bakeTravel, nextBearing, standing } from "./index";
+import { nextBearing, standing } from "./index";
 
 const c = defaultCharacter();
 const dims = body3(c);
@@ -209,18 +209,6 @@ describe("người 3D: kết hợp không hợp lệ là lỗi lúc nạp", () =
   it("`world` mà cảnh thiếu `lens`", () => {
     expect(load({ cast: [person] })).toThrow("`lens`");
   });
-
-  it("`world` cùng `path` 2D", () => {
-    expect(load({ lens: LENS, cast: [{ ...person, path: [{ t: 0, x: 0 }] }] })).toThrow(
-      "`world.path`",
-    );
-  });
-
-  it("đạo cụ `follow` người 3D", () => {
-    expect(
-      load({ lens: LENS, cast: [person], props: [{ id: "p", prop: "x.json", follow: "a" }] }),
-    ).toThrow("`equip`");
-  });
 });
 
 describe("người 3D đi theo `path`: chân trụ đứng yên trên sàn", () => {
@@ -279,7 +267,7 @@ describe("người 3D đi theo `path`: chân trụ đứng yên trên sàn", () 
     expect(fast).toBeGreaterThan(3);
   });
 
-  it("quay tại chỗ qua chính diện: lớp tay khai đi theo đúng cánh tay đã đổi kênh", () => {
+  it("quay tại chỗ qua chính diện: tay giơ đổi kênh gần ↔ xa", () => {
     const path: Key[] = [
       { t: 0, at: [0, 0, 900], yaw: 45 },
       { t: 3, at: [0, 0, 900], yaw: 135 },
@@ -290,7 +278,6 @@ describe("người 3D đi theo `path`: chân trụ đứng yên trên sàn", () 
       const s = sceneAt(rt, "a", t, h, dims);
       const raised = s.pose.an[0] === 150 ? "armNear" : "armFar";
       sides.add(raised);
-      expect(s.layers[raised]).toBe("front");
     }
     expect(sides).toEqual(new Set(["armNear", "armFar"]));
   });
@@ -490,11 +477,17 @@ describe("quay tại chỗ bằng bước chân", () => {
     expect(left.top).toBeGreaterThan(-0.5);
   });
 
-  it("`steps` ít tới mức một nhịp quá 90° thì `check` kêu", () => {
-    const bad = sceneTurnProblems(turn(180, 2.1, 1));
+  it("`steps` ít tới mức một nhịp quá 90°: rig bước `ceil(|góc| / 90)` nhịp, `check` kêu", () => {
+    const told = turn(180, 2.1, 1);
+    const bad = sceneTurnProblems(told);
     expect(bad).toHaveLength(1);
-    expect(bad[0]).toMatch(/^`a` giây 0\.50–2\.10: quay tại chỗ 180° trong 1 nhịp, mỗi nhịp 180°/);
-    expect(bad[0]).toContain("tăng `steps` lên 2");
+    expect(bad[0]).toMatch(
+      /^`a` giây 0\.50–2\.10: quay tại chỗ 180° khai `steps` 1, mỗi nhịp quá 90°/,
+    );
+    expect(bad[0]).toContain("rig bước 2 nhịp; khai `steps` 2");
+    const two = turn(180, 2.1, 2);
+    for (const t of [0.9, 1.3, 1.7])
+      expect(sceneAt(told, "a", t, h, dims)).toStrictEqual(sceneAt(two, "a", t, h, dims));
   });
 });
 
@@ -660,11 +653,10 @@ describe("worldFacingAt", () => {
       [
         { id: "a", tracks: [], world: { at: [0, 0, 900], yaw: 95 } },
         { id: "b", tracks: [], world: { at: [0, 0, 900], yaw: 90 } },
-        { id: "c", tracks: [] },
       ],
       2,
     );
-    const a = worldFacingAt(rt, "a", 1, h, dims)!;
+    const a = worldFacingAt(rt, "a", 1, h, dims);
     expect(a.said).toBe(95);
     expect(a.yaw).toBe(95);
     const wa = sceneAt(rt, "a", 1, h, dims).world!;
@@ -673,38 +665,6 @@ describe("worldFacingAt", () => {
     const wb = sceneAt(rt, "b", 1, h, dims).world!;
     expect(wb.yaw / D).toBeCloseTo(90, 6);
     expect(wb.theta).toBeCloseTo(0, 4);
-    expect(worldFacingAt(rt, "c", 1, h, dims)).toBeUndefined();
-  });
-});
-
-describe("bảng `travel` chỉ nướng cho người trôi theo chân", () => {
-  const walking = { tracks: [{ clips: [{ start: 0, action: "walk" }] }] };
-  const rt = scene(
-    [
-      { id: "flat", ...walking },
-      {
-        id: "path",
-        ...walking,
-        path: [
-          { t: 0, x: 0 },
-          { t: 2, x: 300 },
-        ],
-      },
-      { id: "world", ...walking, world: { at: [0, 0, 900] } },
-    ],
-    2,
-  );
-  const table = (id: string) => rt.cast.find((m) => m.id === id)!.travel;
-
-  it("người 3D và người đi `path` không nướng", () => {
-    expect(table("world").xs).toStrictEqual([0]);
-    expect(table("path").xs).toStrictEqual([0]);
-  });
-
-  it("người 2D vẫn nướng từ tư thế từng khung", () => {
-    const tb = table("flat");
-    expect(tb).toStrictEqual(bakeTravel((t) => sceneAt(rt, "flat", t).pose, rt.duration));
-    expect(Math.abs(tb.xs[tb.xs.length - 1])).toBeGreaterThan(0.1);
   });
 });
 
@@ -1011,13 +971,14 @@ describe("quay tại chỗ rồi đi: nhịp cuối của cú quay là bước �
 
   // tư thế khi không ghép quay rồi đi: [hông x, y, z, yaw, bàn chân xa x y z, gần x y z]
   const TIMES = [0.5, 0.75, 0.9, 1.0, 1.15, 1.3, 1.4, 1.5, 1.8];
+  // thân quay liền qua chỗ nối hai nhịp (`turnShare`); chỗ bàn chân trên sàn không theo tốc quay của thân
   const TURN = [
-    [0, -168.6214, 900, 0.1452, 6.1001, 0, 921.7604, -8.2804, -8.017, 881.364],
-    [0, -167.3464, 900, 1.0947, 17.9056, 0, 904.8425, -21.3142, -6.2645, 900.0422],
+    [0, -168.6214, 900, 0.1005, 6.1001, 0, 921.7604, -8.2804, -8.017, 881.364],
+    [0, -167.3464, 900, 0.8894, 17.9056, 0, 904.8425, -21.3142, -6.2645, 900.0422],
     [0, -167.3464, 900, 1.3963, 22.696, 0, 897.9775, -22.696, 0, 902.0225],
-    [0, -167.3464, 900, 1.5415, 19.7907, -8.017, 895.0815, -22.4891, 0, 902.2288],
-    [0, -167.3464, 900, 2.0944, -15.04, 0, 909.6538, 9.6053, -11.4457, 884.9289],
-    [0, -168.6214, 900, 2.6473, -4.8546, 0, 919.8065, 2.1562, -2.1866, 877.5038],
+    [0, -167.3464, 900, 1.7202, -22.4891, 0, 902.2288, 19.7907, -8.017, 895.0815],
+    [0, -167.3464, 900, 2.2689, -15.04, 0, 909.6538, 9.6053, -11.4457, 884.9289],
+    [0, -168.6214, 900, 2.692, -4.8546, 0, 919.8065, 2.1562, -2.1866, 877.5038],
     [0, -169.8964, 900, 2.7925, -1.9493, 0, 922.7024, 1.9493, 0, 877.2976],
   ];
   const STAND = [0, -169.8964, 900, 2.7925, -1.9493, 0, 922.7024, 1.9493, 0, 877.2976];
@@ -1457,7 +1418,7 @@ describe("chỗ ghép quay rồi đi, dừng, dừng rồi quay: hông không t�
     },
   );
 
-  it("quay rồi đi `0,35 s` rồi dừng, chân trụ trước hông hơn `40%` chiều dài chân lúc vào bước dừng: gối nó không bật thẳng", () => {
+  it("quay rồi đi `0,35 s` rồi dừng, chân trụ trước hông hơn `40%` chiều dài chân lúc vào bước dừng: gối nó không bật thẳng, hông hạ liền", () => {
     const rt = scene(
       [
         walker(
@@ -1485,10 +1446,11 @@ describe("chỗ ghép quay rồi đi, dừng, dừng rồi quay: hông không t�
       const s = sceneAt(rt, "a", t, h, dims);
       const w = s.world!;
       const F = dirOf(w.yaw);
-      // [xa, gần]: bàn chân gần (`ln`) chịu lực, trước hông lúc vào bước dừng
+      // [xa, gần]: bàn chân chịu lực trước hông lúc vào bước dừng — chân bước của nhịp cuối, chân phía quay
       const ft = feet3(s.pose, w, h, dims.hipHalf);
-      if (t < 1.96 && Math.abs(ft[1][1]) < 0.5)
-        reach = Math.max(reach, ((ft[1][0] - w.hip[0]) * F[0] + (ft[1][2] - w.hip[2]) * F[2]) / L);
+      for (const f of ft)
+        if (t < 1.96 && Math.abs(f[1]) < 0.5)
+          reach = Math.max(reach, ((f[0] - w.hip[0]) * F[0] + (f[2] - w.hip[2]) * F[2]) / L);
       if (last) {
         // gối của chân chịu lực ở cả hai khung; chân bay gập duỗi nhanh theo clip đi
         (["lf", "ln"] as const).forEach((ch, i) => {
@@ -1501,7 +1463,16 @@ describe("chỗ ghép quay rồi đi, dừng, dừng rồi quay: hông không t�
     }
     expect(reach).toBeGreaterThan(0.4);
     expect(knee).toBeLessThan(8);
-    expect(hip).toBeLessThan(1);
+    // hông hạ theo gối chân trụ mới tới ~1,1 mỗi khung `1/60 s`; khung `1/120 s` dời nửa chừng ấy: tốc liền, không bước nhảy
+    expect(hip).toBeLessThan(1.2);
+    let fine = 0;
+    let y0: number | undefined;
+    for (const t of frames(1.8, 3.4, 120)) {
+      const y = sceneAt(rt, "a", t, h, dims).world!.hip[1];
+      if (y0 !== undefined) fine = Math.max(fine, Math.abs(y - y0));
+      y0 = y;
+    }
+    expect(fine).toBeLessThan(0.6 * hip);
   });
 
   it("nhịp cuối của cú quay dưới `0,12 s`: không ghép, `check` nói vì sao", () => {

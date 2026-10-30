@@ -46,8 +46,6 @@ function runtime(hands: unknown[], items: unknown[], world: object = { at: AT, y
   return resolveScene(
     r.data,
     {},
-    {},
-    {},
     { nguoi: H },
     { nguoi: DIMS },
     {
@@ -313,7 +311,7 @@ describe("lần cầm một tay theo mốc", () => {
     const items = [
       phone(0.5, "chest", [40, -6, 6]),
       phone(1.2, "chest", [34, 0, 10]),
-      phone(3.3, "eye", [30, 16, -15]),
+      phone(3.3, "eye", [30, 16, -12]),
     ];
     const rt = runtime(hands(), items);
     const lead = holdLinkFrame(inheritHold(rightHold(rt, 2.8 - 1e-4), NGUOI), -1).G.R;

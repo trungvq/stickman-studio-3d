@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 5,
+  "name": "sample-woman",
+  "rig": {
+    "height": 0.98,
+    "shoulderHalf": 34,
+    "hipHalf": 21
+  },
+  "head": {
+    "form": "human"
+  },
+  "palette": {
+    "line": "#3A2A22",
+    "skin": "#FBE5D3",
+    "clad": true,
+    "garment": "#C76B7E",
+    "sleeve": "#C76B7E",
+    "sleeveWidth": 15,
+    "sleeveLength": 0.92,
+    "trouserLength": 0,
+    "shoe": "#7A3B33"
+  },
+  "face": {
+    "blush": 0.4
+  },
+  "pieces": {
+    "torso": {
+      "src": "sculpt",
+      "garment": {
+        "style": "squareNeck",
+        "hem": -18,
+        "bust": 7
+      }
+    },
+    "hem": {
+      "src": "sculpt",
+      "color": "#C76B7E",
+      "layer": "under",
+      "skirt": {
+        "length": 100,
+        "flare": 8,
+        "pleats": 0
+      }
+    },
+    "hair": {
+      "src": "sculpt",
+      "color": "#8B5A3C",
+      "sculpt": {
+        "style": "shoulder",
+        "front": 60,
+        "part": -28,
+        "fringe": 14,
+        "volume": 0.12,
+        "length": 1.35
+      }
+    },
+    "neck": {
+      "src": "sculpt",
+      "necklace": {
+        "style": "pearl",
+        "pendant": "none",
+        "drop": 14
+      }
+    }
+  }
+}

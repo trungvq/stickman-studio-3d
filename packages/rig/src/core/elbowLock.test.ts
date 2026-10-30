@@ -72,7 +72,7 @@ function runtime(hands: Hands, items: unknown[] = [], duration = 4) {
     items,
   });
   if (!r.success) throw new Error(r.error.message);
-  const rt = resolveScene(r.data, {}, {}, {}, { nguoi: H }, { nguoi: DIMS }, HELD);
+  const rt = resolveScene(r.data, {}, { nguoi: H }, { nguoi: DIMS }, HELD);
   rt.chars = { nguoi: NGUOI };
   return rt;
 }
@@ -285,7 +285,7 @@ describe("lần cầm theo mốc (`keyed`)", () => {
 
   it("mốc khoá rồi mốc không khoá: `φ` = `φ` theo mốc kéo về hướng khoá theo phần khoá, đường ngắn qua ±180", () => {
     // khoá gần ngược khuỷu tự do: `φ` theo mốc và hướng khoá nằm hai bên ±180 ở giữa đoạn
-    const e = dirAt(free, 0, report(free, 1).phi + 120);
+    const e = dirAt(free, 0, report(free, 1).phi + 170);
     const rt = runtime(withElbow(HANDS, [e]), ITEMS);
     const [pa, pb] = [report(rt, 0).phi, report(rt, 1).phi];
     expect(Math.abs(wrap(pa - phiOfDir(rt, 0, e)))).toBeLessThan(1e-6);
@@ -381,8 +381,9 @@ describe("`check`: khuỷu khoá xoay quá nhanh", () => {
     { t: 1.1, right: { at: PHONE, point: "grip" } },
   ];
   const free = runtime(HANDS);
-  const e0 = dirAt(free, 1, 60);
-  const e1 = dirAt(free, 1.1, -90);
+  // mốc khoá đầu gần khuỷu tự do, mốc khoá sau lệch xa
+  const e0 = dirAt(free, 1, report(free, 1).phi);
+  const e1 = dirAt(free, 1.1, report(free, 1.1).phi - 150);
   const characterOf = () => NGUOI;
 
   it("hai mốc khoá sát nhau, lệch xa: báo `snap`, khuỷu vẫn tới đúng chỗ ở mốc", () => {

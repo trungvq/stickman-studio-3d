@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 20,
+  "name": "suitcase-pull-both-3d",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["armNear", "armFar", "hand"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "reach": { "armFar": { "at": [-40, 10, 66] }, "armNear": { "at": [-40, 10, 66] } },
+      "ease": "smooth",
+      "hand": { "armFar": { "pose": "grip", "w": 1 }, "armNear": { "pose": "grip", "w": 1 } }
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": { "armFar": { "at": [-40, 10, 66] }, "armNear": { "at": [-40, 10, 66] } },
+      "ease": "smooth",
+      "hand": { "armFar": { "pose": "grip", "w": 1 }, "armNear": { "pose": "grip", "w": 1 } }
+    }
+  ],
+  "events": [],
+  "note": "Kéo hai vali một lượt: như `suitcase-pull-3d` cho cả hai tay, cổ tay sau hông, ra ngoài (hệ thân [−40, 10, 66]), nắm, giữ từ giây 0. Ghi hai tay, `hand`. Chồng lên `walk` (hai tay thôi đánh) hay `stand-3d`; món ở `world.hands[].hold` của mỗi tay, hai thể hiện (`vali`, `vali:2`). Vào bằng blend ~0,3.",
+  "preview": {
+    "stage": "stand",
+    "hold": {
+      "right": {
+        "item": "vali",
+        "group": "cylinder",
+        "part": "can",
+        "variant": "wrap",
+        "face": { "axis": "handleTop", "toward": [0.5, -0.87, 0] }
+      },
+      "left": {
+        "item": "vali:2",
+        "group": "cylinder",
+        "part": "can",
+        "variant": "wrap",
+        "face": { "axis": "handleTop", "toward": [0.5, -0.87, 0] }
+      }
+    }
+  }
+}

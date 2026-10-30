@@ -13,8 +13,7 @@ import { wrapParts, type WrapBody } from './core/wrap';
 import { printParts, type PrintPart } from './core/print';
 import { clipHalf, panelParts } from './core/panel';
 
-// Thân áo dựng khối từ bảng kiểu và mặt cắt `profile` của lõi: như `torsoPaths` nhưng giữ khối, nét và tấm ở 3D
-// thay vì chiếu ra path SVG.
+// Thân áo dựng khối từ bảng kiểu và mặt cắt `profile` của lõi: khối, nét và tấm ở 3D.
 
 export type { ArmRoom, Rig };
 type Vec3 = [number, number, number];

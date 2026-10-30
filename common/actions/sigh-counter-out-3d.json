@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 20,
+  "name": "sigh-counter-out-3d",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["armNear", "armFar", "hand", "torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "torso": 15, "head": [null, null, 20] },
+      "reach": {
+        "armFar": { "at": [86, -33, 36], "point": "palm", "elbow": [-0.3, 0.3, 1] },
+        "armNear": { "at": [86, -33, 36], "point": "palm", "elbow": [-0.3, 0.3, 1] }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "open", "w": 0.7, "palm": "down", "fingers": "forward" },
+        "armNear": { "pose": "open", "w": 0.7, "palm": "down", "fingers": "forward" }
+      }
+    },
+    {
+      "t": 0.5,
+      "pose": { "torso": 4, "head": [null, null, 6] },
+      "reach": {
+        "armFar": { "at": [30, -50, 44], "elbow": [-0.6, 1, 0.6] },
+        "armNear": { "at": [30, -50, 44], "elbow": [-0.6, 1, 0.6] }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "open", "w": 0.5, "turn": 30, "bend": 0 },
+        "armNear": { "pose": "open", "w": 0.5, "turn": 30, "bend": 0 }
+      }
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [-6, 24, 0],
+        "armNear": [-6, 24, 0],
+        "torso": 0,
+        "head": [null, null, 0]
+      },
+      "ease": "linear",
+      "hand": {
+        "armFar": { "w": 0.3, "turn": 0, "bend": 0 },
+        "armNear": { "w": 0.3, "turn": 0, "bend": 0 }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Buông tay khỏi mặt quầy sau `sigh-counter-3d`, bắt đầu đúng dáng cuối của nó: thân đứng lên, hai tay nhấc lên lùi về sát người (0,3 s) rồi về góc tay buông của `stand-3d` lúc 0,6 s. Ghi hai tay, `hand`, `torso` và gật của `head`. Nền `stand-3d` với quầy như `sigh-counter-3d`; nối ngay sau nó, blend ~0,15. Sau đó clip rỗng hay `stand-3d` blend ~0,2.",
+  "preview": { "base": "stand-3d", "stage": "counter" }
+}

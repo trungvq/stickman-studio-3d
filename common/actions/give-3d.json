@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 20,
+  "name": "give-3d",
+  "duration": 1.2,
+  "end": "hold",
+  "mask": ["armNear", "hand", "torso", "head"],
+  "authoredAt": "side",
+  "sides": "anatomical",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "torso": 0, "head": [null, null, 0] },
+      "reach": {
+        "armNear": {
+          "to": "belly",
+          "offset": [26, -14, 22],
+          "point": "grip",
+          "elbow": [-0.4, 1, 0.8]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "grip", "w": 0.6, "palm": "in", "fingers": "forward" } }
+    },
+    {
+      "t": 0.45,
+      "pose": { "torso": 4, "head": [null, null, 6] },
+      "reach": { "armNear": { "at": [98, -74, 12], "point": "grip", "elbow": [-0.4, 1, 0.8] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "grip", "w": 0.6, "palm": "in", "fingers": "forward" } }
+    },
+    {
+      "t": 1,
+      "pose": { "torso": 4, "head": [null, null, 6] },
+      "reach": { "armNear": { "at": [98, -74, 12], "point": "grip", "elbow": [-0.4, 1, 0.8] } },
+      "ease": "linear",
+      "hand": { "armNear": { "pose": "grip", "w": 0.6, "palm": "in", "fingers": "forward" } }
+    }
+  ],
+  "events": [{ "name": "handoff", "t": 0.45 }],
+  "note": "Đưa món bằng tay phải: từ trước bụng (mốc `belly`, offset [26, −14, 22], `point: \"grip\"`) chìa ra trước tới đích hệ thân [98, −74, 12] lúc 0,54 s rồi giữ, lòng tay `in`, ngón ra trước; thân cúi 4°, đầu gật 6°; sự kiện `handoff` lúc chìa xong. Chỉ ghi tay phải (`sides: \"anatomical\"`, kênh `armNear`), `hand`, `torso`, gật của `head`. Nền `stand-3d`, món ở `world.hands[].hold` tay phải; người nhận cùng cao đứng đối diện, hai hông cách 200, lệch sang phải người diễn 30 ở `height` 1, diễn `receive-3d` — lòng tay người ấy đỡ dưới đáy món cao ~35 cầm giữa thân. Scene chuyển món sang tay người nhận ở `world.hands` lúc sự kiện `take` của `receive-3d`; buông bằng clip nền blend ~0,4.",
+  "preview": {
+    "stage": "stand",
+    "hold": { "right": "ly@cylinder" },
+    "partner": { "at": [200, 30], "yaw": -10, "action": "receive-3d" }
+  }
+}

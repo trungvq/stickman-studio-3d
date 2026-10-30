@@ -182,10 +182,11 @@ export const HAND_REST: HandVec = [0, 0, ...fingerVec(HAND_RELAXED)];
 
 /**
  * Một mốc bàn tay trong JSON: tên dáng, hay dáng `pose` (bỏ trống là dáng nghỉ) với phần `w`, xoay và gập cổ tay; hay
- * hướng lòng tay (`palm`) và ngón (`fingers`) theo ý định — rig giải ra xoay và gập, `turn` khi ấy bị bỏ qua
+ * hướng lòng tay (`palm`) và ngón (`fingers`) theo ý định — rig giải ra xoay và gập, `turn` khi ấy bị bỏ qua. Tên dáng có
+ * sẵn (`HandPose`) hay của thư viện `hands/` (`handKeyVec` của `handLibrary.ts` tra)
  */
 export interface HandKey {
-  pose?: HandPose;
+  pose?: string;
   w?: number;
   turn?: number;
   bend?: number;
@@ -193,14 +194,21 @@ export interface HandKey {
   fingers?: AimDirJson;
 }
 
+/** Hoà hai số bàn tay; số thiếu ở bên ngắn hơn (độ gập thêm `HAND_FIT`) là `0` */
 export const mixHand = (a: HandVec, b: HandVec, f: number): number[] =>
-  a.map((v, i) => v + ((b[i] ?? 0) - v) * f);
+  Array.from({ length: Math.max(a.length, b.length) }, (_, i) => {
+    const v = a[i] ?? 0;
+    return v + ((b[i] ?? 0) - v) * f;
+  });
 
-/** Số bàn tay của một mốc: dáng hoà từ dáng nghỉ theo `w`; không có dáng là dáng nghỉ */
-export function handVec(k: HandPose | HandKey): number[] {
+/** Số bàn tay của một mốc: dáng có sẵn hoà từ dáng nghỉ theo `w`; không có dáng hay tên ngoài `HAND_POSES` là dáng nghỉ */
+export function handVec(k: string | HandKey): number[] {
   const o: HandKey = typeof k === "string" ? { pose: k } : k;
   const rest = fingerVec(HAND_RELAXED);
-  const fingers = o.pose ? mixHand(rest, fingerVec(HAND_POSES[o.pose]), o.w ?? 1) : rest;
+  const fingers =
+    o.pose && o.pose in HAND_POSES
+      ? mixHand(rest, fingerVec(HAND_POSES[o.pose as HandPose]), o.w ?? 1)
+      : rest;
   return [o.turn ?? 0, o.bend ?? 0, ...fingers];
 }
 

@@ -2,9 +2,10 @@
 
 `@stickman3d/fx`: hào quang, nước mắt, sủi tăm, vật rời tay, lá bay, chữ diễn, nút
 điều khiển, iris, bong bóng thoại, thẻ chữ gõ, ngày đêm trôi. Khai trong `scene.fx[]`, rig chỉ mang danh sách theo; gói này
-kiểm (`parseFx`) và vẽ (`<SceneFx>`). Cả ba đường render — dải khung `--stage`,
-`stickman-video`, app Remotion — gọi cùng một component, nên thứ agent soi bằng ảnh
-là thứ khán giả thấy.
+kiểm (`parseFx`) và vẽ (`<SceneFx>`). `stickman-render --scene`, `render_scene` của MCP và
+app Remotion gọi cùng một component, nên thứ agent soi bằng ảnh là thứ khán giả thấy. Cảnh 3D
+ở Remotion thì `fx` là lớp SVG đè lên sân khấu three; khung three của `stickman-render` /
+`render_scene` (cảnh có `lens`) không vẽ lớp SVG ấy, soi `fx` của cảnh 3D bằng `pnpm still`.
 
 ## Hợp đồng: thuần theo `t`
 
@@ -21,7 +22,7 @@ mỗi frame chỉ duyệt những phần tử còn sống.
 "fx": [
   { "kind": "glow", "x": -120, "y": 260, "from": 1.6, "to": 10.4, "rise": 1.3, "fall": 2.6,
     "r": 132, "ray": 300, "rays": 14, "spin": 11, "up": 1 },
-  { "kind": "throw", "part": "gold-bar", "t0": 8.97, "flight": 1.5,
+  { "kind": "throw", "piece": "thoi-vang.png", "t0": 8.97, "flight": 1.5,
     "x0": -527, "y0": 120, "vx": 667, "vy": -1092, "g": 1567, "deg0": -276, "spin": 600,
     "w": 40, "h": 104, "shrink": 0.13, "splash": 0.35, "ripple": 1 },
   { "kind": "tears", "cast": "tp", "from": 10.15, "to": 13.8 },
@@ -31,7 +32,7 @@ mỗi frame chỉ duyệt những phần tử còn sống.
   { "kind": "bubble", "cast": "anh", "anchor": "head", "dx": -40, "dy": -60,
     "open": "@ke", "shut": "@ke-xong", "box": { "dx": -180, "dy": -200, "w": 400, "h": 145 },
     "items": [
-      { "part": "gold-bar", "x": -120, "w": 70, "h": 105, "at": "@ke+0.2" },
+      { "piece": "thoi-vang.png", "x": -120, "w": 70, "h": 105, "at": "@ke+0.2" },
       { "text": "=", "size": 70, "at": "@ke+0.6" },
       { "text": "$$$", "x": 120, "size": 50, "fill": "#c98a1b", "at": "@ke+1" }
     ] },
@@ -44,13 +45,13 @@ mỗi frame chỉ duyệt những phần tử còn sống.
 ]
 ```
 
-Mọi mốc là **giây scene**, mọi toạ độ là **hệ toạ độ scene** (cùng hệ `cast[].x`),
-trừ chỗ ghi rõ đơn vị nhân vật. Mọi `kind` nhận bốn trường chung:
+Mọi mốc là **giây scene**, mọi toạ độ là **hệ toạ độ scene** (hệ chỗ vẽ của `cameraAt`, cùng
+hệ `anchorAt` trả), trừ chỗ ghi rõ đơn vị nhân vật. Mọi `kind` nhận bốn trường chung:
 
 | | |
 |---|---|
 | `layer` | `back` / `front` / `ui`, mặc định theo `kind` (bảng dưới) |
-| `z` | nấc trên trục chung với người, đạo cụ, động vật ([03](03-scene.md#trục-z)); bỏ trống là băng của `layer` |
+| `z` | nấc trên trục chung với lớp vẽ code ([03](03-scene.md#trục-z)); bỏ trống là băng của `layer` |
 | `frame` | `stage` (mặc định) hay `camera`: gốc toạ độ ở **tâm khung máy quay** tại `t`, mục lia theo máy — mưa, bụi, chữ dán lên kính. `(0, 0)` là giữa màn hình, không đổi theo `zoom` |
 | `clip` | `name` của một mục `kind: "clip"` cùng cảnh: mục này chỉ vẽ trong hình ấy. Hình cắt khai ở hệ sân khấu, không trôi theo mục `frame: "camera"` | Bảng đầy đủ từng trường nằm trong zod của
 `packages/fx/src/schema.ts` (MCP: `schema`), đây chỉ là nghĩa và bẫy.
@@ -68,52 +69,50 @@ trừ chỗ ghi rõ đơn vị nhân vật. Mọi `kind` nhận bốn trường 
 | `caption` | Chữ diễn burn lên hình, `lines[]` hiện dần; `blow` là bị thổi bay thay vì tắt. `size` là đơn vị scene ở zoom 1 | `front` |
 | `buttons` | Nút PAUSE / PLAY loé lên rồi tắt ở `presses[]`; có `cursor` là con trỏ chuột trượt tới rồi click | `ui` |
 | `iris` | Iris khép: thu từ ngoài khung về `r` quanh `(x, y)` trong `from → to`, giữ tới `close`, đóng hẳn trong `shut` | `ui` |
-| `bubble` | Bong bóng thoại giấy viền mực, không đổ bóng — nó nằm trong cảnh, không dán trên giấy. `style`: `speech` (đuôi cong nhọn, `curl: 0` là thẳng), `thought` (bọt dẹt to dần về phía thân thay đuôi), `shout` (viền răng cưa một đường kín, đuôi là một răng kéo dài, phập phồng và rung). `shape` là thân của hai kiểu đầu: `round` (bo góc `r`; `r` từ nửa cạnh ngắn là viên thuốc, hộp vuông thành tròn), `oval`, `cloud` — mặc định `round` cho `speech`, `cloud` cho `thought`. `width: 0` là mảng phẳng không viền. Bật ra ở `open`, co lại trước `shut`; `items[]` là ảnh trong `pieces/`, bộ phận `PARTS` hay chữ, mỗi món bật ra ở `at` riêng; `grawlix` là dãy `#%&$¥€` đổi mặt mỗi `every` giây | `front` |
+| `bubble` | Bong bóng thoại giấy viền mực, không đổ bóng — nó nằm trong cảnh, không dán trên giấy. `style`: `speech` (đuôi cong nhọn, `curl: 0` là thẳng), `thought` (bọt dẹt to dần về phía thân thay đuôi), `shout` (viền răng cưa một đường kín, đuôi là một răng kéo dài, phập phồng và rung). `shape` là thân của hai kiểu đầu: `round` (bo góc `r`; `r` từ nửa cạnh ngắn là viên thuốc, hộp vuông thành tròn), `oval`, `cloud` — mặc định `round` cho `speech`, `cloud` cho `thought`. `width: 0` là mảng phẳng không viền. Bật ra ở `open`, co lại trước `shut`; `items[]` là ảnh trong `pieces/` hay chữ, mỗi món bật ra ở `at` riêng; `grawlix` là dãy `#%&$¥€` đổi mặt mỗi `every` giây | `front` |
 | `typewriter` | Thẻ chữ gõ dần: hiện ở `from`, mỗi phím một ký tự (hay `keys[]` đích danh, gõ kiểu Telex), con trỏ đứng yên lúc gõ rồi nhấp nháy; `bg` là nền kín khung. `typewriterKeys(fx)` trả giây từng phím để tầng tập neo tiếng gõ | `front` |
 | `dayNight` | Ngày đêm trôi `days` vòng trong `from → to`: mặt trời đi cung `(x0, y0) → (x1, y1)` vồng `arc`, chạng vạng thì trời sập tối phủ cả khung, trăng lưỡi liềm và sao đi nửa đêm | `front` |
 
 ## Ba lớp, ba chỗ chèn
 
-`layer` là `back` (trước cả cast), `front` (sau cast, trước UI) hay `ui` (trên tất
-cả) — ba băng `-500` / `500` / `1000` trên trục `z` của cảnh. Muốn hào quang quanh
-vật cầm tay nằm **trước** người thì đổi `layer` của mục đó; muốn nó chen vào
-**giữa** hai người thì khai `z` — không đổi thứ tự vẽ ở chỗ render.
+`layer` là `back`, `front` hay `ui` — ba băng `-500` / `500` / `1000` trên trục `z` của
+cảnh, cùng trục với `back` / `front` của lớp vẽ code. Muốn một mục chen vào giữa hai thứ
+khác trên trục thì khai `z` — không đổi thứ tự vẽ ở chỗ render. Người không nằm trên trục:
+ở cảnh 3D cả lớp SVG, kể cả `back`, vẽ đè lên sân khấu three
+([03](03-scene.md#trục-z)).
 
 Chỗ chèn chỉ có một: `<SceneWorld>` của gói này — render, MCP và `Scene.tsx` của
-scaffold đều vẽ qua nó. Đường render mới cũng vẽ bằng nó, đừng tự chèn từng lớp.
+scaffold đều vẽ qua nó; lớp SVG của cảnh 3D (`Overlay3D` của scaffold) xếp `<SceneFx>` cùng
+luật. Đường render mới cũng vẽ bằng nó, đừng tự chèn từng lớp.
 
 Cái gì không có `kind`, hoặc cần thứ `SceneFx` không nhận — vẽ cả bối cảnh, rung
-cả khung, đẩy chỗ đứng của người / thú / đạo cụ — thì là **lớp vẽ code** của repo
-video, xem [docs/10](10-lop-ve-code.md).
+cả khung — thì là **lớp vẽ code** của repo video, xem [docs/10](10-lop-ve-code.md).
 
 ## Bám vào người: `anchor`
 
 `tears` cần biết con mắt ở đâu, `bubble` có `cast` cần biết mũi đuôi chĩa vào đâu.
 `<SceneFx anchor>` nhận `FxAnchor` — dựng bằng `sceneAnchor(rt, characterOf)`, bên
-trong gọi `anchorAt` (người) hay `animalAnchorAt` (id trong `animals[]`) của rig và
-kèm `scale` của nó. Đây là đường duy nhất; không chép chuỗi biến hình của
-`<Character>`.
+trong gọi `anchorAt` của rig và kèm `scale` của người ấy. Mốc là của **người 3D**
+(`cast[].world`), trong hệ toạ độ chỗ vẽ của lớp SVG đè lên sân khấu three; `cast` không có
+`id` ấy thì `null`, và hiệu ứng bám người ấy không vẽ. Đây là đường duy nhất; không tự chiếu
+khớp qua `lens` ([03](03-scene.md#hỏi-mốc-trên-người)).
 
-Mũi đuôi `bubble` là mốc `anchor` (mặc định `head`; con vật thì `muzzle`, `poll`…)
+Mũi đuôi `bubble` là mốc `anchor` (mặc định `head`)
 cộng `dx` / `dy` đơn vị nhân vật, đọc **một lần lúc `open`** để bong bóng đứng yên
-khi đầu gật; `follow: true` thì đọc mỗi frame. Tên mốc sai loại (`head` cho con vật)
-là lỗi lúc vẽ. Không có `cast` thì khai `tip: { x, y }` toạ độ scene.
+khi đầu gật; `follow: true` thì đọc mỗi frame. Tên mốc sai là lỗi lúc vẽ. Không có `cast` thì khai `tip: { x, y }` toạ độ scene.
 
 Các hiệu ứng khác khai toạ độ cứng: lấy số bằng `scene_probe` với
-`anchors: ["handNear"]` đúng frame rời tay (`x0`/`y0`/`deg0` của `throw` là tâm
+`anchors: ["wristNear"]` đúng frame rời tay (`x0`/`y0`/`deg0` của `throw` là tâm
 và góc SVG của mốc ấy), không đọc bằng mắt và không render hai lượt trừ ảnh.
 
 ## Ảnh của vật rời tay
 
-`throw` / `fly` / `pausedThrow` và món của `bubble` chọn đúng một nguồn:
-`piece` là file trong `pieces/`, hoặc `part` là tên có trong `PARTS` (ví dụ
-`gold-bar`). Món bong bóng cũng nhận `text`, không khai cùng nguồn hình.
-Cả hai nguồn hình vừa khung `w`/`h` và giữ tỉ lệ; `fly` dùng `w0`/`h0`,
-`w1`/`h1`. Bộ phận dùng màu mặc định trắng, nét `#1a1a1a`, độ dày `6`;
-châu báu và rổ giữ bảng màu riêng.
+`throw` / `fly` / `pausedThrow` và món của `bubble` lấy hình ở `piece`: file ảnh trong
+`pieces/` của repo video. Món bong bóng nhận `piece` (kèm `w`/`h`) hay `text`, chỉ một
+nguồn. Ảnh vừa khung `w`/`h` và giữ tỉ lệ; `fly` dùng `w0`/`h0`, `w1`/`h1`.
 `fxFiles(fx)` liệt kê chúng; chỗ render gom `urls` từ đó — render qua
 `mountPiece`, Remotion qua `pieceUrl` của `data.ts`. `stickman check` báo file
-thiếu ở cả hai lớp mảnh. Mốc `t0` phải khớp mốc `equip` tắt socket ấy: sai một
+thiếu trong `pieces/`. Mốc `t0` phải khớp mốc `equip` tắt socket ấy: sai một
 nhịp là hai cái rìu hoặc không cái nào.
 
 ## Bong bóng trong lớp vẽ code
@@ -190,7 +189,7 @@ Hiệu ứng không phát tiếng; tầng tập neo tiếng vào mốc do chính
   chữ không xô khi dài ra và con trỏ đứng đúng sau chữ cuối mà không đo font. `keys[]`
   thì chữ của phím cuối phải là `text`, không thì dòng xếp theo một chuỗi khác chữ
   hiện ra.
-- **Màn đêm và nền thẻ phủ cả khung.** `dayNight` ở `front` tối cả người; muốn người
-  sáng thì đặt `z` dưới dàn diễn, hay cắt bằng `clip`.
+- **Màn đêm và nền thẻ phủ cả khung.** `dayNight` và `bg` của `typewriter` phủ cả sân khấu
+  three bên dưới, kể cả người; muốn chừa một vùng thì cắt bằng `clip`.
 - **Nút và iris là UI**: vẽ phẳng, không nét mực, không đổ bóng, chỉ loé rồi tắt.
   Trạng thái "đang dừng" do cảnh đứng im nói hộ, không phải icon treo suốt.

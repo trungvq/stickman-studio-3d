@@ -1,4 +1,4 @@
-import { FRAMES, type SceneData } from "@stickman3d/sketch";
+import { FRAMES, type SceneData } from "@stickman3d/rig/core";
 import type { ComponentProps, ReactElement } from "react";
 import { Composition, Folder, useCurrentFrame, useVideoConfig } from "remotion";
 import pkg from "../package.json";

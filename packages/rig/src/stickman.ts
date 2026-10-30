@@ -22,7 +22,7 @@ import { Ankle, earGroup, handRig, humanHeadGeometry, neckGeometry, pelvisGeomet
 import { handGrip } from './core/hand';
 import type { Rig } from './torso';
 
-// Tỉ lệ lấy từ RIG của @stickman3d/sketch, chia 100: người cao ~4,3 đơn vị, đầu to bằng gần một phần ba. Độ dài đoạn của
+// Tỉ lệ lấy từ RIG của lõi, chia 100: người cao ~4,3 đơn vị, đầu to bằng gần một phần ba. Độ dài đoạn của
 // một người theo `rig.height` ở `Figure.bones`; `R` chỉ đúng ở `height = 1`, đầu và bề dày nét thì đúng mọi người.
 export const R = BONES3;
 
@@ -219,7 +219,7 @@ function tubes(m: THREE.Mesh, c: THREE.Vector3[]) {
   }
 }
 /**
- * Uốn hai đoạn chi như `limbCurves` của rig 2D: hai đoạn Bézier bậc ba qua gốc, khớp giữa, đầu chi; tiếp tuyến ở khớp
+ * Uốn hai đoạn chi như `limbCurves` của lõi: hai đoạn Bézier bậc ba qua gốc, khớp giữa, đầu chi; tiếp tuyến ở khớp
  * giữa song song gốc → đầu chi, `k` là `limbCurve`. Đặt vào `userData.bend` của hai đoạn; pipeline gọi trước mỗi lượt vẽ.
  */
 function bendLimb(upper: THREE.Mesh, mid: THREE.Object3D, lower: THREE.Mesh, k: number, ankle?: THREE.Object3D) {
@@ -349,7 +349,7 @@ function inkLines(head: THREE.Object3D, lines: Vec3[][], r: number) {
 
 /**
  * Mũ dựng khối (`pieces.crown.hat`) ôm sọ và vỏ tóc `hair`; trả vùng trong lòng mũ để tóc bỏ lọn, búi nằm trong ấy.
- * docs/02-trang-phuc.md#mũ-dựng-khối
+ * docs/12-trang-phuc-3d.md#mũ-dựng-khối
  */
 function sculptHat(head: THREE.Object3D, hat: Partial<Hat>, hair: Partial<Sculpt> | undefined, color: string) {
   const h = hatSpec(hat);
@@ -370,7 +370,7 @@ function sculptHat(head: THREE.Object3D, hat: Partial<Hat>, hair: Partial<Sculpt
   return (p: Vec3) => insideHat(fit, p);
 }
 
-/** Trâm cài búi (`pieces.headAcc.pin`) xuyên khối buộc của tóc `hair`: que màu `color`, hạt màu `bead`. docs/02-trang-phuc.md#trâm-cài-búi */
+/** Trâm cài búi (`pieces.headAcc.pin`) xuyên khối buộc của tóc `hair`: que màu `color`, hạt màu `bead`. docs/12-trang-phuc-3d.md#trâm-cài-búi */
 function sculptPin(head: THREE.Object3D, pin: Partial<Pin>, hair: Partial<Sculpt> | undefined, human: boolean, color: string, bead: string) {
   const m = pinMesh(pin, hair);
   const bend = (t: Vec3[]) => (human ? t.map(humanHair) : t);
@@ -383,7 +383,7 @@ function sculptPin(head: THREE.Object3D, pin: Partial<Pin>, hair: Partial<Sculpt
 
 /**
  * Bông tai (`pieces.headAcc.earrings`) ở hai dái tai: phần cố định gắn vào đầu, vòng và phần thõng là nhóm quay quanh lỗ xỏ
- * (`userData.dangle`), `hangJewelry` quay cho thõng theo trọng lực. docs/02-trang-phuc.md#bông-tai
+ * (`userData.dangle`), `hangJewelry` quay cho thõng theo trọng lực. docs/12-trang-phuc-3d.md#bông-tai
  */
 function sculptEarrings(head: THREE.Object3D, earrings: Partial<Earrings>, human: boolean) {
   const metal = earrings.color ?? '#d9b44a';
@@ -638,7 +638,7 @@ export function stickman(o: StickmanOptions): Figure {
   }
   const legs = { [-1]: leg(hips, -1, at.hip, B), [1]: leg(hips, 1, at.hip, B) } as Record<Side, Leg>;
   const arms = { [-1]: arm(spine, -1, sx, sy, B), [1]: arm(spine, 1, sx, sy, B) } as Record<Side, Arm>;
-  // tay chân rủ hơi choãi như hình 2D
+  // tay chân rủ hơi choãi
   for (const s of SIDES) arms[s].shoulder.rotation.z = s * 0.2;
   root.traverse((o) => {
     if ((o as THREE.Mesh).isMesh && !o.userData.noShadow) o.castShadow = true;
@@ -702,7 +702,7 @@ export function stickman(o: StickmanOptions): Figure {
     });
     for (const j of [spine, neck, head]) mergeStatic(j);
   }
-  // người có nét riêng theo hình 2D: không vẽ nét gấp pháp tuyến; đồ cầm gắn sau thì vẫn có
+  // người có nét riêng: không vẽ nét gấp pháp tuyến; đồ cầm gắn sau thì vẫn có
   root.traverse(bodyMark);
   root.userData.figure = true;
   const grip = (s: Side): Vec3 => (hands ? handGrip(s, hands[s].scale, hands[s].long) : [0, -(R.limb * sleeveWidth) / 10, 0]);
@@ -924,7 +924,7 @@ function mergeStatic(j: THREE.Object3D) {
 }
 const isJoint = (o: THREE.Object3D) => !!o.userData.joint;
 
-/** Các trường của JSON nhân vật mà người 3D đọc. Truyền object đã qua `parseCharacter` của @stickman3d/sketch. */
+/** Các trường của JSON nhân vật mà người 3D đọc. Truyền object đã qua `parseCharacter` của lõi. */
 export interface CharacterJson {
   rig: Rig;
   palette: {

@@ -369,7 +369,7 @@ export interface SkirtOptions { skirt: Skirt; rig: Rig; color: string; ink: stri
 
 /**
  * Váy dựng khối của rig (`pieces.hem.skirt`): bao lồi của vành cạp, vành gấu và hai ống đùi tới tầm váy
- * phủ, như hình bao `buildSkirt` vẽ ở 2D; ống đùi thon theo đùi từ hông tới gối. `thighs` là hông và hướng đùi trong
+ * phủ; ống đùi thon theo đùi từ hông tới gối. `thighs` là hông và hướng đùi trong
  * hệ thân (px, y xuống). Mọi khối nằm trong một nhóm `userData.skirt` gắn vào `spine`; `fitSkirt` dựng lại nó theo đùi.
  */
 export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thighs, legW, knee = legW / 2, body, legs, legR, curve }: SkirtOptions): THREE.Group {

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 20,
+  "name": "lean-back-seated-3d",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": 0, "head": [null, null, 0] }, "ease": "smooth" },
+    { "t": 1, "pose": { "torso": -6, "head": [null, null, -6] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Ngồi ngả ra sau, cằm hếch (sốt ruột, bề trên): thân −6°, đầu gật −6° trong 0,5 s; giữ. Chỉ ghi `torso` và gật của `head`, nghiêng, lắc để trống; tay để cảnh. Nền `sit-3d` với `world.sit`, ghế có lưng tựa. Chồng được lên tay chống nạnh, chắp sau lưng, khoanh trên ghế và `turn-head-*`; buông bằng clip rỗng blend ~0,4. Đứng là `lean-back-3d`, ngồi là `lean-back-seated-3d`. Sinh bằng `tools/actions/lean-back.mjs`.",
+  "preview": { "stage": "chair" }
+}

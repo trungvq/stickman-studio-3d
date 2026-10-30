@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 20,
+  "name": "face-bitter",
+  "duration": 0.4,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "open",
+        "brow": "furrowed",
+        "mouth": "talkSadB"
+      }
+    }
+  ],
+  "note": "Cay cú bị dồn: mày cau, miệng mếu mà mở (`talkSadB`) — cay chứ không đáng thương như `face-worried`; vào ngay rồi giữ. Chỉ ghi `face`, nên chồng lên mọi tư thế, đứng hay ngồi, và nằm dưới track khẩu hình (`talk-lips`): lời đè `mouth`, mắt và mày vẫn của lớp này. Gào lên thì `face-anguish`.",
+  "preview": {
+    "stage": "stand"
+  }
+}

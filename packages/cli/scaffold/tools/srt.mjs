@@ -9,13 +9,11 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { basename, join, resolve } from "node:path";
 import {
   parseAction,
-  parseAnimal,
   parseHandShape,
   parseHeldItem,
-  parseProp,
   parseScene,
   resolveScene,
-} from "@stickman3d/sketch";
+} from "@stickman3d/rig/core";
 import { parseEpisode } from "../src/episode.ts";
 import { cueStart, layoutShots } from "../src/shots.ts";
 import { commonDir } from "./webpack.mjs";
@@ -55,8 +53,6 @@ const load = (dirs, parse, keep) => {
 const common = commonDir();
 const ACTIONS = load([join(common, "actions"), join(ROOT, "actions")], parseAction);
 const SCENES = load([join(ROOT, "scenes")], parseScene);
-const ANIMALS = load([join(common, "animals"), join(ROOT, "animals")], parseAnimal, true);
-const PROPS = load([join(ROOT, "props")], parseProp, true);
 const HELD = load([join(common, "held"), join(ROOT, "held")], parseHeldItem);
 const HANDS = load([join(common, "hands"), join(ROOT, "hands")], parseHandShape);
 
@@ -64,8 +60,7 @@ const SECONDS = {};
 const sceneSeconds = (name) => {
   if (!SCENES[name]) throw new Error(`không có scenes/${name}.json`);
   return (SECONDS[name] ??=
-    SCENES[name].duration ??
-    resolveScene(SCENES[name], ACTIONS, ANIMALS, PROPS, {}, {}, HELD, HANDS).duration);
+    SCENES[name].duration ?? resolveScene(SCENES[name], ACTIONS, {}, {}, HELD, HANDS).duration);
 };
 
 const run = (bin, args) => {

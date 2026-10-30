@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 20,
+  "name": "phone-film-3d",
+  "duration": 2,
+  "end": "hold",
+  "mask": ["armNear", "armFar", "hand"],
+  "authoredAt": "side",
+  "sides": "anatomical",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "reach": {
+        "armFar": {
+          "to": "otherGrip",
+          "offset": [0, -2, 14],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.8]
+        },
+        "armNear": {
+          "to": "chest",
+          "offset": [48, 2, 14],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.8]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "edge", "palm": "in", "fingers": "up" },
+        "armNear": { "pose": "edge", "palm": "in", "fingers": [1, -1, 0] }
+      }
+    },
+    {
+      "t": 0.3,
+      "pose": {},
+      "reach": {
+        "armFar": {
+          "to": "otherGrip",
+          "offset": [0, -2, 14],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.8]
+        },
+        "armNear": {
+          "to": "chest",
+          "offset": [48, 2, 14],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.8]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "edge", "palm": "in", "fingers": "up" },
+        "armNear": { "pose": "edge", "palm": "in", "fingers": [1, -1, 0] }
+      }
+    },
+    {
+      "t": 0.8,
+      "pose": {},
+      "reach": {
+        "armFar": {
+          "to": "otherGrip",
+          "offset": [0, -2, 14],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.8]
+        },
+        "armNear": {
+          "to": "chest",
+          "offset": [52, -62, 12],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.8]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "edge", "palm": "in", "fingers": "up" },
+        "armNear": { "pose": "edge", "palm": "in", "fingers": "up" }
+      }
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": {
+        "armFar": {
+          "to": "otherGrip",
+          "offset": [0, -2, 14],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.8]
+        },
+        "armNear": {
+          "to": "chest",
+          "offset": [52, -62, 12],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.8]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "edge", "palm": "in", "fingers": "up" },
+        "armNear": { "pose": "edge", "palm": "in", "fingers": "up" }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Giơ điện thoại lên quay phim bằng hai tay: tay phải cầm máy dọc trước ngực (mốc `chest`, offset [48, 2, 14]) tới 0,6 s rồi giơ lên ngang cằm ([52, −62, 12]) lúc 1,6 s, giữ; tay trái kẹp cạnh kia của máy (mốc `otherGrip`, cách 14), dáng `edge`. Ghi hai tay, `hand`; `sides: \"anatomical\"`. Nền `stand-3d` hay `sit-3d`; món ở `world.hands[].hold` tay phải, như `dien-thoai@palmBox` với `face` màn về `back` (người cầm), `roll` đầu máy lên. Hạ bằng clip rỗng blend ~0,4.",
+  "preview": {
+    "stage": "stand",
+    "hold": {
+      "right": {
+        "item": "dien-thoai",
+        "group": "palmBox",
+        "face": { "axis": "screen", "toward": "back" },
+        "roll": { "axis": "top", "toward": "up" }
+      }
+    }
+  }
+}

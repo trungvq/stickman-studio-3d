@@ -6,7 +6,7 @@ import { jewelry } from './demo-jewelry.js';
 import { hem } from './demo-hem.js';
 
 // Cảnh diễn hành động (`?demo=`): scene JSON dựng tại chỗ, @stickman3d/rig lấy mẫu từng khung bằng `sceneAt`,
-// người 3D diễn theo bằng `act`. Hành động là bộ chung của studio (`apps/studio/public/actions/`), cộng `actions/` của app
+// người 3D diễn theo bằng `act`. Hành động là bộ chung (`common/actions/`), cộng `actions/` của app
 // cho hành động chỉ dùng ở đây; trùng tên thì bản của app đè.
 
 const HUMAN = new URLSearchParams(location.search).has('human');
@@ -41,7 +41,7 @@ export const legHalf = (o) => (o.clad ? cladThigh(limbWidths(o).trouser, o.rig.s
 
 export const ACTIONS = Object.fromEntries(
   Object.entries({
-    ...import.meta.glob(['../../studio/public/actions/*.json', '!**/index.json'], { eager: true, import: 'default' }),
+    ...import.meta.glob(['../../../common/actions/*.json', '!**/index.json'], { eager: true, import: 'default' }),
     ...import.meta.glob('../actions/*.json', { eager: true, import: 'default' }),
   }).map(([f, j]) => {
     const r = parseAction(j);
@@ -154,7 +154,7 @@ export function demo(name) {
     if (!r.success) throw new Error(`${k}: ${r.error.message}`);
     return [k, r.data];
   }));
-  const rt = resolveScene(scene.data, { ...ACTIONS, ...extra }, {}, {}, heights, bodies);
+  const rt = resolveScene(scene.data, { ...ACTIONS, ...extra }, heights, bodies);
   const people = members.map((m) => ({ id: m.id, fig: stickman(m.opts) }));
   const props = name === 'sit' ? [furniture()] : (ACTS[name]?.props?.() ?? []);
   const figOf = Object.fromEntries(people.map((p) => [p.id, p.fig]));

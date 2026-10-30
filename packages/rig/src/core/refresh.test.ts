@@ -134,7 +134,7 @@ const scene = (j: unknown): SceneData => {
   return r.data;
 };
 function runtime(sc: SceneData) {
-  const rt = resolveScene(sc, {}, {}, {}, { nguoi: H, ban: H }, { nguoi: DIMS, ban: DIMS }, HELD);
+  const rt = resolveScene(sc, {}, { nguoi: H, ban: H }, { nguoi: DIMS, ban: DIMS }, HELD);
   rt.chars = { nguoi: NGUOI, ban: NGUOI };
   return rt;
 }
@@ -276,7 +276,7 @@ describe("`refreshRuntime`", () => {
           ],
         });
       const make = (sc: SceneData) => {
-        const rt = resolveScene(sc, {}, {}, {}, { a: H, b: H }, { a: DIMS, b: DIMS }, { the: THE });
+        const rt = resolveScene(sc, {}, { a: H, b: H }, { a: DIMS, b: DIMS }, { the: THE });
         rt.chars = { a: NGUOI, b: NGUOI };
         return rt;
       };

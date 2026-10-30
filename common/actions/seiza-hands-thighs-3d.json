@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 18,
+  "name": "seiza-hands-thighs-3d",
+  "duration": 3.4,
+  "end": "wrap",
+  "authoredAt": "side",
+  "mask": ["armFar", "armNear", "legFar", "legNear", "torso", "hand"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "legFar": [80, -170], "legNear": [80, -170], "torso": 3 },
+      "reach": {
+        "armNear": {
+          "to": "thigh",
+          "offset": [20, 0, 16],
+          "point": "palm",
+          "elbow": [-0.1, 1, 2]
+        },
+        "armFar": { "to": "thigh", "offset": [20, 0, 16], "point": "palm", "elbow": [-0.1, 1, 2] }
+      },
+      "hand": {
+        "armNear": { "pose": "flat", "w": 0.6, "palm": "down", "fingers": "forward" },
+        "armFar": { "pose": "flat", "w": 0.6, "palm": "down", "fingers": "forward" }
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5,
+      "pose": { "legFar": [80, -170], "legNear": [80, -170], "torso": 4 },
+      "reach": {
+        "armNear": {
+          "to": "thigh",
+          "offset": [20, 0, 16],
+          "point": "palm",
+          "elbow": [-0.1, 1, 2]
+        },
+        "armFar": { "to": "thigh", "offset": [20, 0, 16], "point": "palm", "elbow": [-0.1, 1, 2] }
+      },
+      "hand": {
+        "armNear": { "pose": "flat", "w": 0.6, "palm": "down", "fingers": "forward" },
+        "armFar": { "pose": "flat", "w": 0.6, "palm": "down", "fingers": "forward" }
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Ngồi quỳ 正座 như `seiza-3d` (chân, hông, thân thở 3 ↔ 4 mỗi 3,4 s, lặp) nhưng hai bàn tay úp trên mặt đùi: lòng tay (`point: palm`) áp mốc `thigh` cùng bên dời 20 về phía gối, 16 ra ngoài, dáng `flat` hờ, ngón chĩa ra trước, khuỷu thả ra ngoài cho cẳng tay tránh bụng. Ghi tay, chân, thân, bàn tay. Nền như `seiza-3d` (`world.sit`, mặt ngồi cao hơn sàn 14). Dáng ngồi chờ, nghe chuyện, người nền ở phòng chiếu; cúi chào ngồi thì chồng hành động thân lên trên.",
+  "preview": { "stage": "floor" }
+}

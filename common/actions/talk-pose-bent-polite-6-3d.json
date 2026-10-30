@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 20,
+  "name": "talk-pose-bent-polite-6-3d",
+  "duration": 3.2,
+  "end": "wrap",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": [28, -2.5], "head": [-2, null, 14] }, "ease": "linear" },
+    { "t": 0.5, "pose": { "torso": [29.5, -2.5], "head": [-2, null, 14] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Dáng thoại 6/6 của bộ `talk-pose-bent-polite` — nền cúi nhìn mặt bàn (thân ~26°, đầu nghiêng 4° gật 12°, gần `bend-place-3d`), tính lễ phép: mắt vẫn trên mặt bàn, sổ, thực đơn: cúi thêm 2°, nghiêng thân −2,5° và đầu −2° phía tay gần. Lặp 3,2 s, giữ nhịp thở của `stand-3d` (thân +1,5° ở nửa lượt); clip đặt `phase` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi `torso` (cúi, nghiêng) và nghiêng, gật của `head`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay xa ống kính. Nền `stand-3d` sau quầy, bàn trước mặt. Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới. Cùng dáng: `talk-pose-bent-polite-6-3d`, `talk-pose-bent-polite-6-nod-3d`, `talk-pose-bent-polite-6-soft-3d`, `talk-pose-bent-polite-6-big-3d`. Sinh bằng `tools/actions/talk-pose.mjs`.",
+  "preview": { "stage": "counter" }
+}

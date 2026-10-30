@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 20,
+  "name": "steps-back-3d",
+  "duration": 1.1,
+  "end": "hold",
+  "mask": ["legNear", "legFar", "torso"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "legFar": [0, 0], "legNear": [0, 0], "torso": 0 }, "ease": "smooth" },
+    {
+      "t": 0.12,
+      "pose": { "legFar": [3, 0], "legNear": [30, -70], "torso": -1 },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.27,
+      "pose": { "legFar": [11, 0], "legNear": [-11, 0], "torso": -2 },
+      "ease": "smooth"
+    },
+    { "t": 0.4, "pose": { "legFar": [30, -70], "legNear": [0, 0], "torso": -1 }, "ease": "smooth" },
+    {
+      "t": 0.55,
+      "pose": { "legFar": [-11, 0], "legNear": [11, 0], "torso": -2 },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.72,
+      "pose": { "legFar": [-3, 0], "legNear": [26, -60], "torso": -1 },
+      "ease": "smooth"
+    },
+    { "t": 1, "pose": { "legFar": [0, 0], "legNear": [0, 0], "torso": 0 }, "ease": "smooth" }
+  ],
+  "events": [
+    { "name": "step", "t": 0.213 },
+    { "name": "step", "t": 0.495 },
+    { "name": "step", "t": 1 }
+  ],
+  "note": "Lùi hai bước ngắn rồi khép chân, mặt giữ hướng cũ: chân gần nhấc, đặt ra sau, dồn hông, tới chân xa, rồi chân gần khép về; 1,1 s rồi giữ đứng khép, quãng 79 đơn vị rig ở `height` 1 (`actionStride` -79). Chỉ ghi hai chân, `torso`. Nền `stand-3d`; người có `world.path` dời đúng quãng ấy ra sau lưng trong 1,1 s, `yaw` giữ nguyên (`preview.path` theo đúng đường hông; hai mốc đều cũng được, rig co giãn nhịp chân). Tay để cảnh (`world.hands` khi bưng đồ). Vào clip và thả về nền (clip rỗng ngay khi `path` dừng) đều blend ~0,1; nối `steps-3d` để về chỗ cũ. Sinh bằng `tools/actions/steps.mjs`.",
+  "preview": {
+    "stage": "stand",
+    "path": [
+      { "t": 0, "at": [0, 0] },
+      { "t": 0.297, "at": [-22, 0] },
+      { "t": 0.605, "at": [-62, 0] },
+      { "t": 1.1, "at": [-79, 0] }
+    ]
+  }
+}

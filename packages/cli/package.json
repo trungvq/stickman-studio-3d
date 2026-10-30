@@ -7,17 +7,23 @@
   "files": [
     "cli.mjs",
     "check-worker.mjs",
+    "gen.mjs",
+    "gen-check.mjs",
+    "gen-pages.mjs",
+    "gen-pour.mjs",
+    "gen-sheet.mjs",
+    "gen-sit.mjs",
+    "gen-walk.mjs",
     "lib.mjs",
+    "migrate-elbow.mjs",
     "migrate-held.mjs",
     "rawjson.mjs",
-    "serve.mjs",
+    "roles-check.mjs",
     "studio3d.mjs",
     "templates.mjs",
     "scaffold",
     "docs",
-    "prompts",
     "template",
-    "studio",
     "studio3d",
     "versions.json"
   ],
@@ -26,7 +32,7 @@
   },
   "scripts": {
     "typecheck": "echo skip",
-    "test": "node --test args.test.mjs reseat.test.mjs upgrade.test.mjs clash.test.mjs snap.test.mjs palm.test.mjs groups.test.mjs sweep.test.mjs scope.test.mjs held.test.mjs migrate.test.mjs migrate-elbow.test.mjs rawjson.test.mjs studio3d.test.mjs",
+    "test": "node --test args.test.mjs gen.test.mjs upgrade.test.mjs clash.test.mjs snap.test.mjs palm.test.mjs groups.test.mjs sweep.test.mjs scope.test.mjs held.test.mjs migrate.test.mjs migrate-elbow.test.mjs rawjson.test.mjs roles.test.mjs studio3d.test.mjs walk.test.mjs",
     "build": "echo skip",
     "prepack": "node prepack.mjs",
     "postpack": "node prepack.mjs --clean"
@@ -34,12 +40,14 @@
   "dependencies": {
     "@stickman3d/fx": "workspace:*",
     "@stickman3d/render": "workspace:*",
-    "@stickman3d/sketch": "workspace:*",
+    "@stickman3d/rig": "workspace:*",
     "prettier": "^3.6.2",
     "vite": "^8.3.3"
   },
   "exports": {
     ".": "./lib.mjs",
+    "./gen": "./gen.mjs",
+    "./gen-pages": "./gen-pages.mjs",
     "./studio3d": "./studio3d.mjs"
   },
   "publishConfig": {

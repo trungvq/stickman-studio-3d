@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 20,
+  "name": "thumbs-up-3d",
+  "duration": 1,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": ["armNear", "hand"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armNear": [-6, 24, 0] },
+      "hand": { "armNear": { "pose": "thumbsUp", "w": 0.3, "turn": 0, "bend": 0 } },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.35,
+      "pose": {},
+      "reach": { "armNear": { "at": [96, -104, 52], "elbow": [-0.4, 1, 0.5] } },
+      "hand": { "armNear": { "pose": "thumbsUp", "w": 1, "turn": -30, "bend": 0 } },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.5,
+      "pose": {},
+      "reach": { "armNear": { "at": [100, -116, 52], "elbow": [-0.4, 1, 0.5] } },
+      "hand": { "armNear": { "pose": "thumbsUp", "w": 1, "turn": -30, "bend": 0 } },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.65,
+      "pose": {},
+      "reach": { "armNear": { "at": [96, -104, 52], "elbow": [-0.4, 1, 0.5] } },
+      "hand": { "armNear": { "pose": "thumbsUp", "w": 1, "turn": -30, "bend": 0 } },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": { "armNear": { "at": [96, -104, 52], "elbow": [-0.4, 1, 0.5] } },
+      "hand": { "armNear": { "pose": "thumbsUp", "w": 1, "turn": -30, "bend": 0 } },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "Giơ ngón cái khen: tay gần đưa nắm tay ra trước ngang ngực (đích cổ tay hệ thân [96, −104, 52]) trong 0,35 s, nảy lên một nhịp lúc 0,5 s rồi giữ; dáng `thumbsUp`, `turn` −30 cho lòng nắm quay vào thân, ngón cái dựng lên. Chỉ ghi `armNear`, `hand`. Nền `stand-3d` hay `sit-3d`; hạ bằng nền blend ~0,4. Tay xa để trống; đi với `nod-*`, `face-delighted`.",
+  "preview": { "stage": "stand" }
+}

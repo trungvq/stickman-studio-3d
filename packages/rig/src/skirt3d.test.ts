@@ -6,11 +6,8 @@ import { RIG } from './core/constants';
 import { DEFAULT_WALK, walkPose } from './core/walk';
 import { defaultCharacter, limbWidths, parseCharacter, SkirtSchema, type CharacterData, type Skirt } from './core/schema';
 import type { Figure } from './stickman';
-import blue from '../../../apps/studio/public/characters/common-blue-blouse-skirt.json';
-import plum from '../../../apps/studio/public/characters/common-plum-cardigan-skirt.json';
-import rose from '../../../apps/studio/public/characters/common-rose-bow-shirt-skirt.json';
-import sage from '../../../apps/studio/public/characters/common-sage-square-neck-skirt.json';
-import taupe from '../../../apps/studio/public/characters/common-taupe-blazer-skirt.json';
+import kimono from '../../../common/characters/sample-kimono.json';
+import woman from '../../../common/characters/sample-woman.json';
 
 // Người que three cần canvas cho nét mặt: một canvas giả đủ để dựng hình, không vẽ gì
 beforeAll(() => {
@@ -39,7 +36,7 @@ function inside(mesh: THREE.Mesh, v: THREE.Vector3) {
 
 /** Nhân vật mặc váy của bộ mẫu */
 const samples = () =>
-  [blue, plum, rose, sage, taupe].map((j) => {
+  [woman, kimono].map((j) => {
     const r = parseCharacter(j);
     if (!r.success) throw new Error(j.name);
     return r.data;
@@ -226,7 +223,7 @@ describe('váy dựng khối', () => {
 
   it('người que: khối thân áo dừng ở cạp, phần dưới cạp nằm trong váy', async () => {
     const cases: [string, CharacterData][] = [['mặc định', skirted({}, false)], ['ngang gối', skirted(KNEE, false)]];
-    for (const c of samples()) cases.push([c.name, c]);
+    for (const c of samples()) cases.push([c.name, skirted(c.pieces.hem.skirt!, false, c)]);
     for (const [name, c] of cases) {
       const { p, mesh } = await posed(c);
       const yW = -c.pieces.hem.skirt!.rise * c.rig.height;

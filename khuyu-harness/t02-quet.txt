@@ -1,0 +1,491 @@
+body	t02-s001-tham-thi-erika-right	0.2667-3.2333	0.67	aim	on=1			
+body	t02-s003b-dong-hanh-canh-sat-vien-right	0.2-0.2167	0.60	hold	on=1			
+body	t02-s003b-dong-hanh-yoshie-left	0-21.6667	1.66	aim	on=0			
+body	t02-s003b-dong-hanh-yoshie-right	0-21.6667	1.48	aim	on=0			
+body	t02-s016-xin-phep-yota-left	1.9-1.95	1.27	aim	on=1			
+body	t02-s016-xin-phep-yota-left	3.6833-3.7833	1.26	aim	on=1			
+body	t02-s017-goi-yota-left	31.7833-31.8167	0.62	hold	on=1			
+body	t02-s017-goi-yota-left	32.5333-32.5833	1.23	aim	on=1			
+body	t02-s025-chi-the-erika-left	2.2667-8.0167	1.03	hold	on=1			
+body	t02-s028-doi-chia-yota-right	3.35-5.9833	0.59	hold	on=1			
+body	t02-s030-khai-vi-yoshie-left	2.6333-15.15	1.16	world	on=1			
+body	t02-s030-khai-vi-yoshie-right	2.65-2.7	1.05	lock	on=1			
+body	t02-s030-khai-vi-yoshie-right	14.3833-14.5333	1.26	aim	on=1			
+body	t02-s032-sach-yoshie-left	0-5	0.72	world	on=1			
+body	t02-s033-ruou-tang-yoshie-left	0-9.1167	0.72	world	on=1			
+body	t02-s034-goi-them-erika-right	21.5167-21.65	0.55	hold	on=1			
+body	t02-s034-goi-them-yoshie-left	0-11.35	0.77	world	on=1			
+body	t02-s034-goi-them-yoshie-left	22.25-27.25	1.09	world	on=1			
+body	t02-s034-goi-them-yoshie-right	10.2-10.4833	0.51	hold	on=1			
+body	t02-s034-goi-them-yoshie-right	10.8-11.05	0.55	hold	on=1			
+body	t02-s034-goi-them-yoshie-right	11.15-11.3667	0.69	hold	on=1			
+body	t02-s037-bep-1-yoshie-left	2.4833-4.6333	1.03	world	on=1			
+body	t02-s037-bep-1-yoshie-right	0-4.6333	2.75	aim	on=1			
+body	t02-s041-nguoi-erika-right	0-0.4167	0.74	hold	on=1			
+body	t02-s041-nguoi-erika-right	1.9-5.0667	1.71	aim	on=1			
+body	t02-s041-nguoi-yoshie-left	0.9667-8.9667	0.68	world	on=1			
+body	t02-s042-lam-lai-yoshie-left	0-0.3667	0.68	world	on=1			
+body	t02-s042-lam-lai-yoshie-left	1.05-1.3833	0.68	world	on=1			
+body	t02-s043-bep-2-yoshie-left	1.1833-2.4	1.01	world	on=1			
+body	t02-s043-bep-2-yoshie-right	1.2-2.4	0.92	world	on=1			
+body	t02-s045-cui-yoshie-left	0.9333-1.15	0.84	aim	on=1			
+body	t02-s045-cui-yoshie-left	1.8-2.7333	1.12	world	on=1			
+body	t02-s045-cui-yoshie-right	0.8667-1.0667	0.84	aim	on=1			
+body	t02-s045-cui-yoshie-right	1.9167-2.7333	1.02	world	on=1			
+body	t02-s046-che-gieu-yoshie-left	0-7.1167	0.73	world	on=1			
+body	t02-s046-che-gieu-yoshie-right	2.5667-2.6333	0.51	world	on=1			
+body	t02-s050-them-bo-yoshie-left	1.1667-7.8333	0.85	hold	on=1			
+body	t02-s050-them-bo-yoshie-right	0.3167-0.85	0.90	world	on=1			
+body	t02-s050-them-bo-yoshie-right	2-2	0.53	hold	on=1			
+body	t02-s052-o2-giuong-erika-right	1.1-1.35	1.23	lock	on=0			
+body	t02-s052-o2-giuong-erika-right	1.5-4	1.23	lock	on=0			
+body	t02-s055-nhan-viec-chiaki-nhan-right	0-0.7	0.54	hold	on=0			
+body	t02-s055-nhan-viec-chiaki-nhan-right	2.5-3.9	0.54	hold	on=0			
+body	t02-s056-bieu-chiaki-nhan-right	0-0.7	0.54	hold	on=0			
+body	t02-s056-bieu-chiaki-nhan-right	2.4833-5.4833	0.54	hold	on=0			
+body	t02-s057-moi-chiaki-nhan-right	0-0.7	0.54	hold	on=0			
+body	t02-s057-moi-chiaki-nhan-right	2.5-3.9	0.54	hold	on=0			
+body	t02-s057-moi-chiaki-nhan-right	5.7-7.0667	0.54	hold	on=0			
+body	t02-s058-quan-truoc-chiaki-nhan-right	0-0.7	0.54	hold	on=0			
+body	t02-s058-quan-truoc-chiaki-nhan-right	2.5-3.9	0.54	hold	on=0			
+body	t02-s058-quan-truoc-chiaki-nhan-right	5.7-7.1	0.54	hold	on=0			
+body	t02-s058-quan-truoc-chiaki-nhan-right	8.9-10.3	0.54	hold	on=0			
+body	t02-s058-quan-truoc-erika-right	0.5833-0.65	1.66	aim	on=1			
+body	t02-s058-quan-truoc-erika-right	3.4833-3.5833	1.71	aim	on=1			
+body	t02-s059-gia-da-bao-chiaki-nhan-right	0-0.3	0.54	hold	on=0			
+body	t02-s059-gia-da-bao-chiaki-nhan-right	1.2167-7.7	0.54	hold	on=0			
+body	t02-s060-mot-dem-chiaki-nhan-right	0-0.7	0.54	hold	on=0			
+body	t02-s060-mot-dem-chiaki-nhan-right	2.5-3.9	0.54	hold	on=0			
+body	t02-s060-mot-dem-chiaki-nhan-right	5.7-6.65	0.54	hold	on=0			
+body	t02-s060-mot-dem-chiaki-nhan-right	7.5667-7.5833	0.54	hold	on=0			
+body	t02-s060-mot-dem-takumi-right	0.6333-0.9	1.17	aim	on=1			
+body	t02-s060-mot-dem-takumi-right	0.9833-0.9833	0.52	aim	on=1			
+body	t02-s060-mot-dem-takumi-right	1.9833-2.3667	1.51	hold	on=1			
+body	t02-s062-hoa-don-yota-left	0.7667-0.7833	0.55	aim	on=1			
+body	t02-s062-hoa-don-yota-left	3.5667-3.5833	0.56	aim	on=1			
+body	t02-s062-hoa-don-yota-right	0.8-0.9	1.07	aim	on=1			
+body	t02-s062-hoa-don-yota-right	4.1833-4.3667	0.68	aim	on=1			
+body	t02-s065-ghi-ro-yota-left	5.75-5.85	0.54	aim	on=1			
+body	t02-s066-day-lai-takumi-left	6.7667-6.8667	0.94	aim	on=1			
+body	t02-s067-luoi-erika-right	0.35-0.3667	0.87	aim	on=1			
+body	t02-s067-luoi-erika-right	1.3667-1.4667	0.87	aim	on=1			
+body	t02-s070-cam-yoshie-left	4.9333-5.15	0.84	aim	on=1			
+body	t02-s070-cam-yoshie-left	5.8-7.7333	1.12	world	on=1			
+body	t02-s070-cam-yoshie-right	4.8667-5.0667	0.84	aim	on=1			
+body	t02-s070-cam-yoshie-right	5.9167-7.7333	1.02	world	on=1			
+body	t02-s071-phieu-chiaki-left	0-0.6167	0.67	aim	on=1			
+body	t02-s075-may-in-erika-right	9.5667-12.4	0.83	aim	on=1			
+body	t02-s078-ra-hieu-yota-right	3.4167-3.4833	2.79	aim	on=1			
+body	t02-s080-goi-yota-left	0.2667-0.4	1.05	placed	on=1			
+body	t02-s082-ra-oai-erika-right	26.6833-26.8	1.21	aim	on=1			
+body	t02-s089-ve-takumi-left	0.5-1.4667	2.00	aim	on=1			
+body	t02-s095-chat-chem-chiaki-right	12.8667-12.9	0.61	aim	on=1			
+body	t02-s095-chat-chem-chiaki-right	14.7167-14.9667	0.88	aim	on=1			
+body	t02-s095-feed-chiaki-right	12.8667-12.9	0.61	aim	on=1			
+body	t02-s095-feed-chiaki-right	14.7167-14.9667	0.88	aim	on=1			
+body	t02-s099-cua-mo-trung-si-right	0-0.1333	0.82	aim	on=0			
+body	t02-s100-tra-erika-right	1.9333-1.9333	0.51	hold	on=1			
+body	t02-s100-tra-takumi-right	1.7-1.7167	0.54	aim	on=1			
+body	t02-s100-tra-takumi-right	2.15-10.4167	1.49	aim	on=1			
+body	t02-s100-tra-takumi-right	10.6167-10.8667	0.85	placed	on=1			
+body	t02-s100-tra-yota-left	7.9-8.2167	0.65	aim	on=1			
+body	t02-s100-tra-yota-left	9-9.1333	0.86	aim	on=1			
+body	t02-s102-feed-canh-sat-vien-right	2.7667-2.8667	1.17	hold	on=1			
+body	t02-s102-feed-canh-sat-vien-right	3.0333-3.5	0.94	hold	on=1			
+body	t02-s102-feed-yoshie-right	1.8167-1.9833	2.31	aim	on=0			
+body	t02-s102-vao-canh-sat-vien-right	2.7667-2.8667	1.18	hold	on=1			
+body	t02-s102-vao-canh-sat-vien-right	3.0333-16.7833	0.95	hold	on=1			
+body	t02-s102-vao-yoshie-right	1.8167-1.9833	2.31	aim	on=0			
+body	t02-s105-cam-nhan-canh-sat-vien-right	0-25.9167	0.95	hold	on=1			
+body	t02-s105-cam-nhan-erika-right	0.5333-6.05	1.21	aim	on=1			
+body	t02-s105-cam-nhan-yoshie-left	12.9667-25.9167	1.66	aim	on=0			
+body	t02-s105-cam-nhan-yoshie-right	12.9833-25.9167	1.48	aim	on=0			
+body	t02-s109-truc-tiep-canh-sat-vien-right	0-36.8167	1.05	hold	on=1			
+body	t02-s109-truc-tiep-ong-khach-left	15.2833-15.2833	0.96	aim	on=0			
+body	t02-s109-truc-tiep-yoshie-left	0-36.8167	1.66	aim	on=0			
+body	t02-s109-truc-tiep-yoshie-right	0-36.8167	1.48	aim	on=0			
+body	t02-s114-lam-chung-canh-sat-vien-right	0-10.5	0.95	hold	on=1			
+body	t02-s114-lam-chung-yoshie-left	0-10.5	1.66	aim	on=0			
+body	t02-s114-lam-chung-yoshie-right	0-10.5	1.48	aim	on=0			
+body	t02-s115-ghi-ten-trung-si-left	0-2	0.81	hold	on=0			
+body	t02-s116-cat-to-canh-sat-vien-right	0-16.5667	1.06	hold	on=1			
+body	t02-s116-cat-to-yoshie-left	0-16.5667	1.66	aim	on=0			
+body	t02-s116-cat-to-yoshie-right	0-16.5667	1.48	aim	on=0			
+body	t02-s116-feed-canh-sat-vien-right	0-16.5667	1.06	hold	on=1			
+body	t02-s116-feed-yoshie-left	0-16.5667	1.66	aim	on=0			
+body	t02-s116-feed-yoshie-right	0-16.5667	1.48	aim	on=0			
+body	t02-s118-biet-kien-canh-sat-vien-right	0.2-0.2167	0.60	hold	on=1			
+body	t02-s118-biet-kien-yoshie-left	0-21.6667	1.66	aim	on=0			
+body	t02-s118-biet-kien-yoshie-right	0-21.6667	1.48	aim	on=0			
+body	t02-s118-feed-canh-sat-vien-right	0.2-0.2167	0.60	hold	on=1			
+body	t02-s118-feed-yoshie-left	0-21.6667	1.66	aim	on=0			
+body	t02-s118-feed-yoshie-right	0-21.6667	1.48	aim	on=0			
+body	t02-s122-ra-cua-yoshie-left	0-2.2	1.66	aim	on=0			
+body	t02-s122-ra-cua-yoshie-right	0-2.2	1.48	aim	on=0			
+body	t02-s123-do-loi-yoshie-left	0-5.8833	1.66	aim	on=0			
+body	t02-s123-do-loi-yoshie-right	0-5.8833	1.48	aim	on=0			
+body	t02-s124-tu-khai-yoshie-left	0-9.5667	1.66	aim	on=0			
+body	t02-s124-tu-khai-yoshie-right	0-9.5667	1.48	aim	on=0			
+body	t02-s125-dung-yoshie-left	0-10.6833	1.66	aim	on=0			
+body	t02-s125-dung-yoshie-right	0-10.6833	1.48	aim	on=0			
+body	t02-s136-dat-phong-yoshie-left	0-20.25	1.20	aim	on=1			
+body	t02-s136-dat-phong-yoshie-right	0-20.25	1.19	hold	on=1			
+close	t02-s006a-bai-xe-erika-right	7.1167-7.15	0.35	hold	on=1			
+close	t02-s037-bep-1-yoshie-right	1.7167-1.9667	0.35	aim	on=1			
+close	t02-s041-nguoi-yoshie-left	0.5-0.6667	0.34	aim	on=1			
+close	t02-s041-nguoi-yoshie-right	0.5-0.6167	0.34	aim	on=1			
+close	t02-s044-cham-takumi-right	1.2167-1.2333	0.34	lock	on=1			
+close	t02-s049-da-trong-erika-right	6.6-6.7167	0.35	lock	on=1			
+close	t02-s051-bep-3-yoshie-right	0.7667-0.85	0.35	aim	on=1			
+close	t02-s051-bep-3-yoshie-right	2.35-2.5667	0.33	aim	on=1			
+close	t02-s066-day-lai-takumi-right	2.7-4.15	0.35	lock	on=1			
+close	t02-s070-cam-yoshie-right	4.6833-4.6833	0.35	aim	on=1			
+close	t02-s100-tra-yota-left	9.1333-9.2667	0.35	world	on=1			
+close	t02-s102-vao-takumi-right	8.5833-8.65	0.35	hold	on=1			
+close	t02-s114-lam-chung-ong-khach-left	7.9333-10.5	0.35	aim	on=0			
+flip	t02-s002-day-chiaki-right	2-2.0333	35.21	aim	on=1	px=13.7	ratio=0.84	
+flip	t02-s009-nhan-phong-yota-left	11.9333-11.9833	-74.60	aim	on=1	px=3.5	ratio=0.86	
+flip	t02-s009-nhan-phong-yota-left	13.6833-13.7	64.78	aim	on=1	px=1.9	ratio=0.88	
+flip	t02-s030-khai-vi-yoshie-right	2.65-2.7	60.81	lock	on=1	px=1.9	ratio=0.87	
+flip	t02-s030-khai-vi-yoshie-right	14.45-14.45	-33.92	aim	on=1	px=9.1	ratio=0.96	
+flip	t02-s046-che-gieu-erika-right	6.2-6.2	34.81	aim	on=1	px=17.4	ratio=0.72	
+flip	t02-s051-bep-3-yoshie-left	1.0167-1.05	63.54	aim	on=1	px=4.0	ratio=0.63	
+flip	t02-s053-hanh-lang-takumi-right	3.6-3.6667	78.69	aim	on=1	px=17.3	ratio=0.89	
+flip	t02-s058-quan-truoc-erika-right	0.5833-0.65	97.04	aim	on=1	px=5.7	ratio=0.57	
+flip	t02-s058-quan-truoc-erika-right	3.6-3.6833	-94.73	aim	on=1	px=5.7	ratio=0.53	
+flip	t02-s062-hoa-don-yota-right	0.8-0.8	30.53	aim	on=1	px=11.3	ratio=0.80	
+flip	t02-s066-day-lai-takumi-left	0.9667-0.9667	32.13	aim	on=1	px=20.7	ratio=0.86	
+flip	t02-s066-day-lai-takumi-left	1.0333-1.05	79.39	aim	on=1	px=0.3	ratio=0.85	
+flip	t02-s066-day-lai-takumi-left	6.7333-6.8167	-85.37	aim	on=1	px=5.2	ratio=0.60	
+flip	t02-s066-day-lai-takumi-right	6.8333-6.8667	65.28	lock	on=1	px=13.6	ratio=0.47	
+flip	t02-s067-luoi-erika-right	0.1833-0.1833	-61.42	aim	on=1	px=1.7	ratio=0.91	
+flip	t02-s071-phieu-chiaki-right	0.5667-0.5667	-47.63	aim	on=1	px=14.3	ratio=0.95	
+flip	t02-s075-may-in-erika-right	9.6-9.6	61.18	aim	on=1	px=1.4	ratio=0.86	
+flip	t02-s078-ra-hieu-yota-left	3.45-3.5167	-71.54	aim	on=1	px=3.2	ratio=0.91	
+flip	t02-s081-day-chiaki-right	2.1-2.1333	35.21	aim	on=1	px=13.7	ratio=0.84	
+flip	t02-s082-ra-oai-erika-right	26.6833-26.6833	46.61	aim	on=1	px=18.7	ratio=0.86	
+flip	t02-s082-ra-oai-erika-right	26.9667-26.9667	-47.46	aim	on=1	px=31.7	ratio=0.73	
+flip	t02-s082-ra-oai-takumi-left	5.7167-5.8	107.36	aim	on=1	px=10.1	ratio=1.00	
+flip	t02-s082-ra-oai-takumi-right	21.5833-21.5833	63.98	aim	on=1	px=3.8	ratio=0.83	
+flip	t02-s082-ra-oai-takumi-right	23.7167-23.8	-92.10	aim	on=1	px=15.6	ratio=0.59	
+flip	t02-s089-ve-takumi-left	0.9333-1.0167	-76.45	aim	on=1	px=0.8	ratio=0.98	
+flip	t02-s089-ve-takumi-left	2.2-2.2833	-163.88	placed	on=1	px=7.2	ratio=0.83	
+flip	t02-s089-ve-takumi-left	3.2667-3.2833	69.02	placed	on=1	px=4.1	ratio=0.84	
+flip	t02-s095-chat-chem-chiaki-left	13.0833-13.1167	-76.13	aim	on=1	px=5.4	ratio=0.74	
+flip	t02-s095-chat-chem-chiaki-left	14.7833-14.8167	75.95	aim	on=1	px=3.1	ratio=0.58	
+flip	t02-s095-chat-chem-takumi-right	1.6333-1.7167	80.02	aim	on=1	px=8.8	ratio=0.49	
+flip	t02-s095-chat-chem-takumi-right	2.6167-2.7	-80.11	world	on=1	px=3.3	ratio=0.77	
+flip	t02-s095-feed-chiaki-left	13.0833-13.1167	-76.13	aim	on=1	px=5.4	ratio=0.74	
+flip	t02-s095-feed-chiaki-left	14.7833-14.8167	75.95	aim	on=1	px=3.1	ratio=0.58	
+flip	t02-s095-feed-takumi-right	1.6333-1.7167	80.02	aim	on=1	px=8.8	ratio=0.49	
+flip	t02-s095-feed-takumi-right	2.6167-2.7	-80.11	world	on=1	px=3.3	ratio=0.77	
+flip	t02-s099-cua-mo-trung-si-right	0.9667-1.0333	-62.32	aim	on=0	px=NaN	ratio=0.75	
+flip	t02-s109-truc-tiep-ong-khach-left	15.2833-15.2833	-36.83	aim	on=0	px=139.3	ratio=0.62	
+flip	t02-s109-truc-tiep-ong-khach-left	15.3833-15.3833	60.66	aim	on=0	px=58.6	ratio=0.65	
+inward	t02-s041-nguoi-yoshie-right	0.5-0.5667	0.38	aim	on=1			
+inward	t02-s053-hanh-lang-takumi-right	3.45-3.5667	0.57	aim	on=1			
+inward	t02-s053-hanh-lang-takumi-right	5.1-5.4667	0.58	aim	on=1			
+inward	t02-s082-ra-oai-takumi-left	11.75-11.85	0.38	aim	on=1			
+inward	t02-s082-ra-oai-takumi-left	14.6833-14.7167	0.30	aim	on=1			
+inward	t02-s082-ra-oai-takumi-right	4.2333-5.2833	0.31	aim	on=1			
+inward	t02-s082-ra-oai-takumi-right	23.8-23.8167	0.31	aim	on=1			
+inward	t02-s089-ve-takumi-left	2.2667-2.3167	0.33	placed	on=1			
+inward	t02-s095-chat-chem-chiaki-left	12.9-13.05	0.50	aim	on=1			
+inward	t02-s095-chat-chem-chiaki-left	14.75-14.9333	0.50	aim	on=1			
+inward	t02-s095-feed-chiaki-left	12.9-13.05	0.50	aim	on=1			
+inward	t02-s095-feed-chiaki-left	14.75-14.9333	0.50	aim	on=1			
+inward	t02-s109-truc-tiep-ong-khach-left	15.3333-15.4	0.36	aim	on=0			
+jitter	t02-s002-day-chiaki-right	0.417-1.3667	4.00	aim	on=1	px=1.0	ratio=0.62	
+jitter	t02-s009-nhan-phong-yota-left	25.283-26.05	4.00	placed	on=1	px=1.5	ratio=0.81	
+jitter	t02-s009-nhan-phong-yota-left	26.733-27.35	3.00	aim	on=1	px=1.5	ratio=0.82	
+jitter	t02-s017-goi-yota-left	2.533-4.3	29.00	hold	on=1	px=0.8	ratio=0.56	
+jitter	t02-s017-goi-yota-left	30.817-31.3667	3.00	hold	on=1	px=0.1	ratio=0.56	
+jitter	t02-s017-goi-yota-right	18.483-19.4	4.00	hold	on=1	px=0.4	ratio=0.92	
+jitter	t02-s017-goi-yota-right	23.217-24.0333	4.00	hold	on=1	px=0.3	ratio=0.88	
+jitter	t02-s025-chi-the-erika-left	2.033-2.7833	3.00	hold	on=1	px=2.3	ratio=0.92	
+jitter	t02-s028-doi-chia-takumi-right	3.717-4.55	3.00	hold	on=1	px=2.0	ratio=0.87	
+jitter	t02-s028-doi-chia-yota-right	2.133-3.0833	4.00	hold	on=1	px=0.5	ratio=0.69	
+jitter	t02-s033-ruou-tang-takumi-right	0.617-1.2833	4.00	hold	on=1	px=2.3	ratio=0.78	
+jitter	t02-s033-ruou-tang-takumi-right	3.733-4.4667	3.00	hold	on=1	px=1.4	ratio=0.42	
+jitter	t02-s034-goi-them-yoshie-right	11.233-11.85	3.00	hold	on=1	px=0.7	ratio=0.76	
+jitter	t02-s041-nguoi-erika-right	5.15-6.1333	9.00	hold	on=1	px=1.5	ratio=0.64	
+jitter	t02-s041-nguoi-yoshie-right	0.083-1	3.00	aim	on=1	px=3.3	ratio=0.30	
+jitter	t02-s044-cham-takumi-left	1.05-1.7167	4.00	aim	on=1	px=2.9	ratio=0.76	
+jitter	t02-s050-them-bo-takumi-right	0.683-1.65	3.00	hold	on=1	px=0.7	ratio=0.60	
+jitter	t02-s050-them-bo-takumi-right	1.783-2.7333	8.00	hold	on=1	px=2.0	ratio=0.40	
+jitter	t02-s050-them-bo-yoshie-right	1.517-2.5333	11.00	hold	on=1	px=1.2	ratio=0.49	
+jitter	t02-s051-bep-3-yoshie-right	1.35-2.4167	8.00	hold	on=1	px=2.4	ratio=0.48	
+jitter	t02-s067-luoi-erika-right	0-0.6167	4.00	aim	on=1	px=5.2	ratio=0.83	
+jitter	t02-s067-luoi-takumi-right	10.733-11.6	5.00	lock	on=1	px=1.8	ratio=0.51	
+jitter	t02-s071-phieu-chiaki-right	0.55-1.05	3.00	aim	on=1	px=1.7	ratio=0.81	
+jitter	t02-s081-day-chiaki-right	0.517-1.4667	4.00	aim	on=1	px=1.2	ratio=0.53	
+jitter	t02-s082-ra-oai-takumi-left	23.433-24.2667	3.00	aim	on=1	px=2.6	ratio=0.59	
+jitter	t02-s093-feed-erika-left	11.733-12.35	4.00	hold	on=1	px=4.3	ratio=0.61	
+jitter	t02-s093-feed-erika-left	15.75-16.35	5.00	hold	on=1	px=3.9	ratio=0.39	
+jitter	t02-s093-live-erika-left	11.733-12.35	4.00	hold	on=1	px=4.3	ratio=0.61	
+jitter	t02-s093-live-erika-left	15.75-16.35	5.00	hold	on=1	px=3.9	ratio=0.39	
+jitter	t02-s102-feed-canh-sat-vien-right	2.483-3.0833	3.00	hold	on=1	px=5.3	ratio=0.67	
+jitter	t02-s102-vao-canh-sat-vien-right	2.483-3.0833	3.00	hold	on=1	px=5.3	ratio=0.67	
+jitter	t02-s102-vao-takumi-right	8.3-9.4167	12.00	hold	on=1	px=4.1	ratio=0.68	
+jitter	t02-s115-ghi-ten-ong-khach-right	0-1.25	10.00	hold	on=0	px=4.0	ratio=0.58	
+jitter	t02-s122-ra-cua-takumi-right	1.033-1.6	3.00	aim	on=1	px=2.0	ratio=0.83	
+straight	t02-s001-tham-thi-erika-right	0-0.1333	1.00	aim	on=1			
+straight	t02-s003-khung-takumi-left	0-3.05	1.00	hold	on=0			
+straight	t02-s003b-dong-hanh-erika-right	21.3333-21.6667	1.00	placed	on=1			
+straight	t02-s003b-dong-hanh-takumi-left	0-21.6667	1.00	hold	on=1			
+straight	t02-s003b-dong-hanh-takumi-right	19.6667-19.7	0.98	hold	on=1			
+straight	t02-s006a-bai-xe-erika-left	7.4-7.4	0.97	hold	on=1			
+straight	t02-s006a-bai-xe-takumi-left	6.3667-9.75	1.00	hold	on=1			
+straight	t02-s006a-bai-xe-takumi-right	7.65-7.6667	0.98	aim	on=1			
+straight	t02-s006a-bai-xe-takumi-right	8.5667-8.5833	0.98	aim	on=1			
+straight	t02-s008-truoc-cua-takumi-left	0-1.6	0.99	hold	on=1			
+straight	t02-s009-nhan-phong-takumi-right	26.5333-26.5333	0.97	world	on=1			
+straight	t02-s009-nhan-phong-yota-left	26.3833-26.5833	0.99	placed	on=1			
+straight	t02-s017-goi-yota-left	32.0833-32.5	1.00	hold	on=1			
+straight	t02-s017-goi-yota-right	10.9-10.9	0.97	aim	on=1			
+straight	t02-s017-goi-yota-right	13.2833-13.2833	0.98	aim	on=1			
+straight	t02-s017-goi-yota-right	16.2833-16.45	0.98	world	on=1			
+straight	t02-s017-goi-yota-right	29.0167-29.0333	0.98	aim	on=1			
+straight	t02-s026-tra-ten-takumi-left	0-0.1667	1.00	aim	on=1			
+straight	t02-s027-doi-ca-takumi-left	0-0.1667	1.00	aim	on=1			
+straight	t02-s028-doi-chia-takumi-left	0-0.1667	1.00	aim	on=1			
+straight	t02-s028-doi-chia-takumi-right	5-5	0.97	world	on=1			
+straight	t02-s028-doi-chia-yota-left	0-0.15	1.00	aim	on=1			
+straight	t02-s029-mong-cho-takumi-left	0-0.1667	1.00	aim	on=1			
+straight	t02-s033-ruou-tang-takumi-right	1.9167-2.4333	1.00	aim	on=1			
+straight	t02-s039-dat-lai-1-erika-left	3.15-3.4	0.97	aim	on=1			
+straight	t02-s039-dat-lai-1-yoshie-left	3.2167-3.6	1.00	aim	on=1			
+straight	t02-s039-dat-lai-1-yoshie-right	3.2167-3.6	1.00	hold	on=1			
+straight	t02-s040b-tua-erika-left	16.9167-16.9167	0.97	aim	on=1			
+straight	t02-s040b-tua-erika-left	20.5833-20.5833	0.97	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	0.3333-0.3833	0.98	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	0.5-0.5333	0.99	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	0.9-1	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	1.0667-1.4	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	4.3333-4.4	0.98	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	4.4667-4.5333	0.99	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	4.9-5	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	5.0667-5.4	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	8.3333-8.4	0.98	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	8.4833-8.5333	0.99	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	8.9-9	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	9.0667-9.4	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	12.3333-12.3833	0.98	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	12.5-12.55	0.99	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	12.9-13	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	13.0667-13.4	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	16.3333-16.3833	0.98	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	16.5-16.5333	0.99	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	16.9-17	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	17.0667-17.4	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	20.3333-20.4	0.98	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	20.4667-20.5333	0.99	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	20.9-21	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	21.0667-21.4	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	24.3333-24.4	0.98	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	24.4833-24.5333	0.99	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	24.9-25	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	25.0667-25.4	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	28.3333-28.3833	0.98	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	28.5-28.55	0.99	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	28.9-29	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-left	29.0667-29.4	1.00	aim	on=1			
+straight	t02-s040b-tua-yoshie-right	0.3333-0.5333	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	0.9-1	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	1.0667-1.4	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	4.3333-4.5333	0.99	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	4.9-5	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	5.0667-5.4	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	8.3333-8.5333	0.99	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	8.9-9	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	9.0667-9.4	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	12.3333-12.55	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	12.9-13	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	13.0667-13.4	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	16.3333-16.5333	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	16.9-17	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	17.0667-17.4	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	20.3333-20.5333	0.99	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	20.9-21	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	21.0667-21.4	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	24.3333-24.5333	0.99	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	24.9-25	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	25.0667-25.4	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	28.3333-28.55	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	28.9-29	1.00	hold	on=1			
+straight	t02-s040b-tua-yoshie-right	29.0667-29.4	1.00	hold	on=1			
+straight	t02-s041-nguoi-erika-left	5.8167-6	1.00	aim	on=1			
+straight	t02-s041-nguoi-erika-right	0.3833-1.4	1.00	hold	on=1			
+straight	t02-s041-nguoi-erika-right	4.35-4.8167	1.00	hold	on=1			
+straight	t02-s041-nguoi-yoshie-left	0.1667-0.3167	1.00	aim	on=1			
+straight	t02-s041-nguoi-yoshie-right	0.1667-0.3167	1.00	aim	on=1			
+straight	t02-s042-lam-lai-yoshie-left	1.7333-1.9667	1.00	aim	on=1			
+straight	t02-s042-lam-lai-yoshie-left	2.0333-2.3	1.00	aim	on=1			
+straight	t02-s042-lam-lai-yoshie-right	1.7333-2.3167	1.00	aim	on=1			
+straight	t02-s045-cui-yoshie-left	0.3667-0.4833	0.99	aim	on=1			
+straight	t02-s045-cui-yoshie-right	0.3833-0.4833	1.00	hold	on=1			
+straight	t02-s049-da-trong-erika-right	4.7-4.8833	1.00	aim	on=1			
+straight	t02-s051-bep-3-kuroiwa-left	7.0167-7.1667	0.98	aim	on=1			
+straight	t02-s051-bep-3-kuroiwa-right	7.0167-7.1667	0.98	aim	on=1			
+straight	t02-s052-o2-giuong-erika-right	1.1-1.3667	1.00	lock	on=0			
+straight	t02-s052-o2-giuong-erika-right	1.4833-4	1.00	lock	on=0			
+straight	t02-s054-xin-loi-takumi-left	2.0833-2.1	0.97	aim	on=1			
+straight	t02-s054-xin-loi-yota-left	1.4333-1.5167	1.00	aim	on=1			
+straight	t02-s054-xin-loi-yota-left	2.3667-2.6167	1.00	aim	on=1			
+straight	t02-s055-nhan-viec-chiaki-left	0.8167-0.8167	0.97	aim	on=0			
+straight	t02-s055-nhan-viec-chiaki-nhan-left	1.4833-1.7167	0.97	aim	on=0			
+straight	t02-s055-nhan-viec-chiaki-nhan-left	4.6833-4.9167	0.97	aim	on=1			
+straight	t02-s055-nhan-viec-chiaki-right	0.8167-0.8167	0.97	aim	on=0			
+straight	t02-s056-bieu-chiaki-nhan-left	1.05-2.4167	1.00	aim	on=1			
+straight	t02-s056-bieu-chiaki-nhan-right	1.2833-2.0667	0.98	hold	on=1			
+straight	t02-s057-moi-chiaki-nhan-left	1.4833-1.7167	0.97	aim	on=1			
+straight	t02-s057-moi-chiaki-nhan-left	4.6833-4.9167	0.97	aim	on=1			
+straight	t02-s057-moi-erika-right	3.1833-3.2	0.98	aim	on=1			
+straight	t02-s058-quan-truoc-chiaki-nhan-left	1.4833-1.7167	0.97	aim	on=1			
+straight	t02-s058-quan-truoc-chiaki-nhan-left	4.6833-4.9167	0.97	aim	on=1			
+straight	t02-s058-quan-truoc-chiaki-nhan-left	7.8833-8.1167	0.97	aim	on=1			
+straight	t02-s059-gia-da-bao-chiaki-nhan-left	0.3333-1.1833	1.00	aim	on=1			
+straight	t02-s059-gia-da-bao-chiaki-nhan-right	0.4833-1.0167	0.98	hold	on=1			
+straight	t02-s060-mot-dem-chiaki-nhan-left	1.4833-1.7167	0.97	aim	on=1			
+straight	t02-s060-mot-dem-chiaki-nhan-left	4.6833-4.9167	0.97	aim	on=1			
+straight	t02-s060-mot-dem-chiaki-nhan-left	6.6833-7.5333	1.00	aim	on=1			
+straight	t02-s060-mot-dem-chiaki-nhan-right	6.8333-7.3667	0.98	hold	on=1			
+straight	t02-s060-mot-dem-takumi-right	1.4-1.4	0.97	hold	on=1			
+straight	t02-s062-hoa-don-yota-right	2.35-2.6667	0.98	aim	on=1			
+straight	t02-s062-hoa-don-yota-right	4.4333-5.8667	1.00	aim	on=1			
+straight	t02-s066-day-lai-takumi-right	0-0.2	1.00	aim	on=1			
+straight	t02-s066-day-lai-takumi-right	0.3833-0.7167	1.00	aim	on=1			
+straight	t02-s067-luoi-erika-right	0.0667-0.0667	0.98	aim	on=1			
+straight	t02-s067-luoi-takumi-right	11.4167-12.7167	1.00	lock	on=1			
+straight	t02-s070-cam-yoshie-left	2.4167-4.1667	1.00	aim	on=1			
+straight	t02-s070-cam-yoshie-right	2.5167-4.1667	1.00	hold	on=1			
+straight	t02-s071-phieu-chiaki-left	0-0.6167	1.00	aim	on=1			
+straight	t02-s071-phieu-chiaki-left	6.25-6.55	0.97	aim	on=1			
+straight	t02-s071-phieu-chiaki-left	6.9-9.1667	0.97	aim	on=1			
+straight	t02-s071-phieu-chiaki-left	9.45-9.75	0.97	aim	on=1			
+straight	t02-s071-phieu-chiaki-left	10.2667-11.2167	0.97	aim	on=1			
+straight	t02-s071-phieu-chiaki-right	0-0.55	1.00	hold	on=1			
+straight	t02-s071-phieu-takumi-right	3.35-22.7	1.00	aim	on=1			
+straight	t02-s078-ra-hieu-yota-left	3.5333-3.5333	0.98	aim	on=1			
+straight	t02-s078-ra-hieu-yota-right	3.5167-3.5333	0.99	aim	on=1			
+straight	t02-s080-goi-yota-left	0.0167-0.2333	1.00	aim	on=1			
+straight	t02-s080-goi-yota-left	0.5667-0.6667	1.00	placed	on=1			
+straight	t02-s082-ra-oai-takumi-left	0.0167-5.6667	1.00	world	on=1			
+straight	t02-s082-ra-oai-takumi-left	5.7333-11.6667	1.00	aim	on=1			
+straight	t02-s082-ra-oai-takumi-left	11.8833-11.9667	1.00	aim	on=1			
+straight	t02-s082-ra-oai-takumi-left	12.05-14.5167	1.00	aim	on=1			
+straight	t02-s082-ra-oai-takumi-left	14.8-23.75	1.00	aim	on=1			
+straight	t02-s082-ra-oai-takumi-right	5.7667-21.0833	1.00	aim	on=1			
+straight	t02-s089-ve-takumi-left	0.9833-2.1833	1.00	aim	on=1			
+straight	t02-s091-khung-erika-right	11.1667-11.2833	1.00	placed	on=0			
+straight	t02-s091-khung-takumi-left	0-11.2833	1.00	hold	on=0			
+straight	t02-s091-khung-takumi-right	3.6833-3.6833	0.97	world	on=0			
+straight	t02-s093-feed-erika-right	0-18.1	1.00	world	on=1			
+straight	t02-s093-feed-takumi-left	0-18.1	1.00	hold	on=1			
+straight	t02-s093-live-takumi-left	0-18.1	1.00	hold	on=1			
+straight	t02-s095-chat-chem-takumi-left	0-23.4833	1.00	hold	on=1			
+straight	t02-s095-chat-chem-takumi-right	2.95-2.9667	0.98	world	on=1			
+straight	t02-s095-feed-takumi-left	0-23.4833	1.00	hold	on=1			
+straight	t02-s095-feed-takumi-right	2.95-2.9667	0.98	world	on=1			
+straight	t02-s099-cua-mo-trung-si-right	0-0.0667	1.00	aim	on=0			
+straight	t02-s099-cua-mo-trung-si-right	0.5167-0.8333	1.00	aim	on=0			
+straight	t02-s100-tra-takumi-left	0-11.4167	1.00	hold	on=1			
+straight	t02-s100-tra-takumi-right	0.0167-0.9167	1.00	aim	on=1			
+straight	t02-s100-tra-takumi-right	1.1333-1.4833	1.00	aim	on=1			
+straight	t02-s100-tra-takumi-right	1.7667-1.95	0.98	aim	on=1			
+straight	t02-s100-tra-takumi-right	7.0167-10.3667	1.00	aim	on=1			
+straight	t02-s100-tra-yota-left	7.65-7.65	0.98	aim	on=1			
+straight	t02-s102-feed-takumi-left	0-3.5	1.00	hold	on=1			
+straight	t02-s102-feed-yoshie-left	1.7667-1.7833	0.98	aim	on=0			
+straight	t02-s102-feed-yoshie-right	1.7667-1.7833	0.98	aim	on=0			
+straight	t02-s102-feed-yoshie-right	2.1333-3.5	0.98	aim	on=0			
+straight	t02-s102-vao-erika-right	3.8833-3.8833	0.97	aim	on=1			
+straight	t02-s102-vao-takumi-left	0-16.7833	1.00	hold	on=1			
+straight	t02-s102-vao-takumi-right	10.9833-11	0.97	hold	on=1			
+straight	t02-s102-vao-yoshie-left	1.7667-1.7833	0.98	aim	on=0			
+straight	t02-s102-vao-yoshie-right	1.7667-1.7833	0.98	aim	on=0			
+straight	t02-s102-vao-yoshie-right	2.1333-16.7833	0.98	aim	on=0			
+straight	t02-s105-cam-nhan-erika-right	0.0167-0.0333	0.98	aim	on=1			
+straight	t02-s105-cam-nhan-erika-right	6.4167-6.4167	0.97	aim	on=1			
+straight	t02-s105-cam-nhan-erika-right	19.2333-19.25	0.98	aim	on=1			
+straight	t02-s105-cam-nhan-takumi-left	0-25.9167	1.00	hold	on=1			
+straight	t02-s105-cam-nhan-yoshie-right	0-12.8833	0.98	aim	on=0			
+straight	t02-s109-truc-tiep-ong-khach-left	0-14.25	1.00	placed	on=0			
+straight	t02-s109-truc-tiep-ong-khach-left	15.5667-15.5667	0.99	aim	on=0			
+straight	t02-s109-truc-tiep-ong-khach-right	14.1833-14.25	0.99	placed	on=0			
+straight	t02-s109-truc-tiep-takumi-left	0-36.8167	1.00	hold	on=1			
+straight	t02-s109-truc-tiep-takumi-right	9.45-9.45	0.98	hold	on=1			
+straight	t02-s109-truc-tiep-takumi-right	11.0333-11.0333	0.97	hold	on=1			
+straight	t02-s114-lam-chung-takumi-left	0-10.5	1.00	hold	on=1			
+straight	t02-s116-cat-to-takumi-left	0-16.5667	1.00	hold	on=1			
+straight	t02-s116-cat-to-takumi-right	2.2833-2.2833	0.97	hold	on=1			
+straight	t02-s116-cat-to-takumi-right	5.2667-5.2667	0.97	hold	on=1			
+straight	t02-s116-feed-takumi-left	0-16.5667	1.00	hold	on=1			
+straight	t02-s116-feed-takumi-right	2.2833-2.2833	0.97	hold	on=1			
+straight	t02-s116-feed-takumi-right	5.2667-5.2667	0.97	hold	on=1			
+straight	t02-s118-biet-kien-erika-right	21.3333-21.6667	1.00	placed	on=1			
+straight	t02-s118-biet-kien-takumi-left	0-21.6667	1.00	hold	on=1			
+straight	t02-s118-biet-kien-takumi-right	19.6667-19.7	0.98	hold	on=1			
+straight	t02-s118-feed-takumi-left	0-21.6667	1.00	hold	on=1			
+straight	t02-s118-feed-takumi-right	19.6667-19.7	0.98	hold	on=1			
+straight	t02-s122-ra-cua-takumi-left	0-2.2	1.00	hold	on=1			
+straight	t02-s122-ra-cua-takumi-right	0.3667-0.3667	0.97	world	on=1			
+straight	t02-s123-do-loi-takumi-left	0-5.8833	1.00	hold	on=0			
+straight	t02-s124-tu-khai-takumi-left	0-9.5667	1.00	hold	on=0			
+straight	t02-s124-tu-khai-takumi-right	4.15-4.15	0.97	aim	on=0			
+straight	t02-s125-dung-takumi-left	0-10.6833	1.00	hold	on=0			
+straight	t02-s135a-anh-bao-erika-left	0-1	0.98	aim	on=1			
+straight	t02-s136-dat-phong-yota-left	7.9333-7.9667	0.97	aim	on=1			
+straight	t02-s136-dat-phong-yota-left	13.0333-13.05	0.98	aim	on=1			
+wristflip	t02-s032-sach-erika-right	3.5333-3.5333	91.03	aim	on=1	px=3.4		turn -90→1.03 bend -25.68→-0.41 dev -30→-0.1
+wristflip	t02-s041-nguoi-erika-right	4.75-4.75	90.00	world	on=1	px=0.0		turn -90→0 bend 36.45→0 dev -24.23→0
+wristflip	t02-s052-o2-giuong-erika-right	0.0667-0.0667	42.15	lock	on=0	px=1.4		turn 90→49.09 bend -60→-60 dev -22.15→20
+wristflip	t02-s082-ra-oai-takumi-left	23.6-23.6	90.03	aim	on=1	px=0.2		turn -87.97→2.06 bend -27.38→-27.38 dev -4.73→-4.75
+wristflip	t02-s089-ve-takumi-left	1.0333-1.1667	176.36	aim	on=1	px=0.5		turn -86.36→90 bend -17.73→-16.88 dev 20→20
+wristflip	t02-s089-ve-takumi-left	1.2667-1.2667	142.75	aim	on=1	px=2.2		turn -71.7→71.05 bend -15.04→-14.34 dev 12.13→10.71
+{
+  trackFrames: 397226,
+  targetFrames: 372729,
+  microRev: 1642,
+  'straight:spans': 208,
+  'straight:aim': 120,
+  'straight:onScreen': 183,
+  'body:spans': 132,
+  'body:aim': 66,
+  'body:onScreen': 84,
+  'flip:spans': 39,
+  'flip:aim': 33,
+  'flip:onScreen': 36,
+  'jitter:spans': 34,
+  'jitter:aim': 9,
+  'jitter:onScreen': 33,
+  'straight:hold': 69,
+  'body:hold': 43,
+  'straight:placed': 7,
+  'close:spans': 13,
+  'close:hold': 2,
+  'close:onScreen': 12,
+  'straight:world': 9,
+  'jitter:placed': 1,
+  'jitter:hold': 23,
+  'body:world': 18,
+  'flip:lock': 2,
+  'body:lock': 3,
+  'wristflip:spans': 6,
+  'wristflip:aim': 4,
+  'wristflip:onScreen': 5,
+  'close:aim': 7,
+  'wristflip:world': 1,
+  'inward:spans': 13,
+  'inward:aim': 12,
+  'inward:onScreen': 12,
+  'close:lock': 3,
+  'wristflip:lock': 1,
+  'straight:lock': 3,
+  'jitter:lock': 1,
+  'body:placed': 2,
+  'flip:placed': 2,
+  'inward:placed': 1,
+  'flip:world': 2,
+  'close:world': 1
+}

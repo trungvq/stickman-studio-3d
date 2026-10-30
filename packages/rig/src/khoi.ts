@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { place3, type Place3 } from './core/lens';
+import type { RoleInput } from './core/roles';
 import type { Touch } from './collide';
 import { hullMaterial, npr, type NprOptions } from './npr';
 
@@ -13,6 +14,7 @@ import { hullMaterial, npr, type NprOptions } from './npr';
 // Một món là `{ parts, lathes, at, k }`: `parts` khối lồi tám đỉnh toạ độ món, `lathes` các khối tròn xoay
 // `{ spec, at }` tự mang chỗ đặt, `at` là `Place3`, `k` bề dày nét của món tính bằng đơn vị rig (cùng nghĩa `sw`
 // chia cỡ món trên khung, mặc định 3) — chỉ dùng cho bề ngang vân. `name`, `touch` cho `collide` như món của lớp vẽ code.
+// `roles` là mục vai trò của món trong khung món (docs/13-vai-tro-do.md mục 5.2).
 
 export type Vec3 = [number, number, number];
 /** Tông một khối: mặt ngửa `top`, mặt khác `lit`; `glow` là tự sáng. */
@@ -29,9 +31,11 @@ export interface LatheSpec {
   top?: { color: string; w?: number; d: Vec3[][] }[];
   beads?: { color: string; w: number; d: [x: number, z: number][] }[];
 }
-export interface Item { parts?: Part[]; lathes?: { spec: LatheSpec; at: Place3; k?: number }[]; at: Place3; k?: number; name?: string; touch?: Touch[] }
-/** Tên và chạm có chủ ý của khối lồi một mảnh trong `Batch` */
-export interface SolidTag { name?: string; touch?: Touch[] }
+export interface Item { parts?: Part[]; lathes?: { spec: LatheSpec; at: Place3; k?: number }[]; at: Place3; k?: number; name?: string; touch?: Touch[]; roles?: RoleInput[] }
+/** Tên và chạm có chủ ý của khối lồi một mảnh trong `Batch`; `owner` là số thứ tự `Item` trong `Batch` của nó */
+export interface SolidTag { name?: string; touch?: Touch[]; owner?: number }
+/** Vai trò của một `Item` trong `Batch` (`userData.itemRoles` của nhóm `build` ra): `roles` trong khung món, `place` là `Item.at` */
+export interface ItemRoles { owner: number; name?: string; place: Place3; roles: RoleInput[] }
 /** Khối lồi một mảnh đã thêm vào `Batch`: `points` x, y, z liền nhau, toạ độ three của nhóm `build` ra */
 export interface BatchSolid extends SolidTag { points: number[] }
 
@@ -99,6 +103,9 @@ export class Batch {
   /** Tam giác có vỏ viền (khối, không gồm vân) */
   hull: number[] = [];
   solids: BatchSolid[] = [];
+  /** Số `Item` đã thêm bằng `addItem`, và vai trò của những `Item` khai `roles` */
+  items = 0;
+  roles: ItemRoles[] = [];
   /** Có tam giác thêm thẳng bằng `flat`, `geometry`, không khối lồi nào bao: `collide` đo cả tam giác của nhóm */
   loose = false;
   private covering = 0;
@@ -151,6 +158,7 @@ export class Batch {
     }
     if (ink > 0 && this.hull.length) out.add(shell(this.hull, ink));
     if (this.solids.length) out.userData.colliders = this.solids.map((s) => ({ ...s, points: [...s.points] }));
+    if (this.roles.length) out.userData.itemRoles = this.roles.map((r) => structuredClone(r));
     return out;
   }
 }
@@ -266,7 +274,9 @@ function lathe(batch: Batch, spec: LatheSpec, at: Place3, k: number) {
 }
 
 export function addItem(batch: Batch, item: Item) {
-  const k = item.k ?? 3, tag: SolidTag = { name: item.name, touch: item.touch };
+  const owner = batch.items++;
+  const k = item.k ?? 3, tag: SolidTag = { name: item.name, touch: item.touch, owner };
+  if (item.roles) batch.roles.push({ owner, ...(item.name !== undefined && { name: item.name }), place: { ...item.at, at: [...item.at.at] }, roles: structuredClone(item.roles) });
   for (const p of item.parts ?? []) addPart(batch, p, item.at, k, tag);
   for (const l of item.lathes ?? []) addLathe(batch, l.spec, l.at, l.k ?? k, tag);
 }

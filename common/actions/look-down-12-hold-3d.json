@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 20,
+  "name": "look-down-12-hold-3d",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "head": [null, null, 12] }, "ease": "smooth" },
+    { "t": 1, "pose": { "head": [null, null, 12] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Cúi nhìn vật trong tay (liếc xuống món cầm trước bụng, điện thoại): gật 12° ngay từ giây 0 rồi giữ. Chỉ ghi gật của `head`, nghiêng và lắc để trống. Nền `stand-3d`, ngồi thì `sit-3d`; tay cầm món là track riêng. Chồng lên `turn-head-*` vẫn giữ hướng quay; vào dần là `look-down-12-3d`, cúi sâu hơn là `look-down-20-3d`, buông bằng clip rỗng blend ~0,4. Sinh bằng `tools/actions/look-down.mjs`.",
+  "preview": { "stage": "stand" }
+}

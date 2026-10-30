@@ -38,7 +38,7 @@ function world(hands: unknown[], items: unknown[] = []) {
     items,
   });
   if (!sc.success) throw new Error(sc.error.message);
-  const rt = resolveScene(sc.data, {}, {}, {}, { nguoi: H }, bodies, HELD);
+  const rt = resolveScene(sc.data, {}, { nguoi: H }, bodies, HELD);
   const objects: Record<string, THREE.Object3D> = {};
   const w = buildWorld(sc.data, rt, {
     set: () => plainRoom(),

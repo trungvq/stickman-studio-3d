@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import * as rig from "@stickman3d/sketch";
+import * as rig from "@stickman3d/rig/core";
 import { migrateElbow, migrateElbowTable } from "./migrate-elbow.mjs";
 
 const HAND = { to: "chin", offset: [30, 40, 15], point: "grip" };
@@ -71,7 +71,7 @@ describe("migrate-elbow", () => {
     const p = rig.parseScene(after);
     assert.equal(p.success, true);
     const c = rig.defaultCharacter();
-    const rt = rig.resolveScene(p.data, {}, {}, {}, { a: c.rig.height }, { a: rig.body3(c) });
+    const rt = rig.resolveScene(p.data, {}, { a: c.rig.height }, { a: rig.body3(c) });
     const w = rig.sceneAt(rt, "a", 2, c.rig.height, rig.body3(c)).world;
     const h = w.flip ? w.hands.near : w.hands.far;
     assert.ok(Math.hypot(...h.elbow.map((x, i) => x - e[i])) < 1e-3);

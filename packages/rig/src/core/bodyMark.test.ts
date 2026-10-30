@@ -227,7 +227,7 @@ describe("đích theo mốc thân", () => {
     expect(parseAction(k({ at: [1, 2, 3], to: "mouth" })).success).toBe(false);
     expect(parseAction(k({ at: [1, 2, 3], offset: [1, 0, 0] })).success).toBe(false);
     expect(parseAction(k({ to: "nose" })).success).toBe(false);
-    // người 2D vẫn có góc dự phòng cho đích theo mốc
+    // đích theo mốc vẫn có góc suy từ đích
     const a = act({
       mask: ["armNear"],
       keys: [{ t: 0, pose: {}, reach: { armNear: { to: "mouth" } } }],
@@ -475,8 +475,6 @@ describe("đích thế giới theo mốc và lòng tay trong scene", () => {
     const rt = resolveScene(
       scene([{ t: 0, right: { at, point: "palm", palm: "down" } }]),
       {},
-      {},
-      {},
       { a: c.rig.height },
       { a: body3(c) },
     );
@@ -490,8 +488,6 @@ describe("đích thế giới theo mốc và lòng tay trong scene", () => {
     const c = PEOPLE[2][1];
     const rt = resolveScene(
       scene([{ t: 0, right: { to: "knee", side: "other", offset: [160, 0, 0], palm: "up" } }]),
-      {},
-      {},
       {},
       { a: c.rig.height },
       { a: body3(c) },

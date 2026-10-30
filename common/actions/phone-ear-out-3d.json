@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 20,
+  "name": "phone-ear-out-3d",
+  "duration": 0.8,
+  "end": "hold",
+  "mask": ["armNear", "hand"],
+  "authoredAt": "side",
+  "sides": "anatomical",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "reach": {
+        "armNear": { "to": "ear", "offset": [7, 3, 5], "point": "grip", "elbow": [-0.2, 1, 0.5] }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "cup", "palm": "in", "fingers": [-0.1, -1, 0] } }
+    },
+    {
+      "t": 0.3,
+      "pose": {},
+      "reach": {
+        "armNear": { "to": "ear", "offset": [18, 6, 18], "point": "grip", "elbow": [-0.2, 1, 0.5] }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "cup", "palm": "in", "fingers": [-0.1, -1, 0] } }
+    },
+    {
+      "t": 0.65,
+      "pose": {},
+      "reach": { "armNear": { "at": [60, -100, 66], "point": "grip", "elbow": [-0.2, 1, 0.6] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "span", "w": 1, "palm": "in" } }
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": { "armNear": { "at": [74, -72, 64], "point": "grip", "elbow": [-0.3, 1, 0.6] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "span", "w": 1, "palm": "in" } }
+    }
+  ],
+  "events": [],
+  "note": "Bỏ điện thoại khỏi tai: từ dáng cuối của `phone-ear-3d`, tay phải đưa ra ngoài (0,24 s) rồi hạ xuống cầm máy trước bụng (hệ thân [72, −72, 58]) lúc 0,8 s, giữ. Chỉ ghi `armNear`, `hand`; `sides: \"anatomical\"`. Nền `stand-3d`, `sit-3d`; món như `phone-ear-3d`. Nối sau `phone-ear-3d` (blend ~0,15); muốn xem máy tiếp thì chồng `phone-use-3d`.",
+  "preview": {
+    "stage": "stand",
+    "hold": {
+      "right": {
+        "item": "dien-thoai",
+        "group": "palmBox",
+        "face": { "axis": "screen", "toward": { "mark": "head" } },
+        "touch": ["self.head"]
+      }
+    }
+  }
+}

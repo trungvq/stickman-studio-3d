@@ -40,7 +40,7 @@ export const stretchJson = (s: Stretch): StretchJson =>
     ? [s[0], s[2], s[4], s[6]]
     : [...s];
 
-/** Kênh tay chân đọc được như góc soạn ở `side` cho người 3D (`cast[].world`); kênh không có là giữ 2D */
+/** Kênh tay chân đọc được như góc soạn ở `side` cho người 3D (`cast[].world`); kênh không có cờ là kênh không nâng */
 export const LIFT_CHANNELS = ["af", "an", "lf", "ln"] as const;
 export type Lift = Partial<Record<(typeof LIFT_CHANNELS)[number], boolean>>;
 
@@ -53,12 +53,14 @@ export type Lift = Partial<Record<(typeof LIFT_CHANNELS)[number], boolean>>;
 export interface Reach {
   at: [number, number, number];
   elbow?: [number, number, number];
+  /** Phần của hướng `elbow` (vắng là `1`), phần còn lại là khuỷu ưu tiên: đoạn giữa mốc khai `elbow` và mốc không khai */
+  elbowW?: number;
   /** Phần khoá khuỷu của `world.hands` (`elbowLock`): `1` là khuỷu nằm đúng hướng `elbow`, không dò xoay khuỷu */
   elbowLock?: number;
   w: number;
   /**
    * Đích theo mốc hay theo điểm khác cổ tay (`ReachTerm`): người 3D giải thành cổ tay mỗi khung (`resolveActing`), `at`
-   * khi ấy chỉ là chỗ ước lượng cho người 2D. docs/01-rig.md#đích-theo-mốc
+   * khi ấy chỉ là chỗ ước lượng trên người mẫu cho góc suy từ đích (`reachAngles`). docs/01-rig.md#đích-theo-mốc
    */
   terms?: ReachTerm[];
   /** Đoạn `ease: "auto"` của `world.hands`: người 3D giải cổ tay theo đây, `terms` chỉ còn là đích ước lượng */
@@ -85,7 +87,7 @@ export interface Pose {
   stretch: Stretch;
   /** Chỉ người 3D đọc; hành động `authoredAt: "side"` ghi. docs/01-rig.md#người-3d */
   lift?: Lift;
-  /** Đích cổ tay hệ thân; chỉ người 3D đọc, người 2D vẽ góc dự phòng của kênh tay */
+  /** Đích cổ tay hệ thân; người 3D giải IK tới đây, kênh tay của `pose` mang góc suy từ đích */
   reach?: ReachMap;
   /** Bàn tay theo `HAND_DOF`: xoay cẳng tay, gập cổ tay, góc ngón; chỉ người 3D mặc đồ đọc. docs/01-rig.md#bàn-tay */
   hand?: HandMap;
@@ -145,55 +147,12 @@ export interface FaceState {
   blush?: number;
 }
 
-export type MoustacheKind =
-  "none" | "short" | "long" | "pencil" | "chevron" | "handlebar" | "walrus" | "horseshoe";
 /** Nếp nhăn: dấu hiệu tuổi tác, vẽ bằng code cùng hệ toạ độ với mắt và mồm */
 export type WrinkleKind = "none" | "light" | "deep";
-export type HeadShape = "round" | "square" | "trapezoid";
-
-/** Góc nhìn rời rạc; không có góc ở giữa. docs/01-rig.md#góc-nhìn */
-export const VIEWS = ["front", "quarter", "side", "rear", "back"] as const;
-export type View = (typeof VIEWS)[number];
-/** Góc mặc định: chính diện 3/4, mặt lệch theo `face.turn` */
-export const DEFAULT_VIEW: View = "quarter";
-/** `front` (chính diện thật) và `quarter` (3/4): mảnh vẽ tay lấy hình chính diện, mặt có đủ nét */
-export const isFrontal = (v: View) => v === "front" || v === "quarter";
-/** Đầu `side` và `rear`: một mắt, một lông mày, mồm cắt ở mép trước */
-export const isProfile = (v: View) => v === "side" || v === "rear";
-/** Góc nhìn của thân và của đầu; `headOf` kẹp tổ hợp không vẽ được */
-export interface Views {
-  body: View;
-  head: View;
-}
-
-/** Thân quay lưng: `rear` hay `back` */
-export const isAway = (v: View) => v === "rear" || v === "back";
 
 /**
- * Thân `rear` chỉ có ở thân áo dựng khối (`solid`); thân khác vẽ như `back`. Chưa biết nhân vật thì
- * giữ `rear`, `figureAnchors` kẹp lần cuối. Tổ hợp không vẽ được: thân quay lưng với đầu `front` /
- * `quarter` thành đầu cùng nấc thân, và đầu `back` / `rear` trên thân chưa quay lưng thành `side`
- */
-export function clampViews(v: Views, solid = true): Views {
-  const body = v.body === "rear" && !solid ? "back" : v.body;
-  if (isAway(body) && isFrontal(v.head)) return { body, head: body };
-  if (!isAway(body) && isAway(v.head)) return { body, head: "side" };
-  return { body, head: v.head };
-}
-
-/** Lớp vẽ của cẳng tay so với thân và đầu; cánh tay trên và vai áo không đổi lớp */
-export type ArmLayer = "back" | "mid" | "front";
-
-export interface ArmLayers {
-  armFar: ArmLayer;
-  armNear: ArmLayer;
-}
-
-/**
- * Khối của một người mà scene xếp `z` riêng được (`cast[].zParts`). `torso` mang cả bóng tiếp
- * đất, tóc sau và đồ vác lưng; `arm*` là khúc vai→khuỷu, `forearm*` là cẳng tay kèm đồ đang cầm;
- * `leg*` là khúc hông→gối, `shin*` là ống chân. Khúc dưới bỏ trống thì theo khúc trên của nó
- * (`UPPER_OF`). docs/03-scene.md#tách-người-theo-z
+ * Khối của một người 3D mà `check` đo va chạm: `arm*` là khúc vai→khuỷu, `forearm*` là cẳng tay,
+ * `leg*` là khúc hông→gối, `shin*` là ống chân.
  */
 export const BODY_PARTS = [
   "legFar",
@@ -207,24 +166,4 @@ export const BODY_PARTS = [
   "forearmNear",
   "head",
 ] as const;
-/**
- * Khối người: `BODY_PARTS`, và `lap` — phần váy dựng khối phủ lên đùi của người 3D ngồi, xếp lớp với
- * đồ khối theo khối riêng của nó. `zParts` không xếp được nó. docs/03-scene.md#người-3d
- */
-export type BodyPart = (typeof BODY_PARTS)[number] | "lap";
-/** Khối khúc dưới → khối khúc trên nó theo khi `zParts` không khai riêng */
-export const UPPER_OF: Partial<Record<(typeof BODY_PARTS)[number], (typeof BODY_PARTS)[number]>> = {
-  forearmFar: "armFar",
-  forearmNear: "armNear",
-  shinFar: "legFar",
-  shinNear: "legNear",
-};
-
-/** Gốc treo người: `feet` là bàn chân thấp hơn chạm `groundY`, `hip` là hông đặt ngay tại `groundY` — người ngồi trên lưng thú. */
-export type Root = "feet" | "hip";
-
-/**
- * Độ mịn của hình dựng khối. `draft` làm tròn góc đầu để tóc trúng cache khi phát thời gian thực;
- * `final` chiếu đúng góc từng khung, chỉ cho bản render để đăng — xem docs/02-trang-phuc.md
- */
-export type RigQuality = "draft" | "final";
+export type BodyPart = (typeof BODY_PARTS)[number];

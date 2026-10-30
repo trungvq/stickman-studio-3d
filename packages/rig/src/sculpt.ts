@@ -5,10 +5,9 @@ import {
 } from './core/sculpt';
 import { onSkull, type Vec3 } from './core/sphere';
 
-// Tóc dựng khối từ bảng kiểu và các hàm dựng vỏ, chân tóc, mái lệch, lọn gai của lõi: như `sculptPaths` nhưng
-// giữ lưới 3D thay vì chiếu ra path SVG.
+// Tóc dựng khối từ bảng kiểu và các hàm dựng vỏ, chân tóc, mái lệch, lọn gai của lõi.
 
-/** Nét trên mặt vỏ như `buildSculpt`: đường ngôi, nét cắt và khe búp xoăn; lọn dẹt có khối nên không vẽ nét; mẩu ngắn hơn một phần tư bị bỏ */
+/** Nét trên mặt vỏ: đường ngôi, nét cắt và khe búp xoăn; lọn dẹt có khối nên không vẽ nét; mẩu ngắn hơn một phần tư bị bỏ */
 function hairLines(s: Sculpt, lines: Vec3[][]) {
   const def = SCULPT_STYLES[s.style];
   const rim = def.rim ?? 0.3;

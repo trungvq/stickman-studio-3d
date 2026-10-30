@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import sitRearJson from "../../../../apps/studio/public/actions/sit-rear.json";
 import {
   ACTION_VERSION,
   actionDelta,
@@ -17,7 +16,7 @@ import {
 } from "./index";
 import { blendDuration, blendPose } from "./index";
 import { D, NEUTRAL_STRETCH, RIG } from "./index";
-import { computeFigure, feet, limbCurves, limbPath, pathOf, tip } from "./index";
+import { computeFigure, feet, limbCurves, tip } from "./index";
 import { POSES } from "./index";
 import { defaultCharacter } from "./index";
 import { stretchJson, stretchSegs, type Pose, type Pt, type Stretch } from "./index";
@@ -72,16 +71,6 @@ const wrap = (deg: number) => {
   const d = (((deg + 180) % 360) + 360) % 360;
   return d === 0 ? 180 : d - 180;
 };
-
-describe("k = 0 ra đúng đường gấp khúc", () => {
-  it.each(poses)("%s", (_ten, P) => {
-    for (const { pts } of limbsOf(P)) {
-      expect(limbPath(pts, 0)).toBe(pathOf(pts));
-      expect(limbPath(pts, 0, 0)).toBe(pathOf(pts.slice(0, 2)));
-      expect(limbPath(pts, 0, 1)).toBe(pathOf(pts.slice(1)));
-    }
-  });
-});
 
 describe("điểm cuối không đổi theo độ cong", () => {
   it.each(poses)("%s", (_ten, P) => {
@@ -433,8 +422,27 @@ describe("góc đầu `null` không ghi", () => {
   });
 });
 
-describe("hành động chung `sit-rear`", () => {
-  const a = action(sitRearJson);
+describe("ngồi bằng `stretch`", () => {
+  const a = action({
+    schemaVersion: 12,
+    name: "sit-rear",
+    duration: 3.4,
+    end: "wrap",
+    mask: ["armFar", "armNear", "legFar", "legNear", "torso", "stretch"],
+    keys: [
+      {
+        t: 0,
+        pose: {
+          armFar: [14, -48, 0],
+          armNear: [-14, 48, 0],
+          legFar: [82, -82],
+          legNear: [82, -82],
+          torso: 3,
+          stretch: [1, 1, 1, 1, 0.75, 1.19, 0.75, 1.19],
+        },
+      },
+    ],
+  });
 
   it.each([0, 0.25, 0.5, 0.75])("t = %s: hông cách bàn chân thấp nhất ≈ 118", (t) => {
     const P = composePose(POSES.idle, actionPose(a, t));

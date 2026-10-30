@@ -3,11 +3,11 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { after, describe, it } from "node:test";
-import * as rig from "@stickman3d/sketch";
+import * as rig from "@stickman3d/rig/core";
 import { loadScene, pngSize, renderThree } from "./lib.mjs";
 import { findChrome, threeData, threeShots, threeSize } from "./three.mjs";
 
-const COMMON = resolve(import.meta.dirname, "../../apps/studio/public");
+const COMMON = resolve(import.meta.dirname, "../../common");
 const SCENE = rig.parseScene({
   name: "thu-three",
   duration: 2,
@@ -15,7 +15,7 @@ const SCENE = rig.parseScene({
   cast: [
     {
       id: "a",
-      character: "code.json",
+      character: "sample-man.json",
       world: { at: [0, 0, 0], yaw: 40 },
       tracks: [
         {
@@ -31,14 +31,12 @@ const SCENE = rig.parseScene({
 const loaded = loadScene(
   SCENE,
   [join(COMMON, "actions")],
-  [],
-  [],
   [join(COMMON, "characters")],
   [join(COMMON, "held")],
 );
 const characters = {
-  "code.json": rig.parseCharacter(
-    JSON.parse(readFileSync(join(COMMON, "characters/code.json"), "utf8")),
+  "sample-man.json": rig.parseCharacter(
+    JSON.parse(readFileSync(join(COMMON, "characters/sample-man.json"), "utf8")),
   ).data,
 };
 const data = { characters, ...loaded };
@@ -81,7 +79,7 @@ describe("ảnh three", { skip }, () => {
       out,
       cols: 2,
       motion: { trails: "hands", span: 0.5, fps: 10 },
-      loadCharacter: () => ({ character: characters["code.json"], urls: {} }),
+      loadCharacter: () => ({ character: characters["sample-man.json"], urls: {} }),
     });
     assert.equal(r.frames.length, 2);
     // dải nhãn phía trên khung three: nhãn ô không đè lên người
@@ -114,15 +112,7 @@ describe("dáng tay của thư viện", () => {
       ],
     }).data;
   const load = (scene, handsDirs) =>
-    loadScene(
-      scene,
-      [join(COMMON, "actions")],
-      [],
-      [],
-      [join(COMMON, "characters")],
-      [],
-      handsDirs,
-    );
+    loadScene(scene, [join(COMMON, "actions")], [join(COMMON, "characters")], [], handsDirs);
 
   it("nạp dáng cảnh gọi qua hai lớp, bản của repo đè bản chung", () => {
     const repo = mkdtempSync(join(tmpdir(), "stickman-hands-"));

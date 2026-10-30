@@ -1,7 +1,6 @@
 // Nạp mã của repo video: `package.json` khai `"stickman": { "layers": "src/lop.tsx",
-// "parts": "src/parts.tsx", "world": "src/khoi3d/world.ts" }`, esbuild gói từng entry. Lớp vẽ code
-// thì `<SceneWorld>` của @stickman3d/fx gọi năm chỗ móc — docs/10-lop-ve-code.md; bộ phận thì vào
-// `PARTS` của rig qua `registerParts` — docs/02-trang-phuc.md; cảnh three thì `check` đo người lồng
+// "world": "src/khoi3d/world.ts" }`, esbuild gói từng entry. Lớp vẽ code thì `<SceneWorld>` của
+// @stickman3d/fx gọi bốn chỗ móc — docs/10-lop-ve-code.md; cảnh three thì `check` đo người lồng
 // vào vật trên nó — docs/10-lop-ve-code.md#người-lồng-vào-đồ.
 import { createHash } from "node:crypto";
 import {
@@ -17,13 +16,12 @@ import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build } from "esbuild";
-import { registerParts } from "@stickman3d/sketch";
 
 const req = createRequire(import.meta.url);
 const HERE = dirname(fileURLToPath(import.meta.url));
 
 /** Không gói lại: hai bản React là hai dispatcher hook khác nhau, hai bản rig là hai bảng hằng số */
-const SHARED = /^(react|react-dom|@stickman3d\/(rig|sketch|fx))(\/|$)/;
+const SHARED = /^(react|react-dom|@stickman3d\/(rig|fx))(\/|$)/;
 
 const IMAGE = ["png", "jpg", "jpeg", "webp", "gif", "svg", "avif"];
 
@@ -48,9 +46,6 @@ function entryOf(root, key) {
 /** Đường dẫn thật của entry lớp, hay `null` nếu repo không khai */
 export const layersEntry = (root = process.cwd()) => entryOf(root, "layers");
 
-/** Đường dẫn thật của entry bộ phận, hay `null` nếu repo không khai */
-export const partsEntry = (root = process.cwd()) => entryOf(root, "parts");
-
 /** Đường dẫn thật của entry dựng cảnh three, hay `null` nếu repo không khai */
 export const worldEntry = (root = process.cwd()) => entryOf(root, "world");
 
@@ -72,7 +67,7 @@ const noRemotion = (what) => ({
     b.onResolve({ filter: /^remotion(\/|$)/ }, (a) => ({
       errors: [
         {
-          text: `${what} không được import "${a.path}" — hợp đồng là thuần theo \`t\`, studio, stickman-render và MCP đều gọi nó ngoài Remotion`,
+          text: `${what} không được import "${a.path}" — hợp đồng là thuần theo \`t\`, studio, \`stickman check\` và MCP đều gọi nó ngoài Remotion`,
         },
       ],
     }));
@@ -109,7 +104,7 @@ async function bundle(root, entry, { platform, plugins, stdin, resolveExtensions
 
 const cache = new Map();
 
-/** React, rig, sketch, fx là bản của chính CLI: đồ của lớp và bộ phận đi thẳng vào `<SceneWorld>` của nó */
+/** React, rig, fx là bản của chính CLI: đồ của lớp và bộ phận đi thẳng vào `<SceneWorld>` của nó */
 const sharedWithCli = {
   name: "stickman-shared",
   setup(b) {
@@ -125,7 +120,7 @@ const sharedWithCli = {
 
 /**
  * Gói entry cho Node rồi `import` nó; gói lại khi file nguồn đổi, nên MCP không phải khởi động lại.
- * Mặc định chặn Remotion và dùng chung React, rig, sketch, fx với CLI; `opts` đè cách gói
+ * Mặc định chặn Remotion và dùng chung React, rig, fx với CLI; `opts` đè cách gói
  */
 async function loadEntry(root, entry, prefix, what, opts = {}) {
   const key = `${prefix}:${entry}`;
@@ -162,19 +157,6 @@ export async function loadLayers(root = process.cwd()) {
   return layers;
 }
 
-/**
- * Bảng `CODE_PARTS` của repo video, đã đăng ký vào `PARTS` của rig mà render vẽ bằng; `{}` nếu
- * repo không khai. Chỗ giữ bản rig riêng (MCP nạp rig theo version) gọi `registerParts` lần nữa.
- */
-export async function loadParts(root = process.cwd()) {
-  const entry = partsEntry(root);
-  const parts = entry ? (await loadEntry(root, entry, "parts", "bộ phận vẽ code")).CODE_PARTS : {};
-  if (!parts || typeof parts !== "object" || Array.isArray(parts))
-    throw new Error(`${entry} phải \`export const CODE_PARTS\` là một bảng tên → PartDef`);
-  registerParts(parts);
-  return parts;
-}
-
 // Code dựng cảnh three hay nằm chung file với component Remotion: React và Remotion thành vỏ rỗng — đọc
 // gì, gọi gì cũng ra vỏ rỗng, nên import và khai component chạy được, chỉ không vẽ gì. Tên import
 // (`import { useVideoConfig }`) đi qua prototype mà `__toESM` của esbuild chép từ module
@@ -200,15 +182,15 @@ const hollowReact = {
 };
 
 /** Gói mà cảnh three của repo video dùng chung với rig của nó: một bản `three` là một `instanceof` */
-const WORLD_SHARED = /^(three|zod|@stickman3d\/(rig|sketch|fx))(\/|$)/;
-/** Chỗ dò gói khi repo video không cài: rig đi theo sketch của CLI */
+const WORLD_SHARED = /^(three|zod|@stickman3d\/(rig|fx))(\/|$)/;
+/** Chỗ dò gói khi repo video không cài: rig của CLI */
 const cliDirs = () => {
-  const sketch = dirname(req.resolve("@stickman3d/sketch"));
-  return [HERE, sketch];
+  const rig = dirname(req.resolve("@stickman3d/rig"));
+  return [HERE, rig];
 };
 
 /**
- * Rig, sketch, fx là bản repo video cài (không có thì bản của CLI); `three` và `zod` là bản mà rig
+ * Rig, fx là bản repo video cài (không có thì bản của CLI); `three` và `zod` là bản mà rig
  * ấy nạp, nên `collide` của rig nhận đúng vật repo dựng. Mọi gói này để ngoài, đường dẫn tuyệt đối;
  * `inline` thì gói vào luôn (trang trình duyệt), vẫn một bản
  */
@@ -249,24 +231,36 @@ class BlankPath2D {
 
 /**
  * Cảnh three của repo video, hay `null` nếu repo không khai `stickman.world`: `{ worldOf, collide,
- * colliders, U, heldHands, heldCarries, legacyHolds }` — `worldOf` của entry, các thứ sau của chính bản rig mà entry nạp
- * (`heldHands`, `heldCarries`, `legacyHolds` trống khi bản rig ấy chưa có). Đặt `Path2D`
- * rỗng vào `globalThis` khi Node không có. Hợp đồng ở docs/10-lop-ve-code.md#đo-trên-cảnh-three
+ * colliders, U, heldHands, heldCarries, legacyHolds, rig }` — `worldOf` của entry, các thứ sau của chính bản rig mà entry
+ * nạp (`heldHands`, `heldCarries`, `legacyHolds` trống khi bản rig ấy chưa có), `rig` là cả bản rig ấy. Đặt `Path2D`
+ * rỗng vào `globalThis` khi Node không có. `bare`: chỉ nạp `@stickman3d/rig` của repo (cùng một bản `three` với cảnh
+ * three của repo), không chạy `stickman.world` dù repo có khai; `worldOf` trả `null`, `bare: true` — cảnh dựng tạm (sân
+ * khấu thử của `stickman gen`, `checkScenes({ spec })`) dựng bằng `rig` ấy. Hợp đồng ở docs/10-lop-ve-code.md#đo-trên-cảnh-three
  */
-export async function loadWorld(root = process.cwd()) {
-  const entry = worldEntry(root);
-  if (!entry) return null;
+export async function loadWorld(root = process.cwd(), { bare = false } = {}) {
+  const entry = bare ? null : worldEntry(root);
+  if (!entry && !bare) return null;
   globalThis.Path2D ??= BlankPath2D;
-  const mod = await loadEntry(root, entry, "world", "cảnh three", {
-    plugins: [hollowReact, sharedWithRepo(root)],
-    stdin: `export * as world from ${JSON.stringify(entry)};
+  const mod = await loadEntry(
+    root,
+    entry ?? join(root, "package.json"),
+    entry ? "world" : "rig",
+    "cảnh three",
+    {
+      plugins: [hollowReact, sharedWithRepo(root)],
+      stdin: entry
+        ? `export * as world from ${JSON.stringify(entry)};
+export * from "@stickman3d/rig";`
+        : `export const world = { worldOf: () => null };
 export * from "@stickman3d/rig";`,
-    resolveExtensions: [".ts", ".tsx", ".mts", ".mjs", ".js", ".jsx", ".cjs", ".json"],
-    loader: { ".css": "empty" },
-  });
+      resolveExtensions: [".ts", ".tsx", ".mts", ".mjs", ".js", ".jsx", ".cjs", ".json"],
+      loader: { ".css": "empty" },
+    },
+  );
   if (typeof mod.world.worldOf !== "function")
     throw new Error(`${entry} phải \`export function worldOf(sceneName, rt)\``);
   return {
+    ...(!entry && { bare: true }),
     worldOf: mod.world.worldOf,
     collide: mod.collide,
     colliders: mod.colliders,
@@ -274,43 +268,14 @@ export * from "@stickman3d/rig";`,
     heldHands: mod.heldHands,
     heldCarries: mod.heldCarries,
     legacyHolds: mod.legacyHolds,
+    rig: mod,
   };
-}
-
-/**
- * Bảng `CODE_PARTS` gói cho trình duyệt, `null` nếu repo không khai. React và rig không gói
- * vào mà lấy của chính trang qua `globalThis.__stickman[<tên gói>]`: studio đặt sẵn trước khi
- * `import` — thêm tên gói dùng chung thì thêm cả ở `apps/studio/src/repoParts.ts`.
- */
-export async function bundlePartsForBrowser(root = process.cwd()) {
-  const entry = partsEntry(root);
-  if (!entry) return null;
-  const { code } = await bundle(root, entry, {
-    platform: "browser",
-    plugins: [
-      noRemotion("bộ phận vẽ code"),
-      {
-        name: "stickman-page",
-        setup(b) {
-          b.onResolve({ filter: SHARED }, (a) => ({ path: a.path, namespace: "stickman-page" }));
-          // CommonJS để esbuild tự đổi `import { x }` ra đọc thuộc tính, không phải liệt kê tên
-          b.onLoad({ filter: /.*/, namespace: "stickman-page" }, (a) => ({
-            contents: `const m = globalThis.__stickman?.[${JSON.stringify(a.path)}];
-if (!m) throw new Error(${JSON.stringify(`studio không cấp "${a.path}" cho bộ phận vẽ code`)});
-module.exports = m;`,
-            loader: "js",
-          }));
-        },
-      },
-    ],
-  });
-  return code;
 }
 
 const pageCache = new Map();
 
 /**
- * Trang trình duyệt vẽ cảnh three của repo video cho `stickman-render --three`: rig, `three` và module
+ * Trang trình duyệt vẽ cảnh three của repo video cho ảnh three của MCP (`threeShots`): rig, `three` và module
  * `stickman.world` (nếu khai) gói chung một bản, rồi `boot(rig, world)` của `three-page.mjs`. Gói lại
  * khi file nguồn đổi
  */

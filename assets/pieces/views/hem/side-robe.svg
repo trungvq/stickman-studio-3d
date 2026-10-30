@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 300">
-<title>Tà áo thụng nhìn nghiêng</title>
-<g id="guide" fill="none" stroke="#9ac" stroke-width="1"><path d="M 75 100 L 75 256"/></g>
-<g fill="white" stroke="black" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 47 49 Q 76 55 103 49 C 107 132.4 113 203.2 121 262.6 Q 80 269.8 28 263.2 C 38 201.4 44 131.2 47 49 Z" fill="white" stroke-width="6"/>
-<path d="M 92 60 Q 89 175.6 97 264.4 M 57 118 Q 53 203.2 45 254.8" fill="none" stroke-width="3.9"/>
-</g>
-</svg>

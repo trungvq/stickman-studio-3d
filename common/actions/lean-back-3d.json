@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 20,
+  "name": "lean-back-3d",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": 0, "head": [null, null, 0] }, "ease": "smooth" },
+    { "t": 1, "pose": { "torso": -7, "head": [null, null, -7] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Ưỡn ngực, ngả ra sau, cằm hất lên (ra oai, bề trên): thân −7°, đầu gật −7° trong 0,5 s; giữ. Chỉ ghi `torso` và gật của `head`, nghiêng, lắc để trống; tay để cảnh. Nền `stand-3d`. Chồng được lên tay chống nạnh, chắp sau lưng, khoanh trên ghế và `turn-head-*`; buông bằng clip rỗng blend ~0,4. Đứng là `lean-back-3d`, ngồi là `lean-back-seated-3d`. Sinh bằng `tools/actions/lean-back.mjs`.",
+  "preview": { "stage": "stand" }
+}

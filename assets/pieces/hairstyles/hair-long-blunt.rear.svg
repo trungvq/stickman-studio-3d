@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
-<title>Dài thẳng, mái bằng — rear</title>
-<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
-<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 56 162 C 52 100 96 50 162 50 C 212 48 248 66 262 80 Q 246 84 232 92 C 226 150 226 220 232 290 C 236 320 238 340 232 354 Q 200 366 160 358 Q 120 366 82 356 Q 44 364 24 350 C 14 336 22 316 32 290 C 46 250 56 200 56 162 Z"/>
-<path d="M 100 220 C 92 270 92 320 102 352" fill="none"/>
-<path d="M 190 230 C 186 280 188 330 196 352" fill="none"/>
-</g>
-</svg>

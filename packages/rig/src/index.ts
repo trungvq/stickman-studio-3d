@@ -25,8 +25,9 @@ export { torsoMesh, type Rig, type TorsoMesh } from './torso';
 export { sculptMesh, type SculptMesh } from './sculpt';
 export {
   addItem, addLathe, addPart, bar, Batch, box, slab, toThree, U,
-  type BatchSolid, type Item, type LatheSpec, type Mark, type Part, type SolidTag, type Tone, type Vec3,
+  type BatchSolid, type Item, type ItemRoles, type LatheSpec, type Mark, type Part, type SolidTag, type Tone, type Vec3,
 } from './khoi';
+export { propOf, propSet, propWorld, PROP_ROOM, rolesOf, withRoles, type Prop, type PropRoles } from './roles';
 export { aimCamera, HOME, lensCamera, STAGE, viewRect, type Crop, type StageFrame } from './lens';
 export { createStage, type FrameView, type Stage, type StageOptions } from './stage';
 export { BUST_CUT, portrait, type PortraitOptions } from './portrait';
@@ -48,3 +49,4 @@ export {
   buildStage, buildWorld, combineExtras, plainRoom, roomLights, stageOf,
   type Cast3D, type Extra3D, type LightAdd, type Released, type Set3D, type World3D, type WorldCtx, type WorldData, type WorldSpec,
 } from './world';
+export { previewExtra, previewHeld, previewProps, previewSet, previewWorld, type PreviewSetOptions } from './preview';

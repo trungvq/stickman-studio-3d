@@ -379,7 +379,7 @@ export function humanDemo(name) {
   if (!scene.success) throw new Error(scene.error.message);
   const bodies = Object.fromEntries(cast.map((m) => [m.id, body3(m.c)]));
   const heights = Object.fromEntries(cast.map((m) => [m.id, m.c.rig.height]));
-  const rt = resolveScene(scene.data, { ...ACTIONS, ...own() }, {}, {}, heights, bodies);
+  const rt = resolveScene(scene.data, { ...ACTIONS, ...own() }, heights, bodies);
   // mỗi người một tủ đồ (`wardrobe`): đổi mảnh dựng khối theo `equip` là hiện bản khác
   const group = new THREE.Group();
   const people = cast.map((m, i) => ({

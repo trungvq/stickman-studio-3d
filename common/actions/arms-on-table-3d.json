@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 18,
+  "name": "arms-on-table-3d",
+  "duration": 1,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": ["armFar", "armNear", "torso", "hand"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "torso": 5 },
+      "reach": {
+        "armFar": { "at": [100, -56, 22], "elbow": [-0.3, 0.3, 1] },
+        "armNear": { "at": [100, -56, 22], "elbow": [-0.3, 0.3, 1] }
+      },
+      "hand": { "armFar": { "turn": 20, "bend": -5 }, "armNear": { "turn": 20, "bend": -5 } },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Hai tay đặt trên bàn trước mặt người ngồi: đích cổ tay hệ thân [100, −56, 22], khuỷu ra ngoài, thân cúi 5, bàn tay nghỉ úp; giữ. Ghi hai tay, thân, bàn tay. Nền `sit-3d` với `world.sit`, mặt bàn cao hơn mặt ngồi ~55 (đơn vị rig ở `height` 1), mép gần trước hông ~80; bàn khác cao thì đặt `world.hands`. Chồng đầu, nét mặt lên trên; gõ phím là `type-3d`.",
+  "preview": { "stage": "desk" }
+}

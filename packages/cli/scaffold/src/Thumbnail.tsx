@@ -1,5 +1,5 @@
 import type { CodeLayer } from "@stickman3d/fx";
-import { PAPER, type SceneData } from "@stickman3d/sketch";
+import { PAPER, type SceneData } from "@stickman3d/rig/core";
 import { useEffect, useMemo } from "react";
 import { AbsoluteFill, continueRender, delayRender, staticFile, useVideoConfig } from "remotion";
 import { SCENES } from "./data";
@@ -12,12 +12,10 @@ type Keep = ThumbnailData["keep"];
 const only = <T extends { id: string }>(list: T[], ids?: string[]) =>
   ids ? list.filter((m) => ids.includes(m.id)) : list;
 
-/** Cảnh chỉ còn những gì `keep` giữ; ai bị bỏ thì thứ bám vào người đó (người cưỡi, đồ xách) cũng phải bỏ */
+/** Cảnh chỉ còn những gì `keep` giữ; ai bị bỏ thì thứ bám vào người đó cũng phải bỏ */
 const keepScene = (s: SceneData, keep: Keep): SceneData => ({
   ...s,
   cast: only(s.cast, keep.cast),
-  animals: only(s.animals, keep.animals),
-  props: only(s.props, keep.props),
   bg: keep.bg === false ? [] : s.bg,
   fx: keep.fx === false ? [] : s.fx,
 });
@@ -38,7 +36,7 @@ const keepLayers = (keep: Keep): readonly CodeLayer[] =>
  * Thumbnail: một khung phim thật cộng một dòng hook. Không dựng cảnh riêng — `<Scene at>`
  * chạy đúng giây ấy, rồi cả tấm được phóng quanh `origin` và đẩy ngang `shift` cho mặt
  * nhân vật chiếm một góc, chữ ăn góc kia. Chữ là SVG `<text>` với `paint-order: stroke`:
- * viền giấy bọc ngoài nét mực nên đọc được trên mọi mảng nền. `keep` lọc người, thú, đạo cụ,
+ * viền giấy bọc ngoài nét mực nên đọc được trên mọi mảng nền. `keep` lọc người,
  * nền, hiệu ứng và lớp vẽ code của khung ấy mà không sửa cảnh phim. docs/07-lam-tap.md
  */
 export const Thumbnail = ({ thumb }: { thumb: ThumbnailData }) => {

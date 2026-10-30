@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 20,
+  "name": "sigh-3d",
+  "duration": 1.8,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": 0, "head": [null, null, 0] }, "ease": "smooth" },
+    { "t": 0.2778, "pose": { "torso": -5, "head": [null, null, -10] }, "ease": "smooth" },
+    { "t": 0.7222, "pose": { "torso": 8, "head": [null, null, 16] }, "ease": "smooth" },
+    { "t": 1, "pose": { "torso": 7, "head": [null, null, 14] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Thở dài, chùng vai: 0–0,5 s hít vào, thân ngả sau 5°, đầu ngửa 10°; 0,5–1,3 s thở ra, thân đổ tới 8°, đầu gục 16°; giữ thân 7°, đầu 14°. Chỉ ghi `torso` và gật của `head`; tay để cảnh. Nền `stand-3d`, ngồi thì `sit-3d`. Chồng được tay buông, chắp trước bụng, `turn-head-*`; buông bằng clip rỗng blend ~0,5. Chống tay lên quầy thì `sigh-counter-3d`.",
+  "preview": { "stage": "stand" }
+}

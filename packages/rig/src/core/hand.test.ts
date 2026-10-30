@@ -298,9 +298,8 @@ describe("kênh `hand` của hành động", () => {
     const k = (hand: object) => ({ keys: [{ t: 0, pose: {}, hand: { armNear: hand } }] });
     expect(parseAction(k({ turn: 95 })).success).toBe(false);
     expect(parseAction(k({ bend: -100 })).success).toBe(false);
-    expect(parseAction(k({ pose: "wave" })).success).toBe(false);
-    // dáng nghỉ không soạn được: bỏ trống `pose`; không có góc ngón thô
-    for (const v of ["relaxed", "pinchy", "thumbsDown"]) {
+    // tên ngoài `HAND_POSES` là dáng của thư viện (`[a-z0-9-]`, `check` tra); không có góc ngón thô
+    for (const v of ["Wave", "pinch_y", "thumbsDown"]) {
       expect(parseAction(k({ pose: v })).success).toBe(false);
       expect(parseAction({ keys: [{ t: 0, pose: {}, hand: { armNear: v } }] }).success).toBe(false);
     }
@@ -371,10 +370,12 @@ describe("ghép và hoà bàn tay", () => {
     const scene = (mask?: string[]) => {
       const r = parseScene({
         name: "s",
+        lens: { eye: [0, -250, -1400], yaw: 0, pitch: 0, f: 800 },
         cast: [
           {
             id: "x",
             character: "x.json",
+            world: { at: [0, 0, 400] },
             tracks: [
               {
                 clips: [
@@ -387,7 +388,7 @@ describe("ghép và hoà bàn tay", () => {
         ],
       });
       if (!r.success) throw new Error(r.error.message);
-      return resolveScene(r.data, ACTIONS, {}, {});
+      return resolveScene(r.data, ACTIONS);
     };
     const rt = scene();
     let prev = sceneAt(rt, "x", 0.9).pose.hand!.an!;

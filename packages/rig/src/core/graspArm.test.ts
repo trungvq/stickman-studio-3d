@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { markShape, trunk3, type ActInput } from "./act3";
+import { ARM_SOFT, prefPole, softReach } from "./elbow";
 import {
   armInput,
   armSeg,
@@ -7,13 +8,13 @@ import {
   evalPhi,
   IN_FREE,
   phiAt,
+  phiBasis,
   phiChain,
   solvePhi,
   wristAngles,
   type ArmInput,
   type ArmSeg,
   type ArmSol,
-  W_IN,
 } from "./graspArm";
 import { wristTurn } from "./hand";
 import { HELD_ELBOW } from "./heldAudit";
@@ -83,41 +84,43 @@ describe("graspArm", () => {
       }
   });
 
-  it("giải φ bằng 41 lần thử (lưới, chia đôi, đỉnh parabol), tất định", () => {
+  it("giải φ bằng 23 lần thử (22 nút lưới cố định 10° phủ ±90° quanh khuỷu ưu tiên, rồi lấy liền), tất định", () => {
     const { Wp, Rw } = handOf(fx.ca.c1, RIGHT);
     const a = solvePhi(inR, Wp, Rw);
     const b = solvePhi(inR, Wp, Rw);
-    expect(a.tries).toBe(41);
+    expect(a.tries).toBe(23);
     expect(b).toEqual(a);
   });
 
-  it.each([["c1", fx.ca.c1]] as const)("ra lại ca %s của bước 0", (_, c) => {
-    const { Wp, Rw } = handOf(c, RIGHT);
+  it("ca c1 của bước 0: khuỷu gần hướng ưu tiên, cổ tay trong tầm, không lấn", () => {
+    const { Wp, Rw } = handOf(fx.ca.c1, RIGHT);
     const x = solvePhi(inR, Wp, Rw);
-    expect(Math.abs(wrapD(x.phi - c.phi))).toBeLessThanOrEqual(2.5);
-    const [turn, bend, dev] = c.wristAngles;
-    expect(Math.abs(x.wrist.turn - turn)).toBeLessThanOrEqual(3);
-    expect(Math.abs(x.wrist.bend - bend)).toBeLessThanOrEqual(3);
-    expect(Math.abs(x.wrist.dev - dev)).toBeLessThanOrEqual(3);
+    expect(Math.abs(x.phi)).toBeLessThan(15);
+    expect(x.wrist.over).toEqual({ turn: 0, bend: 0, dev: 0 });
+    expect(x.inward).toBeLessThan(0);
     expect(x.gap).toBe(0);
     expect(x.body).toBe(0);
   });
 
-  it("ca c2 của bước 0: khung bàn tay ấy chỉ với tới bằng khuỷu gập ngược, `check` báo `elbow`", () => {
+  it("ca c2 của bước 0: khung bàn tay ấy chỉ với tới bằng khuỷu gập ngược — khuỷu giữ dáng tự nhiên, cổ tay kẹp, `check` báo `wrist`", () => {
     const { Wp, Rw } = handOf(fx.ca.c2, RIGHT);
     const x = solvePhi(inR, Wp, Rw);
-    expect(x.inward).toBeGreaterThan(HELD_ELBOW);
-    expect(evalPhi(inR, Wp, Rw, fx.ca.c2.phi).inward).toBeGreaterThan(HELD_ELBOW);
+    expect(x.inward).toBeLessThan(HELD_ELBOW);
+    expect(Math.abs(x.phi)).toBeLessThan(15);
+    expect(x.wrist.over.turn + x.wrist.over.dev).toBeGreaterThan(30);
+    // khuỷu gập ngược mới với tới khung bàn tay ấy
+    expect(evalPhi(inR, Wp, Rw, fx.ca.c2.phi).inward).toBeGreaterThan(-0.1);
   });
 
-  it("ngoài tầm với: khe dương, cánh tay duỗi thẳng về cổ tay", () => {
+  it("ngoài tầm với: khe dương, cánh tay duỗi theo soft IK về cổ tay", () => {
     const fwd = matVec(T.Rr, [0, 0, 1]);
     const Wp: V3 = [inR.S[0] + fwd[0] * 2, inR.S[1] + fwd[1] * 2 - 0.3, inR.S[2] + fwd[2] * 2];
     const x = solvePhi(inR, Wp, T.Rr);
-    expect(x.gap).toBeCloseTo((len(sub(Wp, inR.S)) - inR.l1 - inR.l2) * 100, 6);
-    expect(x.gap).toBeGreaterThan(0);
-    const reach = len(sub(x.elbow, inR.S)) + len(sub(x.reach, x.elbow));
-    expect(len(sub(x.reach, inR.S))).toBeCloseTo(reach, 9);
+    const L = inR.l1 + inR.l2;
+    const d = len(sub(Wp, inR.S));
+    expect(x.gap).toBeCloseTo((d - softReach(d, L, ARM_SOFT * L)) * 100, 6);
+    expect(x.gap).toBeGreaterThan((d - L) * 100);
+    expect(len(sub(x.reach, inR.S))).toBeLessThan(L);
     expect(dot(unit(sub(x.reach, inR.S)), unit(sub(Wp, inR.S)))).toBeCloseTo(1, 9);
   });
 
@@ -138,11 +141,14 @@ describe("graspArm", () => {
     const Wp = inR.S.map((v, i) => v + down[i] * (inR.l1 + inR.l2)) as V3;
     const x = solvePhi(inR, Wp, Rsh);
     expect(x.body).toBeLessThan(0.05);
+    // không trừ mức nền thì bắp tay buông lấn thân (tới mức nền của tay buông thẳng)
     const bare: ArmInput = { ...inR, rest: inR.rest.map(() => 0) };
-    expect(evalPhi(bare, Wp, Rsh, x.phi).body).toBeCloseTo(fx.ca.restAllowMax, 1);
+    const b = evalPhi(bare, Wp, Rsh, x.phi).body;
+    expect(b).toBeGreaterThan(1);
+    expect(b).toBeLessThanOrEqual(fx.ca.restAllowMax + 0.05);
   });
 
-  it("tay trượt (ca 5, tay trái): hai mẫu liền lệch ≤ 3,5°, đổi đều, khớp bước 0", () => {
+  it("tay trượt (ca 5, tay trái): hai mẫu liền lệch ≤ 4°, đổi đều", () => {
     const L = fx.ca.c5Left;
     const at = (t: number) => {
       const i = Math.round(t / HOLD_SLEW_STEP);
@@ -154,12 +160,11 @@ describe("graspArm", () => {
     expect(chain).toHaveLength(L.length);
     const step = (i: number) => wrapD(chain[i].sol.phi - chain[i - 1].sol.phi);
     for (let i = 1; i < chain.length; i++) {
-      expect(Math.abs(step(i))).toBeLessThanOrEqual(3.5);
+      expect(Math.abs(step(i))).toBeLessThanOrEqual(4);
       if (i > 1) expect(Math.abs(step(i) - step(i - 1))).toBeLessThanOrEqual(1.5);
       expect(chain[i].sol.terms.cont).toBeGreaterThanOrEqual(0);
     }
     expect(chain[0].sol.terms.cont).toBe(0);
-    chain.forEach((c, i) => expect(Math.abs(wrapD(c.sol.phi - L[i].phi))).toBeLessThanOrEqual(2.5));
     expect(phiChain(0, 0.6, at)).toEqual(chain);
     const mid = phiAt(chain, 1.5 * HOLD_SLEW_STEP);
     expect(mid).toBeCloseTo((chain[1].sol.phi + chain[2].sol.phi) / 2, 9);
@@ -203,8 +208,7 @@ describe("chuỗi φ và gốc φ", () => {
     expect(chain[2].t).toBeLessThan(t1);
   });
 
-  it("cổ tay thẳng dưới vai: gốc `φ` là `−tiến`, hoà êm sang hình chiếu hướng xuống", () => {
-    const back = matVec(T.Rr, [0, 0, -1]);
+  it("gốc `φ` là khuỷu ưu tiên của cổ tay, đổi êm khi trục vai → cổ tay đi qua phương đứng", () => {
     const r = 0.8 * (inR.l1 + inR.l2);
     const pole = (a: number, az: number) => {
       const h = matVec(T.Rr, [Math.sin(az * D2R), 0, Math.cos(az * D2R)]);
@@ -213,37 +217,40 @@ describe("chuỗi φ và gốc φ", () => {
       const Wp: V3 = [inR.S[0] + n[0] * r, inR.S[1] + n[1] * r, inR.S[2] + n[2] * r];
       const x = evalPhi(inR, Wp, T.Rr, 0);
       expect(Number.isFinite(x.E)).toBe(true);
-      return { n, p: x.pole };
+      return { n, p: x.pole, Wp };
     };
-    expect(ang(pole(0, 0).p, back)).toBeLessThan(1e-6);
     for (let az = 0; az < 360; az += 45) {
-      expect(ang(pole(0.05, az).p, back)).toBeLessThan(5);
-      const { n, p } = pole(0.35, az);
-      const d = sub([0, -1, 0], n.map((v) => v * -n[1]) as V3);
-      expect(ang(p, d)).toBeLessThan(1e-6);
+      const { n, p, Wp } = pole(0.35, az);
+      const want = prefPole(inR.Rr, inR.side, inR.S, Wp, inR.l1 + inR.l2);
+      const d = sub(want, n.map((v) => v * dot(want, n)) as V3);
+      expect(ang(p, d)).toBeLessThan(1e-4);
+      expect(ang(phiBasis(inR, Wp).d0, d)).toBeLessThan(1e-4);
     }
-    // trục ngả ra trước, sang hai bên: gốc `φ` đổi dần, không nhảy
-    for (const az of [0, 90, -90]) {
+    // trục ngả ra trước, sang hai bên, qua phương đứng: gốc `φ` đổi dần, không nhảy
+    for (const az of [0, 90, -90, 180]) {
       let prev = pole(0, az).p;
       for (let a = 0.01; a <= 0.4; a += 0.01) {
         const { p } = pole(a, az);
-        expect(ang(p, prev)).toBeLessThan(15);
+        expect(ang(p, prev)).toBeLessThan(5);
         prev = p;
       }
     }
   });
 
-  it("khuỷu gập ngược: `inward` dương khi khuỷu lệch vào giữa thân hay lên trên, phạt `W_IN` từ `IN_FREE`", () => {
+  it("khuỷu gập ngược: `inward` dương khi khuỷu lệch vào giữa thân hay lên trên; cổ tay dưới vai thì phạt `W_IN` phần vượt khuỷu ưu tiên", () => {
     const { Wp, Rw } = handOf(fx.ca.c1, RIGHT);
+    const x0 = evalPhi(inR, Wp, Rw, 0);
+    let hi = -Infinity;
     for (let p = -180; p < 180; p += 5) {
       const x = evalPhi(inR, Wp, Rw, p);
       expect(x.inward).toBeCloseTo(elbowInward(inR, Wp, x.elbow), 9);
-      expect(x.terms.inward).toBeCloseTo(W_IN * Math.max(0, x.inward - IN_FREE) ** 2, 9);
+      hi = Math.max(hi, x.inward);
+      // phạt chỉ phần vượt độ lệch của khuỷu ưu tiên (`IN_FREE` ở đây vì khuỷu ưu tiên không gập ngược)
+      if (x.inward <= Math.max(IN_FREE, x0.inward)) expect(x.terms.inward).toBe(0);
+      else expect(x.terms.inward).toBeGreaterThan(0);
     }
-    // `φ` âm là vào trong, `±180` là chĩa lên; thõng và ra ngoài thì âm
-    expect(evalPhi(inR, Wp, Rw, -90).inward).toBeGreaterThan(0.3);
-    expect(evalPhi(inR, Wp, Rw, 180).inward).toBeGreaterThan(0.3);
-    expect(evalPhi(inR, Wp, Rw, 0).inward).toBeLessThanOrEqual(0.05);
-    expect(evalPhi(inR, Wp, Rw, 60).inward).toBeLessThan(0);
+    // khuỷu ưu tiên thõng ra ngoài; xoay nửa vòng thì khuỷu chĩa vào trong hay lên
+    expect(x0.inward).toBeLessThan(0);
+    expect(hi).toBeGreaterThan(0.3);
   });
 });

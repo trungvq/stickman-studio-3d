@@ -1,8 +1,9 @@
-import { AIM_BEND, AIM_DEV, clampRange, markShape, TURN_MAX, type Trunk3 } from "./arm3";
+import { markShape, type Trunk3 } from "./arm3";
 import { AIM_GAP } from "./constants";
 import {
   armInput,
   solvePhi,
+  wristClamp,
   type ArmInput,
   type ArmSeg,
   type ArmSol,
@@ -1524,6 +1525,12 @@ export interface GraspOpts {
 
 /** Giá đổi trường rời (`part`, khối hình, `edge`, `thumb`, `variant`) khỏi lựa chọn đang giữ (`GraspOpts.keep`) */
 export const KEEP_COST = 2;
+/**
+ * Ứng viên rời đắt hơn ứng viên tốt nhất dưới ngần này cũng được chạy lưới liên tục (thêm tối đa `ROOT_MORE` gốc): hai
+ * ứng viên gần hoà ở trường liên tục mặc định thì lưới mới phân định
+ */
+export const ROOT_NEAR = 0.5;
+const ROOT_MORE = 2;
 /** Giá đổi trường liên tục khỏi lựa chọn đang giữ khi trường rời giữ nguyên */
 export const KEEP_SLIDE = 1;
 
@@ -1894,11 +1901,11 @@ export function chooseMissing(
     const { Wp, Rw } = handFromItem(pose.R, pose.P, pose.s, frame.G);
     const sol = solvePhi(arm, Wp, Rw, opts.phiPrev, opts.other, opts.elbow);
     const gapCost = (s: ArmSol, ps: number) => (s.gap / (AIM_GAP * ps)) ** 2;
-    let cost = sol.E + gapCost(sol, pose.s);
+    let cost = sol.Efull + gapCost(sol, pose.s);
     for (const x of later) {
       const q = handFromItem(x.pose.R, x.pose.P, x.pose.s, frame.G);
       const s = solvePhi((x.ctx ?? ctx).arms[sd], q.Wp, q.Rw, undefined, x.other, opts.elbow);
-      cost += LATER_W * (s.E + gapCost(s, x.pose.s));
+      cost += LATER_W * (s.Efull + gapCost(s, x.pose.s));
     }
     const withDef = missing.filter((k) => defs[k] !== undefined);
     const off = withDef.filter((k) => choice[k as Field] !== defs[k]).length;
@@ -1975,7 +1982,10 @@ export function chooseMissing(
   // ứng viên rời tốt nhất giữ mọi trường có giá lệch (`NamesChoice.cost`) ở mặc định: lưới liên tục chạy cả quanh nó
   let plain: [Cand, Defs] | undefined;
   const costed = missing.filter((k) => !!group.choices[k as ChoiceKey]?.cost);
+  // mọi ứng viên rời: những ứng viên sát ứng viên tốt nhất cũng được chạy lưới liên tục (`ROOT_NEAR`)
+  const rows: [Cand, Defs][] = [];
   const take = (x: Cand, defs: Defs) => {
+    rows.push([x, defs]);
     if (
       costed.length &&
       costed.every((k) => defs[k] === undefined || x.choice[k as Field] === defs[k]) &&
@@ -2173,6 +2183,11 @@ export function chooseMissing(
   if (kept && kept[0] !== rough) roots.push(kept);
   if (plain && plain[0] !== rough && plain[0] !== home?.[0]) roots.push(plain);
   for (const r of byEdge.values()) if (r[0] !== rough) roots.push(r);
+  for (const r of rows
+    .filter((r) => r[0].cost <= rough.cost + ROOT_NEAR && !roots.some((q) => q[0] === r[0]))
+    .sort((a, b) => a[0].cost - b[0].cost)
+    .slice(0, ROOT_MORE))
+    roots.push(r);
   // hoà thì giá trị liên tục nhỏ hơn trước, theo thứ tự trường (docs/11 mục 5)
   const before = (a: GraspChoice, b: GraspChoice) => {
     for (const k of free) if (a[k] !== b[k]) return (a[k] as number) < (b[k] as number);
@@ -2277,16 +2292,8 @@ export function graspReport(
   const over = Math.max(w.over.turn, w.over.bend, w.over.dev);
   let off = 0;
   if (over > 0) {
-    const cl = (v: number, L: number) => Math.max(-L, Math.min(L, v));
-    const drawn = matMul(
-      sol.arm.fore,
-      wristTurn(
-        cl(w.turn, TURN_MAX),
-        clampRange(w.bend, AIM_BEND),
-        clampRange(w.dev, AIM_DEV),
-        sol.side,
-      ),
-    );
+    const [t, b, d] = wristClamp([w.turn, w.bend, w.dev]);
+    const drawn = matMul(sol.arm.fore, wristTurn(t, b, d, sol.side));
     const c = gripPoint(sol.frame.G, sol.frame.hand.at);
     off = Math.hypot(...sub3(matVec(sol.Rw, c), matVec(drawn, c))) * 100;
   }

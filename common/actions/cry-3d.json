@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 20,
+  "name": "cry-3d",
+  "duration": 0.6,
+  "end": "wrap",
+  "authoredAt": "side",
+  "mask": ["armNear", "armFar", "torso", "head", "hand"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "torso": 3, "head": [0, 0, 14] },
+      "reach": {
+        "armNear": { "to": "eye", "point": "grip", "offset": [7, -10, -2], "elbow": [1, 0.3, 0.3] },
+        "armFar": { "to": "eye", "point": "grip", "offset": [7, -10, -2], "elbow": [1, 0.3, 0.3] }
+      },
+      "hand": {
+        "armNear": { "pose": "fist", "w": 0.8, "palm": "back" },
+        "armFar": { "pose": "fist", "w": 0.8, "palm": "back" }
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.5,
+      "pose": { "torso": 6, "head": [0, 0, 20] },
+      "reach": {
+        "armNear": { "to": "eye", "point": "grip", "offset": [7, -9, -2], "elbow": [1, 0.3, 0.3] },
+        "armFar": { "to": "eye", "point": "grip", "offset": [7, -9, -2], "elbow": [1, 0.3, 0.3] }
+      },
+      "hand": {
+        "armNear": { "pose": "fist", "w": 0.8, "palm": "back" },
+        "armFar": { "pose": "fist", "w": 0.8, "palm": "back" }
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": { "torso": 3, "head": [0, 0, 14] },
+      "reach": {
+        "armNear": { "to": "eye", "point": "grip", "offset": [7, -10, -2], "elbow": [1, 0.3, 0.3] },
+        "armFar": { "to": "eye", "point": "grip", "offset": [7, -10, -2], "elbow": [1, 0.3, 0.3] }
+      },
+      "hand": {
+        "armNear": { "pose": "fist", "w": 0.8, "palm": "back" },
+        "armFar": { "pose": "fist", "w": 0.8, "palm": "back" }
+      },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "Khóc nức nở: hai nắm tay dụi mắt (mốc `eye` mỗi bên, tâm nắm ra trước 7, lên 10, vào trong 2), khuỷu ra trước; thân 3 ↔ 6°, đầu cúi 14 ↔ 20° theo nhịp nấc 0,6 s, lặp. Chỉ ghi hai tay, `torso`, `head`, `hand`. Nền `stand-3d` hay `sit-3d`; vào blend ~0,3, thôi bằng clip rỗng blend ~0,4. Nét mặt chồng `face-sad` hay `face-fake-tears`.",
+  "preview": { "stage": "stand" }
+}

@@ -53,8 +53,6 @@ trúc — **nó là một cái loader còn thiếu**.
   - [x] `6dba822` mất ảnh ở cú cắt (`images.ts`: cổng giải mã 6, hạn 10 s, giữ ảnh khỏi bị
         Chrome dọn) — bug này sống từ repo 00, ăn 2 lượt render đầy đủ (~27 phút) mới bắt được
   - [x] `2c8f0bc` cảnh đầu đứng trắng trong Studio (ô chờ phải là `<div>` trần)
-  - [x] `f806799` + `ed4d4f8` chân voi mẫu
-  - [x] `863e3f0` ngồi trong đạo cụ + kiệu/xe ngựa
   - [x] `e601428` check đọc `dur` của cue
 - [x] **Vá bug thẳng đang mở: `cue.dur` bị zod gạt** (S). `packages/cli/lib.mjs:667` đọc
       `c.dur`, nhưng `packages/cli/scaffold/src/episode.ts:16-22` `CueSchema` chỉ có
@@ -108,13 +106,13 @@ Năm chỗ móc, spec ở [docs/10](docs/10-lop-ve-code.md):
 
 | móc | nghĩa |
 |---|---|
-| `bg(c)` | tự vẽ CẢ bối cảnh, thay `scene.bg`, tắt luôn vạch đất |
+| `bg(c)` | tự vẽ CẢ bối cảnh, thay `scene.bg` |
 | `back(c)` / `front(c)` | vẽ trước / sau dàn diễn |
 | `shake(c)` | trả `{dx,dy}` bọc **cả khung** — rung máy, cộng dồn nhiều lớp |
-| `place(c, id, spot)` | **đẩy chỗ đứng** người/thú/đạo cụ |
+| `place(c, id, spot)` | **đẩy chỗ đứng** người/đạo cụ |
 
 `shake` và `place` là thứ `SceneFx` về bản chất không làm được: fx chỉ vẽ, không được sờ vào
-`sceneAt` / `propAt` / `animalAt`, và không được bọc `<svg>`.
+`sceneAt` / `propAt`, và không được bọc `<svg>`.
 
 - [x] Repo video khai entry lớp trong `package.json`: `"stickman": { "layers": "src/lop.tsx" }`
 - [x] `packages/render` bundle entry ấy bằng esbuild rồi gọi bốn chỗ móc đúng chỗ `sceneWorld`
@@ -200,14 +198,8 @@ dựng ở tập 01 — `validate` và `check` đều im lặng.
       Ca: `run` @ `speed 356`, scale 0,62 → chu kỳ 0,45 → 0,8 s, chân xoạc 84° treo lâu.
       Người dùng chỉ mô tả được cảm giác (*"sản chân nhìn hơi buồn cười"*), agent mất ~15 tool
       call + 2 lượt render mới định lượng
-- [ ] Hộp bao mảnh/animal đang cầm giao nhau mà thứ tự vẽ ngược chiều sâu → cảnh báo.
-      **5 ca layer riêng biệt + 4 commit sửa z** ở tập 01 (cùng bốn commit với § `z`)
-- [ ] `check` liệt kê **mọi** tham chiếu thiếu (animal, action, piece, bg, audio) thành một
+- [ ] `check` liệt kê **mọi** tham chiếu thiếu (action, piece, bg, audio) thành một
       bảng, không dừng ở lỗi đầu
-- [ ] `render_character boxes: true` vẽ luôn **vector chuôi→mũi** của mảnh.
-      Ca: quạt cắm `rotate: 180` → nan xoè ngược đè cẳng tay; render/check/validate đều sạch,
-      mất 5 lượt render mới ra
-- [ ] `scene_probe` trả **hộp bao** của mảnh/con vật đang cầm, không chỉ điểm neo
 - [ ] `scene_probe` / một tool `measure` trả **chiều cao trên màn hình** theo tỉ lệ với một
       nhân vật tham chiếu. Ca: voi thử **4 giá trị scale** (0,62 → 1,2 → 0,95 → 0,8), mỗi
       vòng render + đặt lại toàn bộ cue tiếng bước vì đổi scale làm đổi chu kỳ chân
@@ -252,8 +244,6 @@ L/R cố định 0,05 s, `volume` xen kẽ 0,26 / 0,16, gõ bằng tay.
 
 - [ ] Cue khai `on: "step:ln1"` thay `at: 2.329`. Đổi scale voi 0,95 → 0,8 (chu kỳ chân
       0,674 → 0,728 s) sẽ không phải đặt lại 79 cue nữa
-- [ ] Khai `events` cho action chung có nhịp: `animal-run`, `animal-walk`, `quy-*`.
-      Hiện thiếu ⇒ agent phải đọc thẳng `rig/dist/index.js` tìm `gait`, `RUN_OFFSET`, `footPath`
 - [ ] Lệnh/hàm sinh cue bước chân: duyệt shot → gom `step` event của mọi clip (đã dịch theo
       `start`/`phase`/`speed`/`slow`) → sinh cue kèm mặt nền và gain theo khoảng cách.
       Tiền lệ đã có: `tools/srt.mjs` sinh phụ đề đúng lối này
@@ -302,25 +292,9 @@ Mỗi cái đang đẻ ra một workaround không ai đọc lại được.
       Xoá `di-cam-giao.json` (16 key nướng tay bằng cách grep hằng số trong `rig/dist/index.js`:
       hip 16, knee 28, phase 2.5, arm 9, lean 1) và xoá luôn nhu cầu làm lại nó cho **mọi tập
       sau có lính cầm giáo/đuốc/cờ đi bộ**
-- [x] **Kênh tư thế cho động vật.** `ANIMAL_GENERATORS` đúng hai cái (`animalWalk`,
-      `animalRun`), động vật không có `mask` nên không hand-key được ⇒ *"voi ngẩng vòi rít
-      không viết được ở repo này"*, phải chốt voi đứng yên. Lách hiện tại là `ga-dung.json` =
-      `animalWalk` với `stride ≈ 0`
-- [ ] **`animal-stand`** vào bộ chung; ghi vào `docs/08` rằng con vật không có clip sẽ **thõng
-      chân** (ca: cựa gà vẽ theo tư thế đứng, gán vào tư thế xách thì rời khỏi chân)
-- [ ] **`carry` có timeline bật/tắt, `fade` áp cho đồ/con vật đang cầm.**
-      Hiện phải tách **hai mục `cast` cùng một nhân vật** rồi đổi bằng `fade` ở chỗ cắt
-- [ ] **`carry`/`equip` nhận `rotateWorld`** (góc tuyệt đối theo cảnh). Hiện `rotate` tính
-      trong khung cổ tay ⇒ phải dựng 4 scene tạm chỉ để `scene_probe` dò dấu, chốt `rotate −102`
-- [ ] **`pieces[k].mirror: true`** — `widthScale` âm render sai (chú ý commit `7a69ef3` đã cho
-      mọi socket một `widthScale`, chỉ giá trị âm là hỏng). Hậu quả hiện tại: 4 PNG `*-lat.png`
-      làm tay bằng `magick -flop PNG32` + 4 mục `items` chép tay. **Đã dính 2 lần dù người dùng
-      đã ghi memory**
 - [ ] **Clip đè được `end`** (`{"action":"oh-no","end":"hold"}`) thay vì phải nhân bản file
       hành động. Ca: `oh-no` khai `end:"wrap"` 0,9 s gây giật tay ⇒ đẻ `oh-no-giu` và sửa
       **9 clip ở 3 cảnh**
-- [ ] **Mảnh nhiều vùng màu** (`color` + `color2`). Ca: muốn lưỡi giáo trắng thì cán mất màu gỗ
-      `#8a5a2b` ⇒ giáo bị vẽ lại và `add_piece` **3 lần** trong một session
 - [ ] **Shot không có `scene` render ra trống** ⇒ thẻ chữ / màn chiếu / credit phải viết
       component riêng. Xem § `card` dưới
 - [ ] **Mép shot chặt cụt tiếng và hiệu ứng.** Shot có `overlap` cho *hình*; không có gì tương
@@ -336,15 +310,14 @@ Mỗi cái đang đẻ ra một workaround không ai đọc lại được.
 
 ## Trường JSON mới — suy từ mẫu lặp trong repo tập
 
-- [x] **Một trục `z` cho mọi thứ đặt trên sân khấu** (M). `cast[]`, `props[]` và
-      `animals[]` khai `z`; `sceneOrder` sắp theo nó ở **ba tầng lồng nhau** — sân khấu,
+- [x] **Một trục `z` cho mọi thứ đặt trên sân khấu** (M). `cast[]` và `props[]` khai
+      `z`; `sceneOrder` sắp theo nó ở **ba tầng lồng nhau** — sân khấu,
       cụm quanh một chủ, người ngồi trong một đạo cụ — nên đạo cụ `follow` vẫn kẹp quanh chủ
       nó và người `sit` vẫn nằm giữa hai nửa `part`. Bỏ trống `z` là bảng `SCENE_Z`, dựng lại
       đúng thứ tự cứng cũ: không file nào phải sửa. `layer` còn lại làm đường tắt, ánh xạ
       sang băng toàn cục khi đứng rời và sang `∓1` cục bộ khi `follow`. Trục dừng ở tầng sân
-      khấu: con vật vẽ ở `slots` và chỗ cắt hai nửa `part` không nhận `z` — `sceneZProblems`
-      kêu chỗ thứ nhất. **Nền và `fx` chưa vào trục**, hai băng của chúng trong `SCENE_Z` là
-      chỗ giữ sẵn; `fx` vào được thì `@stickman3d/fx` phải nhả bảng `kind` → lớp mặc định ra
+      khấu: chỗ cắt hai nửa `part` không nhận `z`. **Nền và `fx` chưa vào trục**, hai băng
+      của chúng trong `SCENE_Z` là chỗ giữ sẵn; `fx` vào được thì `@stickman3d/fx` phải nhả bảng `kind` → lớp mặc định ra
       cho rig, còn ba đường render phải thôi vẽ fx thành ba cục `<SceneFx layer>`
 - [x] **`bg` thành mảng lớp, mỗi lớp có `z`** (M). `scene.bg[]` là chồng lớp nền; thứ tự vẽ
       lấy ở `bgOrder`, `z` tăng dần và bỏ trống là `SCENE_Z.bg` cộng thứ tự mảng (`-1000`,
@@ -429,9 +402,6 @@ Mỗi cái đang đẻ ra một workaround không ai đọc lại được.
         dựng nó
 - [ ] **`cast[].equip[]` nhận danh sách mốc** (S). Hiện 17 lần `equip` phải **bịa một clip**
       (`{start, phase: 0, equip: {...}}` trên track rỗng) để làm timeline đạo cụ
-- [ ] **Ghi đè `pieces` của động vật tại chỗ khai** như `cast[].equip` làm với người (S).
-      `voi-chin-nga`, `ga-chin-cua`, `ngua-chin-hong-mao` khác con thường **đúng một socket
-      ảnh** — ba file này sẽ biến mất
 - [ ] **`clip.pose` nhận thẳng tên tư thế** từ `POSES` (S). 12 hành động của repo chỉ là một
       tư thế tĩnh (`end: "hold"`), phải bọc thành file action chỉ vì scene không dùng `POSES`
       trực tiếp được
@@ -440,13 +410,10 @@ Mỗi cái đang đẻ ra một workaround không ai đọc lại được.
       `gio-bien-xa.json` tự ghi trong `note`: *"Bản tay xa của gio-bien-gan, đối xứng dấu."*
       Gộp 6 file thành 3 và bỏ đúng cái bẫy dấu góc mà `docs/00` cảnh báo
 - [ ] **`write`/`patch` của MCP bỏ giá trị bằng default khi ghi** (S). Nhiễu đo được:
-      `"carry": []` viết **49 lần** cho đúng 2 chỗ dùng thật; `outfits: {}` rỗng ở **13/13**
-      file nhân vật; `pieces` liệt đủ 13 socket kể cả `src: "none"` (~11 dòng chết × 13 file)
+      `outfits: {}` rỗng ở **13/13** file nhân vật; `pieces` liệt đủ 13 socket kể cả `src: "none"` (~11 dòng chết × 13 file)
 - [ ] **`patch` giữ nguyên thứ tự khoá** (XS) — hiện ghi lại file làm đổi thứ tự
-      (`characters/author.json` lệch với bản chung chỉ vì `widthScale` bị dời chỗ) →
+      (file nhân vật lệch với bản chung chỉ vì `widthScale` bị dời chỗ) →
       `stickman upgrade` tưởng người dùng sửa tay
-- [ ] `docs/03` bổ sung `ground` ở cấp scene — đang là số ở 17 cảnh, `null` ở 5, không nhất
-      quán và không có mục nào trong docs nói tới
 
 ---
 
@@ -492,43 +459,12 @@ Sau khi có bộ móc (P1 §B). Cột "mức" là mức sẵn sàng của mã hi
 
 ---
 
-## Bộ mẫu chung: hành động, nhân vật, động vật, đạo cụ, mảnh
-- [x] `actions/animal-run.json` bớt nảy: `lift 0.32`, `bob 0`, `sway 1`, `nod 6`
+## Bộ mẫu chung: hành động, nhân vật
 - [x] Bộ mẫu chạy lại qua `parse*` nên mọi file đã ở đúng version schema của rig
-- [x] Ngựa và voi mẫu lấy bản đã căn: voi `upper 152`, `kind:"ridge"`, `markings`; ngựa
-      `pitch 2`, `hindAt 0.13`, `saddle.at 0.55`
-- [x] 32 hành động chung vào bộ mẫu, tên tiếng Anh: nói và mặt (`talk-lips`, `talk-hand`,
-      `talk-hand-far`, `talk-hands`, `talk-nod`, `smile`, `grin`, `scowl`, `puzzled`,
-      `look-up`, `scratch-head`, `impatient`, `fan-self`), thân người (`sit`, `jump`,
-      `stomp`, `plant-feet`, `stance`, `strain`, `despair`, `cheer`, `push-hard`,
-      `raise-hand`, `oh-no-hold`, `receive`, `give`, `press-button`) và lễ nghi (`bow-low`,
-      `kneel-take`, `kneel-pray`, `bow-salute`, `stand-attention`). `chay` không lấy — nó là
-      `run` với tham số dịu hơn
-- [x] `animal-idle` và `animal-call` vào bộ chung: `animalWalk` với tham số bằng không, chỗ
-      dựa cho mọi cảnh thú đứng
-- [x] Đạo cụ tĩnh `tree-1/2/3` cộng ba PNG — bộ mẫu hết cảnh chỉ toàn xe với kiệu
-- [x] 14 mảnh vào sheet chung: `torso/bare`, `hem/loincloth`, `hand/spear`,
-      `hand/spear-short`, `hand/axe-double`, `hand/fan`, `hand/remote`, `hand/rake`,
-      `hand/firewood`, `neck/beads`, `neck/plate`, `crown/headband`, `chin/goatee`,
-      `faceAcc/mole`, `prop/tree-*`
-- [x] Tên tiếng Anh cho cả bộ mẫu: hành động, nhân vật (`author`, `woodcutter`), động vật
-      (`dog`, `chicken`, `tiger`, `horse`, `lion`, `elephant`), đạo cụ (`palanquin`,
-      `oxcart`, `carriage`, `wagon`), cảnh và tập mẫu, cộng khoá `items` / `outfits`
 - [ ] **Một nhân vật mẫu "quần chúng"** nhận `palette` + một socket tóc ghi đè, thay cho sáu
       file. `linh-nui` / `linh-nuoc` / `linh-trieu` khác nhau gần như **chỉ ở `palette` + một
       mảnh tóc**, và **40/98 mục `cast` của repo là `linh-*`**; cộng `dan-cho-nam/nu/gia`.
-      Studio hiện mới có `code`, `ink`, `author`, `woodcutter`
-- [ ] **Bổ sung `PARTS`**: mình trần, khố, áo giao lĩnh. Bộ 17 bộ phận vẽ code **thiếu đúng
-      những món hay dùng nhất ở phim cổ tích Việt** — đó là lý do **11/13 nhân vật của tập 01
-      phải kéo PNG**, trái với chính lời khuyên trong AGENTS.md ("nhân vật phụ dựng bằng
-      `palette` + `src:"part"`, không cần ảnh nào")
-- [ ] **Khoá `PARTS` còn tiếng Việt**: `yem`, `nonla`, `khan`, `khanco`, `kinh`, `kinhcn`,
-      `kinhram`, `sung`, `ta`, `thung`, `xengua`, `kieu` — định danh trong code phải tiếng
-      Anh, và `props/palanquin.json` đang trỏ `part: "kieu"`
-- [ ] Đối chiếu `props/kieu-hoa.json` của repo tập với `props/palanquin.json`
-      — tránh tập sau dựng cái thứ ba
-- [ ] `describe_pieces` nói rõ **mảnh đến từ lớp nào** (`mergePieceCatalogs` hiện im lặng khi
-      nhân vật trỏ tới mảnh chỉ có ở lớp chung)
+      Bộ chung chỉ có bốn người 3D mẫu `sample-*`
 
 ---
 
@@ -579,8 +515,6 @@ tự viết thêm 7 file — dấu hiệu rõ là đường chính thức không
       cả tập (5426 khung) rồi dò tương quan chuẩn hoá chỉ để trả lời một câu hỏi có/không
 - [ ] **`stickman preview-shot <id> --audio-only`** + lệnh A/B đổi một file tiếng — hiện phải
       tự dựng 4-5 file A/B bằng python + numpy + ffmpeg mỗi lần duyệt tiếng
-- [ ] `stickman-render --gait` dựng dải pha một chu kỳ chạy động vật + in số khớp (repo tập tự
-      chế `tmp/qc-ngua.mjs`)
 
 ---
 
@@ -607,8 +541,6 @@ tự viết thêm 7 file — dấu hiệu rõ là đường chính thức không
       (lỗi tham số MCP lặp ~3–4 lần mỗi session)
 - [ ] Loader hiểu **loại `card` mới của repo tập** mà không phải chép loader
       (`pnpm frames` chết với *"No matching discriminator … options: ['the','man']"*)
-- [ ] `describe_rig` trả **bảng nhãn UI ↔ tên trường ↔ đơn vị** ("bề ngang" = `widthScale`,
-      "%" → 0..1). Hiện phải grep bundle minify 4 lượt mới chốt được, và dễ nhầm 89 với 0.89
 - [ ] `describe_rig` công bố **hằng số chu kỳ của bộ sinh** (hip, knee, phase, arm, lean;
       `gait`, `RUN_OFFSET`) thay vì bắt đọc `dist/index.js`
 - [ ] `describe_rig` / `docs` công bố **`groundY` theo tầng** — ca: `cast[].y` của người đứng
@@ -621,31 +553,11 @@ tự viết thêm 7 file — dấu hiệu rõ là đường chính thức không
 Tất cả đang sống trong memory cá nhân (`~/.claude`, **không đi theo repo**) hoặc trong
 `kich-ban-tho.md` của tập. Mỗi tập mới sẽ dò lại từ đầu.
 
-**`docs/02` — mảnh và trang phục**
-- [ ] Mảnh có chữ trên nhân vật `flip`: PNG lật riêng `magick -flop PNG32`, kiểm
-      `magick identify -format '%[channels]'` phải ra `srgba`
-- [ ] **Nhánh "mảnh hình học đơn giản"**: giáo, biển, gậy, điều khiển → **vẽ SVG rồi
-      `add_piece`**, không đi đường `piece_prompt` → codex → cắt sheet. Nhanh hơn hẳn, giữ được
-      nét mực. Đường chính thức hiện không nhắc nhánh này (⇒ cũng nên cho `add_piece` nhận
-      `.svg` và tự rasterize + kiểm alpha)
-- [ ] Nốt ruồi / chấm nhỏ vẽ thẳng bằng `magick`
-- [ ] `tint` của rig là **phép nhân theo kênh** → màu sống (đỏ) chỉ giữ được nếu `color` của
-      mảnh gần trắng
-- [ ] Mảnh cằm (râu) dùng `layer: "under"` — `front` là trùm mất mồm (5 lượt render mới ra)
-
 **`docs/03` — scene**
 - [ ] Neo theo khung / theo camera / theo thế giới (xem § lớp hiệu ứng)
 - [ ] `bg.scale ≥ 1,2` khi camera zoom 0,85
-- [ ] `props schemaVersion 2` mới bỏ được bánh xe tự điền
-- [ ] Thêm ví dụ "hai hàng người khiêng" vào `docs/06`: `z` cục bộ quanh cùng một người
-      xếp được hàng trước hàng sau, `layer` hai bậc thì không
 - [ ] PRNG của lớp code là **state ngầm** — mọi sửa phải kèm ảnh tham chiếu +
       `magick compare -metric AE`
-- [ ] Trao đồ tay-sang-tay: dùng **tay gần**, góc hộp tay gần đảo dấu, đo hai mép bằng
-      `scene_probe` ở hai mốc sát nhau rồi so lệch < 3 đơn vị.
-      (Ca gốc: **26 `patch` + 15 `scene_probe` + 12 `render_scene`** rồi vẫn bị vứt hết ⇒
-      cân nhắc hẳn một primitive **attach/detach mảnh giữa hai cast** tại một mốc)
-- [ ] Hai vật cầm hai tay: `scale` phải hạ, vai ±120°, **cổ tay bù cho tổng góc = 0**
 
 **`docs/07` — làm một tập, phần lời dẫn và tiếng**
 - [ ] Khối lời dẫn **1.200–1.600 ký tự**, sàn cứng 900
@@ -715,7 +627,7 @@ Nhóm sai lầm lặp lại của agent — **rẻ nhất trong tất cả**, v�
       và cắt lại từ đầu, rồi nó thành đạo cụ chính của một shot)
 - [ ] **Mỗi agent một worktree**; đừng `git stash` khi có phiên song song
       (va chạm working tree ở ≥4 session: `src/tmp-water-march/` xuất hiện giữa chừng làm
-      typecheck vỡ; `animals/` có file lạ; `git pull --rebase` gãy vì unstaged)
+      typecheck vỡ; `git pull --rebase` gãy vì unstaged)
 - [ ] Dùng **Edit tool cho `.tsx`**, không `python3 replace`; nếu vẫn script thì bắt buộc
       `assert count == 1` và `pnpm typecheck` ngay sau mỗi lượt vá
 - [ ] Luôn mở đầu Bash bằng `cd <abs> &&` (cwd reset ≥3 lần/session ở 5 session)
@@ -740,6 +652,4 @@ Nhóm sai lầm lặp lại của agent — **rẻ nhất trong tất cả**, v�
 - [ ] **Kênh góp ý gắn với khung/thời điểm.** 4/7 session một nhóm có message **chỉ gồm ảnh
       chụp, không kèm chữ** — dấu hiệu thiếu chỗ để chỉ vào đúng khung mà nói
 - [ ] Quy ước: **chốt chữ + fact-check cả khối trước khi thu bất kỳ cue nào của khối đó**
-- [ ] Quy ước: chốt hình dáng prop (một ảnh nháp SVG) **trước khi** đăng ký vào catalog
-      (ca: xe bánh → kiệu hoa, ~8 phút và 4 tool call mất trắng)
 - [ ] Không chạy render và build web song song (máy 16 GB chạm trần, task nền bị kill)

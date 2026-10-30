@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 20,
+  "name": "chew-3d",
+  "duration": 0.9,
+  "end": "wrap",
+  "mask": ["head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "head": [null, null, 0] }, "ease": "smooth" },
+    { "t": 0.17, "pose": { "head": [null, null, 4] }, "ease": "smooth" },
+    { "t": 0.33, "pose": { "head": [null, null, 0] }, "ease": "smooth" },
+    { "t": 0.5, "pose": { "head": [null, null, 4] }, "ease": "smooth" },
+    { "t": 0.67, "pose": { "head": [null, null, 0] }, "ease": "smooth" },
+    { "t": 0.83, "pose": { "head": [null, null, 4] }, "ease": "smooth" },
+    { "t": 1, "pose": { "head": [null, null, 0] }, "ease": "smooth" }
+  ],
+  "events": [],
+  "note": "Nhai: đầu gật 4° ba nhịp mỗi lượt 0,9 s, lặp. Chỉ ghi gật của `head`; miệng khép lấy từ track nét mặt. Nền `stand-3d`, ngồi ăn thì `sit-3d`. Chồng lên `turn-head-*`, `tilt-head-*` vẫn giữ hướng nhìn; cảnh đặt `cycle` bằng thời gian nhai, buông bằng clip rỗng blend ~0,4.",
+  "preview": { "stage": "stand" }
+}

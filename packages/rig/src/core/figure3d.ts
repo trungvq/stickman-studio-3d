@@ -1,4 +1,4 @@
-import { D, RIG, SKIRT_EASE, TORSO_DEPTH } from "./constants";
+import { D, RIG, TORSO_DEPTH } from "./constants";
 import { lengths, tip, type Figure } from "./geometry";
 import {
   add3,
@@ -10,16 +10,13 @@ import {
   sub3,
   unproject,
   type Lens,
-  type LocalLens,
   type V3,
 } from "./lens";
 import { cladThigh, resolveActing } from "./act3";
 import { bendOf, REACH_ELBOW, solveTwoBone } from "./ik";
 import { limbWidths, type CharacterData } from "./schema";
-import { hull } from "./skirt";
-import { skirtCover, skirtFall, skirtOf } from "./skirtShape";
 import { shoulderRoot } from "./torso";
-import type { BodyPart, Pose, Pt, Reach, View } from "./types";
+import type { BodyPart, Pose, Pt, Reach } from "./types";
 
 /**
  * Khối sọ của người 3D nhận bấy nhiêu phần góc ống kính nhìn xuống đầu: nhận đủ thì ở ống kính cao
@@ -78,15 +75,6 @@ export function facing(lens: Lens, at: V3, yaw: number) {
   return { theta, flip: dot3(F, right) < 0, yaw };
 }
 
-/** Nấc góc nhìn gần nhất cho phần còn vẽ theo nấc (mảnh ảnh, nét mặt); `quarter` nghỉ quanh 10° */
-export function viewOfTheta(theta: number): View {
-  if (theta < 5) return "front";
-  if (theta < 50) return "quarter";
-  if (theta < 105) return "side";
-  if (theta < 150) return "rear";
-  return "back";
-}
-
 /** Bề dày nửa của nét chân, nét tay (đã gồm viền khi `clad`) */
 export const limbHalf = (c: CharacterData) => {
   const out = c.palette.clad ? c.rig.stroke : 0;
@@ -128,7 +116,7 @@ export interface Figure3 {
   k: number;
   /** Góc khung thân đã chiếu, độ theo chiều rig, trong hệ chưa lật */
   torsoDeg: number;
-  /** Chuỗi chi trong hệ của `<Character>` (chưa lật): chân trong hệ hông, tay trong khung thân */
+  /** Chuỗi chi trong hệ khung của người (chưa lật): chân trong hệ hông, tay trong khung thân */
   legN: Pt[];
   legF: Pt[];
   armN: Pt[];
@@ -136,11 +124,6 @@ export interface Figure3 {
   shN: Pt;
   shF: Pt;
   lowest: number;
-  /**
-   * Ống kính thật trong hệ thân (x ngang, y dọc trục thân xuống, z hướng mặt; đơn vị rig, gốc ở hông),
-   * đã soi gương khi lật và xoay theo khung thân: thân áo, váy dựng khối chiếu qua nó
-   */
-  torsoLens: LocalLens;
   /** Cổ và tâm đầu đã chiếu, `y` trong khung thân */
   neckY: number;
   headY: number;
@@ -150,14 +133,6 @@ export interface Figure3 {
   thighs: [number, number][];
   /** Khối của từng phần người trong thế giới (tám đỉnh: bốn đáy rồi bốn đỉnh), để xếp lớp với đồ khối */
   solids: { part: BodyPart; v: V3[] }[];
-  /** Đoạn tay giữ góc 2D: nằm phẳng ở độ sâu gốc vai, nên độ sâu không nói nó trước hay sau đầu */
-  flat: BodyPart[];
-  /**
-   * Người ngồi mặc váy dựng khối: phần váy phủ lên đùi trước mặt trước khối thân (`lap`). `v` là khối
-   * của nó để xếp lớp, `cover` các đỉnh thế giới của vùng nó vẽ (thêm gấu rủ và nét viền), `clip` vùng
-   * ấy đã chiếu trong hệ nhóm thân. docs/03-scene.md#người-3d
-   */
-  lap?: { v: V3[]; cover: V3[]; clip: Pt[] };
 }
 
 /** Khối tiết diện vuông nửa cạnh r từ a tới b */
@@ -201,7 +176,7 @@ const chain2 = (root: Pt, a: readonly number[], l1: number, l2: number): Pt[] =>
   return [root, k, tip(k[0], k[1], l2, a[0] + a[1])];
 };
 
-/** Hệ của người 3D: hệ thân ra thế giới (`[tiến, y, ngang]`), thế giới ra khung `<Character>` (chưa lật) và ngược lại */
+/** Hệ của người 3D: hệ thân ra thế giới (`[tiến, y, ngang]`), thế giới ra khung của người (chưa lật) và ngược lại */
 function frame3(w: World) {
   const F = dirOf(w.yaw);
   const R: V3 = [-Math.sin(w.yaw), 0, -Math.cos(w.yaw)];
@@ -214,7 +189,7 @@ function frame3(w: World) {
     const [x, y] = project(w.lens, p);
     return [(mx * (x - screen[0])) / k, (y - screen[1]) / k];
   };
-  // điểm của khung `<Character>` ra thế giới ở độ sâu `depth` — cho chi giữ 2D
+  // điểm của khung người ra thế giới ở độ sâu `depth` — cho chi không nâng
   const back = (p: Pt, depth: number): V3 =>
     unproject(w.lens, [screen[0] + mx * k * p[0], screen[1] + k * p[1]], depth);
   return { F, R, world, screen, k, local, back };
@@ -255,13 +230,12 @@ function rootAt(fr: Frame3, w: World, c: V3, p: V3): Pt | undefined {
   return [bx - ax, by - ay];
 }
 
-/** `flat`: chuỗi 2D đặt phẳng ở độ sâu gốc chi, không phải khớp thế giới thật */
-type Chain3 = { pts: Pt[]; w3: V3[]; flat?: boolean };
+type Chain3 = { pts: Pt[]; w3: V3[] };
 
 /**
  * Chuỗi đã chiếu `[gốc, khớp giữa, đầu]` vẽ từ gốc vẽ `root2`: đầu chi giữ đúng chỗ chiếu thật, khớp
  * giữa theo phép đồng dạng đưa gốc chiếu về `root2` — bàn chân trên sàn, cổ tay trên mặt bàn dù gốc
- * vẽ ở vành thân 2D lệch gốc thật.
+ * vẽ ở vành thân trên khung lệch gốc thật.
  */
 function pin(root2: Pt, [S, E, W]: Pt[]): Pt[] {
   const v: Pt = [W[0] - S[0], W[1] - S[1]];
@@ -280,7 +254,7 @@ function pin(root2: Pt, [S, E, W]: Pt[]): Pt[] {
 
 /**
  * Một chi: chuỗi trên khung neo ở gốc vẽ `root2`, và ba khớp thế giới. Kênh nâng lấy khớp thế giới
- * `lifted` rồi chiếu; kênh giữ 2D dựng chuỗi trên khung rồi đặt ở độ sâu của gốc chi thật. `reach`
+ * `lifted` rồi chiếu; kênh không nâng dựng chuỗi trên khung rồi đặt ở độ sâu của gốc chi thật. `reach`
  * (tay có đích) thay chuỗi bằng nghiệm IK từ gốc thật, rồi vẽ như kênh nâng.
  */
 function limb3(
@@ -302,7 +276,7 @@ function limb3(
   const depth = depthAt(w.lens, truth[0]);
   const base = pts2 ? pts2.map((p) => fr.back(torso ? torso.fromTorso(p) : p, depth)) : truth;
   const w3 = reach?.(base, truth[0]) ?? (lift ? truth : undefined);
-  if (!w3) return { pts: pts2!, w3: base, flat: true };
+  if (!w3) return { pts: pts2!, w3: base };
   return { pts: pin(root2, w3.map(toLocal)), w3 };
 }
 
@@ -363,17 +337,22 @@ function legs3(fr: Frame3, w: World, P: Pose, height: number, hipHalf: number): 
   ];
 }
 
-/** Hai bàn chân `[xa, gần]` của người 3D trong thế giới, cùng thứ tự với `feet` của rig 2D */
+/** Hai bàn chân `[xa, gần]` của người 3D trong thế giới, cùng thứ tự với `feet` của `geometry.ts` */
 export function feet3(P: Pose, w: World, height: number, hipHalf: number): [V3, V3] {
   const [n, f] = legs3(frame3(w), w, P, height, hipHalf);
   return [f.w3[2], n.w3[2]];
 }
 
+/** Hai chân `[xa, gần]` của người 3D trong thế giới, mỗi chân `[gốc, gối, cổ chân]` như `feet3` dựng */
+export function legs3World(P: Pose, w: World, height: number, hipHalf: number): [V3[], V3[]] {
+  const [n, f] = legs3(frame3(w), w, P, height, hipHalf);
+  return [f.w3, n.w3];
+}
+
 /**
  * Hình học 3D của một tư thế: kênh nâng (`pose.lift`) đọc góc như soạn ở `side` — tiến theo hướng
- * mặt, chân gần là chân phải khi không lật —, kênh còn lại giữ 2D (góc trên mặt khung, như rig 2D).
- * Thân áo, váy dựng khối chiếu qua `torsoLens`; gốc chân, gốc vai, cổ và tâm đầu là điểm thật đã
- * chiếu. docs/01-rig.md#người-3d
+ * mặt, chân gần là chân phải khi không lật —, kênh còn lại giữ góc trên mặt khung. Gốc chân, gốc vai,
+ * cổ và tâm đầu là điểm thật đã chiếu; `solids` là khối từng phần người để `check` đo.
  */
 export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
   // đích theo mốc thân, lòng tay theo ý định quy về số như người 3D của three
@@ -481,23 +460,10 @@ export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
     return [-(r * cps + farR * y * sps), y * cps - farR * r * sps, f * cl + v[1] * sl];
   };
   const lv = w.lens;
-  const [cy, sy, cp, sp] = [
-    Math.cos(lv.yaw),
-    Math.sin(lv.yaw),
-    Math.cos(lv.pitch),
-    Math.sin(lv.pitch),
-  ];
+  const [, ,] = [Math.cos(lv.yaw), Math.sin(lv.yaw), Math.cos(lv.pitch), Math.sin(lv.pitch)];
   const mirror = ([x, y, z]: V3): V3 => (w.flip ? [-x, y, z] : [x, y, z]);
   const eye = mirror(dirIn(scale3(sub3(lv.eye, hip), 1 / w.s)));
-  const r0 = scale3(mirror(dirIn([cy, 0, -sy])), w.flip ? -1 : 1);
-  const d0 = mirror(dirIn([-sy * sp, cp, -cy * sp]));
   const q = (n: number, k: number) => Math.round(n * k) / k;
-  const torsoLens: LocalLens = {
-    eye: eye.map((n) => q(n, 2)) as V3,
-    right: add3(scale3(r0, cs), scale3(d0, sn)).map((n) => q(n, 1e3)) as V3,
-    down: add3(scale3(r0, -sn), scale3(d0, cs)).map((n) => q(n, 1e3)) as V3,
-    fwd: mirror(dirIn([sy * cp, sp, cy * cp])).map((n) => q(n, 1e3)) as V3,
-  };
   const yHead = -(len.torso + len.neck) - headH;
   const look = q((HEAD_LOOK * Math.atan2(yHead - eye[1], Math.hypot(eye[0], eye[2]))) / D, 2);
   const thighAt = (pts: V3[]): [number, number] => {
@@ -571,59 +537,7 @@ export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
     sw(AF.w3, "forearmFar", 1, half.arm),
   ];
 
-  // váy trên đùi: lăng trụ từ mặt trước khối thân tới mút phần váy phủ đùi, đáy là mặt dưới đùi cao
-  // hơn, đỉnh dốc từ cạp xuống mặt trên đùi; hệ `[tiến, y, ngang]` quanh hông, đơn vị rig
-  const lap = (() => {
-    if (!w.seated || c.pieces.hem.src !== "sculpt") return undefined;
-    const g = skirtOf(c.pieces.hem.skirt);
-    const body = (p: V3): V3 => {
-      const d = scale3(sub3(p, hip), 1 / w.s);
-      return [dot3(d, F), d[1], dot3(d, R)];
-    };
-    const th = [LN, LF].map(({ w3: [a, b] }) => {
-      const [deg, lt] = thighAt([a, b]);
-      const reach = skirtCover(g, rig.height, deg * D, lt) / (lt || 1);
-      const end = add3(a, scale3(sub3(b, a), reach));
-      return { a: deg * D, reach, root: body(a), end: body(end) };
-    });
-    const rr = half.leg + SKIRT_EASE;
-    const f1 = Math.max(...th.map((t) => t.end[0])) + rr;
-    const yW = -g.rise * rig.height;
-    const yB = Math.min(...th.flatMap((t) => [t.root[1], t.end[1]])) + half.leg;
-    const yT = Math.min(...th.map((t) => t.end[1])) - rr;
-    if (!(f1 - dp > rr && yB - yW > 2 && yB - yT > 2)) return undefined;
-    const yE =
-      Math.max(...th.map((t) => t.end[1] + skirtFall(g, (th[0].a + th[1].a) / 2, t.reach))) + rr;
-    const m = rig.stroke;
-    const L = rig.hipHalf + rr;
-    const prism = (pr: [number, number][], l: number) =>
-      [-l, l].flatMap((r) => pr.map(([f, y]) => world([f, y, r])));
-    const cover = prism(
-      [
-        [dp, yB + m],
-        [f1 + m, yE + m],
-        [f1 + m, yT - m],
-        [dp, yW - m],
-      ],
-      L + m,
-    );
-    return {
-      v: prism(
-        [
-          [dp, yB],
-          [f1, yB],
-          [f1, yT],
-          [dp, yW],
-        ],
-        L,
-      ),
-      cover,
-      clip: hull(cover.map((p) => torsoFrame.inTorso(local(p)))),
-    };
-  })();
-
   return {
-    lap,
     joints,
     screen,
     k,
@@ -636,11 +550,6 @@ export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
     shF: sF2,
     lowest: Math.max(LN.pts[2][1], LF.pts[2][1]),
     solids,
-    flat: [
-      ...(AN.flat ? (["armNear", "forearmNear"] as const) : []),
-      ...(AF.flat ? (["armFar", "forearmFar"] as const) : []),
-    ],
-    torsoLens,
     neckY: torsoFrame.inTorso(local(neck))[1],
     headY: torsoFrame.inTorso(local(headC))[1],
     look,
@@ -651,7 +560,7 @@ export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
 const wrap180 = (a: number) => ((((a + 180) % 360) + 360) % 360) - 180;
 
 /**
- * Tư thế 2D vẽ ra đúng các chuỗi chi đã chiếu: góc mỗi đoạn theo hướng trên khung, `stretch` theo
+ * Tư thế phẳng trên khung khớp đúng các chuỗi chi đã chiếu: góc mỗi đoạn theo hướng trên khung, `stretch` theo
  * độ dài đã chiếu (đoạn chĩa về ống kính co lại thật). Mảnh treo chi (vai áo, đồ cầm) và mốc khớp
  * đọc góc từ đây nên bám đúng nét.
  */

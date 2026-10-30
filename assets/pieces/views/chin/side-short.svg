@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 520">
-<title>Quai nón ngắn</title>
-<g id="guide" fill="none" stroke="#ccc"><circle cx="160" cy="160" r="100"/></g>
-<path d="M 152 186 L 168 184 C 174 196 182 202 194 204 C 206 206 220 202 230 196 C 240 192 250 196 255 205 C 244 204 230 199 218 200 C 213 210 215 224 225 230 C 236 230 244 232 248 236 C 252 238 248 256 236 268 C 224 278 206 278 190 270 C 170 260 156 240 150 216 C 148 206 149 196 152 186 Z" fill="#fff" stroke="#000" stroke-width="4.95" stroke-linejoin="round"/>
-</svg>

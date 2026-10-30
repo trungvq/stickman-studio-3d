@@ -35,7 +35,7 @@ function world(spec: Omit<WorldSpec, 'set'> = {}, fade = false) {
   if (!sc.success) throw new Error(sc.error.message);
   const ids = ['di', 'ngoi'];
   const heights = Object.fromEntries(ids.map((id) => [id, 1])), bodies = Object.fromEntries(ids.map((id) => [id, body3(c)]));
-  const rt = resolveScene(sc.data, actions, {}, {}, heights, bodies);
+  const rt = resolveScene(sc.data, actions, heights, bodies);
   return buildWorld(sc.data, rt, { set: () => plainRoom(), ...spec }, { characters, heights, bodies });
 }
 

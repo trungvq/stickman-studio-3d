@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 20,
+  "name": "face-downcast",
+  "duration": 0.4,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "droopy",
+        "brow": "sad",
+        "mouth": "closed"
+      }
+    }
+  ],
+  "note": "Tự trách, không dám ngẩng: mắt rũ, mày cụp, môi mím; vào ngay rồi giữ. Chỉ ghi `face`, nên chồng lên mọi tư thế, đứng hay ngồi, và nằm dưới track khẩu hình (`talk-lips`): lời đè `mouth`, mắt và mày vẫn của lớp này. Cúi hẳn mặt thì chồng với `look-down-*`, `slump-*`; nhắm hẳn mắt là `face-eyes-closed`.",
+  "preview": {
+    "stage": "stand"
+  }
+}

@@ -199,7 +199,7 @@ export function holdDemo() {
   const bodies = Object.fromEntries(members.map((m) => [m.id, { legHalf: legHalf(m.opts), hipHalf: m.opts.rig.hipHalf }]));
   // cô cầm cốc thấp hơn (`rig.height`): `sceneAt` đặt hông theo đúng chân ấy
   const heights = Object.fromEntries(members.map((m) => [m.id, m.opts.rig.height]));
-  const rt = resolveScene(scene.data, HOLD_ACTIONS, {}, {}, heights, bodies);
+  const rt = resolveScene(scene.data, HOLD_ACTIONS, heights, bodies);
   const people = members.map((m) => ({ id: m.id, equip: m.equip, fig: stickman(m.opts) }));
   const room = furniture();
   const cols = [...colliders(room.table, 'bàn'), ...room.stools.flatMap((s, i) => colliders(s, `ghế ${i}`))];
@@ -223,7 +223,7 @@ export function holdDemo() {
         if (p.equip) dress(p.fig, p.equip, !!sp.world?.flip);
       }
       if (!el) return;
-      // ngồi thì đùi nằm trên mặt ghế đúng nửa nét (hông 2D là tâm nét): chỗ chạm ấy không phải lỗi
+      // ngồi thì đùi nằm trên mặt ghế đúng nửa nét (hông của rig là tâm nét): chỗ chạm ấy không phải lỗi
       const hits = collide(figs, cols, { people: true }).filter((c) => !(c.part === 'thigh' && c.collider.startsWith('ghế') && c.depth < 0.05));
       const lines = hits.slice(0, 8).map((c) => `${c.who} · ${PART[c.part]}${sideName(c.side)} xuyên ${c.collider} ${(c.depth * 100).toFixed(1)} px`);
       el.textContent = `Va chạm ở t=${t.toFixed(2)}: ${hits.length ? '' : 'không có'}\n${lines.join('\n')}${hits.length > 8 ? `\n… ${hits.length - 8} chỗ nữa` : ''}\n\n${lod}`;

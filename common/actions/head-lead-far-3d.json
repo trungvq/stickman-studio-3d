@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 20,
+  "name": "head-lead-far-3d",
+  "duration": 0.9,
+  "end": "hold",
+  "mask": ["head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "head": [0, 0, null] }, "ease": "smooth" },
+    { "t": 0.35, "pose": { "head": [-2, 35, null] }, "ease": "linear" },
+    { "t": 0.55, "pose": { "head": [-2, 35, null] }, "ease": "smooth" },
+    { "t": 1, "pose": { "head": [0, 0, null] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Đầu dẫn trước khi thân quay về phía xa ống kính: lắc 35° ở 0,35, nghiêng 2° ngược chiều quay, giữ tới 0,55, về thẳng ở 1 khi thân quay theo kịp; lượt 0,9 s, giữ. Chỉ ghi nghiêng và lắc của `head`, gật để trống. Nền `stand-3d` hay đi theo `path`; đặt clip ~0,2 s trước lúc thân bắt đầu quay, `cycle` bằng quãng quay. Chồng `nod-*` lên trên vẫn giữ gật; chiều kia là `head-lead-near-3d`. Sinh bằng `tools/actions/head-lead.mjs`.",
+  "preview": { "stage": "stand" }
+}

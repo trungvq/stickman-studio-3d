@@ -1,0 +1,1301 @@
+rig: /home/trungvq/Work/Dev/stickman-studio-3d-khuyu/packages/rig
+104 cảnh, 60 fps, khoá both, vòng 8,9, 6 luồng
+1/104 t02-s004-tua
+2/104 t02-s014-ho-so
+3/104 t02-s002-day
+4/104 t02-s007-genkan
+5/104 t02-s003-khung
+6/104 t02-s008-truoc-cua
+7/104 t02-s005-gioi-thieu
+8/104 t02-s024-tang
+9/104 t02-s017-goi
+10/104 t02-s015-tot-nhat
+11/104 t02-s001-tham-thi
+12/104 t02-s017-goi-xe
+13/104 t02-s006a-bai-xe
+14/104 t02-s027-doi-ca
+15/104 t02-s028-doi-chia
+16/104 t02-s025-chi-the
+17/104 t02-s037-bep-1
+18/104 t02-s016-xin-phep
+19/104 t02-s042-lam-lai
+20/104 t02-s032-sach
+21/104 t02-s026-tra-ten
+22/104 t02-s040-dat-lai-2
+23/104 t02-s049-da-trong
+24/104 t02-s045-cui
+25/104 t02-s052-bon-o
+26/104 t02-s052-o3-chi-be
+27/104 t02-s003b-dong-hanh
+28/104 t02-s054-xin-loi
+29/104 t02-s057-moi
+30/104 t02-s030-khai-vi
+31/104 t02-s063-hoa-don
+32/104 t02-s033-ruou-tang
+33/104 t02-s060-mot-dem
+34/104 t02-s039-dat-lai-1
+35/104 t02-s066-day-lai
+36/104 t02-s080-goi
+37/104 t02-s034-goi-them
+38/104 t02-s044-cham
+39/104 t02-s051-bep-3
+40/104 t02-s053-hanh-lang
+41/104 t02-s009-nhan-phong
+42/104 t02-s059-gia-da-bao
+43/104 t02-s093-feed
+44/104 t02-s041-nguoi
+45/104 t02-s065-ghi-ro
+46/104 t02-s102-feed
+47/104 t02-s048-vo-tom
+48/104 t02-s023-bang-gia
+49/104 t02-s052-o2-giuong
+50/104 t02-s071-phieu
+51/104 t02-s056-bieu
+52/104 t02-s088-tro-ra
+53/104 t02-s040b-tua
+54/104 t02-s029-mong-cho
+55/104 t02-s038-tom
+56/104 t02-s043-bep-2
+57/104 t02-s078-ra-hieu
+58/104 t02-s062-hoa-don
+59/104 t02-s046-che-gieu
+60/104 t02-s052-o1-sofa
+61/104 t02-s091-khung
+62/104 t02-s050-them-bo
+63/104 t02-s052-o4-ben-kinh
+64/104 t02-s070-cam
+65/104 t02-s095-feed
+66/104 t02-s055-nhan-viec
+67/104 t02-s061-sang
+68/104 t02-s058-quan-truoc
+69/104 t02-s116-cat-to
+70/104 t02-s064-tat-ca
+71/104 t02-s100-tra
+72/104 t02-s115-ghi-ten
+73/104 t02-s123-do-loi
+74/104 t02-s130-xe-mot-minh
+75/104 t02-s135a-anh-bao
+76/104 t02-s124-tu-khai
+77/104 t02-s131-dem
+78/104 t02-s135a-tin-bao
+79/104 t02-s082-ra-oai
+80/104 t02-s075-may-in
+81/104 t02-s089-ve
+82/104 t02-s099-cua-mo
+83/104 t02-s067-luoi
+84/104 t02-s081-day
+85/104 t02-s095-chat-chem
+86/104 t02-s114-lam-chung
+87/104 t02-s093-live
+88/104 t02-s122-ra-cua
+89/104 t02-s129-len-xe
+90/104 t02-s135-dinh-chi
+91/104 t02-s109-truc-tiep
+92/104 t02-s102-vao
+93/104 t02-s105-cam-nhan
+94/104 t02-s118-feed
+95/104 t02-s129-cua-xe
+96/104 t02-s134-tut
+97/104 t02-s116-feed
+98/104 t02-s118-biet-kien
+99/104 t02-s128-tat
+100/104 t02-s133-chuoi-bai
+101/104 t02-s139-the-cuoi
+102/104 t02-s125-dung
+103/104 t02-s132-clip
+104/104 t02-s136-dat-phong
+
+== khoá giữ, 8 vòng ==
+armClose	t02-s037-bep-1	yoshie right	1.72–1.98	2.75	aim	0.28
+armStraight	t02-s003b-dong-hanh	erika right	21.33–21.67	0.99	placed	
+armStraight	t02-s003b-dong-hanh	takumi left	0.02–21.67	1.00	hold	
+armStraight	t02-s006a-bai-xe	takumi left	6.37–9.75	0.99	hold	
+armStraight	t02-s008-truoc-cua	takumi left	0.02–1.60	0.98	hold	
+armStraight	t02-s017-goi	yota left	32.10–32.50	0.99	aim	
+armStraight	t02-s033-ruou-tang	takumi right	1.92–2.43	1.00	aim	
+armStraight	t02-s039-dat-lai-1	yoshie right	3.22–3.60	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	1.07–1.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	13.07–13.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	17.07–17.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	21.07–21.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	25.07–25.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	29.07–29.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	5.07–5.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	9.07–9.40	1.00	hold	
+armStraight	t02-s041-nguoi	erika right	0.38–1.40	1.00	hold	
+armStraight	t02-s041-nguoi	erika right	4.35–4.82	1.00	hold	
+armStraight	t02-s042-lam-lai	yoshie right	1.87–2.32	0.99	hold	
+armStraight	t02-s056-bieu	chiaki-nhan right	1.28–2.07	0.97	hold	
+armStraight	t02-s059-gia-da-bao	chiaki-nhan right	0.48–1.02	0.97	hold	
+armStraight	t02-s060-mot-dem	chiaki-nhan right	6.83–7.37	0.97	hold	
+armStraight	t02-s062-hoa-don	yota right	4.43–5.87	0.99	aim	
+armStraight	t02-s066-day-lai	takumi right	0.38–0.72	0.99	aim	
+armStraight	t02-s067-luoi	takumi right	11.42–12.72	1.00	lock	
+armStraight	t02-s071-phieu	chiaki left	0.02–0.62	1.00	aim	
+armStraight	t02-s071-phieu	chiaki right	0.02–0.55	1.00	hold	
+armStraight	t02-s071-phieu	takumi right	3.35–22.70	1.00	aim	
+armStraight	t02-s082-ra-oai	takumi left	12.05–14.52	0.99	aim	
+armStraight	t02-s082-ra-oai	takumi left	14.80–23.75	1.00	aim	
+armStraight	t02-s082-ra-oai	takumi left	2.80–5.67	1.00	world	
+armStraight	t02-s082-ra-oai	takumi left	5.73–11.67	1.00	aim	
+armStraight	t02-s082-ra-oai	takumi right	5.77–21.08	1.00	aim	
+armStraight	t02-s089-ve	takumi left	0.98–2.18	1.00	aim	
+armStraight	t02-s093-feed	erika right	2.13–18.10	1.00	world	
+armStraight	t02-s093-feed	takumi left	2.28–18.10	1.00	hold	
+armStraight	t02-s093-live	takumi left	2.28–18.10	1.00	hold	
+armStraight	t02-s095-chat-chem	takumi left	0.02–23.48	1.00	hold	
+armStraight	t02-s095-feed	takumi left	0.02–23.48	1.00	hold	
+armStraight	t02-s100-tra	takumi left	0.02–11.42	1.00	hold	
+armStraight	t02-s100-tra	takumi right	7.07–10.35	1.00	aim	
+armStraight	t02-s102-feed	takumi left	0.02–3.50	1.00	hold	
+armStraight	t02-s102-vao	takumi left	0.02–16.78	1.00	hold	
+armStraight	t02-s105-cam-nhan	takumi left	0.02–25.92	1.00	hold	
+armStraight	t02-s109-truc-tiep	takumi left	0.02–36.82	1.00	hold	
+armStraight	t02-s114-lam-chung	takumi left	0.02–10.50	1.00	hold	
+armStraight	t02-s116-cat-to	takumi left	0.02–16.57	1.00	hold	
+armStraight	t02-s116-feed	takumi left	0.02–16.57	1.00	hold	
+armStraight	t02-s118-biet-kien	erika right	21.33–21.67	0.99	placed	
+armStraight	t02-s118-biet-kien	takumi left	0.02–21.67	1.00	hold	
+armStraight	t02-s118-feed	takumi left	0.02–21.67	1.00	hold	
+armStraight	t02-s122-ra-cua	takumi left	0.02–2.20	1.00	hold	
+body	t02-s028-doi-chia	takumi right	3.88–3.93	0.84	hold	
+body	t02-s030-khai-vi	yoshie right	14.47–14.50	0.62	aim	
+body	t02-s034-goi-them	yoshie left	22.33–22.35	0.87	lock	
+body	t02-s037-bep-1	yoshie right	0.02–2.02	2.75	aim	
+body	t02-s041-nguoi	erika right	4.20–4.82	1.44	hold	
+body	t02-s050-them-bo	yoshie right	0.30–0.85	0.90	world	
+body	t02-s060-mot-dem	takumi right	0.98–0.98	0.52	aim	
+body	t02-s062-hoa-don	yota left	0.77–0.78	0.55	aim	
+body	t02-s062-hoa-don	yota left	3.57–3.58	0.56	aim	
+body	t02-s065-ghi-ro	yota left	5.75–5.77	0.52	aim	
+body	t02-s078-ra-hieu	yota right	3.42–3.43	1.68	aim	
+body	t02-s080-goi	yota left	0.30–0.38	1.04	placed	
+body	t02-s089-ve	takumi left	0.48–1.62	2.35	aim	
+body	t02-s095-chat-chem	chiaki right	12.88–12.88	0.53	aim	
+body	t02-s095-chat-chem	chiaki right	14.75–14.95	0.68	aim	
+body	t02-s095-feed	chiaki right	12.88–12.88	0.53	aim	
+body	t02-s095-feed	chiaki right	14.75–14.95	0.68	aim	
+body	t02-s100-tra	takumi right	10.62–10.87	0.84	placed	
+body	t02-s100-tra	takumi right	5.10–5.30	0.68	aim	
+body	t02-s100-tra	takumi right	7.18–10.40	0.77	aim	
+body	t02-s105-cam-nhan	erika right	0.60–6.02	1.23	aim	
+elbowFlip	t02-s009-nhan-phong	yota left	11.83–11.97	64	aim	
+elbowFlip	t02-s026-tra-ten	takumi right	0.88–0.90	32	hold	
+elbowFlip	t02-s039-dat-lai-1	erika left	3.88–3.90	35	aim	
+elbowFlip	t02-s040-dat-lai-2	erika left	3.75–3.77	35	aim	
+elbowFlip	t02-s040b-tua	erika left	0.15–0.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	1.43–1.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	12.15–12.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	13.43–13.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	16.15–16.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	17.43–17.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	20.15–20.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	21.43–21.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	24.15–24.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	25.43–25.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	28.15–28.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	29.43–29.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	4.15–4.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	5.43–5.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	8.15–8.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	9.43–9.45	35	aim	
+elbowFlip	t02-s046-che-gieu	yoshie right	1.02–1.12	73	world	
+elbowFlip	t02-s058-quan-truoc	erika right	0.48–0.63	67	aim	
+elbowFlip	t02-s082-ra-oai	takumi right	21.55–21.65	107	aim	
+elbowInward	t02-s041-nguoi	yoshie right	0.50–0.58	0.40	aim	
+elbowInward	t02-s053-hanh-lang	takumi right	3.45–3.57	0.48	aim	
+elbowInward	t02-s053-hanh-lang	takumi right	5.10–5.47	0.49	aim	
+elbowInward	t02-s082-ra-oai	takumi left	11.77–11.83	0.37	aim	
+elbowInward	t02-s082-ra-oai	takumi right	21.17–21.53	0.44	aim	
+elbowJitter	t02-s017-goi	yota left	2.92–4.80	20	hold	29
+elbowJitter	t02-s017-goi	yota right	17.72–18.67	16	hold	5.00
+elbowJitter	t02-s017-goi	yota right	20.53–21.65	18	hold	16
+elbowJitter	t02-s033-ruou-tang	takumi right	0.42–1.13	31	hold	3.00
+elbowJitter	t02-s045-cui	yoshie left	0.28–1.17	112	aim	4.00
+elbowJitter	t02-s051-bep-3	yoshie right	0.37–1.08	80	aim	3.00
+elbowJitter	t02-s051-bep-3	yoshie right	2.12–2.83	90	aim	5.00
+elbowJitter	t02-s067-luoi	erika right	1.27–1.85	73	aim	4.00
+elbowJitter	t02-s070-cam	yoshie left	4.28–5.13	94	aim	4.00
+elbowJitter	t02-s100-tra	yota left	7.45–8.32	34	aim	3.00
+elbowJitter	t02-s100-tra	yota left	8.62–9.55	66	aim	4.00
+nc	t02-s003b-dong-hanh	canh-sat-vien left		0.15	649 khung	nặng nhất giây 0.55
+nc	t02-s003b-dong-hanh	canh-sat-vien right		0.08	74 khung	nặng nhất giây 0.00
+nc	t02-s003b-dong-hanh	takumi right		0.15	28 khung	nặng nhất giây 19.98
+nc	t02-s003b-dong-hanh	yoshie right		0.01	1301 khung	nặng nhất giây 0.00
+nc	t02-s006a-bai-xe	erika left		0.04	86 khung	nặng nhất giây 8.58
+nc	t02-s006a-bai-xe	takumi left		0.02	125 khung	nặng nhất giây 7.95
+nc	t02-s006a-bai-xe	takumi right		0.05	27 khung	nặng nhất giây 8.23
+nc	t02-s009-nhan-phong	erika left		0.25	2150 khung	nặng nhất giây 19.18
+nc	t02-s009-nhan-phong	takumi right		0.23	477 khung	nặng nhất giây 29.78
+nc	t02-s009-nhan-phong	yota left		0.50	36 khung	nặng nhất giây 26.55
+nc	t02-s015-tot-nhat	erika left		0.06	524 khung	nặng nhất giây 0.00
+nc	t02-s016-xin-phep	erika left		0.06	418 khung	nặng nhất giây 0.00
+nc	t02-s016-xin-phep	takumi left		0.02	393 khung	nặng nhất giây 0.50
+nc	t02-s017-goi	yota left	0.00–16.47 29.60–30.98 31.22–31.28	2.09	1916 khung	nặng nhất giây 2.40
+nc	t02-s017-goi	yota right	17.62–17.63 22.38–22.45 25.67–25.70	1.18	705 khung	nặng nhất giây 25.67
+nc	t02-s023-bang-gia	erika left		0.07	656 khung	nặng nhất giây 10.30
+nc	t02-s023-bang-gia	takumi left		0.05	637 khung	nặng nhất giây 0.47
+nc	t02-s024-tang	erika left		0.06	340 khung	nặng nhất giây 0.00
+nc	t02-s024-tang	takumi left		0.05	321 khung	nặng nhất giây 0.47
+nc	t02-s025-chi-the	erika left		0.85	479 khung	nặng nhất giây 6.38
+nc	t02-s025-chi-the	takumi left		0.05	454 khung	nặng nhất giây 2.73
+nc	t02-s026-tra-ten	erika left		0.06	588 khung	nặng nhất giây 0.00
+nc	t02-s026-tra-ten	takumi right		0.15	20 khung	nặng nhất giây 0.65
+nc	t02-s027-doi-ca	erika left		0.06	509 khung	nặng nhất giây 0.00
+nc	t02-s028-doi-chia	erika left		0.06	360 khung	nặng nhất giây 0.00
+nc	t02-s028-doi-chia	takumi right		0.06	237 khung	nặng nhất giây 3.68
+nc	t02-s028-doi-chia	yota right		0.10	261 khung	nặng nhất giây 3.02
+nc	t02-s029-mong-cho	takumi right		0.06	283 khung	nặng nhất giây 0.02
+nc	t02-s030-khai-vi	yoshie left		0.05	936 khung	nặng nhất giây 0.45
+nc	t02-s032-sach	erika right		0.03	154 khung	nặng nhất giây 0.00
+nc	t02-s032-sach	yoshie left		0.05	301 khung	nặng nhất giây 4.82
+nc	t02-s032-sach	yoshie right		0.01	50 khung	nặng nhất giây 0.00
+nc	t02-s033-ruou-tang	takumi right		0.37	102 khung	nặng nhất giây 2.88
+nc	t02-s033-ruou-tang	yoshie left		0.05	548 khung	nặng nhất giây 4.82
+nc	t02-s033-ruou-tang	yoshie right		0.01	50 khung	nặng nhất giây 0.00
+nc	t02-s034-goi-them	takumi right		0.07	305 khung	nặng nhất giây 8.75
+nc	t02-s034-goi-them	yoshie left		0.05	941 khung	nặng nhất giây 11.18
+nc	t02-s034-goi-them	yoshie right		0.08	696 khung	nặng nhất giây 12.03
+nc	t02-s037-bep-1	yoshie right		0.02	105 khung	nặng nhất giây 2.05
+nc	t02-s040-dat-lai-2	erika left		0.02	1 khung	nặng nhất giây 3.88
+nc	t02-s041-nguoi	erika right		0.22	65 khung	nặng nhất giây 6.18
+nc	t02-s041-nguoi	yoshie left		0.04	494 khung	nặng nhất giây 3.20
+nc	t02-s041-nguoi	yoshie right		0.03	15 khung	nặng nhất giây 0.68
+nc	t02-s042-lam-lai	yoshie left		0.06	142 khung	nặng nhất giây 3.05
+nc	t02-s042-lam-lai	yoshie right		0.02	6 khung	nặng nhất giây 1.52
+nc	t02-s043-bep-2	yoshie left		0.05	122 khung	nặng nhất giây 0.00
+nc	t02-s044-cham	takumi right		0.16	246 khung	nặng nhất giây 2.50
+nc	t02-s044-cham	yoshie left		0.03	324 khung	nặng nhất giây 0.00
+nc	t02-s044-cham	yoshie-di left		0.03	324 khung	nặng nhất giây 0.00
+nc	t02-s045-cui	takumi right		0.02	11 khung	nặng nhất giây 2.58
+nc	t02-s045-cui	yoshie left		0.06	114 khung	nặng nhất giây 0.00
+nc	t02-s045-cui	yoshie right		0.02	8 khung	nặng nhất giây 0.77
+nc	t02-s046-che-gieu	yoshie left		0.04	341 khung	nặng nhất giây 5.37
+nc	t02-s046-che-gieu	yoshie right		0.02	51 khung	nặng nhất giây 0.72
+nc	t02-s048-vo-tom	erika right		0.09	94 khung	nặng nhất giây 1.45
+nc	t02-s049-da-trong	erika right		0.09	283 khung	nặng nhất giây 4.53
+nc	t02-s050-them-bo	takumi right		0.07	449 khung	nặng nhất giây 5.82
+nc	t02-s050-them-bo	yoshie left		0.02	54 khung	nặng nhất giây 0.80
+nc	t02-s050-them-bo	yoshie right		0.07	384 khung	nặng nhất giây 1.87
+nc	t02-s051-bep-3	kuroiwa left		0.02	61 khung	nặng nhất giây 7.57
+nc	t02-s051-bep-3	kuroiwa right		0.02	61 khung	nặng nhất giây 7.57
+nc	t02-s051-bep-3	yoshie left		0.03	15 khung	nặng nhất giây 1.13
+nc	t02-s051-bep-3	yoshie right		0.42	42 khung	nặng nhất giây 1.90
+nc	t02-s052-o1-sofa	erika right		0.35	154 khung	nặng nhất giây 0.00
+nc	t02-s052-o2-giuong	erika left		0.13	241 khung	nặng nhất giây 0.02
+nc	t02-s052-o2-giuong	erika right		0.15	95 khung	nặng nhất giây 1.75
+nc	t02-s052-o3-chi-be	takumi right		0.18	247 khung	nặng nhất giây 0.00
+nc	t02-s052-o4-ben-kinh	erika left		0.12	211 khung	nặng nhất giây 0.00
+nc	t02-s053-hanh-lang	erika left		0.43	419 khung	nặng nhất giây 0.00
+nc	t02-s053-hanh-lang	takumi right		0.04	9 khung	nặng nhất giây 5.02
+nc	t02-s053-hanh-lang	yota left		0.02	418 khung	nặng nhất giây 0.25
+nc	t02-s054-xin-loi	erika left		0.61	410 khung	nặng nhất giây 0.00
+nc	t02-s054-xin-loi	takumi left		0.01	231 khung	nặng nhất giây 4.80
+nc	t02-s054-xin-loi	yota left		0.02	344 khung	nặng nhất giây 2.75
+nc	t02-s055-nhan-viec	erika left		0.61	327 khung	nặng nhất giây 0.00
+nc	t02-s055-nhan-viec	yota left		0.02	323 khung	nặng nhất giây 0.48
+nc	t02-s056-bieu	chiaki-nhan left		0.06	65 khung	nặng nhất giây 1.77
+nc	t02-s056-bieu	chiaki-nhan right		0.05	61 khung	nặng nhất giây 1.92
+nc	t02-s056-bieu	erika left		0.51	330 khung	nặng nhất giây 0.00
+nc	t02-s057-moi	erika left		0.51	70 khung	nặng nhất giây 0.00
+nc	t02-s058-quan-truoc	erika left		0.01	1 khung	nặng nhất giây 0.00
+nc	t02-s058-quan-truoc	erika right		0.01	7 khung	nặng nhất giây 3.45
+nc	t02-s059-gia-da-bao	chiaki-nhan left		0.06	42 khung	nặng nhất giây 0.93
+nc	t02-s059-gia-da-bao	chiaki-nhan right		0.05	41 khung	nặng nhất giây 0.95
+nc	t02-s059-gia-da-bao	erika left		0.01	1 khung	nặng nhất giây 0.00
+nc	t02-s060-mot-dem	chiaki-nhan left		0.06	43 khung	nặng nhất giây 7.30
+nc	t02-s060-mot-dem	chiaki-nhan right		0.05	41 khung	nặng nhất giây 7.28
+nc	t02-s060-mot-dem	erika left		0.01	15 khung	nặng nhất giây 0.15
+nc	t02-s060-mot-dem	takumi right		0.05	291 khung	nặng nhất giây 2.13
+nc	t02-s062-hoa-don	yota left		0.01	65 khung	nặng nhất giây 0.98
+nc	t02-s062-hoa-don	yota right		0.01	9 khung	nặng nhất giây 2.95
+nc	t02-s064-tat-ca	takumi left		0.02	67 khung	nặng nhất giây 2.43
+nc	t02-s064-tat-ca	takumi right		0.81	141 khung	nặng nhất giây 0.00
+nc	t02-s065-ghi-ro	yota right		0.03	8 khung	nặng nhất giây 0.45
+nc	t02-s066-day-lai	takumi left		0.02	5 khung	nặng nhất giây 6.82
+nc	t02-s066-day-lai	takumi right		0.02	9 khung	nặng nhất giây 0.93
+nc	t02-s067-luoi	erika right		0.02	62 khung	nặng nhất giây 1.35
+nc	t02-s067-luoi	takumi right		0.02	86 khung	nặng nhất giây 11.42
+nc	t02-s070-cam	yoshie left		0.06	239 khung	nặng nhất giây 0.00
+nc	t02-s070-cam	yoshie right		0.02	8 khung	nặng nhất giây 4.77
+nc	t02-s071-phieu	chiaki right		0.21	12 khung	nặng nhất giây 0.55
+nc	t02-s080-goi	yota left	1.08–2.80	1.63	113 khung	nặng nhất giây 1.60
+nc	t02-s082-ra-oai	erika right		0.02	7 khung	nặng nhất giây 26.88
+nc	t02-s082-ra-oai	takumi left		0.02	6 khung	nặng nhất giây 11.78
+nc	t02-s082-ra-oai	takumi right		0.26	120 khung	nặng nhất giây 21.60
+nc	t02-s089-ve	takumi left		0.02	7 khung	nặng nhất giây 1.33
+nc	t02-s091-khung	erika right		0.01	2 khung	nặng nhất giây 8.07
+nc	t02-s093-feed	erika left		0.02	24 khung	nặng nhất giây 16.15
+nc	t02-s093-live	erika left		0.02	24 khung	nặng nhất giây 16.15
+nc	t02-s095-chat-chem	chiaki left		0.04	3 khung	nặng nhất giây 14.87
+nc	t02-s095-feed	chiaki left		0.04	3 khung	nặng nhất giây 14.87
+nc	t02-s100-tra	canh-sat-vien left		0.12	199 khung	nặng nhất giây 8.28
+nc	t02-s100-tra	takumi right		0.02	202 khung	nặng nhất giây 10.25
+nc	t02-s102-feed	canh-sat-vien left		0.15	179 khung	nặng nhất giây 0.00
+nc	t02-s102-feed	canh-sat-vien right		0.37	208 khung	nặng nhất giây 0.00
+nc	t02-s102-feed	erika right		0.02	44 khung	nặng nhất giây 3.00
+nc	t02-s102-vao	canh-sat-vien left		0.15	987 khung	nặng nhất giây 0.00
+nc	t02-s102-vao	canh-sat-vien right		0.37	1007 khung	nặng nhất giây 0.00
+nc	t02-s102-vao	erika right		0.02	44 khung	nặng nhất giây 3.00
+nc	t02-s102-vao	takumi right		0.10	10 khung	nặng nhất giây 10.67
+nc	t02-s105-cam-nhan	canh-sat-vien left		0.06	1535 khung	nặng nhất giây 0.00
+nc	t02-s105-cam-nhan	canh-sat-vien right		0.03	1555 khung	nặng nhất giây 0.02
+nc	t02-s105-cam-nhan	erika right		0.05	330 khung	nặng nhất giây 5.15
+nc	t02-s105-cam-nhan	yoshie right		0.01	773 khung	nặng nhất giây 13.08
+nc	t02-s109-truc-tiep	canh-sat-vien left		0.06	917 khung	nặng nhất giây 0.00
+nc	t02-s109-truc-tiep	canh-sat-vien right		0.04	971 khung	nặng nhất giây 15.75
+nc	t02-s109-truc-tiep	ong-khach right		0.05	1356 khung	nặng nhất giây 15.40
+nc	t02-s109-truc-tiep	takumi right		0.55	60 khung	nặng nhất giây 9.85
+nc	t02-s109-truc-tiep	yoshie right		0.01	2210 khung	nặng nhất giây 0.00
+nc	t02-s114-lam-chung	canh-sat-vien left		0.03	9 khung	nặng nhất giây 0.00
+nc	t02-s114-lam-chung	ong-khach left		0.01	1 khung	nặng nhất giây 7.87
+nc	t02-s114-lam-chung	ong-khach right		0.04	631 khung	nặng nhất giây 8.55
+nc	t02-s114-lam-chung	yoshie right		0.01	631 khung	nặng nhất giây 0.00
+nc	t02-s115-ghi-ten	ong-khach right		0.11	121 khung	nặng nhất giây 1.63
+nc	t02-s115-ghi-ten	trung-si left		0.02	121 khung	nặng nhất giây 0.02
+nc	t02-s116-cat-to	canh-sat-vien left		0.03	829 khung	nặng nhất giây 0.00
+nc	t02-s116-cat-to	canh-sat-vien right		0.05	844 khung	nặng nhất giây 2.88
+nc	t02-s116-cat-to	takumi right		0.05	7 khung	nặng nhất giây 2.48
+nc	t02-s116-cat-to	yoshie right		0.01	995 khung	nặng nhất giây 0.00
+nc	t02-s116-feed	canh-sat-vien left		0.03	829 khung	nặng nhất giây 0.00
+nc	t02-s116-feed	canh-sat-vien right		0.05	844 khung	nặng nhất giây 2.88
+nc	t02-s116-feed	takumi right		0.05	7 khung	nặng nhất giây 2.48
+nc	t02-s116-feed	yoshie right		0.01	995 khung	nặng nhất giây 0.00
+nc	t02-s118-biet-kien	canh-sat-vien left		0.15	649 khung	nặng nhất giây 0.55
+nc	t02-s118-biet-kien	canh-sat-vien right		0.08	74 khung	nặng nhất giây 0.00
+nc	t02-s118-biet-kien	takumi right		0.15	28 khung	nặng nhất giây 19.98
+nc	t02-s118-biet-kien	yoshie right		0.01	1301 khung	nặng nhất giây 0.00
+nc	t02-s118-feed	canh-sat-vien left		0.15	649 khung	nặng nhất giây 0.55
+nc	t02-s118-feed	canh-sat-vien right		0.08	74 khung	nặng nhất giây 0.00
+nc	t02-s118-feed	takumi right		0.15	28 khung	nặng nhất giây 19.98
+nc	t02-s118-feed	yoshie right		0.01	1301 khung	nặng nhất giây 0.00
+nc	t02-s122-ra-cua	canh-sat-vien left		0.10	27 khung	nặng nhất giây 0.60
+nc	t02-s122-ra-cua	canh-sat-vien right		0.04	132 khung	nặng nhất giây 1.95
+nc	t02-s122-ra-cua	takumi right		0.15	35 khung	nặng nhất giây 1.10
+nc	t02-s122-ra-cua	yoshie right		0.01	133 khung	nặng nhất giây 0.00
+nc	t02-s123-do-loi	canh-sat-vien right		0.02	39 khung	nặng nhất giây 0.18
+nc	t02-s123-do-loi	yoshie right		0.01	354 khung	nặng nhất giây 0.00
+nc	t02-s124-tu-khai	yoshie right		0.01	575 khung	nặng nhất giây 0.00
+nc	t02-s125-dung	yoshie right		0.01	642 khung	nặng nhất giây 0.00
+nc	t02-s136-dat-phong	yoshie left		0.07	1216 khung	nặng nhất giây 14.78
+nc	t02-s136-dat-phong	yoshie right		0.04	1216 khung	nặng nhất giây 14.75
+nc	t02-s136-dat-phong	yota left		0.14	851 khung	nặng nhất giây 15.20
+nc	t02-s136-dat-phong	yota right		0.02	1216 khung	nặng nhất giây 5.77
+wristFlip	t02-s032-sach	erika right	3.52–3.53	77	hold	-76 1.09 -30 -0.06
+wristFlip	t02-s049-da-trong	erika right	4.77–4.78	69	hold	-69 0.10 -28 0.07
+wristFlip	t02-s051-bep-3	yoshie right	2.13–2.15	76	hold	-76 0.00 1.71 0.00
+wristFlip	t02-s089-ve	takumi left	1.33–1.35	85	aim	-26 60 -7.46 3.97
+{
+  'khung-tay': 572568,
+  'khung theo đích': 356957,
+  'không hội tụ: người-tay': 163,
+  'không hội tụ: khung': 57397,
+  'không hội tụ: khung dời > 1': 1187,
+  armStraight: 51,
+  'armStraight:hold': 34,
+  'armStraight:placed': 2,
+  elbowFlip: 23,
+  'elbowFlip:aim': 21,
+  elbowJitter: 11,
+  'elbowJitter:hold': 4,
+  'armStraight:aim': 12,
+  'elbowFlip:hold': 1,
+  body: 21,
+  'body:hold': 2,
+  'body:aim': 15,
+  wristFlip: 4,
+  'wristFlip:hold': 3,
+  'body:lock': 1,
+  armClose: 1,
+  'armClose:aim': 1,
+  elbowInward: 5,
+  'elbowInward:aim': 5,
+  'elbowJitter:aim': 7,
+  'elbowFlip:world': 1,
+  'body:world': 1,
+  'armStraight:lock': 1,
+  'body:placed': 2,
+  'armStraight:world': 2,
+  'wristFlip:aim': 1
+}
+
+== khoá giữ, 9 vòng ==
+armClose	t02-s037-bep-1	yoshie right	1.72–1.98	2.75	aim	0.28
+armStraight	t02-s003b-dong-hanh	erika right	21.33–21.67	0.99	placed	
+armStraight	t02-s003b-dong-hanh	takumi left	0.02–21.67	1.00	hold	
+armStraight	t02-s006a-bai-xe	takumi left	6.37–9.75	0.99	hold	
+armStraight	t02-s008-truoc-cua	takumi left	0.02–1.60	0.98	hold	
+armStraight	t02-s017-goi	yota left	32.10–32.50	0.99	aim	
+armStraight	t02-s033-ruou-tang	takumi right	1.92–2.43	1.00	aim	
+armStraight	t02-s039-dat-lai-1	yoshie right	3.22–3.60	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	1.07–1.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	13.07–13.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	17.07–17.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	21.07–21.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	25.07–25.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	29.07–29.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	5.07–5.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	9.07–9.40	1.00	hold	
+armStraight	t02-s041-nguoi	erika right	0.38–1.40	1.00	hold	
+armStraight	t02-s041-nguoi	erika right	4.35–4.82	1.00	hold	
+armStraight	t02-s042-lam-lai	yoshie right	1.87–2.32	0.99	hold	
+armStraight	t02-s056-bieu	chiaki-nhan right	1.28–2.07	0.97	hold	
+armStraight	t02-s059-gia-da-bao	chiaki-nhan right	0.48–1.02	0.97	hold	
+armStraight	t02-s060-mot-dem	chiaki-nhan right	6.83–7.37	0.97	hold	
+armStraight	t02-s062-hoa-don	yota right	4.43–5.87	0.99	aim	
+armStraight	t02-s066-day-lai	takumi right	0.38–0.72	0.99	aim	
+armStraight	t02-s067-luoi	takumi right	11.42–12.72	1.00	lock	
+armStraight	t02-s071-phieu	chiaki left	0.02–0.62	1.00	aim	
+armStraight	t02-s071-phieu	chiaki right	0.02–0.55	1.00	hold	
+armStraight	t02-s071-phieu	takumi right	3.35–22.70	1.00	aim	
+armStraight	t02-s082-ra-oai	takumi left	12.05–14.52	0.99	aim	
+armStraight	t02-s082-ra-oai	takumi left	14.80–23.75	1.00	aim	
+armStraight	t02-s082-ra-oai	takumi left	2.80–5.67	1.00	world	
+armStraight	t02-s082-ra-oai	takumi left	5.73–11.67	1.00	aim	
+armStraight	t02-s082-ra-oai	takumi right	5.77–21.08	1.00	aim	
+armStraight	t02-s089-ve	takumi left	0.98–2.18	1.00	aim	
+armStraight	t02-s093-feed	erika right	2.13–18.10	1.00	world	
+armStraight	t02-s093-feed	takumi left	2.28–18.10	1.00	hold	
+armStraight	t02-s093-live	takumi left	2.28–18.10	1.00	hold	
+armStraight	t02-s095-chat-chem	takumi left	0.02–23.48	1.00	hold	
+armStraight	t02-s095-feed	takumi left	0.02–23.48	1.00	hold	
+armStraight	t02-s100-tra	takumi left	0.02–11.42	1.00	hold	
+armStraight	t02-s100-tra	takumi right	7.07–10.35	1.00	aim	
+armStraight	t02-s102-feed	takumi left	0.02–3.50	1.00	hold	
+armStraight	t02-s102-vao	takumi left	0.02–16.78	1.00	hold	
+armStraight	t02-s105-cam-nhan	takumi left	0.02–25.92	1.00	hold	
+armStraight	t02-s109-truc-tiep	takumi left	0.02–36.82	1.00	hold	
+armStraight	t02-s114-lam-chung	takumi left	0.02–10.50	1.00	hold	
+armStraight	t02-s116-cat-to	takumi left	0.02–16.57	1.00	hold	
+armStraight	t02-s116-feed	takumi left	0.02–16.57	1.00	hold	
+armStraight	t02-s118-biet-kien	erika right	21.33–21.67	0.99	placed	
+armStraight	t02-s118-biet-kien	takumi left	0.02–21.67	1.00	hold	
+armStraight	t02-s118-feed	takumi left	0.02–21.67	1.00	hold	
+armStraight	t02-s122-ra-cua	takumi left	0.02–2.20	1.00	hold	
+body	t02-s028-doi-chia	takumi right	3.88–3.93	0.84	hold	
+body	t02-s030-khai-vi	yoshie right	14.47–14.50	0.62	aim	
+body	t02-s034-goi-them	yoshie left	22.33–22.35	0.87	lock	
+body	t02-s037-bep-1	yoshie right	0.02–2.02	2.75	aim	
+body	t02-s041-nguoi	erika right	4.20–4.82	1.44	hold	
+body	t02-s050-them-bo	yoshie right	0.30–0.85	0.90	world	
+body	t02-s060-mot-dem	takumi right	0.98–0.98	0.52	aim	
+body	t02-s062-hoa-don	yota left	0.77–0.78	0.55	aim	
+body	t02-s062-hoa-don	yota left	3.57–3.58	0.56	aim	
+body	t02-s065-ghi-ro	yota left	5.75–5.77	0.52	aim	
+body	t02-s078-ra-hieu	yota right	3.42–3.43	1.68	aim	
+body	t02-s080-goi	yota left	0.30–0.38	1.04	placed	
+body	t02-s089-ve	takumi left	0.48–1.62	2.35	aim	
+body	t02-s095-chat-chem	chiaki right	12.88–12.88	0.53	aim	
+body	t02-s095-chat-chem	chiaki right	14.75–14.95	0.68	aim	
+body	t02-s095-feed	chiaki right	12.88–12.88	0.53	aim	
+body	t02-s095-feed	chiaki right	14.75–14.95	0.68	aim	
+body	t02-s100-tra	takumi right	10.62–10.87	0.84	placed	
+body	t02-s100-tra	takumi right	5.10–5.30	0.68	aim	
+body	t02-s100-tra	takumi right	7.18–10.40	0.77	aim	
+body	t02-s105-cam-nhan	erika right	0.60–6.02	1.23	aim	
+elbowFlip	t02-s009-nhan-phong	yota left	11.83–11.97	64	aim	
+elbowFlip	t02-s026-tra-ten	takumi right	0.88–0.90	32	hold	
+elbowFlip	t02-s039-dat-lai-1	erika left	3.88–3.90	35	aim	
+elbowFlip	t02-s040-dat-lai-2	erika left	3.75–3.77	35	aim	
+elbowFlip	t02-s040b-tua	erika left	0.15–0.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	1.43–1.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	12.15–12.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	13.43–13.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	16.15–16.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	17.43–17.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	20.15–20.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	21.43–21.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	24.15–24.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	25.43–25.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	28.15–28.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	29.43–29.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	4.15–4.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	5.43–5.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	8.15–8.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	9.43–9.45	35	aim	
+elbowFlip	t02-s046-che-gieu	yoshie right	1.02–1.12	73	world	
+elbowFlip	t02-s058-quan-truoc	erika right	0.48–0.63	67	aim	
+elbowFlip	t02-s082-ra-oai	takumi right	21.55–21.65	107	aim	
+elbowInward	t02-s041-nguoi	yoshie right	0.50–0.58	0.40	aim	
+elbowInward	t02-s053-hanh-lang	takumi right	3.45–3.57	0.48	aim	
+elbowInward	t02-s053-hanh-lang	takumi right	5.10–5.47	0.49	aim	
+elbowInward	t02-s082-ra-oai	takumi left	11.77–11.83	0.37	aim	
+elbowInward	t02-s082-ra-oai	takumi right	21.17–21.53	0.44	aim	
+elbowJitter	t02-s017-goi	yota left	2.92–4.83	21	hold	29
+elbowJitter	t02-s017-goi	yota right	17.72–18.70	16	hold	7.00
+elbowJitter	t02-s017-goi	yota right	20.53–21.65	20	hold	16
+elbowJitter	t02-s033-ruou-tang	takumi right	0.42–1.13	31	hold	3.00
+elbowJitter	t02-s045-cui	yoshie left	0.28–1.17	112	aim	4.00
+elbowJitter	t02-s051-bep-3	yoshie right	0.37–1.08	80	aim	3.00
+elbowJitter	t02-s051-bep-3	yoshie right	2.12–2.83	90	aim	5.00
+elbowJitter	t02-s067-luoi	erika right	1.27–1.85	73	aim	4.00
+elbowJitter	t02-s070-cam	yoshie left	4.28–5.13	94	aim	4.00
+elbowJitter	t02-s100-tra	yota left	7.45–8.32	34	aim	3.00
+elbowJitter	t02-s100-tra	yota left	8.62–9.55	66	aim	4.00
+elbowJitter	t02-s109-truc-tiep	takumi right	9.55–10.12	33	hold	3.00
+nc	t02-s003b-dong-hanh	canh-sat-vien left		0.08	67 khung	nặng nhất giây 0.55
+nc	t02-s003b-dong-hanh	canh-sat-vien right		0.04	15 khung	nặng nhất giây 0.00
+nc	t02-s003b-dong-hanh	takumi right		0.10	25 khung	nặng nhất giây 19.97
+nc	t02-s006a-bai-xe	erika left		0.02	86 khung	nặng nhất giây 8.58
+nc	t02-s006a-bai-xe	takumi left		0.01	44 khung	nặng nhất giây 7.95
+nc	t02-s006a-bai-xe	takumi right		0.03	13 khung	nặng nhất giây 8.23
+nc	t02-s009-nhan-phong	erika left		0.18	2022 khung	nặng nhất giây 19.18
+nc	t02-s009-nhan-phong	takumi right		0.12	431 khung	nặng nhất giây 29.78
+nc	t02-s009-nhan-phong	yota left		0.54	28 khung	nặng nhất giây 26.55
+nc	t02-s015-tot-nhat	erika left		0.03	524 khung	nặng nhất giây 0.00
+nc	t02-s016-xin-phep	erika left		0.03	418 khung	nặng nhất giây 0.00
+nc	t02-s017-goi	yota left	1.25–3.43	1.35	1908 khung	nặng nhất giây 2.40
+nc	t02-s017-goi	yota right	25.67–25.67	1.05	693 khung	nặng nhất giây 25.67
+nc	t02-s023-bang-gia	erika left		0.04	656 khung	nặng nhất giây 10.28
+nc	t02-s023-bang-gia	takumi left		0.02	5 khung	nặng nhất giây 0.47
+nc	t02-s024-tang	erika left		0.03	340 khung	nặng nhất giây 0.00
+nc	t02-s024-tang	takumi left		0.02	5 khung	nặng nhất giây 0.47
+nc	t02-s025-chi-the	erika left		0.66	476 khung	nặng nhất giây 6.38
+nc	t02-s025-chi-the	takumi left		0.03	96 khung	nặng nhất giây 2.73
+nc	t02-s026-tra-ten	erika left		0.03	588 khung	nặng nhất giây 0.00
+nc	t02-s026-tra-ten	takumi right		0.08	18 khung	nặng nhất giây 0.65
+nc	t02-s027-doi-ca	erika left		0.03	509 khung	nặng nhất giây 0.00
+nc	t02-s028-doi-chia	erika left		0.03	360 khung	nặng nhất giây 0.00
+nc	t02-s028-doi-chia	takumi right		0.03	234 khung	nặng nhất giây 3.68
+nc	t02-s028-doi-chia	yota right		0.09	191 khung	nặng nhất giây 3.02
+nc	t02-s029-mong-cho	takumi right		0.03	155 khung	nặng nhất giây 0.02
+nc	t02-s030-khai-vi	yoshie left		0.02	936 khung	nặng nhất giây 2.62
+nc	t02-s032-sach	erika right		0.01	9 khung	nặng nhất giây 3.22
+nc	t02-s032-sach	yoshie left		0.02	301 khung	nặng nhất giây 4.82
+nc	t02-s033-ruou-tang	takumi right		0.27	93 khung	nặng nhất giây 2.88
+nc	t02-s033-ruou-tang	yoshie left		0.02	548 khung	nặng nhất giây 4.82
+nc	t02-s034-goi-them	takumi right		0.02	270 khung	nặng nhất giây 8.67
+nc	t02-s034-goi-them	yoshie left		0.02	912 khung	nặng nhất giây 11.18
+nc	t02-s034-goi-them	yoshie right		0.04	54 khung	nặng nhất giây 11.92
+nc	t02-s041-nguoi	erika right		0.11	46 khung	nặng nhất giây 6.18
+nc	t02-s041-nguoi	yoshie left		0.02	481 khung	nặng nhất giây 1.22
+nc	t02-s041-nguoi	yoshie right		0.01	3 khung	nặng nhất giây 0.68
+nc	t02-s042-lam-lai	yoshie left		0.03	126 khung	nặng nhất giây 3.05
+nc	t02-s043-bep-2	yoshie left		0.03	29 khung	nặng nhất giây 0.00
+nc	t02-s044-cham	takumi right		0.11	114 khung	nặng nhất giây 2.50
+nc	t02-s044-cham	yoshie left		0.02	71 khung	nặng nhất giây 0.00
+nc	t02-s044-cham	yoshie-di left		0.02	40 khung	nặng nhất giây 0.00
+nc	t02-s045-cui	yoshie left		0.03	102 khung	nặng nhất giây 0.00
+nc	t02-s045-cui	yoshie right		0.01	1 khung	nặng nhất giây 0.77
+nc	t02-s046-che-gieu	yoshie left		0.02	318 khung	nặng nhất giây 5.03
+nc	t02-s048-vo-tom	erika right		0.04	91 khung	nặng nhất giây 0.62
+nc	t02-s049-da-trong	erika right		0.07	260 khung	nặng nhất giây 4.53
+nc	t02-s050-them-bo	takumi right		0.03	437 khung	nặng nhất giây 5.92
+nc	t02-s050-them-bo	yoshie left		0.01	2 khung	nặng nhất giây 0.80
+nc	t02-s050-them-bo	yoshie right		0.03	365 khung	nặng nhất giây 1.87
+nc	t02-s051-bep-3	yoshie left		0.01	1 khung	nặng nhất giây 1.13
+nc	t02-s051-bep-3	yoshie right		0.24	25 khung	nặng nhất giây 1.90
+nc	t02-s052-o1-sofa	erika right		0.26	154 khung	nặng nhất giây 0.00
+nc	t02-s052-o2-giuong	erika left		0.07	241 khung	nặng nhất giây 0.38
+nc	t02-s052-o2-giuong	erika right		0.11	19 khung	nặng nhất giây 1.75
+nc	t02-s052-o3-chi-be	takumi right		0.12	247 khung	nặng nhất giây 0.00
+nc	t02-s052-o4-ben-kinh	erika left		0.07	211 khung	nặng nhất giây 0.00
+nc	t02-s053-hanh-lang	erika left		0.25	419 khung	nặng nhất giây 0.00
+nc	t02-s053-hanh-lang	takumi right		0.03	3 khung	nặng nhất giây 5.02
+nc	t02-s053-hanh-lang	yota left		0.01	194 khung	nặng nhất giây 0.25
+nc	t02-s054-xin-loi	erika left		0.31	410 khung	nặng nhất giây 0.00
+nc	t02-s054-xin-loi	yota left		0.01	134 khung	nặng nhất giây 2.75
+nc	t02-s055-nhan-viec	erika left		0.31	327 khung	nặng nhất giây 0.00
+nc	t02-s055-nhan-viec	yota left		0.01	126 khung	nặng nhất giây 0.52
+nc	t02-s056-bieu	chiaki-nhan left		0.02	54 khung	nặng nhất giây 1.77
+nc	t02-s056-bieu	chiaki-nhan right		0.02	60 khung	nặng nhất giây 1.92
+nc	t02-s056-bieu	erika left		0.23	330 khung	nặng nhất giây 1.73
+nc	t02-s057-moi	erika left		0.23	69 khung	nặng nhất giây 0.07
+nc	t02-s059-gia-da-bao	chiaki-nhan left		0.02	37 khung	nặng nhất giây 0.93
+nc	t02-s059-gia-da-bao	chiaki-nhan right		0.02	40 khung	nặng nhất giây 0.95
+nc	t02-s060-mot-dem	chiaki-nhan left		0.02	35 khung	nặng nhất giây 7.30
+nc	t02-s060-mot-dem	chiaki-nhan right		0.02	41 khung	nặng nhất giây 7.28
+nc	t02-s060-mot-dem	takumi right		0.02	132 khung	nặng nhất giây 2.13
+nc	t02-s064-tat-ca	takumi right		0.64	102 khung	nặng nhất giây 0.00
+nc	t02-s065-ghi-ro	yota right		0.02	3 khung	nặng nhất giây 0.45
+nc	t02-s070-cam	yoshie left		0.03	157 khung	nặng nhất giây 0.00
+nc	t02-s070-cam	yoshie right		0.01	2 khung	nặng nhất giây 4.77
+nc	t02-s071-phieu	chiaki right		0.16	3 khung	nặng nhất giây 0.55
+nc	t02-s080-goi	yota left	1.40–2.80	1.02	112 khung	nặng nhất giây 1.60
+nc	t02-s082-ra-oai	erika right		0.01	2 khung	nặng nhất giây 26.88
+nc	t02-s082-ra-oai	takumi right		0.20	3 khung	nặng nhất giây 21.60
+nc	t02-s095-chat-chem	chiaki left		0.02	2 khung	nặng nhất giây 14.87
+nc	t02-s095-feed	chiaki left		0.02	2 khung	nặng nhất giây 14.87
+nc	t02-s100-tra	canh-sat-vien left		0.06	199 khung	nặng nhất giây 8.28
+nc	t02-s102-feed	canh-sat-vien left		0.10	25 khung	nặng nhất giây 0.00
+nc	t02-s102-feed	canh-sat-vien right		0.32	209 khung	nặng nhất giây 0.00
+nc	t02-s102-vao	canh-sat-vien left		0.10	1 khung	nặng nhất giây 0.00
+nc	t02-s102-vao	canh-sat-vien right		0.32	1007 khung	nặng nhất giây 0.00
+nc	t02-s102-vao	takumi right		0.07	6 khung	nặng nhất giây 10.67
+nc	t02-s105-cam-nhan	canh-sat-vien left		0.03	1 khung	nặng nhất giây 0.00
+nc	t02-s105-cam-nhan	canh-sat-vien right		0.01	1555 khung	nặng nhất giây 0.02
+nc	t02-s105-cam-nhan	erika right		0.02	321 khung	nặng nhất giây 5.15
+nc	t02-s109-truc-tiep	canh-sat-vien left		0.03	1 khung	nặng nhất giây 0.00
+nc	t02-s109-truc-tiep	canh-sat-vien right		0.02	952 khung	nặng nhất giây 15.75
+nc	t02-s109-truc-tiep	ong-khach right		0.02	1356 khung	nặng nhất giây 14.23
+nc	t02-s109-truc-tiep	takumi right		0.41	55 khung	nặng nhất giây 9.85
+nc	t02-s114-lam-chung	canh-sat-vien left		0.01	1 khung	nặng nhất giây 0.00
+nc	t02-s114-lam-chung	ong-khach right		0.02	631 khung	nặng nhất giây 8.95
+nc	t02-s115-ghi-ten	ong-khach right		0.06	121 khung	nặng nhất giây 1.63
+nc	t02-s116-cat-to	canh-sat-vien left		0.01	1 khung	nặng nhất giây 0.00
+nc	t02-s116-cat-to	canh-sat-vien right		0.02	832 khung	nặng nhất giây 2.88
+nc	t02-s116-cat-to	takumi right		0.03	5 khung	nặng nhất giây 2.48
+nc	t02-s116-feed	canh-sat-vien left		0.01	1 khung	nặng nhất giây 0.00
+nc	t02-s116-feed	canh-sat-vien right		0.02	832 khung	nặng nhất giây 2.88
+nc	t02-s116-feed	takumi right		0.03	5 khung	nặng nhất giây 2.48
+nc	t02-s118-biet-kien	canh-sat-vien left		0.08	67 khung	nặng nhất giây 0.55
+nc	t02-s118-biet-kien	canh-sat-vien right		0.04	15 khung	nặng nhất giây 0.00
+nc	t02-s118-biet-kien	takumi right		0.10	25 khung	nặng nhất giây 19.97
+nc	t02-s118-feed	canh-sat-vien left		0.08	67 khung	nặng nhất giây 0.55
+nc	t02-s118-feed	canh-sat-vien right		0.04	15 khung	nặng nhất giây 0.00
+nc	t02-s118-feed	takumi right		0.10	25 khung	nặng nhất giây 19.97
+nc	t02-s122-ra-cua	canh-sat-vien left		0.06	20 khung	nặng nhất giây 0.60
+nc	t02-s122-ra-cua	canh-sat-vien right		0.02	122 khung	nặng nhất giây 1.95
+nc	t02-s122-ra-cua	takumi right		0.08	24 khung	nặng nhất giây 1.12
+nc	t02-s136-dat-phong	yoshie left		0.04	1216 khung	nặng nhất giây 14.78
+nc	t02-s136-dat-phong	yoshie right		0.02	913 khung	nặng nhất giây 14.75
+nc	t02-s136-dat-phong	yota left		0.09	793 khung	nặng nhất giây 15.20
+wristFlip	t02-s032-sach	erika right	3.52–3.53	77	hold	-76 1.09 -30 -0.06
+wristFlip	t02-s049-da-trong	erika right	4.77–4.78	69	hold	-69 0.10 -28 0.07
+wristFlip	t02-s051-bep-3	yoshie right	2.13–2.15	76	hold	-76 0.00 1.70 0.00
+wristFlip	t02-s089-ve	takumi left	1.33–1.35	85	aim	-26 60 -7.46 3.97
+{
+  'khung-tay': 572568,
+  'khung theo đích': 356957,
+  'không hội tụ: người-tay': 117,
+  'không hội tụ: khung': 30632,
+  'không hội tụ: khung dời > 1': 217,
+  armStraight: 51,
+  'armStraight:hold': 34,
+  'armStraight:placed': 2,
+  elbowFlip: 23,
+  'elbowFlip:aim': 21,
+  elbowJitter: 12,
+  'elbowJitter:hold': 5,
+  'armStraight:aim': 12,
+  'elbowFlip:hold': 1,
+  body: 21,
+  'body:hold': 2,
+  'body:aim': 15,
+  wristFlip: 4,
+  'wristFlip:hold': 3,
+  'body:lock': 1,
+  armClose: 1,
+  'armClose:aim': 1,
+  elbowInward: 5,
+  'elbowInward:aim': 5,
+  'elbowJitter:aim': 7,
+  'elbowFlip:world': 1,
+  'body:world': 1,
+  'armStraight:lock': 1,
+  'body:placed': 2,
+  'armStraight:world': 2,
+  'wristFlip:aim': 1
+}
+
+== khoá bỏ, 8 vòng ==
+armClose	t02-s037-bep-1	yoshie right	1.72–1.98	2.75	aim	0.28
+armStraight	t02-s003b-dong-hanh	erika right	21.33–21.67	0.99	placed	
+armStraight	t02-s003b-dong-hanh	takumi left	0.02–21.67	1.00	hold	
+armStraight	t02-s006a-bai-xe	takumi left	6.37–9.75	0.99	hold	
+armStraight	t02-s008-truoc-cua	takumi left	0.02–1.60	0.98	hold	
+armStraight	t02-s017-goi	yota left	32.10–32.50	0.99	aim	
+armStraight	t02-s033-ruou-tang	takumi right	1.92–2.43	1.00	aim	
+armStraight	t02-s039-dat-lai-1	yoshie right	3.22–3.60	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	1.07–1.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	13.07–13.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	17.07–17.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	21.07–21.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	25.07–25.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	29.07–29.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	5.07–5.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	9.07–9.40	1.00	hold	
+armStraight	t02-s041-nguoi	erika right	0.38–1.40	1.00	hold	
+armStraight	t02-s041-nguoi	erika right	4.35–4.82	1.00	hold	
+armStraight	t02-s042-lam-lai	yoshie right	1.87–2.32	0.99	hold	
+armStraight	t02-s056-bieu	chiaki-nhan right	1.28–2.07	0.97	hold	
+armStraight	t02-s059-gia-da-bao	chiaki-nhan right	0.48–1.02	0.97	hold	
+armStraight	t02-s060-mot-dem	chiaki-nhan right	6.83–7.37	0.97	hold	
+armStraight	t02-s062-hoa-don	yota right	4.43–5.87	0.99	aim	
+armStraight	t02-s066-day-lai	takumi right	0.38–0.72	0.99	aim	
+armStraight	t02-s067-luoi	takumi right	11.42–12.72	1.00	aim	
+armStraight	t02-s071-phieu	chiaki left	0.02–0.62	1.00	aim	
+armStraight	t02-s071-phieu	chiaki right	0.02–0.55	1.00	hold	
+armStraight	t02-s071-phieu	takumi right	3.35–22.70	1.00	aim	
+armStraight	t02-s082-ra-oai	takumi left	12.05–14.52	0.99	aim	
+armStraight	t02-s082-ra-oai	takumi left	14.80–23.75	1.00	aim	
+armStraight	t02-s082-ra-oai	takumi left	2.80–5.67	1.00	world	
+armStraight	t02-s082-ra-oai	takumi left	5.73–11.67	1.00	aim	
+armStraight	t02-s082-ra-oai	takumi right	5.77–21.08	1.00	aim	
+armStraight	t02-s089-ve	takumi left	0.98–2.18	1.00	aim	
+armStraight	t02-s093-feed	erika right	2.13–18.10	1.00	world	
+armStraight	t02-s093-feed	takumi left	2.28–18.10	1.00	hold	
+armStraight	t02-s093-live	takumi left	2.28–18.10	1.00	hold	
+armStraight	t02-s095-chat-chem	takumi left	0.02–23.48	1.00	hold	
+armStraight	t02-s095-feed	takumi left	0.02–23.48	1.00	hold	
+armStraight	t02-s100-tra	takumi left	0.02–11.42	1.00	hold	
+armStraight	t02-s100-tra	takumi right	7.07–10.35	1.00	aim	
+armStraight	t02-s102-feed	takumi left	0.02–3.50	1.00	hold	
+armStraight	t02-s102-vao	takumi left	0.02–16.78	1.00	hold	
+armStraight	t02-s105-cam-nhan	takumi left	0.02–25.92	1.00	hold	
+armStraight	t02-s109-truc-tiep	takumi left	0.02–36.82	1.00	hold	
+armStraight	t02-s114-lam-chung	takumi left	0.02–10.50	1.00	hold	
+armStraight	t02-s116-cat-to	takumi left	0.02–16.57	1.00	hold	
+armStraight	t02-s116-feed	takumi left	0.02–16.57	1.00	hold	
+armStraight	t02-s118-biet-kien	erika right	21.33–21.67	0.99	placed	
+armStraight	t02-s118-biet-kien	takumi left	0.02–21.67	1.00	hold	
+armStraight	t02-s118-feed	takumi left	0.02–21.67	1.00	hold	
+armStraight	t02-s122-ra-cua	takumi left	0.02–2.20	1.00	hold	
+body	t02-s028-doi-chia	takumi right	3.88–3.93	0.84	hold	
+body	t02-s030-khai-vi	yoshie right	14.47–14.50	0.62	aim	
+body	t02-s034-goi-them	yoshie left	22.33–22.35	0.87	aim	
+body	t02-s037-bep-1	yoshie right	0.02–2.02	2.75	aim	
+body	t02-s041-nguoi	erika right	4.20–4.82	1.44	hold	
+body	t02-s050-them-bo	yoshie right	0.30–0.85	0.90	world	
+body	t02-s060-mot-dem	takumi right	0.98–0.98	0.52	aim	
+body	t02-s062-hoa-don	yota left	0.77–0.78	0.55	aim	
+body	t02-s062-hoa-don	yota left	3.57–3.58	0.56	aim	
+body	t02-s065-ghi-ro	yota left	5.75–5.77	0.52	aim	
+body	t02-s078-ra-hieu	yota right	3.42–3.43	1.68	aim	
+body	t02-s080-goi	yota left	0.30–0.38	1.04	placed	
+body	t02-s089-ve	takumi left	0.48–1.62	2.35	aim	
+body	t02-s095-chat-chem	chiaki right	12.88–12.88	0.53	aim	
+body	t02-s095-chat-chem	chiaki right	14.75–14.95	0.68	aim	
+body	t02-s095-feed	chiaki right	12.88–12.88	0.53	aim	
+body	t02-s095-feed	chiaki right	14.75–14.95	0.68	aim	
+body	t02-s100-tra	takumi right	10.70–10.83	0.62	placed	
+body	t02-s100-tra	takumi right	5.10–5.30	0.68	aim	
+body	t02-s100-tra	takumi right	7.18–10.35	0.77	aim	
+body	t02-s105-cam-nhan	erika right	0.60–6.02	1.23	aim	
+elbowFlip	t02-s009-nhan-phong	yota left	11.83–11.97	64	aim	
+elbowFlip	t02-s026-tra-ten	takumi right	0.88–0.90	32	hold	
+elbowFlip	t02-s034-goi-them	yoshie left	22.32–22.37	46	aim	
+elbowFlip	t02-s039-dat-lai-1	erika left	3.88–3.90	35	aim	
+elbowFlip	t02-s040-dat-lai-2	erika left	3.75–3.77	35	aim	
+elbowFlip	t02-s040b-tua	erika left	0.15–0.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	1.43–1.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	12.15–12.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	13.43–13.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	16.15–16.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	17.43–17.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	20.15–20.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	21.43–21.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	24.15–24.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	25.43–25.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	28.15–28.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	29.43–29.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	4.15–4.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	5.43–5.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	8.15–8.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	9.43–9.45	35	aim	
+elbowFlip	t02-s046-che-gieu	yoshie right	1.02–1.12	73	world	
+elbowFlip	t02-s058-quan-truoc	erika right	0.48–0.63	67	aim	
+elbowFlip	t02-s082-ra-oai	takumi right	21.55–21.65	107	aim	
+elbowInward	t02-s041-nguoi	yoshie right	0.50–0.58	0.40	aim	
+elbowInward	t02-s053-hanh-lang	takumi right	3.45–3.57	0.48	aim	
+elbowInward	t02-s053-hanh-lang	takumi right	5.10–5.47	0.49	aim	
+elbowInward	t02-s082-ra-oai	takumi left	11.77–11.83	0.37	aim	
+elbowInward	t02-s082-ra-oai	takumi right	21.17–21.53	0.44	aim	
+elbowJitter	t02-s017-goi	yota right	17.72–18.67	16	hold	5.00
+elbowJitter	t02-s017-goi	yota right	20.53–21.65	18	hold	16
+elbowJitter	t02-s045-cui	yoshie left	0.28–1.17	112	aim	4.00
+elbowJitter	t02-s051-bep-3	yoshie right	0.37–1.08	80	aim	3.00
+elbowJitter	t02-s051-bep-3	yoshie right	2.12–2.83	90	aim	5.00
+elbowJitter	t02-s067-luoi	erika right	1.27–1.85	73	aim	4.00
+elbowJitter	t02-s070-cam	yoshie left	4.28–5.13	94	aim	4.00
+elbowJitter	t02-s100-tra	yota left	7.45–8.32	34	aim	3.00
+elbowJitter	t02-s100-tra	yota left	8.62–9.55	66	aim	4.00
+nc	t02-s003b-dong-hanh	canh-sat-vien left		0.15	649 khung	nặng nhất giây 0.55
+nc	t02-s003b-dong-hanh	canh-sat-vien right		0.08	74 khung	nặng nhất giây 0.00
+nc	t02-s003b-dong-hanh	takumi right		0.15	28 khung	nặng nhất giây 19.98
+nc	t02-s003b-dong-hanh	yoshie right		0.01	1301 khung	nặng nhất giây 0.00
+nc	t02-s006a-bai-xe	erika left		0.04	86 khung	nặng nhất giây 8.58
+nc	t02-s006a-bai-xe	takumi left		0.02	125 khung	nặng nhất giây 7.95
+nc	t02-s006a-bai-xe	takumi right		0.05	27 khung	nặng nhất giây 8.23
+nc	t02-s008-truoc-cua	erika left		0.06	1 khung	nặng nhất giây 0.00
+nc	t02-s009-nhan-phong	erika left		0.25	2150 khung	nặng nhất giây 19.18
+nc	t02-s009-nhan-phong	takumi right		0.23	477 khung	nặng nhất giây 29.78
+nc	t02-s009-nhan-phong	yota left		0.50	36 khung	nặng nhất giây 26.55
+nc	t02-s015-tot-nhat	erika left		0.06	524 khung	nặng nhất giây 0.00
+nc	t02-s015-tot-nhat	takumi right		0.01	86 khung	nặng nhất giây 6.10
+nc	t02-s016-xin-phep	erika left		0.06	418 khung	nặng nhất giây 0.00
+nc	t02-s016-xin-phep	takumi left		0.02	393 khung	nặng nhất giây 0.50
+nc	t02-s017-goi	yota left	0.00–0.00 3.90–16.47 29.60–30.98 31.22–31.28	1.50	1916 khung	nặng nhất giây 8.00
+nc	t02-s017-goi	yota right	17.62–17.63 22.38–22.45 25.67–25.70	1.18	705 khung	nặng nhất giây 25.67
+nc	t02-s023-bang-gia	erika left		0.07	656 khung	nặng nhất giây 10.30
+nc	t02-s023-bang-gia	takumi left		0.05	637 khung	nặng nhất giây 0.47
+nc	t02-s024-tang	erika left		0.06	340 khung	nặng nhất giây 0.00
+nc	t02-s024-tang	takumi left		0.05	321 khung	nặng nhất giây 0.47
+nc	t02-s025-chi-the	erika left		0.85	479 khung	nặng nhất giây 6.38
+nc	t02-s025-chi-the	takumi left		0.05	454 khung	nặng nhất giây 2.73
+nc	t02-s026-tra-ten	erika left		0.06	588 khung	nặng nhất giây 0.00
+nc	t02-s026-tra-ten	takumi right		0.15	20 khung	nặng nhất giây 0.65
+nc	t02-s027-doi-ca	erika left		0.06	509 khung	nặng nhất giây 0.00
+nc	t02-s028-doi-chia	erika left		0.06	360 khung	nặng nhất giây 0.00
+nc	t02-s028-doi-chia	takumi right		0.06	237 khung	nặng nhất giây 3.68
+nc	t02-s028-doi-chia	yota right		0.10	261 khung	nặng nhất giây 3.02
+nc	t02-s029-mong-cho	takumi right		0.06	283 khung	nặng nhất giây 0.02
+nc	t02-s030-khai-vi	yoshie left		0.05	936 khung	nặng nhất giây 0.45
+nc	t02-s032-sach	erika right		0.03	154 khung	nặng nhất giây 0.00
+nc	t02-s032-sach	yoshie left		0.05	301 khung	nặng nhất giây 4.82
+nc	t02-s032-sach	yoshie right		0.01	50 khung	nặng nhất giây 0.00
+nc	t02-s033-ruou-tang	takumi right		0.37	134 khung	nặng nhất giây 2.88
+nc	t02-s033-ruou-tang	yoshie left		0.05	548 khung	nặng nhất giây 4.82
+nc	t02-s033-ruou-tang	yoshie right		0.01	50 khung	nặng nhất giây 0.00
+nc	t02-s034-goi-them	takumi right		0.07	305 khung	nặng nhất giây 8.75
+nc	t02-s034-goi-them	yoshie left		0.05	942 khung	nặng nhất giây 11.18
+nc	t02-s034-goi-them	yoshie right		0.08	696 khung	nặng nhất giây 12.03
+nc	t02-s037-bep-1	yoshie right		0.02	105 khung	nặng nhất giây 2.05
+nc	t02-s040-dat-lai-2	erika left		0.02	1 khung	nặng nhất giây 3.88
+nc	t02-s041-nguoi	erika right		0.22	65 khung	nặng nhất giây 6.18
+nc	t02-s041-nguoi	yoshie left		0.04	494 khung	nặng nhất giây 3.20
+nc	t02-s041-nguoi	yoshie right		0.03	15 khung	nặng nhất giây 0.68
+nc	t02-s042-lam-lai	yoshie left		0.06	142 khung	nặng nhất giây 3.05
+nc	t02-s042-lam-lai	yoshie right		0.02	6 khung	nặng nhất giây 1.52
+nc	t02-s043-bep-2	yoshie left		0.05	122 khung	nặng nhất giây 0.00
+nc	t02-s044-cham	takumi right		0.05	49 khung	nặng nhất giây 2.50
+nc	t02-s044-cham	yoshie left		0.03	324 khung	nặng nhất giây 0.00
+nc	t02-s044-cham	yoshie-di left		0.03	324 khung	nặng nhất giây 0.00
+nc	t02-s045-cui	takumi right		0.02	11 khung	nặng nhất giây 2.58
+nc	t02-s045-cui	yoshie left		0.06	114 khung	nặng nhất giây 0.00
+nc	t02-s045-cui	yoshie right		0.02	8 khung	nặng nhất giây 0.77
+nc	t02-s046-che-gieu	yoshie left		0.04	341 khung	nặng nhất giây 5.37
+nc	t02-s046-che-gieu	yoshie right		0.02	51 khung	nặng nhất giây 0.72
+nc	t02-s048-vo-tom	erika right		0.09	94 khung	nặng nhất giây 1.45
+nc	t02-s049-da-trong	erika right		0.09	280 khung	nặng nhất giây 4.53
+nc	t02-s050-them-bo	takumi right		0.07	449 khung	nặng nhất giây 5.82
+nc	t02-s050-them-bo	yoshie left		0.02	54 khung	nặng nhất giây 0.80
+nc	t02-s050-them-bo	yoshie right		0.07	384 khung	nặng nhất giây 1.87
+nc	t02-s051-bep-3	kuroiwa left		0.02	61 khung	nặng nhất giây 7.57
+nc	t02-s051-bep-3	kuroiwa right		0.02	61 khung	nặng nhất giây 7.57
+nc	t02-s051-bep-3	yoshie left		0.03	15 khung	nặng nhất giây 1.13
+nc	t02-s051-bep-3	yoshie right		0.42	42 khung	nặng nhất giây 1.90
+nc	t02-s052-o1-sofa	erika right		0.35	154 khung	nặng nhất giây 0.00
+nc	t02-s052-o2-giuong	erika left		0.13	241 khung	nặng nhất giây 0.02
+nc	t02-s052-o2-giuong	erika right		0.02	28 khung	nặng nhất giây 1.55
+nc	t02-s052-o3-chi-be	takumi right		0.18	247 khung	nặng nhất giây 0.00
+nc	t02-s052-o4-ben-kinh	erika left		0.12	211 khung	nặng nhất giây 0.00
+nc	t02-s053-hanh-lang	erika left		0.43	419 khung	nặng nhất giây 0.00
+nc	t02-s053-hanh-lang	takumi right		0.04	9 khung	nặng nhất giây 5.02
+nc	t02-s053-hanh-lang	yota left		0.02	418 khung	nặng nhất giây 0.25
+nc	t02-s054-xin-loi	erika left		0.61	410 khung	nặng nhất giây 0.00
+nc	t02-s054-xin-loi	takumi left		0.01	58 khung	nặng nhất giây 2.98
+nc	t02-s054-xin-loi	yota left		0.02	344 khung	nặng nhất giây 2.75
+nc	t02-s055-nhan-viec	erika left		0.61	327 khung	nặng nhất giây 0.00
+nc	t02-s055-nhan-viec	yota left		0.02	323 khung	nặng nhất giây 0.48
+nc	t02-s056-bieu	chiaki-nhan left		0.06	65 khung	nặng nhất giây 1.77
+nc	t02-s056-bieu	chiaki-nhan right		0.05	61 khung	nặng nhất giây 1.92
+nc	t02-s056-bieu	erika left		0.51	330 khung	nặng nhất giây 0.00
+nc	t02-s057-moi	erika left		0.51	70 khung	nặng nhất giây 0.00
+nc	t02-s058-quan-truoc	erika left		0.01	1 khung	nặng nhất giây 0.00
+nc	t02-s058-quan-truoc	erika right		0.01	7 khung	nặng nhất giây 3.45
+nc	t02-s059-gia-da-bao	chiaki-nhan left		0.06	42 khung	nặng nhất giây 0.93
+nc	t02-s059-gia-da-bao	chiaki-nhan right		0.05	41 khung	nặng nhất giây 0.95
+nc	t02-s059-gia-da-bao	erika left		0.01	1 khung	nặng nhất giây 0.00
+nc	t02-s060-mot-dem	chiaki-nhan left		0.06	43 khung	nặng nhất giây 7.30
+nc	t02-s060-mot-dem	chiaki-nhan right		0.05	41 khung	nặng nhất giây 7.28
+nc	t02-s060-mot-dem	erika left		0.01	15 khung	nặng nhất giây 0.15
+nc	t02-s060-mot-dem	takumi right		0.05	291 khung	nặng nhất giây 2.13
+nc	t02-s062-hoa-don	yota left		0.01	65 khung	nặng nhất giây 0.98
+nc	t02-s062-hoa-don	yota right		0.01	9 khung	nặng nhất giây 2.95
+nc	t02-s064-tat-ca	takumi left		0.02	67 khung	nặng nhất giây 2.43
+nc	t02-s064-tat-ca	takumi right		0.81	141 khung	nặng nhất giây 0.00
+nc	t02-s065-ghi-ro	yota right		0.03	8 khung	nặng nhất giây 0.45
+nc	t02-s066-day-lai	takumi left		0.02	5 khung	nặng nhất giây 6.82
+nc	t02-s066-day-lai	takumi right		0.03	85 khung	nặng nhất giây 6.80
+nc	t02-s067-luoi	erika right		0.02	62 khung	nặng nhất giây 1.35
+nc	t02-s067-luoi	takumi right		0.02	88 khung	nặng nhất giây 11.42
+nc	t02-s070-cam	yoshie left		0.06	239 khung	nặng nhất giây 0.00
+nc	t02-s070-cam	yoshie right		0.02	8 khung	nặng nhất giây 4.77
+nc	t02-s071-phieu	chiaki right		0.21	12 khung	nặng nhất giây 0.55
+nc	t02-s080-goi	yota left	1.08–2.80	1.63	113 khung	nặng nhất giây 1.60
+nc	t02-s082-ra-oai	erika right		0.02	7 khung	nặng nhất giây 26.88
+nc	t02-s082-ra-oai	takumi left		0.02	6 khung	nặng nhất giây 11.78
+nc	t02-s082-ra-oai	takumi right		0.26	120 khung	nặng nhất giây 21.60
+nc	t02-s089-ve	takumi left		0.02	7 khung	nặng nhất giây 1.33
+nc	t02-s091-khung	erika right		0.01	2 khung	nặng nhất giây 8.07
+nc	t02-s093-feed	erika left		0.02	24 khung	nặng nhất giây 16.15
+nc	t02-s093-live	erika left		0.02	24 khung	nặng nhất giây 16.15
+nc	t02-s095-chat-chem	chiaki left		0.04	3 khung	nặng nhất giây 14.87
+nc	t02-s095-feed	chiaki left		0.04	3 khung	nặng nhất giây 14.87
+nc	t02-s100-tra	canh-sat-vien left		0.12	199 khung	nặng nhất giây 8.28
+nc	t02-s100-tra	takumi right		0.02	202 khung	nặng nhất giây 10.25
+nc	t02-s102-feed	canh-sat-vien left		0.15	179 khung	nặng nhất giây 0.00
+nc	t02-s102-feed	canh-sat-vien right		0.37	208 khung	nặng nhất giây 0.00
+nc	t02-s102-feed	erika right		0.02	44 khung	nặng nhất giây 3.00
+nc	t02-s102-vao	canh-sat-vien left		0.15	987 khung	nặng nhất giây 0.00
+nc	t02-s102-vao	canh-sat-vien right		0.37	1007 khung	nặng nhất giây 0.00
+nc	t02-s102-vao	erika right		0.02	44 khung	nặng nhất giây 3.00
+nc	t02-s102-vao	takumi right		0.10	10 khung	nặng nhất giây 10.67
+nc	t02-s105-cam-nhan	canh-sat-vien left		0.06	1535 khung	nặng nhất giây 0.00
+nc	t02-s105-cam-nhan	canh-sat-vien right		0.03	1555 khung	nặng nhất giây 0.02
+nc	t02-s105-cam-nhan	erika right		0.05	330 khung	nặng nhất giây 5.15
+nc	t02-s105-cam-nhan	yoshie right		0.01	773 khung	nặng nhất giây 13.08
+nc	t02-s109-truc-tiep	canh-sat-vien left		0.06	917 khung	nặng nhất giây 0.00
+nc	t02-s109-truc-tiep	canh-sat-vien right		0.04	971 khung	nặng nhất giây 15.75
+nc	t02-s109-truc-tiep	ong-khach right		0.05	1356 khung	nặng nhất giây 15.40
+nc	t02-s109-truc-tiep	takumi right		0.55	60 khung	nặng nhất giây 9.85
+nc	t02-s109-truc-tiep	yoshie right		0.01	2210 khung	nặng nhất giây 0.00
+nc	t02-s114-lam-chung	canh-sat-vien left		0.03	9 khung	nặng nhất giây 0.00
+nc	t02-s114-lam-chung	ong-khach left		0.01	1 khung	nặng nhất giây 7.87
+nc	t02-s114-lam-chung	ong-khach right		0.04	631 khung	nặng nhất giây 8.55
+nc	t02-s114-lam-chung	yoshie right		0.01	631 khung	nặng nhất giây 0.00
+nc	t02-s115-ghi-ten	ong-khach right		0.11	121 khung	nặng nhất giây 1.63
+nc	t02-s115-ghi-ten	trung-si left		0.02	121 khung	nặng nhất giây 0.02
+nc	t02-s116-cat-to	canh-sat-vien left		0.03	829 khung	nặng nhất giây 0.00
+nc	t02-s116-cat-to	canh-sat-vien right		0.05	844 khung	nặng nhất giây 2.88
+nc	t02-s116-cat-to	takumi right		0.05	7 khung	nặng nhất giây 2.48
+nc	t02-s116-cat-to	yoshie right		0.01	995 khung	nặng nhất giây 0.00
+nc	t02-s116-feed	canh-sat-vien left		0.03	829 khung	nặng nhất giây 0.00
+nc	t02-s116-feed	canh-sat-vien right		0.05	844 khung	nặng nhất giây 2.88
+nc	t02-s116-feed	takumi right		0.05	7 khung	nặng nhất giây 2.48
+nc	t02-s116-feed	yoshie right		0.01	995 khung	nặng nhất giây 0.00
+nc	t02-s118-biet-kien	canh-sat-vien left		0.15	649 khung	nặng nhất giây 0.55
+nc	t02-s118-biet-kien	canh-sat-vien right		0.08	74 khung	nặng nhất giây 0.00
+nc	t02-s118-biet-kien	takumi right		0.15	28 khung	nặng nhất giây 19.98
+nc	t02-s118-biet-kien	yoshie right		0.01	1301 khung	nặng nhất giây 0.00
+nc	t02-s118-feed	canh-sat-vien left		0.15	649 khung	nặng nhất giây 0.55
+nc	t02-s118-feed	canh-sat-vien right		0.08	74 khung	nặng nhất giây 0.00
+nc	t02-s118-feed	takumi right		0.15	28 khung	nặng nhất giây 19.98
+nc	t02-s118-feed	yoshie right		0.01	1301 khung	nặng nhất giây 0.00
+nc	t02-s122-ra-cua	canh-sat-vien left		0.10	27 khung	nặng nhất giây 0.60
+nc	t02-s122-ra-cua	canh-sat-vien right		0.04	132 khung	nặng nhất giây 1.95
+nc	t02-s122-ra-cua	takumi right		0.15	35 khung	nặng nhất giây 1.10
+nc	t02-s122-ra-cua	yoshie right		0.01	133 khung	nặng nhất giây 0.00
+nc	t02-s123-do-loi	canh-sat-vien right		0.02	39 khung	nặng nhất giây 0.18
+nc	t02-s123-do-loi	yoshie right		0.01	354 khung	nặng nhất giây 0.00
+nc	t02-s124-tu-khai	yoshie right		0.01	575 khung	nặng nhất giây 0.00
+nc	t02-s125-dung	yoshie right		0.01	642 khung	nặng nhất giây 0.00
+nc	t02-s136-dat-phong	yoshie left		0.07	1216 khung	nặng nhất giây 14.78
+nc	t02-s136-dat-phong	yoshie right		0.04	1216 khung	nặng nhất giây 14.75
+nc	t02-s136-dat-phong	yota left		0.14	851 khung	nặng nhất giây 15.20
+nc	t02-s136-dat-phong	yota right		0.02	1216 khung	nặng nhất giây 5.77
+wristFlip	t02-s032-sach	erika right	3.52–3.53	77	hold	-76 1.09 -30 -0.06
+wristFlip	t02-s049-da-trong	erika right	4.77–4.78	69	hold	-69 0.10 -28 0.07
+wristFlip	t02-s051-bep-3	yoshie right	2.13–2.15	76	hold	-76 0.00 1.71 0.00
+wristFlip	t02-s089-ve	takumi left	1.33–1.35	85	aim	-26 60 -7.46 3.97
+{
+  'khung-tay': 572568,
+  'khung theo đích': 356957,
+  'không hội tụ: người-tay': 165,
+  'không hội tụ: khung': 57155,
+  'không hội tụ: khung dời > 1': 951,
+  armStraight: 51,
+  'armStraight:hold': 34,
+  'armStraight:placed': 2,
+  'khoá đã bỏ': 67,
+  elbowFlip: 24,
+  'elbowFlip:aim': 22,
+  elbowJitter: 9,
+  'elbowJitter:hold': 2,
+  'armStraight:aim': 13,
+  'elbowFlip:hold': 1,
+  body: 21,
+  'body:hold': 2,
+  'body:aim': 16,
+  wristFlip: 4,
+  'wristFlip:hold': 3,
+  armClose: 1,
+  'armClose:aim': 1,
+  elbowInward: 5,
+  'elbowInward:aim': 5,
+  'elbowJitter:aim': 7,
+  'elbowFlip:world': 1,
+  'body:world': 1,
+  'body:placed': 2,
+  'armStraight:world': 2,
+  'wristFlip:aim': 1
+}
+
+== khoá bỏ, 9 vòng ==
+armClose	t02-s037-bep-1	yoshie right	1.72–1.98	2.75	aim	0.28
+armStraight	t02-s003b-dong-hanh	erika right	21.33–21.67	0.99	placed	
+armStraight	t02-s003b-dong-hanh	takumi left	0.02–21.67	1.00	hold	
+armStraight	t02-s006a-bai-xe	takumi left	6.37–9.75	0.99	hold	
+armStraight	t02-s008-truoc-cua	takumi left	0.02–1.60	0.98	hold	
+armStraight	t02-s017-goi	yota left	32.10–32.50	0.99	aim	
+armStraight	t02-s033-ruou-tang	takumi right	1.92–2.43	1.00	aim	
+armStraight	t02-s039-dat-lai-1	yoshie right	3.22–3.60	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	1.07–1.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	13.07–13.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	17.07–17.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	21.07–21.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	25.07–25.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	29.07–29.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	5.07–5.40	1.00	hold	
+armStraight	t02-s040b-tua	yoshie right	9.07–9.40	1.00	hold	
+armStraight	t02-s041-nguoi	erika right	0.38–1.40	1.00	hold	
+armStraight	t02-s041-nguoi	erika right	4.35–4.82	1.00	hold	
+armStraight	t02-s042-lam-lai	yoshie right	1.87–2.32	0.99	hold	
+armStraight	t02-s056-bieu	chiaki-nhan right	1.28–2.07	0.97	hold	
+armStraight	t02-s059-gia-da-bao	chiaki-nhan right	0.48–1.02	0.97	hold	
+armStraight	t02-s060-mot-dem	chiaki-nhan right	6.83–7.37	0.97	hold	
+armStraight	t02-s062-hoa-don	yota right	4.43–5.87	0.99	aim	
+armStraight	t02-s066-day-lai	takumi right	0.38–0.72	0.99	aim	
+armStraight	t02-s067-luoi	takumi right	11.42–12.72	1.00	aim	
+armStraight	t02-s071-phieu	chiaki left	0.02–0.62	1.00	aim	
+armStraight	t02-s071-phieu	chiaki right	0.02–0.55	1.00	hold	
+armStraight	t02-s071-phieu	takumi right	3.35–22.70	1.00	aim	
+armStraight	t02-s082-ra-oai	takumi left	12.05–14.52	0.99	aim	
+armStraight	t02-s082-ra-oai	takumi left	14.80–23.75	1.00	aim	
+armStraight	t02-s082-ra-oai	takumi left	2.80–5.67	1.00	world	
+armStraight	t02-s082-ra-oai	takumi left	5.73–11.67	1.00	aim	
+armStraight	t02-s082-ra-oai	takumi right	5.77–21.08	1.00	aim	
+armStraight	t02-s089-ve	takumi left	0.98–2.18	1.00	aim	
+armStraight	t02-s093-feed	erika right	2.13–18.10	1.00	world	
+armStraight	t02-s093-feed	takumi left	2.28–18.10	1.00	hold	
+armStraight	t02-s093-live	takumi left	2.28–18.10	1.00	hold	
+armStraight	t02-s095-chat-chem	takumi left	0.02–23.48	1.00	hold	
+armStraight	t02-s095-feed	takumi left	0.02–23.48	1.00	hold	
+armStraight	t02-s100-tra	takumi left	0.02–11.42	1.00	hold	
+armStraight	t02-s100-tra	takumi right	7.07–10.35	1.00	aim	
+armStraight	t02-s102-feed	takumi left	0.02–3.50	1.00	hold	
+armStraight	t02-s102-vao	takumi left	0.02–16.78	1.00	hold	
+armStraight	t02-s105-cam-nhan	takumi left	0.02–25.92	1.00	hold	
+armStraight	t02-s109-truc-tiep	takumi left	0.02–36.82	1.00	hold	
+armStraight	t02-s114-lam-chung	takumi left	0.02–10.50	1.00	hold	
+armStraight	t02-s116-cat-to	takumi left	0.02–16.57	1.00	hold	
+armStraight	t02-s116-feed	takumi left	0.02–16.57	1.00	hold	
+armStraight	t02-s118-biet-kien	erika right	21.33–21.67	0.99	placed	
+armStraight	t02-s118-biet-kien	takumi left	0.02–21.67	1.00	hold	
+armStraight	t02-s118-feed	takumi left	0.02–21.67	1.00	hold	
+armStraight	t02-s122-ra-cua	takumi left	0.02–2.20	1.00	hold	
+body	t02-s028-doi-chia	takumi right	3.88–3.93	0.84	hold	
+body	t02-s030-khai-vi	yoshie right	14.47–14.50	0.62	aim	
+body	t02-s034-goi-them	yoshie left	22.33–22.35	0.87	aim	
+body	t02-s037-bep-1	yoshie right	0.02–2.02	2.75	aim	
+body	t02-s041-nguoi	erika right	4.20–4.82	1.44	hold	
+body	t02-s050-them-bo	yoshie right	0.30–0.85	0.90	world	
+body	t02-s060-mot-dem	takumi right	0.98–0.98	0.52	aim	
+body	t02-s062-hoa-don	yota left	0.77–0.78	0.55	aim	
+body	t02-s062-hoa-don	yota left	3.57–3.58	0.56	aim	
+body	t02-s065-ghi-ro	yota left	5.75–5.77	0.52	aim	
+body	t02-s078-ra-hieu	yota right	3.42–3.43	1.68	aim	
+body	t02-s080-goi	yota left	0.30–0.38	1.04	placed	
+body	t02-s089-ve	takumi left	0.48–1.62	2.35	aim	
+body	t02-s095-chat-chem	chiaki right	12.88–12.88	0.53	aim	
+body	t02-s095-chat-chem	chiaki right	14.75–14.95	0.68	aim	
+body	t02-s095-feed	chiaki right	12.88–12.88	0.53	aim	
+body	t02-s095-feed	chiaki right	14.75–14.95	0.68	aim	
+body	t02-s100-tra	takumi right	10.70–10.83	0.62	placed	
+body	t02-s100-tra	takumi right	5.10–5.30	0.68	aim	
+body	t02-s100-tra	takumi right	7.18–10.35	0.77	aim	
+body	t02-s105-cam-nhan	erika right	0.60–6.02	1.23	aim	
+elbowFlip	t02-s009-nhan-phong	yota left	11.83–11.97	64	aim	
+elbowFlip	t02-s026-tra-ten	takumi right	0.88–0.90	32	hold	
+elbowFlip	t02-s034-goi-them	yoshie left	22.32–22.37	46	aim	
+elbowFlip	t02-s039-dat-lai-1	erika left	3.88–3.90	35	aim	
+elbowFlip	t02-s040-dat-lai-2	erika left	3.75–3.77	35	aim	
+elbowFlip	t02-s040b-tua	erika left	0.15–0.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	1.43–1.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	12.15–12.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	13.43–13.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	16.15–16.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	17.43–17.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	20.15–20.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	21.43–21.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	24.15–24.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	25.43–25.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	28.15–28.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	29.43–29.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	4.15–4.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	5.43–5.45	35	aim	
+elbowFlip	t02-s040b-tua	erika left	8.15–8.17	37	aim	
+elbowFlip	t02-s040b-tua	erika left	9.43–9.45	35	aim	
+elbowFlip	t02-s046-che-gieu	yoshie right	1.02–1.12	73	world	
+elbowFlip	t02-s058-quan-truoc	erika right	0.48–0.63	67	aim	
+elbowFlip	t02-s082-ra-oai	takumi right	21.55–21.65	107	aim	
+elbowInward	t02-s041-nguoi	yoshie right	0.50–0.58	0.40	aim	
+elbowInward	t02-s053-hanh-lang	takumi right	3.45–3.57	0.48	aim	
+elbowInward	t02-s053-hanh-lang	takumi right	5.10–5.47	0.49	aim	
+elbowInward	t02-s082-ra-oai	takumi left	11.77–11.83	0.37	aim	
+elbowInward	t02-s082-ra-oai	takumi right	21.17–21.53	0.44	aim	
+elbowJitter	t02-s017-goi	yota right	17.72–18.70	16	hold	7.00
+elbowJitter	t02-s017-goi	yota right	20.53–21.65	20	hold	16
+elbowJitter	t02-s045-cui	yoshie left	0.28–1.17	112	aim	4.00
+elbowJitter	t02-s051-bep-3	yoshie right	0.37–1.08	80	aim	3.00
+elbowJitter	t02-s051-bep-3	yoshie right	2.12–2.83	90	aim	5.00
+elbowJitter	t02-s067-luoi	erika right	1.27–1.85	73	aim	4.00
+elbowJitter	t02-s070-cam	yoshie left	4.28–5.13	94	aim	4.00
+elbowJitter	t02-s100-tra	yota left	7.45–8.32	34	aim	3.00
+elbowJitter	t02-s100-tra	yota left	8.62–9.55	66	aim	4.00
+elbowJitter	t02-s109-truc-tiep	takumi right	9.55–10.12	33	hold	3.00
+nc	t02-s003b-dong-hanh	canh-sat-vien left		0.08	67 khung	nặng nhất giây 0.55
+nc	t02-s003b-dong-hanh	canh-sat-vien right		0.04	15 khung	nặng nhất giây 0.00
+nc	t02-s003b-dong-hanh	takumi right		0.10	25 khung	nặng nhất giây 19.97
+nc	t02-s006a-bai-xe	erika left		0.02	86 khung	nặng nhất giây 8.58
+nc	t02-s006a-bai-xe	takumi left		0.01	44 khung	nặng nhất giây 7.95
+nc	t02-s006a-bai-xe	takumi right		0.03	13 khung	nặng nhất giây 8.23
+nc	t02-s008-truoc-cua	erika left		0.03	1 khung	nặng nhất giây 0.00
+nc	t02-s009-nhan-phong	erika left		0.18	2022 khung	nặng nhất giây 19.18
+nc	t02-s009-nhan-phong	takumi right		0.12	431 khung	nặng nhất giây 29.78
+nc	t02-s009-nhan-phong	yota left		0.54	28 khung	nặng nhất giây 26.55
+nc	t02-s015-tot-nhat	erika left		0.03	524 khung	nặng nhất giây 0.00
+nc	t02-s016-xin-phep	erika left		0.03	418 khung	nặng nhất giây 0.00
+nc	t02-s017-goi	yota left		0.99	1908 khung	nặng nhất giây 10.33
+nc	t02-s017-goi	yota right	25.67–25.67	1.05	693 khung	nặng nhất giây 25.67
+nc	t02-s023-bang-gia	erika left		0.04	656 khung	nặng nhất giây 10.28
+nc	t02-s023-bang-gia	takumi left		0.02	5 khung	nặng nhất giây 0.47
+nc	t02-s024-tang	erika left		0.03	340 khung	nặng nhất giây 0.00
+nc	t02-s024-tang	takumi left		0.02	5 khung	nặng nhất giây 0.47
+nc	t02-s025-chi-the	erika left		0.66	476 khung	nặng nhất giây 6.38
+nc	t02-s025-chi-the	takumi left		0.03	96 khung	nặng nhất giây 2.73
+nc	t02-s026-tra-ten	erika left		0.03	588 khung	nặng nhất giây 0.00
+nc	t02-s026-tra-ten	takumi right		0.08	18 khung	nặng nhất giây 0.65
+nc	t02-s027-doi-ca	erika left		0.03	509 khung	nặng nhất giây 0.00
+nc	t02-s028-doi-chia	erika left		0.03	360 khung	nặng nhất giây 0.00
+nc	t02-s028-doi-chia	takumi right		0.03	234 khung	nặng nhất giây 3.68
+nc	t02-s028-doi-chia	yota right		0.09	191 khung	nặng nhất giây 3.02
+nc	t02-s029-mong-cho	takumi right		0.03	155 khung	nặng nhất giây 0.02
+nc	t02-s030-khai-vi	yoshie left		0.02	936 khung	nặng nhất giây 2.62
+nc	t02-s032-sach	erika right		0.01	9 khung	nặng nhất giây 3.22
+nc	t02-s032-sach	yoshie left		0.02	301 khung	nặng nhất giây 4.82
+nc	t02-s033-ruou-tang	takumi right		0.27	126 khung	nặng nhất giây 2.88
+nc	t02-s033-ruou-tang	yoshie left		0.02	548 khung	nặng nhất giây 4.82
+nc	t02-s034-goi-them	takumi right		0.02	270 khung	nặng nhất giây 8.67
+nc	t02-s034-goi-them	yoshie left		0.02	912 khung	nặng nhất giây 11.18
+nc	t02-s034-goi-them	yoshie right		0.04	54 khung	nặng nhất giây 11.92
+nc	t02-s041-nguoi	erika right		0.11	46 khung	nặng nhất giây 6.18
+nc	t02-s041-nguoi	yoshie left		0.02	481 khung	nặng nhất giây 1.22
+nc	t02-s041-nguoi	yoshie right		0.01	3 khung	nặng nhất giây 0.68
+nc	t02-s042-lam-lai	yoshie left		0.03	126 khung	nặng nhất giây 3.05
+nc	t02-s043-bep-2	yoshie left		0.03	29 khung	nặng nhất giây 0.00
+nc	t02-s044-cham	takumi right		0.04	32 khung	nặng nhất giây 2.50
+nc	t02-s044-cham	yoshie left		0.02	71 khung	nặng nhất giây 0.00
+nc	t02-s044-cham	yoshie-di left		0.02	40 khung	nặng nhất giây 0.00
+nc	t02-s045-cui	yoshie left		0.03	102 khung	nặng nhất giây 0.00
+nc	t02-s045-cui	yoshie right		0.01	1 khung	nặng nhất giây 0.77
+nc	t02-s046-che-gieu	yoshie left		0.02	318 khung	nặng nhất giây 5.03
+nc	t02-s048-vo-tom	erika right		0.04	91 khung	nặng nhất giây 0.62
+nc	t02-s049-da-trong	erika right		0.07	260 khung	nặng nhất giây 4.53
+nc	t02-s050-them-bo	takumi right		0.03	437 khung	nặng nhất giây 5.92
+nc	t02-s050-them-bo	yoshie left		0.01	2 khung	nặng nhất giây 0.80
+nc	t02-s050-them-bo	yoshie right		0.03	365 khung	nặng nhất giây 1.87
+nc	t02-s051-bep-3	yoshie left		0.01	1 khung	nặng nhất giây 1.13
+nc	t02-s051-bep-3	yoshie right		0.24	25 khung	nặng nhất giây 1.90
+nc	t02-s052-o1-sofa	erika right		0.26	154 khung	nặng nhất giây 0.00
+nc	t02-s052-o2-giuong	erika left		0.07	241 khung	nặng nhất giây 0.38
+nc	t02-s052-o3-chi-be	takumi right		0.12	247 khung	nặng nhất giây 0.00
+nc	t02-s052-o4-ben-kinh	erika left		0.07	211 khung	nặng nhất giây 0.00
+nc	t02-s053-hanh-lang	erika left		0.25	419 khung	nặng nhất giây 0.00
+nc	t02-s053-hanh-lang	takumi right		0.03	3 khung	nặng nhất giây 5.02
+nc	t02-s053-hanh-lang	yota left		0.01	194 khung	nặng nhất giây 0.25
+nc	t02-s054-xin-loi	erika left		0.31	410 khung	nặng nhất giây 0.00
+nc	t02-s054-xin-loi	yota left		0.01	134 khung	nặng nhất giây 2.75
+nc	t02-s055-nhan-viec	erika left		0.31	327 khung	nặng nhất giây 0.00
+nc	t02-s055-nhan-viec	yota left		0.01	126 khung	nặng nhất giây 0.52
+nc	t02-s056-bieu	chiaki-nhan left		0.02	54 khung	nặng nhất giây 1.77
+nc	t02-s056-bieu	chiaki-nhan right		0.02	60 khung	nặng nhất giây 1.92
+nc	t02-s056-bieu	erika left		0.23	330 khung	nặng nhất giây 1.73
+nc	t02-s057-moi	erika left		0.23	69 khung	nặng nhất giây 0.07
+nc	t02-s059-gia-da-bao	chiaki-nhan left		0.02	37 khung	nặng nhất giây 0.93
+nc	t02-s059-gia-da-bao	chiaki-nhan right		0.02	40 khung	nặng nhất giây 0.95
+nc	t02-s060-mot-dem	chiaki-nhan left		0.02	35 khung	nặng nhất giây 7.30
+nc	t02-s060-mot-dem	chiaki-nhan right		0.02	41 khung	nặng nhất giây 7.28
+nc	t02-s060-mot-dem	takumi right		0.02	132 khung	nặng nhất giây 2.13
+nc	t02-s064-tat-ca	takumi right		0.64	102 khung	nặng nhất giây 0.00
+nc	t02-s065-ghi-ro	yota right		0.02	3 khung	nặng nhất giây 0.45
+nc	t02-s066-day-lai	takumi right		0.01	1 khung	nặng nhất giây 6.80
+nc	t02-s070-cam	yoshie left		0.03	157 khung	nặng nhất giây 0.00
+nc	t02-s070-cam	yoshie right		0.01	2 khung	nặng nhất giây 4.77
+nc	t02-s071-phieu	chiaki right		0.16	3 khung	nặng nhất giây 0.55
+nc	t02-s080-goi	yota left	1.40–2.80	1.02	112 khung	nặng nhất giây 1.60
+nc	t02-s082-ra-oai	erika right		0.01	2 khung	nặng nhất giây 26.88
+nc	t02-s082-ra-oai	takumi right		0.20	3 khung	nặng nhất giây 21.60
+nc	t02-s095-chat-chem	chiaki left		0.02	2 khung	nặng nhất giây 14.87
+nc	t02-s095-feed	chiaki left		0.02	2 khung	nặng nhất giây 14.87
+nc	t02-s100-tra	canh-sat-vien left		0.06	199 khung	nặng nhất giây 8.28
+nc	t02-s102-feed	canh-sat-vien left		0.10	25 khung	nặng nhất giây 0.00
+nc	t02-s102-feed	canh-sat-vien right		0.32	209 khung	nặng nhất giây 0.00
+nc	t02-s102-vao	canh-sat-vien left		0.10	1 khung	nặng nhất giây 0.00
+nc	t02-s102-vao	canh-sat-vien right		0.32	1007 khung	nặng nhất giây 0.00
+nc	t02-s102-vao	takumi right		0.07	6 khung	nặng nhất giây 10.67
+nc	t02-s105-cam-nhan	canh-sat-vien left		0.03	1 khung	nặng nhất giây 0.00
+nc	t02-s105-cam-nhan	canh-sat-vien right		0.01	1555 khung	nặng nhất giây 0.02
+nc	t02-s105-cam-nhan	erika right		0.02	321 khung	nặng nhất giây 5.15
+nc	t02-s109-truc-tiep	canh-sat-vien left		0.03	1 khung	nặng nhất giây 0.00
+nc	t02-s109-truc-tiep	canh-sat-vien right		0.02	952 khung	nặng nhất giây 15.75
+nc	t02-s109-truc-tiep	ong-khach right		0.02	1356 khung	nặng nhất giây 14.23
+nc	t02-s109-truc-tiep	takumi right		0.41	55 khung	nặng nhất giây 9.85
+nc	t02-s114-lam-chung	canh-sat-vien left		0.01	1 khung	nặng nhất giây 0.00
+nc	t02-s114-lam-chung	ong-khach right		0.02	631 khung	nặng nhất giây 8.95
+nc	t02-s115-ghi-ten	ong-khach right		0.06	121 khung	nặng nhất giây 1.63
+nc	t02-s116-cat-to	canh-sat-vien left		0.01	1 khung	nặng nhất giây 0.00
+nc	t02-s116-cat-to	canh-sat-vien right		0.02	832 khung	nặng nhất giây 2.88
+nc	t02-s116-cat-to	takumi right		0.03	5 khung	nặng nhất giây 2.48
+nc	t02-s116-feed	canh-sat-vien left		0.01	1 khung	nặng nhất giây 0.00
+nc	t02-s116-feed	canh-sat-vien right		0.02	832 khung	nặng nhất giây 2.88
+nc	t02-s116-feed	takumi right		0.03	5 khung	nặng nhất giây 2.48
+nc	t02-s118-biet-kien	canh-sat-vien left		0.08	67 khung	nặng nhất giây 0.55
+nc	t02-s118-biet-kien	canh-sat-vien right		0.04	15 khung	nặng nhất giây 0.00
+nc	t02-s118-biet-kien	takumi right		0.10	25 khung	nặng nhất giây 19.97
+nc	t02-s118-feed	canh-sat-vien left		0.08	67 khung	nặng nhất giây 0.55
+nc	t02-s118-feed	canh-sat-vien right		0.04	15 khung	nặng nhất giây 0.00
+nc	t02-s118-feed	takumi right		0.10	25 khung	nặng nhất giây 19.97
+nc	t02-s122-ra-cua	canh-sat-vien left		0.06	20 khung	nặng nhất giây 0.60
+nc	t02-s122-ra-cua	canh-sat-vien right		0.02	122 khung	nặng nhất giây 1.95
+nc	t02-s122-ra-cua	takumi right		0.08	24 khung	nặng nhất giây 1.12
+nc	t02-s136-dat-phong	yoshie left		0.04	1216 khung	nặng nhất giây 14.78
+nc	t02-s136-dat-phong	yoshie right		0.02	913 khung	nặng nhất giây 14.75
+nc	t02-s136-dat-phong	yota left		0.09	793 khung	nặng nhất giây 15.20
+wristFlip	t02-s032-sach	erika right	3.52–3.53	77	hold	-76 1.09 -30 -0.06
+wristFlip	t02-s049-da-trong	erika right	4.77–4.78	69	hold	-69 0.10 -28 0.07
+wristFlip	t02-s051-bep-3	yoshie right	2.13–2.15	76	hold	-76 0.00 1.70 0.00
+wristFlip	t02-s089-ve	takumi left	1.33–1.35	85	aim	-26 60 -7.46 3.97
+{
+  'khung-tay': 572568,
+  'khung theo đích': 356957,
+  'không hội tụ: người-tay': 118,
+  'không hội tụ: khung': 30566,
+  'không hội tụ: khung dời > 1': 86,
+  armStraight: 51,
+  'armStraight:hold': 34,
+  'armStraight:placed': 2,
+  'khoá đã bỏ': 67,
+  elbowFlip: 24,
+  'elbowFlip:aim': 22,
+  elbowJitter: 10,
+  'elbowJitter:hold': 3,
+  'armStraight:aim': 13,
+  'elbowFlip:hold': 1,
+  body: 21,
+  'body:hold': 2,
+  'body:aim': 16,
+  wristFlip: 4,
+  'wristFlip:hold': 3,
+  armClose: 1,
+  'armClose:aim': 1,
+  elbowInward: 5,
+  'elbowInward:aim': 5,
+  'elbowJitter:aim': 7,
+  'elbowFlip:world': 1,
+  'body:world': 1,
+  'body:placed': 2,
+  'armStraight:world': 2,
+  'wristFlip:aim': 1
+}
+
+== khoá giữ: khuỷu / cổ tay lệch > 0.5 rig ==
+8↔9	t02-s017-goi	yota right	86 khung	lệch nhất 1.98 ở giây 19.97
+8↔9	t02-s017-goi	yota left	1083 khung	lệch nhất 1.29 ở giây 2.40
+8↔9	t02-s025-chi-the	erika left	330 khung	lệch nhất 0.66 ở giây 6.38
+8↔9	t02-s053-hanh-lang	erika left	120 khung	lệch nhất 1.07 ở giây 6.38
+8↔9	t02-s054-xin-loi	erika left	179 khung	lệch nhất 1.01 ở giây 3.22
+8↔9	t02-s055-nhan-viec	erika left	98 khung	lệch nhất 1.00 ở giây 3.18
+8↔9	t02-s056-bieu	erika left	206 khung	lệch nhất 1.31 ở giây 4.85
+8↔9	t02-s064-tat-ca	takumi right	1 khung	lệch nhất 0.64 ở giây 0.00
+8↔9	t02-s080-goi	yota left	102 khung	lệch nhất 1.03 ở giây 2.80
+8↔9	t02-s102-feed	canh-sat-vien right	10 khung	lệch nhất 0.84 ở giây 0.37
+8↔9	t02-s102-vao	canh-sat-vien right	6 khung	lệch nhất 0.67 ở giây 0.37
+8↔9	t02-s109-truc-tiep	takumi right	54 khung	lệch nhất 2.07 ở giây 9.92
+
+== khoá bỏ: khuỷu / cổ tay lệch > 0.5 rig ==
+8↔9	t02-s017-goi	yota right	86 khung	lệch nhất 1.98 ở giây 19.97
+8↔9	t02-s017-goi	yota left	945 khung	lệch nhất 0.98 ở giây 6.23
+8↔9	t02-s025-chi-the	erika left	330 khung	lệch nhất 0.66 ở giây 6.38
+8↔9	t02-s053-hanh-lang	erika left	120 khung	lệch nhất 1.07 ở giây 6.38
+8↔9	t02-s054-xin-loi	erika left	179 khung	lệch nhất 1.01 ở giây 3.22
+8↔9	t02-s055-nhan-viec	erika left	98 khung	lệch nhất 1.00 ở giây 3.18
+8↔9	t02-s056-bieu	erika left	206 khung	lệch nhất 1.31 ở giây 4.85
+8↔9	t02-s064-tat-ca	takumi right	1 khung	lệch nhất 0.64 ở giây 0.00
+8↔9	t02-s080-goi	yota left	102 khung	lệch nhất 1.03 ở giây 2.80
+8↔9	t02-s102-feed	canh-sat-vien right	10 khung	lệch nhất 0.84 ở giây 0.37
+8↔9	t02-s102-vao	canh-sat-vien right	6 khung	lệch nhất 0.67 ở giây 0.37
+8↔9	t02-s109-truc-tiep	takumi right	54 khung	lệch nhất 2.07 ở giây 9.92
+
+1322 s

@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": { "@/*": ["./src/*"] },
-    "types": ["vite/client", "wicg-file-system-access"]
-  },
-  "include": ["src", "vite.config.ts"]
-}

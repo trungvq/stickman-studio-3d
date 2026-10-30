@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 13,
+  "name": "stand-3d",
+  "duration": 3.2,
+  "end": "wrap",
+  "authoredAt": "side",
+  "mask": ["armFar", "armNear", "legFar", "legNear", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [-6, 24, 0],
+        "armNear": [-6, 24, 0],
+        "legFar": [1, 0],
+        "legNear": [-1, 0],
+        "torso": 0
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armFar": [-5, 27, 0],
+        "armNear": [-5, 27, 0],
+        "legFar": [1, 0],
+        "legNear": [-1, 0],
+        "torso": 1.5
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Đứng thở: tay buông dọc thân, cánh tay hơi ra sau (−6°), khuỷu gập 24–27° nên tay không thẳng như que, lòng tay quay vào đùi; thân nhích 0 → 1,5° theo nhịp thở, lượt 3,2 s lặp. Ghi tay, chân, thân. Là nền của mọi hành động đứng; hành động tay, đầu, thân chồng lên ghi đè kênh của nó. Biến thể: `stand-relaxed-3d` vai thả, `stand-belly-3d` người bụng phệ, `stand-attention-3d` đứng nghiêm.",
+  "preview": { "stage": "stand" }
+}

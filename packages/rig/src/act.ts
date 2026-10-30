@@ -7,7 +7,7 @@ import { toThree, type Vec3 } from './khoi';
 import { bendNeck, fitSkirt, hangJewelry, type Figure, type Side } from './stickman';
 import { poseHand } from './human';
 
-// Diễn theo tư thế đã lấy mẫu của @stickman3d/sketch (`sceneAt`, docs/01-rig.md#người-3d): package không đọc JSON hành
+// Diễn theo tư thế đã lấy mẫu của lõi (`sceneAt`, docs/01-rig.md#người-3d): package không đọc JSON hành
 // động hay scene. Luật đọc góc (`actAngles`) và IK (`actReach`) ở lõi, `actJoints` của lõi tính lại đúng các khớp này
 // cho `check` — đổi khung xương ở đây thì đổi cùng `core/act3.ts`.
 
@@ -17,7 +17,7 @@ import { poseHand } from './human';
  */
 export interface ActReach { at: readonly number[]; elbow?: readonly number[]; w: number; terms?: readonly ReachTerm[]; aim?: Aim }
 type Limb = 'af' | 'an' | 'lf' | 'ln';
-/** `Pose` của @stickman3d/sketch; góc độ, tay `[vai, khuỷu, cổ tay, dang, xoắn vai]`, chân `[hông, gối, dang]`, `head` là `[nghiêng, lắc, gật]` */
+/** `Pose` của lõi; góc độ, tay `[vai, khuỷu, cổ tay, dang, xoắn vai]`, chân `[hông, gối, dang]`, `head` là `[nghiêng, lắc, gật]` */
 export interface ActPose {
   af: readonly number[];
   an: readonly number[];
@@ -36,7 +36,7 @@ export interface ActPose {
   /** Lòng tay theo ý định: `act` giải ra xoay và gập cổ tay */
   aim?: Partial<Record<'af' | 'an', Aim>>;
 }
-/** `World` của @stickman3d/sketch: tâm hông thế giới rig, `yaw` radian (0 mặt về +x, π/2 về −z), `flip` là mặt sang trái khung */
+/** `World` của lõi: tâm hông thế giới rig, `yaw` radian (0 mặt về +x, π/2 về −z), `flip` là mặt sang trái khung */
 export interface ActWorld {
   hip: readonly number[];
   yaw: number;
@@ -45,7 +45,7 @@ export interface ActWorld {
   seated?: boolean;
   hands?: { near?: ActReach; far?: ActReach };
 }
-/** `ScenePose` của @stickman3d/sketch — `sceneAt(rt, id, t, height, body3(c))` truyền thẳng vào được */
+/** `ScenePose` của lõi — `sceneAt(rt, id, t, height, body3(c))` truyền thẳng vào được */
 export interface Acting {
   pose: ActPose;
   world?: ActWorld;
@@ -131,7 +131,7 @@ function placePose(p: Figure, sp0: Acting, t?: number) {
     p.root.position.copy(toThree(W.hip as Vec3));
     p.root.rotation.set(0, Math.PI / 2 - W.yaw, 0);
     p.root.scale.setScalar(W.s);
-    // hông 2D là tâm nét: người đứng nhấc lên nửa bề dày chi cho bàn chân nằm trên sàn
+    // hông của rig là tâm nét: người đứng nhấc lên nửa bề dày chi cho bàn chân nằm trên sàn
     p.hips.position.set(0, seated ? 0 : p.bones.limb, 0);
   }
   const st = P.stretch, B = p.bones;

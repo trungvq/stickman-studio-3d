@@ -91,10 +91,18 @@ type Choose = Record<
 >;
 // ca 2: prototype chọn `slant −30` với khuỷu gập ngược vào trong (φ −80, `inward` 0,52); `W_IN` đổi sang `slant 30`,
 // khuỷu ra ngoài (docs/11-nhom-cam.md § Khuỷu tự nhiên). Ca 4: prototype cầm cạnh dưới
-// ở `along` 0,75 (góc bên kia tay phải); giá góc cùng bên (`SIDE_W`) kéo về giữa cạnh
+// ở `along` 0,75 (góc bên kia tay phải); giá góc cùng bên (`SIDE_W`) kéo về giữa cạnh. Ca 1, 3, tay trái ca 4: khuỷu theo
+// khuỷu ưu tiên (`elbowPref`) thay khuỷu dạng ra của prototype (φ 55–85); ca 3 vì thế cầm cao hơn trên cạnh, ngón nghiêng
 const choose = fx.ca.choose as unknown as Choose;
+const c3 = (h: Choose[string]["hands"][number]) => ({
+  ...h,
+  rig: { ...h.rig, along: 0.75, slant: 30 },
+  wrist: [-53.5, 15, -5],
+});
 const CHOOSE: Choose = {
   ...choose,
+  c1: { ...choose.c1, hands: [{ ...choose.c1.hands[0], wrist: [-76.7, -10.5, -6.5] }] },
+  c3: { ...choose.c3, hands: choose.c3.hands.map(c3) },
   c2: {
     item: "c2",
     hands: [
@@ -114,7 +122,7 @@ const CHOOSE: Choose = {
         rig: { ...choose.c4.hands[0].rig, along: 0.5 },
         wrist: [-108.5, 14.1, -17.1],
       },
-      choose.c4.hands[1],
+      { ...choose.c4.hands[1], wrist: [18.1, 27.2, -0.3] },
     ],
   },
 };
@@ -283,7 +291,7 @@ describe("chooseMissing", () => {
     expect(sol.candidates).toBe(24 + 9);
     for (const k of ["edge", "thumb", "variant", "along", "slant"] as const)
       expect(sol.by[k]).toBe("rig");
-    expect(sol.cost).toBeGreaterThanOrEqual(sol.arm.E);
+    expect(sol.cost).toBeGreaterThanOrEqual(sol.arm.Efull);
   });
 
   it("cảnh khai đủ thì không giải: một ứng viên, nguồn `scene`", () => {
@@ -650,10 +658,10 @@ describe("chooseMissing: giá biến thể", () => {
       RIGHT,
     );
 
-  // `flat` rẻ hơn `pinch` một chút ở cả hai thế bảng; biến thể khác cộng 0,5 nên rig vẫn chọn `pinch`
+  // bảng đứng: `flat` rẻ hơn `pinch`, biến thể khác cộng 0,5 nên rig vẫn chọn `pinch`; ngửa 20° thì `pinch` rẻ hơn sẵn
   it.each([
     ["đứng", [200, -230, 560], 0, 9, true],
-    ["ngửa 20°", [200, -300, 610], 20, 18, true],
+    ["ngửa 20°", [200, -300, 610], 20, 18, false],
   ] as const)(
     "đọc ngang ngực, bảng %s: rig chọn `pinch` (biến thể khác cộng 0,5)",
     (_, P, a, grid, flatCheaper) => {
@@ -663,8 +671,8 @@ describe("chooseMissing: giá biến thể", () => {
       expect(sol.choice.variant).toBe("pinch");
       expect(sol.by.variant).toBe("rig");
       expect(devOf(sol)).toBeLessThan(0.05);
-      // lưới liên tục quanh `pinch` tốt nhất khi ứng viên rời tốt nhất là biến thể khác
-      expect(sol.candidates).toBe(24 + grid);
+      // lưới liên tục quanh `pinch` tốt nhất khi ứng viên rời tốt nhất là biến thể khác, và quanh một ứng viên sát (`ROOT_NEAR`)
+      expect(sol.candidates).toBe(24 + grid + 9);
     },
   );
 
@@ -683,7 +691,7 @@ describe("chooseMissing: giá biến thể", () => {
 });
 
 /** Phần giá lệch mặc định của nghiệm (giá trừ E và khe ở mốc bắt đầu) */
-const devOf = (s: GraspSolution) => s.cost - s.arm.E - (s.arm.gap / 6) ** 2;
+const devOf = (s: GraspSolution) => s.cost - s.arm.Efull - (s.arm.gap / 6) ** 2;
 
 describe("chooseMissing: `flat` theo bề dày ở mép", () => {
   const slab = (t: number) =>
@@ -814,7 +822,10 @@ describe("chooseMissing: vành đĩa", () => {
 
   it("rig giải vành theo góc, lưới 0–330 bước 30", () => {
     for (const side of [RIGHT, LEFT]) {
-      const s = at(dish(), side, { variant: "rim" });
+      // vành đĩa và cạnh hộp bao ở phía tay ấy là cùng một bàn tay: không khai khối hình thì hai bên gần hoà
+      const free = at(dish(), side, { variant: "rim" });
+      const s = at(dish(), side, { variant: "rim", feature: "disc" });
+      expect(Math.abs(free.cost - s.cost)).toBeLessThan(0.005);
       expect(s.choice.feature).toBe("disc");
       expect(typeof s.choice.edge).toBe("number");
       expect((s.choice.edge as number) % 30).toBe(0);
@@ -823,8 +834,8 @@ describe("chooseMissing: vành đĩa", () => {
       expect(s.by.edge).toBe("rig");
     }
     // tay phải vành phải (`90`), tay trái vành trái (`270`)
-    expect(at(dish(), RIGHT, { variant: "rim" }).choice.edge).toBe(90);
-    expect(at(dish(), LEFT, { variant: "rim" }).choice.edge).toBe(270);
+    expect(at(dish(), RIGHT, { variant: "rim", feature: "disc" }).choice.edge).toBe(90);
+    expect(at(dish(), LEFT, { variant: "rim", feature: "disc" }).choice.edge).toBe(270);
   });
 
   it("`rim` không khai `thumb`: ngón cái ở mặt hướng lên; `pinch` vẫn thử hai mặt", () => {
@@ -838,9 +849,9 @@ describe("chooseMissing: vành đĩa", () => {
         .thumb;
     expect(rim(dish())).toBe("top");
     expect(rim(dish(false))).toBe("bottom");
-    // tấm 4 cạnh + đĩa 12 góc, một mặt; rồi `along` 3 × `slant` 3
-    expect(up.candidates).toBe(16 + 9);
-    expect(at(dish(), RIGHT, { variant: "pinch" }).candidates).toBe(16 * 2 + 9);
+    // tấm 4 cạnh + đĩa 12 góc, một mặt; rồi `along` 3 × `slant` 3 quanh ứng viên tốt nhất và hai ứng viên sát (`ROOT_NEAR`)
+    expect(up.candidates).toBe(16 + 9 * 3);
+    expect(at(dish(), RIGHT, { variant: "pinch" }).candidates).toBe(16 * 2 + 9 * 2);
     expect(at(dish(), RIGHT, { variant: "rim", thumb: "bottom" }).choice.thumb).toBe("bottom");
     expect(at(dish(), RIGHT).choice.thumb).toBe("top");
   });
@@ -1107,7 +1118,7 @@ describe("chooseMissing `platform`", () => {
   };
 
   // `edge` 4, rồi quanh ứng viên tốt nhất của từng cạnh `along` 3 × `psi` 5 (−90..90 bước 45); khay: hộp bao hai vành cũng
-  // có mặt đáy cùng hướng
+  // có mặt đáy cùng hướng, ứng viên ở đó sát ứng viên tốt nhất nên cũng chạy lưới (`ROOT_NEAR`)
   it.each([
     ["khay", 590, 2],
     ["phieu", 570, 1],
@@ -1116,7 +1127,7 @@ describe("chooseMissing `platform`", () => {
     (id, z, faces) => {
       for (const side of [RIGHT, LEFT]) {
         const sol = chooseMissing(pc, `${id}@platform`, flat(z), side);
-        expect(sol.candidates).toBe(4 * faces + 4 * 3 * 5);
+        expect(sol.candidates).toBe(4 * faces + (3 + faces) * 3 * 5);
         expect(faceOf(id, sol)).toBe(id === "khay" ? "day:bottom" : "body:back");
         for (const k of ["edge", "along", "psi"] as const) expect(sol.by[k]).toBe("rig");
         expect([-90, -45, 0, 45, 90]).toContain(sol.choice.psi);

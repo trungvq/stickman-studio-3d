@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 20,
+  "name": "look-up-down-3d",
+  "duration": 1.8,
+  "end": "hold",
+  "mask": ["head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "head": [null, null, 0] }, "ease": "smooth" },
+    { "t": 0.2, "pose": { "head": [null, null, -10] }, "ease": "smooth" },
+    { "t": 0.75, "pose": { "head": [null, null, 22] }, "ease": "smooth" },
+    { "t": 1, "pose": { "head": [null, null, 6] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Nhìn người đối diện từ đầu tới chân: ngửa 10° ở 0,2, hạ dần xuống gật 22° ở 0,75, nhích lên 6° ở 1 rồi giữ; lượt 1,8 s. Chỉ ghi gật của `head`, nghiêng và lắc để trống. Nền `stand-3d`, người kia đứng trước mặt. Chồng lên `turn-head-*`, `tilt-head-*` vẫn giữ hướng nhìn; buông bằng clip rỗng blend ~0,4.",
+  "preview": { "stage": "stand" }
+}

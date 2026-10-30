@@ -4,9 +4,16 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
-import * as rig from "@stickman3d/sketch";
+import * as rig from "@stickman3d/rig/core";
 import { loadLayers, loadWorld } from "@stickman3d/render";
-import { checkWorkspace, clashesAt, worldData, worldScene } from "./lib.mjs";
+import {
+  CHECK_GROUPS,
+  checkScenes,
+  checkWorkspace,
+  clashesAt,
+  worldData,
+  worldScene,
+} from "./lib.mjs";
 
 const TOP = -150;
 const SEAT = -94.5;
@@ -110,7 +117,7 @@ const clashes = (r) => r.problems.filter((p) => p.msg.includes("người lồng 
 
 describe("check: người 3D lồng vào đồ", () => {
   it("báo cẳng tay xuyên mặt bàn; tay đặt bằng `handsOn` và cảnh đóng băng thì im", async () => {
-    const r = await checkWorkspace({ dir: workspace() });
+    const r = await checkWorkspace({ only: CHECK_GROUPS, dir: workspace() });
     const got = clashes(r);
     assert.ok(got.length > 0, JSON.stringify(r.problems, null, 2));
     for (const p of got) {
@@ -123,25 +130,31 @@ describe("check: người 3D lồng vào đồ", () => {
   });
 
   it("`stickman.clash.tol` nâng ngưỡng", async () => {
-    assert.deepEqual(clashes(await checkWorkspace({ dir: workspace({ clash: { tol: 50 } }) })), []);
+    assert.deepEqual(
+      clashes(await checkWorkspace({ only: CHECK_GROUPS, dir: workspace({ clash: { tol: 50 } }) })),
+      [],
+    );
   });
 
   it("người ngồi bàn: đo được người 3D với đồ khối, kể cả cảnh tay xuyên bàn", async () => {
-    const r = await checkWorkspace({ dir: workspace() });
+    const r = await checkWorkspace({ only: CHECK_GROUPS, dir: workspace() });
     assert.ok(!r.problems.some((p) => p.msg.includes("không đo được")));
   });
 
   it("`scene` chỉ soi cảnh khớp; không khớp cảnh nào là lỗi", async () => {
     const dir = workspace();
-    const lan = await checkWorkspace({ dir, scene: "^lan$" });
+    const lan = await checkWorkspace({ only: CHECK_GROUPS, dir, scene: "^lan$" });
     assert.deepEqual(lan.scenes, ["lan"]);
     assert.ok(clashes(lan).length > 0);
     assert.ok(
       lan.problems.every((p) => p.msg.startsWith("scenes/lan.json")),
       lan.problems,
     );
-    assert.deepEqual((await checkWorkspace({ dir, scene: "^dung$" })).problems, []);
-    const none = await checkWorkspace({ dir, scene: "^khong$" });
+    assert.deepEqual(
+      (await checkWorkspace({ only: CHECK_GROUPS, dir, scene: "^dung$" })).problems,
+      [],
+    );
+    const none = await checkWorkspace({ only: CHECK_GROUPS, dir, scene: "^khong$" });
     assert.deepEqual(
       none.problems.map((p) => p.level),
       ["lỗi"],
@@ -156,7 +169,7 @@ const RIG = resolve(dirname(fileURLToPath(import.meta.url)), "../rig");
 // mẫu 0,25 s. Cảnh `hong`: `pose` ném từ giây 1. Cảnh khác trả `null`
 const WORLD = `
 import * as THREE from "three";
-import { act, addItem, Batch, box, castCharacter, defaultCharacter, fromCharacter, sceneAt } from "@stickman3d/rig";
+import { act, addItem, Batch, box, defaultCharacter, fromCharacter, sceneAt } from "@stickman3d/rig";
 import { Ghi } from "./Ghi";
 
 const cube = (name: string, touch?: string[]) => {
@@ -170,7 +183,7 @@ export function worldOf(name: string, rt: any) {
   const root = new THREE.Group();
   const figs: Record<string, any> = {};
   for (const m of rt.runtime.cast) {
-    const f = fromCharacter(castCharacter(m, m.character ? rt.characters[m.character] : defaultCharacter()));
+    const f = fromCharacter((m.character ? rt.characters[m.character] : defaultCharacter()));
     root.add(f.root);
     figs[m.id] = f;
   }
@@ -253,7 +266,7 @@ function worldspace() {
 describe("check: người lồng vào vật trên cảnh three (`stickman.world`)", () => {
   it("báo món xuyên cẳng tay đúng người, bộ phận, món, quãng giây; món khai `touch` và hộp lớp vẽ code thì im; cảnh `null` đi đường cũ", async () => {
     const t0 = performance.now();
-    const r = await checkWorkspace({ dir: worldspace() });
+    const r = await checkWorkspace({ only: CHECK_GROUPS, dir: worldspace() });
     const ms = performance.now() - t0;
     assert.ok(ms < 30000, `check mất ${ms} ms`);
     const got = clashes(r).map((p) => p.msg);
@@ -280,14 +293,14 @@ describe("check: người lồng vào vật trên cảnh three (`stickman.world`
 
   it("đo sâu chia nhiều luồng ra đúng như một luồng, cùng thứ tự", async () => {
     const dir = worldspace();
-    const one = await checkWorkspace({ dir, jobs: 1 });
-    const many = await checkWorkspace({ dir, jobs: 3 });
+    const one = await checkWorkspace({ only: CHECK_GROUPS, dir, jobs: 1 });
+    const many = await checkWorkspace({ only: CHECK_GROUPS, dir, jobs: 3 });
     assert.ok(one.problems.length > 0);
     assert.deepEqual(many.problems, one.problems);
   });
 
   it("chia nhỏ mẫu khi vật dời nhanh: túi bay qua đầu giữa hai mẫu vẫn bị bắt", async () => {
-    const r = await checkWorkspace({ dir: worldspace(), scene: "^bay$" });
+    const r = await checkWorkspace({ only: CHECK_GROUPS, dir: worldspace(), scene: "^bay$" });
     const got = clashes(r).map((p) => p.msg);
     assert.equal(got.length, 1, JSON.stringify(r.problems, null, 2));
     assert.match(
@@ -297,7 +310,7 @@ describe("check: người lồng vào vật trên cảnh three (`stickman.world`
   });
 
   it("`pose` ném thì cảnh báo một dòng, phép đo khác của cảnh vẫn chạy", async () => {
-    const r = await checkWorkspace({ dir: worldspace(), scene: "^hong$" });
+    const r = await checkWorkspace({ only: CHECK_GROUPS, dir: worldspace(), scene: "^hong$" });
     const msgs = r.problems.map((p) => p.msg);
     const err = msgs.filter((m) => m.includes("ném lỗi"));
     assert.deepEqual(err, [
@@ -357,5 +370,25 @@ describe("check: người lồng vào vật trên cảnh three (`stickman.world`
     const late = hong.at(1.5);
     assert.match(hong.notes[0].error, /^cảnh three ném lỗi ở giây 1\.50 — hỏng; /);
     assert.ok(late.some((c) => /^a\.\w+$/.test(c.who) && /^b\.\w+$/.test(c.with)));
+  });
+});
+
+describe("checkScenes: `check` trên cảnh dựng tạm", () => {
+  it("đo `clash` trên cảnh three của `spec` (cảnh xem thử có ghế), không có `spec` thì đi `worldOf` của repo", async () => {
+    const dir = worldspace();
+    const { actions, characters, held } = worldData(dir);
+    const height = characters["sample-man.json"].rig.height;
+    const json = rig.previewScene("stand-3d", actions["stand-3d"], "sample-man.json", { height });
+    // người đứng ở đúng chỗ ghế của `stage: chair`: cẳng chân lồng vào ghế
+    json.cast[0].world.at = [0, 0, 0];
+    const spec = (id, R) => R.previewWorld(json, "chair", held, { height });
+    const got = (await checkScenes({ dir, scenes: { x: json }, spec })).get("x");
+    const clash = got.filter((r) => r.group === "clash").map((r) => r.msg);
+    assert.ok(
+      clash.some((m) => /^người lồng vào đồ — a\.shin[RL] ↔ chair lấn/.test(m)),
+      JSON.stringify(got, null, 2),
+    );
+    const plain = (await checkScenes({ dir, scenes: { x: json } })).get("x");
+    assert.ok(!plain.some((r) => r.msg.includes("chair")), JSON.stringify(plain, null, 2));
   });
 });

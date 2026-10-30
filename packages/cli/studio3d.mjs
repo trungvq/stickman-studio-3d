@@ -1,32 +1,39 @@
-// `stickman studio`: Studio 3D (`apps/studio3d`) chạy trên dev server Vite, gốc là repo video. Đọc cảnh, món, dáng tay và
-// `worldData`; ghi `scenes/` (`POST /api/scene`), `held/` (`POST /api/held`) và `hands/` (`POST /api/hands`), cả ba kiểm
-// hash lúc nạp, vá JSON thô, giữ `.bak`; ảnh **Chép view** vào `tmp/studio3d/` (`POST /api/snap`).
+// `stickman studio`: Studio 3D (`apps/studio3d`) chạy trên dev server Vite, gốc là repo video. Đọc cảnh, món, dáng tay,
+// `worldData` và thư viện hai lớp (`GET /api/library`); ghi `scenes/` (`POST /api/scene`), `held/` (`POST /api/held`) và `hands/` (`POST /api/hands`), cả ba kiểm
+// hash lúc nạp, vá JSON thô, giữ `.bak`; ảnh **Chép view** vào `tmp/studio3d/` (`POST /api/snap`); chạy khô một bộ sinh trên
+// sân khấu thử của trang soi (`POST /api/gen`, docs/13-vai-tro-do.md mục 9.3).
 // apps/studio3d/README.md.
-import { createHash, randomUUID } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
   readdirSync,
   readFileSync,
   realpathSync,
-  renameSync,
-  rmSync,
   writeFileSync,
 } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { basename, dirname, join, resolve, sep } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { isDeepStrictEqual } from "node:util";
-import { heldOptions, sceneShotSpans, snapOptions, SOURCES, worldData } from "./lib.mjs";
-import { formatLike } from "./rawjson.mjs";
+import {
+  actionData,
+  characterData,
+  heldOptions,
+  libraryOf,
+  sceneShotSpans,
+  snapOptions,
+  SOURCES,
+  worldData,
+} from "./lib.mjs";
+import { formatLike, sha, writeWithBak } from "./rawjson.mjs";
+
+export { sha, writeWithBak };
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 /** Gói dùng chung giữa trang và file của repo video: một bản mỗi gói, lấy theo repo video */
-const SHARED = /^(three|react|react-dom|zod|@stickman3d\/(rig|sketch|fx))(\/.*)?$/;
+const SHARED = /^(three|react|react-dom|zod|@stickman3d\/(rig|fx))(\/.*)?$/;
 const NAME = /^[\w.-]+$/;
-
-export const sha = (buf) => createHash("sha256").update(buf).digest("hex");
 
 /** Thư mục thật của gói `name` thấy từ `from` (đi ngược lên qua các `node_modules`) */
 function findPkg(from, name) {
@@ -38,18 +45,17 @@ function findPkg(from, name) {
 }
 
 /**
- * Rig, sketch, fx cho trang: bản repo video nạp (thiếu thì bản đi kèm CLI). Gói là cây nguồn (`link:`, không nằm trong
- * `node_modules`) thì trang lấy `src/`, cài từ registry thì `dist`. `tree` là gốc một monorepo rig: lấy `src/` của nó.
+ * Rig, fx cho trang: bản repo video nạp (thiếu thì bản đi kèm CLI). Gói là cây nguồn
+ * (`link:`, không nằm trong `node_modules`) thì trang lấy `src/`, cài từ registry thì `dist`. `tree` là gốc một monorepo
+ * rig: lấy `src/` của nó.
  */
 export function rigSources(root, tree) {
   const dirs = tree
-    ? Object.fromEntries(["rig", "sketch", "fx"].map((p) => [p, join(tree, "packages", p)]))
+    ? Object.fromEntries(["rig", "fx"].map((p) => [p, join(tree, "packages", p)]))
     : {
-        sketch: findPkg(root, "@stickman3d/sketch") ?? findPkg(HERE, "@stickman3d/sketch"),
         fx: findPkg(root, "@stickman3d/fx") ?? findPkg(HERE, "@stickman3d/fx"),
       };
-  dirs.rig ??=
-    findPkg(root, "@stickman3d/rig") ?? (dirs.sketch && findPkg(dirs.sketch, "@stickman3d/rig"));
+  dirs.rig ??= findPkg(root, "@stickman3d/rig") ?? findPkg(HERE, "@stickman3d/rig");
   const out = {};
   for (const [p, dir] of Object.entries(dirs)) {
     if (!dir) throw new Error(`Không thấy @stickman3d/${p} từ ${root} — pnpm install trước`);
@@ -64,7 +70,8 @@ export function rigSources(root, tree) {
 
 /** Lối vào `stickman.world` của `package.json` repo video: module có `worldOf(tên cảnh, ctx)` */
 function worldEntry(root) {
-  const rel = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).stickman?.world;
+  const pkg = join(root, "package.json");
+  const rel = existsSync(pkg) && JSON.parse(readFileSync(pkg, "utf8")).stickman?.world;
   return rel ? join(root, rel) : null;
 }
 
@@ -85,20 +92,6 @@ class HttpError extends Error {
     super(message);
     this.status = status;
     this.extra = extra;
-  }
-}
-
-/** Ghi `text` vào `file` qua file tạm (hỏng giữa chừng thì xoá file tạm); bản cũ (`old`) giữ ở `<file>.bak` */
-export function writeWithBak(file, text, old) {
-  if (old) writeFileSync(`${file}.bak`, old);
-  mkdirSync(dirname(file), { recursive: true });
-  const tmp = join(dirname(file), `.${basename(file)}.${randomUUID()}.tmp`);
-  try {
-    writeFileSync(tmp, text);
-    renameSync(tmp, file);
-  } catch (e) {
-    rmSync(tmp, { force: true });
-    throw e;
   }
 }
 
@@ -128,10 +121,11 @@ const outsideHands = (s) => ({
 });
 
 /**
- * Món `raw` (JSON thô của `held/`) với bản soạn `authored` ở khoá `authored.<group>.<variant>` (`null` là xoá). Món còn kiểu
- * cầm có tên (`base` / `note`, trường của bản `version`) mà `schemaVersion` cũ hơn thì lên `version`
+ * Món `raw` (JSON thô của `held/`) với bản soạn `authored` ở khoá `authored.<group>.<variant>` (`null` là xoá).
+ * `schemaVersion` cũ hơn bản nhỏ nhất của trường món mang (`minVersion`, `heldMinVersion` của rig: kiểu cầm có tên là 3,
+ * `roles` là 4) thì lên bản ấy, không lên thêm
  */
-export function heldWithAuthored(raw, group, variant, authored, version) {
+export function heldWithAuthored(raw, group, variant, authored, minVersion) {
   const out = { ...raw };
   const all = { ...out.authored };
   const byVariant = { ...all[group] };
@@ -141,11 +135,8 @@ export function heldWithAuthored(raw, group, variant, authored, version) {
   else delete all[group];
   if (Object.keys(all).length) out.authored = all;
   else delete out.authored;
-  const named = Object.values(all).some((g) =>
-    Object.values(g).some((a) => a && (a.base !== undefined || a.note !== undefined)),
-  );
-  if (named && typeof out.schemaVersion === "number" && out.schemaVersion < version)
-    out.schemaVersion = version;
+  const need = minVersion(out);
+  if (typeof out.schemaVersion === "number" && out.schemaVersion < need) out.schemaVersion = need;
   return out;
 }
 
@@ -177,6 +168,66 @@ export function sceneWithHands(disk, edited) {
 }
 
 /**
+ * Chạy khô bộ sinh `kind` cho trang soi trên repo `root` (docs/13-vai-tro-do.md mục 9.3): tham số `params` (form của
+ * `GEN_PAGES[kind].params`, thêm `angle` góc máy), người `who` (tên file `characters/`). Dựng lại cùng `stage` như trang, gọi
+ * `run` với `o.stage` — `stickman.world` và `held/` cùng tên của repo không đọc. Trả `{ kind, ok, name, action, scene,
+ * checks, lines }` (`scene` là cảnh thử đã có clip, `checks` dòng tự kiểm có `t`), kèm `roles` (`sit`), `pourer` (`pour`),
+ * `path`, `clips`, `metrics`, `strips` (`walk` — không có `action`).
+ * Tham số sai: 400; bộ sinh từ chối (lỗi tìm slot, ngoài tầm): 422; cả hai kèm `lines`
+ */
+export async function genRun(root, { kind, params = {}, who } = {}) {
+  // `gen.mjs` kéo `@stickman3d/render`, `prettier`: chỉ nạp khi trang soi gọi
+  const gen = await import("./gen.mjs");
+  const { paramProblems } = await import("./gen-pages.mjs");
+  const k = Object.hasOwn(gen.GEN_KINDS, kind) ? gen.GEN_KINDS[kind] : undefined;
+  if (!k?.page)
+    throw new HttpError(
+      400,
+      `bộ sinh lạ \`${kind}\`; có: ${Object.keys(gen.GEN_KINDS)
+        .filter((n) => gen.GEN_KINDS[n].page)
+        .join(", ")}`,
+    );
+  const bad = paramProblems(k.page.params, params);
+  if (bad.length) throw new HttpError(400, `tham số sai: ${bad.join("; ")}`, { lines: bad });
+  if (who !== undefined && (typeof who !== "string" || !NAME.test(who)))
+    throw new HttpError(400, `\`who\` là tên file characters/, không phải \`${who}\``);
+  // chỉ nhân vật: món của repo nạp trong `run`, sau khi `held` của sân khấu đè file cùng tên (`loadHeld`)
+  const characters = characterData(root);
+  const character = who === undefined ? undefined : characters[who];
+  if (who !== undefined && !character)
+    throw new HttpError(400, `không có nhân vật \`${who}\``, {
+      lines: [`có: ${Object.keys(characters).join(", ")}`],
+    });
+  const fail = (e) =>
+    e instanceof gen.GenError || /^(chai thử|sân khấu thử) hỏng/.test(e.message)
+      ? new HttpError(422, e.message, { lines: e.message.split("\n") })
+      : e;
+  try {
+    const st = k.page.stage(params, { name: who, character, actions: actionData(root) });
+    const r = await k.run({
+      ...k.page.call(params, st),
+      dir: root,
+      stage: gen.stageRun(st),
+      dryRun: true,
+    });
+    return {
+      kind,
+      ok: r.ok,
+      name: r.name,
+      action: r.action,
+      scene: r.scene,
+      checks: r.checks,
+      lines: r.lines,
+      ...(r.roles && { roles: r.roles }),
+      ...(r.pourer && { pourer: { part: r.pourer.part, lip: r.pourer.lip } }),
+      ...(r.path && { path: r.path, clips: r.clips, metrics: r.metrics, strips: r.strips }),
+    };
+  } catch (e) {
+    throw fail(e);
+  }
+}
+
+/**
  * Cấu hình Vite của Studio 3D. `dir` là repo video; `tree` (tuỳ chọn) là monorepo rig mà trang lấy mã nguồn; `heldOut`
  * đổi hướng ghi món sang thư mục ấy và đọc nó phủ lên `held/`; `app` là thư mục app (mặc định bản đi kèm CLI).
  */
@@ -185,6 +236,7 @@ export function studio3dConfig({
   tree,
   heldOut = process.env.STUDIO3D_HELD_OUT,
   app = SOURCES.studio3d,
+  tailnet = true,
 } = {}) {
   const ROOT = resolve(dir);
   const HELD = join(ROOT, "held");
@@ -279,6 +331,28 @@ export function studio3dConfig({
         json(res, { root: ROOT, world: ENTRY, names });
       });
 
+      // hành động và nhân vật của cả hai lớp, mỗi mục ghi lớp; gốc không có `actions/`, `characters/` thì chỉ lớp chung
+      server.middlewares.use(
+        "/api/library",
+        route(async (req) => {
+          if (req.method !== "GET") throw new HttpError(405, "chỉ GET");
+          const held = heldRaw();
+          const hands = handsRaw();
+          const data = worldData(ROOT);
+          return {
+            root: ROOT,
+            ...libraryOf(ROOT, data),
+            data,
+            heldRaw: held.raw,
+            heldHash: held.hash,
+            handsRaw: hands.raw,
+            handsHash: hands.hash,
+            heldOpts: heldOptions(ROOT),
+            heldOut: HELD_OUT,
+          };
+        }),
+      );
+
       server.middlewares.use(
         "/api/scene",
         route(async (req, name) => {
@@ -357,7 +431,7 @@ export function studio3dConfig({
               group,
               variant,
               authored,
-              rig.HELD_VERSION,
+              rig.heldMinVersion,
             );
             const parsed = rig.parseHeldItem(raw);
             if (!parsed.success)
@@ -390,6 +464,16 @@ export function studio3dConfig({
           mkdirSync(SNAPS, { recursive: true });
           writeFileSync(file, buf);
           return { file };
+        }),
+      );
+
+      // trang soi bộ sinh: dựng lại sân khấu thử từ `GEN_PAGES[kind].stage`, chạy khô `run` trên đó (không ghi `actions/`)
+      server.middlewares.use(
+        "/api/gen",
+        route(async (req) => {
+          if (req.method !== "POST") throw new HttpError(405, "chỉ POST");
+          const body = await readBody(req);
+          return serial("gen", () => genRun(ROOT, body));
         }),
       );
 
@@ -433,8 +517,8 @@ export function studio3dConfig({
     },
   };
 
-  /** Mỗi gói dùng chung một bản: tra từ repo video trước, rồi CLI, rồi sketch (rig là gói của sketch) */
-  const bases = [ROOT, HERE, R.sketch.dir].map((d) => join(d, "__studio3d__.js"));
+  /** Mỗi gói dùng chung một bản: tra từ repo video trước, rồi CLI, rồi rig */
+  const bases = [ROOT, HERE, R.rig.dir].map((d) => join(d, "__studio3d__.js"));
   const shared = {
     name: "studio3d-shared",
     enforce: "pre",
@@ -450,6 +534,8 @@ export function studio3dConfig({
 
   const alias = [
     { find: "virtual:stickman-world", replacement: ENTRY ?? join(app, "src/no-world.ts") },
+    // trang soi bộ sinh: đúng bản mô tả của CLI đang chạy server (`/api/gen` dựng lại cùng sân khấu)
+    { find: /^@stickman3d\/cli\/gen-pages$/, replacement: join(HERE, "gen-pages.mjs") },
     // cảnh three của repo nạp `remotion` gián tiếp thì nhận bản rỗng, như `hollowReact` của render
     { find: /^(remotion|@remotion\/[^/]+)(\/.*)?$/, replacement: join(app, "src/hollow.ts") },
   ];
@@ -459,35 +545,57 @@ export function studio3dConfig({
       { find: /^@stickman3d\/rig\/core$/, replacement: R.rig.core },
       { find: /^@stickman3d\/rig$/, replacement: R.rig.main },
     );
-  for (const p of ["sketch", "fx"])
-    if (R[p].src) alias.unshift({ find: new RegExp(`^@stickman3d/${p}$`), replacement: R[p].main });
+  if (R.fx?.src) alias.unshift({ find: /^@stickman3d\/fx$/, replacement: R.fx.main });
 
   const trees = Object.values(R).map((r) => (r.src ? resolve(r.dir, "../..") : r.dir));
   return {
     root: app,
     cacheDir,
     clearScreen: false,
-    plugins: [shared, workspace],
+    plugins: tailnet ? [tailnetGate, shared, workspace] : [shared, workspace],
     resolve: { alias },
     server: {
       port: 5180,
-      host: "localhost",
-      fs: { allow: [...new Set([app, ROOT, cacheDir, ...trees])] },
+      host: tailnet ? "0.0.0.0" : "localhost",
+      allowedHosts: [".ts.net"],
+      fs: { allow: [...new Set([app, HERE, ROOT, cacheDir, ...trees])] },
     },
   };
 }
 
+/** Máy gọi tới là chính máy này hay một máy trong tailnet (Tailscale: `100.64.0.0/10`, `fd7a:115c:a1e0::/48`) */
+export function isTailnetOrLocal(addr = "") {
+  const a = addr.toLowerCase().replace(/^::ffff:/, "");
+  if (a === "::1" || a.startsWith("127.")) return true;
+  if (a.startsWith("fd7a:115c:a1e0:")) return true;
+  const m = /^100\.(\d+)\./.exec(a);
+  return !!m && Number(m[1]) >= 64 && Number(m[1]) < 128;
+}
+
+/** Nghe mọi giao diện nhưng chỉ trả lời localhost và tailnet: trang có đường ghi `scenes/`, `held/`, `hands/` */
+const tailnetGate = {
+  name: "studio3d-tailnet",
+  configureServer(server) {
+    server.middlewares.use((req, res, next) => {
+      if (isTailnetOrLocal(req.socket.remoteAddress)) return next();
+      res.statusCode = 403;
+      res.end("Studio 3D chỉ mở cho localhost và tailnet; --host <địa chỉ> để mở ra mạng khác.");
+    });
+  },
+};
+
 /**
- * Chạy Studio 3D cho repo video `dir`. Chỉ nghe `localhost`: trang ghi thẳng `scenes/`, `held/`, `hands/` của repo; `host`
- * khác (`--host`) là mở cả ba đường ghi ra mạng ấy. `heldOut` trả về là thư mục ghi món khi đổi hướng (`STUDIO3D_HELD_OUT`).
+ * Chạy Studio 3D cho repo video `dir`. Mặc định nghe mọi giao diện nhưng chỉ trả lời localhost và tailnet (`tailnetGate`):
+ * trang ghi thẳng `scenes/`, `held/`, `hands/` của repo. `host` khai (`--host`) là nghe đúng địa chỉ ấy, không chặn — mở cả
+ * ba đường ghi ra mạng ấy. `heldOut` trả về là thư mục ghi món khi đổi hướng (`STUDIO3D_HELD_OUT`).
  */
-export async function serveStudio3d({ dir = ".", port = 5180, host = "localhost", heldOut } = {}) {
+export async function serveStudio3d({ dir = ".", port = 5180, host, heldOut } = {}) {
   const { createServer } = await import("vite");
-  const config = studio3dConfig({ dir, heldOut });
+  const config = studio3dConfig({ dir, heldOut, tailnet: host === undefined });
   const server = await createServer({
     ...config,
     configFile: false,
-    server: { ...config.server, port, host },
+    server: { ...config.server, port, ...(host !== undefined && { host }) },
   });
   await server.listen();
   const out = heldOut ?? process.env.STUDIO3D_HELD_OUT;

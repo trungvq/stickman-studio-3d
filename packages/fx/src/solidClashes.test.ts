@@ -11,10 +11,10 @@ import {
   resolveScene,
   sceneAt,
   type V3,
-} from "@stickman3d/sketch";
+} from "@stickman3d/rig/core";
 import { bar, box, penetration, type SolidItem } from "./solid";
 import { solidClashes, solidItemClashes } from "./solidOrder";
-import { solidBody } from "./SolidWorld";
+import { solidBody } from "./SceneWorld";
 
 const TONE = { top: "#a00", lit: "#0a0", side: "#00a" };
 
@@ -152,7 +152,7 @@ describe("solidClashes: người 3D lồng vào đồ khối", () => {
     if (!r.success) throw new Error(r.error.message);
     const rt = resolveScene(r.data, { sit: sit.data! });
     const sp = sceneAt(rt, "a", 0, c.rig.height, body3(c));
-    return { sp, person: solidBody("a", { character: c, ...sp })! };
+    return { sp, person: solidBody("a", c, sp)! };
   }
 
   it("tay đặt bằng `handsOn`, đùi trên mặt ngồi: không báo", () => {

@@ -1,14 +1,14 @@
-import { D, RIG, SIDE_HIP, SIDE_SHOULDER } from "./constants";
+import { D, RIG } from "./constants";
 import { limbWidths, type CharacterData } from "./schema";
-import { limbSpread, restYaw, shoulderRoot, torsoYaw } from "./torso";
-import { DEFAULT_VIEW, type Pose, type Pt, type Stretch, type View } from "./types";
+import { limbSpread, shoulderRoot } from "./torso";
+import type { Pose, Pt, Stretch } from "./types";
 
 export const tip = (x: number, y: number, len: number, deg: number): Pt => [
   x + Math.sin(deg * D) * len,
   y + Math.cos(deg * D) * len,
 ];
 
-/** Độ dài các đoạn sau khi nhân chiều cao; đầu không co theo, xem docs/02-rig.md */
+/** Độ dài các đoạn sau khi nhân chiều cao; đầu không co theo, xem docs/01-rig.md */
 export interface Lengths {
   torso: number;
   neck: number;
@@ -54,17 +54,13 @@ const chain = (root: Pt, a: readonly number[], l1: number, l2: number): Pt[] => 
   return [root, k, f];
 };
 
-/** Độ dài đùi và cẳng chân ở `height = 1` */
-export type Legs = { thigh: number; shin: number };
-
 /**
- * Hai bàn chân `[xa, gần]` so với tâm hông, bỏ bề ngang hông vì nó là hằng số. `legs` đổi độ
- * dài chân — `stickman reseat` đo hông của cảnh dựng cho chân đời trước. `spread` là của người 3D:
- * chân nâng dang ra thì bàn chân lên theo `cos` góc dang, như `act` dựng.
+ * Hai bàn chân `[xa, gần]` so với tâm hông, bỏ bề ngang hông vì nó là hằng số. `spread` là của
+ * người 3D: chân nâng dang ra thì bàn chân lên theo `cos` góc dang, như `act` dựng.
  */
-export function feet(P: Pose, height: number, legs: Legs = RIG, spread = false): [Pt, Pt] {
-  const thigh = legs.thigh * height;
-  const shin = legs.shin * height;
+export function feet(P: Pose, height: number, spread = false): [Pt, Pt] {
+  const thigh = RIG.thigh * height;
+  const shin = RIG.shin * height;
   const s = P.stretch;
   const foot = (ch: "lf" | "ln", l1: number, l2: number): Pt => {
     const [x, y] = chain([0, 0], P[ch], l1, l2)[2];
@@ -74,27 +70,22 @@ export function feet(P: Pose, height: number, legs: Legs = RIG, spread = false):
 }
 
 /**
- * Toàn bộ hình học của một pose, gốc ở tâm hông. `stretch` nhân riêng từng đoạn chi. `view` là góc
- * nhìn của thân: `side` chập vai và hông về trục giữa. Thân áo dựng khối thì gốc chi chiếu từ vành
- * vai và vành hông của khối; ở `rear` gốc quay ra người xem nằm phía `+x`, nên chi gần sang `+x`.
+ * Toàn bộ hình học của một pose nhìn chính diện, gốc ở tâm hông. `stretch` nhân riêng từng đoạn chi.
+ * Thân áo dựng khối thì gốc chi chiếu từ vành vai và vành hông của khối.
  */
-export function computeFigure(c: CharacterData, P: Pose, view: View = DEFAULT_VIEW): Figure {
+export function computeFigure(c: CharacterData, P: Pose): Figure {
   const { rig, palette } = c;
   const wLine = rig.stroke;
   const len = lengths(rig.height);
   const clad = palette.clad;
   const s = P.stretch;
 
-  const side = view === "side";
   const armOuter = limbWidths(palette).sleeve + (clad ? wLine : 0);
   const cap = armOuter / 2;
   const solid = c.pieces.torso.src === "sculpt";
-  const yaw = torsoYaw(view, restYaw(c));
-  const shoulderSpan = solid
-    ? limbSpread(shoulderRoot(c), yaw)
-    : rig.shoulderHalf * (side ? SIDE_SHOULDER : 1);
-  const hipSpan = solid ? limbSpread(rig.hipHalf, yaw) : rig.hipHalf * (side ? SIDE_HIP : 1);
-  const nearSide = solid && view === "rear" ? 1 : -1;
+  const shoulderSpan = solid ? limbSpread(shoulderRoot(c), 0) : rig.shoulderHalf;
+  const hipSpan = solid ? limbSpread(rig.hipHalf, 0) : rig.hipHalf;
+  const nearSide = -1;
 
   const hipN: Pt = [nearSide * hipSpan, 0];
   const hipF: Pt = [-nearSide * hipSpan, 0];
@@ -155,23 +146,3 @@ export function limbCurves(pts: Pt[], k: number): [Cubic, Cubic] {
     [P1, [P1[0] + T1[0], P1[1] + T1[1]], [P2[0] - T2[0], P2[1] - T2[1]], P2],
   ];
 }
-
-const cubicTo = (c: Cubic) => `C ${c[1][0]} ${c[1][1]} ${c[2][0]} ${c[2][1]} ${c[3][0]} ${c[3][1]}`;
-
-/**
- * `d` của một chi ba khớp: cả chi khi `seg` bỏ trống, nửa gốc `0` hay nửa ngọn `1`. `k = 0`
- * ra đúng chuỗi của `pathOf` trên các điểm ấy.
- */
-export function limbPath(pts: Pt[], k: number, seg?: 0 | 1): string {
-  if (!k) return pathOf(seg === undefined ? pts : seg === 0 ? pts.slice(0, 2) : pts.slice(1));
-  const [a, b] = limbCurves(pts, k);
-  if (seg === 0) return `M ${a[0][0]} ${a[0][1]} ${cubicTo(a)}`;
-  if (seg === 1) return `M ${b[0][0]} ${b[0][1]} ${cubicTo(b)}`;
-  return `M ${a[0][0]} ${a[0][1]} ${cubicTo(a)} ${cubicTo(b)}`;
-}
-
-/** Ba kênh 0→1 của một mã hex, cho ma trận nhân màu của filter */
-export const rgb01 = (hex: string) => {
-  const v = parseInt(hex.slice(1), 16);
-  return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255] as const;
-};

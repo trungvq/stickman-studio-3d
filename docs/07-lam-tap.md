@@ -13,7 +13,7 @@ của tập nằm trong repo video; file này chỉ quy định quy trình và �
 Mỗi bước kết thúc bằng một cổng kiểm tra:
 
 1. **Kịch bản và chia cảnh.** Cổng: bảng shot đọc hết một lượt.
-2. **Tạo hình.** Cổng không chỉ là `render_character` với `shrug` — nó là một
+2. **Tạo hình.** Cổng không chỉ là `render_character` — nó là một
    **key art**: `pnpm still` một khung khó nhất, **có cả nền**, chốt art direction
    trước khi xây cảnh lên trên.
 3. **Lời dẫn.** Cổng: nghe hết một lượt, rồi đóng băng.
@@ -32,10 +32,10 @@ Mỗi bước kết thúc bằng một cổng kiểm tra:
 
 | | Thấy gì | Của ai |
 |---|---|---|
-| `render_scene` / `render_action` | Dải ảnh tĩnh, mỗi ô một mốc; `stage: true` là cả khung, có nền, camera và hiệu ứng; `three` là khung three thật của cảnh 3D | **Agent** — nó không tua được, chỉ đọc được ảnh |
-| `stickman-video` | mp4 nháp nửa cỡ bản chốt (`960×540`, khung dọc `540×960`), có nền, camera và hiệu ứng, không tiếng | Agent, để kiểm chuyển động |
+| `render_scene` / `render_action` | Dải ảnh tĩnh, mỗi ô một mốc đã qua camera: cảnh có `scene.lens` là khung three thật mà video vẽ, cảnh không lens là nền, lớp vẽ code và hiệu ứng; vệt và bóng que xương soi chuyển động trong một ô | **Agent** — nó không tua được, chỉ đọc được ảnh |
+| `pnpm render <id>` | mp4 của một cảnh hay một tập, có nền, camera, hiệu ứng và tiếng | Agent và người, để kiểm chuyển động |
 | `remotion studio` | Cả cảnh, có nền có tiếng, tua được | **Người** |
-| `remotion render` | mp4 chốt | Cuối |
+| `pnpm render:final` | mp4 chốt bản upload — [Render bản chốt](#render-bản-chốt) | Cuối |
 
 **Remotion Studio là preview server, không phải editor.** Props chỉ mang id, dữ liệu
 tra ở `data.ts`, nên nó **không ghi ngược props vào file**
@@ -60,6 +60,7 @@ không đụng.
 | `pnpm frames` | nhiều khung, nhiều cảnh trong một lượt bundle — [03](03-scene.md#remotion) | — |
 | `pnpm can-tay` | bảng ảnh cận bàn tay người 3D — [03](03-scene.md#lòng-bàn-tay) | — |
 | `pnpm bang-cam` | bảng duyệt nhóm cầm (nhóm × món × chỗ cầm mẫu × hai cỡ tay × ba góc), `--nhom`, `--mon` chọn nhóm, món, `--so` so hồi quy với bảng chuẩn — [03](03-scene.md#bảng-duyệt-nhóm-cầm) | `held/`, `CANH_3D["bang-cam"]` |
+| `pnpm bang-hanh-dong` | bảng duyệt hành động (hành động × người mẫu × ba góc × bốn khung, kèm `check --only move,clash`), `--hanh-dong`, `--ai` chọn hành động, người, `--so` so hồi quy với bảng chuẩn — [Bảng duyệt hành động](#bảng-duyệt-hành-động) | `actions/`, `characters/` |
 | `pnpm thumbnails [tập]` | chụp mọi thumbnail và biến thể — [Thumbnail](#thumbnail) | `episodes/*.json` › `thumbnail` |
 | `pnpm tts` | lời dẫn VieNeu local — [Lời dẫn](#lời-dẫn) | `episodes/*.json` › `text` |
 | `pnpm tts-blocks` | lời dẫn ElevenLabs theo khối, cắt cue theo timestamp ký tự — [Lời dẫn ElevenLabs](#lời-dẫn-elevenlabs) | `loi-dan-tag.md` (`--src`) |
@@ -69,11 +70,10 @@ không đụng.
 | `pnpm sfx` | tiếng động từ mẫu CC0 và tổng hợp — [Tiếng động](#tiếng-động) | `sfx/recipes.json` |
 | `pnpm sfx-el` | tiếng động gen bằng ElevenLabs | `sfx/elevenlabs.json` |
 | `pnpm sfx-loop` | bè lặp — [Bè lặp](#bè-lặp-một-thẻ-audio-cho-cả-chuỗi) | `sfx/loops.json` |
-| `pnpm cut-torso` | cắt mảnh thân áo từ sheet về khung `torso` — [02](02-trang-phuc.md#cắt-thân-áo-từ-sheet) | sheet trong `assets/sheets/` |
 
 Mọi lệnh Python nhận `--help`. `tts`, `sfx` và mốc chữ của `lipsync` chạy bằng
-`.venv/bin/python` (VieNeu, numpy, faster-whisper); `tts-blocks`, `sfx-el`, `sfx-loop`
-và `cut-torso` chỉ cần thư viện chuẩn cùng `ffmpeg` / `magick`. `len-giong` chạy bằng
+`.venv/bin/python` (VieNeu, numpy, faster-whisper); `tts-blocks`, `sfx-el` và
+`sfx-loop` chỉ cần thư viện chuẩn cùng `ffmpeg` / `magick`. `len-giong` chạy bằng
 [`uv`](https://docs.astral.sh/uv/), phụ thuộc (numpy, praat-parselmouth) khai ngay trong
 file nên không cần `.venv`; thiếu `uv` thì `tts-blocks` dừng ở cue có `len:`. Key
 ElevenLabs (`ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`) nằm ở `.env`, đã gitignore.
@@ -85,10 +85,39 @@ khác thì ghi thẳng vào `assets/audio/`. `sfx/` là tiếng động dùng ch
 của cue trong `episodes/*.json` tính từ `assets/audio/` nên ghi kèm thư mục:
 `t03/n-0a-03.mp3`, `sfx/sfx-rung.mp3`.
 
-`pnpm cut-torso assets/sheets/<sheet>.png <ten>-01 <ten>-02` tách sheet theo số tên,
-căn từng ô vào khung `300×360` bằng đỉnh ngực, gấu và tâm ngực của mảnh tham chiếu
-`tunic-02` của `GARMENTS`, ghi ra `tmp/cut/` để soi trước khi `add_piece`.
-`--knee` đổi mốc trên sang chân dốc vai cho áo bụng phệ.
+### Bảng duyệt hành động
+
+`pnpm bang-hanh-dong` (`tools/bang-hanh-dong.mjs`) soi cả bộ hành động một lượt. Mỗi hàng là một hành động trên một
+người, dựng đúng cảnh xem thử của Thư viện Studio 3D (`previewScene`, `previewWorld` của rig): nền theo `preview.stage`
+hay `preview.base`, ghế, ghế bành, bàn, đệm seiza hay quầy dựng khối, chỗ người theo `preview.path`, món của `preview.hold`, người kia của `preview.partner` (thu phóng cho cao bằng người diễn). Cột là ba
+góc máy × bốn khung:
+
+- **Góc**: trước, 3/4 gần, nghiêng (`--goc`, tên trong `PREVIEW_ANGLES`: `front`, `near`, `far`, `side`, `back`).
+- **Khung**: đầu (giây 0), giữa (nửa lượt), đỉnh (giây trong một lượt mà khớp người, đo so với hông, xa dáng giây 0
+  nhất), cuối (hết lượt; hành động `wrap` lấy ¾ lượt vì cuối lượt trùng đầu lượt). Đỉnh trùng khung giữa hay cuối (cách
+  dưới 0,1 lượt, hay dáng gần như nhau) thì ô ấy thành khung *khác*: giây có dáng xa ba khung kia nhất; người đứng yên cả
+  lượt thì *tĩnh*. Nhãn ô in góc, tên khung và giây thật.
+- **Kiểm máy**: cạnh mỗi hàng là dòng `stickman check --only move,clash` đo trên chính cảnh ấy, cả ghế, đệm, quầy. Ống
+  kính của cảnh đứng yên, nên người dời chỗ theo `path` (đi, chạy, bước) đo ở góc nghiêng: đi về phía máy thì người tới
+  sát ống kính.
+- **`stage` suy từ tên** (hành động không khai `preview.stage`) thì tiêu đề hành động ghi rõ: khối của ngữ cảnh (bàn,
+  quầy) có thể thiếu, khai `preview` ở hành động ([01](01-rig.md#hành-động)).
+- **Lọc**: `--hanh-dong bow-*,nod-3d` (phẩy ngăn, `*` khớp mọi chuỗi; mặc định mọi hành động người có token `3d` trong
+  tên), `--ai sample-man` (mặc định bốn người mẫu `sample-*` của lớp chung). `--khong-check` bỏ đo cho nhanh.
+- **Ra** `tmp/bang-hanh-dong/`: `<hành động>.jpg` một bảng mỗi hành động (hàng là người), `index.html` dòng `check`
+  dưới tên người ở cột dính trái, bấm ô mở ảnh cỡ thật, `index.md`, ảnh từng ô ở `o/`, `do.json`.
+
+Tất định: cùng code, cùng dữ liệu là cùng pixel. Bảng cũng là cổng kiểm hồi quy của rig:
+
+```bash
+pnpm bang-hanh-dong                # sinh bảng, mở tmp/bang-hanh-dong/index.html mà duyệt
+pnpm bang-hanh-dong --luu-chuan    # sau khi duyệt bằng mắt: chép bảng sang tmp/bang-hanh-dong-chuan (ngoài git)
+pnpm bang-hanh-dong --so           # sau mỗi lần nâng rig hay sửa hành động: sinh lại, so từng ô với chuẩn
+```
+
+`--so` in hàng đổi (số pixel khác từng ô, khung và dòng `check` trước → sau), ảnh chuẩn | mới | chỗ khác ở
+`tmp/bang-hanh-dong/khac/`, thoát mã 1; chưa có chuẩn thì thoát mã 2 mà không sinh gì. `--chuan` đổi thư mục chuẩn,
+`--out` thư mục ra. Bảng chuẩn chỉ lưu sau khi người duyệt đã nhìn bảng.
 
 ## Bảng thời gian của cả tập
 
@@ -127,8 +156,8 @@ Xem [03 — Khung hình](03-scene.md#khung-hình).
 | `thumbnail` | Của cả tập, không phải của shot: `{ scene, at, zoom, origin, shift, lines[], font, size, tilt, ink, paper, shadow, accent, keep, variants }` — xem [Thumbnail](#thumbnail) |
 
 **Camera không ở đây**, nó ở trong scene ([03](03-scene.md#camera)) — nếu để ở lớp
-này thì dải ảnh và `stickman-video` không soi được cảnh nào dùng tới nó, mà đó là hai
-tầng xem duy nhất agent dùng được.
+này thì dải ảnh và `pnpm render` một cảnh không soi được cảnh nào dùng tới nó, mà đó là hai
+tầng xem agent dùng được.
 
 `text` nằm **cùng chỗ** với `file`, để câu thoại chỉ tồn tại một bản: phụ đề suy ra từ
 nó chứ không gõ lại.
@@ -369,23 +398,42 @@ lại, `--words` dùng mốc có sẵn), đo `duration` bằng `ffprobe`, độ 
 Hành động chỉ ghi `mouth`, nên mắt và mày vẫn của lớp cảm xúc bên dưới. Trong cảnh, đặt
 nó ở mốc cue với `cycle` bằng `duration` và `blend: 0`, rồi một clip trống ở
 `"@mốc+duration"` để trả mặt về lớp dưới — tool in sẵn hai clip ấy. Thay file tiếng thì
-chạy lại.
+chạy lại. Thư viện Studio 3D ẩn các hành động chỉ nhép miệng này khỏi danh sách, công tắc
+**Hiện khẩu hình** bật lại.
 
 ### Điệu bộ khi nói
 
 Người nói diễn bằng một chuỗi tư thế giữ, không bằng vòng lặp: mỗi cú là một clip hành động
-giơ một lần rồi giữ tới cú sau — bộ chung và cách xếp ba track (tay, nhịp thân, đầu) ở
-[01](01-rig.md#điệu-bộ-khi-nói).
+giơ một lần rồi giữ tới cú sau — dáng tay là bộ `talk-pose-*` của [bộ hành động 3D](01-rig.md#bộ-hành-động-3d),
+cú nhịp, cú đầu và cách xếp track ở [01](01-rig.md#điệu-bộ-khi-nói).
 
 - **Mật độ:** `0,5`–`0,9` cú mỗi giây, giữa hai cú đứng yên ít nhất `0,5 s`. Không đặt hai cú
   cùng dạng liền nhau; liệt kê thì mỗi mục một tư thế mới (đổi tay, đổi bên ngả).
-- **Chỗ đặt:** cú khởi ở đầu từ nhấn hay đầu cụm, không ở cuối từ. Nói về mình → `talk-chest`.
-  Câu hỏi, phản bác → `talk-shrug` hoặc `talk-hands`, kèm `talk-tilt` ở track đầu. Chỉ người
-  nghe → `talk-point-far`. Tay giữ mà câu cần một cú → `talk-beat` / `talk-beat-back` (ngồi:
-  `talk-beat-seated`, người 3D ngồi `talk-beat-seated-3d`), hay `talk-sway`.
+- **Chỗ đặt:** cú khởi ở đầu từ nhấn hay đầu cụm, không ở cuối từ. Câu hỏi, phản bác → kèm
+  `tilt-head-*` ở track đầu. Tay giữ mà câu cần một cú → `talk-beat-3d` (ngồi
+  `talk-beat-seated-3d`).
 - **Vào và buông:** clip vào blend ~`0,3`; dấu chấm, chỗ ngắt dài thì clip rỗng blend ~`0,4`
-  để tay về track dưới. Nhìn ống kính là `look-camera` ở track đầu, chồng được với `talk-tilt`
-  và `talk-nod`.
+  để tay về track dưới. Quay mặt về người nghe là `turn-head-*` ở track đầu, chồng được với
+  `nod-once-3d`.
+
+### Đi lại trong cảnh
+
+Người 3D đi theo `world.path`; chân, hông, thân lái theo đường do rig ([03](03-scene.md#đi-theo-path)). Viết đoạn đi bằng
+`stickman gen walk` ([05](05-repo-video.md#đi-theo-các-điểm-sàn)), không viết tay mốc và clip: nó lo giây từng mốc, `yaw`,
+chỗ clip đi kết thúc, độ dài cú quay, chỗ clip đi bắt đầu sau cú quay.
+
+- **Rẽ khi đang đi là một mốc giữa đường** (`--to "500,0 500,-500"`): một `path`, một clip `walk` chạy suốt, mốc ở chỗ rẽ là
+  đích mềm. Không dừng – xoay – đi ở góc, không đặt `stand-3d` ở góc. Quay đầu khi đang đi là vòng chữ U (`--radius 125`),
+  không phải một mốc gấp `180°`.
+- **Dừng – quay chỉ khi câu chuyện dừng**: nhìn ai, nói, nhận đồ, chỗ hẹp không vòng được — `x,z!` (dừng, quay, đi tiếp),
+  `x,z!yaw` ở điểm cuối (dừng rồi quay nhìn).
+- **`yaw` mốc theo hướng đi**: mốc giữa đường là phân giác hai quãng, mốc đầu và mốc dừng là hướng quãng kề. `yaw` lệch
+  hướng `path` quá `45°` (vd mọi mốc `yaw: 0`) thì thân lái nửa vời, hông bỏ đường rồi lao theo — `check` báo.
+- **Vào cảnh đang đi thì clip đi `blend 0`** (`--start moving`): `path` đã đủ tốc từ giây đầu, clip hoà vào từ dáng đứng là
+  người đứng sững rồi lao — `check` báo.
+- Sửa đường thì chạy lại lệnh với cùng `--at`, không sửa tay một mốc giữa chuỗi; nối đoạn sau là lệnh mới với `--at` sau mốc
+  dừng. Xong thì `stickman check --scene <id> --only move,clash` và dải khung dày ở từng chỗ rẽ (lệnh in sẵn) trước khi
+  render video.
 
 ## Phụ đề và chữ trên hình
 
@@ -405,7 +453,7 @@ Dùng mẫu có giấy phép phù hợp, ưu tiên CC0. Kiểm giấy phép và 
 file; lưu nguồn và giấy phép trong JSON đi kèm. Tiếng phức hợp được ghép từ
 nhiều lớp mẫu. Nhạc nền là asset riêng và phải được kiểm tra quyền sử dụng.
 
-**Công thức ở hai lớp, như mảnh ảnh.** Thư viện nằm trong tool, `upgrade` chép lại: gói
+**Công thức ở hai lớp, như hành động và nhân vật.** Thư viện nằm trong tool, `upgrade` chép lại: gói
 CC0 (`PACKS`), các mã dùng lại được ở mọi tập (`LIBRARY` — nhát rìu, cú tõm, bước chân cỏ
 và đá lát, phím cơ, bấm máy tính, bíp, pop, rè, gió, chuông), các hàm tổng hợp (`SYNTH`)
 và hậu xử lý (`POST`). Công thức của tập nằm ở `sfx/`, `upgrade` không đụng; trùng mã thì
@@ -464,7 +512,7 @@ Ba chỗ phải đúng, sai thì nghe rõ chỗ nối:
 - **Đuôi tràn qua mốc cuối vòng phải cộng ngược về đầu vòng** — dựng dài `2L` rồi gập
   nửa sau lên nửa đầu. Không gập thì tiếng cuối bị cắt cụt ở chỗ nối.
 
-`check` dò quãng **cả sân khấu đứng yên** của cảnh trong shot — không ai trôi ngang và
+`check` dò quãng **cả sân khấu đứng yên** của cảnh trong shot — không ai dời chỗ và
 không clip nào đang là hành động có sải chân (`stillSpans` của rig; người giậm chân tại chỗ
 vẫn là đang bước) — rồi kêu khi một cue có `loop` phủ lên quãng ấy quá một giây. Đấy là
 tiếng vó, tiếng bước còn chạy sau khi người đã dừng; chữa bằng cắt `dur` hay dời `at`. Cue
@@ -497,15 +545,15 @@ cảnh), mỗi biến thể trộn lên nó thành một composition `<tập>-th
   "scene": "canh-05", "font": { "family": "Baloo 2", "file": "Baloo2.ttf" },
   "variants": {
     "a": { "at": 16.3, "zoom": 4, "origin": [0.35, 0.65], "lines": ["MỘT MÌNH", "MỘT RÌU"],
-           "keep": { "cast": ["tieu-phu"], "animals": [], "props": [], "bg": false, "hooks": ["front"] } },
+           "keep": { "cast": ["tieu-phu"], "bg": false, "hooks": ["front"] } },
     "b": { "at": 5.3, "zoom": 2.8, "lines": ["AI THẮNG", "ĐÂY???"], "accent": { "char": "???", "color": "#c94726" } }
   }
 }
 ```
 
-`keep` lọc khung ấy mà không sửa cảnh phim; trường bỏ trống là giữ nguyên. `cast` /
-`animals` / `props` là `id` được ở lại (`[]` bỏ hết — bỏ ai thì bỏ luôn thứ bám vào người
-đó, người cưỡi hay đồ xách), `bg: false` bỏ `scene.bg[]`, `fx: false` bỏ `scene.fx[]`,
+`keep` lọc khung ấy mà không sửa cảnh phim; trường bỏ trống là giữ nguyên. `cast`
+là `id` được ở lại (`[]` bỏ hết — bỏ ai thì bỏ luôn thứ bám vào người
+đó), `bg: false` bỏ `scene.bg[]`, `fx: false` bỏ `scene.fx[]`,
 `layers` là tên lớp vẽ code được ở lại, `hooks` là móc của chúng được chạy
 ([10](10-lop-ve-code.md)) — `["front"]` giữ bong bóng thoại mà bỏ bối cảnh vẽ code.
 
@@ -526,10 +574,7 @@ Bundle của lệnh này chỉ mang tập `tap`, cảnh của nó và file tiế
 ([03](03-scene.md#phạm-vi-bundle)). Render từ bundle dựng sẵn (`remotion bundle --out-dir`,
 rồi render từng đoạn) thì bundle với `STICKMAN_SCOPE=tap`.
 
-Bản upload dùng frame PNG; preview có thể dùng JPEG để render nhanh. `render:final` còn
-đặt `REMOTION_QUALITY=final` để tóc dựng khối chiếu đúng góc từng khung, không làm tròn
-theo cache — chỉ lệnh này, `pnpm render` / `still` / `frames` / `thumbnails` và Remotion
-Studio vẫn dùng bản cache ([02](02-trang-phuc.md#tóc-dựng-khối)). Chuẩn hoá
+Bản upload dùng frame PNG; preview có thể dùng JPEG để render nhanh. Chuẩn hoá
 từng file audio trước khi trộn, sau đó đo peak của bản mix để tránh clipping.
 
 Công cụ hệ thống cần thiết được liệt kê tại

@@ -1,4 +1,3 @@
-import type { ReactElement } from "react";
 import {
   depthAt,
   dot3,
@@ -10,7 +9,7 @@ import {
   type Lens,
   type Place3,
   type V3,
-} from "@stickman3d/sketch";
+} from "@stickman3d/rig/core";
 
 // Đồ dựng khối: vật là vài khối lồi tám đỉnh trong toạ độ riêng của vật, đặt vào thế giới bằng
 // `Place3`, chiếu qua `Lens` của cảnh. Mặt khối một màu phẳng: mặt ngửa lên lấy `top`, mặt đứng quay
@@ -343,97 +342,8 @@ export function meets(a: number[][], b: number[][]) {
   return true;
 }
 
-const fmt = (lens: Lens, p: V3) =>
-  project(lens, p)
-    .map((u) => u.toFixed(1))
-    .join(" ");
-const path = (lens: Lens, ps: V3[], close = true) =>
-  "M" + ps.map((p) => fmt(lens, p)).join("L") + (close ? "Z" : "");
-function clipSeg(a: V3, b: V3, hs: Half[]): [V3, V3] | null {
-  let t0 = 0;
-  let t1 = 1;
-  for (const h of hs) {
-    const sa = dot3(h.n, a) - h.d;
-    const sb = dot3(h.n, b) - h.d;
-    if (sa > 0 && sb > 0) return null;
-    if (sa > 0) t0 = Math.max(t0, sa / (sa - sb));
-    else if (sb > 0) t1 = Math.min(t1, sa / (sa - sb));
-  }
-  if (t0 >= t1) return null;
-  const at = (t: number): V3 => [
-    a[0] + (b[0] - a[0]) * t,
-    a[1] + (b[1] - a[1]) * t,
-    a[2] + (b[2] - a[2]) * t,
-  ];
-  return [at(t0), at(t1)];
-}
-
 /** Ống kính theo giá trị: khoá của các bảng nhớ theo ống kính */
 export const lensKey = (l: Lens) => `${l.eye}|${l.yaw}|${l.pitch}|${l.f}|${l.cx}|${l.cy}`;
-
-let serial = 0;
-const drawn = new WeakMap<Solid, { id: number; key: string; out: ReactElement[] }>();
-/** Phần tử của một khối: mặt, viền cạnh thật, vân. `key` theo khối, không theo chỗ trong lượt */
-function drawSolid(s: Solid, lens: Lens, key: string, ink: string): ReactElement[] {
-  const c = drawn.get(s);
-  if (c?.key === key) return c.out;
-  const id = c?.id ?? serial++;
-  const out: ReactElement[] = [];
-  const light = (n: V3) => lensView(lens, n)[0];
-  const seen = (f: Face) => dot3(sub3(lens.eye, f.c), f.n) > 0;
-  const t = s.part.tone;
-  const w = s.sw * (s.part.w ?? 1);
-  s.f.forEach((f, i) => {
-    if (f.cap || f.hid || !seen(f)) return;
-    const fill = f.n[1] < -0.5 ? t.top : f.n[1] < 0.5 && light(f.n) < -0.25 ? t.lit : t.side;
-    const ed = f.p
-      .map((a, j) => (f.e[j] ? `M${fmt(lens, a)}L${fmt(lens, f.p[(j + 1) % f.p.length])}` : ""))
-      .join("");
-    out.push(
-      <path key={`${id}f${i}`} d={path(lens, f.p)} fill={fill} stroke={fill} strokeWidth={0.8} />,
-    );
-    if (ed)
-      out.push(
-        <path key={`${id}e${i}`} d={ed} fill="none" stroke={s.ink ?? ink} strokeWidth={w} />,
-      );
-  });
-  (s.part.marks ?? []).forEach((m, i) => {
-    const n = place3({ at: [0, 0, 0], yaw: s.at.yaw }, m.n);
-    const f = s.f.filter((x) => !x.cap).reduce((a, b) => (dot3(b.n, n) > dot3(a.n, n) ? b : a));
-    if (!seen(f)) return;
-    const d = m.d
-      .flatMap((l) => l.slice(1).map((q, j) => clipSeg(place3(s.at, l[j]), place3(s.at, q), s.cut)))
-      .filter((x): x is [V3, V3] => !!x)
-      .map((x) => path(lens, x, false))
-      .join("");
-    if (d)
-      out.push(
-        <path
-          key={`${id}m${i}`}
-          d={d}
-          fill="none"
-          stroke={m.color}
-          strokeWidth={s.sw * (m.w ?? 0.5)}
-        />,
-      );
-  });
-  drawn.set(s, { id, key, out });
-  return out;
-}
-
-/**
- * Vẽ các khối theo thứ tự đưa vào: mỗi mặt tô màu (viền mảnh cùng màu cho khỏi hở chỗ chặt), nét
- * viền cạnh thật, rồi vân. Phần tử nhớ theo object khối, ống kính và `ink`: khối tĩnh của
- * `solidOrder` không chiếu lại, React gặp lại đúng phần tử cũ mỗi khung
- */
-export function SolidPaths({ ss, lens, ink }: { ss: Solid[]; lens: Lens; ink: string }) {
-  const key = `${lensKey(lens)}|${ink}`;
-  return (
-    <g strokeLinejoin="round" strokeLinecap="round">
-      {ss.flatMap((s) => drawSolid(s, lens, key, ink))}
-    </g>
-  );
-}
 
 /** Độ sâu tối thiểu của phần khối còn vẽ: gần hơn thì chiếu ra vô cực */
 const NEAR = 1;

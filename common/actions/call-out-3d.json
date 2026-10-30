@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 20,
+  "name": "call-out-3d",
+  "duration": 1.2,
+  "end": "hold",
+  "mask": ["armNear", "hand", "stretch"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armNear": [-6, 24, 0], "stretch": [1, 1, 1, 1] },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 0.3, "palm": "in" } }
+    },
+    {
+      "t": 0.1667,
+      "pose": { "stretch": [1, 1.1, 1, 1] },
+      "reach": { "armNear": { "at": [50, -110, 100], "elbow": [-0.6, 1, 0.2] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 0.7, "palm": "forward", "fingers": "up" } }
+    },
+    {
+      "t": 0.4,
+      "pose": { "stretch": [1, 1.25, 1, 1] },
+      "reach": { "armNear": { "at": [35, -220, 135], "elbow": [-0.6, 0.6, 1] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 1, "palm": "forward", "fingers": "up" } }
+    },
+    {
+      "t": 0.53,
+      "pose": { "stretch": [1, 1.25, 1, 1] },
+      "reach": { "armNear": { "at": [38, -212, 147], "elbow": [-0.6, 0.6, 1] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 1, "palm": "forward", "fingers": "up" } }
+    },
+    {
+      "t": 0.66,
+      "pose": { "stretch": [1, 1.25, 1, 1] },
+      "reach": { "armNear": { "at": [35, -220, 135], "elbow": [-0.6, 0.6, 1] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 1, "palm": "forward", "fingers": "up" } }
+    },
+    {
+      "t": 1,
+      "pose": { "stretch": [1, 1.25, 1, 1] },
+      "reach": { "armNear": { "at": [35, -220, 135], "elbow": [-0.6, 0.6, 1] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 1, "palm": "forward", "fingers": "up" } }
+    }
+  ],
+  "events": [],
+  "note": "Giơ tay gần lên gọi người (\"anh ơi!\", gọi phục vụ): từ tay buông của `stand-3d`, tay đưa lên qua phía trước-ngoài, tới cổ tay chếch ra ngoài, cao quá đỉnh đầu (đích hệ thân [35, -220, 135], tay gần vươn 1,25 lần, cánh tay duỗi) lúc 0,48 s, lắc ra một nhịp lúc 0,64 s rồi giữ; bàn tay `open`, lòng ra trước, ngón dựng. Chỉ ghi `armNear`, `hand`, `stretch`. Nền `stand-3d`, hay `sit-3d`: đích hệ thân theo hông nên ngồi vẫn đúng. Hạ bằng `call-out-out-3d` rồi nhả về nền; blend thẳng từ tay giơ về nền thì khuỷu lật giữa đường. Giơ tay lặng lẽ, gần thẳng đứng: `raise-hand-3d`. Sinh bằng `tools/actions/call-out.mjs`.",
+  "preview": { "stage": "stand" }
+}

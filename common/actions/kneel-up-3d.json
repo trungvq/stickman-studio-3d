@@ -1,0 +1,298 @@
+{
+  "schemaVersion": 20,
+  "name": "kneel-up-3d",
+  "duration": 1,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": ["armFar", "armNear", "legFar", "legNear", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [11, 42, 0],
+        "armNear": [11, 42, 0],
+        "legFar": [80, -170],
+        "legNear": [80, -170],
+        "torso": 3
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.0417,
+      "pose": {
+        "armFar": [10.9, 41.9, 0],
+        "armNear": [10.9, 41.9, 0],
+        "legFar": [77.8, -168.2],
+        "legNear": [77.8, -168.2],
+        "torso": 3
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.0833,
+      "pose": {
+        "armFar": [10.7, 41.5, 0],
+        "armNear": [10.7, 41.5, 0],
+        "legFar": [75.9, -166.4],
+        "legNear": [75.9, -166.4],
+        "torso": 2.9
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.125,
+      "pose": {
+        "armFar": [10.4, 41, 0],
+        "armNear": [10.4, 41, 0],
+        "legFar": [74.2, -164.7],
+        "legNear": [74.2, -164.7],
+        "torso": 2.8
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.1667,
+      "pose": {
+        "armFar": [10, 40.2, 0],
+        "armNear": [10, 40.2, 0],
+        "legFar": [72.7, -163],
+        "legNear": [72.7, -163],
+        "torso": 2.7
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.2083,
+      "pose": {
+        "armFar": [9.5, 39.3, 0],
+        "armNear": [9.5, 39.3, 0],
+        "legFar": [70.4, -160.8],
+        "legNear": [70.4, -160.8],
+        "torso": 2.6
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.25,
+      "pose": {
+        "armFar": [9, 38.3, 0],
+        "armNear": [9, 38.3, 0],
+        "legFar": [65.2, -156.6],
+        "legNear": [65.2, -156.6],
+        "torso": 2.4
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.2917,
+      "pose": {
+        "armFar": [8.3, 37.1, 0],
+        "armNear": [8.3, 37.1, 0],
+        "legFar": [60.9, -152.5],
+        "legNear": [60.9, -152.5],
+        "torso": 2.2
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.3333,
+      "pose": {
+        "armFar": [7.6, 35.8, 0],
+        "armNear": [7.6, 35.8, 0],
+        "legFar": [57.1, -148.4],
+        "legNear": [57.1, -148.4],
+        "torso": 2
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.375,
+      "pose": {
+        "armFar": [6.9, 34.4, 0],
+        "armNear": [6.9, 34.4, 0],
+        "legFar": [53.7, -144.3],
+        "legNear": [53.7, -144.3],
+        "torso": 1.7
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.4167,
+      "pose": {
+        "armFar": [6.1, 33, 0],
+        "armNear": [6.1, 33, 0],
+        "legFar": [49.5, -140],
+        "legNear": [49.5, -140],
+        "torso": 1.5
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.4583,
+      "pose": {
+        "armFar": [5.3, 31.5, 0],
+        "armNear": [5.3, 31.5, 0],
+        "legFar": [44, -135.2],
+        "legNear": [44, -135.2],
+        "torso": 1.2
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armFar": [4.5, 30, 0],
+        "armNear": [4.5, 30, 0],
+        "legFar": [39, -130.3],
+        "legNear": [39, -130.3],
+        "torso": 1
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5417,
+      "pose": {
+        "armFar": [3.7, 28.5, 0],
+        "armNear": [3.7, 28.5, 0],
+        "legFar": [34.3, -125.4],
+        "legNear": [34.3, -125.4],
+        "torso": 0.8
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5833,
+      "pose": {
+        "armFar": [2.9, 27, 0],
+        "armNear": [2.9, 27, 0],
+        "legFar": [29.9, -120.3],
+        "legNear": [29.9, -120.3],
+        "torso": 0.5
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.625,
+      "pose": {
+        "armFar": [2.1, 25.6, 0],
+        "armNear": [2.1, 25.6, 0],
+        "legFar": [25.5, -115.9],
+        "legNear": [25.5, -115.9],
+        "torso": 0.3
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.6667,
+      "pose": {
+        "armFar": [1.4, 24.2, 0],
+        "armNear": [1.4, 24.2, 0],
+        "legFar": [21.3, -112],
+        "legNear": [21.3, -112],
+        "torso": 0
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.7083,
+      "pose": {
+        "armFar": [0.7, 22.9, 0],
+        "armNear": [0.7, 22.9, 0],
+        "legFar": [17.1, -107.9],
+        "legNear": [17.1, -107.9],
+        "torso": -0.2
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.75,
+      "pose": {
+        "armFar": [0, 21.8, 0],
+        "armNear": [0, 21.8, 0],
+        "legFar": [13.1, -103.7],
+        "legNear": [13.1, -103.7],
+        "torso": -0.4
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.7917,
+      "pose": {
+        "armFar": [-0.5, 20.7, 0],
+        "armNear": [-0.5, 20.7, 0],
+        "legFar": [9.1, -99.3],
+        "legNear": [9.1, -99.3],
+        "torso": -0.6
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.8333,
+      "pose": {
+        "armFar": [-1, 19.8, 0],
+        "armNear": [-1, 19.8, 0],
+        "legFar": [6.9, -97],
+        "legNear": [6.9, -97],
+        "torso": -0.7
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.875,
+      "pose": {
+        "armFar": [-1.4, 19, 0],
+        "armNear": [-1.4, 19, 0],
+        "legFar": [5.2, -95.3],
+        "legNear": [5.2, -95.3],
+        "torso": -0.8
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.9167,
+      "pose": {
+        "armFar": [-1.7, 18.5, 0],
+        "armNear": [-1.7, 18.5, 0],
+        "legFar": [3.5, -93.6],
+        "legNear": [3.5, -93.6],
+        "torso": -0.9
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.9583,
+      "pose": {
+        "armFar": [-1.9, 18.1, 0],
+        "armNear": [-1.9, 18.1, 0],
+        "legFar": [1.7, -91.8],
+        "legNear": [1.7, -91.8],
+        "torso": -1
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "armFar": [-2, 18, 0],
+        "armNear": [-2, 18, 0],
+        "legFar": [0, -90],
+        "legNear": [0, -90],
+        "torso": -1
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Từ seiza nhổm lên quỳ gối thẳng rồi giữ: đùi xoay quanh gối tới dựng đứng trong 1 s, gối và cẳng chân nằm yên trên đệm, thân 3 → −1, tay từ trên đùi buông xuống. Ghi tay, chân, thân. Nền `seiza-3d`; hông đi theo `world.path` toàn mốc `sit: true` như `preview.path` (cung tròn quanh gối, mặt ngồi seiza 14 trên sàn). Tay nâng ly, vỗ tay chồng track tay trên; hạ về bằng `kneel-up-out-3d`. Mặt ngồi của mốc tính cho nửa bề dày đùi 16 (đơn vị rig ở `height` 1): người đùi dày hơn thì hạ mốc chừng ấy. Sinh bởi `tools/actions/seat.mjs`.",
+  "preview": {
+    "stage": "floor",
+    "path": [
+      { "t": 0, "at": [0, 14], "sit": true },
+      { "t": 0.2, "at": [2.8, 25], "sit": true },
+      { "t": 0.4, "at": [15.5, 48.6], "sit": true },
+      { "t": 0.6, "at": [40, 69.2], "sit": true },
+      { "t": 0.8, "at": [65.5, 77.6], "sit": true },
+      { "t": 1, "at": [76.8, 78.5], "sit": true }
+    ]
+  }
+}

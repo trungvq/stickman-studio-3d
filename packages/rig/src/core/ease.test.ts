@@ -255,15 +255,7 @@ function scene(hands: unknown[], items: unknown[] = [], world: object = { at: AT
     items,
   });
   if (!r.success) throw new Error(r.error.message);
-  return resolveScene(
-    r.data,
-    {},
-    {},
-    {},
-    { nguoi: H },
-    { nguoi: DIMS },
-    { "bang-gia": held.data! },
-  );
+  return resolveScene(r.data, {}, { nguoi: H }, { nguoi: DIMS }, { "bang-gia": held.data! });
 }
 
 const poseAt = (rt: SceneRuntime, t: number) => sceneAt(rt, "nguoi", t, H, DIMS) as ActInput;
@@ -497,7 +489,7 @@ describe(`scene đời ${SCENE_VERSION}`, () => {
 });
 
 describe("`auto` của lần cầm theo mốc: `φ` qua `±180°`", () => {
-  // bốn mốc món, `φ` ở mốc ≈ 160, 172,5, −57,5 (= 302,5), −40 (= 320): tăng đều, đoạn giữa đi qua `180°`
+  // bốn mốc món, khuỷu khoá vào hướng gần ngược khuỷu ưu tiên: `φ` ở mốc ≈ −100, −179, 178, −156 — đoạn giữa đi qua `180°`
   const AT4 = [
     [260, -350, 380],
     [380, -380, 520],
@@ -510,7 +502,8 @@ describe("`auto` của lần cầm theo mốc: `φ` qua `±180°`", () => {
         t: 0,
         right: {
           hold: { item: "bang-gia", group: "sheet", edge: "right", along: 0.33, thumb: "front" },
-          elbow: [0, 0, -1],
+          elbow: [0.5, -0.8, -0.8],
+          elbowLock: true,
         },
       },
     ],
@@ -534,14 +527,13 @@ describe("`auto` của lần cầm theo mốc: `φ` qua `±180°`", () => {
     let run = 0;
     for (let i = 1; i <= 100; i++) {
       const d = wrap(phi(1.5 + i / 100) - phi(1.5 + (i - 1) / 100));
-      expect(d).toBeGreaterThanOrEqual(-1e-9);
+      expect(Math.abs(d)).toBeLessThan(5);
       run += d;
     }
     expect(run).toBeCloseTo(wrap(b - a), 6);
     for (const t of [1.5, 2.5]) {
       const [l, r] = dphi(t);
-      expect(l).toBeGreaterThan(5);
-      expect(Math.abs(l - r)).toBeLessThan(0.02 * l);
+      expect(Math.abs(l - r)).toBeLessThan(0.02 * Math.max(Math.abs(l), 25));
     }
   });
 });

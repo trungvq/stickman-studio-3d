@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 20,
+  "name": "face-menace",
+  "duration": 0.4,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "squint",
+        "brow": "angry",
+        "mouth": "grin"
+      }
+    }
+  ],
+  "note": "Doạ nạt khinh khỉnh: mày dựng ngược, mắt nheo, cười nhe răng — đáng sợ chứ không hiền như `face-smug`; vào ngay rồi giữ. Chỉ ghi `face`, nên chồng lên mọi tư thế, đứng hay ngồi, và nằm dưới track khẩu hình (`talk-lips`): lời đè `mouth`, mắt và mày vẫn của lớp này.",
+  "preview": {
+    "stage": "stand"
+  }
+}

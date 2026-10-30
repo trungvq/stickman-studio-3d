@@ -33,8 +33,16 @@ describe("check: tham số và nhóm luật", () => {
       "ref",
       "held",
     ]);
-    assert.deepEqual(checkGroups({}).groups, CHECK_GROUPS);
-    assert.equal(checkGroups({}).all, true);
+    assert.deepEqual(checkGroups({}).groups, ["ref", "move", "held", "legacy", "roles", "episode"]);
+    assert.equal(checkGroups({}).all, false);
+    assert.deepEqual(checkGroups({ skip: "held" }).groups, [
+      "ref",
+      "move",
+      "legacy",
+      "roles",
+      "episode",
+    ]);
+    assert.equal(checkGroups({ only: CHECK_GROUPS }).all, true);
   });
 
   it("các cờ còn lại: `--scene`, `--uses`, `--baseline`, `--save-baseline`, `--time`, `--jobs`", () => {
@@ -67,10 +75,10 @@ describe("check: tham số và nhóm luật", () => {
   it("tên nhóm sai, bỏ hết nhóm, thiếu giá trị, `--jobs` không dương là lỗi kèm danh sách nhóm", () => {
     assert.match(
       parseCheckArgs(["--only", "hand,move"]).error,
-      /không có nhóm `hand` — nhóm của check: ref, move, held, legacy, clash, episode/,
+      /không có nhóm `hand` — nhóm của check: ref, move, held, legacy, roles, clash, episode/,
     );
     assert.match(
-      parseCheckArgs(["--skip", "ref,move,held,legacy,clash,episode"]).error,
+      parseCheckArgs(["--skip", "ref,move,held,legacy,roles,clash,episode"]).error,
       /không còn nhóm/,
     );
     assert.match(parseCheckArgs(["--only"]).error, /--only cần một giá trị/);
@@ -78,13 +86,11 @@ describe("check: tham số và nhóm luật", () => {
     assert.match(parseCheckArgs(["--jobs", "0"]).error, /--jobs phải là số nguyên dương/);
   });
 
-  it("`sceneUses`: hành động của người và động vật, nhân vật, đạo cụ, động vật, bỏ đuôi `.json`", () => {
+  it("`sceneUses`: hành động, nhân vật, bỏ đuôi `.json`", () => {
     const used = sceneUses({
       cast: [{ character: "yota.json", tracks: [{ clips: [{ action: "ngoi-3d" }, {}] }] }],
-      props: [{ prop: "xe.json" }],
-      animals: [{ animal: "dog.json", tracks: [{ clips: [{ action: "dog-walk" }] }] }],
     });
-    assert.deepEqual([...used].sort(), ["dog", "dog-walk", "ngoi-3d", "xe", "yota"]);
+    assert.deepEqual([...used].sort(), ["ngoi-3d", "yota"]);
   });
 });
 
@@ -156,14 +162,14 @@ const X = -230;
 // Cảnh three: sổ kẹp ngang cẳng tay phải cả cảnh; cảnh khác `null`
 const WORLD = `
 import * as THREE from "three";
-import { act, addItem, Batch, box, castCharacter, defaultCharacter, fromCharacter, sceneAt } from "@stickman3d/rig";
+import { act, addItem, Batch, box, defaultCharacter, fromCharacter, sceneAt } from "@stickman3d/rig";
 __HONG__
 export function worldOf(name: string, rt: any) {
   if (!["cam", "ngoi"].includes(name)) return null;
   const root = new THREE.Group();
   const figs: Record<string, any> = {};
   for (const m of rt.runtime.cast) {
-    const f = fromCharacter(castCharacter(m, m.character ? rt.characters[m.character] : defaultCharacter()));
+    const f = fromCharacter((m.character ? rt.characters[m.character] : defaultCharacter()));
     root.add(f.root);
     figs[m.id] = f;
   }
@@ -241,11 +247,14 @@ const msgs = (r) => r.problems.map((p) => `${p.level}: ${p.msg}`);
 describe("check: chạy theo nhóm", () => {
   it("hợp các lượt `--only` từng nhóm bằng lượt đủ; mỗi dòng mang nhóm của nó", async () => {
     const dir = space();
-    const full = await checkWorkspace({ dir, jobs: 1 });
+    const full = await checkWorkspace({ dir, jobs: 1, only: CHECK_GROUPS });
     assert.ok(
       full.problems.some((p) => p.group === "clash"),
       msgs(full).join("\n"),
     );
+    const plain = await checkWorkspace({ dir, jobs: 1 });
+    assert.ok(!plain.problems.some((p) => p.group === "clash"), msgs(plain).join("\n"));
+    assert.equal(plain.time.clash, undefined);
     const parts = [];
     for (const g of CHECK_GROUPS) {
       const r = await checkWorkspace({ dir, jobs: 1, only: g });
@@ -279,7 +288,7 @@ describe("check: chạy theo nhóm", () => {
     assert.ok(held.time.three > 0);
     assert.equal(held.time.clash, undefined);
     assert.equal(held.time.move, undefined);
-    const skip = await checkWorkspace({ dir, jobs: 1, skip: "clash,held,legacy" });
+    const skip = await checkWorkspace({ dir, jobs: 1, skip: "clash,held,legacy,roles" });
     assert.equal(skip.time.three, undefined);
     assert.ok(skip.time.move > 0);
   });
@@ -299,14 +308,24 @@ describe("check: chạy theo nhóm", () => {
 
   it("baseline: lưu rồi so — chỉ còn cảnh báo mới; sửa xong thì đã hết", async () => {
     const dir = space();
-    const first = await checkWorkspace({ dir, jobs: 1, saveBaseline: "baseline.json" });
+    const first = await checkWorkspace({
+      dir,
+      jobs: 1,
+      only: CHECK_GROUPS,
+      saveBaseline: "baseline.json",
+    });
     const saved = JSON.parse(readFileSync(join(dir, "baseline.json"), "utf8"));
     assert.equal(saved.stickman, "check-baseline");
     assert.equal(
       saved.warnings.length,
       new Set(first.problems.filter((p) => p.level !== "lỗi").map((p) => p.msg)).size,
     );
-    const same = await checkWorkspace({ dir, jobs: 1, baseline: "baseline.json" });
+    const same = await checkWorkspace({
+      dir,
+      jobs: 1,
+      only: CHECK_GROUPS,
+      baseline: "baseline.json",
+    });
     assert.deepEqual(same.problems, []);
     assert.deepEqual(
       [same.baseline.fresh, same.baseline.worse, same.baseline.gone.length],
@@ -314,7 +333,13 @@ describe("check: chạy theo nhóm", () => {
     );
     // dồn hai người vào nhau ở cảnh `le`: chỉ thấy cảnh báo mới của cảnh ấy
     writeFileSync(join(dir, "scenes/le.json"), JSON.stringify(stand("le", ["a", "b"], -55)));
-    const moved = await checkWorkspace({ dir, jobs: 1, scene: "^le$", baseline: "baseline.json" });
+    const moved = await checkWorkspace({
+      dir,
+      jobs: 1,
+      only: CHECK_GROUPS,
+      scene: "^le$",
+      baseline: "baseline.json",
+    });
     assert.ok(moved.problems.length > 0);
     for (const p of moved.problems) {
       assert.equal(p.delta, "mới", p.msg);
@@ -322,7 +347,13 @@ describe("check: chạy theo nhóm", () => {
     }
     assert.equal(moved.baseline.fresh, moved.problems.length);
     // lưu lượt một cảnh: cảnh khác giữ nguyên trong file
-    await checkWorkspace({ dir, jobs: 1, scene: "^le$", saveBaseline: "baseline.json" });
+    await checkWorkspace({
+      dir,
+      jobs: 1,
+      only: CHECK_GROUPS,
+      scene: "^le$",
+      saveBaseline: "baseline.json",
+    });
     const after = JSON.parse(readFileSync(join(dir, "baseline.json"), "utf8"));
     for (const e of saved.warnings.filter((e) => e.scene !== "le"))
       assert.ok(
@@ -330,7 +361,13 @@ describe("check: chạy theo nhóm", () => {
         e.key,
       );
     writeFileSync(join(dir, "scenes/le.json"), JSON.stringify(stand("le", ["a"])));
-    const back = await checkWorkspace({ dir, jobs: 1, scene: "^le$", baseline: "baseline.json" });
+    const back = await checkWorkspace({
+      dir,
+      jobs: 1,
+      only: CHECK_GROUPS,
+      scene: "^le$",
+      baseline: "baseline.json",
+    });
     assert.deepEqual(back.problems, []);
     assert.ok(back.baseline.gone.length > 0);
   });

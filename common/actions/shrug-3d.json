@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 20,
+  "name": "shrug-3d",
+  "duration": 1.4,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": ["armNear", "armFar", "torso", "head", "hand"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armNear": [-6, 24, 0], "armFar": [-6, 24, 0], "torso": 0, "head": [0, 0, 0] },
+      "hand": {
+        "armNear": { "pose": "open", "w": 0, "turn": 0, "bend": 0 },
+        "armFar": { "pose": "open", "w": 0, "turn": 0, "bend": 0 }
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.22,
+      "pose": {
+        "armNear": [-4, 100, 0, 18, 50],
+        "armFar": [-4, 100, 0, 18, 50],
+        "torso": -2,
+        "head": [5, 0, -4]
+      },
+      "hand": {
+        "armNear": { "pose": "open", "w": 0.8, "turn": -90, "bend": -10 },
+        "armFar": { "pose": "open", "w": 0.8, "turn": -90, "bend": -10 }
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.64,
+      "pose": {
+        "armNear": [-4, 98, 0, 17, 48],
+        "armFar": [-4, 98, 0, 17, 48],
+        "torso": -2,
+        "head": [5, 0, -3]
+      },
+      "hand": {
+        "armNear": { "pose": "open", "w": 0.8, "turn": -90, "bend": -10 },
+        "armFar": { "pose": "open", "w": 0.8, "turn": -90, "bend": -10 }
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": { "armNear": [-6, 24, 0], "armFar": [-6, 24, 0], "torso": 0, "head": [0, 0, 0] },
+      "hand": {
+        "armNear": { "pose": "open", "w": 0, "turn": 0, "bend": 0 },
+        "armFar": { "pose": "open", "w": 0, "turn": 0, "bend": 0 }
+      },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "Nhún vai bó tay một lần: hai khuỷu gập ~100° sát sườn, cẳng tay xoè ra ngoài (dang 18°, xoay ngoài 50°), bàn tay `open` ngửa (`turn` −90), thân ngả −2°, đầu nghiêng 5°; lên trong 0,3 s, giữ tới 0,9 s, buông về dáng tay của `stand-3d` lúc 1,4 s rồi giữ. Chỉ ghi hai tay, `torso`, `head`, `hand`. Nền `stand-3d`. Giữ dáng suốt câu nói thì cắt clip trước 0,9 s và buông bằng clip rỗng blend ~0,4; đi với `tilt-head-*` hay `face-*` chồng lên.",
+  "preview": { "stage": "stand" }
+}

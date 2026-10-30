@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 20,
+  "name": "face-bow",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "shut",
+        "brow": "neutral",
+        "mouth": "smile"
+      }
+    }
+  ],
+  "note": "Mắt nhắm, mỉm cười khi cúi chào: lễ phép, bình thản; vào ngay rồi giữ. Chỉ ghi `face`, nên chồng lên mọi tư thế, đứng hay ngồi, và nằm dưới track khẩu hình (`talk-lips`): lời đè `mouth`, mắt và mày vẫn của lớp này. Chồng lên `bow-*-3d`, `bow-hands-front-*-3d`, `eshaku-3d`; buông bằng `face-kind` hay `face-calm` khi đứng thẳng lại.",
+  "preview": {
+    "stage": "stand"
+  }
+}

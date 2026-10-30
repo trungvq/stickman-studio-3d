@@ -1,7 +1,7 @@
 // Que xương không nền của người 3D: lưới sàn và viền đồ khối chiếu qua `scene.lens`, khung xương của
 // khung hiện tại theo bên giải phẫu, và ô nhìn từ trên xuống. docs/04-mcp.md#người-3d
 import React from "react";
-import * as rig from "@stickman3d/sketch";
+import * as rig from "@stickman3d/rig/core";
 import * as FX from "@stickman3d/fx";
 import { BONE_SEGS, SIDE_COLOR } from "./trails.mjs";
 
@@ -38,13 +38,13 @@ export function clipSeg(lens, a, b) {
 
 /** Mọi điểm `at` của người 3D: chỗ đứng, các mốc `path` */
 const worldSpots = (rt) =>
-  rt.cast.flatMap((m) => (m.world ? (m.world.path ?? [{ at: m.world.at, sit: m.world.sit }]) : []));
+  rt.cast.flatMap((m) => m.world.path ?? [{ at: m.world.at, sit: m.world.sit }]);
 
 /** Độ cao sàn của cảnh: `at` của mốc đứng, `floor` của người ngồi; không người đứng nào thì `0` */
 export function floorLevels(rt) {
   const ys = new Set();
   for (const k of worldSpots(rt)) if (!k.sit) ys.add(Math.round(k.at[1]));
-  for (const m of rt.cast) if (m.world?.floor !== undefined) ys.add(Math.round(m.world.floor));
+  for (const m of rt.cast) if (m.world.floor !== undefined) ys.add(Math.round(m.world.floor));
   return ys.size ? [...ys] : [0];
 }
 

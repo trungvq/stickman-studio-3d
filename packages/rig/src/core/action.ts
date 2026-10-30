@@ -1,9 +1,8 @@
 import { z } from "zod";
-import { POSE_LAYERS, POSE_NAMES, POSES } from "./poses";
-import { ARM_LAYERS, DEFAULT_FACE, DEFAULT_LAYERS } from "./constants";
+import { POSE_NAMES, POSES } from "./poses";
+import { DEFAULT_FACE } from "./constants";
 import { BROW_KINDS, EYE_KINDS, MOUTH_KINDS } from "./face";
 import type {
-  ArmLayers,
   FaceState,
   HeadPose,
   IdleParams,
@@ -23,8 +22,9 @@ import {
   type Reach,
   type ReachMap,
 } from "./types";
-import { REACH_ELBOW, reachAngles } from "./ik";
-import { HAND_POSE_KINDS, handVec, mixHand, type HandKey, type HandPose } from "./hand";
+import { reachAngles } from "./ik";
+import { HAND_POSE_KINDS, HAND_POSES, mixHand, type HandKey } from "./hand";
+import { HAND_SHAPE_NAME, handKeyVec, type HandShapes } from "./handLibrary";
 import {
   aimDir,
   AimDirSchema,
@@ -35,10 +35,12 @@ import {
   type ReachTerm,
 } from "./bodyMark";
 import { reachEstimate } from "./act3";
+import { SceneHoldSchema } from "./heldItem";
 import {
   BASE_ITEM,
   EquipSchema,
   composeEquip,
+  dropGoneEquip,
   equipSteps,
   type Equip,
   type EquipMap,
@@ -47,33 +49,6 @@ import {
 } from "./schema";
 import { DEFAULT_IDLE, idlePose } from "./idle";
 import { DEFAULT_WALK, WALK_CYCLE_SECONDS, walkPose } from "./walk";
-import {
-  ANIMAL_CHANNELS,
-  ANIMAL_JOINT_CHANNELS,
-  animalChannelKey,
-  type AnimalChannel,
-  type AnimalData,
-  type AnimalFace,
-  type AnimalPose,
-} from "./animals";
-import {
-  ANIMAL_FLY,
-  ANIMAL_FLY_SECONDS,
-  ANIMAL_IDLE,
-  ANIMAL_IDLE_SECONDS,
-  ANIMAL_RUN,
-  ANIMAL_RUN_SECONDS,
-  ANIMAL_WALK,
-  ANIMAL_WALK_SECONDS,
-  animalFlyPose,
-  animalIdlePose,
-  animalRunPose,
-  animalWalkPose,
-  type AnimalFlyParams,
-  type AnimalGaitParams,
-  type AnimalIdleParams,
-} from "./animalGait";
-
 /** Bump khi đổi hình dạng JSON hành động; `migrateAction` phải có nhánh tương ứng. */
 export const ACTION_VERSION = 20;
 
@@ -107,6 +82,50 @@ export const smoothstep = (u: number) => u * u * (3 - 2 * u);
  * `bezier` theo `keys[].bezier`. docs/01-rig.md#hành-động
  */
 export const EASE_NAMES = ["linear", "spring", "smooth", "auto", "bezier"] as const;
+
+/**
+ * Bối cảnh Studio 3D dựng khi xem thử hành động: đứng, ghế, sàn, ngồi xuống, đứng lên, quầy, ghế bành, ghế kèm bàn.
+ * docs/01-rig.md#hành-động
+ */
+export const PREVIEW_STAGES = [
+  "stand",
+  "chair",
+  "floor",
+  "sit-down",
+  "stand-up",
+  "counter",
+  "armchair",
+  "desk",
+] as const;
+
+/**
+ * Mốc chỗ người diễn của cảnh xem thử theo giây của clip: `at` là `[trước, cao]` so với chỗ đứng ban đầu theo hướng mặt,
+ * đơn vị rig ở `height = 1`; `sit` thì `cao` là mặt ngồi dưới khớp hông như `world.path[].sit`. docs/01-rig.md#hành-động
+ */
+const PreviewKeySchema = z.strictObject({
+  t: z.number().min(0),
+  at: z.tuple([z.number(), z.number()]),
+  sit: z.boolean().optional(),
+  ease: z.boolean().optional(),
+});
+
+/** Món mẫu cầm từ giây 0 của cảnh xem thử, theo tay giải phẫu, cùng dạng `world.hands[].hold` */
+const PreviewHoldSchema = z.strictObject({
+  right: SceneHoldSchema.optional(),
+  left: SceneHoldSchema.optional(),
+});
+
+/**
+ * Người thứ hai của cảnh xem thử: `at` là `[trước, phải]` so với hông người diễn theo hướng mặt, đơn vị rig ở `height = 1`
+ * (mặc định `[220, 0]`, đứng đối diện tầm bắt tay); `yaw` lệch thêm, độ, so với hướng nhìn vào người diễn; `action` là
+ * hành động người ấy diễn trên nền `stand-3d`; `hold` là món người ấy cầm từ giây 0, cùng dạng `preview.hold`
+ */
+export const PreviewPartnerSchema = z.strictObject({
+  at: z.tuple([z.number(), z.number()]).optional(),
+  yaw: z.number().optional(),
+  action: z.string().min(1).optional(),
+  hold: PreviewHoldSchema.optional(),
+});
 
 /** Đường `cubic-bezier` của CSS khi `bezier` bỏ trống */
 export const BEZIER_DEFAULT = [0.42, 0, 0.58, 1] as const;
@@ -166,8 +185,8 @@ const stretch = z.union([
 ]);
 
 /**
- * Tư thế một phần: khớp nào không nhắc tới thì hành động này không ghi. `strictObject` vì
- * mốc động vật đi chung một ô `pose`: khoá lạ phải rơi sang schema kia chứ không bị lặng lẽ bỏ.
+ * Tư thế một phần: khớp nào không nhắc tới thì hành động này không ghi. `strictObject`: khoá lạ
+ * là lỗi chứ không bị lặng lẽ bỏ.
  */
 export const PoseDeltaSchema = z.strictObject({
   armFar: arm.optional(),
@@ -180,31 +199,6 @@ export const PoseDeltaSchema = z.strictObject({
 });
 
 export type PoseDelta = z.infer<typeof PoseDeltaSchema>;
-
-/**
- * Tư thế một phần của động vật, tên kênh như `ANIMAL_JOINT_CHANNELS`. `spine` / `neck` /
- * `head` / `tail` / `wing` là độ dốc cộng thêm vào dốc nghỉ của con vật; chân là góc tuyệt đối.
- */
-export const AnimalPoseDeltaSchema = z.strictObject({
-  spine: z.number().optional(),
-  neck: z.number().optional(),
-  head: z.number().optional(),
-  tail: limb.optional(),
-  wing: limb.optional(),
-  legFrontNear: limb.optional(),
-  legFrontFar: limb.optional(),
-  legHindNear: limb.optional(),
-  legHindFar: limb.optional(),
-});
-
-export type AnimalPoseDelta = z.infer<typeof AnimalPoseDeltaSchema>;
-
-/** Mọi tên kênh mà `mask` nhận, của cả người lẫn động vật; bộ nào hợp lệ thì tuỳ ai diễn */
-export const MASK_CHANNELS = [
-  ...CHANNELS,
-  ...ANIMAL_JOINT_CHANNELS.filter((c) => c !== "head"),
-] as unknown as readonly [Channel | AnimalChannel, ...(Channel | AnimalChannel)[]];
-export type MaskChannel = Channel | AnimalChannel;
 
 /** Tên kênh trong JSON ↔ khoá trong `Pose`; chỗ duy nhất biết cả hai. */
 export const poseDelta = (p: Pose): Required<PoseDelta> => ({
@@ -239,12 +233,6 @@ export const deltaPose = (d: PoseDelta): Partial<Pose> => {
   return o;
 };
 
-/** Lớp cẳng tay; mốc không nhắc tới thì giữ lớp của mốc trước đó. */
-const LayerSchema = z.object({
-  armFar: z.enum(ARM_LAYERS).optional(),
-  armNear: z.enum(ARM_LAYERS).optional(),
-});
-
 /** Nét mặt kể từ mốc này, kênh `face`: kiểu nét không nội suy, `blush` nội suy như góc */
 const FaceSchema = z.object({
   mouth: z.enum(MOUTH_KINDS).optional(),
@@ -254,16 +242,25 @@ const FaceSchema = z.object({
   blush: z.number().min(0).max(1).optional(),
 });
 
+/** Tên dáng tay: có sẵn (`HAND_POSE_KINDS`) hay tên file `hands/<tên>.json` của thư viện, `resolveScene` tra */
+const HandShapeRefSchema = z.union([
+  z.enum(HAND_POSE_KINDS),
+  z.string().regex(HAND_SHAPE_NAME, {
+    error: () => "tên dáng tay: dáng có sẵn của rig hay tên file `hands/<tên>.json` (`[a-z0-9-]`)",
+  }),
+]);
+
 /**
- * Bàn tay của một kênh tay kể từ mốc này: tên dáng (`HAND_POSE_KINDS`), hay `{ pose, w, turn, bend }` — dáng hoà từ dáng
- * nghỉ theo `w`, bỏ trống `pose` là dáng nghỉ; xoay cẳng tay `turn` (dương sấp) và gập cổ tay `bend` (dương về lòng tay)
- * trong `±90`. Nội suy như góc. `palm` / `fingers` khai lòng tay, ngón quay về đâu: người 3D tự giải xoay và gập cổ tay,
- * `turn` bị bỏ qua, `bend` khai kèm thì giữ cố định. docs/01-rig.md#bàn-tay, docs/01-rig.md#hướng-lòng-tay-theo-ý
+ * Bàn tay của một kênh tay kể từ mốc này: tên dáng (`HAND_POSE_KINDS` hay của thư viện `hands/`), hay
+ * `{ pose, w, turn, bend }` — dáng hoà từ dáng nghỉ theo `w`, bỏ trống `pose` là dáng nghỉ; xoay cẳng tay `turn` (dương
+ * sấp) và gập cổ tay `bend` (dương về lòng tay) trong `±90`. Nội suy như góc. `palm` / `fingers` khai lòng tay, ngón quay
+ * về đâu: người 3D tự giải xoay và gập cổ tay, `turn` bị bỏ qua, `bend` khai kèm thì giữ cố định.
+ * docs/01-rig.md#bàn-tay, docs/01-rig.md#hướng-lòng-tay-theo-ý
  */
 const HandKeySchema = z.union([
-  z.enum(HAND_POSE_KINDS),
+  HandShapeRefSchema,
   z.strictObject({
-    pose: z.enum(HAND_POSE_KINDS).optional(),
+    pose: HandShapeRefSchema.optional(),
     w: z.number().min(0).max(1).optional(),
     turn: z.number().min(-90).max(90).optional(),
     bend: z.number().min(-90).max(90).optional(),
@@ -333,18 +330,16 @@ export const BezierSchema = z.tuple([unit, unit, unit, unit]);
 const KeySchema = z.object({
   /** Tỉ lệ chu kỳ, không phải giây */
   t: z.number().min(0).max(1),
-  /** Tên pose hay góc của người; hành động của động vật (`actor: "animal"`) ghi góc động vật */
-  pose: z.union([z.enum(POSE_NAMES), PoseDeltaSchema, AnimalPoseDeltaSchema]),
+  /** Tên pose hay góc của người */
+  pose: z.union([z.enum(POSE_NAMES), PoseDeltaSchema]),
   /**
-   * Đích cổ tay của kênh tay (thay cho góc tay ở người 3D): rig giải IK hai đoạn. Người 2D vẽ góc dự
-   * phòng suy từ đích trong mặt phẳng dọc, trừ khi `pose` ghi góc kênh ấy. docs/01-rig.md#đích-bàn-tay
+   * Đích cổ tay của kênh tay (thay cho góc tay ở người 3D): rig giải IK hai đoạn. `pose` không ghi góc kênh ấy thì
+   * kênh nhận góc suy từ đích trong mặt phẳng dọc (`reachAngles`). docs/01-rig.md#đích-bàn-tay
    */
   reach: z.object({ armFar: ReachSchema.optional(), armNear: ReachSchema.optional() }).optional(),
   /** Áp cho đoạn từ mốc này tới mốc sau */
   ease: z.enum(EASE_NAMES).default("linear"),
   bezier: BezierSchema.optional(),
-  /** Đổi lớp vẽ kể từ mốc này; không nội suy */
-  layer: LayerSchema.optional(),
   /** Đổi nét mặt kể từ mốc này; không nội suy, chỉ ăn khi `face` nằm trong mặt nạ */
   face: FaceSchema.optional(),
   /** Bàn tay người 3D theo kênh tay, nội suy; chỉ ăn khi `hand` nằm trong mặt nạ */
@@ -407,95 +402,15 @@ export const GENERATORS: Record<string, Generator> = {
   },
 };
 
-/**
- * Bộ sinh dáng động vật. Khác `Generator` ở chỗ nó **nhận cả con vật**: sải chân và độ nhấc
- * chân khai theo chiều cao hông, nên một file `animal-walk.json` đúng cho cả ngựa lẫn
- * voi. docs/08-dong-vat.md
- */
-export interface AnimalGenerator {
-  label: string;
-  params: GenParam[];
-  /** Nhịp mặc định của một lượt, giây */
-  duration: number;
-  /** Không bàn chân nào chạm đất: scene treo con vật ở hông, trôi ngang bằng `path` */
-  airborne?: boolean;
-  pose: (t: number, p: Record<string, number>, b: AnimalData) => AnimalPose;
-}
-
-const gaitParams = (d: AnimalGaitParams): GenParam[] => [
-  { key: "stride", label: "Sải chân", min: 0.2, max: 2.4, step: 0.05, def: d.stride },
-  { key: "lift", label: "Nhấc chân", min: 0, max: 0.8, step: 0.02, def: d.lift },
-  { key: "duty", label: "Nhịp đạp", min: 0.3, max: 0.9, step: 0.01, def: d.duty },
-  { key: "bob", label: "Nhún thân", min: 0, max: 0.3, step: 0.01, def: d.bob },
-  { key: "sway", label: "Chồm thân", min: 0, max: 20, step: 0.5, def: d.sway },
-  { key: "nod", label: "Gật cổ", min: 0, max: 25, def: d.nod },
-  { key: "swish", label: "Vẫy đuôi", min: 0, max: 30, def: d.swish },
-];
-
-export const ANIMAL_GENERATORS: Record<string, AnimalGenerator> = {
-  animalWalk: {
-    label: "Động vật đi",
-    params: gaitParams(ANIMAL_WALK),
-    duration: ANIMAL_WALK_SECONDS,
-    pose: (t, p, b) => animalWalkPose(t, { ...ANIMAL_WALK, ...p } as AnimalGaitParams, b),
-  },
-  animalRun: {
-    label: "Động vật chạy",
-    params: gaitParams(ANIMAL_RUN),
-    duration: ANIMAL_RUN_SECONDS,
-    pose: (t, p, b) => animalRunPose(t, { ...ANIMAL_RUN, ...p } as AnimalGaitParams, b),
-  },
-  animalFly: {
-    label: "Động vật bay",
-    params: [
-      { key: "flap", label: "Biên độ vỗ", min: 0, max: 90, def: ANIMAL_FLY.flap },
-      { key: "raise", label: "Dốc cánh", min: -60, max: 120, def: ANIMAL_FLY.raise },
-      { key: "lag", label: "Chóp trễ", min: 0, max: 80, def: ANIMAL_FLY.lag },
-      { key: "sway", label: "Chồm thân", min: 0, max: 20, step: 0.5, def: ANIMAL_FLY.sway },
-      { key: "tuck", label: "Xếp chân", min: -120, max: 30, def: ANIMAL_FLY.tuck },
-      { key: "curl", label: "Gập gối", min: -60, max: 200, def: ANIMAL_FLY.curl },
-      { key: "swish", label: "Vẫy đuôi", min: 0, max: 30, def: ANIMAL_FLY.swish },
-    ],
-    duration: ANIMAL_FLY_SECONDS,
-    airborne: true,
-    pose: (t, p, b) => animalFlyPose(t, { ...ANIMAL_FLY, ...p } as AnimalFlyParams, b),
-  },
-  animalIdle: {
-    label: "Động vật đứng thở",
-    params: [
-      { key: "breath", label: "Nhịp thở", min: 0, max: 6, step: 0.5, def: ANIMAL_IDLE.breath },
-      { key: "nod", label: "Gật cổ", min: 0, max: 25, def: ANIMAL_IDLE.nod },
-      { key: "swish", label: "Vẫy đuôi", min: 0, max: 30, def: ANIMAL_IDLE.swish },
-      { key: "wing", label: "Nhích cánh", min: 0, max: 30, def: ANIMAL_IDLE.wing },
-    ],
-    duration: ANIMAL_IDLE_SECONDS,
-    pose: (t, p, b) => animalIdlePose(t, { ...ANIMAL_IDLE, ...p } as AnimalIdleParams, b),
-  },
-};
-
-/**
- * Ai diễn được hành động này. Có bộ sinh thì suy từ tên nó — một cái tên chỉ nằm trong đúng
- * một bảng; hành động mốc thì `actor` nói, bỏ trống là của người.
- */
-export const actionKind = (a: Pick<ActionData, "gen" | "actor">): "character" | "animal" =>
-  a.gen ? (ANIMAL_GENERATORS[a.gen] ? "animal" : "character") : (a.actor ?? "character");
-
-/** Không bàn chân nào chạm đất suốt hành động: `airborne` của file, không thì của bộ sinh. */
-export const actionAirborne = (a: ActionData): boolean =>
-  actionKind(a) === "animal" &&
-  (a.airborne ?? (a.gen ? (ANIMAL_GENERATORS[a.gen]?.airborne ?? false) : false));
-
 export const genDefaults = (gen: string): Record<string, number> =>
-  Object.fromEntries(
-    (GENERATORS[gen]?.params ?? ANIMAL_GENERATORS[gen]?.params ?? []).map((p) => [p.key, p.def]),
-  );
+  Object.fromEntries((GENERATORS[gen]?.params ?? []).map((p) => [p.key, p.def]));
 
 /** Hành động dùng chung cho mọi nhân vật; scene ghép tên nhân vật + tên hành động. docs/01-rig.md */
 export const ActionSchema = z
   .object({
     schemaVersion: z
       .literal(ACTION_VERSION, {
-        error: "JSON hành động thuộc phiên bản schema khác; cần bản @stickman3d/sketch khớp với nó",
+        error: "JSON hành động thuộc phiên bản schema khác; cần bản @stickman3d/rig khớp với nó",
       })
       .default(ACTION_VERSION),
     name: z.string().default("action"),
@@ -503,30 +418,20 @@ export const ActionSchema = z
     duration: z.number().positive().default(WALK_CYCLE_SECONDS),
     /** Lấy mẫu qua mốc cuối: `wrap` vòng về mốc đầu, `hold` giữ nguyên mốc cuối */
     end: z.enum(["wrap", "hold"]).default("wrap"),
-    /** Khớp mà hành động này ghi, tên theo bộ kênh của ai diễn; bỏ trống thì suy ra từ các mốc */
-    mask: z.array(z.enum(MASK_CHANNELS)).optional(),
-    /**
-     * Ai diễn hành động mốc: `animal` thì `keys[].pose` ghi góc động vật, `mask` gọi tên kênh
-     * động vật. Chỉ đi với `keys` — có `gen` thì bộ sinh đã nói. docs/08-dong-vat.md
-     */
-    actor: z.enum(["character", "animal"]).optional(),
-    /**
-     * Động vật không bàn chân nào chạm đất suốt hành động: scene treo nó ở hông và trôi ngang
-     * bằng `path`. Bỏ trống thì lấy của bộ sinh (`animalFly` là bay), hành động mốc là `false`.
-     */
-    airborne: z.boolean().optional(),
+    /** Khớp mà hành động này ghi; bỏ trống thì suy ra từ các mốc */
+    mask: z.array(z.enum(CHANNELS)).optional(),
     gen: z.string().optional(),
     params: z.record(z.string(), z.number()).optional(),
     /**
      * Góc nhìn mà hành động được soạn để xem. `side`: người 3D (`cast[].world`) đọc góc tay chân
-     * như nằm trong mặt phẳng dọc của thân và chiếu thật; bỏ trống là giữ 2D. Người 2D không đọc.
+     * như nằm trong mặt phẳng dọc của thân và chiếu thật; bỏ trống là kênh không nâng, người 3D vẽ tay chân ở dáng nghỉ.
      * docs/01-rig.md#người-3d
      */
     authoredAt: z.enum(["side"]).optional(),
     /**
      * Tay chân theo giải phẫu: `anatomical` thì kênh gần (`armNear`, `legNear`) luôn là tay chân **phải**, kênh xa là
      * trái, dù ống kính ở phía nào của người 3D — rig đổi kênh của riêng clip ấy khi tay phải đang ở phía xa. Bỏ trống là
-     * gần / xa theo ống kính. Người 2D không đọc. docs/03-scene.md#hành-động-theo-tay-phải-trái
+     * gần / xa theo ống kính. docs/03-scene.md#hành-động-theo-tay-phải-trái
      */
     sides: z.enum(["anatomical"]).optional(),
     /**
@@ -539,59 +444,38 @@ export const ActionSchema = z
     events: z.array(EventSchema).default([]),
     /** Ghi chú cách dùng cho người soạn cảnh; rig không đọc, giữ nguyên khi xuất */
     note: z.string().optional(),
+    /**
+     * Cách Studio 3D xem thử, rig không đọc: `base` là hành động nền chồng dưới, bỏ trống thì suy theo `stage`; `hold` là
+     * món mẫu cầm trong tay phải / trái giải phẫu từ giây 0 (như `world.hands[].hold`); `partner` là người thứ hai đứng ở
+     * chỗ hành động vươn tới; `path` là chỗ người diễn theo giây của clip, cho hành động dời hông (nhổm, đứng dậy từ sàn).
+     * docs/01-rig.md#hành-động
+     */
+    preview: z
+      .object({
+        base: z.string().optional(),
+        stage: z.enum(PREVIEW_STAGES).optional(),
+        hold: PreviewHoldSchema.optional(),
+        partner: PreviewPartnerSchema.optional(),
+        path: z.array(PreviewKeySchema).min(2).optional(),
+      })
+      .optional(),
   })
   .superRefine((a, ctx) => {
-    if (!a.gen === !a.keys)
-      ctx.addIssue({ code: "custom", message: "Cần đúng một trong `gen` hoặc `keys`" });
-    if (a.gen && !GENERATORS[a.gen] && !ANIMAL_GENERATORS[a.gen])
-      ctx.addIssue({ code: "custom", message: `Không có bộ sinh \`${a.gen}\``, path: ["gen"] });
-    if (a.gen && a.actor)
-      ctx.addIssue({
-        code: "custom",
-        message: "`actor` chỉ đi với `keys`; có `gen` thì tên bộ sinh đã nói ai diễn",
-        path: ["actor"],
-      });
-    const kind = actionKind(a);
-    const channels: readonly string[] = kind === "animal" ? ANIMAL_CHANNELS : CHANNELS;
-    a.mask?.forEach((c, i) => {
-      if (!channels.includes(c))
+    a.preview?.path?.forEach((k, i, ks) => {
+      if (i && k.t <= ks[i - 1].t)
         ctx.addIssue({
           code: "custom",
-          message: `\`${c}\` không phải kênh của ${kind === "animal" ? "động vật" : "người"}`,
-          path: ["mask", i],
+          message: "`preview.path[].t` phải tăng dần",
+          path: ["preview", "path", i, "t"],
         });
     });
-    if (a.airborne !== undefined && kind !== "animal")
-      ctx.addIssue({
-        code: "custom",
-        message: "`airborne` chỉ có ở hành động của động vật",
-        path: ["airborne"],
-      });
+    if (!a.gen === !a.keys)
+      ctx.addIssue({ code: "custom", message: "Cần đúng một trong `gen` hoặc `keys`" });
+    if (a.gen && !GENERATORS[a.gen])
+      ctx.addIssue({ code: "custom", message: `Không có bộ sinh \`${a.gen}\``, path: ["gen"] });
     a.keys?.forEach((k, i) => {
       if (i > 0 && k.t <= a.keys![i - 1].t)
         ctx.addIssue({ code: "custom", message: "`t` phải tăng dần", path: ["keys", i, "t"] });
-      if (kind !== "animal") {
-        if (typeof k.pose !== "string" && !PoseDeltaSchema.safeParse(k.pose).success)
-          ctx.addIssue({
-            code: "custom",
-            message: 'mốc ghi kênh động vật trong hành động của người; khai `actor: "animal"`',
-            path: ["keys", i, "pose"],
-          });
-        return;
-      }
-      if (typeof k.pose === "string" || !AnimalPoseDeltaSchema.safeParse(k.pose).success)
-        ctx.addIssue({
-          code: "custom",
-          message:
-            "mốc của động vật ghi góc theo `ANIMAL_JOINT_CHANNELS`, không gọi tên pose người",
-          path: ["keys", i, "pose"],
-        });
-      if (k.layer || k.equip || k.reach || k.hand)
-        ctx.addIssue({
-          code: "custom",
-          message: "động vật không có lớp cẳng tay, đích cổ tay, bàn tay hay đồ mang theo",
-          path: ["keys", i],
-        });
     });
   });
 
@@ -613,7 +497,6 @@ export function migrateAction(json: unknown): unknown {
     delete o.walk;
     delete o.rate;
   }
-  // v2 → v3 thêm `keys[].layer`; thiếu nó là lấy `DEFAULT_LAYERS`, không phải viết gì
   // v3 → v4 thêm kênh `head` và `keys[].face`; thiếu thì đầu đứng yên, nét mặt do scene quyết
   // v5 → v6 thêm `keys[].show`; v6 → v7 nó thành `keys[].equip`, tắt socket là gán `null`
   // v7 → v8 thêm `events[]`; thiếu nó là hành động không đặt tên pha nào, không phải viết gì
@@ -659,6 +542,7 @@ export function migrateAction(json: unknown): unknown {
       );
       delete k.show;
     }
+  for (const k of (o.keys ?? []) as Record<string, unknown>[]) dropGoneEquip(k?.equip);
   o.schemaVersion = ACTION_VERSION;
   return o;
 }
@@ -666,38 +550,11 @@ export function migrateAction(json: unknown): unknown {
 export const defaultAction = (): ActionData =>
   ActionSchema.parse({ name: "walk", gen: "walkCycle", params: genDefaults("walkCycle") });
 
-/** Hành động động vật mới: một bộ sinh với tham số mặc định và nhịp của chính nó */
-export const defaultAnimalAction = (gen = "animalWalk"): ActionData =>
-  ActionSchema.parse({
-    name: gen.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`),
-    duration: ANIMAL_GENERATORS[gen].duration,
-    gen,
-    params: genDefaults(gen),
-  });
-
-/** Hành động mốc của động vật, một mốc trống ở `t: 0`; studio bật kênh nào thì mốc ghi kênh ấy */
-export const defaultAnimalKeysAction = (): ActionData =>
-  ActionSchema.parse({
-    name: "hanh-dong-moi",
-    actor: "animal",
-    duration: 1,
-    end: "hold",
-    keys: [{ t: 0, pose: {} }],
-  });
-
 export const parseAction = (json: unknown) => ActionSchema.safeParse(migrateAction(json));
 
 /** Góc mà một mốc ghi; mốc gọi tên pose thì trải ra đủ mọi kênh. */
 export const keyDelta = (k: ActionKey): PoseDelta =>
   typeof k.pose === "string" ? toDelta(POSES[k.pose]) : (k.pose as PoseDelta);
-
-/** Góc động vật mà một mốc ghi; mốc gọi tên pose người thì không ghi gì. */
-export const keyAnimalDelta = (k: ActionKey): AnimalPoseDelta =>
-  typeof k.pose === "string" ? {} : (k.pose as AnimalPoseDelta);
-
-/** Lớp mà một mốc ghi; mốc gọi tên pose thì lấy luôn lớp của pose đó. */
-export const keyLayer = (k: ActionKey): Partial<ArmLayers> =>
-  typeof k.pose === "string" ? { ...POSE_LAYERS[k.pose], ...k.layer } : (k.layer ?? {});
 
 /** Nét mặt mà một mốc ghi; pose trong thư viện không mang nét mặt nào. */
 export const keyFace = (k: ActionKey): Partial<FaceState> => k.face ?? {};
@@ -705,16 +562,34 @@ export const keyFace = (k: ActionKey): Partial<FaceState> => k.face ?? {};
 /** Bàn tay mà một mốc ghi theo kênh tay; pose trong thư viện không mang bàn tay nào. */
 export const keyHand = (
   k: ActionKey,
-): Partial<Record<(typeof ARM_CHANNELS)[number], HandPose | HandKey>> => k.hand ?? {};
+): Partial<Record<(typeof ARM_CHANNELS)[number], string | HandKey>> => k.hand ?? {};
+
+/** Tên dáng tay của thư viện `hands/` mà các mốc `keys[].hand` gọi (không kể dáng có sẵn), mỗi tên một lần */
+export function actionHandShapes(a: ActionData): string[] {
+  const out = new Set<string>();
+  for (const k of a.keys ?? [])
+    for (const h of Object.values(keyHand(k))) {
+      const name = typeof h === "string" ? h : h?.pose;
+      if (name !== undefined && !(name in HAND_POSES)) out.add(name);
+    }
+  return [...out];
+}
+
+/** Dáng tay của thư viện mà hành động gọi nhưng `lib` không có, mỗi dáng một câu */
+export const actionHandShapeProblems = (a: ActionData, lib: HandShapes): string[] =>
+  actionHandShapes(a)
+    .filter((n) => !(n in lib))
+    .map(
+      (n) =>
+        `\`keys[].hand\` gọi dáng tay \`${n}\` — không phải dáng có sẵn của rig (\`HAND_POSES\`), không có \`hands/${n}.json\` (docs/01-rig.md#dáng-tay-có-tên)`,
+    );
 
 /** Đồ mà một mốc đổi; pose trong thư viện không đụng tới mảnh nào. */
 export const keyEquip = (k: ActionKey): Equip | undefined => k.equip;
 
 /** Khớp mà hành động ghi: `mask` nếu có, không thì hợp của các khớp được nhắc tới. */
 export function actionMask(a: ActionData): Channel[] {
-  // Kênh của động vật không nằm trong `CHANNELS`; hành động của động vật không ghi khớp người nào cả
-  if (actionKind(a) === "animal") return [];
-  if (a.mask) return a.mask as Channel[];
+  if (a.mask) return a.mask;
   if (!a.keys) return GEN_CHANNELS;
   const seen = new Set<Channel>();
   for (const k of a.keys) {
@@ -725,18 +600,6 @@ export function actionMask(a: ActionData): Channel[] {
   if (a.keys.some((k) => Object.keys(keyFace(k)).length)) seen.add("face");
   if (a.keys.some((k) => Object.keys(keyHand(k)).length)) seen.add("hand");
   return CHANNELS.filter((c) => seen.has(c));
-}
-
-/** Kênh động vật mà hành động ghi; bộ sinh ghi đủ mọi khớp, hành động của người không ghi gì. */
-export function animalActionMask(a: ActionData): AnimalChannel[] {
-  if (actionKind(a) !== "animal") return [];
-  if (a.mask) return a.mask as AnimalChannel[];
-  if (!a.keys) return [...ANIMAL_JOINT_CHANNELS];
-  const seen = new Set<AnimalChannel>();
-  for (const k of a.keys)
-    for (const c of Object.keys(keyAnimalDelta(k)) as AnimalChannel[]) seen.add(c);
-  if (a.keys.some((k) => Object.keys(keyFace(k)).length)) seen.add("face");
-  return ANIMAL_CHANNELS.filter((c) => seen.has(c));
 }
 
 const spring = (u: number) => 1 - Math.exp(-6 * u) * Math.cos(9 * u);
@@ -954,24 +817,6 @@ function sampleStep<T>(
   return cur.v;
 }
 
-/** Lớp cẳng tay mà hành động ghi tại pha `t`; kênh ngoài mặt nạ thì bỏ trống. */
-export function actionLayers(a: ActionData, t: number): Partial<ArmLayers> {
-  if (!a.keys) return {};
-  const u = phaseOf(a, t);
-  const mask = actionMask(a);
-  const o: Partial<ArmLayers> = {};
-  for (const c of ARM_CHANNELS) {
-    if (!mask.includes(c)) continue;
-    const v = sampleStep(a, (k) => keyLayer(k)[c], u);
-    if (v) o[c] = v;
-  }
-  return o;
-}
-
-/** Ghép lớp như `composePose`: hành động sau đè hành động trước ở kênh nó ghi. */
-export const composeLayers = (...parts: Partial<ArmLayers>[]): ArmLayers =>
-  Object.assign({}, DEFAULT_LAYERS, ...parts) as ArmLayers;
-
 /** Nét mặt mà hành động ghi tại pha `t`; kênh `face`, ngoài mặt nạ thì bỏ trống. Kiểu nét bậc thang, `blush` nội suy. */
 export function actionFace(a: ActionData, t: number): Partial<FaceState> {
   if (!a.keys || !actionMask(a).includes("face")) return {};
@@ -993,11 +838,11 @@ export function actionFace(a: ActionData, t: number): Partial<FaceState> {
 }
 
 /**
- * Bàn tay mà hành động ghi tại pha `t` theo kênh tay (số theo `HAND_DOF`), kênh `hand`: mỗi mốc ra số của nó (`handVec`)
- * rồi nội suy như góc, theo `ease`. Ngoài mặt nạ thì bỏ trống.
+ * Bàn tay mà hành động ghi tại pha `t` theo kênh tay (số theo `HAND_DOF`, dáng của thư viện `lib` kèm `HAND_FIT`), kênh
+ * `hand`: mỗi mốc ra số của nó (`handKeyVec`) rồi nội suy như góc, theo `ease`. Ngoài mặt nạ thì bỏ trống.
  */
-export function actionHand(a: ActionData, t: number): HandMap {
-  if (!a.keys || actionKind(a) === "animal" || !actionMask(a).includes("hand")) return {};
+export function actionHand(a: ActionData, t: number, lib: HandShapes = {}): HandMap {
+  if (!a.keys || !actionMask(a).includes("hand")) return {};
   const u = phaseOf(a, t);
   const o: HandMap = {};
   for (const ch of REACH_CHANNELS) {
@@ -1006,7 +851,7 @@ export function actionHand(a: ActionData, t: number): HandMap {
       a,
       (k) => {
         const h = keyHand(k)[c];
-        return h === undefined ? undefined : handVec(h);
+        return h === undefined ? undefined : handKeyVec(h, lib);
       },
       u,
       mixHand,
@@ -1025,21 +870,9 @@ export function actionHandKey(
   a: ActionData,
   t: number,
   ch: (typeof REACH_CHANNELS)[number],
-): HandPose | HandKey | undefined {
-  if (!a.keys || actionKind(a) === "animal" || !actionMask(a).includes("hand")) return undefined;
+): string | HandKey | undefined {
+  if (!a.keys || !actionMask(a).includes("hand")) return undefined;
   return sampleStep(a, (k) => keyHand(k)[REACH_OF[ch]], phaseOf(a, t));
-}
-
-/** Mỏ và mắt mà hành động của động vật ghi tại pha `t`; kênh `face`, ngoài mặt nạ thì bỏ trống. */
-export function animalActionFace(a: ActionData, t: number): Partial<AnimalFace> {
-  if (!a.keys || !animalActionMask(a).includes("face")) return {};
-  const u = phaseOf(a, t);
-  const o: Partial<AnimalFace> = {};
-  for (const f of ["mouth", "eyes"] as const) {
-    const v = sampleStep(a, (k) => keyFace(k)[f], u);
-    if (v !== undefined) Object.assign(o, { [f]: v });
-  }
-  return o;
 }
 
 /**
@@ -1099,7 +932,6 @@ export function equipSwitchProblems(a: ActionData): string[] {
  * docs/00-bat-bien.md#dấu-góc-và-hình-học
  */
 export function armFoldProblems(a: ActionData): string[] {
-  if (actionKind(a) === "animal") return [];
   const mask = actionMask(a);
   const bad: string[] = [];
   for (const k of a.keys ?? []) {
@@ -1126,18 +958,16 @@ export function armFoldProblems(a: ActionData): string[] {
 export function maskProblems(a: ActionData): string[] {
   const mask = a.mask;
   if (!mask || !a.keys) return [];
-  const dropped = new Map<MaskChannel, number[]>();
-  const note = (c: MaskChannel, t: number) => {
+  const dropped = new Map<Channel, number[]>();
+  const note = (c: Channel, t: number) => {
     if (mask.includes(c)) return;
     if (!dropped.has(c)) dropped.set(c, []);
     dropped.get(c)?.push(t);
   };
   for (const k of a.keys) {
-    if (typeof k.pose !== "string")
-      for (const c of Object.keys(k.pose) as MaskChannel[]) note(c, k.t);
+    if (typeof k.pose !== "string") for (const c of Object.keys(k.pose) as Channel[]) note(c, k.t);
     if (Object.keys(keyFace(k)).length) note("face", k.t);
     if (Object.keys(keyHand(k)).length) note("hand", k.t);
-    for (const c of Object.keys(k.layer ?? {}) as Channel[]) note(c, k.t);
     for (const c of Object.keys(k.reach ?? {}) as Channel[]) note(c, k.t);
   }
   return [...dropped].map(
@@ -1212,7 +1042,8 @@ const REACH_OF = { af: "armFar", an: "armNear" } as const;
 type ReachSample = {
   w: number;
   at: Reach["at"];
-  elbow: NonNullable<Reach["elbow"]>;
+  elbow?: Reach["elbow"];
+  elbowW?: number;
   terms?: ReachTerm[];
 };
 
@@ -1237,10 +1068,15 @@ export function mixReach<T extends Reach | ReachSample>(
   const q = wb > 0 ? b! : a!;
   const lerp = (x: readonly number[], y: readonly number[]) =>
     x.map((v, i) => v + (y[i] - v) * f) as [number, number, number];
+  // một bên không khai hướng khuỷu: hướng của bên kia, phần `elbowW` nhạt dần về khuỷu ưu tiên của cổ tay
+  const ea = p.elbow ?? q.elbow;
+  const eb = q.elbow ?? p.elbow;
+  const part = (r: T) => (r.elbow ? (r.elbowW ?? 1) : 0);
+  const ew = part(p) + (part(q) - part(p)) * f;
   return {
     w,
     at: lerp(p.at, q.at),
-    elbow: lerp(p.elbow ?? REACH_ELBOW, q.elbow ?? REACH_ELBOW),
+    ...(ea && eb && { elbow: lerp(ea, eb), ...(ew < 1 && { elbowW: ew }) }),
     ...((p.terms || q.terms) && { terms: mixTerms(termsOf(p), termsOf(q), f) }),
   };
 }
@@ -1250,7 +1086,7 @@ export function mixReach<T extends Reach | ReachSample>(
  * mà không có đích là `w` 0: đi từ mốc có đích sang mốc góc thì đích nhạt dần, rig hoà vị trí.
  */
 export function actionReach(a: ActionData, t: number): ReachMap {
-  if (!a.keys || actionKind(a) === "animal") return {};
+  if (!a.keys) return {};
   const u = phaseOf(a, t);
   const mask = actionMask(a);
   const o: ReachMap = {};
@@ -1266,14 +1102,19 @@ export function actionReach(a: ActionData, t: number): ReachMap {
           return {
             w: 1,
             at: reachEstimate(r),
-            elbow: r.elbow ?? REACH_ELBOW,
+            ...(r.elbow && { elbow: r.elbow }),
             ...(term && { terms: [term] }),
           };
         }
-        return keyDelta(k)[c] ? { w: 0, at: [0, 0, 0], elbow: REACH_ELBOW } : undefined;
+        return keyDelta(k)[c] ? { w: 0, at: [0, 0, 0] } : undefined;
       },
       u,
-      (x, y, f) => mixReach(x, y, f) ?? { w: 0, at: x.at, elbow: x.elbow },
+      (x, y, f) =>
+        mixReach(x, y, f) ?? {
+          w: 0,
+          at: x.at,
+          ...(x.elbow && { elbow: x.elbow, ...(x.elbowW !== undefined && { elbowW: x.elbowW }) }),
+        },
     );
     if (v && v.w > 0) o[ch] = v;
   }
@@ -1303,7 +1144,7 @@ export const mixAim = (a: Aim, b: Aim, f: number): Aim => ({
 });
 
 /** Bàn tay theo ý định của một mốc: `palm` / `fingers` là một số hạng ý định, không thì xoay và gập thô */
-export function keyAim(h: HandPose | HandKey): Aim {
+export function keyAim(h: string | HandKey): Aim {
   if (typeof h === "string") return rawAim([0, 0]);
   if (!h.palm && !h.fingers) return rawAim([h.turn ?? 0, h.bend ?? 0]);
   return {
@@ -1323,7 +1164,7 @@ export function keyAim(h: HandPose | HandKey): Aim {
  * kênh ấy là số hạng thô, nên đi từ mốc thô sang mốc ý định là cổ tay xoay dần. Ngoài mặt nạ thì bỏ trống.
  */
 export function actionAim(a: ActionData, t: number): AimMap {
-  if (!a.keys || actionKind(a) === "animal" || !actionMask(a).includes("hand")) return {};
+  if (!a.keys || !actionMask(a).includes("hand")) return {};
   const u = phaseOf(a, t);
   const o: AimMap = {};
   for (const ch of REACH_CHANNELS) {
@@ -1359,56 +1200,6 @@ export function aimProblems(a: ActionData): string[] {
   return out;
 }
 
-/** Tên kênh JSON → khoá `AnimalPose`; chiều ngược của `animalPoseDelta`. */
-export const animalDeltaPose = (d: AnimalPoseDelta): Partial<AnimalPose> => {
-  const o: Partial<AnimalPose> = {};
-  for (const c of ANIMAL_JOINT_CHANNELS)
-    if (d[c] !== undefined) Object.assign(o, { [animalChannelKey[c]]: d[c] });
-  return o;
-};
-
-export const animalPoseDelta = (p: AnimalPose): Required<AnimalPoseDelta> =>
-  Object.fromEntries(
-    ANIMAL_JOINT_CHANNELS.map((c) => [c, p[animalChannelKey[c]]]),
-  ) as Required<AnimalPoseDelta>;
-
-/**
- * Góc động vật mà hành động ghi tại pha `t`, trong mặt nạ. Bộ sinh **nhận cả con vật** vì
- * sải chân kẹp theo chân nó; hành động không phải của động vật thì không ghi gì.
- */
-export function animalActionDelta(a: ActionData, t: number, b: AnimalData): AnimalPoseDelta {
-  if (actionKind(a) !== "animal") return {};
-  const u = phaseOf(a, t);
-  const mask = animalActionMask(a);
-  const joints = ANIMAL_JOINT_CHANNELS.filter((c) => mask.includes(c));
-  if (a.gen) {
-    const g = ANIMAL_GENERATORS[a.gen];
-    if (!g) return {};
-    const full = animalPoseDelta(g.pose(u, { ...genDefaults(a.gen), ...a.params }, b));
-    return Object.fromEntries(joints.map((c) => [c, full[c]]));
-  }
-  const d: AnimalPoseDelta = {};
-  for (const c of joints) {
-    const v = sampleChannel(a, (k) => keyAnimalDelta(k)[c], u);
-    if (v !== undefined) Object.assign(d, { [c]: v });
-  }
-  return d;
-}
-
-/**
- * Tư thế động vật tại pha `t`, chỉ các kênh hành động ghi — ghép lên `animalStand` hay tư thế
- * track dưới bằng `composeAnimalPose`. Hành động của người thì trả `null` để chỗ gọi rơi về
- * tư thế đứng.
- */
-export function animalActionPose(
-  a: ActionData,
-  t: number,
-  b: AnimalData,
-): Partial<AnimalPose> | null {
-  if (actionKind(a) !== "animal") return null;
-  return animalDeltaPose(animalActionDelta(a, t, b));
-}
-
 /** Khoá `Pose` của bốn chi, theo thứ tự cặp số trong `Stretch` */
 const STRETCH_LIMBS = ["af", "an", "lf", "ln"] as const;
 
@@ -1429,7 +1220,7 @@ export function stretchOver(base: Stretch, p: Partial<Pose>): Stretch {
 
 /**
  * `head` của `base` đè bằng của `p` ở những góc `p` ghi. `deltaPose` đổi `null` của JSON thành `NaN`:
- * nghiêng đầu khi nói không xoá cái lắc của `look-camera` ở track dưới.
+ * nghiêng đầu khi nói không xoá cái lắc của `turn-head-*` ở track dưới.
  */
 export function headOver(base: HeadPose, p: Partial<Pose>): HeadPose {
   if (!p.head) return base;
@@ -1446,7 +1237,7 @@ export const composePose = (base: Pose, ...parts: Partial<Pose>[]): Pose =>
     const out = { ...o, ...p, stretch: stretchOver(o.stretch, p), head: headOver(o.head, p) };
     // Nghiêng ngang đi cùng kênh `torso`: lớp trên ghi thân mà không nghiêng là thân thẳng
     if (p.torso !== undefined) out.lean = p.lean ?? 0;
-    // Kênh `p` ghi mà không mang cờ nâng là giữ 2D, dù lớp dưới đã nâng
+    // Kênh `p` ghi mà không mang cờ nâng là kênh không nâng, dù lớp dưới đã nâng
     if (o.lift || p.lift) {
       const lift: Lift = { ...o.lift };
       for (const k of LIFT_CHANNELS) if (p[k]) lift[k] = !!p.lift?.[k];
@@ -1479,18 +1270,16 @@ export const composePose = (base: Pose, ...parts: Partial<Pose>[]): Pose =>
 
 /** Thay mốc gọi tên pose bằng số, trong phạm vi mặt nạ. Xuất ra file thì đóng băng. */
 export function freezeAction(a: ActionData): ActionData {
-  if (!a.keys || actionKind(a) === "animal") return a;
+  if (!a.keys) return a;
   const mask = actionMask(a);
   const joints = JOINT_CHANNELS.filter((c) => mask.includes(c));
   return {
     ...a,
     keys: a.keys.map((k) => {
       if (typeof k.pose !== "string") return k;
-      const layer = keyLayer(k);
       return {
         ...k,
         pose: Object.fromEntries(joints.map((c) => [c, keyDelta(k)[c]])) as PoseDelta,
-        ...(Object.keys(layer).length ? { layer } : {}),
       };
     }),
   };

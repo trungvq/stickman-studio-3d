@@ -1,17 +1,16 @@
 # stickman-studio-3d
 
-Người que trên three.js và mọi thứ một repo video cần để dựng tập: rig, studio chỉnh nhân vật,
+Người que trên three.js và mọi thứ một repo video cần để dựng tập: rig, Studio 3D,
 CLI và render. Không chứa nhân vật, phòng hay cảnh của tập phim nào. Quy tắc của repo ở
 [AGENTS.md](AGENTS.md), spec rig ở [docs/](docs/README.md).
 
 | Gói | |
 |---|---|
 | `@stickman3d/rig` | Người que 3D, đồ khối, pipeline vẽ nét mực, và lõi rig: JSON nhân vật / hành động / cảnh, `resolveScene`, `sceneAt`, chu kỳ đi. `@stickman3d/rig/core` là riêng phần lõi, không nạp `three` |
-| `@stickman3d/sketch` | Người que vẽ SVG bằng React (`<Character>`, `<Prop>`, `<Animal>`), xuất lại cả lõi |
-| `@stickman3d/fx` | Hiệu ứng SVG theo `t` và `<SceneWorld>` vẽ cả cảnh 2D |
-| `@stickman3d/render` | `stickman-render` (PNG), `stickman-video` (mp4 xem thử) |
+| `@stickman3d/fx` | Hiệu ứng SVG theo `t`, lớp vẽ code, và `<SceneWorld>` vẽ nền, lớp vẽ code, hiệu ứng của một cảnh |
+| `@stickman3d/render` | `stickman-render` (PNG): ảnh three thật của cảnh và người 3D qua Chromium headless, que xương, vệt chuyển động |
 | `@stickman3d/mcp` | MCP server stdio cho agent |
-| `@stickman3d/cli` | `stickman init / upgrade / check / reseat / studio / studio2d / docs` cho repo video |
+| `@stickman3d/cli` | `stickman init / upgrade / check / studio / docs` cho repo video |
 
 ## Cài
 
@@ -26,7 +25,7 @@ Mở terminal mới hoặc nạp lại file shell theo dòng bộ cài in ra, r�
 
 ```bash
 pnpm install
-pnpm dev        # tsup --watch cho rig, sketch, fx; vite cho app xem thử và studio
+pnpm dev        # tsup --watch cho rig, fx; vite cho app xem thử và Studio 3D
 pnpm typecheck && pnpm lint && pnpm format:check && pnpm test
 pnpm shots      # chụp app xem thử ra tmp/shots/
 pnpm bench      # đo ms/khung ở 1920×1080
@@ -66,8 +65,8 @@ thì xem [docs/05](docs/05-repo-video.md).
 
 Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js` (`demo=hold` ở `demo-hold.js`, kèm đồ mẫu chung), lõi lấy mẫu
 bằng `sceneAt`, người 3D diễn theo bằng `act`. Cảnh có ống kính riêng (`SHOTS` trong `demos.js`) thì
-camera theo `cameraAt`. Hành động là bộ chung `apps/studio/public/actions/` cộng `apps/viewer/actions/`.
-| `demo=acts\|desk\|heads\|side` | Hành động soạn ở `side`, mỗi người một trạm, bắt đầu ở giây 0,3 rồi giữ: đứng (`eshaku-3d`, `show-paper-3d`, `point-3d`, `stop-palm-3d` + `point-lane-3d`, `raise-laptop-3d`), ngồi ở bàn (`type-3d`, `phone-lift-3d`, `pick-paper-3d`, `head-down-3d`, `perch-desk-3d`), chỉ đầu và thân (`lean-in`, `slump-sigh`, `glance-*`, `look-down-small`, `look-up-head`, `nod-once`, `talk-tilt-back`), dang và nghiêng ngang (`step-side-3d` lặp, `arms-out-3d`, `hand-up-side-3d`, `lean-side-3d`, `stance-wide-3d`) |
+camera theo `cameraAt`. Hành động là bộ chung `common/actions/` cộng `apps/viewer/actions/`.
+| `demo=acts\|desk\|heads\|side` | Hành động soạn ở `side`, mỗi người một trạm, bắt đầu ở giây 0,3 rồi giữ: đứng (`eshaku-3d`, `show-paper-3d`, `point-3d`, `stop-palm-3d` + `point-lane-3d`, `raise-laptop-3d`), ngồi ở bàn (`type-3d`, `phone-lift-3d`, `pick-paper-3d`, `head-down-3d`, `perch-desk-3d`), chỉ đầu và thân (`lean-in`, `slump-sigh`, `glance-*`, `look-down-small`, `look-up-head`, `nod-once`, `talk-tilt`), dang và nghiêng ngang (`step-side-3d` lặp, `arms-out-3d`, `hand-up-side-3d`, `lean-side-3d`, `stance-wide-3d`) |
 | `demo=hands\|gestures` | Bàn tay người mặc đồ (luôn mặc đồ): bốn dáng tay `HAND_POSES` (xoè, cầm, chỉ tay, nắm đấm) mỗi người một dáng, tay gần đưa ra trước ngực; vẫy tay bằng xoắn vai (`wave-3d` lặp), nhún vai ngửa tay, ngồi gõ phím úp tay (`arms-on-table-3d` + `type-3d`), chỉ ra ngoài (`point-out-3d`) — hành động dựng tại chỗ trong `demo-acts.js` |
 | `demo=styles` | Bộ sưu tập kiểu: người thứ `i` đội mẫu tóc thứ `i` của `SCULPT_PRESETS` (cuối hàng là đầu trọc), mặc kiểu áo thứ `i % 12` của `GARMENT_STYLES`, rải kính, nếp nhăn, váy xếp ly và váy trơn |
 | `turn=110` | Với `demo=styles`: xoay từng người tại chỗ (độ, mặc định 14) để xem nghiêng, sau lưng |
@@ -83,24 +82,12 @@ camera theo `cameraAt`. Hành động là bộ chung `apps/studio/public/actions
 Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js` và `demo-acts.js`,
 lõi lấy mẫu bằng `sceneAt`, người 3D diễn theo bằng `act`. Bộ sưu tập kiểu và bảng
 nét mặt ở `demo-styles.js`, JSON nhân vật mẫu qua `parseCharacter` rồi `fromCharacter`. Hành động
-ở `apps/viewer/actions/` chỉ dùng ở app này, chưa vào bộ chung `apps/studio/public/actions/`
+ở `apps/viewer/actions/` chỉ dùng ở app này, chưa vào bộ chung `common/actions/`
 (`phone-lift-3d`, `pick-paper-3d`, `show-paper-3d`, `point-3d`, `stop-palm-3d`,
 `point-lane-3d`, `raise-laptop-3d`, `perch-desk-3d`, `head-down-3d`, `arms-out-3d`, `hand-up-side-3d`, `lean-side-3d`, `stance-wide-3d`, các hành động chỉ đầu và thân) — dời sang bộ chung khi repo video cần. Đích cổ tay của hành động ngồi giả định bàn cao 137, ghế 87,5 như `arms-on-table-3d`.
 
 Phím: `O` nét mực, `P` pixel, `A` khử răng cưa, `T` đổi giờ, `H` ẩn HUD,
 `Space` dừng.
-
-## Studio chỉnh nhân vật
-
-`apps/studio` (`pnpm --filter @stickman3d/studio dev`). Làm việc trên một thư mục bất kỳ có
-`characters/`, `actions/`, `pieces/`, mở qua File System Access API (Chromium, Edge). Trình
-duyệt không hỗ trợ thì dùng xuất/nạp gói `.zip`. Tham số URL, bố cục và cách chụp ở
-[README của nó](apps/studio/README.md).
-
-Căn mặc định của một kiểu tóc, mũ, áo cho **mọi** repo video: mở chính `apps/studio/public`
-làm thư mục, căn mảnh rồi bấm nút dấu trang trên ô mảnh — studio ghi vào
-`apps/studio/public/pieces/catalog.json`, lớp chung đi theo package, có hiệu lực ở repo video
-sau lần phát hành kế. Mở thư mục repo video thì chỉ repo đó nhận.
 
 ## Chụp ảnh để so
 
@@ -121,7 +108,7 @@ rồi đưa thư mục `sau-vs-truoc` cho chủ dự án xem.
 
 ## Dùng ở repo video
 
-Repo video pin cùng một version cho cả sáu gói `@stickman3d/*` (`stickman init` ghi sẵn,
+Repo video pin cùng một version cho cả năm gói `@stickman3d/*` (`stickman init` ghi sẵn,
 `stickman upgrade` nâng), cùng `three` (`init` ghi sẵn, `upgrade` thêm khi thiếu).
 
 Trong lúc vừa sửa rig vừa dựng tập thì **đừng đi qua registry** — trỏ `link:` sang cây nguồn,
@@ -129,8 +116,8 @@ chạy `pnpm dev` ở repo này cho tsup build lại:
 
 ```jsonc
 "@stickman3d/rig": "link:../../stickman-studio-3d/packages/rig",
-"@stickman3d/sketch": "link:../../stickman-studio-3d/packages/sketch"
-// fx, render, mcp, cli cũng vậy
+"@stickman3d/fx": "link:../../stickman-studio-3d/packages/fx"
+// render, mcp, cli cũng vậy
 ```
 
 Đi đường `link:` thì symlink làm bundler tìm `three`, `react` và `zod` ở repo này: hai bản
@@ -178,7 +165,7 @@ stage.dispose();
   `<ChanDung>` ở `src/khoi3d/ChanDung.tsx`.
 - **Bám người.** `screenOf(stage, figure, mốc)` hay `screenOf(stage, điểm)` gọi sau `draw`/`pose` của đúng khung ấy.
   Mốc: `root`, `hip`, `chest`, `collar`, `head`, `headTop`, `face`, `mouth`, `wristR/L`, `footR/L`, và
-  `wristNear/Far`, `footNear/Far` chọn bên gần ống kính như `anchorAt` 2D. Trả `x`, `y` px khung; `stage` toạ độ
+  `wristNear/Far`, `footNear/Far` chọn bên gần ống kính như `anchorAt`. Trả `x`, `y` px khung; `stage` toạ độ
   sân khấu (vẽ vào SVG `viewBox` của `cameraAt`); `scale` px khung cho một đơn vị rig ở độ sâu ấy; `behind`,
   `inFrame`; `occluded` khi truyền `{ occluders: [stage.scene] }`. Điểm thế giới rig là `Vec3`, điểm three là `Vector3`.
 - **Renderer.** Không truyền `renderer` thì sân khấu tự dựng trên canvas mới (`stage.canvas`), `pixelRatio` 1,
@@ -201,7 +188,7 @@ export const Scene3D = ({ scene }: { scene: SceneData }) => {
   const tag = useRef<HTMLDivElement>(null);
   const world = useRef<{ stage: Stage; room: Room } | null>(null);
   const [wait] = useState(() => delayRender('cảnh 3D'));
-  const rt = useMemo(() => resolveScene(scene, ACTIONS, ANIMALS, PROPS, castHeights(scene), castBodies(scene)), [scene]);
+  const rt = useMemo(() => resolveScene(scene, ACTIONS, castHeights(scene), castBodies(scene), HELD, HANDS), [scene]);
 
   const draw = (t: number) => {
     const w = world.current;
@@ -288,6 +275,22 @@ pnpm build && node --expose-gc tools/bench.mjs --refresh ../repo-video --scene t
 Mỗi giây đo (`--at`, phần của `duration`): `resolveScene`, dựng lưới (`worldOf`), khung đầu, khung cùng giây, rồi dời
 2 px mốc tay gần nhất trước giây ấy, `world.refresh` và khung sau đó. Khung là `pose(t)` cộng 5 lần
 `updateMatrixWorld` như `stage.draw`.
+
+## Đo khuỷu trên một repo video
+
+Luật khuỷu và cổ tay của `check` ([docs/03](docs/03-scene.md#khuỷu-và-cổ-tay-trên-hình)) đo trên cả cảnh (không theo shot
+của tập), kèm thứ `check` không in: đường giải đang lái tay ở quãng ấy (`placed`, `hold`, `lock`, `aim`, `world`, `body`,
+`fk`), lấn thân ở mọi tầm với, vòng `AIM_ITER` chạy hết vòng mà cổ tay còn dời (`nc`). Chạy CLI từ worktree này trên cảnh
+của repo video, không đổi gì ở repo ấy:
+
+```bash
+pnpm build && node tools/elbows.mjs ../repo-video --scene '^t02-' [--lock on|off|both] [--iter 8,9] [--jobs 6] [--json out.json] [--dump tmp/khuyu]
+```
+
+`--lock off` bỏ mọi `elbowLock` trong bộ nhớ; `both` chạy cả hai. `--iter 8,9` giải mỗi cảnh với từng số vòng (`setAimIter`
+của lõi) và in thêm người-tay mà khuỷu hay cổ tay hai lượt lệch nhau quá `0,5` đơn vị rig. Dòng đầu in thư mục rig đã nạp.
+`--dump` ghi mỗi người-tay một TSV theo khung.
+
 ## Đèn trong nhà
 
 Đèn lấy từ hai chỗ: giờ trong ngày `setPalette(name)` (màu nắng, đèn trần, bóng, trời) và bộ đèn
@@ -363,13 +366,13 @@ stage.scene.add(crowd);
 seatCrowd(seats, (i) => characterOptions(CHARACTERS[seats[i].character], { color: COATS[i % COATS.length] }));
 ```
 
-## Diễn theo hành động 2D
+## Diễn theo cảnh
 
 Repo video lấy mẫu cảnh bằng lõi của chính package (`resolveScene`, `sceneAt`) rồi đưa thẳng kết quả
 cho `act`:
 
 ```ts
-const rt = resolveScene(scene, ACTIONS, ANIMALS, PROPS, castHeights(scene), castBodies(scene));
+const rt = resolveScene(scene, ACTIONS, castHeights(scene), castBodies(scene), HELD, HANDS);
 // mỗi khung
 act(fig, sceneAt(rt, id, t, heights[id], bodies[id]), t);
 ```
@@ -377,7 +380,7 @@ act(fig, sceneAt(rt, id, t, heights[id], bodies[id]), t);
 `act` đặt người theo `world` (tâm hông, hướng, ngồi), đọc góc tay chân của hành động soạn
 ở `side` (`stand-3d`, `sit-3d`, `walk`, `bow-3d`…), đích cổ tay (`reach`, `world.hands`),
 góc thân, góc đầu và nét mặt (`mouth`, `brow`, `eyes`), tự chớp mắt theo `t`. Kênh tay chân
-soạn trên mặt khung 2D không được đọc: người đứng nghỉ ở kênh ấy.
+của hành động không soạn ở `side` (không có cờ nâng `pose.lift`) không được đọc: người đứng nghỉ ở kênh ấy.
 
 ## Cầm đồ, đội đồ, người nền, va chạm
 
@@ -443,7 +446,7 @@ khoá truyền cho `collide`, `R`/`L` là tay chân phải/trái), `'self.head'`
 chuỗi là không báo, `{ part, max }` cho lún tới `max` px rig. Tên phần người của lớp vẽ code cũng được (`'forearmNear'`,
 `'haru.legFar'`, `'lap'` là hai đùi): gần / xa theo `collide(…, { eye })` — mắt ống kính, toạ độ three; bên có gốc chân gần
 mắt hơn là bên gần, như `flip` của lõi —, không có `eye` thì cả hai bên. Mục không hiểu thì bỏ qua và gọi
-`collide(…, { unknown(entry, collider) })`. `hold` tự khai cẳng tay cầm, `wear` đầu hay thân, `wearDecal` thân. Người ngồi thì đùi lún nửa nét vào mặt ghế (hông 2D là tâm nét): khai `touch` cho đùi trên ghế.
+`collide(…, { unknown(entry, collider) })`. `hold` tự khai cẳng tay cầm, `wear` đầu hay thân, `wearDecal` thân. Người ngồi thì đùi lún nửa nét vào mặt ghế (hông của rig là tâm nét): khai `touch` cho đùi trên ghế.
 
 ## Chữ trên vật, món chạy theo `t`
 
@@ -583,10 +586,10 @@ phân giải, rơi nguồn là lộ ra trong diff.
 
 ## Phát hành một version
 
-Cả sáu gói cùng một số version. Sau khi sửa và kiểm:
+Cả năm gói cùng một số version. Sau khi sửa và kiểm:
 
 ```bash
-# bump "version" trong packages/{rig,sketch,fx,render,mcp,cli}/package.json rồi
+# bump "version" trong packages/{rig,fx,render,mcp,cli}/package.json rồi
 pnpm release                            # = pnpm build && pnpm -r publish --no-git-checks
 ```
 

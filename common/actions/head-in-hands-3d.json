@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 20,
+  "name": "head-in-hands-3d",
+  "duration": 1.8,
+  "end": "hold",
+  "mask": ["armNear", "armFar", "hand", "torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [-6, 24, 0],
+        "armNear": [-6, 24, 0],
+        "torso": 0,
+        "head": [null, null, 0]
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "w": 0.3, "turn": 0, "bend": 0 },
+        "armNear": { "w": 0.3, "turn": 0, "bend": 0 }
+      }
+    },
+    {
+      "t": 0.1111,
+      "pose": { "torso": 4, "head": [null, null, 3] },
+      "reach": {
+        "armFar": { "at": [56, -96, 56], "elbow": [0, 1, 0.6] },
+        "armNear": { "at": [56, -96, 56], "elbow": [0, 1, 0.6] }
+      },
+      "ease": "smooth",
+      "hand": { "armFar": { "pose": "open", "w": 0.4 }, "armNear": { "pose": "open", "w": 0.4 } }
+    },
+    {
+      "t": 0.2778,
+      "pose": { "torso": 14, "head": [null, null, 16] },
+      "reach": {
+        "armFar": { "to": "ear", "offset": [15, -3, 3], "elbow": [1, 0.4, 0.15] },
+        "armNear": { "to": "ear", "offset": [15, -3, 3], "elbow": [1, 0.4, 0.15] }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": {
+          "pose": "open",
+          "w": 0.8,
+          "palm": { "toward": "head" },
+          "fingers": { "toward": "crown" }
+        },
+        "armNear": {
+          "pose": "open",
+          "w": 0.8,
+          "palm": { "toward": "head" },
+          "fingers": { "toward": "crown" }
+        }
+      }
+    },
+    {
+      "t": 0.6667,
+      "pose": { "torso": 18, "head": [null, null, 22] },
+      "reach": {
+        "armFar": { "to": "ear", "offset": [15, -3, 3], "elbow": [1, 0.4, 0.15] },
+        "armNear": { "to": "ear", "offset": [15, -3, 3], "elbow": [1, 0.4, 0.15] }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": {
+          "pose": "open",
+          "w": 0.8,
+          "palm": { "toward": "head" },
+          "fingers": { "toward": "crown" }
+        },
+        "armNear": {
+          "pose": "open",
+          "w": 0.8,
+          "palm": { "toward": "head" },
+          "fingers": { "toward": "crown" }
+        }
+      }
+    },
+    {
+      "t": 1,
+      "pose": { "torso": 17, "head": [null, null, 20] },
+      "reach": {
+        "armFar": { "to": "ear", "offset": [15, -3, 3], "elbow": [1, 0.4, 0.15] },
+        "armNear": { "to": "ear", "offset": [15, -3, 3], "elbow": [1, 0.4, 0.15] }
+      },
+      "ease": "linear",
+      "hand": {
+        "armFar": {
+          "pose": "open",
+          "w": 0.8,
+          "palm": { "toward": "head" },
+          "fingers": { "toward": "crown" }
+        },
+        "armNear": {
+          "pose": "open",
+          "w": 0.8,
+          "palm": { "toward": "head" },
+          "fingers": { "toward": "crown" }
+        }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Hai tay ôm đầu: hai bàn tay vòng lên áp hai bên thái dương (mốc `ear`, offset [15, −3, 3]) trong 0,5 s, lòng tay quay vào đầu, ngón chĩa lên đỉnh sọ; thân gập 14° → 18°, đầu gật 16° → 22° lún dần tới 1,2 s, rồi giữ thân 17°, đầu 20°. Ghi hai tay, `hand`, `torso` và gật của `head`. Nền `stand-3d`, ngồi thì `sit-3d`; mốc tính trên đầu nên tay theo đầu mọi cỡ người. Chồng nét mặt `face-pain`, `face-worried`; buông về nền blend ~0,4.",
+  "preview": { "stage": "stand" }
+}

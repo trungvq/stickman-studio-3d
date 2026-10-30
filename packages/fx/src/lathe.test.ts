@@ -12,7 +12,7 @@ import {
   type Lens,
   type Place3,
   type V3,
-} from "@stickman3d/sketch";
+} from "@stickman3d/rig/core";
 import { lathe, type Lathe, type Ring } from "./lathe";
 import { solid, type Mark, type Part } from "./solid";
 

@@ -1,6 +1,6 @@
 // Sửa clip của track (`cast[].tracks`) trên JSON thô của cảnh: hàm thuần, trả bản mới, giữ mọi trường lạ. Thanh tua của
 // studio (hàng track ở Dáng tay) gọi chúng; README.md § Dáng tay.
-import { actionKind, actionMask, type ActionData } from "@stickman3d/rig/core";
+import { actionMask, type ActionData } from "@stickman3d/rig/core";
 import { insertHandKey, type Json } from "./keys";
 import type { HandSide } from "@stickman3d/rig/core";
 
@@ -48,7 +48,7 @@ export function setClipAction(raw: Json, k: ClipRef, action: string): Json {
 }
 
 /**
- * Hành động thay được cho clip: của người (không phải động vật); clip khai `mask` thì hành động phải ghi đủ các kênh ấy
+ * Hành động thay được cho clip: clip khai `mask` thì hành động phải ghi đủ các kênh ấy
  * (`mask` của clip chỉ thu hẹp), không thì ghi đúng các kênh hành động đang có ghi. Trừ chính hành động đang có, theo tên
  */
 export function compatibleActions(
@@ -66,7 +66,7 @@ export function compatibleActions(
       : m.length === want.length && want.every((c) => m.includes(c));
   };
   return Object.entries(actions)
-    .filter(([n, a]) => n !== current && actionKind(a) !== "animal" && same(a))
+    .filter(([n, a]) => n !== current && same(a))
     .map(([n]) => n)
     .sort();
 }

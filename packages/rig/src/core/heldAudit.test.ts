@@ -247,7 +247,7 @@ describe("đồ cầm theo `world.hands`", () => {
     if (!r.success) throw new Error(r.error.message);
     const parsed = parseHeldItem(chenJson);
     if (!parsed.success) throw new Error(parsed.error.message);
-    const rt = resolveScene(r.data, {}, {}, {}, {}, {}, { chen: parsed.data });
+    const rt = resolveScene(r.data, {}, {}, {}, { chen: parsed.data });
     const held = (t: number) => (t >= 0.5 && t < 1.5) || t >= 2.5;
     const issues = sceneHeld(rt, {
       // món xoay trong tay suốt quãng cầm: chỗ cầm nhóm không báo trôi

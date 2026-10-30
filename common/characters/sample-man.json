@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 5,
+  "name": "sample-man",
+  "rig": {
+    "height": 1.06,
+    "shoulderHalf": 40,
+    "hipHalf": 21
+  },
+  "head": {
+    "form": "human"
+  },
+  "palette": {
+    "line": "#3A2A22",
+    "skin": "#F8DCC6",
+    "clad": true,
+    "garment": "#4F7CAC",
+    "sleeve": "#4F7CAC",
+    "sleeveWidth": 17,
+    "sleeveLength": 0.92,
+    "trouser": "#3A3F4B",
+    "trouserWidth": 19,
+    "shoe": "#F2EEE6"
+  },
+  "pieces": {
+    "torso": {
+      "src": "sculpt",
+      "garment": {
+        "style": "tshirt"
+      }
+    },
+    "hair": {
+      "src": "sculpt",
+      "color": "#3B2A20",
+      "sculpt": {
+        "style": "quiff",
+        "part": -20,
+        "front": 40,
+        "fringe": 0,
+        "ear": 18,
+        "sideburn": -10,
+        "volume": 0.12
+      }
+    }
+  }
+}

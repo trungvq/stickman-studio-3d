@@ -105,7 +105,7 @@ describe('dây chuyền', () => {
     expect(Math.max(...ys) - Math.min(...ys)).toBeCloseTo(2.5 * 4, 0);
   });
 
-  it('người 3D dựng dây chuyền cùng khăn, kính ở socket `neck`; 2D chỉ cần qua schema', () => {
+  it('người 3D dựng dây chuyền cùng khăn, kính ở socket `neck`', () => {
     const f = dressed((c) => {
       c.pieces.neck = { ...c.pieces.neck, src: 'sculpt', necklace: { style: 'pearl' } as never, shades: {} as never };
     });

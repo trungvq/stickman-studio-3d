@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// stickman init | upgrade | check | docs | retime | reseat | migrate-held | migrate-elbow | studio | studio2d — dựng, nâng, soi và mở workspace của một repo video.
+// stickman init | upgrade | check | docs | retime | gen | migrate-held | migrate-elbow | studio — dựng, nâng, soi, sinh hành động và mở workspace của một repo video.
 import { readFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import {
@@ -13,13 +13,13 @@ import {
   listDocs,
   parseCheckArgs,
   readDoc,
-  reseatWorkspace,
   retimeWorkspace,
   upgradeWorkspace,
 } from "./lib.mjs";
+import { GEN_KINDS, GenError, genWorkspace, slotTable } from "./gen.mjs";
+import { genSitSheet } from "./gen-sheet.mjs";
 import { migrateElbow, migrateElbowTable } from "./migrate-elbow.mjs";
 import { migrateHeld, migrateTable, writeMigrateReport } from "./migrate-held.mjs";
-import { serveStudio } from "./serve.mjs";
 import { serveStudio3d } from "./studio3d.mjs";
 
 const args = process.argv.slice(2);
@@ -29,7 +29,9 @@ const value = (name, dflt) => {
   const i = args.indexOf(`--${name}`);
   return i < 0 ? dflt : args[i + 1];
 };
-const dir = args[1] && !args[1].startsWith("--") ? args[1] : value("dir", ".");
+// `gen <kiểu> [thư mục]`: tên kiểu đứng trước thư mục
+const dirArg = args[cmd === "gen" ? 2 : 1];
+const dir = dirArg && !dirArg.startsWith("--") ? dirArg : value("dir", ".");
 
 const USAGE = `stickman <lệnh> [thư mục]
 
@@ -40,12 +42,14 @@ const USAGE = `stickman <lệnh> [thư mục]
   check         soi workspace: JSON hỏng, file trỏ tới không có, người 3D trượt, công cụ ngoài;
                 --scene <regex> chỉ soi cảnh có id khớp (cảnh báo của chúng + mọi lỗi),
                 bỏ tập, tiếng, git — nhanh, dùng sau khi sửa một cảnh
-                --uses <tên,…> chỉ soi cảnh dùng hành động, nhân vật, đạo cụ, động vật ấy
+                --uses <tên,…> chỉ soi cảnh dùng hành động, nhân vật ấy
                 (đi chung --scene thì lấy cảnh khớp cả hai)
                 --only <nhóm,…> / --skip <nhóm,…> chọn nhóm luật: ref (JSON, tham chiếu),
-                move (trượt, thân quay, giật), held (đồ cầm), legacy (đồ cầm còn đi
-                đường cũ), clash (lồng vào đồ, vào người, tay xuyên thân), episode (tập,
-                tiếng, git, công cụ ngoài); nhóm không chạy thì không dựng thứ nó cần
+                move (trượt, thân quay, giật, khuỷu), held (đồ cầm), legacy (đồ cầm còn
+                đi đường cũ), roles (vai trò của đồ cảnh: zod, lệch hình, người ngồi lệch
+                mặt ngồi), clash (lồng vào đồ, vào người, tay xuyên thân; chỉ chạy khi
+                gọi tên trong --only), episode (tập, tiếng, git, công cụ ngoài); nhóm
+                không chạy thì không dựng thứ nó cần
                 --held tên tắt của --only held
                 --baseline <file> chỉ in cảnh báo mới hay nặng hơn file ấy (kèm mọi lỗi)
                 --save-baseline <file> ghi cảnh báo lượt này vào file (gộp cảnh không chạy lại)
@@ -54,10 +58,43 @@ const USAGE = `stickman <lệnh> [thư mục]
                 RAM trống)
   retime        đo lại tiếng rồi ghi số vào cue khai \`after\` và mốc khai ở \`shot.marks\`;
                 --mark <cảnh>:<tên>=<giây> đặt tay một mốc
-  reseat        rig đổi độ dài chân: dời \`y\` của người ngồi 2D để hông ở đúng chỗ cũ, người
-                đứng giữ chân trên đất, người đi giãn \`cycle\` để giữ quãng đi; bỏ qua cảnh
-                khớp stickman.frozen.
-                --before <ref> đọc actions/ đời trước ở commit ấy
+  gen <kiểu>    sinh một hành động cho đúng một cảnh từ chỗ người và đồ trong cảnh, tự kiểm trên
+                chính cảnh ấy (cổ tay, tầm với, khuỷu một chiều, điểm tiếp xúc, check move/clash/held/
+                roles) rồi mới ghi actions/; không đạt thì báo lỗi, không ghi. Kiểu: pour (rót), sit (ngồi),
+                walk (đi: ghi path và clip vào scenes/).
+                Đồ của cảnh tìm theo vai trò (Item.roles, withRoles); bảng vai trò cần: gen <kiểu> --help
+                chung: --scene <id> --cast <người> --at <giây bắt đầu> --name <tên file> --force (ghi dù
+                không đạt, đè file không phải gen sinh) --dry-run (chỉ in)
+                pour: --cup <người | người:món | món | vật | x,y,z> (vật đựng mang vai trò vessel hay điểm)
+                --style single|serve (mặc định single) --tilt <độ nghiêng hết> --pour-dir <độ hướng rót>
+                --item <bình mang vai trò pourer, khi tay phải chưa cầm gì; mặc định binh>
+                sit: dáng ngồi nền theo mặt ngồi, sàn, cỡ người của cảnh (--at mặc định 0)
+                --legs bent|square|straight|staggered (mặc định square) --tuck near|far (chân co của
+                staggered, mặc định far) --feet free|floor (mặc định free: chạm được thì chạm, không thì chân
+                square thõng, kiểu khác lỗi; floor: không chạm được là lỗi) --back upright|recline|forward (mặc định upright)
+                --hands thighs|table|armrest|fold (mặc định thighs; armrest: khuỷu, cẳng tay trên tay vịn; fold:
+                khuỷu trên tay vịn, bàn tay chồng trước bụng) --elbow <số> (dời khuỷu dọc tay vịn, dương ra
+                trước, rig ở height 1) --top near|far (bàn tay nằm trên của fold, mặc định near)
+                --table <vật | vật#mục | y | y,mép gần | none>
+                --armrest <vật | x,y,z> --backrest <vật | vật#mục | khoảng sau hông | none>
+                --footrest <vật | vật#mục | y | none> (vật: tên trong cảnh three stickman.world mang vai
+                trò ấy; số: đồ ảo; none: bỏ vai trò tự tìm; không cờ thì tìm mặt ngồi dưới hông, lưng,
+                tay vịn, để chân của cùng ghế, bàn trước mặt)
+                sit --sheet: tờ thử không cần cảnh — mọi tổ hợp chân × lưng × tay trên ghế, bàn, tay vịn của
+                cảnh xem thử, mỗi ô tự kiểm rồi vẽ three; --legs/--back/--hands nhận danh sách a,b (bỏ trống
+                là mọi kiểu) --seat <độ cao mặt ngồi,…> (rig ở height 1, mặc định 87.5) --depth <hông tới mép
+                sau,…> --elbow <dời khuỷu,…> --feet --top --arm-top/--arm-out/--arm-front <số> --character <nhân vật>
+                (mặc định sample-man) --angle front|near|far|side|back --out <png> (mặc định
+                tmp/gen/sit-sheet.png) --size <cỡ ô> --cols <số cột> --software
+                walk: đi qua các điểm sàn, ghi mốc world.path và clip đi / đứng của một track vào
+                scenes/<id>.json (vá JSON thô, bản cũ ở .bak), thay phần từ --at trở đi
+                --to "<x,z> …" (x,z mốc giữa đường — rẽ khi đang đi; x,z! dừng, quay tới hướng quãng sau
+                rồi đi; x,z!yaw ở điểm cuối: dừng rồi quay tới yaw) --at <giây | @mốc±s> (bắt buộc khi
+                người đã có path) --start rest|moving (mặc định rest) --speed <đơn vị/s> (mặc định tốc
+                tự nhiên của --action) --action <hành động đi, mặc định walk> --radius <bán kính bo góc>
+                --turn-time <giây mỗi 90°, mặc định 0.8> --turn-side auto|right|left (quay 180°, auto: về
+                phía ống kính) --hold <giây đứng ở điểm cuối, mặc định 0.6> --track <tên> --after <hành
+                động đứng, mặc định stand-3d> --blend <0…1, mặc định 0.3>
   migrate-held  chuyển món bản 1 (kiểu cầm khai theo món) sang v2 và \`hold\` \`món#kiểu\` của cảnh sang chỗ cầm nhóm
                 \`{ item, group, … }\` (tay dẫn), chỗ cầm gần liên kết cũ nhất; in bảng lệch từng lần cầm.
                 --scene <regex> chỉ cảnh có id khớp
@@ -72,19 +109,18 @@ const USAGE = `stickman <lệnh> [thư mục]
                 --dry-run chỉ in, không ghi
   studio        mở Studio 3D trên repo này (dev server Vite): xem cảnh three, soạn kiểu cầm;
                 ghi thẳng scenes/ và held/ (kiểm hash lúc nạp, bản cũ ở <file>.json.bak)
-  studio2d      mở character studio 2D (app tĩnh) đọc sẵn workspace này: nhân vật, hành động, mảnh;
-                ghi thì bấm Mở thư mục
 
   --force       đè file có sẵn (chỉ init)
-  --port <số>   studio: cổng (mặc định 5180); studio2d: cổng (mặc định 5173)
-  --host <địa chỉ>  studio: nghe địa chỉ ấy thay cho localhost — mở cả đường ghi scenes/, held/ ra mạng ấy
+  --port <số>   studio: cổng (mặc định 5180)
+  --host <địa chỉ>  studio: chỉ nghe địa chỉ ấy, bỏ chặn (mặc định nghe mọi giao diện, chỉ trả lời localhost và
+                tailnet) — mở cả đường ghi scenes/, held/ ra mạng ấy
   --name <tên>  tên project trong package.json (mặc định: tên thư mục)
   --yes         upgrade: đè hết, không hỏi
   --skip-modified  upgrade: giữ nguyên mọi file đã sửa tay, không hỏi
-  --dry-run     upgrade / retime / reseat / migrate-held / migrate-elbow: chỉ in ra sẽ làm gì
+  --dry-run     upgrade / retime / migrate-held / migrate-elbow: chỉ in ra sẽ làm gì
 
-Nội dung của repo — characters, actions, scenes, props, pieces — upgrade không đụng tới;
-chỉ reseat, migrate-held, migrate-elbow và Lưu của studio ghi vào scenes/, và chỉ khi gọi chúng.
+Nội dung của repo — characters, actions, scenes, pieces — upgrade không đụng tới;
+chỉ migrate-held, migrate-elbow và Lưu của studio ghi vào scenes/, và chỉ khi gọi chúng.
 `;
 
 /** Phần của lệnh `c` trong `USAGE` cộng danh sách cờ */
@@ -101,7 +137,14 @@ const list = (label, files) =>
   files.length ? `${label} (${files.length}):\n  ${files.join("\n  ")}` : "";
 
 const parsed = cliArgs(args);
-if (parsed.help) console.log(Object.hasOwn(CLI_FLAGS, cmd) ? usageOf(cmd) : USAGE);
+if (parsed.help)
+  console.log(
+    !Object.hasOwn(CLI_FLAGS, cmd)
+      ? USAGE
+      : cmd === "gen" && GEN_KINDS[args[1]]
+        ? `${usageOf(cmd)}\n\n${slotTable(args[1])}`
+        : usageOf(cmd),
+  );
 else if (parsed.error) {
   console.error(parsed.error);
   process.exitCode = 1;
@@ -144,7 +187,6 @@ else if (parsed.error) {
         console.log(list(dryRun ? "Đã sửa tay, sẽ hỏi" : "Giữ nguyên bản sửa tay", kept));
       if (r.kept.length) console.log(`${r.kept.length} file sửa tay, mẫu chưa đổi, giữ nguyên.`);
       if (r.agentsMd) console.log(r.agentsMd);
-      if (r.legs) console.log(r.legs);
       if (r.elbows) console.log(r.elbows);
       console.log(`${r.same.length} file đã đúng bản mới.`);
     }
@@ -173,7 +215,7 @@ else if (parsed.error) {
     .map(([k, v]) => `${v} ${k}`)
     .join(", ");
   console.log(
-    `${r.dir}\n${n}${r.counts.common === undefined ? "" : `, + ${r.counts.common} file bộ chung của studio`}\n` +
+    `${r.dir}\n${n}${r.counts.common === undefined ? "" : `, + ${r.counts.common} file bộ chung`}\n` +
       `pin @${r.stamped ?? "?"}, rig ${r.rig ? `@${r.rig}` : "chưa cài"}` +
       (r.groups && r.groups.length < CHECK_GROUPS.length
         ? `\nchỉ chạy nhóm: ${r.groups.join(", ")}`
@@ -233,31 +275,98 @@ else if (parsed.error) {
     else console.log(`Đã ghi ${r.wrote.length} file, ${r.changes.length} số.`);
     if (r.problems.length) process.exitCode = 1;
   }
-} else if (cmd === "reseat") {
-  const dryRun = flag("dry-run");
-  const r = await reseatWorkspace({ dir, before: value("before"), dryRun });
-  const legs = (l) => `đùi ${l.thigh} / cẳng ${l.shin}`;
-  console.log(`${r.dir}\nChân ${legs(r.from)} → ${legs(r.to)}`);
-  const px = (v) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}`;
-  for (const ch of r.changes)
-    console.log(
-      ch.kind === "nhịp"
-        ? `${ch.file}: ${ch.id} ${ch.action} cycle ${ch.cycle.from} → ${ch.cycle.to} (giữ quãng đi)`
-        : ch.kind === "path"
-          ? `${ch.file}: ${ch.id} path ${ch.path.length} mốc y (${ch.path.map((k) => `${k.t}s ${k.y}`).join(", ")})`
-          : `${ch.file}: ${ch.id} y ${ch.y.from} → ${ch.y.to}${ch.x ? `, x ${ch.x.from} → ${ch.x.to}` : ""} (${px(ch.dy)} px${ch.props.length ? `, đạo cụ theo: ${ch.props.map((p) => p.id).join(", ")}` : ""})`,
+} else if (cmd === "gen") {
+  const kind = args[1] && !args[1].startsWith("--") ? args[1] : undefined;
+  if (!kind) {
+    console.error(
+      `stickman gen <kiểu> — kiểu: ${Object.entries(GEN_KINDS)
+        .map(([k, v]) => `${k} (${v.describe})`)
+        .join(", ")}`,
     );
-  for (const m of r.manual) console.log(`soi tay: ${m.file}${m.id ? `: ${m.id}` : ""} — ${m.why}`);
-  for (const p of r.problems) console.log(`lỗi: ${p}`);
-  if (r.from.thigh === r.to.thigh && r.from.shin === r.to.shin)
-    console.log("Cảnh đã dựng cho chân đang cài, không có gì để dời.");
-  else if (r.problems.length) console.log("Chưa ghi gì — sửa lỗi nạp rồi chạy lại.");
-  else
-    console.log(
-      `${dryRun ? `${r.changes.length} chỗ sẽ đổi (chưa ghi)` : `Đã ghi ${r.wrote.length} cảnh, ${r.changes.length} chỗ; stickman.json ghi chân mới`}.` +
-        (r.frozen ? ` Bỏ qua ${r.frozen} cảnh khớp stickman.frozen.` : ""),
-    );
-  if (r.problems.length) process.exitCode = 1;
+    process.exitCode = 1;
+  } else if (flag("sheet")) {
+    if (kind !== "sit") {
+      console.error(`lỗi: --sheet chỉ có cho \`gen sit\`, chưa có cho \`${kind}\``);
+      process.exitCode = 1;
+    } else
+      try {
+        const r = await genSitSheet(
+          {
+            dir,
+            legs: value("legs"),
+            back: value("back"),
+            hands: value("hands"),
+            seat: value("seat"),
+            depth: value("depth"),
+            elbow: value("elbow"),
+            feet: value("feet"),
+            top: value("top"),
+            armTop: value("arm-top"),
+            armOut: value("arm-out"),
+            armFront: value("arm-front"),
+            character: value("character"),
+            angle: value("angle"),
+            at: value("at"),
+            out: value("out"),
+            size: value("size"),
+            cols: value("cols"),
+            software: flag("software"),
+          },
+          (line) => console.error(line),
+        );
+        console.log(r.text);
+      } catch (e) {
+        if (!(e instanceof GenError)) throw e;
+        console.error(`lỗi: ${e.message}`);
+        process.exitCode = 1;
+      }
+  } else {
+    try {
+      const r = await genWorkspace({
+        kind,
+        dir,
+        scene: value("scene"),
+        cast: value("cast"),
+        at: value("at"),
+        cup: value("cup"),
+        style: value("style"),
+        tilt: value("tilt"),
+        pourDir: value("pour-dir"),
+        name: value("name"),
+        item: value("item"),
+        legs: value("legs"),
+        back: value("back"),
+        hands: value("hands"),
+        tuck: value("tuck"),
+        feet: value("feet"),
+        elbow: value("elbow"),
+        top: value("top"),
+        table: value("table"),
+        armrest: value("armrest"),
+        backrest: value("backrest"),
+        footrest: value("footrest"),
+        to: value("to"),
+        speed: value("speed"),
+        action: value("action"),
+        start: value("start"),
+        radius: value("radius"),
+        turnTime: value("turn-time"),
+        turnSide: value("turn-side"),
+        hold: value("hold"),
+        track: value("track"),
+        after: value("after"),
+        blend: value("blend"),
+        force: flag("force"),
+        dryRun: flag("dry-run"),
+      });
+      console.log(r.text);
+      if (!r.ok && !r.wrote) process.exitCode = 1;
+    } catch (e) {
+      if (!(e instanceof GenError)) throw e;
+      console.error(`lỗi: ${e.message}`);
+      process.exitCode = 1;
+    }
+  }
 } else if (cmd === "migrate-held") {
   const dryRun = flag("dry-run");
   const mapFile = value("map");
@@ -299,19 +408,11 @@ else if (parsed.error) {
   const r = await serveStudio3d({
     dir,
     port: Number(value("port", 5180)),
-    host: value("host", "localhost"),
+    host: value("host", undefined),
   });
   console.log(`Studio 3D đọc ${r.root}, ghi scenes/ và ${r.heldOut ?? "held/"}`);
   for (const u of r.urls?.local ?? []) console.log(`  Local:   ${u}`);
   for (const u of r.urls?.network ?? []) console.log(`  Network: ${u}`);
-} else if (cmd === "studio2d") {
-  const r = await serveStudio({ dir, port: Number(value("port", 5173)) });
-  console.log(`Studio đọc ${r.root}
-  Local:   ${r.local}`);
-  for (const u of r.lan) console.log(`  Network: ${u}`);
-  console.log(
-    "Ghi JSON thì bấm Mở thư mục và trỏ vào chính thư mục này (chỉ localhost mới có nút ấy).",
-  );
 } else {
   console.log(USAGE);
   if (cmd) process.exitCode = 1;

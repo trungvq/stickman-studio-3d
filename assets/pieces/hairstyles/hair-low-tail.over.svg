@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320">
-<title>Buộc thấp — over</title>
-<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
-<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 61 170 C 54 113 82 59 153 57 C 219 52 264 101 259 170 L 249 176.74 Q 248 146.29 232 104.02 Q 217 89.08 203 86.75 C 170 88.76 127 92.92 86 109.68 Q 74 144.28 72 169.79 Z"/>
-<path d="M 203 86.75 Q 211 77.96 208 66" fill="none"/>
-</g>
-</svg>

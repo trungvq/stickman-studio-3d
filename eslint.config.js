@@ -6,7 +6,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["**/dist", "**/node_modules", "docs", "tmp"] },
+  { ignores: ["**/dist", "**/node_modules", "docs", "tmp", "khuyu-harness"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

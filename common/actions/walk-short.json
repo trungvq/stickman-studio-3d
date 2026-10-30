@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 20,
+  "name": "walk-short",
+  "duration": 1,
+  "end": "wrap",
+  "gen": "walkCycle",
+  "params": {
+    "hip": 14,
+    "knee": 40,
+    "stance": 0.65,
+    "arm": 10,
+    "elbow": 18,
+    "lean": 1,
+    "crouch": 0,
+    "dip": 0.5
+  },
+  "authoredAt": "side",
+  "events": [
+    { "name": "step", "t": 0.176 },
+    { "name": "step", "t": 0.676 }
+  ],
+  "note": "Đi sải ngắn cho người mặc vạt dài quấn, váy dài ôm: đùi vung nửa tầm 14°, gối gập 40°, mỗi chân chạm đất 0,65 chu kỳ, tay đánh 10° khuỷu 18°, thân ngả 1° nhún 0,5°; chu kỳ 1 s, lặp, một chu kỳ đi 140 đơn vị rig ở `height` 1 (`actionStride`) — sải `28°` của `walk` làm vạt căng thành khối nêm giữa hai cổ chân (docs/12 § Vạt dài quấn). Bộ sinh ghi hai tay, hai chân, thân; không ghi bàn tay. Đặt ở track thân trên `world.path` (nền `stand-3d` trước và sau đoạn đi): tốc độ `path` tự nhiên 140 · `height` đơn vị/s, rig co giãn nhịp chân theo `path`. Người bưng đồ đặt cổ tay bằng `world.hands`; dừng thì nối `stand-3d` blend ~0,3 ngay trước mốc dừng. Cùng họ: `walk`, `run-3d`. Sinh bằng `tools/actions/walk.mjs`.",
+  "preview": { "stage": "stand" }
+}

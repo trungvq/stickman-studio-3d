@@ -1,7 +1,7 @@
 {
   "name": "@stickman3d/render",
   "version": "7.15.0",
-  "description": "Vẽ nhân vật người que ra PNG bằng @stickman3d/sketch; ảnh three thật qua Chromium headless",
+  "description": "Ảnh soi người que 3D: khung three thật qua Chromium headless, que xương trên lưới sàn, lớp vẽ code; nạp entry lớp vẽ code và cảnh three của repo video",
   "license": "MIT",
   "type": "module",
   "files": [
@@ -11,13 +11,8 @@
     "skeleton.mjs",
     "three-page.mjs",
     "three.mjs",
-    "trails.mjs",
-    "video.mjs"
+    "trails.mjs"
   ],
-  "bin": {
-    "stickman-render": "./cli.mjs",
-    "stickman-video": "./video.mjs"
-  },
   "scripts": {
     "typecheck": "echo skip",
     "build": "echo skip",
@@ -25,7 +20,7 @@
   },
   "dependencies": {
     "@stickman3d/fx": "workspace:*",
-    "@stickman3d/sketch": "workspace:*",
+    "@stickman3d/rig": "workspace:*",
     "esbuild": "^0.28.2",
     "puppeteer-core": "^25.12.0",
     "react": "^19.2.0",
@@ -37,5 +32,8 @@
   },
   "publishConfig": {
     "registry": "https://gitlab.com/api/v4/projects/87383859/packages/npm/"
+  },
+  "bin": {
+    "stickman-render": "./cli.mjs"
   }
 }

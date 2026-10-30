@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 20,
+  "name": "despair-3d",
+  "duration": 3.2,
+  "end": "wrap",
+  "authoredAt": "side",
+  "mask": ["armNear", "armFar", "torso", "head"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armNear": [6, 10, 0], "armFar": [6, 10, 0], "torso": 15, "head": [4, 14, 18] },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.25,
+      "pose": { "armNear": [7, 12, 0], "armFar": [7, 12, 0], "torso": 16, "head": [-4, -14, 20] },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.5,
+      "pose": { "armNear": [6, 10, 0], "armFar": [6, 10, 0], "torso": 15, "head": [4, 14, 18] },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.75,
+      "pose": { "armNear": [7, 12, 0], "armFar": [7, 12, 0], "torso": 16, "head": [-4, -14, 20] },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": { "armNear": [6, 10, 0], "armFar": [6, 10, 0], "torso": 15, "head": [4, 14, 18] },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "Tuyệt vọng: thân gục 15–16°, đầu cúi 18–20° và lắc chậm ±14° hai nhịp mỗi lượt như lắc đầu ngán ngẩm, hai tay buông thõng hơi ra trước; lượt 3,2 s, lặp. Chỉ ghi hai tay, `torso`, `head`. Nền `stand-3d`; vào blend ~0,5, thôi bằng clip rỗng blend ~0,5. Nét mặt chồng `face-anguish` hay `face-downcast`.",
+  "preview": { "stage": "stand" }
+}

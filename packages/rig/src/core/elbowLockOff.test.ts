@@ -37,7 +37,7 @@ function runtime(hands: unknown[], items: unknown[] = []) {
     items,
   });
   if (!r.success) throw new Error(r.error.message);
-  const rt = resolveScene(r.data, {}, {}, {}, { nguoi: H }, { nguoi: DIMS }, HELD);
+  const rt = resolveScene(r.data, {}, { nguoi: H }, { nguoi: DIMS }, HELD);
   rt.chars = { nguoi: NGUOI };
   return rt;
 }

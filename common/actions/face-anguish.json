@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 20,
+  "name": "face-anguish",
+  "duration": 0.4,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "squeezed",
+        "brow": "furrowed",
+        "mouth": "talkSadB"
+      }
+    }
+  ],
+  "note": "Tuyệt vọng gào lên mà vẫn cay: mắt nhắm siết, mày cau, miệng mếu mở (`talkSadB`); vào ngay rồi giữ. Chỉ ghi `face`, nên chồng lên mọi tư thế, đứng hay ngồi, và nằm dưới track khẩu hình (`talk-lips`): lời đè `mouth`, mắt và mày vẫn của lớp này. Chồng với tay ôm đầu; cay mà chưa gào là `face-bitter`.",
+  "preview": {
+    "stage": "stand"
+  }
+}

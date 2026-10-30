@@ -19,8 +19,8 @@ import {
   type HeldItemSpec,
 } from "./heldItem";
 import { matVec, type M3, type V3 } from "./lens";
-import cocJson from "../../../../apps/studio/public/held/coc.json";
-import tuiJson from "../../../../apps/studio/public/held/tui.json";
+import cocJson from "../../../../common/held/coc.json";
+import tuiJson from "../../../../common/held/tui.json";
 
 const dot = (a: V3, b: V3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const tr = (R: M3): M3 => [R[0], R[3], R[6], R[1], R[4], R[7], R[2], R[5], R[8]];
@@ -107,13 +107,13 @@ describe("held/<món>.json", () => {
     return o;
   };
 
-  it("phiên bản 3", () => {
-    expect(HELD_VERSION).toBe(3);
+  it("phiên bản 4", () => {
+    expect(HELD_VERSION).toBe(4);
   });
 
   it("`coc`, `tui` mẫu nạp được: phần, chỗ treo", () => {
     const coc = parse(cocJson);
-    expect(coc.schemaVersion).toBe(3);
+    expect(coc.schemaVersion).toBe(4);
     expect(new Set(coc.shape!.map((b) => b.part))).toEqual(new Set(["than", "quai"]));
     expect(coc.shape!.filter((b) => b.detail)).toHaveLength(2);
     const tui = parse(tuiJson);
@@ -121,13 +121,13 @@ describe("held/<món>.json", () => {
     expect(tui.shape![0]).toMatchObject({ part: "than" });
   });
 
-  it("`migrateHeldItem`: thiếu số ra 1, bản 2 lên 3, số khác giữ nguyên", () => {
+  it("`migrateHeldItem`: thiếu số ra 1, bản 2, 3 lên 4, số khác giữ nguyên", () => {
     const noVer: Record<string, unknown> = { ...DIEN_THOAI_V2 };
     delete noVer.schemaVersion;
     expect((migrateHeldItem(noVer) as { schemaVersion: number }).schemaVersion).toBe(1);
-    expect((migrateHeldItem(DIEN_THOAI_V2) as { schemaVersion: number }).schemaVersion).toBe(3);
+    expect((migrateHeldItem(DIEN_THOAI_V2) as { schemaVersion: number }).schemaVersion).toBe(4);
     expect((migrateHeldItem({ schemaVersion: 3 }) as { schemaVersion: number }).schemaVersion).toBe(
-      3,
+      4,
     );
     expect((migrateHeldItem({ schemaVersion: 4 }) as { schemaVersion: number }).schemaVersion).toBe(
       4,
@@ -144,7 +144,7 @@ describe("held/<món>.json", () => {
 
   it("ba ví dụ của spec nạp được", () => {
     for (const j of [DIEN_THOAI_V2, CHAI_DIA_V2, TUI_HIEU_V2])
-      expect(parse(j).schemaVersion).toBe(3);
+      expect(parse(j).schemaVersion).toBe(4);
     const dt = parse(DIEN_THOAI_V2);
     expect(dt.shape![3]).toMatchObject({ detail: true });
     expect(parse(CHAI_DIA_V2).shape![0]).toMatchObject({ part: "than" });
@@ -168,7 +168,7 @@ describe("held/<món>.json", () => {
   });
 
   it("`schemaVersion` lạ báo lỗi phiên bản", () => {
-    expect(errs(edit(DIEN_THOAI_V2, (o) => (o.schemaVersion = 4)))).toMatch(/phiên bản/);
+    expect(errs(edit(DIEN_THOAI_V2, (o) => (o.schemaVersion = 5)))).toMatch(/phiên bản/);
     expect(errs(edit(DIEN_THOAI_V2, (o) => (o.schemaVersion = 0)))).toMatch(/phiên bản/);
     expect(errs(edit(DIEN_THOAI_V2, (o) => (o.schemaVersion = 99)))).toMatch(/phiên bản/);
   });
@@ -214,7 +214,7 @@ describe("held/<món>.json", () => {
           ];
         }),
       ).schemaVersion,
-    ).toBe(3);
+    ).toBe(4);
   });
 
   it("điểm và trục trong khung món", () => {

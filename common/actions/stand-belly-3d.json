@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 20,
+  "name": "stand-belly-3d",
+  "duration": 3.2,
+  "end": "wrap",
+  "mask": ["armFar", "armNear", "legFar", "legNear", "torso"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [5, 16, 0, 0, -6],
+        "armNear": [5, 16, 0, 0, -6],
+        "legFar": [1, 0],
+        "legNear": [-1, 0],
+        "torso": 0
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armFar": [6, 19, 0, 0, -6],
+        "armNear": [6, 19, 0, 0, -6],
+        "legFar": [1, 0],
+        "legNear": [-1, 0],
+        "torso": 1.5
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Đứng thở cho người bụng phệ: cánh tay hơi ra trước (vai 5–6°), khuỷu gập 16–19°, xoắn trong 6° nên cẳng tay ôm theo bụng thay vì buông thẳng; thân nhích 0 → 1,5° theo nhịp thở, lượt 3,2 s lặp. Ghi tay, chân, thân — thay hẳn `stand-3d`, không chồng lên nó. Nền là chính nó; chồng được track chỉ đầu, nét mặt, hay hành động tay ghi `armNear` / `armFar` riêng. Sinh bằng `tools/actions/stand.mjs`.",
+  "preview": { "stage": "stand" }
+}

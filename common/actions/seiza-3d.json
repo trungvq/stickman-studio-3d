@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 18,
+  "name": "seiza-3d",
+  "duration": 3.4,
+  "end": "wrap",
+  "authoredAt": "side",
+  "mask": ["armFar", "armNear", "legFar", "legNear", "torso"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [11, 42, 0],
+        "armNear": [11, 42, 0],
+        "legFar": [80, -170],
+        "legNear": [80, -170],
+        "torso": 3
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armFar": [12, 42, 0],
+        "armNear": [12, 42, 0],
+        "legFar": [80, -170],
+        "legNear": [80, -170],
+        "torso": 4
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Ngồi quỳ 正座 thở: đùi dốc 10° xuống gối, cẳng chân nằm ngang ra sau, hông trên gót; tay buông đặt hai bên đùi như `sit-3d`; thân 3 ↔ 4 mỗi 3,4 s (lặp). Ghi tay, chân, thân. Nền: người ngồi đệm hay sàn bằng `world.sit`, mặt ngồi cao hơn sàn 14 (đơn vị rig ở `height` 1, tức trên mặt đệm dày 6 chừng 8: ống chân, gối nằm trên đệm). Tay úp trên đùi là `seiza-hands-thighs-3d`; chồng track tay (cúi chào, cầm chén) lên trên; nhổm lên quỳ gối là `kneel-up-3d`, đứng dậy là `seiza-stand-3d`.",
+  "preview": { "stage": "floor" }
+}

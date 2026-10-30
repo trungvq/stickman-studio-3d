@@ -6,7 +6,6 @@ __pycache__
 tmp
 *.json.bak
 /packages/cli/docs/
-/packages/cli/prompts/
 /packages/cli/template/
 /packages/cli/studio/
 /packages/cli/versions.json

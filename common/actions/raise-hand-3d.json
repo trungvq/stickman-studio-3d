@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 20,
+  "name": "raise-hand-3d",
+  "duration": 1,
+  "end": "hold",
+  "mask": ["armNear", "hand", "stretch"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armNear": [-6, 24, 0], "stretch": [1, 1, 1, 1] },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 0.3, "palm": "in" } }
+    },
+    {
+      "t": 0.3,
+      "pose": { "stretch": [1, 1.1, 1, 1] },
+      "reach": { "armNear": { "at": [50, -110, 100], "elbow": [-0.6, 1, 0.2] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 0.7, "palm": "forward", "fingers": "up" } }
+    },
+    {
+      "t": 0.6,
+      "pose": { "stretch": [1, 1.25, 1, 1] },
+      "reach": { "armNear": { "at": [20, -245, 110], "elbow": [-0.3, 0.6, 1] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 1, "palm": "forward", "fingers": "up" } }
+    },
+    {
+      "t": 1,
+      "pose": { "stretch": [1, 1.25, 1, 1] },
+      "reach": { "armNear": { "at": [20, -245, 110], "elbow": [-0.3, 0.6, 1] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 1, "palm": "forward", "fingers": "up" } }
+    }
+  ],
+  "events": [],
+  "note": "Giơ tay xin phát biểu: từ tay buông của `stand-3d`, tay gần đưa lên qua phía trước-ngoài tới cổ tay cạnh, cao quá đỉnh đầu (đích hệ thân [20, −245, 110], tay gần vươn 1,25 lần, cánh tay gần thẳng đứng) trong 0,6 s, bàn tay `open`, lòng ra trước, ngón dựng; giữ yên. Chỉ ghi `armNear`, `hand`, `stretch`. Nền `stand-3d`, `sit-3d`: đích hệ thân theo hông. Hạ bằng `call-out-out-3d` blend ~0,25; blend thẳng về nền thì khuỷu lật giữa đường. Chếch ra ngoài hơn, lắc một nhịp để gọi người: `call-out-3d`.",
+  "preview": { "stage": "stand" }
+}

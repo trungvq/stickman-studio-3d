@@ -65,7 +65,7 @@ function runtime(a: unknown[], b: unknown[], items: unknown[]): SceneRuntime {
     items,
   });
   if (!r.success) throw new Error(r.error.message);
-  const rt = resolveScene(r.data, {}, {}, {}, { a: H, b: H }, { a: DIMS, b: DIMS }, { the: THE });
+  const rt = resolveScene(r.data, {}, { a: H, b: H }, { a: DIMS, b: DIMS }, { the: THE });
   // như `buildWorld`: nhân vật thật của mọi người cho bàn tay người thả
   rt.chars = { a: NGUOI, b: NGUOI };
   return rt;
@@ -156,16 +156,16 @@ describe("mốc món `rest`", () => {
     expect(underAt(rt, "b", -1, 1.7, g.frame, mark)).toBeLessThan(REST_REF);
   });
 
-  it("mặt đỡ trong `chooseMissing`: thẻ nằm sát người, kẹp bên `lateral` có nắm tay dưới mặt thẻ; mốc `rest` đổi sang `edges` phía trên", () => {
+  it("mặt đỡ trong `chooseMissing`: thẻ nằm sát người, mốc `rest` kẹp `edges` từ phía trên, nắm tay không xuống dưới mặt thẻ", () => {
     const T = trunk3(NGUOI, { pose: fx.pose, world: fx.world } as unknown as ActInput)!;
     const c = graspCtx(T, { the: THE });
     const R: M3 = [1, 0, 0, 0, -1, 0, 0, 0, -1];
     const curl = GRIP_GROUPS.card.variants.edges!.curl;
     for (const side of [-1, 1]) {
       const flat: ItemPose = { R, P: [250, -175, 540], cast: "nguoi", s: 1 };
-      const free = graspAt(c, "the@card", flat, side);
-      expect(free.choice.variant).toBe("lateral");
-      expect(restUnder(THE, free.frame, side, c.k, c.long, c.s, flat)).toBeGreaterThan(5);
+      // không có mặt đỡ: kẹp bên `lateral` thì nắm tay ở dưới mặt thẻ
+      const lateral = graspAt(c, { item: "the", group: "card", variant: "lateral" }, flat, side);
+      expect(restUnder(THE, lateral.frame, side, c.k, c.long, c.s, flat)).toBeGreaterThan(5);
       const lying = graspAt(c, "the@card", { ...flat, rest: true }, side);
       expect(lying.choice).toMatchObject({ variant: "edges", thumb: "front" });
       expect(restUnder(THE, lying.frame, side, c.k, c.long, c.s, flat, curl)).toBeLessThan(

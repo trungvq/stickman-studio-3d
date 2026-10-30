@@ -1,6 +1,25 @@
 // Vá JSON thô theo chỗ: chỉ những giá trị đổi được viết lại, phần còn lại của file giữ từng byte — `git diff` chỉ
-// thấy chỗ sửa. Studio 3D ghi cảnh và món bằng đường này (`studio3d.mjs`).
+// thấy chỗ sửa. Studio 3D ghi cảnh và món, `stickman gen walk` vá cảnh bằng đường này (`studio3d.mjs`, `gen-walk.mjs`).
+import { createHash, randomUUID } from "node:crypto";
+import { mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 import { isDeepStrictEqual } from "node:util";
+
+export const sha = (buf) => createHash("sha256").update(buf).digest("hex");
+
+/** Ghi `text` vào `file` qua file tạm (hỏng giữa chừng thì xoá file tạm); bản cũ (`old`) giữ ở `<file>.bak` */
+export function writeWithBak(file, text, old) {
+  if (old) writeFileSync(`${file}.bak`, old);
+  mkdirSync(dirname(file), { recursive: true });
+  const tmp = join(dirname(file), `.${basename(file)}.${randomUUID()}.tmp`);
+  try {
+    writeFileSync(tmp, text);
+    renameSync(tmp, file);
+  } catch (e) {
+    rmSync(tmp, { force: true });
+    throw e;
+  }
+}
 
 const NUM = /-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|true|false|null/y;
 const isWs = (c) => c === " " || c === "\n" || c === "\r" || c === "\t";

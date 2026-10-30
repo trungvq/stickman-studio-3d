@@ -2,15 +2,7 @@
 // MCP server (stdio) cho agent dựng nhân vật / hành động / scene rồi soi bằng ảnh.
 // Server là tay và mắt: liệt kê, kiểm qua zod của rig, ghi JSON, vẽ PNG ra đĩa.
 // Không có bước "tạo từ mô tả" — đó là việc của model gọi tool. Xem tool `docs`, file 04.
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -30,15 +22,13 @@ const DIRS = {
   characters: resolve(WS, "characters"),
   actions: resolve(WS, "actions"),
   scenes: resolve(WS, "scenes"),
-  props: resolve(WS, "props"),
-  animals: resolve(WS, "animals"),
   held: resolve(WS, "held"),
   hands: resolve(WS, "hands"),
   pieces: resolve(WS, "pieces"),
   bg: resolve(WS, "assets/bg"),
 };
 const layerName = (kind, dir) => (dir === DIRS[kind] ? "workspace" : "common");
-const KINDS = ["characters", "actions", "scenes", "props", "animals", "held", "hands"];
+const KINDS = ["characters", "actions", "scenes", "held", "hands"];
 
 /**
  * Bộ `@stickman3d/*` nạp từ `node_modules` của chính workspace — đúng bản nó đã pin — và nạp
@@ -46,10 +36,12 @@ const KINDS = ["characters", "actions", "scenes", "props", "animals", "held", "h
  * Workspace chưa có `node_modules` thì rơi về bộ đi kèm server này. `rig`, `R`, `cli`, `P`
  * và hai bảng suy từ chúng là `let` vì thế — mọi tool đọc chúng lúc gọi, không giữ riêng.
  */
-let rig, R, cli, P;
+let rig, R, cli;
 /** Vá JSON thô giữ chữ của `@stickman3d/cli` (`rawjson.mjs`); bản cli không có thì `null` */
 let RAW;
-/** Nơi đọc: trừ `scenes/` và `props/`, mỗi loại có bộ chung của studio làm lớp dưới, file trùng tên thì workspace đè */
+/** `stickman gen` của `@stickman3d/cli` (`gen.mjs`); bản cli không có thì `null` */
+let GEN;
+/** Nơi đọc: trừ `scenes/`, mỗi loại có bộ chung làm lớp dưới, file trùng tên thì workspace đè */
 let LAYERS;
 let SCHEMAS;
 let loadedRig = null;
@@ -89,39 +81,29 @@ async function bind(version) {
   // cho chỗ cài đè cùng đường — Node coi URL khác query là module khác
   const load = (path) =>
     import(`${pathToFileURL(path).href}?v=${encodeURIComponent(version ?? "src")}`);
-  let pieces;
-  try {
-    pieces = wsRequire.resolve("@stickman3d/mcp/pieces.mjs");
-  } catch {
-    pieces = join(dirname(HERE), "pieces.mjs");
-  }
-  const [nrig, nR, ncli, nP] = await Promise.all([
-    load(resolveFrom("@stickman3d/sketch")),
+  const [nrig, nR, ncli] = await Promise.all([
+    load(resolveFrom("@stickman3d/rig/core")),
     load(resolveFrom("@stickman3d/render")),
     load(resolveFrom("@stickman3d/cli")),
-    load(pieces),
   ]);
   rig = nrig;
   R = nR;
   cli = ncli;
-  P = nP;
   RAW = await load(join(dirname(resolveFrom("@stickman3d/cli")), "rawjson.mjs")).catch(() => null);
+  GEN = await load(join(dirname(resolveFrom("@stickman3d/cli")), "gen.mjs")).catch(() => null);
   LAYERS = {
     ...Object.fromEntries(Object.entries(DIRS).map(([k, d]) => [k, [d]])),
     actions: R.layers(DIRS.actions, cli.COMMON.actions),
-    animals: R.layers(DIRS.animals, cli.COMMON.animals),
     held: R.layers(DIRS.held, cli.COMMON.held),
     hands: R.layers(DIRS.hands, cli.COMMON.hands),
     characters: R.layers(DIRS.characters, cli.COMMON.characters),
-    pieces: R.layers(DIRS.pieces, cli.COMMON.pieces),
+    pieces: [DIRS.pieces],
   };
 
   SCHEMAS = {
     characters: { schema: rig.CharacterSchema, parse: rig.parseCharacter },
     actions: { schema: rig.ActionSchema, parse: rig.parseAction },
     scenes: { schema: rig.SceneSchema, parse: rig.parseScene },
-    props: { schema: rig.PropSchema, parse: rig.parseProp },
-    animals: { schema: rig.AnimalSchema, parse: rig.parseAnimal },
     held: { schema: rig.HeldItemSchema, parse: rig.parseHeldItem },
     hands: { schema: rig.HandShapeSchema, parse: rig.parseHandShape },
   };
@@ -130,34 +112,20 @@ async function bind(version) {
 
 /** Rig trên đĩa khác bản đang chạy thì nạp lại cả bộ; trả dòng báo để dán vào kết quả, không thì `null` */
 async function refresh() {
-  const now = versionOnDisk("@stickman3d/sketch");
+  const now = versionOnDisk("@stickman3d/rig");
   if (!now || now === loadedRig) return null;
   const was = loadedRig;
   try {
     await bind(now);
   } catch (e) {
     throw new Error(
-      `trên đĩa là @stickman3d/sketch@${now} nhưng không nạp lại được (${e.message}) — đang chạy bản ${was}; /mcp reconnect`,
+      `trên đĩa là @stickman3d/rig@${now} nhưng không nạp lại được (${e.message}) — đang chạy bản ${was}; /mcp reconnect`,
     );
   }
-  return `đã nạp lại @stickman3d/sketch@${now} (trước là ${was}). Schema input của tool vẫn là bản lúc kết nối — tên pose / crop mới cần /mcp reconnect`;
+  return `đã nạp lại @stickman3d/rig@${now} (trước là ${was}). Schema input của tool vẫn là bản lúc kết nối — tên mới cần /mcp reconnect`;
 }
 
-await bind(versionOnDisk("@stickman3d/sketch"));
-
-/**
- * `CODE_PARTS` của repo vào cả rig mà render vẽ bằng lẫn `rig` nạp theo version ở đây. Gói hỏng
- * thì báo kèm kết quả chứ không chặn tool: sửa JSON vẫn phải làm được trong lúc file ấy dở.
- */
-async function repoParts() {
-  if (!R.loadParts) return null;
-  try {
-    rig.registerParts(await R.loadParts(WS));
-    return null;
-  } catch (e) {
-    return `⚠ bộ phận vẽ code không nạp được, đang dùng bộ lần trước: ${e.message}`;
-  }
-}
+await bind(versionOnDisk("@stickman3d/rig"));
 
 const text = (s) => ({ content: [{ type: "text", text: typeof s === "string" ? s : pretty(s) }] });
 const fail = (s) => ({ content: [{ type: "text", text: s }], isError: true });
@@ -184,8 +152,6 @@ function sniffKind(o) {
   if (!o || typeof o !== "object") return null;
   if (Array.isArray(o.cast)) return "scenes";
   if ("keys" in o || "gen" in o) return "actions";
-  if ("legs" in o || "legHind" in o) return "animals";
-  if ("wheel" in o) return "props";
   if ("anchors" in o && "shape" in o) return "held";
   if (Array.isArray(o.fingers) && !("anchors" in o)) return "hands";
   if ("pieces" in o || "palette" in o || "face" in o) return "characters";
@@ -218,31 +184,10 @@ function loadSpec(kind, spec) {
   return r.data;
 }
 
-const loadCharacter = (spec) => {
-  const character = loadSpec("characters", spec);
-  return { character, urls: R.mount(character, LAYERS.pieces) };
-};
-
-const loadProp = (spec) => {
-  const prop = loadSpec("props", spec);
-  return { prop, url: R.mountProp(prop, LAYERS.pieces) };
-};
-
-const loadAnimal = (spec) => {
-  const animal = loadSpec("animals", spec);
-  return { animal, urls: R.mountAnimal(animal, LAYERS.pieces) };
-};
+const loadCharacter = (spec) => ({ character: loadSpec("characters", spec) });
 
 const loadScene = (s) =>
-  R.loadScene(
-    s,
-    LAYERS.actions,
-    LAYERS.animals,
-    LAYERS.props,
-    LAYERS.characters,
-    LAYERS.held,
-    LAYERS.hands,
-  );
+  R.loadScene(s, LAYERS.actions, LAYERS.characters, LAYERS.held, LAYERS.hands);
 
 /**
  * Cảnh three `stickman.world` của repo cho một cảnh, để `scene_probe` đo người lồng vào vật như `check`:
@@ -271,7 +216,7 @@ function itemProblems(scene, rt) {
   for (const m of scene.cast)
     try {
       const c = m.character ? loadSpec("characters", m.character) : rig.defaultCharacter();
-      chars[m.id] = rig.castCharacter(m, c);
+      chars[m.id] = c;
     } catch {
       // file nhân vật thiếu: rig báo người cầm thiếu nhân vật
     }
@@ -343,6 +288,16 @@ const filesIn = (kind, dir) =>
         .filter((f) => f !== "index.json" && !f.endsWith(".bak"))
     : [];
 
+/** `a,b*` thành một regex trên cả tên: phẩy ngăn, `*` khớp mọi chuỗi */
+const globs = (s) =>
+  new RegExp(
+    `^(?:${s
+      .split(",")
+      .map((p) => p.trim().split("*").map(escRe).join(".*"))
+      .join("|")})$`,
+  );
+const escRe = (s) => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
+
 /** `{ file, path, layer }` qua các lớp, workspace đè bộ chung theo tên */
 function listFiles(kind) {
   const seen = new Map();
@@ -351,18 +306,6 @@ function listFiles(kind) {
       if (!seen.has(f))
         seen.set(f, { file: f, path: resolve(dir, f), layer: layerName(kind, dir) });
   return [...seen.values()].sort((a, b) => a.file.localeCompare(b.file));
-}
-
-/** Danh mục mảnh gộp qua các lớp, cả `pieces` lẫn `parts` */
-function catalog() {
-  return rig.mergePieceCatalogs(
-    ...LAYERS.pieces
-      .map((d) => resolve(d, rig.PIECE_CATALOG_FILE))
-      .filter((p) => existsSync(p))
-      .map((p) => rig.parsePieceCatalog(R.readJson(p)))
-      .filter((r) => r.success)
-      .map((r) => r.data),
-  );
 }
 
 /** Deep-merge một phần vào object; `null` xoá khoá, mảng thay cả mảng */
@@ -390,50 +333,21 @@ const outPath = (name, crop) => {
 const report = (results) =>
   results.map((r) => `${r.out}  (${r.width}×${r.height}, ${r.cols}×${r.rows} ô)`).join("\n");
 
-/** Mô tả một tư thế: tên trong POSES, `{ action, t }`, hoặc delta pose */
-const PoseSpec = z.union([
-  z.string(),
-  z.object({ action: z.union([z.string(), z.record(z.string(), z.unknown())]), t: z.number() }),
-  z.record(z.string(), z.unknown()),
-]);
-const Crops = z.array(z.enum(R.CROP_NAMES)).default(["full"]);
 const Spec = z.union([z.string(), z.record(z.string(), z.unknown())]);
-const LayerSpec = z
-  .object({
-    armFar: z.enum(rig.ARM_LAYERS).optional(),
-    armNear: z.enum(rig.ARM_LAYERS).optional(),
-  })
-  .optional();
+/** Một ô: tên hành động (`t` 0), hay `{ action, t }` với `t` tỉ lệ 0–1 của một lượt */
+const CellSpec = z.union([
+  z.string(),
+  z.object({ action: Spec, t: z.number().min(0).max(1).default(0) }),
+]);
 /** Map socket → tên vật (`null` là để trống, "base" là về mảnh nền), hoặc tên một bộ đồ */
 const EquipSpec = z.union([z.string(), z.record(z.string(), z.string().nullable())]).optional();
-const FaceSpec = z
-  .object({
-    mouth: z.enum(rig.MOUTH_KINDS).optional(),
-    brow: z.enum(rig.BROW_KINDS).optional(),
-    eyes: z.enum(rig.EYE_KINDS).optional(),
-    blush: z
-      .number()
-      .min(0)
-      .max(1)
-      .optional()
-      .describe("Má ửng thêm 0..1 cộng vào face.blush của nhân vật; chỉ người 3D vẽ"),
-  })
-  .optional();
-const ViewSpec = z
-  .enum(rig.VIEWS)
-  .default(rig.DEFAULT_VIEW)
-  .describe("Góc nhìn của thân, xem describe_rig");
-const HeadViewSpec = z
-  .enum(rig.VIEWS)
-  .optional()
-  .describe("Góc nhìn của đầu; bỏ trống là theo thân");
 const YawSpec = z
   .number()
-  .optional()
+  .default(60)
   .describe(
-    "Có thì vẽ người 3D giữa sân khấu trống: hướng mặt, độ quanh trục đứng (0 = +x phải khung, 90 = −z về ống kính); bỏ qua view/headView/flip. Hành động gập hai đùi (sit-3d) thì người ngồi trên ghế chuẩn, bàn chân chạm sàn",
+    "Hướng mặt của người 3D giữa sân khấu trống, độ quanh trục đứng (0 = +x phải khung, 90 = −z về ống kính). Hành động gập hai đùi (sit-3d) thì người ngồi trên ghế chuẩn, bàn chân chạm sàn",
   );
-const PitchSpec = z.number().min(0).max(80).default(16).describe("Góc cúi ống kính khi có yaw, độ");
+const PitchSpec = z.number().min(0).max(80).default(16).describe("Góc cúi ống kính, độ");
 const SizeSpec = z
   .string()
   .regex(/^\d+(x\d+)?$/)
@@ -450,14 +364,12 @@ const SoftwareSpec = z
 const threeNote = (r) =>
   `three: ${r.gpu} — mở trang ${r.ms.boot} ms, ${r.ms.frame} ms/khung; từng khung: ${dirname(r.frames[0] ?? r.out)}`;
 
-/** Người 3D một mình bằng three: chỉ ô `{ action, t }` (tư thế rời là kênh 2D, `act` không đọc) */
+/** Người 3D một mình bằng three, mỗi ô `{ action, time, label }` */
 async function soloThreeTool({ character, cells, yaw, pitch, size, software, cols, scale, out }) {
-  if (yaw === undefined) throw new Error("`three` cần `yaw`: ảnh three là người 3D");
-  if (cells.some((c) => !c.action))
-    throw new Error("`three` chỉ vẽ ô `{ action, t }` — tư thế rời là kênh 2D, người 3D không đọc");
   const r = await R.soloThree({
     root: WS,
     character,
+    handsDirs: LAYERS.hands,
     cells,
     yaw,
     pitch,
@@ -468,22 +380,6 @@ async function soloThreeTool({ character, cells, yaw, pitch, size, software, col
     out,
   });
   return text(`${report([r])}\n${threeNote(r)}`);
-}
-
-/** Ô người 3D: hành động thì diễn trong cảnh tối thiểu của `solo3d`, tư thế rời thì giữ kênh 2D */
-function cell3d(c, cell, yaw, pitch, action, t) {
-  const s = R.solo3d({
-    character: c,
-    yaw,
-    pitch,
-    action,
-    time: action ? t * action.duration : 0,
-    pose: action ? undefined : cell.pose,
-  });
-  const label = `${cell.label} ${Math.round(s.world.theta)}°`;
-  return action
-    ? { ...s, label }
-    : { ...cell, flip: s.flip, view: s.view, headView: s.headView, world: s.world, label };
 }
 
 /**
@@ -509,21 +405,10 @@ function reachNotes() {
         why: `tay dài ${upperArm + foreArm} từ vai, mà đỉnh sọ cách vai ${torso + neck - (torso - d.rig.shoulderDrop) + headH} ở height 1. Giải ngược động học sẽ ra một tư thế "bàn tay nằm giữa mặt" chứ không báo là với không tới.`,
         fix: "Ở stretch 1 chạm được má, cằm, thái dương; muốn chạm đỉnh đầu thì nghiêng đầu vào tay (head[nghiêng]), hoặc ghi stretch ≈ 1.6 cho tay ấy.",
       },
-      {
-        what: `vai gần trong khoảng 117°–204° làm mất khúc vai→khuỷu`,
-        why: `đầu rộng hơn vai (nửa rộng ${half} so với ${d.rig.shoulderHalf}) nên vai nằm lọt trong bóng đầu; khuỷu vừa cao hơn cằm vừa nằm trong bề ngang đầu.`,
-        fix: 'layer.armNear: "front" — nó nâng cả khúc trên, không riêng cẳng tay.',
-      },
-      {
-        what: "vai xa quá 155° mất khúc trên, không chữa được",
-        why: "khúc vai→khuỷu xa bị khoá dưới thân áo; đẩy nó lên là hở đường ghép ở vai.",
-        fix: "Giữ khuỷu xa rộng như POSES.hold, đừng đưa hai tay chụm vào trục giữa.",
-      },
     ],
     zoom: {
-      note: "Nhân vật vẽ vector nên zoom bao nhiêu cũng nét; ảnh thì không. px nguồn còn lại = bề ngang ảnh ÷ zoom. Chữa được lúc tạo asset, không chữa được lúc render — docs/02.",
+      note: "Người 3D dựng khối nên zoom bao nhiêu cũng nét; ảnh nền thì không. px nguồn còn lại = bề ngang ảnh ÷ zoom. Chữa được lúc tạo asset, không chữa được lúc render.",
       backdrop: "nền 3840 px: 4,5× là trần, hỏng hẳn từ ~6×",
-      pieces: "mảnh đồ cầm 949 px và mảnh tóc 560 px thì dư sức ở mọi cú cận đã dùng",
     },
   };
 }
@@ -534,7 +419,7 @@ const EXAMPLE_3D = {
   cast: [
     {
       id: "a",
-      character: "code.json",
+      character: "sample-man.json",
       world: { at: [-150, -94.5, 0], yaw: 45, sit: true, floor: 0 },
       tracks: [
         { clips: [{ action: "sit-3d", start: 0 }] },
@@ -543,7 +428,7 @@ const EXAMPLE_3D = {
     },
     {
       id: "b",
-      character: "code.json",
+      character: "sample-woman.json",
       world: {
         path: [
           { t: 0, at: [400, 0, 300], yaw: 180 },
@@ -581,17 +466,6 @@ const EXAMPLE_HOLD = [
   { t: 3, right: { hold: null } },
 ];
 
-/** Nấc góc nhìn theo `theta`, đo từ chính `viewOfTheta` của rig */
-function thetaBands() {
-  const out = [];
-  for (let th = 0; th <= 180; th++) {
-    const v = rig.viewOfTheta(th);
-    if (out.at(-1)?.view === v) out.at(-1).to = th;
-    else out.push({ view: v, from: th, to: th });
-  }
-  return out.map(({ view, from, to }) => ({ view, theta: `${from}–${to === 180 ? 180 : to + 1}` }));
-}
-
 /** Quy ước người 3D cho `describe_rig`; số đọc từ hằng số rig. docs/01-rig.md#người-3d, docs/03-scene.md#người-3d */
 function world3Notes() {
   const actions = listFiles("actions").flatMap(({ file }) => {
@@ -608,20 +482,19 @@ function world3Notes() {
     axes: "Thế giới trục như SVG: x phải, y xuống (lên là âm, sàn thường ở y 0 hay y của `floor`), z sâu vào cảnh.",
     lens: "`scene.lens` { eye [x,y,z], yaw, pitch, f, cx, cy } là ống kính 3D: yaw độ quanh trục đứng (0 nhìn theo +z), pitch dương là cúi, f tiêu cự, (cx, cy) điểm khung của trục nhìn. Không phải `camera[]`: camera là khung cắt 2D đặt SAU phép chiếu, zoom ở đó là phóng ảnh, không phải dolly.",
     world:
-      "`cast[].world` đặt một người vào thế giới của `scene.lens`: đúng một trong `at` (tĩnh, kèm `yaw`, `sit`) hoặc `path` [{t, at, yaw, sit, ease, steps}] (đi: chỗ người phải ở theo thời gian, chân tự đuổi theo; hai mốc đứng cùng `at` khác `yaw` là quay tại chỗ bằng bước chân, `steps` ở mốc cuối là số nhịp, bỏ trống thì mỗi nhịp tới 90°). Đứng thì `at` là điểm sàn dưới hông, ngồi (`sit`) là điểm trên mặt ngồi dưới khớp hông. `s` đơn vị thế giới cho một đơn vị rig (mặc định 1), `floor` y sàn dưới chân người ngồi (có thì bàn chân chạm sàn có bóng), `hands` đích cổ tay thế giới theo thời gian. Có `world` thì `x`, `y`, `scale`, `view`, `headView`, `flip`, `z`, `zParts` của người ấy không còn nghĩa — rig suy từ phép chiếu; người 3D xếp lớp chung với `solids` của lớp vẽ code theo hình học.",
+      "`cast[].world` đặt một người vào thế giới của `scene.lens`: đúng một trong `at` (tĩnh, kèm `yaw`, `sit`) hoặc `path` [{t, at, yaw, sit, ease, steps}] (đi: chỗ người phải ở theo thời gian, chân tự đuổi theo; hai mốc đứng cùng `at` khác `yaw` là quay tại chỗ bằng bước chân, `steps` ở mốc cuối là số nhịp, bỏ trống thì mỗi nhịp tới 90°). Đứng thì `at` là điểm sàn dưới hông, ngồi (`sit`) là điểm trên mặt ngồi dưới khớp hông. `s` đơn vị thế giới cho một đơn vị rig (mặc định 1), `floor` y sàn dưới chân người ngồi (có thì bàn chân chạm sàn có bóng), `hands` đích cổ tay thế giới theo thời gian. Chỗ đứng, cỡ và lật trên khung rig suy từ phép chiếu; nhịp `clips[].speed` là đơn vị thế giới mỗi giây (sải chân nhân `s`); người 3D xếp lớp chung với `solids` của lớp vẽ code theo hình học.",
     yaw: "`world.yaw` / `path[].yaw` độ quanh trục đứng: 0 mặt hướng +x, 90 hướng −z, 180 hướng −x — ống kính yaw 0 đặt ở z âm nhìn theo +z thì 90 là quay mặt về ống kính, 0 là đi sang phải khung. Yaw khai là hướng vẽ ở mọi góc, kể cả nhìn thẳng ống kính.",
     theta:
-      "`theta` là góc thật giữa hướng mặt và tia nhìn từ người tới ống kính, 0–180, đo trong mặt sàn. Thân áo, váy dựng khối chiếu thật qua ống kính (co dọc theo góc cúi); cổ, đầu, gốc vai, gốc chân ở chỗ chiếu thật; khối sọ nhận HEAD_LOOK phần góc ống kính nhìn xuống. Mảnh ảnh và nét mặt lấy nấc gần nhất theo `viewBands`.",
-    viewBands: thetaBands(),
+      "`theta` là góc thật giữa hướng mặt và tia nhìn từ người tới ống kính, 0–180, đo trong mặt sàn. Thân áo, váy dựng khối chiếu thật qua ống kính (co dọc theo góc cúi); cổ, đầu, gốc vai, gốc chân ở chỗ chiếu thật; khối sọ nhận HEAD_LOOK phần góc ống kính nhìn xuống.",
     authoredAt:
-      'Hành động `authoredAt: "side"` cho kênh tay chân nó ghi cờ nâng (`pose.lift`): góc đọc như soạn ở `side` — tiến theo hướng mặt, lên theo trục đứng. Kênh không cờ (POSES, hành động 2D) vẽ như rig 2D trên mặt khung. `torso` của người 3D luôn là góc cúi trong mặt phẳng dọc của thân. Người đi theo `path` đọc chân như soạn ở `side` dù hành động không khai.',
-    reach: `keys[].reach.armNear / armFar = { at: [tiến, y, ra ngoài], elbow?, point? } hay { to, side?, offset?, point?, elbow? }. \`at\`: đích cổ tay hệ thân, gốc tâm hông, đơn vị rig ở height 1 (rig nhân height), y xuống dương, "ra ngoài" dương về phía chính tay ấy — một bộ số cho hai tay đối xứng; hệ thân không nghiêng theo torso. \`to\`: mốc thân trên chính người ấy (${rig.BODY_MARKS.join(", ")}), tính mỗi khung theo đúng đầu, thân, bụng, chiều cao của nhân vật và tư thế lúc ấy (cúi, ngồi, quỳ) — dùng nó cho mọi chỗ chạm người (che miệng, áp tai, vỗ tay, chắp tay sau, tay lên đùi) thay cho số đoán; \`side: "other"\` lấy bên kia (tai, mắt, má, vai, hông, đùi, gối); \`offset\` [tiến, y, ra ngoài] rig (không nhân height) theo khung phần người mang mốc (đầu cho mốc trên đầu, thân cho ngực/bụng/lưng/hông/vai/gáy, hướng mặt cho đùi, gối, tay kia). Mốc other* là bàn tay kia (cổ tay, giữa lòng tay, giữa mu tay, tâm nắm): tay ấy giải trước. \`point\` là điểm bàn tay đặt vào đích (wrist, palm, back, grip, tip; thiếu là wrist với at, palm với to). elbow là hướng khuỷu hệ thân, mặc định REACH_ELBOW ${JSON.stringify(rig.REACH_ELBOW)}. Rig giải IK hai đoạn từ vai thật; xa quá tầm thì tay duỗi về phía đích. Đích hoà trên vị trí (cổ tay đi đường thẳng), hoà toạ độ với mốc cũng vậy. Người 2D không đọc đích, kênh nhận góc dự phòng. docs/01-rig.md#đích-theo-mốc`,
+      'Hành động `authoredAt: "side"` cho kênh tay chân nó ghi cờ nâng (`pose.lift`): góc đọc như soạn ở `side` — tiến theo hướng mặt, lên theo trục đứng. Kênh không cờ (POSES, hành động không soạn ở `side`) người 3D không đọc, `check` báo lỗi. `torso` của người 3D luôn là góc cúi trong mặt phẳng dọc của thân. Người đi theo `path` đọc chân như soạn ở `side` dù hành động không khai.',
+    reach: `keys[].reach.armNear / armFar = { at: [tiến, y, ra ngoài], elbow?, point? } hay { to, side?, offset?, point?, elbow? }. \`at\`: đích cổ tay hệ thân, gốc tâm hông, đơn vị rig ở height 1 (rig nhân height), y xuống dương, "ra ngoài" dương về phía chính tay ấy — một bộ số cho hai tay đối xứng; hệ thân không nghiêng theo torso. \`to\`: mốc thân trên chính người ấy (${rig.BODY_MARKS.join(", ")}), tính mỗi khung theo đúng đầu, thân, bụng, chiều cao của nhân vật và tư thế lúc ấy (cúi, ngồi, quỳ) — dùng nó cho mọi chỗ chạm người (che miệng, áp tai, vỗ tay, chắp tay sau, tay lên đùi) thay cho số đoán; \`side: "other"\` lấy bên kia (tai, mắt, má, vai, hông, đùi, gối); \`offset\` [tiến, y, ra ngoài] rig (không nhân height) theo khung phần người mang mốc (đầu cho mốc trên đầu, thân cho ngực/bụng/lưng/hông/vai/gáy, hướng mặt cho đùi, gối, tay kia). Mốc other* là bàn tay kia (cổ tay, giữa lòng tay, giữa mu tay, tâm nắm): tay ấy giải trước. \`point\` là điểm bàn tay đặt vào đích (wrist, palm, back, grip, tip; thiếu là wrist với at, palm với to). elbow là hướng khuỷu hệ thân, bỏ trống là khuỷu ưu tiên của cổ tay (hàm trơn của chỗ cổ tay so với vai, nội suy các tư thế mẫu — docs/01-rig.md#khuỷu-ưu-tiên). Rig giải IK hai đoạn từ vai thật; sát hay quá tầm thì tay duỗi gần thẳng về phía đích (soft IK). Đích hoà trên vị trí (cổ tay đi đường thẳng), hoà toạ độ với mốc cũng vậy. Mốc không ghi góc kênh tay ấy thì kênh nhận góc suy từ đích — đoạn hoà sang mốc ghi góc đi từ đó. docs/01-rig.md#đích-theo-mốc`,
     twist:
       'Tay của hành động `authoredAt: "side"` nhận thêm số thứ năm `[vai, khuỷu, cổ tay, dang, xoắn vai]`: xoắn cánh tay quanh chính nó, dương là xoay ngoài — khuỷu gập ra trước thì cẳng tay quay ra phía chính tay ấy. Vẫy tay là `[0, 90, 0, 90, 90]` (dang ngang, khuỷu 90, xoay ngoài 90: cẳng tay dựng đứng); vẫy qua lại bằng lắc khuỷu (dưới 90 ngả ra ngoài đầu), không bằng lắc xoắn vai (lắc ra trước, ra sau). Số thứ ba (cổ tay) ở người 3D là lệch bàn tay trong mặt phẳng khuỷu, ra phía ngón cái khi dương. Tay theo đích (IK) không đọc xoắn vai: hướng khuỷu quyết định mặt phẳng gập. docs/01-rig.md#xoắn-tay',
-    hand: `keys[].hand.armNear / armFar (kênh mask "hand"): tên dáng (${rig.HAND_POSE_KINDS.join(", ")}) hay { pose, w, turn, bend, palm, fingers } — dáng hoà từ dáng nghỉ (ngón cong nhẹ, bàn tay không ai đặt dáng) theo w (0..1), bỏ trống pose (hay {}) là dáng nghỉ, turn xoay cẳng tay (−90..90, dương sấp: cẳng tay chĩa ra trước thì lòng tay úp, âm ngửa), bend gập cổ tay (−90..90, dương về phía lòng tay). Dáng: cup khum (che miệng, che tai), pinch kẹp vật nhỏ bằng đầu ngón (chén), clasp nắm quanh cổ tay tay kia, flat duỗi phẳng chịu lực (tay vịn, mặt bàn), hook móc (quai túi, cán vali), edge kẹp cạnh vật dẹt — ngón cái mặt trước, các ngón mặt sau (điện thoại ngang hai tay). ĐỪNG đoán turn: khai palm (lòng tay quay về) và fingers (ngón chĩa về) bằng tên hệ thân (${rig.PALM_DIR_NAMES.join(", ")}; in là về đường giữa thân, out ra phía tay ấy), vectơ [tiến, y, ra ngoài], hay { toward: mốc thân, side?, offset? } — rig tự giải xoay, gập, lệch cổ tay (và xoay khuỷu quanh trục vai → cổ tay khi có fingers), kẹp trong giới hạn khớp (gập cổ tay ${rig.AIM_BEND[0]}..${rig.AIM_BEND[1]}, âm là ngửa; lệch ${rig.AIM_DEV[0]}..${rig.AIM_DEV[1]}, dương về ngón cái); có palm thì turn bị bỏ qua, bend khai kèm thì giữ cố định; không đạt thì check và scene_probe (world.palms.*.aim) báo độ lệch. Không soạn từng ngón. Nội suy góc khớp giữa các mốc theo ease và hoà dần giữa hai clip; track không ghi một bên thì giữ bàn tay bên ấy của track dưới. Chỉ người 3D mặc đồ (palette.clad) vẽ ngón; turn, bend xoay cả đồ cầm ở mọi người 3D. Người đang cầm đồ (equip ở handNear/handFar) giữ dáng grip ở ngón. docs/01-rig.md#bàn-tay`,
+    hand: `keys[].hand.armNear / armFar (kênh mask "hand"): tên dáng (${rig.HAND_POSE_KINDS.join(", ")}, hay tên file \`hands/<tên>.json\` của thư viện — list(hands); tên không có thì check báo lỗi) hay { pose, w, turn, bend, palm, fingers } — dáng hoà từ dáng nghỉ (ngón cong nhẹ, bàn tay không ai đặt dáng) theo w (0..1), bỏ trống pose (hay {}) là dáng nghỉ, turn xoay cẳng tay (−90..90, dương sấp: cẳng tay chĩa ra trước thì lòng tay úp, âm ngửa), bend gập cổ tay (−90..90, dương về phía lòng tay). Dáng: cup khum (che miệng, che tai), pinch kẹp vật nhỏ bằng đầu ngón (chén), clasp nắm quanh cổ tay tay kia, flat duỗi phẳng chịu lực (tay vịn, mặt bàn), hook móc (quai túi, cán vali), edge kẹp cạnh vật dẹt — ngón cái mặt trước, các ngón mặt sau (điện thoại ngang hai tay). ĐỪNG đoán turn: khai palm (lòng tay quay về) và fingers (ngón chĩa về) bằng tên hệ thân (${rig.PALM_DIR_NAMES.join(", ")}; in là về đường giữa thân, out ra phía tay ấy), vectơ [tiến, y, ra ngoài], hay { toward: mốc thân, side?, offset? } — rig tự giải xoay, gập, lệch cổ tay (và xoay khuỷu quanh trục vai → cổ tay khi có fingers), kẹp trong giới hạn khớp (gập cổ tay ${rig.AIM_BEND[0]}..${rig.AIM_BEND[1]}, âm là ngửa; lệch ${rig.AIM_DEV[0]}..${rig.AIM_DEV[1]}, dương về ngón cái); có palm thì turn bị bỏ qua, bend khai kèm thì giữ cố định; không đạt thì check và scene_probe (world.palms.*.aim) báo độ lệch. Không soạn từng ngón. Nội suy góc khớp giữa các mốc theo ease và hoà dần giữa hai clip; track không ghi một bên thì giữ bàn tay bên ấy của track dưới. Chỉ người 3D mặc đồ (palette.clad) vẽ ngón; turn, bend xoay cả đồ cầm ở mọi người 3D. Người đang cầm đồ (equip ở handNear/handFar) giữ dáng grip ở ngón. docs/01-rig.md#bàn-tay`,
     hands:
-      '`cast[].world.hands` [{t, right: {at | to, side?, offset?, point?, elbow?, elbowLock?, palm?, fingers?, bend?, hold?, pose?, w?, ease?, bezier?} | {rest: true, ease?, bezier?} | null, left: …}]: đích bàn tay THẾ GIỚI theo tay phải / trái giải phẫu (tay phải là tay gần khi không lật), đè đích hệ thân và góc tay của mọi hành động; `null` thả tay về góc của hành động. `at` toạ độ thế giới, hay `to` mốc thân của chính người ấy như keys[].reach; `point: "palm"` đặt giữa lòng tay (không phải cổ tay) vào điểm ấy — tay lên tay vịn, mặt bàn; `palm`/`fingers` như keys[].hand, đè bàn tay của hành động theo phần đích. `elbow` là hướng khuỷu theo hệ của đích: mốc có `at` là thế giới rig, mốc khác (`to`, mốc chỉ có `hold`) là hệ thân `[tiến, y, ra ngoài]` của chính tay ấy như keys[].reach (mặc định REACH_ELBOW), nên người quay thì khuỷu quay theo; cảnh schema trước 34 còn `elbow` thế giới trên mốc không có `at` thì zod từ chối, chuyển bằng `stickman migrate-elbow`; `elbowLock: true` (đi với `elbow`) đặt khuỷu đúng hướng ấy ở mốc, rig không dò khuỷu và không giới hạn tốc độ xoay khuỷu — hai mốc khoá sát nhau mà lệch xa thì check báo giật; khoá chỉ có tác dụng khi mốc có `at` / `to` (trừ lần cầm có mốc món), mốc khoá không có thì check báo khoá bị bỏ qua; khoá khuỷu vào thân thì check báo lấn. `pose` là dáng ngón (dáng có sẵn của rig HAND_POSES hay tên file `hands/<tên>.json` của thư viện — list(hands)), `w` hoà từ dáng nghỉ (0..1), đè ngón của hành động; mốc chỉ có `pose` không đổi đích tay; không đi với `hold`. `{ rest: true }` là tay buông: thả đích như `null` và huỷ bàn tay của hành động (dáng ngón, xoay, gập cổ tay, `palm`/`fingers`) ở tay ấy về dáng nghỉ tới mốc sau của tay ấy — sửa clip hành động soạn cho tay khác rơi vào tay này mà không phải xoá clip. `ease` là đường hoà vào mốc này của tay ấy (bỏ trống là smooth, dừng ở mỗi mốc; auto là bậc ba liền vận tốc qua chuỗi mốc auto liền nhau; bezier theo `bezier` [x1, y1, x2, y2]). Tay đặt lên mặt bàn thì tính bằng `handsOn` của rig — docs/03-scene.md#đích-bàn-tay-thế-giới. Cầm đồ: xem `held`.',
-    held: 'Món cầm tay là file `held/<món>.json` (schema(held), list(held), describe_held(món)): `schemaVersion: 3` (bản 2 nạp như bản 3), `size`, `shape` (bắt buộc: hợp {box:[w,h,d], at?, round?} | {cyl: r, from, to, r2?, wall?} | {ball: r, at?}, nhãn `part`, `detail`), `front`, `top`, `anchors` {tên: {at, dir?}} (khung món: đơn vị rig, y lên, +z mặt trước), `parts` (`grip: false`, `as`, `axis`, `strap: true` là quai của món treo — rig đặt quai tựa lên tay, vai), `seats` (chỗ treo `elbow` / `shoulder`), `touch`, `hang`, `authored` (kiểu cầm soạn tay theo nhóm rồi biến thể; khoá không phải biến thể gốc là kiểu cầm có tên, khai `base` là biến thể gốc nó mượn và `note` mô tả — list(held) và describe_held trả ở `named`). File bản 1 (không `schemaVersion`) bị từ chối: chuyển bằng `stickman migrate-held`. Rig suy khối hình (tấm, đĩa, thanh, trụ tiện, hộp) từ `shape`; nhóm cầm (`GRIP_GROUPS`) áp được theo khối hình ấy và cỡ tay — describe_held trả khối hình, nhóm áp được, trường lựa chọn và mặc định. Scene khai chỗ cầm ở `world.hands[].right|left.hold` = "món@nhóm", "món@nhóm/<biến thể hay tên kiểu cầm của món>" hay {item, group, part?, edge?, along?, thumb?, slant?, around?, tilt?, psi?, inset?, variant?, face?, up?, roll?, keep?, both?, touch?, regrip?, on?, yaw?} — `variant` nhận biến thể gốc hay tên kiểu cầm của món; rig không tự chọn kiểu cầm có tên. BẬC THANG từ mốc khai tới mốc có `hold` khác hay `hold: null` (buông); trường không khai thì rig giải, scene_probe trả lựa chọn đã giải và nguồn của nó ở `world.held.<tay>.grasp`. Lần cầm có mốc món (`scene.items`, cùng người cầm) trong khoảng của nó là món đặt trước: bàn tay suy từ món — cầm một tay thì bàn tay giải ở từng mốc, giữa hai mốc hoà trong hệ thân và món theo bàn tay (grasp.keyed; người quay thì tay và món quay cứng theo thân); mốc món `as: "hand"` (mốc đầu của lần cầm) lấy nguyên bàn tay và món như đang vẽ ngay trước lần cầm mở — tay dẫn sang theo mốc không nhảy, lựa chọn chỗ cầm giữ như cũ —, `as: "prev"` giữ nghiệm hệ thân của mốc món trước (đứng yên theo thân tới đây rồi mới hoà sang mốc sau); mốc `as` không khai `at`/`to`/`point`/`face`/`up`/`roll`/`rest`, cầm hai tay thì món ở đúng mốc; lần cầm không có mốc thì tay dẫn: mốc tay đặt bàn tay, ý định `face` {axis: mốc|vectơ, toward: camera|holderFace|up|down|tên hệ thân|vectơ|{cast, mark?}|{mark}, tilt?}, `up`, `roll` giải qua cổ tay trong giới hạn khớp. `point: "item:<mốc>"` đặt một mốc của món vào đích. Món TREO trên cánh tay (`món@carry`, `on: "elbow"|"shoulder"`, `yaw?`; đỉnh quai là `seats[on]`; bộ chung có `tui`): món thõng theo trọng lực, đẩy khỏi thân áo/hông/váy/đùi; bàn tay ấy theo hành động; check đo `seat` và `body`, scene_probe trả ở `world.carry`. Hai tay: `both` (tay phụ theo mặc định của nhóm, object đè từng trường), hay hai tay cùng khai một món để đổi tay. Món phải được `cast.provide(món, vật three, chủ?)` trong `extra` của cảnh three — docs/11-nhom-cam.md, docs/03-scene.md#đồ-cầm-tay.',
+      '`cast[].world.hands` [{t, right: {at | to, side?, offset?, point?, elbow?, elbowLock?, palm?, fingers?, bend?, hold?, pose?, w?, ease?, bezier?} | {rest: true, ease?, bezier?} | null, left: …}]: đích bàn tay THẾ GIỚI theo tay phải / trái giải phẫu (tay phải là tay gần khi không lật), đè đích hệ thân và góc tay của mọi hành động; `null` thả tay về góc của hành động. `at` toạ độ thế giới, hay `to` mốc thân của chính người ấy như keys[].reach; `point: "palm"` đặt giữa lòng tay (không phải cổ tay) vào điểm ấy — tay lên tay vịn, mặt bàn; `palm`/`fingers` như keys[].hand, đè bàn tay của hành động theo phần đích. `elbow` là hướng khuỷu theo hệ của đích: mốc có `at` là thế giới rig, mốc khác (`to`, mốc chỉ có `hold`) là hệ thân `[tiến, y, ra ngoài]` của chính tay ấy như keys[].reach (bỏ trống là khuỷu ưu tiên của cổ tay), nên người quay thì khuỷu quay theo; cảnh schema trước 34 còn `elbow` thế giới trên mốc không có `at` thì zod từ chối, chuyển bằng `stickman migrate-elbow`; `elbowLock: true` (đi với `elbow`) đặt khuỷu đúng hướng ấy ở mốc, rig không dò khuỷu và không giới hạn tốc độ xoay khuỷu — hai mốc khoá sát nhau mà lệch xa thì check báo giật; khoá chỉ có tác dụng khi mốc có `at` / `to` (trừ lần cầm có mốc món), mốc khoá không có thì check báo khoá bị bỏ qua; khoá khuỷu vào thân thì check báo lấn. `pose` là dáng ngón (dáng có sẵn của rig HAND_POSES hay tên file `hands/<tên>.json` của thư viện — list(hands)), `w` hoà từ dáng nghỉ (0..1), đè ngón của hành động; mốc chỉ có `pose` không đổi đích tay; không đi với `hold`. `{ rest: true }` là tay buông: thả đích như `null` và huỷ bàn tay của hành động (dáng ngón, xoay, gập cổ tay, `palm`/`fingers`) ở tay ấy về dáng nghỉ tới mốc sau của tay ấy — sửa clip hành động soạn cho tay khác rơi vào tay này mà không phải xoá clip. `ease` là đường hoà vào mốc này của tay ấy (bỏ trống là smooth, dừng ở mỗi mốc; auto là bậc ba liền vận tốc qua chuỗi mốc auto liền nhau; bezier theo `bezier` [x1, y1, x2, y2]). Tay đặt lên mặt bàn thì tính bằng `handsOn` của rig — docs/03-scene.md#đích-bàn-tay-thế-giới. Cầm đồ: xem `held`.',
+    held: 'Món cầm tay là file `held/<món>.json` (schema(held), list(held), describe_held(món)): `schemaVersion: 4` (bản 2, 3 không có `roles` nạp như bản 4), `size`, `shape` (bắt buộc: hợp {box:[w,h,d], at?, round?} | {cyl: r, from, to, r2?, wall?} | {ball: r, at?}, nhãn `part`, `detail`), `front`, `top`, `anchors` {tên: {at, dir?}} (khung món: đơn vị rig, y lên, +z mặt trước), `parts` (`grip: false`, `as`, `axis`, `strap: true` là quai của món treo — rig đặt quai tựa lên tay, vai), `seats` (chỗ treo `elbow` / `shoulder`), `touch`, `hang`, `authored` (kiểu cầm soạn tay theo nhóm rồi biến thể; khoá không phải biến thể gốc là kiểu cầm có tên, khai `base` là biến thể gốc nó mượn và `note` mô tả — list(held) và describe_held trả ở `named`), `roles` (vai trò cho bộ sinh `gen`: `pourer` {lip, spout?} — điểm rót và hướng rót, `vessel` {mouth: {at, r, dir?}} — miệng vật đựng; `vessel` suy từ `lathe` có `wall` nên chén không phải khai; điểm là mốc, `[x,y,z]` khung món hay {anchor, offset} — describe_held trả `roles` đã giải, docs/13-vai-tro-do.md). File bản 1 (không `schemaVersion`) bị từ chối: chuyển bằng `stickman migrate-held`. Rig suy khối hình (tấm, đĩa, thanh, trụ tiện, hộp) từ `shape`; nhóm cầm (`GRIP_GROUPS`) áp được theo khối hình ấy và cỡ tay — describe_held trả khối hình, nhóm áp được, trường lựa chọn và mặc định. Scene khai chỗ cầm ở `world.hands[].right|left.hold` = "món@nhóm", "món@nhóm/<biến thể hay tên kiểu cầm của món>" hay {item, group, part?, edge?, along?, thumb?, slant?, around?, tilt?, psi?, inset?, variant?, face?, up?, roll?, keep?, both?, touch?, regrip?, on?, yaw?} — `variant` nhận biến thể gốc hay tên kiểu cầm của món; rig không tự chọn kiểu cầm có tên. BẬC THANG từ mốc khai tới mốc có `hold` khác hay `hold: null` (buông); trường không khai thì rig giải, scene_probe trả lựa chọn đã giải và nguồn của nó ở `world.held.<tay>.grasp`. Lần cầm có mốc món (`scene.items`, cùng người cầm) trong khoảng của nó là món đặt trước: bàn tay suy từ món — cầm một tay thì bàn tay giải ở từng mốc, giữa hai mốc hoà trong hệ thân và món theo bàn tay (grasp.keyed; người quay thì tay và món quay cứng theo thân); mốc món `as: "hand"` (mốc đầu của lần cầm) lấy nguyên bàn tay và món như đang vẽ ngay trước lần cầm mở — tay dẫn sang theo mốc không nhảy, lựa chọn chỗ cầm giữ như cũ —, `as: "prev"` giữ nghiệm hệ thân của mốc món trước (đứng yên theo thân tới đây rồi mới hoà sang mốc sau); mốc `as` không khai `at`/`to`/`point`/`face`/`up`/`roll`/`rest`, cầm hai tay thì món ở đúng mốc; lần cầm không có mốc thì tay dẫn: mốc tay đặt bàn tay, ý định `face` {axis: mốc|vectơ, toward: camera|holderFace|up|down|tên hệ thân|vectơ|{cast, mark?}|{mark}, tilt?}, `up`, `roll` giải qua cổ tay trong giới hạn khớp. `point: "item:<mốc>"` đặt một mốc của món vào đích. Món TREO trên cánh tay (`món@carry`, `on: "elbow"|"shoulder"`, `yaw?`; đỉnh quai là `seats[on]`; bộ chung có `tui`): món thõng theo trọng lực, đẩy khỏi thân áo/hông/váy/đùi; bàn tay ấy theo hành động; check đo `seat` và `body`, scene_probe trả ở `world.carry`. Hai tay: `both` (tay phụ theo mặc định của nhóm, object đè từng trường), hay hai tay cùng khai một món để đổi tay. Món phải được `cast.provide(món, vật three, chủ?)` trong `extra` của cảnh three — docs/11-nhom-cam.md, docs/03-scene.md#đồ-cầm-tay.',
 
     handShapes: listFiles("hands").flatMap(({ file }) => {
       try {
@@ -640,7 +513,7 @@ function world3Notes() {
     }),
     actions,
     actionsNote:
-      'Bộ hành động 3D (`authoredAt: "side"`): đứng thở, đi, ngồi (ghép với `world.sit`), tay trên bàn, gõ phím chồng lên ngồi, cúi chào — đích hệ thân và bàn chuẩn ở docs/01-rig.md#bộ-hành-động-3d. Soi một người 3D không cần cảnh: render_action / render_character với `yaw` (và `pitch`).',
+      'Bộ hành động 3D (`authoredAt: "side"`): đứng thở, đi, ngồi (ghép với `world.sit`), tay trên bàn, gõ phím chồng lên ngồi, cúi chào — đích hệ thân và bàn chuẩn ở docs/01-rig.md#bộ-hành-động-3d. Soi một người 3D không cần cảnh: render_action / render_character (`yaw`, `pitch`).',
   };
 }
 
@@ -649,10 +522,9 @@ const server = new McpServer({ name: "stickman", version: "0.1.0" });
 const guard = (fn) => async (input) => {
   try {
     const note = await refresh();
-    const notes = [note && `ℹ ${note}`, await repoParts()].filter(Boolean);
     const r = await fn(input);
-    if (notes.length && r.content?.[0]?.type === "text")
-      r.content[0].text = `${notes.join("\n")}\n${r.content[0].text}`;
+    if (note && r.content?.[0]?.type === "text")
+      r.content[0].text = `ℹ ${note}\n${r.content[0].text}`;
     return r;
   } catch (e) {
     return fail(e.message);
@@ -663,19 +535,10 @@ server.registerTool(
   "describe_rig",
   {
     description:
-      "Mọi thứ có sẵn để chọn khi viết JSON: tư thế, kênh khớp, bộ sinh và tham số, bộ phận vẽ bằng code theo socket, kiểu đầu/tóc/râu/mặt, lớp tay, và các quy ước dấu góc bắt buộc.",
+      "Mọi thứ có sẵn để chọn khi viết JSON: tư thế, kênh khớp, bộ sinh và tham số, kiểu tóc/mặt, mốc trên người 3D, và các quy ước dấu góc bắt buộc.",
     inputSchema: {},
   },
   guard(() => {
-    const parts = {};
-    const cat = catalog();
-    for (const k of rig.PIECE_KEYS)
-      if (rig.partsFor(k).length)
-        parts[k] = rig.partsFor(k).map((n) => ({
-          name: n,
-          label: rig.PARTS[n].label,
-          preset: rig.partConfig(n, cat),
-        }));
     const gens = Object.fromEntries(
       Object.entries(rig.GENERATORS).map(([k, g]) => [k, { label: g.label, params: g.params }]),
     );
@@ -686,69 +549,51 @@ server.registerTool(
       out: OUT,
       constants: { ...rig.RIG, frames: rig.FRAMES },
       reach: reachNotes(),
-      views: rig.VIEWS,
-      viewNote:
-        "Năm góc nhìn rời rạc, không xoay liên tục: `view` là thân, `headView` là đầu (bỏ trống thì theo thân). `quarter` là mặc định — chính diện 3/4, mặt lệch theo `face.turn`; `front` là chính diện thật, mặt nhìn thẳng. Mảnh vẽ tay dùng chung hình chính diện ở hai nấc ấy. `side` chập hai vai và hai hông về trục giữa, ghim mắt và mồm ra mép trước; `rear` là 3/4 sau; `back` quay lưng, không có nét mặt. Thân `rear` chỉ có khi thân áo dựng khối (pieces.torso.src là sculpt): khối thân quay 120°, vai và hông còn nửa khoảng cách, và chi gần (armNear, legNear) sang +x; thân khác ở `rear` vẽ như `back`. Tổ hợp không vẽ được bị kẹp lại: thân quay lưng (`rear`, `back`) với đầu `front` / `quarter` thành đầu cùng nấc thân, đầu `back` / `rear` trên thân không quay lưng thành đầu `side`. Trong scene thì khai ở `cast[].view` / `cast[].headView`; render_character và render_action nhận thẳng hai tham số ấy.",
       world3d: world3Notes(),
       anchors: rig.ANCHOR_NAMES,
       anchorNote:
-        'Mọi chỗ muốn bám vào người — hào quang, nước mắt, vật rời khỏi tay, khung chỉnh — đều hỏi qua anchorAt của rig (scene_probe input `anchors`), đừng chép chuỗi biến hình của <Character> ra ngoài. Mỗi mốc trả {x, y, deg, w, h}: tâm và cỡ hộp đã nhân scale, deg là độ SVG đã lật, nên vẽ đè đúng chỗ là <g transform="translate(x y) rotate(deg)"> với hộp gốc ở giữa. Tên mốc: khớp (root là điểm chạm đất, wrist* là cổ tay, head có cả w/h khối đầu, eye*/mouth để bám nét mặt) hoặc thẳng tên socket mảnh.',
+        'Mọi chỗ muốn bám vào người 3D — hào quang, nước mắt, vật rời khỏi tay — đều hỏi qua anchorAt của rig (scene_probe input `anchors`, `ctx.anchor` của lớp vẽ code). Mỗi mốc trả {x, y, deg, w, h} trong hệ chỗ vẽ của camera: tâm và cỡ hộp đã nhân scale, deg là độ SVG đã lật, nên vẽ đè đúng chỗ là <g transform="translate(x y) rotate(deg)"> với hộp gốc ở giữa. Tên mốc là khớp: root là điểm chạm đất, wrist* là cổ tay, head có cả w/h khối đầu, face/eye*/mouth để bám nét mặt.',
       poses: rig.POSES,
       poseLabels: rig.POSE_LABELS,
-      poseLayers: rig.POSE_LAYERS,
       channels: rig.CHANNEL_LABELS,
       handPoses: rig.HAND_POSE_LABELS,
       bodyMarks: rig.BODY_MARK_LABELS,
       palmDirs: rig.PALM_DIRS,
-      defaultLayers: rig.DEFAULT_LAYERS,
-      armLayers: rig.ARM_LAYER_LABELS,
       generators: gens,
-      parts,
       pieceKeys: rig.PIECE_KEYS,
       glassesPresets: rig.GLASSES_PRESETS,
-      beardPresets: rig.BEARD_PRESETS,
       pieceNotes:
-        'hairBack không có part, chỉ nhận ảnh; socket khác nhận part (xem parts) hoặc ảnh, và hair, faceAcc, chin, torso, hem (cùng crown, headAcc, neck của người 3D) còn nhận src: "sculpt" (dựng khối, không cần ảnh). handNear/handFar là đồ cầm tay: hộp cao 120 (cả cánh tay, không nhân height, không theo stretch), tâm ở bàn tay, xoay theo cẳng tay cộng cổ tay (số thứ ba của armNear/armFar) cộng pieces.hand*.rotate, vẽ cùng lớp với cẳng tay (keys[].layer). Socket nào cũng có rotate, mặc định 0, xoay quanh tâm hộp trừ vai áo (quanh khớp vai) và đồ cầm tay (quanh bàn tay). Hộp vai áo cao theo upperArm × stretch cánh tay trên của tay ấy nên tay vươn vẫn phủ kín khúc vai→khuỷu. Hành động không mang đồ vật — cùng một chop.json dùng cho rìu, cuốc, búa; đồ là mảnh của nhân vật. Tóc: hair nhận kiểu tóc (part hair-*, xem parts) vẽ đủ bốn góc, chính diện kèm lớp sau thân dùng chung bộ chỉnh với lớp trên, và bỏ qua hairBack. Tóc dựng khối: hair { src: "sculpt", color, sculpt: {…} } không cần ảnh, một bộ số quay theo đầu ở mọi góc; sculpt.bang/bangTo/bangThick là mái lệch, sculpt.length > 0 là tóc rủ theo trọng lực (1.5 ≈ ngang vai), sculpt.style: "spiky" là tóc gai theo bảng của kiểu, "anime" là tóc anime lọn dẹt nhọn (chỉ người 3D có lọn), sculpt.spike nhân chiều cao gai và chiều dài lọn (1 đúng kiểu); sculpt.style: "pony" là đuôi ngựa, "bun" là búi, cả hai buộc sau gáy ở vĩ độ sculpt.tie, đuôi ngựa rủ sculpt.tail lần bán kính sọ dưới chỗ buộc, sculpt.tieLon dời chỗ buộc quanh đầu (180 giữa gáy), sculpt.knotSize phóng khối buộc; sculpt.ahoge là số lọn vểnh trên đỉnh, sculpt.recede là hói chữ M hai bên trán, pieces.hair.accent là màu phụ phần tóc dưới hai bên (chỉ người 3D); bộ mẫu SCULPT_PRESETS của rig: short, buzz, crop, quiff, spiky, neat, round, slick, curly, afro, bald, baldLight, baldFront, ponyHigh, ponyLow, bun, messy, bang, bob, shoulder, center, anime — đọc docs 02-trang-phuc#tóc-dựng-khối. Tóc ảnh: hair là mái, vẽ trên đầu; hairBack là mảng rủ sau gáy, vẽ sau cả thân và chân. crown vẽ đè lên hair, và mũ nón khăn đội đầu đều là crown. headAcc là phụ kiện đầu (sừng, tai, vòng hoa), chung hộp với crown nhưng vẽ trên cả mũ và bám sọ — không trôi theo mặt khi lắc. Người 3D: crown { src: "sculpt", color, hat: { shape, front, back, height, ease, folds } } là mũ dựng khối ôm tóc: shape "drum" trụ thấp, "peaked" mũ kê-pi cảnh sát (band, brim, droop, strap, badge và bandColor, brimColor, strapColor, badgeColor), headAcc { src: "sculpt", color, accent, pin: { angle } } là trâm cắm qua búi — đọc docs 02-trang-phuc#mũ-dựng-khối, #trâm-cài-búi. faceAcc là phụ kiện mặt (kính, sẹo, mặt nạ), chung hộp với crown, vẽ trên mắt/mày/miệng và dưới tóc mũ, trôi đúng bằng nét mặt; mắt kính phải để rỗng vì mắt vẽ bằng code ở dưới. Thân áo dựng khối: torso { src: "sculpt", color, garment: { style: "tshirt" | "bare", … } } không cần ảnh, một bộ số chiếu theo góc của thân ở mọi nấc, và gốc vai, hông chiếu từ khối — đọc docs 02-trang-phuc#thân-áo-dựng-khối. Váy dựng khối: hem { src: "sculpt", color, layer: "under", skirt: { rise, waist, length, flare, pleats } } không cần ảnh, một bộ số chiếu theo góc của thân ở mọi nấc, gấu rủ theo đùi và phủ đùi lúc sải, lúc ngồi, chân luôn vẽ (bỏ qua hideLegs, dx…rotate) — đọc docs 02-trang-phuc#váy-dựng-khối. Kính dựng khối: faceAcc { src: "sculpt", color, glasses: { shape, tint, size, … } } không cần ảnh, một bộ số quay theo đầu ở mọi góc, cắm được vào items để đeo tháo bằng equip; bộ mẫu ở glassesPresets — đọc docs 02-trang-phuc#kính-dựng-khối. chin là mảnh râu, vẽ trên cùng ở khối đầu, pieces.chin.layer="under" thì vẽ dưới mắt/mày/ria/miệng cho râu quai nón khỏi khoét chừa mồm. Râu dựng khối: chin { src: "sculpt", color, beard: { reach, cheek, gap, bulk, length, tip, stubble, … } } không cần ảnh, một bộ số quay theo đầu ở mọi góc, khấc tự khớp vào mồm, beard.cover: true là râu kín không khấc và mồm vẽ đè lên có viền, luôn vẽ dưới mắt/mày/ria/miệng (bỏ qua layer, dx…rotate), màu trống thì lấy face.moustache.color; bộ mẫu ở beardPresets, mỗi mẫu kèm kiểu ria hợp với nó — đọc docs 02-trang-phuc#râu-dựng-khối. Ria mép và nếp nhăn luôn vẽ code riêng (face.moustache, face.wrinkle), râu dựng khối không vẽ ria. neck là khăn quàng cổ / cà vạt / yếm, treo ở khớp cổ và nghiêng theo thân chứ không theo đầu; người 3D: neck { src: "sculpt", color, drape: { side, width, front, back } } là khăn vắt vai, neck.shades: { side, size } là kính râm gài nẹp áo — đọc docs 02-trang-phuc#khăn-vắt-vai-và-kính-gài-nẹp. Thân áo dựng khối còn có garment.collarUp (0..1, cổ bẻ dựng ôm gáy) và garment.belly (px, bụng phệ) và garment.bust (px, ngực nở) — #cổ-dựng, #bụng-phệ, #ngực-nở; garment.panels là mảng màu tuỳ ý trên thân (pts hay path SVG, side front/back/both/around, fill màu hay "skin" để khoét lộ da, pattern sọc/kẻ ô/chấm, clip theo viền cổ), garment.inner chỉnh áo trong và cà vạt của blazer/cardigan/suit, garment.neckline đè dáng cổ, garment.marks: false bỏ đặc điểm của kiểu — #mảng-áo-và-hoạ-tiết, #áo-trong-và-cà-vạt; palette.sleeveFlare là tay áo loe của người 3D, bàn tay giữ cỡ theo sleeveWidth. hem là tà áo / váy, treo ở chậu hông, pieces.hem.hideLegs ẩn hai chân và pieces.hem.layer="under" thì thân áo vẽ đè lên tà. Lắc đầu thì tóc và mũ trôi theo mặt head.follow phần (mặc định 0.1) và mảng sau theo head.followBack (mặc định -0.2, âm vì nằm sau trục lắc); đặt 0 là bám sọ, đứng yên hẳn. pieces.hair.clip cắt mái theo bao đầu nở clipGrow lần, mở xuống dưới.',
-      headShapes: rig.HEAD_SHAPES,
-      moustacheKinds: rig.MOUSTACHE_KINDS,
+        'Mọi socket nhận src: "none" (trống); hair, crown, headAcc, faceAcc, neck, torso, hem còn nhận src: "sculpt" — người 3D dựng khối từ bộ số, không cần ảnh. Hành động không mang đồ vật — đồ là của nhân vật (items + equip), món cầm tay là held/ (describe_held). Tóc dựng khối: hair { src: "sculpt", color, sculpt: {…} }, một bộ số quay theo đầu; sculpt.bang/bangTo/bangThick là mái lệch, sculpt.length > 0 là tóc rủ theo trọng lực (1.5 ≈ ngang vai), sculpt.style: "spiky" là tóc gai theo bảng của kiểu, "anime" là tóc anime lọn dẹt nhọn, sculpt.spike nhân chiều cao gai và chiều dài lọn (1 đúng kiểu); sculpt.style: "pony" là đuôi ngựa, "bun" là búi, cả hai buộc sau gáy ở vĩ độ sculpt.tie, đuôi ngựa rủ sculpt.tail lần bán kính sọ dưới chỗ buộc, sculpt.tieLon dời chỗ buộc quanh đầu (180 giữa gáy), sculpt.knotSize phóng khối buộc; sculpt.ahoge là số lọn vểnh trên đỉnh, sculpt.recede là hói chữ M hai bên trán, pieces.hair.accent là màu phụ phần tóc dưới hai bên; bộ mẫu SCULPT_PRESETS của rig: short, buzz, crop, quiff, spiky, neat, round, slick, curly, afro, bald, baldLight, baldFront, ponyHigh, ponyLow, bun, messy, bang, bob, shoulder, center, anime — đọc docs 12-trang-phuc-3d#tóc-dựng-khối. Mũ: crown { src: "sculpt", color, hat: { shape, front, back, height, ease, folds } } là mũ dựng khối ôm tóc: shape "drum" trụ thấp, "peaked" mũ kê-pi cảnh sát (band, brim, droop, strap, badge và bandColor, brimColor, strapColor, badgeColor); headAcc { src: "sculpt", color, accent, pin: { angle } } là trâm cắm qua búi — đọc docs 12-trang-phuc-3d#mũ-dựng-khối, #trâm-cài-búi. Thân áo dựng khối: torso { src: "sculpt", color, garment: { style: "tshirt" | "bare", … } } — đọc docs 12-trang-phuc-3d#thân-áo-dựng-khối; garment.collarUp (0..1, cổ bẻ dựng ôm gáy), garment.belly (px, bụng phệ), garment.bust (px, ngực nở) — #cổ-dựng, #bụng-phệ, #ngực-nở; garment.panels là mảng màu tuỳ ý trên thân (pts hay path SVG, side front/back/both/around, fill màu hay "skin" để khoét lộ da, pattern sọc/kẻ ô/chấm, clip theo viền cổ), garment.inner chỉnh áo trong và cà vạt của blazer/cardigan/suit, garment.neckline đè dáng cổ, garment.marks: false bỏ đặc điểm của kiểu — #mảng-áo-và-hoạ-tiết, #áo-trong-và-cà-vạt; palette.sleeveFlare là tay áo loe, bàn tay giữ cỡ theo sleeveWidth. Váy dựng khối: hem { src: "sculpt", color, skirt: { rise, waist, length, flare, pleats } }, gấu rủ theo đùi và phủ đùi lúc sải, lúc ngồi — đọc docs 12-trang-phuc-3d#váy-dựng-khối. Kính dựng khối: faceAcc { src: "sculpt", color, glasses: { shape, tint, size, … } }, một bộ số quay theo đầu, cắm được vào items để đeo tháo bằng equip; bộ mẫu ở glassesPresets — đọc docs 12-trang-phuc-3d#kính-dựng-khối. Nếp nhăn vẽ riêng (face.wrinkle). neck { src: "sculpt", color, drape: { side, width, front, back } } là khăn vắt vai, neck.shades: { side, size } là kính râm gài nẹp áo — đọc docs 12-trang-phuc-3d#khăn-vắt-vai-và-kính-gài-nẹp.',
       wrinkleKinds: rig.WRINKLE_KINDS,
       wrinkleNote:
-        "face.wrinkle (kind none|light|deep, color, width, dy) là dấu hiệu tuổi tác vẽ bằng code: nếp trán, chân chim, thêm túi mắt và pháp lệnh ở deep. Nó bám tâm mặt nên đi theo lắc/gật, và bị mảnh tóc hay mũ che phần trán. Nhân vật già thì dùng nó cùng tóc râu màu bạc, đừng gen nếp nhăn vào mảnh ảnh.",
+        "face.wrinkle (kind none|light|deep, color, width, dy) là dấu hiệu tuổi tác vẽ bằng code: nếp trán, chân chim, thêm túi mắt và pháp lệnh ở deep. Nó bám tâm mặt nên đi theo lắc/gật, và bị tóc hay mũ che phần trán. Nhân vật già thì dùng nó cùng tóc màu bạc, đừng gen nếp nhăn vào mảnh ảnh.",
       blushNote:
-        "face.blush (0..1, mặc định 0) của nhân vật là má ửng của người 3D, màu suy từ palette.skin nên đọc được trên da sáng lẫn da sẫm; 2D không vẽ. keys[].face.blush (0..1) của hành động cộng thêm vào nó (kẹp ở 1) và nội suy giữa các mốc như góc, không bậc thang như mouth/brow/eyes — ngượng đỏ mặt dần là hai mốc blush 0 → 0.6, mask phải có face.",
+        "face.blush (0..1, mặc định 0) của nhân vật là má ửng của người 3D, màu suy từ palette.skin nên đọc được trên da sáng lẫn da sẫm. keys[].face.blush (0..1) của hành động cộng thêm vào nó (kẹp ở 1) và nội suy giữa các mốc như góc, không bậc thang như mouth/brow/eyes — ngượng đỏ mặt dần là hai mốc blush 0 → 0.6, mask phải có face.",
       faceRest: rig.FACE_REST,
       faceRestNote:
-        "face.eyeScale, eyeWidth, lid, shine, browWidth, browTilt (mặc định và khoảng ở faceRest) là nét mặt nghỉ riêng của nhân vật: mọi người dùng chung bộ nét mặt, mỗi người khác nhau ở 2–3 số này. eyeScale nhân cỡ mắt, eyeWidth nhân bề ngang (<1 hẹp, >1 tròn), shine nhân đốm sáng (0 là mắt không đốm, lạnh): ba số này chỉ đầu human của người 3D đọc. lid là mi trên sụp, phần chiều cao con ngươi (0.4 lười, 0.15–0.25 nghiêm, nham hiểm), ăn ở mắt open, mắt mở của wink, wide và bulge (nhẹ hơn), squint lấy số lớn hơn; browWidth nhân bề dày mày; browTilt cộng vào độ nghiêng mọi kiểu mày, dương nhấc đầu trong (hiền, rụt rè), âm hạ đầu trong (nghiêm, khó tính). Ba số sau mọi nét mặt đọc, cả 2D. Phản diện vẫn cùng rig: lid 0.25, shine 0.5 kèm miệng smirk / fang, mắt sly; quát mắng là miệng shout. Ngạc nhiên thường là mắt wide (cùng họ chấm đặc với open), mắt trố bulge (lòng trắng to) để dành cho cú sốc lớn.",
+        "face.eyeScale, eyeWidth, lid, shine, browWidth, browTilt (mặc định và khoảng ở faceRest) là nét mặt nghỉ riêng của nhân vật: mọi người dùng chung bộ nét mặt, mỗi người khác nhau ở 2–3 số này. eyeScale nhân cỡ mắt, eyeWidth nhân bề ngang (<1 hẹp, >1 tròn), shine nhân đốm sáng (0 là mắt không đốm, lạnh): ba số này chỉ đầu human của người 3D đọc. lid là mi trên sụp, phần chiều cao con ngươi (0.4 lười, 0.15–0.25 nghiêm, nham hiểm), ăn ở mắt open, mắt mở của wink, wide và bulge (nhẹ hơn), squint lấy số lớn hơn; browWidth nhân bề dày mày; browTilt cộng vào độ nghiêng mọi kiểu mày, dương nhấc đầu trong (hiền, rụt rè), âm hạ đầu trong (nghiêm, khó tính). Ba số sau mọi nét mặt đọc. Phản diện vẫn cùng rig: lid 0.25, shine 0.5 kèm miệng smirk / fang, mắt sly; quát mắng là miệng shout. Ngạc nhiên thường là mắt wide (cùng họ chấm đặc với open), mắt trố bulge (lòng trắng to) để dành cho cú sốc lớn.",
       mouth: rig.MOUTH_KINDS,
       brow: rig.BROW_KINDS,
       eyes: rig.EYE_KINDS,
       rules: [
         "Góc: 0° là đoạn chỉ thẳng xuống, dương xoay về +x; khớp con (khuỷu, gối) đo tương đối so với khớp cha. Toạ độ y hướng xuống, gốc ở hông.",
-        "Vai gần ở −x, vai xa ở +x — riêng thân `rear` của thân áo dựng khối thì ngược lại, chi gần (gần ống kính) sang +x. Hai tay xoè đối xứng thì armNear âm, armFar dương. armFar âm là cánh tay trên chui sau thân — trừ khi giơ hẳn lên cao (|góc| > 120) thì nó lộ lại phía trên vai.",
+        "Vai gần ở −x, vai xa ở +x. Hai tay xoè đối xứng thì armNear âm, armFar dương. armFar âm là cánh tay trên chui sau thân — trừ khi giơ hẳn lên cao (|góc| > 120) thì nó lộ lại phía trên vai.",
         "Dấu khuỷu theo từng tay: khuỷu gập vào thân là armNear DƯƠNG, armFar ÂM (hold: an [−22, 124, 0], af [22, −124, 0]). Khuỷu ngược dấu là cẳng tay bẻ ra ngoài — chỉ hợp lý khi tay đang giơ cao.",
-        "armNear/armFar của người 2D là BA số [vai, khuỷu, cổ tay]; số thứ tư (dang) và thứ năm (xoắn vai) chỉ người 3D đọc ở hành động authoredAt side — world3d.twist. Vị trí bàn tay là lượng giác: x = vai.x + sU·sin(vai)·62 + sL·sin(vai+khuỷu)·58, y = vai.y + sU·cos(vai)·62 + sL·cos(vai+khuỷu)·58, với sU, sL là hệ số vươn cánh tay trên, cẳng tay của chính tay ấy (kênh stretch, mặc định 1) — cổ tay không vào đó. Qua −90° thì sin quay đầu — armFar càng âm bàn tay càng về +x. Muốn chính xác thì scene_probe, đừng suy bằng mắt.",
-        "stretch là kênh khớp trong keys[].pose, số dương, mặc định 1: bốn số [tay xa, tay gần, chân xa, chân gần] nhân vào CẢ HAI đoạn của chi ấy, hoặc tám số từng đoạn, đoạn gốc trước [tay xa trên, tay xa dưới, tay gần trên, tay gần dưới, đùi xa, cẳng chân xa, đùi gần, cẳng chân gần]; bảng tầm với ở docs/01 mục Vươn chi. Ghép theo chi: hệ số của một chi chỉ ăn khi hành động cũng ghi chính chi ấy (hành động chỉ ghi stretch thì phủ cả bốn chi), nên hành động ngồi vươn chân và track gõ phím vươn tay đặt sau nó chồng lên nhau được. Ngồi nhìn từ sau có sẵn hành động chung sit-rear: chân [82, -82], stretch [1, 1, 1, 1, 0.75, 1.4, 0.75, 1.4] — đùi chạy sâu vào khung ngắn lại, cẳng chân thẳng đứng dài ra, hông cách sàn ≈ 118 như hành động sit (chân [60, -60], đùi dốc chỉ hợp nhìn nghiêng). palette.limbCurve (0..1, mặc định 1) uốn chi thành nét cong; nhân vật hạ nó về 0 là chi thẳng thì đừng vươn quá ~1.2, đoạn thẳng dài ra đọc thành sai tỉ lệ. mask khai tường minh phải liệt kê stretch mới ăn. Tay lên đỉnh đầu: armNear [-157, -73, 0], stretch [1, 1.65, 1, 1], layer.armNear front.",
-        "Tay đưa lên mặt hoặc vào giữa thân thì đặt layer (armNear/armFar: back|mid|front): back dưới thân, mid trên thân dưới đầu (bị đầu che), front trên tất cả. Tay giơ qua đầu mà thiếu layer front là bị đầu/nón nuốt, trông y như lỗi render.",
-        "Cổ tay chỉ xoay đồ cầm tay (handNear/handFar), không đổi hình cánh tay — nhân vật tay không thì đặt bao nhiêu cũng như nhau. Cách nắm cố định là pieces.hand*.rotate của nhân vật; cổ tay là phần đổi theo thời gian, vd. rìu ngửa ra sau lúc lấy đà rồi gằn xuống lúc chạm.",
-        "Tay phía trước người đối diện là armFar (tầm với 120+34 ở stretch 1); bắt tay, chỉ, đưa đồ thì ghi armFar + layer.armFar: front.",
+        "armNear/armFar là ba số [vai, khuỷu, cổ tay] trên mặt soạn, cộng số thứ tư (dang) và thứ năm (xoắn vai) mà người 3D đọc ở hành động authoredAt side — world3d.twist. Vị trí bàn tay trên mặt soạn là lượng giác: x = vai.x + sU·sin(vai)·62 + sL·sin(vai+khuỷu)·58, y = vai.y + sU·cos(vai)·62 + sL·cos(vai+khuỷu)·58, với sU, sL là hệ số vươn cánh tay trên, cẳng tay của chính tay ấy (kênh stretch, mặc định 1) — cổ tay không vào đó. Qua −90° thì sin quay đầu — armFar càng âm bàn tay càng về +x. Muốn chính xác thì scene_probe, đừng suy bằng mắt.",
+        "stretch là kênh khớp trong keys[].pose, số dương, mặc định 1: bốn số [tay xa, tay gần, chân xa, chân gần] nhân vào CẢ HAI đoạn của chi ấy, hoặc tám số từng đoạn, đoạn gốc trước [tay xa trên, tay xa dưới, tay gần trên, tay gần dưới, đùi xa, cẳng chân xa, đùi gần, cẳng chân gần]; bảng tầm với ở docs/01 mục Vươn chi. Ghép theo chi: hệ số của một chi chỉ ăn khi hành động cũng ghi chính chi ấy (hành động chỉ ghi stretch thì phủ cả bốn chi), nên hành động ngồi vươn chân và track gõ phím vươn tay đặt sau nó chồng lên nhau được. Ngồi nhìn từ sau có sẵn hành động chung sit-rear: chân [82, -82], stretch [1, 1, 1, 1, 0.75, 1.4, 0.75, 1.4] — đùi chạy sâu vào khung ngắn lại, cẳng chân thẳng đứng dài ra, hông cách sàn ≈ 118 như hành động sit (chân [60, -60], đùi dốc chỉ hợp nhìn nghiêng). palette.limbCurve (0..1, mặc định 1) uốn chi thành nét cong; nhân vật hạ nó về 0 là chi thẳng thì đừng vươn quá ~1.2, đoạn thẳng dài ra đọc thành sai tỉ lệ. mask khai tường minh phải liệt kê stretch mới ăn. Tay lên đỉnh đầu: armNear [-157, -73, 0], stretch [1, 1.65, 1, 1].",
         "Hành động: đúng một trong gen hoặc keys. t trong keys là tỉ lệ 0→1, không phải giây; duration là giây cho một lượt, chỉ là nhịp mặc định, scene đè bằng cycle.",
-        "Đồ thay được nằm ở JSON nhân vật: items là { tên vật: { socket: config mảnh } } — một vật khai nhiều socket là để nó ĐỔI CHỖ (kính cầm ở handNear rồi đeo lên faceAcc), mỗi lúc chỉ một socket giữ nó. outfits là { tên bộ: map socket → vật }, chỉ là cách viết gọn. pieces là mảnh nền, mặc định lúc không equip gì.",
+        "Đồ thay được nằm ở JSON nhân vật: items là { tên vật: { socket: config socket } } — một vật khai nhiều socket là để nó ĐỔI CHỖ (kính cầm ở handNear rồi đeo lên faceAcc), mỗi lúc chỉ một socket giữ nó. outfits là { tên bộ: map socket → vật }, chỉ là cách viết gọn. pieces là mảnh nền, mặc định lúc không equip gì.",
         'equip chọn vật cho socket: { torso: "ao-giap" } thay áo, { faceAcc: "kinh" } đeo kính, null là để trống socket, "base" là về mảnh nền, socket không nhắc tới thì giữ nguyên thứ đang có. Giá trị cũng nhận thẳng một tên bộ đồ, hoặc mảng nhiều bước. Nó là công tắc: giữ nguyên qua clip sau ở scene và không đi qua mask.',
         "keys[].equip đổi đồ kể từ mốc đó, cast[].equip là chỗ mở màn. Nhân vật cầm nhiều thứ trong một tập thì chỉ cần MỘT file nhân vật: khai mỗi thứ một vật trong items, cảnh nào cần thì equip cảnh ấy — đừng tách thành nhiều file nhân vật, và đừng cắm sẵn vào pieces rồi cảnh nào cũng phải gỡ ra.",
-        "Mọi socket đều có pieces[k].rotate (độ, chiều rig, mặc định 0): xoay quanh tâm hộp, riêng sleeveNear/sleeveFar quanh khớp vai và handNear/handFar quanh bàn tay.",
         "Mốc t: 0 là hình đầu tiên của hành động, không phải tư thế trước nó; đoạn đưa tay lên thuộc về chỗ nối của scene (blend). Vào giữa chu kỳ thì dùng phase.",
         "end: wrap (lặp về mốc đầu) hoặc hold (giữ mốc cuối). Mask bỏ trống thì suy từ các mốc; hành động sau đè hành động trước ở đúng các khớp trong mask.",
-        "Camera và nền nằm TRONG scene: `camera[]` là chuỗi mốc {t, x, y, zoom, move}, `move` mặc định `cut` (giữ mốc trước rồi nhảy) — chạy máy chỉ khi cái chạy tự nó có nghĩa; `bg[]` là các lớp nền (ảnh trong assets/bg/), vẽ dưới lên theo `z`, mỗi lớp có `parallax` (hệ số trôi theo camera, `1` là dán vào sân khấu) và `repeat` (`none` mặc định vẽ một tấm; `tile`/`mirror` lát ngang khi camera lia ra ngoài bề rộng tấm — `mirror` lật gương ô lẻ nên mép nối trùng khít, số ô rig tự suy từ hộp camera), `ground` là đường đất cả cảnh. Người, đạo cụ, động vật và từng mục `fx[]` chung một trục `z` (số nhỏ ở sau; `fx[].z` bỏ trống là băng của `layer`: back −500, front 500, ui 1000; đàn bướm nửa trước nửa sau một người ở `z: 0` là hai mục fx ở −1 và 1). Người ngồi sau bàn — thân sau bàn, tay và đầu trên bàn — là `cast[].zParts` (`z` riêng cho legFar, shinFar, legNear, shinNear, torso, armFar, forearmFar, armNear, forearmNear, head; arm* là khúc vai→khuỷu, forearm* là cẳng tay kèm đồ cầm và bỏ trống thì theo arm* của nó; leg* là khúc hông→gối, shin* là ống chân và bỏ trống thì theo leg* của nó; tay xa gõ phím mà vẫn sau thân thì chỉ nâng forearmFar; đùi trên mặt ghế mà ống chân sau mép ghế thì hạ shin* xuống dưới z của ghế). Cụm người và đồ đặt chung là `groups[]` {id, x, y, scale, flip, z}: thành viên khai `group`, chỗ đứng và `z` của họ thành tương đối, cả nhóm là một mục trên trục `z`; nhóm đứng yên. Soi bố cục bằng render_scene với `stage: true`, hỏi khung bằng scene_probe (trường `camera`).",
-        "Scene: clip có start (giây), không có độ dài — clip sau kết thúc clip trước; clip không action là nhả track. cycle là giây, phase là tỉ lệ 0–1, blend là giây. flip là hướng người, x là chỗ đứng; trôi ngang khi đi tự sinh từ bàn chân, scene_probe trả x đã cộng trôi.",
-        'Mốc có tên: scene.marks = { "nui-dang": 3.0 } rồi MỌI trường thời gian (start, camera[].t, path/flip/fade[].t, from/to/at của fx) viết được "@nui-dang" hay "@nui-dang+0.4" thay cho số. Đặt mốc cho mọi thời điểm mà tiếng, hình và lớp vẽ code cùng phải khớp; dời mốc là patch một số ở marks, mọi thứ neo vào nó đi theo — đừng sửa từng số. scene_probe và render_scene nhận t / times là "@mốc". check chỉ kêu mốc khai mà JSON không neo khi package.json có stickman.marks.unused = "warn" (lớp vẽ code đọc mốc qua ctx.marks).',
-        "cast[].flip nhận boolean, hoặc chuỗi mốc [{t, v}] để quay giữa cảnh: công tắc bậc thang, không hoà, và MỐC ĐẦU LÀ CHỖ ĐỔI nên trước nó là hướng ngược lại ([{t: 2.4, v: true}] là nhìn phải rồi giây 2.4 quay sang trái). Cú quay gọn một frame vì rig không có góc ¾ — lật lúc hai chân chụm thì đỡ lộ. Đạo cụ follow nhảy sang bên kia người khi quay, đó là ý nghĩa của follow.",
-        'cast[].view và cast[].headView: góc nhìn của thân và của đầu, "front" | "quarter" | "side" | "rear" | "back", hoặc chuỗi mốc bậc thang [{t, v}] như flip (t nhận cả "@mốc", phải tăng dần, trước mốc đầu là quarter). quarter là mặc định: chính diện 3/4, mặt lệch theo face.turn, thân dựng khối quay theo cùng góc nghỉ ấy; front là chính diện thật, mặt nhìn thẳng ống kính. headView bỏ trống là theo thân — quay lưng mà ngoái mặt nói chuyện thì view: "back", headView: "side". rear là 3/4 sau: đầu còn một mắt nhỏ sát mép và khoé mồm, tóc phủ gần hết đầu; thân rear chỉ có khi thân áo dựng khối — khối quay 120°, thấy lưng, vai xoay, chi gần sang +x — thân khác vẽ như back. Người ngồi bàn nhìn từ sau chếch: view "rear", hành động sit-rear ở track dưới, track tay gõ phím đặt sau nó, zParts cho chân nằm sau đệm ghế nếu cảnh có lớp ghế. Tổ hợp không vẽ được bị kẹp: thân quay lưng (rear, back) với đầu front hay quarter thành đầu cùng nấc thân, đầu back hay rear trên thân không quay lưng thành đầu side. Góc là năm nấc rời, không xoay liên tục, nên đổi góc là một frame, lật lúc hai chân chụm thì đỡ lộ, y như flip. cast[].turn (px, cùng nghĩa face.turn) đè face.turn của nhân vật trong riêng cảnh ấy — mặt, thân, tóc và kính dựng khối cùng xoay theo; chỉ có nghĩa ở quarter (front coi turn là 0). turn gần nửa bề ngang đầu (52 trên đầu nửa rộng 65 ≈ 53°) là 3/4 xoay gần ngang, hợp người ngồi nghiêng bên bàn; đừng sửa face.turn trong file nhân vật chỉ vì một cảnh.',
-        "cast[].path: [{t, x, y, scale, ease}] — có path là tắt trôi tự suy, người giậm chân tại chỗ và chỗ đứng/đường đất/scale nội suy giữa các mốc (kẹp hai đầu). Dùng cho đi chéo, đi từ xa lại gần, khớp nền. Chân không trượt khi tốc độ dọc đường ≈ tốc độ trôi tự nhiên × scale (walk mặc định ~293 px/chu kỳ ở scale 1).",
-        "Khung hình là scene.frame: wide (1280×720, ra video 1920×1080) mặc định, tall (405×720, ra 1080×1920) cho short. Gốc ở giữa, đất ở y=260, hai khung cùng cao nên người to y hệt — khung dọc chỉ hẹp bề ngang: x ngoài ±640 (wide) hay ±202 (tall) là ra khỏi khung. Một chu kỳ walk mặc định trôi ~293 px, tức gần hết bề ngang khung dọc. Mọi shot của một tập phải cùng khung.",
-        "Nhân vật: rig.height chỉ kéo dọc. Trang phục là part (src: part) hoặc PNG có alpha (src: image, file trong pieces/); không có SVG.",
+        "Camera và nền nằm TRONG scene: `camera[]` là chuỗi mốc {t, x, y, zoom, move}, `move` mặc định `cut` (giữ mốc trước rồi nhảy) — chạy máy chỉ khi cái chạy tự nó có nghĩa; `bg[]` là các lớp nền (ảnh trong assets/bg/), vẽ dưới lên theo `z`, mỗi lớp có `parallax` (hệ số trôi theo camera, `1` là dán vào sân khấu) và `repeat` (`none` mặc định vẽ một tấm; `tile`/`mirror` lát ngang khi camera lia ra ngoài bề rộng tấm — `mirror` lật gương ô lẻ nên mép nối trùng khít, số ô rig tự suy từ hộp camera). Từng mục `fx[]` nằm trên một trục `z` (số nhỏ ở sau; `fx[].z` bỏ trống là băng của `layer`: back −500, front 500, ui 1000; người ở `z: 0`, nên mục fx âm vẽ sau người, dương vẽ trước). Soi bố cục bằng render_scene, hỏi khung bằng scene_probe (trường `camera`).",
+        "Scene: clip có start (giây), không có độ dài — clip sau kết thúc clip trước; clip không action là nhả track. cycle là giây, phase là tỉ lệ 0–1, blend là giây. Mỗi người trong cast là người 3D: chỗ đứng và hướng ở cast[].world (at/yaw, hay path khi đi). cast rỗng là cảnh chỉ có nền, lớp vẽ code và fx — khi ấy khai duration.",
+        'Mốc có tên: scene.marks = { "nui-dang": 3.0 } rồi MỌI trường thời gian (start, camera[].t, world.path/world.hands/fade[].t, from/to/at của fx) viết được "@nui-dang" hay "@nui-dang+0.4" thay cho số. Đặt mốc cho mọi thời điểm mà tiếng, hình và lớp vẽ code cùng phải khớp; dời mốc là patch một số ở marks, mọi thứ neo vào nó đi theo — đừng sửa từng số. scene_probe và render_scene nhận t / times là "@mốc". check chỉ kêu mốc khai mà JSON không neo khi package.json có stickman.marks.unused = "warn" (lớp vẽ code đọc mốc qua ctx.marks).',
+        "Khung hình là scene.frame: wide (1280×720, ra video 1920×1080) mặc định, tall (405×720, ra 1080×1920) cho short. Hai khung cùng cao, khung dọc chỉ hẹp bề ngang. Mọi shot của một tập phải cùng khung.",
         "Cách đo rẻ nhất: nhồi N tư thế ứng viên vào N mốc của một action inline rồi render_action / scene_probe — một lần gọi vừa có số vừa có hình.",
         'Người 3D (cảnh có `scene.lens`, người có `cast[].world`): quy ước trục, yaw, theta, đích tay và bộ hành động ở `world3d`; mẫu cảnh ở schema(scenes).example3d. Góc khớp trong hành động vẫn theo các luật trên, đọc như soạn ở `side` khi hành động khai `authoredAt: "side"`.',
-        "Cần biết một mảnh hay một khớp nằm ở đâu trên khung thì hỏi scene_probe với `anchors`, đừng suy công thức và đừng render hai lượt rồi diff: nó trả tâm, góc và cỡ hộp trong đúng hệ toạ độ chỗ vẽ.",
+        "Cần biết một khớp nằm ở đâu trên khung thì hỏi scene_probe với `anchors`, đừng suy công thức và đừng render hai lượt rồi diff: nó trả tâm, góc và cỡ hộp trong đúng hệ toạ độ chỗ vẽ.",
       ],
     });
   }),
@@ -758,7 +603,7 @@ server.registerTool(
   "schema",
   {
     description:
-      "JSON Schema (sinh từ zod của rig) và object mặc định của một loại file: characters, actions, scenes, props (đạo cụ có bánh — docs/06-dao-cu.md), animals (động vật — docs/08-dong-vat.md) , held (món cầm tay: hình va chạm, mặt trước, đầu trên, mốc, phần, chỗ treo — docs/11-nhom-cam.md) hay hands (dáng tay có tên `hands/<tên>.json`: mười góc ngón `fingers`, độ gập thêm `fit`; tên chỉ gồm chữ thường, số, gạch nối và không trùng dáng có sẵn của rig). `held` trả `defaults` là món tối thiểu (một tấm), `sample` là món mẫu `coc` của bộ chung, `groups` là bảng nhóm cầm. `hands` trả `defaults` là dáng `open` của rig, `sample` là dáng mẫu `peace` của bộ chung, `builtin` là tên dáng có sẵn. Scene kèm `example3d` (người 3D) và `exampleHold` (`world.hands[].hold`).",
+      "JSON Schema (sinh từ zod của rig) và object mặc định của một loại file: characters, actions, scenes, held (món cầm tay `schemaVersion: 4`: hình va chạm, mặt trước, đầu trên, mốc, phần, chỗ treo, `roles` — vai trò của món cho bộ sinh: `pourer` vật rót {lip, spout?}, `vessel` vật đựng {mouth: {at, r, dir?}} — docs/11-nhom-cam.md, docs/13-vai-tro-do.md) hay hands (dáng tay có tên `hands/<tên>.json`: mười góc ngón `fingers`, độ gập thêm `fit`; tên chỉ gồm chữ thường, số, gạch nối và không trùng dáng có sẵn của rig). `held` trả `defaults` là món tối thiểu (một tấm), `sample` là món mẫu `coc` của bộ chung, `groups` là bảng nhóm cầm. `hands` trả `defaults` là dáng `open` của rig, `sample` là dáng mẫu `peace` của bộ chung, `builtin` là tên dáng có sẵn. Scene kèm `example3d` (người 3D) và `exampleHold` (`world.hands[].hold`).",
     inputSchema: { kind: z.enum(KINDS) },
   },
   guard(({ kind }) => {
@@ -768,28 +613,26 @@ server.registerTool(
         ? rig.defaultCharacter()
         : kind === "actions"
           ? rig.defaultAction()
-          : kind === "props"
-            ? rig.defaultProp()
-            : kind === "held"
-              ? HELD_EXAMPLE
-              : kind === "hands"
-                ? {
-                    schemaVersion: rig.HAND_SHAPE_VERSION,
-                    note: "bàn tay mở",
-                    fingers: rig.shapeFingers("open").slice(0, 10),
-                  }
-                : {
-                    schemaVersion: rig.SCENE_VERSION,
-                    name: "scene",
-                    cast: [
-                      {
-                        id: "a",
-                        character: "common.json",
-                        x: 0,
-                        tracks: [{ clips: [{ action: "walk", start: 0 }, { start: 2 }] }],
-                      },
-                    ],
-                  };
+          : kind === "held"
+            ? HELD_EXAMPLE
+            : kind === "hands"
+              ? {
+                  schemaVersion: rig.HAND_SHAPE_VERSION,
+                  note: "bàn tay mở",
+                  fingers: rig.shapeFingers("open").slice(0, 10),
+                }
+              : {
+                  schemaVersion: rig.SCENE_VERSION,
+                  name: "scene",
+                  cast: [
+                    {
+                      id: "a",
+                      character: "common.json",
+                      x: 0,
+                      tracks: [{ clips: [{ action: "walk", start: 0 }, { start: 2 }] }],
+                    },
+                  ],
+                };
     return text({
       schema,
       defaults,
@@ -814,24 +657,33 @@ server.registerTool(
   "list",
   {
     description:
-      "Liệt kê file: characters, actions, scenes, props, animals (kèm name), held (kèm `groups`: nhóm cầm áp được cho cỡ tay 1, chi tiết ở describe_held; `named`: kiểu cầm có tên của món {group, name, base, note, hold} — gọi bằng `variant` hay dạng tắt `hold`), hands (dáng tay có tên kèm `note`; gọi bằng `world.hands[].right|left.pose`) hoặc pieces (PNG kèm kích thước; kèm name/description/config nếu có trong pieces/catalog.json — studio chỉ liệt kê mảnh có trong danh mục đó). characters, actions, animals, held, hands và pieces gồm cả bộ chung của studio, `layer` cho biết file nằm ở workspace hay common; file cùng tên thì workspace đè.",
+      "Liệt kê file: characters, actions, scenes, held (kèm `schemaVersion` của file, `groups`: nhóm cầm áp được cho cỡ tay 1, chi tiết ở describe_held; `named`: kiểu cầm có tên của món {group, name, base, note, hold} — gọi bằng `variant` hay dạng tắt `hold`; `roles`: vai trò của món, khai hay suy — `role` lọc theo vai trò, vd. `vessel` là món `gen pour` rót vào được), hands (dáng tay có tên kèm `note`; gọi bằng `world.hands[].right|left.pose`) hoặc pieces (PNG cho hiệu ứng vật rời tay, kèm kích thước). characters, actions, held, hands và pieces gồm cả bộ chung, `layer` cho biết file nằm ở workspace hay common; file cùng tên thì workspace đè. `match` lọc theo tên file không đuôi (phẩy ngăn, `*` khớp mọi chuỗi: `bow-*,nod-*-3d`); actions có `match` thì mỗi hàng kèm `note` (làm gì, ghi kênh nào, cần nền gì, chồng với gì) và `preview` — chọn hành động chung bằng nó, bảng cả bộ ở docs 01 § Bộ hành động 3D.",
 
-    inputSchema: { kind: z.enum([...KINDS, "pieces"]) },
+    inputSchema: {
+      kind: z.enum([...KINDS, "pieces"]),
+      match: z
+        .string()
+        .optional()
+        .describe("Lọc tên file không đuôi: phẩy ngăn, `*` khớp mọi chuỗi (`bow-*,nod-*-3d`)"),
+      role: z
+        .enum(["pourer", "vessel"])
+        .optional()
+        .describe(
+          "`held`: chỉ món mang vai trò này (khai hay suy, như describe_held) — `vessel` là món làm đích rót được, `pourer` là bình",
+        ),
+    },
   },
-  guard(({ kind }) => {
-    const entries = kind === "pieces" ? catalog().pieces : [];
-    const rows = listFiles(kind).map(({ file: f, path: p, layer }) => {
+  guard(({ kind, match, role }) => {
+    if (role && kind !== "held") return fail("`role` chỉ lọc `held`");
+    const want = match && globs(match);
+    const files = listFiles(kind).filter(
+      ({ file: f }) => !want || want.test(f.replace(/\.(json|png)$/, "")),
+    );
+    const rows = files.map(({ file: f, path: p, layer }) => {
       const at = LAYERS[kind].length > 1 ? { layer } : {};
       if (kind === "pieces") {
         const { w, h } = R.pngSize(readFileSync(p));
-        const e = entries.find((c) => c.file === f);
-        return {
-          file: f,
-          ...at,
-          width: w,
-          height: h,
-          ...(e ? { name: e.name, description: e.description, config: e.config } : {}),
-        };
+        return { file: f, ...at, width: w, height: h };
       }
       const r = SCHEMAS[kind].parse(R.readJson(p));
       return r.success
@@ -844,13 +696,14 @@ server.registerTool(
                 ? { note: r.data.note }
                 : { name: r.data.name }),
             ...(kind === "actions" ? { mask: rig.actionMask(r.data) } : {}),
+            ...(kind === "actions" && want ? { note: r.data.note, preview: r.data.preview } : {}),
           }
         : { file: f, ...at, error: issues(r.error) };
     });
     return text({
       dir: DIRS[kind],
       ...(LAYERS[kind].length > 1 ? { common: LAYERS[kind][1] } : {}),
-      files: rows,
+      files: role ? rows.filter((r) => r.roles?.includes(role)) : rows,
     });
   }),
 );
@@ -901,11 +754,13 @@ server.registerTool(
         ...rig.sceneLaunchProblems(rt),
         ...rig.sceneStopProblems(rt),
         ...rig.sceneTurnProblems(rt),
+        ...(rig.sceneWalkInProblems?.(rt) ?? []),
+        ...(rig.sceneWalkYawProblems?.(rt) ?? []),
         ...sceneSnapLines(rt),
         ...(rig.sceneHoldProblems?.(rt) ?? []),
         ...(rig.elbowLockIdle?.(rt) ?? []).map(rig.elbowLockIdleLine),
       ];
-      // `check` coi là lỗi: người 3D diễn hành động 2D ở kênh tay chân, mốc món sai hướng hay không tay nào cầm
+      // `check` coi là lỗi: người 3D diễn hành động không soạn ở `side` ở kênh tay chân, mốc món sai hướng hay không tay nào cầm
       const errors = [
         ...(rig.sceneSideProblems?.(rt, allActions()) ?? []),
         ...itemProblems(r.data, rt),
@@ -1007,221 +862,95 @@ server.registerTool(
   "render_character",
   {
     description:
-      "Vẽ một nhân vật (tên file hoặc object inline) ở nhiều tư thế thành một PNG mỗi crop, ghi ra đĩa và trả về đường dẫn. poses nhận tên trong POSES, { action, t }, hoặc delta pose { armNear, armFar, legNear, legFar, torso, head, layer, face, equip } — layer/face trong delta đè layers/face chung của tool, equip trong delta đè equip chung. equip chọn vật trong character.items, xem describe_rig. view/headView đổi góc nhìn cả dải (front|quarter|side|rear|back, mặc định quarter), headView bỏ trống là theo thân. boxes: true thì thay bằng hai khung reference để đi gen mảnh ảnh. yaw (độ, 0 = +x, 90 = −z) vẽ người 3D một mình giữa sân khấu trống qua ống kính cúi pitch độ: ô { action, t } diễn hành động ấy với cờ nâng và đích tay, tên POSES và delta pose vẽ kênh 2D; view/headView/flip suy từ theta.",
+      "Vẽ một nhân vật (tên file hoặc object inline) thành người 3D thật bằng three (Chromium headless) như video — dựng khối, bàn tay năm ngón, vật liệu NPR, bóng — một mình giữa plainRoom(), ghi PNG ra đĩa và trả về đường dẫn. Mỗi ô là một hành động: tên (giây 0) hay { action, t } với t tỉ lệ 0–1 của một lượt; hành động gập hai đùi (sit-3d) thì người ngồi trên ghế chuẩn. equip chọn vật trong character.items, xem describe_rig. yaw là hướng mặt (độ, 0 = +x, 90 = −z về ống kính), pitch là góc cúi ống kính.",
     inputSchema: {
       character: Spec,
-      poses: z.array(PoseSpec).default(["idle", "shrug", "think", "hold"]),
-      crops: Crops,
-      cols: z.number().int().positive().optional(),
-      scale: z.number().positive().default(0.6),
-      flip: z.boolean().default(false),
-      face: FaceSpec,
-      layers: LayerSpec,
+      poses: z.array(CellSpec).default([
+        { action: "stand-3d", t: 0 },
+        { action: "sit-3d", t: 0 },
+      ]),
       equip: EquipSpec,
-      view: ViewSpec,
-      headView: HeadViewSpec,
       yaw: YawSpec,
       pitch: PitchSpec,
-      three: z
-        .boolean()
-        .default(false)
-        .describe(
-          "Với yaw: vẽ người 3D thật bằng three (Chromium headless) như video — dựng khối, bàn tay năm ngón, vật liệu NPR, bóng, trong plainRoom(); chỉ nhận ô { action, t }, bỏ qua crops",
-        ),
       size: SizeSpec,
       software: SoftwareSpec,
-      boxes: z.boolean().default(false),
+      cols: z.number().int().positive().optional(),
+      scale: z.number().positive().default(0.5),
       name: z.string().optional(),
     },
   },
-  guard(
-    async ({
-      character,
-      poses,
-      crops,
-      cols,
-      scale,
-      flip,
-      face,
-      layers,
-      equip,
-      view,
-      headView,
+  guard(async ({ character, poses, equip, yaw, pitch, size, software, cols, scale, name }) => {
+    const { character: c } = loadCharacter(character);
+    const bad = rig.equipProblems(c, equip);
+    if (bad.length) throw new Error(`equip: ${bad.join("; ")}`);
+    const tag = slug(name ?? (typeof character === "string" ? character : c.name));
+    const actions = allActions();
+    const cells = poses.map((p) => {
+      const spec = typeof p === "string" ? { action: p, t: 0 } : p;
+      const a =
+        typeof spec.action === "string" ? actions[spec.action] : loadSpec("actions", spec.action);
+      if (!a) throw new Error(`không có hành động ${spec.action}`);
+      return { action: a, time: spec.t * a.duration, label: `${a.name} ${spec.t}` };
+    });
+    return soloThreeTool({
+      character: equip ? rig.equipCharacter(c, equip) : c,
+      cells,
       yaw,
       pitch,
-      three,
       size,
       software,
-      boxes,
-      name,
-    }) => {
-      const { character: c, urls } = loadCharacter(character);
-      const bad = rig.equipProblems(c, equip);
-      if (bad.length) throw new Error(`equip: ${bad.join("; ")}`);
-      const tag = slug(name ?? (typeof character === "string" ? character : c.name));
-      if (boxes && yaw !== undefined) return fail("`boxes` không đi với `yaw`");
-      if (boxes)
-        return text(
-          report([
-            R.renderBoxes({ character: c, scale, view, headView, out: outPath(tag, "boxes") }),
-          ]),
-        );
-      const actions = allActions();
-      if (three) {
-        const cells = poses.map((p) => {
-          const a =
-            p.action &&
-            (typeof p.action === "string" ? actions[p.action] : loadSpec("actions", p.action));
-          if (p.action && !a) throw new Error(`không có hành động ${p.action}`);
-          return a
-            ? { action: a, time: (p.t ?? 0) * a.duration, label: `${a.name} ${p.t ?? 0}` }
-            : {};
-        });
-        return soloThreeTool({
-          character: equip ? rig.equipCharacter(c, equip) : c,
-          cells,
-          yaw,
-          pitch,
-          size,
-          software,
-          cols,
-          scale,
-          out: outPath(tag, "three"),
-        });
-      }
-      const cells = poses.map((p) => {
-        let cell = R.poseOf(p, actions);
-        if (yaw !== undefined) {
-          const a =
-            p.action &&
-            (typeof p.action === "string" ? actions[p.action] : loadSpec("actions", p.action));
-          cell = cell3d(c, cell, yaw, pitch, a, p.t ?? 0);
-        }
-        return layers ? { ...cell, layers: rig.composeLayers(cell.layers, layers) } : cell;
-      });
-      const results = crops.map((crop) =>
-        R.renderPoses({
-          character: c,
-          urls,
-          poses: cells,
-          flip,
-          equip,
-          face: face ?? {},
-          view,
-          headView,
-          crop,
-          cols,
-          scale: R.isZoom(crop) ? scale * 2 : scale,
-          out: outPath(tag, crop),
-        }),
-      );
-      return text(report(results));
-    },
-  ),
+      cols,
+      scale,
+      out: outPath(tag, "three"),
+    });
+  }),
 );
 
 server.registerTool(
   "render_action",
   {
     description:
-      "Vẽ một hành động (tên file hoặc object inline) thành dải frames đều nhau trong một chu kỳ, trên một nhân vật (mặc định: nhân vật rỗng). view/headView đổi góc nhìn cả dải (front|quarter|side|rear|back, mặc định quarter), headView bỏ trống là theo thân. yaw (độ, 0 = +x, 90 = −z) vẽ người 3D một mình qua ống kính cúi pitch độ, như trong scene có scene.lens; view/headView/flip suy từ theta.",
+      "Vẽ một hành động (tên file hoặc object inline) thành dải frames đều nhau trong một chu kỳ, trên một nhân vật (mặc định: nhân vật rỗng): người 3D thật bằng three (Chromium headless) như video, một mình giữa plainRoom(), qua ống kính cúi pitch độ, mặt quay yaw độ (0 = +x, 90 = −z về ống kính).",
     inputSchema: {
       action: Spec,
       character: Spec.optional(),
       frames: z.number().int().min(2).max(48).default(8),
-      crops: Crops,
-      scale: z.number().positive().default(0.6),
-      flip: z.boolean().default(false),
-      layers: LayerSpec,
-      view: ViewSpec,
-      headView: HeadViewSpec,
       yaw: YawSpec,
       pitch: PitchSpec,
-      three: z
-        .boolean()
-        .default(false)
-        .describe(
-          "Với yaw: vẽ người 3D thật bằng three (Chromium headless) như video, trong plainRoom(); bỏ qua crops",
-        ),
       size: SizeSpec,
       software: SoftwareSpec,
+      cols: z.number().int().positive().optional(),
+      scale: z.number().positive().default(0.5),
       name: z.string().optional(),
     },
   },
-  guard(
-    async ({
-      action,
-      character,
-      frames,
-      crops,
-      scale,
-      flip,
-      layers,
-      view,
-      headView,
+  guard(async ({ action, character, frames, yaw, pitch, size, software, cols, scale, name }) => {
+    const a = loadSpec("actions", action);
+    const c = character ? loadCharacter(character).character : rig.defaultCharacter();
+    return soloThreeTool({
+      character: c,
+      cells: Array.from({ length: frames }, (_, i) => {
+        const t = +(i / (frames - 1)).toFixed(3);
+        return { action: a, time: t * a.duration, label: `${t}` };
+      }),
       yaw,
       pitch,
-      three,
       size,
       software,
-      name,
-    }) => {
-      const a = loadSpec("actions", action);
-      const { character: c, urls } = character
-        ? loadCharacter(character)
-        : { character: rig.defaultCharacter(), urls: {} };
-      if (three)
-        return soloThreeTool({
-          character: c,
-          cells: Array.from({ length: frames }, (_, i) => {
-            const t = +(i / (frames - 1)).toFixed(3);
-            return { action: a, time: t * a.duration, label: `${t}` };
-          }),
-          yaw,
-          pitch,
-          size,
-          software,
-          cols: Math.min(frames, 4),
-          scale: 0.5,
-          out: outPath(slug(name ?? (typeof action === "string" ? action : a.name)), "three"),
-        });
-      const cells = Array.from({ length: frames }, (_, i) => {
-        const t = +(i / (frames - 1)).toFixed(3);
-        let cell = R.poseOf({ action: a, t });
-        if (yaw !== undefined) cell = cell3d(c, cell, yaw, pitch, a, t);
-        return layers ? { ...cell, layers: rig.composeLayers(cell.layers, layers) } : cell;
-      });
-      const tag = slug(name ?? (typeof action === "string" ? action : a.name));
-      const results = crops.map((crop) =>
-        R.renderPoses({
-          character: c,
-          urls,
-          poses: cells,
-          flip,
-          view,
-          headView,
-          crop,
-          cols: frames,
-          scale: R.isZoom(crop) ? scale * 2 : scale,
-          out: outPath(tag, crop),
-        }),
-      );
-      return text(report(results));
-    },
-  ),
+      cols: cols ?? Math.min(frames, 4),
+      scale,
+      out: outPath(slug(name ?? (typeof action === "string" ? action : a.name)), "three"),
+    });
+  }),
 );
 
 server.registerTool(
   "render_scene",
   {
     description:
-      'Dải ảnh một scene (tên file hoặc object inline): mỗi cột một mốc thời gian, mỗi hàng một người. Bỏ chỗ đứng và trôi ngang để soi thân người; xem vị trí thì dùng scene_probe. `stage: true` thì ngược lại — mỗi ô là cả khung, có nền, camera, hiệu ứng và lớp vẽ code của repo, để soi bố cục. Mốc lấy đều bằng `from`/`to`/`cols`/`every`, hay chỉ đích danh bằng `times`. `around` cắt mỗi ô quanh một mốc trên người (đơn vị sân khấu, không qua camera) — soi bàn tay đang cầm mà không đoán pixel. Người 3D (cast[].world) chiếu qua scene.lens; stage xếp họ chung với solids của lớp vẽ code. `trails` / `ghosts` vẽ đè vệt khớp và bóng que xương của người 3D để soi chuyển động trong một ô: chấm mỗi khung (dồn là chậm, thưa là nhanh), đuôi mảnh nét đứt là đã qua, đầu mập nét liền là sắp tới, mũi tên chỉ chiều đi, màu theo bên người, vòng đứt kèm số n là sự kiện máy đo (khựng, giật, quay gắt, vào / dừng gắt); phần chữ kèm ảnh có cách đọc ngắn, bảng sự kiện #n (clip, giây và `t` trong hành động, `keys[i]` kẹp quanh, số góc đổi kèm tên, gợi ý sửa) và số đo từng vệt. `skeleton: true` bỏ người, nền và lớp vẽ code, chỉ vẽ que xương người 3D hai màu bên trên lưới sàn chiếu qua lens (soi nhịp, chân nào bước, chiều sâu); `views: ["top"]` thêm ô nhìn từ trên xuống. Các ảnh trên vẽ người 3D bằng người que 2.5D; `three` vẽ mỗi ô bằng three thật trong Chromium như video (cảnh `worldOf` của stickman.world: bàn tay năm ngón, áo dựng khối, bóng, phòng, đồ riêng, món cầm tay), mặc định bật khi soi khung một cảnh mà worldOf dựng — cảnh 3D thì soi bằng `three`.',
+      'Dải khung một scene (tên file hoặc object inline), mỗi ô một mốc thời gian, cả khung đã qua camera. Cảnh có `scene.lens` thì mỗi ô là khung three thật mà video vẽ (Chromium headless; cảnh `worldOf` của stickman.world: bàn tay năm ngón, áo dựng khối, bóng, phòng, đồ riêng, món cầm tay — cảnh repo không dựng thì plainRoom()); cảnh không có lens thì ô vẽ nền, lớp vẽ code và hiệu ứng. Mốc lấy đều bằng `from`/`to`/`cols`/`every`, hay chỉ đích danh bằng `times`. `trails` / `ghosts` vẽ đè vệt khớp và bóng que xương của người 3D để soi chuyển động trong một ô: chấm mỗi khung (dồn là chậm, thưa là nhanh), đuôi mảnh nét đứt là đã qua, đầu mập nét liền là sắp tới, mũi tên chỉ chiều đi, màu theo bên người, vòng đứt kèm số n là sự kiện máy đo (khựng, giật, quay gắt, vào / dừng gắt); phần chữ kèm ảnh có cách đọc ngắn, bảng sự kiện #n (clip, giây và `t` trong hành động, `keys[i]` kẹp quanh, số góc đổi kèm tên, gợi ý sửa) và số đo từng vệt. `skeleton: true` thay khung three bằng que xương người 3D hai màu bên trên lưới sàn chiếu qua lens (soi nhịp, chân nào bước, chiều sâu); `views: ["top"]` thêm ô nhìn từ trên xuống.',
     inputSchema: {
       scene: Spec,
-      stage: z
-        .boolean()
-        .default(false)
-        .describe("Mỗi ô là cả khung sân khấu: giữ chỗ đứng, vẽ nền, đi qua camera"),
       from: z.number().min(0).default(0),
       to: z.number().positive().optional(),
       cols: z.number().int().min(1).max(48).default(12),
@@ -1234,19 +963,11 @@ server.registerTool(
         .describe(
           "Đúng các mốc này (giây, hay `@mốc+0.4` theo `scene.marks`), thay cho from/to/cols/every — thay cho `pnpm frames` + montage",
         ),
-      around: z
-        .object({
-          cast: z.string().describe("`id` trong cast[]"),
-          anchor: z.enum(rig.ANCHOR_NAMES).default("root"),
-          pad: z.number().positive().default(200).describe("Nửa cạnh ô, đơn vị sân khấu"),
-        })
-        .optional()
-        .describe("Cắt mỗi ô quanh mốc `anchorAt` của một người; kéo theo stage: true"),
       trails: z
         .array(z.string())
         .optional()
         .describe(
-          "Vệt khớp vẽ đè mỗi ô (kéo theo stage: true): tên khớp như `check` đo (wristR, footL, head, hip…) hay `hands`, `feet`, `all`; lọc người bằng `cast`",
+          "Vệt khớp vẽ đè mỗi ô: tên khớp như `check` đo (wristR, footL, head, hip…) hay `hands`, `feet`, `all`; lọc người bằng `cast`",
         ),
       span: z.number().positive().default(1).describe("Vệt lấy trong ± ngần này giây quanh mỗi ô"),
       fps: z
@@ -1265,7 +986,7 @@ server.registerTool(
         .min(0)
         .max(12)
         .default(0)
-        .describe("Số bóng que xương mỗi phía (trước nét đứt, sau nét liền), kéo theo stage: true"),
+        .describe("Số bóng que xương mỗi phía (trước nét đứt, sau nét liền)"),
       ghostStep: z.number().positive().default(0.1).describe("Giây giữa hai bóng que xương"),
       skeleton: z
         .boolean()
@@ -1277,17 +998,10 @@ server.registerTool(
         .array(z.enum(["top"]))
         .optional()
         .describe("Với skeleton: `top` thêm ô nhìn từ trên xuống mặt sàn x–z mỗi mốc"),
-      three: z
-        .boolean()
-        .optional()
-        .describe(
-          "Mỗi ô là ảnh three thật mà video vẽ (Chromium headless): người 3D dựng khối, bàn tay năm ngón, vật liệu NPR, bóng, phòng và đồ riêng của cảnh từ `worldOf` của stickman.world (cảnh repo không dựng thì plainRoom()); trails / ghosts vẽ đè. Bỏ trống: bật khi soi khung (stage, trails, ghosts) một cảnh mà worldOf của repo dựng — cảnh video vẽ bằng three; `false` ép về người que 2.5D",
-        ),
       size: SizeSpec,
       software: SoftwareSpec,
       cast: z.string().optional(),
       character: z.string().optional(),
-      crops: Crops,
       scale: z.number().positive().default(0.5),
       name: z.string().optional(),
     },
@@ -1301,11 +1015,9 @@ server.registerTool(
       every,
       cast,
       character,
-      crops,
       scale,
       name,
       times: picked,
-      around,
       trails,
       span,
       fps,
@@ -1328,7 +1040,6 @@ server.registerTool(
             snap: snapThresholds(),
           }
         : undefined;
-    const stage = input.stage || !!around || !!motion;
     const s = loadSpec("scenes", scene);
     const id = typeof scene === "string" ? basename(scene).replace(/\.json$/, "") : s.name;
     // Đo `aspect` từng lớp nền trước `resolveScene` — số khai trong JSON chỉ là cái đệm lần trước
@@ -1339,32 +1050,28 @@ server.registerTool(
       R.sampleTimes({ from, to: to ?? rt.duration, cols, every });
     const tag = slug(name ?? (typeof scene === "string" ? scene : s.name));
     const notes = [];
-    let bones;
-    if (input.three && (skeleton || around))
-      return fail("`three` không đi với `skeleton` hay `around`");
-    // Mặc định: khung của cảnh mà video vẽ bằng three (worldOf của repo dựng nó) thì soi bằng three
-    let three = input.three;
-    if (three === undefined && stage && !skeleton && !around && s.lens) {
-      const { world } = await probeWorld(id, s, rt);
-      three = !!world;
-    }
-    if (three) {
+    const cache = {};
+    const common = {
+      rt,
+      times,
+      fallback: character,
+      loadCharacter: (f) => (cache[f] ??= loadCharacter(f)),
+      loadPiece: (f) => (cache[`piece:${f}`] ??= R.mountPiece(f, LAYERS.pieces)),
+    };
+    if (s.lens && !skeleton) {
       const data = cli.worldData(WS);
       const px = R.threeSize(input.size, rt.frame);
       const r = await R.renderThree({
+        ...common,
         root: WS,
         id,
         scene: s,
         data,
-        rt,
-        times,
         size: input.size,
         software: input.software,
         motion,
         cols: Math.min(cols, times.length, 4),
         scale: (scale * px.w) / rt.frame.w,
-        fallback: character,
-        loadCharacter: (f) => loadCharacter(f),
         out: outPath(tag, "three"),
       });
       notes.push(threeNote(r), ...r.warnings);
@@ -1372,53 +1079,26 @@ server.registerTool(
         `duration ${rt.duration}s, mốc: ${times.join(", ")}\n${report([r])}${notes.map((n) => `\n${n}`).join("")}${guideOf([r])}`,
       );
     }
-    if (stage && !skeleton && s.lens && input.three === false)
-      notes.push(
-        "ảnh người que 2.5D — video vẽ cảnh có trong worldOf bằng three, soi đúng hình bằng `three`",
-      );
+    let bones;
     if (skeleton) {
       const { world, warn } = await probeWorld(id, s, rt);
       if (warn) notes.push(`${warn} — bỏ hộp vật của cảnh three`);
       bones = { cast, views, world: world ?? undefined };
     }
-    const cache = {};
-    const common = {
-      rt,
-      times,
-      fallback: character,
-      loadCharacter: (f) => (cache[f] ??= loadCharacter(f)),
-      loadProp: (f) => (cache[`prop:${f}`] ??= loadProp(f)),
-      loadAnimal: (f) => (cache[`animal:${f}`] ??= loadAnimal(f)),
-      loadPiece: (f) => (cache[`piece:${f}`] ??= R.mountPiece(f, LAYERS.pieces)),
-    };
-    const results = stage
-      ? [
-          R.renderFrames({
-            ...common,
-            bgUrls,
-            // Lớp vẽ code của repo — docs/10-lop-ve-code.md; dải ảnh thân người không có bối cảnh nên không cần
-            codeLayers: await R.loadLayers(WS),
-            around,
-            motion,
-            skeleton: bones,
-            // Ô cắt quanh mốc nhỏ như ô zoom của dải thân người nên phóng lên như ô zoom
-            scale: around ? scale * 2 : scale * 0.6,
-            cols: Math.min(cols, times.length),
-            out: outPath(tag, around ? `around-${around.anchor}` : skeleton ? "skeleton" : "stage"),
-          }),
-        ]
-      : crops.map((crop) =>
-          R.renderScene({
-            ...common,
-            only: cast,
-            crop,
-            scale: R.isZoom(crop) ? scale * 2 : scale,
-            out: outPath(tag, crop),
-          }),
-        );
-    notes.push(...results.flatMap((r) => r.warnings ?? []));
+    const r = R.renderFrames({
+      ...common,
+      bgUrls,
+      // Lớp vẽ code của repo — docs/10-lop-ve-code.md
+      codeLayers: await R.loadLayers(WS),
+      motion,
+      skeleton: bones,
+      scale: scale * 0.6,
+      cols: Math.min(cols, times.length),
+      out: outPath(tag, skeleton ? "skeleton" : "stage"),
+    });
+    notes.push(...(r.warnings ?? []));
     return text(
-      `duration ${rt.duration}s, mốc: ${times.join(", ")}\n${report(results)}${notes.map((n) => `\n${n}`).join("")}${guideOf(results)}`,
+      `duration ${rt.duration}s, mốc: ${times.join(", ")}\n${report([r])}${notes.map((n) => `\n${n}`).join("")}${guideOf([r])}`,
     );
   }),
 );
@@ -1449,7 +1129,7 @@ server.registerTool(
   "scene_probe",
   {
     description:
-      "Số liệu một scene tại các mốc giây, đọc bằng anchorAt của rig nên đúng hệ toạ độ chỗ vẽ (y xuống, đất ở y của chân): chỗ đứng x (đã cộng trôi ngang), tư thế, lớp tay, nét mặt, toạ độ vai / khuỷu / cổ tay / bàn chân và khối đầu của từng người; đạo cụ thì chỗ đứng, trục bánh và góc bánh đã quay; động vật thì chỗ đứng, hông, vai, yên (saddle), gáy, mõm, bàn chân — con đang bị cưỡi hay xách trả kèm host. `anchors` hỏi thêm mốc bất kỳ — khớp hoặc socket mảnh — mỗi mốc trả {x, y, deg, w, h}: tâm hộp, góc SVG và cỡ hộp đã nhân scale, cắm thẳng vào translate/rotate của một <g> anh em với <Character>. Dùng để tính điểm gặp, đặt tay lên càng xe, bám hiệu ứng vào người thay vì đoán. Người 3D (cast[].world) kèm `world`: khớp hông/gối/bàn chân/vai/khuỷu/cổ tay/cổ/đầu trong toạ độ thế giới, yaw vẽ, yawSaid, yawHeading (người đi: hướng nhắm theo path), theta, seated, near (tay gần là tay phải hay trái), hands (đích thế giới đang áp), palms (người mặc đồ: lòng bàn tay phải/trái quay về đâu — úp/ngửa/vào thân/ra ngoài/ra trước/ra sau —, down: góc lệch khỏi úp, pháp tuyến lòng tay, hướng ngón, tâm; có stickman.world thì kèm on/gap: vật có mặt ngang dưới bàn tay và khe tới nó; tay khai đích theo mốc thân hay palm/fingers thì kèm aim: reach {to, point, gap — khe rig từ điểm bàn tay tới mốc}, palmOff / fingersOff — độ lệch còn lại so với hướng đã khai) — đặt tay lên mặt hay đổi turn/elbow xong thì đọc palms, đừng phán bằng mắt. Có stickman.world thì người đang cầm đồ (hold) kèm held.right / held.left: món, dáng vẽ (pose) và dáng hành động khai (declared), follow, pierce {core, depth, piece} — đốt có trục vào trong lưới món sâu nhất (core, ngưỡng check 1,25; depth là da lún qua mặt món, âm là khe), wrap — nhóm ngón chạm món (thumb, index, fingers, palm), gaps, grip — tâm nắm tới mặt món (âm là trong món), palm {gap, angle}, up / face — góc lệch trục ý định của món (userData.hold, đường cũ), hold — khoá lần cầm nhóm `món@nhóm/biến thể/phần/cạnh/ngón cái` (không có là đường cũ), grasp — chỗ cầm nhóm rig đã giải {group, mode (item: món đặt trước, hand: tay dẫn), keyed (cầm một tay theo mốc: món theo bàn tay), t0, choice {part, feature, edge, along, thumb, variant, slant, around, tilt, psi, inset — trường đã điền}, by (từng trường của choice do `scene` khai, `rig` giải hay `default` nhóm), arm {phi: góc khuỷu quanh trục vai–cổ tay (độ), wrist {turn, bend, dev, over (độ vượt kẹp), off (lệch bàn tay vẽ khỏi chỗ cầm)}, body (lấn thân), gap (khe tầm với)}}, intent {rule, toward, want, got, err, clamped} — ý định trục chính bộ giải nhắm, hướng muốn / đạt (thế giới rig), góc còn lệch, khớp cổ tay kẹp, reach {kind: support | item, point, to, gap} — tay phụ hay điểm `item:` còn cách đích, rel — món trong khung bàn tay (so hai mốc giây để thấy món trôi), issues — luật đồ cầm check sẽ kêu. Cảnh có lens và người 3D kèm `clashes`: mỗi mốc giây, các chỗ phần người lồng vào đồ khối hay vào người khác sâu quá ngưỡng của check (stickman.clash.tol, mặc định 2) ({who, with, depth}) — rig không đẩy người ra khỏi đồ. Repo khai stickman.world và worldOf trả cảnh thì đồ là mọi vật của cảnh three ấy, đúng như check (who theo cú pháp touch: `a.foreArmR`); cảnh three hỏng thì `warnings` kể lỗi và mốc ấy đo bằng khối lớp vẽ code. `snaps`: các cú tay chân giật trên hình của cả cảnh (có `cast` thì của người ấy), cùng dòng báo và ngưỡng (stickman.snap) với check; cố ý giật thì khai `snap: true` ở hành động, ở clip hay ở mốc world.hands.",
+      "Số liệu một scene tại các mốc giây: chỗ đứng, tư thế và nét mặt của từng người, kèm toạ độ vai / khuỷu / cổ tay / bàn chân và khối đầu, đọc bằng anchorAt của rig nên đúng hệ toạ độ chỗ vẽ của lớp SVG đè lên khung (`viewBox` của camera, y xuống). `anchors` hỏi thêm mốc trên người 3D, mỗi mốc trả {x, y, deg, w, h}: tâm hộp, góc SVG và cỡ hộp đã nhân scale, cắm thẳng vào translate/rotate của một <g> trong lớp vẽ code. Dùng để tính điểm gặp, bám hiệu ứng vào người thay vì đoán. Kèm cả `world`: khớp hông/gối/bàn chân/vai/khuỷu/cổ tay/cổ/đầu trong toạ độ thế giới, yaw vẽ, yawSaid, yawHeading (người đi: hướng nhắm theo path), theta, seated, near (tay gần là tay phải hay trái), hands (đích thế giới đang áp), palms (người mặc đồ: lòng bàn tay phải/trái quay về đâu — úp/ngửa/vào thân/ra ngoài/ra trước/ra sau —, down: góc lệch khỏi úp, pháp tuyến lòng tay, hướng ngón, tâm; có stickman.world thì kèm on/gap: vật có mặt ngang dưới bàn tay và khe tới nó; tay khai đích theo mốc thân hay palm/fingers thì kèm aim: reach {to, point, gap — khe rig từ điểm bàn tay tới mốc}, palmOff / fingersOff — độ lệch còn lại so với hướng đã khai) — đặt tay lên mặt hay đổi turn/elbow xong thì đọc palms, đừng phán bằng mắt. Có stickman.world thì người đang cầm đồ (hold) kèm held.right / held.left: món, dáng vẽ (pose) và dáng hành động khai (declared), follow, pierce {core, depth, piece} — đốt có trục vào trong lưới món sâu nhất (core, ngưỡng check 1,25; depth là da lún qua mặt món, âm là khe), wrap — nhóm ngón chạm món (thumb, index, fingers, palm), gaps, grip — tâm nắm tới mặt món (âm là trong món), palm {gap, angle}, up / face — góc lệch trục ý định của món (userData.hold, đường cũ), hold — khoá lần cầm nhóm `món@nhóm/biến thể/phần/cạnh/ngón cái` (không có là đường cũ), grasp — chỗ cầm nhóm rig đã giải {group, mode (item: món đặt trước, hand: tay dẫn), keyed (cầm một tay theo mốc: món theo bàn tay), t0, choice {part, feature, edge, along, thumb, variant, slant, around, tilt, psi, inset — trường đã điền}, by (từng trường của choice do `scene` khai, `rig` giải hay `default` nhóm), arm {phi: góc khuỷu quanh trục vai–cổ tay (độ), wrist {turn, bend, dev, over (độ vượt kẹp), off (lệch bàn tay vẽ khỏi chỗ cầm)}, body (lấn thân), gap (khe tầm với)}}, intent {rule, toward, want, got, err, clamped} — ý định trục chính bộ giải nhắm, hướng muốn / đạt (thế giới rig), góc còn lệch, khớp cổ tay kẹp, reach {kind: support | item, point, to, gap} — tay phụ hay điểm `item:` còn cách đích, rel — món trong khung bàn tay (so hai mốc giây để thấy món trôi), issues — luật đồ cầm check sẽ kêu. Cảnh có lens và người 3D kèm `clashes`: mỗi mốc giây, các chỗ phần người lồng vào đồ khối hay vào người khác sâu quá ngưỡng của check (stickman.clash.tol, mặc định 2) ({who, with, depth}) — rig không đẩy người ra khỏi đồ. Repo khai stickman.world và worldOf trả cảnh thì đồ là mọi vật của cảnh three ấy, đúng như check (who theo cú pháp touch: `a.foreArmR`); cảnh three hỏng thì `warnings` kể lỗi và mốc ấy đo bằng khối lớp vẽ code. `snaps`: các cú tay chân giật trên hình của cả cảnh (có `cast` thì của người ấy), cùng dòng báo và ngưỡng (stickman.snap) với check; cố ý giật thì khai `snap: true` ở hành động, ở clip hay ở mốc world.hands. Repo khai stickman.world thì kèm `roles`: mỗi mốc giây, vai trò của đồ của cảnh three ({name: tên vật, owner: số thứ tự Item trong nhóm Batch, entries: [{role, name?, …toạ độ thế giới rig — seat/footrest {at, size, front}, armrest/backrest {from, to, width, front?}, tabletop {y, poly, thick}, vessel {mouth}}], errors?}) — chọn `table`, `armrest`, `backrest`, `footrest` của gen sit (`vật` hay `vật#mục`) và `cup` của gen pour từ đây.",
     inputSchema: {
       scene: Spec,
       t: z
@@ -1460,7 +1140,7 @@ server.registerTool(
       anchors: z
         .array(z.enum(rig.ANCHOR_NAMES))
         .optional()
-        .describe("Mốc muốn hỏi thêm; tên khớp hoặc tên socket mảnh"),
+        .describe("Mốc muốn hỏi thêm trên người 3D, xem describe_rig `anchors`"),
     },
   },
   guard(async ({ scene, t, cast, character, anchors }) => {
@@ -1471,27 +1151,13 @@ server.registerTool(
     for (const m of rt.cast) {
       if (cast && m.id !== cast) continue;
       const file = m.character ?? character;
-      const c = rig.castCharacter(m, file ? loadSpec("characters", file) : rig.defaultCharacter());
+      const raw = file ? loadSpec("characters", file) : rig.defaultCharacter();
+      const c = raw;
       for (const time of times) {
         const at = rig.sceneAt(rt, m.id, time, c.rig.height, rig.body3(c));
-        // Một bảng chỗ treo cho cả mốc này; anchorIn đã gồm `-lowest`, `scale` và lật
-        const fa = rig.figureAnchors(
-          rig.equipCharacter(c, at.equip),
-          at.pose,
-          { body: at.view, head: at.headView },
-          "closed",
-          at.world,
-        );
-        const put = (name) => {
-          const a = rig.anchorIn(fa, name, at);
-          return { x: +a.x.toFixed(1), y: +a.y.toFixed(1), deg: +a.deg.toFixed(1) };
-        };
-        const pt = (name) => {
-          const a = put(name);
-          return [a.x, a.y];
-        };
+        // `anchorAt` đã gồm chỗ đứng, `scale` và lật
         const box = (name) => {
-          const a = rig.anchorIn(fa, name, at);
+          const a = rig.anchorAt(rt, m.id, name, time, raw);
           return {
             x: +a.x.toFixed(1),
             y: +a.y.toFixed(1),
@@ -1500,20 +1166,22 @@ server.registerTool(
             h: +a.h.toFixed(1),
           };
         };
+        const put = (name) => {
+          const { x, y, deg } = box(name);
+          return { x, y, deg };
+        };
+        const pt = (name) => {
+          const { x, y } = box(name);
+          return [x, y];
+        };
         rows.push({
           id: m.id,
           t: time,
           x: +at.x.toFixed(1),
           y: +at.groundY.toFixed(1),
           scale: +at.scale.toFixed(3),
-          travel: m.path || m.mount || m.sit || at.world ? null : +(at.x - m.x).toFixed(1),
           flip: at.flip,
-          rotate: at.rotate,
-          view: at.view,
-          headView: at.headView,
-          root: at.root,
           pose: at.pose,
-          layers: at.layers,
           face: { mouth: at.mouth, brow: at.brow, eyes: at.eyes, blush: at.blush },
           shoulderFar: pt("shoulderFar"),
           shoulderNear: pt("shoulderNear"),
@@ -1524,85 +1192,10 @@ server.registerTool(
           footFar: pt("footFar"),
           footNear: pt("footNear"),
           head: box("head"),
-          ...(at.world ? { world: world3(rt, m.id, time, c, at, fa) } : {}),
+          world: world3(rt, m.id, time, c, at),
           ...(anchors?.length
             ? { anchors: Object.fromEntries(anchors.map((n) => [n, box(n)])) }
             : {}),
-        });
-      }
-    }
-    for (const p of rt.props) {
-      if (cast && p.id !== cast) continue;
-      const { prop } = loadProp(p.prop);
-      const seat = rig.propSeat(prop);
-      for (const time of times) {
-        const at = rig.propAt(rt, p.id, time);
-        const sx = (at.flip ? -1 : 1) * at.scale;
-        const axle = (x, r) => [
-          +(at.x + sx * x).toFixed(1),
-          +(at.groundY - at.scale * r).toFixed(1),
-        ];
-        const spin = (r) => +(((at.roll / (r * at.scale)) * 180) / Math.PI).toFixed(1);
-        rows.push({
-          id: p.id,
-          t: time,
-          prop: p.prop,
-          follow: p.follow ?? null,
-          x: +at.x.toFixed(1),
-          y: +at.groundY.toFixed(1),
-          scale: +at.scale.toFixed(3),
-          flip: at.flip,
-          ...(seat ? { seat: axle(seat.x, -seat.y) } : {}),
-          ...(prop.rear ? { rearAxle: axle(0, prop.rear.r), rearSpin: spin(prop.rear.r) } : {}),
-          ...(prop.front
-            ? { frontAxle: axle(prop.front.x, prop.front.r), frontSpin: spin(prop.front.r) }
-            : {}),
-        });
-      }
-    }
-    for (const a of rt.animals) {
-      if (cast && a.id !== cast) continue;
-      const carrier =
-        a.host?.kind === "carry" ? rt.cast.find((m) => m.id === a.host.id) : undefined;
-      const cc = carrier ? loadSpec("characters", carrier.character ?? character ?? {}) : undefined;
-      for (const time of times) {
-        const at = rig.animalAt(rt, a.id, time);
-        const pt = (name) => {
-          const k = rig.animalAnchorAt(rt, a.id, name, time, cc);
-          return [+k.x.toFixed(1), +k.y.toFixed(1)];
-        };
-        rows.push({
-          id: a.id,
-          t: time,
-          animal: a.animal,
-          host: a.host ?? null,
-          x: +at.x.toFixed(1),
-          y: +at.groundY.toFixed(1),
-          scale: +at.scale.toFixed(3),
-          travel: a.path || a.host ? null : +(at.x - a.x).toFixed(1),
-          flip: at.flip,
-          hip: pt("hip"),
-          shoulder: pt("shoulder"),
-          saddle: pt("saddle"),
-          poll: pt("poll"),
-          muzzle: pt("muzzle"),
-          wingTip: pt("wingTip"),
-          mouth: at.mouth,
-          eyes: at.eyes,
-          root: at.root,
-          feet: Object.fromEntries(
-            rig.animalLegs(a.spec).map((k) => [
-              k,
-              pt(
-                {
-                  hn: "footHindNear",
-                  hf: "footHindFar",
-                  fn: "footFrontNear",
-                  ff: "footFrontFar",
-                }[k],
-              ),
-            ]),
-          ),
         });
       }
     }
@@ -1624,8 +1217,9 @@ server.registerTool(
     );
     // Người 3D lồng vào đồ khối, vào vật của cảnh three hay vào người khác — cùng phép đo với `check`
     let clashes;
+    let roles;
     const warnings = new Set();
-    if (rt.lens && rt.cast.some((m) => m.world) && cli.clashesAt) {
+    if (rt.lens && rt.cast.length && cli.clashesAt) {
       const codeLayers = await R.loadLayers(WS);
       const characterOf = (m) => {
         const file = m.character ?? character;
@@ -1660,6 +1254,19 @@ server.registerTool(
                 Object.assign(p, { on: best.name, gap: +best.gap.toFixed(1) });
             }
         }
+      // Vai trò của đồ của cảnh three ở từng giây: agent chọn `table`, `cup`… của `gen` từ đây — docs/13-vai-tro-do.md
+      if (world && typeof world.rig?.rolesOf === "function") {
+        roles = {};
+        for (const time of times) {
+          try {
+            world.scene.pose(time);
+            world.scene.root.updateMatrixWorld(true);
+            roles[time] = world.rig.rolesOf(world.scene.root).map(propBrief);
+          } catch (e) {
+            warnings.add(`${rel}: không đọc được vai trò ở giây ${time} — ${e.message}`);
+          }
+        }
+      }
       // Đồ cầm tay: cùng phép đo với luật đồ cầm của `check` — docs/03-scene.md#đồ-cầm-tay
       const heldAt = world && cli.heldFrame?.(rt, world);
       if (heldAt && rig.heldHits)
@@ -1680,6 +1287,7 @@ server.registerTool(
       camera,
       rows,
       ...(clashes ? { clashes } : {}),
+      ...(roles ? { roles } : {}),
       ...(warnings.size ? { warnings: [...warnings] } : {}),
       ...(snaps.length ? { snaps } : {}),
     });
@@ -1863,12 +1471,73 @@ function heldListRow(data, item) {
     rig.namedVariants(data, id).map((x) => ({ group: id, ...x, hold: `${item}@${id}/${x.name}` })),
   );
   const named = all.length ? { named: all } : {};
+  const roles = heldRoleIds(data);
   try {
     const geom = rig.itemGeom(data);
     const { groups } = heldGroupsOf(data, geom, rig.handDims(1));
-    return { schemaVersion: rig.HELD_VERSION, groups: groups.map((g) => g.group), ...named };
+    return {
+      schemaVersion: data.schemaVersion,
+      groups: groups.map((g) => g.group),
+      ...named,
+      roles,
+    };
   } catch (e) {
-    return { schemaVersion: rig.HELD_VERSION, groups: [], ...named, error: e.message };
+    return { schemaVersion: data.schemaVersion, groups: [], ...named, roles, error: e.message };
+  }
+}
+
+/** Một vật mang vai trò (`rolesOf`) cho `scene_probe`: tên, chủ, mục thế giới rig làm tròn, lỗi zod / phép đặt */
+function propBrief(p) {
+  return {
+    name: p.name,
+    ...(p.owner !== undefined ? { owner: p.owner } : {}),
+    entries: p.roles.map((r) => roundAll(r)),
+    ...(p.errors.length ? { errors: p.errors } : {}),
+  };
+}
+
+/** Vai trò của món (khai cộng suy, `heldRoles`), không trùng; rig chưa có vai trò thì rỗng */
+function heldRoleIds(data) {
+  if (!rig.heldRoles) return [];
+  try {
+    return [...new Set(rig.heldRoles(data).roles.map((r) => r.role))];
+  } catch {
+    return [];
+  }
+}
+
+/** `roles` của `describe_held`: mục khai và suy (`source`), giá trị đã giải ra khung món, cảnh báo lệch */
+function heldRolesBrief(data) {
+  if (!rig.heldRoles) return undefined;
+  const d = (v) => roundAll(Array.from(v));
+  try {
+    const { roles, warnings } = rig.heldRoles(data);
+    return {
+      entries: roles.map((r) =>
+        r.role === "pourer"
+          ? {
+              role: r.role,
+              ...(r.name ? { name: r.name } : {}),
+              source: r.source,
+              lip: d(r.lip),
+              spout: d(r.spout),
+              spoutSource: r.spoutSource,
+              ...(r.axis
+                ? { axis: { at: d(r.axis.at), dir: d(r.axis.dir), part: r.axis.part } }
+                : {}),
+            }
+          : {
+              role: r.role,
+              ...(r.name ? { name: r.name } : {}),
+              source: r.source,
+              ...(r.part ? { part: r.part } : {}),
+              mouth: { at: d(r.mouth.at), r: +r.mouth.r.toFixed(2), dir: d(r.mouth.dir) },
+            },
+      ),
+      warnings,
+    };
+  } catch (e) {
+    return { entries: [], warnings: [], error: e.message };
   }
 }
 
@@ -1876,7 +1545,7 @@ server.registerTool(
   "describe_held",
   {
     description:
-      "Mô tả một món cầm tay (file trong `held/` hay object inline): phần (`parts`, nhãn `part` của `shape`, `grip`, `as`), khối hình rig suy ra (`features`: tấm, đĩa, thanh, trụ tiện, hộp — kích thước, tên mặt và cạnh), khung (`front`, `top`, `right`, miệng), mốc, `seats`, và các nhóm cầm áp được ở cỡ tay `scale`/`long` (mặc định 1): khối hình khớp (kèm `ratio` so với bề ngang lòng tay, `warn` từ 0,8), trường lựa chọn với miền, mặc định rig, dòng `hold` viết tắt cho `world.hands[].hold` và `named` — kiểu cầm có tên của món ở nhóm ấy (`name`, `base`, `note`; gọi bằng `variant: <name>` hay `món@nhóm/<name>`). `unfit` nêu nhóm không áp được và điều kiện của nó, `later` là nhóm chưa làm. docs/11-nhom-cam.md, docs/04-mcp.md.",
+      "Mô tả một món cầm tay (file trong `held/` hay object inline): `roles` — vai trò cho bộ sinh (`entries`: mục khai và suy, `source` `declared` | `inferred`, giá trị đã giải ra khung món — `pourer` {lip, spout, spoutSource, axis}, `vessel` {mouth {at, r, dir}, part}; `warnings`: khai lệch hình, vd. `spout` lệch hướng suy quá 30°), phần (`parts`, nhãn `part` của `shape`, `grip`, `as`), khối hình rig suy ra (`features`: tấm, đĩa, thanh, trụ tiện, hộp — kích thước, tên mặt và cạnh), khung (`front`, `top`, `right`, miệng), mốc, `seats`, và các nhóm cầm áp được ở cỡ tay `scale`/`long` (mặc định 1): khối hình khớp (kèm `ratio` so với bề ngang lòng tay, `warn` từ 0,8), trường lựa chọn với miền, mặc định rig, dòng `hold` viết tắt cho `world.hands[].hold` và `named` — kiểu cầm có tên của món ở nhóm ấy (`name`, `base`, `note`; gọi bằng `variant: <name>` hay `món@nhóm/<name>`). `unfit` nêu nhóm không áp được và điều kiện của nó, `later` là nhóm chưa làm. docs/11-nhom-cam.md, docs/04-mcp.md.",
     inputSchema: {
       item: z.union([z.string(), z.object({}).passthrough()]),
       scale: z.number().positive().optional(),
@@ -1930,6 +1599,8 @@ server.registerTool(
     });
     const g = heldGroupsOf(data, geom, dims);
     Object.assign(out, { groups: g.groups, unfit: g.unfit, later: g.later });
+    const roles = heldRolesBrief(data);
+    if (roles) out.roles = roles;
     for (const row of out.groups) row.hold = row.hold.replace("<tên món>", name ?? "<tên món>");
     return text(out);
   }),
@@ -2042,8 +1713,9 @@ const JOINTS3 = [
 ];
 
 /** Người 3D trong thế giới: khớp, hướng khai / nhắm tới / vẽ, đích tay — docs/03-scene.md#người-3d */
-function world3(rt, id, time, c, at, fa) {
+function world3(rt, id, time, c, at) {
   const w = at.world;
+  const f3 = rig.figure3d(rig.equipCharacter(c, at.equip), at.pose, w);
   const said = rig.worldFacingAt?.(rt, id, time, c.rig.height, rig.body3(c));
   const yaw = w.yaw / (Math.PI / 180);
   const near = w.flip ? "left" : "right";
@@ -2063,7 +1735,7 @@ function world3(rt, id, time, c, at, fa) {
     seated: !!w.seated,
     ...(w.floor !== undefined ? { floor: r1(w.floor) } : {}),
     s: w.s,
-    joints: Object.fromEntries(JOINTS3.map((k) => [k, v3(fa.fig3.joints[k])])),
+    joints: Object.fromEntries(JOINTS3.map((k) => [k, v3(f3.joints[k])])),
     ...(hn || hf
       ? {
           hands: {
@@ -2165,7 +1837,7 @@ server.registerTool(
       if (!r.success) throw new Error(issues(r.error));
       const { rt } = loadScene(r.data);
       // người không khai `character` vẽ bằng nhân vật mặc định, như `check`
-      for (const m of r.data.cast) rt.chars[m.id] ??= rig.castCharacter(m, rig.defaultCharacter());
+      for (const m of r.data.cast) rt.chars[m.id] ??= rig.defaultCharacter();
       return rt;
     };
     const run = to === "item" ? rig.holdToItemLed : rig.holdToHandLed;
@@ -2192,126 +1864,10 @@ server.registerTool(
 );
 
 server.registerTool(
-  "describe_pieces",
-  {
-    description:
-      "Số đo hộp ảnh của từng socket (tính từ hằng số rig), mốc treo, hình dáng mảnh phải vẽ, khung của sheet đã gen, và ràng buộc bắt buộc khi gen ảnh. Đọc trước khi đi gen mảnh.",
-    inputSchema: {},
-  },
-  guard(() => text(P.describePieces())),
-);
-
-server.registerTool(
-  "piece_prompt",
-  {
-    description:
-      "Prompt tiếng Anh cho một lượt gen sheet mảnh ảnh, theo schema nhãn của skill imagegen: khổ ảnh, lưới, quy tắc hai màu, ràng buộc của socket và góc vẽ. Gen bằng codex (skill imagegen nếu bạn là codex, không thì codex exec -m gpt-5.6-sol), không đính ảnh tham chiếu, gen xong kiểm alpha ngay.",
-    inputSchema: {
-      socket: z.enum(Object.keys(P.SPECS)),
-      styles: z
-        .array(z.string())
-        .default([])
-        .describe("Mỗi ô một kiểu, đúng thứ tự trái sang phải"),
-      cols: z.number().int().positive().optional(),
-      rows: z.number().int().positive().optional(),
-      width: z.number().int().positive().default(1536),
-      height: z.number().int().positive().default(1024),
-      extra: z
-        .string()
-        .optional()
-        .describe("Ràng buộc riêng của tập phim, chèn trước danh sách kiểu"),
-    },
-  },
-  guard((input) => {
-    const spec = P.SPECS[input.socket];
-    return text(
-      `${P.piecePrompt(input)}\n\n---\n` +
-        "Gen bằng codex (`codex exec -m gpt-5.6-sol` nếu bạn không phải codex), đừng đính ảnh tham chiếu — lượt nào đính cũng về không alpha. " +
-        "Cần bám nét bộ mẫu thì cho codex mở file mẫu ra nhìn rồi tự tả, lấy đoạn tả ấy làm Style/medium. " +
-        "Gen xong kiểm ngay `magick identify -format '%[channels] %[opaque]' <file>`: phải ra `srgba False`, " +
-        "không thì gen lại chứ đừng nhận. Sheet gốc lưu assets/sheets/, cắt và tẩy mực theo docs/02 " +
-        `(${spec.frame}), rồi add_piece để vào thư mục và danh mục.`,
-    );
-  }),
-);
-
-server.registerTool(
-  "add_piece",
-  {
-    description:
-      "Đưa một PNG vào pieces/<socket>/ rồi ghi mục vào pieces/catalog.json. Thiếu mục danh mục là studio không liệt kê mảnh. Ảnh phải có alpha sẵn — server không xoá nền.",
-    inputSchema: {
-      file: z.string().describe("Đường dẫn PNG trên đĩa, hoặc tên đã nằm trong pieces/"),
-      socket: z.enum(rig.PIECE_DIRS),
-      name: z.string().describe("Tên hiện trong ô chọn mảnh của studio"),
-      description: z.string().default(""),
-      config: z
-        .record(z.string(), z.unknown())
-        .default({})
-        .describe("Căn mặc định của kiểu: dx/dy/scale/widthScale/clip/clipGrow/hideLegs/rotate"),
-      as: z.string().optional().describe("Đổi tên file lúc chép vào"),
-      overwrite: z.boolean().default(false),
-    },
-  },
-  guard(({ file, socket, name, description, config, as, overwrite }) => {
-    const src = [
-      resolve(process.cwd(), file),
-      resolve(WS, file),
-      ...LAYERS.pieces.map((d) => resolve(d, file)),
-    ].find((p) => existsSync(p));
-    if (!src) throw new Error(`không có file ${file}`);
-    const rel = `${socket}/${basename(as ?? file)}`;
-    const dest = resolve(DIRS.pieces, rel);
-    const buf = readFileSync(src);
-    if (buf.readUInt32BE(0) !== 0x89504e47) throw new Error(`${file} không phải PNG`);
-    // IHDR: kiểu màu ở byte 25, bit 4 là có alpha
-    if (!(buf[25] & 4))
-      throw new Error(`${file} không có kênh alpha — xoá nền trước, studio không key nền lúc chạy`);
-    if (src !== dest) {
-      if (existsSync(dest) && !overwrite)
-        throw new Error(`pieces/${rel} đã có, cần overwrite: true`);
-      mkdirSync(resolve(DIRS.pieces, socket), { recursive: true });
-      copyFileSync(src, dest);
-    }
-
-    const cfg = rig.PieceConfigSchema.safeParse(config);
-    if (!cfg.success) throw new Error(`config:\n${issues(cfg.error)}`);
-    const entry = { file: rel, socket, name, description, config: cfg.data };
-    const path = resolve(DIRS.pieces, rig.PIECE_CATALOG_FILE);
-    const old = existsSync(path)
-      ? rig.parsePieceCatalog(R.readJson(path))
-      : { success: true, data: { schemaVersion: 1, pieces: [], parts: {} } };
-    if (!old.success) throw new Error(`pieces/catalog.json hỏng:\n${issues(old.error)}`);
-    const pieces = old.data.pieces.filter((p) => p.file !== rel);
-    pieces.push(entry);
-    writeFileSync(path, `${JSON.stringify({ ...old.data, pieces }, null, 2)}\n`);
-    // `aspect` không khai trong JSON — cả bốn đường đọc đo từ chính ảnh. Báo khi ảnh lệch
-    // hẳn khỏi tỉ lệ thiết kế của socket: dấu hiệu cắt sai khung chứ không phải kiểu dáng khác.
-    const { w, h } = R.pngSize(buf);
-    const aspect = w / h;
-    const want = P.SPECS[socket]?.aspect;
-    const off = want && (aspect > want * 1.5 || aspect < want / 1.5);
-    return text({
-      file: `pieces/${rel}`,
-      width: w,
-      height: h,
-      aspect: +aspect.toFixed(3),
-      ...(off
-        ? {
-            warning: `tỉ lệ ${aspect.toFixed(2)} lệch xa thiết kế ${want} của ${socket} — cắt lại khung?`,
-          }
-        : {}),
-      entry,
-      catalog: pieces.length,
-    });
-  }),
-);
-
-server.registerTool(
   "docs",
   {
     description:
-      "Spec rig của chính version đang cài — nguồn sự thật cho mọi hành vi, đọc trước khi viết JSON. Không có `file` thì trả mục lục. `file` nhận tiền tố: `02` ra `02-trang-phuc.md`. Docs không nằm trong repo video, nó đi theo package đã pin nên không lệch version được.",
+      "Spec rig của chính version đang cài — nguồn sự thật cho mọi hành vi, đọc trước khi viết JSON. Không có `file` thì trả mục lục. `file` nhận tiền tố: `03` ra `03-scene.md`. Docs không nằm trong repo video, nó đi theo package đã pin nên không lệch version được. Bộ hành động chung (có gì theo nhóm, xem ở Studio 3D → Thư viện, cách đặt tên, chọn bằng `list` có `match`) ở `01` § Bộ hành động 3D.",
     inputSchema: {
       file: z
         .string()
@@ -2331,7 +1887,7 @@ server.registerTool(
   "init",
   {
     description:
-      "Dựng workspace cho một repo video trong thư mục đang mở: scenes/props/episodes kèm bộ mẫu, characters/actions/animals/pieces trống (bộ chung là lớp dưới), app Remotion, stickman.md / AGENTS.md / CLAUDE.md / README.md / .mcp.json / package.json. Spec rig thì không chép — đọc bằng tool `docs`. Không đè file có sẵn trừ khi force.",
+      "Dựng workspace cho một repo video trong thư mục đang mở: scenes kèm cảnh 3D mẫu vi-du-3d, episodes trống, characters/actions/pieces trống (bộ chung là lớp dưới), app Remotion, stickman.md / AGENTS.md / CLAUDE.md / README.md / .mcp.json / package.json. Spec rig thì không chép — đọc bằng tool `docs`. Không đè file có sẵn trừ khi force.",
 
     inputSchema: {
       force: z.boolean().default(false),
@@ -2357,7 +1913,7 @@ server.registerTool(
   "upgrade",
   {
     description:
-      "Nâng workspace lên bộ `@stickman3d` đang cài: chép lại app Remotion và stickman.md / .mcp.json / .npmrc / pnpm-workspace.yaml, trộn số version vào package.json. Không đụng characters / actions / scenes / props / episodes / pieces, cũng không đụng AGENTS.md / README.md / CLAUDE.md / .gitignore (chỉ phát lúc init — AGENTS.md là chỗ repo video ghi luật riêng). Docs không có ở đây vì không có bản chép — chúng đi theo package. File đã sửa tay thì theo `modified`, mỗi bản mẫu chỉ hỏi một lần; chạy `dryRun` trước để xem sẽ đè cái gì.",
+      "Nâng workspace lên bộ `@stickman3d` đang cài: chép lại app Remotion và stickman.md / .mcp.json / .npmrc / pnpm-workspace.yaml, trộn số version vào package.json. Không đụng characters / actions / scenes / held / episodes / pieces, cũng không đụng AGENTS.md / README.md / CLAUDE.md / .gitignore (chỉ phát lúc init — AGENTS.md là chỗ repo video ghi luật riêng). Docs không có ở đây vì không có bản chép — chúng đi theo package. File đã sửa tay thì theo `modified`, mỗi bản mẫu chỉ hỏi một lần; chạy `dryRun` trước để xem sẽ đè cái gì.",
     inputSchema: {
       modified: z
         .enum(["bỏ qua", "đè", "dừng"])
@@ -2388,10 +1944,224 @@ server.registerTool(
 );
 
 server.registerTool(
+  "gen",
+  {
+    description:
+      "Sinh một hành động cho đúng một cảnh từ chỗ người và đồ trong cảnh ấy, tự kiểm trên chính cảnh (cổ tay so với kẹp, tầm với, khuỷu đi một chiều, điểm tiếp xúc trôi, các dòng `check` move/clash/held/roles mới so với cảnh chưa có hành động) rồi mới ghi `actions/<name>.json`; không đạt thì báo lỗi, không ghi. Tham số như cờ của `stickman gen`. Đồ tìm theo VAI TRÒ (docs/13-vai-tro-do.md): món cầm tay khai `roles` trong `held/` (describe_held, list({kind: held, role})), đồ của cảnh three khai `Item.roles` / `withRoles` (scene_probe trả `roles`). Mỗi kiểu khai các slot (vai trò cần, bắt buộc khi nào, tìm thế nào, cờ nào chỉ đích danh) — trả ở `slots` của kết quả và in ở `stickman gen <kiểu> --help`. Cờ của slot nhận tên vật (`ghe-banh`), `vật#mục` (`ban-an#tren`), số (đồ ảo dựng qua đúng RoleSchema) hay `none` (bỏ slot dùng-nếu-có; không tắt va chạm của vật); tên vật không mang vai trò thì lỗi kèm danh sách vật mang vai trò ấy. Kiểu `pour` (rót): bình là món tay phải đang cầm (không thì `item`, mặc định `binh`) mang `pourer`; đích `cup` là `<người>` cầm món mang `vessel`, `<người>:<món>`, món ở `items[]`, vật của cảnh three mang `vessel`, hay điểm `x,y,z`; điểm rót đứng yên trên tâm miệng khi nâng đuôi bình, ra ngoài miệng thì cảnh báo. Trả bảng tự kiểm, `lip` (đích hệ thân so với `chest`), `dir`, `pourer` (điểm rót, hướng rót, phần cầm đã giải) và `snippet` (clip và mốc `hands` để dán). Kiểu `sit` (ngồi): dáng ngồi nền lặp thở cho người đang ngồi (`world.sit` hay mốc `sit` của `path`) ở giây `at` — mặt ngồi dưới hông (`seat`), lưng ghế, tay vịn, để chân của cùng ghế và bàn trước mặt tự tìm theo vai trò; góc chân cho đế giày trên sàn hay để chân, đùi chỉ chúi tới khi mặt dưới đùi lún mép trước mặt ngồi `THIGH_SINK` (không tới thì chân `square` thõng, kiểu khác lỗi, `feet: floor` thì lỗi; hông không bao giờ dời); `legs` `bent` | `square` | `straight` | `staggered` (`tuck` chân co), `back` `upright` | `recline` | `forward` (tựa thì vừa chạm lưng ghế, không có lưng ghế thì −12° kèm cảnh báo), `hands` `thighs` | `table` | `armrest` | `fold` (`elbow`, `top`). Tự kiểm thêm luật mặt ngồi (điểm ngồi lệch mặt, mông lọt mép, ngồi nông, đùi lún mép trước), đế giày trên mặt đỡ hay chân thõng, lòng tay trên đùi / mặt bàn, cẳng tay trên tay vịn, lòng tay trên mu tay, gối dưới mặt bàn, lưng với lưng ghế (vật phép tính dùng hay chỉ bằng cờ: lấn là lỗi; vật chỉ tự tìm để kiểm: cảnh báo). Trả `legs`, `torso`, `roles` (đồ đã chọn cho từng slot), `snippet.clip` thay clip nền ở giây ấy. Kiểu `walk` (đi, không cần vai trò, docs/14-di-muot.md): người đi qua các điểm sàn `to` từ giây `at`; bộ sinh viết mốc `world.path` (`yaw` theo hướng đi, mốc giữa đường là đích mềm — rẽ khi đang đi, không dừng – xoay – đi; góc quá 100° hay `radius` thì bo cung), giây từng mốc theo `speed`, clip đi `cycle` khớp sải, clip `after` ở mốc dừng, cú quay tại chỗ và quay rồi đi, thay mọi mốc và clip của track từ `at`, tự kiểm số đo đi (cảnh báo, chưa chặn) và `check` move/clash/held so với cảnh trước khi vá, rồi vá JSON thô `scenes/<id>.json` (bản cũ ở `.bak`; `hash` khác bytes trên đĩa là lỗi). Trả `path`, `clips`, `checks`, `metrics`, `strips` (cửa sổ dải khung dày từng chỗ rẽ, dừng, quay — lệnh `stickman-render` in ở `lines`), `hash`, `wrote` — docs 05 § Sinh hành động theo cảnh.",
+    inputSchema: {
+      kind: z
+        .enum(["pour", "sit", "walk"])
+        .describe(
+          "Kiểu sinh: `pour` rót, `sit` dáng ngồi nền, `walk` đi (ghi `path` và clip vào cảnh)",
+        ),
+      scene: z.string().describe("Id cảnh (tên file bỏ .json)"),
+      cast: z.string().describe("Id người rót / người ngồi / người đi trong `cast`"),
+      at: z
+        .union([z.number().min(0), z.string()])
+        .optional()
+        .describe(
+          "Giây cảnh clip bắt đầu: rót (bắt buộc; sự kiện `pour` sau 1,26 s), ngồi (mặc định 0, thay clip nền bắt đầu ở giây ấy), đi (số hay `@mốc±s`; bắt buộc khi người đã có `path`, thay mốc và clip từ giây ấy)",
+        ),
+      to: z
+        .union([
+          z.string(),
+          z.array(
+            z.object({
+              at: z.tuple([z.number(), z.number()]),
+              stop: z.boolean().optional(),
+              yaw: z.number().optional(),
+            }),
+          ),
+        ])
+        .optional()
+        .describe(
+          '`walk` (bắt buộc): điểm sàn thế giới rig — chuỗi `"x,z x,z! x,z!yaw"` như cờ `--to` hay mảng `{ at: [x, z], stop?, yaw? }`. Điểm thường là mốc giữa đường (rẽ khi đang đi, đích mềm tới 100°, quá thì bo cung); `stop` dừng, quay tại chỗ tới hướng quãng sau rồi đi; `yaw` chỉ ở điểm cuối: dừng rồi quay tới yaw. Điểm cuối luôn là mốc dừng',
+        ),
+      speed: z
+        .number()
+        .positive()
+        .optional()
+        .describe(
+          "`walk`: đơn vị thế giới mỗi giây dọc đường (mặc định tốc tự nhiên của `action`)",
+        ),
+      action: z.string().optional().describe("`walk`: hành động đi tới (mặc định `walk`)"),
+      start: z
+        .enum(["rest", "moving"])
+        .optional()
+        .describe(
+          "`walk`: `rest` (mặc định) người đứng yên ở `at` rồi khởi hành; `moving` vào cảnh đang đi (clip đi `blend 0`, người chưa có `path` trước `at`)",
+        ),
+      radius: z
+        .number()
+        .min(0)
+        .optional()
+        .describe("`walk`: bán kính bo các góc rẽ khi đang đi (0 = đích mềm; vòng chữ U thì ~125)"),
+      turnTime: z
+        .number()
+        .min(0.5)
+        .max(2)
+        .optional()
+        .describe("`walk`: giây cho mỗi 90° quay tại chỗ (mặc định 0,8)"),
+      turnSide: z
+        .enum(["auto", "right", "left"])
+        .optional()
+        .describe("`walk`: chiều cú quay đúng 180° (`auto`: giữa cú quay mặt về phía ống kính)"),
+      hold: z
+        .number()
+        .min(0.2)
+        .optional()
+        .describe("`walk`: giây đứng yên ở điểm cuối (mặc định 0,6)"),
+      track: z
+        .string()
+        .optional()
+        .describe(
+          "`walk`: track ghi clip (mặc định track đang lái chân lúc `at`, không có thì `chan`)",
+        ),
+      after: z
+        .string()
+        .optional()
+        .describe("`walk`: hành động sau mỗi mốc dừng (mặc định `stand-3d`)"),
+      blend: z
+        .number()
+        .min(0)
+        .max(1)
+        .optional()
+        .describe(
+          "`walk`: `blend` của clip đi (trừ clip vào cảnh đang đi) và clip sau (mặc định 0,3)",
+        ),
+      hash: z
+        .string()
+        .optional()
+        .describe(
+          "`walk`: sha của file cảnh agent đã có (`hash` / `wrote.hash` của lần gọi trước); file trên đĩa khác thì lỗi, không ghi",
+        ),
+      cup: z
+        .string()
+        .optional()
+        .describe(
+          "`pour` (slot `cup`, vai trò `vessel`): `<người>` cầm món mang `vessel`, `<người>:<món>`, `<món>` của `items[]`, `<vật>` của cảnh three mang `vessel`, hay `x,y,z` thế giới rig (đích dạng điểm)",
+        ),
+      style: z
+        .enum(["single", "serve"])
+        .optional()
+        .describe("`pour`: rót một tay (mặc định) hay mời khách hai tay"),
+      tilt: z
+        .number()
+        .optional()
+        .describe("`pour`: góc nghiêng hết, độ (mặc định theo kiểu: 100 / 88)"),
+      pourDir: z
+        .number()
+        .optional()
+        .describe(
+          "`pour`: hướng rót, độ từ ra ngoài về trước (mặc định theo kiểu: 180 / 30); không đạt thì thử hướng lân cận và báo",
+        ),
+      name: z
+        .string()
+        .optional()
+        .describe(
+          "Tên file hành động (mặc định pour[-serve]-<cảnh>-<người>-3d, sit-<cảnh>-<người>-3d)",
+        ),
+      item: z
+        .string()
+        .optional()
+        .describe(
+          "`pour` (slot `bottle`, vai trò `pourer`): bình khi tay phải người rót chưa cầm gì (mặc định `binh`)",
+        ),
+      legs: z
+        .enum(["bent", "square", "straight", "staggered"])
+        .optional()
+        .describe(
+          "`sit`: chân co (bàn chân lùi dưới mép ghế, gót nhấc), vuông góc (mặc định), duỗi (gót trên sàn), so le (một co một duỗi)",
+        ),
+      tuck: z
+        .enum(["near", "far"])
+        .optional()
+        .describe("`sit` `staggered`: chân co là chân gần hay xa ống kính (mặc định `far`)"),
+      feet: z
+        .enum(["free", "floor"])
+        .optional()
+        .describe(
+          "`sit`: `free` (mặc định) đế giày chạm sàn hay để chân nếu với tới, không thì chân `square` thõng (đùi nằm trên mặt ngồi, khe in ở `lines`) — `bent`, `straight` dựng ống chân về phương đứng tới ±10° rồi lỗi, `staggered` đổi chân không chạm được sang vuông; `floor` bắt buộc chạm, không được thì lỗi nói vì sao (đùi lún mép trước mặt ngồi hay ngoài tầm kiểu chân). Không bao giờ dời hông",
+        ),
+      back: z
+        .enum(["upright", "recline", "forward"])
+        .optional()
+        .describe(
+          "`sit`: lưng thẳng (mặc định), tựa ra sau (ngả tới lưng ghế của ghế hay `backrest`, không có thì −12°), nghiêng về trước",
+        ),
+      hands: z
+        .enum(["thighs", "table", "armrest", "fold"])
+        .optional()
+        .describe(
+          "`sit`: tay úp trên đùi (mặc định, lòng tay theo mặt trên đùi), đặt trên bàn (`table`: bàn trước mặt tự tìm hay cờ `table`), khuỷu và cẳng tay trên tay vịn (`armrest`: tay vịn hai bên của ghế hay cờ `armrest`; bàn tay thả, vượt đầu tay vịn thì buông xuống), khuỷu trên tay vịn và hai bàn tay chồng trước bụng (`fold`)",
+        ),
+      elbow: z
+        .number()
+        .optional()
+        .describe(
+          "`sit` `armrest` | `fold`: dời khuỷu dọc tay vịn khỏi chỗ tự nhiên (rig ở height 1, dương ra trước); bù bằng góc thân trong tầm kiểu lưng và chỗ khuỷu trên bề ngang tay vịn, không đặt được thì lỗi nêu tầm dời được",
+        ),
+      top: z
+        .enum(["near", "far"])
+        .optional()
+        .describe("`sit` `fold`: bàn tay gần hay xa ống kính nằm trên (mặc định `near`)"),
+      table: z
+        .string()
+        .optional()
+        .describe(
+          "`sit` (slot `table`, vai trò `tabletop`): tên vật, `vật#mục`, `y` mặt bàn hay `y,mép gần` (đồ ảo, mép gần trước hông), `none` không kiểm bàn; bỏ trống là bàn trước mặt trong tầm",
+        ),
+      armrest: z
+        .string()
+        .optional()
+        .describe(
+          "`sit` (slot `armrest`, vai trò `armrest`, mỗi bên một mục): tên vật (không nhận `#mục`) hay `x,y,z` giữa mặt trên đầu trước một tay vịn (đồ ảo đối xứng); bỏ trống là tay vịn của cùng ghế",
+        ),
+      backrest: z
+        .string()
+        .optional()
+        .describe(
+          "`sit` (slot `backrest`, vai trò `backrest`): tên vật, `vật#mục`, khoảng từ hông lùi tới mặt trước lưng ghế (đồ ảo) hay `none`; bỏ trống là lưng ghế của cùng ghế",
+        ),
+      footrest: z
+        .string()
+        .optional()
+        .describe(
+          "`sit` (slot `footrest`, vai trò `footrest`): tên vật, `vật#mục`, `y` bệ để chân (đồ ảo) hay `none` (bàn chân xuống `world.floor`); bỏ trống là để chân của cùng ghế (thanh hẹp thì thanh dưới đế giày)",
+        ),
+      force: z
+        .boolean()
+        .default(false)
+        .describe("Ghi dù tự kiểm không đạt, đè file không phải gen sinh"),
+      dryRun: z.boolean().default(false).describe("Chỉ tính và kiểm, không ghi"),
+    },
+  },
+  guard(async ({ kind, ...o }) => {
+    if (!GEN) return fail("bản @stickman3d/cli đang cài chưa có `stickman gen`");
+    const slots = GEN.GEN_KINDS?.[kind]?.roles;
+    let r;
+    try {
+      r = await GEN.genWorkspace({ kind, dir: WS, ...o });
+    } catch (e) {
+      // lỗi tìm slot kèm danh sách vật mang vai trò đã nằm trong dòng báo
+      return fail(slots ? `${e.message}\n\n${GEN.slotTable(kind)}` : e.message);
+    }
+    const { action, world, scene, ...rest } = r;
+    return text({
+      ...rest,
+      ...(kind !== "walk" && { scene }),
+      check: world?.rows ?? [],
+      ...(action && { action: action.name }),
+      ...(slots?.length ? { slots } : {}),
+    });
+  }),
+);
+
+server.registerTool(
   "check",
   {
     description:
-      "Soi workspace: version đã pin so với @stickman3d/sketch đang cài, JSON hỏng, socket trỏ tới mảnh không có, PNG thiếu alpha, mảnh không có trong danh mục, lớp vẽ code gói được không và `scenes` của nó có trỏ đúng tên cảnh, và công cụ ngoài (rsvg-convert / ffmpeg / ffprobe / magick) thiếu trên PATH. Soi cả workspace chậm: sửa xong một cảnh thì truyền `scene` — chỉ soi cảnh khớp (cảnh báo của chúng, người lồng vào đồ, kèm mọi lỗi), bỏ tập, tiếng, mảnh, git. Sửa gì thì chỉ chạy nhóm luật của thứ ấy (`only`): chỗ đứng, path → move,clash; tay → move,clash (+held nếu đang cầm); đồ cầm, chỗ cầm, `held/` → held,clash (+ref khi sửa `held/<món>.json`); bối cảnh, đồ khối → clash; hành động chung → `uses` tên ấy + ref,move,held. Nhóm `legacy` kể đồ cầm còn đi đường cũ (`hold` không có chỗ cầm nhóm), bỏ bằng `skip`. Nhóm không chạy thì không dựng thứ nó cần. Cuối lô thì đủ nhóm trên các cảnh vừa đổi với `baseline` để chỉ thấy cảnh báo mới; cả workspace chỉ ở cuối tập hay sau khi nâng rig. Kết quả kèm `time` (ms từng nhóm, cộng dồn mọi luồng).",
+      "Soi workspace: version đã pin so với @stickman3d/rig đang cài, JSON hỏng, lớp vẽ code gói được không và `scenes` của nó có trỏ đúng tên cảnh, và công cụ ngoài (rsvg-convert / ffmpeg / ffprobe / magick) thiếu trên PATH. Soi cả workspace chậm: sửa xong một cảnh thì truyền `scene` — chỉ soi cảnh khớp (cảnh báo của chúng, kèm mọi lỗi), bỏ tập, tiếng, git. Sửa gì thì chỉ chạy nhóm luật của thứ ấy (`only`): chỗ đứng, path → move; tay → move (+held nếu đang cầm); đồ cầm, chỗ cầm, `held/` → held (+ref khi sửa `held/<món>.json`); bối cảnh, đồ khối → clash (+roles khi sửa vai trò `Item.roles` / `withRoles`: zod, vai trò lệch hình khối cùng vật, người ngồi lệch mặt ngồi); hành động chung → `uses` tên ấy + ref,move,held. Nhóm `legacy` kể đồ cầm còn đi đường cũ (`hold` không có chỗ cầm nhóm), bỏ bằng `skip`. Nhóm `clash` (người lồng vào đồ, tay xuyên thân) chỉ chạy khi gọi tên trong `only`. Nhóm không chạy thì không dựng thứ nó cần. Cuối lô thì đủ nhóm trên các cảnh vừa đổi với `baseline` để chỉ thấy cảnh báo mới; cả workspace chỉ ở cuối tập hay sau khi nâng rig. Kết quả kèm `time` (ms từng nhóm, cộng dồn mọi luồng).",
     inputSchema: {
       scene: z
         .string()
@@ -2401,13 +2171,13 @@ server.registerTool(
         .union([z.string(), z.array(z.string())])
         .optional()
         .describe(
-          "Chỉ soi cảnh dùng các tên này: hành động, nhân vật, đạo cụ, động vật (phẩy ngăn hay mảng); đi chung `scene` thì lấy cảnh khớp cả hai",
+          "Chỉ soi cảnh dùng các tên này: hành động, nhân vật (phẩy ngăn hay mảng); đi chung `scene` thì lấy cảnh khớp cả hai",
         ),
       only: z
         .union([z.string(), z.array(z.string())])
         .optional()
         .describe(
-          "Chỉ chạy các nhóm luật: ref, move, held, legacy, clash, episode (phẩy ngăn hay mảng)",
+          "Chỉ chạy các nhóm luật: ref, move, held, legacy, roles, clash, episode (phẩy ngăn hay mảng); không khai là mọi nhóm trừ clash",
         ),
       skip: z
         .union([z.string(), z.array(z.string())])
@@ -2447,10 +2217,10 @@ server.registerPrompt(
           text:
             `Dựng nhân vật người que: ${description}\n\n` +
             "1. describe_rig và schema(characters) để biết có gì.\n" +
-            "2. Viết JSON: bảng màu, đầu/tóc/râu, socket dùng src: part (không cần ảnh).\n" +
+            "2. Viết JSON: bảng màu, đầu/tóc/râu, socket dùng src: sculpt (dựng khối, không cần ảnh).\n" +
             "3. render_character với object inline, mở ảnh xem, sửa; không ghi cho tới khi ưng.\n" +
             "4. write, rồi render_character theo tên file một lần nữa để chốt.\n" +
-            "Lưu ý: rig.height chỉ kéo dọc; mảnh part có preset scale/dy — lấy làm điểm xuất phát.",
+            "Lưu ý: rig.height chỉ kéo dọc.",
         },
       },
     ],

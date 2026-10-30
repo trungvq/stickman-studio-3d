@@ -3,7 +3,7 @@ import { plainRoom } from "./set";
 
 // Cảnh của repo dựng bằng @stickman3d/rig: tên cảnh → cách dựng cảnh 3D (`WorldSpec`: bối cảnh `set`, người nền `still`,
 // đồ riêng `extra`, đồ gắn lên người `wear`, ống kính `lens(t)`, hậu kỳ `grade(t)`). `Scene.tsx` gặp cảnh có ở đây thì vẽ
-// sân khấu three (`Scene3D`) thay cho người que 2D, lớp chữ 2D (`Overlay3D`) đè lên; `stickman check` đo trên cùng cảnh
+// sân khấu three (`Scene3D`), lớp chữ SVG (`Overlay3D`) đè lên; `stickman check` đo trên cùng cảnh
 // three ấy (`world.ts`). Người diễn (`cast[].world`), ống kính (`lens`) và khung cắt (`camera`) lấy từ scene JSON. Phòng
 // riêng của repo là hàm trả `Set3D` như `plainRoom`, để ở file mới cạnh file này.
 

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 9,
+  "name": "mouth",
+  "duration": 0.28,
+  "end": "wrap",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "ease": "linear",
+      "face": {
+        "mouth": "talkA"
+      }
+    },
+    {
+      "t": 0.5,
+      "pose": {},
+      "ease": "linear",
+      "face": {
+        "mouth": "talkB"
+      }
+    }
+  ],
+  "events": []
+}

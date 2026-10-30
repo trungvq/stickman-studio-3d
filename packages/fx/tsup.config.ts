@@ -8,5 +8,5 @@ export default defineConfig({
   sourcemap: true,
   treeshake: true,
   // Rig phải là một bản duy nhất trong app; react và zod do bên tiêu thụ cài
-  external: ["react", "react/jsx-runtime", "zod", "@stickman3d/sketch"],
+  external: ["react", "react/jsx-runtime", "zod", /^@stickman3d\/rig/],
 });

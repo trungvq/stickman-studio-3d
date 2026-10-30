@@ -34,7 +34,7 @@ function world(hands: unknown[]) {
     cast: [{ id: 'nguoi', character: 'nguoi.json', base: { torso: 9, head: [0, 0, -6] }, world: { at: [250, 0, 506], yaw: 270, hands } }],
   });
   if (!sc.success) throw new Error(sc.error.message);
-  const rt = resolveScene(sc.data, {}, {}, {}, { nguoi: H }, bodies, HELD);
+  const rt = resolveScene(sc.data, {}, { nguoi: H }, bodies, HELD);
   return buildWorld(sc.data, rt, {
     set: () => plainRoom(),
     extra: (_m, cast: Cast3D) => {

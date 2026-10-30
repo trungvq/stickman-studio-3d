@@ -1,16 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  actAim,
-  actHeld,
-  actJoints,
-  actPalms,
-  AIM_BEND,
-  AIM_DEV,
-  TURN_MAX,
-  trunk3,
-  type ActInput,
-} from "./act3";
-import { clampRange } from "./arm3";
+import { actAim, actHeld, actJoints, actPalms, trunk3, type ActInput } from "./act3";
+import { ARM_SOFT, softReach } from "./elbow";
 import { body3 } from "./figure3d";
 import * as arm from "./graspArm";
 import { wristTurn } from "./hand";
@@ -70,7 +60,7 @@ function runtime(
     items,
   });
   if (!r.success) throw new Error(r.error.message);
-  return resolveScene(r.data, {}, {}, {}, { nguoi: H }, { nguoi: body3(NGUOI) }, held);
+  return resolveScene(r.data, {}, { nguoi: H }, { nguoi: body3(NGUOI) }, held);
 }
 
 const poseAt = (rt: SceneRuntime, t: number): ActInput =>
@@ -111,16 +101,8 @@ const rotDeg = (A: M3, B: M3) => {
 /** Khung bàn tay vẽ của nghiệm: cẳng tay ở `φ`, cổ tay kẹp ở giới hạn */
 function drawnRw(sol: GraspAtTime): M3 {
   const w = sol.arm.wrist;
-  const cl = (v: number, L: number) => Math.max(-L, Math.min(L, v));
-  return matMul(
-    sol.arm.fore,
-    wristTurn(
-      cl(w.turn, TURN_MAX),
-      clampRange(w.bend, AIM_BEND),
-      clampRange(w.dev, AIM_DEV),
-      sol.side,
-    ),
-  );
+  const [t, b, d] = arm.wristClamp([w.turn, w.bend, w.dev]);
+  return matMul(sol.arm.fore, wristTurn(t, b, d, sol.side));
 }
 
 /** Khuỷu, lòng tay, ngón người 3D vẽ khớp nghiệm `graspAtTime` của tay `side` */
@@ -164,7 +146,7 @@ describe("món đặt trước trong act3", () => {
     }
   });
 
-  it("ngoài tầm với: tay duỗi thẳng về `Wp`, khe `reach.gap` > 0", () => {
+  it("ngoài tầm với: tay duỗi theo IK mềm về `Wp`, khe `reach.gap` > 0", () => {
     const rt = runtime([{ t: 0, right: { hold: SHEET } }], [mark(0, [140, -2.9, 0])]);
     const sp = poseAt(rt, 0.2);
     const sol = graspAtTime(rt, "nguoi", "right", 0.2, { chars })!;
@@ -173,8 +155,9 @@ describe("món đặt trước trong act3", () => {
     const S = j.shoulderR;
     const E = j.elbowR;
     const W = j.wristR;
-    expect(dist(S, E) + dist(E, W) - dist(S, W)).toBeLessThan(1e-6);
     const Wp = rig(sol.Wp);
+    const L = dist(S, E) + dist(E, W);
+    expect(dist(S, W)).toBeCloseTo(softReach(dist(S, Wp), L, ARM_SOFT * L), 6);
     expect(
       angle([W[0] - S[0], W[1] - S[1], W[2] - S[2]], [Wp[0] - S[0], Wp[1] - S[1], Wp[2] - S[2]]),
     ).toBeLessThan(1e-4);
@@ -432,7 +415,7 @@ describe("`both` trên món đặt trước: tay phụ giải như tay dẫn", (
             const g = rep[tag].hold!.grasp!;
             expect(g.mode).toBe("item");
             expect(rep[tag].reach!.gap).toBeLessThan(0.01);
-            expect(g.arm.wrist.off, `${tag} ${t}`).toBeLessThanOrEqual(c[0] === "khay" ? 1 : 2.5);
+            expect(g.arm.wrist.off, `${tag} ${t}`).toBeLessThanOrEqual(2.5);
           }
           expect(rep.L.hold!.grasp!.choice).toEqual(sup.choice);
         }

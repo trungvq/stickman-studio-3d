@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
-<title>Tròn ngắn — back</title>
-<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
-<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 58 161.26 C 56 98 100 54 160 54 C 220 54 264 98 262 161.26 Q 262 185.29 244 196.68 Q 200 201.74 160 203 Q 120 201.74 76 196.68 Q 58 185.29 58 161.26 Z"/>
-</g>
-</svg>

@@ -113,15 +113,7 @@ describe("tay mang món, đích trôi chậm", () => {
     ],
   });
   if (!s.success) throw new Error(s.error.message);
-  const rt = resolveScene(
-    s.data,
-    {},
-    {},
-    {},
-    { nguoi: H },
-    { nguoi: DIMS },
-    { "dien-thoai": PHONE },
-  );
+  const rt = resolveScene(s.data, {}, { nguoi: H }, { nguoi: DIMS }, { "dien-thoai": PHONE });
   rt.chars = { nguoi: NGUOI };
   const c = itemCentre(PHONE);
   const frames = Array.from({ length: 121 }, (_, i) => 0.5 + i / 60).map((t) => {

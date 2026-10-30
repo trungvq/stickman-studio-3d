@@ -99,7 +99,7 @@ export function hem(q) {
   if (!scene.success) throw new Error(scene.error.message);
   const bodies = Object.fromEntries(cast.map((m) => [m.id, body3(m.c)]));
   const heights = Object.fromEntries(cast.map((m) => [m.id, m.c.rig.height]));
-  const rt = resolveScene(scene.data, actions, {}, {}, heights, bodies);
+  const rt = resolveScene(scene.data, actions, heights, bodies);
   const people = cast.map((m, i) => ({ ...m, fig: fromCharacter(m.c, { seed: i, seated: !!m.world.sit }) }));
   const props = [];
   if (kind === 'sit') {

@@ -1,20 +1,11 @@
-import { actArm, actJoints, bones3, HOLD_SWIVEL_SLEW, type ActArm, type ActJoint } from "./act3";
-import {
-  actionKind,
-  actionMask,
-  keyDelta,
-  type ActionData,
-  type ActionKey,
-  type Channel,
-} from "./action";
-import { D, RIG } from "./constants";
+import { actArm, actElbows, actJoints, bones3, HOLD_SWIVEL_SLEW, type ActJoint } from "./act3";
+import { actionMask, keyDelta, type ActionData, type ActionKey, type Channel } from "./action";
+import { D } from "./constants";
 import { body3 } from "./figure3d";
 import { HOLD_SLEW_STEP } from "./heldItem";
-import { computeFigure } from "./geometry";
 import { depthAt, dot3, project, scale3, sub3, type Lens, type V3 } from "./lens";
 import {
   cameraAt,
-  castCharacter,
   elbowLockAt,
   sceneAt,
   type CastMember,
@@ -22,7 +13,7 @@ import {
   type SceneRuntime,
 } from "./scene";
 import type { CharacterData } from "./schema";
-import { clampViews, type Pt } from "./types";
+import type { Pt } from "./types";
 
 /**
  * Khớp nhảy vượt nền chuyển động quanh nó quá ngần này (pixel của video bản chốt) trong một khung mới
@@ -78,10 +69,8 @@ export function sceneSideProblems(
   rt: SceneRuntime,
   actions: Record<string, ActionData> = {},
 ): string[] {
-  if (!rt.lens) return [];
   const out: string[] = [];
   for (const m of rt.cast) {
-    if (!m.world) continue;
     const byClip = new Map<
       string,
       { limbs: LimbChannel[]; at: number[]; file: string; track: string }
@@ -89,11 +78,11 @@ export function sceneSideProblems(
     m.tracks.forEach((tr, ti) =>
       tr.clips.forEach((c) => {
         const a = c.action;
-        if (!a || a.authoredAt === "side" || actionKind(a) === "animal") return;
+        if (!a || a.authoredAt === "side") return;
         const limbs = LIMBS.filter(
           (k) =>
             clipChannels(c).includes(k) &&
-            !(m.world!.path && (k === "legNear" || k === "legFar")) &&
+            !(m.world.path && (k === "legNear" || k === "legFar")) &&
             !reachOnly(a, k),
         );
         if (!limbs.length) return;
@@ -140,7 +129,7 @@ const ANGLE_CHANNELS = ["armFar", "armNear", "legFar", "legNear", "torso", "head
  * kêu). Hành động khai `snap` thì không soi. docs/01-rig.md#hành-động-giật-có-chủ-ý
  */
 export function actionSnapProblems(a: ActionData): string[] {
-  if (a.snap || !a.keys || actionKind(a) === "animal") return [];
+  if (a.snap || !a.keys) return [];
   const mask = actionMask(a);
   const out: string[] = [];
   for (const ch of ANGLE_CHANNELS) {
@@ -208,17 +197,6 @@ const J3: ActJoint[] = [
   "handL",
   "head",
 ];
-const J2: Joint2[] = [
-  "kneeN",
-  "kneeF",
-  "footN",
-  "footF",
-  "elbowN",
-  "elbowF",
-  "wristN",
-  "wristF",
-  "head",
-];
 
 /** Nhóm kênh của một khớp, để `snap` của clip chỉ miễn khớp mà clip ấy ghi */
 const jointClass = (j: string): "arm" | "leg" | "head" =>
@@ -232,56 +210,6 @@ const CHANNEL_CLASSES: Partial<Record<Channel, ("arm" | "leg" | "head")[]>> = {
   head: ["head"],
   stretch: ["arm", "leg"],
 };
-
-const rot = (deg: number, [x, y]: Pt): Pt => {
-  const c = Math.cos(deg * D);
-  const s = Math.sin(deg * D);
-  return [x * c - y * s, x * s + y * c];
-};
-const fin = (v: number | undefined) => (Number.isFinite(v) ? (v as number) : 0);
-
-/** Khớp người 2D trên khung (hệ chỗ vẽ của scene), gần / xa như rig 2D */
-export type Joint2 =
-  "kneeN" | "kneeF" | "footN" | "footF" | "elbowN" | "elbowF" | "wristN" | "wristF" | "head";
-
-/**
- * Khớp của người 2D tại một khung, trong hệ chỗ vẽ của scene — cùng phép tính với các mốc khớp của
- * `anchorAt` (`figureAnchors`), không dựng mảnh nên rẻ. Người 3D thì dùng `actJoints`.
- */
-export function joints2(c: CharacterData, sp: ScenePose): Record<Joint2 | "hip", Pt> {
-  const views = clampViews({ body: sp.view, head: sp.headView }, c.pieces.torso.src === "sculpt");
-  const P = sp.pose;
-  const F = computeFigure(c, P, views.body);
-  const tor = fin(P.torso);
-  const ph = c.head;
-  const headRy = (RIG.headH / 2) * ph.scaleY;
-  const neckY = -(F.len.torso + F.len.neck) + Math.sin(fin(P.head[2]) * D) * F.len.neck;
-  const head = rot(tor, [0, neckY]);
-  const local: Record<Joint2 | "hip", Pt> = {
-    hip: [0, 0],
-    kneeN: F.legN[1],
-    kneeF: F.legF[1],
-    footN: F.legN[2],
-    footF: F.legF[2],
-    elbowN: rot(tor, F.armN[1]),
-    elbowF: rot(tor, F.armF[1]),
-    wristN: rot(tor, F.armN[2]),
-    wristF: rot(tor, F.armF[2]),
-    head: (([x, y]) => [head[0] + x, head[1] + y] as Pt)(
-      rot(tor + fin(P.head[0]), [ph.dx, -headRy + ph.dy]),
-    ),
-  };
-  // `onStage` của sketch: lật, hạ gốc, xoay quanh gốc, phóng, dời
-  const sx = sp.flip ? -1 : 1;
-  const r = sx * -(sp.rotate ?? 0);
-  const drop = sp.root === "hip" ? 0 : F.lowest;
-  const out = {} as Record<Joint2 | "hip", Pt>;
-  for (const [k, [x, y]] of Object.entries(local) as [Joint2 | "hip", Pt][]) {
-    const [lx, ly] = rot(r, [sx * x, y - drop]);
-    out[k] = [sp.x + sp.scale * lx, sp.groundY + sp.scale * ly];
-  }
-  return out;
-}
 
 export interface SnapOptions {
   /** JSON nhân vật của một người (đã `parseCharacter`); bỏ trống là không đo người ấy */
@@ -297,6 +225,8 @@ export interface SnapOptions {
    * nằm trọn trong một quãng, và đầu mỗi quãng là chỗ cắt
    */
   spans?: [number, number][];
+  /** Đo cả khuỷu và cổ tay trên cùng các mẫu (`sceneMotion`): rung, lật, gập ngược, tầm với */
+  elbows?: boolean;
 }
 
 /** Một cú giật trên hình: khớp nhảy nhiều nhất, cỡ nhảy và nền (pixel video), giây khung sau cú nhảy */
@@ -326,8 +256,51 @@ interface Sample {
   ik: [number, number];
   /** Tay phải, tay trái của người 3D duỗi bao nhiêu phần tầm với (vai → cổ tay) */
   straight: [number, number];
-  /** Người 2D: lật, góc nhìn — đổi là bước rời rạc có chủ ý */
-  step: string;
+  /** Tay phải, tay trái người 3D cho luật khuỷu (`SnapOptions.elbows`), vai → cổ tay thế giới rig */
+  arms?: [ElbowSample, ElbowSample];
+}
+
+/** Phần `ElbowFrame` đọc được từ một mẫu; cặp khung và khung hình đọc theo chuỗi mẫu */
+export type ElbowSample = Omit<ElbowFrame, "pair" | "onElbow" | "onHand">;
+
+/**
+ * Tay phải, tay trái người 3D ở mẫu `sp` cho `elbowTrack`, thế giới rig: cùng lần giải với `actJoints` (`actElbows`), không
+ * giải lại. Lấn thân chỉ đo ở tay theo đích co dưới `ARM_CLOSE`. Người không có `world` thì `undefined`
+ */
+export function elbowSamples(
+  c: CharacterData,
+  sp: ScenePose,
+): [ElbowSample, ElbowSample] | undefined {
+  const w = sp.world;
+  const J = w && actJoints(c, sp);
+  const A = J && actElbows(c, sp);
+  if (!w || !J || !A) return undefined;
+  const near = w.flip ? "L" : "R";
+  const P = sp.pose;
+  const B = bones3(c.rig.height);
+  return SIDES.map((t): ElbowSample => {
+    const isNear = t === near;
+    const r = isNear ? w.hands?.near : w.hands?.far;
+    const k = isNear ? 2 : 0;
+    const tip =
+      (B.upperArm * (P.stretch[k] ?? 1) + B.foreArm * (P.stretch[k + 1] ?? 1)) * 100 * w.s;
+    const [S, E, W] = [J[`shoulder${t}`], J[`elbow${t}`], J[`wrist${t}`]];
+    const straight = Math.hypot(...sub3(W, S)) / tip;
+    const ik = Math.max((isNear ? P.reach?.an : P.reach?.af)?.w ?? 0, r?.w ?? 0);
+    return {
+      S,
+      E,
+      W,
+      tip,
+      straight,
+      ik,
+      wrist: A[t].wrist,
+      inward: A[t].inward,
+      body: ik >= ARM_IK && straight < ARM_CLOSE ? A[t].body() : 0,
+      hold: !!r?.hold,
+      lock: r && r.w > 0 ? Math.min(1, r.elbowLock ?? 0) * Math.min(1, r.w) : 0,
+    };
+  }) as [ElbowSample, ElbowSample];
 }
 
 /** Khung `sceneSnaps` không đọc tới: ngoài mọi cặp khung lên hình */
@@ -339,7 +312,6 @@ const SKIPPED: Sample = {
   flip: false,
   ik: [0, 0],
   straight: [0, 0],
-  step: "",
 };
 
 const LIFT_BITS = ["an", "af", "ln", "lf"] as const;
@@ -361,12 +333,11 @@ export interface StageJoints {
 
 /**
  * Khớp của một người 3D tại một khung, đúng phép tính `sceneSnaps` đo: `actJoints` chiếu qua `scene.lens`,
- * kèm hông, vai, cổ. Người không có `world` thì `undefined`.
+ * kèm hông, vai, cổ.
  */
 export function stageJoints(c: CharacterData, sp: ScenePose): StageJoints | undefined {
-  const w = sp.world;
-  const J = w && actJoints(c, sp);
-  return w && J ? onLens(w.lens, J) : undefined;
+  const J = actJoints(c, sp);
+  return J && onLens(sp.world.lens, J);
 }
 
 function onLens(lens: Lens, J: Record<ActJoint, V3>): StageJoints {
@@ -381,7 +352,7 @@ function onLens(lens: Lens, J: Record<ActJoint, V3>): StageJoints {
   return { pts, depth, world: J, front };
 }
 
-function sample(c: CharacterData, sp: ScenePose): Sample {
+function sample(c: CharacterData, sp: ScenePose, elbows = false): Sample {
   const w = sp.world;
   const J = w && actJoints(c, sp);
   if (w && J) {
@@ -401,6 +372,7 @@ function sample(c: CharacterData, sp: ScenePose): Sample {
       const [a, b] = [J[`shoulder${t}`], J[`wrist${t}`]];
       return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]) / tip;
     }) as [number, number];
+    const arms = elbows ? elbowSamples(c, sp) : undefined;
     return {
       pts: front ? pts : null,
       visible: front && sp.opacity > 0.5,
@@ -409,20 +381,10 @@ function sample(c: CharacterData, sp: ScenePose): Sample {
       flip: w.flip,
       ik,
       straight,
-      step: "",
+      ...(arms && { arms }),
     };
   }
-  const J2d = joints2(c, sp);
-  return {
-    pts: J2d,
-    visible: sp.opacity > 0,
-    hip: J2d.hip,
-    lift: 0,
-    flip: false,
-    ik: [0, 0],
-    straight: [0, 0],
-    step: `${sp.flip}|${sp.view}|${sp.headView}`,
-  };
+  return SKIPPED;
 }
 
 const median = (xs: number[]) => {
@@ -511,7 +473,7 @@ function causesOf(m: CastMember, J: Jolt): { causes: string[]; clips: string[] }
       ];
     });
     causes.push(
-      `cờ \`lift\` của ${flipped.join(", ")} lật${blends.length ? ` giữa đoạn hoà ${blends.join(", ")}` : ""}: một đầu đoạn hoà soạn ở \`side\`, đầu kia là hành động 2D hay tư thế nền \`cast[].base\` (clip rỗng, track chưa có clip) — người 3D cần hành động \`side\` ở cả hai đầu, ví dụ \`stand-3d\` thay cho clip rỗng`,
+      `cờ \`lift\` của ${flipped.join(", ")} lật${blends.length ? ` giữa đoạn hoà ${blends.join(", ")}` : ""}: một đầu đoạn hoà soạn ở \`side\`, đầu kia là hành động không soạn ở \`side\` hay tư thế nền \`cast[].base\` (clip rỗng, track chưa có clip) — người 3D cần hành động \`side\` ở cả hai đầu, ví dụ \`stand-3d\` thay cho clip rỗng`,
     );
   }
   if (a.flip !== b.flip)
@@ -572,13 +534,6 @@ function causesOf(m: CastMember, J: Jolt): { causes: string[]; clips: string[] }
         `phần đích cổ tay ${label} đổi ${a.ik[i].toFixed(2)} → ${b.ik[i].toFixed(2)} trong một khung (\`reach\` của hành động hay \`world.hands\`)`,
       );
     const ks = (m.world?.hands ?? []).filter((k) => k[hand] !== undefined);
-    const seg = (t: number) => ks.findIndex((k, j) => k.t < t && (ks[j + 1]?.t ?? Infinity) >= t);
-    const [s0, s1] = [seg(t0), seg(t1)];
-    const elbowOf = (j: number) => !!(ks[j]?.[hand]?.elbow || ks[j + 1]?.[hand]?.elbow);
-    if (s0 >= 0 && s1 >= 0 && s0 !== s1 && elbowOf(s0) !== elbowOf(s1))
-      causes.push(
-        `hướng khuỷu ${label} đổi ở mốc \`world.hands\` giây ${sec(ks[s1].t)}: đoạn trước và đoạn sau mốc ấy một có \`elbow\`, một không — khai cùng \`elbow\` cho các mốc quanh đó`,
-      );
     // đoạn mốc chồng lên cặp khung, nhanh nhất trước
     const fast = ks
       .slice(1)
@@ -612,15 +567,25 @@ function causesOf(m: CastMember, J: Jolt): { causes: string[]; clips: string[] }
 }
 
 /**
- * Giật trên hình: lấy mẫu cảnh theo `fps`, tính khớp đúng như hình vẽ ra (người 3D qua `actJoints`
- * chiếu qua `scene.lens`, người 2D qua `joints2`), đổi ra pixel video theo khung cắt `cameraAt` của
+ * Giật trên hình: lấy mẫu cảnh theo `fps`, tính khớp đúng như hình vẽ ra (`actJoints` của người 3D
+ * chiếu qua `scene.lens`), đổi ra pixel video theo khung cắt `cameraAt` của
  * từng khung, rồi bắt khung mà một khớp nhảy vượt nền quá `px` và quá `k` lần nền — nền là trung vị
  * dịch chuyển của chính khớp ấy trong ±2 khung, nên cú vung nhanh mà đều hay cú hoà êm có nền lớn
  * theo, không bị bắt; cú nhảy một hai khung thì nền vẫn là phần chậm quanh nó. Bỏ qua: khớp ra
- * ngoài khung hay người khuất, bước lật / đổi góc nhìn của người 2D, quãng ngoài `spans`, cặp khung
+ * ngoài khung hay người khuất, quãng ngoài `spans`, cặp khung
  * vắt qua chỗ cắt, và chỗ khai `snap`. docs/03-scene.md#giật-trên-hình
  */
-export function sceneSnaps(rt: SceneRuntime, o: SnapOptions): Snap[] {
+export const sceneSnaps = (rt: SceneRuntime, o: SnapOptions): Snap[] =>
+  sceneMotion(rt, { ...o, elbows: false }).snaps;
+
+/**
+ * `sceneSnaps` kèm luật khuỷu và cổ tay (`elbowTrack`) khi `o.elbows`, đo trên cùng các mẫu khung: không giải tư thế thêm
+ * lần nào. docs/03-scene.md#khuỷu-và-cổ-tay-trên-hình
+ */
+export function sceneMotion(
+  rt: SceneRuntime,
+  o: SnapOptions,
+): { snaps: Snap[]; elbows: ElbowIssue[] } {
   const fps = o.fps ?? SNAP_FPS;
   const px = o.px ?? SNAP_PX;
   const K = o.k ?? SNAP_K;
@@ -643,17 +608,20 @@ export function sceneSnaps(rt: SceneRuntime, o: SnapOptions): Snap[] {
     );
   });
   const out: Snap[] = [];
+  const elbows: ElbowIssue[] = [];
   for (const m of rt.cast) {
     const base = o.characterOf(m);
     if (!base) continue;
-    const c = castCharacter(m, base);
+    const c = base;
     const h = c.rig.height;
     const b = body3(c);
     // chỉ khung là đầu hay cuối của một cặp lên hình mới được đọc; khung khác để trống
     const S: Sample[] = [];
     for (let i = 0; i <= n; i++)
-      S.push(shown[i] || shown[i + 1] ? sample(c, sceneAt(rt, m.id, i / fps, h, b)) : SKIPPED);
-    const joints: string[] = m.world && rt.lens ? J3 : J2;
+      S.push(
+        shown[i] || shown[i + 1] ? sample(c, sceneAt(rt, m.id, i / fps, h, b), o.elbows) : SKIPPED,
+      );
+    const joints: string[] = J3;
     const windows = snapWindows(m);
     // dịch chuyển mỗi khung của từng khớp, pixel video theo khung cắt của khung sau; NaN là không đo
     // khớp ra ngoài khung hay người đang khuất vẫn góp vào nền của khung kề, chỉ không bị bắt
@@ -664,7 +632,7 @@ export function sceneSnaps(rt: SceneRuntime, o: SnapOptions): Snap[] {
       const on = new Uint8Array(n + 1);
       for (let i = 1; i <= n; i++) {
         const [p, q] = [S[i - 1], S[i]];
-        if (!shown[i] || !p.pts || !q.pts || p.step !== q.step) continue;
+        if (!shown[i] || !p.pts || !q.pts) continue;
         const v = cams[i].view;
         const [x, y] = q.pts[j];
         const mx = v.w * 0.05;
@@ -734,8 +702,23 @@ export function sceneSnaps(rt: SceneRuntime, o: SnapOptions): Snap[] {
       group.push(h);
     }
     flush();
+    if (o.elbows && m.world && rt.lens)
+      SIDES.forEach((tag, k) => {
+        const [onE, onH] = [seen.get(`elbow${tag}`)!, seen.get(`hand${tag}`)!];
+        const frames = S.map((q, i): ElbowFrame | undefined => {
+          const a = q.pts ? q.arms?.[k] : undefined;
+          if (!a) return undefined;
+          const pair =
+            !!shown[i] &&
+            !windows.some(
+              (w) => i / fps >= w.from && (i - 1) / fps <= w.to && w.classes.has("arm"),
+            );
+          return { ...a, pair, onElbow: !!onE[i], onHand: !!onH[i] };
+        });
+        elbows.push(...elbowTrack(m.id, HANDS[k], frames, fps));
+      });
   }
-  return out.sort((a, b) => a.t - b.t);
+  return { snaps: out.sort((a, b) => a.t - b.t), elbows: elbows.sort((a, b) => a.from - b.from) };
 }
 
 /** Dòng báo của một cú giật, như `check` in */
@@ -763,6 +746,9 @@ export interface ElbowLockSnap {
   keys: [number | null, number | null];
 }
 
+/** Vai, khuỷu, cổ tay của một tay */
+type Joints3 = { S: V3; E: V3; W: V3 };
+
 const unitOf = (v: V3): V3 => scale3(v, 1 / (Math.hypot(...v) || 1));
 const crossOf = (a: V3, b: V3): V3 => [
   a[1] * b[2] - a[2] * b[1],
@@ -776,7 +762,12 @@ const crossOf = (a: V3, b: V3): V3 => [
  * `φ`: gốc của `φ` quay theo trục (trục gần thẳng đứng thì gốc đổi hẳn) dù khuỷu không xoay, và trục lắc theo cổ tay không
  * tính là xoay khuỷu. Tay gần thẳng (khuỷu cách trục dưới `0,1` bắp tay) ra `0`
  */
-function swivel(a: ActArm, b: ActArm): number {
+function swivel(a: Joints3, b: Joints3): number {
+  return Math.abs(swivelSigned(a, b));
+}
+
+/** `swivel` có dấu, theo quy tắc bàn tay phải quanh trục vai → cổ tay */
+function swivelSigned(a: Joints3, b: Joints3): number {
   const [n0, n1] = [unitOf(sub3(a.W, a.S)), unitOf(sub3(b.W, b.S))];
   const k = crossOf(n0, n1);
   const s = Math.hypot(...k);
@@ -793,7 +784,8 @@ function swivel(a: ActArm, b: ActArm): number {
   // tay gần thẳng: khuỷu sát trục, góc xoay không đo được
   if (Math.min(Math.hypot(...p), Math.hypot(...q)) < 0.1 * Math.hypot(...e)) return 0;
   const cos = dot3(p, q) / (Math.hypot(...p) * Math.hypot(...q) || 1);
-  return Math.acos(Math.max(-1, Math.min(1, cos))) / D;
+  const sign = dot3(crossOf(p, q), n1) < 0 ? -1 : 1;
+  return (sign * Math.acos(Math.max(-1, Math.min(1, cos)))) / D;
 }
 
 /**
@@ -815,7 +807,7 @@ export function elbowLockSnaps(
     if (!keys?.some((k) => k.right?.elbowLock || k.left?.elbowLock)) continue;
     const base = o.characterOf(m);
     if (!base) continue;
-    const c = castCharacter(m, base);
+    const c = base;
     const b = body3(c);
     for (const hand of ["right", "left"] as const) {
       const ks = keys.filter((k) => k[hand] !== undefined);
@@ -881,4 +873,212 @@ export const elbowLockLine = (s: ElbowLockSnap): string => {
       ? "khuỷu khoá theo hướng `elbow` của mốc ấy trong khi người và tay đi — thêm mốc tay khoá hướng khác cho quãng ấy, hay bỏ `elbowLock`"
       : "dời hai mốc xa nhau hơn, cho `elbow` hai mốc gần hướng nhau hơn, hay bỏ `elbowLock` ở một mốc. Cố ý nhanh thì khai `snap: true` ở mốc sau";
   return `\`${s.id}\` ${s.hand === "right" ? "tay phải" : "tay trái"} giây ${sec(s.from)}–${sec(s.to)}: khuỷu khoá xoay ${s.deg.toFixed(0)}° mỗi 1/30 s (quá ${HOLD_SWIVEL_SLEW}°) ${span} — rig không kẹp khuỷu khoá (\`elbowLock\`): ${fix}`;
+};
+
+/** Luật khuỷu và cổ tay của `sceneMotion`. docs/03-scene.md#khuỷu-và-cổ-tay-trên-hình */
+export type ElbowRule =
+  "elbowJitter" | "elbowFlip" | "wristFlip" | "elbowInward" | "armStraight" | "armClose";
+
+/** Một quãng khuỷu hay cổ tay sai trên hình */
+export interface ElbowIssue {
+  id: string;
+  hand: "right" | "left";
+  rule: ElbowRule;
+  from: number;
+  to: number;
+  /** Mức nặng nhất trong quãng, theo đơn vị của luật (xem `elbowLine`) */
+  worst: number;
+  /** Số phụ của dòng báo: số lần đổi chiều (`elbowJitter`), góc trước → sau (`wristFlip`) */
+  detail?: number[];
+}
+
+/** Khuỷu rung: trong `JITTER_S` giây xoắn đổi chiều từ `JITTER_REV` lần, mỗi bên quá `JITTER_DEG`°, tổng |xoắn| quá `JITTER_SUM`° */
+const JITTER_S = 0.5;
+const JITTER_REV = 3;
+const JITTER_DEG = 0.5;
+const JITTER_SUM = 4;
+/** …mà không khung nào quá ngần này (cú lật, luật `elbowFlip`) */
+const JITTER_MAX = 25;
+/** Khuỷu lật: xoắn quá `FLIP_FRAME`° trong một khung hay quá `FLIP_SUM`° trong `FLIP_S` giây */
+const FLIP_FRAME = 30;
+const FLIP_SUM = 60;
+const FLIP_S = 0.1;
+/** Cổ tay gần đứng yên: so với vai dời dưới ngần này lần tầm với trong quãng đo */
+const STILL = 0.25;
+/** Bàn tay lật: xoay cẳng tay đổi quá `WRIST_TURN`° hay lệch cổ tay quá `WRIST_DEV`° trong một khung */
+const WRIST_TURN = 60;
+const WRIST_DEV = 35;
+/** Tay theo đích: phần đích cổ tay từ ngần này */
+const ARM_IK = 0.5;
+/** Khuỷu gập ngược: `elbowInward` quá ngần này lần cánh tay trên, như `HELD_ELBOW` của tay cầm món */
+export const ARM_INWARD = 0.3;
+/** Tay duỗi quá `ARM_STRAIGHT` tầm với liền quá `ARM_STRAIGHT_S` giây */
+export const ARM_STRAIGHT = 0.97;
+const ARM_STRAIGHT_S = 0.3;
+/** Tay co dưới `ARM_CLOSE` tầm với mà lấn thân quá `ARM_BODY` lần bán kính tay */
+export const ARM_CLOSE = 0.35;
+const ARM_BODY = 0.5;
+
+const HANDS = ["right", "left"] as const;
+
+/** Một tay người 3D trên một khung cho `elbowTrack`, thế giới rig */
+export interface ElbowFrame {
+  S: V3;
+  E: V3;
+  W: V3;
+  /** Tầm với vai → cổ tay */
+  tip: number;
+  /** Phần tầm với cổ tay đang cách vai */
+  straight: number;
+  /** Phần đích cổ tay (`reach` hay `world.hands`) */
+  ik: number;
+  /** Xoay, gập, lệch cổ tay như vẽ */
+  wrist: readonly number[];
+  /** `elbowInward` */
+  inward: number;
+  /** Lấn thân `bodyRatio`; chỉ cần ở khung tay theo đích co dưới `ARM_CLOSE` */
+  body: number;
+  /** Tay đang cầm món (`world.hands[].hold`) */
+  hold: boolean;
+  /** Phần khoá khuỷu (`elbowLock`) của mốc tay */
+  lock: number;
+  /** Cặp khung trước → khung này lên hình và ngoài chỗ khai `snap` của tay */
+  pair: boolean;
+  /** Khuỷu, bàn tay nằm trong khung hình */
+  onElbow: boolean;
+  onHand: boolean;
+}
+
+/**
+ * Luật khuỷu và cổ tay trên chuỗi khung của một tay (`undefined` là khung không đo), `fps` khung mỗi giây — `sceneMotion`
+ * và `tools/elbows.mjs` cùng đọc. docs/03-scene.md#khuỷu-và-cổ-tay-trên-hình
+ */
+export function elbowTrack(
+  id: string,
+  hand: "right" | "left",
+  F: readonly (ElbowFrame | undefined)[],
+  fps: number,
+): ElbowIssue[] {
+  const n = F.length - 1;
+  const out: ElbowIssue[] = [];
+  const t = (i: number) => i / fps;
+  /** Cổ tay (so với vai) dời giữa hai khung, phần tầm với */
+  const moved = (a: ElbowFrame, b: ElbowFrame) =>
+    Math.hypot(...sub3(sub3(b.W, b.S), sub3(a.W, a.S))) / b.tip;
+  const sw = new Float64Array(n + 1).fill(NaN);
+  for (let i = 1; i <= n; i++) {
+    const [a, b] = [F[i - 1], F[i]];
+    if (a && b?.pair) sw[i] = swivelSigned(a, b);
+  }
+  /** Gộp khung bị bắt thành quãng: khung cách nhau không quá `gap` khung là một quãng */
+  const spans = (rule: ElbowRule, gap = MERGE) => {
+    let cur: ElbowIssue | undefined;
+    return (from: number, i: number, v: number, detail?: number[]) => {
+      if (cur && from - cur.to * fps <= gap + 1e-6) {
+        cur.to = t(i);
+        if (v > cur.worst) [cur.worst, cur.detail] = [v, detail];
+      } else {
+        cur = { id, hand, rule, from: t(from), to: t(i), worst: v, ...(detail && { detail }) };
+        out.push(cur);
+      }
+    };
+  };
+  const jitter = spans("elbowJitter", Math.round(0.1 * fps));
+  const flip = spans("elbowFlip");
+  const wflip = spans("wristFlip");
+  const inward = spans("elbowInward");
+  const close = spans("armClose");
+  const W = Math.round(JITTER_S * fps);
+  const K = Math.max(1, Math.round(FLIP_S * fps));
+  let straight: { from: number; to: number; worst: number } | undefined;
+  const endStraight = () => {
+    if (straight && t(straight.to) - t(straight.from) > ARM_STRAIGHT_S)
+      out.push({
+        id,
+        hand,
+        rule: "armStraight",
+        from: t(straight.from),
+        to: t(straight.to),
+        worst: straight.worst,
+      });
+    straight = undefined;
+  };
+  for (let i = 1; i <= n; i++) {
+    const b = F[i];
+    if (!b) {
+      endStraight();
+      continue;
+    }
+    // khuỷu rung: cửa sổ `W` khung kết thúc ở `i`
+    if (i >= W && b.onElbow) {
+      let [rev, abs, net, max, ok] = [0, 0, 0, 0, true];
+      for (let j = i - W + 2; j <= i && ok; j++) {
+        const [p, q] = [sw[j - 1], sw[j]];
+        if (!Number.isFinite(p) || !Number.isFinite(q)) ok = false;
+        else {
+          if (Math.abs(p) >= JITTER_DEG && Math.abs(q) >= JITTER_DEG && p * q < 0) rev++;
+          abs += Math.abs(q);
+          net += q;
+          max = Math.max(max, Math.abs(q));
+        }
+      }
+      if (
+        ok &&
+        rev >= JITTER_REV &&
+        abs > JITTER_SUM &&
+        max <= JITTER_MAX &&
+        Math.abs(net) < abs / 2
+      )
+        jitter(i - W + 1, i, abs, [rev]);
+    }
+    const a = F[i - 1];
+    if (a && Number.isFinite(sw[i])) {
+      // khuỷu lật khi cổ tay gần đứng yên; khuỷu khoá thì `elbowLockSnaps` đo
+      const p = F[i - K];
+      let cum = 0;
+      for (let j = i - K + 1; j <= i; j++) cum += j > 0 ? sw[j] : NaN;
+      const one = Math.abs(sw[i]) > FLIP_FRAME && moved(a, b) < STILL;
+      const run = Math.abs(cum) > FLIP_SUM && !!p && moved(p, b) < STILL;
+      if ((one || run) && b.onElbow && !(a.lock > 0 || b.lock > 0))
+        flip(i - (one ? 1 : K), i, Math.max(one ? Math.abs(sw[i]) : 0, run ? Math.abs(cum) : 0));
+      const dTurn = Math.abs(b.wrist[0] - a.wrist[0]);
+      const dDev = Math.abs(b.wrist[2] - a.wrist[2]);
+      if ((dTurn > WRIST_TURN || dDev > WRIST_DEV) && b.onHand && moved(a, b) < STILL)
+        wflip(i - 1, i, Math.max(dTurn, dDev), [a.wrist[0], b.wrist[0], a.wrist[2], b.wrist[2]]);
+    }
+    if (!(b.ik >= ARM_IK) || !b.onElbow) {
+      endStraight();
+      continue;
+    }
+    if (!b.hold && b.inward > ARM_INWARD) inward(i, i, b.inward);
+    if (b.straight < ARM_CLOSE && b.body > ARM_BODY) close(i, i, b.body, [b.straight]);
+    if (b.straight > ARM_STRAIGHT) {
+      straight ??= { from: i, to: i, worst: 0 };
+      [straight.to, straight.worst] = [i, Math.max(straight.worst, b.straight)];
+    } else endStraight();
+  }
+  endStraight();
+  return out;
+}
+
+const pct = (v: number) => `${(v * 100).toFixed(0)}%`;
+
+/** Dòng báo của một quãng khuỷu hay cổ tay sai, như `check` in */
+export const elbowLine = (s: ElbowIssue): string => {
+  const who = `\`${s.id}\` ${s.hand === "right" ? "tay phải" : "tay trái"} giây ${sec(s.from)}–${sec(s.to)}`;
+  const d = s.detail ?? [];
+  switch (s.rule) {
+    case "elbowJitter":
+      return `${who}: khuỷu rung — xoắn quanh trục vai → cổ tay đổi chiều ${d[0]} lần trong ${JITTER_S} s, tổng ${s.worst.toFixed(1)}° mà gần như không đi đâu; người xem thấy khuỷu giật dù tay đứng yên. Khai \`elbow\` ở các mốc \`world.hands\` quanh đó cho xa trục vai → cổ tay, hay khoá khuỷu (\`elbowLock\`)`;
+    case "elbowFlip":
+      return `${who}: khuỷu lật ${s.worst.toFixed(0)}° (quá ${FLIP_FRAME}° một khung hay ${FLIP_SUM}° trong ${FLIP_S} s) khi cổ tay gần đứng yên — nghiệm IK đổi nhánh: khai \`elbow\` ở các mốc quanh đó cho xa trục vai → cổ tay, hay khoá khuỷu (\`elbowLock\`)`;
+    case "wristFlip":
+      return `${who}: bàn tay lật trong một khung — xoay cẳng tay ${d[0].toFixed(0)}° → ${d[1].toFixed(0)}°, lệch cổ tay ${d[2].toFixed(0)}° → ${d[3].toFixed(0)}° (quá ${WRIST_TURN}° / ${WRIST_DEV}°): lòng tay theo ý định (\`palm\`, \`fingers\`) ở mép tầm cổ tay — khai hướng gần dáng đang có hơn, hay đổi \`elbow\``;
+    case "elbowInward":
+      return `${who}: khuỷu gập ngược — lệch khỏi đường vai → cổ tay vào giữa thân hay lên trên ${s.worst.toFixed(2)} lần cánh tay trên (quá ${ARM_INWARD}): khai \`elbow\` ra ngoài, xuống dưới ở các mốc tay quanh đó`;
+    case "armStraight":
+      return `${who}: tay duỗi ${pct(s.worst)} tầm với liền ${(s.to - s.from).toFixed(2)} s (quá ${pct(ARM_STRAIGHT)} liền quá ${ARM_STRAIGHT_S} s) — đích cổ tay ở mép tầm với, khuỷu dễ lật: kéo đích lại gần vai, hay dời người lại gần`;
+    case "armClose":
+      return `${who}: tay co sát vai (cổ tay cách vai ${pct(d[0])} tầm với) mà lấn thân ${s.worst.toFixed(2)} lần bán kính tay — đích quá sát thân: đẩy đích ra xa thân`;
+  }
 };

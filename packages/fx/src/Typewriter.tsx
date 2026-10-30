@@ -22,7 +22,7 @@ export function typewriterKeys(fx: TypewriterData): { t: number; text: string }[
 // `opacity` trên `tspan` không phải chỗ render nào cũng nhận; tô trong suốt thì chữ vẫn chiếm chỗ
 const HIDE = { fillOpacity: 0, strokeOpacity: 0 };
 
-// Nền phủ dư ra ngoài mọi khung, như vạch đất
+// Nền phủ dư ra ngoài mọi khung: camera lia ra ngoài sân khấu thì nó vẫn phải kín
 const SPAN = 1e4;
 
 /**

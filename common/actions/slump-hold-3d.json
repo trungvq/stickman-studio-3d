@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 20,
+  "name": "slump-hold-3d",
+  "duration": 1,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": 7, "head": [null, null, 12] }, "ease": "linear" },
+    { "t": 1, "pose": { "torso": 7, "head": [null, null, 12] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Giữ dáng cuối của `slump-3d` từ giây 0: thân 7°, đầu cúi 12° — cho người nền, ảnh tĩnh, cảnh cắt vào giữa. Chỉ ghi `torso` và gật của `head`, nghiêng, lắc để trống; tay để cảnh. Nền `stand-3d`, ngồi thì `sit-3d`. Chồng được lên tay buông, chắp trước bụng (`hands-front-3d`), bị nắm tay dẫn đi; buông bằng clip rỗng blend ~0,5. Cùng họ: `slump-3d` gục nhẹ, `slump-big-3d` cúi gằm, `-hold` giữ dáng từ giây 0. Sinh bằng `tools/actions/slump.mjs`.",
+  "preview": { "stage": "stand" }
+}

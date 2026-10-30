@@ -200,7 +200,7 @@ export function viewNote(o: NoteInput): string {
     );
   if (o.view.cam === "scene")
     L.push(
-      `- Vẽ lại không cần trình duyệt: pnpm exec stickman-render --scene ${file} --three --times ${num(o.t)} --out tmp/studio3d/${o.scene}-render.png`,
+      `- Vẽ lại không cần trình duyệt: pnpm exec stickman-render --scene ${file} --times ${num(o.t)} --out tmp/studio3d/${o.scene}-render.png`,
     );
   return L.join("\n");
 }

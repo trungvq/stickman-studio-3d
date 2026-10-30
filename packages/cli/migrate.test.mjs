@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import * as rig from "@stickman3d/sketch";
+import * as rig from "@stickman3d/rig/core";
 import { migrateHeld, migrateTable, touchOther } from "./migrate-held.mjs";
 
 // Món trung tính: tấm (`sheet`), hộp cỡ lòng tay (`palmBox`), túi treo khuỷu (`carry`)

@@ -10,7 +10,7 @@ import { hold } from './attach';
 import { heldHands, legacyHolds } from './held';
 import { U } from './khoi';
 import { buildWorld, plainRoom, type Cast3D } from './world';
-import cocJson from '../../../apps/studio/public/held/coc.json';
+import cocJson from '../../../common/held/coc.json';
 import khay from './core/__fixtures__/held-v2/khay.json';
 
 // Rig tự gắn món theo `world.hands[].hold`: repo đăng ký món bằng `cast.provide`, rig gắn, gỡ, trả về chỗ cũ
@@ -45,7 +45,7 @@ function world(hands: unknown[], provide: (cast: Cast3D, g: THREE.Group) => void
   });
   if (!sc.success) throw new Error(sc.error.message);
   const heights = { a: 1 }, bodies = { a: body3(c) };
-  const rt = resolveScene(sc.data, { still }, {}, {}, heights, bodies, HELD);
+  const rt = resolveScene(sc.data, { still }, heights, bodies, HELD);
   if (out) out.rt = rt;
   return buildWorld(sc.data, rt, {
     set: () => plainRoom(),

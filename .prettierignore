@@ -7,3 +7,4 @@ packages/rig/src/*.ts
 apps/viewer
 tools/shots.mjs
 tools/bench.mjs
+khuyu-harness

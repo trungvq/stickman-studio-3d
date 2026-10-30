@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 20,
+  "name": "toast-3d",
+  "duration": 0.9,
+  "end": "hold",
+  "mask": ["armNear", "hand"],
+  "authoredAt": "side",
+  "sides": "anatomical",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "reach": {
+        "armNear": {
+          "to": "belly",
+          "offset": [30, 0, 30],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.6]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "grip", "palm": "in" } }
+    },
+    {
+      "t": 0.55,
+      "pose": {},
+      "reach": {
+        "armNear": {
+          "to": "mouth",
+          "offset": [46, -18, 28],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.6]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "grip", "palm": "in" } }
+    },
+    {
+      "t": 0.75,
+      "pose": {},
+      "reach": {
+        "armNear": {
+          "to": "mouth",
+          "offset": [44, -4, 26],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.6]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "grip", "palm": "in" } }
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": {
+        "armNear": {
+          "to": "mouth",
+          "offset": [44, -4, 26],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.6]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "grip", "palm": "in" } }
+    }
+  ],
+  "events": [],
+  "note": "Nâng ly chúc: tay phải đi từ trước bụng (mốc `belly`, offset [30, 0, 30]) lên quá miệng một chút, chếch ra ngoài (mốc `mouth`, offset [46, −18, 28]) lúc 0,5 s rồi hạ về ngang miệng ([44, −4, 26]) và giữ; tâm nắm đặt vào đích nên ly đứng đúng chỗ ở mọi dáng tay. Chỉ ghi `armNear`, `hand`; `sides: \"anatomical\"`. Nền `stand-3d`, `sit-3d`, `seiza-3d`; món ở `world.hands[].hold` tay phải, như `ly@cylinder` (ly đứng). Uống sau đó bằng `drink-3d` (blend ~0,3).",
+  "preview": { "stage": "stand", "hold": { "right": "ly@cylinder" } }
+}

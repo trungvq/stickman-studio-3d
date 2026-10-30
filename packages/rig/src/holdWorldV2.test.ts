@@ -47,7 +47,7 @@ function world(hands: unknown[], items: unknown[] = []) {
     items,
   });
   if (!sc.success) throw new Error(sc.error.message);
-  const rt = resolveScene(sc.data, {}, {}, {}, { nguoi: H }, bodies, HELD);
+  const rt = resolveScene(sc.data, {}, { nguoi: H }, bodies, HELD);
   const objects: Record<string, THREE.Object3D> = {};
   const w = buildWorld(sc.data, rt, {
     set: () => plainRoom(),
@@ -255,7 +255,7 @@ describe('treo (`món@carry`)', () => {
     });
     if (!sc.success) throw new Error(sc.error.message);
     const heights = { a: 1 }, bodies = { a: body3(c) };
-    const rt = resolveScene(sc.data, {}, {}, {}, heights, bodies, { 'tui-hieu': item });
+    const rt = resolveScene(sc.data, {}, heights, bodies, { 'tui-hieu': item });
     const bag = new THREE.Group();
     bag.add(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 0.2).translate(0, 0.25, 0), new THREE.MeshBasicMaterial()));
     const w = buildWorld(sc.data, rt, {

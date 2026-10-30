@@ -2,20 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { hatFit, hatMesh, hatSpec, insideHat, pinMesh, shellAt } from "./hat";
 import { HAT_SHAPE_DEFAULTS, HatSchema, SculptSchema, type Hat, type Sculpt } from "./schema";
-import { accentAt, ahogeRings, hairline, knotFrame, SCULPT_PRESETS, sculptPaths } from "./sculpt";
+import { accentAt, ahogeRings, hairline, knotFrame, SCULPT_PRESETS } from "./sculpt";
 import { onSkull, type Vec3 } from "./sphere";
 
-const R = 65;
 const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const sub = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 
 describe("búi lệch tâm", () => {
   const bun = SCULPT_PRESETS.bun.sculpt;
-  it("kinh độ chỗ buộc mặc định giữa gáy: hình y như không khai", () => {
-    const a = sculptPaths(bun, { yaw: 150, pitch: 0 }, "round", 0, 0, R, R);
-    const b = sculptPaths({ ...bun, tieLon: 180 }, { yaw: 150, pitch: 0 }, "round", 0, 0, R, R);
-    expect(b.knot).toBe(a.knot);
-  });
   it("`tieLon` dời khối buộc sang bên, `knotSize` phóng khối", () => {
     const s = SculptSchema.parse({ ...bun, tie: 5, tieLon: -140 });
     const k = knotFrame(s);

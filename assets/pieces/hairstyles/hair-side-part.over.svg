@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320">
-<title>Rẽ ngôi lệch ôm đầu — over</title>
-<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
-<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 56 160 C 53.92 100 95.52 58 160 58 C 222.4 58 266.08 100 264 160 L 254.64 164 Q 253.6 138 240.08 121 Q 224.48 115 212 97 C 181.84 119 135.04 129 88.24 121 Q 68.48 136 65.36 164 Z"/>
-<path d="M 212 97 Q 218.24 81 216.16 72" fill="none"/>
-</g>
-</svg>

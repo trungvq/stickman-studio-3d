@@ -80,7 +80,7 @@ function maple() {
   return svg(pts);
 }
 
-/** Hình in có tên: path SVG trong hộp `0…100` (`y` xuống), tô evenodd. docs/02-trang-phuc.md#hình-in-trên-áo */
+/** Hình in có tên: path SVG trong hộp `0…100` (`y` xuống), tô evenodd. docs/12-trang-phuc-3d.md#hình-in-trên-áo */
 export const PRINT_SHAPES: Record<PrintShape, string> = {
   maple: maple(),
   circle: "M50 2A48 48 0 1 1 50 98A48 48 0 1 1 50 2Z",

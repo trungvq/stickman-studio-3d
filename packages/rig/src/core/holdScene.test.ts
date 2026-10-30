@@ -17,7 +17,7 @@ import { matVec, type M3, type V3 } from "./lens";
 import { heldUnprovided } from "./heldAudit";
 import { parseScene, resolveScene, sceneAt, sceneHoldProblems } from "./scene";
 import { CharacterSchema } from "./schema";
-import cocJson from "../../../../apps/studio/public/held/coc.json";
+import cocJson from "../../../../common/held/coc.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import khay from "./__fixtures__/held-v2/khay.json";
 import butJson from "./__fixtures__/held-v2/but.json";
@@ -83,8 +83,6 @@ const scene = (hands: unknown[], more: object[] = []) => {
 const runtime = (hands: unknown[], more: object[] = []) =>
   resolveScene(
     scene(hands, more),
-    {},
-    {},
     {},
     Object.fromEntries([["a", 1], ...more.map((m) => [(m as { id: string }).id, 1])]),
     Object.fromEntries([["a", body3(C)], ...more.map((m) => [(m as { id: string }).id, body3(C)])]),

@@ -69,7 +69,7 @@ function runtime(hands: unknown[], held: Record<string, HeldItemSpec>): SceneRun
     ],
   });
   if (!r.success) throw new Error(r.error.message);
-  return resolveScene(r.data, {}, {}, {}, { nguoi: H }, { nguoi: body3(NGUOI) }, held);
+  return resolveScene(r.data, {}, { nguoi: H }, { nguoi: body3(NGUOI) }, held);
 }
 const poseAt = (rt: SceneRuntime, t: number): ActInput =>
   sceneAt(rt, "nguoi", t, H, body3(NGUOI)) as ActInput;

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 20,
+  "name": "talk-point-3d",
+  "duration": 0.4,
+  "end": "hold",
+  "mask": ["armNear", "hand", "torso"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armNear": [-6, 24, 0], "torso": 0 },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 0.3, "palm": "in" } }
+    },
+    {
+      "t": 1,
+      "pose": { "torso": 4 },
+      "reach": { "armNear": { "at": [122, -116, 28], "elbow": [-0.6, 0.2, 1] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "point", "w": 1, "palm": "in", "fingers": "forward" } }
+    }
+  ],
+  "events": [],
+  "note": "Chỉ tay vào người nghe đứng trước mặt: tay gần duỗi gần thẳng tới đích hệ thân [122, −116, 28] (ngang ngực, về đường giữa), dáng `point`, ngón chĩa ra trước, lòng tay vào trong; thân ngả tới 4°; 0,4 s rồi giữ. Chỉ ghi `armNear`, `hand`, `torso`. Nền `stand-3d` hay `sit-3d`; người nghe ở phía trước người diễn (+x khi soạn ở `side`). Buông bằng clip rỗng blend ~0,4; chìa tay mở mời người nghe là `talk-forward-3d`.",
+  "preview": { "stage": "stand" }
+}

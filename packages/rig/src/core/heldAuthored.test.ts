@@ -27,6 +27,7 @@ import {
   GROUP_IDS,
   GROUP_VARIANTS,
   groupHold,
+  HELD_VERSION,
   holdRunKey,
   parseHeldItem,
   SceneHoldSchema,
@@ -356,10 +357,10 @@ describe("kiểu cầm có tên (`authored.<nhóm>.<tên>`, `base`, `note`)", ()
     );
     expect(errs(withKey("Kep_Doc", { ...au, base: "flat" }))).toMatch(/a–z, 0–9/);
     expect(errs(withKey("kep", { ...au, base: "flat", note: "" }))).toBeTruthy();
-    // món bản 2 có kiểu cầm có tên: nạp như bản 3
+    // món bản 2 có kiểu cầm có tên: nạp như bản hiện hành
     expect(
       item({ ...withKey("kep", { ...au, base: "flat" }), schemaVersion: 2 }).schemaVersion,
-    ).toBe(3);
+    ).toBe(HELD_VERSION);
   });
 
   it("`variantOf`, `namedVariants`: tên ra biến thể gốc và bản soạn của chính tên ấy; `GROUP_VARIANTS` khớp `GRIP_GROUPS`", () => {
@@ -573,8 +574,6 @@ describe("kiểu cầm có tên (`authored.<nhóm>.<tên>`, `base`, `note`)", ()
       if (!r.success) throw new Error(r.error.message);
       return resolveScene(
         r.data,
-        {},
-        {},
         {},
         { nguoi: parsed.data.rig.height },
         { nguoi: body3(parsed.data) },

@@ -110,7 +110,7 @@ describe("viewNote", () => {
     expect(n).toContain("@nam = 1.10 s");
     expect(n).toContain(base.png);
     expect(n).toContain(base.url);
-    expect(n).toContain("--three --times 1.2");
+    expect(n).toContain("--times 1.2");
     expect(n).toContain("!!pierce");
     expect(n).not.toContain("chưa lưu");
   });

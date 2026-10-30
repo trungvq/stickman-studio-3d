@@ -70,12 +70,12 @@ describe("dang tay chân và nghiêng thân của người 3D", () => {
         near * lateral(joints3(stand).footNear, w) + 40,
       );
       const leg = (RIG.thigh + RIG.shin) * c.rig.height;
-      expect(feet(P, c.rig.height, RIG, true)[1][1]).toBeCloseTo(leg * Math.cos(30 * D), 6);
+      expect(feet(P, c.rig.height, true)[1][1]).toBeCloseTo(leg * Math.cos(30 * D), 6);
       expect(feet(P, c.rig.height)[1][1]).toBeCloseTo(leg, 6);
       expect(joints3(P).footNear[1] - hip[1]).toBeCloseTo(leg * Math.cos(30 * D), 6);
     });
 
-    it(`xoắn vai: tay dang ngang, khuỷu gập 90, xoay ngoài 90 là cẳng tay dựng lên — three và người SVG cùng chiều (${w.flip ? "lật" : "không lật"})`, () => {
+    it(`xoắn vai: tay dang ngang, khuỷu gập 90, xoay ngoài 90 là cẳng tay dựng lên — actJoints và figure3d cùng chiều (${w.flip ? "lật" : "không lật"})`, () => {
       const P = { ...stand, an: [0, 90, 0, 90, 90] } as Pose;
       const [el, wr] = w.flip ? ["elbowL", "wristL"] : ["elbowR", "wristR"];
       const J = joints(P);
@@ -96,7 +96,7 @@ describe("dang tay chân và nghiêng thân của người 3D", () => {
       expect(joints3(down).wristNear[1] - joints3(down).elbowNear[1]).toBeGreaterThan(50);
     });
 
-    it(`dang của kênh giữ 2D không đổi khớp người 3D (${w.flip ? "lật" : "không lật"})`, () => {
+    it(`dang của kênh không nâng không đổi khớp người 3D (${w.flip ? "lật" : "không lật"})`, () => {
       const P = { ...stand, an: [0, 0, 0, 60], lift: { ...LIFT, an: false } } as Pose;
       expect(joints(P)).toEqual(joints({ ...stand, lift: P.lift }));
     });
@@ -109,7 +109,7 @@ describe("dang tay chân và nghiêng thân của người 3D", () => {
       expect(Math.sign(lean)).toBe(Math.sign(tilt));
       // phía tay xa
       expect(Math.sign(lean)).toBe(-near);
-      // người SVG đo cổ ở đầu đoạn cổ, three ở gốc cổ: cùng phía, lệch nhau bằng đoạn cổ
+      // `actJoints` và `figure3d` đo cổ ở hai đầu đoạn cổ: cùng phía, lệch nhau bằng đoạn cổ
       const lean3 = lateral(joints3({ ...stand, lean: 20 }).neck, w);
       expect(Math.sign(lean3)).toBe(Math.sign(lean));
       expect(Math.abs(lean3 / lean - 1)).toBeLessThan(0.1);

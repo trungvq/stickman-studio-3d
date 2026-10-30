@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 19,
+  "name": "hands-behind-3d",
+  "duration": 1,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": ["armNear", "armFar", "hand"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "reach": {
+        "armNear": { "to": "back", "offset": [-4, 6, 2], "point": "back", "elbow": [-0.6, 0.6, 1] },
+        "armFar": { "to": "otherWrist", "point": "grip", "elbow": [-0.6, 0.6, 1] }
+      },
+      "hand": {
+        "armNear": { "pose": "fist", "w": 0.5, "palm": "back", "fingers": "in" },
+        "armFar": { "pose": "clasp", "palm": "up", "fingers": "in" }
+      },
+      "ease": "smooth"
+    }
+  ],
+  "events": [],
+  "note": "Chắp tay sau lưng: tay gần áp mu tay (`point: back`) vào mốc `back` (giữa lưng ngang thắt lưng, offset [−4, 6, 2]), nắm hờ, lòng tay ra sau; tay xa dáng `clasp` nắm quanh cổ tay tay gần (`otherWrist`, `point: grip`); khuỷu chĩa ra sau-ngoài; một mốc, giữ suốt clip, vào bằng blend của clip. Chỉ ghi `armNear`, `armFar`, `hand`. Nền `stand-3d` hay `walk`; mốc theo áo (gồm bụng phệ) nên đúng mọi cỡ người. Chồng được cúi chào, đầu, nhún thân; buông bằng clip rỗng blend ~0,4.",
+  "preview": { "stage": "stand" }
+}

@@ -5,8 +5,7 @@
   "license": "MIT",
   "type": "module",
   "files": [
-    "server.mjs",
-    "pieces.mjs"
+    "server.mjs"
   ],
   "bin": {
     "stickman-mcp": "./server.mjs"
@@ -20,7 +19,7 @@
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@stickman3d/cli": "workspace:*",
     "@stickman3d/render": "workspace:*",
-    "@stickman3d/sketch": "workspace:*",
+    "@stickman3d/rig": "workspace:*",
     "zod": "^4.1.13"
   },
   "publishConfig": {

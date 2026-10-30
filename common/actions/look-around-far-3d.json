@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 20,
+  "name": "look-around-far-3d",
+  "duration": 2.4,
+  "end": "hold",
+  "mask": ["head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "head": [null, 0, 0] }, "ease": "smooth" },
+    { "t": 0.3, "pose": { "head": [null, 28, 3] }, "ease": "linear" },
+    { "t": 0.7, "pose": { "head": [null, 28, 3] }, "ease": "smooth" },
+    { "t": 1, "pose": { "head": [null, 0, 0] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Ngó sang phía xa ống kính một cái rồi về: đầu lắc 28°, gật 3° ở 0,3, giữ tới 0,7, về thẳng ở 1; lượt 2,4 s, giữ dáng thẳng ở cuối. Chỉ ghi lắc và gật của `head`, nghiêng để trống. Nền `stand-3d`, ngồi thì `sit-3d`. Chồng lên mọi track thân, tay; cho người nền thì đổi `cycle` để mỗi người ngó một nhịp; chiều kia là `look-around-near-3d`. Sinh bằng `tools/actions/look-around.mjs`.",
+  "preview": { "stage": "stand" }
+}

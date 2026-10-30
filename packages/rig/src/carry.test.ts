@@ -11,8 +11,8 @@ import { carrySeat } from './attach';
 import { heldCarries, heldHands } from './held';
 import { U } from './khoi';
 import { buildWorld, plainRoom, type Cast3D } from './world';
-import tuiJson from '../../../apps/studio/public/held/tui.json';
-import cocJson from '../../../apps/studio/public/held/coc.json';
+import tuiJson from '../../../common/held/tui.json';
+import cocJson from '../../../common/held/coc.json';
 
 // Món treo (`món@carry`): túi khoác khuỷu, đeo vai — rig treo món trên cánh tay theo `world.hands[].hold`, `check` đo chỗ treo và thân món
 
@@ -51,7 +51,7 @@ function world(hands: unknown[], out?: { rt?: ReturnType<typeof resolveScene> })
   });
   if (!sc.success) throw new Error(sc.error.message);
   const heights = { a: 1 }, bodies = { a: body3(c) };
-  const rt = resolveScene(sc.data, { still }, {}, {}, heights, bodies, HELD);
+  const rt = resolveScene(sc.data, { still }, heights, bodies, HELD);
   if (out) out.rt = rt;
   const bag = new THREE.Group();
   bag.name = 'tui';

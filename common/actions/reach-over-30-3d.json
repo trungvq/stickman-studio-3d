@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 20,
+  "name": "reach-over-30-3d",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": 0, "head": [null, null, 0] }, "ease": "smooth" },
+    { "t": 1, "pose": { "torso": 30, "head": [null, null, -19] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Cúi người với qua mặt quầy 30° (với tới nửa quầy phía bên kia): thân cúi 30° trong 0,6 s, đầu ngửa bù −19° để mắt vẫn nhìn tay và người bên kia quầy; giữ. Chỉ ghi `torso` và gật của `head`, nghiêng, lắc để trống; tay với bằng `world.hands` hay track tay. Nền `stand-3d` sau quầy cao dưới khuỷu, mép gần cách hông ~80, người bụng phệ lùi thêm ~25 kẻo bụng lấn mép. Buông bằng clip rỗng blend ~0,4; với tiếp xa hơn thì đặt bản sâu hơn ngay sau trên cùng track, blend ~0,4. Cùng họ: `reach-over-20-3d`, `reach-over-30-3d`, `reach-over-34-3d`. Sinh bằng `tools/actions/reach-over.mjs`.",
+  "preview": { "stage": "counter" }
+}

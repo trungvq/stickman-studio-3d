@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 5,
+  "name": "sample-heavy",
+  "rig": {
+    "height": 0.94,
+    "shoulderHalf": 42,
+    "hipHalf": 23
+  },
+  "head": {
+    "form": "human",
+    "scaleX": 1.04
+  },
+  "palette": {
+    "line": "#3A2A22",
+    "skin": "#F5D9C2",
+    "clad": true,
+    "garment": "#5E8C6A",
+    "sleeve": "#5E8C6A",
+    "sleeveLength": 0.32,
+    "sleeveWidth": 17,
+    "trouser": "#4A4A52",
+    "trouserWidth": 20,
+    "shoe": "#6B5444",
+    "bicep": 0.3
+  },
+  "face": {
+    "blush": 0.2
+  },
+  "pieces": {
+    "torso": {
+      "src": "sculpt",
+      "garment": {
+        "style": "polo",
+        "neck": 14,
+        "belly": 30,
+        "hem": 6,
+        "bellySide": 0.3
+      }
+    },
+    "hair": {
+      "src": "sculpt",
+      "color": "#1E1612",
+      "sculpt": {
+        "style": "slick",
+        "front": 54,
+        "part": -30,
+        "fringe": 10,
+        "ear": 20,
+        "sideburn": 8,
+        "volume": 0.1,
+        "recede": 16
+      }
+    }
+  }
+}

@@ -5,7 +5,7 @@ import { R, type Figure, type Side } from './stickman';
 
 /**
  * Mốc trên người 3D. `R`/`L` là tay chân phải/trái của người; `Near`/`Far` chọn bên gần/xa ống kính ở khung đang
- * xét như `wristNear` của `anchorAt` 2D. `mouth` và `face` theo nét mặt mặc định (`faceShape` không lưu trên `Figure`).
+ * xét như `wristNear` của `anchorAt`. `mouth` và `face` theo nét mặt mặc định (`faceShape` không lưu trên `Figure`).
  */
 export const LANDMARKS = [
   'root', 'hip', 'chest', 'collar', 'head', 'headTop', 'face', 'mouth',
@@ -61,7 +61,7 @@ export interface ScreenPoint {
   /** px trên khung, gốc trên trái */
   x: number;
   y: number;
-  /** Toạ độ sân khấu (gốc giữa khung, như `anchorAt` và `cameraAt` 2D): vẽ vào SVG có `viewBox` của `cameraAt` */
+  /** Toạ độ sân khấu (gốc giữa khung, như `anchorAt` và `cameraAt`): vẽ vào SVG có `viewBox` của `cameraAt` */
   stage?: { x: number; y: number };
   /** Khoảng cách theo trục nhìn, three */
   depth: number;

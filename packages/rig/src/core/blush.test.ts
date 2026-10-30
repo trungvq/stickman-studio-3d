@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import faceShyJson from "../../../../apps/studio/public/actions/face-shy.json";
+import faceShyJson from "../../../../common/actions/face-shy.json";
 import {
   ACTION_VERSION,
   BLUSH,
@@ -150,7 +150,10 @@ describe("kênh `blush` của hành động", () => {
 describe("`sceneAt` lấy mẫu `blush`", () => {
   const ACTIONS = { flush: FLUSH, talk: TALK, hold: HOLD };
   const at = (tracks: unknown[], t: number) => {
-    const r = parseScene({ cast: [{ id: "a", tracks }] });
+    const r = parseScene({
+      lens: { eye: [0, -250, -1400], yaw: 0, pitch: 0, f: 800 },
+      cast: [{ id: "a", tracks, world: { at: [0, 0, 400] } }],
+    });
     if (!r.success) throw new Error(r.error.message);
     return sceneAt(resolveScene(r.data, ACTIONS), "a", t);
   };

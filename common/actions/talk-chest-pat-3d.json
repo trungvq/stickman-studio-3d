@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 20,
+  "name": "talk-chest-pat-3d",
+  "duration": 1.7,
+  "end": "hold",
+  "mask": ["armNear", "hand", "torso"],
+  "authoredAt": "side",
+  "snap": true,
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armNear": [-6, 24, 0], "torso": 0 },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 0.3, "palm": "in" } }
+    },
+    {
+      "t": 0.1647,
+      "pose": { "torso": -2 },
+      "reach": { "armNear": { "at": [70, -74, 44], "elbow": [-0.3, 1, 1] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 0.8, "palm": "back" } }
+    },
+    {
+      "t": 0.2471,
+      "pose": { "torso": -4 },
+      "reach": {
+        "armNear": { "to": "chest", "offset": [0, 2, 10], "point": "palm", "elbow": [-0.3, 0.8, 1] }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 1, "palm": "back", "fingers": [0, -0.4, -1] } }
+    },
+    {
+      "t": 0.3294,
+      "pose": { "torso": -3 },
+      "reach": {
+        "armNear": {
+          "to": "chest",
+          "offset": [26, 2, 12],
+          "point": "palm",
+          "elbow": [-0.3, 0.8, 1]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 1, "palm": "back", "fingers": [0, -0.4, -1] } }
+    },
+    {
+      "t": 0.4,
+      "pose": { "torso": -5 },
+      "reach": {
+        "armNear": { "to": "chest", "offset": [0, 2, 10], "point": "palm", "elbow": [-0.3, 0.8, 1] }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 1, "palm": "back", "fingers": [0, -0.4, -1] } }
+    },
+    {
+      "t": 0.6176,
+      "pose": { "torso": -5 },
+      "reach": {
+        "armNear": { "to": "chest", "offset": [0, 2, 10], "point": "palm", "elbow": [-0.3, 0.8, 1] }
+      },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 1, "palm": "back", "fingers": [0, -0.4, -1] } }
+    },
+    {
+      "t": 0.7941,
+      "pose": { "torso": -2 },
+      "reach": { "armNear": { "at": [74, -40, 60], "elbow": [-0.3, 1, 1] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 0.6, "palm": "in" } }
+    },
+    {
+      "t": 1,
+      "pose": { "armNear": [-6, 24, 0], "torso": 0 },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "open", "w": 0.3, "palm": "in" } }
+    }
+  ],
+  "events": [],
+  "note": "Vỗ lòng bàn tay gần vào ngực mình hai nhịp (\"chính tôi đây\", \"để tôi lo\"): tay đưa ra ngoài lấy đà (0,28 s), áp lòng tay vào ngực bên cùng phía (mốc `chest`, `offset` [0, 2, 10], 0,42 s), bật ra trước 26 rồi vỗ lại (0,68 s), giữ tới 1,05 s, hạ vòng ra ngoài bụng về tay buông của `stand-3d` lúc 1,7 s; thân ưỡn 4–5° lúc vỗ. `snap: true`: hai cú chạm cố ý nhanh. Chỉ ghi `armNear`, `hand`, `torso`. Nền `stand-3d` hay `sit-3d`. Kết thúc ở tay buông nên nhả ngay bằng clip rỗng blend ~0,3; đặt tay lên ngực rồi giữ là `talk-chest-3d`.",
+  "preview": { "stage": "stand" }
+}

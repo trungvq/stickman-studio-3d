@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 20,
+  "name": "bag-elbow-left-3d",
+  "duration": 1,
+  "end": "hold",
+  "mask": ["armFar", "hand"],
+  "authoredAt": "side",
+  "sides": "anatomical",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "reach": {
+        "armFar": {
+          "to": "shoulder",
+          "offset": [38, 18, 34],
+          "point": "wrist",
+          "elbow": [0.862, 1, 0.712]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armFar": { "pose": "cup", "w": 0.3, "palm": "down" } }
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": {
+        "armFar": {
+          "to": "shoulder",
+          "offset": [38, 18, 34],
+          "point": "wrist",
+          "elbow": [0.862, 1, 0.712]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armFar": { "pose": "cup", "w": 0.3, "palm": "down" } }
+    }
+  ],
+  "events": [],
+  "note": "Khoác túi ở khuỷu tay trái: cổ tay trước vai (mốc `shoulder`, offset [38, 18, 34]), khuỷu ra sau-xuống-ra ngoài, cẳng tay gập chữ V, giữ từ giây 0. Chỉ ghi `armFar`, `hand` (bàn tay buông lơi, lòng úp); `sides: \"anatomical\"`. Nền `stand-3d` hay đi bộ; món treo ở `world.hands[].hold` của tay trái, chỉ `hold` (`{ item, group: \"carry\", on: \"elbow\" }`), không `to` / `at`. Tay kia tự do; tay bên kia là `bag-elbow-right-3d`. Sinh bằng `tools/actions/bag-elbow.mjs`.",
+  "preview": {
+    "stage": "stand",
+    "hold": { "left": { "item": "tui", "group": "carry", "on": "elbow" } }
+  }
+}

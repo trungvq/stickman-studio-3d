@@ -22,13 +22,12 @@ export const ownTmpdir =
     ? process.env.TMPDIR
     : null;
 
-/** Bộ chung của studio (mảnh, hành động và động vật mẫu) trong @stickman3d/cli: `template/` khi cài từ
-
- *  registry, `apps/studio/public` khi `link:` sang cây nguồn. `src/data.ts` nạp qua alias này. */
+/** Bộ chung (mảnh, hành động, nhân vật, món cầm tay, dáng tay) trong @stickman3d/cli: `template/` khi cài từ
+ *  registry, `common/` ở gốc monorepo khi `link:` sang cây nguồn. `src/data.ts` nạp qua alias này. */
 export function commonDir() {
   const cli = dirname(require.resolve("@stickman3d/cli"));
-  const dir = [resolve(cli, "template"), resolve(cli, "../../apps/studio/public")].find(existsSync);
-  if (!dir) throw new Error("không thấy bộ chung của studio trong @stickman3d/cli");
+  const dir = [resolve(cli, "template"), resolve(cli, "../../common")].find(existsSync);
+  if (!dir) throw new Error("không thấy bộ chung trong @stickman3d/cli");
   return dir;
 }
 

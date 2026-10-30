@@ -1,36 +1,25 @@
 import { Fragment, type ReactNode } from "react";
 import {
-  Animal,
-  Character,
-  Prop,
-  anchorAt,
-  animalAt,
+  armPierce,
   bgOrder,
   bgTiles,
-  cameraAt,
-  castCharacter,
-  castSlots,
   body3,
-  propAt,
-  sceneAt,
-  sceneOrder,
-  project,
-  armPierce,
+  cameraAt,
+  depthAt,
+  equipCharacter,
+  figure3d,
   PIERCE_TOL,
-  type AnimalMember,
+  project,
+  sceneAt,
+  SCENE_Z,
   type CameraShot,
   type CastMember,
   type CharacterData,
-  type CharacterProps,
-  type PieceUrls,
-  type PropData,
   type SceneRuntime,
-  SCENE_Z,
-} from "@stickman3d/sketch";
+} from "@stickman3d/rig/core";
 import { SceneAnchor, sceneAnchor } from "./anchor";
-import { layerCovers, type CodeLayer, type LayerCtx, type Offset, type Spot } from "./layers";
+import { layerCovers, type CodeLayer, type LayerCtx } from "./layers";
 import { SceneFx } from "./SceneFx";
-import type { SolidItem } from "./solid";
 import {
   solidClashes,
   solidItemClashes,
@@ -38,12 +27,7 @@ import {
   type SolidClash,
   type SolidPerson,
 } from "./solidOrder";
-import { SolidWorld, solidBody, solidFigure } from "./SolidWorld";
 import { FX_LAYERS, fxFiles, fxZ, sceneFx } from "./schema";
-
-// Vạch đất phải dài hơn khung: camera lia ra ngoài sân khấu thì nó vẫn phải kín
-const GROUND_SPAN = 1e4;
-const GROUND_LINE = "#d8d2c2";
 
 export interface SceneWorldProps {
   rt: SceneRuntime;
@@ -51,12 +35,8 @@ export interface SceneWorldProps {
   t: number;
   /** `cameraAt(rt, t)`; đưa vào để khỏi tính hai lần, thiếu thì tự gọi */
   cam?: CameraShot;
-  /** JSON nhân vật và ảnh mảnh của một người; trả `undefined` thì người ấy không vẽ */
-  characterOf: (m: CastMember) => { character: CharacterData; urls?: PieceUrls } | undefined;
-  /** JSON đạo cụ và ảnh thân theo tên file `props[].prop`; trả `undefined` thì đạo cụ ấy không vẽ */
-  propOf: (file: string) => { prop: PropData; url?: string } | undefined;
-  /** Ảnh mảnh của một con vật */
-  animalUrls?: (a: AnimalMember) => PieceUrls;
+  /** JSON nhân vật của một người, cho mốc bám người (`ctx.anchor`); trả `undefined` thì lấy nhân vật mặc định */
+  characterOf?: (m: CastMember) => { character: CharacterData } | undefined;
   /** Ảnh của một file trong `pieces/` — cho `fx` và `ctx.url` của lớp vẽ code */
   url?: (file: string) => string | undefined;
   /** Ảnh từng lớp nền theo tên file `bg[].file`; lớp không có ảnh thì bỏ qua */
@@ -67,65 +47,39 @@ export interface SceneWorldProps {
   id?: string;
 }
 
+type CharacterOf = (m: CastMember) => { character: CharacterData } | undefined;
+
 /**
- * Đồ khối của lớp vẽ code và người 3D của một khung, đúng như `<SceneWorld>` xếp lớp. `characterOf`
- * đã qua `castCharacter`
+ * Khối từng phần của một người 3D (`figure3d(...).solids`) để kiểm. Một phần người ở sau mặt phẳng
+ * ống kính thì `undefined`
  */
-function sceneSolids<F>(
-  rt: SceneRuntime,
-  t: number,
-  ctx: LayerCtx,
-  on: readonly CodeLayer[],
-  characterOf: SceneWorldProps["characterOf"],
-  animalUrls: NonNullable<SceneWorldProps["animalUrls"]>,
-  figure: (id: string, body: CharacterProps) => F | undefined,
-): { furniture: SolidItem[]; people: { f: F; z: number }[] } {
-  if (!rt.lens) return { furniture: [], people: [] };
-  const furniture = on.flatMap((l) => l.solids?.(ctx) ?? []);
-  const people = rt.cast.flatMap((m) => {
-    if (!m.world) return [];
-    const c = characterOf(m);
-    if (!c) return [];
-    const sp = sceneAt(rt, m.id, t, c.character.rig.height, body3(c.character));
-    const f = figure(m.id, {
-      character: c.character,
-      urls: c.urls,
-      slots: castSlots(rt, sp, t, animalUrls),
-      ...sp,
-    });
-    return f ? [{ f, z: m.z ?? SCENE_Z.cast }] : [];
-  });
-  return { furniture, people };
+export function solidBody(
+  id: string,
+  c: CharacterData,
+  sp: ReturnType<typeof sceneAt>,
+): SolidPerson | undefined {
+  const w = sp.world;
+  if (!w) return;
+  const solids = figure3d(equipCharacter(c, sp.equip), sp.pose, w).solids;
+  if (solids.some((s) => s.v.some((p) => depthAt(w.lens, p) <= 0))) return;
+  return { id, solids };
 }
 
 /** Khối từng phần của người 3D ở giây `t` (`solidBody`); người đã mờ hẳn (`fade` về 0) thì bỏ */
 export function sceneBodies(
   rt: SceneRuntime,
   t: number,
-  { characterOf: rawCharacterOf }: Pick<SceneWorldProps, "characterOf">,
+  { characterOf }: { characterOf: CharacterOf },
 ): SolidPerson[] {
-  const characterOf = (m: CastMember) => {
-    const c = rawCharacterOf(m);
-    return c && { ...c, character: castCharacter(m, c.character) };
-  };
-  const ctx: LayerCtx = {
-    name: rt.name,
-    t,
-    cam: cameraAt(rt, t),
-    marks: rt.marks,
-    url: () => undefined,
-    lens: rt.lens,
-    anchor: () => null,
-  };
-  return sceneSolids(
-    rt,
-    t,
-    ctx,
-    [],
-    characterOf,
-    () => ({}),
-    (id, body) => ((body.opacity ?? 1) > 0 ? solidBody(id, body) : undefined),
-  ).people.map((p) => p.f);
+  if (!rt.lens) return [];
+  return rt.cast.flatMap((m) => {
+    const raw = characterOf(m);
+    if (!raw) return [];
+    const c = raw.character;
+    const sp = sceneAt(rt, m.id, t, c.rig.height, body3(c));
+    const p = (sp.opacity ?? 1) > 0 ? solidBody(m.id, c, sp) : undefined;
+    return p ? [p] : [];
+  });
 }
 
 /**
@@ -136,13 +90,13 @@ function selfClashes(
   rt: SceneRuntime,
   t: number,
   ids: ReadonlySet<string>,
-  characterOf: SceneWorldProps["characterOf"],
+  characterOf: CharacterOf,
   tol: number,
 ): SolidClash[] {
   return rt.cast.flatMap((m) => {
-    const raw = ids.has(m.id) && m.world ? characterOf(m) : undefined;
+    const raw = ids.has(m.id) ? characterOf(m) : undefined;
     if (!raw) return [];
-    const c = castCharacter(m, raw.character);
+    const c = raw.character;
     const sp = sceneAt(rt, m.id, t, c.rig.height, body3(c));
     if ((sp.opacity ?? 1) <= 0) return [];
     return armPierce(c, sp, { tol }).map((h) => ({
@@ -155,8 +109,8 @@ function selfClashes(
 }
 
 /**
- * Chỗ người 3D lồng vào đồ khối hay vào người khác ở giây `t`, dựng đúng các khối mà `<SceneWorld>`
- * vẽ (`solidClashes`). Bỏ phần người ngoài khung camera trừ khi `all`. Cảnh không có `lens` thì rỗng.
+ * Chỗ người 3D lồng vào đồ khối của lớp vẽ code hay vào người khác ở giây `t`, trên khối từng phần
+ * người của `figure3d` (`solidClashes`). Bỏ phần người ngoài khung camera trừ khi `all`. Cảnh không có `lens` thì rỗng.
  * Chỉ để kiểm: `check`, `scene_probe`. docs/10-lop-ve-code.md#người-lồng-vào-đồ
  */
 export function sceneClashes(
@@ -170,7 +124,8 @@ export function sceneClashes(
     all = false,
     people: built,
     self = PIERCE_TOL,
-  }: Pick<SceneWorldProps, "characterOf" | "codeLayers" | "url"> & {
+  }: Pick<SceneWorldProps, "codeLayers" | "url"> & {
+    characterOf: CharacterOf;
     tol?: number;
     all?: boolean;
     /** Ngưỡng tay xuyên thân mình (`armPierce`), `false` là không đo */
@@ -180,11 +135,11 @@ export function sceneClashes(
   },
 ): (SolidClash & { name?: string })[] {
   const lens = rt.lens;
-  if (!lens || !rt.cast.some((m) => m.world)) return [];
+  if (!lens || !rt.cast.length) return [];
   const cam = cameraAt(rt, t);
   const anchor = sceneAnchor(rt, (m) => {
     const c = characterOf(m);
-    return c && castCharacter(m, c.character);
+    return c && c.character;
   });
   const ctx: LayerCtx = { name: rt.name, t, cam, marks: rt.marks, url, lens, anchor };
   const on = codeLayers.filter((l) => layerCovers(l, rt.name));
@@ -247,30 +202,26 @@ export function sceneItemClashes(
 }
 
 /**
- * Cả thế giới của một cảnh tại giây `t`, đặt trong `<svg viewBox={cam.viewBox}>`: nền (hay `bg`
- * của lớp vẽ code, hay vạch đất), `back` của lớp code, `fx` lớp `back`, dàn diễn theo
- * `sceneOrder` với `place` đã cộng, `front` của lớp code, `fx` lớp `front` rồi `ui`, tất cả
- * trong một `<g>` rung theo `shake`. Dải khung, mp4 thử và app Remotion cùng vẽ bằng một
- * component này — chèn thiếu một chỗ móc là không thể. docs/03-scene.md, docs/10-lop-ve-code.md
+ * Cả khung của một cảnh tại giây `t`, đặt trong `<svg viewBox={cam.viewBox}>`: nền (hay `bg` của lớp
+ * vẽ code), `back` / `front` của lớp code và `fx` xếp theo trục `z`, tất cả trong một
+ * `<g>` rung theo `shake`. Không vẽ người: người 3D là của sân khấu three, lớp này đè lên hay đứng
+ * riêng ở cảnh chỉ có chữ và hình. docs/10-lop-ve-code.md
  */
 export function SceneWorld({
   rt,
   t,
   cam = cameraAt(rt, t),
-  characterOf: rawCharacterOf,
-  propOf,
-  animalUrls = () => ({}),
+  characterOf,
   url = () => undefined,
   bgUrls = {},
   codeLayers = [],
   id = rt.name,
 }: SceneWorldProps) {
-  const characterOf = (m: CastMember) => {
-    const c = rawCharacterOf(m);
-    return c && { ...c, character: castCharacter(m, c.character) };
-  };
   const fx = sceneFx(rt);
-  const anchor = sceneAnchor(rt, (m) => characterOf(m)?.character);
+  const anchor = sceneAnchor(rt, (m) => {
+    const c = characterOf?.(m);
+    return c && c.character;
+  });
   const fxProps = {
     fx,
     t,
@@ -288,27 +239,10 @@ export function SceneWorld({
     if (!r) return sum;
     return sum ? { dx: sum.dx + r.dx, dy: sum.dy + r.dy } : r;
   }, null);
-  // Mỗi lớp thấy `spot` đã cộng phần lệch của lớp trước, và cộng thẳng vào chính object mà
-  // `sceneAt` / `propAt` / `animalAt` vừa trả — chúng trả object mới mỗi lượt gọi
-  const place = (castId: string, spot: Spot): Offset | null =>
-    on.reduce<Offset | null>((sum, l) => {
-      const d = l.place?.(ctx, castId, spot);
-      if (!d) return sum;
-      spot.x += d.dx;
-      spot.groundY += d.dy;
-      return sum
-        ? {
-            dx: sum.dx + d.dx,
-            dy: sum.dy + d.dy,
-            spin: d.spin ?? sum.spin,
-            ring: d.ring ?? sum.ring,
-          }
-        : d;
-    }, null);
 
   const out: ReactNode[] = [];
   if (drawBg) out.push(<Fragment key="bg">{drawBg(ctx)}</Fragment>);
-  else if (rt.bg.length) {
+  else
     bgOrder(rt.bg).forEach((b, i) => {
       const href = bgUrls[b.file];
       if (!href) return;
@@ -327,21 +261,7 @@ export function SceneWorld({
           />,
         );
     });
-  } else
-    out.push(
-      <line
-        key="ground"
-        x1={-GROUND_SPAN}
-        x2={GROUND_SPAN}
-        y1={rt.ground}
-        y2={rt.ground}
-        stroke={GROUND_LINE}
-        // Vạch đất là chỉ dẫn, không phải nét vẽ: chia zoom để nó mảnh như nhau ở mọi cỡ
-        strokeWidth={2 / cam.zoom}
-      />,
-    );
-  // Một trục `z` cho lớp vẽ code, `fx` và dàn diễn: hoà thì lớp code, rồi `fx`, rồi dàn diễn,
-  // trong cùng loại giữ thứ tự mảng — đúng thứ tự cứng khi không ai khai `z`. Nền chưa vào trục
+  // Một trục `z` cho lớp vẽ code và `fx`: hoà thì lớp code trước, trong cùng loại giữ thứ tự mảng
   const items: { z: number; tie: number; node: ReactNode }[] = [];
   on.forEach((l, i) => {
     if (l.back)
@@ -364,112 +284,9 @@ export function SceneWorld({
         tie: 1e6 + FX_LAYERS.indexOf(layer),
         node: <SceneFx key={`fx-${layer}-${z}`} layer={layer} z={z} {...fxProps} />,
       });
-  // Người 3D và đồ khối: một lượt chung, thứ tự che suy từ hình học mỗi khung
-  const lens = rt.lens;
-  const { furniture, people } = sceneSolids(rt, t, ctx, on, characterOf, animalUrls, solidFigure);
-  if (lens && (people.length || furniture.length)) {
-    items.push({
-      z: Math.min(SCENE_Z.cast, ...people.map((p) => p.z)),
-      tie: 2e6 - 1,
-      node: (
-        <SolidWorld
-          key="solid-world"
-          lens={lens}
-          furniture={furniture}
-          people={people.map((p) => p.f)}
-        />
-      ),
-    });
-  }
-  // `sceneAt` / `propAt` / `animalAt` trả sẵn `x`, `groundY`, `scale` — bọc thêm transform là cộng đôi
-  sceneOrder(rt).forEach(({ kind, id: castId, part, parts, z }, i) => {
-    const tie = 2e6 + i;
-    if (kind === "prop") {
-      const p = rt.props.find((q) => q.id === castId)!;
-      const def = propOf(p.prop);
-      if (!def) return;
-      const pp = propAt(rt, castId, t);
-      // Cây trên núi phải dâng cùng núi; `spin` và `ring` chỉ có ở người
-      place(castId, pp);
-      items.push({
-        z,
-        tie,
-        node: (
-          <Prop
-            key={part ? `${castId}:${part}` : castId}
-            prop={def.prop}
-            url={def.url}
-            part={part}
-            {...pp}
-          />
-        ),
-      });
-      return;
-    }
-    if (kind === "animal") {
-      const a = rt.animals.find((q) => q.id === castId)!;
-      const ap = animalAt(rt, castId, t);
-      place(castId, ap);
-      items.push({
-        z,
-        tie,
-        node: <Animal key={castId} animal={a.spec} urls={animalUrls(a)} {...ap} />,
-      });
-      return;
-    }
-    const m = rt.cast.find((q) => q.id === castId)!;
-    if (lens && m.world) return;
-    const c = characterOf(m);
-    if (!c) return;
-    const sp = sceneAt(rt, castId, t, c.character.rig.height, body3(c.character));
-    const off = place(castId, sp);
-    const body = {
-      character: c.character,
-      urls: c.urls,
-      slots: castSlots(rt, sp, t, animalUrls),
-      ...sp,
-      parts,
-    };
-    // Người khai `zParts` ra nhiều mục; vòng sóng quanh chân chỉ đi theo lượt mang thân
-    const key = parts ? `${castId}:${parts.join("+")}` : castId;
-    const ringed = !parts || parts.includes("torso");
-    // Không lớp nào đẩy thì vẽ y như cũ: thêm một tầng bọc là `useId` của React đổi, mọi
-    // `id` gradient trong khung lệch theo, và hai bản SVG hết so được với nhau
-    if (!off?.spin && !off?.ring) {
-      items.push({ z, tie, node: <Character key={key} {...body} /> });
-      return;
-    }
-    // `spin` nghiêng CẢ người quanh điểm lớp chọn, bọc ngoài `<Character>` chứ không đổi
-    // `pose`: đây là cái xác quay trong không trung, không phải một khớp nào gập lại
-    const turned = off.spin ? (
-      <g
-        transform={`rotate(${off.spin.deg.toFixed(2)} ${off.spin.x.toFixed(1)} ${off.spin.y.toFixed(1)})`}
-      >
-        <Character {...body} />
-      </g>
-    ) : (
-      <Character {...body} />
-    );
-    // Mốc bàn chân đo bằng `anchorAt` (nó chưa biết lớp đẩy gì) nên cộng đúng phần lệch
-    // vừa cộng cho thân, không thì vòng sóng đứng lại còn người thì trôi
-    const feet = (["footNear", "footFar"] as const).map((f) => {
-      const a = anchorAt(rt, castId, f, t, c.character);
-      return { x: a.x + off.dx, y: a.y + off.dy };
-    });
-    items.push({
-      z,
-      tie,
-      node: (
-        <g key={key}>
-          {turned}
-          {ringed && off.ring?.(feet, sp.scale ?? 1)}
-        </g>
-      ),
-    });
-  });
   items.sort((a, b) => a.z - b.z || a.tie - b.tie);
   out.push(...items.map((i) => i.node));
-  // Rung máy quay bọc CẢ khung — nền, người và hiệu ứng cùng xê dịch; `viewBox` vẫn là của camera
+  // Rung máy quay bọc CẢ khung — nền và hiệu ứng cùng xê dịch; `viewBox` vẫn là của camera
   return (
     <SceneAnchor.Provider value={anchor}>
       {shake ? (

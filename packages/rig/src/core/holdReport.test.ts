@@ -96,15 +96,7 @@ function runtime() {
     items: ITEMS,
   });
   if (!r.success) throw new Error(r.error.message);
-  const rt = resolveScene(
-    r.data,
-    {},
-    {},
-    {},
-    { nguoi: H, ban: H },
-    { nguoi: DIMS, ban: DIMS },
-    HELD,
-  );
+  const rt = resolveScene(r.data, {}, { nguoi: H, ban: H }, { nguoi: DIMS, ban: DIMS }, HELD);
   rt.chars = chars;
   return rt;
 }
@@ -227,7 +219,7 @@ describe("holdRuns", () => {
       items: [bang(0.5)],
     });
     if (!r.success) throw new Error(r.error.message);
-    const rt2 = resolveScene(r.data, {}, {}, {}, { nguoi: H }, { nguoi: DIMS }, HELD);
+    const rt2 = resolveScene(r.data, {}, { nguoi: H }, { nguoi: DIMS }, HELD);
     expect(holdRuns(rt2, "nguoi").left).toEqual([
       {
         since: 0,

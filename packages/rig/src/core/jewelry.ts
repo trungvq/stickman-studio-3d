@@ -152,7 +152,7 @@ export const NECKLACE_INK = { chain: 0.3, pearl: 0.4, pendant: 0.6 } as const;
  * chạy theo viền cổ áo lùi vào `NECKLACE_INSET` (nằm trên da, trong viền gân hay chân cổ bẻ), phía trước võng tới `drop` px
  * dưới chân cổ theo `cos^k` của góc quanh cổ, nên cổ U, cổ V, cổ vuông đều mang cùng một vòng võng. Mặt dây treo ở chỗ thấp
  * nhất. Dây `chain` là ống liền, `pearl` là chuỗi hạt tròn sát nhau. Mỗi phần một khối kín kèm bề dày nét viền `ink` (px).
- * docs/02-trang-phuc.md#dây-chuyền
+ * docs/12-trang-phuc-3d.md#dây-chuyền
  */
 export function necklaceSolids(
   b: { s: Surface; raise: (sp: SP, lift: number) => Vec3 },
@@ -335,7 +335,7 @@ export function earLobe(side: -1 | 1, human: boolean) {
 /**
  * Bông tai `raw` ở tai `side`: `stud` một nụ dẹt áp mặt ngoài dái tai; `hoop` vòng tròn xỏ qua dái tai, nằm trong mặt
  * phẳng dọc của tai; `drop` một hạt kim loại ở dái tai, sợi thõng xuống và viên giọt nước ở đáy. Vòng và phần thõng của
- * bông dài là `hang`: người 3D quay nó quanh lỗ xỏ cho luôn thõng theo trọng lực. docs/02-trang-phuc.md#bông-tai
+ * bông dài là `hang`: người 3D quay nó quanh lỗ xỏ cho luôn thõng theo trọng lực. docs/12-trang-phuc-3d.md#bông-tai
  */
 export function earringMesh(
   raw: Partial<Earrings> | undefined,

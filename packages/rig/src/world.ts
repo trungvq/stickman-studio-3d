@@ -12,7 +12,7 @@ import type { HandPose } from './core/hand';
 import type { HeldIntent } from './core/heldAudit';
 import { PAPER } from './core/constants';
 import type { Body3 } from './core/figure3d';
-import { cameraAt, castCharacter, itemAt, itemReleased, refreshRuntime, sceneAt, type CastMember, type SceneData, type ScenePose, type SceneRuntime } from './core/scene';
+import { cameraAt, itemAt, itemReleased, refreshRuntime, sceneAt, type CastMember, type SceneData, type ScenePose, type SceneRuntime } from './core/scene';
 import { equipCharacter, type CharacterData } from './core/schema';
 import { seatCrowd } from './crowd';
 import { loadFonts } from './decal';
@@ -188,14 +188,14 @@ const m4 = (G: GripFrame) => new THREE.Matrix4().set(G.R[0], G.R[1], G.R[2], G.p
 export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, data: WorldData, s: Set3D = spec.set()): World3D {
   const { still, extra, wear } = spec, { characters, heights, bodies } = data;
   const acting = (id: string, t: number) => sceneAt(rt, id, t, heights[id], bodies[id]);
-  const base = (c: CastMember) => castCharacter(c, characters[c.character!]);
-  const cast = rt.cast.filter((c) => c.world && c.character && characters[c.character]);
+  const base = (c: CastMember) => characters[c.character!];
+  const cast = rt.cast.filter((c) => c.character && characters[c.character]);
   // mốc món `rest` không khai chỗ dựng bàn tay người thả từ nhân vật thật của người ấy
   rt.chars = { ...Object.fromEntries(cast.map((c) => [c.id, base(c)])), ...rt.chars };
-  const frozen = (c: CastMember) => (still ? still.includes(c.id) : !!c.world?.sit);
+  const frozen = (c: CastMember) => (still ? still.includes(c.id) : c.world.sit);
   const seats = cast.filter(frozen).map((c) => ({ c, ac: acting(c.id, 0) }));
   s.group.add(seatCrowd(
-    seats.map(({ c, ac }) => ({ at: c.world!.at as Vec3, yaw: c.world!.yaw ?? 0, acting: ac })),
+    seats.map(({ c, ac }) => ({ at: c.world.at as Vec3, yaw: c.world.yaw, acting: ac })),
     (i) => characterOptions(equipCharacter(base(seats[i].c), seats[i].ac.equip) as unknown as CharacterJson),
   ));
   const root = new THREE.Group();
@@ -207,9 +207,9 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
       wear?.(c.id, f);
       return f;
     });
-    const keys = c.world!.path ?? [], equip = acting(c.id, 0).equip;
-    if (!c.world!.sit && (!c.world!.path || keys.some((k) => !k.sit))) root.add(w.get(equip, false).fig.root);
-    if (c.world!.sit || keys.some((k) => k.sit)) root.add(w.get(equip, true).fig.root);
+    const keys = c.world.path ?? [], equip = acting(c.id, 0).equip;
+    if (!c.world.sit && (!c.world.path || keys.some((k) => !k.sit))) root.add(w.get(equip, false).fig.root);
+    if (c.world.sit || keys.some((k) => k.sit)) root.add(w.get(equip, true).fig.root);
     return { id: c.id, w };
   });
   const current = new Map<string, Figure>();
@@ -234,7 +234,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
   const pick = (item: string, who: string) => entry(item, who) ?? entry(item);
   const seeing = (ac: ScenePose, t: number): ScenePose => {
     const L = spec.lens?.(t);
-    return L && ac.world ? { ...ac, world: { ...ac.world, eye: [...L.eye] as [number, number, number] } } : ac;
+    return L ? { ...ac, world: { ...ac.world, eye: [...L.eye] as [number, number, number] } } : ac;
   };
   /** Lần treo (`món@carry`) của tay `side` ở dáng `ac` */
   const hung = (ac: ScenePose, side: Side) => {
@@ -247,7 +247,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     if (!p) return undefined;
     const acts = cast.map((c) => ({ c, ac: acting(c.id, t) }));
     for (const { c, ac } of acts) {
-      const roles = ac.world?.hands ? holdRoles(ac.world.hands, ac.world.flip ? 1 : -1) : {};
+      const roles = ac.world.hands ? holdRoles(ac.world.hands, ac.world.flip ? 1 : -1) : {};
       for (const side of [-1, 1] as Side[]) {
         const r = roles[side];
         if (r?.role === 'lead' && pick(r.hold.item, c.id) === p) return { id: c.id, side, ac, carry: false };
@@ -302,9 +302,9 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     const want = new Map<Provided, Want>();
     for (const [id, ac] of acts) {
       const fig = current.get(id);
-      const raw = ac.world?.hands;
+      const raw = ac.world.hands;
       if (!fig || !raw) continue;
-      const near: Side = ac.world!.flip ? 1 : -1;
+      const near: Side = ac.world.flip ? 1 : -1;
       const hands = { ...raw };
       for (const k of ['near', 'far'] as const) if (raw[k]?.hold) hands[k] = { ...raw[k]!, hold: placed(fig, raw[k]!.hold) };
       const H = fig.hands?.[-1];
@@ -429,7 +429,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
       for (const a of actors) {
         const ac = seeing(acting(a.id, t), t);
         acts.set(a.id, ac);
-        const { fig, fresh } = a.w.get(ac.equip, !!ac.world?.seated);
+        const { fig, fresh } = a.w.get(ac.equip, !!ac.world.seated);
         if (fresh) root.add(fig.root);
         for (const f of a.w.figures.values()) f.root.visible = f === fig && ac.opacity > 0.5;
         act(fig, ac, t);

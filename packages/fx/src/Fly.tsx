@@ -16,7 +16,7 @@ const RINGS: [number, number][] = [
  */
 export function Fly({ fx, url, t, id }: { fx: FlyData; url?: string; t: number; id: string }) {
   const tau = t - fx.t0;
-  if (tau < 0 || tau > fx.flight || (!url && !fx.part)) return null;
+  if (tau < 0 || tau > fx.flight || !url) return null;
   const raw = tau / fx.flight;
   const u = easeInOut(clamp01(raw));
   const { x, y } = arcAt({ x: fx.x0, y: fx.y0 }, { x: fx.x1, y: fx.y1 }, fx.arc, u);
@@ -54,7 +54,7 @@ export function Fly({ fx, url, t, id }: { fx: FlyData; url?: string; t: number; 
         );
       })}
       <g transform={`translate(${x} ${y}) rotate(${deg})`}>
-        <Piece part={fx.part} url={url} w={w} h={h} />
+        <Piece url={url} w={w} h={h} />
       </g>
     </g>
   );

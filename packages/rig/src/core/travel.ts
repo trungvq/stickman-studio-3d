@@ -1,4 +1,4 @@
-import { feet, type Legs } from "./geometry";
+import { feet } from "./geometry";
 import type { Pose, Pt } from "./types";
 
 /** Bước lấy mẫu lúc nướng bảng (giây); cố định để Remotion và studio ra cùng một bảng */
@@ -35,8 +35,7 @@ export function nextBearing(bearing: number[], ys: number[], v: number[]): numbe
  * đáp thấp ngang chân đang đẩy — vì vậy chân mới chỉ được nhận là chịu lực khi nó
  * **ngừng tiến** (chạm gót), chân đang chịu lực giữ quyền cho tới khi rời dải chạm đất,
  * không chân nào chịu lực thì gốc giữ đà. Nhiều chân cùng chịu lực thì lấy trung bình:
- * dang chân đối xứng không làm người dịch. Số chân là bao nhiêu cũng được — người hai
- * chân và động vật bốn chân đi chung một hàm. docs/01-rig.md
+ * dang chân đối xứng không làm người dịch. Số chân là bao nhiêu cũng được. docs/01-rig.md
  */
 export function bakeFeetTravel(feetAt: (t: number) => Pt[], duration: number): TravelTable {
   const n = Math.max(1, Math.ceil(duration / TRAVEL_STEP - 1e-9));
@@ -48,8 +47,7 @@ export function bakeFeetTravel(feetAt: (t: number) => Pt[], duration: number): T
   let x = 0;
   for (let k = 1; k <= n; k++) {
     const cur = feetAt(k * step);
-    // Số bàn chân đổi là vừa cất cánh hay vừa đáp: không chân nào có gì để so, đứng yên chứ
-    // không giữ đà — con vật đang bay trôi ngang bằng `path`, không phải bằng chân
+    // Số bàn chân đổi: không chân nào có gì để so, đứng yên chứ không giữ đà
     if (cur.length !== prev.length) {
       bearing = standing(cur.map((p) => p[1]));
       dx = 0;
@@ -72,15 +70,14 @@ export function bakeFeetTravel(feetAt: (t: number) => Pt[], duration: number): T
 }
 
 /**
- * Trôi ngang của một chu kỳ tư thế người; `feet` là hai bàn chân so với tâm hông, `legs` đổi độ dài chân,
- * `spread` đo bàn chân như người 3D dựng (chân nâng dang ra thì lên theo `cos` góc dang).
+ * Trôi ngang của một chu kỳ tư thế người; `feet` là hai bàn chân so với tâm hông, `spread` đo bàn
+ * chân như người 3D dựng (chân nâng dang ra thì lên theo `cos` góc dang).
  */
 export const bakeTravel = (
   poseAt: (t: number) => Pose,
   duration: number,
-  legs?: Legs,
   spread = false,
-): TravelTable => bakeFeetTravel((t) => feet(poseAt(t), 1, legs, spread), duration);
+): TravelTable => bakeFeetTravel((t) => feet(poseAt(t), 1, spread), duration);
 
 /** Tra bảng tại `t` giây, nội suy thẳng; ngoài bảng thì kẹp ở hai đầu. */
 export function travelAt(tb: TravelTable, t: number): number {

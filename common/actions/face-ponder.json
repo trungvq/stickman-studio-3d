@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 10,
+  "name": "face-ponder",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["face"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "face": {
+        "eyes": "squint",
+        "brow": "skeptical",
+        "mouth": "closed"
+      }
+    }
+  ],
+  "note": "Nghĩ ngợi, tính toán: mày lệch, mắt nheo."
+}

@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 300">
-<title>Tạp dề nhìn nghiêng</title>
-<g id="guide" fill="none" stroke="#9ac" stroke-width="1"><path d="M 75 100 L 75 256"/></g>
-<g fill="white" stroke="black" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 91 21 L 108 29 L 111 99 Q 114 150.4 134 210.4 L 106 215.2 Q 99 164.8 97 107.2 L 49 106 L 49 99 L 98 99 Z" fill="white" stroke-width="6"/>
-<path d="M 103 30 L 111 3 M 112 133 L 123 133.6 L 127 152.2 L 116 153.4 M 50 100.6 L 27 91 L 36 107.8 L 50 103.6" fill="none" stroke-width="3.9"/>
-</g>
-</svg>

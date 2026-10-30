@@ -8,7 +8,7 @@ import { stageJoints } from './core/snap';
 import { aimCamera } from './lens';
 import { buildWorld, plainRoom } from './world';
 
-// Ảnh three của `stickman-render --three` và lớp vệt SVG đè lên nó (`stageJoints` sau `cameraAt`) phải trùng điểm
+// Ảnh three của `stickman-render --scene` và lớp vệt SVG đè lên nó (`stageJoints` sau `cameraAt`) phải trùng điểm
 
 beforeAll(() => {
   const ctx = new Proxy({}, { get: (_t, k) => (k === 'measureText' ? () => ({ width: 0 }) : () => undefined), set: () => true });
@@ -40,7 +40,7 @@ describe('ảnh three và vệt khớp', () => {
     });
     if (!sc.success) throw new Error(sc.error.message);
     const heights = { a: 1, b: 1 }, bodies = { a: body3(c), b: body3(c) };
-    const rt = resolveScene(sc.data, { still, wave }, {}, {}, heights, bodies);
+    const rt = resolveScene(sc.data, { still, wave }, heights, bodies);
     const world = buildWorld(sc.data, rt, { set: () => plainRoom(), still: [] }, { characters: { 'a.json': c }, heights, bodies });
     const camera = new THREE.PerspectiveCamera();
     const F = rt.frame;

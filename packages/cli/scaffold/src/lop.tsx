@@ -1,6 +1,6 @@
 /**
  * Lớp vẽ code của repo: thứ `scene.fx` không làm được — vẽ cả bối cảnh, rung cả khung, đẩy
- * chỗ đứng của người / thú / đạo cụ. `package.json` trỏ `stickman.layers` tới file này;
+ * chỗ đứng của người. `package.json` trỏ `stickman.layers` tới file này;
  * `stickman-render`, MCP và `Scene.tsx` cùng nạp nó qua `<SceneWorld>`, nên dải ảnh soi và
  * mp4 cuối vẽ cùng một hình. Thứ tự mảng là thứ tự vẽ. Hợp đồng ở `pnpm exec stickman docs 10`.
  *

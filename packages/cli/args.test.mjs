@@ -40,7 +40,7 @@ describe("cliArgs", () => {
     assert.match(a.error, /--held/);
     assert.match(cliArgs(["check", "--force"]).error, /không nhận `--force`/);
     assert.match(cliArgs(["init", "-f"]).error, /không nhận `-f`/);
-    assert.match(cliArgs(["reseat", "--before"]).error, /--before cần một giá trị/);
+    assert.match(cliArgs(["retime", "--mark"]).error, /--mark cần một giá trị/);
     assert.match(cliArgs(["check", "--scene", "--held"]).error, /--scene cần một giá trị/);
   });
 

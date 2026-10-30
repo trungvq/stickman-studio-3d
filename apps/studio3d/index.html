@@ -10,6 +10,18 @@
   <body>
     <header>
       <button id="sceneOpen" title="Danh sách cảnh">☰</button>
+      <div
+        class="seg"
+        id="appMode"
+        title="Xem cảnh của repo, thư viện hành động hai lớp hay trang soi bộ sinh"
+      >
+        <button data-a="scene">Cảnh</button>
+        <button data-a="library">Thư viện</button>
+        <button data-a="gen" title="Trang soi bộ sinh hành động: tham số, sân khấu thử, tự kiểm">
+          Bộ sinh
+        </button>
+      </div>
+      <span id="libTitle"></span>
       <input id="scene" list="scenes" placeholder="Cảnh… (gõ để lọc)" spellcheck="false" />
       <datalist id="scenes"></datalist>
       <button id="reload" title="Nạp lại cảnh từ đĩa (R); Shift+R dựng lại cả cảnh">Nạp lại</button>
@@ -65,10 +77,21 @@
       <aside id="sceneSide">
         <div class="sidehead">
           <button id="sceneToggle" title="Gập / mở danh sách cảnh">⇆</button>
-          <b>Cảnh</b>
+          <b id="sceneTitle">Cảnh</b>
           <span id="sceneCount" class="dim"></span>
+          <span id="libCount" class="dim"></span>
         </div>
-        <div class="sidebody">
+        <div class="sidebody" id="libBody">
+          <input
+            id="libFilter"
+            type="search"
+            placeholder="Tìm… (Enter mở dòng đầu)"
+            spellcheck="false"
+          />
+          <div id="libList"></div>
+        </div>
+        <div class="sidebody" id="genBody"><div id="genForm"></div></div>
+        <div class="sidebody" id="sceneBody">
           <input
             id="sceneFilter"
             type="search"
@@ -97,10 +120,12 @@
       <aside id="side">
         <div class="sidehead">
           <button id="sideToggle" title="Gập / mở panel">⇆</button>
-          <b>Bàn tay</b>
+          <b id="sideTitle">Bàn tay</b>
           <span id="handsAt" class="dim"></span>
         </div>
         <div class="sidebody">
+          <section id="libCard"></section>
+          <section id="genCard"></section>
           <section id="keyCard" hidden></section>
           <section id="runCard" hidden></section>
           <section id="clipCard" hidden></section>
@@ -138,7 +163,16 @@
     <div id="scrim" hidden></div>
     <footer>
       <div id="tlLeft">
-        <div class="tlhead"><button id="play" title="Phát / dừng (Space)">▶</button></div>
+        <div class="tlhead">
+          <button id="play" title="Phát / dừng (Space)">▶</button>
+          <span id="libPlay">
+            <span class="seg" id="speed" title="Tốc độ phát">
+              <button data-s="0.25">0,25×</button>
+              <button data-s="1">1×</button>
+            </span>
+            <button id="loop" title="Lặp: hết cảnh thì chạy lại từ đầu (L)">Lặp</button>
+          </span>
+        </div>
         <div id="laneLabels" hidden></div>
       </div>
       <div id="tlScroll">

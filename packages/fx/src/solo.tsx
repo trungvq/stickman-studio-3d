@@ -9,19 +9,15 @@ import {
   SCENE_VERSION,
   sceneAt,
   type ActionData,
-  type ArmLayers,
   type CharacterData,
-  type CharacterProps,
   type EquipStep,
   type FaceState,
   type Pose,
   type SceneRuntime,
   type V3,
-  type View,
   type World,
-} from "@stickman3d/sketch";
+} from "@stickman3d/rig/core";
 import { bar, box, type SolidItem } from "./solid";
-import { solidFigure, SolidWorld } from "./SolidWorld";
 
 /** Ống kính của `solo3d`: tiêu cự và tầm mắt như cảnh thử 3D, nhìn vào hông từ trước mặt */
 export const SOLO_LENS = { f: 800, dist: 1100, target: [0, -110, 0] as V3 };
@@ -57,18 +53,15 @@ export function soloChair(at: V3, yawDeg: number, drop: number, h: number): Soli
   };
 }
 
-/** Một khung của người 3D đứng một mình: các trường `<Character>` cần, kèm chỗ đặt trên khung ống kính */
+/** Một khung của người 3D đứng một mình: tư thế như `sceneAt` trả, kèm chỗ đặt trên khung ống kính */
 export interface Solo {
   pose: Pose;
-  layers: ArmLayers;
   face: Pick<FaceState, "mouth" | "brow" | "eyes">;
   equip: EquipStep[];
-  view: View;
-  headView: View;
   flip: boolean;
   world: World;
   /** Chỗ đặt người trên khung ống kính, như `sceneAt` trả */
-  spot: { x: number; groundY: number; scale: number; root: "hip" | "feet" };
+  spot: { x: number; groundY: number; scale: number };
   /** Điểm sàn dưới hông trên khung ống kính */
   floor: [number, number];
   /** Ghế chuẩn khi người đang ngồi */
@@ -126,8 +119,6 @@ export function soloStage({ character, yaw, pitch = 16, action }: SoloSpec) {
     const rt = resolveScene(
       scene.data,
       Object.fromEntries(acts.map((a, i) => [`a${i}`, a])),
-      {},
-      {},
       { a: h },
       { a: body },
     );
@@ -147,17 +138,14 @@ export function soloStage({ character, yaw, pitch = 16, action }: SoloSpec) {
       s = sceneAt(runtime(place), "a", time, h, body);
       furniture = [soloChair(top, yaw, -top[1], h)];
     }
-    const world = s.world!;
+    const world = s.world;
     return {
       pose: s.pose,
-      layers: s.layers,
       face: { mouth: s.mouth, brow: s.brow, eyes: s.eyes },
       equip: s.equip,
-      view: s.view,
-      headView: s.headView,
       flip: s.flip,
       world,
-      spot: { x: s.x, groundY: s.groundY, scale: s.scale, root: s.root },
+      spot: { x: s.x, groundY: s.groundY, scale: s.scale },
       floor: project(world.lens, [world.hip[0], 0, world.hip[2]]),
       ...(furniture && { furniture }),
       place,
@@ -165,47 +153,8 @@ export function soloStage({ character, yaw, pitch = 16, action }: SoloSpec) {
   };
 }
 
-/** Một khung của `soloStage`; `pose` có thì thay tư thế (2D, không cờ nâng), hông, sàn và ghế vẫn theo hành động */
+/** Một khung của `soloStage`; `pose` có thì thay tư thế (không cờ nâng), hông, sàn và ghế vẫn theo hành động */
 export function solo3d({ time = 0, pose, ...spec }: SoloSpec & { time?: number; pose?: Pose }) {
   const s = soloStage(spec)(time);
   return pose ? { ...s, pose } : s;
 }
-
-/**
- * Vẽ một khung của `soloStage` qua `<SolidWorld>`, người và ghế xếp lớp chung như cảnh: cả cụm dời
- * và phóng để sàn dưới hông về `(x, groundY)` cỡ 1. `body` là props `<Character>` của người, chưa đặt chỗ.
- */
-export function SoloWorld({
-  solo,
-  body,
-  x = 0,
-  groundY,
-}: {
-  solo: Solo;
-  body: CharacterProps;
-  x?: number;
-  groundY: number;
-}) {
-  const fig = solidFigure("solo", { ...body, world: solo.world, ...solo.spot });
-  const k = solo.spot.scale;
-  return (
-    <g
-      transform={`translate(${x} ${groundY}) scale(${1 / k}) translate(${-solo.floor[0]} ${-solo.floor[1]})`}
-    >
-      {fig && <SolidWorld lens={solo.world.lens} furniture={solo.furniture ?? []} people={[fig]} />}
-    </g>
-  );
-}
-
-/** Điểm trên khung ống kính của `solo` ra điểm của khung đã vẽ bằng `<SoloWorld x groundY>`, và ngược lại */
-export const soloToStage = (solo: Solo, x: number, groundY: number, [u, v]: [number, number]) =>
-  [x + (u - solo.floor[0]) / solo.spot.scale, groundY + (v - solo.floor[1]) / solo.spot.scale] as [
-    number,
-    number,
-  ];
-
-export const stageToSolo = (solo: Solo, x: number, groundY: number, [u, v]: [number, number]) =>
-  [solo.floor[0] + (u - x) * solo.spot.scale, solo.floor[1] + (v - groundY) * solo.spot.scale] as [
-    number,
-    number,
-  ];

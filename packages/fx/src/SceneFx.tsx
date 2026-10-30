@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from "react";
-import type { CameraShot } from "@stickman3d/sketch";
+import type { CameraShot } from "@stickman3d/rig/core";
 import type { FxAnchor } from "./anchor";
 import { BubbleFx } from "./Bubble";
 import { Buttons } from "./Buttons";

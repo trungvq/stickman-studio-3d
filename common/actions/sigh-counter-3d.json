@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 20,
+  "name": "sigh-counter-3d",
+  "duration": 1.8,
+  "end": "hold",
+  "mask": ["armNear", "armFar", "hand", "torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [-6, 24, 0],
+        "armNear": [-6, 24, 0],
+        "torso": 0,
+        "head": [null, null, 0]
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "w": 0.3, "turn": 0, "bend": 0 },
+        "armNear": { "w": 0.3, "turn": 0, "bend": 0 }
+      }
+    },
+    {
+      "t": 0.1389,
+      "pose": { "torso": 4, "head": [null, null, -3] },
+      "reach": {
+        "armFar": { "at": [44, -62, 40], "elbow": [-0.3, 0.3, 1] },
+        "armNear": { "at": [44, -62, 40], "elbow": [-0.3, 0.3, 1] }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "open", "w": 0.5, "palm": "down", "fingers": "forward" },
+        "armNear": { "pose": "open", "w": 0.5, "palm": "down", "fingers": "forward" }
+      }
+    },
+    {
+      "t": 0.2778,
+      "pose": { "torso": 9, "head": [null, null, -6] },
+      "reach": {
+        "armFar": { "at": [86, -33, 36], "point": "palm", "elbow": [-0.3, 0.3, 1] },
+        "armNear": { "at": [86, -33, 36], "point": "palm", "elbow": [-0.3, 0.3, 1] }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "open", "w": 0.7, "palm": "down", "fingers": "forward" },
+        "armNear": { "pose": "open", "w": 0.7, "palm": "down", "fingers": "forward" }
+      }
+    },
+    {
+      "t": 0.7222,
+      "pose": { "torso": 16, "head": [null, null, 22] },
+      "reach": {
+        "armFar": { "at": [86, -33, 36], "point": "palm", "elbow": [-0.3, 0.3, 1] },
+        "armNear": { "at": [86, -33, 36], "point": "palm", "elbow": [-0.3, 0.3, 1] }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "open", "w": 0.7, "palm": "down", "fingers": "forward" },
+        "armNear": { "pose": "open", "w": 0.7, "palm": "down", "fingers": "forward" }
+      }
+    },
+    {
+      "t": 1,
+      "pose": { "torso": 15, "head": [null, null, 20] },
+      "reach": {
+        "armFar": { "at": [86, -33, 36], "point": "palm", "elbow": [-0.3, 0.3, 1] },
+        "armNear": { "at": [86, -33, 36], "point": "palm", "elbow": [-0.3, 0.3, 1] }
+      },
+      "ease": "linear",
+      "hand": {
+        "armFar": { "pose": "open", "w": 0.7, "palm": "down", "fingers": "forward" },
+        "armNear": { "pose": "open", "w": 0.7, "palm": "down", "fingers": "forward" }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Thở dài, hai tay chống mép quầy: 0–0,5 s hít vào, hai tay đưa qua mép quầy úp lòng tay trên mặt quầy (đích hệ thân [86, −33, 36], `point: \"palm\"`, ngón ra trước, hai tay cách ~vai), thân cúi 9°, đầu ngửa 6°; 0,5–1,3 s thở ra, thân cúi 16°, đầu gục 22°; giữ thân 15°, đầu 20°. Ghi hai tay, `hand`, `torso` và gật của `head`. Nền `stand-3d`, quầy cao 200, mép gần cách hông ~78 (người bụng phệ lùi thêm); quầy khác thì đặt `world.hands`. Buông bằng `sigh-counter-out-3d` — blend thẳng về nền thì ngón quẹt mép quầy. Không quầy thì `sigh-3d`.",
+  "preview": { "stage": "counter" }
+}

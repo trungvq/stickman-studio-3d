@@ -48,8 +48,6 @@ function runtime(hands: unknown[], items: unknown[]) {
   const rt = resolveScene(
     r.data,
     {},
-    {},
-    {},
     { nguoi: H },
     { nguoi: DIMS },
     {
@@ -99,7 +97,10 @@ const ITEMS = [
 describe("mốc món `as`", () => {
   it("schema: `as` không đi với chỗ, hướng, `rest`", () => {
     const ok = (k: object) =>
-      parseScene({ cast: [{ id: "a" }], items: [{ t: 0, cast: "a", item: "b", ...k }] }).success;
+      parseScene({
+        cast: [{ id: "a", world: { at: [0, 0, 0] } }],
+        items: [{ t: 0, cast: "a", item: "b", ...k }],
+      }).success;
     expect(ok({ as: "hand" })).toBe(true);
     expect(ok({ as: "prev" })).toBe(true);
     expect(ok({ as: "prev", ease: "auto" })).toBe(true);

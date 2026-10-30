@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 3,
+  "size": [54, 5.2, 72],
+  "front": "cover",
+  "top": "top",
+  "anchors": {
+    "cover": {
+      "at": [0, 5.2, 0],
+      "dir": [0, 1, 0]
+    },
+    "back": {
+      "at": [0, 0, 0],
+      "dir": [0, -1, 0]
+    },
+    "spine": {
+      "at": [-27, 2.6, 0],
+      "dir": [-1, 0, 0]
+    },
+    "edgeR": {
+      "at": [27, 1.4, 0],
+      "dir": [1, 0, 0]
+    },
+    "top": {
+      "at": [0, 0.7, -36],
+      "dir": [0, 0, -1]
+    },
+    "bottom": {
+      "at": [0, 0.7, 36],
+      "dir": [0, 0, 1]
+    },
+    "page": {
+      "at": [0, 3.8, 0]
+    },
+    "spineBack": {
+      "at": [-27, 0, 0],
+      "dir": [0, -1, 0]
+    }
+  },
+  "shape": [
+    {
+      "box": [54, 5.2, 72],
+      "at": [0, 2.6, 0]
+    }
+  ],
+  "authored": {
+    "sheet": {
+      "ap-bia": {
+        "base": "pinch",
+        "note": "Bốn ngón gập ở gốc, vắt qua mép rồi nằm áp phẳng mặt bìa; ngón cái ở mặt sau — ôm kẹp dựng trước ngực",
+        "item": {
+          "p": [0.29411, -0.19069, -0.13577],
+          "q": [-0.96234, 0.2582, 0.08306, 0.01836]
+        },
+        "anchor": "grip",
+        "fingers": [55, 71, 60, -25, 60, 6, 60, 6, 5, 0],
+        "fit": [0, 0, 9.1, -14, 14.9, -19.6, 7, -16.1, -9.7, -1.6],
+        "curl": 8,
+        "choice": {
+          "part": "body",
+          "featureIndex": 0,
+          "edge": "left",
+          "along": 0.38,
+          "thumb": "back",
+          "slant": 0
+        }
+      }
+    }
+  }
+}

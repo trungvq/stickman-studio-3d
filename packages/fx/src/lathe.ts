@@ -1,4 +1,4 @@
-import { INK, scaleAt, sub3, type Lens, type Place3, type V3 } from "@stickman3d/sketch";
+import { INK, scaleAt, sub3, type Lens, type Place3, type V3 } from "@stickman3d/rig/core";
 import type { Mark, Part, Tone } from "./solid";
 
 // Khối tròn xoay (đĩa, bát, cốc, món đắp vòm) dựng từ khối tám đỉnh: mỗi đai giữa hai vòng chia `n`

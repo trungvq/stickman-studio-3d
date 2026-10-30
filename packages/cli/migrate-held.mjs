@@ -2,7 +2,7 @@
 // `{ item, group, … }`, đi đường tay dẫn. Rig chỉ nạp món v2: món bản 1 đọc bằng schema riêng ở đây. docs/11-nhom-cam.md mục 8
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, resolve } from "node:path";
-import * as rig from "@stickman3d/sketch";
+import * as rig from "@stickman3d/rig/core";
 import { COMMON } from "./lib.mjs";
 
 /**
@@ -724,7 +724,7 @@ export function migrateHeld({ dir = ".", scene, heldDir = "held", map, dryRun = 
         blocked = true;
         continue;
       }
-      const hand = handOf(rig.castCharacter(m, c0));
+      const hand = handOf(c0);
       const okeys = out.cast[mi].world.hands;
       const runs = { right: null, left: null };
       for (const [ki, k] of keys.entries())

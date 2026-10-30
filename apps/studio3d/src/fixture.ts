@@ -10,7 +10,7 @@ import {
   type SceneRuntime,
 } from "@stickman3d/rig/core";
 import bangGia from "../../../packages/rig/src/core/__fixtures__/held-v2/bang-gia.json";
-import cocJson from "../../studio/public/held/coc.json";
+import cocJson from "../../../common/held/coc.json";
 import type { Json } from "./keys";
 
 const spec = (j: unknown): HeldItemSpec => {
@@ -92,7 +92,7 @@ export function scene(): Json {
 export function runtime(j: Json): SceneRuntime {
   const p = parseScene(j);
   if (!p.success) throw new Error(p.error.message);
-  const rt = resolveScene(p.data, { still }, {}, {}, { a: 1 }, { a: body3(c) }, HELD);
+  const rt = resolveScene(p.data, { still }, { a: 1 }, { a: body3(c) }, HELD);
   rt.chars = { a: c };
   return rt;
 }

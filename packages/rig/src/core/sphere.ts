@@ -1,5 +1,4 @@
 import { D, FACE_TRUE, REAR_EYE, REAR_YAW, SIDE_EYE } from "./constants";
-import type { View } from "./types";
 
 /** Hướng khối đầu, độ: `yaw` dương đưa mặt về `+x`, `pitch` dương là cúi */
 export interface HeadTurn {
@@ -40,35 +39,6 @@ export function turnPoint(t: HeadTurn, [x, y, z]: Vec3): Vec3 {
   const cl = Math.cos(t.look * D);
   const sl = Math.sin(t.look * D);
   return [x * cy + z1 * sy, y1 * cl - z2 * sl, y1 * sl + z2 * cl];
-}
-
-/**
- * Điểm trên ảnh đầu đang ở hướng `t` nhưng chưa gật, đem gật `t.pitch`: `(u, v)` lần nửa trục,
- * `v` dương xuống. Điểm nhấc lên sọ ở nửa có mặt, nên mặt vẽ lệch viền vẫn đi đúng cung của nó.
- */
-export function nodImage(t: HeadTurn, u: number, v: number): [number, number] {
-  const cy = Math.cos(t.yaw * D);
-  const sy = Math.sin(t.yaw * D);
-  const z = Math.sqrt(Math.max(0, 1 - u * u - v * v)) * (cy < 0 ? -1 : 1);
-  const [x1, y1] = turnPoint(t, [u * cy - z * sy, -v, u * sy + z * cy]);
-  return [x1, -y1];
-}
-
-const VIEW_YAW: Record<Exclude<View, "front" | "quarter">, number> = {
-  side: 90,
-  rear: REAR_YAW,
-  back: 180,
-};
-
-/**
- * Hướng đầu mà nét mặt và tóc dựng khối cùng chiếu theo. `quarter`: `face.turn` là độ lệch tĩnh
- * tính bằng px, đổi ra góc rồi cộng `lắc`; `front` là chính diện thật, chỉ còn `lắc`; góc khác
- * đứng ở góc của nó. `lắc` / `gật` là góc thật. docs/01-rig.md#đầu-và-nét-mặt
- */
-export function headTurn(view: View, faceTurn: number, rx: number, turn: number, nod: number) {
-  if (view !== "front" && view !== "quarter") return { yaw: VIEW_YAW[view], pitch: nod };
-  const rest = view === "quarter" ? lonOf(faceTurn, rx) : 0;
-  return { yaw: Math.max(-90, Math.min(90, rest + turn)), pitch: nod };
 }
 
 /** Hermite giữ đơn điệu qua các mốc `[x, y]` tăng dần (Fritsch–Carlson); `m0` ép độ dốc ở mốc đầu */

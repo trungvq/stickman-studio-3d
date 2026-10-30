@@ -13,8 +13,8 @@ import { handScale, openLength } from './human';
 import { fingerVec, handGrip, HAND_POSE_KINDS, HAND_POSES, HAND_REST } from './core/hand';
 import { handCapsules } from './core/handMesh';
 import { fromCharacter, R, type CharacterJson, type Figure } from './stickman';
-import sitJson from '../../../apps/studio/public/actions/sit-3d.json';
-import tableJson from '../../../apps/studio/public/actions/arms-on-table-3d.json';
+import sitJson from '../../../common/actions/sit-3d.json';
+import tableJson from '../../../common/actions/arms-on-table-3d.json';
 
 // Người 3D mặc đồ (`palette.clad`, `head.form: "human"`): dựng trong Node trần như người que
 
@@ -212,7 +212,7 @@ describe('người 3D mặc đồ', () => {
       const f = make((c) => ((c.palette.clad = true), (c.head.form = 'human')), { lod, seated: true });
       const dims = { legHalf: cladThigh(17, 6), hipHalf: defaultCharacter().rig.hipHalf };
       const sc = parseScene({ name: 'x', lens: { eye: [0, -200, -1400], yaw: 0, pitch: 0, f: 800, cx: 0, cy: 0 }, cast: [{ id: 'a', character: 'a.json', world: { at: [0, -87.5, 350], yaw: 90, sit: true, floor: 0 }, tracks: [{ clips: [{ action: 'sit-3d', start: 0 }] }, { clips: [{ action: 'table', start: 0 }] }] }] });
-      const rt = resolveScene(sc.data!, actions, {}, {}, { a: 1 }, { a: dims });
+      const rt = resolveScene(sc.data!, actions, { a: 1 }, { a: dims });
       act(f, sceneAt(rt, 'a', 0, 1, dims), 0);
       // mặt bàn cao 143 như cảnh `demo=hold`: 700 × 6 × 130 dưới hai bàn tay
       const top = new THREE.Mesh(new THREE.BoxGeometry(7, 0.06, 1.3));
@@ -322,7 +322,7 @@ describe('người 3D mặc đồ', () => {
         for (const torso of [false, true]) {
           const tracks = [{ clips: [{ action: 'sit-3d', start: 0 }] }, ...(torso ? [{ clips: [{ action: 'lean', start: 0 }] }] : [])];
           const sc = parseScene({ name: 'x', lens: { eye: [0, -200, -1400], yaw: 0, pitch: 0, f: 800, cx: 0, cy: 0 }, cast: [{ id: 'a', character: 'a.json', world: { at: [0, -87.5, 0], yaw: 0, sit: true, floor: 0 }, tracks }] });
-          const rt = resolveScene(sc.data!, actions, {}, {}, { a: 1 }, { a: dims });
+          const rt = resolveScene(sc.data!, actions, { a: 1 }, { a: dims });
           act(f, sceneAt(rt, 'a', 1, 1, dims), 1);
           f.root.updateMatrixWorld(true);
           const name = `${clad ? 'mặc đồ' : 'người que'} ${style}${torso ? ' ngả 15°' : ''}`;
@@ -395,7 +395,7 @@ describe('người 3D mặc đồ', () => {
     });
     if (!scene.success) throw new Error(scene.error.message);
     const dims = body3(c);
-    const rt = resolveScene(scene.data, actions, {}, {}, { di: 0.65, ngoi: 0.65 }, { di: dims, ngoi: dims });
+    const rt = resolveScene(scene.data, actions, { di: 0.65, ngoi: 0.65 }, { di: dims, ngoi: dims });
     for (const t of [0.4, 0.9, 1.3, 2.1]) {
       act(f, sceneAt(rt, 'di', t, 0.65, dims), t);
       const sole = Math.min(...([-1, 1] as const).map((s) => bounds(f.legs[s].ankle!).min.y));

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 20,
+  "name": "stand-attention-3d",
+  "duration": 3.2,
+  "end": "wrap",
+  "mask": ["armFar", "armNear", "legFar", "legNear", "torso", "hand"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [0, 6, 0, 3, 0],
+        "armNear": [0, 6, 0, 3, 0],
+        "legFar": [0, 0],
+        "legNear": [0, 0],
+        "torso": 0
+      },
+      "ease": "linear",
+      "hand": {
+        "armFar": { "pose": "flat", "palm": "in", "fingers": "down" },
+        "armNear": { "pose": "flat", "palm": "in", "fingers": "down" }
+      }
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "armFar": [0, 7, 0, 3, 0],
+        "armNear": [0, 7, 0, 3, 0],
+        "legFar": [0, 0],
+        "legNear": [0, 0],
+        "torso": 0.8
+      },
+      "ease": "linear",
+      "hand": {
+        "armFar": { "pose": "flat", "palm": "in", "fingers": "down" },
+        "armNear": { "pose": "flat", "palm": "in", "fingers": "down" }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Đứng nghiêm: hai chân khép, tay duỗi dọc thân (khuỷu 6–7°, dang 3°), bàn tay `flat` khép ngón áp đùi, lòng tay vào trong; thân chỉ nhích 0 → 0,8° theo nhịp thở, lượt 3,2 s lặp. Ghi tay, chân, thân, bàn tay — thay hẳn `stand-3d`, không chồng lên nó. Nền là chính nó; chồng được track chỉ đầu, nét mặt, hay hành động tay ghi `armNear` / `armFar` riêng. Sinh bằng `tools/actions/stand.mjs`.",
+  "preview": { "stage": "stand" }
+}

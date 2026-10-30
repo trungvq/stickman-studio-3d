@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 20,
+  "name": "nod-3d",
+  "duration": 1,
+  "end": "hold",
+  "mask": ["head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "head": [null, null, 0] }, "ease": "smooth" },
+    { "t": 0.25, "pose": { "head": [null, null, 14] }, "ease": "smooth" },
+    { "t": 0.5, "pose": { "head": [null, null, 2] }, "ease": "smooth" },
+    { "t": 0.7, "pose": { "head": [null, null, 10] }, "ease": "smooth" },
+    { "t": 1, "pose": { "head": [null, null, 0] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Gật hai nhịp rồi về (\"vâng\", \"đúng rồi\"): 14° ở 0,25, còn 2° ở 0,5, 10° ở 0,7, về 0 ở 1; lượt 1 s, giữ. Chỉ ghi góc gật của `head`, nghiêng và lắc để trống. Nền `stand-3d`, ngồi thì `sit-3d`. Chồng lên `turn-head-*`, `look-around-*` vẫn giữ hướng quay; cùng họ: `nod-soft-3d`, `nod-3d`, `nod-big-3d`, một cú khi nói `nod-once-3d`. Sinh bằng `tools/actions/nod.mjs`.",
+  "preview": { "stage": "stand" }
+}

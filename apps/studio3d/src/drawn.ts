@@ -46,8 +46,7 @@ const poseOf = (rt: SceneRuntime, id: string, t: number) =>
   };
 
 /**
- * Tay `side` của `id` ở `t` (`handReport`, phần đích của `sceneAt`); đồ theo tay thì kèm hướng món đang vẽ (`axes`). Người
- * không có `world` thì `undefined`
+ * Tay `side` của `id` ở `t` (`handReport`, phần đích của `sceneAt`); đồ theo tay thì kèm hướng món đang vẽ (`axes`)
  */
 export function drawnHand(
   rt: SceneRuntime,

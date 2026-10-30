@@ -80,7 +80,7 @@ export function roomDemo(q) {
   });
   if (!sc.success) throw new Error(sc.error.message);
   const bodies = { di: { legHalf: 4.5, hipHalf: BOY.rig.hipHalf } };
-  const rt = resolveScene(sc.data, ACTIONS, {}, {}, { di: 1 }, bodies);
+  const rt = resolveScene(sc.data, ACTIONS, { di: 1 }, bodies);
   const walker = stickman({ ...BOY, color: '#3aa89c', face: { brow: 'worried' } });
 
   const time = q.get('time') ?? 'day';

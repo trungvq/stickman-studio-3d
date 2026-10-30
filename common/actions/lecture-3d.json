@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 20,
+  "name": "lecture-3d",
+  "duration": 1.5,
+  "end": "hold",
+  "mask": ["armNear", "hand"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armNear": [-6, 24, 0] },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "point", "w": 0.3, "turn": 0, "bend": 0 } }
+    },
+    {
+      "t": 0.1,
+      "pose": {},
+      "reach": { "armNear": { "at": [50, -62, 82], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": { "armNear": { "pose": "point", "w": 0.6, "turn": 0, "bend": 0 } }
+    },
+    {
+      "t": 0.2,
+      "pose": {},
+      "reach": { "armNear": { "at": [86, -108, 96], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "point", "w": 1, "palm": "forward", "fingers": [0.15, -1, 0] }
+      }
+    },
+    {
+      "t": 0.3,
+      "pose": {},
+      "reach": { "armNear": { "at": [90, -112, 84], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "point", "w": 1, "palm": "forward", "fingers": [0.15, -1, -0.5] }
+      }
+    },
+    {
+      "t": 0.4,
+      "pose": {},
+      "reach": { "armNear": { "at": [86, -108, 96], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "point", "w": 1, "palm": "forward", "fingers": [0.15, -1, 0.45] }
+      }
+    },
+    {
+      "t": 0.5,
+      "pose": {},
+      "reach": { "armNear": { "at": [90, -112, 84], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "point", "w": 1, "palm": "forward", "fingers": [0.15, -1, -0.5] }
+      }
+    },
+    {
+      "t": 0.6,
+      "pose": {},
+      "reach": { "armNear": { "at": [86, -108, 96], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "point", "w": 1, "palm": "forward", "fingers": [0.15, -1, 0.45] }
+      }
+    },
+    {
+      "t": 0.7,
+      "pose": {},
+      "reach": { "armNear": { "at": [90, -112, 84], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "point", "w": 1, "palm": "forward", "fingers": [0.15, -1, -0.5] }
+      }
+    },
+    {
+      "t": 0.8,
+      "pose": {},
+      "reach": { "armNear": { "at": [86, -108, 96], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "point", "w": 1, "palm": "forward", "fingers": [0.15, -1, 0.45] }
+      }
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": { "armNear": { "at": [86, -108, 96], "elbow": [0.2, 1, 0.7] } },
+      "ease": "smooth",
+      "hand": {
+        "armNear": { "pose": "point", "w": 1, "palm": "forward", "fingers": [0.15, -1, 0] }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Giơ ngón trỏ lên lắc dạy đời (\"nghe cho kỹ đây\"): tay gần đưa ngón trỏ dựng lên trước-ngoài vai (đích hệ thân [86, −108, 96], 0,3 s), lắc ba nhịp vào-ra (mỗi nhịp 0,3 s: cổ tay dời 12 và ngón nghiêng vào, ra), rồi giữ ngón dựng; lòng tay ra trước. Chỉ ghi `armNear`, `hand`. Nền `stand-3d` hay `sit-3d`. Đích cao hơn hay vào trong hơn thì ngón lọt vào trước mặt thành dáng nghĩ; ở góc 3/4 phía tay gần bàn tay sát cằm, dùng góc thẳng mặt hay phía tay xa. Buông bằng clip rỗng blend ~0,4.",
+  "preview": { "stage": "stand" }
+}

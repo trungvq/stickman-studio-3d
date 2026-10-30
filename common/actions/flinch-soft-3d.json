@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 20,
+  "name": "flinch-soft-3d",
+  "duration": 0.6,
+  "end": "hold",
+  "mask": ["armNear", "armFar", "hand", "torso", "head"],
+  "authoredAt": "side",
+  "snap": true,
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armFar": [-6, 24, 0],
+        "armNear": [-6, 24, 0],
+        "torso": 0,
+        "head": [null, null, 0]
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "w": 0.3, "turn": 0, "bend": 0 },
+        "armNear": { "w": 0.3, "turn": 0, "bend": 0 }
+      }
+    },
+    {
+      "t": 0.3333,
+      "pose": { "torso": 5, "head": [null, null, 11] },
+      "reach": {
+        "armFar": {
+          "to": "belly",
+          "offset": [22, -4, 13],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.55]
+        },
+        "armNear": {
+          "to": "belly",
+          "offset": [22, -4, 13],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.55]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "grip", "w": 0.6, "palm": "in" },
+        "armNear": { "pose": "grip", "w": 0.6, "palm": "in" }
+      }
+    },
+    {
+      "t": 0.5,
+      "pose": { "torso": 4, "head": [null, null, 9] },
+      "reach": {
+        "armFar": {
+          "to": "belly",
+          "offset": [22, -2, 13],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.55]
+        },
+        "armNear": {
+          "to": "belly",
+          "offset": [22, -2, 13],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.55]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": { "pose": "grip", "w": 0.6, "palm": "in" },
+        "armNear": { "pose": "grip", "w": 0.6, "palm": "in" }
+      }
+    },
+    {
+      "t": 1,
+      "pose": { "torso": 4, "head": [null, null, 9] },
+      "reach": {
+        "armFar": {
+          "to": "belly",
+          "offset": [22, -2, 13],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.55]
+        },
+        "armNear": {
+          "to": "belly",
+          "offset": [22, -2, 13],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.55]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armFar": { "pose": "grip", "w": 0.6, "palm": "in" },
+        "armNear": { "pose": "grip", "w": 0.6, "palm": "in" }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Rụt người khẽ: trong 0,2 s thân cúi 5°, đầu gục 11°, hai tay khép trước bụng nắm hờ (mốc `belly`, khuỷu khép sát sườn), rồi lùi về thân 4°, đầu 9° lúc 0,3 s và giữ; khai `snap`. Ghi `armNear`, `armFar`, `hand`, `torso` và gật của `head`. Nền `stand-3d`, vào blend ~0,06. Chồng được nét mặt, `turn-head-*`; buông về `stand-3d` blend ~0,4. Cùng họ: `flinch-3d` giật rõ, `flinch-soft-3d` khẽ; che chắn trước ngực thì `cower-3d`. Sinh bằng `tools/actions/flinch.mjs`.",
+  "preview": { "stage": "stand" }
+}

@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 20,
+  "name": "folder-hold-rim-3d",
+  "duration": 0.8,
+  "end": "hold",
+  "mask": ["armNear", "armFar", "hand"],
+  "authoredAt": "side",
+  "sides": "anatomical",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "reach": {
+        "armFar": {
+          "to": "otherGrip",
+          "offset": [0, 0, 52],
+          "point": "grip",
+          "elbow": [-0.2, 1, 0.2]
+        },
+        "armNear": {
+          "to": "chest",
+          "offset": [6, -16, 26],
+          "point": "grip",
+          "elbow": [-0.2, 1, 0.2]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": {
+          "pose": "edge",
+          "w": 1,
+          "palm": "in",
+          "fingers": "up"
+        },
+        "armNear": {
+          "pose": "edge",
+          "w": 1,
+          "palm": "in",
+          "fingers": "up"
+        }
+      }
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": {
+        "armFar": {
+          "to": "otherGrip",
+          "offset": [0, 0, 52],
+          "point": "grip",
+          "elbow": [-0.2, 1, 0.2]
+        },
+        "armNear": {
+          "to": "chest",
+          "offset": [6, -16, 26],
+          "point": "grip",
+          "elbow": [-0.2, 1, 0.2]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armFar": {
+          "pose": "edge",
+          "w": 1,
+          "palm": "in",
+          "fingers": "up"
+        },
+        "armNear": {
+          "pose": "edge",
+          "w": 1,
+          "palm": "in",
+          "fingers": "up"
+        }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Ôm kẹp hồ sơ dựng trước ngực, cân, bìa ra trước, bốn ngón cuộn vòng qua mép như nắm: tay phải kẹp mép phải (mốc `chest`, offset [6, −16, 26]), tay trái kẹp mép kia (mốc `otherGrip`, cách 52, cùng tầm), dáng `edge`, lòng tay vào trong, ngón chếch lên rồi vòng qua mép ra bìa, khuỷu khép xuống sườn, giữ từ giây 0. Ghi hai tay, `hand`; `sides: \"anatomical\"`. Nền `stand-3d`, đi bộ; món ở `world.hands[].hold` tay phải: `kep-ho-so@sheet` biến thể `rim`, `along: 0.38` (nắm trên giữa mép), `thumb: \"back\"` (ngón cái mặt trong, bốn ngón vòng ra bìa), `slant: 45`, `keep: true` (kẹp theo cổ tay của hành động), `both: { along: 0.62, slant: 45 }` (mép đối diện đếm `along` từ đầu kia), `touch: [\"self.torso\"]`. Biến thể phụ của `folder-hold-3d` (bốn ngón áp phẳng mặt bìa). Mở ra đọc bằng `folder-hold-read-3d`.",
+  "preview": {
+    "stage": "stand",
+    "hold": {
+      "right": {
+        "item": "kep-ho-so",
+        "group": "sheet",
+        "edge": "left",
+        "variant": "rim",
+        "along": 0.38,
+        "thumb": "back",
+        "slant": 45,
+        "keep": true,
+        "both": {
+          "along": 0.62,
+          "slant": 45
+        },
+        "touch": ["self.torso"]
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 20,
+  "name": "talk-pose-bent-polite-chin-4-3d",
+  "duration": 3.2,
+  "end": "wrap",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": [26, -1], "head": [-3, null, 6] }, "ease": "linear" },
+    { "t": 0.5, "pose": { "torso": [27.5, -1], "head": [-3, null, 6] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Dáng thoại 4/4 của bộ `talk-pose-bent-polite` cho máy cao nhìn xuống: thân giữ dáng nền 26°, chỉ đổi cằm (đổi độ chồm ở góc ấy làm đầu trượt sang mặt người cạnh) — nền cúi nhìn mặt bàn (thân ~26°, đầu nghiêng 4° gật 12°, gần `bend-place-3d`), tính lễ phép: mắt vẫn trên mặt bàn, sổ, thực đơn: ngẩng, nghiêng đầu −3°. Lặp 3,2 s, giữ nhịp thở của `stand-3d` (thân +1,5° ở nửa lượt); clip đặt `phase` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi `torso` (cúi, nghiêng) và nghiêng, gật của `head`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay xa ống kính. Nền `stand-3d` sau quầy, bàn trước mặt. Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới. Sinh bằng `tools/actions/talk-pose.mjs`.",
+  "preview": { "stage": "counter" }
+}

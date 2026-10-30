@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 20,
+  "name": "bow-hands-front-15-hold-3d",
+  "duration": 1,
+  "end": "hold",
+  "mask": ["armFar", "armNear", "hand", "torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "torso": 15, "head": [0, 0, 6] },
+      "reach": {
+        "armFar": {
+          "to": "otherBack",
+          "offset": [1, -3, 0],
+          "point": "palm",
+          "elbow": [0, 0.4, 1.4]
+        },
+        "armNear": { "to": "belly", "offset": [5, 28, -2], "point": "palm", "elbow": [0, 0.4, 1.4] }
+      },
+      "ease": "linear",
+      "hand": {
+        "armFar": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" },
+        "armNear": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" }
+      }
+    },
+    {
+      "t": 1,
+      "pose": { "torso": 15, "head": [0, 0, 6] },
+      "reach": {
+        "armFar": {
+          "to": "otherBack",
+          "offset": [1, -3, 0],
+          "point": "palm",
+          "elbow": [0, 0.4, 1.4]
+        },
+        "armNear": { "to": "belly", "offset": [5, 28, -2], "point": "palm", "elbow": [0, 0.4, 1.4] }
+      },
+      "ease": "linear",
+      "hand": {
+        "armFar": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" },
+        "armNear": { "pose": "flat", "w": 0.7, "palm": "back", "fingers": "in" }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Giữ ở đáy cái cúi chào 15° tay chồng trước bụng từ giây 0: thân 15°, đầu gật thêm 6° — cho người nền, ảnh tĩnh, cảnh cắt vào giữa cái cúi; đứng lên bằng `hands-front-3d` blend ~0,5. Hai tay chồng như `hands-front-3d`: tay gần áp lòng tay vào mốc `belly` (offset [5, 28, -2], ngang bụng dưới, sát thân — áo, quần gọn), tay xa áp lòng lên mu tay gần (`otherBack`), `flat` hờ, ngón chĩa vào đường giữa; mốc theo thân nên tay đi theo cái cúi. Ghi `armNear`, `armFar`, `hand`, `torso`, `head`. Nền `stand-3d`; người bụng phệ thì cánh tay lấn vào bụng. Chồng được nét mặt; tay đang cầm món thì dùng `bow-*` chỉ ghi thân, đầu. Cùng họ: `bow-hands-front-15-3d`, `-30-`, `-45-`, `-robe` cho vạt áo, `-hold` giữ ở đáy. Sinh bằng `tools/actions/bow-hands-front.mjs`.",
+  "preview": { "stage": "stand" }
+}

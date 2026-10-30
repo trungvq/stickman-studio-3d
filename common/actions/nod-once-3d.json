@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 20,
+  "name": "nod-once-3d",
+  "duration": 0.6,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": ["head"],
+  "keys": [
+    { "t": 0, "pose": { "head": [null, null, 0] }, "ease": "smooth" },
+    { "t": 0.4, "pose": { "head": [null, null, 9] }, "ease": "smooth" },
+    { "t": 1, "pose": { "head": [null, null, 2] }, "ease": "smooth" }
+  ],
+  "events": [],
+  "note": "Một cú gật khi đang nói, nhấn một ý: gật 9° ở 0,4 rồi về 2° và giữ; lượt 0,6 s. Chỉ ghi góc gật của `head`, nghiêng và lắc để trống. Nền `stand-3d`, ngồi thì `sit-3d`. Chồng lên `turn-head-*` hay track nhìn ống kính vẫn giữ hướng nhìn; gật trả lời \"vâng\" là `nod-3d`, buông bằng clip rỗng blend ~0,4.",
+  "preview": { "stage": "stand" }
+}

@@ -1,52 +1,21 @@
 import { z } from "zod";
-import { HAIR_BACK_FOLLOW, HEAD_FOLLOW, INK, RIG, SHADE } from "./constants";
+import { INK, RIG } from "./constants";
 import { FACE_REST } from "./face";
-import { migrateHairPieces } from "./hairMigration";
 
 /** Bump khi đổi hình dạng JSON nhân vật; `migrateCharacter` phải có nhánh tương ứng. */
-export const CHARACTER_VERSION = 5;
+export const CHARACTER_VERSION = 6;
 
-/** Bộ chỉnh của hình `side` / `rear` / `back`, đo từ chỗ hình nằm trong `VIEW_FRAME`. docs/01-rig.md#bộ-chỉnh-theo-góc */
-export const ViewTuneSchema = z.object({
-  dx: z.number().default(0),
-  dy: z.number().default(0),
-  scale: z.number().default(1),
-  widthScale: z.number().default(1),
-  rotate: z.number().default(0),
-});
-
-const stretch = z.object({
-  /** `part` là bộ phận vẽ bằng code trong `PARTS`; giữ `file` để đổi qua lại không mất ảnh */
-  src: z.enum(["none", "image", "part"]).default("none"),
-  file: z.string().optional(),
-  part: z.string().optional(),
-  /** Bộ phận code: màu vẽ, bỏ trống thì lấy `palette.garment`. Ảnh: nhân vào ảnh mực, bỏ trống thì để nguyên ảnh */
+/** Một socket của người 3D: `sculpt` dựng khối theo trường riêng của socket, `none` là trống */
+const piece = z.object({
+  src: z.enum(["none"]).default("none"),
+  /** Màu dựng khối; bỏ trống thì lấy theo bảng màu */
   color: z.string().optional(),
   accent: z.string().optional(),
-  dx: z.number().default(0),
-  dy: z.number().default(0),
-  /** `scale` là chiều cao, `widthScale` nhân thêm vào bề ngang */
-  scale: z.number().default(1),
-  widthScale: z.number().default(1),
-  aspect: z.number().positive().default(1),
-  /** Độ, chiều rig; xoay quanh tâm hộp, trừ vai áo (quanh khớp vai) và đồ cầm tay (quanh bàn tay) */
-  rotate: z.number().default(0),
-});
-
-const piece = stretch.extend({
-  /** Hình riêng của góc ấy không đọc `dx` … `rotate` ở trên mà đọc ở đây; thiếu là trung tính */
-  views: z
-    .object({
-      side: ViewTuneSchema.optional(),
-      rear: ViewTuneSchema.optional(),
-      back: ViewTuneSchema.optional(),
-    })
-    .optional(),
 });
 
 /**
  * Tóc dựng khối: mảng tóc là một vỏ ôm sọ đơn vị, chân tóc là vĩ độ theo kinh độ, độ.
- * Kinh độ 0 là giữa mặt, dương về `+x`. docs/02-trang-phuc.md#tóc-dựng-khối
+ * Kinh độ 0 là giữa mặt, dương về `+x`. docs/12-trang-phuc-3d.md#tóc-dựng-khối
  */
 /** Kiểu tóc dựng khối: bảng gai và răng cưa mái hard code theo kiểu ở `SCULPT_STYLES` */
 export const SCULPT_STYLE_NAMES = [
@@ -139,7 +108,7 @@ export const SculptSchema = z.object({
 
 /**
  * Kính dựng khối: hai mắt kính, cầu và càng dựng quanh hai mắt trên sọ đơn vị, quay theo mặt.
- * Số đo theo bán kính sọ. docs/02-trang-phuc.md#kính-dựng-khối
+ * Số đo theo bán kính sọ. docs/12-trang-phuc-3d.md#kính-dựng-khối
  */
 export const GLASSES_SHAPES = ["round", "rect"] as const;
 
@@ -162,7 +131,7 @@ export const GlassesSchema = z.object({
 
 /**
  * Mũ dựng khối của người 3D: ôm sọ và vỏ tóc dưới nó, quay theo đầu. Góc theo độ, dài theo bán kính sọ.
- * docs/02-trang-phuc.md#mũ-dựng-khối
+ * docs/12-trang-phuc-3d.md#mũ-dựng-khối
  */
 export const HAT_SHAPES = ["drum", "peaked"] as const;
 export type HatShape = (typeof HAT_SHAPES)[number];
@@ -202,7 +171,7 @@ export const HatSchema = z.object({
   badgeColor: z.string().default("#d8aa3c"),
 });
 
-/** Số đo theo dáng mũ khi JSON bỏ trống. docs/02-trang-phuc.md#mũ-dựng-khối */
+/** Số đo theo dáng mũ khi JSON bỏ trống. docs/12-trang-phuc-3d.md#mũ-dựng-khối */
 export const HAT_SHAPE_DEFAULTS: Record<
   HatShape,
   { front: number; back: number; height: number; round: number; flare: number; folds: number[] }
@@ -213,7 +182,7 @@ export const HAT_SHAPE_DEFAULTS: Record<
 
 /**
  * Trâm cài búi: que mảnh xuyên qua khối buộc của tóc dựng khối (búi, đuôi ngựa), một hạt ở đầu que.
- * docs/02-trang-phuc.md#trâm-cài-búi
+ * docs/12-trang-phuc-3d.md#trâm-cài-búi
  */
 export const PinSchema = z.object({
   /** Hướng đầu có hạt trên mặt búi, độ: `0` ngang về `+x`, `90` thẳng lên, `180` ngang về `−x` */
@@ -231,47 +200,8 @@ export const PinSchema = z.object({
 });
 
 /**
- * Râu dựng khối: một mảng trên nửa dưới sọ đơn vị, nổi khỏi da và rủ dưới cằm, quay theo mặt.
- * Góc theo độ, dài theo bán kính sọ. docs/02-trang-phuc.md#râu-dựng-khối
- */
-export const BEARD_TIPS = ["round", "point", "square", "fork"] as const;
-
-export const BeardSchema = z.object({
-  /** Kinh độ mép sau của râu; quá `90` là tóc mai lên tới tai */
-  reach: z.number().default(100),
-  /** Vĩ độ đỉnh tóc mai ở mép sau */
-  burn: z.number().default(10),
-  /** Mép trên ở má cao hơn mồm bấy nhiêu độ; âm là thấp hơn */
-  cheek: z.number().default(8),
-  /** Khấc chừa mồm: mép trên thấp hơn mồm bấy nhiêu độ, nửa rộng `notch` độ kinh */
-  gap: z.number().default(10),
-  notch: z.number().default(22),
-  /** Thành khấc lên tới mép má trong bấy nhiêu độ kinh; nhỏ là thành dựng đứng */
-  soft: z.number().default(12),
-  /** Kín mồm: bỏ khấc, mồm vẽ đè lên râu và có viền */
-  cover: z.boolean().default(false),
-  /** Dải ria liền với râu: dày bấy nhiêu độ vĩ, `0` là không có */
-  lip: z.number().default(0),
-  /** Dải ria: nửa rộng, độ kinh; mép dưới cao hơn mồm `lipRise` độ */
-  lipWidth: z.number().default(26),
-  lipRise: z.number().default(3),
-  /** Bấy nhiêu độ kinh cuối mỗi bên, mép trên cong xuống đáy; `0` là mép sau thẳng */
-  round: z.number().default(0),
-  /** Cạo giữa cằm: bỏ phần gần trục giữa hơn bấy nhiêu lần bán kính */
-  shave: z.number().default(0),
-  /** Râu nổi khỏi da bấy nhiêu, đầy ở phần dưới, mỏng về mép trên */
-  bulk: z.number().default(0.07),
-  /** Rủ dưới cằm bấy nhiêu, sâu nhất ở giữa theo `tip` */
-  length: z.number().default(0),
-  /** Dáng đáy khi rủ: `round` tròn, `point` nhọn, `square` vuông, `fork` chẻ đôi */
-  tip: z.enum(BEARD_TIPS).default("round"),
-  /** Râu lún phún: lớp màu mờ không viền, không nổi, không rủ */
-  stubble: z.boolean().default(false),
-});
-
-/**
  * Thân áo dựng khối: áo là các đặc điểm trên một khối thân lồi, chiếu theo góc nhìn. Số đo bằng
- * px; trường bỏ trống lấy số của kiểu ở `GARMENT_STYLES`. docs/02-trang-phuc.md#thân-áo-dựng-khối
+ * px; trường bỏ trống lấy số của kiểu ở `GARMENT_STYLES`. docs/12-trang-phuc-3d.md#thân-áo-dựng-khối
  */
 export const GARMENT_STYLE_NAMES = [
   "bare",
@@ -291,7 +221,7 @@ export const GARMENT_STYLE_NAMES = [
 
 export const OBI_KNOTS = ["none", "taiko", "kai", "bunko"] as const;
 
-/** Đai ngang thân áo cổ chéo. docs/02-trang-phuc.md#áo-cổ-chéo */
+/** Đai ngang thân áo cổ chéo. docs/12-trang-phuc-3d.md#áo-cổ-chéo */
 export const ObiSchema = z.object({
   /** Bỏ trống là màu nhấn `torso.accent` */
   color: z.string().optional(),
@@ -315,7 +245,7 @@ export const ObiSchema = z.object({
   knotX: z.number().optional(),
 });
 
-/** Hai vạt mở của áo khoác kiểu `wrap`. docs/02-trang-phuc.md#áo-khoác-vạt-mở */
+/** Hai vạt mở của áo khoác kiểu `wrap`. docs/12-trang-phuc-3d.md#áo-khoác-vạt-mở */
 export const OpenSchema = z.object({
   /** Khe giữa hai mép vạt chỗ buông thẳng rộng bấy nhiêu px */
   gap: z.number().default(12),
@@ -330,7 +260,7 @@ export const OpenSchema = z.object({
 
 export const PRINT_FONTS = ["serif", "sans"] as const;
 
-/** Chữ dọc trên dải cổ. docs/02-trang-phuc.md#chữ-trên-dải-cổ */
+/** Chữ dọc trên dải cổ. docs/12-trang-phuc-3d.md#chữ-trên-dải-cổ */
 export const LettersSchema = z.object({
   /** Chuỗi chữ trên dải cổ bên trái người mặc (`+x`) */
   left: z.string().default(""),
@@ -344,7 +274,7 @@ export const LettersSchema = z.object({
   font: z.enum(PRINT_FONTS).default("serif"),
 });
 
-/** Cổ chéo, dải cổ và đai của kiểu `wrap`. docs/02-trang-phuc.md#áo-cổ-chéo */
+/** Cổ chéo, dải cổ và đai của kiểu `wrap`. docs/12-trang-phuc-3d.md#áo-cổ-chéo */
 export const WrapSchema = z.object({
   /** Mép vạt trên chạy xuống gấu lệch sang bên phải người mặc nhiều nhất bấy nhiêu px */
   overlap: z.number().default(22),
@@ -364,7 +294,7 @@ export const WrapSchema = z.object({
 
 export const PRINT_SHAPE_NAMES = ["maple", "circle", "ring", "diamond"] as const;
 
-/** Hình in trên thân áo dựng khối: chữ, hình có tên hay path SVG. docs/02-trang-phuc.md#hình-in-trên-áo */
+/** Hình in trên thân áo dựng khối: chữ, hình có tên hay path SVG. docs/12-trang-phuc-3d.md#hình-in-trên-áo */
 export const PrintSchema = z.object({
   side: z.enum(["back", "front"]).default("back"),
   /** Tâm lệch khỏi giữa thân bấy nhiêu px về `+x` (bên trái người mặc) */
@@ -386,7 +316,7 @@ export const PrintSchema = z.object({
   rotate: z.number().default(0),
 });
 
-/** Thẻ tên dán ngực thân áo dựng khối. docs/02-trang-phuc.md#thẻ-tên */
+/** Thẻ tên dán ngực thân áo dựng khối. docs/12-trang-phuc-3d.md#thẻ-tên */
 export const BadgeSchema = z.object({
   /** Tâm lệch khỏi giữa ngực bấy nhiêu px về `+x` (ngực trái người mặc) */
   x: z.number().default(19),
@@ -419,7 +349,7 @@ export const MarkFillSchema = z.union([
 
 export const PATTERN_KINDS = ["stripes", "check", "dots"] as const;
 
-/** Hoạ tiết lặp trên một mảng áo. docs/02-trang-phuc.md#mảng-áo-và-hoạ-tiết */
+/** Hoạ tiết lặp trên một mảng áo. docs/12-trang-phuc-3d.md#mảng-áo-và-hoạ-tiết */
 export const PatternSchema = z.object({
   /** `stripes` sọc, `check` kẻ ô (sọc hai chiều vuông góc), `dots` chấm bi */
   kind: z.enum(PATTERN_KINDS).default("stripes"),
@@ -438,7 +368,7 @@ export const PatternSchema = z.object({
 
 export const PANEL_SIDES = ["front", "back", "both", "around"] as const;
 
-/** Mảng màu kín trên thân áo dựng khối, có viền và hoạ tiết tuỳ chọn. docs/02-trang-phuc.md#mảng-áo-và-hoạ-tiết */
+/** Mảng màu kín trên thân áo dựng khối, có viền và hoạ tiết tuỳ chọn. docs/12-trang-phuc-3d.md#mảng-áo-và-hoạ-tiết */
 export const PanelSchema = z.object({
   /** Màu nền của mảng; bỏ trống là không tô, chỉ hoạ tiết và viền */
   fill: MarkFillSchema.optional(),
@@ -485,7 +415,7 @@ export const TieSchema = z.object({
   line: z.number().min(0).default(0),
 });
 
-/** Áo trong lộ ở miệng cổ chữ V của `blazer`, `cardigan`, `suit`. docs/02-trang-phuc.md#áo-trong-và-cà-vạt */
+/** Áo trong lộ ở miệng cổ chữ V của `blazer`, `cardigan`, `suit`. docs/12-trang-phuc-3d.md#áo-trong-và-cà-vạt */
 export const InnerSchema = z.object({
   /** Màu áo trong; bỏ trống là `accent` (blazer, cardigan) hay không có (suit) */
   color: MarkFillSchema.optional(),
@@ -495,7 +425,7 @@ export const InnerSchema = z.object({
   tie: z.union([z.literal(false), TieSchema]).optional(),
 });
 
-/** Khăn vắt vai của người 3D (`pieces.neck.drape`): dải phẳng vắt qua một vai, khối cứng bám thân. docs/02-trang-phuc.md#khăn-vắt-vai */
+/** Khăn vắt vai của người 3D (`pieces.neck.drape`): dải phẳng vắt qua một vai, khối cứng bám thân. docs/12-trang-phuc-3d.md#khăn-vắt-vai */
 export const DrapeSchema = z.object({
   /** Vai vắt khăn: `left` vai trái người mặc (`+x` hệ thân), `right` vai phải */
   side: z.enum(["left", "right"]).default("left"),
@@ -510,7 +440,7 @@ export const DrapeSchema = z.object({
   at: z.number().min(0).max(1).default(0.5),
 });
 
-/** Kính râm gài nẹp áo của người 3D (`pieces.neck.shades`): treo dưới đáy cổ áo bằng một gọng. docs/02-trang-phuc.md#kính-gài-nẹp */
+/** Kính râm gài nẹp áo của người 3D (`pieces.neck.shades`): treo dưới đáy cổ áo bằng một gọng. docs/12-trang-phuc-3d.md#kính-gài-nẹp */
 export const ShadesSchema = z.object({
   /** `rect` mắt chữ nhật bo góc, `round` mắt tròn */
   shape: z.enum(["rect", "round"]).default("rect"),
@@ -526,7 +456,7 @@ export const ShadesSchema = z.object({
   lens: z.string().default("#2a2b33"),
 });
 
-/** Dây chuyền của người 3D (`pieces.neck.necklace`): vòng quanh chân cổ, võng trước ngực, bám mặt thân. docs/02-trang-phuc.md#dây-chuyền */
+/** Dây chuyền của người 3D (`pieces.neck.necklace`): vòng quanh chân cổ, võng trước ngực, bám mặt thân. docs/12-trang-phuc-3d.md#dây-chuyền */
 export const NecklaceSchema = z.object({
   /** `chain` dây mảnh liền, `pearl` chuỗi hạt tròn nối nhau */
   style: z.enum(["chain", "pearl"]).default("chain"),
@@ -544,7 +474,7 @@ export const NecklaceSchema = z.object({
   gem: z.string().optional(),
 });
 
-/** Bông tai của người 3D (`pieces.headAcc.earrings`): một cặp ở dái tai. docs/02-trang-phuc.md#bông-tai */
+/** Bông tai của người 3D (`pieces.headAcc.earrings`): một cặp ở dái tai. docs/12-trang-phuc-3d.md#bông-tai */
 export const EarringsSchema = z.object({
   /** `stud` nụ, `hoop` vòng tròn, `drop` dài thả có viên ở đáy */
   shape: z.enum(["stud", "hoop", "drop"]).default("stud"),
@@ -590,7 +520,7 @@ export const GarmentSchema = z.object({
   neckline: z.enum(["round", "v", "square"]).optional(),
   /** `false` bỏ đặc điểm dán của kiểu (nét, chấm, mảng); cổ bẻ, viền gân, mũ trùm, cổ chéo vẫn dựng */
   marks: z.boolean().optional(),
-  /** Mảng màu kín, hoạ tiết, chỗ khoét lộ da (`fill: "skin"`); chỉ người 3D. docs/02-trang-phuc.md#mảng-áo-và-hoạ-tiết */
+  /** Mảng màu kín, hoạ tiết, chỗ khoét lộ da (`fill: "skin"`); chỉ người 3D. docs/12-trang-phuc-3d.md#mảng-áo-và-hoạ-tiết */
   panels: z.array(PanelSchema).optional(),
   /** Áo trong và cà vạt ở miệng cổ chữ V của `blazer`, `cardigan`, `suit` */
   inner: InnerSchema.optional(),
@@ -600,13 +530,13 @@ export const GarmentSchema = z.object({
   prints: z.array(PrintSchema).optional(),
   /** Thẻ tên dán ngực, chỉ người 3D */
   badge: BadgeSchema.optional(),
-  /** Lá cổ bẻ dựng lên ôm gáy, `0..1`: `0` gập xuống, `1` dựng hẳn; chỉ người 3D. docs/02-trang-phuc.md#cổ-dựng */
+  /** Lá cổ bẻ dựng lên ôm gáy, `0..1`: `0` gập xuống, `1` dựng hẳn; chỉ người 3D. docs/12-trang-phuc-3d.md#cổ-dựng */
   collarUp: z.number().min(0).max(1).optional(),
-  /** Bụng phệ: thân nhô ra trước nhiều nhất bấy nhiêu px ở bụng, ra hai bên ít hơn; chỉ người 3D nhô ra trước. docs/02-trang-phuc.md#bụng-phệ */
+  /** Bụng phệ: thân nhô ra trước nhiều nhất bấy nhiêu px ở bụng, ra hai bên ít hơn; chỉ người 3D nhô ra trước. docs/12-trang-phuc-3d.md#bụng-phệ */
   belly: z.number().min(0).optional(),
-  /** Bụng phệ ra hai bên bấy nhiêu lần `belly`; bỏ trống là `BELLY.side` (`0.45`), `0` là chỉ nhô ra trước. docs/02-trang-phuc.md#bụng-phệ */
+  /** Bụng phệ ra hai bên bấy nhiêu lần `belly`; bỏ trống là `BELLY.side` (`0.45`), `0` là chỉ nhô ra trước. docs/12-trang-phuc-3d.md#bụng-phệ */
   bellySide: z.number().min(0).optional(),
-  /** Ngực nở: nửa trước phồng thêm nhiều nhất bấy nhiêu px ở ngang ngực, liền một khối; chỉ người 3D. docs/02-trang-phuc.md#ngực-nở */
+  /** Ngực nở: nửa trước phồng thêm nhiều nhất bấy nhiêu px ở ngang ngực, liền một khối; chỉ người 3D. docs/12-trang-phuc-3d.md#ngực-nở */
   bust: z.number().min(0).optional(),
 });
 
@@ -625,7 +555,7 @@ export const PiecePaletteSchema = z.object({
 
 export const SKIRT_STYLES = ["cone", "wrap", "apron"] as const;
 
-/** Vạt dài quấn (`skirt.style: "wrap"`). docs/02-trang-phuc.md#vạt-dài-quấn */
+/** Vạt dài quấn (`skirt.style: "wrap"`). docs/12-trang-phuc-3d.md#vạt-dài-quấn */
 export const WrapHemSchema = z.object({
   /** Mép vạt trên ở cạp lệch sang bên phải người mặc bấy nhiêu px */
   overlap: z.number().default(22),
@@ -633,7 +563,7 @@ export const WrapHemSchema = z.object({
   slant: z.number().default(6),
 });
 
-/** Tạp dề (`skirt.style: "apron"`). docs/02-trang-phuc.md#tạp-dề */
+/** Tạp dề (`skirt.style: "apron"`). docs/12-trang-phuc-3d.md#tạp-dề */
 export const ApronSchema = z.object({
   /** Nửa rộng tấm */
   width: z.number().default(38),
@@ -645,7 +575,7 @@ export const ApronSchema = z.object({
   bow: z.number().default(13),
 });
 
-/** Váy dựng khối: nón cụt treo ở hông, chiếu theo góc của thân. docs/02-trang-phuc.md#váy-dựng-khối */
+/** Váy dựng khối: nón cụt treo ở hông, chiếu theo góc của thân. docs/12-trang-phuc-3d.md#váy-dựng-khối */
 export const SkirtSchema = z.object({
   /** Bỏ trống là `cone` nón cụt trong nhóm thân; `wrap` vạt dài quấn và `apron` tạp dề treo ở hông, chỉ người 3D dựng */
   style: z.enum(SKIRT_STYLES).optional(),
@@ -665,21 +595,14 @@ export const SkirtSchema = z.object({
   apron: ApronSchema.optional(),
 });
 
-/** Thân đạo cụ dùng lại đúng hình dạng này — docs/06-dao-cu.md */
-export const StretchPieceSchema = stretch;
-
 /** Khai trước `CharacterSchema` vì `items` cần tới; `PIECE_KEYS` bên dưới kiểm lại cho khớp. */
 const PIECE_KEY_NAMES = [
   "torso",
-  "sleeveNear",
-  "sleeveFar",
   "neck",
-  "hairBack",
   "hair",
   "crown",
   "headAcc",
   "faceAcc",
-  "chin",
   "hem",
   "handNear",
   "handFar",
@@ -690,9 +613,8 @@ const PIECE_KEY_NAMES = [
  * vào nhiều socket nên không biết trước mình cần trường nào; socket bỏ qua trường thừa.
  */
 export const SocketPieceSchema = piece.extend({
-  src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
+  src: z.enum(["none", "sculpt"]).default("none"),
   glasses: GlassesSchema.optional(),
-  beard: BeardSchema.optional(),
   hat: HatSchema.optional(),
   pin: PinSchema.optional(),
   drape: DrapeSchema.optional(),
@@ -702,11 +624,6 @@ export const SocketPieceSchema = piece.extend({
   garment: GarmentSchema.optional(),
   palette: PiecePaletteSchema.optional(),
   skirt: SkirtSchema.optional(),
-  clip: z.boolean().default(false),
-  clipGrow: z.number().default(1.12),
-  hideLegs: z.boolean().default(true),
-  /** `chin`: dưới nét mặt; `hem`: dưới thân áo; `handNear`/`handFar`: sau cả chân lẫn thân */
-  layer: z.enum(["front", "under"]).default("front"),
 });
 
 /** Một vật thay được: config ở từng socket nó cắm được. Mỗi lúc chỉ một socket giữ nó. */
@@ -727,7 +644,7 @@ const rest = (k: keyof typeof FACE_REST) =>
 export const CharacterSchema = z.object({
   schemaVersion: z
     .literal(CHARACTER_VERSION, {
-      error: "JSON nhân vật thuộc phiên bản schema khác; cần bản @stickman3d/sketch khớp với nó",
+      error: "JSON nhân vật thuộc phiên bản schema khác; cần bản @stickman3d/rig khớp với nó",
     })
     .default(CHARACTER_VERSION),
   name: z.string().default("common"),
@@ -745,16 +662,9 @@ export const CharacterSchema = z.object({
     .prefault({}),
   head: z
     .object({
-      shape: z.enum(["round", "square", "trapezoid"]).default("round"),
       scaleX: z.number().default(1),
       scaleY: z.number().default(1),
-      dx: z.number().default(0),
-      dy: z.number().default(0),
-      /** Mảnh `hair` / `crown` trôi theo mặt bấy nhiêu phần; 0 = bám sọ, đứng yên khi lắc */
-      follow: z.number().default(HEAD_FOLLOW),
-      /** Như trên cho lớp sau đầu: `hairBack` và lớp `under` của kiểu tóc; nó nằm sau trục lắc nên muốn nhúc nhích thì kéo âm */
-      followBack: z.number().default(HAIR_BACK_FOLLOW),
-      /** Dáng khối đầu của người 3D: `human` có quai hàm, cằm, tai, mũi; 2D không đọc. docs/01-rig.md#người-3d-mặc-đồ */
+      /** Dáng khối đầu: `human` có quai hàm, cằm, tai, mũi. docs/01-rig.md#người-3d-mặc-đồ */
       form: z.enum(["sphere", "human"]).default("sphere"),
     })
     .prefault({}),
@@ -781,17 +691,14 @@ export const CharacterSchema = z.object({
       shoe: z.string().default("#2b2623"),
       /** Độ cong nét chi `0..1`; `0` là hai đoạn thẳng gãy ở khuỷu, gối. docs/01-rig.md#vẽ-chi */
       limbCurve: z.number().min(0).max(1).default(1),
-      /** Đậm của bóng khối trên đầu, thân áo, tà áo; `0` tắt. docs/01-rig.md#bóng-khối */
-      shade: z.number().min(0).max(1).default(SHADE),
     })
     .prefault({}),
   face: z
     .object({
       offsetY: z.number().default(0),
       eyeGap: z.number().default(26),
-      turn: z.number().default(12),
       mouthGap: z.number().default(34),
-      /** Má ửng `0..1` của người 3D, màu suy từ `palette.skin` (`blushColor`); `0` tắt, 2D không vẽ */
+      /** Má ửng `0..1` của người 3D, màu suy từ `palette.skin` (`blushColor`); `0` tắt */
       blush: z.number().min(0).max(1).default(0),
       /** Nét mặt nghỉ riêng của nhân vật, mặc định và khoảng ở `FACE_REST`. docs/01-rig.md#nét-mặt-riêng */
       eyeScale: rest("eyeScale"),
@@ -800,27 +707,6 @@ export const CharacterSchema = z.object({
       shine: rest("shine"),
       browWidth: rest("browWidth"),
       browTilt: rest("browTilt"),
-      moustache: z
-        .object({
-          kind: z
-            .enum([
-              "none",
-              "short",
-              "long",
-              "pencil",
-              "chevron",
-              "handlebar",
-              "walrus",
-              "horseshoe",
-            ])
-            .default("none"),
-          color: z.string().default("#3a2620"),
-          width: z.number().default(1),
-          dx: z.number().default(0),
-          dy: z.number().default(0),
-          follow: z.boolean().default(true),
-        })
-        .prefault({}),
       wrinkle: z
         .object({
           kind: z.enum(["none", "light", "deep"]).default("none"),
@@ -832,90 +718,63 @@ export const CharacterSchema = z.object({
         .prefault({}),
     })
     .prefault({}),
-  sleeveFit: z
-    .object({
-      hideUpperArm: z.boolean().default(false),
-      /** Tay xa dùng chung dx/dy/dài/bề ngang với tay gần; ảnh và aspect vẫn riêng */
-      syncFar: z.boolean().default(true),
-    })
-    .prefault({}),
   pieces: z
     .object({
       /** `sculpt` là thân áo dựng khối, số đo ở `garment` */
       torso: piece
         .extend({
-          src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
+          src: z.enum(["none", "sculpt"]).default("none"),
           garment: GarmentSchema.optional(),
           /** Tay áo, quần, giày của bộ áo này, đè `palette`; chỉ người 3D */
           palette: PiecePaletteSchema.optional(),
         })
-        .prefault({ scale: 1.1, aspect: 0.55 }),
-      sleeveNear: piece.prefault({ aspect: 0.45 }),
-      sleeveFar: piece.prefault({ aspect: 0.45 }),
+        .prefault({}),
       /** Khăn quàng, cà vạt, yếm; `sculpt` là khăn vắt vai (`drape`), kính gài nẹp (`shades`) và dây chuyền (`necklace`) của người 3D */
       neck: piece
         .extend({
-          src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
+          src: z.enum(["none", "sculpt"]).default("none"),
           drape: DrapeSchema.optional(),
           shades: ShadesSchema.optional(),
           necklace: NecklaceSchema.optional(),
         })
-        .prefault({ aspect: 1 }),
-      hairBack: piece.prefault({ aspect: 0.62 }),
+        .prefault({}),
       hair: piece
         .extend({
-          src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
+          src: z.enum(["none", "sculpt"]).default("none"),
           sculpt: SculptSchema.optional(),
-          /** Cắt mảnh theo bao tóc để ảnh không tràn khỏi khối đầu */
-          clip: z.boolean().default(false),
-          /** Bao tóc = viền đầu nở ra bấy nhiêu; 1 là đúng viền */
-          clipGrow: z.number().default(1.12),
         })
-        .prefault({ aspect: 0.95 }),
+        .prefault({}),
       /** Mũ; `sculpt` là mũ dựng khối của người 3D, số đo ở `hat` */
       crown: piece
         .extend({
-          src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
+          src: z.enum(["none", "sculpt"]).default("none"),
           hat: HatSchema.optional(),
         })
-        .prefault({ aspect: 0.95 }),
+        .prefault({}),
       /** Phụ kiện đội trên mũ / bám sọ: sừng, tai, vòng hoa — đứng yên khi lắc đầu; `sculpt` là trâm cài búi (`pin`) và bông tai (`earrings`) của người 3D */
       headAcc: piece
         .extend({
-          src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
+          src: z.enum(["none", "sculpt"]).default("none"),
           pin: PinSchema.optional(),
           earrings: EarringsSchema.optional(),
         })
-        .prefault({ aspect: 0.95 }),
+        .prefault({}),
       /** Phụ kiện dán lên mặt: kính, sẹo, mặt nạ — trôi đúng bằng nét mặt; `sculpt` là kính dựng khối */
       faceAcc: piece
         .extend({
-          src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
+          src: z.enum(["none", "sculpt"]).default("none"),
           glasses: GlassesSchema.optional(),
         })
-        .prefault({ aspect: 0.95 }),
-      /** Râu; `sculpt` là râu dựng khối, luôn vẽ dưới nét mặt */
-      chin: piece
-        .extend({
-          src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
-          beard: BeardSchema.optional(),
-          /** `under` = dưới miệng/ria/mắt: râu quai nón khỏi phải khoét alpha chừa mồm */
-          layer: z.enum(["front", "under"]).default("front"),
-        })
-        .prefault({ aspect: 0.62 }),
+        .prefault({}),
       /** `sculpt` là váy dựng khối, số đo ở `skirt` */
       hem: piece
         .extend({
-          src: z.enum(["none", "image", "part", "sculpt"]).default("none"),
+          src: z.enum(["none", "sculpt"]).default("none"),
           skirt: SkirtSchema.optional(),
-          hideLegs: z.boolean().default(true),
-          /** `under` = dưới thân áo: gấu áo trùm ra ngoài, tà áo luồn vào trong */
-          layer: z.enum(["front", "under"]).default("front"),
         })
-        .prefault({ aspect: 0.62 }),
-      /** `under` = sau cả chân lẫn thân: đồ vác sau lưng, mũ cầm buông thõng sau đùi */
-      handNear: piece.extend({ layer: z.enum(["front", "under"]).default("front") }).prefault({}),
-      handFar: piece.extend({ layer: z.enum(["front", "under"]).default("front") }).prefault({}),
+        .prefault({}),
+      handNear: piece.prefault({}),
+      handFar: piece.prefault({}),
     })
     .prefault({}),
   /** Vật thay được — rìu, áo giáp, kính. Scene và hành động gọi tên ở đây qua `equip`. docs/01-rig.md */
@@ -928,17 +787,14 @@ export type CharacterData = z.infer<typeof CharacterSchema>;
 export type PieceKey = keyof CharacterData["pieces"];
 export const PIECE_KEYS = PIECE_KEY_NAMES satisfies readonly PieceKey[];
 
-export type ViewTune = z.infer<typeof ViewTuneSchema>;
 export type Sculpt = z.infer<typeof SculptSchema>;
 export type Glasses = z.infer<typeof GlassesSchema>;
-export type Beard = z.infer<typeof BeardSchema>;
 export type Hat = z.infer<typeof HatSchema>;
 export type Pin = z.infer<typeof PinSchema>;
 export type Drape = z.infer<typeof DrapeSchema>;
 export type Shades = z.infer<typeof ShadesSchema>;
 export type Necklace = z.infer<typeof NecklaceSchema>;
 export type Earrings = z.infer<typeof EarringsSchema>;
-export type BeardTip = (typeof BEARD_TIPS)[number];
 export type Garment = z.infer<typeof GarmentSchema>;
 export type Wrap = z.infer<typeof WrapSchema>;
 export type Open = z.infer<typeof OpenSchema>;
@@ -1033,17 +889,6 @@ export const equipCharacter = (c: CharacterData, e?: Equip): CharacterData => {
   return pieces === c.pieces ? c : { ...c, pieces };
 };
 
-/**
- * Object đang chiếm socket, sửa được tại chỗ: của vật đang mặc nếu có, không thì của
- * `pieces`. Studio chỉnh mảnh phải đi qua đây, không thì kéo cái áo giáp lại ghi vào áo nền.
- */
-export function wornPiece(c: CharacterData, e: Equip | undefined, k: PieceKey): PieceData {
-  const name = equipMap(c, e)[k];
-  if (name && name !== BASE_ITEM)
-    return (c.items[name]?.[k] as PieceData | undefined) ?? c.pieces[k];
-  return c.pieces[k];
-}
-
 /** Tên vật / bộ đồ mà `equip` gọi tới mà nhân vật không có. Rỗng là sạch. */
 export function equipProblems(c: CharacterData, e?: Equip): string[] {
   const bad: string[] = [];
@@ -1061,62 +906,19 @@ export function equipProblems(c: CharacterData, e?: Equip): string[] {
   return bad;
 }
 
-/**
- * Thư mục ảnh và socket trong danh mục: đồ cầm tay dùng chung `hand`, thân đạo cụ ở
- * `prop`, socket của động vật mang tiền tố `animal` để không đụng tên socket nhân vật (`neck`,
- * `head`, …) — xem `animalPieceDir` ở docs/08-dong-vat.md
- */
-export const PIECE_DIRS = [
-  "torso",
-  "sleeveNear",
-  "sleeveFar",
-  "neck",
-  "hairBack",
-  "hair",
-  "crown",
-  "headAcc",
-  "faceAcc",
-  "chin",
-  "hem",
-  "hand",
-  "prop",
-  "animalBody",
-  "animalNeck",
-  "animalHead",
-  "animalEar",
-  "animalWing",
-  "animalTail",
-] as const;
-export type PieceDir = (typeof PIECE_DIRS)[number];
-export const pieceDir = (k: PieceKey): PieceDir =>
-  k === "handNear" || k === "handFar" ? "hand" : k;
+/** Socket không còn trong `PIECE_KEYS`: JSON nhân vật, hành động và cảnh ở mọi đời bỏ nó lặng lẽ */
+const GONE_SOCKETS = ["chin", "sleeveNear", "sleeveFar", "hairBack"];
 
-/** Tên file ảnh của socket, hoặc `undefined` nếu socket không dùng ảnh. */
-export const pieceFile = (p: PieceData): string | undefined =>
-  p.src === "image" ? p.file : undefined;
+/** Bỏ socket không còn khỏi một map socket → giá trị (`pieces`, một vật của `items`, bộ đồ) */
+const dropGone = (map: unknown) => {
+  if (map && typeof map === "object" && !Array.isArray(map))
+    for (const k of GONE_SOCKETS) delete (map as Record<string, unknown>)[k];
+};
 
-/** Tên bộ phận code của socket, hoặc `undefined` nếu socket không dùng bộ phận code. */
-export const piecePart = (p: PieceData): string | undefined =>
-  p.src === "part" ? p.part : undefined;
-
-/** Mọi socket có thể vẽ: mảnh nền và mảnh của từng vật. Đường nạp ảnh đi qua đây. */
-export const characterSockets = (c: CharacterData): PieceData[] => [
-  ...PIECE_KEYS.map((k) => c.pieces[k]),
-  ...Object.values(c.items).flatMap((it) => Object.values(it) as PieceData[]),
-];
-
-/** Tên file ảnh mà nhân vật cần — kể cả vật chưa mặc, vì cảnh sau sẽ mặc. Không trùng lặp. */
-export const characterFiles = (c: CharacterData): string[] => [
-  ...new Set(characterSockets(c).flatMap((p) => pieceFile(p) ?? [])),
-];
-
-/** Ghi tỉ lệ khung đo từ ảnh vào mọi socket dùng file ấy, kể cả socket của vật. */
-export function applyAspects(c: CharacterData, aspects: Record<string, number>) {
-  for (const p of characterSockets(c)) {
-    const f = pieceFile(p);
-    if (f && aspects[f] !== undefined) p.aspect = aspects[f];
-  }
-}
+/** Bỏ socket không còn khỏi một `equip` thô: tên bộ đồ, map hay mảng các bước */
+export const dropGoneEquip = (e: unknown) => {
+  for (const step of Array.isArray(e) ? e : [e]) dropGone(step);
+};
 
 /** Nâng JSON đời cũ lên `CHARACTER_VERSION`. File mới hơn thì trả nguyên để zod báo lỗi. */
 export function migrateCharacter(json: unknown): unknown {
@@ -1126,19 +928,24 @@ export function migrateCharacter(json: unknown): unknown {
   if (from > CHARACTER_VERSION) return o;
   // v1 → v2 thêm `items` / `outfits`; thiếu thì nhân vật chỉ có mảnh nền, đúng như trước
   // v2 → v3 thêm `palette.limbCurve` và `palette.shade`; thiếu thì lấy mặc định, không phải viết gì
-  // v3 → v4 thêm `pieces.*.views`; thiếu là bộ chỉnh trung tính
-  if (from < 1) {
-    const pieces = (o.pieces ?? {}) as Record<string, Record<string, unknown>>;
-    for (const pc of Object.values(pieces))
-      if (pc && typeof pc === "object") pc.src ??= pc.file ? "image" : "none";
+  // v5 → v6 chỉ còn `none` và `sculpt`: socket ảnh, bộ phận vẽ code thành trống; bỏ `face.turn`, `face.moustache`,
+  // `head.shape`, `head.dx`, `head.dy`
+  if (from < 6) {
+    if (o.face && typeof o.face === "object")
+      for (const k of ["turn", "moustache"]) delete (o.face as Record<string, unknown>)[k];
+    if (o.head && typeof o.head === "object")
+      for (const k of ["shape", "dx", "dy"]) delete (o.head as Record<string, unknown>)[k];
+    const sockets = [
+      o.pieces,
+      ...Object.values((o.items ?? {}) as Record<string, unknown>),
+    ] as Record<string, Record<string, unknown> | undefined>[];
+    for (const group of sockets)
+      for (const pc of Object.values(group ?? {}))
+        if (pc && typeof pc === "object" && pc.src !== "sculpt") pc.src = "none";
   }
-  if (from < 5) {
-    const pieces = (o.pieces ?? {}) as Record<string, Record<string, unknown>>;
-    migrateHairPieces(pieces, RIG.headH);
-    const items = (o.items ?? {}) as Record<string, Record<string, Record<string, unknown>>>;
-    for (const it of Object.values(items))
-      if (it && typeof it === "object") migrateHairPieces(it, RIG.headH);
-  }
+  dropGone(o.pieces);
+  for (const group of [o.items, o.outfits])
+    if (group && typeof group === "object") Object.values(group).forEach(dropGone);
   o.schemaVersion = CHARACTER_VERSION;
   return o;
 }
@@ -1156,81 +963,4 @@ export const defaultCharacter = (): CharacterData => CharacterSchema.parse({});
 
 export const parseCharacter = (json: unknown) => CharacterSchema.safeParse(migrateCharacter(json));
 
-/** Ảnh mảnh đã nạp, **khoá theo tên file** — một ảnh dùng ở hai socket chỉ nạp một lần */
-export type PieceUrls = Record<string, string>;
-
 export { RIG };
-
-/** Tên file danh mục mảnh ảnh, nằm ngay trong `pieces/`. */
-export const PIECE_CATALOG_FILE = "catalog.json";
-
-/** Cấu hình mặc định của một kiểu; thiếu khoá nào thì giữ giá trị đang có của socket. */
-export const PieceConfigSchema = z
-  .object({
-    dx: z.number(),
-    dy: z.number(),
-    scale: z.number(),
-    widthScale: z.number(),
-    clip: z.boolean(),
-    clipGrow: z.number(),
-    hideLegs: z.boolean(),
-    layer: z.enum(["front", "under"]),
-    rotate: z.number(),
-  })
-  .partial();
-
-export const PieceCatalogEntrySchema = z.object({
-  /** Đường dẫn trong `pieces/`, mang cả thư mục socket (`hair/x.png`) */
-  file: z.string(),
-  socket: z.enum(PIECE_DIRS),
-  name: z.string(),
-  description: z.string().default(""),
-  config: PieceConfigSchema.default({}),
-});
-
-/** `pieces/catalog.json`: studio chỉ liệt kê mảnh có trong đây, không quét thư mục. */
-export const PieceCatalogSchema = z.object({
-  schemaVersion: z.literal(1).default(1),
-  pieces: z.array(PieceCatalogEntrySchema).default([]),
-  /** Cấu hình lúc cắm của bộ phận vẽ code, theo tên `part`; đè lên `preset` của bộ phận */
-  parts: z.record(z.string(), PieceConfigSchema).default({}),
-});
-
-export type PieceConfig = z.infer<typeof PieceConfigSchema>;
-export type PieceCatalogEntry = z.infer<typeof PieceCatalogEntrySchema>;
-export type PieceCatalog = z.infer<typeof PieceCatalogSchema>;
-
-export const parsePieceCatalog = (json: unknown) => PieceCatalogSchema.safeParse(json);
-
-/**
- * Gộp danh mục theo lớp, lớp trước đè lớp sau theo `file` và theo tên `part` — workspace trước,
- * bộ chung của studio sau.
- */
-export function mergePieceCatalogs(...layers: PieceCatalog[]): PieceCatalog {
-  const seen = new Set<string>();
-  const pieces: PieceCatalogEntry[] = [];
-  const parts: Record<string, PieceConfig> = {};
-  for (const layer of layers) {
-    for (const p of layer.pieces) {
-      if (seen.has(p.file)) continue;
-      seen.add(p.file);
-      pieces.push(p);
-    }
-    for (const [n, c] of Object.entries(layer.parts)) parts[n] ??= c;
-  }
-  return { schemaVersion: 1, pieces, parts };
-}
-
-/** Mọi khoá cấu hình mà socket này có, đọc từ mảnh đang cắm — chiều ngược của `applyPieceConfig` */
-export function pieceConfigOf(piece: PieceData): PieceConfig {
-  const out: Record<string, unknown> = {};
-  for (const k of Object.keys(PieceConfigSchema.shape))
-    if (k in piece) out[k] = (piece as Record<string, unknown>)[k];
-  return out as PieceConfig;
-}
-
-/** Ghi config của kiểu vào socket; khoá không có trong socket (vd. `clip` ở torso) bị bỏ qua. */
-export function applyPieceConfig(piece: PieceData, config: PieceConfig) {
-  for (const [k, v] of Object.entries(config))
-    if (v !== undefined && k in piece) (piece as Record<string, unknown>)[k] = v;
-}

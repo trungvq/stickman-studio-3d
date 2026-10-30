@@ -324,7 +324,7 @@ describe("sceneHeld: chỗ cầm nhóm", () => {
       cast: [{ id: "a", world: { at: [0, 0, 0], ...(hands.length && { hands }) }, tracks: [] }],
     });
     if (!r.success) throw new Error(r.error.message);
-    return resolveScene(r.data, {}, {}, {}, {}, {}, { "bang-gia": BANG });
+    return resolveScene(r.data, {}, {}, {}, { "bang-gia": BANG });
   };
 
   it("`holdBlending`: `HOLD_BLEND` giây sau mốc vừa cầm, đổi chỗ cầm, buông; mốc ở giây 0 không hoà", () => {
@@ -367,7 +367,7 @@ describe("sceneHeld: chỗ cầm nhóm", () => {
       ],
     });
     if (!r.success) throw new Error(r.error.message);
-    const rt = resolveScene(r.data, {}, {}, {}, {}, {}, { "bang-gia": BANG });
+    const rt = resolveScene(r.data, {}, {}, {}, { "bang-gia": BANG });
     const deep = sample({ under: HELD_REST + 2 });
     const at = (t0: number) => sceneHeld(rt, { frame: (t) => (t === t0 ? [deep] : []) });
     const issues = at(0.55);

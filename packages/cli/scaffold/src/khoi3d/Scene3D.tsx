@@ -9,7 +9,7 @@ import {
 } from "@stickman3d/rig";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { cancelRender, continueRender, delayRender, useVideoConfig } from "remotion";
-import { ACTIONS, ANIMALS, CHARACTERS, castBodies, castHeights, HANDS, HELD, PROPS } from "../data";
+import { ACTIONS, CHARACTERS, castBodies, castHeights, HANDS, HELD } from "../data";
 
 /**
  * Cảnh 3D: cảnh three `buildWorld` của @stickman3d/rig (bối cảnh `set`, người diễn mặc đồ theo `equip`, người nền, đồ
@@ -40,18 +40,7 @@ export const Scene3D = ({
   const [wait] = useState(() => delayRender("cảnh 3D"));
   const released = useRef(false);
   const rt = useMemo(
-    () =>
-      given ??
-      resolveScene(
-        scene,
-        ACTIONS,
-        ANIMALS,
-        PROPS,
-        castHeights(scene),
-        castBodies(scene),
-        HELD,
-        HANDS,
-      ),
+    () => given ?? resolveScene(scene, ACTIONS, castHeights(scene), castBodies(scene), HELD, HANDS),
     [scene, given],
   );
 

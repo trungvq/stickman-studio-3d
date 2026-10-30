@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 20,
+  "name": "talk-pose-reach-bossy-2-3d",
+  "duration": 3.2,
+  "end": "wrap",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": [17, -2], "head": [0, null, -12] }, "ease": "linear" },
+    { "t": 0.5, "pose": { "torso": [18.5, -2], "head": [0, null, -12] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Dáng thoại 2/6 của bộ `talk-pose-reach-bossy` — nền vói qua quầy (thân ~20°, đầu ngửa −12°, gần `reach-over-20-3d`), tính hống hách: chồm sát người nghe, cằm hất: nhổm lại 3°, hất cằm 2° quá mức bù, nghiêng thân 2° phía kia. Lặp 3,2 s, giữ nhịp thở của `stand-3d` (thân +1,5° ở nửa lượt); clip đặt `phase` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi `torso` (cúi, nghiêng) và nghiêng, gật của `head`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay xa ống kính. Nền `stand-3d` sau quầy, bàn trước mặt. Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới. Cùng dáng: `talk-pose-reach-bossy-2-3d`, `talk-pose-reach-bossy-2-nod-3d`, `talk-pose-reach-bossy-2-soft-3d`, `talk-pose-reach-bossy-2-big-3d`. Sinh bằng `tools/actions/talk-pose.mjs`.",
+  "preview": { "stage": "counter" }
+}

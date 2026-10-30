@@ -1,22 +1,9 @@
-import { ARM_LAYERS, DEFAULT_LAYERS } from "./constants";
-import {
-  ARM_CHANNELS,
-  headOver,
-  mixAim,
-  mixAngles,
-  mixReach,
-  rawAim,
-  smoothstep,
-  stretchOver,
-} from "./action";
+import { headOver, mixAim, mixAngles, mixReach, rawAim, smoothstep, stretchOver } from "./action";
 import { HAND_REST, mixHand } from "./hand";
-import type { AnimalPose } from "./animals";
 import {
   LIFT_CHANNELS,
   REACH_CHANNELS,
-  type ArmLayer,
   type AimMap,
-  type ArmLayers,
   type FaceState,
   type HandMap,
   type Lift,
@@ -81,8 +68,6 @@ export function blendPose(
   f: number,
 ): Partial<Pose> {
   if (f >= 1) return to;
-  // Chân cắt cứng ngay ở `f === 0` nữa: giữ chân của clip cũ dù chỉ một khung là con vật
-  // đang bay bỗng đứng bằng chân xếp, và `animalAirborne` đã trả về mặt đất từ khung ấy
   const w = f <= 0 ? 0 : smoothstep(f);
   const o: Partial<Pose> = {};
   eachChannel(
@@ -148,29 +133,6 @@ export function blendDuration(base: Pose, from: Partial<Pose>, to: Partial<Pose>
 const gap = (a: readonly number[], b: readonly number[]) =>
   (mixAngles(a, b, 1) as number[]).map((v, i) => Math.abs(v - (a[i] ?? 0)));
 
-const rank = (l: ArmLayer) => ARM_LAYERS.indexOf(l);
-
-/**
- * Lớp không nội suy được: suốt đoạn hoà lấy lớp **trước nhất** của hai bên.
- * Đè dư vài frame thì không ai thấy; đè thiếu thì cẳng tay chui vào khối thân giữa đường bay.
- */
-export function blendLayers(
-  from: Partial<ArmLayers>,
-  to: Partial<ArmLayers>,
-  f: number,
-): Partial<ArmLayers> {
-  if (f <= 0) return from;
-  if (f >= 1) return to;
-  const o: Partial<ArmLayers> = {};
-  for (const k of ARM_CHANNELS) {
-    if (!from[k] && !to[k]) continue;
-    const a = from[k] ?? DEFAULT_LAYERS[k];
-    const b = to[k] ?? DEFAULT_LAYERS[k];
-    o[k] = rank(a) >= rank(b) ? a : b;
-  }
-  return o;
-}
-
 /**
  * Kiểu nét mặt không nội suy được: đổi ở giữa đoạn hoà. Khẩu hình đọc ra là tức thì, nên đổi
  * sớm hay muộn nửa đoạn đều không ai thấy sai. `blush` hoà thẳng suốt đoạn, bên không ghi là `0`.
@@ -187,70 +149,4 @@ export function blendFace(
     o.blush = a + ((to.blush ?? 0) - a) * f;
   }
   return o;
-}
-
-/** Kênh động vật hoà được: thân, cổ, đầu một số; đuôi, cánh hai số. Chân thì không — xem `blendAnimalPose`. */
-const ANIMAL_SCALARS = ["spine", "neck", "head"] as const;
-const ANIMAL_VECTORS = ["tail", "wing"] as const;
-const ANIMAL_LEGS = ["fn", "ff", "hn", "hf"] as const;
-
-function eachAnimalChannel(
-  base: AnimalPose,
-  from: Partial<AnimalPose>,
-  to: Partial<AnimalPose>,
-  vec: (k: (typeof ANIMAL_VECTORS)[number], a: readonly number[], b: readonly number[]) => void,
-  num: (k: (typeof ANIMAL_SCALARS)[number], a: number, b: number) => void,
-) {
-  for (const k of ANIMAL_VECTORS) {
-    if (!from[k] && !to[k]) continue;
-    vec(k, from[k] ?? base[k], to[k] ?? base[k]);
-  }
-  for (const k of ANIMAL_SCALARS) {
-    if (from[k] === undefined && to[k] === undefined) continue;
-    num(k, from[k] ?? base[k], to[k] ?? base[k]);
-  }
-}
-
-/**
- * Hoà hai kết quả `animalActionPose`. Thân, cổ, đầu, đuôi, cánh hoà như của người; **chân
- * cắt cứng**: góc chân là kết quả IK, hoà là bàn chân trượt, nên từ giây đầu chỗ nối chân đã là
- * của clip mới — clip mới không ghi chân thì chân về track dưới ngay. docs/03-scene.md#động-vật
- */
-export function blendAnimalPose(
-  base: AnimalPose,
-  from: Partial<AnimalPose>,
-  to: Partial<AnimalPose>,
-  f: number,
-): Partial<AnimalPose> {
-  if (f >= 1) return to;
-  // Chân cắt cứng ngay ở `f === 0` nữa: giữ chân của clip cũ dù chỉ một khung là con vật
-  // đang bay bỗng đứng bằng chân xếp, và `animalAirborne` đã trả về mặt đất từ khung ấy
-  const w = f <= 0 ? 0 : smoothstep(f);
-  const o: Partial<AnimalPose> = {};
-  eachAnimalChannel(
-    base,
-    from,
-    to,
-    (k, a, b) => Object.assign(o, { [k]: a.map((v, i) => v + (b[i] - v) * w) }),
-    (k, a, b) => (o[k] = a + (b - a) * w),
-  );
-  for (const k of ANIMAL_LEGS) if (to[k]) o[k] = to[k];
-  return o;
-}
-
-/** Giây cần để đi từ `from` sang `to` ở các kênh hoà được của động vật; scene đè được. */
-export function blendAnimalDuration(
-  base: AnimalPose,
-  from: Partial<AnimalPose>,
-  to: Partial<AnimalPose>,
-): number {
-  let d = 0;
-  eachAnimalChannel(
-    base,
-    from,
-    to,
-    (_k, a, b) => (d = Math.max(d, ...a.map((v, i) => Math.abs(b[i] - v)))),
-    (_k, a, b) => (d = Math.max(d, Math.abs(b - a))),
-  );
-  return Math.min(BLEND_MAX, Math.max(BLEND_MIN, d / BLEND_RATE));
 }

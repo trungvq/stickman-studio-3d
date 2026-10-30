@@ -7,12 +7,14 @@ import {
   FRAMES,
   buildStage,
   parseScene,
+  previewWorld,
   resolveScene,
+  type PreviewScene,
+  type PreviewStage,
   type SceneData,
   type Stage,
   type World3D,
 } from "@stickman3d/rig";
-import { registerParts } from "@stickman3d/sketch";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Composition,
@@ -25,19 +27,8 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import {
-  ACTIONS,
-  ANIMALS,
-  CHARACTERS,
-  HANDS,
-  HELD,
-  PROPS,
-  SCENES,
-  castBodies,
-  castHeights,
-} from "../src/data";
+import { ACTIONS, CHARACTERS, HANDS, HELD, SCENES, castBodies, castHeights } from "../src/data";
 import { CANH_3D } from "../src/khoi3d/canh";
-import { CODE_PARTS } from "../src/parts";
 import { Root } from "../src/Root";
 import { Scene } from "../src/Scene";
 
@@ -46,10 +37,14 @@ type Lens = NonNullable<SceneData["lens"]>;
 /** Khung `frame` của composition cảnh `scene`; hay giây cảnh `t` nhìn qua ống kính `lens` (chỉ sân khấu 3D, không lớp 2D) */
 export type SoiJob = { scene: string; frame: number } | { scene: string; t: number; lens: Lens };
 
+/** Cảnh xem thử của `previewScene` (rig): `stage`, `yaw`, `height` như đã đưa cho `previewScene` */
+export type SoiPreview = { stage: PreviewStage; yaw?: number; height?: number };
+
 /**
  * `frames`: số khung của từng cảnh có trong `soi`, như composition của cảnh ấy — `calculateMetadata` điền, `0` là không có
  * cảnh. `scenes`: cảnh dựng tạm không nằm trong `scenes/` (JSON thô, theo id việc dùng ở `soi[].scene`), như bảng nhóm cầm
- * của `tools/bang-cam.mjs`; cảnh three của nó tra `CANH_3D` theo `name` trong JSON, không theo id
+ * của `tools/bang-cam.mjs`; cảnh three của nó tra `CANH_3D` theo `name` trong JSON, không theo id. `preview`: cảnh dựng
+ * tạm theo id là cảnh xem thử của `tools/bang-hanh-dong.mjs` — cảnh three là `previewWorld` của rig, không tra `CANH_3D`
  */
 export type SoiProps = {
   soi: SoiJob[];
@@ -57,6 +52,7 @@ export type SoiProps = {
   h: number;
   frames?: Record<string, number>;
   scenes?: Record<string, unknown>;
+  preview?: Record<string, SoiPreview>;
 };
 
 /** Cảnh của việc: file trong `scenes/`, không thì cảnh dựng tạm của `inputProps.scenes` (parse một lần mỗi id) */
@@ -75,28 +71,36 @@ const sceneOf = (id: string, raw?: Record<string, unknown>): SceneData | undefin
 const FPS = 60;
 
 /** Sân khấu 3D của cảnh nhìn qua `lens`: khung cắt bỏ camera của cảnh, khung ra thấy trọn chiều cao sân khấu quanh trục nhìn */
-const LensStill = ({ scene, t, lens }: { scene: SceneData; t: number; lens: Lens }) => {
+const LensStill = ({
+  scene,
+  t,
+  lens,
+  raw,
+  preview,
+}: {
+  scene: SceneData;
+  t: number;
+  lens: Lens;
+  raw?: unknown;
+  preview?: SoiPreview;
+}) => {
   const { width, height } = useVideoConfig();
   const host = useRef<HTMLDivElement>(null);
   const built = useRef<{ stage: Stage; world: World3D } | null>(null);
   const [wait] = useState(() => delayRender(`soi 3D ${scene.name}`));
-  const spec = CANH_3D[scene.name];
+  const spec = useMemo(
+    () =>
+      preview
+        ? previewWorld(raw as PreviewScene, preview.stage, HELD, preview)
+        : CANH_3D[scene.name],
+    [scene, raw, preview],
+  );
   if (!spec)
     throw new Error(
       `cảnh ${scene.name} không có trong CANH_3D (khoi3d/canh.ts) — không phải cảnh 3D`,
     );
   const rt = useMemo(
-    () =>
-      resolveScene(
-        scene,
-        ACTIONS,
-        ANIMALS,
-        PROPS,
-        castHeights(scene),
-        castBodies(scene),
-        HELD,
-        HANDS,
-      ),
+    () => resolveScene(scene, ACTIONS, castHeights(scene), castBodies(scene), HELD, HANDS),
     [scene],
   );
   const fr = FRAMES[scene.frame];
@@ -147,13 +151,20 @@ const LensStill = ({ scene, t, lens }: { scene: SceneData; t: number; lens: Lens
   return <div ref={host} style={{ position: "absolute", inset: 0 }} />;
 };
 
-const Soi = ({ soi, scenes }: SoiProps) => {
+const Soi = ({ soi, scenes, preview }: SoiProps) => {
   const job = soi[useCurrentFrame()];
   const scene = sceneOf(job.scene, scenes);
   if (!scene) throw new Error(`không có scenes/${job.scene}.json (hay cảnh dựng tạm hỏng)`);
   // `key` theo cảnh: cùng cảnh thì giữ sân khấu đã dựng, sang cảnh khác thì dựng lại và Remotion chờ lại
   return "lens" in job ? (
-    <LensStill key={job.scene} scene={scene} t={job.t} lens={job.lens} />
+    <LensStill
+      key={job.scene}
+      scene={scene}
+      t={job.t}
+      lens={job.lens}
+      raw={scenes?.[job.scene]}
+      preview={preview?.[job.scene]}
+    />
   ) : (
     <Freeze key={job.scene} frame={job.frame}>
       <Scene scene={scene} />
@@ -176,7 +187,13 @@ const SoiRoot = () => {
       width={p.w ?? 1920}
       height={p.h ?? 1080}
       durationInFrames={length(p.soi)}
-      defaultProps={{ soi: p.soi, w: p.w ?? 1920, h: p.h ?? 1080, scenes: p.scenes }}
+      defaultProps={{
+        soi: p.soi,
+        w: p.w ?? 1920,
+        h: p.h ?? 1080,
+        scenes: p.scenes,
+        preview: p.preview,
+      }}
       calculateMetadata={({ props }) => ({
         props: {
           ...props,
@@ -185,11 +202,7 @@ const SoiRoot = () => {
               const d = sceneOf(s, props.scenes);
               return [
                 s,
-                d
-                  ? Math.ceil(
-                      resolveScene(d, ACTIONS, ANIMALS, PROPS, {}, {}, HELD, HANDS).duration * FPS,
-                    )
-                  : 0,
+                d ? Math.ceil(resolveScene(d, ACTIONS, {}, {}, HELD, HANDS).duration * FPS) : 0,
               ];
             }),
           ),
@@ -199,5 +212,4 @@ const SoiRoot = () => {
   );
 };
 
-registerParts(CODE_PARTS);
 registerRoot(SoiRoot);

@@ -1,7 +1,7 @@
 // Vệt quỹ đạo khớp và bóng que xương vẽ đè lên ô sân khấu — cùng khớp và phép chiếu với đo giật
 // của `check` (`stageJoints`), kèm hướng dẫn đọc và bảng số đo bằng chữ. docs/04-mcp.md#người-3d
 import React from "react";
-import * as rig from "@stickman3d/sketch";
+import * as rig from "@stickman3d/rig/core";
 
 const KEYWORDS = {
   hands: ["wristR", "wristL"],
@@ -83,24 +83,18 @@ const median = (xs) => {
 
 /**
  * Bộ lấy mẫu khớp người 3D, nhớ theo giây nên các ô chồng cửa sổ không tính lại. `characterOf(m)` trả
- * JSON nhân vật đã parse, `undefined` là bỏ người ấy; người không có `world` thì bỏ, kèm một dòng ở `warnings`.
+ * JSON nhân vật đã parse, `undefined` là bỏ người ấy.
  */
 export function jointSampler(rt, characterOf) {
   const people = new Map();
-  const warnings = [];
   for (const m of rt.cast) {
-    if (!m.world || !rt.lens) {
-      warnings.push(`\`${m.id}\` không phải người 3D (thiếu \`world\`) — vệt và que xương bỏ qua`);
-      continue;
-    }
     const base = characterOf(m);
     if (!base) continue;
-    const c = rig.castCharacter(m, base);
+    const c = base;
     people.set(m.id, { m, base, c, h: c.rig.height, b: rig.body3(c), memo: new Map() });
   }
   return {
     ids: [...people.keys()],
-    warnings,
     at(id, t) {
       const P = people.get(id);
       const key = t.toFixed(6);
@@ -276,7 +270,7 @@ export function motionData(
         p.v = q ? Math.hypot(p.x - q.x, p.y - q.y) * p.k : NaN;
       });
       const cur = now.pts?.[joint];
-      const gait = !!m.world?.path && joint.startsWith("foot");
+      const gait = !!m.world.path && joint.startsWith("foot");
       return {
         joint,
         side: sideOf(joint),

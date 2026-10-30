@@ -34,7 +34,7 @@ describe('món đặt trước', () => {
     });
     if (!r.success) throw new Error(r.error.message);
     const H = c.data.rig.height;
-    const rt = resolveScene(r.data, {}, {}, {}, { nguoi: H }, { nguoi: body3(c.data) }, { 'bang-gia': spec.data });
+    const rt = resolveScene(r.data, {}, { nguoi: H }, { nguoi: body3(c.data) }, { 'bang-gia': spec.data });
     const p = fromCharacter(c.data as unknown as Parameters<typeof fromCharacter>[0]);
     for (const t of [0, 0.5, 1]) {
       const sp = sceneAt(rt, 'nguoi', t, H, body3(c.data)) as unknown as Acting;

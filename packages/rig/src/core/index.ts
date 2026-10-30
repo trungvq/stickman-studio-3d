@@ -1,21 +1,15 @@
-export * from "./accessories";
-export * from "./accessoryViews";
+export * from "./anchor";
 export * from "./act3";
 export * from "./action";
-export * from "./animalGait";
-export * from "./animalGeometry";
-export * from "./animals";
-export * from "./beard";
 export * from "./blend";
-export * from "./chinViews";
 export * from "./constants";
 export * from "./face";
 export * from "./figure3d";
-export * from "./garments";
-export * from "./garmentViews";
+export * from "./gait";
 export * from "./geometry";
 export * from "./glasses";
 export * from "./graspArm";
+export * from "./elbow";
 export * from "./graspGroups";
 export * from "./graspSolve";
 export * from "./hand";
@@ -24,17 +18,14 @@ export * from "./hat";
 export * from "./jewelry";
 export * from "./handLibrary";
 export * from "./handMesh";
-export * from "./hairMigration";
-export * from "./hairstyles";
-export * from "./head";
 export * from "./humanHead";
-export * from "./headwear";
 export * from "./heldAudit";
 export * from "./heldAuthored";
 export * from "./heldCarry";
 export * from "./heldFit";
 export * from "./heldGeom";
 export * from "./heldItem";
+export * from "./heldRoles";
 export * from "./holdLink";
 export * from "./holdMode";
 export * from "./idle";
@@ -42,32 +33,26 @@ export * from "./ik";
 export * from "./lens";
 export * from "./bodyMark";
 export * from "./palm";
-export * from "./parts";
 export * from "./pierce";
 export * from "./poses";
-export * from "./props";
+export * from "./preview";
+export * from "./roles";
 export * from "./scene";
 export * from "./schema";
 export {
   chain,
-  depthHalf,
   f,
   fanOf,
   grid,
   hairline,
   SCULPT_PRESETS,
   SCULPT_STYLES,
-  sculptPaths,
   sculptPresetOf,
   step,
-  weld,
   winding,
   type Layer,
-  type SculptPaths,
   type SculptPreset,
 } from "./sculpt";
-export * from "./shade";
-export * from "./skirt";
 export * from "./skirtShape";
 export * from "./hem";
 export * from "./snap";
@@ -79,17 +64,11 @@ export {
   garmentShoulder,
   lapFold,
   limbSpread,
-  restYaw,
   shoulderRoot,
-  torsoPaths,
-  torsoYaw,
   type Lap,
   type MarkFill,
-  type TorsoPaths,
 } from "./torso";
 export { flattenPath, PANEL_LIFT, panelParts, type PanelParts } from "./panel";
-export * from "./traced";
 export * from "./travel";
 export * from "./types";
-export * from "./views";
 export * from "./walk";

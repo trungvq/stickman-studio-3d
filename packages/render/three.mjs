@@ -3,7 +3,7 @@
 // docs/04-mcp.md#ảnh-three-thật
 import { existsSync } from "node:fs";
 import { platform } from "node:os";
-import * as rig from "@stickman3d/sketch";
+import * as rig from "@stickman3d/rig/core";
 import { bundleThreePage } from "./layers.mjs";
 
 const CHROMES = {
@@ -55,20 +55,17 @@ export function threeSize(spec, frame) {
 }
 
 /**
- * Dữ liệu cho trang: JSON đã parse (nhân vật theo tên file, hành động, động vật, đạo cụ, món cầm tay, dáng tay) kèm
+ * Dữ liệu cho trang: JSON đã parse (nhân vật theo tên file, hành động, món cầm tay, dáng tay) kèm
  * `heights` và `bodies` của `cast` — đúng `ctx` mà `worldOf` nhận ở `check`
  */
-export function threeData(
-  scene,
-  { characters, actions = {}, animals = {}, props = {}, held = {}, hands = {} },
-) {
+export function threeData(scene, { characters, actions = {}, held = {}, hands = {} }) {
   const heights = {};
   const bodies = {};
   for (const m of scene.cast) {
     const c = m.character && characters[m.character];
     if (c) [heights[m.id], bodies[m.id]] = [c.rig.height, rig.body3(c)];
   }
-  return { characters, actions, animals, props, held, hands, heights, bodies };
+  return { characters, actions, held, hands, heights, bodies };
 }
 
 async function launch(software) {
@@ -97,10 +94,11 @@ async function launch(software) {
 }
 
 /**
- * Chạy các lượt vẽ trong một Chromium: mỗi `job` là `{ id, scene, data, times, plain?, furniture? }` — `scene` đã
- * parse, `data` của `threeData`, `plain` bỏ qua `worldOf` của repo, `furniture` là `Item` của rig thêm vào bối cảnh.
- * Trả `{ gpu, boot, jobs: [{ from, warnings, frames: [{ t, png, ms }] }] }`: `from` là `world` (cảnh của repo) hay
- * `plain` (`plainRoom()`), `png` là Buffer, `ms` thời gian vẽ khung trong trang, `boot` ms gói trang và mở Chromium
+ * Chạy các lượt vẽ trong một Chromium: mỗi `job` là `{ id, scene, data, times, plain?, preview?, props?, furniture? }` —
+ * `scene` đã parse, `data` của `threeData`, `plain` bỏ qua `worldOf` của repo, `preview` là `{ stage, ...PreviewSetOptions }`
+ * của bối cảnh xem thử (`previewSet`), `props` là `{ list, h }` đồ thử của sân khấu `stickman gen` (`propWorld`, món của
+ * `world.hands` qua `previewExtra`), `furniture` là `Item` của rig thêm vào bối cảnh. Trả `{ gpu, boot, jobs: [{ from,
+ * warnings, frames: [{ t, png, ms }] }] }`: `from` là `world` (cảnh của repo), `preview`, `props` hay `plain` (`plainRoom()`), `png` là Buffer, `ms` thời gian vẽ khung trong trang, `boot` ms gói trang và mở Chromium
  */
 export async function threeShots({ root = process.cwd(), jobs, size, software = false }) {
   const t0 = performance.now();

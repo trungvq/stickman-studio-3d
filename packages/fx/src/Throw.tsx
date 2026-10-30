@@ -26,7 +26,7 @@ export const throwLanding = (fx: ThrowData) => ({
 
 /**
  * Vật rời tay: bay parabol + xoay, chạm rồi tóe và loang sóng nếu có `splash` / `ripple`.
- * Trước `t0` trả `null` — cái trên tay là mảnh của nhân vật, `equip` tắt đúng giây ấy.
+ * Trước `t0` trả `null` — cái trên tay là đồ của nhân vật, `equip` tắt đúng giây ấy.
  */
 export function Throw({ fx, url, t }: { fx: ThrowData; url?: string; t: number }) {
   const tau = t - fx.t0;
@@ -34,11 +34,11 @@ export function Throw({ fx, url, t }: { fx: ThrowData; url?: string; t: number }
   const { x, y } = flightAt(fx, Math.min(tau, fx.flight));
 
   if (tau < fx.flight) {
-    if (!url && !fx.part) return null;
+    if (!url) return null;
     const k = 1 - fx.shrink * (tau / fx.flight);
     return (
       <g transform={`translate(${x} ${y}) rotate(${fx.deg0 + fx.spin * tau}) scale(${k})`}>
-        <Piece part={fx.part} url={url} w={fx.w} h={fx.h} />
+        <Piece url={url} w={fx.w} h={fx.h} />
       </g>
     );
   }

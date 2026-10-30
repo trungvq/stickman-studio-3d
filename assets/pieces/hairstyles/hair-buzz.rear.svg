@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
-<title>Đầu đinh — rear</title>
-<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
-<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 62 160 C 62 102 102 60 160 60 C 208 60 238 78 248 98 Q 230 110 222 132 C 212 146 216 178 210 198 Q 204 216 190 226 Q 150 238 106 234 Q 70 216 62 190 Q 59 176 60 160 Z"/>
-</g>
-</svg>

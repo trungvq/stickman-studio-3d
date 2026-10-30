@@ -15,14 +15,7 @@ import {
   mixReach,
   actionEquip,
   actionEvents,
-  actionAirborne,
-  actionKind,
   actionMask,
-  animalActionDelta,
-  animalActionFace,
-  animalActionMask,
-  animalActionPose,
-  animalDeltaPose,
   equipSockets,
   actionFace,
   actionAim,
@@ -33,17 +26,14 @@ import {
   mixAim,
   rawAim,
   reachTerm,
-  actionLayers,
   actionPose,
   composeFace,
-  composeLayers,
   composePose,
   deltaPose,
   smoothstep,
   type ActionData,
   type Channel,
 } from "./action";
-import type { Root } from "./types";
 import {
   actArm,
   actHandAt,
@@ -57,7 +47,7 @@ import {
   type ActInput,
   type Trunk3,
 } from "./act3";
-import { AIM_BEND, AIM_DEV, clampRange, overRange, rangeMargin, TURN_MAX } from "./arm3";
+import { AIM_BEND, AIM_DEV, BONES3, overRange, rangeMargin, TURN_MAX } from "./arm3";
 import {
   armInput,
   armSeg,
@@ -69,6 +59,7 @@ import {
   phiToward,
   rigElbowBody,
   solvePhi,
+  wristClamp,
   yawFrame,
   type ArmInput,
   type ArmQuery,
@@ -139,43 +130,14 @@ import {
   type SceneHold,
   type SceneHoldGroup,
 } from "./heldItem";
-import {
-  ANIMAL_ANCHOR_NAMES,
-  ANIMAL_CHANNELS,
-  ANIMAL_JOINT_CHANNELS,
-  ANIMAL_LEG_CHANNELS,
-  DEFAULT_ANIMAL_FACE,
-  type AnimalChannel,
-  type AnimalData,
-  type AnimalFace,
-  type AnimalPose,
-} from "./animals";
-import {
-  animalAnchorOf,
-  animalFeet,
-  animalHang,
-  animalStand,
-  composeAnimalPose,
-  computeAnimalFigure,
-  type AnimalFigure,
-} from "./animalGeometry";
-import {
-  BLEND_MAX,
-  BLEND_MIN,
-  blendAnimalDuration,
-  blendAnimalPose,
-  blendDuration,
-  blendFace,
-  blendLayers,
-  blendPose,
-} from "./blend";
-import { HAND_REST, mixHand, type HandKey as ActionHandKey, type HandPose } from "./hand";
+import { BLEND_MAX, BLEND_MIN, blendDuration, blendFace, blendPose } from "./blend";
+import { HAND_REST, mixHand, type HandKey as ActionHandKey } from "./hand";
 import { fingersOf, isHandShape, shapeFingers, withFingers, type HandShapes } from "./handLibrary";
 import { shapeBound, type CarryRef } from "./heldCarry";
 import { isCarryHold, supportChoice, supportGroup } from "./holdLink";
 import { D, FRAMES, RIG, type FrameName, type FrameSpec } from "./constants";
-import { feet, lengths, type Legs } from "./geometry";
-import { BODY3, dirOf, facing, feet3, viewOfTheta, type Body3, type World } from "./figure3d";
+import { feet, lengths } from "./geometry";
+import { BODY3, dirOf, facing, feet3, type Body3, type World } from "./figure3d";
 import {
   add3,
   cross3,
@@ -192,11 +154,11 @@ import {
   type V3,
 } from "./lens";
 import { POSES, POSE_NAMES } from "./poses";
-import { propSeat, type PropData } from "./props";
 import {
   EquipSchema,
   composeEquip,
   defaultCharacter,
+  dropGoneEquip,
   equipCharacter,
   equipSteps,
   limbWidths,
@@ -205,34 +167,18 @@ import {
   type Equip,
   type EquipStep,
 } from "./schema";
+import { bakeTravel, nextBearing, standing, TRAVEL_STEP } from "./travel";
 import {
-  bakeFeetTravel,
-  bakeTravel,
-  nextBearing,
-  standing,
-  travelAt,
-  TRAVEL_STEP,
-  type TravelTable,
-} from "./travel";
-import {
-  BODY_PARTS,
-  UPPER_OF,
-  DEFAULT_VIEW,
-  VIEWS,
-  clampViews,
   LIFT_CHANNELS,
   REACH_CHANNELS,
-  type ArmLayers,
   type Reach,
-  type BodyPart,
   type FaceState,
   type LegAngles,
   type Pose,
-  type View,
 } from "./types";
 
 /** Bump khi đổi hình dạng JSON scene; `migrateScene` phải có nhánh tương ứng. */
-export const SCENE_VERSION = 34;
+export const SCENE_VERSION = 36;
 
 /** `"@ten"` hay `"@ten+0.4"` / `"@ten-1"`: một mốc có tên trong `scene.marks` cộng phần lệch giây */
 export const MARK_REF = /^@([A-Za-z0-9_-]+)(?:\s*([+-])\s*(\d+(?:\.\d+)?))?$/;
@@ -276,8 +222,7 @@ const BgLayerSchema = z.object({
     .default(16 / 9),
   /**
    * Nấc xếp lớp **giữa các lớp nền**; nhỏ là ở sau. Bỏ trống là `SCENE_Z.bg` cộng thứ tự
-   * mảng. Nền chưa vào trục chung của `sceneOrder` nên số lớn hơn băng nền không đưa được
-   * lớp ấy ra trước người. docs/03-scene.md#trục-z
+   * mảng. docs/03-scene.md#trục-z
    */
   z: z.number().optional(),
   /**
@@ -308,16 +253,16 @@ const ClipSchema = z.object({
     .optional()
     .describe("Giây cho một lượt t: 0 → 1; đè `duration` của file hành động"),
   /**
-   * Cách khai nhịp thứ hai: tốc độ trôi ngang mong muốn, đơn vị scene mỗi giây cho người
-   * `height = 1` — rig suy `cycle` từ sải chân của chính hành động (`actionStride`) nhân
-   * `scale` của người. Không đi cùng `cycle`. docs/03-scene.md
+   * Cách khai nhịp thứ hai: tốc độ đi mong muốn, đơn vị thế giới mỗi giây — rig suy `cycle` từ sải
+   * chân của chính hành động (`actionStride`, người `height = 1`) nhân `world.s` của người. Không đi
+   * cùng `cycle`. docs/03-scene.md#nhịp-theo-tốc-độ
    */
   speed: z
     .number()
     .positive()
     .optional()
     .describe(
-      "Đơn vị scene mỗi giây; rig suy `cycle` từ sải chân của hành động, không khai cùng `cycle`",
+      "Đơn vị thế giới mỗi giây; rig suy `cycle` từ sải chân của hành động nhân `world.s`, không khai cùng `cycle`",
     ),
   phase: z
     .number()
@@ -354,51 +299,10 @@ const TrackSchema = z.object({
   clips: z.array(ClipSchema).min(1),
 });
 
-/** Một mốc đường đi; `t` là giây scene, trường bỏ trống lấy `x`/`y`/`scale` của `cast` */
-const PathKeySchema = z.object({
-  t: time(),
-  x: z.number().optional(),
-  y: z.number().optional(),
-  scale: z.number().positive().optional(),
-  /** Vào mốc này theo smoothstep thay vì thẳng */
-  ease: z.boolean().default(false),
-});
-
 /** Một mốc mờ dần; `v` là độ đục 0–1 */
 const FadeKeySchema = z.object({
   t: time(),
   v: z.number().min(0).max(1),
-});
-
-/** Một mốc đổi hướng; `v` là `flip` kể từ giây `t` */
-const FlipKeySchema = z.object({
-  t: time(),
-  v: z.boolean(),
-});
-
-/** Một mốc đổi góc nhìn; `v` là góc kể từ giây `t` */
-const ViewKeySchema = z.object({
-  t: time(),
-  v: z.enum(VIEWS),
-});
-const ViewTrackSchema = z.union([z.enum(VIEWS), z.array(ViewKeySchema).min(1)]);
-
-/**
- * Một con vật đang bị xách hay ôm: vẽ trong khung cổ tay của `socket`, cùng lớp với cẳng
- * tay ấy. `anchor` là điểm nào của con vật đặt vào tay, `dx`/`dy` dời thêm trong khung
- * cổ tay (đơn vị rig của người), `rotate` xoay quanh đó theo chiều rig — gà xách ngược
- * chân lên thì `anchor: "hip"`, `rotate: 180`. docs/03-scene.md#động-vật
- */
-const CarrySchema = z.object({
-  /** `id` trong `animals[]` */
-  animal: z.string().min(1),
-  socket: z.enum(["handNear", "handFar"]).default("handNear"),
-  anchor: z.enum(ANIMAL_ANCHOR_NAMES).default("hip"),
-  dx: z.number().default(0),
-  dy: z.number().default(0),
-  rotate: z.number().default(0),
-  /** Lật ngược so với người xách */
-  flip: z.boolean().default(false),
 });
 
 const V3Schema = z.tuple([z.number(), z.number(), z.number()]);
@@ -570,10 +474,9 @@ export const SceneItemMarkSchema = z
 export type SceneItemMark = Unmarked<z.infer<typeof SceneItemMarkSchema>>;
 
 /**
- * Người đặt trong thế giới 3D của `scene.lens`: chỗ đứng, cỡ, góc nhìn, lật đều suy từ đây mỗi
- * khung — `x`, `y`, `scale`, `view`, `headView`, `flip`, `zParts` của người ấy không còn
- * nghĩa. Tay chân chiếu thật (kênh soạn ở `side`), `yaw` khai là hướng vẽ ở mọi góc. Tĩnh thì
- * khai `at` / `yaw` / `sit`, đi thì `path`. docs/03-scene.md#người-3d
+ * Người đặt trong thế giới 3D của `scene.lens`: chỗ đứng, cỡ, lật đều suy từ đây mỗi khung. Tay chân chiếu thật (kênh
+ * soạn ở `side`), `yaw` khai là hướng vẽ ở mọi góc. Tĩnh thì khai `at` / `yaw` / `sit`, đi thì `path`.
+ * docs/03-scene.md#người-3d
  */
 const WorldSchema = z
   .object({
@@ -604,88 +507,8 @@ const CastSchema = z.object({
   id: z.string().min(1),
   /** Tên file nhân vật; scene phần lớn không phụ thuộc ai diễn nên bỏ trống được */
   character: z.string().optional(),
-  x: z.number().default(0),
-  /** Đường đất người này đứng lên; bỏ trống là `scene.ground` — `0` là giữa khung */
-  y: z.number().optional(),
-  scale: z.number().positive().default(1),
-  /**
-   * Nấc xếp lớp; nhỏ là ở sau. Bỏ trống là `SCENE_Z.cast`. Ngồi trong đạo cụ thì đây là
-   * `z` **cục bộ** giữa những người cùng ngồi trong đạo cụ ấy. docs/03-scene.md#trục-z
-   */
-  z: z.number().optional(),
-  /**
-   * `z` riêng cho từng khối của người, cùng trục với `z`; khối không khai thì theo `z`. Khối cùng
-   * `z` vẽ chung một lượt theo thứ tự lớp của rig. Không đi cùng `mount` hay `sit`.
-   * docs/03-scene.md#tách-người-theo-z
-   */
-  zParts: z.partialRecord(z.enum(BODY_PARTS), z.number()).optional(),
-  /**
-   * `id` một nhóm trong `groups[]`: `x`/`y`/`scale`/`flip`/`path` thành tương đối so với nhóm, `y`
-   * bỏ trống là `0`, và `z` là `z` **cục bộ** trong nhóm. docs/03-scene.md#nhóm
-   */
-  group: z.string().optional(),
-  /**
-   * Hướng nhìn, `true` là lật. Chuỗi mốc là quay giữa cảnh: **công tắc, lấy mẫu bậc
-   * thang, không hoà** — rig không có góc ¾ nên cú quay gọn trong một frame. Mốc đầu là
-   * chỗ *đổi*, trước nó là hướng ngược lại: `[{ t: 2, v: true }]` là nhìn phải rồi giây
-   * 2 quay sang trái. docs/03-scene.md
-   */
-  flip: z.union([z.boolean(), z.array(FlipKeySchema).min(1)]).default(false),
-  /**
-   * Góc nhìn của thân: `front` / `side` / `rear` / `back`, hay chuỗi mốc bậc thang như `flip` — trước
-   * mốc đầu là `front`. Trôi ngang suy từ bàn chân không đổi theo góc nhìn: người quay lưng
-   * đi vào trong thì khai `path`. docs/03-scene.md#góc-nhìn
-   */
-  view: ViewTrackSchema.default(DEFAULT_VIEW),
-  /** Góc nhìn của đầu; bỏ trống là theo thân. Tổ hợp không vẽ được thì `clampViews` kẹp */
-  headView: ViewTrackSchema.optional(),
-  /**
-   * Đè `face.turn` của nhân vật trong riêng cảnh này, cùng đơn vị px: mặt, thân dựng khối, tóc và
-   * kính dựng khối cùng xoay theo. Chỉ có nghĩa ở nấc `quarter`. docs/03-scene.md#góc-nhìn
-   */
-  turn: z.number().optional(),
-  /**
-   * Xoay cả người quanh gốc (`x`, `y` — điểm chạm đất giữa hai bàn chân), độ theo chiều rig:
-   * dương là chân quét về phía mặt nhìn, nên `90` là nằm ngửa, `-90` là nằm sấp; lật theo `flip`,
-   * nên `flip` chọn đầu bên phải hay bên trái. Tĩnh cả cảnh. Không đi cùng `mount` hay `sit`.
-   * docs/03-scene.md#nằm-và-xoay-cả-người
-   */
-  rotate: z.number().min(-180).max(180).default(0),
-  /**
-   * Có `path` là trôi ngang tự suy **tắt**: người giậm chân tại chỗ, chỗ đứng nội suy
-   * giữa các mốc và kẹp ở hai đầu. Chân có trượt hay không là scene chịu. docs/03-scene.md
-   */
-  path: z.array(PathKeySchema).min(1).optional(),
-  /** Bỏ trống là `idle`, hay `ride` khi có `mount` */
+  /** Bỏ trống là `idle` */
   base: z.union([z.enum(POSE_NAMES), PoseDeltaSchema]).optional(),
-  /**
-   * Cưỡi một con trong `animals[]`: hông đặt vào mốc `saddle` của nó, đi theo nó, lật theo
-   * nó; `x`/`y`/`flip`/`path` của người không còn nghĩa, `scale` nhân thêm. `dx`/`dy` dời
-   * chỗ ngồi so với yên, đơn vị rig của con vật. Con vật vẽ **giữa các lớp của người** —
-   * sau chân xa, trước chân gần. docs/03-scene.md#động-vật
-   */
-  mount: z
-    .object({
-      on: z.string().min(1),
-      dx: z.number().default(0),
-      dy: z.number().default(0),
-    })
-    .optional(),
-  /** Con vật đang cầm trên tay, mỗi tay một con */
-  carry: z.array(CarrySchema).default([]),
-  /**
-   * Ngồi trong một đạo cụ trong `props[]`: hông đặt vào chỗ ngồi của nó (`propSeat`), đi theo
-   * nó, lật theo nó; `x`/`y`/`flip`/`path` của người không còn nghĩa, `scale` nhân thêm.
-   * `dx`/`dy` dời chỗ ngồi, đơn vị rig của đạo cụ. Đạo cụ vẽ **quanh** người: lớp sau, người,
-   * lớp trước — `sceneOrder` tách nó làm hai. docs/03-scene.md#đạo-cụ
-   */
-  sit: z
-    .object({
-      in: z.string().min(1),
-      dx: z.number().default(0),
-      dy: z.number().default(0),
-    })
-    .optional(),
   /** Mặc gì lúc mở màn; hành động đổi tiếp từ đó. docs/03-scene.md */
   equip: EquipSchema.optional(),
   /**
@@ -695,125 +518,7 @@ const CastSchema = z.object({
   fade: z.array(FadeKeySchema).min(1).optional(),
   /** Thứ tự có nghĩa: track sau đè track trước */
   tracks: z.array(TrackSchema).default([]),
-  world: WorldSchema.optional(),
-});
-
-/**
- * Một đạo cụ trên sân khấu. Không có track: chuyển động duy nhất của nó là chỗ đứng
- * (và bánh quay theo chỗ đứng). `follow` là đi theo một người trong `cast`: khi đó
- * `x`/`y` là độ lệch trong hệ của người ấy (đơn vị rig, đã nhân `scale` và lật theo
- * họ), `scale` nhân thêm, `flip` lật ngược lại so với họ. docs/06-dao-cu.md
- */
-const PropCastSchema = z.object({
-  id: z.string().min(1),
-  /** Tên file trong `props/` */
-  prop: z.string().min(1),
-  x: z.number().default(0),
-  /** Đường đất; bỏ trống là `scene.ground`, hay `0` khi `follow` */
-  y: z.number().optional(),
-  scale: z.number().positive().default(1),
-  flip: z.boolean().default(false),
-  path: z.array(PathKeySchema).min(1).optional(),
-  follow: z.string().optional(),
-  /**
-   * `follow` trỏ tới con vật: đặt gốc đạo cụ vào mốc này của nó (chóp cánh, mõm…) thay vì chỗ
-   * đứng; `x`/`y` dời thêm, đơn vị rig của con vật. Không xoay theo đoạn mang mốc. docs/03-scene.md#động-vật
-   */
-  anchor: z.enum(ANIMAL_ANCHOR_NAMES).optional(),
-  /** Đường tắt của `z`: vẽ trước hay sau người nó theo; không theo ai thì trước hay sau cả `cast` */
-  layer: z.enum(["back", "front"]).default("front"),
-  /**
-   * Nấc xếp lớp; nhỏ là ở sau, có thì `layer` không còn nghĩa. Đứng rời thì đây là `z` toàn
-   * cục của sân khấu (mặc định `SCENE_Z.propBack` / `propFront`); có `follow` thì là `z`
-   * **cục bộ** quanh chủ nó — chủ ở `0`, mặc định `∓1` — và cả cụm dời theo `z` của chủ.
-   * docs/03-scene.md#trục-z
-   */
-  z: z.number().optional(),
-  /**
-   * `id` một nhóm trong `groups[]`: `x`/`y`/`scale`/`flip`/`path` thành tương đối so với nhóm, `y`
-   * bỏ trống là `0`, và `z` là `z` **cục bộ** trong nhóm. docs/03-scene.md#nhóm
-   */
-  group: z.string().optional(),
-});
-
-/**
- * Một lần đặt hành động của động vật lên track. Như clip của người, trừ `equip`; `blend` hoà
- * thân, cổ, đầu, đuôi, cánh và mặt, còn **chân cắt cứng** ở `start` — góc chân là kết quả IK,
- * hoà là bàn chân trượt. Clip rỗng nhả track. docs/03-scene.md#động-vật
- */
-const AnimalClipSchema = z.object({
-  action: z.string().optional(),
-  start: time().describe("Giây trên timeline scene, hay `@mốc`"),
-  cycle: z.number().positive().optional(),
-  /** Như `clips[].speed` của người: đơn vị scene mỗi giây, suy `cycle` từ sải chân của con vật */
-  speed: z.number().positive().optional(),
-  phase: z.number().default(0),
-  mask: z
-    .array(z.enum(ANIMAL_CHANNELS))
-    .optional()
-    .describe("Thu hẹp `mask` của file cho riêng lần đặt này; nới rộng là lỗi"),
-  blend: z
-    .number()
-    .min(0)
-    .optional()
-    .describe(
-      `Giây hoà thân, cổ, đầu, đuôi, cánh và mặt sang clip này — chân luôn cắt cứng ở start; 0 là cắt hết; bỏ trống thì tự suy, trong [${BLEND_MIN}, ${BLEND_MAX}]`,
-    ),
-});
-
-const AnimalTrackSchema = z.object({
-  name: z.string().optional(),
-  clips: z.array(AnimalClipSchema).min(1),
-});
-
-/**
- * Một con vật trên sân khấu, một chồng track như người. Trôi ngang suy từ bàn chân của
- * **chính con vật ấy** — sải chân kẹp theo chân nó — nên `resolveScene` cần JSON con vật ngay
- * lúc nướng; đang bay thì không nướng gì, chỗ đứng là `path`. docs/03-scene.md#động-vật
- */
-const AnimalCastSchema = z.object({
-  id: z.string().min(1),
-  /** Tên file trong `animals/` */
-  animal: z.string().min(1),
-  x: z.number().default(0),
-  /** Đường đất; bỏ trống là `scene.ground` */
-  y: z.number().optional(),
-  scale: z.number().positive().default(1),
-  flip: z.union([z.boolean(), z.array(FlipKeySchema).min(1)]).default(false),
-  path: z.array(PathKeySchema).min(1).optional(),
-  fade: z.array(FadeKeySchema).min(1).optional(),
-  /** Đường tắt của `z`: vẽ dưới hay trên cả `cast`. Con vật có người cưỡi hay bị xách thì vẽ trong người ấy, không ở đây */
-  layer: z.enum(["back", "front"]).default("back"),
-  /**
-   * Nấc xếp lớp toàn cục; nhỏ là ở sau, có thì `layer` không còn nghĩa. Mặc định
-   * `SCENE_Z.animalBack` / `animalFront`. Con vật có chủ vẽ ở `slots` của người ấy nên
-   * **bỏ qua** `z`. docs/03-scene.md#trục-z
-   */
-  z: z.number().optional(),
-  /**
-   * `id` một nhóm trong `groups[]`: `x`/`y`/`scale`/`flip`/`path` thành tương đối so với nhóm, `y`
-   * bỏ trống là `0`, và `z` là `z` **cục bộ** trong nhóm. docs/03-scene.md#nhóm
-   */
-  group: z.string().optional(),
-  /** Thứ tự có nghĩa: track sau đè track trước */
-  tracks: z.array(AnimalTrackSchema).default([]),
-});
-
-/**
- * Một nhóm người, đạo cụ và động vật đặt chung: thành viên khai `group` trỏ về đây, chỗ đứng của
- * họ là tương đối so với nhóm, và cả nhóm là **một** mục trên trục `z` của sân khấu. Nhóm đứng
- * yên. docs/03-scene.md#nhóm
- */
-const GroupSchema = z.object({
-  id: z.string().min(1),
-  x: z.number().default(0),
-  /** Đường đất của nhóm; bỏ trống là `scene.ground` */
-  y: z.number().optional(),
-  scale: z.number().positive().default(1),
-  /** Lật gương cả nhóm quanh `x` của nó */
-  flip: z.boolean().default(false),
-  /** Nấc của cả nhóm ở tầng sân khấu; bỏ trống là `SCENE_Z.cast` */
-  z: z.number().optional(),
+  world: WorldSchema,
 });
 
 /**
@@ -827,13 +532,13 @@ export const SceneSchema = z.object({
       error: (iss) =>
         iss.input === ELBOW_LEGACY
           ? "`world.hands`: `elbow` của mốc không có `at` khai theo thế giới (schema trước 34), bản này đọc theo hệ thân người ấy — chạy `stickman migrate-elbow` (docs/03-scene.md#đích-bàn-tay-thế-giới)"
-          : "JSON scene thuộc phiên bản schema khác; cần bản @stickman3d/sketch khớp với nó",
+          : "JSON scene thuộc phiên bản schema khác; cần bản @stickman3d/rig khớp với nó",
     })
     .default(SCENE_VERSION),
   name: z.string().default("scene"),
   /**
    * Khung hình: `wide` (1280×720, ra 1920×1080) cho tập phim, `tall` (405×720, ra 1080×1920)
-   * cho short. Hai khung cùng cao và cùng `ground`, chỉ khác bề ngang. Mọi shot của một tập
+   * cho short. Hai khung cùng cao, chỉ khác bề ngang. Mọi shot của một tập
    * phải cùng khung. docs/03-scene.md#khung-hình
    */
   frame: z.enum(Object.keys(FRAMES) as [FrameName, ...FrameName[]]).default("wide"),
@@ -845,20 +550,16 @@ export const SceneSchema = z.object({
    * đi theo. `stickman retime` ghi vào bảng này. docs/03-scene.md#mốc-có-tên
    */
   marks: z.record(z.string().regex(/^[A-Za-z0-9_-]+$/), z.number().min(0)).default({}),
-  /** Đường đất của cả cảnh; `cast[].y` và `props[].y` không khai thì đứng lên nó */
-  ground: z.number().default(FRAMES.wide.ground),
   /** Ống kính 3D cho người khai `cast[].world` và đồ khối của lớp vẽ code. docs/03-scene.md#người-3d */
   lens: LensSchema.optional(),
-  /** Các lớp nền, vẽ dưới lên theo `z`; rỗng là sân khấu trắng và chỗ vẽ kẻ vạch đường đất */
+  /** Các lớp nền, vẽ dưới lên theo `z`; rỗng là sân khấu trắng */
   bg: z.array(BgLayerSchema).default([]),
   /** Chuỗi mốc camera; rỗng là đúng khung sân khấu, `zoom` 1. docs/03-scene.md#camera */
   camera: z.array(CameraKeySchema).default([]),
-  groups: z.array(GroupSchema).default([]),
-  cast: z.array(CastSchema).min(1),
+  /** Người 3D; rỗng là cảnh chỉ có nền, lớp vẽ code và hiệu ứng — không clip nào để suy độ dài, khai `duration` */
+  cast: z.array(CastSchema).default([]),
   /** Mốc món đặt trước: chỗ, hướng món theo thời gian; chỗ cầm ở `cast[].world.hands[].hold`. docs/11-nhom-cam.md#mốc-món-items */
   items: z.array(SceneItemMarkSchema).optional(),
-  props: z.array(PropCastSchema).default([]),
-  animals: z.array(AnimalCastSchema).default([]),
   /**
    * Hiệu ứng: hào quang, nước mắt, vật rời tay, chữ, iris… Rig chỉ mang danh sách này theo;
    * hình dạng từng mục do `@stickman3d/fx` kiểm (`parseFx`) và vẽ (`<SceneFx>`). docs/09-hieu-ung.md
@@ -870,10 +571,6 @@ export type ClipData = z.infer<typeof ClipSchema>;
 export type SceneData = z.infer<typeof SceneSchema>;
 export type CastData = SceneData["cast"][number];
 export type BgLayerData = SceneData["bg"][number];
-export type PropCastData = SceneData["props"][number];
-export type AnimalCastData = SceneData["animals"][number];
-export type GroupData = SceneData["groups"][number];
-export type CarryData = z.infer<typeof CarrySchema>;
 
 /** `T` với mọi tham chiếu `@mốc` đã thành số — hình dạng `resolveScene` đọc */
 export type Unmarked<T> = T extends MarkRef
@@ -941,6 +638,12 @@ export function unmarkScene(scene: SceneData): SceneSpec {
   return { ...(walk(rest, "") as Omit<SceneSpec, "marks">), marks };
 }
 
+/** Trường của `cast[]` mà schema 36 không còn: chỗ đứng sân khấu, vẽ 2D và cỡ `scale` (cỡ người là `world.s`) */
+const CAST_GONE = [
+  ...["x", "y", "group", "flip", "rotate", "path", "scale"],
+  ...["sit", "z", "zParts", "view", "headView", "turn"],
+];
+
 /** Nâng JSON đời cũ lên `SCENE_VERSION`. File mới hơn thì trả nguyên để zod báo lỗi. */
 export function migrateScene(json: unknown): unknown {
   if (!json || typeof json !== "object" || Array.isArray(json)) return json;
@@ -971,36 +674,11 @@ export function migrateScene(json: unknown): unknown {
   // v10 → v11 thêm `bg[].repeat` và `bg[].tiles`; thiếu là `none`, tức vẫn đúng một tấm
   // v11 → v12 thêm `fx[].z`; thiếu là nấc mặc định của `layer`, tức ba lớp fx vẫn chèn ba chỗ cũ
   // v12 → v13 thêm `marks` và tham chiếu `@mốc` ở trường thời gian; số cũ vẫn là số
-  // v13 → v14 trước mốc `flip` đầu là chưa lật; đời cũ ngầm là ngược mốc đầu, ghi rõ ra
-  if (from < 14)
-    for (const key of ["cast", "animals"])
-      for (const m of (o[key] ?? []) as Record<string, unknown>[]) {
-        const f = m?.flip;
-        if (!Array.isArray(f) || !f.length) continue;
-        const first = f[0] as { t: number; v: boolean };
-        if (first.t > 0 && !first.v) m.flip = [{ t: 0, v: true }, ...f];
-      }
   // v14 → v15 thêm `frame`; thiếu là `wide`
-  // v15 → v16 `animals[].clips` thành chồng `tracks[]`; chuỗi clip cũ là track duy nhất
-  if (from < 16)
-    for (const a of (o.animals ?? []) as Record<string, unknown>[]) {
-      if (!a || !Array.isArray(a.clips)) continue;
-      if (a.clips.length && !a.tracks) a.tracks = [{ clips: a.clips }];
-      delete a.clips;
-    }
+  // v15 → v16 `animals[].clips` thành chồng `tracks[]`
   // v17 → v18 thêm `cast[].view` và `cast[].headView`; thiếu là chính diện
   // v16 → v17 thêm `groups[]`, `group` và `cast[].zParts`; thiếu là không nhóm nào và người vẽ nguyên khối
   // v18 → v19 thêm nấc `quarter` và nó là mặc định; `front` đời cũ chính là `quarter` bây giờ
-  if (from < 19)
-    for (const m of (o.cast ?? []) as Record<string, unknown>[])
-      for (const field of ["view", "headView"]) {
-        const v = m?.[field];
-        if (v === "front") m[field] = "quarter";
-        else if (Array.isArray(v))
-          m[field] = v.map((k: { v?: unknown }) =>
-            k && k.v === "front" ? { ...k, v: "quarter" } : k,
-          );
-      }
   // v19 → v20 thêm `cast[].turn`; thiếu là theo `face.turn` của nhân vật
   // v20 → v21 `stretch` của `cast[].base` nhận thêm tám số từng đoạn; bốn số cũ vẫn hợp lệ
   // v21 → v22 thêm `cast[].rotate`; thiếu là `0`, tức đứng thẳng
@@ -1020,6 +698,35 @@ export function migrateScene(json: unknown): unknown {
   // ấy (`sceneAt`) nên không tự đổi ở đây: zod báo kèm lệnh `stickman migrate-elbow`. JSON không ghi `schemaVersion` (cảnh
   // dựng trong code) đọc theo nghĩa mới
   // v33 → v34 `items[]` nhận `as` (`hand`: nghiệm tay đang vẽ, `prev`: giữ mốc trước); thiếu là mốc khai chỗ như cũ
+  // v34 → v35 không còn động vật: bỏ `animals[]`, `cast[].mount`, `cast[].carry`
+  if (from < 35) {
+    delete o.animals;
+    for (const m of (o.cast ?? []) as Record<string, unknown>[]) {
+      if (!m || typeof m !== "object") continue;
+      delete m.mount;
+      delete m.carry;
+    }
+  }
+  // v35 → v36 không còn người vẽ 2D: bỏ `props[]`, `groups[]`, vạch đất `ground`, người không có `world` và chỗ đứng sân
+  // khấu của `cast[]`
+  if (from < 36) {
+    delete o.props;
+    delete o.groups;
+    delete o.ground;
+    // Cảnh dựng trong code (không `schemaVersion`) thiếu `world` thì zod báo
+    if (Array.isArray(o.cast)) {
+      if (typeof o.schemaVersion === "number")
+        o.cast = o.cast.filter((m) => !m || typeof m !== "object" || "world" in m);
+      for (const m of o.cast as Record<string, unknown>[])
+        if (m && typeof m === "object") for (const k of CAST_GONE) delete m[k];
+    }
+  }
+  for (const m of (o.cast ?? []) as Record<string, unknown>[]) {
+    if (!m || typeof m !== "object") continue;
+    dropGoneEquip(m.equip);
+    for (const t of (m.tracks ?? []) as { clips?: { equip?: unknown }[] }[])
+      for (const c of t?.clips ?? []) dropGoneEquip(c?.equip);
+  }
   if (typeof o.schemaVersion === "number" && from < 34 && legacyElbows(o).length) {
     o.schemaVersion = ELBOW_LEGACY;
     return o;
@@ -1112,10 +819,8 @@ export function migrateLegacyElbows(
   const moves: ElbowMove[] = [];
   for (const e of legacyElbows(json)) {
     const m = member(rt, e.id);
-    const t = m.world!.hands![e.key].t;
-    const w =
-      sceneAt(rt, e.id, t, rt.heights[e.id] ?? 1, rt.bodies[e.id] ?? BODY3).world ??
-      fail(`\`${e.id}\`: \`elbow\` của \`world.hands\` cần người 3D`);
+    const t = m.world.hands![e.key].t;
+    const w = sceneAt(rt, e.id, t, rt.heights[e.id] ?? 1, rt.bodies[e.id] ?? BODY3).world;
     const h = o.cast[e.cast].world.hands[e.key][e.side];
     const from = [...h.elbow] as V3;
     const to = rigElbowBody(yawFrame(w.yaw), sideSign(e.side), from).map(
@@ -1145,6 +850,8 @@ interface Clip {
   snap?: boolean;
   /** Người 3D đi theo `path`: quãng một lượt (đơn vị rig, `height = 1`) của clip có sải chân; pha chạy theo đồng hồ của người ấy */
   stride?: number;
+  /** Thư viện dáng tay của cảnh; dáng `keys[].hand` gọi mà thiếu thì ra dáng nghỉ (người que không vẽ ngón), `check` báo */
+  hands?: HandShapes;
 }
 
 /**
@@ -1161,22 +868,9 @@ interface Track {
   clips: Clip[];
 }
 
-export interface CastMember extends Omit<
-  Unmarked<CastData>,
-  "base" | "tracks" | "path" | "flip" | "y" | "view" | "headView"
-> {
-  /** Đường đất đã suy: `cast[].y`, hay `scene.ground` */
-  y: number;
+export interface CastMember extends Omit<Unmarked<CastData>, "base" | "tracks"> {
   base: Pose;
   tracks: Track[];
-  path?: PathKey[];
-  /** Hướng nhìn đã chuẩn hoá thành chuỗi mốc, luôn có mốc ở giây 0 */
-  flip: FlipKey[];
-  /** Góc nhìn của thân và của đầu, cùng dạng chuỗi mốc; đầu bỏ trống là theo thân */
-  view: ViewKey[];
-  headView?: ViewKey[];
-  /** Trôi ngang cho `height = 1`, chưa nhân `scale` và chưa lật */
-  travel: TravelTable;
   /**
    * Người 3D đứng ở `world.at` (không `path`) có tay phải ở phía xa ống kính (`facing().flip`): clip của hành động
    * `sides: "anatomical"` đổi kênh gần ↔ xa. docs/03-scene.md#hành-động-theo-tay-phải-trái
@@ -1184,57 +878,15 @@ export interface CastMember extends Omit<
   rightFar?: boolean;
 }
 
-export interface PropMember extends Omit<Unmarked<PropCastData>, "path"> {
-  path?: PathKey[];
-  /** JSON đạo cụ đã parse, nếu `resolveScene` được đưa; có người ngồi thì bắt buộc */
-  spec?: PropData;
-}
-
-interface AnimalClip {
-  start: number;
-  file?: string;
-  action?: ActionData;
-  cycle: number;
-  phase: number;
-  mask?: AnimalChannel[];
-  tau: number;
-}
-
-interface AnimalTrack {
-  name?: string;
-  clips: AnimalClip[];
-}
-
-export interface AnimalMember extends Omit<
-  Unmarked<AnimalCastData>,
-  "path" | "flip" | "y" | "tracks"
-> {
-  y: number;
-  flip: FlipKey[];
-  path?: PathKey[];
-  tracks: AnimalTrack[];
-  /** JSON con vật đã parse — dáng đi và mốc trên lưng đều cần nó */
-  spec: AnimalData;
-  /** Trôi ngang của chính con vật này, chưa nhân `scale` và chưa lật */
-  travel: TravelTable;
-  /** Người đang cưỡi hay xách nó; có thì con vật vẽ trong người ấy, không có lớp riêng */
-  host?: { id: string; kind: "mount" | "carry" };
-}
-
 export interface SceneRuntime {
   name: string;
   duration: number;
   /** Khung sân khấu của cảnh, tra từ `scene.frame`; `cameraAt` cắt theo nó */
   frame: FrameSpec;
-  ground: number;
   bg: SceneData["bg"];
   camera: CameraKey[];
-  /** Nhóm của cảnh; chỗ đứng của thành viên trong `cast` / `props` / `animals` đã quy ra sân khấu */
-  groups: GroupData[];
   cast: CastMember[];
-  props: PropMember[];
-  animals: AnimalMember[];
-  /** `rig.height` của từng người trong `cast`, do chỗ nạp đưa vào; thiếu là `1`. Đạo cụ theo người và người ngồi trên đạo cụ ấy trôi theo số này */
+  /** `rig.height` của từng người trong `cast`, do chỗ nạp đưa vào; thiếu là `1` */
   heights: Record<string, number>;
   /** `body3(nhân vật)` của từng người trong `cast`, do chỗ nạp đưa vào; thiếu là `BODY3`. Người 3D đi theo `path` bước bằng hông này */
   bodies: Record<string, Body3>;
@@ -1251,7 +903,7 @@ export interface SceneRuntime {
   /** `scene.items`, `@mốc` đã thành số; `itemAt` đọc */
   items?: SceneItemMark[];
   /**
-   * JSON nhân vật (`castCharacter`) của từng người trong `cast`, do chỗ dựng cảnh đưa vào (`buildWorld` điền): mốc món `rest`
+   * JSON nhân vật của từng người trong `cast`, do chỗ dựng cảnh đưa vào (`buildWorld` điền): mốc món `rest`
    * không khai chỗ dựng bàn tay người thả từ đây khi `ItemOptions.chars` không có người ấy
    */
   chars?: Record<string, CharacterData>;
@@ -1269,85 +921,22 @@ export interface CameraShot {
   viewBox: string;
 }
 
-/** Chỗ đặt con vật đang cưỡi **trong hệ của người**: props `<Animal>` cho khe `slots.mount` */
-export interface MountSpot {
-  id: string;
-  x: number;
-  groundY: number;
-  scale: number;
-  /** `hip` khi con vật đang bay: không bàn chân nào chạm đất để treo nó vào */
-  root: Root;
-  /** `over` khi đang bay: cặp chân xếp phải nổi lên trên thân mới thấy */
-  legLayer: "under" | "over";
-}
-
-/** Chỗ đặt con vật đang cầm **trong khung cổ tay**: props `<Animal>` cho khe `slots[socket]` */
-export interface CarrySpot {
-  id: string;
-  socket: "handNear" | "handFar";
-  x: number;
-  groundY: number;
-  scale: number;
-  rotate: number;
-  flip: boolean;
-  root: Root;
-}
-
-/** Props mà `<Character>` nhận thẳng: `{...sceneAt(rt, id, t, height)}` */
+/** Tư thế, nét mặt và chỗ đặt của một người tại một giây: `sceneAt(rt, id, t, height)` */
 export interface ScenePose extends FaceState {
   pose: Pose;
-  layers: ArmLayers;
-  /** Chỗ đứng trên sân khấu: `cast[].x` cộng trôi ngang suy từ bàn chân, hoặc tra `path`; cưỡi thì là yên con vật */
+  /** Tâm hông chiếu qua `scene.lens`, hệ toạ độ chỗ vẽ của cảnh */
   x: number;
-  /** Đường đất: `cast[].y`, hoặc tra `path`; gốc `hip` thì đây là chính tâm hông */
   groundY: number;
+  /** Đơn vị chỗ vẽ cho một đơn vị rig ở tâm hông: tỉ lệ chiếu nhân `world.s` */
   scale: number;
-  /** Hướng nhìn lúc này, tra `cast[].flip`; `<Character flip>` nhận thẳng */
+  /** Mặt hướng sang trái khung, như `world.flip` */
   flip: boolean;
-  /** Góc nhìn của thân và đầu lúc này, đã kẹp; `<Character view headView>` nhận thẳng */
-  view: View;
-  headView: View;
-  /** `hip` khi đang cưỡi hay ngồi xe — treo người ở hông thay cho bàn chân */
-  root: Root;
-  /** Xoay cả người quanh gốc, tra `cast[].rotate`; `<Character rotate>` nhận thẳng */
-  rotate: number;
-  /** Đồ đang mặc lúc này; `<Character equip>` nhận thẳng */
+  /** Đồ đang mặc lúc này */
   equip: EquipStep[];
   /** Độ đục 0–1, tra `cast[].fade`; 1 là đục hẳn */
   opacity: number;
-  /** Con vật đang cưỡi, đặt trong hệ của người; `castSlots` dựng `<Animal>` từ đây */
-  mounted?: MountSpot;
-  /** Con vật đang cầm, mỗi cái trong khung cổ tay của nó */
-  carried: CarrySpot[];
-  /** Người 3D (`cast[].world`): chỗ đặt và ống kính; `<Character world>` nhận thẳng */
-  world?: World;
-}
-
-/** Props mà `<Animal>` nhận thẳng: `{...animalAt(rt, id, t)}` */
-export interface AnimalSpot extends AnimalFace {
-  pose: AnimalPose;
-  /** Con bị xách thì đây là chỗ đứng của người xách — chỗ chính xác trong tay là việc của `<Character slots>` */
-  x: number;
-  groundY: number;
-  scale: number;
-  flip: boolean;
-  /** `hip` khi đang bay hay bị xách — treo ở khớp hông thay cho bàn chân; đang bay thì `groundY` đã trừ `rig.hipY` để hông cao như lúc đứng */
-  root: Root;
-  /** `over` khi đang bay: chân xếp sát bụng nằm gọn trong bóng thân, phải nổi lên mới thấy */
-  legLayer: "under" | "over";
-  opacity: number;
-}
-
-/** Props mà `<Prop>` nhận thẳng: `{...propAt(rt, id, t, height)}` */
-export interface PropPose {
-  x: number;
-  groundY: number;
-  scale: number;
-  /** `0` khi đạo cụ theo người mà được nâng lên (`y` khác `0`) — kiệu trên vai không đổ bóng lơ lửng, người khiêng đã có bóng */
-  shadow?: number;
-  flip: boolean;
-  /** Quãng đã lăn trên màn hình — chính là `x`, bánh quay theo nó */
-  roll: number;
+  /** Chỗ đặt người 3D (`cast[].world`) và ống kính lúc này */
+  world: World;
 }
 
 const phaseAt = (
@@ -1396,19 +985,12 @@ function phasePose(c: Clip, u: number): Partial<Pose> {
   for (const k of REACH_CHANNELS) if (!p[k]) delete reach[k];
   if (Object.keys(reach).length) p.reach = reach;
   if (inMask(c, "hand")) {
-    const hand = actionHand(c.action, u);
+    const hand = actionHand(c.action, u, c.hands);
     if (Object.keys(hand).length) p.hand = hand;
     const aim = actionAim(c.action, u);
     if (Object.keys(aim).length) p.aim = aim;
   }
   return p;
-}
-
-function clipLayers(c: Clip, time: number, clock?: Clock, farRight?: boolean): Partial<ArmLayers> {
-  if (!c.action) return {};
-  const l = actionLayers(c.action, phaseAt(c, time, clock));
-  for (const k of ARM_CHANNELS) if (!inMask(c, k)) delete l[k];
-  return anatomicalSwap(c, farRight) ? swapLayers(l) : l;
 }
 
 const clipFace = (c: Clip, time: number, clock?: Clock): Partial<FaceState> =>
@@ -1446,20 +1028,6 @@ function poseUpTo(
   );
 }
 
-function layersUpTo(
-  tr: Track,
-  i: number,
-  time: number,
-  clock?: Clock,
-  farRight?: boolean,
-): Partial<ArmLayers> {
-  const c = tr.clips[i];
-  const l = clipLayers(c, time, clock, farRight);
-  const s = time - c.start;
-  if (s >= c.tau) return l;
-  return blendLayers(i === 0 ? {} : layersUpTo(tr, i - 1, time, clock, farRight), l, s / c.tau);
-}
-
 function faceUpTo(tr: Track, i: number, time: number, clock?: Clock): Partial<FaceState> {
   const c = tr.clips[i];
   const f = clipFace(c, time, clock);
@@ -1494,30 +1062,9 @@ const fail = (msg: string): never => {
 const basePose = (b: NonNullable<SceneSpec["cast"][number]["base"]>): Pose =>
   typeof b === "string" ? POSES[b] : composePose(POSES.idle, deltaPose(b));
 
-/** Chuẩn hoá hướng về chuỗi mốc bắt đầu ở giây 0; trước mốc đầu là chưa lật. */
-function flipKeys(f: SceneSpec["cast"][number]["flip"], who: string): FlipKey[] {
-  if (typeof f === "boolean") return [{ t: 0, v: f }];
-  f.forEach((k, i) => {
-    if (i > 0 && k.t <= f[i - 1].t) fail(`${who}: \`flip[].t\` phải tăng dần`);
-  });
-  return f[0].t > 0 ? [{ t: 0, v: false }, ...f] : f;
-}
-
-function viewKeys(
-  v: NonNullable<SceneSpec["cast"][number]["headView"]>,
-  who: string,
-  field: "view" | "headView",
-): ViewKey[] {
-  if (typeof v === "string") return [{ t: 0, v }];
-  v.forEach((k, i) => {
-    if (i > 0 && k.t <= v[i - 1].t) fail(`${who}: \`${field}[].t\` phải tăng dần`);
-  });
-  return v[0].t > 0 ? [{ t: 0, v: DEFAULT_VIEW }, ...v] : v;
-}
-
 /**
- * `cycle` suy từ `speed`: một lượt hành động trôi `stride` đơn vị rig, nhân `scale` ra đơn vị
- * scene, chia tốc độ ra giây. Hành động không trôi thì không có gì để chia — lỗi lúc nạp.
+ * `cycle` suy từ `speed`: một lượt hành động trôi `stride` đơn vị rig, nhân `world.s` ra đơn vị
+ * thế giới, chia tốc độ ra giây. Hành động không trôi thì không có gì để chia — lỗi lúc nạp.
  */
 function cycleForSpeed(
   r: { cycle?: number; speed?: number; action?: string },
@@ -1556,6 +1103,7 @@ function resolveTrack(
   who: string,
   actions: Record<string, ActionData>,
   stride: Stride,
+  hands: HandShapes,
 ): Track {
   const tr: Track = { name: raw.name, clips: [] };
   raw.clips.forEach((r, i) => {
@@ -1576,6 +1124,7 @@ function resolveTrack(
       equip: r.equip,
       tau: r.blend ?? 0,
       ...((r.snap || action?.snap) && { snap: true }),
+      hands,
     };
     tr.clips.push(c);
     // τ là chỗ nối giữa thứ track đã ghi và clip này; ở giây 0 chưa có chỗ nối nào
@@ -1590,15 +1139,12 @@ function resolveTrack(
 }
 
 /**
- * Tra hành động, nướng τ và bảng trôi ngang, kiểm chéo. Làm một lần lúc nạp — τ không
- * phụ thuộc frame đang vẽ, tính lại mỗi frame là đệ quy mũ; trôi ngang là tích phân,
- * tích luỹ trong rAF là Remotion seek sai.
+ * Tra hành động, nướng τ, kiểm chéo. Làm một lần lúc nạp — τ không phụ thuộc frame đang vẽ, tính lại
+ * mỗi frame là đệ quy mũ.
  */
 export function resolveScene(
   raw: SceneData,
   actions: Record<string, ActionData>,
-  animals: Record<string, AnimalData> = {},
-  propSpecs: Record<string, PropData> = {},
   heights: Record<string, number> = {},
   bodies: Record<string, Body3> = {},
   held0: Record<string, HeldItemSpec> = {},
@@ -1620,70 +1166,9 @@ export function resolveScene(
     keys?.forEach((k, i) => {
       if (i > 0 && k.t <= keys[i - 1].t) fail(`${who}: \`${name}[].t\` phải tăng dần`);
     });
-  const pathOf = <T extends { x: number; scale: number; path?: PathKey0[] }>(
-    id: string,
-    m: T,
-    y: number,
-  ) => {
-    keyed(id, m.path, "path");
-    return m.path?.map((k) => ({ ...k, x: k.x ?? m.x, y: k.y ?? y, scale: k.scale ?? m.scale }));
-  };
-  for (const g of scene.groups) claim(g.id);
-  // Nhóm đứng yên nên quy chỗ đứng ra sân khấu một lần ở đây; mọi thứ dưới đọc số sân khấu
-  const placed = <T extends { x: number; scale: number; group?: string; path?: PathKey0[] }>(
-    id: string,
-    m: T,
-    y: number | undefined,
-    free: number,
-  ) => {
-    if (!m.group) {
-      const at = y ?? free;
-      return { x: m.x, y: at, scale: m.scale, path: pathOf(id, m, at), mirror: false };
-    }
-    const g =
-      scene.groups.find((q) => q.id === m.group) ??
-      fail(`${id}: không có nhóm \`${m.group}\` trong \`groups\``);
-    const dir = g.flip ? -1 : 1;
-    const gy = g.y ?? scene.ground;
-    const out = (x: number, ly: number, k: number) => ({
-      x: g.x + dir * g.scale * x,
-      y: gy + g.scale * ly,
-      scale: g.scale * k,
-    });
-    return {
-      ...out(m.x, y ?? 0, m.scale),
-      path: pathOf(id, m, y ?? 0)?.map((k) => ({ ...k, ...out(k.x, k.y, k.scale) })),
-      mirror: g.flip,
-    };
-  };
-
-  const hosts = new Map<string, AnimalMember["host"]>();
-  const beasts = scene.animals.map((a): Omit<AnimalMember, "travel" | "host"> => {
-    claim(a.id);
-    const spec = animals[a.animal] ?? fail(`${a.id}: không có con vật \`${a.animal}\``);
-    const { mirror, ...at } = placed(a.id, a, a.y, scene.ground);
-    keyed(a.id, a.fade, "fade");
-    const tracks = a.tracks.map((t) => resolveAnimalTrack(t, spec, a.scale, a.id, actions));
-    const flip = flipKeys(a.flip, a.id).map((k) => ({ ...k, v: k.v !== mirror }));
-    return { ...a, ...at, spec, tracks, flip };
-  });
-  const beast = (who: string, id: string, kind: "mount" | "carry") => {
-    const b =
-      beasts.find((a) => a.id === id) ?? fail(`${who}: không có \`${id}\` trong \`animals\``);
-    const had = hosts.get(id);
-    if (had)
-      fail(
-        `${who}: \`${id}\` đã có người ${had.kind === "mount" ? "cưỡi" : "xách"} (\`${had.id}\`)`,
-      );
-    hosts.set(id, { id: who, kind });
-    if (b.group) fail(`${id}: \`${who}\` đang giữ nó nên nó đi theo người ấy — bỏ \`group\``);
-    return b;
-  };
-
   const cast = scene.cast.map((m) => {
     claim(m.id);
-    const base = basePose(m.base ?? (m.mount ? "ride" : m.sit ? "sit" : "idle"));
-    const { mirror, ...at } = placed(m.id, m, m.y, scene.ground);
+    const base = basePose(m.base ?? "idle");
     keyed(m.id, m.fade, "fade");
     keyed(m.id, m.world?.path, "world.path");
     keyed(m.id, m.world?.hands, "world.hands");
@@ -1699,100 +1184,21 @@ export function resolveScene(
       checkHolds(m.id, m.world.hands, held, scene.cast, scene.items, () =>
         holderDims(heights[m.id] ?? 1),
       );
-    if (m.world) {
-      if (!scene.lens) fail(`${m.id}: có \`world\` thì cảnh phải có \`lens\``);
-      if (m.mount || m.sit)
-        fail(
-          `${m.id}: \`world\` không đi cùng \`mount\` hay \`sit\` — người 3D ngồi bằng \`world.sit\``,
-        );
-      if (m.path) fail(`${m.id}: có \`world\` thì đường đi là \`world.path\` — bỏ \`path\``);
-    }
-    if ((m.mount || m.sit) && m.group)
-      fail(`${m.id}: đang cưỡi hay ngồi xe thì đi theo chủ — bỏ \`group\``);
-    if ((m.mount || m.sit) && m.zParts)
-      fail(`${m.id}: \`zParts\` không đi cùng \`mount\` hay \`sit\``);
-    if ((m.mount || m.sit) && m.rotate)
-      fail(`${m.id}: \`rotate\` không đi cùng \`mount\` hay \`sit\` — tư thế là của chỗ ngồi`);
-    if (m.mount) {
-      beast(m.id, m.mount.on, "mount");
-      if (m.path) fail(`${m.id}: đang cưỡi thì không có \`path\` — đường đi là của con vật`);
-      if (m.flip !== false) fail(`${m.id}: đang cưỡi thì không có \`flip\` — hướng là của con vật`);
-    }
-    if (m.sit) {
-      if (m.mount) fail(`${m.id}: không vừa cưỡi vừa ngồi xe`);
-      const p =
-        scene.props.find((q) => q.id === m.sit?.in) ??
-        fail(`${m.id}: không có \`${m.sit.in}\` trong \`props\``);
-      const spec =
-        propSpecs[p.prop] ??
-        fail(`${m.id}: ngồi \`${p.id}\` thì \`resolveScene\` cần JSON đạo cụ \`${p.prop}\``);
-      if (!propSeat(spec)) fail(`${m.id}: \`${p.prop}\` không có chỗ ngồi (\`seat\`)`);
-      if (m.path) fail(`${m.id}: đang ngồi xe thì không có \`path\` — đường đi là của đạo cụ`);
-      if (m.flip !== false)
-        fail(`${m.id}: đang ngồi xe thì không có \`flip\` — hướng là của đạo cụ`);
-    }
-    const socks = new Set<string>();
-    for (const c of m.carry) {
-      beast(m.id, c.animal, "carry");
-      if (socks.has(c.socket)) fail(`${m.id}: hai con cùng cầm ở \`${c.socket}\``);
-      socks.add(c.socket);
-    }
-    const tracks = m.tracks.map((t) => resolveTrack(t, base, m.scale, m.id, actions, stride));
-    if (m.world?.path)
+    if (!scene.lens) fail(`${m.id}: cảnh có người thì phải có \`lens\``);
+    const tracks = m.tracks.map((t) =>
+      resolveTrack(t, base, m.world.s, m.id, actions, stride, hands),
+    );
+    if (m.world.path)
       for (const tr of tracks)
         for (const c of tr.clips) {
           if (!c.action || !writesLegs(c)) continue;
           const st = stride(c.action, base);
-          if (Math.abs(st) > STRIDE_MIN) c.stride = st;
+          if (Math.abs(st) > STRIDE_MIN && !seatedRun(m.world.path, c)) c.stride = st;
         }
-    return {
-      ...m,
-      ...at,
-      base,
-      flip: flipKeys(m.flip, m.id).map((k) => ({ ...k, v: k.v !== mirror })),
-      view: viewKeys(m.view, m.id, "view"),
-      headView: m.headView && viewKeys(m.headView, m.id, "headView"),
-      tracks,
-    };
+    return { ...m, base, tracks };
   });
-  const props = scene.props.map((p) => {
-    claim(p.id);
-    if (
-      p.follow &&
-      !scene.cast.some((m) => m.id === p.follow) &&
-      !beasts.some((a) => a.id === p.follow)
-    )
-      fail(`${p.id}: \`follow\` trỏ tới \`${p.follow}\` không có trong \`cast\` hay \`animals\``);
-    if (p.follow && p.path) fail(`${p.id}: có \`follow\` thì không có \`path\``);
-    // Đạo cụ theo người đọc chỗ đứng 2D của chủ; người 3D cầm đồ bằng `equip`
-    if (scene.cast.some((m) => m.id === p.follow && m.world))
-      fail(
-        `${p.id}: \`follow\` không theo được người 3D \`${p.follow}\` — cho người ấy cầm bằng \`equip\``,
-      );
-    if (p.anchor && !beasts.some((a) => a.id === p.follow))
-      fail(
-        `${p.id}: \`anchor\` là mốc trên con vật, cần \`follow\` trỏ tới một con trong \`animals\``,
-      );
-    if (p.follow && p.group) fail(`${p.id}: có \`follow\` thì đi theo chủ — bỏ \`group\``);
-    const { mirror, ...at } = placed(p.id, p, p.y, p.follow ? 0 : scene.ground);
-    return { ...p, ...at, flip: p.flip !== mirror, spec: propSpecs[p.prop] };
-  });
-  // Người ngồi xe đi theo xe, xe đi theo người: chuỗi ấy khép lại là `propAt` gọi mình mãi
-  for (const m of scene.cast) {
-    const trail = [m.id];
-    let id: string | undefined = m.sit?.in;
-    while (id) {
-      const p = scene.props.find((q) => q.id === id);
-      const next = p?.follow;
-      if (next && trail.includes(next))
-        fail(`${trail.join(" → ")} → ${id} → ${next}: ngồi xe đi theo chính mình`);
-      if (!next) break;
-      trail.push(next);
-      id = scene.cast.find((c) => c.id === next)?.sit?.in;
-    }
-  }
   if (scene.items) checkItems(scene.items, held, scene.cast);
-  const duration = scene.duration ?? sceneEnd(cast, beasts);
+  const duration = scene.duration ?? sceneEnd(cast);
   const lens = scene.lens && {
     ...scene.lens,
     yaw: scene.lens.yaw * D,
@@ -1803,44 +1209,24 @@ export function resolveScene(
     marks: scene.marks,
     duration,
     frame: FRAMES[scene.frame],
-    ground: scene.ground,
     bg: scene.bg,
     camera: scene.camera,
-    groups: scene.groups,
     fx: scene.fx,
     ...(lens && { lens }),
     cast: cast.map((m) => {
       const w = m.world;
-      const rightFar =
-        lens && w?.at && !w.path ? facing(lens, w.at, (w.yaw ?? 0) * D).flip : undefined;
-      return {
-        ...m,
-        ...(rightFar && { rightFar }),
-        travel: drifts(m) ? bakeTravel((t) => poseAt(m, t), duration) : STILL,
-      };
+      const rightFar = lens && w.at && !w.path ? facing(lens, w.at, w.yaw * D).flip : undefined;
+      return { ...m, ...(rightFar && { rightFar }) };
     }),
-    props,
     heights,
     bodies,
     held,
     hands,
     ...(scene.items && { items: scene.items }),
-    animals: beasts.map((a) => {
-      const host = hosts.get(a.id);
-      const m = { ...a, host };
-      // Đang bay thì không bàn chân nào: `bakeFeetTravel` đứng yên chứ không giữ đà
-      return {
-        ...m,
-        travel: bakeFeetTravel(
-          (t) => (animalAirborne(m, t) ? [] : animalFeet(a.spec, animalPoseOf(m, t))),
-          duration,
-        ),
-      };
-    }),
   };
   sources.set(rt, {
     shape: sceneShape(raw),
-    args: [actions, animals, propSpecs, heights, bodies, held0, hands],
+    args: [actions, heights, bodies, held0, hands],
   });
   return rt;
 }
@@ -1852,8 +1238,6 @@ const sources = new WeakMap<
     shape: string;
     args: [
       Record<string, ActionData>,
-      Record<string, AnimalData>,
-      Record<string, PropData>,
       Record<string, number>,
       Record<string, Body3>,
       Record<string, HeldItemSpec>,
@@ -1867,7 +1251,7 @@ const sceneShape = (s: SceneData): string =>
   JSON.stringify({
     ...s,
     items: undefined,
-    cast: s.cast.map((m) => (m.world ? { ...m, world: { ...m.world, hands: undefined } } : m)),
+    cast: s.cast.map((m) => ({ ...m, world: { ...m.world, hands: undefined } })),
   });
 
 /**
@@ -1891,54 +1275,11 @@ export function refreshRuntime(rt: SceneRuntime, scene: SceneData): boolean {
   return true;
 }
 
-/** Như `resolveTrack` cho động vật: τ đo trên các kênh hoà được, nền là tư thế đứng của chính con ấy. */
-function resolveAnimalTrack(
-  raw: SceneSpec["animals"][number]["tracks"][number],
-  spec: AnimalData,
-  scale: number,
-  who: string,
-  actions: Record<string, ActionData>,
-): AnimalTrack {
-  const base = animalStand(spec);
-  const tr: AnimalTrack = { name: raw.name, clips: [] };
-  raw.clips.forEach((r, i) => {
-    const where = `${who}/${raw.name ?? i} clip ${i}`;
-    if (i > 0 && r.start <= raw.clips[i - 1].start) fail(`${where}: \`start\` phải tăng dần`);
-    const action = r.action ? actions[r.action] : undefined;
-    if (r.action && !action) fail(`${where}: không có hành động \`${r.action}\``);
-    if (action && action.schemaVersion !== ACTION_VERSION)
-      fail(`${where}: \`${r.action}\` chưa qua \`parseAction\``);
-    if (action && actionKind(action) !== "animal")
-      fail(`${where}: \`${r.action}\` là hành động của người, không phải của động vật`);
-    const cycle = cycleForSpeed(r, () => animalStride(spec, action as ActionData), scale, where);
-    const c: AnimalClip = {
-      start: r.start,
-      file: r.action,
-      action,
-      cycle: cycle ?? action?.duration ?? 1,
-      phase: r.phase,
-      mask: r.mask,
-      tau: r.blend ?? 0,
-    };
-    tr.clips.push(c);
-    if (r.blend === undefined && !(i === 0 && r.start === 0))
-      c.tau = blendAnimalDuration(
-        base,
-        i === 0 ? {} : animalPoseUpTo(tr, i - 1, c.start, base, spec),
-        animalClipPose(c, c.start, spec),
-      );
-  });
-  return tr;
-}
-
-type PathKey0 = Unmarked<z.infer<typeof PathKeySchema>>;
-
 /**
  * Quãng một lượt hành động trôi ngang, đơn vị rig ở `height = 1`; âm là đi lùi. Đo bằng
  * chính `bakeTravel`, nên nó khớp với trôi ngang lúc vẽ — `clips[].speed` chia cho số này.
- * `legs` đo trên độ dài chân khác rig đang cài (`stickman reseat`).
  */
-export function actionStride(a: ActionData, base: Pose = POSES.idle, legs?: Legs): number {
+export function actionStride(a: ActionData, base: Pose = POSES.idle): number {
   // hành động soạn ở `side` thì chân của nó là chân nâng: bàn chân đang bước dang ra cao lên như người 3D dựng
   const side = a.authoredAt === "side";
   const lift = { lf: true, ln: true };
@@ -1946,29 +1287,17 @@ export function actionStride(a: ActionData, base: Pose = POSES.idle, legs?: Legs
     (t) =>
       side ? { ...composePose(base, actionPose(a, t)), lift } : composePose(base, actionPose(a, t)),
     1,
-    legs,
     side,
   );
   return tb.xs[tb.xs.length - 1];
 }
 
-/** Như `actionStride` cho động vật: một lượt hành động, đơn vị rig của chính con ấy; bay thì không trôi. */
-export function animalStride(spec: AnimalData, a: ActionData): number {
-  if (actionAirborne(a)) return 0;
-  const stand = animalStand(spec);
-  const tb = bakeFeetTravel(
-    (t) => animalFeet(spec, composeAnimalPose(stand, animalActionPose(a, t, spec) ?? {})),
-    1,
-  );
-  return tb.xs[tb.xs.length - 1];
-}
-
-/** Hết clip cuối của mọi người và mọi con vật: mốc bắt đầu của nó cộng một lượt (clip rỗng thì cộng τ). */
-const sceneEnd = (cast: Acting[], animals: Pick<AnimalMember, "tracks">[]): number =>
+/** Hết clip cuối của mọi người: mốc bắt đầu của nó cộng một lượt (clip rỗng thì cộng τ). */
+const sceneEnd = (cast: CastMember[]): number =>
   Math.max(
     0,
-    ...[...cast, ...animals].flatMap((m) =>
-      m.tracks.map((t: Track | AnimalTrack) => {
+    ...cast.flatMap((m) =>
+      m.tracks.map((t) => {
         const c = t.clips[t.clips.length - 1];
         return c.start + (c.action ? c.cycle : c.tau);
       }),
@@ -1978,20 +1307,8 @@ const sceneEnd = (cast: Acting[], animals: Pick<AnimalMember, "tracks">[]): numb
 const member = (rt: SceneRuntime, id: string): CastMember =>
   rt.cast.find((m) => m.id === id) ?? fail(`không có \`${id}\` trong \`cast\``);
 
-const turned = new WeakMap<CharacterData, Map<number, CharacterData>>();
-
-/**
- * JSON nhân vật mà một người trong cảnh diễn bằng: `cast[].turn` đè `face.turn`. Mọi chỗ vẽ hay
- * đo người của scene đi qua đây; cùng đầu vào trả cùng object nên `<Character>` không vẽ lại.
- */
-export function castCharacter(m: Pick<CastData, "turn">, c: CharacterData): CharacterData {
-  if (m.turn === undefined || m.turn === c.face.turn) return c;
-  let byTurn = turned.get(c);
-  if (!byTurn) turned.set(c, (byTurn = new Map()));
-  let out = byTurn.get(m.turn);
-  if (!out) byTurn.set(m.turn, (out = { ...c, face: { ...c.face, turn: m.turn } }));
-  return out;
-}
+/** `scene.lens` của cảnh có người; `resolveScene` đã đòi nó */
+const lensOf = (rt: SceneRuntime): Lens => rt.lens ?? fail("cảnh có người thì phải có `lens`");
 
 /** Tư thế ở một mẫu của chuỗi cổ tay mang món (`ReachHold.prior`): mỗi mẫu một lần cho một runtime */
 const keyPoses = new WeakMap<SceneRuntime, Map<string, ScenePose>>();
@@ -2006,8 +1323,8 @@ function keyPose(rt: SceneRuntime, id: string, t: number, height: number, dims: 
 }
 
 /**
- * Tư thế, lớp, nét mặt và chỗ đứng của một người tại `time` giây; `height` là
- * `rig.height` của người diễn, trôi ngang tỉ lệ với nó. Track sau đè track trước.
+ * Tư thế, nét mặt và chỗ đặt của một người 3D tại `time` giây; `height` là `rig.height` của người
+ * diễn, bước chân theo `world.path` tỉ lệ với nó. Track sau đè track trước.
  * `base` của mỗi track là **thứ nằm dưới nó**, không phải `base` của scene: nhả một
  * track là lộ ra track dưới, hoà về `base` thì cuối đoạn nhả có cú giật.
  */
@@ -2024,286 +1341,48 @@ export function sceneAt(
   const m = member(rt, id);
   const walk = walkerOf(rt, m, height, dims.hipHalf);
   const clock = walk && clockOf(walk);
-  const layers: Partial<ArmLayers>[] = [];
   const faces: Partial<FaceState>[] = [];
   const equips: EquipStep[][] = [];
   for (const tr of m.tracks) {
     const i = activeClip(tr, time);
     if (i < 0) continue;
-    layers.push(layersUpTo(tr, i, time, clock, rightFarOf(m, walk)));
     faces.push(faceUpTo(tr, i, time, clock));
     equips.push(equipUpTo(tr, i, time, clock));
   }
   const acted = worldPoseAt(m, time, walk, height, dims.hipHalf);
-  // Thân lật thì `poseAt` đổi kênh tay gần ↔ xa: lớp hành động khai theo cùng tay ấy; lớp mặc định
-  // vẫn theo chỗ gần / xa nên đổi trước khi ghép với nó
-  const own = clock && clock(time).half % 2 ? layers.map(swapLayers) : layers;
-  const placed =
-    m.world && rt.lens && worldAt(rt.lens, m.world, time, acted, height, dims.legHalf, walk).world;
-  const world =
-    placed && m.world?.hands
-      ? withHands(
-          placed,
-          m.world.hands,
-          time,
-          rt.held,
-          (who, mark) => castMarkAt(rt, who, mark, time),
-          (t) => keyPose(rt, id, t, height, dims),
-          { rt, height, id },
-        )
-      : placed;
-  const pose =
-    world && m.world?.hands
-      ? shapeHands(
-          restHands(acted, m.world.hands, time, world.flip),
-          m.world.hands,
-          time,
-          world.flip,
-          rt.hands,
-        )
-      : acted;
-  const body = world ? viewOfTheta(world.theta) : stepOf(m.view, time);
-  const views = clampViews({ body, head: m.headView && !world ? stepOf(m.headView, time) : body });
-  const spot3 = world && {
-    x: project(world.lens, world.hip)[0],
-    groundY: project(world.lens, world.hip)[1],
-    scale: scaleAt(world.lens, world.hip) * world.s,
-    flip: world.flip,
-    root: "hip" as const,
-    rotate: 0,
-    world,
-  };
+  const placed = worldAt(lensOf(rt), m.world, time, acted, height, dims.legHalf, walk).world;
+  const world = m.world.hands
+    ? withHands(
+        placed,
+        m.world.hands,
+        time,
+        rt.held,
+        (who, mark) => castMarkAt(rt, who, mark, time),
+        (t) => keyPose(rt, id, t, height, dims),
+        { rt, height, id },
+      )
+    : placed;
+  const pose = m.world.hands
+    ? shapeHands(
+        restHands(acted, m.world.hands, time, world.flip),
+        m.world.hands,
+        time,
+        world.flip,
+        rt.hands,
+      )
+    : acted;
+  const [x, groundY] = project(world.lens, world.hip);
   return {
     pose,
-    view: views.body,
-    headView: views.head,
-    layers: composeLayers(...own),
     equip: composeEquip(m.equip, ...equips),
     ...composeFace(...faces),
-    ...(spot3
-      ? spot3
-      : m.mount
-        ? rideAt(rt, m, time)
-        : m.sit
-          ? sitAt(rt, m, time)
-          : {
-              ...spotAt(m, time, height),
-              flip: flipOf(m.flip, time),
-              root: "feet" as const,
-              rotate: m.rotate,
-            }),
+    x,
+    groundY,
+    scale: scaleAt(world.lens, world.hip) * world.s,
+    flip: world.flip,
+    world,
     opacity: m.fade ? fadeAt(m.fade, time) : 1,
-    carried: m.carry.map((c) => carryAt(rt, c)),
   };
-}
-
-/**
- * Người cưỡi: hông đặt vào yên con vật tại `time`, nên nhún, chồm và trôi theo lưng nó tự có.
- * Trả kèm chỗ đặt con vật **trong hệ của người** — con vật vẽ ở khe `slots.mount`, giữa chân
- * xa và chân gần, nên phải quy về hệ ấy: người là gốc, con vật đi vào trong.
- */
-function rideAt(rt: SceneRuntime, m: CastMember, time: number) {
-  const on = m.mount as NonNullable<CastMember["mount"]>;
-  const a = animalMember(rt, on.on);
-  const at = animalSpotOf(a, time);
-  const F = computeAnimalFigure(a.spec, animalPoseOf(a, time));
-  const sx = F.saddle[0] + on.dx;
-  const sy = F.saddle[1] + on.dy - drop(F, at.root);
-  const dir = at.flip ? -1 : 1;
-  const k = 1 / m.scale;
-  return {
-    x: at.x + at.scale * dir * sx,
-    groundY: at.groundY + at.scale * sy,
-    scale: at.scale * m.scale,
-    flip: at.flip,
-    root: "hip" as const,
-    rotate: 0,
-    mounted: {
-      id: a.id,
-      x: -k * sx,
-      groundY: -k * sy,
-      scale: k,
-      root: at.root,
-      legLayer: at.legLayer,
-    },
-  };
-}
-
-/** Gốc `feet` treo con vật ở bàn chân thấp nhất, gốc `hip` ở chính khớp hông — cùng phép tính với `rootDrop` của rig. */
-const drop = (F: AnimalFigure, root: Root) => (root === "hip" ? 0 : F.lowest);
-
-/**
- * Người ngồi xe: hông đặt vào chỗ ngồi của đạo cụ tại `time`, đi theo và lật theo nó. Đạo cụ
- * theo ai thì chỗ đứng ấy đã lấy `rt.heights` của người đó — không nhận `height` ở đây.
- */
-function sitAt(rt: SceneRuntime, m: CastMember, time: number) {
-  const on = m.sit as NonNullable<CastMember["sit"]>;
-  const p = propMember(rt, on.in);
-  const seat = propSeat(p.spec as PropData) as { x: number; y: number };
-  const at = propAt(rt, p.id, time);
-  const dir = at.flip ? -1 : 1;
-  return {
-    x: at.x + at.scale * dir * (seat.x + on.dx),
-    groundY: at.groundY + at.scale * (seat.y + on.dy),
-    scale: at.scale * m.scale,
-    flip: at.flip,
-    root: "hip" as const,
-    rotate: 0,
-  };
-}
-
-/** Con vật trong tay: điểm `anchor` của nó đặt vào `dx`/`dy` của khung cổ tay, xoay `rotate` quanh đó. */
-function carryAt(rt: SceneRuntime, c: CarryData): CarrySpot {
-  const a = animalMember(rt, c.animal);
-  const F = computeAnimalFigure(a.spec, animalHang(a.spec));
-  const p = animalAnchorOf(a.spec, F, c.anchor);
-  const k = a.scale;
-  const r = -c.rotate * D;
-  const fx = c.flip ? -1 : 1;
-  // Gốc `hip` của <Animal>: điểm `p` sau translate · rotate · scale · lật nằm ở R(−rotate)·k·p
-  const px = fx * p.x * k;
-  const py = p.y * k;
-  return {
-    id: a.id,
-    socket: c.socket,
-    x: c.dx - (px * Math.cos(r) - py * Math.sin(r)),
-    groundY: c.dy - (px * Math.sin(r) + py * Math.cos(r)),
-    scale: k,
-    rotate: c.rotate,
-    flip: c.flip,
-    root: "hip",
-  };
-}
-
-const animalMember = (rt: SceneRuntime, id: string): AnimalMember =>
-  rt.animals.find((a) => a.id === id) ?? fail(`không có \`${id}\` trong \`animals\``);
-
-const inAnimalMask = (c: AnimalClip, k: AnimalChannel) => !c.mask || c.mask.includes(k);
-
-function animalClipPose(c: AnimalClip, time: number, spec: AnimalData): Partial<AnimalPose> {
-  if (!c.action) return {};
-  const d = animalActionDelta(c.action, phaseAt(c, time), spec);
-  for (const k of ANIMAL_JOINT_CHANNELS) if (!inAnimalMask(c, k)) delete d[k];
-  return animalDeltaPose(d);
-}
-
-const animalClipFace = (c: AnimalClip, time: number): Partial<AnimalFace> =>
-  c.action && inAnimalMask(c, "face") ? animalActionFace(c.action, phaseAt(c, time)) : {};
-
-/** Như `poseUpTo` cho động vật; chân không hoà — xem `blendAnimalPose`. */
-function animalPoseUpTo(
-  tr: AnimalTrack,
-  i: number,
-  time: number,
-  base: AnimalPose,
-  spec: AnimalData,
-): Partial<AnimalPose> {
-  const c = tr.clips[i];
-  const p = animalClipPose(c, time, spec);
-  const s = time - c.start;
-  if (s >= c.tau) return p;
-  return blendAnimalPose(
-    base,
-    i === 0 ? {} : animalPoseUpTo(tr, i - 1, time, base, spec),
-    p,
-    s / c.tau,
-  );
-}
-
-function animalFaceUpTo(tr: AnimalTrack, i: number, time: number): Partial<AnimalFace> {
-  const c = tr.clips[i];
-  const f = animalClipFace(c, time);
-  const s = time - c.start;
-  if (s >= c.tau) return f;
-  return blendFace(i === 0 ? {} : animalFaceUpTo(tr, i - 1, time), f, s / c.tau);
-}
-
-type Beast = Omit<AnimalMember, "travel">;
-
-/** Tư thế con vật tại `time`: track sau đè track trước lên nền đứng — hay buông chân nếu đang bị xách. */
-function animalPoseOf(a: Beast, time: number): AnimalPose {
-  let pose = a.host?.kind === "carry" ? animalHang(a.spec) : animalStand(a.spec);
-  for (const tr of a.tracks) {
-    const i = activeClip(tr, time);
-    if (i >= 0) pose = composeAnimalPose(pose, animalPoseUpTo(tr, i, time, pose, a.spec));
-  }
-  return pose;
-}
-
-function animalFaceOf(a: Beast, time: number): AnimalFace {
-  const faces: Partial<AnimalFace>[] = [];
-  for (const tr of a.tracks) {
-    const i = activeClip(tr, time);
-    if (i >= 0) faces.push(animalFaceUpTo(tr, i, time));
-  }
-  return Object.assign({}, DEFAULT_ANIMAL_FACE, ...faces) as AnimalFace;
-}
-
-/**
- * Đang trên không: clip **trên cùng đang ghi chân** quyết định — track trên không ghi chân
- * thì chân là của track dưới, và cùng với chân là chuyện có chạm đất hay không.
- */
-function animalAirborne(a: Beast, time: number): boolean {
-  for (let k = a.tracks.length - 1; k >= 0; k--) {
-    const tr = a.tracks[k];
-    const i = activeClip(tr, time);
-    if (i < 0) continue;
-    const c = tr.clips[i];
-    if (!c.action) continue;
-    const mask = animalActionMask(c.action);
-    if (!ANIMAL_LEG_CHANNELS.some((ch) => mask.includes(ch) && inAnimalMask(c, ch))) continue;
-    return actionAirborne(c.action);
-  }
-  return false;
-}
-
-/**
- * Chỗ đứng của con vật. Đang bay thì treo ở hông (`root: "hip"`) và hạ `groundY` đúng một
- * `rig.hipY` để hông cao ngang lúc đứng: cất cánh tại chỗ không nhảy, `path.y` là độ cao thêm.
- */
-function animalSpotOf(
-  a: AnimalMember,
-  time: number,
-): Spot & { flip: boolean; root: Root; legLayer: "under" | "over" } {
-  const spot = a.path
-    ? pathAt(a.path, time)
-    : { x: a.x + a.scale * travelSigned(a, time), groundY: a.y, scale: a.scale };
-  const fly = animalAirborne(a, time);
-  return {
-    ...spot,
-    groundY: fly ? spot.groundY - spot.scale * a.spec.rig.hipY : spot.groundY,
-    flip: flipOf(a.flip, time),
-    root: fly ? "hip" : "feet",
-    legLayer: fly ? "over" : "under",
-  };
-}
-
-/**
- * Tư thế và chỗ đứng của một con vật tại `time`; `<Animal>` nhận thẳng. Con đang bị cưỡi vẫn
- * có chỗ đứng của chính nó (người theo nó). Con đang bị xách thì mượn chỗ đứng của người xách —
- * chỗ chính xác trong tay nằm ở `sceneAt(...).carried`, và ba đường render vẽ nó qua
- * `castSlots`, không đặt rời.
- */
-export function animalAt(rt: SceneRuntime, id: string, time: number): AnimalSpot {
-  const a = animalMember(rt, id);
-  const pose = animalPoseOf(a, time);
-  const face = animalFaceOf(a, time);
-  const opacity = a.fade ? fadeAt(a.fade, time) : 1;
-  if (a.host?.kind === "carry") {
-    const h = sceneAt(rt, a.host.id, time);
-    return {
-      pose,
-      ...face,
-      x: h.x,
-      groundY: h.groundY,
-      scale: h.scale * a.scale,
-      flip: h.flip,
-      root: "hip",
-      legLayer: "under",
-      opacity,
-    };
-  }
-  return { pose, ...face, ...animalSpotOf(a, time), opacity };
 }
 
 /**
@@ -2365,16 +1444,13 @@ const EVENT_CAP = 10000;
  */
 export function sceneEvents(rt: SceneRuntime, name?: string): SceneEvent[] {
   const out: SceneEvent[] = [];
-  for (const m of [...rt.cast, ...rt.animals]) {
-    const walk =
-      "world" in m
-        ? walkerOf(rt, m, rt.heights[m.id] ?? 1, (rt.bodies[m.id] ?? BODY3).hipHalf)
-        : undefined;
-    m.tracks.forEach((tr: Track | AnimalTrack, ti) =>
+  for (const m of rt.cast) {
+    const walk = walkerOf(rt, m, rt.heights[m.id] ?? 1, (rt.bodies[m.id] ?? BODY3).hipHalf);
+    m.tracks.forEach((tr, ti) =>
       tr.clips.forEach((c, ci) => {
         if (!c.action?.events.length) return;
         const end = tr.clips[ci + 1]?.start ?? rt.duration;
-        const clock = walk && (c as Clip).stride ? clockOf(walk) : undefined;
+        const clock = walk && c.stride ? clockOf(walk) : undefined;
         for (const e of actionEvents(c.action)) {
           if (name !== undefined && e.name !== name) continue;
           const put = (t: number) => {
@@ -2426,26 +1502,26 @@ export interface StillSpan {
 
 /** Bước lấy mẫu chỗ đứng khi dò quãng đứng yên, giây scene */
 const STILL_STEP = 1 / 15;
-/** Trôi ngang chậm hơn ngần này đơn vị sân khấu mỗi giây thì coi như đứng yên */
+/** Hông chiếu trên khung dời chậm hơn ngần này đơn vị chỗ vẽ mỗi giây thì coi như đứng yên */
 const STILL_SPEED = 5;
 
 /**
- * Những quãng **cả sân khấu đứng yên**: không người hay con vật nào trôi ngang, và không
- * clip nào đang là hành động có sải chân — người giậm chân tại chỗ (`path` ghim một chỗ)
- * vẫn là đang bước. `min` là quãng ngắn hơn thì bỏ qua. Bè lặp tiếng bước, tiếng vó kêu
+ * Những quãng **cả sân khấu đứng yên**: không người nào dời chỗ, và không
+ * clip nào đang là hành động có sải chân — người giậm chân tại chỗ (`world.path` ghim một chỗ)
+ * vẫn là đang bước. `min` là quãng ngắn hơn thì bỏ qua. Bè lặp tiếng bước kêu
  * đè lên một quãng ở đây là tiếng còn chạy sau khi người đã dừng: docs/07-lam-tap.md.
  */
 export function stillSpans(rt: SceneRuntime, min = 0): StillSpan[] {
   const strides = new Map<ActionData, number>();
-  const stride = (a: ActionData, spec?: AnimalData) => {
+  const stride = (a: ActionData) => {
     let v = strides.get(a);
-    if (v === undefined) strides.set(a, (v = spec ? animalStride(spec, a) : actionStride(a)));
+    if (v === undefined) strides.set(a, (v = actionStride(a)));
     return v;
   };
   const gaits: StillSpan[] = [];
-  const walked = (clips: Clip[] | AnimalClip[], i: number, next: number, spec?: AnimalData) => {
+  const walked = (clips: Clip[], i: number, next: number) => {
     const c = clips[i];
-    if (!c.action || stride(c.action, spec) === 0) return;
+    if (!c.action || stride(c.action) === 0) return;
     // `end: "hold"` là đi đúng một lượt rồi đứng lại, dù clip còn giữ track tới tận đây
     gaits.push({
       from: c.start,
@@ -2455,16 +1531,8 @@ export function stillSpans(rt: SceneRuntime, min = 0): StillSpan[] {
   for (const m of rt.cast)
     for (const tr of m.tracks)
       tr.clips.forEach((_, i) => walked(tr.clips, i, tr.clips[i + 1]?.start ?? rt.duration));
-  for (const a of rt.animals)
-    for (const tr of a.tracks)
-      tr.clips.forEach((_, i) =>
-        walked(tr.clips, i, tr.clips[i + 1]?.start ?? rt.duration, a.spec),
-      );
 
-  const spots = (t: number) => [
-    ...rt.cast.map((m) => sceneAt(rt, m.id, t, rt.heights[m.id] ?? 1).x),
-    ...rt.animals.map((a) => animalAt(rt, a.id, t).x),
-  ];
+  const spots = (t: number) => rt.cast.map((m) => sceneAt(rt, m.id, t, rt.heights[m.id] ?? 1).x);
   const out: StillSpan[] = [];
   let prev = spots(0);
   for (let t = 0; t < rt.duration; t += STILL_STEP) {
@@ -2491,100 +1559,6 @@ function fadeAt(keys: FadeKey[], time: number): number {
   const b = keys[i + 1];
   if (!b || time <= a.t) return a.v;
   return a.v + (b.v - a.v) * ((time - a.t) / (b.t - a.t));
-}
-
-/** Lấy mẫu bậc thang, như `layer` và `equip`: hướng của mốc cuối cùng đã tới. */
-const flipOf = (keys: FlipKey[], time: number): boolean => stepOf(keys, time);
-
-function stepOf<T>(keys: { t: number; v: T }[], time: number): T {
-  let v = keys[0].v;
-  for (const k of keys) {
-    if (k.t > time) break;
-    v = k.v;
-  }
-  return v;
-}
-
-/** Hướng nhìn của một người tại `time`; đạo cụ theo họ và ba đường render dùng chung. */
-export const flipAt = (rt: SceneRuntime, id: string, time: number): boolean =>
-  flipOf(member(rt, id).flip, time);
-
-type Spot = Pick<ScenePose, "x" | "groundY" | "scale">;
-
-/** Người trôi ngang bằng bảng `travel`: còn lại đứng theo `world`, `path`, yên con vật hay chỗ ngồi — đường của `spotAt` / `hostSpot` */
-const drifts = (m: Pick<CastMember, "world" | "path" | "mount" | "sit">): boolean =>
-  !m.world && !m.path && !m.mount && !m.sit;
-
-/** Bảng của người không trôi theo chân: `travelAt` ra 0 ở mọi `t` */
-const STILL: TravelTable = { step: TRAVEL_STEP, xs: [0] };
-
-const spotAt = (m: CastMember, time: number, height: number): Spot =>
-  m.path
-    ? pathAt(m.path, time)
-    : { x: m.x + m.scale * height * travelSigned(m, time), groundY: m.y, scale: m.scale };
-
-/**
- * Trôi ngang cộng dồn từng đoạn hướng: `Σ dirₖ · (T(min(t, tₖ₊₁)) − T(tₖ))`. Nhân dấu ở
- * ngoài tích phân — `dir(t) · T(t)` — là lật một cái người nhảy `2 · T(t)`.
- */
-function travelSigned(m: { flip: FlipKey[]; travel: TravelTable }, time: number): number {
-  let x = 0;
-  for (let i = 0; i < m.flip.length && m.flip[i].t < time; i++) {
-    const to = Math.min(time, m.flip[i + 1]?.t ?? time);
-    x += (m.flip[i].v ? -1 : 1) * (travelAt(m.travel, to) - travelAt(m.travel, m.flip[i].t));
-  }
-  return x;
-}
-
-const propMember = (rt: SceneRuntime, id: string): PropMember =>
-  rt.props.find((p) => p.id === id) ?? fail(`không có \`${id}\` trong \`props\``);
-
-/**
- * Chỗ đứng của một đạo cụ tại `time`; `height` là `rig.height` của người nó theo (nếu
- * có), bỏ trống là tra `rt.heights`. Đi theo ai thì mượn chỗ đứng, `scale` và hướng của
- * người ấy rồi cộng độ lệch.
- */
-export function propAt(rt: SceneRuntime, id: string, time: number, height?: number): PropPose {
-  const p = propMember(rt, id);
-  let spot: Spot & { flip: boolean };
-  if (p.follow) {
-    const beast = rt.animals.find((a) => a.id === p.follow);
-    let at = beast
-      ? animalSpotOf(beast, time)
-      : hostSpot(rt, member(rt, p.follow), time, height ?? rt.heights[p.follow] ?? 1);
-    if (beast && p.anchor) {
-      // Gốc đạo cụ dời tới mốc trên con vật; `x`/`y` cộng tiếp từ đó
-      const F = computeAnimalFigure(beast.spec, animalPoseOf(beast, time));
-      const q = animalAnchorOf(beast.spec, F, p.anchor);
-      const root = (at as { root?: Root }).root ?? "feet";
-      at = {
-        ...at,
-        x: at.x + (at.flip ? -1 : 1) * at.scale * q.x,
-        groundY: at.groundY + at.scale * (q.y - drop(F, root)),
-      };
-    }
-    spot = {
-      x: at.x + (at.flip ? -1 : 1) * at.scale * p.x,
-      groundY: at.groundY + at.scale * (p.y as number),
-      scale: at.scale * p.scale,
-      flip: at.flip !== p.flip,
-    };
-  } else {
-    spot = {
-      ...(p.path ? pathAt(p.path, time) : { x: p.x, groundY: p.y as number, scale: p.scale }),
-      flip: p.flip,
-    };
-  }
-  return { ...spot, roll: spot.x, ...(p.follow && p.y !== 0 ? { shadow: 0 } : {}) };
-}
-
-/** Chỗ đứng và hướng của một người, kể cả khi đang cưỡi (yên con vật) hay ngồi xe (chỗ ngồi của đạo cụ). */
-function hostSpot(rt: SceneRuntime, m: CastMember, time: number, height: number) {
-  if (m.mount || m.sit) {
-    const r = m.mount ? rideAt(rt, m, time) : sitAt(rt, m, time);
-    return { x: r.x, groundY: r.groundY, scale: r.scale, flip: r.flip };
-  }
-  return { ...spotAt(m, time, height), flip: flipOf(m.flip, time) };
 }
 
 /**
@@ -2707,37 +1681,20 @@ export const sceneImages = (scene: SceneData): string[] => [
   ...new Set(scene.bg.map((b) => b.file)),
 ];
 
-/** Ghi `aspect` đo được vào từng lớp nền, như `applyAspects` làm với mảnh nhân vật */
+/** Ghi `aspect` đo được vào từng lớp nền */
 export function applySceneAspects(scene: SceneData, aspects: Record<string, number>) {
   for (const b of scene.bg) if (aspects[b.file] !== undefined) b.aspect = aspects[b.file];
 }
 
-/** Đạo cụ có người ngồi tách làm hai mục `part`; `<Prop part>` nhận thẳng. Không có `part` là vẽ cả */
-export type SceneLayer = {
-  kind: "cast" | "prop" | "animal";
-  id: string;
-  part?: "back" | "front";
-  /** Người khai `zParts` ra nhiều mục, mỗi mục một lượt `<Character parts>`. Không có là vẽ cả người */
-  parts?: BodyPart[];
-  /** `z` ở tầng sân khấu của mục này — của chủ cụm nếu nó theo ai; `fx` và lớp vẽ code xen vào theo số này */
-  z: number;
-};
-
 /**
- * Nấc `z` mặc định của từng loại mục trên sân khấu, dựng lại đúng thứ tự cứng vốn có: nền,
- * `fx` lớp `back`, đạo cụ `back`, con vật `back`, người, con vật `front`, đạo cụ `front`,
- * `fx` lớp `front`, `fx` lớp `ui`. Nền và `fx` **chưa** vào trục của `sceneOrder`: băng `bg`
- * là chỗ `bgOrder` xếp các lớp nền với nhau, băng `fx` giữ chỗ cho `<SceneFx>` — đừng phát
- * lại số của chúng cho thứ khác. docs/03-scene.md#trục-z
+ * Nấc `z` mặc định của từng loại mục: nền, `fx` lớp `back`, người, `fx` lớp `front`, `fx` lớp `ui`.
+ * Băng `bg` là chỗ `bgOrder` xếp các lớp nền với nhau, băng `fx` giữ chỗ cho `<SceneFx>`.
+ * docs/03-scene.md#trục-z
  */
 export const SCENE_Z = {
   bg: -1000,
   fxBack: -500,
-  propBack: -100,
-  animalBack: -50,
   cast: 0,
-  animalFront: 50,
-  propFront: 100,
   fxFront: 500,
   fxUi: 1000,
 } as const;
@@ -2753,107 +1710,16 @@ export const bgOrder = (bg: SceneData["bg"]): BgLayerData[] =>
     .sort((p, q) => p.z - q.z)
     .map((p) => p.b);
 
-/** `z` cục bộ của đạo cụ đi theo ai đó: chủ nó ở `0`, nên `back`/`front` là ngay dưới / ngay trên */
-const FOLLOW_Z = { back: -1, front: 1 } as const;
-
-const propZ = (p: Pick<PropCastData, "z" | "layer" | "follow">): number =>
-  p.z ?? (p.follow ? FOLLOW_Z[p.layer] : p.layer === "back" ? SCENE_Z.propBack : SCENE_Z.propFront);
-
-const animalZ = (a: Pick<AnimalCastData, "z" | "layer">): number =>
-  a.z ?? (a.layer === "back" ? SCENE_Z.animalBack : SCENE_Z.animalFront);
-
-const castZ = (m: Pick<CastData, "z">): number => m.z ?? SCENE_Z.cast;
-
-/** Các lượt vẽ của một người: khối cùng `z` gộp một lượt; lượt ở `z` của người là lượt mang cụm `follow` */
-function castBands(m: Pick<CastData, "z" | "zParts">): { z: number; parts?: BodyPart[] }[] {
-  const own = castZ(m);
-  if (!m.zParts) return [{ z: own }];
-  const bands = new Map<number, BodyPart[]>([[own, []]]);
-  for (const p of BODY_PARTS) {
-    const upper = UPPER_OF[p];
-    const z = m.zParts[p] ?? (upper && m.zParts[upper]) ?? own;
-    bands.set(z, [...(bands.get(z) ?? []), p]);
-  }
-  return [...bands].map(([z, parts]) => ({ z, parts }));
-}
-
-/** Một mục của một tầng: `z` trong chính tầng ấy, và những lớp nó nở ra */
-type Stage = Omit<SceneLayer, "z">;
-type ZItem = { z: number; layers: Stage[] };
-
-/**
- * Sắp một tầng: `z` tăng dần, hoà thì giữ nguyên thứ tự mảng — `sort` của JS ổn định. Mỗi lớp
- * mang `z` của tầng vừa sắp, nên tầng ngoài cùng ghi đè `z` cục bộ bằng `z` sân khấu
- */
-const stack = (items: ZItem[]): SceneLayer[] =>
-  [...items].sort((a, b) => a.z - b.z).flatMap((i) => i.layers.map((l) => ({ ...l, z: i.z })));
-
-/**
- * Thứ tự vẽ cả cảnh, dưới lên, sắp theo `z` ở **các tầng lồng nhau** chứ không phẳng cả cảnh:
- * tầng sân khấu là nhóm, cùng người không ngồi, con vật không chủ và đạo cụ không theo ai chưa vào
- * nhóm nào; trong một nhóm thì thành viên sắp theo `z` cục bộ, cả nhóm dời theo `z` của nó; người
- * khai `zParts` ra nhiều mục trong chính tầng của mình; trong một cụm
- * thì chủ ở `z` cục bộ `0` và đạo cụ theo nó xếp quanh, cả cụm dời theo `z` của chủ; trong một
- * đạo cụ có người ngồi thì những người ấy sắp theo `z` cục bộ của họ. Con vật có người cưỡi hay
- * xách **không có lớp riêng** — nó vẽ trong người ấy qua `slots`; đạo cụ theo nó bám quanh người
- * ấy. Đạo cụ có người ngồi tách làm `part: "back"`, những người ngồi, `part: "front"` — chỗ cắt
- * ấy không phải một nấc `z`. Ba đường render dùng chung, đừng tự xếp lại. docs/03-scene.md#trục-z
- */
-export function sceneOrder(rt: SceneRuntime): SceneLayer[] {
-  // Lớp nào đang vẽ một `id`: con vật có chủ thì là chủ nó
-  const ownerOf = (id: string) => rt.animals.find((a) => a.id === id)?.host?.id ?? id;
-  const cluster = (id: string, self: Stage[]): Stage[] =>
-    stack([
-      { z: 0, layers: self },
-      ...rt.props
-        .filter((p) => !!p.follow && ownerOf(p.follow) === id)
-        .map((p) => ({ z: propZ(p), layers: propLayers(p) })),
-    ]);
-  const sitter = (m: CastMember): Stage[] => cluster(m.id, [{ kind: "cast", id: m.id }]);
-  const person = (m: CastMember): ZItem[] =>
-    castBands(m).map(({ z, parts }) => {
-      const self: Stage[] = [{ kind: "cast", id: m.id, ...(parts ? { parts } : {}) }];
-      return { z, layers: z === castZ(m) ? cluster(m.id, self) : self };
-    });
-  const propLayers = (p: PropMember): Stage[] => {
-    const inside = rt.cast.filter((m) => m.sit?.in === p.id);
-    return inside.length
-      ? [
-          { kind: "prop", id: p.id, part: "back" },
-          ...stack(inside.map((m) => ({ z: castZ(m), layers: sitter(m) }))),
-          { kind: "prop", id: p.id, part: "front" },
-        ]
-      : [{ kind: "prop", id: p.id }];
-  };
-  const tier = (group?: string): ZItem[] => [
-    ...rt.props
-      .filter((p) => !p.follow && p.group === group)
-      .map((p) => ({ z: propZ(p), layers: propLayers(p) })),
-    ...rt.animals
-      .filter((a) => !a.host && a.group === group)
-      .map((a) => ({
-        z: animalZ(a),
-        layers: cluster(a.id, [{ kind: "animal" as const, id: a.id }]),
-      })),
-    ...rt.cast.filter((m) => !m.sit && m.group === group).flatMap(person),
-  ];
-  return stack([
-    ...rt.groups.map((g) => ({ z: g.z ?? SCENE_Z.cast, layers: stack(tier(g.id)) })),
-    ...tier(),
-  ]);
-}
-
 /** Cửa sổ đo trượt chân (giây); chân chịu lực dịch quá nửa quãng hông đi trong cửa sổ là trượt */
 const SLIDE_WINDOW = 0.4;
 /** Trượt dưới ngần này (đơn vị rig một cửa sổ) thì mắt không thấy, kể cả thân đứng yên */
 const SLIDE_MIN = 8;
 
 /**
- * Người 3D trượt trên sàn hay không tới mốc dừng của `path`; chỉ đo người có `world` ở cảnh có
- * `lens`. docs/03-scene.md#check-cho-người-3d
+ * Người 3D trượt trên sàn hay không tới mốc dừng của `path`. docs/03-scene.md#check-cho-người-3d
  */
 export function sceneSlideProblems(rt: SceneRuntime): string[] {
-  return rt.lens ? rt.cast.flatMap((m) => (m.world ? worldSlideProblems(rt, m) : [])) : [];
+  return rt.cast.flatMap((m) => worldSlideProblems(rt, m));
 }
 
 /** Mốc dừng trượt khỏi `at` quá ngần này (đơn vị rig) là người không tới được chỗ khai */
@@ -2870,7 +1736,7 @@ const STALL_MIN = 0.25;
  * có sải chân chạy khi `path` đứng yên.
  */
 function worldSlideProblems(rt: SceneRuntime, m: CastMember): string[] {
-  const w = m.world as WorldSpec;
+  const w = m.world;
   const h = rt.heights[m.id] ?? 1;
   const dims = rt.bodies[m.id] ?? BODY3;
   const unit = w.s;
@@ -2893,7 +1759,7 @@ function worldSlideProblems(rt: SceneRuntime, m: CastMember): string[] {
     const ft = feet3(sp.pose, wd, h, dims.hipHalf);
     const F = dirOf(wd.yaw);
     const fwd = ft.map((p) => ((p[0] - wd.hip[0]) * F[0] + (p[2] - wd.hip[2]) * F[2]) / (unit * h));
-    const ys = feet(sp.pose, h, RIG, true).map((p) => p[1] / h);
+    const ys = feet(sp.pose, h, true).map((p) => p[1] / h);
     const sitting = legOf(keys, t).sit;
     if (!prev || sitting) bearing = standing(ys);
     else {
@@ -2999,7 +1865,6 @@ export function sceneTurnProblems(rt: SceneRuntime): string[] {
   const bad: string[] = [];
   const n = Math.max(1, Math.round(rt.duration / TURN_STEP));
   for (const m of rt.cast) {
-    if (!m.world) continue;
     const h = rt.heights[m.id] ?? 1;
     const ts: number[] = [];
     const ys: number[] = [];
@@ -3080,13 +1945,14 @@ export function sceneTurnProblems(rt: SceneRuntime): string[] {
       );
       while (i < peaks.length && peaks[i] < back) i++;
     }
-    // `steps` khai ít quá: một nhịp bước quay quá `TURN_STEP_MAX`
+    // `steps` khai ít quá: rig bước nhiều nhịp hơn số khai
     const keys = m.world.path ?? [];
     for (let k = 1; k < keys.length; k++) {
-      const turn = keys[k].steps && turnOf(keys[k - 1], keys[k]);
-      if (!turn || Math.abs(turn.delta) / turn.steps <= TURN_STEP_MAX) continue;
+      const told = keys[k].steps;
+      const turn = told && turnOf(keys[k - 1], keys[k]);
+      if (!turn || turn.steps === told) continue;
       bad.push(
-        `\`${m.id}\` giây ${sec(keys[k - 1].t)}–${sec(keys[k].t)}: quay tại chỗ ${Math.round(Math.abs(turn.delta))}° trong ${turn.steps} nhịp, mỗi nhịp ${Math.round(Math.abs(turn.delta) / turn.steps)}° (nhiều nhất ${TURN_STEP_MAX}°) — bàn chân bước vòng quanh hông; tăng \`steps\` lên ${Math.ceil(Math.abs(turn.delta) / TURN_STEP_MAX)}, hay bỏ trống cho rig tự chia`,
+        `\`${m.id}\` giây ${sec(keys[k - 1].t)}–${sec(keys[k].t)}: quay tại chỗ ${Math.round(Math.abs(turn.delta))}° khai \`steps\` ${told}, mỗi nhịp quá ${TURN_STEP_MAX}° — rig bước ${turn.steps} nhịp; khai \`steps\` ${turn.steps}, hay bỏ trống cho rig tự chia`,
       );
     }
   }
@@ -3250,10 +2116,121 @@ export function sceneStopProblems(rt: SceneRuntime): string[] {
   return bad;
 }
 
+/** Clip đi hoà vào lâu hơn ngần này giây (`blend`) mới tính là hoà */
+const WALK_IN_BLEND = 0.05;
+/** `path` nhanh hơn ngần này (đơn vị rig mỗi giây) là đang chạy */
+const WALK_IN_SPEED = 60;
+/** Trước clip `path` chậm dưới phần này tốc lúc clip bắt đầu là còn đứng: khởi hành từ đứng */
+const WALK_IN_REST = 0.3;
+
+/** Tốc độ `path` (đơn vị thế giới mỗi giây) của quãng chứa `time`, `0` khi đứng hay ngồi */
+function pathSpeedAt(keys: WorldKey[], time: number): number {
+  const { a, b, sit } = legOf(keys, time);
+  return !b || sit ? 0 : Math.hypot(b.at[0] - a.at[0], b.at[2] - a.at[2]) / (b.t - a.t);
+}
+
+/**
+ * Giây đầu clip `clip` của track `track` lái chân người `id` (`legSourceAt`) khi đoạn hoà vào còn quá `WALK_IN_BLEND`
+ * giây; bị che suốt đoạn ấy thì `undefined`
+ */
+function walkInLive(rt: SceneRuntime, id: string, track: number, clip: number, c: Clip) {
+  const end = c.start + c.tau - WALK_IN_BLEND + 1e-9;
+  // nguồn chân chỉ đổi ở đầu clip và cuối đoạn hoà của clip
+  const times = member(rt, id)
+    .tracks.flatMap((tr) => tr.clips.flatMap((k) => [k.start, k.start + k.tau]))
+    .filter((t) => t > c.start && t <= end);
+  return [c.start, ...times]
+    .sort((a, b) => a - b)
+    .find((t) => {
+      const src = legSourceAt(rt, id, t);
+      return src?.track === track && src.clip === clip;
+    });
+}
+
+/**
+ * Người 3D đi theo `path` mà clip đi hoà vào (`blend` quá `WALK_IN_BLEND` giây) từ tư thế không đi trong lúc `path` đã
+ * chạy (nhanh hơn `WALK_IN_SPEED · s` đơn vị/s, `LAUNCH_REST` giây ngay trước đã quá `WALK_IN_REST` phần tốc ấy): người đứng sững rồi lao
+ * theo `path`. Chỉ xét từ lúc clip lái chân (`legSourceAt`); khởi hành từ đứng (`path` đứng yên trước đó) và quay rồi đi không
+ * báo. docs/03-scene.md#check-cho-người-3d
+ */
+export function sceneWalkInProblems(rt: SceneRuntime): string[] {
+  if (!rt.lens) return [];
+  const bad: string[] = [];
+  for (const m of rt.cast) {
+    const w = m.world;
+    if (!w?.path) continue;
+    const keys = keysOf(w);
+    for (const [k, tr] of m.tracks.entries())
+      for (const [i, c] of tr.clips.entries()) {
+        if (!c.stride || c.tau <= WALK_IN_BLEND || (c.start > 0 && strideClip(m, c.start - 1e-6)))
+          continue;
+        const t0 = walkInLive(rt, m.id, k, i, c);
+        if (t0 === undefined) continue;
+        const v = pathSpeedAt(keys, t0 + 1e-6);
+        if (v < WALK_IN_SPEED * w.s) continue;
+        // khởi hành từ đứng: `LAUNCH_REST` giây ngay trước clip `path` còn chậm dưới `WALK_IN_REST` phần tốc lúc ấy
+        const [p, q] = [keyAt(keys, t0 - LAUNCH_REST).xz, keyAt(keys, t0).xz];
+        const moved = Math.hypot(q[0] - p[0], q[1] - p[1]);
+        if (t0 >= LAUNCH_REST - 1e-9 && moved < WALK_IN_REST * v * LAUNCH_REST) continue;
+        bad.push(
+          `\`${m.id}\` giây ${t0.toFixed(2)}: clip đi \`${c.file}\` hoà vào ${+c.tau.toFixed(2)} s từ tư thế không đi trong khi \`path\` đã chạy ${Math.round(v)} đơn vị/s — người đứng sững rồi lao theo \`path\`: khai \`blend: 0\` cho clip đi khi vào cảnh đang đi, hay cho \`path\` đứng yên ở chỗ ấy ít nhất ${LAUNCH_REST} s rồi mới rời chỗ`,
+        );
+      }
+  }
+  return bad;
+}
+
+/** Mốc `path` có `yaw` lệch hướng đi quá ngần này độ thì kêu */
+const WALK_YAW_OFF = 45;
+/** Quãng ngắn hơn ngần này (đơn vị rig, nhân `world.s`) là bước dời chỗ, không đo hướng đi */
+const WALK_YAW_LEG = 100;
+
+/**
+ * Mốc `path` của người 3D có `yaw` lệch hướng đi quá `WALK_YAW_OFF`: mốc giữa đường so với phân giác hai quãng kề, mốc
+ * đầu so với quãng sau, mốc dừng so với quãng tới; chỉ quãng dài từ `WALK_YAW_LEG · s` có clip đi lái chân (đi lùi thì hướng
+ * lưng). Thân lái
+ * nhạt dần khi hướng tới lệch `yaw` khai (`STEER_BACK`), nhịp chân tụt, hông bỏ `path` rồi lao theo. Mốc cuối của cú quay
+ * tại chỗ là việc của `sceneLaunchProblems`. docs/03-scene.md#check-cho-người-3d
+ */
+export function sceneWalkYawProblems(rt: SceneRuntime): string[] {
+  if (!rt.lens) return [];
+  const bad: string[] = [];
+  for (const m of rt.cast) {
+    const keys = m.world?.path;
+    if (!keys) continue;
+    const short = WALK_YAW_LEG * m.world.s;
+    const walking = (i: number) => {
+      const [a, b] = [keys[i], keys[i + 1]];
+      if (!a || !b || a.sit || b.sit) return;
+      if (Math.hypot(b.at[0] - a.at[0], b.at[2] - a.at[2]) < short) return;
+      const clip = strideClip(m, (a.t + b.t) / 2);
+      return clip && legHeading(a, b, clip);
+    };
+    keys.forEach((k, i) => {
+      const [hin, hout] = [walking(i - 1), walking(i)];
+      let ref: number;
+      let where: string;
+      if (hin !== undefined && hout !== undefined) {
+        ref = hin + wrap180(hout - hin) / 2;
+        where = "phân giác hai quãng kề";
+      } else if (hout !== undefined) {
+        if (i > 0 && turnOf(keys[i - 1], k)) return;
+        [ref, where] = [hout, "hướng quãng sau"];
+      } else if (hin !== undefined) [ref, where] = [hin, "hướng quãng tới"];
+      else return;
+      const off = wrap180(k.yaw - ref);
+      if (Math.abs(off) <= WALK_YAW_OFF) return;
+      bad.push(
+        `\`${m.id}\` mốc \`world.path\` giây ${+k.t.toFixed(3)}: \`yaw\` ${+k.yaw.toFixed(1)} lệch hướng đi ${Math.round(Math.abs(off))}° (${where}: ${Math.round(k.yaw - off)}) — thân lái nửa vời, hông bỏ \`path\` rồi lao theo: đặt \`yaw\` ${Math.round(k.yaw - off)}, hay sinh đoạn đi bằng \`stickman gen walk\``,
+      );
+    });
+  }
+  return bad;
+}
+
 /**
  * Hướng của người 3D tại `time`, độ: `said` là yaw khai (nội suy `path`), `yaw` là hướng thân nhắm
- * tới (người đi: hướng theo `path`, trước giới hạn tốc quay). Người không có `world` thì
- * `undefined`. Hướng vẽ là `sceneAt(…).world.yaw`.
+ * tới (người đi: hướng theo `path`, trước giới hạn tốc quay). Hướng vẽ là `sceneAt(…).world.yaw`.
  */
 export function worldFacingAt(
   rt: SceneRuntime,
@@ -3261,28 +2238,47 @@ export function worldFacingAt(
   time: number,
   height = 1,
   dims: Body3 = rt.bodies[id] ?? BODY3,
-): { said: number; yaw: number } | undefined {
+): { said: number; yaw: number } {
   const m = member(rt, id);
-  if (!m.world || !rt.lens) return;
   const walk = walkerOf(rt, m, height, dims.hipHalf);
   const pose = worldPoseAt(m, time, walk, height, dims.hipHalf);
-  const at = worldAt(rt.lens, m.world, time, pose, height, dims.legHalf, walk);
+  const at = worldAt(lensOf(rt), m.world, time, pose, height, dims.legHalf, walk);
   return { said: keyAt(keysOf(m.world), time).yaw, yaw: at.yaw };
 }
 
-type PathKey = Required<PathKey0>;
 type CameraKey = Unmarked<z.infer<typeof CameraKeySchema>>;
 type FadeKey = Unmarked<z.infer<typeof FadeKeySchema>>;
-type FlipKey = Unmarked<z.infer<typeof FlipKeySchema>>;
-type ViewKey = Unmarked<z.infer<typeof ViewKeySchema>>;
 
-type WorldSpec = NonNullable<CastMember["world"]>;
+type WorldSpec = CastMember["world"];
 type WorldKey = NonNullable<WorldSpec["path"]>[number];
+
+/**
+ * Lượt đầu của clip (`start` tới hết một `cycle` từ `phase`) nằm trọn trong đoạn có mốc ngồi của `path`: hông nội suy giữa
+ * các mốc, không suy từ bàn chân, nên clip chạy theo giờ — ngồi xuống, đứng dậy, nhổm lên không phải clip có sải chân
+ */
+function seatedRun(keys: WorldKey[], c: Clip): boolean {
+  const from = c.start;
+  const to = c.start + c.cycle * (1 - (((c.phase % 1) + 1) % 1));
+  if (from < keys[0].t && !keys[0].sit) return false;
+  return keys.every((k, i) => {
+    const next = keys[i + 1];
+    const end = next ? next.t : Infinity;
+    return end <= from || k.t >= to || k.sit || !!next?.sit;
+  });
+}
 
 const keysOf = (w: WorldSpec): WorldKey[] =>
   w.path ?? [{ t: 0, at: w.at!, yaw: w.yaw, sit: w.sit, ease: false }];
 
 const wrap180 = (a: number) => ((((a + 180) % 360) + 360) % 360) - 180;
+
+/** Lệch `yaw` (độ, có dấu) từ mốc `from` tới mốc `to` theo đường ngắn; lệch đúng nửa vòng giữ dấu của lệch thô (`0 → 180` quay phải) */
+export function yawDelta(from: number, to: number): number {
+  const raw = to - from;
+  const d = wrap180(raw);
+  // số thực của `yaw` lớn lệch nửa vòng ra ±179,99999…: so có dung sai
+  return Math.abs(Math.abs(d) - 180) < 1e-6 ? Math.sign(raw) * 180 : d;
+}
 
 /** Đoạn `path` chứa `time`: mốc trước, mốc sau (nếu đang đi giữa hai mốc), tỉ lệ đã êm, và có ngồi không */
 function legOf(keys: WorldKey[], time: number) {
@@ -3306,7 +2302,7 @@ function keyAt(keys: WorldKey[], time: number) {
     y: mix(a.at[1], b.at[1]),
     yaw: turn
       ? a.yaw + turn.delta * turnShare(turn.steps, (time - a.t) / (b.t - a.t))
-      : a.yaw + wrap180(b.yaw - a.yaw) * u,
+      : a.yaw + yawDelta(a.yaw, b.yaw) * u,
   };
 }
 
@@ -3314,7 +2310,7 @@ function keyAt(keys: WorldKey[], time: number) {
 const TURN_STEP_MIN = 15;
 /** Một nhịp bước quay (một chân bước, chân kia xoay trên sàn) quay nhiều nhất ngần này độ */
 const TURN_STEP_MAX = 90;
-/** Phần nhịp mà chân bước đặt xuống trước khi thân dừng, và chân xoay chờ trước khi trượt */
+/** Phần nhịp mà chân bước đặt xuống trước cuối nhịp, và chân xoay chờ trước khi trượt */
 const TURN_LAG = 0.15;
 /** Bàn chân bước nhấc cao nhất, phần độ dài chân */
 const TURN_LIFT = 0.07;
@@ -3326,22 +2322,36 @@ const TURN_DIP_RAMP = 0.2;
 const TURN_KNEE_LIFT = 0.01;
 /** Thân nghiêng về chân xoay khi chân kia nhấc, độ */
 const TURN_LEAN = 3;
+/** Quay tại chỗ: đầu nhìn trước tới hướng thân ngần này giây sau, lệch thân không quá `HEAD_LEAD_MAX` độ */
+const HEAD_LEAD = 0.12;
+const HEAD_LEAD_MAX = 25;
 
-/**
- * Hai mốc đứng cùng `at` khác `yaw` là quay tại chỗ: góc quay (độ, có dấu) và số nhịp bước — `b.steps`
- * khai thì theo nó (kể cả dưới `TURN_STEP_MIN`), không thì mỗi nhịp tới `TURN_STEP_MAX`
- */
-function turnOf(a: WorldKey, b: WorldKey) {
-  if (a.sit || b.sit || a.at[0] !== b.at[0] || a.at[2] !== b.at[2]) return;
-  const delta = wrap180(b.yaw - a.yaw);
-  if (delta === 0 || (!b.steps && Math.abs(delta) < TURN_STEP_MIN)) return;
-  return { delta, steps: b.steps ?? Math.ceil(Math.abs(delta) / TURN_STEP_MAX) };
+/** Hai mốc đứng cùng `at` khác `yaw`: góc quay tại chỗ (độ, có dấu), có bước chân hay không */
+function spinOf(a: WorldKey, b: WorldKey): number {
+  if (a.sit || b.sit || a.at[0] !== b.at[0] || a.at[2] !== b.at[2]) return 0;
+  return yawDelta(a.yaw, b.yaw);
 }
 
-/** Phần góc đã quay ở `u` (0..1) của cú quay `steps` nhịp: mỗi nhịp thân quay êm một lượt, dừng giữa hai nhịp */
+/**
+ * Quay tại chỗ bằng bước chân (`spinOf`): góc quay (độ, có dấu) và số nhịp — `b.steps` khai thì theo nó (kể cả dưới
+ * `TURN_STEP_MIN`) nhưng không ít hơn `ceil(|góc| / TURN_STEP_MAX)`, không thì đúng chừng ấy
+ */
+function turnOf(a: WorldKey, b: WorldKey) {
+  const delta = spinOf(a, b);
+  if (delta === 0 || (!b.steps && Math.abs(delta) < TURN_STEP_MIN)) return;
+  return { delta, steps: Math.max(b.steps ?? 0, Math.ceil(Math.abs(delta) / TURN_STEP_MAX)) };
+}
+
+/**
+ * Phần góc đã quay ở `u` (0..1) của cú quay `steps` nhịp: mỗi nhịp một đoạn Hermite, tốc `0` ở đầu và cuối cả cú,
+ * qua chỗ nối hai nhịp đúng tốc trung bình — thân quay liền, đúng góc của nhịp ở mỗi chỗ nối
+ */
 function turnShare(steps: number, u: number): number {
   const { v, j } = turnBeat(steps, u);
-  return (j + smoothstep(Math.max(0, v - j))) / steps;
+  const w = Math.min(1, Math.max(0, v - j));
+  const m0 = j > 0 ? 1 : 0;
+  const m1 = j < steps - 1 ? 1 : 0;
+  return (j + w * w * (3 - 2 * w) + m0 * w * (1 - w) ** 2 - m1 * w * w * (1 - w)) / steps;
 }
 
 /** Nhịp `j` và vị trí `v` (theo nhịp) ở `u` của cú quay `steps` nhịp; `u` tính bằng dấu phẩy động nên đầu nhịp có dung sai */
@@ -3350,10 +2360,20 @@ function turnBeat(steps: number, u: number): { v: number; j: number } {
   return { v, j: Math.min(steps - 1, Math.floor(v + 1e-6)) };
 }
 
-/** Chân bước ở nhịp `j` của cú quay: nhịp đầu chân phía quay (quay phải — `delta` dương — là chân phải), nhịp sau đổi chân; kênh chưa đổi theo lật */
-function turnLead(delta: number, j: number, flip0: boolean): "ln" | "lf" {
+/**
+ * Chân bước ở nhịp `j` của cú quay `steps` nhịp, hai chân luân phiên: nhịp đầu là chân phía quay (quay phải — `delta`
+ * dương — là chân phải); cú quay nối đi (`joined`) thì nhịp cuối là chân phía quay, đếm ngược từ nó. Kênh chưa đổi theo lật
+ */
+function turnLead(
+  delta: number,
+  j: number,
+  steps: number,
+  joined: boolean,
+  flip0: boolean,
+): "ln" | "lf" {
   const right = flip0 ? "lf" : "ln";
-  return delta > 0 === (j % 2 === 0) ? right : right === "ln" ? "lf" : "ln";
+  const k = joined ? steps - 1 - j : j;
+  return delta > 0 === (k % 2 === 0) ? right : right === "ln" ? "lf" : "ln";
 }
 
 /** Chỗ nối quay rồi đi còn lệch hướng quãng đi quá ngần này độ sau khi bẻ cú quay thì `check` gợi ý `yaw` */
@@ -3408,7 +2428,7 @@ interface TurnWalk {
   beat: number;
 }
 
-const turnWalkCache = new WeakMap<Acting, TurnWalk[]>();
+const turnWalkCache = new WeakMap<CastMember, TurnWalk[]>();
 
 /** Hướng (độ) của quãng `b → next` mà clip `clip` đi: clip đi lùi thì lưng về phía ấy */
 function legHeading(b: WorldKey, next: WorldKey, clip: Clip): number {
@@ -3422,7 +2442,7 @@ function legHeading(b: WorldKey, next: WorldKey, clip: Clip): number {
  * quãng đi.
  */
 function turnWalkWhy(
-  m: Acting,
+  m: CastMember,
   a: WorldKey,
   b: WorldKey,
   next: WorldKey,
@@ -3486,7 +2506,7 @@ function aimFix(a: WorldKey, b: WorldKey, delta: number, want: number): string {
   return `đặt \`yaw\` ${yaw}${slow}`;
 }
 
-function turnWalks(m: Acting): TurnWalk[] {
+function turnWalks(m: CastMember): TurnWalk[] {
   const hit = turnWalkCache.get(m);
   if (hit) return hit;
   const out: TurnWalk[] = [];
@@ -3555,7 +2575,7 @@ function joinStride(j: WalkJoin, V: [number, number], t: number): number {
  * đi và quãng còn ít nhất một bước của clip, dưới nửa bước thì `1` — bước co dồn nhịp chân, pha lệch ở
  * chỗ clip hết hay chỗ quãng rẽ làm hông tụt
  */
-function joinShort(m: Acting, tw: TurnWalk, t1: number): number {
+function joinShort(m: CastMember, tw: TurnWalk, t1: number): number {
   const tr = m.tracks.find((tr) => tr.clips.includes(tw.clip));
   const after = tr?.clips[tr.clips.indexOf(tw.clip) + 1];
   const room = Math.min(after?.start ?? Infinity, tw.next.t) - t1;
@@ -3667,9 +2687,9 @@ interface StopWalk {
   turn?: WorldKey;
 }
 
-const stopWalkCache = new WeakMap<Acting, StopWalk[]>();
+const stopWalkCache = new WeakMap<CastMember, StopWalk[]>();
 
-function stopWalks(m: Acting): StopWalk[] {
+function stopWalks(m: CastMember): StopWalk[] {
   const hit = stopWalkCache.get(m);
   if (hit) return hit;
   const out: StopWalk[] = [];
@@ -3900,7 +2920,7 @@ function worldToBody(H: [number, number], yaw: number, s: number, p: [number, nu
  * lúc chân ấy chạm sàn trong clip đi; chân kia bước khép về chỗ của nó sau `STOP_GAP`. Nhịp bước theo
  * nhịp chân lúc `tp`, bàn chân bay không nhanh hơn một bước của clip đi.
  */
-function planStop(m: Acting, s: WalkStop, w: Walker, height: number, hipHalf: number) {
+function planStop(m: CastMember, s: WalkStop, w: Walker, height: number, hipHalf: number) {
   const ws = m.world as WorldSpec;
   const step = w.step;
   const k = s.k0 - 1;
@@ -4034,7 +3054,7 @@ function planStop(m: Acting, s: WalkStop, w: Walker, height: number, hipHalf: nu
  * như `turnStep`. docs/03-scene.md#dừng-ở-mốc
  */
 function stopStep(
-  m: Acting,
+  m: CastMember,
   time: number,
   pose: Pose,
   walk: Walker,
@@ -4121,9 +3141,9 @@ interface Walker {
 }
 
 /** Clip có sải chân bám lại path trong ngần này giây khi tụt trước / sau mốc */
-const TRACK_ALONG = 0.5;
+export const TRACK_ALONG = 0.5;
 /** Người đang bước nhìn về chỗ `path` sẽ tới sau ngần này giây */
-const STEER_AHEAD = 0.35;
+export const STEER_AHEAD = 0.35;
 /** Đi chậm hơn ngần này (đơn vị rig mỗi giây), hay cách chỗ nhìn tới gần hơn ngần này (đơn vị rig), thì hướng thân nhạt dần về `yaw` khai */
 const STEER_SPEED = 60;
 const STEER_NEAR = 30;
@@ -4135,13 +3155,13 @@ const RATE_TAU = 0.15;
  * Thân người đang bước quay nhanh nhất ngần này (độ mỗi giây): cú quay trải qua cả một pha trụ nên
  * hông xoay quanh bàn chân trụ không văng ra
  */
-const TURN_WALK = 150;
+export const TURN_WALK = 150;
 /** Như `TURN_WALK` khi không bước — quay tại chỗ, ngồi: chỉ chặn cú nhảy một khung */
 const TURN_STAND = 720;
 /** Nhịp chân nhanh nhất so với nhịp khai của clip */
 const RATE_MAX = 2.5;
 /** Clip trôi một lượt dưới ngần này (đơn vị rig) là không có sải chân */
-const STRIDE_MIN = 1;
+export const STRIDE_MIN = 1;
 
 const sampleAt = (xs: number[], step: number, t: number) => {
   const last = xs.length - 1;
@@ -4161,7 +3181,7 @@ const clockOf = (w: Walker): Clock =>
   );
 
 /** Clip có sải chân đang lái chân lúc `time` (`tail`: kể cả lúc nó đang hoà ra), track sau đè track trước */
-function strideClip(m: Acting, time: number, tail = true): Clip | undefined {
+function strideClip(m: CastMember, time: number, tail = true): Clip | undefined {
   let out: Clip | undefined;
   for (const tr of m.tracks) {
     const i = activeClip(tr, time);
@@ -4405,7 +3425,7 @@ function bakeWalker(
     // pha clip đi tự căn: chân bước của nhịp cuối đặt xuống đúng lúc nó chạm gót trong chu kỳ đi
     if (!k)
       for (const j of joins) {
-        const lead = turnLead(j.turn.delta, j.turn.steps - 1, f.flip);
+        const lead = turnLead(j.turn.delta, j.turn.steps - 1, j.turn.steps, true, f.flip);
         const s0 = joinClock(j, step, j.clip.start);
         const strike = clipStrike(j.clip, lead, f.flip);
         const shift = strike - (joinClock(j, step, j.land) - s0) / j.clip.cycle;
@@ -4419,7 +3439,7 @@ function bakeWalker(
       prevF = [prevF[1], prevF[0]];
     }
     const pose = worldPoseAt(m, t, out, height, hipHalf);
-    const ys = feet(pose, height, RIG, true).map((q) => q[1]);
+    const ys = feet(pose, height, true).map((q) => q[1]);
     lift = Math.max(...ys);
     out.lift.push(lift);
     hip[1] = key.y - w.s * lift;
@@ -4462,6 +3482,98 @@ function bakeWalker(
   return out;
 }
 
+/** Bảng `Walker` đã nướng của một người đi `path` và lịch của nó, chỉ đọc — nguồn số của `gaitTrace` (`core/gait.ts`) */
+export interface WalkerTable {
+  step: number;
+  x: readonly number[];
+  z: readonly number[];
+  /** Yaw thân thật (độ, liền) và yaw thân nhắm tới */
+  yaw: readonly number[];
+  yaw0: readonly number[];
+  clock: readonly number[];
+  stride: readonly number[];
+  keys: readonly WorldKey[];
+  /** Chỗ dừng đã ghép: sải bắt đầu co (`from`), hông bắt đầu giảm tốc (`tp`), bước khép xong (`done`), mốc dừng */
+  stops: { from: number; tp: number; done: number; at: number }[];
+  /** Chỗ nối quay rồi đi: đầu nhịp cuối của cú quay, mốc cuối cú quay */
+  joins: { from: number; at: number }[];
+  /** Clip có sải chân lái chân lúc `t`, kể cả đuôi hoà: track, chỉ số clip, sải mỗi chu kỳ (đơn vị rig, `height` 1), pha không cuộn */
+  clipAt(t: number): { track: number; clip: number; stride: number; phase: number } | undefined;
+  /** Đoạn `path` chứa `t` (`legOf`): chỉ số mốc trước, mốc sau khi đang giữa hai mốc, tỉ lệ đã êm, ngồi */
+  legAt(t: number): { i: number; b?: number; u: number; sit: boolean };
+  /** Điểm sàn `[x, z]` của `path` lúc `t` (`keyAt`) */
+  pathAt(t: number): [number, number];
+  /** Cú quay tại chỗ của đoạn `i → i + 1` (`turnOf`) */
+  turnAt(i: number): { delta: number; steps: number } | undefined;
+}
+
+export function walkerTable(
+  rt: SceneRuntime,
+  id: string,
+  height = 1,
+  dims: Body3 = rt.bodies[id] ?? BODY3,
+): WalkerTable | undefined {
+  const m = member(rt, id);
+  const w = walkerOf(rt, m, height, dims.hipHalf);
+  if (!w) return;
+  const keys = keysOf(m.world);
+  const clock = clockOf(w);
+  return {
+    step: w.step,
+    x: w.x,
+    z: w.z,
+    yaw: w.yaw,
+    yaw0: w.yaw0,
+    clock: w.clock,
+    stride: w.stride,
+    keys,
+    stops: w.stops.map((s) => ({
+      from: s.tp - s.lead,
+      tp: s.tp,
+      done: s.plan?.done ?? s.t1,
+      at: s.b.t,
+    })),
+    joins: w.joins.map((j) => ({ from: j.from, at: j.b.t })),
+    clipAt: (t) => {
+      const c = strideClip(m, t);
+      if (!c) return;
+      const track = m.tracks.findIndex((tr) => tr.clips.includes(c));
+      return {
+        track,
+        clip: m.tracks[track].clips.indexOf(c),
+        stride: c.stride as number,
+        phase: clockPhase(c, t, clock),
+      };
+    },
+    legAt: (t) => {
+      const { i, b, u, sit } = legOf(keys, t);
+      return { i, ...(b && { b: i + 1 }), u, sit };
+    },
+    pathAt: (t) => keyAt(keys, t).xz,
+    turnAt: (i) => (keys[i + 1] ? turnOf(keys[i], keys[i + 1]) : undefined),
+  };
+}
+
+/**
+ * Track và clip đang lái chân người `id` lúc `time` (`writesLegs`): track sau đè track trước, clip đang hoà vào sau một clip
+ * ghi chân vẫn tính cho track ấy. Không track nào ghi chân thì `undefined`
+ */
+export function legSourceAt(
+  rt: SceneRuntime,
+  id: string,
+  time: number,
+): { track: number; clip: number } | undefined {
+  let out: { track: number; clip: number } | undefined;
+  member(rt, id).tracks.forEach((tr, track) => {
+    const clip = activeClip(tr, time);
+    if (clip < 0) return;
+    const c = tr.clips[clip];
+    const was = clip > 0 ? tr.clips[clip - 1] : undefined;
+    if (writesLegs(c) || (was && writesLegs(was) && time - c.start < c.tau)) out = { track, clip };
+  });
+  return out;
+}
+
 /**
  * Người 3D tại `time`: tâm hông thế giới — ngồi thì nâng khỏi mặt ngồi nửa bề dày đùi, đứng thì
  * bàn chân thấp nhất chạm sàn —, rồi hướng thật so với ống kính. Đứng yên (`at`) thì đặt thẳng;
@@ -4478,13 +3590,17 @@ function worldAt(
 ): { world: World; yaw: number } {
   const keys = keysOf(w);
   const { a, b, u, sit } = legOf(keys, time);
-  const stand = Math.max(...feet(pose, height, RIG, true).map((f) => f[1]));
+  const stand = Math.max(...feet(pose, height, true).map((f) => f[1]));
   const key = keyAt(keys, time);
   const xz = walk ? [sampleAt(walk.x, walk.step, time), sampleAt(walk.z, walk.step, time)] : key.xz;
   const yaw = walk ? sampleAt(walk.yaw0, walk.step, time) : key.yaw;
-  // Đang ngồi xuống hay đứng dậy: mốc đứng giữ độ cao hông của chính lúc ấy, không theo chân đang co
+  // Đang ngồi xuống hay đứng dậy: mốc đứng giữ độ cao hông của chính lúc ấy, không theo chân đang co; người ngồi dựng
+  // chân từ khớp hông, người đứng từ trên nó `BONES3.limb`, nên mốc đứng cộng phần ấy cho chân không nhảy lúc đổi
   const liftAt = (k: WorldKey) =>
-    k.sit ? legHalf : walk ? sampleAt(walk.lift, walk.step, k.t) : (RIG.thigh + RIG.shin) * height;
+    k.sit
+      ? legHalf
+      : (walk ? sampleAt(walk.lift, walk.step, k.t) : (RIG.thigh + RIG.shin) * height) +
+        BONES3.limb * 100;
   let y = key.y - w.s * stand;
   if (sit) {
     const ya = a.at[1] - w.s * liftAt(a);
@@ -4900,8 +4016,6 @@ function handAt(
   }
   const pa = one(ra, a.t);
   const pb = one(rb, b.t);
-  // hai mốc cùng có đích mà một bên không khai hướng khuỷu: giữ hướng của bên kia, không nội suy
-  if (pa && pb && !!pa.elbow !== !!pb.elbow) pa.elbow = pb.elbow = pa.elbow ?? pb.elbow;
   const near =
     rb?.ease === "auto" && pa && pa.w > 0 && pb && pb.w > 0
       ? autoNear(ks, i, (k) => k[side]?.ease === "auto")
@@ -4924,7 +4038,7 @@ function handAt(
           w: r.w,
           at: r.at,
           ...(r.terms && { terms: r.terms }),
-          ...("spline" in r && r.spline && { spline: r.spline }),
+          ...("spline" in r && r.spline ? { spline: r.spline } : {}),
         });
   const lock = keyLock(ks, side, time);
   if (!(out && lock > 0)) return finish(out, pa, pb);
@@ -5010,12 +4124,15 @@ function autoReach(
     c: readonly number[],
     d: readonly number[] | undefined,
   ) => hermiteN(a, b, c, d, n.h0, n.h, n.h2, u) as V3;
-  const elbow = p1.elbow && p2.elbow && cubic(p0?.elbow, p1.elbow, p2.elbow, p3?.elbow);
+  // một mốc không khai hướng khuỷu: hướng của mốc kia nhạt dần về khuỷu ưu tiên như số hạng
+  const elbow =
+    p1.elbow && p2.elbow ? cubic(p0?.elbow, p1.elbow, p2.elbow, p3?.elbow) : (p1.elbow ?? p2.elbow);
+  const elbowW = p1.elbow && p2.elbow ? 1 : p1.elbow ? 1 - smoothstep(u) : smoothstep(u);
   const marked = [p0, p1, p2, p3].some((r) => r?.terms);
   return {
     w: 1,
     at: cubic(raw(p0), p1.at, p2.at, raw(p3)),
-    ...(elbow && { elbow }),
+    ...(elbow && { elbow, ...(elbowW < 1 && { elbowW }) }),
     ...(marked && {
       terms: mixTerms(termsOf(p1), termsOf(p2), smoothstep(u)),
       spline: {
@@ -5819,11 +4936,7 @@ function graspStart(
         W: matVec(Rt, sub3(q.Wp, q.inp.S)),
         R: matMul(Rt, q.Rw),
         phi: a.phi,
-        wrist: [
-          clampTo(w.turn, TURN_MAX),
-          clampRange(w.bend, AIM_BEND),
-          clampRange(w.dev, AIM_DEV),
-        ],
+        wrist: wristClamp([w.turn, w.bend, w.dev]),
         over: [w.over.turn, w.over.bend, w.over.dev],
       });
       prev = a.phi;
@@ -5891,7 +5004,6 @@ function priorChoice(
   return (c && hg.inherit?.(c)) || { choice: hg.choice };
 }
 
-const clampTo = (v: number, L: number) => Math.max(-L, Math.min(L, v));
 const wrapDeg = (a: number) => ((((a + 180) % 360) + 360) % 360) - 180;
 const lerpN = (a: readonly number[], b: readonly number[], f: number) =>
   a.map((x, i) => x + (b[i] - x) * f);
@@ -6429,8 +5541,8 @@ const WRIST_KEYS = ["turn", "bend", "dev"] as const;
 /**
  * Tay `side` của người `id` ở `time` như người 3D vẽ (cùng lần giải với `act`, `actJoints`): chế độ và lần cầm, `φ`, `φ₀`,
  * góc cổ tay trước và sau kẹp, khớp, đường tròn khuỷu và `E(φ)` trên nó, tâm nắm. `o.char`: nhân vật như vẽ
- * (`Figure.body`), bỏ trống là `rt.chars[id]`; `o.eye`: mắt ống kính (thế giới rig) cho ý định `camera`. Người không có
- * `world` thì `undefined`. docs/11-nhom-cam.md § Báo tay cho studio
+ * (`Figure.body`), bỏ trống là `rt.chars[id]`; `o.eye`: mắt ống kính (thế giới rig) cho ý định `camera`.
+ * docs/11-nhom-cam.md § Báo tay cho studio
  */
 export function handReport(
   rt: SceneRuntime,
@@ -6442,7 +5554,6 @@ export function handReport(
   const c =
     o.char ?? rt.chars?.[id] ?? fail(`\`handReport\`: thiếu nhân vật của \`${id}\` (\`o.char\`)`);
   const sp0 = sceneAt(rt, id, time, rt.heights[id] ?? 1, rt.bodies[id] ?? BODY3);
-  if (!sp0.world) return undefined;
   const sp = (o.eye ? { ...sp0, world: { ...sp0.world, eye: [...o.eye] } } : sp0) as ActInput;
   const a = actArm(c, sp, sideSign(side));
   if (!a) return undefined;
@@ -6514,13 +5625,11 @@ export function handReport(
  */
 function castMarkAt(rt: SceneRuntime, id: string, mark: BodyMark | undefined, time: number): V3 {
   const m = member(rt, id);
-  const lens =
-    (m.world && rt.lens) || fail(`\`${id}\`: \`face: { cast }\` cần người 3D (\`cast[].world\`)`);
   const height = rt.heights[id] ?? 1;
   const dims = rt.bodies[id] ?? BODY3;
   const walk = walkerOf(rt, m, height, dims.hipHalf);
   const pose = worldPoseAt(m, time, walk, height, dims.hipHalf);
-  const w = worldAt(lens, m.world!, time, pose, height, dims.legHalf, walk).world;
+  const w = worldAt(lensOf(rt), m.world, time, pose, height, dims.legHalf, walk).world;
   const B = bones3(height);
   const k = 100 * w.s;
   const bend = (pose.torso ?? 0) * D;
@@ -6628,8 +5737,8 @@ function checkHolds(
               heldAxis(spec, a.axis);
               const t = a.toward;
               if (typeof t === "object" && !Array.isArray(t) && "cast" in t) {
-                const c = cast.find((m) => m.id === t.cast);
-                if (!c?.world) throw new Error(`\`${t.cast}\` không phải người 3D trong \`cast\``);
+                if (!cast.some((m) => m.id === t.cast))
+                  throw new Error(`không có \`${t.cast}\` trong \`cast\``);
                 if (t.mark && !(CAST_MARKS as readonly string[]).includes(t.mark))
                   throw new Error(`mốc trên người khác chỉ ước được ${CAST_MARKS.join(", ")}`);
               }
@@ -6773,14 +5882,11 @@ export function holderTrunk(rt: SceneRuntime, id: string, time: number, o: ItemO
   const hit = memo.get(key);
   if (hit) return hit;
   const m = member(rt, id);
-  const lens =
-    (m.world && rt.lens) ||
-    fail(`\`${id}\`: người cầm món đặt trước phải là người 3D (\`cast[].world\`)`);
   const height = rt.heights[id] ?? 1;
   const dims = rt.bodies[id] ?? BODY3;
   const walk = walkerOf(rt, m, height, dims.hipHalf);
   const pose = worldPoseAt(m, time, walk, height, dims.hipHalf);
-  const world = worldAt(lens, m.world!, time, pose, height, dims.legHalf, walk).world;
+  const world = worldAt(lensOf(rt), m.world, time, pose, height, dims.legHalf, walk).world;
   const T = trunk3(c, { pose, world })!;
   if (memo.size >= TRUNK_KEEP) memo.delete(memo.keys().next().value!);
   memo.set(key, T);
@@ -7335,7 +6441,7 @@ export function sceneItemHoldProblems(rt: SceneRuntime): string[] {
 function checkItems(
   items: SceneItemMark[],
   held: Record<string, HeldItemSpec>,
-  cast: { id: string; world?: unknown }[],
+  cast: { id: string }[],
 ) {
   const last = new Map<string, number>();
   items.forEach((k, i) => {
@@ -7343,9 +6449,7 @@ function checkItems(
     const prev = last.get(k.item);
     if (prev !== undefined && k.t <= prev) fail(`${where}: \`t\` của cùng một món phải tăng dần`);
     last.set(k.item, k.t);
-    const c =
-      cast.find((m) => m.id === k.cast) ?? fail(`${where}: không có \`${k.cast}\` trong \`cast\``);
-    if (!c.world) fail(`${where}: người cầm \`${k.cast}\` phải là người 3D (\`cast[].world\`)`);
+    if (!cast.some((m) => m.id === k.cast)) fail(`${where}: không có \`${k.cast}\` trong \`cast\``);
     const spec =
       held[k.item] ??
       held[heldBase(k.item)] ??
@@ -7359,8 +6463,8 @@ function checkItems(
         const t = "axis" in a ? a.toward : a;
         if (typeof t !== "object" || Array.isArray(t)) continue;
         if ("cast" in t) {
-          if (!cast.find((m) => m.id === t.cast)?.world)
-            throw new Error(`\`${t.cast}\` không phải người 3D trong \`cast\``);
+          if (!cast.some((m) => m.id === t.cast))
+            throw new Error(`không có \`${t.cast}\` trong \`cast\``);
           if (t.mark && !(CAST_MARKS as readonly string[]).includes(t.mark))
             throw new Error(`mốc trên người khác chỉ ước được ${CAST_MARKS.join(", ")}`);
         } else if (isOtherHand(t.mark))
@@ -7372,23 +6476,9 @@ function checkItems(
   });
 }
 
-function pathAt(path: PathKey[], time: number): Spot {
-  let i = 0;
-  while (i + 1 < path.length && path[i + 1].t <= time) i++;
-  const a = path[i];
-  const b = path[i + 1];
-  if (!b || time <= a.t) return { x: a.x, groundY: a.y, scale: a.scale };
-  let u = (time - a.t) / (b.t - a.t);
-  if (b.ease) u = u * u * (3 - 2 * u);
-  const mix = (p: number, q: number) => p + (q - p) * u;
-  return { x: mix(a.x, b.x), groundY: mix(a.y, b.y), scale: mix(a.scale, b.scale) };
-}
-
-type Acting = Omit<CastMember, "travel">;
-
 /** `turn` sửa tư thế trước khi đổi kênh gần ↔ xa: kênh còn là chi gần lúc đầu cảnh */
 function poseAt(
-  m: Acting,
+  m: CastMember,
   time: number,
   clock?: Clock,
   turn?: (p: Pose) => Pose,
@@ -7400,7 +6490,7 @@ function poseAt(
     if (i >= 0) pose = composePose(pose, poseUpTo(tr, i, time, pose, clock, farRight));
   }
   // Người đi theo `path` đọc chân như soạn ở `side`: bàn chân trụ phải nằm trên sàn thế giới, và
-  // hoà từ chân nâng sang chân 2D là bàn chân nhảy giữa chừng
+  // hoà từ chân nâng sang chân không nâng là bàn chân nhảy giữa chừng
   if (m.world?.path) pose = { ...pose, lift: { ...pose.lift, ln: true, lf: true } };
   if (turn) pose = turn(pose);
   return clock && clock(time).half % 2 ? swapSides(pose) : pose;
@@ -7408,7 +6498,7 @@ function poseAt(
 
 /** Tư thế người 3D đi theo `path`: `poseAt` cộng bước chân của cú quay tại chỗ */
 function worldPoseAt(
-  m: Acting,
+  m: CastMember,
   time: number,
   walk: Walker | undefined,
   height: number,
@@ -7426,7 +6516,7 @@ function worldPoseAt(
 
 /** Bước chân của người đi theo `path` cộng vào tư thế đã gom: quay tại chỗ, khởi hành, dừng, ngả thân */
 function walkStep(
-  m: Acting,
+  m: CastMember,
   time: number,
   pose: Pose,
   walk: Walker,
@@ -7441,7 +6531,34 @@ function walkStep(
     height,
     hipHalf,
   );
-  return leanStep(time, strideStep(m, time, p, walk, height, hipHalf), walk);
+  return headStep(
+    m,
+    time,
+    leanStep(time, strideStep(m, time, p, walk, height, hipHalf), walk),
+    walk,
+  );
+}
+
+/**
+ * Quay tại chỗ (`spinOf`, cả cú không bước): đầu quay trước thân — lắc (`head[1]`) tới hướng thân vẽ ra `HEAD_LEAD`
+ * giây sau, không quá mốc cuối của cú quay, hiện dần trong `HEAD_LEAD` giây trước mốc đầu. docs/03-scene.md#quay-tại-chỗ
+ */
+function headStep(m: CastMember, time: number, pose: Pose, walk: Walker): Pose {
+  const keys = keysOf(m.world as WorldSpec);
+  const yaw = (t: number) => sampleAt(walk.yaw, walk.step, t);
+  let lead = 0;
+  for (let i = 1; i < keys.length; i++) {
+    const [a, b] = [keys[i - 1], keys[i]];
+    if (time <= a.t - HEAD_LEAD || time >= b.t || !spinOf(a, b)) continue;
+    const ramp = smoothstep(Math.min(1, (time - a.t + HEAD_LEAD) / HEAD_LEAD));
+    lead += ramp * (yaw(Math.min(time + HEAD_LEAD, b.t)) - yaw(time));
+  }
+  if (!lead) return pose;
+  // lắc dương là quay mặt về trái người khi không lật, `yaw` dương là quay phải
+  const side = walk.flip[stepIndex(walk, time)] ? 1 : -1;
+  const [tilt, turn, nod] = pose.head;
+  const d = side * Math.max(-HEAD_LEAD_MAX, Math.min(HEAD_LEAD_MAX, lead));
+  return { ...pose, head: [tilt, turn + d, nod] };
 }
 
 /**
@@ -7450,7 +6567,7 @@ function walkStep(
  * `pose` chưa đổi kênh. docs/03-scene.md#đi-theo-path
  */
 function strideStep(
-  m: Acting,
+  m: CastMember,
   time: number,
   pose: Pose,
   walk: Walker,
@@ -7529,7 +6646,7 @@ function turnU(walk: Walker | undefined, a: WorldKey, b: WorldKey, time: number)
  * Cú quay tại chỗ đang bước lúc `time`: mốc đầu, mốc cuối và `turnOf` của chúng; clip có sải chân
  * đang lái chân thì không, trừ nhịp cuối của chỗ nối quay rồi đi (`turnWalks`)
  */
-function turnStepAt(m: Acting, time: number, walk?: Walker) {
+function turnStepAt(m: CastMember, time: number, walk?: Walker) {
   if (!m.world?.path) return;
   const { a, b } = legOf(keysOf(m.world as WorldSpec), time);
   const turn = b && turnOf(a, b);
@@ -7541,7 +6658,7 @@ function turnStepAt(m: Acting, time: number, walk?: Walker) {
     (strideClip(m, a.t) || (strideClip(m, time) && !(join && time >= join.from - 1e-9)))
   )
     return;
-  return { a, b, turn: join?.turn ?? turn };
+  return { a, b, turn: join?.turn ?? turn, joined: !!join };
 }
 
 /**
@@ -7555,7 +6672,7 @@ function turnStepAt(m: Acting, time: number, walk?: Walker) {
  * docs/03-scene.md#quay-tại-chỗ
  */
 function turnStep(
-  m: Acting,
+  m: CastMember,
   time: number,
   pose: Pose,
   walk: Walker,
@@ -7572,7 +6689,7 @@ function turnStep(
     const p = clipPose(join.clip, time, clockOf(walk), flip0);
     return { ...pose, ln: p.ln ?? pose.ln, lf: p.lf ?? pose.lf };
   }
-  const { a, b, turn } = at;
+  const { a, b, turn, joined } = at;
   const u = turnU(walk, a, b, time);
   const { v, j } = turnBeat(turn.steps, u);
   const w = Math.max(0, v - j);
@@ -7588,7 +6705,7 @@ function turnStep(
   ];
   const len = lengths(height);
   const st = pose.stretch;
-  const lead = turnLead(turn.delta, j, flip0);
+  const lead = turnLead(turn.delta, j, turn.steps, joined, flip0);
   const ramp = Math.min(1, u / TURN_DIP_RAMP, (1 - u) / TURN_DIP_RAMP);
   // chỗ nối quay rồi đi: chân đầu nhịp lấy từ tư thế lúc ấy (clip đi đang hoà vào), chân cuối nhịp
   // là chân của clip đi lúc mốc cuối; hông đã đi `gone` (hệ đầu nhịp) tới lúc này. Chân bước đặt
@@ -7718,11 +6835,6 @@ function legTo(f: number, depth: number, o: number, l1: number, l2: number): Leg
   return [phi + al, -(al + be), sp];
 }
 
-const swapLayers = (l: Partial<ArmLayers>): Partial<ArmLayers> => ({
-  ...(l.armFar && { armNear: l.armFar }),
-  ...(l.armNear && { armFar: l.armNear }),
-});
-
 /** Đổi khoá gần ↔ xa của một map theo kênh (`an`/`af`, `ln`/`lf`), giữ khoá khác; khoá thiếu vẫn thiếu */
 function swapKeys<T extends object>(o: T): T {
   const r = { ...o } as Record<string, unknown>;
@@ -7756,7 +6868,7 @@ function swapPartial(p: Partial<Pose>): Partial<Pose> {
  * Tay phải của người 3D là tay xa ống kính, theo nghĩa kênh của hành động: người đi `path` lấy lúc đầu cảnh (`poseAt`
  * giữ mỗi kênh là chính chi ấy qua các lần lật), người đứng ở `world.at` lấy `rightFar` đã suy lúc dựng cảnh
  */
-const rightFarOf = (m: Acting, walk?: Walker): boolean | undefined =>
+const rightFarOf = (m: CastMember, walk?: Walker): boolean | undefined =>
   walk ? walk.flip[0] : m.rightFar;
 
 /** Đổi kênh gần ↔ xa: thân vừa lật qua chính diện hay quay lưng thì chi gần là chi kia */
@@ -7783,40 +6895,6 @@ function swapSides(p: Pose): Pose {
 const LEGS: Channel[] = ["legFar", "legNear"];
 const writesLegs = (c: Clip) =>
   !!c.action && LEGS.some((k) => inMask(c, k) && actionMask(c.action as ActionData).includes(k));
-
-/**
- * Phần của kênh chân tại `time` đến từ clip mà `pick(tên hành động)` nhận, `0..1`, hoà đúng như
- * `poseAt`; `base` là phần của tư thế nền. `stickman reseat` đọc nó để biết khung nào đang ngồi.
- */
-export function legShare(
-  rt: SceneRuntime,
-  id: string,
-  time: number,
-  pick: (action: string) => boolean,
-  base = 0,
-): number {
-  let share = base;
-  for (const tr of member(rt, id).tracks) {
-    const i = activeClip(tr, time);
-    if (i >= 0) share = legShareUpTo(tr, i, time, share, pick);
-  }
-  return share;
-}
-
-function legShareUpTo(
-  tr: Track,
-  i: number,
-  time: number,
-  under: number,
-  pick: (action: string) => boolean,
-): number {
-  const c = tr.clips[i];
-  const own = writesLegs(c) ? (pick(c.file ?? "") ? 1 : 0) : under;
-  const s = time - c.start;
-  if (s >= c.tau) return own;
-  const from = i === 0 ? under : legShareUpTo(tr, i - 1, time, under, pick);
-  return from + (own - from) * (s <= 0 ? 0 : smoothstep(s / c.tau));
-}
 
 /** Clip của một track đang ghi một phần của tay ở giây đang xem (`handSources`) */
 export interface PoseSourceClip {
@@ -7864,7 +6942,7 @@ export interface HandSource {
   /** Clip ghi góc cánh tay, track trên cùng có ghi; không có là `base` của người */
   arm?: PoseSourceClip;
   /** Clip ghi bàn tay (kênh `hand`): `key` là mốc bàn tay của hành động ở pha ấy, `aim` là bàn tay theo ý định (`palm` / `fingers`) */
-  hand?: PoseSourceClip & { key?: HandPose | ActionHandKey; aim: boolean };
+  hand?: PoseSourceClip & { key?: string | ActionHandKey; aim: boolean };
   /** Clip ghi đích của hành động (`reach`) — đi theo clip ghi góc cánh tay */
   reach?: PoseSourceClip;
   /** Mốc `world.hands` gần nhất không sau giây ấy nhắc tay này (`index` vào `world.hands`), và mốc sau */
@@ -7885,7 +6963,6 @@ const otherChannel = (ch: "an" | "af") => (ch === "an" ? "af" : "an");
 /** Cách kênh của clip đi vào tay của người 3D `id` ở `time`, như `sceneAt`: phía tay phải lúc dựng, nhịp đi, lật */
 function channelsAt(rt: SceneRuntime, id: string, time: number) {
   const m = member(rt, id);
-  if (!m.world) return undefined;
   const height = rt.heights[id] ?? 1;
   const dims = rt.bodies[id] ?? BODY3;
   const walk = walkerOf(rt, m, height, dims.hipHalf);
@@ -7896,7 +6973,7 @@ function channelsAt(rt: SceneRuntime, id: string, time: number) {
     clock,
     farRight: rightFarOf(m, walk),
     stepSwap: !!(clock && clock(time).half % 2),
-    flip: !!sp.world?.flip,
+    flip: sp.world.flip,
     sp,
   };
 }
@@ -7904,7 +6981,7 @@ function channelsAt(rt: SceneRuntime, id: string, time: number) {
 /**
  * Tay giải phẫu mà clip `clip` của track `track` (chỉ số trong `cast[].tracks`) của người 3D `id` ghi vào, ở `time`:
  * `arm` góc cánh tay (cả `reach`), `hand` bàn tay (kênh `hand`, kênh tay có mốc bàn tay) — theo `mask` của clip và của
- * hành động, `sides: "anatomical"`, nhịp đi và lật như `sceneAt`. Người không có `world` thì `undefined`
+ * hành động, `sides: "anatomical"`, nhịp đi và lật như `sceneAt`. Không có clip ấy thì `undefined`
  */
 export function clipSides(
   rt: SceneRuntime,
@@ -7914,8 +6991,8 @@ export function clipSides(
   time: number,
 ): Record<HandSide, { arm: boolean; hand: boolean }> | undefined {
   const k = channelsAt(rt, id, time);
-  const c = k?.m.tracks[track]?.clips[clip];
-  if (!k || !c) return undefined;
+  const c = k.m.tracks[track]?.clips[clip];
+  if (!c) return undefined;
   const out = { right: { arm: false, hand: false }, left: { arm: false, hand: false } };
   const a = c.action;
   if (!a) return out;
@@ -7939,15 +7016,14 @@ export function clipSides(
 /**
  * Thứ đang điều khiển từng tay giải phẫu của người 3D `id` ở `time`, tính đúng như `sceneAt`: clip đang chạy của từng track
  * (`mask`, `sides: "anatomical"`, đổi kênh theo nhịp đi), kênh gần / xa theo `facing().flip`, mốc `world.hands` và đích
- * thế giới đang áp. Người không có `world` thì `undefined`
+ * thế giới đang áp
  */
 export function handSources(
   rt: SceneRuntime,
   id: string,
   time: number,
-): Record<HandSide, HandSource> | undefined {
+): Record<HandSide, HandSource> {
   const k = channelsAt(rt, id, time);
-  if (!k) return undefined;
   const { m, clock, farRight, stepSwap, flip, sp } = k;
   type Got = Pick<HandSource, "arm" | "hand" | "reach">;
   const got: Record<"an" | "af", Got> = { an: {}, af: {} };

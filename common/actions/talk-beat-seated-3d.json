@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 20,
+  "name": "talk-beat-seated-3d",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "torso": 0, "head": [null, null, 0] }, "ease": "smooth" },
+    { "t": 1, "pose": { "torso": 8, "head": [null, null, -6] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Cú nhịp thân ở chữ nhấn: thân cúi tới 8° trong 0,5 s, đầu ngửa bù 6° nên mặt gần như giữ hướng, rồi giữ. Chỉ ghi `torso` và gật của `head`; nghiêng, lắc để track khác. Nền `sit-3d`. Đặt ở track nhịp riêng trên track tay, buông bằng clip rỗng blend ~0,4; đứng thì `talk-beat-3d`. Sinh bằng `tools/actions/talk-beat.mjs`.",
+  "preview": { "stage": "chair" }
+}

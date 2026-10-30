@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="520" viewBox="0 0 320 520">
-<title>Buộc thấp — rear</title>
-<g id="guide" display="none"><circle cx="160" cy="160" r="100" fill="none" stroke="#999"/></g>
-<g fill="#fff" stroke="#000" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 96 228 Q 114 220 132 226 C 141 254 140 291 128 325 Q 108 333 91 323 C 82 290 84 256 96 228 Z"/>
-<path d="M 60 160.00 C 56 99.00 99 56.00 160 56.00 C 214 56.00 252 72.35 260 84.95 Q 240 85.65 226 90.00 C 214 127.49 214 180.00 208 204.00 Q 200 226.00 180 236.00 Q 150 242.00 116 236.00 Q 76 222.00 64 196.00 Q 59 178.00 60 160.00 Z"/>
-</g>
-</svg>

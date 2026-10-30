@@ -1,4 +1,4 @@
-import { D } from "@stickman3d/sketch";
+import { D } from "@stickman3d/rig/core";
 import type { TearsData } from "./schema";
 import { hash } from "./math";
 import type { FxAnchor } from "./anchor";

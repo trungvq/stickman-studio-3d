@@ -1,4 +1,4 @@
-import { FRAMES, resolveScene, type FrameName, type SceneData } from "@stickman3d/sketch";
+import { FRAMES, resolveScene, type FrameName, type SceneData } from "@stickman3d/rig/core";
 import { useMemo } from "react";
 import {
   Audio,
@@ -9,7 +9,7 @@ import {
   useVideoConfig,
 } from "remotion";
 import { useAudioDurations } from "./audio";
-import { ACTIONS, ANIMALS, AUDIO, HANDS, HELD, PROPS, SCENES } from "./data";
+import { ACTIONS, AUDIO, HANDS, HELD, SCENES } from "./data";
 import type { CueData, EpisodeData, ShotData } from "./episode";
 import { Scene } from "./Scene";
 import { cueStart, layoutShots, type LaidShot } from "./shots";
@@ -30,8 +30,7 @@ const sceneNamed = (name: string): SceneData => {
 export const sceneDuration = (s: SceneData): number => {
   if (s.duration !== undefined) return s.duration;
   let d = SECONDS.get(s);
-  if (d === undefined)
-    SECONDS.set(s, (d = resolveScene(s, ACTIONS, ANIMALS, PROPS, {}, {}, HELD, HANDS).duration));
+  if (d === undefined) SECONDS.set(s, (d = resolveScene(s, ACTIONS, {}, {}, HELD, HANDS).duration));
   return d;
 };
 

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 20,
+  "name": "glance-up-far-3d",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "head": [0, 0, 0] }, "ease": "smooth" },
+    { "t": 0.7, "pose": { "head": [-9, 32, -7] }, "ease": "smooth" },
+    { "t": 1, "pose": { "head": [-8, 30, -6] }, "ease": "smooth" }
+  ],
+  "events": [],
+  "note": "Liếc lên phía xa ống kính rồi giữ, làm duyên: đầu lắc 32°, ngửa 7°, nghiêng 9° ngược chiều quay ở 0,7, lùi về 30°, 6°, 8° ở 1; lượt 0,5 s, giữ. Ghi đủ ba góc của `head`. Nền `stand-3d`, ngồi thì `sit-3d` liếc lên người đứng cạnh bàn. Chồng lên mọi track thân, tay; chiều kia là `glance-up-near-3d`, buông bằng clip rỗng blend ~0,4. Sinh bằng `tools/actions/glance.mjs`.",
+  "preview": { "stage": "stand" }
+}

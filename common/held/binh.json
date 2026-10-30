@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 4,
+  "size": [26, 55, 26],
+  "top": "mouth",
+  "anchors": {
+    "neck": { "at": [0, 13, 0] },
+    "shoulder": { "at": [0, 5, 0] },
+    "mouth": { "at": [0, 17, 6], "dir": [0, 1, 0] },
+    "base": { "at": [0, -38, 0], "dir": [0, -1, 0] },
+    "belly": { "at": [0, -24, 0] }
+  },
+  "parts": { "mieng": { "grip": false } },
+  "roles": [{ "role": "pourer", "lip": "mouth" }],
+  "shape": [
+    { "cyl": 9, "from": [0, -38, 0], "to": [0, -32, 0], "r2": 13, "part": "than" },
+    { "cyl": 13, "from": [0, -32, 0], "to": [0, -14, 0], "part": "than" },
+    { "cyl": 13, "from": [0, -14, 0], "to": [0, -2, 0], "r2": 8, "part": "vai" },
+    { "cyl": 8, "from": [0, -2, 0], "to": [0, 8, 0], "r2": 4, "part": "vai" },
+    { "cyl": 4, "from": [0, 8, 0], "to": [0, 14, 0], "part": "co" },
+    { "cyl": 4, "from": [0, 14, 0], "to": [0, 17, 0], "r2": 6, "part": "mieng" }
+  ]
+}

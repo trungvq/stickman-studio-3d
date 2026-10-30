@@ -25,7 +25,7 @@ const STAND3D = action({
   mask: ["armFar", "armNear", "legFar", "legNear", "torso"],
   keys: [{ t: 0, pose: { ...LIMBS4, torso: 0 } }],
 });
-/** Hai tay giơ che mặt: bản 2D và bản soạn ở `side` cùng góc */
+/** Hai tay giơ che mặt: bản không soạn ở `side` và bản soạn ở `side` cùng góc */
 const coverKeys = [
   { t: 0, pose: { armNear: [-20, -30, 0], armFar: [20, 30, 0] }, ease: "smooth" },
   { t: 1, pose: { armNear: [-150, -100, 0], armFar: [150, 100, 0] } },
@@ -41,6 +41,7 @@ const COVER3D = action({
 /** Một tay giơ thẳng lên — đích của cú cắt cứng */
 const RAISE = action({
   name: "raise",
+  authoredAt: "side",
   end: "hold",
   mask: ["armNear"],
   keys: [{ t: 0, pose: { armNear: [-170, 0, 0] } }],
@@ -75,7 +76,7 @@ const snaps = (rt: ReturnType<typeof scene>) =>
   sceneSnaps(rt, { characterOf: () => defaultCharacter() });
 
 describe("sceneSideProblems", () => {
-  it("người 3D diễn hành động 2D ghi tay chân là lỗi, gợi ý bản soạn ở `side` có sẵn", () => {
+  it("người 3D diễn hành động không soạn ở `side` ghi tay chân là lỗi, gợi ý bản soạn ở `side` có sẵn", () => {
     const out = sceneSideProblems(person3d("cover"), ACTIONS);
     expect(out).toHaveLength(1);
     expect(out[0]).toMatch(/`a` clip `cover` \(track `tay`, giây 1\.00\)/);
@@ -101,12 +102,7 @@ describe("sceneSideProblems", () => {
     expect(sceneSideProblems(rt, ACTIONS)).toEqual([]);
   });
 
-  it("người 2D diễn hành động 2D thì không kêu", () => {
-    const rt = scene({ cast: [{ id: "a", tracks: [{ clips: [{ action: "cover", start: 0 }] }] }] });
-    expect(sceneSideProblems(rt, ACTIONS)).toEqual([]);
-  });
-
-  it("tay đặt bằng đích cổ tay ở mọi mốc thì góc 2D không lên hình, không kêu", () => {
+  it("tay đặt bằng đích cổ tay ở mọi mốc thì góc kênh không nâng không lên hình, không kêu", () => {
     const reach = action({
       name: "reach",
       mask: ["armNear"],
@@ -163,7 +159,7 @@ describe("actionSnapProblems", () => {
 });
 
 describe("sceneSnaps", () => {
-  it("người 3D hoà `side` → hành động 2D: tay giật giữa đoạn hoà, kèm lý do cờ `lift`", () => {
+  it("người 3D hoà `side` → hành động không soạn ở `side`: tay giật giữa đoạn hoà, kèm lý do cờ `lift`", () => {
     const out = snaps(person3d("cover"));
     expect(out.length).toBeGreaterThan(0);
     const s = out[0];
@@ -182,16 +178,26 @@ describe("sceneSnaps", () => {
     expect(snaps(person3d("cover", { snap: true }))).toEqual([]);
   });
 
-  const person2d = (clip: Record<string, unknown>, actions = ACTIONS) =>
+  const WORLD = { at: [0, 0, 0], yaw: 155 };
+  const cut = (clip: Record<string, unknown>, actions = ACTIONS) =>
     scene(
-      { cast: [{ id: "b", tracks: [{ clips: [{ action: "stand-3d", start: 0 }, clip] }] }] },
+      {
+        lens: LENS,
+        cast: [
+          {
+            id: "b",
+            world: WORLD,
+            tracks: [{ clips: [{ action: "stand-3d", start: 0 }, clip] }],
+          },
+        ],
+      },
       actions,
     );
 
-  it("người 2D cắt cứng (`blend` 0) sang tư thế khác xa: bắt, kèm lý do", () => {
-    const out = snaps(person2d({ action: "raise", start: 1, blend: 0 }));
+  it("cắt cứng (`blend` 0) sang tư thế khác xa: bắt, kèm lý do", () => {
+    const out = snaps(cut({ action: "raise", start: 1, blend: 0 }));
     expect(out).toHaveLength(1);
-    expect(out[0].joint).toBe("wristN");
+    expect(out[0].joint).toMatch(/^(hand|wrist|elbow)/);
     expect(out[0].t).toBeCloseTo(1, 6);
     expect(out[0].causes.join("\n")).toMatch(/`raise` \(track `#0`\) vào không hoà/);
   });
@@ -199,10 +205,12 @@ describe("sceneSnaps", () => {
   it("cú cắt cứng trùng mốc camera `cut` hay nằm ngoài quãng lên hình thì không bị bắt", () => {
     const r = parseScene({
       duration: 2,
+      lens: LENS,
       camera: [{ t: 0 }, { t: 1, zoom: 1.5 }],
       cast: [
         {
           id: "b",
+          world: WORLD,
           tracks: [
             {
               clips: [
@@ -215,25 +223,26 @@ describe("sceneSnaps", () => {
       ],
     });
     expect(snaps(resolveScene(r.data!, ACTIONS))).toEqual([]);
-    const rt = person2d({ action: "raise", start: 1, blend: 0 });
+    const rt = cut({ action: "raise", start: 1, blend: 0 });
     const o = { characterOf: () => defaultCharacter() };
     expect(sceneSnaps(rt, { ...o, spans: [[1.2, 2]] })).toEqual([]);
     expect(sceneSnaps(rt, { ...o, spans: [[0, 2]] })).toHaveLength(1);
   });
 
   it("cùng cú ấy mà hoà tự suy thì êm", () => {
-    expect(snaps(person2d({ action: "raise", start: 1 }))).toEqual([]);
+    expect(snaps(cut({ action: "raise", start: 1 }))).toEqual([]);
   });
 
   it("hành động khai `snap` thì cú cắt cứng của nó không bị bắt", () => {
     const actions = { ...ACTIONS, raise: { ...RAISE, snap: true } };
-    const rt = person2d({ action: "raise", start: 1, blend: 0 }, actions);
+    const rt = cut({ action: "raise", start: 1, blend: 0 }, actions);
     expect(snaps(rt)).toEqual([]);
   });
 
   it("vung nhanh mà đều không bị bắt", () => {
     const swing = action({
       name: "swing",
+      authoredAt: "side",
       end: "wrap",
       duration: 0.5,
       mask: ["armNear"],
@@ -244,7 +253,10 @@ describe("sceneSnaps", () => {
       ],
     });
     const rt = scene(
-      { cast: [{ id: "b", tracks: [{ clips: [{ action: "swing", start: 0 }] }] }] },
+      {
+        lens: LENS,
+        cast: [{ id: "b", world: WORLD, tracks: [{ clips: [{ action: "swing", start: 0 }] }] }],
+      },
       { swing },
     );
     expect(snaps(rt)).toEqual([]);
@@ -275,9 +287,11 @@ describe("sceneSnaps", () => {
 
   it("người đã tắt (`fade` về 0) không đo", () => {
     const rt = scene({
+      lens: LENS,
       cast: [
         {
           id: "b",
+          world: WORLD,
           fade: [
             { t: 0, v: 1 },
             { t: 0.5, v: 0 },

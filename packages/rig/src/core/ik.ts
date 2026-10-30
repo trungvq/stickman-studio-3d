@@ -48,8 +48,8 @@ export function bendOf([a, b, c]: V3[]): V3 | undefined {
 const wrap180 = (a: number) => ((((a + 180) % 360) + 360) % 360) - 180;
 
 /**
- * Góc tay `[vai, khuỷu, 0]` cho người không đọc đích (người 2D, kênh dự phòng): IK hai đoạn trong mặt
- * phẳng dọc của thân với số đo mặc định ở `height = 1`, bỏ thành phần ngang. `torso` là góc cúi thân
+ * Góc tay `[vai, khuỷu, 0]` suy từ đích, cho mốc có đích mà không ghi góc kênh ấy — đoạn hoà sang mốc ghi góc đi
+ * từ góc này (`Reach.w`): IK hai đoạn trong mặt phẳng dọc của thân với số đo mặc định ở `height = 1`, bỏ thành phần ngang. `torso` là góc cúi thân
  * của cùng mốc — góc tay đo trong khung thân.
  */
 export function reachAngles(r: Pick<Reach, "at" | "elbow">, torso = 0): Arm {
