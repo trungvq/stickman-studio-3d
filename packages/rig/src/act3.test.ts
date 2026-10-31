@@ -29,12 +29,11 @@ const rig3 = (p: THREE.Vector3): [number, number, number] => [p.x * 100, -p.y * 
 
 /** Khớp three vẽ ra, cùng tên với `actJoints` */
 function drawn(p: Figure, sp: Acting): Record<ActJoint, [number, number, number]> {
-  const near = sp.world!.flip ? 1 : -1;
   const w = (o: THREE.Object3D, local?: THREE.Vector3) => rig3(local ? o.localToWorld(local.clone()) : o.getWorldPosition(new THREE.Vector3()));
   const out = {} as Record<ActJoint, [number, number, number]>;
   for (const side of [-1, 1] as const) {
     const t = side === -1 ? 'R' : 'L';
-    const st = sp.pose.stretch[side === near ? 7 : 5] ?? 1;
+    const st = sp.pose.stretch[side === -1 ? 7 : 5] ?? 1;
     out[`knee${t}`] = w(p.legs[side].knee);
     out[`foot${t}`] = w(p.legs[side].knee, new THREE.Vector3(0, -p.bones.shin * st, 0));
     out[`shoulder${t}`] = w(p.arms[side].shoulder);
@@ -65,18 +64,18 @@ describe('actJoints', () => {
       const json = c as unknown as Parameters<typeof fromCharacter>[0];
       const p = fromCharacter(json, { seated });
       for (let i = 0; i < 40; i++) {
-        const lift = { af: r() < 0.6, an: r() < 0.6, lf: r() < 0.6, ln: r() < 0.6 };
-        const reach = r() < 0.4 ? { an: { at: [ang(80), ang(80), ang(40)] as number[], w: r() } } : undefined;
-        const hands = r() < 0.3 ? { far: { at: [ang(300), -150 + ang(60), ang(300)] as number[], ...(r() < 0.5 && { elbow: [0, 1, -1] }), w: r() } } : undefined;
+        const lift = { al: r() < 0.6, ar: r() < 0.6, ll: r() < 0.6, lr: r() < 0.6 };
+        const reach = r() < 0.4 ? { ar: { at: [ang(80), ang(80), ang(40)] as number[], w: r() } } : undefined;
+        const hands = r() < 0.3 ? { left: { at: [ang(300), -150 + ang(60), ang(300)] as number[], ...(r() < 0.5 && { elbow: [0, 1, -1] }), w: r() } } : undefined;
         const hand = () => [ang(90), ang(80), ...Array.from({ length: 9 }, () => ang(90))];
         const sp: Acting = {
           pose: {
-            af: [ang(), ang(), ang(40), ang(90), ang(90)], an: [ang(), ang(), ang(40), ang(90), ang(90)], lf: [ang(90), ang(90), ang(40)], ln: [ang(90), ang(90), ang(40)],
+            al: [ang(), ang(), ang(40), ang(90), ang(90)], ar: [ang(), ang(), ang(40), ang(90), ang(90)], ll: [ang(90), ang(90), ang(40)], lr: [ang(90), ang(90), ang(40)],
             torso: ang(30), lean: ang(30), head: [ang(20), ang(40), ang(20)],
             stretch: Array.from({ length: 8 }, () => 0.8 + r() * 0.4),
-            lift, ...(reach && { reach }), ...(r() < 0.7 && { hand: { an: hand(), ...(r() < 0.5 && { af: hand() }) } }),
+            lift, ...(reach && { reach }), ...(r() < 0.7 && { hand: { ar: hand(), ...(r() < 0.5 && { al: hand() }) } }),
           },
-          world: { hip: [ang(400), -200 + ang(40), ang(400)], yaw: ang(Math.PI), s: 0.8 + r() * 0.5, flip: r() < 0.5, seated, ...(hands && { hands }) },
+          world: { hip: [ang(400), -200 + ang(40), ang(400)], yaw: ang(Math.PI), s: 0.8 + r() * 0.5, seated, ...(hands && { hands }) },
           mouth: 'closed', brow: 'neutral', eyes: 'open',
         };
         act(p, sp);
@@ -118,14 +117,14 @@ describe('actJoints', () => {
         const aim = () => ({ terms: [{ k: 0.4, raw: [ang(), ang()] as [number, number] }, { k: 0.6, palm: { v: [...({ down: [0, 1, 0], up: [0, -1, 0], in: [0, 0, -1], out: [0, 0, 1], forward: [1, 0, 0], back: [-1, 0, 0] } as const)[DIRS[Math.floor(r() * 6)]]] as [number, number, number] }, ...(r() < 0.5 && { fingers: { to } }) }] });
         const sp: Acting = {
           pose: {
-            af: [ang(), ang(), ang(20)], an: [ang(), ang(), ang(20)], lf: seated ? [90, -90] : [0, 0], ln: seated ? [90, -90] : [0, 0],
+            al: [ang(), ang(), ang(20)], ar: [ang(), ang(), ang(20)], ll: seated ? [90, -90] : [0, 0], lr: seated ? [90, -90] : [0, 0],
             torso: ang(25), head: [ang(15), ang(30), ang(15)], stretch: [1, 1, 1, 1, 1, 1, 1, 1],
-            lift: { af: true, an: true, lf: true, ln: true },
-            reach: { an: { at: [0, 0, 0], w: 0.5 + r() * 0.5, terms: [term] }, af: { at: [0, 0, 0], w: 1, terms: [other] } },
-            hand: { an: [0, 0, 10, 30, 10, 12, 16, 22, 18, 24, 0], af: [0, 0, 55, 55, 15, 20, 45, 35, 70, 70, 0] },
-            aim: { an: aim(), af: aim() },
+            lift: { al: true, ar: true, ll: true, lr: true },
+            reach: { ar: { at: [0, 0, 0], w: 0.5 + r() * 0.5, terms: [term] }, al: { at: [0, 0, 0], w: 1, terms: [other] } },
+            hand: { ar: [0, 0, 10, 30, 10, 12, 16, 22, 18, 24, 0], al: [0, 0, 55, 55, 15, 20, 45, 35, 70, 70, 0] },
+            aim: { ar: aim(), al: aim() },
           },
-          world: { hip: [ang(300), -150, ang(300)], yaw: ang(Math.PI), s: 0.8 + r() * 0.4, flip: r() < 0.5, seated },
+          world: { hip: [ang(300), -150, ang(300)], yaw: ang(Math.PI), s: 0.8 + r() * 0.4, seated },
           mouth: 'closed', brow: 'neutral', eyes: 'open',
         };
         act(p, sp);
@@ -198,19 +197,19 @@ describe('actJoints', () => {
 
   it('kênh không nâng của người 3D về dáng nghỉ: góc soạn trên mặt khung không đổi khớp', () => {
     const c = defaultCharacter();
-    const base = { af: [0, 0, 0], an: [0, 0, 0], lf: [0, 0], ln: [0, 0], torso: 0, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1] };
+    const base = { al: [0, 0, 0], ar: [0, 0, 0], ll: [0, 0], lr: [0, 0], torso: 0, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1] };
     const world = { hip: [0, -170, 0], yaw: 0.4, s: 1, flip: false };
     const rest = actJoints(c, { pose: base, world })!;
-    const raised = actJoints(c, { pose: { ...base, an: [-150, -40, 0] }, world })!;
-    const lifted = actJoints(c, { pose: { ...base, an: [-150, -40, 0], lift: { an: true } }, world })!;
+    const raised = actJoints(c, { pose: { ...base, ar: [-150, -40, 0] }, world })!;
+    const lifted = actJoints(c, { pose: { ...base, ar: [-150, -40, 0], lift: { ar: true } }, world })!;
     expect(raised.wristR).toEqual(rest.wristR);
     expect(Math.hypot(...lifted.wristR.map((v, i) => v - rest.wristR[i]))).toBeGreaterThan(50);
   });
 
   const still = (): Acting => ({
-    pose: { af: [0, 0, 0], an: [0, 0, 0], lf: [0, 0], ln: [0, 0], torso: 0, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { af: true, an: true } },
+    pose: { al: [0, 0, 0], ar: [0, 0, 0], ll: [0, 0], lr: [0, 0], torso: 0, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { al: true, ar: true } },
     // người nhìn +z của three: hệ người trùng hệ thế giới
-    world: { hip: [0, -170, 0], yaw: Math.PI / 2, s: 1, flip: false },
+    world: { hip: [0, -170, 0], yaw: Math.PI / 2, s: 1 },
     mouth: 'closed', brow: 'neutral', eyes: 'open',
   });
   const up = (p: Figure, side: -1 | 1, axis: THREE.Vector3) => axis.clone().applyQuaternion(p.arms[side].wrist.getWorldQuaternion(new THREE.Quaternion()));
@@ -220,7 +219,7 @@ describe('actJoints', () => {
     const c = defaultCharacter();
     const p = fromCharacter(c as unknown as Parameters<typeof fromCharacter>[0]);
     const sp = still();
-    sp.pose = { ...sp.pose, an: [0, 90, 0, 90, 90], af: [0, 90, 0, 90, 90] };
+    sp.pose = { ...sp.pose, ar: [0, 90, 0, 90, 90], al: [0, 90, 0, 90, 90] };
     act(p, sp);
     const J = actJoints(c, sp)!;
     for (const t of ['R', 'L'] as const) {
@@ -228,7 +227,7 @@ describe('actJoints', () => {
       expect(J[`elbow${t}`][1] - J[`wrist${t}`][1]).toBeGreaterThan(58 * Math.cos(SPLAY3) - 1e-6);
       expect(Math.hypot(J[`elbow${t}`][0] - J[`wrist${t}`][0], J[`elbow${t}`][2] - J[`wrist${t}`][2])).toBeLessThan(58 * Math.sin(SPLAY3) + 1e-6);
       // không xoắn thì cẳng tay chĩa ra trước
-      const flat = actJoints(c, { ...sp, pose: { ...sp.pose, an: [0, 90, 0, 90], af: [0, 90, 0, 90] } })!;
+      const flat = actJoints(c, { ...sp, pose: { ...sp.pose, ar: [0, 90, 0, 90], al: [0, 90, 0, 90] } })!;
       expect(Math.abs(flat[`elbow${t}`][1] - flat[`wrist${t}`][1])).toBeLessThan(58 * Math.sin(SPLAY3) + 1e-6);
     }
   });
@@ -239,7 +238,7 @@ describe('actJoints', () => {
     c.palette.clad = true;
     const p = fromCharacter(c as unknown as Parameters<typeof fromCharacter>[0]);
     for (const side of [-1, 1] as const) {
-      const ch = side === -1 ? 'an' : 'af';
+      const ch = side === -1 ? 'ar' : 'al';
       const palm = new THREE.Vector3(-side, 0, 0);
       const at = (turn: number, bend = 0) => {
         const sp = still();
@@ -264,7 +263,7 @@ describe('actJoints', () => {
     const p = fromCharacter(c as unknown as Parameters<typeof fromCharacter>[0]);
     const q = new THREE.Quaternion();
     for (const side of [-1, 1] as const) {
-      const ch = side === -1 ? 'an' : 'af';
+      const ch = side === -1 ? 'ar' : 'al';
       let prev: THREE.Quaternion | undefined;
       let worst = 0;
       // đích hệ thân `[tiến, y, ra ngoài]`: vòng từ trước bụng lên qua đỉnh đầu ra sau gáy rồi sang ngang
@@ -297,14 +296,14 @@ describe('actJoints', () => {
     const c = defaultCharacter();
     const p = fromCharacter(c as unknown as Parameters<typeof fromCharacter>[0]);
     const x = new THREE.Vector3(1, 0, 0);
-    for (const an of [[0, 0, 0], [30, 40, 0, 20, 30]]) {
+    for (const ar of [[0, 0, 0], [30, 40, 0, 20, 30]]) {
       const sp = still();
-      sp.pose = { ...sp.pose, an };
+      sp.pose = { ...sp.pose, ar };
       act(p, sp);
       const x0 = up(p, -1, x);
-      act(p, { ...sp, pose: { ...sp.pose, reach: { an: { at: [100, -60, 20], w: 1e-5 } } } });
+      act(p, { ...sp, pose: { ...sp.pose, reach: { ar: { at: [100, -60, 20], w: 1e-5 } } } });
       // tay duỗi hẳn thì IK gập khuỷu nhanh theo đích (căn bậc hai), nhưng chỉ quanh bản lề cũ
-      expect(x0.angleTo(up(p, -1, x)) / D, JSON.stringify(an)).toBeLessThan(0.05);
+      expect(x0.angleTo(up(p, -1, x)) / D, JSON.stringify(ar)).toBeLessThan(0.05);
     }
   });
 });
@@ -381,7 +380,7 @@ describe('khuỷu qua ranh mốc tay', () => {
   });
 
   it('đích thế giới mờ về `w` 0 nhường đích hệ thân theo mốc của hành động hay chuỗi góc: khuỷu liền qua chỗ `w` chạm 0', async () => {
-    // `yaw` 155 lật người: tay trái là tay gần (`armNear`); đích theo mốc và lòng tay theo ý định thì tay vẫn qua bộ giải khi
+    // `yaw` 155 lật người trên hình, kênh `armLeft` vẫn là tay trái; đích theo mốc và lòng tay theo ý định thì tay vẫn qua bộ giải khi
     // đích thế giới đã hết
     const hold = (elbow?: number[]) => ({
       schemaVersion: 19,
@@ -389,8 +388,8 @@ describe('khuỷu qua ranh mốc tay', () => {
       duration: 1,
       end: 'hold',
       authoredAt: 'side',
-      mask: ['armNear', 'hand'],
-      keys: [{ t: 0, pose: {}, reach: { armNear: { to: 'chest', offset: [30, 30, 10], point: 'grip', ...(elbow && { elbow }) } }, hand: { armNear: { palm: 'down', fingers: 'forward' } } }],
+      mask: ['armRight', 'hand'],
+      keys: [{ t: 0, pose: {}, reach: { armRight: { to: 'chest', offset: [30, 30, 10], point: 'grip', ...(elbow && { elbow }) } }, hand: { armRight: { palm: 'down', fingers: 'forward' } } }],
       events: [],
     });
     for (const elbow of [[-0.6, 1, 0.4], undefined, null]) {

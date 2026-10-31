@@ -1,37 +1,37 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "flinch-3d",
   "duration": 0.6,
   "end": "hold",
-  "mask": ["armNear", "armFar", "hand", "torso", "head"],
+  "mask": ["armRight", "armLeft", "hand", "torso", "head"],
   "authoredAt": "side",
   "snap": true,
   "keys": [
     {
       "t": 0,
       "pose": {
-        "armFar": [-6, 24, 0],
-        "armNear": [-6, 24, 0],
+        "armLeft": [-6, 24, 0],
+        "armRight": [-6, 24, 0],
         "torso": 0,
         "head": [null, null, 0]
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "w": 0.3, "turn": 0, "bend": 0 },
-        "armNear": { "w": 0.3, "turn": 0, "bend": 0 }
+        "armLeft": { "w": 0.3, "turn": 0, "bend": 0 },
+        "armRight": { "w": 0.3, "turn": 0, "bend": 0 }
       }
     },
     {
       "t": 0.2667,
       "pose": { "torso": 14, "head": [null, null, 24] },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "belly",
           "offset": [27, -14, 13],
           "point": "grip",
           "elbow": [-0.3, 1, 0.55]
         },
-        "armNear": {
+        "armRight": {
           "to": "belly",
           "offset": [27, -14, 13],
           "point": "grip",
@@ -40,21 +40,21 @@
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "grip", "w": 0.6, "palm": "in" },
-        "armNear": { "pose": "grip", "w": 0.6, "palm": "in" }
+        "armLeft": { "pose": "grip", "w": 0.6, "palm": "in" },
+        "armRight": { "pose": "grip", "w": 0.6, "palm": "in" }
       }
     },
     {
       "t": 0.5,
       "pose": { "torso": 11, "head": [null, null, 20] },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "belly",
           "offset": [27, -10, 13],
           "point": "grip",
           "elbow": [-0.3, 1, 0.55]
         },
-        "armNear": {
+        "armRight": {
           "to": "belly",
           "offset": [27, -10, 13],
           "point": "grip",
@@ -63,21 +63,21 @@
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "grip", "w": 0.6, "palm": "in" },
-        "armNear": { "pose": "grip", "w": 0.6, "palm": "in" }
+        "armLeft": { "pose": "grip", "w": 0.6, "palm": "in" },
+        "armRight": { "pose": "grip", "w": 0.6, "palm": "in" }
       }
     },
     {
       "t": 1,
       "pose": { "torso": 11, "head": [null, null, 20] },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "belly",
           "offset": [27, -10, 13],
           "point": "grip",
           "elbow": [-0.3, 1, 0.55]
         },
-        "armNear": {
+        "armRight": {
           "to": "belly",
           "offset": [27, -10, 13],
           "point": "grip",
@@ -86,12 +86,12 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "grip", "w": 0.6, "palm": "in" },
-        "armNear": { "pose": "grip", "w": 0.6, "palm": "in" }
+        "armLeft": { "pose": "grip", "w": 0.6, "palm": "in" },
+        "armRight": { "pose": "grip", "w": 0.6, "palm": "in" }
       }
     }
   ],
   "events": [],
-  "note": "Rụt người sợ: trong 0,16 s thân cúi 14°, đầu gục 24°, hai tay khép trước bụng nắm hờ (mốc `belly`, khuỷu khép sát sườn), rồi lùi về thân 11°, đầu 20° lúc 0,3 s và giữ; khai `snap`. Ghi `armNear`, `armFar`, `hand`, `torso` và gật của `head`. Nền `stand-3d`, vào blend ~0,06. Chồng được nét mặt, `turn-head-*`; buông về `stand-3d` blend ~0,4. Cùng họ: `flinch-3d` giật rõ, `flinch-soft-3d` khẽ; che chắn trước ngực thì `cower-3d`. Sinh bằng `tools/actions/flinch.mjs`.",
+  "note": "Rụt người sợ: trong 0,16 s thân cúi 14°, đầu gục 24°, hai tay khép trước bụng nắm hờ (mốc `belly`, khuỷu khép sát sườn), rồi lùi về thân 11°, đầu 20° lúc 0,3 s và giữ; khai `snap`. Ghi `armRight`, `armLeft`, `hand`, `torso` và gật của `head`. Nền `stand-3d`, vào blend ~0,06. Chồng được nét mặt, `turn-head-*`; buông về `stand-3d` blend ~0,4. Cùng họ: `flinch-3d` giật rõ, `flinch-soft-3d` khẽ; che chắn trước ngực thì `cower-3d`. Sinh bằng `tools/actions/flinch.mjs`.",
   "preview": { "stage": "stand" }
 }

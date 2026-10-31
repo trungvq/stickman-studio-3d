@@ -21,8 +21,8 @@ export type Arm =
 export type HeadPose = [number, number, number];
 
 /**
- * Hệ số nhân độ dài từng đoạn chi, hai số một chi theo thứ tự `[tay xa, tay gần, chân xa, chân
- * gần]`, đoạn gốc trước: cánh tay trên rồi cẳng tay, đùi rồi cẳng chân. `1` là dài chuẩn.
+ * Hệ số nhân độ dài từng đoạn chi, hai số một chi theo thứ tự `[tay trái, tay phải, chân trái, chân
+ * phải]`, đoạn gốc trước: cánh tay trên rồi cẳng tay, đùi rồi cẳng chân. `1` là dài chuẩn.
  * docs/01-rig.md#vươn-chi
  */
 export type Stretch = [number, number, number, number, number, number, number, number];
@@ -41,7 +41,7 @@ export const stretchJson = (s: Stretch): StretchJson =>
     : [...s];
 
 /** Kênh tay chân đọc được như góc soạn ở `side` cho người 3D (`cast[].world`); kênh không có cờ là kênh không nâng */
-export const LIFT_CHANNELS = ["af", "an", "lf", "ln"] as const;
+export const LIFT_CHANNELS = ["al", "ar", "ll", "lr"] as const;
 export type Lift = Partial<Record<(typeof LIFT_CHANNELS)[number], boolean>>;
 
 /**
@@ -72,14 +72,14 @@ export interface Reach {
 }
 
 /** Hai kênh tay nhận đích cổ tay */
-export const REACH_CHANNELS = ["af", "an"] as const;
+export const REACH_CHANNELS = ["al", "ar"] as const;
 export type ReachMap = Partial<Record<(typeof REACH_CHANNELS)[number], Reach>>;
 
 export interface Pose {
-  af: Arm;
-  an: Arm;
-  lf: LegAngles;
-  ln: LegAngles;
+  al: Arm;
+  ar: Arm;
+  ll: LegAngles;
+  lr: LegAngles;
   torso: number;
   /** Thân nghiêng sang ngang, độ; chỉ người 3D đọc, đi cùng kênh `torso`. docs/01-rig.md#dang-và-nghiêng-ngang */
   lean?: number;
@@ -96,6 +96,11 @@ export interface Pose {
    * của `hand` ở kênh ấy. docs/01-rig.md#hướng-lòng-tay-theo-ý
    */
   aim?: AimMap;
+  /**
+   * Kênh tay đến từ clip soi gương (`clips[].mirror`): người 3D giải hai tay theo thứ tự của hành động, tay trái (kênh
+   * `armRight` của hành động) trước
+   */
+  mirror?: boolean;
 }
 
 /** Bàn tay theo ý định của hai kênh tay */
@@ -155,15 +160,15 @@ export type WrinkleKind = "none" | "light" | "deep";
  * `leg*` là khúc hông→gối, `shin*` là ống chân.
  */
 export const BODY_PARTS = [
-  "legFar",
-  "shinFar",
-  "legNear",
-  "shinNear",
+  "legLeft",
+  "shinLeft",
+  "legRight",
+  "shinRight",
   "torso",
-  "armFar",
-  "forearmFar",
-  "armNear",
-  "forearmNear",
+  "armLeft",
+  "forearmLeft",
+  "armRight",
+  "forearmRight",
   "head",
 ] as const;
 export type BodyPart = (typeof BODY_PARTS)[number];

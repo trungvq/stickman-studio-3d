@@ -136,9 +136,9 @@ describe("mốc món: đặt, hướng, báo", () => {
     ]);
     expect(at(face, 0).coincident).toBe(true);
     expect(at(face, 0).degenerate).toBeUndefined();
-    const lf = sceneItemProblems(face, { chars });
-    expect(lf).toHaveLength(1);
-    expect(lf[0]).toMatch(/nguoi: `items` bang-gia t=0: đích của `face` trùng chỗ món/);
+    const ll = sceneItemProblems(face, { chars });
+    expect(ll).toHaveLength(1);
+    expect(ll[0]).toMatch(/nguoi: `items` bang-gia t=0: đích của `face` trùng chỗ món/);
 
     const roll = runtime([
       mark({ roll: { axis: "top", toward: { mark: "chest" } }, offset: undefined }),

@@ -1,24 +1,24 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "suitcase-pull-both-3d",
   "duration": 0.5,
   "end": "hold",
-  "mask": ["armNear", "armFar", "hand"],
+  "mask": ["armRight", "armLeft", "hand"],
   "authoredAt": "side",
   "keys": [
     {
       "t": 0,
       "pose": {},
-      "reach": { "armFar": { "at": [-40, 10, 66] }, "armNear": { "at": [-40, 10, 66] } },
+      "reach": { "armLeft": { "at": [-40, 10, 66] }, "armRight": { "at": [-40, 10, 66] } },
       "ease": "smooth",
-      "hand": { "armFar": { "pose": "grip", "w": 1 }, "armNear": { "pose": "grip", "w": 1 } }
+      "hand": { "armLeft": { "pose": "grip", "w": 1 }, "armRight": { "pose": "grip", "w": 1 } }
     },
     {
       "t": 1,
       "pose": {},
-      "reach": { "armFar": { "at": [-40, 10, 66] }, "armNear": { "at": [-40, 10, 66] } },
+      "reach": { "armLeft": { "at": [-40, 10, 66] }, "armRight": { "at": [-40, 10, 66] } },
       "ease": "smooth",
-      "hand": { "armFar": { "pose": "grip", "w": 1 }, "armNear": { "pose": "grip", "w": 1 } }
+      "hand": { "armLeft": { "pose": "grip", "w": 1 }, "armRight": { "pose": "grip", "w": 1 } }
     }
   ],
   "events": [],

@@ -150,7 +150,7 @@ function raise(
 }
 
 /**
- * Chu kỳ đi tại pha t, `0 → 1` là một chu kỳ, `t = 0` là giữa pha vung của chân gần. Góc theo clip
+ * Chu kỳ đi tại pha t, `0 → 1` là một chu kỳ, `t = 0` là giữa pha vung của chân phải. Góc theo clip
  * đi đã khớp; riêng pha trụ bàn chân lùi đều theo x, giải bằng IK. docs/01-rig.md#chu-kỳ-đi
  */
 export function walkPose(t: number, p: WalkParams): Pose {
@@ -185,8 +185,8 @@ export function walkPose(t: number, p: WalkParams): Pose {
   };
   const un = wrap1(t - 0.5 + beta / 2);
   const uf = wrap1(un - 0.5);
-  const ln = legAt(un);
-  const lf = legAt(uf);
+  const lr = legAt(un);
+  const ll = legAt(uf);
   const pn = phiOf(un);
   const pf = phiOf(uf);
   const arm = (phi: number): [number, number, number] => [
@@ -195,10 +195,10 @@ export function walkPose(t: number, p: WalkParams): Pose {
     0,
   ];
   return {
-    ln: lifted(ln, un, lf),
-    lf: lifted(lf, uf, ln),
-    an: arm(pn),
-    af: arm(pf),
+    lr: lifted(lr, un, ll),
+    ll: lifted(ll, uf, lr),
+    ar: arm(pn),
+    al: arm(pf),
     torso: p.lean + p.dip * (2 * unit("trunk", pn) - 1),
     head: NEUTRAL_HEAD,
     stretch: NEUTRAL_STRETCH,

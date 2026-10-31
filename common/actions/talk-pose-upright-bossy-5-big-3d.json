@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "talk-pose-upright-bossy-5-big-3d",
   "duration": 3.2,
   "end": "wrap",
@@ -10,6 +10,6 @@
     { "t": 0.5, "pose": { "torso": [-5.3, -3.4], "head": [0, null, -10] }, "ease": "linear" }
   ],
   "events": [],
-  "note": "Dáng thoại 5 của bộ `talk-pose-upright-bossy`, độ lệch khỏi dáng nền ×1,7 (trần thân 8° / 5°, đầu 6° / 10°) cho đầu nhỏ trên hình (khung trung, rộng) — nền đứng thẳng (thân 0°, đầu 0°), tính hống hách: biên độ lớn, hất cằm, ngửa đầu nhìn xuống người nghe: ngả lại 4° phía tay gần, hất cằm 8°. Lặp 3,2 s, giữ nhịp thở của `stand-3d` (thân +1,5° ở nửa lượt); clip đặt `phase` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi `torso` (cúi, nghiêng) và nghiêng, gật của `head`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay xa ống kính. Nền `stand-3d`, ngồi thì `sit-3d`. Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới. Cùng dáng: `talk-pose-upright-bossy-5-3d`, `talk-pose-upright-bossy-5-nod-3d`, `talk-pose-upright-bossy-5-soft-3d`, `talk-pose-upright-bossy-5-big-3d`. Sinh bằng `tools/actions/talk-pose.mjs`.",
+  "note": "Dáng thoại 5 của bộ `talk-pose-upright-bossy`, độ lệch khỏi dáng nền ×1,7 (trần thân 8° / 5°, đầu 6° / 10°) cho đầu nhỏ trên hình (khung trung, rộng) — nền đứng thẳng (thân 0°, đầu 0°), tính hống hách: biên độ lớn, hất cằm, ngửa đầu nhìn xuống người nghe: ngả lại 4° phía tay phải, hất cằm 8°. Lặp 3,2 s, giữ nhịp thở của `stand-3d` (thân +1,5° ở nửa lượt); clip đặt `phase` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi `torso` (cúi, nghiêng) và nghiêng, gật của `head`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay trái. Nền `stand-3d`, ngồi thì `sit-3d`. Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới. Cùng dáng: `talk-pose-upright-bossy-5-3d`, `talk-pose-upright-bossy-5-nod-3d`, `talk-pose-upright-bossy-5-soft-3d`, `talk-pose-upright-bossy-5-big-3d`. Sinh bằng `tools/actions/talk-pose.mjs`.",
   "preview": { "stage": "stand" }
 }

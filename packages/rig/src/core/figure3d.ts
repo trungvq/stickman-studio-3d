@@ -43,8 +43,8 @@ export interface World {
   flip: boolean;
   /** Góc giữa hướng mặt và hướng về ống kính, độ 0–180 */
   theta: number;
-  /** Đích cổ tay thế giới của tay gần, tay xa (`cast[].world.hands` đã lấy mẫu); đè đích hệ thân */
-  hands?: { near?: Reach; far?: Reach };
+  /** Đích cổ tay thế giới của tay phải, tay trái (`cast[].world.hands` đã lấy mẫu); đè đích hệ thân */
+  hands?: { right?: Reach; left?: Reach };
   /** Mắt ống kính ở khung này (thế giới rig) khi ống kính chạy theo `t` ngoài `lens`: ý định quay món về ống kính đọc nó */
   eye?: V3;
 }
@@ -93,18 +93,18 @@ export const body3 = (c: CharacterData): Body3 => ({
 /** Mốc khớp 3D của một người */
 export type Joint3 =
   | "hip"
-  | "hipNear"
-  | "hipFar"
-  | "kneeNear"
-  | "kneeFar"
-  | "footNear"
-  | "footFar"
-  | "shoulderNear"
-  | "shoulderFar"
-  | "elbowNear"
-  | "elbowFar"
-  | "wristNear"
-  | "wristFar"
+  | "hipRight"
+  | "hipLeft"
+  | "kneeRight"
+  | "kneeLeft"
+  | "footRight"
+  | "footLeft"
+  | "shoulderRight"
+  | "shoulderLeft"
+  | "elbowRight"
+  | "elbowLeft"
+  | "wristRight"
+  | "wristLeft"
   | "neck"
   | "head";
 
@@ -117,19 +117,19 @@ export interface Figure3 {
   /** Góc khung thân đã chiếu, độ theo chiều rig, trong hệ chưa lật */
   torsoDeg: number;
   /** Chuỗi chi trong hệ khung của người (chưa lật): chân trong hệ hông, tay trong khung thân */
-  legN: Pt[];
-  legF: Pt[];
-  armN: Pt[];
-  armF: Pt[];
-  shN: Pt;
-  shF: Pt;
+  legR: Pt[];
+  legL: Pt[];
+  armR: Pt[];
+  armL: Pt[];
+  shR: Pt;
+  shL: Pt;
   lowest: number;
   /** Cổ và tâm đầu đã chiếu, `y` trong khung thân */
   neckY: number;
   headY: number;
   /** Góc nhìn xuống mà khối sọ nhận, độ: `HEAD_LOOK` phần góc ống kính nhìn xuống tâm đầu trong hệ thân */
   look: number;
-  /** Đùi gần, đùi xa thật: góc với trục thân (độ) và độ dài (đơn vị rig) */
+  /** Đùi phải, đùi trái thật: góc với trục thân (độ) và độ dài (đơn vị rig) */
   thighs: [number, number][];
   /** Khối của từng phần người trong thế giới (tám đỉnh: bốn đáy rồi bốn đỉnh), để xếp lớp với đồ khối */
   solids: { part: BodyPart; v: V3[] }[];
@@ -198,8 +198,7 @@ function frame3(w: World) {
 type Frame3 = ReturnType<typeof frame3>;
 
 /** Phía `ra ngoài` của một tay trong hệ thân: `+1` theo `R` của người, `−1` ngược lại */
-const reachSide = (w: World, ch: "armNear" | "armFar") =>
-  (ch === "armNear" ? 1 : -1) * (w.flip ? -1 : 1);
+const reachSide = (ch: "armRight" | "armLeft") => (ch === "armRight" ? 1 : -1);
 
 /** Đích cổ tay hệ thân `[tiến, y, ra ngoài]` (đơn vị rig ở `height = 1`) ra thế giới. docs/01-rig.md#đích-bàn-tay */
 function reachWorld(w: World, lat: number, [f, y, o]: readonly number[], height: number): V3 {
@@ -207,14 +206,14 @@ function reachWorld(w: World, lat: number, [f, y, o]: readonly number[], height:
 }
 
 /** Đích hệ thân của tay `ch` ra điểm thế giới */
-export const reachToWorld = (w: World, ch: "armNear" | "armFar", at: V3, height: number) =>
-  reachWorld(w, reachSide(w, ch), at, height);
+export const reachToWorld = (w: World, ch: "armRight" | "armLeft", at: V3, height: number) =>
+  reachWorld(w, reachSide(ch), at, height);
 
 /** Chiều ngược của `reachToWorld`: điểm thế giới `p` ra đích hệ thân của tay `ch` */
-export function worldToReach(w: World, ch: "armNear" | "armFar", p: V3, height: number): V3 {
+export function worldToReach(w: World, ch: "armRight" | "armLeft", p: V3, height: number): V3 {
   const { F, R } = frame3(w);
   const d = scale3(sub3(p, w.hip), 1 / (w.s * height));
-  return [dot3(d, F), d[1], dot3(d, R) * reachSide(w, ch)];
+  return [dot3(d, F), d[1], dot3(d, R) * reachSide(ch)];
 }
 
 /**
@@ -261,7 +260,7 @@ function limb3(
   fr: Frame3,
   w: World,
   P: Pose,
-  ch: "an" | "af" | "ln" | "lf",
+  ch: "ar" | "al" | "lr" | "ll",
   root2: Pt,
   lifted: () => V3[],
   l1: number,
@@ -311,39 +310,37 @@ function twisted(pts: Pt[], deg: number, out: number): V3[] {
   return [r, e, add3(e, f)];
 }
 
-/** Hai chân `[gần, xa]`: chân gần là chân phải khi không lật; gốc vẽ là gốc hông thật đã chiếu */
+/** Hai chân `[phải, trái]`; gốc vẽ là gốc hông thật đã chiếu */
 function legs3(fr: Frame3, w: World, P: Pose, height: number, hipHalf: number): [Chain3, Chain3] {
   const len = lengths(height);
   const st = P.stretch;
-  const nearR = w.flip ? -1 : 1;
+  // khung của người soi gương khi lật: bên phải người ở `−x` của khung khi không lật, `+x` khi lật
+  const mx = w.flip ? -1 : 1;
   const cosT = Math.cos(w.theta * D);
-  const leg = (ch: "ln" | "lf", side: number, l1: number, l2: number) =>
+  const leg = (ch: "lr" | "ll", side: number, l1: number, l2: number) =>
     limb3(
       fr,
       w,
       P,
       ch,
-      rootAt(fr, w, w.hip, fr.world([0, 0, -side * nearR * hipHalf])) ?? [side * hipHalf * cosT, 0],
-      () =>
-        spreadOut(chain2([0, 0], P[ch], l1, l2), -side * nearR * hipHalf, P[ch][2] ?? 0).map(
-          fr.world,
-        ),
+      rootAt(fr, w, w.hip, fr.world([0, 0, -side * hipHalf])) ?? [side * mx * hipHalf * cosT, 0],
+      () => spreadOut(chain2([0, 0], P[ch], l1, l2), -side * hipHalf, P[ch][2] ?? 0).map(fr.world),
       l1,
       l2,
     );
   return [
-    leg("ln", -1, len.thigh * st[6], len.shin * st[7]),
-    leg("lf", 1, len.thigh * st[4], len.shin * st[5]),
+    leg("lr", -1, len.thigh * st[6], len.shin * st[7]),
+    leg("ll", 1, len.thigh * st[4], len.shin * st[5]),
   ];
 }
 
-/** Hai bàn chân `[xa, gần]` của người 3D trong thế giới, cùng thứ tự với `feet` của `geometry.ts` */
+/** Hai bàn chân `[trái, phải]` của người 3D trong thế giới, cùng thứ tự với `feet` của `geometry.ts` */
 export function feet3(P: Pose, w: World, height: number, hipHalf: number): [V3, V3] {
   const [n, f] = legs3(frame3(w), w, P, height, hipHalf);
   return [f.w3[2], n.w3[2]];
 }
 
-/** Hai chân `[xa, gần]` của người 3D trong thế giới, mỗi chân `[gốc, gối, cổ chân]` như `feet3` dựng */
+/** Hai chân `[trái, phải]` của người 3D trong thế giới, mỗi chân `[gốc, gối, cổ chân]` như `feet3` dựng */
 export function legs3World(P: Pose, w: World, height: number, hipHalf: number): [V3[], V3[]] {
   const [n, f] = legs3(frame3(w), w, P, height, hipHalf);
   return [f.w3, n.w3];
@@ -351,7 +348,7 @@ export function legs3World(P: Pose, w: World, height: number, hipHalf: number): 
 
 /**
  * Hình học 3D của một tư thế: kênh nâng (`pose.lift`) đọc góc như soạn ở `side` — tiến theo hướng
- * mặt, chân gần là chân phải khi không lật —, kênh còn lại giữ góc trên mặt khung. Gốc chân, gốc vai,
+ * mặt —, kênh còn lại giữ góc trên mặt khung. Gốc chân, gốc vai,
  * cổ và tâm đầu là điểm thật đã chiếu; `solids` là khối từng phần người để `check` đo.
  */
 export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
@@ -365,10 +362,10 @@ export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
   const shHalf = solidTorso ? shoulderRoot(c) : rig.shoulderHalf;
   const fr = frame3(w);
   const { F, R, world, screen, k, local } = fr;
-  const nearR = w.flip ? -1 : 1;
+  const mx = w.flip ? -1 : 1;
   const lam = (P.torso || 0) * D;
-  // nghiêng ngang về phía tay xa quanh trục tiến qua hông, trước cái cúi — như `spine` của `act`
-  const farR = -nearR;
+  // nghiêng ngang về bên trái người (`−R`) quanh trục tiến qua hông, trước cái cúi — như `spine` của `act`
+  const farR = -1;
   const cps = Math.cos((P.lean || 0) * D);
   const sps = Math.sin((P.lean || 0) * D);
   const shY = -len.torso + rig.shoulderDrop;
@@ -398,17 +395,17 @@ export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
     const [dx, dy] = d ? torsoFrame.inTorso(d) : [flat, 0];
     return [shC2[0] + dx, shC2[1] + dy];
   };
-  const sN2 = shAt(nearR * shHalf, -shHalf * cosT);
-  const sF2 = shAt(-nearR * shHalf, shHalf * cosT);
+  const sR2 = shAt(shHalf, -mx * shHalf * cosT);
+  const sL2 = shAt(-shHalf, mx * shHalf * cosT);
 
   const armBody = (a: readonly number[], l1: number, l2: number, lat: number): V3[] =>
     spreadOut(twisted(chain2([0, shY], a, l1, l2), a[4] ?? 0, Math.sign(lat)), lat, a[3] ?? 0).map(
       torsoPt,
     );
-  const [LN, LF] = legs3(fr, w, P, rig.height, rig.hipHalf);
+  const [LR, LL] = legs3(fr, w, P, rig.height, rig.hipHalf);
   // đích hệ thân `[tiến, y, ra ngoài]` của một tay ra thế giới; `ra ngoài` theo phía của chính tay ấy
   const ik =
-    (ch: "an" | "af", lat: number, l1: number, l2: number) =>
+    (ch: "ar" | "al", lat: number, l1: number, l2: number) =>
     (base: V3[], S: V3): V3[] | undefined => {
       const H = rig.height;
       const at = (r: readonly number[]): V3 => reachWorld(w, lat, r, H);
@@ -427,25 +424,25 @@ export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
       };
       const rb = P.reach?.[ch];
       toward(rb, rb && at(rb.at), dir(rb?.elbow ?? REACH_ELBOW));
-      const rw = w.hands?.[ch === "an" ? "near" : "far"];
+      const rw = w.hands?.[ch === "ar" ? "right" : "left"];
       toward(rw, rw?.at, rw?.elbow ?? dir(REACH_ELBOW));
       return any ? solveTwoBone(S, T, l1 * w.s, l2 * w.s, pole) : undefined;
     };
-  const arm = (ch: "an" | "af", root2: Pt, side: number, l1: number, l2: number) =>
+  const arm = (ch: "ar" | "al", root2: Pt, side: number, l1: number, l2: number) =>
     limb3(
       fr,
       w,
       P,
       ch,
       root2,
-      () => armBody(P[ch], l1, l2, side * nearR * shHalf),
+      () => armBody(P[ch], l1, l2, side * shHalf),
       l1,
       l2,
       torsoFrame,
-      ik(ch, side * nearR, l1, l2),
+      ik(ch, side, l1, l2),
     );
-  const AN = arm("an", sN2, 1, len.upperArm * st[2], len.foreArm * st[3]);
-  const AF = arm("af", sF2, -1, len.upperArm * st[0], len.foreArm * st[1]);
+  const AR = arm("ar", sR2, 1, len.upperArm * st[2], len.foreArm * st[3]);
+  const AL = arm("al", sL2, -1, len.upperArm * st[0], len.foreArm * st[1]);
 
   const headH = (c.head.scaleY * RIG.headH) / 2;
   const headC = torsoPt([0, -(len.torso + len.neck) - headH, 0]);
@@ -473,18 +470,18 @@ export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
   };
   const joints: Record<Joint3, V3> = {
     hip,
-    hipNear: LN.w3[0],
-    hipFar: LF.w3[0],
-    kneeNear: LN.w3[1],
-    kneeFar: LF.w3[1],
-    footNear: LN.w3[2],
-    footFar: LF.w3[2],
-    shoulderNear: AN.w3[0],
-    shoulderFar: AF.w3[0],
-    elbowNear: AN.w3[1],
-    elbowFar: AF.w3[1],
-    wristNear: AN.w3[2],
-    wristFar: AF.w3[2],
+    hipRight: LR.w3[0],
+    hipLeft: LL.w3[0],
+    kneeRight: LR.w3[1],
+    kneeLeft: LL.w3[1],
+    footRight: LR.w3[2],
+    footLeft: LL.w3[2],
+    shoulderRight: AR.w3[0],
+    shoulderLeft: AL.w3[0],
+    elbowRight: AR.w3[1],
+    elbowLeft: AL.w3[1],
+    wristRight: AR.w3[2],
+    wristLeft: AL.w3[2],
     neck,
     head: headC,
   };
@@ -527,14 +524,14 @@ export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
   const solids: Figure3["solids"] = [
     { part: "torso", v: torso },
     { part: "head", v: headBox },
-    sw(LN.w3, "legNear", 0, half.leg),
-    shin(LN.w3, "shinNear"),
-    sw(LF.w3, "legFar", 0, half.leg),
-    shin(LF.w3, "shinFar"),
-    sw(AN.w3, "armNear", 0, half.arm),
-    sw(AN.w3, "forearmNear", 1, half.arm),
-    sw(AF.w3, "armFar", 0, half.arm),
-    sw(AF.w3, "forearmFar", 1, half.arm),
+    sw(LR.w3, "legRight", 0, half.leg),
+    shin(LR.w3, "shinRight"),
+    sw(LL.w3, "legLeft", 0, half.leg),
+    shin(LL.w3, "shinLeft"),
+    sw(AR.w3, "armRight", 0, half.arm),
+    sw(AR.w3, "forearmRight", 1, half.arm),
+    sw(AL.w3, "armLeft", 0, half.arm),
+    sw(AL.w3, "forearmLeft", 1, half.arm),
   ];
 
   return {
@@ -542,18 +539,18 @@ export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
     screen,
     k,
     torsoDeg,
-    legN: LN.pts,
-    legF: LF.pts,
-    armN: AN.pts,
-    armF: AF.pts,
-    shN: sN2,
-    shF: sF2,
-    lowest: Math.max(LN.pts[2][1], LF.pts[2][1]),
+    legR: LR.pts,
+    legL: LL.pts,
+    armR: AR.pts,
+    armL: AL.pts,
+    shR: sR2,
+    shL: sL2,
+    lowest: Math.max(LR.pts[2][1], LL.pts[2][1]),
     solids,
     neckY: torsoFrame.inTorso(local(neck))[1],
     headY: torsoFrame.inTorso(local(headC))[1],
     look,
-    thighs: [thighAt(LN.w3), thighAt(LF.w3)],
+    thighs: [thighAt(LR.w3), thighAt(LL.w3)],
   };
 }
 
@@ -573,34 +570,33 @@ export function flatPose(c: CharacterData, P: Pose, f3: Figure3): Pose {
     const a1 = wrap180(Math.atan2(d2[0], d2[1]) / D - a0);
     return { a: [a0, a1] as [number, number], s: [Math.hypot(...d1) / l1, Math.hypot(...d2) / l2] };
   };
-  const an = seg(f3.armN, len.upperArm, len.foreArm);
-  const af = seg(f3.armF, len.upperArm, len.foreArm);
-  const ln = seg(f3.legN, len.thigh, len.shin);
-  const lf = seg(f3.legF, len.thigh, len.shin);
+  const ar = seg(f3.armR, len.upperArm, len.foreArm);
+  const al = seg(f3.armL, len.upperArm, len.foreArm);
+  const lr = seg(f3.legR, len.thigh, len.shin);
+  const ll = seg(f3.legL, len.thigh, len.shin);
   return {
     ...P,
-    af: [af.a[0], af.a[1], P.af[2]],
-    an: [an.a[0], an.a[1], P.an[2]],
-    lf: lf.a,
-    ln: ln.a,
+    al: [al.a[0], al.a[1], P.al[2]],
+    ar: [ar.a[0], ar.a[1], P.ar[2]],
+    ll: ll.a,
+    lr: lr.a,
     torso: f3.torsoDeg,
-    stretch: [af.s[0], af.s[1], an.s[0], an.s[1], lf.s[0], lf.s[1], ln.s[0], ln.s[1]],
+    stretch: [al.s[0], al.s[1], ar.s[0], ar.s[1], ll.s[0], ll.s[1], lr.s[0], lr.s[1]],
   };
 }
 
-/** `Figure` của rig với chuỗi chi, gốc chi của người 3D; gốc gần ở `+x` khi thân quay quá ngang */
-export function figureOf3(F: Figure, f3: Figure3, theta: number): Figure {
+/** `Figure` của rig với chuỗi chi, gốc chi của người 3D */
+export function figureOf3(F: Figure, f3: Figure3): Figure {
   return {
     ...F,
-    nearSide: Math.cos(theta * D) < 0 ? 1 : -1,
-    shoulderSpan: Math.abs(f3.shN[0]),
-    hipSpan: Math.abs(f3.legN[0][0]),
-    legN: f3.legN,
-    legF: f3.legF,
-    armN: f3.armN,
-    armF: f3.armF,
-    shN: f3.shN,
-    shF: f3.shF,
+    shoulderSpan: Math.abs(f3.shR[0]),
+    hipSpan: Math.abs(f3.legR[0][0]),
+    legR: f3.legR,
+    legL: f3.legL,
+    armR: f3.armR,
+    armL: f3.armL,
+    shR: f3.shR,
+    shL: f3.shL,
     lowest: f3.lowest,
   };
 }
@@ -640,8 +636,8 @@ export function handsOn(
   const cx = top.poly.reduce((a, p) => a + p[0], 0) / n;
   const cz = top.poly.reduce((a, p) => a + p[1], 0) / n;
   const out: { right?: { at: V3 }; left?: { at: V3 } } = {};
-  for (const near of [true, false]) {
-    const S = near ? f3.joints.shoulderNear : f3.joints.shoulderFar;
+  for (const right of [true, false]) {
+    const S = right ? f3.joints.shoulderRight : f3.joints.shoulderLeft;
     const lat = dot3(sub3(S, w.hip), R) * 0.7;
     const B: V3 = add3(w.hip, scale3(R, lat));
     let lo = 0;
@@ -663,12 +659,12 @@ export function handsOn(
       else hi = Math.min(hi, -a / b);
     }
     if (!(lo <= hi)) continue;
-    const l1 = len.upperArm * st[near ? 2 : 0] * w.s;
-    const l2 = len.foreArm * st[near ? 3 : 1] * w.s;
-    const side = near ? 1 : -1;
+    const l1 = len.upperArm * st[right ? 2 : 0] * w.s;
+    const l2 = len.foreArm * st[right ? 3 : 1] * w.s;
+    const side = right ? 1 : -1;
     const pole = add3(
       add3(scale3(F, REACH_ELBOW[0]), [0, REACH_ELBOW[1], 0]),
-      scale3(R, REACH_ELBOW[2] * side * (w.flip ? -1 : 1)),
+      scale3(R, REACH_ELBOW[2] * side),
     );
     const at = (d: number): V3 => [B[0] + F[0] * d, y, B[2] + F[2] * d];
     let d = lo;
@@ -677,7 +673,7 @@ export function handsOn(
       d = x;
       if (solveTwoBone(S, at(x), l1, l2, pole)[1][1] <= y - ELBOW_LIFT * w.s) break;
     }
-    out[near !== w.flip ? "right" : "left"] = { at: at(d).map((v) => +v.toFixed(2)) as V3 };
+    out[right ? "right" : "left"] = { at: at(d).map((v) => +v.toFixed(2)) as V3 };
   }
   return out;
 }

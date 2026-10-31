@@ -27,39 +27,39 @@ function desk(b, x0, stool) {
 
 /** Đưa tay gần ra trước ngang ngực rồi giữ dáng tay `pose`: một trạm của bảng dáng tay */
 const handShow = (pose) => ({
-  name: `hand-${pose}`, duration: 0.8, end: 'hold', authoredAt: 'side', mask: ['armNear', 'hand'],
+  name: `hand-${pose}`, duration: 0.8, end: 'hold', authoredAt: 'side', mask: ['armRight', 'hand'],
   keys: [
-    { t: 0, pose: { armNear: [3, 8, 0] }, hand: { armNear: {} }, ease: 'smooth' },
-    { t: 1, pose: { armNear: [40, 70, 0, 10] }, hand: { armNear: pose } },
+    { t: 0, pose: { armRight: [3, 8, 0] }, hand: { armRight: {} }, ease: 'smooth' },
+    { t: 1, pose: { armRight: [40, 70, 0, 10] }, hand: { armRight: pose } },
   ],
 });
 
 /** Hành động chỉ người mặc đồ: vẫy tay bằng xoắn vai, nhún vai ngửa tay, úp tay gõ phím, chỉ tay */
 const GESTURES = {
   'wave-3d': {
-    name: 'wave-3d', duration: 1.2, end: 'wrap', authoredAt: 'side', mask: ['armNear', 'hand'],
+    name: 'wave-3d', duration: 1.2, end: 'wrap', authoredAt: 'side', mask: ['armRight', 'hand'],
     note: 'Vẫy tay: cánh tay trên ngang vai (dang 80 cộng tay choãi), xoay ngoài 90 dựng cẳng tay, khuỷu lắc 40 ↔ 75 nên cẳng tay ngả ra ngoài đầu qua lại; lòng tay ra trước.',
     keys: [
-      { t: 0, pose: { armNear: [0, 58, 0, 80, 90] }, hand: { armNear: { pose: 'open', bend: -10 } }, ease: 'smooth' },
-      { t: 0.25, pose: { armNear: [0, 40, 0, 80, 90] }, hand: { armNear: { pose: 'open', bend: -20 } }, ease: 'smooth' },
-      { t: 0.75, pose: { armNear: [0, 75, 0, 80, 90] }, hand: { armNear: { pose: 'open', bend: 0 } }, ease: 'smooth' },
-      { t: 1, pose: { armNear: [0, 58, 0, 80, 90] }, hand: { armNear: { pose: 'open', bend: -10 } } },
+      { t: 0, pose: { armRight: [0, 58, 0, 80, 90] }, hand: { armRight: { pose: 'open', bend: -10 } }, ease: 'smooth' },
+      { t: 0.25, pose: { armRight: [0, 40, 0, 80, 90] }, hand: { armRight: { pose: 'open', bend: -20 } }, ease: 'smooth' },
+      { t: 0.75, pose: { armRight: [0, 75, 0, 80, 90] }, hand: { armRight: { pose: 'open', bend: 0 } }, ease: 'smooth' },
+      { t: 1, pose: { armRight: [0, 58, 0, 80, 90] }, hand: { armRight: { pose: 'open', bend: -10 } } },
     ],
   },
   'shrug-palms-3d': {
-    name: 'shrug-palms-3d', duration: 0.6, end: 'hold', authoredAt: 'side', mask: ['armNear', 'armFar', 'hand'],
+    name: 'shrug-palms-3d', duration: 0.6, end: 'hold', authoredAt: 'side', mask: ['armRight', 'armLeft', 'hand'],
     note: 'Nhún vai ngửa tay: cẳng tay ra trước, dang 25, ngửa hẳn (turn −90).',
     keys: [
-      { t: 0, pose: { armNear: [3, 8, 0], armFar: [3, 8, 0] }, hand: { armNear: {}, armFar: {} }, ease: 'smooth' },
-      { t: 1, pose: { armNear: [10, 80, 0, 25], armFar: [10, 80, 0, 25] }, hand: { armNear: { pose: 'open', w: 0.7, turn: -90, bend: -10 }, armFar: { pose: 'open', w: 0.7, turn: -90, bend: -10 } } },
+      { t: 0, pose: { armRight: [3, 8, 0], armLeft: [3, 8, 0] }, hand: { armRight: {}, armLeft: {} }, ease: 'smooth' },
+      { t: 1, pose: { armRight: [10, 80, 0, 25], armLeft: [10, 80, 0, 25] }, hand: { armRight: { pose: 'open', w: 0.7, turn: -90, bend: -10 }, armLeft: { pose: 'open', w: 0.7, turn: -90, bend: -10 } } },
     ],
   },
   'point-out-3d': {
-    name: 'point-out-3d', duration: 0.5, end: 'hold', authoredAt: 'side', mask: ['armNear', 'hand'],
+    name: 'point-out-3d', duration: 0.5, end: 'hold', authoredAt: 'side', mask: ['armRight', 'hand'],
     note: 'Chỉ sang ngang chếch ra trước: tay gần gần duỗi, hơi dưới vai, ngón trỏ theo trục cẳng tay, ngón cái lên.',
     keys: [
-      { t: 0, pose: { armNear: [3, 8, 0] }, hand: { armNear: {} }, ease: 'smooth' },
-      { t: 1, pose: { armNear: [40, 5, 0, 75] }, hand: { armNear: { pose: 'point', bend: -5 } } },
+      { t: 0, pose: { armRight: [3, 8, 0] }, hand: { armRight: {} }, ease: 'smooth' },
+      { t: 1, pose: { armRight: [40, 5, 0, 75] }, hand: { armRight: { pose: 'point', bend: -5 } } },
     ],
   },
 };

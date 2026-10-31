@@ -7,7 +7,6 @@ import {
   parseScene,
   resolveScene,
   sceneAt,
-  sideChannel,
   type ActionData,
 } from "./index";
 
@@ -23,11 +22,11 @@ const ACTIONS: Record<string, ActionData> = {
     duration: 1,
     end: "hold",
     authoredAt: "side",
-    mask: ["armFar", "armNear"],
-    keys: [{ t: 0, pose: { armFar: [5, -10, 0], armNear: [5, -10, 0] } }],
+    mask: ["armLeft", "armRight"],
+    keys: [{ t: 0, pose: { armLeft: [5, -10, 0], armRight: [5, -10, 0] } }],
   }),
-  farHand: action({
-    name: "farHand",
+  leftHand: action({
+    name: "leftHand",
     duration: 1,
     end: "hold",
     authoredAt: "side",
@@ -36,7 +35,7 @@ const ACTIONS: Record<string, ActionData> = {
       {
         t: 0,
         pose: {},
-        hand: { armFar: { pose: "open", w: 0.75, palm: "down", fingers: "forward" } },
+        hand: { armLeft: { pose: "open", w: 0.75, palm: "down", fingers: "forward" } },
       },
     ],
   }),
@@ -45,15 +44,14 @@ const ACTIONS: Record<string, ActionData> = {
     duration: 1,
     end: "hold",
     authoredAt: "side",
-    sides: "anatomical",
     mask: ["hand"],
-    keys: [{ t: 0, pose: {}, hand: { armNear: "fist" } }],
+    keys: [{ t: 0, pose: {}, hand: { armRight: "fist" } }],
   }),
 };
 
 const LENS = { eye: [0, -200, 0], yaw: 0, pitch: 0, f: 800, cx: 0, cy: -200 };
 
-function run(yaw: number, hand: string, hands?: unknown[]) {
+function run(yaw: number, hand: string, hands?: unknown[], mirror?: boolean) {
   const r = parseScene({
     lens: LENS,
     duration: 2,
@@ -63,7 +61,7 @@ function run(yaw: number, hand: string, hands?: unknown[]) {
         world: { at: [0, 0, 500], yaw, ...(hands && { hands }) },
         tracks: [
           { name: "than", clips: [{ action: "stand", start: 0 }] },
-          { name: "tay", clips: [{ action: hand, start: 0 }] },
+          { name: "tay", clips: [{ action: hand, start: 0, ...(mirror && { mirror }) }] },
         ],
       },
     ],
@@ -74,37 +72,40 @@ function run(yaw: number, hand: string, hands?: unknown[]) {
 }
 
 describe("handSources", () => {
-  it("kênh xa đi vào tay phải khi thân lật, tay trái khi không", () => {
+  it("kênh `armLeft` đi vào tay trái ở mọi phía của ống kính; clip `mirror` đưa nó vào tay phải", () => {
     for (const yaw of [90, 270]) {
-      const { rt, src } = run(yaw, "farHand");
-      const flip = rt.cast[0].rightFar === true;
-      const far = flip ? src.right : src.left;
-      const near = flip ? src.left : src.right;
-      expect(far.flip).toBe(flip);
-      expect(far.channel).toBe("af");
-      expect(far.hand).toMatchObject({
+      const { src } = run(yaw, "leftHand");
+      expect(src.left.channel).toBe("al");
+      expect(src.left.hand).toMatchObject({
         track: 1,
         trackName: "tay",
         clip: 0,
-        action: "farHand",
-        channel: "armFar",
+        action: "leftHand",
+        channel: "armLeft",
+        mirror: false,
         aim: true,
         key: { pose: "open", w: 0.75, palm: "down", fingers: "forward" },
       });
-      expect(far.arm).toMatchObject({ trackName: "than", action: "stand", channel: "armFar" });
-      expect(near.channel).toBe("an");
-      expect(near.hand).toBeUndefined();
-      expect(near.arm).toMatchObject({ trackName: "than", channel: "armNear" });
+      expect(src.left.arm).toMatchObject({
+        trackName: "than",
+        action: "stand",
+        channel: "armLeft",
+      });
+      expect(src.right.channel).toBe("ar");
+      expect(src.right.hand).toBeUndefined();
+      expect(src.right.arm).toMatchObject({ trackName: "than", channel: "armRight" });
+      const m = run(yaw, "leftHand", undefined, true).src;
+      expect(m.right.hand).toMatchObject({ action: "leftHand", channel: "armLeft", mirror: true });
+      expect(m.left.hand).toBeUndefined();
     }
-    expect([90, 270].map((y) => run(y, "farHand").rt.cast[0].rightFar === true)).toContain(true);
   });
 
-  it('hành động `sides: "anatomical"` giữ kênh gần là tay phải', () => {
+  it("kênh `armRight` là tay phải", () => {
     for (const yaw of [90, 270]) {
       const { src } = run(yaw, "rightHand");
-      expect(src.right.hand).toMatchObject({ action: "rightHand", anatomical: src.right.flip });
-      expect(src.right.hand?.channel).toBe("armNear");
-      expect(src.right.channel).toBe(src.right.flip ? "af" : "an");
+      expect(src.right.hand).toMatchObject({ action: "rightHand", mirror: false });
+      expect(src.right.hand?.channel).toBe("armRight");
+      expect(src.right.channel).toBe("ar");
       expect(src.right.hand?.aim).toBe(false);
       expect(src.left.hand).toBeUndefined();
     }
@@ -115,7 +116,7 @@ describe("handSources", () => {
       { t: 0, left: { at: [0, -200, 520], palm: "down" } },
       { t: 1, left: null, right: { pose: "fist" } },
     ];
-    const { src } = run(270, "farHand", hands);
+    const { src } = run(270, "leftHand", hands);
     expect(src.left.mark).toEqual({
       index: 0,
       t: 0,
@@ -131,22 +132,22 @@ describe("handSources", () => {
 });
 
 describe("clipSides", () => {
-  it("clip chỉ ghi bàn tay xa: tay phải khi lật, tay trái khi không; clip thân ghi góc cả hai tay", () => {
+  it("clip chỉ ghi bàn tay trái: tay trái ở mọi phía, tay phải khi soi gương; clip thân ghi góc cả hai tay", () => {
     for (const yaw of [90, 270]) {
-      const { rt } = run(yaw, "farHand");
-      const flip = rt.cast[0].rightFar === true;
-      const far = flip ? "right" : "left";
-      const near = flip ? "left" : "right";
+      const { rt } = run(yaw, "leftHand");
       const s = clipSides(rt, "a", 1, 0, 0.5)!;
-      expect(s[far]).toEqual({ arm: false, hand: true });
-      expect(s[near]).toEqual({ arm: false, hand: false });
+      expect(s.left).toEqual({ arm: false, hand: true });
+      expect(s.right).toEqual({ arm: false, hand: false });
+      const m = clipSides(run(yaw, "leftHand", undefined, true).rt, "a", 1, 0, 0.5)!;
+      expect(m.right).toEqual({ arm: false, hand: true });
+      expect(m.left).toEqual({ arm: false, hand: false });
       const body = clipSides(rt, "a", 0, 0, 0.5)!;
       expect(body.right).toEqual({ arm: true, hand: false });
       expect(body.left).toEqual({ arm: true, hand: false });
     }
   });
 
-  it('hành động `sides: "anatomical"` ghi kênh gần vào tay phải ở mọi phía', () => {
+  it("kênh `armRight` ghi vào tay phải ở mọi phía", () => {
     for (const yaw of [90, 270]) {
       const s = clipSides(run(yaw, "rightHand").rt, "a", 1, 0, 0.5)!;
       expect(s.right.hand).toBe(true);
@@ -166,7 +167,7 @@ describe("mốc `rest`", () => {
       {
         t: 0,
         pose: {},
-        hand: { armFar: { pose: "open", palm: "down" }, armNear: { pose: "open", palm: "down" } },
+        hand: { armLeft: { pose: "open", palm: "down" }, armRight: { pose: "open", palm: "down" } },
       },
     ],
   });
@@ -188,8 +189,7 @@ describe("mốc `rest`", () => {
     if (!r.success) throw new Error(r.error.message);
     const rt = resolveScene(r.data, { ...ACTIONS, both });
     const sp = sceneAt(rt, "a", time);
-    const flip = !!sp.world?.flip;
-    return { rt, sp, ch: (s: "right" | "left") => sideChannel(s, flip) };
+    return { rt, sp, ch: (s: "right" | "left") => (s === "right" ? "ar" : "al") };
   };
 
   it("huỷ bàn tay và ý định của hành động ở đúng tay ấy, từ mốc", () => {

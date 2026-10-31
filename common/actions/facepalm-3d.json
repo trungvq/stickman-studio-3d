@@ -1,24 +1,24 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "facepalm-3d",
   "duration": 1,
   "end": "hold",
-  "mask": ["armNear", "hand", "torso", "head"],
+  "mask": ["armRight", "hand", "torso", "head"],
   "authoredAt": "side",
   "keys": [
     {
       "t": 0,
-      "pose": { "armNear": [-6, 24, 0], "torso": 0, "head": [null, null, 0] },
+      "pose": { "armRight": [-6, 24, 0], "torso": 0, "head": [null, null, 0] },
       "ease": "smooth",
-      "hand": { "armNear": { "w": 0.3, "turn": 0, "bend": 0 } }
+      "hand": { "armRight": { "w": 0.3, "turn": 0, "bend": 0 } }
     },
     {
       "t": 0.25,
       "pose": { "torso": 1, "head": [null, null, 2] },
-      "reach": { "armNear": { "to": "chin", "offset": [18, 8, 10], "elbow": [0.2, 1, 0.6] } },
+      "reach": { "armRight": { "to": "chin", "offset": [18, 8, 10], "elbow": [0.2, 1, 0.6] } },
       "ease": "smooth",
       "hand": {
-        "armNear": {
+        "armRight": {
           "pose": "open",
           "w": 0.6,
           "palm": { "toward": "head" },
@@ -30,11 +30,16 @@
       "t": 0.5,
       "pose": { "torso": 3, "head": [null, null, 8] },
       "reach": {
-        "armNear": { "to": "eye", "offset": [5, -16, -14], "point": "palm", "elbow": [0.2, 1, 0.6] }
+        "armRight": {
+          "to": "eye",
+          "offset": [5, -16, -14],
+          "point": "palm",
+          "elbow": [0.2, 1, 0.6]
+        }
       },
       "ease": "smooth",
       "hand": {
-        "armNear": {
+        "armRight": {
           "pose": "open",
           "w": 1,
           "palm": { "toward": "head" },
@@ -46,11 +51,16 @@
       "t": 0.75,
       "pose": { "torso": 4, "head": [null, null, 14] },
       "reach": {
-        "armNear": { "to": "eye", "offset": [5, -16, -14], "point": "palm", "elbow": [0.2, 1, 0.6] }
+        "armRight": {
+          "to": "eye",
+          "offset": [5, -16, -14],
+          "point": "palm",
+          "elbow": [0.2, 1, 0.6]
+        }
       },
       "ease": "smooth",
       "hand": {
-        "armNear": {
+        "armRight": {
           "pose": "open",
           "w": 1,
           "palm": { "toward": "head" },
@@ -62,11 +72,16 @@
       "t": 1,
       "pose": { "torso": 4, "head": [null, null, 14] },
       "reach": {
-        "armNear": { "to": "eye", "offset": [5, -16, -14], "point": "palm", "elbow": [0.2, 1, 0.6] }
+        "armRight": {
+          "to": "eye",
+          "offset": [5, -16, -14],
+          "point": "palm",
+          "elbow": [0.2, 1, 0.6]
+        }
       },
       "ease": "linear",
       "hand": {
-        "armNear": {
+        "armRight": {
           "pose": "open",
           "w": 1,
           "palm": { "toward": "head" },
@@ -76,6 +91,6 @@
     }
   ],
   "events": [],
-  "note": "Úp tay lên mặt (chán, ngán ngẩm): tay gần qua dưới cằm lên áp lòng tay lên trán và mắt (mốc `eye`, offset [5, −16, −14] về phía giữa trán, `point: \"palm\"`) lúc 0,5 s, `open`, lòng tay quay vào đầu, ngón nằm ngang sang phía kia; đầu gục vào lòng tay tới 14°, thân cúi 4° lúc 0,75 s, giữ. Đầu gục ít để ống kính trước còn thấy mặt dưới bàn tay. Ghi `armNear`, `hand`, `torso` và gật của `head`. Nền `stand-3d`, ngồi thì `sit-3d`. Chồng nét mặt `face-tired`; buông về nền blend ~0,4. Hai tay ôm đầu thì `head-in-hands-3d`.",
+  "note": "Úp tay lên mặt (chán, ngán ngẩm): tay phải qua dưới cằm lên áp lòng tay lên trán và mắt (mốc `eye`, offset [5, −16, −14] về phía giữa trán, `point: \"palm\"`) lúc 0,5 s, `open`, lòng tay quay vào đầu, ngón nằm ngang sang phía kia; đầu gục vào lòng tay tới 14°, thân cúi 4° lúc 0,75 s, giữ. Đầu gục ít để ống kính trước còn thấy mặt dưới bàn tay. Ghi `armRight`, `hand`, `torso` và gật của `head`. Nền `stand-3d`, ngồi thì `sit-3d`. Chồng nét mặt `face-tired`; buông về nền blend ~0,4. Hai tay ôm đầu thì `head-in-hands-3d`.",
   "preview": { "stage": "stand" }
 }

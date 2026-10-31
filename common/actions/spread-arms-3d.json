@@ -1,17 +1,17 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "spread-arms-3d",
   "duration": 1.2,
   "end": "hold",
   "authoredAt": "side",
-  "mask": ["armNear", "armFar", "torso", "head", "hand"],
+  "mask": ["armRight", "armLeft", "torso", "head", "hand"],
   "keys": [
     {
       "t": 0,
-      "pose": { "armNear": [-6, 24, 0], "armFar": [-6, 24, 0], "torso": 0, "head": [0, 0, 0] },
+      "pose": { "armRight": [-6, 24, 0], "armLeft": [-6, 24, 0], "torso": 0, "head": [0, 0, 0] },
       "hand": {
-        "armNear": { "pose": "open", "w": 0.3, "turn": 0, "bend": 0 },
-        "armFar": { "pose": "open", "w": 0.3, "turn": 0, "bend": 0 }
+        "armRight": { "pose": "open", "w": 0.3, "turn": 0, "bend": 0 },
+        "armLeft": { "pose": "open", "w": 0.3, "turn": 0, "bend": 0 }
       },
       "ease": "smooth"
     },
@@ -20,12 +20,12 @@
       "pose": {
         "torso": -2,
         "head": [0, 0, -2],
-        "armNear": [12, 22, 0, 25, 30],
-        "armFar": [12, 22, 0, 25, 30]
+        "armRight": [12, 22, 0, 25, 30],
+        "armLeft": [12, 22, 0, 25, 30]
       },
       "hand": {
-        "armNear": { "pose": "open", "w": 0.8, "turn": -60, "bend": 0 },
-        "armFar": { "pose": "open", "w": 0.8, "turn": -60, "bend": 0 }
+        "armRight": { "pose": "open", "w": 0.8, "turn": -60, "bend": 0 },
+        "armLeft": { "pose": "open", "w": 0.8, "turn": -60, "bend": 0 }
       },
       "ease": "smooth"
     },
@@ -34,12 +34,12 @@
       "pose": {
         "torso": -5,
         "head": [0, 0, -6],
-        "armNear": [25, 22, 0, 38, 60],
-        "armFar": [25, 22, 0, 38, 60]
+        "armRight": [25, 22, 0, 38, 60],
+        "armLeft": [25, 22, 0, 38, 60]
       },
       "hand": {
-        "armNear": { "pose": "open", "w": 1, "turn": -90, "bend": -10 },
-        "armFar": { "pose": "open", "w": 1, "turn": -90, "bend": -10 }
+        "armRight": { "pose": "open", "w": 1, "turn": -90, "bend": -10 },
+        "armLeft": { "pose": "open", "w": 1, "turn": -90, "bend": -10 }
       },
       "ease": "smooth"
     },
@@ -48,12 +48,12 @@
       "pose": {
         "torso": -6,
         "head": [0, 0, -8],
-        "armNear": [26, 20, 0, 42, 60],
-        "armFar": [26, 20, 0, 42, 60]
+        "armRight": [26, 20, 0, 42, 60],
+        "armLeft": [26, 20, 0, 42, 60]
       },
       "hand": {
-        "armNear": { "pose": "open", "w": 1, "turn": -90, "bend": -10 },
-        "armFar": { "pose": "open", "w": 1, "turn": -90, "bend": -10 }
+        "armRight": { "pose": "open", "w": 1, "turn": -90, "bend": -10 },
+        "armLeft": { "pose": "open", "w": 1, "turn": -90, "bend": -10 }
       },
       "ease": "smooth"
     },
@@ -62,12 +62,12 @@
       "pose": {
         "torso": -5,
         "head": [0, 0, -6],
-        "armNear": [25, 22, 0, 38, 60],
-        "armFar": [25, 22, 0, 38, 60]
+        "armRight": [25, 22, 0, 38, 60],
+        "armLeft": [25, 22, 0, 38, 60]
       },
       "hand": {
-        "armNear": { "pose": "open", "w": 1, "turn": -90, "bend": -10 },
-        "armFar": { "pose": "open", "w": 1, "turn": -90, "bend": -10 }
+        "armRight": { "pose": "open", "w": 1, "turn": -90, "bend": -10 },
+        "armLeft": { "pose": "open", "w": 1, "turn": -90, "bend": -10 }
       },
       "ease": "smooth"
     }

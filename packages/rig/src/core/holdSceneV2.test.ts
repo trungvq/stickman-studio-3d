@@ -61,10 +61,10 @@ function runtime(hands: unknown[], items?: unknown[]): SceneRuntime {
   );
 }
 
-/** Tay phải, tay trái của người ở `t` (gần / xa đổi theo lật) */
+/** Tay phải, tay trái của người ở `t` */
 function handsAt(rt: SceneRuntime, t: number): { right?: Reach; left?: Reach } {
   const w = sceneAt(rt, "nguoi", t, H, body3(NGUOI)).world!;
-  const [right, left] = w.flip ? [w.hands?.far, w.hands?.near] : [w.hands?.near, w.hands?.far];
+  const [right, left] = [w.hands?.right, w.hands?.left];
   return { right, left };
 }
 const holdAt = (rt: SceneRuntime, t: number, side: "right" | "left" = "right"): ReachHold =>

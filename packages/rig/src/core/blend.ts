@@ -17,7 +17,7 @@ export const BLEND_MIN = 0.12;
 export const BLEND_MAX = 0.4;
 
 /** Kênh mang một dãy số; tay ba hay bốn số, chân hai hay ba, `head` ba, `stretch` tám hệ số */
-const VECTORS = ["af", "an", "lf", "ln", "head", "stretch"] as const;
+const VECTORS = ["al", "ar", "ll", "lr", "head", "stretch"] as const;
 
 /**
  * Đi qua từng kênh của hai bên, bên nào không ghi thì lấy `base`; `stretch` xét theo từng chi, `head`
@@ -94,6 +94,12 @@ export function blendPose(
       if (r) reach[k] = r;
     }
     if (Object.keys(reach).length) o.reach = reach;
+  }
+  // Thứ tự giải hai tay theo bên đang thắng, như cờ nâng
+  const arms = (p: Partial<Pose>) => !!(p.ar || p.al);
+  if (arms(from) || arms(to)) {
+    const [a, b] = w < 0.5 ? [from, to] : [to, from];
+    if ((arms(a) ? a : b).mirror) o.mirror = true;
   }
   // Bàn tay hoà trên góc khớp, cả xoay cẳng tay và gập cổ tay: dáng tay đổi dần, không nhảy
   const hand: HandMap = {};

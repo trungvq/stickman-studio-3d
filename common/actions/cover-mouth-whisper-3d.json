@@ -1,46 +1,46 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "cover-mouth-whisper-3d",
   "duration": 1,
   "end": "hold",
-  "mask": ["armNear", "hand"],
+  "mask": ["armRight", "hand"],
   "authoredAt": "side",
   "keys": [
     {
       "t": 0,
-      "pose": { "armNear": [-6, 24, 0] },
+      "pose": { "armRight": [-6, 24, 0] },
       "ease": "smooth",
-      "hand": { "armNear": { "w": 0.3, "turn": 0, "bend": 0 } }
+      "hand": { "armRight": { "w": 0.3, "turn": 0, "bend": 0 } }
     },
     {
       "t": 0.25,
       "pose": {},
-      "reach": { "armNear": { "to": "chin", "offset": [14, 8, 16], "elbow": [0, 0.8, 1] } },
+      "reach": { "armRight": { "to": "chin", "offset": [14, 8, 16], "elbow": [0, 0.8, 1] } },
       "ease": "smooth",
       "hand": {
-        "armNear": { "pose": "cup", "w": 0.5, "palm": [0.6, 0, -1], "fingers": [0.15, -1, -0.1] }
+        "armRight": { "pose": "cup", "w": 0.5, "palm": [0.6, 0, -1], "fingers": [0.15, -1, -0.1] }
       }
     },
     {
       "t": 0.5,
       "pose": {},
-      "reach": { "armNear": { "to": "mouth", "offset": [10, 11, 21], "elbow": [0, 0.8, 1] } },
+      "reach": { "armRight": { "to": "mouth", "offset": [10, 11, 21], "elbow": [0, 0.8, 1] } },
       "ease": "smooth",
       "hand": {
-        "armNear": { "pose": "cup", "w": 0.65, "palm": [0.6, 0, -1], "fingers": [0.15, -1, -0.1] }
+        "armRight": { "pose": "cup", "w": 0.65, "palm": [0.6, 0, -1], "fingers": [0.15, -1, -0.1] }
       }
     },
     {
       "t": 1,
       "pose": {},
-      "reach": { "armNear": { "to": "mouth", "offset": [10, 11, 21], "elbow": [0, 0.8, 1] } },
+      "reach": { "armRight": { "to": "mouth", "offset": [10, 11, 21], "elbow": [0, 0.8, 1] } },
       "ease": "linear",
       "hand": {
-        "armNear": { "pose": "cup", "w": 0.65, "palm": [0.6, 0, -1], "fingers": [0.15, -1, -0.1] }
+        "armRight": { "pose": "cup", "w": 0.65, "palm": [0.6, 0, -1], "fingers": [0.15, -1, -0.1] }
       }
     }
   ],
   "events": [],
-  "note": "Khum tay bên miệng nói khẽ: tay gần từ tay buông qua dưới cằm tới dựng cạnh khoé miệng phía tay ấy (mốc `mouth`, offset [10, 11, 21]) lúc 0,5 s rồi giữ; `cup` hờ, lòng tay quay vào đường giữa và ra trước, ngón dựng lên — che mồm khỏi phía tay gần, nói về phía trước. Chỉ ghi `armNear`, `hand`. Nền `stand-3d`, `sit-3d` hay `seiza-3d`. Chồng `lean-in-soft-3d` và `turn-head-35-*` khi ghé tai người bên cạnh; hạ bằng blend ~0,35. Cùng họ: `cover-mouth-3d` áp lòng tay lên mồm, `cover-mouth-gasp-3d` hai tay ngạc nhiên.",
+  "note": "Khum tay bên miệng nói khẽ: tay phải từ tay buông qua dưới cằm tới dựng cạnh khoé miệng phía tay ấy (mốc `mouth`, offset [10, 11, 21]) lúc 0,5 s rồi giữ; `cup` hờ, lòng tay quay vào đường giữa và ra trước, ngón dựng lên — che mồm khỏi phía tay phải, nói về phía trước. Chỉ ghi `armRight`, `hand`. Nền `stand-3d`, `sit-3d` hay `seiza-3d`. Chồng `lean-in-soft-3d` và `turn-head-35-*` khi ghé tai người bên cạnh; hạ bằng blend ~0,35. Cùng họ: `cover-mouth-3d` áp lòng tay lên mồm, `cover-mouth-gasp-3d` hai tay ngạc nhiên.",
   "preview": { "stage": "stand" }
 }

@@ -1,17 +1,17 @@
 {
-  "schemaVersion": 13,
+  "schemaVersion": 21,
   "name": "phone-lift-3d",
   "duration": 1.4,
   "end": "hold",
   "authoredAt": "side",
   "mask": [
-    "armNear"
+    "armRight"
   ],
   "keys": [
     {
       "t": 0,
       "pose": {
-        "armNear": [
+        "armRight": [
           11,
           42,
           0
@@ -23,7 +23,7 @@
       "t": 0.3,
       "pose": {},
       "reach": {
-        "armNear": {
+        "armRight": {
           "at": [
             96,
             -58,
@@ -42,7 +42,7 @@
       "t": 0.42,
       "pose": {},
       "reach": {
-        "armNear": {
+        "armRight": {
           "at": [
             96,
             -58,
@@ -61,7 +61,7 @@
       "t": 1,
       "pose": {},
       "reach": {
-        "armNear": {
+        "armRight": {
           "at": [
             12,
             -168,
@@ -78,5 +78,5 @@
     }
   ],
   "events": [],
-  "note": "Nhấc ống nghe ở bàn lên tai, tay gần: với xuống máy đặt bên phải trước mặt `[96, −58, 30]` (bàn cao hơn hông ngồi ~51 như `arms-on-table-3d`), rồi đưa lên tai `[12, −168, 52]` và giữ. Chồng lên `sit-3d`; bàn khác cao thì scene đặt `world.hands` cho đoạn đầu."
+  "note": "Nhấc ống nghe ở bàn lên tai, tay phải: với xuống máy đặt bên phải trước mặt `[96, −58, 30]` (bàn cao hơn hông ngồi ~51 như `arms-on-table-3d`), rồi đưa lên tai `[12, −168, 52]` và giữ. Chồng lên `sit-3d`; bàn khác cao thì scene đặt `world.hands` cho đoạn đầu."
 }

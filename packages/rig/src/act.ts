@@ -16,34 +16,35 @@ import { poseHand } from './human';
  * `terms` (mốc thân, điểm bàn tay) và `aim` (lòng tay theo ý định, ở `world.hands`) `act` giải trên chính người ấy
  */
 export interface ActReach { at: readonly number[]; elbow?: readonly number[]; w: number; terms?: readonly ReachTerm[]; aim?: Aim }
-type Limb = 'af' | 'an' | 'lf' | 'ln';
+type Limb = 'al' | 'ar' | 'll' | 'lr';
 /** `Pose` của lõi; góc độ, tay `[vai, khuỷu, cổ tay, dang, xoắn vai]`, chân `[hông, gối, dang]`, `head` là `[nghiêng, lắc, gật]` */
 export interface ActPose {
-  af: readonly number[];
-  an: readonly number[];
-  lf: readonly number[];
-  ln: readonly number[];
+  al: readonly number[];
+  ar: readonly number[];
+  ll: readonly number[];
+  lr: readonly number[];
   torso: number;
-  /** Nghiêng thân sang ngang, độ; dương như nghiêng đầu, về phía tay xa */
+  /** Nghiêng thân sang ngang, độ; dương như nghiêng đầu, về bên trái người */
   lean?: number;
   head: readonly number[];
-  /** `[tay xa ×2, tay gần ×2, chân xa ×2, chân gần ×2]` */
+  /** `[tay trái ×2, tay phải ×2, chân trái ×2, chân phải ×2]` */
   stretch: readonly number[];
   lift?: Partial<Record<Limb, boolean>>;
-  reach?: Partial<Record<'af' | 'an', ActReach>>;
+  reach?: Partial<Record<'al' | 'ar', ActReach>>;
   /** Bàn tay theo `HAND_DOF` của lõi: xoay cẳng tay, gập cổ tay, góc ngón */
-  hand?: Partial<Record<'af' | 'an', readonly number[]>>;
+  hand?: Partial<Record<'al' | 'ar', readonly number[]>>;
   /** Lòng tay theo ý định: `act` giải ra xoay và gập cổ tay */
-  aim?: Partial<Record<'af' | 'an', Aim>>;
+  aim?: Partial<Record<'al' | 'ar', Aim>>;
+  /** Giải tay trái trước: kênh tay đến từ clip soi gương */
+  mirror?: boolean;
 }
-/** `World` của lõi: tâm hông thế giới rig, `yaw` radian (0 mặt về +x, π/2 về −z), `flip` là mặt sang trái khung */
+/** `World` của lõi: tâm hông thế giới rig, `yaw` radian (0 mặt về +x, π/2 về −z) */
 export interface ActWorld {
   hip: readonly number[];
   yaw: number;
   s: number;
-  flip: boolean;
   seated?: boolean;
-  hands?: { near?: ActReach; far?: ActReach };
+  hands?: { right?: ActReach; left?: ActReach };
 }
 /** `ScenePose` của lõi — `sceneAt(rt, id, t, height, body3(c))` truyền thẳng vào được */
 export interface Acting {
@@ -102,7 +103,7 @@ function blinking(t: number, seed: number) {
 
 /**
  * Đặt người theo một khung của `sceneAt`: chỗ đứng và hướng (`world`), góc tay chân thân đầu, đích cổ tay, nét
- * mặt. `t` (giây) bật chớp mắt khi mắt đang `open`. Chi gần là bên phải người khi không lật.
+ * mặt. `t` (giây) bật chớp mắt khi mắt đang `open`. Kênh `ar`, `lr` là tay, chân phải.
  */
 export function act(p: Figure, sp0: Acting, t?: number) {
   p.posing = true;
@@ -124,8 +125,6 @@ function placePose(p: Figure, sp0: Acting, t?: number) {
     if (r) p.aim = r.report;
   }
   const { pose: P, world: W } = sp;
-  const flip = !!W?.flip;
-  const near: Side = flip ? 1 : -1;
   const seated = !!W?.seated;
   if (W) {
     p.root.position.copy(toThree(W.hip as Vec3));
@@ -136,25 +135,24 @@ function placePose(p: Figure, sp0: Acting, t?: number) {
   }
   const st = P.stretch, B = p.bones;
 
-  for (const side of [near, -near as Side]) {
-    const isNear = side === near;
+  for (const side of [-1, 1] as const) {
+    const isRight = side === -1;
     const { hip, knee, ankle } = p.legs[side];
-    const [a, b, sp] = actAngles(P, isNear ? 'ln' : 'lf', seated);
+    const [a, b, sp] = actAngles(P, isRight ? 'lr' : 'll', seated);
     hip.rotation.set(-a * D, 0, side * sp * D, 'ZXY');
     knee.rotation.set(-b * D, 0, 0);
-    segment(hip, knee, B.thigh, st[isNear ? 6 : 4] ?? 1);
-    segment(knee, ankle, B.shin, st[isNear ? 7 : 5] ?? 1);
+    segment(hip, knee, B.thigh, st[isRight ? 6 : 4] ?? 1);
+    segment(knee, ankle, B.shin, st[isRight ? 7 : 5] ?? 1);
   }
 
-  const m = flip ? -1 : 1;
-  p.spine.rotation.set(num(P.torso) * D, 0, -m * num(P.lean) * D);
+  p.spine.rotation.set(num(P.torso) * D, 0, -num(P.lean) * D);
   const [tilt, turn, nod] = P.head;
-  // lắc dương là quay mặt xa ống kính (về bên trái người khi không lật), nghiêng dương đưa đỉnh đầu về phía ấy
-  p.neck.rotation.set(num(nod) * D, m * num(turn) * D, -m * num(tilt) * D, 'YXZ');
+  // lắc dương là quay mặt về bên trái người, nghiêng dương đưa đỉnh đầu về phía ấy
+  p.neck.rotation.set(num(nod) * D, num(turn) * D, -num(tilt) * D, 'YXZ');
   bendNeck(p);
 
-  for (const side of [near, -near as Side]) {
-    const ch = side === near ? 'an' : 'af';
+  for (const side of [-1, 1] as const) {
+    const ch = side === -1 ? 'ar' : 'al';
     const { shoulder, elbow, wrist } = p.arms[side];
     const [a, b, sp] = actAngles(P, ch, false);
     const [twist, dev] = actTwist(P, ch);
@@ -164,14 +162,14 @@ function placePose(p: Figure, sp0: Acting, t?: number) {
     // khung bàn tay `wristTurn` của lõi: xoay quanh cẳng tay, gập, lệch
     wrist.rotation.set(-dev * D, -side * hand[0] * D, -side * hand[1] * D, 'YZX');
     if (p.hands) poseHand(p.hands[side], hand);
-    segment(shoulder, elbow, B.upperArm, st[side === near ? 2 : 0] ?? 1);
-    segment(elbow, wrist, B.foreArm, st[side === near ? 3 : 1] ?? 1);
+    segment(shoulder, elbow, B.upperArm, st[side === -1 ? 2 : 0] ?? 1);
+    segment(elbow, wrist, B.foreArm, st[side === -1 ? 3 : 1] ?? 1);
   }
   p.root.updateMatrixWorld(true);
   fitSkirt(p);
   hangJewelry(p);
-  reachArm(p, near, P.reach?.an, W?.hands?.near);
-  reachArm(p, -near as Side, P.reach?.af, W?.hands?.far);
+  reachArm(p, -1, P.reach?.ar, W?.hands?.right);
+  reachArm(p, 1, P.reach?.al, W?.hands?.left);
 
   const blink = t !== undefined && sp.eyes === 'open' && blinking(t, p.seed);
   p.face.set({ mouth: sp.mouth, brow: sp.brow, eyes: blink ? 'shut' : sp.eyes, blush: sp.blush });

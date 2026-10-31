@@ -1,16 +1,15 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "bag-carry-3d",
   "duration": 1,
   "end": "hold",
-  "mask": ["armNear"],
+  "mask": ["armRight"],
   "authoredAt": "side",
-  "sides": "anatomical",
   "keys": [
-    { "t": 0, "pose": { "armNear": [-4, 22, 0, 12] }, "ease": "smooth" },
-    { "t": 1, "pose": { "armNear": [-4, 22, 0, 12] }, "ease": "smooth" }
+    { "t": 0, "pose": { "armRight": [-4, 22, 0, 12] }, "ease": "smooth" },
+    { "t": 1, "pose": { "armRight": [-4, 22, 0, 12] }, "ease": "smooth" }
   ],
   "events": [],
-  "note": "Xách túi bên hông bằng tay phải: tay buông, khuỷu chùng 22°, dang 12° cho thân túi thõng ngoài đùi, giữ từ giây 0; góc tay chứ không đích nên đúng mọi cỡ người. Chỉ ghi `armNear`; `sides: \"anatomical\"`. Nền `stand-3d` hay đi bộ (tay phải thôi đánh); món ở `world.hands[].hold` tay phải, như `tui-du-lich@handle`.",
+  "note": "Xách túi bên hông bằng tay phải: tay buông, khuỷu chùng 22°, dang 12° cho thân túi thõng ngoài đùi, giữ từ giây 0; góc tay chứ không đích nên đúng mọi cỡ người. Chỉ ghi `armRight`. Nền `stand-3d` hay đi bộ (tay phải thôi đánh); món ở `world.hands[].hold` tay phải, như `tui-du-lich@handle`.",
   "preview": { "stage": "stand", "hold": { "right": "tui-du-lich@handle" } }
 }

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "turn-head-70-snap-far-3d",
   "duration": 0.6,
   "end": "hold",
@@ -13,6 +13,6 @@
     { "t": 1, "pose": { "head": [-3, 70, null] }, "ease": "smooth" }
   ],
   "events": [],
-  "note": "Quay ngoắt 70° về phía xa ống kính trong 0,1 s, vượt tới 76° rồi về 70°, nghiêng 3° ngược chiều quay; lượt 0,6 s, giữ — quát, giật mình quay lại. Chỉ ghi nghiêng và lắc của `head`, gật để trống. Nền `stand-3d`, ngồi thì `sit-3d`, quỳ thì `seiza-3d`. Chồng `nod-*` hay đầu cúi lên trên vẫn giữ hướng quay; chiều kia là `turn-head-70-snap-near-3d`, buông bằng clip rỗng blend ~0,4. Sinh bằng `tools/actions/turn-head.mjs`.",
+  "note": "Quay ngoắt 70° về phía tay trái trong 0,1 s, vượt tới 76° rồi về 70°, nghiêng 3° ngược chiều quay; lượt 0,6 s, giữ — quát, giật mình quay lại. Chỉ ghi nghiêng và lắc của `head`, gật để trống. Nền `stand-3d`, ngồi thì `sit-3d`, quỳ thì `seiza-3d`. Chồng `nod-*` hay đầu cúi lên trên vẫn giữ hướng quay; chiều kia là `turn-head-70-snap-near-3d`, buông bằng clip rỗng blend ~0,4. Sinh bằng `tools/actions/turn-head.mjs`.",
   "preview": { "stage": "stand" }
 }

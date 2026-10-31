@@ -54,9 +54,9 @@ const keyAction = (name, mask, keys, extra = {}) => {
   if (!r.success) throw new Error(`${name}: ${r.error.message}`);
   return r.data;
 };
-const bow = (deg) => keyAction(`bow${deg}-3d`, ['armFar', 'armNear', 'legFar', 'legNear', 'torso', 'head'], [
-  { t: 0, pose: { armFar: [3, 6, 0], armNear: [3, 6, 0], legFar: [0, 0], legNear: [0, 0], torso: 0, head: [0, 0, 0] }, ease: 'smooth' },
-  { t: 0.5, pose: { armFar: [6, 20, 0], armNear: [6, 20, 0], legFar: [0, 0], legNear: [0, 0], torso: deg, head: [0, 0, 6] }, ease: 'linear' },
+const bow = (deg) => keyAction(`bow${deg}-3d`, ['armLeft', 'armRight', 'legLeft', 'legRight', 'torso', 'head'], [
+  { t: 0, pose: { armLeft: [3, 6, 0], armRight: [3, 6, 0], legLeft: [0, 0], legRight: [0, 0], torso: 0, head: [0, 0, 0] }, ease: 'smooth' },
+  { t: 0.5, pose: { armLeft: [6, 20, 0], armRight: [6, 20, 0], legLeft: [0, 0], legRight: [0, 0], torso: deg, head: [0, 0, 6] }, ease: 'linear' },
 ]);
 const own = () => {
   const walk = parseAction({ schemaVersion: 9, name: 'walk-short', duration: 1, end: 'wrap', gen: 'walkCycle', authoredAt: 'side', params: { hip: 14, knee: 40, stance: 0.65, arm: 10, elbow: 18, lean: 1, crouch: 0, dip: 0.5 }, events: [] });
@@ -65,8 +65,8 @@ const own = () => {
     'walk-short': walk.data,
     bow30: bow(30),
     bow45: bow(45),
-    seiza: keyAction('seiza', ['armFar', 'armNear', 'legFar', 'legNear', 'torso'], [
-      { t: 0, pose: { armFar: [11, 42, 0], armNear: [11, 42, 0], legFar: [80, -170], legNear: [80, -170], torso: 3 }, ease: 'linear' },
+    seiza: keyAction('seiza', ['armLeft', 'armRight', 'legLeft', 'legRight', 'torso'], [
+      { t: 0, pose: { armLeft: [11, 42, 0], armRight: [11, 42, 0], legLeft: [80, -170], legRight: [80, -170], torso: 3 }, ease: 'linear' },
     ]),
   };
 };

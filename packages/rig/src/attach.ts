@@ -17,8 +17,8 @@ import { poseHand, type Hand } from './human';
 // gọi thêm gì: nhóm bám tự đặt lại mỗi lần three cập nhật ma trận (lúc render, hay `root.updateMatrixWorld()`).
 
 /** Socket theo tên của lõi (`PIECE_KEYS`), cộng `chest` chỉ có ở 3D */
-export type SocketName = 'handNear' | 'handFar' | 'crown' | 'headAcc' | 'faceAcc' | 'chest';
-export const SOCKET_NAMES: readonly SocketName[] = ['handNear', 'handFar', 'crown', 'headAcc', 'faceAcc', 'chest'];
+export type SocketName = 'handRight' | 'handLeft' | 'crown' | 'headAcc' | 'faceAcc' | 'chest';
+export const SOCKET_NAMES: readonly SocketName[] = ['handRight', 'handLeft', 'crown', 'headAcc', 'faceAcc', 'chest'];
 
 /** Số đo đầu trong hệ nhóm đầu (three, y lên, z ra trước mặt, gốc ở tâm sọ) */
 export interface HeadFit {
@@ -827,17 +827,15 @@ export interface Gear {
 export const newGear = (items: ItemFactories = {}, specs: Gear['specs'] = {}): Gear => ({ items, specs, worn: new Map(), built: new Map() });
 
 /**
- * Mặc đồ theo `equip` (socket → tên vật, như `equipMap(nhânVật, sceneAt(...).equip)` của lõi). `flip` của
- * `world` chọn tay: `handNear` là tay phải khi không lật, như `act`. Vật dựng một lần bằng bảng `items` của người
+ * Mặc đồ theo `equip` (socket → tên vật, như `equipMap(nhânVật, sceneAt(...).equip)` của lõi). Vật dựng một lần bằng bảng `items` của người
  * rồi giữ lại; tên không có trong bảng thì socket để trống. Gọi mỗi khung được, không đổi gì thì không làm gì.
  */
-export function dress(fig: Figure, equip: EquipState, flip = false) {
+export function dress(fig: Figure, equip: EquipState) {
   const gear = fig.gear;
-  const near: Side = flip ? 1 : -1;
   for (const socket of SOCKET_NAMES) {
     const v = equip[socket];
     const name = typeof v === 'string' && v !== 'base' && gear.items[v] ? v : undefined;
-    const side = socket === 'handNear' ? near : socket === 'handFar' ? (-near as Side) : undefined;
+    const side: Side | undefined = socket === 'handRight' ? -1 : socket === 'handLeft' ? 1 : undefined;
     const cur = gear.worn.get(socket);
     if (cur && cur.name === name && cur.side === side) continue;
     cur?.release();

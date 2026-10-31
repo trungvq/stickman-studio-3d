@@ -116,7 +116,7 @@ const ThrowSchema = z
     t0: sec,
     /** Bay bao lâu thì chạm */
     flight: z.number().positive(),
-    /** Tâm ảnh lúc rời tay: hỏi `scene_probe` với `anchors: ["handNear"]` */
+    /** Tâm ảnh lúc rời tay: hỏi `scene_probe` với `anchors: ["wristRight"]` */
     x0: z.number(),
     y0: z.number(),
     vx: z.number(),
@@ -584,8 +584,8 @@ export const fxFiles = (list: FxData[]): string[] => [
 
 /** Mốc trên người mà `tears` bám: hai con mắt, tên như `ANCHOR_NAMES` của rig */
 export const EYE_ANCHORS = [
-  "eyeNear",
-  "eyeFar",
+  "eyeRight",
+  "eyeLeft",
 ] as const satisfies readonly (typeof ANCHOR_NAMES)[number][];
 
 export { INK, PAPER };

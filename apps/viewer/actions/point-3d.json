@@ -1,17 +1,17 @@
 {
-  "schemaVersion": 13,
+  "schemaVersion": 21,
   "name": "point-3d",
   "duration": 0.6,
   "end": "hold",
   "authoredAt": "side",
   "mask": [
-    "armNear"
+    "armRight"
   ],
   "keys": [
     {
       "t": 0,
       "pose": {
-        "armNear": [
+        "armRight": [
           3,
           8,
           0
@@ -23,7 +23,7 @@
       "t": 1,
       "pose": {},
       "reach": {
-        "armNear": {
+        "armRight": {
           "at": [
             108,
             -112,
@@ -40,5 +40,5 @@
     }
   ],
   "events": [],
-  "note": "Chỉ tay về trước mặt, tay gần duỗi gần thẳng ngang vai `[108, −112, 44]`. Chỉ hướng khác thì xoay người (`yaw`) hay đặt `world.hands`."
+  "note": "Chỉ tay về trước mặt, tay phải duỗi gần thẳng ngang vai `[108, −112, 44]`. Chỉ hướng khác thì xoay người (`yaw`) hay đặt `world.hands`."
 }

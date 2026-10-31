@@ -1,55 +1,55 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "chop-air-3d",
   "duration": 1.3,
   "end": "hold",
-  "mask": ["armNear", "hand", "torso"],
+  "mask": ["armRight", "hand", "torso"],
   "authoredAt": "side",
   "snap": true,
   "keys": [
     {
       "t": 0,
-      "pose": { "armNear": [-6, 24, 0], "torso": 0 },
+      "pose": { "armRight": [-6, 24, 0], "torso": 0 },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "open", "w": 0.3, "turn": 0, "bend": 0 } }
+      "hand": { "armRight": { "pose": "open", "w": 0.3, "turn": 0, "bend": 0 } }
     },
     {
       "t": 0.1231,
       "pose": { "torso": 2 },
-      "reach": { "armNear": { "at": [54, -60, 46], "elbow": [-0.3, 1, 0.6] } },
+      "reach": { "armRight": { "at": [54, -60, 46], "elbow": [-0.3, 1, 0.6] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "open", "w": 0.7, "turn": 40, "bend": 0 } }
+      "hand": { "armRight": { "pose": "open", "w": 0.7, "turn": 40, "bend": 0 } }
     },
     {
       "t": 0.2462,
       "pose": { "torso": [5, 4] },
-      "reach": { "armNear": { "at": [58, -98, 2], "elbow": [-0.2, 0.6, 1] } },
+      "reach": { "armRight": { "at": [58, -98, 2], "elbow": [-0.2, 0.6, 1] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "open", "w": 1, "turn": 70, "bend": 20 } }
+      "hand": { "armRight": { "pose": "open", "w": 1, "turn": 70, "bend": 20 } }
     },
     {
       "t": 0.3231,
       "pose": { "torso": [2, -6] },
-      "reach": { "armNear": { "at": [62, -104, 104], "elbow": [-0.4, 0.3, 1] } },
+      "reach": { "armRight": { "at": [62, -104, 104], "elbow": [-0.4, 0.3, 1] } },
       "ease": "linear",
-      "hand": { "armNear": { "pose": "open", "w": 1, "turn": 70, "bend": -15 } }
+      "hand": { "armRight": { "pose": "open", "w": 1, "turn": 70, "bend": -15 } }
     },
     {
       "t": 0.4,
       "pose": { "torso": [1, -5] },
-      "reach": { "armNear": { "at": [58, -98, 98], "elbow": [-0.4, 0.3, 1] } },
+      "reach": { "armRight": { "at": [58, -98, 98], "elbow": [-0.4, 0.3, 1] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "open", "w": 1, "turn": 70, "bend": 0 } }
+      "hand": { "armRight": { "pose": "open", "w": 1, "turn": 70, "bend": 0 } }
     },
     {
       "t": 1,
       "pose": { "torso": [1, -5] },
-      "reach": { "armNear": { "at": [58, -98, 98], "elbow": [-0.4, 0.3, 1] } },
+      "reach": { "armRight": { "at": [58, -98, 98], "elbow": [-0.4, 0.3, 1] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "open", "w": 1, "turn": 70, "bend": 0 } }
+      "hand": { "armRight": { "pose": "open", "w": 1, "turn": 70, "bend": 0 } }
     }
   ],
   "events": [],
-  "note": "Vung mạnh một tay ngang (quát, gạt cả đám): tay gần đưa lên trước ngực (0,16 s), lấy đà sang vai bên kia (0,32 s), quét ngang ra ngoài trong 0,1 s tới tay duỗi chéo trước ngang vai (đích hệ thân [58, −98, 98]), bàn tay xoè úp, thân nghiêng theo cú vung, rồi giữ. `snap: true`: cú quét cố ý giật. Chỉ ghi `armNear`, `hand`, `torso`. Nền `stand-3d`. Buông bằng clip rỗng blend ~0,4.",
+  "note": "Vung mạnh một tay ngang (quát, gạt cả đám): tay phải đưa lên trước ngực (0,16 s), lấy đà sang vai bên kia (0,32 s), quét ngang ra ngoài trong 0,1 s tới tay duỗi chéo trước ngang vai (đích hệ thân [58, −98, 98]), bàn tay xoè úp, thân nghiêng theo cú vung, rồi giữ. `snap: true`: cú quét cố ý giật. Chỉ ghi `armRight`, `hand`, `torso`. Nền `stand-3d`. Buông bằng clip rỗng blend ~0,4.",
   "preview": { "stage": "stand" }
 }

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "talk-pose-reach-bossy-chin-2-3d",
   "duration": 3.2,
   "end": "wrap",
@@ -10,6 +10,6 @@
     { "t": 0.5, "pose": { "torso": [21.5, -1], "head": [0, null, -9] }, "ease": "linear" }
   ],
   "events": [],
-  "note": "Dáng thoại 2/4 của bộ `talk-pose-reach-bossy` cho máy cao nhìn xuống: thân giữ dáng nền 20°, chỉ đổi cằm (đổi độ chồm ở góc ấy làm đầu trượt sang mặt người cạnh) — nền vói qua quầy (thân ~20°, đầu ngửa −12°, gần `reach-over-20-3d`), tính hống hách: chồm sát người nghe, cằm hất: hạ cằm 3° như ghé sát. Lặp 3,2 s, giữ nhịp thở của `stand-3d` (thân +1,5° ở nửa lượt); clip đặt `phase` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi `torso` (cúi, nghiêng) và nghiêng, gật của `head`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay xa ống kính. Nền `stand-3d` sau quầy, bàn trước mặt. Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới. Sinh bằng `tools/actions/talk-pose.mjs`.",
+  "note": "Dáng thoại 2/4 của bộ `talk-pose-reach-bossy` cho máy cao nhìn xuống: thân giữ dáng nền 20°, chỉ đổi cằm (đổi độ chồm ở góc ấy làm đầu trượt sang mặt người cạnh) — nền vói qua quầy (thân ~20°, đầu ngửa −12°, gần `reach-over-20-3d`), tính hống hách: chồm sát người nghe, cằm hất: hạ cằm 3° như ghé sát. Lặp 3,2 s, giữ nhịp thở của `stand-3d` (thân +1,5° ở nửa lượt); clip đặt `phase` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi `torso` (cúi, nghiêng) và nghiêng, gật của `head`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay trái. Nền `stand-3d` sau quầy, bàn trước mặt. Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới. Sinh bằng `tools/actions/talk-pose.mjs`.",
   "preview": { "stage": "counter" }
 }

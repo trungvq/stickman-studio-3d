@@ -32,7 +32,7 @@ const PEOPLE = () => [
 const Z3 = [0, 0, 0];
 /** Tầm với (rig) và độ cao của mốc `shoulder` trên khớp vai (rig, `y` xuống) của tay `side` người `c` đứng thẳng */
 function armOf(c, side) {
-  const sp = { pose: { af: Z3, an: Z3, lf: Z3, ln: Z3, torso: 0, head: Z3, stretch: [1, 1, 1, 1, 1, 1, 1, 1] }, world: { hip: Z3, yaw: Math.PI / 2, s: 1, flip: false } };
+  const sp = { pose: { al: Z3, ar: Z3, ll: Z3, lr: Z3, torso: 0, head: Z3, stretch: [1, 1, 1, 1, 1, 1, 1, 1] }, world: { hip: Z3, yaw: Math.PI / 2, s: 1, flip: false } };
   const inp = armInput(trunk3(c, sp), side);
   const mark = bodyMarkAt(c, sp, { to: 'shoulder' }, side === -1 ? 'R' : 'L');
   return { L: (inp.l1 + inp.l2) * 100, cap: -inp.S[1] * 100 - mark[1] };

@@ -34,8 +34,8 @@ const dressed = (edit: (c: Char) => void = () => {}, opts = {}) =>
   }, opts);
 
 const stand = (legs: [number, number] = [0, 0]): Acting => ({
-  pose: { af: [0, 0, 0], an: [0, 0, 0], lf: [legs[0], legs[1], 0], ln: [legs[0], legs[1], 0], torso: 0, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { lf: true, ln: true } },
-  world: { hip: [0, -(R.thigh + R.shin) * 100, 0], yaw: 0, s: 1, flip: false },
+  pose: { al: [0, 0, 0], ar: [0, 0, 0], ll: [legs[0], legs[1], 0], lr: [legs[0], legs[1], 0], torso: 0, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { ll: true, lr: true } },
+  world: { hip: [0, -(R.thigh + R.shin) * 100, 0], yaw: 0, s: 1 },
   mouth: 'closed', brow: 'neutral', eyes: 'open',
 });
 
@@ -151,7 +151,7 @@ describe('người 3D mặc đồ', () => {
   it('tâm nắm nằm giữa lòng bàn tay và các ngón của dáng `grip`, xoay theo cổ tay', () => {
     const f = dressed();
     const h = f.hands![-1];
-    act(f, { ...stand(), pose: { ...stand().pose, hand: { an: [60, -20, ...HAND_POSES.grip.thumb, ...HAND_POSES.grip.index, ...HAND_POSES.grip.fingers, 0] } } }, 0);
+    act(f, { ...stand(), pose: { ...stand().pose, hand: { ar: [60, -20, ...HAND_POSES.grip.thumb, ...HAND_POSES.grip.index, ...HAND_POSES.grip.fingers, 0] } } }, 0);
     const w = f.arms[-1].wrist, sock = f.sockets.hand[-1].getWorldPosition(new THREE.Vector3());
     const g = new THREE.Vector3(...handGrip(-1, h.scale, h.long)).applyMatrix4(w.matrixWorld);
     expect(sock.distanceTo(g)).toBeLessThan(1e-9);
@@ -168,7 +168,7 @@ describe('người 3D mặc đồ', () => {
       const w = f.arms[-1].wrist.getWorldPosition(new THREE.Vector3());
       return Math.max(...bodyCapsules(f, ['hand']).filter((c) => c.side === -1).flatMap((c) => [c.a.distanceTo(w), c.b.distanceTo(w)]));
     };
-    const at = (hand: number[]) => act(f, { ...stand(), pose: { ...stand().pose, hand: { an: hand } } }, 0);
+    const at = (hand: number[]) => act(f, { ...stand(), pose: { ...stand().pose, hand: { ar: hand } } }, 0);
     at([0, 0, ...HAND_POSES.point.thumb, ...HAND_POSES.point.index, ...HAND_POSES.point.fingers, 0]);
     const point = far();
     at([0, 0, ...HAND_POSES.fist.thumb, ...HAND_POSES.fist.index, ...HAND_POSES.fist.fingers, 0]);
@@ -197,7 +197,7 @@ describe('người 3D mặc đồ', () => {
     };
     for (const k of [...HAND_POSE_KINDS, 'rest'] as const) {
       const v = k === 'rest' ? HAND_REST : [0, 0, ...fingerVec(HAND_POSES[k])];
-      act(f, { ...stand(), pose: { ...stand().pose, hand: { an: [40, -15, ...v.slice(2)] } } }, 0);
+      act(f, { ...stand(), pose: { ...stand().pose, hand: { ar: [40, -15, ...v.slice(2)] } } }, 0);
       expect(outside()).toBeLessThan(1e-6);
     }
     const held = hold(f, new THREE.Group(), { hand: -1 });

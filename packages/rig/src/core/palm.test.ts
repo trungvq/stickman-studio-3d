@@ -77,11 +77,10 @@ describe("actPalms: hướng lòng bàn tay người 3D", () => {
       for (const k of ["R", "L"] as const) expect(palmFace(p[k]).face).toBe("in");
     });
 
-    it(`talk-forward-3d: cuối điệu bộ lòng tay ngửa (yaw ${yaw})`, () => {
+    it(`talk-forward-3d: cuối điệu bộ lòng tay phải ngửa (yaw ${yaw})`, () => {
       const p = palmsAt([TALK], 1.5, yaw);
-      const near = yaw === 180 ? "L" : "R";
-      expect(palmFace(p[near]).face).toBe("up");
-      expect(palmFace(p[near]).down).toBeGreaterThan(120);
+      expect(palmFace(p.R).face).toBe("up");
+      expect(palmFace(p.R).down).toBeGreaterThan(120);
     });
   }
 });

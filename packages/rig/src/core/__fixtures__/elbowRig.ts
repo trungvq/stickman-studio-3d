@@ -50,13 +50,12 @@ const Z = [0, 0, 0];
 /** Người đứng thẳng nhìn +z three (`yaw` 90°), hông ở gốc; `hands` theo bên giải phẫu */
 export function stand(hands: Partial<Record<-1 | 1, ReachIn>> = {}): ActInput {
   return {
-    pose: { af: Z, an: Z, lf: Z, ln: Z, torso: 0, head: Z, stretch: [1, 1, 1, 1, 1, 1, 1, 1] },
+    pose: { al: Z, ar: Z, ll: Z, lr: Z, torso: 0, head: Z, stretch: [1, 1, 1, 1, 1, 1, 1, 1] },
     world: {
       hip: Z,
       yaw: Math.PI / 2,
       s: 1,
-      flip: false,
-      hands: { near: hands[-1], far: hands[1] },
+      hands: { right: hands[-1], left: hands[1] },
     },
   };
 }

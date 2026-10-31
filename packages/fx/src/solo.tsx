@@ -130,7 +130,7 @@ export function soloStage({ character, yaw, pitch = 16, action }: SoloSpec) {
     let place: Solo["place"] = { at: [0, 0, 0], yaw };
     let s = sceneAt(runtime(place), "a", time, h, body);
     let furniture: SolidItem[] | undefined;
-    if (acts.length && Math.min(s.pose.lf[0], s.pose.ln[0]) > SOLO_SIT_THIGH) {
+    if (acts.length && Math.min(s.pose.ll[0], s.pose.lr[0]) > SOLO_SIT_THIGH) {
       // Hông trên mặt ngồi cách đúng nửa nét chân; bàn chân thấp hơn chạm sàn
       const drop = Math.max(...feet(s.pose, h).map((q) => q[1]));
       const top: V3 = [0, body.legHalf - drop, 0];

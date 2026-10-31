@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "talk-pose-reach-bossy-5-soft-3d",
   "duration": 3.2,
   "end": "wrap",
@@ -10,6 +10,6 @@
     { "t": 0.5, "pose": { "torso": [19.7, 1.2], "head": [0, null, -13.2] }, "ease": "linear" }
   ],
   "events": [],
-  "note": "Dáng thoại 5 của bộ `talk-pose-reach-bossy`, độ lệch khỏi dáng nền ×0,6 cho cận mặt (đầu to trên hình, dáng thường làm đầu trượt như lắc) — nền vói qua quầy (thân ~20°, đầu ngửa −12°, gần `reach-over-20-3d`), tính hống hách: chồm sát người nghe, cằm hất: nhổm lại 3° phía tay xa, hất cằm. Lặp 3,2 s, giữ nhịp thở của `stand-3d` (thân +1,5° ở nửa lượt); clip đặt `phase` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi `torso` (cúi, nghiêng) và nghiêng, gật của `head`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay xa ống kính. Nền `stand-3d` sau quầy, bàn trước mặt. Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới. Cùng dáng: `talk-pose-reach-bossy-5-3d`, `talk-pose-reach-bossy-5-nod-3d`, `talk-pose-reach-bossy-5-soft-3d`, `talk-pose-reach-bossy-5-big-3d`. Sinh bằng `tools/actions/talk-pose.mjs`.",
+  "note": "Dáng thoại 5 của bộ `talk-pose-reach-bossy`, độ lệch khỏi dáng nền ×0,6 cho cận mặt (đầu to trên hình, dáng thường làm đầu trượt như lắc) — nền vói qua quầy (thân ~20°, đầu ngửa −12°, gần `reach-over-20-3d`), tính hống hách: chồm sát người nghe, cằm hất: nhổm lại 3° phía tay trái, hất cằm. Lặp 3,2 s, giữ nhịp thở của `stand-3d` (thân +1,5° ở nửa lượt); clip đặt `phase` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi `torso` (cúi, nghiêng) và nghiêng, gật của `head`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay trái. Nền `stand-3d` sau quầy, bàn trước mặt. Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới. Cùng dáng: `talk-pose-reach-bossy-5-3d`, `talk-pose-reach-bossy-5-nod-3d`, `talk-pose-reach-bossy-5-soft-3d`, `talk-pose-reach-bossy-5-big-3d`. Sinh bằng `tools/actions/talk-pose.mjs`.",
   "preview": { "stage": "counter" }
 }

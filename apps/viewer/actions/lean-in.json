@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 21,
   "name": "lean-in",
   "description": "Nghiêng người tới nhẹ (thân 9°, đầu cúi theo) rồi giữ: người đứng sát bên chuyện trò với người ngồi. Nhẹ hơn `lean-over` (16°) cho đầu khỏi chạm đầu người kia.",
   "duration": 0.6,

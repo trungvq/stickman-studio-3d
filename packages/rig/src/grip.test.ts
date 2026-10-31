@@ -20,11 +20,11 @@ beforeAll(() => {
 /** Đứng, hai tay chĩa ra trước, khuỷu gập; `turn`, `bend` của cổ tay */
 const reach = (turn = 0, bend = 0): Acting => ({
   pose: {
-    af: [0, 60, 0, 30], an: [0, 60, 0, 30], lf: [0, 0], ln: [0, 0], torso: 0, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1],
-    lift: { af: true, an: true },
-    hand: { an: [turn, bend, 0, 0, 0, 0, 0, 0, 0, 0, 0], af: [turn, bend, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+    al: [0, 60, 0, 30], ar: [0, 60, 0, 30], ll: [0, 0], lr: [0, 0], torso: 0, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1],
+    lift: { al: true, ar: true },
+    hand: { ar: [turn, bend, 0, 0, 0, 0, 0, 0, 0, 0, 0], al: [turn, bend, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
   },
-  world: { hip: [0, -170, 0], yaw: Math.PI / 2, s: 1.2, flip: false },
+  world: { hip: [0, -170, 0], yaw: Math.PI / 2, s: 1.2 },
   mouth: 'closed', brow: 'neutral', eyes: 'open',
 });
 

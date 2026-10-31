@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "talk-pose-lean-bossy-5-3d",
   "duration": 3.2,
   "end": "wrap",
@@ -10,6 +10,6 @@
     { "t": 0.5, "pose": { "torso": [12.5, 2], "head": [0, null, -11] }, "ease": "linear" }
   ],
   "events": [],
-  "note": "Dáng thoại 5/6 của bộ `talk-pose-lean-bossy` — nền ngả tới (thân ~14°, đầu ngửa bù −8°, giữa `lean-in-3d` và `lean-in-firm-3d`), tính hống hách: đầu ngửa bù ~0,6° mỗi độ thân, dáng hất cằm ngửa quá mức bù để nhìn xuống người nghe; chồm thêm tối đa 3° vì người ngả tới thường đã sát quầy, bàn: ngả lại về 11° phía tay xa, hất cằm 3° quá bù. Lặp 3,2 s, giữ nhịp thở của `stand-3d` (thân +1,5° ở nửa lượt); clip đặt `phase` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi `torso` (cúi, nghiêng) và nghiêng, gật của `head`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay xa ống kính. Nền `stand-3d`, ngồi thì `sit-3d`. Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới. Cùng dáng: `talk-pose-lean-bossy-5-3d`, `talk-pose-lean-bossy-5-nod-3d`, `talk-pose-lean-bossy-5-soft-3d`, `talk-pose-lean-bossy-5-big-3d`. Sinh bằng `tools/actions/talk-pose.mjs`.",
+  "note": "Dáng thoại 5/6 của bộ `talk-pose-lean-bossy` — nền ngả tới (thân ~14°, đầu ngửa bù −8°, giữa `lean-in-3d` và `lean-in-firm-3d`), tính hống hách: đầu ngửa bù ~0,6° mỗi độ thân, dáng hất cằm ngửa quá mức bù để nhìn xuống người nghe; chồm thêm tối đa 3° vì người ngả tới thường đã sát quầy, bàn: ngả lại về 11° phía tay trái, hất cằm 3° quá bù. Lặp 3,2 s, giữ nhịp thở của `stand-3d` (thân +1,5° ở nửa lượt); clip đặt `phase` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi `torso` (cúi, nghiêng) và nghiêng, gật của `head`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay trái. Nền `stand-3d`, ngồi thì `sit-3d`. Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới. Cùng dáng: `talk-pose-lean-bossy-5-3d`, `talk-pose-lean-bossy-5-nod-3d`, `talk-pose-lean-bossy-5-soft-3d`, `talk-pose-lean-bossy-5-big-3d`. Sinh bằng `tools/actions/talk-pose.mjs`.",
   "preview": { "stage": "stand" }
 }

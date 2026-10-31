@@ -1,17 +1,17 @@
 {
-  "schemaVersion": 13,
+  "schemaVersion": 21,
   "name": "stop-palm-3d",
   "duration": 0.5,
   "end": "hold",
   "authoredAt": "side",
   "mask": [
-    "armNear"
+    "armRight"
   ],
   "keys": [
     {
       "t": 0,
       "pose": {
-        "armNear": [
+        "armRight": [
           3,
           8,
           0
@@ -23,7 +23,7 @@
       "t": 1,
       "pose": {},
       "reach": {
-        "armNear": {
+        "armRight": {
           "at": [
             96,
             -136,
@@ -40,5 +40,5 @@
     }
   ],
   "events": [],
-  "note": "Cảnh sát giao thông giơ tay chặn: tay gần đưa thẳng ra trước, cổ tay cao hơn vai `[96, −136, 34]`, khuỷu hơi chùng xuống. Đồ trong tay (còi, gậy) gắn vào cổ tay gần."
+  "note": "Cảnh sát giao thông giơ tay chặn: tay phải đưa thẳng ra trước, cổ tay cao hơn vai `[96, −136, 34]`, khuỷu hơi chùng xuống. Đồ trong tay (còi, gậy) gắn vào cổ tay phải."
 }

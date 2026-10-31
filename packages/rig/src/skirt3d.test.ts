@@ -53,9 +53,9 @@ function skirted(skirt: Partial<Skirt>, clad: boolean, base = defaultCharacter()
   return c;
 }
 
-const rest = (lf = 0, ln = 0): Acting => ({
-  pose: { af: [0, 0, 0, 0], an: [0, 0, 0, 0], lf: [lf, 0, 0], ln: [ln, 0, 0], torso: 0, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { lf: true, ln: true } },
-  world: { hip: [0, -170, 0], yaw: 0.6, s: 1, flip: false },
+const rest = (ll = 0, lr = 0): Acting => ({
+  pose: { al: [0, 0, 0, 0], ar: [0, 0, 0, 0], ll: [ll, 0, 0], lr: [lr, 0, 0], torso: 0, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { ll: true, lr: true } },
+  world: { hip: [0, -170, 0], yaw: 0.6, s: 1 },
   mouth: 'closed', brow: 'neutral', eyes: 'open',
 });
 
@@ -78,8 +78,8 @@ describe('váy dựng khối', () => {
     const p = fromCharacter(c as unknown as Parameters<typeof fromCharacter>[0], { seated: true });
     for (const torso of [0, 4, 15]) {
       const sp: Acting = {
-        pose: { af: [0, 0, 0, 0], an: [0, 0, 0, 0], lf: [90, -90, 0], ln: [90, -90, 0], torso, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1] },
-        world: { hip: [0, -100, 0], yaw: 1, s: 1, flip: false, seated: true },
+        pose: { al: [0, 0, 0, 0], ar: [0, 0, 0, 0], ll: [90, -90, 0], lr: [90, -90, 0], torso, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1] },
+        world: { hip: [0, -100, 0], yaw: 1, s: 1, seated: true },
         mouth: 'closed', brow: 'neutral', eyes: 'open',
       };
       act(p, sp);
@@ -132,18 +132,18 @@ describe('váy dựng khối', () => {
       const r0 = clad ? cladThigh(w.trouser, c.rig.stroke) : w.trouser / 2;
       const r1 = clad ? (r0 * CLAD_TAPER.leg[1]) / CLAD_TAPER.leg[0] : r0;
       const g = c.pieces.hem.skirt!;
-      for (const [lf, ln] of [[0, 0], [25, -20]]) {
-        const { p, mesh } = await posed(c, rest(lf, ln));
+      for (const [ll, lr] of [[0, 0], [25, -20]]) {
+        const { p, mesh } = await posed(c, rest(ll, lr));
         for (const s of [-1, 1] as const) {
           const hip = p.legs[s].hip;
-          const a = (Math.abs(s === -1 ? ln : lf) * Math.PI) / 180;
+          const a = (Math.abs(s === -1 ? lr : ll) * Math.PI) / 180;
           // gấu buông thẳng ở `length − rise` dưới hông: phần đùi cao hơn đó nằm trong váy
           const reach = Math.min(1, (g.length - g.rise - 3) / Math.cos(a) / RIG.thigh);
           for (let k = 0.05; k <= reach; k += 0.05) {
             const rr = (r0 + (r1 - r0) * k) / 100;
             for (const [x, z] of [[s * rr, 0], [0, rr], [0, -rr]]) {
               const v = hip.localToWorld(new THREE.Vector3(x, -p.bones.thigh * k, z));
-              expect(inside(mesh, v), `${clad ? 'mặc đồ' : 'người que'} ${lf}/${ln}, đùi ${s}, ${k.toFixed(2)}, ${x}, ${z}`).toBe(true);
+              expect(inside(mesh, v), `${clad ? 'mặc đồ' : 'người que'} ${ll}/${lr}, đùi ${s}, ${k.toFixed(2)}, ${x}, ${z}`).toBe(true);
             }
           }
         }
@@ -190,7 +190,7 @@ describe('váy dựng khối', () => {
       expect(-torso.geometry.boundingBox!.min.y * 100, name).toBeLessThanOrEqual(-g.rise * h + 1.01);
       for (let k = 0; k < 12; k++) {
         const w = walkPose(k / 12, DEFAULT_WALK);
-        act(p, { ...rest(), pose: { ...rest().pose, lf: [w.lf[0], w.lf[1], 0], ln: [w.ln[0], w.ln[1], 0] } });
+        act(p, { ...rest(), pose: { ...rest().pose, ll: [w.ll[0], w.ll[1], 0], lr: [w.lr[0], w.lr[1], 0] } });
         p.root.updateMatrixWorld(true);
         p.root.traverse((o) => o.userData.bend?.());
         p.root.updateMatrixWorld(true);
@@ -206,13 +206,13 @@ describe('váy dựng khối', () => {
         for (const s of [-1, 1] as const)
           for (const j of [p.legs[s].hip, p.legs[s].knee]) {
             const limb = j.children.find((o) => (o as THREE.Mesh).isMesh && o.userData.limb) as THREE.Mesh;
-            const lp = limb.geometry.attributes.position, ln = limb.geometry.attributes.normal;
+            const lp = limb.geometry.attributes.position, lr = limb.geometry.attributes.normal;
             let out = 0;
             for (let i = 0; i < lp.count; i++) {
               const v = new THREE.Vector3().fromBufferAttribute(lp, i).applyMatrix4(limb.matrixWorld);
               // chân chui ra ở gấu: bỏ dải sát gấu
               if (-p.spine.worldToLocal(v.clone()).y * 100 > (g.length - g.rise) * h * 0.85) continue;
-              v.addScaledVector(new THREE.Vector3().fromBufferAttribute(ln, i).transformDirection(limb.matrixWorld), 0.026).applyMatrix4(inv);
+              v.addScaledVector(new THREE.Vector3().fromBufferAttribute(lr, i).transformDirection(limb.matrixWorld), 0.026).applyMatrix4(inv);
               if (Math.max(...faces.map(([n, a]) => n.dot(v.clone().sub(a)))) > 0) out++;
             }
             expect(out, `${name}, pha ${k}, chân ${s}`).toBe(0);
@@ -245,8 +245,8 @@ describe('váy dựng khối', () => {
         for (const torso of [3, 15]) {
           const p = fromCharacter(skirted(KNEE, clad) as unknown as Parameters<typeof fromCharacter>[0], { seated: true });
           act(p, {
-            pose: { af: [0, 0, 0, 0], an: [0, 0, 0, 0], lf: [leg[0], leg[1], 0], ln: [leg[0], leg[1], 0], torso, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { lf: true, ln: true } },
-            world: { hip: [0, -100, 0], yaw: 1, s: 1, flip: false, seated: true },
+            pose: { al: [0, 0, 0, 0], ar: [0, 0, 0, 0], ll: [leg[0], leg[1], 0], lr: [leg[0], leg[1], 0], torso, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { ll: true, lr: true } },
+            world: { hip: [0, -100, 0], yaw: 1, s: 1, seated: true },
             mouth: 'closed', brow: 'neutral', eyes: 'open',
           });
           p.root.traverse((o) => o.userData.bend?.());

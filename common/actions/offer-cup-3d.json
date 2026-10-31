@@ -1,35 +1,34 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "offer-cup-3d",
   "duration": 0.7,
   "end": "hold",
-  "mask": ["armNear", "hand"],
+  "mask": ["armRight", "hand"],
   "authoredAt": "side",
-  "sides": "anatomical",
   "keys": [
     {
       "t": 0,
       "pose": {},
-      "reach": { "armNear": { "at": [62, -60, 52], "point": "grip", "elbow": [-0.3, 1, 0.7] } },
+      "reach": { "armRight": { "at": [62, -60, 52], "point": "grip", "elbow": [-0.3, 1, 0.7] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "grip", "palm": "in" } }
+      "hand": { "armRight": { "pose": "grip", "palm": "in" } }
     },
     {
       "t": 0.6,
       "pose": {},
-      "reach": { "armNear": { "at": [50, -60, 82], "point": "grip", "elbow": [-0.3, 1, 0.7] } },
+      "reach": { "armRight": { "at": [50, -60, 82], "point": "grip", "elbow": [-0.3, 1, 0.7] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "grip", "palm": "in" } }
+      "hand": { "armRight": { "pose": "grip", "palm": "in" } }
     },
     {
       "t": 1,
       "pose": {},
-      "reach": { "armNear": { "at": [50, -60, 82], "point": "grip", "elbow": [-0.3, 1, 0.7] } },
+      "reach": { "armRight": { "at": [50, -60, 82], "point": "grip", "elbow": [-0.3, 1, 0.7] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "grip", "palm": "in" } }
+      "hand": { "armRight": { "pose": "grip", "palm": "in" } }
     }
   ],
   "events": [],
-  "note": "Chìa chén nhận rót: tay phải cầm chén từ trước bụng (hệ thân [62, −60, 52]) đưa ra trước-ngoài (hệ thân [50, −60, 82]) lúc 0,42 s rồi giữ. Chỉ ghi `armNear`, `hand`; `sides: \"anatomical\"`. Nền `seiza-3d`, `stand-3d`, `sit-3d`; món ở `world.hands[].hold` tay phải, như `chen@bowl`; người rót (`pour-serve-3d`, `pour-serve-kneel-3d`) ở phía tay phải, trước mặt. Thôi bằng clip rỗng blend ~0,4.",
+  "note": "Chìa chén nhận rót: tay phải cầm chén từ trước bụng (hệ thân [62, −60, 52]) đưa ra trước-ngoài (hệ thân [50, −60, 82]) lúc 0,42 s rồi giữ. Chỉ ghi `armRight`, `hand`. Nền `seiza-3d`, `stand-3d`, `sit-3d`; món ở `world.hands[].hold` tay phải, như `chen@bowl`; người rót (`pour-serve-3d`, `pour-serve-kneel-3d`) ở phía tay phải, trước mặt. Thôi bằng clip rỗng blend ~0,4.",
   "preview": { "stage": "stand", "hold": { "right": "chen@bowl" }, "partner": { "at": [170, 70] } }
 }

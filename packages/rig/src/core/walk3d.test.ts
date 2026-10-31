@@ -19,7 +19,7 @@ import {
   type ScenePose,
   type SceneRuntime,
 } from "./index";
-import { nextBearing, standing } from "./index";
+import { actJoints, nextBearing, standing } from "./index";
 
 const c = defaultCharacter();
 const dims = body3(c);
@@ -67,15 +67,15 @@ const ACTIONS: Record<string, ActionData> = {
     name: "raise",
     duration: 1,
     end: "hold",
-    mask: ["armNear"],
-    keys: [{ t: 0, pose: { armNear: [150, -60, 0] }, layer: { armNear: "front" } }],
+    mask: ["armRight"],
+    keys: [{ t: 0, pose: { armRight: [150, -60, 0] }, layer: { armRight: "front" } }],
   }),
   sit: action({
     name: "sit",
     duration: 1,
     authoredAt: "side",
-    mask: ["legFar", "legNear", "torso"],
-    keys: [{ t: 0, pose: { legFar: [90, -90], legNear: [90, -90], torso: 3 } }],
+    mask: ["legLeft", "legRight", "torso"],
+    keys: [{ t: 0, pose: { legLeft: [90, -90], legRight: [90, -90], torso: 3 } }],
   }),
 };
 
@@ -136,7 +136,7 @@ function hipRise(rt: SceneRuntime, t0: number, t1: number) {
  * pha trụ đã đo.
  */
 function stanceSlip(rt: SceneRuntime, id: string, from = 0, to = rt.duration) {
-  let prev: { ft: number[][]; fwd: number[]; flip: boolean } | undefined;
+  let prev: { ft: number[][]; fwd: number[] } | undefined;
   let bearing: number[] = [];
   let acc: [number, number] = [0, 0];
   let stance = "";
@@ -151,12 +151,6 @@ function stanceSlip(rt: SceneRuntime, id: string, from = 0, to = rt.duration) {
     const ys = feet(s.pose, h).map((p) => p[1] / h);
     if (!prev) bearing = standing(ys);
     else {
-      if (prev.flip !== w.flip) {
-        bearing = bearing.map((i) => 1 - i);
-        prev.ft.reverse();
-        prev.fwd.reverse();
-        stance = bearing.join();
-      }
       const p = prev;
       bearing = nextBearing(
         bearing,
@@ -174,7 +168,7 @@ function stanceSlip(rt: SceneRuntime, id: string, from = 0, to = rt.duration) {
       }
       stance = key;
     }
-    prev = { ft, fwd, flip: w.flip };
+    prev = { ft, fwd };
   }
   return { worst, phases };
 }
@@ -267,19 +261,21 @@ describe("người 3D đi theo `path`: chân trụ đứng yên trên sàn", () 
     expect(fast).toBeGreaterThan(3);
   });
 
-  it("quay tại chỗ qua chính diện: tay giơ đổi kênh gần ↔ xa", () => {
+  it("quay tại chỗ qua chính diện: tay giơ vẫn là tay phải", () => {
     const path: Key[] = [
       { t: 0, at: [0, 0, 900], yaw: 45 },
       { t: 3, at: [0, 0, 900], yaw: 135 },
     ];
     const rt = scene([walker(path, [{ action: "raise", start: 0 }])], 3);
     const sides = new Set<string>();
+    const flips = new Set<boolean>();
     for (const t of frames(0, 3, 10)) {
       const s = sceneAt(rt, "a", t, h, dims);
-      const raised = s.pose.an[0] === 150 ? "armNear" : "armFar";
-      sides.add(raised);
+      sides.add(s.pose.ar[0] === 150 ? "armRight" : "armLeft");
+      flips.add(s.world!.flip);
     }
-    expect(sides).toEqual(new Set(["armNear", "armFar"]));
+    expect(flips.size).toBe(2);
+    expect(sides).toEqual(new Set(["armRight"]));
   });
 
   it("clip `hold` vào giữa pha: sự kiện nằm trước pha đầu không phát, như người đứng ở `at`", () => {
@@ -310,6 +306,27 @@ describe("người 3D đi theo `path`: chân trụ đứng yên trên sàn", () 
     }
     expect(maxHipStep(rt, "a")).toBeLessThan(8);
     expect(sceneSlideProblems(rt).filter((p) => p.includes("trượt"))).toStrictEqual([]);
+  });
+
+  it("qua chính diện, quay lưng: chân phải vẫn là kênh `lr`, mỗi bàn chân đi liền không nhảy", () => {
+    const rt = scene([walker(arc(0, 900, 220, -90, 180, 4.5))], 4.5);
+    const flips = frames(0, 4.5, 30).map((t) => sceneAt(rt, "a", t, h, dims).world!.flip);
+    expect(new Set(flips).size).toBe(2);
+    let last: number[][] | undefined;
+    let worst = 0;
+    for (const t of frames(0, 4.5, 120)) {
+      const s = sceneAt(rt, "a", t, h, dims);
+      // `feet3` là `[trái, phải]` theo kênh `ll`, `lr`: kênh không đổi chỗ khi lật
+      const ft = feet3(s.pose, s.world!, h, dims.hipHalf);
+      if (last)
+        worst = Math.max(
+          worst,
+          ...ft.map((p, i) => Math.hypot(...p.map((v, j) => v - last![i][j]))),
+        );
+      last = ft;
+    }
+    // bàn chân vung đi cỡ 7–8 mỗi 1/120 s; đổi kênh giữa hai chân là nhảy cả bề ngang hông
+    expect(worst).toBeLessThan(10);
   });
 
   it("đi tới rồi ngồi: hông đúng mặt ngồi, chuyển đi ↔ đứng ↔ ngồi không giật", () => {
@@ -423,7 +440,7 @@ describe("quay tại chỗ bằng bước chân", () => {
   };
 
   it("mỗi nhịp một chân bước: chân phía quay nhấc lên, chân kia xoay trên sàn tới chỗ mới", () => {
-    // ống kính ở gốc, người ở +z nhìn +x: chân gần (thứ hai) là chân phải; quay phải là `yaw` tăng
+    // ống kính ở gốc, người ở +z nhìn +x: chân thứ hai là chân phải; quay phải là `yaw` tăng
     const rt = turn(90);
     const [left, right] = track(rt, 0.5, 1.3);
     expect(right.top).toBeLessThan(-8);
@@ -668,45 +685,87 @@ describe("worldFacingAt", () => {
   });
 });
 
-describe('hành động `sides: "anatomical"`', () => {
-  const reachNear = (sides?: "anatomical") =>
-    action({
-      name: "hip",
-      duration: 1,
-      end: "hold",
-      authoredAt: "side",
-      ...(sides && { sides }),
-      mask: ["armNear"],
-      keys: [{ t: 0, pose: {}, reach: { armNear: { at: [0.1, -0.5, 0.3] } } }],
-    });
-  const run = (yaw: number, sides?: "anatomical") => {
+describe("clip `mirror`", () => {
+  const lean = action({
+    name: "lean",
+    duration: 1,
+    end: "hold",
+    authoredAt: "side",
+    mask: ["armRight", "armLeft", "legRight", "torso", "head", "stretch"],
+    keys: [
+      {
+        t: 0,
+        pose: {
+          armRight: [40, -60, 10, 20, 15],
+          armLeft: [-10, -20, 0, 5],
+          legRight: [30, -40, 8],
+          torso: [6, 9],
+          head: [7, 25, -4],
+          stretch: [1, 1.2, 1, 1],
+        },
+        reach: { armRight: { at: [0.3, -0.4, 0.25] } },
+      },
+    ],
+  });
+  const run = (yaw: number, mirror?: boolean, baseMirror?: boolean) => {
     const r = parseScene({
       lens: LENS,
       duration: 1,
       cast: [
         {
           id: "a",
+          ...(baseMirror && { baseMirror }),
           world: { at: [0, 0, 500], yaw },
-          tracks: [{ clips: [{ action: "hip", start: 0 }] }],
+          tracks: [{ clips: [{ action: "lean", start: 0, ...(mirror && { mirror }) }] }],
         },
       ],
     });
     if (!r.success) throw new Error(r.error.message);
-    const rt = resolveScene(r.data, { ...ACTIONS, hip: reachNear(sides) });
-    return { rt, pose: sceneAt(rt, "a", 0.5, h, dims).pose };
+    const rt = resolveScene(r.data, { ...ACTIONS, lean });
+    return sceneAt(rt, "a", 0.5, h, dims);
   };
 
-  it("kênh gần là tay phải: tay phải ở phía xa ống kính thì clip đổi sang kênh xa", () => {
+  it("kênh `armRight` là tay phải ở mọi phía của ống kính; soi gương đổi phải ↔ trái và dấu nghiêng, lắc", () => {
     for (const yaw of [90, 270]) {
-      const { rt, pose } = run(yaw, "anatomical");
-      const far = rt.cast[0].rightFar === true;
-      expect(Object.keys(pose.reach ?? {})).toEqual([far ? "af" : "an"]);
+      const p = run(yaw).pose;
+      expect(Object.keys(p.reach ?? {})).toEqual(["ar"]);
+      const m = run(yaw, true).pose;
+      expect(Object.keys(m.reach ?? {})).toEqual(["al"]);
+      expect(m.al).toEqual(p.ar);
+      expect(m.ar).toEqual(p.al);
+      expect(m.ll).toEqual(p.lr);
+      expect(m.lean).toBe(-9);
+      expect(m.head).toEqual([-7, -25, -4]);
+      expect(m.stretch.slice(0, 4)).toEqual([
+        p.stretch[2],
+        p.stretch[3],
+        p.stretch[0],
+        p.stretch[1],
+      ]);
+      expect(m.lift).toMatchObject({ al: true, ar: true, ll: true });
+      expect(m.mirror).toBe(true);
     }
-    expect([90, 270].map((y) => run(y, "anatomical").rt.cast[0].rightFar === true)).toContain(true);
   });
 
-  it("bỏ trống `sides` thì vẫn theo gần / xa ống kính", () => {
-    for (const yaw of [90, 270]) expect(Object.keys(run(yaw).pose.reach ?? {})).toEqual(["an"]);
+  it("người soi gương qua mặt phẳng dọc thân: khớp phải của clip soi gương là ảnh gương của khớp trái", () => {
+    for (const yaw of [90, 200]) {
+      const sp = run(yaw);
+      const J = actJoints(c, sp)!;
+      const Jm = actJoints(c, run(yaw, true, true))!;
+      const W = sp.world!;
+      const R = [-Math.sin(W.yaw), 0, -Math.cos(W.yaw)];
+      const flipX = (p: number[]) => {
+        const d = (p[0] - W.hip[0]) * R[0] + (p[2] - W.hip[2]) * R[2];
+        return [p[0] - 2 * d * R[0], p[1], p[2] - 2 * d * R[2]];
+      };
+      const other = (k: string) => k.replace(/R$/, "#").replace(/L$/, "R").replace(/#$/, "L");
+      for (const [k, v] of Object.entries(Jm)) {
+        const want = flipX(J[other(k) as keyof typeof J]);
+        expect(Math.max(...v.map((x, i) => Math.abs(x - want[i]))), `${yaw} ${k}`).toBeLessThan(
+          1e-6,
+        );
+      }
+    }
   });
 });
 
@@ -969,24 +1028,24 @@ describe("quay tại chỗ rồi đi: nhịp cuối của cú quay là bước �
     expect(bad[0]).toContain("lệch hướng quãng đi 120° (rig bẻ thêm 50°): đặt `yaw` 160");
   });
 
-  // tư thế khi không ghép quay rồi đi: [hông x, y, z, yaw, bàn chân xa x y z, gần x y z]
+  // tư thế khi không ghép quay rồi đi: [hông x, y, z, yaw, bàn chân trái x y z, phải x y z]
   const TIMES = [0.5, 0.75, 0.9, 1.0, 1.15, 1.3, 1.4, 1.5, 1.8];
   // thân quay liền qua chỗ nối hai nhịp (`turnShare`); chỗ bàn chân trên sàn không theo tốc quay của thân
   const TURN = [
     [0, -168.6214, 900, 0.1005, 6.1001, 0, 921.7604, -8.2804, -8.017, 881.364],
     [0, -167.3464, 900, 0.8894, 17.9056, 0, 904.8425, -21.3142, -6.2645, 900.0422],
     [0, -167.3464, 900, 1.3963, 22.696, 0, 897.9775, -22.696, 0, 902.0225],
-    [0, -167.3464, 900, 1.7202, -22.4891, 0, 902.2288, 19.7907, -8.017, 895.0815],
-    [0, -167.3464, 900, 2.2689, -15.04, 0, 909.6538, 9.6053, -11.4457, 884.9289],
-    [0, -168.6214, 900, 2.692, -4.8546, 0, 919.8065, 2.1562, -2.1866, 877.5038],
-    [0, -169.8964, 900, 2.7925, -1.9493, 0, 922.7024, 1.9493, 0, 877.2976],
+    [0, -167.3464, 900, 1.7202, 19.7907, -8.017, 895.0815, -22.4891, 0, 902.2288],
+    [0, -167.3464, 900, 2.2689, 9.6053, -11.4457, 884.9289, -15.04, 0, 909.6538],
+    [0, -168.6214, 900, 2.692, 2.1562, -2.1866, 877.5038, -4.8546, 0, 919.8065],
+    [0, -169.8964, 900, 2.7925, 1.9493, 0, 877.2976, -1.9493, 0, 922.7024],
   ];
-  const STAND = [0, -169.8964, 900, 2.7925, -1.9493, 0, 922.7024, 1.9493, 0, 877.2976];
+  const STAND = [0, -169.8964, 900, 2.7925, 1.9493, 0, 877.2976, -1.9493, 0, 922.7024];
   const sample = (rt: SceneRuntime) =>
     TIMES.map((t) => {
       const s = sceneAt(rt, "a", t, h, dims);
-      const [far, near] = feet3(s.pose, s.world!, h, dims.hipHalf);
-      return [...s.world!.hip, s.world!.yaw, ...far, ...near];
+      const [left, right] = feet3(s.pose, s.world!, h, dims.hipHalf);
+      return [...s.world!.hip, s.world!.yaw, ...left, ...right];
     });
   const near = (got: number[][], want: number[][]) =>
     got.forEach((row, i) => row.forEach((x, j) => expect(x).toBeCloseTo(want[i][j], 3)));
@@ -1009,8 +1068,8 @@ describe("quay tại chỗ rồi đi: nhịp cuối của cú quay là bước �
     );
     near(sample(late), [
       ...TURN,
-      [-20.1429, -169.8964, 892.6429, 2.7925, -22.0922, 0, 915.3453, -18.1935, 0, 869.9404],
-      [-76.6926, -157.7491, 871.9926, 2.7916, -155.677, -8.5594, 866.5844, -18.3958, 0, 869.8503],
+      [-20.1429, -169.8964, 892.6429, 2.7925, -18.1935, 0, 869.9404, -22.0922, 0, 915.3453],
+      [-76.6926, -157.7491, 871.9926, 2.7916, -18.3958, 0, 869.8503, -155.677, -8.5594, 866.5844],
     ]);
   });
 });
@@ -1078,7 +1137,7 @@ describe("đi rồi dừng: bước cuối của chu kỳ đi là bước dừng
 
   it("clip đi hết sớm hơn cửa sổ: tư thế khi không ghép — hông trượt theo `path`, `check` kêu hụt mốc", () => {
     const rt = go(1.2);
-    // [hông x, y, z, yaw, bàn chân xa x y z, gần x y z]
+    // [hông x, y, z, yaw, bàn chân trái x y z, phải x y z]
     const want = [
       [-148.8531, -166.1003, 900, 0, -130.6954, -9.7659, 922, -166.3148, 0, 878],
       [-113.432, -160.7193, 900, 0, -54.3056, -2.6381, 922, -162.2902, 0, 878],
@@ -1250,10 +1309,10 @@ describe("sải chân theo tốc độ hông: bước đầu và bước áp ch�
     for (const t of frames(t0, t1, 120)) {
       const s = sceneAt(rt, "a", t, h, dims);
       const w = s.world!;
-      const [lf, ln] = feet3(s.pose, w, h, dims.hipHalf);
+      const [ll, lr] = feet3(s.pose, w, h, dims.hipHalf);
       const floor = w.floor ?? 0;
-      if (floor - ln[1] < 0.5) knee = Math.max(knee, Math.abs(s.pose.ln[1]));
-      if (floor - lf[1] < 0.5) knee = Math.max(knee, Math.abs(s.pose.lf[1]));
+      if (floor - lr[1] < 0.5) knee = Math.max(knee, Math.abs(s.pose.lr[1]));
+      if (floor - ll[1] < 0.5) knee = Math.max(knee, Math.abs(s.pose.ll[1]));
       hip = Math.min(hip, floor - w.hip[1]);
     }
     return { knee, hip };
@@ -1453,7 +1512,7 @@ describe("chỗ ghép quay rồi đi, dừng, dừng rồi quay: hông không t�
           reach = Math.max(reach, ((f[0] - w.hip[0]) * F[0] + (f[2] - w.hip[2]) * F[2]) / L);
       if (last) {
         // gối của chân chịu lực ở cả hai khung; chân bay gập duỗi nhanh theo clip đi
-        (["lf", "ln"] as const).forEach((ch, i) => {
+        (["ll", "lr"] as const).forEach((ch, i) => {
           if (Math.abs(ft[i][1]) < 0.5 && Math.abs(last!.ft[i][1]) < 0.5)
             knee = Math.max(knee, Math.abs(s.pose[ch][1] - last!.s.pose[ch][1]));
         });

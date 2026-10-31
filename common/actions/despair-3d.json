@@ -1,34 +1,34 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "despair-3d",
   "duration": 3.2,
   "end": "wrap",
   "authoredAt": "side",
-  "mask": ["armNear", "armFar", "torso", "head"],
+  "mask": ["armRight", "armLeft", "torso", "head"],
   "keys": [
     {
       "t": 0,
-      "pose": { "armNear": [6, 10, 0], "armFar": [6, 10, 0], "torso": 15, "head": [4, 14, 18] },
+      "pose": { "armRight": [6, 10, 0], "armLeft": [6, 10, 0], "torso": 15, "head": [4, 14, 18] },
       "ease": "smooth"
     },
     {
       "t": 0.25,
-      "pose": { "armNear": [7, 12, 0], "armFar": [7, 12, 0], "torso": 16, "head": [-4, -14, 20] },
+      "pose": { "armRight": [7, 12, 0], "armLeft": [7, 12, 0], "torso": 16, "head": [-4, -14, 20] },
       "ease": "smooth"
     },
     {
       "t": 0.5,
-      "pose": { "armNear": [6, 10, 0], "armFar": [6, 10, 0], "torso": 15, "head": [4, 14, 18] },
+      "pose": { "armRight": [6, 10, 0], "armLeft": [6, 10, 0], "torso": 15, "head": [4, 14, 18] },
       "ease": "smooth"
     },
     {
       "t": 0.75,
-      "pose": { "armNear": [7, 12, 0], "armFar": [7, 12, 0], "torso": 16, "head": [-4, -14, 20] },
+      "pose": { "armRight": [7, 12, 0], "armLeft": [7, 12, 0], "torso": 16, "head": [-4, -14, 20] },
       "ease": "smooth"
     },
     {
       "t": 1,
-      "pose": { "armNear": [6, 10, 0], "armFar": [6, 10, 0], "torso": 15, "head": [4, 14, 18] },
+      "pose": { "armRight": [6, 10, 0], "armLeft": [6, 10, 0], "torso": 15, "head": [4, 14, 18] },
       "ease": "smooth"
     }
   ],

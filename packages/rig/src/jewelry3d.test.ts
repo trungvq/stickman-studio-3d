@@ -117,8 +117,8 @@ describe('dây chuyền', () => {
 });
 
 const stand = (head: [number, number, number] = [0, 0, 0], torso = 0): Acting => ({
-  pose: { af: [0, 0, 0], an: [0, 0, 0], lf: [0, 0, 0], ln: [0, 0, 0], torso, head, stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { lf: true, ln: true, af: true, an: true } },
-  world: { hip: [0, -(R.thigh + R.shin) * 100, 0], yaw: 30, s: 1, flip: false },
+  pose: { al: [0, 0, 0], ar: [0, 0, 0], ll: [0, 0, 0], lr: [0, 0, 0], torso, head, stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { ll: true, lr: true, al: true, ar: true } },
+  world: { hip: [0, -(R.thigh + R.shin) * 100, 0], yaw: 30, s: 1 },
   mouth: 'closed', brow: 'neutral', eyes: 'open',
 });
 

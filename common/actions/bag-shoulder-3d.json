@@ -1,27 +1,26 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "bag-shoulder-3d",
   "duration": 1,
   "end": "hold",
-  "mask": ["armNear", "hand"],
+  "mask": ["armRight", "hand"],
   "authoredAt": "side",
-  "sides": "anatomical",
   "keys": [
     {
       "t": 0,
-      "pose": { "armNear": [-4, 16, 0, 18] },
+      "pose": { "armRight": [-4, 16, 0, 18] },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "cup", "w": 0.3, "palm": "in" } }
+      "hand": { "armRight": { "pose": "cup", "w": 0.3, "palm": "in" } }
     },
     {
       "t": 1,
-      "pose": { "armNear": [-4, 16, 0, 18] },
+      "pose": { "armRight": [-4, 16, 0, 18] },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "cup", "w": 0.3, "palm": "in" } }
+      "hand": { "armRight": { "pose": "cup", "w": 0.3, "palm": "in" } }
     }
   ],
   "events": [],
-  "note": "Đeo túi trên vai phải: quai trên đỉnh vai, thân túi dưới nách; cánh tay dang 18° ra ngoài thân túi, khuỷu chùng 16°, bàn tay buông lơi, giữ từ giây 0; góc tay nên đúng mọi cỡ người. Chỉ ghi `armNear`, `hand`; `sides: \"anatomical\"`. Nền `stand-3d` hay đi bộ; món treo ở `world.hands[].hold` tay phải, như `{ item: \"tui-deo\", group: \"carry\", on: \"shoulder\" }`.",
+  "note": "Đeo túi trên vai phải: quai trên đỉnh vai, thân túi dưới nách; cánh tay dang 18° ra ngoài thân túi, khuỷu chùng 16°, bàn tay buông lơi, giữ từ giây 0; góc tay nên đúng mọi cỡ người. Chỉ ghi `armRight`, `hand`. Nền `stand-3d` hay đi bộ; món treo ở `world.hands[].hold` tay phải, như `{ item: \"tui-deo\", group: \"carry\", on: \"shoulder\" }`.",
   "preview": {
     "stage": "stand",
     "hold": { "right": { "item": "tui-deo", "group": "carry", "on": "shoulder" } }

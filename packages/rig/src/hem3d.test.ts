@@ -41,9 +41,9 @@ function dressed(skirt: Partial<Skirt>, clad = true): CharacterData {
   return c;
 }
 
-const pose = (ln: number[], lf: number[], torso = 0, seated = false): Acting => ({
-  pose: { af: [3, 6, 0, 0], an: [3, 6, 0, 0], lf: [...lf, 0], ln: [...ln, 0], torso, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { af: true, an: true, lf: true, ln: true } },
-  world: { hip: [0, seated ? -90 : -170, 0], yaw: 0.6, s: 1, flip: false, seated },
+const pose = (lr: number[], ll: number[], torso = 0, seated = false): Acting => ({
+  pose: { al: [3, 6, 0, 0], ar: [3, 6, 0, 0], ll: [...ll, 0], lr: [...lr, 0], torso, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { al: true, ar: true, ll: true, lr: true } },
+  world: { hip: [0, seated ? -90 : -170, 0], yaw: 0.6, s: 1, seated },
   mouth: 'closed', brow: 'neutral', eyes: 'open',
 });
 const STAND = pose([0, 0], [0, 0]);
@@ -85,7 +85,7 @@ describe('vạt dài quấn', () => {
         const mesh = p.skirt!.group.children[0] as THREE.Mesh;
         const pts = legPoints(p, shin);
         const out = pts.filter((v) => !inside(mesh, v));
-        expect(out.length, `${name}, chân ${sp.pose.ln}/${sp.pose.lf}, thân ${sp.pose.torso}°`).toBe(0);
+        expect(out.length, `${name}, chân ${sp.pose.lr}/${sp.pose.ll}, thân ${sp.pose.torso}°`).toBe(0);
       }
   });
 
@@ -155,7 +155,7 @@ describe('vạt dài quấn', () => {
       const mesh = p.skirt!.group.children[0] as THREE.Mesh;
       const pos = mesh.geometry.attributes.position;
       const ys = Array.from({ length: pos.count }, (_, i) => -p.spine.worldToLocal(mesh.localToWorld(new THREE.Vector3().fromBufferAttribute(pos, i))).y * 100);
-      const label = `chân ${sp.pose.ln}/${sp.pose.lf}, thân ${sp.pose.torso}°`;
+      const label = `chân ${sp.pose.lr}/${sp.pose.ll}, thân ${sp.pose.torso}°`;
       // ngồi thì đùi ra trước cao hơn cạp: vạt phủ lòng cắt qua mặt trước và hai sườn áo, chỉ đo lưng
       const seated = !!sp.world!.seated;
       if (!seated) expect(Math.min(...ys), label).toBeGreaterThan(yW - 0.01);
@@ -215,7 +215,7 @@ describe('tạp dề', () => {
           const z = zAt(v.x, v.y);
           if (z === undefined) continue;
           n++;
-          expect(z, `${sk.length} ${sp.pose.ln}/${sp.pose.lf}/${sp.pose.torso} ${v.toArray().map(Math.round)}`).toBeGreaterThan(v.z);
+          expect(z, `${sk.length} ${sp.pose.lr}/${sp.pose.ll}/${sp.pose.torso} ${v.toArray().map(Math.round)}`).toBeGreaterThan(v.z);
         }
         expect(n).toBeGreaterThan(50);
       }

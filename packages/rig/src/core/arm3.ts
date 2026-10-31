@@ -392,7 +392,7 @@ export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Buil
   };
 };
 
-export type Limb3 = "af" | "an" | "lf" | "ln";
+export type Limb3 = "al" | "ar" | "ll" | "lr";
 
 /** Đích cổ tay như `Reach` của lõi, nhận cả mảng chỉ đọc; `terms` và `aim` (ở `world.hands`) giải bằng `resolveActing` */
 export interface ReachIn {
@@ -408,23 +408,25 @@ export interface ReachIn {
   hold?: ReachHold;
 }
 
-/** Đích thế giới hai tay của `world.hands`, theo gần / xa */
-export type ActHands = { near?: ReachIn; far?: ReachIn };
+/** Đích thế giới hai tay của `world.hands`, theo tay phải / trái */
+export type ActHands = { right?: ReachIn; left?: ReachIn };
 
 /** Phần `Pose` mà người 3D đọc */
 export interface PoseIn {
-  af: readonly number[];
-  an: readonly number[];
-  lf: readonly number[];
-  ln: readonly number[];
+  al: readonly number[];
+  ar: readonly number[];
+  ll: readonly number[];
+  lr: readonly number[];
   torso: number;
   lean?: number;
   head: readonly number[];
   stretch: readonly number[];
   lift?: Partial<Record<Limb3, boolean>>;
-  reach?: Partial<Record<"af" | "an", ReachIn>>;
-  hand?: Partial<Record<"af" | "an", readonly number[]>>;
-  aim?: Partial<Record<"af" | "an", Aim>>;
+  reach?: Partial<Record<"al" | "ar", ReachIn>>;
+  hand?: Partial<Record<"al" | "ar", readonly number[]>>;
+  aim?: Partial<Record<"al" | "ar", Aim>>;
+  /** Giải tay trái trước (`Pose.mirror`) */
+  mirror?: boolean;
 }
 
 const num = (v: number | undefined) => (Number.isFinite(v) ? (v as number) : 0);
@@ -523,7 +525,6 @@ export interface ActInput {
     hip: readonly number[];
     yaw: number;
     s: number;
-    flip: boolean;
     seated?: boolean;
     hands?: ActHands;
     /** Ống kính của scene: mắt (thế giới rig) cho ý định quay món về ống kính */
@@ -556,8 +557,6 @@ export function trunk3(c: ActCharacter, sp: ActInput) {
     flare: pal.sleeveFlare,
     sleeveLength: pal.sleeveLength,
   });
-  const flip = !!W.flip;
-  const near = flip ? 1 : -1;
   const seated = !!W.seated;
   const st = P.stretch;
   const s = W.s;
@@ -570,25 +569,28 @@ export function trunk3(c: ActCharacter, sp: ActInput) {
   const hipJ = {} as Record<"R" | "L", V3>;
   const tag = (side: number) => (side === -1 ? "R" : "L");
 
-  for (const side of [near, -near]) {
-    const isNear = side === near;
-    const [a, b, sp] = actAngles(P, isNear ? "ln" : "lf", seated);
+  for (const side of [-1, 1]) {
+    const isRight = side === -1;
+    const [a, b, sp] = actAngles(P, isRight ? "lr" : "ll", seated);
     const hj = at(hips, Rr, [side * roots.hip, 0, 0]);
     // Euler 'ZXY' của three: Rz · Rx · Ry, quay quanh y bằng 0
     const Rh = mm(Rr, mm(rz(side * sp * D), rx(-a * D)));
-    const knee = at(hj, Rh, [0, -B.thigh * (st[isNear ? 6 : 4] ?? 1), 0]);
+    const knee = at(hj, Rh, [0, -B.thigh * (st[isRight ? 6 : 4] ?? 1), 0]);
     const Rk = mm(Rh, rx(-b * D));
     hipJ[tag(side)] = hj;
     out[`knee${tag(side)}` as ActJoint] = knee;
-    out[`foot${tag(side)}` as ActJoint] = at(knee, Rk, [0, -B.shin * (st[isNear ? 7 : 5] ?? 1), 0]);
+    out[`foot${tag(side)}` as ActJoint] = at(knee, Rk, [
+      0,
+      -B.shin * (st[isRight ? 7 : 5] ?? 1),
+      0,
+    ]);
   }
 
-  const m = flip ? -1 : 1;
   // Euler 'XYZ' của three: Rx · Ry · Rz
-  const Rs = mm(Rr, mm(rx(num(P.torso) * D), rz(-m * num(P.lean) * D)));
+  const Rs = mm(Rr, mm(rx(num(P.torso) * D), rz(-num(P.lean) * D)));
   const [tilt, turn, nod] = P.head;
   // Euler 'YXZ' của three: Ry · Rx · Rz
-  const Rn = mm(mm(Rs, ry(m * num(turn) * D)), mm(rx(num(nod) * D), rz(-m * num(tilt) * D)));
+  const Rn = mm(mm(Rs, ry(num(turn) * D)), mm(rx(num(nod) * D), rz(-num(tilt) * D)));
   const neck = at(hips, Rs, [0, B.torso, 0]);
   out.neck = neck;
   out.head = at(neck, Rn, [0, head3(B, c.head.form === "human"), 0]);
@@ -605,7 +607,6 @@ export function trunk3(c: ActCharacter, sp: ActInput) {
     pal,
     skirt,
     roots,
-    near,
     s,
     root,
     Rr,

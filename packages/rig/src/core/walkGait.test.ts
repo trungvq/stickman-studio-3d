@@ -447,8 +447,8 @@ describe("quay tại chỗ: chân không bắt chéo, thân quay liền, đầu 
       const y = s.world!.yaw / D;
       const prev = out[out.length - 1]?.yaw ?? y;
       const yaw = prev + ((((y - prev + 180) % 360) + 360) % 360) - 180;
-      // lắc dương là quay mặt về trái người khi không lật
-      out.push({ t, yaw, lead: (s.world!.flip ? 1 : -1) * s.pose.head[1] });
+      // lắc dương là quay mặt về trái người, `yaw` dương là quay phải
+      out.push({ t, yaw, lead: -s.pose.head[1] });
     }
     return out;
   };

@@ -22,8 +22,8 @@ const dressed = (edit: (c: Char) => void = () => {}, opts = {}): Figure => {
   return fromCharacter(c as unknown as CharacterJson, opts);
 };
 const stand = (): Acting => ({
-  pose: { af: [0, 0, 0], an: [0, 0, 0], lf: [0, 0, 0], ln: [0, 0, 0], torso: 0, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { lf: true, ln: true, af: true, an: true } },
-  world: { hip: [0, -(R.thigh + R.shin) * 100, 0], yaw: 0, s: 1, flip: false },
+  pose: { al: [0, 0, 0], ar: [0, 0, 0], ll: [0, 0, 0], lr: [0, 0, 0], torso: 0, head: [0, 0, 0], stretch: [1, 1, 1, 1, 1, 1, 1, 1], lift: { ll: true, lr: true, al: true, ar: true } },
+  world: { hip: [0, -(R.thigh + R.shin) * 100, 0], yaw: 0, s: 1 },
   mouth: 'closed', brow: 'neutral', eyes: 'open',
 });
 const build = { clad: true, sleeve: 15, trouser: 17 };
@@ -219,7 +219,7 @@ describe('khăn vắt vai', () => {
     const room = roots3({ style: 'wrap' }, rig, build).room;
     const towel = torsoMesh({ style: 'wrap' }, rig, room, { drape, color: '#2b3a67' }).solids.at(-1)!;
     const fold = stand();
-    fold.pose = { ...fold.pose, reach: { an: { at: [55, -55, 20], elbow: [0, 0.5, 1], w: 1 }, af: { at: [49, -47, 18], elbow: [0, 0.5, 1], w: 1 } } };
+    fold.pose = { ...fold.pose, reach: { ar: { at: [55, -55, 20], elbow: [0, 0.5, 1], w: 1 }, al: { at: [49, -47, 18], elbow: [0, 0.5, 1], w: 1 } } };
     for (const pose of [stand(), fold]) {
       act(f, pose, 0);
       f.root.updateMatrixWorld(true);
@@ -266,7 +266,7 @@ describe('đổi đồ người 3D (`wardrobe`)', () => {
   c.pieces.torso = { ...c.pieces.torso, src: 'sculpt', garment: { style: 'wrap', hem: 40 } };
   c.items = {
     stand: { hem: { ...c.pieces.hem, src: 'sculpt', skirt: { style: 'wrap', length: 150, flare: 0, pleats: 0 } } as never },
-    mug: { handNear: { ...c.pieces.handNear, src: 'part', part: 'mug' } as never },
+    mug: { handRight: { ...c.pieces.handRight, src: 'part', part: 'mug' } as never },
   };
   const made: string[] = [];
   const w = wardrobe(c, (worn, seated) => {
@@ -278,7 +278,7 @@ describe('đổi đồ người 3D (`wardrobe`)', () => {
     const a = w.get(undefined);
     expect(a.fresh).toBe(true);
     expect(w.get(undefined).fig).toBe(a.fig);
-    expect(w.get({ handNear: 'mug' }).fresh).toBe(false);
+    expect(w.get({ handRight: 'mug' }).fresh).toBe(false);
     const b = w.get({ hem: 'stand' });
     expect(b.fresh).toBe(true);
     expect(b.fig.skirt?.hip).toBe(true);

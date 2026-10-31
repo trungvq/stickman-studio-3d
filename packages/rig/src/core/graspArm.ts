@@ -285,7 +285,7 @@ function intrusion(inp: ArmInput, S0: V3, E: V3, W: V3, other?: ArmSeg) {
  */
 export function armInput(T: Trunk3, side: number, shape = markShape(T)): ArmInput {
   const st = T.P.stretch;
-  const near = side === T.near;
+  const right = side === -1;
   const s = T.s;
   const S = T.at(T.hips, T.Rs, [side * T.roots.shoulder[0], T.roots.shoulder[1], 0]);
   const room = T.roots.room;
@@ -293,8 +293,8 @@ export function armInput(T: Trunk3, side: number, shape = markShape(T)): ArmInpu
   const inp: ArmInput = {
     side,
     S,
-    l1: T.B.upperArm * (st[near ? 2 : 0] ?? 1) * s,
-    l2: T.B.foreArm * (st[near ? 3 : 1] ?? 1) * s,
+    l1: T.B.upperArm * (st[right ? 2 : 0] ?? 1) * s,
+    l2: T.B.foreArm * (st[right ? 3 : 1] ?? 1) * s,
     s,
     hips: T.hips,
     Rs: T.Rs,

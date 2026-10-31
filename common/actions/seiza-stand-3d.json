@@ -1,18 +1,18 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "seiza-stand-3d",
   "duration": 2,
   "end": "hold",
   "authoredAt": "side",
-  "mask": ["armFar", "armNear", "legFar", "legNear", "torso"],
+  "mask": ["armLeft", "armRight", "legLeft", "legRight", "torso"],
   "keys": [
     {
       "t": 0,
       "pose": {
-        "armFar": [11, 42, 0],
-        "armNear": [11, 42, 0],
-        "legFar": [80, -170],
-        "legNear": [80, -170],
+        "armLeft": [11, 42, 0],
+        "armRight": [11, 42, 0],
+        "legLeft": [80, -170],
+        "legRight": [80, -170],
         "torso": 3
       },
       "ease": "linear"
@@ -20,10 +20,10 @@
     {
       "t": 0.025,
       "pose": {
-        "armFar": [10.8, 41.7, 0],
-        "armNear": [10.8, 41.7, 0],
-        "legFar": [76.4, -166.9],
-        "legNear": [76.4, -166.9],
+        "armLeft": [10.8, 41.7, 0],
+        "armRight": [10.8, 41.7, 0],
+        "legLeft": [76.4, -166.9],
+        "legRight": [76.4, -166.9],
         "torso": 2.9
       },
       "ease": "linear"
@@ -31,10 +31,10 @@
     {
       "t": 0.05,
       "pose": {
-        "armFar": [10.3, 40.7, 0],
-        "armNear": [10.3, 40.7, 0],
-        "legFar": [73.6, -164],
-        "legNear": [73.6, -164],
+        "armLeft": [10.3, 40.7, 0],
+        "armRight": [10.3, 40.7, 0],
+        "legLeft": [73.6, -164],
+        "legRight": [73.6, -164],
         "torso": 2.8
       },
       "ease": "linear"
@@ -42,10 +42,10 @@
     {
       "t": 0.075,
       "pose": {
-        "armFar": [9.5, 39.2, 0],
-        "armNear": [9.5, 39.2, 0],
-        "legFar": [69.6, -160.2],
-        "legNear": [69.6, -160.2],
+        "armLeft": [9.5, 39.2, 0],
+        "armRight": [9.5, 39.2, 0],
+        "legLeft": [69.6, -160.2],
+        "legRight": [69.6, -160.2],
         "torso": 2.5
       },
       "ease": "linear"
@@ -53,10 +53,10 @@
     {
       "t": 0.1,
       "pose": {
-        "armFar": [8.4, 37.2, 0],
-        "armNear": [8.4, 37.2, 0],
-        "legFar": [61.5, -153.1],
-        "legNear": [61.5, -153.1],
+        "armLeft": [8.4, 37.2, 0],
+        "armRight": [8.4, 37.2, 0],
+        "legLeft": [61.5, -153.1],
+        "legRight": [61.5, -153.1],
         "torso": 2.2
       },
       "ease": "linear"
@@ -64,10 +64,10 @@
     {
       "t": 0.125,
       "pose": {
-        "armFar": [7.2, 35, 0],
-        "armNear": [7.2, 35, 0],
-        "legFar": [55.2, -146.1],
-        "legNear": [55.2, -146.1],
+        "armLeft": [7.2, 35, 0],
+        "armRight": [7.2, 35, 0],
+        "legLeft": [55.2, -146.1],
+        "legRight": [55.2, -146.1],
         "torso": 1.8
       },
       "ease": "linear"
@@ -75,10 +75,10 @@
     {
       "t": 0.15,
       "pose": {
-        "armFar": [5.9, 32.6, 0],
-        "armNear": [5.9, 32.6, 0],
-        "legFar": [47.8, -138.6],
-        "legNear": [47.8, -138.6],
+        "armLeft": [5.9, 32.6, 0],
+        "armRight": [5.9, 32.6, 0],
+        "legLeft": [47.8, -138.6],
+        "legRight": [47.8, -138.6],
         "torso": 1.4
       },
       "ease": "linear"
@@ -86,10 +86,10 @@
     {
       "t": 0.175,
       "pose": {
-        "armFar": [4.5, 30, 0],
-        "armNear": [4.5, 30, 0],
-        "legFar": [39, -130.3],
-        "legNear": [39, -130.3],
+        "armLeft": [4.5, 30, 0],
+        "armRight": [4.5, 30, 0],
+        "legLeft": [39, -130.3],
+        "legRight": [39, -130.3],
         "torso": 1
       },
       "ease": "linear"
@@ -97,10 +97,10 @@
     {
       "t": 0.2,
       "pose": {
-        "armFar": [3.1, 27.4, 0],
-        "armNear": [3.1, 27.4, 0],
-        "legFar": [31.1, -121.7],
-        "legNear": [31.1, -121.7],
+        "armLeft": [3.1, 27.4, 0],
+        "armRight": [3.1, 27.4, 0],
+        "legLeft": [31.1, -121.7],
+        "legRight": [31.1, -121.7],
         "torso": 0.6
       },
       "ease": "linear"
@@ -108,10 +108,10 @@
     {
       "t": 0.225,
       "pose": {
-        "armFar": [1.8, 25, 0],
-        "armNear": [1.8, 25, 0],
-        "legFar": [23.7, -114.2],
-        "legNear": [23.7, -114.2],
+        "armLeft": [1.8, 25, 0],
+        "armRight": [1.8, 25, 0],
+        "legLeft": [23.7, -114.2],
+        "legRight": [23.7, -114.2],
         "torso": 0.2
       },
       "ease": "linear"
@@ -119,10 +119,10 @@
     {
       "t": 0.25,
       "pose": {
-        "armFar": [0.6, 22.8, 0],
-        "armNear": [0.6, 22.8, 0],
-        "legFar": [16.6, -107.3],
-        "legNear": [16.6, -107.3],
+        "armLeft": [0.6, 22.8, 0],
+        "armRight": [0.6, 22.8, 0],
+        "legLeft": [16.6, -107.3],
+        "legRight": [16.6, -107.3],
         "torso": -0.2
       },
       "ease": "linear"
@@ -130,10 +130,10 @@
     {
       "t": 0.275,
       "pose": {
-        "armFar": [-0.5, 20.8, 0],
-        "armNear": [-0.5, 20.8, 0],
-        "legFar": [9.7, -99.9],
-        "legNear": [9.7, -99.9],
+        "armLeft": [-0.5, 20.8, 0],
+        "armRight": [-0.5, 20.8, 0],
+        "legLeft": [9.7, -99.9],
+        "legRight": [9.7, -99.9],
         "torso": -0.5
       },
       "ease": "linear"
@@ -141,10 +141,10 @@
     {
       "t": 0.3,
       "pose": {
-        "armFar": [-1.3, 19.3, 0],
-        "armNear": [-1.3, 19.3, 0],
-        "legFar": [6, -96.1],
-        "legNear": [6, -96.1],
+        "armLeft": [-1.3, 19.3, 0],
+        "armRight": [-1.3, 19.3, 0],
+        "legLeft": [6, -96.1],
+        "legRight": [6, -96.1],
         "torso": -0.8
       },
       "ease": "linear"
@@ -152,10 +152,10 @@
     {
       "t": 0.325,
       "pose": {
-        "armFar": [-1.8, 18.3, 0],
-        "armNear": [-1.8, 18.3, 0],
-        "legFar": [3, -93.1],
-        "legNear": [3, -93.1],
+        "armLeft": [-1.8, 18.3, 0],
+        "armRight": [-1.8, 18.3, 0],
+        "legLeft": [3, -93.1],
+        "legRight": [3, -93.1],
         "torso": -0.9
       },
       "ease": "linear"
@@ -163,10 +163,10 @@
     {
       "t": 0.35,
       "pose": {
-        "armFar": [-2, 18, 0],
-        "armNear": [-2, 18, 0],
-        "legFar": [0, -90],
-        "legNear": [0, -90],
+        "armLeft": [-2, 18, 0],
+        "armRight": [-2, 18, 0],
+        "legLeft": [0, -90],
+        "legRight": [0, -90],
         "torso": -1
       },
       "ease": "linear"
@@ -174,10 +174,10 @@
     {
       "t": 0.375,
       "pose": {
-        "armFar": [-1.8, 18.1, 0],
-        "armNear": [-1.8, 18.1, 0],
-        "legFar": [0, -90],
-        "legNear": [0, -90],
+        "armLeft": [-1.8, 18.1, 0],
+        "armRight": [-1.8, 18.1, 0],
+        "legLeft": [0, -90],
+        "legRight": [0, -90],
         "torso": -0.8
       },
       "ease": "linear"
@@ -185,10 +185,10 @@
     {
       "t": 0.4,
       "pose": {
-        "armFar": [-1.4, 18.2, 0],
-        "armNear": [-1.4, 18.2, 0],
-        "legFar": [0, -90],
-        "legNear": [2.9, -94.5],
+        "armLeft": [-1.4, 18.2, 0],
+        "armRight": [-1.4, 18.2, 0],
+        "legLeft": [0, -90],
+        "legRight": [2.9, -94.5],
         "torso": -0.3
       },
       "ease": "linear"
@@ -196,10 +196,10 @@
     {
       "t": 0.425,
       "pose": {
-        "armFar": [-0.7, 18.4, 0],
-        "armNear": [-0.7, 18.4, 0],
-        "legFar": [0, -90],
-        "legNear": [13.2, -109.3],
+        "armLeft": [-0.7, 18.4, 0],
+        "armRight": [-0.7, 18.4, 0],
+        "legLeft": [0, -90],
+        "legRight": [13.2, -109.3],
         "torso": 0.5
       },
       "ease": "linear"
@@ -207,10 +207,10 @@
     {
       "t": 0.45,
       "pose": {
-        "armFar": [0.1, 18.7, 0],
-        "armNear": [0.1, 18.7, 0],
-        "legFar": [0, -90],
-        "legNear": [30.2, -127.8],
+        "armLeft": [0.1, 18.7, 0],
+        "armRight": [0.1, 18.7, 0],
+        "legLeft": [0, -90],
+        "legRight": [30.2, -127.8],
         "torso": 1.4
       },
       "ease": "linear"
@@ -218,10 +218,10 @@
     {
       "t": 0.475,
       "pose": {
-        "armFar": [1, 19, 0],
-        "armNear": [1, 19, 0],
-        "legFar": [0, -90],
-        "legNear": [57, -142.3],
+        "armLeft": [1, 19, 0],
+        "armRight": [1, 19, 0],
+        "legLeft": [0, -90],
+        "legRight": [57, -142.3],
         "torso": 2.4
       },
       "ease": "linear"
@@ -229,10 +229,10 @@
     {
       "t": 0.5,
       "pose": {
-        "armFar": [1.9, 19.3, 0],
-        "armNear": [1.9, 19.3, 0],
-        "legFar": [0, -90],
-        "legNear": [85.3, -143],
+        "armLeft": [1.9, 19.3, 0],
+        "armRight": [1.9, 19.3, 0],
+        "legLeft": [0, -90],
+        "legRight": [85.3, -143],
         "torso": 3.3
       },
       "ease": "linear"
@@ -240,10 +240,10 @@
     {
       "t": 0.525,
       "pose": {
-        "armFar": [2.7, 19.6, 0],
-        "armNear": [2.7, 19.6, 0],
-        "legFar": [0, -90],
-        "legNear": [93.7, -129.8],
+        "armLeft": [2.7, 19.6, 0],
+        "armRight": [2.7, 19.6, 0],
+        "legLeft": [0, -90],
+        "legRight": [93.7, -129.8],
         "torso": 4.1
       },
       "ease": "linear"
@@ -251,10 +251,10 @@
     {
       "t": 0.55,
       "pose": {
-        "armFar": [3.4, 19.8, 0],
-        "armNear": [3.4, 19.8, 0],
-        "legFar": [0, -90],
-        "legNear": [91, -114.4],
+        "armLeft": [3.4, 19.8, 0],
+        "armRight": [3.4, 19.8, 0],
+        "legLeft": [0, -90],
+        "legRight": [91, -114.4],
         "torso": 4.7
       },
       "ease": "linear"
@@ -262,10 +262,10 @@
     {
       "t": 0.575,
       "pose": {
-        "armFar": [3.8, 19.9, 0],
-        "armNear": [3.8, 19.9, 0],
-        "legFar": [0, -90],
-        "legNear": [88.2, -106],
+        "armLeft": [3.8, 19.9, 0],
+        "armRight": [3.8, 19.9, 0],
+        "legLeft": [0, -90],
+        "legRight": [88.2, -106],
         "torso": 5
       },
       "ease": "linear"
@@ -273,10 +273,10 @@
     {
       "t": 0.6,
       "pose": {
-        "armFar": [4, 20, 0],
-        "armNear": [4, 20, 0],
-        "legFar": [0, -90],
-        "legNear": [88.1, -105.7],
+        "armLeft": [4, 20, 0],
+        "armRight": [4, 20, 0],
+        "legLeft": [0, -90],
+        "legRight": [88.1, -105.7],
         "torso": 5.8
       },
       "ease": "linear"
@@ -284,10 +284,10 @@
     {
       "t": 0.625,
       "pose": {
-        "armFar": [4.8, 20.4, 0],
-        "armNear": [4.8, 20.4, 0],
-        "legFar": [-2.7, -86],
-        "legNear": [85.7, -105.7],
+        "armLeft": [4.8, 20.4, 0],
+        "armRight": [4.8, 20.4, 0],
+        "legLeft": [-2.7, -86],
+        "legRight": [85.7, -105.7],
         "torso": 8.7
       },
       "ease": "linear"
@@ -295,10 +295,10 @@
     {
       "t": 0.65,
       "pose": {
-        "armFar": [6.8, 21.4, 0],
-        "armNear": [6.8, 21.4, 0],
-        "legFar": [-5.5, -81.8],
-        "legNear": [83.3, -105.5],
+        "armLeft": [6.8, 21.4, 0],
+        "armRight": [6.8, 21.4, 0],
+        "legLeft": [-5.5, -81.8],
+        "legRight": [83.3, -105.5],
         "torso": 12.7
       },
       "ease": "linear"
@@ -306,10 +306,10 @@
     {
       "t": 0.675,
       "pose": {
-        "armFar": [9.4, 22.7, 0],
-        "armNear": [9.4, 22.7, 0],
-        "legFar": [-8.3, -77.4],
-        "legNear": [80.8, -105.2],
+        "armLeft": [9.4, 22.7, 0],
+        "armRight": [9.4, 22.7, 0],
+        "legLeft": [-8.3, -77.4],
+        "legRight": [80.8, -105.2],
         "torso": 17.1
       },
       "ease": "linear"
@@ -317,10 +317,10 @@
     {
       "t": 0.7,
       "pose": {
-        "armFar": [12.2, 24.1, 0],
-        "armNear": [12.2, 24.1, 0],
-        "legFar": [-11.2, -72.9],
-        "legNear": [78.2, -104.7],
+        "armLeft": [12.2, 24.1, 0],
+        "armRight": [12.2, 24.1, 0],
+        "legLeft": [-11.2, -72.9],
+        "legRight": [78.2, -104.7],
         "torso": 21
       },
       "ease": "linear"
@@ -328,10 +328,10 @@
     {
       "t": 0.725,
       "pose": {
-        "armFar": [14.5, 25.3, 0],
-        "armNear": [14.5, 25.3, 0],
-        "legFar": [-14, -68.4],
-        "legNear": [75.6, -104],
+        "armLeft": [14.5, 25.3, 0],
+        "armRight": [14.5, 25.3, 0],
+        "legLeft": [-14, -68.4],
+        "legRight": [75.6, -104],
         "torso": 23.5
       },
       "ease": "linear"
@@ -339,10 +339,10 @@
     {
       "t": 0.75,
       "pose": {
-        "armFar": [15.9, 25.9, 0],
-        "armNear": [15.9, 25.9, 0],
-        "legFar": [-10.2, -74.1],
-        "legNear": [72.9, -103.3],
+        "armLeft": [15.9, 25.9, 0],
+        "armRight": [15.9, 25.9, 0],
+        "legLeft": [-10.2, -74.1],
+        "legRight": [72.9, -103.3],
         "torso": 23.8
       },
       "ease": "linear"
@@ -350,10 +350,10 @@
     {
       "t": 0.775,
       "pose": {
-        "armFar": [15.8, 26, 0],
-        "armNear": [15.8, 26, 0],
-        "legFar": [0, -84.6],
-        "legNear": [65.8, -96.5],
+        "armLeft": [15.8, 26, 0],
+        "armRight": [15.8, 26, 0],
+        "legLeft": [0, -84.6],
+        "legRight": [65.8, -96.5],
         "torso": 22.1
       },
       "ease": "linear"
@@ -361,10 +361,10 @@
     {
       "t": 0.8,
       "pose": {
-        "armFar": [14.4, 25.9, 0],
-        "armNear": [14.4, 25.9, 0],
-        "legFar": [14.4, -96.2],
-        "legNear": [58.8, -89.1],
+        "armLeft": [14.4, 25.9, 0],
+        "armRight": [14.4, 25.9, 0],
+        "legLeft": [14.4, -96.2],
+        "legRight": [58.8, -89.1],
         "torso": 19.3
       },
       "ease": "linear"
@@ -372,10 +372,10 @@
     {
       "t": 0.825,
       "pose": {
-        "armFar": [12, 25.6, 0],
-        "armNear": [12, 25.6, 0],
-        "legFar": [29.2, -100.9],
-        "legNear": [51.8, -81],
+        "armLeft": [12, 25.6, 0],
+        "armRight": [12, 25.6, 0],
+        "legLeft": [29.2, -100.9],
+        "legRight": [51.8, -81],
         "torso": 16.1
       },
       "ease": "linear"
@@ -383,10 +383,10 @@
     {
       "t": 0.85,
       "pose": {
-        "armFar": [9, 25.4, 0],
-        "armNear": [9, 25.4, 0],
-        "legFar": [38.2, -93.5],
-        "legNear": [44.6, -71.9],
+        "armLeft": [9, 25.4, 0],
+        "armRight": [9, 25.4, 0],
+        "legLeft": [38.2, -93.5],
+        "legRight": [44.6, -71.9],
         "torso": 13.4
       },
       "ease": "linear"
@@ -394,10 +394,10 @@
     {
       "t": 0.875,
       "pose": {
-        "armFar": [5.7, 25.1, 0],
-        "armNear": [5.7, 25.1, 0],
-        "legFar": [37.4, -75.7],
-        "legNear": [37, -61.4],
+        "armLeft": [5.7, 25.1, 0],
+        "armRight": [5.7, 25.1, 0],
+        "legLeft": [37.4, -75.7],
+        "legRight": [37, -61.4],
         "torso": 12
       },
       "ease": "linear"
@@ -405,10 +405,10 @@
     {
       "t": 0.9,
       "pose": {
-        "armFar": [2.3, 24.8, 0],
-        "armNear": [2.3, 24.8, 0],
-        "legFar": [34.5, -60.7],
-        "legNear": [33.8, -56.9],
+        "armLeft": [2.3, 24.8, 0],
+        "armRight": [2.3, 24.8, 0],
+        "legLeft": [34.5, -60.7],
+        "legRight": [33.8, -56.9],
         "torso": 11.1
       },
       "ease": "linear"
@@ -416,10 +416,10 @@
     {
       "t": 0.925,
       "pose": {
-        "armFar": [-0.9, 24.5, 0],
-        "armNear": [-0.9, 24.5, 0],
-        "legFar": [28.6, -48.8],
-        "legNear": [28.6, -48.8],
+        "armLeft": [-0.9, 24.5, 0],
+        "armRight": [-0.9, 24.5, 0],
+        "legLeft": [28.6, -48.8],
+        "legRight": [28.6, -48.8],
         "torso": 8.2
       },
       "ease": "linear"
@@ -427,10 +427,10 @@
     {
       "t": 0.95,
       "pose": {
-        "armFar": [-3.5, 24.2, 0],
-        "armNear": [-3.5, 24.2, 0],
-        "legFar": [20.7, -36.1],
-        "legNear": [20.7, -36.1],
+        "armLeft": [-3.5, 24.2, 0],
+        "armRight": [-3.5, 24.2, 0],
+        "legLeft": [20.7, -36.1],
+        "legRight": [20.7, -36.1],
         "torso": 4.5
       },
       "ease": "linear"
@@ -438,10 +438,10 @@
     {
       "t": 0.975,
       "pose": {
-        "armFar": [-5.3, 24.1, 0],
-        "armNear": [-5.3, 24.1, 0],
-        "legFar": [11, -19.7],
-        "legNear": [11, -19.7],
+        "armLeft": [-5.3, 24.1, 0],
+        "armRight": [-5.3, 24.1, 0],
+        "legLeft": [11, -19.7],
+        "legRight": [11, -19.7],
         "torso": 1.3
       },
       "ease": "linear"
@@ -449,17 +449,17 @@
     {
       "t": 1,
       "pose": {
-        "armFar": [-6, 24, 0],
-        "armNear": [-6, 24, 0],
-        "legFar": [0, 0],
-        "legNear": [0, 0],
+        "armLeft": [-6, 24, 0],
+        "armRight": [-6, 24, 0],
+        "legLeft": [0, 0],
+        "legRight": [0, 0],
         "torso": 0
       },
       "ease": "linear"
     }
   ],
   "events": [],
-  "note": "Đứng dậy từ seiza trên đệm trong 2 s: nhổm lên quỳ gối thẳng (gối, cẳng chân nằm yên), chân gần bước ra trước đặt bàn chân xuống sàn trước gối 50, chúi 24° đẩy người đứng lên trên bàn chân ấy, chân xa rời đệm thu về cạnh; giữ đứng. Ghi tay, chân, thân. Nền `seiza-3d`; hông đi theo `world.path` như `preview.path` (mốc `sit: true` tới lúc rời đệm, mốc cuối đứng `ease` ở sàn trước chỗ ngồi 126.8); hết thì `stand-3d`. Mặt ngồi của mốc tính cho nửa bề dày đùi 16 (đơn vị rig ở `height` 1): người đùi dày hơn thì hạ mốc chừng ấy. Sinh bởi `tools/actions/seat.mjs`.",
+  "note": "Đứng dậy từ seiza trên đệm trong 2 s: nhổm lên quỳ gối thẳng (gối, cẳng chân nằm yên), chân phải bước ra trước đặt bàn chân xuống sàn trước gối 50, chúi 24° đẩy người đứng lên trên bàn chân ấy, chân trái rời đệm thu về cạnh; giữ đứng. Ghi tay, chân, thân. Nền `seiza-3d`; hông đi theo `world.path` như `preview.path` (mốc `sit: true` tới lúc rời đệm, mốc cuối đứng `ease` ở sàn trước chỗ ngồi 126.8); hết thì `stand-3d`. Mặt ngồi của mốc tính cho nửa bề dày đùi 16 (đơn vị rig ở `height` 1): người đùi dày hơn thì hạ mốc chừng ấy. Sinh bởi `tools/actions/seat.mjs`.",
   "preview": {
     "stage": "floor",
     "path": [

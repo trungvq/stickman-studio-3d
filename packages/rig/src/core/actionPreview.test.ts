@@ -4,8 +4,8 @@ import { ActionSchema, parseAction } from "./index";
 const json = {
   name: "wave-3d",
   authoredAt: "side",
-  mask: ["armNear"],
-  keys: [{ t: 0, pose: { armNear: [0, 0, 0] } }],
+  mask: ["armRight"],
+  keys: [{ t: 0, pose: { armRight: [0, 0, 0] } }],
   preview: { base: "stand-3d", stage: "stand" },
 };
 

@@ -4,12 +4,12 @@ import type { aimCamera } from './lens';
 import { R, type Figure, type Side } from './stickman';
 
 /**
- * Mốc trên người 3D. `R`/`L` là tay chân phải/trái của người; `Near`/`Far` chọn bên gần/xa ống kính ở khung đang
- * xét như `wristNear` của `anchorAt`. `mouth` và `face` theo nét mặt mặc định (`faceShape` không lưu trên `Figure`).
+ * Mốc trên người 3D. `R`/`L` là tay chân phải/trái của người. `mouth` và `face` theo nét mặt mặc định (`faceShape` không
+ * lưu trên `Figure`).
  */
 export const LANDMARKS = [
   'root', 'hip', 'chest', 'collar', 'head', 'headTop', 'face', 'mouth',
-  'wristR', 'wristL', 'wristNear', 'wristFar', 'footR', 'footL', 'footNear', 'footFar',
+  'wristR', 'wristL', 'footR', 'footL',
 ] as const;
 export type Landmark = (typeof LANDMARKS)[number];
 
@@ -20,17 +20,11 @@ const MOUTH_Z = Math.sqrt(R.head * R.head - (34 * PX) ** 2) * 0.98;
 
 const eye = new THREE.Vector3();
 
-/** Toạ độ thế giới three của mốc `name` trên người `p`; `matrixWorld` phải đã cập nhật. `camera` để chọn bên `Near`/`Far`. */
-export function landmark(p: Figure, name: Landmark, camera?: THREE.Camera, out = new THREE.Vector3()): THREE.Vector3 {
+/** Toạ độ thế giới three của mốc `name` trên người `p`; `matrixWorld` phải đã cập nhật */
+export function landmark(p: Figure, name: Landmark, out = new THREE.Vector3()): THREE.Vector3 {
   const at = (o: THREE.Object3D, x = 0, y = 0, z = 0) => o.localToWorld(out.set(x, y, z));
   const wrist = (s: Side) => at(p.arms[s].wrist).clone();
   const foot = (s: Side) => at(p.legs[s].knee, 0, -p.bones.shin, 0).clone();
-  const pick = (f: (s: Side) => THREE.Vector3, near: boolean) => {
-    const a = f(-1), b = f(1);
-    if (camera) camera.getWorldPosition(eye);
-    const aNear = !camera || a.distanceToSquared(eye) <= b.distanceToSquared(eye);
-    return out.copy(aNear === near ? a : b);
-  };
   switch (name) {
     case 'root': return at(p.root);
     case 'hip': return at(p.hips);
@@ -44,8 +38,6 @@ export function landmark(p: Figure, name: Landmark, camera?: THREE.Camera, out =
     case 'wristL': return out.copy(wrist(1));
     case 'footR': return out.copy(foot(-1));
     case 'footL': return out.copy(foot(1));
-    case 'wristNear': case 'wristFar': return pick(wrist, name === 'wristNear');
-    case 'footNear': case 'footFar': return pick(foot, name === 'footNear');
   }
 }
 
@@ -96,7 +88,7 @@ export function screenOf(view: ScreenView, at: Target | Figure, a?: Landmark | S
   const { camera, size } = view;
   let p: THREE.Vector3, self: THREE.Object3D | undefined, opt: ScreenOptions | undefined;
   if (isFigure(at)) {
-    p = landmark(at, a as Landmark, camera);
+    p = landmark(at, a as Landmark);
     self = at.root;
     opt = b;
   } else {

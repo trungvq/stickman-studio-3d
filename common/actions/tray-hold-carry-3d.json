@@ -1,22 +1,22 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "tray-hold-carry-3d",
   "duration": 0.6,
   "end": "hold",
-  "mask": ["armNear", "armFar", "hand"],
+  "mask": ["armRight", "armLeft", "hand"],
   "authoredAt": "side",
   "keys": [
     {
       "t": 0,
       "pose": {},
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [0, 0, 78],
           "point": "grip",
           "elbow": [-0.2, 1, 0.6]
         },
-        "armNear": {
+        "armRight": {
           "to": "belly",
           "offset": [34, 8, 44],
           "point": "grip",
@@ -25,21 +25,21 @@
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "open", "w": 1, "palm": "up" },
-        "armNear": { "pose": "open", "w": 1, "palm": "up" }
+        "armLeft": { "pose": "open", "w": 1, "palm": "up" },
+        "armRight": { "pose": "open", "w": 1, "palm": "up" }
       }
     },
     {
       "t": 1,
       "pose": {},
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [0, 0, 78],
           "point": "grip",
           "elbow": [-0.2, 1, 0.6]
         },
-        "armNear": {
+        "armRight": {
           "to": "belly",
           "offset": [34, 8, 44],
           "point": "grip",
@@ -48,8 +48,8 @@
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "open", "w": 1, "palm": "up" },
-        "armNear": { "pose": "open", "w": 1, "palm": "up" }
+        "armLeft": { "pose": "open", "w": 1, "palm": "up" },
+        "armRight": { "pose": "open", "w": 1, "palm": "up" }
       }
     }
   ],

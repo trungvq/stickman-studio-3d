@@ -203,26 +203,26 @@ const keyAction = (name, mask, keys, extra = {}) => {
 };
 const own = () => ({
   // tay gần giơ lên khi nói: cẳng tay dựng trước ngực, bàn tay ngang vai
-  'talk-raise-3d': keyAction('talk-raise-3d', ['armNear'], [
-    { t: 0, pose: { armNear: [0, 0, 0] }, ease: 'smooth' },
-    { t: 1, pose: { armNear: [35, 95, 0, 10] }, ease: 'linear' },
+  'talk-raise-3d': keyAction('talk-raise-3d', ['armRight'], [
+    { t: 0, pose: { armRight: [0, 0, 0] }, ease: 'smooth' },
+    { t: 1, pose: { armRight: [35, 95, 0, 10] }, ease: 'linear' },
   ], { authoredAt: 'side' }),
-  'hold-mug': keyAction('hold-mug', ['armNear'], [{ t: 0, pose: {}, reach: { armNear: { at: [38, -62, 14], elbow: [-0.4, 1, 0.4] } }, ease: 'linear' }], { authoredAt: 'side' }),
-  'chin-rest-3d': keyAction('chin-rest-3d', ['armNear'], [{ t: 0, pose: {}, reach: { armNear: { at: [45, -141, 6], elbow: [0.3, 1, 0.1] } }, ease: 'linear' }], { authoredAt: 'side' }),
+  'hold-mug': keyAction('hold-mug', ['armRight'], [{ t: 0, pose: {}, reach: { armRight: { at: [38, -62, 14], elbow: [-0.4, 1, 0.4] } }, ease: 'linear' }], { authoredAt: 'side' }),
+  'chin-rest-3d': keyAction('chin-rest-3d', ['armRight'], [{ t: 0, pose: {}, reach: { armRight: { at: [45, -141, 6], elbow: [0.3, 1, 0.1] } }, ease: 'linear' }], { authoredAt: 'side' }),
   // hai bàn tay úp trên gối người ngồi
-  'hands-knees-3d': keyAction('hands-knees-3d', ['armNear', 'armFar'], [{ t: 0, pose: {}, reach: { armNear: { at: [64, -20, 16], elbow: [0, 1, 0.6] }, armFar: { at: [64, -20, 16], elbow: [0, 1, 0.6] } }, ease: 'linear' }], { authoredAt: 'side' }),
+  'hands-knees-3d': keyAction('hands-knees-3d', ['armRight', 'armLeft'], [{ t: 0, pose: {}, reach: { armRight: { at: [64, -20, 16], elbow: [0, 1, 0.6] }, armLeft: { at: [64, -20, 16], elbow: [0, 1, 0.6] } }, ease: 'linear' }], { authoredAt: 'side' }),
   // ngồi quỳ trên gót: đùi ngang ra trước, ống chân gập hẳn ra sau dưới đùi
-  'seiza-3d': keyAction('seiza-3d', ['legNear', 'legFar', 'torso'], [{ t: 0, pose: { legNear: [90, -172], legFar: [90, -172], torso: 2 }, ease: 'linear' }], { authoredAt: 'side' }),
-  'hands-lap-3d': keyAction('hands-lap-3d', ['armNear', 'armFar'], [{ t: 0, pose: {}, reach: { armNear: { at: [44, -16, 12], elbow: [0, 1, 0.6] }, armFar: { at: [44, -16, 12], elbow: [0, 1, 0.6] } }, ease: 'linear' }], { authoredAt: 'side' }),
+  'seiza-3d': keyAction('seiza-3d', ['legRight', 'legLeft', 'torso'], [{ t: 0, pose: { legRight: [90, -172], legLeft: [90, -172], torso: 2 }, ease: 'linear' }], { authoredAt: 'side' }),
+  'hands-lap-3d': keyAction('hands-lap-3d', ['armRight', 'armLeft'], [{ t: 0, pose: {}, reach: { armRight: { at: [44, -16, 12], elbow: [0, 1, 0.6] }, armLeft: { at: [44, -16, 12], elbow: [0, 1, 0.6] } }, ease: 'linear' }], { authoredAt: 'side' }),
   // cúi chào sâu 45°, hai tay giơ thẳng ra trước
   'bow45-3d': keyAction('bow45-3d', ['torso'], [{ t: 0, pose: { torso: 45 }, ease: 'linear' }], { authoredAt: 'side' }),
-  'reach-3d': keyAction('reach-3d', ['armNear', 'armFar'], [{ t: 0, pose: { armNear: [84, 6, 0], armFar: [84, 6, 0] }, ease: 'linear' }], { authoredAt: 'side' }),
+  'reach-3d': keyAction('reach-3d', ['armRight', 'armLeft'], [{ t: 0, pose: { armRight: [84, 6, 0], armLeft: [84, 6, 0] }, ease: 'linear' }], { authoredAt: 'side' }),
   // giơ tay gần ra trước ngang ngực, bàn tay xoè
-  'reach-out-3d': keyAction('reach-out-3d', ['armNear'], [{ t: 0, pose: {}, reach: { armNear: { at: [78, -92, 8], elbow: [0, 1, 0.5] } }, hand: { armNear: 'open' }, ease: 'linear' }], { authoredAt: 'side', schemaVersion: 18 }),
+  'reach-out-3d': keyAction('reach-out-3d', ['armRight'], [{ t: 0, pose: {}, reach: { armRight: { at: [78, -92, 8], elbow: [0, 1, 0.5] } }, hand: { armRight: 'open' }, ease: 'linear' }], { authoredAt: 'side', schemaVersion: 18 }),
   // chắp hai tay trước bụng
-  'hands-front-3d': keyAction('hands-front-3d', ['armNear', 'armFar'], [{ t: 0, pose: {}, reach: { armNear: { at: [34, -50, -6], elbow: [-0.2, 1, 0.5] }, armFar: { at: [36, -46, -9], elbow: [-0.2, 1, 0.5] } }, ease: 'linear' }], { authoredAt: 'side', schemaVersion: 18 }),
+  'hands-front-3d': keyAction('hands-front-3d', ['armRight', 'armLeft'], [{ t: 0, pose: {}, reach: { armRight: { at: [34, -50, -6], elbow: [-0.2, 1, 0.5] }, armLeft: { at: [36, -46, -9], elbow: [-0.2, 1, 0.5] } }, ease: 'linear' }], { authoredAt: 'side', schemaVersion: 18 }),
   // khoanh tay trước ngực: hai cẳng tay chéo ngang, khuỷu chĩa ra ngoài
-  'arms-fold-3d': keyAction('arms-fold-3d', ['armNear', 'armFar'], [{ t: 0, pose: {}, reach: { armNear: { at: [66, -84, -24], elbow: [0, 0.6, 1] }, armFar: { at: [58, -76, -26], elbow: [0, 0.6, 1] } }, hand: { armNear: 'fist', armFar: 'fist' }, ease: 'linear' }], { authoredAt: 'side', schemaVersion: 18 }),
+  'arms-fold-3d': keyAction('arms-fold-3d', ['armRight', 'armLeft'], [{ t: 0, pose: {}, reach: { armRight: { at: [66, -84, -24], elbow: [0, 0.6, 1] }, armLeft: { at: [58, -76, -26], elbow: [0, 0.6, 1] } }, hand: { armRight: 'fist', armLeft: 'fist' }, ease: 'linear' }], { authoredAt: 'side', schemaVersion: 18 }),
   'face-wry': keyAction('face-wry', ['face'], [{ t: 0, pose: {}, face: { mouth: 'wryOpen', brow: 'skeptical', eyes: 'open' }, ease: 'linear' }]),
 });
 
@@ -256,7 +256,7 @@ const SCENES = {
       { id: 'noi', c: LONG, world: { at: [-330, 0, 0], yaw: 60 }, tracks: [track(clip('stand-3d')), track(clip('talk-raise-3d', 0.3)), track(clip('face-delighted')), track(clip('talk-lips', 0.4))] },
       { id: 'di', c: SHORT, world: { path: [{ t: 0, at: [-300, 0, 220], yaw: 10 }, { t: 4, at: [260, 0, 160], yaw: 10 }] }, tracks: [track(clip('walk')), track(clip('face-calm'))] },
       { id: 'ngoi', c: GIRL, world: { at: [-20, -SEAT * GIRL.rig.height, -150], yaw: 0, sit: true, floor: 0 }, tracks: [track(clip('sit-3d')), track(clip('arms-on-table-3d')), track(clip('chin-rest-3d', 0.3)), track(clip('face-sad'))] },
-      { id: 'coc', c: GLASSES, world: { at: [330, 0, -40], yaw: 120 }, tracks: [track(clip('stand-3d')), track(clip('hold-mug')), track(clip('face-calm'))], equip: { handNear: 'mug' } },
+      { id: 'coc', c: GLASSES, world: { at: [330, 0, -40], yaw: 120 }, tracks: [track(clip('stand-3d')), track(clip('hold-mug')), track(clip('face-calm'))], equip: { handRight: 'mug' } },
       { id: 'nu-di', c: GIRL, world: { path: [{ t: 0, at: [380, 0, -330], yaw: 170 }, { t: 4, at: [-200, 0, -330], yaw: 170 }] }, tracks: [track(clip('walk')), track(clip('face-calm'))] },
     ],
     props: [desk(40 * GIRL.rig.height, -20, -150, GIRL.rig.height)],
@@ -265,7 +265,7 @@ const SCENES = {
   'human-bench': ({ LONG, KNIT }) => ({
     cast: [
       { id: 'b0', c: KNIT, world: { at: [-80, -SEAT, 0], yaw: 90, sit: true, floor: 0 }, tracks: [track(clip('sit-3d')), track(clip('hands-knees-3d')), track(clip('face-calm'))] },
-      { id: 'b1', c: LONG, world: { at: [80, -SEAT, 0], yaw: 90, sit: true, floor: 0 }, tracks: [track(clip('sit-3d')), track(clip('hold-mug')), track(clip('face-calm'))], equip: { handNear: 'mug' } },
+      { id: 'b1', c: LONG, world: { at: [80, -SEAT, 0], yaw: 90, sit: true, floor: 0 }, tracks: [track(clip('sit-3d')), track(clip('hold-mug')), track(clip('face-calm'))], equip: { handRight: 'mug' } },
     ],
     props: [bench(0, 0, 320)],
   }),
@@ -300,7 +300,7 @@ const SCENES = {
       { id: 'x0', c: POLO, world: { at: [-300, -SEAT, 0], yaw: 90, sit: true, floor: 0 }, tracks: [track(clip('sit-3d')), track(clip('hands-knees-3d')), track(clip('face-calm'))] },
       { id: 'x1', c: YUKATA, world: { at: [-150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('reach-out-3d')), track(clip('face-calm'))] },
       { id: 'x2', c: YUKATA, world: { at: [0, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('hands-front-3d')), track(clip('face-calm'))] },
-      { id: 'x3', c: YUKATA, world: { at: [150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('hold-mug')), track(clip('face-calm'))], equip: { handNear: 'mug' } },
+      { id: 'x3', c: YUKATA, world: { at: [150, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('hold-mug')), track(clip('face-calm'))], equip: { handRight: 'mug' } },
       { id: 'x4', c: ROBE_BELLY, world: { at: [300, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('arms-fold-3d')), track(clip('face-calm'))] },
       { id: 'x7', c: CHEF_TOWEL, world: { at: [450, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('arms-fold-3d')), track(clip('face-calm'))] },
     ],
@@ -396,7 +396,7 @@ export function humanDemo(name) {
         if (fresh) group.add(fig.root);
         for (const f of p.w.figures.values()) f.root.visible = f === fig;
         act(fig, sp, t);
-        if (p.equip) dress(fig, p.equip, !!sp.world?.flip);
+        if (p.equip) dress(fig, p.equip);
       }
     },
   };

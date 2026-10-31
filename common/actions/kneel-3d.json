@@ -1,149 +1,149 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "kneel-3d",
   "duration": 1.2,
   "end": "hold",
   "authoredAt": "side",
-  "mask": ["armFar", "armNear", "legFar", "legNear", "torso", "hand"],
+  "mask": ["armLeft", "armRight", "legLeft", "legRight", "torso", "hand"],
   "keys": [
     {
       "t": 0,
       "pose": {
-        "legFar": [0, 0],
-        "legNear": [0, 0],
+        "legLeft": [0, 0],
+        "legRight": [0, 0],
         "torso": 0,
-        "armFar": [-6, 24, 0],
-        "armNear": [-6, 24, 0]
+        "armLeft": [-6, 24, 0],
+        "armRight": [-6, 24, 0]
       },
       "ease": "linear"
     },
     {
       "t": 0.0417,
-      "pose": { "legFar": [10.4, -17.6], "legNear": [10.4, -17.6], "torso": 0.2 },
+      "pose": { "legLeft": [10.4, -17.6], "legRight": [10.4, -17.6], "torso": 0.2 },
       "ease": "linear"
     },
     {
       "t": 0.0833,
-      "pose": { "legFar": [15.3, -24.8], "legNear": [15.3, -24.8], "torso": 0.6 },
+      "pose": { "legLeft": [15.3, -24.8], "legRight": [15.3, -24.8], "torso": 0.6 },
       "ease": "linear"
     },
     {
       "t": 0.125,
-      "pose": { "legFar": [19.2, -30.3], "legNear": [19.4, -30.9], "torso": 1.3 },
+      "pose": { "legLeft": [19.2, -30.3], "legRight": [19.4, -30.9], "torso": 1.3 },
       "ease": "linear"
     },
     {
       "t": 0.1667,
-      "pose": { "legFar": [22.6, -34.8], "legNear": [23.7, -38.3], "torso": 2.1 },
+      "pose": { "legLeft": [22.6, -34.8], "legRight": [23.7, -38.3], "torso": 2.1 },
       "ease": "linear"
     },
     {
       "t": 0.2083,
-      "pose": { "legFar": [25.7, -38.7], "legNear": [28, -46.4], "torso": 3 },
+      "pose": { "legLeft": [25.7, -38.7], "legRight": [28, -46.4], "torso": 3 },
       "ease": "linear"
     },
     {
       "t": 0.25,
-      "pose": { "legFar": [28.6, -42.2], "legNear": [31.9, -54.8], "torso": 4 },
+      "pose": { "legLeft": [28.6, -42.2], "legRight": [31.9, -54.8], "torso": 4 },
       "ease": "linear"
     },
     {
       "t": 0.2917,
-      "pose": { "legFar": [31.4, -45.3], "legNear": [35.3, -63], "torso": 5 },
+      "pose": { "legLeft": [31.4, -45.3], "legRight": [35.3, -63], "torso": 5 },
       "ease": "linear"
     },
     {
       "t": 0.3333,
-      "pose": { "legFar": [34, -48.2], "legNear": [38, -70.9], "torso": 5.9 },
+      "pose": { "legLeft": [34, -48.2], "legRight": [38, -70.9], "torso": 5.9 },
       "ease": "linear"
     },
     {
       "t": 0.375,
-      "pose": { "legFar": [36.5, -50.8], "legNear": [39.8, -78.1], "torso": 6.8 },
+      "pose": { "legLeft": [36.5, -50.8], "legRight": [39.8, -78.1], "torso": 6.8 },
       "ease": "linear"
     },
     {
       "t": 0.4167,
-      "pose": { "legFar": [38.9, -53.2], "legNear": [40.6, -84.4], "torso": 7.4 },
+      "pose": { "legLeft": [38.9, -53.2], "legRight": [40.6, -84.4], "torso": 7.4 },
       "ease": "linear"
     },
     {
       "t": 0.4583,
-      "pose": { "legFar": [41.3, -55.5], "legNear": [40.3, -89.5], "torso": 7.8 },
+      "pose": { "legLeft": [41.3, -55.5], "legRight": [40.3, -89.5], "torso": 7.8 },
       "ease": "linear"
     },
     {
       "t": 0.5,
-      "pose": { "legFar": [43.6, -57.5], "legNear": [38.9, -93.3], "torso": 8 },
+      "pose": { "legLeft": [43.6, -57.5], "legRight": [38.9, -93.3], "torso": 8 },
       "ease": "linear"
     },
     {
       "t": 0.5417,
-      "pose": { "legFar": [44.7, -59], "legNear": [35, -94.5], "torso": 8.1 },
+      "pose": { "legLeft": [44.7, -59], "legRight": [35, -94.5], "torso": 8.1 },
       "ease": "linear"
     },
     {
       "t": 0.5833,
-      "pose": { "legFar": [47.9, -62.7], "legNear": [31.8, -96.4], "torso": 8.3 },
+      "pose": { "legLeft": [47.9, -62.7], "legRight": [31.8, -96.4], "torso": 8.3 },
       "ease": "linear"
     },
     {
       "t": 0.625,
-      "pose": { "legFar": [52.6, -68], "legNear": [29.1, -98.6], "torso": 8.6 },
+      "pose": { "legLeft": [52.6, -68], "legRight": [29.1, -98.6], "torso": 8.6 },
       "ease": "linear"
     },
     {
       "t": 0.6667,
-      "pose": { "legFar": [58.2, -73.8], "legNear": [26.8, -101.1], "torso": 8.9 },
+      "pose": { "legLeft": [58.2, -73.8], "legRight": [26.8, -101.1], "torso": 8.9 },
       "ease": "linear"
     },
     {
       "t": 0.7083,
-      "pose": { "legFar": [64.4, -79.7], "legNear": [24.8, -103.8], "torso": 9.3 },
+      "pose": { "legLeft": [64.4, -79.7], "legRight": [24.8, -103.8], "torso": 9.3 },
       "ease": "linear"
     },
     {
       "t": 0.75,
-      "pose": { "legFar": [70.8, -85.2], "legNear": [23, -106.4], "torso": 9.6 },
+      "pose": { "legLeft": [70.8, -85.2], "legRight": [23, -106.4], "torso": 9.6 },
       "ease": "linear"
     },
     {
       "t": 0.7917,
-      "pose": { "legFar": [77.1, -90], "legNear": [21.5, -109], "torso": 9.9 },
+      "pose": { "legLeft": [77.1, -90], "legRight": [21.5, -109], "torso": 9.9 },
       "ease": "linear"
     },
     {
       "t": 0.8333,
-      "pose": { "legFar": [83, -93.9], "legNear": [20.1, -111.4], "torso": 10 },
+      "pose": { "legLeft": [83, -93.9], "legRight": [20.1, -111.4], "torso": 10 },
       "ease": "linear"
     },
     {
       "t": 0.875,
-      "pose": { "legFar": [88.1, -96.9], "legNear": [18.9, -113.6], "torso": 9.7 },
+      "pose": { "legLeft": [88.1, -96.9], "legRight": [18.9, -113.6], "torso": 9.7 },
       "ease": "linear"
     },
     {
       "t": 0.9167,
-      "pose": { "legFar": [92.2, -98.9], "legNear": [18, -115.3], "torso": 8.3 },
+      "pose": { "legLeft": [92.2, -98.9], "legRight": [18, -115.3], "torso": 8.3 },
       "ease": "linear"
     },
     {
       "t": 0.9583,
-      "pose": { "legFar": [94.8, -100.1], "legNear": [17.4, -116.5], "torso": 6.8 },
+      "pose": { "legLeft": [94.8, -100.1], "legRight": [17.4, -116.5], "torso": 6.8 },
       "ease": "linear"
     },
     {
       "t": 1,
       "pose": {
-        "legFar": [95.8, -100.5],
-        "legNear": [17.2, -116.9],
+        "legLeft": [95.8, -100.5],
+        "legRight": [17.2, -116.9],
         "torso": 6,
-        "armNear": [4, 20, 0],
-        "armFar": [30, 50, 0]
+        "armRight": [4, 20, 0],
+        "armLeft": [30, 50, 0]
       },
       "ease": "linear",
-      "reach": { "armFar": { "to": "knee", "offset": [4, -10, 0], "elbow": [-0.3, 1, 0.6] } },
-      "hand": { "armFar": {} }
+      "reach": { "armLeft": { "to": "knee", "offset": [4, -10, 0], "elbow": [-0.3, 1, 0.6] } },
+      "hand": { "armLeft": {} }
     }
   ],
   "events": [],

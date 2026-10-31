@@ -1,18 +1,18 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 21,
   "name": "sit-3d-staggered",
   "duration": 3.4,
   "end": "wrap",
   "authoredAt": "side",
-  "mask": ["armFar", "armNear", "legFar", "legNear", "torso"],
+  "mask": ["armLeft", "armRight", "legLeft", "legRight", "torso"],
   "keys": [
     {
       "t": 0,
       "pose": {
-        "armFar": [11, 42, 0],
-        "armNear": [11, 42, 0],
-        "legFar": [84, -112],
-        "legNear": [90, -74],
+        "armLeft": [11, 42, 0],
+        "armRight": [11, 42, 0],
+        "legLeft": [84, -112],
+        "legRight": [90, -74],
         "torso": 3
       },
       "ease": "linear"
@@ -20,16 +20,16 @@
     {
       "t": 0.5,
       "pose": {
-        "armFar": [12, 42, 0],
-        "armNear": [12, 42, 0],
-        "legFar": [84, -112],
-        "legNear": [90, -74],
+        "armLeft": [12, 42, 0],
+        "armRight": [12, 42, 0],
+        "legLeft": [84, -112],
+        "legRight": [90, -74],
         "torso": 4
       },
       "ease": "linear"
     }
   ],
   "events": [],
-  "note": "Ngồi ghế như `sit-3d` nhưng hai chân so le: chân gần đưa bàn chân ra trước, chân xa gập cẳng ra sau dưới ghế — nhìn ngang và 3/4 vẫn thấy hai chân; tay, thân thở như `sit-3d` (lặp). Ghi tay, chân, thân. Nền: `world.sit` trên mặt ngồi cao bằng gối (87,5 ở `height` 1), gầm ghế trống cho cẳng chân xa. Chồng track tay, đầu, thân lên trên như `sit-3d`.",
+  "note": "Ngồi ghế như `sit-3d` nhưng hai chân so le: chân phải đưa bàn chân ra trước, chân trái gập cẳng ra sau dưới ghế — nhìn ngang và 3/4 vẫn thấy hai chân; tay, thân thở như `sit-3d` (lặp). Ghi tay, chân, thân. Nền: `world.sit` trên mặt ngồi cao bằng gối (87,5 ở `height` 1), gầm ghế trống cho cẳng chân trái. Chồng track tay, đầu, thân lên trên như `sit-3d`.",
   "preview": { "stage": "chair" }
 }

@@ -1,18 +1,18 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "stand-relaxed-3d",
   "duration": 3.2,
   "end": "wrap",
-  "mask": ["armFar", "armNear", "legFar", "legNear", "torso"],
+  "mask": ["armLeft", "armRight", "legLeft", "legRight", "torso"],
   "authoredAt": "side",
   "keys": [
     {
       "t": 0,
       "pose": {
-        "armFar": [6, 30, 0, 0, -20],
-        "armNear": [7, 32, 0, 0, -8],
-        "legFar": [1, 0],
-        "legNear": [-1, 0],
+        "armLeft": [6, 30, 0, 0, -20],
+        "armRight": [7, 32, 0, 0, -8],
+        "legLeft": [1, 0],
+        "legRight": [-1, 0],
         "torso": 0
       },
       "ease": "linear"
@@ -20,16 +20,16 @@
     {
       "t": 0.5,
       "pose": {
-        "armFar": [7, 33, 0, 0, -20],
-        "armNear": [8, 35, 0, 0, -8],
-        "legFar": [1, 0],
-        "legNear": [-1, 0],
+        "armLeft": [7, 33, 0, 0, -20],
+        "armRight": [8, 35, 0, 0, -8],
+        "legLeft": [1, 0],
+        "legRight": [-1, 0],
         "torso": 1.5
       },
       "ease": "linear"
     }
   ],
   "events": [],
-  "note": "Đứng thở, vai thả: cánh tay hơi ra trước (vai 6–8°), khuỷu gập 30–35°, tay xa xoắn trong nhiều hơn nên cẳng tay hơi chéo vào thân; thân nhích 0 → 1,5° theo nhịp thở, lượt 3,2 s lặp. Ghi tay, chân, thân — thay hẳn `stand-3d`, không chồng lên nó. Nền là chính nó; chồng được track chỉ đầu, nét mặt, hay hành động tay ghi `armNear` / `armFar` riêng. Sinh bằng `tools/actions/stand.mjs`.",
+  "note": "Đứng thở, vai thả: cánh tay hơi ra trước (vai 6–8°), khuỷu gập 30–35°, tay trái xoắn trong nhiều hơn nên cẳng tay hơi chéo vào thân; thân nhích 0 → 1,5° theo nhịp thở, lượt 3,2 s lặp. Ghi tay, chân, thân — thay hẳn `stand-3d`, không chồng lên nó. Nền là chính nó; chồng được track chỉ đầu, nét mặt, hay hành động tay ghi `armRight` / `armLeft` riêng. Sinh bằng `tools/actions/stand.mjs`.",
   "preview": { "stage": "stand" }
 }

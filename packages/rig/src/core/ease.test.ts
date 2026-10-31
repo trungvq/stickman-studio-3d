@@ -259,15 +259,15 @@ function scene(hands: unknown[], items: unknown[] = [], world: object = { at: AT
 }
 
 const poseAt = (rt: SceneRuntime, t: number) => sceneAt(rt, "nguoi", t, H, DIMS) as ActInput;
-/** Đích tay phải (tay gần khi không lật) ở `t` */
+/** Đích tay phải ở `t` */
 const right = (rt: SceneRuntime, t: number) => {
   const W = poseAt(rt, t).world!;
-  return (W.flip ? W.hands!.far : W.hands!.near)!;
+  return W.hands!.right!;
 };
 /** Cổ tay phải người 3D giải ra ở `t`, toạ độ thế giới rig */
 const wristOf = (rt: SceneRuntime, t: number) => {
   const W = resolveActing(NGUOI, poseAt(rt, t)).world!;
-  return (W.flip ? W.hands!.far : W.hands!.near)!.at;
+  return W.hands!.right!.at;
 };
 const vsub = (a: readonly number[], b: readonly number[]) => a.map((v, i) => v - b[i]);
 const vlen = (a: readonly number[]) => Math.hypot(...a);
@@ -570,7 +570,7 @@ describe("tay phụ vào chỗ cầm giữa chuỗi `auto`", () => {
   /** Cổ tay trái người 3D giải ra ở `t` */
   const left = (rt: SceneRuntime, t: number) => {
     const W = resolveActing(NGUOI, poseAt(rt, t)).world!;
-    return (W.flip ? W.hands!.near : W.hands!.far)!.at;
+    return W.hands!.left!.at;
   };
 
   it("vừa cầm, cổ tay tay phụ còn trên chuỗi `auto` của nó, không nhảy sang đích ước lượng", () => {

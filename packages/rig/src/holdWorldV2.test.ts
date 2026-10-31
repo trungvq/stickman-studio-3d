@@ -190,7 +190,7 @@ describe('tay dẫn (`mode: "hand"`)', () => {
       const fig = w.pose(t).nguoi;
       const sp = sceneAt(rt, 'nguoi', t, H, bodies.nguoi);
       const W = sp.world!;
-      const hold = (W.flip ? W.hands!.far : W.hands!.near)!.hold as ReachHold;
+      const hold = W.hands!.right!.hold as ReachHold;
       expect(hold.grasp?.mode).toBe('hand');
       const h = fig.hands![-1];
       const { G } = holdLinkFrame(hold, -1, h.scale, h.long, 1);

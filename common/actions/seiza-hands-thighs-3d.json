@@ -1,44 +1,44 @@
 {
-  "schemaVersion": 18,
+  "schemaVersion": 21,
   "name": "seiza-hands-thighs-3d",
   "duration": 3.4,
   "end": "wrap",
   "authoredAt": "side",
-  "mask": ["armFar", "armNear", "legFar", "legNear", "torso", "hand"],
+  "mask": ["armLeft", "armRight", "legLeft", "legRight", "torso", "hand"],
   "keys": [
     {
       "t": 0,
-      "pose": { "legFar": [80, -170], "legNear": [80, -170], "torso": 3 },
+      "pose": { "legLeft": [80, -170], "legRight": [80, -170], "torso": 3 },
       "reach": {
-        "armNear": {
+        "armRight": {
           "to": "thigh",
           "offset": [20, 0, 16],
           "point": "palm",
           "elbow": [-0.1, 1, 2]
         },
-        "armFar": { "to": "thigh", "offset": [20, 0, 16], "point": "palm", "elbow": [-0.1, 1, 2] }
+        "armLeft": { "to": "thigh", "offset": [20, 0, 16], "point": "palm", "elbow": [-0.1, 1, 2] }
       },
       "hand": {
-        "armNear": { "pose": "flat", "w": 0.6, "palm": "down", "fingers": "forward" },
-        "armFar": { "pose": "flat", "w": 0.6, "palm": "down", "fingers": "forward" }
+        "armRight": { "pose": "flat", "w": 0.6, "palm": "down", "fingers": "forward" },
+        "armLeft": { "pose": "flat", "w": 0.6, "palm": "down", "fingers": "forward" }
       },
       "ease": "linear"
     },
     {
       "t": 0.5,
-      "pose": { "legFar": [80, -170], "legNear": [80, -170], "torso": 4 },
+      "pose": { "legLeft": [80, -170], "legRight": [80, -170], "torso": 4 },
       "reach": {
-        "armNear": {
+        "armRight": {
           "to": "thigh",
           "offset": [20, 0, 16],
           "point": "palm",
           "elbow": [-0.1, 1, 2]
         },
-        "armFar": { "to": "thigh", "offset": [20, 0, 16], "point": "palm", "elbow": [-0.1, 1, 2] }
+        "armLeft": { "to": "thigh", "offset": [20, 0, 16], "point": "palm", "elbow": [-0.1, 1, 2] }
       },
       "hand": {
-        "armNear": { "pose": "flat", "w": 0.6, "palm": "down", "fingers": "forward" },
-        "armFar": { "pose": "flat", "w": 0.6, "palm": "down", "fingers": "forward" }
+        "armRight": { "pose": "flat", "w": 0.6, "palm": "down", "fingers": "forward" },
+        "armLeft": { "pose": "flat", "w": 0.6, "palm": "down", "fingers": "forward" }
       },
       "ease": "linear"
     }

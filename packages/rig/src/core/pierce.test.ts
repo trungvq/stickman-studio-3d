@@ -72,7 +72,7 @@ describe("armPierce: tay người 3D xuyên thân áo của chính người ấy
   it("tay phải với chéo qua người sang phía trái: báo đoạn tay gần lấn vào thân", () => {
     const hits = at([20, -250, 60]);
     expect(hits.length).toBeGreaterThan(0);
-    expect(hits[0].part).toMatch(/Near$/);
+    expect(hits[0].part).toMatch(/Right$/);
     expect(hits[0].depth).toBeGreaterThan(10);
   });
 });

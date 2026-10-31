@@ -41,6 +41,9 @@ import {
   EquipSchema,
   composeEquip,
   dropGoneEquip,
+  renameSideEquip,
+  renameSideKeys,
+  renameSideList,
   equipSteps,
   type Equip,
   type EquipMap,
@@ -50,14 +53,14 @@ import {
 import { DEFAULT_IDLE, idlePose } from "./idle";
 import { DEFAULT_WALK, WALK_CYCLE_SECONDS, walkPose } from "./walk";
 /** Bump khi đổi hình dạng JSON hành động; `migrateAction` phải có nhánh tương ứng. */
-export const ACTION_VERSION = 20;
+export const ACTION_VERSION = 21;
 
 /** Kênh khớp: thứ có số trong `Pose`; `stretch` là hệ số dài chi, không phải góc */
 export const JOINT_CHANNELS = [
-  "armFar",
-  "armNear",
-  "legFar",
-  "legNear",
+  "armLeft",
+  "armRight",
+  "legLeft",
+  "legRight",
   "torso",
   "head",
   "stretch",
@@ -131,13 +134,13 @@ export const PreviewPartnerSchema = z.strictObject({
 export const BEZIER_DEFAULT = [0.42, 0, 0.58, 1] as const;
 
 /** Hai kênh có lớp vẽ riêng cho cẳng tay */
-export const ARM_CHANNELS = ["armFar", "armNear"] as const satisfies readonly Channel[];
+export const ARM_CHANNELS = ["armLeft", "armRight"] as const satisfies readonly Channel[];
 
 export const CHANNEL_LABELS: Record<Channel, string> = {
-  armFar: "tay xa",
-  armNear: "tay gần",
-  legFar: "chân xa",
-  legNear: "chân gần",
+  armLeft: "tay trái",
+  armRight: "tay phải",
+  legLeft: "chân trái",
+  legRight: "chân phải",
   torso: "thân",
   head: "đầu",
   stretch: "vươn",
@@ -150,10 +153,10 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
  * docs/01-rig.md#hành-động
  */
 export const CHANNEL_PARTS = {
-  armFar: ["vai", "khuỷu", "cổ tay", "dang", "xoắn vai"],
-  armNear: ["vai", "khuỷu", "cổ tay", "dang", "xoắn vai"],
-  legFar: ["hông", "gối", "dang"],
-  legNear: ["hông", "gối", "dang"],
+  armLeft: ["vai", "khuỷu", "cổ tay", "dang", "xoắn vai"],
+  armRight: ["vai", "khuỷu", "cổ tay", "dang", "xoắn vai"],
+  legLeft: ["hông", "gối", "dang"],
+  legRight: ["hông", "gối", "dang"],
   torso: ["cúi", "nghiêng"],
   head: ["nghiêng", "lắc", "gật"],
 } as const satisfies Partial<Record<JointChannel, readonly string[]>>;
@@ -176,7 +179,7 @@ const headPart = z.number().nullable();
 const headAngles = z.tuple([headPart, headPart, headPart]);
 const factor = z.number().positive();
 /**
- * Hệ số dài chi, `1` là chuẩn: bốn số `[tay xa, tay gần, chân xa, chân gần]` cho cả hai đoạn, hoặc
+ * Hệ số dài chi, `1` là chuẩn: bốn số `[tay trái, tay phải, chân trái, chân phải]` cho cả hai đoạn, hoặc
  * tám số từng đoạn, đoạn gốc trước. docs/01-rig.md#vươn-chi
  */
 const stretch = z.union([
@@ -189,10 +192,10 @@ const stretch = z.union([
  * là lỗi chứ không bị lặng lẽ bỏ.
  */
 export const PoseDeltaSchema = z.strictObject({
-  armFar: arm.optional(),
-  armNear: arm.optional(),
-  legFar: leg.optional(),
-  legNear: leg.optional(),
+  armLeft: arm.optional(),
+  armRight: arm.optional(),
+  legLeft: leg.optional(),
+  legRight: leg.optional(),
   torso: torso.optional(),
   head: headAngles.optional(),
   stretch: stretch.optional(),
@@ -202,10 +205,10 @@ export type PoseDelta = z.infer<typeof PoseDeltaSchema>;
 
 /** Tên kênh trong JSON ↔ khoá trong `Pose`; chỗ duy nhất biết cả hai. */
 export const poseDelta = (p: Pose): Required<PoseDelta> => ({
-  armFar: p.af,
-  armNear: p.an,
-  legFar: p.lf,
-  legNear: p.ln,
+  armLeft: p.al,
+  armRight: p.ar,
+  legLeft: p.ll,
+  legRight: p.lr,
   torso: p.lean ? [p.torso, p.lean] : p.torso,
   head: p.head,
   stretch: stretchJson(p.stretch),
@@ -220,10 +223,10 @@ const toDelta = poseDelta;
 /** Chiều ngược của `poseDelta`; scene cần nó để hoà trong không gian `Pose`. */
 export const deltaPose = (d: PoseDelta): Partial<Pose> => {
   const o: Partial<Pose> = {};
-  if (d.armFar) o.af = d.armFar;
-  if (d.armNear) o.an = d.armNear;
-  if (d.legFar) o.lf = d.legFar;
-  if (d.legNear) o.ln = d.legNear;
+  if (d.armLeft) o.al = d.armLeft;
+  if (d.armRight) o.ar = d.armRight;
+  if (d.legLeft) o.ll = d.legLeft;
+  if (d.legRight) o.lr = d.legRight;
   if (d.torso !== undefined) {
     o.torso = torsoBend(d.torso);
     o.lean = typeof d.torso === "number" ? 0 : d.torso[1];
@@ -336,7 +339,7 @@ const KeySchema = z.object({
    * Đích cổ tay của kênh tay (thay cho góc tay ở người 3D): rig giải IK hai đoạn. `pose` không ghi góc kênh ấy thì
    * kênh nhận góc suy từ đích trong mặt phẳng dọc (`reachAngles`). docs/01-rig.md#đích-bàn-tay
    */
-  reach: z.object({ armFar: ReachSchema.optional(), armNear: ReachSchema.optional() }).optional(),
+  reach: z.object({ armLeft: ReachSchema.optional(), armRight: ReachSchema.optional() }).optional(),
   /** Áp cho đoạn từ mốc này tới mốc sau */
   ease: z.enum(EASE_NAMES).default("linear"),
   bezier: BezierSchema.optional(),
@@ -344,7 +347,7 @@ const KeySchema = z.object({
   face: FaceSchema.optional(),
   /** Bàn tay người 3D theo kênh tay, nội suy; chỉ ăn khi `hand` nằm trong mặt nạ */
   hand: z
-    .object({ armFar: HandKeySchema.optional(), armNear: HandKeySchema.optional() })
+    .object({ armLeft: HandKeySchema.optional(), armRight: HandKeySchema.optional() })
     .optional(),
   /** Đổi đồ kể từ mốc này; công tắc, không nội suy và không đi qua mặt nạ. docs/01-rig.md */
   equip: EquipSchema.optional(),
@@ -429,12 +432,6 @@ export const ActionSchema = z
      */
     authoredAt: z.enum(["side"]).optional(),
     /**
-     * Tay chân theo giải phẫu: `anatomical` thì kênh gần (`armNear`, `legNear`) luôn là tay chân **phải**, kênh xa là
-     * trái, dù ống kính ở phía nào của người 3D — rig đổi kênh của riêng clip ấy khi tay phải đang ở phía xa. Bỏ trống là
-     * gần / xa theo ống kính. docs/03-scene.md#hành-động-theo-tay-phải-trái
-     */
-    sides: z.enum(["anatomical"]).optional(),
-    /**
      * Cố ý giật (giật mình, đập bàn): `check` không đo giật tay chân ở kênh hành động này ghi suốt lúc
      * clip của nó chạy, kể cả đoạn hoà vào và ra. docs/03-scene.md#giật-trên-hình
      */
@@ -497,6 +494,17 @@ export function migrateAction(json: unknown): unknown {
     delete o.walk;
     delete o.rate;
   }
+  // v20 → v21 kênh tay chân theo phải / trái của người (`armNear` → `armRight`, `armFar` → `armLeft`, chân như thế), bỏ
+  // `sides`: kênh không còn đổi theo ống kính
+  if (from < 21) {
+    o.mask = renameSideList(o.mask);
+    if (o.mask === undefined) delete o.mask;
+    delete o.sides;
+    for (const k of (o.keys ?? []) as Record<string, unknown>[]) {
+      if (!k || typeof k !== "object") continue;
+      for (const f of ["pose", "reach", "hand"]) renameSideKeys(k[f]);
+    }
+  }
   // v3 → v4 thêm kênh `head` và `keys[].face`; thiếu thì đầu đứng yên, nét mặt do scene quyết
   // v5 → v6 thêm `keys[].show`; v6 → v7 nó thành `keys[].equip`, tắt socket là gán `null`
   // v7 → v8 thêm `events[]`; thiếu nó là hành động không đặt tên pha nào, không phải viết gì
@@ -542,7 +550,10 @@ export function migrateAction(json: unknown): unknown {
       );
       delete k.show;
     }
-  for (const k of (o.keys ?? []) as Record<string, unknown>[]) dropGoneEquip(k?.equip);
+  for (const k of (o.keys ?? []) as Record<string, unknown>[]) {
+    if (from < 21) renameSideEquip(k?.equip);
+    dropGoneEquip(k?.equip);
+  }
   o.schemaVersion = ACTION_VERSION;
   return o;
 }
@@ -1021,7 +1032,7 @@ export function actionDelta(a: ActionData, t: number): PoseDelta {
         const d = keyDelta(k);
         const x = d[c];
         if (c === "stretch" && x) return stretchSegs(x as StretchJson);
-        const r = (c === "armFar" || c === "armNear") && k.reach?.[c];
+        const r = (c === "armLeft" || c === "armRight") && k.reach?.[c];
         // Mốc chỉ khai đích tay thì góc cúi thân lấy từ các mốc khác của kênh `torso` tại pha ấy
         const lean = () => {
           const v = d.torso ?? sampleChannel(a, (q) => keyDelta(q).torso, k.t);
@@ -1037,7 +1048,7 @@ export function actionDelta(a: ActionData, t: number): PoseDelta {
   return d;
 }
 
-const REACH_OF = { af: "armFar", an: "armNear" } as const;
+const REACH_OF = { al: "armLeft", ar: "armRight" } as const;
 
 type ReachSample = {
   w: number;
@@ -1201,7 +1212,7 @@ export function aimProblems(a: ActionData): string[] {
 }
 
 /** Khoá `Pose` của bốn chi, theo thứ tự cặp số trong `Stretch` */
-const STRETCH_LIMBS = ["af", "an", "lf", "ln"] as const;
+const STRETCH_LIMBS = ["al", "ar", "ll", "lr"] as const;
 
 /**
  * Hệ số `stretch` của chi thứ `i` trong `p` có hiệu lực không: `p` ghi cả chi ấy, hoặc `p` không
@@ -1253,7 +1264,12 @@ export const composePose = (base: Pose, ...parts: Partial<Pose>[]): Pose =>
       if (Object.keys(reach).length) out.reach = reach;
       else delete out.reach;
     }
-    // Bàn tay đè theo từng kênh tay: track chỉ ghi tay gần không xoá bàn tay xa của track dưới
+    // Thứ tự giải hai tay theo lớp trên cùng ghi tay
+    if (p.ar || p.al) {
+      if (p.mirror) out.mirror = true;
+      else delete out.mirror;
+    }
+    // Bàn tay đè theo từng kênh tay: track chỉ ghi tay phải không xoá bàn tay trái của track dưới
     if (o.hand || p.hand) out.hand = { ...o.hand, ...p.hand };
     // Lòng tay theo ý định đi theo bàn tay: lớp trên ghi bàn tay thô là xoá ý định của lớp dưới
     if (o.aim || p.aim) {

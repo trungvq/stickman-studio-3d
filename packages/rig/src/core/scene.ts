@@ -159,6 +159,9 @@ import {
   composeEquip,
   defaultCharacter,
   dropGoneEquip,
+  renameSideEquip,
+  renameSideKeys,
+  renameSideList,
   equipCharacter,
   equipSteps,
   limbWidths,
@@ -178,7 +181,7 @@ import {
 } from "./types";
 
 /** Bump khi đổi hình dạng JSON scene; `migrateScene` phải có nhánh tương ứng. */
-export const SCENE_VERSION = 36;
+export const SCENE_VERSION = 37;
 
 /** `"@ten"` hay `"@ten+0.4"` / `"@ten-1"`: một mốc có tên trong `scene.marks` cộng phần lệch giây */
 export const MARK_REF = /^@([A-Za-z0-9_-]+)(?:\s*([+-])\s*(\d+(?:\.\d+)?))?$/;
@@ -292,6 +295,16 @@ const ClipSchema = z.object({
     .describe(
       "Cố ý giật (cắt cứng, giật mình): `check` không đo giật ở kênh clip ghi suốt lúc nó chạy, kể cả đoạn hoà vào và ra",
     ),
+  /**
+   * Phát clip như soi gương: kênh tay chân phải ↔ trái (góc, `stretch`, đích, bàn tay, socket bàn tay trong `equip`) đổi
+   * chỗ, nghiêng thân và lắc, nghiêng đầu đổi dấu. `mask` vẫn gọi tên kênh của hành động. docs/03-scene.md#soi-gương
+   */
+  mirror: z
+    .boolean()
+    .optional()
+    .describe(
+      "Soi gương: tay chân phải ↔ trái của hành động đổi chỗ, nghiêng thân và lắc, nghiêng đầu đổi dấu; `mask` gọi tên kênh của hành động",
+    ),
 });
 
 const TrackSchema = z.object({
@@ -394,7 +407,7 @@ const HandSchema = z
   });
 
 /**
- * Mốc đích cổ tay thế giới: tay phải, tay trái của người (giải phẫu, không theo gần / xa), `null` là
+ * Mốc đích cổ tay thế giới: tay phải, tay trái của người, `null` là
  * thả tay về góc của hành động. Giữa hai mốc nhắc một tay thì đích và phần của đích nội suy êm;
  * trước mốc đầu và sau mốc cuối giữ nguyên. docs/03-scene.md#đích-bàn-tay-thế-giới
  */
@@ -509,6 +522,8 @@ const CastSchema = z.object({
   character: z.string().optional(),
   /** Bỏ trống là `idle` */
   base: z.union([z.enum(POSE_NAMES), PoseDeltaSchema]).optional(),
+  /** Tư thế nền soi gương như `clips[].mirror`: clip soi gương hoà vào từ đúng tư thế nền ấy. docs/03-scene.md#soi-gương */
+  baseMirror: z.boolean().optional(),
   /** Mặc gì lúc mở màn; hành động đổi tiếp từ đó. docs/03-scene.md */
   equip: EquipSchema.optional(),
   /**
@@ -721,6 +736,20 @@ export function migrateScene(json: unknown): unknown {
         if (m && typeof m === "object") for (const k of CAST_GONE) delete m[k];
     }
   }
+  // v36 → v37 kênh tay chân, socket bàn tay theo phải / trái của người (`armNear` → `armRight`, `handNear` →
+  // `handRight`…) ở `cast[].base`, `cast[].equip`, `clips[].mask`, `clips[].equip`; thêm `clips[].mirror`, `cast[].baseMirror`
+  if (from < 37)
+    for (const m of (o.cast ?? []) as Record<string, unknown>[]) {
+      if (!m || typeof m !== "object") continue;
+      renameSideKeys(m.base);
+      renameSideEquip(m.equip);
+      for (const t of (m.tracks ?? []) as { clips?: Record<string, unknown>[] }[])
+        for (const c of t?.clips ?? []) {
+          if (!c || typeof c !== "object") continue;
+          if (c.mask !== undefined) c.mask = renameSideList(c.mask);
+          renameSideEquip(c.equip);
+        }
+    }
   for (const m of (o.cast ?? []) as Record<string, unknown>[]) {
     if (!m || typeof m !== "object") continue;
     dropGoneEquip(m.equip);
@@ -848,6 +877,8 @@ interface Clip {
   tau: number;
   /** Cố ý giật: clip khai `snap` hay hành động của nó khai `snap` */
   snap?: boolean;
+  /** Phát như soi gương (`clips[].mirror`) */
+  mirror?: boolean;
   /** Người 3D đi theo `path`: quãng một lượt (đơn vị rig, `height = 1`) của clip có sải chân; pha chạy theo đồng hồ của người ấy */
   stride?: number;
   /** Thư viện dáng tay của cảnh; dáng `keys[].hand` gọi mà thiếu thì ra dáng nghỉ (người que không vẽ ngón), `check` báo */
@@ -855,11 +886,10 @@ interface Clip {
 }
 
 /**
- * Đồng hồ của người 3D đi theo `path`: `at` là giây đã co giãn theo nhịp chân của clip có sải chân,
- * `half` là số lần thân đã lật qua chính diện / quay lưng — lẻ thì kênh gần và xa đổi chỗ. `shift`
- * là pha rig tự cộng cho clip đi nối sau cú quay tại chỗ (`WalkJoin`).
+ * Đồng hồ của người 3D đi theo `path`: `at` là giây đã co giãn theo nhịp chân của clip có sải chân. `shift` là pha rig tự
+ * cộng cho clip đi nối sau cú quay tại chỗ (`WalkJoin`).
  */
-type Clock = ((t: number) => { at: number; half: number }) & {
+type Clock = ((t: number) => { at: number }) & {
   shift?: ReadonlyMap<object, number>;
 };
 
@@ -871,11 +901,6 @@ interface Track {
 export interface CastMember extends Omit<Unmarked<CastData>, "base" | "tracks"> {
   base: Pose;
   tracks: Track[];
-  /**
-   * Người 3D đứng ở `world.at` (không `path`) có tay phải ở phía xa ống kính (`facing().flip`): clip của hành động
-   * `sides: "anatomical"` đổi kênh gần ↔ xa. docs/03-scene.md#hành-động-theo-tay-phải-trái
-   */
-  rightFar?: boolean;
 }
 
 export interface SceneRuntime {
@@ -955,24 +980,12 @@ function clockPhase(
 
 const inMask = (c: Clip, k: Channel) => !c.mask || c.mask.includes(k);
 
-/**
- * `farRight`: tay phải của người 3D đang là tay xa ống kính (`rightFar`) — clip của hành động `sides: "anatomical"` đổi
- * kênh gần ↔ xa của riêng nó để kênh gần vẫn là tay chân phải. docs/03-scene.md#hành-động-theo-tay-phải-trái
- */
-const anatomicalSwap = (c: Clip, farRight?: boolean) =>
-  !!farRight && c.action?.sides === "anatomical";
-
-function clipPose(c: Clip, time: number, clock?: Clock, farRight?: boolean): Partial<Pose> {
-  if (!c.action) return {};
-  const p = clipPoseRaw(c, time, clock);
-  return anatomicalSwap(c, farRight) ? swapPartial(p) : p;
+/** Tư thế clip ghi lúc `time`, đã soi gương theo `mirror` */
+function clipPose(c: Clip, time: number, clock?: Clock): Partial<Pose> {
+  return c.action ? clipPhasePose(c, phaseAt(c, time, clock)) : {};
 }
 
-function clipPoseRaw(c: Clip, time: number, clock?: Clock): Partial<Pose> {
-  return c.action ? phasePose(c, phaseAt(c, time, clock)) : {};
-}
-
-/** Tư thế clip ghi ở pha `u` của nó, chưa đổi kênh theo `sides` */
+/** Tư thế clip ghi ở pha `u` của nó, chưa soi gương */
 function phasePose(c: Clip, u: number): Partial<Pose> {
   if (!c.action) return {};
   const d = actionDelta(c.action, u);
@@ -1000,32 +1013,25 @@ const clipFace = (c: Clip, time: number, clock?: Clock): Partial<FaceState> =>
  * Đổi đồ không đi qua `mask`: nó không phải khớp, thu hẹp `mask` không đụng tới nó.
  * `clips[].equip` đặt trước, mốc trong file hành động đè lên — file nói được chi tiết hơn.
  */
-const clipEquip = (c: Clip, time: number, clock?: Clock): EquipStep[] =>
-  composeEquip(c.equip, ...(c.action ? [actionEquip(c.action, phaseAt(c, time, clock))] : []));
+const clipEquip = (c: Clip, time: number, clock?: Clock): EquipStep[] => {
+  const steps = composeEquip(
+    c.equip,
+    ...(c.action ? [actionEquip(c.action, phaseAt(c, time, clock))] : []),
+  );
+  return c.mirror ? mirrorEquip(steps) : steps;
+};
 
 /**
  * Tư thế track ghi tại `time`, tính tới hết clip `i`.
  * Clip cũ **vẫn chạy** trong lúc hoà — đóng băng nó là chân đứng chết nửa giây.
  * Đệ quy vì clip mới chen vào khi chỗ nối cũ chưa xong là chuyện thường.
  */
-function poseUpTo(
-  tr: Track,
-  i: number,
-  time: number,
-  base: Pose,
-  clock?: Clock,
-  farRight?: boolean,
-): Partial<Pose> {
+function poseUpTo(tr: Track, i: number, time: number, base: Pose, clock?: Clock): Partial<Pose> {
   const c = tr.clips[i];
-  const p = clipPose(c, time, clock, farRight);
+  const p = clipPose(c, time, clock);
   const s = time - c.start;
   if (s >= c.tau) return p;
-  return blendPose(
-    base,
-    i === 0 ? {} : poseUpTo(tr, i - 1, time, base, clock, farRight),
-    p,
-    s / c.tau,
-  );
+  return blendPose(base, i === 0 ? {} : poseUpTo(tr, i - 1, time, base, clock), p, s / c.tau);
 }
 
 function faceUpTo(tr: Track, i: number, time: number, clock?: Clock): Partial<FaceState> {
@@ -1124,6 +1130,7 @@ function resolveTrack(
       equip: r.equip,
       tau: r.blend ?? 0,
       ...((r.snap || action?.snap) && { snap: true }),
+      ...(r.mirror && { mirror: true }),
       hands,
     };
     tr.clips.push(c);
@@ -1168,7 +1175,8 @@ export function resolveScene(
     });
   const cast = scene.cast.map((m) => {
     claim(m.id);
-    const base = basePose(m.base ?? "idle");
+    const base0 = basePose(m.base ?? "idle");
+    const base = m.baseMirror ? composePose(base0, mirrorPartial(base0)) : base0;
     keyed(m.id, m.fade, "fade");
     keyed(m.id, m.world?.path, "world.path");
     keyed(m.id, m.world?.hands, "world.hands");
@@ -1213,11 +1221,7 @@ export function resolveScene(
     camera: scene.camera,
     fx: scene.fx,
     ...(lens && { lens }),
-    cast: cast.map((m) => {
-      const w = m.world;
-      const rightFar = lens && w.at && !w.path ? facing(lens, w.at, w.yaw * D).flip : undefined;
-      return { ...m, ...(rightFar && { rightFar }) };
-    }),
+    cast,
     heights,
     bodies,
     held,
@@ -1282,7 +1286,7 @@ export function refreshRuntime(rt: SceneRuntime, scene: SceneData): boolean {
 export function actionStride(a: ActionData, base: Pose = POSES.idle): number {
   // hành động soạn ở `side` thì chân của nó là chân nâng: bàn chân đang bước dang ra cao lên như người 3D dựng
   const side = a.authoredAt === "side";
-  const lift = { lf: true, ln: true };
+  const lift = { ll: true, lr: true };
   const tb = bakeTravel(
     (t) =>
       side ? { ...composePose(base, actionPose(a, t)), lift } : composePose(base, actionPose(a, t)),
@@ -1363,13 +1367,7 @@ export function sceneAt(
       )
     : placed;
   const pose = m.world.hands
-    ? shapeHands(
-        restHands(acted, m.world.hands, time, world.flip),
-        m.world.hands,
-        time,
-        world.flip,
-        rt.hands,
-      )
+    ? shapeHands(restHands(acted, m.world.hands, time), m.world.hands, time, rt.hands)
     : acted;
   const [x, groundY] = project(world.lens, world.hip);
   return {
@@ -1746,7 +1744,7 @@ function worldSlideProblems(rt: SceneRuntime, m: CastMember): string[] {
   const dt = rt.duration / n;
   const per = Math.max(1, Math.round(SLIDE_WINDOW / dt));
   const walk = w.path && walkerOf(rt, m, h, dims.hipHalf);
-  let prev: { ft: V3[]; fwd: number[]; hip: V3; flip: boolean } | undefined;
+  let prev: { ft: V3[]; fwd: number[]; hip: V3 } | undefined;
   let bearing: number[] = [];
   let slip: [number, number] = [0, 0];
   let from = 0;
@@ -1763,11 +1761,6 @@ function worldSlideProblems(rt: SceneRuntime, m: CastMember): string[] {
     const sitting = legOf(keys, t).sit;
     if (!prev || sitting) bearing = standing(ys);
     else {
-      if (prev.flip !== wd.flip) {
-        bearing = bearing.map((i) => 1 - i);
-        prev.ft.reverse();
-        prev.fwd.reverse();
-      }
       const was = bearing;
       bearing = nextBearing(
         bearing,
@@ -1801,7 +1794,7 @@ function worldSlideProblems(rt: SceneRuntime, m: CastMember): string[] {
       }
       [slip, from, hip0] = [[0, 0], k, wd.hip];
     }
-    prev = { ft, fwd, hip: wd.hip, flip: wd.flip };
+    prev = { ft, fwd, hip: wd.hip };
   }
   if (!walk) return bad;
   keys.forEach((k, i) => {
@@ -2362,18 +2355,11 @@ function turnBeat(steps: number, u: number): { v: number; j: number } {
 
 /**
  * Chân bước ở nhịp `j` của cú quay `steps` nhịp, hai chân luân phiên: nhịp đầu là chân phía quay (quay phải — `delta`
- * dương — là chân phải); cú quay nối đi (`joined`) thì nhịp cuối là chân phía quay, đếm ngược từ nó. Kênh chưa đổi theo lật
+ * dương — là chân phải); cú quay nối đi (`joined`) thì nhịp cuối là chân phía quay, đếm ngược từ nó
  */
-function turnLead(
-  delta: number,
-  j: number,
-  steps: number,
-  joined: boolean,
-  flip0: boolean,
-): "ln" | "lf" {
-  const right = flip0 ? "lf" : "ln";
+function turnLead(delta: number, j: number, steps: number, joined: boolean): "lr" | "ll" {
   const k = joined ? steps - 1 - j : j;
-  return delta > 0 === (k % 2 === 0) ? right : right === "ln" ? "lf" : "ln";
+  return delta > 0 === (k % 2 === 0) ? "lr" : "ll";
 }
 
 /** Chỗ nối quay rồi đi còn lệch hướng quãng đi quá ngần này độ sau khi bẻ cú quay thì `check` gợi ý `yaw` */
@@ -2622,30 +2608,29 @@ function strideAt(w: Walker, t: number): number {
   return t / w.step <= w.stride.length - 1 + 1e-6 ? sampleAt(w.stride, w.step, t) : 1;
 }
 
-/** Tư thế clip ở pha `u`, đã đổi kênh theo `sides` như `clipPose` */
-function clipPhasePose(c: Clip, u: number, farRight?: boolean): Partial<Pose> {
+/** Tư thế clip ở pha `u`, đã soi gương theo `mirror` như `clipPose` */
+function clipPhasePose(c: Clip, u: number): Partial<Pose> {
   const p = phasePose(c, u);
-  return anatomicalSwap(c, farRight) ? swapPartial(p) : p;
+  return c.mirror ? mirrorPartial(p) : p;
 }
 
 const strikeCache = new WeakMap<Clip, Map<string, number>>();
 
 /** Pha clip đi đặt gót chân `ch` xuống: lúc bàn chân ấy ra trước nhất */
-function clipStrike(c: Clip, ch: "ln" | "lf", farRight: boolean): number {
+function clipStrike(c: Clip, ch: "lr" | "ll"): number {
   let byKey = strikeCache.get(c);
   if (!byKey) strikeCache.set(c, (byKey = new Map()));
-  const key = `${ch}|${farRight}`;
-  const hit = byKey.get(key);
+  const hit = byKey.get(ch);
   if (hit !== undefined) return hit;
   let best = 0;
   let front = -Infinity;
   for (let i = 0; i < 240; i++) {
-    const leg = clipPhasePose(c, i / 240, farRight)[ch];
+    const leg = clipPhasePose(c, i / 240)[ch];
     if (!leg) break;
     const x = Math.sin(leg[0] * D) * RIG.thigh + Math.sin((leg[0] + leg[1]) * D) * RIG.shin;
     if (x > front) [front, best] = [x, i / 240];
   }
-  byKey.set(key, best);
+  byKey.set(ch, best);
   return best;
 }
 
@@ -2747,9 +2732,9 @@ interface WalkStop extends StopWalk {
   plan?: {
     H0: [number, number];
     V0: [number, number];
-    feet: Record<"ln" | "lf", StopFoot>;
+    feet: Record<"lr" | "ll", StopFoot>;
     /** Chân bước trước: chân đang bay lúc `tp` */
-    first: "ln" | "lf";
+    first: "lr" | "ll";
     /** Gối chùng (độ) của chân đứng lúc `tp` và của tư thế nền: hông cao tới đâu thì gối chùng chừng ấy */
     K0: number;
     K1: number;
@@ -2825,18 +2810,16 @@ function stopFootAt(f: StopFoot, t: number): { at: [number, number]; h: number }
 const gaitCache = new WeakMap<Clip, Map<string, boolean[]>>();
 const GAIT_N = 240;
 
-const swingCache = new WeakMap<Clip, Map<boolean, number[]>>();
+const swingCache = new WeakMap<Clip, number[]>();
 
 /**
  * Ở từng pha `i / GAIT_N` của clip đi: một bàn chân đang bay thì phần chu kỳ còn lại tới lúc nó chạm
  * sàn, không thì `0`
  */
-function clipSwing(c: Clip, farRight: boolean): number[] {
-  let byKey = swingCache.get(c);
-  if (!byKey) swingCache.set(c, (byKey = new Map()));
-  const hit = byKey.get(farRight);
+function clipSwing(c: Clip): number[] {
+  const hit = swingCache.get(c);
   if (hit) return hit;
-  const [a, b] = [clipGround(c, "ln", farRight), clipGround(c, "lf", farRight)];
+  const [a, b] = [clipGround(c, "lr"), clipGround(c, "ll")];
   const out = new Array<number>(GAIT_N).fill(0);
   for (let i = 0; i < GAIT_N; i++) {
     if (a[i] === b[i]) continue;
@@ -2845,43 +2828,40 @@ function clipSwing(c: Clip, farRight: boolean): number[] {
     while (n < GAIT_N && !air[(i + n) % GAIT_N]) n++;
     out[i] = n / GAIT_N;
   }
-  byKey.set(farRight, out);
+  swingCache.set(c, out);
   return out;
 }
 
-const kneeCache = new WeakMap<Clip, Map<boolean, number>>();
+const kneeCache = new WeakMap<Clip, number>();
 
 /** Gối chùng nhất (độ) của chân chạm sàn trong một chu kỳ của clip đi */
-function clipKnee(c: Clip, farRight: boolean): number {
-  let byKey = kneeCache.get(c);
-  if (!byKey) kneeCache.set(c, (byKey = new Map()));
-  const hit = byKey.get(farRight);
+function clipKnee(c: Clip): number {
+  const hit = kneeCache.get(c);
   if (hit !== undefined) return hit;
-  const g = { ln: clipGround(c, "ln", farRight), lf: clipGround(c, "lf", farRight) };
+  const g = { lr: clipGround(c, "lr"), ll: clipGround(c, "ll") };
   let out = 0;
   for (let i = 0; i < GAIT_N; i++) {
-    const p = clipPhasePose(c, i / GAIT_N, farRight);
-    for (const ch of ["ln", "lf"] as const)
+    const p = clipPhasePose(c, i / GAIT_N);
+    for (const ch of ["lr", "ll"] as const)
       if (g[ch][i] && p[ch]) out = Math.max(out, Math.abs(p[ch][1]));
   }
-  byKey.set(farRight, out);
+  kneeCache.set(c, out);
   return out;
 }
 
 /** Chân `ch` của clip đi chạm sàn ở từng pha `i / GAIT_N` */
-function clipGround(c: Clip, ch: "ln" | "lf", farRight: boolean): boolean[] {
+function clipGround(c: Clip, ch: "lr" | "ll"): boolean[] {
   let byKey = gaitCache.get(c);
   if (!byKey) gaitCache.set(c, (byKey = new Map()));
-  const key = `${ch}|${farRight}`;
-  const hit = byKey.get(key);
+  const hit = byKey.get(ch);
   if (hit) return hit;
   const out: boolean[] = [];
   for (let i = 0; i < GAIT_N; i++) {
-    const p = clipPhasePose(c, i / GAIT_N, farRight);
-    const d = (k: "ln" | "lf") => (p[k] ? legFoot(p[k], 1, 0, RIG.thigh, RIG.shin).depth : 0);
-    out.push(d(ch) >= Math.max(d("ln"), d("lf")) - GROUND_TOL);
+    const p = clipPhasePose(c, i / GAIT_N);
+    const d = (k: "lr" | "ll") => (p[k] ? legFoot(p[k], 1, 0, RIG.thigh, RIG.shin).depth : 0);
+    out.push(d(ch) >= Math.max(d("lr"), d("ll")) - GROUND_TOL);
   }
-  byKey.set(key, out);
+  byKey.set(ch, out);
   return out;
 }
 
@@ -2925,25 +2905,23 @@ function planStop(m: CastMember, s: WalkStop, w: Walker, height: number, hipHalf
   const step = w.step;
   const k = s.k0 - 1;
   const clock = clockOf(w);
-  const flip0 = w.flip[0];
   const len = lengths(height);
-  const unswapped = (t: number, raw = false) => {
+  const posed = (t: number, raw = false) => {
     let out = m.base;
-    poseAt(m, t, clock, (p) => (out = raw ? p : walkStep(m, t, p, w, height, hipHalf)), flip0);
+    poseAt(m, t, clock, (p) => (out = raw ? p : walkStep(m, t, p, w, height, hipHalf)));
     return out;
   };
-  const right: "ln" | "lf" = flip0 ? "lf" : "ln";
-  const chs = ["ln", "lf"] as const;
-  const lens = (p: Pose, ch: "ln" | "lf") => [
-    len.thigh * p.stretch[ch === "ln" ? 6 : 4],
-    len.shin * p.stretch[ch === "ln" ? 7 : 5],
+  const chs = ["lr", "ll"] as const;
+  const lens = (p: Pose, ch: "lr" | "ll") => [
+    len.thigh * p.stretch[ch === "lr" ? 6 : 4],
+    len.shin * p.stretch[ch === "lr" ? 7 : 5],
   ];
   const measure = (i: number) => {
-    const p = unswapped(i * step);
+    const p = posed(i * step);
     const H: [number, number] = [w.x[i], w.z[i]];
     const f = chs.map((ch) => {
       const [l1, l2] = lens(p, ch);
-      return legFoot(p[ch], ch === right ? 1 : -1, hipHalf, l1, l2);
+      return legFoot(p[ch], ch === "lr" ? 1 : -1, hipHalf, l1, l2);
     });
     const D0 = Math.max(f[0].depth, f[1].depth);
     return f.map((q, j) => ({
@@ -2955,10 +2933,10 @@ function planStop(m: CastMember, s: WalkStop, w: Walker, height: number, hipHalf
   const now = measure(k);
   const was = measure(Math.max(0, k - 1));
   const tb = Math.max(s.tail, s.t1) + 1e-6;
-  const B = unswapped(tb, true);
+  const B = posed(tb, true);
   const target = chs.map((ch) => {
     const [l1, l2] = lens(B, ch);
-    return legFoot(B[ch], ch === right ? 1 : -1, hipHalf, l1, l2);
+    return legFoot(B[ch], ch === "lr" ? 1 : -1, hipHalf, l1, l2);
   });
   const to = target.map((q) => bodyToWorld([s.b.at[0], s.b.at[2]], s.b.yaw, ws.s, q.at));
   // chân bay: chân đang nhấc, hai chân trên sàn thì chân sau theo hướng đi
@@ -2967,7 +2945,7 @@ function planStop(m: CastMember, s: WalkStop, w: Walker, height: number, hipHalf
   const down = now.map((q) => q.h < GROUND_TOL);
   const fly = down[0] !== down[1] ? (down[0] ? 1 : 0) : ahead(0) <= ahead(1) ? 0 : 1;
   const rate = Math.min(RATE_MAX, Math.max(0.6, (w.clock[k] - w.clock[Math.max(0, k - 1)]) / step));
-  const g = clipGround(s.clip, chs[fly], flip0);
+  const g = clipGround(s.clip, chs[fly]);
   const swing = ((g.filter((x) => !x).length / GAIT_N) * s.clip.cycle) / rate;
   let rest = 0;
   if (!down[fly]) {
@@ -3003,7 +2981,7 @@ function planStop(m: CastMember, s: WalkStop, w: Walker, height: number, hipHalf
     const sp = Math.hypot(v[0], v[1]);
     return sp > cap ? [(v[0] * cap) / sp, (v[1] * cap) / sp] : v;
   };
-  const feetPlan = {} as Record<"ln" | "lf", StopFoot>;
+  const feetPlan = {} as Record<"lr" | "ll", StopFoot>;
   const lift = (dd: number, h0: number) =>
     Math.max(0, Math.min(TURN_LIFT * L, (0.25 * dd) / ws.s) - h0);
   feetPlan[chs[fly]] = {
@@ -3042,7 +3020,7 @@ function planStop(m: CastMember, s: WalkStop, w: Walker, height: number, hipHalf
     feet: feetPlan,
     first: chs[fly],
     K0: now[1 - fly].knee,
-    K1: Math.min(Math.abs(B.ln[1]), Math.abs(B.lf[1])),
+    K1: Math.min(Math.abs(B.lr[1]), Math.abs(B.ll[1])),
     done: Math.max(feetPlan[chs[other]].t1, s.t1, s.tail),
   };
 }
@@ -3068,21 +3046,20 @@ function stopStep(
   const p = s.plan;
   if (!p || time <= s.tp + 1e-9) {
     if (time < s.end) return pose;
-    const q = clipPose(s.clip, time, clockOf(walk), walk.flip[0]);
-    return { ...pose, ln: q.ln ?? pose.ln, lf: q.lf ?? pose.lf };
+    const q = clipPose(s.clip, time, clockOf(walk));
+    return { ...pose, lr: q.lr ?? pose.lr, ll: q.ll ?? pose.ll };
   }
   const ws = m.world as WorldSpec;
   const len = lengths(height);
-  const right: "ln" | "lf" = walk.flip[0] ? "lf" : "ln";
   const H = stopHip(s, time);
   const yaw = sampleAt(walk.yaw, walk.step, time);
   const u = smoothstep(Math.min(1, (time - s.tp) / (p.done - s.tp)));
   const bend = p.K0 + (p.K1 - p.K0) * u;
   const reachIn = smoothstep(Math.min(1, (time - s.tp) / STOP_REACH_IN));
-  const legs = (["ln", "lf"] as const).map((ch) => {
-    const l1 = len.thigh * pose.stretch[ch === "ln" ? 6 : 4];
-    const l2 = len.shin * pose.stretch[ch === "ln" ? 7 : 5];
-    const side = ch === right ? 1 : -1;
+  const legs = (["lr", "ll"] as const).map((ch) => {
+    const l1 = len.thigh * pose.stretch[ch === "lr" ? 6 : 4];
+    const l2 = len.shin * pose.stretch[ch === "lr" ? 7 : 5];
+    const side = ch === "lr" ? 1 : -1;
     const f = stopFootAt(p.feet[ch], time);
     const [fw, lat] = worldToBody(H, yaw, ws.s, f.at);
     const o = side * lat - hipHalf;
@@ -3096,14 +3073,14 @@ function stopStep(
   });
   // sàn dưới hông: chân thấp hơn quyết, gối chùng như `bend` (duỗi theo `STOP_REACH`); từ lúc chân bước trước đặt xuống, chân
   // kia kiễng gót rời sàn nên chỉ chân trước quyết, tới giữa bước khép thì cả hai
-  const [A, B] = p.first === "ln" ? legs : [legs[1], legs[0]];
+  const [A, B] = p.first === "lr" ? legs : [legs[1], legs[0]];
   const sB = p.feet[B.ch];
   const mid = (sB.t0 + sB.t1) / 2;
   const both = Math.min(A.c, B.c);
   const tA = p.feet[A.ch].t1;
   const beta = smoothstep(Math.min(1, Math.max(0, (time - tA) / Math.max(1e-3, sB.t1 - tA))));
   const [fB, lB] = worldToBody(H, yaw, ws.s, sB.from);
-  const oB = (B.ch === right ? 1 : -1) * lB - hipHalf;
+  const oB = (B.ch === "lr" ? 1 : -1) * lB - hipHalf;
   const planted = Math.sqrt(Math.max(0, B.r2 - fB * fB - oB * oB));
   const floor =
     time < tA ? both : Math.min(A.c, planted) * (1 - beta) + (time >= mid ? both : A.c) * beta;
@@ -3127,9 +3104,8 @@ interface Walker {
   /** Yaw vẽ (đã giới hạn tốc quay) và yaw thân nhắm tới */
   yaw: number[];
   yaw0: number[];
-  /** Lật của bước ấy, và số lần đã lật tính tới nó — tra bậc thang, không nội suy */
+  /** Lật của bước ấy — tra bậc thang, không nội suy */
   flip: boolean[];
-  half: number[];
   clock: number[];
   lift: number[];
   joins: WalkJoin[];
@@ -3172,13 +3148,10 @@ const sampleAt = (xs: number[], step: number, t: number) => {
 
 /** Chỉ số bước cho tra bậc thang: bước cuối đã tới */
 const stepIndex = (w: Walker, t: number) =>
-  Math.min(w.half.length - 1, Math.max(0, Math.floor(t / w.step + 1e-6)));
+  Math.min(w.flip.length - 1, Math.max(0, Math.floor(t / w.step + 1e-6)));
 
 const clockOf = (w: Walker): Clock =>
-  Object.assign(
-    (t: number) => ({ at: sampleAt(w.clock, w.step, t), half: w.half[stepIndex(w, t)] ?? 0 }),
-    { shift: w.shift },
-  );
+  Object.assign((t: number) => ({ at: sampleAt(w.clock, w.step, t) }), { shift: w.shift });
 
 /** Clip có sải chân đang lái chân lúc `time` (`tail`: kể cả lúc nó đang hoà ra), track sau đè track trước */
 function strideClip(m: CastMember, time: number, tail = true): Clip | undefined {
@@ -3239,7 +3212,6 @@ function bakeWalker(
     yaw: [],
     yaw0: [],
     flip: [],
-    half: [],
     clock: [],
     lift: [],
     joins: [],
@@ -3394,7 +3366,7 @@ function bakeWalker(
     // bàn chân bay còn xa lúc chạm sàn: sải đổi lúc chạm sàn thì bàn chân mới đặt xuống đã trượt
     const u = c && k ? clockPhase(c, t - step, clockOf(out)) : 0;
     const i = ((Math.floor(u * GAIT_N) % GAIT_N) + GAIT_N) % GAIT_N;
-    const left = c ? (clipSwing(c, out.flip[0])[i] * c.cycle) / Math.max(r / s0, 1e-3) : 0;
+    const left = c ? (clipSwing(c)[i] * c.cycle) / Math.max(r / s0, 1e-3) : 0;
     const free = bearing.length === 1 && left > STRIDE_LAND;
     const s1 = joins.some((j) => t > j.k0 * step && t <= j.b.t + 1e-9)
       ? aim
@@ -3418,26 +3390,18 @@ function bakeWalker(
     out.yaw.push(yaw);
     out.yaw0.push(yawKey + steer);
     const f = facing(lens, hip, yaw * D);
-    // Lật là chân gần đổi sang chân kia: `poseAt` đổi kênh để mỗi bàn chân vẫn là chính nó
-    const turned = k > 0 && f.flip !== out.flip[k - 1];
     out.flip.push(f.flip);
-    out.half.push(k ? out.half[k - 1] + (turned ? 1 : 0) : 0);
     // pha clip đi tự căn: chân bước của nhịp cuối đặt xuống đúng lúc nó chạm gót trong chu kỳ đi
     if (!k)
       for (const j of joins) {
-        const lead = turnLead(j.turn.delta, j.turn.steps - 1, j.turn.steps, true, f.flip);
+        const lead = turnLead(j.turn.delta, j.turn.steps - 1, j.turn.steps, true);
         const s0 = joinClock(j, step, j.clip.start);
-        const strike = clipStrike(j.clip, lead, f.flip);
+        const strike = clipStrike(j.clip, lead);
         const shift = strike - (joinClock(j, step, j.land) - s0) / j.clip.cycle;
         out.shift.set(j.clip, shift);
         j.landPhase = strike + j.clip.phase;
         j.phase = (joinClock(j, step, j.b.t) - s0) / j.clip.cycle + j.clip.phase + shift;
       }
-    if (turned) {
-      bearing = bearing.map((i) => 1 - i);
-      prevO = [prevO[1], prevO[0]];
-      prevF = [prevF[1], prevF[0]];
-    }
     const pose = worldPoseAt(m, t, out, height, hipHalf);
     const ys = feet(pose, height, true).map((q) => q[1]);
     lift = Math.max(...ys);
@@ -4200,9 +4164,8 @@ function shapeAt(
   return withFingers(act, mixHand(fa, at(rb), f));
 }
 
-/** Kênh tư thế của tay giải phẫu `side` ở người 3D: tay phải là kênh gần (`an`) khi không lật */
-export const sideChannel = (side: HandSide, flip: boolean): "an" | "af" =>
-  (side === "right") === !flip ? "an" : "af";
+/** Kênh tư thế của tay `side` */
+const handChannel = (side: HandSide): "ar" | "al" => (side === "right" ? "ar" : "al");
 
 /**
  * Phần `0..1` của tay buông (mốc `rest`) ở tay `side` lúc `time`: mốc `rest` là `1`, mốc khác nhắc tay ấy là `0` (mốc chỉ có
@@ -4223,12 +4186,12 @@ export function restAt(keys: readonly HandKey[], side: HandSide, time: number): 
 }
 
 /** `pose` với bàn tay của hành động huỷ theo phần tay buông (`restAt`): xoay, gập cổ tay, ngón về `HAND_REST`, bỏ ý định */
-function restHands(pose: Pose, keys: readonly HandKey[], time: number, flip: boolean): Pose {
+function restHands(pose: Pose, keys: readonly HandKey[], time: number): Pose {
   let { hand, aim } = pose;
   for (const side of ["right", "left"] as const) {
     const r = restAt(keys, side, time);
     if (r <= 0) continue;
-    const ch = sideChannel(side, flip);
+    const ch = handChannel(side);
     hand = { ...hand, [ch]: mixHand(pose.hand?.[ch] ?? HAND_REST, HAND_REST, r) };
     const a = aim?.[ch];
     if (!a) continue;
@@ -4243,24 +4206,18 @@ function restHands(pose: Pose, keys: readonly HandKey[], time: number, flip: boo
   return out;
 }
 
-/** `pose` với ngón của hành động đè theo `pose` của mốc tay (`shapeAt`): tay phải là kênh gần khi không lật */
-function shapeHands(
-  pose: Pose,
-  keys: readonly HandKey[],
-  time: number,
-  flip: boolean,
-  lib: HandShapes,
-): Pose {
+/** `pose` với ngón của hành động đè theo `pose` của mốc tay (`shapeAt`) */
+function shapeHands(pose: Pose, keys: readonly HandKey[], time: number, lib: HandShapes): Pose {
   let hand = pose.hand;
   for (const side of ["right", "left"] as const) {
-    const ch = sideChannel(side, flip);
+    const ch = handChannel(side);
     const v = shapeAt(keys, side, time, lib, pose.hand?.[ch] ?? HAND_REST);
     if (v) hand = { ...hand, [ch]: v };
   }
   return hand === pose.hand ? pose : { ...pose, hand };
 }
 
-/** Gắn đích cổ tay thế giới vào chỗ đặt: tay phải là tay gần khi không lật */
+/** Gắn đích cổ tay thế giới vào chỗ đặt */
 function withHands(
   w: World,
   keys: HandKey[],
@@ -4273,8 +4230,7 @@ function withHands(
   const right = handAt(keys, "right", time, w.yaw, held, castAt, poseAt, host);
   const left = handAt(keys, "left", time, w.yaw, held, castAt, poseAt, host);
   if (!right && !left) return w;
-  const [near, far] = w.flip ? [left, right] : [right, left];
-  return { ...w, hands: { ...(near && { near }), ...(far && { far }) } };
+  return { ...w, hands: { ...(right && { right }), ...(left && { left }) } };
 }
 
 /** Người cầm của `handAt`: chỗ cầm nhóm tra mốc món trên runtime, tay dẫn lấy mặc định theo cỡ người */
@@ -5425,7 +5381,7 @@ export function elbowLockAt(rt: SceneRuntime, id: string, side: HandSide, time: 
   if (run && placedRun(rt, keys, side, run)) return runLock(keys, side, time, run)?.k ?? 0;
   if (!(keyLock(keys, side, time) > 0)) return 0;
   const w = sceneAt(rt, id, time, rt.heights[id] ?? 1).world;
-  const r = (side === "right") === !w?.flip ? w?.hands?.near : w?.hands?.far;
+  const r = w?.hands?.[side];
   return r && r.w > 0 ? Math.min(1, r.elbowLock ?? 0) * Math.min(1, r.w) : 0;
 }
 
@@ -6476,24 +6432,17 @@ function checkItems(
   });
 }
 
-/** `turn` sửa tư thế trước khi đổi kênh gần ↔ xa: kênh còn là chi gần lúc đầu cảnh */
-function poseAt(
-  m: CastMember,
-  time: number,
-  clock?: Clock,
-  turn?: (p: Pose) => Pose,
-  farRight?: boolean,
-): Pose {
+/** Tư thế các track gom lại lúc `time`; `turn` sửa thêm bước chân của người đi theo `path` */
+function poseAt(m: CastMember, time: number, clock?: Clock, turn?: (p: Pose) => Pose): Pose {
   let pose: Pose = m.base;
   for (const tr of m.tracks) {
     const i = activeClip(tr, time);
-    if (i >= 0) pose = composePose(pose, poseUpTo(tr, i, time, pose, clock, farRight));
+    if (i >= 0) pose = composePose(pose, poseUpTo(tr, i, time, pose, clock));
   }
   // Người đi theo `path` đọc chân như soạn ở `side`: bàn chân trụ phải nằm trên sàn thế giới, và
   // hoà từ chân nâng sang chân không nâng là bàn chân nhảy giữa chừng
-  if (m.world?.path) pose = { ...pose, lift: { ...pose.lift, ln: true, lf: true } };
-  if (turn) pose = turn(pose);
-  return clock && clock(time).half % 2 ? swapSides(pose) : pose;
+  if (m.world?.path) pose = { ...pose, lift: { ...pose.lift, lr: true, ll: true } };
+  return turn ? turn(pose) : pose;
 }
 
 /** Tư thế người 3D đi theo `path`: `poseAt` cộng bước chân của cú quay tại chỗ */
@@ -6504,14 +6453,8 @@ function worldPoseAt(
   height: number,
   hipHalf: number,
 ): Pose {
-  if (!walk) return poseAt(m, time, undefined, undefined, m.rightFar);
-  return poseAt(
-    m,
-    time,
-    clockOf(walk),
-    (p) => walkStep(m, time, p, walk, height, hipHalf),
-    rightFarOf(m, walk),
-  );
+  if (!walk) return poseAt(m, time);
+  return poseAt(m, time, clockOf(walk), (p) => walkStep(m, time, p, walk, height, hipHalf));
 }
 
 /** Bước chân của người đi theo `path` cộng vào tư thế đã gom: quay tại chỗ, khởi hành, dừng, ngả thân */
@@ -6554,17 +6497,16 @@ function headStep(m: CastMember, time: number, pose: Pose, walk: Walker): Pose {
     lead += ramp * (yaw(Math.min(time + HEAD_LEAD, b.t)) - yaw(time));
   }
   if (!lead) return pose;
-  // lắc dương là quay mặt về trái người khi không lật, `yaw` dương là quay phải
-  const side = walk.flip[stepIndex(walk, time)] ? 1 : -1;
+  // lắc dương là quay mặt về trái người, `yaw` dương là quay phải
   const [tilt, turn, nod] = pose.head;
-  const d = side * Math.max(-HEAD_LEAD_MAX, Math.min(HEAD_LEAD_MAX, lead));
+  const d = -Math.max(-HEAD_LEAD_MAX, Math.min(HEAD_LEAD_MAX, lead));
   return { ...pose, head: [tilt, turn + d, nod] };
 }
 
 /**
  * Sải co (`strideAt`): bàn chân co dọc hướng thân quanh hông (`shortLegs`) — quãng khởi hành sau nhịp
  * cuối của cú quay (trong nhịp cuối `turnStep` tự co), và bước trước lúc giảm tốc của chỗ dừng.
- * `pose` chưa đổi kênh. docs/03-scene.md#đi-theo-path
+ * docs/03-scene.md#đi-theo-path
  */
 function strideStep(
   m: CastMember,
@@ -6579,28 +6521,27 @@ function strideStep(
   if (k >= 1 || planned || turnStepAt(m, time, walk)) return pose;
   return {
     ...pose,
-    ...shortLegs(pose, pose.stretch, k, height, hipHalf, walk.flip[0] ? "lf" : "ln"),
+    ...shortLegs(pose, pose.stretch, k, height, hipHalf),
   };
 }
 
 /**
- * Hai chân `ln`, `lf` (chưa đổi kênh, `right` là kênh chân phải) với bàn chân co dọc hướng thân về phần
+ * Hai chân `lr`, `ll` với bàn chân co dọc hướng thân về phần
  * `k` quanh hông, giữ bề ngang: hai bàn chân cùng hạ sâu thêm một khoảng dưới hông (hông nâng theo) sao
  * cho chân chịu lực giữ tầm hông – bàn chân, tức gối, của clip; bàn chân nhấc cao hơn ít quyết ít
  */
 function shortLegs(
-  legs: Pick<Pose, "ln" | "lf">,
+  legs: Pick<Pose, "lr" | "ll">,
   stretch: Pose["stretch"],
   k: number,
   height: number,
   hipHalf: number,
-  right: "ln" | "lf",
-): Pick<Pose, "ln" | "lf"> {
+): Pick<Pose, "lr" | "ll"> {
   const len = lengths(height);
-  const g = (["ln", "lf"] as const).map((ch) => {
-    const l1 = len.thigh * stretch[ch === "ln" ? 6 : 4];
-    const l2 = len.shin * stretch[ch === "ln" ? 7 : 5];
-    const side = ch === right ? 1 : -1;
+  const g = (["lr", "ll"] as const).map((ch) => {
+    const l1 = len.thigh * stretch[ch === "lr" ? 6 : 4];
+    const l2 = len.shin * stretch[ch === "lr" ? 7 : 5];
+    const side = ch === "lr" ? 1 : -1;
     const f = legFoot(legs[ch], side, hipHalf, l1, l2);
     const o = side * f.at[1] - hipHalf;
     const r2 = f.at[0] ** 2 + o * o + f.depth ** 2;
@@ -6609,7 +6550,7 @@ function shortLegs(
   });
   const deep = Math.max(g[0].f.depth, g[1].f.depth);
   const sink = Math.max(0, Math.min(...g.map((q) => q.sink + deep - q.f.depth)));
-  const out = {} as Pick<Pose, "ln" | "lf">;
+  const out = {} as Pick<Pose, "lr" | "ll">;
   for (const q of g) out[q.ch] = legTo(q.f.at[0] * k, q.f.depth + sink, q.o, q.l1, q.l2);
   return out;
 }
@@ -6665,9 +6606,8 @@ function turnStepAt(m: CastMember, time: number, walk?: Walker) {
  * Quay tại chỗ (`turnOf`) bằng bước chân: mỗi nhịp một chân nhấc lên đặt xuống chỗ của nó ở hướng
  * mới, chân kia xoay trên sàn tới chỗ của nó (không nhấc); nhịp đầu chân phía quay bước, các nhịp
  * sau đổi chân. Hông hạ chút cho gối chùng, thân nghiêng về chân xoay một lần mỗi nhịp. Chỗ hai bàn
- * chân lấy từ chân của `pose` ở hướng đầu và cuối nhịp; góc chân giải lại theo hướng thân đang vẽ
- * vẽ. `pose` chưa đổi kênh: `ln` là chi gần lúc đầu cảnh, tức chân phải khi `walk.flip[0]` không
- * lật. Nhịp cuối của chỗ nối quay rồi đi (`WalkJoin`) đặt hai bàn chân ở chỗ của clip đi lúc mốc
+ * chân lấy từ chân của `pose` ở hướng đầu và cuối nhịp; góc chân giải lại theo hướng thân đang vẽ.
+ * Nhịp cuối của chỗ nối quay rồi đi (`WalkJoin`) đặt hai bàn chân ở chỗ của clip đi lúc mốc
  * cuối, tính cả quãng hông đã khởi hành; sau mốc chân theo clip đi tới khi nó hoà xong.
  * docs/03-scene.md#quay-tại-chỗ
  */
@@ -6680,14 +6620,12 @@ function turnStep(
   hipHalf: number,
 ): Pose {
   const yaw = sampleAt(walk.yaw, walk.step, time);
-  const flip0 = walk.flip[0];
-  const flip = walk.flip[stepIndex(walk, time)];
   const at = turnStepAt(m, time, walk);
   if (!at) {
     const join = walk.joins.find((j) => time >= j.b.t && time < j.clip.start + j.clip.tau);
     if (!join) return pose;
-    const p = clipPose(join.clip, time, clockOf(walk), flip0);
-    return { ...pose, ln: p.ln ?? pose.ln, lf: p.lf ?? pose.lf };
+    const p = clipPose(join.clip, time, clockOf(walk));
+    return { ...pose, lr: p.lr ?? pose.lr, ll: p.ll ?? pose.ll };
   }
   const { a, b, turn, joined } = at;
   const u = turnU(walk, a, b, time);
@@ -6705,20 +6643,19 @@ function turnStep(
   ];
   const len = lengths(height);
   const st = pose.stretch;
-  const lead = turnLead(turn.delta, j, turn.steps, joined, flip0);
+  const lead = turnLead(turn.delta, j, turn.steps, joined);
   const ramp = Math.min(1, u / TURN_DIP_RAMP, (1 - u) / TURN_DIP_RAMP);
   // chỗ nối quay rồi đi: chân đầu nhịp lấy từ tư thế lúc ấy (clip đi đang hoà vào), chân cuối nhịp
   // là chân của clip đi lúc mốc cuối; hông đã đi `gone` (hệ đầu nhịp) tới lúc này. Chân bước đặt
   // xuống ở chỗ chạm gót của clip đi rồi nhích dần về chỗ của nó lúc mốc cuối
   let base = pose;
-  if (join) poseAt(m, join.from, clockOf(walk), (p) => (base = p), flip0);
-  const right: "ln" | "lf" = flip0 ? "lf" : "ln";
+  if (join) poseAt(m, join.from, clockOf(walk), (p) => (base = p));
   // chân của clip đi co theo sải lúc ấy (`strideAt`) như sau mốc cuối
   const short = (phase: number, t: number) => {
-    const p = clipPhasePose(join!.clip, phase, flip0);
+    const p = clipPhasePose(join!.clip, phase);
     const k = strideAt(walk, t);
-    return p.ln && p.lf && k < 1
-      ? { ...p, ...shortLegs(p as Pose, pose.stretch, k, height, hipHalf, right) }
+    return p.lr && p.ll && k < 1
+      ? { ...p, ...shortLegs(p as Pose, pose.stretch, k, height, hipHalf) }
       : p;
   };
   const end = join ? short(join.phase, b.t) : undefined;
@@ -6742,32 +6679,32 @@ function turnStep(
     : 0;
   const foot = (leg: readonly number[], side: number, l1: number, l2: number) =>
     legFoot(leg, side, hipHalf, l1, l2);
-  const out: Partial<Record<"ln" | "lf", LegAngles>> = {};
-  const legs: { ch: "ln" | "lf"; f: number; depth: number; o: number; l1: number; l2: number }[] =
+  const out: Partial<Record<"lr" | "ll", LegAngles>> = {};
+  const legs: { ch: "lr" | "ll"; f: number; depth: number; o: number; l1: number; l2: number }[] =
     [];
-  const legLen = (ch: "ln" | "lf") => [
-    len.thigh * st[ch === "ln" ? 6 : 4],
-    len.shin * st[ch === "ln" ? 7 : 5],
+  const legLen = (ch: "lr" | "ll") => [
+    len.thigh * st[ch === "lr" ? 6 : 4],
+    len.shin * st[ch === "lr" ? 7 : 5],
   ];
   // chỗ nối: chân xoay sâu hơn chân bước lúc `land` thì nâng lên phần ấy trong nhịp, chân bước chạm
   // sàn đúng lúc đặt xuống
   let raise = 0;
   const strikeLead = strike?.[lead];
   if (join && end && strikeLead) {
-    const ch = lead === "ln" ? "lf" : "ln";
+    const ch = lead === "lr" ? "ll" : "lr";
     const [l1, l2] = legLen(ch);
-    const side = ch === right ? 1 : -1;
+    const side = ch === "lr" ? 1 : -1;
     const d0 = foot(base[ch], side, l1, l2).depth;
     const d1 = end[ch] ? foot(end[ch], side, l1, l2).depth : d0;
     const wl = Math.min(1, Math.max(0, turnU(walk, a, b, join.land))) * turn.steps - j;
     const pl = smoothstep(Math.min(1, Math.max(0, (wl - TURN_LAG) / (1 - TURN_LAG))));
     const [m1, m2] = legLen(lead);
-    const hit = foot(strikeLead, lead === right ? 1 : -1, m1, m2).depth;
+    const hit = foot(strikeLead, lead === "lr" ? 1 : -1, m1, m2).depth;
     raise = Math.max(0, d0 + (d1 - d0) * pl - hit);
   }
-  for (const ch of ["ln", "lf"] as const) {
+  for (const ch of ["lr", "ll"] as const) {
     const [l1, l2] = legLen(ch);
-    const side = ch === right ? 1 : -1;
+    const side = ch === "lr" ? 1 : -1;
     const { at: from, depth: d0 } = foot(base[ch], side, l1, l2);
     let to = rot(from, step * D);
     let d1 = d0;
@@ -6804,7 +6741,7 @@ function turnStep(
   // chân cùng hạ sâu thêm (hông nâng); bàn chân nhấc lên `TURN_KNEE_LIFT` thì thôi quyết
   let sink = 0;
   if (join) {
-    const cos = Math.cos(clipKnee(join.clip, flip0) * D);
+    const cos = Math.cos(clipKnee(join.clip) * D);
     const deep = Math.max(...legs.map((g) => g.depth));
     for (const g of legs) {
       const r2 = g.l1 * g.l1 + g.l2 * g.l2 + 2 * g.l1 * g.l2 * cos;
@@ -6814,10 +6751,9 @@ function turnStep(
     }
   }
   for (const g of legs) out[g.ch] = legTo(g.f, g.depth + sink, g.o, g.l1, g.l2);
-  // thân nghiêng về chân xoay; `lean` dương là về chân đang xa
-  const far = (lead !== right) === flip;
-  const lean = TURN_LEAN * Math.sin(Math.PI * w) * (far ? 1 : -1);
-  return { ...pose, ln: out.ln!, lf: out.lf!, lean: (pose.lean ?? 0) + lean };
+  // thân nghiêng về chân xoay; `lean` dương là về bên trái người
+  const lean = TURN_LEAN * Math.sin(Math.PI * w) * (lead === "lr" ? 1 : -1);
+  return { ...pose, lr: out.lr!, ll: out.ll!, lean: (pose.lean ?? 0) + lean };
 }
 
 /**
@@ -6835,13 +6771,13 @@ function legTo(f: number, depth: number, o: number, l1: number, l2: number): Leg
   return [phi + al, -(al + be), sp];
 }
 
-/** Đổi khoá gần ↔ xa của một map theo kênh (`an`/`af`, `ln`/`lf`), giữ khoá khác; khoá thiếu vẫn thiếu */
+/** Đổi khoá phải ↔ trái của một map theo kênh (`ar`/`al`, `lr`/`ll`), giữ khoá khác; khoá thiếu vẫn thiếu */
 function swapKeys<T extends object>(o: T): T {
   const r = { ...o } as Record<string, unknown>;
   const src = o as Record<string, unknown>;
   for (const [a, b] of [
-    ["an", "af"],
-    ["ln", "lf"],
+    ["ar", "al"],
+    ["lr", "ll"],
   ]) {
     delete r[a];
     delete r[b];
@@ -6851,10 +6787,13 @@ function swapKeys<T extends object>(o: T): T {
   return r as T;
 }
 
-/** `swapSides` cho tư thế một clip ghi: kênh clip không ghi vẫn không có, để `composePose` giữ của track dưới */
-function swapPartial(p: Partial<Pose>): Partial<Pose> {
+/**
+ * Tư thế một clip ghi soi gương (`clips[].mirror`): kênh phải ↔ trái đổi chỗ, nghiêng thân, lắc và nghiêng đầu đổi dấu;
+ * kênh clip không ghi vẫn không có, để `composePose` giữ của track dưới
+ */
+function mirrorPartial(p: Partial<Pose>): Partial<Pose> {
   const st = p.stretch;
-  return {
+  const out: Partial<Pose> = {
     ...swapKeys(p),
     ...(st && { stretch: [st[2], st[3], st[0], st[1], st[6], st[7], st[4], st[5]] as typeof st }),
     ...(p.lift && { lift: swapKeys(p.lift) }),
@@ -6862,37 +6801,25 @@ function swapPartial(p: Partial<Pose>): Partial<Pose> {
     ...(p.hand && { hand: swapKeys(p.hand) }),
     ...(p.aim && { aim: swapKeys(p.aim) }),
   };
+  if (p.lean !== undefined) out.lean = -p.lean;
+  if (p.head) out.head = [-p.head[0], -p.head[1], p.head[2]];
+  if (out.ar || out.al) out.mirror = true;
+  return out;
 }
 
-/**
- * Tay phải của người 3D là tay xa ống kính, theo nghĩa kênh của hành động: người đi `path` lấy lúc đầu cảnh (`poseAt`
- * giữ mỗi kênh là chính chi ấy qua các lần lật), người đứng ở `world.at` lấy `rightFar` đã suy lúc dựng cảnh
- */
-const rightFarOf = (m: CastMember, walk?: Walker): boolean | undefined =>
-  walk ? walk.flip[0] : m.rightFar;
+/** Bước `equip` soi gương: socket bàn tay phải ↔ trái của các bước dạng map; tên bộ đồ giữ nguyên */
+const mirrorEquip = (steps: EquipStep[]): EquipStep[] =>
+  steps.map((st) => {
+    if (typeof st === "string" || !("handRight" in st || "handLeft" in st)) return st;
+    const { handRight, handLeft, ...rest } = st;
+    return {
+      ...rest,
+      ...(handLeft !== undefined && { handRight: handLeft }),
+      ...(handRight !== undefined && { handLeft: handRight }),
+    };
+  });
 
-/** Đổi kênh gần ↔ xa: thân vừa lật qua chính diện hay quay lưng thì chi gần là chi kia */
-function swapSides(p: Pose): Pose {
-  const st = p.stretch;
-  const l = p.lift;
-  const r = p.reach;
-  const h = p.hand;
-  const a = p.aim;
-  return {
-    ...p,
-    an: p.af,
-    af: p.an,
-    ln: p.lf,
-    lf: p.ln,
-    stretch: [st[2], st[3], st[0], st[1], st[6], st[7], st[4], st[5]],
-    ...(l && { lift: { ...l, an: l.af, af: l.an, ln: l.lf, lf: l.ln } }),
-    ...(r && { reach: { ...(r.af && { an: r.af }), ...(r.an && { af: r.an }) } }),
-    ...(h && { hand: { ...(h.af && { an: h.af }), ...(h.an && { af: h.an }) } }),
-    ...(a && { aim: { ...(a.af && { an: a.af }), ...(a.an && { af: a.an }) } }),
-  };
-}
-
-const LEGS: Channel[] = ["legFar", "legNear"];
+const LEGS: Channel[] = ["legLeft", "legRight"];
 const writesLegs = (c: Clip) =>
   !!c.action && LEGS.some((k) => inMask(c, k) && actionMask(c.action as ActionData).includes(k));
 
@@ -6912,8 +6839,8 @@ export interface PoseSourceClip {
   blending: boolean;
   /** Kênh tay của file hành động đi vào tay này */
   channel: (typeof ARM_CHANNELS)[number];
-  /** Hành động `sides: "anatomical"` đổi kênh gần ↔ xa của nó */
-  anatomical: boolean;
+  /** Clip soi gương (`mirror`): kênh tay kia của file đi vào tay này */
+  mirror: boolean;
 }
 
 /** Loại mốc `world.hands` của một tay: đích (`at` / `to` / hướng tay), chỉ `hold`, chỉ `pose`, `null`, tay buông `rest` */
@@ -6933,12 +6860,8 @@ export const handMarkKind = (h: HandMark | null | undefined): HandMarkKind =>
 /** Thứ đang điều khiển một tay giải phẫu của người 3D ở một giây (`handSources`) */
 export interface HandSource {
   side: HandSide;
-  /** Kênh tư thế tay này đọc khi vẽ: `an` gần ống kính, `af` xa */
-  channel: "an" | "af";
-  /** Thân đang lật (`facing().flip`): tay phải là kênh xa */
-  flip: boolean;
-  /** Nhịp đi theo `path` đang đổi kênh gần ↔ xa của mọi clip, để mỗi kênh vẫn là chính chi ấy */
-  stepSwap: boolean;
+  /** Kênh tư thế của tay này: `ar` tay phải, `al` tay trái */
+  channel: "ar" | "al";
   /** Clip ghi góc cánh tay, track trên cùng có ghi; không có là `base` của người */
   arm?: PoseSourceClip;
   /** Clip ghi bàn tay (kênh `hand`): `key` là mốc bàn tay của hành động ở pha ấy, `aim` là bàn tay theo ý định (`palm` / `fingers`) */
@@ -6958,30 +6881,22 @@ export interface HandSource {
   rest: number;
 }
 
-const otherChannel = (ch: "an" | "af") => (ch === "an" ? "af" : "an");
+const otherChannel = (ch: "ar" | "al") => (ch === "ar" ? "al" : "ar");
 
-/** Cách kênh của clip đi vào tay của người 3D `id` ở `time`, như `sceneAt`: phía tay phải lúc dựng, nhịp đi, lật */
+/** Người 3D `id`, đồng hồ đi theo `path` và tư thế ở `time`, như `sceneAt` */
 function channelsAt(rt: SceneRuntime, id: string, time: number) {
   const m = member(rt, id);
   const height = rt.heights[id] ?? 1;
   const dims = rt.bodies[id] ?? BODY3;
   const walk = walkerOf(rt, m, height, dims.hipHalf);
   const clock = walk && clockOf(walk);
-  const sp = keyPose(rt, id, time, height, dims);
-  return {
-    m,
-    clock,
-    farRight: rightFarOf(m, walk),
-    stepSwap: !!(clock && clock(time).half % 2),
-    flip: sp.world.flip,
-    sp,
-  };
+  return { m, clock, sp: keyPose(rt, id, time, height, dims) };
 }
 
 /**
- * Tay giải phẫu mà clip `clip` của track `track` (chỉ số trong `cast[].tracks`) của người 3D `id` ghi vào, ở `time`:
- * `arm` góc cánh tay (cả `reach`), `hand` bàn tay (kênh `hand`, kênh tay có mốc bàn tay) — theo `mask` của clip và của
- * hành động, `sides: "anatomical"`, nhịp đi và lật như `sceneAt`. Không có clip ấy thì `undefined`
+ * Tay mà clip `clip` của track `track` (chỉ số trong `cast[].tracks`) của người 3D `id` ghi vào, ở `time`: `arm` góc cánh
+ * tay (cả `reach`), `hand` bàn tay (kênh `hand`, kênh tay có mốc bàn tay) — theo `mask` của clip và của hành động, và
+ * `mirror` của clip. Không có clip ấy thì `undefined`
  */
 export function clipSides(
   rt: SceneRuntime,
@@ -6997,11 +6912,10 @@ export function clipSides(
   const a = c.action;
   if (!a) return out;
   const mask = actionMask(a);
-  const swap = anatomicalSwap(c, k.farRight);
   for (const own of REACH_CHANNELS) {
-    const name = own === "an" ? "armNear" : "armFar";
-    const ch = swap !== k.stepSwap ? otherChannel(own) : own;
-    const side: HandSide = ch === sideChannel("right", k.flip) ? "right" : "left";
+    const name = own === "ar" ? "armRight" : "armLeft";
+    const ch = c.mirror ? otherChannel(own) : own;
+    const side: HandSide = ch === "ar" ? "right" : "left";
     if (mask.includes(name) && inMask(c, name)) out[side].arm = true;
     if (
       mask.includes("hand") &&
@@ -7014,9 +6928,8 @@ export function clipSides(
 }
 
 /**
- * Thứ đang điều khiển từng tay giải phẫu của người 3D `id` ở `time`, tính đúng như `sceneAt`: clip đang chạy của từng track
- * (`mask`, `sides: "anatomical"`, đổi kênh theo nhịp đi), kênh gần / xa theo `facing().flip`, mốc `world.hands` và đích
- * thế giới đang áp
+ * Thứ đang điều khiển từng tay của người 3D `id` ở `time`, tính đúng như `sceneAt`: clip đang chạy của từng track (`mask`,
+ * `mirror`), mốc `world.hands` và đích thế giới đang áp
  */
 export function handSources(
   rt: SceneRuntime,
@@ -7024,19 +6937,18 @@ export function handSources(
   time: number,
 ): Record<HandSide, HandSource> {
   const k = channelsAt(rt, id, time);
-  const { m, clock, farRight, stepSwap, flip, sp } = k;
+  const { m, clock, sp } = k;
   type Got = Pick<HandSource, "arm" | "hand" | "reach">;
-  const got: Record<"an" | "af", Got> = { an: {}, af: {} };
+  const got: Record<"ar" | "al", Got> = { ar: {}, al: {} };
   let pose: Pose = m.base;
   m.tracks.forEach((tr, ti) => {
     const i = activeClip(tr, time);
     if (i < 0) return;
-    const p = poseUpTo(tr, i, time, pose, clock, farRight);
+    const p = poseUpTo(tr, i, time, pose, clock);
     pose = composePose(pose, p);
     const c = tr.clips[i];
-    const swap = anatomicalSwap(c, farRight);
     for (const ch of REACH_CHANNELS) {
-      const own = swap ? otherChannel(ch) : ch;
+      const own = c.mirror ? otherChannel(ch) : ch;
       const src: PoseSourceClip = {
         track: ti,
         ...(tr.name !== undefined && { trackName: tr.name }),
@@ -7046,8 +6958,8 @@ export function handSources(
         blend: c.tau,
         ...(c.mask && { mask: c.mask }),
         blending: time - c.start < c.tau,
-        channel: own === "an" ? "armNear" : "armFar",
-        anatomical: swap,
+        channel: own === "ar" ? "armRight" : "armLeft",
+        mirror: !!c.mirror,
       };
       if (p[ch]) got[ch] = { ...got[ch], arm: src, reach: p.reach?.[ch] ? src : undefined };
       if (p.hand?.[ch]) {
@@ -7059,8 +6971,8 @@ export function handSources(
   const keys = m.world?.hands ?? [];
   const out = {} as Record<HandSide, HandSource>;
   for (const side of ["right", "left"] as const) {
-    const channel = sideChannel(side, flip);
-    const g = got[stepSwap ? otherChannel(channel) : channel];
+    const channel = handChannel(side);
+    const g = got[channel];
     // trước mốc đầu tay giữ mốc đầu, như `handAt`
     const ks = keys.flatMap((k, index) =>
       k[side] === undefined ? [] : [{ index, t: k.t, kind: handMarkKind(k[side]) }],
@@ -7069,12 +6981,10 @@ export function handSources(
     while (a + 1 < ks.length && ks[a + 1].t <= time) a++;
     const next = ks[a] && ks[a].t <= time ? ks[a + 1] : undefined;
     const mark: HandSource["mark"] = ks.length ? { ...ks[a], ...(next && { next }) } : undefined;
-    const rw = sp.world?.hands?.[channel === "an" ? "near" : "far"];
+    const rw = sp.world?.hands?.[side];
     out[side] = {
       side,
       channel,
-      flip,
-      stepSwap,
       ...(g.arm && { arm: g.arm }),
       ...(g.hand && { hand: g.hand }),
       ...(g.reach && { reach: g.reach }),

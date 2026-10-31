@@ -154,13 +154,13 @@ import { hermiteN } from "./action";
  * Xoắn vai và lệch cổ tay (độ) người 3D vẽ cho một kênh tay: số thứ năm và thứ ba của tuple ở kênh nâng; kênh không
  * nâng ở dáng nghỉ nên là `0`. Xoắn vai dương là xoay ngoài: khuỷu gập ra trước thì cẳng tay quay ra phía chính tay ấy
  */
-export function actTwist(P: Pick<PoseIn, "af" | "an" | "lift">, ch: "af" | "an"): [number, number] {
+export function actTwist(P: Pick<PoseIn, "al" | "ar" | "lift">, ch: "al" | "ar"): [number, number] {
   const v = P[ch];
   return P.lift?.[ch] ? [num(v[4]), num(v[2])] : [0, 0];
 }
 
 /** Bàn tay của một kênh tay (`HAND_DOF`): `pose.hand`, không ghi là `HAND_REST`; không cần cờ nâng */
-export const actHand = (P: Pick<PoseIn, "hand">, ch: "af" | "an"): readonly number[] =>
+export const actHand = (P: Pick<PoseIn, "hand">, ch: "al" | "ar"): readonly number[] =>
   P.hand?.[ch] ?? HAND_REST;
 
 const num = (v: number | undefined) => (Number.isFinite(v) ? (v as number) : 0);
@@ -280,17 +280,17 @@ interface Wrist3 {
 
 /** Tay bên `side` của thân `T` ở tư thế `P` với đích thế giới `hands`: vai, khuỷu, cổ tay, khung bàn tay */
 function arm3(T: Trunk3, P: PoseIn, hands: ActHands | undefined, side: number) {
-  const { B, roots, near, s, at, frame } = T;
+  const { B, roots, s, at, frame } = T;
   const st = P.stretch;
-  const isNear = side === near;
-  const ch = isNear ? "an" : "af";
+  const isRight = side === -1;
+  const ch = isRight ? "ar" : "al";
   const [a, b, sp] = actAngles(P, ch, false);
   const [twist, dev] = actTwist(P, ch);
   const sh = at(T.hips, T.Rs, [side * roots.shoulder[0], roots.shoulder[1], 0]);
   // Euler 'ZXY' của vai: dang · gập · xoắn quanh chính cánh tay
   const Rsh = mm(T.Rs, mm(mm(rz(side * (roots.splay + sp * D)), rx(-a * D)), ry(side * twist * D)));
-  const l1 = B.upperArm * (st[isNear ? 2 : 0] ?? 1);
-  const l2 = B.foreArm * (st[isNear ? 3 : 1] ?? 1);
+  const l1 = B.upperArm * (st[isRight ? 2 : 0] ?? 1);
+  const l2 = B.foreArm * (st[isRight ? 3 : 1] ?? 1);
   const el = at(sh, Rsh, [0, -l1, 0]);
   let Re = mm(Rsh, rx(-b * D));
   let wr = at(el, Re, [0, -l2, 0]);
@@ -301,7 +301,7 @@ function arm3(T: Trunk3, P: PoseIn, hands: ActHands | undefined, side: number) {
     l1 * s,
     l2 * s,
     P.reach?.[ch],
-    isNear ? hands?.near : hands?.far,
+    isRight ? hands?.right : hands?.left,
     B.height,
     mv(Rsh, [1, 0, 0]),
   );
@@ -340,7 +340,7 @@ function solvePose3(c: ActCharacter, sp0: ActInput) {
   const out = T.out;
   const wrists: Partial<Record<"R" | "L", Wrist3>> = {};
   const frames = {} as Record<"R" | "L", { at: V3; R: M3; wrist: [number, number, number] }>;
-  for (const side of [T.near, -T.near]) {
+  for (const side of [-1, 1]) {
     const A = arm3(T, sp.pose, sp.world?.hands, side);
     const tag = T.tag(side);
     frames[tag] = { at: A.wr, R: A.Rw, wrist: [A.v[0] ?? 0, A.v[1] ?? 0, A.dev] };
@@ -554,16 +554,16 @@ export function needsSolve(sp: ActInput): boolean {
   const P = sp.pose;
   const h = sp.world?.hands;
   return !!(
-    hasTerms(P.reach?.af) ||
-    hasTerms(P.reach?.an) ||
-    P.aim?.af ||
-    P.aim?.an ||
-    hasTerms(h?.near) ||
-    hasTerms(h?.far) ||
-    h?.near?.aim ||
-    h?.far?.aim ||
-    h?.near?.hold ||
-    h?.far?.hold
+    hasTerms(P.reach?.al) ||
+    hasTerms(P.reach?.ar) ||
+    P.aim?.al ||
+    P.aim?.ar ||
+    hasTerms(h?.right) ||
+    hasTerms(h?.left) ||
+    h?.right?.aim ||
+    h?.left?.aim ||
+    h?.right?.hold ||
+    h?.left?.hold
   );
 }
 
@@ -578,16 +578,16 @@ export function plainActing<T extends ActInput>(sp: T): T {
       w: r.w,
     } as ReachIn);
   const P = sp.pose;
-  const reach = P.reach && { af: strip(P.reach.af), an: strip(P.reach.an) };
+  const reach = P.reach && { al: strip(P.reach.al), ar: strip(P.reach.ar) };
   const h0 = sp.world?.hands;
   // đích thế giới theo mốc không có chỗ ước lượng: bỏ
   const marked = (r: ReachIn | undefined) => (r?.terms?.some((t) => t.to) ? undefined : r);
-  const h = h0 && { near: marked(h0.near), far: marked(h0.far) };
+  const h = h0 && { right: marked(h0.right), left: marked(h0.left) };
   return {
     ...sp,
     pose: { ...P, ...(reach && { reach }), aim: undefined },
     ...(sp.world && {
-      world: { ...sp.world, ...(h && { hands: { near: strip(h.near), far: strip(h.far) } }) },
+      world: { ...sp.world, ...(h && { hands: { right: strip(h.right), left: strip(h.left) } }) },
     }),
   };
 }
@@ -656,21 +656,20 @@ export interface HoldRole {
 }
 
 /**
- * Vai trò hai bàn tay theo lần cầm của `world.hands` (`near`: bên của tay gần). Cầm hai tay (`both`): món theo tay dẫn,
+ * Vai trò hai bàn tay theo lần cầm của `world.hands`. Cầm hai tay (`both`): món theo tay dẫn,
  * tay kia với tới chỗ của tay phụ (tay ấy không khai `hold` hay khai cùng món). Hai tay cùng khai một món không `both`
  * (đổi tay): tay cầm trước (`since` nhỏ hơn, bằng nhau thì tay phải) mang món, tay kia với tới chỗ cầm của mình.
  * Món đặt trước: mỗi tay khai nó đều theo món
  */
 export function holdRoles(
   hands: ActHands | undefined,
-  near: number,
   dims: HandDims = handDims(1),
 ): Partial<Record<number, HoldRole>> {
   const out: Partial<Record<number, HoldRole>> = {};
   // món treo không chiếm bàn tay: không có vai trò, tay ấy cầm hai tay hay làm tay phụ được
   const links: Partial<Record<number, { h: ReachHold; x: HoldLinkHand }>> = {};
   for (const side of [-1, 1]) {
-    const h0 = (side === near ? hands?.near : hands?.far)?.hold;
+    const h0 = (side === -1 ? hands?.right : hands?.left)?.hold;
     const h = h0?.released ? undefined : h0;
     const x = h && holdHand(h, side, dims);
     if (x) links[side] = { h: h!, x };
@@ -794,8 +793,8 @@ function priorWrist(c: ActCharacter, h: ReachHold, tag: "R" | "L"): WristTbd | u
     if (priorWrists.get(sp)?.has(p)) break;
     chain.push(sp);
     const W = sp.world;
-    const near = W && (tag === "R" ? -1 : 1) === (W.flip ? 1 : -1);
-    const [own, other] = near ? [W?.hands?.near, W?.hands?.far] : [W?.hands?.far, W?.hands?.near];
+    const [own, other] =
+      tag === "R" ? [W?.hands?.right, W?.hands?.left] : [W?.hands?.left, W?.hands?.right];
     cur = own?.hold ?? other?.hold;
   }
   for (let i = chain.length - 1; i >= 0; i--)
@@ -835,7 +834,7 @@ function wasHand(T: Trunk3, was: NonNullable<ReachHold["was"]>): WasHand | undef
 function placedHolds(T: Trunk3, hands: ActHands | undefined) {
   const sols: Partial<Record<number, PlacedSol>> = {};
   let out = hands;
-  for (const wk of ["near", "far"] as const) {
+  for (const wk of ["right", "left"] as const) {
     const r0 = hands?.[wk];
     const h0 = r0?.hold;
     // tay dẫn kế thừa lựa chọn của lần cầm theo mốc liền trước
@@ -854,7 +853,7 @@ function placedHolds(T: Trunk3, hands: ActHands | undefined) {
     if (h?.grasp?.mode !== "item" || !h.solve || h.released) continue;
     const sol = byPrint(placedMemo, h0!, T.c, () => h.solve!(canon(T.c), T));
     if (!sol) continue;
-    sols[wk === "near" ? T.near : -T.near] = sol;
+    sols[wk === "right" ? -1 : 1] = sol;
     const cur = out?.[wk]?.hold ?? h;
     out = { ...out, [wk]: { ...r, hold: { ...cur, grasp: { ...h.grasp, frame: sol.frame } } } };
   }
@@ -896,13 +895,13 @@ type ArmState = { Wp: V3; Rw: M3; El: V3; fingers: readonly number[] };
 function solveActing(T: Trunk3, sp: ActInput): Solved {
   const hands = sp.world?.hands;
   if (!hands || !needsSolve(sp)) return solveCore(T, sp);
-  const plan: { wk: "near" | "far"; side: number; f: number; old: WasHand | "free" }[] = [];
+  const plan: { wk: "right" | "left"; side: number; f: number; old: WasHand | "free" }[] = [];
   let main: ActHands = hands;
-  for (const wk of ["near", "far"] as const) {
+  for (const wk of ["right", "left"] as const) {
     const r = hands[wk];
     const h = r?.hold;
     if (!r || !h) continue;
-    const side = wk === "near" ? T.near : -T.near;
+    const side = wk === "right" ? -1 : 1;
     if (h.released) main = { ...main, [wk]: { ...r, hold: undefined } };
     const old = h.was && wasHand(T, h.was);
     if (old) plan.push({ wk, side, f: 1 - h.was!.k, old });
@@ -942,7 +941,7 @@ function solveActing(T: Trunk3, sp: ActInput): Solved {
     const qb = wristOf(evalPhi(inp, b.Wp, b.Rw, fb));
     const q = qa.map((x, i) => x + (qb[i] - x) * p.f);
     const fingers = b.fingers.map((x, i) => (a.fingers[i] ?? x) + (x - (a.fingers[i] ?? x)) * p.f);
-    P = placeArm(P, H, p.side === T.near ? "an" : "af", p.wk, Wp, arm.pole, q, fingers);
+    P = placeArm(P, H, p.side === -1 ? "ar" : "al", p.wk, Wp, arm.pole, q, fingers);
   }
   return { ...out, input: { pose: P, world: { ...out.input.world!, hands: H } } };
 }
@@ -954,8 +953,8 @@ function solveActing(T: Trunk3, sp: ActInput): Solved {
 function placeArm(
   P: PoseIn,
   H: ActHands,
-  ch: "an" | "af",
-  wk: "near" | "far",
+  ch: "ar" | "al",
+  wk: "right" | "left",
   Wp: V3,
   pole: V3,
   [turn, bend, dev]: readonly number[],
@@ -1060,12 +1059,12 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
   const W0 = sp.world!;
   let P: PoseIn = { ...P0, reach: { ...P0.reach }, hand: { ...P0.hand }, aim: undefined };
   const hands: ActHands = { ...W0.hands };
-  const { near, s } = T;
+  const { s } = T;
   const k = T.hand ? T.hand.k * s : 1;
   const long = T.hand ? T.hand.long * s : 1;
   const dims = handDims(k / s, long / s);
   const placed = placedHolds(T, W0.hands);
-  const roles = holdRoles(placed.hands, near, dims);
+  const roles = holdRoles(placed.hands, dims);
   // món trong khung bàn tay (tay mang món) và tâm nắm của dáng chỗ cầm; người que không bàn tay nắm ở mút nét
   const extras: Partial<Record<number, HoldState>> = {};
   for (const side of [-1, 1]) {
@@ -1092,10 +1091,12 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
     ...(!T.hand && { stick: mul(A.grip, s) }),
     ...extras[side],
   });
-  const sides = [near, -near];
+  // tay của kênh `armRight` của hành động giải trước: clip soi gương thì tay trái
+  const first = P0.mirror ? 1 : -1;
+  const sides = [first, -first];
   const dep = (side: number) => {
-    const rw = side === near ? W0.hands?.near : W0.hands?.far;
-    const ch = side === near ? "an" : "af";
+    const rw = side === -1 ? W0.hands?.right : W0.hands?.left;
+    const ch = side === -1 ? "ar" : "al";
     return (
       usesOther(P0.reach?.[ch], P0.aim?.[ch]) ||
       usesOther(rw, rw?.aim) ||
@@ -1103,13 +1104,13 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
     );
   };
   // tay bám vào tay kia giải sau tay kia
-  if (dep(near) && !dep(-near)) sides.reverse();
-  const cycle = dep(near) && dep(-near);
+  if (dep(first) && !dep(-first)) sides.reverse();
+  const cycle = dep(-1) && dep(1);
   const done: Partial<Record<number, HandState>> = {};
   const fromRig = (p: readonly number[]): V3 => [p[0] * 0.01, -p[1] * 0.01, -p[2] * 0.01];
   for (const side of sides) {
-    const ch = side === near ? "an" : "af";
-    const wk = side === near ? "near" : "far";
+    const ch = side === -1 ? "ar" : "al";
+    const wk = side === -1 ? "right" : "left";
     const rb = P0.reach?.[ch];
     const role = roles[side];
     const item = placed.sols[side];
@@ -1898,7 +1899,7 @@ export function actElbows(
   const arm = (side: number): ActElbow => {
     const tag = T.tag(side);
     const [S, E, W] = [J[`shoulder${tag}`], J[`elbow${tag}`], J[`wrist${tag}`]];
-    const l1 = T.B.upperArm * (T.P.stretch[side === T.near ? 2 : 0] ?? 1) * T.s;
+    const l1 = T.B.upperArm * (T.P.stretch[side === -1 ? 2 : 0] ?? 1) * T.s;
     return {
       wrist: frames[tag].wrist,
       inward: elbowInward({ S, side, Rr: T.Rr, l1 }, W, E),
@@ -1992,7 +1993,7 @@ export function actHeld(c: ActCharacter, sp: ActInput): Partial<Record<"R" | "L"
   const T = p.T;
   const dims = T.hand ? handDims(T.hand.k, T.hand.long) : handDims(1 / T.s);
   const placed = placedHolds(T, sp.world?.hands);
-  const roles = holdRoles(placed.hands, T.near, dims);
+  const roles = holdRoles(placed.hands, dims);
   const out: Partial<Record<"R" | "L", ActHeld>> = {};
   for (const side of [-1, 1]) {
     const r = roles[side];
@@ -2060,8 +2061,8 @@ export function reachEstimate(
   }
   const z3 = [0, 0, 0];
   const T = trunk3(sample, {
-    pose: { af: z3, an: z3, lf: z3, ln: z3, torso, head: z3, stretch: [1, 1, 1, 1, 1, 1, 1, 1] },
-    world: { hip: z3, yaw: Math.PI / 2, s: 1, flip: false },
+    pose: { al: z3, ar: z3, ll: z3, lr: z3, torso, head: z3, stretch: [1, 1, 1, 1, 1, 1, 1, 1] },
+    world: { hip: z3, yaw: Math.PI / 2, s: 1 },
   })!;
   const side = -1;
   const k = T.hand ? T.hand.k : 1;

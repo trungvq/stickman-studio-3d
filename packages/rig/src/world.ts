@@ -221,7 +221,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
   const cast3: Cast3D = {
     scene,
     fig: (id) => current.get(id),
-    at: (id, name) => { const f = posed(id); return f ? fromThree(landmark(f, name, undefined, v3)) : null; },
+    at: (id, name) => { const f = posed(id); return f ? fromThree(landmark(f, name, v3)) : null; },
     arm: (id, side, joint) => { const f = posed(id); return f ? fromThree(f.arms[side][joint].getWorldPosition(v3)) : null; },
     provide: () => undefined,
     holder: () => undefined,
@@ -239,7 +239,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
   /** Lần treo (`món@carry`) của tay `side` ở dáng `ac` */
   const hung = (ac: ScenePose, side: Side) => {
     const W = ac.world;
-    const h = W && (side === (W.flip ? 1 : -1) ? W.hands?.near : W.hands?.far)?.hold;
+    const h = W && (side === -1 ? W.hands?.right : W.hands?.left)?.hold;
     return h && isCarryHold(h) ? h : undefined;
   };
   /** Người, tay mang món `p` ở giây `t` (thuần: chỉ đọc scene); cầm trong bàn tay trước, treo trên cánh tay sau */
@@ -247,7 +247,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
     if (!p) return undefined;
     const acts = cast.map((c) => ({ c, ac: acting(c.id, t) }));
     for (const { c, ac } of acts) {
-      const roles = ac.world.hands ? holdRoles(ac.world.hands, ac.world.flip ? 1 : -1) : {};
+      const roles = ac.world.hands ? holdRoles(ac.world.hands) : {};
       for (const side of [-1, 1] as Side[]) {
         const r = roles[side];
         if (r?.role === 'lead' && pick(r.hold.item, c.id) === p) return { id: c.id, side, ac, carry: false };
@@ -304,11 +304,10 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
       const fig = current.get(id);
       const raw = ac.world.hands;
       if (!fig || !raw) continue;
-      const near: Side = ac.world.flip ? 1 : -1;
       const hands = { ...raw };
-      for (const k of ['near', 'far'] as const) if (raw[k]?.hold) hands[k] = { ...raw[k]!, hold: placed(fig, raw[k]!.hold) };
+      for (const k of ['right', 'left'] as const) if (raw[k]?.hold) hands[k] = { ...raw[k]!, hold: placed(fig, raw[k]!.hold) };
       const H = fig.hands?.[-1];
-      const roles = holdRoles(hands, near, handDims(H?.scale ?? 1, H?.long ?? H?.scale ?? 1));
+      const roles = holdRoles(hands, handDims(H?.scale ?? 1, H?.long ?? H?.scale ?? 1));
       for (const side of [-1, 1] as Side[]) {
         const r = roles[side];
         const p = r?.role === 'lead' ? pick(r.hold.item, id) : undefined;
@@ -319,7 +318,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
         want.set(p, {
           id, fig, side, item: r.hold.item, grip: r.hold.grip, spec: r.hold.spec, hold: r.hold, hand: r.hand,
           ...(two && { support: { side: -side as Side, pose: two.hand.pose, grip: two.hold.grip, hand: two.hand, ...(two.hold.grasp && { v: two.pose, roles: two.roles, ...(two.curl !== undefined && { curl: two.curl }) }) } }),
-          aim: (side === near ? hands.near : hands.far)?.aim?.terms.filter((a) => a.hold?.item === r.hold.item && (a.hold.grip === r.hold.grip || a.hold.grip === r.hold.from?.grip)) ?? [],
+          aim: (side === -1 ? hands.right : hands.left)?.aim?.terms.filter((a) => a.hold?.item === r.hold.item && (a.hold.grip === r.hold.grip || a.hold.grip === r.hold.from?.grip)) ?? [],
         });
       }
       // món treo: món chưa ai cầm trong bàn tay thì treo trên cánh tay khai nó

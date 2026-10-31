@@ -269,47 +269,49 @@ const WAVE = {
   end: "hold",
   mask: ["hand"],
   keys: [
-    { t: 0, pose: {}, hand: { armNear: {} }, ease: "smooth" },
-    { t: 1, pose: {}, hand: { armNear: { pose: "fist", turn: 80 } } },
+    { t: 0, pose: {}, hand: { armRight: {} }, ease: "smooth" },
+    { t: 1, pose: {}, hand: { armRight: { pose: "fist", turn: 80 } } },
   ],
 };
 
 describe("kênh `hand` của hành động", () => {
   it(`đời ${ACTION_VERSION}: nội suy góc khớp giữa hai mốc theo \`ease\``, () => {
     const a = action(WAVE);
-    expect(ACTION_VERSION).toBe(20);
-    const mid = actionHand(a, 0.3).an!;
+    expect(ACTION_VERSION).toBe(21);
+    const mid = actionHand(a, 0.3).ar!;
     const f = smoothstep(0.3);
     const want = vec("rest").map((v, i) => v + ((i === 0 ? 80 : vec("fist")[i]) - v) * f);
     mid.forEach((v, i) => expect(v).toBeCloseTo(want[i], 9));
-    expect(actionHand(a, 0.3).af).toBeUndefined();
-    expect(actionPose(a, 1).hand?.an?.[0]).toBe(80);
+    expect(actionHand(a, 0.3).al).toBeUndefined();
+    expect(actionPose(a, 1).hand?.ar?.[0]).toBe(80);
   });
 
   it("mốc ghi bàn tay tự thêm `hand` vào `mask`; `mask` khai tường minh mà thiếu `hand` thì kêu và không ghi", () => {
     const free = { ...WAVE, mask: undefined };
     expect(actionMask(action(free))).toContain("hand");
-    const bad = action({ ...WAVE, mask: ["armNear"] });
+    const bad = action({ ...WAVE, mask: ["armRight"] });
     expect(maskProblems(bad).join()).toMatch(/`hand`/);
     expect(actionHand(bad, 0.5)).toEqual({});
   });
 
   it("xoay cẳng tay, gập cổ tay quá `±90` là lỗi; tay năm số (xoắn vai) hợp lệ, sáu số thì không", () => {
-    const k = (hand: object) => ({ keys: [{ t: 0, pose: {}, hand: { armNear: hand } }] });
+    const k = (hand: object) => ({ keys: [{ t: 0, pose: {}, hand: { armRight: hand } }] });
     expect(parseAction(k({ turn: 95 })).success).toBe(false);
     expect(parseAction(k({ bend: -100 })).success).toBe(false);
     // tên ngoài `HAND_POSES` là dáng của thư viện (`[a-z0-9-]`, `check` tra); không có góc ngón thô
     for (const v of ["Wave", "pinch_y", "thumbsDown"]) {
       expect(parseAction(k({ pose: v })).success).toBe(false);
-      expect(parseAction({ keys: [{ t: 0, pose: {}, hand: { armNear: v } }] }).success).toBe(false);
+      expect(parseAction({ keys: [{ t: 0, pose: {}, hand: { armRight: v } }] }).success).toBe(
+        false,
+      );
     }
     expect(parseAction(k({ fingers: [0, 0, 0, 0, 0, 0, 0, 0, 0] })).success).toBe(false);
     expect(parseAction(k({})).success).toBe(true);
-    expect(parseAction({ keys: [{ t: 0, pose: { armNear: [0, 90, 0, 90, 90] } }] }).success).toBe(
+    expect(parseAction({ keys: [{ t: 0, pose: { armRight: [0, 90, 0, 90, 90] } }] }).success).toBe(
       true,
     );
     expect(
-      parseAction({ keys: [{ t: 0, pose: { armNear: [0, 90, 0, 90, 90, 1] } }] }).success,
+      parseAction({ keys: [{ t: 0, pose: { armRight: [0, 90, 0, 90, 90, 1] } }] }).success,
     ).toBe(false);
   });
 
@@ -317,12 +319,12 @@ describe("kênh `hand` của hành động", () => {
     const old = {
       ...WAVE,
       schemaVersion: 17,
-      mask: ["armNear"],
-      keys: [{ t: 0, pose: { armNear: [0, 0, 0] } }],
+      mask: ["armRight"],
+      keys: [{ t: 0, pose: { armRight: [0, 0, 0] } }],
     };
     const a = action(old);
     expect(a.schemaVersion).toBe(ACTION_VERSION);
-    expect(a.keys![0].pose).toEqual({ armNear: [0, 0, 0] });
+    expect(a.keys![0].pose).toEqual({ armRight: [0, 0, 0] });
   });
 });
 
@@ -333,23 +335,23 @@ describe("ghép và hoà bàn tay", () => {
   it("track ghi bàn tay một bên không xoá bàn tay bên kia của track dưới; track không ghi thì giữ", () => {
     const p = composePose(
       POSES.idle,
-      { hand: { af: fist, an: fist } },
-      { hand: { an: point } },
+      { hand: { al: fist, ar: fist } },
+      { hand: { ar: point } },
       {},
     );
-    expect(p.hand).toEqual({ af: fist, an: point });
+    expect(p.hand).toEqual({ al: fist, ar: point });
   });
 
   it("hoà trên góc khớp theo smoothstep; bên không ghi lấy của track dưới, không có thì thả lỏng", () => {
-    const base = { ...POSES.idle, hand: { af: point } };
-    const o = blendPose(base, { hand: { an: fist } }, { hand: { an: point, af: fist } }, 0.5);
-    o.hand!.an!.forEach((v, i) => expect(v).toBeCloseTo((fist[i] + point[i]) / 2, 9));
-    o.hand!.af!.forEach((v, i) => expect(v).toBeCloseTo((point[i] + fist[i]) / 2, 9));
-    const rest = blendPose(POSES.idle, {}, { hand: { an: fist } }, 0.25).hand!.an!;
+    const base = { ...POSES.idle, hand: { al: point } };
+    const o = blendPose(base, { hand: { ar: fist } }, { hand: { ar: point, al: fist } }, 0.5);
+    o.hand!.ar!.forEach((v, i) => expect(v).toBeCloseTo((fist[i] + point[i]) / 2, 9));
+    o.hand!.al!.forEach((v, i) => expect(v).toBeCloseTo((point[i] + fist[i]) / 2, 9));
+    const rest = blendPose(POSES.idle, {}, { hand: { ar: fist } }, 0.25).hand!.ar!;
     rest.forEach((v, i) =>
       expect(v).toBeCloseTo(HAND_REST[i] + (fist[i] - HAND_REST[i]) * smoothstep(0.25), 9),
     );
-    expect(blendDuration(POSES.idle, {}, { hand: { an: fist } })).toBeGreaterThan(0.12);
+    expect(blendDuration(POSES.idle, {}, { hand: { ar: fist } })).toBeGreaterThan(0.12);
   });
 
   it("scene: clip sau đổi dáng tay hoà dần, không nhảy; `clips[].mask` cắt được kênh `hand`", () => {
@@ -358,13 +360,13 @@ describe("ghép và hoà bàn tay", () => {
         name: "a",
         duration: 1,
         end: "hold",
-        keys: [{ t: 0, pose: {}, hand: { armNear: "open" } }],
+        keys: [{ t: 0, pose: {}, hand: { armRight: "open" } }],
       }),
       b: action({
         name: "b",
         duration: 1,
         end: "hold",
-        keys: [{ t: 0, pose: {}, hand: { armNear: "fist" } }],
+        keys: [{ t: 0, pose: {}, hand: { armRight: "fist" } }],
       }),
     };
     const scene = (mask?: string[]) => {
@@ -391,16 +393,16 @@ describe("ghép và hoà bàn tay", () => {
       return resolveScene(r.data, ACTIONS);
     };
     const rt = scene();
-    let prev = sceneAt(rt, "x", 0.9).pose.hand!.an!;
+    let prev = sceneAt(rt, "x", 0.9).pose.hand!.ar!;
     expect(prev).toEqual(vec("open"));
     for (let t = 0.92; t < 1.6; t += 1 / 30) {
-      const v = sceneAt(rt, "x", t).pose.hand!.an!;
+      const v = sceneAt(rt, "x", t).pose.hand!.ar!;
       expect(Math.max(...v.map((x, i) => Math.abs(x - prev[i])))).toBeLessThan(20);
       prev = v;
     }
     expect(prev).toEqual(vec("fist"));
     // clip sau thu `mask` không có `hand`: track không còn ghi bàn tay, người 3D về thả lỏng
-    expect(sceneAt(scene(["armNear"]), "x", 2).pose.hand).toBeUndefined();
+    expect(sceneAt(scene(["armRight"]), "x", 2).pose.hand).toBeUndefined();
   });
 });
 

@@ -4,18 +4,18 @@ import { profileAt, wornSkirt } from "./skirtShape";
 import { garmentOf, profile } from "./torso";
 import type { V3 } from "./lens";
 
-/** Đoạn tay của người 3D: cánh tay, cẳng tay, bên gần hay xa ống kính như `BODY_PARTS` */
-export type ArmPart = "armNear" | "forearmNear" | "armFar" | "forearmFar";
+/** Đoạn tay của người 3D: cánh tay, cẳng tay, bên phải hay trái như `BODY_PARTS` */
+export type ArmPart = "armRight" | "forearmRight" | "armLeft" | "forearmLeft";
 
 /**
  * Quãng đầu đoạn tay bỏ đi khi đo tay xuyên thân mình: cánh tay bỏ phía vai (khớp vai nằm trong thân
  * áo ở mọi tư thế), cẳng tay bỏ phía cổ tay (tay đặt lên ngực, chống hông chỉ chạm ở cổ tay)
  */
 export const PIERCE_TRIM: Record<ArmPart, { root: number; tip: number }> = {
-  armNear: { root: 0.3, tip: 0 },
-  armFar: { root: 0.3, tip: 0 },
-  forearmNear: { root: 0, tip: 0.2 },
-  forearmFar: { root: 0, tip: 0.2 },
+  armRight: { root: 0.3, tip: 0 },
+  armLeft: { root: 0.3, tip: 0 },
+  forearmRight: { root: 0, tip: 0.2 },
+  forearmLeft: { root: 0, tip: 0.2 },
 };
 /** Bề dày tay giữ lại khi đo, phần của bán kính thật: tay áp sát mặt áo không tính, tay xuyên qua thì có */
 export const PIERCE_CORE = 0.5;
@@ -105,19 +105,18 @@ export function armPierce(
     // quãng tới mặt áo dọc bán kính elip, quy về trục ngắn: đủ để xếp nặng nhẹ, không cần đúng tuyệt đối
     return (1 - q) * Math.min(a, dz) * s + r;
   };
-  const [near, far] = W.flip ? ["L", "R"] : ["R", "L"];
   const segs: [ArmPart, ActJoint, ActJoint][] = [
-    ["armNear", `shoulder${near}` as ActJoint, `elbow${near}` as ActJoint],
-    ["forearmNear", `elbow${near}` as ActJoint, `wrist${near}` as ActJoint],
-    ["armFar", `shoulder${far}` as ActJoint, `elbow${far}` as ActJoint],
-    ["forearmFar", `elbow${far}` as ActJoint, `wrist${far}` as ActJoint],
+    ["armRight", "shoulderR", "elbowR"],
+    ["forearmRight", "elbowR", "wristR"],
+    ["armLeft", "shoulderL", "elbowL"],
+    ["forearmLeft", "elbowL", "wristL"],
   ];
   const out: ArmPierce[] = [];
   for (const [part, A, B] of segs) {
     const { root, tip } = PIERCE_TRIM[part];
     const [a, b] = [j[A], j[B]];
     let depth = -Infinity;
-    const upper = part === "armNear" || part === "armFar";
+    const upper = part === "armRight" || part === "armLeft";
     for (let i = 0; i <= STEPS; i++) {
       const k = root + ((1 - root - tip) * i) / STEPS;
       const p = [0, 1, 2].map((m) => a[m] + (b[m] - a[m]) * k) as V3;

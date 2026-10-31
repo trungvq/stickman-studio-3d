@@ -20,7 +20,7 @@ beforeAll(() => {
 const still = parseAction({ name: 'still', duration: 1, end: 'hold', authoredAt: 'side', keys: [{ t: 0, pose: {} }] }).data!;
 const waved = parseAction({
   name: 'wave', duration: 2, end: 'hold', authoredAt: 'side',
-  keys: [{ t: 0, pose: { armNear: [10, 20, 0] } }, { t: 0.5, pose: { armNear: [120, 60, 0], armFar: [-30, 40, 0] } }, { t: 1, pose: { armNear: [40, 90, 0] } }],
+  keys: [{ t: 0, pose: { armRight: [10, 20, 0] } }, { t: 0.5, pose: { armRight: [120, 60, 0], armLeft: [-30, 40, 0] } }, { t: 1, pose: { armRight: [40, 90, 0] } }],
 });
 if (!waved.success) throw new Error(waved.error.message);
 const wave = waved.data;

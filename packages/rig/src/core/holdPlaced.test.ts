@@ -180,7 +180,7 @@ describe("món đặt trước trong act3", () => {
       20,
     );
     expect(
-      b.sp.world!.hands?.near?.hold?.prior ?? b.sp.world!.hands?.far?.hold?.prior,
+      b.sp.world!.hands?.right?.hold?.prior ?? b.sp.world!.hands?.left?.hold?.prior,
     ).toBeUndefined();
   });
 

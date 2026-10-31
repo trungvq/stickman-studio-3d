@@ -1,37 +1,37 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "think-3d",
   "duration": 1,
   "end": "hold",
   "authoredAt": "side",
-  "mask": ["armNear", "head", "hand"],
+  "mask": ["armRight", "head", "hand"],
   "keys": [
     {
       "t": 0,
-      "pose": { "armNear": [-6, 24, 0], "head": [0, 0, 0] },
-      "hand": { "armNear": { "pose": "fist", "w": 0, "turn": 0, "bend": 0 } },
+      "pose": { "armRight": [-6, 24, 0], "head": [0, 0, 0] },
+      "hand": { "armRight": { "pose": "fist", "w": 0, "turn": 0, "bend": 0 } },
       "ease": "smooth"
     },
     {
       "t": 0.5,
       "pose": { "head": [4, 0, -3] },
       "reach": {
-        "armNear": { "to": "chin", "point": "grip", "offset": [4, 3, 0], "elbow": [0.3, 1, 0.7] }
+        "armRight": { "to": "chin", "point": "grip", "offset": [4, 3, 0], "elbow": [0.3, 1, 0.7] }
       },
-      "hand": { "armNear": { "pose": "fist", "w": 0.7, "palm": "back" } },
+      "hand": { "armRight": { "pose": "fist", "w": 0.7, "palm": "back" } },
       "ease": "smooth"
     },
     {
       "t": 1,
       "pose": { "head": [4, 0, -3] },
       "reach": {
-        "armNear": { "to": "chin", "point": "grip", "offset": [4, 3, 0], "elbow": [0.3, 1, 0.7] }
+        "armRight": { "to": "chin", "point": "grip", "offset": [4, 3, 0], "elbow": [0.3, 1, 0.7] }
       },
-      "hand": { "armNear": { "pose": "fist", "w": 0.7, "palm": "back" } },
+      "hand": { "armRight": { "pose": "fist", "w": 0.7, "palm": "back" } },
       "ease": "smooth"
     }
   ],
   "events": [],
-  "note": "Chống cằm suy nghĩ: tay gần lên trong 0,5 s, tâm nắm (`point: \"grip\"`) ngay dưới-trước cằm (mốc `chin`, offset [4, 3, 0]), dáng `fist` hờ, lòng tay quay về mặt, khuỷu xuống-ra ngoài; giữ; đầu nghiêng 4°, ngửa 3°. Chỉ ghi `armNear`, `head`, `hand`. Nền `stand-3d` hay `sit-3d`; buông bằng clip rỗng blend ~0,4. Đi với `face-ponder`; tay xa để trống.",
+  "note": "Chống cằm suy nghĩ: tay phải lên trong 0,5 s, tâm nắm (`point: \"grip\"`) ngay dưới-trước cằm (mốc `chin`, offset [4, 3, 0]), dáng `fist` hờ, lòng tay quay về mặt, khuỷu xuống-ra ngoài; giữ; đầu nghiêng 4°, ngửa 3°. Chỉ ghi `armRight`, `head`, `hand`. Nền `stand-3d` hay `sit-3d`; buông bằng clip rỗng blend ~0,4. Đi với `face-ponder`; tay trái để trống.",
   "preview": { "stage": "stand" }
 }

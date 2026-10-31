@@ -1,66 +1,66 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "adjust-glasses-3d",
   "duration": 1.4,
   "end": "hold",
-  "mask": ["armNear", "head", "hand"],
+  "mask": ["armRight", "head", "hand"],
   "authoredAt": "side",
   "keys": [
     {
       "t": 0,
-      "pose": { "armNear": [-6, 24, 0], "head": [null, null, 0] },
+      "pose": { "armRight": [-6, 24, 0], "head": [null, null, 0] },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "open", "w": 0.3 } }
+      "hand": { "armRight": { "pose": "open", "w": 0.3 } }
     },
     {
       "t": 0.2143,
       "pose": { "head": [null, null, 2] },
-      "reach": { "armNear": { "at": [64, -110, 40], "elbow": [0.2, 1, 0.6] } },
+      "reach": { "armRight": { "at": [64, -110, 40], "elbow": [0.2, 1, 0.6] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "point", "w": 1, "turn": -30 } }
+      "hand": { "armRight": { "pose": "point", "w": 1, "turn": -30 } }
     },
     {
       "t": 0.3571,
       "pose": { "head": [null, null, 4] },
       "reach": {
-        "armNear": { "to": "eye", "offset": [6, 2, -26], "point": "tip", "elbow": [0.2, 1, 0.6] }
+        "armRight": { "to": "eye", "offset": [6, 2, -26], "point": "tip", "elbow": [0.2, 1, 0.6] }
       },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "point", "w": 1, "turn": -30 } }
+      "hand": { "armRight": { "pose": "point", "w": 1, "turn": -30 } }
     },
     {
       "t": 0.4429,
       "pose": { "head": [null, null, 2] },
       "reach": {
-        "armNear": { "to": "eye", "offset": [6, -2, -26], "point": "tip", "elbow": [0.2, 1, 0.6] }
+        "armRight": { "to": "eye", "offset": [6, -2, -26], "point": "tip", "elbow": [0.2, 1, 0.6] }
       },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "point", "w": 1, "turn": -30 } }
+      "hand": { "armRight": { "pose": "point", "w": 1, "turn": -30 } }
     },
     {
       "t": 0.6429,
       "pose": { "head": [null, null, 2] },
       "reach": {
-        "armNear": { "to": "eye", "offset": [6, -2, -26], "point": "tip", "elbow": [0.2, 1, 0.6] }
+        "armRight": { "to": "eye", "offset": [6, -2, -26], "point": "tip", "elbow": [0.2, 1, 0.6] }
       },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "point", "w": 1, "turn": -30 } }
+      "hand": { "armRight": { "pose": "point", "w": 1, "turn": -30 } }
     },
     {
       "t": 0.8214,
       "pose": { "head": [null, null, 0] },
-      "reach": { "armNear": { "at": [64, -90, 44], "elbow": [0, 1, 0.6] } },
+      "reach": { "armRight": { "at": [64, -90, 44], "elbow": [0, 1, 0.6] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "point", "w": 0.6 } }
+      "hand": { "armRight": { "pose": "point", "w": 0.6 } }
     },
     {
       "t": 1,
-      "pose": { "armNear": [-6, 24, 0], "head": [null, null, 0] },
+      "pose": { "armRight": [-6, 24, 0], "head": [null, null, 0] },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "open", "w": 0.3 } }
+      "hand": { "armRight": { "pose": "open", "w": 0.3 } }
     }
   ],
   "events": [],
-  "note": "Đẩy gọng kính: tay gần đưa ngón trỏ lên (0,3 s) tới sống mũi giữa hai mắt (mốc `eye`, offset [6, 2, −26] về đường giữa, `point: tip`) lúc 0,5 s, đẩy lên 4 lúc 0,62 s, giữ tới 0,9 s, hạ về tay buông của `stand-3d` lúc 1,4 s; đầu gật 4° lúc chạm. Ghi `armNear`, `hand`, gật của `head`. Nền `stand-3d`, `sit-3d`; mốc thân nên đúng mọi cỡ đầu, có kính hay không.",
+  "note": "Đẩy gọng kính: tay phải đưa ngón trỏ lên (0,3 s) tới sống mũi giữa hai mắt (mốc `eye`, offset [6, 2, −26] về đường giữa, `point: tip`) lúc 0,5 s, đẩy lên 4 lúc 0,62 s, giữ tới 0,9 s, hạ về tay buông của `stand-3d` lúc 1,4 s; đầu gật 4° lúc chạm. Ghi `armRight`, `hand`, gật của `head`. Nền `stand-3d`, `sit-3d`; mốc thân nên đúng mọi cỡ đầu, có kính hay không.",
   "preview": { "stage": "stand" }
 }

@@ -37,20 +37,20 @@ const oracleChain = (root: Pt, a0: number, a1: number, l1: number, l2: number): 
 };
 
 const oracleLimbs = (P: Pose) => ({
-  armF: oracleChain(SH_F, P.af[0], P.af[1], RIG.upperArm, RIG.foreArm),
-  armN: oracleChain(SH_N, P.an[0], P.an[1], RIG.upperArm, RIG.foreArm),
-  legF: oracleChain(HIP_F, P.lf[0], P.lf[1], RIG.thigh, RIG.shin),
-  legN: oracleChain(HIP_N, P.ln[0], P.ln[1], RIG.thigh, RIG.shin),
+  armL: oracleChain(SH_F, P.al[0], P.al[1], RIG.upperArm, RIG.foreArm),
+  armR: oracleChain(SH_N, P.ar[0], P.ar[1], RIG.upperArm, RIG.foreArm),
+  legL: oracleChain(HIP_F, P.ll[0], P.ll[1], RIG.thigh, RIG.shin),
+  legR: oracleChain(HIP_N, P.lr[0], P.lr[1], RIG.thigh, RIG.shin),
 });
 
 /** Bốn chi của một pose kèm góc rig của tay, để lặp chung */
 const limbsOf = (P: Pose) => {
   const f = computeFigure(C, P);
   return [
-    { ten: "armF", pts: f.armF, arm: P.af as readonly number[] | null },
-    { ten: "armN", pts: f.armN, arm: P.an as readonly number[] | null },
-    { ten: "legF", pts: f.legF, arm: null },
-    { ten: "legN", pts: f.legN, arm: null },
+    { ten: "armL", pts: f.armL, arm: P.al as readonly number[] | null },
+    { ten: "armR", pts: f.armR, arm: P.ar as readonly number[] | null },
+    { ten: "legL", pts: f.legL, arm: null },
+    { ten: "legR", pts: f.legR, arm: null },
   ];
 };
 
@@ -120,21 +120,21 @@ describe("stretch 1 là trung tính", () => {
   it.each(poses)("%s", (_ten, P) => {
     const f = computeFigure(C, P);
     const want = oracleLimbs(P);
-    expect(f.armF).toEqual(want.armF);
-    expect(f.armN).toEqual(want.armN);
-    expect(f.legF).toEqual(want.legF);
-    expect(f.legN).toEqual(want.legN);
+    expect(f.armL).toEqual(want.armL);
+    expect(f.armR).toEqual(want.armR);
+    expect(f.legL).toEqual(want.legL);
+    expect(f.legR).toEqual(want.legR);
 
     const hien: Stretch = [1, 1, 1, 1, 1, 1, 1, 1];
     expect(computeFigure(C, { ...P, stretch: hien })).toEqual(f);
 
     const g = computeFigure(C, { ...P, stretch: [1, 1, 2, 2, 1, 1, 1, 1] });
-    expect(g.armN).not.toEqual(f.armN);
-    expect(g.armF).toEqual(f.armF);
-    expect(g.legF).toEqual(f.legF);
-    expect(g.legN).toEqual(f.legN);
-    expect(g.shN).toEqual(f.shN);
-    expect(g.shF).toEqual(f.shF);
+    expect(g.armR).not.toEqual(f.armR);
+    expect(g.armL).toEqual(f.armL);
+    expect(g.legL).toEqual(f.legL);
+    expect(g.legR).toEqual(f.legR);
+    expect(g.shR).toEqual(f.shR);
+    expect(g.shL).toEqual(f.shL);
     expect(g.len).toEqual(f.len);
   });
 });
@@ -147,16 +147,16 @@ describe("tầm với của tay", () => {
     expect(toiDinhDau).toBeCloseTo(163, 0);
     expect(toiDinhDau).toBeGreaterThan(RIG.upperArm + RIG.foreArm);
 
-    const P: Pose = { ...POSES.idle, an: [theta, 0, 0] };
+    const P: Pose = { ...POSES.idle, ar: [theta, 0, 0] };
     const f = computeFigure(C, P);
-    expect(Math.hypot(f.armN[2][0] - SH_N[0], f.armN[2][1] - SH_N[1])).toBeLessThan(toiDinhDau);
+    expect(Math.hypot(f.armR[2][0] - SH_N[0], f.armR[2][1] - SH_N[1])).toBeLessThan(toiDinhDau);
   });
 
   it("stretch 1.4 vươn qua đỉnh đầu, vẫn trên tia vai→đỉnh đầu", () => {
     expect((RIG.upperArm + RIG.foreArm) * 1.4).toBeGreaterThanOrEqual(toiDinhDau);
 
-    const P: Pose = { ...POSES.idle, an: [theta, 0, 0], stretch: [1, 1, 1.4, 1.4, 1, 1, 1, 1] };
-    const w = computeFigure(C, P).armN[2];
+    const P: Pose = { ...POSES.idle, ar: [theta, 0, 0], stretch: [1, 1, 1.4, 1.4, 1, 1, 1, 1] };
+    const w = computeFigure(C, P).armR[2];
     const dx = w[0] - SH_N[0];
     const dy = w[1] - SH_N[1];
     expect(Math.hypot(dx, dy)).toBeGreaterThanOrEqual(toiDinhDau);
@@ -176,17 +176,17 @@ const TYPE_SIDE = {
   name: "type-side",
   duration: 1,
   end: "wrap",
-  mask: ["armFar", "armNear", "stretch"],
+  mask: ["armLeft", "armRight", "stretch"],
   keys: [
-    { t: 0, pose: { armFar: [34, 58, 0], armNear: [38, 54, 0], stretch: [0.9, 1, 1, 1] } },
-    { t: 0.5, pose: { armFar: [34, 60, 0], armNear: [38, 52, 0], stretch: [0.9, 1, 1, 1] } },
-    { t: 1, pose: { armFar: [34, 58, 0], armNear: [38, 54, 0], stretch: [0.9, 1, 1, 1] } },
+    { t: 0, pose: { armLeft: [34, 58, 0], armRight: [38, 54, 0], stretch: [0.9, 1, 1, 1] } },
+    { t: 0.5, pose: { armLeft: [34, 60, 0], armRight: [38, 52, 0], stretch: [0.9, 1, 1, 1] } },
+    { t: 1, pose: { armLeft: [34, 58, 0], armRight: [38, 54, 0], stretch: [0.9, 1, 1, 1] } },
   ],
 };
 
 const SIT_LEGS: Stretch = [1, 1, 1, 1, 0.75, 1.19, 0.75, 1.19];
-const sit: Partial<Pose> = { lf: [82, -82], ln: [82, -82], torso: 3, stretch: SIT_LEGS };
-const typing = deltaPose({ armFar: [34, 58, 0], armNear: [38, 54, 0], stretch: [0.9, 1, 1, 1] });
+const sit: Partial<Pose> = { ll: [82, -82], lr: [82, -82], torso: 3, stretch: SIT_LEGS };
+const typing = deltaPose({ armLeft: [34, 58, 0], armRight: [38, 54, 0], stretch: [0.9, 1, 1, 1] });
 
 describe("stretch từng đoạn", () => {
   it("bốn số trải ra tám, tám số gọn lại bốn khi hai đoạn của mọi chi bằng nhau", () => {
@@ -207,12 +207,12 @@ describe("stretch từng đoạn", () => {
     const f = computeFigure(C, composePose(P, deltaPose({ stretch: s4 })));
     expect(f).toEqual(computeFigure(C, { ...P, stretch: stretchSegs(s4) }));
     const want = {
-      armF: oracleChain(SH_F, P.af[0], P.af[1], RIG.upperArm * 1.2, RIG.foreArm * 1.2),
-      armN: oracleChain(SH_N, P.an[0], P.an[1], RIG.upperArm * 0.8, RIG.foreArm * 0.8),
-      legF: oracleChain(HIP_F, P.lf[0], P.lf[1], RIG.thigh * 1.1, RIG.shin * 1.1),
-      legN: oracleChain(HIP_N, P.ln[0], P.ln[1], RIG.thigh * 0.9, RIG.shin * 0.9),
+      armL: oracleChain(SH_F, P.al[0], P.al[1], RIG.upperArm * 1.2, RIG.foreArm * 1.2),
+      armR: oracleChain(SH_N, P.ar[0], P.ar[1], RIG.upperArm * 0.8, RIG.foreArm * 0.8),
+      legL: oracleChain(HIP_F, P.ll[0], P.ll[1], RIG.thigh * 1.1, RIG.shin * 1.1),
+      legR: oracleChain(HIP_N, P.lr[0], P.lr[1], RIG.thigh * 0.9, RIG.shin * 0.9),
     };
-    for (const k of ["armF", "armN", "legF", "legN"] as const)
+    for (const k of ["armL", "armR", "legL", "legR"] as const)
       f[k].forEach((q, i) => {
         expect(q[0]).toBeCloseTo(want[k][i][0], 10);
         expect(q[1]).toBeCloseTo(want[k][i][1], 10);
@@ -234,17 +234,17 @@ describe("stretch từng đoạn", () => {
       root[1] + sU * l1 * Math.cos(a[0] * D) + sL * l2 * Math.cos((a[0] + a[1]) * D),
     ];
     const cases = [
-      [f.armF, end(SH_F, P.af, 62, 58, s[0], s[1]), tip(SH_F[0], SH_F[1], 62 * s[0], P.af[0])],
-      [f.armN, end(SH_N, P.an, 62, 58, s[2], s[3]), tip(SH_N[0], SH_N[1], 62 * s[2], P.an[0])],
+      [f.armL, end(SH_F, P.al, 62, 58, s[0], s[1]), tip(SH_F[0], SH_F[1], 62 * s[0], P.al[0])],
+      [f.armR, end(SH_N, P.ar, 62, 58, s[2], s[3]), tip(SH_N[0], SH_N[1], 62 * s[2], P.ar[0])],
       [
-        f.legF,
-        end(HIP_F, P.lf, RIG.thigh, RIG.shin, s[4], s[5]),
-        tip(HIP_F[0], HIP_F[1], RIG.thigh * s[4], P.lf[0]),
+        f.legL,
+        end(HIP_F, P.ll, RIG.thigh, RIG.shin, s[4], s[5]),
+        tip(HIP_F[0], HIP_F[1], RIG.thigh * s[4], P.ll[0]),
       ],
       [
-        f.legN,
-        end(HIP_N, P.ln, RIG.thigh, RIG.shin, s[6], s[7]),
-        tip(HIP_N[0], HIP_N[1], RIG.thigh * s[6], P.ln[0]),
+        f.legR,
+        end(HIP_N, P.lr, RIG.thigh, RIG.shin, s[6], s[7]),
+        tip(HIP_N[0], HIP_N[1], RIG.thigh * s[6], P.lr[0]),
       ],
     ] as const;
     for (const [pts, ngon, khop] of cases) {
@@ -259,11 +259,11 @@ describe("stretch từng đoạn", () => {
     const Q: Pose = { ...P, stretch: [1, 1, 1, 1, 0.75, 1.4, 1.2, 0.8] };
     const f = computeFigure(C, Q);
     const [xa, gan] = feet(Q, 1);
-    expect(xa[0]).toBeCloseTo(f.legF[2][0] - f.legF[0][0], 10);
-    expect(xa[1]).toBeCloseTo(f.legF[2][1], 10);
-    expect(gan[0]).toBeCloseTo(f.legN[2][0] - f.legN[0][0], 10);
-    expect(gan[1]).toBeCloseTo(f.legN[2][1], 10);
-    expect(f.lowest).toBe(Math.max(f.legF[2][1], f.legN[2][1]));
+    expect(xa[0]).toBeCloseTo(f.legL[2][0] - f.legL[0][0], 10);
+    expect(xa[1]).toBeCloseTo(f.legL[2][1], 10);
+    expect(gan[0]).toBeCloseTo(f.legR[2][0] - f.legR[0][0], 10);
+    expect(gan[1]).toBeCloseTo(f.legR[2][1], 10);
+    expect(f.lowest).toBe(Math.max(f.legL[2][1], f.legR[2][1]));
   });
 });
 
@@ -278,11 +278,11 @@ describe("`note` của JSON hành động", () => {
 
 describe("kênh `stretch` trong JSON hành động", () => {
   const withStretch = (stretch: number[]) => ({
-    keys: [{ t: 0, pose: { armNear: [0, 0, 0], stretch } }],
+    keys: [{ t: 0, pose: { armRight: [0, 0, 0], stretch } }],
   });
 
   it("bốn hoặc tám số dương; năm số, số âm hay 0 là lỗi", () => {
-    expect(ACTION_VERSION).toBe(20);
+    expect(ACTION_VERSION).toBe(21);
     expect(parseAction(withStretch([1, 1, 1, 1])).success).toBe(true);
     expect(parseAction(withStretch(SIT_LEGS)).success).toBe(true);
     expect(parseAction(withStretch([1, 1, 1, 1, 1])).success).toBe(false);
@@ -325,8 +325,8 @@ describe("ghép `stretch` theo chi", () => {
     expect(own(sit)).toEqual([false, false, true, true]);
     expect(own(typing)).toEqual([true, true, false, false]);
     expect(own({ stretch: SIT_LEGS })).toEqual([true, true, true, true]);
-    expect(own({ lf: [0, 0] })).toEqual([false, false, false, false]);
-    expect(stretchOver(SIT_LEGS, { an: [0, 0, 0] })).toBe(SIT_LEGS);
+    expect(own({ ll: [0, 0] })).toEqual([false, false, false, false]);
+    expect(stretchOver(SIT_LEGS, { ar: [0, 0, 0] })).toBe(SIT_LEGS);
   });
 
   it("ngồi rồi gõ phím: tay lấy của gõ phím, chân vẫn của hành động ngồi, thứ tự nào cũng vậy", () => {
@@ -341,11 +341,11 @@ describe("ghép `stretch` theo chi", () => {
   });
 
   it("hoà hai clip: hệ số của chi mà clip không ghi lấy của nền", () => {
-    const from: Partial<Pose> = { lf: POSES.idle.lf, stretch: [3, 3, 3, 3, 1, 1, 1, 1] };
-    const to: Partial<Pose> = { lf: POSES.idle.lf, stretch: NEUTRAL_STRETCH };
+    const from: Partial<Pose> = { ll: POSES.idle.ll, stretch: [3, 3, 3, 3, 1, 1, 1, 1] };
+    const to: Partial<Pose> = { ll: POSES.idle.ll, stretch: NEUTRAL_STRETCH };
     expect(blendPose(POSES.idle, from, to, 0.5).stretch).toEqual(NEUTRAL_STRETCH);
     expect(blendDuration(POSES.idle, from, to)).toBe(
-      blendDuration(POSES.idle, { lf: POSES.idle.lf }, { lf: POSES.idle.lf }),
+      blendDuration(POSES.idle, { ll: POSES.idle.ll }, { ll: POSES.idle.ll }),
     );
     const s = blendPose(POSES.idle, sit, typing, 0.5).stretch!;
     [0.95, 0.95, 1, 1, 0.875, 1.095, 0.875, 1.095].forEach((v, i) =>
@@ -354,12 +354,12 @@ describe("ghép `stretch` theo chi", () => {
   });
 
   it("hoà hai clip: kênh bên mới ghi mà không nâng thì bỏ cờ nâng của nền ngay nửa sau", () => {
-    const base = { ...POSES.idle, lift: { an: true } };
-    const from: Partial<Pose> = { an: [90, 0, 0], lift: { an: true } };
-    const to: Partial<Pose> = { an: [90, 0, 0] };
-    expect(blendPose(base, from, to, 0.3).lift?.an).toBe(true);
-    expect(blendPose(base, from, to, 0.7).lift?.an).toBe(false);
-    expect(blendPose(base, {}, to, 0.3).lift?.an).toBe(true);
+    const base = { ...POSES.idle, lift: { ar: true } };
+    const from: Partial<Pose> = { ar: [90, 0, 0], lift: { ar: true } };
+    const to: Partial<Pose> = { ar: [90, 0, 0] };
+    expect(blendPose(base, from, to, 0.3).lift?.ar).toBe(true);
+    expect(blendPose(base, from, to, 0.7).lift?.ar).toBe(false);
+    expect(blendPose(base, {}, to, 0.3).lift?.ar).toBe(true);
   });
 });
 
@@ -428,15 +428,15 @@ describe("ngồi bằng `stretch`", () => {
     name: "sit-rear",
     duration: 3.4,
     end: "wrap",
-    mask: ["armFar", "armNear", "legFar", "legNear", "torso", "stretch"],
+    mask: ["armLeft", "armRight", "legLeft", "legRight", "torso", "stretch"],
     keys: [
       {
         t: 0,
         pose: {
-          armFar: [14, -48, 0],
-          armNear: [-14, 48, 0],
-          legFar: [82, -82],
-          legNear: [82, -82],
+          armLeft: [14, -48, 0],
+          armRight: [-14, 48, 0],
+          legLeft: [82, -82],
+          legRight: [82, -82],
           torso: 3,
           stretch: [1, 1, 1, 1, 0.75, 1.19, 0.75, 1.19],
         },

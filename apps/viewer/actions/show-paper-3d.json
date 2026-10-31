@@ -1,23 +1,23 @@
 {
-  "schemaVersion": 13,
+  "schemaVersion": 21,
   "name": "show-paper-3d",
   "duration": 0.8,
   "end": "hold",
   "authoredAt": "side",
   "mask": [
-    "armFar",
-    "armNear"
+    "armLeft",
+    "armRight"
   ],
   "keys": [
     {
       "t": 0,
       "pose": {
-        "armFar": [
+        "armLeft": [
           3,
           8,
           0
         ],
-        "armNear": [
+        "armRight": [
           3,
           8,
           0
@@ -29,7 +29,7 @@
       "t": 1,
       "pose": {},
       "reach": {
-        "armFar": {
+        "armLeft": {
           "at": [
             92,
             -108,
@@ -41,7 +41,7 @@
             0.8
           ]
         },
-        "armNear": {
+        "armRight": {
           "at": [
             92,
             -108,

@@ -1,16 +1,16 @@
 {
-  "schemaVersion": 13,
+  "schemaVersion": 21,
   "name": "eshaku-3d",
   "duration": 1,
   "end": "hold",
   "authoredAt": "side",
-  "mask": ["armFar", "armNear", "torso", "head"],
+  "mask": ["armLeft", "armRight", "torso", "head"],
   "keys": [
     {
       "t": 0,
       "pose": {
-        "armFar": [3, 6, 0],
-        "armNear": [3, 6, 0],
+        "armLeft": [3, 6, 0],
+        "armRight": [3, 6, 0],
         "torso": 0,
         "head": [0, 0, 0]
       },
@@ -19,8 +19,8 @@
     {
       "t": 0.3,
       "pose": {
-        "armFar": [7, 5, 0],
-        "armNear": [7, 5, 0],
+        "armLeft": [7, 5, 0],
+        "armRight": [7, 5, 0],
         "torso": 16,
         "head": [0, 0, 8]
       },
@@ -29,8 +29,8 @@
     {
       "t": 0.6,
       "pose": {
-        "armFar": [7, 5, 0],
-        "armNear": [7, 5, 0],
+        "armLeft": [7, 5, 0],
+        "armRight": [7, 5, 0],
         "torso": 16,
         "head": [0, 0, 8]
       },
@@ -39,8 +39,8 @@
     {
       "t": 1,
       "pose": {
-        "armFar": [3, 6, 0],
-        "armNear": [3, 6, 0],
+        "armLeft": [3, 6, 0],
+        "armRight": [3, 6, 0],
         "torso": 0,
         "head": [0, 0, 0]
       },
@@ -48,6 +48,6 @@
     }
   ],
   "events": [],
-  "note": "Cúi chào nhẹ (会釈) một lần rồi đứng thẳng: thân cúi 16°, đầu gật thêm 8°, tay dọc thân nhích ra trước; xuống trong 0,3 s, giữ 0,3 s, đứng thẳng lúc 1 s rồi giữ. Ghi `armNear`, `armFar`, `torso`, `head`. Nền `stand-3d`. Tay theo hành động này nên không chồng lên tay đang cầm món; cần thế thì dùng `bow-15-3d` chỉ ghi thân, đầu.",
+  "note": "Cúi chào nhẹ (会釈) một lần rồi đứng thẳng: thân cúi 16°, đầu gật thêm 8°, tay dọc thân nhích ra trước; xuống trong 0,3 s, giữ 0,3 s, đứng thẳng lúc 1 s rồi giữ. Ghi `armRight`, `armLeft`, `torso`, `head`. Nền `stand-3d`. Tay theo hành động này nên không chồng lên tay đang cầm món; cần thế thì dùng `bow-15-3d` chỉ ghi thân, đầu.",
   "preview": { "stage": "stand" }
 }

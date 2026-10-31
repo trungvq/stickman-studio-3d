@@ -1,18 +1,18 @@
 {
-  "schemaVersion": 13,
+  "schemaVersion": 21,
   "name": "stand-3d",
   "duration": 3.2,
   "end": "wrap",
   "authoredAt": "side",
-  "mask": ["armFar", "armNear", "legFar", "legNear", "torso"],
+  "mask": ["armLeft", "armRight", "legLeft", "legRight", "torso"],
   "keys": [
     {
       "t": 0,
       "pose": {
-        "armFar": [-6, 24, 0],
-        "armNear": [-6, 24, 0],
-        "legFar": [1, 0],
-        "legNear": [-1, 0],
+        "armLeft": [-6, 24, 0],
+        "armRight": [-6, 24, 0],
+        "legLeft": [1, 0],
+        "legRight": [-1, 0],
         "torso": 0
       },
       "ease": "linear"
@@ -20,10 +20,10 @@
     {
       "t": 0.5,
       "pose": {
-        "armFar": [-5, 27, 0],
-        "armNear": [-5, 27, 0],
-        "legFar": [1, 0],
-        "legNear": [-1, 0],
+        "armLeft": [-5, 27, 0],
+        "armRight": [-5, 27, 0],
+        "legLeft": [1, 0],
+        "legRight": [-1, 0],
         "torso": 1.5
       },
       "ease": "linear"

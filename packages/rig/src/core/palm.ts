@@ -56,7 +56,7 @@ export function handClips(m: CastMember, t: number): string[] {
     for (const k of tr.clips) if (k.start <= t) c = k;
     const hands =
       c?.action &&
-      actionMask(c.action).some((k) => k === "hand" || k === "armNear" || k === "armFar");
+      actionMask(c.action).some((k) => k === "hand" || k === "armRight" || k === "armLeft");
     return hands ? [`${c!.file ?? c!.action!.name} (${tr.name ?? `#${ti}`})`] : [];
   });
 }

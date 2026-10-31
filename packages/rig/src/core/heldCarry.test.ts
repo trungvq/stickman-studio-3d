@@ -278,11 +278,11 @@ describe("treo: `món@carry` đọc `seats` của món", () => {
         },
       ]);
       const sp = sceneAt(rt, "a", 0.5, 1, body3(C)) as ActInput;
-      const roles = holdRoles(sp.world!.hands, -1);
+      const roles = holdRoles(sp.world!.hands);
       expect(roles[-1]).toBeUndefined();
       expect(roles[1]).toMatchObject({ role: "lead", hold: { item: "coc" } });
-      expect(sp.world!.hands!.near!.hold).toMatchObject({ item: "tui-hieu", grip: "@carry////" });
-      expect(sp.world!.hands!.near!.aim).toBeUndefined();
+      expect(sp.world!.hands!.right!.hold).toMatchObject({ item: "tui-hieu", grip: "@carry////" });
+      expect(sp.world!.hands!.right!.aim).toBeUndefined();
       const held = actHeld(C, sp);
       expect(held.R).toBeUndefined();
       expect(held.L).toBeDefined();

@@ -120,15 +120,15 @@ describe("solidClashes: người 3D lồng vào đồ khối", () => {
     name: "sit",
     duration: 2,
     authoredAt: "side",
-    mask: ["armFar", "armNear", "legFar", "legNear", "torso"],
+    mask: ["armLeft", "armRight", "legLeft", "legRight", "torso"],
     keys: [
       {
         t: 0,
         pose: {
-          armFar: [11, 42, 0],
-          armNear: [11, 42, 0],
-          legFar: [90, -90],
-          legNear: [90, -90],
+          armLeft: [11, 42, 0],
+          armRight: [11, 42, 0],
+          legLeft: [90, -90],
+          legRight: [90, -90],
           torso: 3,
         },
       },
@@ -162,8 +162,8 @@ describe("solidClashes: người 3D lồng vào đồ khối", () => {
     // ca thử thật sự chạm: đáy đùi, mông nằm trên mặt ngồi, đáy cẳng tay trên mặt bàn
     const low = (p: string) =>
       Math.max(...person.solids.find((s) => s.part === p)!.v.map((q) => q[1]));
-    for (const p of ["torso", "legNear", "legFar"]) expect(low(p)).toBeCloseTo(SEAT, 1);
-    for (const p of ["forearmNear", "forearmFar"]) expect(low(p)).toBeCloseTo(TOP, 1);
+    for (const p of ["torso", "legRight", "legLeft"]) expect(low(p)).toBeCloseTo(SEAT, 1);
+    for (const p of ["forearmRight", "forearmLeft"]) expect(low(p)).toBeCloseTo(TOP, 1);
     expect(solidClashes(lens, [table, chair], [person], { tol: 2 })).toEqual([]);
   });
 
@@ -173,14 +173,14 @@ describe("solidClashes: người 3D lồng vào đồ khối", () => {
     const under = (h?: { at: V3 }) => h && { at: [h.at[0], TOP + 20, h.at[2]] as V3 };
     const { person } = seated({ t: 0, right: under(on.right), left: under(on.left) });
     const hits = solidClashes(lens, [table, chair], [person], { tol: 2 });
-    const fore = hits.filter((h) => h.part === "forearmNear" || h.part === "forearmFar");
+    const fore = hits.filter((h) => h.part === "forearmRight" || h.part === "forearmLeft");
     expect(fore.length).toBeGreaterThan(0);
     for (const h of fore) {
       expect(h).toMatchObject({ id: "a", item: 0, piece: 0 });
       expect(h.depth).toBeGreaterThan(2);
     }
     // món khai `touch` cho cẳng tay thì không báo cẳng tay nữa
-    const ok = { ...table, touch: ["forearmNear", "a.forearmFar"] };
+    const ok = { ...table, touch: ["forearmRight", "a.forearmLeft"] };
     expect(
       solidClashes(lens, [ok, chair], [person], { tol: 2 }).filter((h) =>
         h.part.startsWith("fore"),
@@ -199,15 +199,15 @@ describe("solidClashes: người 3D lồng vào đồ khối", () => {
     };
     const legs = (touch?: SolidItem["touch"]) =>
       solidClashes(lens, [{ ...high, touch }], [person], { tol: 2 }).filter(
-        (h) => h.part === "legNear",
+        (h) => h.part === "legRight",
       );
     // mặt ngồi dày 6 nâng lên 8 lọt trong khối đùi: hộp bao chồng 6 mà phải đẩy đùi 8 mới rời
     const [hit] = legs();
     expect(hit.depth).toBeCloseTo(8, 1);
-    expect(legs([{ part: "a.legNear", max: 7 }])).toEqual([hit]);
-    expect(legs([{ part: "legNear", max: 9 }])).toEqual([]);
-    expect(legs([{ part: "legNear", max: 1 }])).toEqual([hit]);
-    expect(legs(["a.legNear", { part: "legNear", max: 1 }])).toEqual([]);
+    expect(legs([{ part: "a.legRight", max: 7 }])).toEqual([hit]);
+    expect(legs([{ part: "legRight", max: 9 }])).toEqual([]);
+    expect(legs([{ part: "legRight", max: 1 }])).toEqual([hit]);
+    expect(legs(["a.legRight", { part: "legRight", max: 1 }])).toEqual([]);
   });
 
   it("người với người: báo phần của hai người khác nhau, không báo khớp của cùng một người", () => {

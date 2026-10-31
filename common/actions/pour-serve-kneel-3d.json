@@ -1,23 +1,22 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "pour-serve-kneel-3d",
   "duration": 3,
   "end": "hold",
-  "mask": ["armNear", "armFar", "hand", "torso"],
+  "mask": ["armRight", "armLeft", "hand", "torso"],
   "authoredAt": "side",
-  "sides": "anatomical",
   "keys": [
     {
       "t": 0,
       "pose": { "torso": 3 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [58.99, 17.34, -1.9],
           "point": "grip",
@@ -26,21 +25,21 @@
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0, 0, -1], "fingers": [1, 0, 0] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0, 0, -1], "fingers": [1, 0, 0] }
       }
     },
     {
       "t": 0.2,
       "pose": { "torso": 3 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [58.99, 17.34, -1.9],
           "point": "grip",
@@ -49,21 +48,21 @@
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0, 0, -1], "fingers": [1, 0, 0] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0, 0, -1], "fingers": [1, 0, 0] }
       }
     },
     {
       "t": 0.26,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [48.2, 40.5, 17.51],
           "point": "grip",
@@ -72,21 +71,21 @@
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.1, -0.56, -0.82], "fingers": [0.94, 0.32, -0.1] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.1, -0.56, -0.82], "fingers": [0.94, 0.32, -0.1] }
       }
     },
     {
       "t": 0.3,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [52.06, 50.2, 22.7],
           "point": "grip",
@@ -95,21 +94,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.1, -0.56, -0.82], "fingers": [0.94, 0.32, -0.1] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.1, -0.56, -0.82], "fingers": [0.94, 0.32, -0.1] }
       }
     },
     {
       "t": 0.315,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [51.46, 49.6, 21.75],
           "point": "grip",
@@ -118,21 +117,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.11, -0.58, -0.81], "fingers": [0.94, 0.33, -0.11] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.11, -0.58, -0.81], "fingers": [0.94, 0.33, -0.11] }
       }
     },
     {
       "t": 0.33,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [49.78, 47.7, 19.14],
           "point": "grip",
@@ -141,21 +140,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.14, -0.63, -0.76], "fingers": [0.92, 0.37, -0.14] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.14, -0.63, -0.76], "fingers": [0.92, 0.37, -0.14] }
       }
     },
     {
       "t": 0.345,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [47.41, 44.37, 15.56],
           "point": "grip",
@@ -164,21 +163,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.18, -0.71, -0.68], "fingers": [0.89, 0.41, -0.18] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.18, -0.71, -0.68], "fingers": [0.89, 0.41, -0.18] }
       }
     },
     {
       "t": 0.36,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [44.89, 39.73, 11.91],
           "point": "grip",
@@ -187,21 +186,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.24, -0.78, -0.58], "fingers": [0.86, 0.45, -0.24] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.24, -0.78, -0.58], "fingers": [0.86, 0.45, -0.24] }
       }
     },
     {
       "t": 0.375,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [42.73, 34.45, 8.98],
           "point": "grip",
@@ -210,21 +209,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.31, -0.83, -0.47], "fingers": [0.82, 0.48, -0.31] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.31, -0.83, -0.47], "fingers": [0.82, 0.48, -0.31] }
       }
     },
     {
       "t": 0.39,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [41.22, 29.56, 7.11],
           "point": "grip",
@@ -233,21 +232,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.37, -0.86, -0.37], "fingers": [0.79, 0.49, -0.37] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.37, -0.86, -0.37], "fingers": [0.79, 0.49, -0.37] }
       }
     },
     {
       "t": 0.405,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [40.39, 26.14, 6.2],
           "point": "grip",
@@ -256,21 +255,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.4, -0.86, -0.3], "fingers": [0.77, 0.5, -0.4] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.4, -0.86, -0.3], "fingers": [0.77, 0.5, -0.4] }
       }
     },
     {
       "t": 0.42,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [40.14, 24.92, 5.94],
           "point": "grip",
@@ -279,21 +278,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.42, -0.87, -0.28], "fingers": [0.76, 0.5, -0.42] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.42, -0.87, -0.28], "fingers": [0.76, 0.5, -0.42] }
       }
     },
     {
       "t": 0.75,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [40.14, 24.92, 5.94],
           "point": "grip",
@@ -302,21 +301,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.42, -0.87, -0.28], "fingers": [0.76, 0.5, -0.42] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.42, -0.87, -0.28], "fingers": [0.76, 0.5, -0.42] }
       }
     },
     {
       "t": 0.7638,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [40.39, 26.14, 6.2],
           "point": "grip",
@@ -325,21 +324,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.4, -0.86, -0.3], "fingers": [0.77, 0.5, -0.4] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.4, -0.86, -0.3], "fingers": [0.77, 0.5, -0.4] }
       }
     },
     {
       "t": 0.7775,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [41.22, 29.56, 7.11],
           "point": "grip",
@@ -348,21 +347,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.37, -0.86, -0.37], "fingers": [0.79, 0.49, -0.37] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.37, -0.86, -0.37], "fingers": [0.79, 0.49, -0.37] }
       }
     },
     {
       "t": 0.7913,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [42.73, 34.45, 8.98],
           "point": "grip",
@@ -371,21 +370,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.31, -0.83, -0.47], "fingers": [0.82, 0.48, -0.31] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.31, -0.83, -0.47], "fingers": [0.82, 0.48, -0.31] }
       }
     },
     {
       "t": 0.805,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [44.89, 39.73, 11.91],
           "point": "grip",
@@ -394,21 +393,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.24, -0.78, -0.58], "fingers": [0.86, 0.45, -0.24] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.24, -0.78, -0.58], "fingers": [0.86, 0.45, -0.24] }
       }
     },
     {
       "t": 0.8188,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [47.41, 44.37, 15.56],
           "point": "grip",
@@ -417,21 +416,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.18, -0.71, -0.68], "fingers": [0.89, 0.41, -0.18] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.18, -0.71, -0.68], "fingers": [0.89, 0.41, -0.18] }
       }
     },
     {
       "t": 0.8325,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [49.78, 47.7, 19.14],
           "point": "grip",
@@ -440,21 +439,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.14, -0.63, -0.76], "fingers": [0.92, 0.37, -0.14] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.14, -0.63, -0.76], "fingers": [0.92, 0.37, -0.14] }
       }
     },
     {
       "t": 0.8463,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [51.46, 49.6, 21.75],
           "point": "grip",
@@ -463,21 +462,21 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.11, -0.58, -0.81], "fingers": [0.94, 0.33, -0.11] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.11, -0.58, -0.81], "fingers": [0.94, 0.33, -0.11] }
       }
     },
     {
       "t": 0.86,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [52.06, 50.2, 22.7],
           "point": "grip",
@@ -486,21 +485,21 @@
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.1, -0.56, -0.82], "fingers": [0.94, 0.32, -0.1] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.1, -0.56, -0.82], "fingers": [0.94, 0.32, -0.1] }
       }
     },
     {
       "t": 0.9,
       "pose": { "torso": 5 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [48.2, 40.5, 17.51],
           "point": "grip",
@@ -509,21 +508,21 @@
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0.1, -0.56, -0.82], "fingers": [0.94, 0.32, -0.1] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0.1, -0.56, -0.82], "fingers": [0.94, 0.32, -0.1] }
       }
     },
     {
       "t": 0.97,
       "pose": { "torso": 3 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [58.99, 17.34, -1.9],
           "point": "grip",
@@ -532,21 +531,21 @@
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0, 0, -1], "fingers": [1, 0, 0] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0, 0, -1], "fingers": [1, 0, 0] }
       }
     },
     {
       "t": 1,
       "pose": { "torso": 3 },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [-4, 20, 4],
           "point": "palm",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [58.99, 17.34, -1.9],
           "point": "grip",
@@ -555,13 +554,13 @@
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.6, "palm": "up" },
-        "armNear": { "pose": "grip", "palm": [0, 0, -1], "fingers": [1, 0, 0] }
+        "armLeft": { "pose": "open", "w": 0.6, "palm": "up" },
+        "armRight": { "pose": "grip", "palm": [0, 0, -1], "fingers": [1, 0, 0] }
       }
     }
   ],
   "events": [{ "name": "pour", "t": 0.42 }],
-  "note": "Rót mời khách bằng hai tay khi quỳ seiza: như `pour-serve-3d` — tay phải nắm thân bình trước ngực (mốc `chest`), tay trái đỡ dưới đáy, vòi về trước-phải; 0,6 → 0,78 s đưa bình tới, vòi lướt trên miệng cốc; 0,78 → 0,9 s hạ miệng bình xuống ướm miệng cốc; 0,9 → 1,26 s nâng đuôi bình: bình xoay quanh chính miệng bình, miệng bình đứng yên; sự kiện `pour` lúc 1,26 s, giữ rót tới 2,25 s, dựng lại theo đường ấy tới 2,58 s, nhấc khỏi miệng cốc, rút bình về lúc 2,91 s rồi giữ. Ghi hai tay, `hand`, `torso`; `sides: \"anatomical\"`. Nền `seiza-3d` trên đệm sàn; món ở `world.hands[].hold` tay phải như `pour-serve-3d` (`keep`, `slant: 0`, `along: 0.3`, `around: 330`, `both: { group: \"platform\", psi: -90 }`). Người nhận quỳ chìa chén ở trước-phải, miệng chén ngay dưới miệng bình. Sinh bằng `tools/actions/pour.mjs`.",
+  "note": "Rót mời khách bằng hai tay khi quỳ seiza: như `pour-serve-3d` — tay phải nắm thân bình trước ngực (mốc `chest`), tay trái đỡ dưới đáy, vòi về trước-phải; 0,6 → 0,78 s đưa bình tới, vòi lướt trên miệng cốc; 0,78 → 0,9 s hạ miệng bình xuống ướm miệng cốc; 0,9 → 1,26 s nâng đuôi bình: bình xoay quanh chính miệng bình, miệng bình đứng yên; sự kiện `pour` lúc 1,26 s, giữ rót tới 2,25 s, dựng lại theo đường ấy tới 2,58 s, nhấc khỏi miệng cốc, rút bình về lúc 2,91 s rồi giữ. Ghi hai tay, `hand`, `torso`. Nền `seiza-3d` trên đệm sàn; món ở `world.hands[].hold` tay phải như `pour-serve-3d` (`keep`, `slant: 0`, `along: 0.3`, `around: 330`, `both: { group: \"platform\", psi: -90 }`). Người nhận quỳ chìa chén ở trước-phải, miệng chén ngay dưới miệng bình. Sinh bằng `tools/actions/pour.mjs`.",
   "preview": {
     "stage": "floor",
     "hold": {

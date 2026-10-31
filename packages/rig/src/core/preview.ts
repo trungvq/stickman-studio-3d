@@ -10,7 +10,7 @@ import { actionStride } from "./scene";
 
 export type PreviewStage = (typeof PREVIEW_STAGES)[number];
 
-/** Góc máy quanh người: `near` là 3/4 phía tay phải (người không lật, kênh gần là tay phải), `far` là 3/4 phía tay trái */
+/** Góc máy quanh người: `near` là 3/4 phía tay phải, `far` là 3/4 phía tay trái */
 export const PREVIEW_ANGLES = ["front", "near", "far", "side", "back"] as const;
 export type PreviewAngle = (typeof PREVIEW_ANGLES)[number];
 
@@ -300,7 +300,7 @@ export function previewScene(
   }
   const angle = opts.angle ?? "near";
   const lens = lensAround(center, yaw, PREVIEW_ORBIT[angle], h, far);
-  // góc Trước có người kia: mắt lệch theo giữa hai người thì người diễn lật (kênh gần thành tay trái); đặt mắt ngay trước
+  // góc Trước có người kia: mắt lệch theo giữa hai người thì người diễn lật trên hình; đặt mắt ngay trước
   // người diễn, nhích về phía tay phải, quay về giữa hai người
   if (p && angle === "front") {
     const right = dirOf((yaw + 90) * D);

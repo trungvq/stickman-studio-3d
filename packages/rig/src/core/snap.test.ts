@@ -16,19 +16,19 @@ const action = (json: unknown): ActionData => {
   return r.data;
 };
 
-const LIMBS4 = { armFar: [0, 0, 0], armNear: [0, 0, 0], legFar: [0, 0], legNear: [0, 0] };
+const LIMBS4 = { armLeft: [0, 0, 0], armRight: [0, 0, 0], legLeft: [0, 0], legRight: [0, 0] };
 /** Đứng soạn ở `side`: tay buông, chân thẳng */
 const STAND3D = action({
   name: "stand-3d",
   authoredAt: "side",
   end: "hold",
-  mask: ["armFar", "armNear", "legFar", "legNear", "torso"],
+  mask: ["armLeft", "armRight", "legLeft", "legRight", "torso"],
   keys: [{ t: 0, pose: { ...LIMBS4, torso: 0 } }],
 });
 /** Hai tay giơ che mặt: bản không soạn ở `side` và bản soạn ở `side` cùng góc */
 const coverKeys = [
-  { t: 0, pose: { armNear: [-20, -30, 0], armFar: [20, 30, 0] }, ease: "smooth" },
-  { t: 1, pose: { armNear: [-150, -100, 0], armFar: [150, 100, 0] } },
+  { t: 0, pose: { armRight: [-20, -30, 0], armLeft: [20, 30, 0] }, ease: "smooth" },
+  { t: 1, pose: { armRight: [-150, -100, 0], armLeft: [150, 100, 0] } },
 ];
 const COVER = action({ name: "cover", end: "hold", duration: 0.6, keys: coverKeys });
 const COVER3D = action({
@@ -43,8 +43,8 @@ const RAISE = action({
   name: "raise",
   authoredAt: "side",
   end: "hold",
-  mask: ["armNear"],
-  keys: [{ t: 0, pose: { armNear: [-170, 0, 0] } }],
+  mask: ["armRight"],
+  keys: [{ t: 0, pose: { armRight: [-170, 0, 0] } }],
 });
 const ACTIONS = { "stand-3d": STAND3D, cover: COVER, "cover-3d": COVER3D, raise: RAISE };
 
@@ -80,7 +80,7 @@ describe("sceneSideProblems", () => {
     const out = sceneSideProblems(person3d("cover"), ACTIONS);
     expect(out).toHaveLength(1);
     expect(out[0]).toMatch(/`a` clip `cover` \(track `tay`, giây 1\.00\)/);
-    expect(out[0]).toMatch(/tay gần, tay xa/);
+    expect(out[0]).toMatch(/tay phải, tay trái/);
     expect(out[0]).toMatch(/có sẵn `cover-3d`/);
   });
 
@@ -105,8 +105,8 @@ describe("sceneSideProblems", () => {
   it("tay đặt bằng đích cổ tay ở mọi mốc thì góc kênh không nâng không lên hình, không kêu", () => {
     const reach = action({
       name: "reach",
-      mask: ["armNear"],
-      keys: [{ t: 0, pose: {}, reach: { armNear: { at: [90, -60, 10] } } }],
+      mask: ["armRight"],
+      keys: [{ t: 0, pose: {}, reach: { armRight: { at: [90, -60, 10] } } }],
     });
     const rt = scene(
       {
@@ -128,7 +128,7 @@ describe("sceneSideProblems", () => {
 describe("actionSnapProblems", () => {
   it("`wrap` mà mốc cuối ở `t: 1` lệch mốc đầu: mỗi lượt lặp nhảy", () => {
     const a = action({ end: "wrap", keys: coverKeys });
-    expect(actionSnapProblems(a).join("\n")).toMatch(/`end: "wrap"` mà `armNear`/);
+    expect(actionSnapProblems(a).join("\n")).toMatch(/`end: "wrap"` mà `armLeft`/);
     expect(actionSnapProblems({ ...a, end: "hold" })).toEqual([]);
   });
 
@@ -137,14 +137,14 @@ describe("actionSnapProblems", () => {
       end: "hold",
       duration: 1,
       keys: [
-        { t: 0, pose: { armNear: [0, 0, 0] } },
-        { t: 0.5, pose: { armNear: [10, 0, 0] } },
-        { t: 0.51, pose: { armNear: [80, 0, 0] } },
-        { t: 1, pose: { armNear: [85, 0, 0] } },
+        { t: 0, pose: { armRight: [0, 0, 0] } },
+        { t: 0.5, pose: { armRight: [10, 0, 0] } },
+        { t: 0.51, pose: { armRight: [80, 0, 0] } },
+        { t: 1, pose: { armRight: [85, 0, 0] } },
       ],
     });
     expect(actionSnapProblems(a).join("\n")).toMatch(
-      /`armNear` đổi 70° giữa mốc `t: 0.5` và `t: 0.51`/,
+      /`armRight` đổi 70° giữa mốc `t: 0.5` và `t: 0.51`/,
     );
     expect(actionSnapProblems({ ...a, snap: true })).toEqual([]);
   });
@@ -152,7 +152,7 @@ describe("actionSnapProblems", () => {
   it("chuỗi mốc dày cùng nhanh là cú vung, không kêu", () => {
     const keys = Array.from({ length: 21 }, (_, i) => ({
       t: i / 20,
-      pose: { armNear: [i * 30, 0, 0] },
+      pose: { armRight: [i * 30, 0, 0] },
     }));
     expect(actionSnapProblems(action({ end: "hold", duration: 0.5, keys }))).toEqual([]);
   });
@@ -167,7 +167,7 @@ describe("sceneSnaps", () => {
     expect(s.t).toBeGreaterThan(1);
     expect(s.t).toBeLessThan(1.35);
     expect(s.joint).toMatch(/^(hand|wrist|elbow)/);
-    expect(s.causes.join("\n")).toMatch(/cờ `lift` của tay gần, tay xa lật giữa đoạn hoà/);
+    expect(s.causes.join("\n")).toMatch(/cờ `lift` của tay phải, tay trái lật giữa đoạn hoà/);
   });
 
   it("bản soạn ở `side` cùng góc thì êm", () => {
@@ -245,11 +245,11 @@ describe("sceneSnaps", () => {
       authoredAt: "side",
       end: "wrap",
       duration: 0.5,
-      mask: ["armNear"],
+      mask: ["armRight"],
       keys: [
-        { t: 0, pose: { armNear: [-60, 0, 0] }, ease: "smooth" },
-        { t: 0.5, pose: { armNear: [60, 0, 0] }, ease: "smooth" },
-        { t: 1, pose: { armNear: [-60, 0, 0] } },
+        { t: 0, pose: { armRight: [-60, 0, 0] }, ease: "smooth" },
+        { t: 0.5, pose: { armRight: [60, 0, 0] }, ease: "smooth" },
+        { t: 1, pose: { armRight: [-60, 0, 0] } },
       ],
     });
     const rt = scene(

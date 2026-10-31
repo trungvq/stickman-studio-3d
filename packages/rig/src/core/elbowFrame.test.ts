@@ -107,14 +107,14 @@ describe("`elbow` theo hệ của đích", () => {
     });
     const w = sceneAt(rt, "nguoi", 3, H, DIMS).world!;
     const hands = w.hands!;
-    const r = (w.flip ? hands.near : hands.far)!;
+    const r = hands.left!;
     const b = elbowRig(yawFrame(w.yaw), 1, { v: eTo, body: true });
     const [p, q] = [eAt, b].map((v) => v.map((x) => x / Math.hypot(...v)));
     const dot = p[0] * q[0] + p[1] * q[1] + p[2] * q[2];
     const om = Math.acos(dot);
     // ở mốc sau hướng thế giới là hướng hệ thân quay theo người
     const end = sceneAt(rt, "nguoi", 4.2, H, DIMS).world!;
-    const re = (end.flip ? end.hands!.near : end.hands!.far)!;
+    const re = end.hands!.left!;
     expect(gap(re.elbow!, elbowRig(yawFrame(end.yaw), 1, { v: eTo, body: true }))).toBeLessThan(
       1e-9,
     );
@@ -175,7 +175,7 @@ describe("chuyển cảnh đời trước (`migrate-elbow`)", () => {
     expect(hands[0].left.elbow).toEqual([0, 1, -1]);
     const rt = runtime(json as Record<string, unknown>);
     const w = sceneAt(rt, "nguoi", 2.5, H, DIMS).world!;
-    const r = (w.flip ? w.hands!.near : w.hands!.far)!;
+    const r = w.hands!.left!;
     expect(gap(r.elbow!, e)).toBeLessThan(1e-3);
   });
 });

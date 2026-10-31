@@ -3,7 +3,7 @@ import { INK, RIG } from "./constants";
 import { FACE_REST } from "./face";
 
 /** Bump khi đổi hình dạng JSON nhân vật; `migrateCharacter` phải có nhánh tương ứng. */
-export const CHARACTER_VERSION = 6;
+export const CHARACTER_VERSION = 7;
 
 /** Một socket của người 3D: `sculpt` dựng khối theo trường riêng của socket, `none` là trống */
 const piece = z.object({
@@ -604,8 +604,8 @@ const PIECE_KEY_NAMES = [
   "headAcc",
   "faceAcc",
   "hem",
-  "handNear",
-  "handFar",
+  "handRight",
+  "handLeft",
 ] as const;
 
 /**
@@ -773,8 +773,8 @@ export const CharacterSchema = z.object({
           skirt: SkirtSchema.optional(),
         })
         .prefault({}),
-      handNear: piece.prefault({}),
-      handFar: piece.prefault({}),
+      handRight: piece.prefault({}),
+      handLeft: piece.prefault({}),
     })
     .prefault({}),
   /** Vật thay được — rìu, áo giáp, kính. Scene và hành động gọi tên ở đây qua `equip`. docs/01-rig.md */
@@ -920,6 +920,35 @@ export const dropGoneEquip = (e: unknown) => {
   for (const step of Array.isArray(e) ? e : [e]) dropGone(step);
 };
 
+/** Tên kênh tay chân, socket bàn tay đời cũ → tên theo phải / trái của người, cho `migrate*` */
+export const SIDE_RENAMES: Readonly<Record<string, string>> = {
+  armNear: "armRight",
+  armFar: "armLeft",
+  legNear: "legRight",
+  legFar: "legLeft",
+  handNear: "handRight",
+  handFar: "handLeft",
+};
+
+/** Đổi khoá đời cũ của một map thô tại chỗ (`SIDE_RENAMES`), giữ thứ tự khoá */
+export const renameSideKeys = (map: unknown) => {
+  if (!map || typeof map !== "object" || Array.isArray(map)) return;
+  const o = map as Record<string, unknown>;
+  if (!Object.keys(o).some((k) => k in SIDE_RENAMES)) return;
+  const entries = Object.entries(o);
+  for (const k of Object.keys(o)) delete o[k];
+  for (const [k, v] of entries) o[SIDE_RENAMES[k] ?? k] = v;
+};
+
+/** `renameSideKeys` cho một `equip` thô: tên bộ đồ, map hay mảng các bước */
+export const renameSideEquip = (e: unknown) => {
+  for (const step of Array.isArray(e) ? e : [e]) renameSideKeys(step);
+};
+
+/** Đổi tên kênh đời cũ trong một mảng thô (`mask`) */
+export const renameSideList = (a: unknown): unknown =>
+  Array.isArray(a) ? a.map((k) => (typeof k === "string" ? (SIDE_RENAMES[k] ?? k) : k)) : a;
+
 /** Nâng JSON đời cũ lên `CHARACTER_VERSION`. File mới hơn thì trả nguyên để zod báo lỗi. */
 export function migrateCharacter(json: unknown): unknown {
   if (!json || typeof json !== "object" || Array.isArray(json)) return json;
@@ -942,6 +971,12 @@ export function migrateCharacter(json: unknown): unknown {
     for (const group of sockets)
       for (const pc of Object.values(group ?? {}))
         if (pc && typeof pc === "object" && pc.src !== "sculpt") pc.src = "none";
+  }
+  // v6 → v7 socket bàn tay theo phải / trái của người: `handNear` → `handRight`, `handFar` → `handLeft`
+  if (from < 7) {
+    renameSideKeys(o.pieces);
+    for (const group of [o.items, o.outfits])
+      if (group && typeof group === "object") Object.values(group).forEach(renameSideKeys);
   }
   dropGone(o.pieces);
   for (const group of [o.items, o.outfits])

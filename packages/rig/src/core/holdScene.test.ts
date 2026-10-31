@@ -151,24 +151,24 @@ describe("`world.hands[].hold` trong scene", () => {
       { t: 3, right: { hold: { item: "coc", group: "cylinder", part: "quai" } } },
       { t: 4, right: { hold: null } },
     ];
-    const h = (t: number) => at(hands, t).world?.hands?.near?.hold;
+    const h = (t: number) => at(hands, t).world?.hands?.right?.hold;
     expect(h(0.99)).toBeUndefined();
     expect(h(1)).toMatchObject({ item: "coc", grip: "@cylinder////", since: 1 });
     expect(h(2.5)).toMatchObject({ grip: "@cylinder////", since: 1 });
     expect(h(3.2)).toMatchObject({ grip: "@cylinder//quai//", since: 3 });
     expect(h(4)).toBeUndefined();
     // quãng t 3 → 4: mốc chỉ có `hold` nên vị trí trả dần về hành động
-    expect(at(hands, 3).world?.hands?.near?.w).toBe(0);
+    expect(at(hands, 3).world?.hands?.right?.w).toBe(0);
   });
 
   it("đang cầm: ngón theo dáng của chỗ cầm, không theo hành động", () => {
     const sp = at([{ t: 0, right: { at: [-30, -280, -60], point: "grip", hold: "coc@cylinder" } }]);
     const r = resolveActing(C, sp);
-    const near = r.pose.hand!.an!;
+    const right = r.pose.hand!.ar!;
     const T = trunk3(C, sp)!;
     const dims = T.hand ? handDims(T.hand.k, T.hand.long) : handDims(1 / T.s);
-    const role = holdRoles(sp.world!.hands, -1, dims)[-1]!;
-    expect(near.slice(2, role.pose.length)).toEqual(role.pose.slice(2));
+    const role = holdRoles(sp.world!.hands, dims)[-1]!;
+    expect(right.slice(2, role.pose.length)).toEqual(role.pose.slice(2));
   });
 
   it("`point: item:<mốc>`: mốc của món nằm đúng đích (loa vào tai)", () => {
@@ -186,7 +186,7 @@ describe("`world.hands[].hold` trong scene", () => {
     const target: V3 = [-30, -280, -60];
     const sp = at([{ t: 0, right: { at: target, point: "grip", hold: KHOE } }]);
     const held = actHeld(C, sp).R!;
-    const q = holdHand(sp.world!.hands!.near!.hold!, -1, handDims(1))!.hand.at;
+    const q = holdHand(sp.world!.hands!.right!.hold!, -1, handDims(1))!.hand.at;
     expect(len(sub(pointW(held, q), target))).toBeLessThan(1);
   });
 
@@ -282,7 +282,7 @@ describe("`world.hands[].hold` trong scene", () => {
 
   it("hai tay: món theo tay chính, tay phụ với tới chỗ của nó trên món", () => {
     const sp = at([{ t: 0, right: { at: [-30, -260, -80], point: "grip", hold: BUNG } }]);
-    expect(holdRoles(sp.world!.hands, -1)).toMatchObject({
+    expect(holdRoles(sp.world!.hands)).toMatchObject({
       [-1]: { role: "lead" },
       1: { role: "support", lead: -1 },
     });
@@ -295,9 +295,9 @@ describe("`world.hands[].hold` trong scene", () => {
     // khay nằm ngang, tay chính đạt ý định
     expect(deg(axisW(held.R!.R, [0, 1, 0]), [0, -1, 0])).toBeLessThan(15);
     expect(r.report.R.hold!.err).toBeLessThan(15);
-    const support = holdRoles(sp.world!.hands, -1)[1]!;
+    const support = holdRoles(sp.world!.hands)[1]!;
     const resolved = resolveActing(C, sp);
-    expect(resolved.pose.hand!.af!.slice(2, support.pose.length)).toEqual(support.pose.slice(2));
+    expect(resolved.pose.hand!.al!.slice(2, support.pose.length)).toEqual(support.pose.slice(2));
   });
 
   it("ý định không làm khuỷu bật: tay dời êm thì khuỷu đi liền", () => {
@@ -345,7 +345,7 @@ describe("`world.hands[].hold` trong scene", () => {
     expect(pose(1.01).grip).toBe("@cylinder//quai//");
     // hết quãng hoà: đúng chỗ cầm mới
     const sp = sceneAt(rt, "a", 1.5, 1, body3(C)) as ActInput;
-    expect(sp.world!.hands!.near!.hold!.from).toBeUndefined();
+    expect(sp.world!.hands!.right!.hold!.from).toBeUndefined();
   });
 
   it("vừa cầm hai tay: tay phụ hoà từ chỗ nó đang ở tới mép món, không nhảy", () => {
@@ -415,7 +415,7 @@ describe("`world.hands[].hold` trong scene", () => {
       { t: 1, left: { at: [20, -270, -70], point: "grip", hold: "coc@cylinder" } },
     ];
     const sp = at(hands, 1.5);
-    const roles = holdRoles(sp.world!.hands, -1);
+    const roles = holdRoles(sp.world!.hands);
     expect(roles[-1]?.role).toBe("lead");
     expect(roles[1]?.role).toBe("support");
     expect(Object.keys(actHeld(C, sp))).toEqual(["R"]);
@@ -425,9 +425,9 @@ describe("`world.hands[].hold` trong scene", () => {
 /** Mẫu không có chuỗi cổ tay (`ReachHold.prior`): bộ giải chỉ thấy khung này */
 const alone = (sp: ActInput): ActInput => {
   const H = sp.world!.hands!;
-  const f = (x: typeof H.near) =>
+  const f = (x: typeof H.right) =>
     x && { ...x, ...(x.hold && { hold: { ...x.hold, prior: undefined } }) };
-  return { ...sp, world: { ...sp.world!, hands: { near: f(H.near), far: f(H.far) } } };
+  return { ...sp, world: { ...sp.world!, hands: { right: f(H.right), left: f(H.left) } } };
 };
 
 describe("cổ tay mang món nối từ mẫu trước", () => {
@@ -440,7 +440,7 @@ describe("cổ tay mang món nối từ mẫu trước", () => {
   it("ý định vượt tầm cổ tay: cổ tay không lật trong một khung, đi dần tới nghiệm mới", () => {
     const rt = runtime(swing);
     const turn = (t: number, f = (x: ActInput) => x) =>
-      resolveActing(C, f(sceneAt(rt, "a", t, 1, body3(C)) as ActInput)).pose.hand!.an![0];
+      resolveActing(C, f(sceneAt(rt, "a", t, 1, body3(C)) as ActInput)).pose.hand!.ar![0];
     let lone = 0;
     let kept = 0;
     for (let i = 1; i <= 30; i++) {
@@ -458,7 +458,7 @@ describe("cổ tay mang món nối từ mẫu trước", () => {
       const rt = runtime(swing);
       const out = new Map<number, readonly number[]>();
       for (const t of order)
-        out.set(t, resolveActing(C, sceneAt(rt, "a", t, 1, body3(C)) as ActInput).pose.hand!.an!);
+        out.set(t, resolveActing(C, sceneAt(rt, "a", t, 1, body3(C)) as ActInput).pose.hand!.ar!);
       return frames.map((t) => out.get(t));
     };
     const shuffled = [...frames].sort((a, b) => Math.sin(a * 977) - Math.sin(b * 977));

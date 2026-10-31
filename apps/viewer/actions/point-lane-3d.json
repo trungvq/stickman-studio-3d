@@ -1,18 +1,18 @@
 {
-  "schemaVersion": 13,
+  "schemaVersion": 21,
   "name": "point-lane-3d",
   "duration": 1,
   "end": "hold",
   "authoredAt": "side",
   "mask": [
-    "armFar",
+    "armLeft",
     "head"
   ],
   "keys": [
     {
       "t": 0,
       "pose": {
-        "armFar": [
+        "armLeft": [
           3,
           8,
           0
@@ -35,7 +35,7 @@
         ]
       },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "at": [
             110,
             -110,
@@ -60,7 +60,7 @@
         ]
       },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "at": [
             32,
             -112,
@@ -77,5 +77,5 @@
     }
   ],
   "events": [],
-  "note": "Cảnh sát giao thông chỉ sang làn bên: tay xa đưa ra trước rồi quét ngang sang phía tay ấy `[32, −112, 150]`, đầu quay theo 38°. Ghép với `stop-palm-3d` ở track khác: một tay chặn, một tay chỉ đường."
+  "note": "Cảnh sát giao thông chỉ sang làn bên: tay trái đưa ra trước rồi quét ngang sang phía tay ấy `[32, −112, 150]`, đầu quay theo 38°. Ghép với `stop-palm-3d` ở track khác: một tay chặn, một tay chỉ đường."
 }

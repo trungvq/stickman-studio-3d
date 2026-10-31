@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "turn-head-35-far-3d",
   "duration": 0.45,
   "end": "hold",
@@ -11,6 +11,6 @@
     { "t": 1, "pose": { "head": [-2, 35, null] }, "ease": "smooth" }
   ],
   "events": [],
-  "note": "Quay đầu 35° về phía xa ống kính (nhìn người ngồi cạnh, đầu dẫn trước thân), vượt 37° ở 0,7 rồi giữ 35°, nghiêng 2° ngược chiều quay; lượt 0,45 s, giữ. Chỉ ghi nghiêng và lắc của `head`, gật để trống. Nền `stand-3d`, ngồi thì `sit-3d`, quỳ thì `seiza-3d`. Chồng `nod-*` hay đầu cúi lên trên vẫn giữ hướng quay; chiều kia là `turn-head-35-near-3d`, buông bằng clip rỗng blend ~0,4. Sinh bằng `tools/actions/turn-head.mjs`.",
+  "note": "Quay đầu 35° về phía tay trái (nhìn người ngồi cạnh, đầu dẫn trước thân), vượt 37° ở 0,7 rồi giữ 35°, nghiêng 2° ngược chiều quay; lượt 0,45 s, giữ. Chỉ ghi nghiêng và lắc của `head`, gật để trống. Nền `stand-3d`, ngồi thì `sit-3d`, quỳ thì `seiza-3d`. Chồng `nod-*` hay đầu cúi lên trên vẫn giữ hướng quay; chiều kia là `turn-head-35-near-3d`, buông bằng clip rỗng blend ~0,4. Sinh bằng `tools/actions/turn-head.mjs`.",
   "preview": { "stage": "stand" }
 }

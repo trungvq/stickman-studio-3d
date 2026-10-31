@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 16,
+  "schemaVersion": 21,
   "name": "lean-side-3d",
   "duration": 0.8,
   "end": "hold",
@@ -10,5 +10,5 @@
     { "t": 1, "pose": { "torso": [0, 12], "head": [-8, null, null] }, "ease": "smooth" }
   ],
   "events": [],
-  "note": "Nghiêng thân 12° về phía tay xa, đầu nghiêng ngược 8° cho mắt gần ngang, rồi giữ."
+  "note": "Nghiêng thân 12° về phía tay trái, đầu nghiêng ngược 8° cho mắt gần ngang, rồi giữ."
 }

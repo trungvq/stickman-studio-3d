@@ -1,21 +1,21 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "rub-hands-3d",
   "duration": 0.5,
   "end": "wrap",
   "authoredAt": "side",
-  "mask": ["armNear", "armFar", "hand"],
+  "mask": ["armRight", "armLeft", "hand"],
   "keys": [
     {
       "t": 0,
       "pose": {},
       "reach": {
-        "armNear": { "to": "chest", "offset": [46, 16, 3], "elbow": [-0.1, 0.6, 1.4] },
-        "armFar": { "to": "otherPalm", "offset": [-12, 6, 0], "elbow": [-0.1, 0.6, 1.4] }
+        "armRight": { "to": "chest", "offset": [46, 16, 3], "elbow": [-0.1, 0.6, 1.4] },
+        "armLeft": { "to": "otherPalm", "offset": [-12, 6, 0], "elbow": [-0.1, 0.6, 1.4] }
       },
       "hand": {
-        "armNear": { "pose": "flat", "w": 1, "palm": "in", "fingers": [1, -0.4, 0] },
-        "armFar": { "pose": "flat", "w": 1, "palm": "in", "fingers": [1, -0.4, 0] }
+        "armRight": { "pose": "flat", "w": 1, "palm": "in", "fingers": [1, -0.4, 0] },
+        "armLeft": { "pose": "flat", "w": 1, "palm": "in", "fingers": [1, -0.4, 0] }
       },
       "ease": "smooth"
     },
@@ -23,12 +23,12 @@
       "t": 0.5,
       "pose": {},
       "reach": {
-        "armNear": { "to": "chest", "offset": [40, 18, 3], "elbow": [-0.1, 0.6, 1.4] },
-        "armFar": { "to": "otherPalm", "offset": [12, -6, 0], "elbow": [-0.1, 0.6, 1.4] }
+        "armRight": { "to": "chest", "offset": [40, 18, 3], "elbow": [-0.1, 0.6, 1.4] },
+        "armLeft": { "to": "otherPalm", "offset": [12, -6, 0], "elbow": [-0.1, 0.6, 1.4] }
       },
       "hand": {
-        "armNear": { "pose": "flat", "w": 1, "palm": "in", "fingers": [1, -0.4, 0] },
-        "armFar": { "pose": "flat", "w": 1, "palm": "in", "fingers": [1, -0.4, 0] }
+        "armRight": { "pose": "flat", "w": 1, "palm": "in", "fingers": [1, -0.4, 0] },
+        "armLeft": { "pose": "flat", "w": 1, "palm": "in", "fingers": [1, -0.4, 0] }
       },
       "ease": "smooth"
     },
@@ -36,17 +36,17 @@
       "t": 1,
       "pose": {},
       "reach": {
-        "armNear": { "to": "chest", "offset": [46, 16, 3], "elbow": [-0.1, 0.6, 1.4] },
-        "armFar": { "to": "otherPalm", "offset": [-12, 6, 0], "elbow": [-0.1, 0.6, 1.4] }
+        "armRight": { "to": "chest", "offset": [46, 16, 3], "elbow": [-0.1, 0.6, 1.4] },
+        "armLeft": { "to": "otherPalm", "offset": [-12, 6, 0], "elbow": [-0.1, 0.6, 1.4] }
       },
       "hand": {
-        "armNear": { "pose": "flat", "w": 1, "palm": "in", "fingers": [1, -0.4, 0] },
-        "armFar": { "pose": "flat", "w": 1, "palm": "in", "fingers": [1, -0.4, 0] }
+        "armRight": { "pose": "flat", "w": 1, "palm": "in", "fingers": [1, -0.4, 0] },
+        "armLeft": { "pose": "flat", "w": 1, "palm": "in", "fingers": [1, -0.4, 0] }
       },
       "ease": "smooth"
     }
   ],
   "events": [],
-  "note": "Xoa hai bàn tay vào nhau trước ngực dưới (nịnh, háo hức): tay gần trước ngực (mốc `chest`, offset [46…40, 16…18, 3]), tay xa áp lòng tay vào lòng tay gần (`otherPalm`) trượt tới-lui so le ±12, dáng `flat` duỗi, ngón chĩa ra trước, hơi lên; 0,5 s một lượt, lặp. Chỉ ghi hai tay, `hand`. Nền `stand-3d`, `sit-3d` hay `walk`; mốc theo mặt áo nên người bụng phệ tay tự ra trước bụng. Vào blend ~0,3, thôi bằng clip lớp dưới blend ~0,3; đi với `face-greedy`, `face-forced-smile`.",
+  "note": "Xoa hai bàn tay vào nhau trước ngực dưới (nịnh, háo hức): tay phải trước ngực (mốc `chest`, offset [46…40, 16…18, 3]), tay trái áp lòng tay vào lòng tay phải (`otherPalm`) trượt tới-lui so le ±12, dáng `flat` duỗi, ngón chĩa ra trước, hơi lên; 0,5 s một lượt, lặp. Chỉ ghi hai tay, `hand`. Nền `stand-3d`, `sit-3d` hay `walk`; mốc theo mặt áo nên người bụng phệ tay tự ra trước bụng. Vào blend ~0,3, thôi bằng clip lớp dưới blend ~0,3; đi với `face-greedy`, `face-forced-smile`.",
   "preview": { "stage": "stand" }
 }

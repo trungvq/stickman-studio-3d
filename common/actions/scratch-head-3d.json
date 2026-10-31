@@ -1,48 +1,48 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "scratch-head-3d",
   "duration": 1,
   "end": "wrap",
   "authoredAt": "side",
-  "mask": ["armNear", "head", "hand"],
+  "mask": ["armRight", "head", "hand"],
   "keys": [
     {
       "t": 0,
       "pose": { "head": [-5, 0, 8] },
-      "reach": { "armNear": { "to": "ear", "offset": [-8, -12, 4], "elbow": [0.2, -0.2, 1] } },
-      "hand": { "armNear": { "pose": "scratch", "palm": "in", "fingers": "up" } },
+      "reach": { "armRight": { "to": "ear", "offset": [-8, -12, 4], "elbow": [0.2, -0.2, 1] } },
+      "hand": { "armRight": { "pose": "scratch", "palm": "in", "fingers": "up" } },
       "ease": "smooth"
     },
     {
       "t": 0.25,
       "pose": { "head": [-5, 0, 8] },
-      "reach": { "armNear": { "to": "ear", "offset": [-6, -7, 4], "elbow": [0.2, -0.2, 1] } },
-      "hand": { "armNear": { "pose": "scratch", "palm": "in", "fingers": "up" } },
+      "reach": { "armRight": { "to": "ear", "offset": [-6, -7, 4], "elbow": [0.2, -0.2, 1] } },
+      "hand": { "armRight": { "pose": "scratch", "palm": "in", "fingers": "up" } },
       "ease": "smooth"
     },
     {
       "t": 0.5,
       "pose": { "head": [-5, 0, 8] },
-      "reach": { "armNear": { "to": "ear", "offset": [-8, -12, 4], "elbow": [0.2, -0.2, 1] } },
-      "hand": { "armNear": { "pose": "scratch", "palm": "in", "fingers": "up" } },
+      "reach": { "armRight": { "to": "ear", "offset": [-8, -12, 4], "elbow": [0.2, -0.2, 1] } },
+      "hand": { "armRight": { "pose": "scratch", "palm": "in", "fingers": "up" } },
       "ease": "smooth"
     },
     {
       "t": 0.75,
       "pose": { "head": [-5, 0, 8] },
-      "reach": { "armNear": { "to": "ear", "offset": [-6, -7, 4], "elbow": [0.2, -0.2, 1] } },
-      "hand": { "armNear": { "pose": "scratch", "palm": "in", "fingers": "up" } },
+      "reach": { "armRight": { "to": "ear", "offset": [-6, -7, 4], "elbow": [0.2, -0.2, 1] } },
+      "hand": { "armRight": { "pose": "scratch", "palm": "in", "fingers": "up" } },
       "ease": "smooth"
     },
     {
       "t": 1,
       "pose": { "head": [-5, 0, 8] },
-      "reach": { "armNear": { "to": "ear", "offset": [-8, -12, 4], "elbow": [0.2, -0.2, 1] } },
-      "hand": { "armNear": { "pose": "scratch", "palm": "in", "fingers": "up" } },
+      "reach": { "armRight": { "to": "ear", "offset": [-8, -12, 4], "elbow": [0.2, -0.2, 1] } },
+      "hand": { "armRight": { "pose": "scratch", "palm": "in", "fingers": "up" } },
       "ease": "smooth"
     }
   ],
   "events": [],
-  "note": "Gãi đầu ngượng: tay gần đặt lòng tay sau-trên tai (mốc `ear`, offset [−8, −12, 4] ↔ [−6, −7, 4]), dáng `scratch` của thư viện tay, khuỷu chĩa ra ngoài; gãi hai nhịp mỗi lượt 1 s, lặp; đầu cúi 8°, nghiêng 5° về phía tay. Chỉ ghi `armNear`, `head`, `hand`. Nền `stand-3d` hay `sit-3d`; vào blend ~0,3, thôi bằng clip rỗng blend ~0,4. Đi với `face-shy`; tay xa để trống.",
+  "note": "Gãi đầu ngượng: tay phải đặt lòng tay sau-trên tai (mốc `ear`, offset [−8, −12, 4] ↔ [−6, −7, 4]), dáng `scratch` của thư viện tay, khuỷu chĩa ra ngoài; gãi hai nhịp mỗi lượt 1 s, lặp; đầu cúi 8°, nghiêng 5° về phía tay. Chỉ ghi `armRight`, `head`, `hand`. Nền `stand-3d` hay `sit-3d`; vào blend ~0,3, thôi bằng clip rỗng blend ~0,4. Đi với `face-shy`; tay trái để trống.",
   "preview": { "stage": "stand" }
 }

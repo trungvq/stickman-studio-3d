@@ -119,13 +119,13 @@ const ARM = 24;
 /** Từng cảnh: một hành động cho cả ba người; `sit` ngồi ghế đẩu, `chair` ngồi ghế bành */
 const ACTS = {
   cover: { tracks: [track(clip('stand-3d')), track(clip('cover-mouth-3d'))] },
-  ear: { tracks: [track(clip('stand-3d')), track(clip('phone-ear-3d'))], equip: { handNear: 'phone' } },
-  'ear-sit': { sit: true, tracks: [track(clip('sit-3d')), track(clip('phone-ear-3d'))], equip: { handNear: 'phone' } },
+  ear: { tracks: [track(clip('stand-3d')), track(clip('phone-ear-3d'))], equip: { handRight: 'phone' } },
+  'ear-sit': { sit: true, tracks: [track(clip('sit-3d')), track(clip('phone-ear-3d'))], equip: { handRight: 'phone' } },
   clap: { tracks: [track(clip('stand-3d')), track(clip('clap-3d', 0, { cycle: 0.42 }))] },
   behind: { tracks: [track(clip('stand-3d')), track(clip('hands-behind-3d'))] },
   armrest: { chair: true, tracks: [track(clip('sit-3d')), track(clip('hands-flat-3d'))] },
-  sake: { sit: true, tracks: [track(clip('sit-3d')), track(clip('raise-cup-3d'))], equip: { handNear: 'sake' } },
-  phone2: { tracks: [track(clip('stand-3d')), track(clip('phone-landscape-3d'))], equip: { handNear: 'phoneWide' } },
+  sake: { sit: true, tracks: [track(clip('sit-3d')), track(clip('raise-cup-3d'))], equip: { handRight: 'sake' } },
+  phone2: { tracks: [track(clip('stand-3d')), track(clip('phone-landscape-3d'))], equip: { handRight: 'phoneWide' } },
 };
 
 /** Đích bàn tay trên tay vịn (thế giới): lòng tay úp trên mặt tay vịn, giữa vịn */
@@ -161,7 +161,7 @@ export function handAimDemo(q) {
     for (const p of people) {
       const sp = sceneAt(rt, p.id, t, heights[p.id], bodies[p.id]);
       act(p.fig, sp, t);
-      if (p.equip) dress(p.fig, p.equip, !!sp.world?.flip);
+      if (p.equip) dress(p.fig, p.equip);
     }
   };
   return {

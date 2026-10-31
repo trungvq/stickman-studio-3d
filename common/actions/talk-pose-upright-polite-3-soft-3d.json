@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "talk-pose-upright-polite-3-soft-3d",
   "duration": 3.2,
   "end": "wrap",
@@ -10,6 +10,6 @@
     { "t": 0.5, "pose": { "torso": [4.5, 0.9], "head": [1.2, null, -2.4] }, "ease": "linear" }
   ],
   "events": [],
-  "note": "Dáng thoại 3 của bộ `talk-pose-upright-polite`, độ lệch khỏi dáng nền ×0,6 cho cận mặt (đầu to trên hình, dáng thường làm đầu trượt như lắc) — nền đứng thẳng (thân 0°, đầu 0°), tính lễ phép: biên độ nhỏ, đầu bù ~0,8° mỗi độ thân cho cằm ngang, mắt vẫn trên người nghe: cúi nhẹ 5° như giải thích lễ phép, ngẩng bù 4° cho cằm ngang. Lặp 3,2 s, giữ nhịp thở của `stand-3d` (thân +1,5° ở nửa lượt); clip đặt `phase` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi `torso` (cúi, nghiêng) và nghiêng, gật của `head`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay xa ống kính. Nền `stand-3d`, ngồi thì `sit-3d`. Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới. Cùng dáng: `talk-pose-upright-polite-3-3d`, `talk-pose-upright-polite-3-nod-3d`, `talk-pose-upright-polite-3-soft-3d`, `talk-pose-upright-polite-3-big-3d`. Sinh bằng `tools/actions/talk-pose.mjs`.",
+  "note": "Dáng thoại 3 của bộ `talk-pose-upright-polite`, độ lệch khỏi dáng nền ×0,6 cho cận mặt (đầu to trên hình, dáng thường làm đầu trượt như lắc) — nền đứng thẳng (thân 0°, đầu 0°), tính lễ phép: biên độ nhỏ, đầu bù ~0,8° mỗi độ thân cho cằm ngang, mắt vẫn trên người nghe: cúi nhẹ 5° như giải thích lễ phép, ngẩng bù 4° cho cằm ngang. Lặp 3,2 s, giữ nhịp thở của `stand-3d` (thân +1,5° ở nửa lượt); clip đặt `phase` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi `torso` (cúi, nghiêng) và nghiêng, gật của `head`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay trái. Nền `stand-3d`, ngồi thì `sit-3d`. Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới. Cùng dáng: `talk-pose-upright-polite-3-3d`, `talk-pose-upright-polite-3-nod-3d`, `talk-pose-upright-polite-3-soft-3d`, `talk-pose-upright-polite-3-big-3d`. Sinh bằng `tools/actions/talk-pose.mjs`.",
   "preview": { "stage": "stand" }
 }

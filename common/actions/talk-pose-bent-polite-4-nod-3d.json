@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "talk-pose-bent-polite-4-nod-3d",
   "duration": 3.2,
   "end": "wrap",
@@ -10,6 +10,6 @@
     { "t": 0.5, "pose": { "torso": [26.5, -3], "head": [-3, null, 14] }, "ease": "linear" }
   ],
   "events": [],
-  "note": "Cú gật nhấn của `talk-pose-bent-polite-4-3d`: cùng thân, đầu gật thêm 3°. Đặt ~0,1 s ở chữ nhấn rồi trả về `talk-pose-bent-polite-4-3d`, đầu gật xuống rồi về trong ~0,3 s. Lặp 3,2 s, giữ nhịp thở của `stand-3d` (thân +1,5° ở nửa lượt); clip đặt `phase` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi `torso` (cúi, nghiêng) và nghiêng, gật của `head`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay xa ống kính. Nền `stand-3d` sau quầy, bàn trước mặt. Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới. Cùng dáng: `talk-pose-bent-polite-4-3d`, `talk-pose-bent-polite-4-nod-3d`, `talk-pose-bent-polite-4-soft-3d`, `talk-pose-bent-polite-4-big-3d`. Sinh bằng `tools/actions/talk-pose.mjs`.",
+  "note": "Cú gật nhấn của `talk-pose-bent-polite-4-3d`: cùng thân, đầu gật thêm 3°. Đặt ~0,1 s ở chữ nhấn rồi trả về `talk-pose-bent-polite-4-3d`, đầu gật xuống rồi về trong ~0,3 s. Lặp 3,2 s, giữ nhịp thở của `stand-3d` (thân +1,5° ở nửa lượt); clip đặt `phase` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi `torso` (cúi, nghiêng) và nghiêng, gật của `head`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay trái. Nền `stand-3d` sau quầy, bàn trước mặt. Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới. Cùng dáng: `talk-pose-bent-polite-4-3d`, `talk-pose-bent-polite-4-nod-3d`, `talk-pose-bent-polite-4-soft-3d`, `talk-pose-bent-polite-4-big-3d`. Sinh bằng `tools/actions/talk-pose.mjs`.",
   "preview": { "stage": "counter" }
 }

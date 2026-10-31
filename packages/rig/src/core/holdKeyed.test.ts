@@ -56,10 +56,10 @@ function runtime(hands: unknown[], items: unknown[], world: object = { at: AT, y
 }
 
 const poseAt = (rt: SceneRuntime, t: number) => sceneAt(rt, "nguoi", t, H, DIMS) as ActInput;
-/** Lần cầm tay phải ở `t` (tay gần khi không lật) */
+/** Lần cầm tay phải ở `t` */
 const rightHold = (rt: SceneRuntime, t: number) => {
   const W = poseAt(rt, t).world!;
-  return (W.flip ? W.hands!.far : W.hands!.near)!.hold as ReachHold;
+  return W.hands!.right!.hold as ReachHold;
 };
 const mark = (t: number, offset = [30, -2.9, 0], ease?: string) => ({
   t,
@@ -342,7 +342,7 @@ describe("lần cầm một tay theo mốc", () => {
     // trước mốc cầm và lúc bàn tay đang hoà tới món: đích tay tự do vẫn là đích của mốc 0,4 s
     for (const t of [0.7, 0.99, 1.15]) {
       const W = poseAt(rt, t).world!;
-      const h = (W.flip ? W.hands!.far : W.hands!.near)!;
+      const h = W.hands!.right!;
       expect(h.w).toBe(1);
       expect(dist(h.at, AIM)).toBeLessThan(1e-9);
     }

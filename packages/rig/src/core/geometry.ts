@@ -31,18 +31,16 @@ export interface Figure {
   /** Độ dài chuẩn, chưa nhân `stretch`; hộp mảnh đo theo đây */
   len: Lengths;
   stretch: Stretch;
-  /** Gốc chi gần ống kính nằm phía nào: `-1`, riêng thân áo dựng khối ở `rear` là `+1` */
   shoulderSpan: number;
   hipSpan: number;
-  nearSide: 1 | -1;
   cap: number;
   armOuter: number;
-  legF: Pt[];
-  legN: Pt[];
-  armF: Pt[];
-  armN: Pt[];
-  shF: Pt;
-  shN: Pt;
+  legL: Pt[];
+  legR: Pt[];
+  armL: Pt[];
+  armR: Pt[];
+  shL: Pt;
+  shR: Pt;
   /** y của bàn chân thấp nhất, tính từ hông */
   lowest: number;
 }
@@ -55,18 +53,18 @@ const chain = (root: Pt, a: readonly number[], l1: number, l2: number): Pt[] => 
 };
 
 /**
- * Hai bàn chân `[xa, gần]` so với tâm hông, bỏ bề ngang hông vì nó là hằng số. `spread` là của
+ * Hai bàn chân `[trái, phải]` so với tâm hông, bỏ bề ngang hông vì nó là hằng số. `spread` là của
  * người 3D: chân nâng dang ra thì bàn chân lên theo `cos` góc dang, như `act` dựng.
  */
 export function feet(P: Pose, height: number, spread = false): [Pt, Pt] {
   const thigh = RIG.thigh * height;
   const shin = RIG.shin * height;
   const s = P.stretch;
-  const foot = (ch: "lf" | "ln", l1: number, l2: number): Pt => {
+  const foot = (ch: "ll" | "lr", l1: number, l2: number): Pt => {
     const [x, y] = chain([0, 0], P[ch], l1, l2)[2];
     return spread && P.lift?.[ch] ? [x, y * Math.cos((P[ch][2] ?? 0) * D)] : [x, y];
   };
-  return [foot("lf", thigh * s[4], shin * s[5]), foot("ln", thigh * s[6], shin * s[7])];
+  return [foot("ll", thigh * s[4], shin * s[5]), foot("lr", thigh * s[6], shin * s[7])];
 }
 
 /**
@@ -85,34 +83,32 @@ export function computeFigure(c: CharacterData, P: Pose): Figure {
   const solid = c.pieces.torso.src === "sculpt";
   const shoulderSpan = solid ? limbSpread(shoulderRoot(c), 0) : rig.shoulderHalf;
   const hipSpan = solid ? limbSpread(rig.hipHalf, 0) : rig.hipHalf;
-  const nearSide = -1;
-
-  const hipN: Pt = [nearSide * hipSpan, 0];
-  const hipF: Pt = [-nearSide * hipSpan, 0];
-  const legF = chain(hipF, P.lf, len.thigh * s[4], len.shin * s[5]);
-  const legN = chain(hipN, P.ln, len.thigh * s[6], len.shin * s[7]);
+  // khung nhìn chính diện: bên phải người ở `−x`
+  const hipR: Pt = [-hipSpan, 0];
+  const hipL: Pt = [hipSpan, 0];
+  const legL = chain(hipL, P.ll, len.thigh * s[4], len.shin * s[5]);
+  const legR = chain(hipR, P.lr, len.thigh * s[6], len.shin * s[7]);
 
   const shY = -len.torso + rig.shoulderDrop;
-  const shN: Pt = [nearSide * shoulderSpan, shY];
-  const shF: Pt = [-nearSide * shoulderSpan, shY];
-  const armF = chain(shF, P.af, len.upperArm * s[0], len.foreArm * s[1]);
-  const armN = chain(shN, P.an, len.upperArm * s[2], len.foreArm * s[3]);
+  const shR: Pt = [-shoulderSpan, shY];
+  const shL: Pt = [shoulderSpan, shY];
+  const armL = chain(shL, P.al, len.upperArm * s[0], len.foreArm * s[1]);
+  const armR = chain(shR, P.ar, len.upperArm * s[2], len.foreArm * s[3]);
 
   return {
     len,
     stretch: P.stretch,
     shoulderSpan,
     hipSpan,
-    nearSide,
     cap,
     armOuter,
-    legF,
-    legN,
-    armF,
-    armN,
-    shF,
-    shN,
-    lowest: Math.max(legF[2][1], legN[2][1]),
+    legL,
+    legR,
+    armL,
+    armR,
+    shL,
+    shR,
+    lowest: Math.max(legL[2][1], legR[2][1]),
   };
 }
 

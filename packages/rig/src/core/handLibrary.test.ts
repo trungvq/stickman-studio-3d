@@ -40,12 +40,12 @@ function runtime(hands: unknown[], lib: HandShapes = LIB, clips = false) {
     duration: 4,
     end: "hold",
     authoredAt: "side",
-    mask: ["armNear", "armFar", "hand"],
+    mask: ["armRight", "armLeft", "hand"],
     keys: [
       {
         t: 0,
-        pose: { armNear: [10, 20, 0], armFar: [10, 20, 0] },
-        hand: { armNear: "point", armFar: "point" },
+        pose: { armRight: [10, 20, 0], armLeft: [10, 20, 0] },
+        hand: { armRight: "point", armLeft: "point" },
       },
     ],
   });
@@ -53,13 +53,12 @@ function runtime(hands: unknown[], lib: HandShapes = LIB, clips = false) {
   return resolveScene(r.data, clips ? { chi: chi.data } : {}, {}, {}, {}, lib);
 }
 
-/** Số bàn tay phải, trái ở `t`: tay phải là kênh gần khi không lật */
+/** Số bàn tay phải, trái ở `t` */
 const hands = (rt: ReturnType<typeof runtime>, t: number) => {
   const sp = sceneAt(rt, "a", t);
-  const flip = !!sp.world?.flip;
-  return { right: sp.pose.hand?.[flip ? "af" : "an"], left: sp.pose.hand?.[flip ? "an" : "af"] };
+  return { right: sp.pose.hand?.ar, left: sp.pose.hand?.al };
 };
-const near = (rt: ReturnType<typeof runtime>, t: number) => hands(rt, t).right;
+const right = (rt: ReturnType<typeof runtime>, t: number) => hands(rt, t).right;
 
 describe("file dáng tay", () => {
   it("nạp: thiếu `schemaVersion` là bản hiện hành, `fit` tuỳ chọn; bản khác là lỗi phiên bản", () => {
@@ -102,7 +101,7 @@ describe("`pose` của mốc tay", () => {
     expect(p({ pose: "fist", palm: "up" }).error!.message).toMatch(/chỉ có `pose`/);
     expect(p({ at: [0, -200, 450], w: 0.5 }).error!.message).toMatch(/`w` chỉ đi với `pose`/);
     expect(p({}).success).toBe(false);
-    expect(SCENE_VERSION).toBe(36);
+    expect(SCENE_VERSION).toBe(37);
   });
 
   it("tên không có trong thư viện: `resolveScene` báo rõ", () => {
@@ -129,11 +128,11 @@ describe("`pose` của mốc tay", () => {
       LIB,
       true,
     );
-    const mid = near(rt, 1)!;
+    const mid = right(rt, 1)!;
     expect(mid[2]).toBeCloseTo((PEACE.fingers[0] + HAND_POSES.fist.thumb[0]) / 2);
     expect(mid[N + 4]).toBeCloseTo(PEACE.fit![4] / 2);
-    expect(near(rt, 3)!.slice(2, N)).toEqual(fingerVec(HAND_POSES.point));
-    expect(near(rt, 3.5)!.slice(2, N)).toEqual(fingerVec(HAND_POSES.point));
+    expect(right(rt, 3)!.slice(2, N)).toEqual(fingerVec(HAND_POSES.point));
+    expect(right(rt, 3.5)!.slice(2, N)).toEqual(fingerVec(HAND_POSES.point));
   });
 
   it("mốc chỉ có `pose` không đụng tới đích tay", () => {
@@ -145,21 +144,21 @@ describe("`pose` của mốc tay", () => {
     const shaped = runtime([keys[0], { t: 1, right: { pose: "fist" } }, keys[1]]);
     for (const t of [0.5, 1, 1.5])
       expect(sceneAt(shaped, "a", t).world).toStrictEqual(sceneAt(plain, "a", t).world);
-    expect(near(shaped, 1)?.slice(2, N)).toEqual(fingerVec(HAND_POSES.fist));
+    expect(right(shaped, 1)?.slice(2, N)).toEqual(fingerVec(HAND_POSES.fist));
   });
 });
 
-/** Hành động chỉ ghi bàn tay gần: mốc `k[i]` ở pha `i / (n - 1)`, nội suy thẳng */
+/** Hành động chỉ ghi bàn tay phải: mốc `k[i]` ở pha `i / (n - 1)`, nội suy thẳng */
 function handAction(...k: unknown[]) {
   const r = parseAction({
     name: "vay",
     duration: 4,
     end: "hold",
     mask: ["hand"],
-    keys: k.map((armNear, i) => ({
+    keys: k.map((armRight, i) => ({
       t: i / Math.max(1, k.length - 1),
       pose: {},
-      hand: { armNear },
+      hand: { armRight },
       ease: "linear",
     })),
   });
@@ -169,8 +168,8 @@ function handAction(...k: unknown[]) {
 
 describe("dáng của thư viện ở `keys[].hand`", () => {
   it("schema: tên dáng có sẵn hay tên file của thư viện, ở cả tên trần và `pose`; tên sai dạng là lỗi", () => {
-    const p = (armNear: unknown) =>
-      parseAction({ keys: [{ t: 0, pose: {}, hand: { armNear } }] }).success;
+    const p = (armRight: unknown) =>
+      parseAction({ keys: [{ t: 0, pose: {}, hand: { armRight } }] }).success;
     expect(p("peace")).toBe(true);
     expect(p({ pose: "chu-v", w: 0.5, turn: 30 })).toBe(true);
     expect(p("edgePinch")).toBe(true);
@@ -195,17 +194,17 @@ describe("dáng của thư viện ở `keys[].hand`", () => {
       ...PEACE.fit!,
     ]);
     expect(handKeyVec("khong-co", LIB)).toEqual([0, 0, ...fingerVec(HAND_RELAXED)]);
-    expect(actionHand(handAction("peace"), 0, LIB).an).toEqual([
+    expect(actionHand(handAction("peace"), 0, LIB).ar).toEqual([
       0,
       0,
       ...PEACE.fingers,
       ...PEACE.fit!,
     ]);
-    expect(actionHand(handAction("peace"), 0).an).toEqual([0, 0, ...fingerVec(HAND_RELAXED)]);
+    expect(actionHand(handAction("peace"), 0).ar).toEqual([0, 0, ...fingerVec(HAND_RELAXED)]);
   });
 
   it("giữa dáng có sẵn và dáng của thư viện hoà cả góc ngón và `fit`", () => {
-    const mid = actionHand(handAction("fist", "peace"), 0.5, LIB).an!;
+    const mid = actionHand(handAction("fist", "peace"), 0.5, LIB).ar!;
     expect(mid[2]).toBeCloseTo((HAND_POSES.fist.thumb[0] + PEACE.fingers[0]) / 2);
     expect(mid[N + 4]).toBeCloseTo(PEACE.fit![4] / 2);
     expect(mixHand([1, 2], [3, 4, 5], 0.5)).toEqual([2, 3, 2.5]);
@@ -225,7 +224,7 @@ describe("dáng của thư viện ở `keys[].hand`", () => {
     });
     if (!r.success) throw new Error(r.error.message);
     const run = (a: ReturnType<typeof handAction>, lib: HandShapes) =>
-      sceneAt(resolveScene(r.data, { vay: a }, {}, {}, {}, lib), "a", 1).pose.hand?.an;
+      sceneAt(resolveScene(r.data, { vay: a }, {}, {}, {}, lib), "a", 1).pose.hand?.ar;
     expect(run(handAction("peace"), LIB)).toEqual([0, 0, ...PEACE.fingers, ...PEACE.fit!]);
     expect(run(handAction({ pose: "peace", w: 0.5 }), LIB)?.[N + 4]).toBeCloseTo(PEACE.fit![4] / 2);
     expect(run(handAction("khong-co"), LIB)?.slice(2, N)).toEqual(fingerVec(HAND_RELAXED));

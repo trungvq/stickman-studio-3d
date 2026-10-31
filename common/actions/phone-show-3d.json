@@ -1,17 +1,16 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "phone-show-3d",
   "duration": 1.2,
   "end": "hold",
-  "mask": ["armNear", "hand"],
+  "mask": ["armRight", "hand"],
   "authoredAt": "side",
-  "sides": "anatomical",
   "keys": [
     {
       "t": 0,
       "pose": {},
       "reach": {
-        "armNear": {
+        "armRight": {
           "to": "belly",
           "offset": [24, -20, 44],
           "point": "grip",
@@ -19,39 +18,39 @@
         }
       },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "span", "w": 1, "palm": "forward" } }
+      "hand": { "armRight": { "pose": "span", "w": 1, "palm": "forward" } }
     },
     {
       "t": 0.35,
       "pose": {},
-      "reach": { "armNear": { "at": [100, -108, 40], "point": "grip", "elbow": [-0.2, 1, 0.6] } },
+      "reach": { "armRight": { "at": [100, -108, 40], "point": "grip", "elbow": [-0.2, 1, 0.6] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "span", "w": 1, "palm": "forward" } }
+      "hand": { "armRight": { "pose": "span", "w": 1, "palm": "forward" } }
     },
     {
       "t": 0.5,
       "pose": {},
-      "reach": { "armNear": { "at": [108, -111, 40], "point": "grip", "elbow": [-0.2, 1, 0.6] } },
+      "reach": { "armRight": { "at": [108, -111, 40], "point": "grip", "elbow": [-0.2, 1, 0.6] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "span", "w": 1, "palm": "forward" } }
+      "hand": { "armRight": { "pose": "span", "w": 1, "palm": "forward" } }
     },
     {
       "t": 0.65,
       "pose": {},
-      "reach": { "armNear": { "at": [100, -108, 40], "point": "grip", "elbow": [-0.2, 1, 0.6] } },
+      "reach": { "armRight": { "at": [100, -108, 40], "point": "grip", "elbow": [-0.2, 1, 0.6] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "span", "w": 1, "palm": "forward" } }
+      "hand": { "armRight": { "pose": "span", "w": 1, "palm": "forward" } }
     },
     {
       "t": 1,
       "pose": {},
-      "reach": { "armNear": { "at": [100, -108, 40], "point": "grip", "elbow": [-0.2, 1, 0.6] } },
+      "reach": { "armRight": { "at": [100, -108, 40], "point": "grip", "elbow": [-0.2, 1, 0.6] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "span", "w": 1, "palm": "forward" } }
+      "hand": { "armRight": { "pose": "span", "w": 1, "palm": "forward" } }
     }
   ],
   "events": [],
-  "note": "Giơ màn hình điện thoại về người đối diện: tay phải từ trước bụng đưa ra trước ngang ngực (hệ thân [100, −108, 40]) lúc 0,42 s, dí thêm một nhịp lúc 0,6 s rồi giữ. Chỉ ghi `armNear`, `hand`; `sides: \"anatomical\"`. Nền `stand-3d`; món ở `world.hands[].hold` tay phải, như `dien-thoai@palmBox` với `face` màn về `{ cast: \"<người xem>\" }`, `roll` đầu máy lên; người xem đứng trước mặt ~220. Hạ bằng clip rỗng blend ~0,4.",
+  "note": "Giơ màn hình điện thoại về người đối diện: tay phải từ trước bụng đưa ra trước ngang ngực (hệ thân [100, −108, 40]) lúc 0,42 s, dí thêm một nhịp lúc 0,6 s rồi giữ. Chỉ ghi `armRight`, `hand`. Nền `stand-3d`; món ở `world.hands[].hold` tay phải, như `dien-thoai@palmBox` với `face` màn về `{ cast: \"<người xem>\" }`, `roll` đầu máy lên; người xem đứng trước mặt ~220. Hạ bằng clip rỗng blend ~0,4.",
   "preview": {
     "stage": "stand",
     "hold": {

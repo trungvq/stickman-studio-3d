@@ -176,10 +176,10 @@ export function gaitTrace(
     const t = k * w.step;
     const sp = sceneAt(rt, id, t, height, body);
     const wd = sp.world;
-    const [far, near] = legs3World(sp.pose, wd, height, body.hipHalf);
-    const legs = wd.flip ? [far, near] : [near, far];
+    const [left, right] = legs3World(sp.pose, wd, height, body.hipHalf);
+    const legs = [right, left];
     const ft = feet(sp.pose, height, true);
-    const ys = (wd.flip ? [ft[0], ft[1]] : [ft[1], ft[0]]).map((p) => p[1] / height);
+    const ys = [ft[1], ft[0]].map((p) => p[1] / height);
     const F = dirOf(wd.yaw);
     const fwd = legs.map((l) => (l[2][0] - wd.hip[0]) * F[0] + (l[2][2] - wd.hip[2]) * F[2]);
     bearing =

@@ -73,10 +73,9 @@ function runtime(hands: unknown[], held: Record<string, HeldItemSpec>): SceneRun
 }
 const poseAt = (rt: SceneRuntime, t: number): ActInput =>
   sceneAt(rt, "nguoi", t, H, body3(NGUOI)) as ActInput;
-const nearSide = (sp: ActInput) => (sp.world!.flip ? 1 : -1);
 const rightHold = (sp: ActInput): ReachHold => {
   const w = sp.world!;
-  return (w.flip ? w.hands!.far : w.hands!.near)!.hold!;
+  return w.hands!.right!.hold!;
 };
 
 describe("lớp liên kết tay ↔ món", () => {
@@ -95,7 +94,7 @@ describe("lớp liên kết tay ↔ món", () => {
     expect(h.grasp!.mode).toBe("hand");
     const { G } = holdLinkFrame(h, -1);
     expect(rotDeg(G.R, FIX["dien-thoai#doc"]["1"].right.R)).toBeLessThanOrEqual(5);
-    const role = holdRoles(sp.world!.hands, nearSide(sp))[-1]!;
+    const role = holdRoles(sp.world!.hands)[-1]!;
     expect(role.role).toBe("lead");
     expect(role.roles).toBeDefined();
     // dáng ngón là dáng gốc đã hoà của khung cầm
@@ -150,7 +149,7 @@ describe("lớp liên kết tay ↔ món", () => {
     expect(other[2]).toBeLessThan(-20);
     expect(itemGeom(BANG).features[x.frame!.choice.featureIndex!].kind).toBe("slab");
 
-    const roles = holdRoles(sp.world!.hands, nearSide(sp));
+    const roles = holdRoles(sp.world!.hands);
     expect(roles[-1]).toMatchObject({ role: "lead", lead: -1 });
     expect(roles[1]).toMatchObject({ role: "support", lead: -1 });
     const rep = actAim(NGUOI, sp)!.report;
@@ -170,8 +169,7 @@ describe("lớp liên kết tay ↔ món", () => {
     const across = (hands: object, side: "right" | "left") => {
       const sp = poseAt(runtime([{ t: 0, ...hands }], { "bang-gia": BANG }), 0.5);
       const w = sp.world!;
-      const near = w.flip ? side === "left" : side === "right";
-      const h = (near ? w.hands!.near : w.hands!.far)!.hold!;
+      const h = w.hands![side]!.hold!;
       const x = holdHand(h, side === "right" ? -1 : 1, handDims(1))!;
       expect(x.frame!.choice.edge).toBe("bottom");
       return { along: x.frame!.choice.along, x: heldPoint(BANG, x.hand.at as V3)[0] };
@@ -275,7 +273,7 @@ describe("lớp liên kết tay ↔ món", () => {
       const sp = poseAt(rt, 0.5);
       const w = sp.world!;
       const side = key === "right" ? -1 : 1;
-      const h = (side === nearSide(sp) ? w.hands!.near : w.hands!.far)!.hold!;
+      const h = (side === -1 ? w.hands!.right : w.hands!.left)!.hold!;
       const x = holdHand(h, side, handDims(1))!;
       expect(x.frame!.choice.variant).toBe("flat");
       // lòng tay áp mặt lưng, ngón ngang thân chếch `BOX_RISE` về đầu loa (khung món)

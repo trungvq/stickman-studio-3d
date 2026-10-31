@@ -1,34 +1,34 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "wave-soft-3d",
   "duration": 0.44,
   "end": "wrap",
-  "mask": ["armNear", "hand"],
+  "mask": ["armRight", "hand"],
   "authoredAt": "side",
   "keys": [
     {
       "t": 0,
       "pose": {},
-      "reach": { "armNear": { "at": [35, -140, 92], "elbow": [0, 1, 0.6] } },
+      "reach": { "armRight": { "at": [35, -140, 92], "elbow": [0, 1, 0.6] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "open", "palm": "forward", "fingers": "up" } }
+      "hand": { "armRight": { "pose": "open", "palm": "forward", "fingers": "up" } }
     },
     {
       "t": 0.5,
       "pose": {},
-      "reach": { "armNear": { "at": [35, -140, 112], "elbow": [0, 1, 0.6] } },
+      "reach": { "armRight": { "at": [35, -140, 112], "elbow": [0, 1, 0.6] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "open", "palm": "forward", "fingers": "up" } }
+      "hand": { "armRight": { "pose": "open", "palm": "forward", "fingers": "up" } }
     },
     {
       "t": 1,
       "pose": {},
-      "reach": { "armNear": { "at": [35, -140, 92], "elbow": [0, 1, 0.6] } },
+      "reach": { "armRight": { "at": [35, -140, 92], "elbow": [0, 1, 0.6] } },
       "ease": "smooth",
-      "hand": { "armNear": { "pose": "open", "palm": "forward", "fingers": "up" } }
+      "hand": { "armRight": { "pose": "open", "palm": "forward", "fingers": "up" } }
     }
   ],
   "events": [],
-  "note": "Vẫy chào bằng tay gần, vẫy khẽ: bàn tay ngang vai, trước vai, cẳng tay lắc ít: cổ tay đi qua lại giữa đích hệ thân [35, -140, 92] và [35, -140, 112], một lượt 0,44 s, lặp; bàn tay `open`, lòng ra trước, ngón dựng. Chỉ ghi `armNear`, `hand`. Nền `stand-3d`, `sit-3d`. Vào và buông bằng blend của clip ~0,3. Bản cùng họ: `wave-soft-3d`, `wave-3d`, `wave-big-3d`. Sinh bằng `tools/actions/wave.mjs`.",
+  "note": "Vẫy chào bằng tay phải, vẫy khẽ: bàn tay ngang vai, trước vai, cẳng tay lắc ít: cổ tay đi qua lại giữa đích hệ thân [35, -140, 92] và [35, -140, 112], một lượt 0,44 s, lặp; bàn tay `open`, lòng ra trước, ngón dựng. Chỉ ghi `armRight`, `hand`. Nền `stand-3d`, `sit-3d`. Vào và buông bằng blend của clip ~0,3. Bản cùng họ: `wave-soft-3d`, `wave-3d`, `wave-big-3d`. Sinh bằng `tools/actions/wave.mjs`.",
   "preview": { "stage": "stand" }
 }

@@ -36,13 +36,13 @@ const MERGE = 3;
 const FAST_S = 0.04;
 const FAST_DEG = 20;
 
-const LIMBS = ["armNear", "armFar", "legNear", "legFar"] as const;
+const LIMBS = ["armRight", "armLeft", "legRight", "legLeft"] as const;
 type LimbChannel = (typeof LIMBS)[number];
 const LIMB_LABEL: Record<LimbChannel, string> = {
-  armNear: "tay gần",
-  armFar: "tay xa",
-  legNear: "chân gần",
-  legFar: "chân xa",
+  armRight: "tay phải",
+  armLeft: "tay trái",
+  legRight: "chân phải",
+  legLeft: "chân trái",
 };
 
 const sec = (t: number) => t.toFixed(2);
@@ -53,7 +53,7 @@ const clipChannels = (c: { action?: ActionData; mask?: Channel[] }): Channel[] =
 
 /** Mọi mốc ghi kênh tay `k` đều có đích cổ tay của kênh ấy: góc của kênh không lên hình */
 function reachOnly(a: ActionData, k: LimbChannel) {
-  if (k !== "armNear" && k !== "armFar") return false;
+  if (k !== "armRight" && k !== "armLeft") return false;
   const keys = (a.keys ?? []).filter((key) => keyDelta(key)[k] !== undefined || key.reach?.[k]);
   return keys.length > 0 && keys.every((key) => key.reach?.[k]);
 }
@@ -82,7 +82,7 @@ export function sceneSideProblems(
         const limbs = LIMBS.filter(
           (k) =>
             clipChannels(c).includes(k) &&
-            !(m.world.path && (k === "legNear" || k === "legFar")) &&
+            !(m.world.path && (k === "legRight" || k === "legLeft")) &&
             !reachOnly(a, k),
         );
         if (!limbs.length) return;
@@ -120,7 +120,7 @@ function jump(a: unknown, b: unknown): number {
 const valueOf = (k: ActionKey, ch: Channel): unknown =>
   (keyDelta(k) as Record<string, unknown>)[ch];
 
-const ANGLE_CHANNELS = ["armFar", "armNear", "legFar", "legNear", "torso", "head"] as const;
+const ANGLE_CHANNELS = ["armLeft", "armRight", "legLeft", "legRight", "torso", "head"] as const;
 
 /**
  * Hành động tự giật: `end: "wrap"` mà mốc cuối ở `t: 1` khác mốc đầu (mỗi lượt lặp nhảy về mốc đầu
@@ -174,14 +174,6 @@ const JOINT_LABEL: Record<string, string> = {
   wristL: "cổ tay trái",
   handR: "bàn tay phải",
   handL: "bàn tay trái",
-  kneeN: "gối gần",
-  kneeF: "gối xa",
-  footN: "bàn chân gần",
-  footF: "bàn chân xa",
-  elbowN: "khuỷu gần",
-  elbowF: "khuỷu xa",
-  wristN: "cổ tay gần",
-  wristF: "cổ tay xa",
   head: "đầu",
 };
 const J3: ActJoint[] = [
@@ -202,10 +194,10 @@ const J3: ActJoint[] = [
 const jointClass = (j: string): "arm" | "leg" | "head" =>
   j === "head" ? "head" : j.startsWith("knee") || j.startsWith("foot") ? "leg" : "arm";
 const CHANNEL_CLASSES: Partial<Record<Channel, ("arm" | "leg" | "head")[]>> = {
-  armNear: ["arm"],
-  armFar: ["arm"],
-  legNear: ["leg"],
-  legFar: ["leg"],
+  armRight: ["arm"],
+  armLeft: ["arm"],
+  legRight: ["leg"],
+  legLeft: ["leg"],
   torso: ["arm", "head"],
   head: ["head"],
   stretch: ["arm", "leg"],
@@ -250,8 +242,6 @@ interface Sample {
   hip: Pt | null;
   /** Cờ nâng bốn kênh tay chân của người 3D, gói thành số */
   lift: number;
-  /** Người 3D mặt sang trái khung: đổi là thân vừa quay qua chính diện hay quay lưng */
-  flip: boolean;
   /** Phần đích cổ tay của tay phải, tay trái người 3D (`reach` hay `world.hands`, lấy phần lớn) */
   ik: [number, number];
   /** Tay phải, tay trái của người 3D duỗi bao nhiêu phần tầm với (vai → cổ tay) */
@@ -275,18 +265,17 @@ export function elbowSamples(
   const J = w && actJoints(c, sp);
   const A = J && actElbows(c, sp);
   if (!w || !J || !A) return undefined;
-  const near = w.flip ? "L" : "R";
   const P = sp.pose;
   const B = bones3(c.rig.height);
   return SIDES.map((t): ElbowSample => {
-    const isNear = t === near;
-    const r = isNear ? w.hands?.near : w.hands?.far;
-    const k = isNear ? 2 : 0;
+    const isRight = t === "R";
+    const r = isRight ? w.hands?.right : w.hands?.left;
+    const k = isRight ? 2 : 0;
     const tip =
       (B.upperArm * (P.stretch[k] ?? 1) + B.foreArm * (P.stretch[k + 1] ?? 1)) * 100 * w.s;
     const [S, E, W] = [J[`shoulder${t}`], J[`elbow${t}`], J[`wrist${t}`]];
     const straight = Math.hypot(...sub3(W, S)) / tip;
-    const ik = Math.max((isNear ? P.reach?.an : P.reach?.af)?.w ?? 0, r?.w ?? 0);
+    const ik = Math.max((isRight ? P.reach?.ar : P.reach?.al)?.w ?? 0, r?.w ?? 0);
     return {
       S,
       E,
@@ -309,12 +298,11 @@ const SKIPPED: Sample = {
   visible: false,
   hip: null,
   lift: 0,
-  flip: false,
   ik: [0, 0],
   straight: [0, 0],
 };
 
-const LIFT_BITS = ["an", "af", "ln", "lf"] as const;
+const LIFT_BITS = ["ar", "al", "lr", "ll"] as const;
 const SIDES = ["R", "L"] as const;
 
 /** Khớp người 3D mà `sceneSnaps` đo, theo bên giải phẫu */
@@ -357,16 +345,15 @@ function sample(c: CharacterData, sp: ScenePose, elbows = false): Sample {
   const J = w && actJoints(c, sp);
   if (w && J) {
     const { pts, front } = onLens(w.lens, J);
-    const near = w.flip ? "L" : "R";
     const P = sp.pose;
     const ik = SIDES.map((t) =>
-      t === near
-        ? Math.max(P.reach?.an?.w ?? 0, w.hands?.near?.w ?? 0)
-        : Math.max(P.reach?.af?.w ?? 0, w.hands?.far?.w ?? 0),
+      t === "R"
+        ? Math.max(P.reach?.ar?.w ?? 0, w.hands?.right?.w ?? 0)
+        : Math.max(P.reach?.al?.w ?? 0, w.hands?.left?.w ?? 0),
     ) as [number, number];
     const B = bones3(c.rig.height);
     const straight = SIDES.map((t) => {
-      const k = t === near ? 2 : 0;
+      const k = t === "R" ? 2 : 0;
       const tip =
         (B.upperArm * (P.stretch[k] ?? 1) + B.foreArm * (P.stretch[k + 1] ?? 1)) * 100 * w.s;
       const [a, b] = [J[`shoulder${t}`], J[`wrist${t}`]];
@@ -378,7 +365,6 @@ function sample(c: CharacterData, sp: ScenePose, elbows = false): Sample {
       visible: front && sp.opacity > 0.5,
       hip: front ? pts.hip : null,
       lift: LIFT_BITS.reduce((n, k, i) => n | (P.lift?.[k] ? 1 << i : 0), 0),
-      flip: w.flip,
       ik,
       straight,
       ...(arms && { arms }),
@@ -460,7 +446,7 @@ function causesOf(m: CastMember, J: Jolt): { causes: string[]; clips: string[] }
   const on1 = activeAt(m, t1);
   if (a.lift !== b.lift) {
     const flipped = LIFT_BITS.filter((_k, i) => ((a.lift ^ b.lift) >> i) & 1).map(
-      (k) => ({ an: "tay gần", af: "tay xa", ln: "chân gần", lf: "chân xa" })[k],
+      (k) => ({ ar: "tay phải", al: "tay trái", lr: "chân phải", ll: "chân trái" })[k],
     );
     const limbs = (c: Clip | undefined) =>
       !!c && (!c.action || clipChannels(c).some((k) => (LIMBS as readonly string[]).includes(k)));
@@ -476,10 +462,6 @@ function causesOf(m: CastMember, J: Jolt): { causes: string[]; clips: string[] }
       `cờ \`lift\` của ${flipped.join(", ")} lật${blends.length ? ` giữa đoạn hoà ${blends.join(", ")}` : ""}: một đầu đoạn hoà soạn ở \`side\`, đầu kia là hành động không soạn ở \`side\` hay tư thế nền \`cast[].base\` (clip rỗng, track chưa có clip) — người 3D cần hành động \`side\` ở cả hai đầu, ví dụ \`stand-3d\` thay cho clip rỗng`,
     );
   }
-  if (a.flip !== b.flip)
-    causes.push(
-      "thân quay qua chính diện hay quay lưng: gần ↔ xa đổi chỗ, góc lắc và nghiêng đầu đổi phía theo — đừng để đầu lắc, nghiêng lúc người quay qua ống kính",
-    );
   m.tracks.forEach((tr, ti) =>
     tr.clips.forEach((c, i) => {
       if (!touches(c) && !touches(tr.clips[i - 1])) return;

@@ -1,23 +1,22 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "folder-hold-read-3d",
   "duration": 1.4,
   "end": "hold",
-  "mask": ["armNear", "armFar", "hand", "torso", "head"],
+  "mask": ["armRight", "armLeft", "hand", "torso", "head"],
   "authoredAt": "side",
-  "sides": "anatomical",
   "keys": [
     {
       "t": 0,
       "pose": { "torso": 0, "head": [null, null, 0] },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [0, 0, 52],
           "point": "grip",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [62, -10, 27],
           "point": "grip",
@@ -26,21 +25,21 @@
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "edge", "w": 1, "palm": "in" },
-        "armNear": { "pose": "edge", "w": 1, "palm": "in" }
+        "armLeft": { "pose": "edge", "w": 1, "palm": "in" },
+        "armRight": { "pose": "edge", "w": 1, "palm": "in" }
       }
     },
     {
       "t": 0.2857,
       "pose": { "torso": 0, "head": [null, null, 0] },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [0, 0, 52],
           "point": "grip",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [66, -22, 27],
           "point": "grip",
@@ -49,21 +48,21 @@
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "edge", "w": 1, "palm": "in" },
-        "armNear": { "pose": "edge", "w": 1, "palm": "in" }
+        "armLeft": { "pose": "edge", "w": 1, "palm": "in" },
+        "armRight": { "pose": "edge", "w": 1, "palm": "in" }
       }
     },
     {
       "t": 0.6429,
       "pose": { "torso": 0, "head": [null, null, 0] },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [0, 0, 52],
           "point": "grip",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [66, -22, 27],
           "point": "grip",
@@ -72,21 +71,21 @@
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "edge", "w": 1, "palm": "in" },
-        "armNear": { "pose": "edge", "w": 1, "palm": "in" }
+        "armLeft": { "pose": "edge", "w": 1, "palm": "in" },
+        "armRight": { "pose": "edge", "w": 1, "palm": "in" }
       }
     },
     {
       "t": 1,
       "pose": { "torso": 0, "head": [null, null, 20] },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "to": "otherGrip",
           "offset": [0, 0, 52],
           "point": "grip",
           "elbow": [-0.3, 0.6, 1]
         },
-        "armNear": {
+        "armRight": {
           "to": "chest",
           "offset": [66, -22, 27],
           "point": "grip",
@@ -95,13 +94,13 @@
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "edge", "w": 1, "palm": "in" },
-        "armNear": { "pose": "edge", "w": 1, "palm": "in" }
+        "armLeft": { "pose": "edge", "w": 1, "palm": "in" },
+        "armRight": { "pose": "edge", "w": 1, "palm": "in" }
       }
     }
   ],
   "events": [],
-  "note": "Cầm kẹp hồ sơ ra trước đọc: hai tay kẹp hai mép (tay phải mốc `chest`, offset [62, −10, 27] → [66, −22, 27] lúc 0,4 s, tay trái mốc `otherGrip`, cách 52), giữ, rồi đầu cúi 20° nhìn xuống tới 1,4 s, giữ. Ghi hai tay, `hand`, gật của `head`; `sides: \"anatomical\"`. Nền `stand-3d`; món ở `world.hands[].hold` tay phải với `both: true`, như `kep-ho-so@sheet` biến thể `rim`, mặt bìa về người cầm (hướng mặc định của nhóm). Đi sau `folder-hold-3d` (blend ~0,3).",
+  "note": "Cầm kẹp hồ sơ ra trước đọc: hai tay kẹp hai mép (tay phải mốc `chest`, offset [62, −10, 27] → [66, −22, 27] lúc 0,4 s, tay trái mốc `otherGrip`, cách 52), giữ, rồi đầu cúi 20° nhìn xuống tới 1,4 s, giữ. Ghi hai tay, `hand`, gật của `head`. Nền `stand-3d`; món ở `world.hands[].hold` tay phải với `both: true`, như `kep-ho-so@sheet` biến thể `rim`, mặt bìa về người cầm (hướng mặc định của nhóm). Đi sau `folder-hold-3d` (blend ~0,3).",
   "preview": {
     "stage": "stand",
     "hold": {

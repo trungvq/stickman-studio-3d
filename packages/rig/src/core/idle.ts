@@ -11,11 +11,11 @@ export function idlePose(t: number, p: IdleParams): Pose {
   const a = 2 * Math.PI * t;
   const s = Math.sin(a);
   return {
-    // Xoè đối xứng: tay gần âm, tay xa dương
-    an: [-8 - p.arm * s, 6, 0],
-    af: [8 + p.arm * s, -6, 0],
-    ln: [-2, 0],
-    lf: [2, 0],
+    // Xoè đối xứng: tay phải âm, tay trái dương
+    ar: [-8 - p.arm * s, 6, 0],
+    al: [8 + p.arm * s, -6, 0],
+    lr: [-2, 0],
+    ll: [2, 0],
     torso: p.lean + p.breath * s,
     head: NEUTRAL_HEAD,
     stretch: NEUTRAL_STRETCH,

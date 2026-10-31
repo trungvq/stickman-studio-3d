@@ -1,72 +1,72 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "startle-step-back-3d",
   "duration": 0.7,
   "end": "hold",
-  "mask": ["armNear", "armFar", "hand", "torso", "head", "legNear", "legFar"],
+  "mask": ["armRight", "armLeft", "hand", "torso", "head", "legRight", "legLeft"],
   "authoredAt": "side",
   "snap": true,
   "keys": [
     {
       "t": 0,
       "pose": {
-        "armFar": [-6, 24, 0],
-        "armNear": [-6, 24, 0],
-        "legFar": [1, 0],
-        "legNear": [-1, 0],
+        "armLeft": [-6, 24, 0],
+        "armRight": [-6, 24, 0],
+        "legLeft": [1, 0],
+        "legRight": [-1, 0],
         "torso": 0,
         "head": [null, null, 0]
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "w": 0.3, "turn": 0, "bend": 0 },
-        "armNear": { "w": 0.3, "turn": 0, "bend": 0 }
+        "armLeft": { "w": 0.3, "turn": 0, "bend": 0 },
+        "armRight": { "w": 0.3, "turn": 0, "bend": 0 }
       }
     },
-    { "t": 0.1429, "pose": { "legFar": [1, 0], "legNear": [10, -22] }, "ease": "auto" },
+    { "t": 0.1429, "pose": { "legLeft": [1, 0], "legRight": [10, -22] }, "ease": "auto" },
     {
       "t": 0.1714,
       "pose": { "torso": -9, "head": [null, null, -14] },
       "reach": {
-        "armFar": { "at": [52, -102, 46], "elbow": [-0.3, 1, 0.9] },
-        "armNear": { "at": [52, -102, 46], "elbow": [-0.3, 1, 0.9] }
+        "armLeft": { "at": [52, -102, 46], "elbow": [-0.3, 1, 0.9] },
+        "armRight": { "at": [52, -102, 46], "elbow": [-0.3, 1, 0.9] }
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "open", "w": 1, "palm": "forward", "fingers": [0.3, -1, 0.3] },
-        "armNear": { "pose": "open", "w": 1, "palm": "forward", "fingers": [0.3, -1, 0.3] }
+        "armLeft": { "pose": "open", "w": 1, "palm": "forward", "fingers": [0.3, -1, 0.3] },
+        "armRight": { "pose": "open", "w": 1, "palm": "forward", "fingers": [0.3, -1, 0.3] }
       }
     },
-    { "t": 0.3429, "pose": { "legFar": [1, 0], "legNear": [10, -38] }, "ease": "auto" },
-    { "t": 0.5143, "pose": { "legFar": [1, 0], "legNear": [-14, 0] }, "ease": "smooth" },
+    { "t": 0.3429, "pose": { "legLeft": [1, 0], "legRight": [10, -38] }, "ease": "auto" },
+    { "t": 0.5143, "pose": { "legLeft": [1, 0], "legRight": [-14, 0] }, "ease": "smooth" },
     {
       "t": 0.7143,
-      "pose": { "legFar": [1, 0], "legNear": [-14, 0], "torso": -5, "head": [null, null, -6] },
+      "pose": { "legLeft": [1, 0], "legRight": [-14, 0], "torso": -5, "head": [null, null, -6] },
       "reach": {
-        "armFar": { "at": [48, -86, 48], "elbow": [-0.3, 1, 0.9] },
-        "armNear": { "at": [48, -86, 48], "elbow": [-0.3, 1, 0.9] }
+        "armLeft": { "at": [48, -86, 48], "elbow": [-0.3, 1, 0.9] },
+        "armRight": { "at": [48, -86, 48], "elbow": [-0.3, 1, 0.9] }
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.7, "palm": "forward", "fingers": [0.3, -1, 0.3] },
-        "armNear": { "pose": "open", "w": 0.7, "palm": "forward", "fingers": [0.3, -1, 0.3] }
+        "armLeft": { "pose": "open", "w": 0.7, "palm": "forward", "fingers": [0.3, -1, 0.3] },
+        "armRight": { "pose": "open", "w": 0.7, "palm": "forward", "fingers": [0.3, -1, 0.3] }
       }
     },
     {
       "t": 1,
-      "pose": { "legFar": [1, 0], "legNear": [-14, 0], "torso": -5, "head": [null, null, -6] },
+      "pose": { "legLeft": [1, 0], "legRight": [-14, 0], "torso": -5, "head": [null, null, -6] },
       "reach": {
-        "armFar": { "at": [48, -86, 48], "elbow": [-0.3, 1, 0.9] },
-        "armNear": { "at": [48, -86, 48], "elbow": [-0.3, 1, 0.9] }
+        "armLeft": { "at": [48, -86, 48], "elbow": [-0.3, 1, 0.9] },
+        "armRight": { "at": [48, -86, 48], "elbow": [-0.3, 1, 0.9] }
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "open", "w": 0.7, "palm": "forward", "fingers": [0.3, -1, 0.3] },
-        "armNear": { "pose": "open", "w": 0.7, "palm": "forward", "fingers": [0.3, -1, 0.3] }
+        "armLeft": { "pose": "open", "w": 0.7, "palm": "forward", "fingers": [0.3, -1, 0.3] },
+        "armRight": { "pose": "open", "w": 0.7, "palm": "forward", "fingers": [0.3, -1, 0.3] }
       }
     }
   ],
   "events": [],
-  "note": "Giật mình lùi một bước: trong 0,12 s thân bật ra sau 9°, đầu ngửa 14°, hai tay vụt lên trước ngực (đích cổ tay hệ thân [52, -102, 46]), bàn tay xoè, lòng tay ra trước; lúc 0,5 s về thân -5°, đầu -6°, tay hạ một chút, giữ. Khai `snap`. Chân gần nhấc lên, đặt ra sau 42 (đùi -14°) lúc 0,36 s, hông đứng yên trên chân xa. Ghi hai tay, `hand`, `torso`, gật của `head`, hai chân. Nền `stand-3d`, người đứng một chỗ (`world.at`), hông không dời; lùi hẳn ra sau thì nối hành động bước lùi trên `world.path`. Chồng nét mặt `face-shocked`, `face-surprised`; buông về nền blend ~0,4. Cùng họ: `startle-3d` tại chỗ, `startle-step-back-3d` lùi một bước. Sinh bằng `tools/actions/startle.mjs`.",
+  "note": "Giật mình lùi một bước: trong 0,12 s thân bật ra sau 9°, đầu ngửa 14°, hai tay vụt lên trước ngực (đích cổ tay hệ thân [52, -102, 46]), bàn tay xoè, lòng tay ra trước; lúc 0,5 s về thân -5°, đầu -6°, tay hạ một chút, giữ. Khai `snap`. Chân phải nhấc lên, đặt ra sau 42 (đùi -14°) lúc 0,36 s, hông đứng yên trên chân trái. Ghi hai tay, `hand`, `torso`, gật của `head`, hai chân. Nền `stand-3d`, người đứng một chỗ (`world.at`), hông không dời; lùi hẳn ra sau thì nối hành động bước lùi trên `world.path`. Chồng nét mặt `face-shocked`, `face-surprised`; buông về nền blend ~0,4. Cùng họ: `startle-3d` tại chỗ, `startle-step-back-3d` lùi một bước. Sinh bằng `tools/actions/startle.mjs`.",
   "preview": { "stage": "stand" }
 }

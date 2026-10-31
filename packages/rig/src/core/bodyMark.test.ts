@@ -70,7 +70,7 @@ const BASES: Record<string, { pose: Pose; seated: boolean }> = {
   đứng: { pose: POSES.idle, seated: false },
   ngồi: { pose: POSES.sit, seated: true },
   cúi: { pose: { ...POSES.idle, torso: 40 }, seated: false },
-  quỳ: { pose: { ...POSES.idle, lf: [-10, -150], ln: [-10, -150], torso: 10 }, seated: true },
+  quỳ: { pose: { ...POSES.idle, ll: [-10, -150], lr: [-10, -150], torso: 10 }, seated: true },
 };
 
 /** Một khung: hành động `a` ở pha `u` chồng lên tư thế nền, như scene ghép, kênh tay chân nâng */
@@ -78,8 +78,8 @@ function frame(a: ActionData, base: keyof typeof BASES, u = 1, yaw = 0.4): ActIn
   const B = BASES[base];
   const pose = composePose(B.pose, actionPose(a, u));
   return {
-    pose: { ...pose, lift: { af: true, an: true, lf: true, ln: true } },
-    world: { hip: [30, -140, 20], yaw, s: 1, flip: false, seated: B.seated },
+    pose: { ...pose, lift: { al: true, ar: true, ll: true, lr: true } },
+    world: { hip: [30, -140, 20], yaw, s: 1, seated: B.seated },
   };
 }
 
@@ -91,13 +91,13 @@ const deg = (a: readonly number[], b: readonly number[]) =>
 
 describe("đích theo mốc thân", () => {
   const cover = act({
-    mask: ["armNear", "hand"],
+    mask: ["armRight", "hand"],
     keys: [
       {
         t: 0,
         pose: {},
-        reach: { armNear: { to: "mouth", offset: [3, 0, 0] } },
-        hand: { armNear: { pose: "cup", palm: { toward: "mouth" } } },
+        reach: { armRight: { to: "mouth", offset: [3, 0, 0] } },
+        hand: { armRight: { pose: "cup", palm: { toward: "mouth" } } },
       },
     ],
   });
@@ -145,8 +145,8 @@ describe("đích theo mốc thân", () => {
       ["knee", "same", "palm", "ngồi"],
     ] as const) {
       const a = act({
-        mask: ["armNear"],
-        keys: [{ t: 0, pose: {}, reach: { armNear: { to, side, point } } }],
+        mask: ["armRight"],
+        keys: [{ t: 0, pose: {}, reach: { armRight: { to, side, point } } }],
       });
       for (const [name, c] of PEOPLE) {
         const gap = actAim(c, frame(a, base))!.report.R.reach!.gap;
@@ -155,26 +155,26 @@ describe("đích theo mốc thân", () => {
     }
     // chibi tay ngắn đầu to: má bên kia ngoài tầm, khe báo ra chứ không im lặng
     const far = act({
-      mask: ["armNear"],
-      keys: [{ t: 0, pose: {}, reach: { armNear: { to: "cheek", side: "other" } } }],
+      mask: ["armRight"],
+      keys: [{ t: 0, pose: {}, reach: { armRight: { to: "cheek", side: "other" } } }],
     });
     expect(actAim(PEOPLE[2][1], frame(far, "đứng"))!.report.R.reach!.gap).toBeGreaterThan(2);
   });
 
   it("đích toạ độ cũ không đổi gì: không có số hạng, `resolveActing` trả nguyên khung", () => {
     const a = act({
-      mask: ["armNear", "hand"],
+      mask: ["armRight", "hand"],
       keys: [
         {
           t: 0,
           pose: {},
-          reach: { armNear: { at: [60, -80, 20] } },
-          hand: { armNear: { turn: 20 } },
+          reach: { armRight: { at: [60, -80, 20] } },
+          hand: { armRight: { turn: 20 } },
         },
       ],
     });
     const sp = frame(a, "đứng");
-    expect(sp.pose.reach?.an?.terms).toBeUndefined();
+    expect(sp.pose.reach?.ar?.terms).toBeUndefined();
     expect(sp.pose.aim).toBeUndefined();
     expect(needsSolve(sp)).toBe(false);
     expect(resolveActing(PEOPLE[0][1], sp)).toBe(sp);
@@ -182,10 +182,10 @@ describe("đích theo mốc thân", () => {
 
   it("hoà toạ độ thô sang mốc: cổ tay đi liền, đầu mút đúng hai đích", () => {
     const a = act({
-      mask: ["armNear"],
+      mask: ["armRight"],
       keys: [
-        { t: 0, pose: {}, reach: { armNear: { at: [40, -40, 30] } }, ease: "linear" },
-        { t: 1, pose: {}, reach: { armNear: { to: "mouth" } } },
+        { t: 0, pose: {}, reach: { armRight: { at: [40, -40, 30] } }, ease: "linear" },
+        { t: 1, pose: {}, reach: { armRight: { to: "mouth" } } },
       ],
     });
     const c = PEOPLE[1][1];
@@ -198,29 +198,29 @@ describe("đích theo mốc thân", () => {
     }
     expect(step).toBeLessThan(6);
     const start = actAim(c, frame(a, "đứng", 0))!;
-    expect(start.input.pose.reach!.an!.at.map((v) => +v.toFixed(6))).toEqual([40, -40, 30]);
+    expect(start.input.pose.reach!.ar!.at.map((v) => +v.toFixed(6))).toEqual([40, -40, 30]);
     expect(actAim(c, frame(a, "đứng", 1))!.report.R.reach!.gap).toBeLessThan(0.5);
   });
 
   it("hoà hai clip có mốc thân (`blendPose`) cũng hoà trên số hạng", () => {
     const a = actionPose(
       act({
-        mask: ["armNear"],
-        keys: [{ t: 0, pose: {}, reach: { armNear: { to: "chest", offset: [30, 0, 0] } } }],
+        mask: ["armRight"],
+        keys: [{ t: 0, pose: {}, reach: { armRight: { to: "chest", offset: [30, 0, 0] } } }],
       }),
       0,
     );
     const b = actionPose(
-      act({ mask: ["armNear"], keys: [{ t: 0, pose: {}, reach: { armNear: { to: "mouth" } } }] }),
+      act({ mask: ["armRight"], keys: [{ t: 0, pose: {}, reach: { armRight: { to: "mouth" } } }] }),
       0,
     );
     const mid = blendPose(POSES.idle, a, b, 0.5);
-    expect(mid.reach!.an!.terms!.map((t) => t.to).sort()).toEqual(["chest", "mouth"]);
-    expect(mid.reach!.an!.terms!.reduce((s, t) => s + t.k, 0)).toBeCloseTo(1, 9);
+    expect(mid.reach!.ar!.terms!.map((t) => t.to).sort()).toEqual(["chest", "mouth"]);
+    expect(mid.reach!.ar!.terms!.reduce((s, t) => s + t.k, 0)).toBeCloseTo(1, 9);
   });
 
   it("schema: đúng một trong `at` hay `to`; `side`, `offset` chỉ đi với `to`", () => {
-    const k = (r: object) => ({ keys: [{ t: 0, pose: {}, reach: { armNear: r } }] });
+    const k = (r: object) => ({ keys: [{ t: 0, pose: {}, reach: { armRight: r } }] });
     expect(parseAction(k({ to: "mouth" })).success).toBe(true);
     expect(parseAction(k({ at: [1, 2, 3], point: "palm" })).success).toBe(true);
     expect(parseAction(k({})).success).toBe(false);
@@ -229,28 +229,28 @@ describe("đích theo mốc thân", () => {
     expect(parseAction(k({ to: "nose" })).success).toBe(false);
     // đích theo mốc vẫn có góc suy từ đích
     const a = act({
-      mask: ["armNear"],
-      keys: [{ t: 0, pose: {}, reach: { armNear: { to: "mouth" } } }],
+      mask: ["armRight"],
+      keys: [{ t: 0, pose: {}, reach: { armRight: { to: "mouth" } } }],
     });
-    expect(actionPose(a, 0).an?.every(Number.isFinite)).toBe(true);
-    expect(actionReach(a, 0).an!.at.every(Number.isFinite)).toBe(true);
+    expect(actionPose(a, 0).ar?.every(Number.isFinite)).toBe(true);
+    expect(actionReach(a, 0).ar!.at.every(Number.isFinite)).toBe(true);
   });
 });
 
 describe("hai tay ràng buộc nhau", () => {
   const clap = act({
-    mask: ["armNear", "armFar", "hand"],
+    mask: ["armRight", "armLeft", "hand"],
     keys: [
       {
         t: 0,
         pose: {},
         reach: {
-          armNear: { to: "chest", offset: [36, -6, 2] },
-          armFar: { to: "otherPalm" },
+          armRight: { to: "chest", offset: [36, -6, 2] },
+          armLeft: { to: "otherPalm" },
         },
         hand: {
-          armNear: { pose: "flat", palm: "in", fingers: [1, -1, 0] },
-          armFar: { pose: "flat", palm: "in", fingers: [1, -1, 0] },
+          armRight: { pose: "flat", palm: "in", fingers: [1, -1, 0] },
+          armLeft: { pose: "flat", palm: "in", fingers: [1, -1, 0] },
         },
       },
     ],
@@ -275,14 +275,14 @@ describe("hai tay ràng buộc nhau", () => {
 
   it("tay bám vào tay kia giải sau tay kia, dù đó là tay gần; hai tay cùng bám nhau thì báo `cycle`", () => {
     const swap = act({
-      mask: ["armNear", "armFar"],
+      mask: ["armRight", "armLeft"],
       keys: [
         {
           t: 0,
           pose: {},
           reach: {
-            armNear: { to: "otherWrist", point: "grip" },
-            armFar: { to: "back", point: "back" },
+            armRight: { to: "otherWrist", point: "grip" },
+            armLeft: { to: "back", point: "back" },
           },
         },
       ],
@@ -291,9 +291,9 @@ describe("hai tay ràng buộc nhau", () => {
     expect(r.report.R.reach!.gap).toBeLessThan(0.5);
     expect(r.report.R.cycle).toBeUndefined();
     const both = act({
-      mask: ["armNear", "armFar"],
+      mask: ["armRight", "armLeft"],
       keys: [
-        { t: 0, pose: {}, reach: { armNear: { to: "otherPalm" }, armFar: { to: "otherPalm" } } },
+        { t: 0, pose: {}, reach: { armRight: { to: "otherPalm" }, armLeft: { to: "otherPalm" } } },
       ],
     });
     expect(actAim(PEOPLE[0][1], frame(both, "đứng"))!.report.R.cycle).toBe(true);
@@ -301,16 +301,16 @@ describe("hai tay ràng buộc nhau", () => {
 
   it("chắp tay sau lưng: tâm nắm tay xa ôm đúng cổ tay tay gần, cả người bụng phệ", () => {
     const behind = act({
-      mask: ["armNear", "armFar", "hand"],
+      mask: ["armRight", "armLeft", "hand"],
       keys: [
         {
           t: 0,
           pose: {},
           reach: {
-            armNear: { to: "back", offset: [-4, 6, 2], point: "back", elbow: [-0.6, 0.6, 1] },
-            armFar: { to: "otherWrist", point: "grip", elbow: [-0.6, 0.6, 1] },
+            armRight: { to: "back", offset: [-4, 6, 2], point: "back", elbow: [-0.6, 0.6, 1] },
+            armLeft: { to: "otherWrist", point: "grip", elbow: [-0.6, 0.6, 1] },
           },
-          hand: { armFar: { pose: "clasp", palm: "up" } },
+          hand: { armLeft: { pose: "clasp", palm: "up" } },
         },
       ],
     });
@@ -374,20 +374,20 @@ describe("hướng lòng tay theo ý định", () => {
 
   it("mốc thô sang mốc `palm`: xoay cẳng tay đổi dần, không nhảy; đạt úp ở mốc cuối", () => {
     const a = act({
-      mask: ["armNear", "hand"],
+      mask: ["armRight", "hand"],
       keys: [
         {
           t: 0,
           pose: {},
-          reach: { armNear: { at: [90, -60, 20] } },
-          hand: { armNear: { turn: -40 } },
+          reach: { armRight: { at: [90, -60, 20] } },
+          hand: { armRight: { turn: -40 } },
           ease: "linear",
         },
         {
           t: 1,
           pose: {},
-          reach: { armNear: { at: [90, -60, 20] } },
-          hand: { armNear: { pose: "flat", palm: "down" } },
+          reach: { armRight: { at: [90, -60, 20] } },
+          hand: { armRight: { pose: "flat", palm: "down" } },
         },
       ],
     });
@@ -395,7 +395,7 @@ describe("hướng lòng tay theo ý định", () => {
     let last: number | undefined;
     let jump = 0;
     for (let i = 0; i <= 40; i++) {
-      const turn = resolveActing(c, frame(a, "ngồi", i / 40)).pose.hand!.an![0];
+      const turn = resolveActing(c, frame(a, "ngồi", i / 40)).pose.hand!.ar![0];
       if (last !== undefined) jump = Math.max(jump, Math.abs(turn - last));
       last = turn;
     }
@@ -406,13 +406,13 @@ describe("hướng lòng tay theo ý định", () => {
 
   it("`palm` thắng `turn`: `turn` khai kèm bị bỏ qua và `aimProblems` kêu", () => {
     const a = act({
-      mask: ["armNear", "hand"],
+      mask: ["armRight", "hand"],
       keys: [
         {
           t: 0,
           pose: {},
-          reach: { armNear: { at: [90, -60, 20] } },
-          hand: { armNear: { turn: -80, palm: "down" } },
+          reach: { armRight: { at: [90, -60, 20] } },
+          hand: { armRight: { turn: -80, palm: "down" } },
         },
       ],
     });
@@ -453,7 +453,7 @@ describe("dáng tay mới và tâm nắm", () => {
     const hook = HAND_GRIPS.hook;
     expect(hook[1]).toBeLessThan(HAND_GRIPS.grip[1]);
     for (const p of ["cup", "flat", "hook", "edge", "clasp", "pinch"] as HandPose[])
-      expect(parseAction({ keys: [{ t: 0, pose: {}, hand: { armNear: p } }] }).success).toBe(true);
+      expect(parseAction({ keys: [{ t: 0, pose: {}, hand: { armRight: p } }] }).success).toBe(true);
   });
 });
 

@@ -1,9 +1,108 @@
 import { describe, expect, it } from "vitest";
-import { parseAction } from "./action";
-import { parseScene } from "./scene";
+import { ACTION_VERSION, parseAction } from "./action";
+import { parseScene, SCENE_VERSION } from "./scene";
 import { CHARACTER_VERSION, parseCharacter } from "./schema";
 
 const LENS = { eye: [0, -250, -1400], yaw: 0, pitch: 0, f: 800 };
+
+describe("kênh, socket đời cũ thành tên phải / trái", () => {
+  it("hành động: khoá `pose`, `reach`, `hand`, `mask`, socket bàn tay của `equip`; bỏ `sides`", () => {
+    const r = parseAction({
+      schemaVersion: 20,
+      name: "x",
+      duration: 1,
+      sides: "anatomical",
+      mask: ["armNear", "legFar", "hand"],
+      keys: [
+        {
+          t: 0,
+          pose: { armNear: [10, 20, 0], legFar: [5, 0] },
+          reach: { armNear: { at: [0.3, -0.4, 0.2] } },
+          hand: { armNear: "fist", armFar: "open" },
+          equip: { handNear: "coc", handFar: null },
+        },
+      ],
+    });
+    expect(r.success).toBe(true);
+    if (!r.success) return;
+    expect(r.data.schemaVersion).toBe(ACTION_VERSION);
+    expect("sides" in r.data).toBe(false);
+    expect(r.data.mask).toEqual(["armRight", "legLeft", "hand"]);
+    const k = r.data.keys![0];
+    expect(k.pose).toEqual({ armRight: [10, 20, 0], legLeft: [5, 0] });
+    expect(Object.keys(k.reach!)).toEqual(["armRight"]);
+    expect(k.hand).toEqual({ armRight: "fist", armLeft: "open" });
+    expect(k.equip).toEqual({ handRight: "coc", handLeft: null });
+  });
+
+  it("nhân vật: socket `handNear` / `handFar` ở `pieces`, `items`, `outfits`", () => {
+    const r = parseCharacter({
+      schemaVersion: 6,
+      pieces: { handNear: { color: "#111" }, handFar: { color: "#222" } },
+      items: { coc: { handNear: { src: "sculpt" } } },
+      outfits: { uong: { handFar: "coc" } },
+    });
+    expect(r.success).toBe(true);
+    if (!r.success) return;
+    expect(r.data.pieces.handRight.color).toBe("#111");
+    expect(r.data.pieces.handLeft.color).toBe("#222");
+    expect(Object.keys(r.data.items.coc)).toEqual(["handRight"]);
+    expect(r.data.outfits.uong).toEqual({ handLeft: "coc" });
+  });
+
+  it("cảnh: `cast[].base`, `cast[].equip`, `clips[].mask`, `clips[].equip`; bản hiện hành giữ nguyên", () => {
+    const cast = (v: Record<string, unknown>) => [
+      {
+        id: "a",
+        world: { at: [0, 0, 400] },
+        base: { [`arm${v.near}`]: [5, 10, 0] },
+        equip: { [`hand${v.far}`]: "coc" },
+        tracks: [
+          {
+            clips: [
+              {
+                action: "x",
+                start: 0,
+                mask: [`arm${v.near}`, "torso"],
+                equip: [{ [`hand${v.near}`]: null }, "tet"],
+                ...(v.mirror ? { mirror: true } : {}),
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const old = parseScene({
+      schemaVersion: 36,
+      lens: LENS,
+      cast: cast({ near: "Near", far: "Far" }),
+    });
+    expect(old.success).toBe(true);
+    if (!old.success) return;
+    const m = old.data.cast[0];
+    expect(old.data.schemaVersion).toBe(SCENE_VERSION);
+    expect(m.base).toEqual({ armRight: [5, 10, 0] });
+    expect(m.equip).toEqual({ handLeft: "coc" });
+    expect(m.tracks[0].clips[0].mask).toEqual(["armRight", "torso"]);
+    expect(m.tracks[0].clips[0].equip).toEqual([{ handRight: null }, "tet"]);
+    const now = parseScene({
+      lens: LENS,
+      cast: cast({ near: "Right", far: "Left", mirror: true }),
+    });
+    expect(now.success).toBe(true);
+    expect(now.data?.cast[0].tracks[0].clips[0]).toMatchObject({
+      mirror: true,
+      mask: ["armRight", "torso"],
+    });
+    expect(
+      parseScene({
+        schemaVersion: SCENE_VERSION,
+        lens: LENS,
+        cast: cast({ near: "Near", far: "Far" }),
+      }).success,
+    ).toBe(false);
+  });
+});
 
 describe("trường không còn: JSON cũ bỏ lặng lẽ", () => {
   it("nhân vật: râu `chin`, ria `face.moustache`", () => {
@@ -28,14 +127,14 @@ describe("trường không còn: JSON cũ bỏ lặng lẽ", () => {
       schemaVersion: 5,
       head: { shape: "square", scaleX: 1.1, dx: 4, dy: -3 },
       pieces: { sleeveNear: {}, sleeveFar: {}, hairBack: { color: "#000" } },
-      items: { ao: { sleeveNear: { src: "none" }, handNear: { src: "none" } } },
+      items: { ao: { sleeveNear: { src: "none" }, handRight: { src: "none" } } },
     });
     expect(r.success).toBe(true);
     if (!r.success) return;
     for (const k of ["shape", "dx", "dy"]) expect(k in r.data.head).toBe(false);
     expect(r.data.head.scaleX).toBe(1.1);
     for (const k of ["sleeveNear", "sleeveFar", "hairBack"]) expect(k in r.data.pieces).toBe(false);
-    expect(Object.keys(r.data.items.ao)).toEqual(["handNear"]);
+    expect(Object.keys(r.data.items.ao)).toEqual(["handRight"]);
   });
 
   it("hành động và cảnh: `equip` của socket không còn", () => {
@@ -73,7 +172,7 @@ describe("trường không còn: JSON cũ bỏ lặng lẽ", () => {
       ground: 300,
       groups: [{ id: "g", x: 100, flip: true }],
       cast: [
-        { id: "an", character: "an.json", x: 5000, y: 300, scale: 1, tracks: [] },
+        { id: "ar", character: "an.json", x: 5000, y: 300, scale: 1, tracks: [] },
         { id: "ink", x: -2000, fade: [{ t: 0, v: 0 }] },
         {
           id: "b",
@@ -101,7 +200,7 @@ describe("trường không còn: JSON cũ bỏ lặng lẽ", () => {
     const s = parseScene({
       schemaVersion: 26,
       duration: 2,
-      cast: [{ id: "an", x: 5000, tracks: [{ clips: [{ action: "idle", start: 0 }] }] }],
+      cast: [{ id: "ar", x: 5000, tracks: [{ clips: [{ action: "idle", start: 0 }] }] }],
       fx: [{ kind: "glow", from: 0, to: 1, x: 0, y: 0, r: 40 }],
     });
     expect(s.success).toBe(true);

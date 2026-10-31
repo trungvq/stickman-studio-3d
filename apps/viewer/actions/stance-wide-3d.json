@@ -1,13 +1,13 @@
 {
-  "schemaVersion": 16,
+  "schemaVersion": 21,
   "name": "stance-wide-3d",
   "duration": 0.8,
   "end": "hold",
   "authoredAt": "side",
-  "mask": ["armFar", "armNear", "legFar", "legNear"],
+  "mask": ["armLeft", "armRight", "legLeft", "legRight"],
   "keys": [
-    { "t": 0, "pose": { "armFar": [3, 8, 0], "armNear": [3, 8, 0], "legFar": [0, 0], "legNear": [0, 0] }, "ease": "smooth" },
-    { "t": 1, "pose": { "armFar": [3, 8, 0, 10], "armNear": [3, 8, 0, 10], "legFar": [0, 0, 12], "legNear": [0, 0, 12] }, "ease": "smooth" }
+    { "t": 0, "pose": { "armLeft": [3, 8, 0], "armRight": [3, 8, 0], "legLeft": [0, 0], "legRight": [0, 0] }, "ease": "smooth" },
+    { "t": 1, "pose": { "armLeft": [3, 8, 0, 10], "armRight": [3, 8, 0, 10], "legLeft": [0, 0, 12], "legRight": [0, 0, 12] }, "ease": "smooth" }
   ],
   "events": [],
   "note": "Đứng dạng chân: hai chân dang 12°, hông hạ theo; tay dang nhẹ 10°, rồi giữ."

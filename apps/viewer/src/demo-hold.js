@@ -125,8 +125,8 @@ const reachAction = (name, reach) => {
 };
 const HOLD_ACTIONS = {
   ...ACTIONS,
-  'carry-tray': reachAction('carry-tray', { armFar: { at: [42, -58, 25], elbow: [-0.4, 1, 0.6] }, armNear: { at: [42, -58, 25], elbow: [-0.4, 1, 0.6] } }),
-  'hold-mug': reachAction('hold-mug', { armNear: { at: [38, -62, 14], elbow: [-0.4, 1, 0.4] } }),
+  'carry-tray': reachAction('carry-tray', { armLeft: { at: [42, -58, 25], elbow: [-0.4, 1, 0.6] }, armRight: { at: [42, -58, 25], elbow: [-0.4, 1, 0.6] } }),
+  'hold-mug': reachAction('hold-mug', { armRight: { at: [38, -62, 14], elbow: [-0.4, 1, 0.4] } }),
 };
 
 const LENS = { eye: [0, -200, -1400], yaw: 0, pitch: 0, f: 800, cx: 0, cy: 0 };
@@ -187,11 +187,11 @@ export function holdDemo() {
   const members = [
     { id: 'khay', opts: { ...BOY, items: SAMPLE_ITEMS },
       world: { path: [{ t: 0, at: [-250, 0, -150], yaw: 0 }, { t: 4.5, at: [200, 0, -150], yaw: 0 }] },
-      tracks: [track(clip('walk'), clip('stand-3d', 4.3, { blend: 0.3 })), track(clip('carry-tray')), track(clip('face-calm'))], equip: { handNear: 'tray', chest: 'badge' } },
+      tracks: [track(clip('walk'), clip('stand-3d', 4.3, { blend: 0.3 })), track(clip('carry-tray')), track(clip('face-calm'))], equip: { handRight: 'tray', chest: 'badge' } },
     { id: 'coc', opts: { ...GIRL, rig: { ...GIRL.rig, height: 0.88 }, items: SAMPLE_ITEMS }, world: { at: [-430, 0, 20], yaw: 90 },
-      tracks: [track(clip('stand-3d')), track(clip('hold-mug')), track(clip('face-calm'))], equip: { crown: 'cap', handNear: 'mug' } },
+      tracks: [track(clip('stand-3d')), track(clip('hold-mug')), track(clip('face-calm'))], equip: { crown: 'cap', handRight: 'mug' } },
     { id: 'giay', opts: { ...BOY, hairColor: '#5a3a26', items: SAMPLE_ITEMS }, world: { at: [430, 0, 20], yaw: 110 },
-      tracks: [track(clip('stand-3d')), track(clip('face-smug'))], equip: { crown: 'cap', faceAcc: 'sunglasses', handFar: 'paper' } },
+      tracks: [track(clip('stand-3d')), track(clip('face-smug'))], equip: { crown: 'cap', faceAcc: 'sunglasses', handLeft: 'paper' } },
     ...SEATS.map((_, i) => extra(i)),
   ];
   const scene = parseScene({ name: 'demo-hold', lens: LENS, cast: members.map((m) => ({ id: m.id, character: `${m.id}.json`, world: m.world, tracks: m.tracks })) });
@@ -220,7 +220,7 @@ export function holdDemo() {
       for (const p of actors) {
         const sp = sceneAt(rt, p.id, t, heights[p.id], bodies[p.id]);
         act(p.fig, sp, t);
-        if (p.equip) dress(p.fig, p.equip, !!sp.world?.flip);
+        if (p.equip) dress(p.fig, p.equip);
       }
       if (!el) return;
       // ngồi thì đùi nằm trên mặt ghế đúng nửa nét (hông của rig là tâm nét): chỗ chạm ấy không phải lỗi

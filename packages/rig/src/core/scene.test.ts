@@ -55,13 +55,15 @@ describe("cảnh không người", () => {
 
 describe("`cast[].base` với `stretch` từng đoạn", () => {
   const ngoi = {
-    legFar: [82, -82],
-    legNear: [82, -82],
+    legLeft: [82, -82],
+    legRight: [82, -82],
     stretch: [1, 1, 1, 1, 0.75, 1.19, 0.75, 1.19],
   };
   const go = parseAction({
-    mask: ["armFar", "armNear", "stretch"],
-    keys: [{ t: 0, pose: { armFar: [34, 58, 0], armNear: [38, 54, 0], stretch: [0.9, 1, 1, 1] } }],
+    mask: ["armLeft", "armRight", "stretch"],
+    keys: [
+      { t: 0, pose: { armLeft: [34, 58, 0], armRight: [38, 54, 0], stretch: [0.9, 1, 1, 1] } },
+    ],
   });
   if (!go.success) throw new Error(go.error.message);
 

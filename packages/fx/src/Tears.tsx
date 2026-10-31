@@ -51,7 +51,7 @@ export function Tears({ fx, t, anchor }: { fx: TearsData; t: number; anchor: FxA
     if (tau < 0 || tau > fx.life) continue;
     // Hai bên xen kẽ; `side` là bên của khung hình
     const side = i % 2 ? 1 : -1;
-    const a = anchor(fx.cast, side > 0 ? "eyeFar" : "eyeNear", born);
+    const a = anchor(fx.cast, side > 0 ? "eyeLeft" : "eyeRight", born);
     if (!a) continue;
     const j = hash(i);
     const vx = fx.vx * side * (0.78 + 0.44 * j);

@@ -171,14 +171,13 @@ describe('khoảng cách tới khối lồi', () => {
     expect(fore(slab(0.12))[0].depth).toBeCloseTo(k + 0.03, 4);
   });
 
-  it('touch nhận tên phần người của lớp vẽ code: gần / xa theo mắt, không có mắt thì cả hai bên; tên lạ thì gọi `unknown`', () => {
+  it('touch nhận tên phần người của lớp vẽ code: `…Right` / `…Left` là bên phải / trái của người; tên lạ thì gọi `unknown`', () => {
     const touched = (touch: Touch[]) => slab(0).map((c) => ({ ...c, touch }));
-    const right = new THREE.Vector3(-10, 1, 0), left: [number, number, number] = [10, 1, 0];
-    expect(fore(touched(['forearmNear']), { eye: right })).toEqual([]);
-    expect(fore(touched(['forearmNear']), { eye: left })).toHaveLength(1);
-    expect(fore(touched(['a.forearmFar']), { eye: left })).toEqual([]);
-    expect(fore(touched(['forearmNear']))).toEqual([]);
-    expect(fore(touched(['armNear']))).toHaveLength(1);
+    expect(fore(touched(['forearmRight']))).toEqual([]);
+    expect(fore(touched(['forearmLeft']))).toHaveLength(1);
+    expect(fore(touched(['a.forearmRight']))).toEqual([]);
+    expect(fore(touched(['b.forearmRight']))).toHaveLength(1);
+    expect(fore(touched(['armRight']))).toHaveLength(1);
     const bad: string[] = [];
     expect(fore(touched(['tay', { part: 'a.chan', max: 3 }]), { unknown: (e) => bad.push(e) })).toHaveLength(1);
     expect(bad).toEqual(['tay', 'a.chan']);

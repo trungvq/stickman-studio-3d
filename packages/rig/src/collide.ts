@@ -16,7 +16,7 @@ export const BODY_PARTS: readonly BodyPart[] = ['head', 'torso', 'upperArm', 'fo
 /**
  * Phần người được phép lấn vào vật: `'<bộ phận>[R|L]'` của mọi người, `'<người>.<bộ phận>[R|L]'` của một người (tên như
  * khoá của `figures` truyền cho `collide`), `'self.…'` là người đang cầm, đang đội vật. Tên phần người của lớp vẽ code
- * (`forearmNear`, `legFar`, `lap`…) cũng được: gần / xa theo `eye` của `collide`. Chuỗi là lấn bao nhiêu cũng không báo;
+ * (`forearmRight`, `legLeft`, `lap`…) cũng được. Chuỗi là lấn bao nhiêu cũng không báo;
  * `{ part, max }` cho lấn tới `max` đơn vị thế giới rig (px, như `touch` của món lớp vẽ code), sâu hơn vẫn báo.
  */
 export type Touch = string | { part: string; max: number };
@@ -61,8 +61,6 @@ export interface CollideOptions {
   parts?: readonly BodyPart[];
   /** Kiểm cả người với người */
   people?: boolean;
-  /** Mắt ống kính (thế giới three): tên `…Near` / `…Far` trong `touch` là bên gần / xa mắt của từng người; không có thì cả hai bên */
-  eye?: THREE.Vector3 | readonly [number, number, number];
   /** Gọi với mục `touch` không phải phần người nào, mỗi lần gặp */
   unknown?: (entry: string, collider: string) => void;
 }
@@ -470,17 +468,17 @@ function capsuleCollider(c: Capsule, box: THREE.Box3, col: Collider): [number, T
 }
 
 const PART_RE = new RegExp(`^(${BODY_PARTS.join('|')})([RL])?$`, 'i');
-/** Phần người của lớp vẽ code (`BODY_PARTS` của fx) → bộ phận rig; bên theo mắt (`eye`) */
-const FLAT_RE = /^(arm|forearm|leg|shin)(Near|Far)$/;
+/** Phần người của lớp vẽ code (`BODY_PARTS` của fx) → bộ phận rig và bên */
+const FLAT_RE = /^(arm|forearm|leg|shin)(Right|Left)$/;
 const FLAT: Record<string, BodyPart> = { arm: 'upperArm', forearm: 'foreArm', leg: 'thigh', shin: 'shin' };
-interface TouchRule { who?: string; part: BodyPart; side?: Side; near?: boolean; max: number }
+interface TouchRule { who?: string; part: BodyPart; side?: Side; max: number }
 
 /** Mục `touch` → luật; tên bộ phận rig không phân biệt hoa thường, tên của lớp vẽ code thì đúng như fx; mục không hiểu là `null` */
 function touchRule(t: Touch): TouchRule | null {
   const s = typeof t === 'string' ? t : t.part, i = s.lastIndexOf('.'), name = s.slice(i + 1);
   const who = i < 0 ? undefined : s.slice(0, i), max = typeof t === 'string' ? Infinity : t.max * U;
   const f = FLAT_RE.exec(name);
-  if (f) return { who, part: FLAT[f[1]], near: f[2] === 'Near', max };
+  if (f) return { who, part: FLAT[f[1]], side: f[2] === 'Right' ? -1 : 1, max };
   if (name === 'lap') return { who, part: 'thigh', max };
   const m = PART_RE.exec(name);
   if (!m) return null;
@@ -489,20 +487,14 @@ function touchRule(t: Touch): TouchRule | null {
   return { who, part, side, max };
 }
 
-/** Lún tối đa (three) mà `touch` của vật cho phép bộ phận ấy; `self` là người mang vật, `near` bên gần mắt của người */
-function allowance(rules: readonly TouchRule[], who: string, c: Capsule, near?: Side, self?: string) {
+/** Lún tối đa (three) mà `touch` của vật cho phép bộ phận ấy; `self` là người mang vật */
+function allowance(rules: readonly TouchRule[], who: string, c: Capsule, self?: string) {
   let lim = 0;
   for (const r of rules) {
-    const side = r.near === undefined ? r.side === undefined || r.side === c.side : near === undefined || c.side === (r.near ? near : -near);
+    const side = r.side === undefined || r.side === c.side;
     if (r.part === c.part && side && (r.who === undefined || (r.who === 'self' ? self : r.who) === who)) lim = Math.max(lim, r.max);
   }
   return lim;
-}
-
-/** Bên gần mắt của người: bên có gốc chân gần mắt hơn theo phương ngang, như `flip` của lõi */
-function nearSide(fig: Figure, eye: THREE.Vector3): Side {
-  const r = fig.legs[-1].hip.getWorldPosition(new THREE.Vector3()), l = fig.legs[1].hip.getWorldPosition(new THREE.Vector3());
-  return (r.x - l.x) * (eye.x - (r.x + l.x) / 2) + (r.z - l.z) * (eye.z - (r.z + l.z) / 2) >= 0 ? -1 : 1;
 }
 
 /**
@@ -513,12 +505,11 @@ function nearSide(fig: Figure, eye: THREE.Vector3): Side {
 export function collide(figures: readonly Figure[] | Record<string, Figure>, cols: readonly Collider[], o: CollideOptions = {}): Contact[] {
   const slack = o.slack ?? 0.01;
   const entries = Array.isArray(figures) ? figures.map((f, i) => [String(i), f] as const) : Object.entries(figures);
-  const eye = o.eye && (o.eye instanceof THREE.Vector3 ? o.eye : new THREE.Vector3(...o.eye));
   const bodies = entries.map(([who, f]) => {
     const caps = bodyCapsules(f, o.parts), boxes = caps.map((c) => new THREE.Box3().setFromPoints([c.a, c.b]).expandByScalar(c.r));
     // khung bao cả người: vật ngoài nó thì không viên nang nào chạm
     const all = boxes.reduce((u, b) => u.union(b), new THREE.Box3());
-    return { who, caps, boxes, all, near: eye && nearSide(f, eye) };
+    return { who, caps, boxes, all };
   });
   const whoOf = new Map(entries.map(([who, f]) => [f.root as THREE.Object3D, who]));
   const found = new Map<string, Contact>();
@@ -535,10 +526,10 @@ export function collide(figures: readonly Figure[] | Record<string, Figure>, col
       else o.unknown?.(typeof t === 'string' ? t : t.part, col.name);
     }
     const self = col.owner && whoOf.get(col.owner);
-    for (const { who, caps, boxes, all, near } of bodies) {
+    for (const { who, caps, boxes, all } of bodies) {
       if (!all.intersectsBox(col.box)) continue;
       caps.forEach((c, k) => {
-        const lim = rules.length ? allowance(rules, who, c, near, self) : 0;
+        const lim = rules.length ? allowance(rules, who, c, self) : 0;
         if (lim < Infinity) add(who, c, col.name, capsuleCollider(c, boxes[k], col), lim);
       });
     }

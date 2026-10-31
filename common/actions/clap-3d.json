@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 20,
+  "schemaVersion": 21,
   "name": "clap-3d",
   "duration": 0.42,
   "end": "wrap",
-  "mask": ["armNear", "armFar", "hand"],
+  "mask": ["armRight", "armLeft", "hand"],
   "authoredAt": "side",
   "snap": true,
   "keys": [
@@ -11,56 +11,56 @@
       "t": 0,
       "pose": {},
       "reach": {
-        "armFar": { "to": "otherPalm", "offset": [0, 0, 24], "elbow": [-0.3, 1, 0.8] },
-        "armNear": { "to": "chest", "offset": [36, -6, 12], "elbow": [-0.3, 1, 0.8] }
+        "armLeft": { "to": "otherPalm", "offset": [0, 0, 24], "elbow": [-0.3, 1, 0.8] },
+        "armRight": { "to": "chest", "offset": [36, -6, 12], "elbow": [-0.3, 1, 0.8] }
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] },
-        "armNear": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] }
+        "armLeft": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] },
+        "armRight": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] }
       }
     },
     {
       "t": 0.45,
       "pose": {},
       "reach": {
-        "armFar": { "to": "otherPalm", "elbow": [-0.3, 1, 0.8] },
-        "armNear": { "to": "chest", "offset": [36, -6, 2], "elbow": [-0.3, 1, 0.8] }
+        "armLeft": { "to": "otherPalm", "elbow": [-0.3, 1, 0.8] },
+        "armRight": { "to": "chest", "offset": [36, -6, 2], "elbow": [-0.3, 1, 0.8] }
       },
       "ease": "linear",
       "hand": {
-        "armFar": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] },
-        "armNear": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] }
+        "armLeft": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] },
+        "armRight": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] }
       }
     },
     {
       "t": 0.55,
       "pose": {},
       "reach": {
-        "armFar": { "to": "otherPalm", "elbow": [-0.3, 1, 0.8] },
-        "armNear": { "to": "chest", "offset": [36, -6, 2], "elbow": [-0.3, 1, 0.8] }
+        "armLeft": { "to": "otherPalm", "elbow": [-0.3, 1, 0.8] },
+        "armRight": { "to": "chest", "offset": [36, -6, 2], "elbow": [-0.3, 1, 0.8] }
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] },
-        "armNear": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] }
+        "armLeft": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] },
+        "armRight": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] }
       }
     },
     {
       "t": 1,
       "pose": {},
       "reach": {
-        "armFar": { "to": "otherPalm", "offset": [0, 0, 24], "elbow": [-0.3, 1, 0.8] },
-        "armNear": { "to": "chest", "offset": [36, -6, 12], "elbow": [-0.3, 1, 0.8] }
+        "armLeft": { "to": "otherPalm", "offset": [0, 0, 24], "elbow": [-0.3, 1, 0.8] },
+        "armRight": { "to": "chest", "offset": [36, -6, 12], "elbow": [-0.3, 1, 0.8] }
       },
       "ease": "smooth",
       "hand": {
-        "armFar": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] },
-        "armNear": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] }
+        "armLeft": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] },
+        "armRight": { "pose": "flat", "palm": "in", "fingers": [1, -1, 0] }
       }
     }
   ],
   "events": [{ "name": "clap", "t": 0.5 }],
-  "note": "Vỗ tay lặp: tay gần trước ngực (mốc `chest`, offset [36, -6, 12] mở → 2 chạm), tay xa áp lòng tay vào lòng tay gần (`otherPalm`, cách 24 lúc mở), 0,42 s một lượt, lặp; dáng `flat`, hai lòng tay `in` đối nhau, sự kiện `clap` lúc chạm, `snap` vì cú khép nhanh cố ý. Chỉ ghi `armNear`, `armFar`, `hand`. Nền `stand-3d`, `sit-3d` hay `seiza-3d`; mốc theo mặt áo nên người bụng phệ tay tự ra trước bụng. Vào blend ~0,25, thôi bằng clip lớp dưới blend ~0,35; nhịp khác thì đặt `cycle`. Cùng họ: `clap-soft-3d` khẽ, `clap-3d`, `clap-big-3d` to. Sinh bằng `tools/actions/clap.mjs`.",
+  "note": "Vỗ tay lặp: tay phải trước ngực (mốc `chest`, offset [36, -6, 12] mở → 2 chạm), tay trái áp lòng tay vào lòng tay phải (`otherPalm`, cách 24 lúc mở), 0,42 s một lượt, lặp; dáng `flat`, hai lòng tay `in` đối nhau, sự kiện `clap` lúc chạm, `snap` vì cú khép nhanh cố ý. Chỉ ghi `armRight`, `armLeft`, `hand`. Nền `stand-3d`, `sit-3d` hay `seiza-3d`; mốc theo mặt áo nên người bụng phệ tay tự ra trước bụng. Vào blend ~0,25, thôi bằng clip lớp dưới blend ~0,35; nhịp khác thì đặt `cycle`. Cùng họ: `clap-soft-3d` khẽ, `clap-3d`, `clap-big-3d` to. Sinh bằng `tools/actions/clap.mjs`.",
   "preview": { "stage": "stand" }
 }

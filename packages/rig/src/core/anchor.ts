@@ -33,23 +33,23 @@ export function frameCompose(outer: Frame, inner: Frame): Frame {
 export const ANCHOR_NAMES = [
   "root",
   "hip",
-  "hipNear",
-  "hipFar",
-  "kneeNear",
-  "kneeFar",
-  "footNear",
-  "footFar",
-  "shoulderNear",
-  "shoulderFar",
-  "elbowNear",
-  "elbowFar",
-  "wristNear",
-  "wristFar",
+  "hipRight",
+  "hipLeft",
+  "kneeRight",
+  "kneeLeft",
+  "footRight",
+  "footLeft",
+  "shoulderRight",
+  "shoulderLeft",
+  "elbowRight",
+  "elbowLeft",
+  "wristRight",
+  "wristLeft",
   "collar",
   "head",
   "face",
-  "eyeNear",
-  "eyeFar",
+  "eyeRight",
+  "eyeLeft",
   "mouth",
 ] as const;
 
@@ -76,15 +76,17 @@ type Joint = { frame: Frame; w: number; h: number };
 function jointsOf(c: CharacterData, raw: Pose, world: World): Record<AnchorName, Joint> {
   const f3 = figure3d(c, raw, world);
   const pose = flatPose(c, raw, f3);
-  const F = figureOf3(computeFigure(c, pose), f3, world.theta);
+  const F = figureOf3(computeFigure(c, pose), f3);
   const { face, head: ph } = c;
   const torso: Frame = { x: 0, y: 0, deg: pose.torso || 0 };
   const [tilt, turn, nod] = pose.head;
+  // khung của mốc chưa lật: người lật thì lắc, nghiêng (theo bên trái người) đổi dấu trên khung
+  const mx = world.flip ? -1 : 1;
   const headRx = (RIG.headH / 2) * ph.scaleX;
   const headRy = (RIG.headH / 2) * ph.scaleY;
   const headCy = -headRy;
   // Đầu quay liên tục theo `theta`, xem docs/01-rig.md#mặt-người-3d
-  const T: HeadTurn = { yaw: world.theta + turn, pitch: nod, look: f3.look };
+  const T: HeadTurn = { yaw: world.theta + mx * turn, pitch: nod, look: f3.look };
   const eyeLat = latOf(face.offsetY, headRy);
   const eyeLon = lonOf(face.eyeGap / 2, headRx);
   const u = Math.max(0, Math.min(1, (T.yaw - FACE_REAL_FROM) / FACE_REAL_SPAN));
@@ -92,18 +94,18 @@ function jointsOf(c: CharacterData, raw: Pose, world: World): Record<AnchorName,
   const fy = faceYaw(T.yaw, eyeLon, eyeLat);
   // Nét mặt quay theo `faceYaw` (chậm hơn đầu ở góc lớn), rồi trượt dần về góc thật
   const TF: HeadTurn = { ...T, yaw: fy + (T.yaw - fy) * real };
-  const near = facePoint(TF, -eyeLon, eyeLat);
-  const far = facePoint(TF, eyeLon, eyeLat);
-  const faceCx = (headRx * (near[0] + far[0])) / 2;
-  const faceCy = headCy + face.offsetY - headRy * (near[1] - Math.sin(eyeLat * D));
-  const eyeGap = headRx * (far[0] - near[0]);
+  const eyeA = facePoint(TF, -eyeLon, eyeLat);
+  const eyeB = facePoint(TF, eyeLon, eyeLat);
+  const faceCx = (headRx * (eyeA[0] + eyeB[0])) / 2;
+  const faceCy = headCy + face.offsetY - headRy * (eyeA[1] - Math.sin(eyeLat * D));
+  const eyeGap = headRx * (eyeB[0] - eyeA[0]);
   const mouthAt = facePoint(TF, 0, latOf(face.offsetY + face.mouthGap, headRy));
   const mouthCx = headRx * mouthAt[0];
   const mouthCy = headCy - headRy * mouthAt[1];
   // Cổ và tâm đầu ở chỗ chiếu thật, thân co theo góc cúi
   const squash = f3.neckY / -(F.len.torso + F.len.neck);
   const neckDrop = Math.sin(nod * D) * F.len.neck * squash;
-  const head = frameCompose(torso, { x: 0, y: f3.headY + headRy + neckDrop, deg: tilt });
+  const head = frameCompose(torso, { x: 0, y: f3.headY + headRy + neckDrop, deg: mx * tilt });
 
   // Đoạn xương rời khớp chỉ theo +y của khung — nên `deg` là góc rig đổi dấu
   const at = (base: Frame, p: Pt, rigDeg: number): Joint => ({
@@ -117,27 +119,27 @@ function jointsOf(c: CharacterData, raw: Pose, world: World): Record<AnchorName,
     h,
   });
   const ID: Frame = { x: 0, y: 0, deg: 0 };
-  const [af, an] = [pose.af, pose.an];
+  const [al, ar] = [pose.al, pose.ar];
   return {
     root: { frame: { x: 0, y: F.lowest, deg: 0 }, w: 0, h: 0 },
     hip: { frame: torso, w: 0, h: 0 },
-    hipNear: at(ID, F.legN[0], pose.ln[0]),
-    hipFar: at(ID, F.legF[0], pose.lf[0]),
-    kneeNear: at(ID, F.legN[1], pose.ln[0] + pose.ln[1]),
-    kneeFar: at(ID, F.legF[1], pose.lf[0] + pose.lf[1]),
-    footNear: at(ID, F.legN[2], pose.ln[0] + pose.ln[1]),
-    footFar: at(ID, F.legF[2], pose.lf[0] + pose.lf[1]),
-    shoulderNear: at(torso, F.shN, an[0]),
-    shoulderFar: at(torso, F.shF, af[0]),
-    elbowNear: at(torso, F.armN[1], an[0] + an[1]),
-    elbowFar: at(torso, F.armF[1], af[0] + af[1]),
-    wristNear: at(torso, F.armN[2], an[0] + an[1] + an[2]),
-    wristFar: at(torso, F.armF[2], af[0] + af[1] + af[2]),
+    hipRight: at(ID, F.legR[0], pose.lr[0]),
+    hipLeft: at(ID, F.legL[0], pose.ll[0]),
+    kneeRight: at(ID, F.legR[1], pose.lr[0] + pose.lr[1]),
+    kneeLeft: at(ID, F.legL[1], pose.ll[0] + pose.ll[1]),
+    footRight: at(ID, F.legR[2], pose.lr[0] + pose.lr[1]),
+    footLeft: at(ID, F.legL[2], pose.ll[0] + pose.ll[1]),
+    shoulderRight: at(torso, F.shR, ar[0]),
+    shoulderLeft: at(torso, F.shL, al[0]),
+    elbowRight: at(torso, F.armR[1], ar[0] + ar[1]),
+    elbowLeft: at(torso, F.armL[1], al[0] + al[1]),
+    wristRight: at(torso, F.armR[2], ar[0] + ar[1] + ar[2]),
+    wristLeft: at(torso, F.armL[2], al[0] + al[1] + al[2]),
     collar: at(torso, [0, f3.neckY], 0),
     head: inFrame(head, 0, headCy, headRx * 2, headRy * 2),
     face: inFrame(head, faceCx, faceCy),
-    eyeNear: inFrame(head, faceCx - eyeGap / 2, faceCy),
-    eyeFar: inFrame(head, faceCx + eyeGap / 2, faceCy),
+    eyeRight: inFrame(head, faceCx - mx * (eyeGap / 2), faceCy),
+    eyeLeft: inFrame(head, faceCx + mx * (eyeGap / 2), faceCy),
     mouth: inFrame(head, mouthCx, mouthCy),
   };
 }

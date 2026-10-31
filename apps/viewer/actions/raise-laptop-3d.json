@@ -1,24 +1,24 @@
 {
-  "schemaVersion": 13,
+  "schemaVersion": 21,
   "name": "raise-laptop-3d",
   "duration": 0.9,
   "end": "hold",
   "authoredAt": "side",
   "mask": [
-    "armFar",
-    "armNear",
+    "armLeft",
+    "armRight",
     "torso"
   ],
   "keys": [
     {
       "t": 0,
       "pose": {
-        "armFar": [
+        "armLeft": [
           3,
           8,
           0
         ],
-        "armNear": [
+        "armRight": [
           3,
           8,
           0
@@ -33,7 +33,7 @@
         "torso": -3
       },
       "reach": {
-        "armFar": {
+        "armLeft": {
           "at": [
             90,
             -104,
@@ -45,7 +45,7 @@
             0.7
           ]
         },
-        "armNear": {
+        "armRight": {
           "at": [
             90,
             -104,
