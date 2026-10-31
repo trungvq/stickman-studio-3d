@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 21,
+  "name": "glance-left-3d",
+  "duration": 1.4,
+  "end": "hold",
+  "mask": ["head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "head": [null, 0, 0] }, "ease": "smooth" },
+    { "t": 0.18, "pose": { "head": [null, 30, 14] }, "ease": "linear" },
+    { "t": 0.64, "pose": { "head": [null, 30, 14] }, "ease": "smooth" },
+    { "t": 1, "pose": { "head": [null, 0, 0] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Liếc xuống phía tay trái một cái rồi về: đầu lắc 30°, gật 14° ở 0,18, giữ tới 0,64, về thẳng ở 1; lượt 1,4 s, giữ dáng thẳng ở cuối. Chỉ ghi lắc và gật của `head`, nghiêng để trống. Nền `stand-3d`, ngồi thì `sit-3d`. Chồng lên mọi track thân, tay; chiều kia là `glance-right-3d`, liếc lên là `glance-up-left-3d`. Sinh bằng `tools/actions/glance.mjs`.",
+  "preview": { "stage": "stand" }
+}

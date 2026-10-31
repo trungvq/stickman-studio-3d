@@ -1,10 +1,10 @@
 // Ghé sang người bên cạnh thì thầm về một phía. Chạy `node tools/actions/whisper.mjs`.
 import { emit } from "./emit.mjs";
 
-/** `s` là dấu của nghiêng thân, nghiêng và lắc đầu: âm về phía tay gần */
+/** `s` là dấu của nghiêng thân, nghiêng và lắc đầu: âm về phía tay phải */
 const ROWS = [
-  { name: "whisper-near-3d", arm: "armNear", s: -1, side: "gần", mirror: "whisper-far-3d" },
-  { name: "whisper-far-3d", arm: "armFar", s: 1, side: "xa", mirror: "whisper-near-3d" },
+  { name: "whisper-right-3d", arm: "armRight", s: -1, side: "phải", mirror: "whisper-left-3d" },
+  { name: "whisper-left-3d", arm: "armLeft", s: 1, side: "trái", mirror: "whisper-right-3d" },
 ];
 
 /** Người nghe đứng ngang hàng phía tay ấy, hai hông cách `APART` ở `height = 1`; xem thử thì người ấy xoay `TOWARD` độ về người nói */

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 21,
+  "name": "look-up-left-3d",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["head"],
+  "authoredAt": "side",
+  "keys": [
+    { "t": 0, "pose": { "head": [null, 0, 0] }, "ease": "smooth" },
+    { "t": 1, "pose": { "head": [null, 40, -14] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Ngẩng nhìn người đứng cao chếch về phía tay trái: đầu lắc 40°, ngửa 14° trong 0,5 s rồi giữ. Chỉ ghi lắc và gật của `head`, nghiêng để trống. Nền `stand-3d` hay `sit-3d` nhìn lên người đứng cạnh. Chồng `tilt-head-*` lên trên vẫn giữ hướng nhìn; chiều kia là `look-up-right-3d`, buông bằng clip rỗng blend ~0,4. Sinh bằng `tools/actions/look-up.mjs`.",
+  "preview": { "stage": "stand" }
+}

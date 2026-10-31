@@ -1,10 +1,10 @@
 // Ngó sang một bên rồi về. Chạy `node tools/actions/look-around.mjs`.
 import { emit } from "./emit.mjs";
 
-/** Lắc dương là quay mặt về phía xa ống kính */
+/** Lắc dương là quay mặt về phía tay trái */
 const ROWS = [
-  { name: "look-around-near-3d", sign: -1, side: "phía ống kính", other: "look-around-far-3d" },
-  { name: "look-around-far-3d", sign: 1, side: "phía xa ống kính", other: "look-around-near-3d" },
+  { name: "look-around-right-3d", sign: -1, side: "phía tay phải", other: "look-around-left-3d" },
+  { name: "look-around-left-3d", sign: 1, side: "phía tay trái", other: "look-around-right-3d" },
 ];
 
 const TURN = 28;

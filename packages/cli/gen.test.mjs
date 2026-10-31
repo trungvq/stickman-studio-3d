@@ -275,7 +275,7 @@ describe("stickman gen sit", () => {
     const dangle = byRule(hang, "dangle");
     assert.equal(dangle.length, 2, hang.text);
     for (const x of dangle) assert.ok(x.worst > 30, x.msg);
-    assert.match(hang.text, /chân gần thõng: đế giày hở/);
+    assert.match(hang.text, /chân phải thõng: đế giày hở/);
     // ghế quá thấp cho chân vuông góc: gợi ý kiểu chân khác
     await assert.rejects(
       genSit({ dir: sitSpace(sitScene(45)), scene: "ngoi", cast: "a" }),
@@ -289,7 +289,7 @@ describe("stickman gen sit", () => {
       { legs: "square", back: "upright", hands: "thighs", backrest: "55" },
       { legs: "bent", back: "forward", hands: "table", table: String(-SEAT - 57) },
       { legs: "straight", back: "recline", hands: "armrest", armrest: right },
-      { legs: "staggered", tuck: "near", back: "recline", hands: "thighs", backrest: "48" },
+      { legs: "staggered", tuck: "right", back: "recline", hands: "thighs", backrest: "48" },
     ];
     for (const o of runs) {
       const dir = sitSpace();
@@ -300,12 +300,12 @@ describe("stickman gen sit", () => {
       assert.equal(a.success, true);
       assert.equal(a.data.end, "wrap");
       assert.match(a.data.note, /`stickman gen sit`/);
-      for (const ch of ["legNear", "legFar", "armNear", "armFar", "torso", "hand"])
+      for (const ch of ["legRight", "legLeft", "armRight", "armLeft", "torso", "hand"])
         assert.ok(a.data.mask.includes(ch), ch);
       assert.deepEqual(r.snippet.clip, { action: "sit-ngoi-a-3d", start: 0 });
       const [k0, k1] = a.data.keys;
       assert.equal(k1.pose.torso - k0.pose.torso, 1);
-      if (o.legs === "staggered") assert.notDeepEqual(k0.pose.legNear, k0.pose.legFar);
+      if (o.legs === "staggered") assert.notDeepEqual(k0.pose.legRight, k0.pose.legLeft);
       if (o.back === "upright") assert.equal(k0.pose.torso, 3);
       if (o.back === "forward") assert.ok(k0.pose.torso > 10 && a.data.mask.includes("head"));
       if (o.back === "recline") assert.ok(k0.pose.torso < 0, String(k0.pose.torso));
@@ -408,11 +408,11 @@ describe("stickman gen sit", () => {
     const o = { cast: "a", legs: "straight", back: "upright", hands: "thighs" };
     const self = {
       group: "clash",
-      msg: "tay xuyên thân — a.forearmNear lấn vào a.torso 4.0 ở giây 0.00 · giây 0.00",
+      msg: "tay xuyên thân — a.forearmRight lấn vào a.torso 4.0 ở giây 0.00 · giây 0.00",
     };
     const prop = {
       group: "clash",
-      msg: "người lồng vào đồ — a.thighNear ↔ ghe lấn 5.0 ở giây 0.00",
+      msg: "người lồng vào đồ — a.thighRight ↔ ghe lấn 5.0 ở giây 0.00",
     };
     const only = sitHints({ ...o, core: [], rows: [self] });
     assert.ok(
@@ -452,7 +452,7 @@ describe("stickman gen sit", () => {
   it("--tuck chỉ đi với chân so le; tựa ra sau không lưng ghế thì cảnh báo", async () => {
     const dir = sitSpace();
     const base = { dir, scene: "ngoi", cast: "a", dryRun: true };
-    await assert.rejects(genSit({ ...base, tuck: "near" }), /--tuck chỉ đi với --legs staggered/);
+    await assert.rejects(genSit({ ...base, tuck: "right" }), /--tuck chỉ đi với --legs staggered/);
     const free = await genSit({ ...base, back: "recline" });
     assert.equal(free.ok, true, free.text);
     assert.match(free.text, /cảnh báo: tựa ra sau mà không có lưng ghế/);
@@ -742,7 +742,7 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
   it("ghế hơi cao: hông gần mép trước thì đùi chúi được tới sàn, hông sâu thì đùi lún mép — `floor` lỗi, mặc định chân thõng", async () => {
     const near = await run({ seat: 93, depth: 90 }, { feet: "floor" });
     assert.equal(near.ok, true, near.text);
-    assert.ok(near.legs.near[0] < 84, String(near.legs.near));
+    assert.ok(near.legs.right[0] < 84, String(near.legs.right));
     const edge = byRule(near, "thigh")[0];
     assert.equal(edge.level, "ok", near.text);
     assert.ok(edge.worst <= THIGH_SINK, edge.msg);
@@ -762,13 +762,13 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
     assert.equal(hang.length, 2, deep.text);
     for (const x of hang) assert.ok(x.worst >= DANGLE_MIN, x.msg);
     // đùi nằm trên mặt ngồi: không lún mép
-    assert.ok(deep.legs.near[0] > near.legs.near[0], `${deep.legs.near} ${near.legs.near}`);
+    assert.ok(deep.legs.right[0] > near.legs.right[0], `${deep.legs.right} ${near.legs.right}`);
     assert.equal(byRule(deep, "thigh")[0].level, "ok", deep.text);
   });
   it("ghế cao hẳn: chân vuông thõng, `--feet floor` thì lỗi", async () => {
     const r = await run({ seat: 130 });
     assert.equal(r.ok, true, r.text);
-    assert.match(r.text, /chân gần thõng: đế giày hở [\d,]+ trên sàn y 0/);
+    assert.match(r.text, /chân phải thõng: đế giày hở [\d,]+ trên sàn y 0/);
     await assert.rejects(run({ seat: 130 }, { feet: "floor" }), /cao hơn tầm chân|đùi phải chúi/);
     await assert.rejects(run({}, { feet: "air" }), /--feet nhận free \| floor/);
   });
@@ -788,7 +788,7 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
       for (const feet of ["free", "floor"]) {
         const r = await run({ seat: 87.5, depth: 55, legs }, { feet });
         planted(r);
-        for (const side of ["near", "far"]) {
+        for (const side of ["right", "left"]) {
           const shin = shinOf(r, side);
           assert.ok(shin < lo || shin > hi, `${legs} ${shin}`);
           assert.ok(Math.abs(shin) >= LEG_STYLES.square.range[1] - 0.05, `${legs} ${shin}`);
@@ -797,7 +797,7 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
           const deg = String(Math.round(shin * 10) / 10).replace(".", ",");
           assert.ok(
             r.text.includes(
-              `chân ${side === "near" ? "gần" : "xa"}: ống chân ${word} dựng tới ${deg}° (ngoài tầm kiểu)`,
+              `chân ${side === "right" ? "phải" : "trái"}: ống chân ${word} dựng tới ${deg}° (ngoài tầm kiểu)`,
             ),
             r.text,
           );
@@ -807,7 +807,7 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
     // ngồi gần mép trước: chân co chúi đùi được, góc trong tầm, không ghi chú
     const front = await run({ seat: 87.5, depth: 85, legs: "bent" });
     planted(front);
-    const shin = shinOf(front, "near");
+    const shin = shinOf(front, "right");
     assert.ok(shin >= LEG_STYLES.bent.range[0] && shin <= LEG_STYLES.bent.range[1], String(shin));
     assert.doesNotMatch(front.text, /ngoài tầm kiểu/);
   });
@@ -829,7 +829,7 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
       run({ seat: 130, legs: "staggered" }),
       (e) =>
         e instanceof GenError &&
-        /chân so le: chân gần — chân kiểu `straight`.*; chân xa — chân kiểu `bent`/.test(
+        /chân so le: chân phải — chân kiểu `straight`.*; chân trái — chân kiểu `bent`/.test(
           e.message,
         ) &&
         /--legs square/.test(e.message),
@@ -844,10 +844,10 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
     bar.at[0] = 90;
     const r = await genSit({ ...page.call(p, st), dir: workspace(), stage: stageRun(st) });
     assert.equal(r.ok, true, r.text);
-    assert.ok(Math.abs(shinOf(r, "far")) <= LEG_STYLES.square.range[1], String(r.legs.far));
-    assert.ok(shinOf(r, "near") >= LEG_STYLES.square.range[1], String(r.legs.near));
-    assert.match(r.text, /chân so le: chân xa vuông \[[^\]]+\], chân gần duỗi/);
-    assert.match(r.text, /chân xa về vuông: kiểu `bent` không chạm để chân `ghe-thu`/);
+    assert.ok(Math.abs(shinOf(r, "left")) <= LEG_STYLES.square.range[1], String(r.legs.left));
+    assert.ok(shinOf(r, "right") >= LEG_STYLES.square.range[1], String(r.legs.right));
+    assert.match(r.text, /chân so le: chân trái vuông \[[^\]]+\], chân phải duỗi/);
+    assert.match(r.text, /chân trái về vuông: kiểu `bent` không chạm để chân `ghe-thu`/);
   });
   it("chân thõng chỉ nhận nghiệm qua mép, kể cả ghế sâu", async () => {
     const c = who.character;
@@ -868,7 +868,7 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
     for (const depth of [35, 45])
       await assert.rejects(
         run({ seat: 130, depth, legs: "square" }),
-        /Chân gần: ống chân không qua mép/,
+        /Chân phải: ống chân không qua mép/,
       );
   });
   it("thanh để chân hẹp không nằm dưới chân: free đo tới sàn thật", async () => {
@@ -915,13 +915,13 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
     const r = await run({ seat: 80, depth: 90, legs: "staggered" });
     assert.equal(r.ok, true, r.text);
     const [k0] = r.action.keys;
-    for (const side of ["near", "far"]) {
+    for (const side of ["right", "left"]) {
       // lòng tay ngược pháp tuyến mặt trên đùi trong mặt dọc: tiến / xuống = −cos / sin góc đùi
       const a = (r.legs[side][0] * Math.PI) / 180;
-      const palm = k0.hand[side === "near" ? "armNear" : "armFar"].palm;
+      const palm = k0.hand[side === "right" ? "armRight" : "armLeft"].palm;
       assert.ok(Math.abs(palm[0] / palm[1] + Math.cos(a) / Math.sin(a)) < 2e-2, `${side} ${palm}`);
     }
-    assert.notDeepEqual(k0.hand.armNear.palm, k0.hand.armFar.palm);
+    assert.notDeepEqual(k0.hand.armRight.palm, k0.hand.armLeft.palm);
     const rows = byRule(r, "rest").filter((x) => x.msg.startsWith("lòng tay"));
     assert.equal(rows.length, 2, r.text);
     for (const x of rows) assert.equal(x.level, "ok", x.msg);
@@ -994,8 +994,8 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
         }
         if (hands === "fold") {
           const P = rig.actPalms(c, sp);
-          const top = sp.world.flip ? "L" : "R",
-            bottom = top === "R" ? "L" : "R";
+          const top = "R",
+            bottom = "L";
           assert.ok(
             Math.hypot(...P[top].skin[0].map((v, i) => v - P[bottom].skin[1][i])) <= 2 * scale,
           );
@@ -1004,7 +1004,7 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
     }
   });
   it("fold: lòng tay trên chạm mu tay dưới, khuỷu trên tay vịn", async () => {
-    for (const top of ["near", "far"]) {
+    for (const top of ["right", "left"]) {
       const r = await run({ hands: "fold", armrest: true, armOut: 50, top });
       assert.equal(r.ok, true, r.text);
       const rt = castRuntime(
@@ -1017,7 +1017,7 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
       for (const t of sampleTimes(0, SIT_DURATION)) {
         const sp = rig.sceneAt(rt, rig.PREVIEW_ACTOR, t, who.character.rig.height, rt.bodies.a);
         const P = rig.actPalms(who.character, sp);
-        const tag = (top === "near") !== !!sp.world.flip ? "R" : "L";
+        const tag = top === "right" ? "R" : "L";
         const other = tag === "R" ? "L" : "R";
         assert.ok(
           Math.hypot(...P[tag].skin[0].map((v, i) => v - P[other].skin[1][i])) < 2 * sp.world.s,
@@ -1026,7 +1026,7 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
       for (const row of byRule(r, "rest")) assert.equal(row.level, "ok", row.msg);
     }
     await assert.rejects(
-      run({ hands: "armrest", armrest: true }, { top: "far" }),
+      run({ hands: "armrest", armrest: true }, { top: "left" }),
       /--top chỉ đi với --hands fold/,
     );
   });

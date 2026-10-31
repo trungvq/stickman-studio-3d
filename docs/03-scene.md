@@ -74,6 +74,7 @@ Nhân vật nền không tốn gì: một mục `cast` với `world.at` và mộ
 | `cast[].character` | Tên file trong `characters/`, của repo hoặc của bộ chung. Để trống được — một màn diễn phần lớn không phụ thuộc ai diễn |
 | `cast[].world` | Bắt buộc. Chỗ của người 3D trong thế giới của `lens`: `at` hay `path`, `yaw`, `sit`, `s` (cỡ người, nhân cả nhịp `speed`), `hands` — xem [Người 3D](#người-3d) |
 | `cast[].base` | Tư thế nền: tên một pose, hoặc object như `keys[].pose` (`stretch` bốn hoặc tám số). Mọi chỗ nối hoà **về** nó và **từ** nó ở kênh chỉ một bên ghi. Bỏ trống là `idle` |
+| `cast[].baseMirror` | `true`: tư thế nền soi gương như `mirror` của clip — đổi phải ↔ trái, đảo dấu trục ngang của thân. Xem [Soi gương](#soi-gương) |
 | `cast[].equip` | Mặc gì lúc mở màn: `{ "handRight": "axe" }`, hoặc tên một bộ đồ. Hành động đổi tiếp từ đó. Xem [Đổi đồ](#đổi-đồ) |
 | `cast[].fade[]` | Mờ dần rồi biến mất, hay hiện ra: mốc `{ t, v }`, `v` là độ đục `0 → 1`, nội suy thẳng và giữ ở hai đầu. `sceneAt` trả ở `opacity`; người 3D mờ quá nửa thì tắt. Bỏ trống là đục hẳn |
 | `cast[].tracks[]` | Thứ tự có nghĩa: **track sau đè track trước** |
@@ -92,7 +93,7 @@ người không có `world` và `x`, `y`, `group`, `flip`, `rotate`, `path`, `si
 | `speed` | Cách khai nhịp thứ hai: đơn vị thế giới mỗi giây mà người này đi; rig suy `cycle` từ sải chân của hành động nhân `world.s` — xem [Nhịp theo tốc độ](#nhịp-theo-tốc-độ). Không đi cùng `cycle` |
 | `phase` | Pha lúc bắt đầu, `0 → 1`. Để hai người đi lệch bước |
 | `mask` | **Thu hẹp** `mask` của file hành động, cho riêng lần đặt này. Nới rộng là lỗi schema — kênh file không ghi thì không có số nào để lấy. Gọi tên theo kênh của hành động, kể cả khi clip `mirror` |
-| `mirror` | `true`: clip phát như soi gương — đổi phải ↔ trái mọi kênh và phần đi kèm (góc, `stretch`, `reach`, mốc bàn tay của hành động), đảo dấu trục ngang của thân (nghiêng `lean`, lắc và nghiêng đầu). Diễn bằng tay trái một hành động soạn cho tay phải — xem [Hành động theo tay phải trái](#hành-động-theo-tay-phải-trái) |
+| `mirror` | `true`: clip phát như soi gương — đổi phải ↔ trái mọi kênh và phần đi kèm (góc, `stretch`, `reach`, mốc bàn tay của hành động), đảo dấu trục ngang của thân (nghiêng `lean`, lắc và nghiêng đầu). Diễn bằng tay trái một hành động soạn cho tay phải — xem [Soi gương](#soi-gương) |
 | `equip` | Đổi đồ ngay ở `start` của clip: `{ "handLeft": "axe" }`, `null` là để trống socket. **Công tắc**, giữ nguyên qua clip sau như mọi `equip` khác — xem [Đổi đồ](#đổi-đồ) |
 | `blend` | τ tính bằng giây, đè `blendDuration()`. `0` là cắt cứng |
 | `snap` | Cố ý giật (cắt cứng, giật mình) ở riêng lần đặt này, như `snap` của file hành động: `check` không đo giật ở kênh clip ghi suốt lúc nó chạy, kể cả đoạn hoà vào và ra — xem [Giật trên hình](#giật-trên-hình) |
@@ -839,16 +840,26 @@ làm động tác; động tác một tay có bản tay phải và bản tay tr�
   "keys": [{ "t": 0, "pose": {}, "reach": { "armRight": { "to": "hip", "point": "palm", "elbow": [0.1, 0.2, 1] } } }] }
 ```
 
+#### Soi gương
+
 - **Diễn bằng tay kia: `mirror: true` trên clip.** Clip soi gương đổi phải ↔ trái mọi kênh và phần đi kèm — góc tay chân,
-  `stretch`, `reach`, mốc bàn tay (dáng, xoay, hướng lòng tay) — và đảo dấu `lean`, lắc và nghiêng đầu. `mask` của clip
-  vẫn gọi tên theo kênh của hành động: clip `chong-nanh-phai-3d` với `mirror: true` và `mask: ["armRight"]` chống nạnh tay
-  trái. Clip khác trên cùng người không bị ảnh hưởng.
+  `stretch`, `reach`, mốc bàn tay (dáng, xoay, hướng lòng tay), socket bàn tay trong `equip` của clip — và đảo dấu `lean`,
+  lắc và nghiêng đầu. `mask` của clip vẫn gọi tên theo kênh của hành động: clip `chong-nanh-phai-3d` với `mirror: true` và
+  `mask: ["armRight"]` chống nạnh tay trái. Clip khác trên cùng người không bị ảnh hưởng.
 
 ```jsonc
 { "start": 2, "action": "chong-nanh-phai-3d", "mirror": true }   // chống nạnh tay trái
 ```
 
 - `ra ngoài` của `reach` và `elbow` đã theo phía chính tay ấy, nên một bộ số đúng cho cả bản soi gương.
+- **Tư thế nền soi gương: `cast[].baseMirror: true`.** `cast[].base` đổi phải ↔ trái như một clip `mirror`. Chỗ nối hoà
+  về và từ tư thế nền ở kênh chỉ một bên ghi, nên người diễn cả cảnh bằng clip `mirror` khai `baseMirror` để clip hoà vào
+  từ đúng tư thế nền đã soi gương, không từ bản gốc.
+
+```jsonc
+{ "id": "lan", "base": "hold", "baseMirror": true, "tracks": [{ "name": "tay", "clips": [{ "action": "wave-3d", "start": 0, "mirror": true }] }] }
+```
+
 - **Tay nào đang theo clip nào**: `handSources(rt, id, t)` trả cho từng tay kênh tư thế nó đọc (`ar` / `al`), clip ghi góc
   cánh tay, clip ghi bàn tay (kèm mốc bàn tay của hành động ở
   pha ấy và cờ ý định `palm` / `fingers`), clip ghi `reach`, mốc `world.hands` gần nhất và đích thế giới đang áp — cùng

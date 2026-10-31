@@ -40,7 +40,7 @@ export async function emit(actions) {
 export function footfalls(a) {
   const n = 1000;
   const at = (u) =>
-    feet({ ...composePose(POSES.idle, actionPose(a, u)), lift: { lf: true, ln: true } }, 1, true);
+    feet({ ...composePose(POSES.idle, actionPose(a, u)), lift: { ll: true, lr: true } }, 1, true);
   const wrap = a.end === "wrap";
   let prev = at(0);
   let bearing = standing(prev.map((p) => p[1]));

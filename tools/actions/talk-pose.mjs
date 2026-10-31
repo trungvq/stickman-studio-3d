@@ -28,8 +28,8 @@ const SETS = {
       [[-2, -2.5], [-3, 1], "ngả lại 2°, nghiêng thân −2,5° và đầu −3° phía kia, cúi bù 1°"],
       [[5, 1.5], [2, -4], "cúi nhẹ 5° như giải thích lễ phép, ngẩng bù 4° cho cằm ngang"],
       [[1.5, -3], [-3.5, -1], "gần thẳng, nghiêng thân −3° và đầu −3,5°"],
-      [[-2.5, 2.5], [3, 1.5], "ngả lại 2,5°, nghiêng thân 2,5° và đầu 3° phía tay xa"],
-      [[4, -2], [-2.5, -3], "chồm 4°, nghiêng thân −2° và đầu −2,5° phía tay gần, ngẩng bù"],
+      [[-2.5, 2.5], [3, 1.5], "ngả lại 2,5°, nghiêng thân 2,5° và đầu 3° phía tay trái"],
+      [[4, -2], [-2.5, -3], "chồm 4°, nghiêng thân −2° và đầu −2,5° phía tay phải, ngẩng bù"],
     ],
   },
   "upright-bossy": {
@@ -45,8 +45,8 @@ const SETS = {
       [[6, -2], [0, -7], "chồm tới 6° ép người nghe, ngẩng 7° cho mắt vẫn nhìn thẳng"],
       [[-2, -2], [0, -10], "ngửa đầu khinh khỉnh: thân ngả 2°, cằm hất 10°"],
       [[3, 2], [0, -4], "chồm nhẹ 3°, nghiêng thân 2°, hơi hếch cằm"],
-      [[-4, -2], [0, -8], "ngả lại 4° phía tay gần, hất cằm 8°"],
-      [[5, 2], [0, -6], "chồm 5° phía tay xa, ngẩng 6°"],
+      [[-4, -2], [0, -8], "ngả lại 4° phía tay phải, hất cằm 8°"],
+      [[5, 2], [0, -6], "chồm 5° phía tay trái, ngẩng 6°"],
     ],
   },
   "bent-polite": {
@@ -62,8 +62,8 @@ const SETS = {
       [[23, -3], [-2, 13], "nhổm lên 3°, nghiêng thân và đầu phía kia, gật bù giữ mắt trên bàn"],
       [[29, 1.5], [4, 15], "cúi sát hơn, gật 15° như dò dòng chữ"],
       [[25, -3], [-3, 11], "gần dáng nền, nghiêng thân −3° và đầu −3°"],
-      [[23, 2.5], [3, 13], "nhổm lên 3°, nghiêng thân 2,5° và đầu 3° phía tay xa"],
-      [[28, -2.5], [-2, 14], "cúi thêm 2°, nghiêng thân −2,5° và đầu −2° phía tay gần"],
+      [[23, 2.5], [3, 13], "nhổm lên 3°, nghiêng thân 2,5° và đầu 3° phía tay trái"],
+      [[28, -2.5], [-2, 14], "cúi thêm 2°, nghiêng thân −2,5° và đầu −2° phía tay phải"],
     ],
     chin: [
       [1, [3, 5], "ngẩng lên nhìn người nghe: gật còn 5°"],
@@ -85,8 +85,8 @@ const SETS = {
       [[17, -2], [0, -12], "nhổm lại 3°, hất cằm 2° quá mức bù, nghiêng thân 2° phía kia"],
       [[21, -2], [0, -16], "hất cằm nhìn xuống: thân 21°, đầu ngửa 16°"],
       [[18, 2], [0, -10], "nhổm lại 2°, nghiêng thân 2°"],
-      [[17, 2], [0, -14], "nhổm lại 3° phía tay xa, hất cằm"],
-      [[22, -2], [0, -12], "chồm thêm 2° phía tay gần"],
+      [[17, 2], [0, -14], "nhổm lại 3° phía tay trái, hất cằm"],
+      [[22, -2], [0, -12], "chồm thêm 2° phía tay phải"],
     ],
     chin: [
       [1, [0, -17], "hất cằm 5° quá dáng nền"],
@@ -108,8 +108,8 @@ const SETS = {
       [[10, -2], [0, -9], "ngả lại về 10°, hất cằm 3° quá mức bù, nghiêng thân 2° phía kia"],
       [[15, -2], [0, -14], "hất cằm nhìn xuống: thân 15°, đầu ngửa 14° (quá bù 5°)"],
       [[12, 2], [0, -12], "ngả lại 12°, hất cằm đắc ý, nghiêng thân 2°"],
-      [[11, 2], [0, -11], "ngả lại về 11° phía tay xa, hất cằm 3° quá bù"],
-      [[16, -2], [0, -11], "chồm thêm 2° phía tay gần, ngẩng bù"],
+      [[11, 2], [0, -11], "ngả lại về 11° phía tay trái, hất cằm 3° quá bù"],
+      [[16, -2], [0, -11], "chồm thêm 2° phía tay phải, ngẩng bù"],
     ],
     chin: [
       [1, [0, -13], "hất cằm 5° quá dáng nền"],
@@ -123,7 +123,7 @@ const SETS = {
 const r1 = (x) => Math.round(x * 10) / 10;
 const num = (v) => String(v).replace(".", ",").replace("-", "−");
 const clamp = (x, m) => Math.max(-m, Math.min(m, x));
-const COMMON = `Lặp 3,2 s, giữ nhịp thở của \`stand-3d\` (thân +${num(BREATH)}° ở nửa lượt); clip đặt \`phase\` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi \`torso\` (cúi, nghiêng) và nghiêng, gật của \`head\`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay xa ống kính.`;
+const COMMON = `Lặp 3,2 s, giữ nhịp thở của \`stand-3d\` (thân +${num(BREATH)}° ở nửa lượt); clip đặt \`phase\` bằng phần lẻ của giây bắt đầu chia 3,2 để khớp pha với nền. Chỉ ghi \`torso\` (cúi, nghiêng) và nghiêng, gật của \`head\`; lắc để trống nên hướng nhìn của track dưới giữ nguyên. Nghiêng dương là về phía tay trái.`;
 const LAYER =
   "Đặt trên track tư thế, dưới track cử chỉ (cúi chào, quay đầu), mỗi cụm từ một dáng, đổi blend ~0,25 s; hết lượt nói thì clip rỗng để về lớp dưới.";
 const made = "Sinh bằng `tools/actions/talk-pose.mjs`.";

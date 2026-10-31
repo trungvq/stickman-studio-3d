@@ -162,11 +162,11 @@ describe("gen-pages: module thuần", () => {
       dryRun: true,
     });
     // `top` chỉ với `fold`, `elbow` chỉ với tay trên tay vịn và khác 0
-    const fold = GEN_PAGES.sit.call({ hands: "fold", top: "far", elbow: -6, feet: "floor" }, st);
-    assert.equal(fold.top, "far");
+    const fold = GEN_PAGES.sit.call({ hands: "fold", top: "left", elbow: -6, feet: "floor" }, st);
+    assert.equal(fold.top, "left");
     assert.equal(fold.elbow, -6);
     assert.equal(fold.feet, "floor");
-    const thighs = GEN_PAGES.sit.call({ hands: "thighs", top: "far", elbow: -6 }, st);
+    const thighs = GEN_PAGES.sit.call({ hands: "thighs", top: "left", elbow: -6 }, st);
     assert.equal(thighs.top, undefined);
     assert.equal(thighs.elbow, undefined);
   });

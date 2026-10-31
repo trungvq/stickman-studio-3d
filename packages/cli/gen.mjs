@@ -694,7 +694,7 @@ export async function genPour(o) {
   const holdJson = JSON.stringify(hold);
   const note =
     `Rót ${style === "serve" ? "mời khách hai tay" : "một tay"} sinh bằng \`stickman gen pour\` cho cảnh \`${o.scene}\`, người \`${o.cast}\` từ giây ${at}: đích rót ${cupNote}; hướng rót ${best.dir}°, bình nghiêng ${K.tilt[0]} → ${K.tilt[1]}°; ${POUR_TIMING}. ` +
-    `Ghi ${K.support ? "hai tay" : "tay phải"}, \`hand\`, \`torso\`; \`sides: "anatomical"\`; món ở \`world.hands[].hold\` tay phải: ${holdJson}. ` +
+    `Ghi ${K.support ? "hai tay" : "tay phải"}, \`hand\`, \`torso\`; món ở \`world.hands[].hold\` tay phải: ${holdJson}. ` +
     `Cốc hay người rót đổi chỗ thì sinh lại, không sửa tay.`;
   const preview = { stage: stageAt(member, at, marks), hold: { right: hold } };
   const action = rig.parseAction({
@@ -1024,9 +1024,9 @@ export async function genSit(o) {
   const legs = o.legs ?? "square";
   const back = o.back ?? "upright";
   const hands = o.hands ?? "thighs";
-  const tuck = o.tuck ?? "far";
+  const tuck = o.tuck ?? "left";
   const feet = o.feet ?? "free";
-  const top = o.top ?? "near";
+  const top = o.top ?? "right";
   const onArmrest = hands === "armrest" || hands === "fold";
   if (!LEG_KINDS.includes(legs))
     fail(`--legs nhận ${LEG_KINDS.join(" | ")}, không phải \`${legs}\``);
@@ -1034,7 +1034,7 @@ export async function genSit(o) {
     fail(`--back nhận ${BACK_KINDS.join(" | ")}, không phải \`${back}\``);
   if (!HAND_KINDS.includes(hands))
     fail(`--hands nhận ${HAND_KINDS.join(" | ")}, không phải \`${hands}\``);
-  if (!["near", "far"].includes(tuck)) fail(`--tuck nhận near | far, không phải \`${tuck}\``);
+  if (!["right", "left"].includes(tuck)) fail(`--tuck nhận right | left, không phải \`${tuck}\``);
   if (o.tuck !== undefined && legs !== "staggered")
     fail(`--tuck chỉ đi với --legs staggered (chân co là chân nào), không với \`${legs}\``);
   if (!FEET_KINDS.includes(feet))
@@ -1206,8 +1206,8 @@ export async function genSit(o) {
       return mid >= ankle + sh.heel[0] && mid <= ankle + Math.min(sh.toe[0], 2 * ra);
     });
   const styleOf = (side) => (legs === "staggered" ? (side === tuck ? "bent" : "straight") : legs);
-  /** Bên phải người (`+1`) hay trái của chân, tay `near` / `far` */
-  const rightOf = (side) => ((side === "near") !== !!W.flip ? 1 : -1);
+  /** Bên phải người (`+1`) hay trái của chân, tay `right` / `left` */
+  const rightOf = (side) => (side === "right" ? 1 : -1);
   const lh = rig.limbHalf(c).leg;
   const thighR = { r0: rig.CLAD_TAPER.leg[0] * lh * s, rk: rig.CLAD_TAPER.leg[1] * lh * s, T };
   const hipHalf = rig.body3(c).hipHalf * s;
@@ -1234,7 +1234,7 @@ export async function genSit(o) {
   /** Góc đùi nằm trên mặt ngồi (mặt dưới đùi vừa chạm mép trước) khi chân thõng */
   const restOf = (side) =>
     seat ? thighLow({ ...thighR, ...edgeOf(seat.role, side), sink: 0 }) : 90;
-  const sideName = (side) => (side === "near" ? "gần" : "xa");
+  const sideName = (side) => (side === "right" ? "phải" : "trái");
   /**
    * Chân `side` kiểu `style`: góc cho đế giày chạm mặt đỡ (`note` khi ống chân ngoài tầm kiểu); chân `square` với `free`
    * không chạm được thì thõng; không được thì `{ ok: false }` kèm tầm của kiểu
@@ -1305,18 +1305,18 @@ export async function genSit(o) {
     return { why, fix: [use, ...fix].filter(Boolean).join("; ") };
   };
   const leg = {};
-  for (const side of ["near", "far"]) leg[side] = legFor(side, styleOf(side));
+  for (const side of ["right", "left"]) leg[side] = legFor(side, styleOf(side));
   // chân so le: chân không chạm được về vuông khi chân kia giữ được kiểu
-  if (legs === "staggered" && leg.near.ok !== leg.far.ok) {
-    const side = leg.near.ok ? "far" : "near";
+  if (legs === "staggered" && leg.right.ok !== leg.left.ok) {
+    const side = leg.right.ok ? "left" : "right";
     const sq = legFor(side, "square");
     if (sq.ok)
       leg[side] = {
         ...sq,
-        note: `chân ${sideName(side)} về vuông: kiểu \`${leg[side].style}\` không chạm ${support.label}${sq.note ? `, ${sq.note.replace(/^chân (gần|xa) /, "")}` : ""}`,
+        note: `chân ${sideName(side)} về vuông: kiểu \`${leg[side].style}\` không chạm ${support.label}${sq.note ? `, ${sq.note.replace(/^chân (phải|trái) /, "")}` : ""}`,
       };
   }
-  const bad = ["near", "far"].filter((side) => !leg[side].ok);
+  const bad = ["right", "left"].filter((side) => !leg[side].ok);
   if (bad.length) {
     const errs = bad.map((side) => legError(side, leg[side]));
     const why =
@@ -1325,7 +1325,7 @@ export async function genSit(o) {
         : errs[0].why;
     fail(`${why}. Gợi ý: ${errs[0].fix}. Không ghi file.`);
   }
-  const feetNote = ["near", "far"].map((side) => leg[side].note).filter(Boolean);
+  const feetNote = ["right", "left"].map((side) => leg[side].note).filter(Boolean);
 
   // lưng ghế: cờ, hay của cùng ghế ở sau hông; phép tính dùng khi `recline`, còn lại chỉ để kiểm lấn
   let rest;
@@ -1438,7 +1438,7 @@ export async function genSit(o) {
     if (!r.success) fail(`cảnh thêm clip ngồi không qua zod: ${r.error.issues?.[0]?.message}`);
     return r.data;
   };
-  const legPose = { near: leg.near.leg, far: leg.far.leg };
+  const legPose = { right: leg.right.leg, left: leg.left.leg };
   const build = (arms, extra = {}) =>
     rig.parseAction({
       schemaVersion: rig.ACTION_VERSION,
@@ -1584,7 +1584,6 @@ export async function genSit(o) {
   // tay: đùi theo mốc thân; bàn, tay vịn đo trên vai trò rồi đổi ra đích hệ thân ở giây `at`
   const bare = runWith(build({}));
   const sp1 = rig.sceneAt(bare, o.cast, at, h, bare.bodies[o.cast]);
-  const chOf = (side) => ((side === "right") !== sp1.world.flip ? "near" : "far");
   let arms;
   let armNote;
   /** Bàn hay ghế phải dời lại gần ngần này cho khuỷu gập tới `ELBOW_BEND` */
@@ -1828,7 +1827,7 @@ export async function genSit(o) {
     const alpha = Math.asin(Math.min(1, (ER - foreR(1)) / L2));
     /** Đích tay `side` theo khuỷu, cổ tay (hệ người ngồi) ở góc thân `theta` */
     const reachOf = (side, theta, E, Wl) => {
-      const ch = chOf(side) === "near" ? "armNear" : "armFar";
+      const ch = side === "right" ? "armRight" : "armLeft";
       const S = shoulderAt(theta, side);
       const mid = S.map((v, i) => (v + Wl[i]) / 2);
       return {
@@ -1865,8 +1864,8 @@ export async function genSit(o) {
           const cb = Math.cos(beta * D);
           const sb = Math.sin(beta * D);
           const d = sub(F.to([Math.cos(psi), Math.sin(psi), 0]), F.to([0, 0, 0]));
-          A[chOf(side)] = reachOf(side, theta, E[side], Wl);
-          Hd[chOf(side)] = {
+          A[side] = reachOf(side, theta, E[side], Wl);
+          Hd[side] = {
             pose: "open",
             w: 0.5,
             palm: bodyVec([-sb * d[0], -cb, -sb * d[2]], side),
@@ -1878,7 +1877,7 @@ export async function genSit(o) {
         out.foldPick ??= f.pick;
         Object.assign(A, f.arms);
         Object.assign(Hd, f.hand);
-        note ??= `khuỷu trên tay vịn ở dọc ${["right", "left"].map((x) => comma(K[x].a)).join(" / ")} từ đầu sau, bàn tay ${top === "near" ? "gần" : "xa"} nằm trên mu bàn tay kia${elbowAt ? ` (--elbow ${o.elbow})` : ""}`;
+        note ??= `khuỷu trên tay vịn ở dọc ${["right", "left"].map((x) => comma(K[x].a)).join(" / ")} từ đầu sau, bàn tay ${top === "right" ? "phải" : "trái"} nằm trên mu bàn tay kia${elbowAt ? ` (--elbow ${o.elbow})` : ""}`;
       }
       out.arms.push(A);
       out.hand.push(Hd);
@@ -1890,11 +1889,10 @@ export async function genSit(o) {
      * `keep` ưu tiên đích của mốc trước
      */
     function foldAt(theta, E, keep) {
-      const sideOf = (ch) => ((ch === "near") !== !!sp1.world.flip ? "right" : "left");
-      const tSide = sideOf(top);
+      const tSide = top;
       const bSide = tSide === "right" ? "left" : "right";
-      const bc = chOf(bSide),
-        tc = chOf(tSide);
+      const bc = bSide,
+        tc = tSide;
       const bt = tagOf(bSide),
         tt = tagOf(tSide);
       const hand = {
@@ -1933,15 +1931,15 @@ export async function genSit(o) {
           } else {
             const reach = { ...sp.pose.reach };
             for (const side of [bSide, tSide]) {
-              const key = chOf(side) === "near" ? "an" : "af";
-              reach[key] = { ...reach[key], elbow: arms[chOf(side)].elbow };
+              const key = side === "right" ? "ar" : "al";
+              reach[key] = { ...reach[key], elbow: arms[side].elbow };
             }
             sp = { ...sp, pose: { ...sp.pose, reach } };
           }
           J = rig.actJoints(c, sp);
           if (iteration < 2)
             for (const side of [bSide, tSide])
-              arms[chOf(side)].elbow = reachOf(
+              arms[side].elbow = reachOf(
                 side,
                 theta,
                 E[side],
@@ -2022,9 +2020,9 @@ export async function genSit(o) {
       return (d) => {
         const p = {};
         for (const side of ["right", "left"])
-          p[chOf(side)] = rig.worldToReach(
+          p[side] = rig.worldToReach(
             sp1.world,
-            chOf(side) === "near" ? "armNear" : "armFar",
+            side === "right" ? "armRight" : "armLeft",
             fr.world(edge[side](d)),
             h,
           );
@@ -2076,7 +2074,7 @@ export async function genSit(o) {
   } else {
     // lòng tay về phía gối nhất mà hai tay còn với tới (tựa sau thì vai lùi xa đùi), rồi ra ngoài, về phía gối tới khi cẳng
     // tay không lấn bụng mà vẫn với tới; lòng tay theo mặt trên đùi từng bên
-    const thighs = { near: leg.near.thigh, far: leg.far.thigh };
+    const thighs = { right: leg.right.thigh, left: leg.left.thigh };
     const r = ((rig.CLAD_TAPER.leg[0] + rig.CLAD_TAPER.leg[1]) / 2) * lh;
     let f = THIGH_REACH[back];
     while (
@@ -2112,8 +2110,8 @@ export async function genSit(o) {
         const low = Math.min(...P[tag].skin.map((p) => -p[1]));
         const top = -surfaceY(side, P[tag].at);
         const d = (low - top - HAND_LIFT * s) / hs;
-        const r = arms.arms[chOf(side)];
-        arms.arms[chOf(side)] = { ...r, at: [r.at[0], r1(r.at[1] + d), r.at[2]] };
+        const r = arms.arms[side];
+        arms.arms[side] = { ...r, at: [r.at[0], r1(r.at[1] + d), r.at[2]] };
         moved = Math.max(moved, Math.abs(d));
       }
       if (moved < 0.1) break;
@@ -2171,13 +2169,12 @@ export async function genSit(o) {
   };
   const rests = [];
   const clears = [];
-  const sideOfTag = (tag) => ((tag === "R") !== !!W.flip ? "near" : "far");
   const dangling = [];
   for (const [tag, label] of [
     ["R", "đế giày phải"],
     ["L", "đế giày trái"],
   ])
-    if (leg[sideOfTag(tag)].dangle) dangling.push([tag, label]);
+    if (leg[tag === "R" ? "right" : "left"].dangle) dangling.push([tag, label]);
     else
       rests.push({
         label: `${label} trên ${support.label}`,
@@ -2297,10 +2294,10 @@ export async function genSit(o) {
       });
     }
   if (hands === "fold") {
-    const tTag = (top === "near") !== !!W.flip ? "R" : "L";
+    const tTag = top === "right" ? "R" : "L";
     const bTag = tTag === "R" ? "L" : "R";
     rests.push({
-      label: `lòng bàn tay ${top === "near" ? "gần" : "xa"} trên mu bàn tay kia`,
+      label: `lòng bàn tay ${top === "right" ? "phải" : "trái"} trên mu bàn tay kia`,
       gap: (t) => {
         const P = rig.actPalms(c, spAt(t));
         return len(sub(P[tTag].skin[0], P[bTag].skin[1]));
@@ -2361,7 +2358,7 @@ export async function genSit(o) {
             S,
             thigh,
             phi,
-            ...edgeOf(r, sideOfTag(tag), spAt(t).world.hip),
+            ...edgeOf(r, tag === "R" ? "right" : "left", spAt(t).world.hip),
             r: thighR.rk + DANGLE_EDGE * s,
           })
         )
@@ -2397,7 +2394,7 @@ export async function genSit(o) {
         const hj = hipJoint(J, tag);
         const L = fr.local(hj);
         const K = fr.local(J[`knee${tag}`]);
-        const { edge, down } = edgeOf(r, sideOfTag(tag), spAt(t).world.hip);
+        const { edge, down } = edgeOf(r, tag === "R" ? "right" : "left", spAt(t).world.hip);
         const beta = Math.atan2(L[1] - K[1], K[0] - L[0]) / D;
         const k = thighSink({ ...thighR, T: len(sub(K, L)), beta, edge, down });
         if (k > worst.k) worst = { k, t, tag };
@@ -2535,15 +2532,15 @@ export async function genSit(o) {
   const legText = (side) => `[${legPose[side].join(", ")}]`;
   const legNote =
     (legs === "staggered"
-      ? `${LEG_LABEL.staggered}: ${[tuck, tuck === "near" ? "far" : "near"].map((k) => `chân ${sideName(k)} ${LEG_WORD[leg[k].style]} ${legText(k)}`).join(", ")}`
-      : `${LEG_LABEL[legs]} ${legText("near")}`) +
+      ? `${LEG_LABEL.staggered}: ${[tuck, tuck === "right" ? "left" : "right"].map((k) => `chân ${sideName(k)} ${LEG_WORD[leg[k].style]} ${legText(k)}`).join(", ")}`
+      : `${LEG_LABEL[legs]} ${legText("right")}`) +
     (feetNote.length ? ` (${feetNote.join("; ")})` : "");
   const seatNote = `mặt ngồi y ${r1(seatY)}, hông cao ${r1(drop)} trên ${support.label}`;
   const handNote =
     hands === "thighs"
-      ? `${HAND_LABEL.thighs} (lòng tay ở mốc \`thigh\` dời ${arms.arms.near.offset[0]} về phía gối)`
+      ? `${HAND_LABEL.thighs} (lòng tay ở mốc \`thigh\` dời ${arms.arms.right.offset[0]} về phía gối)`
       : hands === "table"
-        ? `${HAND_LABEL.table} (${table.label}, giữa lòng tay hệ thân [${arms.arms.near.at.join(", ")}])`
+        ? `${HAND_LABEL.table} (${table.label}, giữa lòng tay hệ thân [${arms.arms.right.at.join(", ")}])`
         : `${HAND_LABEL[hands]} (${arm.label}, ${armNote})`;
   const backNote = `${BACK_LABEL[back]}, thân ${r1(torso)} ↔ ${r1(torso + 1)} mỗi ${String(SIT_DURATION).replace(".", ",")} s (lặp)${rest ? ` — ${rest.label}` : ""}${head ? `, đầu gật bù ${r1(head)}` : ""}`;
   const note =
@@ -2878,13 +2875,13 @@ export async function genWalk(o) {
   const B =
     data.actions[afterName] ??
     fail(`không có hành động \`${afterName}\` (actions/ của repo hay bộ chung)`);
-  const bothLegs = (a) => ["legFar", "legNear"].every((k) => rig.actionMask(a).includes(k));
+  const bothLegs = (a) => ["legLeft", "legRight"].every((k) => rig.actionMask(a).includes(k));
   const stride = rig.actionStride(A, m0.base);
   if (!(stride > rig.STRIDE_MIN))
     fail(
       `--action ${actionName}: ${stride < -rig.STRIDE_MIN ? "đi lùi" : "không có sải chân"} (sải ${r1(stride)}) — gen walk cần hành động đi tới`,
     );
-  if (!bothLegs(A)) fail(`--action ${actionName} phải ghi cả hai chân (\`legFar\`, \`legNear\`)`);
+  if (!bothLegs(A)) fail(`--action ${actionName} phải ghi cả hai chân (\`legLeft\`, \`legRight\`)`);
   if (Math.abs(rig.actionStride(B, m0.base)) > rig.STRIDE_MIN)
     fail(`--after ${afterName} có sải chân — cần hành động đứng`);
   if (!bothLegs(B)) fail(`--after ${afterName} phải ghi cả hai chân để chặn chân của clip đi`);

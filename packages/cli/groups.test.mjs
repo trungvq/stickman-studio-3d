@@ -195,15 +195,15 @@ const SIT = {
   name: "ngoi-3d",
   duration: 2,
   authoredAt: "side",
-  mask: ["armFar", "armNear", "legFar", "legNear", "torso"],
+  mask: ["armLeft", "armRight", "legLeft", "legRight", "torso"],
   keys: [
     {
       t: 0,
       pose: {
-        armFar: [11, 42, 0],
-        armNear: [11, 42, 0],
-        legFar: [90, -90],
-        legNear: [90, -90],
+        armLeft: [11, 42, 0],
+        armRight: [11, 42, 0],
+        legLeft: [90, -90],
+        legRight: [90, -90],
         torso: 3,
       },
     },

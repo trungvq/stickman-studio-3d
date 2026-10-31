@@ -4,20 +4,20 @@ import { emit } from "./emit.mjs";
 /** `lean` là số nghiêng của `torso`, về phía tay mời */
 const ROWS = [
   {
-    name: "invite-near-3d",
-    arm: "armNear",
-    rest: "armFar",
+    name: "invite-right-3d",
+    arm: "armRight",
+    rest: "armLeft",
     lean: -4,
-    side: "gần",
-    mirror: "invite-far-3d",
+    side: "phải",
+    mirror: "invite-left-3d",
   },
   {
-    name: "invite-far-3d",
-    arm: "armFar",
-    rest: "armNear",
+    name: "invite-left-3d",
+    arm: "armLeft",
+    rest: "armRight",
     lean: 4,
-    side: "xa",
-    mirror: "invite-near-3d",
+    side: "trái",
+    mirror: "invite-right-3d",
   },
 ];
 
@@ -45,7 +45,7 @@ await emit(
       duration: 1.2,
       end: "hold",
       authoredAt: "side",
-      mask: ["armFar", "armNear", "hand", "torso", "head"],
+      mask: ["armLeft", "armRight", "hand", "torso", "head"],
       keys: [
         key(0, STACK, FLAT, { torso: 0, head: [null, null, 0] }),
         key(0.4167, OUT, OPEN, lean),

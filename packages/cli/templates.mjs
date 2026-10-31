@@ -59,7 +59,7 @@ và từng file ở \`docs 01\` § Bộ hành động 3D. **Dùng bộ chung tr�
   \`http://localhost:5180/?library=1&action=bow-30-3d&who=sample-woman&angle=near\`. Soi cả lô trên bốn người mẫu:
   \`pnpm bang-hanh-dong --hanh-dong 'bow-*-3d'\` (\`docs 07\` § Bảng duyệt hành động).
 - **Đọc tên**: \`<gốc>[-<mức>][-<biến>][-<phía>][-<pha>]-3d\`. Mức là số độ (\`bow-30-3d\`) hay \`-soft\` / \`-big\`;
-  phía \`-near\` / \`-far\` theo ống kính (chọn theo bố cục khung), \`-left\` / \`-right\` theo tay của người; pha:
+  phía \`-right\` / \`-left\` theo tay của người (soi gương bằng \`mirror\` của clip); pha:
   không hậu tố là vào dáng rồi giữ (hay đi rồi về một lần, hay lặp), \`-hold\` ở dáng cuối từ giây 0, \`-out\` buông
   về nền. \`walk\` là bộ sinh nên không đuôi.
 - **Ghép**: track dưới là nền (\`stand-3d\`, \`sit-3d\` với \`world.sit\`, \`seiza-3d\`), track trên là hành động

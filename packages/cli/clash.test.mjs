@@ -23,15 +23,15 @@ const SIT = {
   name: "ngoi-3d",
   duration: 2,
   authoredAt: "side",
-  mask: ["armFar", "armNear", "legFar", "legNear", "torso"],
+  mask: ["armLeft", "armRight", "legLeft", "legRight", "torso"],
   keys: [
     {
       t: 0,
       pose: {
-        armFar: [11, 42, 0],
-        armNear: [11, 42, 0],
-        legFar: [90, -90],
-        legNear: [90, -90],
+        armLeft: [11, 42, 0],
+        armRight: [11, 42, 0],
+        legLeft: [90, -90],
+        legRight: [90, -90],
         torso: 3,
       },
     },
@@ -124,7 +124,7 @@ describe("check: người 3D lồng vào đồ", () => {
       assert.equal(p.level, "cảnh báo");
       assert.match(
         p.msg,
-        /^scenes\/lan\.json: người lồng vào đồ — a\.forearm(Near|Far) ↔ ban \(mảnh 0\) lấn \d+\.\d ở giây \d\.\d\d · giây 0\.00–1\.00$/,
+        /^scenes\/lan\.json: người lồng vào đồ — a\.forearm(Right|Left) ↔ ban \(mảnh 0\) lấn \d+\.\d ở giây \d\.\d\d · giây 0\.00–1\.00$/,
       );
     }
   });

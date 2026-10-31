@@ -12,17 +12,23 @@ const STAND = {
   name: "dung-3d",
   authoredAt: "side",
   end: "hold",
-  mask: ["armFar", "armNear", "legFar", "legNear", "torso"],
+  mask: ["armLeft", "armRight", "legLeft", "legRight", "torso"],
   keys: [
     {
       t: 0,
-      pose: { armFar: [0, 0, 0], armNear: [0, 0, 0], legFar: [0, 0], legNear: [0, 0], torso: 0 },
+      pose: {
+        armLeft: [0, 0, 0],
+        armRight: [0, 0, 0],
+        legLeft: [0, 0],
+        legRight: [0, 0],
+        torso: 0,
+      },
     },
   ],
 };
 const coverKeys = [
-  { t: 0, pose: { armNear: [-20, -30, 0], armFar: [20, 30, 0] }, ease: "smooth" },
-  { t: 1, pose: { armNear: [-150, -100, 0], armFar: [150, 100, 0] } },
+  { t: 0, pose: { armRight: [-20, -30, 0], armLeft: [20, 30, 0] }, ease: "smooth" },
+  { t: 1, pose: { armRight: [-150, -100, 0], armLeft: [150, 100, 0] } },
 ];
 const COVER = { name: "che", end: "hold", duration: 0.6, keys: coverKeys };
 const COVER3D = { ...COVER, name: "che-3d", authoredAt: "side" };
@@ -30,8 +36,8 @@ const RAISE = {
   name: "gio",
   authoredAt: "side",
   end: "hold",
-  mask: ["armNear"],
-  keys: [{ t: 0, pose: { armNear: [-170, 0, 0] } }],
+  mask: ["armRight"],
+  keys: [{ t: 0, pose: { armRight: [-170, 0, 0] } }],
 };
 
 /** Người 3D đứng, track `tay` vào `arms` ở giây 1 */
@@ -110,7 +116,7 @@ describe("check: hành động không soạn ở `side` trên người 3D và gi
     );
     assert.match(
       jolt[0].msg,
-      /cờ `lift` của tay gần, tay xa lật giữa đoạn hoà track trống → `che`/,
+      /cờ `lift` của tay phải, tay trái lật giữa đoạn hoà track trống → `che`/,
     );
   });
 
@@ -132,7 +138,7 @@ describe("check: hành động không soạn ở `side` trên người 3D và gi
     const r = await checkWorkspace({ dir: workspace() });
     const got = r.problems.filter((p) => p.msg.startsWith("actions/vong.json"));
     assert.ok(got.length > 0);
-    assert.match(got[0].msg, /`end: "wrap"` mà `arm(Near|Far)` ở mốc cuối/);
+    assert.match(got[0].msg, /`end: "wrap"` mà `arm(Right|Left)` ở mốc cuối/);
   });
 
   it("`--scene` chỉ đo cảnh khớp", async () => {

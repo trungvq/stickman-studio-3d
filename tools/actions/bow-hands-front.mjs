@@ -7,7 +7,7 @@ const LEVELS = {
   30: { torso: 30, head: 5, down: 0.4, hold: 0.5, up: 0.5 },
   45: { torso: 45, head: 3, down: 0.55, hold: 1.2, up: 0.7 },
 };
-/** `offset` của bàn tay gần so với mốc `belly` — như `tools/actions/hands-front.mjs` */
+/** `offset` của bàn tay phải so với mốc `belly` — như `tools/actions/hands-front.mjs` */
 const STYLES = [
   {
     suffix: "",
@@ -29,10 +29,10 @@ const num = (v) => String(Math.round(v * 100) / 100).replace(".", ",");
 
 const arms = (s) => ({
   reach: {
-    armNear: { to: "belly", offset: s.offset, point: "palm", elbow: ELBOW },
-    armFar: { to: "otherBack", offset: [1, -3, 0], point: "palm", elbow: ELBOW },
+    armRight: { to: "belly", offset: s.offset, point: "palm", elbow: ELBOW },
+    armLeft: { to: "otherBack", offset: [1, -3, 0], point: "palm", elbow: ELBOW },
   },
-  hand: { armNear: HAND, armFar: HAND },
+  hand: { armRight: HAND, armLeft: HAND },
 });
 const key = (t, s, torso, head, ease) => ({
   t,
@@ -42,9 +42,9 @@ const key = (t, s, torso, head, ease) => ({
 });
 
 const hands = (s) =>
-  `Hai tay chồng như \`${s.base}\`: tay gần áp lòng tay vào mốc \`belly\` (offset [${s.offset.join(", ")}], ${s.note}), tay xa áp lòng lên mu tay gần (\`otherBack\`), \`flat\` hờ, ngón chĩa vào đường giữa; mốc theo thân nên tay đi theo cái cúi.`;
+  `Hai tay chồng như \`${s.base}\`: tay phải áp lòng tay vào mốc \`belly\` (offset [${s.offset.join(", ")}], ${s.note}), tay trái áp lòng lên mu tay phải (\`otherBack\`), \`flat\` hờ, ngón chĩa vào đường giữa; mốc theo thân nên tay đi theo cái cúi.`;
 const tail =
-  "Ghi `armNear`, `armFar`, `hand`, `torso`, `head`. Nền `stand-3d`; người bụng phệ thì cánh tay lấn vào bụng. Chồng được nét mặt; tay đang cầm món thì dùng `bow-*` chỉ ghi thân, đầu.";
+  "Ghi `armRight`, `armLeft`, `hand`, `torso`, `head`. Nền `stand-3d`; người bụng phệ thì cánh tay lấn vào bụng. Chồng được nét mặt; tay đang cầm món thì dùng `bow-*` chỉ ghi thân, đầu.";
 const family =
   "Cùng họ: `bow-hands-front-15-3d`, `-30-`, `-45-`, `-robe` cho vạt áo, `-hold` giữ ở đáy. Sinh bằng `tools/actions/bow-hands-front.mjs`.";
 
@@ -58,7 +58,7 @@ for (const [deg, l] of Object.entries(LEVELS))
       duration: Math.round(d * 100) / 100,
       end: "hold",
       authoredAt: "side",
-      mask: ["armFar", "armNear", "hand", "torso", "head"],
+      mask: ["armLeft", "armRight", "hand", "torso", "head"],
       keys: [
         key(0, s, 0, 0, "smooth"),
         key(r(l.down), s, l.torso, l.head, "smooth"),
@@ -73,7 +73,7 @@ for (const [deg, l] of Object.entries(LEVELS))
       duration: 1,
       end: "hold",
       authoredAt: "side",
-      mask: ["armFar", "armNear", "hand", "torso", "head"],
+      mask: ["armLeft", "armRight", "hand", "torso", "head"],
       keys: [key(0, s, l.torso, l.head), key(1, s, l.torso, l.head)],
       note: `Giữ ở đáy cái cúi chào ${deg}° tay chồng trước bụng từ giây 0: thân ${l.torso}°, đầu gật thêm ${l.head}° — cho người nền, ảnh tĩnh, cảnh cắt vào giữa cái cúi; đứng lên bằng \`${s.base}\` blend ~0,5. ${hands(s)} ${tail} ${family}`,
       preview: { stage: "stand" },

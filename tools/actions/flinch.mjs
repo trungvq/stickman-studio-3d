@@ -39,22 +39,22 @@ const num = (v) => String(v).replace(".", ",");
 const r4 = (v) => Math.round(v * 1e4) / 1e4;
 
 const reach = (offset) => ({
-  armNear: { to: "belly", offset, point: "grip", elbow: ELBOW },
-  armFar: { to: "belly", offset, point: "grip", elbow: ELBOW },
+  armRight: { to: "belly", offset, point: "grip", elbow: ELBOW },
+  armLeft: { to: "belly", offset, point: "grip", elbow: ELBOW },
 });
-const both = (h) => ({ armNear: h, armFar: h });
+const both = (h) => ({ armRight: h, armLeft: h });
 
 const actions = ROWS.map((r) => ({
   name: r.name,
   duration: DURATION,
   end: "hold",
   authoredAt: "side",
-  mask: ["armNear", "armFar", "hand", "torso", "head"],
+  mask: ["armRight", "armLeft", "hand", "torso", "head"],
   snap: true,
   keys: [
     {
       t: 0,
-      pose: { armNear: STAND_ARMS, armFar: STAND_ARMS, torso: 0, head: [null, null, 0] },
+      pose: { armRight: STAND_ARMS, armLeft: STAND_ARMS, torso: 0, head: [null, null, 0] },
       hand: both(REST),
       ease: "smooth",
     },
@@ -79,7 +79,7 @@ const actions = ROWS.map((r) => ({
       hand: both(GRIP),
     },
   ],
-  note: `${r.what}: trong ${num(r.peak)} s thân cúi ${r.torso[0]}°, đầu gục ${r.head[0]}°, hai tay khép trước bụng nắm hờ (mốc \`belly\`, khuỷu khép sát sườn), rồi lùi về thân ${r.torso[1]}°, đầu ${r.head[1]}° lúc ${num(DURATION / 2)} s và giữ; khai \`snap\`. Ghi \`armNear\`, \`armFar\`, \`hand\`, \`torso\` và gật của \`head\`. Nền \`stand-3d\`, vào blend ~0,06. Chồng được nét mặt, \`turn-head-*\`; buông về \`stand-3d\` blend ~0,4. Cùng họ: \`flinch-3d\` giật rõ, \`flinch-soft-3d\` khẽ; che chắn trước ngực thì \`cower-3d\`. Sinh bằng \`tools/actions/flinch.mjs\`.`,
+  note: `${r.what}: trong ${num(r.peak)} s thân cúi ${r.torso[0]}°, đầu gục ${r.head[0]}°, hai tay khép trước bụng nắm hờ (mốc \`belly\`, khuỷu khép sát sườn), rồi lùi về thân ${r.torso[1]}°, đầu ${r.head[1]}° lúc ${num(DURATION / 2)} s và giữ; khai \`snap\`. Ghi \`armRight\`, \`armLeft\`, \`hand\`, \`torso\` và gật của \`head\`. Nền \`stand-3d\`, vào blend ~0,06. Chồng được nét mặt, \`turn-head-*\`; buông về \`stand-3d\` blend ~0,4. Cùng họ: \`flinch-3d\` giật rõ, \`flinch-soft-3d\` khẽ; che chắn trước ngực thì \`cower-3d\`. Sinh bằng \`tools/actions/flinch.mjs\`.`,
   preview: { stage: "stand" },
 }));
 

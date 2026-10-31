@@ -147,7 +147,7 @@
     }
   ],
   "events": [],
-  "note": "Quỳ một gối rồi giữ: bàn chân trái (xa) đứng yên ở chỗ đứng, hông lùi 70 và hạ xuống cao 88 trên sàn trong 1.2 s, chân phải (gần) lùi ra sau, gối phải xuống sàn ngay dưới hông, mũi bàn chân phải chống; tay trái đặt trên gối trái, tay phải buông. Ghi tay, chân, thân, bàn tay. Nền `stand-3d`; hông đi theo `world.path` như `preview.path` (mốc đứng ở chỗ đứng đúng lúc clip bắt đầu, rồi mốc `sit: true`, mặt ngồi ảo). Nhận đồ, cầu hôn, buộc dây giày thì chồng track tay; đứng lên thì thêm mốc đứng và clip rỗng blend ~0,6. Mặt ngồi của mốc tính cho nửa bề dày đùi 16 (đơn vị rig ở `height` 1): người đùi dày hơn thì hạ mốc chừng ấy. Sinh bởi `tools/actions/seat.mjs`.",
+  "note": "Quỳ một gối rồi giữ: bàn chân trái đứng yên ở chỗ đứng, hông lùi 70 và hạ xuống cao 88 trên sàn trong 1.2 s, chân phải lùi ra sau, gối phải xuống sàn ngay dưới hông, mũi bàn chân phải chống; tay trái đặt trên gối trái, tay phải buông. Ghi tay, chân, thân, bàn tay. Nền `stand-3d`; hông đi theo `world.path` như `preview.path` (mốc đứng ở chỗ đứng đúng lúc clip bắt đầu, rồi mốc `sit: true`, mặt ngồi ảo). Nhận đồ, cầu hôn, buộc dây giày thì chồng track tay; đứng lên thì thêm mốc đứng và clip rỗng blend ~0,6. Mặt ngồi của mốc tính cho nửa bề dày đùi 16 (đơn vị rig ở `height` 1): người đùi dày hơn thì hạ mốc chừng ấy. Sinh bởi `tools/actions/seat.mjs`.",
   "preview": {
     "stage": "stand",
     "path": [

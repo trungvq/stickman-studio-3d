@@ -481,7 +481,7 @@ describe("check: hai luật đi của người 3D", () => {
       return runtime(sc);
     };
     assert.deepEqual(rig.sceneWalkInProblems(two([{ action: "stand-3d", start: 0 }])), []);
-    const arms = ["armFar", "armNear"];
+    const arms = ["armLeft", "armRight"];
     const part = rig.sceneWalkInProblems(
       two([
         { action: "stand-3d", start: 0 },

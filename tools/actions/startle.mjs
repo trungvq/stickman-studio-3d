@@ -3,16 +3,16 @@
 import { RIG } from "../../packages/rig/dist/core/index.js";
 import { emit } from "./emit.mjs";
 
-/** Bàn chân gần đặt sau chỗ cũ chừng này, đơn vị rig ở `height = 1`; hông đứng yên trên bàn chân xa */
+/** Bàn chân phải đặt sau chỗ cũ chừng này, đơn vị rig ở `height = 1`; hông đứng yên trên bàn chân trái */
 const BACK = 42;
 const BACK_DEG = -Math.round((Math.asin(BACK / (RIG.thigh + RIG.shin)) * 180) / Math.PI);
-/** Chân gần `[giây, góc]`: nhấc gần thẳng đứng (gối gập, đùi ra trước giữ cổ chân dưới hông), lùi trên cao, đặt xuống */
+/** Chân phải `[giây, góc]`: nhấc gần thẳng đứng (gối gập, đùi ra trước giữ cổ chân dưới hông), lùi trên cao, đặt xuống */
 const LIFT = [
   [0.1, [10, -22]],
   [0.24, [10, -38]],
 ];
 const PLANT = 0.36;
-const STAND_LEGS = { legFar: [1, 0], legNear: [-1, 0] };
+const STAND_LEGS = { legLeft: [1, 0], legRight: [-1, 0] };
 
 /** Mốc thân trên: giây, thân, gật đầu, đích cổ tay hệ thân của hai tay, độ xoè */
 const UPPER = [
@@ -30,12 +30,12 @@ const upperKey = (dur, u, last) => ({
   t: r4(u.t / dur),
   pose: { torso: u.torso, head: [null, null, u.head] },
   reach: {
-    armNear: { at: u.hands, elbow: ELBOW },
-    armFar: { at: u.hands, elbow: ELBOW },
+    armRight: { at: u.hands, elbow: ELBOW },
+    armLeft: { at: u.hands, elbow: ELBOW },
   },
   hand: {
-    armNear: { pose: "open", w: u.w, palm: "forward", fingers: [0.3, -1, 0.3] },
-    armFar: { pose: "open", w: u.w, palm: "forward", fingers: [0.3, -1, 0.3] },
+    armRight: { pose: "open", w: u.w, palm: "forward", fingers: [0.3, -1, 0.3] },
+    armLeft: { pose: "open", w: u.w, palm: "forward", fingers: [0.3, -1, 0.3] },
   },
   ...(!last && { ease: "smooth" }),
 });
@@ -43,8 +43,8 @@ const upperKey = (dur, u, last) => ({
 function startle(name, dur, step) {
   const first = {
     t: 0,
-    pose: { armNear: STAND_ARMS, armFar: STAND_ARMS, torso: 0, head: [null, null, 0] },
-    hand: { armNear: REST, armFar: REST },
+    pose: { armRight: STAND_ARMS, armLeft: STAND_ARMS, torso: 0, head: [null, null, 0] },
+    hand: { armRight: REST, armLeft: REST },
     ease: "smooth",
   };
   const upper = UPPER.map((u, i) => upperKey(dur, u, i === UPPER.length - 1));
@@ -53,16 +53,16 @@ function startle(name, dur, step) {
   const keys = [first, ...upper, hold];
   if (step) {
     Object.assign(first.pose, STAND_LEGS);
-    Object.assign(hold.pose, { legFar: STAND_LEGS.legFar, legNear: [BACK_DEG, 0] });
+    Object.assign(hold.pose, { legLeft: STAND_LEGS.legLeft, legRight: [BACK_DEG, 0] });
     keys.push(
-      ...LIFT.map(([sec, legNear]) => ({
+      ...LIFT.map(([sec, legRight]) => ({
         t: r4(sec / dur),
-        pose: { legFar: STAND_LEGS.legFar, legNear },
+        pose: { legLeft: STAND_LEGS.legLeft, legRight },
         ease: "auto",
       })),
       {
         t: r4(PLANT / dur),
-        pose: { legFar: STAND_LEGS.legFar, legNear: [BACK_DEG, 0] },
+        pose: { legLeft: STAND_LEGS.legLeft, legRight: [BACK_DEG, 0] },
         ease: "smooth",
       },
     );
@@ -74,13 +74,20 @@ function startle(name, dur, step) {
     duration: dur,
     end: "hold",
     authoredAt: "side",
-    mask: ["armNear", "armFar", "hand", "torso", "head", ...(step ? ["legNear", "legFar"] : [])],
+    mask: [
+      "armRight",
+      "armLeft",
+      "hand",
+      "torso",
+      "head",
+      ...(step ? ["legRight", "legLeft"] : []),
+    ],
     snap: true,
     keys,
     note: [
       `Giật mình${step ? " lùi một bước" : ""}: trong ${num(peak.t)} s thân bật ra sau ${-peak.torso}°, đầu ngửa ${-peak.head}°, hai tay vụt lên trước ngực (đích cổ tay hệ thân [${peak.hands.join(", ")}]), bàn tay xoè, lòng tay ra trước; lúc ${num(settle.t)} s về thân ${settle.torso}°, đầu ${settle.head}°, tay hạ một chút, giữ. Khai \`snap\`.`,
       step
-        ? `Chân gần nhấc lên, đặt ra sau ${BACK} (đùi ${BACK_DEG}°) lúc ${num(PLANT)} s, hông đứng yên trên chân xa. Ghi hai tay, \`hand\`, \`torso\`, gật của \`head\`, hai chân.`
+        ? `Chân phải nhấc lên, đặt ra sau ${BACK} (đùi ${BACK_DEG}°) lúc ${num(PLANT)} s, hông đứng yên trên chân trái. Ghi hai tay, \`hand\`, \`torso\`, gật của \`head\`, hai chân.`
         : "Ghi hai tay, `hand`, `torso` và gật của `head`.",
       step
         ? "Nền `stand-3d`, người đứng một chỗ (`world.at`), hông không dời; lùi hẳn ra sau thì nối hành động bước lùi trên `world.path`."

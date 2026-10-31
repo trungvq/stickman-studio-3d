@@ -2,8 +2,8 @@
 import { emit } from "./emit.mjs";
 
 const ROWS = [
-  { name: "wave-off-near-3d", arm: "armNear", side: "gần", mirror: "wave-off-far-3d" },
-  { name: "wave-off-far-3d", arm: "armFar", side: "xa", mirror: "wave-off-near-3d" },
+  { name: "wave-off-right-3d", arm: "armRight", side: "phải", mirror: "wave-off-left-3d" },
+  { name: "wave-off-left-3d", arm: "armLeft", side: "trái", mirror: "wave-off-right-3d" },
 ];
 
 /** Tay buông của `stand-3d`: mốc không có đích thì cổ tay về chuỗi góc này */

@@ -1,7 +1,7 @@
 // Vỗ tay lặp. Chạy `node tools/actions/clap.mjs`.
 import { emit } from "./emit.mjs";
 
-/** Tay gần trước ngực (mốc `chest`, `at` [tiến, y, ra ngoài]), mở `open` → chạm `shut`; tay xa cách `gap` lúc mở */
+/** Tay phải trước ngực (mốc `chest`, `at` [tiến, y, ra ngoài]), mở `open` → chạm `shut`; tay trái cách `gap` lúc mở */
 const ROWS = [
   {
     name: "clap-3d",
@@ -43,10 +43,10 @@ await emit(
       t,
       pose: {},
       reach: {
-        armNear: near(z),
-        armFar: { to: "otherPalm", ...(gap && { offset: [0, 0, gap] }), elbow: ELBOW },
+        armRight: near(z),
+        armLeft: { to: "otherPalm", ...(gap && { offset: [0, 0, gap] }), elbow: ELBOW },
       },
-      hand: { armNear: HAND, armFar: HAND },
+      hand: { armRight: HAND, armLeft: HAND },
       ease,
     });
     return {
@@ -55,7 +55,7 @@ await emit(
       end: "wrap",
       authoredAt: "side",
       snap: true,
-      mask: ["armNear", "armFar", "hand"],
+      mask: ["armRight", "armLeft", "hand"],
       keys: [
         key(0, r.open, r.gap, "smooth"),
         key(0.45, r.shut, 0, "linear"),
@@ -63,7 +63,7 @@ await emit(
         key(1, r.open, r.gap, "smooth"),
       ],
       events: [{ name: "clap", t: 0.5 }],
-      note: `${r.what}: tay gần trước ngực (mốc \`chest\`, offset [${r.at.map(num).join(", ")}, ${r.open}] mở → ${r.shut} chạm), tay xa áp lòng tay vào lòng tay gần (\`otherPalm\`, cách ${r.gap} lúc mở), ${num(r.duration)} s một lượt, lặp; dáng \`flat\`, hai lòng tay \`in\` đối nhau, sự kiện \`clap\` lúc chạm, \`snap\` vì cú khép nhanh cố ý. Chỉ ghi \`armNear\`, \`armFar\`, \`hand\`. Nền \`stand-3d\`, \`sit-3d\` hay \`seiza-3d\`; mốc theo mặt áo nên người bụng phệ tay tự ra trước bụng. Vào blend ~0,25, thôi bằng clip lớp dưới blend ~0,35; nhịp khác thì đặt \`cycle\`. Cùng họ: \`clap-soft-3d\` khẽ, \`clap-3d\`, \`clap-big-3d\` to. Sinh bằng \`tools/actions/clap.mjs\`.`,
+      note: `${r.what}: tay phải trước ngực (mốc \`chest\`, offset [${r.at.map(num).join(", ")}, ${r.open}] mở → ${r.shut} chạm), tay trái áp lòng tay vào lòng tay phải (\`otherPalm\`, cách ${r.gap} lúc mở), ${num(r.duration)} s một lượt, lặp; dáng \`flat\`, hai lòng tay \`in\` đối nhau, sự kiện \`clap\` lúc chạm, \`snap\` vì cú khép nhanh cố ý. Chỉ ghi \`armRight\`, \`armLeft\`, \`hand\`. Nền \`stand-3d\`, \`sit-3d\` hay \`seiza-3d\`; mốc theo mặt áo nên người bụng phệ tay tự ra trước bụng. Vào blend ~0,25, thôi bằng clip lớp dưới blend ~0,35; nhịp khác thì đặt \`cycle\`. Cùng họ: \`clap-soft-3d\` khẽ, \`clap-3d\`, \`clap-big-3d\` to. Sinh bằng \`tools/actions/clap.mjs\`.`,
       preview: { stage: "stand" },
     };
   }),

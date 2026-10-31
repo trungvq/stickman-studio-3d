@@ -57,9 +57,9 @@ const SIT_PARAMS = [
     key: "tuck",
     label: "Chân co",
     type: "enum",
-    values: ["near", "far"],
-    names: { near: "chân gần", far: "chân xa" },
-    default: "far",
+    values: ["right", "left"],
+    names: { right: "chân phải", left: "chân trái" },
+    default: "left",
     when: { legs: "staggered" },
   },
   {
@@ -96,8 +96,8 @@ const SIT_PARAMS = [
     label: "Bàn tay nằm trên",
     type: "enum",
     values: TOP_KINDS,
-    names: { near: "tay gần", far: "tay xa" },
-    default: "near",
+    names: { right: "tay phải", left: "tay trái" },
+    default: "right",
     when: { hands: "fold" },
   },
   {

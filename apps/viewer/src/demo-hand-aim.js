@@ -167,17 +167,16 @@ export function handAimDemo(q) {
   return {
     objects: [group, ...props],
     animate,
-    /** Chỗ của `joint` (`near`, `far` tâm nắm tay gần, xa; `hands` giữa hai tay; `head`) người `id` ở giây `t`, three */
+    /** Chỗ của `joint` (`right`, `left` tâm nắm tay phải, trái; `hands` giữa hai tay; `head`) người `id` ở giây `t`, three */
     focus(id, joint, t) {
       animate(t);
       const p = people.find((m) => m.id === id);
       const f = p.fig;
       f.root.updateMatrixWorld(true);
       const w = (o) => o.getWorldPosition(new THREE.Vector3());
-      const near = sceneAt(rt, id, t, heights[id], bodies[id]).world?.flip ? 1 : -1;
       if (joint === 'head') return w(f.head);
-      if (joint === 'near') return w(f.sockets.hand[near]);
-      if (joint === 'far') return w(f.sockets.hand[-near]);
+      if (joint === 'right') return w(f.sockets.hand[-1]);
+      if (joint === 'left') return w(f.sockets.hand[1]);
       return w(f.sockets.hand[-1]).add(w(f.sockets.hand[1])).multiplyScalar(0.5);
     },
   };

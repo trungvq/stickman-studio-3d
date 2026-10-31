@@ -1,10 +1,10 @@
 // Liếc một bên. Chạy `node tools/actions/glance.mjs`.
 import { emit } from "./emit.mjs";
 
-/** Lắc dương là quay mặt về phía xa ống kính; nghiêng ngược chiều quay, gật âm là ngửa */
+/** Lắc dương là quay mặt về phía tay trái; nghiêng ngược chiều quay, gật âm là ngửa */
 const SIDES = [
-  { side: "near", sign: -1, label: "phía ống kính" },
-  { side: "far", sign: 1, label: "phía xa ống kính" },
+  { side: "right", sign: -1, label: "phía tay phải" },
+  { side: "left", sign: 1, label: "phía tay trái" },
 ];
 
 const DOWN = { turn: 30, nod: 14 };
@@ -12,7 +12,7 @@ const UP = { over: [9, 32, -7], hold: [8, 30, -6] };
 
 const rows = [];
 for (const s of SIDES) {
-  const other = s.side === "near" ? "far" : "near";
+  const other = s.side === "right" ? "left" : "right";
   rows.push({
     name: `glance-${s.side}-3d`,
     duration: 1.4,

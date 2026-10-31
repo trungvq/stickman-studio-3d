@@ -206,7 +206,7 @@ describe("hold_mode", () => {
     const [row] = (
       await call("scene_probe", { scene: "thu-coc", t: 0, cast: "a", anchors: ["mouth"] })
     ).rows;
-    for (const k of ["head", "wristNear", "footFar"]) assert.ok(row[k], k);
+    for (const k of ["head", "wristRight", "footLeft"]) assert.ok(row[k], k);
     assert.ok(Number.isFinite(row.anchors.mouth.x));
     assert.ok(Number.isFinite(row.world.joints.head[1]));
   });
@@ -427,7 +427,7 @@ describe("vai trò của đồ (docs/13)", () => {
       /--elbow chỉ đi với --hands armrest \| fold/,
     );
     await assert.rejects(
-      ask("gen", { kind: "sit", scene: "ngoi", cast: "a", top: "far", dryRun: true }),
+      ask("gen", { kind: "sit", scene: "ngoi", cast: "a", top: "left", dryRun: true }),
       /--top chỉ đi với --hands fold/,
     );
   });

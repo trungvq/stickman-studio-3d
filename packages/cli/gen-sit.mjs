@@ -194,8 +194,8 @@ export const RECLINE = [-24, -4];
 export const BACK_GAP = 0.5;
 
 export const HAND_KINDS = ["thighs", "table", "armrest", "fold"];
-/** Tay trên của `fold`: bàn tay gần hay xa ống kính nằm trên */
-export const TOP_KINDS = ["near", "far"];
+/** Tay trên của `fold`: bàn tay phải hay trái nằm trên */
+export const TOP_KINDS = ["right", "left"];
 /** Lòng tay úp trên đùi (mốc `thigh` cùng bên): dời về phía gối theo kiểu lưng, ra ngoài một chút */
 export const THIGH_REACH = { upright: 24, recline: 6, forward: 32 };
 /** Lòng tay ra ngoài mặt đùi ngần này: tựa sau thì cẳng tay đi ngoài bụng */
@@ -280,26 +280,26 @@ export function frameOf(hip, yaw) {
 }
 
 /**
- * Mốc của dáng ngồi: `legs` `{ near, far }` góc chân, `torso` góc thân, `head` gật bù, `arms` `{ near, far }` đích tay
- * (`reach` của mốc) và `hand` bàn tay (một dáng cho hai tay, hay `{ near, far }`); `arms`, `hand` là cặp `[mốc 0, mốc 0,5]`
+ * Mốc của dáng ngồi: `legs` `{ right, left }` góc chân, `torso` góc thân, `head` gật bù, `arms` `{ right, left }` đích tay
+ * (`reach` của mốc) và `hand` bàn tay (một dáng cho hai tay, hay `{ right, left }`); `arms`, `hand` là cặp `[mốc 0, mốc 0,5]`
  * khi đích đổi theo nhịp thở. Mốc `0,5` thân `+1` (thở), `end: wrap`
  */
 export function sitKeys({ legs, torso, head, arms, hand }) {
   const at = (v, i) => (Array.isArray(v) ? v[i] : v);
-  const sides = (v) => (v && "near" in v ? v : v && { near: v, far: v });
+  const sides = (v) => (v && "right" in v ? v : v && { right: v, left: v });
   const key = (t, tor, i) => {
     const A = at(arms, i);
     const H = sides(at(hand, i));
     return {
       t,
       pose: {
-        legFar: legs.far,
-        legNear: legs.near,
+        legLeft: legs.left,
+        legRight: legs.right,
         torso: r1(tor),
         ...(head && { head: [null, null, r1(head)] }),
       },
-      ...(A && { reach: { armNear: A.near, armFar: A.far } }),
-      ...(H && { hand: { armNear: H.near, armFar: H.far } }),
+      ...(A && { reach: { armRight: A.right, armLeft: A.left } }),
+      ...(H && { hand: { armRight: H.right, armLeft: H.left } }),
       ease: "linear",
     };
   };
@@ -308,7 +308,7 @@ export function sitKeys({ legs, torso, head, arms, hand }) {
 
 /**
  * Đích tay theo kiểu tay: `thighs` mốc `thigh` dời `reach` về phía gối, `out` ra ngoài, hạ theo mặt đùi (đùi dốc `thighs`
- * góc đùi `{ near, far }`, mặt cong bán kính `r` rig không nhân `s`, ra ngoài đỉnh đùi tới `side` bán kính), lòng tay theo
+ * góc đùi `{ right, left }`, mặt cong bán kính `r` rig không nhân `s`, ra ngoài đỉnh đùi tới `side` bán kính), lòng tay theo
  * mặt đùi; `table` giữa lòng tay ở điểm hệ thân `at` của từng tay
  */
 export function sitArms(
@@ -339,12 +339,12 @@ export function sitArms(
     });
     const hand = (k) => ({ pose: "flat", w: 0.6, palm: thighPalm(thighs[k], phi) });
     return {
-      arms: { near: one("near"), far: one("far") },
-      hand: { near: hand("near"), far: hand("far") },
+      arms: { right: one("right"), left: one("left") },
+      hand: { right: hand("right"), left: hand("left") },
     };
   }
   const one = (p) => ({ at: p.map(r1), point: "palm", elbow: TABLE_ELBOW });
-  return { arms: { near: one(at.near), far: one(at.far) }, hand: TABLE_HAND };
+  return { arms: { right: one(at.right), left: one(at.left) }, hand: TABLE_HAND };
 }
 
 /** Hành động ngồi chưa qua `parseAction` */
@@ -354,7 +354,15 @@ export function sitAction({ name, keys, note, preview, head }) {
     duration: SIT_DURATION,
     end: "wrap",
     authoredAt: "side",
-    mask: ["armFar", "armNear", "legFar", "legNear", "torso", "hand", ...(head ? ["head"] : [])],
+    mask: [
+      "armLeft",
+      "armRight",
+      "legLeft",
+      "legRight",
+      "torso",
+      "hand",
+      ...(head ? ["head"] : []),
+    ],
     keys,
     events: [],
     ...(note !== undefined && { note }),

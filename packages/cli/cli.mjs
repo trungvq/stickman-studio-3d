@@ -69,12 +69,12 @@ const USAGE = `stickman <lệnh> [thư mục]
                 --style single|serve (mặc định single) --tilt <độ nghiêng hết> --pour-dir <độ hướng rót>
                 --item <bình mang vai trò pourer, khi tay phải chưa cầm gì; mặc định binh>
                 sit: dáng ngồi nền theo mặt ngồi, sàn, cỡ người của cảnh (--at mặc định 0)
-                --legs bent|square|straight|staggered (mặc định square) --tuck near|far (chân co của
-                staggered, mặc định far) --feet free|floor (mặc định free: chạm được thì chạm, không thì chân
+                --legs bent|square|straight|staggered (mặc định square) --tuck right|left (chân co của
+                staggered, mặc định left) --feet free|floor (mặc định free: chạm được thì chạm, không thì chân
                 square thõng, kiểu khác lỗi; floor: không chạm được là lỗi) --back upright|recline|forward (mặc định upright)
                 --hands thighs|table|armrest|fold (mặc định thighs; armrest: khuỷu, cẳng tay trên tay vịn; fold:
                 khuỷu trên tay vịn, bàn tay chồng trước bụng) --elbow <số> (dời khuỷu dọc tay vịn, dương ra
-                trước, rig ở height 1) --top near|far (bàn tay nằm trên của fold, mặc định near)
+                trước, rig ở height 1) --top right|left (bàn tay nằm trên của fold, mặc định right)
                 --table <vật | vật#mục | y | y,mép gần | none>
                 --armrest <vật | x,y,z> --backrest <vật | vật#mục | khoảng sau hông | none>
                 --footrest <vật | vật#mục | y | none> (vật: tên trong cảnh three stickman.world mang vai

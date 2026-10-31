@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 21,
+  "name": "pat-shoulder-left-3d",
+  "duration": 1.7,
+  "end": "hold",
+  "mask": ["armLeft", "hand", "torso"],
+  "authoredAt": "side",
+  "snap": true,
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armLeft": [-6, 24, 0], "torso": [0, 0] },
+      "ease": "smooth",
+      "hand": { "armLeft": { "w": 0.3, "turn": 0, "bend": 0 } }
+    },
+    {
+      "t": 0.1765,
+      "pose": { "torso": [2, 3] },
+      "reach": { "armLeft": { "at": [44, -102, 84], "point": "palm", "elbow": [-0.3, 1, 0.2] } },
+      "ease": "smooth",
+      "hand": { "armLeft": { "pose": "open", "w": 1, "palm": [0, 0.5, 1] } }
+    },
+    {
+      "t": 0.2471,
+      "pose": { "torso": [2, 4] },
+      "reach": { "armLeft": { "at": [34, -110, 100], "point": "palm", "elbow": [-0.3, 1, 0.2] } },
+      "ease": "smooth",
+      "hand": { "armLeft": { "pose": "open", "w": 1, "bend": 10, "palm": [0, 0.5, 1] } }
+    },
+    {
+      "t": 0.3412,
+      "pose": { "torso": [2, 4] },
+      "reach": { "armLeft": { "at": [36, -108, 90], "point": "palm", "elbow": [-0.3, 1, 0.2] } },
+      "ease": "smooth",
+      "hand": { "armLeft": { "pose": "open", "w": 1, "bend": -10, "palm": [0, 0.5, 1] } }
+    },
+    {
+      "t": 0.4118,
+      "pose": { "torso": [2, 4] },
+      "reach": { "armLeft": { "at": [34, -110, 100], "point": "palm", "elbow": [-0.3, 1, 0.2] } },
+      "ease": "smooth",
+      "hand": { "armLeft": { "pose": "open", "w": 1, "bend": 10, "palm": [0, 0.5, 1] } }
+    },
+    {
+      "t": 0.6176,
+      "pose": { "torso": [2, 4] },
+      "reach": { "armLeft": { "at": [34, -110, 100], "point": "palm", "elbow": [-0.3, 1, 0.2] } },
+      "ease": "smooth",
+      "hand": { "armLeft": { "pose": "open", "w": 1, "bend": 10, "palm": [0, 0.5, 1] } }
+    },
+    {
+      "t": 0.7176,
+      "pose": { "torso": [1, 3] },
+      "reach": { "armLeft": { "at": [44, -100, 84], "point": "palm", "elbow": [-0.3, 1, 0.2] } },
+      "ease": "smooth",
+      "hand": { "armLeft": { "pose": "open", "w": 0.8, "palm": [0, 0.5, 1] } }
+    },
+    {
+      "t": 0.8235,
+      "pose": { "torso": [1, 1] },
+      "reach": { "armLeft": { "at": [52, -40, 64], "point": "palm", "elbow": [-0.4, 1, 0.6] } },
+      "ease": "smooth",
+      "hand": { "armLeft": { "w": 0.6, "turn": 0, "bend": 0 } }
+    },
+    {
+      "t": 1,
+      "pose": { "armLeft": [-6, 24, 0], "torso": [0, 0] },
+      "ease": "smooth",
+      "hand": { "armLeft": { "w": 0.3, "turn": 0, "bend": 0 } }
+    }
+  ],
+  "events": [],
+  "note": "Vỗ vai người đứng cạnh phía tay trái hai nhịp rồi buông: tay trái đưa lên (0,3 s), áp lòng tay lên mặt ngoài vai người kia ngay dưới nắp vai (đích hệ thân [34, -110, 100], `point: \"palm\"`, lòng tay úp-ra, 0,42 s), nhấc ra về phía mình rồi vỗ lại (0,7 s), giữ tới 1,05 s, rút về rồi hạ về tay buông của `stand-3d` lúc 1,7 s; thân cúi 2°, nghiêng 4° về phía ấy; `snap`. Chỉ ghi tay trái, `hand`, `torso`. Nền `stand-3d`; người được vỗ cùng cao, đứng phía tay trái, hông trước 30, ngang 165 ở `height` 1, mặt cùng hướng hay xoay về người vỗ — gần hơn thì hai đầu chibi chạm nhau; đứng chỗ khác hay cao thấp khác thì đặt `world.hands` tới vai đo bằng `scene_probe`. Người phía kia thì `pat-shoulder-right-3d`. Sinh bằng `tools/actions/pat-shoulder.mjs`.",
+  "preview": { "stage": "stand", "partner": { "at": [30, -165], "yaw": -85 } }
+}

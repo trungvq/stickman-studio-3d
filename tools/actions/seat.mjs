@@ -67,9 +67,9 @@ function key(f, legs, torso, arms, extra = {}) {
   return {
     t: r4(f),
     pose: {
-      ...(arms && { armFar: arms.map(r1), armNear: arms.map(r1) }),
-      legFar: legs.far ?? legs,
-      legNear: legs.near ?? legs,
+      ...(arms && { armLeft: arms.map(r1), armRight: arms.map(r1) }),
+      legLeft: legs.left ?? legs,
+      legRight: legs.right ?? legs,
       torso: r1(torso),
     },
     ...extra,
@@ -79,8 +79,8 @@ function key(f, legs, torso, arms, extra = {}) {
 
 /** Hai tay cùng đích hệ thân `at`, hướng khuỷu `elbow`, bàn tay `hand` (bỏ trống thì mốc không nhắc bàn tay) */
 const both = (at, elbow, hand) => ({
-  reach: { armNear: { at: at.map(r1), elbow }, armFar: { at: at.map(r1), elbow } },
-  ...(hand && { hand: { armNear: hand, armFar: hand } }),
+  reach: { armRight: { at: at.map(r1), elbow }, armLeft: { at: at.map(r1), elbow } },
+  ...(hand && { hand: { armRight: hand, armLeft: hand } }),
 });
 
 /** Nội suy bậc thang qua các điểm `[pha, giá trị]` (êm giữa hai điểm) */
@@ -175,7 +175,7 @@ function chairMove(down) {
     let extra = {};
     if (down) {
       if (f === 0)
-        [arms, extra] = [STAND_ARMS, { hand: { armNear: REST_HAND, armFar: REST_HAND } }];
+        [arms, extra] = [STAND_ARMS, { hand: { armRight: REST_HAND, armLeft: REST_HAND } }];
       else if (i === 6) [arms, extra] = [[4, 30, 0], both([22, -8, 60], HANG_ELBOW)];
       else if (i === 10) [arms, extra] = [GRIP_ARMS, both(body(f, above), GRIP_ELBOW)];
       else if (i >= 13) [arms, extra] = [GRIP_ARMS, both(body(f, G), GRIP_ELBOW, GRIP_HAND)];
@@ -245,8 +245,8 @@ function kneelMove(up, duration) {
 }
 
 /**
- * Đứng dậy từ seiza: nhổm lên quỳ thẳng, chân gần bước ra trước đặt bàn chân xuống sàn trước mép đệm, đẩy người đứng
- * lên trên bàn chân ấy, chân xa rời đệm thu về cạnh
+ * Đứng dậy từ seiza: nhổm lên quỳ thẳng, chân phải bước ra trước đặt bàn chân xuống sàn trước mép đệm, đẩy người đứng
+ * lên trên bàn chân ấy, chân trái rời đệm thu về cạnh
  */
 function seizaStand(duration) {
   const step = [KNEEL_HIP[0] + 50, FOOT];
@@ -259,15 +259,15 @@ function seizaStand(duration) {
     { t: duration, at: [r1(step[0]), 0], ease: true },
   ];
   const stand = () => lift + FOOT;
-  // chân gần: quỳ tới 0,38, bước 0,38–0,58, rồi đứng trên `step`
-  const nearFoot = (f) => {
+  // chân phải: quỳ tới 0,38, bước 0,38–0,58, rồi đứng trên `step`
+  const rightFoot = (f) => {
     if (f <= 0.38) return ANKLE;
     if (f >= 0.58) return step;
     const u = ss((f - 0.38) / 0.2);
     return [lerp(ANKLE[0], step[0], u), lerp(ANKLE[1], step[1], u) + 34 * Math.sin(Math.PI * u)];
   };
-  // chân xa: quỳ, mũi chân đẩy tới 0,72, rồi thu về cạnh chân gần lúc 0,92
-  const farFoot = (f) => {
+  // chân trái: quỳ, mũi chân đẩy tới 0,72, rồi thu về cạnh chân phải lúc 0,92
+  const leftFoot = (f) => {
     if (f <= 0.72) return ANKLE;
     if (f >= 0.92) return step;
     const u = ss((f - 0.72) / 0.2);
@@ -292,7 +292,7 @@ function seizaStand(duration) {
   for (let i = 0; i <= 40; i++) {
     const f = i / 40;
     const hip = hipOn(path, f * duration, stand);
-    const legs = { near: ik(rel(nearFoot(f), hip)), far: ik(rel(farFoot(f), hip)) };
+    const legs = { right: ik(rel(rightFoot(f), hip)), left: ik(rel(leftFoot(f), hip)) };
     keys.push(key(f, legs, torso(f), arms(f).map(r1)));
   }
   return { keys, path };
@@ -344,20 +344,20 @@ function squat(duration) {
     k.pose.head = [0, 0, r1(head(f))];
     keys.push(k);
   }
-  Object.assign(keys[0].pose, { armFar: STAND_ARMS, armNear: STAND_ARMS });
+  Object.assign(keys[0].pose, { armLeft: STAND_ARMS, armRight: STAND_ARMS });
   const end = keys[n];
-  Object.assign(end.pose, { armFar: [30, 40, 0], armNear: [30, 40, 0] });
+  Object.assign(end.pose, { armLeft: [30, 40, 0], armRight: [30, 40, 0] });
   end.reach = {
-    armNear: { to: "knee", offset: [16, 4, 0], elbow: [-0.3, 1, 0.6] },
-    armFar: { to: "knee", offset: [16, 4, 0], elbow: [-0.3, 1, 0.6] },
+    armRight: { to: "knee", offset: [16, 4, 0], elbow: [-0.3, 1, 0.6] },
+    armLeft: { to: "knee", offset: [16, 4, 0], elbow: [-0.3, 1, 0.6] },
   };
-  end.hand = { armNear: REST_HAND, armFar: REST_HAND };
+  end.hand = { armRight: REST_HAND, armLeft: REST_HAND };
   return { keys, path };
 }
 
 /**
- * Quỳ một gối: bàn chân xa đứng yên ở chỗ đứng, hông lùi `KNEEL_BACK` và hạ xuống `KNEEL_HIP_H`, chân gần lùi ra sau,
- * gối gần xuống sàn ngay dưới hông, mũi bàn chân gần chống
+ * Quỳ một gối: bàn chân trái đứng yên ở chỗ đứng, hông lùi `KNEEL_BACK` và hạ xuống `KNEEL_HIP_H`, chân phải lùi ra sau,
+ * gối phải xuống sàn ngay dưới hông, mũi bàn chân phải chống
  */
 const KNEEL_BACK = 70;
 const KNEEL_HIP_H = 88;
@@ -385,18 +385,18 @@ function kneel(duration) {
   for (let i = 0; i <= n; i++) {
     const f = i / n;
     const hip = hipOn(path, f * duration, stand);
-    // chân gần: rời sàn từ 0,1, cổ chân lùi theo cung về chỗ chống mũi
+    // chân phải: rời sàn từ 0,1, cổ chân lùi theo cung về chỗ chống mũi
     const u = ss(clamp01((f - 0.1) / 0.9));
-    const near = [lerp(0, toe[0], u), lerp(FOOT, toe[1], u) + 22 * Math.sin(Math.PI * u)];
-    const legs = { near: ik(rel(near, hip)), far: planted([0, FOOT], hip) };
+    const right = [lerp(0, toe[0], u), lerp(FOOT, toe[1], u) + 22 * Math.sin(Math.PI * u)];
+    const legs = { right: ik(rel(right, hip)), left: planted([0, FOOT], hip) };
     keys.push(key(f, legs, torso(f)));
   }
-  Object.assign(keys[0].pose, { armFar: STAND_ARMS, armNear: STAND_ARMS });
+  Object.assign(keys[0].pose, { armLeft: STAND_ARMS, armRight: STAND_ARMS });
   const end = keys[n];
-  end.pose.armNear = [4, 20, 0];
-  end.pose.armFar = [30, 50, 0];
-  end.reach = { armFar: { to: "knee", offset: [4, -10, 0], elbow: [-0.3, 1, 0.6] } };
-  end.hand = { armFar: REST_HAND };
+  end.pose.armRight = [4, 20, 0];
+  end.pose.armLeft = [30, 50, 0];
+  end.reach = { armLeft: { to: "knee", offset: [4, -10, 0], elbow: [-0.3, 1, 0.6] } };
+  end.hand = { armLeft: REST_HAND };
   return { keys, path };
 }
 
@@ -419,7 +419,7 @@ const ACTIONS = [
   {
     name: "sit-down-3d",
     duration: SIT_DOWN,
-    mask: ["armFar", "armNear", "legFar", "legNear", "torso", "head", "hand"],
+    mask: ["armLeft", "armRight", "legLeft", "legRight", "torso", "head", "hand"],
     keys: chairMove(true),
     preview: { stage: "sit-down" },
     note: `Ngồi phịch xuống ghế bành từ đứng: hông lùi và hạ từ chỗ đứng trước mặt ngồi một đùi xuống mặt ngồi trong ${SIT_DOWN} s, bàn chân đứng yên, thân chúi tới 22° rồi bật ngửa lúc chạm đệm, đầu ngẩng bù, hai tay vòng ra ngoài rồi úp nắm đầu tay vịn (cao hơn mặt ngồi ${ARM.top}, tâm cách giữa hông ${ARM.out}); giữ. Ghi tay, chân, thân, đầu, bàn tay. Nền: \`stand-3d\` trước, \`world.path\` hai mốc — mốc đứng ở sàn trước điểm ngồi ${T} (một đùi) đúng lúc clip bắt đầu, mốc \`sit: true, ease: true\` ở điểm ngồi ${SIT_DOWN} s sau —, hết thì \`sit-lounge-3d\` (tay giữ trên tay vịn) hay \`sit-3d\`. ${BY}`,
@@ -427,7 +427,7 @@ const ACTIONS = [
   {
     name: "stand-up-3d",
     duration: STAND_UP,
-    mask: ["armFar", "armNear", "legFar", "legNear", "torso", "head", "hand"],
+    mask: ["armLeft", "armRight", "legLeft", "legRight", "torso", "head", "hand"],
     keys: chairMove(false),
     preview: { stage: "stand-up" },
     note: `Đứng dậy khỏi ghế bành: hai tay úp chống đầu tay vịn, thân chúi tới 28°, đầu ngẩng bù, đẩy hông lên và ra trước tới chỗ đứng trước điểm ngồi ${T} trong ${STAND_UP} s, buông tay vịn giữa chừng về buông dọc thân; bàn chân đứng yên. Ghi tay, chân, thân, đầu, bàn tay. Nền: \`world.path\` hai mốc — mốc \`sit: true\` ở điểm ngồi đúng lúc clip bắt đầu, mốc đứng \`ease: true\` ở sàn trước điểm ngồi ${T} ${STAND_UP} s sau —, hết thì \`stand-3d\`. Ghế không tay vịn thì tay chống vào khoảng trống: chồng track tay. ${BY}`,
@@ -435,7 +435,7 @@ const ACTIONS = [
   {
     name: "kneel-up-3d",
     duration: KNEEL,
-    mask: ["armFar", "armNear", "legFar", "legNear", "torso"],
+    mask: ["armLeft", "armRight", "legLeft", "legRight", "torso"],
     keys: kneelUp.keys,
     preview: { stage: "floor", path: kneelUp.path },
     note: `Từ seiza nhổm lên quỳ gối thẳng rồi giữ: đùi xoay quanh gối tới dựng đứng trong ${KNEEL} s, gối và cẳng chân nằm yên trên đệm, thân 3 → −1, tay từ trên đùi buông xuống. Ghi tay, chân, thân. Nền \`seiza-3d\`; hông đi theo \`world.path\` toàn mốc \`sit: true\` như \`preview.path\` (cung tròn quanh gối, mặt ngồi seiza ${FLOOR_SEAT} trên sàn). Tay nâng ly, vỗ tay chồng track tay trên; hạ về bằng \`kneel-up-out-3d\`. ${SEAT_NOTE} ${BY}`,
@@ -443,7 +443,7 @@ const ACTIONS = [
   {
     name: "kneel-up-out-3d",
     duration: KNEEL,
-    mask: ["armFar", "armNear", "legFar", "legNear", "torso"],
+    mask: ["armLeft", "armRight", "legLeft", "legRight", "torso"],
     keys: kneelOut.keys,
     preview: { stage: "floor", path: kneelOut.path },
     note: `Từ quỳ gối thẳng hạ mông về ngồi seiza trong ${KNEEL} s — chiều ngược của \`kneel-up-3d\`, nối ngay sau nó; giữ ở dáng \`seiza-3d\`. Ghi tay, chân, thân. Hông đi theo \`world.path\` toàn mốc \`sit: true\` như \`preview.path\`; hết thì \`seiza-3d\`. ${SEAT_NOTE} ${BY}`,
@@ -451,15 +451,15 @@ const ACTIONS = [
   {
     name: "seiza-stand-3d",
     duration: SEIZA_STAND,
-    mask: ["armFar", "armNear", "legFar", "legNear", "torso"],
+    mask: ["armLeft", "armRight", "legLeft", "legRight", "torso"],
     keys: stand.keys,
     preview: { stage: "floor", path: stand.path },
-    note: `Đứng dậy từ seiza trên đệm trong ${SEIZA_STAND} s: nhổm lên quỳ gối thẳng (gối, cẳng chân nằm yên), chân gần bước ra trước đặt bàn chân xuống sàn trước gối 50, chúi 24° đẩy người đứng lên trên bàn chân ấy, chân xa rời đệm thu về cạnh; giữ đứng. Ghi tay, chân, thân. Nền \`seiza-3d\`; hông đi theo \`world.path\` như \`preview.path\` (mốc \`sit: true\` tới lúc rời đệm, mốc cuối đứng \`ease\` ở sàn trước chỗ ngồi ${r1(stand.path.at(-1).at[0])}); hết thì \`stand-3d\`. ${SEAT_NOTE} ${BY}`,
+    note: `Đứng dậy từ seiza trên đệm trong ${SEIZA_STAND} s: nhổm lên quỳ gối thẳng (gối, cẳng chân nằm yên), chân phải bước ra trước đặt bàn chân xuống sàn trước gối 50, chúi 24° đẩy người đứng lên trên bàn chân ấy, chân trái rời đệm thu về cạnh; giữ đứng. Ghi tay, chân, thân. Nền \`seiza-3d\`; hông đi theo \`world.path\` như \`preview.path\` (mốc \`sit: true\` tới lúc rời đệm, mốc cuối đứng \`ease\` ở sàn trước chỗ ngồi ${r1(stand.path.at(-1).at[0])}); hết thì \`stand-3d\`. ${SEAT_NOTE} ${BY}`,
   },
   {
     name: "squat-3d",
     duration: SQUAT,
-    mask: ["armFar", "armNear", "legFar", "legNear", "torso", "head", "hand"],
+    mask: ["armLeft", "armRight", "legLeft", "legRight", "torso", "head", "hand"],
     keys: sq.keys,
     preview: { stage: "stand", path: sq.path },
     note: `Ngồi xổm rồi giữ: hai bàn chân đứng yên ở chỗ đứng, hông lùi ${SQUAT_BACK} và hạ xuống cao ${SQUAT_HIP} trên sàn trong ${SQUAT} s, gót nhấc khi ống chân chúc, thân chúi 34°, đầu ngẩng bù cho mắt nhìn ra trước, hai cẳng tay gác trên gối, bàn tay buông trước gối. Ghi tay, chân, thân, đầu, bàn tay. Nền \`stand-3d\`; hông đi theo \`world.path\` như \`preview.path\` — mốc đứng ở chỗ đứng đúng lúc clip bắt đầu, mốc \`sit: true, ease: true\` (mặt ngồi ảo cao ${SQUAT_HIP - LEG_HALF}) ${SQUAT} s sau; ngồi sẵn thì \`world.sit\` ở chỗ ấy. Tay nhặt, xem vật dưới chân chồng track tay; đứng lên thì thêm mốc đứng và clip rỗng blend ~0,6. ${SEAT_NOTE} ${BY}`,
@@ -467,10 +467,10 @@ const ACTIONS = [
   {
     name: "kneel-3d",
     duration: KNEEL_DOWN,
-    mask: ["armFar", "armNear", "legFar", "legNear", "torso", "hand"],
+    mask: ["armLeft", "armRight", "legLeft", "legRight", "torso", "hand"],
     keys: kn.keys,
     preview: { stage: "stand", path: kn.path },
-    note: `Quỳ một gối rồi giữ: bàn chân trái (xa) đứng yên ở chỗ đứng, hông lùi ${KNEEL_BACK} và hạ xuống cao ${KNEEL_HIP_H} trên sàn trong ${KNEEL_DOWN} s, chân phải (gần) lùi ra sau, gối phải xuống sàn ngay dưới hông, mũi bàn chân phải chống; tay trái đặt trên gối trái, tay phải buông. Ghi tay, chân, thân, bàn tay. Nền \`stand-3d\`; hông đi theo \`world.path\` như \`preview.path\` (mốc đứng ở chỗ đứng đúng lúc clip bắt đầu, rồi mốc \`sit: true\`, mặt ngồi ảo). Nhận đồ, cầu hôn, buộc dây giày thì chồng track tay; đứng lên thì thêm mốc đứng và clip rỗng blend ~0,6. ${SEAT_NOTE} ${BY}`,
+    note: `Quỳ một gối rồi giữ: bàn chân trái đứng yên ở chỗ đứng, hông lùi ${KNEEL_BACK} và hạ xuống cao ${KNEEL_HIP_H} trên sàn trong ${KNEEL_DOWN} s, chân phải lùi ra sau, gối phải xuống sàn ngay dưới hông, mũi bàn chân phải chống; tay trái đặt trên gối trái, tay phải buông. Ghi tay, chân, thân, bàn tay. Nền \`stand-3d\`; hông đi theo \`world.path\` như \`preview.path\` (mốc đứng ở chỗ đứng đúng lúc clip bắt đầu, rồi mốc \`sit: true\`, mặt ngồi ảo). Nhận đồ, cầu hôn, buộc dây giày thì chồng track tay; đứng lên thì thêm mốc đứng và clip rỗng blend ~0,6. ${SEAT_NOTE} ${BY}`,
   },
 ];
 

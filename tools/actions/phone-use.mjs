@@ -1,29 +1,29 @@
 // Cầm điện thoại xem, tay kia gõ màn, lặp. Chạy `node tools/actions/phone-use.mjs`.
 import { emit } from "./emit.mjs";
 
-/** `hold` kênh tay cầm máy (`sides: "anatomical"`: `armNear` là tay phải), `at` tâm nắm của tay ấy, hệ thân */
+/** `hold` kênh tay cầm máy, `at` tâm nắm của tay ấy, hệ thân */
 const ROWS = [
   {
     name: "phone-use-3d",
-    hold: "armNear",
+    hold: "armRight",
     at: [90, -92, 32],
     what: "trước ngực, tay phải cầm máy",
   },
   {
     name: "phone-use-left-3d",
-    hold: "armFar",
+    hold: "armLeft",
     at: [90, -92, 32],
     what: "trước ngực, tay trái cầm máy",
   },
   {
     name: "phone-use-high-3d",
-    hold: "armNear",
+    hold: "armRight",
     at: [100, -120, 16],
     what: "giơ cao ngang ngực trên, tay phải cầm máy",
   },
   {
     name: "phone-use-high-left-3d",
-    hold: "armFar",
+    hold: "armLeft",
     at: [100, -120, 16],
     what: "giơ cao ngang ngực trên, tay trái cầm máy",
   },
@@ -39,8 +39,8 @@ const num = (v) => String(v).replace(".", ",");
 
 await emit(
   ROWS.map((r) => {
-    const tap = r.hold === "armNear" ? "armFar" : "armNear";
-    const right = r.hold === "armNear";
+    const tap = r.hold === "armRight" ? "armLeft" : "armRight";
+    const right = r.hold === "armRight";
     const hold = { at: r.at, elbow: [-0.6, 1, 0.4], point: "grip" };
     const hand = {
       [r.hold]: { pose: "span", w: 1, palm: { toward: "mouth" } },
@@ -51,8 +51,7 @@ await emit(
       duration: 1.4,
       end: "wrap",
       authoredAt: "side",
-      sides: "anatomical",
-      mask: ["armNear", "armFar", "hand"],
+      mask: ["armRight", "armLeft", "hand"],
       keys: TAPS.map((t) => ({
         t,
         pose: {},
@@ -68,7 +67,7 @@ await emit(
         hand,
         ease: "smooth",
       })),
-      note: `Cầm điện thoại xem và gõ, ${r.what}: tâm nắm tay cầm ở hệ thân [${r.at.map(num).join(", ")}], tay kia giơ ngón trỏ trên màn (mốc \`otherGrip\`) và gõ ba cú mỗi lượt 1,4 s, lặp. Ghi hai tay, \`hand\`; \`sides: "anatomical"\`. Nền \`stand-3d\` hay \`sit-3d\`; món ở \`world.hands[].hold\` của tay cầm, như \`dien-thoai@palmBox\` với \`roll\` đầu máy ra trước. Chồng \`look-down-*\` cho đầu cúi nhìn máy; cùng họ: \`phone-use-3d\`, \`-left\`, \`-high\`, \`-high-left\`. Sinh bằng \`tools/actions/phone-use.mjs\`.`,
+      note: `Cầm điện thoại xem và gõ, ${r.what}: tâm nắm tay cầm ở hệ thân [${r.at.map(num).join(", ")}], tay kia giơ ngón trỏ trên màn (mốc \`otherGrip\`) và gõ ba cú mỗi lượt 1,4 s, lặp. Ghi hai tay, \`hand\`. Nền \`stand-3d\` hay \`sit-3d\`; món ở \`world.hands[].hold\` của tay cầm, như \`dien-thoai@palmBox\` với \`roll\` đầu máy ra trước. Chồng \`look-down-*\` cho đầu cúi nhìn máy; cùng họ: \`phone-use-3d\`, \`-left\`, \`-high\`, \`-high-left\`. Sinh bằng \`tools/actions/phone-use.mjs\`.`,
       preview: {
         stage: "stand",
         hold: {

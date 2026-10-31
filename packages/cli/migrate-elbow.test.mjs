@@ -73,7 +73,7 @@ describe("migrate-elbow", () => {
     const c = rig.defaultCharacter();
     const rt = rig.resolveScene(p.data, {}, { a: c.rig.height }, { a: rig.body3(c) });
     const w = rig.sceneAt(rt, "a", 2, c.rig.height, rig.body3(c)).world;
-    const h = w.flip ? w.hands.near : w.hands.far;
+    const h = w.hands.left;
     assert.ok(Math.hypot(...h.elbow.map((x, i) => x - e[i])) < 1e-3);
     // chạy lại: không còn gì để đổi
     assert.equal(migrateElbow({ dir }).scenes.length, 0);

@@ -1,10 +1,10 @@
 // Đầu dẫn trước khi thân quay. Chạy `node tools/actions/head-lead.mjs`.
 import { emit } from "./emit.mjs";
 
-/** Lắc dương là quay mặt về phía xa ống kính; nghiêng ngược chiều quay */
+/** Lắc dương là quay mặt về phía tay trái; nghiêng ngược chiều quay */
 const SIDES = [
-  { side: "near", sign: -1, label: "phía ống kính" },
-  { side: "far", sign: 1, label: "phía xa ống kính" },
+  { side: "right", sign: -1, label: "phía tay phải" },
+  { side: "left", sign: 1, label: "phía tay trái" },
 ];
 
 const TURN = 35;
@@ -12,7 +12,7 @@ const TILT = 2;
 
 await emit(
   SIDES.map((s) => {
-    const other = s.side === "near" ? "far" : "near";
+    const other = s.side === "right" ? "left" : "right";
     const head = (tilt, turn) => ({ head: [-s.sign * tilt, s.sign * turn, null] });
     return {
       name: `head-lead-${s.side}-3d`,

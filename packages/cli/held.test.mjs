@@ -228,11 +228,11 @@ describe("check: dáng tay của thư viện ở `keys[].hand`", () => {
     const json = (rel, v) => writeFileSync(join(dir, rel), JSON.stringify(v));
     json("package.json", { name: "x" });
     json("hands/chu-v.json", { fingers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] });
-    const act = (name, armNear) => ({
+    const act = (name, armRight) => ({
       name,
       end: "hold",
       mask: ["hand"],
-      keys: [{ t: 0, pose: {}, hand: { armNear, armFar: "fist" } }],
+      keys: [{ t: 0, pose: {}, hand: { armRight, armLeft: "fist" } }],
     });
     json("actions/vay.json", act("vay", "peace"));
     json("actions/chu.json", act("chu", { pose: "chu-v", w: 0.5 }));

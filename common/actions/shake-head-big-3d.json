@@ -13,6 +13,6 @@
     { "t": 1, "pose": { "head": [null, 0, null] }, "ease": "linear" }
   ],
   "events": [],
-  "note": "Lắc đầu (\"không đời nào\", từ chối thẳng): lắc 30° về phía ống kính ở 0,2, 30° sang phía kia ở 0,5, 20° về lại ở 0,8, thẳng ở 1; lượt 1,1 s, giữ. Chỉ ghi góc lắc của `head`, nghiêng và gật để trống. Nền `stand-3d`, ngồi thì `sit-3d`. Track dưới cúi, ngẩng đầu thì góc gật ấy vẫn giữ; cùng họ: `shake-head-soft-3d`, `shake-head-3d`, `shake-head-big-3d`. Sinh bằng `tools/actions/shake-head.mjs`.",
+  "note": "Lắc đầu (\"không đời nào\", từ chối thẳng): lắc 30° về phía tay phải ở 0,2, 30° sang phía kia ở 0,5, 20° về lại ở 0,8, thẳng ở 1; lượt 1,1 s, giữ. Chỉ ghi góc lắc của `head`, nghiêng và gật để trống. Nền `stand-3d`, ngồi thì `sit-3d`. Track dưới cúi, ngẩng đầu thì góc gật ấy vẫn giữ; cùng họ: `shake-head-soft-3d`, `shake-head-3d`, `shake-head-big-3d`. Sinh bằng `tools/actions/shake-head.mjs`.",
   "preview": { "stage": "stand" }
 }

@@ -1,16 +1,22 @@
 // Vỗ vai người đứng cạnh về một phía. Chạy `node tools/actions/pat-shoulder.mjs`.
 import { emit } from "./emit.mjs";
 
-/** `s` là dấu của nghiêng thân: âm về phía tay gần */
+/** `s` là dấu của nghiêng thân: âm về phía tay phải */
 const ROWS = [
   {
-    name: "pat-shoulder-near-3d",
-    arm: "armNear",
+    name: "pat-shoulder-right-3d",
+    arm: "armRight",
     s: -1,
-    side: "gần",
-    mirror: "pat-shoulder-far-3d",
+    side: "phải",
+    mirror: "pat-shoulder-left-3d",
   },
-  { name: "pat-shoulder-far-3d", arm: "armFar", s: 1, side: "xa", mirror: "pat-shoulder-near-3d" },
+  {
+    name: "pat-shoulder-left-3d",
+    arm: "armLeft",
+    s: 1,
+    side: "trái",
+    mirror: "pat-shoulder-right-3d",
+  },
 ];
 
 /**

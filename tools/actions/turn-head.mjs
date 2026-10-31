@@ -21,8 +21,8 @@ const ANGLES = [
 ];
 const SNAP = { at: 0.1667, peak: 0.3, over: 6, duration: 0.6 };
 const SIDES = [
-  { side: "near", sign: -1, label: "phía ống kính" },
-  { side: "far", sign: 1, label: "phía xa ống kính" },
+  { side: "right", sign: -1, label: "phía tay phải" },
+  { side: "left", sign: 1, label: "phía tay trái" },
 ];
 
 const head = (s, tilt, turn) => ({ head: [-s * tilt, s * turn, null] });
@@ -33,7 +33,7 @@ for (const a of ANGLES)
   for (const snap of a.turn === 35 ? [false] : [false, true])
     for (const s of SIDES) {
       const name = `turn-head-${a.turn}${snap ? "-snap" : ""}-${s.side}-3d`;
-      const other = `turn-head-${a.turn}${snap ? "-snap" : ""}-${s.side === "near" ? "far" : "near"}-3d`;
+      const other = `turn-head-${a.turn}${snap ? "-snap" : ""}-${s.side === "right" ? "left" : "right"}-3d`;
       const keys = snap
         ? [
             { t: 0, pose: head(s.sign, 0, 0), ease: "smooth" },

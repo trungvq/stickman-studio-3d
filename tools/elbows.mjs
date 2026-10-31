@@ -100,12 +100,11 @@ function measure(ctx, name, { locked, iter, fps, keep, dump }) {
       const inView = ([x, y]) =>
         x >= v.x - mx && x <= v.x + v.w + mx && y >= v.y - mx && y <= v.y + v.h + mx;
       const visible = st.front && sp.opacity > 0.5;
-      const near = sp.world.flip ? "L" : "R";
       rows.push(
         HANDS.map(([hand, , tag], k) => {
           const a = arms[k];
           const e = el[tag];
-          const reach = tag === near ? sp.world.hands?.near : sp.world.hands?.far;
+          const reach = tag === "R" ? sp.world.hands?.right : sp.world.hands?.left;
           const target = a.ik >= 0.5;
           return {
             ...a,

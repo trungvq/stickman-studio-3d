@@ -1,20 +1,20 @@
 // Hất hàm hỏi, thẳng hay về một phía. Chạy `node tools/actions/chin-up.mjs`.
 import { emit } from "./emit.mjs";
 
-/** Lắc dương là quay mặt về phía xa ống kính; gật âm là ngửa. Mốc đỉnh ở `peak`, lùi về `hold` ở 1 */
+/** Lắc dương là quay mặt về phía tay trái; gật âm là ngửa. Mốc đỉnh ở `peak`, lùi về `hold` ở 1 */
 const ROWS = [
   { name: "chin-up-3d", sign: 0, peak: { t: 0.25, turn: 0, up: 12 }, hold: { turn: 0, up: 5 } },
   {
-    name: "chin-up-side-near-3d",
+    name: "chin-up-side-right-3d",
     sign: -1,
-    label: "phía ống kính",
+    label: "phía tay phải",
     peak: { t: 0.35, turn: 15, up: 16 },
     hold: { turn: 10, up: 7 },
   },
   {
-    name: "chin-up-side-far-3d",
+    name: "chin-up-side-left-3d",
     sign: 1,
-    label: "phía xa ống kính",
+    label: "phía tay trái",
     peak: { t: 0.35, turn: 15, up: 16 },
     hold: { turn: 10, up: 7 },
   },
@@ -30,8 +30,8 @@ await emit(
       ? `Hất cằm về ${r.label}: đầu lắc ${r.peak.turn}°, ngửa ${r.peak.up}° ở ${t(r.peak.t)}, lùi về lắc ${r.hold.turn}°, ngửa ${r.hold.up}° ở 1 (mặt vẫn đọc được); lượt 0,6 s, giữ`
       : `Hất hàm hỏi: đầu ngửa ${r.peak.up}° ở ${t(r.peak.t)} rồi lùi về ${r.hold.up}° ở 1; lượt 0,6 s, giữ`;
     const others = side
-      ? `chiều kia là \`chin-up-side-${r.sign < 0 ? "far" : "near"}-3d\`, hất thẳng là \`chin-up-3d\``
-      : "hất về một phía là `chin-up-side-near-3d`, `chin-up-side-far-3d`";
+      ? `chiều kia là \`chin-up-side-${r.sign < 0 ? "left" : "right"}-3d\`, hất thẳng là \`chin-up-3d\``
+      : "hất về một phía là `chin-up-side-right-3d`, `chin-up-side-left-3d`";
     return {
       name: r.name,
       duration: 0.6,

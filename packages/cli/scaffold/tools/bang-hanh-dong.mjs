@@ -187,13 +187,8 @@ for (const name of actions) {
     try {
       for (const g of GOC) {
         const json = rig.previewScene(name, a, person, { ...opts, angle: g });
-        // góc chỉ khác ống kính thì chung một cảnh: tab Remotion không dựng lại. Kênh gần là tay nào (`flip`) suy từ
-        // ống kính của cảnh nên vào khoá
-        const flips = json.cast.map(
-          ({ world: w }) =>
-            w.at && !w.path && rig.facing(json.lens, w.at, (w.yaw * Math.PI) / 180).flip,
-        );
-        const k = JSON.stringify({ ...json, lens: undefined, flips });
+        // góc chỉ khác ống kính thì chung một cảnh: tab Remotion không dựng lại
+        const k = JSON.stringify({ ...json, lens: undefined });
         if (!sceneKey.has(k)) {
           const sid = `bang-hanh-dong-${id}-${sceneKey.size}`;
           sceneKey.set(k, sid);

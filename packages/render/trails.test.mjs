@@ -316,7 +316,7 @@ describe("đọc vệt trên cảnh thật", () => {
   const dir = mkdtempSync(join(tmpdir(), "vet-"));
   after(() => rmSync(dir, { recursive: true, force: true }));
   const D = 3.4;
-  const key = (s, arm) => ({ t: +(s / D).toFixed(5), pose: { armNear: arm }, ease: "auto" });
+  const key = (s, arm) => ({ t: +(s / D).toFixed(5), pose: { armRight: arm }, ease: "auto" });
   const keys = [
     key(0, [-6, 24, 0, 0, 0]),
     key(0.35, [-3, 40, 0, 38, 45]),
@@ -333,12 +333,12 @@ describe("đọc vệt trên cảnh thật", () => {
     duration: D,
     end: "hold",
     authoredAt: "side",
-    mask: ["armNear"],
+    mask: ["armRight"],
     keys: list,
     events: [],
   });
   const smooth = rig.parseAction(action("tron", keys)).data;
-  const at = (s) => rig.actionPose(smooth, s / D).an;
+  const at = (s) => rig.actionPose(smooth, s / D).ar;
   const spike = at(2.8 + 1 / 30);
   spike[3] += 35;
   // khựng: hai mốc gần trùng tư thế cách 0.25 s giữa đường giơ tay; giật: một mốc lệch chỉ một khung
@@ -439,14 +439,18 @@ describe("bảng sự kiện", () => {
   const dir = mkdtempSync(join(tmpdir(), "su-kien-"));
   after(() => rmSync(dir, { recursive: true, force: true }));
   const D = 3.4;
-  const key = (s, arm, ease = "auto") => ({ t: +(s / D).toFixed(5), pose: { armNear: arm }, ease });
+  const key = (s, arm, ease = "auto") => ({
+    t: +(s / D).toFixed(5),
+    pose: { armRight: arm },
+    ease,
+  });
   const action = (name, list, duration = D) => ({
     schemaVersion: rig.ACTION_VERSION,
     name,
     duration,
     end: "hold",
     authoredAt: "side",
-    mask: ["armNear"],
+    mask: ["armRight"],
     keys: list,
     events: [],
   });
@@ -507,7 +511,7 @@ describe("bảng sự kiện", () => {
       "track 1 `gio` bắt đầu 0.5 s, blend 0.2 s",
       "/ duration 3.4 s = t 0.",
       "mốc kẹp: keys[0] t 0 (0 s, auto) · keys[1] t 0.10294 (0.35 s, auto) · keys[2] t 0.17647 (0.6 s, auto)",
-      "`armNear[3]` dang: keys[0] 0 · keys[1] 38 · keys[2] 40",
+      "`armRight[3]` dang: keys[0] 0 · keys[1] 38 · keys[2] 40",
       "gợi ý: keys[1] (t 0.10294, 0.35 s) và keys[2] (t 0.17647, 0.6 s) của `gio` gần trùng tư thế",
       "track 0 `stand-3d` bắt đầu 0 s",
     ])

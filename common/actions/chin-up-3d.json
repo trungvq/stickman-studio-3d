@@ -11,6 +11,6 @@
     { "t": 1, "pose": { "head": [null, null, -5] }, "ease": "linear" }
   ],
   "events": [],
-  "note": "Hất hàm hỏi: đầu ngửa 12° ở 0,25 rồi lùi về 5° ở 1; lượt 0,6 s, giữ. Chỉ ghi gật của `head`, nghiêng và lắc để trống. Nền `stand-3d`, ngồi thì `sit-3d`. Chồng `turn-head-*`, `tilt-head-*` vẫn giữ góc của track kia; hất về một phía là `chin-up-side-near-3d`, `chin-up-side-far-3d`, buông bằng clip rỗng blend ~0,4. Sinh bằng `tools/actions/chin-up.mjs`.",
+  "note": "Hất hàm hỏi: đầu ngửa 12° ở 0,25 rồi lùi về 5° ở 1; lượt 0,6 s, giữ. Chỉ ghi gật của `head`, nghiêng và lắc để trống. Nền `stand-3d`, ngồi thì `sit-3d`. Chồng `turn-head-*`, `tilt-head-*` vẫn giữ góc của track kia; hất về một phía là `chin-up-side-right-3d`, `chin-up-side-left-3d`, buông bằng clip rỗng blend ~0,4. Sinh bằng `tools/actions/chin-up.mjs`.",
   "preview": { "stage": "stand" }
 }

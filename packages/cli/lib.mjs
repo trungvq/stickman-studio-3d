@@ -1354,14 +1354,13 @@ function worldAt(rt, t, { world, tol, unknown }) {
     const [x, y] = rig.project(rt.lens, [at.x / U, -at.y / U, -at.z / U]);
     return x >= view.x && x <= view.x + view.w && y >= view.y && y <= view.y + view.h;
   };
-  const eye = rt.lens && [rt.lens.eye[0] * U, -rt.lens.eye[1] * U, -rt.lens.eye[2] * U];
   const floorOf = (id) => {
     const m = rt.cast.find((x) => x.id === id);
     if (!m?.world) return;
     const sp = rig.sceneAt(rt, id, t, rt.heights[id] ?? 1, rt.bodies[id]);
     return sp.world && !sp.world.seated ? { y: -sp.world.floor * U, s: sp.world.s } : undefined;
   };
-  const hits = collide(figures, cols, { slack: tol * U, eye, unknown })
+  const hits = collide(figures, cols, { slack: tol * U, unknown })
     .filter(inView)
     .map((c) => {
       const who = `${c.who}.${c.part}${c.side ? (c.side < 0 ? "R" : "L") : ""}`;

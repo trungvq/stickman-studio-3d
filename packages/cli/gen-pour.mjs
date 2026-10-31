@@ -140,19 +140,19 @@ export function pourKeys(
       t: Math.round(t * 1e4) / 1e4,
       pose: { torso: tor },
       reach: {
-        armNear: {
+        armRight: {
           to: "chest",
           offset: markOffset(flip(b.grip), tor).map(r2),
           elbow: e.map(r2),
           point: "grip",
         },
         ...(support && {
-          armFar: { to: "otherGrip", offset: [-4, 20, 4], elbow: [-0.3, 0.6, 1], point: "palm" },
+          armLeft: { to: "otherGrip", offset: [-4, 20, 4], elbow: [-0.3, 0.6, 1], point: "palm" },
         }),
       },
       hand: {
-        armNear: { pose: "grip", palm: flip(b.palm).map(r2), fingers: flip(b.fingers).map(r2) },
-        ...(support && { armFar: { pose: "open", w: 0.6, palm: "up" } }),
+        armRight: { pose: "grip", palm: flip(b.palm).map(r2), fingers: flip(b.fingers).map(r2) },
+        ...(support && { armLeft: { pose: "open", w: 0.6, palm: "up" } }),
       },
       ease: "linear",
     };
@@ -312,8 +312,7 @@ export function pourAction(k, link, { name, note, preview } = {}) {
     duration: POUR_DURATION,
     end: "hold",
     authoredAt: "side",
-    sides: "anatomical",
-    mask: k.support ? ["armNear", "armFar", "hand", "torso"] : ["armNear", "hand", "torso"],
+    mask: k.support ? ["armRight", "armLeft", "hand", "torso"] : ["armRight", "hand", "torso"],
     events: [POUR_EVENT],
     keys: pourKeys(k, link),
     ...(note !== undefined && { note }),
