@@ -141,7 +141,7 @@ export class HandGrab {
     const lab = this.cone.label;
     this.tagCone.textContent = lab?.text ?? "";
     this.tagCone.classList.toggle("bad", lab?.tone === "bad");
-    this.tagCone.classList.toggle("near", lab?.tone === "near");
+    this.tagCone.classList.toggle("edge", lab?.tone === "edge");
     put(this.tagCone, lab?.at);
     const rep = this.rep!;
     const phi = this.ringPhi ?? rep.phi;
@@ -320,16 +320,16 @@ export class HandGrab {
   }
 
   /** `φ` của chỗ trên vòng khuỷu dưới con trỏ; tay nắm dưới con trỏ thắng (trừ nhấp đúp: tay nắm không nhận) */
-  private nearRing(e: MouseEvent, dbl = false) {
+  private ringPick(e: MouseEvent, dbl = false) {
     if (!this.active || this.pending || this.start) return undefined;
     if (this.tc?.axis && !dbl) return undefined;
     const { p, w, h } = this.px(e);
-    return this.ring.near(this.camera, p, w, h);
+    return this.ring.pick(this.camera, p, w, h);
   }
 
   private onDown = (e: PointerEvent) => {
     if (e.button !== 0 || e.shiftKey || e.ctrlKey) return;
-    const phi = this.nearRing(e);
+    const phi = this.ringPick(e);
     if (phi === undefined || this.support()) return;
     e.stopPropagation();
     e.preventDefault();
@@ -349,7 +349,7 @@ export class HandGrab {
     const { p, w, h } = this.px(e);
     const ray = new THREE.Raycaster();
     ray.setFromCamera(new THREE.Vector2((p.x / w) * 2 - 1, -(p.y / h) * 2 + 1), this.camera);
-    const phi = this.ring.phiOn(ray.ray) ?? this.ring.near(this.camera, p, w, h, 1e9);
+    const phi = this.ring.phiOn(ray.ray) ?? this.ring.pick(this.camera, p, w, h, 1e9);
     if (phi === undefined) return;
     this.ringPhi = phi;
     this.ring.drag(phi);
@@ -386,7 +386,7 @@ export class HandGrab {
   };
 
   private onDbl = (e: MouseEvent) => {
-    if (this.nearRing(e, true) === undefined) return;
+    if (this.ringPick(e, true) === undefined) return;
     e.stopPropagation();
     e.preventDefault();
     const row = this.row!;

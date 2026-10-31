@@ -1,6 +1,14 @@
 import { parseAction, type ActionData } from "@stickman3d/rig/core";
 import { describe, expect, it } from "vitest";
-import { compatibleActions, deleteClip, restHand, setClipAction, tracksOf } from "./clips";
+import {
+  compatibleActions,
+  deleteClip,
+  restHand,
+  setBaseMirror,
+  setClipAction,
+  setClipMirror,
+  tracksOf,
+} from "./clips";
 
 const raw = () => ({
   cast: [
@@ -11,8 +19,8 @@ const raw = () => ({
         {
           name: "tay",
           clips: [
-            { action: "farHand", start: 0, lạ: 1 },
-            { action: "farHand", start: "@x+1", blend: 0.3 },
+            { action: "leftHand", start: 0, lạ: 1 },
+            { action: "leftHand", start: "@x+1", blend: 0.3 },
           ],
         },
       ],
@@ -30,7 +38,7 @@ describe("sửa clip", () => {
   it("xoá clip giữ clip khác; xoá clip cuối bỏ cả track", () => {
     const one = deleteClip(raw(), { id: "a", track: 1, clip: 0 });
     expect(tracksOf(one, "a")![1].clips).toEqual([
-      { action: "farHand", start: "@x+1", blend: 0.3 },
+      { action: "leftHand", start: "@x+1", blend: 0.3 },
     ]);
     const two = deleteClip(one, { id: "a", track: 1, clip: 0 });
     expect(tracksOf(two, "a")!.map((t) => t.name)).toEqual(["than"]);
@@ -38,19 +46,39 @@ describe("sửa clip", () => {
   });
 
   it("đổi hành động giữ trường khác của clip", () => {
-    const out = setClipAction(raw(), { id: "a", track: 1, clip: 0 }, "nearHand");
-    expect(tracksOf(out, "a")![1].clips).toContainEqual({ action: "nearHand", start: 0, lạ: 1 });
+    const out = setClipAction(raw(), { id: "a", track: 1, clip: 0 }, "rightHand");
+    expect(tracksOf(out, "a")![1].clips).toContainEqual({ action: "rightHand", start: 0, lạ: 1 });
+  });
+
+  it("soi gương clip và tư thế nền: bật là `true`, tắt là bỏ khoá", () => {
+    const k = { id: "a", track: 1, clip: 0 };
+    const on = setClipMirror(raw(), k, true);
+    expect(tracksOf(on, "a")![1].clips).toContainEqual({
+      action: "leftHand",
+      start: 0,
+      lạ: 1,
+      mirror: true,
+    });
+    expect((tracksOf(setClipMirror(on, k, false), "a")![1].clips as unknown[])[0]).toEqual({
+      action: "leftHand",
+      start: 0,
+      lạ: 1,
+    });
+    const base = setBaseMirror(raw(), "a", true);
+    expect((base.cast as { baseMirror?: boolean }[])[0].baseMirror).toBe(true);
+    expect("baseMirror" in (setBaseMirror(base, "a", false).cast as object[])[0]).toBe(false);
+    expect(() => setBaseMirror(raw(), "b", true)).toThrow();
   });
 
   it("hành động thay được: cùng kênh, hay đủ `mask` của clip", () => {
     const actions = {
-      farHand: act("farHand", ["hand"]),
-      nearHand: act("nearHand", ["hand"]),
-      both: act("both", ["hand", "armFar"]),
-      stand: act("stand", ["armFar", "armNear"]),
+      leftHand: act("leftHand", ["hand"]),
+      rightHand: act("rightHand", ["hand"]),
+      both: act("both", ["hand", "armLeft"]),
+      stand: act("stand", ["armLeft", "armRight"]),
     };
-    expect(compatibleActions(actions, "farHand")).toEqual(["nearHand"]);
-    expect(compatibleActions(actions, "farHand", ["hand"])).toEqual(["both", "nearHand"]);
+    expect(compatibleActions(actions, "leftHand")).toEqual(["rightHand"]);
+    expect(compatibleActions(actions, "leftHand", ["hand"])).toEqual(["both", "rightHand"]);
   });
 });
 

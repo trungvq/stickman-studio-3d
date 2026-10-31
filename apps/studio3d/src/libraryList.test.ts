@@ -110,7 +110,7 @@ describe("hành động chỉ nhép miệng", () => {
     expect(isMouthOnly(lip([{ face: { mouth: "o", eyes: "shut" } }]))).toBe(false);
     expect(isMouthOnly(lip([{ face: { mouth: "o", brow: "lifted" } }]))).toBe(false);
     expect(isMouthOnly(lip([{ face: { mouth: "o", blush: 0.5 } }]))).toBe(false);
-    expect(isMouthOnly(lip([m, { hand: { armNear: "open" } }], null))).toBe(false);
+    expect(isMouthOnly(lip([m, { hand: { armRight: "open" } }], null))).toBe(false);
     expect(isMouthOnly(lip([m], ["face", "head"]))).toBe(false);
     expect(isMouthOnly(lip([{}, {}]))).toBe(false);
     expect(isMouthOnly({ ...lip([{ face: { mouth: "o" } }]), keys: undefined })).toBe(false);

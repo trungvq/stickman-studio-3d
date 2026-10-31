@@ -9,7 +9,7 @@ import { coneRim, wristDir } from "./grab";
 
 const OK = 0xffffff;
 const BAD = 0xff3b30;
-const NEAR = 0xffb300;
+const EDGE = 0xffb300;
 const CONE = 0x7fb8ff;
 
 const basic = (color: number, opacity = 1) =>
@@ -36,7 +36,7 @@ const rotation = (o: THREE.Object3D) => {
 export class WristCone {
   readonly group = new THREE.Group();
   /** Chỗ đặt nhãn (thế giới three) và chữ: số độ vượt, khớp kẹp */
-  label: { at: THREE.Vector3; text: string; tone: "ok" | "near" | "bad" } | null = null;
+  label: { at: THREE.Vector3; text: string; tone: "ok" | "edge" | "bad" } | null = null;
 
   /**
    * Dựng lại ở cổ tay của `fig` bên `side` theo báo tay `rep`; khung cẳng tay là hướng khớp khuỷu three (`Re`, bàn tay
@@ -97,8 +97,8 @@ export class WristCone {
           ).map(([v, [lo, hi]]) => Math.max(lo - v, v - hi)),
         );
     const bad = clamped.includes("bend") || clamped.includes("dev") || margin > 0;
-    const near = !bad && margin > -warn;
-    const tone = bad ? BAD : near ? NEAR : OK;
+    const edge = !bad && margin > -warn;
+    const tone = bad ? BAD : edge ? EDGE : OK;
     const dot = (d: THREE.Vector3, color: number) => {
       const m = new THREE.Mesh(new THREE.SphereGeometry(L * 0.06, 14, 10), basic(color));
       m.position.copy(d);
@@ -117,7 +117,7 @@ export class WristCone {
       parts.push(`vượt ${each.join(", ")}`);
     } else if (clamped.length) parts.push(`kẹp ${clamped.map((k) => NAMES[k]).join(", ")}`);
     else if (margin > 0) parts.push(`vượt kẹp ${margin.toFixed(0)}°`);
-    else if (near) parts.push(`sát giới hạn — còn ${(-margin).toFixed(0)}° tới kẹp`);
+    else if (edge) parts.push(`sát giới hạn — còn ${(-margin).toFixed(0)}° tới kẹp`);
     if (rep.wrist.err !== undefined && rep.wrist.err > 0.5)
       parts.push(`trục món lệch ${rep.wrist.err.toFixed(0)}°`);
     for (const o of this.group.children) o.renderOrder = 11;
@@ -125,7 +125,7 @@ export class WristCone {
     this.label = {
       at: tip.clone().applyMatrix4(this.group.matrixWorld),
       text: parts.length ? parts.join(" · ") : "cổ tay trong miền",
-      tone: clamped.length > 0 || sum > 0.05 || bad ? "bad" : near ? "near" : "ok",
+      tone: clamped.length > 0 || sum > 0.05 || bad ? "bad" : edge ? "edge" : "ok",
     };
   }
 

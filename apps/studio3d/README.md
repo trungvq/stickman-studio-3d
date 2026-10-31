@@ -41,9 +41,9 @@ Cả hai dùng chung cấu hình `studio3dConfig` (`packages/cli/studio3d.mjs`);
   `GET /api/scene`. Gốc thiếu `package.json` hay `actions/`, `characters/` vẫn chạy.
 - **Ghi.** Ba đường, cả ba kiểm hash, vá JSON thô và giữ `<file>.json.bak`:
   - `POST /api/scene?name=<cảnh>` `{ hash, scene }`: `scene` là JSON thô của cảnh đã sửa; server lấy `cast[*].world.hands`,
-    `cast[*].tracks` và `items` của nó vá vào file trên đĩa; `scene` thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên, xoá hết là gửi mảng
-    rỗng (`items: []`, `hands: []` ghi thành mảng rỗng), `items: null` bỏ cả khoá `items` (trang gửi khi bản đang sửa không còn
-    khoá ấy mà bản đã lưu có). `schemaVersion` số lớn hơn đĩa thì lên theo: trang nạp cảnh đời trước mà `migrateScene` chỉ đổi số ấy thì nâng ngay trong bản sửa (`sceneVersionUp`), nên `elbow` hệ thân trang ghi lên mốc không có `at` đọc đúng nghĩa ở lần nạp sau. Phần khác của `scene` khác đĩa thì 400. Trả `{ file, raw, hash }`.
+    `cast[*].tracks`, `cast[*].baseMirror` và `items` của nó vá vào file trên đĩa; `scene` thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên, xoá hết là gửi mảng
+    rỗng (`items: []`, `hands: []` ghi thành mảng rỗng), `items: null` bỏ cả khoá `items`, `baseMirror: null` bỏ khoá ấy của
+    người (trang gửi khi bản đang sửa không còn khoá ấy mà bản đã lưu có). `schemaVersion` số lớn hơn đĩa thì lên theo: trang nạp cảnh đời trước mà `migrateScene` chỉ đổi số ấy thì nâng ngay trong bản sửa (`sceneVersionUp`), nên `elbow` hệ thân trang ghi lên mốc không có `at` đọc đúng nghĩa ở lần nạp sau. Phần khác của `scene` khác đĩa thì 400. Trả `{ file, raw, hash }`.
   - `POST /api/held?name=<món>` `{ hash, group, variant, authored }`: **Lưu** của khung soạn kiểu cầm ghi `authored` của
     món × nhóm × biến thể (`authored: null` là xoá). Món còn kiểu cầm có tên (`base` / `note`) mà `schemaVersion` cũ hơn
     `HELD_VERSION` của rig thì ghi lên `HELD_VERSION`. `STUDIO3D_HELD_OUT=<thư mục>` đổi hướng ghi sang thư mục ấy và đọc nó
@@ -169,11 +169,11 @@ hai lớp, hành động parse bằng rig của trang.
   người diễn, món là khối dựng thẳng từ `shape` của `held/<món>.json` (món treo có `seats` mà hình không có quai thì thêm
   hai sợi quai lên mốc treo). `preview.partner` thêm người thứ hai — người đầu danh sách khác người diễn, thu phóng cho
   cao bằng người diễn, cầm món của `partner.hold` — đứng ở `at`, nhìn vào người diễn; máy nhìn vào giữa hai người (góc Trước: mắt máy ngay trước người diễn,
-  để người diễn không lật). Góc máy mà người kia đứng chắn giữa máy và người diễn thì người kia ẩn,
+  để máy không nhìn nghiêng người diễn). Góc máy mà người kia đứng chắn giữa máy và người diễn thì người kia ẩn,
   thẻ ghi "ẩn ở góc này".
-- **Góc máy** quanh người, theo hướng mặt: Trước, 3/4 gần (phía tay phải — kênh gần khi không lật), 3/4 xa (phía tay
-  trái, người lật), Nghiêng (phía tay phải), Sau. Bản `-near` và `-far` của cùng hành động thấy khác nhau ở 3/4 gần và 3/4
-  xa. Người đi (`walk`, `run-3d`…) thì máy bám hông. Camera tự do vẫn dùng được; đổi góc máy là về camera cảnh.
+- **Góc máy** quanh người, theo hướng mặt: Trước, 3/4 phải (phía tay phải, khoá `near` của URL), 3/4 trái (phía tay trái,
+  khoá `far`), Nghiêng (phía tay phải), Sau. Người đi (`walk`, `run-3d`…) thì máy bám hông. Camera tự do vẫn dùng được;
+  đổi góc máy là về camera cảnh.
 - **Phát**: ▶ / Space, thanh tua, tốc độ `0,25×` / `1×`, **Lặp** (tắt thì dừng ở cuối). Cảnh thử: `end: "wrap"` lặp đủ
   ≥ 3 s, `end: "hold"` một lượt rồi giữ 1 s.
 
@@ -181,7 +181,7 @@ hai lớp, hành động parse bằng rig của trang.
 |---|---|
 | ↑ ↓ | Dòng trước / sau trong danh sách (theo ô tìm): bản trong nhóm đang mở; nhóm gập là một bước, mở bản đầu của nhóm |
 | V · Shift+V | Biến thể sau / trước cùng gốc |
-| 1 – 5 | Góc máy: Trước, 3/4 gần, 3/4 xa, Nghiêng, Sau |
+| 1 – 5 | Góc máy: Trước, 3/4 phải, 3/4 trái, Nghiêng, Sau |
 | L | Bật / tắt lặp |
 | R | Nạp lại thư viện từ đĩa, giữ giây đang xem |
 | Space, ← →, C | Như chế độ Cảnh |
@@ -208,7 +208,7 @@ Trang soi bộ sinh hành động (`stickman gen <kiểu>`, [docs/13](../../docs
   chạy khô bộ sinh, trang phát hành động sinh ra trên chính sân khấu ấy. Một lượt một lúc: đổi tham số giữa chừng thì kết
   quả của lượt đang chạy bỏ đi, lượt mới chạy khi đã ngừng gõ và lượt cũ xong. Một lượt mất vài giây (`pour` lâu hơn
   `sit`); lúc ấy server Vite bận.
-- **Panel phải**: người diễn và góc máy như Thư viện (đổi góc máy là sinh lại: chân, tay gần là bên nào theo ống kính), rồi
+- **Panel phải**: người diễn và góc máy như Thư viện (đổi góc máy là sinh lại: bộ sinh nhận góc máy), rồi
   thẻ kết quả — đạt / không đạt, số lỗi, cảnh báo, tên hành động sinh ra, **bảng tự kiểm**: mỗi dòng một luật (cổ tay, tầm
   với, đặt trên mặt, không lấn, mặt ngồi, điểm tiếp xúc, điểm rót trong miệng…) kèm mức, giây tệ nhất và ngưỡng; dòng
   `check` mới hay nặng hơn nằm thụt dưới dòng tổng `check`. Bấm một dòng có giây: thanh tua nhảy tới giây ấy, dừng phát.
@@ -220,7 +220,7 @@ Trang soi bộ sinh hành động (`stickman gen <kiểu>`, [docs/13](../../docs
 
 | Phím (Bộ sinh) | Việc |
 |---|---|
-| 1 – 5 | Góc máy: Trước, 3/4 gần, 3/4 xa, Nghiêng, Sau |
+| 1 – 5 | Góc máy: Trước, 3/4 phải, 3/4 trái, Nghiêng, Sau |
 | L | Bật / tắt lặp |
 | R | Nạp lại nhân vật, hành động từ đĩa rồi sinh lại |
 | Space, ← →, C | Như chế độ Cảnh |
@@ -252,9 +252,11 @@ dòng hay nhấp lên bàn tay / món trên hình (cả camera cảnh) để ch�
   sửa và lịch sử không đổi, số đo cầm đồ vẫn đo trên cảnh đủ người. Thứ đã ẩn không chặn nhấp chọn tay, nhấp đúp đặt tâm
   xoay hay đường camera của các góc cận tay. Chọn tay người khác thì hình theo người ấy; chưa chọn tay thì hiện cả cảnh.
   Công tắc giữ khi đổi cảnh, không nhớ qua lần mở trang. Khung soạn kiểu cầm không theo công tắc này.
+- **Soi gương tư thế nền**: bật / tắt `cast[].baseMirror` của người có bàn tay đang chọn — tư thế nền đổi phải ↔ trái
+  như clip soi gương. Một bước lịch sử, sửa JSON thô; lưu bằng **Lưu**.
 - **Nguồn dáng** (chỉ đọc): cái gì đang điều khiển tay ấy ở giây đang xem, tính bằng `handSources` của rig (cùng phép tính
-  với `sceneAt`) — tay gần hay xa ống kính và vì sao (`kênh xa → tay phải vì đang lật`), clip và track ghi góc **cánh tay**
-  (không clip nào là `base`), clip và track ghi **bàn tay** kèm mốc bàn tay của hành động (`open 0.75 · palm down · fingers
+  với `sceneAt`) — clip và track ghi góc **cánh tay** (không clip nào là `base`; clip soi gương ghi kênh tay kia của
+  hành động: `soi gương: kênh armLeft của hành động`), clip và track ghi **bàn tay** kèm mốc bàn tay của hành động (`open 0.75 · palm down · fingers
   forward`), **mốc tay** `world.hands` đang áp (chỉ số, loại, giây, mốc sau, phần đích `w`, món). Dòng bàn tay tô vàng khi
   hành động khai ý định hướng tay (`palm` / `fingers`) mà tay không có mốc `world.hands` đang áp: clip soạn cho tay khác rơi
   vào tay này hay gặp nhất ở đây.
@@ -410,9 +412,10 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi trac
   tới nó bắt đầu từ vận tốc `0` (bàn tay dừng ở mốc mới).
 - **Hàng track** (`track <tên>`, theo thứ tự `cast[].tracks`): mỗi clip một dải mang tên hành động, từ `start` tới clip sau
   (hay hết cảnh), sọc là `blend` (τ rig đã suy). Dải sáng là clip chạm tay đang chọn ở giây đang xem — ghi góc cánh tay
-  hay bàn tay của tay ấy theo `mask` của clip và hành động, `sides: "anatomical"`, lật (`clipSides` của rig) —, mờ là
+  hay bàn tay của tay ấy theo `mask` của clip và hành động, `mirror` của clip (`clipSides` của rig) —, mờ là
   không chạm. **Nhấp dải** mở thẻ clip: hành động, `start` (mốc tên kèm giây), `blend` (khai hay tự suy), `mask` (của clip
-  hay của hành động), tay clip chạm, `note` của hành động; **Đổi hành động** với danh sách hành động cùng mask (clip khai
+  hay của hành động), tay clip chạm, ô **Soi gương** (`mirror` của clip: tay chân phải ↔ trái, nghiêng thân, lắc và nghiêng
+  đầu đổi chiều), `note` của hành động; **Đổi hành động** với danh sách hành động cùng mask (clip khai
   `mask` thì hành động ghi đủ các kênh ấy, không thì ghi đúng các kênh hành động đang có); **Xoá clip** — clip cuối của
   track thì bỏ cả track. Mỗi thao tác là một bước lịch sử chung, sửa JSON thô, rồi dựng lại cả cảnh; lưu bằng **Lưu**.
 - **Tay nắm, vòng khuỷu, nón cổ tay** của bàn tay đang chọn (ẩn khi phát, khi khung soạn kiểu cầm mở). Thả chuột mới áp: trang
@@ -534,5 +537,5 @@ Thẻ lần cầm (nhấp dải dưới hàng tay) ghi món, người, tay, quã
 ## Lưu ý khi xem bằng camera tự do
 
 Vài thứ của rig dựng theo ống kính của cảnh, không theo camera đang xem: lớp miệng lật về phía ống kính khi mặt gần
-nghiêng, tay "gần" / "xa" gán theo phía ống kính, vỏ phòng ẩn tường theo camera đang xem (`room.cull`). Nhìn từ góc khác
+nghiêng, vỏ phòng ẩn tường theo camera đang xem (`room.cull`). Nhìn từ góc khác
 thì chúng có thể lạ; đó không phải lỗi của cảnh.

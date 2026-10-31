@@ -47,6 +47,26 @@ export function setClipAction(raw: Json, k: ClipRef, action: string): Json {
   return out;
 }
 
+/** Bật / tắt `mirror` của clip: tắt là bỏ khoá */
+export function setClipMirror(raw: Json, k: ClipRef, on: boolean): Json {
+  const out = structuredClone(raw);
+  const c = clipOf(out, k) ?? fail("không có clip ấy");
+  if (on) c.mirror = true;
+  else delete c.mirror;
+  return out;
+}
+
+/** Bật / tắt `baseMirror` của người `id`: tắt là bỏ khoá */
+export function setBaseMirror(raw: Json, id: string, on: boolean): Json {
+  const out = structuredClone(raw);
+  const c =
+    (out.cast as Json[] | undefined)?.find((m) => isObj(m) && m.id === id) ??
+    fail(`không có người \`${id}\``);
+  if (on) c.baseMirror = true;
+  else delete c.baseMirror;
+  return out;
+}
+
 /**
  * Hành động thay được cho clip: clip khai `mask` thì hành động phải ghi đủ các kênh ấy
  * (`mask` của clip chỉ thu hẹp), không thì ghi đúng các kênh hành động đang có ghi. Trừ chính hành động đang có, theo tên

@@ -112,8 +112,8 @@ export class ElbowRing {
     return this.rep?.cost ? costAt(this.rep.cost, phi) : undefined;
   }
 
-  /** Góc `φ` của chỗ trên vòng gần con trỏ (`px` toạ độ khung, `w`×`h`) trong `near` px; không gần thì `undefined` */
-  near(camera: THREE.Camera, px: THREE.Vector2, w: number, h: number, near = 12) {
+  /** Góc `φ` của chỗ trên vòng gần con trỏ (`px` toạ độ khung, `w`×`h`) trong `tol` px; không gần thì `undefined` */
+  pick(camera: THREE.Camera, px: THREE.Vector2, w: number, h: number, tol = 12) {
     const rep = this.rep;
     if (!rep || rep.ring.radius < 1e-6) return undefined;
     let best: { phi: number; d: number } | undefined;
@@ -133,7 +133,7 @@ export class ElbowRing {
       }
       prev = cur;
     }
-    return best && best.d <= near ? best.phi : undefined;
+    return best && best.d <= tol ? best.phi : undefined;
   }
 
   /** Góc `φ` của tia `ray` cắt mặt phẳng vòng; tia gần song song mặt phẳng thì `undefined` */

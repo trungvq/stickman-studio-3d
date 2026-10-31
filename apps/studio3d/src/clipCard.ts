@@ -1,5 +1,5 @@
-// Thẻ clip của hàng track (Dáng tay): hành động, `start`, `blend`, `mask`, `note` của hành động, tay clip chạm; Xoá clip,
-// Đổi hành động (danh sách hành động cùng mask).
+// Thẻ clip của hàng track (Dáng tay): hành động, `start`, `blend`, `mask`, `note` của hành động, tay clip chạm; Soi gương,
+// Xoá clip, Đổi hành động (danh sách hành động cùng mask).
 
 export interface ClipCardModel {
   title: string;
@@ -9,6 +9,8 @@ export interface ClipCardModel {
   mask: string;
   /** Tay giải phẫu clip chạm ở giây đang xem (góc cánh tay, bàn tay) */
   touch: string;
+  /** `mirror` của clip */
+  mirror: boolean;
   note?: string;
   /** Hành động thay được (`compatibleActions`), cho ô chọn của nút Đổi hành động */
   options: string[];
@@ -19,6 +21,7 @@ export interface ClipCardModel {
 export interface ClipCardHost {
   del(): void;
   swap(action: string): void;
+  mirror(on: boolean): void;
   close(): void;
 }
 
@@ -37,6 +40,7 @@ export function renderClipCard(el: HTMLElement, m: ClipCardModel | null, host: C
     ${row("blend", m.blend)}
     ${row("mask", m.mask)}
     ${row("chạm", m.touch)}
+    <label title="Phát clip như soi gương: tay chân phải ↔ trái, nghiêng thân, lắc và nghiêng đầu đổi chiều"><input type="checkbox" data-c="mirror"${m.mirror ? " checked" : ""} /> Soi gương</label>
     ${m.note ? `<div class="dim">${esc(m.note)}</div>` : ""}
     <div class="crow"><select data-c="pick" title="Hành động ghi cùng các kênh"${m.options.length ? "" : " disabled"}>
       <option value="">${m.options.length ? "(chọn hành động cùng mask)" : "không có hành động cùng mask"}</option>
@@ -46,6 +50,8 @@ export function renderClipCard(el: HTMLElement, m: ClipCardModel | null, host: C
   const q = <T extends HTMLElement>(c: string) => el.querySelector<T>(`[data-c=${c}]`)!;
   q("close").onclick = () => host.close();
   q("del").onclick = () => host.del();
+  q<HTMLInputElement>("mirror").onchange = (e) =>
+    host.mirror((e.target as HTMLInputElement).checked);
   const pick = q<HTMLSelectElement>("pick");
   pick.onchange = () => (q<HTMLButtonElement>("swap").disabled = !pick.value);
   q("swap").onclick = () => pick.value && host.swap(pick.value);

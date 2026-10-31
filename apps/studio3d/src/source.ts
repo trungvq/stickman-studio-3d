@@ -14,7 +14,6 @@ export interface SourceRow {
 export interface SourceModel {
   head: string;
   rows: SourceRow[];
-  note: string;
 }
 
 const SIDE = { right: "phải", left: "trái" } as const;
@@ -50,12 +49,11 @@ const trackOf = (c: PoseSourceClip) => `track ${c.trackName ?? `#${c.track}`}`;
 const clipOf = (c: PoseSourceClip) => c.action ?? "(clip rỗng)";
 const flags = (c: PoseSourceClip) => [
   ...(c.blending ? [`đang hoà từ clip trước (${num(c.blend)} s)`] : []),
-  ...(c.anatomical ? [`theo tay giải phẫu: kênh ${c.channel} của hành động`] : []),
+  ...(c.mirror ? [`soi gương: kênh ${c.channel} của hành động`] : []),
 ];
 
 /** Bảng nguồn dáng của tay `src.side` người `id` */
 export function sourceModel(id: string, src: HandSource): SourceModel {
-  const far = src.channel === "af";
   const rows: SourceRow[] = [];
   const w = src.world;
   rows.push(
@@ -115,11 +113,8 @@ export function sourceModel(id: string, src: HandSource): SourceModel {
     ].join(" · "),
   });
   return {
-    head: `${id} · tay ${SIDE[src.side]} · tay ${far ? "XA" : "GẦN"}${src.flip ? " (đang lật)" : ""}`,
+    head: `${id} · tay ${SIDE[src.side]}`,
     rows,
-    note:
-      `kênh ${far ? "xa" : "gần"} → tay ${SIDE[src.side]} vì ${src.flip ? "đang lật" : "không lật"}` +
-      (src.stepSwap ? " · nhịp đi đang đổi gần ↔ xa của mọi clip" : ""),
   };
 }
 
@@ -129,7 +124,7 @@ const esc = (s: string) =>
 export function sourceHtml(s: SourceModel): string {
   const tr = (r: SourceRow) =>
     `<tr${r.warn ? ` class="warn" title="ý định hướng tay của hành động mà tay không có mốc world.hands đang áp"` : ""}><td>${esc(r.label)}</td><td>${esc(r.what)}</td><td>${esc(r.where)}</td><td>${esc(r.detail)}</td></tr>`;
-  return `<div class="srchead">Nguồn dáng · ${esc(s.head)}</div><table class="source">${s.rows.map(tr).join("")}</table><div class="dim">${esc(s.note)}</div>`;
+  return `<div class="srchead">Nguồn dáng · ${esc(s.head)}</div><table class="source">${s.rows.map(tr).join("")}</table>`;
 }
 
 /** Dòng chữ cho Chép view */
@@ -140,6 +135,5 @@ export function sourceLines(s: SourceModel): string[] {
       (r) =>
         `  ${r.label.padEnd(9)} ${r.what.padEnd(15)} ${r.where}${r.detail ? `   ${r.detail}` : ""}${r.warn ? "   ⚠ ý định của hành động, không mốc tay" : ""}`,
     ),
-    `  ${s.note}`,
   ];
 }

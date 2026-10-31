@@ -31,7 +31,9 @@ import {
   compatibleActions,
   deleteClip,
   restHand,
+  setBaseMirror,
   setClipAction,
+  setClipMirror,
   tracksOf,
   type ClipRef,
   type RestHit,
@@ -190,6 +192,7 @@ const ui = {
   angles: $<HTMLDivElement>("angles"),
   follow: $<HTMLInputElement>("follow"),
   solo: $<HTMLInputElement>("solo"),
+  baseMirror: $<HTMLInputElement>("baseMirror"),
   measure: $<HTMLDivElement>("measure"),
   source: $<HTMLDivElement>("source"),
   editGrasp: $<HTMLButtonElement>("editGrasp"),
@@ -819,6 +822,9 @@ function panel() {
   ui.selBox.hidden = !r || !!editor;
   if (!r || !cur) return;
   ui.selName.textContent = `${r.id} · tay ${sideName(r.side)}`;
+  const member = work && castOf(work.raw, r.id);
+  ui.baseMirror.checked = member?.baseMirror === true;
+  ui.baseMirror.disabled = !member;
   const src = sourceOf(r);
   ui.source.innerHTML = src
     ? sourceHtml(src)
@@ -1851,6 +1857,7 @@ function clipCardOf(k: ClipRef): ClipCardModel | null {
         ? `theo hành động: ${rig.actionMask(a).join(", ") || "—"}`
         : "—",
     touch: live ? touchText(k.id, k) : "đang dựng lại cảnh",
+    mirror: c.mirror === true,
     ...(a?.note && { note: a.note }),
     options: compatibleActions(actions, act || undefined, mask),
     last: ((tr.clips as Json[] | undefined)?.length ?? 0) <= 1,
@@ -1879,6 +1886,15 @@ const clipHost = {
     if (!work || !clipSel) return;
     try {
       if (apply(setClipAction(work.raw, clipSel, action))) say(`clip đổi sang ${action}`);
+    } catch (e) {
+      say((e as Error).message, true);
+    }
+  },
+  mirror(on: boolean) {
+    if (!work || !clipSel) return;
+    try {
+      if (apply(setClipMirror(work.raw, clipSel, on)))
+        say(`clip ${on ? "soi gương" : "bỏ soi gương"}`);
     } catch (e) {
       say((e as Error).message, true);
     }
@@ -2309,6 +2325,22 @@ function setEdMode(m: "view" | "hands") {
   remember();
 }
 
+/** Người `id` trong `cast` của JSON thô */
+const castOf = (raw: Json, id: string) =>
+  (raw.cast as Json[] | undefined)?.find((m) => isObj(m) && m.id === id);
+
+/** Bản gửi lưu: khoá `items`, `cast[].baseMirror` bản đang sửa bỏ mà bản đã lưu có thành `null` để server bỏ khoá ấy trên đĩa */
+function savedShape(raw: Json, saved: Json): Json {
+  const out: Json = !("items" in raw) && "items" in saved ? { ...raw, items: null } : { ...raw };
+  if (Array.isArray(raw.cast))
+    out.cast = raw.cast.map((m) =>
+      isObj(m) && !("baseMirror" in m) && castOf(saved, m.id as string)?.baseMirror !== undefined
+        ? { ...m, baseMirror: null }
+        : m,
+    );
+  return out;
+}
+
 /** Lưu mốc tay, mốc món, track vào `scenes/` kèm hash lúc nạp; file đã đổi trên đĩa thì 409, hiện hộp chọn */
 let saving = false;
 async function save() {
@@ -2320,13 +2352,9 @@ async function save() {
     const res = await fetch(`/api/scene?name=${encodeURIComponent(name)}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      // bản đang sửa bỏ khoá `items` mà bản đã lưu có: `null` để server bỏ khoá ấy trên đĩa
       body: JSON.stringify({
         hash: work.hash,
-        scene:
-          !("items" in work.raw) && "items" in JSON.parse(work.saved)
-            ? { ...work.raw, items: null }
-            : work.raw,
+        scene: savedShape(work.raw, JSON.parse(work.saved)),
       }),
     });
     const j = await res.json();
@@ -2506,6 +2534,18 @@ ui.frame.addEventListener("pointerup", (e) => {
 ui.editGrasp.onclick = openEditor;
 ui.editShape.onclick = openShapeEditor;
 ui.solo.onchange = toggleSolo;
+ui.baseMirror.onchange = () => {
+  const r = selRow();
+  if (!work || !r) return;
+  const on = ui.baseMirror.checked;
+  try {
+    if (apply(setBaseMirror(work.raw, r.id, on)))
+      say(`${r.id}: ${on ? "soi gương tư thế nền" : "bỏ soi gương tư thế nền"}`);
+  } catch (e) {
+    say((e as Error).message, true);
+  }
+  panel();
+};
 const sideKey = () => (narrow.matches ? "studio3d.sideNarrow" : "studio3d.side");
 const syncSide = () => ui.side.classList.toggle("shut", localStorage.getItem(sideKey()) === "shut");
 ui.sideToggle.onclick = () => {
@@ -3067,8 +3107,7 @@ async function openAction(name: string) {
 
 function setAngle(a: (typeof lv)["angle"]) {
   lv.angle = a;
-  // kênh gần là tay nào (`flip`) và người thứ hai ẩn khi che người diễn (`cast[].fade`) suy từ ống kính của cảnh: dựng lại;
-  // trang soi sinh lại (chân co `near` / `far` theo kênh gần)
+  // người thứ hai ẩn khi che người diễn (`cast[].fade`) suy từ ống kính của cảnh: dựng lại; trang soi gửi góc máy cho bộ sinh
   if (GEN) runGen(0);
   else if (preview && lib && lv.action) void loadPreview(true);
   // camera tự do: góc máy mới là chỗ đứng mới của nó

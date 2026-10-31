@@ -195,6 +195,15 @@ describe("sceneWithHands", () => {
     edited.cast[0].id = "y";
     assert.throws(() => sceneWithHands(withTracks, edited), /chỉ ghi/);
   });
+  it("lấy `baseMirror` của bản studio; `null` bỏ khoá, thiếu thì giữ của đĩa", () => {
+    const on = structuredClone(disk);
+    on.cast[0].baseMirror = true;
+    assert.equal(sceneWithHands(disk, on).cast[0].baseMirror, true);
+    const off = structuredClone(disk);
+    off.cast[0].baseMirror = null;
+    assert.equal("baseMirror" in sceneWithHands(on, off).cast[0], false);
+    assert.equal(sceneWithHands(on, disk).cast[0].baseMirror, true);
+  });
   it("bản studio đổi phần khác thì từ chối", () => {
     assert.throws(() => sceneWithHands(disk, { ...disk, a: 2 }), /chỉ ghi/);
     assert.throws(() => sceneWithHands(disk, { a: 1, cast: [] }), /chỉ ghi/);

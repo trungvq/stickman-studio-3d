@@ -42,7 +42,7 @@ const trVec = (R: M3, v: V3): V3 => [
 const poseOf = (rt: SceneRuntime, id: string, t: number) =>
   sceneAt(rt, id, t, rt.heights[id] ?? 1, rt.bodies[id] ?? BODY3) as unknown as ActInput & {
     equip?: Equip;
-    world?: { yaw: number; hands?: { near?: { w: number }; far?: { w: number } } };
+    world?: { yaw: number; hands?: { right?: { w: number }; left?: { w: number } } };
   };
 
 /**
@@ -58,8 +58,7 @@ export function drawnHand(
   const r = handReport(rt, id, side, t, o);
   if (!r) return undefined;
   const sp = poseOf(rt, id, t);
-  const near: HandSide = sp.world?.flip ? "left" : "right";
-  const reach = sp.world?.hands?.[side === near ? "near" : "far"];
+  const reach = sp.world?.hands?.[side];
   const e = sub(r.joints.elbow, r.ring.center);
   const n = Math.hypot(...e);
   const axes =

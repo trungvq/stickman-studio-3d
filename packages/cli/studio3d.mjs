@@ -105,7 +105,7 @@ function serial(key, fn) {
   return run;
 }
 
-/** Bỏ những chỗ studio được ghi (`cast[*].world.hands`, `cast[*].tracks`, `items`) để so phần còn lại */
+/** Bỏ những chỗ studio được ghi (`cast[*].world.hands`, `cast[*].tracks`, `cast[*].baseMirror`, `items`) để so phần còn lại */
 const outsideHands = (s) => ({
   ...s,
   items: undefined,
@@ -113,7 +113,7 @@ const outsideHands = (s) => ({
   cast: Array.isArray(s?.cast)
     ? s.cast.map((c) => {
         if (!c || typeof c !== "object") return c;
-        const o = { ...c, tracks: undefined };
+        const o = { ...c, tracks: undefined, baseMirror: undefined };
         if (c.world) o.world = { ...c.world, hands: undefined };
         return o;
       })
@@ -141,8 +141,9 @@ export function heldWithAuthored(raw, group, variant, authored, minVersion) {
 }
 
 /**
- * Cảnh trên đĩa `disk` nhận `cast[*].world.hands`, `cast[*].tracks` và `items` của bản studio `edited`; phần khác phải trùng.
- * Bản studio thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên; xoá hết là gửi mảng rỗng, `items: null` bỏ cả khoá `items`.
+ * Cảnh trên đĩa `disk` nhận `cast[*].world.hands`, `cast[*].tracks`, `cast[*].baseMirror` và `items` của bản studio `edited`;
+ * phần khác phải trùng. Bản studio thiếu khoá nào thì khoá ấy trên đĩa giữ nguyên; xoá hết là gửi mảng rỗng, `items: null`
+ * bỏ cả khoá `items`, `baseMirror: null` bỏ khoá `baseMirror` của người ấy.
  * `schemaVersion` số lớn hơn đĩa thì lên theo (trang nâng cảnh đời trước chỉ khác số ấy, `sceneVersionUp`)
  */
 export function sceneWithHands(disk, edited) {
@@ -150,7 +151,7 @@ export function sceneWithHands(disk, edited) {
   if (!isDeepStrictEqual(clean(outsideHands(disk)), clean(outsideHands(edited))))
     throw new HttpError(
       400,
-      "studio chỉ ghi `cast[*].world.hands`, `cast[*].tracks` và `items`; bản gửi lên đổi cả phần khác của cảnh",
+      "studio chỉ ghi `cast[*].world.hands`, `cast[*].tracks`, `cast[*].baseMirror` và `items`; bản gửi lên đổi cả phần khác của cảnh",
     );
   const next = structuredClone(disk);
   next.cast.forEach((c, i) => {
@@ -158,6 +159,9 @@ export function sceneWithHands(disk, edited) {
     if (hands !== undefined) c.world.hands = hands;
     const tracks = edited.cast[i].tracks;
     if (tracks !== undefined) c.tracks = tracks;
+    const mirror = edited.cast[i].baseMirror;
+    if (mirror === null) delete c.baseMirror;
+    else if (mirror !== undefined) c.baseMirror = mirror;
   });
   if (edited.items === null) delete next.items;
   else if (edited.items !== undefined) next.items = edited.items;
@@ -382,7 +386,7 @@ export function studio3dConfig({
             };
           }
           if (req.method !== "POST") throw new HttpError(405, "chỉ GET, POST");
-          // ghi `cast[*].world.hands`, `cast[*].tracks` và `items` của bản studio vào JSON thô trên đĩa
+          // ghi `cast[*].world.hands`, `cast[*].tracks`, `cast[*].baseMirror` và `items` của bản studio vào JSON thô trên đĩa
           const { hash, scene } = await readBody(req);
           return serial(file, async () => {
             const buf = readFileSync(file);

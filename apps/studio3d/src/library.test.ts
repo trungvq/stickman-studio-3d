@@ -165,7 +165,7 @@ describe("previewScene", () => {
     );
   });
 
-  it("góc máy: `near` không lật, `far` lật, `front` nhìn thẳng, `back` sau lưng, `side` nghiêng", () => {
+  it("góc máy: `near` 3/4 phía tay phải, `far` 3/4 phía tay trái, `front` nhìn thẳng, `back` sau lưng, `side` nghiêng", () => {
     const theta = (angle: (typeof PREVIEW_ANGLES)[number], yaw = 90) => {
       const s = previewScene("nod", actions.nod, undefined, { angle, yaw, has });
       const L = previewLens(s, 0);

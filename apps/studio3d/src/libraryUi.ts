@@ -14,8 +14,8 @@ import type { PreviewAngle } from "@stickman3d/rig/core";
 
 export const ANGLE_NAME: Record<PreviewAngle, string> = {
   front: "Trước",
-  near: "3/4 gần",
-  far: "3/4 xa",
+  near: "3/4 phải",
+  far: "3/4 trái",
   side: "Nghiêng",
   back: "Sau",
 };
