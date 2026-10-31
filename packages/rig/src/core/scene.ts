@@ -129,6 +129,7 @@ import {
   type ReachHold,
   type SceneHold,
   type SceneHoldGroup,
+  renameTouch,
 } from "./heldItem";
 import { BLEND_MAX, BLEND_MIN, blendDuration, blendFace, blendPose } from "./blend";
 import { HAND_REST, mixHand, type HandKey as ActionHandKey } from "./hand";
@@ -162,6 +163,7 @@ import {
   renameSideEquip,
   renameSideKeys,
   renameSideList,
+  renameSideName,
   equipCharacter,
   equipSteps,
   limbWidths,
@@ -737,12 +739,20 @@ export function migrateScene(json: unknown): unknown {
     }
   }
   // v36 → v37 kênh tay chân, socket bàn tay theo phải / trái của người (`armNear` → `armRight`, `handNear` →
-  // `handRight`…) ở `cast[].base`, `cast[].equip`, `clips[].mask`, `clips[].equip`; thêm `clips[].mirror`, `cast[].baseMirror`
+  // `handRight`…) ở `cast[].base`, `cast[].equip`, `clips[].mask`, `clips[].equip`, mốc `fx[].anchor`; thêm `clips[].mirror`, `cast[].baseMirror`
+  if (from < 37 && Array.isArray(o.fx))
+    for (const f of o.fx as Record<string, unknown>[])
+      if (f && typeof f === "object" && "anchor" in f) f.anchor = renameSideName(f.anchor);
   if (from < 37)
     for (const m of (o.cast ?? []) as Record<string, unknown>[]) {
       if (!m || typeof m !== "object") continue;
       renameSideKeys(m.base);
       renameSideEquip(m.equip);
+      const w = m.world as { hands?: Record<string, unknown>[] } | undefined;
+      for (const k of w?.hands ?? [])
+        for (const side of ["right", "left"])
+          for (const h of [(k?.[side] as Record<string, unknown> | undefined)?.hold].flat())
+            if (h && typeof h === "object") renameTouch(h as Record<string, unknown>);
       for (const t of (m.tracks ?? []) as { clips?: Record<string, unknown>[] }[])
         for (const c of t?.clips ?? []) {
           if (!c || typeof c !== "object") continue;

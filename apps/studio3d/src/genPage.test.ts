@@ -44,7 +44,7 @@ describe("URL ↔ tham số", () => {
   it("ghi chỉ tham số khác mặc định, đọc lại ra đúng bản ấy; đổi trang không sót khoá trang kia", () => {
     const view = {
       kind: "sit",
-      values: { legs: "staggered", tuck: "near", seat: 100, desk: true },
+      values: { legs: "staggered", tuck: "right", seat: 100, desk: true },
     };
     const p = writeGen(q("gen=pour&cupR=9&t=1.5&who=sample-man"), view, GEN_PAGES);
     expect(p.get("cupR")).toBeNull();

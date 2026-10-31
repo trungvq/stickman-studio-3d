@@ -7,6 +7,7 @@ import { topProblems } from "./heldGeom";
 import { fromColumns, matMul, matVec, type M3, type V3 } from "./lens";
 import { heldRoleIssues } from "./heldRoles";
 import { RoleSchema } from "./roles";
+import { renameSideName } from "./schema";
 
 /**
  * Món cầm tay (`held/<món>.json`): hộp bao, mốc ngữ nghĩa (điểm và pháp tuyến ra ngoài), hình va chạm có nhãn phần, mặt
@@ -274,6 +275,16 @@ export const HeldItemSchema = z
   });
 export type HeldItemSpec = z.infer<typeof HeldItemSchema>;
 
+/** `touch` thô của món hay của `hold` trong cảnh: tên khối đời cũ (`forearmNear`) → phải / trái, tại chỗ */
+export function renameTouch(o: Record<string, unknown>) {
+  if (!Array.isArray(o.touch)) return;
+  o.touch = o.touch.map((t: unknown) =>
+    t && typeof t === "object"
+      ? { ...t, part: renameSideName((t as { part: unknown }).part) }
+      : renameSideName(t),
+  );
+}
+
 /**
  * Thiếu `schemaVersion` thì là bản 1 (zod báo lỗi kèm cách chuyển); bản 2, 3 lên `HELD_VERSION` (chỉ thêm trường) trừ khi
  * mang `roles` — trường của bản 4, giữ số để zod báo; số khác giữ nguyên
@@ -281,6 +292,7 @@ export type HeldItemSpec = z.infer<typeof HeldItemSchema>;
 export function migrateHeldItem(json: unknown): unknown {
   if (!json || typeof json !== "object" || Array.isArray(json)) return json;
   const o = structuredClone(json) as Record<string, unknown>;
+  renameTouch(o);
   if (typeof o.schemaVersion !== "number") o.schemaVersion = 1;
   else if ((o.schemaVersion === 2 || o.schemaVersion === 3) && o.roles === undefined)
     o.schemaVersion = HELD_VERSION;

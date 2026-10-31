@@ -26,9 +26,9 @@ const NAMES = [
   "bow-hands-front-45-robe-hold-3d",
   "look-up-3d",
   "look-down-3d",
-  "turn-head-35-near-3d",
-  "turn-head-70-far-3d",
-  "turn-head-70-snap-near-3d",
+  "turn-head-35-right-3d",
+  "turn-head-70-left-3d",
+  "turn-head-70-snap-right-3d",
   "sit-3d",
   "sit-3d-staggered",
   "walk",
@@ -37,7 +37,7 @@ const NAMES = [
 
 describe("gốc tên hành động", () => {
   it("bỏ đuôi 3d và hậu tố mức, phía, pha", () => {
-    expect(actionStem("turn-head-70-near-3d")).toBe("turn-head");
+    expect(actionStem("turn-head-70-right-3d")).toBe("turn-head");
     expect(actionStem("bow-hands-front-45-robe-hold-3d")).toBe("bow-hands-front-45-robe");
     expect(actionStem("nod-soft-3d")).toBe("nod");
     expect(actionStem("sit-3d-staggered")).toBe("sit-staggered");
@@ -48,7 +48,7 @@ describe("gốc tên hành động", () => {
     const stems = new Set(NAMES.map(actionStem));
     expect(actionRoot("bow-quick-3d", stems)).toBe("bow");
     expect(actionRoot("bow-hands-front-45-robe-hold-3d", stems)).toBe("bow-hands-front");
-    expect(actionRoot("turn-head-70-snap-near-3d", stems)).toBe("turn-head");
+    expect(actionRoot("turn-head-70-snap-right-3d", stems)).toBe("turn-head");
     expect(actionRoot("sit-3d-staggered", stems)).toBe("sit");
     expect(actionRoot("walk-fast", stems)).toBe("walk");
     expect(actionRoot("look-up-3d", stems)).toBe("look-up");
@@ -68,16 +68,16 @@ describe("gốc tên hành động", () => {
       "walk",
     ]);
     expect(g[0].names).toEqual(["bow-3d", "bow-15-3d", "bow-30-3d", "bow-quick-3d"]);
-    expect(siblingsOf(g, "turn-head-70-far-3d")).toEqual([
-      "turn-head-35-near-3d",
-      "turn-head-70-far-3d",
-      "turn-head-70-snap-near-3d",
+    expect(siblingsOf(g, "turn-head-70-left-3d")).toEqual([
+      "turn-head-35-right-3d",
+      "turn-head-70-left-3d",
+      "turn-head-70-snap-right-3d",
     ]);
   });
 
   it("lọc theo mọi từ, bước vòng hai đầu", () => {
-    const g = filterGroups(groupActions(NAMES), "Head near");
-    expect(flatNames(g)).toEqual(["turn-head-35-near-3d", "turn-head-70-snap-near-3d"]);
+    const g = filterGroups(groupActions(NAMES), "Head right");
+    expect(flatNames(g)).toEqual(["turn-head-35-right-3d", "turn-head-70-snap-right-3d"]);
     const all = flatNames(groupActions(NAMES));
     expect(stepIn(all, "bow-3d", -1)).toBe("walk-fast");
     expect(stepIn(all, "walk-fast", 1)).toBe("bow-3d");

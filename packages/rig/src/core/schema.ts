@@ -945,6 +945,12 @@ export const renameSideEquip = (e: unknown) => {
   for (const step of Array.isArray(e) ? e : [e]) renameSideKeys(step);
 };
 
+/** Tên mốc người (`anchorAt`) hay khối va chạm (`touch` của món) đời cũ → phải / trái: `wristNear` → `wristRight` */
+export const renameSideName = (k: unknown): unknown =>
+  typeof k === "string" && /^[a-z]+(Near|Far)$/.test(k)
+    ? k.replace(/Near$/, "Right").replace(/Far$/, "Left")
+    : k;
+
 /** Đổi tên kênh đời cũ trong một mảng thô (`mask`) */
 export const renameSideList = (a: unknown): unknown =>
   Array.isArray(a) ? a.map((k) => (typeof k === "string" ? (SIDE_RENAMES[k] ?? k) : k)) : a;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ACTION_VERSION, parseAction } from "./action";
-import { parseScene, SCENE_VERSION } from "./scene";
+import { migrateHeldItem } from "./heldItem";
+import { migrateScene, parseScene, SCENE_VERSION } from "./scene";
 import { CHARACTER_VERSION, parseCharacter } from "./schema";
 
 const LENS = { eye: [0, -250, -1400], yaw: 0, pitch: 0, f: 800 };
@@ -209,5 +210,46 @@ describe("trường không còn: JSON cũ bỏ lặng lẽ", () => {
 
   it("cảnh dựng trong code (không `schemaVersion`) thiếu `world` thì zod báo", () => {
     expect(parseScene({ lens: LENS, cast: [{ id: "a" }] }).success).toBe(false);
+  });
+});
+
+describe("mốc người, khối va chạm đời cũ thành tên phải / trái", () => {
+  it("cảnh: `fx[].anchor`, `touch` của `hold` trong `world.hands`", () => {
+    const o = migrateScene({
+      schemaVersion: 36,
+      fx: [
+        { kind: "bubble", anchor: "wristNear" },
+        { kind: "bubble", anchor: "head" },
+      ],
+      cast: [
+        {
+          id: "a",
+          world: {
+            at: [0, 0, 0],
+            hands: [
+              {
+                t: 0,
+                left: { hold: { item: "coc", touch: ["forearmFar", { part: "armNear", max: 2 }] } },
+              },
+            ],
+          },
+        },
+      ],
+    }) as {
+      fx: { anchor: string }[];
+      cast: { world: { hands: { left: { hold: { touch: unknown[] } } }[] } }[];
+    };
+    expect(o.fx.map((f) => f.anchor)).toEqual(["wristRight", "head"]);
+    expect(o.cast[0].world.hands[0].left.hold.touch).toEqual([
+      "forearmLeft",
+      { part: "armRight", max: 2 },
+    ]);
+  });
+
+  it("món: `touch`", () => {
+    const o = migrateHeldItem({ schemaVersion: 4, touch: ["shinNear", "torso"] }) as {
+      touch: unknown[];
+    };
+    expect(o.touch).toEqual(["shinRight", "torso"]);
   });
 });

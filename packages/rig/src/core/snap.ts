@@ -38,6 +38,10 @@ const FAST_DEG = 20;
 
 const LIMBS = ["armRight", "armLeft", "legRight", "legLeft"] as const;
 type LimbChannel = (typeof LIMBS)[number];
+const otherLimb = (k: LimbChannel): LimbChannel =>
+  k.endsWith("Right")
+    ? (k.replace("Right", "Left") as LimbChannel)
+    : (k.replace("Left", "Right") as LimbChannel);
 const LIMB_LABEL: Record<LimbChannel, string> = {
   armRight: "tay phải",
   armLeft: "tay trái",
@@ -87,8 +91,13 @@ export function sceneSideProblems(
         );
         if (!limbs.length) return;
         const track = tr.name ?? `#${ti}`;
-        const key = `${track}|${c.file}`;
-        const row = byClip.get(key) ?? { limbs, at: [], file: c.file ?? a.name, track };
+        const key = `${track}|${c.file}|${!!c.mirror}`;
+        const row = byClip.get(key) ?? {
+          limbs: c.mirror ? limbs.map(otherLimb) : limbs,
+          at: [],
+          file: c.file ?? a.name,
+          track,
+        };
         row.at.push(c.start);
         byClip.set(key, row);
       }),

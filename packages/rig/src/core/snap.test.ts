@@ -88,6 +88,22 @@ describe("sceneSideProblems", () => {
     expect(sceneSideProblems(person3d("cover-3d"), ACTIONS)).toEqual([]);
   });
 
+  it("clip soi gương báo theo tay nó thật sự đưa", () => {
+    const rt = scene({
+      lens: LENS,
+      cast: [
+        {
+          id: "a",
+          world: { at: [0, 0, 0] },
+          tracks: [{ clips: [{ action: "cover", start: 0, mask: ["armRight"], mirror: true }] }],
+        },
+      ],
+    });
+    const out = sceneSideProblems(rt, ACTIONS);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatch(/mà ghi tay trái —/);
+  });
+
   it("clip thu `mask` về kênh không phải tay chân thì không kêu", () => {
     const rt = scene({
       lens: LENS,

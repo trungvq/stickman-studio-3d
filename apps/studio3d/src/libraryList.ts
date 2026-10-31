@@ -3,7 +3,7 @@
 import { PREVIEW_ANGLES, type ActionData, type PreviewAngle } from "@stickman3d/rig/core";
 
 /** Hậu tố mức, phía, pha: bỏ đi là ra gốc; số độ cũng là mức */
-const CLOSED = new Set(["soft", "big", "near", "far", "left", "right", "hold", "out"]);
+const CLOSED = new Set(["soft", "big", "left", "right", "hold", "out"]);
 const closed = (w: string) => /^\d+$/.test(w) || CLOSED.has(w);
 
 function stemWords(name: string): string[] {
@@ -12,7 +12,7 @@ function stemWords(name: string): string[] {
   return w;
 }
 
-/** Tên bỏ đuôi `3d` và hậu tố mức, phía, pha ở cuối: `turn-head-70-near-3d` → `turn-head` */
+/** Tên bỏ đuôi `3d` và hậu tố mức, phía, pha ở cuối: `turn-head-70-right-3d` → `turn-head` */
 export const actionStem = (name: string) => stemWords(name).join("-");
 
 /**
