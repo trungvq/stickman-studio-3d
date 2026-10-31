@@ -264,6 +264,14 @@ describe('người 3D mặc đồ', () => {
     const tube = f.neck.children.find((o) => o.userData.neckTube)!;
     const torso = f.spine.children.find((o) => o.userData.torso)!;
     expect(tube.children[0].userData.inkSkip).toBe(torso);
+    // mảng da ngực trong miệng cổ: mọi mảng da của thân chung một chuỗi, ống cổ bỏ qua cả nó
+    const open = dressed((c) => {
+      c.pieces.torso = { ...c.pieces.torso, src: 'sculpt', garment: GarmentSchema.parse({ style: 'shirt', panels: [{ fill: 'skin', clip: 'neck' }, { fill: 'skin', pts: [[-5, 140], [5, 140], [5, 130], [-5, 130]] }] }) };
+    });
+    const skins = open.spine.children.filter((o) => o.userData.inkChain === open.spine.children[0].id);
+    expect(skins.length).toBeGreaterThan(0);
+    const skip = open.neck.children.find((o) => o.userData.neckTube)!.children[0].userData.inkSkip;
+    expect(skip).toEqual([open.spine.children[0], skins[0]]);
   });
 
   it('đầu human: tai ẩn dưới tóc rủ, hiện với tóc ngắn; đầu cao hơn đầu cầu một đoạn cổ', () => {

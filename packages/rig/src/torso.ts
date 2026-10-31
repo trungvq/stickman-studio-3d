@@ -361,8 +361,8 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     sheet(curve(NU, (u) => curve(NV, (v) => ribAt(360 * u, v))), [0, NV], "color", rib.line);
   }
 
-  // miệng cổ viền gân của người mặc đồ lộ da: mặt khối từ viền cổ lên đỉnh và nắp đỉnh khối, dưới viền gân
-  if (arm && def.rib) {
+  // miệng cổ của người mặc đồ lộ da: mặt khối từ viền cổ lên đỉnh và nắp đỉnh khối, dưới viền gân, cổ bẻ, áo trong
+  if (arm) {
     const ring = curve(NU, (u) => surf.neck(360 * u - 180));
     const yTop = pts[0][1];
     const side = ring.map(([lon, y]) => curve(NECK_SKIN.rows, (v) => raise([lon, lerp(y, yTop, v)], NECK_SKIN.lift, 0, 0)));

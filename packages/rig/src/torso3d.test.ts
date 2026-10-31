@@ -456,7 +456,7 @@ describe('dáng thân chung của thân trần và áo', () => {
   it('mảng da người mặc đồ là lưới kín ghi độ sâu, quấn ra ngoài; người que vẫn là hình in', () => {
     const g = GarmentSchema.parse({ style: 'bare', marks: false, panels: [{ fill: 'skin', side: 'both', mirror: true, from: 'neck', pts: [[28, -16], [90, -16], [90, 50], [40, 44], [29, 16]] }] });
     const r = roots3(g, base, { clad: true, sleeve: 15, trouser: 17 });
-    const clad = torsoMesh(g, base, r.room).fills.filter((f) => f.fill === 'skin');
+    const clad = torsoMesh(g, base, r.room).fills.filter((f) => f.fill === 'skin' && !f.neck);
     expect(clad.length).toBeGreaterThan(0);
     for (const f of clad) {
       expect(f.skin).toBe(true);

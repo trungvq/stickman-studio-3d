@@ -24,9 +24,9 @@ ivec2 inkClamp(ivec2 q, vec4 r){ return clamp(q, ivec2(r.xy), ivec2(r.zw)); }
 float linz(float d){ float z = d * 2.0 - 1.0; return 2.0 * uNear * uFar / (uFar + uNear - z * (uFar - uNear)); }
 vec2 inkOff(vec4 s){ return vec2(mod(s.x, 2048.0), floor(s.x / 2048.0)) - 1024.0; }
 float inkPack(vec2 o){ return o.x + 1024.0 + (o.y + 1024.0) * 2048.0; }
-float inkGate(vec2 idp, float zp, vec4 s){
+float inkGate(vec3 idp, float zp, vec4 s){
   float ids = floor(s.y / 1024.0);
-  if (s.z < 0.0 || ids == idp.x || ids == idp.y) return 0.0;
+  if (s.z < 0.0 || ids == idp.x || ids == idp.y || ids == idp.z) return 0.0;
   float w = uInk[int(ids)].x;
   return smoothstep(-3.0 * w, -2.0 * w, zp - s.z);
 }
@@ -43,7 +43,7 @@ uniform mat4 uProj;
 ${INK_GLSL}
 void main(){
   ivec2 p = ivec2(gl_FragCoord.xy);
-  vec2 idp = texelFetch(tId, p, 0).rb;
+  vec3 idp = texelFetch(tId, p, 0).rba;
   float zp = linz(texelFetch(tZ, p, 0).r);
   vec4 best = vec4(0.0, 0.0, -1.0, 0.0);
   if (uStep < 0.5) {
@@ -52,7 +52,7 @@ void main(){
     for (int i = 0; i < 9; i++) {
       ivec2 q = inkClamp(p + ivec2(i % 3 - 1, i / 3 - 1), uRect);
       float idq = texelFetch(tId, q, 0).r, zq = linz(texelFetch(tZ, q, 0).r);
-      if (idq > 0.5 && idq != idp.x && idq != idp.y && zq < zb) {
+      if (idq > 0.5 && idq != idp.x && idq != idp.y && idq != idp.z && zq < zb) {
         idb = idq;
         zb = zq;
       }
@@ -111,7 +111,7 @@ void main(){
         n += 1.0;
       }
     }
-    ink = inkGate(texelFetch(tId, p, 0).rb, linz(texelFetch(tZ, p, 0).r), s) * w / max(n, 1.0) * clamp(inkReach(s) + 0.5, 0.0, 1.0);
+    ink = inkGate(texelFetch(tId, p, 0).rba, linz(texelFetch(tZ, p, 0).r), s) * w / max(n, 1.0) * clamp(inkReach(s) + 0.5, 0.0, 1.0);
   }
   gl_FragColor = vec4(ink);
 }`;
@@ -419,8 +419,8 @@ function fitOrtho(cam: THREE.OrthographicCamera, dir: THREE.Vector3, region: THR
  * khác; vật liệu `userData.ink` (`npr({ ink })`)
  * có nét bóng dáng dò ở hậu kỳ, cả khi tắt `outline` như vỏ ngược; các mesh cùng `userData.inkChain` và cùng vật liệu chung một
  * mã vật, chỗ nối không có nét. Vật liệu chỉ khác `doubleSided` tính là cùng vật liệu. Mép vật đè lên vật khác cùng vật liệu có nét khi khe sâu qua `userData.inkGap` (three, cỡ bán
- * kính vật: nét đầy ở 0,8, mờ dần dưới 0,3), không có thì theo bề dày nét. Mesh có `userData.inkSkip` (một mesh khác) không nhận
- * nét bóng dáng của mesh ấy.
+ * kính vật: nét đầy ở 0,8, mờ dần dưới 0,3), không có thì theo bề dày nét. Mesh có `userData.inkSkip` (một mesh hay mảng tối đa hai
+ * mesh) không nhận nét bóng dáng của các mesh ấy.
  */
 export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSize = 2048 }: PipelineOptions = {}): Pipeline {
   renderer.localClippingEnabled = true;
@@ -446,17 +446,17 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
   const inkTable = Array.from({ length: MAX_INK }, () => new THREE.Vector4());
   const maskRT = new THREE.WebGLRenderTarget(4, 4, { format: THREE.RedFormat, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false });
   let rw = 4, rh = 4, dot = 6;
-  // pháp tuyến hệ nhìn, mặt sau lật lại; a: 1 có nét gấp, 0,5 vật `noCrease`, 0,3 lưới người (`body`), 0,1 vật `noEdge`, 0 không có vật. Đích thứ hai: mã vật có nét bóng dáng, mặt nạ đứt nét của kiểu cel, mã vật mà nét bóng dáng không loang lên vật này (`inkSkip`)
-  const normalMat = (a: number, id: number, skip: number) => new THREE.ShaderMaterial({
+  // pháp tuyến hệ nhìn, mặt sau lật lại; a: 1 có nét gấp, 0,5 vật `noCrease`, 0,3 lưới người (`body`), 0,1 vật `noEdge`, 0 không có vật. Đích thứ hai: mã vật có nét bóng dáng, mặt nạ đứt nét của kiểu cel, hai mã vật mà nét bóng dáng không loang lên vật này (`inkSkip`)
+  const normalMat = (a: number, id: number, skip: [number, number]) => new THREE.ShaderMaterial({
     side: THREE.DoubleSide,
     vertexShader: /* glsl */ `varying vec3 vN, vL; void main(){ vN = normalize(normalMatrix * normal); vL = ${SCALED_POSITION}; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: /* glsl */ `layout(location = 1) out highp vec4 gInk; varying vec3 vN, vL; ${NOISE}
-      void main(){ vec3 n = normalize(gl_FrontFacing ? vN : -vN); gl_FragColor = vec4(n * 0.5 + 0.5, ${a.toFixed(1)}); gInk = vec4(${id}.0, inkKeep(vL), ${skip}.0, 1.0); }`,
+      void main(){ vec3 n = normalize(gl_FrontFacing ? vN : -vN); gl_FragColor = vec4(n * 0.5 + 0.5, ${a.toFixed(1)}); gInk = vec4(${id}.0, inkKeep(vL), ${skip[0]}.0, ${skip[1]}.0); }`,
   });
   // decal giữ độ lệch sâu của vật liệu gốc, không thì giành điểm ảnh với mặt dưới nó thành nét lấm chấm
   const normalMats = new Map<string, THREE.ShaderMaterial>();
-  const normalFor = (m: THREE.Mesh, src: THREE.Material, id: number, skip: number) => {
-    const a = m.userData.noEdge ? 0.1 : m.userData.body ? 0.3 : m.userData.noCrease ? 0.5 : 1, key = `${a} ${id} ${skip}` + (src.polygonOffset ? ` ${src.polygonOffsetFactor} ${src.polygonOffsetUnits}` : '');
+  const normalFor = (m: THREE.Mesh, src: THREE.Material, id: number, skip: [number, number]) => {
+    const a = m.userData.noEdge ? 0.1 : m.userData.body ? 0.3 : m.userData.noCrease ? 0.5 : 1, key = `${a} ${id} ${skip.join(' ')}` + (src.polygonOffset ? ` ${src.polygonOffsetFactor} ${src.polygonOffsetUnits}` : '');
     let mat = normalMats.get(key);
     if (!mat) {
       normalMats.set(key, (mat = normalMat(a, id, skip)));
@@ -694,7 +694,10 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
         swapped.push([m, m.material]);
         ids.set(m, id);
       });
-      for (const [m, mat] of swapped) m.material = normalFor(m, mat as THREE.Material, ids.get(m)!, ids.get(m.userData.inkSkip) ?? 0);
+      for (const [m, mat] of swapped) {
+        const skip = [m.userData.inkSkip ?? []].flat().map((o: THREE.Object3D) => ids.get(o) ?? 0);
+        m.material = normalFor(m, mat as THREE.Material, ids.get(m)!, [skip[0] ?? 0, skip[1] ?? 0]);
+      }
       if (cel) inks = 0;
       if (outline || inks) {
         for (const o of shells) o.visible = false;

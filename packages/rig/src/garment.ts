@@ -235,6 +235,7 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
   add(h);
 
   const shown = (p: Vec3) => p[1] < tuck;
+  let skinFill: THREE.Mesh | undefined, neckFill: THREE.Mesh | undefined;
   for (const f of t.fills) {
     if (!f.pts.some(shown)) continue;
     const g = new THREE.BufferGeometry();
@@ -248,6 +249,7 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
       sm.userData.noShadow = true;
       sm.userData.noCollide = true;
       sm.userData.inkSkip = m;
+      neckFill = sm;
       add(sm);
       continue;
     }
@@ -256,6 +258,9 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
       sm.userData.noShadow = true;
       sm.userData.noCollide = true;
       sm.userData.inkGap = inkGap;
+      // mọi mảng da của thân chung một mã vật: ống cổ bỏ qua nét bóng dáng của chúng bằng một mã (`skin` trả ra)
+      sm.userData.inkChain = m.id;
+      skinFill ??= sm;
       add(sm);
       continue;
     }
@@ -277,6 +282,7 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
     dm.userData.noCollide = true;
     add(dm);
   }
+  if (neckFill && skinFill) neckFill.userData.inkSkip = [m, skinFill];
   for (const l of t.lines) {
     const closed = l.pts.length > 40 && v3(l.pts[0]).distanceTo(v3(l.pts[l.pts.length - 1])) < 0.02;
     if (l.pts.every(shown)) {
@@ -329,7 +335,7 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
     add(hl);
   }
   for (const p of t.prints) if (p.grid.some((col) => col.some(shown))) add(printMesh(p, ink));
-  const out = { profile: t.profile, depth: t.depth, refold: undefined as ((dir: [number, number]) => void) | undefined };
+  const out = { profile: t.profile, depth: t.depth, skin: skinFill, refold: undefined as ((dir: [number, number]) => void) | undefined };
   if (!lap) return out;
   // gập từ hình đứng giữ sẵn, đơn vị three
   // mỗi lưới: đỉnh đứng, chỗ thấp nhất và nhô trước nhất (px); lưới nằm hẳn trên chỗ gập thì gập lại không đổi gì
