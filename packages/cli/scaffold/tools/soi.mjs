@@ -9,7 +9,7 @@ import { ownBundle } from "./bundle.mjs";
 import { bundleScope } from "./scope.mjs";
 
 // cảnh 3D (`src/khoi3d/`) vẽ bằng GPU qua Vulkan như `remotion.config.ts`; API renderer không đọc file ấy
-export const chromiumOptions = { gl: "vulkan" };
+export const chromiumOptions = { gl: process.platform === "darwin" ? "angle" : "vulkan" };
 // biến `REMOTION_*` của shell vào trang như `remotion still`
 export const envVariables = Object.fromEntries(
   Object.entries(process.env).filter(([k]) => k.startsWith("REMOTION_")),

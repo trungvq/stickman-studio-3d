@@ -3,7 +3,7 @@ import type { ComponentProps, ReactElement } from "react";
 import { Composition, Folder, useCurrentFrame, useVideoConfig } from "remotion";
 import pkg from "../package.json";
 import { EPISODES, SCENES } from "./data";
-import { Episode, episodeVideo, sceneDuration, sceneFrame, sceneSeconds } from "./Episode";
+import { Episode, episodeVideo, sceneDuration, sceneFrame, sceneSeconds } from "./Episode.tsx";
 import { episodeThumbnails, type ThumbnailData } from "./episode";
 import { THU_3D } from "./khoi3d/canh";
 import { Scene3D } from "./khoi3d/Scene3D";

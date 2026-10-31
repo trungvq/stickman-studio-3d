@@ -244,11 +244,11 @@ mount dựng lại shader của context mới, vài chục ms một cảnh.
 
 ```ts
 // GPU thật qua ANGLE trên Vulkan; không có Vulkan thì tạo context lỗi ngay chứ không âm thầm vẽ phần mềm
-Config.setChromiumOpenGlRenderer('vulkan');
+Config.setChromiumOpenGlRenderer(process.platform === 'darwin' ? 'angle' : 'vulkan');
 Config.setConcurrency(4);
 ```
 
-Hay `--gl=vulkan` trên dòng lệnh. `angle` cũng chạy GPU (chrome-headless-shell của Remotion chọn Vulkan làm
+Hay `--gl=vulkan` trên dòng lệnh. macOS không có Vulkan: `angle` ở đó là ANGLE trên Metal. `angle` cũng chạy GPU (chrome-headless-shell của Remotion chọn Vulkan làm
 backend) nhưng rơi về SwiftShader khi không có GPU mà không báo. `swangle` (mặc định của Lambda) và `swiftshader`
 là vẽ phần mềm, chậm ~100 lần. `egl`, `angle-egl` không tạo được context với chrome-headless-shell của Remotion
 trên máy dựng. Kiểm bằng `pnpm bench --gl vulkan,angle,swangle` với `CHROME=` trỏ vào

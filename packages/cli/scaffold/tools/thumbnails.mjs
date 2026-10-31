@@ -25,7 +25,7 @@ if (!ids.length) {
 }
 
 // cảnh 3D (`src/khoi3d/`) vẽ bằng GPU qua Vulkan như `remotion.config.ts`; API renderer không đọc file ấy
-const chromiumOptions = { gl: "vulkan" };
+const chromiumOptions = { gl: process.platform === "darwin" ? "angle" : "vulkan" };
 const scope = bundleScope(root, ids, { audio: "none" });
 const { serveUrl } = await ownBundle(resolve("src/index.ts"), { scope });
 

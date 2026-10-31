@@ -8,8 +8,9 @@ import { ownTmpdir, webpackOverride } from "./tools/webpack.mjs";
 sweepAndReport({ own: ownTmpdir !== null });
 
 Config.setVideoImageFormat("jpeg");
-// Cảnh 3D (`src/khoi3d/`): GPU thật qua ANGLE trên Vulkan; máy không có Vulkan thì tạo context lỗi ngay, không âm thầm vẽ phần mềm
-Config.setChromiumOpenGlRenderer("vulkan");
+// Cảnh 3D (`src/khoi3d/`): GPU thật qua ANGLE trên Vulkan (macOS không có Vulkan: ANGLE trên Metal); máy không có
+// Vulkan thì tạo context lỗi ngay, không âm thầm vẽ phần mềm
+Config.setChromiumOpenGlRenderer(process.platform === "darwin" ? "angle" : "vulkan");
 
 // `pnpm remotion-prod` (`STUDIO_FAST=1`): studio dùng React production — cảnh 3D nặng nhanh ~2,7 lần,
 // đổi lại mất fast refresh (sửa code phải reload trang) và cảnh báo dev của React. Runtime,

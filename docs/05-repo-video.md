@@ -39,7 +39,8 @@ là cảnh 3D mẫu, `khoi3d/canh.ts` nối tên nó với `plainRoom` (`CANH_3D
 cảnh có trong `CANH_3D` thì vẽ sân khấu three, cảnh khác chỉ có nền, lớp vẽ code và `fx`; `THU_3D` cùng file là composition thử bối cảnh
 (người, ống kính, khung cắt mượn của một cảnh), nằm trong thư mục `khoi3d` của Studio. Cảnh 3D nặng thì `pnpm remotion-prod`
 chạy Studio bằng React production, mất fast refresh. Render cảnh 3D cần GPU qua Vulkan:
-`remotion.config.ts`, `tools/soi.mjs` và `tools/thumbnails.mjs` đặt sẵn `gl: "vulkan"`. Mỗi file trong `scenes/` là một composition, mỗi file trong
+`remotion.config.ts`, `tools/soi.mjs` và `tools/thumbnails.mjs` đặt sẵn `gl: "vulkan"`, riêng macOS (không có Vulkan) là
+`"angle"` (ANGLE trên Metal). Mỗi file trong `scenes/` là một composition, mỗi file trong
 `episodes/` cũng vậy, nhưng mỗi bundle chỉ mang phạm vi của lượt chạy — id gõ trên dòng lệnh, hay
 `stickman.scope` cho Studio ([03](03-scene.md#phạm-vi-bundle)); chi tiết và các bẫy ở [03](03-scene.md#remotion) và
 [07](07-lam-tap.md#bảng-thời-gian-của-cả-tập).
