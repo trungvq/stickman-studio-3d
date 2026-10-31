@@ -629,6 +629,8 @@ export function stickman(o: StickmanOptions): Figure {
     const bend = lod !== 'low';
     const geo = neckGeometry(head3(B, true) - R.head * 0.5, undefined, bend ? NECK_BEND.rows : 1);
     const tube = inked(geo, skinMat, 0.022);
+    // chân ống lùi sau mép cổ áo một khe đổi theo dáng đầu: nét bóng dáng của thân áo loang lên đó thành vạch dài ngắn
+    tube.children[0].userData.inkSkip = spine.children[0];
     neck.add(tube);
     if (bend) {
       tube.userData.neckTube = true;

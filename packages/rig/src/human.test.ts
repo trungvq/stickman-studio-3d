@@ -259,6 +259,13 @@ describe('người 3D mặc đồ', () => {
     expect(make((c) => ((c.palette.clad = true), (c.head.form = 'human')), { lod: 'low' }).neckTube).toBeUndefined();
   });
 
+  it('ống cổ không nhận nét bóng dáng của thân áo cùng người', () => {
+    const f = dressed();
+    const tube = f.neck.children.find((o) => o.userData.neckTube)!;
+    const torso = f.spine.children.find((o) => o.userData.torso)!;
+    expect(tube.children[0].userData.inkSkip).toBe(torso);
+  });
+
   it('đầu human: tai ẩn dưới tóc rủ, hiện với tóc ngắn; đầu cao hơn đầu cầu một đoạn cổ', () => {
     const ears = (f: Figure) => f.head.children.filter((g) => g.position.x !== 0 && !g.userData.joint).length;
     const shortHair = dressed((c) => (c.pieces.hair = { ...c.pieces.hair, src: 'sculpt', sculpt: SculptSchema.parse({ style: 'neat' }) }));

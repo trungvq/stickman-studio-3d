@@ -1462,7 +1462,8 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
   rộng (`flat`), hơi dời ra trước (`chin`) và thu gáy (`nape`); không có mũi. Mọi số nhân bình phương
   độ sâu dưới xích đạo nên viền đầu không gãy ở chỗ nối. Đầu ngồi cao hơn đầu cầu `HUMAN_NECK`
   (`head3`, `actJoints` cùng đọc): một đoạn cổ da lộ ra giữa cằm và cổ áo. Vỏ viền dưới cằm chìm sau
-  cổ và cổ áo nên sọ có thêm nét bóng dáng dò ở hậu kỳ (`npr({ ink })`).
+  cổ và cổ áo nên sọ có thêm nét bóng dáng dò ở hậu kỳ (`npr({ ink })`). Ống cổ không nhận nét bóng dáng của thân áo
+  cùng người (`userData.inkSkip`): chân ống lùi sau mép cổ áo một khe đổi theo dáng đầu, nét ấy thành vạch dài ngắn.
 - **Nét mặt chibi nằm trên mặt nặn.** Lưới nét mặt đi qua cùng `humanSkull` nên mồm, nếp nhăn theo
   má ở mọi góc quay. `CHIBI` (`core/face.ts`) cộng vào `face` của JSON nhân vật: mắt hạ `10`, hai mắt
   giãn thêm `18`, mồm gần mắt `10` px (`chibiShape`) — kính và `headFit` đọc chỗ mắt đã dời. Mỗi mắt

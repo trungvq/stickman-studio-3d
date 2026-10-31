@@ -247,6 +247,7 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
       const sm = new THREE.Mesh(g, npr({ ...skinLook(skin), doubleSided: true }));
       sm.userData.noShadow = true;
       sm.userData.noCollide = true;
+      sm.userData.inkSkip = m;
       add(sm);
       continue;
     }
@@ -259,7 +260,10 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
       continue;
     }
     if (!f.decal) {
-      add(new THREE.Mesh(g, npr({ color: colorOf(f.fill, pal), stipple: 0.04, soft: 1, doubleSided: true })));
+      // mảng nằm trên mặt thân như chính thân: mép trên áo trong sát vành cổ không nhận nét bóng dáng của thân
+      const fm = new THREE.Mesh(g, npr({ color: colorOf(f.fill, pal), stipple: 0.04, soft: 1, doubleSided: true }));
+      fm.userData.inkSkip = m;
+      add(fm);
       continue;
     }
     // nét nhạt (`ink`): màu nét pha về màu thân
