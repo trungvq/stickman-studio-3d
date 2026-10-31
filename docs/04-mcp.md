@@ -87,7 +87,7 @@ khung, bao nhiêu cảnh cũng được.
 
 ## Đo toạ độ và góc trên người: hỏi `anchors`
 
-`scene_probe` nhận `anchors: ["wristFar", "mouth", …]` và trả `{x, y, deg, w, h}`
+`scene_probe` nhận `anchors: ["wristLeft", "mouth", …]` và trả `{x, y, deg, w, h}`
 cho từng mốc, trong đúng hệ toạ độ chỗ vẽ — nó gọi thẳng `anchorAt` của rig, xem
 [03 — Hỏi mốc trên người](03-scene.md#hỏi-mốc-trên-người) cho danh sách tên và
 cách cắm số vào một `<g>`.
@@ -145,7 +145,7 @@ không có tool riêng.
      - `mốc kẹp`: các phần tử `keys[i]` bao quanh quãng sự kiện nới một khung mỗi phía, kèm `t` đúng như trong file,
        giây hành động và `ease` (bỏ trống là `linear`);
      - tới bốn số đổi từ `5°` giữa các mốc **có ghi kênh ấy** quanh sự kiện, lớn nhất trước, kèm tên số theo
-       `CHANNEL_PARTS` của lõi (`armNear[3]` dang, `torso[0]` cúi, `head[1]` lắc …) và giá trị ở từng mốc. Clip không
+       `CHANNEL_PARTS` của lõi (`armRight[3]` dang, `torso[0]` cúi, `head[1]` lắc …) và giá trị ở từng mốc. Clip không
        đổi kênh góc nào thì ghi một dòng như vậy; hành động `gen` hay clip đi theo nhịp `path` thì không tra mốc;
      - `gợi ý` — theo dấu hiệu, thận trọng: khựng mà hai mốc liền của một kênh lệch tới `3°` cách nhau hơn `0,1 s`
        giữa đoạn đang đi → mốc thừa; khựng quanh mốc `smooth` → vận tốc về 0 ở mốc giữa; giật ở chỗ nối clip `blend`
@@ -187,7 +187,7 @@ không có tool riêng.
   `scene.lens` ở độ cao sàn của cảnh (`at` của mốc đứng, `floor` của người ngồi; trục `x = 0`, `z = 0`
   đậm hơn), viền mờ từng khối đồ khối của lớp vẽ code (`solids`) và hộp bao từng vật cản của cảnh three
   `stickman.world` khi repo khai, rồi que xương người 3D ở khung của ô — cùng khớp với vệt
-  (`stageJoints`), bên phải giải phẫu màu hồng, bên trái xanh lục lam, cột sống và đầu xám đậm; đoạn
+  (`stageJoints`), bên phải của người màu hồng, bên trái xanh lục lam, cột sống và đầu xám đậm; đoạn
   càng gần ống kính hơn hông thì nét càng to và đậm, đoạn xa vẽ trước. Đầu là vòng tròn, gạch từ tâm
   đầu là hướng mặt (`yaw` vẽ). Dải nhãn trên mỗi ô ghi giây và hai màu bên `━ phải ━ trái`; vệt cùng màu
   bên ấy. Phần chữ kèm ảnh có cách đọc que xương như vệt. Đi chung `trails`, `ghosts`, `relative`, `span`, `fps`, `cast`.
@@ -201,9 +201,9 @@ không có tool riêng.
   ```jsonc
   "world": {
     "yaw": 112, "yawSaid": 112, "theta": 45,
-    "flip": true, "near": "left", "seated": true, "floor": 0, "s": 1,
-    "joints": { "hip": [300, 96, 700], "kneeNear": [...], "footNear": [...], "shoulderNear": [...],
-                "elbowNear": [...], "wristNear": [...], "neck": [...], "head": [...], … },
+    "flip": true, "seated": true, "floor": 0, "s": 1,
+    "joints": { "hip": [300, 96, 700], "kneeRight": [...], "footRight": [...], "shoulderRight": [...],
+                "elbowRight": [...], "wristRight": [...], "neck": [...], "head": [...], … },
     "hands": { "right": { "at": [-124, -154, -32], "w": 1 }, "left": null },
     "palms": {
       "right": { "faces": "úp", "down": 20, "palm": [-0.2, 0.94, -0.27], "finger": [0.96, 0.13, -0.25],
@@ -217,9 +217,9 @@ không có tool riêng.
   `yaw` là hướng vẽ (độ, cùng vòng với `yawSaid`), `yawSaid` là yaw khai (nội suy `path`),
   `yawHeading` có khi người đi mà thân nhắm khác yaw khai — hướng theo `path`, trước giới hạn tốc
   quay. Người đứng yên thì `yaw` là đúng `yawSaid` ở mọi góc, kể cả nhìn thẳng ống kính (`theta` 0).
-  `near` là tay / chân gần ống kính theo giải phẫu (`*Near` của `joints` là chi ấy);
+  `*Right` / `*Left` của `joints` là chi phải / trái của người;
   `hands` là đích thế giới đang áp (`w` là phần đích), đích hệ thân của hành động nằm ở `pose.reach`.
-  `palms` (người mặc đồ) là lòng bàn tay hai bên theo giải phẫu, đúng như three vẽ (`actPalms`):
+  `palms` (người mặc đồ) là lòng bàn tay phải và trái, đúng như three vẽ (`actPalms`):
   `faces` lòng tay quay về đâu (`úp`, `ngửa`, `vào thân`, `ra ngoài`, `ra trước`, `ra sau`), `down` góc lệch
   khỏi úp (độ), `palm` pháp tuyến lòng tay và `finger` hướng ngón (vectơ đơn vị, thế giới rig), `at` tâm lòng
   bàn tay. Repo khai `stickman.world` thì kèm `on` (vật có mặt ngang dưới bàn tay) và `gap` (khe từ điểm thấp

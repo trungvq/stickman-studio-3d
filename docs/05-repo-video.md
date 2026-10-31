@@ -531,7 +531,7 @@ pnpm exec stickman gen pour --scene t02-s04 --cast chu-quan --at 3.2 --cup 8,-25
 | `--tilt <độ>` | Góc nghiêng hết: bình đầy `60–70`, gần hết `100–120`; mặc định `100` / `88` |
 | `--pour-dir <độ>` | Hướng rót — mặt phẳng đứng chứa bình và cốc —, độ từ ra ngoài về trước (`180` vào giữa thân, `30` trước-phải); mặc định theo kiểu. Hướng đã chọn không đạt bộ lõi (cổ tay, tầm với, khuỷu, tiếp xúc) thì lệnh thử `±10`, `±20`, `±30`, `±45` và **báo** hướng gần nhất làm được, không đổi lặng; dòng `check` (`clash`…) không dự vào việc chọn hướng — tay lấn thân thì tự chọn `--pour-dir` theo gợi ý |
 | `--name <tên>` | Tên file, mặc định `pour[-serve]-<cảnh>-<người>-3d`; file có sẵn chỉ đè khi chính `gen` sinh nó |
-| `--item <món>` | Bình (slot `bottle`) khi tay phải giải phẫu của người rót chưa cầm gì ở giây ấy (mặc định `binh`) |
+| `--item <món>` | Bình (slot `bottle`) khi tay phải của người rót chưa cầm gì ở giây ấy (mặc định `binh`) |
 | `--force`, `--dry-run` | Ghi dù tự kiểm không đạt (kèm cảnh báo) hay đè file soạn tay; chỉ tính và in |
 
 **Bình** là món mang vai trò `pourer` ([13](13-vai-tro-do.md#31-pourer--vật-rót)): điểm rót `lip`, hướng rót `spout` (suy từ

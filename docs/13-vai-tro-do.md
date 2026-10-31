@@ -378,7 +378,7 @@ quãng rót. Thứ tự cho mỗi slot:
      ngầm: ghế đẩu đặt sát tường không mượn tường làm lưng ghế.
    - `ahead`: vật trước mặt trong tầm (mép gần trước hông dưới `150 · hs`, mặt trên cao hơn mặt ngồi `20…90 · hs`), gần
      nhất. Hai vật cách nhau dưới `10 %` khoảng gần nhất là lỗi kèm tên cả hai: chọn bằng cờ.
-   - `heldRight`: món trong tay phải giải phẫu (`world.hands[].right.hold`; người lật vẫn là tay ấy) của người rót ở giây
+   - `heldRight`: món trong tay phải (`world.hands[].right.hold`) của người rót ở giây
      ấy, không thì món `--item` (mặc định `binh`).
    - `flag`: chỉ theo cờ (đích rót là ý định của cảnh, không đoán).
 3. Không thấy: slot `always` hay đúng điều kiện là lỗi; `auto` đi nhánh không có kèm một dòng in (mặt ngồi: mặt ngang qua

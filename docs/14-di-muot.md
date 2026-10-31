@@ -171,7 +171,7 @@ pnpm exec stickman gen walk --scene canh --cast a --at 0 --start moving --to "50
   cuối `+180` là quay phải, `−180` quay trái — một cú `steps: 2`, nhịp cuối (nối đi) là chân phía quay. Hai cú `90°` liền
   nhau mỗi cú `steps: 1` **không** tương đương: nhịp đếm lại ở mỗi cú (`turnLead`), một chân bước cả hai nhịp, chân kia
   xoay cả hai.
-- Biến thể chuẩn: K4 quay trái và K4 quay phải; dải khung kiểm chân bước từng nhịp theo bên giải phẫu.
+- Biến thể chuẩn: K4 quay trái và K4 quay phải; dải khung kiểm chân bước từng nhịp theo chân phải / trái.
 - `yaw` mốc cuối của cú quay là hướng quãng về, nên rig không phải bẻ thêm (`sceneLaunchProblems` kêu khi còn lệch
   quá `10°`).
 
@@ -293,14 +293,14 @@ là ngưỡng cố định.
 | M1 | Tốc hông trên sàn | `cruise` | `v` = ` | Δ hip_xz | / step`. Cửa sổ dài một bước ở tốc `path` (`actionStride · height · s / (2 · vRef)`), chỉ cửa sổ nằm trọn trong một lượt, bỏ cửa sổ có `vRef`trung bình dưới`60 · height · s`/s; `ρ`=`Σv / ΣvRef`của cửa sổ. Tụt`1 − min ρ`, vọt `max ρ − 1`, gia tốc `max | Δρ | / Δt`(cửa sổ dời`1/60 s`) | tụt `≤ 10%`, vọt `≤ 15%`, gia tốc `≤ 1,0`/s | `dip`, `surge`, `accel` | **mới** |
 | | Trễ dọc đường | `cruise`, `launch` | `(P(t) − hip) · T(t)` trên sàn | ` | trễ | ≤ 40 · s` | `lag` | **mới** |
 | M2 | Quay thân | mọi nhãn trừ `still`, `sit` | `ω` = sai phân trung tâm của `yaw` thật bước `1/60 s`; `α` = sai phân trung tâm của `ω` bước `1/60 s` | ` | ω | `: `cruise`, `stop` `≤ 150°/s · 1,02` (`TURN_WALK`); `turn`, `launch` `≤ 300°/s` (`TURN_JERK`). ` | α | ≤ 1200°/s²`trên`cruise`, `stop`, `launch` | `alpha` (`ω`: —) | `ω` ở `turn`: có (`sceneTurnProblems`); còn lại **mới** |
-| M3 | Trượt chân trụ | `cruise`, `stop`; `launch` từ mốc cuối của cú quay (khởi hành từ đứng: cả quãng) | Pha trụ đơn: đúng một bàn chân chịu lực, cùng bàn chân giải phẫu (đổi kênh khi lật); hai chân cùng chạm là hết pha (gót – mũi lăn). Lệch = `max | p(t) − p(t₀) | `trên sàn,`p`là`feet3`của chân ấy,`t₀`đầu pha — đúng`stanceSlip`của`walk3d.test.ts`. Mỗi khung: `max | p(t) − p(t − 1/60) | ` | lệch `≤ 2 · s` (`cruise`), `≤ 3 · s` (`stop`, `launch`); mỗi khung `≤ 0,5 · s` | `slip`, `slipJoin`, `slipFrame` | **mới** (luật thô `sceneSlideProblems` giữ nguyên) |
+| M3 | Trượt chân trụ | `cruise`, `stop`; `launch` từ mốc cuối của cú quay (khởi hành từ đứng: cả quãng) | Pha trụ đơn: đúng một bàn chân chịu lực, cùng một bàn chân suốt pha; hai chân cùng chạm là hết pha (gót – mũi lăn). Lệch = `max | p(t) − p(t₀) | `trên sàn,`p`là`feet3`của chân ấy,`t₀`đầu pha — đúng`stanceSlip`của`walk3d.test.ts`. Mỗi khung: `max | p(t) − p(t − 1/60) | ` | lệch `≤ 2 · s` (`cruise`), `≤ 3 · s` (`stop`, `launch`); mỗi khung `≤ 0,5 · s` | `slip`, `slipJoin`, `slipFrame` | **mới** (luật thô `sceneSlideProblems` giữ nguyên) |
 | M4 | Nhịp chân | `cruise` | `rate` như 3.1. Nhảy `max | rate(t + 0,05) − rate(t − 0,05) | / 0,1`; đỉnh `max rate` | nhảy `≤ 1,5`/s; đỉnh `≤ 1,6` (`RATE_MAX` là `2,5`) | `rateJump`, `ratePeak` | **mới** |
 | M5 | Giật trên hình | mọi nhãn | `sceneSnaps` (`snap.ts`): khớp `actJoints` chiếu qua `lens`, px video theo `cameraAt`, nền trung vị ±2 khung | kịch bản chuẩn trên sân khấu thử: không dòng nào; cảnh của repo: không dòng mới so với cảnh trước khi vá | `stickman.snap` (có) | có |
 | M6 | Bám đường | `cruise` | Khoảng cách sàn từ hông tới **nhánh gần theo thời gian** của `path`: các đoạn có quãng giây giao `[t − 1; t + 1]` (vòng chữ U không nhận nhầm làn về). Vùng góc mềm, vùng cung là cửa sổ của sự kiện ấy ở [mục 4](#4-dải-khung-dày-quanh-chỗ-rẽ); còn lại là đoạn thẳng | thẳng `≤ 5 · s`; góc mềm `θ` `≤ 50 · s · sin(θ/2) / sin 45°`; cung `≤ 20 · s` | `devStraight`, `devCorner`, `devArc` | **mới** |
 | | Tới mốc dừng | — | Hông cách `at` của mốc dừng khi đứng yên | `≤ 20 · s` (`ARRIVE_MAX`) | — | có (`sceneSlideProblems`) |
 | M7 | Luật `move` của người đi | — | `sceneSlideProblems`, `sceneLaunchProblems`, `sceneStopProblems`, `sceneTurnProblems` | không dòng nào | — | có |
 | M8 | Hướng thân so hướng đi | `cruise` | ` | wrap180(yaw thật − hướng của vận tốc hông) | `, vận tốc trung bình một bước; bỏ mẫu có tốc dưới `0,3 · vRef` | `≤ 45°` | `facing` | **mới**, chẩn đoán |
-| M9 | Hai chân | mọi nhãn trừ `sit` | Khoảng ngang (theo hướng thân thật) từ cổ chân trái tới cổ chân phải giải phẫu — âm là bắt chéo; khoảng cách nhỏ nhất giữa hai đoạn gối – cổ chân | ngang `≥ 0`; hai cẳng chân cách nhau `≥ 2 · legHalf · height · s` (`BODY3.legHalf` của người) | `feet` | **mới**, chẩn đoán |
+| M9 | Hai chân | mọi nhãn trừ `sit` | Khoảng ngang (theo hướng thân thật) từ cổ chân trái tới cổ chân phải — âm là bắt chéo; khoảng cách nhỏ nhất giữa hai đoạn gối – cổ chân | ngang `≥ 0`; hai cẳng chân cách nhau `≥ 2 · legHalf · height · s` (`BODY3.legHalf` của người) | `feet` | **mới**, chẩn đoán |
 | M10 | Bước dừng | `stop` | Bàn chân bay: đỉnh tốc ngang và độ nhấc cao nhất, so với đỉnh của chính chân ấy trên lượt `cruise` ngay trước | `≤ 1,1 ×` cả hai | `stopSwing` | **mới**, chẩn đoán |
 
 - M1 lấy trung bình một bước vì tốc hông trong một bước dao động theo chân trụ. Cú tụt ngắn hơn một bước bị lọc đi, nên
@@ -390,7 +390,7 @@ pnpm exec stickman gen walk --scene <id> --cast <người> --to "<điểm> …" 
 | `--at` | Giây bắt đầu (số hay `"@mốc+0.4"`, `markTime`). Bắt buộc khi người đã có `path`; người đứng ở `world.at` thì mặc định `0`. Đầu ra in lệnh đầy đủ với `--at` đã giải để chạy lại |
 | `--to` | Các điểm sàn `x,z` thế giới rig, cách nhau bằng dấu cách ([5.2](#52-điểm)); bắt buộc |
 | `--speed` | Đơn vị thế giới mỗi giây dọc đường, số hữu hạn `> 0`; mặc định tốc độ tự nhiên `actionStride(action, base) · height · s / duration` của `--action` cho người ấy |
-| `--action` | Hành động đi tới, hai lớp; mặc định `walk`. Phải có sải dương (`actionStride` trên nền của người `> STRIDE_MIN`) và ghi cả hai kênh chân (`legFar`, `legNear`); đi lùi, không sải là lỗi |
+| `--action` | Hành động đi tới, hai lớp; mặc định `walk`. Phải có sải dương (`actionStride` trên nền của người `> STRIDE_MIN`) và ghi cả hai kênh chân (`legLeft`, `legRight`); đi lùi, không sải là lỗi |
 | `--start` | `rest`: người đứng yên ở `--at` rồi khởi hành; `moving`: `path` bắt đầu ở `--at` đúng tốc độ, clip đi chạy từ `--at` (vào cảnh đang đi). Mặc định `rest` |
 | `--radius` | Bán kính bo các góc rẽ khi đang đi, đơn vị thế giới, `≥ 0`; `0` (mặc định) để mốc giữa đường là đích mềm (luật 3) |
 | `--turn-time` | Giây cho mỗi `90°` quay tại chỗ, `0,5…2`; mặc định `0,8` ([03](03-scene.md#đi-theo-path)) |

@@ -182,7 +182,7 @@ một trong hai đường:
 
 | Cảnh | Người đo với | Bộ phận gọi là |
 |---|---|---|
-| mặc định | khối đồ của `solids(ctx)` — [Khối lớp vẽ code](#khối-lớp-vẽ-code) | `a.forearmNear`, `a.head`… (`BODY_PARTS` của `@stickman3d/rig/core`) |
+| mặc định | khối đồ của `solids(ctx)` — [Khối lớp vẽ code](#khối-lớp-vẽ-code) | `a.forearmRight`, `a.head`… (`BODY_PARTS` của `@stickman3d/rig/core`) |
 | repo khai `stickman.world` và `worldOf` trả cảnh | mọi vật của chính cảnh three mà repo vẽ — [Đo trên cảnh three](#đo-trên-cảnh-three) | `a.foreArmR`, `a.head`… (`BODY_PARTS` của `@stickman3d/rig`, `R`/`L` là tay chân phải/trái) |
 
 Cảnh đi đường cảnh three thì không đo `solids(ctx)` với người, nên một món không báo hai lần.
@@ -230,13 +230,13 @@ là `k` dời.
 
 ```
 scenes/quan.json: người lồng vào đồ — a.head ↔ coc (mảnh 0) lấn 33.0 ở giây 0.00 · giây 0.00–2.75
-scenes/quan.json: người lồng vào đồ — b.forearmFar ↔ ban (mảnh 0) lấn 10.8 ở giây 14.59 · giây 7.19, 14.59
+scenes/quan.json: người lồng vào đồ — b.forearmLeft ↔ ban (mảnh 0) lấn 10.8 ở giây 14.59 · giây 7.19, 14.59
 scenes/hop.json: người lồng vào đồ — a.head ↔ b.head lấn 40.7 ở giây 3.78 · giây 2.19–4.09
 ```
 
-`touch` của món: tên phần người (`head`, `torso`, `forearmNear`…) cho mọi người, hay `id.phần` cho
+`touch` của món: tên phần người (`head`, `torso`, `forearmRight`…) cho mọi người, hay `id.phần` cho
 một người. Cốc kề miệng là `touch: ["a.head"]`, loa cầm sát mặt là `touch: ["head"]`, đùi tựa mặt
-ngồi là `{ "part": "a.legNear", "max": 6 }`.
+ngồi là `{ "part": "a.legRight", "max": 6 }`.
 
 `scene_probe` của MCP trả cùng phép đo ở từng mốc hỏi (`clashes`), đi đúng đường của `check` cho
 cảnh ấy — [Đo trên cảnh three](#đo-trên-cảnh-three) khi `worldOf` trả cảnh.
@@ -334,9 +334,9 @@ cha xuống), hay `touch` của món `Item`. Mỗi mục là `'[<người>.]<b�
 `max` đơn vị thế giới:
 
 - `<bộ phận>` là `head`, `torso`, `upperArm`, `foreArm`, `thigh`, `shin`; thiếu `R`/`L` là cả hai bên.
-  Tên khối của `BODY_PARTS` lõi cũng được: `armNear`/`armFar` là `upperArm`, `forearmNear`/`forearmFar`
-  là `foreArm`, `legNear`/`legFar` là `thigh`, `shinNear`/`shinFar` là `shin`; `lap` là hai đùi; bên gần
-  là bên có gốc chân gần mắt của `scene.lens` hơn ở giây ấy, như `flip` của lõi;
+  Tên khối của `BODY_PARTS` lõi cũng được: `armRight`/`armLeft` là `upperArm`, `forearmRight`/`forearmLeft`
+  là `foreArm`, `legRight`/`legLeft` là `thigh`, `shinRight`/`shinLeft` là `shin`; `lap` là hai đùi; `Right` /
+  `Left` là bên phải / trái của người;
 - `<người>` là `id` trong `cast` (khoá của `pose(t)`), thiếu là mọi người; `self` là người đang mang
   vật — vật nằm dưới `root` của người ấy (cầm, đội, gắn trên thân);
 - `hold` tự khai cẳng tay cầm (`hand: 'both'` là cả hai), `carry` (món treo, `món@carry`) khai cánh tay trên và cẳng tay
@@ -357,8 +357,8 @@ ghe.userData.touch = [{ part: "thigh", max: 6 }]; // đùi tựa mặt ghế, l�
 
 Người 3D vẽ tay đúng theo đích cổ tay và khuỷu, không tránh thân mình: đích cổ tay đặt sát quá trước
 ngực (cốc cầm sát người), với chéo qua người tới đồ nằm phía tay kia, hay buông tay từ một đích ở phía
-bên kia người là cẳng tay hay cánh tay xuyên qua thân. `stickman check` đo đoạn tay (`armNear`,
-`armFar`, `forearmNear`, `forearmFar`) với thân áo của chính người ấy, cùng các giây lấy mẫu với
+bên kia người là cẳng tay hay cánh tay xuyên qua thân. `stickman check` đo đoạn tay (`armRight`,
+`armLeft`, `forearmRight`, `forearmLeft`) với thân áo của chính người ấy, cùng các giây lấy mẫu với
 [Người lồng vào đồ](#người-lồng-vào-đồ), bằng `armPierce` của lõi:
 
 - tay và thân đúng như three vẽ, không theo khối hộp từng phần người (`solidBody`): tay là khớp `actJoints`
@@ -377,7 +377,7 @@ bên kia người là cẳng tay hay cánh tay xuyên qua thân. `stickman check
 - bỏ người có thân ngoài khung camera, và người đã mờ hẳn.
 
 ```
-scenes/pantry.json: tay xuyên thân — haru.forearmNear lấn vào haru.torso 17.6 ở giây 0.75 · giây 0.69–0.88
+scenes/pantry.json: tay xuyên thân — haru.forearmRight lấn vào haru.torso 17.6 ở giây 0.75 · giây 0.69–0.88
 ```
 
 Cách sửa: cổ tay cầm đồ trước ngực đưa ra trước đủ xa (thân người 3D dày, cổ tay cách trục thân dưới

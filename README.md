@@ -67,7 +67,7 @@ Cảnh `demo=` là scene JSON dựng trong `apps/viewer/src/demos.js` (`demo=hol
 bằng `sceneAt`, người 3D diễn theo bằng `act`. Cảnh có ống kính riêng (`SHOTS` trong `demos.js`) thì
 camera theo `cameraAt`. Hành động là bộ chung `common/actions/` cộng `apps/viewer/actions/`.
 | `demo=acts\|desk\|heads\|side` | Hành động soạn ở `side`, mỗi người một trạm, bắt đầu ở giây 0,3 rồi giữ: đứng (`eshaku-3d`, `show-paper-3d`, `point-3d`, `stop-palm-3d` + `point-lane-3d`, `raise-laptop-3d`), ngồi ở bàn (`type-3d`, `phone-lift-3d`, `pick-paper-3d`, `head-down-3d`, `perch-desk-3d`), chỉ đầu và thân (`lean-in`, `slump-sigh`, `glance-*`, `look-down-small`, `look-up-head`, `nod-once`, `talk-tilt`), dang và nghiêng ngang (`step-side-3d` lặp, `arms-out-3d`, `hand-up-side-3d`, `lean-side-3d`, `stance-wide-3d`) |
-| `demo=hands\|gestures` | Bàn tay người mặc đồ (luôn mặc đồ): bốn dáng tay `HAND_POSES` (xoè, cầm, chỉ tay, nắm đấm) mỗi người một dáng, tay gần đưa ra trước ngực; vẫy tay bằng xoắn vai (`wave-3d` lặp), nhún vai ngửa tay, ngồi gõ phím úp tay (`arms-on-table-3d` + `type-3d`), chỉ ra ngoài (`point-out-3d`) — hành động dựng tại chỗ trong `demo-acts.js` |
+| `demo=hands\|gestures` | Bàn tay người mặc đồ (luôn mặc đồ): bốn dáng tay `HAND_POSES` (xoè, cầm, chỉ tay, nắm đấm) mỗi người một dáng, tay phải đưa ra trước ngực; vẫy tay bằng xoắn vai (`wave-3d` lặp), nhún vai ngửa tay, ngồi gõ phím úp tay (`arms-on-table-3d` + `type-3d`), chỉ ra ngoài (`point-out-3d`) — hành động dựng tại chỗ trong `demo-acts.js` |
 | `demo=styles` | Bộ sưu tập kiểu: người thứ `i` đội mẫu tóc thứ `i` của `SCULPT_PRESETS` (cuối hàng là đầu trọc), mặc kiểu áo thứ `i % 12` của `GARMENT_STYLES`, rải kính, nếp nhăn, váy xếp ly và váy trơn |
 | `turn=110` | Với `demo=styles`: xoay từng người tại chỗ (độ, mặc định 14) để xem nghiêng, sau lưng |
 | `demo=headgear` | Đầu và đồ đội của người 3D mặc đồ: búi cao, búi thấp lệch có trâm, búi thấp to, ngôi lệch mái rủ có lọn vểnh, vuốt ngược hói chữ M, đầu đinh đội mũ trụ thấp, hói nhẹ mai hai màu (`apps/viewer/src/demo-headgear.js`); `row=caps` thay bằng hàng mũ kê-pi (cảnh sát khu vực tóc ngắn, tóc dài; cảnh sát giao thông đầu đinh, đuôi ngựa); `turn=` xoay từng người tại chỗ (mặc định 0), `bow=` cúi thân bấy nhiêu độ, `nod=` cúi đầu (âm là ngửa) |
@@ -164,8 +164,8 @@ stage.dispose();
   nền trong suốt, khung tự ôm, không cần cảnh — [docs/01](docs/01-rig.md#chân-dung). Repo video dùng
   `<ChanDung>` ở `src/khoi3d/ChanDung.tsx`.
 - **Bám người.** `screenOf(stage, figure, mốc)` hay `screenOf(stage, điểm)` gọi sau `draw`/`pose` của đúng khung ấy.
-  Mốc: `root`, `hip`, `chest`, `collar`, `head`, `headTop`, `face`, `mouth`, `wristR/L`, `footR/L`, và
-  `wristNear/Far`, `footNear/Far` chọn bên gần ống kính như `anchorAt`. Trả `x`, `y` px khung; `stage` toạ độ
+  Mốc: `root`, `hip`, `chest`, `collar`, `head`, `headTop`, `face`, `mouth`, `wristR/L`, `footR/L` (hay
+  `wristRight/Left`, `footRight/Left` như `anchorAt`). Trả `x`, `y` px khung; `stage` toạ độ
   sân khấu (vẽ vào SVG `viewBox` của `cameraAt`); `scale` px khung cho một đơn vị rig ở độ sâu ấy; `behind`,
   `inFrame`; `occluded` khi truyền `{ occluders: [stage.scene] }`. Điểm thế giới rig là `Vec3`, điểm three là `Vector3`.
 - **Renderer.** Không truyền `renderer` thì sân khấu tự dựng trên canvas mới (`stage.canvas`), `pixelRatio` 1,
@@ -401,7 +401,7 @@ wear(fig, 'crown', cap); wear(fig, 'chest', badge);
 ```ts
 const fig = fromCharacter(json, { items: { cup: (ctx) => ({ object: mug(), hold: { follow: 'level' } }), cap: policeCap } });
 // mỗi khung, sau act:
-dress(fig, equipMap(json, sp.equip), sp.world?.flip);    // equipMap của lõi; handNear là tay act gọi là tay gần
+dress(fig, equipMap(json, sp.equip));    // equipMap của lõi; handRight là tay phải
 ```
 
 Đồ cầm bám tay **tự cập nhật** khi three tính ma trận (lúc render, hay `fig.root.updateMatrixWorld()`), nên thứ tự
@@ -443,9 +443,8 @@ mút nét: bàn chân đặt trên sàn không lún.
 Lấn có chủ ý thì khai `userData.touch` trên vật hay nhóm cha (cộng dồn xuống), hay `touch` của `Item`, cùng nghĩa `touch`
 của món lớp vẽ code. Mỗi mục là `'[<người>.]<bộ phận>[R|L]'` hay `{ part, max }`: `'shin'`, `'haru.foreArmR'` (người là
 khoá truyền cho `collide`, `R`/`L` là tay chân phải/trái), `'self.head'` là người có `root` chứa vật (đang cầm, đang đội);
-chuỗi là không báo, `{ part, max }` cho lún tới `max` px rig. Tên phần người của lớp vẽ code cũng được (`'forearmNear'`,
-`'haru.legFar'`, `'lap'` là hai đùi): gần / xa theo `collide(…, { eye })` — mắt ống kính, toạ độ three; bên có gốc chân gần
-mắt hơn là bên gần, như `flip` của lõi —, không có `eye` thì cả hai bên. Mục không hiểu thì bỏ qua và gọi
+chuỗi là không báo, `{ part, max }` cho lún tới `max` px rig. Tên phần người của lớp vẽ code cũng được (`'forearmRight'`,
+`'haru.legLeft'`, `'lap'` là hai đùi), `Right` / `Left` là bên phải / trái của người. Mục không hiểu thì bỏ qua và gọi
 `collide(…, { unknown(entry, collider) })`. `hold` tự khai cẳng tay cầm, `wear` đầu hay thân, `wearDecal` thân. Người ngồi thì đùi lún nửa nét vào mặt ghế (hông của rig là tâm nét): khai `touch` cho đùi trên ghế.
 
 ## Chữ trên vật, món chạy theo `t`

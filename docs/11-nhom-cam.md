@@ -1380,7 +1380,7 @@ thân, mục 5). `check` (dòng `reach`, `wrist`, `arm`, `elbow`),
 
 Hai hàm đọc của `scene.ts` (cửa `@stickman3d/rig/core`), không đổi hình:
 
-- **`holdRuns(rt, id)`** → `{ right, left }`: mỗi tay giải phẫu một danh sách lần cầm theo thời gian,
+- **`holdRuns(rt, id)`** → `{ right, left }`: mỗi tay một danh sách lần cầm theo thời gian,
   `{ since, until, item, group, variant?, mode, handKeys, itemKeys, lead? }`. Nhớ theo runtime.
   - Lần cầm như mục 4 (cùng món, cùng nhóm, cùng trường rời, không `regrip`). `since`, `until` là giây đã giải (mốc tên quy
     ra số); `until` là mốc mở lần cầm khác hay buông (không gồm nó), tới hết cảnh là `rt.duration`.
@@ -1389,7 +1389,7 @@ Hai hàm đọc của `scene.ts` (cửa `@stickman3d/rig/core`), không đổi h
     `null`. `itemKeys`: chỉ số vào `scene.items` của JSON. `resolveScene` giữ thứ tự hai mảng, nên chỉ số vá thẳng JSON gốc.
   - Tay phụ của `both` là một lần cầm riêng có `lead` (tay dẫn): `mode` theo lần cầm tay dẫn, `handKeys` là mốc tay dẫn khai
     `hold`, `variant` lấy ở object `both`.
-- **`handReport(rt, id, side, t, o?)`**: tay `side` (`right` / `left` giải phẫu) như người 3D vẽ ở `t`, cùng lần giải với
+- **`handReport(rt, id, side, t, o?)`**: tay `side` (`right` / `left`) như người 3D vẽ ở `t`, cùng lần giải với
   `act` và `actJoints` (`actArm` của `act3.ts`). Toạ độ thế giới rig. `o.char` là nhân vật như vẽ (`Figure.body`), thiếu
   thì `rt.chars[id]`; `o.eye` là mắt ống kính cho ý định `camera`.
   - `mode` (`free` khi không cầm), `run` (phần tử của `holdRuns`), `blending` (trong `HOLD_BLEND`, như `holdBlending`).

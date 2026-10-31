@@ -7,7 +7,8 @@ mục trỏ tiếp tới file spec đầy đủ.
 ## Dấu góc và hình học
 
 **Quy ước góc**: `0°` = đoạn chỉ thẳng xuống, dương = xoay về `+x`, khớp con
-(khuỷu, gối) đo **tương đối** so với khớp cha. Người quay mặt sang trái khung (`flip`) không đổi dấu góc.
+(khuỷu, gối) đo **tương đối** so với khớp cha. Góc gắn với người, không với khung: người quay về hướng nào, ống kính
+đặt ở đâu thì tay phải vẫn mang góc của kênh tay phải, cùng dấu.
 
 **Quy ước góc ngược dấu với `rotate()` của SVG.** `deg` mà `anchorAt` trả là độ SVG; vẽ
 đè một hình nằm dọc đoạn ở góc rig `θ` là `rotate(−θ)`. Sai dấu chỗ này không lộ ra ở chu
@@ -25,8 +26,8 @@ tới độ cong; đừng bù trừ gì cho nó. Mặc định `1`; hạ về `0
 thẳng. Xem [01](01-rig.md#vẽ-chi).
 
 **`stretch` là một kênh riêng, không phải số trong tuple tay.** Số thứ tư của
-`armNear` / `armFar` là góc dang của người 3D, không phải hệ số; hệ số dài chi nằm ở
-`pose.stretch`: bốn số `[tay xa, tay gần, chân xa, chân gần]`, mỗi số nhân **cả
+`armRight` / `armLeft` là góc dang của người 3D, không phải hệ số; hệ số dài chi nằm ở
+`pose.stretch`: bốn số `[tay trái, tay phải, chân trái, chân phải]`, mỗi số nhân **cả
 hai đoạn** của chi ấy, hoặc tám số từng đoạn, hai số một chi, đoạn gốc trước;
 mặc định `1`. Bên trong rig (`Pose.stretch`, `F.stretch`) luôn là tám số —
 `stretchSegs` trải, `stretchJson` gọn lại — nên đọc theo chỉ số của dạng bốn số là
@@ -63,7 +64,7 @@ cổ tay quay cả đồ cầm. Nó ngồi
 trên gốc đùi `cladThigh`, không trên `limbHalf`, nên `sceneAt` phải nhận `body3(nhân vật)` — truyền
 `legHalf` cứng là người ngồi lún hay lơ lửng trên ghế. Xem [01](01-rig.md#người-3d-mặc-đồ).
 
-**Mốc mặt của `anchorAt` không nằm đúng chỗ chiếu thật trên sọ.** `face`, `eyeNear`, `eyeFar`,
+**Mốc mặt của `anchorAt` không nằm đúng chỗ chiếu thật trên sọ.** `face`, `eyeRight`, `eyeLeft`,
 `mouth` chạy theo đường cong ăn gian của `faceYaw`: thật tới `FACE_TRUE`, chậm hơn đầu tới
 `FACE_REAL_FROM`, rồi trượt dần về chỗ chiếu thật. Bám hiệu ứng vào mặt thì hỏi đúng các mốc ấy,
 đừng tự chiếu tâm sọ. Xem [01](01-rig.md#mặt-người-3d).

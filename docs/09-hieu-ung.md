@@ -102,7 +102,7 @@ cộng `dx` / `dy` đơn vị nhân vật, đọc **một lần lúc `open`** đ
 khi đầu gật; `follow: true` thì đọc mỗi frame. Tên mốc sai là lỗi lúc vẽ. Không có `cast` thì khai `tip: { x, y }` toạ độ scene.
 
 Các hiệu ứng khác khai toạ độ cứng: lấy số bằng `scene_probe` với
-`anchors: ["wristNear"]` đúng frame rời tay (`x0`/`y0`/`deg0` của `throw` là tâm
+`anchors: ["wristRight"]` đúng frame rời tay (`x0`/`y0`/`deg0` của `throw` là tâm
 và góc SVG của mốc ấy), không đọc bằng mắt và không render hai lượt trừ ảnh.
 
 ## Ảnh của vật rời tay

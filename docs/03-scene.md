@@ -74,7 +74,7 @@ Nhân vật nền không tốn gì: một mục `cast` với `world.at` và mộ
 | `cast[].character` | Tên file trong `characters/`, của repo hoặc của bộ chung. Để trống được — một màn diễn phần lớn không phụ thuộc ai diễn |
 | `cast[].world` | Bắt buộc. Chỗ của người 3D trong thế giới của `lens`: `at` hay `path`, `yaw`, `sit`, `s` (cỡ người, nhân cả nhịp `speed`), `hands` — xem [Người 3D](#người-3d) |
 | `cast[].base` | Tư thế nền: tên một pose, hoặc object như `keys[].pose` (`stretch` bốn hoặc tám số). Mọi chỗ nối hoà **về** nó và **từ** nó ở kênh chỉ một bên ghi. Bỏ trống là `idle` |
-| `cast[].equip` | Mặc gì lúc mở màn: `{ "handNear": "axe" }`, hoặc tên một bộ đồ. Hành động đổi tiếp từ đó. Xem [Đổi đồ](#đổi-đồ) |
+| `cast[].equip` | Mặc gì lúc mở màn: `{ "handRight": "axe" }`, hoặc tên một bộ đồ. Hành động đổi tiếp từ đó. Xem [Đổi đồ](#đổi-đồ) |
 | `cast[].fade[]` | Mờ dần rồi biến mất, hay hiện ra: mốc `{ t, v }`, `v` là độ đục `0 → 1`, nội suy thẳng và giữ ở hai đầu. `sceneAt` trả ở `opacity`; người 3D mờ quá nửa thì tắt. Bỏ trống là đục hẳn |
 | `cast[].tracks[]` | Thứ tự có nghĩa: **track sau đè track trước** |
 | `items[]` | Mốc món đặt trước: chỗ, hướng món theo thời gian — xem [Đồ cầm tay](#đồ-cầm-tay) |
@@ -91,8 +91,9 @@ người không có `world` và `x`, `y`, `group`, `flip`, `rotate`, `path`, `si
 | `cycle` | Giây cho một lượt `t: 0 → 1`, đè `duration` của file hành động |
 | `speed` | Cách khai nhịp thứ hai: đơn vị thế giới mỗi giây mà người này đi; rig suy `cycle` từ sải chân của hành động nhân `world.s` — xem [Nhịp theo tốc độ](#nhịp-theo-tốc-độ). Không đi cùng `cycle` |
 | `phase` | Pha lúc bắt đầu, `0 → 1`. Để hai người đi lệch bước |
-| `mask` | **Thu hẹp** `mask` của file hành động, cho riêng lần đặt này. Nới rộng là lỗi schema — kênh file không ghi thì không có số nào để lấy |
-| `equip` | Đổi đồ ngay ở `start` của clip: `{ "handFar": "axe" }`, `null` là để trống socket. **Công tắc**, giữ nguyên qua clip sau như mọi `equip` khác — xem [Đổi đồ](#đổi-đồ) |
+| `mask` | **Thu hẹp** `mask` của file hành động, cho riêng lần đặt này. Nới rộng là lỗi schema — kênh file không ghi thì không có số nào để lấy. Gọi tên theo kênh của hành động, kể cả khi clip `mirror` |
+| `mirror` | `true`: clip phát như soi gương — đổi phải ↔ trái mọi kênh và phần đi kèm (góc, `stretch`, `reach`, mốc bàn tay của hành động), đảo dấu trục ngang của thân (nghiêng `lean`, lắc và nghiêng đầu). Diễn bằng tay trái một hành động soạn cho tay phải — xem [Hành động theo tay phải trái](#hành-động-theo-tay-phải-trái) |
+| `equip` | Đổi đồ ngay ở `start` của clip: `{ "handLeft": "axe" }`, `null` là để trống socket. **Công tắc**, giữ nguyên qua clip sau như mọi `equip` khác — xem [Đổi đồ](#đổi-đồ) |
 | `blend` | τ tính bằng giây, đè `blendDuration()`. `0` là cắt cứng |
 | `snap` | Cố ý giật (cắt cứng, giật mình) ở riêng lần đặt này, như `snap` của file hành động: `check` không đo giật ở kênh clip ghi suốt lúc nó chạy, kể cả đoạn hoà vào và ra — xem [Giật trên hình](#giật-trên-hình) |
 
@@ -223,7 +224,7 @@ nhân vật, scene chỉ gọi tên. Mặc định là đồ nền của nhân v
 rìu thì không phải khai gì**.
 
 ```json
-{ "id": "m", "character": "nguoi.json", "equip": { "handNear": "axe" },
+{ "id": "m", "character": "nguoi.json", "equip": { "handRight": "axe" },
   "tracks": [ { "clips": [{ "action": "wear-hat", "start": 0.4 }] } ] }
 ```
 
@@ -264,7 +265,7 @@ nối. Mũ nhấp nháy nửa giây trong đoạn hoà tệ hơn là đổi sớ
 ### Bốn bẫy của `equip`
 
 **Công tắc thì phải khai cả hai chiều.** Một hành động chỉ có
-`{ "handFar": null }` ở `t: 0.45` là đồ **không hiện ra ở frame nào cả**, kể cả
+`{ "handLeft": null }` ở `t: 0.45` là đồ **không hiện ra ở frame nào cả**, kể cả
 trước `0.45`: `end: "hold"` giữ trạng thái mốc cuối, nên vào chu kỳ sau nó đã tắt
 sẵn từ lượt trước. Muốn nó có rồi mới mất thì phải có mốc bật ở `t: 0`. `stickman check` và
 `validate` của MCP kêu đúng chỗ này (`equipSwitchProblems`): socket bật tắt mà
@@ -273,7 +274,7 @@ hành động một mốc đặt đồ cố định, một cách viết có ch�
 
 **Hành động dùng chung không cầm tên vật.** Hành động nhận đồ chỉ điều khiển tư
 thế; scene điều khiển vật bằng `clips[].equip`. Gỡ đồ ở scene dùng
-`{ "handFar": null }`.
+`{ "handLeft": null }`.
 
 **Track sau đè track trước, `equip` cũng vậy.** Mỗi socket chỉ được một track ghi;
 `sceneEquipProblems` kiểm ràng buộc này.
@@ -285,14 +286,14 @@ không tả nổi. Mốc đổi tay là **một con số trong scene**, không p
 
 ```json
 { "name": "gear", "clips": [
-  { "start": 0,    "equip": { "handFar": "glove" } },
-  { "start": 4.2,  "equip": { "handFar": "helmet" } },
-  { "start": 7.9,  "equip": { "handFar": null } }
+  { "start": 0,    "equip": { "handLeft": "glove" } },
+  { "start": 4.2,  "equip": { "handLeft": "helmet" } },
+  { "start": 7.9,  "equip": { "handLeft": null } }
 ] }
 ```
 
 Clip không có `action` nên không ghi khớp nào. Clip rỗng nhả tư thế, không nhả đồ;
-muốn tay trống thì phải nói `{ "equip": { "handFar": null } }`.
+muốn tay trống thì phải nói `{ "equip": { "handLeft": null } }`.
 
 ## Khung hình
 
@@ -518,7 +519,7 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
 ]
 ```
 
-- **Tay phải / trái theo giải phẫu**, không theo gần / xa: tay phải là tay gần khi người không lật.
+- **Tay phải / trái của người**: `right` là tay phải ở mọi góc máy, cùng tay với kênh `armRight` của hành động.
 - **`elbow` theo hệ của đích.** Mốc có `at` (đích thế giới): `elbow` là hướng thế giới rig. Mốc khác — có `to`, hay chỉ có
   `hold` (lần cầm theo mốc món) —: `elbow` là hệ thân `[tiến, y, ra ngoài]` của chính tay ấy, cùng quy ước với `elbow` của
   `keys[].reach` (`y` xuống dương, `ra ngoài` dương về phía tay ấy nên một bộ số đúng cho hai tay; hệ thân là hướng hông,
@@ -802,9 +803,8 @@ là bước đầu của chu kỳ đi:
   mốc đầu của cú quay (kể cả lúc hoà ra), hay nhịp cuối ngắn hơn `0,12 s` (`TURN_JOIN_BEAT` — chân
   xoay không kịp hạ tới chỗ của clip đi), thì cũng không ghép.
 
-**Lật qua chính diện hay quay lưng đổi chân gần.** Chân gần (`ln`) là chân phía ống kính; thân quay
-qua `theta` 0 hay 180 thì chân gần là chân kia, nên từ lúc ấy `sceneAt` đổi chỗ các kênh gần ↔ xa
-(`ln`/`lf`, `an`/`af`, `stretch`, cờ nâng, đích tay, bàn tay) để mỗi chi vẫn là chính nó — lật lần nữa thì đổi lại.
+**Quay qua chính diện hay quay lưng không đổi kênh.** Chân phải (`lr`) là chân phải suốt đường đi: thân quay
+qua `theta` 0 hay 180 thì mọi kênh (`lr`/`ll`, `ar`/`al`, `stretch`, cờ nâng, đích tay, bàn tay) vẫn ở chính chi của nó.
 
 ### Hành động cho người 3D
 
@@ -828,27 +828,33 @@ từ góc đang hoà về dáng nghỉ trong một khung.
 
 ### Hành động theo tay phải trái
 
-Kênh tay chân của hành động (`armNear`, `legNear` … ở `keys[].pose`, `reach`, `hand`, `mask`) gọi theo **gần /
-xa ống kính**. Người 3D đứng yên ở hai cảnh có ống kính ở hai phía thì cùng một hành động rơi vào hai tay khác nhau:
-chống nạnh tay phải ở cảnh này là tay trái ở cảnh kia. Dáng riêng của nhân vật mà dùng lại nhiều cảnh thì khai
-`"sides": "anatomical"` ở hành động: **kênh gần là tay chân phải, kênh xa là trái**, ở mọi góc máy.
+Kênh tay chân của hành động (`armRight`, `armLeft`, `legRight`, `legLeft` ở `keys[].pose`, `reach`, `hand`, `mask`) là
+**tay chân phải / trái của người**, ở mọi góc máy, mọi hướng mặt: chống nạnh tay phải là tay phải ở cảnh nào cũng vậy,
+người đứng yên hay đi theo `path`. Dấu trục ngang của thân cũng theo người: `torso[nghiêng]` dương ngả về phía tay trái,
+`head` lắc dương quay mặt về bên trái người, nghiêng dương đưa đỉnh đầu về bên trái người. Mỗi hành động ghi đúng tay
+làm động tác; động tác một tay có bản tay phải và bản tay trái ([01](01-rig.md#phía-phải-trái)).
 
 ```jsonc
-{ "name": "chong-nanh-phai-3d", "authoredAt": "side", "sides": "anatomical", "mask": ["armNear", "hand"],
-  "keys": [{ "t": 0, "pose": {}, "reach": { "armNear": { "to": "hip", "point": "palm", "elbow": [0.1, 0.2, 1] } } }] }
+{ "name": "chong-nanh-phai-3d", "authoredAt": "side", "mask": ["armRight", "hand"],
+  "keys": [{ "t": 0, "pose": {}, "reach": { "armRight": { "to": "hip", "point": "palm", "elbow": [0.1, 0.2, 1] } } }] }
 ```
 
-- Rig đổi kênh gần ↔ xa của **riêng clip ấy** khi tay phải đang ở phía xa ống kính (`facing().flip`); clip khác trên
-  cùng người vẫn theo gần / xa. `mask` của clip đọc theo tên kênh của hành động, trước khi đổi: `armNear` là tay phải.
-- Người đứng ở `world.at` suy phía một lần lúc dựng cảnh (`CastMember.rightFar`). Người đi `path` lấy phía lúc đầu cảnh;
-  thân lật qua chính diện thì rig vẫn giữ mỗi kênh là chính chi ấy như mọi hành động ([Quay tại chỗ](#quay-tại-chỗ)).
-- `ra ngoài` của `reach` và `elbow` đã theo phía chính tay ấy, nên một bộ số đúng cho cả hai trường hợp.
-- **Tay nào đang theo clip nào**: `handSources(rt, id, t)` trả cho từng tay giải phẫu kênh tư thế nó đọc (`an` / `af`
-  sau khi đổi theo `facing().flip` và nhịp đi), clip ghi góc cánh tay, clip ghi bàn tay (kèm mốc bàn tay của hành động ở
+- **Diễn bằng tay kia: `mirror: true` trên clip.** Clip soi gương đổi phải ↔ trái mọi kênh và phần đi kèm — góc tay chân,
+  `stretch`, `reach`, mốc bàn tay (dáng, xoay, hướng lòng tay) — và đảo dấu `lean`, lắc và nghiêng đầu. `mask` của clip
+  vẫn gọi tên theo kênh của hành động: clip `chong-nanh-phai-3d` với `mirror: true` và `mask: ["armRight"]` chống nạnh tay
+  trái. Clip khác trên cùng người không bị ảnh hưởng.
+
+```jsonc
+{ "start": 2, "action": "chong-nanh-phai-3d", "mirror": true }   // chống nạnh tay trái
+```
+
+- `ra ngoài` của `reach` và `elbow` đã theo phía chính tay ấy, nên một bộ số đúng cho cả bản soi gương.
+- **Tay nào đang theo clip nào**: `handSources(rt, id, t)` trả cho từng tay kênh tư thế nó đọc (`ar` / `al`), clip ghi góc
+  cánh tay, clip ghi bàn tay (kèm mốc bàn tay của hành động ở
   pha ấy và cờ ý định `palm` / `fingers`), clip ghi `reach`, mốc `world.hands` gần nhất và đích thế giới đang áp — cùng
-  phép tính với `sceneAt`. Studio 3D hiện nó ở dòng **Nguồn dáng** của panel Bàn tay: clip soạn cho tay xa (`armFar`)
-  rơi vào tay phải đang buông khi người lật là thấy ngay ở đây. Chiều ngược lại, `clipSides(rt, id, track, clip, t)` cho
-  biết một clip ghi góc cánh tay (`arm`) và bàn tay (`hand`) của tay giải phẫu nào — hàng track của Studio 3D tô sáng clip
+  phép tính với `sceneAt`. Studio 3D hiện nó ở dòng **Nguồn dáng** của panel Bàn tay: clip ghi tay trái (`armLeft`)
+  chạy `mirror` thì rơi vào tay phải, thấy ngay ở đây. Chiều ngược lại, `clipSides(rt, id, track, clip, t)` cho
+  biết một clip ghi góc cánh tay (`arm`) và bàn tay (`hand`) của tay nào — hàng track của Studio 3D tô sáng clip
   chạm tay đang chọn bằng nó.
 
 ### `check` cho người 3D
@@ -939,7 +945,7 @@ người 3D **đúng như hình vẽ ra** — qua `actJoints` (cùng khung xươ
 chiếu qua `scene.lens` — rồi đổi ra pixel video theo khung cắt `cameraAt` của từng khung. Người không
 có `world` không đo. Khớp đo: gối, bàn chân, khuỷu, cổ tay hai bên, tâm đầu và tâm nắm hai bàn tay
 (`handR` / `handL`, quay theo xoay và gập cổ tay — bàn tay lật trong một khung là giật); khớp theo bên
-giải phẫu nên người quay qua chính diện không đổi tên khớp.
+phải / trái của người nên người quay qua chính diện không đổi tên khớp.
 
 Một khung bị bắt khi một khớp nhảy vượt **nền** quá `px` và quá `k` lần nền. Nền là trung vị dịch
 chuyển mỗi khung của chính khớp ấy trong ±2 khung, tính cả khung đang xét: cú vung nhanh mà đều hay cú
@@ -947,12 +953,11 @@ hoà êm thì các khung quanh đó cũng nhanh, nền lớn theo, không bị b
 là phần chậm quanh nó. Các khung bị bắt sát nhau gộp một dòng, báo ở khớp nhảy nhiều nhất:
 
 ```
-scenes/canh-05.json: `lan` giây 1.48: cổ tay trái nhảy 85 px trong một khung (nền 11.6 px; cả cổ tay phải) — cờ `lift` của tay gần, tay xa lật giữa đoạn hoà track trống → `cower` (track `tay`): …
+scenes/canh-05.json: `lan` giây 1.48: cổ tay trái nhảy 85 px trong một khung (nền 11.6 px; cả cổ tay phải) — cờ `lift` của tay phải, tay trái lật giữa đoạn hoà track trống → `cower` (track `tay`): …
 ```
 
-Lý do đọc từ timeline của người ấy: cờ `lift` lật (kèm đoạn hoà gây ra), thân quay qua chính diện
-(gần ↔ xa đổi chỗ, góc lắc đầu đổi phía), clip vào không hoà hay hoà quá ngắn, `wrap` vòng lại, đoạn
-mốc quá nhanh, phần đích cổ tay đổi đột ngột, đích `world.hands` dời vọt hay đổi hướng khuỷu ở một
+Lý do đọc từ timeline của người ấy: cờ `lift` lật (kèm đoạn hoà gây ra), clip vào không hoà hay hoà quá
+ngắn, `wrap` vòng lại, đoạn mốc quá nhanh, phần đích cổ tay đổi đột ngột, đích `world.hands` dời vọt hay đổi hướng khuỷu ở một
 mốc, khuỷu của IK bật khi tay duỗi sát hết tầm hay hướng khuỷu gần trùng trục tay, cả người dời chỗ.
 Dòng nào không có lý do thì đọc danh sách clip đang chạy kèm theo.
 
@@ -1264,15 +1269,15 @@ const a = anchorAt(rt, "lan", "head", t, character);
 `cast` thì ném lỗi.
 
 Tên mốc lấy ở `ANCHOR_NAMES`: hai chục khớp — `root` (điểm chạm đất), `hip`,
-`hipNear/Far`, `kneeNear/Far`, `footNear/Far`, `shoulderNear/Far`,
-`elbowNear/Far`, `wristNear/Far` (cổ tay), `collar` (khớp cổ), `head` (khối sọ),
-`face`, `eyeNear/Far`, `mouth` (nét mặt trên sọ). `Near` / `Far` là gần / xa ống kính.
+`hipRight/Left`, `kneeRight/Left`, `footRight/Left`, `shoulderRight/Left`,
+`elbowRight/Left`, `wristRight/Left` (cổ tay), `collar` (khớp cổ), `head` (khối sọ),
+`face`, `eyeRight/Left`, `mouth` (nét mặt trên sọ). `Right` / `Left` là bên phải / trái của người.
 
 **Đây là đường duy nhất để bám vào người.** Bên trong nó dựng khớp từ `figure3d` của lõi ở
 tư thế, đồ đang mặc và `world` mà `sceneAt` trả, đặt quanh tâm hông đã chiếu (`x`, `groundY`,
 `scale` của `sceneAt`). Không tự chiếu khớp qua `lens` ở ngoài rig và không suy góc bằng tay.
 
-Từ MCP thì `scene_probe` với `anchors: ["wristNear", "mouth"]` — nó gọi thẳng vào
+Từ MCP thì `scene_probe` với `anchors: ["wristRight", "mouth"]` — nó gọi thẳng vào
 đây, không tự tính.
 
 **Mốc thân cho bàn tay người 3D là bảng khác**: `bodyMarkAt(nhân_vật, scenePose, { to, side, offset }, "R" | "L")` trả điểm
