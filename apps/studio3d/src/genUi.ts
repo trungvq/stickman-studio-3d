@@ -83,16 +83,19 @@ export class GenPanel {
       return;
     }
     this.keys = keys;
+    const pick = el(
+      "select",
+      { title: "Bộ sinh" },
+      ...Object.entries(pages).map(([k, g]) =>
+        el("option", { value: k, selected: k === v.kind }, `${g.label} · ${k}`),
+      ),
+    );
+    pick.onchange = () => this.host.kind(pick.value);
     const kinds = el(
       "div",
-      { className: "seg gkinds", title: "Bộ sinh" },
-      ...Object.entries(pages).map(([k, g]) =>
-        el(
-          "button",
-          { className: k === v.kind ? "on" : "", onclick: () => this.host.kind(k) },
-          `${g.label} · ${k}`,
-        ),
-      ),
+      { className: "gfield gkinds" },
+      el("div", { className: "glabel" }, el("span", {}, "Bộ sinh")),
+      pick,
     );
     const reset = (this.reset = el(
       "button",

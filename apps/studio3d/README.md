@@ -196,7 +196,7 @@ Trang soi bộ sinh hành động (`stickman gen <kiểu>`, [docs/13](../../docs
 **Bộ sinh** đầu thanh trên. Một trang chung vẽ mọi bộ sinh từ bản mô tả `GEN_PAGES` của `@stickman3d/cli/gen-pages`
 (`packages/cli/gen-pages.mjs`): thêm bộ sinh là thêm bản mô tả, không viết trang. Trang chỉ xem: không ghi `actions/`.
 
-- **Tham số** (panel trái, ngăn kéo ☰ khi hẹp): nút chọn bộ sinh (`Ngồi · sit`, `Rót · pour`), rồi một ô cho mỗi tham số
+- **Tham số** (panel trái, ngăn kéo ☰ khi hẹp): ô chọn **Bộ sinh** (`Ngồi · sit`, `Rót · pour`…), rồi một ô cho mỗi tham số
   của `params` — `enum` là ô chọn (tên tiếng Việt kèm id), `number` là thanh kéo cộng ô số trong `min`…`max`, `bool` là ô
   đánh dấu, `point` là ba ô `x, y, z`; tham số mặc định `auto` có ô **tự động** (bật thì bộ sinh tự chọn, ô số hiện số tự
   động của kiểu đang chọn, `GEN_PAGES[kiểu].auto`). Ô phụ ẩn khi `when` không đúng (chân co khi chân so le, số đo tay vịn

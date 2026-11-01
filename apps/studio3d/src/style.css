@@ -1867,13 +1867,9 @@ body.gen #sceneSide:not(.shut) {
   gap: 8px;
 }
 
-#genForm .gkinds button {
-  flex: 1 1 0;
-  white-space: nowrap;
-}
-
-#genForm .gkinds button:not(:first-child) {
-  border-left: 0;
+#genForm .gkinds {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
 }
 
 .gfield {

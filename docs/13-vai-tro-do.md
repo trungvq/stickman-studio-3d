@@ -502,7 +502,7 @@ server nhập qua `GEN_KINDS[kiểu].page`. `gen.mjs` (có `node:fs`, `prettier`
 
 | Trường | | Nghĩa |
 |---|---|---|
-| `label` | bắt buộc | Tên trang tiếng Việt: nút chọn bộ sinh (`Ngồi · sit`), tiêu đề trang |
+| `label` | bắt buộc | Tên trang tiếng Việt: dòng trong ô chọn bộ sinh (`Ngồi · sit`), tiêu đề trang |
 | `params` | bắt buộc | Danh sách tham số. Bắt buộc: `key`, `label` (tiếng Việt), `type` (`number`, `enum`, `bool`, `point`), `default` (giá trị, hay `"auto"`: bộ sinh tự chọn); `values` với `enum` (lấy từ bảng kiểu của bộ sinh: `LEG_KINDS`…). Tuỳ chọn: `min`/`max`/`step`/`unit` (`number`; `unit` cả `point`), `names` (`enum`: tên tiếng Việt từng giá trị, form hiện `tên (id)`; thiếu thì hiện id), `when` (hiện khi tham số khác bằng giá trị, hay một trong danh sách giá trị) |
 | `stage(p, who)` | bắt buộc | Dựng **sân khấu thử** (JSON thuần) từ tham số và nhân vật đang chọn: `scene` (JSON cảnh: người ở đâu, ngồi hay đứng, `world.hands`), `props: [{ name, place, roles }]` (đồ thử chỉ bằng mục vai trò), `held: { tên: spec }` (món cầm tay thử). Tham số `"auto"` mà sân khấu cần giải ở đây thành số cụ thể |
 | `call(p, stage)` | bắt buộc | Tham số gọi `run` của bộ sinh: cờ như CLI, luôn `dryRun`; sân khấu đưa riêng ([9.3](#93-chạy)). Tham số `"auto"` mà sân khấu không cần thì bỏ cờ: `run` lấy mặc định của nó |
