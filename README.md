@@ -280,16 +280,14 @@ Mỗi giây đo (`--at`, phần của `duration`): `resolveScene`, dựng lướ
 
 Luật khuỷu và cổ tay của `check` ([docs/03](docs/03-scene.md#khuỷu-và-cổ-tay-trên-hình)) đo trên cả cảnh (không theo shot
 của tập), kèm thứ `check` không in: đường giải đang lái tay ở quãng ấy (`placed`, `hold`, `lock`, `aim`, `world`, `body`,
-`fk`), lấn thân ở mọi tầm với, vòng `AIM_ITER` chạy hết vòng mà cổ tay còn dời (`nc`). Chạy CLI từ worktree này trên cảnh
-của repo video, không đổi gì ở repo ấy:
+`fk`), lấn thân ở mọi tầm với. Chạy CLI từ worktree này trên cảnh của repo video, không đổi gì ở repo ấy:
 
 ```bash
-pnpm build && node tools/elbows.mjs ../repo-video --scene '^t02-' [--lock on|off|both] [--iter 8,9] [--jobs 6] [--json out.json] [--dump tmp/khuyu]
+pnpm build && node tools/elbows.mjs ../repo-video --scene '^t02-' [--lock on|off|both] [--jobs 6] [--json out.json] [--dump tmp/khuyu]
 ```
 
-`--lock off` bỏ mọi `elbowLock` trong bộ nhớ; `both` chạy cả hai. `--iter 8,9` giải mỗi cảnh với từng số vòng (`setAimIter`
-của lõi) và in thêm người-tay mà khuỷu hay cổ tay hai lượt lệch nhau quá `0,5` đơn vị rig. Dòng đầu in thư mục rig đã nạp.
-`--dump` ghi mỗi người-tay một TSV theo khung.
+`--lock off` bỏ mọi `elbowLock` trong bộ nhớ; `both` chạy cả hai. Dòng đầu in thư mục rig đã nạp. `--dump` ghi mỗi
+người-tay một TSV theo khung.
 
 ## Đèn trong nhà
 
