@@ -466,3 +466,5 @@ studio3d `grab.test.ts` 2 (đã biết).
 - Lấn thân ×2, `elbowFlip`, `elbowInward` so HEAD (gốc ở nền); `wristFlip` 20 (soi từng quãng: thả món, ý định ~180°).
 - Ba test viết theo phương án cũ (áp tai, tay phụ `both`, cảnh B) nay mâu thuẫn ý định nhường: chủ dự án quyết viết lại.
 - Đo t03, `stickman check`; bảng 29 tư thế đủ ba góc đã chụp nhưng chưa soi hết từng ô.
+- Vòng review (Codex `gpt-6-astra`) và vòng sửa theo review của đợt bỏ `AIM_ITER` (`e31f9e6`) chưa chạy: làm ở phiên sau, agent
+  code chỉ chạy trên Claude Work.
