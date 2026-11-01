@@ -1,6 +1,6 @@
 {
   "name": "@stickman3d/render",
-  "version": "7.15.0",
+  "version": "8.0.0",
   "description": "Ảnh soi người que 3D: khung three thật qua Chromium headless, que xương trên lưới sàn, lớp vẽ code; nạp entry lớp vẽ code và cảnh three của repo video",
   "license": "MIT",
   "type": "module",
