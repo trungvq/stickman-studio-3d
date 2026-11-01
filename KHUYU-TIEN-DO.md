@@ -390,3 +390,79 @@ Chủ dự án: test nào hết hay mất nghĩa khi bỏ vòng `AIM_ITER` (mụ
   `rp30`, `rp31`, `rpnc`) dựng lại trong `tmp/khuyu/` — các bản sao ấy không có trong nhánh.
 - `cmp.cjs`, `sum.cjs`: so có/không khoá, tóm tắt.
 - `tuong-tac/*.mjs`: thống kê tương tác tay–đồ trên cảnh của repo video (đường dẫn tuyệt đối tới `jp-sukatto/scenes`).
+
+## Bỏ vòng `AIM_ITER`, ý định nhường khi hết cách (2026-11-01)
+
+Nền: phương án "mặt phẳng bàn tay chốt" (bỏ vòng, cổ tay ước từ tâm đích, bảng `keep` theo chỗ đích, khuỷu khai giữ hướng)
+đo trên t02 ra 47% khung rig tự giải vẽ cổ tay quá giới hạn > 15° (bàn tay gãy). Chủ dự án chọn **phương án 1**: vị trí không
+nhường, khuỷu ưu tiên xoay trước, còn vượt thì ý định nhường; một chiều, số bước cố định.
+
+### Bộ giải hiện tại (`solveCore`, `act3.ts`)
+
+- Cổ tay ước (hai bước như nền). Bảng `keep` tinh thêm một lượt ở cổ tay của chính bàn tay ấy.
+- Mỗi `φ` thử: **hai lượt cố định** (cẳng tay tới cổ tay ước → bàn tay ý định trên cẳng tay ấy → nhường → cổ tay; lượt hai với
+  cẳng tay tới cổ tay ấy, phép chiếu của món bắt đầu từ bàn tay lượt một). `E(φ)` = giá `evalPhi` với cổ tay của bàn tay ý định
+  trên cẳng tay thử (`HandAim`, trần `WRIST_CAP` như HEAD) + `W_MISS · Σ w (1 − cos)/2` phần ý định mất trên trục chốt.
+- Dựng tay: cổ tay đặt bàn tay của `φ` đã chọn; đích hoà một phần (`kAll < 1`) thì bàn tay hoà (`mixRotation`, theo phần đích)
+  từ nghiệm không đích trên cẳng tay vẽ — liền khi `w → 0`; còn vượt thì nhường nốt tại chỗ, cổ tay giữ nguyên.
+- Nhường (`yieldTo`): lòng tay / ngón / `keep`: `aimWrist` thường (kẹp liền trên vòng, tinh chỉnh khi loose), chỉ chốt trục ý
+  định chốt, tham chiếu là góc hành động — như HEAD. Món còn độ lăn: gần nhất theo trục món, tinh chỉnh trong hộp từ nghiệm kẹp
+  (`start` mới của `aimWrist`), nhạt về nghiệm kẹp trong `OPP_RAMP` 45° trước điểm đối diện giữa tầm (không lật mép).
+- Số hạng ý định hoà theo khung bàn tay (`mixRotation`), không cộng góc (góc chưa kẹp cuộn ±360 làm trung bình nhảy 100°).
+- Báo: `palm`/`fingers`/`hold.err` đo ở bàn tay vẽ; `hold.clamped` = khớp ý định đòi quá giới hạn; `ArmTrace.yield` (độ, trên
+  trục chốt). Luật `check` `aimYield` (nhóm `move`, cảnh báo, > 20°) thay `wristOver`.
+- Trả về HEAD: `graspArm.ts` (bỏ `OVER_CAP` — làm khuỷu nhảy lòng chảo, 78°/khung ở ca thử), món đặt trước / lần cầm theo mốc vẽ
+  kẹp như HEAD (`scene.ts`, `graspSolve.ts`, `heldAudit.ts`, mcp, docs 04, README studio3d).
+- Giữ của nền: khuỷu khai giữ hướng (test `elbowLock`), kênh không nâng được nâng ở góc 0 để mang lệch, sửa gốc `elbowFrame`.
+
+### Phần dư của bước hai (test rig, khung-tay đủ đích)
+
+Điểm bàn tay trôi (cổ tay của bàn tay vẽ so với cổ tay đã đặt), rig: 0 ở 11 094, < 0,5 ở 2 640, < 1 ở 576, < 3 ở 176, 3–10 ở
+334, ≥ 10 ở 3 (đuôi là tay phụ `both` có ý định vượt rất xa). Cổ tay vẽ vượt giới hạn: 0 (bước hai kẹp hết).
+
+### Số đo t02 (`tools/elbows.mjs --scene '^t02-' --lock both`, khoá giữ / bỏ; HEAD đo lại cùng máy bằng công cụ của HEAD)
+
+| Luật | HEAD `f7ccb83` | nền "mặt phẳng chốt" | mới `W_MISS` 10 | mới `W_MISS` 0 |
+|---|---|---|---|---|
+| `elbowJitter` | 10 / 11 | 12 / 13 | 13 / 13 | 12 / 12 |
+| `elbowFlip` | 18 / 19 | 32 / 34 | 30 / 33 | 38 / 41 |
+| `wristFlip` | 5 / 5 | 108 / 108 | 20 / 20 | 28 / 28 |
+| `elbowInward` | 20 / 15 | 20 / 19 | 31 / 31 | 31 / 31 |
+| `armStraight` | 51 / 51 | 117 / 117 | 48 / 48 | 48 / 48 |
+| `armClose` | 2 / 1 | 2 / 2 | 2 / 2 | 2 / 2 |
+| lấn thân > 0,5 | 48 / 42 | 95 / 95 | 105 / 105 | 105 / 105 |
+| `aimYield` > 20° | — | — | 279 | 290 |
+
+Chọn `W_MISS` 10. So nền: `wristFlip` 108 → 20, `armStraight` 117 → 48 (về HEAD). So HEAD còn tệ hơn: `elbowFlip` (+12),
+`wristFlip` (+15: phần lớn lúc thả món — HEAD cũng lật ở các chỗ ấy, một phần ở ý định đòi ~175°), `elbowInward` (+11), lấn
+thân (×2, đã có ở nền: khuỷu khai giữ cứng, bảng `keep`), `elbowJitter` (+3). Khoá / không khoá ra gần như nhau vì khuỷu khai
+giữ cứng. t03 và `stickman check` chưa đo.
+
+### Hình
+
+- `jp-sukatto/tmp/khuyu-over/v3-*-head-cu-moi.png` (s009 25,8 s, 29,8 s; s026 0 s; cột HEAD / nền / mới) và
+  `v3-s009-*-tay*.png` (phóng): mới gần HEAD; s009 25,8 s tay giơ của takumi ở nền vặn, mới về dáng HEAD.
+- `pnpm shots` 30 khung `khuyu-*`: `tmp/shots/khuyu-moi-vs-khuyu-head/` (tờ gộp `khuyu-moi.png`): khác HEAD ≤ 0,4% điểm ảnh;
+  rõ nhất #4 người lớn (bàn tay trước bụng chĩa xuống thay vì cong vào).
+
+### Test
+
+Test mới `aimYield.test.ts` (quá tầm nhường + điểm bàn tay đúng đích, không phụ thuộc `yaw`, liền qua ranh mốc, ý định qua giới
+hạn từ từ, đòi ngược hẳn không lật). Trả về HEAD: `graspArm`, `graspAt`, `heldAuditGroup`, `holdPlaced`, `holdAs`, `holdRest`
+(1e-6), `holdScene` (cả "quá tầm cổ tay" HEAD giờ xanh). `holdMode`: cảnh C `clamped` `[]` (cổ tay trong giới hạn, không nhường),
+"cổ tay tay dẫn…" `clamped` không rỗng thay `toContain('bend')`. `elbowLockOff` ghi lại `-u`.
+
+Rig 1447 qua, **đỏ 6**: `act3` "mốc cuối không khai `elbow`" 3,14 rig (đích < 3; HEAD xanh); `holdLink` áp tai 71,2° (HEAD
+73,4°, đích < 70); `holdLink` `both` tay phụ chai lòng tay 12,7° (đích ≤ 10; HEAD đỏ 14,5°); `holdMode` cảnh B 37,7 rig (HEAD đỏ
+38,8); `holdMode` "bỏ khoá thì…" 9,5 rig (HEAD xanh: tay dẫn giữ đúng `elbow` khai nên bộ giải món theo mốc không khoá — vốn coi
+`elbow` là ưu tiên — chọn `φ` −26° cổ tay vượt 35°/55°, bản nền che bằng vẽ không kẹp); `holdScene` "ý định vượt tầm…"
+15,00027° (đích ≤ 15 + 1e-6: mẫu chuỗi lấy ở `prior.toFixed(6)`, cổ tay đang quay 450°/s). Ngoài rig: cli đỏ 5 `gen sit`,
+studio3d `grab.test.ts` 2 (đã biết).
+
+### Việc còn mở
+
+- Quyết: hai bộ giải hiểu `elbow` khác nhau (tay dẫn giữ cứng, món theo mốc coi là ưu tiên) — thống nhất thì đổi `graspAtTime`
+  hay đổi test "bỏ khoá".
+- Lấn thân ×2, `elbowFlip`, `elbowInward` so HEAD (gốc ở nền); `wristFlip` 20 (soi từng quãng: thả món, ý định ~180°).
+- Ba test viết theo phương án cũ (áp tai, tay phụ `both`, cảnh B) nay mâu thuẫn ý định nhường: chủ dự án quyết viết lại.
+- Đo t03, `stickman check`; bảng 29 tư thế đủ ba góc đã chụp nhưng chưa soi hết từng ô.
