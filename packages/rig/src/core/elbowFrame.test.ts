@@ -81,7 +81,11 @@ describe("`elbow` theo hệ của đích", () => {
     const hand = { to: "chin", offset: [30, 40, 15], point: "grip" };
     const free = runtime({ cast: cast([{ t: 0, left: hand }]) });
     const ref = elbowAt(free, 0);
-    for (const t of TS) expect(gap(elbowAt(free, t).body, ref.body)).toBeLessThan(0.08);
+    for (let k = 0; k <= 50; k++) {
+      const t = k / 10;
+      const lead = Math.abs(sceneAt(free, "nguoi", t, H, DIMS).pose.head[1]);
+      expect(gap(elbowAt(free, t).body, ref.body), `${t}`).toBeLessThanOrEqual(0.025 * lead + 1e-4);
+    }
     // khác hướng mặc định cố định cũ: khuỷu ưu tiên tính từ chỗ cổ tay
     const told = runtime({ cast: cast([{ t: 0, left: { ...hand, elbow: [-0.4, 1, 0.5] } }]) });
     expect(gap(elbowAt(told, 0).body, ref.body)).toBeGreaterThan(0.05);

@@ -362,6 +362,21 @@ Theo thứ tự đề xuất; mục 1–2 đã bàn với chủ dự án.
 `tools/elbows.mjs --lock both` (430 s): khoá giữ và bỏ khoá (27 khoá, đều ở s033) ra cùng số dòng; không hội tụ 14 người-tay
 (17 805 khung, 52 khung dời > 1 rig; nặng nhất s019 oba trái 1,94 rig ở 56,8–57,95 s).
 
+## 7 test rig đỏ so với phương án mặt phẳng bàn tay (2026-11-01)
+
+Chủ dự án: test nào hết hay mất nghĩa khi bỏ vòng `AIM_ITER` (mục 1 "Việc cần làm") thì không sửa.
+
+- `elbowFrame` "mốc `to`" (dư 0,0006 sau cú quay): gốc đã tìm ra — vòng `AIM_ITER` khởi đầu từ `world.hands.*.at` giữ chỗ
+  `[0, 0, 0]` (gốc thế giới, đổi theo `yaw` trong hệ thân; 1 vòng cổ tay lệch 25 rig giữa `yaw` 280 và 210), 8 vòng chưa
+  hội tụ hẳn (50 vòng còn 6e-5). Không phụ thuộc ống kính. Bỏ vòng thì hết.
+- `elbowFrame` "không khai `elbow`": ngưỡng cố định 0,08 không tính đầu quay trước thân (đỉnh 0,088 ở lệch đầu 4,7°). Đã sửa
+  test theo ngưỡng của test trên (`0,025 · lệch đầu + 1e-4`); giờ chỉ còn đỏ vì cùng phần dư 0,00056 của vòng lặp.
+- `holdLink` áp tai (73°), `holdLink` `both` tay phụ (ngón 14,5°), `holdMode` cảnh A (5,15°), cảnh B (38,8 rig): đều do
+  bàn tay là thoả hiệp giữa ý định và giới hạn cổ tay (`W_MISS`, tinh chỉnh trong hộp ↔ kẹp liền trên vòng). Mặt phẳng bàn tay
+  chốt thì bàn tay đúng ý định ở cả hai chế độ — hết (áp tai: gốc 62°, cần đo lại khi làm).
+- `holdMode` "cổ tay tay dẫn kẹp … `toContain('bend')`": mất nghĩa — phương án mới không kẹp cổ tay mà vẽ quá giới hạn kèm
+  luật `check`; viết lại test theo báo vượt giới hạn.
+
 ## Harness điều tra (`khuyu-harness/`)
 
 Đã thay bằng `tools/elbows.mjs` (bước 0); giữ lại để đọc lại cách đo lúc điều tra.
