@@ -1168,13 +1168,15 @@ nói món quay về đâu; trục là tên mốc (lấy `dir`) hay vectơ khung 
   `chest`, `belly` của người ấy — ước từ chỗ đặt và góc cúi thân, không đọc đầu quay), `{ mark }` (mốc thân của chính người
   cầm). `tilt` (độ) quay hướng đích lên trong mặt phẳng đứng chứa nó, âm là xuống.
 - `up: "<mốc>"`, viết tắt `face: { axis, toward: "up" }`: chén, ly đứng.
-- `roll`, trục phụ chốt độ lăn (đầu máy lên trên). Không có thì giữ độ lăn gần bàn tay đang có.
+- `roll`, trục phụ chốt độ lăn (đầu máy lên trên). Không có thì độ lăn quanh trục chính là chỗ cổ tay thoải mái nhất trên
+  cẳng tay của từng `φ` thử, tính từ cú quay ít nhất của bàn tay của hành động.
 
-Rig giải ý định trên cổ tay (`aimWrist`): trục chính trọng số `1`, `roll` `0,3`; khuỷu giải bằng `E(φ)` quanh hướng ưu tiên
-hay `elbow` đã khai ([11](11-nhom-cam.md#khuỷu-tự-nhiên)). Giới hạn cổ tay giữ nguyên — xoay `±90`, gập `AIM_BEND` (ngửa
-`60`, gập `70`), lệch `AIM_DEV` (về ngón út `30`, về ngón cái `20`), kẹp liền trên vòng, kênh tay không nâng thì lệch cổ tay
-giữ `0` —: không đạt thì món lệch thật, `AimReport.hold` ghi trục, hướng muốn, hướng đạt, góc
-còn lệch và khớp kẹp, `check` báo ([03](03-scene.md#đồ-cầm-tay)). Vị trí tay (`at`, `to`, `point`) luôn thắng ý định. Cổ tay
+Ý định chốt khung bàn tay ([Hướng lòng tay theo ý](#hướng-lòng-tay-theo-ý)); khuỷu giải bằng `E(φ)` quanh hướng ưu tiên hay
+`elbow` đã khai ([11](11-nhom-cam.md#khuỷu-tự-nhiên)). Giới hạn cổ tay giữ nguyên — xoay `±90`, gập `AIM_BEND` (ngửa `60`,
+gập `70`), lệch `AIM_DEV` (về ngón út `30`, về ngón cái `20`) —: khuỷu xoay cứu cổ tay trước, còn vượt thì ý định nhường —
+bàn tay gần nhất theo trục món (trục chính trọng số `1`, `roll` `0,3`) trong giới hạn, món lệch thật; `AimReport.hold` ghi
+trục, hướng muốn, hướng đạt (ở bàn tay vẽ), góc còn lệch và khớp ý định đòi quá giới hạn (`clamped`), `check` báo
+([03](03-scene.md#đồ-cầm-tay)). Vị trí tay (`at`, `to`, `point`) luôn thắng ý định. Cổ tay
 và khuỷu của tay mang món, tay phụ đi từ nghiệm của mẫu trước với tốc độ có hạn (`HOLD_SLEW`, `HOLD_SWIVEL_SLEW`; khuỷu khoá
 `elbowLock` không dò, không giới hạn): ý định
 vượt tầm thì cổ tay sang nghiệm mới trong vài khung chứ không lật trong một khung ([03](03-scene.md#đồ-cầm-tay)). Món đặt
@@ -1682,14 +1684,25 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 | `thigh`, `knee` | Giữa mặt đùi, mặt gối, phía trên-trước của đùi theo dáng chân | Hướng mặt nằm ngang |
 | `otherWrist`, `otherPalm`, `otherBack`, `otherGrip` | Cổ tay, giữa lòng tay, giữa mu tay, tâm nắm của **tay kia** đúng như nó vẽ | Hướng mặt nằm ngang |
 
-- **Giải mỗi khung, trên người ấy** (`resolveActing`, `core/act3.ts`): mốc tính trên thân, cổ, đầu đã đặt rồi mới tới tay;
-  điểm bàn tay phụ thuộc hướng bàn tay mà hướng bàn tay phụ thuộc cổ tay, nên rig lặp tới khi cổ tay đứng yên (dời dưới
-  `AIM_STILL` `0,01` đơn vị rig, tối đa `AIM_ITER` `8` vòng): bước của cổ tay đổi chiều thì giảm một nửa, nên vòng không dao động
-  giữa hai trạng thái; lòng tay, ngón hướng về một mốc thì đo từ chỗ điểm bàn tay sẽ nằm (đã trên đích), không từ chỗ đang thử —
-  điểm bàn tay sát mốc thì hướng ấy không lắc theo từng vòng; đích đang hoà nhiều số hạng hay hai nguồn thì chỗ ấy hoà theo
-  phần của từng số hạng. Số vòng không đổi kết quả. Kết quả
-  là đích cổ tay số (hệ thân, thế giới) và `turn` / `bend` số — `act` của three, `actJoints`, `actPalms`, `figure3d` cùng đọc
-  một phép giải, `act3.test.ts` giữ chúng trùng. Người que three dựng từ `stickman(o)` mang số đo ấy ở `Figure.body`.
+- **Giải mỗi khung, trên người ấy** (`resolveActing`, `core/act3.ts`): mốc tính trên thân, cổ, đầu đã đặt rồi mới tới tay.
+  Điểm bàn tay phụ thuộc hướng bàn tay mà hướng bàn tay phụ thuộc cẳng tay; rig đi một chiều, số bước cố định, không lặp —
+  **bàn tay → cổ tay → khuỷu → cẳng tay → góc cổ tay**:
+  1. *Cổ tay ước*: bàn tay của hành động trên tay với tới tâm đích (các điểm đích theo phần, khuỷu ưu tiên hay khai), rồi cổ
+     tay đặt bàn tay ấy vào đích.
+  2. *Bàn tay không ý định* (`keep`): bàn tay của hành động trên cẳng tay của tay với tới cổ tay ước theo khuỷu ưu tiên (hay
+     khai), tinh thêm một lượt ở cổ tay của chính bàn tay ấy — bảng theo chỗ đích, hàm trơn của chỗ đích trong hệ thân.
+  3. *Mỗi `φ` thử* (đo từ hướng khai ở cổ tay ước), hai lượt cố định: cẳng tay tới cổ tay ước → bàn tay theo ý định trên cẳng tay
+     ấy, nhường ở giới hạn cổ tay ([Hướng lòng tay theo ý](#hướng-lòng-tay-theo-ý)) → cổ tay đặt bàn tay ấy vào đích; lượt hai
+     làm lại với cẳng tay tới cổ tay ấy. `E(φ)` ([11](11-nhom-cam.md#khuỷu-tự-nhiên)) chấm cánh tay của lần thử.
+  4. *Dựng tay*: cổ tay đặt bàn tay của `φ` đã chọn vào đích; góc cổ tay đọc trên cẳng tay đã vẽ. Cẳng tay vẽ lệch cẳng tay
+     thử (đích hoà một phần, cổ tay dời theo bàn tay) mà cổ tay còn vượt giới hạn thì bàn tay nhường nốt tại chỗ, cổ tay giữ
+     nguyên — điểm bàn tay trôi đúng phần ấy.
+
+  Lòng tay, ngón hướng về một mốc thì đo từ chỗ điểm bàn tay sẽ nằm (đã trên đích) với bàn tay của lượt trước; đích đang hoà
+  nhiều số hạng hay hai nguồn thì chỗ ấy hoà theo phần của từng số hạng. Kết quả chỉ phụ thuộc đại lượng hệ thân và đích, không
+  phụ thuộc hướng người trong thế giới; là đích cổ tay số (hệ thân, thế giới) và `turn` / `bend` số — `act` của three,
+  `actJoints`, `actPalms`, `figure3d` cùng đọc một phép giải, `act3.test.ts` giữ chúng trùng. Người que three dựng từ
+  `stickman(o)` mang số đo ấy ở `Figure.body`.
 - **Tay bám vào tay kia giải sau tay kia**, dù đó là tay phải hay trái. Hai tay cùng bám nhau thì tay phải giải trước trên chỗ chưa
   giải của tay trái — `scene_probe` báo `cycle`. Vỗ tay: một tay tới mốc thân, tay kia `to: "otherPalm"`, cả hai `palm: "in"` —
   lòng áp lòng, không xuyên.
@@ -1719,22 +1732,27 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 | `fingers` | Ngón chĩa về, cùng ba dạng; phụ cho `palm` |
 | `bend` | Khai kèm thì giữ cố định, rig chỉ giải phần còn lại |
 
-- **Rig giải mỗi khung** (`aimWrist`): lòng tay chỉ phụ thuộc xoay và gập cổ tay (lệch cổ tay không đổi pháp tuyến lòng tay)
-  nên hai góc ấy giải đúng; ngón lấy thêm lệch cổ tay (số thứ ba của tay, kênh nâng, `AIM_DEV` `−30..20`, dương về phía ngón
-  cái). Chỉ khai ngón thì lòng tay là hướng gần lòng tay trung tính nhất vuông góc với ngón. Lòng tay gần dọc cẳng tay (gập quá
-  `70°`) thì phương vị của nó không xác định, xoay kéo dần về xoay của bàn tay đang có. Góc ra kẹp liền trên vòng
-  (`wristClamp`, [Khuỷu ưu tiên](#khuỷu-ưu-tiên)) trong `turn` `−90..90`, `bend` `AIM_BEND` `−60..70` (âm là ngửa) — hẹp hơn
-  tầm khớp người thật chút ít, quá đó cổ tay khối của người que trông gãy —; trong tầm mà lòng tay, ngón không khớp nhau
-  (gập khai sẵn, lệch giữ `0` ở kênh không nâng) thì tối đa `AIM_REFINE` (24) bước Newton trong hộp giới hạn, dừng khi bước
-  dưới `0,001°`. Khi tay theo đích, khuỷu giải bằng
-  cùng `E(φ)` với món đặt trước ([11](11-nhom-cam.md#khuỷu-tự-nhiên)): giá cổ tay là bàn tay đã kẹp ở cẳng tay thử cộng lệch
-  còn lại của ý định — cẳng tay gánh hướng bàn tay trước, khuỷu chỉ rời hướng ưu tiên khi đáng; mốc `world.hands` khoá khuỷu
-  (`elbowLock`, [03](03-scene.md#đích-bàn-tay-thế-giới)) thì kéo phần khoá về đúng hướng khai.
+- **Ý định chốt khung bàn tay** (`aimWrist`, góc chưa kẹp, trên cẳng tay của lần thử): lòng tay chỉ phụ thuộc xoay và gập cổ
+  tay (lệch cổ tay xoay bàn tay quanh pháp tuyến lòng tay) nên hai góc ấy giải đúng; ngón lấy thêm lệch cổ tay (số thứ ba
+  của tay, `AIM_DEV` `−30..20`, dương về phía ngón cái; kênh tay không nâng được nâng ở góc `0` để mang lệch). Chỉ khai ngón
+  thì lòng tay là hướng gần lòng tay trung tính nhất vuông góc với ngón. Lòng tay gần dọc cẳng tay (gập quá `70°`) thì phương
+  vị của nó không xác định, xoay kéo dần về xoay của hành động.
+- **Khuỷu trước, rồi ý định nhường.** Giới hạn cổ tay — `turn` `−90..90`, `bend` `AIM_BEND` `−60..70` (âm là ngửa), lệch
+  `AIM_DEV` — hẹp hơn tầm khớp người thật chút ít, quá đó cổ tay khối của người que trông gãy. `E(φ)` chấm cổ tay của bàn tay
+  theo ý định trên cẳng tay thử ([11](11-nhom-cam.md#khuỷu-tự-nhiên)), nên khuỷu ưu tiên xoay quanh trục vai → cổ tay (cổ tay
+  không dời) để cẳng tay gánh hướng bàn tay. Còn vượt thì bàn tay nhường về trong giới hạn: lòng tay và ngón kẹp liền trên vòng
+  (`wristClamp`, [Khuỷu ưu tiên](#khuỷu-ưu-tiên): ngoài tầm đứng ở mép, đòi ngược hẳn thì về dần giữa tầm, không lật mép này
+  sang mép kia; lòng tay, ngón không khớp nhau thì tối đa `AIM_REFINE` (24) bước Newton trong hộp giới hạn); món còn độ lăn tự
+  do thì bàn tay gần nhất theo trục món, tinh chỉnh trong hộp từ nghiệm kẹp, nhạt dần về nghiệm kẹp trong `45°` cuối trước điểm
+  đối diện giữa tầm. Rồi cổ tay đặt lại cho điểm bàn tay vẫn đúng đích. Bàn tay không ý định cũng về trong giới hạn theo cả khung.
+  `elbow` khai và khuỷu khoá (`elbowLock`, [03](03-scene.md#đích-bàn-tay-thế-giới)) giữ hướng khai theo phần khai, không xoay
+  để cứu cổ tay.
 - **`palm` / `fingers` thắng `turn`.** Mốc khai cả hai thì `turn` bị bỏ qua — `validate` và `check` kêu (`aimProblems`).
-- **Hoà là hoà góc đã giải.** Mốc thô sang mốc ý định: từng số hạng giải riêng rồi cộng góc theo phần, nên cổ tay xoay dần,
-  không lật nửa vòng (góc nằm trong `±90`, nội suy thẳng). `world.hands` nhận cùng `palm`, `fingers`, `bend`, đè bàn tay của
-  hành động theo phần đích; mốc `world.hands` không khai thì giữ bàn tay của hành động.
-- **Không đạt thì nói ra**: `scene_probe` trả độ lệch còn lại của lòng tay và ngón (`palmOff`, `fingersOff`).
+- **Hoà là hoà khung bàn tay.** Mốc thô sang mốc ý định: từng số hạng giải riêng trên cùng cẳng tay rồi hoà khung bàn tay theo
+  phần (đường ngắn nhất, `mixRotation`), nên cổ tay xoay dần, không lật nửa vòng. `world.hands` nhận cùng `palm`, `fingers`,
+  `bend`, đè bàn tay của hành động theo phần đích; mốc `world.hands` không khai thì giữ bàn tay của hành động.
+- **Không đạt thì nói ra**: `scene_probe` trả độ lệch còn lại của lòng tay và ngón ở bàn tay vẽ (`palmOff`, `fingersOff`);
+  bàn tay nhường quá `20°` thì `check` báo `aimYield` ([03](03-scene.md#khuỷu-và-cổ-tay-trên-hình)).
 
 ### Bộ hành động 3D
 

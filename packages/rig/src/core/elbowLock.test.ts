@@ -173,7 +173,7 @@ describe("đồ theo tay (`hand`)", () => {
   const e0 = dirAt(free, 0, 50);
   const e1 = dirAt(free, 1, -60);
 
-  it("ở mốc khoá `φ` = `φ(elbow)`; không khoá thì bộ giải dò ra chỗ khác", () => {
+  it("ở mốc khoá `φ` = `φ(elbow)`; tay theo đích không khoá cũng giữ đúng hướng khai", () => {
     const rt = runtime(withElbow(HANDS, [e0, e1]));
     for (const [t, e] of [
       [0, e0],
@@ -184,9 +184,11 @@ describe("đồ theo tay (`hand`)", () => {
       expect(h.elbowLock).toBe(true);
       expect(Math.abs(wrap(h.phi - phiOfDir(rt, t, e)))).toBeLessThan(0.5);
     }
+    // tay theo đích (`hand`) giữ hướng `elbow` đã khai cả khi không khoá: chỉ khuỷu ưu tiên xoay để cứu cổ tay
+    // (docs/11-nhom-cam.md § Khuỷu tự nhiên); khoá chỉ còn khác ở phần khoá giữa 0 và 1
     const loose = runtime(withElbow(HANDS, [e0, e1], false));
     expect(report(loose, 0).elbowLock).toBe(false);
-    expect(Math.abs(wrap(report(loose, 0).phi - phiOfDir(loose, 0, e0)))).toBeGreaterThan(2);
+    expect(Math.abs(wrap(report(loose, 0).phi - phiOfDir(loose, 0, e0)))).toBeLessThan(0.5);
   });
 
   it("giữa hai mốc khoá `φ` đi đường ngắn trên vòng", () => {

@@ -1134,21 +1134,24 @@ cap(x) = WRIST_CAP · tanh(x / WRIST_CAP)
   `E(φ)` chỉ còn để báo. Phần khoá giữa `0` và `1` (từ mốc khoá sang mốc không khoá) thì mẫu giải như thường. Khung vẽ lấy `φ`
   của chuỗi (hay của lần cầm theo mốc) rồi kéo về `φ(elbow)` theo phần khoá, đường ngắn trên vòng (`lockPhi`): phần khoá `1` là
   đúng hướng khoá dù giây ấy không trùng mẫu hay mốc món. Lựa chọn chỗ cầm (`chooseMissing`) vẫn giải với khuỷu tự do.
-- **Tay theo đích trong `act3`** (tay dẫn, tay phụ, bàn tay theo ý định, đích theo mốc không ý định) giải cùng `E(φ)`: cổ tay
-  đích từ vòng giải, giá cổ tay là bàn tay **đã kẹp** ở cẳng tay thử (`HandAim`) cộng `W_MISS · Σ k · (1 − cos lệch)/2`
-  (`W_MISS` `10`) — lệch còn lại của lòng tay, ngón, trục món. Tay mang món, tay phụ: `φ` trong tầm `HOLD_SWIVEL_SLEW` quanh
-  mẫu trước (`ReachHold.prior`, chuỗi `HOLD_SLEW_STEP`). Hướng khai của một nguồn đích là khuỷu ưu tiên hoà với `elbow` theo
-  `elbowW`; hai nguồn (hành động, `world.hands`) cùng kéo tay thì cổ tay đích là chỗ đã hoà theo phần như `actReach`, hướng
-  khai (`φ₀`) là hai hướng ấy hoà theo phần. Mọi phép hoà hướng khuỷu ở đây và ở `actReach` là `poleMix` trên mặt vuông
-  góc trục vai → cổ tay: hai hướng chênh tới `POLE_EVEN` (`120°`) thì đi đều trên vòng, chênh hơn thì bù dần về phía ngoài
-  của khuỷu ưu tiên (`POLE_OUT`) — không chọn nhánh góc, nên hướng khai qua phía đối diện khuỷu ưu tiên thì khuỷu không lật. Phần khai không theo ý định
-  `b = phần khai · (1 − phần ý định)` — phần khai là `elbowW` nhân phần của nguồn khai, phần ý định là phần số hạng `palm` /
-  `fingers` / `hold` trong ý định của hành động và của `world.hands` (cái sau nhân phần của nguồn ấy, món đang cầm thì đủ):
-  từ `b` `0,5` khoảng dò `φ` quanh hướng khai hẹp dần từ `±SETTLE_HALF` về `0`, trong khoảng ấy `E(φ)` vẫn chọn (tránh thân,
-  giá cổ tay); `b` `1` là đúng hướng khai, không giải. Tay mang món thì khoảng hãm `HOLD_SWIVEL_SLEW` nở dần cùng lúc, hai
-  khoảng luôn giao nhau. Giá ý định góp vào `E(φ)` theo đúng phần ý định, từ `0`. Nguồn tự nó không vào bộ giải (đích `at`
-  trần, không ý định) nhận khuỷu đã giải theo phần của nguồn kia, còn lại giữ hướng của nó. Phần khoá (`elbowLock`) kéo
-  khuỷu đã giải về hướng khai bằng `poleMix`; phần khoá `1` không giải.
+- **Tay theo đích trong `act3`** (tay dẫn, tay phụ, bàn tay theo ý định, đích theo mốc không ý định) giải cùng `E(φ)`, một
+  chiều, số bước cố định ([01](01-rig.md#đích-theo-mốc)): mỗi `φ` thử đo từ hướng khai ở cổ tay ước; bàn tay theo ý định trên
+  cẳng tay của lần thử, nhường ở giới hạn cổ tay, cổ tay đặt bàn tay ấy vào đích (hai lượt); giá cổ tay là bàn tay **theo ý định** ở cẳng tay thử (`HandAim`) cộng `W_MISS · Σ w · (1 − cos lệch)/2` (`W_MISS` `10`) —
+  phần ý định mất khi bàn tay nhường ở giới hạn cổ tay, trên các trục ý định chốt (lòng tay `1`, ngón `0,6`, trục món `1`, `roll`
+  `0,3`, trục phụ giữ độ lăn `0,15`). Món một
+  trục: độ lăn quanh trục chính là cực tiểu lấy liền (`settlePhi`) của giá thoải mái cổ tay trên cẳng tay thử. Tay mang món,
+  tay phụ: `φ` trong tầm `HOLD_SWIVEL_SLEW` quanh mẫu trước (`ReachHold.prior`, chuỗi `HOLD_SLEW_STEP`), góc cổ tay trong
+  `HOLD_SLEW` quanh mẫu trước — cổ tay đích giữ chỗ của nghiệm, góc còn đang đi tới chỉ đổi bàn tay. Hướng khai của một nguồn
+  đích là khuỷu ưu tiên hoà với `elbow` theo `elbowW`; hai nguồn (hành động, `world.hands`) cùng kéo tay thì cổ tay đích là
+  chỗ đã hoà theo phần như `actReach`, hướng khai (`φ₀`) là hai hướng ấy hoà theo phần. Mọi phép hoà hướng khuỷu ở đây và ở
+  `actReach` là `poleMix` trên mặt vuông góc trục vai → cổ tay: hai hướng chênh tới `POLE_EVEN` (`120°`) thì đi đều trên vòng,
+  chênh hơn thì bù dần về phía ngoài của khuỷu ưu tiên (`POLE_OUT`) — không chọn nhánh góc, nên hướng khai qua phía đối diện
+  khuỷu ưu tiên thì khuỷu không lật. **Khuỷu khai giữ hướng khai**, cả khi bàn tay theo ý định: phần khai `b` là `elbowW` nhân
+  phần của nguồn khai; khoảng dò `φ` quanh hướng khai là `±SETTLE_HALF · (1 − b)`, trong khoảng ấy `E(φ)` vẫn chọn (tránh
+  thân, giá cổ tay); `b` `1` là đúng hướng khai, không giải — khuỷu khai không xoay để cứu cổ tay, ý định nhường. Tay mang món
+  thì khoảng hãm `HOLD_SWIVEL_SLEW` nở dần cùng lúc, hai khoảng luôn giao nhau. Nguồn tự nó không vào bộ giải (đích `at` trần,
+  không ý định) nhận khuỷu đã giải theo phần của nguồn kia, còn lại giữ hướng của nó. Phần khoá (`elbowLock`) kéo khuỷu đã
+  giải về hướng khai bằng `poleMix`; phần khoá `1` không giải.
 - **Tất định**: lần cầm hai tay giải `φ` ở các mẫu cách `HOLD_SLEW_STEP` (`heldItem.ts`) tính từ đầu lần cầm, `φ_trước` là mẫu
   liền trước (lưới quanh nó: liền với khung trước); `φ(t)` hoà giữa hai mẫu kề. Lần cầm theo mốc giải `φ` ở từng mốc (mục
   [Lần cầm theo mốc](#lần-cầm-theo-mốc)). Mẫu đầu của một lần cầm lấy `φ_trước` là mẫu cuối của lần cầm liền trước trên cùng

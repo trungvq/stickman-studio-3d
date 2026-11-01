@@ -404,9 +404,11 @@ describe("đồ theo tay → tay theo đồ: khoá khuỷu", () => {
     expect(r.scope.mode).toEqual({ before: "hand", after: "keyed" });
     expect(right).toMatchObject({ elbowLock: true, hold: { item: "dien-thoai" } });
     expect(right.elbow).not.toEqual([0, 1, -1]);
+    // ý định một trục (`face`): bàn tay lăn quanh trục món cho cổ tay thoải mái trên cẳng tay của khuỷu khai, nên cổ tay
+    // trong giới hạn, không nhường
     expect(r.rows[0]).toMatchObject({
       elbowLock: true,
-      clamped: { before: { right: ["turn", "bend"] } },
+      clamped: { before: { right: [] } },
     });
     expect(r.max.item.pos).toBeLessThan(HOLD_MODE_POS);
     expect(r.max.item.angle).toBeLessThan(HOLD_MODE_ANGLE);
@@ -540,7 +542,7 @@ describe("hai tay trên mốc món → đồ theo tay", () => {
     const k = holdToHandLed(rb, b, { id: "nguoi", side: "right", at: 0, rebuild: build });
     const rb2 = build(applyJsonPatch(b, k.ops));
     const row = k.rows[0];
-    expect(row.clamped.before.right).toContain("bend");
+    expect(row.clamped.before.right!.length).toBeGreaterThan(0);
     const a = drawnBoard(rb, 0, true);
     const c = drawnBoard(rb2, 0, false);
     expect(Math.abs(row.item!.pos - Math.hypot(...sub3(a.P, c.P)))).toBeLessThan(1e-6);

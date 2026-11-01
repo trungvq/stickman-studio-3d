@@ -4,7 +4,6 @@ import {
   AIM_DEV,
   clampRange,
   overRange,
-  rangeMargin,
   armFrame,
   BONES3,
   handAt,
@@ -56,7 +55,10 @@ import {
   settlePhi,
   SETTLE_HALF,
   gimbalBlend,
+  wristAngles,
   wristClamp,
+  wristOver,
+  wristEase,
   type ArmInput,
   type ArmSeg,
   type ArmSol,
@@ -362,17 +364,13 @@ function solvePose3(c: ActCharacter, sp0: ActInput) {
   };
 }
 
-/** Lặp giải đích theo điểm bàn tay và hướng lòng tay: chỗ bàn tay và hướng cổ tay phụ thuộc nhau, hội tụ trong vài vòng */
-export const AIM_ITER = 8;
-/** Cổ tay dời dưới ngần này (đơn vị rig) giữa hai vòng thì vòng giải đích đã đứng yên */
-export const AIM_STILL = 0.01;
-let aimIter = AIM_ITER;
-/** Số vòng lặp của `AIM_ITER` cho công cụ đo (`tools/elbows.mjs`); bỏ trống là `AIM_ITER`. Đổi giữa chừng thì dựng lại runtime */
-export function setAimIter(n = AIM_ITER) {
-  aimIter = Math.max(1, Math.round(n));
-}
 const ZERO3: V3 = [0, 0, 0];
 const tr = (R: M3): M3 => [R[0], R[3], R[6], R[1], R[4], R[7], R[2], R[5], R[8]];
+/** Góc quay giữa hai khung, độ */
+const ang3 = (A: M3, B: M3) => {
+  const M = mm(tr(A), B);
+  return Math.acos(Math.max(-1, Math.min(1, (M[0] + M[4] + M[8] - 1) / 2))) / D;
+};
 const ang = (a: V3, b: V3) =>
   (Math.acos(Math.max(-1, Math.min(1, dot(unit(a), unit(b))))) * 180) / Math.PI;
 
@@ -403,6 +401,10 @@ export function aimWrist(
     turn?: number;
     fixedDev?: number;
     fast?: boolean;
+    /** Trả góc chưa kẹp (`raw`), không tinh chỉnh */
+    free?: boolean;
+    /** Có `axes`: tinh chỉnh trong hộp từ góc này thay vì từ nghiệm đã kẹp (giữ nhánh của lần giải trước) */
+    start?: readonly number[];
     /** Trục khung bàn tay `h` quay về hướng thế giới `d`, phần `w`: thay giá của lòng tay, ngón (ý định của món cầm) */
     axes?: readonly { h: V3; d: V3; w: number }[];
   } = {},
@@ -455,7 +457,8 @@ export function aimWrist(
     const b = o.bend ?? lat;
     // lòng tay gần dọc cẳng tay: phương vị của nó không xác định, xoay kéo dần về xoay gốc (`turn`) cho liền
     const t = (Math.atan2(-dp[2], -side * dp[0]) * 180) / Math.PI;
-    raw = gimbalBlend([t, b, rawDev(t, b)]);
+    const exact: [number, number, number] = [t, b, rawDev(t, b)];
+    raw = o.free ? exact : gimbalBlend(exact);
     const [tc, bc, dc] = wristClamp(raw);
     // lòng tay gần dọc cẳng tay: phương vị của nó không xác định, xoay đã kẹp kéo dần về xoay gốc (`turn`) cho liền
     const kp = smooth01((Math.abs(lat) - GIMBAL_BEND) / (90 - GIMBAL_BEND));
@@ -463,12 +466,12 @@ export function aimWrist(
     const bf = o.bend ?? bc;
     // lệch lấy lại cho ngón ở xoay, gập đã chọn; gần cực thì theo lệch đã dồn
     const fit = freeDev && df ? wristClamp([0, 0, rawDev(tf, bf)])[2] : dc;
-    best = [tf, bf, dc + (fit - dc) * (1 - kp)];
+    best = o.free ? raw : [tf, bf, dc + (fit - dc) * (1 - kp)];
     const loose =
       o.bend !== undefined ||
       (!freeDev && !!df) ||
       (palm && df ? Math.abs(dot(unit(palm), unit(fingers!))) > 1e-3 : !!ax);
-    if (!o.fast && loose) {
+    if (!o.fast && !o.free && loose) {
       // gập khai sẵn, lệch giữ cố định, lòng tay và ngón không vuông góc: vài bước Newton trong hộp giới hạn từ nghiệm đã
       // kẹp — mỗi bước là hàm liền của đầu vào, nên bàn tay không nhảy giữa hai nghiệm
       const free = [true, o.bend === undefined, freeDev];
@@ -477,6 +480,7 @@ export function aimWrist(
         clampB(q[1]),
         freeDev ? clampRange(q[2], AIM_DEV) : o.fixedDev!,
       ];
+      if (o.start) best = box([...o.start]);
       for (let k = 0; k < AIM_REFINE; k++) {
         const q = [...best];
         const c0 = cost(...best);
@@ -734,6 +738,10 @@ export function holdRoles(
   return out;
 }
 
+/** Phép quay quanh trục đơn vị `u` một góc `a` (radian) */
+const spinM = (u: V3, a: number): M3 =>
+  fromColumns(spin([1, 0, 0], u, a), spin([0, 1, 0], u, a), spin([0, 0, 1], u, a));
+
 /** Phép quay đưa hướng đơn vị `a` về `b` theo đường ngắn nhất */
 function turnTo(a: V3, b: V3): M3 {
   const c = Math.max(-1, Math.min(1, dot(a, b)));
@@ -869,8 +877,8 @@ export interface ArmTrace {
   elbow0?: V3;
   aim?: readonly number[];
   gripAt?: V3;
-  /** Vòng lặp `AIM_ITER`: số vòng đã chạy, cổ tay dời ở vòng cuối (đơn vị rig), `done` là dừng vì đã đứng yên */
-  loop?: { steps: number; moved: number; done: boolean };
+  /** Bàn tay nhường ý định ở giới hạn cổ tay: góc quay giữa bàn tay theo ý định và bàn tay vẽ, độ (`aimYield`) */
+  yield?: number;
 }
 
 type Solved = {
@@ -1037,18 +1045,48 @@ function handGrasp(
 /** Xoay, gập, lệch cổ tay của cánh tay đã giải, kẹp liền trên vòng như người 3D vẽ (`wristClamp`) */
 const wristOf = ({ wrist: w }: ArmSol): number[] => wristClamp([w.turn, w.bend, w.dev]);
 const wrapDeg = (a: number) => ((((a + 180) % 360) + 360) % 360) - 180;
+/** Cổ tay vượt giới hạn bao nhiêu ở góc chưa kẹp `q` (xoay, gập, lệch; có thể đã cuộn vòng): `wristOver` sau `gimbalBlend` */
+const overOf = (q: readonly number[]) =>
+  wristOver(...gimbalBlend([wrapDeg(q[0]), q[1], wrapDeg(q[2])]));
+/** Khớp cổ tay của góc chưa kẹp `q` vượt giới hạn */
+const overKeys = (q: readonly number[]): ("turn" | "bend" | "dev")[] => {
+  const o = overOf(q);
+  return (["turn", "bend", "dev"] as const).filter((k) => o[k] > 0.05);
+};
+const overMax = (q: readonly number[]) => Math.max(...Object.values(overOf(q)));
 const smooth01 = (x: number) => {
   const u = Math.max(0, Math.min(1, x));
   return u * u * (3 - 2 * u);
 };
 /** Lòng tay lệch khỏi mặt vuông góc cẳng tay quá ngần này độ thì phương vị của nó kéo dần về xoay gốc (`aimWrist`) */
 const GIMBAL_BEND = 70;
+/** Hướng lòng tay, ngón đã khai (three, đơn vị) của các số hạng ý định, theo phần */
+type AimDirs = { k: number; palm?: V3; fingers?: V3 }[];
+/** Trục khung bàn tay mà ý định chốt, theo phần: giá của bàn tay nhường ở giới hạn cổ tay; `hold` là trục của món */
+type AimAxes = { h: V3; w: number; hold?: true }[];
+/** Trục phụ yếu giữ độ lăn khi ý định chỉ chốt một trục (lòng tay, ngón, trục món) */
+const ROLL_W = 0.15;
 /**
- * Giá bàn tay đạt lệch ý định trong `E(φ)` của tay theo ý định: `W_MISS · Σ k · (1 − cos lệch) / 2` — trơn và phẳng ở lệch
- * 180°, nên ý định đòi ngược hẳn không đẩy khuỷu về hai phía
+ * Độ nhường (độ) từ bàn tay `Hi` tới bàn tay `Hd`: góc lớn nhất của các trục ý định chốt (từ nửa trọng số lớn nhất); không
+ * ý định thì góc quay giữa hai khung
+ */
+const yieldAngle = (Hi: M3, Hd: M3, axes: AimAxes) => {
+  const top = Math.max(0, ...axes.map((a) => a.w));
+  if (!(top > 0)) return ang3(Hi, Hd);
+  return Math.max(
+    ...axes.filter((a) => a.w >= 0.5 * top).map((a) => ang(mv(Hi, a.h), mv(Hd, a.h))),
+  );
+};
+/** Cung (độ) trước điểm đối diện giữa tầm xoay, lệch mà bàn tay nhường nhạt dần về nghiệm kẹp liền trên vòng */
+const OPP_RAMP = 45;
+/**
+ * Giá ý định mất khi bàn tay nhường, trong `E(φ)`: `W_MISS · Σ w · (1 − cos lệch) / 2` trên các trục ý định chốt (không ý
+ * định: cả khung) — trơn và phẳng ở lệch 180°, nên ý định đòi ngược hẳn không đẩy khuỷu về hai phía
  */
 export const W_MISS = 10;
-const missOf = (deg: number) => (1 - Math.cos(deg * D)) / 2;
+/** Phần ý định mất giữa bàn tay theo ý định `Hi` và bàn tay đã nhường `Hy` trên các trục `axes` */
+const missOf = (Hi: M3, Hy: M3, axes: AimAxes) =>
+  axes.reduce((m, a) => m + (a.w * (1 - dot(mv(Hi, a.h), mv(Hy, a.h)))) / 2, 0);
 
 function solveCore(T: Trunk3, sp: ActInput): Solved {
   const report = { R: {}, L: {} } as Record<"R" | "L", AimReport>;
@@ -1308,10 +1346,9 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
     /** Ý định của món tay này mang: trục chính (và trục phụ) quay về đích, giải qua `aimWrist`; `undefined` là giữ bàn tay */
     const holdSolve = (
       ha: HoldAim,
-      base: [number, number, number],
+      ref: readonly number[],
       A: Pick<ReturnType<typeof arm3>, "Re">,
       h: HandState,
-      fast: boolean,
     ) => {
       const G = h.G;
       const main = ha.face ?? ha.roll;
@@ -1346,7 +1383,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
       const dMain = want(main);
       if (!dMain) return undefined;
       const { n, f } = handAxes(side);
-      const R0 = handR(A, base);
+      const R0 = handR(A, ref);
       const axes = [{ h: aH, d: dMain, w: 1 }];
       let Rt: M3 | undefined;
       const second = ha.face && ha.roll;
@@ -1362,104 +1399,110 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
         }
       }
       if (!Rt) {
-        // một trục: quay ít nhất từ bàn tay đang có; trục phụ yếu giữ độ lăn ấy
-        Rt = mm(turnTo(unit(mv(R0, aH)), dMain), R0);
-        const bH = Math.abs(dot(n, aH)) < Math.abs(dot(f, aH)) ? n : f;
-        axes.push({ h: bH, d: mv(Rt, bH), w: 0.15 });
+        // một trục: lăn quanh trục chính theo giá thoải mái cổ tay trên cẳng tay này, từ cú quay ít nhất (lấy liền)
+        const R1 = mm(turnTo(unit(mv(R0, aH)), dMain), R0);
+        const roll = (p: number) => mm(spinM(dMain, p * D), R1);
+        const ease = (p: number) => {
+          const w = wristAngles(mm(tr(A.Re), roll(p)), side);
+          const e = wristEase(...gimbalBlend([w.turn, w.bend, w.dev]));
+          return e.ease + e.over;
+        };
+        Rt = roll(settlePhi((p) => p, ease, 0, -SETTLE_HALF, SETTLE_HALF).x);
       }
       const sol = aimWrist(A.Re, side, mv(Rt, n), mv(Rt, f), {
-        turn: base[0],
-        dev: base[2],
-        ...(!lifted && { fixedDev: 0 }),
-        fast,
+        turn: ref[0],
+        dev: ref[2],
+        free: true,
         axes,
       });
       const err = sol.axisErr?.[0] ?? 0;
-      const clamped: ("turn" | "bend" | "dev")[] = [];
-      const off = (i: number, x: number) => Math.abs(wrapDeg(sol.raw[i] - x)) > 0.05;
-      if (off(0, sol.turn) || Math.abs(sol.turn) >= TURN_MAX - 0.05) clamped.push("turn");
-      if (off(1, sol.bend) || rangeMargin(sol.bend, AIM_BEND) >= -0.05) clamped.push("bend");
-      // kênh không nâng không có lệch cổ tay: lệch bị giữ ở 0
-      if (lifted ? off(2, sol.dev) || rangeMargin(sol.dev, AIM_DEV) >= -0.05 : err > 1)
-        clamped.push("dev");
       const got = mv(mm(A.Re, wristTurn(sol.turn, sol.bend, sol.dev, side)), aH);
+      const bH = Math.abs(dot(n, aH)) < Math.abs(dot(f, aH)) ? n : f;
       return {
         sol,
         err,
+        axes:
+          axes.length > 1
+            ? axes.map((a) => ({ h: a.h, w: a.w }))
+            : [
+                { h: aH, w: 1 },
+                { h: bH, w: ROLL_W },
+              ],
         report: {
           axis: [...main.axis] as V3,
           want: rigDir(dMain),
           got: rigDir(unit(got)),
           err,
-          clamped,
+          clamped: overKeys([sol.turn, sol.bend, sol.dev]),
           ...(main.label && { toward: main.label }),
         },
       };
     };
-    // lệch cổ tay chỉ đọc ở kênh nâng: kênh không nâng thì rig không lấy nó cho ngón
-    const lifted = !!P0.lift?.[ch];
-    const dev0 = lifted ? num(P0[ch][2]) : 0;
-    /** Xoay, gập, lệch cổ tay của các số hạng ý định cộng theo phần; `fast` bỏ bước tinh chỉnh (thử hướng khuỷu) */
+    const dev0 = P0.lift?.[ch] ? num(P0[ch][2]) : 0;
+    /**
+     * Xoay, gập, lệch cổ tay (chưa kẹp) của các số hạng ý định cộng theo phần, trên cẳng tay `A`: `keep` lấy `base`; bậc
+     * tự do ý định không chốt (lăn quanh lòng tay, quanh ngón, quanh trục món) theo `ref` trên chính cẳng tay ấy
+     */
     const solveAim = (
       aim: Aim,
       base: [number, number, number],
+      ref: readonly number[],
       A: Pick<ReturnType<typeof arm3>, "Re">,
       h: HandState,
-      fast = false,
     ) => {
-      const out: [number, number, number] = [0, 0, 0];
-      const rawOut: [number, number, number] = [0, 0, 0];
-      let cost = 0;
-      /** Bàn tay đạt lệch ý định bao nhiêu (giá cho khuỷu): `Σ k · (1 − cos lệch) / 2`, ngón `0,6` */
-      let miss = 0;
       const err = { palm: 0, fingers: 0, wp: 0, wf: 0 };
+      const dirs: AimDirs = [];
+      const yAxes: AimAxes = [];
       let held: { k: number; report: NonNullable<AimReport["hold"]> } | undefined;
+      // các số hạng hoà theo khung bàn tay (đường ngắn), không cộng góc: góc chưa kẹp của một số hạng cuộn vòng được
+      let acc: M3 | undefined;
+      let sum = 0;
+      const add = (q: readonly number[], k: number) => {
+        const M = wristTurn(q[0], q[1], q[2], side);
+        sum += k;
+        acc = acc ? mixRotation(acc, M, k / sum) : M;
+      };
       for (const a of aim.terms) {
         if (a.hold) {
-          const r = holdSolve(a.hold, base, A, h, fast);
-          const q = r ? [r.sol.turn, r.sol.bend, r.sol.dev] : base;
-          const qr = r ? r.sol.raw : base;
-          for (let i = 0; i < 3; i++) out[i] += a.k * q[i];
-          for (let i = 0; i < 3; i++) rawOut[i] += a.k * qr[i];
-          if (r) {
-            cost += a.k * r.err;
-            miss += a.k * missOf(r.err);
-            if (!held || a.k > held.k) held = { k: a.k, report: r.report };
-          }
+          const r = holdSolve(a.hold, ref, A, h);
+          add(r ? [r.sol.turn, r.sol.bend, r.sol.dev] : base, a.k);
+          if (r) for (const x of r.axes) yAxes.push({ h: x.h, w: a.k * x.w, hold: true });
+          if (r && (!held || a.k > held.k)) held = { k: a.k, report: r.report };
           continue;
         }
         if (a.raw || a.keep || (!a.palm && !a.fingers)) {
-          const r = a.raw ? [a.raw[0], a.raw[1], base[2]] : base;
-          for (let i = 0; i < 3; i++) out[i] += a.k * r[i];
-          for (let i = 0; i < 3; i++) rawOut[i] += a.k * r[i];
+          add(a.raw ? [a.raw[0], a.raw[1], base[2]] : base, a.k);
           continue;
         }
-        const sol = aimWrist(A.Re, side, dirOf(a.palm, h, "palm"), dirOf(a.fingers, h, "wrist"), {
+        const dp = dirOf(a.palm, h, "palm");
+        const df = dirOf(a.fingers, h, "wrist");
+        dirs.push({ k: a.k, palm: dp && unit(dp), fingers: df && unit(df) });
+        const { n, f } = handAxes(side);
+        yAxes.push(
+          { h: n, w: a.k * (dp ? 1 : ROLL_W) },
+          { h: f, w: a.k * (df ? (dp ? 0.6 : 1) : ROLL_W) },
+        );
+        const sol = aimWrist(A.Re, side, dp, df, {
           bend: a.bend,
-          turn: base[0],
-          dev: base[2],
-          ...(!lifted && { fixedDev: 0 }),
-          fast,
+          turn: ref[0],
+          dev: ref[2],
+          free: true,
         });
-        out[0] += a.k * sol.turn;
-        out[1] += a.k * sol.bend;
-        out[2] += a.k * sol.dev;
-        for (let i = 0; i < 3; i++) rawOut[i] += a.k * sol.raw[i];
-        cost += a.k * ((sol.palmErr ?? 0) + 0.6 * (sol.fingerErr ?? 0));
-        miss += a.k * (missOf(sol.palmErr ?? 0) + 0.6 * missOf(sol.fingerErr ?? 0));
+        add([sol.turn, sol.bend, sol.dev], a.k);
         if (sol.palmErr !== undefined)
           [err.palm, err.wp] = [err.palm + a.k * sol.palmErr, err.wp + a.k];
         if (sol.fingerErr !== undefined)
           [err.fingers, err.wf] = [err.fingers + a.k * sol.fingerErr, err.wf + a.k];
       }
+      // phần còn thiếu tới đủ là góc 0
+      if (sum < 1) add([0, 0, 0], 1 - sum);
       return {
-        tbd: out,
-        raw: rawOut,
-        miss,
-        cost,
+        tbd: anglesNear(acc!, base),
         palm: err.wp > 0.5 ? err.palm / err.wp : undefined,
         fingers: err.wf > 0.5 ? err.fingers / err.wf : undefined,
         hold: held?.report,
+        dirs,
+        axes: yAxes,
       };
     };
     const drive = kAll > 0;
@@ -1482,26 +1525,14 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
     };
     // khuỷu khoá (`elbowLock` của `world.hands`): phần ấy của khuỷu nằm đúng `elbow`, không dò, không `HOLD_SWIVEL_SLEW`
     const lock = decl[1] ? Math.min(1, rw!.elbowLock ?? 0) * share.w * decl[1].k : 0;
-    // bàn tay theo ý định: khuỷu tính cả giá cổ tay ở từng hướng thử
-    const aimK = (a: Aim | undefined, k: number) =>
-      a
-        ? k *
-          Math.min(
-            1,
-            a.terms.reduce((n, t) => n + (t.palm || t.fingers || t.hold ? t.k : 0), 0),
-          )
-        : 0;
-    // phần ý định của bàn tay mà các nguồn đang kéo khuỷu đòi: ý định thế giới theo phần của nguồn ấy (món đang cầm: đủ)
-    const intentK = 1 - (1 - aimK(aimB, 1)) * (1 - aimK(aimW, rw?.hold ? 1 : share.w));
     // nguồn tự nó vào bộ giải (đích theo mốc, ý định, món); nguồn trần chỉ nhận khuỷu đã giải theo phần của nguồn kia
     const own = {
       b: hasTerms(rb) || !!aimB || !!role || !!rw?.hold,
       w: hasTerms(rw) || !!aimW || !!role,
     };
-    let tbd: [number, number, number] = [raw[0] ?? 0, raw[1] ?? 0, dev0];
     /** Hướng khuỷu (three) đặt vào từng nguồn đang kéo tay: `actReach` hoà chúng */
     let poles: { b: V3; w: V3 } | undefined;
-    /** Đặt đích, hướng khuỷu, bàn tay và lệch cổ tay vào tư thế đang giải */
+    /** Đặt đích, hướng khuỷu, bàn tay và lệch cổ tay vào tư thế đang giải; cổ tay đích theo khung bàn tay `R` */
     const place = (R: M3, q: readonly number[]) => {
       const v = [q[0], q[1], ...fingersV];
       const elOf = (r: ReachIn, k: number, e: V3 | undefined) =>
@@ -1523,30 +1554,130 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
         const e = elOf(rw, kw, poles && rigDir(poles.w));
         hands[wk] = { at: [g[0] * 100, -g[1] * 100, -g[2] * 100], ...e, w: rw.w };
       }
-      const arm = [...P[ch]];
-      if (lifted) arm[2] = q[2];
-      P = { ...P, [ch]: arm, hand: { ...P.hand, [ch]: v } };
+      // kênh không nâng là tay buông ở góc 0: nâng nó với góc 0 để mang lệch cổ tay
+      const arm = P.lift?.[ch] ? [...P[ch]] : [0, 0, 0, 0, 0];
+      arm[2] = q[2];
+      P = { ...P, [ch]: arm, lift: { ...P.lift, [ch]: true }, hand: { ...P.hand, [ch]: v } };
     };
     const handR = (A: Pick<ReturnType<typeof arm3>, "Re">, q: readonly number[]) =>
       mm(A.Re, wristTurn(q[0], q[1], q[2], side));
-    /** Bàn tay theo ý định (đích hệ thân rồi thế giới) ở cẳng tay `A`, bàn tay `h`: góc đã kẹp, góc chưa kẹp, báo */
-    const aimAt = (A: Pick<ReturnType<typeof arm3>, "Re">, h: HandState, fast: boolean) => {
-      let nb: [number, number, number] = [raw[0] ?? 0, raw[1] ?? 0, dev0];
-      let miss = 0;
+    /** Xoay, gập, lệch của bàn tay `M` trên cẳng tay, xoay và lệch cuộn về gần `q` */
+    const anglesNear = (M: M3, q: readonly number[]): [number, number, number] => {
+      const w = wristAngles(M, side);
+      return [q[0] + wrapDeg(w.turn - q[0]), w.bend, q[2] + wrapDeg(w.dev - q[2])];
+    };
+    // phần ý định của nguồn thế giới trong bàn tay: món đang cầm là đủ
+    const wwOf = rw?.hold ? 1 : Math.min(1, rw?.w ?? 0);
+    const aimK = (a: Aim | undefined, w: number) =>
+      a
+        ? w *
+          Math.min(
+            1,
+            a.terms.reduce((n, t) => n + (t.palm || t.fingers || t.hold ? t.k : 0), 0),
+          )
+        : 0;
+    // phần ý định của bàn tay đã hoà; phần còn lại giữ cả khung bàn tay khi nhường ở giới hạn cổ tay
+    const intentK = 1 - (1 - aimK(aimB, 1)) * (1 - aimK(aimW, wwOf));
+    /**
+     * Bàn tay theo ý định (đích hệ thân rồi thế giới) ở cẳng tay `A`, bàn tay `h`, từ góc `base` (bàn tay không ý định):
+     * góc chưa kẹp, báo
+     */
+    const aimAt = (
+      A: Pick<ReturnType<typeof arm3>, "Re">,
+      h: HandState,
+      base: [number, number, number],
+    ) => {
+      let nb = base;
       const out: Pick<AimReport, "palm" | "fingers" | "hold"> = {};
+      let dirs: AimDirs = [];
+      let axes: AimAxes = [];
       if (aimB) {
-        const r = solveAim(aimB, nb, A, h, fast);
-        [nb, miss] = [r.tbd, r.miss];
-        [out.palm, out.fingers] = [r.palm, r.fingers];
+        const r = solveAim(aimB, nb, base0, A, h);
+        nb = r.tbd;
+        [out.palm, out.fingers, dirs, axes] = [r.palm, r.fingers, r.dirs, r.axes];
       }
       if (aimW) {
-        const r = solveAim(aimW, nb, A, h, fast);
-        const ww = rw!.hold ? 1 : Math.min(1, rw!.w);
-        nb = nb.map((x, j) => x + (r.tbd[j] - x) * ww) as [number, number, number];
-        miss += (r.miss - miss) * ww;
-        if (ww >= 0.999) [out.palm, out.fingers, out.hold] = [r.palm, r.fingers, r.hold];
+        const r = solveAim(aimW, nb, aimB ? nb : base0, A, h);
+        const M = wristTurn(nb[0], nb[1], nb[2], side);
+        nb = anglesNear(mixRotation(M, wristTurn(r.tbd[0], r.tbd[1], r.tbd[2], side), wwOf), nb);
+        if (wwOf >= 0.999)
+          [out.palm, out.fingers, out.hold, dirs] = [r.palm, r.fingers, r.hold, r.dirs];
+        axes = [
+          ...axes.map((a) => ({ ...a, w: a.w * (1 - wwOf) })),
+          ...r.axes.map((a) => ({ ...a, w: a.w * wwOf })),
+        ];
       }
-      return { tbd: nb, miss, rep: out };
+      return { tbd: nb, rep: out, dirs, axes };
+    };
+    /** Lệch còn lại của lòng tay, ngón (độ) ở bàn tay `Hd` so với hướng đã khai `dirs`, như `aimWrist` đo */
+    const aimErr = (Hd: M3, dirs: AimDirs) => {
+      const e = { palm: 0, fingers: 0, wp: 0, wf: 0 };
+      for (const d of dirs) {
+        if (d.palm)
+          [e.palm, e.wp] = [e.palm + d.k * ang(mv(Hd, [-side, 0, 0]), d.palm), e.wp + d.k];
+        if (d.fingers)
+          [e.fingers, e.wf] = [e.fingers + d.k * ang(mv(Hd, [0, -1, 0]), d.fingers), e.wf + d.k];
+      }
+      return {
+        palm: e.wp > 0.5 ? e.palm / e.wp : undefined,
+        fingers: e.wf > 0.5 ? e.fingers / e.wf : undefined,
+      };
+    };
+    /**
+     * Ý định nhường ở giới hạn cổ tay: bàn tay `Hi` (góc chưa kẹp `q` trên cẳng tay `Re`) vượt giới hạn thì về trong giới
+     * hạn — lòng tay và ngón kẹp liền trên vòng như `aimWrist` (ngoài tầm đứng ở mép, đòi ngược hẳn thì về dần giữa tầm);
+     * món còn độ lăn tự do thì bàn tay gần nhất theo trục món, tinh chỉnh trong hộp từ nghiệm kẹp. Trong giới hạn thì đúng `q`
+     */
+    const yieldTo = (
+      q: readonly number[],
+      Re: M3,
+      Hi: M3,
+      axes: AimAxes,
+      start?: readonly number[],
+    ): [number, number, number] => {
+      if (!(overMax(q) > 0)) return [q[0], q[1], q[2]];
+      const { n, f } = handAxes(side);
+      const unwrap = (y: readonly number[]): [number, number, number] => [
+        q[0] + wrapDeg(y[0] - q[0]),
+        y[1],
+        q[2] + wrapDeg(y[2] - q[2]),
+      ];
+      if (!axes.some((a) => a.hold && a.w > 0)) {
+        // trục ý định chốt (phần không ý định chốt cả khung): chỉ khai lòng tay thì ngón tự do, lệch theo hành động
+        const keep = 1 - intentK;
+        const wn = axes.reduce((x, a) => x + (dot(a.h, n) > 0.999 ? a.w : 0), keep);
+        const wf = axes.reduce((x, a) => x + (dot(a.h, f) > 0.999 ? a.w : 0), keep);
+        const top = Math.max(wn, wf);
+        const c = aimWrist(
+          Re,
+          side,
+          wn > 0.5 * top ? mv(Hi, n) : undefined,
+          wf > 0.5 * top ? mv(Hi, f) : undefined,
+          { turn: base0[0], dev: wf > 0.5 * top ? q[2] : base0[2] },
+        );
+        return unwrap([c.turn, c.bend, c.dev]);
+      }
+      const all = [...axes, { h: n, w: 1 - intentK }, { h: f, w: 1 - intentK }].filter(
+        (a) => a.w > 0,
+      );
+      const g = gimbalBlend([wrapDeg(q[0]), q[1], wrapDeg(q[2])]);
+      const k0 = wristClamp(g);
+      // tinh chỉnh trong hộp (`aimWrist` có `axes`) từ nghiệm kẹp liền trên vòng — liền theo bàn tay cả khi lòng tay gần
+      // dọc cẳng tay, chỗ xoay và lệch riêng lẻ nhảy — hay từ bàn tay đã nhường của lượt trước
+      const c = aimWrist(Re, side, mv(Hi, n), undefined, {
+        turn: q[0],
+        dev: q[2],
+        axes: all.map((a) => ({ h: a.h, d: mv(Hi, a.h), w: a.w })),
+        start: start ?? k0,
+      });
+      // ý định gần điểm đối diện giữa tầm xoay hay lệch: tinh chỉnh nhạt dần về nghiệm kẹp (ở đó về giữa tầm), nên qua điểm
+      // ấy bàn tay không lật mép này sang mép kia
+      const opp = Math.min(
+        180 - Math.abs(g[0]),
+        180 - Math.abs(wrapDeg(g[2] - (AIM_DEV[0] + AIM_DEV[1]) / 2)),
+      );
+      const u = smooth01(opp / OPP_RAMP);
+      return unwrap([c.turn, c.bend, c.dev].map((x, j) => k0[j] + (x - k0[j]) * u));
     };
     // tay mang món theo ý định, tay đỡ món: cổ tay, khuỷu đi từ nghiệm của mẫu trước, mỗi mẫu tối đa `HOLD_SLEW`,
     // `HOLD_SWIVEL_SLEW`
@@ -1557,144 +1688,252 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
         : undefined;
     // phần của một mẫu đã trôi từ mẫu trước: tốc độ đều cả khi khung dày hơn mẫu
     const part = Math.min(1, (role?.hold.prior?.dt ?? HOLD_SLEW_STEP) / HOLD_SLEW_STEP);
-    const inp = drive && armInput(T, side);
-    // tay kia như đang đặt: số hạng lấn
-    const B2 = drive && arm3(T, P, hands, -side);
-    const seg: ArmSeg | undefined = B2 ? { S: B2.sh, E: B2.elbow, W: B2.wr } : undefined;
+    const base0: [number, number, number] = [raw[0] ?? 0, raw[1] ?? 0, dev0];
+    /** Góc `base0` đọc lại trên cẳng tay `Re` của bàn tay `Hk`, cuộn về gần `base0` */
+    const keepOn = (Re: M3, Hk: M3): [number, number, number] => {
+      const w = wristAngles(mm(tr(Re), Hk), side);
+      return [base0[0] + wrapDeg(w.turn - base0[0]), w.bend, base0[2] + wrapDeg(w.dev - base0[2])];
+    };
+    let A = arm3(T, P, hands, side);
+    let tbd: [number, number, number] = base0;
+    let H: M3;
     let phi: number | undefined;
     let pref: V3 | undefined;
-    let A = arm3(T, P, hands, side);
-    let last: V3 | undefined;
-    const loop = { steps: 0, moved: Infinity, done: false };
-    /** Cổ tay đích (three) đang đặt trong tư thế giải */
-    const goalB = () => T.frame.point(mul(body(P.reach![ch]!.at), 0.01 * T.B.height));
-    const goalW = () => fromRig(hands[wk]!.at);
-    const goalNow = (): V3 =>
-      kb > 0 && kw > 0
-        ? add(mul(goalB(), share.b), mul(goalW(), share.w))
-        : kw > 0
-          ? goalW()
-          : goalB();
-    /** Dời đích đã hoà tới `p`: mọi nguồn đang kéo tay dời cùng một đoạn */
-    const setGoal = (p: V3) => {
-      const d = sub(p, goalNow());
-      if (kw > 0) hands[wk] = { ...hands[wk]!, at: rigOf(add(goalW(), d)) };
-      if (kb > 0)
-        P = {
-          ...P,
-          reach: { ...P.reach, [ch]: { ...P.reach![ch]!, at: toBody(add(goalB(), d)) } },
-        };
-    };
-    const setPole = (p: { b: V3; w: V3 }) => {
-      poles = p;
-      if (kw > 0) {
-        hands[wk] = { ...hands[wk]!, elbow: rigDir(p.w), elbowW: 1 };
-      }
-      if (kb > 0) {
-        P = {
-          ...P,
-          reach: {
-            ...P.reach,
-            [ch]: { ...P.reach![ch]!, elbow: toBodyDir(T, side, p.b), elbowW: 1 },
-          },
-        };
-      }
-    };
-    // cổ tay đích ↔ bàn tay phụ thuộc nhau: bước của cổ tay đổi chiều thì giảm một nửa (hội tụ, không dao động hai trạng thái)
-    let aimed: V3 | undefined;
-    let stepPrev: V3 | undefined;
-    let relax = 1;
-    for (let i = 0; i < aimIter; i++) {
-      const R = handR(A, tbd);
-      place(R, tbd);
-      if (drive) {
-        let g = goalNow();
-        if (aimed) {
-          const d = sub(g, aimed);
-          if (stepPrev && dot(d, stepPrev) < 0) relax *= 0.5;
-          stepPrev = mul(d, relax);
-          g = add(aimed, stepPrev);
-          setGoal(g);
+    /** Bàn tay theo ý định trước khi nhường, và hướng đã khai của nó */
+    let Hi: M3;
+    let qi: [number, number, number];
+    let dirs: AimDirs;
+    let pinned: AimAxes = [];
+    if (!drive) {
+      // không đích: cẳng tay theo chuỗi góc, bàn tay theo ý định trên chính cẳng tay ấy, nhường tại chỗ
+      const Hk = handR(A, base0);
+      const r = aimAt(A, { ...state(A, side), R: Hk }, base0);
+      [qi, dirs, pinned] = [r.tbd, r.dirs, r.axes];
+      Hi = handR(A, qi);
+      Object.assign(rep, r.rep);
+      tbd = yieldTo(qi, A.Re, Hi, r.axes);
+      H = handR(A, tbd);
+    } else {
+      const inp = armInput(T, side);
+      // tay kia như đang đặt: số hạng lấn
+      const B2 = arm3(T, P, hands, -side);
+      const seg: ArmSeg = { S: B2.sh, E: B2.elbow, W: B2.wr };
+      const soft = ARM_SOFT * (inp.l1 + inp.l2);
+      /** Tâm đích (three): các điểm đích theo phần, chưa trừ điểm bàn tay — gốc của khuỷu, bàn tay không ý định */
+      const centerOf = (terms: readonly ReachTerm[], world: boolean): V3 => {
+        let acc: V3 = ZERO3;
+        let sum = 0;
+        for (const t of terms) [acc, sum] = [add(acc, mul(goal(t, world)[0], t.k)), sum + t.k];
+        return mul(acc, 1 / (sum || 1));
+      };
+      const srcCenter = (r: ReachIn, world: boolean): V3 => {
+        if (world && r.spline) {
+          const [a, b, c, d] = r.spline.keys.map((k) => k && centerOf(k, true));
+          return hermiteN(a, b!, c!, d, ...r.spline.h, r.spline.f) as V3;
         }
-        aimed = g;
-      }
-      if (inp) {
-        // khuỷu: `E(φ)` ít tốn nhất lấy liền quanh hướng khai / ưu tiên (mẫu trước khi mang món), giá cổ tay là ý định ở
-        // cẳng tay thử
-        const Wg = aimed!;
-        const B = phiBasis(inp, Wg);
-        const n = unit(sub(Wg, inp.S));
+        if (hasTerms(r)) return centerOf(r.terms!, world);
+        return world ? fromRig(r.at as V3) : T.frame.point(mul(body(r.at), 0.01 * T.B.height));
+      };
+      const Pt = add(
+        share.b > 0 ? mul(srcCenter(rb!, false), share.b) : ZERO3,
+        share.w > 0 ? mul(srcCenter(rw!, true), share.w) : ZERO3,
+      );
+      /** Cổ tay (three) đặt bàn tay khung `R` vào đích đã hoà hai nguồn */
+      const wristAt = (R: M3, q: readonly number[]): V3 => {
+        const v = [q[0], q[1], ...fingersV];
+        const at = (r: ReachIn, world: boolean) =>
+          world
+            ? worldWrist(r, R, v)
+            : hasTerms(r)
+              ? wristFor(r.terms!, false, R, v)
+              : T.frame.point(mul(body(r.at), 0.01 * T.B.height));
+        return add(
+          share.b > 0 ? mul(at(rb!, false), share.b) : ZERO3,
+          share.w > 0 ? mul(at(rw!, true), share.w) : ZERO3,
+        );
+      };
+      /**
+       * Khung `φ` quanh trục vai → `Wx` (`phiBasis`): hướng khai của từng nguồn (`rawPoles`) và `want`, `φ` của chúng hoà
+       * theo phần nguồn. `φ` thử đo từ `want` ở chính cổ tay của lần thử, nên khuỷu khai, khuỷu khoá đúng hướng ở cổ tay cuối
+       */
+      const frameAt = (Wx: V3) => {
+        const B = phiBasis(inp, Wx);
+        const n = unit(sub(Wx, inp.S));
         const at = (p: number) => unit(add(mul(B.d0, Math.cos(p * D)), mul(B.o0, Math.sin(p * D))));
         const phiOfV = (v: V3) => Math.atan2(dot(v, B.o0), dot(v, B.d0)) / D;
-        const src = rawPoles(inp, Wg, n, B.o0);
-        const want = phiOfV(poleMix(n, B.o0, src[0], src[1], share.w));
-        pref = at(want);
-        const declared: ElbowDir | undefined = declK > 0 ? { v: rigDir(pref) } : undefined;
-        // phần khuỷu khai mà bàn tay không theo ý định: từ nửa trở lên thì khoảng dò quanh hướng khai hẹp dần, đủ thì đúng
-        // hướng ấy, không dò
-        const bound = declK * (1 - intentK);
-        let next = want;
-        if (lock < 1 && bound < 1) {
-          const hand: HandAim = (fore, _El, Wr) => {
-            if (!(intentK > 0)) return { turn: tbd[0], bend: tbd[1], dev: tbd[2] };
-            const F = { Re: fore };
-            const r = aimAt(F, { ...state(A, side), at: Wr, R: handR(F, tbd) }, true);
-            return { turn: r.tbd[0], bend: r.tbd[1], dev: r.tbd[2], cost: W_MISS * r.miss };
-          };
-          // khoảng dò: quanh hướng khai, hẹp dần theo `bound`; món đang mang thì giao với khoảng hãm `HOLD_SWIVEL_SLEW` quanh
-          // mẫu trước, khoảng ấy nở dần cùng lúc nên hai khoảng luôn giao nhau và tới đủ thì còn đúng hướng khai
-          const g = Math.min(1, 2 * (1 - bound));
-          const sw = slew ? HOLD_SWIVEL_SLEW * part : 0;
-          const from = slew ? slew[3] : want;
-          const mid = from + wrapDeg(want - from);
-          const half = (slew ? 180 + sw : SETTLE_HALF) * g;
-          const lo = Math.max(slew ? from - sw - 180 * (1 - g) : -Infinity, mid - half);
-          const hi = Math.min(slew ? from + sw + 180 * (1 - g) : Infinity, mid + half);
-          const seen = new Map<number, ArmSol>();
-          const ev = (p: number) => {
-            const k = Math.round(p * 1e9);
-            let c = seen.get(k);
-            if (!c) seen.set(k, (c = evalPhi(inp, Wg, hand, p, undefined, seg, declared)));
-            return c;
-          };
-          const sol = settlePhi(ev, (c) => c.E, (lo + hi) / 2, lo, hi).c;
-          next = lock > 0 ? phiOfV(poleMix(n, B.o0, at(sol.phi), at(want), lock)) : sol.phi;
+        const src = rawPoles(inp, Wx, n, B.o0);
+        return {
+          n,
+          o0: B.o0,
+          at,
+          phiOfV,
+          src,
+          want: phiOfV(poleMix(n, B.o0, src[0], src[1], share.w)),
+        };
+      };
+      /** Cẳng tay của tay với tới `Wx`, khuỷu lệch `d` độ khỏi hướng khai ở đó */
+      const foreTo = (Wx: V3, F: ReturnType<typeof frameAt>, d: number): M3 => {
+        const [El, Wr, hinge] = twoBone3(inp.S, Wx, inp.l1, inp.l2, F.at(F.want + d), soft);
+        const f = armFrame(inp.S, El, Wr, hinge);
+        return mm(f.R, rx(-f.b));
+      };
+      // cổ tay ước (hai bước cố định, không lặp): bàn tay của hành động trên tay với tới tâm đích, rồi cổ tay đặt bàn tay
+      // ấy vào đích — điểm bàn tay xa cổ tay (đầu món, đầu ngón) thì cẳng tay gốc vẫn đúng hướng
+      const C = wristAt(handR({ Re: foreTo(Pt, frameAt(Pt), 0) }, base0), base0);
+      const F0 = frameAt(C);
+      pref = F0.at(F0.want);
+      /** Cẳng tay gốc của bàn tay ở mỗi lần thử: tay với tới cổ tay ước, khuỷu lệch `d` độ khỏi hướng khai */
+      const foreAt = (d: number): M3 => foreTo(C, F0, d);
+      // bàn tay không ý định: khung của tay với tới cổ tay ước theo khuỷu ưu tiên (hay khai) cộng góc của hành động, tinh
+      // thêm một lượt ở cổ tay của chính bàn tay ấy — hàm trơn của chỗ đích trong hệ thân
+      const Wk = wristAt(handR({ Re: foreAt(0) }, base0), base0);
+      const Hk = handR({ Re: foreTo(Wk, frameAt(Wk), 0) }, base0);
+      const h0: HandState = { ...state(A, side), at: wristAt(Hk, base0), R: Hk };
+      /**
+       * Một lần thử, khuỷu lệch `d` khỏi hướng khai: bàn tay theo ý định trên cẳng tay thử, nhường ở giới hạn cổ tay trên
+       * chính cẳng tay ấy, cổ tay đặt bàn tay đã nhường vào đích
+       */
+      const seen = new Map<
+        number,
+        {
+          c: ArmSol;
+          E: number;
+          Hi: M3;
+          H: M3;
+          q: [number, number, number];
+          rep: object;
+          dirs: AimDirs;
+          axes: AimAxes;
         }
-        phi = next;
-        const pole = at(next);
-        // nguồn trần: từ hướng thô của nó tới khuỷu đã giải theo phần của nguồn kia
-        const mix = (r: V3, k: number) => at(phiOfV(poleMix(n, B.o0, r, pole, k)));
-        setPole({ b: own.b ? pole : mix(src[0], kw), w: own.w ? pole : mix(src[1], kb) });
+      >();
+      const ev = (d: number) => {
+        const key = Math.round(d * 1e9);
+        let x = seen.get(key);
+        if (x) return x;
+        // hai lượt cố định: cẳng tay tới cổ tay ước, rồi tới cổ tay của bàn tay lượt đầu
+        const pass = (Re1: M3, h: HandState, from?: M3) => {
+          const r = aimAt({ Re: Re1 }, h, keepOn(Re1, Hk));
+          const Hp = handR({ Re: Re1 }, r.tbd);
+          const w = from && wristAngles(mm(tr(Re1), from), side);
+          const q = yieldTo(r.tbd, Re1, Hp, r.axes, w && [w.turn, w.bend, w.dev]);
+          const Hy = q.every((v, j) => v === r.tbd[j]) ? Hp : handR({ Re: Re1 }, q);
+          return { r, Hp, q, Hy, W: wristAt(Hy, q) };
+        };
+        const p1 = pass(foreAt(d), h0);
+        const {
+          r,
+          Hp,
+          q,
+          Hy,
+          W: Wp,
+        } = pass(foreTo(p1.W, frameAt(p1.W), d), { ...h0, at: p1.W, R: p1.Hy }, p1.Hy);
+        const F = frameAt(Wp);
+        const declared: ElbowDir | undefined = declK > 0 ? { v: rigDir(F.at(F.want)) } : undefined;
+        // giá cổ tay là của bàn tay theo ý định trên cẳng tay thử: khuỷu xoay cứu cổ tay trước khi ý định nhường
+        const hand: HandAim = (fore) => {
+          const w = wristAngles(mm(tr(fore), Hp), side);
+          return { turn: w.turn, bend: w.bend, dev: w.dev };
+        };
+        const c = evalPhi(inp, Wp, hand, F.want + d, undefined, seg, declared);
+        const { n, f } = handAxes(side);
+        const E =
+          c.E +
+          W_MISS *
+            missOf(
+              Hp,
+              Hy,
+              r.axes.length
+                ? r.axes
+                : [
+                    { h: n, w: 1 },
+                    { h: f, w: 1 },
+                  ],
+            );
+        x = { c, E, Hi: Hp, H: Hy, q, rep: r.rep, dirs: r.dirs, axes: r.axes };
+        seen.set(key, x);
+        return x;
+      };
+      // khuỷu khai giữ hướng khai theo phần khai (`elbowW` · phần nguồn): khoảng dò hẹp dần theo phần ấy, đủ thì đúng
+      // hướng ấy; khuỷu ưu tiên dò tự do — xoay khuỷu là thứ nhường trước khi cổ tay vượt giới hạn
+      let d = 0;
+      if (lock < 1 && declK < 1) {
+        // món đang mang thì giao với khoảng hãm `HOLD_SWIVEL_SLEW` quanh mẫu trước (`φ` của mẫu ấy đo từ hướng khai ở
+        // cổ tay ước), khoảng ấy nở dần cùng lúc nên hai khoảng luôn giao nhau và tới đủ thì còn đúng hướng khai
+        const g = 1 - declK;
+        const sw = slew ? HOLD_SWIVEL_SLEW * part : 0;
+        const from = slew ? wrapDeg(slew[3] - F0.want) : 0;
+        const half = (slew ? 180 + sw : SETTLE_HALF) * g;
+        const lo = Math.max(slew ? from - sw - 180 * (1 - g) : -Infinity, -half);
+        const hi = Math.min(slew ? from + sw + 180 * (1 - g) : Infinity, half);
+        const sol = settlePhi(ev, (x) => x.E, (lo + hi) / 2, lo, hi).x;
+        d =
+          lock > 0
+            ? F0.phiOfV(poleMix(F0.n, F0.o0, F0.at(F0.want + sol), pref, lock)) - F0.want
+            : sol;
       }
-      A = arm3(T, P, hands, side);
-      const r = aimAt(A, state(A, side), false);
-      tbd = r.tbd;
-      Object.assign(rep, r.rep);
-      const moved = last ? len(sub(A.wr, last)) : Infinity;
-      last = A.wr;
-      [loop.steps, loop.moved, loop.done] = [
-        i + 1,
-        (moved * 100) / s,
-        (moved * 100) / s < AIM_STILL && i > 0,
-      ];
-      if (loop.done) break;
+      const best = ev(d);
+      Object.assign(rep, best.rep);
+      dirs = best.dirs;
+      // `φ` cho mẫu sau đo từ hướng khai ở cổ tay ước, như chỗ mẫu sau đọc nó
+      phi = F0.want + d;
+      /** Đặt bàn tay khung `Hx` (góc `q` cho ngón) vào đích: cổ tay theo điểm bàn tay, khuỷu lệch `d` khỏi hướng khai ở đó */
+      const settle = (Hx: M3, q: readonly number[]) => {
+        const F = frameAt(wristAt(Hx, q));
+        const pole = F.at(F.want + d);
+        // nguồn trần: từ hướng thô của nó tới khuỷu đã giải theo phần của nguồn kia
+        const mix = (r: V3, k: number) => F.at(F.phiOfV(poleMix(F.n, F.o0, r, pole, k)));
+        poles = { b: own.b ? pole : mix(F.src[0], kw), w: own.w ? pole : mix(F.src[1], kb) };
+        place(Hx, q);
+        A = arm3(T, P, hands, side);
+        // góc cổ tay đọc ra trên cẳng tay đã vẽ, cuộn về gần `q`
+        const w = wristAngles(mm(tr(A.Re), Hx), side);
+        return [q[0] + wrapDeg(w.turn - q[0]), w.bend, q[2] + wrapDeg(w.dev - q[2])] as [
+          number,
+          number,
+          number,
+        ];
+      };
+      // bước một: bàn tay của lần thử (đã nhường trên cẳng tay thử), cổ tay đặt nó vào đích
+      Hi = best.Hi;
+      H = best.H;
+      let t1 = settle(H, best.q);
+      pinned = best.axes;
+      if (kAll < 1) {
+        // đích hoà một phần: bàn tay hoà theo phần đích từ bàn tay của tay không đích (ý định trên chính cẳng tay đã vẽ, góc
+        // của hành động) — đích tắt dần thì bàn tay về đúng nghiệm không đích, không nhảy
+        const r = aimAt(A, { ...state(A, side), R: handR(A, base0) }, base0);
+        const Hn = handR(A, r.tbd);
+        t1 = anglesNear(mm(tr(A.Re), mixRotation(Hn, handR(A, t1), kAll)), t1);
+        Hi = mixRotation(Hn, Hi, kAll);
+        if (r.axes.length) pinned = r.axes;
+      }
+      qi = anglesNear(mm(tr(A.Re), Hi), best.q);
+      // bước hai: cẳng tay đã vẽ lệch cẳng tay thử (cổ tay dời theo bàn tay, đích hoà một phần) nên bàn tay ấy còn vượt thì
+      // nhường nốt tại chỗ, cổ tay giữ nguyên: điểm bàn tay trôi đúng phần ấy
+      tbd = yieldTo(t1, A.Re, handR(A, t1), pinned);
+    }
+    const yielded = yieldAngle(Hi, handR(A, tbd), pinned);
+    if (yielded > 1e-6) {
+      // ý định nhường: lệch còn lại đo ở bàn tay vẽ
+      Object.assign(rep, aimErr(handR(A, tbd), dirs));
+      if (rep.hold) rep.hold = { ...rep.hold, clamped: overKeys(qi) };
     }
     const solved = tbd;
     if (slew !== undefined) {
       // ý định đổi nhánh cổ tay (xoay quá tầm, gập gần 90): cổ tay đi dần tới nghiệm mới
       if (slew)
         tbd = tbd.map(
-          (x, j) => slew[j] + Math.max(-HOLD_SLEW * part, Math.min(HOLD_SLEW * part, x - slew[j])),
+          (x, j) =>
+            slew[j] + Math.max(-HOLD_SLEW * part, Math.min(HOLD_SLEW * part, wrapDeg(x - slew[j]))),
         ) as typeof tbd;
       wrist[T.tag(side)] = [...tbd, phi ?? 0];
     }
-    place(handR(A, tbd), tbd);
-    // cổ tay đích giữ chỗ đã hội tụ: đặt lại theo bàn tay cuối chỉ đổi góc bàn tay
-    if (aimed) setGoal(aimed);
+    // cổ tay đích theo bàn tay đã giải: góc còn đang đi tới nghiệm chỉ đổi bàn tay, không dời cổ tay
+    place(H, tbd);
     A = arm3(T, P, hands, side);
     const h = state(A, side);
-    if (rep.hold && h.G && tbd !== solved && tbd.some((x, j) => Math.abs(x - solved[j]) > 1e-9)) {
-      // cổ tay còn đang đi tới nghiệm: lệch của món đo ở bàn tay đã vẽ
+    if (rep.hold && h.G && (yielded > 1e-6 || tbd.some((x, j) => Math.abs(x - solved[j]) > 1e-9))) {
+      // ý định nhường, hay cổ tay còn đang đi tới nghiệm: lệch của món đo ở bàn tay đã vẽ
       const got = rigDir(unit(mv(handR(A, tbd), unit(mv(h.G.R, rep.hold.axis)))));
       rep.hold = { ...rep.hold, got, err: ang(got, rep.hold.want) };
     }
@@ -1746,7 +1985,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
       ...(pref && { elbow0: pref }),
       ...((aimB || aimW) && { aim: solved }),
       ...(gripAt && { gripAt }),
-      loop,
+      ...(yielded > 1e-6 && { yield: yielded }),
     };
     done[side] = h;
   }
