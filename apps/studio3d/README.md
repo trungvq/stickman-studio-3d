@@ -430,15 +430,15 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi trac
     một điểm giữa không trung — đổi lại tay không duỗi được hết cỡ. Thanh trạng thái báo "chỗ thả quá mép tầm với … cách chỗ
     thả … px". Lúc kéo, mặt cầu mờ quanh vai là mép ước (soft IK `ARM_SOFT` cộng cổ tay → tâm nắm); tay nắm ra ngoài thì mặt
     cầu hổ phách, chấm là chỗ bàn tay sẽ dừng, nhãn ghi khoảng quá mép. Bộ bù (`fitPoint`) chặn mỗi bước ở `FIT_STEP` và kéo
-    đích về sát chỗ bàn tay vẽ ra hết mức mà lệch không tăng; đích vẫn cách tâm nắm quá 5 px (cổ tay kẹp…) thì thanh trạng
+    đích về sát chỗ bàn tay vẽ ra hết mức mà lệch không tăng; đích vẫn cách tâm nắm quá 5 px (cổ tay chạm giới hạn…) thì thanh trạng
     thái báo "ngoài tầm với"; xoay quanh tâm nắm ghi ý định món `hold.face`, `hold.roll` (trục khung món `[0, 0, 1]`, `[0, 1, 0]` về
     vectơ hệ thân, ngang ra ngoài phía tay ấy, như ＋) cho đồ theo tay, `palm` + `fingers` (vectơ hệ thân, bỏ `bend`) cho tay
     tự do. Tay theo đồ (theo mốc, hai tay) sửa mốc món `items[]` ở giây ấy: dời, xoay **món** quanh tâm nắm, hướng ghi `face`,
     `roll` trục khung món về vectơ hệ thân người cầm (ngang phải, bỏ `up`), chỗ ghi `at` hay `offset` bù tới khi tâm món ở
     chỗ mới; bàn tay theo món. Tay phụ của `both` không có tay nắm: kéo ở tay dẫn. Tay đang hoà (`HOLD_BLEND`) mà đích ở
     giây ấy chưa đổi được hình thì không sửa, thanh trạng thái báo. Bàn tay xoay chưa tới (khung bàn tay sau khi áp lệch
-    khung muốn quá 2° và quá một phần mười góc xoay — cổ tay kẹp, món xoay quá kẹp) thì vẫn áp, thanh trạng thái báo "bàn
-    tay chỉ xoay được ~…° / …°" kèm khớp kẹp.
+    khung muốn quá 2° và quá một phần mười góc xoay — cổ tay chạm giới hạn, món xoay quá giới hạn) thì vẫn áp, thanh trạng thái báo "bàn
+    tay chỉ xoay được ~…° / …°" kèm khớp chạm giới hạn.
   - **Vòng khuỷu**: đường tròn khuỷu quanh trục vai → cổ tay (đường xám) đi qua khuỷu đang vẽ (`handReport.ring`), tô theo
     `E(φ)` của `handReport.cost` (`evalPhi`): xanh ở chỗ rẻ nhất, đỏ từ rẻ nhất + 3 trở lên; tay tự do không có giá, vòng xám.
     Chấm trắng là khuỷu đang vẽ, tím khi khoá; nhãn cạnh khuỷu ghi `φ`, `E`. **Kéo** chấm hay bất kỳ chỗ nào trên vòng (bóng
@@ -449,11 +449,11 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi trac
     sai) thì không áp, thanh trạng thái báo. **Nhấp đúp** lên vòng: bỏ `elbowLock` và `elbow` của mốc ở giây ấy, về khuỷu tự
     nhiên. Tay nắm dưới con trỏ thắng vòng khi bấm kéo.
   - **Nón cổ tay**, chỉ để xem: chóp ở cổ tay trong khung cẳng tay; cạnh chóp là miền `AIM_BEND` −60..70 × `AIM_DEV` −30..20 ở
-    xoay cẳng tay đang vẽ, vòng cung dưới chân là xoay cẳng tay ±90 (vạch là hướng lòng tay, đỏ khi xoay bị kẹp). Chấm là
-    hướng bàn tay đang vẽ: trắng trong miền, hổ phách khi cách kẹp dưới `stickman.held.wrist` (mặc định `HELD_WRIST` 5°, nhãn
-    "sát giới hạn") và đỏ khi gập hay lệch bị kẹp hay vượt kẹp — cùng biên với luật `wrist` của `held`: món đặt trước đo trên
-    nghiệm của bộ giải (`heldWristMargin`), nên panel báo `!` thì nón hổ phách, `!!` thì đỏ. Món đặt trước vượt kẹp thì thêm
-    chấm đỏ ở hướng nghiệm, nhãn ghi số độ vượt; tay dẫn giải trong miền nên chỉ có khớp kẹp và độ lệch trục món
+    xoay cẳng tay đang vẽ, vòng cung dưới chân là xoay cẳng tay ±90 (vạch là hướng lòng tay, đỏ khi xoay chạm giới hạn). Chấm là
+    hướng bàn tay đang vẽ: trắng trong miền, hổ phách khi cách giới hạn dưới `stickman.held.wrist` (mặc định `HELD_WRIST` 5°, nhãn
+    "sát giới hạn") và đỏ khi gập hay lệch chạm giới hạn hay vượt giới hạn — cùng biên với luật `wrist` của `held`: món đặt trước đo trên
+    nghiệm của bộ giải (`heldWristMargin`), nên panel báo `!` thì nón hổ phách, `!!` thì đỏ. Món đặt trước vượt giới hạn thì thêm
+    chấm đỏ ở hướng nghiệm, nhãn ghi số độ vượt; tay dẫn giải trong miền nên chỉ có khớp chạm giới hạn và độ lệch trục món
     (`wrist.err`). Cổ tay chỉnh qua hướng món và khuỷu, không có trường góc cổ tay. Nhãn `φ`/`E` và nhãn nón ẩn khi điểm của
     nó ra ngoài khung nhìn.
 - **Vệt** của bàn tay đang chọn (ẩn khi phát, khi khung soạn kiểu cầm mở; ô **Vệt** và cửa sổ **±… s** ở góc dưới khung,
@@ -463,7 +463,7 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi trac
   mốc món (tâm món), kể cả mốc lệch khung; chấm quanh giây đang xem (±1,5 khung) bỏ đi để không che tay, trừ chấm đỏ.
   - Cổ tay, khuỷu là `actJoints` của nhân vật cảnh (người không khai `character` là `defaultCharacter()`
     như `check`), đúng khớp `check` đo giật. **Vạch tím** ngang qua chấm
-    cổ tay: cổ tay kẹp ở khung ấy (`clamped` như `handReport`).
+    cổ tay: cổ tay chạm giới hạn ở khung ấy (`clamped` như `handReport`).
   - **Chấm đỏ** viền đen là khung giật của `check` nhóm `move` cho người ấy, cùng phép đo và ngưỡng (`stickman.snap` của
     `package.json`, mặc định `SNAP_PX` / `SNAP_K` / `SNAP_FPS`), đo cả cảnh: `sceneSnaps` nhắc cổ tay hay bàn tay bên ấy đỏ ở
     vệt cổ tay, nhắc khuỷu đỏ ở vệt khuỷu — khung vệt chứa cú nhảy (`Snap.t` là khung sau cú nhảy ở nhịp đo); quãng khuỷu
@@ -490,7 +490,7 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi trac
   rig, như vẽ ở giây của mốc) và **hướng** `quay`, `chúc`, `nghiêng` (độ, quanh trục đứng, ngang, tiến của người cầm; `0` là
   trục x, y, z của món theo tiến, xuống, ngang trái) — sửa một ô (Enter, rời ô, mũi tên) là áp như thả tay nắm, xoay quanh
   tâm món. Mốc món: chỗ ghi `at` hay `offset` bù tới khi tâm món ở đúng số, góc ghi `face` / `roll`. Mốc tay đồ theo tay:
-  quy ra dời tâm nắm, xoay bàn tay, ghi như tay nắm (`at` / `offset`, ý định `hold.face` / `hold.roll`); cổ tay kẹp thì món
+  quy ra dời tâm nắm, xoay bàn tay, ghi như tay nắm (`at` / `offset`, ý định `hold.face` / `hold.roll`); cổ tay chạm giới hạn thì món
   xoay chưa tới, thanh trạng thái báo như tay nắm. Chỉ dời thì giữ hướng mốc
   đang khai (hướng nhắm một đích như `holderFace` thì góc đổi theo chỗ); mốc `as`, `rest` chưa khai chỗ thành mốc khai chỗ và
   hướng đang vẽ. Món không ở tay theo đồ ở giây ấy thì ô chỉ để xem; JSON thô của mốc kèm nút chép (mở hay đóng giữ qua các lần vẽ lại thẻ); **Xoá mốc** (Del). Mốc tay cuối cùng của một người không xoá

@@ -460,7 +460,7 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
     với gốc ngón gập 30° → `sheet`, theo `t` trong `[0,05 · A, 0,45 · A]` (tấm dày thì mở). Ngón cái ở cả hai dáng là
     `PINCH_THUMB = [0, 10, 10, −20]` (`PoseRef.thumb`, góc bốn khớp ngón cái): khép theo trỏ, ngọn duỗi ngược để đầu ngón
     đè mặt `F` mà đốt gốc (da phình) tránh mép. Ngón cái ở mặt sau (`thumb` đổi mặt, quay π quanh `m`) đặt cổ tay bên kia
-    mặt phẳng tấm vì lòng tay nghiêng 40°: vượt kẹp cổ tay 17–25° ở `slant` 30° (`bang-gia`, hai cỡ tay) — giới hạn khớp,
+    mặt phẳng tấm vì lòng tay nghiêng 40°: vượt giới hạn cổ tay 17–25° ở `slant` 30° (`bang-gia`, hai cỡ tay) — góc cần vượt tầm khớp nên rig dừng cổ tay ở mép tầm (`clamp` trong code), phần thiếu thì bàn tay không tới chỗ cầm,
     `check` báo `wrist`; cầm bằng ngón cái mặt trước, `flat` hay `rim`.
   - `flat` (fixture `phieu-lien#cam`, `thuc-don#khoe`; `frame: "nf"`): lòng tay và ngón áp phẳng mặt kia, ngón cái vắt qua
     mép đè mặt `F`; `n = F`, `f = −m` quay `slant`. Dáng `edge`. Chỉ áp khi bề dày thật ở mép (`edgeThick`: giữa cạnh, 5
@@ -551,14 +551,14 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
     (chừng một nắm tay); nhặt thẻ nằm trên bàn là `edges`.
 - **Nhặt thẻ nằm trên bàn** (`edges`): thẻ ngửa trước bụng (mốc món `face: front → up`, `roll: top → forward`), cảnh không khai
   gì: rig chọn `edges` (`lateral` đắt hơn nó cả khi `edges` mang `VARIANT_COST`: kẹp bên ở thẻ nằm cộng giá `upright` chừng 1),
-  bàn tay phía mặt trên, ngón cái ở mép gần người, `along` 0,5, cổ tay không vượt kẹp (người mẫu `nguoi-cam-bang`, thẻ ngang
+  bàn tay phía mặt trên, ngón cái ở mép gần người, `along` 0,5, cổ tay không vượt giới hạn (người mẫu `nguoi-cam-bang`, thẻ ngang
   hông, cách hông 55–75; `bang-cam` hàng nhặt trên bàn: cả hai cỡ tay, hai tay, không luật nào báo). Thẻ dựng (*xem*, *khoe*) rig vẫn chọn `lateral`. Thẻ sát người
   (cách hông 35) không có mặt đỡ thì rig chọn `lateral` với nắm tay dưới mặt thẻ (da dưới mặt 12,7); mốc món nằm (`rest`, mục
   [4](#mốc-món-items)) cộng giá mặt đỡ (mục [5](#mặt-đỡ)) nên rig chọn `edges` từ phía trên (da dưới mặt ≤ 0,2).
 - **Tay**: một. **Hướng mặc định**: `face: { axis: <front>, toward: [−cos 20°, −sin 20°, 0] }` (hệ thân người cầm: mặt thẻ lùi
   về người cầm, ngửa `CARD_RISE` = 20°), `roll: { axis: <top>, toward: "up" }` — thẻ dựng xiên như ảnh mẫu `the-phong-xem`.
   Không dùng `holderFace` của `sheet`: thẻ trước ngực người chibi ngửa tới 45° thì kẹp bên chỉ với tới bằng khuỷu gập ngược
-  (mục 5) hay cổ tay vượt kẹp; ngửa ≤ 20° thì bàn tay giữa ngực ra khuỷu thấp sát sườn, cổ tay gần thẳng.
+  (mục 5) hay cổ tay vượt giới hạn; ngửa ≤ 20° thì bàn tay giữa ngực ra khuỷu thấp sát sườn, cổ tay gần thẳng.
 - **Độ khớp** `lateral`: khe ngón cái ≤ 0,3, sườn ngón trỏ ≤ 1,0, lực đối 180° (sườn trỏ), lún ≤ 0,4, không xuyên, da trỏ – út
   chiếu lên ≤ 20% mặt thẻ phòng (7–17%) — hai cỡ tay, hai tay, ngón cái hai mặt, `slant` −40 / 0 / 40. `edges` trên thẻ phòng
   (cạnh dài): khe đầu ngón cái tới mép 0,43–0,51, đầu trỏ 0,22–0,45, lực đối cái – trỏ 122–180°, lòng tay cách mặt thẻ 5,9–10,
@@ -583,7 +583,7 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
   tới món tối đa 15° (mục 6 điểm 4).
 - **Tay**: một. Món không có hướng mặc định: cảnh đặt bút trước ngực với `face` (ngòi ra trước chúc xuống, hệ thân
   `[tiến, y xuống, ngang phải]` ≈ `[0,8, 0,6, −0,2]`). Bút dựng đứng ngòi xuống (khung `held/`) thì kẹp ngón cái – ngón trỏ cần
-  lệch cổ tay chừng 98°, vượt kẹp 72–78° và `check` báo `wrist`. Tay dẫn (`point: "item:tip"`) lấy hướng ngòi làm ý định cổ tay
+  lệch cổ tay chừng 98°, vượt giới hạn 72–78° và `check` báo `wrist`. Tay dẫn (`point: "item:tip"`) lấy hướng ngòi làm ý định cổ tay
   (ngòi xuống mặt bàn); đường đi của ngòi do cảnh khai.
 - **Độ khớp**: fixture `but#viet` lệch 0,04° với hai bàn tay người thật và hai tay chuẩn cỡ 1,61 / 2,16 (vị trí lệch 0,20 – 0,22 với tay
   người thật, 0,45 – 0,51 với tay chuẩn); trên da, khe cái, trỏ, giữa ≤ khe của fixture + 0,3, lún ≤ 0,25, không xuyên.
@@ -604,7 +604,7 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
   đốt ngọn áp út; lòng tay không chạm que trên. **Vai trò**: cái, trỏ, giữa, áp út `press`; út, lòng tay `free`. **`curl` 15**: ngón
   cuộn tới món tối đa 15° (mục [6](#6-ngón) điểm 4).
 - **Tay**: một. Món không có hướng mặc định: cảnh đặt món trước ngực với `face` (ngọn ra trước, chúc 30°) và `roll` (hai que nằm
-  ngang); hướng khác thì tay theo khung cầm phải nâng khuỷu hay vượt kẹp cổ tay và `check` báo `elbow`, `wrist`. Tay dẫn lấy hướng
+  ngang); hướng khác thì tay theo khung cầm phải nâng khuỷu hay vượt giới hạn cổ tay và `check` báo `elbow`, `wrist`. Tay dẫn lấy hướng
   món làm ý định cổ tay.
 - **Độ khớp** (tay `1,75` / `2`, hai tay, hai que): trên da, que trên cách ngón cái ≤ 0,4, trỏ ≤ 0,6, giữa ≤ 1,3; que dưới cách kẽ
   cái – trỏ ≤ 0,25, áp út ≤ 0,3; đốt ngọn trỏ không chạm que dưới, áp út không chạm que trên; lún ≤ 0,25, lực đối ≥ 120°.
@@ -621,7 +621,7 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
   - **Trụ to nằm chéo lòng tay**: hướng ngón chếch `slant` độ về phía ngón cái (`f = f₀ · cos + t · sin`), đủ khi số đo ngón cái
     (bên dưới) từ `0,42 · W`, hoà tuyến tính từ `0,36 · W` (`WRAP_BIG`); trụ mảnh hơn giữ `f = f₀`. Trục món đi từ gò út sang gốc
     ngón trỏ như tay người nắm chai: chỉ khi ấy mặt gập của ngón cái mới vòng quanh thân (trục vuông góc ngón thì ngón cái gập dọc
-    trục). Chai đứng thì cẳng tay chếch lên tới bàn tay (ảnh mẫu `chai-than`). Mặc định `WRAP_SLANT` = 25°; cổ tay lệch quá kẹp
+    trục). Chai đứng thì cẳng tay chếch lên tới bàn tay (ảnh mẫu `chai-than`). Mặc định `WRAP_SLANT` = 25°; cổ tay lệch quá giới hạn
     (tay dẫn thấp trước bụng, cẳng tay ngang) thì cảnh khai `slant: 0`; rig giải thử cả `0` (`gridByVariant`), có giá lệch.
   - Lòng tay ngả theo **dốc mặt món**: đo bán kính ngoài ở 5 điểm (`WRAP_STEPS`) trên `±WRAP_HALF · W` = 0,3·W dọc trục, lòng nghiêng
     `WRAP_GAIN` = 1,6 lần góc dốc về phía `a`, tối đa `WRAP_TILT_MAX` = 45° (vai chai nghiêng 16,8° ra 26,8°, khớp fixture).
@@ -672,7 +672,7 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
   - `along` khai sát phần `grip: false` quá `GRIP_CLEAR · W` thì rig kẹp tâm nắm về miền `alongRoom` và `check` báo **cảnh báo**
     `choice` (mục 7): nêu phần cắt, khoảng cách và `along` rig kẹp về.
   - Ống nghe máy bàn, máy tường, bộ đàm: `rod` của tay cầm, đầu cao là loa (`top`). Áp tai là lòng tay áp mặt lưng của thân
-    (`around 180`; mặt trước nhô loa, mic), rig suy ra `flat`: ngón cái dọc cạnh về loa, ngón ngang thân; cổ tay kẹp thì ống nghe
+    (`around 180`; mặt trước nhô loa, mic), rig suy ra `flat`: ngón cái dọc cạnh về loa, ngón ngang thân; cổ tay chạm giới hạn thì ống nghe
     nghiêng theo bàn tay, chếch theo đường tai – miệng. Ý định loa vào tai ở cảnh. Trước ngực rig giải `wrap` ở mặt hông, ngón cái
     về loa (ảnh mẫu `ong-nghe-cam`).
 - **Tay**: một hay hai. Tay phụ mặc định: `platform` ở mặt đáy (`place: "bottom"`; rót có tay đỡ, mục [5](#tay-phụ-both)). Chai đứng
@@ -756,9 +756,9 @@ nắp; dáng mới `claw`). Lựa chọn: hướng tiếp cận, biến thể. M
   chừng 90° móc dưới quai; dáng gốc gập 28–32° đẩy đốt gốc vào quai dày), `by: "radius"` trong `[0, 0,3] · W`, cả hai đầu cùng dáng.
   **Vai trò**: trỏ–út `wrap`, cái `free`.
 - **Độ khớp**: fixture `tui#xach` lệch ≤ 5° / 1 đơn vị; trên da lún 0 (không xuyên), khe trỏ–út ≤ 0,25 (≤ khe của fixture + 0,3), lệch cổ tay −18,8° ở
-  cỡ tay 1,61 và 2,16 (sát kẹp ±20°).
+  cỡ tay 1,61 và 2,16 (sát giới hạn ±20°).
 - **Lựa chọn**: `part`, `along` (**0,5**). **Tay**: một. **Hướng mặc định**: `up: <top>` (quai lên).
-- **Chỗ đặt món**: túi hạ xuống dưới tay, quai ngang tầm tay buông. Đặt trước ngực thì quai cao hơn đầu tay với, cổ tay vượt kẹp
+- **Chỗ đặt món**: túi hạ xuống dưới tay, quai ngang tầm tay buông. Đặt trước ngực thì quai cao hơn đầu tay với, cổ tay vượt giới hạn
   35–46°; `bang-cam` đặt ngang hông (`to: "hip"`) và thêm tay dẫn: tay buông xách (không khai đích, tay ở tư thế đứng, món theo
   bàn tay).
 
@@ -774,7 +774,7 @@ nắp; dáng mới `claw`). Lựa chọn: hướng tiếp cận, biến thể. M
 - **Lựa chọn**: `thumb` ∈ {`left`, `right`} (cạnh dài có ngón cái; mặc định **cùng bên với tay**), `along` (**0,4**), `tilt`
   ∈ [0°, 25°] (**20°**). `tilt` từ 15° trở lên gò ngón cái ép cạnh có ngón cái (lún 0,3–1,4 ở cỡ tay 1,61), ≤ 10°
   không lún ở cỡ 1,61–2,16: rig giải `tilt` với giá lún (mục 5).
-- **Khoe một tay** (màn ra người xem, tay trước ngực): mọi `thumb` × `tilt` × `along` đều vượt kẹp cổ tay (nhỏ nhất 12–14°,
+- **Khoe một tay** (màn ra người xem, tay trước ngực): mọi `thumb` × `tilt` × `along` đều vượt giới hạn cổ tay (nhỏ nhất 12–14°,
   `thumb` khác bên tay, `tilt` 25°, `along` 1) — giới hạn khớp, `check` báo `wrist`; khoe bằng hai tay hay nhóm `sheet`.
 - **Tay**: một; `both` được vì nhóm có `support: { group: "platform", place: "back" }`: tay phụ đặt lòng tay lên mặt sau (pháp tuyến
   `−front`) của máy, tay tới từ cạnh sau ngón (mục [5](#tay-phụ-both)). Hai tay ôm điện thoại trước ngực, màn về người cầm.
@@ -809,8 +809,8 @@ nắp; dáng mới `claw`). Lựa chọn: hướng tiếp cận, biến thể. M
   của cạnh tay dẫn (`oppositeEdge`: theo tên `left` ↔ `right`, `top` ↔ `bottom`, `front` ↔ `back`).
 - **Hướng mặc định**: `face: { axis: "support", toward: "up" }`; trục `support` là ngược pháp tuyến mặt lớn (diện tích
   `≥ ½` mặt lớn nhất; gần `−top`, hoà gần `−front`) nên mặt đỡ ngửa lên: khay `top` lên, phiếu đỡ mặt sau `front` lên.
-- **Giới hạn khớp**: lòng ngửa nằm sát kẹp xoay cẳng tay ±90°. Món sát ngực cần 93–108° và `check` báo `wrist`; món đặt xa ngực
-  và thấp hơn (`to: "chest"`, `offset: [80, 20, 0]`) thì khay vừa kẹp, phiếu còn vượt vài độ. `bang-cam` đặt `platform` ở chỗ này.
+- **Giới hạn khớp**: lòng ngửa nằm sát giới hạn xoay cẳng tay ±90°. Món sát ngực cần 93–108° và `check` báo `wrist`; món đặt xa ngực
+  và thấp hơn (`to: "chest"`, `offset: [80, 20, 0]`) thì khay vừa chạm giới hạn, phiếu còn vượt vài độ. `bang-cam` đặt `platform` ở chỗ này.
 
 #### 11. `hug` — ôm vào thân (để sau)
 
@@ -900,7 +900,7 @@ const SceneItemMarkSchema = z.strictObject({
 - **`holderFace`** là hướng từ chỗ món về người cầm: hướng ngang về tâm sọ, ngẩng tới tầm giữa hai mắt, góc ngẩng kẹp ở 45°
   so với mặt ngang hệ thân (người chibi, món ngang ngực mà không kẹp thì mặt bảng gần ngửa); nghiêng khác thì `tilt`.
 - **Món giơ trước mặt** (xem điện thoại, đọc thẻ): đầu người que to so với tay, món ngang mắt thì tay duỗi thẳng và cổ tay
-  vặn tới kẹp. Đặt món ngang cằm, lệch về phía tay cầm — `to: "eye"`, `offset` chừng `[45, 45, 10]` —, khuỷu gập, `holderFace`
+  vặn tới giới hạn. Đặt món ngang cằm, lệch về phía tay cầm — `to: "eye"`, `offset` chừng `[45, 45, 10]` —, khuỷu gập, `holderFace`
   ngửa mặt món lên về mắt. Nhóm không có `roll` mặc định (`palmBox`) thì khai `roll: { axis: "top", toward: "up" }`, bỏ trống
   là đầu món có thể chúc xuống.
 - **Giữa hai mốc** (`itemAt`): chỗ món hoà theo `ease` của mốc sau (bỏ trống là `smooth`; `bezier` theo `bezier` của mốc,
@@ -1075,7 +1075,7 @@ Hai chỗ của món, tách rõ:
   mốc; cầm hai tay đọc mỗi khung.
 - **Chỗ món vẽ** — renderer (`world.ts`), `check` và `scene_probe` đọc trên cảnh three. Cầm hai tay: `itemAt`. Lần cầm theo mốc
   và tay dẫn: `bàn tay đã vẽ · GripFrame` (`actHeld` của lõi, nhánh liên kết của `world.ts`), nên món dính tay cả khi cổ tay
-  vượt kẹp hay tay không với tới. Ở mốc trong tầm và trong kẹp, hai chỗ trùng nhau.
+  vượt giới hạn hay tay không với tới. Ở mốc trong tầm và trong giới hạn, hai chỗ trùng nhau.
 
 ### Bàn tay từ món
 
@@ -1095,7 +1095,7 @@ Một hàm giá chung cho mọi tay theo đích (`graspArm.ts`): món đặt tr�
 đích không ý định trong lần giải của `act3`.
 
 ```
-E(φ) = cap( ½ (turn/90)² + (bend/50)² + ½ (dev/20)²                 cổ tay chưa kẹp ứng với cẳng tay ở φ (thang thoải mái)
+E(φ) = cap( ½ (turn/90)² + (bend/50)² + ½ (dev/20)²                 cổ tay chưa bị giới hạn ứng với cẳng tay ở φ (thang thoải mái)
           + 10 · Σ (vượt giới hạn / nửa tầm phía ấy)² )             phạt vượt `AIM_BEND`, `AIM_DEV`, xoay cẳng tay ±90
      + w_pref · ((Δ/60)² + ((|Δ| − 30)⁺/25)²)                       Δ = φ − φ₀: mềm trong ±30°, cứng dần ngoài đó
      + w_twist · ((|ψ − 30| − 45)⁺/40)²                             xoay trục cánh tay trên ψ (dương là xoay trong)
@@ -1111,12 +1111,12 @@ cap(x) = WRIST_CAP · tanh(x / WRIST_CAP)
   `0`, hay `elbow` của mốc tay chiếu lên vòng ấy (`phiToward`).
 - **Hai nghĩa của `elbow`.** Món đặt trước (theo mốc) đọc `elbow` không khoá là gợi ý: `φ₀`, mềm trong `±30°` rồi cứng dần,
   nên `E(φ)` được kéo khuỷu khỏi hướng khai khi hướng ấy làm tay lấn thân hay cổ tay vượt giới hạn — lấn thân phạt nặng hơn
-  cổ tay (trần `WRIST_CAP`), nên khuỷu khai xấu thì khuỷu nhường, cổ tay có thể kẹp và món theo bàn tay đã kẹp. Tay theo đích
+  cổ tay (trần `WRIST_CAP`), nên khuỷu khai xấu thì khuỷu nhường, cổ tay có thể chạm giới hạn và món theo bàn tay đã dừng ở giới hạn. Tay theo đích
   (tay dẫn, tay phụ, ý định) đọc `elbow` là lệnh theo phần khai (bên dưới). Muốn món đặt trước giữ đúng hướng khai thì
   `elbowLock`; phép đổi chế độ tự ghi khoá ([Đổi chế độ lần cầm](#đổi-chế-độ-lần-cầm)).
 - **Cổ tay**: góc tách từ khung bàn tay qua `gimbalBlend` (gập gần `±90°` dồn lệch vào xoay). Giá thoải mái êm, không có vùng
   chết; khuỷu không bị cổ tay kéo xa vì giá khuỷu cứng ngoài `±30°`: cổ tay đòi xoay `45°` thì khuỷu nhích chừng 6°. Cả phần
-  cổ tay có **trần mềm** `WRIST_CAP` (`4`): bàn tay đòi xa quá thì khuỷu thôi chạy theo, đứng ở chỗ ưu tiên và cổ tay kẹp —
+  cổ tay có **trần mềm** `WRIST_CAP` (`4`): bàn tay đòi xa quá thì khuỷu thôi chạy theo, đứng ở chỗ ưu tiên và cổ tay chạm giới hạn —
   khuỷu đúng giải phẫu thắng món đúng hướng. Giá thoải mái phẳng dần từ `150°` cách giữa tầm tới điểm đối diện, như
   `wristClamp` về giữa tầm, nên đòi ngược hẳn không đẩy khuỷu về hai phía.
 - **`ψ`, vai** (`shoulderAngles`, `core/elbow.ts`): `ψ` đo bản lề khuỷu quanh cánh tay trên so với bản lề nghỉ (tay buông, cẳng
@@ -1181,7 +1181,7 @@ cap(x) = WRIST_CAP · tanh(x / WRIST_CAP)
   `reach` với khe. Rig không kéo món lại gần.
 - **Cổ tay vượt giới hạn** ở `φ` đã giải: bàn tay vẽ theo `wristClamp` (xoay `±90`, gập `AIM_BEND` `−60..70`, lệch `AIM_DEV`
   `−30..20`, liền trên vòng), khuỷu giữ `φ` đã giải; cầm hai tay thì món vẫn ở chỗ khai, lần cầm theo mốc thì món theo bàn
-  tay đã kẹp. `check` báo `wrist` kèm độ vượt và độ lệch giữa bàn tay và chỗ cầm.
+  tay đã dừng ở giới hạn. `check` báo `wrist` kèm độ vượt và độ lệch giữa bàn tay và chỗ cầm.
 - Hai tay giải trên cùng `itemPose`: tay có `both` (lead) trước, tay kia sau; không có `both` thì tay phải trước. Tay giải sau
   tính tay đã đặt vào số hạng lấn: ở phía cảnh (`scene.ts`, `placedOther`) tay trái tính tay phải đã đặt trên món.
 - Tay dẫn có `grasp` (`mode: "hand"`, mục [Báo](#báo)): lựa chọn là trường cảnh khai cộng mặc định nhóm, cánh tay đọc trên bàn
@@ -1197,13 +1197,13 @@ Lần cầm một tay có mốc món (mục 4) không giải từng khung trên 
 2. **Ở mỗi mốc `t_k`**: khung cầm, `Wp`, `Rw` từ món ở mốc (thân người cầm ở `t_k`); `φ` bằng `solvePhi` với `φ_trước` là mốc
    trước (mốc đầu: `φ` cuối như vẽ, kể cả phần khoá, của lần cầm theo món liền trước trên cùng tay) và `elbow` của mốc tay nếu có — phần khoá `1`
    (`elbowLock`) thì `φ = φ(elbow)`, không tìm. Nghiệm lưu **trong
-   hệ thân**: cổ tay so với vai bên ấy và khung bàn tay, cả hai qua `Rr` của thân; `φ`; góc cổ tay đã kẹp và phần vượt kẹp.
+   hệ thân**: cổ tay so với vai bên ấy và khung bàn tay, cả hai qua `Rr` của thân; `φ`; góc cổ tay sau giới hạn và phần vượt giới hạn.
 3. **Giữa hai mốc**: hệ số `f` theo `ease` của mốc sau (như `itemAt`); cổ tay dời thẳng và bàn tay quay đường ngắn nhất
    (`mixRotation`) trong hệ thân, đổi ra thế giới bằng thân ở chính `t` — người cúi, đi giữa hai mốc thì tay theo thân; `φ` đi
-   đường ngắn nhất trên vòng; góc cổ tay đã kẹp hoà thẳng (như `solveActing` hoà hai nghiệm). `auto` thì bậc ba đơn điệu qua
+   đường ngắn nhất trên vòng; góc cổ tay sau giới hạn hoà thẳng (như `solveActing` hoà hai nghiệm). `auto` thì bậc ba đơn điệu qua
    bốn mốc kề như `itemAt`: cổ tay và góc cổ tay từng thành phần, `φ` đã mở vòng, bàn tay theo góc trắc địa cộng dồn. Trước mốc đầu và sau mốc cuối giữ
    mốc gần nhất trong hệ thân. Khung cầm đọc ở `t` (trường số của tay trượt hoà như mục 4); dáng ngón theo khung cầm.
-4. **Món** vẽ ở `bàn tay đã vẽ · GripFrame`: dính tay suốt lần cầm, ở mốc trùng chỗ khai (trừ khi ngoài tầm hay vượt kẹp).
+4. **Món** vẽ ở `bàn tay đã vẽ · GripFrame`: dính tay suốt lần cầm, ở mốc trùng chỗ khai (trừ khi ngoài tầm hay vượt giới hạn).
 5. **Món nằm chờ tay**: trước mốc món đầu khi mốc ấy là mốc nằm (`rest`), và sau mốc món cuối khi mốc ấy là mốc nằm, món đứng ở
    mốc ấy (`itemAt` ở giây mốc), không theo bàn tay — bàn tay đang tới món (hoà từ tay tự do, `enter`) hay vừa đặt xuống
    (`HoldGrasp.rest`, `GraspSolution.still`; `actHeld` và `world.ts` cùng đọc). Nhặt món người khác vừa thả: mốc tay mở lần
@@ -1218,7 +1218,7 @@ theo người như một khối — không có chế độ nào phải tắt. M�
 **Mốc đầu lấy nguyên tay đang vẽ** (`as: "hand"` ở mốc món đầu, [Mốc món](#mốc-món-items)): lần cầm mở ngay sau một lần cầm
 cùng món trên cùng tay (tay dẫn hay theo mốc, không phải tay phụ) thì mốc keyed đầu là bàn tay đã vẽ ngay trước ranh giới
 (`drawnKeyed`: `actArm` trên `sceneAt` ở `since − RUN_EPS`, cùng giây với `was`) đổi sang hệ thân — cổ tay so với vai, khung
-bàn tay, `φ` của khuỷu đang vẽ (`phiOf`), góc cổ tay như vẽ (đã trong miền khớp, phần vượt kẹp `0`) — không qua `solvePhi`,
+bàn tay, `φ` của khuỷu đang vẽ (`phiOf`), góc cổ tay như vẽ (đã trong miền khớp, phần vượt giới hạn `0`) — không qua `solvePhi`,
 không qua khung cầm của món. Bước hoà `was` của ranh giới đi từ đúng nghiệm ấy tới chính nó, nên cổ tay, bàn tay, khuỷu
 không trượt; cổ tay tay dẫn đi từ chuỗi `HOLD_SLEW` như lúc vẽ nên cùng `t` ra cùng số dù hỏi theo thứ tự nào. Lựa chọn
 chỗ cầm của lần cầm mới **giữ đúng lựa chọn ngay trước ranh giới** (`priorChoice`, cả đầu cao `high` khi có): mọi trường
@@ -1303,10 +1303,10 @@ Cảnh thường khai đủ chỗ cầm. Thiếu trường nào:
   `KEEP_COST` = 2; trùng trường rời mà lấy đầu cao của chính nó khác đầu cao đang giữ cũng tính là khác (món quay nửa vòng
   trong tay); trùng trường rời chỉ khác trường liên tục cộng `KEEP_SLIDE` = 1. Ứng viên trùng trường rời thử luôn trường liên
   tục đang giữ (cả ở bậc rời lẫn trong lưới liên tục), và lưới liên tục chạy cả quanh ứng viên giữ tốt nhất. `KEEP_COST` = 2 là
-  cỡ giá cổ tay vượt kẹp chừng 45% giới hạn (`10 · 0,45²`) hay khe tầm với 1,4 `AIM_GAP`: rig chỉ đổi khi lựa chọn cũ không với
+  cỡ giá cổ tay vượt giới hạn chừng 45% nửa tầm (`10 · 0,45²`) hay khe tầm với 1,4 `AIM_GAP`: rig chỉ đổi khi lựa chọn cũ không với
   tới hay gãy cổ tay rõ ở các mốc của lần cầm mới, khi ấy món vẫn xoay trong tay suốt `HOLD_BLEND` (điện thoại ngang mắt cầm
   `thumb` cũ lệch cổ tay 91°: đổi mặt ngón cái, món quay 140°; cảnh muốn khác thì hạ mốc món hay khai `thumb`). Không ép giữ:
-  ép thì bàn tay vượt kẹp và món theo bàn tay đã kẹp, lệch chỗ khai ở mốc. Trường cảnh khai thắng (không xét ở `keep`).
+  ép thì bàn tay vượt giới hạn và món theo bàn tay đã dừng ở giới hạn, lệch chỗ khai ở mốc. Trường cảnh khai thắng (không xét ở `keep`).
   Lần cầm từ giây 0, tay phụ của `both`, khác món hay khác nhóm thì giải như thường.
 
 ### Mặt đỡ
@@ -1348,7 +1348,7 @@ có chỗ tiếp xúc, hay khác nhóm mà không có `support.place`, thì khô
 - **Món đặt trước**: tay `both` giải trước (không có `both` thì tay phải); tay phụ giải sau ở cùng mốc bắt đầu: `supportChoice`
   trên khung tay lead, khối hình cố định bằng `featureIndex`, trường còn thiếu `chooseMissing` giải như tay lead (cùng giá, số hạng
   lấn gồm tay lead đã đặt) và khuỷu `E(φ)` riêng. Tay phụ khác nhóm để `psi` cho bộ giải, trừ khi `both.psi` khai. Tay lead chọn
-  chỗ cầm không xét tay phụ: chỗ lệch một bên thì tay phụ có thể vượt kẹp cổ tay.
+  chỗ cầm không xét tay phụ: chỗ lệch một bên thì tay phụ có thể vượt giới hạn cổ tay.
 - **Tay dẫn**: tay phụ đặt theo khung tay lead đã vẽ, `psi` 0 với tay phụ khác nhóm.
 
 ### Đổi lần cầm
@@ -1365,7 +1365,7 @@ Hai đường, theo lần cầm:
   `was` và `released: true` (không vai trò, không món, không dáng ngón) cho tới hết quãng hoà. Từng thành phần hoà thẳng từ cũ
   sang mới (`solveActing` của `act3.ts`):
   cổ tay `Wp` dời thẳng; bàn tay `Rw` đi đường ngắn nhất (`mixRotation`); khuỷu `φ` đi đường ngắn nhất trên vòng;
-  góc cổ tay (xoay, gập, lệch, đã kẹp) và dáng ngón hoà tuyến tính. Lần cầm từ giây 0 không hoà.
+  góc cổ tay (xoay, gập, lệch, sau giới hạn) và dáng ngón hoà tuyến tính. Lần cầm từ giây 0 không hoà.
 - **Tay dẫn.** Liên kết tay ↔ món hoà từ cũ sang mới (`ReachHold.from`, `mixGrip`: quay đường ngắn nhất, dời
   thẳng); ý định hoà theo. Lần cầm cũ theo món của cùng món thì bàn tay còn hoà từ nghiệm cũ (`was`), và liên kết cũ là khung
   cầm của nghiệm ấy (`from.grasp.frame`, `act3` và `world.ts` điền từ `was`). Lần cầm cũ theo mốc cùng nhóm thì liên kết mới
@@ -1391,7 +1391,7 @@ grasp: {
 }
 ```
 
-`keyed`: lần cầm một tay theo mốc (món theo bàn tay). `wrist.over` là độ vượt kẹp, `wrist.off` là độ lệch giữa bàn tay vẽ và chỗ cầm (đơn vị rig; tay dẫn luôn `0`, bàn tay là
+`keyed`: lần cầm một tay theo mốc (món theo bàn tay). `wrist.over` là độ vượt giới hạn, `wrist.off` là độ lệch giữa bàn tay vẽ và chỗ cầm (đơn vị rig; tay dẫn luôn `0`, bàn tay là
 chính chỗ đã vẽ). `by` của tay dẫn chỉ có `scene` (cảnh khai) và `default` (mặc định nhóm), không có `rig`. `arm` của món
 đặt trước thêm `bodyRatio`, `bodyPart` (lấn chia bán kính tay ở chỗ lấn); cả hai đường thêm `inward` (khuỷu lệch vào giữa
 thân, mục 5). `check` (dòng `reach`, `wrist`, `arm`, `elbow`),
@@ -1419,7 +1419,7 @@ Hai hàm đọc của `scene.ts` (cửa `@stickman3d/rig/core`), không đổi h
     `elbowLock`: khuỷu nằm đúng hướng `elbow` của mốc khoá — phần khoá thật sự áp lên tay (`elbowLockAt`) là `1`: ở mốc khoá,
     giữa hai mốc khoá, trước mốc đầu, sau mốc cuối khi mốc ấy khoá. Tay không theo món đặt trước thì phần khoá nhân phần đích
     `w`: mốc khoá không có `at` / `to` (đích `w` `0`) không khoá.
-  - `wrist.drawn`: xoay, gập, lệch như vẽ (sau kẹp). `wrist.raw` (trước kẹp): món đặt trước là góc bàn tay của nghiệm trên
+  - `wrist.drawn`: xoay, gập, lệch như vẽ (sau giới hạn). `wrist.raw` (trước giới hạn): món đặt trước là góc bàn tay của nghiệm trên
     cẳng tay (theo mốc: bàn tay đã hoà giữa hai mốc); tay dẫn, tay tự do là nghiệm ý định trước `HOLD_SLEW` — ý định giải
     trong miền khớp nên không vượt; không ý định là `null`. `wrist.over`: phần vượt miền, món đặt trước lấy của bộ giải, còn
     lại đo trên góc vẽ. `wrist.clamped`: khớp ở giới hạn. `wrist.err`: tay dẫn có ý định, góc lệch còn lại của trục món.
@@ -1476,7 +1476,7 @@ vá và độ lệch, không ghi gì.
   không dựng hay không giải được thì lùi: chỉ trường rời (`part`, `edge`, `thumb`, `variant`), rồi không ghi thêm (`notes` báo).
 - **Khoá khuỷu.** Sau phép đổi, mốc mà khuỷu tay dẫn lệch khuỷu đang vẽ quá `0,5°` (`φ`, `HOLD_MODE_PHI`) nhận `elbow` là hướng
   khuỷu đang vẽ (theo hệ của đích mốc ấy, như `elbow` của mốc tay) cùng `elbowLock: true` ([03](03-scene.md#đích-bàn-tay-thế-giới)), đè
-  `elbow` cảnh khai ở mốc ấy: cùng khuỷu thì cổ tay không phải kẹp khác đi, món ở mốc về đúng chỗ. Mốc ngay sau mốc khoá cũng
+  `elbow` cảnh khai ở mốc ấy: cùng khuỷu thì cổ tay không phải dừng ở giới hạn khác đi, món ở mốc về đúng chỗ. Mốc ngay sau mốc khoá cũng
   khoá (khoá của một mốc giữ tới mốc khoá kế tiếp, mốc không khoá mà trống thì bị bỏ). Tay theo đồ đọc khoá ở mốc
   tay mang `hold` cùng giây với mốc món; đồ theo tay ở mốc có đích. Khoá giữ khi bản vá có khoá hơn bản không khoá, so lần lượt:
   món ở mốc (lệch dời chia `HOLD_MODE_POS` `0,5` đơn vị rig cộng lệch quay chia `HOLD_MODE_ANGLE` `1°`; lớn nhất, rồi tổng các
@@ -1484,7 +1484,7 @@ vá và độ lệch, không ghi gì.
   (đầu cạnh, dời đích đồ theo tay) so cùng cách, trừ bước khuỷu. Tay phụ của `both` không khoá
   (`elbowLock` không áp cho nó). Hàng `rows` của mốc khoá có `elbowLock`, `notes` nêu các giây khoá. Khoá là thứ giữ món đứng
   yên: `elbow` của món đặt trước chỉ là gợi ý ([Khuỷu tự nhiên](#khuỷu-tự-nhiên)), nên bỏ `elbowLock` thì rig dò lại khuỷu —
-  dáng tự nhiên ra gần cùng khuỷu, món giữ chỗ; khuỷu đang vẽ lấn thân hay đẩy cổ tay sát giới hạn thì khuỷu nhường, cổ tay kẹp
+  dáng tự nhiên ra gần cùng khuỷu, món giữ chỗ; khuỷu đang vẽ lấn thân hay đẩy cổ tay sát giới hạn thì khuỷu nhường, cổ tay chạm giới hạn
   và món dời theo bàn tay.
 - **Đầu cao của cạnh** (`high`): cảnh không khai thì hai chế độ dựng chiều cạnh `e` từ hai nguồn khác nhau: tay dẫn không kế
   thừa lần cầm theo mốc dựng khung cầm với `e` mặc định của khối hình (`handFrame` của `holdLink.ts` → `edgeFrame` của
@@ -1499,9 +1499,9 @@ vá và độ lệch, không ghi gì.
   along` (tên: `low` ↔ `high`), hay thêm `slant` đổi dấu (`low` ↔ `high`) và `thumb` của `palmBox` đổi bên — giữ cách lệch ít
   nhất; `notes` báo tay nào, cách nào.
 - **Đồ theo tay: món giữ chỗ.** Sau phép đổi, đích tay dẫn dời theo chỗ món đo được (`HOLD_MODE_FIX` = 2 lượt, giữ lượt nào món
-  ở mốc gần hơn): khung cầm hai chế độ khác nhau thì bàn tay dời, món đứng yên. Cổ tay đã kẹp ở giới hạn trước phép đổi
+  ở mốc gần hơn): khung cầm hai chế độ khác nhau thì bàn tay dời, món đứng yên. Cổ tay đã dừng ở giới hạn trước phép đổi
   (`clamped.before` của hàng không hoà, ví dụ hai tay bắt chéo trên tấm) thì bàn tay không tới chỗ cầm: hai tay trên mốc món
-  vẽ món ở mốc nên lệch bị che, sau phép đổi món theo bàn tay đã kẹp nên dời; `notes` báo tay, khớp kẹp, quãng giây và lệch
+  vẽ món ở mốc nên lệch bị che, sau phép đổi món theo bàn tay đã dừng ở giới hạn nên dời; `notes` báo tay, khớp chạm giới hạn, quãng giây và lệch
   lớn nhất.
 - **Đổi giữa chừng** (`from`): chèn mốc ở `from` (hay dùng mốc có sẵn ở giây ấy) mang `hold` của lần cầm cộng `regrip: true`,
   rồi chỉ đổi phần sau. Tay kia đang cầm qua giây ấy: sang tay theo đồ thì nó cũng `regrip` ở đó, sang đồ theo tay thì nó
@@ -1519,8 +1519,8 @@ vá và độ lệch, không ghi gì.
 Phép đổi không khớp tuyệt đối; studio và agent đọc `rows` trước khi áp:
 
 - Tay theo đồ giải khuỷu bằng `E(φ)`, tay dẫn dò khuỷu từ cực khởi đầu: cùng chỗ và hướng món, hai chế độ có thể chọn `φ` khác
-  nhau; cổ tay kẹp ở một bên thì món lệch theo (`phi`, `clamped`). Khoá khuỷu kéo `φ` về khuỷu đang vẽ; sang đồ theo tay, tay
-  dẫn khoá khuỷu vẫn giải cổ tay theo ý định từ góc cổ tay của hành động, có thể dừng ở nghiệm kẹp khác (`wrist.err` của
+  nhau; cổ tay chạm giới hạn ở một bên thì món lệch theo (`phi`, `clamped`). Khoá khuỷu kéo `φ` về khuỷu đang vẽ; sang đồ theo tay, tay
+  dẫn khoá khuỷu vẫn giải cổ tay theo ý định từ góc cổ tay của hành động, có thể dừng ở một nghiệm giới hạn khác (`wrist.err` của
   `handReport`) — khi ấy khoá làm món lệch hơn và không được giữ.
 - Có khi hai chế độ dựng khung cầm khác nhau cả khi cùng chiều cạnh, món giữ chỗ mà tâm nắm dời trên món (`hand`).
 - Ranh giới lần cầm hoà khác nhau: tay theo đồ hoà từ tay tự do trong `HOLD_BLEND` sau mốc mở, tay dẫn tới đích đúng ở mốc
@@ -1692,7 +1692,7 @@ của `held/`.
   kê hàng bỏ.
 - Cặp (món, nhóm, người) mà món không có khối hình đạt `needs` của nhóm với cỡ tay ấy bị bỏ; lý do ở `do.json` (`bo`) và dòng
   in ra.
-- Nhãn in chỗ cầm rig chọn, `lún` trên da, `role` từng ngón (khe tới món, vai trò), cổ tay vượt kẹp, `size`; `do.json` giữ thêm
+- Nhãn in chỗ cầm rig chọn, `lún` trên da, `role` từng ngón (khe tới món, vai trò), cổ tay vượt giới hạn, `size`; `do.json` giữ thêm
   `sink`, `roles`, `gaps`, `pierce`, `grip`, `grasp`.
 - `--so`, `--luu-chuan`, `--chuan` so hồi quy ([03](03-scene.md#bảng-duyệt-nhóm-cầm)): bảng chuẩn là bảng vừa duyệt bằng mắt,
   cũng là chuẩn so cho fixture của nhóm.

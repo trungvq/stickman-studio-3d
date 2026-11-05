@@ -1191,7 +1191,7 @@ bỏ bàn tay ngoài khung camera:
 scenes/canh-05.json: mặt món quay sai — `nguoi-a` tay trái cầm dien-thoai: trục ý định còn lệch 72° khỏi `khach.eye` (chỗ cầm `dien-thoai@palmBox` (…)); đổi `face` / `up` của mốc tay, `elbow`, hay `edge` / `thumb` ở giây 1.20 · giây 0.90–1.60. Lúc ấy: … (docs/11-nhom-cam.md#7-luật-check-nhóm-held)
 ```
 
-Dòng `up` / `face` của tay dẫn kể đích, góc còn lệch, khớp cổ tay kẹp (xoay cẳng tay `±90`, gập `AIM_BEND` `−60..70`, lệch
+Dòng `up` / `face` của tay dẫn kể đích, góc còn lệch, khớp cổ tay chạm giới hạn (xoay cẳng tay `±90`, gập `AIM_BEND` `−60..70`, lệch
 `AIM_DEV` `−30..20`) hay khuỷu hết xoay, và gợi ý: đổi `face` / `up` của mốc tay, `elbow` (khung cẳng tay quay theo hướng
 khuỷu), đổi chỗ cầm (`edge`, `thumb`). Rig không tự đổi chỗ cầm — đó là việc của cảnh. Thêm hai dòng một lần mỗi cảnh,
 không theo giây:
@@ -1214,7 +1214,7 @@ scenes/canh-07.json: ngón xuyên đồ — `saito` tay phải cầm chen-ruou: 
 **Chỗ cầm nhóm** (`món@nhóm`) đi bộ luật riêng, đo tới hình (`shape`) và trên da bàn tay đang vẽ ([11](11-nhom-cam.md#7-luật-check-nhóm-held)):
 `pierce`, `sink` (da lún quá `HELD_SINK` `0,65`), `loose`, `role` (ngón có vai trò mà hở quá ngưỡng `wrap` `1,5`), `oppose` (ngón cái chạm mà
 không phần nào kẹp món phía bên kia, góc pháp tuyến dưới `HELD_OPPOSE` `120°`), `grip` (ngưỡng theo nhóm; `grip`
-khai ở `package.json` thì thắng, cả khi nhỏ hơn); món đặt trước thêm `reach` và `wrist` (cổ tay vượt kẹp — lỗi; còn cách kẹp
+khai ở `package.json` thì thắng, cả khi nhỏ hơn); món đặt trước thêm `reach` và `wrist` (cổ tay vượt giới hạn — lỗi; còn cách giới hạn
 dưới `HELD_WRIST` `5°` — cảnh báo), `arm` (tay lấn thân quá `HELD_ARM` `0,3` bán kính tay) và `size`; mọi chỗ cầm nhóm thêm `elbow`
 (khuỷu gập ngược — vào trong hay chĩa lên — quá `HELD_ELBOW` `0,3` cánh tay trên — lỗi) và `arm` lấn đầu (lỗi); tay dẫn đọc `up`, `face`,
 `reach` (bảng trên). `grip`, `loose`, `role`, `oppose` im trong quãng hoà của lần cầm. Dòng báo trỏ về chỗ cầm và hướng món của cảnh.
@@ -1254,8 +1254,8 @@ cặp bỏ: [11](11-nhom-cam.md#bang-cam-theo-nhóm).
 - **Ra** `tmp/bang-cam/`: `<món>.jpg` một bảng mỗi món (hàng: nhóm × chỗ cầm × tay × người, cột: góc), `index.html` /
   `index.md` mục lục mọi hàng (chỗ cầm, món đặt ở đâu, số đo, dòng `check` báo), `o/` ảnh từng ô, `do.json` số đo. Số đo:
   `lún` da lún sâu nhất vào món (âm là khe), `role` khe từng ngón tới món theo vai trò, `nắm` tâm nắm tới mặt món, `lòng`
-  khe/góc lòng tay (không đo với dáng kẹp), `up`/`face` góc lệch ý định và khớp cổ tay kẹp, `tới` khe tay phụ hay `item:`
-  tới đích, cổ tay vượt kẹp, `size`; `!!` là luật `held`.
+  khe/góc lòng tay (không đo với dáng kẹp), `up`/`face` góc lệch ý định và khớp cổ tay chạm giới hạn, `tới` khe tay phụ hay `item:`
+  tới đích, cổ tay vượt giới hạn, `size`; `!!` là luật `held`.
 - **Tất định**: cùng code, cùng dữ liệu là cùng pixel. Nên bảng là cổng hồi quy:
 
 ```bash

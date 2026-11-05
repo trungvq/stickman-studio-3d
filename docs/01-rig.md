@@ -1661,10 +1661,10 @@ thẳng — khuỷu không giật khi đích qua mép tầm với và hướng k
 nhân phần đích đã hoà: đích mờ về `w` `0` thì tay về đúng chuỗi góc, không bật ra khi đích tắt.
 
 **Cổ tay liền trên vòng.** Xoay, gập, lệch tách từ một khung bàn tay qua `gimbalBlend` — gập quá `70°` thì dồn dần lệch vào
-xoay theo đúng `xoay − dấu(gập) · lệch` (ở gập `90°` hai góc riêng lẻ nhảy nửa vòng) — rồi `wristClamp`: xoay và lệch kẹp
+xoay theo đúng `xoay − dấu(gập) · lệch` (ở gập `90°` hai góc riêng lẻ nhảy nửa vòng) — rồi `wristClamp`: xoay và lệch dừng ở giới hạn
 liền trên vòng (`ringClamp`): ra ngoài tầm thì lùi dần về giữa tầm, tới hướng đối diện giữa tầm thì ở giữa tầm, hai phía gặp
 nhau nên bàn tay không lật từ mép này sang mép kia. Xoay `±90` với `WRIST_RAMP` `90`: xoay đòi `120°` vẽ `60°`, đòi
-`180°` vẽ `0`. Gập kẹp thường trong `AIM_BEND`.
+`180°` vẽ `0`. Gập thì dừng thẳng ở giới hạn `AIM_BEND`. ("Chạm giới hạn" ở các mục sau là chỗ này: góc cần vượt tầm nên rig dừng nó ở mép tầm, phần thiếu thì bàn tay không tới; trong code là `clamp`.)
 
 | Hằng số | Giá trị | Nghĩa |
 |---|---|---|
@@ -1759,7 +1759,7 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 | `fingers` | Ngón chĩa về, cùng ba dạng; phụ cho `palm` |
 | `bend` | Khai kèm thì giữ cố định, rig chỉ giải phần còn lại |
 
-- **Ý định chốt khung bàn tay** (`aimWrist`, góc chưa kẹp, trên cẳng tay của lần thử): lòng tay chỉ phụ thuộc xoay và gập cổ
+- **Ý định chốt khung bàn tay** (`aimWrist`, góc chưa bị giới hạn, trên cẳng tay của lần thử): lòng tay chỉ phụ thuộc xoay và gập cổ
   tay (lệch cổ tay xoay bàn tay quanh pháp tuyến lòng tay) nên hai góc ấy giải đúng; ngón lấy thêm lệch cổ tay (số thứ ba
   của tay, `AIM_DEV` `−30..20`, dương về phía ngón cái; kênh tay không nâng được nâng ở góc `0` để mang lệch). Chỉ khai ngón
   thì lòng tay là hướng gần lòng tay trung tính nhất vuông góc với ngón. Lòng tay gần dọc cẳng tay (gập quá `70°`) thì phương
@@ -1767,10 +1767,10 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 - **Khuỷu trước, rồi ý định nhường.** Giới hạn cổ tay — `turn` `−90..90`, `bend` `AIM_BEND` `−60..70` (âm là ngửa), lệch
   `AIM_DEV` — hẹp hơn tầm khớp người thật chút ít, quá đó cổ tay khối của người que trông gãy. `E(φ)` chấm cổ tay của bàn tay
   theo ý định trên cẳng tay thử ([11](11-nhom-cam.md#khuỷu-tự-nhiên)), nên khuỷu ưu tiên xoay quanh trục vai → cổ tay (cổ tay
-  không dời) để cẳng tay gánh hướng bàn tay. Còn vượt thì bàn tay nhường về trong giới hạn: lòng tay và ngón kẹp liền trên vòng
+  không dời) để cẳng tay gánh hướng bàn tay. Còn vượt thì bàn tay nhường về trong giới hạn: lòng tay và ngón dừng ở giới hạn liền trên vòng
   (`wristClamp`, [Khuỷu ưu tiên](#khuỷu-ưu-tiên): ngoài tầm đứng ở mép, đòi ngược hẳn thì về dần giữa tầm, không lật mép này
   sang mép kia; lòng tay, ngón không khớp nhau thì tối đa `AIM_REFINE` (24) bước Newton trong hộp giới hạn); món còn độ lăn tự
-  do thì bàn tay gần nhất theo trục món, tinh chỉnh trong hộp từ nghiệm kẹp, nhạt dần về nghiệm kẹp trong `45°` cuối trước điểm
+  do thì bàn tay gần nhất theo trục món, tinh chỉnh trong hộp từ nghiệm chạm giới hạn, nhạt dần về nghiệm ấy trong `45°` cuối trước điểm
   đối diện giữa tầm. Rồi cổ tay đặt lại cho điểm bàn tay vẫn đúng đích. Bàn tay không ý định cũng về trong giới hạn theo cả khung.
   `elbow` khai và khuỷu khoá (`elbowLock`, [03](03-scene.md#đích-bàn-tay-thế-giới)) giữ hướng khai theo phần khai, không xoay
   để cứu cổ tay. Món đặt trước (lần cầm theo mốc món) thì khác: `elbow` không khoá chỉ là gợi ý của `E(φ)`, khuỷu được nhường
