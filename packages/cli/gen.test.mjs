@@ -37,7 +37,16 @@ import {
   soleDrop,
   solveLeg,
 } from "./gen-sit.mjs";
-import { GEN_KINDS, GenError, genPour, genSit, sitHints, stageRun } from "./gen.mjs";
+import {
+  GEN_KINDS,
+  GenError,
+  genPour,
+  genSit,
+  SIT_SELF_PIERCE,
+  sitHints,
+  sitSoftRow,
+  stageRun,
+} from "./gen.mjs";
 import { castRuntime, worldData } from "./lib.mjs";
 
 const AT = 1;
@@ -448,6 +457,25 @@ describe("stickman gen sit", () => {
     assert.deepEqual(sitHints({ ...t, core: [bend], closer: 4.2 }), [
       "tay duỗi thẳng mới tới mặt bàn: dời bàn hay ghế lại gần ~4.2",
     ]);
+  });
+  it("chỉ báo, không chặn: tay duỗi gần hết tầm, tay lấn thân mình tới ngưỡng — của chính người ngồi", () => {
+    const soft = sitSoftRow("a");
+    const straight = (id) => ({
+      group: "move",
+      key: `elbow|${id}|left|armStraight`,
+      measure: 0.98,
+    });
+    assert.equal(soft(straight("a")), true);
+    assert.equal(soft(straight("b")), false);
+    assert.equal(soft({ group: "move", key: "elbow|a|left|elbowFlip", measure: 40 }), false);
+    const self = (key, measure) => ({ group: "clash", key, measure });
+    assert.equal(soft(self("người|a.forearmRight|a.torso", 4)), true);
+    assert.equal(soft(self("người|a.armLeft|a.torso", SIT_SELF_PIERCE)), true);
+    assert.equal(soft(self("người|a.forearmLeft|a.torso", SIT_SELF_PIERCE + 0.1)), false);
+    assert.equal(soft(self("người|b.forearmLeft|b.torso", 4)), false);
+    assert.equal(soft(self("người|a.forearmLeft|b.torso", 4)), false);
+    assert.equal(soft(self("người|a.thighRight|ghe", 4)), false);
+    assert.equal(soft({ group: "held", key: "held:pierce|a|right|coc" }), true);
   });
   it("--tuck chỉ đi với chân so le; tựa ra sau không lưng ghế thì cảnh báo", async () => {
     const dir = sitSpace();

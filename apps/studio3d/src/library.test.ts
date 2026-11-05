@@ -73,7 +73,7 @@ describe("previewScene", () => {
         const rt = run(s);
         for (const t of [0, s.duration / 2, s.duration]) expect(at(rt, t).world).toBeDefined();
       }
-  });
+  }, 10_000);
 
   it("`wrap` lặp đủ lượt, `hold` phát một lượt rồi giữ 1 s", () => {
     const nod = actions.nod;

@@ -883,6 +883,34 @@ const HOLD_RULES = new Set([
   "size",
 ]);
 
+/** Độ lấn tối đa (như số in trong dòng `check`) của tay người ngồi vào thân chính mình mà `gen sit` chỉ báo, không chặn */
+export const SIT_SELF_PIERCE = 6;
+
+/**
+ * Dòng `check` mà `gen sit` chỉ báo chứ không chặn ghi, của người ngồi `cast`: luật `held` về độ ôm của chỗ cầm
+ * (`HOLD_RULES`); tay duỗi gần hết tầm (`armStraight`) — bàn tay đặt đứng yên trên đùi, bàn, tay vịn nên khuỷu không lật
+ * được, lưng tựa đẩy vai ra sau là duỗi gần thẳng; cánh tay, cẳng tay lấn thân chính mình không quá `SIT_SELF_PIERCE` —
+ * người béo tựa lưng, cẳng tay tì mép bụng. Lấn sâu hơn, lấn người khác hay lấn đồ thì chặn
+ */
+export function sitSoftRow(cast) {
+  return (r) => {
+    const key = r.key ?? "";
+    const held = /^held:([a-z]+)\|/.exec(key);
+    if (held) return HOLD_RULES.has(held[1]);
+    const straight = /^elbow\|([^|]*)\|[^|]*\|armStraight$/.exec(key);
+    if (straight) return straight[1] === cast;
+    const self = /^người\|([^|]+)\.(?:arm|forearm)(?:Right|Left)\|([^|]+)\.torso$/.exec(key);
+    return (
+      !!self &&
+      r.group === "clash" &&
+      self[1] === cast &&
+      self[2] === cast &&
+      typeof r.measure === "number" &&
+      r.measure <= SIT_SELF_PIERCE
+    );
+  };
+}
+
 /**
  * Dòng `check` chỉ báo chứ không chặn ghi: luật `held` về độ ôm của chỗ cầm (`HOLD_RULES`); bình chưa `provide` hay nhảy
  * vào tay khi cảnh chưa khai `hold` (việc của cảnh); bình lấn bàn tay đang cầm cốc và bàn tay cầm bình lấn cốc khi mọi
@@ -2522,10 +2550,7 @@ export async function genSit(o) {
     groups: ["move", "clash", "held", "roles"],
     ...(o.stage && { spec: o.stage.spec, held: o.stage.held }),
   });
-  const ignore = (r) => {
-    const m = /^held:([a-z]+)\|/.exec(r.key ?? "");
-    return !!m && HOLD_RULES.has(m[1]);
-  };
+  const ignore = sitSoftRow(o.cast);
   const failed = checkFailed(core, world, ignore);
   const table_ = checkTable(core, world, ignore);
 
