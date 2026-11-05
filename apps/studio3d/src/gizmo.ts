@@ -11,6 +11,7 @@ import { rigRotation, wrapDeg } from "./grab";
 import { gripWorld, type HandRow } from "./hands";
 import type { Json, KeyRef, V3 } from "./keys";
 import type { PlusOptions } from "./plus";
+import { ReachShell } from "./reachShell";
 import { WristCone } from "./wristCone";
 
 export interface GrabHost {
@@ -46,6 +47,7 @@ export class HandGrab {
   readonly log: { t: number; side: HandSide; want: number; got: number }[] = [];
   private ring = new ElbowRing();
   private cone = new WristCone();
+  private shell = new ReachShell();
   private handle = new THREE.Object3D();
   private tc: TransformControls | null = null;
   private camera: THREE.Camera = new THREE.PerspectiveCamera();
@@ -60,17 +62,19 @@ export class HandGrab {
   private hud = document.createElement("div");
   private tagCone = document.createElement("div");
   private tagRing = document.createElement("div");
+  private tagReach = document.createElement("div");
 
   constructor(
     private frame: HTMLElement,
     private host: GrabHost,
   ) {
-    this.scene.add(this.ring.group, this.cone.group, this.handle);
+    this.scene.add(this.ring.group, this.cone.group, this.shell.group, this.handle);
     this.hud.className = "grabhud";
     this.tagCone.className = "grabtag";
     this.tagRing.className = "grabtag";
-    this.hud.hidden = this.tagCone.hidden = this.tagRing.hidden = true;
-    frame.append(this.hud, this.tagCone, this.tagRing);
+    this.tagReach.className = "grabtag edge";
+    this.hud.hidden = this.tagCone.hidden = this.tagRing.hidden = this.tagReach.hidden = true;
+    frame.append(this.hud, this.tagCone, this.tagRing, this.tagReach);
     this.hud.onclick = (e) => {
       const m = (e.target as HTMLElement).dataset.m;
       if (m === "translate" || m === "rotate") this.setMode(m);
@@ -143,6 +147,11 @@ export class HandGrab {
     this.tagCone.classList.toggle("bad", lab?.tone === "bad");
     this.tagCone.classList.toggle("edge", lab?.tone === "edge");
     put(this.tagCone, lab?.at);
+    this.shell.update(this.handle.position, camera);
+    const over = this.shell.over;
+    this.tagReach.textContent = over ? `quá mép tầm với ~${over.px.toFixed(0)} px` : "";
+    put(this.tagReach, over?.at);
+    if (!over) this.tagReach.hidden = true;
     const rep = this.rep!;
     const phi = this.ringPhi ?? rep.phi;
     const E = this.ring.cost(phi);
@@ -228,11 +237,15 @@ export class HandGrab {
       orbit: !!o?.enabled,
     };
     if (o) o.enabled = false;
+    // mép tầm với khi dời bàn tay (mốc tay); món theo mốc thì bàn tay theo món, không đưa về mép
+    this.shell.show(this.mode === "translate" && !this.itemLed() ? this.rep : null);
   }
 
   private drop() {
     const s = this.start;
     this.start = null;
+    this.shell.show(null);
+    this.tagReach.hidden = true;
     if (!s) return;
     const o = this.host.orbit();
     if (o) o.enabled = s.orbit;

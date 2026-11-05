@@ -424,9 +424,14 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi trac
   Mốc vừa sửa mở thẻ; một lần kéo là một bước lịch sử.
   - **Tay nắm** (TransformControls ở tâm nắm; HUD góc trên khung, **T** dời theo trục thế giới, **Y** xoay theo trục của
     bàn tay hay món). Đồ theo tay, tay tự do sửa mốc tay: dời ghi `at` (mốc theo mốc thân `to` thì `offset`), bù tới khi tâm
-    nắm ở đúng chỗ thả. Bộ bù (`fitPoint`) chặn mỗi bước ở `FIT_STEP` và kéo đích về sát chỗ bàn tay vẽ ra hết mức mà lệch
-    không tăng: thả sát hay quá tầm với thì đích là điểm bàn tay với tới, không chạy ra xa; đích còn cách tâm nắm quá 5 px
-    thì thanh trạng thái báo "ngoài tầm với"; xoay quanh tâm nắm ghi ý định món `hold.face`, `hold.roll` (trục khung món `[0, 0, 1]`, `[0, 1, 0]` về
+    nắm ở đúng chỗ thả. Gần duỗi hết, soft IK của rig cho bàn tay dừng hụt đích; thả ở vùng ấy thì trang dò (chia đôi,
+    dựng lại cảnh mỗi lần thử, `reachEdge`) điểm xa vai nhất trên đoạn vai → chỗ thả mà bàn tay còn tới đúng đích (lệch ≤
+    `EDGE_TOL`), đưa chỗ thả về đó và ghi `at` ở đấy: `at` luôn trùng bàn tay vẽ ra, nên người dời thì tay không trôi theo
+    một điểm giữa không trung — đổi lại tay không duỗi được hết cỡ. Thanh trạng thái báo "chỗ thả quá mép tầm với … cách chỗ
+    thả … px". Lúc kéo, mặt cầu mờ quanh vai là mép ước (soft IK `ARM_SOFT` cộng cổ tay → tâm nắm); tay nắm ra ngoài thì mặt
+    cầu hổ phách, chấm là chỗ bàn tay sẽ dừng, nhãn ghi khoảng quá mép. Bộ bù (`fitPoint`) chặn mỗi bước ở `FIT_STEP` và kéo
+    đích về sát chỗ bàn tay vẽ ra hết mức mà lệch không tăng; đích vẫn cách tâm nắm quá 5 px (cổ tay kẹp…) thì thanh trạng
+    thái báo "ngoài tầm với"; xoay quanh tâm nắm ghi ý định món `hold.face`, `hold.roll` (trục khung món `[0, 0, 1]`, `[0, 1, 0]` về
     vectơ hệ thân, ngang ra ngoài phía tay ấy, như ＋) cho đồ theo tay, `palm` + `fingers` (vectơ hệ thân, bỏ `bend`) cho tay
     tự do. Tay theo đồ (theo mốc, hai tay) sửa mốc món `items[]` ở giây ấy: dời, xoay **món** quanh tâm nắm, hướng ghi `face`,
     `roll` trục khung món về vectơ hệ thân người cầm (ngang phải, bỏ `up`), chỗ ghi `at` hay `offset` bù tới khi tâm món ở

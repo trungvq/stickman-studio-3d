@@ -288,50 +288,68 @@ describe("kéo tay nắm, vòng khuỷu (drag.ts)", () => {
     expect(dist(p2.at, p0.at)).toBeLessThan(0.6);
   });
 
+  // gần duỗi hết, soft IK của rig cho bàn tay dừng hụt đích: chỗ thả quá mép thì đưa về mép theo hướng vai → chỗ thả, `at`
+  // ghi ở chỗ bàn tay vẽ ra (không là điểm ma giữa không trung)
+  const edgeDrop = (k: number | V3) => {
+    const j = scene();
+    const rt = runtime(j);
+    const t = 1.2;
+    const r0 = handReport(rt, "a", "right", t, { char: c })!;
+    const { shoulder, elbow, wrist } = r0.joints;
+    const reach = dist(shoulder, elbow) + dist(elbow, wrist) + dist(wrist, r0.grip);
+    // tay ra ngoài và chúc xuống: tay gần duỗi thẳng, Jacobian theo trục cánh tay gần 0
+    const dir = [0.25, 0.94, 0.23].map((x) => x / Math.hypot(0.25, 0.94, 0.23));
+    const want = (
+      typeof k === "number"
+        ? shoulder.map((x, i) => x + dir[i] * reach * k)
+        : r0.grip.map((x, i) => x + k[i])
+    ) as V3;
+    const r = dragHand(j, rt, "a", "right", t, { d: want.map((x, i) => x - r0.grip[i]) as V3 }, O);
+    const at = (keyValue(r.raw, r.key) as Json).at as number[];
+    const d1 = drawnHand(runtime(r.raw), "a", "right", t)!;
+    const S = shoulder;
+    const toS = (p: readonly number[]) => p.map((x, i) => x - S[i]);
+    return { r, at, d1, want, reach, S, ray: deg(toS(d1.grip), toS(want)) };
+  };
+
+  it("thả trong tầm với: tâm nắm tới đúng chỗ thả, không đưa về mép", { timeout: 120_000 }, () => {
+    const { r, at, d1, want } = edgeDrop(0.85);
+    expect(r.edge).toBeUndefined();
+    expect(r.notes.join(" ")).not.toMatch(/mép tầm với|ngoài tầm với/);
+    expect(dist(d1.grip, want)).toBeLessThan(0.5);
+    expect(dist(at, d1.grip)).toBeLessThan(0.5);
+  });
+
   it(
-    "thả sát mép tầm với: `at` ghi ra nằm sát tâm nắm, không vượt tầm với",
+    "thả sát mép tầm với: đưa về mép theo hướng vai → chỗ thả, `at` trùng tâm nắm",
     { timeout: 120_000 },
     () => {
-      const j = scene();
-      const rt = runtime(j);
-      const t = 1.2;
-      const r0 = handReport(rt, "a", "right", t, { char: c })!;
-      const { shoulder, elbow, wrist } = r0.joints;
-      const reach = dist(shoulder, elbow) + dist(elbow, wrist) + dist(wrist, r0.grip);
-      // tay ra ngoài và chúc xuống, tâm nắm ở 99,5% tầm với: tay gần duỗi thẳng, Jacobian theo trục cánh tay gần 0
-      const dir = [0.25, 0.94, 0.23].map((x) => x / Math.hypot(0.25, 0.94, 0.23));
-      const want = shoulder.map((x, i) => x + dir[i] * reach * 0.995) as V3;
-      const r = dragHand(
-        j,
-        rt,
-        "a",
-        "right",
-        t,
-        { d: want.map((x, i) => x - r0.grip[i]) as V3 },
-        O,
-      );
-      const at = (keyValue(r.raw, r.key) as Json).at as number[];
-      const d1 = drawnHand(runtime(r.raw), "a", "right", t)!;
-      expect(dist(at, d1.grip)).toBeLessThan(5);
-      expect(dist(at, shoulder)).toBeLessThan(reach + 5);
+      const { r, at, d1, want, S, ray } = edgeDrop(0.995);
+      expect(dist(at, d1.grip)).toBeLessThan(1);
+      expect(ray).toBeLessThan(1);
+      expect(dist(d1.grip, S)).toBeLessThan(dist(want, S));
+      expect(r.edge).toBeGreaterThan(0.5);
+      expect(r.edge).toBeCloseTo(dist(d1.grip, want), 0);
+      expect(r.notes.join(" ")).toMatch(/quá mép tầm với.*cách chỗ thả \d/);
+      expect(r.notes.join(" ")).not.toMatch(/ngoài tầm với/);
     },
   );
 
   it(
-    "thả ngoài tầm với: `at` kéo về chỗ bàn tay với tới, thanh trạng thái báo",
+    "thả ngoài tầm với: tâm nắm ở mép theo hướng vai → chỗ thả, `at` trùng tâm nắm, thanh trạng thái báo",
     { timeout: 120_000 },
     () => {
-      const j = scene();
-      const rt = runtime(j);
-      const t = 1.2;
-      const r0 = handReport(rt, "a", "right", t, { char: c })!;
-      const r = dragHand(j, rt, "a", "right", t, { d: [60, 160, 40] }, O);
-      const at = (keyValue(r.raw, r.key) as Json).at as number[];
-      const d1 = drawnHand(runtime(r.raw), "a", "right", t)!;
+      const { r, at, d1, want, S, ray } = edgeDrop([60, 160, 40]);
+      const near = edgeDrop(0.995);
       expect(r.gap).toBeGreaterThan(0.5);
-      expect(r.notes.join(" ")).toMatch(/ngoài tầm với/);
-      expect(dist(at, d1.grip)).toBeLessThan(5);
-      expect(dist(at, r0.joints.shoulder)).toBeLessThan(200);
+      expect(r.edge).toBeCloseTo(r.gap, 0);
+      expect(r.notes.join(" ")).toMatch(/quá mép tầm với/);
+      expect(r.notes.join(" ")).not.toMatch(/ngoài tầm với/);
+      expect(dist(at, d1.grip)).toBeLessThan(1);
+      expect(ray).toBeLessThan(1);
+      // mép ở cỡ cùng khoảng cách tới vai như khi thả sát mép
+      expect(Math.abs(dist(d1.grip, S) - dist(near.d1.grip, near.S))).toBeLessThan(5);
+      expect(dist(want, S)).toBeGreaterThan(dist(d1.grip, S) + 10);
     },
   );
 

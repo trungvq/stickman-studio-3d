@@ -46,6 +46,8 @@ export interface DragResult {
   notes: string[];
   /** Điểm kéo (tâm nắm, tâm món) còn lệch chỗ thả, đơn vị rig */
   gap: number;
+  /** Chỗ thả quá mép tầm với: tâm nắm đưa về mép theo hướng vai → chỗ thả, cách chỗ thả `edge` (đơn vị rig) */
+  edge?: number;
   /** Vòng khuỷu: `φ` muốn và `φ` vẽ ra sau khi khoá */
   phi?: { want: number; got: number };
 }
@@ -174,6 +176,34 @@ function handBase(
 
 /** Đích mốc tay cách tâm nắm vẽ ra quá chừng này (đơn vị rig) thì báo: bàn tay không với tới, chỉ duỗi về phía đích */
 const REACH_FAR = 5;
+/** Bàn tay coi là tới đích khi tâm nắm vẽ ra cách đích không quá chừng này (đơn vị rig); số lần chia đôi khi dò mép */
+export const EDGE_TOL = 0.25;
+const EDGE_STEPS = 14;
+
+/**
+ * Mép tầm với trên đoạn vai `S` → `want`: điểm xa vai nhất mà đích đặt ở đó thì tâm nắm vẽ ra tới đúng đích (`got`, lệch
+ * ≤ `EDGE_TOL`), chia đôi. Gần duỗi hết, soft IK của rig cho bàn tay dừng hụt đích: đích xa hơn mép là điểm ma giữa không
+ * trung. `want` tới được hay bàn tay không hụt về phía vai thì `undefined`; không thấy điểm nào tới được cũng `undefined`
+ */
+export function reachEdge(
+  S: V3,
+  want: V3,
+  got: (x: V3) => V3 | undefined,
+  f0 = got(want),
+): V3 | undefined {
+  if (!f0 || dist(f0, want) <= EDGE_TOL) return undefined;
+  if (dist(f0, S) >= dist(want, S) - EDGE_TOL) return undefined;
+  const at = (k: number) => want.map((v, i) => S[i] + (v - S[i]) * k) as V3;
+  let [lo, hi, ok] = [0, 1, false];
+  for (let i = 0; i < EDGE_STEPS; i++) {
+    const k = (lo + hi) / 2;
+    const x = at(k);
+    const f = got(x);
+    if (f && dist(f, x) <= EDGE_TOL) [lo, ok] = [k, true];
+    else hi = k;
+  }
+  return ok ? at(lo) : undefined;
+}
 
 /**
  * Đích thật của mốc tay `key` ở `t` (thế giới rig) khi `point` là tâm nắm: `at`, hay mốc thân `to` + `offset`
@@ -285,7 +315,8 @@ function fitPlace(
   measure: (raw: Json) => V3 | undefined,
   basis: { Rr: M3; s: number; out: number; origin?: V3 },
   start: (m: Json) => void,
-): { raw: Json; gap: number } {
+  shoulder?: V3,
+): { raw: Json; gap: number; edge?: V3 } {
   const m0 = keyValue(raw, key);
   const v0: Json = isObj(m0) ? m0 : {};
   const field = v0.at === undefined && v0.to !== undefined ? "offset" : "at";
@@ -316,10 +347,13 @@ function fitPlace(
       return undefined;
     }
   };
-  const x = fitPoint(want, want, got, { tol: 0.02, steps: 8 });
+  // chỗ thả quá mép tầm với (bàn tay hụt về phía vai): nhắm mép, để `at` trùng bàn tay vẽ ra
+  const edge = shoulder && reachEdge(shoulder, want, got);
+  const aim = edge ?? want;
+  const x = fitPoint(aim, aim, got, { tol: 0.02, steps: 8 });
   const out = edit(x);
   const p = measure(out);
-  return { raw: out, gap: p ? dist(p, want) : Infinity };
+  return { raw: out, gap: p ? dist(p, want) : Infinity, ...(edge && { edge }) };
 }
 
 /**
@@ -374,6 +408,7 @@ export function dragHand(
   }
   const measure = (r: Json) => drawnHand(o.rebuild(r), id, side, t, o)?.grip;
   const origin = handTarget(cur, b.key, b.rt, t, o.char);
+  const shoulder = d1.blending ? undefined : handReport(b.rt, id, side, t, o)?.joints.shoulder;
   const fit = fitPlace(
     cur,
     b.key,
@@ -384,18 +419,31 @@ export function dragHand(
     (m) => {
       if (m.point === undefined) m.point = "grip";
     },
+    shoulder && ([...shoulder] as V3),
   );
   if (fit.gap > PLUS_TOL && d1.blending)
     fail(
       `không sửa ở ${t.toFixed(2)} s: tay đang hoà sang lần cầm mới (\`HOLD_BLEND\`), đích ở giây này chưa đổi được hình — tua ra sau quãng hoà`,
     );
-  if (fit.gap > PLUS_TOL)
+  const edge = fit.edge && dist(fit.edge, want);
+  if (edge)
+    notes.push(
+      `chỗ thả quá mép tầm với: tâm nắm đưa về mép (hướng vai → chỗ thả), cách chỗ thả ${edge.toFixed(1)} px`,
+    );
+  else if (fit.gap > PLUS_TOL)
     notes.push(`tâm nắm còn lệch chỗ thả ${fit.gap.toFixed(1)} px (ngoài tầm với hay cổ tay kẹp)`);
   const far = reachNote(fit.raw, b.key, t, o, id, side, d1.blending);
   if (far) notes.push(far);
   const short = turnNote(mv.R, b.rt, fit.raw, id, side, t, o);
   if (short) notes.push(short);
-  return { raw: fit.raw, key: b.key, added: b.added, notes, gap: fit.gap };
+  return {
+    raw: fit.raw,
+    key: b.key,
+    added: b.added,
+    notes,
+    gap: fit.gap,
+    ...(edge && { edge }),
+  };
 }
 
 /** Món đặt trước `item` ở `t` theo `items[]`: tâm hộp bao và khung món (thế giới rig) */
