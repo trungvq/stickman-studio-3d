@@ -97,6 +97,13 @@ export const HELD_SINK = Math.abs(HELD_FIT.touch) + 0.5;
 export const HELD_REST = REST_REF;
 /** Món đặt trước: cổ tay vượt giới hạn là lỗi `wrist`; còn cách giới hạn dưới ngần này độ là cảnh báo */
 export const HELD_WRIST = 5;
+/**
+ * Lần cầm một tay theo mốc (`keyed`): món vẽ theo bàn tay đã vẽ, nên cổ tay chạm giới hạn thì món lệch mốc — bàn tay vẽ
+ * xoay khỏi bàn tay của nghiệm quá ngần này độ (`AimReport.hold.err`) hay chỗ cầm trên món dời quá `HELD_MARK_MOVE` (rig,
+ * nhân cỡ người; `wrist.off`) là `mark`
+ */
+export const HELD_MARK_TURN = 40;
+export const HELD_MARK_MOVE = 10;
 /** Món đặt trước: bắp tay, cẳng tay lấn thân, đầu, tay kia quá ngần này lần bán kính tay ở chỗ lấn (`arm`) */
 export const HELD_ARM = 0.3;
 /**
@@ -565,6 +572,7 @@ export type HeldRule =
   | "seat"
   | "body"
   | "wrist"
+  | "mark"
   | "arm"
   | "elbow"
   | "role"
@@ -788,6 +796,12 @@ function groupHits(
     const m = heldWristMargin(g.arm.wrist);
     if (m > -(o.wrist ?? HELD_WRIST))
       out.push({ rule: "wrist", worst: m, ...(m > 0 && { error: true as const }) });
+    // theo mốc: góc cổ tay báo là góc đã vẽ (trong giới hạn), phần chạm giới hạn chỉ thấy ở món lệch mốc
+    if (g.keyed && !blend) {
+      const turn = (s.intent?.err ?? 0) / HELD_MARK_TURN;
+      const move = g.arm.wrist.off / (HELD_MARK_MOVE * (s.s ?? 1));
+      if (turn > 1 || move > 1) out.push({ rule: "mark", worst: Math.max(turn, move) });
+    }
   } else {
     const i = s.intent;
     if (i && i.err > (i.rule === "up" ? (o.up ?? HELD_UP) : (o.face ?? HELD_FACE)))
@@ -1080,6 +1094,7 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
   }
   const order: HeldRule[] = [
     "wrist",
+    "mark",
     "pierce",
     "sink",
     "rest",
@@ -1300,6 +1315,7 @@ export function heldLine(s: HeldIssue): string {
       | "seat"
       | "body"
       | "wrist"
+      | "mark"
       | "arm"
       | "elbow"
       | "role"
@@ -1344,6 +1360,8 @@ export function heldLine(s: HeldIssue): string {
 export const ELBOW_LOCK_FIX =
   "khuỷu đang khoá (`elbowLock`) đúng hướng `elbow` của mốc tay, rig không dời nó — đổi hướng `elbow` của mốc khoá (ra ngoài, xuống dưới), hay bỏ `elbowLock` cho rig dò khuỷu";
 
+const WRIST_LABELS = { turn: "xoay", bend: "gập", dev: "lệch" } as const;
+
 /** Dòng báo của một mục chỗ cầm nhóm: trỏ về chỗ cầm ở cảnh (`món@nhóm` và trường), docs/11-nhom-cam.md mục 7 */
 function groupLine(s: HeldIssue, x: HeldHand, who: string, when: string): string {
   const place = `chỗ cầm ${heldPlace(x)}`;
@@ -1362,6 +1380,14 @@ function groupLine(s: HeldIssue, x: HeldHand, who: string, when: string): string
         const w = a!.wrist;
         const over = s.worst > 0;
         return `cổ tay ${over ? "vượt giới hạn" : "sát giới hạn"} — ${who}: xoay ${Math.round(w.turn)}°/±${TURN_MAX}, gập ${Math.round(w.bend)}°/${AIM_BEND[0]}..${AIM_BEND[1]}, lệch ${Math.round(w.dev)}°/${AIM_DEV[0]}..${AIM_DEV[1]}${over ? ` — vượt ${r1(w.over)}°, bàn tay vẽ lệch chỗ cầm ${r1(w.off)}` : ` — còn ${r1(-s.worst)}° tới giới hạn`} (${place}); đổi \`edge\` / \`thumb\` hay hướng món (\`face\` / \`roll\` của ${item})`;
+      }
+      case "mark": {
+        const w = a!.wrist;
+        const joints = x.intent?.clamped.map((j) => `\`${j}\` (${WRIST_LABELS[j]})`).join(", ");
+        const why = joints
+          ? `cổ tay chạm giới hạn ở khớp ${joints}, vượt ${r1(w.over)}°`
+          : "bàn tay vẽ không tới bàn tay của nghiệm";
+        return `món lệch mốc — ${who}: món theo bàn tay đã vẽ xoay ${Math.round(x.intent?.err ?? 0)}° khỏi hướng ở mốc, chỗ cầm trên món dời ${r1(w.off)} (ngưỡng ${HELD_MARK_TURN}°, ${r1(HELD_MARK_MOVE * (x.s ?? 1))}) vì ${why} (${place}); dời mốc món (\`to\` / \`offset\` / \`at\`) hay đổi hướng món (\`face\` / \`roll\`) của ${item} cho cổ tay vào giới hạn, đổi \`edge\` / \`thumb\`, hay cầm bằng tay kia`;
       }
       case "elbow":
         return `khuỷu gập ngược — ${who}: khuỷu lệch khỏi đường vai → cổ tay vào giữa thân hay lên trên ${Math.round(s.worst * 100)}% cánh tay trên (quá ${HELD_ELBOW * 100}%), cẳng tay chạy ra ngoài hay xuống tới bàn tay (${place}); ${s.lock ? ELBOW_LOCK_FIX : `đổi \`edge\` / \`thumb\` hay hướng món (\`face\` / \`roll\` của ${item}), không thì khai \`elbow\` ở mốc tay`}`;

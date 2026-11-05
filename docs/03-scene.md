@@ -1224,7 +1224,9 @@ scenes/canh-07.json: ngón xuyên đồ — `saito` tay phải cầm chen-ruou: 
 `pierce`, `sink` (da lún quá `HELD_SINK` `0,65`), `loose`, `role` (ngón có vai trò mà hở quá ngưỡng `wrap` `1,5`), `oppose` (ngón cái chạm mà
 không phần nào kẹp món phía bên kia, góc pháp tuyến dưới `HELD_OPPOSE` `120°`), `grip` (ngưỡng theo nhóm; `grip`
 khai ở `package.json` thì thắng, cả khi nhỏ hơn); món đặt trước thêm `reach` và `wrist` (cổ tay vượt giới hạn — lỗi; còn cách giới hạn
-dưới `HELD_WRIST` `5°` — cảnh báo), `arm` (tay lấn thân quá `HELD_ARM` `0,3` bán kính tay) và `size`; mọi chỗ cầm nhóm thêm `elbow`
+dưới `HELD_WRIST` `5°` — cảnh báo), `arm` (tay lấn thân quá `HELD_ARM` `0,3` bán kính tay) và `size`; lần cầm một tay theo mốc
+thêm `mark` (món theo bàn tay đã vẽ lệch mốc vì cổ tay chạm giới hạn: xoay quá `HELD_MARK_TURN` `40°` hay chỗ cầm dời quá
+`HELD_MARK_MOVE` `10` — cảnh báo); mọi chỗ cầm nhóm thêm `elbow`
 (khuỷu gập ngược — vào trong hay chĩa lên — quá `HELD_ELBOW` `0,3` cánh tay trên — lỗi) và `arm` lấn đầu (lỗi); tay dẫn đọc `up`, `face`,
 `reach` (bảng trên). `grip`, `loose`, `role`, `oppose` im trong quãng hoà của lần cầm. Dòng báo trỏ về chỗ cầm và hướng món của cảnh.
 Nhóm `ref` báo thêm `group` (món không có khối hình cho nhóm với cỡ tay), `choice` (chỗ cầm

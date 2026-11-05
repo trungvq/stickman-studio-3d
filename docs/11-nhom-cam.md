@@ -1214,7 +1214,8 @@ Lần cầm một tay có mốc món (mục 4) không giải từng khung trên 
    đường ngắn nhất trên vòng; góc cổ tay sau giới hạn hoà thẳng (như `solveActing` hoà hai nghiệm). `auto` thì bậc ba đơn điệu qua
    bốn mốc kề như `itemAt`: cổ tay và góc cổ tay từng thành phần, `φ` đã mở vòng, bàn tay theo góc trắc địa cộng dồn. Trước mốc đầu và sau mốc cuối giữ
    mốc gần nhất trong hệ thân. Khung cầm đọc ở `t` (trường số của tay trượt hoà như mục 4); dáng ngón theo khung cầm.
-4. **Món** vẽ ở `bàn tay đã vẽ · GripFrame`: dính tay suốt lần cầm, ở mốc trùng chỗ khai (trừ khi ngoài tầm hay vượt giới hạn).
+4. **Món** vẽ ở `bàn tay đã vẽ · GripFrame`: dính tay suốt lần cầm, ở mốc trùng chỗ khai (trừ khi ngoài tầm hay vượt giới hạn;
+   lệch quá ngưỡng thì `check` báo `mark`, mục [7](#7-luật-check-nhóm-held)).
 5. **Món nằm chờ tay**: trước mốc món đầu khi mốc ấy là mốc nằm (`rest`), và sau mốc món cuối khi mốc ấy là mốc nằm, món đứng ở
    mốc ấy (`itemAt` ở giây mốc), không theo bàn tay — bàn tay đang tới món (hoà từ tay tự do, `enter`) hay vừa đặt xuống
    (`HoldGrasp.rest`, `GraspSolution.still`; `actHeld` và `world.ts` cùng đọc). Nhặt món người khác vừa thả: mốc tay mở lần
@@ -1405,7 +1406,7 @@ grasp: {
 `keyed`: lần cầm một tay theo mốc (món theo bàn tay). `wrist.over` là độ vượt giới hạn, `wrist.off` là độ lệch giữa bàn tay vẽ và chỗ cầm (đơn vị rig; tay dẫn luôn `0`, bàn tay là
 chính chỗ đã vẽ). `by` của tay dẫn chỉ có `scene` (cảnh khai) và `default` (mặc định nhóm), không có `rig`. `arm` của món
 đặt trước thêm `bodyRatio`, `bodyPart` (lấn chia bán kính tay ở chỗ lấn); cả hai đường thêm `inward` (khuỷu lệch vào giữa
-thân, mục 5). `check` (dòng `reach`, `wrist`, `arm`, `elbow`),
+thân, mục 5). `check` (dòng `reach`, `wrist`, `mark`, `arm`, `elbow`),
 `scene_probe` (`world.held.<tay>.grasp`) và MCP đọc nó.
 
 ### Báo tay cho studio
@@ -1590,6 +1591,7 @@ trong cùng lần cầm (`regrip` cùng khoá), như `scene_probe`.
 | `grip` | mọi chỗ cầm nhóm | Tâm nắm cách **hình** (`shape`) quá ngưỡng của nhóm (`groupGripMax`: nhóm hay biến thể có dáng kẹp đầu ngón `HELD_PINCHES` dùng `HELD_GRIP_PINCH` `5`, còn lại `HELD_GRIP` `3`; tay dẫn lấy biến thể cảnh khai: `cylinder` không khai `variant` lấy `5` vì `flat` có dáng `span`, `wrap` khai rõ lấy `3`). `grip` khai ở `package.json` thì thắng ngưỡng nhóm, cả khi nhỏ hơn (`gripDeclared`) | cảnh báo |
 | `reach` | món đặt trước | Tay duỗi hết vẫn không tới chỗ cầm: khe tầm với `arm.gap` quá `AIM_GAP · s` | **lỗi** |
 | `wrist` | món đặt trước | Ở khuỷu tốt nhất cổ tay vượt `TURN_MAX`, `AIM_BEND` hay `AIM_DEV` (`heldWristMargin` dương) — lỗi, kèm độ vượt và độ lệch bàn tay – chỗ cầm; còn cách giới hạn dưới `HELD_WRIST` (`5°`) — cảnh báo. Dòng báo gợi đổi `edge`/`thumb` hay hướng món | lỗi / cảnh báo |
+| `mark` | lần cầm một tay theo mốc (`keyed`) | Món vẽ theo bàn tay đã vẽ lệch mốc: bàn tay vẽ xoay khỏi bàn tay của nghiệm quá `HELD_MARK_TURN` (`40°`, `AimReport.hold.err`) hay chỗ cầm trên món dời quá `HELD_MARK_MOVE` (`10`, nhân cỡ người; `wrist.off`). Góc cổ tay của lần cầm theo mốc là góc đã vẽ, trong giới hạn, nên `wrist` không thấy phần chạm giới hạn. Dòng báo nêu món xoay, chỗ cầm dời, khớp cổ tay chạm giới hạn (`clamped`) và độ vượt; gợi dời mốc món (`to` / `offset` / `at`), đổi hướng món (`face` / `roll`), `edge` / `thumb` hay cầm bằng tay kia. Im trong quãng hoà | cảnh báo |
 | `arm` | món đặt trước; tay dẫn có phần khoá khuỷu; lấn đầu: mọi chỗ cầm nhóm | Bắp tay, cẳng tay lấn vào thân, đầu hay tay kia quá `HELD_ARM` (`0,3`) lần bán kính tay ở chỗ lấn (`bodyRatio`). Lấn đầu (`bodyPart` `*.head`) là lỗi, cả ở tay dẫn. Tay dẫn chỉ xét lấn thân khi khuỷu khoá (`elbowLockAt` dương) | cảnh báo / **lỗi** |
 | `elbow` | mọi chỗ cầm nhóm | Khuỷu gập ngược: `arm.inward` (mục 5) quá `HELD_ELBOW` (`0,3` lần cánh tay trên) — khuỷu nằm phía giữa thân hay chĩa lên so với đường vai → cổ tay, cẳng tay chạy ra ngoài hay xuống tới bàn tay. Dòng báo gợi đổi `edge` / `thumb`, hướng món hay khai `elbow` | **lỗi** |
 | `size` | món đặt trước | Số đo khối hình đã chọn từ `SIZE_WARN · W` (`0,8`) trở lên (thân `chai-dac-tuyen` `r 13,2` với tay `W 14,7`: `0,90 · W`) | cảnh báo |
