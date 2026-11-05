@@ -281,7 +281,9 @@ describe("hold của thẻ mốc", () => {
     setHold(b, { item: "bang-gia", group: "sheet" });
     expect(b.hold).toEqual({ ...SHEET, lạ: 1 });
     // đổi món: trường chỗ cầm của món cũ không còn nghĩa, ý định và trường lạ còn
-    const e: Json = { hold: { ...SHEET, part: "x", face: { axis: "front", toward: "up" }, lạ: 2 } };
+    const e: Json = {
+      hold: { ...SHEET, part: "x", high: "top", face: { axis: "front", toward: "up" }, lạ: 2 },
+    };
     setHold(e, { item: "coc", group: "cylinder" });
     expect(e.hold).toEqual({
       item: "coc",

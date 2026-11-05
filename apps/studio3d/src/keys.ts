@@ -417,7 +417,7 @@ export function holdPickOf(hold: unknown): HoldPick | undefined {
   return undefined;
 }
 
-/** Trường chỗ cầm của một món × nhóm (`CHOICE_KEYS` của lõi trừ `variant`, cộng `both`): đổi món hay nhóm thì bỏ */
+/** Trường chỗ cầm của một món × nhóm (`CHOICE_KEYS` của lõi trừ `variant`, cộng `high`, `both`): đổi món hay nhóm thì bỏ */
 const GRIP = [
   "part",
   "edge",
@@ -428,6 +428,7 @@ const GRIP = [
   "tilt",
   "psi",
   "inset",
+  "high",
   "on",
   "yaw",
   "both",

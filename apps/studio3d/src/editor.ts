@@ -301,9 +301,9 @@ function buildHand(
 }
 
 /**
- * Đầu cao của cạnh (`edgeHigh`) mà cảnh đã dùng cho chỗ cầm: báo cáo của bộ giải không mang nó, nên thử không khai và sáu
- * hướng trục món (chỉ dấu so với cạnh là có nghĩa), lấy hướng mà khung cầm dựng lại trùng bàn tay đang vẽ (`hand` của lần
- * cầm, khung món). Dò không ra thì `undefined`
+ * Đầu cao của cạnh mà cảnh đã dùng cho chỗ cầm khi báo cáo của bộ giải không mang nó (`GraspReport.high`): thử không khai và
+ * sáu hướng trục món (chỉ dấu so với cạnh là có nghĩa), lấy hướng mà khung cầm dựng lại trùng bàn tay đang vẽ (`hand` của
+ * lần cầm, khung món). Dò không ra thì `undefined`
  */
 export function sceneHigh(
   spec: HeldItemSpec,

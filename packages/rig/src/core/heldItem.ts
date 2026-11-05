@@ -644,6 +644,7 @@ const HoldObject = z.strictObject({
   ...holdPlace,
   around: z.number().optional(),
   tilt: z.number().optional(),
+  high: z.enum(HOLD_EDGES).optional(),
   face: z.union([AxisIntentSchema, IntentTargetSchema]).optional(),
   up: z.union([z.string().min(1), v3]).optional(),
   roll: AxisIntentSchema.optional(),
@@ -706,9 +707,12 @@ export function groupHold(h: SceneHold): SceneHoldGroup {
   return { item: h.slice(0, i), group: group as GroupId, ...(variant && { variant }) };
 }
 
-/** Khoá lần cầm: `@nhóm/biến thể/phần/cạnh/ngón cái` (trường thiếu để trống); trường số trượt không vào khoá */
+/**
+ * Khoá lần cầm: `@nhóm/biến thể/phần/cạnh/ngón cái` (trường thiếu để trống), khai `high` thì thêm `/high`; trường số trượt
+ * không vào khoá
+ */
 const groupKey = (g: SceneHoldGroup): string =>
-  `@${g.group}/${[g.variant, g.part, g.edge, g.thumb].map((v) => v ?? "").join("/")}`;
+  `@${g.group}/${[g.variant, g.part, g.edge, g.thumb].map((v) => v ?? "").join("/")}${g.high ? `/${g.high}` : ""}`;
 
 /** Món và khoá lần cầm của một mốc `hold` */
 export function sceneHoldRef(h: SceneHold): { item: string; grip: string } {

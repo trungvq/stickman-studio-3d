@@ -202,6 +202,8 @@ export interface GraspFrame {
   base?: string;
   /** Tầm cuộn `heldFit` của bản soạn; không có thì của biến thể (`frameCurl`) */
   curl?: number;
+  /** Đầu cao của cạnh hay trục dài mà chỗ tiếp xúc dùng (`±e`, khung món, `edgeEnd`) */
+  high?: V3;
 }
 
 /** Tầm cuộn `heldFit` của khung cầm: của bản soạn tay, không thì `curl` của biến thể; không khai thì `undefined` */
@@ -473,13 +475,76 @@ function boxAxes(b: BoxFeature, g: Pick<ItemGeom, "U" | "F" | "R">) {
   return { it, il, e: signed(AXES[il], [g.U, g.F, g.R]) };
 }
 
+/** Trục dài của hộp về đầu cao `high` (khung món); không có `high` thì về `top` (`boxAxes`) */
+function boxEnd(b: BoxFeature, g: Pick<ItemGeom, "U" | "F" | "R">, high?: V3): V3 {
+  const e0 = boxAxes(b, g).e;
+  return high && dot3(e0, high) < 0 ? neg(e0) : e0;
+}
+
+/** Dọc cạnh `ed` của mặt `f` về đầu cao `high`; không có `high` thì về `−front`, cạnh vuông góc `front` thì về `top` */
+function faceEnd(
+  f: FaceFeature,
+  ed: FaceFeature["edges"][number],
+  g: Pick<ItemGeom, "U" | "F">,
+  high?: V3,
+): V3 {
+  const e0 = unit(cross3(neg(ed.inward), f.n));
+  const ref = high ?? (Math.abs(dot3(e0, g.F)) > EPS ? neg(g.F) : g.U);
+  return dot3(e0, ref) < 0 ? neg(e0) : e0;
+}
+
+/** Hướng của tên `top` … `right` trong khung món (`U`, `F`, `R` của `itemGeom`; `bottom`, `back`, `left` là hướng ngược) */
+export function itemSide(g: Pick<ItemGeom, "U" | "F" | "R">, name: SideName): V3 {
+  const v =
+    name === "top" || name === "bottom" ? g.U : name === "front" || name === "back" ? g.F : g.R;
+  return name === "bottom" || name === "back" || name === "left" ? neg(v) : v;
+}
+
+const SIDE_NAMES: readonly SideName[] = ["top", "bottom", "front", "back", "right", "left"];
+
+/** Tên hướng của món (`itemSide`) gần hướng `v` (khung món) nhất */
+export function sideToward(g: Pick<ItemGeom, "U" | "F" | "R">, v: V3): SideName {
+  let best: SideName = "top";
+  let d = -Infinity;
+  for (const n of SIDE_NAMES) {
+    const x = dot3(itemSide(g, n), v);
+    if (x > d + EPS) [best, d] = [n, x];
+  }
+  return best;
+}
+
+/**
+ * Đầu cao mà chỗ tiếp xúc dùng trên khối hình `f` ở cạnh `edge`, mặt ngón cái `thumb` (`±e`, khung món): tấm, đĩa như
+ * `edgeFrame`, hộp như `boxEnd`, mặt như `faceEnd`; khối hình không có chiều cạnh hay thiếu trường thì `undefined`
+ */
+export function edgeEnd(
+  geom: ItemGeom,
+  f: Feature,
+  edge: GraspChoice["edge"],
+  thumb: string | undefined,
+  high?: V3,
+): V3 | undefined {
+  if (f.kind === "box") return boxEnd(f, geom, high);
+  if (f.kind === "face") {
+    const ed = f.edges.find((x) => x.name === edge);
+    return ed && faceEnd(f, ed, geom, high);
+  }
+  if ((f.kind !== "slab" && f.kind !== "disc") || edge === undefined || thumb === undefined)
+    return undefined;
+  try {
+    return edgeFrame(f, edge as SideName | number, thumb as SideName, high).e;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Lòng tay áp mặt sau, ngón cái dọc cạnh dài `thumb`, ngón sang cạnh kia; lòng tay chếch `tilt` quanh trục dọc máy */
 const palmBox: ContactFn = (x) => {
   const b = x.feature as BoxFeature;
   const { U, F, R } = x.geom;
-  const { it, il, e: e0 } = boxAxes(b, x.geom);
+  const { it, il } = boxAxes(b, x.geom);
   const front = signed(AXES[it], [F, U, R]);
-  const e = x.high && dot3(e0, x.high) < 0 ? neg(e0) : e0;
+  const e = boxEnd(b, x.geom, x.high);
   const right = unit(cross3(e, front));
   const g = x.thumb === "left" ? right : neg(right);
   const along = alongFrac(x.along, 2 * b.half[il], x.dims.W);
@@ -799,10 +864,7 @@ const platformPalm: ContactFn = (x) => {
     throw new Error(
       `mặt \`${f.name}\` của \`${f.part}\` không có cạnh \`${x.edge}\`; cạnh: ${f.edges.map((e) => e.name).join(", ") || "không"}`,
     );
-  const e0 = unit(cross3(neg(ed.inward), f.n));
-  // không có hướng món trong thế giới: đầu cao về `−front`, cạnh vuông góc `front` thì về `top`
-  const ref = x.high ?? (Math.abs(dot3(e0, x.geom.F)) > EPS ? neg(x.geom.F) : x.geom.U);
-  const e = dot3(e0, ref) < 0 ? neg(e0) : e0;
+  const e = faceEnd(f, ed, x.geom, x.high);
   const psi = x.psi ?? 0;
   const inset = x.inset ?? platformInset(psi, x.dims);
   // dọc cạnh: bàn tay (gót lòng `P` sau tâm nắm, đầu ngón `L − P` trước, ngang `W`) nằm trong cạnh; cạnh ngắn quá thì giữa
@@ -1224,6 +1286,7 @@ export function graspFrame(
     ? authoredPlace(spec, geom, au, choice.group, base, vs.frame, side, dims, k, long, s, ct)
     : ct;
   const name = au ? au.anchor : (vs.pose.closed.pose as HandPose);
+  const end = edgeEnd(geom, feature, edge, thumb, eHigh);
   const hand: GraspHand = {
     pose: name,
     at: place.at,
@@ -1239,6 +1302,7 @@ export function graspFrame(
     roles: au ? authoredRoles(vs.roles) : vs.roles,
     ...(au && { authored: true as const, curl: au.curl ?? AUTHORED_CURL }),
     ...(base !== variant && { base }),
+    ...(end && { high: end }),
     feature,
     choice: {
       part: feature.part,
@@ -1472,6 +1536,8 @@ export interface GraspReport {
   choice: GraspChoice;
   /** Biến thể gốc khi `choice.variant` là kiểu cầm có tên của món */
   base?: string;
+  /** Đầu cao của cạnh mà khung cầm dùng (`GraspFrame.high`) */
+  high?: V3;
   by: GraspBy;
   arm: {
     phi: number;
@@ -1699,6 +1765,20 @@ function gridOf(key: Field, c: RangeChoice, variant: string): number[] {
   return [lo, hi];
 }
 
+/** Chiều cạnh `edge` (mặt ngón cái `thumb`) hay trục dài của hộp, chưa lấy dấu; khối hình không có chiều cạnh thì `undefined` */
+function edgeAxis(geom: ItemGeom, f: Feature, c: GraspChoice): V3 | undefined {
+  if (f.kind === "slab" || f.kind === "disc") {
+    if (c.edge === undefined || c.thumb === undefined) return undefined;
+    return edgeFrame(f, c.edge, c.thumb as SideName).e;
+  }
+  if (f.kind === "box") return boxAxes(f, geom).e;
+  if (f.kind === "face") {
+    const ed = f.edges.find((x) => x.name === c.edge);
+    return ed && cross3(neg(ed.inward), f.n);
+  }
+  return undefined;
+}
+
 /** Đầu cao của cạnh `edge` (mặt ngón cái `thumb`) hay trục dài của hộp, khi món quay `R` */
 function highOf(
   geom: ItemGeom,
@@ -1708,17 +1788,25 @@ function highOf(
   side: number,
   across: V3,
 ): V3 | undefined {
-  let e: V3;
-  if (f.kind === "slab" || f.kind === "disc") {
-    if (c.edge === undefined || c.thumb === undefined) return undefined;
-    e = edgeFrame(f, c.edge, c.thumb as SideName).e;
-  } else if (f.kind === "box") e = boxAxes(f, geom).e;
-  else if (f.kind === "face") {
-    const ed = f.edges.find((x) => x.name === c.edge);
-    if (!ed) return undefined;
-    e = cross3(neg(ed.inward), f.n);
-  } else return undefined;
-  return edgeHigh(e, R, side, across);
+  const e = edgeAxis(geom, f, c);
+  return e && edgeHigh(e, R, side, across);
+}
+
+/**
+ * Đầu cao cảnh khai (`hold.high`, tên hướng của món) của chiều cạnh trên khối hình `f`: `±e` về phía tên ấy. Khối hình
+ * không có chiều cạnh, hay chiều cạnh vuông góc hướng ấy, thì `undefined` (rig lấy đầu cao như không khai).
+ * docs/11-nhom-cam.md § Chỗ cầm
+ */
+export function declaredHigh(
+  geom: ItemGeom,
+  f: Feature,
+  c: GraspChoice,
+  name: SideName | undefined,
+): V3 | undefined {
+  if (!name) return undefined;
+  const e = edgeAxis(geom, f, c);
+  const d = e ? dot3(e, itemSide(geom, name)) : 0;
+  return Math.abs(d) > EPS ? (d < 0 ? neg(e!) : e) : undefined;
 }
 
 interface Cand {
@@ -1879,7 +1967,10 @@ export function chooseMissing(
     tried++;
     const rel = own ? 2 : keepRel(f, c);
     const high =
-      opts.high ?? (rel < 2 ? keep?.high : undefined) ?? highOf(geom, f, c, pose.R, sd, ctx.across);
+      declaredHigh(geom, f, c, h.high) ??
+      opts.high ??
+      (rel < 2 ? keep?.high : undefined) ??
+      highOf(geom, f, c, pose.R, sd, ctx.across);
     const choice = {
       ...c,
       group: h.group,
@@ -2162,12 +2253,18 @@ export function chooseMissing(
                 c.edge,
                 c.thumb,
                 sd,
-                opts.high ?? highOf(geom, f, c, pose.R, sd, ctx.across),
+                declaredHigh(geom, f, c, h.high) ??
+                  opts.high ??
+                  highOf(geom, f, c, pose.R, sd, ctx.across),
               ) ?? c.along;
           if (keepRel(f, c) < 2) {
             // trùng trường rời của lựa chọn đang giữ: trường liên tục của nó; đầu cao khác đầu cao đang giữ là cách cầm khác
             take(run(f, { ...c, ...keepCont }, defs), defs);
-            const oh = keep?.high && !opts.high && highOf(geom, f, c, pose.R, sd, ctx.across);
+            const oh =
+              keep?.high &&
+              !opts.high &&
+              !declaredHigh(geom, f, c, h.high) &&
+              highOf(geom, f, c, pose.R, sd, ctx.across);
             if (oh && dot3(oh, keep!.high!) < 1 - 1e-6) take(run(f, c, defs, true), defs);
           } else take(run(f, c, defs), defs);
         }
@@ -2304,6 +2401,7 @@ export function graspReport(
     t0,
     choice: sol.choice,
     ...(sol.frame.base && { base: sol.frame.base }),
+    ...(sol.frame.high && { high: sol.frame.high }),
     by: sol.by,
     arm: {
       phi: sol.arm.phi,

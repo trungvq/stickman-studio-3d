@@ -1050,7 +1050,7 @@ function editTarget(r: HandRow): EditTarget | undefined {
     group: g.group,
     variant: g.choice.variant!,
     choice: g.choice,
-    high: sceneHigh(spec, geom, choice, r.side, h.scale, h.long, s, hold.hand),
+    high: g.high ?? sceneHigh(spec, geom, choice, r.side, h.scale, h.long, s, hold.hand),
     k: h.scale,
     long: h.long,
     s,

@@ -998,7 +998,7 @@ function handGrasp(
   T: Trunk3,
   side: number,
   g: HoldGrasp,
-  fr: Pick<GraspFrame, "choice" | "base">,
+  fr: Pick<GraspFrame, "choice" | "base" | "high">,
   A: ReturnType<typeof arm3>,
   B?: ReturnType<typeof arm3>,
 ): GraspReport {
@@ -1018,6 +1018,7 @@ function handGrasp(
     t0: g.t0,
     choice,
     ...(fr.base && { base: fr.base }),
+    ...(fr.high && { high: fr.high }),
     by,
     arm: {
       phi: a.phi,

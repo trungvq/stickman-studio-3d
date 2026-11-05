@@ -4,8 +4,8 @@ import { isOtherHand, type BodyMark } from "./bodyMark";
 import { D } from "./constants";
 import { BODY3 } from "./figure3d";
 import { elbowRig, phiOf, rigElbowBody } from "./graspArm";
-import type { GraspBy, GraspChoice } from "./graspSolve";
-import { itemGeom } from "./heldGeom";
+import { sideToward, type GraspBy, type GraspChoice } from "./graspSolve";
+import { itemGeom, type SideName } from "./heldGeom";
 import {
   GROUP_VARIANTS,
   HOLD_BLEND,
@@ -259,7 +259,8 @@ interface Seen {
   /** Khung món → thế giới rig, gốc khung món, cỡ */
   item?: { R: M3; P: V3; s: number };
   grip: Partial<Record<HandSide, V3>>;
-  grasp: Partial<Record<HandSide, { choice: GraspChoice; by: GraspBy }>>;
+  /** Lựa chọn của chỗ cầm, nguồn từng trường, đầu cao của cạnh khung cầm dùng (khung món, `GraspReport.high`) */
+  grasp: Partial<Record<HandSide, { choice: GraspChoice; by: GraspBy; high?: V3 }>>;
   clamped: Partial<Record<HandSide, Clamp>>;
   /** Hướng khuỷu đang vẽ (thế giới rig, đơn vị): từ trục vai → cổ tay ra khuỷu; ghi vào mốc qua `elbowFor` */
   elbow: Partial<Record<HandSide, V3>>;
@@ -310,7 +311,12 @@ function seen(rt: SceneRuntime, id: string, item: string, t: number): Seen {
         r4,
       );
     const h = a.report.hold;
-    if (h?.grasp) out.grasp[s] = { choice: h.grasp.choice, by: h.grasp.by };
+    if (h?.grasp)
+      out.grasp[s] = {
+        choice: h.grasp.choice,
+        by: h.grasp.by,
+        ...(h.grasp.high && { high: h.grasp.high }),
+      };
     out.clamped[s] = h?.clamped ?? [];
   }
   const runs = holdRuns(rt, id);
@@ -374,19 +380,27 @@ type Grasp = Seen["grasp"][HandSide];
 export type HoldPin = "all" | "discrete" | "none";
 const DISCRETE = new Set(["part", "edge", "thumb", "variant"]);
 /**
- * Đo chỗ cầm từ đầu kia của cạnh — đầu cao của cạnh (`high`) không khai được trong cảnh, hai chế độ có thể lấy hai đầu khác
- * nhau: `along` chỉ đổi `along`; `mirror` đổi cả các trường theo chiều cạnh (`mirrorEdge`)
+ * Đo chỗ cầm từ đầu kia của cạnh, lượt thử khi món còn lệch: `along` chỉ đổi `along`; `mirror` đổi cả các trường theo chiều
+ * cạnh (`mirrorEdge`)
  */
 type Flip = "along" | "mirror";
-/** Cách ghi chỗ cầm của một lượt dựng bản vá: `pin`; `flip` của tay dẫn, tay kia */
-type Way = { pin: HoldPin; flip: Partial<Record<"lead" | "partner", Flip>> };
+/**
+ * Cách ghi chỗ cầm của một lượt dựng bản vá: `pin`; `flip` của tay dẫn, tay kia; `high` ghi vào chỗ cầm khi hai chế độ lấy
+ * đầu cao của cạnh khác nhau
+ */
+type Way = {
+  pin: HoldPin;
+  flip: Partial<Record<"lead" | "partner", Flip>>;
+  high?: Partial<Record<"lead" | "partner", SideName>>;
+};
 const FLIP_ALONG: Record<string, string> = { low: "high", high: "low", mid: "mid" };
 const FLIP_SLANT: Record<string, string> = { low: "high", high: "low", in: "in" };
 const FLIP_THUMB: Record<string, string> = { left: "right", right: "left" };
 
 /**
  * Chỗ cầm đo từ đầu kia của cạnh: `along` → `1 − along`; `mirror` thêm `slant` (quay về đầu cao) đổi dấu và `thumb` của
- * `palmBox` (bên ngón cái dựng từ chiều cạnh) đổi bên — độ ngón chúc dọc hộp `BOX_RISE` vẫn theo chiều cạnh, không bù được
+ * `palmBox` (bên ngón cái dựng từ chiều cạnh) đổi bên. Ngón `palmBox` chúc `BOX_RISE` về đầu cao nên `mirror` chỉ gần đúng ở
+ * đó; đầu cao trùng nhờ ghi `high` (`Way.high`)
  */
 function mirrorEdge(o: Obj, flip: Flip) {
   if (o.along !== undefined)
@@ -410,11 +424,13 @@ function pinnedHold(
   pin: HoldPin,
   flip: Flip | undefined,
   spec: HeldItemSpec,
+  high?: SideName,
 ): Obj {
   const o: Obj = { ...groupHold(h) };
   for (const k of INTENT) delete o[k];
   if (g && pin !== "none") pinChoice(o, g, pin, spec);
   if (flip) mirrorEdge(o, flip);
+  if (high) o.high = high;
   return o;
 }
 
@@ -710,6 +726,7 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
           way.pin,
           way.flip.lead,
           spec,
+          way.high?.lead,
         );
         if (atCut(t)) h.regrip = true;
         strip(k, lead, h, t);
@@ -723,7 +740,14 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
           if (!has && !split) continue;
           const h = holdIn(keys, partner, t);
           if (!h) continue;
-          const ph = pinnedHold(h, src.get(t)!.grasp[partner], way.pin, way.flip.partner, spec);
+          const ph = pinnedHold(
+            h,
+            src.get(t)!.grasp[partner],
+            way.pin,
+            way.flip.partner,
+            spec,
+            way.high?.partner,
+          );
           if (split) ph.regrip = true;
           strip(keyAt(t), partner, ph, t);
         }
@@ -748,7 +772,7 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
         const want = add3(aim.want, shift.get(t) ?? [0, 0, 0]);
         const h = holdIn(keys, lead, t) ?? fail(`tay ${viSide(lead)} không cầm ở ${t}s`);
         const lh: Obj = {
-          ...pinnedHold(h, v.grasp[lead], way.pin, way.flip.lead, spec),
+          ...pinnedHold(h, v.grasp[lead], way.pin, way.flip.lead, spec, way.high?.lead),
           ...itemAxes(v, sideSign(lead)),
         };
         if (partner) {
@@ -908,6 +932,27 @@ function convert(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode): 
     }
   };
 
+  /**
+   * Tên đầu cao chế độ đang vẽ của tay dẫn (và tay kia khi sang tay theo đồ) ở mốc đầu có cả hai bên, khi runtime `r`
+   * lấy đầu kia; không tay nào khác thì `undefined`
+   */
+  const highFix = (r: SceneRuntime): Way["high"] => {
+    const out: NonNullable<Way["high"]> = {};
+    const geom = itemGeom(spec);
+    const pairs = [
+      ["lead", lead] as const,
+      ...(partner && to === "item" ? [["partner", partner] as const] : []),
+    ];
+    for (const [k, s] of pairs)
+      for (const t of times) {
+        const a = before.get(t)!.grasp[s]?.high;
+        const b = a && seen(r, o.id, item, t).grasp[s]?.high;
+        if (!a || !b) continue;
+        if (dot3(a, b) < 0) out[k] = sideToward(geom, a);
+        break;
+      }
+    return out.lead || out.partner ? out : undefined;
+  };
   // lựa chọn rig dùng có thể không khai được (trường số ngoài miền của biến thể, phần không cầm được): lùi dần cách ghi
   // chỗ cầm tới khi cảnh dựng được
   let shift = new Map<number, V3>();
@@ -929,6 +974,25 @@ function convert(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode): 
         : "chỗ cầm không ghi thêm trường nào: lựa chọn rig đang dùng không khai được",
     );
   let rt2: SceneRuntime = built;
+  // hai chế độ lấy đầu cao của cạnh khác nhau (`edgeHigh` của món đặt trước, đầu mặc định của tay dẫn): ghi `high` của chế
+  // độ đang vẽ vào chỗ cầm, khung cầm hai chế độ cùng chiều cạnh
+  const ends = highFix(rt2);
+  if (ends) {
+    const w: Way = { ...way, high: ends };
+    const ops2 = compose(shift, w, lock);
+    const rt3 = apply(raw, ops2, o);
+    if (typeof rt3 !== "string") {
+      [way, ops, rt2] = [w, ops2, rt3];
+      ctx.notes.push(
+        `chỗ cầm ${(["lead", "partner"] as const)
+          .filter((k) => ends[k])
+          .map((k) => `tay ${viSide(k === "lead" ? lead : partner!)} ghi \`high: "${ends[k]}"\``)
+          .join(
+            ", ",
+          )}: hai chế độ lấy đầu cao của cạnh khác nhau (docs/11-nhom-cam.md § Đổi chế độ lần cầm)`,
+      );
+    }
+  }
   const first = tryMeasure(rt2);
   if (typeof first === "string") return fail(`cảnh sau phép đổi không giải được: ${first}`);
   let keyed = first;

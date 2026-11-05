@@ -499,7 +499,7 @@ studio3d `grab.test.ts` 2 (đã biết).
   trước). t02, 32 quãng có `elbow` → không khai: `s033` takumi 3,62 → 4,22 s 9,45 → −0,01, 0,85 → 1,15 s 3,64 → 0,01; còn lại
   không đổi hay giảm (`s080` yota 1,65 giữ, v8 2,49). `library.test` "mọi hành động…" ~1,47 → ~1,50 s.
 
-## Đổi chế độ áp tai, máy gần nằm ngang (2026-11-05, chưa sửa — chờ chủ dự án chọn hướng)
+## Đổi chế độ áp tai, máy gần nằm ngang (2026-11-05, hướng (a) ở cây làm việc, chưa commit — DỪNG: đỏ 1 ca `graspAt`)
 
 - Lỗi: `holdToItemLed` trên dáng áp tai `sceneEar` với `elbow` [0.7, 0.15, 1], `offset` [0..4, 2, 2]: phép đổi chọn đo từ
   đầu kia (`mirror`: `along` 0,1 → 0,9, `thumb` right → left), không khoá khuỷu (φ −20 → +9, cổ tay sau phép đổi kẹp `turn`),
@@ -515,6 +515,32 @@ studio3d `grab.test.ts` 2 (đã biết).
   `graspSolve.ts` hay schema: cho cảnh khai đầu cao (`hold` ghi được, phép đổi ghi vào); `BOX_RISE` của `palmBox` luôn chúc
   về `top` bất kể `high` (`mirror` khi ấy đúng); hay khối `box` bỏ `edgeHigh` ở món đặt trước. Hai cách sau đổi hình các
   cảnh tay theo đồ cầm `palmBox` có trục dài ngẩng dưới 30°.
-- Test: `holdMode.test.ts` describe "áp tai, trục dài máy ngẩng dưới 30°": dáng nằm trong vùng lỗi, chiều ngược giữ món;
-  `it.fails` cho `offset` x 0 và 4. `sceneEar` nhận `offset`, `elbow` (mặc định vẫn là dáng né). Rig: đỏ 1 như trước
-  (`holdScene` 15,00027), 3 expected fail.
+- Test ban đầu (`it.fails` "áp tai, trục dài máy ngẩng dưới 30°", `offset` x 0 và 4) đã thay bằng describe "dải dáng tự nhiên
+  quanh ngưỡng 30°" (16 dáng `elbow` × `offset`, trục `top` ngẩng 15–35°, cả hai chiều, bỏ `elbow`/`along`/`thumb`);
+  `sceneEar` mặc định `elbow` [0.7, 0.15, 1].
+- Đã thử hướng (b) (`palmBox` chúc ngón `BOX_RISE` về `top` bất kể `high`), bỏ: không đổi tay dẫn nhưng 8 lần cầm món đặt trước
+  của erika ở t02 (`s003b`, `s091`, `s118`, `s122`–`s125`, `s129`; máy buông dọc thân, trục ngẩng ~22°, `high` ở đáy) đổi
+  hình: bàn tay quay 27–44°, tâm nắm dời 17–20, món dời 14–28 rig, `check held` thêm 9 cảnh báo (cổ tay vượt kẹp 46–60°). Đã
+  hoàn tác `graspSolve.ts`, `graspSolve.test.ts`, docs; diff ở scratchpad `palmbox-b-full.diff`.
+- Hướng (a) (chủ dự án chọn): cảnh khai đầu cao của chiều cạnh, `hold.high` ∈ `top|bottom|front|back|left|right` (hướng của món,
+  `HoldObject` của `heldItem.ts`; không thêm vào `both`). Áp mọi nhóm dựng khung trên chiều cạnh (tấm, đĩa, hộp, mặt đỡ):
+  `graspFrame` nhận `high` chung cho cả bốn loại, `highOf` / `edgeHigh` cũng chung, và hai chế độ lệch đầu ở cả `sheet` /
+  `platform` (`along`, `slant`, `psi`), không riêng `palmBox`.
+  - Lõi: `declaredHigh` (tên → `±e`; chiều cạnh vuông góc hướng ấy thì `undefined`, như không khai) đứng đầu chuỗi `high`
+    của `chooseMissing` (trước `opts.high`, `keep.high`, `highOf`); tay dẫn `handFrame` của `holdLink.ts` (đè `high` kế thừa,
+    cả `sideAlong` của tấm một tay). `groupKey` thêm `/high` khi khai (đổi `high` là lần cầm mới; cảnh không khai giữ khoá cũ).
+    `edgeEnd` / `boxEnd` / `faceEnd` tách từ `palmBox`, `platformPalm` (cùng số học) để `GraspFrame.high` và `GraspReport.high`
+    báo đầu cao khung cầm thật dùng.
+  - `holdMode.ts`: `highFix` so `GraspReport.high` chế độ đang vẽ với bản vá đầu (tay dẫn; tay kia khi sang tay theo đồ) ở mốc
+    đầu có cả hai; khác đầu thì ghi `high` (`sideToward`) vào chỗ cầm mọi mốc của tay ấy, cả hai chiều, `notes` báo. Đo từ đầu
+    kia (`along` / `mirror`) còn là lượt thử khi lệch > 1.
+  - Test (`holdMode.test.ts`): 16 dáng "dải dáng tự nhiên quanh ngưỡng 30°" xanh cả bốn ca (món lệch < 0,5 rig, < 1°, không kẹp,
+    hai chiều); thêm ca `high` chỉ ghi dưới 30° (`top`) và chiều ngược giữ; describe "đầu cao cảnh khai": tay dẫn không khai
+    `top` / khai `bottom` đổi khung, món đặt trước không khai như cũ (đầu dưới) và khai `bottom` trùng hệt, `front` vuông góc như
+    không khai, đổi `high` giữa chừng là lần cầm mới.
+  - Repo video (rig build mới, `link:`): 70 lần cầm `palmBox` (18 285 mẫu) và 597 lần cầm mọi nhóm trừ `carry` (133 612 mẫu, 171
+    cảnh có `hold`): món, khung món, bàn tay, tâm nắm, cổ tay, độ ngẩng, đầu cao, kẹp trùng từng số (làm tròn 1e-4).
+  - Rig: đỏ 2 — `holdScene` 15,00027 (có từ trước) và **`graspAt.test` "báo đúng kiểu"** (mới: `graspReport` thêm trường `high`
+    mà ca so `toEqual` cả object). Theo luật giao việc: dừng, chưa sửa ca ấy (sửa: thêm `high: sol.frame.high` vào object mong
+    đợi, hay bỏ `high` khỏi `GraspReport` và lấy đầu cao chỗ khác). MCP 15/15, studio `keys.test` xanh; typecheck, lint, format
+    sạch.

@@ -254,6 +254,7 @@ describe("graspAt: bốn ca `sheet` của bước 0", () => {
       group: "sheet",
       mode: "item",
       t0: 1,
+      high: sol.frame.high,
       choice: sol.choice,
       by: sol.by,
       arm: {

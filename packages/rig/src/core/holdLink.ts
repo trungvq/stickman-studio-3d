@@ -9,6 +9,7 @@ import {
 import type { ActCharacter } from "./arm3";
 import {
   CONTACTS,
+  declaredHigh,
   edgeOk,
   frameCurl,
   graspFrame,
@@ -17,7 +18,14 @@ import {
   type GraspFrame,
 } from "./graspSolve";
 import type { HandVec } from "./hand";
-import { handDims, itemGeom, type FaceFeature, type Feature, type HandDims } from "./heldGeom";
+import {
+  handDims,
+  itemGeom,
+  type FaceFeature,
+  type Feature,
+  type HandDims,
+  type SideName,
+} from "./heldGeom";
 import {
   gripCenter,
   type GraspHand,
@@ -86,7 +94,7 @@ function leadEdge(f: Feature, side: number, dims: HandDims): GraspChoice["edge"]
 
 /**
  * Lựa chọn đủ để dựng khung: trường của `grasp.choice`, trường thiếu lấy mặc định của nhóm trên khối hình của chỗ cầm;
- * `one`: tay dẫn cầm tấm một tay, `along` thiếu về góc phía tay (`sideAlong`)
+ * `one`: tay dẫn cầm tấm một tay, `along` thiếu về góc phía tay (`sideAlong`, đầu cao `high` khai)
  */
 function fillChoice(
   spec: HeldItemSpec,
@@ -95,6 +103,7 @@ function fillChoice(
   side: number,
   dims: HandDims,
   one = false,
+  high?: SideName,
 ): GraspChoice & { group: GroupId } {
   const geom = itemGeom(spec);
   const gs = GRIP_GROUPS[group];
@@ -126,8 +135,14 @@ function fillChoice(
   if (c.edge === undefined && gs.choices.edge) c.edge = leadEdge(f, side, dims);
   if (one && group === "sheet" && given.along === undefined)
     c.along =
-      sideAlong(geom, f, c.edge as GraspChoice["edge"], c.thumb as GraspChoice["thumb"], side) ??
-      c.along;
+      sideAlong(
+        geom,
+        f,
+        c.edge as GraspChoice["edge"],
+        c.thumb as GraspChoice["thumb"],
+        side,
+        declaredHigh(geom, f, c as GraspChoice, high),
+      ) ?? c.along;
   return {
     ...(c as GraspChoice),
     group,
@@ -302,6 +317,23 @@ function supportOf(
   return { lead: side, other: fr.hand, pose: fr.pose, roles: fr.roles, ...curlOf(sc.group, fr) };
 }
 
+/** Khung cầm của tay dẫn: lựa chọn điền mặc định nhóm; đầu cao cảnh khai (`hold.high`) đè đầu cao kế thừa */
+function handFrame(
+  spec: HeldItemSpec,
+  g: HoldGrasp,
+  side: number,
+  dims: HandDims,
+  k: number,
+  long: number,
+  s: number,
+): GraspFrame {
+  const c = fillChoice(spec, g.hold.group, g.choice, side, dims, !g.hold.both, g.hold.high);
+  const geom = itemGeom(spec);
+  const f = c.featureIndex !== undefined ? geom.features[c.featureIndex] : undefined;
+  const high = (f && declaredHigh(geom, f, c, g.hold.high)) || g.high;
+  return frameOf(spec, c, side, dims, k, long, s, high);
+}
+
 /** Bàn tay của chỗ cầm nhóm và khung của nó */
 function groupHand(
   h: ReachHold,
@@ -313,18 +345,7 @@ function groupHand(
 ): HoldLinkHand | undefined {
   const g = h.grasp;
   if (!g || g.hold.group === "carry") return undefined;
-  const fr =
-    g.frame ??
-    frameOf(
-      h.spec,
-      fillChoice(h.spec, g.hold.group, g.choice, side, dims, !g.hold.both),
-      side,
-      dims,
-      k,
-      long,
-      s,
-      g.high,
-    );
+  const fr = g.frame ?? handFrame(h.spec, g, side, dims, k, long, s);
   const both = g.hold.both ? supportOf(h.spec, g, fr, side, dims, k, long, s) : undefined;
   return {
     hand: fr.hand,

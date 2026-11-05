@@ -788,9 +788,9 @@ nắp; dáng mới `claw`). Lựa chọn: hướng tiếp cận, biến thể. M
 - **Chỗ tiếp xúc** (`frame: "nf"`, fixture `khay#bung`, `phieu#do`): lòng tay ngửa áp mặt (`n` ngược pháp tuyến ngoài của mặt), ngón
   duỗi `PLATFORM_FLAT`. Tay đến từ cạnh `edge` của mặt (`FaceFeature.edges`: `name`, `inward`, `at`, `len`).
   - **`ψ`**: hướng ngón đo từ pháp tuyến trong của cạnh quay về đầu cao của cạnh: `0` ngón chĩa vuông góc vào trong mặt, `+90°`
-    ngón chạy dọc cạnh về đầu cao, `−90°` về đầu thấp. Đầu cao theo `edgeHigh` (như đầu thấp của `along`,
-    mục 4 "Vị trí dọc cạnh", đảo lại); không có hướng món trong thế giới (`graspFrame` thiếu `high`) thì đầu về `−front`, cạnh
-    vuông góc `front` thì về `top`.
+    ngón chạy dọc cạnh về đầu cao, `−90°` về đầu thấp. Đầu cao theo `high` khai, không thì `edgeHigh` (như đầu thấp của
+    `along`, mục 4 "Vị trí dọc cạnh", đảo lại); không có hướng món trong thế giới (`graspFrame` thiếu `high`) thì đầu về
+    `−front`, cạnh vuông góc `front` thì về `top`.
   - **`inset`**: khoảng từ cạnh tới tâm nắm theo pháp tuyến trong; mặc định vừa đủ cho bàn tay nằm trọn trong mặt,
     `inset₀(ψ) = ½ · (W · |sin ψ| + P · |cos ψ|)` (`platformInset`), `P` dài lòng bàn tay (10,1 · long). Fixture `khay#bung` (tay sát
     vành trái, phải; ngón về phía xa, `ψ = ±90°`) cho `inset₀ = W / 2` ≈ 6,7 ở cỡ `1,61`.
@@ -957,6 +957,7 @@ const SceneHoldSchema = z.union([
     around: z.number().optional(),                  // độ, quanh trục trụ
     tilt: z.number().optional(),                    // palmBox
     psi: z.number().optional(), inset: z.number().optional(),   // platform
+    high: z.enum(["top", "bottom", "left", "right", "front", "back"]).optional(),   // đầu cao của chiều cạnh, hướng của món
     variant: z.string().optional(),                 // biến thể gốc hay tên kiểu cầm của món (mục 2)
     // chỉ đường tay dẫn — ý định của món (01 § Món cầm tay)
     face: z.union([AxisIntentSchema, IntentTargetSchema]).optional(),
@@ -984,12 +985,18 @@ const SceneHoldSchema = z.union([
   sau với số hạng lấn của tay lead.
 - **Tay trượt**: các trường số (`along`, `slant`, `around`, `tilt`, `psi`, `inset`) hoà theo `ease` của mốc tay sau giữa hai mốc
   `hold` của cùng lần cầm (`auto` bậc ba trên chuỗi mốc `hold` của lần cầm) — tay trượt dọc cạnh, dọc cán, xoay quanh trụ. **Một lần cầm** là chuỗi mốc cùng món, cùng nhóm, cùng các trường rời (`part`,
-  `edge`, `thumb`, `variant`), không `regrip`; đổi trường rời là lần cầm mới, liên kết tay ↔ món hoà trong `HOLD_BLEND`.
+  `edge`, `thumb`, `variant`, `high`), không `regrip`; đổi trường rời là lần cầm mới, liên kết tay ↔ món hoà trong `HOLD_BLEND`.
 - **Vị trí dọc cạnh**: tên (`corner` ≈ nửa bàn tay từ đầu thấp, `low` 0,25, `mid` 0,5, `high` 0,75) hay tỉ lệ 0–1 từ đầu thấp. Đầu thấp
   của cạnh xét một lần ở mốc bắt đầu lần cầm: cạnh dốc ≥ 30° so với mặt ngang thì là đầu dưới; cạnh gần ngang chạy ngang
   thân hơn chạy trước–sau thì là đầu về phía tay ấy (ngang hệ thân), nên cùng tên ở hai tay của một cạnh ngang cho vị trí đối
   xứng; cạnh gần ngang chạy trước–sau (tấm nằm cầm cạnh `left`/`right`) thì là đầu gần người cầm (`−tiến`), như nhau ở hai tay
   và hai `thumb`. Giữ nguyên tới hết lần cầm dù món quay.
+- **Đầu cao khai** (`high`): tên hướng của món (`top` là `top` của món, `bottom` hướng ngược; `front`, `right` như vậy) — đầu cao
+  của chiều cạnh là đầu về phía hướng ấy, thay luật trên ở món đặt trước và đầu mặc định của tay dẫn (mục 3 nhóm 10, `boxAxes`
+  của `palmBox`). Đọc ở mọi nhóm dựng khung cầm trên chiều cạnh: tấm và đĩa (`sheet`, `card`: `along`, `slant`), hộp (`palmBox`:
+  `along`, bên ngón cái, ngón chúc `BOX_RISE`), mặt đỡ (`platform`: `along`, `psi`). Chiều cạnh vuông góc hướng ấy (trục dài
+  điện thoại với `front`) thì như không khai. Không áp cho tay phụ của `both`. Hai chế độ (món đặt trước, tay dẫn) không khai
+  có thể lấy hai đầu khác nhau ([Đổi chế độ lần cầm](#đổi-chế-độ-lần-cầm)); khai thì cùng đầu.
 - **Tay dẫn không khai chỗ cầm** lấy mặc định của nhóm (mục 3); `thumb` của tấm và thẻ là mặt quay về tâm đầu người cầm ở mốc bắt
   đầu lần cầm, `edge` không khai thì tấm đứng `bottom`, tấm nằm cạnh phía tay ấy (`right`, `left`).
 - **Đổi tay**, **đưa người khác**: mốc món đổi `cast` khi tay người nhận đã cầm; tay người đưa `hold: null` sau đó. Tay dẫn giữ luật
@@ -1378,6 +1385,7 @@ Hai phép quay lệch đúng nửa vòng (đổi `thumb` của tấm là quay π
 grasp: {
   item: string; group: GroupId; mode: "item" | "hand"; keyed?: true; t0: number;
   choice: GraspChoice;                               // part, feature, featureIndex, edge, along, thumb, variant, slant, around, tilt, psi, inset
+  high?: V3;                                         // đầu cao của chiều cạnh khung cầm dùng (`±e`, khung món; `GraspFrame.high`)
   by: Partial<Record<keyof GraspChoice, "scene" | "rig" | "default">>;
   arm: { phi: number; wrist: { turn: number; bend: number; dev: number; over: number; off: number }; body: number; inward?: number; gap: number };
 }
@@ -1478,16 +1486,18 @@ vá và độ lệch, không ghi gì.
   yên: `elbow` của món đặt trước chỉ là gợi ý ([Khuỷu tự nhiên](#khuỷu-tự-nhiên)), nên bỏ `elbowLock` thì rig dò lại khuỷu —
   dáng tự nhiên ra gần cùng khuỷu, món giữ chỗ; khuỷu đang vẽ lấn thân hay đẩy cổ tay sát giới hạn thì khuỷu nhường, cổ tay kẹp
   và món dời theo bàn tay.
-- **Đầu cao của cạnh** (`high`) không khai được trong cảnh, và hai chế độ dựng chiều cạnh `e` từ hai nguồn khác nhau: tay dẫn
-  không kế thừa lần cầm theo mốc dựng khung cầm không có `high` (`groupHand` của `holdLink.ts` → `edgeFrame` của `heldGeom.ts`,
-  `boxAxes` của `graspSolve.ts`: `e` mặc định của khối hình), món đặt trước lấy đầu cao theo hướng món ở mốc đầu lần cầm
-  (`chooseGrasp` của `graspSolve.ts` → `highOf` → `edgeHigh`: đầu cao hơn trên thế giới, cạnh nằm ngang thì đầu phía tay ấy
-  hay phía trước). Khung cầm đọc `e` ở `along` (tính từ đầu ngược `e`), `slant` (ngón quay về đầu cao) và bên ngón cái của
-  `palmBox` (`e × mặt trước`). Phép đổi thử đo chỗ cầm từ đầu kia ở tay dẫn, tay kia hay cả hai, hai cách: `along` → `1 −
-  along` (tên: `low` ↔ `high`), hay thêm `slant` đổi dấu (`low` ↔ `high`) và `thumb` của `palmBox` đổi bên — khi lệch ở mốc
-  (món dời cộng tâm nắm dời) quá 1 đơn vị rig, và lại khi thêm mốc khoá khuỷu — giữ cách lệch ít nhất; `notes` báo tay nào,
-  cách nào. Ngón chúc dọc hộp của `palmBox` (`BOX_RISE`) theo `e` mà cảnh không khai được, nên với `palmBox` cách này chỉ gần
-  đúng.
+- **Đầu cao của cạnh** (`high`): cảnh không khai thì hai chế độ dựng chiều cạnh `e` từ hai nguồn khác nhau: tay dẫn không kế
+  thừa lần cầm theo mốc dựng khung cầm với `e` mặc định của khối hình (`handFrame` của `holdLink.ts` → `edgeFrame` của
+  `heldGeom.ts`, `boxEnd`, `faceEnd` của `graspSolve.ts`), món đặt trước lấy đầu cao theo hướng món ở mốc đầu lần cầm
+  (`chooseMissing` của `graspSolve.ts` → `highOf` → `edgeHigh`: đầu cao hơn trên thế giới, cạnh dốc dưới 30° thì đầu phía tay
+  ấy hay phía trước). Khung cầm đọc `e` ở `along` (tính từ đầu ngược `e`), `slant` (ngón quay về đầu cao), `psi`, bên ngón cái
+  của `palmBox` (`e × mặt trước`) và độ ngón chúc dọc hộp `BOX_RISE`. Phép đổi đọc đầu cao khung cầm chế độ đang vẽ dùng
+  (`GraspReport.high`) ở tay dẫn — và tay kia khi sang tay theo đồ — ở mốc đầu của quãng đổi; bản vá đầu tiên mà chế độ mới lấy
+  đầu kia thì ghi `high` (tên hướng của món gần đầu ấy nhất, `sideToward`) vào chỗ cầm của mọi mốc tay ấy trong quãng đổi, cả
+  hai chiều; `notes` báo. Hai chế độ khi ấy cùng khung cầm. Còn lệch ở mốc (món dời cộng tâm nắm dời) quá 1 đơn vị rig, và lại
+  khi thêm mốc khoá khuỷu, thì phép đổi thử đo chỗ cầm từ đầu kia ở tay dẫn, tay kia hay cả hai, hai cách: `along` → `1 −
+  along` (tên: `low` ↔ `high`), hay thêm `slant` đổi dấu (`low` ↔ `high`) và `thumb` của `palmBox` đổi bên — giữ cách lệch ít
+  nhất; `notes` báo tay nào, cách nào.
 - **Đồ theo tay: món giữ chỗ.** Sau phép đổi, đích tay dẫn dời theo chỗ món đo được (`HOLD_MODE_FIX` = 2 lượt, giữ lượt nào món
   ở mốc gần hơn): khung cầm hai chế độ khác nhau thì bàn tay dời, món đứng yên. Cổ tay đã kẹp ở giới hạn trước phép đổi
   (`clamped.before` của hàng không hoà, ví dụ hai tay bắt chéo trên tấm) thì bàn tay không tới chỗ cầm: hai tay trên mốc món
@@ -1512,8 +1522,7 @@ Phép đổi không khớp tuyệt đối; studio và agent đọc `rows` trư�
   nhau; cổ tay kẹp ở một bên thì món lệch theo (`phi`, `clamped`). Khoá khuỷu kéo `φ` về khuỷu đang vẽ; sang đồ theo tay, tay
   dẫn khoá khuỷu vẫn giải cổ tay theo ý định từ góc cổ tay của hành động, có thể dừng ở nghiệm kẹp khác (`wrist.err` của
   `handReport`) — khi ấy khoá làm món lệch hơn và không được giữ.
-- Đo từ đầu kia không bù hết khi khung cầm còn đọc chiều cạnh ở chỗ cảnh không khai được (`BOX_RISE` của `palmBox`): món lệch
-  vài độ; có khi hai chế độ dựng khung cầm khác nhau cả khi cùng chiều cạnh, món giữ chỗ mà tâm nắm dời trên món (`hand`).
+- Có khi hai chế độ dựng khung cầm khác nhau cả khi cùng chiều cạnh, món giữ chỗ mà tâm nắm dời trên món (`hand`).
 - Ranh giới lần cầm hoà khác nhau: tay theo đồ hoà từ tay tự do trong `HOLD_BLEND` sau mốc mở, tay dẫn tới đích đúng ở mốc
   (`blending`, `outside` quanh mốc mở).
 - Giữa hai mốc: tay dẫn hoà đích và ý định với tốc độ có hạn (`HOLD_SLEW`), tay theo đồ hoà bàn tay trong hệ thân (hàng `mid`).
