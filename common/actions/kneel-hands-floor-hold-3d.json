@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 21,
+  "name": "kneel-hands-floor-hold-3d",
+  "duration": 1,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": ["armLeft", "armRight", "legLeft", "legRight", "torso", "head", "hand"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "legLeft": [60, -159.7],
+        "legRight": [60, -159.7],
+        "torso": 56,
+        "head": [null, null, -64]
+      },
+      "ease": "linear",
+      "reach": {
+        "armRight": { "at": [127.5, 48.5, 30], "point": "palm", "elbow": [-1, -0.2, 0.45] },
+        "armLeft": { "at": [127.5, 48.5, 30], "point": "palm", "elbow": [-1, -0.2, 0.45] }
+      },
+      "hand": {
+        "armRight": { "pose": "flat", "palm": "down", "fingers": "forward" },
+        "armLeft": { "pose": "flat", "palm": "down", "fingers": "forward" }
+      }
+    }
+  ],
+  "events": [],
+  "note": "Giữ dáng cuối của `kneel-hands-floor-3d` từ giây 0: quỳ hai gối, đùi ngả sau 60°, thân chúi 56°, hai bàn tay úp trên sàn trước gối, đầu ngẩng 64° — cho cảnh cắt vào lúc đã quỳ, người nền. Ghi tay, chân, thân, gật của `head`, bàn tay. Nền: `world.sit` (hay mốc `path` `sit: true`) ở mặt ngồi ảo như `preview.path` — cao 36.5 trên sàn, gối ở 67.6 trước nó, mũi chân 23.1 sau nó —, nhân với `height`; nối từ `kneel-drop-3d` thì là 23.1 trước chỗ đứng trước khi sụp gối. Cúi gằm thì chồng `kneel-hands-floor-head-down-3d`. Cùng chuỗi: `kneel-drop-3d` → `kneel-hands-floor-3d` (hay `-hold`) → `kneel-hands-floor-head-down-3d` (hay `-hold`). Mặt ngồi của mốc tính cho nửa bề dày đùi 16 (đơn vị rig ở `height` 1): người đùi dày hơn thì hạ mốc chừng ấy. Sinh bởi `tools/actions/seat.mjs`.",
+  "preview": {
+    "stage": "stand",
+    "path": [
+      { "t": 0, "at": [23.1, 36.5], "sit": true },
+      { "t": 1, "at": [23.1, 36.5], "sit": true }
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-// Sinh họ hành động dời hông giữa đứng, ngồi ghế bành và seiza: góc chân giải IK theo đúng đường hông rig nội suy giữa
+// Sinh họ hành động dời hông giữa đứng, ngồi ghế bành, seiza và quỳ: góc chân giải IK theo đúng đường hông rig nội suy giữa
 // các mốc `path` có mốc ngồi (docs/03-scene.md#đi-theo-path), nên bàn chân và gối đứng yên trên sàn, trên đệm.
 // node tools/actions/seat.mjs
 import { readFileSync, writeFileSync } from "node:fs";
@@ -400,12 +400,200 @@ function kneel(duration) {
   return { keys, path };
 }
 
+/**
+ * Quỳ hai gối từ đứng: cổ chân đứng yên ở chỗ đứng (gót nhấc, mũi chống), hai gối đổ ra trước xuống sàn cách mũi chân một
+ * ống chân; hông theo `DROP_*`. Độ cao tính từ sàn, `trước` từ chỗ đứng.
+ */
+const DROP_KNEE = [Math.sqrt(S * S - (TOE_UP - KNEE_UP) ** 2), KNEE_UP];
+/** Pha gối chạm sàn, góc đùi ngả ra sau lúc chạm và lúc lắng lại (độ, 0 là đùi dựng trên gối) */
+const DROP_HIT = 0.6;
+const DROP_LEAN = 0;
+const DROP_SETTLE = 8;
+/** Chống tay: đùi ngả ra sau, thân chúi, đầu ngẩng; tâm lòng tay trên sàn trước gối, cách đường giữa thân */
+const FLOOR_THIGH = 60;
+const FLOOR_TORSO = 56;
+const FLOOR_HEAD = -64;
+const FLOOR_HAND = [DROP_KNEE[0] + 60, 4, 30];
+const FLOOR_ELBOW = [-1, -0.2, 0.45];
+const FLOOR_PALM = { pose: "flat", palm: "down", fingers: "forward" };
+const HEAD_DOWN = 26;
+/** Vai trên hông dọc thân (thân 120, vai tụt 20); lòng tay buông dưới vai `[trước, xuống]` lúc tay vào đích */
+const SHOULDER = RIG.torso - 20;
+const HANG_PALM = [14, 104];
+const DROP_ARMS = [0, 22, 0];
+
+/** Hông `[trước, cao]` khi gối nằm ở `DROP_KNEE` và đùi ngả ra sau `psi` độ */
+const kneelHip = (psi) => [
+  DROP_KNEE[0] - T * Math.sin(psi * D),
+  DROP_KNEE[1] + T * Math.cos(psi * D),
+];
+
+/** Cổ chân `[trước, cao]` của chân quỳ, mũi giày không lún sàn: gót nhấc dần theo `u` tới `TOE_UP` */
+function dropAnkle(u, hip) {
+  let y = lerp(FOOT, TOE_UP, ss(u));
+  for (let n = 0; n < 6; n++) {
+    const legs = ik(rel([0, y], hip));
+    const over = Math.max(0, Math.abs(legs[0] + legs[1]) - FOOT_FREE);
+    y = Math.max(lerp(FOOT, TOE_UP, ss(u)), FOOT + TOE * Math.sin(over * D));
+  }
+  return [0, y];
+}
+
+function kneelDrop(duration) {
+  const stand = () => T + S + FOOT;
+  const top = [0, T + S + FOOT];
+  const hit = kneelHip(DROP_LEAN);
+  // sụp: hông rơi nhanh dần tới lúc gối chạm sàn, ra trước chậm hơn rơi; rồi đùi lắng ra sau
+  const fall = (f) => {
+    const s = clamp01((f - 0.06) / (DROP_HIT - 0.06));
+    return s * s;
+  };
+  const hipAt = (f) => {
+    if (f <= DROP_HIT) {
+      const u = fall(f);
+      return [lerp(top[0], hit[0], u ** 1.5), lerp(top[1], hit[1], u)];
+    }
+    return kneelHip(lerp(DROP_LEAN, DROP_SETTLE, ss((f - DROP_HIT) / (1 - DROP_HIT))));
+  };
+  const marks = [0.06, 0.15, 0.25, 0.35, 0.45, 0.53, DROP_HIT, 0.7, 0.8, 0.9, 1];
+  const path = [{ t: 0, at: [0, 0] }, ...marks.map((f) => sitKey(f * duration, hipAt(f)))];
+  const torso = curve([
+    [0, 0],
+    [0.15, 2],
+    [DROP_HIT, 9],
+    [0.72, 15],
+    [0.88, 7],
+    [1, 6],
+  ]);
+  const head = curve([
+    [0, 0],
+    [0.45, 5],
+    [0.72, 20],
+    [0.88, 11],
+    [1, 12],
+  ]);
+  const arms = curve([
+    [0, STAND_ARMS],
+    [0.4, [4, 32, 0]],
+    [DROP_HIT, [10, 38, 0]],
+    [0.74, [5, 30, 0]],
+    [1, DROP_ARMS],
+  ]);
+  const keys = [];
+  const n = 30;
+  for (let i = 0; i <= n; i++) {
+    const f = i / n;
+    const hip = hipOn(path, f * duration, stand);
+    const ankle = dropAnkle(Math.min(1, fall(f)), hip);
+    const k = key(f, ik(rel(ankle, hip)), torso(f), arms(f));
+    k.pose.head = [null, null, r1(head(f))];
+    keys.push(k);
+  }
+  keys[0].hand = { armRight: REST_HAND, armLeft: REST_HAND };
+  return { keys, path };
+}
+
+/** Từ quỳ hai gối (`kneelDrop` đã lắng) đổ thân tới, hai bàn tay úp xuống sàn trước gối, đầu ngẩng */
+function kneelFloor(duration) {
+  const ankle = [0, TOE_UP];
+  const thigh = curve([
+    [0, DROP_SETTLE],
+    [0.15, DROP_SETTLE],
+    [0.8, FLOOR_THIGH],
+  ]);
+  const marks = [0, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.8, 1];
+  const path = marks.map((f) => sitKey(f * duration, kneelHip(thigh(f))));
+  const torso = curve([
+    [0, 6],
+    [0.2, 10],
+    [0.8, FLOOR_TORSO + 3],
+    [1, FLOOR_TORSO],
+  ]);
+  const head = curve([
+    [0, 12],
+    [0.3, 18],
+    [0.75, FLOOR_HEAD + 12],
+    [1, FLOOR_HEAD],
+  ]);
+  // lòng tay đi theo vai: cánh tay xoay từ buông dọc thân ra trước (độ dài vai → lòng tay không quá `FLOOR_SPAN` tầm với),
+  // úp xuống sàn đúng lúc thân tới dáng cuối (0,8), rồi nằm yên trên sàn tới hết
+  const shoulderAt = (f) => {
+    const hip = hipOn(path, f * duration);
+    const a = torso(f) * D;
+    return [hip[0] + SHOULDER * Math.sin(a), hip[1] + SHOULDER * Math.cos(a)];
+  };
+  const land = shoulderAt(0.8);
+  const v1 = [FLOOR_HAND[0] - land[0], land[1] - FLOOR_HAND[1]];
+  const polar = (v) => [Math.atan2(v[0], v[1]), Math.hypot(v[0], v[1])];
+  const [a0, l0] = polar(HANG_PALM);
+  const [a1, l1] = polar(v1);
+  const palmAt = (f) => {
+    if (f >= 0.8) return FLOOR_HAND;
+    const u = ss(clamp01((f - 0.1) / 0.7));
+    const s = shoulderAt(f);
+    const a = lerp(a0, a1, u);
+    const l = lerp(l0, l1, u);
+    const y = Math.max(FLOOR_HAND[1], s[1] - l * Math.cos(a));
+    return [s[0] + l * Math.sin(a), y, lerp(40, FLOOR_HAND[2], u)];
+  };
+  // đích tay thưa hơn mốc chân: mỗi đích lòng tay là một lượt giải bàn tay → cổ tay ở mỗi khung rig nội suy qua nó
+  const REACH_KEYS = [3, 9, 14, 20];
+  const keys = [];
+  const n = 24;
+  for (let i = 0; i <= n; i++) {
+    const f = i / n;
+    const hip = hipOn(path, f * duration);
+    const k = key(f, ik(rel(ankle, hip)), torso(f));
+    k.pose.head = [null, null, r1(head(f))];
+    if (i === 0) {
+      Object.assign(k.pose, { armLeft: DROP_ARMS, armRight: DROP_ARMS });
+      k.hand = { armRight: REST_HAND, armLeft: REST_HAND };
+    } else if (REACH_KEYS.includes(i)) {
+      const p = palmAt(f);
+      const at = [p[0] - hip[0], hip[1] - p[1], p[2]].map(r1);
+      k.reach = {
+        armRight: { at, point: "palm", elbow: FLOOR_ELBOW },
+        armLeft: { at, point: "palm", elbow: FLOOR_ELBOW },
+      };
+      if (i === REACH_KEYS[2]) k.hand = { armRight: FLOOR_PALM, armLeft: FLOOR_PALM };
+    }
+    keys.push(k);
+  }
+  return { keys, path };
+}
+
+/** Dáng cuối của `kneelFloor` ngay từ giây 0 */
+function kneelFloorHold() {
+  const hip = kneelHip(FLOOR_THIGH);
+  const at = [FLOOR_HAND[0] - hip[0], hip[1] - FLOOR_HAND[1], FLOOR_HAND[2]].map(r1);
+  const pose = (f) => {
+    const k = key(f, ik(rel([0, TOE_UP], hip)), FLOOR_TORSO);
+    k.pose.head = [null, null, FLOOR_HEAD];
+    k.reach = {
+      armRight: { at, point: "palm", elbow: FLOOR_ELBOW },
+      armLeft: { at, point: "palm", elbow: FLOOR_ELBOW },
+    };
+    k.hand = { armRight: FLOOR_PALM, armLeft: FLOOR_PALM };
+    return k;
+  };
+  return { keys: [pose(0)], path: [sitKey(0, hip), sitKey(1, hip)] };
+}
+
+/** Gật đầu từ ngẩng (`FLOOR_HEAD`) xuống cúi gằm (`HEAD_DOWN`), chỉ ghi gật; `hold` cúi sẵn từ giây 0 */
+const headDown = (hold) => [
+  { t: 0, pose: { head: [null, null, hold ? HEAD_DOWN : FLOOR_HEAD] }, ease: "smooth" },
+  { t: 1, pose: { head: [null, null, HEAD_DOWN] }, ease: "linear" },
+];
+
 const SIT_DOWN = 1.1;
 const STAND_UP = 1.1;
 const KNEEL = 1;
 const SEIZA_STAND = 2;
 const SQUAT = 0.9;
 const KNEEL_DOWN = 1.2;
+const KNEEL_DROP = 1;
+const KNEEL_FLOOR = 1.2;
+const HEAD_DOWN_TIME = 0.8;
 const BY = "Sinh bởi `tools/actions/seat.mjs`.";
 const SEAT_NOTE = `Mặt ngồi của mốc tính cho nửa bề dày đùi ${LEG_HALF} (đơn vị rig ở \`height\` 1): người đùi dày hơn thì hạ mốc chừng ấy.`;
 
@@ -414,6 +602,12 @@ const kneelOut = kneelMove(false, KNEEL);
 const stand = seizaStand(SEIZA_STAND);
 const sq = squat(SQUAT);
 const kn = kneel(KNEEL_DOWN);
+const drop = kneelDrop(KNEEL_DROP);
+const floor = kneelFloor(KNEEL_FLOOR);
+const floorHold = kneelFloorHold();
+const floorAt = floorHold.path[0].at;
+const FLOOR_FAMILY =
+  "Cùng chuỗi: `kneel-drop-3d` → `kneel-hands-floor-3d` (hay `-hold`) → `kneel-hands-floor-head-down-3d` (hay `-hold`).";
 
 const ACTIONS = [
   {
@@ -471,6 +665,46 @@ const ACTIONS = [
     keys: kn.keys,
     preview: { stage: "stand", path: kn.path },
     note: `Quỳ một gối rồi giữ: bàn chân trái đứng yên ở chỗ đứng, hông lùi ${KNEEL_BACK} và hạ xuống cao ${KNEEL_HIP_H} trên sàn trong ${KNEEL_DOWN} s, chân phải lùi ra sau, gối phải xuống sàn ngay dưới hông, mũi bàn chân phải chống; tay trái đặt trên gối trái, tay phải buông. Ghi tay, chân, thân, bàn tay. Nền \`stand-3d\`; hông đi theo \`world.path\` như \`preview.path\` (mốc đứng ở chỗ đứng đúng lúc clip bắt đầu, rồi mốc \`sit: true\`, mặt ngồi ảo). Nhận đồ, cầu hôn, buộc dây giày thì chồng track tay; đứng lên thì thêm mốc đứng và clip rỗng blend ~0,6. ${SEAT_NOTE} ${BY}`,
+  },
+  {
+    name: "kneel-drop-3d",
+    duration: KNEEL_DROP,
+    mask: ["armLeft", "armRight", "legLeft", "legRight", "torso", "head", "hand"],
+    keys: drop.keys,
+    preview: { stage: "stand", path: drop.path },
+    note: `Sụp hai gối xuống quỳ rồi giữ: gối khuỵu, hông rơi nhanh dần, hai gối đổ ra trước chạm sàn lúc ${r1(DROP_HIT * KNEEL_DROP)} s cách mũi chân ${r1(DROP_KNEE[0])} (một ống chân), cổ chân đứng yên ở chỗ đứng, gót nhấc, mũi giày chống; thân giật tới 15° rồi lắng 6°, đầu gục 20° rồi 12°, tay buông văng theo; tới ${KNEEL_DROP} s đùi lắng ngả sau ${DROP_SETTLE}°, hông cao ${r1(kneelHip(DROP_SETTLE)[1])} trên sàn. Ghi tay, chân, thân, gật của \`head\` (nghiêng, lắc để trống), bàn tay. Nền \`stand-3d\`; hông đi theo \`world.path\` như \`preview.path\` — mốc đứng ở chỗ đứng đúng lúc clip bắt đầu, rồi các mốc \`sit: true\` (mặt ngồi ảo) tới ${r1(drop.path.at(-1).at[0])} trước chỗ đứng —, nhân \`at\` với \`height\` của người. Nối ngay sau là \`kneel-hands-floor-3d\`; giữ quỳ thẳng thì để clip giữ, chồng track đầu (\`turn-head-*\`) được. ${FLOOR_FAMILY} ${SEAT_NOTE} ${BY}`,
+  },
+  {
+    name: "kneel-hands-floor-3d",
+    duration: KNEEL_FLOOR,
+    mask: ["armLeft", "armRight", "legLeft", "legRight", "torso", "head", "hand"],
+    keys: floor.keys,
+    preview: { stage: "stand", path: floor.path },
+    note: `Từ quỳ hai gối (dáng cuối \`kneel-drop-3d\`) đổ thân tới ${FLOOR_TORSO}°, hông lùi ngồi xuống theo cung quanh gối (đùi ngả sau ${FLOOR_THIGH}°, hông cao ${r1(floorAt[1] + LEG_HALF)} trên sàn), hai bàn tay vòng ra trước úp xuống sàn trước gối ${r1(FLOOR_HAND[0] - DROP_KNEE[0])} lúc ${Math.round(80 * KNEEL_FLOOR) / 100} s (lòng tay úp, ngón ra trước, khuỷu choãi ra sau ngoài), đầu ngẩng ${-FLOOR_HEAD}° nhìn người đứng trước mặt trong ${KNEEL_FLOOR} s; giữ. Ghi tay, chân, thân, gật của \`head\`, bàn tay. Nối ngay sau \`kneel-drop-3d\`; hông đi theo \`world.path\` toàn mốc \`sit: true\` như \`preview.path\` — cùng gốc với \`kneel-drop-3d\` (chỗ đứng trước khi sụp gối), gối, mũi chân nằm yên —, nhân \`at\` với \`height\`. Đích tay hệ thân tính cho đúng đường hông ấy, nên bàn tay nằm trên sàn ở mọi cỡ người khi \`path\` nhân \`height\`. Cúi gằm thì chồng \`kneel-hands-floor-head-down-3d\` ở track trên; quay đầu thì \`turn-head-*\`. ${FLOOR_FAMILY} ${SEAT_NOTE} ${BY}`,
+  },
+  {
+    name: "kneel-hands-floor-hold-3d",
+    duration: 1,
+    mask: ["armLeft", "armRight", "legLeft", "legRight", "torso", "head", "hand"],
+    keys: floorHold.keys,
+    preview: { stage: "stand", path: floorHold.path },
+    note: `Giữ dáng cuối của \`kneel-hands-floor-3d\` từ giây 0: quỳ hai gối, đùi ngả sau ${FLOOR_THIGH}°, thân chúi ${FLOOR_TORSO}°, hai bàn tay úp trên sàn trước gối, đầu ngẩng ${-FLOOR_HEAD}° — cho cảnh cắt vào lúc đã quỳ, người nền. Ghi tay, chân, thân, gật của \`head\`, bàn tay. Nền: \`world.sit\` (hay mốc \`path\` \`sit: true\`) ở mặt ngồi ảo như \`preview.path\` — cao ${floorAt[1]} trên sàn, gối ở ${r1(DROP_KNEE[0] - floorAt[0])} trước nó, mũi chân ${r1(floorAt[0])} sau nó —, nhân với \`height\`; nối từ \`kneel-drop-3d\` thì là ${r1(floorAt[0])} trước chỗ đứng trước khi sụp gối. Cúi gằm thì chồng \`kneel-hands-floor-head-down-3d\`. ${FLOOR_FAMILY} ${SEAT_NOTE} ${BY}`,
+  },
+  {
+    name: "kneel-hands-floor-head-down-3d",
+    duration: HEAD_DOWN_TIME,
+    mask: ["head"],
+    keys: headDown(false),
+    preview: { stage: "stand", base: "kneel-hands-floor-hold-3d", path: floorHold.path },
+    note: `Quỳ chống tay rồi cúi gằm: đầu từ ngẩng ${-FLOOR_HEAD}° (dáng \`kneel-hands-floor-3d\`) gật xuống ${HEAD_DOWN}° trong ${HEAD_DOWN_TIME} s, mặt nhìn sàn giữa hai tay; giữ. Chỉ ghi gật của \`head\`, nghiêng, lắc để trống. Nền \`kneel-hands-floor-3d\` hay \`-hold-3d\` ở track dưới (thân, tay, chân giữ nguyên); cắt vào lúc đã cúi thì \`kneel-hands-floor-head-down-hold-3d\`, ngẩng lại bằng clip rỗng blend ~0,5. ${FLOOR_FAMILY} ${BY}`,
+  },
+  {
+    name: "kneel-hands-floor-head-down-hold-3d",
+    duration: HEAD_DOWN_TIME,
+    mask: ["head"],
+    keys: headDown(true),
+    preview: { stage: "stand", base: "kneel-hands-floor-hold-3d", path: floorHold.path },
+    note: `Cúi gằm khi quỳ chống tay, gật ${HEAD_DOWN}° ngay từ giây 0 rồi giữ — cho cảnh cắt vào lúc đã cúi. Chỉ ghi gật của \`head\`, nghiêng, lắc để trống. Nền \`kneel-hands-floor-3d\` hay \`-hold-3d\` ở track dưới; vào dần là \`kneel-hands-floor-head-down-3d\`, ngẩng lại bằng clip rỗng blend ~0,5. ${FLOOR_FAMILY} ${BY}`,
   },
 ];
 

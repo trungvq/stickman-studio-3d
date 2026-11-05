@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 21,
+  "name": "kneel-hands-floor-head-down-hold-3d",
+  "duration": 0.8,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": ["head"],
+  "keys": [
+    { "t": 0, "pose": { "head": [null, null, 26] }, "ease": "smooth" },
+    { "t": 1, "pose": { "head": [null, null, 26] }, "ease": "linear" }
+  ],
+  "events": [],
+  "note": "Cúi gằm khi quỳ chống tay, gật 26° ngay từ giây 0 rồi giữ — cho cảnh cắt vào lúc đã cúi. Chỉ ghi gật của `head`, nghiêng, lắc để trống. Nền `kneel-hands-floor-3d` hay `-hold-3d` ở track dưới; vào dần là `kneel-hands-floor-head-down-3d`, ngẩng lại bằng clip rỗng blend ~0,5. Cùng chuỗi: `kneel-drop-3d` → `kneel-hands-floor-3d` (hay `-hold`) → `kneel-hands-floor-head-down-3d` (hay `-hold`). Sinh bởi `tools/actions/seat.mjs`.",
+  "preview": {
+    "stage": "stand",
+    "base": "kneel-hands-floor-hold-3d",
+    "path": [
+      { "t": 0, "at": [23.1, 36.5], "sit": true },
+      { "t": 1, "at": [23.1, 36.5], "sit": true }
+    ]
+  }
+}

@@ -1,0 +1,299 @@
+{
+  "schemaVersion": 21,
+  "name": "kneel-hands-floor-3d",
+  "duration": 1.2,
+  "end": "hold",
+  "authoredAt": "side",
+  "mask": ["armLeft", "armRight", "legLeft", "legRight", "torso", "head", "hand"],
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "legLeft": [8, -107.7],
+        "legRight": [8, -107.7],
+        "torso": 6,
+        "head": [null, null, 12],
+        "armLeft": [0, 22, 0],
+        "armRight": [0, 22, 0]
+      },
+      "ease": "linear",
+      "hand": { "armRight": {}, "armLeft": {} }
+    },
+    {
+      "t": 0.0417,
+      "pose": {
+        "legLeft": [8, -107.7],
+        "legRight": [8, -107.7],
+        "torso": 6.4,
+        "head": [null, null, 12.3]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.0833,
+      "pose": {
+        "legLeft": [8, -107.7],
+        "legRight": [8, -107.7],
+        "torso": 7.5,
+        "head": [null, null, 13.1]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.125,
+      "pose": {
+        "legLeft": [8, -107.7],
+        "legRight": [8, -107.7],
+        "torso": 8.7,
+        "head": [null, null, 14.3]
+      },
+      "ease": "linear",
+      "reach": {
+        "armRight": { "at": [29.3, 5.2, 40], "point": "palm", "elbow": [-1, -0.2, 0.45] },
+        "armLeft": { "at": [29.3, 5.2, 40], "point": "palm", "elbow": [-1, -0.2, 0.45] }
+      }
+    },
+    {
+      "t": 0.1667,
+      "pose": {
+        "legLeft": [8.6, -108.3],
+        "legRight": [8.6, -108.3],
+        "torso": 9.7,
+        "head": [null, null, 15.5]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.2083,
+      "pose": {
+        "legLeft": [9.9, -109.7],
+        "legRight": [9.9, -109.7],
+        "torso": 10,
+        "head": [null, null, 16.7]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.25,
+      "pose": {
+        "legLeft": [11.3, -111],
+        "legRight": [11.3, -111],
+        "torso": 11,
+        "head": [null, null, 17.6]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.2917,
+      "pose": {
+        "legLeft": [14.8, -114.6],
+        "legRight": [14.8, -114.6],
+        "torso": 13.1,
+        "head": [null, null, 18]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.3333,
+      "pose": {
+        "legLeft": [18.3, -118.1],
+        "legRight": [18.3, -118.1],
+        "torso": 16.2,
+        "head": [null, null, 16.9]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.375,
+      "pose": {
+        "legLeft": [22.4, -122.3],
+        "legRight": [22.4, -122.3],
+        "torso": 20.1,
+        "head": [null, null, 12.8]
+      },
+      "ease": "linear",
+      "reach": {
+        "armRight": { "at": [57.9, 9.6, 36.6], "point": "palm", "elbow": [-1, -0.2, 0.45] },
+        "armLeft": { "at": [57.9, 9.6, 36.6], "point": "palm", "elbow": [-1, -0.2, 0.45] }
+      }
+    },
+    {
+      "t": 0.4167,
+      "pose": {
+        "legLeft": [27.1, -127],
+        "legRight": [27.1, -127],
+        "torso": 24.6,
+        "head": [null, null, 6.3]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.4583,
+      "pose": {
+        "legLeft": [31.9, -131.7],
+        "legRight": [31.9, -131.7],
+        "torso": 29.4,
+        "head": [null, null, -1.9]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "legLeft": [36.6, -136.7],
+        "legRight": [36.6, -136.7],
+        "torso": 34.5,
+        "head": [null, null, -11.2]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5417,
+      "pose": {
+        "legLeft": [41.8, -141.6],
+        "legRight": [41.8, -141.6],
+        "torso": 39.6,
+        "head": [null, null, -20.9]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.5833,
+      "pose": {
+        "legLeft": [46, -145.9],
+        "legRight": [46, -145.9],
+        "torso": 44.4,
+        "head": [null, null, -30.3]
+      },
+      "ease": "linear",
+      "reach": {
+        "armRight": { "at": [105.6, 30.2, 32.3], "point": "palm", "elbow": [-1, -0.2, 0.45] },
+        "armLeft": { "at": [105.6, 30.2, 32.3], "point": "palm", "elbow": [-1, -0.2, 0.45] }
+      },
+      "hand": {
+        "armRight": { "pose": "flat", "palm": "down", "fingers": "forward" },
+        "armLeft": { "pose": "flat", "palm": "down", "fingers": "forward" }
+      }
+    },
+    {
+      "t": 0.625,
+      "pose": {
+        "legLeft": [50.2, -150.1],
+        "legRight": [50.2, -150.1],
+        "torso": 48.9,
+        "head": [null, null, -38.8]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.6667,
+      "pose": {
+        "legLeft": [53.7, -153.4],
+        "legRight": [53.7, -153.4],
+        "torso": 52.8,
+        "head": [null, null, -45.7]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.7083,
+      "pose": {
+        "legLeft": [55.5, -155.4],
+        "legRight": [55.5, -155.4],
+        "torso": 55.9,
+        "head": [null, null, -50.3]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.75,
+      "pose": {
+        "legLeft": [57.5, -157.3],
+        "legRight": [57.5, -157.3],
+        "torso": 58,
+        "head": [null, null, -52]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.7917,
+      "pose": {
+        "legLeft": [59.6, -159.3],
+        "legRight": [59.6, -159.3],
+        "torso": 59,
+        "head": [null, null, -52.9]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.8333,
+      "pose": {
+        "legLeft": [60.1, -159.7],
+        "legRight": [60.1, -159.7],
+        "torso": 58.8,
+        "head": [null, null, -55.1]
+      },
+      "ease": "linear",
+      "reach": {
+        "armRight": { "at": [127.6, 48.5, 30], "point": "palm", "elbow": [-1, -0.2, 0.45] },
+        "armLeft": { "at": [127.6, 48.5, 30], "point": "palm", "elbow": [-1, -0.2, 0.45] }
+      }
+    },
+    {
+      "t": 0.875,
+      "pose": {
+        "legLeft": [60.1, -159.7],
+        "legRight": [60.1, -159.7],
+        "torso": 58.1,
+        "head": [null, null, -58]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.9167,
+      "pose": {
+        "legLeft": [60.1, -159.7],
+        "legRight": [60.1, -159.7],
+        "torso": 57.1,
+        "head": [null, null, -60.9]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 0.9583,
+      "pose": {
+        "legLeft": [60.1, -159.7],
+        "legRight": [60.1, -159.7],
+        "torso": 56.3,
+        "head": [null, null, -63.1]
+      },
+      "ease": "linear"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "legLeft": [60.1, -159.7],
+        "legRight": [60.1, -159.7],
+        "torso": 56,
+        "head": [null, null, -64]
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Từ quỳ hai gối (dáng cuối `kneel-drop-3d`) đổ thân tới 56°, hông lùi ngồi xuống theo cung quanh gối (đùi ngả sau 60°, hông cao 52.5 trên sàn), hai bàn tay vòng ra trước úp xuống sàn trước gối 60 lúc 0.96 s (lòng tay úp, ngón ra trước, khuỷu choãi ra sau ngoài), đầu ngẩng 64° nhìn người đứng trước mặt trong 1.2 s; giữ. Ghi tay, chân, thân, gật của `head`, bàn tay. Nối ngay sau `kneel-drop-3d`; hông đi theo `world.path` toàn mốc `sit: true` như `preview.path` — cùng gốc với `kneel-drop-3d` (chỗ đứng trước khi sụp gối), gối, mũi chân nằm yên —, nhân `at` với `height`. Đích tay hệ thân tính cho đúng đường hông ấy, nên bàn tay nằm trên sàn ở mọi cỡ người khi `path` nhân `height`. Cúi gằm thì chồng `kneel-hands-floor-head-down-3d` ở track trên; quay đầu thì `turn-head-*`. Cùng chuỗi: `kneel-drop-3d` → `kneel-hands-floor-3d` (hay `-hold`) → `kneel-hands-floor-head-down-3d` (hay `-hold`). Mặt ngồi của mốc tính cho nửa bề dày đùi 16 (đơn vị rig ở `height` 1): người đùi dày hơn thì hạ mốc chừng ấy. Sinh bởi `tools/actions/seat.mjs`.",
+  "preview": {
+    "stage": "stand",
+    "path": [
+      { "t": 0, "at": [79.8, 74.7], "sit": true },
+      { "t": 0.18, "at": [79.8, 74.7], "sit": true },
+      { "t": 0.3, "at": [75.4, 74], "sit": true },
+      { "t": 0.42, "at": [64.3, 70.9], "sit": true },
+      { "t": 0.54, "at": [50.5, 64.4], "sit": true },
+      { "t": 0.66, "at": [37.6, 54.7], "sit": true },
+      { "t": 0.78, "at": [28.4, 44.5], "sit": true },
+      { "t": 0.96, "at": [23.1, 36.5], "sit": true },
+      { "t": 1.2, "at": [23.1, 36.5], "sit": true }
+    ]
+  }
+}
