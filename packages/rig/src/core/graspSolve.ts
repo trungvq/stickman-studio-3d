@@ -14,6 +14,7 @@ import {
   acrossOf,
   baseVariant,
   GRIP_GROUPS,
+  groupFits,
   groupNeeds,
   PINCH_ALONG,
   holdDefaults,
@@ -1807,6 +1808,57 @@ export function declaredHigh(
   const e = edgeAxis(geom, f, c);
   const d = e ? dot3(e, itemSide(geom, name)) : 0;
   return Math.abs(d) > EPS ? (d < 0 ? neg(e!) : e) : undefined;
+}
+
+/** `|cos|` giữa chiều cạnh và hướng `high` khai dưới ngần này là vuông góc (`highWarnings`) */
+export const HIGH_ACROSS = 0.1;
+/** Nhóm có chỗ tiếp xúc đọc đầu cao của chiều cạnh (`ContactInput.high`) */
+const HIGH_GROUPS: readonly GroupId[] = ["sheet", "card", "palmBox", "platform"];
+
+/**
+ * Cảnh báo `high` khai mà rig không dùng được: nhóm không đọc đầu cao, hay mọi chỗ cầm khớp `part`, `edge` khai có chiều
+ * cạnh vuông góc hướng ấy (`|cos| < HIGH_ACROSS`). Còn chỗ cầm không vuông góc (cạnh chưa khai) thì không báo.
+ * docs/11-nhom-cam.md § Chỗ cầm
+ */
+export function highWarnings(
+  group: GroupId,
+  geom: ItemGeom,
+  hold: SceneHold,
+  dims: HandDims,
+  anchors?: Record<string, { dir?: unknown }>,
+): string[] {
+  const h = groupHold(hold);
+  if (!h.high) return [];
+  const where = `\`${h.item}@${group}\`: \`high: ${h.high}\``;
+  if (!HIGH_GROUPS.includes(group))
+    return [
+      `${where} không có tác dụng — chỉ nhóm ${HIGH_GROUPS.map((g) => `\`${g}\``).join(", ")} đọc đầu cao của chiều cạnh`,
+    ];
+  const axes: V3[] = [];
+  for (const { feature: f } of groupFits(geom, group, dims, anchors)) {
+    if (h.part !== undefined && f.part !== h.part) continue;
+    if (f.kind === "disc" && h.edge === undefined) return [];
+    const edges: GraspChoice["edge"][] =
+      h.edge !== undefined
+        ? [h.edge]
+        : f.kind === "slab" || f.kind === "face"
+          ? f.edges.map((x) => x.name as GraspChoice["edge"])
+          : [undefined];
+    for (const edge of edges) {
+      if (!edgeOk(f, edge)) continue;
+      const thumb = f.kind === "slab" || f.kind === "disc" ? f.faces[0]?.name : undefined;
+      const e = edgeAxis(geom, f, { edge, thumb });
+      if (e) axes.push(unit(e));
+    }
+  }
+  const want = itemSide(geom, h.high);
+  if (!axes.length || axes.some((e) => Math.abs(dot3(e, want)) >= HIGH_ACROSS)) return [];
+  const along = SIDE_NAMES.filter((n) =>
+    axes.some((e) => Math.abs(dot3(e, itemSide(geom, n))) > 0.5),
+  );
+  return [
+    `${where} vuông góc chiều cạnh ${h.edge !== undefined ? `của cạnh \`${h.edge}\`` : "ở mọi chỗ cầm"} (|cos| dưới ${String(HIGH_ACROSS).replace(".", ",")}): đầu cao không theo hướng ấy — khai hướng dọc chiều cạnh (${along.map((n) => `\`${n}\``).join(", ")})`,
+  ];
 }
 
 interface Cand {

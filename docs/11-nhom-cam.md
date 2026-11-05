@@ -995,8 +995,15 @@ const SceneHoldSchema = z.union([
   của chiều cạnh là đầu về phía hướng ấy, thay luật trên ở món đặt trước và đầu mặc định của tay dẫn (mục 3 nhóm 10, `boxAxes`
   của `palmBox`). Đọc ở mọi nhóm dựng khung cầm trên chiều cạnh: tấm và đĩa (`sheet`, `card`: `along`, `slant`), hộp (`palmBox`:
   `along`, bên ngón cái, ngón chúc `BOX_RISE`), mặt đỡ (`platform`: `along`, `psi`). Chiều cạnh vuông góc hướng ấy (trục dài
-  điện thoại với `front`) thì như không khai. Không áp cho tay phụ của `both`. Hai chế độ (món đặt trước, tay dẫn) không khai
+  điện thoại với `front`) thì như không khai; `check` và `validate` báo khi mọi chỗ cầm khớp phần khai đều vuông góc (|cos| <
+  `HIGH_ACROSS` = 0,1, `highWarnings`) hay nhóm không đọc đầu cao (mục 7). Hai chế độ (món đặt trước, tay dẫn) không khai
   có thể lấy hai đầu khác nhau ([Đổi chế độ lần cầm](#đổi-chế-độ-lần-cầm)); khai thì cùng đầu.
+- **Tay phụ của `both` không mang `high`** (object `both` không có trường ấy): món chỉ theo khung tay dẫn (tay dẫn) hay mốc
+  món (món đặt trước), tay phụ đặt lên món sau, nên `high` của tay dẫn đủ cho món đúng chỗ. Tay phụ đo `along`, `slant` từ đầu
+  thấp của chính nó như không khai — tay dẫn: đầu mặc định của khối hình (`supportOf` của `holdLink.ts`), món đặt trước:
+  `edgeHigh` (`supportAt` của `scene.ts`) —, cùng chỗ trên món dù tay dẫn khai `high` gì; `high` đổi đầu ở tay dẫn thì tay
+  dẫn sang góc kia, tay phụ đứng yên. Phép đổi chế độ gộp tay kia thành `both` thì bỏ `high` của nó, đo từ đầu kia
+  (`along`, `mirror`) nếu cần.
 - **Tay dẫn không khai chỗ cầm** lấy mặc định của nhóm (mục 3); `thumb` của tấm và thẻ là mặt quay về tâm đầu người cầm ở mốc bắt
   đầu lần cầm, `edge` không khai thì tấm đứng `bottom`, tấm nằm cạnh phía tay ấy (`right`, `left`).
 - **Đổi tay**, **đưa người khác**: mốc món đổi `cast` khi tay người nhận đã cầm; tay người đưa `hold: null` sau đó. Tay dẫn giữ luật
@@ -1590,6 +1597,7 @@ trong cùng lần cầm (`regrip` cùng khoá), như `scene_probe`.
 | lỗi `ref` `group` | `resolveScene` | Món không có khối hình nào cho nhóm với cỡ tay của người khai (`checkHolds` của `scene.ts`); dòng báo nêu khối hình món có, và phần khác còn vừa nếu có: `` `<món>` phần `than` (r 15) quá tầm nắm của tay `<người>` (0,95 · W = 14,0): khai `part: "vai"` hay hai tay `` | lỗi |
 | lỗi `ref` `choice` | `resolveScene` | Chỗ cầm không hợp lệ: trường không thuộc nhóm, `edge`/`thumb` không có trên khối hình, biến thể quá bề dày ở mép (`flat` trên tấm dày hơn `FLAT_MAX · W`), biến thể kẹp qua hai mép mà bề rộng tấm ở cạnh khai (hay mọi cạnh) ngoài `across` (`card` `edges`), biến thể không áp trên loại khối hình (`flat` của `cylinder` chỉ trên `rod`; chai, trụ tiện báo lỗi kèm khối hình món có), `part` không có hay `grip: false`, `along` ngoài 0–1, `both` với nhóm một tay không có `support`, `both` mà tay kia cũng có `hold` ở cùng `t`, `on`/`yaw` ngoài `carry`, `carry` thiếu `on` hay món không có `seats[on]`, nhóm `later`; lần cầm có mốc món ở `items` mà mốc tay khai đích (`to`, `at`, `offset`, `point`) hay ý định (`face`, `up`, `roll`, `keep`); mốc món ở `t` không tay nào cầm món ấy | lỗi |
 | cảnh báo `ref` `choice` | `sceneHoldProblems` (`choiceWarnings`) | Chỗ cầm hợp lệ mà `along` cảnh khai sát phần `grip: false` quá `clear · W` của nhóm (`cylinder`: `GRIP_CLEAR` = 0,3): tâm nắm cách phần ấy dưới ngưỡng. Dòng báo nêu phần cắt, khoảng cách dọc trục, `along` rig kẹp về (`alongRoom`) và `along` nên khai; cỡ tay lấy theo người cầm. Không chặn | cảnh báo |
+| cảnh báo `ref` `choice` | `sceneHoldProblems` (`highWarnings`) | `high` khai mà đầu cao không theo được: nhóm không đọc đầu cao (ngoài `sheet`, `card`, `palmBox`, `platform`), hay chiều cạnh vuông góc hướng khai (`HIGH_ACROSS`: \|cos\| < 0,1) ở mọi chỗ cầm khớp `part`, `edge` khai — cạnh khai, trục dài hộp, hay mọi cạnh khi chưa khai (đĩa chưa khai cạnh thì không báo). Dòng báo gợi các hướng dọc chiều cạnh; tĩnh, không số đo. `validate` của MCP cũng báo. Không chặn | cảnh báo |
 | lỗi `ref` `item` | `resolveScene` | Mốc món có đích của trục phụ lệch đích của trục chính dưới 18° (cos tuyệt đối > 0,95): hướng món suy biến, dòng báo gợi `roll` khác; đích của một trục trùng chỗ món; `face` trần không có trục (mốc không khai, nhóm không có mặc định). Rig không tự đổi | lỗi |
 
 Khuỷu khoá (`elbowLock`) đi qua cùng các luật `arm`, `elbow`, `wrist` ở chỗ khoá: rig không dời khuỷu khoá ra khỏi thân hay

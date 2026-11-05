@@ -1094,7 +1094,8 @@ vật three của món.
   `scene_probe` trả lựa chọn đã giải cùng nguồn của nó). `high` (`top`, `bottom`, `front`, `back`, `left`, `right` — hướng
   của món) là đầu cao của chiều cạnh cầm (cạnh tấm, trục dài hộp, cạnh mặt đỡ), gốc đo của `along`, `slant`, `psi`, bên ngón
   cái và độ ngón chúc của `palmBox`; không khai thì món đặt trước lấy theo hướng món ở mốc đầu lần cầm, tay dẫn lấy đầu mặc
-  định của khối hình, nên hai chế độ có thể khác đầu ([11](11-nhom-cam.md#chỗ-cầm-castworldhandshold)). Hai đường, theo **từng lần cầm** có mốc món ở **`items[]`** hay không.
+  định của khối hình, nên hai chế độ có thể khác đầu ([11](11-nhom-cam.md#chỗ-cầm-castworldhandshold)); tay phụ của `both`
+  không mang `high`, khai vuông góc chiều cạnh thì `check` báo (`highWarnings`). Hai đường, theo **từng lần cầm** có mốc món ở **`items[]`** hay không.
   `items[]` nằm ở cấp cảnh cạnh `cast`: mỗi mốc `{ t, cast, item, to | at, offset?, point?, face?, up?, roll?, ease? }` nói món
   ở đâu, quay về đâu theo thời gian, mốc tay của người `cast` cầm nó. Lần cầm có mốc món (cùng món, cùng người cầm) trong
   khoảng của nó là **món đặt trước**: mốc tay chỉ khai

@@ -83,6 +83,7 @@ import {
   graspCtx,
   graspFrame,
   handFromItem,
+  highWarnings,
   LATER_SPAN,
   type GraspChoice,
   type GraspCtx,
@@ -3676,8 +3677,8 @@ function heldInstances(
 
 /**
  * Lần cầm hai tay khai lệch ở `world.hands`: một tay cầm hai tay (`both`) mà cùng lúc tay kia cầm món khác — cầm hai tay
- * không thành, mỗi tay mang một món; và cảnh báo của chỗ cầm nhóm (`choiceWarnings`, cỡ tay người mẫu cao như người
- * cầm). `check` (nhóm `ref`) báo. docs/03-scene.md#đồ-cầm-tay
+ * không thành, mỗi tay mang một món; và cảnh báo của chỗ cầm nhóm (`choiceWarnings`, `highWarnings`, cỡ tay người mẫu cao
+ * như người cầm). `check` (nhóm `ref`) và `validate` của MCP báo. docs/03-scene.md#đồ-cầm-tay
  */
 export function sceneHoldProblems(rt: SceneRuntime): string[] {
   const out: string[] = [];
@@ -3692,11 +3693,19 @@ export function sceneHoldProblems(rt: SceneRuntime): string[] {
         if (!h || !spec) continue;
         const g = groupHold(h);
         const dims = holderDims(rt.heights[m.id] ?? 1);
-        for (const line of choiceWarnings(g.group, itemGeom(spec), h, dims, spec.anchors)) {
+        const lines = [
+          ...choiceWarnings(g.group, itemGeom(spec), h, dims, spec.anchors).map(
+            (l) => [l, "docs/11-nhom-cam.md mục 3, nhóm 5"] as const,
+          ),
+          ...highWarnings(g.group, itemGeom(spec), h, dims, spec.anchors).map(
+            (l) => [l, "docs/11-nhom-cam.md#chỗ-cầm-castworldhandshold"] as const,
+          ),
+        ];
+        for (const [line, doc] of lines) {
           if (said.has(`${side}|${line}`)) continue;
           said.add(`${side}|${line}`);
           out.push(
-            `${m.id}: \`world.hands\` ${side} t=${k.t} (cảnh báo \`choice\`): ${line} (docs/11-nhom-cam.md mục 3, nhóm 5)`,
+            `${m.id}: \`world.hands\` ${side} t=${k.t} (cảnh báo \`choice\`): ${line} (${doc})`,
           );
         }
       }

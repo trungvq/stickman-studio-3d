@@ -4,7 +4,7 @@ import type { ActInput } from "./arm3";
 import { body3 } from "./figure3d";
 import { evalPhi, phiOf, phiToward } from "./graspArm";
 import { HELD_ARM } from "./heldAudit";
-import { parseHeldItem, type HeldItemSpec } from "./heldItem";
+import { heldPoint, parseHeldItem, type HeldItemSpec } from "./heldItem";
 import {
   applyJsonPatch,
   holdToHandLed,
@@ -14,7 +14,8 @@ import {
   type HoldModeResult,
   type JsonPatchOp,
 } from "./holdMode";
-import { add3, matVec, scale3, sub3, type M3 } from "./lens";
+import { holdHand } from "./holdLink";
+import { add3, matVec, scale3, sub3, type M3, type V3 } from "./lens";
 import {
   holdRuns,
   itemAt,
@@ -22,12 +23,14 @@ import {
   parseScene,
   resolveScene,
   sceneAt,
+  sceneHoldProblems,
   type SceneRuntime,
 } from "./scene";
 import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
+import khay from "./__fixtures__/held-v2/khay.json";
 
 // Đổi chế độ lần cầm (docs/11-nhom-cam.md § Đổi chế độ lần cầm)
 
@@ -36,7 +39,7 @@ const spec = (j: unknown): HeldItemSpec => {
   if (!r.success) throw new Error(r.error.message);
   return r.data;
 };
-const HELD = { "bang-gia": spec(bangGia), "dien-thoai": spec(dienThoai) };
+const HELD = { "bang-gia": spec(bangGia), "dien-thoai": spec(dienThoai), khay: spec(khay) };
 const parsed = parseCharacter(fx.character);
 if (!parsed.success) throw new Error("nguoi");
 const NGUOI = parsed.data;
@@ -666,7 +669,224 @@ describe("đầu cao cảnh khai (`hold.high`)", () => {
     const runs = holdRuns(build(raw), "nguoi").right;
     expect(runs.map((x) => x.since)).toEqual([0, 1]);
   });
+
+  it("`sceneHoldProblems` báo `high` vuông góc chiều cạnh, một dòng không số đo; dọc chiều cạnh thì không", () => {
+    for (const raw of [ear, keyed]) {
+      expect(sceneHoldProblems(build(withHigh(raw, "front")))).toEqual([
+        "nguoi: `world.hands` right t=0 (cảnh báo `choice`): `dien-thoai@palmBox`: `high: front` vuông góc chiều cạnh ở mọi chỗ cầm (|cos| dưới 0,1): đầu cao không theo hướng ấy — khai hướng dọc chiều cạnh (`top`, `bottom`) (docs/11-nhom-cam.md#chỗ-cầm-castworldhandshold)",
+      ]);
+      expect(sceneHoldProblems(build(withHigh(raw, "bottom")))).toEqual([]);
+      expect(sceneHoldProblems(build(withHigh(raw)))).toEqual([]);
+    }
+  });
 });
+
+/** Bảng hai tay (`both`) tay phải dẫn, cạnh dưới `along` 0,25; `keyed` thì món đặt trước, không thì tay dẫn tới trước ngực */
+function sceneBoth(high: string | undefined, keyed: boolean, both = true): Raw {
+  const hold = {
+    ...SHEET,
+    edge: "bottom",
+    along: 0.25,
+    ...(high && { high }),
+    ...(both && { both: true }),
+  };
+  return {
+    duration: 2,
+    lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
+    cast: [
+      {
+        id: "nguoi",
+        base: { torso: 9, head: [0, 0, -6] },
+        world: {
+          at: [250, 0, 506],
+          yaw: 270,
+          hands: [
+            {
+              t: 0,
+              right: keyed ? { hold } : { to: "chest", offset: [30, 20, 0], point: "grip", hold },
+            },
+          ],
+        },
+      },
+    ],
+    ...(keyed && { items: [bang(0, [35, -5, 0])] }),
+  };
+}
+
+/** Đầu cao khung cầm tay `side` dùng ở `t` (`GraspReport.high`), lựa chọn cạnh và `along` */
+function graspOf(rt: SceneRuntime, side: -1 | 1, t = 0.5) {
+  const g = actArm(NGUOI, sceneAt(rt, "nguoi", t, H, DIMS) as ActInput, side)!.report.hold?.grasp;
+  return {
+    high: g?.high?.map((v) => Math.round(v * 1e6) / 1e6 + 0),
+    edge: g?.choice.edge,
+    along: g?.choice.along,
+  };
+}
+
+// Tay phụ của `both` không mang `high`: món chỉ theo tay dẫn (tay dẫn) hay mốc món (món đặt trước), tay phụ đặt lên món sau
+// đó, nên đầu cao khai của tay dẫn đúng chỗ món mà không cần tay phụ; tay phụ đo `along` từ đầu của chính nó ở cả hai chế độ
+describe("hai tay (`both`) khai `high`", () => {
+  const HIGHS = [undefined, "left", "right"] as const;
+  const sign = (high: (typeof HIGHS)[number]) => (high === "right" ? 1 : -1);
+
+  it("tay dẫn: khung cầm tay dẫn theo `high`, món như khi cầm một tay cùng chỗ; tay phụ cùng chỗ trên món mọi `high`", () => {
+    const spots = HIGHS.map((high) => {
+      const rt = build(sceneBoth(high, false));
+      expect(graspOf(rt, -1).high, high).toEqual([sign(high), 0, 0]);
+      const one = drawnBoard(build(sceneBoth(high, false, false)), 0.5, false);
+      const two = drawnBoard(rt, 0.5, false);
+      expect(Math.hypot(...sub3(one.P, two.P)), high).toBeLessThan(1e-9);
+      expect(Math.max(...one.R.map((v, i) => Math.abs(v - two.R[i]))), high).toBeLessThan(1e-9);
+      const h = (sceneAt(rt, "nguoi", 0.5, H, DIMS) as ActInput).world!.hands!.right!.hold!;
+      const x = holdHand(h, -1)!;
+      return { lead: heldPoint(HELD["bang-gia"], x.hand.at as V3), other: x.both!.other.at };
+    });
+    // tay dẫn sang góc kia của cạnh dưới khi `high` đổi đầu; tay phụ (cạnh trên, `along` 0,25 từ đầu của nó) đứng yên
+    expect(spots.map((s) => Math.sign(s.lead[0]))).toEqual([1, 1, -1]);
+    for (const s of spots.slice(1)) expect(s.other).toEqual(spots[0].other);
+  });
+
+  it("món đặt trước: tay dẫn theo `high`, món ở mốc; tay phụ cùng cạnh, cùng `along`, cùng đầu cao mọi `high`", () => {
+    const base = build(sceneBoth(undefined, true));
+    const sup = graspOf(base, 1);
+    expect(sup).toMatchObject({ edge: "top", along: 0.25 });
+    const P = drawnBoard(base, 0.5, true).P;
+    for (const high of HIGHS.slice(1)) {
+      const rt = build(sceneBoth(high, true));
+      expect(graspOf(rt, -1).high, high).toEqual([sign(high), 0, 0]);
+      expect(graspOf(rt, 1), high).toEqual(sup);
+      expect(Math.hypot(...sub3(drawnBoard(rt, 0.5, true).P, P)), high).toBeLessThan(1e-9);
+    }
+  });
+
+  it("đổi chế độ hai chiều giữ món; `high` ở lại chỗ cầm tay dẫn, `both` không mang", () => {
+    const raw = sceneBoth("right", false);
+    const r = holdToItemLed(build(raw), raw, { id: "nguoi", side: "right", at: 0, rebuild: build });
+    expect(r.max.item.pos).toBeLessThan(HOLD_MODE_POS);
+    expect(r.max.item.angle).toBeLessThan(HOLD_MODE_ANGLE);
+    const next = applyJsonPatch(raw, r.ops);
+    const hold = (keysOf(next)[0].right as { hold: Record<string, unknown> }).hold;
+    expect(hold.high).toBe("right");
+    expect(hold.both).not.toHaveProperty("high");
+    const back = holdToHandLed(build(next), next, {
+      id: "nguoi",
+      side: "right",
+      at: 0,
+      rebuild: build,
+    });
+    expect(back.max.item.pos).toBeLessThan(HOLD_MODE_POS);
+    expect(back.max.item.angle).toBeLessThan(HOLD_MODE_ANGLE);
+  });
+
+  it("hai tay trên mốc món cùng khai `high` → đồ theo tay: tay kia thành `both` không `high`, đo từ đầu kia, món giữ chỗ", () => {
+    const raw = sceneB();
+    for (const k of keysOf(raw))
+      for (const s of ["right", "left"])
+        Object.assign((k[s] as { hold?: object } | undefined)?.hold ?? {}, {
+          along: 0.3,
+          high: "bottom",
+        });
+    const r = holdToHandLed(build(raw), raw, {
+      id: "nguoi",
+      side: "left",
+      at: 1.5,
+      rebuild: build,
+    });
+    expect(r.max.item.pos).toBeLessThan(HOLD_MODE_POS);
+    expect(r.max.item.angle).toBeLessThan(HOLD_MODE_ANGLE);
+    const hold = (keysOf(applyJsonPatch(raw, r.ops))[1].right as { hold: Record<string, unknown> })
+      .hold;
+    expect(hold.high).toBe("bottom");
+    expect(hold.both).toMatchObject({ edge: "left", along: 0.7 });
+    expect(hold.both).not.toHaveProperty("high");
+    expect(r.notes.join(" ")).toMatch(/tay trái đo từ đầu kia của cạnh \(`along`\)/);
+  });
+});
+
+// `sheet` và `platform` khai `high` (tay dẫn và món đặt trước): đầu cao khung cầm theo tên khai, `along` đo từ đầu ngược
+describe("`high` của `sheet`, `platform`", () => {
+  it("`sheet` cạnh dưới: `high` đổi đầu cao và góc cầm; `top` (vuông góc cạnh) như không khai, `sceneHoldProblems` báo", () => {
+    for (const keyed of [false, true]) {
+      const none = build(sceneBoth(undefined, keyed, false));
+      const def = graspOf(none, -1).high!;
+      for (const high of ["left", "right"]) {
+        const rt = build(sceneBoth(high, keyed, false));
+        const want = high === "right" ? 1 : -1;
+        expect(graspOf(rt, -1).high, `${keyed} ${high}`).toEqual([want, 0, 0]);
+        expect(sceneHoldProblems(rt)).toEqual([]);
+        if (def[0] !== want && !keyed) {
+          const a = drawnBoard(none, 0.5, false);
+          const b = drawnBoard(rt, 0.5, false);
+          expect(Math.hypot(...sub3(a.P, b.P))).toBeGreaterThan(HOLD_MODE_POS);
+        }
+      }
+      const top = build(sceneBoth("top", keyed, false));
+      expect(graspOf(top, -1).high).toEqual(def);
+      expect(drawnBoard(top, 0.5, keyed).P).toEqual(drawnBoard(none, 0.5, keyed).P);
+      expect(sceneHoldProblems(top)).toHaveLength(1);
+    }
+  });
+
+  it("`platform` cạnh phải: `front` / `back` chọn đầu cao dọc cạnh; `left` (vuông góc) như không khai, báo", () => {
+    for (const keyed of [false, true]) {
+      const at = (high?: string) => build(sceneTray(high, keyed));
+      const none = at();
+      for (const high of ["front", "back"]) {
+        const g = graspOf(at(high), -1);
+        expect(g.edge).toBe("right");
+        expect(g.high, `${keyed} ${high}`).toEqual([0, 0, high === "front" ? 1 : -1]);
+        expect(sceneHoldProblems(at(high))).toEqual([]);
+      }
+      const left = at("left");
+      expect(graspOf(left, -1)).toEqual(graspOf(none, -1));
+      expect(sceneHoldProblems(left)).toHaveLength(1);
+    }
+  });
+});
+
+/** Khay đỡ dưới một tay phải, cạnh phải, `along` 0,25, `psi` 60; `keyed` thì món đặt trước */
+function sceneTray(high: string | undefined, keyed: boolean): Raw {
+  const hold = {
+    item: "khay",
+    group: "platform",
+    edge: "right",
+    along: 0.25,
+    psi: 60,
+    ...(high && { high }),
+  };
+  return {
+    duration: 2,
+    lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
+    cast: [
+      {
+        id: "nguoi",
+        base: { torso: 9, head: [0, 0, -6] },
+        world: {
+          at: [250, 0, 506],
+          yaw: 270,
+          hands: [
+            {
+              t: 0,
+              right: keyed ? { hold } : { to: "chest", offset: [30, 20, 0], point: "grip", hold },
+            },
+          ],
+        },
+      },
+    ],
+    ...(keyed && {
+      items: [
+        {
+          t: 0,
+          cast: "nguoi",
+          item: "khay",
+          to: "chest",
+          offset: [35, -5, 0],
+          face: { axis: "top", toward: "up" },
+        },
+      ],
+    }),
+  };
+}
 
 // Chủ ý (docs/11-nhom-cam.md § Đổi chế độ lần cầm): món theo mốc đọc `elbow` là gợi ý, tay dẫn đọc là lệnh. Khuỷu khai xấu
 // thì món theo mốc được nhường khuỷu để tránh lấn thân, chịu cổ tay chạm giới hạn; muốn cứng thì `elbowLock`

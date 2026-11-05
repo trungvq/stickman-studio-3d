@@ -19,6 +19,9 @@ import {
   CONTACTS,
   edgeHigh,
   graspFrame,
+  HIGH_ACROSS,
+  highWarnings,
+  itemSide,
   platformInset,
   BOX_RISE,
   type ContactInput,
@@ -54,7 +57,15 @@ import {
   skinPieces,
   toItem,
 } from "./heldFit";
-import { edgeFrame, handDims, itemGeom, type Feature, type SlabFeature } from "./heldGeom";
+import {
+  edgeFrame,
+  handDims,
+  itemGeom,
+  radialDir,
+  type DiscFeature,
+  type Feature,
+  type SlabFeature,
+} from "./heldGeom";
 import {
   gripCenter,
   gripPoint,
@@ -1481,6 +1492,67 @@ describe("edgeHigh", () => {
       const e: V3 = [Math.cos(a * D2R), 0, -Math.sin(a * D2R)];
       close(edgeHigh(e, R, -1, across), want as unknown as V3, 1e-12);
     }
+  });
+});
+
+describe("highWarnings", () => {
+  const dims = handDims(1.61);
+  const warn = (spec: HeldItemSpec, hold: Record<string, unknown>) =>
+    highWarnings(hold.group as GroupId, itemGeom(spec), hold as never, dims, spec.anchors);
+  const KHAY = item(khay);
+
+  it("`high` dọc chiều cạnh, hay chưa khai cạnh mà còn chỗ cầm dọc hướng ấy: không báo", () => {
+    for (const [spec, hold] of [
+      [BANG, { item: "bang-gia", group: "sheet", edge: "bottom", high: "right" }],
+      [BANG, { item: "bang-gia", group: "sheet", edge: "bottom", high: "left" }],
+      [BANG, { item: "bang-gia", group: "sheet", high: "top" }],
+      [BANG, { item: "bang-gia", group: "sheet", edge: "bottom" }],
+      [PHONE, { item: "dien-thoai", group: "palmBox", high: "bottom" }],
+      [KHAY, { item: "khay", group: "platform", edge: "right", high: "front" }],
+      [KHAY, { item: "khay", group: "platform", high: "left" }],
+      [TOM, { item: "tom-hum", group: "sheet", high: "front" }],
+    ] as const)
+      expect(warn(spec, hold), JSON.stringify(hold)).toEqual([]);
+  });
+
+  it("`high` vuông góc chiều cạnh của cạnh khai, trục dài hộp, hay mọi chỗ cầm: một dòng, gợi ý hướng dọc chiều cạnh", () => {
+    expect(warn(BANG, { item: "bang-gia", group: "sheet", edge: "bottom", high: "top" })).toEqual([
+      "`bang-gia@sheet`: `high: top` vuông góc chiều cạnh của cạnh `bottom` (|cos| dưới 0,1): đầu cao không theo hướng ấy — khai hướng dọc chiều cạnh (`right`, `left`)",
+    ]);
+    expect(warn(BANG, { item: "bang-gia", group: "sheet", high: "front" })[0]).toMatch(
+      /ở mọi chỗ cầm .*\(`top`, `bottom`, `right`, `left`\)$/,
+    );
+    expect(warn(PHONE, { item: "dien-thoai", group: "palmBox", high: "front" })[0]).toMatch(
+      /^`dien-thoai@palmBox`: `high: front` vuông góc .*\(`top`, `bottom`\)$/,
+    );
+    expect(
+      warn(KHAY, { item: "khay", group: "platform", edge: "right", high: "left" }),
+    ).toHaveLength(1);
+  });
+
+  it("nhóm không đọc đầu cao: báo không có tác dụng", () => {
+    expect(warn(item(chaiDia), { item: "chai-dia", group: "cylinder", high: "top" })).toEqual([
+      "`chai-dia@cylinder`: `high: top` không có tác dụng — chỉ nhóm `sheet`, `card`, `palmBox`, `platform` đọc đầu cao của chiều cạnh",
+    ]);
+  });
+
+  it("ngưỡng: chiều cạnh của vành đĩa lệch hướng khai dưới `HIGH_ACROSS` thì báo, trên thì không", () => {
+    const d = itemGeom(TOM).features.find((f): f is DiscFeature => f.kind === "disc")!;
+    const e = (deg: number) => cross3(radialDir(d, deg), d.a);
+    const along = (deg: number, n: "top" | "right" | "front") =>
+      Math.abs(
+        e(deg).reduce((s, v, i) => s + v * itemSide(itemGeom(TOM), n)[i], 0) /
+          Math.hypot(...e(deg)),
+      );
+    const name = (["top", "right", "front"] as const).find((n) => along(0, n) > 0.9)!;
+    let n = 0;
+    for (let deg = 0; deg < 360; deg += 2) {
+      const lines = warn(TOM, { item: "tom-hum", group: "sheet", edge: deg, high: name });
+      expect(lines.length, `${deg}`).toBe(along(deg, name) < HIGH_ACROSS ? 1 : 0);
+      n += lines.length;
+    }
+    // |cos| < 0,1 trong ±5,7° quanh 90° và 270°: 86–94°, 266–274°
+    expect(n).toBe(10);
   });
 });
 
