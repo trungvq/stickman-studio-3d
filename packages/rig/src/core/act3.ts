@@ -1388,8 +1388,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
       const t = ha.face?.target;
       if (!x?.G || !x.spec?.top || ha.roll || !t || !("to" in t) || !leads(ha)) return undefined;
       if (!EAR_MARKS.includes(t.to) || t.side === "other" || !hasTerms(rw)) return undefined;
-      // bình phương phần đích tay đặt ở tai, má: tay đang tới hay rời tai thì giá nhạt theo phần ấy, vừa rời chỗ cũ thì
-      // gần như chưa có
+      // bình phương phần đích ở tai, má: vừa rời chỗ cũ thì giá tai gần như chưa có
       const all = rw!.terms!.reduce((s, r) => s + r.k, 0);
       const k =
         ((Math.min(1, rw!.w) *
@@ -1956,8 +1955,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
         const half = (slew ? 180 + sw : SETTLE_HALF) * g;
         const lo = Math.max(slew ? from - sw - 180 * (1 - g) : -Infinity, -half);
         const hi = Math.min(slew ? from + sw + 180 * (1 - g) : Infinity, half);
-        // áp tai: giá dốc thêm theo phần áp tai (trung bình Gibbs lạnh đi) — khuỷu tới đáy trong khoảng hãm với tốc độ hãm,
-        // không bò theo độ dốc thoải khi người đã đứng yên
+        // áp tai: Gibbs lạnh đi theo phần áp tai để khuỷu tới đáy trong khoảng hãm, không bò khi người đứng yên
         const sharp = 1 + earK * (EAR_SETTLE_SHARP - 1);
         const cost = (x: ReturnType<typeof ev>) => x.E * sharp;
         // chỗ dò tự do: khoảng như khi không khai (món đang mang: khoảng hãm quanh mẫu trước, đo từ khuỷu ưu tiên), nên tới
