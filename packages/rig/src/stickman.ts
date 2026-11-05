@@ -10,7 +10,7 @@ import { INK, toThree, type Vec3 } from './khoi';
 import { hullMaterial, npr } from './npr';
 import { sculptMesh } from './sculpt';
 import { equipCharacter, limbWidths, wornPalette, type CharacterData, type Drape, type Earrings, type Equip, type PieceKey, type Garment, type Glasses, type Hat, type Necklace, type Pin, type Sculpt, type Shades, type Skirt } from './core/schema';
-import { hatFit, hatMesh, hatSpec, insideHat, pinMesh } from './core/hat';
+import { hatFit, hatMesh, hatSpec, insideHat, pinMesh, pressHair } from './core/hat';
 import { earringMesh } from './core/jewelry';
 import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, SLEEVE_EASE, sleeveGrow, THIGH_ROOT, type ActCharacter, type AimReport, type Bones3 } from './core/act3';
 import { blushLevel, chibiShape } from './core/face';
@@ -298,10 +298,11 @@ function arm(parent: THREE.Object3D, side: Side, x: number, y: number, B: Bones3
  * Tóc dựng khối của rig (`pieces.hair.sculpt` trong JSON nhân vật), lưới hệ sọ đơn vị phóng theo khối đầu. Đầu `human`:
  * tóc dời theo sọ (`humanHair`).
  */
-function sculptHair(head: THREE.Object3D, sculpt: Partial<Sculpt>, color: string, human: boolean, cut?: (p: Vec3) => boolean, accent?: string) {
-  const mesh = sculptMesh(sculpt, { cut, accent: !!accent });
-  if (human) {
-    const bend = (p: number[]) => humanHair(p as Vec3);
+function sculptHair(head: THREE.Object3D, sculpt: Partial<Sculpt>, color: string, human: boolean, hat?: SculptHat, accent?: string) {
+  const mesh = sculptMesh(sculpt, { cut: hat?.cut, accent: !!accent });
+  if (human || hat?.press) {
+    const press = hat?.press ?? ((p: Vec3) => p);
+    const bend = (p: number[]) => (human ? humanHair(press(p as Vec3)) : press(p as Vec3));
     for (const tris of [mesh.shell, mesh.spikes, mesh.hang]) tris.forEach((t, i) => (tris[i] = t.map(bend) as typeof t));
     mesh.lines.forEach((l, i) => (mesh.lines[i] = l.map(bend) as typeof l));
   }
@@ -347,18 +348,24 @@ function inkLines(head: THREE.Object3D, lines: Vec3[][], r: number) {
   }
 }
 
+/** Vùng trong lòng mũ (tóc bỏ lọn, búi nằm trong ấy) và phép ép tóc dưới mũ (`pressHair`; trống là không ép) */
+interface SculptHat { cut: (p: Vec3) => boolean; press?: (p: Vec3) => Vec3 }
+
 /**
- * Mũ dựng khối (`pieces.crown.hat`) ôm sọ và vỏ tóc `hair`; trả vùng trong lòng mũ để tóc bỏ lọn, búi nằm trong ấy.
+ * Mũ dựng khối (`pieces.crown.hat`) ôm sọ và vỏ tóc `hair`; trả vùng trong lòng mũ và phép ép tóc.
  * docs/12-trang-phuc-3d.md#mũ-dựng-khối
  */
-function sculptHat(head: THREE.Object3D, hat: Partial<Hat>, hair: Partial<Sculpt> | undefined, color: string) {
+function sculptHat(head: THREE.Object3D, hat: Partial<Hat>, hair: Partial<Sculpt> | undefined, color: string): SculptHat {
   const h = hatSpec(hat);
   const fit = hatFit(h, hair);
   const m = hatMesh(h, fit);
   // một vật liệu màu theo tam giác: chỗ giáp hai phần không có nét như hai vật, nên quai và huy hiệu nổi sát băng không bị
   // nét bóng dáng của băng phủ; khe sâu `inkGap` cho mép lưỡi trai, chóp loe vẫn có nét
-  const parts = [[m.tris, color], [m.band, h.bandColor], [m.seat, h.bandColor], [m.brim, h.brimColor], [m.strap, h.strapColor], [m.badge, h.badgeColor]] as const;
-  const multi = h.shape !== 'drum';
+  const brimColor = h.brimColor ?? (h.shape === 'peaked' ? '#101114' : color);
+  // vân rơm: vòng xen kẽ tối đi `straw` về màu nét
+  const woven = (c: string) => '#' + new THREE.Color(c).lerp(new THREE.Color(INK), h.straw).getHexString();
+  const parts = [[m.tris, color], [m.weave, woven(color)], [m.band, h.bandColor], [m.seat, h.bandColor], [m.brim, brimColor], [m.brimWeave, woven(brimColor)], [m.strap, h.strapColor], [m.badge, h.badgeColor]] as const;
+  const multi = h.shape !== 'drum' || h.straw > 0;
   const tris = parts.flatMap(([t]) => t);
   const tone = multi ? parts.flatMap(([t, c]) => t.map(() => new THREE.Color(c))) : undefined;
   const mesh = new THREE.Mesh(skullGeometry(tris, tone), npr({ color: multi ? '#ffffff' : color, stipple: 0.04, stippleScale: 4, soft: 0.7, doubleSided: true, ink: 0.03, tint: multi }));
@@ -367,7 +374,7 @@ function sculptHat(head: THREE.Object3D, hat: Partial<Hat>, hair: Partial<Sculpt
   if (multi) mesh.userData.inkGap = 0.06;
   head.add(new THREE.Group().add(mesh));
   inkLines(head, m.lines, 0.01);
-  return (p: Vec3) => insideHat(fit, p);
+  return { cut: (p: Vec3) => insideHat(fit, p), ...(fit.squash < 1 && { press: (p: Vec3) => pressHair(fit, p) }) };
 }
 
 /** Trâm cài búi (`pieces.headAcc.pin`) xuyên khối buộc của tóc `hair`: que màu `color`, hạt màu `bead`. docs/12-trang-phuc-3d.md#trâm-cài-búi */
@@ -609,7 +616,7 @@ export function stickman(o: StickmanOptions): Figure {
   // vỏ ngược dưới cằm `human` chìm sau cổ và cổ áo: nét bóng dáng vẽ thêm ở hậu kỳ
   const skullMat = human ? npr({ ...skin3, ink: 0.03 }) : skinMat;
   head.add(inked(skull, skullMat, 0.03));
-  const faceR = lod === 'low' ? stillFace(skullScale, faceShape, face, human, skin) : faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face }, human, skin);
+  const faceR = lod === 'low' ? stillFace(skullScale, faceShape, face, human, skin, hairColor) : faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face }, human, skin, hairColor);
   head.add(faceR.mesh);
   if (glasses) {
     const asin = (v: number) => (Math.asin(Math.max(-1, Math.min(1, v / 65))) * 180) / Math.PI;
@@ -617,8 +624,8 @@ export function stickman(o: StickmanOptions): Figure {
     g.scale.copy(skullScale).multiplyScalar(R.head);
     head.add(g);
   }
-  const cut = o.hat ? sculptHat(head, o.hat, hair, o.hatColor ?? color) : undefined;
-  if (hair) sculptHair(head, hair, hairColor, human, cut, o.hairAccent);
+  const hat = o.hat ? sculptHat(head, o.hat, hair, o.hatColor ?? color) : undefined;
+  if (hair) sculptHair(head, hair, hairColor, human, hat, o.hairAccent);
   if (o.pin) sculptPin(head, o.pin, hair, human, o.pinColor ?? '#3a2a22', o.pinBead ?? o.pinColor ?? '#3a2a22');
   if (o.earrings) sculptEarrings(head, o.earrings, human);
   if (human) {
@@ -867,11 +874,11 @@ function fitHipHem(p: Figure, sk: NonNullable<Figure['skirt']>) {
 
 const stillFaces = new Map<string, FaceRig>();
 /** Nét mặt dùng chung cho người nền: một cặp texture mặt và mồm cho mọi người cùng dáng mặt, nét, mức ửng và màu da; `set` không đổi gì, mồm không lật */
-function stillFace(scale: THREE.Vector3, shape: Partial<FaceShape> = {}, state?: Partial<FaceState>, human = false, skin?: string): FaceRig {
+function stillFace(scale: THREE.Vector3, shape: Partial<FaceShape> = {}, state?: Partial<FaceState>, human = false, skin?: string, hair?: string): FaceRig {
   const s = { ...DEFAULT_FACE, ...state }, { blush, ...rest } = shape, lv = blushLevel(blush, s.blush);
-  const key = JSON.stringify([rest, s.mouth, s.brow, s.eyes, lv, human, skin]);
+  const key = JSON.stringify([rest, s.mouth, s.brow, s.eyes, lv, human, skin, rest.beard && hair]);
   let f = stillFaces.get(key);
-  if (!f) stillFaces.set(key, (f = faceRig(R.head, scale, { ...rest, blush: lv }, { ...s, blush: 0 }, human, skin)));
+  if (!f) stillFaces.set(key, (f = faceRig(R.head, scale, { ...rest, blush: lv }, { ...s, blush: 0 }, human, skin, hair)));
   const copy = (m: THREE.Mesh) => {
     const c = new THREE.Mesh(m.geometry, m.material);
     c.userData.noShadow = true;

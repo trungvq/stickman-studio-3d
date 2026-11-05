@@ -832,6 +832,33 @@ Công thức mẫu cho một dàn văn phòng:
 Phản diện vẫn cùng rig: dữ là ở vài nét — mi sụp không đốm sáng, miệng `smirk` / `fang`, mắt `sly`, mày
 `flat` hay `angry`; cảnh mắng là miệng `shout`.
 
+### Ria mép
+
+`face.beard.moustache` là ria mép của người 3D: một dải màu thon hai đầu vẽ trên **lớp mồm** (`MOUTH_BOX`), ngay trên
+mép trên của khẩu hình đang dùng. Mồm há (`talkB`, `wide`, `shout`) thì ria nhích lên theo `mouthExtent(kind).top`; lớp
+mồm trượt về phía camera, lật gương khi quay mặt thì ria đi cùng, nên nhìn 3/4, nghiêng vẫn nằm trên môi. px của đầu cao
+130 như nét mặt; đầu `human` phóng theo `CHIBI.mouth` cùng khẩu hình.
+
+```json
+"face": { "beard": { "moustache": { "width": 15, "thick": 3, "droop": 3.5, "taper": 0.2 } } }
+```
+
+| Trường | Mặc định | Nghĩa |
+|---|---:|---|
+| `width` | 16 | Nửa rộng dải từ giữa nhân trung; mồm `closed` nửa rộng `11`, ria rộng hơn mồm mới không thành dấu "=" |
+| `thick` | 4.5 | Bề dày ở giữa; `2,5`–`3` là ria mảnh một dải |
+| `gap` | 3.5 | Mép dưới ở giữa cách mép trên của khẩu hình bấy nhiêu |
+| `droop` | 3 | Hai đầu thấp hơn giữa bấy nhiêu (đường giữa cong parabol); âm là hai đầu vểnh lên |
+| `taper` | 0.3 | Bề dày ở hai đầu, lần bề dày ở giữa |
+| `part` | 0 | Hở giữa nhân trung bấy nhiêu px, chẻ thành hai nửa; `0` là một dải liền |
+| `line` | 0.8 | Nét viền mực (màu mực mồm); `0` là không viền |
+| `color` | màu tóc | Bỏ trống là `pieces.hair.color` (người không tóc: màu tóc mặc định của rig) |
+
+- `moustacheMark` (`core/face.ts`) dựng nét, `moustacheTop` cho mép trên cao nhất qua mọi khẩu hình: lớp mồm nới lên
+  tới đó khi ria dày, không cắt ria lúc `shout`.
+- Ria dán phẳng trên sọ như nét mặt, không nổi khối: nhìn nghiêng không lồi khỏi viền mặt.
+- `face.beard` để dành chỗ cho râu cằm, râu quai nón: mỗi phần một khoá, chỉ phần khai mới vẽ. Hiện chỉ có `moustache`.
+
 ### Tóc
 
 Tóc là [tóc dựng khối](12-trang-phuc-3d.md#tóc-dựng-khối) cắm ở `hair` (`src: "sculpt"`): vỏ

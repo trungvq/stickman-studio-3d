@@ -23,6 +23,7 @@ export type Dims = Required<
     | "marks"
     | "panels"
     | "inner"
+    | "bib"
   >
 >;
 export type P2 = [number, number];

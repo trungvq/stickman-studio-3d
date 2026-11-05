@@ -398,6 +398,61 @@ export function mouthExtent(kind: MouthKind): { top: number; bottom: number } {
   return MOUTHS[kind].extent;
 }
 
+/** Ria mép đã đủ số (`face.beard.moustache` của JSON nhân vật qua zod); `color` bỏ trống là màu tóc */
+export interface MoustacheSpec {
+  width: number;
+  thick: number;
+  gap: number;
+  droop: number;
+  taper: number;
+  part: number;
+  line: number;
+  color?: string;
+}
+
+/** Số điểm mỗi mép của dải ria trên một nửa rộng */
+const MOUSTACHE_STEPS = 10;
+
+/**
+ * Ria mép trên khẩu hình `kind` tâm `(cx, cy)`: dải nửa rộng `width`, dày `thick` ở giữa, thon về hai đầu còn `taper`
+ * lần; đường giữa dải cong parabol, hai đầu thấp hơn giữa `droop`; mép dưới ở giữa cách mép trên của khẩu hình `gap` —
+ * mồm há thì ria nhích lên theo. `part` hở giữa nhân trung bấy nhiêu px. Tô `color`, viền mực `line`.
+ * docs/01-rig.md#ria-mép
+ */
+export function moustacheMark(
+  m: MoustacheSpec,
+  kind: MouthKind,
+  cx: number,
+  cy: number,
+  color: string,
+): FaceMark {
+  const mid = cy + MOUTHS[kind].extent.top - m.gap - m.thick / 2;
+  /** Dải từ `u0` tới `u1` (phần nửa rộng, âm là bên `−x`): mép trên đi tới, mép dưới đi về */
+  const strip = (u0: number, u1: number) => {
+    const n = Math.max(2, Math.round(MOUSTACHE_STEPS * Math.abs(u1 - u0)));
+    const pts = Array.from({ length: n + 1 }, (_, k) => {
+      const u = u0 + ((u1 - u0) * k) / n;
+      const t = (m.thick * (1 - (1 - m.taper) * u * u)) / 2;
+      const y = mid + m.droop * u * u;
+      return [cx + u * m.width, y - t, y + t] as const;
+    });
+    const top = pts.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`);
+    const bot = pts.map(([x, , y]) => `${x.toFixed(2)} ${y.toFixed(2)}`).reverse();
+    return `M ${top.join(" L ")} L ${bot.join(" L ")} Z`;
+  };
+  const ink =
+    m.line > 0 ? { stroke: MOUTH_INK, strokeWidth: m.line, strokeLinejoin: "round" as const } : {};
+  const x0 = Math.min(m.part / 2, m.width * 0.8) / m.width;
+  const paths = x0 > 0 ? [strip(-1, -x0), strip(x0, 1)] : [strip(-1, 1)];
+  return { group: paths.map((path) => ({ path, fill: color, ...ink })) };
+}
+
+/** Mép trên của ria mép so với tâm mồm ở khẩu hình há cao nhất: lớp mồm phải phủ tới đó */
+export function moustacheTop(m: MoustacheSpec) {
+  const top = Math.min(...MOUTH_KINDS.map((k) => MOUTHS[k].extent.top));
+  return top - m.gap - m.thick - Math.max(0, -m.droop) - m.line;
+}
+
 const EYE_LINE = { fill: "none", stroke: EYE_INK, strokeWidth: 4, strokeLinecap: "round" } as const;
 
 /** Bầu dục tâm `(x, cy)` cắt ngang ở phần `f` chiều cao tính từ đỉnh, giữ phần dưới: mi trên sụp */

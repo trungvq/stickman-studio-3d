@@ -441,39 +441,43 @@ dưới nó, quay theo đầu.
 "crown": { "src": "sculpt", "color": "#F3EBDD", "hat": { "height": 0.6 } }
 ```
 
-Hai dáng (`shape`):
+Ba dáng (`shape`):
 
 - `drum` — trụ thấp hở đáy, đỉnh phẳng bo mép: mũ đầu bếp Nhật 和帽子, mũ thợ.
 - `peaked` — mũ kê-pi có lưỡi trai (制帽 của cảnh sát Nhật): băng quanh chân, chóp loe rộng hơn băng tới đỉnh
   phẳng, lưỡi trai nửa elip chúc xuống trước trán, dây quai ngang băng trên lưỡi trai, hai nút ở đầu quai,
   huy hiệu giữa trán chỗ chóp gặp băng (sao năm cánh trong vòng lá hở đỉnh, trên đế tròn).
+- `brimmed` — mũ vành tròn: chóp tròn hơi thon lên đỉnh, vành phẳng vòng kín quanh chóp cụp dần ra mép, dải băng
+  quanh chân chóp tuỳ chọn — mũ rơm 麦わら帽子, mũ làm vườn, mũ phớt ([Mũ vành tròn](#mũ-vành-tròn)).
 
-Góc theo độ, dài theo bán kính sọ. Ô có hai số cách bằng `·` là `drum` · `peaked`: JSON bỏ trống thì lấy theo dáng
-(`HAT_SHAPE_DEFAULTS`, đọc qua `hatSpec`).
+Góc theo độ, dài theo bán kính sọ. Ô có ba số cách bằng `·` là `drum` · `peaked` · `brimmed`: JSON bỏ trống thì lấy theo
+dáng (`HAT_SHAPE_DEFAULTS`, đọc qua `hatSpec`).
 
 | Trường | Mặc định | Nghĩa |
 |---|---:|---|
-| `shape` | `drum` | `drum` hay `peaked` |
-| `front` / `back` | 32 / 18 · 24 / 14 | Vĩ độ miệng mũ ở giữa trán, ở gáy: miệng là mặt phẳng qua hai điểm ấy |
-| `height` | 0.62 · 0.66 | Thân cao bấy nhiêu tính từ miệng theo trục mũ |
+| `shape` | `drum` | `drum`, `peaked` hay `brimmed` |
+| `front` / `back` | 32 / 18 · 24 / 14 · 26 / 12 | Vĩ độ miệng mũ ở giữa trán, ở gáy: miệng là mặt phẳng qua hai điểm ấy |
+| `height` | 0.62 · 0.66 · 0.5 | Thân cao bấy nhiêu tính từ miệng theo trục mũ |
 | `ease` | 0.03 | Khoảng hở giữa thân mũ và tóc (hay sọ); âm là ôm chặt hơn |
-| `round` | 0.12 · 0.05 | Bán kính bo mép đỉnh |
-| `flare` | 0 · 0.24 | `drum`: miệng nở ra bấy nhiêu phần bán kính thân, nhỏ dần tới mép bo. `peaked`: chóp nở dần từ mép trên băng, tới đỉnh rộng hơn băng bấy nhiêu phần |
-| `folds` | `[0.32]` · `[]` | Nếp gấp ngang: mỗi số là một vòng nét mực ở bấy nhiêu phần chiều cao thân (`peaked`: phần chóp trên băng); `[]` là trơn |
-| `band` | 0.24 | `peaked`: băng cao bấy nhiêu tính từ miệng |
-| `bandColor` | `#16171b` | `peaked`: màu băng, cũng là màu đế huy hiệu |
-| `brim` | 0.5 | `peaked`: lưỡi trai chìa ra trước miệng mũ bấy nhiêu ở giữa trán; `0` là không có |
-| `droop` | 24 | `peaked`: lưỡi trai chúc xuống bấy nhiêu độ so với mặt miệng mũ |
-| `brimColor` | `#101114` | `peaked`: màu lưỡi trai |
+| `round` | 0.12 · 0.05 · 0.22 | Bán kính bo mép đỉnh |
+| `flare` | 0 · 0.24 · 0.06 | `drum`, `brimmed`: miệng nở ra bấy nhiêu phần bán kính thân, nhỏ dần tới mép bo. `peaked`: chóp nở dần từ mép trên băng, tới đỉnh rộng hơn băng bấy nhiêu phần |
+| `folds` | `[0.32]` · `[]` · `[]` | Nếp gấp ngang: mỗi số là một vòng nét mực ở bấy nhiêu phần chiều cao thân (`peaked`: phần chóp trên băng); `[]` là trơn |
+| `band` | — · 0.24 · 0 | `peaked`: băng cao bấy nhiêu tính từ miệng. `brimmed`: dải băng quanh chân chóp; `0` là không có |
+| `bandColor` | `#16171b` | Màu băng, cũng là màu đế huy hiệu của `peaked` |
+| `brim` | — · 0.5 · 0.62 | `peaked`: lưỡi trai chìa ra trước miệng mũ bấy nhiêu ở giữa trán. `brimmed`: vành chìa ra quanh miệng mũ bấy nhiêu; `0` là không có |
+| `droop` | — · 24 · 16 | `peaked`: lưỡi trai chúc xuống bấy nhiêu độ so với mặt miệng mũ. `brimmed`: mép vành cụp xuống bấy nhiêu độ, góc tăng đều từ chân vành; âm là vành vểnh lên |
+| `brimColor` | `#101114` · màu thân | Màu lưỡi trai, vành |
 | `strap` | 0.055 | `peaked`: bản dây quai; `0` là không có quai và nút |
 | `strapColor` | `#222327` | `peaked`: màu dây quai |
 | `badge` | 0.13 | `peaked`: bán kính huy hiệu (không quá nửa phần chóp trên băng); `0` là không có |
 | `badgeColor` | `#d8aa3c` | `peaked`: màu huy hiệu và hai nút ở đầu quai |
+| `press` | 0 · 0 · 1 | [Mũ ép tóc](#mũ-ép-tóc) `0..1`: `0` thân nâng cho trùm hết tóc, `1` thân giữ `height`, tóc trên miệng mũ nén xuống |
+| `straw` | 0 | Vân rơm `0..1`: các vòng thân và vành xen kẽ tối đi bấy nhiêu phần về màu nét; `0` là trơn |
 
 - **Cỡ mũ đo trên đầu** (`hatFit`): lấy mẫu sọ và vỏ tóc (`shellAt`, như hàng vỏ khi đầu thẳng) mỗi
   `3°`, giữ điểm trên miệng mũ (và dải `0.03` dưới nó). Thân là ống elip cùng tâm nhỏ nhất ôm mọi điểm
-  ấy, nở thêm `ease`: đầu đinh thì mũ ôm sát, tóc bồng thì mũ to theo. Thân cao ít nhất tới trên đỉnh tóc
-  `ease` cộng một phần bo, nên đỉnh mũ không cắt tóc. Băng của `peaked` là chính ống ấy; chóp loe ra ngoài nó.
+  ấy, nở thêm `ease`: đầu đinh thì mũ ôm sát, tóc bồng thì mũ to theo. `press: 0` thì thân cao ít nhất tới trên đỉnh
+  tóc `ease` cộng một phần bo, nên đỉnh mũ không cắt tóc. Băng của `peaked` là chính ống ấy; chóp loe ra ngoài nó.
 - **Tóc dưới mũ không lòi ra**: vỏ tóc nằm trong ống nên mũ che; lọn gai, lọn dẹt, lọn vểnh, búi, đuôi
   ngựa có chân trong lòng mũ (`insideHat`) bị bỏ cả khối (`sculptMesh` nhận `cut`). Phần tóc dưới miệng
   mũ — mai, gáy — vẫn hiện.
@@ -488,8 +492,8 @@ Góc theo độ, dài theo bán kính sọ. Ô có hai số cách bằng `·` l�
   vẫn có nét.
 - Mũ vẽ hai mặt: nhìn từ dưới thấy lòng mũ cùng màu. Đỉnh mũ là đỉnh đầu của `headFit`, nên socket
   `crown` của đồ gắn và nhãn bám đỉnh đầu nằm trên mũ.
-- `hatMesh` ra tam giác từng phần (`tris` thân, `band`, `seat` đế huy hiệu, `brim`, `strap`, `badge`) và vòng
-  nét ở hệ sọ đơn vị; người 3D phóng theo khối đầu như tóc. Mũ không dời theo `humanHair`: miệng mũ nằm ở nửa
+- `hatMesh` ra tam giác từng phần (`tris` thân, `band`, `seat` đế huy hiệu, `brim`, `strap`, `badge`, `weave` /
+  `brimWeave` vòng vân rơm) và vòng nét ở hệ sọ đơn vị; người 3D phóng theo khối đầu như tóc. Mũ không dời theo `humanHair`: miệng mũ nằm ở nửa
   trên sọ, nơi đầu `human` trùng mặt cầu.
 - Màu thân là `pieces.crown.color`, bỏ trống thì lấy màu áo.
 
@@ -512,6 +516,42 @@ quai bằng nhựa đen; huy hiệu 日章 vàng trong vòng hoa anh đào vàng
 thêm sọc vàng hay xanh theo cấp — rig không vẽ sọc, 巡査 / 巡査部長 là băng đen trơn. Mũ hè, mũ giao mùa màu 藍色
 ("chàm"). Quai trắng và bọc mũ trắng của cảnh sát giao thông theo quy định của từng tỉnh (ví dụ [quy định của cảnh
 sát Gunma](https://www.pref.gunma.jp/uploaded/attachment/153572.pdf), điều 6).
+
+### Mũ vành tròn
+
+`shape: "brimmed"`: thân như `drum` (ống ôm tóc, `flare` nở ở miệng nên chóp thon lên đỉnh, `round` bo tròn đỉnh), vành là
+tấm dày `0.035` vòng kín quanh miệng mũ. Mép trong lùi vào thân, mỗi điểm chìa ra `brim` theo pháp tuyến ống mũ và cụp
+xuống, góc so với mặt miệng mũ tăng đều từ `0` ở chân vành tới `droop` ở mép: vành cong võng như vành mũ rơm. Vành gắn vào
+khối đầu như cả mũ, nên gật, lắc, cúi chào thì vành đi theo đầu; cúi chào `30°` vành không chạm vai.
+
+- **Kéo thấp che trán**: hạ `front` (và `back`) — miệng mũ nghiêng xuống trước, vành ngang mày: `front` `14`–`20` là sụp
+  vành che nắng, `26` là đội ngay ngắn. Mày nằm ở vĩ độ khoảng `16°`.
+- **Dải băng**: `band` > `0` tô phần thân từ miệng lên bấy nhiêu màu `bandColor`, có vòng nét ở mép trên.
+- **Vân rơm** `straw`: các vòng thân (mỗi vòng `≈ 0,06` bán kính sọ) và các hàng vành (mỗi hàng không rộng quá `0,06`)
+  xen kẽ tô màu thân / vành tối đi `straw` phần về màu nét — đọc như các vòng rơm bện. `0,1`–`0,15` là vừa.
+- Vành dựng cùng vật liệu màu theo tam giác như `peaked`; `brimColor` bỏ trống là màu thân.
+
+Mũ rơm ông nông dân, vành rộng sụp, dải băng nâu:
+
+```json
+"crown": { "src": "sculpt", "color": "#E2C27A",
+  "hat": { "shape": "brimmed", "straw": 0.12, "band": 0.12, "bandColor": "#3A2A22", "brim": 0.7, "droop": 22, "front": 20, "back": 8 } }
+```
+
+Mũ vải làm vườn kéo thấp:
+
+```json
+"crown": { "src": "sculpt", "color": "#6B5A44",
+  "hat": { "shape": "brimmed", "front": 14, "back": 6, "brim": 0.55, "droop": 18, "band": 0.1, "bandColor": "#2A2018" } }
+```
+
+### Mũ ép tóc
+
+Mũ thật đè tóc xuống. `press` (`0..1`, mặc định theo dáng: `1` cho `brimmed`, `0` cho `drum`, `peaked`) chọn giữa hai
+cách: `0` là thân nâng lên tới trên đỉnh tóc như trên; `1` là thân giữ `height` (không thấp hơn đỉnh sọ cộng một phần bo)
+và tóc trên miệng mũ bị nén theo trục mũ, hệ số `squash` của `hatFit`, cho đỉnh tóc nằm dưới đỉnh mũ (`pressHair`). Tóc
+dưới miệng mũ — mai, gáy, đuôi tóc — không dời. Giữa hai số là thân cao giữa hai mức. Cần nó khi miệng mũ thấp (mũ kéo
+thấp) trên tóc cao (vuốt ngược, phồng): không ép thì thân vọt lên thành mũ chóp cao.
 
 ## Trâm cài búi
 
@@ -618,7 +658,7 @@ nhau. Kiểu khác (`blazer` `ease` `8`, `cardigan` `12`…) là áo rộng, ch�
 Trường bỏ trống lấy số của kiểu ở bảng `GARMENT_STYLES`; `garmentOf` trả bộ số đã đủ. `collarUp` ([cổ dựng](#cổ-dựng)), `belly`
 ([bụng phệ](#bụng-phệ)) và `bust` ([ngực nở](#ngực-nở)) không thuộc bảng kiểu: bỏ trống là `0` ở mọi kiểu. `neckline`, `marks`
 ([dáng cổ và đặc điểm của kiểu](#dáng-cổ-và-đặc-điểm-của-kiểu)), `panels` ([mảng áo và hoạ tiết](#mảng-áo-và-hoạ-tiết)) và
-`inner` ([áo trong và cà vạt](#áo-trong-và-cà-vạt)) cũng không thuộc bảng kiểu.
+`inner` ([áo trong và cà vạt](#áo-trong-và-cà-vạt)), `bib` ([yếm](#yếm)) cũng không thuộc bảng kiểu.
 Kiểu mang cả những đặc điểm không có số, đặt theo số đo đã đủ nên đè `neck`, `hem`… thì
 chúng đi theo:
 
@@ -1162,6 +1202,34 @@ nổi thấp thì vỏ ấy lòi qua thành chấm mực.
 | `length` | 102 | Mũi cà vạt thấp hơn chỗ viền cổ chạm mặt vát bấy nhiêu px |
 | `line` | 0 | Nét viền, lần nét thân |
 
+**Gilê ngoài sơ mi** (sommelier, bồi bàn, bartender) không có kiểu riêng: thân áo không tay là thân áo dựng khối màu gilê,
+tay áo là ống `palette.sleeve*` màu sơ mi, áo trong trắng và cà vạt ở cổ chữ V. Hai bộ:
+
+- `cardigan` — cổ V viền gân, ba cúc: gilê thường. Bo gấu của kiểu nằm dưới tạp dề hay cạp quần.
+- `suit` — có ve nổi khối: gilê có ve, nhìn gần như áo vest cụt tay.
+
+```json
+"palette": { "sleeve": "#FFF8EC", "sleeveLength": 0.92 },
+"pieces": { "torso": { "src": "sculpt", "color": "#1E1A1A",
+  "garment": { "style": "cardigan", "ease": 8, "hem": 4, "neckFront": 62,
+    "inner": { "color": "#FFF8EC", "tie": { "color": "#7E2235" } } } } }
+```
+
+Lưng gilê thật là vải lót khác màu: thêm mảng `side: "back"` cả lưng.
+
+**Áo bếp hai hàng cúc cổ đứng** cũng không có kiểu riêng: `sweater` (viền gân dựng `4` px sau gáy đọc như cổ đứng),
+`marks: false`, `neckFront` nhỏ cho cổ kín, một mảng dọc màu nhạt hơn có viền làm vạt đè, hai hàng cúc là
+[hình in](#hình-in-trên-áo) `circle`:
+
+```json
+"garment": { "style": "sweater", "marks": false, "hem": 10, "neckFront": 4,
+  "panels": [{ "fill": "#E6D9BF", "pts": [[-13, 140], [12, 140], [12, -14], [-13, -14]], "line": 0.6 }],
+  "prints": [{ "shape": "circle", "size": 4, "x": 7, "y": 114, "color": "#9C8A68" },
+             { "shape": "circle", "size": 4, "x": -9, "y": 114, "color": "#9C8A68" }] }
+```
+
+Thêm cặp cúc ở `y` `96`, `78`… cho đủ hàng.
+
 ### Mảng áo và hoạ tiết
 
 `garment.panels` là danh sách mảng màu kín trên mặt khối của **mọi kiểu** thân áo dựng khối: phối màu từng mảng, sọc ngang,
@@ -1283,6 +1351,48 @@ eo có khoá, bao súng bên phải:
     { "fill": "#0E0E10", "pts": [[-2, 26], [2, 26], [2, 22], [-2, 22]] },
     { "fill": "#0E0E10", "x": -30, "y": 11, "size": 26, "path": "M22 0 H78 V70 Q78 96 50 98 Q22 96 22 70 Z", "line": 0.4 }
   ] } }
+```
+
+### Yếm
+
+`garment.bib` là yếm mặc ngoài thân áo — quần yếm, yếm làm vườn, tạp dề yếm: mảng ngực hình thang từ cạp lên, hai dây vắt
+qua đỉnh vai xuống lưng (chéo chữ X hay thẳng), vòng cạp quanh khối từ cạp xuống gấu áo, cúc ở chân dây trước ngực. Có ở
+**mọi kiểu** thân áo dựng khối, chỉ người 3D. `bibPanels` (`core/bib.ts`) dựng yếm thành [mảng áo](#mảng-áo-và-hoạ-tiết)
+trên mặt khối, nên yếm cong theo thân, gập theo đùi khi ngồi, khuất khi quay đi như mảng.
+
+```json
+"garment": { "style": "shirt", "bib": { "color": "#4A6380", "pocket": true } },
+"palette": { "trouser": "#4A6380" }
+```
+
+| Trường của `bib` | Mặc định | Nghĩa |
+|---|---:|---|
+| `color` | `#46607e` | Màu yếm, dây, vòng cạp; màu tô như mảng áo. Quần yếm thì để bằng `palette.trouser`: vòng cạp liền ống quần |
+| `top` | 78 | Mép trên mảng ngực cao hơn hông bấy nhiêu px, nhân `rig.height` (ngang ngực ở `84`) |
+| `width` | 17 | Nửa rộng mép trên mảng ngực |
+| `flare` | 5 | Mảng ngực nở thêm bấy nhiêu mỗi bên khi xuống tới cạp |
+| `waist` | 16 | Cạp — chỗ mảng ngực gặp vòng cạp, chân dây sau lưng — cao hơn hông bấy nhiêu, nhân `rig.height` |
+| `band` | `true` | Vòng cạp quanh khối từ cạp xuống gấu áo (quần yếm); `false` chỉ mảng ngực và dây (tạp dề yếm) |
+| `strap` | 6 | Bản dây vai |
+| `back` | `cross` | Dây sau lưng: `cross` chéo chữ X, chân dây ở bên kia trục; `straight` thẳng xuống hai bên |
+| `buttons` | `#cfc8b8` | Màu cúc ở chân dây trước ngực; `false` là không có |
+| `pocket` | `false` | Túi ngực: khung viền giữa mảng ngực (cần mảng ngực cao quá `30` px) |
+| `line` | 0.5 | Nét viền, lần nét thân |
+
+- **Dây vắt qua đỉnh vai.** Mặt trước dây đi từ mép trên mảng ngực lên sườn (kinh độ `90`) ở độ cao trên mặt vát vai nơi
+  khối nửa rộng `25 ± strap / 2` px — ngoài miệng cổ, như dây áo ba lỗ —; mặt sau đi tiếp từ đó xuống cạp. Hai mép dây
+  qua đỉnh vai ở hai độ cao khác nhau nên dây giữ bản rộng qua vai.
+- **Yếm nổi trên áo trong, cà vạt** (`PANEL_LIFT.bib` `1.2` px, trên áo trong `1`, cà vạt `1.05`): yếm che phần cổ V,
+  cà vạt dưới nó như vải mặc ngoài. Hình in và thẻ tên của áo có yếm nổi trên yếm (`1.5` px), in được lên yếm.
+- **Nét, chấm của kiểu dưới yếm bị bỏ**: nẹp, cúc sơ mi trong mảng ngực và dưới cạp (khi có vòng cạp) không lồi qua yếm;
+  phần trên yếm còn. Mảng tô của kiểu (túi, áo trong) giữ nguyên, nằm dưới yếm.
+- Mảng của `panels` nằm dưới yếm; muốn vẽ lên yếm thì dùng hình in.
+- Tạp dề yếm: [tạp dề](#tạp-dề) ở `hem` cộng `bib` không vòng cạp, `waist` bằng `rise` của tạp dề, cùng màu tấm:
+
+```json
+"torso": { "src": "sculpt", "garment": { "style": "cardigan",
+  "bib": { "color": "#3A3230", "band": false, "waist": 18, "top": 84, "width": 15, "flare": 8 } } },
+"hem": { "src": "sculpt", "color": "#3A3230", "skirt": { "style": "apron", "rise": 18, "length": 140 } }
 ```
 
 ## Quần và váy
@@ -1451,3 +1561,4 @@ phía trước tới chỗ rời người rồi rủ thẳng. Đứng, cúi chà
 - Tay không choãi vì tạp dề.
 - `rise`, `waist` như `cone`; `flare`, `pleats` bị bỏ qua.
 - Tạp dề và vạt dài quấn cùng socket `hem`: một người không mặc cả hai.
+- Mảng ngực và dây của tạp dề yếm là [yếm](#yếm) của thân áo (`garment.bib` với `band: false`).

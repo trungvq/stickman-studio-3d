@@ -1,3 +1,4 @@
+import { bibPanels, type BibFrame } from "./bib";
 import { D } from "./constants";
 import type { Garment, Pattern } from "./schema";
 import type { MarkFill, P2, SP, Surface } from "./torso";
@@ -7,7 +8,14 @@ import type { MarkFill, P2, SP, Surface } from "./torso";
  * hoạ tiết nằm trên nền mảng thêm `pattern` mỗi lớp. Mảng da nổi ít nhất `skin`: vỏ viền cổ người 3D cắm xiên qua mặt vát,
  * da nổi thấp thì vỏ ấy lòi qua thành chấm mực. Đặc điểm của kiểu nổi `0.3`, hình in `0.8`
  */
-export const PANEL_LIFT = { under: 0.16, over: 0.36, step: 0.03, pattern: 0.01, skin: 1 } as const;
+export const PANEL_LIFT = {
+  under: 0.16,
+  over: 0.36,
+  step: 0.03,
+  pattern: 0.01,
+  skin: 1,
+  bib: 1.2,
+} as const;
 
 export interface PanelFill {
   /** Polygon kín trên mặt khối, điểm cuối trùng điểm đầu */
@@ -275,6 +283,36 @@ export function necklineAt(s: Surface) {
   };
 }
 
+/** Khung mặt khối `s` cho yếm (`bibPanels`), độ cao theo hệ `from: "hip"` */
+function bibFrame(s: Surface, height: number): BibFrame {
+  return {
+    side(up, back) {
+      const y = Math.min(s.yH, Math.max(s.yC, -up * height));
+      const a = Math.max(s.a(y), 1e-6);
+      if (!s.depth) return a;
+      const d = Math.max(s.depth(y, back), 1e-6);
+      let acc = 0;
+      for (let i = 0; i < ARC_STEPS; i++) {
+        const tm = ((i + 0.5) / ARC_STEPS) * (Math.PI / 2);
+        acc += Math.hypot(a * Math.cos(tm), d * Math.sin(tm)) * (Math.PI / 2 / ARC_STEPS);
+      }
+      // lùi vào trong sườn một chút: điểm đúng phần tư chu vi bị coi là mép khối
+      return acc * 0.995;
+    },
+    ridge(half) {
+      // nửa rộng tăng dần từ mép trên xuống vành vai
+      let [lo, hi] = [s.yC, s.yS];
+      if (s.a(lo) >= half) return -lo / height;
+      for (let i = 0; i < 40; i++) {
+        const m = (lo + hi) / 2;
+        if (s.a(m) < half) lo = m;
+        else hi = m;
+      }
+      return -lo / height;
+    },
+  };
+}
+
 /**
  * Mảng áo (`garment.panels`) trên mặt khối `s`: polygon nền, các mảnh hoạ tiết và nét viền, toạ độ mặt khối. Nét viền
  * không chạy dọc mép khối — mép trên, gấu, sườn chỗ mặt trước gặp mặt sau, đường nối sau lưng của mảng cả thân —, chạy
@@ -282,15 +320,21 @@ export function necklineAt(s: Surface) {
  */
 export function panelParts(s: Surface, g: Garment, height: number): PanelParts {
   const out: PanelParts = { fills: [], lines: [] };
-  const panels = g.panels ?? [];
+  // yếm nổi trên áo trong, cà vạt (`1`–`1.05` px) như vải mặc ngoài
+  const bib = g.bib ? bibPanels(g.bib, bibFrame(s, height)) : [];
+  const panels = [...(g.panels ?? []), ...bib];
   if (!panels.length) return out;
   const neckY = necklineAt(s);
   /** px trên mặt khối mỗi độ kinh, đo ở nửa rộng ngang ngực: hoạ tiết của mảng quanh khối đo bằng px */
   const R = s.a(s.t(0.3)) * D;
   const EPS = 1e-3;
   const order = { under: 0, over: 0 };
-  for (const p of panels) {
-    const base = PANEL_LIFT[p.layer] + PANEL_LIFT.step * order[p.layer]++;
+  for (const [i, p] of panels.entries()) {
+    const k = i - (panels.length - bib.length);
+    const base =
+      k >= 0
+        ? PANEL_LIFT.bib + PANEL_LIFT.step * k
+        : PANEL_LIFT[p.layer] + PANEL_LIFT.step * order[p.layer]++;
     const lift = p.fill === "skin" ? Math.max(PANEL_LIFT.skin, base) : base;
     const whole = !p.pts && !p.path;
     const around = whole || p.side === "around";

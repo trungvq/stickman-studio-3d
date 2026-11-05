@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { hatFit, hatMesh, hatSpec, insideHat, pinMesh, shellAt } from "./hat";
+import { hatFit, hatMesh, hatSpec, insideHat, pinMesh, pressHair, shellAt } from "./hat";
 import { HAT_SHAPE_DEFAULTS, HatSchema, SculptSchema, type Hat, type Sculpt } from "./schema";
 import { accentAt, ahogeRings, hairline, knotFrame, SCULPT_PRESETS } from "./sculpt";
 import { onSkull, type Vec3 } from "./sphere";
@@ -129,10 +129,12 @@ describe("mũ kê-pi", () => {
         if (ahead(fit, p) > front) expect(Math.hypot(...p)).toBeGreaterThan(1.02);
     });
   }
-  it("mọi trường số của `HatSchema` đổi hình `peaked` (đầu trọc: tóc không nâng `height`)", () => {
+  it("mọi trường số của `HatSchema` đổi hình `peaked` (đầu trọc: tóc không nâng `height`, không có gì để ép)", () => {
     const hair = undefined;
     const base = JSON.stringify(hatMesh(police, hatFit(police, hair)));
-    const keys = Object.keys(HatSchema.shape).filter((k) => k !== "shape" && !k.endsWith("Color"));
+    const keys = Object.keys(HatSchema.shape).filter(
+      (k) => k !== "shape" && k !== "press" && !k.endsWith("Color"),
+    );
     expect(keys.length).toBeGreaterThan(10);
     for (const k of keys) {
       const hat = {
@@ -160,6 +162,91 @@ describe("mũ kê-pi", () => {
           .map((p) => ahead(fit, p)),
       );
     expect(reach(0.7) - reach(0.4)).toBeGreaterThan(0.2);
+  });
+});
+
+describe("mũ vành tròn", () => {
+  const up = (fit: ReturnType<typeof hatFit>, p: Vec3) => dot(sub(p, fit.base), fit.n);
+  const wide = { shape: "brimmed" } as const;
+  const hair = SCULPT_PRESETS.short.sculpt;
+  const fit = hatFit(wide, hair);
+  const m = hatMesh(wide, fit);
+  it("số theo dáng `brimmed`; mặc định trơn, không băng, chỉ thân và vành", () => {
+    expect(hatSpec(wide)).toMatchObject(HAT_SHAPE_DEFAULTS.brimmed);
+    expect(m.tris.length).toBeGreaterThan(0);
+    expect(m.brim.length).toBeGreaterThan(0);
+    for (const part of [m.band, m.strap, m.badge, m.seat, m.weave, m.brimWeave])
+      expect(part).toEqual([]);
+    expect(m.lines).toEqual([]);
+  });
+  it("vành vòng kín quanh miệng mũ, chìa `brim` ra mọi phía, nằm ngoài sọ", () => {
+    const pts = m.brim.flat();
+    const h = hatSpec(wide);
+    // chìa ra quanh trục mũ: trước, sau, hai bên đều xa trục hơn thân `brim`
+    const rel = (p: Vec3) => sub(p, fit.base);
+    const reach = (dir: Vec3) => Math.max(...pts.map((p) => dot(rel(p), dir)));
+    const back: Vec3 = [-fit.fwd[0], -fit.fwd[1], -fit.fwd[2]];
+    expect(reach(fit.fwd) - fit.b).toBeGreaterThan(h.brim * 0.9);
+    expect(reach(back) - fit.b).toBeGreaterThan(h.brim * 0.9);
+    expect(reach([1, 0, 0]) - fit.a).toBeGreaterThan(h.brim * 0.9);
+    expect(reach([-1, 0, 0]) - fit.a).toBeGreaterThan(h.brim * 0.9);
+    for (const p of pts)
+      if (Math.hypot(...rel(p)) > Math.max(fit.a, fit.b))
+        expect(Math.hypot(...p)).toBeGreaterThan(1.02);
+  });
+  it("`droop` cụp mép vành xuống, âm thì vểnh lên; `brim: 0` là không vành", () => {
+    const low = (droop: number) =>
+      Math.min(
+        ...hatMesh({ ...wide, droop }, fit)
+          .brim.flat()
+          .map((p) => up(fit, p)),
+      );
+    expect(low(30)).toBeLessThan(low(5) - 0.1);
+    const high = Math.max(
+      ...hatMesh({ ...wide, droop: -20 }, fit)
+        .brim.flat()
+        .map((p) => up(fit, p)),
+    );
+    expect(high).toBeGreaterThan(0.1);
+    expect(hatMesh({ ...wide, brim: 0 }, fit).brim).toEqual([]);
+  });
+  it("`band` là dải băng quanh chân chóp có nét ở mép trên; `straw` tách vòng xen kẽ của thân và vành", () => {
+    const ribbon = hatMesh({ ...wide, band: 0.12 }, fit);
+    expect(ribbon.band.length).toBeGreaterThan(0);
+    expect(Math.max(...ribbon.band.flat().map((p) => up(fit, p)))).toBeCloseTo(0.12, 9);
+    expect(ribbon.lines).toHaveLength(1);
+    const straw = hatMesh({ ...wide, straw: 0.15 }, fit);
+    expect(straw.weave.length).toBeGreaterThan(0);
+    expect(straw.brimWeave.length).toBeGreaterThan(0);
+    expect(straw.tris.length + straw.weave.length).toBe(m.tris.length);
+    expect(straw.brim.length + straw.brimWeave.length).toBe(m.brim.length);
+  });
+});
+
+describe("mũ ép tóc", () => {
+  const hair = { ...SCULPT_PRESETS.slick.sculpt, volume: 0.12 };
+  const s = SculptSchema.parse(hair);
+  const low = { shape: "brimmed", front: 14, back: 6 } as const;
+  it("`press: 0` nâng thân trùm hết tóc; `press: 1` giữ thân thấp và nén tóc trên miệng xuống dưới đỉnh", () => {
+    const tall = hatFit({ ...low, press: 0 }, hair);
+    const flat = hatFit(low, hair);
+    expect(tall.squash).toBe(1);
+    expect(flat.height).toBeLessThan(tall.height - 0.05);
+    expect(flat.squash).toBeLessThan(1);
+    const room = Math.max(hatSpec(low).ease, 0.02) + hatSpec(low).round * 0.3;
+    for (let lon = -180; lon < 180; lon += 9)
+      for (let lat = 0; lat <= 90; lat += 6) {
+        const p = pressHair(flat, onSkull(lon, lat, shellAt(s, lon, lat)));
+        expect(dot(sub(p, flat.base), flat.n)).toBeLessThanOrEqual(flat.height - room + 1e-9);
+      }
+  });
+  it("thân không thấp hơn đỉnh sọ; dưới miệng mũ tóc không dời; mũ cũ mặc định không ép", () => {
+    const flat = hatFit({ ...low, height: 0.05 }, hair);
+    const bare = hatFit({ ...low, press: 0, height: 0.05 });
+    expect(flat.height).toBeCloseTo(bare.height, 3);
+    const below = onSkull(0, 0, 0.1);
+    expect(pressHair(flat, below)).toEqual(below);
+    for (const shape of ["drum", "peaked"] as const) expect(hatFit({ shape }, hair).squash).toBe(1);
   });
 });
 

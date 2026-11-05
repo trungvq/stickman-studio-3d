@@ -133,11 +133,11 @@ export const GlassesSchema = z.object({
  * Mũ dựng khối của người 3D: ôm sọ và vỏ tóc dưới nó, quay theo đầu. Góc theo độ, dài theo bán kính sọ.
  * docs/12-trang-phuc-3d.md#mũ-dựng-khối
  */
-export const HAT_SHAPES = ["drum", "peaked"] as const;
+export const HAT_SHAPES = ["drum", "peaked", "brimmed"] as const;
 export type HatShape = (typeof HAT_SHAPES)[number];
 
 export const HatSchema = z.object({
-  /** `drum` trụ thấp hở đáy, đỉnh phẳng bo mép; `peaked` mũ kê-pi: băng quanh chân, chóp loe đỉnh phẳng, lưỡi trai, quai, huy hiệu */
+  /** `drum` trụ thấp hở đáy, đỉnh phẳng bo mép; `peaked` mũ kê-pi: băng quanh chân, chóp loe đỉnh phẳng, lưỡi trai, quai, huy hiệu; `brimmed` chóp tròn và vành tròn quanh chóp */
   shape: z.enum(HAT_SHAPES).default("drum"),
   /** Vĩ độ miệng mũ ở giữa trán; bỏ trống theo `HAT_SHAPE_DEFAULTS` của dáng */
   front: z.number().optional(),
@@ -149,19 +149,20 @@ export const HatSchema = z.object({
   ease: z.number().default(0.03),
   /** Bán kính bo mép đỉnh */
   round: z.number().optional(),
-  /** `drum`: miệng mũ nở ra bấy nhiêu phần bán kính thân; `peaked`: chóp nở rộng hơn băng bấy nhiêu phần ở đỉnh */
+  /** `drum`, `brimmed`: miệng mũ nở ra bấy nhiêu phần bán kính thân; `peaked`: chóp nở rộng hơn băng bấy nhiêu phần ở đỉnh */
   flare: z.number().optional(),
   /** Nếp gấp ngang: các độ cao, phần chiều cao thân */
   folds: z.array(z.number()).optional(),
-  /** `peaked`: băng quanh chân mũ cao bấy nhiêu tính từ miệng */
-  band: z.number().default(0.24),
-  /** `peaked`: màu băng, cũng là màu đế huy hiệu */
+  /** `peaked`: băng quanh chân mũ; `brimmed`: dải băng quanh chân chóp, `0` là không có. Cao bấy nhiêu tính từ miệng */
+  band: z.number().optional(),
+  /** Màu băng, cũng là màu đế huy hiệu của `peaked` */
   bandColor: z.string().default("#16171b"),
-  /** `peaked`: lưỡi trai chìa ra trước miệng mũ bấy nhiêu ở giữa trán; `0` là không có */
-  brim: z.number().default(0.5),
-  /** `peaked`: lưỡi trai chúc xuống bấy nhiêu độ so với miệng mũ */
-  droop: z.number().default(24),
-  brimColor: z.string().default("#101114"),
+  /** `peaked`: lưỡi trai chìa ra trước miệng mũ bấy nhiêu ở giữa trán; `brimmed`: vành chìa ra quanh miệng mũ bấy nhiêu; `0` là không có */
+  brim: z.number().optional(),
+  /** `peaked`: lưỡi trai chúc xuống bấy nhiêu độ so với miệng mũ; `brimmed`: mép vành cụp xuống bấy nhiêu độ, cong dần từ chân vành; âm là vành vểnh lên */
+  droop: z.number().optional(),
+  /** Màu lưỡi trai, vành; bỏ trống theo dáng: `peaked` đen, `brimmed` màu thân */
+  brimColor: z.string().optional(),
   /** `peaked`: bản dây quai ngang trán trên lưỡi trai; `0` là không có */
   strap: z.number().default(0.055),
   strapColor: z.string().default("#222327"),
@@ -169,15 +170,64 @@ export const HatSchema = z.object({
   badge: z.number().default(0.13),
   /** `peaked`: màu huy hiệu và hai nút ở đầu dây quai */
   badgeColor: z.string().default("#d8aa3c"),
+  /** Mũ ép tóc `0..1`: `0` thân nâng cho trùm hết tóc dưới nó, `1` thân giữ `height` và tóc trên miệng mũ ép xuống dưới đỉnh; bỏ trống theo dáng */
+  press: z.number().min(0).max(1).optional(),
+  /** Vân rơm: các vòng thân và vành xen kẽ tối đi bấy nhiêu phần (`0..1`); `0` là trơn */
+  straw: z.number().min(0).max(1).default(0),
 });
 
 /** Số đo theo dáng mũ khi JSON bỏ trống. docs/12-trang-phuc-3d.md#mũ-dựng-khối */
 export const HAT_SHAPE_DEFAULTS: Record<
   HatShape,
-  { front: number; back: number; height: number; round: number; flare: number; folds: number[] }
+  {
+    front: number;
+    back: number;
+    height: number;
+    round: number;
+    flare: number;
+    folds: number[];
+    band: number;
+    brim: number;
+    droop: number;
+    press: number;
+  }
 > = {
-  drum: { front: 32, back: 18, height: 0.62, round: 0.12, flare: 0, folds: [0.32] },
-  peaked: { front: 24, back: 14, height: 0.66, round: 0.05, flare: 0.24, folds: [] },
+  drum: {
+    front: 32,
+    back: 18,
+    height: 0.62,
+    round: 0.12,
+    flare: 0,
+    folds: [0.32],
+    band: 0,
+    brim: 0,
+    droop: 0,
+    press: 0,
+  },
+  peaked: {
+    front: 24,
+    back: 14,
+    height: 0.66,
+    round: 0.05,
+    flare: 0.24,
+    folds: [],
+    band: 0.24,
+    brim: 0.5,
+    droop: 24,
+    press: 0,
+  },
+  brimmed: {
+    front: 26,
+    back: 12,
+    height: 0.5,
+    round: 0.22,
+    flare: 0.06,
+    folds: [],
+    band: 0,
+    brim: 0.62,
+    droop: 16,
+    press: 1,
+  },
 };
 
 /**
@@ -490,6 +540,36 @@ export const EarringsSchema = z.object({
   thick: z.number().default(0.014),
 });
 
+/**
+ * Yếm mặc ngoài thân áo: mảng ngực từ cạp lên, hai dây vai vắt qua vai xuống lưng, vòng cạp quanh khối dưới eo — quần
+ * yếm, yếm làm vườn, tạp dề yếm. Dựng thành mảng áo (`panels`), nét và cúc của kiểu trong vùng yếm bị che. px như
+ * `panels`, độ cao tính từ hông nhân `rig.height`. docs/12-trang-phuc-3d.md#yếm
+ */
+export const BibSchema = z.object({
+  /** Màu yếm, dây, vòng cạp; màu tô như mảng áo */
+  color: MarkFillSchema.default("#46607e"),
+  /** Mép trên mảng ngực cao hơn hông bấy nhiêu */
+  top: z.number().default(78),
+  /** Nửa rộng mép trên mảng ngực */
+  width: z.number().positive().default(17),
+  /** Mảng ngực nở thêm bấy nhiêu mỗi bên khi xuống tới cạp */
+  flare: z.number().default(5),
+  /** Cạp (chỗ mảng ngực gặp vòng cạp) cao hơn hông bấy nhiêu */
+  waist: z.number().default(16),
+  /** `true` vòng cạp quanh khối từ cạp xuống gấu áo, liền quần (quần yếm); `false` chỉ mảng ngực và dây (tạp dề yếm) */
+  band: z.boolean().default(true),
+  /** Bản dây vai */
+  strap: z.number().positive().default(6),
+  /** Dây sau lưng: `cross` chéo chữ X, `straight` thẳng song song */
+  back: z.enum(["cross", "straight"]).default("cross"),
+  /** Cúc ở chân dây trước ngực; `false` là không có */
+  buttons: z.union([MarkFillSchema, z.literal(false)]).default("#cfc8b8"),
+  /** Túi ngực: khung viền giữa mảng ngực */
+  pocket: z.boolean().default(false),
+  /** Nét viền, lần nét thân */
+  line: z.number().min(0).default(0.5),
+});
+
 export const GarmentSchema = z.object({
   /** Kiểu áo trong `GARMENT_STYLES`: `bare` ngực trần, `tshirt` áo phông cổ tròn, `shirt` sơ mi, `polo`, `sweater` áo len, `suit` vest, `hoodie`, `blouse` cổ lá sen, `wrap` cổ chéo */
   style: z.enum(GARMENT_STYLE_NAMES).default("tshirt"),
@@ -524,6 +604,8 @@ export const GarmentSchema = z.object({
   panels: z.array(PanelSchema).optional(),
   /** Áo trong và cà vạt ở miệng cổ chữ V của `blazer`, `cardigan`, `suit` */
   inner: InnerSchema.optional(),
+  /** Yếm mặc ngoài thân áo; chỉ người 3D. docs/12-trang-phuc-3d.md#yếm */
+  bib: BibSchema.optional(),
   /** Kiểu `wrap`: cổ chéo, dải cổ, đai; kiểu khác bỏ qua */
   wrap: WrapSchema.optional(),
   /** Hình in trên mặt khối, chỉ người 3D */
@@ -593,6 +675,34 @@ export const SkirtSchema = z.object({
   wrap: WrapHemSchema.optional(),
   /** Kiểu `apron`: tấm, dây cạp, nơ; kiểu khác bỏ qua */
   apron: ApronSchema.optional(),
+});
+
+/**
+ * Ria mép vẽ trên lớp mồm của người 3D, bám mép trên của khẩu hình: dải thon hai đầu, px của đầu cao 130 như nét mặt.
+ * docs/01-rig.md#ria-mép
+ */
+export const MoustacheSchema = z.object({
+  /** Nửa rộng dải, tính từ giữa nhân trung */
+  width: z.number().min(2).default(16),
+  /** Bề dày ở giữa */
+  thick: z.number().min(0.5).default(4.5),
+  /** Mép dưới ở giữa cách mép trên của khẩu hình bấy nhiêu */
+  gap: z.number().default(3.5),
+  /** Hai đầu thấp hơn giữa bấy nhiêu; âm là hai đầu vểnh lên */
+  droop: z.number().default(3),
+  /** Bề dày ở hai đầu, lần bề dày ở giữa */
+  taper: z.number().min(0).max(1).default(0.3),
+  /** Hở giữa nhân trung bấy nhiêu; `0` là một dải liền */
+  part: z.number().min(0).default(0),
+  /** Nét viền mực; `0` là không viền */
+  line: z.number().min(0).default(0.8),
+  /** Màu; bỏ trống là màu tóc (`pieces.hair.color`) */
+  color: z.string().optional(),
+});
+
+/** Râu trên mặt: mỗi phần một khoá, chỉ phần khai mới vẽ. docs/01-rig.md#ria-mép */
+export const BeardSchema = z.object({
+  moustache: MoustacheSchema.optional(),
 });
 
 /** Khai trước `CharacterSchema` vì `items` cần tới; `PIECE_KEYS` bên dưới kiểm lại cho khớp. */
@@ -707,6 +817,8 @@ export const CharacterSchema = z.object({
       shine: rest("shine"),
       browWidth: rest("browWidth"),
       browTilt: rest("browTilt"),
+      /** Râu trên mặt của người 3D, màu bỏ trống là màu tóc. docs/01-rig.md#ria-mép */
+      beard: BeardSchema.optional(),
       wrinkle: z
         .object({
           kind: z.enum(["none", "light", "deep"]).default("none"),
@@ -790,6 +902,8 @@ export const PIECE_KEYS = PIECE_KEY_NAMES satisfies readonly PieceKey[];
 export type Sculpt = z.infer<typeof SculptSchema>;
 export type Glasses = z.infer<typeof GlassesSchema>;
 export type Hat = z.infer<typeof HatSchema>;
+export type Moustache = z.infer<typeof MoustacheSchema>;
+export type Beard = z.infer<typeof BeardSchema>;
 export type Pin = z.infer<typeof PinSchema>;
 export type Drape = z.infer<typeof DrapeSchema>;
 export type Shades = z.infer<typeof ShadesSchema>;
@@ -804,6 +918,7 @@ export type PrintShape = (typeof PRINT_SHAPE_NAMES)[number];
 export type PrintFont = (typeof PRINT_FONTS)[number];
 export type Badge = z.infer<typeof BadgeSchema>;
 export type Panel = z.infer<typeof PanelSchema>;
+export type Bib = z.infer<typeof BibSchema>;
 export type Pattern = z.infer<typeof PatternSchema>;
 export type Inner = z.infer<typeof InnerSchema>;
 export type Tie = z.infer<typeof TieSchema>;

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_FACE } from './core/constants';
-import { blushColor, MOUTH_KINDS, mouthExtent, mouthMark, type FaceMark } from './core/face';
-import { defaultCharacter } from './core/schema';
+import { blushColor, MOUTH_KINDS, mouthExtent, mouthMark, moustacheMark, moustacheTop, type FaceMark } from './core/face';
+import { CharacterSchema, defaultCharacter, MoustacheSchema } from './core/schema';
 import { faceRig, MOUTH_BOX, type FaceRig } from './face';
 import { fromCharacter, R, type CharacterJson } from './stickman';
 
@@ -147,5 +147,68 @@ describe('nét mặt người nền', () => {
     expect(low((c) => (c.face.blush = 0.6))).not.toBe(a);
     expect(low((c) => (c.face.blush = 0), { blush: 0.2 })).not.toBe(low((c) => (c.face.blush = 0)));
     expect(low((c) => { c.face.blush = 0.5; c.palette.skin = '#5a3a28'; })).not.toBe(a);
+  });
+});
+
+describe('ria mép', () => {
+  const tash = MoustacheSchema.parse({});
+  /** Hộp bao các điểm của path ria (chỉ lệnh M / L) */
+  const box = (m: FaceMark) => {
+    const ys: number[] = [], xs: number[] = [];
+    const walk = (k: FaceMark) => {
+      if ('clip' in k) return;
+      if ('group' in k) return k.group.forEach(walk);
+      if ('path' in k) for (const [, x, y] of k.path.matchAll(/(-?[\d.]+) (-?[\d.]+)/g)) xs.push(+x), ys.push(+y);
+    };
+    walk(m);
+    return { top: Math.min(...ys), bottom: Math.max(...ys), left: Math.min(...xs), right: Math.max(...xs) };
+  };
+
+  it('nằm trên mép trên của mọi khẩu hình cách `gap`, rộng `width` mỗi bên, tô màu được đưa', () => {
+    for (const k of MOUTH_KINDS) {
+      const m = moustacheMark(tash, k, 0, 40, '#123456');
+      const b = box(m);
+      expect(b.bottom, k).toBeLessThanOrEqual(40 + mouthExtent(k).top - tash.gap + tash.droop + 1e-6);
+      expect(b.left).toBeCloseTo(-tash.width, 6);
+      expect(b.right).toBeCloseTo(tash.width, 6);
+      expect(b.top, k).toBeGreaterThanOrEqual(40 + moustacheTop(tash) - 1e-6);
+      expect(fills(m)).toEqual(['#123456']);
+    }
+  });
+
+  it('một dải liền khi `part: 0`, hai nửa hở giữa khi `part > 0`', () => {
+    const one = moustacheMark(tash, 'closed', 0, 0, '#000');
+    const two = moustacheMark({ ...tash, part: 4 }, 'closed', 0, 0, '#000');
+    expect('group' in one && one.group.length).toBe(1);
+    expect('group' in two && two.group.length).toBe(2);
+  });
+
+  it('vẽ trên lớp mồm theo khẩu hình, màu bỏ trống là màu tóc; không khai thì không tô gì thêm', () => {
+    const seen: unknown[] = [];
+    const ctx = new Proxy({} as Record<string | symbol, unknown>, {
+      get: (t, k) => (k in t ? t[k] : () => {}),
+      set: (t, k, v) => ((k === 'fillStyle' && seen.push(v), (t[k] = v)), true),
+    });
+    vi.stubGlobal('OffscreenCanvas', class { constructor(public width: number, public height: number) {} getContext() { return ctx; } });
+    try {
+      faceRig(R.head, new THREE.Vector3(1, 1, 1), {}, DEFAULT_FACE, true, undefined, '#8a8378');
+      expect(seen).not.toContain('#8a8378');
+      const f = faceRig(R.head, new THREE.Vector3(1, 1, 1), { beard: { moustache: tash } }, DEFAULT_FACE, true, undefined, '#8a8378');
+      expect(seen).toContain('#8a8378');
+      seen.length = 0;
+      f.set({ ...DEFAULT_FACE, mouth: 'shout' });
+      expect(seen).toContain('#8a8378');
+      faceRig(R.head, new THREE.Vector3(1, 1, 1), { beard: { moustache: { ...tash, color: '#ffffff' } } }, DEFAULT_FACE, true, undefined, '#8a8378');
+      expect(seen).toContain('#ffffff');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('JSON nhân vật: `face.beard.moustache` qua zod đủ mặc định; người 3D dựng được', () => {
+    const c = defaultCharacter();
+    const parsed = CharacterSchema.parse({ ...c, face: { ...c.face, beard: { moustache: { thick: 3 } } } });
+    expect(parsed.face.beard?.moustache).toEqual({ ...tash, thick: 3 });
+    expect(() => fromCharacter({ ...parsed, head: { form: 'human' } } as unknown as CharacterJson)).not.toThrow();
   });
 });

@@ -1,11 +1,14 @@
 import { D } from "./constants";
 import type { Garment, PrintFont, PrintShape } from "./schema";
 import type { Vec3 } from "./sphere";
+import { PANEL_LIFT } from "./panel";
 import { curve } from "./torso";
 import type { WrapBody } from "./wrap";
 
 /** Hình in nổi khỏi mặt khối bấy nhiêu px: trên mảng tô và áo trong lộ giữa vạt mở */
 export const PRINT_LIFT = 0.8;
+/** Áo có yếm: hình in, thẻ tên nổi trên yếm thêm bấy nhiêu px */
+const OVER_BIB = 0.3;
 
 /** Nội dung vẽ lên hình in: chữ, path SVG trong hộp `0…100`, hay mặt thẻ tên */
 export type PrintArt =
@@ -133,6 +136,7 @@ export function printParts(b: WrapBody, g: Garment): PrintPart[] {
     );
   };
   const out: PrintPart[] = [];
+  const floor = g.bib ? PANEL_LIFT.bib + OVER_BIB : 0;
   for (const p of g.prints ?? []) {
     const chars = p.text === undefined ? [] : Array.from(p.text);
     const [w, hh] = !chars.length
@@ -141,7 +145,7 @@ export function printParts(b: WrapBody, g: Garment): PrintPart[] {
         ? [p.size, chars.length * p.size]
         : [chars.length * p.size, p.size];
     out.push({
-      grid: onBody(p.side === "back", p.x, -p.y * h, w, hh, p.rotate, PRINT_LIFT),
+      grid: onBody(p.side === "back", p.x, -p.y * h, w, hh, p.rotate, Math.max(PRINT_LIFT, floor)),
       w,
       h: hh,
       art: chars.length
@@ -152,7 +156,7 @@ export function printParts(b: WrapBody, g: Garment): PrintPart[] {
   const t = g.badge;
   if (t)
     out.push({
-      grid: onBody(false, t.x, -t.y * h, t.width, t.height, 0, t.lift),
+      grid: onBody(false, t.x, -t.y * h, t.width, t.height, 0, Math.max(t.lift, floor)),
       w: t.width,
       h: t.height,
       art: {

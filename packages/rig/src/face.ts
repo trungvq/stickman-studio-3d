@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { newCanvas, path2D } from './canvas';
 import { DEFAULT_FACE } from './core/constants';
-import { blushLevel, blushMarks, browMarks, CHIBI, chibiShape, eyeMarks, eyeShine, faceRest, mouthMark, wrinkleMarks, type FaceInk, type FaceMark, type FaceRest, type WrinkleSpec } from './core/face';
+import { blushLevel, blushMarks, browMarks, CHIBI, chibiShape, eyeMarks, eyeShine, faceRest, mouthMark, moustacheMark, moustacheTop, wrinkleMarks, type FaceInk, type FaceMark, type FaceRest, type MoustacheSpec, type WrinkleSpec } from './core/face';
 import { FACE_R, faceSurface } from './core/humanHead';
 import type { FaceState } from './core/types';
 
@@ -10,8 +10,8 @@ import type { FaceState } from './core/types';
 
 /** `face.wrinkle` của JSON nhân vật */
 export type Wrinkle = WrinkleSpec;
-/** `face` của JSON nhân vật, px của đầu cao 130; `blush` là má ửng nền `0..1`, nét mặt nghỉ theo `FACE_REST` */
-export interface FaceShape extends Partial<FaceRest> { offsetY: number; eyeGap: number; mouthGap: number; wrinkle?: Wrinkle; blush?: number }
+/** `face` của JSON nhân vật, px của đầu cao 130; `blush` là má ửng nền `0..1`, nét mặt nghỉ theo `FACE_REST`; `beard` là râu (đã qua zod) */
+export interface FaceShape extends Partial<FaceRest> { offsetY: number; eyeGap: number; mouthGap: number; wrinkle?: Wrinkle; blush?: number; beard?: { moustache?: MoustacheSpec } }
 
 const SHAPE: FaceShape = { offsetY: 0, eyeGap: 26, mouthGap: 34 };
 
@@ -92,11 +92,15 @@ export interface FaceRig {
  * Lớp nét mặt cho sọ bán kính `r` (three), cùng tỉ lệ `scale` với khối sọ. Mặt hướng +z, `y` lên; px đầu đổi ra
  * three theo `r / FACE_R`. Lưới dời lên khỏi mặt sọ một chút để khỏi lẫn độ sâu. `human`: dán trên đầu `humanSkull`, nét
  * mặt chibi (`CHIBI`): mắt to có đốm sáng, cỡ mắt và đốm theo `FACE_REST` của `shape`. Má ửng `shape.blush` cộng `state.blush`, màu suy từ da `skin`.
+ * Ria mép `shape.beard.moustache` vẽ trên lớp mồm theo khẩu hình, màu bỏ trống là `hair`.
  */
-export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShape> = {}, state: FaceState = DEFAULT_FACE, human = false, skin = '#f0d9b8'): FaceRig {
+export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShape> = {}, state: FaceState = DEFAULT_FACE, human = false, skin = '#f0d9b8', hair = '#2a1c15'): FaceRig {
   const sh = human ? chibiShape({ ...SHAPE, ...shape }) : { ...SHAPE, ...shape };
   const mouthCy = sh.offsetY + sh.mouthGap, mk = human ? CHIBI.mouth : 1;
-  const MB: Box = { x0: -MOUTH_BOX.half, y0: mouthCy - MOUTH_BOX.top * mk, w: 2 * MOUTH_BOX.half, h: (MOUTH_BOX.top + MOUTH_BOX.bottom) * mk };
+  const tash = sh.beard?.moustache;
+  // ria dày hay mồm há cao thì lớp mồm nới lên cho ria khỏi bị cắt
+  const top = Math.max(MOUTH_BOX.top, tash ? -moustacheTop(tash) + 1 : 0);
+  const MB: Box = { x0: -MOUTH_BOX.half, y0: mouthCy - top * mk, w: 2 * MOUTH_BOX.half, h: (top + MOUTH_BOX.bottom) * mk };
   const face = layer(r, scale, human, BOX, 1), mouth = layer(r, scale, human, MB, 2);
   const mesh = face.mesh;
   mesh.add(mouth.mesh);
@@ -117,7 +121,9 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
     face.tex.needsUpdate = true;
   };
   const drawMouth = (s: FaceState) => {
-    paintAt(mouth.begin(), [mouthMark(s.mouth, 0, mouthCy)], mk, 0, mouthCy);
+    const marks = [mouthMark(s.mouth, 0, mouthCy)];
+    if (tash) marks.push(moustacheMark(tash, s.mouth, 0, mouthCy, tash.color ?? hair));
+    paintAt(mouth.begin(), marks, mk, 0, mouthCy);
     mouth.tex.needsUpdate = true;
   };
   const rig: FaceRig = {

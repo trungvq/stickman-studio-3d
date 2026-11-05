@@ -42,7 +42,8 @@ export function hatSpec(raw: Partial<Hat> | undefined): HatSpec {
 
 /**
  * Mũ đặt trên đầu, hệ sọ đơn vị (y lên, z ra trước mặt): `n` trục mũ hướng lên, `fwd` trục trước nằm trên miệng mũ, `base`
- * tâm miệng; thân là ống elip nửa trục `a` ngang, `b` trước–sau, cao `height` theo `n`
+ * tâm miệng; thân là ống elip nửa trục `a` ngang, `b` trước–sau, cao `height` theo `n`. `squash` là hệ số nén độ cao (theo
+ * `n`, từ miệng) của tóc trên miệng mũ (`pressHair`); `1` là không nén
  */
 export interface HatFit {
   n: Vec3;
@@ -51,6 +52,7 @@ export interface HatFit {
   a: number;
   b: number;
   height: number;
+  squash: number;
 }
 
 /** Bước lấy mẫu mặt sọ và vỏ tóc khi đo mũ, độ */
@@ -96,14 +98,36 @@ export function hatFit(raw: Partial<Hat> | undefined, hair?: Partial<Sculpt>): H
   const b0 = Math.max(...zs.map((z) => Math.abs(z - zc)));
   const k = Math.max(...pts.map(([x, z]) => Math.hypot(x / a0, (z - zc) / b0)));
   const top = Math.max(...pts.map(([, , up]) => up));
+  // đỉnh sọ trên miệng: mũ ép tóc tới đâu cũng không thấp hơn nó
+  const skull = Math.max(...SKULL_TOP.map((p) => dot(n, p) - d));
+  const room = Math.max(h.ease, 0.02) + h.round * 0.3;
+  const need = top + room;
+  const floor = Math.max(h.height, skull + room);
+  const height = Math.max(floor, need - h.press * (need - floor));
   return {
     n,
     fwd,
     base: add([0, 0, 0], [n, d], [fwd, zc]),
     a: a0 * k + h.ease,
     b: b0 * k + h.ease,
-    height: Math.max(h.height, top + Math.max(h.ease, 0.02) + h.round * 0.3),
+    height,
+    squash: top > 0 && height < need - 1e-9 ? (height - room) / top : 1,
   };
+}
+
+/** Điểm sọ đơn vị nửa trên, mỗi `FIT_STEP` độ: đỉnh sọ trên miệng mũ */
+const SKULL_TOP: Vec3[] = Array.from({ length: 360 / FIT_STEP }, (_, i) =>
+  Array.from({ length: 31 }, (_, j) => onSkull(-180 + i * FIT_STEP, j * 3)),
+).flat();
+
+/**
+ * Điểm tóc `p` (hệ sọ đơn vị) dưới mũ ép tóc: phần trên miệng mũ nén độ cao theo trục mũ bằng `fit.squash`, nên đỉnh tóc
+ * nằm dưới đỉnh mũ; dưới miệng giữ nguyên. docs/12-trang-phuc-3d.md#mũ-vành-tròn
+ */
+export function pressHair(fit: HatFit, p: Vec3): Vec3 {
+  if (fit.squash >= 1) return p;
+  const up = dot(add(p, [fit.base, -1]), fit.n);
+  return up > 0 ? add(p, [fit.n, -up * (1 - fit.squash)]) : p;
 }
 
 /** Điểm `p` của hệ sọ đơn vị nằm trong lòng mũ: trên miệng, dưới đỉnh, trong ống elip */
@@ -138,10 +162,15 @@ const BUTTON_R = 0.032;
 const BADGE_BASE = 0.01;
 const BADGE_RELIEF = 0.012;
 
+/** Vành của `brimmed`: số hàng từ chân ra mép không dưới bấy nhiêu, mỗi hàng không rộng quá bấy nhiêu lần bán kính */
+const WIDE_ROWS = 6;
+const WIDE_ROW = 0.06;
+
 /**
  * Mũ dựng khối, hệ sọ đơn vị: tam giác từng phần quay mặt ra ngoài, nét nếp gấp và đường nối là vòng kín. `tris` là
- * thân (màu `pieces.crown.color`); `band`, `brim`, `strap`, `badge` là phần của `peaked`, màu `bandColor` … `badgeColor`;
- * `seat` là đế huy hiệu, màu băng. Dáng khác để trống
+ * thân (màu `pieces.crown.color`); `band`, `brim`, `strap`, `badge` là phần của `peaked` (`band`, `brim` cả của `brimmed`),
+ * màu `bandColor` … `badgeColor`; `seat` là đế huy hiệu, màu băng. `weave` / `brimWeave` là các vòng thân / vành xen
+ * kẽ của vân rơm (`straw`), màu thân / vành tối đi `straw`. Dáng khác để trống
  */
 export interface HatMesh {
   tris: Vec3[][];
@@ -151,6 +180,8 @@ export interface HatMesh {
   strap: Vec3[][];
   badge: Vec3[][];
   seat: Vec3[][];
+  weave: Vec3[][];
+  brimWeave: Vec3[][];
 }
 
 /** Đẩy tam giác `t` vào `list`, lật chiều cho pháp tuyến quay xa điểm `ref` */
@@ -173,7 +204,8 @@ export function hatMesh(raw: Partial<Hat> | undefined, fit: HatFit): HatMesh {
   const peaked = h.shape === "peaked";
   const round = Math.max(0, Math.min(h.round, height * 0.5, a * 0.5, b * 0.5));
   const wall = height - round;
-  const band = peaked ? Math.max(0, Math.min(h.band, wall * 0.8)) : 0;
+  const band = h.shape !== "drum" ? Math.max(0, Math.min(h.band, wall * 0.8)) : 0;
+  const woven = h.straw > 0;
   /** Bán kính thân ở độ cao `up` chia bán kính miệng */
   const widen = (up: number) => {
     if (!peaked) return up < wall ? 1 + h.flare * (1 - up / wall) ** 2 : 1;
@@ -205,9 +237,10 @@ export function hatMesh(raw: Partial<Hat> | undefined, fit: HatFit): HatMesh {
   const top = add(base, [n, height]);
   const tris: Vec3[][] = [];
   const bandTris: Vec3[][] = [];
+  const weave: Vec3[][] = [];
   for (let j = 0; j + 1 < rings.length; j++) {
     const ref = add(base, [n, Math.min(ringUp[j], wall)]);
-    const list = ringUp[j + 1] <= band ? bandTris : tris;
+    const list = ringUp[j + 1] <= band ? bandTris : woven && j % 2 ? weave : tris;
     for (let i = 0; i < HAT_RING; i++) {
       const i1 = (i + 1) % HAT_RING;
       quad(list, rings[j][i], rings[j][i1], rings[j + 1][i1], rings[j + 1][i], ref);
@@ -220,9 +253,23 @@ export function hatMesh(raw: Partial<Hat> | undefined, fit: HatFit): HatMesh {
   const lines = h.folds
     .filter((f) => f > 0 && f < 1)
     .map((f) => closed(ring(band + (wall - band) * f, -FOLD_LIFT)));
-  const out: HatMesh = { tris, lines, band: bandTris, brim: [], strap: [], badge: [], seat: [] };
-  if (!peaked) return out;
+  const out: HatMesh = {
+    tris,
+    lines,
+    band: bandTris,
+    brim: [],
+    strap: [],
+    badge: [],
+    seat: [],
+    weave,
+    brimWeave: [],
+  };
+  if (h.shape === "drum") return out;
   if (band > 0) lines.push(closed(ring(band, -FOLD_LIFT)));
+  if (!peaked) {
+    if (h.brim > 0) wideBrimMesh(out, fit, h.brim, h.droop, woven, widen(0));
+    return out;
+  }
   if (h.brim > 0) brimMesh(out.brim, fit, h.brim, h.droop);
   if (h.strap > 0) strapMesh(out, fit, band, h.strap);
   if (h.badge > 0) badgeMesh(out, fit, band, Math.min(h.badge, (wall - band) / 2), widen);
@@ -283,6 +330,77 @@ function brimMesh(list: Vec3[][], { n, fwd, base, a, b }: HatFit, brim: number, 
   ])
     for (let j = 0; j < BRIM_ROWS; j++)
       quad(list, top[i][j], top[i][j + 1], bot[i][j + 1], bot[i][j], mid(k, j));
+}
+
+/**
+ * Vành của `brimmed`: tấm dày `BRIM_THICK` vòng kín quanh miệng mũ, mép trong lùi vào thân `BRIM_INSET`, chìa ra `brim`
+ * theo pháp tuyến ống mũ; mỗi điểm cụp xuống dần, góc tăng đều từ `0` ở chân vành tới `droop` ở mép. Hàng lẻ vào
+ * `brimWeave` khi có vân rơm
+ */
+function wideBrimMesh(
+  out: HatMesh,
+  fit: HatFit,
+  brim: number,
+  droop: number,
+  woven: boolean,
+  k: number,
+) {
+  const { n, fwd, base, a, b } = fit;
+  const x: Vec3 = [1, 0, 0];
+  const rows = Math.max(WIDE_ROWS, Math.ceil(brim / WIDE_ROW));
+  const d = (droop * Math.PI) / 180;
+  // mặt cắt dọc của vành: ra ngoài `r`, xuống `dn` sau quãng `brim · j / rows`, góc tăng đều tới `droop`
+  const prof: [r: number, dn: number, ang: number][] = [[0, 0, 0]];
+  const sub = 8;
+  for (let j = 0; j < rows * sub; j++) {
+    const [r, dn] = prof[prof.length - 1].slice(0, 2) as [number, number];
+    const ang = (d * (j + 0.5)) / (rows * sub);
+    prof.push([
+      r + (brim / (rows * sub)) * Math.cos(ang),
+      dn + (brim / (rows * sub)) * Math.sin(ang),
+      (d * (j + 1)) / (rows * sub),
+    ]);
+  }
+  const cols = HAT_RING;
+  const top: Vec3[][] = [];
+  const bot: Vec3[][] = [];
+  for (let i = 0; i <= cols; i++) {
+    const f = (i / cols) * 2 * Math.PI;
+    const out0 = wallNormal(fit, f);
+    const inner = add(
+      base,
+      [x, a * k * (1 - BRIM_INSET) * Math.sin(f)],
+      [fwd, b * k * (1 - BRIM_INSET) * Math.cos(f)],
+    );
+    const lead = BRIM_INSET * Math.hypot(a * Math.sin(f), b * Math.cos(f)) * k;
+    top.push([]);
+    bot.push([]);
+    for (let j = 0; j <= rows; j++) {
+      const [r, dn, ang] = prof[j * sub];
+      const p = add(inner, [out0, r + lead * (j === 0 ? 0 : 1)], [n, -dn]);
+      const up = add([0, 0, 0], [n, Math.cos(ang)], [out0, Math.sin(ang)]);
+      top[i].push(p);
+      bot[i].push(add(p, [up, -BRIM_THICK]));
+    }
+  }
+  const mid = (i: number, j: number) =>
+    add(top[i][j], [bot[i][j], 1], [top[i][j], -0.5], [bot[i][j], -0.5]);
+  for (let i = 0; i < cols; i++) {
+    for (let j = 0; j < rows; j++) {
+      const list = woven && j % 2 ? out.brimWeave : out.brim;
+      quad(list, top[i][j], top[i + 1][j], top[i + 1][j + 1], top[i][j + 1], bot[i][j]);
+      quad(list, bot[i][j], bot[i + 1][j], bot[i + 1][j + 1], bot[i][j + 1], top[i][j]);
+    }
+    quad(
+      out.brim,
+      top[i][rows],
+      top[i + 1][rows],
+      bot[i + 1][rows],
+      bot[i][rows],
+      mid(i, rows - 1),
+    );
+    quad(out.brim, top[i][0], top[i + 1][0], bot[i + 1][0], bot[i][0], mid(i, 1));
+  }
 }
 
 /** Pháp tuyến ngoài của ống elip `a`, `b` ở góc `f` quanh trục mũ */

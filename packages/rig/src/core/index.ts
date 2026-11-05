@@ -1,6 +1,7 @@
 export * from "./anchor";
 export * from "./act3";
 export * from "./action";
+export * from "./bib";
 export * from "./blend";
 export * from "./constants";
 export * from "./face";

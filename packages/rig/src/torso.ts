@@ -11,6 +11,7 @@ import { drapeSolid, shadesSolids } from './core/drape';
 import { necklaceSolids } from './core/jewelry';
 import { wrapParts, type WrapBody } from './core/wrap';
 import { printParts, type PrintPart } from './core/print';
+import { bibCovers } from './core/bib';
 import { clipHalf, panelParts } from './core/panel';
 
 // Thân áo dựng khối từ bảng kiểu và mặt cắt `profile` của lõi: khối, nét và tấm ở 3D.
@@ -297,7 +298,27 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
   };
 
   const out: TorsoMesh = { profile: pts, depth, front, lines: [], fills: [], dots: [], sheets: [], solids: [], prints: [] };
-  for (const m of g.marks === false ? [] : def.marks(surf)) {
+  // nét, chấm, mảng của kiểu dưới yếm bị che: bỏ phần nằm trong yếm
+  const bib = g.bib;
+  const hidden = ([lon, y]: SP) => {
+    if (!bib) return false;
+    const up = -y / rig.height;
+    if (bib.band && up < bib.waist) return true;
+    return Math.abs(lon) < 90 && bibCovers(bib, pxOf([lon, y])[0], up);
+  };
+  const styleMarks = (g.marks === false ? [] : def.marks(surf)).flatMap((m) => {
+    if (!bib) return [m];
+    // mảng của kiểu (áo trong, cà vạt, túi) nằm dưới yếm nổi cao hơn chúng; nét, chấm là ống nổi lên qua yếm nên bỏ
+    if (m.fill) return [m];
+    if (m.dot) return hidden(m.pts[0]) ? [] : [m];
+    const runs: SP[][] = [[]];
+    for (const p of dense(m.pts, !!m.closed)) {
+      if (hidden(p)) runs.push([]);
+      else runs[runs.length - 1].push(p);
+    }
+    return runs.filter((r) => r.length > 1).map((pts) => ({ ...m, pts, closed: false }));
+  });
+  for (const m of styleMarks) {
     if (m.ink !== undefined && m.ink < 1 && !m.fill) {
       out.fills.push({ ...decalOf(m.dot ? disc(m.pts[0], (m.k * rig.stroke) / 2) : ribbon(dense(m.pts), m.k * rig.stroke), FAINT_LIFT), fill: 'line', ink: m.ink });
       continue;
