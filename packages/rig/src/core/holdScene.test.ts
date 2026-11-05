@@ -449,7 +449,8 @@ describe("cổ tay mang món nối từ mẫu trước", () => {
     }
     // giải riêng từng khung: cổ tay lật ±90 → ∓90 trong một khung
     expect(lone).toBeGreaterThan(150);
-    expect(kept).toBeLessThanOrEqual(HOLD_SLEW + 1e-6);
+    // mẫu trước của rig lấy ở `t` làm tròn `toFixed(6)`: lệch ≤ 5e-7 s nhân tốc độ quay cổ tay (~800°/s) ra ~3e-4°
+    expect(kept).toBeLessThanOrEqual(HOLD_SLEW + 1e-3);
   });
 
   it("chuỗi chỉ phụ thuộc scene: khung giải theo thứ tự nào cũng ra cùng số", () => {
