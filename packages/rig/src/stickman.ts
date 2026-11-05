@@ -67,6 +67,8 @@ export interface Figure {
   neckTube?: { geo: THREE.BufferGeometry; rest: Float32Array; from: number; to: number };
   /** Váy dựng khối: `act` gọi `fitSkirt` dựng lại theo đùi khi đùi đổi hướng; `hip` là vạt treo ở nhóm hông */
   skirt?: { opts: Omit<SkirtOptions, 'thighs'>; group: THREE.Group; key: string; hip?: boolean };
+  /** Sàn dưới người ở lần `act` gần nhất: y trong nhóm hông (px, y xuống); tạp dề nằm trên nó */
+  floor?: number;
   /** Vạt áo người ngồi: `act` gọi `fitSkirt` gập lại theo đùi khi đùi đổi hướng trong hệ thân */
   lap?: { refold: (dir: [number, number]) => void; key: string };
   /** Bàn tay của người `clad` */
@@ -861,13 +863,14 @@ function legsIn(p: Figure, frame = new THREE.Matrix4()) {
 /** Vạt treo hông: dựng lại theo nhóm thân và hai chân trong hệ hông */
 function fitHipHem(p: Figure, sk: NonNullable<Figure['skirt']>) {
   const legs = legsIn(p);
-  const key = [...p.spine.matrix.elements.slice(0, 11).map((v) => Math.round(v * 1000)), ...legs.flatMap((l) => [...l.knee, ...l.foot].map((v) => Math.round(v * 2)))].join(',');
+  const floor = sk.opts.skirt.style === 'apron' ? p.floor : undefined;
+  const key = [...p.spine.matrix.elements.slice(0, 11).map((v) => Math.round(v * 1000)), ...legs.flatMap((l) => [...l.knee, ...l.foot].map((v) => Math.round(v * 2))), floor === undefined ? '' : Math.round(floor * 2)].join(',');
   if (key === sk.key) return;
   sk.key = key;
   const parent = sk.group.parent!;
   sk.group.removeFromParent();
   sk.group.traverse((o) => (o as THREE.Mesh).geometry?.dispose());
-  sk.group = sculptHipHem(parent, sk.opts, { spine: p.spine.matrix, legs });
+  sk.group = sculptHipHem(parent, sk.opts, { spine: p.spine.matrix, legs, floor });
   sk.group.traverse(bodyMark);
   sk.group.updateMatrixWorld(true);
 }

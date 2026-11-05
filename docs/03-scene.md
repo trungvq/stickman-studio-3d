@@ -485,7 +485,8 @@ nhìn xuống (`HEAD_LOOK`) ([01](01-rig.md#người-3d)); `yaw` khai là hướ
 thẳng ống kính. Chỗ vẽ người 3D truyền `body3(nhân vật)` làm tham số thứ năm của `sceneAt` (nửa bề
 dày đùi cho người ngồi, nửa khoảng hai gốc chân cho bước theo `path`). Người đang đứng có bóng tròn chiếu
 trên chính mặt sàn; người ngồi khai `floor` (y sàn dưới chân) thì mỗi bàn chân chạm sàn có một bóng
-tròn nhỏ — thiếu nó, bàn chân nằm sau chân ghế trông như hở sàn dù đúng chỗ.
+tròn nhỏ — thiếu nó, bàn chân nằm sau chân ghế trông như hở sàn dù đúng chỗ. Tạp dề dài cũng đọc sàn ấy (người
+đứng lấy sàn ở `at`): chạm sàn thì nằm trên sàn, không xuyên xuống ([12](12-trang-phuc-3d.md#tạp-dề)).
 
 **`resolveScene(scene, actions, heights, bodies, held, hands)`** nhận `heights` (`id` →
 `rig.height`) để người cao thấp khác `1` bước đúng, và `bodies` (`id` → `body3(nhân vật)`)

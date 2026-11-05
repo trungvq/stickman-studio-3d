@@ -71,6 +71,13 @@ export const SKIRT_FALL = 0.5;
 export const HEM_HANG = [35, 70] as const;
 /** Tạp dề nằm cách mặt người và đồ bên dưới bấy nhiêu px */
 export const APRON_LIFT = 5;
+/**
+ * Tạp dề chạm sàn: nằm trên sàn bấy nhiêu px, góc gập từ buông xuống sang nằm sàn bo bán kính bấy nhiêu px, trải trên sàn
+ * tới trước chỗ chạm không quá bấy nhiêu px (phần dài hơn coi như dồn lại, không vẽ)
+ */
+export const APRON_FLOOR = [1, 8, 20] as const;
+/** Tạp dề khi quỳ: đáy gối cách sàn dưới số đầu (px) thì buông đủ dài, quá số sau thì như ngồi ghế (`kneelOn`) */
+export const APRON_KNEEL = [10, 30] as const;
 /** Đầu `side`: mắt cách tâm đầu bấy nhiêu lần nửa trục ngang, về phía `+x` */
 export const SIDE_EYE = 0.74;
 /** Đầu `side`: hình tròn của mắt bóp ngang còn bấy nhiêu, thành oval đứng */

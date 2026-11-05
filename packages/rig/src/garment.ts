@@ -5,8 +5,8 @@ import { hullMaterial, npr, surface } from './npr';
 import { canvasTexture } from './decal';
 import { path2D } from './canvas';
 import { WAKABA, type PrintArt, type PrintPart } from './core/print';
-import { APRON_LIFT, D, RIG, SKIRT_EASE, TORSO_DEPTH } from './core/constants';
-import { apronBow, apronOf, drape, drapeAt, hemHang, hemReach, sectionFront, wrapHemEdge, wrapHemOf } from './core/hem';
+import { APRON_FLOOR, APRON_LIFT, D, RIG, SKIRT_EASE, TORSO_DEPTH } from './core/constants';
+import { apronBow, apronOf, drape, drapeAt, drapeFloor, drapeLength, hemHang, hemReach, kneelOn, sectionFront, wrapHemEdge, wrapHemOf } from './core/hem';
 import type { Garment, Skirt } from './core/schema';
 import { profileAt, skirtCover, skirtFall, skirtSpread, skirtTube } from './core/skirtShape';
 import { lapFold, type Lap, type MarkFill } from './core/torso';
@@ -467,8 +467,8 @@ export const APRON_GRID = [15, 28] as const;
 
 /** Chân trong hệ hông (px, y xuống): khớp hông, gối, cổ chân */
 export interface HemLeg { hip: Vec3; knee: Vec3; foot: Vec3 }
-/** Dáng của người mà vạt treo hông bám: `spine` là ma trận nhóm thân trong nhóm hông (three), `legs` hai chân */
-export interface HemPose { spine: THREE.Matrix4; legs: HemLeg[] }
+/** Dáng của người mà vạt treo hông bám: `spine` là ma trận nhóm thân trong nhóm hông (three), `legs` hai chân, `floor` y của sàn (px, có thì tạp dề nằm trên sàn) */
+export interface HemPose { spine: THREE.Matrix4; legs: HemLeg[]; floor?: number }
 
 const sub3 = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const len3 = (a: Vec3) => Math.hypot(a[0], a[1], a[2]);
@@ -581,7 +581,7 @@ function lapRings(leg: HemLeg, cover: number, [ra, rb]: readonly [number, number
  * ống chân tới tầm vạt phủ (`hemReach`); `wrap` bỏ phần khối hông, ống chân cao hơn cạp mà còn trong thân áo. `lift` nở mọi
  * khối thêm bấy nhiêu px. Trả cả cạp (hệ thân) và hàm đổi hệ thân → hệ hông
  */
-function hipHull(o: Omit<SkirtOptions, 'thighs'>, pose: HemPose, lift: number) {
+function hipHull(o: Omit<SkirtOptions, 'thighs'>, pose: HemPose, lift: number, kneel = 0) {
   const { skirt: g, rig, body, legW } = o;
   const h = rig.height, inset = rig.stroke / 2;
   const yW = -g.rise * h;
@@ -626,7 +626,10 @@ function hipHull(o: Omit<SkirtOptions, 'thighs'>, pose: HemPose, lift: number) {
     const [cT, cS] = hemReach(g, h, angle, lt, ls);
     hang += hemHang(angle) / pose.legs.length;
     const [thigh, shin] = legCurves(leg, o.curve ?? 1);
-    const e1 = tube(thigh, Math.min(1, cT / (len3(td) || 1)), r0, r1);
+    // quỳ (`kneelOn`): vạt buông qua gối xuống sàn, khối trùm dần hết đùi và đầu gối tròn
+    const lT = len3(td) || 1, cK = cT + (lT - cT) * kneel;
+    const e1 = tube(thigh, Math.min(1, cK / lT), r0, r1);
+    if (kneel > 0) pts.push(...ringAround(add3(hip, td, (cK + (r1 + 1) * kneel) / lT), td, (0.55 * r1 + ease) * kneel, 16));
     if (cS <= 0.5) {
       // vạt dừng ở gối: trùm cả đầu gối tròn
       if (cT >= len3(td) - 0.5) pts.push(...ringAround(add3(knee, td, (r1 + 1) / (len3(td) || 1)), td, 0.55 * r1 + ease, 16));
@@ -688,21 +691,29 @@ export function sculptHipHem(hips: THREE.Object3D, o: Omit<SkirtOptions, 'thighs
   const lineR = (k: number) => (k * rig.stroke * U) / 2;
   if (g.style === 'apron') {
     const lift = APRON_LIFT;
-    const hh = hipHull(o, pose, lift);
+    // quỳ thì vải buông qua gối xuống sàn như lúc đứng
+    const kneel = pose.floor === undefined ? 0 : kneelOn(pose.legs, pose.floor, (o.legR ?? [o.legW / 2, o.legW / 2])[1]);
+    const hh = hipHull(o, pose, lift, kneel);
     const { tris } = hullOf(hh.pts);
     const a = apronOf(g);
     const wa = hh.aW + lift, da = hh.dW + lift;
     const W = Math.min(a.width, 0.97 * wa);
     const L = g.length * rig.height;
     const [NC, NR] = APRON_GRID;
+    const [floorLift, bend, run] = APRON_FLOOR;
+    const hang = Math.max(hh.hang, kneel);
+    // hướng lên của thân trong mặt cắt dọc `[tiến, y xuống]`
+    const sp = new THREE.Vector3(0, 1, 0).transformDirection(pose.spine), sl = Math.hypot(sp.z, sp.y) || 1;
+    const up: [number, number] = [sp.z / sl, -sp.y / sl];
     const grid: Vec3[][] = [];
     for (let i = 0; i < NC; i++) {
       const x = -W + (2 * W * i) / (NC - 1);
       const top = hh.toHip([x, hh.yW, da * Math.sqrt(Math.max(0, 1 - (x / wa) ** 2))]);
-      const path = drape([top[2], top[1]], sliceX(tris, top[0]));
-      // phần rủ tự do dưới chỗ vải rời người chỉ có khi chân buông: ngồi, quỳ thì tấm dừng ở gối
-      const lay = path.reduce((s, p, k) => (k ? s + Math.hypot(p[0] - path[k - 1][0], p[1] - path[k - 1][1]) : 0), 0);
-      const Lc = Math.min(L, lay + Math.max(0, L - lay) * hh.hang);
+      const lie = drape([top[2], top[1]], sliceX(tris, top[0]), up);
+      // phần rủ tự do dưới chỗ vải rời người chỉ có khi chân buông: ngồi thì tấm dừng ở gối
+      const lay = drapeLength(lie);
+      const path = pose.floor === undefined ? lie : drapeFloor(lie, pose.floor - floorLift, bend, run);
+      const Lc = Math.min(L, lay + Math.max(0, L - lay) * hang, pose.floor === undefined ? Infinity : drapeLength(path));
       grid.push(Array.from({ length: NR }, (_, j) => {
         const [z, y] = drapeAt(path, (Lc * j) / (NR - 1));
         return [top[0], y, z] as Vec3;
@@ -711,7 +722,8 @@ export function sculptHipHem(hips: THREE.Object3D, o: Omit<SkirtOptions, 'thighs
     const sm = new THREE.Mesh(sheetGeometry(grid), npr({ color, stipple: 0.04, soft: 1, doubleSided: true }));
     sm.castShadow = true;
     group.add(sm);
-    for (const line of [grid[0], grid[NC - 1], grid.map((c) => c[NR - 1])]) group.add(tubeMesh(line, lineR(1), inkMat));
+    // một nét liền mép trái, gấu, mép phải: góc gấu không hở khi tấm nằm trên sàn
+    group.add(tubeMesh([...grid[0], ...grid.slice(1).map((c) => c[NR - 1]), ...grid[NC - 1].slice(0, -1).reverse()], lineR(1), inkMat));
     return group;
   }
   const hh = hipHull(o, pose, 0);

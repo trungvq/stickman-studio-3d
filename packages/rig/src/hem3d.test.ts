@@ -1,9 +1,11 @@
 import * as THREE from 'three';
+import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, type Acting } from './act';
 import { APRON_GRID } from './garment';
 import { cladHand, roots3 } from './core/act3';
-import { RIG } from './core/constants';
+import { APRON_FLOOR, RIG } from './core/constants';
 import { defaultCharacter, GarmentSchema, limbWidths, SkirtSchema, type CharacterData, type Skirt } from './core/schema';
 import type { Figure } from './stickman';
 
@@ -34,6 +36,7 @@ const KIMONO: Partial<Skirt> = { style: 'wrap', length: 192, flare: -4, pleats: 
 const CALF: Partial<Skirt> = { style: 'wrap', length: 150, flare: 0, pleats: 0 };
 const APRON: Partial<Skirt> = { style: 'apron', length: 100 };
 const LONG_APRON: Partial<Skirt> = { style: 'apron', length: 140 };
+const LOW_APRON: Partial<Skirt> = { style: 'apron', rise: 18, length: 140 };
 
 function dressed(skirt: Partial<Skirt>, clad = true): CharacterData {
   const c = defaultCharacter();
@@ -238,14 +241,96 @@ describe('tạp dề', () => {
     expect(Math.max(...cols.flat().map((v) => v.z))).toBeGreaterThan(knee.z);
   });
 
+  /** Quỳ trên sàn `y = 0`: hông cao bằng gối cộng `10` px, gối chạm sàn */
+  const kneeling = (legs: number[], torso: number): Acting => {
+    const sp = pose(legs, legs, torso, true);
+    return { ...sp, world: { ...sp.world!, hip: [0, -(RIG.thigh * Math.cos(legs[0] * Math.PI / 180) + 10), 0], floor: 0 } };
+  };
+  /** Khối lồi của đoạn đùi, ống chân (thế giới) */
+  const legHulls = (p: Figure) => {
+    const out: THREE.Mesh[] = [];
+    for (const s of [-1, 1] as const)
+      for (const j of [p.legs[s].hip, p.legs[s].knee]) {
+        const m = j.children.find((o) => o.userData.limb) as THREE.Mesh;
+        m.userData.bend?.();
+        const pos = m.geometry.attributes.position;
+        const pts = Array.from({ length: pos.count }, (_, i) => m.localToWorld(new THREE.Vector3().fromBufferAttribute(pos, i)));
+        out.push(new THREE.Mesh(mergeVertices(new ConvexGeometry(pts))));
+      }
+    return out;
+  };
+  const KNEELS = { 'quỳ thẳng': kneeling([8, -108], 6), 'chống tay': kneeling([60, -160], 56), '正座': kneeling([80, -170], 3) };
+
+  it('quỳ: tấm qua gối xuống sàn, nằm trên sàn trước gối, không dưới sàn, không trong chân', async () => {
+    const [, bend, run] = APRON_FLOOR;
+    for (const [name, sp] of Object.entries(KNEELS))
+      for (const sk of [LONG_APRON, LOW_APRON]) {
+      const p = await posed(dressed(sk), sp);
+      const floor = toHips(p, new THREE.Vector3(0, 0, 0)).y;
+      const knee = toHips(p, p.legs[-1].knee.getWorldPosition(new THREE.Vector3()));
+      const { cols } = panel(p);
+      const all = cols.flat();
+      for (const v of all) expect(v.y, name).toBeLessThan(floor - 0.5);
+      const lying = all.filter((v) => v.y > floor - 2);
+      expect(lying.length, name).toBeGreaterThan(APRON_GRID[0] * 2);
+      for (const v of lying) expect(v.z, name).toBeGreaterThan(knee.z);
+      const zs = lying.map((v) => v.z);
+      expect(Math.max(...zs) - Math.min(...zs), name).toBeLessThan(run + bend);
+      // trừ mấy hàng đầu ở cạp (thân chống tay gập sát đùi: cạp lọt trong đùi)
+      const hulls = legHulls(p);
+      const bad = cols.flatMap((c) => c.slice(4)).filter((v) => hulls.some((h) => inside(h, p.hips.localToWorld(v.clone().multiply(new THREE.Vector3(0.01, -0.01, 0.01))))));
+      expect(bad.length, `${name} ${bad.slice(0, 5).map((v) => v.toArray().map(Math.round))}`).toBe(0);
+      }
+  });
+
+  it('quỳ, tấm ngắn: gối không lòi qua tấm, tấm không xuống dưới sàn', async () => {
+    for (const [name, sp] of Object.entries(KNEELS)) {
+      const p = await posed(dressed(APRON), sp);
+      const floor = toHips(p, new THREE.Vector3(0, 0, 0)).y;
+      const { cols } = panel(p);
+      for (const v of cols.flat()) expect(v.y, name).toBeLessThan(floor - 0.5);
+      const hulls = legHulls(p);
+      const bad = cols.flatMap((c) => c.slice(4)).filter((v) => hulls.some((h) => inside(h, p.hips.localToWorld(v.clone().multiply(new THREE.Vector3(0.01, -0.01, 0.01))))));
+      expect(bad.length, `${name} ${bad.slice(0, 5).map((v) => v.toArray().map(Math.round))}`).toBe(0);
+    }
+  });
+
+  it('chống tay quỳ: tấm nằm trên mặt đùi, không xa quá vạt nở', async () => {
+    const p = await posed(dressed(LOW_APRON), KNEELS['chống tay']);
+    const { cols } = panel(p);
+    const hip = toHips(p, p.legs[-1].hip.getWorldPosition(new THREE.Vector3()));
+    const knee = toHips(p, p.legs[-1].knee.getWorldPosition(new THREE.Vector3()));
+    const col = cols.reduce((a, c) => (Math.abs(c[0].x - hip.x) < Math.abs(a[0].x - hip.x) ? c : a));
+    const d = knee.clone().sub(hip).normalize();
+    const mid = hip.clone().lerp(knee, 0.6);
+    // điểm tấm ngay trên giữa đùi: cách trục đùi chừng bán kính đùi cộng vạt nở
+    const near = col.reduce((a, v) => (Math.abs(v.clone().sub(mid).dot(d)) < Math.abs(a.clone().sub(mid).dot(d)) ? v : a));
+    const off = near.clone().sub(mid).projectOnPlane(d);
+    expect(off.y).toBeLessThan(0);
+    expect(off.length()).toBeLessThan(30);
+  });
+
+  it('đứng, đi, cúi chào: có sàn hay không tấm vẫn như nhau', async () => {
+    for (const sp of [STAND, ...STRIDES, pose([0, 0], [0, 0], 45)]) {
+      const p = await posed(dressed(LONG_APRON), { ...sp, world: { ...sp.world!, floor: 0 } });
+      const a = (p.skirt!.group.children[0] as THREE.Mesh).geometry.attributes.position.array.slice();
+      const { fitSkirt } = await import('./stickman');
+      p.floor = undefined;
+      p.skirt!.key = '';
+      fitSkirt(p);
+      const b = (p.skirt!.group.children[0] as THREE.Mesh).geometry.attributes.position.array;
+      expect(Math.max(...a.map((v, i) => Math.abs(v - b[i])))).toBeLessThan(1e-6);
+    }
+  });
+
   it('mặc ngoài quần: khối hông màu quần, không có khối vạt kín vòng', async () => {
     const c = dressed(APRON);
     c.palette.trouser = '#123456';
     const p = await posed(c, STAND);
-    // một tấm và ba nét mép, không khối kín
+    // một tấm và một nét liền mép trái, gấu, mép phải; không khối kín
     const [sheet, ...rims] = p.skirt!.group.children as THREE.Mesh[];
     expect(sheet.geometry.attributes.position.count).toBe(APRON_GRID[0] * APRON_GRID[1]);
-    expect(rims.length).toBe(3);
+    expect(rims.length).toBe(1);
     const pelvis = p.spine.children.find((o) => o.userData.pelvis)!;
     const mat = (pelvis.children[0] as THREE.Mesh).material as THREE.ShaderMaterial;
     expect(`#${mat.uniforms.uColor.value.getHexString()}`).toBe('#123456');

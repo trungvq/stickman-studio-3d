@@ -4,8 +4,11 @@ import {
   D,
   drape,
   drapeAt,
+  drapeFloor,
+  drapeLength,
   hemHang,
   hemReach,
+  kneelOn,
   matchWrap,
   RIG,
   roots3,
@@ -92,6 +95,74 @@ describe("vạt treo hông", () => {
     const [z, y] = drapeAt(path, 1000);
     expect(z).toBe(92);
     expect(y).toBeGreaterThan(0);
+  });
+
+  it("thân ngả trước, cạp kẹt giữa bụng và đùi: vải theo mặt bụng ra khỏi mặt cắt, không đi thẳng lên", () => {
+    // đùi chéo xuống trước, cạp ở `[30, 10]` nằm trong mặt cắt
+    const thigh: [number, number][] = [
+      [-10, -20],
+      [10, -22],
+      [80, 15],
+      [85, 40],
+      [70, 50],
+      [0, 20],
+    ];
+    const top: [number, number] = [30, 10];
+    const up: [number, number] = [Math.sin(0.9), -Math.cos(0.9)];
+    const path = drape(top, thigh, up);
+    expect(path[0]).toEqual(top);
+    // đi theo `up` tới mép mặt cắt, rồi xuống theo mặt trên đùi tới gối
+    const [z1, y1] = path[1];
+    expect((z1 - top[0]) * up[1] - (y1 - top[1]) * up[0]).toBeCloseTo(0, 6);
+    expect(y1).toBeLessThan(top[1]);
+    expect(z1).toBeGreaterThan(top[0]);
+    expect(path[path.length - 1][0]).toBe(85);
+    // thân đứng thẳng: như không có `up`
+    expect(drape(top, thigh, [0, -1])).toEqual(drape(top, thigh));
+    // cạp ở ngoài mặt cắt: `up` ngả trước không đổi gì
+    const out: [number, number] = [40, -40];
+    expect(drape(out, thigh, up)).toEqual(drape(out, thigh));
+  });
+
+  it("vải chạm sàn: cắt ở sàn, nằm trên sàn tiến ra trước có hạn, góc gập bo", () => {
+    const path: [number, number][] = [
+      [24, -27],
+      [80, -14],
+      [92, 0],
+    ];
+    // buông thẳng từ đỉnh cuối xuống sàn ở 40
+    const f = drapeFloor(path, 40, 8, 20);
+    expect(f.slice(0, 3)).toEqual(path);
+    for (const [, y] of f) expect(y).toBeLessThanOrEqual(40);
+    expect(f[f.length - 1][0]).toBeCloseTo(112, 9);
+    expect(f[f.length - 1][1]).toBeCloseTo(40, 9);
+    expect(drapeLength(f)).toBeLessThan(drapeLength(path) + 40 + 20);
+    expect(drapeLength(f)).toBeGreaterThan(drapeLength(path) + 40 + 20 - 4);
+    // vải dài hơn thì dừng ở mút, không rủ xuống dưới sàn
+    const [z, y] = drapeAt(f, drapeLength(f));
+    expect(z).toBeCloseTo(112, 6);
+    expect(y).toBeCloseTo(40, 6);
+    // đường vải cắt sàn: dừng ở chỗ cắt rồi nằm sàn
+    const cut = drapeFloor(path, -7, 8, 20);
+    expect(cut[cut.length - 1]).toEqual([106, -7]);
+    expect(Math.max(...cut.map((p) => p[1]))).toBeLessThanOrEqual(-7 + 1e-9);
+  });
+
+  it("quỳ: gối sát sàn và ống chân chĩa ra sau; đứng, ngồi ghế, duỗi chân trên sàn thì không", () => {
+    const leg = (knee: [number, number, number], foot: [number, number, number]) => ({
+      knee,
+      foot,
+    });
+    // sàn ở 90, bán kính gối 8
+    expect(kneelOn([leg([0, 82, 10], [0, 70, -88])], 90, 8)).toBe(1);
+    expect(kneelOn([leg([0, 80, 0], [0, 170, 0])], 180, 8)).toBe(0);
+    expect(kneelOn([leg([0, 0, 78], [0, 80, 78])], 120, 8)).toBe(0);
+    expect(kneelOn([leg([0, 82, 78], [0, 82, 170])], 90, 8)).toBe(0);
+    // gối nhấc dần khỏi sàn: giảm dần về 0
+    const k = [5, 15, 22, 30].map((d) => kneelOn([leg([0, 82 - d, 10], [0, 70 - d, -88])], 90, 8));
+    expect(k[0]).toBe(1);
+    for (let i = 1; i < k.length; i++) expect(k[i]).toBeLessThan(k[i - 1]);
+    expect(k[3]).toBe(0);
   });
 
   it("tạp dề không làm tay choãi, vạt dài thì có", () => {
