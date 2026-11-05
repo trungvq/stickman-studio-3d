@@ -103,13 +103,18 @@ const sceneA = (): Raw => ({
   items: [bang(2.5), bang("@doi", [36, -10, 6]), bang(4.2, [30, 0, 0])],
 });
 
-/** Cảnh: hai tay cầm bảng theo mốc món (tay trái khai riêng từ giây 1); `face` của mốc món, `offset` đổi được */
+/**
+ * Cảnh: hai tay cầm bảng theo mốc món (tay trái khai riêng từ giây 1); `face` của mốc món, `offset` đổi được. Cạnh tấm
+ * gọi theo khung món nhìn từ mặt `front`, nên bảng quay mặt về người cầm thì cầm thuận là tay phải `right`, tay trái `left`;
+ * `edges` ngược lại là hai tay bắt chéo
+ */
 const sceneB = (
   face = "holderFace",
   offsets = [
     [35, -5, 0],
     [30, -5, -5],
   ],
+  [er, el] = ["right", "left"],
 ): Raw => ({
   duration: 3,
   lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
@@ -121,11 +126,11 @@ const sceneB = (
         at: [250, 0, 506],
         yaw: 270,
         hands: [
-          { t: 0, right: { hold: { item: "bang-gia", group: "sheet", edge: "left" } } },
+          { t: 0, right: { hold: { item: "bang-gia", group: "sheet", edge: er } } },
           {
             t: 1,
-            right: { hold: { item: "bang-gia", group: "sheet", edge: "left" } },
-            left: { hold: { item: "bang-gia", group: "sheet", edge: "right" } },
+            right: { hold: { item: "bang-gia", group: "sheet", edge: er } },
+            left: { hold: { item: "bang-gia", group: "sheet", edge: el } },
           },
           { t: 2.5, right: { hold: null }, left: { hold: null } },
         ],
@@ -520,7 +525,7 @@ describe("hai tay trên mốc món → đồ theo tay", () => {
     expect(hands.map((k) => k.t)).toEqual([0, 1, 2, 2.5]);
     expect((hands[0].right as { hold: object }).hold).not.toHaveProperty("both");
     for (const k of hands.slice(1, 3))
-      expect((k.right as { hold: { both: object } }).hold.both).toMatchObject({ edge: "right" });
+      expect((k.right as { hold: { both: object } }).hold.both).toMatchObject({ edge: "left" });
     expect(hands[1]).not.toHaveProperty("left");
     expect(hands[3]).toEqual(keysOf(raw)[2]);
     expect(next).not.toHaveProperty("items");
@@ -528,23 +533,36 @@ describe("hai tay trên mốc món → đồ theo tay", () => {
     expect(runs.left.map((x) => [x.since, x.lead, x.mode])).toEqual([[1, "right", "hand"]]);
   });
 
-  it("món ở mốc giữ chỗ trong 0,5 đơn vị rig và 1°", () => {
+  it("cầm thuận: cổ tay hai tay trong giới hạn, không báo kẹp; món ở mốc giữ chỗ trong 0,5 đơn vị rig và 1°", () => {
+    for (const x of r.rows) expect(Object.values(x.clamped.before).flat()).toEqual([]);
+    expect(r.notes.join(" ")).not.toMatch(/cổ tay kẹp/);
     expect(r.max.item.pos).toBeLessThan(0.5);
     expect(r.max.item.angle).toBeLessThan(1);
   });
 
-  it("cổ tay tay dẫn kẹp khi còn hai tay: độ lệch báo đúng món như vẽ", { timeout: 30_000 }, () => {
-    const b = sceneB("camera", [
-      [35, -10, 0],
-      [35, -10, 0],
-    ]);
-    const rb = build(b);
-    const k = holdToHandLed(rb, b, { id: "nguoi", side: "right", at: 0, rebuild: build });
-    const rb2 = build(applyJsonPatch(b, k.ops));
-    const row = k.rows[0];
-    expect(row.clamped.before.right!.length).toBeGreaterThan(0);
-    const a = drawnBoard(rb, 0, true);
-    const c = drawnBoard(rb2, 0, false);
-    expect(Math.abs(row.item!.pos - Math.hypot(...sub3(a.P, c.P)))).toBeLessThan(1e-6);
-  });
+  it(
+    "cổ tay tay dẫn kẹp khi còn hai tay: độ lệch báo đúng món như vẽ, báo kẹp",
+    { timeout: 30_000 },
+    () => {
+      // hai tay bắt chéo, bảng quay về máy: cổ tay phải vượt giới hạn
+      const b = sceneB(
+        "camera",
+        [
+          [35, -10, 0],
+          [35, -10, 0],
+        ],
+        ["left", "right"],
+      );
+      const rb = build(b);
+      const k = holdToHandLed(rb, b, { id: "nguoi", side: "right", at: 0, rebuild: build });
+      const rb2 = build(applyJsonPatch(b, k.ops));
+      const row = k.rows[0];
+      expect(row.clamped.before.right!.length).toBeGreaterThan(0);
+      const a = drawnBoard(rb, 0, true);
+      const c = drawnBoard(rb2, 0, false);
+      expect(Math.abs(row.item!.pos - Math.hypot(...sub3(a.P, c.P)))).toBeLessThan(1e-6);
+      expect(k.notes.join(" ")).toMatch(/cổ tay kẹp ở giới hạn trước phép đổi: tay phải \(`turn`/);
+      expect(k.notes.join(" ")).toMatch(/sau phép đổi món theo bàn tay đã kẹp nên dời/);
+    },
+  );
 });

@@ -1090,6 +1090,26 @@ function convert(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode): 
     out.push(compare(rt2, t));
   }
 
+  const tight = rows.filter(
+    (x) => !x.blending && Object.values(x.clamped.before).some((c) => c?.length),
+  );
+  if (tight.length) {
+    const hands = ([lead, otherSide(lead)] as const).flatMap((s) => {
+      const at = tight.filter((x) => x.clamped.before[s]?.length);
+      if (!at.length) return [];
+      const kinds = [...new Set(at.flatMap((x) => x.clamped.before[s]!))];
+      const span = at.length > 1 ? `${r3(at[0].t)}–${r3(at.at(-1)!.t)}s` : `${r3(at[0].t)}s`;
+      return [`tay ${viSide(s)} (${kinds.map((k) => `\`${k}\``).join(", ")}) ở ${span}`];
+    });
+    const worst = tight.reduce((a, x) => ((x.item?.pos ?? 0) > (a.item?.pos ?? 0) ? x : a));
+    ctx.notes.push(
+      `cổ tay kẹp ở giới hạn trước phép đổi: ${hands.join(", ")}; bàn tay không tới chỗ cầm, ${
+        to === "hand" && run.mode === "both"
+          ? `món đang vẽ ở mốc món nên lệch bị che, sau phép đổi món theo bàn tay đã kẹp nên dời (${r2(worst.item?.pos ?? 0)} đơn vị rig, ${r2(worst.item?.angle ?? 0)}° ở ${r3(worst.t)}s)`
+          : "món đang theo bàn tay đã kẹp"
+      }: sửa chỗ cầm hay hướng món cho cổ tay trong giới hạn`,
+    );
+  }
   if (lock.size)
     ctx.notes.push(
       `khuỷu tay ${viSide(lead)} khoá (\`elbowLock\`) vào hướng đang vẽ ở ${[...lock]

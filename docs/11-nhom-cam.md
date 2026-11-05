@@ -1476,7 +1476,10 @@ vá và độ lệch, không ghi gì.
   cách nào. Ngón chúc dọc hộp của `palmBox` (`BOX_RISE`) theo `e` mà cảnh không khai được, nên với `palmBox` cách này chỉ gần
   đúng.
 - **Đồ theo tay: món giữ chỗ.** Sau phép đổi, đích tay dẫn dời theo chỗ món đo được (`HOLD_MODE_FIX` = 2 lượt, giữ lượt nào món
-  ở mốc gần hơn): khung cầm hai chế độ khác nhau thì bàn tay dời, món đứng yên.
+  ở mốc gần hơn): khung cầm hai chế độ khác nhau thì bàn tay dời, món đứng yên. Cổ tay đã kẹp ở giới hạn trước phép đổi
+  (`clamped.before` của hàng không hoà, ví dụ hai tay bắt chéo trên tấm) thì bàn tay không tới chỗ cầm: hai tay trên mốc món
+  vẽ món ở mốc nên lệch bị che, sau phép đổi món theo bàn tay đã kẹp nên dời; `notes` báo tay, khớp kẹp, quãng giây và lệch
+  lớn nhất.
 - **Đổi giữa chừng** (`from`): chèn mốc ở `from` (hay dùng mốc có sẵn ở giây ấy) mang `hold` của lần cầm cộng `regrip: true`,
   rồi chỉ đổi phần sau. Tay kia đang cầm qua giây ấy: sang tay theo đồ thì nó cũng `regrip` ở đó, sang đồ theo tay thì nó
   `hold: null` ở đó.
