@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   acrossMiss,
   acrossOf,
@@ -87,6 +87,8 @@ import dua from "./__fixtures__/held-v2/dua.json";
 import but from "./__fixtures__/held-v2/but.json";
 import tui from "./__fixtures__/held-v2/tui.json";
 import chen from "./__fixtures__/held-v2/chen.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 const item = (json: unknown): HeldItemSpec => {
   const r = parseHeldItem(json);

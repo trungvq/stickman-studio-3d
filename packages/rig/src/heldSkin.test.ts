@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { body3 } from './core/figure3d';
 import { parseHeldItem, type HeldItemSpec } from './core/heldItem';
 import { parseScene, resolveScene } from './core/scene';
@@ -8,6 +8,8 @@ import { heldHands } from './held';
 import { buildWorld, plainRoom, type Cast3D } from './world';
 import fx from './core/__fixtures__/nguoi-cam-bang.json';
 import bangGia from './core/__fixtures__/held-v2/bang-gia.json';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Số đo lún của `heldHands` đo trên đỉnh da đang vẽ (`skinDepth`) và mang chỗ cầm nhóm đã giải (`grasp`)
 

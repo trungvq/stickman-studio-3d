@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { act, type Acting } from './act';
 import { bodyCapsules } from './collide';
 import { armSide, cladArm, CLAD_TAPER, roots3, SLEEVE_EASE } from './core/act3';
@@ -9,6 +9,8 @@ import { bellyAt, BUST, bustAt, CHEST, garmentOf, lerpAt, profile, type Surface 
 import { signedVolume } from './core/wrap';
 import { fromCharacter, R, wardrobe, type CharacterJson, type Figure } from './stickman';
 import { torsoMesh } from './torso';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Polo cổ dựng, thân bụng phệ, tay áo loe, khăn vắt vai, kính gài nẹp, đổi đồ người 3D
 

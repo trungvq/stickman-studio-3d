@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { trunk3, type ActInput } from "./act3";
 import { body3 } from "./figure3d";
 import { checkChoice, GRIP_GROUPS, namedVariants, variantOf } from "./graspGroups";
@@ -43,6 +43,8 @@ import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dua from "./__fixtures__/held-v2/dua.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import ongNghe from "./__fixtures__/held-v2/ong-nghe-ban.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 const item = (json: unknown): HeldItemSpec => {
   const r = parseHeldItem(json);

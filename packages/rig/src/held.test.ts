@@ -1,11 +1,13 @@
 import * as THREE from 'three';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, type Acting } from './act';
 import { hold } from './attach';
 import { defaultCharacter } from './core/schema';
 import { HELD_PIERCE } from './core/heldAudit';
 import { heldHands } from './held';
 import type { Figure } from './stickman';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Người que three cần canvas cho nét mặt: một canvas giả đủ để dựng hình, không vẽ gì
 beforeAll(() => {

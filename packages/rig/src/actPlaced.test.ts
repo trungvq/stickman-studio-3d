@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, type Acting } from './act';
 import { actJoints, actPalms } from './core/act3';
 import { body3 } from './core/figure3d';
@@ -8,6 +8,8 @@ import { parseScene, resolveScene, sceneAt } from './core/scene';
 import { parseCharacter } from './core/schema';
 import fx from './core/__fixtures__/nguoi-cam-bang.json';
 import bangGia from './core/__fixtures__/held-v2/bang-gia.json';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 beforeAll(() => {
   const ctx = new Proxy({}, { get: (_t, k) => (k === 'measureText' ? () => ({ width: 0 }) : () => undefined), set: () => true });

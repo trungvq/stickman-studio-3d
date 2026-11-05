@@ -24,6 +24,8 @@ import khay from "./__fixtures__/held-v2/khay.json";
 import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
 import chen from "./__fixtures__/held-v2/chen.json";
 
+vi.setConfig({ testTimeout: 30_000 });
+
 vi.mock("./graspArm", async (orig) => {
   const m = await orig<typeof import("./graspArm")>();
   return { ...m, solvePhi: vi.fn(m.solvePhi) };

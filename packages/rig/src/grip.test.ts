@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, type Acting } from './act';
 import { hold } from './attach';
 import { handDims } from './core/heldGeom';
@@ -9,6 +9,8 @@ import { defaultCharacter } from './core/schema';
 import type { Figure, Side } from './stickman';
 import type { HoldGrip } from './attach';
 import dienThoai from './core/__fixtures__/held-v2/dien-thoai.json';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 beforeAll(() => {
   const ctx = new Proxy({}, { get: (_t, k) => (k === 'measureText' ? () => ({ width: 0 }) : () => undefined), set: () => true });

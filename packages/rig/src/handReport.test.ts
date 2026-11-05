@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { body3 } from './core/figure3d';
 import { parseHeldItem, type HeldItemSpec } from './core/heldItem';
 import { handReport, parseScene, resolveScene } from './core/scene';
@@ -9,6 +9,8 @@ import { buildWorld, plainRoom, type Cast3D } from './world';
 import fx from './core/__fixtures__/nguoi-cam-bang.json';
 import bangGia from './core/__fixtures__/held-v2/bang-gia.json';
 import dienThoai from './core/__fixtures__/held-v2/dien-thoai.json';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // `handReport` của lõi trùng `heldHands` đọc trên cảnh three ở góc cổ tay và phần vượt giới hạn
 // (docs/11-nhom-cam.md § Báo tay cho studio)

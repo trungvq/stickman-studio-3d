@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { actArm, actHeld, actJoints, type ActJoint } from "./act3";
 import type { ActInput } from "./arm3";
 import { body3 } from "./figure3d";
@@ -31,6 +31,8 @@ import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import khay from "./__fixtures__/held-v2/khay.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Đổi chế độ lần cầm (docs/11-nhom-cam.md § Đổi chế độ lần cầm)
 

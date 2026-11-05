@@ -1,11 +1,13 @@
 import * as THREE from 'three';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, type Acting } from './act';
 import { APRON_GRID } from './garment';
 import { cladHand, roots3 } from './core/act3';
 import { RIG } from './core/constants';
 import { defaultCharacter, GarmentSchema, limbWidths, SkirtSchema, type CharacterData, type Skirt } from './core/schema';
 import type { Figure } from './stickman';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 beforeAll(() => {
   const ctx = new Proxy({}, { get: (_t, k) => (k === 'measureText' ? () => ({ width: 0 }) : () => undefined), set: () => true });

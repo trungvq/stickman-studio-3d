@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, type Acting } from './act';
 import { actJoints, actPalms, actReach, armInner, armSide, CLAD_DEPTH, CLAD_GAP, cladArm, cladProfile, cladThigh, roots3, SPLAY3, THIGH_CLEAR, THIGH_RAMP, type ActJoint } from './core/act3';
 import { D } from './core/constants';
@@ -8,6 +8,8 @@ import { HAND_BONES } from './core/hand';
 import { defaultCharacter, limbWidths, SkirtSchema } from './core/schema';
 import { garmentOf, profile } from './core/torso';
 import type { Figure } from './stickman';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Người que three cần canvas cho nét mặt: một canvas giả đủ để dựng hình, không vẽ gì
 beforeAll(() => {

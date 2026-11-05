@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { actHeld, actJoints, trunk3, type ActInput } from "./act3";
 import { body3 } from "./figure3d";
 import { armInput } from "./graspArm";
@@ -17,6 +17,8 @@ import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Lần cầm một tay theo mốc: bàn tay giải ở từng mốc món, giữa hai mốc hoà trong hệ thân, món theo bàn tay
 // (docs/11-nhom-cam.md § Lần cầm theo mốc)

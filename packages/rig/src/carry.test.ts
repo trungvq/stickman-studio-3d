@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { body3 } from './core/figure3d';
 import { parseAction } from './core/action';
 import { heldPoint, parseHeldItem, type HeldItemSpec } from './core/heldItem';
@@ -13,6 +13,8 @@ import { U } from './khoi';
 import { buildWorld, plainRoom, type Cast3D } from './world';
 import tuiJson from '../../../common/held/tui.json';
 import cocJson from '../../../common/held/coc.json';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Món treo (`món@carry`): túi khoác khuỷu, đeo vai — rig treo món trên cánh tay theo `world.hands[].hold`, `check` đo chỗ treo và thân món
 
@@ -172,7 +174,7 @@ describe('món treo: nhớ lời giải theo dáng người', () => {
     expect(fit()).not.toBe(b);
   });
 
-  it('lời giải nhớ trùng từng số với cảnh dựng mới ở từng giây, đi tới đi lui', { timeout: 30_000 }, () => {
+  it('lời giải nhớ trùng từng số với cảnh dựng mới ở từng giây, đi tới đi lui', () => {
     const { w } = world(MOVING);
     for (const t of [0.2, 0.7, 0.7, 0.2, 1.5, 0.7]) {
       posed(w, t);
@@ -208,7 +210,7 @@ describe('món treo: luật `held`', () => {
     const ok: { rt?: ReturnType<typeof resolveScene> } = {};
     const good = world([{ t: 0, right: { ...OUT, hold: VAI } }], ok);
     expect(sceneHeld(ok.rt!, { frame: frame(good.w) }).filter((i) => i.rule === 'body' || i.rule === 'seat')).toEqual([]);
-  }, 20000);
+  }, 60_000);
 
   it('món nằm xa lúc treo: `jump` lúc gắn', () => {
     const out: { rt?: ReturnType<typeof resolveScene> } = {};

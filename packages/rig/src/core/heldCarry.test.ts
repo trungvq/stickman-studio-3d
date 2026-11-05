@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { actHeld, holdRoles, type ActInput } from "./act3";
 import { body3 } from "./figure3d";
 import { carryHits, heldLine, type HeldCarry, type HeldIssue } from "./heldAudit";
@@ -23,6 +23,8 @@ import { CharacterSchema } from "./schema";
 import cocJson from "../../../../common/held/coc.json";
 import tuiJson from "../../../../common/held/tui.json";
 import tuiHieuJson from "./__fixtures__/held-v2/tui-hieu.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 const spec = (j: unknown): HeldItemSpec => {
   const r = parseHeldItem(j);

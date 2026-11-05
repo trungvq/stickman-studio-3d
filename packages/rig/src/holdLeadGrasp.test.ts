@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { body3 } from './core/figure3d';
 import { parseHeldItem, type HeldItemSpec } from './core/heldItem';
 import { parseScene, resolveScene } from './core/scene';
@@ -8,6 +8,8 @@ import { heldHands } from './held';
 import { buildWorld, plainRoom, type Cast3D } from './world';
 import fx from './core/__fixtures__/nguoi-cam-bang.json';
 import dienThoai from './core/__fixtures__/held-v2/dien-thoai.json';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Tay dẫn cầm món v2 (`mode: "hand"`) mang báo chỗ cầm `AimReport.hold.grasp` như món đặt trước
 

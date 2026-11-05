@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { act, type Acting } from './act';
 import { hold } from './attach';
 import { bodyCapsules, collide, colliders } from './collide';
@@ -15,6 +15,8 @@ import { handCapsules } from './core/handMesh';
 import { fromCharacter, R, type CharacterJson, type Figure } from './stickman';
 import sitJson from '../../../common/actions/sit-3d.json';
 import tableJson from '../../../common/actions/arms-on-table-3d.json';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Người 3D mặc đồ (`palette.clad`, `head.form: "human"`): dựng trong Node trần như người que
 

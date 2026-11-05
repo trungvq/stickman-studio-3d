@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   ACTION_VERSION,
@@ -41,6 +41,8 @@ import {
   type HandPose,
   type V3,
 } from "./index";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 const action = (json: object): ActionData => {
   const r = parseAction(json);

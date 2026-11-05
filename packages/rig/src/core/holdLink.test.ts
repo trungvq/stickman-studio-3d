@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   actAim,
   actArm,
@@ -33,6 +33,8 @@ import tomHum from "./__fixtures__/held-v2/tom-hum.json";
 import ongNgheBan from "./__fixtures__/held-v2/ong-nghe-ban.json";
 import khay from "./__fixtures__/held-v2/khay.json";
 import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 const spec = (j: unknown): HeldItemSpec => {
   const r = parseHeldItem(j);

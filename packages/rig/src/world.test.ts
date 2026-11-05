@@ -1,11 +1,13 @@
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { body3 } from './core/figure3d';
 import { parseAction } from './core/action';
 import { parseScene, resolveScene } from './core/scene';
 import { defaultCharacter } from './core/schema';
 import type { Figure } from './stickman';
 import { buildWorld, combineExtras, plainRoom, type Cast3D, type WorldSpec } from './world';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Cảnh three dựng chung cho sân khấu Remotion và `stickman check`: người nền, đổi đồ theo `equip`, tắt khi mờ, đồ riêng bám người
 

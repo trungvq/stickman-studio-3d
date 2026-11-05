@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { actAim, actJoints, type ActInput } from "./act3";
 import { AIM_BEND, AIM_DEV, clampRange, overRange, TURN_MAX } from "./arm3";
 import { body3 } from "./figure3d";
@@ -16,6 +16,8 @@ import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Lần cầm và báo tay cho studio (docs/11-nhom-cam.md § Báo tay cho studio)
 

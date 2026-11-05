@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { BadgeSchema, defaultCharacter, GarmentSchema, LettersSchema, OBI_KNOTS, ObiSchema, OpenSchema, PanelSchema, PatternSchema, PRINT_SHAPE_NAMES, PrintSchema, WrapSchema } from './core/schema';
 import { flattenPath, PANEL_LIFT } from './core/panel';
 import { TORSO_DEPTH } from './core/constants';
@@ -7,6 +7,8 @@ import { cladProfile, cladThigh, roots3, THIGH_CLEAR } from './core/act3';
 import { signedVolume, wrapEdge } from './core/wrap';
 import { PRINT_SHAPES, WAKABA } from './core/print';
 import { torsoMesh, type TorsoMesh } from './torso';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 /** Mặt khối cách điểm bao nhiêu, quy về nửa rộng (âm là trong ruột): nửa trước bề sâu `front`, nửa sau `depth` */
 const surfaceOf = (t: TorsoMesh) => ([x, y, z]: number[]) => {

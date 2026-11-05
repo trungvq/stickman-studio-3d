@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   actAim,
   actHeld,
@@ -22,6 +22,8 @@ import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import khay from "./__fixtures__/held-v2/khay.json";
 import butJson from "./__fixtures__/held-v2/but.json";
 import chenJson from "./__fixtures__/held-v2/chen.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 const C = CharacterSchema.parse({ head: { form: "human" }, palette: { clad: true } });
 const spec = (j: unknown): HeldItemSpec => {

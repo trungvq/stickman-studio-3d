@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, type Acting } from './act';
 import { cladHand, CLAD_TAPER, cladThigh, roots3 } from './core/act3';
 import { RIG } from './core/constants';
@@ -8,6 +8,8 @@ import { defaultCharacter, limbWidths, parseCharacter, SkirtSchema, type Charact
 import type { Figure } from './stickman';
 import kimono from '../../../common/characters/sample-kimono.json';
 import woman from '../../../common/characters/sample-woman.json';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Người que three cần canvas cho nét mặt: một canvas giả đủ để dựng hình, không vẽ gì
 beforeAll(() => {

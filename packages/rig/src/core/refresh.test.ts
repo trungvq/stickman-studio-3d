@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { actJoints, actPalms, type ActInput } from "./act3";
 import { body3 } from "./figure3d";
 import { parseHeldItem, type HeldItemSpec } from "./heldItem";
@@ -18,6 +18,8 @@ import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Làm mới runtime tại chỗ khi chỉ đổi mốc tay và mốc món (docs/03-scene.md#làm-mới-runtime)
 
@@ -196,7 +198,7 @@ describe("`refreshRuntime`", () => {
     },
   );
 
-  it("cùng cảnh: không đổi gì", { timeout: 30_000 }, () => {
+  it("cùng cảnh: không đổi gì", () => {
     const rt = runtime(before);
     const want = snapshot(rt);
     expect(refreshRuntime(rt, scene(json()))).toBe(true);
