@@ -5,10 +5,13 @@ import {
   actHeld,
   actPalms,
   bodyMarkAt,
+  EAR_LINE_SPAN,
+  earLineCost,
   holdRoles,
   leadGrip,
   type ActInput,
 } from "./act3";
+import { parseAction, type ActionData } from "./action";
 import { body3 } from "./figure3d";
 import { handDims, itemGeom, radialDir, type DiscFeature } from "./heldGeom";
 import {
@@ -72,6 +75,7 @@ function runtime(
   hands: unknown[],
   held: Record<string, HeldItemSpec>,
   head: readonly number[] = [0, 0, -6],
+  actions: Record<string, ActionData> = {},
 ): SceneRuntime {
   const r = parseScene({
     duration: 4,
@@ -80,12 +84,15 @@ function runtime(
       {
         id: "nguoi",
         base: { torso: 9, head },
+        ...(Object.keys(actions).length && {
+          tracks: [{ clips: Object.keys(actions).map((action) => ({ action, start: 0 })) }],
+        }),
         world: { at: [250, 0, 506], yaw: 270, hands },
       },
     ],
   });
   if (!r.success) throw new Error(r.error.message);
-  return resolveScene(r.data, {}, { nguoi: H }, { nguoi: body3(NGUOI) }, held);
+  return resolveScene(r.data, actions, { nguoi: H }, { nguoi: body3(NGUOI) }, held);
 }
 const poseAt = (rt: SceneRuntime, t: number): ActInput =>
   sceneAt(rt, "nguoi", t, H, body3(NGUOI)) as ActInput;
@@ -309,34 +316,117 @@ describe("lớp liên kết tay ↔ món", () => {
     for (const key of ["right", "left"] as const) {
       const side = key === "right" ? -1 : 1;
       const tag = key === "right" ? "R" : "L";
-      // đầu thẳng, rồi đầu quay về hai phía
-      for (const head of [
-        [0, 0, -6],
-        [0, 28, -6],
-        [0, -28, -6],
-      ]) {
+      // đầu thẳng và đầu quay −40…40° mỗi 10°, về phía tay cầm lẫn ra xa
+      for (let yaw = -40; yaw <= 40; yaw += 10) {
         const rt = runtime(
           [{ t: 0, [key]: { to: "ear", point: "item:speaker", hold } }],
           { "ong-nghe-ban": HANDSET },
-          head,
+          [0, yaw, -6],
         );
         const sp = poseAt(rt, 0.5);
-        const at = `${key} đầu ${head[1]}`;
+        const at = `${key} đầu ${yaw}`;
         const ear = earHold(sp, tag);
         // mặt máy (loa) quay vào đầu, không lật ra sau gáy
         expect(ear.face, at).toBeLessThan(20);
-        if (head[1] !== 0) continue;
+        // máy dọc má theo đường tai – miệng, đo ngang đầu: đầu chibi miệng xa trước tai nên đường ấy gần nằm ngang, so với
+        // phương đứng của thế giới là sai thước
+        expect(ear.cheek, at).toBeLessThan(15);
+        if (yaw !== 0) continue;
         const h = (side === -1 ? sp.world!.hands!.right : sp.world!.hands!.left)!.hold!;
         const x = holdHand(h, side, handDims(1))!;
         expect(x.frame!.choice.variant).toBe("flat");
         // lòng tay áp mặt lưng, ngón ngang thân chếch `BOX_RISE` về đầu loa (khung món)
         expect(angle(x.hand.palm as V3, [0, -1, 0])).toBeLessThan(1);
         expect(angle(x.hand.fingers as V3, [0, 0, 1])).toBeCloseTo(90 - BOX_RISE, 6);
-        // máy dọc má theo đường tai – miệng, đo ngang đầu: đầu chibi miệng xa trước tai nên đường ấy gần nằm ngang, so với
-        // phương đứng của thế giới là sai thước
-        expect(ear.cheek, at).toBeLessThan(15);
+        // cổ tay trong giới hạn, ý định không nhường
+        const arm = actArm(NGUOI, sp, side)!;
+        expect(arm.report.hold!.clamped, at).toEqual([]);
+        expect(arm.trace?.yield ?? 0, at).toBe(0);
       }
     }
+  });
+
+  it(
+    "áp tai không khai `roll`, đầu quay liền −40 → 40° trong 4 s: trục máy theo đường tai – miệng, món và khuỷu đi đều từng khung",
+    { timeout: 30_000 },
+    () => {
+      const hold = {
+        item: "ong-nghe-ban",
+        group: "cylinder",
+        around: 180,
+        face: { axis: "front", toward: { mark: "head" } },
+        touch: ["self.head"],
+      };
+      const turn = parseAction({
+        schemaVersion: 21,
+        name: "quay-dau",
+        duration: 4,
+        end: "hold",
+        mask: ["head"],
+        authoredAt: "side",
+        keys: [
+          { t: 0, pose: { head: [0, -40, -6] }, ease: "linear" },
+          { t: 1, pose: { head: [0, 40, -6] }, ease: "linear" },
+        ],
+        events: [],
+      });
+      if (!turn.success) throw new Error(turn.error.message);
+      for (const key of ["right", "left"] as const) {
+        const side = key === "right" ? -1 : 1;
+        const tag = key === "right" ? "R" : "L";
+        const rt = runtime(
+          [{ t: 0, [key]: { to: "ear", point: "item:speaker", hold } }],
+          { "ong-nghe-ban": HANDSET },
+          [0, 0, -6],
+          { "quay-dau": turn.data },
+        );
+        let prev: { at: V3; R: M3; E: V3; d?: number; r?: number; e?: number } | undefined;
+        for (let f = 0; f <= 120; f++) {
+          const sp = poseAt(rt, f / 30);
+          const at = `${key} khung ${f}`;
+          const ear = earHold(sp, tag);
+          expect(ear.face, at).toBeLessThan(20);
+          expect(ear.cheek, at).toBeLessThan(15);
+          const h = actHeld(NGUOI, sp)[tag]!;
+          const now = { at: h.at, R: h.R, E: actArm(NGUOI, sp, side)!.E.map((v) => v * 100) as V3 };
+          if (prev) {
+            // dời, xoay mỗi khung chừng 0,9 rig, 0,8°: không bước nào vọt, và tốc độ đổi dần giữa hai khung liền nhau
+            const d = Math.hypot(...sub3(now.at, prev.at));
+            const r = rotDeg(prev.R, now.R);
+            const e = Math.hypot(...sub3(now.E, prev.E));
+            expect(d, at).toBeLessThan(1.5);
+            expect(r, at).toBeLessThan(1.5);
+            expect(e, at).toBeLessThan(1.5);
+            if (prev.d !== undefined) {
+              expect(Math.abs(d - prev.d), at).toBeLessThan(0.2);
+              expect(Math.abs(r - prev.r!), at).toBeLessThan(0.2);
+              expect(Math.abs(e - prev.e!), at).toBeLessThan(0.2);
+            }
+            prev = { ...now, d, r, e };
+          } else prev = now;
+        }
+      }
+    },
+  );
+
+  it("`earLineCost`: 0 khi `top` dọc đường miệng → tai, gần `(lệch / EAR_LINE_SPAN)²`, liền khi `top` dọc trục hai tai", () => {
+    const n: V3 = [1, 0, 0];
+    const line: V3 = [0, 0.3, -1];
+    const l = Math.hypot(0.3, 1);
+    const at = (deg: number): V3 => {
+      // `line` quay quanh `n` một góc `deg`
+      const c = Math.cos(deg * D2R);
+      const s = Math.sin(deg * D2R);
+      return [0, (0.3 * c + s) / l, (-c + 0.3 * s) / l];
+    };
+    expect(earLineCost(at(0), line, n)).toBeCloseTo(0, 12);
+    expect(earLineCost(at(EAR_LINE_SPAN), line, n)).toBeCloseTo(1, 1);
+    expect(earLineCost(at(-EAR_LINE_SPAN / 2), line, n)).toBeCloseTo(0.25, 2);
+    // `top` chĩa ra khỏi má: giá giảm dần về 0 theo phần chiếu `p` lên mặt ngang đầu, không nhảy
+    const a = at(90);
+    const tilt = (p: number): V3 => [Math.sqrt(1 - p * p), a[1] * p, a[2] * p];
+    expect(earLineCost(tilt(1e-4), line, n)).toBeLessThan(1e-2);
+    expect(earLineCost(tilt(0.5), line, n)).toBeCloseTo(earLineCost(tilt(1), line, n) / 2, 9);
   });
 
   // rig làm đúng lệnh `elbow` nên mặt máy vẫn quay ra sau gáy; `check` báo (docs/03-scene.md § Khuỷu và cổ tay trên hình)

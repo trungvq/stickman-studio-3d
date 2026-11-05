@@ -522,6 +522,9 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
 ```
 
 - **Tay phải / trái của người**: `right` là tay phải ở mọi góc máy, cùng tay với kênh `armRight` của hành động.
+- **Áp tai** (mốc `t: 9`): tay `to: "ear"`, mặt món về `{ mark: "head" }` mà không khai `roll` thì rig giữ trục `top` của món (đầu loa) dọc
+  đường miệng → tai nhìn ngang đầu, cả khi đầu quay ([11](11-nhom-cam.md#9-palmbox--hộp-cỡ-lòng-tay-bản-đầu)). Cảnh cần ép
+  trục máy thì khai `roll` trên trục ngược `top` với `toward: { mark: "mouth" }`.
 - **`elbow` theo hệ của đích.** Mốc có `at` (đích thế giới): `elbow` là hướng thế giới rig. Mốc khác — có `to`, hay chỉ có
   `hold` (lần cầm theo mốc món) —: `elbow` là hệ thân `[tiến, y, ra ngoài]` của chính tay ấy, cùng quy ước với `elbow` của
   `keys[].reach` (`y` xuống dương, `ra ngoài` dương về phía tay ấy nên một bộ số đúng cho hai tay; hệ thân là hướng hông,

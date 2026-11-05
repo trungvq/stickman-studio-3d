@@ -42,7 +42,7 @@ import {
   type GraspReport,
   type GraspSolution,
 } from "./graspSolve";
-import { handDims, type HandDims } from "./heldGeom";
+import { handDims, itemGeom, type HandDims } from "./heldGeom";
 import { holdFrom, holdHand, holdLinkFrame, inheritHold, type HoldLinkHand } from "./holdLink";
 import { ARM_SOFT, prefPole } from "./elbow";
 import {
@@ -1098,6 +1098,24 @@ export const W_MISS = 10;
 /** Phần ý định mất giữa bàn tay theo ý định `Hi` và bàn tay đã nhường `Hy` trên các trục `axes` */
 const missOf = (Hi: M3, Hy: M3, axes: AimAxes) =>
   axes.reduce((m, a) => m + (a.w * (1 - dot(mv(Hi, a.h), mv(Hy, a.h)))) / 2, 0);
+/** Mốc đầu của người cầm mà mặt món quay vào là áp mặt (áp tai): trục `top` của món theo đường tai – miệng */
+const EAR_MARKS: readonly BodyMark[] = ["head", "ear", "cheek"];
+/** Mốc tay (`to` của đích) của món áp tai: phần đích đặt ở đây là phần của giá đường tai – miệng */
+const EAR_REACH: readonly BodyMark[] = ["ear", "cheek"];
+/** Thang (độ) của giá trục `top` món áp tai lệch đường tai – miệng: lệch ngần này có giá `1`, như cổ tay gập 50° */
+export const EAR_LINE_SPAN = 15;
+/**
+ * Giá trục `top` của món (three, đơn vị) lệch hướng `line` (miệng → tai) nhìn dọc trục hai tai `n` (đơn vị):
+ * `2 · (|a| − a · line / |line|) / EAR_LINE_SPAN²` với `a` là `top` chiếu vuông góc `n` — gần `(lệch / EAR_LINE_SPAN)²`, liền
+ * cả khi `top` dọc `n`. docs/11-nhom-cam.md#9-palmbox--hộp-cỡ-lòng-tay-bản-đầu
+ */
+export function earLineCost(top: V3, line: V3, n: V3): number {
+  const a = sub(top, mul(n, dot(top, n)));
+  const l = sub(line, mul(n, dot(line, n)));
+  const ll = len(l);
+  if (ll < 1e-9) return 0;
+  return (2 * (len(a) - dot(a, l) / ll)) / (EAR_LINE_SPAN * D) ** 2;
+}
 
 function solveCore(T: Trunk3, sp: ActInput): Solved {
   const report = { R: {}, L: {} } as Record<"R" | "L", AimReport>;
@@ -1354,6 +1372,33 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
             )
           : bodyDir(T, side, d.v!));
     const eye = W0.eye ?? W0.lens?.eye;
+    /** Số hạng ý định `ha` thuộc lần cầm tay dẫn đang mang */
+    const leads = (ha: HoldAim) =>
+      role?.role === "lead" &&
+      rw?.hold?.item === ha.item &&
+      (rw.hold.grip === ha.grip || rw.hold.from?.grip === ha.grip);
+    /**
+     * Mặt món quay vào đầu người cầm, cảnh không khai `roll`, món khai `top`: giá trục `top` của món ở khung bàn tay `R` lệch
+     * đường tai – miệng nhìn ngang đầu (`earLineCost`)
+     */
+    const earOf = (ha: HoldAim): ((R: M3) => number) | undefined => {
+      const x = extras[side];
+      const t = ha.face?.target;
+      if (!x?.G || !x.spec?.top || ha.roll || !t || !("to" in t) || !leads(ha)) return undefined;
+      if (!EAR_MARKS.includes(t.to) || t.side === "other" || !hasTerms(rw)) return undefined;
+      // phần đích tay đặt ở tai, má: tay đang tới hay rời tai thì giá nhạt theo phần ấy
+      const all = rw!.terms!.reduce((s, r) => s + r.k, 0);
+      const k =
+        (Math.min(1, rw!.w) *
+          rw!.terms!.reduce((s, r) => s + (r.to && EAR_REACH.includes(r.to) ? r.k : 0), 0)) /
+        (all || 1);
+      if (!(k > 0)) return undefined;
+      const ear = markAt(T, { to: "ear" }, side, other);
+      const n = unit(sub(ear, markAt(T, { to: "ear", side: "other" }, side, other)));
+      const line = sub(ear, markAt(T, { to: "mouth" }, side, other));
+      const top = unit(mv(x.G.R, itemGeom(x.spec).U));
+      return (R) => k * earLineCost(mv(R, top), line, n);
+    };
     /** Ý định của món tay này mang: trục chính (và trục phụ) quay về đích, giải qua `aimWrist`; `undefined` là giữ bàn tay */
     const holdSolve = (
       ha: HoldAim,
@@ -1363,12 +1408,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
     ) => {
       const G = h.G;
       const main = ha.face ?? ha.roll;
-      if (role?.role !== "lead" || !G || !main) return undefined;
-      if (
-        rw?.hold?.item !== ha.item ||
-        (rw.hold.grip !== ha.grip && rw.hold.from?.grip !== ha.grip)
-      )
-        return undefined;
+      if (!G || !main || !leads(ha)) return undefined;
       const origin = add(h.at, mv(h.R, G.p));
       const dirTo = (t: HoldTarget): V3 | undefined => {
         if ("name" in t) {
@@ -1410,13 +1450,16 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
         }
       }
       if (!Rt) {
-        // một trục: lăn quanh trục chính theo giá thoải mái cổ tay trên cẳng tay này, từ cú quay ít nhất (lấy liền)
+        // một trục: lăn quanh trục chính theo giá thoải mái cổ tay trên cẳng tay này (áp tai: cộng giá trục máy lệch
+        // đường tai – miệng), từ cú quay ít nhất (lấy liền)
         const R1 = mm(turnTo(unit(mv(R0, aH)), dMain), R0);
         const roll = (p: number) => mm(spinM(dMain, p * D), R1);
+        const earE = earOf(ha);
         const ease = (p: number) => {
-          const w = wristAngles(mm(tr(A.Re), roll(p)), side);
+          const R = roll(p);
+          const w = wristAngles(mm(tr(A.Re), R), side);
           const e = wristEase(...gimbalBlend([w.turn, w.bend, w.dev]));
-          return e.ease + e.over;
+          return e.ease + e.over + (earE ? earE(R) : 0);
         };
         Rt = roll(settlePhi((p) => p, ease, 0, -SETTLE_HALF, SETTLE_HALF).x);
       }
@@ -1579,6 +1622,12 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
     };
     // phần ý định của nguồn thế giới trong bàn tay: món đang cầm là đủ
     const wwOf = rw?.hold ? 1 : Math.min(1, rw?.w ?? 0);
+    // áp tai không khai `roll`: giá trục máy lệch đường tai – miệng theo phần ý định, cho cả bước chọn khuỷu
+    const ears = (aimW?.terms ?? []).flatMap((a) => {
+      const f = a.hold && earOf(a.hold);
+      return f ? [{ k: a.k * wwOf, f }] : [];
+    });
+    const earMiss = (R: M3) => ears.reduce((e, x) => e + x.k * x.f(R), 0);
     const aimK = (a: Aim | undefined, w: number) =>
       a
         ? w *
@@ -1870,6 +1919,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
         const { n, f } = handAxes(side);
         const E =
           c.E +
+          earMiss(Hy) +
           W_MISS *
             missOf(
               Hp,

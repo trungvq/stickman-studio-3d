@@ -672,8 +672,9 @@ khi mốc món không khai `face`/`up` (món đặt trước), hay ý định c�
   - `along` khai sát phần `grip: false` quá `GRIP_CLEAR · W` thì rig kẹp tâm nắm về miền `alongRoom` và `check` báo **cảnh báo**
     `choice` (mục 7): nêu phần cắt, khoảng cách và `along` rig kẹp về.
   - Ống nghe máy bàn, máy tường, bộ đàm: `rod` của tay cầm, đầu cao là loa (`top`). Áp tai là lòng tay áp mặt lưng của thân
-    (`around 180`; mặt trước nhô loa, mic), rig suy ra `flat`: ngón cái dọc cạnh về loa, ngón ngang thân; cổ tay chạm giới hạn thì ống nghe
-    nghiêng theo bàn tay, chếch theo đường tai – miệng. Ý định loa vào tai ở cảnh. Trước ngực rig giải `wrap` ở mặt hông, ngón cái
+    (`around 180`; mặt trước nhô loa, mic), rig suy ra `flat`: ngón cái dọc cạnh về loa, ngón ngang thân; ống nghe dọc đường
+    tai – miệng ([áp tai không khai `roll`](#9-palmbox--hộp-cỡ-lòng-tay-bản-đầu)), cổ tay chạm giới hạn thì ống nghe nghiêng
+    theo bàn tay. Ý định loa vào tai ở cảnh. Trước ngực rig giải `wrap` ở mặt hông, ngón cái
     về loa (ảnh mẫu `ong-nghe-cam`).
 - **Tay**: một hay hai. Tay phụ mặc định: `platform` ở mặt đáy (`place: "bottom"`; rót có tay đỡ, mục [5](#tay-phụ-both)). Chai đứng
   thẳng thì lòng ngửa của tay đỡ đáy cần xoay cẳng tay quá ±90°: đặt chai nghiêng nhẹ (`up` lệch về trước và về phía tay đỡ).
@@ -781,6 +782,17 @@ nắp; dáng mới `claw`). Lựa chọn: hướng tiếp cận, biến thể. M
 - **Hướng mặc định**: `face: { axis: <front>, toward: "holderFace" }`, không có `roll`: xem màn hình trước mặt thì cảnh khai
   `roll` và đặt máy ngang cằm ([mốc món](#mốc-món-items)). Áp tai: cùng nhóm, cùng chỗ bám, ý định màn vào má
   (`toward: { mark: "head" }`), cảnh đặt tay cạnh tai.
+- **Áp tai không khai `roll`** (mọi nhóm, tay dẫn): mặt món quay vào đầu chính người cầm (`face` về `{ mark }` là `head`,
+  `ear` hay `cheek`, không `side: "other"`), mốc tay đặt ở tai hay má (`to: "ear"` / `"cheek"`) và món khai `top` (đầu loa)
+  thì rig giữ trục `top` dọc đường miệng → tai nhìn ngang đầu (chiếu lên mặt vuông góc trục hai tai): loa ở tai, mic về
+  miệng, cả khi đầu quay. Giá `earLineCost` = `2 · (|a| − a · l̂) / EAR_LINE_SPAN²` (`a` là `top` chiếu lên mặt ấy, `l̂`
+  hướng miệng → tai trên mặt ấy, `EAR_LINE_SPAN` = 15°: gần `(lệch / 15°)²`, lệch 15° giá như cổ tay gập 50°), nhân phần
+  đích tay ở tai, má trong các số hạng đích (tay đang tới hay rời tai thì giá nhạt theo đích), cộng vào giá thoải mái cổ tay khi chọn độ lăn quanh trục
+  `face` (`holdSolve`), và cộng vào `E(φ)` của từng `φ` thử trên bàn tay đã nhường ([Khuỷu tự nhiên](#khuỷu-tự-nhiên)): khuỷu
+  chọn chỗ cổ tay với tới trục ấy trong giới hạn. Ống nghe máy bàn ở người mẫu, đầu quay −40…40°: trục lệch đường ấy ≤ 8°,
+  cổ tay trong giới hạn, mặt máy lệch hướng vào đầu ≤ 5°. Cảnh khai `roll` thì `roll` chốt độ lăn, không có giá này; cảnh
+  cần ép trục máy thì khai `roll` với `toward: { mark: "mouth" }` trên trục ngược `top` (ống nghe máy bàn: `roll: { axis: [0,
+  0, -1], toward: { mark: "mouth" } }`).
 
 #### 10. `platform` — đỡ dưới (bản đầu: `palm`)
 
@@ -1164,7 +1176,8 @@ cap(x) = WRIST_CAP · tanh(x / WRIST_CAP)
   cẳng tay của lần thử, nhường ở giới hạn cổ tay, cổ tay đặt bàn tay ấy vào đích (hai lượt); giá cổ tay là bàn tay **theo ý định** ở cẳng tay thử (`HandAim`) cộng `W_MISS · Σ w · (1 − cos lệch)/2` (`W_MISS` `10`) —
   phần ý định mất khi bàn tay nhường ở giới hạn cổ tay, trên các trục ý định chốt (lòng tay `1`, ngón `0,6`, trục món `1`, `roll`
   `0,3`, trục phụ giữ độ lăn `0,15`). Món một
-  trục: độ lăn quanh trục chính là cực tiểu lấy liền (`settlePhi`) của giá thoải mái cổ tay trên cẳng tay thử. Tay mang món,
+  trục: độ lăn quanh trục chính là cực tiểu lấy liền (`settlePhi`) của giá thoải mái cổ tay trên cẳng tay thử; áp tai không
+  khai `roll` thì giá ấy và giá của lần thử (trên bàn tay đã nhường) cộng `earLineCost` (mục [9](#9-palmbox--hộp-cỡ-lòng-tay-bản-đầu)). Tay mang món,
   tay phụ: `φ` trong tầm `HOLD_SWIVEL_SLEW` quanh mẫu trước (`ReachHold.prior`, chuỗi `HOLD_SLEW_STEP`), góc cổ tay trong
   `HOLD_SLEW` quanh mẫu trước — cổ tay đích giữ chỗ của nghiệm, góc còn đang đi tới chỉ đổi bàn tay. Hướng khai của một nguồn
   đích là khuỷu ưu tiên hoà với `elbow` theo `elbowW`; hai nguồn (hành động, `world.hands`) cùng kéo tay thì cổ tay đích là

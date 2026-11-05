@@ -1196,7 +1196,9 @@ nói món quay về đâu; trục là tên mốc (lấy `dir`) hay vectơ khung 
   cầm). `tilt` (độ) quay hướng đích lên trong mặt phẳng đứng chứa nó, âm là xuống.
 - `up: "<mốc>"`, viết tắt `face: { axis, toward: "up" }`: chén, ly đứng.
 - `roll`, trục phụ chốt độ lăn (đầu máy lên trên). Không có thì độ lăn quanh trục chính là chỗ cổ tay thoải mái nhất trên
-  cẳng tay của từng `φ` thử, tính từ cú quay ít nhất của bàn tay của hành động.
+  cẳng tay của từng `φ` thử, tính từ cú quay ít nhất của bàn tay của hành động. Áp mặt món vào đầu người cầm (`face` về
+  `{ mark: "head" | "ear" | "cheek" }`, tay `to: "ear"` / `"cheek"`, món khai `top`) thì giá ấy cộng giá trục `top` lệch đường miệng → tai nhìn ngang
+  đầu (`earLineCost`, [11](11-nhom-cam.md#9-palmbox--hộp-cỡ-lòng-tay-bản-đầu)).
 
 Ý định chốt khung bàn tay ([Hướng lòng tay theo ý](#hướng-lòng-tay-theo-ý)); khuỷu giải bằng `E(φ)` quanh hướng ưu tiên hay
 `elbow` đã khai ([11](11-nhom-cam.md#khuỷu-tự-nhiên)). Giới hạn cổ tay giữ nguyên — xoay `±90`, gập `AIM_BEND` (ngửa `60`,

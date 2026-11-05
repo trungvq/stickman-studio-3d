@@ -376,13 +376,13 @@ describe("đồ theo tay → tay theo đồ", () => {
  * ngoài, hơi xuống (người chibi tai cao hơn vai nên khuỷu chỉ xuống tới ngang vai); cổ tay trong giới hạn, tay không lấn thân.
  * Trục dài máy ngẩng dưới 30°: món đặt trước lấy đầu cao là đầu dưới (`edgeHigh`), tay dẫn lấy đầu `top`
  */
-const sceneEar = (offset = [4, 2, 2], elbow = [0.7, 0.15, 1]): Raw => ({
+const sceneEar = (offset = [4, 2, 2], elbow = [0.7, 0.15, 1], head = [0, 0, -6]): Raw => ({
   duration: 2,
   lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
   cast: [
     {
       id: "nguoi",
-      base: { torso: 9, head: [0, 0, -6] },
+      base: { torso: 9, head },
       world: {
         at: [250, 0, 506],
         yaw: 270,
@@ -524,21 +524,24 @@ describe("đồ theo tay → tay theo đồ: khoá khuỷu", () => {
 });
 
 // Trục dài máy quanh ngưỡng 30° của `edgeHigh`: dưới ngưỡng món đặt trước lấy đầu cao là đầu dưới, tay dẫn lấy đầu `top`;
-// phép đổi ghi `high` của chế độ đang vẽ vào chỗ cầm nên khung cầm trùng, món giữ chỗ cả hai chiều
+// phép đổi ghi `high` của chế độ đang vẽ vào chỗ cầm nên khung cầm trùng, món giữ chỗ cả hai chiều. Áp tai không `roll` giữ
+// trục `top` dọc đường tai – miệng, nên độ ngẩng theo đầu cúi: đầu gật −6 ngẩng 23–26°, gật 3 ngẩng 31–33°
 describe("đồ theo tay ↔ tay theo đồ: áp tai, dải dáng tự nhiên quanh ngưỡng 30°", () => {
-  const runs = [
-    [0.5, 0, 0.8],
-    [0.7, 0.15, 1],
-    [0.6, 0.3, 0.8],
-    [0.9, 0.3, 1],
-  ].flatMap((elbow) =>
+  const runs = (
+    [
+      [[0.5, 0, 0.8], -6],
+      [[0.7, 0.15, 1], -6],
+      [[0.6, 0.3, 0.8], 3],
+      [[0.9, 0.3, 1], 3],
+    ] as const
+  ).flatMap(([elbow, nod]) =>
     [
       [0, 2, 2],
       [4, 2, 2],
       [2, 0, 2],
       [2, 2, 4],
     ].map((offset) => {
-      const raw = sceneEar(offset, elbow);
+      const raw = sceneEar(offset, [...elbow], [0, 0, nod]);
       const rt = build(raw);
       const r = holdToItemLed(rt, raw, { id: "nguoi", side: "right", at: 0, rebuild: build });
       const next = applyJsonPatch(raw, r.ops);
@@ -550,7 +553,7 @@ describe("đồ theo tay ↔ tay theo đồ: áp tai, dải dáng tự nhiên qu
         at: 0,
         rebuild: build,
       });
-      return { tag: `elbow ${elbow} offset ${offset}`, rt, r, next, rise, back };
+      return { tag: `elbow ${elbow} offset ${offset} gật ${nod}`, rt, r, next, rise, back };
     }),
   );
 
