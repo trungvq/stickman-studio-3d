@@ -995,6 +995,40 @@ export function edgeHigh(e: V3, R: M3, side: number, across: V3, up: V3 = [0, -1
   return f > 0 ? e : neg(e);
 }
 
+/** Đầu cao `edgeHigh` quyết cách ranh giới của luật dưới ngần này độ thì `check` báo (`sceneHighProblems`) */
+export const HIGH_NEAR = 5;
+
+/**
+ * Độ cách ranh giới gần nhất của luật `edgeHigh` mà qua đó đầu cao đổi (cùng tham số), đo theo từng chiều: độ dốc tới 30° khi
+ * luật dốc và luật gần ngang cho hai đầu khác nhau; cạnh dốc dưới 30° thì cả phương ngang tới đường chéo gần nhất (45° giữa
+ * ngang thân và trước–sau) mà hai nhánh của luật gần ngang khác đầu. Không ranh giới nào đổi đầu thì `Infinity`.
+ * docs/11-nhom-cam.md#chỗ-cầm-castworldhandshold
+ */
+export function edgeHighMargin(
+  e: V3,
+  R: M3,
+  side: number,
+  across: V3,
+  up: V3 = [0, -1, 0],
+): number {
+  const w = matVec(R, e);
+  const rise = dot3(w, up) / (len3(w) || 1);
+  const slope = Math.asin(Math.min(1, Math.abs(rise))) / D2R;
+  const a = dot3(w, across);
+  const f = dot3(w, cross3(up, across));
+  const byA = (x: number) => (x * side < 0 ? -1 : 1);
+  const byF = (x: number) => (x > 0 ? 1 : -1);
+  const flat = Math.abs(a) >= Math.abs(f) ? byA(a) : byF(f);
+  let m = (rise > 0 ? 1 : -1) !== flat ? Math.abs(slope - 30) : Infinity;
+  if (slope < 30) {
+    const az = Math.atan2(a, f) / D2R;
+    for (const d of [45, 135, -135, -45])
+      if (byA(Math.sin(d * D2R)) !== byF(Math.cos(d * D2R)))
+        m = Math.min(m, Math.abs(((((az - d) % 360) + 540) % 360) - 180));
+  }
+  return m;
+}
+
 /** `sheet` một tay, tấm đứng: tay dẫn cầm cách giữa cạnh ngang ngần này lần dài cạnh, về góc phía tay */
 export const SIDE_ALONG = 0.25;
 /**

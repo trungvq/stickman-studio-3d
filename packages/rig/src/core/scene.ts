@@ -79,12 +79,15 @@ import {
 } from "./graspGroups";
 import {
   chooseMissing,
+  edgeHighMargin,
   edgeOk,
   graspCtx,
   graspFrame,
   handFromItem,
+  HIGH_NEAR,
   highWarnings,
   LATER_SPAN,
+  sideToward,
   type GraspChoice,
   type GraspCtx,
   type GraspLater,
@@ -6405,6 +6408,51 @@ export function sceneItemHoldProblems(rt: SceneRuntime): string[] {
           `${k.cast}: \`items\` ${k.item} t=${k.t}: \`as: "hand"\` giữa lần cầm — chỉ mốc món đầu của lần cầm lấy món như đang vẽ trước khi cầm; giữ mốc trước là \`as: "prev"\` (docs/11-nhom-cam.md#mốc-món-items)`,
         );
     }
+  }
+  return out;
+}
+
+/** Trường chỗ cầm đo theo đầu cao của chiều cạnh: `thumb` chỉ ở `palmBox` (bên ngón cái `e × mặt trước`) */
+const HIGH_FIELDS = ["along", "slant", "psi"] as const;
+
+/**
+ * Lần cầm món đặt trước (tay dẫn) mà đầu cao rig quyết ở mốc mở bằng luật `edgeHigh` cách ranh giới của luật dưới
+ * `HIGH_NEAR` độ, trong khi cảnh khai trường đo theo đầu cao (`along`, `slant`, `psi`, `thumb` của `palmBox`) và không khai
+ * `high`: dời mốc hay đổi dáng một chút là đầu kia, chỗ cầm khai đổi nghĩa. Đầu cao lấy từ lần cầm trước (`priorChoice`) thì
+ * không xét. `check` (nhóm `ref`) cảnh báo; `o.chars` bắt buộc như `graspAtTime`. docs/11-nhom-cam.md#chỗ-cầm-castworldhandshold
+ */
+export function sceneHighProblems(rt: SceneRuntime, o: ItemOptions = {}): string[] {
+  const out: string[] = [];
+  for (const m of rt.cast) {
+    const keys = handKeys(rt, m.id);
+    for (const side of ["right", "left"] as const)
+      for (const k of keys) {
+        if (k[side]?.hold == null) continue;
+        const run = holdRun(keys, side, k.t);
+        if (!run || run.since !== k.t || !placedRun(rt, keys, side, run)) continue;
+        const g = groupHold(run.hold);
+        if (g.high) continue;
+        const r = graspStart(rt, m.id, side, run, o);
+        const high = r.sol.high;
+        if (!high) continue;
+        const said = [
+          ...HIGH_FIELDS,
+          ...(g.group === "palmBox" ? (["thumb"] as const) : []),
+        ].filter((f) => r.sol.by[f] === "scene");
+        if (!said.length) continue;
+        const keep = priorChoice(rt, m.id, side, run, o);
+        if (keep?.high && dot3(keep.high, high) > 0) continue;
+        const rm = runMarks(rt, keys, side, run);
+        const ts = rm.keyed ? rm.marks[0].t : run.since;
+        const pose = itemAt(rt, g.item, ts, o);
+        if (!pose) continue;
+        const near = edgeHighMargin(high, pose.R, sideSign(side), r.ctx.across);
+        if (near >= HIGH_NEAR) continue;
+        const name = sideToward(itemGeom(itemSpec(rt, g.item)), high);
+        out.push(
+          `${m.id}: tay ${side === "right" ? "phải" : "trái"} cầm \`${g.item}@${g.group}\` từ t=${ts}: đầu cao của cạnh (gốc đo ${said.map((f) => `\`${f}\``).join(", ")}) rig chọn theo hướng món ở mốc mở, cách ranh giới của luật ${near.toFixed(1)}° (dưới ${HIGH_NEAR}°) — dời mốc hay đổi dáng một chút là đầu kia, chỗ cầm khai đổi nghĩa; khai \`high: "${name}"\` để giữ (docs/11-nhom-cam.md#chỗ-cầm-castworldhandshold)`,
+        );
+      }
   }
   return out;
 }

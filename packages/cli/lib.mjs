@@ -2721,6 +2721,15 @@ export async function checkWorkspace({
               } catch (e) {
                 bad(`scenes/${f}: ${e.message}`);
               }
+              // Đầu cao của cạnh rig chọn sát ranh giới luật — docs/11-nhom-cam.md#chỗ-cầm-castworldhandshold
+              if (rig.sceneHighProblems)
+                try {
+                  const chars = castChars(r.data, charactersByName);
+                  for (const problem of rig.sceneHighProblems(rt, { chars }))
+                    refWarn(`scenes/${f}: ${problem}`);
+                } catch {
+                  // lỗi của lần cầm đã báo ở `sceneItemProblems`
+                }
             }
             for (const file of rig.sceneImages(r.data))
               if (!existsSync(join(root, "assets/bg", file)))
