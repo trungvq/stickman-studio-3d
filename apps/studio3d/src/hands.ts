@@ -34,8 +34,8 @@ export const ANGLES: Record<Angle, string> = {
   sau: "Sau lưng",
 };
 
-/** Luật `held` theo chữ cho người đọc (docs/11-nhom-cam.md mục 7) */
-export const RULE_LABELS: Partial<Record<HeldRule, string>> = {
+/** Luật `held` theo chữ cho người đọc (docs/11-nhom-cam.md mục 7, docs/03-scene.md § Đồ cầm tay) */
+export const RULE_LABELS: Record<HeldRule, string> = {
   pierce: "xương ngón vào trong món",
   sink: "da lún",
   loose: "không ngón nào chạm",
@@ -45,12 +45,17 @@ export const RULE_LABELS: Partial<Record<HeldRule, string>> = {
   rest: "da dưới mặt đỡ",
   reach: "ngoài tầm với",
   wrist: "cổ tay vượt / sát giới hạn",
+  mark: "món lệch mốc vì cổ tay",
   arm: "tay lấn thân / đầu",
   elbow: "khuỷu gập ngược",
   size: "món to so với tay",
   up: "món nghiêng (ý định trục lên)",
   face: "mặt món quay sai ý định",
   pose: "dáng tay khác dáng khai",
+  drift: "món trôi trong tay",
+  jump: "món nhảy qua mốc cầm",
+  seat: "quai lệch chỗ treo",
+  body: "món treo lồng vào người",
 };
 
 const r1 = (x: number) => (Math.abs(x) < 0.05 ? "0" : x.toFixed(1));

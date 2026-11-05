@@ -72,7 +72,7 @@ export class HandGrab {
     this.hud.className = "grabhud";
     this.tagCone.className = "grabtag";
     this.tagRing.className = "grabtag";
-    this.tagReach.className = "grabtag edge";
+    this.tagReach.className = "grabtag edge reach";
     this.hud.hidden = this.tagCone.hidden = this.tagRing.hidden = this.tagReach.hidden = true;
     frame.append(this.hud, this.tagCone, this.tagRing, this.tagReach);
     this.hud.onclick = (e) => {
@@ -150,8 +150,7 @@ export class HandGrab {
     this.shell.update(this.handle.position, camera);
     const over = this.shell.over;
     this.tagReach.textContent = over ? `quá mép tầm với ~${over.px.toFixed(0)} px` : "";
-    put(this.tagReach, over?.at);
-    if (!over) this.tagReach.hidden = true;
+    this.putInside(this.tagReach, over?.at, camera, r);
     const rep = this.rep!;
     const phi = this.ringPhi ?? rep.phi;
     const E = this.ring.cost(phi);
@@ -163,6 +162,34 @@ export class HandGrab {
         ? new THREE.Vector3(at[0] * rig.U, -at[1] * rig.U, -at[2] * rig.U)
         : this.ghostAt(this.ringPhi),
     );
+    // đang kéo tay nắm: nhãn nón, vòng còn của tư thế trước khi kéo, chỉ chồng lên nhãn mép tầm với
+    if (this.start) this.tagCone.hidden = this.tagRing.hidden = true;
+  }
+
+  /**
+   * Nhãn cạnh điểm `at` mà luôn nằm trọn trong khung, dưới HUD, trên ô Vệt: sát mép phải thì lật sang trái điểm, điểm ra
+   * ngoài khung thì nhãn đứng ở mép gần nhất; điểm sau camera thì ẩn
+   */
+  private putInside(
+    el: HTMLElement,
+    at: THREE.Vector3 | undefined,
+    camera: THREE.Camera,
+    r: DOMRect,
+  ) {
+    const p = at?.clone().project(camera);
+    el.hidden = !p || p.z > 1;
+    if (!p || el.hidden) return;
+    const x = ((p.x + 1) / 2) * r.width;
+    const y = ((1 - p.y) / 2) * r.height;
+    const [w, h] = [el.offsetWidth, el.offsetHeight];
+    const pad = 4;
+    const top = this.hud.hidden ? pad : this.hud.offsetTop + this.hud.offsetHeight + pad;
+    const trail = this.frame.querySelector<HTMLElement>(".trailhud:not([hidden])");
+    const bottom = (trail ? trail.offsetTop : r.height) - pad;
+    const left = x + 8 + w <= r.width - pad ? x + 8 : x - 8 - w;
+    const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+    el.style.left = `${clamp(left, pad, r.width - pad - w)}px`;
+    el.style.top = `${clamp(y - h / 2, top, Math.max(top, bottom - h))}px`;
   }
 
   private ghostAt(phi: number) {

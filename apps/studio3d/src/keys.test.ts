@@ -1,7 +1,7 @@
-import { holdRuns, type HandSide, type SceneRuntime } from "@stickman3d/rig/core";
+import { handReport, holdRuns, type HandSide, type SceneRuntime } from "@stickman3d/rig/core";
 import { describe, expect, it } from "vitest";
 import { drawnHand, drawnItem } from "./drawn";
-import { runtime, scene, SHEET } from "./fixture";
+import { c, runtime, scene, SHEET } from "./fixture";
 import { record, travel } from "./history";
 import { plusHand } from "./plus";
 import {
@@ -396,8 +396,41 @@ describe("＋ giữ hình ở giây đang xem (plus.ts)", () => {
         if (t === 1.25) expect(g0.wrist).toBeGreaterThan(0.5);
         expect(g.grip).toBeLessThan(0.5);
         expect(g.wrist).toBeLessThan(0.5);
+        expect(r.edge).toBeUndefined();
         expect(runsOf(runtime(r.raw), "left")).toEqual(runsOf(rt, "left"));
       }
+    },
+  );
+
+  it(
+    "dáng đang vẽ quá mép tầm với: `at` ở mép theo hướng vai → bàn tay, trùng tâm nắm vẽ ra, báo",
+    { timeout: 120_000 },
+    () => {
+      const j = scene();
+      const rt0 = runtime(j);
+      const r0 = handReport(rt0, "a", "right", 1.1, { char: c })!;
+      const { shoulder: S, elbow, wrist } = r0.joints;
+      const reach = dist(S, elbow) + dist(elbow, wrist) + dist(wrist, r0.grip);
+      const far = (k: number, dir: number[]) => {
+        const n = Math.hypot(...dir);
+        return S.map((x, i) => Math.round((x + (dir[i] / n) * reach * k) * 100) / 100);
+      };
+      // hai mốc kề nhắm quá mép: soft IK cho bàn tay dừng hụt đích, cả quãng giữa chúng
+      hands(j)[1].right = { at: far(1.3, [0.25, 0.94, 0.23]), point: "grip" };
+      hands(j)[2].right = { at: far(1.3, [0.3, 0.9, 0.3]), point: "grip" };
+      const rt = runtime(j);
+      const t = 1.1;
+      const d0 = drawnHand(rt, "a", "right", t)!;
+      const r = plusHand(j, rt, "a", "right", t, O);
+      const k = hands(r.raw).find((x) => Math.abs(timeOf(x.t, { m: 1.5 }) - t) < 1e-3)!;
+      const at = (k.right as Json).at as number[];
+      const d1 = drawnHand(runtime(r.raw), "a", "right", t)!;
+      expect(dist(at, d1.grip)).toBeLessThan(1);
+      expect(r.edge).toBeGreaterThan(0.5);
+      expect(r.edge).toBeCloseTo(dist(d1.grip, d0.grip), 0);
+      expect(dist(d1.grip, S)).toBeLessThan(dist(d0.grip, S));
+      expect(r.notes.join(" ")).toMatch(/quá mép tầm với.*dời \d/);
+      expect(r.notes.join(" ")).not.toMatch(/để bàn tay ở giây này không đổi/);
     },
   );
 

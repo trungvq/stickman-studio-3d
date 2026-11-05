@@ -30,7 +30,7 @@ import {
   type KeyRef,
   type V3,
 } from "./keys";
-import { fitPoint, plusHand, plusItem, PLUS_TOL, type PlusOptions } from "./plus";
+import { fitPoint, plusHand, plusItem, reachEdge, PLUS_TOL, type PlusOptions } from "./plus";
 
 /** Dời `d` rồi quay `R` quanh tâm nắm, thế giới rig */
 export interface Move {
@@ -176,35 +176,6 @@ function handBase(
 
 /** Đích mốc tay cách tâm nắm vẽ ra quá chừng này (đơn vị rig) thì báo: bàn tay không với tới, chỉ duỗi về phía đích */
 const REACH_FAR = 5;
-/** Bàn tay coi là tới đích khi tâm nắm vẽ ra cách đích không quá chừng này (đơn vị rig); số lần chia đôi khi dò mép */
-export const EDGE_TOL = 0.25;
-const EDGE_STEPS = 14;
-
-/**
- * Mép tầm với trên đoạn vai `S` → `want`: điểm xa vai nhất mà đích đặt ở đó thì tâm nắm vẽ ra tới đúng đích (`got`, lệch
- * ≤ `EDGE_TOL`), chia đôi. Gần duỗi hết, soft IK của rig cho bàn tay dừng hụt đích: đích xa hơn mép là điểm ma giữa không
- * trung. `want` tới được hay bàn tay không hụt về phía vai thì `undefined`; không thấy điểm nào tới được cũng `undefined`
- */
-export function reachEdge(
-  S: V3,
-  want: V3,
-  got: (x: V3) => V3 | undefined,
-  f0 = got(want),
-): V3 | undefined {
-  if (!f0 || dist(f0, want) <= EDGE_TOL) return undefined;
-  if (dist(f0, S) >= dist(want, S) - EDGE_TOL) return undefined;
-  const at = (k: number) => want.map((v, i) => S[i] + (v - S[i]) * k) as V3;
-  let [lo, hi, ok] = [0, 1, false];
-  for (let i = 0; i < EDGE_STEPS; i++) {
-    const k = (lo + hi) / 2;
-    const x = at(k);
-    const f = got(x);
-    if (f && dist(f, x) <= EDGE_TOL) [lo, ok] = [k, true];
-    else hi = k;
-  }
-  return ok ? at(lo) : undefined;
-}
-
 /**
  * Đích thật của mốc tay `key` ở `t` (thế giới rig) khi `point` là tâm nắm: `at`, hay mốc thân `to` + `offset`
  * (`markPoint`); điểm khác hay mốc không có đích thì `undefined`
