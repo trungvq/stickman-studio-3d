@@ -498,3 +498,23 @@ studio3d `grab.test.ts` 2 (đã biết).
 - Số: test 3,14 → 1,43 (41° rải đều nửa giây; ca không ý định 26° ra 0,80). Rig: đỏ 2 → 1 (còn `holdScene` 15,00027, có từ
   trước). t02, 32 quãng có `elbow` → không khai: `s033` takumi 3,62 → 4,22 s 9,45 → −0,01, 0,85 → 1,15 s 3,64 → 0,01; còn lại
   không đổi hay giảm (`s080` yota 1,65 giữ, v8 2,49). `library.test` "mọi hành động…" ~1,47 → ~1,50 s.
+
+## Đổi chế độ áp tai, máy gần nằm ngang (2026-11-05, chưa sửa — chờ chủ dự án chọn hướng)
+
+- Lỗi: `holdToItemLed` trên dáng áp tai `sceneEar` với `elbow` [0.7, 0.15, 1], `offset` [0..4, 2, 2]: phép đổi chọn đo từ
+  đầu kia (`mirror`: `along` 0,1 → 0,9, `thumb` right → left), không khoá khuỷu (φ −20 → +9, cổ tay sau phép đổi kẹp `turn`),
+  món dời 2,93 / 3,57 / 4,18 rig, quay 14,3 / 17,6 / 20,8° (`offset` x = 0 / 2 / 4). Chiều ngược (bản vá ấy → đồ theo tay)
+  giữ món ≤ 0,006 rig.
+- Gốc: (1) khuỷu ra trước thì trục `top` của máy chỉ ngẩng 24° (`roll.toward` y −0,40 < sin 30°): `edgeHigh` sang luật nằm
+  ngang, lấy đầu phía trước (đầu dưới, phía miệng) làm đầu cao; tay dẫn không `high` lấy đầu `top` (`boxAxes`). Dáng
+  `elbow` [0.5, 0, 0.8] ngẩng 0,53 > 0,5 nên hai chế độ cùng đầu. (2) `mirror` không bù được ở `palmBox`: ngón chúc dọc hộp
+  `BOX_RISE` 20° theo `e`, đảo đầu thì hướng ngón lệch 40° quanh pháp tuyến lòng tay — không trường cảnh nào xoay được.
+  (3) Khoá khuỷu trên `mirror` (φ khớp −19,75) bắt cổ tay kẹp `dev`, món lệch hơn bản không khoá (điểm `itemMax` 44,8 so
+  20,2) nên không giữ khoá. Thử đặt tạm `BOX_RISE` 0 (đã hoàn tác): `mirror` + khoá ra món dời 0,001, φ khớp — xác nhận gốc.
+- Không sửa được chỉ ở `holdMode.ts` (đầu cao không khai được trong cảnh). Hướng sửa cần chủ dự án chọn, đều đụng
+  `graspSolve.ts` hay schema: cho cảnh khai đầu cao (`hold` ghi được, phép đổi ghi vào); `BOX_RISE` của `palmBox` luôn chúc
+  về `top` bất kể `high` (`mirror` khi ấy đúng); hay khối `box` bỏ `edgeHigh` ở món đặt trước. Hai cách sau đổi hình các
+  cảnh tay theo đồ cầm `palmBox` có trục dài ngẩng dưới 30°.
+- Test: `holdMode.test.ts` describe "áp tai, trục dài máy ngẩng dưới 30°": dáng nằm trong vùng lỗi, chiều ngược giữ món;
+  `it.fails` cho `offset` x 0 và 4. `sceneEar` nhận `offset`, `elbow` (mặc định vẫn là dáng né). Rig: đỏ 1 như trước
+  (`holdScene` 15,00027), 3 expected fail.

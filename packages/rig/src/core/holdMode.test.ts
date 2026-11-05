@@ -370,7 +370,7 @@ describe("đồ theo tay → tay theo đồ", () => {
  * Cảnh: tay phải dẫn điện thoại áp tai như người thật — loa ở tai, máy dọc má về miệng, màn vào má; khuỷu khai ra trước, ra
  * ngoài, hơi xuống (người chibi tai cao hơn vai nên khuỷu chỉ xuống tới ngang vai); cổ tay trong giới hạn, tay không lấn thân
  */
-const sceneEar = (): Raw => ({
+const sceneEar = (offset = [4, 2, 2], elbow = [0.5, 0, 0.8]): Raw => ({
   duration: 2,
   lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
   cast: [
@@ -385,9 +385,9 @@ const sceneEar = (): Raw => ({
             t: 0,
             right: {
               to: "ear",
-              offset: [4, 2, 2],
+              offset,
               point: "item:speaker",
-              elbow: [0.5, 0, 0.8],
+              elbow,
               hold: {
                 item: "dien-thoai",
                 group: "palmBox",
@@ -512,6 +512,41 @@ describe("đồ theo tay → tay theo đồ: khoá khuỷu", () => {
     expect(last).toMatchObject({ to: "ear", point: "item:speaker", elbowLock: true });
     expect(last.elbow).toEqual(right.elbow);
   });
+});
+
+// Lỗi chưa sửa (KHUYU-TIEN-DO.md § Đổi chế độ áp tai, máy gần nằm ngang): khuỷu ra trước hơn thì trục dài máy ngẩng dưới
+// 30°, món đặt trước lấy đầu cao là đầu dưới (phía miệng, `edgeHigh`), tay dẫn lấy đầu `top`; đo từ đầu kia (`mirror`) lệch
+// `BOX_RISE` hai lần, khoá khuỷu thì cổ tay kẹp `dev` nên không giữ khoá: món dời 2,9–4,2 đơn vị rig, quay 14–21°
+describe("đồ theo tay → tay theo đồ: áp tai, trục dài máy ngẩng dưới 30°", () => {
+  const runs = [0, 2, 4].map((x) => {
+    const raw = sceneEar([x, 2, 2], [0.7, 0.15, 1]);
+    const r = holdToItemLed(build(raw), raw, { id: "nguoi", side: "right", at: 0, rebuild: build });
+    return { x, raw, r, next: applyJsonPatch(raw, r.ops) };
+  });
+
+  it("dáng nằm trong vùng lỗi: trục `top` của máy ngẩng 0–30°; đồ theo tay lại thì món về chỗ", () => {
+    for (const { r, next } of runs) {
+      const mark = (next.items as { roll: { toward: number[] } }[])[0];
+      const rise = -mark.roll.toward[1] / Math.hypot(...mark.roll.toward);
+      expect(rise).toBeGreaterThan(0);
+      expect(rise).toBeLessThan(0.5);
+      expect(r.scope.mode).toEqual({ before: "hand", after: "keyed" });
+      const back = holdToHandLed(build(next), next, {
+        id: "nguoi",
+        side: "right",
+        at: 0,
+        rebuild: build,
+      });
+      expect(back.max.item.pos).toBeLessThan(HOLD_MODE_POS);
+      expect(back.max.item.angle).toBeLessThan(HOLD_MODE_ANGLE);
+    }
+  });
+
+  for (const { x, r } of [runs[0], runs[2]])
+    it.fails(`offset [${x}, 2, 2]: món ở mốc lệch dưới ngưỡng`, () => {
+      expect(r.max.item.pos).toBeLessThan(HOLD_MODE_POS);
+      expect(r.max.item.angle).toBeLessThan(HOLD_MODE_ANGLE);
+    });
 });
 
 // Chủ ý (docs/11-nhom-cam.md § Đổi chế độ lần cầm): món theo mốc đọc `elbow` là gợi ý, tay dẫn đọc là lệnh. Khuỷu khai xấu
