@@ -141,7 +141,7 @@ describe("check: đồ cầm tay chỗ cầm nhóm", () => {
     assert.match(rows[0].key, /^held:reach\|a\|R\|bang-gia$/);
   });
 
-  it("`wrist` vượt kẹp là lỗi, `arm` chỉ là cảnh báo", () => {
+  it("`wrist` vượt giới hạn là lỗi, `arm` chỉ là cảnh báo", () => {
     const over = grasp({ wrist: { turn: 100, bend: 0, dev: 0, over: 10, off: 2.5 } });
     const rows = run([v2({ grasp: over })]);
     assert.deepEqual(

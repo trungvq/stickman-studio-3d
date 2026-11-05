@@ -38,7 +38,7 @@ export const W_PREF = 1;
 export const PREF_SPAN = 60;
 export const PREF_FREE = 30;
 export const PREF_STIFF = 25;
-/** Thang xoay, gập, lệch cổ tay của giá thoải mái `½ (xoay/90)² + (gập/50)² + ½ (lệch/20)²`, độ — không phải kẹp */
+/** Thang xoay, gập, lệch cổ tay của giá thoải mái `½ (xoay/90)² + (gập/50)² + ½ (lệch/20)²`, độ — không phải giới hạn khớp */
 const TURN_EASE = 90;
 const BEND_EASE = 50;
 const DEV_EASE = 20;
@@ -68,7 +68,7 @@ const W_OVER = 10;
 const RING_CAP = 150;
 /**
  * Trần mềm của giá cổ tay (thoải mái cộng vượt) trong `E(φ)`: `WRIST_CAP · tanh(giá / WRIST_CAP)`. Bàn tay đòi xa quá thì
- * khuỷu thôi chạy theo, đứng ở chỗ ưu tiên và cổ tay kẹp — khuỷu đúng giải phẫu thắng món đúng hướng
+ * khuỷu thôi chạy theo, đứng ở chỗ ưu tiên và cổ tay chạm giới hạn — khuỷu đúng giải phẫu thắng món đúng hướng
  */
 export const WRIST_CAP = 4;
 /** Số mẫu dọc mỗi đoạn tay khi đo lấn */
@@ -125,7 +125,7 @@ export interface ArmSol {
   reach: V3;
   pole: V3;
   fore: M3;
-  /** Góc cổ tay của `Rw` trên cẳng tay chưa kẹp (độ, như `wristTurn`), `over` phần vượt giới hạn (`wristOver`) */
+  /** Góc cổ tay của `Rw` trên cẳng tay, trước giới hạn (độ, như `wristTurn`), `over` phần vượt giới hạn (`wristOver`) */
   wrist: {
     turn: number;
     bend: number;
@@ -352,8 +352,8 @@ export function gimbalBlend([t, b, d]: readonly number[]): [number, number, numb
 export const WRIST_RAMP = 90;
 
 /**
- * Xoay, gập, lệch cổ tay chưa kẹp (đã qua `gimbalBlend`) ra góc người 3D vẽ: kẹp liền trên vòng (`ringClamp`, cung cuối
- * `WRIST_RAMP`), không nhảy mép này sang mép kia
+ * Xoay, gập, lệch cổ tay trước giới hạn (đã qua `gimbalBlend`) ra góc người 3D vẽ: dừng ở giới hạn liền trên vòng
+ * (`ringClamp`, cung cuối `WRIST_RAMP`), không nhảy mép này sang mép kia
  */
 export const wristClamp = ([t, b, d]: readonly number[]): [number, number, number] => [
   ringClamp(t, -TURN_MAX, TURN_MAX, WRIST_RAMP),
@@ -388,7 +388,7 @@ function ringEase(v: number, free: number, ease: number, half: number, k = 1) {
   };
 }
 
-/** Giá thoải mái của xoay, gập, lệch cổ tay chưa kẹp (`wristAngles`), tách phần vượt giới hạn */
+/** Giá thoải mái của xoay, gập, lệch cổ tay trước giới hạn (`wristAngles`), tách phần vượt giới hạn */
 export function wristEase(t: number, b: number, d: number) {
   const T = ringEase(Math.abs(wrap(t)), 0, TURN_EASE, TURN_MAX, 0.5);
   const devC = (AIM_DEV[0] + AIM_DEV[1]) / 2;
@@ -460,8 +460,8 @@ export function phiToward(inp: ArmInput, Wp: V3, elbow: ElbowDir): number {
 }
 
 /**
- * Bàn tay theo ý định ở một cánh tay thử: từ khung cẳng tay `fore`, khuỷu, cổ tay (three) ra xoay, gập, lệch cổ tay chưa
- * kẹp, kèm giá riêng của ý định (`cost`) nếu có
+ * Bàn tay theo ý định ở một cánh tay thử: từ khung cẳng tay `fore`, khuỷu, cổ tay (three) ra xoay, gập, lệch cổ tay trước
+ * giới hạn, kèm giá riêng của ý định (`cost`) nếu có
  */
 export type HandAim = (
   fore: M3,

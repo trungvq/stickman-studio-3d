@@ -10,7 +10,8 @@ import fx from './core/__fixtures__/nguoi-cam-bang.json';
 import bangGia from './core/__fixtures__/held-v2/bang-gia.json';
 import dienThoai from './core/__fixtures__/held-v2/dien-thoai.json';
 
-// `handReport` của lõi trùng `heldHands` đọc trên cảnh three ở góc cổ tay và phần vượt kẹp (docs/11-nhom-cam.md § Báo tay cho studio)
+// `handReport` của lõi trùng `heldHands` đọc trên cảnh three ở góc cổ tay và phần vượt giới hạn
+// (docs/11-nhom-cam.md § Báo tay cho studio)
 
 beforeAll(() => {
   const ctx = new Proxy({}, { get: (_t, k) => (k === 'measureText' ? () => ({ width: 0 }) : () => undefined), set: () => true });
@@ -72,7 +73,7 @@ function world() {
 }
 
 describe('handReport trùng heldHands', () => {
-  it('góc cổ tay, phần vượt kẹp, khuỷu ở cả ba chế độ', () => {
+  it('góc cổ tay, phần vượt giới hạn, khuỷu ở cả ba chế độ', () => {
     const { w, rt } = world();
     const seen = new Set<string>();
     for (let i = 0; i <= 120; i++) {

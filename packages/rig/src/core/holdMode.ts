@@ -138,9 +138,12 @@ export interface HoldModeRow {
   item: { pos: number; angle: number } | null;
   /** Tâm nắm từng tay cầm món dời (đơn vị rig) */
   hand: Partial<Record<HandSide, number>>;
-  /** Khớp cổ tay ở giới hạn trước và sau phép đổi: cổ tay kẹp thì bàn tay không tới hướng cần, món theo bàn tay lệch theo */
+  /**
+   * Khớp cổ tay ở giới hạn trước và sau phép đổi: cổ tay chạm giới hạn thì bàn tay không tới hướng cần, món theo bàn tay
+   * lệch theo
+   */
   clamped: { before: Partial<Record<HandSide, Clamp>>; after: Partial<Record<HandSide, Clamp>> };
-  /** `φ` khuỷu tay dẫn trước và sau, độ: hai chế độ chọn khuỷu khác nhau thì cổ tay có thể kẹp */
+  /** `φ` khuỷu tay dẫn trước và sau, độ: hai chế độ chọn khuỷu khác nhau thì cổ tay có thể chạm giới hạn */
   phi?: { before: number; after: number };
   /** Bản vá khoá khuỷu tay dẫn ở mốc này (`elbow` hướng khuỷu đang vẽ, `elbowLock`) */
   elbowLock?: true;
@@ -1167,10 +1170,10 @@ function convert(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode): 
     });
     const worst = tight.reduce((a, x) => ((x.item?.pos ?? 0) > (a.item?.pos ?? 0) ? x : a));
     ctx.notes.push(
-      `cổ tay kẹp ở giới hạn trước phép đổi: ${hands.join(", ")}; bàn tay không tới chỗ cầm, ${
+      `cổ tay chạm giới hạn trước phép đổi: ${hands.join(", ")}; bàn tay không tới chỗ cầm, ${
         to === "hand" && run.mode === "both"
-          ? `món đang vẽ ở mốc món nên lệch bị che, sau phép đổi món theo bàn tay đã kẹp nên dời (${r2(worst.item?.pos ?? 0)} đơn vị rig, ${r2(worst.item?.angle ?? 0)}° ở ${r3(worst.t)}s)`
-          : "món đang theo bàn tay đã kẹp"
+          ? `món đang vẽ ở mốc món nên lệch bị che, sau phép đổi món theo bàn tay đã dừng ở giới hạn nên dời (${r2(worst.item?.pos ?? 0)} đơn vị rig, ${r2(worst.item?.angle ?? 0)}° ở ${r3(worst.t)}s)`
+          : "món đang theo bàn tay đã dừng ở giới hạn"
       }: sửa chỗ cầm hay hướng món cho cổ tay trong giới hạn`,
     );
   }

@@ -783,8 +783,8 @@ function swivelSigned(a: Joints3, b: Joints3): number {
 }
 
 /**
- * Khuỷu khoá xoay quá nhanh: rig không kẹp khuỷu khoá (`elbowLock`), nên quãng có phần khoá (`elbowLockAt` dương) mà khuỷu vẽ
- * ra (`actArm`) xoay quanh trục vai → cổ tay (`swivel`) quá `HOLD_SWIVEL_SLEW` mỗi `HOLD_SLEW_STEP` là một cú giật. Đo mọi
+ * Khuỷu khoá xoay quá nhanh: rig không hãm tốc độ xoay của khuỷu khoá (`elbowLock`), nên quãng có phần khoá
+ * (`elbowLockAt` dương) mà khuỷu vẽ ra (`actArm`) xoay quanh trục vai → cổ tay (`swivel`) quá `HOLD_SWIVEL_SLEW` mỗi `HOLD_SLEW_STEP` là một cú giật. Đo mọi
  * đoạn giữa hai mốc nhắc tay ấy, cả trước mốc đầu và sau mốc cuối (phần khoá của mốc ấy giữ nguyên); chỉ cặp mẫu cùng có
  * phần khoá. Bỏ đoạn tới mốc `snap`, cặp mẫu ngoài `spans`. docs/03-scene.md#giật-trên-hình
  */
@@ -866,7 +866,7 @@ export const elbowLockLine = (s: ElbowLockSnap): string => {
     a === null || b === null
       ? "khuỷu khoá theo hướng `elbow` của mốc ấy trong khi người và tay đi — thêm mốc tay khoá hướng khác cho quãng ấy, hay bỏ `elbowLock`"
       : "dời hai mốc xa nhau hơn, cho `elbow` hai mốc gần hướng nhau hơn, hay bỏ `elbowLock` ở một mốc. Cố ý nhanh thì khai `snap: true` ở mốc sau";
-  return `\`${s.id}\` ${s.hand === "right" ? "tay phải" : "tay trái"} giây ${sec(s.from)}–${sec(s.to)}: khuỷu khoá xoay ${s.deg.toFixed(0)}° mỗi 1/30 s (quá ${HOLD_SWIVEL_SLEW}°) ${span} — rig không kẹp khuỷu khoá (\`elbowLock\`): ${fix}`;
+  return `\`${s.id}\` ${s.hand === "right" ? "tay phải" : "tay trái"} giây ${sec(s.from)}–${sec(s.to)}: khuỷu khoá xoay ${s.deg.toFixed(0)}° mỗi 1/30 s (quá ${HOLD_SWIVEL_SLEW}°) ${span} — rig không hãm tốc độ xoay của khuỷu khoá (\`elbowLock\`): ${fix}`;
 };
 
 /** Luật khuỷu và cổ tay của `sceneMotion`. docs/03-scene.md#khuỷu-và-cổ-tay-trên-hình */

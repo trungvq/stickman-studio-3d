@@ -626,7 +626,7 @@ export type Trunk3 = NonNullable<ReturnType<typeof trunk3>>;
 
 /**
  * Tầm gập cổ tay khi rig tự giải lòng tay, độ: `[ngửa, gập]`, dương về phía lòng tay. Hẹp hơn tầm khớp người thật chút ít:
- * quá đó cổ tay khối của người que trông gãy; ý định vượt thì món lệch thật và `check` báo khớp kẹp
+ * quá đó cổ tay khối của người que trông gãy; ý định vượt thì món lệch thật và `check` báo khớp chạm giới hạn
  */
 export const AIM_BEND = [-60, 70] as const;
 /** Tầm lệch cổ tay (số thứ ba của tay) khi rig tự giải hướng ngón, độ: `[về ngón út, về ngón cái]`, dương về ngón cái */

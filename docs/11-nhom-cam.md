@@ -739,7 +739,7 @@ nắp; dáng mới `claw`). Lựa chọn: hướng tiếp cận, biến thể. M
   của `pinch` là phía ngón cái. `around` còn bị cổ tay giới hạn: `side` 45 vượt 14–25°, 270 xuyên vào thân chén ở tay nhỏ; chén
   trước ngực mặt `front` ra trước, `pinch` 180 (ngón cái về thân) trong giới hạn ở tay nhỏ, `pinch` 90 vượt 48°.
 - **Tay**: một hay hai; tay phụ mặc định `platform` dưới đáy (`place: "bottom"`, mục [5](#tay-phụ-both)): lòng ngửa đỡ đáy, ngón cái tay phụ
-  `free`. Tay phụ ngửa xoay cẳng tay sát −90°: `check` báo `wrist` (cảnh báo, vượt 0,0°) dù chén nghiêng nhẹ (`up` lệch về trước và phía tay đỡ); món đặt trước ngực thì tay kẹp ở tay nhỏ vượt cổ tay chừng 2–3°.
+  `free`. Tay phụ ngửa xoay cẳng tay sát −90°: `check` báo `wrist` (cảnh báo, vượt 0,0°) dù chén nghiêng nhẹ (`up` lệch về trước và phía tay đỡ); món đặt trước ngực thì ở cỡ tay nhỏ, tay dẫn kẹp chén (`pinch`) có lệch cổ tay (`dev`) vượt giới hạn chừng 2–3°.
   **Hướng mặc định**: `up` = trục miệng (một nguồn: miệng suy từ `wall`), miệng ngửa.
 
 #### 8. `handle` — quai (bản đầu: `hook`)
@@ -1165,8 +1165,8 @@ cap(x) = WRIST_CAP · tanh(x / WRIST_CAP)
   là `E(φ)` dò tự do. `0 < b < 1`: dò thêm một lượt như không khai (cùng giá, khoảng `±SETTLE_HALF` quanh khuỷu ưu tiên) ra
   `φ*` (đo từ khuỷu ưu tiên), khuỷu lệch `(1 − b) · φ*` khỏi hướng khai đã hoà — đi đều từ hướng khai tới chỗ tự chọn theo
   phần đã nhạt, không bám mép khoảng dò. Giữa chừng không dò lại cho cổ tay: còn vượt thì ý định nhường như thường. Tay mang
-  món thì kẹp vào khoảng hãm `HOLD_SWIVEL_SLEW` quanh mẫu trước (nở thêm `180° · b`), lượt dò tự do dùng chính khoảng hãm ấy
-  nên `b → 0` liền với nhánh không khai. Nguồn tự nó không vào bộ giải (đích `at` trần, không ý định) nhận khuỷu đã giải theo
+  món thì tốc độ xoay khuỷu bị hãm: khuỷu nằm trong khoảng hãm `HOLD_SWIVEL_SLEW` quanh mẫu trước (nở thêm `180° · b`),
+  lượt dò tự do dùng chính khoảng hãm ấy nên `b → 0` liền với nhánh không khai. Nguồn tự nó không vào bộ giải (đích `at` trần, không ý định) nhận khuỷu đã giải theo
   phần của nguồn kia, còn lại giữ hướng của nó. Phần khoá (`elbowLock`) kéo khuỷu đã giải về hướng khai bằng
   `poleMix`; phần khoá `1` không giải.
 - **Tất định**: lần cầm hai tay giải `φ` ở các mẫu cách `HOLD_SLEW_STEP` (`heldItem.ts`) tính từ đầu lần cầm, `φ_trước` là mẫu

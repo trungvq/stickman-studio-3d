@@ -1,5 +1,5 @@
 // Vệt của bàn tay đang chọn (Dáng tay): cổ tay, khuỷu, tâm món trong `±span` giây quanh giây đang xem, mỗi chấm một khung
-// 1/30 s (khoảng cách là tốc độ), chấm to ở mốc, chấm đỏ là khung giật của `check`, vạch tím là cổ tay kẹp. Luồng vệt
+// 1/30 s (khoảng cách là tốc độ), chấm to ở mốc, chấm đỏ là khung giật của `check`, vạch tím là cổ tay chạm giới hạn. Luồng vệt
 // (`trailWorker.ts`) tính sau mỗi thao tác (chậm lại 150 ms), vệt cũ mờ đi trong lúc tính; ở đây chỉ chiếu và vẽ lên lớp
 // 2D phủ khung vẽ. README.md § Dáng tay.
 import type { HandSide } from "@stickman3d/rig/core";
@@ -206,7 +206,7 @@ export class Trails {
     const side = w?.side ?? "right";
     const dot = (color: string, cls = "") => `<i class="d ${cls}" style="--c:${color}"></i>`;
     this.hud.querySelector(".leg")!.innerHTML =
-      `${dot(SIDE_COLOR[side])}cổ tay ${dot(SIDE_COLOR[side], "o")}khuỷu ${dot(ITEM)}món · ${dot(JERK, "j")}giật <i class="v"></i>kẹp`;
+      `${dot(SIDE_COLOR[side])}cổ tay ${dot(SIDE_COLOR[side], "o")}khuỷu ${dot(ITEM)}món · ${dot(JERK, "j")}giật <i class="v"></i>chạm giới hạn`;
     const st = this.hud.querySelector<HTMLElement>(".st")!;
     const snapOff = !!w?.snap && (w.snap.off || w.snap.error);
     st.textContent = this.note
@@ -281,7 +281,7 @@ export class Trails {
       });
       g.stroke();
       g.globalAlpha = this.stale ? 0.3 : 1;
-      // vạch tím: cổ tay kẹp — ngang qua chấm, vuông góc đường vệt trên hình
+      // vạch tím: cổ tay chạm giới hạn — ngang qua chấm, vuông góc đường vệt trên hình
       if (kind === "wrist")
         P.forEach((p, i) => {
           if (!p || !S[i].clamped.length || near(S[i])) return;

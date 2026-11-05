@@ -355,7 +355,7 @@ describe("hướng lòng tay theo ý định", () => {
     }
   });
 
-  it("ngoài tầm thì kẹp trong giới hạn, báo góc còn lệch, không lật dấu giữa hai khung liền nhau", () => {
+  it("ngoài tầm thì dừng ở giới hạn, báo góc còn lệch, không lật dấu giữa hai khung liền nhau", () => {
     const side = -1;
     let last: number | undefined;
     let jump = 0;

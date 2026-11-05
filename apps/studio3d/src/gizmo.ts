@@ -21,7 +21,7 @@ export interface GrabHost {
   apply(raw: Json, key: KeyRef): boolean;
   say(text: string, error?: boolean): void;
   orbit(): { enabled: boolean } | null;
-  /** Ngưỡng "sát kẹp" cổ tay của luật `held` (`stickman.held.wrist`, độ) */
+  /** Ngưỡng "sát giới hạn" cổ tay của luật `held` (`stickman.held.wrist`, độ) */
   wristWarn(): number;
   redraw(): void;
 }

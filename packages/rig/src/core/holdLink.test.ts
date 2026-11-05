@@ -336,7 +336,7 @@ describe("lớp liên kết tay ↔ món", () => {
     }
   });
 
-  // Lỗi lật: khai như cảnh áp tai có `roll`, đầu quay 40° thì cổ tay `turn` kẹp, ý định nhường, mặt máy quay ra sau gáy
+  // Lỗi lật: khai như cảnh áp tai có `roll`, đầu quay 40° thì cổ tay `turn` chạm giới hạn, ý định nhường, mặt máy quay ra sau gáy
   // (~150°, rig có báo ở `report.hold`). Việc mở ở KHUYU-TIEN-DO.md; sửa xong thì đổi về `it`.
   it.fails("áp tai khai `roll`, đầu quay 40°: mặt máy vẫn quay vào đầu", () => {
     const rt = runtime(
@@ -387,7 +387,7 @@ describe("lớp liên kết tay ↔ món", () => {
               offset,
               point: "grip",
               // tay dẫn thấp trước bụng, cẳng tay ngang: thân chai nằm chéo lòng tay (`slant` mặc định) cần cổ tay lệch quá
-              // kẹp, chai nghiêng theo bàn tay — cảnh khai `slant: 0`
+              // giới hạn, chai nghiêng theo bàn tay — cảnh khai `slant: 0`
               hold: { item, group, both: true, ...(group === "cylinder" && { slant: 0 }) },
             },
           },

@@ -2017,7 +2017,7 @@ function deepScene(ctx, name) {
               measure: s.worst,
             }),
           );
-        // khuỷu khoá xoay quá nhanh: rig không kẹp nó — docs/03-scene.md#giật-trên-hình
+        // khuỷu khoá xoay quá nhanh: rig không hãm tốc độ xoay của nó — docs/03-scene.md#giật-trên-hình
         for (const s of rig.elbowLockSnaps(rt, { characterOf, spans: spans[name] }))
           out.snap.push(
             row("move", rig.elbowLockLine(s), {

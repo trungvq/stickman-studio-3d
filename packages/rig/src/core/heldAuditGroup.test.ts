@@ -104,7 +104,7 @@ describe("heldHits: chỗ cầm nhóm", () => {
     expect(rules({ grasp: grasp({}, { gap: AIM_GAP + 2 }), s: 2 })).toEqual([]);
   });
 
-  it("`wrist`: vượt kẹp là lỗi, sát kẹp trong `HELD_WRIST` độ là cảnh báo, xa kẹp thì im", () => {
+  it("`wrist`: vượt giới hạn là lỗi, sát giới hạn trong `HELD_WRIST` độ là cảnh báo, xa giới hạn thì im", () => {
     const at = (bend: number, over = 0) =>
       heldHits(
         sample({ grasp: grasp({}, { wrist: { turn: 0, bend, dev: 0, over, off: over && 3 } }) }),

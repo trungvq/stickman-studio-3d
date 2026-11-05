@@ -239,7 +239,7 @@ const topOf = (spec) => spec.top ?? (spec.anchors.top?.dir ? "top" : [0, 1, 0]);
   });
   // đỡ dưới: món ngang bụng, xa ngực hơn hàng chung để cẳng tay xoay không vượt ±90
   const XA = { to: "chest", offset: [80, 20, 0] };
-  // trụ đứng hơi nghiêng: tay phụ đỡ đáy không quay cẳng tay quá kẹp
+  // trụ đứng hơi nghiêng: tay phụ đỡ đáy không quay cẳng tay quá giới hạn
   const NGHIENG = { to: "chest", offset: [25, 20, 10], up: [0.3, 1, 0.3] };
   /** Tay dẫn chạm món ở ngực, ngón theo món (`point: grip`): tay phụ `both` đặt theo tay này */
   const TAY_DAN = { to: "chest", offset: [40, 10, 30], point: "grip" };
@@ -256,7 +256,7 @@ const topOf = (spec) => spec.top ?? (spec.anchors.top?.dir ? "top" : [0, 1, 0]);
   });
   /** Tay dẫn duỗi ra trước qua quầy */
   const DUA_XA = { to: "chest", offset: [95, -20, 15], point: "grip" };
-  /** Đũa không có hướng mặc định: ngọn ra trước chúc 30°, hai que xếp chéo xuống trái để cổ tay và khuỷu không vượt kẹp */
+  /** Đũa không có hướng mặc định: ngọn ra trước chúc 30°, hai que xếp chéo xuống trái để cổ tay và khuỷu không vượt giới hạn */
   const NGON = { face: { axis: "tip", toward: "forward", tilt: -30 } };
   const DUA_DAT = {
     to: "chest",
@@ -264,7 +264,7 @@ const topOf = (spec) => spec.top ?? (spec.anchors.top?.dir ? "top" : [0, 1, 0]);
     ...NGON,
     roll: { axis: [1, 0, 0], toward: [0, Math.cos(Math.PI / 6), -Math.sin(Math.PI / 6)] },
   };
-  /** Bút không có hướng mặc định: ngòi ra trước chúc xuống, hơi sang trái, để cổ tay không vượt kẹp */
+  /** Bút không có hướng mặc định: ngòi ra trước chúc xuống, hơi sang trái, để cổ tay không vượt giới hạn */
   const BUT_DAT = {
     to: "chest",
     offset: [44, 16, 25],
@@ -273,7 +273,7 @@ const topOf = (spec) => spec.top ?? (spec.anchors.top?.dir ? "top" : [0, 1, 0]);
   /** Tay dẫn bút ở trước ngực (`ben` ±1 là bên tay), ngòi xuống mặt bàn */
   const BUT_BAN = (ben) => ({ to: "chest", offset: [40, 30, 25 * ben], point: "item:tip" });
   const NGOI_BAN = { face: { axis: "tip", toward: [0.5, 0.866, 0] } };
-  /** Chén hơi nghiêng, xa ngực hơn chai: cẳng tay xoay của tay đỡ đáy không vượt kẹp */
+  /** Chén hơi nghiêng, xa ngực hơn chai: cẳng tay xoay của tay đỡ đáy không vượt giới hạn */
   const CHEN_NGHIENG = { to: "chest", offset: [35, 20, 10], up: [0.2, 1, 0.2] };
   /** Túi hạ xuống dưới tay: quai ngang hông, cách thân ra phía tay phải để cẳng tay không vào thân */
   const HONG = { to: "hip", offset: [0, 65, 30] };
@@ -1134,7 +1134,7 @@ const md = [
   "# Bảng duyệt nhóm cầm",
   "",
   `Rig \`${rig.RIG_VERSION ?? JSON.parse(readFileSync(join(root, "node_modules/@stickman3d/rig/package.json"), "utf8")).version}\` · giây ${T} · người: ${people.map((p) => `\`${p.file}\` (tay ${r2(p.size)})`).join(", ")} · ${cells.length} hàng × ${GOC.length} góc.`,
-  "Số đo (đơn vị rig, góc độ). Chỗ cầm nhóm: dòng đầu là lựa chọn rig giải (`variant`, `edge`, `along`, `thumb`…), dòng hai `lún` da lún sâu nhất vào món, `xuyên` trục nang tới mặt món (âm là còn ngoài), `nắm` tâm nắm tới hình, `cỡ` khối hình / `W` tay, `cổ tay vượt` độ vượt kẹp, `hở` ngón có vai trò chạm mà còn cách món; dòng ba là khe từng ngón tới món (âm là lún) và vai trò (`press`, `wrap`, `tip`, `support`, `free`). Món treo: `quai` đỉnh quai tới chỗ treo, `nâng` món có quai `strap` dời ngần ấy để quai tựa lên người, `khuỷu` góc gập/độ ngóc cẳng tay, `thân` khe thân món tới phần người gần nhất, `đẩy` góc lệch khỏi phương đứng. `!!` là luật `held` của `check` báo trên cảnh này.",
+  "Số đo (đơn vị rig, góc độ). Chỗ cầm nhóm: dòng đầu là lựa chọn rig giải (`variant`, `edge`, `along`, `thumb`…), dòng hai `lún` da lún sâu nhất vào món, `xuyên` trục nang tới mặt món (âm là còn ngoài), `nắm` tâm nắm tới hình, `cỡ` khối hình / `W` tay, `cổ tay vượt` độ vượt giới hạn, `hở` ngón có vai trò chạm mà còn cách món; dòng ba là khe từng ngón tới món (âm là lún) và vai trò (`press`, `wrap`, `tip`, `support`, `free`). Món treo: `quai` đỉnh quai tới chỗ treo, `nâng` món có quai `strap` dời ngần ấy để quai tựa lên người, `khuỷu` góc gập/độ ngóc cẳng tay, `thân` khe thân món tới phần người gần nhất, `đẩy` góc lệch khỏi phương đứng. `!!` là luật `held` của `check` báo trên cảnh này.",
   "",
   ...(bo.length
     ? [

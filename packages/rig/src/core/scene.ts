@@ -4750,7 +4750,7 @@ interface KeyedMark {
   W: V3;
   R: M3;
   phi: number;
-  /** Xoay, gập, lệch đã kẹp; phần vượt kẹp */
+  /** Xoay, gập, lệch sau giới hạn; phần vượt giới hạn */
   wrist: number[];
   over: number[];
 }
@@ -4975,8 +4975,8 @@ const lerpN = (a: readonly number[], b: readonly number[], f: number) =>
   a.map((x, i) => x + (b[i] - x) * f);
 
 /**
- * Lần cầm theo mốc ở `time`, hệ thân: cổ tay, khung bàn tay, `φ`, góc cổ tay đã kẹp và phần vượt kẹp. Theo `ease` của mốc
- * sau: cổ tay dời thẳng, bàn tay quay đường ngắn nhất, `φ` đường ngắn nhất trên vòng, góc cổ tay hoà thẳng; `auto` thì bậc
+ * Lần cầm theo mốc ở `time`, hệ thân: cổ tay, khung bàn tay, `φ`, góc cổ tay sau giới hạn và phần vượt giới hạn. Theo
+ * `ease` của mốc sau: cổ tay dời thẳng, bàn tay quay đường ngắn nhất, `φ` đường ngắn nhất trên vòng, góc cổ tay hoà thẳng; `auto` thì bậc
  * ba đơn điệu qua bốn mốc kề — bàn tay theo góc cộng dồn (`autoRotation`), `φ` đã mở vòng. Ngoài khoảng mốc thì mốc gần nhất
  */
 function keyedAt(ks: readonly KeyedMark[], time: number) {
@@ -5021,7 +5021,7 @@ function keyedAt(ks: readonly KeyedMark[], time: number) {
 
 /**
  * Bàn tay của lần cầm theo mốc ở `time` (như `solveActing` của `act3.ts`): cổ tay dời thẳng và bàn tay quay đường ngắn nhất
- * trong hệ thân, đổi ra thế giới bằng thân ở chính `time`; `φ` đường ngắn nhất; góc cổ tay đã kẹp hoà thẳng
+ * trong hệ thân, đổi ra thế giới bằng thân ở chính `time`; `φ` đường ngắn nhất; góc cổ tay sau giới hạn hoà thẳng
  */
 function keyedArm(
   rt: SceneRuntime,
@@ -5469,11 +5469,11 @@ export interface HandReport {
   elbowLock: boolean;
   wrist: {
     /**
-     * Trước kẹp. Món đặt trước: góc bàn tay của nghiệm trên cẳng tay (lần cầm theo mốc: bàn tay đã hoà giữa hai mốc); tay
+     * Trước giới hạn. Món đặt trước: góc bàn tay của nghiệm trên cẳng tay (lần cầm theo mốc: bàn tay đã hoà giữa hai mốc); tay
      * dẫn, tay tự do: nghiệm ý định trước giới hạn tốc độ `HOLD_SLEW`, đã trong miền khớp; không ý định: `null`
      */
     raw: WristAngles | null;
-    /** Sau kẹp, như vẽ */
+    /** Sau giới hạn, như vẽ */
     drawn: WristAngles;
     /** Phần vượt miền (≥ 0): món đặt trước của bộ giải, còn lại đo trên góc vẽ */
     over: WristAngles;
@@ -5506,7 +5506,7 @@ const WRIST_KEYS = ["turn", "bend", "dev"] as const;
 
 /**
  * Tay `side` của người `id` ở `time` như người 3D vẽ (cùng lần giải với `act`, `actJoints`): chế độ và lần cầm, `φ`, `φ₀`,
- * góc cổ tay trước và sau kẹp, khớp, đường tròn khuỷu và `E(φ)` trên nó, tâm nắm. `o.char`: nhân vật như vẽ
+ * góc cổ tay trước và sau giới hạn, khớp, đường tròn khuỷu và `E(φ)` trên nó, tâm nắm. `o.char`: nhân vật như vẽ
  * (`Figure.body`), bỏ trống là `rt.chars[id]`; `o.eye`: mắt ống kính (thế giới rig) cho ý định `camera`.
  * docs/11-nhom-cam.md § Báo tay cho studio
  */

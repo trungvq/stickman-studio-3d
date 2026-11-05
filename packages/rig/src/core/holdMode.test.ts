@@ -437,7 +437,10 @@ const sceneC = (): Raw => ({
   ],
 });
 
-/** Tay phải như vẽ ở `t`: `φ` khuỷu, góc cổ tay, khớp kẹp, lấn thân (`bodyRatio`, như `E(φ)` đo) và `φ` của `elbow` khai */
+/**
+ * Tay phải như vẽ ở `t`: `φ` khuỷu, góc cổ tay, khớp chạm giới hạn, lấn thân (`bodyRatio`, như `E(φ)` đo) và `φ` của
+ * `elbow` khai
+ */
 function rightArm(rt: SceneRuntime, t = 0) {
   const a = actArm(NGUOI, sceneAt(rt, "nguoi", t, H, DIMS) as ActInput, -1)!;
   const phi = phiOf(a.inp, a.W, a.E);
@@ -555,7 +558,7 @@ describe("đồ theo tay ↔ tay theo đồ: áp tai, dải dáng tự nhiên qu
     expect(runs.some((x) => x.rise > 0.5)).toBe(true);
   });
 
-  it("tay theo đồ: món ở mốc lệch dưới ngưỡng; cổ tay không kẹp trước và sau", () => {
+  it("tay theo đồ: món ở mốc lệch dưới ngưỡng; cổ tay không chạm giới hạn trước và sau", () => {
     for (const { tag, rt, r, next } of runs) {
       expect(r.scope.mode, tag).toEqual({ before: "hand", after: "keyed" });
       expect(r.max.item.pos, tag).toBeLessThan(HOLD_MODE_POS);
@@ -565,7 +568,7 @@ describe("đồ theo tay ↔ tay theo đồ: áp tai, dải dáng tự nhiên qu
     }
   });
 
-  it("bỏ `elbow`, `along`, `thumb` (rig giải): cổ tay không kẹp, món ở mốc như khi giữ", () => {
+  it("bỏ `elbow`, `along`, `thumb` (rig giải): cổ tay không chạm giới hạn, món ở mốc như khi giữ", () => {
     for (const { tag, next } of runs) {
       const bare = structuredClone(next);
       const k = keysOf(bare)[0].right as Record<string, unknown>;
@@ -581,7 +584,7 @@ describe("đồ theo tay ↔ tay theo đồ: áp tai, dải dáng tự nhiên qu
     }
   });
 
-  it("đồ theo tay lại: món về chỗ, cổ tay không kẹp", () => {
+  it("đồ theo tay lại: món về chỗ, cổ tay không chạm giới hạn", () => {
     for (const { tag, next, back } of runs) {
       expect(back.max.item.pos, tag).toBeLessThan(HOLD_MODE_POS);
       expect(back.max.item.angle, tag).toBeLessThan(HOLD_MODE_ANGLE);
@@ -666,7 +669,7 @@ describe("đầu cao cảnh khai (`hold.high`)", () => {
 });
 
 // Chủ ý (docs/11-nhom-cam.md § Đổi chế độ lần cầm): món theo mốc đọc `elbow` là gợi ý, tay dẫn đọc là lệnh. Khuỷu khai xấu
-// thì món theo mốc được nhường khuỷu để tránh lấn thân, chịu cổ tay kẹp; muốn cứng thì `elbowLock`
+// thì món theo mốc được nhường khuỷu để tránh lấn thân, chịu cổ tay chạm giới hạn; muốn cứng thì `elbowLock`
 describe("món theo mốc: `elbow` khai xấu là gợi ý, `elbowLock` là lệnh", () => {
   const raw = sceneC();
   const r = holdToItemLed(build(raw), raw, { id: "nguoi", side: "right", at: 0, rebuild: build });
@@ -775,15 +778,15 @@ describe("hai tay trên mốc món → đồ theo tay", () => {
     expect(runs.left.map((x) => [x.since, x.lead, x.mode])).toEqual([[1, "right", "hand"]]);
   });
 
-  it("cầm thuận: cổ tay hai tay trong giới hạn, không báo kẹp; món ở mốc giữ chỗ trong 0,5 đơn vị rig và 1°", () => {
+  it("cầm thuận: cổ tay hai tay trong giới hạn, không báo chạm giới hạn; món ở mốc giữ chỗ trong 0,5 đơn vị rig và 1°", () => {
     for (const x of r.rows) expect(Object.values(x.clamped.before).flat()).toEqual([]);
-    expect(r.notes.join(" ")).not.toMatch(/cổ tay kẹp/);
+    expect(r.notes.join(" ")).not.toMatch(/cổ tay chạm giới hạn/);
     expect(r.max.item.pos).toBeLessThan(0.5);
     expect(r.max.item.angle).toBeLessThan(1);
   });
 
   it(
-    "cổ tay tay dẫn kẹp khi còn hai tay: độ lệch báo đúng món như vẽ, báo kẹp",
+    "cổ tay tay dẫn chạm giới hạn khi còn hai tay: độ lệch báo đúng món như vẽ, báo chạm giới hạn",
     { timeout: 30_000 },
     () => {
       // hai tay bắt chéo, bảng quay về máy: cổ tay phải vượt giới hạn
@@ -803,8 +806,8 @@ describe("hai tay trên mốc món → đồ theo tay", () => {
       const a = drawnBoard(rb, 0, true);
       const c = drawnBoard(rb2, 0, false);
       expect(Math.abs(row.item!.pos - Math.hypot(...sub3(a.P, c.P)))).toBeLessThan(1e-6);
-      expect(k.notes.join(" ")).toMatch(/cổ tay kẹp ở giới hạn trước phép đổi: tay phải \(`turn`/);
-      expect(k.notes.join(" ")).toMatch(/sau phép đổi món theo bàn tay đã kẹp nên dời/);
+      expect(k.notes.join(" ")).toMatch(/cổ tay chạm giới hạn trước phép đổi: tay phải \(`turn`/);
+      expect(k.notes.join(" ")).toMatch(/sau phép đổi món theo bàn tay đã dừng ở giới hạn nên dời/);
     },
   );
 });

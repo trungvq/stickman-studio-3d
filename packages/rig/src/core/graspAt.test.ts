@@ -484,7 +484,7 @@ describe("chooseMissing `card`", () => {
     }
   });
 
-  it("thẻ nằm phẳng trên mặt ngang trước bụng: rig chọn `edges`, bàn tay phía mặt trên, ngón cái ở mép gần, `along` 0,5, cổ tay không vượt kẹp; `lateral` đắt hơn cả khi cộng `VARIANT_COST` cho `edges`", () => {
+  it("thẻ nằm phẳng trên mặt ngang trước bụng: rig chọn `edges`, bàn tay phía mặt trên, ngón cái ở mép gần, `along` 0,5, cổ tay không vượt giới hạn; `lateral` đắt hơn cả khi cộng `VARIANT_COST` cho `edges`", () => {
     // mặt trước ngửa, mép trên ra xa người cầm; hông người mẫu ở [250, −180, 506]
     const R = fromColumns([1, 0, 0], [0, -1, 0], [0, 0, -1]);
     for (const P of [

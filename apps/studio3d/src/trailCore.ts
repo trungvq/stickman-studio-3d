@@ -89,7 +89,7 @@ export const runAt = (runs: readonly HoldRunInfo[], t: number, dur: number) =>
 
 /**
  * Mẫu tay `side` của `id` ở giây `x.t`: cổ tay, khuỷu (`actJoints` của nhân vật `rt.chars[id]`, như `check`), tâm món của
- * lần cầm `runs` ở giây ấy (`drawnItemAt`, cùng nhân vật và tư thế), khớp cổ tay kẹp như `handReport` (món:
+ * lần cầm `runs` ở giây ấy (`drawnItemAt`, cùng nhân vật và tư thế), khớp cổ tay chạm giới hạn như `handReport` (món:
  * `AimReport.hold.clamped`; không món: góc vẽ chạm giới hạn)
  */
 export function trailSample(

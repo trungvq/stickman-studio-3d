@@ -984,7 +984,7 @@ dùng, và `scene_probe` / `validate` (không biết tập), thì đo cả cản
   ghi, suốt lúc nó chạy, kể cả đoạn hoà vào và đoạn hoà ra sang clip sau;
 - mốc `world.hands[].snap`: tay ấy, đoạn từ mốc trước tới mốc này.
 
-**Khuỷu khoá xoay quá nhanh.** Rig không kẹp khuỷu khoá (`elbowLock`, [Đích bàn tay thế
+**Khuỷu khoá xoay quá nhanh.** Rig không hãm tốc độ xoay của khuỷu khoá (`elbowLock`, [Đích bàn tay thế
 giới](#đích-bàn-tay-thế-giới)), nên `check` đo riêng nó (`elbowLockSnaps` của lõi): mẫu cách nhau `HOLD_SLEW_STEP` (`1/30 s`)
 trên mọi đoạn giữa hai mốc `world.hands` của tay có mốc khoá, cả trước mốc đầu và sau mốc cuối (phần khoá của mốc ấy giữ
 nguyên ở đó), khuỷu vẽ ra (`actArm`) xoay quanh trục vai → cổ tay quá `HOLD_SWIVEL_SLEW` (`5°`) giữa hai mẫu cùng có phần
@@ -994,7 +994,7 @@ thì gốc đổi hẳn) dù khuỷu không xoay. Tay gần thẳng (khuỷu cá
 qua hướng khoá thì khuỷu khoá lật thật: báo. Các mẫu quá ngưỡng liền nhau gộp một dòng, cùng nhóm `move`:
 
 ```
-scenes/canh-05.json: `lan` tay phải giây 1.00–1.10: khuỷu khoá xoay 46° mỗi 1/30 s (quá 5°) trên đoạn mốc `world.hands` giây 1.00 → 1.10 — rig không kẹp khuỷu khoá (`elbowLock`): dời hai mốc xa nhau hơn, cho `elbow` hai mốc gần hướng nhau hơn, hay bỏ `elbowLock` ở một mốc. Cố ý nhanh thì khai `snap: true` ở mốc sau
+scenes/canh-05.json: `lan` tay phải giây 1.00–1.10: khuỷu khoá xoay 46° mỗi 1/30 s (quá 5°) trên đoạn mốc `world.hands` giây 1.00 → 1.10 — rig không hãm tốc độ xoay của khuỷu khoá (`elbowLock`): dời hai mốc xa nhau hơn, cho `elbow` hai mốc gần hướng nhau hơn, hay bỏ `elbowLock` ở một mốc. Cố ý nhanh thì khai `snap: true` ở mốc sau
 ```
 
 Mốc sau khai `snap` và quãng không lên hình thì không đo. Quãng trước mốc đầu, sau mốc cuối thì dòng báo nêu mốc ấy và gợi

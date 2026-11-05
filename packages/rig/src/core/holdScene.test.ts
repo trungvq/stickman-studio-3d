@@ -260,7 +260,7 @@ describe("`world.hands[].hold` trong scene", () => {
     expect(deg(screen, sub([-100, -390, -350], o))).toBeLessThan(25);
   });
 
-  it("quá tầm cổ tay: báo lệch và khớp bị kẹp, không nới giới hạn", () => {
+  it("quá tầm cổ tay: báo lệch và khớp chạm giới hạn, không nới giới hạn", () => {
     // màn ngửa lên mà đầu máy chĩa ra ngoài, tay cao sát ngực: cổ tay phải gập quá `AIM_BEND`
     const sp = at([
       {

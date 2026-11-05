@@ -424,11 +424,11 @@ describe("turnShort", () => {
     expect(turnShort(R, before, part, ["bend"])).toBeUndefined();
   });
 
-  it("xoay không tới thì báo góc xoay được và khớp kẹp", () => {
+  it("xoay không tới thì báo góc xoay được và khớp chạm giới hạn", () => {
     const half = axisRotation([0, 0, 1], 15);
     const part = { palm: matVec(half, before.palm), finger: matVec(half, before.finger) };
     expect(turnShort(R, before, part, ["bend", "dev"])).toBe(
-      "bàn tay chỉ xoay được ~15° / 40° (lệch 25°), cổ tay kẹp gập, lệch",
+      "bàn tay chỉ xoay được ~15° / 40° (lệch 25°), cổ tay chạm giới hạn gập, lệch",
     );
     expect(turnShort(R, before, before, [])).toMatch(/~0° \/ 40°.*hết miền khớp/);
   });

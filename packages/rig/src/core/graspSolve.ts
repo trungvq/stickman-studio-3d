@@ -1525,7 +1525,7 @@ export interface GraspSolution {
   still?: ItemPose;
 }
 
-/** Báo của một chỗ cầm (`AimReport.hold.grasp`): `wrist.over` độ vượt kẹp, `wrist.off` lệch bàn tay vẽ (rig) */
+/** Báo của một chỗ cầm (`AimReport.hold.grasp`): `wrist.over` độ vượt giới hạn, `wrist.off` lệch bàn tay vẽ (rig) */
 export interface GraspReport {
   item: string;
   group: GroupId;
