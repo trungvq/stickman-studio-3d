@@ -476,14 +476,20 @@ studio3d `grab.test.ts` 2 (đã biết).
   `t02-s017-goi` của jp-sukatto (`around` 150, `roll` `top` về `[-0.3, -1, 0]`, `elbow`, `elbowLock`), đầu quay 40° thì cổ
   tay `turn` kẹp, ý định nhường, mặt máy lệch 150° khỏi hướng vào đầu (cảnh thật giây 0,5–0,9, Yota ngó quanh: 132–161°).
   Sửa xong thì đổi ca ấy về `it`.
-- **Ống nghe áp tai khi đầu quay ra xa tay cầm** (ca `around` 180 của test, không `roll`): mặt máy vẫn quay vào đầu, nhưng
-  trục máy lệch đường tai – miệng 24° (đầu quay 20°) tới 37° (40°), đầu thẳng 8°. Test chỉ đòi < 15° ở đầu thẳng.
+- **Ống nghe áp tai khi đầu quay về phía tay cầm** (ca `around` 180 của test, không `roll`): mặt máy vẫn quay vào đầu, trục
+  máy lệch đường tai – miệng 24° (đầu quay 20°) tới 37° (40°), đầu thẳng 8°, quay ra xa tay ≤ 10°. Rig chọn góc xoay máy
+  quanh mặt máy theo cổ tay thoải mái nhất, không theo đường tai – miệng; cổ tay không chạm giới hạn, ý định không nhường.
+  Chủ dự án soi ảnh (2026-11-06): trông ổn, không sửa. Cần ép thì cảnh khai `roll` với `toward: { mark: "mouth" }`.
 - **Tay phụ `both` nên nằm phẳng hơn**: lòng tay phụ lệch hướng đỡ 12,7° (chai đỡ đáy), 18,4° (điện thoại), 27,6° (khay, ngón
-  27,7°); cảnh thật khay `t02-s053`–`s057` ~11°, chồng khăn `t02-s136` ~31°. Không thấy ở khung toàn cảnh; làm khi có cảnh cận
-  tay đỡ chai, khay (tập 4). Tăng `W_MISS` đã thử: khuỷu nhảy, bàn tay lật (mục "Bước 4").
+  27,7°); cảnh thật khay `t02-s053`–`s057` ~11°, chồng khăn `t02-s136` ~31°. Tăng `W_MISS` đã thử: khuỷu nhảy, bàn tay lật
+  (mục "Bước 4"). Soi ảnh cận (2026-11-06, `scratchpad/item5/to-1-ca-test.png`, `to-2-canh-that.png`): ca test, khay, chồng khăn,
+  máy chẩn đoán trông ổn. Chỗ lạ duy nhất: rót có tay đỡ đáy (`pour-serve`, đo ở `t03-s008`) lệch 34,5°, tới 50° khi chai
+  nghiêng — tay đỡ thành nắm tay tì góc bên chai, cổ tay chạm giới hạn (gập 70, lệch −30). Tập 4 cận đúng kiểu này ở S37, S148
+  (`can-ly`). Chưa sửa, chờ chủ dự án chọn: (1) `W_MISS` riêng cho tay phụ `both`; (2) bỏ hướng ngón khi tay phụ đỡ đáy tròn, cho
+  bàn tay tự xoay quanh lòng tay (cần hãm tốc độ xoay); (3) món nghiêng một phần về phía tay phụ; (4) ở cảnh tập 4: rót một tay,
+  khung cận để tay đỡ ra ngoài, hay rót nghiêng ít. `held/chai-vang.json` chưa khai `roles: pourer` nên `gen pour` chưa sinh được.
 - Đo t03, `stickman check`; bảng 29 tư thế đủ ba góc đã chụp nhưng chưa soi hết từng ô.
-- Vòng review (Codex `gpt-6-astra`) và vòng sửa theo review của đợt bỏ `AIM_ITER` (`e31f9e6`) chưa chạy: làm ở phiên sau, agent
-  code chỉ chạy trên Claude Work.
+- Vòng review và vòng sửa theo review của đợt bỏ `AIM_ITER` (`e31f9e6`) chưa chạy: làm ở phiên sau.
 
 ## Khuỷu khai nhạt dần: rải đều (2026-11-05, chưa commit)
 
@@ -544,3 +550,34 @@ studio3d `grab.test.ts` 2 (đã biết).
     mà ca so `toEqual` cả object). Theo luật giao việc: dừng, chưa sửa ca ấy (sửa: thêm `high: sol.frame.high` vào object mong
     đợi, hay bỏ `high` khỏi `GraspReport` và lấy đầu cao chỗ khác). MCP 15/15, studio `keys.test` xanh; typecheck, lint, format
     sạch.
+
+## 11 việc sau `2853a6c` (2026-11-06, đã commit trên `dev`)
+
+Ảnh, script đo ở scratchpad phiên `82659988-…/scratchpad/item*/`. Repo video `jp-sukatto` đo qua `pnpm rig local`; tập 2, 3 đã
+xong nên cảnh t02/t03 chỉ là bộ đo.
+
+1. `holdScene` "ý định vượt tầm cổ tay": lỗi làm tròn `toFixed(6)` của mẫu trước, nới 1e-3 (`35b10fd`). Rig đúng (15,0000000°).
+2. "kẹp" → "chạm / vượt / sát giới hạn" trong chuỗi, comment, tên test; docs 742, 987, 997, 1168 viết lại (`a142117`). Không
+   chuỗi nào vào khoá baseline.
+3. Ống nghe lật ra sau gáy (`t02-s017-goi`): `elbow` khai gần trùng trục vai → tai (177–179°) nên góc xoay khuỷu vô định. Sửa
+   `elbow` 4 cảnh (repo video `757c8f4`), luật `check` `elbowAxis` + `aimYield` quá 90° gợi ý đổi `elbow`; ca `it.fails` thành
+   ca kiểm `check` báo (`df131e0`). Còn 11 tay t02 bị `elbowAxis` báo, chưa soi (takumi trái s016, s023–s025).
+4. Ống nghe lệch má khi đầu quay về phía tay cầm (24° ở 20°, 37° ở 40°): rig giữ trục món dọc đường tai – miệng khi không khai
+   `roll` (`earLineCost` ở chọn góc xoay và chọn khuỷu, `178aa6f`); sửa tay trôi sau mốc cuối và khuỷu lật ở `thu-nhom-cam`
+   (`EAR_SETTLE_SHARP`, `ff6261b`). Ca test ±40° hai tay ≤ 7,5°; cầm không áp tai và cảnh khai `roll` lệch 0. Còn, có từ trước:
+   tay từ ngực lên tai khi đầu quay về phía tay (khuỷu nhảy 75–100 px/khung), điện thoại lật ở `thu-nhom-cam` 5,6 s; tư thế
+   cuối `thu-nhom-cam` cổ tay gập 59° (giới hạn 60°).
+5. Tay phụ `both`: ca test, khay, chồng khăn, máy chẩn đoán trông ổn, không sửa (xem mục việc còn mở ở trên: `pour-serve`).
+6. `high`: tay phụ `both` không mang `high` (test khẳng định), `validate`/`check` báo `high` vuông góc mọi cạnh khớp hay nhóm không
+   dùng, test `sheet`/`platform` (`210e2a3`). Studio đọc `high` từ báo cáo đúng (lệch 0, 4 ca).
+7. Ngưỡng 30° của `edgeHigh`: đầu cao chọn một lần ở mốc mở lần cầm, giữa lần cầm không đổi; 8 chỗ nghi nhảy soi ảnh, mp4
+   không thấy. Thêm cảnh báo lần cầm mở sát ranh giới (< 5°) mà cảnh khai số đo theo đầu cao (`704a32e`, 0 dòng trên 168 cảnh).
+8. Món theo mốc lệch vì cổ tay chạm giới hạn: luật `held` `mark` (40°, 10; `2787e82`). Mới bắt 3/8 chỗ erika: `check` lấy
+   `lens` trong JSON, không lấy ống kính của `world.ts`, nên 5 cảnh coi tay ngoài khung (cũng gặp ở `t03-s135` mục 3). Dùng ống
+   kính thật thì 8/8 nhưng mọi luật `held` +77/−17 dòng trên t02/t03: việc riêng, chưa làm.
+9. Studio 3D: ＋ đặt `at` lên mép tầm với khi dáng ở ngoài mép; nhãn tầm với giữ trong khung (390 px); nhãn đủ mọi luật held
+   (`939da23`). Còn: khoá khuỷu trên vòng khuỷu khi mốc chưa có `at` vẫn ghi `at` không dò mép; `#msg` dài đè đáy khung ở 390 px.
+10. Test nặng: `vi.setConfig({ testTimeout: 30_000 })` ở 37 file nặng, giữ 5 s cho phần còn lại (`d5082a1`).
+11. Tạp dề dài lúc quỳ: nằm theo đùi, qua gối, gập xuống sàn (`drapeFloor`, `kneelOn`, `drape` theo hướng lên thân,
+    `f24bcb6`); đứng, đi, váy thường lệch 0. Còn: hai test `hem3d` mới vẫn qua trên code trước (phần giữ thật ở `hem.test.ts`);
+    nếp gập trên sàn nhìn ngang hơi như giọt nước; váy thường, vạt quấn quỳ vẫn xuống dưới sàn 1–3 px.
