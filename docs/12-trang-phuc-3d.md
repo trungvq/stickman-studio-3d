@@ -1552,7 +1552,7 @@ phía trước tới chỗ rời người rồi rủ thẳng. Đứng, cúi chà
 
 - **Thân ngả trước, đùi gập sát bụng** (quỳ chống tay): dây cạp lọt vào trong mặt cắt giữa bụng và đùi thì vải đi theo
   hướng lên của thân, dọc mặt bụng, ra tới mép mặt cắt rồi mới phủ xuống mặt trên đùi; không đi thẳng đứng xuyên bụng.
-  Thân đứng thẳng hay ngả sau thì như cũ: vật phía trước cao hơn cạp thì vải đi thẳng lên trùm qua.
+  Thân đứng thẳng hay ngả sau: vật phía trước cao hơn cạp thì vải đi thẳng lên trùm qua.
 - **Chạm sàn.** `act` biết sàn dưới người (`world.floor`) thì vải không xuống dưới sàn: chạm sàn (hay buông thẳng từ chỗ
   rời người xuống sàn) thì gập, nằm trên sàn cao `APRON_FLOOR[0]` (`1` px), góc gập bo bán kính `APRON_FLOOR[1]`
   (`8` px), tiến ra trước không quá `APRON_FLOOR[2]` (`20` px) quá chỗ chạm — phần vải dài hơn coi như dồn lại, không
