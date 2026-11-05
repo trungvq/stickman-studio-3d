@@ -1104,6 +1104,8 @@ const EAR_MARKS: readonly BodyMark[] = ["head", "ear", "cheek"];
 const EAR_REACH: readonly BodyMark[] = ["ear", "cheek"];
 /** Thang (độ) của giá trục `top` món áp tai lệch đường tai – miệng: lệch ngần này có giá `1`, như cổ tay gập 50° */
 export const EAR_LINE_SPAN = 15;
+/** Hệ số nhân giá `E(φ)` khi áp tai đủ phần: trung bình Gibbs của `settlePhi` lạnh đi ngần ấy lần */
+const EAR_SETTLE_SHARP = 10;
 /**
  * Giá trục `top` của món (three, đơn vị) lệch hướng `line` (miệng → tai) nhìn dọc trục hai tai `n` (đơn vị):
  * `2 · (|a| − a · line / |line|) / EAR_LINE_SPAN²` với `a` là `top` chiếu vuông góc `n` — gần `(lệch / EAR_LINE_SPAN)²`, liền
@@ -1381,23 +1383,25 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
      * Mặt món quay vào đầu người cầm, cảnh không khai `roll`, món khai `top`: giá trục `top` của món ở khung bàn tay `R` lệch
      * đường tai – miệng nhìn ngang đầu (`earLineCost`)
      */
-    const earOf = (ha: HoldAim): ((R: M3) => number) | undefined => {
+    const earOf = (ha: HoldAim): { k: number; f: (R: M3) => number } | undefined => {
       const x = extras[side];
       const t = ha.face?.target;
       if (!x?.G || !x.spec?.top || ha.roll || !t || !("to" in t) || !leads(ha)) return undefined;
       if (!EAR_MARKS.includes(t.to) || t.side === "other" || !hasTerms(rw)) return undefined;
-      // phần đích tay đặt ở tai, má: tay đang tới hay rời tai thì giá nhạt theo phần ấy
+      // bình phương phần đích tay đặt ở tai, má: tay đang tới hay rời tai thì giá nhạt theo phần ấy, vừa rời chỗ cũ thì
+      // gần như chưa có
       const all = rw!.terms!.reduce((s, r) => s + r.k, 0);
       const k =
-        (Math.min(1, rw!.w) *
+        ((Math.min(1, rw!.w) *
           rw!.terms!.reduce((s, r) => s + (r.to && EAR_REACH.includes(r.to) ? r.k : 0), 0)) /
-        (all || 1);
+          (all || 1)) **
+        2;
       if (!(k > 0)) return undefined;
       const ear = markAt(T, { to: "ear" }, side, other);
       const n = unit(sub(ear, markAt(T, { to: "ear", side: "other" }, side, other)));
       const line = sub(ear, markAt(T, { to: "mouth" }, side, other));
       const top = unit(mv(x.G.R, itemGeom(x.spec).U));
-      return (R) => k * earLineCost(mv(R, top), line, n);
+      return { k, f: (R) => earLineCost(mv(R, top), line, n) };
     };
     /** Ý định của món tay này mang: trục chính (và trục phụ) quay về đích, giải qua `aimWrist`; `undefined` là giữ bàn tay */
     const holdSolve = (
@@ -1459,7 +1463,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
           const R = roll(p);
           const w = wristAngles(mm(tr(A.Re), R), side);
           const e = wristEase(...gimbalBlend([w.turn, w.bend, w.dev]));
-          return e.ease + e.over + (earE ? earE(R) : 0);
+          return e.ease + e.over + (earE ? earE.k * earE.f(R) : 0);
         };
         Rt = roll(settlePhi((p) => p, ease, 0, -SETTLE_HALF, SETTLE_HALF).x);
       }
@@ -1624,10 +1628,14 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
     const wwOf = rw?.hold ? 1 : Math.min(1, rw?.w ?? 0);
     // áp tai không khai `roll`: giá trục máy lệch đường tai – miệng theo phần ý định, cho cả bước chọn khuỷu
     const ears = (aimW?.terms ?? []).flatMap((a) => {
-      const f = a.hold && earOf(a.hold);
-      return f ? [{ k: a.k * wwOf, f }] : [];
+      const e = a.hold && earOf(a.hold);
+      return e ? [{ k: a.k * wwOf * e.k, f: e.f }] : [];
     });
     const earMiss = (R: M3) => ears.reduce((e, x) => e + x.k * x.f(R), 0);
+    const earK = Math.min(
+      1,
+      ears.reduce((s, x) => s + x.k, 0),
+    );
     const aimK = (a: Aim | undefined, w: number) =>
       a
         ? w *
@@ -1948,6 +1956,10 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
         const half = (slew ? 180 + sw : SETTLE_HALF) * g;
         const lo = Math.max(slew ? from - sw - 180 * (1 - g) : -Infinity, -half);
         const hi = Math.min(slew ? from + sw + 180 * (1 - g) : Infinity, half);
+        // áp tai: giá dốc thêm theo phần áp tai (trung bình Gibbs lạnh đi) — khuỷu tới đáy trong khoảng hãm với tốc độ hãm,
+        // không bò theo độ dốc thoải khi người đã đứng yên
+        const sharp = 1 + earK * (EAR_SETTLE_SHARP - 1);
+        const cost = (x: ReturnType<typeof ev>) => x.E * sharp;
         // chỗ dò tự do: khoảng như khi không khai (món đang mang: khoảng hãm quanh mẫu trước, đo từ khuỷu ưu tiên), nên tới
         // đủ phần nhạt thì liền với nhánh không khai
         const freeAt = () => {
@@ -1958,18 +1970,12 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
                 Math.min(fr + sw + 180 * (1 - g), 180 + sw),
               ]
             : [-SETTLE_HALF, SETTLE_HALF];
-          return settlePhi(
-            (x) => ev(x, true),
-            (x) => x.E,
-            (a + b) / 2,
-            a,
-            b,
-          ).x;
+          return settlePhi((x) => ev(x, true), cost, (a + b) / 2, a, b).x;
         };
         const sol =
           declK > 0
             ? Math.max(lo, Math.min(hi, g * freeAt()))
-            : settlePhi(ev, (x) => x.E, (lo + hi) / 2, lo, hi).x;
+            : settlePhi(ev, cost, (lo + hi) / 2, lo, hi).x;
         d =
           lock > 0
             ? F0.phiOfV(poleMix(F0.n, F0.o0, F0.at(F0.want + sol), pref, lock)) - F0.want

@@ -786,10 +786,13 @@ nắp; dáng mới `claw`). Lựa chọn: hướng tiếp cận, biến thể. M
   `ear` hay `cheek`, không `side: "other"`), mốc tay đặt ở tai hay má (`to: "ear"` / `"cheek"`) và món khai `top` (đầu loa)
   thì rig giữ trục `top` dọc đường miệng → tai nhìn ngang đầu (chiếu lên mặt vuông góc trục hai tai): loa ở tai, mic về
   miệng, cả khi đầu quay. Giá `earLineCost` = `2 · (|a| − a · l̂) / EAR_LINE_SPAN²` (`a` là `top` chiếu lên mặt ấy, `l̂`
-  hướng miệng → tai trên mặt ấy, `EAR_LINE_SPAN` = 15°: gần `(lệch / 15°)²`, lệch 15° giá như cổ tay gập 50°), nhân phần
-  đích tay ở tai, má trong các số hạng đích (tay đang tới hay rời tai thì giá nhạt theo đích), cộng vào giá thoải mái cổ tay khi chọn độ lăn quanh trục
+  hướng miệng → tai trên mặt ấy, `EAR_LINE_SPAN` = 15°: gần `(lệch / 15°)²`, lệch 15° giá như cổ tay gập 50°), nhân bình
+  phương phần đích tay ở tai, má trong các số hạng đích (tay đang tới hay rời tai thì giá nhạt theo đích, vừa rời chỗ cũ thì
+  gần như chưa có), cộng vào giá thoải mái cổ tay khi chọn độ lăn quanh trục
   `face` (`holdSolve`), và cộng vào `E(φ)` của từng `φ` thử trên bàn tay đã nhường ([Khuỷu tự nhiên](#khuỷu-tự-nhiên)): khuỷu
-  chọn chỗ cổ tay với tới trục ấy trong giới hạn. Ống nghe máy bàn ở người mẫu, đầu quay −40…40°: trục lệch đường ấy ≤ 8°,
+  chọn chỗ cổ tay với tới trục ấy trong giới hạn. Phần giá ấy (`earK`, tối đa `1`) còn làm `E(φ)` dốc thêm `1 + 9 · earK` lần
+  khi dò khuỷu (`EAR_SETTLE_SHARP` `10`): trong khoảng hãm `HOLD_SWIVEL_SLEW` khuỷu tới đáy với tốc độ hãm rồi đứng, không
+  bò theo độ dốc thoải sau khi người đã đứng yên. Ống nghe máy bàn ở người mẫu, đầu quay −40…40°: trục lệch đường ấy ≤ 8°,
   cổ tay trong giới hạn, mặt máy lệch hướng vào đầu ≤ 5°. Cảnh khai `roll` thì `roll` chốt độ lăn, không có giá này; cảnh
   cần ép trục máy thì khai `roll` với `toward: { mark: "mouth" }` trên trục ngược `top` (ống nghe máy bàn: `roll: { axis: [0,
   0, -1], toward: { mark: "mouth" } }`).
@@ -1190,7 +1193,9 @@ cap(x) = WRIST_CAP · tanh(x / WRIST_CAP)
   `φ*` (đo từ khuỷu ưu tiên), khuỷu lệch `(1 − b) · φ*` khỏi hướng khai đã hoà — đi đều từ hướng khai tới chỗ tự chọn theo
   phần đã nhạt, không bám mép khoảng dò. Giữa chừng không dò lại cho cổ tay: còn vượt thì ý định nhường như thường. Tay mang
   món thì tốc độ xoay khuỷu bị hãm: khuỷu nằm trong khoảng hãm `HOLD_SWIVEL_SLEW` quanh mẫu trước (nở thêm `180° · b`),
-  lượt dò tự do dùng chính khoảng hãm ấy nên `b → 0` liền với nhánh không khai. Nguồn tự nó không vào bộ giải (đích `at` trần, không ý định) nhận khuỷu đã giải theo
+  lượt dò tự do dùng chính khoảng hãm ấy nên `b → 0` liền với nhánh không khai. Trung bình Gibbs của `settlePhi` trong khoảng
+  hãm hẹp dời khuỷu theo độ dốc của `E(φ)`: giá thoải thì khuỷu bò chậm về đáy; áp tai không khai `roll` thì `E(φ)` dốc thêm
+  theo phần áp tai (mục [9](#9-palmbox--hộp-cỡ-lòng-tay-bản-đầu)). Nguồn tự nó không vào bộ giải (đích `at` trần, không ý định) nhận khuỷu đã giải theo
   phần của nguồn kia, còn lại giữ hướng của nó. Phần khoá (`elbowLock`) kéo khuỷu đã giải về hướng khai bằng
   `poleMix`; phần khoá `1` không giải.
 - **Tất định**: lần cầm hai tay giải `φ` ở các mẫu cách `HOLD_SLEW_STEP` (`heldItem.ts`) tính từ đầu lần cầm, `φ_trước` là mẫu

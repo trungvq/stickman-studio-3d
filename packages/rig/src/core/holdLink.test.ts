@@ -409,6 +409,67 @@ describe("lớp liên kết tay ↔ món", () => {
     },
   );
 
+  it(
+    "áp tai không khai `roll`, từ ngực lên tai rồi đứng yên: một giây sau mốc cuối khuỷu, món không trôi",
+    { timeout: 30_000 },
+    () => {
+      const cases = [
+        {
+          item: "ong-nghe-ban",
+          spec: HANDSET,
+          from: { item: "ong-nghe-ban", group: "cylinder", around: 180 },
+          face: { axis: "front", toward: { mark: "head" } },
+        },
+        {
+          item: "dien-thoai",
+          spec: PHONE,
+          from: { item: "dien-thoai", group: "palmBox" },
+          face: { axis: "screen", toward: { mark: "head" } },
+        },
+      ];
+      for (const c of cases)
+        for (const yaw of [0, 30, -30])
+          for (const key of ["right", "left"] as const) {
+            const side = key === "right" ? -1 : 1;
+            const tag = key === "right" ? "R" : "L";
+            const { from, face } = c;
+            const rt = runtime(
+              [
+                { t: 0.5, [key]: { to: "chest", offset: [30, 20, 25], point: "grip", hold: from } },
+                {
+                  t: 1.5,
+                  [key]: {
+                    to: "ear",
+                    point: "item:speaker",
+                    hold: { ...from, face, touch: ["self.head"] },
+                  },
+                },
+              ],
+              { [c.item]: c.spec },
+              [0, yaw, -6],
+            );
+            let prev: { at: V3; R: M3; E: V3 } | undefined;
+            // từ 2,5 s: một giây sau mốc cuối
+            for (let f = 75; f <= 120; f++) {
+              const sp = poseAt(rt, f / 30);
+              const h = actHeld(NGUOI, sp)[tag]!;
+              const now = {
+                at: h.at,
+                R: h.R,
+                E: actArm(NGUOI, sp, side)!.E.map((v) => v * 100) as V3,
+              };
+              if (prev) {
+                const at = `${c.item} ${key} đầu ${yaw} khung ${f}`;
+                expect(Math.hypot(...sub3(now.E, prev.E)), at).toBeLessThan(0.02);
+                expect(Math.hypot(...sub3(now.at, prev.at)), at).toBeLessThan(0.02);
+                expect(rotDeg(prev.R, now.R), at).toBeLessThan(0.02);
+              }
+              prev = now;
+            }
+          }
+    },
+  );
+
   it("`earLineCost`: 0 khi `top` dọc đường miệng → tai, gần `(lệch / EAR_LINE_SPAN)²`, liền khi `top` dọc trục hai tai", () => {
     const n: V3 = [1, 0, 0];
     const line: V3 = [0, 0.3, -1];
