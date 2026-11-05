@@ -540,6 +540,13 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
 - **Bẫy: đích thế giới, khuỷu thế giới mà người quay.** Tay có đích `at` kèm `elbow` trong quãng người quay (`path` đổi
   `yaw`): cổ tay và khuỷu đứng yên trong thế giới, vai quay theo người — đúng cho tay tì quầy, tay vịn. Tay phải đi theo
   người (cầm máy trước mặt, khoanh trước ngực) thì đặt đích theo mốc thân (`to`), khuỷu hệ thân theo cùng.
+- **Bẫy: `elbow` gần trục vai → đích.** Rig chỉ đọc phần của `elbow` vuông góc đường vai → đích (và vai → cổ tay ước) để
+  biết khuỷu nằm phía nào quanh trục ấy. Hướng khai gần trùng đường ấy, cùng chiều hay ngược chiều, thì phần ấy chỉ còn mẩu
+  nhỏ: đầu quay, thân nghiêng hay đích dời vài độ là khuỷu lật sang phía khác, cẳng tay quay theo, cổ tay chạm giới hạn và ý
+  định nhường gần như ngược (ống nghe lật ra sau gáy). Hay gặp ở tay áp tai của người đầu to (tai rộng hơn vai, đường vai →
+  tai chếch lên và ra ngoài): `elbow` `[0, 1, -0.4]` (xuống, vào trong) gần như ngược đường ấy. Khuỷu áp tai khai xuống
+  và ra trước, như `[0.55, 1, 0.05]`. `check` báo `elbowAxis`, và dòng `aimYield` quá `90°` của tay có `elbow` khai gợi ý đổi
+  hay bỏ `elbow` ([Khuỷu và cổ tay trên hình](#khuỷu-và-cổ-tay-trên-hình)).
 - **Cảnh đời trước schema 34.** `elbow` trên mốc không có `at` ở JSON ghi `schemaVersion` dưới 34 là hướng thế giới: `parseScene`
   từ chối cả cảnh với dòng báo chỉ lệnh chuyển. `stickman migrate-elbow` ([05](05-repo-video.md#chuyển-elbow-sang-hệ-thân)) quay
   từng hướng ấy về hệ thân bằng hướng thân người ấy ở giây của mốc (`legacyElbows`, `migrateLegacyElbows` của lõi), nên ở chính
@@ -1025,7 +1032,8 @@ thẳng ra `0`). Một quãng một dòng, mức cảnh báo, nhóm `move`:
 | `elbowJitter` khuỷu rung | trong `0,5 s` xoắn đổi chiều từ `3` lần (mỗi bên từ `0,5°`), tổng \|xoắn\| quá `4°`, tổng có dấu dưới nửa tổng \|xoắn\|, không khung nào quá `25°` |
 | `elbowFlip` khuỷu lật | xoắn quá `30°` trong một khung hay quá `60°` trong `0,1 s` mà cổ tay (so với vai) dời dưới `0,25` tầm với; khuỷu khoá thì để luật khuỷu khoá ở trên |
 | `wristFlip` bàn tay lật | xoay cẳng tay đổi quá `60°` hay lệch cổ tay đổi quá `35°` (trên vòng) trong một khung, cổ tay dời dưới `0,25` tầm với |
-| `aimYield` bàn tay lệch ý định | bàn tay rig tự giải (tay theo đích, ý định, món theo tay; món đặt trước có luật `wrist` của [11](11-nhom-cam.md#7-luật-check-nhóm-held)) nhường ý định ở giới hạn cổ tay quá `20°` (`AIM_YIELD`): góc quay giữa bàn tay theo ý định (hay bàn tay của hành động) và bàn tay vẽ (`ArmTrace.yield`). Khuỷu đã xoay cứu cổ tay mà cẳng tay vẫn không tới hướng đã khai ([01](01-rig.md#hướng-lòng-tay-theo-ý)) |
+| `aimYield` bàn tay lệch ý định | bàn tay rig tự giải (tay theo đích, ý định, món theo tay; món đặt trước có luật `wrist` của [11](11-nhom-cam.md#7-luật-check-nhóm-held)) nhường ý định ở giới hạn cổ tay quá `20°` (`AIM_YIELD`): góc quay giữa bàn tay theo ý định (hay bàn tay của hành động) và bàn tay vẽ (`ArmTrace.yield`). Khuỷu đã xoay cứu cổ tay mà cẳng tay vẫn không tới hướng đã khai ([01](01-rig.md#hướng-lòng-tay-theo-ý)). Quá `90°` (`ELBOW_YIELD`) ở khung tay có `elbow` khai (phần khai từ `0,5`) thì dòng báo gợi ý đổi hay bỏ `elbow`: khuỷu khai không xoay để cứu cổ tay |
+| `elbowAxis` `elbow` gần trục | tay rig tự giải có `elbow` khai (phần khai từ `0,5`, `ArmTrace.elbowK`) mà hướng khai cách đường vai → tâm đích hay vai → cổ tay ước dưới `10°` (`ELBOW_AXIS`, `ArmTrace.elbowAxis`, cùng chiều hay ngược chiều) từ `0,1 s` (`ELBOW_AXIS_S`; các quãng cách nhau tới `3` khung tính là một) — [bẫy](#đích-bàn-tay-thế-giới) khuỷu không biết nằm phía nào. Đo cả khung người khuất, tay ngoài khung hình (vẫn trong quãng lên hình): lỗi ở chính JSON |
 | `elbowInward` khuỷu gập ngược | tay theo đích (phần đích từ `0,5`) không cầm món: khuỷu lệch khỏi đường vai → cổ tay vào giữa thân hay lên trên quá `0,3` lần cánh tay trên (`elbowInward`, như luật `elbow` của tay cầm món ở [11](11-nhom-cam.md#7-luật-check-nhóm-held)) |
 | `armStraight` tay duỗi hết tầm | tay theo đích, vai → cổ tay quá `0,97` tầm với liền quá `0,3 s` |
 | `armClose` tay co sát thân | tay theo đích, vai → cổ tay dưới `0,35` tầm với mà bắp tay, cẳng tay lấn thân quá `0,5` lần bán kính tay |
@@ -1036,8 +1044,8 @@ scenes/canh-05.json: `lan` tay trái giây 2.55–4.30: khuỷu rung — xoắn 
 
 Nhịp thở của dáng đứng (`stand-3d`, `idleSway`) xoắn êm theo chu kỳ vài giây, không đổi chiều mỗi khung, không bị bắt.
 Không đo như giật trên hình: cặp khung ngoài quãng lên hình hay vắt qua chỗ cắt, khuỷu hay bàn tay ra ngoài khung, người
-khuất, chỗ khai `snap` của tay. Đo khuỷu cả một repo video ngoài `check` (cả cảnh, có / không `elbowLock`, đường giải từng
-khung): `tools/elbows.mjs` của repo rig.
+khuất, chỗ khai `snap` của tay; riêng `elbowAxis` đo cả khi khuỷu, bàn tay ngoài khung hay người khuất. Đo khuỷu cả một
+repo video ngoài `check` (cả cảnh, có / không `elbowLock`, đường giải từng khung): `tools/elbows.mjs` của repo rig.
 
 ## Lòng bàn tay
 

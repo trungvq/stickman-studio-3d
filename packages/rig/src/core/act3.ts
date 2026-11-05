@@ -879,6 +879,13 @@ export interface ArmTrace {
   gripAt?: V3;
   /** Bàn tay nhường ý định ở giới hạn cổ tay: góc quay giữa bàn tay theo ý định và bàn tay vẽ, độ (`aimYield`) */
   yield?: number;
+  /** Phần khai của khuỷu đã hoà (`elbowW` · phần nguồn) ở tay theo đích; có khi dương */
+  elbowK?: number;
+  /**
+   * Góc nhỏ nhất (độ, `0..90`) giữa hướng `elbow` khai của các nguồn và đường vai → tâm đích, vai → cổ tay ước: gần `0` thì
+   * hướng khai chiếu lên vòng quanh trục ấy chỉ còn mẩu nhỏ, `φ` của nó lật theo dịch chuyển nhỏ (`elbowAxis` của `check`)
+   */
+  elbowAxis?: number;
 }
 
 type Solved = {
@@ -1704,6 +1711,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
     let H: M3;
     let phi: number | undefined;
     let pref: V3 | undefined;
+    let elbowAxis: number | undefined;
     /** Bàn tay theo ý định trước khi nhường, và hướng đã khai của nó */
     let Hi: M3;
     let qi: [number, number, number];
@@ -1794,6 +1802,17 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
       const C = wristAt(handR({ Re: foreTo(Pt, frameAt(Pt), 0) }, base0), base0);
       const F0 = frameAt(C);
       pref = F0.at(F0.want);
+      if (declK > 0) {
+        const axes = [unit(sub(Pt, inp.S)), F0.n];
+        for (const e of decl) {
+          if (!e) continue;
+          const v = unit(rigDir(elbowRig(inp.Rr, side, e.e)));
+          for (const n of axes) {
+            const a = Math.asin(Math.min(1, len(sub(v, mul(n, dot(v, n)))))) / D;
+            elbowAxis = Math.min(elbowAxis ?? 90, a);
+          }
+        }
+      }
       /** Cẳng tay gốc của bàn tay ở mỗi lần thử: tay với tới cổ tay ước, khuỷu lệch `d` độ khỏi hướng khai */
       const foreAt = (d: number, free = false): M3 => foreTo(C, F0, d, free);
       // bàn tay không ý định: khung của tay với tới cổ tay ước theo khuỷu ưu tiên (hay khai) cộng góc của hành động, tinh
@@ -2021,6 +2040,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
       ...((aimB || aimW) && { aim: solved }),
       ...(gripAt && { gripAt }),
       ...(yielded > 1e-6 && { yield: yielded }),
+      ...(elbowAxis !== undefined && { elbowK: declK, elbowAxis }),
     };
     done[side] = h;
   }

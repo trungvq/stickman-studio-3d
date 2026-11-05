@@ -300,6 +300,10 @@ export function elbowSamples(
       // món đặt trước có luật `wrist` của `held`
       solved: !A[t].trace?.placed && (ik >= ARM_IK || !!r?.hold || !!A[t].trace?.aim),
       yield: A[t].trace?.yield ?? 0,
+      ...(A[t].trace?.elbowAxis !== undefined && {
+        elbowK: A[t].trace!.elbowK,
+        elbowAxis: A[t].trace!.elbowAxis,
+      }),
     };
   }) as [ElbowSample, ElbowSample];
 }
@@ -699,17 +703,20 @@ export function sceneMotion(
     if (o.elbows && m.world && rt.lens)
       SIDES.forEach((tag, k) => {
         const [onE, onH] = [seen.get(`elbow${tag}`)!, seen.get(`hand${tag}`)!];
-        const frames = S.map((q, i): ElbowFrame | undefined => {
-          const a = q.pts ? q.arms?.[k] : undefined;
+        // luật `elbow` khai đọc cả khung người khuất: khuỷu khai sai làm hỏng cả quãng, không riêng chỗ lên hình
+        const all = S.map((q, i): ElbowFrame | undefined => {
+          const a = q.arms?.[k];
           if (!a) return undefined;
           const pair =
             !!shown[i] &&
             !windows.some(
               (w) => i / fps >= w.from && (i - 1) / fps <= w.to && w.classes.has("arm"),
             );
-          return { ...a, pair, onElbow: !!onE[i], onHand: !!onH[i] };
+          return { ...a, pair, onElbow: !!q.pts && !!onE[i], onHand: !!q.pts && !!onH[i] };
         });
+        const frames = all.map((f, i) => (S[i].pts ? f : undefined));
         elbows.push(...elbowTrack(m.id, HANDS[k], frames, fps));
+        elbows.push(...elbowAxisTrack(m.id, HANDS[k], all, fps));
       });
   }
   return { snaps: out.sort((a, b) => a.t - b.t), elbows: elbows.sort((a, b) => a.from - b.from) };
@@ -875,6 +882,7 @@ export type ElbowRule =
   | "elbowFlip"
   | "wristFlip"
   | "aimYield"
+  | "elbowAxis"
   | "elbowInward"
   | "armStraight"
   | "armClose";
@@ -910,6 +918,14 @@ const WRIST_TURN = 60;
 const WRIST_DEV = 35;
 /** Bàn tay rig tự giải nhường ý định ở giới hạn cổ tay (`ArmTrace.yield`, độ) quá ngần này */
 export const AIM_YIELD = 20;
+/** Hướng `elbow` khai cách đường vai → đích hay vai → cổ tay ước dưới ngần này (độ, `ArmTrace.elbowAxis`)… */
+export const ELBOW_AXIS = 10;
+/** …liền từ ngần này giây */
+export const ELBOW_AXIS_S = 0.1;
+/** `aimYield` quá ngần này (độ) mà khuỷu theo `elbow` khai thì dòng báo gợi ý đổi hay bỏ `elbow` */
+export const ELBOW_YIELD = 90;
+/** Phần khai của khuỷu (`ArmTrace.elbowK`) từ ngần này thì `elbowAxis` mới xét, `aimYield` mới gợi ý `elbow` */
+const ELBOW_K = 0.5;
 /** Tay theo đích: phần đích cổ tay từ ngần này */
 const ARM_IK = 0.5;
 /** Khuỷu gập ngược: `elbowInward` quá ngần này lần cánh tay trên, như `HELD_ELBOW` của tay cầm món */
@@ -949,12 +965,42 @@ export interface ElbowFrame {
   solved?: boolean;
   /** Bàn tay nhường ý định bao nhiêu độ ở giới hạn cổ tay (`ArmTrace.yield`) */
   yield?: number;
+  /** Phần khai của khuỷu và góc hướng khai tới trục (`ArmTrace.elbowK`, `elbowAxis`); không khai thì không có */
+  elbowK?: number;
+  elbowAxis?: number;
   /** Cặp khung trước → khung này lên hình và ngoài chỗ khai `snap` của tay */
   pair: boolean;
   /** Khuỷu, bàn tay nằm trong khung hình */
   onElbow: boolean;
   onHand: boolean;
 }
+
+/**
+ * Gộp khung bị bắt của luật `rule` thành quãng đẩy vào `out`: khung cách nhau không quá `gap` khung là một quãng, `worst` là
+ * số lớn nhất kèm `detail` của khung ấy
+ */
+const spanner =
+  (out: ElbowIssue[], id: string, hand: "right" | "left", fps: number) =>
+  (rule: ElbowRule, gap = MERGE) => {
+    let cur: ElbowIssue | undefined;
+    return (from: number, i: number, v: number, detail?: number[]) => {
+      if (cur && from - cur.to * fps <= gap + 1e-6) {
+        cur.to = i / fps;
+        if (v > cur.worst) [cur.worst, cur.detail] = [v, detail];
+      } else {
+        cur = {
+          id,
+          hand,
+          rule,
+          from: from / fps,
+          to: i / fps,
+          worst: v,
+          ...(detail && { detail }),
+        };
+        out.push(cur);
+      }
+    };
+  };
 
 /**
  * Luật khuỷu và cổ tay trên chuỗi khung của một tay (`undefined` là khung không đo), `fps` khung mỗi giây — `sceneMotion`
@@ -977,19 +1023,7 @@ export function elbowTrack(
     const [a, b] = [F[i - 1], F[i]];
     if (a && b?.pair) sw[i] = swivelSigned(a, b);
   }
-  /** Gộp khung bị bắt thành quãng: khung cách nhau không quá `gap` khung là một quãng */
-  const spans = (rule: ElbowRule, gap = MERGE) => {
-    let cur: ElbowIssue | undefined;
-    return (from: number, i: number, v: number, detail?: number[]) => {
-      if (cur && from - cur.to * fps <= gap + 1e-6) {
-        cur.to = t(i);
-        if (v > cur.worst) [cur.worst, cur.detail] = [v, detail];
-      } else {
-        cur = { id, hand, rule, from: t(from), to: t(i), worst: v, ...(detail && { detail }) };
-        out.push(cur);
-      }
-    };
-  };
+  const spans = spanner(out, id, hand, fps);
   const jitter = spans("elbowJitter", Math.round(0.1 * fps));
   const flip = spans("elbowFlip");
   const wflip = spans("wristFlip");
@@ -1054,7 +1088,8 @@ export function elbowTrack(
       if ((dTurn > WRIST_TURN || dDev > WRIST_DEV) && b.onHand && moved(a, b) < STILL)
         wflip(i - 1, i, Math.max(dTurn, dDev), [a.wrist[0], b.wrist[0], a.wrist[2], b.wrist[2]]);
     }
-    if (b.solved && b.onHand && (b.yield ?? 0) > AIM_YIELD) yieldS(i, i, b.yield!);
+    if (b.solved && b.onHand && (b.yield ?? 0) > AIM_YIELD)
+      yieldS(i, i, b.yield!, [(b.elbowK ?? 0) >= ELBOW_K ? 1 : 0]);
     if (!(b.ik >= ARM_IK) || !b.onElbow) {
       endStraight();
       continue;
@@ -1068,6 +1103,27 @@ export function elbowTrack(
   }
   endStraight();
   return out;
+}
+
+/**
+ * Luật `elbowAxis` trên chuỗi khung của một tay như `elbowTrack`, cả khung người khuất hay khuỷu, bàn tay ngoài khung hình
+ * (`pair` vẫn phải đúng): tay rig giải có phần khai từ `ELBOW_K` mà hướng khai cách trục vai → đích dưới `ELBOW_AXIS` liền
+ * từ `ELBOW_AXIS_S`. docs/03-scene.md#khuỷu-và-cổ-tay-trên-hình
+ */
+export function elbowAxisTrack(
+  id: string,
+  hand: "right" | "left",
+  F: readonly (ElbowFrame | undefined)[],
+  fps: number,
+): ElbowIssue[] {
+  const out: ElbowIssue[] = [];
+  const spans = spanner(out, id, hand, fps);
+  const axis = spans("elbowAxis");
+  F.forEach((b, i) => {
+    if (b?.pair && b.solved && (b.elbowK ?? 0) >= ELBOW_K && b.elbowAxis! < ELBOW_AXIS)
+      axis(i, i, ELBOW_AXIS - b.elbowAxis!, [b.elbowAxis!]);
+  });
+  return out.filter((s) => s.to - s.from >= ELBOW_AXIS_S - 1e-9);
 }
 
 const pct = (v: number) => `${(v * 100).toFixed(0)}%`;
@@ -1084,7 +1140,11 @@ export const elbowLine = (s: ElbowIssue): string => {
     case "wristFlip":
       return `${who}: bàn tay lật trong một khung — xoay cẳng tay ${d[0].toFixed(0)}° → ${d[1].toFixed(0)}°, lệch cổ tay ${d[2].toFixed(0)}° → ${d[3].toFixed(0)}° (quá ${WRIST_TURN}° / ${WRIST_DEV}°): lòng tay theo ý định (\`palm\`, \`fingers\`) ở mép tầm cổ tay — khai hướng gần dáng đang có hơn, hay đổi \`elbow\``;
     case "aimYield":
-      return `${who}: bàn tay lệch ý định ${s.worst.toFixed(0)}° (quá ${AIM_YIELD}°) — cẳng tay không tới hướng đã khai nên bàn tay nhường về trong giới hạn cổ tay: đổi hướng lòng tay, ngón, món (\`palm\`, \`fingers\`, \`face\` / \`roll\`), bỏ \`elbow\` khai cho khuỷu tự xoay, hay dời đích`;
+      return s.worst > ELBOW_YIELD && d[0]
+        ? `${who}: bàn tay lệch ý định ${s.worst.toFixed(0)}° (quá ${AIM_YIELD}°) mà khuỷu theo \`elbow\` khai — khuỷu khai không xoay để cứu cổ tay, cổ tay chạm giới hạn nên ý định nhường gần như ngược: đổi \`elbow\` về phía khuỷu tự nhiên của dáng ấy (khuỷu ra sau, vào trong hay gần trục vai → đích thường là chỗ sai), hay bỏ \`elbow\` cho khuỷu tự xoay`
+        : `${who}: bàn tay lệch ý định ${s.worst.toFixed(0)}° (quá ${AIM_YIELD}°) — cẳng tay không tới hướng đã khai nên bàn tay nhường về trong giới hạn cổ tay: đổi hướng lòng tay, ngón, món (\`palm\`, \`fingers\`, \`face\` / \`roll\`), bỏ \`elbow\` khai cho khuỷu tự xoay, hay dời đích`;
+    case "elbowAxis":
+      return `${who}: hướng \`elbow\` khai gần trùng đường vai → đích (cách ${d[0].toFixed(1)}°, dưới ${ELBOW_AXIS}°) — rig chiếu hướng khai lên vòng quanh trục ấy để biết khuỷu nằm phía nào; gần trục thì phần chiếu còn lại rất nhỏ, đầu, thân hay đích dời chút ít là khuỷu, cổ tay, món lật: khai \`elbow\` xa trục ấy (thêm phần ra trước hay ra ngoài), hay bỏ \`elbow\``;
     case "elbowInward":
       return `${who}: khuỷu gập ngược — lệch khỏi đường vai → cổ tay vào giữa thân hay lên trên ${s.worst.toFixed(2)} lần cánh tay trên (quá ${ARM_INWARD}): khai \`elbow\` ra ngoài, xuống dưới ở các mốc tay quanh đó`;
     case "armStraight":

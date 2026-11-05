@@ -23,6 +23,7 @@ import { BOX_RISE } from "./graspSolve";
 import { holdHand, holdLinkFrame, isCarryHold } from "./holdLink";
 import { matMul, matVec, type M3, type V3 } from "./lens";
 import { parseScene, resolveScene, sceneAt, type SceneRuntime } from "./scene";
+import { elbowLine, sceneMotion } from "./snap";
 import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import grip from "./__fixtures__/grip-frames.json";
@@ -336,9 +337,8 @@ describe("lớp liên kết tay ↔ món", () => {
     }
   });
 
-  // Lỗi lật: khai như cảnh áp tai có `roll`, đầu quay 40° thì cổ tay `turn` chạm giới hạn, ý định nhường, mặt máy quay ra sau gáy
-  // (~150°, rig có báo ở `report.hold`). Việc mở ở KHUYU-TIEN-DO.md; sửa xong thì đổi về `it`.
-  it.fails("áp tai khai `roll`, đầu quay 40°: mặt máy vẫn quay vào đầu", () => {
+  // rig làm đúng lệnh `elbow` nên mặt máy vẫn quay ra sau gáy; `check` báo (docs/03-scene.md § Khuỷu và cổ tay trên hình)
+  it("áp tai khai `roll`, `elbow` khoá xuống và vào trong, đầu quay 40°: dòng `aimYield` của `check` gợi ý đổi hay bỏ `elbow`", () => {
     const rt = runtime(
       [
         {
@@ -367,7 +367,12 @@ describe("lớp liên kết tay ↔ món", () => {
       { "ong-nghe-ban": HANDSET },
       [0, 40, -6],
     );
-    expect(earHold(poseAt(rt, 0.5), "L").face).toBeLessThan(20);
+    const left = sceneMotion(rt, { characterOf: () => NGUOI, elbows: true }).elbows.filter(
+      (e) => e.hand === "left",
+    );
+    expect(left.map((e) => e.rule)).toEqual(["aimYield"]);
+    expect(left[0].worst).toBeGreaterThan(90);
+    expect(elbowLine(left[0])).toMatch(/khuỷu theo `elbow` khai — .*đổi `elbow`.*hay bỏ `elbow`/);
   });
 
   it("`both` tay dẫn: chai đỡ đáy, điện thoại đỡ mặt sau (`place`), khay cạnh đối; tay phụ tới chỗ, hướng bàn tay lệch ≤ 30° và rig báo phần nhường", () => {

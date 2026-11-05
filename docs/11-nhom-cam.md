@@ -1108,7 +1108,10 @@ cap(x) = WRIST_CAP · tanh(x / WRIST_CAP)
 
 - **`φ`** quanh trục vai → cổ tay: `0` là **khuỷu ưu tiên** của cổ tay ([01](01-rig.md#khuỷu-ưu-tiên), `phiBasis`), dương quay ra
   ngoài phía tay ấy. Gốc ấy là hàm trơn của cổ tay nên `φ` của hai mẫu kề đo trên cùng một khuỷu đứng yên ra cùng số. `φ₀` là
-  `0`, hay `elbow` của mốc tay chiếu lên vòng ấy (`phiToward`).
+  `0`, hay `elbow` của mốc tay chiếu lên vòng ấy (`phiToward`). `elbow` gần trùng trục (cùng hay ngược chiều) chỉ còn mẩu
+  chiếu nhỏ nên `φ₀` lật theo dịch chuyển nhỏ của đích, thân, đầu; tay theo đích đọc `elbow` là lệnh nên cẳng tay lật theo,
+  cổ tay chạm giới hạn, ý định nhường — `check` báo `elbowAxis` ([03](03-scene.md#đích-bàn-tay-thế-giới), bẫy `elbow` gần
+  trục vai → đích).
 - **Hai nghĩa của `elbow`.** Món đặt trước (theo mốc) đọc `elbow` không khoá là gợi ý: `φ₀`, mềm trong `±30°` rồi cứng dần,
   nên `E(φ)` được kéo khuỷu khỏi hướng khai khi hướng ấy làm tay lấn thân hay cổ tay vượt giới hạn — lấn thân phạt nặng hơn
   cổ tay (trần `WRIST_CAP`), nên khuỷu khai xấu thì khuỷu nhường, cổ tay có thể chạm giới hạn và món theo bàn tay đã dừng ở giới hạn. Tay theo đích
