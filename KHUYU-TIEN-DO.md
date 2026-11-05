@@ -461,8 +461,11 @@ studio3d `grab.test.ts` 2 (đã biết).
 
 ### Việc còn mở
 
-- Quyết: hai bộ giải hiểu `elbow` khác nhau (tay dẫn giữ cứng, món theo mốc coi là ưu tiên) — thống nhất thì đổi `graspAtTime`
-  hay đổi test "bỏ khoá".
+- **Đã chốt B (chủ dự án, 2026-11-05)**: hai bộ giải hiểu `elbow` khác nhau là chủ ý — tay dẫn giữ cứng, món theo mốc coi là
+  gợi ý (nhường để tránh lấn thân, cổ tay kẹp), muốn cứng thì `elbowLock`; không đổi `graspAtTime`. `holdMode.test.ts`: describe
+  "khoá khuỷu" dựng lại trên dáng áp tai tự nhiên (`sceneEar`: cổ tay −67/−36/−10, không kẹp, không lấn thân; bỏ khoá món dời
+  0,0003 rig), cảnh khuỷu xấu cũ (`sceneC`) thành ca ghi hành vi "`elbow` khai xấu là gợi ý, `elbowLock` là lệnh". Docs 01, 03,
+  11 ghi hai nghĩa của `elbow`.
 - Lấn thân ×2, `elbowFlip`, `elbowInward` so HEAD (gốc ở nền); `wristFlip` 20 (soi từng quãng: thả món, ý định ~180°).
 - Ba test viết theo phương án cũ (áp tai, tay phụ `both`, cảnh B) nay mâu thuẫn ý định nhường: chủ dự án quyết viết lại.
   Hai test `holdLink` đã viết lại (2026-11-05): áp tai đo trục máy so với đường tai – miệng nhìn ngang đầu (< 15°, đo 8,2°)

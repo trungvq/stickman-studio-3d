@@ -1773,7 +1773,9 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
   do thì bàn tay gần nhất theo trục món, tinh chỉnh trong hộp từ nghiệm kẹp, nhạt dần về nghiệm kẹp trong `45°` cuối trước điểm
   đối diện giữa tầm. Rồi cổ tay đặt lại cho điểm bàn tay vẫn đúng đích. Bàn tay không ý định cũng về trong giới hạn theo cả khung.
   `elbow` khai và khuỷu khoá (`elbowLock`, [03](03-scene.md#đích-bàn-tay-thế-giới)) giữ hướng khai theo phần khai, không xoay
-  để cứu cổ tay.
+  để cứu cổ tay. Món đặt trước (lần cầm theo mốc món) thì khác: `elbow` không khoá chỉ là gợi ý của `E(φ)`, khuỷu được nhường
+  để tay không lấn thân và cổ tay trong giới hạn; muốn cứng thì `elbowLock`
+  ([11](11-nhom-cam.md#khuỷu-tự-nhiên)). Phép đổi chế độ cầm (`hold_mode`) tự ghi `elbowLock`.
 - **`palm` / `fingers` thắng `turn`.** Mốc khai cả hai thì `turn` bị bỏ qua — `validate` và `check` kêu (`aimProblems`).
 - **Hoà là hoà khung bàn tay.** Mốc thô sang mốc ý định: từng số hạng giải riêng trên cùng cẳng tay rồi hoà khung bàn tay theo
   phần (đường ngắn nhất, `mixRotation`), nên cổ tay xoay dần, không lật nửa vòng. `world.hands` nhận cùng `palm`, `fingers`,

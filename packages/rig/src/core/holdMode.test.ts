@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { actHeld, actJoints, type ActJoint } from "./act3";
+import { actArm, actHeld, actJoints, type ActJoint } from "./act3";
 import type { ActInput } from "./arm3";
 import { body3 } from "./figure3d";
+import { evalPhi, phiOf, phiToward } from "./graspArm";
+import { HELD_ARM } from "./heldAudit";
 import { parseHeldItem, type HeldItemSpec } from "./heldItem";
 import {
   applyJsonPatch,
@@ -364,7 +366,45 @@ describe("đồ theo tay → tay theo đồ", () => {
   });
 });
 
-/** Cảnh: tay phải dẫn điện thoại, `elbow` khai chĩa ra sau, cổ tay kẹp xoay và gập */
+/**
+ * Cảnh: tay phải dẫn điện thoại áp tai như người thật — loa ở tai, máy dọc má về miệng, màn vào má; khuỷu khai ra trước, ra
+ * ngoài, hơi xuống (người chibi tai cao hơn vai nên khuỷu chỉ xuống tới ngang vai); cổ tay trong giới hạn, tay không lấn thân
+ */
+const sceneEar = (): Raw => ({
+  duration: 2,
+  lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
+  cast: [
+    {
+      id: "nguoi",
+      base: { torso: 9, head: [0, 0, -6] },
+      world: {
+        at: [250, 0, 506],
+        yaw: 270,
+        hands: [
+          {
+            t: 0,
+            right: {
+              to: "ear",
+              offset: [4, 2, 2],
+              point: "item:speaker",
+              elbow: [0.5, 0, 0.8],
+              hold: {
+                item: "dien-thoai",
+                group: "palmBox",
+                along: 0.1,
+                tilt: 5,
+                face: { axis: "screen", toward: { mark: "head" } },
+                touch: ["self.head"],
+              },
+            },
+          },
+        ],
+      },
+    },
+  ],
+});
+
+/** Cảnh: tay phải dẫn điện thoại trước mặt, `elbow` khai chĩa ra sau: khuỷu khai khép trước ngực, bắp tay lấn thân */
 const sceneC = (): Raw => ({
   duration: 2,
   lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
@@ -396,8 +436,23 @@ const sceneC = (): Raw => ({
   ],
 });
 
+/** Tay phải như vẽ ở `t`: `φ` khuỷu, góc cổ tay, khớp kẹp, lấn thân (`bodyRatio`, như `E(φ)` đo) và `φ` của `elbow` khai */
+function rightArm(rt: SceneRuntime, t = 0) {
+  const a = actArm(NGUOI, sceneAt(rt, "nguoi", t, H, DIMS) as ActInput, -1)!;
+  const phi = phiOf(a.inp, a.W, a.E);
+  return {
+    phi,
+    wrist: a.wrist,
+    clamped: a.report.hold?.clamped ?? [],
+    body: evalPhi(a.inp, a.W, a.Rw, phi).bodyRatio,
+    toward: (v: number[]) =>
+      phiToward(a.inp, a.W, { v: v as [number, number, number], body: true }),
+  };
+}
+const wrapDeg = (d: number) => ((((d + 180) % 360) + 360) % 360) - 180;
+
 describe("đồ theo tay → tay theo đồ: khoá khuỷu", () => {
-  const raw = sceneC();
+  const raw = sceneEar();
   const rt = build(raw);
   const r = holdToItemLed(rt, raw, { id: "nguoi", side: "right", at: 0, rebuild: build });
   const next = applyJsonPatch(raw, r.ops);
@@ -408,7 +463,7 @@ describe("đồ theo tay → tay theo đồ: khoá khuỷu", () => {
   it("mốc tay khoá khuỷu vào hướng đang vẽ; món ở mốc lệch dưới ngưỡng", () => {
     expect(r.scope.mode).toEqual({ before: "hand", after: "keyed" });
     expect(right).toMatchObject({ elbowLock: true, hold: { item: "dien-thoai" } });
-    expect(right.elbow).not.toEqual([0, 1, -1]);
+    expect(right.elbow).not.toEqual([0.5, 0, 0.8]);
     // ý định một trục (`face`): bàn tay lăn quanh trục món cho cổ tay thoải mái trên cẳng tay của khuỷu khai, nên cổ tay
     // trong giới hạn, không nhường
     expect(r.rows[0]).toMatchObject({
@@ -422,7 +477,20 @@ describe("đồ theo tay → tay theo đồ: khoá khuỷu", () => {
     expect(Math.abs(r.rows[0].item!.pos - Math.hypot(...sub3(a.P, b.P)))).toBeLessThan(1e-6);
   });
 
-  it("bỏ khoá thì mốc món vẫn lấy `elbow` đã ghi làm khuỷu ưu tiên: món gần như không dời", () => {
+  it("dáng áp tai tự nhiên: cổ tay trong giới hạn, tay không lấn thân, cả đồ theo tay, khoá và bỏ khoá", () => {
+    const free = structuredClone(next);
+    delete (keysOf(free)[0].right as Record<string, unknown>).elbowLock;
+    for (const x of [rt, build(next), build(free)]) {
+      const arm = rightArm(x);
+      expect(arm.clamped).toEqual([]);
+      expect(arm.body).toBeLessThan(0.05);
+      // gập, lệch cổ tay xa giới hạn (`AIM_BEND` −60, `AIM_DEV` −30)
+      expect(arm.wrist[1]).toBeGreaterThan(-45);
+      expect(Math.abs(arm.wrist[2])).toBeLessThan(15);
+    }
+  });
+
+  it("bỏ khoá thì mốc món lấy `elbow` đã ghi làm gợi ý; dáng tự nhiên không phải nhường: món gần như không dời", () => {
     const free = structuredClone(next);
     delete (keysOf(free)[0].right as Record<string, unknown>).elbowLock;
     const a = drawnBoard(rt, 0, false, "dien-thoai");
@@ -441,8 +509,31 @@ describe("đồ theo tay → tay theo đồ: khoá khuỷu", () => {
     expect(back.max.item.pos).toBeLessThan(HOLD_MODE_POS);
     expect(back.max.item.angle).toBeLessThan(HOLD_MODE_ANGLE);
     const last = keysOf(applyJsonPatch(next, back.ops))[0].right as Record<string, unknown>;
-    expect(last).toMatchObject({ to: "chest", point: "grip", elbowLock: true });
+    expect(last).toMatchObject({ to: "ear", point: "item:speaker", elbowLock: true });
     expect(last.elbow).toEqual(right.elbow);
+  });
+});
+
+// Chủ ý (docs/11-nhom-cam.md § Đổi chế độ lần cầm): món theo mốc đọc `elbow` là gợi ý, tay dẫn đọc là lệnh. Khuỷu khai xấu
+// thì món theo mốc được nhường khuỷu để tránh lấn thân, chịu cổ tay kẹp; muốn cứng thì `elbowLock`
+describe("món theo mốc: `elbow` khai xấu là gợi ý, `elbowLock` là lệnh", () => {
+  const raw = sceneC();
+  const r = holdToItemLed(build(raw), raw, { id: "nguoi", side: "right", at: 0, rebuild: build });
+  const next = applyJsonPatch(raw, r.ops);
+  const elbow = (keysOf(next)[0].right as { elbow: number[] }).elbow;
+  const free = structuredClone(next);
+  delete (keysOf(free)[0].right as Record<string, unknown>).elbowLock;
+
+  it("có `elbowLock`: khuỷu đúng hướng khai, kể cả khi bắp tay lấn thân", () => {
+    const arm = rightArm(build(next));
+    expect(Math.abs(wrapDeg(arm.phi - arm.toward(elbow)))).toBeLessThan(0.5);
+    expect(arm.body).toBeGreaterThan(HELD_ARM);
+  });
+
+  it("không `elbowLock`: rig được nhường khuỷu khỏi hướng khai để tay không lấn thân", () => {
+    const arm = rightArm(build(free));
+    expect(Math.abs(wrapDeg(arm.phi - arm.toward(elbow)))).toBeGreaterThan(10);
+    expect(arm.body).toBeLessThan(HELD_ARM);
   });
 });
 

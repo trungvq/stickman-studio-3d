@@ -528,7 +528,8 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
   `E(φ)` quanh nó ([11](11-nhom-cam.md#khuỷu-tự-nhiên)). Khai `elbow` thì khuỷu đúng hướng ấy theo phần khai (`elbowW`), cả khi
   bàn tay theo ý định (`palm`, `fingers`, `hold`): khuỷu khai không xoay để cứu cổ tay, ý định nhường ở giới hạn cổ tay
   ([01](01-rig.md#hướng-lòng-tay-theo-ý)); phần khai dưới `1` thì khoảng dò quanh hướng khai hẹp dần theo phần ấy, khuỷu đi
-  liền. Mỗi khung rig quy `elbow` hệ thân ra
+  liền. Lần cầm theo mốc món đọc `elbow` không khoá là gợi ý: khuỷu được nhường khỏi nó để tay không lấn thân, cổ tay trong
+  giới hạn ([11](11-nhom-cam.md#khuỷu-tự-nhiên)); muốn cứng thì `elbowLock`. Mỗi khung rig quy `elbow` hệ thân ra
   thế giới bằng hướng thân ở chính giây ấy (`sceneAt(…).world.yaw`), nên người quay, đi theo `path` thì khuỷu quay theo
   người cùng đích mốc thân; `elbow` thế giới đứng yên dù người quay. Mốc chỉ có `hold` mượn đích của mốc trước
   ([Đồ cầm tay](#đồ-cầm-tay)) mà không khai `elbow` thì mượn luôn `elbow` của mốc ấy theo hệ của nó. Đoạn giữa mốc khai

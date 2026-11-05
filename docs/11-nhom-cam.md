@@ -974,7 +974,9 @@ const SceneHoldSchema = z.union([
 ```
 
 - **Món đặt trước**: mốc tay của lần cầm có mốc món không khai đích (`to`, `at`, `offset`, `point`), không khai ý định (`face`,
-  `up`, `roll`, `keep`) — chỗ bàn tay suy từ món; lần cầm tay dẫn của cùng món thì khai như tay dẫn. Được khai `elbow` để đè hướng khuỷu tự nhiên. Mốc ấy (chỉ
+  `up`, `roll`, `keep`) — chỗ bàn tay suy từ món; lần cầm tay dẫn của cùng món thì khai như tay dẫn. Được khai `elbow`: ở đây là gợi ý, `φ₀` của `E(φ)` (mục
+  [Khuỷu tự nhiên](#khuỷu-tự-nhiên)), rig được nhường khỏi nó để tay không lấn thân và cổ tay trong giới hạn; muốn khuỷu đúng
+  hướng ấy thì thêm `elbowLock`. Mốc ấy (chỉ
   `hold`, không `at`/`to`/`palm`/`fingers`) không phải mốc đích của tay tự do: đích tay tự do ở mốc ấy lấy của mốc có đích gần
   nhất trước nó (`lend` trong `handAt` của `scene.ts`), nên trước mốc cầm và trong quãng hoà `enter` bàn tay đi từ đích đã khai
   tới món, không rơi về tư thế của hành động (nhặt món trên quầy: tay lên qua mép quầy bằng mốc đích trước mốc cầm). Mỗi tay khai chỗ cầm của nó; `both` là viết
@@ -1100,6 +1102,11 @@ cap(x) = WRIST_CAP · tanh(x / WRIST_CAP)
 - **`φ`** quanh trục vai → cổ tay: `0` là **khuỷu ưu tiên** của cổ tay ([01](01-rig.md#khuỷu-ưu-tiên), `phiBasis`), dương quay ra
   ngoài phía tay ấy. Gốc ấy là hàm trơn của cổ tay nên `φ` của hai mẫu kề đo trên cùng một khuỷu đứng yên ra cùng số. `φ₀` là
   `0`, hay `elbow` của mốc tay chiếu lên vòng ấy (`phiToward`).
+- **Hai nghĩa của `elbow`.** Món đặt trước (theo mốc) đọc `elbow` không khoá là gợi ý: `φ₀`, mềm trong `±30°` rồi cứng dần,
+  nên `E(φ)` được kéo khuỷu khỏi hướng khai khi hướng ấy làm tay lấn thân hay cổ tay vượt giới hạn — lấn thân phạt nặng hơn
+  cổ tay (trần `WRIST_CAP`), nên khuỷu khai xấu thì khuỷu nhường, cổ tay có thể kẹp và món theo bàn tay đã kẹp. Tay theo đích
+  (tay dẫn, tay phụ, ý định) đọc `elbow` là lệnh theo phần khai (bên dưới). Muốn món đặt trước giữ đúng hướng khai thì
+  `elbowLock`; phép đổi chế độ tự ghi khoá ([Đổi chế độ lần cầm](#đổi-chế-độ-lần-cầm)).
 - **Cổ tay**: góc tách từ khung bàn tay qua `gimbalBlend` (gập gần `±90°` dồn lệch vào xoay). Giá thoải mái êm, không có vùng
   chết; khuỷu không bị cổ tay kéo xa vì giá khuỷu cứng ngoài `±30°`: cổ tay đòi xoay `45°` thì khuỷu nhích chừng 6°. Cả phần
   cổ tay có **trần mềm** `WRIST_CAP` (`4`): bàn tay đòi xa quá thì khuỷu thôi chạy theo, đứng ở chỗ ưu tiên và cổ tay kẹp —
@@ -1464,7 +1471,10 @@ vá và độ lệch, không ghi gì.
   món ở mốc (lệch dời chia `HOLD_MODE_POS` `0,5` đơn vị rig cộng lệch quay chia `HOLD_MODE_ANGLE` `1°`; lớn nhất, rồi tổng các
   mốc), tâm nắm tay dẫn dời, rồi khuỷu gần khuỷu đang vẽ hơn; tối đa `HOLD_MODE_FIX` lượt thêm mốc khoá. Các lượt chọn khác
   (đầu cạnh, dời đích đồ theo tay) so cùng cách, trừ bước khuỷu. Tay phụ của `both` không khoá
-  (`elbowLock` không áp cho nó). Hàng `rows` của mốc khoá có `elbowLock`, `notes` nêu các giây khoá.
+  (`elbowLock` không áp cho nó). Hàng `rows` của mốc khoá có `elbowLock`, `notes` nêu các giây khoá. Khoá là thứ giữ món đứng
+  yên: `elbow` của món đặt trước chỉ là gợi ý ([Khuỷu tự nhiên](#khuỷu-tự-nhiên)), nên bỏ `elbowLock` thì rig dò lại khuỷu —
+  dáng tự nhiên ra gần cùng khuỷu, món giữ chỗ; khuỷu đang vẽ lấn thân hay đẩy cổ tay sát giới hạn thì khuỷu nhường, cổ tay kẹp
+  và món dời theo bàn tay.
 - **Đầu cao của cạnh** (`high`) không khai được trong cảnh, và hai chế độ dựng chiều cạnh `e` từ hai nguồn khác nhau: tay dẫn
   không kế thừa lần cầm theo mốc dựng khung cầm không có `high` (`groupHand` của `holdLink.ts` → `edgeFrame` của `heldGeom.ts`,
   `boxAxes` của `graspSolve.ts`: `e` mặc định của khối hình), món đặt trước lấy đầu cao theo hướng món ở mốc đầu lần cầm
