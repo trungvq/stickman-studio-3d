@@ -1771,9 +1771,16 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
           want: phiOfV(poleMix(n, B.o0, src[0], src[1], share.w)),
         };
       };
-      /** Cẳng tay của tay với tới `Wx`, khuỷu lệch `d` độ khỏi hướng khai ở đó */
-      const foreTo = (Wx: V3, F: ReturnType<typeof frameAt>, d: number): M3 => {
-        const [El, Wr, hinge] = twoBone3(inp.S, Wx, inp.l1, inp.l2, F.at(F.want + d), soft);
+      /** Cẳng tay của tay với tới `Wx`, khuỷu lệch `d` độ khỏi hướng khai ở đó (`free`: khỏi khuỷu ưu tiên) */
+      const foreTo = (Wx: V3, F: ReturnType<typeof frameAt>, d: number, free = false): M3 => {
+        const [El, Wr, hinge] = twoBone3(
+          inp.S,
+          Wx,
+          inp.l1,
+          inp.l2,
+          F.at((free ? 0 : F.want) + d),
+          soft,
+        );
         const f = armFrame(inp.S, El, Wr, hinge);
         return mm(f.R, rx(-f.b));
       };
@@ -1783,7 +1790,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
       const F0 = frameAt(C);
       pref = F0.at(F0.want);
       /** Cẳng tay gốc của bàn tay ở mỗi lần thử: tay với tới cổ tay ước, khuỷu lệch `d` độ khỏi hướng khai */
-      const foreAt = (d: number): M3 => foreTo(C, F0, d);
+      const foreAt = (d: number, free = false): M3 => foreTo(C, F0, d, free);
       // bàn tay không ý định: khung của tay với tới cổ tay ước theo khuỷu ưu tiên (hay khai) cộng góc của hành động, tinh
       // thêm một lượt ở cổ tay của chính bàn tay ấy — hàm trơn của chỗ đích trong hệ thân
       const Wk = wristAt(handR({ Re: foreAt(0) }, base0), base0);
@@ -1791,7 +1798,7 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
       const h0: HandState = { ...state(A, side), at: wristAt(Hk, base0), R: Hk };
       /**
        * Một lần thử, khuỷu lệch `d` khỏi hướng khai: bàn tay theo ý định trên cẳng tay thử, nhường ở giới hạn cổ tay trên
-       * chính cẳng tay ấy, cổ tay đặt bàn tay đã nhường vào đích
+       * chính cẳng tay ấy, cổ tay đặt bàn tay đã nhường vào đích. `free`: lệch `d` khỏi khuỷu ưu tiên, giá như không khai
        */
       const seen = new Map<
         number,
@@ -1806,8 +1813,8 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
           axes: AimAxes;
         }
       >();
-      const ev = (d: number) => {
-        const key = Math.round(d * 1e9);
+      const ev = (d: number, free = false) => {
+        const key = Math.round(d * 1e9) * 2 + (free ? 1 : 0);
         let x = seen.get(key);
         if (x) return x;
         // hai lượt cố định: cẳng tay tới cổ tay ước, rồi tới cổ tay của bàn tay lượt đầu
@@ -1819,22 +1826,23 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
           const Hy = q.every((v, j) => v === r.tbd[j]) ? Hp : handR({ Re: Re1 }, q);
           return { r, Hp, q, Hy, W: wristAt(Hy, q) };
         };
-        const p1 = pass(foreAt(d), h0);
+        const p1 = pass(foreAt(d, free), h0);
         const {
           r,
           Hp,
           q,
           Hy,
           W: Wp,
-        } = pass(foreTo(p1.W, frameAt(p1.W), d), { ...h0, at: p1.W, R: p1.Hy }, p1.Hy);
+        } = pass(foreTo(p1.W, frameAt(p1.W), d, free), { ...h0, at: p1.W, R: p1.Hy }, p1.Hy);
         const F = frameAt(Wp);
-        const declared: ElbowDir | undefined = declK > 0 ? { v: rigDir(F.at(F.want)) } : undefined;
+        const declared: ElbowDir | undefined =
+          declK > 0 && !free ? { v: rigDir(F.at(F.want)) } : undefined;
         // giá cổ tay là của bàn tay theo ý định trên cẳng tay thử: khuỷu xoay cứu cổ tay trước khi ý định nhường
         const hand: HandAim = (fore) => {
           const w = wristAngles(mm(tr(fore), Hp), side);
           return { turn: w.turn, bend: w.bend, dev: w.dev };
         };
-        const c = evalPhi(inp, Wp, hand, F.want + d, undefined, seg, declared);
+        const c = evalPhi(inp, Wp, hand, (free ? 0 : F.want) + d, undefined, seg, declared);
         const { n, f } = handAxes(side);
         const E =
           c.E +
@@ -1853,8 +1861,9 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
         seen.set(key, x);
         return x;
       };
-      // khuỷu khai giữ hướng khai theo phần khai (`elbowW` · phần nguồn): khoảng dò hẹp dần theo phần ấy, đủ thì đúng
-      // hướng ấy; khuỷu ưu tiên dò tự do — xoay khuỷu là thứ nhường trước khi cổ tay vượt giới hạn
+      // khuỷu khai giữ hướng khai theo phần khai (`elbowW` · phần nguồn), đủ thì đúng hướng ấy; khuỷu ưu tiên dò tự do —
+      // xoay khuỷu là thứ nhường trước khi cổ tay vượt giới hạn. Khai hoà một phần: khuỷu đi từ hướng khai tới chỗ dò tự do
+      // (như không khai) đúng theo phần đã nhạt, nên xoay đều suốt quãng hoà chứ không bám mép khoảng dò
       let d = 0;
       if (lock < 1 && declK < 1) {
         // món đang mang thì giao với khoảng hãm `HOLD_SWIVEL_SLEW` quanh mẫu trước (`φ` của mẫu ấy đo từ hướng khai ở
@@ -1865,7 +1874,28 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
         const half = (slew ? 180 + sw : SETTLE_HALF) * g;
         const lo = Math.max(slew ? from - sw - 180 * (1 - g) : -Infinity, -half);
         const hi = Math.min(slew ? from + sw + 180 * (1 - g) : Infinity, half);
-        const sol = settlePhi(ev, (x) => x.E, (lo + hi) / 2, lo, hi).x;
+        // chỗ dò tự do: khoảng như khi không khai (món đang mang: khoảng hãm quanh mẫu trước, đo từ khuỷu ưu tiên), nên tới
+        // đủ phần nhạt thì liền với nhánh không khai
+        const freeAt = () => {
+          const fr = slew ? wrapDeg(slew[3]) : 0;
+          const [a, b] = slew
+            ? [
+                Math.max(fr - sw - 180 * (1 - g), -180 - sw),
+                Math.min(fr + sw + 180 * (1 - g), 180 + sw),
+              ]
+            : [-SETTLE_HALF, SETTLE_HALF];
+          return settlePhi(
+            (x) => ev(x, true),
+            (x) => x.E,
+            (a + b) / 2,
+            a,
+            b,
+          ).x;
+        };
+        const sol =
+          declK > 0
+            ? Math.max(lo, Math.min(hi, g * freeAt()))
+            : settlePhi(ev, (x) => x.E, (lo + hi) / 2, lo, hi).x;
         d =
           lock > 0
             ? F0.phiOfV(poleMix(F0.n, F0.o0, F0.at(F0.want + sol), pref, lock)) - F0.want

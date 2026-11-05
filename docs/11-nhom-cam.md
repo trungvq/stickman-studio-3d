@@ -1154,11 +1154,14 @@ cap(x) = WRIST_CAP · tanh(x / WRIST_CAP)
   `actReach` là `poleMix` trên mặt vuông góc trục vai → cổ tay: hai hướng chênh tới `POLE_EVEN` (`120°`) thì đi đều trên vòng,
   chênh hơn thì bù dần về phía ngoài của khuỷu ưu tiên (`POLE_OUT`) — không chọn nhánh góc, nên hướng khai qua phía đối diện
   khuỷu ưu tiên thì khuỷu không lật. **Khuỷu khai giữ hướng khai**, cả khi bàn tay theo ý định: phần khai `b` là `elbowW` nhân
-  phần của nguồn khai; khoảng dò `φ` quanh hướng khai là `±SETTLE_HALF · (1 − b)`, trong khoảng ấy `E(φ)` vẫn chọn (tránh
-  thân, giá cổ tay); `b` `1` là đúng hướng khai, không giải — khuỷu khai không xoay để cứu cổ tay, ý định nhường. Tay mang món
-  thì khoảng hãm `HOLD_SWIVEL_SLEW` nở dần cùng lúc, hai khoảng luôn giao nhau. Nguồn tự nó không vào bộ giải (đích `at` trần,
-  không ý định) nhận khuỷu đã giải theo phần của nguồn kia, còn lại giữ hướng của nó. Phần khoá (`elbowLock`) kéo khuỷu đã
-  giải về hướng khai bằng `poleMix`; phần khoá `1` không giải.
+  phần của nguồn khai; `b` `1` là đúng hướng khai, không giải — khuỷu khai không xoay để cứu cổ tay, ý định nhường; `b` `0`
+  là `E(φ)` dò tự do. `0 < b < 1`: dò thêm một lượt như không khai (cùng giá, khoảng `±SETTLE_HALF` quanh khuỷu ưu tiên) ra
+  `φ*` (đo từ khuỷu ưu tiên), khuỷu lệch `(1 − b) · φ*` khỏi hướng khai đã hoà — đi đều từ hướng khai tới chỗ tự chọn theo
+  phần đã nhạt, không bám mép khoảng dò. Giữa chừng không dò lại cho cổ tay: còn vượt thì ý định nhường như thường. Tay mang
+  món thì kẹp vào khoảng hãm `HOLD_SWIVEL_SLEW` quanh mẫu trước (nở thêm `180° · b`), lượt dò tự do dùng chính khoảng hãm ấy
+  nên `b → 0` liền với nhánh không khai. Nguồn tự nó không vào bộ giải (đích `at` trần, không ý định) nhận khuỷu đã giải theo
+  phần của nguồn kia, còn lại giữ hướng của nó. Phần khoá (`elbowLock`) kéo khuỷu đã giải về hướng khai bằng
+  `poleMix`; phần khoá `1` không giải.
 - **Tất định**: lần cầm hai tay giải `φ` ở các mẫu cách `HOLD_SLEW_STEP` (`heldItem.ts`) tính từ đầu lần cầm, `φ_trước` là mẫu
   liền trước (lưới quanh nó: liền với khung trước); `φ(t)` hoà giữa hai mẫu kề. Lần cầm theo mốc giải `φ` ở từng mốc (mục
   [Lần cầm theo mốc](#lần-cầm-theo-mốc)). Mẫu đầu của một lần cầm lấy `φ_trước` là mẫu cuối của lần cầm liền trước trên cùng

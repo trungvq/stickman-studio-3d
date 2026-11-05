@@ -484,3 +484,17 @@ studio3d `grab.test.ts` 2 (đã biết).
 - Đo t03, `stickman check`; bảng 29 tư thế đủ ba góc đã chụp nhưng chưa soi hết từng ô.
 - Vòng review (Codex `gpt-6-astra`) và vòng sửa theo review của đợt bỏ `AIM_ITER` (`e31f9e6`) chưa chạy: làm ở phiên sau, agent
   code chỉ chạy trên Claude Work.
+
+## Khuỷu khai nhạt dần: rải đều (2026-11-05, chưa commit)
+
+- Lỗi: `act3.test.ts` "mốc cuối không khai `elbow`…" đỏ 3,14 (ngưỡng < 3, v8 0,32), từ `e31f9e6`. Giữa mốc có `elbow` và mốc
+  không khai, phần khai `b` nhạt 1 → 0, khoảng dò `±SETTLE_HALF · (1 − b)` mở dần; chỗ khuỷu tự chọn cách hướng khai 41° nên
+  khuỷu bám mép khoảng, xoay gần hết 41° trong 0,57–0,73 s rồi đứng (chẩn đoán: scratchpad `giai-thich/act3/ghi-chu.md`).
+- Sửa (`solveCore`, khối "khuỷu khai giữ hướng khai"): `0 < b < 1` thì dò thêm một lượt như không khai (`ev(x, true)`: `φ`
+  đo từ khuỷu ưu tiên, không số hạng hướng khai, cùng giá) ra `φ*`, khuỷu lệch `(1 − b) · φ*` khỏi hướng khai đã hoà. Tay mang
+  món: lượt dò tự do dùng khoảng hãm quanh mẫu trước (đo từ khuỷu ưu tiên), kết quả kẹp vào khoảng hãm như cũ — `b → 0` liền
+  với nhánh không khai (bản đầu dò ±90 thì `holdMode` "mốc giữa không khai `elbow`" nhảy 0,128 ở mốc). Cổ tay: không dò lại
+  quanh `(1 − b) · φ*`; còn vượt thì ý định nhường như thường (yield lớn nhất trong 32 quãng t02 không đổi, ±0,3°).
+- Số: test 3,14 → 1,43 (41° rải đều nửa giây; ca không ý định 26° ra 0,80). Rig: đỏ 2 → 1 (còn `holdScene` 15,00027, có từ
+  trước). t02, 32 quãng có `elbow` → không khai: `s033` takumi 3,62 → 4,22 s 9,45 → −0,01, 0,85 → 1,15 s 3,64 → 0,01; còn lại
+  không đổi hay giảm (`s080` yota 1,65 giữ, v8 2,49). `library.test` "mọi hành động…" ~1,47 → ~1,50 s.
