@@ -465,6 +465,19 @@ studio3d `grab.test.ts` 2 (đã biết).
   hay đổi test "bỏ khoá".
 - Lấn thân ×2, `elbowFlip`, `elbowInward` so HEAD (gốc ở nền); `wristFlip` 20 (soi từng quãng: thả món, ý định ~180°).
 - Ba test viết theo phương án cũ (áp tai, tay phụ `both`, cảnh B) nay mâu thuẫn ý định nhường: chủ dự án quyết viết lại.
+  Hai test `holdLink` đã viết lại (2026-11-05): áp tai đo trục máy so với đường tai – miệng nhìn ngang đầu (< 15°, đo 8,2°)
+  và mặt máy quay vào tâm đầu (< 20°, đo 1–5° cả đầu thẳng lẫn đầu quay ±28°); tay phụ `both` giữ khe ≤ 1, lòng và ngón
+  lệch không quá phần rig báo đã nhường (`trace.yield`), phần ấy ≤ 30° (chai 12,7°, điện thoại 18,4°, khay 27,7°). Còn cảnh B
+  của `holdMode`.
+- **Lật ống nghe ra sau gáy** (`holdLink.test.ts`, ca `it.fails` "áp tai khai `roll`, đầu quay 40°"): khai như
+  `t02-s017-goi` của jp-sukatto (`around` 150, `roll` `top` về `[-0.3, -1, 0]`, `elbow`, `elbowLock`), đầu quay 40° thì cổ
+  tay `turn` kẹp, ý định nhường, mặt máy lệch 150° khỏi hướng vào đầu (cảnh thật giây 0,5–0,9, Yota ngó quanh: 132–161°).
+  Sửa xong thì đổi ca ấy về `it`.
+- **Ống nghe áp tai khi đầu quay ra xa tay cầm** (ca `around` 180 của test, không `roll`): mặt máy vẫn quay vào đầu, nhưng
+  trục máy lệch đường tai – miệng 24° (đầu quay 20°) tới 37° (40°), đầu thẳng 8°. Test chỉ đòi < 15° ở đầu thẳng.
+- **Tay phụ `both` nên nằm phẳng hơn**: lòng tay phụ lệch hướng đỡ 12,7° (chai đỡ đáy), 18,4° (điện thoại), 27,6° (khay, ngón
+  27,7°); cảnh thật khay `t02-s053`–`s057` ~11°, chồng khăn `t02-s136` ~31°. Không thấy ở khung toàn cảnh; làm khi có cảnh cận
+  tay đỡ chai, khay (tập 4). Tăng `W_MISS` đã thử: khuỷu nhảy, bàn tay lật (mục "Bước 4").
 - Đo t03, `stickman check`; bảng 29 tư thế đủ ba góc đã chụp nhưng chưa soi hết từng ô.
 - Vòng review (Codex `gpt-6-astra`) và vòng sửa theo review của đợt bỏ `AIM_ITER` (`e31f9e6`) chưa chạy: làm ở phiên sau, agent
   code chỉ chạy trên Claude Work.

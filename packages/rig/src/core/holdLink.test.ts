@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { actAim, actHeld, actPalms, holdRoles, leadGrip, type ActInput } from "./act3";
+import {
+  actAim,
+  actArm,
+  actHeld,
+  actPalms,
+  bodyMarkAt,
+  holdRoles,
+  leadGrip,
+  type ActInput,
+} from "./act3";
 import { body3 } from "./figure3d";
 import { handDims, itemGeom, radialDir, type DiscFeature } from "./heldGeom";
 import {
@@ -56,14 +65,18 @@ const angle = (a: readonly number[], b: readonly number[]) =>
   ) / D2R;
 const FIX = grip as unknown as Record<string, Record<string, Record<"right", { R: M3; palm: V3 }>>>;
 
-function runtime(hands: unknown[], held: Record<string, HeldItemSpec>): SceneRuntime {
+function runtime(
+  hands: unknown[],
+  held: Record<string, HeldItemSpec>,
+  head: readonly number[] = [0, 0, -6],
+): SceneRuntime {
   const r = parseScene({
     duration: 4,
     lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
     cast: [
       {
         id: "nguoi",
-        base: { torso: 9, head: [0, 0, -6] },
+        base: { torso: 9, head },
         world: { at: [250, 0, 506], yaw: 270, hands },
       },
     ],
@@ -77,6 +90,39 @@ const rightHold = (sp: ActInput): ReachHold => {
   const w = sp.world!;
   return w.hands!.right!.hold!;
 };
+
+const sub3 = (a: readonly number[], b: readonly number[]): V3 => [
+  a[0] - b[0],
+  a[1] - b[1],
+  a[2] - b[2],
+];
+/** Chiếu `v` lên mặt phẳng vuông góc pháp tuyến đơn vị `n` */
+const flat = (v: readonly number[], n: readonly number[]): V3 => {
+  const k = v[0] * n[0] + v[1] * n[1] + v[2] * n[2];
+  return [v[0] - k * n[0], v[1] - k * n[1], v[2] - k * n[2]];
+};
+/** Hướng thế giới rig (y xuống, z sâu) sang three (y lên, z ra trước) */
+const three = (v: readonly number[]): V3 => [v[0], -v[1], -v[2]];
+
+/**
+ * Ống nghe tay `tag` đang áp tai, đo trong khung đầu (three): `cheek` góc giữa trục máy (loa → mic) và đường tai – miệng
+ * nhìn ngang đầu (chiếu lên mặt phẳng vuông góc trục hai tai); `face` góc giữa mặt máy (`front` của món) và hướng từ gốc món
+ * tới tâm đầu
+ */
+function earHold(sp: ActInput, tag: "R" | "L") {
+  const h = actHeld(NGUOI, sp)[tag]!;
+  const mark = (to: "ear" | "mouth" | "head", hand = tag) =>
+    three(bodyMarkAt(NGUOI, sp, { to }, hand)!);
+  const ear = mark("ear");
+  const across = sub3(ear, mark("ear", tag === "R" ? "L" : "R"));
+  const n = across.map((v) => v / Math.hypot(...across));
+  const mic = matVec(h.R, [0, 0, -1]);
+  const front = matVec(h.R, HANDSET.anchors.front.dir!);
+  return {
+    cheek: angle(flat(mic, n), flat(sub3(mark("mouth"), ear), n)),
+    face: angle(front, sub3(mark("head"), three(h.at))),
+  };
+}
 
 describe("lớp liên kết tay ↔ món", () => {
   it("tay dẫn `dien-thoai@palmBox`: lòng tay áp mặt sau, khung lệch ≤ 5° so khung chuẩn của fixture", () => {
@@ -249,42 +295,82 @@ describe("lớp liên kết tay ↔ món", () => {
     }
   });
 
-  it("tay dẫn áp tai `ong-nghe-ban@cylinder` `around` 180: `flat`, ngón dọc thân về loa, ống nghe dựng dọc má", () => {
+  it("tay dẫn áp tai `ong-nghe-ban@cylinder` `around` 180: `flat`, ngón dọc thân về loa, ống nghe dọc đường tai – miệng, mặt máy quay vào đầu", () => {
+    const hold = {
+      item: "ong-nghe-ban",
+      group: "cylinder",
+      around: 180,
+      face: { axis: "front", toward: { mark: "head" } },
+      touch: ["self.head"],
+    };
     for (const key of ["right", "left"] as const) {
-      const rt = runtime(
-        [
-          {
-            t: 0,
-            [key]: {
-              to: "ear",
-              point: "item:speaker",
-              hold: {
-                item: "ong-nghe-ban",
-                group: "cylinder",
-                around: 180,
-                face: { axis: "front", toward: { mark: "head" } },
-                touch: ["self.head"],
-              },
-            },
-          },
-        ],
-        { "ong-nghe-ban": HANDSET },
-      );
-      const sp = poseAt(rt, 0.5);
-      const w = sp.world!;
       const side = key === "right" ? -1 : 1;
-      const h = (side === -1 ? w.hands!.right : w.hands!.left)!.hold!;
-      const x = holdHand(h, side, handDims(1))!;
-      expect(x.frame!.choice.variant).toBe("flat");
-      // lòng tay áp mặt lưng, ngón ngang thân chếch `BOX_RISE` về đầu loa (khung món)
-      expect(angle(x.hand.palm as V3, [0, -1, 0])).toBeLessThan(1);
-      expect(angle(x.hand.fingers as V3, [0, 0, 1])).toBeCloseTo(90 - BOX_RISE, 6);
-      const held = actHeld(NGUOI, sp)[key === "right" ? "R" : "L"]!;
-      // trục món (loa ở trên) chếch theo đường tai – miệng: `R` ở thế giới three, y lên
-      expect(angle(matVec(held.R, [0, 0, 1]), [0, 1, 0])).toBeLessThan(70);
+      const tag = key === "right" ? "R" : "L";
+      // đầu thẳng, rồi đầu quay về hai phía
+      for (const head of [
+        [0, 0, -6],
+        [0, 28, -6],
+        [0, -28, -6],
+      ]) {
+        const rt = runtime(
+          [{ t: 0, [key]: { to: "ear", point: "item:speaker", hold } }],
+          { "ong-nghe-ban": HANDSET },
+          head,
+        );
+        const sp = poseAt(rt, 0.5);
+        const at = `${key} đầu ${head[1]}`;
+        const ear = earHold(sp, tag);
+        // mặt máy (loa) quay vào đầu, không lật ra sau gáy
+        expect(ear.face, at).toBeLessThan(20);
+        if (head[1] !== 0) continue;
+        const h = (side === -1 ? sp.world!.hands!.right : sp.world!.hands!.left)!.hold!;
+        const x = holdHand(h, side, handDims(1))!;
+        expect(x.frame!.choice.variant).toBe("flat");
+        // lòng tay áp mặt lưng, ngón ngang thân chếch `BOX_RISE` về đầu loa (khung món)
+        expect(angle(x.hand.palm as V3, [0, -1, 0])).toBeLessThan(1);
+        expect(angle(x.hand.fingers as V3, [0, 0, 1])).toBeCloseTo(90 - BOX_RISE, 6);
+        // máy dọc má theo đường tai – miệng, đo ngang đầu: đầu chibi miệng xa trước tai nên đường ấy gần nằm ngang, so với
+        // phương đứng của thế giới là sai thước
+        expect(ear.cheek, at).toBeLessThan(15);
+      }
     }
   });
-  it("`both` tay dẫn: chai đỡ đáy, điện thoại đỡ mặt sau (`place`), khay cạnh đối; tay phụ tới chỗ, lòng và ngón theo khung", () => {
+
+  // Lỗi lật: khai như cảnh áp tai có `roll`, đầu quay 40° thì cổ tay `turn` kẹp, ý định nhường, mặt máy quay ra sau gáy
+  // (~150°, rig có báo ở `report.hold`). Việc mở ở KHUYU-TIEN-DO.md; sửa xong thì đổi về `it`.
+  it.fails("áp tai khai `roll`, đầu quay 40°: mặt máy vẫn quay vào đầu", () => {
+    const rt = runtime(
+      [
+        {
+          t: 0,
+          left: {
+            to: "ear",
+            point: "item:speaker",
+            offset: [0, 0, 3],
+            elbow: [0.037, 1, -0.4226],
+            elbowLock: true,
+            hold: {
+              item: "ong-nghe-ban",
+              group: "cylinder",
+              part: "tay",
+              along: 0.319,
+              thumb: "up",
+              variant: "flat",
+              around: 150,
+              face: { axis: "front", toward: { mark: "head" } },
+              touch: ["self.head"],
+              roll: { axis: "top", toward: [-0.3, -1, 0] },
+            },
+          },
+        },
+      ],
+      { "ong-nghe-ban": HANDSET },
+      [0, 40, -6],
+    );
+    expect(earHold(poseAt(rt, 0.5), "L").face).toBeLessThan(20);
+  });
+
+  it("`both` tay dẫn: chai đỡ đáy, điện thoại đỡ mặt sau (`place`), khay cạnh đối; tay phụ tới chỗ, hướng bàn tay lệch ≤ 30° và rig báo phần nhường", () => {
     const { W, P } = handDims(1);
     const cases = [
       ["chai-dia", spec(chaiDia), "cylinder", [0, 1, 0], [30, 20, 0]],
@@ -327,11 +413,16 @@ describe("lớp liên kết tay ↔ món", () => {
         expect(other[1] - lead[1]).toBeGreaterThanOrEqual((W + P) / 2 - 1e-6);
         expect(angle(o.fingers as V3, [0, 1, 0])).toBeLessThan(1e-6);
       } else expect(lead[0] + other[0]).toBeCloseTo(0, 9);
-      const rep = actAim(NGUOI, sp)!.report.L;
+      const arm = actArm(NGUOI, sp, 1)!;
+      const rep = arm.report;
       expect(rep.reach, item).toMatchObject({ hold: "support" });
       expect(rep.reach!.gap, item).toBeLessThanOrEqual(1);
-      expect(rep.palm, item).toBeLessThanOrEqual(10);
-      expect(rep.fingers, item).toBeLessThanOrEqual(5);
+      // hướng bàn tay phụ thoả hiệp với giới hạn cổ tay: lệch nào của lòng tay, ngón cũng nằm trong phần rig báo đã nhường
+      // (`trace.yield`, góc quay cả bàn tay), và phần ấy không quá 30°
+      const y = arm.trace?.yield ?? 0;
+      expect(rep.palm, item).toBeLessThanOrEqual(y + 1e-6);
+      expect(rep.fingers, item).toBeLessThanOrEqual(y + 1e-6);
+      expect(y, item).toBeLessThanOrEqual(30);
     }
   });
 });
