@@ -122,14 +122,18 @@ function touchLimits(it: SolidItem, tol: number) {
  * Phần người lồng vào khối đồ hay vào phần người của người khác, lấn sâu hơn `tol`: chỉ đo những cặp
  * mà phép chiếu không tách được trước sau. Phần người khai trong
  * `touch` của món thì ngưỡng là `max` của mục ấy (chuỗi: không báo), và bỏ phần người có bóng ngoài
- * `view` (khung camera) khi đưa `view`. Không gọi lúc vẽ: chỉ để kiểm.
+ * `view` (khung camera, chiếu qua `viewLens`, bỏ trống là `lens`) khi đưa `view`. Không gọi lúc vẽ: chỉ để kiểm.
  * docs/10-lop-ve-code.md#người-lồng-vào-đồ
  */
 export function solidClashes(
   lens: Lens,
   items: SolidItem[],
   people: SolidPerson[],
-  { tol = 0, view }: { tol?: number; view?: { x: number; y: number; w: number; h: number } } = {},
+  {
+    tol = 0,
+    view,
+    viewLens = lens,
+  }: { tol?: number; view?: { x: number; y: number; w: number; h: number }; viewLens?: Lens } = {},
 ): SolidClash[] {
   const frame: Solid["box"] | undefined = view && [
     view.x,
@@ -137,7 +141,9 @@ export function solidClashes(
     view.x + view.w,
     view.y + view.h,
   ];
-  const segs = segsOf(people, lens).filter((g) => !frame || overlap(g.s.box, frame));
+  const all = segsOf(people, lens);
+  const onView = frame && viewLens !== lens ? segsOf(people, viewLens) : all;
+  const segs = all.filter((_, i) => !frame || overlap(onView[i].s.box, frame));
   const boxes = new Map(segs.map((g) => [g, aabb(g.s.v)]));
   const shapes = new Map<Seg, Convex>();
   const shape = (g: Seg) => {
@@ -179,6 +185,15 @@ export function solidClashes(
         out.push({ id: a.id, part: a.part, other: { id: b.id, part: b.part }, depth });
     }
   return out.sort((a, b) => b.depth - a.depth);
+}
+
+/** Hộp bóng của món trên khung chiếu qua `viewLens`: `bake` sẵn khi cùng ống kính vẽ lớp */
+function shownBox(it: SolidItem, b: Baked, lens: Lens, viewLens: Lens): Solid["box"] {
+  if (viewLens === lens) return b.box;
+  const box: Solid["box"] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const s of itemSolids(it, viewLens))
+    for (let k = 0; k < 4; k++) box[k] = (k < 2 ? Math.min : Math.max)(box[k], s.box[k]);
+  return box;
 }
 
 /** Một chỗ món đồ lồng vào món khác ở một khung */
@@ -271,8 +286,8 @@ const itemPairs = new WeakMap<
  * Món đồ lồng vào món khác: báo khi khối lấn sâu nhất sâu hơn `tol` **và** phần thể tích của món nhỏ hơn
  * nằm trong món kia vượt `ratio` (cốc lún nửa thân vào khay máy pha; đồ đặt lên mặt bàn, tờ giấy mỏng
  * nằm trên bàn thì không). Bỏ hai món cùng chỗ đặt (một vật dựng thành nhiều món), cặp mà một món khai
- * tên món kia trong `touch` (bút trong ống bút), và cặp có cả hai bóng ngoài `view`. Không gọi lúc vẽ:
- * chỉ để kiểm. docs/10-lop-ve-code.md#đồ-lồng-vào-đồ
+ * tên món kia trong `touch` (bút trong ống bút), và cặp có cả hai bóng ngoài `view` (chiếu qua `viewLens`, bỏ
+ * trống là `lens`). Không gọi lúc vẽ: chỉ để kiểm. docs/10-lop-ve-code.md#đồ-lồng-vào-đồ
  */
 export function solidItemClashes(
   lens: Lens,
@@ -281,7 +296,13 @@ export function solidItemClashes(
     tol = 0,
     ratio = 0.1,
     view,
-  }: { tol?: number; ratio?: number; view?: { x: number; y: number; w: number; h: number } } = {},
+    viewLens = lens,
+  }: {
+    tol?: number;
+    ratio?: number;
+    view?: { x: number; y: number; w: number; h: number };
+    viewLens?: Lens;
+  } = {},
 ): ItemClash[] {
   const frame: Solid["box"] | undefined = view && [
     view.x,
@@ -300,7 +321,7 @@ export function solidItemClashes(
         box[k + 3] = Math.max(box[k + 3], q[k + 3]);
       }
     }
-    return { it, k: items.indexOf(it), b, box };
+    return { it, k: items.indexOf(it), b, box, shown: frame && shownBox(it, b, lens, viewLens) };
   });
   const out: ItemClash[] = [];
   const key = `${tol}|${ratio}`;
@@ -309,7 +330,7 @@ export function solidItemClashes(
       const [A, B] = [list[i], list[j]];
       if (boxOverlap(A.box, B.box) <= tol) continue;
       if (samePlace(A.it, B.it) || nests(A.it, B.it) || nests(B.it, A.it)) continue;
-      if (frame && !overlap(A.b.box, frame) && !overlap(B.b.box, frame)) continue;
+      if (frame && !overlap(A.shown!, frame) && !overlap(B.shown!, frame)) continue;
       let m = itemPairs.get(A.b);
       if (!m) itemPairs.set(A.b, (m = new WeakMap()));
       let r = m.get(B.b);

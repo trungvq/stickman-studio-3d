@@ -8,6 +8,7 @@ import {
   depthAt,
   equipCharacter,
   figure3d,
+  lensAt,
   PIERCE_TOL,
   project,
   sceneAt,
@@ -110,7 +111,7 @@ function selfClashes(
 
 /**
  * Chỗ người 3D lồng vào đồ khối của lớp vẽ code hay vào người khác ở giây `t`, trên khối từng phần
- * người của `figure3d` (`solidClashes`). Bỏ phần người ngoài khung camera trừ khi `all`. Cảnh không có `lens` thì rỗng.
+ * người của `figure3d` (`solidClashes`). Bỏ phần người ngoài khung camera của ống kính vẽ ra (`lensAt`) trừ khi `all`. Cảnh không có `lens` thì rỗng.
  * Chỉ để kiểm: `check`, `scene_probe`. docs/10-lop-ve-code.md#người-lồng-vào-đồ
  */
 export function sceneClashes(
@@ -147,11 +148,13 @@ export function sceneClashes(
   const people = built ?? sceneBodies(rt, t, { characterOf });
   const view = all ? undefined : cam.view;
   const frame = view && [view.x, view.y, view.x + view.w, view.y + view.h];
+  // khung là của ống kính vẽ ra; lớp vẽ code vẫn dựng khối qua `scene.lens`
+  const viewLens = lensAt(rt, t) ?? lens;
   // tay xuyên thân mình: chỉ người có thân trong khung
   const inView = (p: SolidPerson) =>
     !frame ||
     p.solids.some((x) => {
-      const q = x.v.map((v) => project(lens, v));
+      const q = x.v.map((v) => project(viewLens, v));
       return (
         Math.max(...q.map((v) => v[0])) >= frame[0] &&
         Math.min(...q.map((v) => v[0])) <= frame[2] &&
@@ -160,7 +163,7 @@ export function sceneClashes(
       );
     });
   return [
-    ...solidClashes(lens, furniture, people, { tol, view }),
+    ...solidClashes(lens, furniture, people, { tol, view, viewLens }),
     ...(self === false
       ? []
       : selfClashes(rt, t, new Set(people.filter(inView).map((p) => p.id)), characterOf, self)),
@@ -171,7 +174,7 @@ export function sceneClashes(
 
 /**
  * Chỗ món đồ lồng vào món khác ở giây `t` (`solidItemClashes`), trên đúng các món mà lớp vẽ code dựng
- * ở giây ấy. Bỏ cặp ngoài khung camera trừ khi `all`. Cảnh không có `lens` thì rỗng. Chỉ để kiểm:
+ * ở giây ấy. Bỏ cặp ngoài khung camera của ống kính vẽ ra (`lensAt`) trừ khi `all`. Cảnh không có `lens` thì rỗng. Chỉ để kiểm:
  * `check`. docs/10-lop-ve-code.md#đồ-lồng-vào-đồ
  */
 export function sceneItemClashes(
@@ -192,13 +195,17 @@ export function sceneItemClashes(
   const furniture = codeLayers
     .filter((l) => layerCovers(l, rt.name))
     .flatMap((l) => l.solids?.(ctx) ?? []);
-  return solidItemClashes(lens, furniture, { tol, ratio, view: all ? undefined : cam.view }).map(
-    (c) => ({
-      ...c,
-      name: furniture[c.item].name,
-      otherName: furniture[c.other].name,
-    }),
-  );
+  const viewLens = lensAt(rt, t) ?? lens;
+  return solidItemClashes(lens, furniture, {
+    tol,
+    ratio,
+    view: all ? undefined : cam.view,
+    viewLens,
+  }).map((c) => ({
+    ...c,
+    name: furniture[c.item].name,
+    otherName: furniture[c.other].name,
+  }));
 }
 
 /**

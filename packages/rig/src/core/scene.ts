@@ -946,6 +946,40 @@ export interface SceneRuntime {
    * không khai chỗ dựng bàn tay người thả từ đây khi `ItemOptions.chars` không có người ấy
    */
   chars?: Record<string, CharacterData>;
+  /**
+   * Ống kính máy quay vẽ ra ở giây `t`, góc radian (`buildWorld` điền từ `WorldSpec.lens`); `undefined` là `lens`. Luật đo
+   * trên hình đọc qua `lensAt`
+   */
+  lensAt?: (t: number) => Lens | undefined;
+}
+
+/** Ống kính góc độ như `scene.lens` (tâm ảnh bỏ trống là `0`) ra `Lens` góc radian */
+export const lensRadians = (l: {
+  eye: readonly number[];
+  yaw: number;
+  pitch: number;
+  f: number;
+  cx?: number;
+  cy?: number;
+}): Lens => ({
+  eye: [l.eye[0], l.eye[1], l.eye[2]],
+  yaw: l.yaw * D,
+  pitch: l.pitch * D,
+  f: l.f,
+  cx: l.cx ?? 0,
+  cy: l.cy ?? 0,
+});
+
+/** Ống kính máy quay vẽ ra ở giây `t`: `rt.lensAt`, không có thì `scene.lens` */
+export const lensAt = (rt: SceneRuntime, t: number): Lens | undefined => rt.lensAt?.(t) ?? rt.lens;
+
+/**
+ * Dáng `sp` của `sceneAt` nhìn qua ống kính vẽ ra ở giây `t` (`lensAt`): `world.lens` và mắt cho ý định `camera` đổi theo,
+ * như `buildWorld` đặt người. Không có `rt.lensAt` thì giữ nguyên
+ */
+export function seenPose(rt: SceneRuntime, sp: ScenePose, t: number): ScenePose {
+  const L = rt.lensAt?.(t);
+  return L && sp.world ? { ...sp, world: { ...sp.world, lens: L, eye: [...L.eye] } } : sp;
 }
 
 /** Khung camera lúc `time`; `view` là hộp cắt trong hệ toạ độ sân khấu */
@@ -1221,11 +1255,7 @@ export function resolveScene(
   });
   if (scene.items) checkItems(scene.items, held, scene.cast);
   const duration = scene.duration ?? sceneEnd(cast);
-  const lens = scene.lens && {
-    ...scene.lens,
-    yaw: scene.lens.yaw * D,
-    pitch: scene.lens.pitch * D,
-  };
+  const lens = scene.lens && lensRadians(scene.lens);
   const rt: SceneRuntime = {
     name: scene.name,
     marks: scene.marks,

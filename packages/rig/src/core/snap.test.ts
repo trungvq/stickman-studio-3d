@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   actionSnapProblems,
   defaultCharacter,
+  lensCuts,
+  lensRadians,
   parseAction,
   parseScene,
   resolveScene,
@@ -243,6 +245,32 @@ describe("sceneSnaps", () => {
     const o = { characterOf: () => defaultCharacter() };
     expect(sceneSnaps(rt, { ...o, spans: [[1.2, 2]] })).toEqual([]);
     expect(sceneSnaps(rt, { ...o, spans: [[0, 2]] })).toHaveLength(1);
+  });
+
+  it("đo qua ống kính vẽ ra (`lensAt`): ngoài khung thì thôi, đổi bậc trùng cú cắt cứng là chỗ cắt", () => {
+    const rt = cut({ action: "raise", start: 1, blend: 0 });
+    const side = lensRadians({ ...LENS, eye: [300, -300, -1500] });
+    const away = lensRadians({ ...LENS, yaw: 180 });
+    expect(snaps({ ...rt, lensAt: () => away })).toEqual([]);
+    expect(snaps({ ...rt, lensAt: () => side })).toHaveLength(1);
+    expect(snaps({ ...rt, lensAt: (t) => (t >= 1 ? side : undefined) })).toEqual([]);
+    expect(snaps({ ...rt, lensAt: (t) => (t >= 0.5 ? side : undefined) })).toHaveLength(1);
+    const pan = (t: number) => lensRadians({ ...LENS, eye: [t * 200, -300, -1500] });
+    expect(lensCuts({ ...rt, lensAt: pan }, 120, 60).some(Boolean)).toBe(false);
+    expect(
+      lensCuts({ ...rt, lensAt: (t) => (t >= 1 ? side : undefined) }, 120, 60).flatMap((c, i) =>
+        c ? [i] : [],
+      ),
+    ).toEqual([60]);
+    const zoom = lensRadians({ ...LENS, f: 900 });
+    const twice = (t: number) => (t >= 1 + 1 / 60 - 1e-9 ? side : t >= 1 ? zoom : undefined);
+    const cuts = lensCuts({ ...rt, lensAt: twice }, 120, 60);
+    expect(cuts.flatMap((c, i) => (c ? [i] : []))).toEqual([60, 61]);
+    const dolly = (t: number) =>
+      t >= 1 ? lensRadians({ ...LENS, eye: [300 + t * 60, -300, -1500] }) : undefined;
+    expect(lensCuts({ ...rt, lensAt: dolly }, 120, 60).flatMap((c, i) => (c ? [i] : []))).toEqual([
+      60,
+    ]);
   });
 
   it("cùng cú ấy mà hoà tự suy thì êm", () => {

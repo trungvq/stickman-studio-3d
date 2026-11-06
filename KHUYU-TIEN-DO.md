@@ -581,3 +581,51 @@ xong nên cảnh t02/t03 chỉ là bộ đo.
 11. Tạp dề dài lúc quỳ: nằm theo đùi, qua gối, gập xuống sàn (`drapeFloor`, `kneelOn`, `drape` theo hướng lên thân,
     `f24bcb6`); đứng, đi, váy thường lệch 0. Còn: hai test `hem3d` mới vẫn qua trên code trước (phần giữ thật ở `hem.test.ts`);
     nếp gập trên sàn nhìn ngang hơi như giọt nước; váy thường, vạt quấn quỳ vẫn xuống dưới sàn 1–3 px.
+
+## `check` đo qua ống kính vẽ ra (2026-11-06, việc 8 của mục trên)
+
+- Gốc: luật đo trên hình đọc `scene.lens` của JSON, còn hình vẽ bằng `WorldSpec.lens` của `world.ts` repo video (t02/t03 cắt
+  góc máy bằng `lens(t)`, `catGoc`, `dayLens`…). Không cần Chromium: `check` vốn dựng `buildWorld` trong Node cho `held`.
+- Sửa: lõi thêm `SceneRuntime.lensAt`, `lensAt(rt, t)` (không có thì `scene.lens`), `lensRadians`, `seenPose` (đặt `world.lens`
+  và mắt như `buildWorld`). `buildWorld` điền `rt.lensAt` từ `spec.lens` (`seeing` dùng `seenPose`). Đọc qua nó: `sceneHeld`
+  (bàn tay trong khung), `sceneMotion` (khớp chiếu ra pixel, lên hình, mắt cho ý định nhìn ống kính), `heldFrame` (mắt theo
+  giây), `worldAt` của cli và `sceneClashes` / `sceneItemClashes` của fx (khung; khối lớp vẽ code vẫn dựng qua `scene.lens`,
+  `viewLens` của `solidClashes` / `solidItemClashes`). `lensCuts`: cặp khung mà một thành phần ống kính đổi gấp 4 lần trung vị
+  3 cặp mỗi bên là chỗ cắt, không đo giật qua nó (cắt sang máy đang chạy, hai lần đổi bậc liền nhau cũng bắt; lia đều thì
+  không). `move` dựng cảnh three khi repo có `stickman.world` (chủ dự án chọn 2026-11-06: hai lượt phải ra cùng dòng);
+  module hỏng / `worldOf` ném thì dòng báo nói rõ giật, khuỷu đo qua `scene.lens`. Test: `heldAudit`, `snap` (`lensCuts`,
+  ngoài khung, đổi bậc trùng cú cắt), `world` (`lensAt` điền / xoá), `solidClashes` (`viewLens`), `groups.test.mjs` (`move`
+  nạp cảnh three, module hỏng là lỗi). Docs 03, 05, 10.
+- Số `check` t02+t03 (129 cảnh, `--skip episode`, dòng): 733 → 1035 (1 lỗi như cũ). Theo luật (trước → sau, +khoá/−khoá):
+  `held` 125 → 185 (oppose 9 → 36 +28/−1, sink 22 → 36 +20/−6, mark 12 → 17 +6/−1, pierce 1 → 6, role 27 → 31, face 10 → 12,
+  wrist 15 → 17, loose 1 → 2, reach 4 → 5, jump 8 → 7 +2/−3, body 11 → 11 +2/−2, arm 4 → 4); khuỷu 494 → 665 (aimYield
+  319 → 417 +45/−31, armStraight 62 → 133 +21/−5, còn lại ±1–2); giật 61 → 132 (+64/−13 khoá; chưa có `lensCuts` là 612).
+  `--only clash`: người lồng vào đồ 278 → 456 (+244/−66), tay xuyên thân 105 → 108. `held mark` erika: 8/8 (s003b, s091,
+  s118, s122–s125, s129; trước 3/8).
+- Thời gian: lượt mặc định 354 → 297 s đồng hồ (nhiễu máy; dựng cảnh three 149 → 129 s cộng dồn); `--only move` 181 s, trong
+  đó dựng cảnh three 115 s cộng dồn ≈ +11% so với không dựng; `--only move` ra đúng các dòng `move` của lượt đủ (so 100%).
+  `--only clash` 329 → 319 s.
+- Phân loại (ảnh ở `/tmp/claude-1000/lens-check/img/`, dải 4 khung t−2/60…t+1/60 hay hai giây):
+  - Dòng mất: đều đúng — tay, người ngoài khung thật hay cú cắt ống kính: `jump-s033-230`, `jump-s034-2116`, `jump-s042-185`,
+    `snapgone-s116-8488` (cắt góc máy, 260 px), `snapgone-s082-2367`, `snapgone-s046-107`, `gone-s109-bodam`,
+    `gone-s114-bodam` (cảnh sát trong hình là `trung-si`; tay `canh-sat-vien` chiếu ra x 1401, ngoài khung), `gone-s102feed`,
+    `gone-s116feed` (khung tường của cảnh feed), `gone-s004-kep`, `gone-s057-khay`.
+  - Giật thêm: thấy trên hình — `s050-3757` (tay phải buông → cầm máy trong một khung, 391 px), `snap-s033-037`,
+    `snap-s041-723`, `snap-s118-2032`, `snap-s008-615`, `snap-s139-002` (đầu quay ở khung 0→1), `jump-s043-500` (bút hiện ra
+    khi tay rời khung). Đúng theo luật mà không thấy: khớp bị che hay nằm trong lề 5% dưới mép (`snap-s019-6255` tay sau xe
+    đẩy, `snap-s143-1080` khuỷu sau thùng, `snap-s100-157` gối sau túi, `snap-s023-1012` gối dưới mép khung). Nhiều dòng thêm
+    là cận cảnh: cùng chuyển động 3D lên to hơn nên vượt 12 px.
+  - `held` thêm: phép đo không đổi, chỉ khác bàn tay nào trong khung. Thấy trên hình: `held-s091` (mark 46°), `held-s124`,
+    `held-s133` (biển tên nghiêng 43°), `crop-s050-523` (ngón cái lún vào máy chẩn đoán, pierce 3.8), `crop-s148-6` (ngón
+    tay đỡ lún đáy máy, sink 1.8), `held-s115` (sổ hở tay). Khuất: `held-s123` (điện thoại sau lưng erika), `jump-s009-4036`
+    (ống nghe sau quầy). Thừa của luật có từ trước (cùng dạng đã có ở `kep-ho-so` trước thay đổi): `oppose` báo máy chẩn đoán
+    đặt trên hai lòng tay (`held-s143-may`, `held-s148-may`: món tựa lòng tay, không cần ngón cái kẹp) và báo tờ báo
+    `bao@sheet` rim (`held-s082-bao`, `held-s095-bao`, 13 dòng `ong-khach`).
+  - `clash` thêm: phần lớn thấy (`clash-s050` người lồng xe đẩy 45, đầu xuyên khung xe 53; `clash-s100` cảnh sát đi xuyên cửa
+    vào). `clash-s099` người đứng trong vật `ngoai-troi` (khối ngoài trời của repo, không thấy trên hình — việc của repo
+    khai `touch` / `noCollide`), `clash-s019` cẳng tay khuất sau người.
+- Còn mở (cần chủ dự án quyết): (1) `check` không đo che khuất (khớp, bàn tay sau người / đồ vẫn tính lên hình) — có từ trước,
+  giờ lộ nhiều hơn ở cận cảnh; (2) `oppose` cho món tựa lòng tay (palmBox hai tay đỡ dưới đáy) và tờ báo rim — đổi luật hay
+  khai riêng; (3) `sceneAt` bên trong vẫn giải phần ý định `camera` của chỗ cầm nhóm theo mắt `scene.lens` (chỉ `act` dùng mắt
+  thật, `scene.ts` ~5907) — cả render lẫn `check`, chưa kiểm có lệch hình không; (4) lớp SVG (`fx`, lớp vẽ code, `anchorAt`) vẫn chiếu qua `scene.lens` trong render nên lệch
+  người khi `WorldSpec.lens` khác (repo video đang tự chiếu, `goc-t03-lo.ts`).

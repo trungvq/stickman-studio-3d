@@ -19,7 +19,7 @@ import {
 } from "./heldAudit";
 import type { V3 } from "./lens";
 import { parseHeldItem } from "./heldItem";
-import { parseScene, resolveScene } from "./scene";
+import { lensRadians, parseScene, resolveScene } from "./scene";
 import chenJson from "./__fixtures__/held-v2/chen.json";
 
 /** Hộp kín thẳng trục `lo..hi`, 12 tam giác quấn ra ngoài; `flip` quấn ngược */
@@ -180,6 +180,19 @@ describe("sceneHeld: luật trên cả cảnh", () => {
     expect(issues[0].drift!.from).toBe(0);
     expect(issues[0].drift!.turn).toBeGreaterThan(50);
     expect(issues[0].runs[0][1]).toBeLessThan(1);
+  });
+
+  it("bàn tay trong hay ngoài khung theo ống kính vẽ ra (`lensAt`), không theo `scene.lens`", () => {
+    const pose = (t: number) => (t <= 1 ? [sample({ acted: handVec("pinch") })] : []);
+    // mắt sau lưng tay, nhìn ra xa: tay sau mặt phẳng ống kính
+    const behind = lensRadians({ eye: [0, -150, 400], yaw: 0, pitch: 0, f: 800 });
+    expect(sceneHeld({ ...rt, lensAt: () => behind }, { frame: pose })).toEqual([]);
+    const off = { ...rt, lens: behind };
+    expect(sceneHeld(off, { frame: pose })).toEqual([]);
+    expect(
+      sceneHeld({ ...off, lensAt: () => rt.lens }, { frame: pose }).map((i) => i.rule),
+    ).toEqual(["pose"]);
+    expect(sceneHeld({ ...off, lensAt: () => undefined }, { frame: pose })).toEqual([]);
   });
 });
 

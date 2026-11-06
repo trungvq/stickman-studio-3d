@@ -7,7 +7,9 @@ import { depthAt, dot3, project, scale3, sub3, type Lens, type V3 } from "./lens
 import {
   cameraAt,
   elbowLockAt,
+  lensAt,
   sceneAt,
+  seenPose,
   type CastMember,
   type ScenePose,
   type SceneRuntime,
@@ -564,14 +566,54 @@ function causesOf(m: CastMember, J: Jolt): { causes: string[]; clips: string[] }
   return { causes, clips };
 }
 
+/** Một cặp khung ống kính đổi gấp ngần này lần trung vị `LENS_CUT_SPAN` cặp mỗi bên (từng thành phần) là chỗ cắt */
+const LENS_CUT_K = 4;
+const LENS_CUT_SPAN = 3;
+
+/** Ống kính đổi bao nhiêu giữa `a` và `b`, từng thành phần: mắt, quay, cúi, tiêu cự, tâm ảnh */
+const lensStep = (a: Lens | undefined, b: Lens | undefined): number[] =>
+  a && b
+    ? [
+        Math.hypot(a.eye[0] - b.eye[0], a.eye[1] - b.eye[1], a.eye[2] - b.eye[2]),
+        Math.abs(a.yaw - b.yaw),
+        Math.abs(a.pitch - b.pitch),
+        Math.abs(a.f - b.f),
+        Math.hypot(a.cx - b.cx, a.cy - b.cy),
+      ]
+    : [a === b ? 0 : Infinity, 0, 0, 0, 0];
+
+/**
+ * Cặp khung `i − 1 → i` (mẫu `fps`) mà ống kính vẽ ra (`lensAt`) đổi gấp (`LENS_CUT_K`) các cặp quanh nó: chỗ cắt sang
+ * góc máy khác, hình đổi cả khung — cắt từ máy đứng sang máy đang chạy, hai lần đổi bậc liền nhau cũng vậy. Ống kính chạy
+ * liền (lia, dời theo người) đổi đều mọi khung, không là cắt
+ */
+export function lensCuts(rt: SceneRuntime, n: number, fps: number): boolean[] {
+  const out = new Array<boolean>(n + 1).fill(false);
+  if (!rt.lensAt) return out;
+  const W = LENS_CUT_SPAN;
+  const L = Array.from({ length: n + 2 * W + 1 }, (_, k) => lensAt(rt, Math.max(0, (k - W) / fps)));
+  // `d[i + W - 1]`: cặp `i − 1 → i`
+  const d = Array.from({ length: n + 2 * W }, (_, k) => lensStep(L[k], L[k + 1]));
+  for (let i = 1; i <= n; i++) {
+    const k = i + W - 1;
+    out[i] = d[k].some((v, c) => {
+      if (!(v > 1e-9)) return false;
+      const near: number[] = [];
+      for (let j = k - W; j <= k + W; j++) if (j !== k) near.push(d[j][c]);
+      return v > LENS_CUT_K * median(near);
+    });
+  }
+  return out;
+}
+
 /**
  * Giật trên hình: lấy mẫu cảnh theo `fps`, tính khớp đúng như hình vẽ ra (`actJoints` của người 3D
- * chiếu qua `scene.lens`), đổi ra pixel video theo khung cắt `cameraAt` của
+ * chiếu qua ống kính vẽ ra, `lensAt`), đổi ra pixel video theo khung cắt `cameraAt` của
  * từng khung, rồi bắt khung mà một khớp nhảy vượt nền quá `px` và quá `k` lần nền — nền là trung vị
  * dịch chuyển của chính khớp ấy trong ±2 khung, nên cú vung nhanh mà đều hay cú hoà êm có nền lớn
  * theo, không bị bắt; cú nhảy một hai khung thì nền vẫn là phần chậm quanh nó. Bỏ qua: khớp ra
  * ngoài khung hay người khuất, quãng ngoài `spans`, cặp khung
- * vắt qua chỗ cắt, và chỗ khai `snap`. docs/03-scene.md#giật-trên-hình
+ * vắt qua chỗ cắt (mốc camera `cut`, ống kính đổi bậc `lensCuts`), và chỗ khai `snap`. docs/03-scene.md#giật-trên-hình
  */
 export const sceneSnaps = (rt: SceneRuntime, o: SnapOptions): Snap[] =>
   sceneMotion(rt, { ...o, elbows: false }).snaps;
@@ -590,19 +632,21 @@ export function sceneMotion(
   const n = Math.floor(rt.duration * fps + 1e-6);
   const cams = Array.from({ length: n + 1 }, (_, i) => cameraAt(rt, i / fps));
   const video = rt.frame.video.w;
-  // cặp khung vắt qua chỗ cắt (hai đầu shot, mốc camera `cut`) không phải giật: hình đổi cả khung
+  // cặp khung vắt qua chỗ cắt (hai đầu shot, mốc camera `cut`, ống kính đổi bậc) không phải giật: hình đổi cả khung
   const spans = o.spans?.length ? o.spans : [[0, rt.duration] as [number, number]];
   const cuts = [
     ...spans.flat(),
     ...rt.camera.filter((k, j) => j > 0 && k.move === "cut").map((k) => k.t),
   ];
   const E = 1e-6;
+  const lensCut = lensCuts(rt, n, fps);
   const shown = Array.from({ length: n + 1 }, (_, i) => {
     const [t0, t1] = [(i - 1) / fps, i / fps];
     return (
       i > 0 &&
       spans.some(([a, b]) => t0 >= a - E && t1 <= b + E) &&
-      !cuts.some((c) => c > t0 + E && c <= t1 + E)
+      !cuts.some((c) => c > t0 + E && c <= t1 + E) &&
+      !lensCut[i]
     );
   });
   const out: Snap[] = [];
@@ -617,7 +661,9 @@ export function sceneMotion(
     const S: Sample[] = [];
     for (let i = 0; i <= n; i++)
       S.push(
-        shown[i] || shown[i + 1] ? sample(c, sceneAt(rt, m.id, i / fps, h, b), o.elbows) : SKIPPED,
+        shown[i] || shown[i + 1]
+          ? sample(c, seenPose(rt, sceneAt(rt, m.id, i / fps, h, b), i / fps), o.elbows)
+          : SKIPPED,
       );
     const joints: string[] = J3;
     const windows = snapWindows(m);

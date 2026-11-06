@@ -17,7 +17,7 @@ import {
 import { CARRY } from "./heldCarry";
 import { AIM_GAP } from "./constants";
 import { handClips, PALM_HAND_LABELS, type PalmHand } from "./palm";
-import { cameraAt, elbowLockAt, holdBlending, type SceneRuntime } from "./scene";
+import { cameraAt, elbowLockAt, holdBlending, lensAt, type SceneRuntime } from "./scene";
 
 /**
  * Đo đồ cầm tay của người 3D mặc đồ: dáng tay vẽ so với dáng khai, ngón lún vào món, ngón ôm món, món xoay đúng ý,
@@ -1009,10 +1009,11 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
   };
   /** Bàn tay ở `at` (thế giới rig) trong khung camera giây `t` */
   const inView = (t: number, at: V3) => {
-    const view = rt.lens && cameraAt(rt, t).view;
-    if (!rt.lens || !view) return true;
-    if (depthAt(rt.lens, at) <= 0) return false;
-    const [x, y] = project(rt.lens, at);
+    const L = lensAt(rt, t);
+    if (!L) return true;
+    const view = cameraAt(rt, t).view;
+    if (depthAt(L, at) <= 0) return false;
+    const [x, y] = project(L, at);
     return !(x < view.x || x > view.x + view.w || y < view.y || y > view.y + view.h);
   };
   times.forEach((t, i) => {

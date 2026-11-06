@@ -267,19 +267,25 @@ describe("check: chạy theo nhóm", () => {
     assert.deepEqual([...new Set(parts)].sort(), [...new Set(msgs(full))].sort());
   });
 
-  it("nhóm không chạy thì không dựng thứ nó cần: `ref`, `move` không nạp cảnh three, `held` không đo va chạm", async () => {
+  it("nhóm không chạy thì không dựng thứ nó cần: `ref` không nạp cảnh three, `move` nạp (ống kính vẽ ra), `held` không đo va chạm", async () => {
     const hong = space({ hong: true });
     const all = await checkWorkspace({ dir: hong, jobs: 1 });
     assert.ok(
       msgs(all).some((m) => m.includes("module hỏng")),
       msgs(all).join("\n"),
     );
-    for (const only of ["ref", "move", "ref,move,episode"]) {
+    for (const only of ["ref", "ref,episode"]) {
       const r = await checkWorkspace({ dir: hong, jobs: 1, only });
       assert.ok(!msgs(r).some((m) => m.includes("module hỏng")), `${only}: ${msgs(r).join("\n")}`);
       assert.equal(r.time.worldModule, undefined);
       assert.equal(r.time.three, undefined);
     }
+    // module cảnh three hỏng: `move` báo lỗi kèm tên module, không lặng lẽ đo qua `scene.lens`
+    const move = await checkWorkspace({ dir: hong, jobs: 1, only: "move" });
+    assert.ok(
+      move.problems.some((p) => p.level === "lỗi" && /src\/world\.ts: module hỏng/.test(p.msg)),
+      msgs(move).join("\n"),
+    );
     const dir = space();
     const ref = await checkWorkspace({ dir, jobs: 1, only: "ref" });
     for (const k of ["move", "held", "clash", "threads", "three"])
@@ -288,9 +294,12 @@ describe("check: chạy theo nhóm", () => {
     assert.ok(held.time.three > 0);
     assert.equal(held.time.clash, undefined);
     assert.equal(held.time.move, undefined);
-    const skip = await checkWorkspace({ dir, jobs: 1, skip: "clash,held,legacy,roles" });
+    const moved = await checkWorkspace({ dir, jobs: 1, only: "move" });
+    assert.ok(moved.time.three > 0);
+    assert.ok(moved.time.move > 0);
+    assert.equal(moved.time.held, undefined);
+    const skip = await checkWorkspace({ dir, jobs: 1, skip: "move,clash,held,legacy,roles" });
     assert.equal(skip.time.three, undefined);
-    assert.ok(skip.time.move > 0);
   });
 
   it("`uses` chọn cảnh dùng hành động, giao với `scene`; không cảnh nào hay tên lạ là lỗi", async () => {

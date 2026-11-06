@@ -1084,8 +1084,9 @@ export function heldOptions(dir = ".") {
 export function heldFrame(rt, world, onError, onPosed) {
   const { scene, U, heldHands, heldCarries } = world;
   if (typeof heldHands !== "function") return null;
-  const eye = rt.lens && [rt.lens.eye[0] * U, -rt.lens.eye[1] * U, -rt.lens.eye[2] * U];
   return (t) => {
+    const L = rig.lensAt(rt, t);
+    const eye = L && [L.eye[0] * U, -L.eye[1] * U, -L.eye[2] * U];
     let posed;
     try {
       posed = scene.pose(t) ?? {};
@@ -1348,10 +1349,11 @@ function worldAt(rt, t, { world, tol, unknown }) {
     if (b) b.union(c.box);
     else boxes.set(c.from, c.box.clone());
   }
-  const view = rt.lens && rig.cameraAt(rt, t).view;
+  const L = rig.lensAt(rt, t);
+  const view = L && rig.cameraAt(rt, t).view;
   const inView = ({ at }) => {
     if (!view) return true;
-    const [x, y] = rig.project(rt.lens, [at.x / U, -at.y / U, -at.z / U]);
+    const [x, y] = rig.project(L, [at.x / U, -at.y / U, -at.z / U]);
     return x >= view.x && x <= view.x + view.w && y >= view.y && y <= view.y + view.h;
   };
   const floorOf = (id) => {
@@ -1659,9 +1661,9 @@ const moveProblems = (rt) => [
 ];
 
 /**
- * Nhóm luật của `check`, xếp theo thứ nó cần dựng: `ref` chỉ đọc JSON, `move` đo khớp người theo runtime, `held`,
- * `legacy` và `roles` cần cảnh three, `clash` cần cả cảnh three lẫn mẫu khối người, `episode` là tập, tiếng, git —
- * docs/05-repo-video.md#nhóm-luật
+ * Nhóm luật của `check`, xếp theo thứ nó cần dựng: `ref` chỉ đọc JSON, `move` đo khớp người theo runtime (chiếu
+ * qua ống kính của cảnh three khi repo có), `held`, `legacy` và `roles` cần cảnh three, `clash` cần cả cảnh three
+ * lẫn mẫu khối người, `episode` là tập, tiếng, git — docs/05-repo-video.md#nhóm-luật
  */
 export const CHECK_GROUPS = ["ref", "move", "held", "legacy", "roles", "clash", "episode"];
 
@@ -1861,8 +1863,9 @@ function roleRows(ctx, rt, on, warn) {
 /**
  * Đo sâu một cảnh theo nhóm `ctx.groups`: trượt chân, thân quay gắt, giật trên hình (`move`); người lồng vào đồ, tay
  * xuyên thân, đồ lồng vào đồ (`clash`); đồ cầm tay (`held`). Nhóm không chạy thì không dựng thứ nó cần: cảnh three
- * chỉ dựng cho `clash`, `held`, `legacy`, mẫu khối người chỉ cho `clash`. Mỗi mục `{ msg, group, key?, measure?, t? }`
- * (`key`, `measure` cho baseline, `t` giây đầu quãng), `error: true` là lỗi; mục `touch` lạ kèm `touch` (tên mục) vì
+ * chỉ dựng cho `move`, `clash`, `held`, `legacy`, `roles`, mẫu khối người chỉ cho `clash`. Luật đo trên hình đọc
+ * ống kính vẽ ra (`lensAt`: `WorldSpec.lens` mà `buildWorld` điền, không có thì `scene.lens`). Mỗi mục
+ * `{ msg, group, key?, measure?, t? }` (`key`, `measure` cho baseline, `t` giây đầu quãng), `error: true` là lỗi; mục `touch` lạ kèm `touch` (tên mục) vì
  * `check` chỉ báo nó ở cảnh đầu tiên gặp. `time` là ms từng phần. `ctx` là dữ liệu đã nạp của workspace
  * cùng ngưỡng đã kiểm
  */
@@ -1895,6 +1898,8 @@ function deepScene(ctx, name) {
   const doHeld = has("held") && !!held && !held.off && !held.error && people;
   const doLegacy = has("legacy") && people;
   const doRoles = has("roles") && !!data.lens;
+  // giật, khuỷu trên hình đo qua ống kính vẽ ra: `buildWorld` điền `rt.lensAt`
+  const doSnap = has("move") && !snap.error && !snap.off && people;
   const warn = (group, msg, extra) => out.clash.push(row(group, msg, extra));
   const characterOf = (m) => {
     const character = m.character ? charactersByName[m.character] : rig.defaultCharacter();
@@ -1902,7 +1907,7 @@ function deepScene(ctx, name) {
   };
   // Cảnh three dựng một lần cho mọi nhóm cần nó; `ctx` là dữ liệu `check` đã nạp và resolve, cùng khoá như `data.ts`
   let on;
-  if (world && (doClash || doHeld || doLegacy || doRoles)) {
+  if (world && (doClash || doHeld || doLegacy || doRoles || doSnap)) {
     const scene = lap(time, "three", () =>
       worldScene(
         world,
@@ -1918,7 +1923,12 @@ function deepScene(ctx, name) {
       ),
     );
     if (scene?.error)
-      warn(doClash ? "clash" : doHeld ? "held" : doLegacy ? "legacy" : "roles", scene.error);
+      warn(
+        doClash ? "clash" : doHeld ? "held" : doLegacy ? "legacy" : doRoles ? "roles" : "move",
+        doSnap
+          ? `${scene.error} — giật, khuỷu trên hình của cảnh này đo qua \`scene.lens\`, không theo \`WorldSpec.lens\``
+          : scene.error,
+      );
     on = scene && !scene.error ? scene : undefined;
   }
   if (doClash)
@@ -2172,8 +2182,8 @@ export async function checkScenes({
   return out;
 }
 
-/** Nhóm cần cảnh three của repo (`stickman.world`) */
-const WORLD_GROUPS = ["clash", "held", "legacy", "roles"];
+/** Nhóm cần cảnh three của repo (`stickman.world`); `move` đo giật trên hình qua ống kính của nó */
+const WORLD_GROUPS = ["move", "clash", "held", "legacy", "roles"];
 
 /** RAM một luồng đo sâu cần, ước chừng */
 const JOB_RAM = 1e9;
@@ -2835,7 +2845,11 @@ export async function checkWorkspace({
         world = await lapAsync(times, "worldModule", () => loadWorld(root));
       }
     } catch (e) {
-      bad(worldRel ? `${worldRel}: ${e.message}` : e.message);
+      // `move` vẫn chạy: nói rõ nó đo qua `scene.lens` chứ không theo ống kính vẽ ra
+      const lens = has("move")
+        ? " — giật, khuỷu trên hình đo qua `scene.lens`, không theo `WorldSpec.lens`"
+        : "";
+      bad(`${worldRel ? `${worldRel}: ${e.message}` : e.message}${lens}`);
     }
 
   // Thư mục sidebar Remotion: regex hỏng hay tên thư mục có ký tự lạ thì `Root.tsx` ném —

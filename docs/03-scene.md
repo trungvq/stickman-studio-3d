@@ -985,8 +985,11 @@ ngắn, `wrap` vòng lại, đoạn mốc quá nhanh, phần đích cổ tay đ�
 mốc, khuỷu của IK bật khi tay duỗi sát hết tầm hay hướng khuỷu gần trùng trục tay, cả người dời chỗ.
 Dòng nào không có lý do thì đọc danh sách clip đang chạy kèm theo.
 
-Không đo: khớp ra ngoài khung, người khuất (`fade` dưới `0,5` là tắt), điểm sau mặt phẳng ống kính, cặp khung vắt
-qua chỗ cắt — mốc camera `cut`, đầu và cuối shot —, quãng cảnh không lên hình, và chỗ khai **cố ý
+Khớp chiếu qua ống kính vẽ ra: `WorldSpec.lens` của cảnh three khi repo có `stickman.world`
+([05](05-repo-video.md#cảnh-three-cho-check)), không thì `scene.lens`. Không đo: khớp ra ngoài khung, người khuất (`fade`
+dưới `0,5` là tắt), điểm sau mặt phẳng ống kính, cặp khung vắt qua chỗ cắt — mốc camera `cut`, đầu và cuối shot, ống kính
+đổi bậc (một thành phần của nó đổi gấp `4` lần trung vị ba cặp mỗi bên, `lensCuts`: cắt sang góc máy khác, cả cắt vào máy
+đang chạy; lia, dời theo người đổi đều nên vẫn đo) —, quãng cảnh không lên hình, và chỗ khai **cố ý
 giật**. Cảnh có shot trong `episodes/` dùng thì `check` chỉ đo quãng `[from, to]` của các shot ấy;
 hai shot liền nhau nối tiếp cùng một cảnh gộp lại, không có chỗ cắt giữa chúng. Cảnh không shot nào
 dùng, và `scene_probe` / `validate` (không biết tập), thì đo cả cảnh. Cố ý giật khai ở:
@@ -1184,7 +1187,7 @@ mỗi `0,1 s`, mỗi bàn tay người mặc đồ đang cầm một món hiện
 nang bàn tay theo dáng đang vẽ (`handCapsules`, `fitCapsules`, cả độ gập thêm của ngón ôm). Lún, khe và độ ôm đo tới
 hình va chạm của món (`shape`) khi cầm cứng, không thì tới lưới hiện hình của món (mọi lưới mặt trước, kể cả
 lưới `noCollide`, bỏ vỏ nét); tâm nắm và lòng tay luôn đo tới lưới. Kêu quãng từ `0,3 s` (trôi, nhảy thì mọi độ dài),
-bỏ bàn tay ngoài khung camera:
+bỏ bàn tay ngoài khung camera của ống kính vẽ ra (`WorldSpec.lens`, không thì `scene.lens`):
 
 | Luật | Kêu khi | Ngưỡng |
 |---|---|---|
@@ -1508,7 +1511,7 @@ stageOf(world, { size, aa?, software? }): Promise<{ stage, world }>             
 | `still` | `id` người đóng băng ở dáng giây 0 thành người nền (`seatCrowd`); bỏ trống là mọi người `world.sit`, `[]` là không ai |
 | `extra(marks, cast)` | Đồ riêng của cảnh `Extra3D`: nhận `scene.marks` và người diễn `Cast3D` |
 | `wear(id, fig)` | Đồ three gắn lên người diễn (`dress`, mũ, thẻ tên): gọi một lần cho mỗi bản người vừa dựng |
-| `lens(t)` | Ống kính ở giây `t`, đè `scene.lens`; `undefined` là `scene.lens` |
+| `lens(t)` | Ống kính ở giây `t`, đè `scene.lens`; `undefined` là `scene.lens`. `buildWorld` điền `rt.lensAt` từ nó: `check` đo trên hình qua ống kính này |
 | `grade(t)` | Hậu kỳ toàn khung ở giây `t` (`render(…, { grade })` của pipeline) |
 
 | `Set3D` | |
