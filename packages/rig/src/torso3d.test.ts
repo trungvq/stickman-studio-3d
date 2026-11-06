@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BadgeSchema, defaultCharacter, GarmentSchema, LettersSchema, OBI_KNOTS, ObiSchema, OpenSchema, PanelSchema, PatternSchema, PRINT_SHAPE_NAMES, PrintSchema, WrapSchema } from './core/schema';
 import { flattenPath, PANEL_LIFT } from './core/panel';
 import { TORSO_DEPTH } from './core/constants';
-import { CHEST, CLOTH, GARMENT_STYLES, garmentOf, lerpAt, profile, type Surface } from './core/torso';
+import { CHEST, CLOTH, GARMENT_STYLES, garmentOf, garmentShoulder, lerpAt, NECK_MIN, profile, SHOULDER_REF, type Surface } from './core/torso';
 import { cladProfile, cladThigh, roots3, THIGH_CLEAR } from './core/act3';
 import { signedVolume, wrapEdge } from './core/wrap';
 import { PRINT_SHAPES, WAKABA } from './core/print';
@@ -39,7 +39,7 @@ describe('thân áo dựng khối', () => {
         const room = clad ? roots3(g, rig, { clad: true, sleeve: 15, trouser: 17 }).room : undefined;
         const t = torsoMesh(g, rig, room);
         const flat = clad
-          ? cladProfile(profile(garmentOf(g, true), rig, rig.stroke / 2).pts, room!)
+          ? cladProfile(profile(garmentOf(g, true, rig), rig, rig.stroke / 2).pts, room!)
           : { pts: t.profile, depth: t.profile.map(([a]) => TORSO_DEPTH * a) };
         const flatAt = (y: number) => lerpAt(flat.pts.map(([, py], i) => [flat.depth[i], py]), y, 1, 0);
         const yS = t.profile.reduce((m, p) => (p[0] > m[0] ? p : m))[1];
@@ -501,3 +501,42 @@ describe('dáng thân chung của thân trần và áo', () => {
   });
 });
 
+
+describe('áo khoác cổ V co theo vai', () => {
+  const base = defaultCharacter().rig;
+  const JACKETS = ['suit', 'blazer', 'cardigan'] as const;
+
+  it('miệng cổ và ve co giãn theo nửa rộng vai áo so với vai chuẩn; kiểu khác giữ số', () => {
+    for (const style of JACKETS) {
+      const def = GARMENT_STYLES[style];
+      const at = (shoulderHalf: number, g = {}) => garmentOf({ style, ...g }, true, { shoulderHalf });
+      expect(at(SHOULDER_REF).neck, style).toBe(def.dims.neck);
+      expect(at(SHOULDER_REF).lapel, style).toBe(def.lapel);
+      const k = (36 + 6) / (SHOULDER_REF + def.dims.ease);
+      expect(at(36, { ease: 6 }).neck, style).toBeCloseTo(Math.max(NECK_MIN, def.dims.neck * k), 9);
+      if (def.lapel) {
+        expect(at(36, { ease: 6 }).lapel, style).toBeCloseTo(def.lapel * k, 9);
+        expect(at(36, { ease: 6, lapel: 30 }).lapel, style).toBeCloseTo(30 * k, 9);
+      }
+      // vai rất hẹp: miệng cổ không hẹp hơn chân ống cổ cộng viền da
+      expect(at(20).neck, style).toBe(NECK_MIN);
+      // không có rig: số của kiểu
+      expect(garmentOf({ style }, true).neck, style).toBe(def.dims.neck);
+    }
+    for (const style of ['tshirt', 'shirt', 'sweater'] as const)
+      expect(garmentOf({ style }, true, { shoulderHalf: 30 }).neck, style).toBe(GARMENT_STYLES[style].dims.neck);
+  });
+
+  it('lá cổ, ve suit và blazer nằm trong bề ngang vai áo ở mọi cỡ vai, không chìa ra gốc tay', () => {
+    for (const style of ['suit', 'blazer'] as const)
+      for (const shoulderHalf of [31, 36, 40, 46])
+        for (const ease of [undefined, 8]) {
+          const rig = { ...base, shoulderHalf };
+          const g = { style, ...(ease && { ease }) };
+          const t = torsoMesh(g, rig, roots3(g, rig, { clad: true, sleeve: 14, trouser: 16 }).room);
+          const leaf = t.sheets[t.sheets.length - 1].grid.flat().filter((p) => p[2] > 0);
+          const wide = Math.max(...leaf.map((p) => Math.abs(p[0])));
+          expect(wide / garmentShoulder(g, rig, true), `${style} ${shoulderHalf} ${ease}`).toBeLessThan(0.85);
+        }
+  });
+});

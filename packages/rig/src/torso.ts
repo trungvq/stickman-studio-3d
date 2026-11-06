@@ -100,7 +100,7 @@ const lerp3 = (p: Vec3, q: Vec3, t: number): Vec3 => [p[0] + (q[0] - p[0]) * t, 
  * (`pieces.neck`), khối kín đè lên thân và nắp vai
  */
 export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: ArmRoom, neck?: NeckWear): TorsoMesh {
-  const g = garmentOf(raw, !!arm);
+  const g = garmentOf(raw, !!arm, rig);
   const def = GARMENT_STYLES[g.style];
   const pr = profile(g, rig, rig.stroke / 2);
   const { pts, back: depth, front } = torsoSection(pr.pts, g, rig.height, arm);

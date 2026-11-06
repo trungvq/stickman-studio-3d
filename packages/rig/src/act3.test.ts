@@ -144,7 +144,7 @@ describe('actJoints', () => {
       const arm = cladArm(sleeve, c.rig.stroke);
       const [x, h] = roots3(g, c.rig, { clad: true, sleeve, trouser }).shoulder.map((v) => v * 100);
       const [xb, hb] = roots3(g, c.rig, { clad: true, sleeve, trouser, bicep: 0.7 }).shoulder.map((v) => v * 100);
-      const pts = profile(garmentOf(g, true), c.rig, c.rig.stroke / 2).pts;
+      const pts = profile(garmentOf(g, true, c.rig), c.rig, c.rig.stroke / 2).pts;
       // khoảng cách từ tâm (x, −h) tới đường qua hai điểm
       const dist = (a: number[], b: number[]) => Math.abs((b[0] - a[0]) * (a[1] + h) - (a[0] - x) * (b[1] - a[1])) / Math.hypot(b[0] - a[0], b[1] - a[1]);
       expect(dist(pts[0], pts[1]), style).toBeCloseTo(arm, 6);
@@ -170,7 +170,7 @@ describe('actJoints', () => {
       expect(armInner(room, 0)).toBeGreaterThanOrEqual(hipHalf + thigh - 1e-6);
       if (armInner({ ...room, splay: SPLAY3 }, 0) >= hipHalf + thigh) expect(r.splay).toBe(SPLAY3);
       else expect(armInner(room, 0)).toBeCloseTo(hipHalf + thigh, 4);
-      const { pts: side, depth } = cladProfile(profile(garmentOf(g, true), rig, rig.stroke / 2).pts, room);
+      const { pts: side, depth } = cladProfile(profile(garmentOf(g, true, rig), rig, rig.stroke / 2).pts, room);
       side.forEach(([a, y], i) => {
         // quanh hông sườn áo phủ gốc đùi thêm `THIGH_CLEAR`: tay vẫn cách sườn ít nhất `CLAD_GAP - THIGH_CLEAR`
         const slack = y >= -THIGH_RAMP ? THIGH_CLEAR : 0;

@@ -321,7 +321,7 @@ export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Buil
     // nét tay người que bán kính `BONES3.limb` nhân bề dày, đầu nét tròn
     const limb = BONES3.limb * 10 * b.sleeve;
     // cạp liền mặt thân áo như `sculptSkirt` nhận `body`
-    const torso = profile(garmentOf(garment), rig, inset).pts;
+    const torso = profile(garmentOf(garment, false, rig), rig, inset).pts;
     const [aW, dW] = profileAt(
       torso,
       torso.map(([a]) => TORSO_DEPTH * a),
@@ -353,7 +353,7 @@ export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Buil
         ]
       : [cap, k * CLAD_TAPER.arm[1], k * CLAD_TAPER.arm[2]]
   ) as readonly [number, number, number];
-  const g = garmentOf(garment, true);
+  const g = garmentOf(garment, true, rig);
   const hipEdge = rig.hipHalf + thigh;
   const hand = cladHand(b.sleeve, rig.stroke, len[1]).length;
   const torso = skirt && profile(g, rig, inset).pts;
@@ -682,7 +682,7 @@ export function markShape(T: Trunk3) {
   const sk = (p: V3): V3 => [p[0] * SKULL3[0], p[1] * SKULL3[1], p[2] * SKULL3[2]];
   const onFace = (px: number, py: number) => sk(faceSurface(px, py, r, human));
   const onSkull = (u: V3) => sk(mul(human ? humanSkull(unit(u)) : unit(u), r));
-  const g = garmentOf(c.pieces.torso.garment, !!T.pal.clad);
+  const g = garmentOf(c.pieces.torso.garment, !!T.pal.clad, c.rig);
   const h = c.rig.height;
   const {
     pts,

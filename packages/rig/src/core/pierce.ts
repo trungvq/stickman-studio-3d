@@ -60,7 +60,7 @@ export function armPierce(
   if (!j || !W) return [];
   const s = W.s;
   const pal = wornPalette(c);
-  const g = garmentOf(c.pieces.torso.garment, pal.clad);
+  const g = garmentOf(c.pieces.torso.garment, pal.clad, c.rig);
   const w = limbWidths(pal);
   const room = pal.clad
     ? roots3(c.pieces.torso.garment, c.rig, {

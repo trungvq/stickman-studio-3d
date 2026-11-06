@@ -24,6 +24,7 @@ export type Dims = Required<
     | "panels"
     | "inner"
     | "bib"
+    | "lapel"
   >
 >;
 export type P2 = [number, number];
@@ -135,6 +136,10 @@ interface GarmentStyleDef {
   hood?: Hood;
   /** Cổ chéo `garment.wrap`: dải cổ, đai, nút đai — chỉ người 3D dựng (`wrapParts`) */
   wrap?: boolean;
+  /** Áo khoác cổ V: miệng cổ và ve đo ở vai chuẩn, co giãn theo vai người mặc (`garmentOf` có `rig`) */
+  shoulderFit?: boolean;
+  /** Nửa rộng ve ở đỉnh ve mặc định, px ở vai chuẩn; `collar` đọc `g.lapel` đã co giãn */
+  lapel?: number;
 }
 
 /** Nét viền cổ bẻ nổi khối, lần nét thân */
@@ -145,6 +150,8 @@ export const COLLAR_LEAN = 0.35;
 export const RIB_FRONT = 0.3;
 /** Đỉnh khối hẹp hơn miệng cổ áo bấy nhiêu lần, để viền cổ nằm hẳn trên mặt vát */
 const NECK_TOP = 0.8;
+/** Vai chuẩn của áo khoác cổ V (`shoulderFit`): `rig.shoulderHalf` mặc định; vải lấy `ease` mặc định của kiểu */
+export const SHOULDER_REF = 40;
 /** Bụng phệ: đỉnh bụng cao hơn hông bấy nhiêu phần thân, nhạt theo hình chuông rộng bấy nhiêu phần thân; ra hai bên bấy nhiêu lần ra trước khi `garment.bellySide` bỏ trống */
 export const BELLY = { at: 0.3, spread: 0.3, side: 0.45 } as const;
 
@@ -159,6 +166,8 @@ export const bellyAt = (y: number, height: number) =>
 export const CHEST = { at: 0.7, back: 0.6, step: 3 } as const;
 /** Ống cổ người 3D (`neckGeometry`): bán kính trên, độ loe ở chân và quãng lùi sau trục, đơn vị three */
 export const NECK_TUBE = { r: 0.135, flare: 1.08, back: 0.03 } as const;
+/** Miệng cổ áo khoác cổ V co theo vai không hẹp hơn chân ống cổ cộng ngần này px, để còn viền da quanh cổ */
+export const NECK_MIN = 100 * NECK_TUBE.r * NECK_TUBE.flare + 1.5;
 /**
  * Ống cổ uốn (`bendNeck`): dưới mép cổ áo áo phông (cao hơn khớp cổ `bones.neck + collar`) ống đứng theo thân, lên thêm
  * `span` thì theo trọn khớp cổ, giữa hai mức chuyển êm; `rows` đoạn dọc. Đơn vị three
@@ -420,6 +429,11 @@ function innerMarks(s: Surface, fill?: MarkFill, tie?: Partial<Tie>): Mark[] {
 
 const COLLAR_CREAM = "#f6efe4";
 
+/** Miệng cổ của áo khoác cổ V và nửa rộng ve ở đỉnh ve, px ở vai chuẩn (`SHOULDER_REF`) */
+const SUIT_NECK = 18;
+const SUIT_LAPEL = 21;
+const BLAZER_LAPEL = 25;
+
 /** Nét ngực, lưng của thân trần: mảnh và nhạt, chỉ gợi khối */
 const BARE_LINE = 0.5;
 const BARE_INK = 0.3;
@@ -533,8 +547,10 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
   },
   suit: {
     label: "Vest dựng khối",
-    dims: { ...TEE, hem: 10, fit: 0.8, neckFront: 76 },
+    dims: { ...TEE, hem: 10, fit: 0.8, neck: SUIT_NECK, neckFront: 76 },
     neckline: "v",
+    shoulderFit: true,
+    lapel: SUIT_LAPEL,
     marks: (s) => {
       const [yA, ...buttons] = placket(s, [0, 0.26, 0.6]);
       return [
@@ -555,10 +571,10 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
     collar: (s) => ({
       stand: 6,
       band: 7,
-      side: 6,
+      side: 3,
       flap: [
-        [27, s.top() + 38],
-        [8, s.top() + s.g.neckFront - 8],
+        [s.g.lapel ?? SUIT_LAPEL, s.top() + 38],
+        [0.3 * (s.g.lapel ?? SUIT_LAPEL), s.top() + s.g.neckFront - 8],
       ],
       lift: [7, 1.5],
       tip: 4,
@@ -627,8 +643,10 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
   },
   blazer: {
     label: "Blazer nữ dựng khối",
-    dims: { ...TEE, ease: 8, waist: 11, fit: 0.85, hem: 0, neckFront: 73 },
+    dims: { ...TEE, ease: 8, waist: 11, fit: 0.85, hem: 0, neck: SUIT_NECK, neckFront: 73 },
     neckline: "v",
+    shoulderFit: true,
+    lapel: BLAZER_LAPEL,
     marks: (s) => [
       ...innerMarks(s, "accent"),
       ...placket(s, [0.38, 0.75]).map((y) => ({ pts: [s.at(18, y)], dot: true, k: 1.05 })),
@@ -637,25 +655,29 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
         k: 0.5,
       })),
     ],
-    collar: (s) => ({
-      stand: 4,
-      band: 7,
-      side: 5,
-      flap: [
-        [25, s.top() + 22],
-        [19, s.top() + 28],
-        [29, s.top() + 33],
-        [9, s.top() + s.g.neckFront - 4],
-      ],
-      lift: [5, 1.5],
-      tip: 4,
-      tipAt: 2,
-    }),
+    collar: (s) => {
+      const w = (s.g.lapel ?? BLAZER_LAPEL) / 29;
+      return {
+        stand: 4,
+        band: 7,
+        side: 3,
+        flap: [
+          [25 * w, s.top() + 22],
+          [19 * w, s.top() + 28],
+          [29 * w, s.top() + 33],
+          [9 * w, s.top() + s.g.neckFront - 4],
+        ],
+        lift: [5, 1.5],
+        tip: 4,
+        tipAt: 2,
+      };
+    },
   },
   cardigan: {
     label: "Cardigan cổ V dựng khối",
-    dims: { ...TEE, ease: 12, waist: 3, hem: 6, neckFront: 52 },
+    dims: { ...TEE, ease: 12, waist: 3, hem: 6, neck: SUIT_NECK, neckFront: 52 },
     neckline: "v",
+    shoulderFit: true,
     rib: { width: 5, stand: 2, lift: [2, 0.5], line: 0.55 },
     marks: (s) => [
       ...innerMarks(s, "accent"),
@@ -785,13 +807,25 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
   },
 };
 
-/** Bộ số đã đủ: trường bỏ trống lấy số của kiểu; `clad` (`palette.clad`) thì `slope` là `cladSlope` */
-export function garmentOf(raw: Partial<Garment> | undefined, clad = false): Garment & Dims {
+/**
+ * Bộ số đã đủ: trường bỏ trống lấy số của kiểu; `clad` (`palette.clad`) thì `slope` là `cladSlope`. Có `rig` thì áo
+ * khoác cổ V (`shoulderFit`) co giãn `neck` và `lapel` theo nửa rộng vai áo (`shoulderHalf + ease`) so với vai chuẩn
+ */
+export function garmentOf(
+  raw: Partial<Garment> | undefined,
+  clad = false,
+  rig?: Pick<Rig, "shoulderHalf">,
+): Garment & Dims {
   const g = GarmentSchema.parse(raw ?? {});
-  const dims = { ...GARMENT_STYLES[g.style].dims };
+  const def = GARMENT_STYLES[g.style];
+  const dims = { ...def.dims };
   for (const k of Object.keys(dims) as (keyof Dims)[]) if (g[k] !== undefined) dims[k] = g[k];
   if (clad) dims.slope = dims.cladSlope;
-  return { ...g, ...dims };
+  if (!def.shoulderFit) return { ...g, ...dims };
+  const k = rig ? (rig.shoulderHalf + dims.ease) / (SHOULDER_REF + def.dims.ease) : 1;
+  dims.neck = Math.max(Math.min(NECK_MIN, dims.neck), dims.neck * k);
+  const lapel = g.lapel ?? def.lapel;
+  return { ...g, ...dims, ...(lapel !== undefined && { lapel: lapel * k }) };
 }
 
 /** Số đo của rig mà khối thân đọc */
@@ -946,7 +980,7 @@ export const lerpAt = (pts: P2[], v: number, from: 0 | 1, to: 0 | 1) => {
  * để tay mọc ra đúng từ viền thân
  */
 export function garmentShoulder(raw: Partial<Garment> | undefined, rig: Rig, clad = false) {
-  const pr = profile(garmentOf(raw, clad), rig, 0);
+  const pr = profile(garmentOf(raw, clad, rig), rig, 0);
   return Math.max(0, lerpAt(pr.pts, pr.yS, 1, 0) - rig.stroke / 2);
 }
 
@@ -965,7 +999,7 @@ export function garmentSocket(
   r: number,
   grow = r,
 ): P2 {
-  const pr = profile(garmentOf(raw, true), rig, rig.stroke / 2);
+  const pr = profile(garmentOf(raw, true, rig), rig, rig.stroke / 2);
   // vát vai: khớp cổ → đầu cung bo; sườn: cuối cung bo (`B`) xuôi vài điểm, đã thắt eo
   const [P0, A, B, S] = [pr.pts[0], pr.pts[1], pr.pts[13], pr.pts[17]];
   const unit = (x: number, y: number): P2 => {

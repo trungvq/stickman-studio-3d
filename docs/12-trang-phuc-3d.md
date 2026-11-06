@@ -642,7 +642,7 @@ thân. `torsoMesh` (`torso.ts`) dựng khối từ bảng kiểu và hàm của 
 | `waist` | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 10 | Eo co vào bấy nhiêu px mỗi bên |
 | `hem` | −4 | 1 | 5 | 3.5 | 2 | 10 | 5.5 | 8 | Gấu thấp hơn hông bấy nhiêu px, nhân `rig.height`; giữa gấu còn võng thêm |
 | `rise` | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | Mép trên của khối cao hơn khớp cổ bấy nhiêu px; áo có cổ đứng quanh cổ |
-| `neck` | 17 | 20 | 20 | 20 | 20 | 20 | 20 | 19 | Nửa rộng miệng cổ áo, chỗ viền cổ chạm mặt vát hai bên |
+| `neck` | 17 | 20 | 20 | 20 | 20 | 18 | 20 | 19 | Nửa rộng miệng cổ áo, chỗ viền cổ chạm mặt vát hai bên; `suit`, `blazer`, `cardigan` đo ở vai chuẩn ([theo vai](#áo-khoác-cổ-v-theo-vai)) |
 | `neckFront` | 0 | 7 | 10 | 9 | 12 | 76 | 8 | 8 | Viền cổ trước thấp hơn chỗ chạm hai bên bấy nhiêu px trên mặt khối; âm là cao hơn |
 | `neckBack` | 0 | 0 | 0 | 0 | 0 | 0 | 8 | 0 | Như `neckFront`, phía sau |
 | `slope` | 0.6 | 0.6 | 0.6 | 0.6 | 0.6 | 0.6 | 0.7 | 0.6 | Vát vai hạ bấy nhiêu px mỗi px ra ngang |
@@ -658,7 +658,8 @@ nhau. Kiểu khác (`blazer` `ease` `8`, `cardigan` `12`…) là áo rộng, ch�
 Trường bỏ trống lấy số của kiểu ở bảng `GARMENT_STYLES`; `garmentOf` trả bộ số đã đủ. `collarUp` ([cổ dựng](#cổ-dựng)), `belly`
 ([bụng phệ](#bụng-phệ)) và `bust` ([ngực nở](#ngực-nở)) không thuộc bảng kiểu: bỏ trống là `0` ở mọi kiểu. `neckline`, `marks`
 ([dáng cổ và đặc điểm của kiểu](#dáng-cổ-và-đặc-điểm-của-kiểu)), `panels` ([mảng áo và hoạ tiết](#mảng-áo-và-hoạ-tiết)) và
-`inner` ([áo trong và cà vạt](#áo-trong-và-cà-vạt)), `bib` ([yếm](#yếm)) cũng không thuộc bảng kiểu.
+`inner` ([áo trong và cà vạt](#áo-trong-và-cà-vạt)), `bib` ([yếm](#yếm)), `lapel` ([áo khoác cổ V theo vai](#áo-khoác-cổ-v-theo-vai))
+cũng không thuộc bảng kiểu.
 Kiểu mang cả những đặc điểm không có số, đặt theo số đo đã đủ nên đè `neck`, `hem`… thì
 chúng đi theo:
 
@@ -678,8 +679,8 @@ Bốn kiểu áo nữ dùng cùng khối thân và bộ chỉnh:
 
 | Kiểu | Số khác áo phông | Đặc điểm |
 |---|---|---|
-| `blazer` | `ease: 8`, `waist: 11`, `fit: 0.85`, `hem: 0`, `neckFront: 73` | Ve gập có khấc, áo trong màu `accent`, hai cúc lệch bên, túi ngang |
-| `cardigan` | `ease: 12`, `waist: 3`, `hem: 6`, `neckFront: 52` | Cổ V viền gân, áo trong màu `accent`, ba cúc, bo gấu |
+| `blazer` | `ease: 8`, `waist: 11`, `fit: 0.85`, `hem: 0`, `neck: 18`, `neckFront: 73` | Ve gập có khấc, áo trong màu `accent`, hai cúc lệch bên, túi ngang |
+| `cardigan` | `ease: 12`, `waist: 3`, `hem: 6`, `neck: 18`, `neckFront: 52` | Cổ V viền gân, áo trong màu `accent`, ba cúc, bo gấu |
 | `bowShirt` | `ease: 8`, `waist: 5`, `hem: 3`, `neckFront: 17` | Cổ bẻ nhỏ, nơ màu `accent` với hai dải rủ, nẹp giữa |
 | `squareNeck` | `ease: 9`, `waist: 10`, `fit: 1`, `hem: 9`, `neck: 23`, `neckFront: 19` | Cổ vuông bo nhẹ, đường eo cao, vạt xòe với nếp lớn |
 
@@ -726,7 +727,8 @@ Không có chỏm vai: tay áo là ống `palette.sleeve*` của người mặc 
   |---|---:|---:|---:|---|---|---:|---|
   | `shirt` | 6 | 9 | 6 | `(16, neckFront + 11)` | 5 → 2 | 9 | áo |
   | `polo` | 6 | 8 | 6 | `(16, neckFront + 9)` | 5 → 2 | 8 | áo |
-  | `suit` | 6 | 7 | 6 | `(27, 38)`, `(8, neckFront − 8)`; vểnh ở đỉnh ve | 7 → 1.5 | 4 | áo |
+  | `suit` | 6 | 7 | 3 | `(lapel, 38)`, `(0.3 · lapel, neckFront − 8)`; vểnh ở đỉnh ve | 7 → 1.5 | 4 | áo |
+  | `blazer` | 4 | 7 | 3 | `(25, 22)`, `(19, 28)`, `(29, 33)`, `(9, neckFront − 4)`, `x` nhân `lapel / 29`; vểnh ở khấc `(29, 33)` | 5 → 1.5 | 4 | áo |
   | `blouse` | 2 | 6 | 3 | cánh bên: cung elip tâm `(14.5, 8)`, bán trục `6.5 × 6`, `−45°` → `165°`; nửa cánh giữa: tâm `(0, 11)`, `8 × 7`, `−35°` → `90°`; vểnh ở cánh bên | 3 → 2 | 2 | kem `#f6efe4` |
 
   `y` của `flap` tính từ chỗ viền cổ chạm mặt vát. Mép ngoài chạm trục giữa trước đáy cổ
@@ -1208,6 +1210,9 @@ tay áo là ống `palette.sleeve*` màu sơ mi, áo trong trắng và cà vạt
 - `cardigan` — cổ V viền gân, ba cúc: gilê thường. Bo gấu của kiểu nằm dưới tạp dề hay cạp quần.
 - `suit` — có ve nổi khối: gilê có ve, nhìn gần như áo vest cụt tay.
 
+Tay áo trắng lộ ngay cạnh thân gilê nên ve rộng hay chữ V mở rộng ở vai nhìn như mảnh vải rách: người vai hẹp, `ease`
+nhỏ thì miệng cổ và ve tự co theo ([áo khoác cổ V theo vai](#áo-khoác-cổ-v-theo-vai)); muốn ve hẹp nữa thì hạ `lapel`.
+
 ```json
 "palette": { "sleeve": "#FFF8EC", "sleeveLength": 0.92 },
 "pieces": { "torso": { "src": "sculpt", "color": "#1E1A1A",
@@ -1229,6 +1234,28 @@ Lưng gilê thật là vải lót khác màu: thêm mảng `side: "back"` cả l
 ```
 
 Thêm cặp cúc ở `y` `96`, `78`… cho đủ hàng.
+
+### Áo khoác cổ V theo vai
+
+`suit`, `blazer`, `cardigan` là áo khoác mở cổ V: miệng cổ (`neck`) và ve (`lapel`) đo ở **vai chuẩn** — `rig.shoulderHalf`
+`40` (`SHOULDER_REF`) cộng `ease` mặc định của kiểu — rồi nhân theo nửa rộng vai áo của người mặc:
+
+```
+k = (rig.shoulderHalf + ease) / (40 + ease mặc định của kiểu)
+neck thật = max(NECK_MIN, neck · k)      lapel thật = lapel · k
+```
+
+Người vai hẹp hay áo chật (`ease` nhỏ) thì cổ và ve hẹp theo, người vai rộng thì nở theo; số khai trong JSON cũng là số ở
+vai chuẩn. Miệng cổ không hẹp hơn `NECK_MIN` (chân ống cổ người 3D cộng `1.5` px, chừng `16`) để còn viền da quanh cổ;
+`neck` khai nhỏ hơn mức ấy thì giữ số khai. `garmentOf(raw, clad, rig)` trả bộ số đã co giãn; mọi chỗ dựng hay đo thân áo
+(`torsoMesh`, gốc tay, `check`) gọi nó kèm `rig`, gọi không có `rig` là số ở vai chuẩn. Kiểu khác không co giãn.
+
+| Trường | Mặc định | Nghĩa |
+|---|---:|---|
+| `lapel` | `21` (`suit`), `25` (`blazer`) | Nửa rộng ve ở đỉnh ve (`suit`) hay ở khấc (`blazer`), px ở vai chuẩn; mọi điểm khác của mép ve co theo cùng tỉ lệ. Kiểu khác bỏ qua |
+
+Lá cổ hai bên cổ (`side` của [cổ bẻ](#thân-áo-dựng-khối)) ở `suit`, `blazer` chỉ `3` px: trên vai thoải của người
+mặc đồ (`cladSlope`) mỗi px hạ xuống là hơn hai px ra ngang, lá cổ bên cổ rộng thì mép ve ở vai chìa ra tận gốc tay.
 
 ### Mảng áo và hoạ tiết
 

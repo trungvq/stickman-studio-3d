@@ -583,8 +583,10 @@ export const GarmentSchema = z.object({
   hem: z.number().optional(),
   /** Mép trên của khối cao hơn khớp cổ bấy nhiêu; âm là thấp hơn */
   rise: z.number().optional(),
-  /** Nửa rộng miệng cổ áo */
+  /** Nửa rộng miệng cổ áo; áo khoác cổ V (`suit`, `blazer`, `cardigan`) đo ở vai chuẩn, co giãn theo vai người mặc */
   neck: z.number().optional(),
+  /** Nửa rộng ve áo ở đỉnh ve (`suit`, `blazer`), đo ở vai chuẩn, co giãn theo vai người mặc; kiểu khác bỏ qua */
+  lapel: z.number().positive().optional(),
   /** Cổ áo phía trước, phía sau thấp hơn chỗ chạm hai bên bấy nhiêu, đo trên mặt khối; âm là cao hơn */
   neckFront: z.number().optional(),
   neckBack: z.number().optional(),

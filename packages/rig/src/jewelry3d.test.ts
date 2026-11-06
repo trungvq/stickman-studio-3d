@@ -42,7 +42,7 @@ const necklace = (style: (typeof STYLES)[number], n = {}) => {
   const room = roots3(g, rig, build).room;
   const plain = torsoMesh(g, rig, room);
   const t = torsoMesh(g, rig, room, { necklace: n, color: '#fff' });
-  return { parts: t.solids.slice(plain.solids.length), t, g: garmentOf(g, true) };
+  return { parts: t.solids.slice(plain.solids.length), t, g: garmentOf(g, true, rig) };
 };
 
 describe('dây chuyền', () => {
