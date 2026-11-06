@@ -79,11 +79,15 @@ import {
 } from "./graspGroups";
 import {
   chooseMissing,
+  edgeHighMargin,
   edgeOk,
   graspCtx,
   graspFrame,
   handFromItem,
+  HIGH_NEAR,
+  highWarnings,
   LATER_SPAN,
+  sideToward,
   type GraspChoice,
   type GraspCtx,
   type GraspLater,
@@ -942,6 +946,40 @@ export interface SceneRuntime {
    * không khai chỗ dựng bàn tay người thả từ đây khi `ItemOptions.chars` không có người ấy
    */
   chars?: Record<string, CharacterData>;
+  /**
+   * Ống kính máy quay vẽ ra ở giây `t`, góc radian (`buildWorld` điền từ `WorldSpec.lens`); `undefined` là `lens`. Luật đo
+   * trên hình đọc qua `lensAt`
+   */
+  lensAt?: (t: number) => Lens | undefined;
+}
+
+/** Ống kính góc độ như `scene.lens` (tâm ảnh bỏ trống là `0`) ra `Lens` góc radian */
+export const lensRadians = (l: {
+  eye: readonly number[];
+  yaw: number;
+  pitch: number;
+  f: number;
+  cx?: number;
+  cy?: number;
+}): Lens => ({
+  eye: [l.eye[0], l.eye[1], l.eye[2]],
+  yaw: l.yaw * D,
+  pitch: l.pitch * D,
+  f: l.f,
+  cx: l.cx ?? 0,
+  cy: l.cy ?? 0,
+});
+
+/** Ống kính máy quay vẽ ra ở giây `t`: `rt.lensAt`, không có thì `scene.lens` */
+export const lensAt = (rt: SceneRuntime, t: number): Lens | undefined => rt.lensAt?.(t) ?? rt.lens;
+
+/**
+ * Dáng `sp` của `sceneAt` nhìn qua ống kính vẽ ra ở giây `t` (`lensAt`): `world.lens` và mắt cho ý định `camera` đổi theo,
+ * như `buildWorld` đặt người. Không có `rt.lensAt` thì giữ nguyên
+ */
+export function seenPose(rt: SceneRuntime, sp: ScenePose, t: number): ScenePose {
+  const L = rt.lensAt?.(t);
+  return L && sp.world ? { ...sp, world: { ...sp.world, lens: L, eye: [...L.eye] } } : sp;
 }
 
 /** Khung camera lúc `time`; `view` là hộp cắt trong hệ toạ độ sân khấu */
@@ -1217,11 +1255,7 @@ export function resolveScene(
   });
   if (scene.items) checkItems(scene.items, held, scene.cast);
   const duration = scene.duration ?? sceneEnd(cast);
-  const lens = scene.lens && {
-    ...scene.lens,
-    yaw: scene.lens.yaw * D,
-    pitch: scene.lens.pitch * D,
-  };
+  const lens = scene.lens && lensRadians(scene.lens);
   const rt: SceneRuntime = {
     name: scene.name,
     marks: scene.marks,
@@ -3676,8 +3710,8 @@ function heldInstances(
 
 /**
  * Lần cầm hai tay khai lệch ở `world.hands`: một tay cầm hai tay (`both`) mà cùng lúc tay kia cầm món khác — cầm hai tay
- * không thành, mỗi tay mang một món; và cảnh báo của chỗ cầm nhóm (`choiceWarnings`, cỡ tay người mẫu cao như người
- * cầm). `check` (nhóm `ref`) báo. docs/03-scene.md#đồ-cầm-tay
+ * không thành, mỗi tay mang một món; và cảnh báo của chỗ cầm nhóm (`choiceWarnings`, `highWarnings`, cỡ tay người mẫu cao
+ * như người cầm). `check` (nhóm `ref`) và `validate` của MCP báo. docs/03-scene.md#đồ-cầm-tay
  */
 export function sceneHoldProblems(rt: SceneRuntime): string[] {
   const out: string[] = [];
@@ -3692,11 +3726,19 @@ export function sceneHoldProblems(rt: SceneRuntime): string[] {
         if (!h || !spec) continue;
         const g = groupHold(h);
         const dims = holderDims(rt.heights[m.id] ?? 1);
-        for (const line of choiceWarnings(g.group, itemGeom(spec), h, dims, spec.anchors)) {
+        const lines = [
+          ...choiceWarnings(g.group, itemGeom(spec), h, dims, spec.anchors).map(
+            (l) => [l, "docs/11-nhom-cam.md mục 3, nhóm 5"] as const,
+          ),
+          ...highWarnings(g.group, itemGeom(spec), h, dims, spec.anchors).map(
+            (l) => [l, "docs/11-nhom-cam.md#chỗ-cầm-castworldhandshold"] as const,
+          ),
+        ];
+        for (const [line, doc] of lines) {
           if (said.has(`${side}|${line}`)) continue;
           said.add(`${side}|${line}`);
           out.push(
-            `${m.id}: \`world.hands\` ${side} t=${k.t} (cảnh báo \`choice\`): ${line} (docs/11-nhom-cam.md mục 3, nhóm 5)`,
+            `${m.id}: \`world.hands\` ${side} t=${k.t} (cảnh báo \`choice\`): ${line} (${doc})`,
           );
         }
       }
@@ -4750,7 +4792,7 @@ interface KeyedMark {
   W: V3;
   R: M3;
   phi: number;
-  /** Xoay, gập, lệch đã kẹp; phần vượt kẹp */
+  /** Xoay, gập, lệch sau giới hạn; phần vượt giới hạn */
   wrist: number[];
   over: number[];
 }
@@ -4975,8 +5017,8 @@ const lerpN = (a: readonly number[], b: readonly number[], f: number) =>
   a.map((x, i) => x + (b[i] - x) * f);
 
 /**
- * Lần cầm theo mốc ở `time`, hệ thân: cổ tay, khung bàn tay, `φ`, góc cổ tay đã kẹp và phần vượt kẹp. Theo `ease` của mốc
- * sau: cổ tay dời thẳng, bàn tay quay đường ngắn nhất, `φ` đường ngắn nhất trên vòng, góc cổ tay hoà thẳng; `auto` thì bậc
+ * Lần cầm theo mốc ở `time`, hệ thân: cổ tay, khung bàn tay, `φ`, góc cổ tay sau giới hạn và phần vượt giới hạn. Theo
+ * `ease` của mốc sau: cổ tay dời thẳng, bàn tay quay đường ngắn nhất, `φ` đường ngắn nhất trên vòng, góc cổ tay hoà thẳng; `auto` thì bậc
  * ba đơn điệu qua bốn mốc kề — bàn tay theo góc cộng dồn (`autoRotation`), `φ` đã mở vòng. Ngoài khoảng mốc thì mốc gần nhất
  */
 function keyedAt(ks: readonly KeyedMark[], time: number) {
@@ -5021,7 +5063,7 @@ function keyedAt(ks: readonly KeyedMark[], time: number) {
 
 /**
  * Bàn tay của lần cầm theo mốc ở `time` (như `solveActing` của `act3.ts`): cổ tay dời thẳng và bàn tay quay đường ngắn nhất
- * trong hệ thân, đổi ra thế giới bằng thân ở chính `time`; `φ` đường ngắn nhất; góc cổ tay đã kẹp hoà thẳng
+ * trong hệ thân, đổi ra thế giới bằng thân ở chính `time`; `φ` đường ngắn nhất; góc cổ tay sau giới hạn hoà thẳng
  */
 function keyedArm(
   rt: SceneRuntime,
@@ -5469,11 +5511,11 @@ export interface HandReport {
   elbowLock: boolean;
   wrist: {
     /**
-     * Trước kẹp. Món đặt trước: góc bàn tay của nghiệm trên cẳng tay (lần cầm theo mốc: bàn tay đã hoà giữa hai mốc); tay
+     * Trước giới hạn. Món đặt trước: góc bàn tay của nghiệm trên cẳng tay (lần cầm theo mốc: bàn tay đã hoà giữa hai mốc); tay
      * dẫn, tay tự do: nghiệm ý định trước giới hạn tốc độ `HOLD_SLEW`, đã trong miền khớp; không ý định: `null`
      */
     raw: WristAngles | null;
-    /** Sau kẹp, như vẽ */
+    /** Sau giới hạn, như vẽ */
     drawn: WristAngles;
     /** Phần vượt miền (≥ 0): món đặt trước của bộ giải, còn lại đo trên góc vẽ */
     over: WristAngles;
@@ -5506,7 +5548,7 @@ const WRIST_KEYS = ["turn", "bend", "dev"] as const;
 
 /**
  * Tay `side` của người `id` ở `time` như người 3D vẽ (cùng lần giải với `act`, `actJoints`): chế độ và lần cầm, `φ`, `φ₀`,
- * góc cổ tay trước và sau kẹp, khớp, đường tròn khuỷu và `E(φ)` trên nó, tâm nắm. `o.char`: nhân vật như vẽ
+ * góc cổ tay trước và sau giới hạn, khớp, đường tròn khuỷu và `E(φ)` trên nó, tâm nắm. `o.char`: nhân vật như vẽ
  * (`Figure.body`), bỏ trống là `rt.chars[id]`; `o.eye`: mắt ống kính (thế giới rig) cho ý định `camera`.
  * docs/11-nhom-cam.md § Báo tay cho studio
  */
@@ -6396,6 +6438,51 @@ export function sceneItemHoldProblems(rt: SceneRuntime): string[] {
           `${k.cast}: \`items\` ${k.item} t=${k.t}: \`as: "hand"\` giữa lần cầm — chỉ mốc món đầu của lần cầm lấy món như đang vẽ trước khi cầm; giữ mốc trước là \`as: "prev"\` (docs/11-nhom-cam.md#mốc-món-items)`,
         );
     }
+  }
+  return out;
+}
+
+/** Trường chỗ cầm đo theo đầu cao của chiều cạnh: `thumb` chỉ ở `palmBox` (bên ngón cái `e × mặt trước`) */
+const HIGH_FIELDS = ["along", "slant", "psi"] as const;
+
+/**
+ * Lần cầm món đặt trước (tay dẫn) mà đầu cao rig quyết ở mốc mở bằng luật `edgeHigh` cách ranh giới của luật dưới
+ * `HIGH_NEAR` độ, trong khi cảnh khai trường đo theo đầu cao (`along`, `slant`, `psi`, `thumb` của `palmBox`) và không khai
+ * `high`: dời mốc hay đổi dáng một chút là đầu kia, chỗ cầm khai đổi nghĩa. Đầu cao lấy từ lần cầm trước (`priorChoice`) thì
+ * không xét. `check` (nhóm `ref`) cảnh báo; `o.chars` bắt buộc như `graspAtTime`. docs/11-nhom-cam.md#chỗ-cầm-castworldhandshold
+ */
+export function sceneHighProblems(rt: SceneRuntime, o: ItemOptions = {}): string[] {
+  const out: string[] = [];
+  for (const m of rt.cast) {
+    const keys = handKeys(rt, m.id);
+    for (const side of ["right", "left"] as const)
+      for (const k of keys) {
+        if (k[side]?.hold == null) continue;
+        const run = holdRun(keys, side, k.t);
+        if (!run || run.since !== k.t || !placedRun(rt, keys, side, run)) continue;
+        const g = groupHold(run.hold);
+        if (g.high) continue;
+        const r = graspStart(rt, m.id, side, run, o);
+        const high = r.sol.high;
+        if (!high) continue;
+        const said = [
+          ...HIGH_FIELDS,
+          ...(g.group === "palmBox" ? (["thumb"] as const) : []),
+        ].filter((f) => r.sol.by[f] === "scene");
+        if (!said.length) continue;
+        const keep = priorChoice(rt, m.id, side, run, o);
+        if (keep?.high && dot3(keep.high, high) > 0) continue;
+        const rm = runMarks(rt, keys, side, run);
+        const ts = rm.keyed ? rm.marks[0].t : run.since;
+        const pose = itemAt(rt, g.item, ts, o);
+        if (!pose) continue;
+        const near = edgeHighMargin(high, pose.R, sideSign(side), r.ctx.across);
+        if (near >= HIGH_NEAR) continue;
+        const name = sideToward(itemGeom(itemSpec(rt, g.item)), high);
+        out.push(
+          `${m.id}: tay ${side === "right" ? "phải" : "trái"} cầm \`${g.item}@${g.group}\` từ t=${ts}: đầu cao của cạnh (gốc đo ${said.map((f) => `\`${f}\``).join(", ")}) rig chọn theo hướng món ở mốc mở, cách ranh giới của luật ${near.toFixed(1)}° (dưới ${HIGH_NEAR}°) — dời mốc hay đổi dáng một chút là đầu kia, chỗ cầm khai đổi nghĩa; khai \`high: "${name}"\` để giữ (docs/11-nhom-cam.md#chỗ-cầm-castworldhandshold)`,
+        );
+      }
   }
   return out;
 }

@@ -197,8 +197,9 @@ Chung cho hai đường:
   hai mẫu cũng bị bắt;
 - lấn quá ngưỡng mới kêu: mặc định `2` đơn vị thế giới, khai `"stickman": { "clash": { "tol": 3 } }`
   trong `package.json` để đổi;
-- bỏ chỗ nằm ngoài khung camera lúc ấy, mỗi đường xét theo cách của nó (dưới). Bị rèm hay vật khác
-  che thì vẫn báo — `check` không biết khung còn gì đè lên;
+- bỏ chỗ nằm ngoài khung camera lúc ấy, mỗi đường xét theo cách của nó (dưới). Khung là của ống kính vẽ
+  ra: `WorldSpec.lens` của cảnh three ([05](05-repo-video.md#cảnh-three-cho-check)), không thì `scene.lens`. Bị
+  rèm hay vật khác che thì vẫn báo — `check` không biết khung còn gì đè lên;
 - mỗi cặp (phần người, món) một dòng cảnh báo, sâu nhất trước: chỗ lấn sâu nhất, ở giây nào, và các
   quãng giây liền nhau đang lấn. Đặt `name` cho món: tên trong dòng báo là tên ấy.
 
@@ -323,7 +324,8 @@ các viên nang theo khung xương, vật là mọi thứ khác dưới `root`.
   `root`, không nữa thì `vat` — đặt `name` cho món và nhóm đồ thêm.
 - Ống chân dừng ở mút nét: bàn chân đặt trên sàn không báo, chân lún dưới sàn thì báo sàn. Hông là
   tâm nét, nên người ngồi lún nửa nét đùi vào mặt ghế: khai `touch` cho đùi ở ghế.
-- Chỗ có điểm lấn sâu nhất nằm ngoài khung camera thì bỏ.
+- Chỗ có điểm lấn sâu nhất nằm ngoài khung camera thì bỏ; khung là của ống kính vẽ ra (`WorldSpec.lens`, không thì
+  `scene.lens`).
 
 ```
 scenes/s66.json: người lồng vào đồ — a.foreArmR ↔ so lấn 28.0 ở giây 1.25 · giây 1.00–1.50

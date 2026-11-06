@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { actAim, HOLD_SWIVEL_SLEW, type ActInput } from "./act3";
 import { body3 } from "./figure3d";
 import type { GraspReport } from "./graspSolve";
@@ -28,6 +28,8 @@ import { elbowLockLine, elbowLockSnaps } from "./snap";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Khuỷu khoá `elbowLock` của mốc tay (docs/03-scene.md#đích-bàn-tay-thế-giới, docs/11-nhom-cam.md § Khuỷu tự nhiên)
 

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { body3 } from './core/figure3d';
 import { parseAction } from './core/action';
 import { parseHeldItem, type HeldItemSpec } from './core/heldItem';
@@ -9,6 +9,8 @@ import { buildWorld, plainRoom, type World3D } from './world';
 import tuiJson from '../../../common/held/tui.json';
 import cocJson from '../../../common/held/coc.json';
 import bangGia from './core/__fixtures__/held-v2/bang-gia.json';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // `World3D.refresh`: đổi mốc tay, mốc món mà không dựng lại lưới — vẽ ra như cảnh dựng mới (docs/03-scene.md#làm-mới-runtime)
 
@@ -112,7 +114,7 @@ function drawn(w: World3D, t: number) {
 const TS = [0.2, 0.9, 1.4, 2.1, 2.6, 3.2, 3.8];
 
 describe('`World3D.refresh`', () => {
-  it('đổi mốc tay và mốc món: lưới giữ nguyên, vẽ ra trùng từng số với cảnh dựng mới', { timeout: 30_000 }, () => {
+  it('đổi mốc tay và mốc món: lưới giữ nguyên, vẽ ra trùng từng số với cảnh dựng mới', () => {
     const w = world(scene(json()));
     const meshes = new Set<THREE.Object3D>();
     const each = (f: (m: THREE.Mesh) => void) => w.root.traverse((o) => (o as THREE.Mesh).isMesh && f(o as THREE.Mesh));
@@ -130,7 +132,7 @@ describe('`World3D.refresh`', () => {
     each((m) => expect(meshes.has(m)).toBe(true));
   });
 
-  it('đổi mốc tay của người nền, đổi món một người cầm hay chỗ khác mốc: trả `false`, cảnh vẽ như cũ', { timeout: 30_000 }, () => {
+  it('đổi mốc tay của người nền, đổi món một người cầm hay chỗ khác mốc: trả `false`, cảnh vẽ như cũ', () => {
     const w = world(scene(json()));
     const want = TS.map((t) => drawn(w, t));
     expect(w.refresh!(scene(json({ b: [150, -240, 110] })))).toBe(false);
@@ -141,7 +143,7 @@ describe('`World3D.refresh`', () => {
     expect(seated.refresh!(scene(json({ seat: [160, -240, 110] })))).toBe(false);
   });
 
-  it('đổi trường số của chỗ cầm (`rt.held` mới) và đổi lượt món bản sao trong tay (gỡ, gắn lại): vẽ như cảnh dựng mới', { timeout: 30_000 }, () => {
+  it('đổi trường số của chỗ cầm (`rt.held` mới) và đổi lượt món bản sao trong tay (gỡ, gắn lại): vẽ như cảnh dựng mới', () => {
     for (const [a, b] of [
       [{}, { along: 0.6 }],
       [{ cups: ['coc', 'coc:2'] }, { cups: ['coc:2', 'coc'] }],

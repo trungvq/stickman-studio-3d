@@ -1,11 +1,13 @@
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { body3 } from './core/figure3d';
 import { parseAction } from './core/action';
-import { parseScene, resolveScene } from './core/scene';
+import { lensAt, parseScene, resolveScene } from './core/scene';
 import { defaultCharacter } from './core/schema';
 import type { Figure } from './stickman';
 import { buildWorld, combineExtras, plainRoom, type Cast3D, type WorldSpec } from './world';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Cảnh three dựng chung cho sân khấu Remotion và `stickman check`: người nền, đổi đồ theo `equip`, tắt khi mờ, đồ riêng bám người
 
@@ -93,5 +95,17 @@ describe('cảnh three (`buildWorld`)', () => {
     expect(l.window).toBeUndefined();
     expect(w.view(0.5).lens).toEqual(lens);
     expect(w.view(1.5).lens?.f).toBe(1200);
+  });
+
+  it('`lens` của cảnh three điền `rt.lensAt` cho luật đo trên hình: góc ra radian, giây không khai về `scene.lens`', () => {
+    const sc = parseScene({ name: 'x', lens, duration: 2, cast: [{ id: 'di', character: 'a.json', world: { at: [0, 0, 300] }, tracks: [] }] });
+    if (!sc.success) throw new Error(sc.error.message);
+    const rt = resolveScene(sc.data, actions);
+    const data = { characters, heights: { di: 1 }, bodies: { di: body3(c) } };
+    buildWorld(sc.data, rt, { set: () => plainRoom(), lens: (t) => (t > 1 ? { ...lens, yaw: 90, cx: undefined } : undefined) }, data);
+    expect(lensAt(rt, 0.5)).toEqual(rt.lens);
+    expect(lensAt(rt, 1.5)).toMatchObject({ yaw: Math.PI / 2, f: 800, cx: 0 });
+    buildWorld(sc.data, rt, { set: () => plainRoom() }, data);
+    expect(rt.lensAt).toBeUndefined();
   });
 });

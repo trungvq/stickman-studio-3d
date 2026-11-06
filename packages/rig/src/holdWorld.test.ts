@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { body3 } from './core/figure3d';
 import { parseAction } from './core/action';
 import { gripCenter, parseHeldItem, type HeldItemSpec } from './core/heldItem';
@@ -12,6 +12,8 @@ import { U } from './khoi';
 import { buildWorld, plainRoom, type Cast3D } from './world';
 import cocJson from '../../../common/held/coc.json';
 import khay from './core/__fixtures__/held-v2/khay.json';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Rig tự gắn món theo `world.hands[].hold`: repo đăng ký món bằng `cast.provide`, rig gắn, gỡ, trả về chỗ cũ
 

@@ -269,8 +269,9 @@ dòng hay nhấp lên bàn tay / món trên hình (cả camera cảnh) để ch�
   dáng ghi phần buông của mốc `rest` ở dòng bàn tay.
 - số đo cầm đồ ở giây đang xem bằng chính phép đo của `check` nhóm `held` (`heldHands`, `heldHits`, `heldSummary` của rig,
   ngưỡng `stickman.held` của `package.json` repo): lựa chọn cầm của bộ giải kèm nguồn (`·rig` rig giải, `·mđ` mặc định nhóm),
-  luật phạm (`!! pierce`, `sink`, `loose`, `role`, `oppose`, `grip`, `wrist`, `reach`, `elbow`, `arm`, `size`, `up`/`face` — món
-  quay sai ý định), khe da từng ngón và lòng tay theo vai trò, dòng tóm tắt như `check`. Luật đo trên cả lần cầm (`drift`,
+  luật phạm (`!! pierce`, `sink`, `loose`, `role`, `oppose`, `grip`, `wrist`, `mark` — món theo mốc lệch mốc vì cổ tay chạm
+  giới hạn, `reach`, `elbow`, `arm`, `size`, `up`/`face` — món quay sai ý định; mỗi luật kèm nhãn chữ, `RULE_LABELS` của
+  `src/hands.ts`), khe da từng ngón và lòng tay theo vai trò, dòng tóm tắt như `check`. Luật đo trên cả lần cầm (`drift`,
   `jump`) và cửa sổ hoà `HOLD_BLEND` không xét ở đây. Đang phát thì không đo; dừng là đo.
 - trên hình: vòng cam ở tâm nắm; đốt lún quá `sink` tô đỏ, ngón vai trò (`press`/`wrap`/`tip`) còn hở quá `wrap` tô vàng.
 - **Kiểu cầm** của lần cầm ở giây đang xem (`holdRuns`): **rig chọn** (cảnh không khai `variant` thì kèm biến thể gốc rig
@@ -392,7 +393,10 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi trac
 - **＋** ở cuối hàng: thêm mốc ở giây đang xem, `ease: "auto"`, hình ở giây ấy giữ nguyên. Giá trị đầu lấy thứ đang vẽ, rồi
   trang dựng lại cảnh với mốc mới, đo tâm nắm và cổ tay (mốc món: tâm món) ở giây ấy và bù `at` cho tới khi lệch không quá
   0,5 px (`plus.ts`); không được thì **không thêm**, thanh trạng thái nêu lý do, độ lệch và giây gần nhất thêm được (tìm
-  trong ±1 s). Thanh trạng thái báo độ lệch còn lại của mốc vừa thêm.
+  trong ±1 s). Thanh trạng thái báo độ lệch còn lại của mốc vừa thêm. Dáng đang vẽ quá mép tầm với (soft IK cho bàn tay
+  dừng hụt đích, như khi hai mốc kề nhắm ra ngoài tầm với) thì `at` không bù ra điểm ma giữa không trung: trang dò mép
+  (`reachEdge`) trên đoạn vai → bàn tay đang vẽ, đặt `at` ở đó như kéo tay nắm, bàn tay ở giây ấy lùi về mép; thanh trạng thái
+  báo "dáng đang vẽ quá mép tầm với … bàn tay dời … px".
   - tay theo đồ (theo mốc, hai tay): mốc chỉ có `hold` — chép `hold` có hiệu lực (bỏ `regrip`), trường số của chỗ cầm trượt
     (`along`, `slant`…) lấy lựa chọn đang vẽ —, nên lần cầm không bị cắt và mốc không khai đích;
   - đồ theo tay, tay tự do: phần đích đang là `0` thì `null`; không thì `at` là điểm bàn tay theo `point` của mốc kề (tâm
@@ -429,7 +433,8 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi trac
     `EDGE_TOL`), đưa chỗ thả về đó và ghi `at` ở đấy: `at` luôn trùng bàn tay vẽ ra, nên người dời thì tay không trôi theo
     một điểm giữa không trung — đổi lại tay không duỗi được hết cỡ. Thanh trạng thái báo "chỗ thả quá mép tầm với … cách chỗ
     thả … px". Lúc kéo, mặt cầu mờ quanh vai là mép ước (soft IK `ARM_SOFT` cộng cổ tay → tâm nắm); tay nắm ra ngoài thì mặt
-    cầu hổ phách, chấm là chỗ bàn tay sẽ dừng, nhãn ghi khoảng quá mép. Bộ bù (`fitPoint`) chặn mỗi bước ở `FIT_STEP` và kéo
+    cầu hổ phách, chấm là chỗ bàn tay sẽ dừng, nhãn ghi khoảng quá mép (nhãn luôn nằm trong khung, dưới
+    HUD, trên ô Vệt; nhãn nón cổ tay và vòng khuỷu ẩn khi kéo). Bộ bù (`fitPoint`) chặn mỗi bước ở `FIT_STEP` và kéo
     đích về sát chỗ bàn tay vẽ ra hết mức mà lệch không tăng; đích vẫn cách tâm nắm quá 5 px (cổ tay chạm giới hạn…) thì thanh trạng
     thái báo "ngoài tầm với"; xoay quanh tâm nắm ghi ý định món `hold.face`, `hold.roll` (trục khung món `[0, 0, 1]`, `[0, 1, 0]` về
     vectơ hệ thân, ngang ra ngoài phía tay ấy, như ＋) cho đồ theo tay, `palm` + `fingers` (vectơ hệ thân, bỏ `bend`) cho tay

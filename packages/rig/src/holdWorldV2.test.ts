@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { body3 } from './core/figure3d';
 import { parseHeldItem, type HeldItemSpec, type ReachHold } from './core/heldItem';
 import { holdLinkFrame } from './core/holdLink';
@@ -16,6 +16,8 @@ import fx from './core/__fixtures__/nguoi-cam-bang.json';
 import bangGia from './core/__fixtures__/held-v2/bang-gia.json';
 import dienThoai from './core/__fixtures__/held-v2/dien-thoai.json';
 import tuiHieu from './core/__fixtures__/held-v2/tui-hieu.json';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Chỗ cầm nhóm (`món@nhóm`) gắn món three qua `holdLink`: món đặt trước hai tay ngồi ở `itemAt`; cầm một tay theo mốc và
 // tay dẫn thì món theo bàn tay

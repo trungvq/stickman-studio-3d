@@ -10,6 +10,8 @@ import {
   HELD_FACE,
   HELD_GRIP,
   HELD_GRIP_PINCH,
+  HELD_MARK_MOVE,
+  HELD_MARK_TURN,
   HELD_OPPOSE,
   HELD_REST,
   HELD_SINK,
@@ -104,7 +106,7 @@ describe("heldHits: chỗ cầm nhóm", () => {
     expect(rules({ grasp: grasp({}, { gap: AIM_GAP + 2 }), s: 2 })).toEqual([]);
   });
 
-  it("`wrist`: vượt kẹp là lỗi, sát kẹp trong `HELD_WRIST` độ là cảnh báo, xa kẹp thì im", () => {
+  it("`wrist`: vượt giới hạn là lỗi, sát giới hạn trong `HELD_WRIST` độ là cảnh báo, xa giới hạn thì im", () => {
     const at = (bend: number, over = 0) =>
       heldHits(
         sample({ grasp: grasp({}, { wrist: { turn: 0, bend, dev: 0, over, off: over && 3 } }) }),
@@ -113,6 +115,74 @@ describe("heldHits: chỗ cầm nhóm", () => {
     expect(at(AIM_BEND[1] - 2)).toEqual([{ rule: "wrist", worst: -2 }]);
     expect(at(AIM_BEND[1] + 8, 8)).toEqual([{ rule: "wrist", worst: 8, error: true }]);
     expect(at(AIM_BEND[0] + 2)).toEqual([{ rule: "wrist", worst: -2 }]);
+  });
+
+  it("`mark`: theo mốc, món lệch mốc quá `HELD_MARK_TURN` hay `HELD_MARK_MOVE` (nhân cỡ người) là cảnh báo", () => {
+    const at = (
+      err: number,
+      off: number,
+      o: { keyed?: boolean; mode?: "item" | "hand"; s?: number; blend?: boolean } = {},
+    ) =>
+      heldHits(
+        sample({
+          s: o.s ?? 1,
+          intent: { rule: "face", err, clamped: ["dev"], want: [0, 0, 1], got: [1, 0, 0] },
+          grasp: grasp(
+            { mode: o.mode ?? "item", ...((o.keyed ?? true) && { keyed: true as const }) },
+            { wrist: { turn: -37, bend: 20, dev: 9, over: 104, off } },
+          ),
+        }),
+        {},
+        o.blend,
+      ).filter((h) => h.rule === "mark" || h.rule === "wrist");
+    // cổ tay đã vẽ còn trong giới hạn: `wrist` im, chỉ `mark` thấy món lệch
+    expect(at(114, 33)).toEqual([{ rule: "mark", worst: 33 / HELD_MARK_MOVE }]);
+    expect(at(HELD_MARK_TURN + 4, 2)).toEqual([
+      { rule: "mark", worst: (HELD_MARK_TURN + 4) / HELD_MARK_TURN },
+    ]);
+    expect(at(10, HELD_MARK_MOVE + 1)).toHaveLength(1);
+    expect(at(30, 5.4)).toEqual([]);
+    expect(at(10, HELD_MARK_MOVE + 1, { s: 2 })).toEqual([]);
+    expect(at(114, 33, { keyed: false })).toEqual([]);
+    expect(at(114, 33, { mode: "hand", keyed: false })).toEqual([]);
+    expect(at(114, 33, { blend: true })).toEqual([]);
+  });
+
+  it("dòng `mark` nêu món xoay, chỗ cầm dời, khớp cổ tay chạm giới hạn và cách sửa", () => {
+    const s = sample({
+      item: "dien-thoai",
+      hold: "dien-thoai@palmBox////",
+      intent: { rule: "face", err: 114, clamped: ["dev"], want: [0, 0, 1], got: [1, 0, 0] },
+      grasp: grasp(
+        {
+          item: "dien-thoai",
+          group: "palmBox",
+          keyed: true,
+          choice: { part: "body", along: 0.25, thumb: "right", featureIndex: 0 },
+          by: { part: "default", along: "scene", thumb: "rig" },
+        },
+        { wrist: { turn: -37, bend: 20, dev: 9, over: 103.7, off: 33.3 } },
+      ),
+    });
+    const line = heldLine({
+      id: "a",
+      hand: "R",
+      item: "dien-thoai",
+      rule: "mark",
+      t: 1,
+      worst: 3.3,
+      sample: s,
+      declared: { pose: "rest", off: 0 },
+      runs: [[0, 2]],
+      clips: [],
+    });
+    expect(line).toMatch(/^món lệch mốc — `a` tay phải cầm dien-thoai: /);
+    expect(line).toContain(
+      "xoay 114° khỏi hướng ở mốc, chỗ cầm trên món dời 33.3 (ngưỡng 40°, 10.0)",
+    );
+    expect(line).toContain("cổ tay chạm giới hạn ở khớp `dev` (lệch), vượt 103.7°");
+    expect(line).toContain("dời mốc món (`to` / `offset` / `at`)");
+    expect(line).toContain("mốc món `dien-thoai` ở `items`");
   });
 
   it("`arm`: tay lấn quá `HELD_ARM` lần bán kính tay", () => {

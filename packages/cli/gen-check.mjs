@@ -1,5 +1,5 @@
 // Bộ tự kiểm dùng chung của `stickman gen`: chạy hành động vừa sinh trong chính cảnh (runtime thật, đúng giây cảnh sẽ gọi)
-// rồi đo bằng phép đo của `check`: cổ tay so với kẹp, tầm với, khuỷu đi một chiều, điểm tiếp xúc trôi, và các nhóm
+// rồi đo bằng phép đo của `check`: cổ tay so với giới hạn, tầm với, khuỷu đi một chiều, điểm tiếp xúc trôi, và các nhóm
 // `move` / `clash` / `held` trên cảnh three của repo so với cảnh chưa có hành động. Mỗi kiểu của `gen` khai một `GenSpec`.
 // docs/05-repo-video.md#sinh-hành-động-theo-cảnh
 import * as rig from "@stickman3d/rig/core";
@@ -45,8 +45,8 @@ export function backtrack(phis) {
 
 /**
  * Phần lõi của bộ tự kiểm trên runtime `rt` (nhân vật thật ở `chars`): mỗi luật một dòng `{ rule, level, worst, t, limit, msg }`,
- * `level` là `lỗi`, `cảnh báo` hay `ok`. Ngưỡng lấy của `check`: cổ tay vượt kẹp là lỗi, còn cách kẹp dưới `HELD_WRIST` là cảnh
- * báo; khe tới đích quá `AIM_GAP · s` là ngoài tầm; điểm tiếp xúc trôi quá `tol`; khuỷu lùi quá `ELBOW_BACK`
+ * `level` là `lỗi`, `cảnh báo` hay `ok`. Ngưỡng lấy của `check`: cổ tay vượt giới hạn là lỗi, còn cách giới hạn dưới
+ * `HELD_WRIST` là cảnh báo; khe tới đích quá `AIM_GAP · s` là ngoài tầm; điểm tiếp xúc trôi quá `tol`; khuỷu lùi quá `ELBOW_BACK`
  */
 export function coreChecks(rt, chars, spec) {
   const { id, side = "right", window, step = GEN_STEP } = spec;
@@ -79,9 +79,9 @@ export function coreChecks(rt, chars, spec) {
     level: wrist.m > 0 ? "lỗi" : wrist.m > -wristLimit ? "cảnh báo" : "ok",
     worst: r2(wrist.m),
     t: wrist.t,
-    limit: `còn ≥ ${wristLimit}° tới kẹp`,
+    limit: `còn ≥ ${wristLimit}° tới giới hạn`,
     msg: w
-      ? `cổ tay ${wrist.m > 0 ? "vượt kẹp" : "còn cách kẹp"} ${r2(Math.abs(wrist.m))}° ở giây ${sec(wrist.t)} (xoay ${Math.round(w.turn)}°, gập ${Math.round(w.bend)}°, lệch ${Math.round(w.dev)}°; kẹp ±${rig.TURN_MAX}, ${rig.AIM_BEND.join("..")}, ${rig.AIM_DEV.join("..")})`
+      ? `cổ tay ${wrist.m > 0 ? "vượt giới hạn" : "còn cách giới hạn"} ${r2(Math.abs(wrist.m))}° ở giây ${sec(wrist.t)} (xoay ${Math.round(w.turn)}°, gập ${Math.round(w.bend)}°, lệch ${Math.round(w.dev)}°; giới hạn ±${rig.TURN_MAX}, ${rig.AIM_BEND.join("..")}, ${rig.AIM_DEV.join("..")})`
       : "không đo được cổ tay",
   });
   const reachLimit = rig.AIM_GAP * reach.s;

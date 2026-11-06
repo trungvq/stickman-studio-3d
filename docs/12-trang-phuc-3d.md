@@ -1574,8 +1574,21 @@ Quãng một chu kỳ đổi theo `hip`, `knee`, `stance` — đo bằng `action
 Mỗi cột của tấm là một đường vải buông từ dây cạp phủ qua mặt người (`drape`): cắt dọc khối gồm thân áo dưới cạp,
 khối hông và hai ống chân (như [vạt dài quấn](#vạt-dài-quấn), nở thêm `APRON_LIFT` `5` px), vải đi từ dây cạp vòng
 phía trước tới chỗ rời người rồi rủ thẳng. Đứng, cúi chào thì tấm rủ thẳng từ dây cạp trước hai đùi; bước thì gối trước
-đẩy tấm ra; ngồi thì tấm nằm trên đùi và dừng ở gối — phần rủ tự do dưới chỗ rời người nhân `hemHang` của góc đùi.
-`length` là chiều dài tấm đo dọc vải; mép dưới thẳng khi đứng.
+đẩy tấm ra; ngồi ghế thì tấm nằm trên đùi và dừng ở gối — phần rủ tự do dưới chỗ rời người nhân `hemHang` của góc đùi.
+`length` là chiều dài tấm đo dọc vải; mép dưới thẳng khi đứng. Mép trái, gấu, mép phải là một nét liền.
+
+- **Thân ngả trước, đùi gập sát bụng** (quỳ chống tay): dây cạp lọt vào trong mặt cắt giữa bụng và đùi thì vải đi theo
+  hướng lên của thân, dọc mặt bụng, ra tới mép mặt cắt rồi mới phủ xuống mặt trên đùi; không đi thẳng đứng xuyên bụng.
+  Thân đứng thẳng hay ngả sau: vật phía trước cao hơn cạp thì vải đi thẳng lên trùm qua.
+- **Chạm sàn.** `act` biết sàn dưới người (`world.floor`) thì vải không xuống dưới sàn: chạm sàn (hay buông thẳng từ chỗ
+  rời người xuống sàn) thì gập, nằm trên sàn cao `APRON_FLOOR[0]` (`1` px), góc gập bo bán kính `APRON_FLOOR[1]`
+  (`8` px), tiến ra trước không quá `APRON_FLOOR[2]` (`20` px) quá chỗ chạm — phần vải dài hơn coi như dồn lại, không
+  vẽ, nên tấm không trải tới chỗ hai bàn tay chống sàn. Không có `world.floor` thì như không có sàn.
+- **Quỳ** (`kneelOn`): đáy gối cách sàn dưới `APRON_KNEEL[0]` (`10` px) và ống chân chĩa ra sau (cổ chân sau gối quá
+  nửa ống chân) thì tấm buông đủ dài như lúc đứng: phủ mặt trên đùi, qua đầu gối tròn xuống sàn trước gối rồi nằm trên
+  sàn — quỳ thẳng, quỳ chống tay, 正座. Gối nhấc tới `APRON_KNEEL[1]` (`30` px) thì về dần như ngồi ghế. Lúc quỳ khối
+  cắt dọc trùm dần hết đùi và đầu gối tròn, nên tấm ngắn chưa tới gối khi đứng cũng không để gối lòi qua. Đứng, đi, cúi
+  chào thì gối xa sàn, tấm không tới sàn: như không có sàn.
 
 | Trường `skirt.apron` | Mặc định | Nghĩa |
 |---|---:|---|
@@ -1583,6 +1596,12 @@ phía trước tới chỗ rời người rồi rủ thẳng. Đứng, cúi chà
 | `band` | 5 | Dây cạp dày bấy nhiêu px, vòng quanh cạp ở `rise`; `0` là không có |
 | `tieColor` | màu tấm | Màu dây cạp và nơ |
 | `bow` | 13 | Mỗi cánh nơ sau lưng dài bấy nhiêu px: hai cánh, nút, hai đuôi ngắn chĩa xuống (`apronBow`), khối cứng không rủ; `0` là không nơ |
+
+| Hằng số | Giá trị | Nghĩa |
+|---|---:|---|
+| `APRON_LIFT` | 5 | Tấm cách mặt người và đồ bên dưới bấy nhiêu px |
+| `APRON_FLOOR` | `[1, 8, 20]` | Chạm sàn: nằm trên sàn bấy nhiêu px, góc gập bo bán kính bấy nhiêu px, trải trên sàn không quá bấy nhiêu px |
+| `APRON_KNEEL` | `[10, 30]` | Đáy gối cách sàn dưới số đầu (px) thì buông đủ dài như lúc đứng, quá số sau thì như ngồi ghế |
 
 - Thân áo, khối hông, vạt áo người ngồi dựng như không có váy: thân áo không dừng ở cạp, khối hông màu quần.
 - Tay không choãi vì tạp dề.

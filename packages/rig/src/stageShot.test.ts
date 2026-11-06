@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { body3 } from './core/figure3d';
 import { parseAction } from './core/action';
 import { cameraAt, parseScene, resolveScene, sceneAt } from './core/scene';
@@ -7,6 +7,8 @@ import { defaultCharacter } from './core/schema';
 import { stageJoints } from './core/snap';
 import { aimCamera } from './lens';
 import { buildWorld, plainRoom } from './world';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Ảnh three của `stickman-render --scene` và lớp vệt SVG đè lên nó (`stageJoints` sau `cameraAt`) phải trùng điểm
 
@@ -28,7 +30,7 @@ const c = defaultCharacter();
 c.palette.clad = true;
 
 describe('ảnh three và vệt khớp', () => {
-  it('khớp người three chiếu qua camera của sân khấu trùng điểm `stageJoints` trong ô, cả khi khung cắt zoom', { timeout: 30_000 }, () => {
+  it('khớp người three chiếu qua camera của sân khấu trùng điểm `stageJoints` trong ô, cả khi khung cắt zoom', () => {
     const sc = parseScene({
       name: 'x', duration: 2,
       lens: { eye: [0, -423, -1057], yaw: 0, pitch: 16, f: 800, cx: 0, cy: 120 },

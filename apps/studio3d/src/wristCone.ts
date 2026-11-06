@@ -1,7 +1,7 @@
 // Nón cổ tay của bàn tay đang chọn (Dáng tay), chỉ để xem: chóp ở cổ tay trong khung cẳng tay; cạnh chóp là miền
 // `AIM_BEND × AIM_DEV` ở xoay cẳng tay đang vẽ, vòng cung dưới chân là xoay cẳng tay ±`TURN_MAX` (vạch là hướng lòng tay
-// đang vẽ). Chấm là hướng bàn tay: trắng trong miền, hổ phách khi sát kẹp (như cảnh báo `wrist` của luật `held`), đỏ khi khớp
-// bị kẹp hay vượt kẹp; món đặt trước vượt kẹp thì thêm chấm hướng nghiệm và số độ vượt.
+// đang vẽ). Chấm là hướng bàn tay: trắng trong miền, hổ phách khi sát giới hạn (như cảnh báo `wrist` của luật `held`),
+// đỏ khi khớp chạm giới hạn hay vượt giới hạn; món đặt trước vượt giới hạn thì thêm chấm hướng nghiệm và số độ vượt.
 import * as rig from "@stickman3d/rig";
 import type { HandReport, Side } from "@stickman3d/rig";
 import * as THREE from "three";
@@ -35,12 +35,12 @@ const rotation = (o: THREE.Object3D) => {
 
 export class WristCone {
   readonly group = new THREE.Group();
-  /** Chỗ đặt nhãn (thế giới three) và chữ: số độ vượt, khớp kẹp */
+  /** Chỗ đặt nhãn (thế giới three) và chữ: số độ vượt, khớp chạm giới hạn */
   label: { at: THREE.Vector3; text: string; tone: "ok" | "edge" | "bad" } | null = null;
 
   /**
    * Dựng lại ở cổ tay của `fig` bên `side` theo báo tay `rep`; khung cẳng tay là hướng khớp khuỷu three (`Re`, bàn tay
-   * `Re · wristTurn`). `warn`: cách kẹp dưới ngần này độ là sát kẹp (`stickman.held.wrist` của luật `held`)
+   * `Re · wristTurn`). `warn`: cách giới hạn dưới ngần này độ là sát giới hạn (`stickman.held.wrist` của luật `held`)
    */
   update(rep: HandReport | null, fig: rig.Figure | null, side: Side, warn = rig.HELD_WRIST) {
     this.clear();
@@ -83,7 +83,7 @@ export class WristCone {
       lineOf(arc, 0x9aa6bd, 0.85),
       lineOf([base, base.clone().add(palmAt(drawn.turn))], turnBad ? BAD : OK, 0.95),
     );
-    // cách kẹp như luật `held`: món đặt trước đo trên nghiệm của bộ giải (`heldWristMargin`), còn lại trên góc vẽ
+    // cách giới hạn như luật `held`: món đặt trước đo trên nghiệm của bộ giải (`heldWristMargin`), còn lại trên góc vẽ
     const placed = rep.grasp?.mode === "item" ? rep.grasp : undefined;
     const margin = placed
       ? rig.heldWristMargin(placed.arm.wrist)
@@ -115,9 +115,10 @@ export class WristCone {
         .filter((k) => over[k] > 0.05)
         .map((k) => `${NAMES[k]} ${over[k].toFixed(0)}°`);
       parts.push(`vượt ${each.join(", ")}`);
-    } else if (clamped.length) parts.push(`kẹp ${clamped.map((k) => NAMES[k]).join(", ")}`);
-    else if (margin > 0) parts.push(`vượt kẹp ${margin.toFixed(0)}°`);
-    else if (edge) parts.push(`sát giới hạn — còn ${(-margin).toFixed(0)}° tới kẹp`);
+    } else if (clamped.length)
+      parts.push(`chạm giới hạn ${clamped.map((k) => NAMES[k]).join(", ")}`);
+    else if (margin > 0) parts.push(`vượt giới hạn ${margin.toFixed(0)}°`);
+    else if (edge) parts.push(`sát giới hạn — còn ${(-margin).toFixed(0)}°`);
     if (rep.wrist.err !== undefined && rep.wrist.err > 0.5)
       parts.push(`trục món lệch ${rep.wrist.err.toFixed(0)}°`);
     for (const o of this.group.children) o.renderOrder = 11;

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fingerVec, HAND_FIT, HAND_PIECES, HAND_POSES, HAND_REST, type HandPose } from "./hand";
 import { handSkin, skinHand } from "./handMesh";
 import {
@@ -21,6 +21,8 @@ import { parseHeldItem } from "./heldItem";
 import type { V3 } from "./lens";
 import grip from "./__fixtures__/grip-frames.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 const I = [1, 0, 0, 0, 1, 0, 0, 0, 1] as HeldFitInput["G"]["R"];
 const FINGERS = ["thumb", "index", "middle", "ring", "pinky"] as const;

@@ -485,7 +485,8 @@ nhìn xuống (`HEAD_LOOK`) ([01](01-rig.md#người-3d)); `yaw` khai là hướ
 thẳng ống kính. Chỗ vẽ người 3D truyền `body3(nhân vật)` làm tham số thứ năm của `sceneAt` (nửa bề
 dày đùi cho người ngồi, nửa khoảng hai gốc chân cho bước theo `path`). Người đang đứng có bóng tròn chiếu
 trên chính mặt sàn; người ngồi khai `floor` (y sàn dưới chân) thì mỗi bàn chân chạm sàn có một bóng
-tròn nhỏ — thiếu nó, bàn chân nằm sau chân ghế trông như hở sàn dù đúng chỗ.
+tròn nhỏ — thiếu nó, bàn chân nằm sau chân ghế trông như hở sàn dù đúng chỗ. Tạp dề dài cũng đọc sàn ấy (người
+đứng lấy sàn ở `at`): chạm sàn thì nằm trên sàn, không xuyên xuống ([12](12-trang-phuc-3d.md#tạp-dề)).
 
 **`resolveScene(scene, actions, heights, bodies, held, hands)`** nhận `heights` (`id` →
 `rig.height`) để người cao thấp khác `1` bước đúng, và `bodies` (`id` → `body3(nhân vật)`)
@@ -521,6 +522,9 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
 ```
 
 - **Tay phải / trái của người**: `right` là tay phải ở mọi góc máy, cùng tay với kênh `armRight` của hành động.
+- **Áp tai** (mốc `t: 9`): tay `to: "ear"`, mặt món về `{ mark: "head" }` mà không khai `roll` thì rig giữ trục `top` của món (đầu loa) dọc
+  đường miệng → tai nhìn ngang đầu, cả khi đầu quay ([11](11-nhom-cam.md#9-palmbox--hộp-cỡ-lòng-tay-bản-đầu)). Cảnh cần ép
+  trục máy thì khai `roll` trên trục ngược `top` với `toward: { mark: "mouth" }`.
 - **`elbow` theo hệ của đích.** Mốc có `at` (đích thế giới): `elbow` là hướng thế giới rig. Mốc khác — có `to`, hay chỉ có
   `hold` (lần cầm theo mốc món) —: `elbow` là hệ thân `[tiến, y, ra ngoài]` của chính tay ấy, cùng quy ước với `elbow` của
   `keys[].reach` (`y` xuống dương, `ra ngoài` dương về phía tay ấy nên một bộ số đúng cho hai tay; hệ thân là hướng hông,
@@ -540,6 +544,13 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
 - **Bẫy: đích thế giới, khuỷu thế giới mà người quay.** Tay có đích `at` kèm `elbow` trong quãng người quay (`path` đổi
   `yaw`): cổ tay và khuỷu đứng yên trong thế giới, vai quay theo người — đúng cho tay tì quầy, tay vịn. Tay phải đi theo
   người (cầm máy trước mặt, khoanh trước ngực) thì đặt đích theo mốc thân (`to`), khuỷu hệ thân theo cùng.
+- **Bẫy: `elbow` gần trục vai → đích.** Rig chỉ đọc phần của `elbow` vuông góc đường vai → đích (và vai → cổ tay ước) để
+  biết khuỷu nằm phía nào quanh trục ấy. Hướng khai gần trùng đường ấy, cùng chiều hay ngược chiều, thì phần ấy chỉ còn mẩu
+  nhỏ: đầu quay, thân nghiêng hay đích dời vài độ là khuỷu lật sang phía khác, cẳng tay quay theo, cổ tay chạm giới hạn và ý
+  định nhường gần như ngược (ống nghe lật ra sau gáy). Hay gặp ở tay áp tai của người đầu to (tai rộng hơn vai, đường vai →
+  tai chếch lên và ra ngoài): `elbow` `[0, 1, -0.4]` (xuống, vào trong) gần như ngược đường ấy. Khuỷu áp tai khai xuống
+  và ra trước, như `[0.55, 1, 0.05]`. `check` báo `elbowAxis`, và dòng `aimYield` quá `90°` của tay có `elbow` khai gợi ý đổi
+  hay bỏ `elbow` ([Khuỷu và cổ tay trên hình](#khuỷu-và-cổ-tay-trên-hình)).
 - **Cảnh đời trước schema 34.** `elbow` trên mốc không có `at` ở JSON ghi `schemaVersion` dưới 34 là hướng thế giới: `parseScene`
   từ chối cả cảnh với dòng báo chỉ lệnh chuyển. `stickman migrate-elbow` ([05](05-repo-video.md#chuyển-elbow-sang-hệ-thân)) quay
   từng hướng ấy về hệ thân bằng hướng thân người ấy ở giây của mốc (`legacyElbows`, `migrateLegacyElbows` của lõi), nên ở chính
@@ -974,8 +985,11 @@ ngắn, `wrap` vòng lại, đoạn mốc quá nhanh, phần đích cổ tay đ�
 mốc, khuỷu của IK bật khi tay duỗi sát hết tầm hay hướng khuỷu gần trùng trục tay, cả người dời chỗ.
 Dòng nào không có lý do thì đọc danh sách clip đang chạy kèm theo.
 
-Không đo: khớp ra ngoài khung, người khuất (`fade` dưới `0,5` là tắt), điểm sau mặt phẳng ống kính, cặp khung vắt
-qua chỗ cắt — mốc camera `cut`, đầu và cuối shot —, quãng cảnh không lên hình, và chỗ khai **cố ý
+Khớp chiếu qua ống kính vẽ ra: `WorldSpec.lens` của cảnh three khi repo có `stickman.world`
+([05](05-repo-video.md#cảnh-three-cho-check)), không thì `scene.lens`. Không đo: khớp ra ngoài khung, người khuất (`fade`
+dưới `0,5` là tắt), điểm sau mặt phẳng ống kính, cặp khung vắt qua chỗ cắt — mốc camera `cut`, đầu và cuối shot, ống kính
+đổi bậc (một thành phần của nó đổi gấp `4` lần trung vị ba cặp mỗi bên, `lensCuts`: cắt sang góc máy khác, cả cắt vào máy
+đang chạy; lia, dời theo người đổi đều nên vẫn đo) —, quãng cảnh không lên hình, và chỗ khai **cố ý
 giật**. Cảnh có shot trong `episodes/` dùng thì `check` chỉ đo quãng `[from, to]` của các shot ấy;
 hai shot liền nhau nối tiếp cùng một cảnh gộp lại, không có chỗ cắt giữa chúng. Cảnh không shot nào
 dùng, và `scene_probe` / `validate` (không biết tập), thì đo cả cảnh. Cố ý giật khai ở:
@@ -984,7 +998,7 @@ dùng, và `scene_probe` / `validate` (không biết tập), thì đo cả cản
   ghi, suốt lúc nó chạy, kể cả đoạn hoà vào và đoạn hoà ra sang clip sau;
 - mốc `world.hands[].snap`: tay ấy, đoạn từ mốc trước tới mốc này.
 
-**Khuỷu khoá xoay quá nhanh.** Rig không kẹp khuỷu khoá (`elbowLock`, [Đích bàn tay thế
+**Khuỷu khoá xoay quá nhanh.** Rig không hãm tốc độ xoay của khuỷu khoá (`elbowLock`, [Đích bàn tay thế
 giới](#đích-bàn-tay-thế-giới)), nên `check` đo riêng nó (`elbowLockSnaps` của lõi): mẫu cách nhau `HOLD_SLEW_STEP` (`1/30 s`)
 trên mọi đoạn giữa hai mốc `world.hands` của tay có mốc khoá, cả trước mốc đầu và sau mốc cuối (phần khoá của mốc ấy giữ
 nguyên ở đó), khuỷu vẽ ra (`actArm`) xoay quanh trục vai → cổ tay quá `HOLD_SWIVEL_SLEW` (`5°`) giữa hai mẫu cùng có phần
@@ -994,7 +1008,7 @@ thì gốc đổi hẳn) dù khuỷu không xoay. Tay gần thẳng (khuỷu cá
 qua hướng khoá thì khuỷu khoá lật thật: báo. Các mẫu quá ngưỡng liền nhau gộp một dòng, cùng nhóm `move`:
 
 ```
-scenes/canh-05.json: `lan` tay phải giây 1.00–1.10: khuỷu khoá xoay 46° mỗi 1/30 s (quá 5°) trên đoạn mốc `world.hands` giây 1.00 → 1.10 — rig không kẹp khuỷu khoá (`elbowLock`): dời hai mốc xa nhau hơn, cho `elbow` hai mốc gần hướng nhau hơn, hay bỏ `elbowLock` ở một mốc. Cố ý nhanh thì khai `snap: true` ở mốc sau
+scenes/canh-05.json: `lan` tay phải giây 1.00–1.10: khuỷu khoá xoay 46° mỗi 1/30 s (quá 5°) trên đoạn mốc `world.hands` giây 1.00 → 1.10 — rig không hãm tốc độ xoay của khuỷu khoá (`elbowLock`): dời hai mốc xa nhau hơn, cho `elbow` hai mốc gần hướng nhau hơn, hay bỏ `elbowLock` ở một mốc. Cố ý nhanh thì khai `snap: true` ở mốc sau
 ```
 
 Mốc sau khai `snap` và quãng không lên hình thì không đo. Quãng trước mốc đầu, sau mốc cuối thì dòng báo nêu mốc ấy và gợi
@@ -1025,7 +1039,8 @@ thẳng ra `0`). Một quãng một dòng, mức cảnh báo, nhóm `move`:
 | `elbowJitter` khuỷu rung | trong `0,5 s` xoắn đổi chiều từ `3` lần (mỗi bên từ `0,5°`), tổng \|xoắn\| quá `4°`, tổng có dấu dưới nửa tổng \|xoắn\|, không khung nào quá `25°` |
 | `elbowFlip` khuỷu lật | xoắn quá `30°` trong một khung hay quá `60°` trong `0,1 s` mà cổ tay (so với vai) dời dưới `0,25` tầm với; khuỷu khoá thì để luật khuỷu khoá ở trên |
 | `wristFlip` bàn tay lật | xoay cẳng tay đổi quá `60°` hay lệch cổ tay đổi quá `35°` (trên vòng) trong một khung, cổ tay dời dưới `0,25` tầm với |
-| `aimYield` bàn tay lệch ý định | bàn tay rig tự giải (tay theo đích, ý định, món theo tay; món đặt trước có luật `wrist` của [11](11-nhom-cam.md#7-luật-check-nhóm-held)) nhường ý định ở giới hạn cổ tay quá `20°` (`AIM_YIELD`): góc quay giữa bàn tay theo ý định (hay bàn tay của hành động) và bàn tay vẽ (`ArmTrace.yield`). Khuỷu đã xoay cứu cổ tay mà cẳng tay vẫn không tới hướng đã khai ([01](01-rig.md#hướng-lòng-tay-theo-ý)) |
+| `aimYield` bàn tay lệch ý định | bàn tay rig tự giải (tay theo đích, ý định, món theo tay; món đặt trước có luật `wrist` của [11](11-nhom-cam.md#7-luật-check-nhóm-held)) nhường ý định ở giới hạn cổ tay quá `20°` (`AIM_YIELD`): góc quay giữa bàn tay theo ý định (hay bàn tay của hành động) và bàn tay vẽ (`ArmTrace.yield`). Khuỷu đã xoay cứu cổ tay mà cẳng tay vẫn không tới hướng đã khai ([01](01-rig.md#hướng-lòng-tay-theo-ý)). Quá `90°` (`ELBOW_YIELD`) ở khung tay có `elbow` khai (phần khai từ `0,5`) thì dòng báo gợi ý đổi hay bỏ `elbow`: khuỷu khai không xoay để cứu cổ tay |
+| `elbowAxis` `elbow` gần trục | tay rig tự giải có `elbow` khai (phần khai từ `0,5`, `ArmTrace.elbowK`) mà hướng khai cách đường vai → tâm đích hay vai → cổ tay ước dưới `10°` (`ELBOW_AXIS`, `ArmTrace.elbowAxis`, cùng chiều hay ngược chiều) từ `0,1 s` (`ELBOW_AXIS_S`; các quãng cách nhau tới `3` khung tính là một) — [bẫy](#đích-bàn-tay-thế-giới) khuỷu không biết nằm phía nào. Đo cả khung người khuất, tay ngoài khung hình (vẫn trong quãng lên hình): lỗi ở chính JSON |
 | `elbowInward` khuỷu gập ngược | tay theo đích (phần đích từ `0,5`) không cầm món: khuỷu lệch khỏi đường vai → cổ tay vào giữa thân hay lên trên quá `0,3` lần cánh tay trên (`elbowInward`, như luật `elbow` của tay cầm món ở [11](11-nhom-cam.md#7-luật-check-nhóm-held)) |
 | `armStraight` tay duỗi hết tầm | tay theo đích, vai → cổ tay quá `0,97` tầm với liền quá `0,3 s` |
 | `armClose` tay co sát thân | tay theo đích, vai → cổ tay dưới `0,35` tầm với mà bắp tay, cẳng tay lấn thân quá `0,5` lần bán kính tay |
@@ -1036,8 +1051,8 @@ scenes/canh-05.json: `lan` tay trái giây 2.55–4.30: khuỷu rung — xoắn 
 
 Nhịp thở của dáng đứng (`stand-3d`, `idleSway`) xoắn êm theo chu kỳ vài giây, không đổi chiều mỗi khung, không bị bắt.
 Không đo như giật trên hình: cặp khung ngoài quãng lên hình hay vắt qua chỗ cắt, khuỷu hay bàn tay ra ngoài khung, người
-khuất, chỗ khai `snap` của tay. Đo khuỷu cả một repo video ngoài `check` (cả cảnh, có / không `elbowLock`, đường giải từng
-khung): `tools/elbows.mjs` của repo rig.
+khuất, chỗ khai `snap` của tay; riêng `elbowAxis` đo cả khi khuỷu, bàn tay ngoài khung hay người khuất. Đo khuỷu cả một
+repo video ngoài `check` (cả cảnh, có / không `elbowLock`, đường giải từng khung): `tools/elbows.mjs` của repo rig.
 
 ## Lòng bàn tay
 
@@ -1086,7 +1101,8 @@ vật three của món.
   `scene_probe` trả lựa chọn đã giải cùng nguồn của nó). `high` (`top`, `bottom`, `front`, `back`, `left`, `right` — hướng
   của món) là đầu cao của chiều cạnh cầm (cạnh tấm, trục dài hộp, cạnh mặt đỡ), gốc đo của `along`, `slant`, `psi`, bên ngón
   cái và độ ngón chúc của `palmBox`; không khai thì món đặt trước lấy theo hướng món ở mốc đầu lần cầm, tay dẫn lấy đầu mặc
-  định của khối hình, nên hai chế độ có thể khác đầu ([11](11-nhom-cam.md#chỗ-cầm-castworldhandshold)). Hai đường, theo **từng lần cầm** có mốc món ở **`items[]`** hay không.
+  định của khối hình, nên hai chế độ có thể khác đầu ([11](11-nhom-cam.md#chỗ-cầm-castworldhandshold)); tay phụ của `both`
+  không mang `high`, khai vuông góc chiều cạnh thì `check` báo (`highWarnings`). Hai đường, theo **từng lần cầm** có mốc món ở **`items[]`** hay không.
   `items[]` nằm ở cấp cảnh cạnh `cast`: mỗi mốc `{ t, cast, item, to | at, offset?, point?, face?, up?, roll?, ease? }` nói món
   ở đâu, quay về đâu theo thời gian, mốc tay của người `cast` cầm nó. Lần cầm có mốc món (cùng món, cùng người cầm) trong
   khoảng của nó là **món đặt trước**: mốc tay chỉ khai
@@ -1171,7 +1187,7 @@ mỗi `0,1 s`, mỗi bàn tay người mặc đồ đang cầm một món hiện
 nang bàn tay theo dáng đang vẽ (`handCapsules`, `fitCapsules`, cả độ gập thêm của ngón ôm). Lún, khe và độ ôm đo tới
 hình va chạm của món (`shape`) khi cầm cứng, không thì tới lưới hiện hình của món (mọi lưới mặt trước, kể cả
 lưới `noCollide`, bỏ vỏ nét); tâm nắm và lòng tay luôn đo tới lưới. Kêu quãng từ `0,3 s` (trôi, nhảy thì mọi độ dài),
-bỏ bàn tay ngoài khung camera:
+bỏ bàn tay ngoài khung camera của ống kính vẽ ra (`WorldSpec.lens`, không thì `scene.lens`):
 
 | Luật | Kêu khi | Ngưỡng |
 |---|---|---|
@@ -1215,7 +1231,9 @@ scenes/canh-07.json: ngón xuyên đồ — `saito` tay phải cầm chen-ruou: 
 `pierce`, `sink` (da lún quá `HELD_SINK` `0,65`), `loose`, `role` (ngón có vai trò mà hở quá ngưỡng `wrap` `1,5`), `oppose` (ngón cái chạm mà
 không phần nào kẹp món phía bên kia, góc pháp tuyến dưới `HELD_OPPOSE` `120°`), `grip` (ngưỡng theo nhóm; `grip`
 khai ở `package.json` thì thắng, cả khi nhỏ hơn); món đặt trước thêm `reach` và `wrist` (cổ tay vượt giới hạn — lỗi; còn cách giới hạn
-dưới `HELD_WRIST` `5°` — cảnh báo), `arm` (tay lấn thân quá `HELD_ARM` `0,3` bán kính tay) và `size`; mọi chỗ cầm nhóm thêm `elbow`
+dưới `HELD_WRIST` `5°` — cảnh báo), `arm` (tay lấn thân quá `HELD_ARM` `0,3` bán kính tay) và `size`; lần cầm một tay theo mốc
+thêm `mark` (món theo bàn tay đã vẽ lệch mốc vì cổ tay chạm giới hạn: xoay quá `HELD_MARK_TURN` `40°` hay chỗ cầm dời quá
+`HELD_MARK_MOVE` `10` — cảnh báo); mọi chỗ cầm nhóm thêm `elbow`
 (khuỷu gập ngược — vào trong hay chĩa lên — quá `HELD_ELBOW` `0,3` cánh tay trên — lỗi) và `arm` lấn đầu (lỗi); tay dẫn đọc `up`, `face`,
 `reach` (bảng trên). `grip`, `loose`, `role`, `oppose` im trong quãng hoà của lần cầm. Dòng báo trỏ về chỗ cầm và hướng món của cảnh.
 Nhóm `ref` báo thêm `group` (món không có khối hình cho nhóm với cỡ tay), `choice` (chỗ cầm
@@ -1493,7 +1511,7 @@ stageOf(world, { size, aa?, software? }): Promise<{ stage, world }>             
 | `still` | `id` người đóng băng ở dáng giây 0 thành người nền (`seatCrowd`); bỏ trống là mọi người `world.sit`, `[]` là không ai |
 | `extra(marks, cast)` | Đồ riêng của cảnh `Extra3D`: nhận `scene.marks` và người diễn `Cast3D` |
 | `wear(id, fig)` | Đồ three gắn lên người diễn (`dress`, mũ, thẻ tên): gọi một lần cho mỗi bản người vừa dựng |
-| `lens(t)` | Ống kính ở giây `t`, đè `scene.lens`; `undefined` là `scene.lens` |
+| `lens(t)` | Ống kính ở giây `t`, đè `scene.lens`; `undefined` là `scene.lens`. `buildWorld` điền `rt.lensAt` từ nó: `check` đo trên hình qua ống kính này |
 | `grade(t)` | Hậu kỳ toàn khung ở giây `t` (`render(…, { grade })` của pipeline) |
 
 | `Set3D` | |

@@ -44,6 +44,8 @@ export interface ActWorld {
   yaw: number;
   s: number;
   seated?: boolean;
+  /** y của sàn (thế giới rig) */
+  floor?: number;
   hands?: { right?: ActReach; left?: ActReach };
 }
 /** `ScenePose` của lõi — `sceneAt(rt, id, t, height, body3(c))` truyền thẳng vào được */
@@ -133,6 +135,7 @@ function placePose(p: Figure, sp0: Acting, t?: number) {
     // hông của rig là tâm nét: người đứng nhấc lên nửa bề dày chi cho bàn chân nằm trên sàn
     p.hips.position.set(0, seated ? 0 : p.bones.limb, 0);
   }
+  p.floor = W?.floor === undefined ? undefined : (W.floor - W.hip[1]) / W.s + p.hips.position.y * 100;
   const st = P.stretch, B = p.bones;
 
   for (const side of [-1, 1] as const) {

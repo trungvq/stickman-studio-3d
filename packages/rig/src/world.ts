@@ -12,7 +12,7 @@ import type { HandPose } from './core/hand';
 import type { HeldIntent } from './core/heldAudit';
 import { PAPER } from './core/constants';
 import type { Body3 } from './core/figure3d';
-import { cameraAt, itemAt, itemReleased, refreshRuntime, sceneAt, type CastMember, type SceneData, type ScenePose, type SceneRuntime } from './core/scene';
+import { cameraAt, itemAt, itemReleased, lensRadians, refreshRuntime, sceneAt, seenPose, type CastMember, type SceneData, type ScenePose, type SceneRuntime } from './core/scene';
 import { equipCharacter, type CharacterData } from './core/schema';
 import { seatCrowd } from './crowd';
 import { loadFonts } from './decal';
@@ -192,6 +192,10 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
   const cast = rt.cast.filter((c) => c.character && characters[c.character]);
   // mốc món `rest` không khai chỗ dựng bàn tay người thả từ nhân vật thật của người ấy
   rt.chars = { ...Object.fromEntries(cast.map((c) => [c.id, base(c)])), ...rt.chars };
+  // luật đo trên hình của `check` đọc ống kính vẽ ra qua `lensAt`
+  const lensOf = spec.lens;
+  if (lensOf) rt.lensAt = (t) => { const l = lensOf(t); return l && lensRadians(l); };
+  else delete rt.lensAt;
   const frozen = (c: CastMember) => (still ? still.includes(c.id) : c.world.sit);
   const seats = cast.filter(frozen).map((c) => ({ c, ac: acting(c.id, 0) }));
   s.group.add(seatCrowd(
@@ -232,10 +236,7 @@ export function buildWorld(scene: SceneData, rt: SceneRuntime, spec: WorldSpec, 
   const provided: Provided[] = [];
   const entry = (item: string, owner?: string) => provided.find((p) => p.item === item && p.owner === owner);
   const pick = (item: string, who: string) => entry(item, who) ?? entry(item);
-  const seeing = (ac: ScenePose, t: number): ScenePose => {
-    const L = spec.lens?.(t);
-    return L ? { ...ac, world: { ...ac.world, eye: [...L.eye] as [number, number, number] } } : ac;
-  };
+  const seeing = (ac: ScenePose, t: number): ScenePose => seenPose(rt, ac, t);
   /** Lần treo (`món@carry`) của tay `side` ở dáng `ac` */
   const hung = (ac: ScenePose, side: Side) => {
     const W = ac.world;

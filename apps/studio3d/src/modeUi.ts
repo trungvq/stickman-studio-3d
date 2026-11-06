@@ -63,7 +63,7 @@ function maxText(m: HoldModeMax) {
   return `món dời ${bad(overPos(m.item.pos), `${cmText(m.item.pos)} cm`)} · quay ${bad(overAngle(m.item.angle), `${n1(m.item.angle)}°`)} · tâm nắm ${bad(overPos(m.hand), `${cmText(m.hand)} cm`)}${m.t !== undefined ? ` <span class="dim">(ở ${m.t.toFixed(2)} s)</span>` : ""}`;
 }
 
-/** Khớp cổ tay kẹp trước → sau của các tay */
+/** Khớp cổ tay chạm giới hạn trước → sau của các tay */
 function clampText(r: HoldModeRow) {
   const sides = [
     ...new Set([...Object.keys(r.clamped.before), ...Object.keys(r.clamped.after)]),
@@ -240,13 +240,13 @@ export class ModeCard {
     const mid = midMax(p.res.rows);
     return `
       <div class="mhead">${esc(s.item)}@${esc(s.group)} · tay dẫn ${SIDE[s.lead]}${s.partner ? ` + tay ${SIDE[s.partner]}` : ""} · ${s.from.toFixed(2)}–${s.until.toFixed(2)} s · ${MODE[s.mode.before]} → <b>${MODE[s.mode.after]}</b></div>
-      <div class="dim">Đơn vị: cm, độ; tô đỏ: dời &gt; ${POS_LIMIT_CM} cm, quay &gt; 1°; kẹp (cổ tay ở giới hạn, trước → sau): x xoay, g gập, l lệch; khoá: bản vá khoá khuỷu ở mốc. ${keyed.length} mốc, ${p.res.ops.length} thao tác JSON Patch, ${Math.round(p.ms)} ms.</div>
+      <div class="dim">Đơn vị: cm, độ; tô đỏ: dời &gt; ${POS_LIMIT_CM} cm, quay &gt; 1°; giới hạn (khớp cổ tay chạm giới hạn, trước → sau): x xoay, g gập, l lệch; khoá: bản vá khoá khuỷu ở mốc. ${keyed.length} mốc, ${p.res.ops.length} thao tác JSON Patch, ${Math.round(p.ms)} ms.</div>
       <div class="msum${maxOver(p.res.max) ? " bad" : ""}">Ở mốc: ${maxText(p.res.max)}</div>
       ${mid ? `<div class="msum${maxOver(mid) ? " bad" : ""}" title="hàng giữa hai mốc kề, trừ hàng đang hoà">Giữa mốc: ${maxText(mid)}</div>` : ""}
       <div class="msum${maxOver(p.res.outside) ? " bad" : ""}">Ngoài quãng đổi: ${maxText(p.res.outside)}</div>
       ${p.res.rows.some((r) => r.blending) ? `<div class="msum dim">Lúc hoà (<code>HOLD_BLEND</code>, không tính ở trên): ${maxText(p.res.blend)}</div>` : ""}
       <div class="mtable"><table>
-        <thead><tr><th>Mốc</th><th title="tâm hộp bao của món dời, cm">Món dời cm</th><th title="món quay, độ">Quay °</th><th title="tâm nắm từng tay dời, cm">Tâm nắm cm</th><th title="góc khuỷu φ tay dẫn trước → sau, độ">φ °</th><th title="khớp cổ tay ở giới hạn trước → sau: x xoay, g gập, l lệch">Kẹp</th></tr></thead>
+        <thead><tr><th>Mốc</th><th title="tâm hộp bao của món dời, cm">Món dời cm</th><th title="món quay, độ">Quay °</th><th title="tâm nắm từng tay dời, cm">Tâm nắm cm</th><th title="góc khuỷu φ tay dẫn trước → sau, độ">φ °</th><th title="khớp cổ tay ở giới hạn trước → sau: x xoay, g gập, l lệch">Giới hạn</th></tr></thead>
         <tbody>${p.res.rows.map(rowHtml).join("")}</tbody>
       </table></div>
       ${p.res.notes.map((n) => `<div class="warn">${esc(n)}</div>`).join("")}

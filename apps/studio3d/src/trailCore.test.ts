@@ -155,7 +155,7 @@ describe("trailSample trên cảnh thử", () => {
   const rt = runtime(scene());
   const runs = (side: "right" | "left") => holdRuns(rt, "a")[side];
 
-  it("cổ tay, khuỷu là `actJoints` như `check` đo; kẹp như `handReport`; tâm món như vẽ", () => {
+  it("cổ tay, khuỷu là `actJoints` như `check` đo; khớp chạm giới hạn như `handReport`; tâm món như vẽ", () => {
     for (const t of [0.5, 1.3, 2.5]) {
       for (const side of ["right", "left"] as const) {
         const s = trailSample(rt, "a", side, { t }, runs(side));

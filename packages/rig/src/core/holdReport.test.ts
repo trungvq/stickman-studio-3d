@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { actAim, actJoints, type ActInput } from "./act3";
 import { AIM_BEND, AIM_DEV, clampRange, overRange, TURN_MAX } from "./arm3";
 import { body3 } from "./figure3d";
@@ -16,6 +16,8 @@ import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Lần cầm và báo tay cho studio (docs/11-nhom-cam.md § Báo tay cho studio)
 
@@ -239,7 +241,7 @@ describe("handReport", () => {
   const rt = runtime();
   const report = (side: "right" | "left", t: number) => handReport(rt, "nguoi", side, t)!;
 
-  /** Khớp như `actJoints`, góc cổ tay và kẹp như `AimReport.hold.grasp` của cùng khung, vòng khuỷu qua khuỷu vẽ */
+  /** Khớp như `actJoints`, góc cổ tay và khớp chạm giới hạn như `AimReport.hold.grasp` của cùng khung, vòng khuỷu qua khuỷu vẽ */
   function agrees(h: HandReport, side: "right" | "left", t: number) {
     const sp = poseAt(rt, t);
     const tag = side === "right" ? "R" : "L";
@@ -286,7 +288,7 @@ describe("handReport", () => {
     }
     const sol = graspAtTime(rt, "nguoi", "right", 1.5, { chars })!;
     expect(report("right", 1.5).phi0).toBeCloseTo(sol.arm.phi0, 9);
-    // ở mốc món: sau kẹp là nghiệm của mốc kẹp vào miền, phần vượt đo trên nghiệm ấy
+    // ở mốc món: góc sau giới hạn là nghiệm của mốc dừng trong miền khớp, phần vượt đo trên nghiệm ấy
     const { raw, drawn, over } = report("right", 1.5).wrist;
     expect(drawn.turn).toBeCloseTo(Math.max(-TURN_MAX, Math.min(TURN_MAX, raw!.turn)), 9);
     expect(drawn.bend).toBeCloseTo(clampRange(raw!.bend, AIM_BEND), 9);

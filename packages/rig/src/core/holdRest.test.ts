@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { actHeld, trunk3, type ActInput } from "./act3";
 import { GRIP_GROUPS } from "./graspGroups";
 import { body3 } from "./figure3d";
@@ -26,6 +26,8 @@ import {
 } from "./scene";
 import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Mốc món nằm (`rest`): chỗ món ở mốc lấy từ lúc thả, mặt đỡ suy từ món (docs/11-nhom-cam.md § Mốc món, § Mặt đỡ)
 

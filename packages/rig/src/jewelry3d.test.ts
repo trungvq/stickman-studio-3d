@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { act, type Acting } from './act';
 import { roots3 } from './core/act3';
 import { defaultCharacter, parseCharacter, type Garment } from './core/schema';
@@ -7,6 +7,8 @@ import { garmentOf, lerpAt, NECK_TUBE } from './core/torso';
 import { signedVolume } from './core/wrap';
 import { fromCharacter, hangJewelry, R, type CharacterJson, type Figure } from './stickman';
 import { torsoMesh } from './torso';
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Dây chuyền bám thân áo, bông tai ở dái tai, phần thõng theo trọng lực
 

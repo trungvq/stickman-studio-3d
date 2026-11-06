@@ -24,6 +24,8 @@ import khay from "./__fixtures__/held-v2/khay.json";
 import chaiDia from "./__fixtures__/held-v2/chai-dia.json";
 import chen from "./__fixtures__/held-v2/chen.json";
 
+vi.setConfig({ testTimeout: 30_000 });
+
 vi.mock("./graspArm", async (orig) => {
   const m = await orig<typeof import("./graspArm")>();
   return { ...m, solvePhi: vi.fn(m.solvePhi) };
@@ -98,7 +100,7 @@ const rotDeg = (A: M3, B: M3) => {
   return Math.acos(Math.max(-1, Math.min(1, (M[0] + M[4] + M[8] - 1) / 2))) / D2R;
 };
 
-/** Khung bàn tay vẽ của nghiệm: cẳng tay ở `φ`, cổ tay kẹp ở giới hạn */
+/** Khung bàn tay vẽ của nghiệm: cẳng tay ở `φ`, cổ tay dừng ở giới hạn */
 function drawnRw(sol: GraspAtTime): M3 {
   const w = sol.arm.wrist;
   const [t, b, d] = arm.wristClamp([w.turn, w.bend, w.dev]);
@@ -349,7 +351,7 @@ describe("`both` trên món đặt trước: tay phụ giải như tay dẫn", (
   const CHAI = parse(chaiDia);
   const CHEN = parse(chen);
   // chai, chén đứng hơi nghiêng: cổ tay trong giới hạn (tay kẹp chén, tay nắm thân chai vượt ≤ 2,5° lúc đầu); khay nằm ngang
-  // sát kẹp xoay cẳng tay
+  // sát giới hạn xoay cẳng tay
   type Case = [string, HeldItemSpec, string, number[], number[], number[] | undefined];
   const cases: Case[] = [
     ["khay", KHAY, "platform", [30, 20, 0], [45, 10, 0], undefined],

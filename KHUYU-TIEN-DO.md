@@ -476,14 +476,20 @@ studio3d `grab.test.ts` 2 (đã biết).
   `t02-s017-goi` của jp-sukatto (`around` 150, `roll` `top` về `[-0.3, -1, 0]`, `elbow`, `elbowLock`), đầu quay 40° thì cổ
   tay `turn` kẹp, ý định nhường, mặt máy lệch 150° khỏi hướng vào đầu (cảnh thật giây 0,5–0,9, Yota ngó quanh: 132–161°).
   Sửa xong thì đổi ca ấy về `it`.
-- **Ống nghe áp tai khi đầu quay ra xa tay cầm** (ca `around` 180 của test, không `roll`): mặt máy vẫn quay vào đầu, nhưng
-  trục máy lệch đường tai – miệng 24° (đầu quay 20°) tới 37° (40°), đầu thẳng 8°. Test chỉ đòi < 15° ở đầu thẳng.
+- **Ống nghe áp tai khi đầu quay về phía tay cầm** (ca `around` 180 của test, không `roll`): mặt máy vẫn quay vào đầu, trục
+  máy lệch đường tai – miệng 24° (đầu quay 20°) tới 37° (40°), đầu thẳng 8°, quay ra xa tay ≤ 10°. Rig chọn góc xoay máy
+  quanh mặt máy theo cổ tay thoải mái nhất, không theo đường tai – miệng; cổ tay không chạm giới hạn, ý định không nhường.
+  Chủ dự án soi ảnh (2026-11-06): trông ổn, không sửa. Cần ép thì cảnh khai `roll` với `toward: { mark: "mouth" }`.
 - **Tay phụ `both` nên nằm phẳng hơn**: lòng tay phụ lệch hướng đỡ 12,7° (chai đỡ đáy), 18,4° (điện thoại), 27,6° (khay, ngón
-  27,7°); cảnh thật khay `t02-s053`–`s057` ~11°, chồng khăn `t02-s136` ~31°. Không thấy ở khung toàn cảnh; làm khi có cảnh cận
-  tay đỡ chai, khay (tập 4). Tăng `W_MISS` đã thử: khuỷu nhảy, bàn tay lật (mục "Bước 4").
+  27,7°); cảnh thật khay `t02-s053`–`s057` ~11°, chồng khăn `t02-s136` ~31°. Tăng `W_MISS` đã thử: khuỷu nhảy, bàn tay lật
+  (mục "Bước 4"). Soi ảnh cận (2026-11-06, `scratchpad/item5/to-1-ca-test.png`, `to-2-canh-that.png`): ca test, khay, chồng khăn,
+  máy chẩn đoán trông ổn. Chỗ lạ duy nhất: rót có tay đỡ đáy (`pour-serve`, đo ở `t03-s008`) lệch 34,5°, tới 50° khi chai
+  nghiêng — tay đỡ thành nắm tay tì góc bên chai, cổ tay chạm giới hạn (gập 70, lệch −30). Tập 4 cận đúng kiểu này ở S37, S148
+  (`can-ly`). Chưa sửa, chờ chủ dự án chọn: (1) `W_MISS` riêng cho tay phụ `both`; (2) bỏ hướng ngón khi tay phụ đỡ đáy tròn, cho
+  bàn tay tự xoay quanh lòng tay (cần hãm tốc độ xoay); (3) món nghiêng một phần về phía tay phụ; (4) ở cảnh tập 4: rót một tay,
+  khung cận để tay đỡ ra ngoài, hay rót nghiêng ít. `held/chai-vang.json` chưa khai `roles: pourer` nên `gen pour` chưa sinh được.
 - Đo t03, `stickman check`; bảng 29 tư thế đủ ba góc đã chụp nhưng chưa soi hết từng ô.
-- Vòng review (Codex `gpt-6-astra`) và vòng sửa theo review của đợt bỏ `AIM_ITER` (`e31f9e6`) chưa chạy: làm ở phiên sau, agent
-  code chỉ chạy trên Claude Work.
+- Vòng review và vòng sửa theo review của đợt bỏ `AIM_ITER` (`e31f9e6`) chưa chạy: làm ở phiên sau.
 
 ## Khuỷu khai nhạt dần: rải đều (2026-11-05, chưa commit)
 
@@ -544,3 +550,96 @@ studio3d `grab.test.ts` 2 (đã biết).
     mà ca so `toEqual` cả object). Theo luật giao việc: dừng, chưa sửa ca ấy (sửa: thêm `high: sol.frame.high` vào object mong
     đợi, hay bỏ `high` khỏi `GraspReport` và lấy đầu cao chỗ khác). MCP 15/15, studio `keys.test` xanh; typecheck, lint, format
     sạch.
+
+## 11 việc sau `2853a6c` (2026-11-06, đã commit trên `dev`)
+
+Ảnh, script đo ở scratchpad phiên `82659988-…/scratchpad/item*/`. Repo video `jp-sukatto` đo qua `pnpm rig local`; tập 2, 3 đã
+xong nên cảnh t02/t03 chỉ là bộ đo.
+
+1. `holdScene` "ý định vượt tầm cổ tay": lỗi làm tròn `toFixed(6)` của mẫu trước, nới 1e-3 (`35b10fd`). Rig đúng (15,0000000°).
+2. "kẹp" → "chạm / vượt / sát giới hạn" trong chuỗi, comment, tên test; docs 742, 987, 997, 1168 viết lại (`a142117`). Không
+   chuỗi nào vào khoá baseline.
+3. Ống nghe lật ra sau gáy (`t02-s017-goi`): `elbow` khai gần trùng trục vai → tai (177–179°) nên góc xoay khuỷu vô định. Sửa
+   `elbow` 4 cảnh (repo video `757c8f4`), luật `check` `elbowAxis` + `aimYield` quá 90° gợi ý đổi `elbow`; ca `it.fails` thành
+   ca kiểm `check` báo (`df131e0`). Còn 11 tay t02 bị `elbowAxis` báo, chưa soi (takumi trái s016, s023–s025).
+4. Ống nghe lệch má khi đầu quay về phía tay cầm (24° ở 20°, 37° ở 40°): rig giữ trục món dọc đường tai – miệng khi không khai
+   `roll` (`earLineCost` ở chọn góc xoay và chọn khuỷu, `178aa6f`); sửa tay trôi sau mốc cuối và khuỷu lật ở `thu-nhom-cam`
+   (`EAR_SETTLE_SHARP`, `ff6261b`). Ca test ±40° hai tay ≤ 7,5°; cầm không áp tai và cảnh khai `roll` lệch 0. Còn, có từ trước:
+   tay từ ngực lên tai khi đầu quay về phía tay (khuỷu nhảy 75–100 px/khung), điện thoại lật ở `thu-nhom-cam` 5,6 s; tư thế
+   cuối `thu-nhom-cam` cổ tay gập 59° (giới hạn 60°).
+   - Đo lại (2026-11-06, chưa sửa; chủ dự án: ca khó, ít dùng, không cần sửa). Ca: `sample-man`, tay phải cầm
+     `dien-thoai@palmBox` từ ngực (`world.hands` 0,5 s) lên tai (`to: ear`, `point: item:speaker`, 1,5 s), đầu quay về
+     phía tay 0/20/40°; so HEAD `6713b29`, `2853a6c`, `f7ccb83`. Ảnh `/tmp/claude-1000/ear-lift/img/` (`cận-dau-0.png`,
+     `cận-dau-40.png`: ba hàng f7ccb83 / 2853a6c / HEAD, 0,933–1,017 s mỗi 1/60 s).
+   - Hành động chung `phone-ear-3d`, `phone-ear-out-3d` (đầu 0, ±10, ±20, 40°): khuỷu đi liền theo cổ tay (khuỷu dời
+     ≈ cổ tay mỗi khung), không lật; ba bản gần như trùng (đích theo mốc thân nên `earLineCost` không vào).
+   - Đường `world.hands` ngực → tai: `f7ccb83` đầu 0° êm, đầu 20/40° khuỷu nhảy 80–114 px/khung (cổ tay 12) — chỗ ghi
+     "75–100" là của bản này. Từ `e31f9e6` (có ở `2853a6c` và HEAD) khuỷu hết nhảy riêng nhưng cả bàn tay lật: cổ tay
+     dời 26 px (đầu 0°, HEAD; `2853a6c` hai lần 25 và 62 px) tới 52–55 px qua lại trong 4 khung (đầu 40°) ở chỗ cổ tay
+     chạm giới hạn (xoay −90, lệch −30), khuỷu theo cổ tay. Thấy rõ trên hình cả ở đầu thẳng; HEAD không tệ hơn
+     `2853a6c`. Gốc nghi (chưa kiểm): bàn tay đã nhường đổi nhánh, cổ tay đặt theo bàn tay ấy với điểm `item:speaker` xa
+     cổ tay nên dời theo. Đây là kiểu `thu-nhom-cam` 5,6 s.
+5. Tay phụ `both`: ca test, khay, chồng khăn, máy chẩn đoán trông ổn, không sửa (xem mục việc còn mở ở trên: `pour-serve`).
+6. `high`: tay phụ `both` không mang `high` (test khẳng định), `validate`/`check` báo `high` vuông góc mọi cạnh khớp hay nhóm không
+   dùng, test `sheet`/`platform` (`210e2a3`). Studio đọc `high` từ báo cáo đúng (lệch 0, 4 ca).
+7. Ngưỡng 30° của `edgeHigh`: đầu cao chọn một lần ở mốc mở lần cầm, giữa lần cầm không đổi; 8 chỗ nghi nhảy soi ảnh, mp4
+   không thấy. Thêm cảnh báo lần cầm mở sát ranh giới (< 5°) mà cảnh khai số đo theo đầu cao (`704a32e`, 0 dòng trên 168 cảnh).
+8. Món theo mốc lệch vì cổ tay chạm giới hạn: luật `held` `mark` (40°, 10; `2787e82`). Mới bắt 3/8 chỗ erika: `check` lấy
+   `lens` trong JSON, không lấy ống kính của `world.ts`, nên 5 cảnh coi tay ngoài khung (cũng gặp ở `t03-s135` mục 3). Dùng ống
+   kính thật thì 8/8 nhưng mọi luật `held` +77/−17 dòng trên t02/t03: việc riêng, chưa làm.
+9. Studio 3D: ＋ đặt `at` lên mép tầm với khi dáng ở ngoài mép; nhãn tầm với giữ trong khung (390 px); nhãn đủ mọi luật held
+   (`939da23`). Còn: khoá khuỷu trên vòng khuỷu khi mốc chưa có `at` vẫn ghi `at` không dò mép; `#msg` dài đè đáy khung ở 390 px.
+10. Test nặng: `vi.setConfig({ testTimeout: 30_000 })` ở 37 file nặng, giữ 5 s cho phần còn lại (`d5082a1`).
+11. Tạp dề dài lúc quỳ: nằm theo đùi, qua gối, gập xuống sàn (`drapeFloor`, `kneelOn`, `drape` theo hướng lên thân,
+    `f24bcb6`); đứng, đi, váy thường lệch 0. Còn: hai test `hem3d` mới vẫn qua trên code trước (phần giữ thật ở `hem.test.ts`);
+    nếp gập trên sàn nhìn ngang hơi như giọt nước; váy thường, vạt quấn quỳ vẫn xuống dưới sàn 1–3 px.
+
+## `check` đo qua ống kính vẽ ra (2026-11-06, việc 8 của mục trên)
+
+Commit `1c1d34c` trên `dev`; gate xanh (lint còn 1 cảnh báo có từ trước ở `scaffold/src/khoi3d/Scene3D.tsx`).
+
+- Gốc: luật đo trên hình đọc `scene.lens` của JSON, còn hình vẽ bằng `WorldSpec.lens` của `world.ts` repo video (t02/t03 cắt
+  góc máy bằng `lens(t)`, `catGoc`, `dayLens`…). Không cần Chromium: `check` vốn dựng `buildWorld` trong Node cho `held`.
+- Sửa: lõi thêm `SceneRuntime.lensAt`, `lensAt(rt, t)` (không có thì `scene.lens`), `lensRadians`, `seenPose` (đặt `world.lens`
+  và mắt như `buildWorld`). `buildWorld` điền `rt.lensAt` từ `spec.lens` (`seeing` dùng `seenPose`). Đọc qua nó: `sceneHeld`
+  (bàn tay trong khung), `sceneMotion` (khớp chiếu ra pixel, lên hình, mắt cho ý định nhìn ống kính), `heldFrame` (mắt theo
+  giây), `worldAt` của cli và `sceneClashes` / `sceneItemClashes` của fx (khung; khối lớp vẽ code vẫn dựng qua `scene.lens`,
+  `viewLens` của `solidClashes` / `solidItemClashes`). `lensCuts`: cặp khung mà một thành phần ống kính đổi gấp 4 lần trung vị
+  3 cặp mỗi bên là chỗ cắt, không đo giật qua nó (cắt sang máy đang chạy, hai lần đổi bậc liền nhau cũng bắt; lia đều thì
+  không). `move` dựng cảnh three khi repo có `stickman.world` (chủ dự án chọn 2026-11-06: hai lượt phải ra cùng dòng);
+  module hỏng / `worldOf` ném thì dòng báo nói rõ giật, khuỷu đo qua `scene.lens`. Test: `heldAudit`, `snap` (`lensCuts`,
+  ngoài khung, đổi bậc trùng cú cắt), `world` (`lensAt` điền / xoá), `solidClashes` (`viewLens`), `groups.test.mjs` (`move`
+  nạp cảnh three, module hỏng là lỗi). Docs 03, 05, 10.
+- Số `check` t02+t03 (129 cảnh, `--skip episode`, dòng): 733 → 1035 (1 lỗi như cũ). Theo luật (trước → sau, +khoá/−khoá):
+  `held` 125 → 185 (oppose 9 → 36 +28/−1, sink 22 → 36 +20/−6, mark 12 → 17 +6/−1, pierce 1 → 6, role 27 → 31, face 10 → 12,
+  wrist 15 → 17, loose 1 → 2, reach 4 → 5, jump 8 → 7 +2/−3, body 11 → 11 +2/−2, arm 4 → 4); khuỷu 494 → 665 (aimYield
+  319 → 417 +45/−31, armStraight 62 → 133 +21/−5, còn lại ±1–2); giật 61 → 132 (+64/−13 khoá; chưa có `lensCuts` là 612).
+  `--only clash`: người lồng vào đồ 278 → 456 (+244/−66), tay xuyên thân 105 → 108. `held mark` erika: 8/8 (s003b, s091,
+  s118, s122–s125, s129; trước 3/8).
+- Thời gian: lượt mặc định 354 → 297 s đồng hồ (nhiễu máy; dựng cảnh three 149 → 129 s cộng dồn); `--only move` 181 s, trong
+  đó dựng cảnh three 115 s cộng dồn ≈ +11% so với không dựng; `--only move` ra đúng các dòng `move` của lượt đủ (so 100%).
+  `--only clash` 329 → 319 s.
+- Phân loại (ảnh ở `/tmp/claude-1000/lens-check/img/`, dải 4 khung t−2/60…t+1/60 hay hai giây):
+  - Dòng mất: đều đúng — tay, người ngoài khung thật hay cú cắt ống kính: `jump-s033-230`, `jump-s034-2116`, `jump-s042-185`,
+    `snapgone-s116-8488` (cắt góc máy, 260 px), `snapgone-s082-2367`, `snapgone-s046-107`, `gone-s109-bodam`,
+    `gone-s114-bodam` (cảnh sát trong hình là `trung-si`; tay `canh-sat-vien` chiếu ra x 1401, ngoài khung), `gone-s102feed`,
+    `gone-s116feed` (khung tường của cảnh feed), `gone-s004-kep`, `gone-s057-khay`.
+  - Giật thêm: thấy trên hình — `s050-3757` (tay phải buông → cầm máy trong một khung, 391 px), `snap-s033-037`,
+    `snap-s041-723`, `snap-s118-2032`, `snap-s008-615`, `snap-s139-002` (đầu quay ở khung 0→1), `jump-s043-500` (bút hiện ra
+    khi tay rời khung). Đúng theo luật mà không thấy: khớp bị che hay nằm trong lề 5% dưới mép (`snap-s019-6255` tay sau xe
+    đẩy, `snap-s143-1080` khuỷu sau thùng, `snap-s100-157` gối sau túi, `snap-s023-1012` gối dưới mép khung). Nhiều dòng thêm
+    là cận cảnh: cùng chuyển động 3D lên to hơn nên vượt 12 px.
+  - `held` thêm: phép đo không đổi, chỉ khác bàn tay nào trong khung. Thấy trên hình: `held-s091` (mark 46°), `held-s124`,
+    `held-s133` (biển tên nghiêng 43°), `crop-s050-523` (ngón cái lún vào máy chẩn đoán, pierce 3.8), `crop-s148-6` (ngón
+    tay đỡ lún đáy máy, sink 1.8), `held-s115` (sổ hở tay). Khuất: `held-s123` (điện thoại sau lưng erika), `jump-s009-4036`
+    (ống nghe sau quầy). Thừa của luật có từ trước (cùng dạng đã có ở `kep-ho-so` trước thay đổi): `oppose` báo máy chẩn đoán
+    đặt trên hai lòng tay (`held-s143-may`, `held-s148-may`: món tựa lòng tay, không cần ngón cái kẹp) và báo tờ báo
+    `bao@sheet` rim (`held-s082-bao`, `held-s095-bao`, 13 dòng `ong-khach`).
+  - `clash` thêm: phần lớn thấy (`clash-s050` người lồng xe đẩy 45, đầu xuyên khung xe 53; `clash-s100` cảnh sát đi xuyên cửa
+    vào). `clash-s099` người đứng trong vật `ngoai-troi` (khối ngoài trời của repo, không thấy trên hình — việc của repo
+    khai `touch` / `noCollide`), `clash-s019` cẳng tay khuất sau người.
+- Còn mở (cần chủ dự án quyết): (1) `check` không đo che khuất (khớp, bàn tay sau người / đồ vẫn tính lên hình) — có từ trước,
+  giờ lộ nhiều hơn ở cận cảnh; (2) `oppose` cho món tựa lòng tay (palmBox hai tay đỡ dưới đáy) và tờ báo rim — đổi luật hay
+  khai riêng; (3) `sceneAt` bên trong vẫn giải phần ý định `camera` của chỗ cầm nhóm theo mắt `scene.lens` (chỉ `act` dùng mắt
+  thật, `scene.ts` ~5907) — cả render lẫn `check`, chưa kiểm có lệch hình không; (4) lớp SVG (`fx`, lớp vẽ code, `anchorAt`) vẫn chiếu qua `scene.lens` trong render nên lệch
+  người khi `WorldSpec.lens` khác (repo video đang tự chiếu, `goc-t03-lo.ts`).

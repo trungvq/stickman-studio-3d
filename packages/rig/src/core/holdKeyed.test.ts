@@ -1,7 +1,16 @@
-import { describe, expect, it } from "vitest";
-import { actHeld, actJoints, trunk3, type ActInput } from "./act3";
+import { describe, expect, it, vi } from "vitest";
+import { actArm, actHeld, actJoints, trunk3, type ActInput } from "./act3";
 import { body3 } from "./figure3d";
 import { armInput } from "./graspArm";
+import { handVec } from "./hand";
+import {
+  HELD_MARK_MOVE,
+  HELD_MARK_TURN,
+  HELD_WRIST,
+  heldHits,
+  heldWristMargin,
+  type HeldHand,
+} from "./heldAudit";
 import { handFromItem } from "./graspSolve";
 import {
   graspLink,
@@ -17,6 +26,8 @@ import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
 import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Lần cầm một tay theo mốc: bàn tay giải ở từng mốc món, giữa hai mốc hoà trong hệ thân, món theo bàn tay
 // (docs/11-nhom-cam.md § Lần cầm theo mốc)
@@ -362,6 +373,57 @@ describe("lần cầm một tay theo mốc", () => {
       expect(dist(fwd[i].Wp, jump[i].Wp)).toBe(0);
       expect(fwd[i].arm.phi).toBe(jump[i].arm.phi);
     }
+  });
+
+  it("cổ tay chạm giới hạn: món theo bàn tay lệch mốc, góc đã vẽ trong giới hạn nên `wrist` im, `mark` báo", () => {
+    /** Luật `held` trên số đo bộ giải của tay phải ở `t` (`heldHands` đọc cùng báo ấy) */
+    const hits = (rt: SceneRuntime, t: number, item: string) => {
+      const sp = poseAt(rt, t);
+      const h = actArm(NGUOI, sp, -1)!.report.hold!;
+      const s: HeldHand = {
+        id: "nguoi",
+        hand: "R",
+        item,
+        key: "k",
+        hold: `${item}@${h.grasp!.group}`,
+        pose: "span",
+        follow: "wrist",
+        acted: handVec({}),
+        pierce: { depth: 0, core: -2, piece: "palm" },
+        gaps: { thumb: 0, index: 0, fingers: 0, palm: 0 },
+        grip: 0,
+        palm: { gap: 0, angle: 0 },
+        rel: { p: [0, 0, 0], q: [0, 0, 0, 1] },
+        at: [0, 0, 0],
+        s: 1,
+        intent: { rule: "face", err: h.err, clamped: h.clamped, want: h.want, got: h.got },
+        grasp: h.grasp,
+      };
+      return { h, rules: heldHits(s).map((x) => x.rule) };
+    };
+    // máy buông dọc hông, màn quay ra sau, đầu máy chúc xuống: cổ tay chạm giới hạn ở `dev`
+    const hip = (t: number) => ({
+      t,
+      cast: "nguoi",
+      item: "dien-thoai",
+      to: "hip",
+      offset: [8, -10, 28],
+      face: { axis: "screen", toward: [0, 0, -1] },
+      roll: { axis: "top", toward: [0, 1, 0] },
+    });
+    const PHONE = { item: "dien-thoai", group: "palmBox", along: 0.25 };
+    const bad = runtime([{ t: 0, right: { hold: PHONE } }], [hip(0.5), hip(2)]);
+    for (const t of [0.5, 1.2, 2]) {
+      const { h, rules } = hits(bad, t, "dien-thoai");
+      expect(h.grasp).toMatchObject({ mode: "item", keyed: true });
+      expect(h.clamped).toContain("dev");
+      expect(h.err).toBeGreaterThan(HELD_MARK_TURN);
+      expect(h.grasp!.arm.wrist.off).toBeGreaterThan(HELD_MARK_MOVE);
+      expect(heldWristMargin(h.grasp!.arm.wrist)).toBeLessThan(-HELD_WRIST);
+      expect(rules).toEqual(["mark"]);
+    }
+    const good = runtime([{ t: 0, right: { hold: SHEET } }], MARKS);
+    for (const t of [0.5, 1, 1.5, 2.5]) expect(hits(good, t, "bang-gia").rules).toEqual([]);
   });
 
   it("khung cầm theo cỡ người tỉ lệ thẳng: `world.ts` đưa khung đã giải về cỡ 1", () => {

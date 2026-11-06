@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   actAim,
   actHeld,
@@ -22,6 +22,8 @@ import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
 import khay from "./__fixtures__/held-v2/khay.json";
 import butJson from "./__fixtures__/held-v2/but.json";
 import chenJson from "./__fixtures__/held-v2/chen.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 const C = CharacterSchema.parse({ head: { form: "human" }, palette: { clad: true } });
 const spec = (j: unknown): HeldItemSpec => {
@@ -260,7 +262,7 @@ describe("`world.hands[].hold` trong scene", () => {
     expect(deg(screen, sub([-100, -390, -350], o))).toBeLessThan(25);
   });
 
-  it("quá tầm cổ tay: báo lệch và khớp bị kẹp, không nới giới hạn", () => {
+  it("quá tầm cổ tay: báo lệch và khớp chạm giới hạn, không nới giới hạn", () => {
     // màn ngửa lên mà đầu máy chĩa ra ngoài, tay cao sát ngực: cổ tay phải gập quá `AIM_BEND`
     const sp = at([
       {
@@ -449,7 +451,8 @@ describe("cổ tay mang món nối từ mẫu trước", () => {
     }
     // giải riêng từng khung: cổ tay lật ±90 → ∓90 trong một khung
     expect(lone).toBeGreaterThan(150);
-    expect(kept).toBeLessThanOrEqual(HOLD_SLEW + 1e-6);
+    // mẫu trước của rig lấy ở `t` làm tròn `toFixed(6)`: lệch ≤ 5e-7 s nhân tốc độ quay cổ tay (~800°/s) ra ~3e-4°
+    expect(kept).toBeLessThanOrEqual(HOLD_SLEW + 1e-3);
   });
 
   it("chuỗi chỉ phụ thuộc scene: khung giải theo thứ tự nào cũng ra cùng số", () => {

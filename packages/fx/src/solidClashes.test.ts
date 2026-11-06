@@ -226,6 +226,13 @@ describe("solidClashes: người 3D lồng vào đồ khối", () => {
       expect(h.other?.id).toBe("b");
     }
     expect(solidClashes(lens, [], [person, moved(400)], { tol: 2 })).toEqual([]);
+    // khung đo qua ống kính vẽ ra (`viewLens`): quay đi chỗ khác thì người ra ngoài khung
+    const view = { x: -640, y: -360, w: 1280, h: 720 };
+    const away = { ...lens, cx: lens.cx + 5000 };
+    expect(solidClashes(lens, [], [person, moved(8)], { tol: 2, view })).toEqual(hits);
+    expect(solidClashes(lens, [], [person, moved(8)], { tol: 2, view, viewLens: away })).toEqual(
+      [],
+    );
   });
 });
 
@@ -285,5 +292,12 @@ describe("solidItemClashes: đồ lồng vào đồ", () => {
     // cốc lún 3 vào khay: độ lấn 3 > 2 nhưng chỉ 15% thân cốc
     expect(solidItemClashes(lens, [tray, cup(-11)], { tol: 2, ratio: 0.2 })).toEqual([]);
     expect(solidItemClashes(lens, [tray, cup(-11)], { tol: 2, ratio: 0.1 })).toHaveLength(1);
+  });
+
+  it("khung đo qua ống kính vẽ ra (`viewLens`): cặp ngoài khung ấy không báo", () => {
+    const view = { x: -640, y: -360, w: 1280, h: 720 };
+    const away = { ...lens, cx: lens.cx + 5000 };
+    expect(solidItemClashes(lens, [tray, cup(0)], { tol: 2, view })).toHaveLength(1);
+    expect(solidItemClashes(lens, [tray, cup(0)], { tol: 2, view, viewLens: away })).toEqual([]);
   });
 });

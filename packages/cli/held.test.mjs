@@ -141,7 +141,7 @@ describe("check: đồ cầm tay chỗ cầm nhóm", () => {
     assert.match(rows[0].key, /^held:reach\|a\|R\|bang-gia$/);
   });
 
-  it("`wrist` vượt kẹp là lỗi, `arm` chỉ là cảnh báo", () => {
+  it("`wrist` vượt giới hạn là lỗi, `arm` chỉ là cảnh báo", () => {
     const over = grasp({ wrist: { turn: 100, bend: 0, dev: 0, over: 10, off: 2.5 } });
     const rows = run([v2({ grasp: over })]);
     assert.deepEqual(
@@ -245,5 +245,64 @@ describe("check: dáng tay của thư viện ở `keys[].hand`", () => {
         "actions/la.json: `keys[].hand` gọi dáng tay `khong-co` — không phải dáng có sẵn của rig (`HAND_POSES`), không có `hands/khong-co.json` (docs/01-rig.md#dáng-tay-có-tên)",
       ],
     );
+  });
+});
+
+describe("check: đầu cao của cạnh rig chọn sát ranh giới luật", () => {
+  const CORE = resolve(dirname(fileURLToPath(import.meta.url)), "../rig/src/core/__fixtures__");
+  const workspace = (slope, hold) => {
+    const dir = mkdtempSync(join(tmpdir(), "high-check-"));
+    for (const d of ["actions", "scenes", "characters", "held"]) mkdirSync(join(dir, d));
+    const json = (rel, v) => writeFileSync(join(dir, rel), JSON.stringify(v));
+    json("package.json", { name: "x" });
+    json(
+      "characters/nguoi.json",
+      JSON.parse(readFileSync(join(CORE, "nguoi-cam-bang.json"), "utf8")).character,
+    );
+    json(
+      "held/dien-thoai.json",
+      JSON.parse(readFileSync(join(CORE, "held-v2/dien-thoai.json"), "utf8")),
+    );
+    const D = Math.PI / 180;
+    json("scenes/cam.json", {
+      duration: 1,
+      lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
+      cast: [
+        {
+          id: "a",
+          character: "nguoi.json",
+          world: {
+            at: [250, 0, 506],
+            yaw: 280,
+            hands: [{ t: 0, left: { hold: { item: "dien-thoai", group: "palmBox", ...hold } } }],
+          },
+        },
+      ],
+      items: [
+        {
+          t: 0.5,
+          cast: "a",
+          item: "dien-thoai",
+          to: "chest",
+          offset: [40, 20, -20],
+          face: { axis: "screen", toward: [0, 0, 1] },
+          roll: { axis: "top", toward: [-Math.cos(slope * D), -Math.sin(slope * D), 0] },
+        },
+      ],
+    });
+    return dir;
+  };
+  const lines = async (dir) =>
+    (await checkWorkspace({ dir, only: "ref" })).problems
+      .filter((p) => /đầu cao của cạnh/.test(p.msg))
+      .map((p) => `${p.level} ${p.msg}`);
+
+  it("mốc mở dốc 27°, cảnh khai `along`, `thumb`: cảnh báo; khai `high` thì không", async () => {
+    const said = { along: 0.3, thumb: "left" };
+    const near = await lines(workspace(27, said));
+    assert.equal(near.length, 1);
+    assert.match(near[0], /^cảnh báo scenes\/cam\.json: a: tay trái .*khai `high: "bottom"`/);
+    assert.deepEqual(await lines(workspace(27, { ...said, high: "bottom" })), []);
+    assert.deepEqual(await lines(workspace(40, said)), []);
   });
 });

@@ -2,6 +2,7 @@
 // `itemValueAt`), rồi dựng lại cảnh với mốc mới, đo và bù `at` (Broyden) tới khi tâm nắm, cổ tay, món ở giây ấy lệch
 // không quá `PLUS_TOL`; không bù được thì chặn, kèm giây gần nhất thêm được. README.md § Dáng tay.
 import {
+  handReport,
   holdBlending,
   type ActCharacter,
   type HandSide,
@@ -43,6 +44,8 @@ export interface PlusResult {
   notes: string[];
   /** Lệch còn lại ở giây ấy: tâm nắm, cổ tay (mốc tay) hay tâm món (mốc món) */
   gap: { grip?: number; wrist?: number; item?: number };
+  /** Dáng đang vẽ quá mép tầm với: điểm đặt (`point`) đưa về mép theo hướng vai → bàn tay, dời chừng này (đơn vị rig) */
+  edge?: number;
 }
 
 const sub = (a: readonly number[], b: readonly number[]): V3 => [
@@ -135,13 +138,47 @@ function pullBack(
   return best.x;
 }
 
+/** Bàn tay coi là tới đích khi tâm nắm vẽ ra cách đích không quá chừng này (đơn vị rig); số lần chia đôi khi dò mép */
+export const EDGE_TOL = 0.25;
+const EDGE_STEPS = 14;
+
+/**
+ * Mép tầm với trên đoạn vai `S` → `want`: điểm xa vai nhất mà đích đặt ở đó thì tâm nắm vẽ ra tới đúng đích (`got`, lệch
+ * ≤ `EDGE_TOL`), chia đôi. Gần duỗi hết, soft IK của rig cho bàn tay dừng hụt đích: đích xa hơn mép là điểm ma giữa không
+ * trung. `want` tới được hay bàn tay không hụt về phía vai thì `undefined`; không thấy điểm nào tới được cũng `undefined`
+ */
+export function reachEdge(
+  S: V3,
+  want: V3,
+  got: (x: V3) => V3 | undefined,
+  f0 = got(want),
+): V3 | undefined {
+  if (!f0 || dist(f0, want) <= EDGE_TOL) return undefined;
+  if (dist(f0, S) >= dist(want, S) - EDGE_TOL) return undefined;
+  const at = (k: number) => want.map((v, i) => S[i] + (v - S[i]) * k) as V3;
+  let [lo, hi, ok] = [0, 1, false];
+  for (let i = 0; i < EDGE_STEPS; i++) {
+    const k = (lo + hi) / 2;
+    const x = at(k);
+    const f = got(x);
+    if (f && dist(f, x) <= EDGE_TOL) [lo, ok] = [k, true];
+    else hi = k;
+  }
+  return ok ? at(lo) : undefined;
+}
+
 const same = (a: number, b: number) => Math.abs(a - b) < 5e-4;
 
 const worst = (g: { grip: number; wrist: number }) => Math.max(g.grip, g.wrist);
+/** Lệch của một bản thử: mốc ở mép tầm với thì lệch của điểm đặt so với mép (hình ở `t` buộc phải đổi) */
+const miss = (m: { g: { grip: number; wrist: number }; edge?: { at: V3; got: V3 } }) =>
+  m.edge ? dist(m.edge.got, m.edge.at) : worst(m.g);
 
 /**
  * Mốc tay mới ở `t` lệch ít nhất: thử giá trị của `handValueAt` rồi các bản thay thế (`alts`); bản có `at` thì bù `at` theo
- * điểm đặt (`point`). Tay đã có mốc ở `t` thì lỗi (bên gọi mở thẻ mốc ấy)
+ * điểm đặt (`point`). Dáng đang vẽ quá mép tầm với (soft IK cho bàn tay dừng hụt đích) thì `at` đặt ở mép theo hướng vai →
+ * bàn tay (`reachEdge`), trùng bàn tay vẽ ra, như kéo tay nắm: `edge` là khoảng điểm đặt dời về mép. Tay đã có mốc ở `t`
+ * thì lỗi (bên gọi mở thẻ mốc ấy)
  */
 function handAt(
   raw: Json,
@@ -158,40 +195,61 @@ function handAt(
     const d = drawnHand(o.rebuild(r.raw), id, side, t, o);
     return d && { r, d, g: { grip: dist(d.grip, d0.grip), wrist: dist(d.wrist, d0.wrist) } };
   };
+  const S = d0.blending ? undefined : handReport(rt, id, side, t, o)?.joints.shoulder;
   const tries: (Json | null)[] = [value, ...alts];
-  let best: (NonNullable<ReturnType<typeof measure>> & { shift: number }) | undefined;
+  type Try = NonNullable<ReturnType<typeof measure>> & {
+    shift: number;
+    edge?: { at: V3; got: V3; d: number };
+  };
+  let best: Try | undefined;
   for (const v of tries) {
-    let m = measure(v);
-    if (!m) continue;
-    let shift = 0;
+    const m0 = measure(v);
+    if (!m0) continue;
+    let m: Try = { ...m0, shift: 0 };
     if (isObj(v) && Array.isArray(v.at) && worst(m.g) > 0.05) {
       const p = v.point === "wrist" ? "wrist" : "grip";
-      const at = fitPoint(v.at as V3, d0[p], (x) => {
+      const got = (x: V3) => {
         try {
           return measure({ ...v, at: x })?.d[p];
         } catch {
           return undefined;
         }
-      }).map(r2) as V3;
+      };
+      // bàn tay đang vẽ hụt đích về phía vai: `at` ở mép, không phải điểm ma giữa không trung
+      const edge = S && reachEdge([...S] as V3, [...d0[p]] as V3, got);
+      const at = (edge ? fitPoint(edge, edge, got) : fitPoint(v.at as V3, d0[p], got)).map(
+        r2,
+      ) as V3;
       const m2 = measure({ ...v, at });
-      if (m2 && worst(m2.g) < worst(m.g)) [m, shift] = [m2, dist(at, v.at as V3)];
+      if (m2) {
+        const c: Try = {
+          ...m2,
+          shift: dist(at, v.at as V3),
+          ...(edge && { edge: { at: edge, got: m2.d[p], d: dist(edge, d0[p]) } }),
+        };
+        if (edge || miss(c) < miss(m)) m = c;
+      }
     }
-    if (!best || worst(m.g) < worst(best.g)) best = { ...m, shift };
-    if (worst(best.g) <= 0.05) break;
+    if (!best || miss(m) < miss(best)) best = m;
+    if (miss(best) <= 0.05) break;
   }
   if (!best) return fail("không dựng được cảnh với mốc mới");
-  if (best.shift > 1)
+  if (best.edge)
+    notes.push(
+      `dáng đang vẽ quá mép tầm với: \`at\` đặt ở mép (hướng vai → bàn tay), bàn tay dời ${best.edge.d.toFixed(1)} px`,
+    );
+  else if (best.shift > 1)
     notes.push(
       d0.blending
         ? `tay đang hoà sang lần cầm mới (\`HOLD_BLEND\`): đích \`at\` dời ${best.shift.toFixed(1)} px khỏi điểm đang vẽ để bù phần hoà — hết quãng hoà bàn tay tới đúng \`at\` ấy`
         : `đích \`at\` dời ${best.shift.toFixed(1)} px khỏi điểm đang vẽ để bàn tay ở giây này không đổi`,
     );
-  return { m: best, g: best.g, notes, d0 };
+  return { m: best, g: best.g, miss: miss(best), edge: best.edge?.d, notes, d0 };
 }
 
 /**
- * Thêm mốc tay `side` của `id` ở `t`, hình ở `t` giữ nguyên (tâm nắm và cổ tay lệch ≤ `PLUS_TOL`). Không giữ được thì ném
- * lỗi nêu lý do và giây gần nhất thêm được
+ * Thêm mốc tay `side` của `id` ở `t`, hình ở `t` giữ nguyên (tâm nắm và cổ tay lệch ≤ `PLUS_TOL`; dáng quá mép tầm với
+ * thì bàn tay về mép, `edge`). Không giữ được thì ném lỗi nêu lý do và giây gần nhất thêm được
  */
 export function plusHand(
   raw: Json,
@@ -201,16 +259,16 @@ export function plusHand(
   t: number,
   o: PlusOptions,
 ): PlusResult {
-  const { m, g, notes, d0 } = handAt(raw, rt, id, side, t, o);
+  const { m, g, miss: e, edge, notes, d0 } = handAt(raw, rt, id, side, t, o);
   const tol = o.tol ?? PLUS_TOL;
-  if (worst(g) <= tol) return { raw: m.r.raw, key: m.r.key, notes, gap: g };
+  if (e <= tol) return { raw: m.r.raw, key: m.r.key, notes, gap: g, ...(edge && { edge }) };
   const why = d0.blending
     ? `tay đang hoà sang lần cầm mới (\`HOLD_BLEND\`), bù đích không giữ được hình`
     : "mốc mới không giữ được hình";
   const near = nearestOk(
     t,
     o,
-    (c) => worst(handAt(raw, rt, id, side, c, o).g) <= tol,
+    (c) => handAt(raw, rt, id, side, c, o).miss <= tol,
     (c) => holdBlending(rt, id, side === "right" ? "R" : "L", c) || hasHandKey(rt, id, side, c),
   );
   return fail(

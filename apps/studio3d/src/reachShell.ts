@@ -1,6 +1,6 @@
 // Mép tầm với của bàn tay đang kéo (Dáng tay, lúc dời tay nắm), chỉ để xem: mặt cầu mờ quanh vai và đường viền quay về
 // camera, bán kính ước từ soft IK của rig (`ARM_SOFT`) cộng cổ tay → tâm nắm. Tay nắm ra ngoài mép thì viền hổ phách, chấm
-// là chỗ bàn tay sẽ dừng (mép theo hướng vai → tay nắm); chỗ dừng thật dò lúc thả (`reachEdge` của `drag.ts`).
+// là chỗ bàn tay sẽ dừng (mép theo hướng vai → tay nắm); chỗ dừng thật dò lúc thả (`reachEdge` của `plus.ts`).
 import * as rig from "@stickman3d/rig";
 import type { HandReport } from "@stickman3d/rig";
 import * as THREE from "three";

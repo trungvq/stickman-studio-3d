@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import stand3dJson from "../../../../common/actions/stand-3d.json";
 import {
   defaultCharacter,
+  ELBOW_AXIS,
+  elbowAxisTrack,
   elbowLine,
   elbowTrack,
   parseAction,
@@ -167,6 +169,60 @@ describe("elbowTrack", () => {
       ),
     ).toEqual([]);
   });
+
+  it("nhường quá 90° mà khuỷu theo `elbow` khai: dòng `aimYield` gợi ý đổi hay bỏ `elbow`; không khai, hay nhường ít hơn, giữ lời cũ", () => {
+    const line = (over: Partial<ElbowFrame>) => {
+      const out = elbowTrack(
+        "a",
+        "left",
+        track(
+          60,
+          () => 0,
+          (i) => ({ solved: true, ...(i >= 10 && i < 30 && over) }),
+        ),
+        FPS,
+      );
+      expect(out.map((e) => e.rule)).toEqual(["aimYield"]);
+      return elbowLine(out[0]);
+    };
+    const hint = /khuỷu theo `elbow` khai — .*đổi `elbow`.*hay bỏ `elbow`/;
+    expect(line({ yield: 150, elbowK: 1, elbowAxis: 40 })).toMatch(hint);
+    expect(line({ yield: 150 })).not.toMatch(hint);
+    expect(line({ yield: 150, elbowK: 0.3, elbowAxis: 40 })).not.toMatch(hint);
+    expect(line({ yield: 60, elbowK: 1, elbowAxis: 40 })).not.toMatch(hint);
+  });
+});
+
+describe("elbowAxisTrack", () => {
+  /** Tay rig giải, phần khai `1`, hướng khai cách trục `axis` độ ở khung `10..39` và `40°` ngoài đó; `over` đè từng khung */
+  const axisTrack = (axis: number, over: (i: number) => Partial<ElbowFrame> = () => ({})) =>
+    elbowAxisTrack(
+      "a",
+      "left",
+      track(
+        60,
+        () => 0,
+        (i) => ({ solved: true, elbowK: 1, elbowAxis: i >= 10 && i < 40 ? axis : 40, ...over(i) }),
+      ),
+      FPS,
+    );
+
+  it("hướng khai cách trục vai → đích dưới `ELBOW_AXIS` liền từ `ELBOW_AXIS_S`: một dòng, kể cả khi tay ngoài khung hình", () => {
+    const out = axisTrack(3);
+    expect(out.map((e) => [e.rule, e.from, e.to])).toEqual([["elbowAxis", 10 / FPS, 39 / FPS]]);
+    expect(out[0].detail).toEqual([3]);
+    expect(elbowLine(out[0])).toMatch(/gần trùng đường vai → đích \(cách 3\.0°/);
+    expect(axisTrack(3, () => ({ onElbow: false, onHand: false })).length).toBe(1);
+  });
+
+  it("xa trục, quãng ngắn hơn `ELBOW_AXIS_S`, phần khai nhỏ, tay không do rig giải hay ngoài cặp khung lên hình: không báo", () => {
+    expect(axisTrack(ELBOW_AXIS + 5)).toEqual([]);
+    expect(axisTrack(3, (i) => ({ elbowAxis: i >= 10 && i < 14 ? 3 : 40 }))).toEqual([]);
+    expect(axisTrack(3, () => ({ elbowK: 0.3 }))).toEqual([]);
+    expect(axisTrack(3, () => ({ solved: false }))).toEqual([]);
+    expect(axisTrack(3, () => ({ pair: false }))).toEqual([]);
+    expect(axisTrack(3, () => ({ elbowK: undefined, elbowAxis: undefined }))).toEqual([]);
+  });
 });
 
 const action = (json: unknown): ActionData => {
@@ -204,5 +260,37 @@ describe("sceneMotion", () => {
     expect(breathing([40, -230, -60]).map((e) => [e.rule, e.hand])).toEqual([
       ["armStraight", "right"],
     ]);
+  });
+
+  /** Người 3D đứng thở, tay trái áp tai (`to: "ear"`, lòng tay vào đầu) với `elbow` hệ thân ấy */
+  function ear(elbow: number[]) {
+    const r = parseScene({
+      duration: 2,
+      lens: LENS,
+      cast: [
+        {
+          id: "a",
+          world: {
+            at: [0, 0, 0],
+            yaw: 155,
+            hands: [
+              { t: 0, left: { to: "ear", offset: [0, 0, 3], elbow, palm: { toward: "head" } } },
+            ],
+          },
+          tracks: [{ clips: [{ action: "stand-3d", start: 0 }] }],
+        },
+      ],
+    });
+    if (!r.success) throw new Error(r.error.message);
+    const rt = resolveScene(r.data, ACTIONS);
+    return sceneMotion(rt, { characterOf: () => defaultCharacter(), elbows: true }).elbows;
+  }
+
+  it("áp tai, `elbow` dọc trục vai → tai: `elbowAxis`; khuỷu xuống và ra trước thì không", () => {
+    // hướng tai → vai của người mẫu ở dáng này, hệ thân `[tiến, xuống, ra ngoài]`
+    const along = ear([0.04, 0.98, -0.21]);
+    expect(along.filter((e) => e.rule === "elbowAxis").map((e) => e.hand)).toEqual(["left"]);
+    expect(along.find((e) => e.rule === "elbowAxis")!.detail![0]).toBeLessThan(1);
+    expect(ear([0.56, 1, 0.05]).filter((e) => e.hand === "left")).toEqual([]);
   });
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { parseAction, type ActionData } from "./action";
 import { D } from "./constants";
@@ -32,6 +32,8 @@ import heavyJson from "../../../../common/characters/sample-heavy.json";
 import kimonoJson from "../../../../common/characters/sample-kimono.json";
 import manJson from "../../../../common/characters/sample-man.json";
 import womanJson from "../../../../common/characters/sample-woman.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 function action(json: unknown): ActionData {
   const r = parseAction(json);

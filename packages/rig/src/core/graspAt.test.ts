@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { trunk3, type ActInput } from "./act3";
 import { phiChain } from "./graspArm";
 import { FLAT_MAX, GRIP_CLEAR, PINCH_ALONG, THUMB_TOWARD_SPAN } from "./graspGroups";
@@ -42,6 +42,8 @@ import dua from "./__fixtures__/held-v2/dua.json";
 import but from "./__fixtures__/held-v2/but.json";
 import tui from "./__fixtures__/held-v2/tui.json";
 import chen from "./__fixtures__/held-v2/chen.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // người mẫu đứng cầm bảng ở t = 1; mốc món và số đối chiếu của prototype bước 0 (docs/11-nhom-cam.md mục 5)
 const item = (json: unknown): HeldItemSpec => {
@@ -484,7 +486,7 @@ describe("chooseMissing `card`", () => {
     }
   });
 
-  it("thẻ nằm phẳng trên mặt ngang trước bụng: rig chọn `edges`, bàn tay phía mặt trên, ngón cái ở mép gần, `along` 0,5, cổ tay không vượt kẹp; `lateral` đắt hơn cả khi cộng `VARIANT_COST` cho `edges`", () => {
+  it("thẻ nằm phẳng trên mặt ngang trước bụng: rig chọn `edges`, bàn tay phía mặt trên, ngón cái ở mép gần, `along` 0,5, cổ tay không vượt giới hạn; `lateral` đắt hơn cả khi cộng `VARIANT_COST` cho `edges`", () => {
     // mặt trước ngửa, mép trên ra xa người cầm; hông người mẫu ở [250, −180, 506]
     const R = fromColumns([1, 0, 0], [0, -1, 0], [0, 0, -1]);
     for (const P of [

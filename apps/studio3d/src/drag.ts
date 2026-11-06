@@ -30,7 +30,7 @@ import {
   type KeyRef,
   type V3,
 } from "./keys";
-import { fitPoint, plusHand, plusItem, PLUS_TOL, type PlusOptions } from "./plus";
+import { fitPoint, plusHand, plusItem, reachEdge, PLUS_TOL, type PlusOptions } from "./plus";
 
 /** Dời `d` rồi quay `R` quanh tâm nắm, thế giới rig */
 export interface Move {
@@ -96,7 +96,7 @@ const WRIST_NAME = { turn: "xoay", bend: "gập", dev: "lệch" } as const;
 
 /**
  * Bàn tay xoay chưa tới: khung bàn tay sau khi áp (`after`) lệch khung muốn (`R` áp lên khung trước `before`) quá 2° và quá
- * một phần mười góc muốn — cổ tay kẹp (`clamped`) hay món vượt kẹp. Trả dòng báo, tới thì `undefined`
+ * một phần mười góc muốn — cổ tay chạm giới hạn (`clamped`) hay món xoay quá giới hạn. Trả dòng báo, tới thì `undefined`
  */
 export function turnShort(
   R: M3,
@@ -108,12 +108,12 @@ export function turnShort(
   const miss = turnOf(matMul(handFrame(after), transpose(matMul(R, handFrame(before)))));
   if (miss <= Math.max(2, want * 0.1)) return undefined;
   const why = clamped.length
-    ? `cổ tay kẹp ${clamped.map((k) => WRIST_NAME[k]).join(", ")}`
+    ? `cổ tay chạm giới hạn ${clamped.map((k) => WRIST_NAME[k]).join(", ")}`
     : "cổ tay hết miền khớp";
   return `bàn tay chỉ xoay được ~${Math.max(0, want - miss).toFixed(0)}° / ${want.toFixed(0)}° (lệch ${miss.toFixed(0)}°), ${why}`;
 }
 
-/** Xoay chưa tới sau khi áp `raw`: so bàn tay trước (`rt0`) và sau, đọc khớp kẹp ở cảnh mới */
+/** Xoay chưa tới sau khi áp `raw`: so bàn tay trước (`rt0`) và sau, đọc khớp chạm giới hạn ở cảnh mới */
 function turnNote(
   R: M3 | undefined,
   rt0: SceneRuntime,
@@ -176,35 +176,6 @@ function handBase(
 
 /** Đích mốc tay cách tâm nắm vẽ ra quá chừng này (đơn vị rig) thì báo: bàn tay không với tới, chỉ duỗi về phía đích */
 const REACH_FAR = 5;
-/** Bàn tay coi là tới đích khi tâm nắm vẽ ra cách đích không quá chừng này (đơn vị rig); số lần chia đôi khi dò mép */
-export const EDGE_TOL = 0.25;
-const EDGE_STEPS = 14;
-
-/**
- * Mép tầm với trên đoạn vai `S` → `want`: điểm xa vai nhất mà đích đặt ở đó thì tâm nắm vẽ ra tới đúng đích (`got`, lệch
- * ≤ `EDGE_TOL`), chia đôi. Gần duỗi hết, soft IK của rig cho bàn tay dừng hụt đích: đích xa hơn mép là điểm ma giữa không
- * trung. `want` tới được hay bàn tay không hụt về phía vai thì `undefined`; không thấy điểm nào tới được cũng `undefined`
- */
-export function reachEdge(
-  S: V3,
-  want: V3,
-  got: (x: V3) => V3 | undefined,
-  f0 = got(want),
-): V3 | undefined {
-  if (!f0 || dist(f0, want) <= EDGE_TOL) return undefined;
-  if (dist(f0, S) >= dist(want, S) - EDGE_TOL) return undefined;
-  const at = (k: number) => want.map((v, i) => S[i] + (v - S[i]) * k) as V3;
-  let [lo, hi, ok] = [0, 1, false];
-  for (let i = 0; i < EDGE_STEPS; i++) {
-    const k = (lo + hi) / 2;
-    const x = at(k);
-    const f = got(x);
-    if (f && dist(f, x) <= EDGE_TOL) [lo, ok] = [k, true];
-    else hi = k;
-  }
-  return ok ? at(lo) : undefined;
-}
-
 /**
  * Đích thật của mốc tay `key` ở `t` (thế giới rig) khi `point` là tâm nắm: `at`, hay mốc thân `to` + `offset`
  * (`markPoint`); điểm khác hay mốc không có đích thì `undefined`
@@ -296,7 +267,7 @@ export function anchorHand(
   );
   const notes =
     fit.gap > PLUS_TOL
-      ? [`tâm nắm lệch hình cũ ${fit.gap.toFixed(1)} px (ngoài tầm với hay cổ tay kẹp)`]
+      ? [`tâm nắm lệch hình cũ ${fit.gap.toFixed(1)} px (ngoài tầm với hay cổ tay chạm giới hạn)`]
       : [];
   return { raw: fit.raw, key, added: false, notes, gap: fit.gap };
 }
@@ -431,7 +402,9 @@ export function dragHand(
       `chỗ thả quá mép tầm với: tâm nắm đưa về mép (hướng vai → chỗ thả), cách chỗ thả ${edge.toFixed(1)} px`,
     );
   else if (fit.gap > PLUS_TOL)
-    notes.push(`tâm nắm còn lệch chỗ thả ${fit.gap.toFixed(1)} px (ngoài tầm với hay cổ tay kẹp)`);
+    notes.push(
+      `tâm nắm còn lệch chỗ thả ${fit.gap.toFixed(1)} px (ngoài tầm với hay cổ tay chạm giới hạn)`,
+    );
   const far = reachNote(fit.raw, b.key, t, o, id, side, d1.blending);
   if (far) notes.push(far);
   const short = turnNote(mv.R, b.rt, fit.raw, id, side, t, o);

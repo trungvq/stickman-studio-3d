@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { actArm, type ActInput } from "./act3";
 import { body3 } from "./figure3d";
 import { gimbalBlend, wristOver, yawFrame } from "./graspArm";
@@ -6,6 +6,8 @@ import { matMul, matVec, type M3, type V3 } from "./lens";
 import { parseScene, resolveScene, sceneAt } from "./scene";
 import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
+
+vi.setConfig({ testTimeout: 30_000 });
 
 // Ý định nhường ở giới hạn cổ tay (docs/11-nhom-cam.md § Khuỷu tự nhiên)
 

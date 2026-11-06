@@ -1270,6 +1270,11 @@ button.key.diamond .keytip {
   color: #ffd54f;
 }
 
+/* nhãn mép tầm với: gizmo.ts đặt góc trên trái, giữ trong khung */
+.grabtag.reach {
+  transform: none;
+}
+
 /* vệt của bàn tay đang chọn (Dáng tay): lớp 2D phủ khung vẽ, ô bật / cửa sổ và chú thích ở góc dưới trái */
 #frame canvas.trails {
   position: absolute;

@@ -143,7 +143,7 @@ three của từng cảnh, không lấy mẫu khối người, không mở luồ
 | Nhóm | Luật | Cần dựng |
 |---|---|---|
 | `ref` | tham chiếu chéo (nhân vật, hành động, nền, `fx`, `equip`), version pin, file giống bộ chung, bộ đồ của nhân vật; công tắc `equip` một chiều, hai track cùng ghi một socket, khuỷu gập ngược khi giơ tay, mốc ngoài `mask`, hành động tự giật, mốc khai không ai neo, người 3D diễn hành động không soạn ở `side`; tay cầm hai tay (`both`) trong khi tay kia cầm món khác; lớp vẽ code bật cho cảnh không có, thư mục sidebar | JSON, runtime, gói lớp vẽ code |
-| `move` | người 3D trượt, không tới mốc dừng, khởi hành và dừng giật, thân quay gắt, clip đi hoà vào khi `path` đã chạy, `yaw` mốc lệch hướng đi; tay chân giật trên hình; khuỷu rung, lật, gập ngược, bàn tay lật, tay duỗi hết tầm hay co sát thân | runtime, khớp người theo thời gian |
+| `move` | người 3D trượt, không tới mốc dừng, khởi hành và dừng giật, thân quay gắt, clip đi hoà vào khi `path` đã chạy, `yaw` mốc lệch hướng đi; tay chân giật trên hình; khuỷu rung, lật, gập ngược, bàn tay lật, tay duỗi hết tầm hay co sát thân | runtime, khớp người theo thời gian, cảnh three (ống kính vẽ ra) |
 | `held` | đồ cầm tay sai: ngón xuyên, món hở, tâm nắm xa, ý định không đạt, tay phụ hay `item:` không tới, món nhảy qua mốc `hold`, cầm món không ai `provide`; chỗ cầm nhóm (`món@nhóm`) thêm da lún, ngón vai trò hở, cổ tay vượt giới hạn hay sát giới hạn, tay lấn thân, món to so với tay; đường cũ thêm dáng khác dáng khai, món trôi | runtime, cảnh three |
 | `legacy` | đồ cầm còn đi đường cũ (`hold` gọi tay không có chỗ cầm nhóm), một dòng mỗi cảnh | runtime, cảnh three |
 | `roles` | vai trò của đồ của cảnh ([13](13-vai-tro-do.md#7-check-mcp-hai-lớp)): `roles` hỏng zod hay vật có vai trò mà phép đặt nghiêng, cỡ không đều, lật (lỗi, dòng mang entry `stickman.world` và tên vật); mặt ngồi, tay vịn, để chân, mặt trên bàn không nằm trên mặt trên của khối cùng vật (dò dọc xuống, khe quá `2`), mặt trước lưng ghế cách mặt khối cùng vật quá `2` (cảnh báo); người ngồi có điểm ngồi chiếu vào trong một mặt ngồi (nới `2 · s`) mà lệch độ cao quá `1 · s` (cảnh báo). Ngưỡng của đồ là đơn vị rig thế giới. Người ngồi trên đồ không khai `seat` không ra dòng nào | runtime, cảnh three (mỗi `0,25 s` cho người ngồi, mỗi `1 s` cho zod và lệch hình) |
@@ -156,7 +156,7 @@ chính nó là phép kiểm tham chiếu chéo của `ref`, và nó rẻ so vớ
 luật của tay: nó đo chung một lượt với người lồng vào đồ (`sceneClashes` trên khối người, giây lấy mẫu chia nhỏ theo vật
 của cảnh three dời), ngưỡng ở `stickman.clash.self`. Lòng tay và hướng ngón `check` không đo — soi và sửa ở Studio 3D; khuỷu và cổ tay trên hình đo ở `move`
 ([03](03-scene.md#khuỷu-và-cổ-tay-trên-hình)). Cảnh three dựng một lần cho mọi nhóm cần nó (cùng `worldOf`, cùng `pose(t)`); dựng hỏng thì dòng báo mang nhóm đầu tiên
-trong `clash`, `held`, `legacy`, `roles` đang chạy. `held/<món>.json` và `hands/<tên>.json` hỏng là lỗi zod như mọi JSON; tên
+trong `clash`, `held`, `legacy`, `roles`, `move` đang chạy. `held/<món>.json` và `hands/<tên>.json` hỏng là lỗi zod như mọi JSON; tên
 dáng tay ngoài `[a-z0-9-]` hay trùng dáng có sẵn của rig cũng là lỗi, và dáng ấy không vào thư viện; hành động có
 `keys[].hand` gọi dáng không có sẵn mà cũng không có trong `hands/` của hai lớp là lỗi ở file hành động. Món, mốc, dáng tay
 mà scene trỏ tới không có, chỗ cầm không hợp lệ là lỗi `resolveScene`. `legacy` chạy cùng `held` thì đọc chung các tư thế đã đặt, chạy riêng thì
@@ -279,6 +279,14 @@ export function worldOf(sceneName: string, ctx: WorldCtx) {
   return spec ? buildWorld(ctx.scene, ctx.runtime, spec, ctx) : null;
 }
 ```
+
+**Ống kính của `check` là ống kính vẽ ra**: `buildWorld` điền `lensAt` của runtime từ `WorldSpec.lens` (giây nào nó
+trả `undefined` thì `scene.lens`), và mọi luật đo trên hình đọc nó — khớp chiếu ra pixel và lên hình hay không của `move`
+(giật, khuỷu, cổ tay), bàn tay trong khung của `held`, chỗ lấn trong khung của `clash`, mắt cho ý định nhìn ống kính. Cảnh
+cắt góc máy bằng `lens(t)` không cần khai thêm gì; cặp khung ống kính đổi bậc là chỗ cắt, không đo giật qua nó
+([03](03-scene.md#giật-trên-hình)). Vì vậy `move` cũng dựng cảnh three khi repo có `stickman.world`, và `--only move` ra
+đúng các dòng `move` của lượt đủ. Module hỏng là lỗi kèm tên module và lý do, `worldOf` ném ở một cảnh là cảnh báo ở cảnh
+ấy; cả hai dòng nói rõ giật, khuỷu trên hình khi ấy đo qua `scene.lens`.
 
 `worldOf` chạy trong Node, không trình duyệt, không webpack: code dựng bối cảnh và đồ riêng của repo không được đụng
 `document` (canvas đi qua `newCanvas` / `canvasTexture` của rig). Hợp đồng đủ — trường của `ctx`, cách gói, vật nào tự

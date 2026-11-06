@@ -102,7 +102,7 @@ describe("graspArm", () => {
     expect(x.body).toBe(0);
   });
 
-  it("ca c2 của bước 0: khung bàn tay ấy chỉ với tới bằng khuỷu gập ngược — khuỷu giữ dáng tự nhiên, cổ tay kẹp, `check` báo `wrist`", () => {
+  it("ca c2 của bước 0: khung bàn tay ấy chỉ với tới bằng khuỷu gập ngược — khuỷu giữ dáng tự nhiên, cổ tay chạm giới hạn, `check` báo `wrist`", () => {
     const { Wp, Rw } = handOf(fx.ca.c2, RIGHT);
     const x = solvePhi(inR, Wp, Rw);
     expect(x.inward).toBeLessThan(HELD_ELBOW);

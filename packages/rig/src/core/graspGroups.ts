@@ -323,7 +323,7 @@ export const HOOK_GAP = (2 * HAND_BONES.index.r) / (2 * HAND_BONES.palm.half[1])
 export const HOOK_TILT = 45;
 /**
  * `cylinder`: rig chọn ngón cái về đầu dưới (`thumb: "down"`, bàn tay ngược với món) hay `slant` khác mặc định cộng giá ngần
- * này — cỡ cổ tay vượt kẹp 30%
+ * này — cỡ cổ tay vượt giới hạn 30%
  */
 const OFF_COST = 1;
 /**
@@ -590,7 +590,7 @@ const SPECS: {
       }),
     },
     hands: "one",
-    // mặt thẻ về người cầm, ngửa `CARD_RISE`: ngửa hơn thì kẹp bên chỉ tới được bằng khuỷu gập ngược hay cổ tay vượt kẹp
+    // mặt thẻ về người cầm, ngửa `CARD_RISE`: ngửa hơn thì kẹp bên chỉ tới được bằng khuỷu gập ngược hay cổ tay vượt giới hạn
     intent: {
       face: { axis: "front", toward: CARD_FACE },
       roll: { axis: "top", toward: "up" },
