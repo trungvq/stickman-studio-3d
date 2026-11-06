@@ -567,6 +567,18 @@ xong nên cảnh t02/t03 chỉ là bộ đo.
    (`EAR_SETTLE_SHARP`, `ff6261b`). Ca test ±40° hai tay ≤ 7,5°; cầm không áp tai và cảnh khai `roll` lệch 0. Còn, có từ trước:
    tay từ ngực lên tai khi đầu quay về phía tay (khuỷu nhảy 75–100 px/khung), điện thoại lật ở `thu-nhom-cam` 5,6 s; tư thế
    cuối `thu-nhom-cam` cổ tay gập 59° (giới hạn 60°).
+   - Đo lại (2026-11-06, chưa sửa; chủ dự án: ca khó, ít dùng, không cần sửa). Ca: `sample-man`, tay phải cầm
+     `dien-thoai@palmBox` từ ngực (`world.hands` 0,5 s) lên tai (`to: ear`, `point: item:speaker`, 1,5 s), đầu quay về
+     phía tay 0/20/40°; so HEAD `6713b29`, `2853a6c`, `f7ccb83`. Ảnh `/tmp/claude-1000/ear-lift/img/` (`cận-dau-0.png`,
+     `cận-dau-40.png`: ba hàng f7ccb83 / 2853a6c / HEAD, 0,933–1,017 s mỗi 1/60 s).
+   - Hành động chung `phone-ear-3d`, `phone-ear-out-3d` (đầu 0, ±10, ±20, 40°): khuỷu đi liền theo cổ tay (khuỷu dời
+     ≈ cổ tay mỗi khung), không lật; ba bản gần như trùng (đích theo mốc thân nên `earLineCost` không vào).
+   - Đường `world.hands` ngực → tai: `f7ccb83` đầu 0° êm, đầu 20/40° khuỷu nhảy 80–114 px/khung (cổ tay 12) — chỗ ghi
+     "75–100" là của bản này. Từ `e31f9e6` (có ở `2853a6c` và HEAD) khuỷu hết nhảy riêng nhưng cả bàn tay lật: cổ tay
+     dời 26 px (đầu 0°, HEAD; `2853a6c` hai lần 25 và 62 px) tới 52–55 px qua lại trong 4 khung (đầu 40°) ở chỗ cổ tay
+     chạm giới hạn (xoay −90, lệch −30), khuỷu theo cổ tay. Thấy rõ trên hình cả ở đầu thẳng; HEAD không tệ hơn
+     `2853a6c`. Gốc nghi (chưa kiểm): bàn tay đã nhường đổi nhánh, cổ tay đặt theo bàn tay ấy với điểm `item:speaker` xa
+     cổ tay nên dời theo. Đây là kiểu `thu-nhom-cam` 5,6 s.
 5. Tay phụ `both`: ca test, khay, chồng khăn, máy chẩn đoán trông ổn, không sửa (xem mục việc còn mở ở trên: `pour-serve`).
 6. `high`: tay phụ `both` không mang `high` (test khẳng định), `validate`/`check` báo `high` vuông góc mọi cạnh khớp hay nhóm không
    dùng, test `sheet`/`platform` (`210e2a3`). Studio đọc `high` từ báo cáo đúng (lệch 0, 4 ca).
