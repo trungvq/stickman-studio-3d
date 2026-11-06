@@ -584,6 +584,8 @@ xong nên cảnh t02/t03 chỉ là bộ đo.
 
 ## `check` đo qua ống kính vẽ ra (2026-11-06, việc 8 của mục trên)
 
+Commit `1c1d34c` trên `dev`; gate xanh (lint còn 1 cảnh báo có từ trước ở `scaffold/src/khoi3d/Scene3D.tsx`).
+
 - Gốc: luật đo trên hình đọc `scene.lens` của JSON, còn hình vẽ bằng `WorldSpec.lens` của `world.ts` repo video (t02/t03 cắt
   góc máy bằng `lens(t)`, `catGoc`, `dayLens`…). Không cần Chromium: `check` vốn dựng `buildWorld` trong Node cho `held`.
 - Sửa: lõi thêm `SceneRuntime.lensAt`, `lensAt(rt, t)` (không có thì `scene.lens`), `lensRadians`, `seenPose` (đặt `world.lens`
