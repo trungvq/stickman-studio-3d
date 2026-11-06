@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 21,
+  "name": "scoff-3d",
+  "duration": 0.8,
+  "end": "hold",
+  "mask": ["torso", "head"],
+  "authoredAt": "side",
+  "snap": true,
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "torso": 0,
+        "head": [null, null, 0]
+      },
+      "ease": "bezier",
+      "bezier": [0.2, 0.7, 0.4, 1]
+    },
+    {
+      "t": 0.2,
+      "pose": {
+        "torso": -2,
+        "head": [null, null, -4]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 0.5,
+      "pose": {
+        "torso": -1,
+        "head": [null, null, -2]
+      },
+      "ease": "smooth"
+    },
+    {
+      "t": 1,
+      "pose": {
+        "torso": 0,
+        "head": [null, null, -1]
+      },
+      "ease": "linear"
+    }
+  ],
+  "events": [],
+  "note": "Cười khẩy qua mũi (hừ, coi thường) một lần, giật nhẹ: trong 0,16 s thân bật ra sau 2°, đầu ngửa 4°, lắng về thân −1°, đầu −2° lúc 0,4 s rồi về gần dáng nghỉ (thân 0°, đầu −1°) lúc 0,8 s, giữ; khai `snap` cho nhịp bật. Chỉ ghi `torso` và gật của `head`, nghiêng, lắc để trống; rig không có kênh nhún vai riêng nên nhịp bật nằm ở thân và đầu, tay để cảnh — chồng được lên tay đang cầm chai, ly, chống nạnh. Nền `stand-3d`, ngồi thì `sit-3d`. Chồng nét mặt `face-smirk` (hay `face-smug`) và `turn-head-*`; quay mặt đi theo một phía là `scoff-side-right-3d`, `scoff-side-left-3d`; vào blend ~0,04, hết clip thì buông bằng clip rỗng blend ~0,3.",
+  "preview": {
+    "stage": "stand"
+  }
+}

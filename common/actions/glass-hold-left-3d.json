@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 21,
+  "name": "glass-hold-left-3d",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["armLeft", "hand"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armLeft": [-6, 24, 0] },
+      "ease": "smooth",
+      "hand": { "armLeft": { "pose": "grip", "w": 0.4, "palm": "in" } }
+    },
+    {
+      "t": 0.5,
+      "pose": {},
+      "reach": {
+        "armLeft": {
+          "to": "belly",
+          "offset": [30, 6, 17],
+          "point": "grip",
+          "elbow": [-0.4, 1, 0.5]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armLeft": { "pose": "grip", "palm": "in" } }
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": {
+        "armLeft": {
+          "to": "belly",
+          "offset": [22, -12, 15],
+          "point": "grip",
+          "elbow": [-0.4, 1, 0.5]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armLeft": { "pose": "grip", "palm": "in" } }
+    }
+  ],
+  "events": [],
+  "note": "Đưa ly lên cầm trước bụng trên rồi giữ (dáng đứng cầm ly ở tiệc): tay trái từ tay buông của `stand-3d` nhấc lên trong 0,5 s, vòng qua trước bụng dưới (mốc `belly` offset [30, 6, 17] lúc nửa lượt, món không quệt bụng phệ) rồi tâm nắm đặt vào mốc `belly` offset [22, −12, 15] (`point: \"grip\"`), khuỷu gập ~90° sát sườn, chĩa xuống-sau-ngoài, dáng `grip` lòng tay quay vào. Chỉ ghi `armLeft`, `hand`. Nền `stand-3d`; món ở `world.hands[].hold` tay trái, ly có chân cầm ở chân ly (nhóm `cylinder`, `slant: 0`, `thumb: \"up\"`), ý định mặc định của nhóm giữ ly đứng. Người nền cầm sẵn từ giây 0 thì dùng `glass-hold-left-hold-3d`. Chồng được `turn-head-*`, `talk-pose-*`, nét mặt; uống bằng `drink-3d` với `mirror: true` (blend ~0,3), buông bằng clip rỗng blend ~0,4. Phía kia là `glass-hold-right-3d`. Sinh bằng `tools/actions/glass-hold.mjs`.",
+  "preview": {
+    "stage": "stand",
+    "hold": { "left": { "item": "coc", "group": "cylinder", "part": "than", "slant": 0 } }
+  }
+}

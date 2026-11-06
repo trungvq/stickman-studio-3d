@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 21,
+  "name": "pocket-take-inner-right-3d",
+  "duration": 1.1,
+  "end": "hold",
+  "mask": ["armRight", "hand"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {
+        "armRight": [-6, 24, 0]
+      },
+      "ease": "smooth",
+      "hand": {
+        "armRight": {
+          "pose": "open",
+          "w": 0.3,
+          "palm": "in"
+        }
+      }
+    },
+    {
+      "t": 0.15,
+      "pose": {},
+      "reach": {
+        "armRight": {
+          "at": [40, -66, 26],
+          "point": "grip",
+          "elbow": [-0.3, 0.8, 1]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armRight": {
+          "pose": "open",
+          "w": 0.5,
+          "palm": "back",
+          "fingers": [0.3, 0.3, -1]
+        }
+      }
+    },
+    {
+      "t": 0.3,
+      "pose": {},
+      "reach": {
+        "armRight": {
+          "to": "chest",
+          "offset": [16, -4, -8],
+          "point": "tip",
+          "elbow": [-0.3, 0.8, 1]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armRight": {
+          "pose": "open",
+          "w": 0.6,
+          "palm": "back",
+          "fingers": [0, 0, -1]
+        }
+      }
+    },
+    {
+      "t": 0.48,
+      "pose": {},
+      "reach": {
+        "armRight": {
+          "to": "chest",
+          "offset": [0, -4, -9],
+          "point": "tip",
+          "elbow": [-0.3, 0.8, 1]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armRight": {
+          "pose": "flat",
+          "w": 0.8,
+          "palm": "back",
+          "fingers": [-0.1, 0, -1]
+        }
+      }
+    },
+    {
+      "t": 0.6,
+      "pose": {},
+      "reach": {
+        "armRight": {
+          "to": "chest",
+          "offset": [0, -4, -9],
+          "point": "tip",
+          "elbow": [-0.3, 0.8, 1]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armRight": {
+          "pose": "pinch",
+          "w": 1,
+          "palm": "back",
+          "fingers": [-0.1, 0, -1]
+        }
+      }
+    },
+    {
+      "t": 0.66,
+      "pose": {},
+      "reach": {
+        "armRight": {
+          "to": "chest",
+          "offset": [0, -4, -9],
+          "point": "tip",
+          "elbow": [-0.3, 0.8, 1]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armRight": {
+          "pose": "pinch",
+          "w": 1,
+          "palm": "back",
+          "fingers": [-0.1, 0, -1]
+        }
+      }
+    },
+    {
+      "t": 0.78,
+      "pose": {},
+      "reach": {
+        "armRight": {
+          "to": "chest",
+          "offset": [26, -6, -4],
+          "point": "palm",
+          "elbow": [-0.3, 0.8, 1]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armRight": {
+          "pose": "pinch",
+          "w": 1,
+          "palm": "back",
+          "fingers": [0, 0.3, -1]
+        }
+      }
+    },
+    {
+      "t": 0.89,
+      "pose": {},
+      "reach": {
+        "armRight": {
+          "at": [56, -92, 8],
+          "point": "palm",
+          "elbow": [-0.4, 0.9, 0.8]
+        }
+      },
+      "ease": "smooth",
+      "hand": {
+        "armRight": {
+          "pose": "span",
+          "w": 0.7,
+          "palm": [-0.25, 0.58, -0.78],
+          "fingers": [0.41, -0.66, -0.63]
+        }
+      }
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": {
+        "armRight": {
+          "at": [64, -80, 12],
+          "point": "palm",
+          "elbow": [-0.5, 1, 0.5]
+        }
+      },
+      "ease": "linear",
+      "hand": {
+        "armRight": {
+          "pose": "span",
+          "w": 1,
+          "palm": [-0.22, 0.35, -0.91],
+          "fingers": [0.66, -0.64, -0.4]
+        }
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "pocket",
+      "t": 0.48
+    },
+    {
+      "name": "take",
+      "t": 0.7
+    }
+  ],
+  "note": "Rút món từ túi trong áo vest bằng tay phải: từ tay buông, tay vắt qua trước ngực (0,33 s), đầu ngón luồn dưới ve áo bên trái (mốc `chest`, `offset` [0, −4, −9], `point: \"tip\"`, lòng tay áp ngực, ngón chĩa sang trái) lúc 0,53 s (sự kiện `pocket`), nhón món (`pinch`) ở miệng túi tới 0,73 s, sự kiện `take` lúc 0,77 s, rút ra trước ngực (0,86 s) rồi hạ món xuống trước ngực dưới (hệ thân [64, −80, 12], `point: \"palm\"`) lúc 1,1 s, giữ. Chỉ ghi `armRight`, `hand`. Nền `stand-3d`, áo có ve (vest, blazer); món ở `world.hands[].hold` tay phải khai đúng ở sự kiện `take`, lúc tay vừa ra khỏi ve áo, như `dien-thoai@palmBox` với `face` màn về `{ mark: \"head\" }` — khai sớm hơn thì món hiện ngoài ve áo trong quãng hoà. Chồng `look-down-12-3d` cho đầu cúi nhìn món, xem máy tiếp thì nối `phone-use-3d`, buông bằng clip nền blend ~0,4; tay trái là `pocket-take-inner-left-3d`.",
+  "preview": {
+    "stage": "stand"
+  }
+}

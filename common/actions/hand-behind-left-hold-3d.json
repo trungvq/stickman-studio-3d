@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 21,
+  "name": "hand-behind-left-hold-3d",
+  "duration": 1,
+  "end": "hold",
+  "mask": ["armLeft", "hand"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "reach": {
+        "armLeft": { "to": "back", "offset": [-4, 6, 2], "point": "back", "elbow": [-0.6, 0.6, 1] }
+      },
+      "ease": "smooth",
+      "hand": { "armLeft": { "pose": "fist", "w": 0.5, "palm": "back" } }
+    }
+  ],
+  "events": [],
+  "note": "Chắp tay trái sau lưng (dáng bồi bàn, sommelier đứng hầu): mu tay (`point: back`) áp mốc `back` (giữa lưng ngang thắt lưng, offset [−4, 6, 2]), nắm hờ, lòng tay ra sau, khuỷu chĩa ra sau-ngoài; dáng cuối của `hand-behind-left-3d` từ giây 0, vào bằng blend của clip. Chỉ ghi `armLeft`, `hand`; tay kia để cảnh — cầm chai, chìa mời, chỉ bằng track hay `world.hands` của tay ấy. Nền `stand-3d` hay `walk`; mốc `back` theo áo (gồm bụng phệ) nên đúng mọi cỡ người. Chồng được cúi chào, đầu, nhún thân và cử chỉ chỉ ghi tay kia (`talk-forward-3d`, `wave-*`, `thumbs-up-3d`; tay kia là tay trái thì `mirror: true`); hành động mở từ tay chồng trước bụng (`invite-*`: mốc đầu `otherBack`) kéo tay kia ra sau lưng tìm mu tay này, đừng chồng. Buông bằng clip rỗng blend ~0,4. Cùng họ: `hand-behind-right-3d` tay kia, `-hold` dáng cuối từ giây 0, `hands-behind-3d` hai tay. Sinh bằng `tools/actions/hand-behind.mjs`.",
+  "preview": { "stage": "stand" }
+}

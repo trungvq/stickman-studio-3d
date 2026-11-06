@@ -1792,7 +1792,7 @@ Bộ chung soạn ở `side` (`authoredAt: "side"`) cho người 3D, đi theo pa
   `sit-3d-staggered`, `sit-lounge-3d`, `seiza-3d`, `seiza-hands-thighs-3d`; `sit-down-3d`, `stand-up-3d`, `kneel-*`,
   `squat-3d`, `seiza-stand-3d`.
 - **Đi, bước**: `walk`, `walk-short`, `run-3d`, `steps-3d`, `steps-back-3d`, `step-side-3d`.
-- **Tay để yên**: `hands-front-*`, `hands-hips-*`, `hands-behind-3d`, `arms-on-table-3d`, `elbows-on-counter-3d`.
+- **Tay để yên**: `hands-front-*`, `hands-hips-*`, `hands-behind-3d`, `hand-behind-*`, `arms-on-table-3d`, `elbows-on-counter-3d`.
 - **Thân**: `weight-shift-*`, `lean-in-*`, `lean-back-*`, `slump-*`, `bend-place-*`, `reach-over-*`, `lean-type-3d`,
   `sigh-*`.
 - **Cúi chào**: `bow-*`, `bow-hands-front-*`, `eshaku-3d`.
@@ -1803,9 +1803,9 @@ Bộ chung soạn ở `side` (`authoredAt: "side"`) cho người 3D, đi theo pa
   `wave-off-*`, `chop-air-3d`, `talk-beat-*`, bộ dáng thoại `talk-pose-*`.
 - **Chào, mời, gọi**: `invite-*`, `thank-clasp-3d`, `wave-*`, `call-out-*`, `raise-hand-3d`.
 - **Cảm xúc, cử chỉ**: `cower-3d`, `flinch-*`, `startle-*`, `head-in-hands-3d`, `facepalm-3d`, `cover-mouth-*`,
-  `cheer-*`, `clap-*`, `shrug-3d`, `spread-arms-3d`, `rub-hands-3d`, `thumbs-up-3d`, `scratch-head-3d`, `think-3d`,
+  `cheer-*`, `clap-*`, `shrug-3d`, `scoff-*`, `spread-arms-3d`, `rub-hands-3d`, `thumbs-up-3d`, `scratch-head-3d`, `think-3d`,
   `cry-3d`, `despair-3d`, `wipe-sweat-3d`, `adjust-glasses-3d`.
-- **Cầm đồ**: `phone-*`, `tray-*`, `folder-*`, `toast-3d`, `drink-3d`, `offer-cup-3d`, `pour-*`, `suitcase-*`, `bag-*`,
+- **Cầm đồ**: `phone-*`, `pocket-take-side-*`, `pocket-take-inner-*`, `tray-*`, `folder-*`, `glass-hold-*`, `toast-3d`, `drink-3d`, `offer-cup-3d`, `pour-*`, `suitcase-*`, `bag-*`,
   `write-3d`, `type-3d`.
 - **Hai người**: `whisper-*`, `pat-shoulder-*`, `handshake-3d`, `give-3d`, `receive-3d`.
 
@@ -1870,8 +1870,11 @@ Xem, chọn và đọc tên: [Xem và chọn](#xem-và-chọn), [Tên và hậu 
 | `phone-use-3d`, `phone-use-left-3d`, `phone-use-high-3d`, `phone-use-high-left-3d` | Cầm điện thoại xem trước ngực (`-high`: ngang ngực trên), ngón trỏ tay kia gõ màn theo mốc `otherGrip` (`point: "tip"`), ba cú mỗi lượt `1,4 s`, lặp. Sinh bởi `tools/actions/phone-use.mjs` |
 | `phone-show-3d` | Giơ màn điện thoại ra trước ngang ngực về người đối diện, dí thêm một nhịp, giữ |
 | `phone-film-3d` | Giơ điện thoại dọc lên ngang cằm quay phim, tay trái kẹp cạnh kia của máy (mốc `otherGrip`) |
+| `pocket-take-side-right-3d`, `pocket-take-side-left-3d` | Lấy món từ túi hông áo ngoài (gilê, blazer, áo khoác) bằng tay phải / tay trái: tâm nắm tới miệng túi trước sườn (mốc `hip`, offset `[24, −10, 0]`), khuỷu ra sau sát sườn, luồn ngón xuống túi (`[24, 8, −3]`, sự kiện `pocket` `0,45 s`), nhón bằng dáng `cupPinch`, rút ra từ sự kiện `take` (`0,6 s`) rồi đưa món lên trước bụng (mốc `belly`, `[24, −20, 14]`) lúc `1 s`, giữ. Cảnh bật `hold` ở `take` |
+| `pocket-take-inner-right-3d`, `pocket-take-inner-left-3d` | Rút món từ túi trong áo vest bằng tay phải / tay trái: tay vắt qua trước ngực, đầu ngón luồn dưới ve áo ngực bên kia (mốc `chest`, offset `[0, −4, −9]`, `point: "tip"`, sự kiện `pocket` `0,53 s`), nhón, rút ra từ sự kiện `take` (`0,77 s`) rồi hạ món xuống trước ngực dưới (hệ thân `[64, −80, 12]`, `point: "palm"`) lúc `1,1 s`, giữ. Cảnh bật `hold` ở `take` |
 | `tray-hold-3d`, `tray-hold-carry-3d` | Ôm khay dựng đứng trước bụng, hai tay kẹp hai mép (mốc `belly`, tay trái `otherGrip` cách `88`); `-carry` bưng khay ngang eo, hai lòng tay ngửa đỡ dưới hai mép (cách `78`). Giữ từ giây `0` |
 | `folder-hold-3d`, `folder-hold-rim-3d`, `folder-hold-read-3d` | Ôm kẹp hồ sơ dựng trước ngực, hai tay kẹp hai mép (mốc `chest`, tay trái `otherGrip` cách `52`): bốn ngón gập ở gốc nằm áp phẳng mặt bìa, ngón cái mặt sau (kiểu cầm có tên `kep-ho-so@sheet/ap-bia`); `-rim` bốn ngón cuộn vòng qua mép (`rim`); `-read` cầm ra trước, đầu cúi `20°` đọc |
+| `glass-hold-right-3d`, `glass-hold-left-3d` | Đứng cầm ly có chân ở tiệc: từ tay buông, tâm nắm đi qua trước bụng dưới (mốc `belly`, `[30, 6, 17]`) lên trước bụng trên (`[22, −12, 15]`, `point: "grip"`), khuỷu gập `~90°` sát sườn, chĩa xuống-sau-ngoài; `0,5 s` rồi giữ. `-hold` dáng cuối từ giây `0` cho người nền. Ly đứng do ý định mặc định của nhóm `cylinder` (cầm chân ly, `slant: 0`); sinh bởi `tools/actions/glass-hold.mjs` |
 | `toast-3d`, `drink-3d`, `offer-cup-3d` | Nâng ly chếch ra ngoài ngang miệng; đưa ly lên miệng (mốc `mouth`), đầu ngửa `14 → 18°`, hạ; chìa chén ra trước-ngoài nhận rót |
 | `pour-3d` | Rót một tay (nước, bia, rượu): tay phải nắm thân bình (mốc `chest`), ướm vòi vào miệng cốc giữa thân rồi nâng đuôi bình — bình xoay quanh chính miệng bình, cẳng tay sấp dần, khuỷu nhấc dần ra ngoài —, sự kiện `pour`, dựng lại; tay trái của nền. Bình theo cổ tay (`keep`, `slant: 0`, `along: 0.3`, `around` cho hướng vòi). Sinh bởi `tools/actions/pour.mjs`; cốc ở chỗ khác thì `stickman gen pour` ([Bộ sinh chung](#bộ-sinh-chung)) |
 | `pour-serve-3d`, `pour-serve-kneel-3d` | Rót mời khách hai tay: tay phải nắm thân bình (mốc `chest`), ướm vòi vào chén người nhận ở trước-phải rồi nâng đuôi bình quanh miệng bình, cẳng tay ngửa dần, khuỷu khép dần, thân cúi `3 → 5°`, sự kiện `pour`, dựng lại; tay trái đỡ đáy bằng `both: { group: "platform", psi: -90 }` của món. `-kneel` khi quỳ seiza. Sinh bởi `tools/actions/pour.mjs` |
@@ -1882,6 +1885,7 @@ Xem, chọn và đọc tên: [Xem và chọn](#xem-và-chọn), [Tên và hậu 
 | `clap-soft-3d`, `clap-3d`, `clap-big-3d` | Vỗ tay lặp: tay phải trước ngực (mốc `chest`), tay trái áp `otherPalm`, hai lòng tay `in` đối nhau, dáng `flat`; sự kiện `clap` lúc chạm, `snap`. Hai tay cách nhau lúc mở `10 / 24 / 60`, lượt `0,55 / 0,42 / 0,36 s`; bản khẽ tay thấp hơn, bản to cao hơn |
 | `cheer-3d`, `cheer-both-3d` | Hò reo: nắm đấm giơ chếch ngoài đầu thành chữ V (dang `122°`) ↔ nắm đấm ngang đỉnh đầu, gối nhún `20°`, lượt `0,5 s` lặp. Một tay (tay phải) hay hai tay; ghi tay, chân, thân, đầu |
 | `shrug-3d` | Nhún vai bó tay một lần: khuỷu `~100°` sát sườn, cẳng tay xoè ra ngoài, bàn tay ngửa (`turn` `−90`), giữ rồi buông về dáng tay của `stand-3d` lúc `1,4 s` |
+| `scoff-3d`, `scoff-side-right-3d`, `scoff-side-left-3d` | Cười khẩy qua mũi (hừ, coi thường), giật nhẹ: trong `0,16 s` thân bật ra sau `2°`, đầu ngửa `4°`, lắng về gần dáng nghỉ lúc `0,8 s`, giữ; khai `snap`. Chỉ ghi `torso` và gật của `head`, tay để cảnh (chồng lên tay cầm đồ). `-side-<right·left>` quay mặt đi về một phía, lắc `6 → 11°`, nghiêng `2°`, ghi cả ba góc đầu, `0,9 s` |
 | `spread-arms-3d` | Dang hai tay khoe chếch ra trước (dang `38°`), lòng tay ngửa, nảy một nhịp rồi giữ; thân ưỡn `−5°` |
 | `rub-hands-3d` | Xoa hai bàn tay trước ngực dưới, ngón chĩa ra trước: tay phải ở mốc `chest`, tay trái trượt tới-lui trên `otherPalm`, lượt `0,5 s` lặp. Chỉ ghi hai tay |
 | `thumbs-up-3d` | Giơ ngón cái: tay phải ra trước ngang ngực, dáng `thumbsUp`, nảy một nhịp rồi giữ. Chỉ ghi tay phải |
@@ -1891,6 +1895,7 @@ Xem, chọn và đọc tên: [Xem và chọn](#xem-và-chọn), [Tên và hậu 
 | `despair-3d` | Tuyệt vọng: thân gục `15°`, đầu cúi `18°` và lắc chậm `±14°` hai nhịp, tay buông thõng; lượt `3,2 s` lặp |
 | `wipe-sweat-3d` | Lau mồ hôi trán một lần: lòng tay quệt từ mép trán bên tay ra thái dương (mốc `forehead`), cẳng tay dựng cạnh mặt, tay phải vươn `1,3` để người đầu to với tới, đầu cúi `12°`, buông xuống cạnh thân về dáng tay của `stand-3d` lúc `1,4 s` |
 | `hands-behind-3d` | Chắp tay sau lưng: tay phải mu tay áp lưng, tay trái `clasp` nắm cổ tay tay phải (`otherWrist`, `point: "grip"`) |
+| `hand-behind-right-3d`, `hand-behind-left-3d` | Chắp một tay sau lưng, tay kia tự do (bồi bàn, sommelier đứng hầu): mu tay áp mốc `back` như tay phải của `hands-behind-3d`, nắm hờ, lòng tay ra sau; từ tay buông vòng ra sau hông (mốc `hip`) rồi vào lưng trong `0,5 s`, giữ. Chỉ ghi tay ấy, `hand`; `-hold` dáng cuối từ giây 0. Sinh bởi `tools/actions/hand-behind.mjs` |
 | `whisper-right-3d`, `whisper-left-3d` | Ghé tai người đứng ngang hàng bên phải / bên trái thì thầm: thân cúi `6°`, nghiêng `12°`, đầu nghiêng `12°`, quay `28°` về phía ấy, tay ấy `cup` cạnh khoé miệng (mốc `mouth`) như `cover-mouth-whisper-3d`; `0,5 s` rồi giữ. Người nghe cách hông `~195`. Sinh bởi `tools/actions/whisper.mjs` |
 | `pat-shoulder-right-3d`, `pat-shoulder-left-3d` | Vỗ vai người đứng cạnh bằng tay phải / tay trái, hai nhịp rồi buông: lòng tay áp mặt ngoài vai ngay dưới nắp vai (đầu chibi che nắp vai), nhấc ra về phía mình giữa hai nhịp; người kia trước `30`, ngang `165`. Sinh bởi `tools/actions/pat-shoulder.mjs` |
 | `handshake-3d` | Bắt tay phải: lòng tay `in` tới `[100, −74, 10]`, `grip` hờ, lắc hai nhịp rồi giữ. Hai người cùng diễn, hai hông cách `200`, lệch phải `27` thì hai lòng tay áp nhau |
@@ -1913,7 +1918,7 @@ Xem, chọn và đọc tên: [Xem và chọn](#xem-và-chọn), [Tên và hậu 
 | `sit-down-3d`, `stand-up-3d`, `kneel-up-3d`, `kneel-up-out-3d`, `seiza-stand-3d`, `squat-3d`, `kneel-3d` | Dời hông giữa đứng, ngồi ghế bành, seiza, quỳ, ngồi xổm, sinh bởi `tools/actions/seat.mjs`: góc chân giải IK theo đúng đường hông rig nội suy giữa các mốc `path` (`preview.path`, hay hai mốc của `previewScene` cho `sit-down` / `stand-up`), nên bàn chân, gối đứng yên |
 | `kneel-drop-3d`, `kneel-hands-floor-3d`, `kneel-hands-floor-hold-3d`, `kneel-hands-floor-head-down-3d`, `-hold-3d` | Chuỗi quỳ xin, cũng sinh bởi `seat.mjs`: sụp hai gối từ đứng (gối đổ ra trước một ống chân, mũi giày chống, `1 s`) → đổ thân `56°`, hông lùi theo cung quanh gối, hai bàn tay úp xuống sàn trước gối, đầu ngẩng (`1,2 s`; lòng tay đặt bằng đích hệ thân `point: "palm"` tính theo đường hông, nên đúng mọi cỡ người khi `world.path` nhân `height`) → bản chỉ ghi gật đầu cúi gằm chồng lên. Ba bước nối liền, `world.path` chung gốc là chỗ đứng trước khi sụp gối |
 
-Hành động cầm đồ (`phone-*`, `tray-*`, `folder-*`, `toast-3d`, `drink-3d`, `offer-cup-3d`, `pour-*`, `suitcase-*`, `bag-*`,
+Hành động cầm đồ (`phone-*`, `tray-*`, `folder-*`, `glass-hold-*`, `toast-3d`, `drink-3d`, `offer-cup-3d`, `pour-*`, `suitcase-*`, `bag-*`,
 `write-3d`) chỉ đặt tay; món và chỗ cầm khai ở `world.hands[].hold` của cảnh ([11](11-nhom-cam.md#4-schema-cảnh)), xem thử
 ở `preview.hold`. Món một tay cầm thì món ở tay phải, bản `-left` ở tay trái. Hai tay cầm một món
 (`both`) thì tay trái đặt theo mốc `otherGrip` cách đúng bề ngang món, vì tay phụ chỉ bám món khi bàn tay đã tới gần chỗ của nó.

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 21,
+  "name": "glass-hold-left-hold-3d",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["armLeft", "hand"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": {},
+      "reach": {
+        "armLeft": {
+          "to": "belly",
+          "offset": [22, -12, 15],
+          "point": "grip",
+          "elbow": [-0.4, 1, 0.5]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armLeft": { "pose": "grip", "palm": "in" } }
+    }
+  ],
+  "events": [],
+  "note": "Dáng cuối của `glass-hold-left-3d` từ giây 0, cho người nền đứng cầm ly suốt cảnh: tay trái tâm nắm đặt vào mốc `belly` offset [22, −12, 15] (`point: \"grip\"`), khuỷu gập ~90° sát sườn, chĩa xuống-sau-ngoài, dáng `grip` lòng tay quay vào. Chỉ ghi `armLeft`, `hand`. Nền `stand-3d`; món ở `world.hands[].hold` tay trái, ly có chân cầm ở chân ly (nhóm `cylinder`, `slant: 0`, `thumb: \"up\"`), ý định mặc định của nhóm giữ ly đứng. Chồng được `turn-head-*`, `talk-pose-*`, nét mặt; uống bằng `drink-3d` với `mirror: true` (blend ~0,3), buông bằng clip rỗng blend ~0,4. Phía kia là `glass-hold-right-3d`. Sinh bằng `tools/actions/glass-hold.mjs`.",
+  "preview": {
+    "stage": "stand",
+    "hold": { "left": { "item": "coc", "group": "cylinder", "part": "than", "slant": 0 } }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 21,
+  "name": "hand-behind-right-3d",
+  "duration": 0.5,
+  "end": "hold",
+  "mask": ["armRight", "hand"],
+  "authoredAt": "side",
+  "keys": [
+    {
+      "t": 0,
+      "pose": { "armRight": [-6, 24, 0] },
+      "ease": "smooth",
+      "hand": { "armRight": { "pose": "fist", "w": 0, "palm": "in" } }
+    },
+    {
+      "t": 0.5,
+      "pose": {},
+      "reach": {
+        "armRight": {
+          "to": "hip",
+          "offset": [-18, 4, 4],
+          "point": "back",
+          "elbow": [-0.8, 0.3, 0.6]
+        }
+      },
+      "ease": "smooth",
+      "hand": { "armRight": { "pose": "fist", "w": 0.3 } }
+    },
+    {
+      "t": 1,
+      "pose": {},
+      "reach": {
+        "armRight": { "to": "back", "offset": [-4, 6, 2], "point": "back", "elbow": [-0.6, 0.6, 1] }
+      },
+      "ease": "smooth",
+      "hand": { "armRight": { "pose": "fist", "w": 0.5, "palm": "back" } }
+    }
+  ],
+  "events": [],
+  "note": "Chắp tay phải sau lưng (dáng bồi bàn, sommelier đứng hầu): mu tay (`point: back`) áp mốc `back` (giữa lưng ngang thắt lưng, offset [−4, 6, 2]), nắm hờ, lòng tay ra sau, khuỷu chĩa ra sau-ngoài; từ tay buông của `stand-3d` vào dáng trong 0,5 s rồi giữ. Chỉ ghi `armRight`, `hand`; tay kia để cảnh — cầm chai, chìa mời, chỉ bằng track hay `world.hands` của tay ấy. Nền `stand-3d` hay `walk`; mốc `back` theo áo (gồm bụng phệ) nên đúng mọi cỡ người. Chồng được cúi chào, đầu, nhún thân và cử chỉ chỉ ghi tay kia (`talk-forward-3d`, `wave-*`, `thumbs-up-3d`; tay kia là tay trái thì `mirror: true`); hành động mở từ tay chồng trước bụng (`invite-*`: mốc đầu `otherBack`) kéo tay kia ra sau lưng tìm mu tay này, đừng chồng. Buông bằng clip rỗng blend ~0,4. Cùng họ: `hand-behind-left-3d` tay kia, `-hold` dáng cuối từ giây 0, `hands-behind-3d` hai tay. Sinh bằng `tools/actions/hand-behind.mjs`.",
+  "preview": { "stage": "stand" }
+}
