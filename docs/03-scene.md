@@ -1364,8 +1364,14 @@ của lượt chạy. Props của composition chỉ là `{ id }`: component tra 
 không khai `duration`) và cỡ khung `FRAMES[scene.frame].video` — chỉ cho composition được chọn,
 nên `Root` dựng nhanh và danh sách composition nhỏ dù bundle mang bao nhiêu cảnh. Đừng đưa dữ
 liệu cảnh, tập hay `schema` zod vào props: Remotion tuần tự hoá cả danh sách composition mỗi lần
-chọn một cái, quá ~230 MB là `defaultProps too big`. Cả app chạy `60 fps` — hằng `FPS` ở
-`Root.tsx`, và `tools/srt.mjs` khai cùng số ấy.
+chọn một cái, quá ~230 MB là `defaultProps too big`. Cả app chạy một fps: `stickman.fps` trong
+`package.json` (số nguyên dương, không khai thì `60`). `Root.tsx` xuất hằng `FPS` từ đó cho app và
+`tools/soi.tsx`; công cụ chạy bằng node (`tools/srt.mjs`, `tools/bang-hanh-dong.mjs`, tool riêng của repo) đọc cùng
+số bằng `fpsOf(root)` của `tools/scope.mjs`, đừng khai lại số.
+
+```json
+"stickman": { "fps": 30 }
+```
 
 ```bash
 pnpm remotion

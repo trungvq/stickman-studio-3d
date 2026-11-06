@@ -166,9 +166,9 @@ nó chứ không gõ lại.
 sceneDuration)`, `Episode.tsx` chỉ vẽ — vì **hai** thứ cần bảng xếp: composition trong
 bundler, và công cụ sinh `.srt` chạy thẳng bằng node, không qua bundler.
 
-**Mọi mốc khai bằng giây, không bằng frame.** Nhờ vậy đổi fps là sửa hằng `FPS` ở
-`Root.tsx` và số khai lại trong `tools/srt.mjs`; kiểm bằng cách sinh lại `.srt` và so
-từng byte. Riêng
+**Mọi mốc khai bằng giây, không bằng frame.** Nhờ vậy đổi fps là đổi `stickman.fps` trong `package.json`
+([03](03-scene.md#remotion)); số khung gõ cho `pnpm frames`, `--frames` của `render` và vòng tiếng nền thì tính lại theo
+fps mới. Riêng
 chỗ cộng dồn độ dài các shot thì `layoutShots` cộng bằng **frame**, không bằng giây —
 cộng giây rồi mới đổi là trôi frame.
 
@@ -507,7 +507,7 @@ Ba chỗ phải đúng, sai thì nghe rõ chỗ nối:
 
 - **Ghi `.wav`, không `.mp3`.** mp3 có khoảng đệm của bộ mã hoá ở hai đầu, lặp lại là
   hụt một nhịp.
-- **Độ dài vòng phải tròn frame** ở fps đang dùng (60 fps: 0,9 · 1,2 · 1,5 s), và `loop`
+- **Độ dài vòng phải tròn frame** ở fps đang dùng (60 fps: 0,9 · 1,2 · 1,5 s; 30 fps: bội của 1/30 s), và `loop`
   bên `episodes/*.json` khai đúng số ấy. Lệch một phần khung là mỗi vòng trôi một tí.
 - **Đuôi tràn qua mốc cuối vòng phải cộng ngược về đầu vòng** — dựng dài `2L` rồi gập
   nửa sau lên nửa đầu. Không gập thì tiếng cuối bị cắt cụt ở chỗ nối.

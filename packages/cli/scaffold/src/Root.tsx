@@ -11,7 +11,20 @@ import { Scene } from "./Scene";
 import { episodeFrames, layoutShots } from "./shots";
 import { Thumbnail } from "./Thumbnail";
 
-const FPS = 60;
+/**
+ * Số khung mỗi giây của cả app: `stickman.fps` của `package.json`, không khai thì 60. Công cụ chạy bằng node đọc cùng
+ * số qua `fpsOf` của `tools/scope.mjs`. Mọi mốc khai bằng giây nên đổi số này không phải sửa cảnh hay tập.
+ */
+export const FPS = fpsFrom((pkg as { stickman?: { fps?: unknown } }).stickman?.fps);
+
+function fpsFrom(v: unknown): number {
+  if (v === undefined) return 60;
+  if (typeof v !== "number" || !Number.isInteger(v) || v <= 0)
+    throw new Error(
+      `package.json: stickman.fps phải là số nguyên dương, đang là ${JSON.stringify(v)}`,
+    );
+  return v;
+}
 
 /** Cỡ pixel cho `calculateMetadata` */
 const wh = (v: { w: number; h: number }) => ({ width: v.w, height: v.h });

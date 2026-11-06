@@ -16,11 +16,12 @@ import {
 } from "@stickman3d/rig/core";
 import { parseEpisode } from "../src/episode.ts";
 import { cueStart, layoutShots } from "../src/shots.ts";
+import { fpsOf } from "./scope.mjs";
 import { commonDir } from "./webpack.mjs";
 
 const ROOT = process.cwd();
-/** Cùng số với `Root.tsx`; đổi ở đó thì đổi ở đây */
-const FPS = 60;
+/** Cùng số với `FPS` của `Root.tsx`: `stickman.fps` của `package.json` */
+const FPS = fpsOf(ROOT);
 
 /** `silencedetect`: dưới ngưỡng này và dài hơn ngần này giây thì là chỗ nghỉ — bắt được ngắt mệnh đề mà không cắt nhầm phụ âm tắc */
 const NOISE = "-35dB";

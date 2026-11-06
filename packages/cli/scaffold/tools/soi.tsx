@@ -29,7 +29,7 @@ import {
 } from "remotion";
 import { ACTIONS, CHARACTERS, HANDS, HELD, SCENES, castBodies, castHeights } from "../src/data";
 import { CANH_3D } from "../src/khoi3d/canh";
-import { Root } from "../src/Root";
+import { FPS, Root } from "../src/Root";
 import { Scene } from "../src/Scene";
 
 type Lens = NonNullable<SceneData["lens"]>;
@@ -66,9 +66,6 @@ const sceneOf = (id: string, raw?: Record<string, unknown>): SceneData | undefin
   }
   return inline.get(id) ?? undefined;
 };
-
-// Khớp `FPS` và độ dài cảnh của `src/Root.tsx`: khung `frame` của cảnh phải ra đúng giây cảnh ấy
-const FPS = 60;
 
 /** Sân khấu 3D của cảnh nhìn qua `lens`: khung cắt bỏ camera của cảnh, khung ra thấy trọn chiều cao sân khấu quanh trục nhìn */
 const LensStill = ({

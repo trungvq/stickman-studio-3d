@@ -31,6 +31,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } fr
 import { join, relative, resolve } from "node:path";
 import * as rig from "@stickman3d/rig/core";
 import { castRuntime, checkScenes, worldData } from "@stickman3d/cli";
+import { fpsOf } from "./scope.mjs";
 import { defaultTabs, openSoi, renderSoi } from "./soi.mjs";
 
 const argv = process.argv.slice(2);
@@ -113,7 +114,7 @@ const partnerOf = (p) => partners.find((f) => f !== p && data.characters[f]);
 
 // ---- cảnh xem thử và khung ----
 const YAW = 90;
-const FPS = 60;
+const FPS = fpsOf(root);
 const KHUNG = ["dau", "giua", "dinh", "cuoi"];
 const KHUNG_VN = { dau: "đầu", giua: "giữa", dinh: "đỉnh", cuoi: "cuối" };
 /** Tên khung trên nhãn: khung thứ ba là `đỉnh` hay `khác` (`thirdOf`) */

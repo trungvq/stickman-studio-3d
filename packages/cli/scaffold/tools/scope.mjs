@@ -20,6 +20,17 @@ const stickmanOf = (root) => {
   }
 };
 
+/** Số khung mỗi giây của cả app, cùng số với `FPS` của `src/Root.tsx`: `stickman.fps` của `package.json`, không khai thì 60 */
+export function fpsOf(root) {
+  const v = stickmanOf(root).fps;
+  if (v === undefined) return 60;
+  if (!Number.isInteger(v) || v <= 0)
+    throw new Error(
+      `package.json: stickman.fps phải là số nguyên dương, đang là ${JSON.stringify(v)}`,
+    );
+  return v;
+}
+
 /** Thư mục của một id theo `stickman.folders` — đoạn khớp đầu của regex; `null` là nằm ở gốc */
 export function folderFn(root) {
   const src = stickmanOf(root).folders;
