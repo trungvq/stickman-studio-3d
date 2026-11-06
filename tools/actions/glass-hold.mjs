@@ -21,7 +21,7 @@ const rows = SIDES.flatMap((s) => {
   const reach = { [s.arm]: HOLD };
   const hand = { [s.arm]: HAND };
   const base = `Chỉ ghi \`${s.arm}\`, \`hand\`. Nền \`stand-3d\`; món ở \`world.hands[].hold\` tay ${s.vi}, ly có chân cầm ở chân ly (nhóm \`cylinder\`, \`slant: 0\`, \`thumb: "up"\`), ý định mặc định của nhóm giữ ly đứng.`;
-  const tail = `Chồng được \`turn-head-*\`, \`talk-pose-*\`, nét mặt; uống bằng \`drink-3d\`${s.side === "left" ? " với \`mirror: true\`" : ""} (blend ~0,3), buông bằng clip rỗng blend ~0,4. Phía kia là \`glass-hold-${s.other}-3d\`. Sinh bằng \`tools/actions/glass-hold.mjs\`.`;
+  const tail = `Chồng được \`turn-head-*\`, \`talk-pose-*\`, nét mặt; uống bằng \`drink-3d\`${s.side === "left" ? " với `mirror: true`" : ""} (blend ~0,3), buông bằng clip rỗng blend ~0,4. Phía kia là \`glass-hold-${s.other}-3d\`. Sinh bằng \`tools/actions/glass-hold.mjs\`.`;
   const where = `tâm nắm đặt vào mốc \`belly\` offset ${fmt(HOLD.offset)} (\`point: "grip"\`), khuỷu gập ~90° sát sườn, chĩa xuống-sau-ngoài`;
   return [
     {
