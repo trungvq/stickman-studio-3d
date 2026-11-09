@@ -25,6 +25,7 @@
       <input id="scene" list="scenes" placeholder="Cảnh… (gõ để lọc)" spellcheck="false" />
       <datalist id="scenes"></datalist>
       <button id="reload" title="Nạp lại cảnh từ đĩa (R); Shift+R dựng lại cả cảnh">Nạp lại</button>
+      <button id="sound" title="Tiếng và phụ đề của cảnh khi phát (M); lấy từ tập có shot trỏ vào cảnh" hidden></button>
       <button id="crowd" title="Hiện / ẩn người nền khi xem nháp (N), mặc định ẩn; chỉ đổi lúc xem, file cảnh và video vẫn đủ người" hidden></button>
       <button
         id="copyView"
@@ -103,7 +104,7 @@
         </div>
       </aside>
       <main id="view">
-        <div id="frame"></div>
+        <div id="frame"><div id="sub" hidden></div></div>
         <div id="msg"></div>
         <div id="conflict" hidden>
           <b>Cảnh đã đổi trên đĩa từ lúc nạp — chưa ghi.</b>

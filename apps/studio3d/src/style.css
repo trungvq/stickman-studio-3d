@@ -123,6 +123,22 @@ button:hover {
   cursor: grab;
 }
 
+#sub {
+  position: absolute;
+  z-index: 2;
+  left: 8%;
+  right: 8%;
+  bottom: 5%;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background: rgb(20 28 60 / 80%);
+  color: #fff;
+  font-size: clamp(14px, 2.2vw, 26px);
+  line-height: 1.35;
+  text-align: center;
+  pointer-events: none;
+}
+
 #msg {
   position: absolute;
   inset: auto 12px 12px auto;

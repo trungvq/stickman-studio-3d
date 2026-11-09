@@ -740,6 +740,12 @@ pnpm exec stickman gen walk --scene t04-s14 --cast haru --at 6.2 --to "-200,300!
   `stickman-render` cho mỗi sự kiện — dải khung dày `0,05 s` và ô nhìn từ trên có vệt hông, bàn chân
   ([14](14-di-muot.md#4-dải-khung-dày-quanh-chỗ-rẽ)) —, và lệnh chạy lại với `--at` đã giải.
 
+## Tiếng và phụ đề trong Studio 3D
+
+Bấm phát một cảnh là nghe lời, tiếng động, nhạc của mọi shot trỏ vào cảnh ấy, trong tập có nhiều shot trỏ vào cảnh nhất; lời hiện thành phụ đề chữ trơn. Nút **Tiếng** hay phím `M` tắt, bật. Hình bám đồng hồ tiếng: máy chậm thì mất khung, tiếng không lệch. Đổi tốc độ phát thì tiếng cao, trầm theo.
+
+Chỉ một cảnh: không nối sang cảnh khác, không có băng chữ, thẻ chữ, 漫符, lớp vẽ code. `slow` và `hold` của shot không phát theo: Studio 3D chạy giây cảnh đều, cue chỉ đặt đúng chỗ vào. Đoạn shot chồng lên đoạn dài hơn của cùng cảnh (hook cắt lại) thì không phát.
+
 ## Studio 3D đọc repo video
 
 `@stickman3d/cli` mang Studio 3D, mở tại chỗ trong repo video:

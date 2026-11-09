@@ -118,6 +118,7 @@ import { renderStyles } from "./namedUi";
 import { plusHand, plusItem } from "./plus";
 import { PoseEditor, type PoseHost, type PoseTarget, type ShapeEntry } from "./poseEditor";
 import { runtimeOf, type Data } from "./runtime";
+import { ScenePlayer, sceneCues, type SoundData } from "./sceneAudio";
 import { SceneList } from "./sceneList";
 import { lensOf, readView, viewNote, writeView, type V3, type ViewState } from "./share";
 import { Solo } from "./solo";
@@ -154,6 +155,8 @@ const ui = {
   sceneList: $<HTMLDivElement>("sceneList"),
   reload: $<HTMLButtonElement>("reload"),
   crowd: $<HTMLButtonElement>("crowd"),
+  sound: $<HTMLButtonElement>("sound"),
+  sub: $<HTMLDivElement>("sub"),
   copyView: $<HTMLButtonElement>("copyView"),
   edMode: $<HTMLDivElement>("edMode"),
   dirty: $<HTMLSpanElement>("dirty"),
@@ -447,6 +450,73 @@ interface LoadOptions {
 }
 
 /** Nạp cảnh; `false` khi hỏng hay đã có lần nạp sau */
+const SOUND_KEY = "studio3d.sound";
+const sound = new ScenePlayer();
+/** Giây vừa lấy từ đồng hồ tiếng: `t` lệch khỏi nó là có ai tua, phải phát lại từ chỗ mới */
+let soundT = 0;
+let soundOn = (() => {
+  try {
+    return localStorage.getItem(SOUND_KEY) !== "0";
+  } catch {
+    return true;
+  }
+})();
+let soundGen = 0;
+
+function paintSound() {
+  ui.sound.hidden = LIB || !sound.has;
+  ui.sound.textContent = soundOn ? "Tiếng: bật" : "Tiếng: tắt";
+}
+
+function toggleSound() {
+  soundOn = !soundOn;
+  try {
+    localStorage.setItem(SOUND_KEY, soundOn ? "1" : "0");
+  } catch {
+    // trình duyệt chặn lưu thì chỉ mất việc nhớ qua lần nạp sau
+  }
+  paintSound();
+  ui.sub.hidden = true;
+  dirty = true;
+}
+
+/** Nạp tiếng của cảnh; cảnh không có shot nào trong tập thì phát im như cũ */
+async function loadSound(name: string, marks: Record<string, number>) {
+  const gen = ++soundGen;
+  sound.clear();
+  paintSound();
+  try {
+    const d = (await (await fetch(`/api/sound?name=${encodeURIComponent(name)}`)).json()) as SoundData;
+    if (gen !== soundGen || !d.episode) return;
+    const missing = await sound.load(sceneCues(d, name, marks), (f) => `/api/audio?file=${encodeURIComponent(f)}`);
+    if (gen !== soundGen) return;
+    paintSound();
+    if (missing.length) say(`thiếu ${missing.length} file tiếng: ${missing.slice(0, 3).join(", ")}`);
+    dirty = true;
+  } catch (e) {
+    say(`không nạp được tiếng: ${(e as Error).message}`, true);
+  }
+}
+
+/** Tiến giây phát: có tiếng thì theo đồng hồ tiếng, không thì theo thời gian khung */
+function advance(dt: number) {
+  if (soundOn && sound.has) {
+    if (!sound.running || sound.speed !== lv.speed || Math.abs(t - soundT) > 0.15) sound.start(t, lv.speed);
+    if (sound.running) {
+      t = sound.time();
+      soundT = t;
+      return;
+    }
+  } else if (sound.running) sound.stop();
+  t += dt * lv.speed;
+}
+
+function paintSub() {
+  const text = soundOn && sound.has && !LIB ? sound.subtitle(t) : "";
+  if (ui.sub.textContent !== text) ui.sub.textContent = text;
+  ui.sub.hidden = !text;
+}
+
 const CROWD_KEY = "stickman.showCrowd";
 /** Mặc định ẩn người nền lúc xem: chỉ bỏ họ ở bản dựng; `work.raw` (thứ được lưu) vẫn đủ người */
 let hideCrowd = (() => {
@@ -576,6 +646,7 @@ async function load(name: string, o: LoadOptions = {}): Promise<boolean> {
     dirty = true;
     remember();
     syncEdit();
+    if (!o.reuse) void loadSound(name, scene.marks as Record<string, number>);
     return true;
   } catch (e) {
     if (my !== loading) return false;
@@ -1408,8 +1479,9 @@ let since = 0;
 function loop(now: number) {
   const dt = (now - last) / 1000;
   last = now;
+  if (!(cur && playing) && sound.running) sound.stop();
   if (cur && playing) {
-    t += dt * lv.speed;
+    advance(dt);
     if (t > cur.dur) {
       t = lv.loop ? 0 : cur.dur;
       if (!lv.loop) togglePlay();
@@ -1433,6 +1505,7 @@ function loop(now: number) {
       say(`vẽ hỏng ở ${t.toFixed(2)} s: ${(e as Error).stack ?? e}`, true);
     }
   }
+  paintSub();
   requestAnimationFrame(loop);
 }
 
@@ -2486,6 +2559,7 @@ ui.sceneToggle.onclick = () => {
 if (localStorage.getItem("studio3d.sceneSide") === "shut") ui.sceneSide.classList.add("shut");
 ui.reload.onclick = (e) => (LIB ? void reloadLibrary() : reload(e.shiftKey));
 ui.crowd.onclick = toggleCrowd;
+ui.sound.onclick = toggleSound;
 ui.copyView.onclick = () => void copyView();
 ui.edMode.onclick = (e) => {
   const m = (e.target as HTMLElement).dataset.m;
@@ -2653,6 +2727,7 @@ addEventListener("keydown", (e) => {
     toggleSolo();
   } else if ((e.key === "r" || e.key === "R") && !mod && cur) reload(e.shiftKey);
   else if (k === "n" && !mod && !LIB) toggleCrowd();
+  else if (k === "m" && !mod && !LIB) toggleSound();
   else if (e.key === "Escape" && clipSel) clipHost.close();
   else if (e.key === "Escape" && modeCard.sel) modeCard.close();
   else if (e.key === "Escape" && picked) cardHost.close();

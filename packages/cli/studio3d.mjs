@@ -324,6 +324,58 @@ export function studio3dConfig({
       const core = () =>
         R.rig.src ? server.ssrLoadModule(R.rig.core) : import(pathToFileURL(R.rig.core).href);
 
+      // Tiếng của cảnh: tập có nhiều shot trỏ vào cảnh nhất, kèm độ dài cảnh và fps để xếp shot lên trục tập
+      server.middlewares.use(
+        "/api/sound",
+        route(async (req, name) => {
+          if (req.method !== "GET") throw new HttpError(405, "chỉ GET");
+          const dir = join(ROOT, "episodes");
+          let best = null;
+          for (const f of existsSync(dir) ? readdirSync(dir) : []) {
+            if (!f.endsWith(".json")) continue;
+            let ep;
+            try {
+              ep = JSON.parse(readFileSync(join(dir, f), "utf8"));
+            } catch {
+              continue;
+            }
+            const n = (ep.shots ?? []).filter((s) => s.scene === name).length;
+            if (n > (best?.n ?? 0)) best = { n, name: f.slice(0, -5), ep };
+          }
+          if (!best) return { episode: null };
+          const durations = {};
+          for (const s of best.ep.shots)
+            if (s.scene && !(s.scene in durations))
+              try {
+                durations[s.scene] = JSON.parse(
+                  readFileSync(join(ROOT, "scenes", `${s.scene}.json`), "utf8"),
+                ).duration;
+              } catch {
+                durations[s.scene] = undefined;
+              }
+          let fps = 60;
+          try {
+            fps = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).stickman?.fps ?? 60;
+          } catch {
+            // không có package.json: giữ mặc định
+          }
+          return { episode: best.name, shots: best.ep.shots, audio: best.ep.audio ?? [], durations, fps };
+        }),
+      );
+
+      // File tiếng trong `assets/audio/`, chỉ đọc
+      server.middlewares.use("/api/audio", (req, res) => {
+        const base = join(ROOT, "assets", "audio");
+        const file = resolve(base, new URL(req.url ?? "", "http://x").searchParams.get("file") ?? "");
+        if (!file.startsWith(base + sep) || !existsSync(file)) {
+          res.statusCode = 404;
+          res.end();
+          return;
+        }
+        res.setHeader("Cache-Control", "no-store");
+        res.end(readFileSync(file));
+      });
+
       server.middlewares.use("/api/scenes", (_req, res) => {
         const d = join(ROOT, "scenes");
         const names = existsSync(d)
