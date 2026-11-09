@@ -140,6 +140,8 @@ của `check` mà đo người trên ống chi trần (không theo quần áo v�
 `check({ only, skip })`. Nhóm không chạy thì thứ chỉ nó cần không dựng — không gói module cảnh three, không dựng cảnh
 three của từng cảnh, không lấy mẫu khối người, không mở luồng phụ — nên lượt hẹp nhanh thật chứ không chỉ in ít dòng hơn.
 
+Người nền (`cast[].crowd`) mặc định không đo ở các nhóm đo sâu; `--crowd` đo đủ ([03](03-scene.md#người-nền)).
+
 | Nhóm | Luật | Cần dựng |
 |---|---|---|
 | `ref` | tham chiếu chéo (nhân vật, hành động, nền, `fx`, `equip`), version pin, file giống bộ chung, bộ đồ của nhân vật; công tắc `equip` một chiều, hai track cùng ghi một socket, khuỷu gập ngược khi giơ tay, mốc ngoài `mask`, hành động tự giật, mốc khai không ai neo, người 3D diễn hành động không soạn ở `side`; tay cầm hai tay (`both`) trong khi tay kia cầm món khác; lớp vẽ code bật cho cảnh không có, thư mục sidebar | JSON, runtime, gói lớp vẽ code |

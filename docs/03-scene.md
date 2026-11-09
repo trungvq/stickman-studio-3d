@@ -76,6 +76,7 @@ Nhân vật nền không tốn gì: một mục `cast` với `world.at` và mộ
 | `cast[].base` | Tư thế nền: tên một pose, hoặc object như `keys[].pose` (`stretch` bốn hoặc tám số). Mọi chỗ nối hoà **về** nó và **từ** nó ở kênh chỉ một bên ghi. Bỏ trống là `idle` |
 | `cast[].baseMirror` | `true`: tư thế nền soi gương như `mirror` của clip — đổi phải ↔ trái, đảo dấu trục ngang của thân. Xem [Soi gương](#soi-gương) |
 | `cast[].equip` | Mặc gì lúc mở màn: `{ "handRight": "axe" }`, hoặc tên một bộ đồ. Hành động đổi tiếp từ đó. Xem [Đổi đồ](#đổi-đồ) |
+| `cast[].crowd` | Người nền: vẫn lên hình trong video, `check` mặc định không đo, xem nháp ẩn được — [Người nền](#người-nền) |
 | `cast[].fade[]` | Mờ dần rồi biến mất, hay hiện ra: mốc `{ t, v }`, `v` là độ đục `0 → 1`, nội suy thẳng và giữ ở hai đầu. `sceneAt` trả ở `opacity`; người 3D mờ quá nửa thì tắt. Bỏ trống là đục hẳn |
 | `cast[].tracks[]` | Thứ tự có nghĩa: **track sau đè track trước** |
 | `items[]` | Mốc món đặt trước: chỗ, hướng món theo thời gian — xem [Đồ cầm tay](#đồ-cầm-tay) |
@@ -1285,6 +1286,17 @@ pnpm bang-cam --so            # sau mỗi lần nâng rig hay sửa held/: sinh 
 `--so` in hàng đổi (số pixel khác từng góc, số đo trước → sau), ảnh chuẩn | mới | chỗ khác ở `tmp/bang-cam/khac/`, thoát
 `1` khi có đổi; chưa có chuẩn thì báo rồi thoát `2`, không sinh gì. Ô đổi mà đúng ý (sửa món, rig sửa lỗi) thì duyệt
 lại rồi `--luu-chuan`. Thêm món, thêm người làm đổi hàng (`MỚI`, `MẤT`) — bảng chuẩn đi theo `held/` và `characters/`.
+
+## Người nền
+
+`cast[].crowd: true` khai một người là người nền của cảnh đông: họ vẫn diễn và lên hình đầy đủ trong `render`, `still`, `frames`, `final`, chỉ nhẹ đi ở hai chỗ.
+
+- `check`: nhóm `move`, `held`, `legacy`, `roles`, `clash` đo cảnh đã bỏ người nền, dòng đầu in số người bỏ qua; `--crowd` (MCP `crowd: true`) đo đủ, dùng ở lượt cuối lô. `ref` và `episode` luôn đọc đủ người. Baseline lưu lúc không có `--crowd` thì không chứa cảnh báo của người nền.
+- Xem nháp: nút **Ẩn người nền** hay phím `N` ở Studio 3D, `Shift+N` ở Remotion Studio (có nhãn góc khung khi đang ẩn). Lựa chọn nhớ qua lần nạp trang. Studio 3D chỉ bỏ họ ở bản dựng, lưu cảnh vẫn đủ người.
+
+Bản bỏ người nền là `withoutCrowd(scene)` của rig: bỏ từ JSON cảnh trước khi dựng, nên món họ cầm mà đồ riêng đăng ký theo `cast.scene.cast` cũng không dựng. Người nền được phần còn lại của cảnh nhắc tới id (`face.cast`, camera, `fx`) thì được giữ. Đồ riêng hay lớp vẽ code gọi thẳng id người nền trong code thì phải tự chịu trường hợp người ấy vắng.
+
+Khác `WorldSpec.still`: `still` đóng băng người ở dáng giây 0 trong cả video và không làm `check` nhẹ đi.
 
 ## Hỏi mốc trên người
 

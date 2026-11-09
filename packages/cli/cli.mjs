@@ -54,6 +54,7 @@ const USAGE = `stickman <lệnh> [thư mục]
                 --baseline <file> chỉ in cảnh báo mới hay nặng hơn file ấy (kèm mọi lỗi)
                 --save-baseline <file> ghi cảnh báo lượt này vào file (gộp cảnh không chạy lại)
                 --time in thời gian từng nhóm và phần dựng chung
+                --crowd đo cả người nền (cast[].crowd); mặc định bỏ qua, chạy cuối lô
                 --jobs <số> số luồng đo sâu các cảnh (mặc định nửa số nhân, không quá số GB
                 RAM trống)
   retime        đo lại tiếng rồi ghi số vào cue khai \`after\` và mốc khai ở \`shot.marks\`;
@@ -220,7 +221,8 @@ else if (parsed.error) {
       (r.groups && r.groups.length < CHECK_GROUPS.length
         ? `\nchỉ chạy nhóm: ${r.groups.join(", ")}`
         : "") +
-      (r.scenes ? `\nchỉ soi ${r.scenes.length} cảnh: ${r.scenes.join(", ")}` : ""),
+      (r.scenes ? `\nchỉ soi ${r.scenes.length} cảnh: ${r.scenes.join(", ")}` : "") +
+      (r.crowdSkipped ? `\nbỏ qua ${r.crowdSkipped} người nền (đo đủ: --crowd)` : ""),
   );
   if (o.time && r.time) {
     const s = (ms) => (ms / 1000).toFixed(1).padStart(7);

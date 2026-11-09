@@ -2187,10 +2187,14 @@ server.registerTool(
         .describe(
           "Ghi cảnh báo lượt này vào file baseline, gộp với mục của cảnh và nhóm không chạy",
         ),
+      crowd: z
+        .boolean()
+        .optional()
+        .describe("Đo cả người nền (`cast[].crowd`); mặc định bỏ qua, dùng ở lượt cuối lô"),
     },
   },
-  guard(async ({ scene, uses, only, skip, baseline, saveBaseline }) =>
-    text(await cli.checkWorkspace({ dir: WS, scene, uses, only, skip, baseline, saveBaseline })),
+  guard(async ({ scene, uses, only, skip, baseline, saveBaseline, crowd }) =>
+    text(await cli.checkWorkspace({ dir: WS, scene, uses, only, skip, baseline, saveBaseline, crowd })),
   ),
 );
 

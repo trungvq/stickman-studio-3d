@@ -29,6 +29,7 @@ describe("check: tham số và nhóm luật", () => {
     assert.deepEqual(o.skip, ["legacy"]);
     assert.deepEqual(checkGroups(o).groups, ["move", "clash"]);
     assert.deepEqual(parseCheckArgs(["--held"]).only, ["held"]);
+    assert.equal(parseCheckArgs(["--crowd"]).crowd, true);
     assert.deepEqual(checkGroups(parseCheckArgs(["--held", "--only", "ref"])).groups, [
       "ref",
       "held",
@@ -245,6 +246,25 @@ function space({ hong = false } = {}) {
 const msgs = (r) => r.problems.map((p) => `${p.level}: ${p.msg}`);
 
 describe("check: chạy theo nhóm", () => {
+  it("người nền (`crowd`) không đo sâu, `--crowd` đo đủ, kể cả khi chia luồng", async () => {
+    const dir = space();
+    const add = (name) => {
+      const s = stand(name, ["a", "nen"]);
+      s.cast[1].crowd = true;
+      writeFileSync(join(dir, `scenes/${name}.json`), JSON.stringify(s));
+    };
+    add("dong");
+    add("dong2");
+    const o = { dir, jobs: 2, only: "clash", scene: "^dong2?$" };
+    const of = (r) => r.problems.filter((p) => p.msg.includes("nen"));
+    const bo = await checkWorkspace(o);
+    assert.equal(bo.crowdSkipped, 2);
+    assert.deepEqual(of(bo), []);
+    const du = await checkWorkspace({ ...o, crowd: true });
+    assert.equal(du.crowdSkipped, undefined);
+    assert.ok(of(du).length > 0, msgs(du).join("\n"));
+  });
+
   it("hợp các lượt `--only` từng nhóm bằng lượt đủ; mỗi dòng mang nhóm của nó", async () => {
     const dir = space();
     const full = await checkWorkspace({ dir, jobs: 1, only: CHECK_GROUPS });

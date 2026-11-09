@@ -8,6 +8,7 @@ import {
   parseScene,
   resolveScene,
   sceneAt,
+  withoutCrowd,
   type SceneData,
   type SceneRuntime,
 } from "./index";
@@ -24,6 +25,44 @@ const run = (json: unknown): SceneRuntime => resolveScene(parsed(json), {});
 
 const LENS = { eye: [0, -250, -1400], yaw: 0, pitch: 0, f: 800 };
 const WORLD = { at: [0, 0, 400] };
+
+describe("withoutCrowd", () => {
+  const base = { duration: 3, lens: LENS };
+  const man = (id: string, more: object = {}) => ({ id, world: WORLD, ...more });
+
+  it("bỏ người có `crowd`, không đụng cảnh gốc, cùng cảnh ra cùng object", () => {
+    const s = parsed({ ...base, cast: [man("a"), man("b", { crowd: true })] });
+    const out = withoutCrowd(s);
+    expect(out.cast.map((m) => m.id)).toEqual(["a"]);
+    expect(s.cast.map((m) => m.id)).toEqual(["a", "b"]);
+    expect(withoutCrowd(s)).toBe(out);
+    expect(resolveScene(out, {}).cast.map((m) => m.id)).toEqual(["a"]);
+  });
+
+  it("không có người nền thì trả chính cảnh ấy", () => {
+    const s = parsed({ ...base, cast: [man("a")] });
+    expect(withoutCrowd(s)).toBe(s);
+  });
+
+  it("người nền được người khác nhắc tới id thì giữ lại, kể cả chuỗi nhắc qua người nền", () => {
+    const hands = (cast: string) => ({
+      world: {
+        ...WORLD,
+        hands: [{ t: 0, right: { hold: { item: "coc", group: "cylinder", face: { cast } } } }],
+      },
+    });
+    const s = parsed({
+      ...base,
+      cast: [
+        man("a", hands("b")),
+        { ...man("b", { crowd: true }), ...hands("c") },
+        man("c", { crowd: true }),
+        man("d", { crowd: true }),
+      ],
+    });
+    expect(withoutCrowd(s).cast.map((m) => m.id)).toEqual(["a", "b", "c"]);
+  });
+});
 
 describe("cảnh không người", () => {
   it("`cast` rỗng có `duration` thì dựng được", () => {

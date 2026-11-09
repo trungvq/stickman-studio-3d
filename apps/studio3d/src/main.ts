@@ -153,6 +153,7 @@ const ui = {
   sceneFilter: $<HTMLInputElement>("sceneFilter"),
   sceneList: $<HTMLDivElement>("sceneList"),
   reload: $<HTMLButtonElement>("reload"),
+  crowd: $<HTMLButtonElement>("crowd"),
   copyView: $<HTMLButtonElement>("copyView"),
   edMode: $<HTMLDivElement>("edMode"),
   dirty: $<HTMLSpanElement>("dirty"),
@@ -446,6 +447,26 @@ interface LoadOptions {
 }
 
 /** Nạp cảnh; `false` khi hỏng hay đã có lần nạp sau */
+const CROWD_KEY = "stickman.hideCrowd";
+/** Ẩn người nền lúc xem: chỉ bỏ họ ở bản dựng; `work.raw` (thứ được lưu) vẫn đủ người */
+let hideCrowd = (() => {
+  try {
+    return localStorage.getItem(CROWD_KEY) === "1";
+  } catch {
+    return false;
+  }
+})();
+
+function toggleCrowd() {
+  hideCrowd = !hideCrowd;
+  try {
+    localStorage.setItem(CROWD_KEY, hideCrowd ? "1" : "0");
+  } catch {
+    // trình duyệt chặn lưu thì chỉ mất việc nhớ qua lần nạp sau
+  }
+  if (cur) void load(cur.name, { keepTime: true, reuse: true, full: true });
+}
+
 async function load(name: string, o: LoadOptions = {}): Promise<boolean> {
   const my = ++loading;
   playing = false;
@@ -484,7 +505,11 @@ async function load(name: string, o: LoadOptions = {}): Promise<boolean> {
     const src = work.raw;
     const parsed = rig.parseScene(src);
     if (!parsed.success) throw new Error(`scene JSON sai: ${parsed.error.message}`);
-    const scene = parsed.data;
+    const scene = hideCrowd ? rig.withoutCrowd(parsed.data) : parsed.data;
+    const crowdCount = parsed.data.cast.filter((m) => m.crowd).length;
+    const crowdHidden = parsed.data.cast.length - scene.cast.length;
+    ui.crowd.hidden = !crowdCount;
+    ui.crowd.textContent = hideCrowd ? "Hiện người nền" : "Ẩn người nền";
     // bàn tay đang chọn của cảnh trước: người không có trong cảnh này thì bỏ chọn (vệt, thẻ món tra người theo `id`)
     const has = (id: string) => scene.cast.some((m) => m.id === id);
     if (sel && !has(sel.id)) {
@@ -546,7 +571,7 @@ async function load(name: string, o: LoadOptions = {}): Promise<boolean> {
     attachOrbit();
     if (mode === "free" && !o.keepTime) seedFree();
     const gpu = /SwiftShader/.test(stage.gpu) ? " · ⚠ vẽ phần mềm" : "";
-    ui.status.textContent = `${from === "world" ? "cảnh của repo" : "plainRoom (cảnh không có trong worldOf)"} · ${scene.cast.length} người${gpu}`;
+    ui.status.textContent = `${from === "world" ? "cảnh của repo" : "plainRoom (cảnh không có trong worldOf)"} · ${scene.cast.length} người${crowdHidden ? ` (ẩn ${crowdHidden} người nền)` : ""}${gpu}`;
     done(warnings);
     dirty = true;
     remember();
@@ -2460,6 +2485,7 @@ ui.sceneToggle.onclick = () => {
 };
 if (localStorage.getItem("studio3d.sceneSide") === "shut") ui.sceneSide.classList.add("shut");
 ui.reload.onclick = (e) => (LIB ? void reloadLibrary() : reload(e.shiftKey));
+ui.crowd.onclick = toggleCrowd;
 ui.copyView.onclick = () => void copyView();
 ui.edMode.onclick = (e) => {
   const m = (e.target as HTMLElement).dataset.m;
@@ -2626,6 +2652,7 @@ addEventListener("keydown", (e) => {
     ui.solo.checked = !ui.solo.checked;
     toggleSolo();
   } else if ((e.key === "r" || e.key === "R") && !mod && cur) reload(e.shiftKey);
+  else if (k === "n" && !mod && !LIB) toggleCrowd();
   else if (e.key === "Escape" && clipSel) clipHost.close();
   else if (e.key === "Escape" && modeCard.sel) modeCard.close();
   else if (e.key === "Escape" && picked) cardHost.close();

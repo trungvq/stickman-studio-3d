@@ -2061,7 +2061,7 @@ export async function deepContext({ dir, names, actions, heldItems, bare, ...opt
   const scenesByName = {};
   for (const name of names) {
     const r = rig.parseScene(readJson(join(root, "scenes", `${name}.json`)));
-    if (r.success) scenesByName[name] = r.data;
+    if (r.success) scenesByName[name] = opts.dropCrowd ? rig.withoutCrowd(r.data) : r.data;
   }
   const runtimes = new Map();
   const sceneRuntime = (name) => {
@@ -2201,7 +2201,7 @@ async function deepScenes(root, names, ctx, jobs = checkJobs(names.length), time
   const out = new Map();
   const n = Math.min(jobs, names.length);
   if (n > 1) {
-    const { clash, snap, spans, held, groups } = ctx;
+    const { clash, snap, spans, held, groups, dropCrowd } = ctx;
     // cảnh nặng (dài, đông người) đi trước để không cảnh nào kéo đuôi
     const weight = (name) => {
       const d = ctx.scenesByName[name];
@@ -2214,7 +2214,7 @@ async function deepScenes(root, names, ctx, jobs = checkJobs(names.length), time
         () =>
           new Promise((done) => {
             const w = new Worker(new URL("./check-worker.mjs", import.meta.url), {
-              workerData: { dir: root, names, clash, snap, spans, held, groups },
+              workerData: { dir: root, names, clash, snap, spans, held, groups, dropCrowd },
             });
             const next = () => {
               const name = queue.shift();
@@ -2276,7 +2276,7 @@ const CHECK_VALUE_FLAGS = {
 
 /**
  * Tham số `stickman check` từ dòng lệnh (các cờ sau tên lệnh): `{ scene, jobs, only, skip, uses, baseline, saveBaseline,
- * time }`; `--held` là tên tắt của `--only held`, `--only` / `--skip` / `--uses` lặp thì cộng dồn. Sai thì `{ error }`
+ * time, crowd }`; `--held` là tên tắt của `--only held`, `--only` / `--skip` / `--uses` lặp thì cộng dồn. Sai thì `{ error }`
  */
 export function parseCheckArgs(args) {
   const out = {};
@@ -2285,6 +2285,7 @@ export function parseCheckArgs(args) {
     const flag = args[i].slice(2);
     if (flag === "held") out.only = [...(out.only ?? []), "held"];
     else if (flag === "time") out.time = true;
+    else if (flag === "crowd") out.crowd = true;
     else if (flag in CHECK_VALUE_FLAGS) {
       const v = args[i + 1];
       if (v === undefined || v.startsWith("--")) return { error: `--${flag} cần một giá trị` };
@@ -2312,7 +2313,7 @@ export const CLI_FLAGS = {
   init: { bool: ["force"], value: ["name"] },
   upgrade: { bool: ["yes", "skip-modified", "dry-run"], value: [] },
   docs: { bool: [], value: [] },
-  check: { bool: ["held", "time"], value: Object.keys(CHECK_VALUE_FLAGS) },
+  check: { bool: ["held", "time", "crowd"], value: Object.keys(CHECK_VALUE_FLAGS) },
   retime: { bool: ["dry-run"], value: ["mark"] },
   "migrate-held": { bool: ["dry-run"], value: ["scene", "held-dir", "map", "out"] },
   "migrate-elbow": { bool: ["dry-run"], value: ["scene"] },
@@ -2509,11 +2510,13 @@ export async function checkWorkspace({
   uses,
   baseline,
   saveBaseline,
+  crowd,
 } = {}) {
   const t0 = performance.now();
   const times = {};
   const root = resolve(dir);
   const problems = [];
+  let crowdSkipped = 0;
   const fail = (msg) => ({
     dir: root,
     counts: {},
@@ -2949,15 +2952,39 @@ export async function checkWorkspace({
       : lap(times, "move", () =>
           Object.fromEntries(shotSpans(root, scenesByName, sceneRuntime, (n) => wanted.has(n))),
         );
-  const opts = { clash, snap, spans, held, groups };
+  // Người nền (`cast[].crowd`) không đo sâu trừ khi `--crowd`: bản đã bỏ họ chỉ dùng ở đây, tập, tiếng và `ref` vẫn đọc đủ người
+  const dropCrowd = !crowd;
+  const deepData = dropCrowd
+    ? Object.fromEntries(
+        deep.filter((n) => scenesByName[n]).map((n) => [n, rig.withoutCrowd(scenesByName[n])]),
+      )
+    : scenesByName;
+  if (dropCrowd)
+    for (const n of Object.keys(deepData))
+      crowdSkipped += scenesByName[n].cast.length - deepData[n].cast.length;
+  const deepRuntimes = new Map();
+  const deepRuntime = (name) => {
+    if (deepData[name] === scenesByName[name]) return sceneRuntime(name);
+    if (!deepRuntimes.has(name)) {
+      let rt = null;
+      try {
+        rt = castRuntime(deepData[name], actionsByName, charactersByName, heldByName, handsByName);
+      } catch {
+        rt = null;
+      }
+      deepRuntimes.set(name, rt);
+    }
+    return deepRuntimes.get(name);
+  };
+  const opts = { clash, snap, spans, held, groups, dropCrowd };
   const results = deep.length
     ? await deepScenes(
         root,
         deep,
         {
           ...opts,
-          scenesByName,
-          sceneRuntime,
+          scenesByName: deepData,
+          sceneRuntime: deepRuntime,
           charactersByName,
           actionsByName,
           codeLayers,
@@ -3056,6 +3083,7 @@ export async function checkWorkspace({
           .map((k) => [k, Math.round(times[k])]),
       ),
       wall: Math.round(performance.now() - t0),
+      ...(crowdSkipped > 0 && { crowdSkipped }),
     };
   };
 

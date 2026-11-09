@@ -4,12 +4,13 @@ import {
   resolveScene,
   sceneTime,
   warpTable,
+  withoutCrowd,
   type SceneData,
   type SceneRuntime,
 } from "@stickman3d/rig/core";
 import { SceneWorld, type CodeLayer } from "@stickman3d/fx";
-import { useMemo } from "react";
-import { AbsoluteFill, useCurrentFrame, useVideoConfig } from "remotion";
+import { useMemo, useSyncExternalStore } from "react";
+import { AbsoluteFill, getRemotionEnvironment, useCurrentFrame, useVideoConfig } from "remotion";
 import {
   ACTIONS,
   ALL_IMAGES,
@@ -30,6 +31,44 @@ import { SceneWrap } from "./scene-wrap";
 
 const NO_WARP = warpTable([]);
 
+// Shift+N trong Remotion Studio ẩn, hiện người nền (`cast[].crowd`) để xem nháp cho nhẹ; nhớ qua lần nạp trang. Lúc render
+// `isStudio` là false nên video luôn đủ người. docs/03-scene.md#người-nền
+const CROWD_KEY = "stickman.hideCrowd";
+const crowdSubs = new Set<() => void>();
+let crowdHidden = false;
+let crowdWired = false;
+const crowdKey = (e: KeyboardEvent) => {
+  const el = e.target as HTMLElement | null;
+  if (e.key.toLowerCase() !== "n" || !e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (el?.closest?.("input,textarea,select,[contenteditable]")) return;
+  crowdHidden = !crowdHidden;
+  try {
+    localStorage.setItem(CROWD_KEY, crowdHidden ? "1" : "0");
+  } catch {
+    // trình duyệt chặn lưu thì chỉ mất việc nhớ qua lần nạp sau
+  }
+  crowdSubs.forEach((f) => f());
+};
+const crowdSubscribe = (f: () => void) => {
+  if (!crowdWired && getRemotionEnvironment().isStudio) {
+    crowdWired = true;
+    try {
+      crowdHidden = localStorage.getItem(CROWD_KEY) === "1";
+    } catch {
+      crowdHidden = false;
+    }
+    window.addEventListener("keydown", crowdKey);
+  }
+  crowdSubs.add(f);
+  return () => void crowdSubs.delete(f);
+};
+const useHideCrowd = () =>
+  useSyncExternalStore(
+    crowdSubscribe,
+    () => crowdHidden && getRemotionEnvironment().isStudio,
+    () => false,
+  );
+
 /** `resolveScene` một lần cho mỗi object cảnh, dùng lại qua mọi shot và lượt mount của tab */
 const RUNTIMES = new WeakMap<SceneData, SceneRuntime>();
 
@@ -46,12 +85,14 @@ type SceneProps = {
 };
 
 export const Scene = ({
-  scene,
+  scene: full,
   at = 0,
   preroll = 0,
   table = NO_WARP,
   codeLayers = CODE_LAYERS,
 }: SceneProps) => {
+  const scene = useHideCrowd() ? withoutCrowd(full) : full;
+  const crowdOff = full.cast.length - scene.cast.length;
   const { fps, width, height } = useVideoConfig();
   // Hai đồng hồ: frame đếm giây màn hình, `sceneAt` ăn giây cảnh. `preroll` là đoạn chạy
   // sau lưng shot trước, nên giây cảnh ở đó âm so với `at`.
@@ -99,6 +140,22 @@ export const Scene = ({
             <Overlay3D rt={rt} t={t} cam={cam} url={pieceUrl} codeLayers={codeLayers} />
           </SceneWrap>
         </svg>
+        {crowdOff > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              top: 12,
+              left: 12,
+              padding: "4px 10px",
+              borderRadius: 4,
+              background: "rgba(0,0,0,.65)",
+              color: "#fff",
+              font: "22px sans-serif",
+            }}
+          >
+            Đang ẩn {crowdOff} người nền · Shift+N
+          </div>
+        )}
       </AbsoluteFill>
     );
   return (

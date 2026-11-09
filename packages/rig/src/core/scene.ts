@@ -537,6 +537,11 @@ const CastSchema = z.object({
    * và giữ ở hai đầu. Bỏ trống là đục hẳn suốt cảnh. docs/03-scene.md
    */
   fade: z.array(FadeKeySchema).min(1).optional(),
+  /**
+   * Người nền: vẫn lên hình trong video, nhưng `check` không đo (`--crowd` mới đo) và lúc xem nháp ẩn được.
+   * docs/03-scene.md#người-nền
+   */
+  crowd: z.boolean().optional(),
   /** Thứ tự có nghĩa: track sau đè track trước */
   tracks: z.array(TrackSchema).default([]),
   world: WorldSchema,
@@ -1341,6 +1346,29 @@ export function actionStride(a: ActionData, base: Pose = POSES.idle): number {
 }
 
 /** Hết clip cuối của mọi người: mốc bắt đầu của nó cộng một lượt (clip rỗng thì cộng τ). */
+/** Bản đã bỏ người nền theo object cảnh: cùng cảnh luôn ra cùng object, nơi gọi nhớ theo object được (runtime, sân khấu) */
+const CROWDLESS = new WeakMap<object, object>();
+
+/**
+ * Cảnh không có người nền (`cast[].crowd`); object gốc không đổi, không có ai để bỏ thì trả chính nó. Người nền mà phần còn
+ * lại của cảnh nhắc tới id (`face.cast`, camera bám, `fx`) được giữ, vì bỏ đi thì `resolveScene` ném. docs/03-scene.md#người-nền
+ */
+export function withoutCrowd<S extends { cast: readonly { id: string; crowd?: boolean }[] }>(scene: S): S {
+  const known = CROWDLESS.get(scene);
+  if (known) return known as S;
+  const crowd = new Set(scene.cast.filter((m) => m.crowd).map((m) => m.id));
+  const kept = () => scene.cast.filter((m) => !crowd.has(m.id));
+  for (;;) {
+    const text = JSON.stringify({ ...scene, cast: kept() });
+    const named = [...crowd].filter((id) => text.includes(JSON.stringify(id)));
+    if (!named.length) break;
+    for (const id of named) crowd.delete(id);
+  }
+  const out = crowd.size ? { ...scene, cast: kept() } : scene;
+  CROWDLESS.set(scene, out);
+  return out;
+}
+
 const sceneEnd = (cast: CastMember[]): number =>
   Math.max(
     0,
