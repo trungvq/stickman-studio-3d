@@ -1292,7 +1292,7 @@ lại rồi `--luu-chuan`. Thêm món, thêm người làm đổi hàng (`MỚI`
 `cast[].crowd: true` khai một người là người nền của cảnh đông: họ vẫn diễn và lên hình đầy đủ trong `render`, `still`, `frames`, `final`, chỉ nhẹ đi ở hai chỗ.
 
 - `check`: nhóm `move`, `held`, `legacy`, `roles`, `clash` đo cảnh đã bỏ người nền, dòng đầu in số người bỏ qua; `--crowd` (MCP `crowd: true`) đo đủ, dùng ở lượt cuối lô. `ref` và `episode` luôn đọc đủ người. Baseline lưu lúc không có `--crowd` thì không chứa cảnh báo của người nền.
-- Xem nháp: nút **Ẩn người nền** hay phím `N` ở Studio 3D, `Shift+N` ở Remotion Studio (có nhãn góc khung khi đang ẩn). Lựa chọn nhớ qua lần nạp trang. Studio 3D chỉ bỏ họ ở bản dựng, lưu cảnh vẫn đủ người.
+- Xem nháp: mặc định **ẩn**. Nút **Hiện người nền** hay phím `N` ở Studio 3D, `Shift+N` ở Remotion Studio hiện lại (có nhãn góc khung khi đang ẩn). Lựa chọn nhớ qua lần nạp trang. Studio 3D chỉ bỏ họ ở bản dựng, lưu cảnh vẫn đủ người.
 
 Bản bỏ người nền là `withoutCrowd(scene)` của rig: bỏ từ JSON cảnh trước khi dựng, nên món họ cầm mà đồ riêng đăng ký theo `cast.scene.cast` cũng không dựng. Người nền được phần còn lại của cảnh nhắc tới id (`face.cast`, camera, `fx`) thì được giữ. Đồ riêng hay lớp vẽ code gọi thẳng id người nền trong code thì phải tự chịu trường hợp người ấy vắng.
 

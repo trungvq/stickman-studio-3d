@@ -25,7 +25,7 @@
       <input id="scene" list="scenes" placeholder="Cảnh… (gõ để lọc)" spellcheck="false" />
       <datalist id="scenes"></datalist>
       <button id="reload" title="Nạp lại cảnh từ đĩa (R); Shift+R dựng lại cả cảnh">Nạp lại</button>
-      <button id="crowd" title="Ẩn / hiện người nền khi xem nháp (N); chỉ đổi lúc xem, file cảnh và video vẫn đủ người" hidden></button>
+      <button id="crowd" title="Hiện / ẩn người nền khi xem nháp (N), mặc định ẩn; chỉ đổi lúc xem, file cảnh và video vẫn đủ người" hidden></button>
       <button
         id="copyView"
         title="Chép view cho agent: ảnh khung vẽ vào tmp/studio3d/ của repo, đoạn chữ (cảnh, giây, camera, bàn tay, link mở lại đúng view) vào clipboard"
@@ -56,8 +56,8 @@
         <label title="Khử răng cưa: siêu mẫu càng cao càng nét, càng chậm">
           AA
           <select id="aa">
-            <option value="off">tắt</option>
-            <option value="ss1.5" selected>1.5×</option>
+            <option value="off" selected>tắt</option>
+            <option value="ss1.5">1.5×</option>
             <option value="ss2">2× (như render)</option>
           </select>
         </label>

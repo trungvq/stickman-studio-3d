@@ -447,20 +447,20 @@ interface LoadOptions {
 }
 
 /** Nạp cảnh; `false` khi hỏng hay đã có lần nạp sau */
-const CROWD_KEY = "stickman.hideCrowd";
-/** Ẩn người nền lúc xem: chỉ bỏ họ ở bản dựng; `work.raw` (thứ được lưu) vẫn đủ người */
+const CROWD_KEY = "stickman.showCrowd";
+/** Mặc định ẩn người nền lúc xem: chỉ bỏ họ ở bản dựng; `work.raw` (thứ được lưu) vẫn đủ người */
 let hideCrowd = (() => {
   try {
-    return localStorage.getItem(CROWD_KEY) === "1";
+    return localStorage.getItem(CROWD_KEY) !== "1";
   } catch {
-    return false;
+    return true;
   }
 })();
 
 function toggleCrowd() {
   hideCrowd = !hideCrowd;
   try {
-    localStorage.setItem(CROWD_KEY, hideCrowd ? "1" : "0");
+    localStorage.setItem(CROWD_KEY, hideCrowd ? "0" : "1");
   } catch {
     // trình duyệt chặn lưu thì chỉ mất việc nhớ qua lần nạp sau
   }

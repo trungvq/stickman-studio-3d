@@ -31,19 +31,29 @@ import { SceneWrap } from "./scene-wrap";
 
 const NO_WARP = warpTable([]);
 
-// Shift+N trong Remotion Studio ẩn, hiện người nền (`cast[].crowd`) để xem nháp cho nhẹ; nhớ qua lần nạp trang. Lúc render
+// Remotion Studio mặc định ẩn người nền (`cast[].crowd`) cho nhẹ, Shift+N hiện lại; nhớ qua lần nạp trang. Lúc render
 // `isStudio` là false nên video luôn đủ người. docs/03-scene.md#người-nền
-const CROWD_KEY = "stickman.hideCrowd";
+const CROWD_KEY = "stickman.showCrowd";
 const crowdSubs = new Set<() => void>();
-let crowdHidden = false;
+let crowdHidden: boolean | undefined;
 let crowdWired = false;
+const isCrowdHidden = () => {
+  if (crowdHidden === undefined) {
+    try {
+      crowdHidden = localStorage.getItem(CROWD_KEY) !== "1";
+    } catch {
+      crowdHidden = true;
+    }
+  }
+  return crowdHidden;
+};
 const crowdKey = (e: KeyboardEvent) => {
   const el = e.target as HTMLElement | null;
   if (e.key.toLowerCase() !== "n" || !e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
   if (el?.closest?.("input,textarea,select,[contenteditable]")) return;
-  crowdHidden = !crowdHidden;
+  crowdHidden = !isCrowdHidden();
   try {
-    localStorage.setItem(CROWD_KEY, crowdHidden ? "1" : "0");
+    localStorage.setItem(CROWD_KEY, crowdHidden ? "0" : "1");
   } catch {
     // trình duyệt chặn lưu thì chỉ mất việc nhớ qua lần nạp sau
   }
@@ -52,11 +62,6 @@ const crowdKey = (e: KeyboardEvent) => {
 const crowdSubscribe = (f: () => void) => {
   if (!crowdWired && getRemotionEnvironment().isStudio) {
     crowdWired = true;
-    try {
-      crowdHidden = localStorage.getItem(CROWD_KEY) === "1";
-    } catch {
-      crowdHidden = false;
-    }
     window.addEventListener("keydown", crowdKey);
   }
   crowdSubs.add(f);
@@ -65,7 +70,7 @@ const crowdSubscribe = (f: () => void) => {
 const useHideCrowd = () =>
   useSyncExternalStore(
     crowdSubscribe,
-    () => crowdHidden && getRemotionEnvironment().isStudio,
+    () => getRemotionEnvironment().isStudio && isCrowdHidden(),
     () => false,
   );
 
