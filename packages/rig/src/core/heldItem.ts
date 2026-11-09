@@ -512,6 +512,13 @@ export const HOLD_BLEND = 0.3;
 /** Giây giữa hai mẫu của chuỗi cổ tay mang món (`ReachHold.prior`), tính từ mốc `world.hands` gần nhất của tay ấy */
 export const HOLD_SLEW_STEP = 1 / 30;
 
+/**
+ * Người nền (`cast[].crowd`): tay cách mốc `world.hands` gần nhất hai phía quá ngần này giây thì cổ tay giải độc lập, không nối
+ * từ mẫu trước. Chuỗi mẫu tính lùi tới mốc nên giá tỉ lệ với giây trong cảnh, nhân số người cầm đồ; đám đông cầm ly đứng yên
+ * chiếm gần hết thời gian tua tới cuối một cảnh dài
+ */
+export const HOLD_CROWD_SETTLE = 0.5;
+
 /** Phép quay quanh trục đơn vị `u` góc `a` (radian) */
 export function rotAxis(u: V3, a: number): M3 {
   const [x, y, z] = u;

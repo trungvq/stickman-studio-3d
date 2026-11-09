@@ -163,6 +163,21 @@ describe("`world.hands[].hold` trong scene", () => {
     expect(at(hands, 3).world?.hands?.right?.w).toBe(0);
   });
 
+  it("người nền xa mốc tay thì không nối chuỗi cổ tay; sát mốc và người chính vẫn nối", () => {
+    const hands = [
+      { t: 0, right: { hold: "coc@cylinder" } },
+      { t: 5, right: { hold: "coc@cylinder" } },
+    ];
+    const b = { id: "b", crowd: true, world: { at: [200, 0, 0], yaw: 90, hands }, tracks: [] };
+    const rt = runtime(hands, [b]);
+    const prior = (id: string, t: number) =>
+      (sceneAt(rt, id, t, 1, body3(C)) as ActInput).world?.hands?.right?.hold?.prior;
+    expect(prior("a", 2)).toBeDefined();
+    expect(prior("b", 2)).toBeUndefined();
+    expect(prior("b", 0.3)).toBeDefined();
+    expect(prior("b", 4.7)).toBeDefined();
+  });
+
   it("đang cầm: ngón theo dáng của chỗ cầm, không theo hành động", () => {
     const sp = at([{ t: 0, right: { at: [-30, -280, -60], point: "grip", hold: "coc@cylinder" } }]);
     const r = resolveActing(C, sp);

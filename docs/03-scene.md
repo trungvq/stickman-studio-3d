@@ -1289,8 +1289,9 @@ lại rồi `--luu-chuan`. Thêm món, thêm người làm đổi hàng (`MỚI`
 
 ## Người nền
 
-`cast[].crowd: true` khai một người là người nền của cảnh đông: họ vẫn diễn và lên hình đầy đủ trong `render`, `still`, `frames`, `final`, chỉ nhẹ đi ở hai chỗ.
+`cast[].crowd: true` khai một người là người nền của cảnh đông: họ vẫn diễn và lên hình đầy đủ trong `render`, `still`, `frames`, `final`, chỉ nhẹ đi ở ba chỗ.
 
+- Đồ cầm: tay cách mốc `world.hands` gần nhất hai phía quá `HOLD_CROWD_SETTLE` (`0,5 s`) thì cổ tay giải độc lập, không đi từ khung trước với tốc độ có hạn, nên tua tới cuối cảnh dài đông người không phải tính lại từ đầu cảnh. Người chính luôn nối từ khung trước.
 - `check`: nhóm `move`, `held`, `legacy`, `roles`, `clash` đo cảnh đã bỏ người nền, dòng đầu in số người bỏ qua; `--crowd` (MCP `crowd: true`) đo đủ, dùng ở lượt cuối lô. `ref` và `episode` luôn đọc đủ người. Baseline lưu lúc không có `--crowd` thì không chứa cảnh báo của người nền.
 - Xem nháp: mặc định **ẩn**. Nút **Hiện người nền** hay phím `N` ở Studio 3D, `Shift+N` ở Remotion Studio hiện lại (có nhãn góc khung khi đang ẩn). Lựa chọn nhớ qua lần nạp trang. Studio 3D chỉ bỏ họ ở bản dựng, lưu cảnh vẫn đủ người.
 

@@ -116,6 +116,7 @@ import {
   heldBase,
   heldPoint,
   HOLD_BLEND,
+  HOLD_CROWD_SETTLE,
   HOLD_SLEW_STEP,
   mixRotation,
   rotAxis,
@@ -1435,7 +1436,7 @@ export function sceneAt(
         rt.held,
         (who, mark) => castMarkAt(rt, who, mark, time),
         (t) => keyPose(rt, id, t, height, dims),
-        { rt, height, id },
+        { rt, height, id, crowd: m.crowd },
       )
     : placed;
   const pose = m.world.hands
@@ -3903,6 +3904,9 @@ function handAt(
   const key = ks[i].t < time - 1e-9 ? ks[i] : ks[i - 1];
   const prior =
     key && key.t + HOLD_SLEW_STEP * Math.ceil((time - key.t) / HOLD_SLEW_STEP - 1 - 1e-3);
+  // người nền xa mốc tay: cổ tay giải độc lập, chuỗi mẫu dừng ở đây
+  const settled =
+    !!host?.crowd && time - a.t > HOLD_CROWD_SETTLE && (!b || b.t - time > HOLD_CROWD_SETTLE);
   // `HOLD_BLEND` giây đầu của lần cầm (trừ lần cầm từ đầu cảnh): đổi chỗ cầm cùng món thì liên kết và ý định hoà từ chỗ
   // cũ; cầm món mới thì `enter` cho tay phụ hoà tới mốc trên món
   const blend = now && now.since > 0 && time - now.since < HOLD_BLEND;
@@ -3928,6 +3932,7 @@ function handAt(
     ...(blend && !carried && prevRef?.item !== nowRef.item && { enter: f }),
     ...(poseAt &&
       prior !== undefined &&
+      !settled &&
       !placedItem && {
         prior: { dt: time - prior, pose: () => poseAt(+prior.toFixed(6)) },
       }),
@@ -4318,6 +4323,7 @@ interface GraspHost {
   rt: SceneRuntime;
   height: number;
   id: string;
+  crowd?: boolean;
 }
 
 /** Lần cầm của một tay; tay phụ của `both` trên món đặt trước mang `lead` (tay dẫn) và `end` (giây hết, không có là hết cảnh) */
