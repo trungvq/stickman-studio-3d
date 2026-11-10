@@ -54,13 +54,16 @@ import {
  * chia 100 — `world.hip` của `sceneAt` đặt hông theo chính chúng, lệch là chân trượt hay lơ lửng. Đầu, bề dày nét chi không
  * nhân. `act` và `actJoints` đọc cùng bảng này — `act3.test.ts` giữ hai bên trùng nhau. docs/01-rig.md#khớp-người-3d-vẽ-ra
  */
+/** THỬ (feat/real-head-proto): cỡ đầu so với đầu chibi */
+export const HEAD_K = 0.6;
+
 export function bones3(height = 1) {
   const L = lengths(height);
   return {
     height,
     torso: L.torso / 100,
     neck: L.neck / 100,
-    head: 0.64,
+    head: 0.64 * HEAD_K,
     upperArm: L.upperArm / 100,
     foreArm: L.foreArm / 100,
     thigh: L.thigh / 100,

@@ -591,6 +591,14 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
     },
 
     render(scene, camera, { outline = true, t = 0, grade = {}, paper = true, shade = 'paint' } = {}) {
+      // THỬ (feat/real-head-proto): vẽ không viền — tắt nét hậu kỳ, vỏ ngược, nét bóng dáng `ink`
+      outline = false;
+      scene.traverse((o) => {
+        const m = (o as THREE.Mesh).isMesh ? ((o as THREE.Mesh).material as THREE.ShaderMaterial) : null;
+        if (!m || Array.isArray(m)) return;
+        if (m.side === THREE.BackSide && m.uniforms?.uW) o.visible = false;
+        if (m.userData?.ink) m.userData.ink = 0;
+      });
       const cel = shade === 'cel';
       G.uShade.value = SHADES[shade];
       G.uDot.value = dot;

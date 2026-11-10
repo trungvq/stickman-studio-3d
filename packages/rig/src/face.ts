@@ -112,6 +112,9 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
     if (wrinkle) paint(g, [wrinkle]);
     paint(g, [blushMarks(0, sh.offsetY, sh.eyeGap, skin, level(s))]);
     if (human) {
+      // THỬ (feat/real-head-proto): mũi là một nét bóng nhỏ bên sườn mũi và vệt dưới chóp
+      const ny = sh.offsetY + 0.62 * (mouthCy - sh.offsetY);
+      paint(g, [{ path: `M 2 ${ny - 1.5} Q 2.8 ${ny + 0.6} 2 ${ny + 1.8} M 0 ${ny + 2.4} Q 1 ${ny + 2.8} 1.9 ${ny + 2.3}`, fill: 'none', stroke: 'rgba(120, 66, 48, 0.4)', strokeWidth: 1.9, strokeLinecap: 'round' }]);
       for (const side of [-1, 1] as const) {
         const o = { only: side, squash: CHIBI.squash * rest.eyeWidth, pupil: CHIBI.pupil, lid: rest.lid, shine: rest.shine };
         paintAt(g, [eyeMarks(s.eyes, 0, sh.offsetY, sh.eyeGap, o), eyeShine(s.eyes, 0, sh.offsetY, sh.eyeGap, o)], CHIBI.eye * rest.eyeScale, (side * sh.eyeGap) / 2, sh.offsetY);

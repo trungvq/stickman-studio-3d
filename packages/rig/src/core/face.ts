@@ -465,7 +465,7 @@ function lidCut(x: number, cy: number, rx: number, ry: number, f: number): strin
 }
 
 /** Con ngươi bầu dục; `lid` khác `0` thì mi trên cắt đi phần ấy của chiều cao */
-const pupil = (x: number, cy: number, rx: number, ry: number, lid: number): FaceMark =>
+export const chibiPupil = (x: number, cy: number, rx: number, ry: number, lid: number): FaceMark =>
   lid > 0
     ? { path: lidCut(x, cy, rx, ry, lid), fill: EYE_INK }
     : { ellipse: [x, cy, rx, ry], fill: EYE_INK };
@@ -484,9 +484,46 @@ const WIDE = { r: 1.35, white: 0.55, dot: 0.45 };
 /** Bán kính lòng trắng `bulge` theo `R` */
 const BULGE = 1.5;
 
+/** THỬ (feat/real-head-proto): mắt anime người lớn — hạnh nhân, lòng trắng, tròng nâu, con ngươi, mi trên dày có đuôi */
+const IRIS = "#4a3426";
+const ADULT = { rx: 1.75, ry: 1, up: 1.6, down: 1.2, iris: [0.92, 1.1], pupil: [0.42, 0.56], lash: 3.4, flick: 2.4 };
+function adultEye(x: number, cy: number, s: 1 | -1, k: number, lid: number): FaceMark {
+  const A = ADULT;
+  const rx = A.rx * R * k, ry = A.ry * R;
+  const ix = x - s * rx, iy = cy + 0.12 * R, ox = x + s * rx, oy = cy - 0.08 * R;
+  const upY = cy - A.up * ry + lid * 2.2 * ry, dnY = cy + A.down * ry;
+  const upper = `M ${ix} ${iy} Q ${x - s * 0.15 * rx} ${upY} ${ox} ${oy}`;
+  const d = `${upper} Q ${x + s * 0.1 * rx} ${dnY} ${ix} ${iy} Z`;
+  return {
+    group: [
+      { clip: d },
+      { path: d, fill: WHITE },
+      { ellipse: [x - s * 0.05 * R, cy + 0.06 * R, A.iris[0] * R * k, A.iris[1] * R] as Quad, fill: IRIS, clipped: true },
+      { ellipse: [x - s * 0.05 * R, cy + 0.1 * R, A.pupil[0] * R * k, A.pupil[1] * R] as Quad, fill: EYE_INK, clipped: true },
+      { path: upper, fill: "none", stroke: EYE_INK, strokeWidth: 1.6, strokeLinecap: "round" },
+      {
+        // nửa ngoài mi trên dày, có đuôi: điểm giữa đường cong bậc hai ở t = 0,45 tới đuôi
+        path: `M ${0.3025 * ix + 0.495 * (x - s * 0.15 * rx) + 0.2025 * ox} ${0.3025 * iy + 0.495 * upY + 0.2025 * oy} Q ${0.45 * (x - s * 0.15 * rx) + 0.55 * ox} ${0.45 * upY + 0.55 * oy} ${ox} ${oy} L ${ox + s * A.flick} ${oy - 1.4}`,
+        fill: "none",
+        stroke: EYE_INK,
+        strokeWidth: A.lash,
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+      },
+      {
+        path: `M ${ox} ${oy + 0.4} Q ${x + s * 0.35 * rx} ${cy + 0.95 * ry} ${x - s * 0.1 * rx} ${cy + 1.0 * ry}`,
+        fill: "none",
+        stroke: EYE_INK,
+        strokeWidth: 1.3,
+        strokeLinecap: "round",
+      },
+    ],
+  };
+}
+
 /** Kiểu mắt: thứ tự khoá là thứ tự của `EYE_KINDS`; `wide` và `bulge` có lòng trắng */
 export const EYES = {
-  open: (x, cy, _s, k, _p, lid) => pupil(x, cy, R * k, R, lid),
+  open: (x, cy, s, k, _p, lid) => adultEye(x, cy, s, k, lid),
   shut: (x, cy) => ({ line: [x - 7, cy, x + 7, cy], ...EYE_LINE }),
   // Mắt mở to hơn, lòng trắng giữa vành đen, con ngươi co còn chấm
   wide: (x, cy, _s, k, p, lid) => {
@@ -528,10 +565,7 @@ export const EYES = {
     };
   },
   // Mi trên sụp xuống: chỉ còn nửa dưới con ngươi, `lid` nghỉ sâu hơn thì theo nó
-  squint: (x, cy, _s, k, _p, lid) => ({
-    path: lidCut(x, cy, R * k, R, Math.max(0.5, lid)),
-    fill: EYE_INK,
-  }),
+  squint: (x, cy, s, k, _p, lid) => adultEye(x, cy, s, k, Math.max(0.5, lid)),
   happy: (x, cy) => ({
     path: `M ${x - 8} ${cy + 4} Q ${x} ${cy - 7} ${x + 8} ${cy + 4}`,
     ...EYE_LINE,
@@ -548,7 +582,7 @@ export const EYES = {
   wink: (x, cy, s, k, _p, lid) =>
     s === -1
       ? { path: `M ${x - 7} ${cy + 2} Q ${x} ${cy - 3} ${x + 7} ${cy + 2}`, ...EYE_LINE }
-      : pupil(x, cy, R * k, R, lid),
+      : adultEye(x, cy, s, k, lid),
   // Cười nham hiểm (ニタァ): trăng lưỡi liềm, mi dưới cong lên khoét lõm vào bầu dục, không đốm sáng
   sly: (x, cy, _s, k) => {
     const [rx, ry, y] = [R * k * 1.15, R * 1.05, cy + 0.55 * R];
@@ -706,7 +740,7 @@ export function wrinkleMarks(
                 },
                 // Pháp lệnh: từ cạnh mũi xoè ra ngoài rồi xuống quá mép mồm
                 {
-                  path: `M ${X(s * 7 * k)} ${y + 16 * k} Q ${X(s * 23 * k)} ${(y + mouthCy) / 2} ${X(s * 20 * k)} ${mouthCy + 6 * k}`,
+                  path: `M ${X(s * 11 * k)} ${y + 0.55 * (mouthCy - y)} Q ${X(s * 19 * k)} ${y + 0.75 * (mouthCy - y)} ${X(s * 18 * k)} ${mouthCy + 3 * k}`,
                 },
               ]
             : []),
@@ -723,9 +757,10 @@ export function wrinkleMarks(
  * `squash` và đốm sáng. docs/01-rig.md#người-3d-mặc-đồ
  */
 export const CHIBI = {
-  shift: { offsetY: 10, eyeGap: 18, mouthGap: -10 },
-  eye: 1.45,
-  squash: 0.75,
+  // THỬ (feat/real-head-proto): mắt nhỏ hơn, gần nhau hơn, miệng xa mắt hơn cho mặt dài
+  shift: { offsetY: 4, eyeGap: 10, mouthGap: 0 },
+  eye: 1.2,
+  squash: 1,
   pupil: 0.85,
   mouth: 0.8,
   brow: 3,

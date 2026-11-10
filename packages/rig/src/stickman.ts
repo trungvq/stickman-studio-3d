@@ -17,7 +17,7 @@ import { blushLevel, chibiShape } from './core/face';
 import { wornSkirt } from './core/skirtShape';
 import { hangsFromHip, matchWrap } from './core/hem';
 import { NECK_BEND } from './core/torso';
-import { humanHair, humanSkull, SKULL3 } from './core/humanHead';
+import { humanHair, humanSkull, setJaw, SKULL3 } from './core/humanHead';
 import { Ankle, earGroup, handRig, humanHeadGeometry, neckGeometry, pelvisGeometry, shoeCapsule, shoeGeometry, type Hand } from './human';
 import { handGrip } from './core/hand';
 import type { Rig } from './torso';
@@ -94,7 +94,7 @@ export type Lod = 'full' | 'low';
 /** `limb`: vòng mỗi đầu tròn, cạnh quanh ống, đoạn dọc ống */
 interface Quality { skull: [number, number]; limb: [number, number, number] }
 const QUALITY: Record<Lod, Quality> = {
-  full: { skull: [36, 24], limb: [4, 16, 12] },
+  full: { skull: [72, 52], limb: [4, 16, 12] },
   low: { skull: [16, 11], limb: [2, 6, 5] },
 };
 let q = QUALITY.full;
@@ -543,6 +543,8 @@ export interface StickmanOptions {
   trouserLength?: number;
   /** `head.form` */
   headForm?: 'sphere' | 'human';
+  /** THỬ: `head.jaw` */
+  headJaw?: 'v' | 'square';
 }
 
 /** Phần JSON nhân vật mà `resolveActing` đọc, dựng lại từ tham số của `stickman` */
@@ -558,6 +560,15 @@ function actCharacter(o: StickmanOptions): ActCharacter {
 
 /** Một người que 3D theo JSON nhân vật của rig. */
 export function stickman(o: StickmanOptions): Figure {
+  const prevJaw = setJaw(o.headJaw ?? 'v');
+  try {
+    return stickmanBuild(o);
+  } finally {
+    setJaw(prevJaw);
+  }
+}
+
+function stickmanBuild(o: StickmanOptions): Figure {
   const { rig, skin = '#f0d9b8', garment, color, accent, skirt, skirtColor = color, hair, hairColor = '#2a1c15', glasses = false, glassesColor, faceShape, face, seed = 0, seated = false, limbCurve = 1, lod = 'full', items, itemSpecs, equip } = o;
   const clad = !!o.clad, human = o.headForm === 'human';
   const { sleeve: sleeveWidth, trouser: trouserWidth } = limbWidths(o);
@@ -1000,7 +1011,7 @@ export function characterOptions(json: CharacterJson, opts: Partial<StickmanOpti
     ...(pc.headAcc?.src === 'sculpt' && { pin: pc.headAcc.pin ?? (pc.headAcc.earrings ? undefined : {}), earrings: pc.headAcc.earrings, pinColor: pc.headAcc.color, pinBead: pc.headAcc.accent }),
     ...(pc.neck?.src === 'sculpt' && { drape: pc.neck.drape, shades: pc.neck.shades, necklace: pc.neck.necklace, drapeColor: pc.neck.color }),
     clad: pal.clad, sleeveColor: pal.sleeve, trouserColor: pal.trouser, shoeColor: pal.shoe, sleeveLength: pal.sleeveLength, sleeveFlare: pal.sleeveFlare, bicep: pal.bicep,
-    trouserLength: pal.trouserLength, headForm: json.head?.form, ...opts,
+    trouserLength: pal.trouserLength, headForm: json.head?.form, headJaw: (json.head as { jaw?: 'v' | 'square' } | undefined)?.jaw, ...opts,
   };
 }
 

@@ -780,6 +780,8 @@ export const CharacterSchema = z.object({
       scaleY: z.number().default(1),
       /** Dáng khối đầu: `human` có quai hàm, cằm, tai, mũi. docs/01-rig.md#người-3d-mặc-đồ */
       form: z.enum(["sphere", "human"]).default("sphere"),
+      /** THỬ (feat/real-head-proto): hình hàm của đầu `human` — `v` thon thẳng từ gò má, `square` quai hàm vuông */
+      jaw: z.enum(["v", "square"]).default("v"),
     })
     .prefault({}),
   palette: z
