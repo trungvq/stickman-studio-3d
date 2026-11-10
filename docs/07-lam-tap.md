@@ -391,7 +391,8 @@ lại, `--words` dùng mốc có sẵn), đo `duration` bằng `ffprobe`, độ 
 - một khẩu hình mỗi mora (chữ có kana) hay mỗi tiếng (chữ Latin), đặt đúng mốc đầu mora; âm chọn
   vai răng cắn / há vừa / tròn, mora to nhất mỗi 1,5 s của đoạn là há to, nghỉ 0,07–0,2 s là răng
   cắn, nghỉ từ 0,2 s khép — luật đầy đủ ở [01](01-rig.md#khẩu-hình-và-mắt);
-- `--mood` chọn bộ: `neutral` (mặc định), `happy`, `sad`, `bored`, `angry`;
+- `--mood` chọn bộ: `neutral` (mặc định, miệng mếu `talkSadA/B`), `bright` (chữ D, miệng cười), `happy`,
+  `sad`, `angry` — chọn theo lời, bảng ở [01](01-rig.md#khẩu-hình-và-mắt); `bored` là tên cũ của `neutral`;
 - `--step` là độ dài một mora ước cho kanji và nhịp chẻ tiếng Latin dài (mặc định 0,13 s),
   `--faster 1.2` chọn `step` cho số lần mấp máy gấp 1,2 lần bản mặc định.
 

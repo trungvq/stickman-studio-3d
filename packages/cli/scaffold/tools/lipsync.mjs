@@ -15,7 +15,7 @@ const USAGE = `pnpm lipsync <file tiếng> <tên hành động> [tuỳ chọn]
 
   --step <giây>     độ dài một mora ước cho kanji, nhịp chẻ tiếng dài (mặc định ${STEP})
   --faster <hệ số>  chọn --step sao cho số lần mấp máy gấp ngần này lần bản mặc định
-  --mood <kiểu>     neutral (mặc định) | happy | sad | bored | angry — bộ khẩu hình
+  --mood <kiểu>     neutral (mặc định, mếu) | bright | happy | sad | angry — bộ khẩu hình
   --words <file>    dùng mốc chữ có sẵn thay vì chạy whisper
   --model <tên>     model whisper (mặc định small)   --lang <mã>  (mặc định vi; tiếng Nhật: ja)
   --out <thư mục>   thư mục ghi (mặc định actions)
@@ -32,13 +32,17 @@ const STRESS_SPAN = 1.5;
 
 /**
  * Bộ khẩu hình theo vai: R nghỉ, G răng cắn, A há vừa, B há to, O tròn, OO tròn dọc (nguyên âm
- * o kéo dài). docs/01 § Khẩu hình và mắt.
+ * o kéo dài). Chữ D (`talkTeeth`, `talkA`, `talkB`) đọc ra miệng cười, nên mặc định `neutral` là
+ * miệng mếu `talkSadA/B`; nói tươi, tiếp khách, cười đểu, cười gượng thì `bright`. `bored` là tên
+ * cũ của `neutral`. docs/01 § Khẩu hình và mắt.
  */
+const NEUTRAL = { R: "closed", G: "talkSadA", A: "talkSadB", B: "talkSadB", O: "o", OO: "talkO" };
 const MOODS = {
-  neutral: { R: "closed", G: "talkTeeth", A: "talkA", B: "talkB", O: "o", OO: "talkO" },
+  neutral: NEUTRAL,
+  bright: { R: "closed", G: "talkTeeth", A: "talkA", B: "talkB", O: "o", OO: "talkO" },
   happy: { R: "smile", G: "talkTeeth", A: "talkA", B: "grin", O: "o", OO: "talkO" },
   sad: { R: "frown", G: "talkSadA", A: "talkSadB", B: "talkSadB", O: "o", OO: "talkO" },
-  bored: { R: "closed", G: "talkSadA", A: "talkSadB", B: "talkSadB", O: "o", OO: "talkO" },
+  bored: NEUTRAL,
   angry: { R: "frown", G: "grit", A: "talkAngryA", B: "talkAngryB", O: "o", OO: "talkO" },
 };
 

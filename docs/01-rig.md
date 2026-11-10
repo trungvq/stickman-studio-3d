@@ -660,10 +660,10 @@ Người nền (`lod: "low"`) không lật, không trượt.
 | `closed` | Đoạn thẳng ngắn | Im lặng |
 | `parted` | Khe nhỏ khép nhọn hai đầu, không răng | Khựng, chưa biết đáp; đi với mắt `open`, mày `lifted` |
 | `talkTeeth` | Chữ D tô trắng, vạch mực cong chia hai hàm, không khoang | Nói: răng cắn — tiếng nhỏ, phụ âm, nguyên âm `i`, nghỉ ngắn |
-| `talkA` | Chữ D, dải răng trên, khoang bên dưới | Nói: há vừa — nguyên âm `a`, `e`, tiếng thường |
+| `talkA` | Chữ D, dải răng trên, khoang bên dưới | Nói: há vừa — nguyên âm `a`, `e`; đọc ra miệng cười (bộ `bright`, `happy`) |
 | `talkB` | Chữ D sâu hơn `talkA` (cao ≥ 1,25 lần), dải răng trên, lưỡi ở đáy | Nói: há to — tiếng nhấn, to nhất đoạn |
 | `talkO` | Bầu dục đứng, dải răng trên, lưỡi ở đáy | Nói: nguyên âm `o` kéo dài (おう, おお, オー) |
-| `talkSadA` / `talkSadB` | Miệng hé ngang, vòm trên nhẹ, đáy phẳng, khoé bo; A tô trắng, B mở sâu với dải răng trên | Nói buồn nhẹ, ngập ngừng, thắc mắc |
+| `talkSadA` / `talkSadB` | Miệng hé ngang, vòm trên nhẹ, đáy phẳng, khoé bo; A tô trắng, B mở sâu với dải răng trên | Nói thường (bộ `neutral`, mặc định), nghiêm, buồn nhẹ, ngập ngừng, thắc mắc |
 | `talkAngryA` / `talkAngryB` | Hình thang bè dưới, mép trên vồng, dải răng trên; há nhỏ / lớn | Vừa giận vừa nói |
 | `smile` | Cung cong lên | Vui |
 | `frown` | Cung cong xuống | Buồn, thất vọng |
@@ -685,11 +685,17 @@ Bộ khẩu hình theo cảm xúc (`--mood` của `lipsync`):
 
 | Bộ | Nghỉ | Răng cắn | Há vừa | Há to | Tròn |
 |---|---|---|---|---|---|
-| `neutral` | `closed` | `talkTeeth` | `talkA` | `talkB` | `o`, `talkO` |
+| `neutral` (mặc định) | `closed` | `talkSadA` | `talkSadB` | `talkSadB` | `o`, `talkO` |
+| `bright` | `closed` | `talkTeeth` | `talkA` | `talkB` | `o`, `talkO` |
 | `happy` | `smile` | `talkTeeth` | `talkA` | `grin` | `o`, `talkO` |
 | `sad` | `frown` | `talkSadA` | `talkSadB` | `talkSadB` | `o`, `talkO` |
-| `bored` | `closed` | `talkSadA` | `talkSadB` | `talkSadB` | `o`, `talkO` |
 | `angry` | `frown` | `grit` | `talkAngryA` | `talkAngryB` | `o`, `talkO` |
+
+**Chữ D (`talkTeeth`, `talkA`, `talkB`) đọc ra miệng cười**, kể cả khi mắt mày nghiêm, nên mặc định
+là miệng mếu `talkSadA/B` (`neutral`). Chọn bộ theo lời chứ không theo người: nghiêm, căng, chất
+vấn, kể lể là `neutral`; nói tươi, tiếp khách, cười đểu, tự mãn, cười gượng là `bright`; vui, hớn
+hở là `happy`; lo, sợ, van xin, buồn là `sad`; giận, quát là `angry`. `bored` là tên cũ của
+`neutral`, vẫn nhận.
 
 Nghỉ của bộ giận là cung trễ `frown`, không phải `grit`: nghiến răng là một nhịp trong lời. Hành
 động nhép chỉ ghi `mouth` để giữ mắt và mày của lớp cảm xúc; chọn mày `sad` hoặc `angry` ở lớp
