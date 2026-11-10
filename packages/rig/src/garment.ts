@@ -249,6 +249,8 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
       sm.userData.noShadow = true;
       sm.userData.noCollide = true;
       sm.userData.inkSkip = m;
+      // người `human` đổi sang vật liệu có nét của ống cổ và gộp vào mã vật của nó
+      sm.userData.neckFill = true;
       neckFill = sm;
       add(sm);
       continue;

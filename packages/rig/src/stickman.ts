@@ -287,11 +287,21 @@ function leg(parent: THREE.Object3D, side: Side, hipHalf: number, B: Bones3): Le
   return { hip, knee };
 }
 
+/** Bề dày nét bóng dáng của sọ, ống cổ và da trong miệng cổ áo của người `human` (three): cùng khoá nét, chỗ nối không có nét */
+const HEAD_INK = 0.03;
+
+/** Nét mép tay đè lên thân cùng vật liệu đậm dần theo khoảng dọc tay từ vai, phần bắp tay (pipeline `userData.inkU`), thay cho khe sâu */
+const ARM_INK_U = [0.06, 0.2] as const;
+
 function arm(parent: THREE.Object3D, side: Side, x: number, y: number, B: Bones3): Arm {
   const shoulder = joint(parent, side * x, y, 0);
-  shoulder.add(limb(B.upperArm));
+  const [u0, u1] = ARM_INK_U.map((f) => f * B.upperArm);
+  const upper = limb(B.upperArm), fore = limb(B.foreArm);
+  upper.userData.inkU = [0, u0, u1];
+  fore.userData.inkU = [B.upperArm, u0, u1];
+  shoulder.add(upper);
   const elbow = joint(shoulder, 0, -B.upperArm, 0);
-  elbow.add(limb(B.foreArm));
+  elbow.add(fore);
   const wrist = joint(elbow, 0, -B.foreArm, 0);
   return { shoulder, elbow, wrist };
 }
@@ -616,7 +626,7 @@ export function stickman(o: StickmanOptions): Figure {
   const skin3 = skinLook(skin);
   const skinMat = npr(skin3);
   // vỏ ngược dưới cằm `human` chìm sau cổ và cổ áo: nét bóng dáng vẽ thêm ở hậu kỳ
-  const skullMat = human ? npr({ ...skin3, ink: 0.03 }) : skinMat;
+  const skullMat = human ? npr({ ...skin3, ink: HEAD_INK }) : skinMat;
   head.add(inked(skull, skullMat, 0.03));
   const faceR = lod === 'low' ? stillFace(skullScale, faceShape, face, human, skin, hairColor) : faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face }, human, skin, hairColor);
   head.add(faceR.mesh);
@@ -637,7 +647,21 @@ export function stickman(o: StickmanOptions): Figure {
     }
     const bend = lod !== 'low';
     const geo = neckGeometry(head3(B, true) - R.head * 0.5, undefined, bend ? NECK_BEND.rows : 1);
-    const tube = inked(geo, skinMat, 0.022);
+    // nét cổ là nét bóng dáng hậu kỳ, không vỏ ngược: vỏ ngược thò qua khe cằm và cổ áo thành vạch đổi theo dáng đầu từng khung.
+    // Chung vật liệu với sọ và da trong miệng cổ áo, khe nét xa như tai: không nét ở chỗ cắm vào đầu, vào miệng cổ áo
+    const tube = new THREE.Group();
+    const neckMesh = new THREE.Mesh(geo, skullMat);
+    neckMesh.castShadow = true;
+    neckMesh.userData.inkGap = 1;
+    // da trong miệng cổ áo chung mã vật với ống cổ: không nét giữa hai bên, thân áo bỏ qua nét của cả hai bằng một mã
+    neckMesh.userData.inkChain = neckMesh.id;
+    const fillMat = npr({ ...skin3, doubleSided: true, ink: HEAD_INK });
+    for (const c of spine.children) {
+      if (!c.userData.neckFill) continue;
+      (c as THREE.Mesh).material = fillMat;
+      c.userData.inkChain = neckMesh.id;
+    }
+    tube.add(neckMesh);
     // chân ống lùi sau mép cổ áo một khe đổi theo dáng đầu: nét bóng dáng của thân áo, mảng da ngực loang lên đó thành vạch
     tube.children[0].userData.inkSkip = body.skin ? [spine.children[0], body.skin] : spine.children[0];
     neck.add(tube);
@@ -751,6 +775,7 @@ function cladLimb(upper: THREE.Mesh, lower: THREE.Mesh, [L1, L2]: [number, numbe
     if ((mat === cover || mat === flare?.cover) && tint) paint(geo, tint);
     // tay áo loe chung khe nét với thân áo: mép tay áo trên thân có nét theo khe sâu cỡ bán kính ống như ống tay
     if (mat === flare?.cover) c.userData.inkGap = flare.gap;
+    if (m.userData.inkU) c.userData.inkU = m.userData.inkU;
     c.castShadow = true;
     c.userData.inkChain = more.disk === undefined ? chain : -chain;
     if (hull) {

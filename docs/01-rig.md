@@ -1497,8 +1497,11 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
   rộng (`flat`), hơi dời ra trước (`chin`) và thu gáy (`nape`); không có mũi. Mọi số nhân bình phương
   độ sâu dưới xích đạo nên viền đầu không gãy ở chỗ nối. Đầu ngồi cao hơn đầu cầu `HUMAN_NECK`
   (`head3`, `actJoints` cùng đọc): một đoạn cổ da lộ ra giữa cằm và cổ áo. Vỏ viền dưới cằm chìm sau
-  cổ và cổ áo nên sọ có thêm nét bóng dáng dò ở hậu kỳ (`npr({ ink })`). Ống cổ không nhận nét bóng dáng của thân áo
-  cùng người (`userData.inkSkip`): chân ống lùi sau mép cổ áo một khe đổi theo dáng đầu, nét ấy thành vạch dài ngắn.
+  cổ và cổ áo nên sọ có thêm nét bóng dáng dò ở hậu kỳ (`npr({ ink })`). Ống cổ không có vỏ viền, chỉ nét bóng dáng
+  hậu kỳ: vỏ viền thò qua khe giữa cằm và cổ áo thành vạch đổi theo dáng đầu từng khung. Sọ, ống cổ và da trong miệng
+  cổ áo chung vật liệu nét (`HEAD_INK`); ống cổ có khe nét xa (`inkGap` `1`) như tai và chung mã vật với da trong miệng
+  cổ áo, nên chỗ cổ cắm vào đầu, vào miệng cổ áo không có nét. Ống cổ không nhận nét bóng dáng của thân áo cùng người
+  (`userData.inkSkip`): chân ống lùi sau mép cổ áo một khe đổi theo dáng đầu, nét ấy thành vạch dài ngắn.
 - **Nét mặt chibi nằm trên mặt nặn.** Lưới nét mặt đi qua cùng `humanSkull` nên mồm, nếp nhăn theo
   má ở mọi góc quay. `CHIBI` (`core/face.ts`) cộng vào `face` của JSON nhân vật: mắt hạ `10`, hai mắt
   giãn thêm `18`, mồm gần mắt `10` px (`chibiShape`) — kính và `headFit` đọc chỗ mắt đã dời. Mỗi mắt
@@ -1585,7 +1588,9 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
   thân áo. Thân áo, khối hông, ống tay chân, bàn tay và giày có thêm nét bóng dáng dò ở hậu kỳ (`LIMB_SIL`,
   `npr({ ink })`). Thân áo và tay áo là cùng vật liệu nên nét chỉ hiện ở chỗ tay nằm hẳn trước thân, vai liền không
   có đường may: cùng màu thì chung vật liệu `npr`, khác màu thì chung vật liệu vải tô màu từng đỉnh (`clothMaterial`,
-  `npr({ tint })`) — trừ thân trần. Tay áo loe vẽ hai mặt: nét bóng dáng coi vật liệu chỉ khác `doubleSided` là một
+  `npr({ tint })`) — trừ thân trần. Mép tay đè lên thân cùng vật liệu đậm theo khoảng dọc tay từ vai (`ARM_INK_U`:
+  mờ ở `0.06`, đủ ở `0.2` chiều dài bắp tay, ghi trên lưới qua `userData.inkU`), không theo khe sâu từng điểm ảnh: khe
+  sâu giữa tay buông sát sườn và thân đổi theo nhịp thở thành nét chập chờn. Tay áo loe vẽ hai mặt: nét bóng dáng coi vật liệu chỉ khác `doubleSided` là một
   (`inkKey`), vai tay áo loe cũng liền thân áo; các đoạn của một chi chung một mã vật (`userData.inkChain`), khuỷu và gối
   không có nét. Da chân trần là vật liệu riêng (`npr({ group })`), khác da tay: bàn tay đặt lên đùi trần vẫn có nét. Người mặc đồ chiếm chừng hai chục mã vật, `MAX_INK` (`128`) của pipeline đủ cho năm, sáu
   người; quá thì người sau chỉ còn vỏ viền.

@@ -48,7 +48,7 @@ void main(){
   vec4 best = vec4(0.0, 0.0, -1.0, 0.0);
   if (uStep < 0.5) {
     // vật có nét gần nhất trong tám điểm kề; khe sâu đo tới điểm kề thẳng xa nhất của nó (sát mép nhất), không thì sọc theo bậc thang của mép
-    float idb = 0.0, zb = 1e9, ze = 0.0;
+    float idb = 0.0, zb = 1e9, ze = 0.0, ue = -1.0;
     for (int i = 0; i < 9; i++) {
       ivec2 q = inkClamp(p + ivec2(i % 3 - 1, i / 3 - 1), uRect);
       float idq = texelFetch(tId, q, 0).r, zq = linz(texelFetch(tZ, q, 0).r);
@@ -63,10 +63,15 @@ void main(){
     }
     for (int i = 1; i < 9; i += 2) {
       ivec2 q = inkClamp(p + ivec2(i % 3 - 1, i / 3 - 1), uRect);
-      if (texelFetch(tId, q, 0).r == idb) ze = max(ze, linz(texelFetch(tZ, q, 0).r));
+      vec4 iq = texelFetch(tId, q, 0);
+      if (iq.r == idb) {
+        ze = max(ze, linz(texelFetch(tZ, q, 0).r));
+        ue = max(ue, iq.g);
+      }
     }
     vec4 k = uInk[int(idb)];
-    float edge = uInk[int(idp.x)].y != k.y ? 1.0 : ze > 0.0 ? smoothstep(k.z, k.w, zp - ze) : 0.0;
+    // cùng vật liệu: vật phía trước có độ đậm ghi sẵn trên lưới (userData.inkU, kênh g không âm) thì theo nó, không thì theo khe sâu ở mép
+    float edge = uInk[int(idp.x)].y != k.y ? 1.0 : ue >= 0.0 ? ue : ze > 0.0 ? smoothstep(k.z, k.w, zp - ze) : 0.0;
     best = vec4(inkPack(vec2(0.0)), idb * 1024.0 + min(k.x * uProj[1][1] * uRes.y * 0.5 / zb, 1000.0), zb, edge);
     if (best.w <= 0.0 || inkGate(idp, zp, best) <= 0.0) best.z = -1.0;
     gl_FragColor = best;
@@ -419,7 +424,8 @@ function fitOrtho(cam: THREE.OrthographicCamera, dir: THREE.Vector3, region: THR
  * khác; vật liệu `userData.ink` (`npr({ ink })`)
  * có nét bóng dáng dò ở hậu kỳ, cả khi tắt `outline` như vỏ ngược; các mesh cùng `userData.inkChain` và cùng vật liệu chung một
  * mã vật, chỗ nối không có nét. Vật liệu chỉ khác `doubleSided` tính là cùng vật liệu. Mép vật đè lên vật khác cùng vật liệu có nét khi khe sâu qua `userData.inkGap` (three, cỡ bán
- * kính vật: nét đầy ở 0,8, mờ dần dưới 0,3), không có thì theo bề dày nét. Mesh có `userData.inkSkip` (một mesh hay mảng tối đa hai
+ * kính vật: nét đầy ở 0,8, mờ dần dưới 0,3), không có thì theo bề dày nét; mesh có `userData.inkU` ([gốc, đầu, cuối] theo −y local)
+ * thì mép nó đè lên vật cùng vật liệu đậm theo dải ấy, không theo khe sâu. Mesh có `userData.inkSkip` (một mesh hay mảng tối đa hai
  * mesh) không nhận nét bóng dáng của các mesh ấy.
  */
 export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSize = 2048 }: PipelineOptions = {}): Pipeline {
@@ -447,19 +453,25 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
   const maskRT = new THREE.WebGLRenderTarget(4, 4, { format: THREE.RedFormat, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false });
   let rw = 4, rh = 4, dot = 6;
   // pháp tuyến hệ nhìn, mặt sau lật lại; a: 1 có nét gấp, 0,5 vật `noCrease`, 0,3 lưới người (`body`), 0,1 vật `noEdge`, 0 không có vật. Đích thứ hai: mã vật có nét bóng dáng, mặt nạ đứt nét của kiểu cel, hai mã vật mà nét bóng dáng không loang lên vật này (`inkSkip`)
-  const normalMat = (a: number, id: number, skip: [number, number]) => new THREE.ShaderMaterial({
+  // kênh g của đích thứ hai: kiểu cel là mặt nạ đứt nét; kiểu khác là độ đậm nét bóng dáng lên vật cùng vật liệu theo `userData.inkU`
+  // (gốc, đầu và cuối dải theo −y local), −1 khi không có — cố định trên lưới nên không nhấp nháy theo khe sâu từng khung
+  const normalMat = (a: number, id: number, skip: [number, number], u?: [number, number, number]) => new THREE.ShaderMaterial({
     side: THREE.DoubleSide,
-    vertexShader: /* glsl */ `varying vec3 vN, vL; void main(){ vN = normalize(normalMatrix * normal); vL = ${SCALED_POSITION}; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: /* glsl */ `layout(location = 1) out highp vec4 gInk; varying vec3 vN, vL; ${NOISE}
-      void main(){ vec3 n = normalize(gl_FrontFacing ? vN : -vN); gl_FragColor = vec4(n * 0.5 + 0.5, ${a.toFixed(1)}); gInk = vec4(${id}.0, inkKeep(vL), ${skip[0]}.0, ${skip[1]}.0); }`,
+    uniforms: { uShade: G.uShade },
+    vertexShader: /* glsl */ `varying vec3 vN, vL; varying float vU; void main(){ vN = normalize(normalMatrix * normal); vL = ${SCALED_POSITION}; vU = ${(u?.[0] ?? 0).toFixed(5)} - position.y; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: /* glsl */ `layout(location = 1) out highp vec4 gInk; uniform float uShade; varying vec3 vN, vL; varying float vU; ${NOISE}
+      void main(){ vec3 n = normalize(gl_FrontFacing ? vN : -vN); gl_FragColor = vec4(n * 0.5 + 0.5, ${a.toFixed(1)});
+        float g = abs(uShade - 1.0) < 0.5 ? inkKeep(vL) : ${u ? `smoothstep(${u[1].toFixed(5)}, ${u[2].toFixed(5)}, vU)` : '-1.0'};
+        gInk = vec4(${id}.0, g, ${skip[0]}.0, ${skip[1]}.0); }`,
   });
   // decal giữ độ lệch sâu của vật liệu gốc, không thì giành điểm ảnh với mặt dưới nó thành nét lấm chấm
   const normalMats = new Map<string, THREE.ShaderMaterial>();
   const normalFor = (m: THREE.Mesh, src: THREE.Material, id: number, skip: [number, number]) => {
-    const a = m.userData.noEdge ? 0.1 : m.userData.body ? 0.3 : m.userData.noCrease ? 0.5 : 1, key = `${a} ${id} ${skip.join(' ')}` + (src.polygonOffset ? ` ${src.polygonOffsetFactor} ${src.polygonOffsetUnits}` : '');
+    const u = m.userData.inkU as [number, number, number] | undefined;
+    const a = m.userData.noEdge ? 0.1 : m.userData.body ? 0.3 : m.userData.noCrease ? 0.5 : 1, key = `${a} ${id} ${skip.join(' ')}` + (u ? ` u${u.join(' ')}` : '') + (src.polygonOffset ? ` ${src.polygonOffsetFactor} ${src.polygonOffsetUnits}` : '');
     let mat = normalMats.get(key);
     if (!mat) {
-      normalMats.set(key, (mat = normalMat(a, id, skip)));
+      normalMats.set(key, (mat = normalMat(a, id, skip, u)));
       if (src.polygonOffset) Object.assign(mat, { polygonOffset: true, polygonOffsetFactor: src.polygonOffsetFactor, polygonOffsetUnits: src.polygonOffsetUnits });
     }
     return mat;
@@ -673,7 +685,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
         if (m.material.side === THREE.BackSide || !m.material.depthWrite) return void shells.push(m);
         const w: number = m.material.userData.ink ?? 0;
         let id = 0;
-        const chain = m.userData.inkChain === undefined ? '' : `${m.userData.inkChain} ${m.material.uuid}`;
+        const chain = m.userData.inkChain === undefined ? '' : `${m.userData.inkChain} ${m.material.userData.inkKey ?? m.material.uuid}`;
         if (w > 0 && (chains.has(chain) || inks < MAX_INK - 1)) {
           const slot: string = m.material.userData.inkKey ?? m.material.uuid;
           if (!slots.has(slot)) slots.set(slot, slots.size + 1);

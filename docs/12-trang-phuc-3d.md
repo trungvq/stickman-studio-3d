@@ -751,8 +751,9 @@ Không có chỏm vai: tay áo là ống `palette.sleeve*` của người mặc 
 
   **Da trong miệng cổ.** Người 3D mặc đồ (`palette.clad`), mọi kiểu áo, có lưới màu da phủ mặt khối từ viền cổ lên mép
   trên khối và nắp đỉnh khối, nổi `0.3` px (`NECK_SKIN`, dưới viền gân, cổ bẻ, áo trong và mảng áo): miệng cổ áo lộ da chứ
-  không phải màu áo — cổ chữ V của sơ mi, polo là ngực trên. Lưới dùng chính vật liệu ống cổ, không nét hậu kỳ: chỗ nối
-  với cổ liền, mép dưới khuất dưới nét mép cổ của viền gân, cổ bẻ.
+  không phải màu áo — cổ chữ V của sơ mi, polo là ngực trên. Lưới dùng chính vật liệu ống cổ; người `human` thì chung cả
+  vật liệu nét và mã vật với ống cổ (`docs 01`, mục đầu `human`): chỗ nối với cổ liền, mép dưới khuất dưới nét mép cổ của
+  viền gân, cổ bẻ.
 - **Mũ trùm nổi khối** (`hood` của kiểu) là một tấm lưới dải hở, từ đuôi vạt `+x` vòng qua
   lưng tới đuôi vạt `−x`. Mép cổ là viền cổ chữ V, nửa sau trễ xuống `neckBack`. Mỗi vạt
   vắt qua giữa ngực `tuck` độ quanh trục cổ: mép cổ chữ V đi thẳng tiếp xuống nên hai vạt
