@@ -1196,6 +1196,7 @@ nổi thấp thì vỏ ấy lòi qua thành chấm mực.
 | `color` | `accent` (blazer, cardigan), không có (suit) | Màu áo trong; màu tô như mảng áo: `color`, `line`, `accent`, `skin` hay mã màu |
 | `line` | 0 | Nét viền áo trong, lần nét thân |
 | `tie` | không có (blazer, cardigan), cà vạt màu nét (suit) | Cà vạt; `false` bỏ cà vạt của suit |
+| `collar` | `false` | Cổ sơ mi nổi khối ([cổ sơ mi](#cổ-sơ-mi-dưới-áo-khoác)) |
 
 | Trường của `inner.tie` | Mặc định | Nghĩa |
 |---|---:|---|
@@ -1204,11 +1205,33 @@ nổi thấp thì vỏ ấy lòi qua thành chấm mực.
 | `length` | 102 | Mũi cà vạt thấp hơn chỗ viền cổ chạm mặt vát bấy nhiêu px |
 | `line` | 0 | Nét viền, lần nét thân |
 
+#### Cổ sơ mi dưới áo khoác
+
+`inner.collar: true` dựng cổ sơ mi màu áo trong (bỏ trống `inner.color` là `accent`) nằm trong miệng cổ chữ V: miệng cổ
+riêng ôm chân ống cổ, hẹp hơn miệng cổ áo khoác `INNER_COLLAR.inset` (`2.5`) px và không rộng quá `NECK_MIN`, nên chân cổ
+sơ mi nằm trong chân cổ áo khoác; chân cổ cao `8.5` px ở nửa sau, lá cổ nửa sau rủ `5` px dọc chân cổ, không trải xuống
+thân. Phía trước hai lá cổ nhọn luồn dưới ve. Dựng bằng chính bộ dựng [cổ bẻ](#thân-áo-dựng-khối), nét viền như cổ bẻ.
+Áo trong khoét theo miệng cổ sơ mi: trong miệng cổ là da cổ.
+
+```json
+"inner": { "color": "#FFF8EC", "tie": { "color": "#7E2235" }, "collar": true }
+```
+
+| Dáng (`INNER_COLLAR`) | Đáy chữ V dưới bên cổ | Chân cổ giữa ngực | Mũi cổ `(x, y)`, `y` dưới đáy chữ V | Dùng khi |
+|---|---:|---:|---|---|
+| `tie` cài kín | 6 | `0.8` lần chân cổ sau | `(12.5, 13)` | Có cà vạt: nút cà vạt bắt đầu `2` px trên đáy chữ V, giữa hai mũi cổ, mũi cà vạt giữ ở `length` |
+| `open` mở cúc trên | 16 | `0` | `(13.5, −6)` | Không cà vạt: chữ V sâu lộ da, mũi cổ cao hơn đáy chữ V |
+
+Chỉ áo khoác cổ V (`suit`, `blazer`, `cardigan`) dựng nó; kiểu khác bỏ qua. Đừng vẽ cổ sơ mi bằng [mảng áo](#mảng-áo-và-hoạ-tiết):
+mảng là hình in, không có chân cổ, và không khớp nút cà vạt khi người quay.
+
 **Gilê ngoài sơ mi** (sommelier, bồi bàn, bartender) không có kiểu riêng: thân áo không tay là thân áo dựng khối màu gilê,
 tay áo là ống `palette.sleeve*` màu sơ mi, áo trong trắng và cà vạt ở cổ chữ V. Hai bộ:
 
 - `cardigan` — cổ V viền gân, ba cúc: gilê thường. Bo gấu của kiểu nằm dưới tạp dề hay cạp quần.
 - `suit` — có ve nổi khối: gilê có ve, nhìn gần như áo vest cụt tay.
+
+Cổ sơ mi thì khai `inner.collar` ([cổ sơ mi](#cổ-sơ-mi-dưới-áo-khoác)).
 
 Tay áo trắng lộ ngay cạnh thân gilê nên ve rộng hay chữ V mở rộng ở vai nhìn như mảnh vải rách: người vai hẹp, `ease`
 nhỏ thì miệng cổ và ve tự co theo ([áo khoác cổ V theo vai](#áo-khoác-cổ-v-theo-vai)); muốn ve hẹp nữa thì hạ `lapel`.

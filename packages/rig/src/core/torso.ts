@@ -76,7 +76,7 @@ export interface Surface {
  * Cổ bẻ nổi khối: chân cổ dựng quanh viền cổ, lá cổ gập từ đỉnh chân cổ xuống. Mép ngoài quanh lưng
  * là dải rộng `band` px, phía trước đi thẳng từ bên cổ qua `flap` về giữa ngực
  */
-interface Collar {
+export interface Collar {
   /** Chân cổ cao bấy nhiêu px ở nửa sau, thấp dần về `0` ở giữa ngực */
   stand: number;
   /** Lá cổ rộng bấy nhiêu px trên mặt khối giữa lưng, và ở hai bên cổ */
@@ -90,6 +90,8 @@ interface Collar {
   tipAt?: number;
   /** Màu tô, bỏ trống là màu áo */
   fill?: MarkFill;
+  /** Chân cổ giữa ngực cao bằng bấy nhiêu phần `stand` (cổ cài kín); bỏ trống là `0`, cổ mở */
+  closed?: number;
 }
 
 /** Viền cổ gân nổi khối: vòng vải có bề dày quanh viền cổ, từ mép cổ xuống viền cổ nở rộng `width` */
@@ -368,10 +370,12 @@ const onPlane = (s: Surface, poly: P2[]): SP[] =>
     return curve(n, (u): SP => s.at(x + (qx - x) * u, y + (qy - y) * u)).slice(0, -1);
   });
 
-/** Cà vạt mặc định: nút sát viền cổ, bản rộng dần, mũi thấp hơn chỗ viền cổ chạm mặt vát `length` px */
-const tiePoly = (s: Surface, t: Tie): P2[] => {
-  const top = s.top();
-  const k = (t.length - 11) / 91;
+/**
+ * Cà vạt mặc định: nút từ `y0` (bỏ trống là sát viền cổ), bản rộng dần, mũi thấp hơn chỗ viền cổ chạm mặt vát `length`
+ * px dù nút ở đâu
+ */
+const tiePoly = (s: Surface, t: Tie, y0 = s.top()): P2[] => {
+  const k = (t.length - (y0 - s.top()) - 11) / 91;
   return (
     [
       [-5.5, 1],
@@ -384,7 +388,72 @@ const tiePoly = (s: Surface, t: Tie): P2[] => {
       [-8, 11 + 49 * k],
       [-3, 11],
     ] as P2[]
-  ).map(([x, y]) => [x * t.width, top + y]);
+  ).map(([x, y]) => [x * t.width, y0 + y]);
+};
+
+/**
+ * Cổ sơ mi dưới áo khoác cổ V (`inner.collar`). Miệng cổ chữ V `front` px ôm chân ống cổ; chân cổ cao `stand` px ở nửa
+ * sau, còn `closed` phần ở giữa ngực; lá cổ gập từ đỉnh chân cổ — nửa sau rủ `fall` px dọc chân cổ, phía trước xuống mép qua
+ * mũi cổ `point` (`[x, y]`, `y` dưới đáy chữ V) về đáy chữ V. Lá cổ nổi `lift` px ở nếp gập và mép, mũi vểnh thêm `tip`.
+ * Có cà vạt (`tie`): cổ cài kín quanh họng, nút cà vạt bắt đầu `knot` px trên đáy chữ V, luồn dưới hai lá cổ. Không cà vạt
+ * (`open`): cúc trên mở, chữ V sâu lộ da, mũi cổ cao hơn đáy chữ V
+ */
+export const INNER_COLLAR = {
+  stand: 8.5,
+  fall: 5,
+  lift: [2.2, 1.4],
+  tip: 1,
+  knot: 2,
+  /** Miệng cổ sơ mi hẹp hơn miệng cổ áo khoác ít nhất bấy nhiêu px: chân cổ sơ mi nằm trong chân cổ áo khoác */
+  inset: 2.5,
+  tie: { front: 6, closed: 0.8, point: [12.5, 13] },
+  open: { front: 16, closed: 0, point: [13.5, -6] },
+} as const;
+
+/** Cà vạt của áo trong: `inner.tie`, bỏ trống thì `suit` có, kiểu khác không */
+export const innerTie = (g: Garment): Partial<Tie> | undefined =>
+  g.inner?.tie === false ? undefined : (g.inner?.tie ?? (g.style === "suit" ? {} : undefined));
+
+/** Dáng cổ sơ mi `inner.collar` theo có cà vạt hay không */
+export const innerCollarShape = (g: Garment) =>
+  innerTie(g) ? INNER_COLLAR.tie : INNER_COLLAR.open;
+
+/**
+ * Điểm trên viền cổ dáng `shape`, nở rộng và hạ `grow` px, ở góc `phi` quanh trục cổ (`0` giữa trước, `±180` giữa sau);
+ * kinh độ cuộn về gần `phi` cho vòng liền
+ */
+export function neckRing(
+  s: Pick<Surface, "g" | "top" | "at">,
+  shape: GarmentStyleDef["neckline"],
+  phi: number,
+  grow = 0,
+): SP {
+  const g = s.g;
+  const x = (g.neck + grow) * Math.sin(phi * D);
+  const c = Math.cos(phi * D);
+  const dip =
+    c < 0
+      ? (g.neckBack + grow) * -c
+      : shape === "v"
+        ? (g.neckFront + grow) * (1 - Math.abs(Math.sin(phi * D)))
+        : shape === "square"
+          ? (g.neckFront + grow) * Math.min(1, c * 3)
+          : (g.neckFront + grow) * c;
+  const [lon, y] = s.at(x, s.top(grow) + dip, c < 0);
+  return [lon + 360 * Math.round((phi - lon) / 360), y];
+}
+
+/** Mặt khối với miệng cổ của cổ sơ mi `inner.collar`: cùng khối, miệng cổ hẹp chữ V */
+export const innerNeckOf = (s: Surface): Surface => {
+  const neck = Math.min(NECK_MIN, s.g.neck - INNER_COLLAR.inset);
+  const grow = neck - s.g.neck;
+  const shirt: Surface = {
+    ...s,
+    g: { ...s.g, neck, neckFront: innerCollarShape(s.g).front, neckBack: 0, neckline: "v" },
+    top: (more = 0) => s.top(grow + more),
+    neck: (phi, more = 0) => neckRing(shirt, "v", phi, more),
+  };
+  return shirt;
 };
 
 /** Áo trong nổi bấy nhiêu px ở người 3D: vỏ viền cổ người cắm xiên qua mặt vát, áo trong nổi thấp thì vỏ ấy lòi qua thành chấm mực */
@@ -394,31 +463,36 @@ const INNER_LIFT = 1;
  * Áo trong lộ giữa hai vạt cổ chữ V (`garment.inner`): phủ cả miệng cổ từ mép trên khối tới đáy chữ V, liền viền cổ;
  * cà vạt cắt theo chữ V như luồn dưới vạt. `fill`, `tie` là mặc định của kiểu khi `inner` không khai
  */
-function innerMarks(s: Surface, fill?: MarkFill, tie?: Partial<Tie>): Mark[] {
+function innerMarks(s: Surface, fill?: MarkFill): Mark[] {
   const inner = s.g.inner;
   const out: Mark[] = [];
   const color = inner?.color ?? fill;
+  // có cổ sơ mi thì áo trong khoét theo miệng cổ sơ mi: trong miệng cổ là da
+  const shirt = inner?.collar ? innerNeckOf(s) : undefined;
   if (color) {
     const w = 3 * s.g.neck;
+    const cut: P2[] = shirt
+      ? [
+          [-shirt.g.neck, s.yC],
+          [-shirt.g.neck, shirt.top()],
+          [0, shirt.top() + shirt.g.neckFront],
+          [shirt.g.neck, shirt.top()],
+          [shirt.g.neck, s.yC],
+        ]
+      : [];
     out.push({
-      pts: onPlane(
-        s,
-        inV(s, [
-          [-w, s.yC],
-          [w, s.yC],
-          [0, s.top() + s.g.neckFront],
-        ]),
-      ),
+      pts: onPlane(s, inV(s, [[-w, s.yC], ...cut, [w, s.yC], [0, s.top() + s.g.neckFront]])),
       fill: color,
       k: inner?.line ?? 0,
       lift: INNER_LIFT,
     });
   }
-  const t = inner?.tie === false ? undefined : (inner?.tie ?? tie);
+  const t = innerTie(s.g);
   if (t) {
     const spec = { width: 1, length: 102, line: 0, ...t };
+    const y0 = shirt && shirt.top() + shirt.g.neckFront - INNER_COLLAR.knot;
     out.push({
-      pts: onPlane(s, inV(s, tiePoly(s, spec))),
+      pts: onPlane(s, inV(s, tiePoly(s, spec, y0))),
       fill: spec.color ?? "line",
       k: spec.line,
       lift: INNER_LIFT + 0.05,
@@ -554,7 +628,7 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
     marks: (s) => {
       const [yA, ...buttons] = placket(s, [0, 0.26, 0.6]);
       return [
-        ...innerMarks(s, undefined, {}),
+        ...innerMarks(s),
         { pts: [s.at(0, yA), s.at(-1, yA + 20), s.at(0, s.yH - 9)], k: 0.45 },
         // Hai vạt trước bo tròn ở gấu
         ...SIDES.map((d) => ({

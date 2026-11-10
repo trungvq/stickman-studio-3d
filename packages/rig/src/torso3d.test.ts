@@ -384,6 +384,22 @@ describe('mảng áo, hoạ tiết, áo trong', () => {
     expect(width(tie({ width: 1.5 }))).toBeGreaterThan(width(tie({})) * 1.3);
   });
 
+  it('`inner.collar` dựng cổ sơ mi nổi khối màu áo trong; nút cà vạt ở đáy cổ sơ mi, mũi giữ chỗ', () => {
+    const plain = mesh({ style: 'suit', inner: { color: '#ffffff' } });
+    const shirt = mesh({ style: 'suit', inner: { color: '#ffffff', collar: true } });
+    expect(shirt.sheets.length).toBe(plain.sheets.length + 2);
+    expect(shirt.sheets.filter((s) => s.color === '#ffffff')).toHaveLength(2);
+    const tie = (t: TorsoMesh) => t.fills.find((f) => f.fill === 'line')!.pts;
+    const ys = (pts: number[][]) => pts.map((p) => p[1]);
+    expect(Math.min(...ys(tie(shirt)))).toBeGreaterThan(Math.min(...ys(tie(plain))) + 2);
+    expect(Math.max(...ys(tie(shirt)))).toBeCloseTo(Math.max(...ys(tie(plain))), 0);
+    // không cà vạt: cổ mở, áo trong khoét chữ V sâu nên mép trên thấp hơn ở giữa ngực
+    const top = (t: TorsoMesh) => Math.min(...t.fills.find((f) => f.fill === '#ffffff')!.pts.filter((p) => Math.abs(p[0]) < 1).map((p) => p[1]));
+    const open = mesh({ style: 'suit', inner: { color: '#ffffff', tie: false, collar: true } });
+    expect(top(open)).toBeGreaterThan(top(mesh({ style: 'suit', inner: { color: '#ffffff', tie: false } })) + 10);
+    expect(mesh({ style: 'shirt', inner: { collar: true } }).sheets.length).toBe(mesh({ style: 'shirt' }).sheets.length);
+  });
+
   it('`neckline` đè dáng cổ của kiểu, `marks: false` bỏ đặc điểm dán', () => {
     const v = mesh({ style: 'tshirt', neckline: 'v', neckFront: 30 });
     const u = mesh({ style: 'tshirt', neckFront: 30 });

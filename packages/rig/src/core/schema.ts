@@ -473,6 +473,8 @@ export const InnerSchema = z.object({
   line: z.number().min(0).default(0),
   /** Cà vạt; `false` bỏ cà vạt của `suit` */
   tie: z.union([z.literal(false), TieSchema]).optional(),
+  /** Cổ sơ mi nổi khối ôm chân cổ, hai lá cổ nhọn luồn dưới ve; nút cà vạt nằm giữa hai mũi cổ. Chỉ người 3D */
+  collar: z.boolean().optional(),
 });
 
 /** Khăn vắt vai của người 3D (`pieces.neck.drape`): dải phẳng vắt qua một vai, khối cứng bám thân. docs/12-trang-phuc-3d.md#khăn-vắt-vai */

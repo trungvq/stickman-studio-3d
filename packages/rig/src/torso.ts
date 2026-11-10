@@ -3,8 +3,8 @@ import { torsoSection, type ArmRoom } from './core/act3';
 import { D } from './core/constants';
 import type { Garment } from './core/schema';
 import {
-  COLLAR_LEAN, COLLAR_LINE, curve, GARMENT_STYLES, garmentOf, lerp, lerpAt, lipOf, profile, RIB_FRONT, spline,
-  type MarkFill, type P2, type Rig, type SP, type Surface,
+  COLLAR_LEAN, COLLAR_LINE, curve, GARMENT_STYLES, garmentOf, INNER_COLLAR, innerCollarShape, innerNeckOf, lerp, lerpAt, lipOf, neckRing, profile, RIB_FRONT, spline,
+  type Collar, type MarkFill, type P2, type Rig, type SP, type Surface,
 } from './core/torso';
 import { WrapSchema, type Drape, type Necklace, type Shades } from './core/schema';
 import { drapeSolid, shadesSolids } from './core/drape';
@@ -124,20 +124,7 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     top,
     at,
     depth: (y, back = false) => (back ? dAt : fAt)(y),
-    neck: (phi, grow = 0) => {
-      const x = (g.neck + grow) * Math.sin(phi * D);
-      const c = Math.cos(phi * D);
-      const dip =
-        c < 0
-          ? (g.neckBack + grow) * -c
-          : (g.neckline ?? def.neckline) === "v"
-            ? (g.neckFront + grow) * (1 - Math.abs(Math.sin(phi * D)))
-            : (g.neckline ?? def.neckline) === "square"
-              ? (g.neckFront + grow) * Math.min(1, c * 3)
-              : (g.neckFront + grow) * c;
-      const [lon, y] = at(x, top(grow) + dip, c < 0);
-      return [lon + 360 * Math.round((phi - lon) / 360), y];
-    },
+    neck: (phi, grow = 0) => neckRing({ g, top, at }, g.neckline ?? def.neckline, phi, grow),
     t: (tt) => pr.yS * (1 - tt),
   };
   const solid = ([lon, y]: SP): [Vec3, Vec3] => {
@@ -464,9 +451,12 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
   if (neck?.shades) out.solids.push(...shadesSolids({ s: surf, raise: (sp, lift) => raise(sp, lift, 0, 0) }, neck.shades));
   if (neck?.necklace) out.solids.push(...necklaceSolids({ s: surf, raise: (sp, lift) => raise(sp, lift, 0, 0) }, neck.necklace));
 
-  const spec = def.collar?.(surf);
-  if (spec) {
-    const lip = lipOf(surf, spec.side, spec.flap);
+  /**
+   * Cổ bẻ trên miệng cổ của `s`. `hang`: lá cổ nửa sau không trải xuống thân mà rủ dọc chân cổ, mép dừng cao hơn viền cổ
+   * `stand − hang` px ở giữa lưng — cổ sơ mi nằm trong chân cổ áo khoác
+   */
+  const collarSheets = (spec: Collar, s: Surface, up = 0, hang?: number) => {
+    const lip = lipOf(s, spec.side, spec.flap);
     const lens = lip.map((q, i) => (i ? Math.hypot(q[0] - lip[i - 1][0], q[1] - lip[i - 1][1]) : 0));
     for (let i = 1; i < lens.length; i++) lens[i] += lens[i - 1];
     const along = (t: number): P2 => {
@@ -489,8 +479,8 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
       const t = frontAt(phi);
       if (t === undefined) {
         const c = Math.cos(phi * D);
-        const [l, y] = surf.neck(phi);
-        return [l, y + spec.side + (spec.band - spec.side) * c * c];
+        const [l, y] = s.neck(phi);
+        return [l, y + (hang === undefined ? spec.side + (spec.band - spec.side) * c * c : spec.side * (1 - c * c))];
       }
       const sn = Math.sin(phi * D);
       const [x, y] = along(Math.min(t, onAxis));
@@ -498,22 +488,51 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
       return [l + 360 * Math.round((phi - l) / 360), y];
     };
     const [liftFold, liftEdge] = spec.lift;
-    const up = g.collarUp ?? 0;
     const stand: Vec3[][] = [];
     const leaf: Vec3[][] = [];
     for (let i = 0; i <= NU; i++) {
       const phi = (360 * i) / NU;
-      const h = spec.stand * (Math.cos(phi * D) <= 0 ? 1 : Math.abs(Math.sin(phi * D)));
-      const inner = surf.neck(phi);
+      const c = Math.cos(phi * D);
+      const h = spec.stand * (c <= 0 ? 1 : lerp(spec.closed ?? 0, 1, Math.abs(Math.sin(phi * D))));
+      const rest = hang === undefined || c > 0 ? 0 : Math.max(0, spec.stand - hang) * c * c;
+      const inner = s.neck(phi);
       const o = outer(phi);
       stand.push([0, 1].map((w) => raise(inner, liftFold * w, h * w)));
       const down = curve(NV, (v) =>
-        raise([lerp(inner[0], o[0], v), lerp(inner[1], o[1], v)], lerp(liftFold, liftEdge + tipLift(phi), v), h * (1 - v) ** 2),
+        raise(
+          [lerp(inner[0], o[0], v), lerp(inner[1], o[1], v)],
+          lerp(liftFold, liftEdge + tipLift(phi), v),
+          rest + (h - rest) * (1 - v) ** 2,
+        ),
       );
       leaf.push(up > 0 ? popUp(down, solid(inner)[1], phi, up) : down);
     }
     sheet(stand, [], spec.fill ?? "color", COLLAR_LINE);
     sheet(leaf, [0, NV], spec.fill ?? "color", COLLAR_LINE);
+  };
+
+  const spec = def.collar?.(surf);
+  if (spec) collarSheets(spec, surf, g.collarUp ?? 0);
+  // cổ sơ mi dưới áo khoác cổ V: miệng cổ, lá cổ màu áo trong
+  if (g.inner?.collar && def.shoulderFit) {
+    const C = INNER_COLLAR;
+    const shape = innerCollarShape(g);
+    const shirt = innerNeckOf(surf);
+    collarSheets(
+      {
+        stand: C.stand,
+        band: 0,
+        side: 0,
+        flap: [[shape.point[0], shirt.top() + shape.front + shape.point[1]]],
+        lift: [...C.lift],
+        tip: C.tip,
+        closed: shape.closed,
+        fill: g.inner.color ?? 'accent',
+      },
+      shirt,
+      0,
+      C.fall,
+    );
   }
   return out;
 }
