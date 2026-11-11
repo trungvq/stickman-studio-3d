@@ -1618,7 +1618,7 @@ phía trước tới chỗ rời người rồi rủ thẳng. Đứng, cúi chà
 | Trường `skirt.apron` | Mặc định | Nghĩa |
 |---|---:|---|
 | `width` | 38 | Nửa rộng tấm, không quá nửa rộng cạp |
-| `band` | 5 | Dây cạp dày bấy nhiêu px, vòng quanh cạp ở `rise`; `0` là không có |
+| `band` | 5 | Dây cạp bản dẹt cao bấy nhiêu px (dày `APRON_BAND` `1,2` px), vòng quanh cạp ở `rise`: ôm thân cách `0,3` px, phía trước chỗ tấm che thì nổi qua mép trên tấm (`APRON_LIFT`) rồi hạ dần về sát thân ở hai mép tấm; nơ sát lưng ngoài dây; `0` là không có |
 | `tieColor` | màu tấm | Màu dây cạp và nơ |
 | `bow` | 13 | Mỗi cánh nơ sau lưng dài bấy nhiêu px: hai cánh, nút, hai đuôi ngắn chĩa xuống (`apronBow`), khối cứng không rủ; `0` là không nơ |
 

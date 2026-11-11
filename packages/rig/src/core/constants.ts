@@ -71,6 +71,8 @@ export const SKIRT_FALL = 0.5;
 export const HEM_HANG = [35, 70] as const;
 /** Tạp dề nằm cách mặt người và đồ bên dưới bấy nhiêu px */
 export const APRON_LIFT = 5;
+/** Dây cạp tạp dề bản dẹt: ôm thân cách bấy nhiêu px, dày bấy nhiêu px (cao là `apron.band`) */
+export const APRON_BAND = [0.3, 1.2] as const;
 /**
  * Tạp dề chạm sàn: nằm trên sàn bấy nhiêu px, góc gập từ buông xuống sang nằm sàn bo bán kính bấy nhiêu px, trải trên sàn
  * tới trước chỗ chạm không quá bấy nhiêu px (phần dài hơn coi như dồn lại, không vẽ)

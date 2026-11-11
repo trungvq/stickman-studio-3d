@@ -5,7 +5,7 @@ import { hullMaterial, npr, surface } from './npr';
 import { canvasTexture } from './decal';
 import { path2D } from './canvas';
 import { WAKABA, type PrintArt, type PrintPart } from './core/print';
-import { APRON_FLOOR, APRON_LIFT, D, RIG, SKIRT_EASE, TORSO_DEPTH } from './core/constants';
+import { APRON_BAND, APRON_FLOOR, APRON_LIFT, D, RIG, SKIRT_EASE, TORSO_DEPTH } from './core/constants';
 import { apronBow, apronOf, drape, drapeAt, drapeFloor, drapeLength, hemHang, hemReach, kneelOn, sectionFront, wrapHemEdge, wrapHemOf } from './core/hem';
 import type { Garment, Skirt } from './core/schema';
 import { profileAt, skirtCover, skirtFall, skirtSpread, skirtTube } from './core/skirtShape';
@@ -26,6 +26,27 @@ interface Palette { color: string; accent?: string; ink: string; skin?: string }
 export const skinLook = (color: string) => ({ color, stipple: 0.035, stippleScale: 4, soft: 1, flat: true });
 
 export const sameColor = (a?: string, b?: string) => !!a && !!b && new THREE.Color(a).getHex() === new THREE.Color(b).getHex();
+
+/**
+ * THỬ (feat/real-head-proto): nét áo dựng ống (mép vạt, cổ áo, nếp váy, mép tạp dề, cúc) không đen. Màu nét là màu vải
+ * dưới nó làm đậm theo cùng công thức nét màu của lượt hậu kỳ (`inkTone`, `BARE` ở `pipeline.ts`): sắc đậm thêm `0,45`
+ * rồi nhân `dark`; bề dày nhân `scale`. `tone: false` về nét mực đen, bề dày cũ.
+ */
+export const CLOTH_LINE = { tone: true, dark: 0.6, scale: 0.6 };
+
+/** Màu nét áo nằm trên vải `under` (tính trên sRGB như màu đã vẽ của lượt hậu kỳ) */
+export function clothLineColor(under: string): string {
+  const s = { r: 0, g: 0, b: 0 };
+  new THREE.Color(under).getRGB(s, THREE.SRGBColorSpace);
+  const m = Math.max(s.r, s.g, s.b, 1e-3);
+  const f = (v: number) => v * (1 + (v / m - 1) * 0.45) * CLOTH_LINE.dark;
+  return new THREE.Color().setRGB(f(s.r), f(s.g), f(s.b), THREE.SRGBColorSpace).getStyle();
+}
+
+/** Vật liệu nét áo dựng ống trên vải `under`; tắt `CLOTH_LINE.tone` thì là mực `ink` */
+const clothLineMat = (ink: string, under: string) => npr({ color: CLOTH_LINE.tone ? clothLineColor(under) : ink, stipple: 0 });
+/** Bán kính nét áo dựng ống, px nét `k` của `rig.stroke`, đơn vị three */
+const clothLineR = (rig: Rig, k: number) => ((k * rig.stroke * U) / 2) * (CLOTH_LINE.tone ? CLOTH_LINE.scale : 1);
 
 /**
  * Vật liệu vải chung của thân áo và tay áo khác màu ở người mặc đồ: màu từng đỉnh (`tint`), nét bóng dáng `ink`. Một vật liệu
@@ -215,8 +236,8 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
   const t = torsoMesh(garment, rig, arm, neck, human);
   const pal = { color, accent, ink, skin };
   const matOf = (fill: MarkFill, soft = 1) => npr({ color: colorOf(fill, pal), stipple: 0.05, stippleScale: 3, soft });
-  const inkMat = npr({ color: ink, stipple: 0 });
-  const lineR = (k: number) => (k * rig.stroke * U) / 2;
+  const inkMat = clothLineMat(ink, color);
+  const lineR = (k: number) => clothLineR(rig, k);
   const geos = new Set<THREE.BufferGeometry>();
   const add = (m: THREE.Mesh) => (geos.add(m.geometry), spine.add(m));
   const tube = (pts: Vec3[], r: number, mat: THREE.Material, closed = false) => add(tubeMesh(pts, r, mat, closed));
@@ -313,7 +334,8 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
     const sm = new THREE.Mesh(sheetGeometry(s.grid), npr({ color: colorOf(s.color, pal), stipple: 0.04, soft: 1, doubleSided: true }));
     sm.castShadow = true;
     add(sm);
-    for (const r of s.rims) tube(s.grid.map((col) => col[r]), lineR(s.line), inkMat);
+    const rimMat = sameColor(colorOf(s.color, pal), color) ? inkMat : clothLineMat(ink, colorOf(s.color, pal));
+    for (const r of s.rims) tube(s.grid.map((col) => col[r]), lineR(s.line), rimMat);
   }
   for (const s of t.solids) {
     if (!s.pts.some(shown)) continue;
@@ -453,14 +475,14 @@ export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thi
   group.add(hl);
   // nếp: đường thẳng trên mặt nón cụt, chỉ khi váy buông
   const n = Math.round(skirt.pleats);
-  const inkMat = npr({ color: ink, stipple: 0 });
+  const inkMat = clothLineMat(ink, color);
   if (n > 0 && yH - yW > 8)
     for (let i = 0; i < n; i++) {
       const p = (2 * Math.PI * (i + 0.5)) / n;
       const out = ([x, y, z]: Vec3): Vec3 => [x * 1.02, y, z * 1.02];
       const a = out(ring(0.3, yW + (yH - yW) * 0.3, p));
       const b = out(ring(0.9, yW + (yH - yW) * 0.9, p));
-      group.add(tubeMesh([a, b], (0.45 * rig.stroke * U) / 2, inkMat));
+      group.add(tubeMesh([a, b], clothLineR(rig, 0.45), inkMat));
     }
   return group;
 }
@@ -690,8 +712,8 @@ export function sculptHipHem(hips: THREE.Object3D, o: Omit<SkirtOptions, 'thighs
   group.userData.skirt = true;
   hips.add(group);
   const { skirt: g, rig, color, ink } = o;
-  const inkMat = npr({ color: ink, stipple: 0 });
-  const lineR = (k: number) => (k * rig.stroke * U) / 2;
+  const inkMat = clothLineMat(ink, color);
+  const lineR = (k: number) => clothLineR(rig, k);
   if (g.style === 'apron') {
     const lift = APRON_LIFT;
     // quỳ thì vải buông qua gối xuống sàn như lúc đứng
@@ -761,6 +783,58 @@ export function sculptHipHem(hips: THREE.Object3D, o: Omit<SkirtOptions, 'thighs
   return group;
 }
 
+/**
+ * Dây cạp tạp dề: bản dẹt cao `band` px, dày `APRON_BAND[1]` px, vòng quanh mặt cắt thân ở eo (nửa rộng `aW`, nửa sâu
+ * `dW`, đã nở nửa px). Ôm thân cách `APRON_BAND[0]` px; phía trước, chỗ tấm che (|x| ≤ `W`), nổi lên qua mép trên tấm
+ * (`APRON_LIFT`), ra tới mép tấm thì hạ dần về sát thân. Bốn mặt (ngoài, trong, trên, dưới) mỗi mặt một dải đỉnh riêng
+ * nên cạnh bản dây sắc, dọc vòng thì mượt.
+ */
+function apronBand(aW: number, dW: number, yW: number, band: number, W: number): THREE.BufferGeometry {
+  const [gap, thick] = APRON_BAND;
+  const N = 128;
+  const smooth = (e0: number, e1: number, x: number) => {
+    const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0)));
+    return t * t * (3 - 2 * t);
+  };
+  // điểm trên vành nở `L` px ở góc `p` (0 trước bụng), độ cao `y` px (y xuống), ra đơn vị three
+  const at = (p: number, L: number, y: number) => new THREE.Vector3((aW + L) * Math.sin(p) * U, -y * U, (dW + L) * Math.cos(p) * U);
+  const liftAt = (p: number) => {
+    const x = Math.abs(aW * Math.sin(p));
+    const cover = Math.cos(p) > 0 ? (1 - smooth(W - 1, W + 3, x)) * smooth(-0.05, 0.2, Math.cos(p)) : 0;
+    return gap + cover * (APRON_LIFT + gap);
+  };
+  const [yT, yB] = [yW - band / 2, yW + band / 2];
+  const pos: number[] = [];
+  const idx: number[] = [];
+  // một dải: hai đường đỉnh `A`, `B` dọc vòng; `out` là hướng mặt phải quay ra ở góc `p`
+  const strip = (A: (p: number) => THREE.Vector3, B: (p: number) => THREE.Vector3, out: (p: number) => THREE.Vector3) => {
+    const base = pos.length / 3;
+    for (let i = 0; i < N; i++) {
+      const q = (2 * Math.PI * i) / N;
+      pos.push(...A(q).toArray(), ...B(q).toArray());
+    }
+    for (let i = 0; i < N; i++) {
+      const [a0, b0, a1, b1] = [base + 2 * i, base + 2 * i + 1, base + 2 * ((i + 1) % N), base + 2 * ((i + 1) % N) + 1];
+      const v = (k: number) => new THREE.Vector3(pos[3 * k], pos[3 * k + 1], pos[3 * k + 2]);
+      const n = v(b0).sub(v(a0)).cross(v(a1).sub(v(a0)));
+      const flip = n.dot(out((2 * Math.PI * (i + 0.5)) / N)) < 0;
+      idx.push(...(flip ? [a0, a1, b0, b0, a1, b1] : [a0, b0, a1, b0, b1, a1]));
+    }
+  };
+  const radial = (p: number) => new THREE.Vector3(Math.sin(p) * dW, 0, Math.cos(p) * aW).normalize();
+  const inner = (y: number) => (p: number) => at(p, liftAt(p), y);
+  const outer = (y: number) => (p: number) => at(p, liftAt(p) + thick, y);
+  strip(outer(yT), outer(yB), radial);
+  strip(inner(yT), inner(yB), (p) => radial(p).negate());
+  strip(inner(yT), outer(yT), () => new THREE.Vector3(0, 1, 0));
+  strip(inner(yB), outer(yB), () => new THREE.Vector3(0, -1, 0));
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
 /** Dây cạp và nơ sau lưng của tạp dề, gắn vào nhóm thân `spine`: cạp ở độ cao `skirt.rise`, nơ giữa lưng */
 export function apronTie(spine: THREE.Object3D, o: Omit<SkirtOptions, 'thighs'>) {
   const { skirt: g, rig, body, ink } = o;
@@ -775,7 +849,6 @@ export function apronTie(spine: THREE.Object3D, o: Omit<SkirtOptions, 'thighs'>)
     const [aa, d] = profileAt(body.profile, body.depth, yW);
     [aW, dW] = [aa + 0.5, d + 0.5];
   }
-  const lift = APRON_LIFT + 0.5;
   const mat = npr({ color, stipple: 0.04, soft: 1 });
   const inked = (geo: THREE.BufferGeometry) => {
     const m = new THREE.Mesh(geo, mat);
@@ -784,20 +857,14 @@ export function apronTie(spine: THREE.Object3D, o: Omit<SkirtOptions, 'thighs'>)
     hl.userData.noShadow = true;
     group.add(m, hl);
   };
+  const [gap, thick] = APRON_BAND;
   if (a.band > 0) {
-    const pts: Vec3[] = [];
-    const r = a.band / 2;
-    for (let i = 0; i < 64; i++) {
-      const p = (2 * Math.PI * i) / 64;
-      pts.push([(aW + lift) * Math.sin(p), yW, (dW + lift) * Math.cos(p)]);
-    }
-    const curve = new THREE.CatmullRomCurve3(pts.map(v3), true);
-    // bản dẹt: dây ôm thân, cao hơn dày
-    const geo = new THREE.TubeGeometry(curve, 96, r * U, 8, true);
-    inked(geo);
+    // bề ngang tấm ở mép trên, như `sculptHipHem`: tấm phủ |x| ≤ W trên vành cạp nở `APRON_LIFT`
+    const wa = aW + APRON_LIFT;
+    inked(apronBand(aW, dW, yW, a.band, Math.min(a.width, 0.97 * wa)));
   }
   if (a.bow > 0)
-    for (const b of apronBow([0, yW, -(dW + lift + a.band / 2)], a.bow)) {
+    for (const b of apronBow([0, yW, -(dW + gap + thick)], a.bow)) {
       const geo = new THREE.SphereGeometry(1, 16, 12);
       geo.scale(b.r[0] * U, b.r[1] * U, b.r[2] * U);
       geo.rotateZ((-b.roll * Math.PI) / 180);
