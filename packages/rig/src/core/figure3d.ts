@@ -16,6 +16,7 @@ import { cladThigh, resolveActing } from "./act3";
 import { bendOf, REACH_ELBOW, solveTwoBone } from "./ik";
 import { limbWidths, type CharacterData } from "./schema";
 import { shoulderRoot } from "./torso";
+import { COLLAR3, headDims, type HeadSpec } from "./stature";
 import type { BodyPart, Pose, Pt, Reach } from "./types";
 
 /**
@@ -55,6 +56,22 @@ export const dirOf = (yaw: number): V3 => [Math.cos(yaw), 0, -Math.sin(yaw)];
 export interface Body3 {
   legHalf: number;
   hipHalf: number;
+  /** `head` của nhân vật: cỡ đầu cho mốc ước (`headDims`) */
+  head?: HeadSpec;
+}
+
+/**
+ * Hộp đầu của nhân vật, px rig: nửa ngang `rx`, nửa cao `ry`, tâm cao hơn đỉnh cổ (khớp cổ của lõi) `up`. Đầu cầu theo
+ * `head.scaleX` / `scaleY` của `RIG.headH`; đầu `human` theo `headDims` (cằm → đỉnh sọ, trên cổ áo và cổ họng)
+ */
+export function headBoxOf(c: Pick<CharacterData, "rig" | "head">) {
+  if (c.head.form !== "human") {
+    const ry = (c.head.scaleY * RIG.headH) / 2;
+    return { rx: (c.head.scaleX * RIG.headH) / 2, ry, up: ry };
+  }
+  const H = headDims(c.rig.height, c.head);
+  const ry = (H.height * 100) / 2;
+  return { rx: (H.width * 100) / 2, ry, up: (COLLAR3 + H.throat) * 100 + ry };
 }
 
 /** Thân mặc định — chỗ gọi chưa biết nhân vật */
@@ -88,6 +105,7 @@ export const body3 = (c: CharacterData): Body3 => ({
     ? cladThigh(limbWidths(c.palette).trouser, c.rig.stroke)
     : limbHalf(c).leg,
   hipHalf: c.rig.hipHalf,
+  head: c.head,
 });
 
 /** Mốc khớp 3D của một người */
@@ -444,8 +462,9 @@ export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
   const AR = arm("ar", sR2, 1, len.upperArm * st[2], len.foreArm * st[3]);
   const AL = arm("al", sL2, -1, len.upperArm * st[0], len.foreArm * st[1]);
 
-  const headH = (c.head.scaleY * RIG.headH) / 2;
-  const headC = torsoPt([0, -(len.torso + len.neck) - headH, 0]);
+  const box = headBoxOf(c);
+  const headH = box.ry;
+  const headC = torsoPt([0, -(len.torso + len.neck) - box.up, 0]);
 
   // ống kính trong hệ thân: x = −R, y dọc trục thân, z = hướng mặt; lật thì soi gương hệ ấy
   const cl = Math.cos(lam);
@@ -461,7 +480,7 @@ export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
   const mirror = ([x, y, z]: V3): V3 => (w.flip ? [-x, y, z] : [x, y, z]);
   const eye = mirror(dirIn(scale3(sub3(lv.eye, hip), 1 / w.s)));
   const q = (n: number, k: number) => Math.round(n * k) / k;
-  const yHead = -(len.torso + len.neck) - headH;
+  const yHead = -(len.torso + len.neck) - box.up;
   const look = q((HEAD_LOOK * Math.atan2(yHead - eye[1], Math.hypot(eye[0], eye[2]))) / D, 2);
   const thighAt = (pts: V3[]): [number, number] => {
     const v = dirIn(sub3(pts[1], pts[0]));
@@ -499,9 +518,9 @@ export function figure3d(c: CharacterData, P0: Pose, w0: World): Figure3 {
       [-dp, a],
     ].map(([f, r]) => at([f, y, r]));
   const torso = [...ring(half.leg, hb, world), ...ring(shY, ht, torsoPt)];
-  const hr = (c.head.scaleX * RIG.headH) / 2;
+  const hr = box.rx;
   const headBox = (() => {
-    const o = torsoPt([0, -(len.torso + len.neck) - headH, 0]);
+    const o = headC;
     const at = (f: number, y: number, r: number) =>
       add3(o, scale3(add3(add3(scale3(F, f), [0, y, 0]), scale3(R, r)), w.s));
     const q = (y: number) =>

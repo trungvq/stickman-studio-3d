@@ -40,7 +40,6 @@ import {
   actHeld,
   bones3,
   cladHand,
-  head3,
   markAt,
   trunk3,
   type ActCharacter,
@@ -5672,7 +5671,7 @@ function castMarkAt(rt: SceneRuntime, id: string, mark: BodyMark | undefined, ti
   const walk = walkerOf(rt, m, height, dims.hipHalf);
   const pose = worldPoseAt(m, time, walk, height, dims.hipHalf);
   const w = worldAt(lensOf(rt), m.world, time, pose, height, dims.legHalf, walk).world;
-  const B = bones3(height);
+  const B = bones3(height, dims.head);
   const k = 100 * w.s;
   const bend = (pose.torso ?? 0) * D;
   // hệ thân rig: tiến theo `dirOf(yaw)`, y xuống
@@ -5687,9 +5686,12 @@ function castMarkAt(rt: SceneRuntime, id: string, mark: BodyMark | undefined, ti
   if (which === "chest") return onTorso(0.7 * B.torso, 0.12);
   if (which === "belly") return onTorso(0.3 * B.torso, 0.14);
   const neck = B.torso + B.neck * 0.5;
-  const head = neck + head3(B) - B.neck * 0.5;
+  const head = neck + B.headUp - B.neck * 0.5;
   // mặt trước sọ: nửa bề sâu đầu ra trước, mồm thấp hơn mắt chừng một phần năm đầu
-  return onTorso(which === "mouth" ? head - B.head * 0.35 : head - B.head * 0.1, B.head * 0.45);
+  return onTorso(
+    which === "mouth" ? head - B.head * 0.35 : head - B.head * 0.1,
+    (B.head * 0.45 * B.headK[2]) / B.headK[1],
+  );
 }
 
 /** Lần cầm của mốc `hold` cho `isCarryHold` / `carrySpecOf`: chỗ cầm nhóm của cảnh */

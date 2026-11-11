@@ -28,7 +28,7 @@ const MAX_INK = 128, MAX_RECTS = 8;
  *   `rim` lần theo 1 − n·v giữa `rimFrom` và `rimTo` (pháp tuyến hệ nhìn từ lượt pháp tuyến, nên đi theo lưới, không đặt cứng theo đầu).
  * Vật liệu `userData.ink` không bị đặt về 0 nữa: nét đen tắt bằng `inkColor`, không dùng thì đặt `inkScale` 0.
  */
-export const BARE = { inkColor: true, inkScale: 0.4, inkDark: 0.52, rim: 0.7, rimFrom: 0.55, rimTo: 0.97 };
+export const BARE = { inkColor: true, inkScale: 0, inkDark: 0.52, rim: 0.7, rimFrom: 0.55, rimTo: 0.97 };
 const INK_GLSL = /* glsl */ `
 uniform vec4 uInk[${MAX_INK}];
 ivec2 inkClamp(ivec2 q, vec4 r){ return clamp(q, ivec2(r.xy), ivec2(r.zw)); }

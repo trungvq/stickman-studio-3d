@@ -121,7 +121,6 @@ export {
   cladThigh,
   handScale,
   head3,
-  HUMAN_NECK,
   markAt,
   markShape,
   openLength,

@@ -14,7 +14,6 @@ import {
 import { D, RIG } from "./constants";
 import { ARM_SOFT, prefPole, ringClamp, shoulderAngles } from "./elbow";
 import { HOLD_SLEW_STEP } from "./heldItem";
-import { SKULL3 } from "./humanHead";
 import {
   add3,
   cross3,
@@ -301,7 +300,7 @@ export function armInput(T: Trunk3, side: number, shape = markShape(T)): ArmInpu
     Rr: T.Rr,
     head: T.out.head,
     Rn: T.Rn,
-    skull: scale3(SKULL3, T.B.head * s),
+    skull: scale3(T.B.skull, s),
     torsoLen: RIG.torso * shape.h,
     across: shape.across,
     front: shape.front,

@@ -99,13 +99,13 @@ const lerp3 = (p: Vec3, q: Vec3, t: number): Vec3 => [p[0] + (q[0] - p[0]) * t, 
  * `arm` có là người `clad`: vát vai `cladSlope`, sườn áo lùi theo `cladProfile`. `neck`: khăn vắt vai, kính gài nẹp
  * (`pieces.neck`), khối kín đè lên thân và nắp vai
  */
-export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: ArmRoom, neck?: NeckWear, human = false): TorsoMesh {
+export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: ArmRoom, neck?: NeckWear, human?: number): TorsoMesh {
   const g0 = garmentOf(raw, !!arm, rig);
   const def = GARMENT_STYLES[g0.style];
   const pr = profile(g0, rig, rig.stroke / 2);
-  // THỬ (feat/real-head-proto): cổ `human` dày hơn ống cổ chibi: mặt cắt thân (vai, gốc tay) giữ theo `g.neck` gốc, chỉ viền
-  // cổ, cổ áo và cổ sơ mi `inner.collar` nới ra quanh chân cổ (`humanNeckMin`)
-  const neckMin = human ? humanNeckMin(rig) : undefined;
+  // cổ `human` (nửa rộng nhân `human`, `humanNeckWidth`): mặt cắt thân (vai, gốc tay) giữ theo `g.neck` gốc, chỉ viền cổ,
+  // cổ áo và cổ sơ mi `inner.collar` nới ra quanh chân cổ (`humanNeckMin`)
+  const neckMin = human ? humanNeckMin(human) : undefined;
   const g = neckMin === undefined ? g0 : { ...g0, neck: Math.max(g0.neck, neckMin + (g0.inner?.collar && def.shoulderFit ? INNER_COLLAR.inset : 0)) };
   const { pts, back: depth, front } = torsoSection(pr.pts, g, rig.height, arm);
   const aAt = (y: number) => lerpAt(pts, y, 1, 0);

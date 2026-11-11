@@ -58,6 +58,7 @@ export * from "./skirtShape";
 export * from "./hem";
 export * from "./snap";
 export * from "./sphere";
+export * from "./stature";
 export * from "./timewarp";
 export {
   GARMENT_STYLES,

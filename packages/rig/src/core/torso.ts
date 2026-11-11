@@ -7,6 +7,7 @@ import {
   type Tie,
 } from "./schema";
 import type { Vec3 } from "./sphere";
+import { NECK_OF_HEAD } from "./stature";
 
 export type Dims = Required<
   Omit<
@@ -184,12 +185,13 @@ export const HUMAN_NECK_ROWS: readonly (readonly [number, number, number, number
   [0.07, 0.232, -0.165, 0.115],
   [0.13, 0.215, -0.172, 0.122],
   [0.22, 0.208, -0.186, 0.138],
-  [0.3, 0.222, -0.198, 0.15],
-  [0.38, 0.238, -0.205, 0.155],
+  [0.3, 0.212, -0.198, 0.15],
+  [0.38, 0.222, -0.205, 0.155],
 ];
-/** Nửa rộng cổ `human` theo vai: vai hẹp (nữ) cổ thon hơn, `rig.shoulderHalf` 40 là `1` */
-export const humanNeckWidth = (rig: { shoulderHalf?: number }) =>
-  Math.min(1.04, Math.max(0.86, (rig.shoulderHalf ?? 40) / 40));
+/** Nửa rộng chỗ thon nhất của `HUMAN_NECK_ROWS` */
+const NECK_THIN = Math.min(...HUMAN_NECK_ROWS.map((r) => r[1]));
+/** Nửa rộng cổ `human` nhân bấy nhiêu cho đầu rộng `headWidth` (three): chỗ thon nhất bằng `NECK_OF_HEAD` bề ngang đầu */
+export const humanNeckWidth = (headWidth: number) => (NECK_OF_HEAD * headWidth) / (2 * NECK_THIN);
 /** Hàng cổ `human` ở độ cao `y` (hệ khớp cổ, three): `[nửa rộng, mép sau, mép trước]`, nửa rộng đã nhân `k` */
 export function humanNeckAt(y: number, k = 1): [number, number, number] {
   const R = HUMAN_NECK_ROWS;
@@ -207,8 +209,9 @@ export function humanNeckAt(y: number, k = 1): [number, number, number] {
 export const HUMAN_RING_CLEAR = 1.5;
 /** Hàng cổ `human` cao từ ngần này (three, hệ khớp cổ) đã ở trên mọi viền cổ áo: không tính vào miệng cổ tối thiểu */
 const HUMAN_RING_UP = 0.2;
-export const humanNeckMin = (rig: { shoulderHalf?: number }) =>
-  100 * Math.max(...HUMAN_NECK_ROWS.filter((r) => r[0] < HUMAN_RING_UP).map((r) => r[1])) * humanNeckWidth(rig) + HUMAN_RING_CLEAR;
+/** Miệng cổ áo tối thiểu (px) của cổ `human` nửa rộng nhân `k` (`humanNeckWidth`) */
+export const humanNeckMin = (k: number) =>
+  100 * Math.max(...HUMAN_NECK_ROWS.filter((r) => r[0] < HUMAN_RING_UP).map((r) => r[1])) * k + HUMAN_RING_CLEAR;
 /**
  * Ống cổ uốn (`bendNeck`): dưới mép cổ áo áo phông (cao hơn khớp cổ `bones.neck + collar`) ống đứng theo thân, lên thêm
  * `span` thì theo trọn khớp cổ, giữa hai mức chuyển êm; `rows` đoạn dọc. Đơn vị three

@@ -1,5 +1,8 @@
 import { D, FACE_REAL_FROM, FACE_REAL_SPAN, RIG } from "./constants";
-import { body3, figure3d, figureOf3, flatPose, type World } from "./figure3d";
+import { chibiShape } from "./face";
+import { body3, figure3d, figureOf3, flatPose, headBoxOf, type World } from "./figure3d";
+import { FACE_R } from "./humanHead";
+import { headDims } from "./stature";
 import { computeFigure } from "./geometry";
 import { facePoint, faceYaw, latOf, lonOf, type HeadTurn } from "./sphere";
 import { sceneAt, type SceneRuntime } from "./scene";
@@ -77,18 +80,24 @@ function jointsOf(c: CharacterData, raw: Pose, world: World): Record<AnchorName,
   const f3 = figure3d(c, raw, world);
   const pose = flatPose(c, raw, f3);
   const F = figureOf3(computeFigure(c, pose), f3);
-  const { face, head: ph } = c;
+  const { head: ph } = c;
+  // đầu `human`: nét mặt dời kiểu chibi (`chibiShape`), px nét mặt theo `FACE_R` trên sọ đã phóng `headDims`
+  const H = ph.form === "human" ? headDims(c.rig.height, ph) : undefined;
+  const face = H ? chibiShape({ ...c.face }) : c.face;
   const torso: Frame = { x: 0, y: 0, deg: pose.torso || 0 };
   const [tilt, turn, nod] = pose.head;
   // khung của mốc chưa lật: người lật thì lắc, nghiêng (theo bên trái người) đổi dấu trên khung
   const mx = world.flip ? -1 : 1;
-  const headRx = (RIG.headH / 2) * ph.scaleX;
-  const headRy = (RIG.headH / 2) * ph.scaleY;
-  const headCy = -headRy;
+  const headRx = H ? H.skull[0] * 100 : (RIG.headH / 2) * ph.scaleX;
+  const headRy = H ? H.skull[1] * 100 : (RIG.headH / 2) * ph.scaleY;
+  // bán kính mà px nét mặt đo theo, và px nét mặt đổi ra px rig theo chiều dọc
+  const [faceRx, faceRy, pxY] = H ? [FACE_R, FACE_R, headRy / FACE_R] : [headRx, headRy, 1];
+  const box = headBoxOf(c);
+  const headCy = -box.ry;
   // Đầu quay liên tục theo `theta`, xem docs/01-rig.md#mặt-người-3d
   const T: HeadTurn = { yaw: world.theta + mx * turn, pitch: nod, look: f3.look };
-  const eyeLat = latOf(face.offsetY, headRy);
-  const eyeLon = lonOf(face.eyeGap / 2, headRx);
+  const eyeLat = latOf(face.offsetY, faceRy);
+  const eyeLon = lonOf(face.eyeGap / 2, faceRx);
   const u = Math.max(0, Math.min(1, (T.yaw - FACE_REAL_FROM) / FACE_REAL_SPAN));
   const real = u * u * (3 - 2 * u);
   const fy = faceYaw(T.yaw, eyeLon, eyeLat);
@@ -97,15 +106,15 @@ function jointsOf(c: CharacterData, raw: Pose, world: World): Record<AnchorName,
   const eyeA = facePoint(TF, -eyeLon, eyeLat);
   const eyeB = facePoint(TF, eyeLon, eyeLat);
   const faceCx = (headRx * (eyeA[0] + eyeB[0])) / 2;
-  const faceCy = headCy + face.offsetY - headRy * (eyeA[1] - Math.sin(eyeLat * D));
+  const faceCy = headCy + face.offsetY * pxY - headRy * (eyeA[1] - Math.sin(eyeLat * D));
   const eyeGap = headRx * (eyeB[0] - eyeA[0]);
-  const mouthAt = facePoint(TF, 0, latOf(face.offsetY + face.mouthGap, headRy));
+  const mouthAt = facePoint(TF, 0, latOf(face.offsetY + face.mouthGap, faceRy));
   const mouthCx = headRx * mouthAt[0];
   const mouthCy = headCy - headRy * mouthAt[1];
   // Cổ và tâm đầu ở chỗ chiếu thật, thân co theo góc cúi
   const squash = f3.neckY / -(F.len.torso + F.len.neck);
   const neckDrop = Math.sin(nod * D) * F.len.neck * squash;
-  const head = frameCompose(torso, { x: 0, y: f3.headY + headRy + neckDrop, deg: mx * tilt });
+  const head = frameCompose(torso, { x: 0, y: f3.headY + box.ry + neckDrop, deg: mx * tilt });
 
   // Đoạn xương rời khớp chỉ theo +y của khung — nên `deg` là góc rig đổi dấu
   const at = (base: Frame, p: Pt, rigDeg: number): Joint => ({
@@ -136,7 +145,7 @@ function jointsOf(c: CharacterData, raw: Pose, world: World): Record<AnchorName,
     wristRight: at(torso, F.armR[2], ar[0] + ar[1] + ar[2]),
     wristLeft: at(torso, F.armL[2], al[0] + al[1] + al[2]),
     collar: at(torso, [0, f3.neckY], 0),
-    head: inFrame(head, 0, headCy, headRx * 2, headRy * 2),
+    head: inFrame(head, 0, headCy, box.rx * 2, box.ry * 2),
     face: inFrame(head, faceCx, faceCy),
     eyeRight: inFrame(head, faceCx - mx * (eyeGap / 2), faceCy),
     eyeLeft: inFrame(head, faceCx + mx * (eyeGap / 2), faceCy),

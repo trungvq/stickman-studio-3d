@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { INK, RIG } from "./constants";
 import { FACE_REST } from "./face";
+import { HEAD_ASPECT, HEADS, heightOfStature } from "./stature";
 
 /** Bump khi đổi hình dạng JSON nhân vật; `migrateCharacter` phải có nhánh tương ứng. */
-export const CHARACTER_VERSION = 7;
+export const CHARACTER_VERSION = 8;
 
 /** Một socket của người 3D: `sculpt` dựng khối theo trường riêng của socket, `none` là trống */
 const piece = z.object({
@@ -765,8 +766,13 @@ export const CharacterSchema = z.object({
   rig: z
     .object({
       stroke: z.number().default(6),
-      /** Nhân vào mọi đoạn thân/tay/chân; đầu giữ nguyên */
+      /**
+       * Nhân vào mọi đoạn thân/tay/chân; đầu `human` theo `head.heads`. Có `stature` thì trường này suy từ nó lúc nạp
+       * (`parseCharacter`). docs/01-rig.md#chiều-cao-và-cỡ-đầu
+       */
       height: z.number().default(1),
+      /** Chiều cao người gót → đỉnh sọ, mét: khai thì `height` tính từ đây. docs/01-rig.md#chiều-cao-và-cỡ-đầu */
+      stature: z.number().positive().optional(),
       /** Nửa khoảng cách hai khớp vai */
       shoulderHalf: z.number().default(40),
       /** Khớp vai tụt xuống dưới đỉnh thân bấy nhiêu */
@@ -776,12 +782,25 @@ export const CharacterSchema = z.object({
     .prefault({}),
   head: z
     .object({
+      /** Đầu cầu: nhân bề ngang, bề cao khối đầu; đầu `human` không đọc (dùng `heads`, `aspect`) */
       scaleX: z.number().default(1),
       scaleY: z.number().default(1),
+      /**
+       * Đầu `human`: chiều cao người (gót → đỉnh sọ) bằng bấy nhiêu lần chiều cao đầu (cằm → đỉnh sọ); kẹp
+       * `HEADS.min..HEADS.max`. docs/01-rig.md#chiều-cao-và-cỡ-đầu
+       */
+      heads: z.number().default(HEADS.def),
+      /** Đầu `human`: bề ngang đầu chia chiều cao đầu; kẹp `HEAD_ASPECT.min..HEAD_ASPECT.max` */
+      aspect: z.number().default(HEAD_ASPECT.def),
       /** Dáng khối đầu: `human` có quai hàm, cằm, tai, mũi. docs/01-rig.md#người-3d-mặc-đồ */
       form: z.enum(["sphere", "human"]).default("sphere"),
       /** THỬ (feat/real-head-proto): hình hàm của đầu `human` — `v` thon thẳng từ gò má, `square` quai hàm vuông */
       jaw: z.enum(["v", "square"]).default("v"),
+      /**
+       * THỬ (feat/real-head-proto): kiểu mặt của đầu `human` (`FACES` của core/humanHead.ts) — gói mũi, đường nghiêng mặt,
+       * cằm và hàm; `jaw`, `nose`, `aspect`, `heads` chồng lên. docs/01-rig.md#người-3d-mặc-đồ
+       */
+      face: z.enum(["asian", "western"]).default("asian"),
       /** THỬ (feat/real-head-proto): mũi khối riêng của đầu `human` — `length` nhân độ dài từ gốc giữa hai mắt tới chóp, `out` nhân độ nhô */
       nose: z.object({ length: z.number().min(0.6).max(1.5).default(1), out: z.number().min(0).max(2).default(1) }).prefault({}),
     })
@@ -1101,6 +1120,8 @@ export function migrateCharacter(json: unknown): unknown {
       for (const pc of Object.values(group ?? {}))
         if (pc && typeof pc === "object" && pc.src !== "sculpt") pc.src = "none";
   }
+  // v7 → v8 thêm `rig.stature`, `head.heads`, `head.aspect`, `head.face`: đầu `human` theo số đầu, thiếu thì lấy mặc định
+  // (`head.face` thiếu là `asian`)
   // v6 → v7 socket bàn tay theo phải / trái của người: `handNear` → `handRight`, `handFar` → `handLeft`
   if (from < 7) {
     renameSideKeys(o.pieces);
@@ -1125,6 +1146,12 @@ export const limbWidths = (p: { clad?: boolean; sleeveWidth?: number; trouserWid
 
 export const defaultCharacter = (): CharacterData => CharacterSchema.parse({});
 
-export const parseCharacter = (json: unknown) => CharacterSchema.safeParse(migrateCharacter(json));
+/** JSON nhân vật → `CharacterData` qua `migrateCharacter` và zod; có `rig.stature` thì `rig.height` tính từ nó (`heightOfStature`) */
+export const parseCharacter = (json: unknown) => {
+  const r = CharacterSchema.safeParse(migrateCharacter(json));
+  if (r.success && r.data.rig.stature !== undefined)
+    r.data.rig.height = heightOfStature(r.data.rig.stature, r.data.head);
+  return r;
+};
 
 export { RIG };

@@ -5,19 +5,12 @@ import type { V3 } from "./lens";
  * cầu nên tóc và kính dựng khối ôm như đầu cầu; nửa dưới nở ngang về phía đáy và vạt đáy thành cằm chữ U rộng, thu
  * gáy vào cổ. docs/01-rig.md#người-3d-mặc-đồ
  */
-/** THỬ (feat/real-head-proto): hai hình hàm, `head.jaw` của nhân vật chọn; nhân vật đang dựng đặt bằng `setJaw` */
+/** THỬ (feat/real-head-proto): hai hình hàm, `head.jaw` của nhân vật chọn (số của mặt `western`; `FACES` đè theo kiểu mặt) */
 export const JAWS = {
   v: { jaw: 0.04, jawAt: 0.55, chinW: 0.5, drop: 0.14, corner: 0.07, flat: 0.12, squareLow: 2.4 },
   square: { jaw: 0.06, jawAt: 0.62, chinW: 0.6, corner: 0.06, flat: 0.1, squareLow: 3.2 },
 } as const;
 export type JawKind = keyof typeof JAWS;
-let jawNow: JawKind = 'v';
-/** Đặt hình hàm cho các lần gọi `humanSkull` sau; trả hình hàm cũ */
-export function setJaw(k: JawKind): JawKind {
-  const old = jawNow;
-  jawNow = k;
-  return old;
-}
 
 export const HUMAN_HEAD = {
   /** THỬ (feat/real-head-proto): đầu người thật, mặt góc cạnh. Bề ngang thon nhẹ từ xích đạo tới góc hàm, phần */
@@ -26,7 +19,7 @@ export const HUMAN_HEAD = {
   drop: 0.18,
   /** Đáy cằm vạt phẳng: đáy cắt ở bấy nhiêu phần dưới đáy đã kéo, góc mềm `corner` */
   flat: 0.1,
-  /** Nửa dưới dời ra trước ở đáy: cằm nhô */
+  /** Nửa dưới dời ra trước ở đáy: cằm nhô (số của mặt `western`; `FACES` đè cả `chinFront`, `profile`) */
   chin: 0.06,
   /** Gáy thu vào cổ */
   nape: 0.6,
@@ -54,13 +47,20 @@ export const HUMAN_HEAD = {
    * (`HUMAN_NECK_ROWS`) thay vì gờ ngang trên cổ
    */
   napeDrop: { to: -0.75, drop: 0.3 },
+  /**
+   * Sọ ôm cổ: sau góc hàm (bề sâu từ `jawLine.back` lùi tới `back`) và dưới tai (cao từ `top` xuống `low`) bề ngang thu về
+   * `half` (min mềm bậc `p`) — nửa bề ngang đỉnh cổ (`HUMAN_NECK_ROWS` × `humanNeckWidth`) theo sọ đơn vị. Đáy sọ sau góc
+   * hàm (`napeDrop`) không chìa ngoài cổ thành gờ chữ ∧ dưới tai khi nhìn ngang mà thon dần vào cổ; quai hàm, cằm, gáy giữa
+   * không đổi
+   */
+  hug: { half: 0.42, p: 4, back: -0.45, nape: [-0.5, -0.75], top: -0.4, low: -0.85 },
   /** Nửa sau thu bề sâu còn bấy nhiêu phần: tai ngay sau đường giữa đầu, đầu nhìn ngang không dài như trứng nằm */
   backDepth: 0.9,
   /**
    * Gáy: nửa dưới phía sau kéo vĩ độ xuống (`t + pull·t²(1−t)²`, `t` vĩ độ âm theo phần 90°), chân tóc gáy của tóc dựng
    * khối xuống tới ống cổ như đầu chibi thay vì lơ lửng giữa gáy
    */
-  napePull: 4,
+  napePull: 6,
   /**
    * Đường nghiêng mặt: trán đầy, gờ mày nhô, hốc mắt và sống mũi trên lõm, môi trên, môi dưới nhô, rãnh dưới môi lõm, cằm nhô.
    * Mỗi nét: cao độ (sọ cầu, như nét mặt dán), nửa cao, nửa rộng ngang (sin kinh độ), độ nhô (âm là lõm)
@@ -79,6 +79,116 @@ export const HUMAN_HEAD = {
   /** Tai: cao độ tâm, lệch sau tâm sọ, nửa cao, nửa rộng, độ chìa khỏi má */
   ear: { y: -0.2, z: -0.08, h: 0.24, w: 0.12, out: 0.06 },
 } as const;
+
+/**
+ * THỬ (feat/real-head-proto): mũi khối riêng của đầu `human` (`noseGeometry` của human.ts), px nét mặt (`FACE_R`, y xuống
+ * quanh tâm đầu) và sọ đơn vị; số của mặt `western`, `FACES` đè theo kiểu mặt. Gốc sống mũi `root` px trên hàng mắt; chóp
+ * cách gốc `tip` phần khoảng mắt → mồm (nhân `length` của nhân vật), cách mồm ít nhất `gap` px; mặt dưới chóp dài `under`
+ * px về nhân trung. Nửa rộng dải đặt mũi `wRoot` ở gốc, `wTip` ở chóp (px, mép dải chìm dưới da), nở theo luỹ thừa `flare`
+ * của độ dài tới chóp; độ nhô ở chóp `out` (sọ đơn vị, nhân `out` của nhân vật), cong sống mũi `bow`; mép dải chìm `sink`.
+ * Mặt cắt ngang theo `(1 − (u/t)²)^k`, `k` từ `ridge[0]` ở gốc về `ridge[1]` ở chóp (lớn là sống hẹp, nhỏ là tròn bầu),
+ * `t` từ `1` ở gốc về `tipW` ở chóp (chóp chỉ chiếm bấy nhiêu phần nửa rộng, phần ngoài để cho cánh mũi). Cánh
+ * mũi `ala`: hai gò hai bên chóp ở `u` (phần nửa rộng) nửa rộng `w`, cao `h` phần độ nhô chóp, dọc theo `v` (phần dải gốc →
+ * nhân trung) nửa cao `vh`; `h: 0` là không cánh
+ */
+export const HUMAN_NOSE = {
+  root: 1, tip: 0.6, gap: 9, under: 5, wRoot: 4, wTip: 5.2, flare: 1, out: 0.2, bow: 1.7, sink: 0.01,
+  ridge: [2.6, 1.8] as readonly [number, number],
+  tipW: 1,
+  ala: { u: 0.62, w: 0.22, h: 0, v: 0.8, vh: 0.14 },
+};
+export type NoseNums = typeof HUMAN_NOSE;
+
+/** Số sọ của đầu `human` mà kiểu mặt đè: hằng số `HUMAN_HEAD`, hình hàm `JAWS` */
+type Widen<T> = T extends number ? number : T extends readonly (infer U)[] ? readonly Widen<U>[] : T extends object ? { readonly [K in keyof T]: Widen<T[K]> } : T;
+export type HeadNums = Widen<typeof HUMAN_HEAD>;
+type JawNums = Widen<(typeof JAWS)["v"]>;
+
+/** Một kiểu mặt: số đè lên `HUMAN_HEAD` (`head`), lên từng hình hàm `JAWS` (`jaw`), lên `HUMAN_NOSE` (`nose`) */
+export interface FacePreset {
+  head?: Partial<Pick<HeadNums, "chin" | "chinFront" | "profile">>;
+  jaw?: Partial<Record<JawKind, Partial<JawNums>>>;
+  nose?: Partial<NoseNums>;
+}
+
+/**
+ * THỬ (feat/real-head-proto): kiểu mặt của đầu `human` (`head.face`), gói mũi, đường nghiêng mặt và cằm, hàm. `western`
+ * là đúng số gốc (`HUMAN_HEAD`, `JAWS`, `HUMAN_NOSE`): mũi cao thon, gờ mày và hốc mắt sâu, cằm nhô trước đường môi.
+ * `asian` (mặc định): mũi rộng gấp đôi, chóp tròn bầu có cánh, gốc mũi giữa hai mắt nông và thấp, chóp nhô ít hơn; gờ mày,
+ * hốc mắt nhẹ, giữa mặt phẳng; cằm lùi sau đường môi khi nhìn ngang, tròn, rộng hơn nhìn thẳng, nửa dưới mặt đầy hơn.
+ * Trường riêng của nhân vật (`head.jaw`, `head.nose`, `head.aspect`, `head.heads`) chồng lên kiểu mặt.
+ * docs/01-rig.md#người-3d-mặc-đồ
+ */
+export const FACES = {
+  western: {},
+  asian: {
+    head: {
+      chin: 0.04,
+      chinFront: 0.19,
+      profile: [
+        { y: 0.42, h: 0.18, w: 0.6, out: 0.025 },
+        { y: 0.15, h: 0.09, w: 0.6, out: 0.018 },
+        { y: -0.04, h: 0.08, w: 0.45, out: -0.018 },
+        { y: -0.5, h: 0.06, w: 0.3, out: 0.05 },
+        { y: -0.6, h: 0.05, w: 0.28, out: 0.045 },
+        { y: -0.66, h: 0.035, w: 0.3, out: -0.025 },
+        { y: -0.74, h: 0.07, w: 0.42, out: 0.035 },
+      ],
+    },
+    jaw: {
+      v: { jaw: 0.06, chinW: 0.58, corner: 0.1 },
+      square: { jaw: 0.08, chinW: 0.66, corner: 0.09 },
+    },
+    nose: { root: -1, wRoot: 5, wTip: 15, flare: 2, out: 0.17, bow: 2.4, ridge: [2.2, 1.3], tipW: 0.6, ala: { u: 0.72, w: 0.2, h: 0.55, v: 0.8, vh: 0.15 } },
+  },
+} as const satisfies Record<string, FacePreset>;
+export type FaceKind = keyof typeof FACES;
+
+/** Dáng đầu `human` của một nhân vật: kiểu mặt và hình hàm */
+export interface HeadShape {
+  face: FaceKind;
+  jaw: JawKind;
+}
+export const HEAD_SHAPE_DEFAULT: HeadShape = { face: "asian", jaw: "v" };
+
+/** Số sọ của dáng `s`: `HUMAN_HEAD` ← `JAWS[jaw]` ← kiểu mặt (`head`, rồi `jaw` của nó) */
+export function headNums(s: HeadShape): HeadNums {
+  const F: FacePreset = FACES[s.face];
+  return { ...HUMAN_HEAD, ...JAWS[s.jaw], ...F.head, ...F.jaw?.[s.jaw] };
+}
+
+/** Số mũi của dáng `s`: `HUMAN_NOSE` ← `nose` của kiểu mặt */
+export function noseNums(s: HeadShape): NoseNums {
+  const F: FacePreset = FACES[s.face];
+  return { ...HUMAN_NOSE, ...F.nose };
+}
+
+let shapeNow: HeadShape = { ...HEAD_SHAPE_DEFAULT };
+let numsNow = headNums(shapeNow);
+
+/**
+ * Đặt dáng đầu (kiểu mặt, hình hàm; trường bỏ trống lấy `HEAD_SHAPE_DEFAULT`) cho các lần đọc mặt sọ sau: `humanSkull`,
+ * `humanHair`, `humanEar`, `faceSurface`, `humanSkullGlsl`, mũi — dựng người, mốc, đo đầu cùng đặt trước khi đọc. Trả dáng cũ
+ */
+export function setHeadShape(s: Partial<HeadShape> = {}): HeadShape {
+  const old = shapeNow;
+  shapeNow = { face: s.face ?? HEAD_SHAPE_DEFAULT.face, jaw: s.jaw ?? HEAD_SHAPE_DEFAULT.jaw };
+  if (shapeNow.face !== old.face || shapeNow.jaw !== old.jaw) numsNow = headNums(shapeNow);
+  return old;
+}
+
+/** Dáng đầu đang đặt */
+export const headShape = (): HeadShape => shapeNow;
+
+/** Chạy `fn` với dáng đầu `s` rồi trả dáng cũ */
+export function withHeadShape<T>(s: Partial<HeadShape> | undefined, fn: () => T): T {
+  const old = setHeadShape(s);
+  try {
+    return fn();
+  } finally {
+    setHeadShape(old);
+  }
+}
 
 /** Mức min mềm của `max(−v, 0)`: gáy thu vào trơn, không gãy ở hai bên má */
 const back = (v: number) => (Math.sqrt(v * v + 0.04) - v) / 2;
@@ -106,7 +216,7 @@ function napeWarp([x, y, z]: V3, pull: number): V3 {
  * thu bề sâu; mặt trước theo đường nghiêng của người (gờ mày, hốc mắt, môi, cằm).
  */
 export function humanSkull(p: V3): V3 {
-  const H = { ...HUMAN_HEAD, ...JAWS[jawNow] };
+  const H = numsNow;
   const [x, y, z] = napeWarp(p, H.napePull);
   const s0 = Math.max(0, -y);
   const n = H.square + H.squareLow * s0 * s0;
@@ -135,17 +245,21 @@ export function humanSkull(p: V3): V3 {
   const N = H.nose;
   const bump = N.out * front * front * Math.exp(-((p[0] / N.w) ** 2) - ((p[1] - N.y) / N.h) ** 2);
   const Zd = Z + s2 * (H.chin + H.nape * back(Z)) + H.chinFront * front * s2 * s + fw * relief + bump;
-  return [X * H.narrow * w, yb, Zd + (1 - H.backDepth) * back(Zd)];
+  // sọ ôm cổ sau góc hàm, dưới tai
+  const G = H.hug, xo = X * H.narrow * w, ax = Math.abs(xo);
+  const wh = smooth01(J.back, G.back, Z) * smooth01(G.nape[1], G.nape[0], Z) * smooth01(G.top, G.low, yb);
+  const hx = ax + ((ax * G.half) / Math.pow(ax ** G.p + G.half ** G.p, 1 / G.p) - ax) * wh;
+  return [Math.sign(xo) * hx, yb, Zd + (1 - H.backDepth) * back(Zd)];
 }
 
 /**
- * `humanSkull` viết bằng GLSL cho hình hàm `jaw` (số chép từ `HUMAN_HEAD`, `JAWS`): hàm `vec3 humanSkull(vec3 p)` cho shader
- * cần mặt đầu (`earMaterial`). Đổi `humanSkull` thì đổi theo ở đây
+ * `humanSkull` viết bằng GLSL cho dáng đầu `shape` (mặc định dáng đang đặt; số chép từ `headNums`): hàm `vec3 humanSkull(vec3 p)`
+ * cho shader cần mặt đầu (`earMaterial`). Đổi `humanSkull` thì đổi theo ở đây
  */
-export function humanSkullGlsl(jaw: JawKind = "v"): string {
-  const H = { ...HUMAN_HEAD, ...JAWS[jaw] };
+export function humanSkullGlsl(shape: HeadShape = shapeNow): string {
+  const H = headNums(shape);
   const f = (v: number) => (Number.isInteger(v) ? v.toFixed(1) : String(v));
-  const J = H.jawLine, N = H.nose, ND = H.napeDrop;
+  const J = H.jawLine, N = H.nose, ND = H.napeDrop, G = H.hug;
   const relief = H.profile
     .map((r) => `${f(r.out)} * exp(-hsSq(lon / ${f(r.w)}) - hsSq((p.y - ${f(r.y)}) / ${f(r.h)}))`)
     .join(" + ");
@@ -180,7 +294,10 @@ export function humanSkullGlsl(jaw: JawKind = "v"): string {
         float relief = ${relief};
         float bump = ${f(N.out)} * front * front * exp(-hsSq(p.x / ${f(N.w)}) - hsSq((p.y - ${f(N.y)}) / ${f(N.h)}));
         float zd = b.z + s2 * (${f(H.chin)} + ${f(H.nape)} * hsBack(b.z)) + ${f(H.chinFront)} * front * s2 * s + fw * relief + bump;
-        return vec3(b.x * ${f(H.narrow)} * w, yb, zd + ${f(1 - H.backDepth)} * hsBack(zd));
+        float xo = b.x * ${f(H.narrow)} * w, ax = abs(xo);
+        float wh = hsStep(${f(J.back)}, ${f(G.back)}, b.z) * hsStep(${f(G.nape[1])}, ${f(G.nape[0])}, b.z) * hsStep(${f(G.top)}, ${f(G.low)}, yb);
+        float hx = ax + (ax * ${f(G.half)} / pow(pow(ax, ${f(G.p)}) + ${f(G.half ** G.p)}, ${f(1 / G.p)}) - ax) * wh;
+        return vec3(sign(xo) * hx, yb, zd + ${f(1 - H.backDepth)} * hsBack(zd));
       }`;
 }
 

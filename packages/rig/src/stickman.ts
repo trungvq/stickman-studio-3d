@@ -12,13 +12,13 @@ import { sculptMesh } from './sculpt';
 import { equipCharacter, limbWidths, wornPalette, type CharacterData, type Drape, type Earrings, type Equip, type PieceKey, type Garment, type Glasses, type Hat, type Necklace, type Pin, type Sculpt, type Shades, type Skirt } from './core/schema';
 import { hatFit, hatMesh, hatSpec, insideHat, pinMesh, pressHair } from './core/hat';
 import { earringMesh } from './core/jewelry';
-import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, SLEEVE_EASE, sleeveGrow, THIGH_ROOT, type ActCharacter, type AimReport, type Bones3 } from './core/act3';
+import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, roots3, SLEEVE_EASE, sleeveGrow, THIGH_ROOT, type ActCharacter, type AimReport, type Bones3 } from './core/act3';
 import { blushLevel, chibiShape } from './core/face';
 import { wornSkirt } from './core/skirtShape';
 import { hangsFromHip, matchWrap } from './core/hem';
 import { humanNeckWidth, NECK_BEND } from './core/torso';
 import { setBluntSideburn } from './core/sculpt';
-import { humanHair, humanSkull, setJaw, SKULL3 } from './core/humanHead';
+import { humanHair, humanSkull, setHeadShape, SKULL3 } from './core/humanHead';
 import { Ankle, earGroup, handRig, humanHeadGeometry, neckGeometry, noseGeometry, pelvisGeometry, shoeCapsule, shoeGeometry, type Hand } from './human';
 import { handGrip } from './core/hand';
 import type { Rig } from './torso';
@@ -440,7 +440,7 @@ function sculptEarrings(head: THREE.Object3D, earrings: Partial<Earrings>, human
   }
 }
 
-const qHead = new THREE.Quaternion(), qFall = new THREE.Quaternion(), headDown = new THREE.Vector3();
+const qHead = new THREE.Quaternion(), sHead = new THREE.Vector3(), headDown = new THREE.Vector3();
 const DOWN = new THREE.Vector3(0, -1, 0);
 /**
  * Phần thõng của bông tai (`userData.dangle` trên nhóm đầu) quay quanh lỗ xỏ cho trục `−y` của nó chỉ thẳng xuống thế giới:
@@ -450,11 +450,10 @@ const DOWN = new THREE.Vector3(0, -1, 0);
 export function hangJewelry(p: Figure) {
   const list = p.head.children.filter((o) => o.userData.dangle);
   if (!list.length) return;
-  p.head.getWorldQuaternion(qHead);
-  headDown.set(0, -1, 0).applyQuaternion(qHead);
-  qFall.setFromUnitVectors(headDown, DOWN);
-  // quay `qFall` trong thế giới, đổi về hệ đầu: q = qHead⁻¹ · qFall · qHead
-  const q = qHead.clone().invert().multiply(qFall).multiply(qHead);
+  p.head.matrixWorld.decompose(headDown, qHead, sHead);
+  // hướng xuống của thế giới trong hệ đầu, qua cả cỡ đầu ba trục (`headDims`): trục −y của phần thõng chỉ đúng xuống
+  headDown.copy(DOWN).applyQuaternion(qHead.invert()).divide(sHead).normalize();
+  const q = new THREE.Quaternion().setFromUnitVectors(DOWN, headDown);
   for (const g of list) {
     g.quaternion.copy(q);
     g.updateMatrixWorld(true);
@@ -554,15 +553,24 @@ export interface StickmanOptions {
   headForm?: 'sphere' | 'human';
   /** THỬ: `head.jaw` */
   headJaw?: 'v' | 'square';
+  /** THỬ: `head.face` (mặc định `asian`) */
+  headFace?: 'asian' | 'western';
   /** THỬ: `head.nose` */
   headNose?: { length?: number; out?: number };
+  /** `head.heads`: đầu `human` theo số đầu */
+  headHeads?: number;
+  /** `head.aspect`: bề ngang đầu `human` chia chiều cao đầu */
+  headAspect?: number;
 }
+
+/** `head` của JSON nhân vật dựng lại từ tham số của `stickman`: cỡ đầu (`bones3`) */
+const headSpec = (o: StickmanOptions) => ({ form: o.headForm ?? 'sphere', jaw: o.headJaw ?? 'v', face: o.headFace ?? 'asian', heads: o.headHeads, aspect: o.headAspect });
 
 /** Phần JSON nhân vật mà `resolveActing` đọc, dựng lại từ tham số của `stickman` */
 function actCharacter(o: StickmanOptions): ActCharacter {
   return {
     rig: o.rig,
-    head: { form: o.headForm ?? 'sphere' },
+    head: headSpec(o),
     face: o.faceShape,
     palette: { clad: !!o.clad, sleeveWidth: o.sleeveWidth, trouserWidth: o.trouserWidth, bicep: o.bicep ?? 0, sleeveFlare: o.sleeveFlare ?? 0, sleeveLength: o.sleeveLength ?? 1 },
     pieces: { torso: { garment: o.garment }, ...(o.skirt && { hem: { src: 'sculpt', skirt: o.skirt } }) },
@@ -571,12 +579,13 @@ function actCharacter(o: StickmanOptions): ActCharacter {
 
 /** Một người que 3D theo JSON nhân vật của rig. */
 export function stickman(o: StickmanOptions): Figure {
-  const prevJaw = setJaw(o.headJaw ?? 'v');
+  // dáng đầu (kiểu mặt, hình hàm) đặt suốt lúc dựng: sọ, nét mặt, tai, tóc bám sọ, mũi, bông tai cùng đọc
+  const prevShape = setHeadShape({ face: o.headFace, jaw: o.headJaw });
   const prevSideburn = setBluntSideburn(o.headForm === 'human');
   try {
     return stickmanBuild(o);
   } finally {
-    setJaw(prevJaw);
+    setHeadShape(prevShape);
     setBluntSideburn(prevSideburn);
   }
 }
@@ -588,7 +597,7 @@ function stickmanBuild(o: StickmanOptions): Figure {
   // người `clad`: nửa bề dày chi như `limbHalf` của lõi (gồm viền), nên người ngồi nằm đúng trên mặt ghế
   const limbR = (w: number) => (clad ? (w + rig.stroke) / 200 : (R.limb * w) / 10);
   q = QUALITY[lod];
-  const B = bones3(rig.height);
+  const B = bones3(rig.height, headSpec(o));
   const root = new THREE.Group();
   const hips = joint(root, 0, B.thigh + B.shin + B.limb, 0);
   const spine = joint(hips, 0, 0.0, 0);
@@ -610,7 +619,7 @@ function stickmanBuild(o: StickmanOptions): Figure {
   const sleeveColor = o.sleeveColor ?? '#1a1a1a';
   const cloth = clad && (o.sleeveLength ?? 1) > 0 && !sameColor(sleeveColor, color) && !sameColor(color, skin) ? clothMaterial(LIMB_SIL) : undefined;
   const lap = seated ? (dressed ? { seat: -dressed.rise * rig.height } : { seat: seatAt, fold: { top: -(thighTop + 1), dir: [-0.1, 1] as [number, number] } }) : undefined;
-  const body = sculptTorso(spine, { garment, rig, color, accent, skin, ink: INK, arm: at.room, lap, ...((o.drape || o.shades || o.necklace) && { neck: { drape: o.drape, shades: o.shades, necklace: o.necklace, color: o.drapeColor ?? color } }), ...(clad && { sil: LIMB_SIL }), ...(dressed && { tuck: -dressed.rise * rig.height }), cloth, human });
+  const body = sculptTorso(spine, { garment, rig, color, accent, skin, ink: INK, arm: at.room, lap, ...((o.drape || o.shades || o.necklace) && { neck: { drape: o.drape, shades: o.shades, necklace: o.necklace, color: o.drapeColor ?? color } }), ...(clad && { sil: LIMB_SIL }), ...(dressed && { tuck: -dressed.rise * rig.height }), cloth, human: human ? humanNeckWidth(B.headWidth) : undefined });
   // khối thân áo là mảnh đầu tiên: `collide` lấy hộp thân từ nó
   spine.children[0].userData.torso = true;
   spine.children[0].userData.inkGap = Math.max(...body.depth) / 100;
@@ -635,8 +644,10 @@ function stickmanBuild(o: StickmanOptions): Figure {
   const neck = joint(spine, 0, B.torso, 0);
   let neckTube: Figure['neckTube'];
   const skullScale = new THREE.Vector3(...SKULL3);
-  // đáy sọ trên mép cổ áo (khớp cổ của lõi + `rise` 6 của áo phông)
-  const head = joint(neck, 0, head3(B, human), 0);
+  // đáy sọ trên mép cổ áo (khớp cổ của lõi + `rise` 6 của áo phông); mọi thứ trên đầu dựng ở cỡ gốc `R.head` rồi phóng theo
+  // cỡ đầu của người (`headDims`): sọ, nét mặt, tóc, mũ, kính, tai, mũi, bông tai, socket đầu cùng co
+  const head = joint(neck, 0, B.headUp, 0);
+  head.scale.set(...B.headK);
   if (human) head.userData.human = true;
   // kính và mốc đầu đọc chỗ mắt đã dời của nét mặt chibi
   const eyes = { eyeGap: 26, offsetY: 0, mouthGap: 34, ...faceShape };
@@ -683,7 +694,7 @@ function stickmanBuild(o: StickmanOptions): Figure {
     headSkin(nose);
     head.add(nose);
     const bend = lod !== 'low';
-    const geo = neckGeometry(head3(B, true) - R.head * 0.5, humanNeckWidth(rig), bend ? NECK_BEND.rows : 1);
+    const geo = neckGeometry(B.headUp - B.skull[1] * 0.5, humanNeckWidth(B.headWidth), bend ? NECK_BEND.rows : 1);
     // nét cổ là nét bóng dáng hậu kỳ, không vỏ ngược: vỏ ngược thò qua khe cằm và cổ áo thành vạch đổi theo dáng đầu từng khung.
     // Chung vật liệu với sọ và da trong miệng cổ áo, khe nét xa như tai: không nét ở chỗ cắm vào đầu, vào miệng cổ áo
     const tube = new THREE.Group();
@@ -1015,7 +1026,7 @@ export interface CharacterJson {
     garment: string; skin?: string; sleeveWidth?: number; trouserWidth?: number; limbCurve?: number; sleeveFlare?: number;
     clad?: boolean; sleeve?: string; trouser?: string; shoe?: string; sleeveLength?: number; trouserLength?: number; bicep?: number;
   };
-  head?: { form?: 'sphere' | 'human' };
+  head?: { form?: 'sphere' | 'human'; jaw?: 'v' | 'square'; face?: 'asian' | 'western'; nose?: { length?: number; out?: number }; heads?: number; aspect?: number };
   face?: Partial<FaceShape>;
   pieces: {
     torso: {
@@ -1047,7 +1058,7 @@ export function characterOptions(json: CharacterJson, opts: Partial<StickmanOpti
     ...(pc.headAcc?.src === 'sculpt' && { pin: pc.headAcc.pin ?? (pc.headAcc.earrings ? undefined : {}), earrings: pc.headAcc.earrings, pinColor: pc.headAcc.color, pinBead: pc.headAcc.accent }),
     ...(pc.neck?.src === 'sculpt' && { drape: pc.neck.drape, shades: pc.neck.shades, necklace: pc.neck.necklace, drapeColor: pc.neck.color }),
     clad: pal.clad, sleeveColor: pal.sleeve, trouserColor: pal.trouser, shoeColor: pal.shoe, sleeveLength: pal.sleeveLength, sleeveFlare: pal.sleeveFlare, bicep: pal.bicep,
-    trouserLength: pal.trouserLength, headForm: json.head?.form, headJaw: (json.head as { jaw?: 'v' | 'square' } | undefined)?.jaw, headNose: (json.head as { nose?: { length?: number; out?: number } } | undefined)?.nose, ...opts,
+    trouserLength: pal.trouserLength, headForm: json.head?.form, headJaw: json.head?.jaw, headFace: json.head?.face, headNose: json.head?.nose, headHeads: json.head?.heads, headAspect: json.head?.aspect, ...opts,
   };
 }
 

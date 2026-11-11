@@ -27,9 +27,11 @@ Gốc toạ độ đặt ở **chậu hông** (pelvis). Trục y hướng xuốn
 **`Chiều cao` nhân vào các đoạn dọc, không nhân vào bề ngang.** Sáu đoạn `cổ`,
 `thân`, `cánh tay trên`, `cẳng tay`, `đùi`, `cẳng chân` nhân với `rig.height`
 (mặc định `1`); `nửa rộng vai`, `nửa rộng hông`, các độ dày nét và **đầu** thì
-không. Đầu chỉnh riêng bằng `head.scaleX` / `scaleY` — kéo `Chiều cao` xuống là ra
-người lùn đầu to, đúng kiểu hoạt hình, muốn khác thì bóp đầu lại. Bảng trên là
-số ở `height = 1`; mọi mốc `y` trong trang này cũng vậy.
+không. Đầu cầu chỉnh riêng bằng `head.scaleX` / `scaleY` — kéo `Chiều cao` xuống là ra
+người lùn đầu to, đúng kiểu hoạt hình, muốn khác thì bóp đầu lại. Đầu `human` theo số đầu
+(`head.heads`), và chiều cao người khai được bằng mét (`rig.stature`) —
+[Chiều cao và cỡ đầu](#chiều-cao-và-cỡ-đầu). Bảng trên là số ở `height = 1`; mọi mốc `y` trong trang
+này cũng vậy.
 
 Bộ xương có hai vai và hai hông; thân là [thân áo dựng khối](12-trang-phuc-3d.md#thân-áo-dựng-khối)
 dựng quanh chúng. `rig.shoulderHalf`, `rig.shoulderDrop` và `rig.hipHalf` đặt trực tiếp
@@ -154,11 +156,12 @@ Vai âm quét cánh tay lên phía ngoài đầu, khuỷu cùng dấu âm cuộn
 đồ](#người-3d-mặc-đồ)), nét mặt vẽ lên canvas dán trên sọ nên quay, gật, nhép cùng đầu. Tóc,
 mũ, kính là đồ dựng khối cắm vào socket trên đầu ([tóc](12-trang-phuc-3d.md#tóc-dựng-khối),
 [mũ](12-trang-phuc-3d.md#mũ-dựng-khối)); nếp nhăn vẽ cùng nét mặt vì nó bám tâm mặt.
-`scaleX`/`scaleY` nhân lên `headH/2`, không có `scale` chung — muốn to đều thì kéo cả hai.
+`scaleX`/`scaleY` nhân lên `headH/2` của đầu cầu, không có `scale` chung — muốn to đều thì kéo cả hai. Đầu `human`
+không đọc hai trường ấy: cỡ đầu theo `heads`, tỉ lệ ngang theo `aspect` ([Chiều cao và cỡ đầu](#chiều-cao-và-cỡ-đầu)).
 
 | Bộ phận | Cấu tạo | Điều khiển bằng |
 |---|---|---|
-| `head` | Khối sọ dựng code | `head.form, scaleX, scaleY` |
+| `head` | Khối sọ dựng code | `head.form`; đầu cầu `scaleX, scaleY`, đầu `human` `heads, aspect` |
 | `hair` | [Tóc dựng khối](12-trang-phuc-3d.md#tóc-dựng-khối) | `pieces.hair.sculpt` |
 | `face` | Mắt, lông mày, miệng trên canvas nét mặt | kênh `face` + `keys[].face` của hành động |
 | `wrinkle` | Dưới nét mặt: nếp trán, chân chim, túi mắt, pháp lệnh | `face.wrinkle.*` (hằng số của nhân vật) |
@@ -1373,9 +1376,10 @@ của lõi (`core/act3.ts`) trả đúng các khớp ấy trong toạ độ th�
 đo giật tay chân trên chúng ([03](03-scene.md#giật-trên-hình)). Hai bên dùng chung (khung xương, luật đọc góc và `twoBone3`
 ở `core/arm3.ts`; `core/act3.ts` xuất lại chúng và giữ `actReach`, `actJoints`):
 
-- **Khung xương** `bones3(rig.height)` (đơn vị three, tức rig chia 100), gốc vai và gốc chân
-  `roots3(áo, rig, { clad, sleeve, trouser, bicep, skirt })` cùng góc tay choãi của nó, tâm đầu `head3(khung, human)` — `stickman.ts` dựng người que từ
-  chúng, `Figure.bones` giữ khung của người ấy. `BONES3` là khung ở `height = 1`.
+- **Khung xương** `bones3(rig.height, head)` (đơn vị three, tức rig chia 100; `head` là `head` của nhân vật), gốc vai và
+  gốc chân `roots3(áo, rig, { clad, sleeve, trouser, bicep, skirt })` cùng góc tay choãi của nó, cỡ đầu và tâm đầu
+  (`headDims`: `skull`, `headK`, `headUp`) — `stickman.ts` dựng người que từ chúng, `Figure.bones` giữ khung của người ấy.
+  `BONES3` là khung ở `height = 1`, đầu cầu.
 - **Luật đọc góc** `actAngles`: kênh nâng đọc góc soạn ở `side` và số dang, kênh không có cờ về dáng
   nghỉ (tay buông `[0, 0]`, chân thẳng, ngồi thì đùi `[90, −90]`, không dang). `actTwist` đọc xoắn vai và
   lệch cổ tay theo cùng cờ; `actHand` đọc bàn tay (`pose.hand`, không cần cờ).
@@ -1389,15 +1393,15 @@ của lõi (`core/act3.ts`) trả đúng các khớp ấy trong toạ độ th�
 | `neck` | `0,08` | có |
 | `upperArm` / `foreArm` | `0,62` / `0,58` | có |
 | `thigh` / `shin` | `0,78` / `0,92` | có |
-| `head` (bán kính sọ) | `0,64` | không |
+| `head` (bán kính sọ gốc `HEAD3_R`) | `0,384`, sọ bóp `SKULL3` `(1; 1,04; 0,98)` | đầu cầu không; đầu `human` nhân `headK` theo số đầu |
 | `limb` (nửa bề dày nét người que) | `0,042` | không |
-| Khớp cổ → tâm đầu `head3` | `neck + 0,09 + head · 1,04`, đầu `human` thêm `HUMAN_NECK` `0,1` | chỉ phần `neck` |
+| Khớp cổ → tâm đầu `headUp` | `neck + 0,09 + head · 1,04`; đầu `human` `neck + 0,09 + cổ họng + cằm` ([Chiều cao và cỡ đầu](#chiều-cao-và-cỡ-đầu)) | đầu cầu chỉ phần `neck` |
 
 **Sáu đoạn là `lengths(height)` của lõi chia 100.** Hông người 3D lấy thẳng `world.hip`, mà `sceneAt`
 đặt hông cho bàn chân thấp nhất chạm sàn bằng `feet(pose, height)` — chân 3D phải dài đúng chừng ấy,
 lệch là chân lún, lơ lửng hay trượt khi đi theo `path`. Gốc vai người que ở `torso · height −
 shoulderDrop`, thân áo dựng khối (`profile`), váy và đích tay hệ thân (`actReach` như `reachToWorld`)
-cũng đọc `height`; đầu, khoảng đáy sọ → đỉnh cổ và bề dày chi giữ nguyên.
+cũng đọc `height`; bề dày chi giữ nguyên, đầu cầu và khoảng đáy sọ → đỉnh cổ của nó cũng vậy.
 
 Phần còn lại — chuỗi biến hình gốc → hông → thân → vai → khuỷu → cổ tay → bàn tay, thứ tự góc Euler của
 từng khớp (vai `ZXY`: dang · gập · xoắn; khuỷu chỉ gập; cổ tay `YZX`: xoay cẳng tay · gập · lệch) —
@@ -1480,7 +1484,13 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
 
 | Trường | Mặc định | Người 3D |
 |---|---|---|
-| `head.form` | `"sphere"` | `"human"`: đầu chibi — má phính, cằm chữ U, cổ, tai, mắt to có đốm sáng, má hồng |
+| `head.form` | `"sphere"` | `"human"`: đầu người — quai hàm, cằm, cổ, tai, mũi, mắt có đốm sáng, má hồng |
+| `head.heads` | `6` | Đầu `human`: người cao bấy nhiêu đầu, kẹp `5,5..7` — [Chiều cao và cỡ đầu](#chiều-cao-và-cỡ-đầu) |
+| `head.aspect` | `0,76` | Đầu `human`: bề ngang đầu chia chiều cao đầu, kẹp `0,71..0,81` |
+| `head.face` | `"asian"` | Đầu `human`: kiểu mặt `"asian"` hay `"western"`, gói mũi, đường nghiêng mặt, cằm và hàm (gạch đầu dòng "Kiểu mặt" dưới bảng) |
+| `head.jaw` | `"v"` | Đầu `human` (thử): hình hàm `"v"` thon thẳng từ gò má hay `"square"` quai hàm vuông; chồng lên kiểu mặt |
+| `head.nose` | `{ length: 1, out: 1 }` | Đầu `human` (thử): nhân độ dài gốc → chóp (`0,6..1,5`) và độ nhô (`0..2`) của mũi kiểu mặt |
+| `rig.stature` | trống | Chiều cao người gót → đỉnh sọ, mét; khai thì `rig.height` tính từ nó |
 | `palette.clad` | `false` | Tay chân là ống màu có vỏ viền, bàn tay, giày, khối hông có mông |
 | `palette.sleeve` | `#1a1a1a` | Màu tay áo |
 | `palette.sleeveLength` | `1` | Phần tay phủ màu tay áo tính từ vai, `0..1`; phần còn lại màu da. `1` có cổ tay áo, quanh `0,25` là áo ngắn tay |
@@ -1495,13 +1505,32 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
   của sọ đơn vị (y lên, z ra trước mặt) và trả điểm trên đầu: nửa trên giữ nguyên, nửa dưới nở
   ngang về phía đáy (`jaw`) thành má phính và quai hàm tròn, kéo dài (`drop`), vạt đáy thành cằm chữ U
   rộng (`flat`), hơi dời ra trước (`chin`) và thu gáy (`nape`); không có mũi. Mọi số nhân bình phương
-  độ sâu dưới xích đạo nên viền đầu không gãy ở chỗ nối. Đầu ngồi cao hơn đầu cầu `HUMAN_NECK`
-  (`head3`, `actJoints` cùng đọc): một đoạn cổ da lộ ra giữa cằm và cổ áo. Vỏ viền dưới cằm chìm sau
+  độ sâu dưới xích đạo nên viền đầu không gãy ở chỗ nối. Cỡ đầu theo số đầu, cằm cách mép cổ áo một đoạn cổ họng
+  (`headDims`, `Bones3.headUp`; `actJoints` cùng đọc) — [Chiều cao và cỡ đầu](#chiều-cao-và-cỡ-đầu). Vỏ viền dưới cằm chìm sau
   cổ và cổ áo nên sọ có thêm nét bóng dáng dò ở hậu kỳ (`npr({ ink })`). Ống cổ không có vỏ viền, chỉ nét bóng dáng
   hậu kỳ: vỏ viền thò qua khe giữa cằm và cổ áo thành vạch đổi theo dáng đầu từng khung. Sọ, ống cổ và da trong miệng
   cổ áo chung vật liệu nét (`HEAD_INK`); ống cổ có khe nét xa (`inkGap` `1`) như tai và chung mã vật với da trong miệng
   cổ áo, nên chỗ cổ cắm vào đầu, vào miệng cổ áo không có nét. Ống cổ không nhận nét bóng dáng của thân áo cùng người
   (`userData.inkSkip`): chân ống lùi sau mép cổ áo một khe đổi theo dáng đầu, nét ấy thành vạch dài ngắn.
+- **Kiểu mặt (`head.face`).** Gói số của mũi, đường nghiêng mặt và cằm, hàm (`FACES` của `core/humanHead.ts`); không
+  khai là `asian` (nhân vật cũ cũng thế). `western` là đúng số gốc (`HUMAN_HEAD`, `JAWS`, `HUMAN_NOSE`). `jaw`, `nose`,
+  `aspect`, `heads` của nhân vật chồng lên kiểu mặt.
+
+  | Số | `western` | `asian` |
+  |---|---|---|
+  | Mũi: nửa rộng gốc / chóp (`wRoot` / `wTip`, px nét mặt) | `4` / `5,2` | `5` / `15`, nở dồn về chóp (`flare` `2`) |
+  | Mũi: chóp (`tipW`, mặt cắt `ridge`) | sống hẹp tới chóp nhọn (`2,6 → 1,8`) | chóp tròn bầu chiếm `0,6` nửa rộng (`2,2 → 1,3`) |
+  | Mũi: cánh mũi (`ala.h`) | không | hai gò hai bên chóp, cao `0,55` độ nhô chóp |
+  | Mũi: gốc (`root`), cong sống (`bow`), độ nhô chóp (`out`) | `1` px trên hàng mắt, `1,7`, `0,2` | `1` px dưới hàng mắt, `2,4` (gốc nông), `0,17` |
+  | Gờ mày / hốc mắt (`profile`, độ nhô) | `0,055` / `−0,055` | `0,018` / `−0,018`: giữa mặt phẳng |
+  | Môi trên, rãnh dưới môi, gò cằm (`profile`) | `0,045`, `−0,05`, `0,075` | `0,05`, `−0,025`, `0,035` (nửa cao `0,07`) |
+  | Cằm dời trước (`chin`, `chinFront`) | `0,06`, `0,3` | `0,04`, `0,19`: nhìn ngang cằm lùi sau đường môi |
+  | Hàm `v`: má phính, bề ngang cằm, góc mềm (`jaw`, `chinW`, `corner`) | `0,04`, `0,5`, `0,07` | `0,06`, `0,58`, `0,1` |
+  | Hàm `square`: như trên | `0,06`, `0,6`, `0,06` | `0,08`, `0,66`, `0,09` |
+
+  Dáng đầu (kiểu mặt, hình hàm) là trạng thái chung của lõi đặt bằng `setHeadShape` / `withHeadShape` trước khi đọc
+  mặt sọ: `stickman` đặt suốt lúc dựng (sọ, nét mặt, tai và shader nét tai, tóc bám sọ, mũi, bông tai), mốc thân
+  (`markShape`) và cỡ đầu (`headDims`) đặt theo `head` của chính nhân vật.
 - **Nét mặt chibi nằm trên mặt nặn.** Lưới nét mặt đi qua cùng `humanSkull` nên mồm, nếp nhăn theo
   má ở mọi góc quay. `CHIBI` (`core/face.ts`) cộng vào `face` của JSON nhân vật: mắt hạ `10`, hai mắt
   giãn thêm `18`, mồm gần mắt `10` px (`chibiShape`) — kính và `headFit` đọc chỗ mắt đã dời. Mỗi mắt
@@ -1603,13 +1632,56 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
   `46`) hay `ease` của áo. Tay càng to thì gốc vai càng lùi vào góc vai áo, còn mép ngoài gốc đùi
   (`hipHalf + cladThigh`) giữ sườn áo: hông rộng so với vai thì tay choãi thêm, hẹp thì thân thành cột
   dưới vai. Dáng quả lê là đùi đầy (`trouserWidth` lớn, mẫu nữ `21`) chứ không nới `hipHalf`: nới hông là
-  hai chân dạng xa nhau. Muốn chibi thì hạ `rig.height`: đầu không co
-  nên `0,85` là đầu ~`1/3` chiều cao, `0,65` là ~`1/2,5`; thân áo, váy ngắn lại theo `height`. Đích tay hệ thân nhân `height`
-  mà đầu thì không, nên hành động chạm người (che miệng, chống cằm, áp tai) đặt tay bằng mốc thân, không bằng toạ độ
-  ([Đích theo mốc](#đích-theo-mốc)); ghế cao bằng gối là
-  `87,5 · height`.
+  hai chân dạng xa nhau. Đầu cầu không co theo `rig.height`, nên muốn chibi thì hạ `rig.height`: `0,85` là đầu ~`1/3`
+  chiều cao, `0,65` là ~`1/2,5`; thân áo, váy ngắn lại theo `height`. Đầu `human` thì theo số đầu
+  ([Chiều cao và cỡ đầu](#chiều-cao-và-cỡ-đầu)). Đích tay hệ thân nhân `height` mà đầu thì không theo cùng tỉ lệ, nên hành
+  động chạm người (che miệng, chống cằm, áp tai) đặt tay bằng mốc thân, không bằng toạ độ
+  ([Đích theo mốc](#đích-theo-mốc)); ghế cao bằng gối là `87,5 · height`.
 - **Giá.** Người mặc đồ đầy đủ khoảng `53` lưới, người que `23`; người nền nên `lod: "low"` và
   `freeze`.
+
+### Chiều cao và cỡ đầu
+
+Đầu `human` theo **số đầu**: chiều cao đầu (cằm → đỉnh sọ, không tính tóc) bằng chiều cao người (gót → đỉnh sọ) chia
+`head.heads`. Bề ngang đầu bằng chiều cao đầu nhân `head.aspect`, bề sâu (trán → gáy, không tính mũi) theo `HEAD_DEPTH`
+(`0,86` chiều cao đầu; `aspect` lệch bao nhiêu thì bề sâu lệch nửa chừng ấy). Lưới đầu dựng ở cỡ gốc (`HEAD3_R`,
+`SKULL3`) rồi cả nhóm đầu phóng `headK` ba trục: sọ, nét mặt, mũi, tai, tóc dựng khối (kể cả tham số px như `front`,
+`bang`), mũ, kính, ria, nếp nhăn, bông tai, trâm và đồ cắm socket `crown`, `faceAcc` co cùng đầu. Mốc thân trên đầu
+(`mouth`, `eye`, `ear`, `chin`… — [Đích theo mốc](#đích-theo-mốc)), ý định cầm `face` / `{ mark: "head" }`, mốc
+`anchorAt`, khối va chạm đầu của `check` và `HEAD_LOOK` đọc cùng cỡ ấy (`headDims`, `headBoxOf`). `offset` của đích theo
+mốc vẫn là px rig, không co theo đầu.
+
+| Trường | Mặc định | Khoảng | |
+|---|---|---|---|
+| `head.heads` | `6` | `5,5..7` (kẹp) | Ít đầu là đầu to, nhiều đầu là đầu nhỏ |
+| `head.aspect` | `0,76` | `0,71..0,81` (kẹp) | Bề ngang / chiều cao đầu; ngoài khoảng là dị dạng nên bị kẹp |
+| `rig.stature` | trống | mét | Gót → đỉnh sọ |
+
+- **Cổ họng** giữa mép cổ áo và cằm bằng `THROAT` (`0,1`) chiều cao đầu: tâm đầu cao hơn khớp cổ
+  `neck + 0,09 + cổ họng + cằm` (`headUp`). Người `1,70 m` sáu đầu lộ chừng `3` cm cổ họng phía trước trên cổ sơ mi.
+  Chân tóc gáy của tóc dựng khối kéo xuống theo (`HUMAN_HEAD.napePull`) nên gáy sau lưng không lộ cao hơn cổ họng.
+- **Cổ theo bề ngang đầu**, không theo vai: chỗ thon nhất của ống cổ bằng `NECK_OF_HEAD` (`0,54`) bề ngang đầu
+  (`humanNeckWidth`): thấp hơn tỉ lệ người thật vì đầu sáu đầu vẫn to hơn đầu thật, người `1,80 m` cổ chừng `12` cm;
+  dưới hàm cổ chỉ loe `1,07` lần chỗ thon nhất cho cổ vào cằm gọn. Miệng cổ áo, cổ sơ mi `inner.collar` và dây chuyền nới theo cùng nửa rộng ấy (`humanNeckMin`).
+- **`rig.stature` và `rig.height`.** Khai `rig.stature` thì lúc nạp (`parseCharacter`) `rig.height` tính lại từ nó
+  (`heightOfStature`): phần dưới cổ áo co giãn cho tổng chiều cao đúng số khai, đầu theo số đầu; `height` khai kèm bị
+  đè. Không khai thì `rig.height` giữ nghĩa cũ (thân, tay, chân) và chiều cao người suy ra từ nó với đầu theo số đầu
+  (`headDims(height, head).stature`). Đổi `heads` khi có `stature` thì thân ngắn lại hay dài ra, tổng chiều cao giữ nguyên.
+- Đầu cầu không đọc `heads`, `aspect`; `rig.stature` vẫn dùng được (đầu giữ cỡ gốc).
+
+Chiều cao gợi ý:
+
+| Người | `rig.stature` |
+|---|---|
+| Nam cao | `1.80` |
+| Nam trung bình | `1.70` |
+| Nữ trung bình | `1.60` |
+| Người già | thấp hơn người cùng giới `3–5 %`: nam `1.62–1.65`, nữ `1.52–1.55` |
+
+```json
+"rig": { "stature": 1.7, "shoulderHalf": 42, "hipHalf": 22 },
+"head": { "form": "human", "heads": 6, "aspect": 0.76, "face": "asian", "jaw": "square" }
+```
 
 ### Đích bàn tay
 

@@ -1212,7 +1212,8 @@ nổi thấp thì vỏ ấy lòi qua thành chấm mực.
 riêng ôm chân ống cổ, hẹp hơn miệng cổ áo khoác `INNER_COLLAR.inset` (`2.5`) px và không rộng quá `NECK_MIN`, nên chân cổ
 sơ mi nằm trong chân cổ áo khoác; chân cổ cao `8.5` px ở nửa sau, lá cổ nửa sau rủ `5` px dọc chân cổ, không trải xuống
 thân. Phía trước hai lá cổ nhọn luồn dưới ve. Dựng bằng chính bộ dựng [cổ bẻ](#thân-áo-dựng-khối), nét viền như cổ bẻ.
-Áo trong khoét theo miệng cổ sơ mi: trong miệng cổ là da cổ.
+Áo trong khoét theo miệng cổ sơ mi: trong miệng cổ là da cổ. Người đầu `human` thì miệng cổ áo, cổ sơ mi nới ra quanh chân
+cổ (`humanNeckMin`), mà cổ rộng theo bề ngang đầu ([01](01-rig.md#chiều-cao-và-cỡ-đầu)).
 
 ```json
 "inner": { "color": "#FFF8EC", "tie": { "color": "#7E2235" }, "collar": true }

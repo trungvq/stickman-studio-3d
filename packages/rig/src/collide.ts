@@ -292,7 +292,7 @@ export function bodyCapsules(fig: Figure, parts: readonly BodyPart[] = BODY_PART
     const c = fig.head.getWorldPosition(new THREE.Vector3());
     // đầu `human`: má và quai hàm chibi nở ra ngoài mặt cầu ở nửa dưới
     const b = fig.head.userData.human ? fig.head.localToWorld(new THREE.Vector3(0, -0.2 * R.head, 0.03 * R.head)) : c.clone();
-    out.push({ part: 'head', a: c, b, r: R.head * k });
+    out.push({ part: 'head', a: c, b, r: R.head * Math.max(fig.bones.headK[0], fig.bones.headK[2]) * k });
   }
   if (want.has('torso')) {
     const b = torsoBox(fig);

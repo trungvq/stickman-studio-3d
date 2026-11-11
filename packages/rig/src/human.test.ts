@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { act, type Acting } from './act';
 import { hold } from './attach';
 import { bodyCapsules, collide, colliders } from './collide';
-import { cladThigh, HUMAN_NECK } from './core/act3';
+import { cladThigh } from './core/act3';
+import { headDims } from './core/stature';
 import { body3 } from './core/figure3d';
 import { parseAction } from './core/action';
 import { parseScene, resolveScene, sceneAt } from './core/scene';
@@ -276,13 +277,16 @@ describe('người 3D mặc đồ', () => {
     expect(skip).toEqual([open.spine.children[0], skins[0]]);
   });
 
-  it('đầu human: tai ẩn dưới tóc rủ, hiện với tóc ngắn; đầu cao hơn đầu cầu một đoạn cổ', () => {
+  it('đầu human: tai ẩn dưới tóc rủ, hiện với tóc ngắn; tâm đầu và cỡ đầu theo số đầu', () => {
     const ears = (f: Figure) => f.head.children.filter((g) => g.position.x !== 0 && !g.userData.joint).length;
     const shortHair = dressed((c) => (c.pieces.hair = { ...c.pieces.hair, src: 'sculpt', sculpt: SculptSchema.parse({ style: 'neat' }) }));
     const bob = dressed((c) => (c.pieces.hair = { ...c.pieces.hair, src: 'sculpt', sculpt: SculptSchema.parse({ style: 'bob', length: 0.9 }) }));
     expect(ears(shortHair)).toBe(2);
     expect(ears(bob)).toBe(0);
-    expect(shortHair.head.position.y).toBeCloseTo(make().head.position.y + HUMAN_NECK, 12);
+    const H = headDims(1, { form: 'human' });
+    expect(shortHair.head.position.y).toBeCloseTo(H.up, 12);
+    expect(shortHair.head.scale.toArray()).toEqual(H.k);
+    expect(make().head.scale.toArray()).toEqual([1, 1, 1]);
   });
 
   it('bàn tay xoè to theo cổ tay, dài không quá nửa cẳng tay hơn chút: chi to mà ngắn thì găng tròn lại', () => {

@@ -3,7 +3,8 @@ import { softReach } from "./elbow";
 import { chibiShape } from "./face";
 import { lengths } from "./geometry";
 import { handPoint } from "./hand";
-import { faceSurface, HUMAN_HEAD, humanEar, humanSkull, SKULL3 } from "./humanHead";
+import { faceSurface, HUMAN_HEAD, humanEar, humanSkull, withHeadShape } from "./humanHead";
+import { HEAD3_R, headDims, LIMB3, type HeadSpec } from "./stature";
 import {
   fromColumns,
   matMul as mm,
@@ -51,30 +52,38 @@ import {
 
 /**
  * Khung xương của người 3D (`stickman.ts`) ở `rig.height`, đơn vị three: thân, cổ, tay, chân là `lengths(height)` của lõi
- * chia 100 — `world.hip` của `sceneAt` đặt hông theo chính chúng, lệch là chân trượt hay lơ lửng. Đầu, bề dày nét chi không
- * nhân. `act` và `actJoints` đọc cùng bảng này — `act3.test.ts` giữ hai bên trùng nhau. docs/01-rig.md#khớp-người-3d-vẽ-ra
+ * chia 100 — `world.hip` của `sceneAt` đặt hông theo chính chúng, lệch là chân trượt hay lơ lửng. Đầu theo `head` của nhân
+ * vật (`headDims`: đầu `human` theo số đầu), bề dày nét chi không nhân. `act` và `actJoints` đọc cùng bảng này —
+ * `act3.test.ts` giữ hai bên trùng nhau. docs/01-rig.md#khớp-người-3d-vẽ-ra
  */
-/** THỬ (feat/real-head-proto): cỡ đầu so với đầu chibi */
-export const HEAD_K = 0.6;
-
-export function bones3(height = 1) {
+export function bones3(height = 1, headSpec?: HeadSpec) {
   const L = lengths(height);
+  const H = headDims(height, headSpec);
   return {
     height,
     torso: L.torso / 100,
     neck: L.neck / 100,
-    head: 0.64 * HEAD_K,
+    /** Bán kính dọc của khối sọ chia `SKULL3[1]`: cỡ đầu một số cho phép ước */
+    head: HEAD3_R * H.k[1],
+    /** Bán kính ba trục của khối sọ */
+    skull: H.skull,
+    /** Nhân lưới đầu gốc theo ba trục (`HeadDims.k`) */
+    headK: H.k,
+    /** Tâm khối sọ trên khớp cổ */
+    headUp: H.up,
+    /** Bề ngang đầu */
+    headWidth: H.width,
     upperArm: L.upperArm / 100,
     foreArm: L.foreArm / 100,
     thigh: L.thigh / 100,
     shin: L.shin / 100,
-    limb: 0.042,
+    limb: LIMB3,
   };
 }
 
 export type Bones3 = ReturnType<typeof bones3>;
 
-/** Khung xương ở `height = 1` */
+/** Khung xương ở `height = 1`, đầu cầu */
 export const BONES3: Readonly<Bones3> = bones3();
 
 /** Tay choãi khỏi thân áo, radian quanh trục tiến; đích cổ tay thì không. Người mặc đồ tay to: `roots3` */
@@ -83,15 +92,8 @@ export const SPLAY3 = 0.08;
 /** Khe giữa sườn áo và cánh tay buông của người mặc đồ, px */
 export const CLAD_GAP = 2;
 
-/** Cổ lộ ra giữa cằm và cổ áo của đầu `human`, đơn vị three */
-export const HUMAN_NECK = 0.1;
-
-/**
- * Đáy sọ trên mép cổ áo: tâm khối đầu cao hơn khớp cổ ngần này, đơn vị three; đầu `human` cao thêm `HUMAN_NECK`. Chỉ
- * đoạn cổ nhân `height`
- */
-export const head3 = (B: Bones3, human = false) =>
-  B.neck + 0.09 + (human ? HUMAN_NECK : 0) + B.head * 1.04;
+/** Tâm khối sọ trên khớp cổ (`Bones3.headUp`, `headDims`) */
+export const head3 = (B: Bones3) => B.headUp;
 
 /**
  * Bán kính chi người 3D mặc đồ (`palette.clad`) ở gốc, khớp giữa, ngọn, nhân bán kính chi: bắp tay to hơn cẳng tay
@@ -547,7 +549,7 @@ export function trunk3(c: ActCharacter, sp: ActInput) {
   const W = sp.world;
   if (!W) return undefined;
   const P = sp.pose;
-  const B = bones3(c.rig.height);
+  const B = bones3(c.rig.height, c.head);
   const pal = wornPalette(c);
   const w = limbWidths(pal);
   const skirt = wornSkirt(c.pieces.hem);
@@ -596,7 +598,7 @@ export function trunk3(c: ActCharacter, sp: ActInput) {
   const Rn = mm(mm(Rs, ry(num(turn) * D)), mm(rx(num(nod) * D), rz(-num(tilt) * D)));
   const neck = at(hips, Rs, [0, B.torso, 0]);
   out.neck = neck;
-  out.head = at(neck, Rn, [0, head3(B, c.head.form === "human"), 0]);
+  out.head = at(neck, Rn, [0, B.headUp, 0]);
   out.hip = hips;
 
   const frame: ActFrame = { point: (v) => at(root, Rr, v), dir: (v) => mv(Rr, v) };
@@ -681,10 +683,13 @@ export function markShape(T: Trunk3) {
   const human = c.head.form === "human";
   const f0 = { offsetY: 0, eyeGap: 26, mouthGap: 34, ...c.face };
   const face = human ? chibiShape({ ...f0 }) : f0;
-  const r = B.head;
-  const sk = (p: V3): V3 => [p[0] * SKULL3[0], p[1] * SKULL3[1], p[2] * SKULL3[2]];
-  const onFace = (px: number, py: number) => sk(faceSurface(px, py, r, human));
-  const onSkull = (u: V3) => sk(mul(human ? humanSkull(unit(u)) : unit(u), r));
+  const r = B.skull;
+  const sk = (p: V3): V3 => [p[0] * r[0], p[1] * r[1], p[2] * r[2]];
+  // mặt sọ theo dáng đầu của chính nhân vật (kiểu mặt, hình hàm), không theo dáng đang đặt lúc gọi
+  const shape = { face: c.head.face, jaw: c.head.jaw };
+  const onFace = (px: number, py: number) => sk(withHeadShape(shape, () => faceSurface(px, py, 1, human)));
+  const onSkull = (u: V3) => sk(human ? withHeadShape(shape, () => humanSkull(unit(u))) : unit(u));
+  const ear = (side: -1 | 1) => withHeadShape(shape, () => humanEar(side));
   const g = garmentOf(c.pieces.torso.garment, !!T.pal.clad, c.rig);
   const h = c.rig.height;
   const {
@@ -701,7 +706,7 @@ export function markShape(T: Trunk3) {
   const front = (y: number) => profileAt(pts, ahead, y)[1];
   // nửa bề dày gốc đùi như `body3` của `figure3d.ts`
   const leg = (T.pal.clad ? cladThigh(T.w.trouser, c.rig.stroke) : T.w.trouser / 2) / 100;
-  return { human, face, r, onFace, onSkull, across, front, h, leg };
+  return { human, face, r, onFace, onSkull, ear, across, front, h, leg };
 }
 
 const shapes = new WeakMap<object, ReturnType<typeof markShape>>();
@@ -764,13 +769,9 @@ export function markAt(
       break;
     case "ear": {
       const E = HUMAN_HEAD.ear;
-      const e = S.human ? humanEar(sd as -1 | 1) : unit([sd, E.y, E.z]);
+      const e = S.human ? S.ear(sd as -1 | 1) : unit([sd, E.y, E.z]);
       const out = S.human ? E.out * 1.35 : 0;
-      p = at(H, T.Rn, [
-        (e[0] + sd * out) * S.r * SKULL3[0],
-        e[1] * S.r * SKULL3[1],
-        e[2] * S.r * SKULL3[2],
-      ]);
+      p = at(H, T.Rn, [(e[0] + sd * out) * S.r[0], e[1] * S.r[1], e[2] * S.r[2]]);
       R = T.Rn;
       break;
     }

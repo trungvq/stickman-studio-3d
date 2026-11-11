@@ -14,6 +14,8 @@ export type Wrinkle = WrinkleSpec;
 export interface FaceShape extends Partial<FaceRest> { offsetY: number; eyeGap: number; mouthGap: number; wrinkle?: Wrinkle; blush?: number; beard?: { moustache?: MoustacheSpec } }
 
 const SHAPE: FaceShape = { offsetY: 0, eyeGap: 26, mouthGap: 34 };
+/** THỬ (feat/real-head-proto): đầu `human` có cho mồm trượt về phía máy (lật gương khi quay quá `TURN`) không */
+const HUMAN_MOUTH_CHEAT = false;
 
 type Box = { x0: number; y0: number; w: number; h: number };
 /** Vùng mặt trên canvas, px đầu quanh tâm đầu: từ nếp trán `deep` tới cằm */
@@ -143,6 +145,8 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
   const eye = new THREE.Vector3();
   mouth.tex.matrixAutoUpdate = false;
   mouth.mesh.onBeforeRender = (_r, _s, camera) => {
+    // THỬ (feat/real-head-proto): đầu `human` tắt mồm trượt về phía máy, mồm nằm đúng chỗ thật trên mặt
+    if (human && !HUMAN_MOUTH_CHEAT) return;
     mouth.mesh.worldToLocal(eye.setFromMatrixPosition(camera.matrixWorld));
     const a = Math.atan2(eye.x, eye.z), over = Math.min(Math.max(Math.abs(a) - CHEEK, 0), Math.PI / 2);
     const x = Math.sign(a) * Math.min(ring * Math.sin(over), Math.max(0.95 * ring - SLIDE_HALF * mk, 0));

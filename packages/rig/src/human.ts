@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { faceSurface, HUMAN_HEAD, humanEar, humanSkull, humanSkullGlsl } from './core/humanHead';
+import { faceSurface, HUMAN_HEAD, humanEar, headShape, humanSkull, humanSkullGlsl, noseNums } from './core/humanHead';
 import { fingerVec, HAND_DOF, HAND_POSES, HAND_REST, type HandPose } from './core/hand';
 import { handSkin, skinHand, smoothNormals, type HandSkin } from './core/handMesh';
 import { humanNeckAt } from './core/torso';
@@ -120,7 +120,9 @@ function earCurl() {
  * bóng dáng. Kiểu cel bỏ hai dải như vỏ ngược.
  */
 function earMaterial(ink: string) {
-  let m = earInk.get(ink);
+  // shader dò mặt sọ theo dáng đầu đang dựng (kiểu mặt, hình hàm): mỗi dáng một vật liệu
+  const shape = headShape(), key = `${ink}|${shape.face}|${shape.jaw}`;
+  let m = earInk.get(key);
   if (m) return m;
   m = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
@@ -141,7 +143,7 @@ function earMaterial(ink: string) {
       vec3 local(vec3 p){ return vFit.xyz * p + vec3(vFit.w, 0.0, 0.0); }
       vec3 toHead(vec3 l){ vec4 h = vec4(l, 1.0); return vec3(dot(vH0, h), dot(vH1, h), dot(vH2, h)); }
       // humanSkull của core/humanHead.ts (hàm V); cao trên sọ theo tia từ tâm, sọ đơn vị
-      ${humanSkullGlsl()}
+      ${humanSkullGlsl(shape)}
       float above(vec3 x){ return length(x) - length(humanSkull(normalize(x))); }
       void main(){
         // chữ C chỉ ở nửa ngoài: dấu của fit.w là bên
@@ -171,7 +173,7 @@ function earMaterial(ink: string) {
       }`,
   });
   m.userData.earInk = true;
-  earInk.set(ink, m);
+  earInk.set(key, m);
   return m;
 }
 
@@ -229,22 +231,18 @@ export function earGroup(side: -1 | 1, r: number, scale: THREE.Vector3, skin: TH
   return g;
 }
 
-/**
- * THỬ (feat/real-head-proto): mũi của đầu `human`, px nét mặt (`FACE_R`, y xuống quanh tâm đầu) và sọ đơn vị. Gốc sống
- * mũi `root` px trên hàng mắt; chóp cách gốc `tip` phần khoảng mắt → mồm (nhân `length` của nhân vật), cách mồm ít nhất
- * `gap` px; mặt dưới chóp dài `under` px về nhân trung. Nửa rộng dải đặt mũi `wRoot` ở gốc, `wTip` ở chóp (px, mép dải
- * chìm dưới da); độ nhô ở chóp `out` (sọ đơn vị, nhân `out` của nhân vật), cong sống mũi `bow`; mép dải chìm `sink`.
- */
-export const NOSE = { root: 1, tip: 0.6, gap: 9, under: 5, wRoot: 4, wTip: 5.2, out: 0.2, bow: 1.7, sink: 0.01 };
+/** THỬ (feat/real-head-proto): số mũi gốc (mặt `western`); dựng theo kiểu mặt đang đặt thì đọc `noseNums` — `HUMAN_NOSE` của lõi */
+export { HUMAN_NOSE as NOSE } from './core/humanHead';
 
 /**
  * THỬ (feat/real-head-proto): mũi khối riêng trên đầu `human`, hệ nhóm đầu: một tấm phủ dải giữa mặt, từng điểm nằm trên
- * mặt sọ (`faceSurface`, nên theo đúng `humanSkull` hiện hành) rồi nhô ra trước (+z) theo một trường cao — sống mũi hẹp
- * mọc dần từ giữa hai mắt, chóp tròn nhỏ, mặt dưới dốc về nhân trung. Mép tấm chìm `NOSE.sink` dưới da nên sống mũi liền
- * vào mặt, không có mép dán. `eyes` là `offsetY`, `mouthGap` sau `chibiShape`; `spec` là `head.nose` của nhân vật.
+ * mặt sọ (`faceSurface`, nên theo đúng `humanSkull` hiện hành) rồi nhô ra trước (+z) theo một trường cao — sống mũi mọc dần
+ * từ giữa hai mắt, chóp tròn, cánh mũi hai bên chóp (kiểu mặt có `ala.h`), mặt dưới dốc về nhân trung. Số theo kiểu mặt
+ * đang đặt (`noseNums`, `HUMAN_NOSE` của lõi). Mép tấm chìm `sink` dưới da nên sống mũi liền vào mặt, không có mép dán.
+ * `eyes` là `offsetY`, `mouthGap` sau `chibiShape`; `spec` là `head.nose` của nhân vật.
  */
 export function noseGeometry(r: number, scale: THREE.Vector3, eyes: { offsetY: number; mouthGap: number }, spec: { length?: number; out?: number } = {}, low = false) {
-  const N = NOSE, len = spec.length ?? 1, out = N.out * (spec.out ?? 1);
+  const N = noseNums(headShape()), len = spec.length ?? 1, out = N.out * (spec.out ?? 1), A = N.ala;
   const mouth = eyes.offsetY + eyes.mouthGap;
   const y0 = eyes.offsetY - N.root;
   const yt = Math.min(y0 + N.tip * eyes.mouthGap * len, mouth - N.gap);
@@ -266,13 +264,20 @@ export function noseGeometry(r: number, scale: THREE.Vector3, eyes: { offsetY: n
   for (let j = 0; j <= nv; j++) {
     const v = j / nv, py = y0 + v * (y1 - y0);
     const ht = Math.max(smin(rise(v), fall(v), 0.35), 0);
-    const half = N.wRoot + (N.wTip - N.wRoot) * Math.min(v / vt, 1);
+    const m = Math.min(v / vt, 1);
+    const half = N.wRoot + (N.wTip - N.wRoot) * m ** N.flare;
+    // cánh mũi theo dọc: gò quanh `ala.v`, tắt về mép dưới dải (nhân trung)
+    const av = A.h > 0 ? Math.exp(-(((v - A.v) / A.vh) ** 2)) * Math.min(1, (1 - v) * 6) : 0;
     for (let i = 0; i <= nu; i++) {
       const u = -1 + (2 * i) / nu;
       // mặt cắt ngang: sống hẹp ở gốc, tròn dần về chóp; tới mép dải thì phẳng hẳn
-      const c = (1 - u * u) ** (2.6 - 0.8 * Math.min(v / vt, 1));
+      const ut = u / (1 + (N.tipW - 1) * m);
+      const c = Math.max(1 - ut * ut, 0) ** (N.ridge[0] + (N.ridge[1] - N.ridge[0]) * m);
+      const wing = av > 0 ? A.h * av * Math.exp(-(((Math.abs(u) - A.u) / A.w) ** 2)) * (1 - u * u) : 0;
       const [x, y, z] = faceSurface(u * half, py, 1, true);
-      const h = out * ht * c - N.sink;
+      // cánh mũi chồng với chóp bằng max mềm: hai gò tách bạch, không cộng thành sống bè
+      const hm = wing > 0 ? -smin(-ht * c, -wing, 0.12) : ht * c;
+      const h = out * hm - N.sink;
       pos.push(x * r * scale.x, y * r * scale.y, (z + h) * r * scale.z);
     }
   }
