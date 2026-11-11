@@ -3,7 +3,7 @@ import { torsoSection, type ArmRoom } from './core/act3';
 import { D } from './core/constants';
 import type { Garment } from './core/schema';
 import {
-  COLLAR_LEAN, COLLAR_LINE, curve, GARMENT_STYLES, garmentOf, INNER_COLLAR, innerCollarShape, innerNeckOf, lerp, lerpAt, lipOf, neckRing, profile, RIB_FRONT, spline,
+  COLLAR_LEAN, COLLAR_LINE, curve, GARMENT_STYLES, garmentOf, humanNeckMin, INNER_COLLAR, innerCollarShape, innerNeckOf, lerp, lerpAt, lipOf, neckRing, profile, RIB_FRONT, spline,
   type Collar, type MarkFill, type P2, type Rig, type SP, type Surface,
 } from './core/torso';
 import { WrapSchema, type Drape, type Necklace, type Shades } from './core/schema';
@@ -99,10 +99,14 @@ const lerp3 = (p: Vec3, q: Vec3, t: number): Vec3 => [p[0] + (q[0] - p[0]) * t, 
  * `arm` có là người `clad`: vát vai `cladSlope`, sườn áo lùi theo `cladProfile`. `neck`: khăn vắt vai, kính gài nẹp
  * (`pieces.neck`), khối kín đè lên thân và nắp vai
  */
-export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: ArmRoom, neck?: NeckWear): TorsoMesh {
-  const g = garmentOf(raw, !!arm, rig);
-  const def = GARMENT_STYLES[g.style];
-  const pr = profile(g, rig, rig.stroke / 2);
+export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: ArmRoom, neck?: NeckWear, human = false): TorsoMesh {
+  const g0 = garmentOf(raw, !!arm, rig);
+  const def = GARMENT_STYLES[g0.style];
+  const pr = profile(g0, rig, rig.stroke / 2);
+  // THỬ (feat/real-head-proto): cổ `human` dày hơn ống cổ chibi: mặt cắt thân (vai, gốc tay) giữ theo `g.neck` gốc, chỉ viền
+  // cổ, cổ áo và cổ sơ mi `inner.collar` nới ra quanh chân cổ (`humanNeckMin`)
+  const neckMin = human ? humanNeckMin(rig) : undefined;
+  const g = neckMin === undefined ? g0 : { ...g0, neck: Math.max(g0.neck, neckMin + (g0.inner?.collar && def.shoulderFit ? INNER_COLLAR.inset : 0)) };
   const { pts, back: depth, front } = torsoSection(pr.pts, g, rig.height, arm);
   const aAt = (y: number) => lerpAt(pts, y, 1, 0);
   const deep: P2[] = pts.map(([, y], i) => [depth[i], y]);
@@ -126,6 +130,7 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     depth: (y, back = false) => (back ? dAt : fAt)(y),
     neck: (phi, grow = 0) => neckRing({ g, top, at }, g.neckline ?? def.neckline, phi, grow),
     t: (tt) => pr.yS * (1 - tt),
+    ...(neckMin !== undefined && { neckMin }),
   };
   const solid = ([lon, y]: SP): [Vec3, Vec3] => {
     const s = Math.sin(lon * D), c = Math.cos(lon * D), half = c > 0 ? fAt : dAt;

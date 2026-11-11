@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
-import { HUMAN_HEAD, humanEar, humanSkull } from './core/humanHead';
+import { faceSurface, HUMAN_HEAD, humanEar, humanSkull, humanSkullGlsl } from './core/humanHead';
 import { fingerVec, HAND_DOF, HAND_POSES, HAND_REST, type HandPose } from './core/hand';
 import { handSkin, skinHand, smoothNormals, type HandSkin } from './core/handMesh';
-import { NECK_TUBE } from './core/torso';
+import { humanNeckAt } from './core/torso';
 import { newCanvas } from './canvas';
 import { G } from './npr';
 
@@ -57,14 +57,39 @@ function smooth(g: THREE.BufferGeometry) {
   return m;
 }
 
-/** Khối sọ `human`: mặt cầu bán kính `r` qua `humanSkull` rồi phóng `scale` như sọ cầu */
+/**
+ * THỬ (feat/real-head-proto): mặt dưới sọ chỗ gặp cổ (sọ đơn vị). Pháp tuyến ở đó ngả về nằm ngang như mặt cổ ngay dưới:
+ * đáy sọ úp xuống sau góc hàm không tối hơn cổ (ánh viền theo góc pháp tuyến, ánh trời theo `N.y`), nên chỗ đầu gặp cổ
+ * không thành vòng khoanh tối. Trọng số: mặt úp xuống (`down`, theo −n.y), thấp hơn `low` (y), sau `back` (z, góc hàm ở
+ * −0,05: quai hàm phía trước giữ bóng tối dưới hàm); phần `k` của độ ngả
+ */
+export const SKULL_NAPE_NORMAL = { down: [0.15, 0.6], low: [-0.45, -0.62], back: [0.12, -0.12], k: 0.85 } as const;
+
+/** Khối sọ `human`: mặt cầu bán kính `r` qua `humanSkull` rồi phóng `scale` như sọ cầu; pháp tuyến đáy sau theo `SKULL_NAPE_NORMAL` */
 export function humanHeadGeometry(r: number, segs: [number, number], scale: THREE.Vector3) {
   const g = new THREE.SphereGeometry(1, ...segs), p = g.attributes.position;
   for (let i = 0; i < p.count; i++) {
     const [x, y, z] = humanSkull([p.getX(i), p.getY(i), p.getZ(i)]);
     p.setXYZ(i, x * r * scale.x, y * r * scale.y, z * r * scale.z);
   }
-  return smooth(g);
+  const m = smooth(g), P = m.attributes.position, N = m.attributes.normal, W = SKULL_NAPE_NORMAL;
+  const step = (a: number, b: number, v: number) => {
+    const u = Math.max(0, Math.min(1, (v - a) / (b - a)));
+    return u * u * (3 - 2 * u);
+  };
+  const n = new THREE.Vector3(), h = new THREE.Vector3();
+  for (let i = 0; i < P.count; i++) {
+    n.fromBufferAttribute(N, i);
+    const uy = P.getY(i) / (r * scale.y), uz = P.getZ(i) / (r * scale.z);
+    const w = W.k * step(W.down[0], W.down[1], -n.y) * step(W.low[0], W.low[1], uy) * step(W.back[0], W.back[1], uz);
+    if (w <= 0) continue;
+    h.set(n.x, 0, n.z);
+    if (h.lengthSq() < 0.04) h.set(P.getX(i), 0, P.getZ(i));
+    h.normalize();
+    n.lerp(h, w).normalize();
+    N.setXYZ(i, n.x, n.y, n.z);
+  }
+  return m;
 }
 
 /** Bề dày nét chữ C của tai, phần bán kính đầu */
@@ -97,10 +122,9 @@ function earCurl() {
 function earMaterial(ink: string) {
   let m = earInk.get(ink);
   if (m) return m;
-  const H = HUMAN_HEAD;
   m = new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
-    uniforms: { uMap: { value: earCurl() }, uColor: { value: new THREE.Color(ink) }, uW: { value: EAR_SEAM }, uShade: G.uShade },
+    uniforms: { uMap: { value: earCurl() }, uColor: { value: new THREE.Color(ink) }, uW: { value: EAR_SEAM }, uShade: G.uShade, uLine: { value: 1 } },
     vertexShader: /* glsl */ `
       attribute float gap; attribute vec4 fit, h0, h1, h2; attribute vec3 sph;
       varying float vGap, vScale; varying vec3 vW, vS, vL, vEye; varying vec4 vFit, vH0, vH1, vH2; varying vec2 vUv;
@@ -112,20 +136,19 @@ function earMaterial(ink: string) {
         gl_Position = projectionMatrix * viewMatrix * w;
       }`,
     fragmentShader: /* glsl */ `
-      uniform sampler2D uMap; uniform vec3 uColor; uniform float uW, uShade;
+      uniform sampler2D uMap; uniform vec3 uColor; uniform float uW, uShade, uLine;
       varying float vGap, vScale; varying vec3 vW, vS, vL, vEye; varying vec4 vFit, vH0, vH1, vH2; varying vec2 vUv;
       vec3 local(vec3 p){ return vFit.xyz * p + vec3(vFit.w, 0.0, 0.0); }
       vec3 toHead(vec3 l){ vec4 h = vec4(l, 1.0); return vec3(dot(vH0, h), dot(vH1, h), dot(vH2, h)); }
-      // humanSkull của core/humanHead.ts; cao trên sọ theo tia từ tâm, sọ đơn vị
-      float above(vec3 x){
-        vec3 p = normalize(x);
-        float s = max(0.0, -p.y), s2 = s * s, b = (sqrt(p.z * p.z + 0.04) - p.z) / 2.0;
-        return length(x) - length(vec3(p.x * (1.0 + ${H.jaw} * s2), p.y * (1.0 + ${H.drop} * s2) * (1.0 - ${H.flat} * s2 * s2 * s2), p.z + s2 * (${H.chin} + ${H.nape} * b)));
-      }
+      // humanSkull của core/humanHead.ts (hàm V); cao trên sọ theo tia từ tâm, sọ đơn vị
+      ${humanSkullGlsl()}
+      float above(vec3 x){ return length(x) - length(humanSkull(normalize(x))); }
       void main(){
         // chữ C chỉ ở nửa ngoài: dấu của fit.w là bên
         float a = texture2D(uMap, vUv).a * step(0.0, vS.x * vFit.w);
-        if (abs(uShade - 1.0) > 0.5) {
+        // THỬ (feat/real-head-proto): vẽ không viền thì chữ C chỉ còn vệt bóng mờ trên da, bỏ dải cắt má và dải bóng dáng
+        if (uLine < 0.5) a *= 0.28;
+        if (abs(uShade - 1.0) > 0.5 && uLine > 0.5) {
           vec3 v = normalize(vW - cameraPosition), dx = dFdx(vW), dy = dFdy(vW);
           float px = max(length(dx - v * dot(dx, v)), length(dy - v * dot(dy, v))), w = uW / px;
           float seam = abs(vGap) / max(length(vec2(dFdx(vGap), dFdy(vGap))), 1e-9);
@@ -147,6 +170,7 @@ function earMaterial(ink: string) {
         gl_FragColor = vec4(uColor, a);
       }`,
   });
+  m.userData.earInk = true;
   earInk.set(ink, m);
   return m;
 }
@@ -205,11 +229,95 @@ export function earGroup(side: -1 | 1, r: number, scale: THREE.Vector3, skin: TH
   return g;
 }
 
-/** Cổ trong nhóm cổ: từ trong cổ áo lên tới trong đầu, hơi lùi sau trục; `rows` đoạn dọc cho `bendNeck` uốn */
-export function neckGeometry(top: number, radius: number = NECK_TUBE.r, rows = 1) {
-  const g = new THREE.CylinderGeometry(radius, radius * NECK_TUBE.flare, top + 0.04, 16, rows, true);
-  g.translate(0, top / 2 - 0.02, -NECK_TUBE.back);
-  return smooth(g);
+/**
+ * THỬ (feat/real-head-proto): mũi của đầu `human`, px nét mặt (`FACE_R`, y xuống quanh tâm đầu) và sọ đơn vị. Gốc sống
+ * mũi `root` px trên hàng mắt; chóp cách gốc `tip` phần khoảng mắt → mồm (nhân `length` của nhân vật), cách mồm ít nhất
+ * `gap` px; mặt dưới chóp dài `under` px về nhân trung. Nửa rộng dải đặt mũi `wRoot` ở gốc, `wTip` ở chóp (px, mép dải
+ * chìm dưới da); độ nhô ở chóp `out` (sọ đơn vị, nhân `out` của nhân vật), cong sống mũi `bow`; mép dải chìm `sink`.
+ */
+export const NOSE = { root: 1, tip: 0.6, gap: 9, under: 5, wRoot: 4, wTip: 5.2, out: 0.2, bow: 1.7, sink: 0.01 };
+
+/**
+ * THỬ (feat/real-head-proto): mũi khối riêng trên đầu `human`, hệ nhóm đầu: một tấm phủ dải giữa mặt, từng điểm nằm trên
+ * mặt sọ (`faceSurface`, nên theo đúng `humanSkull` hiện hành) rồi nhô ra trước (+z) theo một trường cao — sống mũi hẹp
+ * mọc dần từ giữa hai mắt, chóp tròn nhỏ, mặt dưới dốc về nhân trung. Mép tấm chìm `NOSE.sink` dưới da nên sống mũi liền
+ * vào mặt, không có mép dán. `eyes` là `offsetY`, `mouthGap` sau `chibiShape`; `spec` là `head.nose` của nhân vật.
+ */
+export function noseGeometry(r: number, scale: THREE.Vector3, eyes: { offsetY: number; mouthGap: number }, spec: { length?: number; out?: number } = {}, low = false) {
+  const N = NOSE, len = spec.length ?? 1, out = N.out * (spec.out ?? 1);
+  const mouth = eyes.offsetY + eyes.mouthGap;
+  const y0 = eyes.offsetY - N.root;
+  const yt = Math.min(y0 + N.tip * eyes.mouthGap * len, mouth - N.gap);
+  const y1 = Math.min(yt + N.under, mouth - N.gap / 2);
+  const vt = (yt - y0) / (y1 - y0);
+  // cao dọc sống mũi (0..1): mọc từ gốc không gãy, cong `bow`, hoà tròn vào mặt dưới chóp
+  const rise = (v: number) => Math.pow(Math.max(v, 0) / vt, N.bow);
+  const fall = (v: number) => {
+    if (v <= vt) return 2 + (vt - v) * 10;
+    const w = Math.min((v - vt) / (1 - vt), 1);
+    return 1.04 * (1 - w * w) ** 2;
+  };
+  const smin = (a: number, b: number, k: number) => {
+    const h = Math.max(k - Math.abs(a - b), 0) / k;
+    return Math.min(a, b) - (h * h * k) / 4;
+  };
+  const [nu, nv] = low ? [6, 10] : [28, 48];
+  const pos: number[] = [], idx: number[] = [];
+  for (let j = 0; j <= nv; j++) {
+    const v = j / nv, py = y0 + v * (y1 - y0);
+    const ht = Math.max(smin(rise(v), fall(v), 0.35), 0);
+    const half = N.wRoot + (N.wTip - N.wRoot) * Math.min(v / vt, 1);
+    for (let i = 0; i <= nu; i++) {
+      const u = -1 + (2 * i) / nu;
+      // mặt cắt ngang: sống hẹp ở gốc, tròn dần về chóp; tới mép dải thì phẳng hẳn
+      const c = (1 - u * u) ** (2.6 - 0.8 * Math.min(v / vt, 1));
+      const [x, y, z] = faceSurface(u * half, py, 1, true);
+      const h = out * ht * c - N.sink;
+      pos.push(x * r * scale.x, y * r * scale.y, (z + h) * r * scale.z);
+    }
+  }
+  for (let j = 0; j < nv; j++)
+    for (let i = 0; i < nu; i++) {
+      const a = j * (nu + 1) + i, b = a + 1, c = a + nu + 1, d = c + 1;
+      idx.push(a, c, b, b, c, d);
+    }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+/**
+ * Cổ trong nhóm cổ của đầu `human`: từ trong cổ áo lên tới trong đầu theo `HUMAN_NECK_ROWS` (mặt cắt dẹt, mép trước chúi
+ * ra trước về dưới hàm, mép sau vào gáy, chân loe thành dốc vai), nửa rộng nhân `k` (`humanNeckWidth`); `rows` đoạn dọc
+ * cho `bendNeck` uốn, tối thiểu đủ để mặt nghiêng trơn
+ */
+/** Nửa sau cổ `human` hẹp bớt bấy nhiêu phần ở giữa gáy, từ hàng 0,2 lên 0,38 (three, hệ khớp cổ) */
+const HUMAN_NECK_NAPE = 0.18;
+export function neckGeometry(top: number, k = 1, rows = 1) {
+  const n = Math.max(rows, 12), m = 32, y0 = -0.02, y1 = top + 0.02;
+  const pos: number[] = [], idx: number[] = [];
+  for (let j = 0; j <= n; j++) {
+    const y = y0 + ((y1 - y0) * j) / n;
+    const [a, back, front] = humanNeckAt(y, k);
+    for (let i = 0; i < m; i++) {
+      const t = (2 * Math.PI * i) / m, c = Math.cos(t);
+      // nửa sau thon dần lên trên: góc sau hai bên gáy không lồi khỏi gáy sọ đang thu vào
+      const x = a * Math.sin(t) * (c < 0 ? 1 + HUMAN_NECK_NAPE * c * Math.max(0, Math.min(1, (y - 0.2) / 0.18)) : 1);
+      pos.push(x, y, c >= 0 ? front * c : -back * c);
+    }
+  }
+  for (let j = 0; j < n; j++)
+    for (let i = 0; i < m; i++) {
+      const a = j * m + i, b = j * m + ((i + 1) % m), c = a + m, d = b + m;
+      idx.push(a, b, d, a, d, c);
+    }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
 }
 
 export { handScale, openLength } from './core/act3';

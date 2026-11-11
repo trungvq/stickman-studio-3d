@@ -23,6 +23,15 @@ export const step = (a: number, b: number, v: number) => {
 export const fromPart = (s: Sculpt, lon: number) =>
   (((((s.part - lon) * Math.sign(s.part || 1) + 180) % 360) + 360) % 360) - 180;
 
+/** THỬ (feat/real-head-proto): đầu `human` cho tóc mai bản phẳng đáy thay mũi nhọn; người 3D đang dựng đặt bằng `setBluntSideburn` */
+let bluntSideburn = false;
+/** Đặt kiểu tóc mai cho các lần dựng tóc sau; trả kiểu cũ */
+export function setBluntSideburn(on: boolean): boolean {
+  const old = bluntSideburn;
+  bluntSideburn = on;
+  return old;
+}
+
 /**
  * Vĩ độ chân tóc ở kinh độ `lon`: ngang trán tới thái dương, hạ xuống vành trên tai, rồi xuống
  * gáy; tóc mai là một dải hẹp trước tai. docs/12-trang-phuc-3d.md#tóc-dựng-khối
@@ -32,7 +41,8 @@ export function hairline(s: Sculpt, lon: number): number {
   let h = s.front + (s.ear - s.front) * step(60, 92, a) + (s.nape - s.ear) * step(96, 140, a);
   const { jag, fringe, reach = 55 } = SCULPT_STYLES[s.style];
   if (fringe !== "flat") h += 5 * bump(a, 50, 9);
-  h += (s.sideburn - h) * bump(a, 82, 5);
+  // tóc mai: dải hẹp trước tai; đầu `human` cho dải rộng đáy phẳng chạy tới sát tai, nhìn ngang không thành răng nhọn
+  h += (s.sideburn - h) * (bluntSideburn ? Math.exp(-(((a - 84) / 7) ** 4)) : bump(a, 82, 5));
   if (jag) {
     // Mái răng cưa: mỗi lọn một mũi nhọn chĩa xuống sâu `fringe` × `depth`, hai lọn kề nhau gặp
     // nhau thành vòm cong lên

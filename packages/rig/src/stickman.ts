@@ -16,9 +16,10 @@ import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, head3, roots3, SLEEVE_
 import { blushLevel, chibiShape } from './core/face';
 import { wornSkirt } from './core/skirtShape';
 import { hangsFromHip, matchWrap } from './core/hem';
-import { NECK_BEND } from './core/torso';
+import { humanNeckWidth, NECK_BEND } from './core/torso';
+import { setBluntSideburn } from './core/sculpt';
 import { humanHair, humanSkull, setJaw, SKULL3 } from './core/humanHead';
-import { Ankle, earGroup, handRig, humanHeadGeometry, neckGeometry, pelvisGeometry, shoeCapsule, shoeGeometry, type Hand } from './human';
+import { Ankle, earGroup, handRig, humanHeadGeometry, neckGeometry, noseGeometry, pelvisGeometry, shoeCapsule, shoeGeometry, type Hand } from './human';
 import { handGrip } from './core/hand';
 import type { Rig } from './torso';
 
@@ -289,6 +290,14 @@ function leg(parent: THREE.Object3D, side: Side, hipHalf: number, B: Bones3): Le
 
 /** Bề dày nét bóng dáng của sọ, ống cổ và da trong miệng cổ áo của người `human` (three): cùng khoá nét, chỗ nối không có nét */
 const HEAD_INK = 0.03;
+/**
+ * THỬ (feat/real-head-proto): khe sâu (`inkGap`) của mã vật da đầu `human` (sọ, tai, mũi): mép đầu đè lên ống cổ, cùng vật
+ * liệu, chỉ có nét khi khe sâu ở mép qua 0,6–1,6. Đứng thẳng chỗ hàm, gáy gặp cổ khe dưới 0,3 nên không nét ở mọi góc; cúi
+ * (cằm che cổ, `look-down-20`) khe trên 1,6 nên nét bóng dáng cằm trên cổ vẫn có, hiện dần theo độ cúi
+ */
+const HEAD_NECK_GAP = 2;
+/** Trục cổ `human` lùi sau trục thân ngần này (three): tâm toả pháp tuyến của da trong miệng cổ áo */
+const NECK_FILL_AXIS = 0.025;
 
 /** Nét mép tay đè lên thân cùng vật liệu đậm dần theo khoảng dọc tay từ vai, phần bắp tay (pipeline `userData.inkU`), thay cho khe sâu */
 const ARM_INK_U = [0.06, 0.2] as const;
@@ -545,6 +554,8 @@ export interface StickmanOptions {
   headForm?: 'sphere' | 'human';
   /** THỬ: `head.jaw` */
   headJaw?: 'v' | 'square';
+  /** THỬ: `head.nose` */
+  headNose?: { length?: number; out?: number };
 }
 
 /** Phần JSON nhân vật mà `resolveActing` đọc, dựng lại từ tham số của `stickman` */
@@ -561,10 +572,12 @@ function actCharacter(o: StickmanOptions): ActCharacter {
 /** Một người que 3D theo JSON nhân vật của rig. */
 export function stickman(o: StickmanOptions): Figure {
   const prevJaw = setJaw(o.headJaw ?? 'v');
+  const prevSideburn = setBluntSideburn(o.headForm === 'human');
   try {
     return stickmanBuild(o);
   } finally {
     setJaw(prevJaw);
+    setBluntSideburn(prevSideburn);
   }
 }
 
@@ -597,7 +610,7 @@ function stickmanBuild(o: StickmanOptions): Figure {
   const sleeveColor = o.sleeveColor ?? '#1a1a1a';
   const cloth = clad && (o.sleeveLength ?? 1) > 0 && !sameColor(sleeveColor, color) && !sameColor(color, skin) ? clothMaterial(LIMB_SIL) : undefined;
   const lap = seated ? (dressed ? { seat: -dressed.rise * rig.height } : { seat: seatAt, fold: { top: -(thighTop + 1), dir: [-0.1, 1] as [number, number] } }) : undefined;
-  const body = sculptTorso(spine, { garment, rig, color, accent, skin, ink: INK, arm: at.room, lap, ...((o.drape || o.shades || o.necklace) && { neck: { drape: o.drape, shades: o.shades, necklace: o.necklace, color: o.drapeColor ?? color } }), ...(clad && { sil: LIMB_SIL }), ...(dressed && { tuck: -dressed.rise * rig.height }), cloth });
+  const body = sculptTorso(spine, { garment, rig, color, accent, skin, ink: INK, arm: at.room, lap, ...((o.drape || o.shades || o.necklace) && { neck: { drape: o.drape, shades: o.shades, necklace: o.necklace, color: o.drapeColor ?? color } }), ...(clad && { sil: LIMB_SIL }), ...(dressed && { tuck: -dressed.rise * rig.height }), cloth, human });
   // khối thân áo là mảnh đầu tiên: `collide` lấy hộp thân từ nó
   spine.children[0].userData.torso = true;
   spine.children[0].userData.inkGap = Math.max(...body.depth) / 100;
@@ -638,7 +651,14 @@ function stickmanBuild(o: StickmanOptions): Figure {
   const skinMat = npr(skin3);
   // vỏ ngược dưới cằm `human` chìm sau cổ và cổ áo: nét bóng dáng vẽ thêm ở hậu kỳ
   const skullMat = human ? npr({ ...skin3, ink: HEAD_INK }) : skinMat;
-  head.add(inked(skull, skullMat, 0.03));
+  const skullG = inked(skull, skullMat, 0.03);
+  head.add(skullG);
+  // THỬ (feat/real-head-proto): khối da của đầu `human` (sọ, tai, mũi) chung một mã vật cho nét bóng dáng: không nét ở chỗ tai,
+  // mũi liền vào đầu (kể cả sọ che tai, mũi khi nhìn 3/4 sau); nét ngoài (da trên nền, tóc, áo) giữ. Ống cổ giữ mã riêng, mép
+  // đầu đè lên cổ theo khe sâu `HEAD_NECK_GAP`. Mọi khối của mã cùng một khe để bảng nét không đổi theo thứ tự duyệt
+  const skinChain = skullG.children[0].id;
+  const headSkin = (o: THREE.Object3D) => Object.assign(o.userData, { inkChain: skinChain, inkGap: HEAD_NECK_GAP });
+  if (human) headSkin(skullG.children[0]);
   const faceR = lod === 'low' ? stillFace(skullScale, faceShape, face, human, skin, hairColor) : faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face }, human, skin, hairColor);
   head.add(faceR.mesh);
   if (glasses) {
@@ -654,10 +674,16 @@ function stickmanBuild(o: StickmanOptions): Figure {
   if (human) {
     for (const s of SIDES) {
       const ear = earGroup(s, R.head, skullScale, skullMat, INK);
+      headSkin(ear.children[0]);
       if (!hairCovers(head, ear.position)) head.add(ear);
     }
+    // THỬ (feat/real-head-proto): mũi khối riêng, cùng vật liệu và mã vật với sọ: không nét chỗ liền vào mặt; không đổ bóng lên mặt
+    const nose = new THREE.Mesh(noseGeometry(R.head, skullScale, eyes, o.headNose, lod === 'low'), skullMat);
+    nose.userData.noShadow = true;
+    headSkin(nose);
+    head.add(nose);
     const bend = lod !== 'low';
-    const geo = neckGeometry(head3(B, true) - R.head * 0.5, undefined, bend ? NECK_BEND.rows : 1);
+    const geo = neckGeometry(head3(B, true) - R.head * 0.5, humanNeckWidth(rig), bend ? NECK_BEND.rows : 1);
     // nét cổ là nét bóng dáng hậu kỳ, không vỏ ngược: vỏ ngược thò qua khe cằm và cổ áo thành vạch đổi theo dáng đầu từng khung.
     // Chung vật liệu với sọ và da trong miệng cổ áo, khe nét xa như tai: không nét ở chỗ cắm vào đầu, vào miệng cổ áo
     const tube = new THREE.Group();
@@ -671,6 +697,16 @@ function stickmanBuild(o: StickmanOptions): Figure {
       if (!c.userData.neckFill) continue;
       (c as THREE.Mesh).material = fillMat;
       c.userData.inkChain = neckMesh.id;
+      // THỬ (feat/real-head-proto): da trong miệng cổ (mặt vát quanh chân cổ) mang pháp tuyến nằm ngang toả từ trục cổ như mặt
+      // cổ: không sáng hơn cổ thành gờ ngang ở chân cổ
+      const g = (c as THREE.Mesh).geometry, P = g.attributes.position, N = g.attributes.normal, v = new THREE.Vector3();
+      for (let i = 0; i < P.count; i++) {
+        v.set(P.getX(i), 0, P.getZ(i) + NECK_FILL_AXIS);
+        if (v.lengthSq() < 1e-8) continue;
+        v.normalize();
+        N.setXYZ(i, v.x, v.y, v.z);
+      }
+      N.needsUpdate = true;
     }
     tube.add(neckMesh);
     // chân ống lùi sau mép cổ áo một khe đổi theo dáng đầu: nét bóng dáng của thân áo, mảng da ngực loang lên đó thành vạch
@@ -1011,7 +1047,7 @@ export function characterOptions(json: CharacterJson, opts: Partial<StickmanOpti
     ...(pc.headAcc?.src === 'sculpt' && { pin: pc.headAcc.pin ?? (pc.headAcc.earrings ? undefined : {}), earrings: pc.headAcc.earrings, pinColor: pc.headAcc.color, pinBead: pc.headAcc.accent }),
     ...(pc.neck?.src === 'sculpt' && { drape: pc.neck.drape, shades: pc.neck.shades, necklace: pc.neck.necklace, drapeColor: pc.neck.color }),
     clad: pal.clad, sleeveColor: pal.sleeve, trouserColor: pal.trouser, shoeColor: pal.shoe, sleeveLength: pal.sleeveLength, sleeveFlare: pal.sleeveFlare, bicep: pal.bicep,
-    trouserLength: pal.trouserLength, headForm: json.head?.form, headJaw: (json.head as { jaw?: 'v' | 'square' } | undefined)?.jaw, ...opts,
+    trouserLength: pal.trouserLength, headForm: json.head?.form, headJaw: (json.head as { jaw?: 'v' | 'square' } | undefined)?.jaw, headNose: (json.head as { nose?: { length?: number; out?: number } } | undefined)?.nose, ...opts,
   };
 }
 

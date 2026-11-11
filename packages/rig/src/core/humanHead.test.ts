@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { chibiShape, CHIBI, eyeShine } from "./face";
-import { humanEar, humanHair, humanSkull } from "./humanHead";
+import { humanEar, humanHair, humanSkull, setJaw } from "./humanHead";
 import { parseCharacter } from "./schema";
 
 const unit = (x: number, y: number, z: number): [number, number, number] => {
@@ -9,37 +9,50 @@ const unit = (x: number, y: number, z: number): [number, number, number] => {
 };
 
 describe("đầu human", () => {
-  it("nửa trên trùng mặt cầu: tóc và kính dựng khối khỏi làm lại", () => {
+  const mid = (y: number) => humanSkull(unit(0, y, Math.sqrt(1 - y * y)));
+
+  it("nửa trên giữ cao độ của mặt cầu: tóc và kính dựng khối ôm như đầu chibi", () => {
     for (const p of [unit(1, 0.3, 0.2), unit(0, 1, 0), unit(-0.4, 0.05, -0.9), unit(0.2, 0.6, 0.7)])
-      humanSkull(p).forEach((v, i) => expect(v).toBeCloseTo(p[i], 12));
+      expect(humanSkull(p)[1]).toBeCloseTo(p[1], 2);
   });
 
   it("đổi trơn qua xích đạo: vỏ viền không gãy ở chỗ nối", () => {
+    const h = 1e-4;
     for (const [x, z] of [
       [1, 0],
       [0.6, 0.8],
       [-0.7, -0.7],
     ]) {
-      // dưới xích đạo một đoạn ε thì độ dời cỡ ε²: không có góc gãy
-      const p = unit(x, -1e-4, z);
-      humanSkull(p).forEach((v, i) => expect(Math.abs(v - p[i])).toBeLessThan(1e-6));
+      // độ dốc trên và dưới xích đạo bằng nhau: không có góc gãy
+      const [a, o, b] = [h, 0, -h].map((y) => humanSkull(unit(x, y, z)));
+      for (let i = 0; i < 3; i++) expect(Math.abs((a[i] - o[i]) / h - (o[i] - b[i]) / h)).toBeLessThan(0.01);
     }
   });
 
-  it("chibi: má phồng ngang miệng, cằm chữ U rộng vừa chạm cổ áo, gáy thu vào", () => {
-    const cheek = humanSkull(unit(Math.sqrt(0.75), -0.5, 0));
-    expect(cheek[0]).toBeGreaterThan(Math.sqrt(0.75) * 1.05);
-    // cằm thấp hơn đáy cầu một chút: cao hơn thì lộ khúc cổ trên cổ áo
-    const chin = humanSkull([0, -1, 0]);
-    expect(chin[1]).toBeGreaterThan(-1.06);
-    expect(chin[1]).toBeLessThan(-1.01);
-    expect(chin[2]).toBeLessThan(0.15);
-    // đáy cằm phẳng: cách giữa cằm một phần tư bề ngang mà gần như cùng cao độ
-    const side = humanSkull(unit(0.31, -0.95, 0));
-    expect(side[0]).toBeGreaterThan(0.2);
-    expect(side[1] - chin[1]).toBeLessThan(0.05);
-    const nape = humanSkull(unit(0, -1, -1));
-    expect(nape[2]).toBeGreaterThan(-Math.SQRT1_2 * 0.8);
+  it("người thật: đường nghiêng mặt không phẳng, quai hàm chéo lên góc hàm, gáy có tóc tới cổ", () => {
+    for (const jaw of ["v", "square"] as const) {
+      const old = setJaw(jaw);
+      // gờ mày nhô hơn hốc mắt, môi nhô hơn rãnh dưới môi, cằm nhô lại
+      expect(mid(0.15)[2] - mid(-0.04)[2]).toBeGreaterThan(0.04);
+      expect(mid(-0.58)[2] - mid(-0.66)[2]).toBeGreaterThan(0.03);
+      expect(mid(-0.73)[2] - mid(-0.66)[2]).toBeGreaterThan(0.03);
+      // đáy cằm thấp hơn đáy cầu một chút; dưới tai (góc hàm) cao hơn đáy cằm nhiều
+      const chin = Array.from({ length: 41 }, (_, i) => mid(-0.6 - i / 100)).reduce((a, b) => (b[1] < a[1] ? b : a));
+      expect(chin[1]).toBeGreaterThan(-1.1);
+      expect(chin[1]).toBeLessThan(-0.95);
+      expect(humanSkull(unit(0.6, -0.8, -0.05))[1] - chin[1]).toBeGreaterThan(0.3);
+      // chân tóc gáy (vĩ độ −22° phía sau) xuống tới ống cổ, gáy thu vào
+      const nape = humanSkull(unit(0, -Math.sin((22 * Math.PI) / 180), -Math.cos((22 * Math.PI) / 180)));
+      expect(nape[1]).toBeLessThan(-0.5);
+      expect(nape[2]).toBeGreaterThan(-0.75);
+      // nhìn ngang không dài như trứng nằm: tai ngay sau đường giữa đầu
+      const [front, back] = [mid(0.15)[2], humanSkull([0, 0, -1])[2]];
+      expect(back).toBeGreaterThan(-0.92);
+      const ear = humanEar(1)[2];
+      expect(ear).toBeLessThan((front + back) / 2);
+      expect(ear).toBeGreaterThan((front + back) / 2 - 0.2);
+      setJaw(old);
+    }
   });
 
   it("tóc dời theo sọ bên dưới, giữ bề dày", () => {
@@ -53,7 +66,7 @@ describe("đầu human", () => {
   it("tai hai bên đối xứng, nằm trên má sau tâm sọ", () => {
     const [r, l] = [humanEar(-1), humanEar(1)];
     expect(r[0]).toBeCloseTo(-l[0], 12);
-    expect(r[0]).toBeLessThan(-0.9);
+    expect(r[0]).toBeLessThan(-0.85);
     expect(r[2]).toBeLessThan(0);
   });
 });

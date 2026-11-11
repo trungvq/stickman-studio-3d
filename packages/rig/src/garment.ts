@@ -209,9 +209,10 @@ function printMesh(p: PrintPart, ink: string) {
  * áo có thêm nét bóng dáng hậu kỳ bề dày ấy (`npr({ ink })`). `lap`: người ngồi, vạt dưới hông gập lên đùi (`lapFold`); có
  * `lap.fold` thì trả thêm `refold` gập lại theo hướng đùi mới. `neck`: khăn vắt vai, kính gài nẹp, dây chuyền, khối kín cùng thân áo.
  * `cloth`: thân áo (và khối kín màu áo) dùng vật liệu vải chung với tay áo khác màu (`clothMaterial`), thay vật liệu nét `sil`.
+ * `human`: THỬ (feat/real-head-proto) — người đầu `human`, cổ dày hơn: miệng cổ áo nới theo (`torsoMesh`).
  */
-export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, skin, arm, tuck = Infinity, sil, lap, neck, cloth }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom; tuck?: number; sil?: number; lap?: Lap; neck?: NeckWear; cloth?: THREE.Material } & Palette) {
-  const t = torsoMesh(garment, rig, arm, neck);
+export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, skin, arm, tuck = Infinity, sil, lap, neck, cloth, human }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom; tuck?: number; sil?: number; lap?: Lap; neck?: NeckWear; cloth?: THREE.Material; human?: boolean } & Palette) {
+  const t = torsoMesh(garment, rig, arm, neck, human);
   const pal = { color, accent, ink, skin };
   const matOf = (fill: MarkFill, soft = 1) => npr({ color: colorOf(fill, pal), stipple: 0.05, stippleScale: 3, soft });
   const inkMat = npr({ color: ink, stipple: 0 });

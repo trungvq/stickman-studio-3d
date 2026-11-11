@@ -70,6 +70,8 @@ export interface Surface {
   neck: (phi: number, grow?: number) => SP;
   /** `y` ở phân số `t` từ vành vai (`0`) xuống khớp hông (`1`) */
   t: (t: number) => number;
+  /** THỬ (feat/real-head-proto): miệng cổ sơ mi `inner.collar` không hẹp hơn ngần này px thay cho `NECK_MIN` (đầu `human`) */
+  neckMin?: number;
 }
 
 /**
@@ -170,6 +172,43 @@ export const CHEST = { at: 0.7, back: 0.6, step: 3 } as const;
 export const NECK_TUBE = { r: 0.135, flare: 1.08, back: 0.03 } as const;
 /** Miệng cổ áo khoác cổ V co theo vai không hẹp hơn chân ống cổ cộng ngần này px, để còn viền da quanh cổ */
 export const NECK_MIN = 100 * NECK_TUBE.r * NECK_TUBE.flare + 1.5;
+/**
+ * THỬ (feat/real-head-proto): cổ của đầu `human` (`neckGeometry`), đơn vị three, hệ khớp cổ (y lên, z ra trước): hàng
+ * `[y, nửa rộng, mép sau, mép trước]` từ chân ống trong thân áo lên dưới đáy sọ, giữa các hàng nối trơn. Mặt cắt dẹt
+ * (rộng hơn sâu). Chân cổ loe ngang thành dốc vai, nằm gọn trong mặt vát và miệng cổ áo (mép sau trong `NAPE`, mép trước
+ * trong ngực trên); lên trên mép trước chúi ra trước về dưới hàm, mép sau lùi dần vào gáy sọ. Nửa rộng nhân
+ * `humanNeckWidth`; trên hàng cuối giữ như hàng cuối
+ */
+export const HUMAN_NECK_ROWS: readonly (readonly [number, number, number, number])[] = [
+  [-0.02, 0.215, -0.15, 0.1],
+  [0.07, 0.232, -0.165, 0.115],
+  [0.13, 0.215, -0.172, 0.122],
+  [0.22, 0.208, -0.186, 0.138],
+  [0.3, 0.222, -0.198, 0.15],
+  [0.38, 0.238, -0.205, 0.155],
+];
+/** Nửa rộng cổ `human` theo vai: vai hẹp (nữ) cổ thon hơn, `rig.shoulderHalf` 40 là `1` */
+export const humanNeckWidth = (rig: { shoulderHalf?: number }) =>
+  Math.min(1.04, Math.max(0.86, (rig.shoulderHalf ?? 40) / 40));
+/** Hàng cổ `human` ở độ cao `y` (hệ khớp cổ, three): `[nửa rộng, mép sau, mép trước]`, nửa rộng đã nhân `k` */
+export function humanNeckAt(y: number, k = 1): [number, number, number] {
+  const R = HUMAN_NECK_ROWS;
+  let i = 1;
+  while (i < R.length - 1 && R[i][0] < y) i++;
+  const [p, q] = [R[i - 1], R[i]];
+  const u = Math.max(0, Math.min(1, (y - p[0]) / (q[0] - p[0])));
+  const s = u * u * (3 - 2 * u);
+  return [(p[1] + (q[1] - p[1]) * s) * k, p[2] + (q[2] - p[2]) * s, p[3] + (q[3] - p[3]) * s];
+}
+/**
+ * Miệng cổ áo (`g.neck`, px) tối thiểu của người đầu `human`: nửa rộng chỗ loe nhất của chân cổ cộng ngần này px. Thân áo
+ * giữ mặt cắt (vai, gốc tay) theo `g.neck` gốc; chỉ viền cổ, cổ áo, áo trong nới ra (`torsoMesh`)
+ */
+export const HUMAN_RING_CLEAR = 1.5;
+/** Hàng cổ `human` cao từ ngần này (three, hệ khớp cổ) đã ở trên mọi viền cổ áo: không tính vào miệng cổ tối thiểu */
+const HUMAN_RING_UP = 0.2;
+export const humanNeckMin = (rig: { shoulderHalf?: number }) =>
+  100 * Math.max(...HUMAN_NECK_ROWS.filter((r) => r[0] < HUMAN_RING_UP).map((r) => r[1])) * humanNeckWidth(rig) + HUMAN_RING_CLEAR;
 /**
  * Ống cổ uốn (`bendNeck`): dưới mép cổ áo áo phông (cao hơn khớp cổ `bones.neck + collar`) ống đứng theo thân, lên thêm
  * `span` thì theo trọn khớp cổ, giữa hai mức chuyển êm; `rows` đoạn dọc. Đơn vị three
@@ -445,7 +484,7 @@ export function neckRing(
 
 /** Mặt khối với miệng cổ của cổ sơ mi `inner.collar`: cùng khối, miệng cổ hẹp chữ V */
 export const innerNeckOf = (s: Surface): Surface => {
-  const neck = Math.min(NECK_MIN, s.g.neck - INNER_COLLAR.inset);
+  const neck = Math.min(s.neckMin ?? NECK_MIN, s.g.neck - INNER_COLLAR.inset);
   const grow = neck - s.g.neck;
   const shirt: Surface = {
     ...s,

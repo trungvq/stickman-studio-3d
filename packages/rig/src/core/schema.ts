@@ -782,6 +782,8 @@ export const CharacterSchema = z.object({
       form: z.enum(["sphere", "human"]).default("sphere"),
       /** THỬ (feat/real-head-proto): hình hàm của đầu `human` — `v` thon thẳng từ gò má, `square` quai hàm vuông */
       jaw: z.enum(["v", "square"]).default("v"),
+      /** THỬ (feat/real-head-proto): mũi khối riêng của đầu `human` — `length` nhân độ dài từ gốc giữa hai mắt tới chóp, `out` nhân độ nhô */
+      nose: z.object({ length: z.number().min(0.6).max(1.5).default(1), out: z.number().min(0).max(2).default(1) }).prefault({}),
     })
     .prefault({}),
   palette: z

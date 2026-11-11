@@ -3,6 +3,8 @@ import { EarringsSchema, NecklaceSchema, type Earrings, type Necklace } from "./
 import {
   GARMENT_STYLES,
   NECK_TUBE,
+  HUMAN_RING_CLEAR,
+  humanNeckAt,
   RIB_FRONT,
   type MarkFill,
   type SP,
@@ -179,9 +181,14 @@ export function necklaceSolids(
   const k = n.pendant === "none" ? 1.3 : 1.7;
   // ống cổ lùi sau và nở ở chân: sau gáy nó nhô khỏi mặt khối, dây lùi vào trong viền cổ thì chui vào ống cổ
   const clear = NECK_TUBE.r * NECK_TUBE.flare * 100 + r + NECKLACE_LIFT;
+  // THỬ (feat/real-head-proto): đầu `human` (`s.neckMin`) cổ dày dẹt: elip nửa rộng theo miệng cổ tối thiểu, mép sau, mép
+  // trước theo hàng cổ ngang viền cổ áo
+  const [, nb, nf] = humanNeckAt(0.1);
   const outside = (sp: SP) => {
     const p = b.raise(sp, 0);
-    return Math.hypot(p[0], p[2] + NECK_TUBE.back * 100) >= clear;
+    if (s.neckMin === undefined) return Math.hypot(p[0], p[2] + NECK_TUBE.back * 100) >= clear;
+    const a = s.neckMin - HUMAN_RING_CLEAR + r + NECKLACE_LIFT, d = 100 * (p[2] < 0 ? -nb : nf) + r + NECKLACE_LIFT;
+    return Math.hypot(p[0] / a, p[2] / d) >= 1;
   };
   // không đủ chỗ trong viền cổ thì dây vắt lên viền gân, tối đa hết bề rộng viền
   const floor = -(rib?.width ?? 0);

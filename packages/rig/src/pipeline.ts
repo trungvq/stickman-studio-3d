@@ -18,6 +18,17 @@ const AO_KERNEL = Array.from({ length: AO_N }, (_, i) => {
 // tay áo cắm vào thân áo cùng màu) thì nét đậm dần theo khe sâu ở mép qua dải ấy: chỗ cắm vào nhau khe gần 0, không nét; mép
 // nằm trước thì có. Vật khác thì nét chỉ dừng ở chỗ nó nằm hẳn trước.
 const MAX_INK = 128, MAX_RECTS = 8;
+
+/**
+ * THỬ (feat/real-head-proto): vẽ không viền đen, tách người khỏi nền bằng hai cách bật tắt riêng.
+ * - `inkColor`: giữ nét bóng dáng `ink` (mảnh đi theo `inkScale`) nhưng màu nét là màu đã vẽ của chính vật ngay trong mép
+ *   (lấy ở điểm ảnh trong mép, cạnh mầm của nét) làm đậm theo `inkDark`: da ra nâu da, tóc ra tóc đậm, áo ra áo đậm. Đi theo
+ *   mã vật của lượt pháp tuyến nên khối mới (mũi, sọ khác) tự có nét.
+ * - `rim`: ánh viền tối theo mép khối của mọi vật có nét bóng dáng (người, đồ cầm): màu vật làm đậm theo `inkDark`, trộn
+ *   `rim` lần theo 1 − n·v giữa `rimFrom` và `rimTo` (pháp tuyến hệ nhìn từ lượt pháp tuyến, nên đi theo lưới, không đặt cứng theo đầu).
+ * Vật liệu `userData.ink` không bị đặt về 0 nữa: nét đen tắt bằng `inkColor`, không dùng thì đặt `inkScale` 0.
+ */
+export const BARE = { inkColor: true, inkScale: 0.4, inkDark: 0.52, rim: 0.7, rimFrom: 0.55, rimTo: 0.97 };
 const INK_GLSL = /* glsl */ `
 uniform vec4 uInk[${MAX_INK}];
 ivec2 inkClamp(ivec2 q, vec4 r){ return clamp(q, ivec2(r.xy), ivec2(r.zw)); }
@@ -104,10 +115,13 @@ ${INK_GLSL}
 void main(){
   ivec2 p = ivec2(gl_FragCoord.xy);
   vec4 s = texelFetch(tSil, p, 0);
-  float ink = 0.0;
+  float ink = 0.0, ids = 0.0;
+  vec2 off = vec2(0.0);
   if (s.z >= 0.0 && inkReach(s) > -0.5) {
     // độ sâu ở mép vật nhảy theo điểm ảnh: độ đậm lấy trung bình mầm quanh đây cùng vật
-    float ids = floor(s.y / 1024.0), w = 0.0, n = 0.0;
+    float w = 0.0, n = 0.0;
+    ids = floor(s.y / 1024.0);
+    off = inkOff(s);
     int d = max(1, int(uThick + 0.5));
     for (int i = 0; i < 25; i++) {
       vec4 t = texelFetch(tSil, inkClamp(p + ivec2(i % 5 - 2, i / 5 - 2) * d, uRect), 0);
@@ -118,7 +132,8 @@ void main(){
     }
     ink = inkGate(texelFetch(tId, p, 0).rba, linz(texelFetch(tZ, p, 0).r), s) * w / max(n, 1.0) * clamp(inkReach(s) + 0.5, 0.0, 1.0);
   }
-  gl_FragColor = vec4(ink);
+  // r độ phủ, gb độ lệch tới mầm (điểm ngay ngoài mép vật), a mã vật: lượt hậu kỳ lấy màu vật trong mép cho nét màu
+  gl_FragColor = vec4(ink, off, ids);
 }`;
 
 // Nét mực: Laplacian của 1/độ sâu — chỗ độ sâu gãy (mép, nếp gấp) thì tối đi; cạnh gấp (pháp tuyến gãy, độ sâu liền) cũng
@@ -126,7 +141,7 @@ void main(){
 const POST_FRAG = /* glsl */ `
 uniform sampler2D tColor, tDepth, tNormal, tInk, tId;
 uniform vec2 uRes;
-uniform float uNear, uFar, uOutline, uThick, uPixel, uPaper, uAo, uAoRadius, uSil, uShade;
+uniform float uNear, uFar, uOutline, uThick, uPixel, uPaper, uAo, uAoRadius, uSil, uShade, uInkTone, uInkDark, uRim, uRimFrom, uRimTo;
 uniform vec3 uInkColor, uCelInk;
 uniform mat4 uProj, uProjInv;
 uniform vec3 uShadowTint;
@@ -137,6 +152,8 @@ float invz(float d){ float z = d * 2.0 - 1.0; return (uFar + uNear - z * (uFar -
 float h12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
 float bayer2(vec2 a){ a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
 float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
+// màu nét, ánh viền: màu vật đậm đi, sắc đậm thêm chút cho khỏi xám (da ra nâu da chứ không ra nâu xám)
+vec3 inkTone(vec3 c){ float m = max(max(c.r, c.g), max(c.b, 1e-3)); return c * mix(vec3(1.0), c / m, 0.45) * uInkDark; }
 vec3 vpos(vec2 uv){ vec4 p = uProjInv * vec4(uv * 2.0 - 1.0, texture2D(tDepth, uv).r * 2.0 - 1.0, 1.0); return p.xyz / p.w; }
 // SSAO bán cầu theo pháp tuyến dựng lại từ độ sâu; hướng xoay theo ô 4×4 điểm ảnh nên tất định.
 float ssao(vec2 uv){
@@ -243,7 +260,41 @@ void main(){
     col = mix(col, mix(uCelInk, uInkColor, manga), ink);
   } else col = mix(col, col * vec3(0.2, 0.18, 0.26), edge * 0.92);
   // nét bóng dáng của vật bên dưới không loang lên đồ nhỏ nằm sát nó: dây chuyền cách thân áo chưa tới ba lần bề dày nét
-  if (uSil > 0.5 && !fine) col = mix(col, uInkColor, texelFetch(tInk, ivec2(gl_FragCoord.xy), 0).r);
+  // ánh viền tối theo mép khối của vật có nét bóng dáng (mã vật > 0): mặt càng xiên khỏi máy càng đậm
+  if (uRim > 0.0 && d0 < 0.99999 && texelFetch(tId, p, 0).r > 0.5) {
+    vec3 V = normalize(-vpos(vUv));
+    float f = smoothstep(uRimFrom, uRimTo, 1.0 - max(dot(a, V), 0.0));
+    col = mix(col, inkTone(col), f * uRim);
+  }
+  if (uSil > 0.5 && !fine) {
+    vec4 im = texelFetch(tInk, p, 0);
+    vec3 ic = uInkColor;
+    if (uInkTone > 0.5 && im.r > 0.0) {
+      // mầm nằm ngay ngoài mép: lấy màu vật trong mép, cùng mã vật, ở vài điểm vào sâu theo hướng từ đây tới mầm và vài điểm
+      // dọc mép hai bên; giữ điểm sáng nhất, cho nét mặt dán (mày, mắt chạm mép mặt nghiêng) và hạt loang không nhuộm đen nét.
+      // Ở chính mầm (độ lệch 0) không có hướng: lấy hướng tới điểm kề cùng mã vật
+      ivec2 sp = p + ivec2(floor(im.gb + 0.5));
+      vec2 dv = length(im.gb) > 0.5 ? normalize(im.gb) : vec2(0.0);
+      if (dv == vec2(0.0)) for (int i = 0; i < 8; i++)
+        if (dv == vec2(0.0) && abs(texelFetch(tId, clamp(sp + CEL_DIRS[i], ivec2(0), hi), 0).r - im.a) < 0.5) dv = normalize(vec2(CEL_DIRS[i]));
+      vec2 tv = vec2(-dv.y, dv.x);
+      float k = max(1.0, uThick);
+      vec3 best = vec3(-1.0);
+      for (int j = 0; j < 9; j++) {
+        // 0–3: vào sâu 1, 2, 4, 6 bước; 4–8: ở 2 bước vào, dọc mép −8, −4, 4, 8 bước
+        float dj = j < 4 ? float(j == 0 ? 1 : j == 1 ? 2 : j == 2 ? 4 : 6) : 2.0;
+        float tj = j < 4 ? 0.0 : float(j == 4 ? -8 : j == 5 ? -4 : j == 6 ? 4 : 8);
+        ivec2 q = clamp(sp + ivec2(floor((dv * dj + tv * tj) * k + 0.5)), ivec2(0), hi);
+        if (abs(texelFetch(tId, q, 0).r - im.a) > 0.5) continue;
+        vec3 c = texelFetch(tColor, q, 0).rgb;
+        if (dot(c, vec3(0.299, 0.587, 0.114)) > dot(best, vec3(0.299, 0.587, 0.114))) best = c;
+      }
+      if (best.r >= 0.0) ic = inkTone(best);
+      // nét màu chỉ làm tối: nằm trên vật tối hơn nó (nét da lên tóc đen, áo vest) thì nhạt dần tới mất, khỏi thành vệt sáng
+      im.r *= smoothstep(0.0, 0.06, dot(col - ic, vec3(0.299, 0.587, 0.114)));
+    }
+    col = mix(col, ic, im.r);
+  }
   vec2 fc = vUv * uRes;
   if (uPixel > 0.5) col = floor(col * 14.0 + 0.5 + bayer4(fc) - 0.5) / 14.0;
   else if (uPaper > 0.5 && uShade < 0.5) col *= 0.975 + 0.05 * h12(floor(gl_FragCoord.xy));
@@ -450,7 +501,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
   normalRT.textures[1].minFilter = normalRT.textures[1].magFilter = THREE.NearestFilter;
   const jfaRT = [0, 1].map(() => new THREE.WebGLRenderTarget(4, 4, { type: THREE.FloatType, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false }));
   const inkTable = Array.from({ length: MAX_INK }, () => new THREE.Vector4());
-  const maskRT = new THREE.WebGLRenderTarget(4, 4, { format: THREE.RedFormat, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false });
+  const maskRT = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false });
   let rw = 4, rh = 4, dot = 6;
   // pháp tuyến hệ nhìn, mặt sau lật lại; a: 1 có nét gấp, 0,5 vật `noCrease`, 0,3 lưới người (`body`), 0,1 vật `noEdge`, 0 không có vật. Đích thứ hai: mã vật có nét bóng dáng, mặt nạ đứt nét của kiểu cel, hai mã vật mà nét bóng dáng không loang lên vật này (`inkSkip`)
   // kênh g của đích thứ hai: kiểu cel là mặt nạ đứt nét; kiểu khác là độ đậm nét bóng dáng lên vật cùng vật liệu theo `userData.inkU`
@@ -490,6 +541,11 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       uShade: G.uShade,
       uCelInk: G.uCelInk,
       uSil: { value: 0 },
+      uInkTone: { value: 0 },
+      uInkDark: { value: BARE.inkDark },
+      uRim: { value: 0 },
+      uRimFrom: { value: BARE.rimFrom },
+      uRimTo: { value: BARE.rimTo },
       uInkColor: { value: new THREE.Color(INK) },
       uRes: { value: new THREE.Vector2() },
       uNear: { value: 0 },
@@ -597,7 +653,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
         const m = (o as THREE.Mesh).isMesh ? ((o as THREE.Mesh).material as THREE.ShaderMaterial) : null;
         if (!m || Array.isArray(m)) return;
         if (m.side === THREE.BackSide && m.uniforms?.uW) o.visible = false;
-        if (m.userData?.ink) m.userData.ink = 0;
+        if (m.userData?.earInk) m.uniforms.uLine.value = 0;
       });
       const cel = shade === 'cel';
       G.uShade.value = SHADES[shade];
@@ -681,6 +737,11 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       pu.uAoRadius.value = LIGHTING.ao.radius;
       pu.uOutline.value = outline ? 1 : 0;
       pu.uPaper.value = paper ? 1 : 0;
+      pu.uInkTone.value = BARE.inkColor ? 1 : 0;
+      pu.uInkDark.value = BARE.inkDark;
+      pu.uRim.value = shade === 'paint' ? BARE.rim : 0;
+      pu.uRimFrom.value = BARE.rimFrom;
+      pu.uRimTo.value = BARE.rimTo;
       // vỏ nét ngược không phải mặt thật, vật không ghi độ sâu (kính, lớp nét mặt) không có trong độ sâu: bỏ khỏi lượt pháp tuyến
       const shells: THREE.Object3D[] = [], swapped: [THREE.Mesh, THREE.Material | THREE.Material[]][] = [];
       const slots = new Map<string, number>(), f = (camera.projectionMatrix.elements[5] * rh) / 2;
@@ -691,7 +752,8 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
         const m = o as THREE.Mesh;
         if (!m.isMesh || !m.visible || Array.isArray(m.material)) return;
         if (m.material.side === THREE.BackSide || !m.material.depthWrite) return void shells.push(m);
-        const w: number = m.material.userData.ink ?? 0;
+        // THỬ: nét bóng dáng mảnh theo `BARE.inkScale`; còn mã vật (ánh viền cần) khi nét tắt hẳn
+        const w: number = (m.material.userData.ink ?? 0) * (BARE.inkScale || 1e-4);
         let id = 0;
         const chain = m.userData.inkChain === undefined ? '' : `${m.userData.inkChain} ${m.material.userData.inkKey ?? m.material.uuid}`;
         if (w > 0 && (chains.has(chain) || inks < MAX_INK - 1)) {
@@ -737,7 +799,7 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       // khung điểm ảnh ôm từng vật có nét và bán kính nét, gộp khung chồng nhau: các lượt loang chỉ vẽ trong đó
       reach = Math.min(reach, 256);
       const screen = new THREE.Box2(new THREE.Vector2(0, 0), new THREE.Vector2(rw, rh));
-      let rects = !inks ? [] : whole ? [screen] : boxes.map((r) => r.expandByScalar(reach + 3).intersect(screen)).filter((r) => !r.isEmpty());
+      let rects = !inks || !BARE.inkScale ? [] : whole ? [screen] : boxes.map((r) => r.expandByScalar(reach + 3).intersect(screen)).filter((r) => !r.isEmpty());
       for (let merged = true; merged; ) {
         merged = false;
         for (let i = 0; i < rects.length && !merged; i++)
