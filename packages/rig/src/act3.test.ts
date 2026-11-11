@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, type Acting } from './act';
 import { actJoints, actPalms, actReach, armInner, armSide, CLAD_DEPTH, CLAD_GAP, cladArm, cladProfile, cladThigh, roots3, SPLAY3, THIGH_CLEAR, THIGH_RAMP, type ActJoint } from './core/act3';
-import { D } from './core/constants';
+import { D, RIG } from './core/constants';
 import { prefPole } from './core/elbow';
 import { HAND_BONES } from './core/hand';
 import { defaultCharacter, limbWidths, SkirtSchema } from './core/schema';
@@ -167,7 +167,7 @@ describe('actJoints', () => {
     for (const [w, bicep, height, hipHalf] of [[11, 0, 1, 22], [19, 0.7, 1, 22], [19, 0, 0.65, 22], [15, 0, 1, 30]] as const) {
       const rig = { ...c.rig, height, hipHalf }, thigh = cladThigh(17, 6);
       const r = roots3(g, rig, { clad: true, sleeve: w, trouser: 17, bicep }), room = r.room!;
-      const elbow = room.at[0] + 62 * height * Math.sin(r.splay) - room.r[1] / Math.cos(r.splay);
+      const elbow = room.at[0] + RIG.upperArm * height * Math.sin(r.splay) - room.r[1] / Math.cos(r.splay);
       expect(elbow - room.side, `${w} ${bicep} ${height}`).toBeCloseTo(CLAD_GAP, 6);
       expect(armInner(room, 0)).toBeGreaterThanOrEqual(hipHalf + thigh - 1e-6);
       if (armInner({ ...room, splay: SPLAY3 }, 0) >= hipHalf + thigh) expect(r.splay).toBe(SPLAY3);
@@ -226,11 +226,11 @@ describe('actJoints', () => {
     const J = actJoints(c, sp)!;
     for (const t of ['R', 'L'] as const) {
       // rig: y xuống — cổ tay cao hơn khuỷu gần trọn cẳng tay (tay choãi `SPLAY3` nghiêng nó chút), cùng chỗ ngang và sâu
-      expect(J[`elbow${t}`][1] - J[`wrist${t}`][1]).toBeGreaterThan(58 * Math.cos(SPLAY3) - 1e-6);
-      expect(Math.hypot(J[`elbow${t}`][0] - J[`wrist${t}`][0], J[`elbow${t}`][2] - J[`wrist${t}`][2])).toBeLessThan(58 * Math.sin(SPLAY3) + 1e-6);
+      expect(J[`elbow${t}`][1] - J[`wrist${t}`][1]).toBeGreaterThan(RIG.foreArm * Math.cos(SPLAY3) - 1e-6);
+      expect(Math.hypot(J[`elbow${t}`][0] - J[`wrist${t}`][0], J[`elbow${t}`][2] - J[`wrist${t}`][2])).toBeLessThan(RIG.foreArm * Math.sin(SPLAY3) + 1e-6);
       // không xoắn thì cẳng tay chĩa ra trước
       const flat = actJoints(c, { ...sp, pose: { ...sp.pose, ar: [0, 90, 0, 90], al: [0, 90, 0, 90] } })!;
-      expect(Math.abs(flat[`elbow${t}`][1] - flat[`wrist${t}`][1])).toBeLessThan(58 * Math.sin(SPLAY3) + 1e-6);
+      expect(Math.abs(flat[`elbow${t}`][1] - flat[`wrist${t}`][1])).toBeLessThan(RIG.foreArm * Math.sin(SPLAY3) + 1e-6);
     }
   });
 

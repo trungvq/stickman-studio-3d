@@ -16,8 +16,8 @@ Gốc toạ độ đặt ở **chậu hông** (pelvis). Trục y hướng xuốn
 | Thân (hông → vai) | 120 | |
 | Đùi | 78 | Giữa tỉ lệ người Nhật (`72`) và bảng nhân trắc phương Tây (`85`), quy về thân hông → vai `100` |
 | Cẳng chân | 92 | Gối → gót, gồm bàn chân; cũng lấy giữa (`84` / `99`). Người ngồi ghế cao bằng gối thì chân chạm sàn |
-| Cánh tay trên | 62 | |
-| Cẳng tay | 58 | |
+| Cánh tay trên | 67 | Vai → khuỷu. Tổng hai đoạn `120`; chia theo người châu Á, cẳng tay ≈ `0,79` cánh tay trên (AIST 2003, người Nhật trẻ: nam `315 : 251`, nữ `292 : 227` mm) |
+| Cẳng tay | 53 | Khuỷu → cổ tay |
 | Nửa rộng vai | 40 | `rig.shoulderHalf`, xem ghi chú dưới bảng |
 | Vai tụt | 20 | `rig.shoulderDrop`, khớp vai nằm dưới đỉnh thân bấy nhiêu |
 | Nửa rộng hông | 22 | `rig.hipHalf` |
@@ -109,11 +109,11 @@ Vị trí bàn tay trong hệ thân, `sU` và `sL` là hệ số cánh tay trên
 chính tay ấy (dạng bốn số thì `sU = sL = s`):
 
 ```
-x = vai.x + sU·sin(vai)·62 + sL·sin(vai + khuỷu)·58
-y = vai.y + sU·cos(vai)·62 + sL·cos(vai + khuỷu)·58
+x = vai.x + sU·sin(vai)·67 + sL·sin(vai + khuỷu)·53
+y = vai.y + sU·cos(vai)·67 + sL·cos(vai + khuỷu)·53
 ```
 
-Tầm với chuẩn là `62 + 58 = 120`, vai phải ở `(−40, −100)`; bảng tính ở dạng bốn số:
+Tầm với chuẩn là `67 + 53 = 120`, vai phải ở `(−40, −100)`; bảng tính ở dạng bốn số:
 
 | Đích | Cách vai | Cần `stretch` |
 |---|---:|---:|
@@ -1391,7 +1391,7 @@ của lõi (`core/act3.ts`) trả đúng các khớp ấy trong toạ độ th�
 |---|---:|---|
 | `torso` (hông → khớp cổ) | `1,2` | có |
 | `neck` | `0,08` | có |
-| `upperArm` / `foreArm` | `0,62` / `0,58` | có |
+| `upperArm` / `foreArm` | `0,67` / `0,53` | có |
 | `thigh` / `shin` | `0,78` / `0,92` | có |
 | `head` (bán kính sọ gốc `HEAD3_R`) | `0,384`, sọ bóp `SKULL3` `(1; 1,04; 0,98)` | đầu cầu không; đầu `human` nhân `headK` theo số đầu |
 | `limb` (nửa bề dày nét người que) | `0,042` | không |
@@ -1916,7 +1916,7 @@ Xem, chọn và đọc tên: [Xem và chọn](#xem-và-chọn), [Tên và hậu 
 | `walk-short`, `run-3d` | Chu kỳ đi `walkCycle` đọc ở `side`, chỉ khác `params`, sinh bởi `tools/actions/walk.mjs`: `walk-short` sải ngắn cho vạt dài quấn, váy dài ôm (đùi `14°`, chu kỳ `1 s`, `140` đơn vị rig mỗi chu kỳ — [12](12-trang-phuc-3d.md#vạt-dài-quấn)); `run-3d` chạy (đùi `26°`, gối `90°`, khuỷu gập `110°` đánh sát sườn, thân ngả `16°`, chu kỳ `0,38 s`, `277` đơn vị rig) — đùi vung quá `26°` hay `stance` dưới `0,55` (có pha bay) thì mũi giày người 3D lún sàn lúc chạm đất, nên chạy nhanh bằng nhịp ngắn và luôn có chân trụ. |
 | `steps-3d`, `steps-back-3d` | Tiến / lùi hai bước ngắn rồi khép chân, mặt giữ hướng, `1,1 s` rồi giữ, quãng `80` đơn vị rig ở `height` 1; người đi `world.path` đúng quãng ấy, vào clip và thả về nền (clip rỗng ngay khi `path` dừng) đều blend `~0,1`. Chỉ ghi chân, thân; sinh bởi `tools/actions/steps.mjs` |
 | `sit-3d` | Ngồi: đùi ngang, ống chân thõng, tay buông; ghép với người ngồi (`world.sit`) trên mặt ngồi cao bằng gối; ghế khác cao, người khác cỡ, tựa lưng ghế, tay trên bàn hay tay vịn thì `stickman gen sit` ([Bộ sinh chung](#bộ-sinh-chung)) |
-| `arms-on-table-3d` | Đặt tay lên bàn: đích cổ tay hệ thân `[100, −56, 22]`, thân cúi `5`, bàn tay dáng nghỉ úp (`turn` `20`, `bend` `−5`) nằm trên mặt bàn. Bàn khác cao thì scene đặt `world.hands` |
+| `arms-on-table-3d` | Đặt tay lên bàn: đích cổ tay hệ thân `[100, −56, 22]`, thân cúi `5`, bàn tay dáng nghỉ úp (`turn` `20`, `bend` `0`) nằm trên mặt bàn. Bàn khác cao thì scene đặt `world.hands` |
 | `type-3d` | Gõ phím, chồng lên `sit-3d` (`stage: desk`): cổ tay trên bàn phím `[105, −60…−65, ~32]`, hai tay so le, bàn tay úp ngón cong nhẹ (`turn` `70`, `bend` `−20`), thân cúi `8` |
 | `bow-3d` | お辞儀: thân cúi `38°` trong mặt phẳng dọc, tay dọc thân, giữ rồi đứng lên; một lượt `2,6 s`, lặp được |
 | `bow-15-3d`, `bow-30-3d`, `bow-45-3d` | Cúi chào một lần chỉ bằng thân, đầu: thân cúi `15 / 30 / 45°`, đầu gật thêm `6 / 5 / 3°`, xuống `0,3 / 0,4 / 0,55 s`, giữ `0,4 / 0,5 / 1,2 s`, đứng lên rồi giữ. Chỉ ghi `torso`, `head`, nên chồng được lên tay đang bưng khay, cầm món: đích tay hệ thân đứng yên khi thân cúi, nên `15°` chồng được lên tay sát eo, `30°` cần cổ tay ra trước `~65`, `45°` đổ lên cẳng tay |

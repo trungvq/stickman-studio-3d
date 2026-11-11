@@ -13,7 +13,7 @@
         "armLeft": { "at": [100, -56, 22], "elbow": [-0.3, 0.3, 1] },
         "armRight": { "at": [100, -56, 22], "elbow": [-0.3, 0.3, 1] }
       },
-      "hand": { "armLeft": { "turn": 20, "bend": -5 }, "armRight": { "turn": 20, "bend": -5 } },
+      "hand": { "armLeft": { "turn": 20, "bend": 0 }, "armRight": { "turn": 20, "bend": 0 } },
       "ease": "linear"
     }
   ],

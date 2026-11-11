@@ -219,7 +219,7 @@ describe("stretch từng đoạn", () => {
       });
   });
 
-  it.each(poses)("%s: bàn tay ở vai + sU·62·sin(vai) + sL·58·sin(vai + khuỷu)", (_ten, P) => {
+  it.each(poses)("%s: bàn tay ở vai + sU·67·sin(vai) + sL·53·sin(vai + khuỷu)", (_ten, P) => {
     const s: Stretch = [1.3, 0.7, 0.8, 1.5, 1.2, 0.6, 0.9, 1.1];
     const f = computeFigure(C, { ...P, stretch: s });
     const end = (
@@ -234,8 +234,16 @@ describe("stretch từng đoạn", () => {
       root[1] + sU * l1 * Math.cos(a[0] * D) + sL * l2 * Math.cos((a[0] + a[1]) * D),
     ];
     const cases = [
-      [f.armL, end(SH_F, P.al, 62, 58, s[0], s[1]), tip(SH_F[0], SH_F[1], 62 * s[0], P.al[0])],
-      [f.armR, end(SH_N, P.ar, 62, 58, s[2], s[3]), tip(SH_N[0], SH_N[1], 62 * s[2], P.ar[0])],
+      [
+        f.armL,
+        end(SH_F, P.al, RIG.upperArm, RIG.foreArm, s[0], s[1]),
+        tip(SH_F[0], SH_F[1], RIG.upperArm * s[0], P.al[0]),
+      ],
+      [
+        f.armR,
+        end(SH_N, P.ar, RIG.upperArm, RIG.foreArm, s[2], s[3]),
+        tip(SH_N[0], SH_N[1], RIG.upperArm * s[2], P.ar[0]),
+      ],
       [
         f.legL,
         end(HIP_F, P.ll, RIG.thigh, RIG.shin, s[4], s[5]),
