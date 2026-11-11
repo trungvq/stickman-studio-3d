@@ -1648,8 +1648,8 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
 `SKULL3`) rồi cả nhóm đầu phóng `headK` ba trục: sọ, nét mặt, mũi, tai, tóc dựng khối (kể cả tham số px như `front`,
 `bang`), mũ, kính, ria, nếp nhăn, bông tai, trâm và đồ cắm socket `crown`, `faceAcc` co cùng đầu. Mốc thân trên đầu
 (`mouth`, `eye`, `ear`, `chin`… — [Đích theo mốc](#đích-theo-mốc)), ý định cầm `face` / `{ mark: "head" }`, mốc
-`anchorAt`, khối va chạm đầu của `check` và `HEAD_LOOK` đọc cùng cỡ ấy (`headDims`, `headBoxOf`). `offset` của đích theo
-mốc vẫn là px rig, không co theo đầu.
+`anchorAt`, khối va chạm đầu của `check` và `HEAD_LOOK` đọc cùng cỡ ấy (`headDims`, `headBoxOf`); `offset` của đích theo
+mốc trên đầu co theo cỡ sọ ([Đích theo mốc](#đích-theo-mốc)).
 
 | Trường | Mặc định | Khoảng | |
 |---|---|---|---|
@@ -1781,7 +1781,7 @@ chiều cao và `world.s` của nhân vật, ở tư thế lúc ấy (cúi, ng�
 |---|---|
 | `to` | Mốc thân (`BODY_MARKS`), thay cho `at`; đúng một trong hai |
 | `side` | `"same"` (mặc định) bên cùng phía tay đang với, `"other"` bên kia — mốc có hai bên: `cheek`, `eye`, `ear`, `shoulder`, `hip`, `thigh`, `knee` |
-| `offset` | Dời khỏi mốc `[tiến, y, ra ngoài]`, đơn vị rig nhân `world.s`, **không** nhân `height`; theo khung phần người mang mốc, `ra ngoài` dương về phía chính tay ấy |
+| `offset` | Dời khỏi mốc `[tiến, y, ra ngoài]`, đơn vị rig nhân `world.s`, **không** nhân `height`; theo khung phần người mang mốc, `ra ngoài` dương về phía chính tay ấy. Mốc trên đầu (`HEAD_BODY_MARKS`): offset đo trên sọ chuẩn bán kính `MARK_HEAD_R` (`0,64`, sọ bóp `SKULL3`), mỗi trục nhân bán kính sọ của nhân vật (`Bones3.skull`) chia bán kính chuẩn — cùng offset là cùng chỗ trên mặt ở mọi cỡ đầu |
 | `point` | Điểm bàn tay đặt vào đích: `wrist`, `palm` (giữa mặt lòng tay), `back` (giữa mu tay), `grip` (tâm nắm của dáng đang vẽ, `handGripOf`), `tip` (đầu ngón giữa); ở `world.hands` của tay đang cầm món còn có `item:<mốc>`, mốc của món ([Món cầm tay](#món-cầm-tay)). Thiếu là `wrist` với `at`, `palm` với `to`. Đi được cả với `at` |
 | `elbow` | Hướng khuỷu hệ thân như đích toạ độ |
 

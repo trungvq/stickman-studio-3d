@@ -288,7 +288,7 @@ const v3 = z.tuple([z.number(), z.number(), z.number()]);
 /**
  * Đích bàn tay: toạ độ `at` hệ thân `[tiến, y, ra ngoài]` đơn vị rig ở `height = 1`, gốc tâm hông, `y` xuống là dương,
  * `ra ngoài` dương về phía chính tay ấy — hay mốc thân `to` (`BODY_MARKS`) trên chính người ấy, `side` chọn bên mốc,
- * `offset` dời khỏi mốc theo khung phần người mang mốc (rig, không nhân `height`). `point` là điểm bàn tay đặt vào đích:
+ * `offset` dời khỏi mốc theo khung phần người mang mốc (rig, không nhân `height`; mốc trên đầu co theo cỡ sọ). `point` là điểm bàn tay đặt vào đích:
  * thiếu là cổ tay với `at`, giữa lòng tay với `to`. `elbow` hướng khuỷu hệ thân. docs/01-rig.md#đích-bàn-tay,
  * docs/01-rig.md#đích-theo-mốc
  */

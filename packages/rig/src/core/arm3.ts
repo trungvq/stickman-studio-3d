@@ -3,7 +3,7 @@ import { softReach } from "./elbow";
 import { chibiShape } from "./face";
 import { lengths } from "./geometry";
 import { handPoint } from "./hand";
-import { faceSurface, HUMAN_HEAD, humanEar, humanSkull, withHeadShape } from "./humanHead";
+import { faceSurface, HUMAN_HEAD, humanEar, humanSkull, SKULL3, withHeadShape } from "./humanHead";
 import { HEAD3_R, headDims, LIMB3, type HeadSpec } from "./stature";
 import {
   fromColumns,
@@ -16,6 +16,7 @@ import {
   type V3,
 } from "./lens";
 import {
+  HEAD_BODY_MARKS,
   type Aim,
   type HandPoint,
   type BodyMark,
@@ -687,7 +688,8 @@ export function markShape(T: Trunk3) {
   const sk = (p: V3): V3 => [p[0] * r[0], p[1] * r[1], p[2] * r[2]];
   // mặt sọ theo dáng đầu của chính nhân vật (kiểu mặt, hình hàm), không theo dáng đang đặt lúc gọi
   const shape = { face: c.head.face, jaw: c.head.jaw };
-  const onFace = (px: number, py: number) => sk(withHeadShape(shape, () => faceSurface(px, py, 1, human)));
+  const onFace = (px: number, py: number) =>
+    sk(withHeadShape(shape, () => faceSurface(px, py, 1, human)));
   const onSkull = (u: V3) => sk(human ? withHeadShape(shape, () => humanSkull(unit(u))) : unit(u));
   const ear = (side: -1 | 1) => withHeadShape(shape, () => humanEar(side));
   const g = garmentOf(c.pieces.torso.garment, !!T.pal.clad, c.rig);
@@ -710,6 +712,9 @@ export function markShape(T: Trunk3) {
 }
 
 const shapes = new WeakMap<object, ReturnType<typeof markShape>>();
+
+/** Bán kính sọ mà `offset` của mốc trên đầu đo theo: offset nhân `Bones3.skull / (MARK_HEAD_R · SKULL3)` từng trục */
+export const MARK_HEAD_R = 0.64;
 
 /**
  * Mốc `to` trên người thân `T` (three) cho tay bên `hand`, bên mốc `sel`; `offset` `[tiến, y, ra ngoài]` (rig, nhân
@@ -833,5 +838,9 @@ export function markAt(
     }
   }
   const o = ref.offset;
-  return o ? add(p, mul(mv(R, [hand * o[2], -o[1], o[0]]), 0.01 * s)) : p;
+  if (!o) return p;
+  const k = HEAD_BODY_MARKS.includes(ref.to)
+    ? B.skull.map((r, i) => r / (MARK_HEAD_R * SKULL3[i]))
+    : [1, 1, 1];
+  return add(p, mul(mv(R, [hand * o[2] * k[0], -o[1] * k[1], o[0] * k[2]]), 0.01 * s));
 }
