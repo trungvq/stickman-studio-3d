@@ -61,10 +61,12 @@ export const PREVIEW_ARMREST = { top: 62, out: 63, front: 62 } as const;
 export const PREVIEW_DESK = { top: 55, near: 80 } as const;
 /** Mặt trước lưng ghế xem thử sau hông, rig ở `height = 1`: mông, vạt áo, nơ obi người mặc đồ lấn sau hông tới ~47 */
 export const CHAIR_BACK = 55;
+/** Dải cao của lưng ghế xem thử trên mặt ngồi, rig ở `height = 1`: đỉnh `to` ~44 cm, ngang bả vai người ngồi */
+export const CHAIR_BACKREST = { from: 24, to: 110 } as const;
 
 /**
  * Mục vai trò của ghế xem thử ở `height` `h`, khung món `+x` hướng mặt, gốc là điểm trên mặt ngồi dưới khớp hông: mặt ngồi
- * từ lưng ghế (`CHAIR_BACK` sau hông) tới gần gối, lưng ghế cao hơn mặt ngồi `24`–`80`; `arms` thêm hai tay vịn
+ * từ lưng ghế (`CHAIR_BACK` sau hông) tới gần gối, lưng ghế cao hơn mặt ngồi theo `CHAIR_BACKREST`; `arms` thêm hai tay vịn
  * (`armrest`, mặc định `PREVIEW_ARMREST`) từ sau lưng ghế ra trước. Ghế của Thư viện dựng từ chính các mục này (`propOf`)
  */
 export function chairRoles(
@@ -89,7 +91,12 @@ export function chairRoles(
   };
   return [
     { role: "seat", at: [(back + front) / 2, 0, 0], size: [front - back, width] },
-    { role: "backrest", from: [back, -24 * h, 0], to: [back, -80 * h, 0], width },
+    {
+      role: "backrest",
+      from: [back, -CHAIR_BACKREST.from * h, 0],
+      to: [back, -CHAIR_BACKREST.to * h, 0],
+      width,
+    },
     ...(arms ? [rest("phai", -1), rest("trai", 1)] : []),
   ];
 }

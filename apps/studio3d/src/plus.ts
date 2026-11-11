@@ -4,7 +4,9 @@
 import {
   handReport,
   holdBlending,
+  HEAD_BODY_MARKS,
   type ActCharacter,
+  type BodyMark,
   type HandSide,
   type SceneRuntime,
 } from "@stickman3d/rig/core";
@@ -12,8 +14,12 @@ import { drawnHand, drawnItem } from "./drawn";
 import {
   handValueAt,
   insertHandKey,
+  intentFrameOf,
   insertItemKey,
   itemValueAt,
+  marksOf,
+  timeOf,
+  type IntentFrame,
   type Json,
   type KeyRef,
   type V3,
@@ -306,8 +312,31 @@ function nearestOk(
 }
 
 /**
- * Thêm mốc món `item` (lần cầm tay `side` của `id`) ở `t`: tâm hộp bao, hướng như đang vẽ; tâm món lệch quá `PLUS_TOL` thì
- * bù `at`, không được thì ném lỗi
+ * Hệ ghi hướng của mốc món mới `item` ở `t`, luật `tự` (`intentFrameOf`): hệ đầu khi mốc món có hiệu lực (mốc cuối không sau
+ * `t`) khai hệ đầu, hay mốc trước, mốc sau đặt món ở mốc trên đầu (`HEAD_BODY_MARKS`), hay đích tay đang tới mốc trên đầu
+ */
+export function plusItemFrame(
+  raw: Json,
+  item: string,
+  t: number,
+  head: boolean,
+): IntentFrame | undefined {
+  const marks = marksOf(raw);
+  const ks = ((raw.items as Json[] | undefined) ?? [])
+    .filter((k) => k.item === item)
+    .sort((a, b) => timeOf(a.t, marks) - timeOf(b.t, marks));
+  const i = ks.findIndex((k) => timeOf(k.t, marks) > t + 1e-9);
+  const prev = (i < 0 ? ks : ks.slice(0, i)).at(-1);
+  const next = i < 0 ? undefined : ks[i];
+  const onHead = [prev, next].some(
+    (k) => typeof k?.to === "string" && HEAD_BODY_MARKS.includes(k.to as BodyMark),
+  );
+  return intentFrameOf("auto", prev ?? next, head || onHead);
+}
+
+/**
+ * Thêm mốc món `item` (lần cầm tay `side` của `id`) ở `t`: tâm hộp bao, hướng như đang vẽ ở hệ của `plusItemFrame`; tâm
+ * món lệch quá `PLUS_TOL` thì bù `at`, không được thì ném lỗi
  */
 export function plusItem(
   raw: Json,
@@ -318,10 +347,12 @@ export function plusItem(
   t: number,
   o: PlusOptions,
 ): PlusResult {
+  const frame = plusItemFrame(raw, item, t, !!drawnHand(rt, id, side, t, o)?.head);
   const p =
-    drawnItem(rt, id, side, item, t, o) ?? fail(`không thấy ${item} đang vẽ ở ${t.toFixed(2)} s`);
+    drawnItem(rt, id, side, item, t, { ...o, frame }) ??
+    fail(`không thấy ${item} đang vẽ ở ${t.toFixed(2)} s`);
   const measure = (at: V3) => {
-    const r = insertItemKey(raw, t, itemValueAt(id, item, at, p.face, p.roll));
+    const r = insertItemKey(raw, t, itemValueAt(id, item, at, p.face, p.roll, frame));
     const q = drawnItem(o.rebuild(r.raw), id, side, item, t, o);
     return q && { r, q };
   };

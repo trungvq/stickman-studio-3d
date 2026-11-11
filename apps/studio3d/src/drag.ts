@@ -9,7 +9,9 @@ import {
   matMul,
   matVec,
   rigElbowBody,
+  HEAD_BODY_MARKS,
   type ActCharacter,
+  type BodyMark,
   type CharacterData,
   type HandSide,
   type M3,
@@ -21,11 +23,13 @@ import {
   editKey,
   handsOf,
   holdAt,
+  intentFrameOf,
   intentHold,
   keyValue,
   marksOf,
   timeOf,
   touch,
+  type FramePick,
   type Json,
   type KeyRef,
   type V3,
@@ -329,8 +333,8 @@ function fitPlace(
 
 /**
  * Tay nắm trên bàn tay đồ theo tay hay tay tự do: dời tâm nắm `d`, xoay bàn tay `R` quanh tâm nắm. Xoay ghi ý định món
- * (`hold.face`, `hold.roll` vectơ hệ thân) cho đồ theo tay, `palm` + `fingers` cho tay tự do (bỏ `bend`). Chỗ: `at` hay
- * `offset` bù tới khi tâm nắm ở chỗ thả
+ * (`hold.face`, `hold.roll` vectơ hệ thân, hệ đầu theo `pick` — `intentFrameOf`) cho đồ theo tay, `palm` + `fingers` cho
+ * tay tự do (bỏ `bend`). Chỗ: `at` hay `offset` bù tới khi tâm nắm ở chỗ thả
  */
 export function dragHand(
   raw: Json,
@@ -340,6 +344,7 @@ export function dragHand(
   t: number,
   mv: Move,
   o: PlusOptions,
+  pick: FramePick = "auto",
 ): DragResult {
   const d0 = drawnHand(rt, id, side, t, o) ?? fail(`\`${id}\` không có \`world\``);
   if (d0.support) fail("tay phụ của `both` theo tay dẫn: kéo ở tay dẫn");
@@ -354,15 +359,18 @@ export function dragHand(
   if (mv.R) {
     const R = mv.R;
     if (d1.mode === "hand") {
-      const axes = d1.axes ?? fail("không đọc được hướng món đang vẽ");
       const hold = holdAt(cur, id, side, t) ?? fail("không thấy `hold` có hiệu lực");
-      const face = turnBody(axes.face, R, tk.Rr, out);
-      const roll = turnBody(axes.roll, R, tk.Rr, out);
+      const frame = intentFrameOf(pick, hold, !!d1.head);
+      const axes = (frame ? d1.headAxes : d1.axes) ?? fail("không đọc được hướng món đang vẽ");
+      const M = frame ? tk.Rn : tk.Rr;
+      const face = turnBody(axes.face, R, M, out);
+      const roll = turnBody(axes.roll, R, M, out);
       cur = editKey(cur, b.key, (m) => {
         const x = m ?? {};
-        x.hold = intentHold(hold, { face, roll });
+        x.hold = intentHold(hold, { face, roll }, frame);
         return x;
       });
+      if (frame) notes.push('ý định món ghi hệ đầu (`frame: "head"`): món quay, gật theo đầu');
     } else {
       const p = palmAt(b.rt, id, side, t, o.char) ?? fail("không đọc được lòng tay đang vẽ");
       cur = editKey(cur, b.key, (m) => {
@@ -442,6 +450,7 @@ function editItem(
   t: number,
   target: (p0: { R: M3; at: V3 }, grip: V3) => { R?: M3; want: V3 },
   o: PlusOptions,
+  pick: FramePick = "auto",
 ): DragResult {
   const rep = handReport(rt, id, side, t, o) ?? fail(`\`${id}\` không có \`world\``);
   const run = rep.run;
@@ -472,13 +481,19 @@ function editItem(
   let cur = base;
   if (R) {
     const R1 = matMul(R, p0.R);
-    const face = toBody(matVec(R1, [0, 0, 1]), tk.Rr, -1).map(r4);
-    const roll = toBody(matVec(R1, [0, 1, 0]), tk.Rr, -1).map(r4);
+    const onHead =
+      isObj(m0) && typeof m0.to === "string" && HEAD_BODY_MARKS.includes(m0.to as BodyMark);
+    const frame = intentFrameOf(pick, m0, onHead);
+    const M = frame ? tk.Rn : tk.Rr;
+    const face = toBody(matVec(R1, [0, 0, 1]), M, -1).map(r4);
+    const roll = toBody(matVec(R1, [0, 1, 0]), M, -1).map(r4);
+    const fr = frame && { frame };
     cur = editKey(cur, key, (m) => {
-      m!.face = { axis: [0, 0, 1], toward: face };
-      m!.roll = { axis: [0, 1, 0], toward: roll };
+      m!.face = { axis: [0, 0, 1], toward: face, ...fr };
+      m!.roll = { axis: [0, 1, 0], toward: roll, ...fr };
       delete m!.up;
     });
+    if (frame) notes.push('hướng món ghi hệ đầu (`frame: "head"`)');
   }
   const measure = (r: Json) => itemPose(o.rebuild(r), item, t, id, c)?.at;
   const fit = fitPlace(cur, key, p0.at, want, measure, { Rr: tk.Rr, s: tk.s, out: -1 }, (m) => {
@@ -501,6 +516,7 @@ export function dragItem(
   t: number,
   mv: Move,
   o: PlusOptions,
+  pick: FramePick = "auto",
 ): DragResult {
   return editItem(
     raw,
@@ -510,6 +526,7 @@ export function dragItem(
     t,
     (p0, grip) => ({ R: mv.R, want: movePoint(p0.at, grip, mv.R ?? I3, mv.d) }),
     o,
+    pick,
   );
 }
 

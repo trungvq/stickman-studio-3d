@@ -711,6 +711,30 @@ export function solvePhi(
   return { ...best, tries: n };
 }
 
+/** Số lượt tối đa của `solvePhiRest` */
+const REST_ROUNDS = 8;
+
+/**
+ * Mẫu đầu của chuỗi `φ` không có mẫu trước: `solvePhi` lặp với mẫu trước là chính nghiệm vừa ra tới khi đứng (lệch dưới
+ * `0,01°`) — chuỗi bắt đầu ở chỗ nó dừng khi món đứng yên, khuỷu không trôi ở các mẫu đầu
+ */
+export function solvePhiRest(
+  inp: ArmInput,
+  Wp: V3,
+  Rw: M3 | HandAim,
+  other?: ArmSeg,
+  elbow?: ElbowDir,
+): ArmSol {
+  let sol = solvePhi(inp, Wp, Rw, undefined, other, elbow);
+  for (let k = 0; k < REST_ROUNDS; k++) {
+    const next = solvePhi(inp, Wp, Rw, sol.phi, other, elbow);
+    const still = Math.abs(wrap(next.phi - sol.phi)) < 0.01;
+    sol = next;
+    if (still) break;
+  }
+  return sol;
+}
+
 /** Hai đoạn của tay đã giải, cho số hạng lấn của tay giải sau */
 export const armSeg = (inp: ArmInput, sol: ArmSol): ArmSeg => ({
   S: inp.S,
@@ -729,7 +753,7 @@ export interface ArmQuery {
 
 /**
  * Chuỗi `φ` của một lần cầm `t0..t1`: mẫu cách `HOLD_SLEW_STEP` tính từ `t0`, mẫu cuối không trước `t1`; mỗi mẫu lấy
- * `φ_trước` là mẫu liền trước, mẫu đầu lấy `phiPrev` (mẫu cuối của lần cầm trước trên cùng tay)
+ * `φ_trước` là mẫu liền trước, mẫu đầu lấy `phiPrev` (mẫu cuối của lần cầm trước trên cùng tay), không có thì `solvePhiRest`
  */
 export function phiChain(
   t0: number,
@@ -743,7 +767,10 @@ export function phiChain(
   for (let i = 0; i <= n; i++) {
     const t = t0 + i * HOLD_SLEW_STEP;
     const q = at(t);
-    const sol = solvePhi(q.inp, q.Wp, q.Rw, prev, q.other, q.elbow);
+    const sol =
+      prev === undefined
+        ? solvePhiRest(q.inp, q.Wp, q.Rw, q.other, q.elbow)
+        : solvePhi(q.inp, q.Wp, q.Rw, prev, q.other, q.elbow);
     out.push({ t, sol });
     prev = sol.phi;
   }

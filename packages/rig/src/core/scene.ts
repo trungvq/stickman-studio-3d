@@ -58,6 +58,7 @@ import {
   phiToward,
   rigElbowBody,
   solvePhi,
+  solvePhiRest,
   wristClamp,
   yawFrame,
   type ArmInput,
@@ -1353,7 +1354,9 @@ const CROWDLESS = new WeakMap<object, object>();
  * Cảnh không có người nền (`cast[].crowd`); object gốc không đổi, không có ai để bỏ thì trả chính nó. Người nền mà phần còn
  * lại của cảnh nhắc tới id (`face.cast`, camera bám, `fx`) được giữ, vì bỏ đi thì `resolveScene` ném. docs/03-scene.md#người-nền
  */
-export function withoutCrowd<S extends { cast: readonly { id: string; crowd?: boolean }[] }>(scene: S): S {
+export function withoutCrowd<S extends { cast: readonly { id: string; crowd?: boolean }[] }>(
+  scene: S,
+): S {
   const known = CROWDLESS.get(scene);
   if (known) return known as S;
   const crowd = new Set(scene.cast.filter((m) => m.crowd).map((m) => m.id));
@@ -3794,12 +3797,16 @@ export function sceneHoldProblems(rt: SceneRuntime): string[] {
 
 /** Đích một trục ý định ra dạng bộ giải đọc; người khác trong `cast` ước ra điểm thế giới ở giây đang lấy mẫu */
 function holdTarget(
-  t: AxisIntent["toward"],
+  a: AxisIntent,
   castAt: (id: string, mark: BodyMark | undefined) => V3,
 ): HoldTarget {
+  const t = a.toward;
+  const head = a.frame === "head" && { head: true as const };
   if (typeof t === "string")
-    return t === "camera" || t === "holderFace" ? { name: t } : { v: [...PALM_DIRS[t]] as V3 };
-  if (Array.isArray(t)) return { v: [...t] as V3 };
+    return t === "camera" || t === "holderFace"
+      ? { name: t }
+      : { v: [...PALM_DIRS[t]] as V3, ...head };
+  if (Array.isArray(t)) return { v: [...t] as V3, ...head };
   if ("cast" in t) return { at: castAt(t.cast, t.mark) };
   return {
     to: t.mark,
@@ -3808,15 +3815,15 @@ function holdTarget(
   };
 }
 
-/** Đích một trục ý định như scene khai, để báo */
-const towardLabel = (t: AxisIntent["toward"]): string =>
-  typeof t === "string"
+/** Đích một trục ý định như scene khai, để báo; hướng hệ đầu ghi kèm `(hệ đầu)` */
+const towardLabel = ({ toward: t, frame }: AxisIntent): string =>
+  (typeof t === "string"
     ? t
     : Array.isArray(t)
       ? `[${t.join(", ")}]`
       : "cast" in t
         ? `${t.cast}.${t.mark ?? "eye"}`
-        : t.mark;
+        : t.mark) + (frame === "head" ? " (hệ đầu)" : "");
 
 /**
  * Ý định `roll` của tay dẫn khi biến thể có `thumbToward`: phía ngón cái (`ρ(around)` của chỗ cầm) quay về đích; cảnh khai
@@ -3860,9 +3867,9 @@ function holdAim(
   const roll = thumb ?? intent.roll;
   const axis = (a: AxisIntent): HoldAxis => ({
     axis: heldAxis(spec, a.axis),
-    target: holdTarget(a.toward, castAt),
+    target: holdTarget(a, castAt),
     ...(a.tilt && { tilt: a.tilt }),
-    label: towardLabel(a.toward),
+    label: towardLabel(a),
   });
   return { item, grip, ...(face && { face: axis(face) }), ...(roll && { roll: axis(roll) }) };
 }
@@ -5242,7 +5249,9 @@ function chainTo(
       sol:
         L && L.k >= 1
           ? evalPhi(q.inp, q.Wp, q.Rw, lockPhi(0, q.inp, q.Wp, L), prev, other, q.elbow)
-          : solvePhi(q.inp, q.Wp, q.Rw, prev, other, q.elbow),
+          : prev === undefined
+            ? solvePhiRest(q.inp, q.Wp, q.Rw, other, q.elbow)
+            : solvePhi(q.inp, q.Wp, q.Rw, prev, other, q.elbow),
     });
   }
 }
@@ -5966,14 +5975,16 @@ function holderFace(T: Trunk3, from: V3): V3 {
   return [(h[0] / k) * Math.cos(rise), Math.sin(rise), (h[2] / k) * Math.cos(rise)];
 }
 
-/** Hướng từ `from` (three) tới đích ý định của mốc món, đọc ở `time`; vectơ ở hệ thân người cầm */
-function itemToward(rt: SceneRuntime, T: Trunk3, t: IntentTarget, from: V3, time: number): V3 {
+/** Hướng từ `from` (three) tới đích ý định `a` của mốc món, đọc ở `time`; hướng ở hệ thân người cầm, `frame: "head"` hệ đầu */
+function itemToward(rt: SceneRuntime, T: Trunk3, a: AxisIntent, from: V3, time: number): V3 {
+  const t = a.toward;
   if (t === "holderFace") return holderFace(T, from);
   if (t === "camera") {
     const eye = T.W.eye ?? T.W.lens?.eye ?? fail("`camera` cần `scene.lens`");
     return sub3(toThree(eye), from);
   }
-  const body = (v: readonly number[]) => matVec(T.Rr, [ITEM_SIDE * v[2], -v[1], v[0]]);
+  const M = a.frame === "head" ? T.Rn : T.Rr;
+  const body = (v: readonly number[]) => matVec(M, [ITEM_SIDE * v[2], -v[1], v[0]]);
   if (typeof t === "string") return body(PALM_DIRS[t]);
   if (Array.isArray(t)) return body(t);
   if ("cast" in t) return sub3(toThree(castMarkAt(rt, t.cast, t.mark, time)), from);
@@ -6313,7 +6324,7 @@ function solveItemMark(rt: SceneRuntime, k: SceneItemMark, time: number, o: Item
   const d = o.defaults ?? itemGroupDefaults(handKeys(rt, k.cast), () => spec, k.item, time);
   const { face, roll } = itemIntent(k, d);
   const aim = (a: AxisIntent): V3 | undefined => {
-    const d0 = itemToward(rt, T, a.toward, at, time);
+    const d0 = itemToward(rt, T, a, at, time);
     if (Math.hypot(...d0) < 1e-9) return undefined;
     const d = norm3(d0);
     const u = cross3(d, [0, 1, 0]);

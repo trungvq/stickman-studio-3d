@@ -940,8 +940,8 @@ mỏng, từ chân cổ mặt trước đi xuống ngực theo một dốc dài,
   người ngồi gập theo nó (`lapFold`).
 - **Tay buông choãi ra ngoài bụng**: `roots3` choãi tay tới khi mép trong tay cách sườn áo không bụng (đã lùi theo tay)
   cộng phần bụng nở hai bên một `CLAD_GAP`, nên sườn áo không bị tay cắt mất bụng ([01](01-rig.md#người-3d-mặc-đồ)).
-  Tay tránh phần bụng chứ không tránh cả thân áo chưa lùi: `polo` `belly` `24` người mặc đồ mặc định choãi chừng `15°`
-  (người không bụng `6°`), `bellySide` `0.15` chừng `9°`.
+  Tay tránh phần bụng chứ không tránh cả thân áo chưa lùi: `polo` `belly` `24` người mặc đồ mặc định choãi chừng `14°`
+  (người không bụng `5°`), `bellySide` `0.15` chừng `8°`.
   Góc choãi là của cả tay; cẳng tay ôm theo bụng là việc của hành động (gập khuỷu vài độ ở dáng đứng).
 - **Đai trên bụng phệ** ([áo cổ chéo](#áo-cổ-chéo)) không còn là trụ ở chỗ rộng nhất mà ôm bao lồi của thân trong bản
   đai, riêng bề ngang, nửa sâu trước, nửa sâu sau: mép trên mép dưới của đai không hở khỏi bụng, đai dưới bụng nghiêng
@@ -1510,7 +1510,8 @@ không lòi qua mặt váy.
   nếp chia đều. Vành gấu co hết (đùi ngang) thì không còn nếp; lòng váy lúc ngồi trơn.
 - Cắm được vào vật (`items`), đổi bằng `equip` như mọi `hem`.
 - **Tay buông nằm ngoài váy.** Người 3D đứng nghỉ choãi tay thêm tới khi cẳng tay và bàn tay cách hình bao
-  váy một `CLAD_GAP` (`roots3`, [01](01-rig.md#người-3d-mặc-đồ)); `flare` lớn là tay xoè như chim cánh cụt.
+  váy một `CLAD_GAP` (`roots3`, [01](01-rig.md#người-3d-mặc-đồ)); hình bao dựng trên cạp đã lùi theo tay, như váy 3D,
+  nên tay sát sườn áo và bàn tay sát mép váy; `flare` lớn là tay xoè như chim cánh cụt.
   `actJoints` đọc cùng váy nên `check` đo đúng khớp vẽ ra.
 - `pieces.hem` không phải `src: "sculpt"` thì người 3D không mặc váy dựng khối, kể cả khi còn sót `skirt`.
 

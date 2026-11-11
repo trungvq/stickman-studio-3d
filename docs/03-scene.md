@@ -514,8 +514,10 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
   { "t": 4, "left": { "at": [-82, -112, 20], "point": "palm", "palm": "down" } }, // lòng tay úp trên tay vịn
   { "t": 6, "left": { "to": "mouth", "palm": { "toward": "mouth" } } },       // mốc thân của chính người ấy
   { "t": 7, "right": { "at": [-90, -280, -60], "point": "grip", "hold": "dien-thoai@palmBox" } }, // cầm món, màn về mặt người cầm
-  { "t": 9, "right": { "to": "ear", "point": "item:speaker",                                  // loa vào tai
-                       "hold": { "item": "dien-thoai", "group": "palmBox", "face": { "axis": "screen", "toward": { "mark": "head" } } } } },
+  { "t": 9, "right": { "to": "ear", "offset": [33, 19, 11], "point": "grip",                 // máy áp má, loa ở tai
+                       "hold": { "item": "dien-thoai", "group": "palmBox", "thumb": "right", "tilt": 2,
+                                 "face": { "axis": "screen", "toward": [0, 0, -1], "frame": "head" },
+                                 "roll": { "axis": "top", "toward": [-0.9, -0.44, 0], "frame": "head" } } } },
   { "t": 11, "right": { "hold": null } },                                     // buông món
   { "t": 12, "right": { "pose": "peace" } },                                  // chỉ đổi ngón: chữ V của thư viện hands/
   { "t": 13, "left": { "rest": true } }                                       // tay buông: bỏ bàn tay của hành động
@@ -523,9 +525,11 @@ rig giải IK hai đoạn tới đó ([01](01-rig.md#đích-bàn-tay)):
 ```
 
 - **Tay phải / trái của người**: `right` là tay phải ở mọi góc máy, cùng tay với kênh `armRight` của hành động.
-- **Áp tai** (mốc `t: 9`): tay `to: "ear"`, mặt món về `{ mark: "head" }` mà không khai `roll` thì rig giữ trục `top` của món (đầu loa) dọc
-  đường miệng → tai nhìn ngang đầu, cả khi đầu quay ([11](11-nhom-cam.md#9-palmbox--hộp-cỡ-lòng-tay-bản-đầu)). Cảnh cần ép
-  trục máy thì khai `roll` trên trục ngược `top` với `toward: { mark: "mouth" }`.
+- **Áp tai** (mốc `t: 9`, dáng của `phone-ear-3d` bộ chung): tay `to: "ear"`, `face` và `roll` là vectơ hệ đầu
+  (`frame: "head"`, [01](01-rig.md#món-cầm-tay)) — màn vào má, đầu loa ra sau và lên dọc đường miệng → tai —, nên máy nằm
+  phẳng trên má, quay và gật theo đầu; khuỷu để rig giải. Cách khác: mặt món về `{ mark: "head" }` không khai `roll` thì rig
+  giữ trục `top` (đầu loa) dọc đường miệng → tai nhìn ngang đầu ([11](11-nhom-cam.md#9-palmbox--hộp-cỡ-lòng-tay-bản-đầu));
+  cảnh cần ép trục máy thì khai `roll` trên trục ngược `top` với `toward: { mark: "mouth" }`.
 - **`elbow` theo hệ của đích.** Mốc có `at` (đích thế giới): `elbow` là hướng thế giới rig. Mốc khác — có `to`, hay chỉ có
   `hold` (lần cầm theo mốc món) —: `elbow` là hệ thân `[tiến, y, ra ngoài]` của chính tay ấy, cùng quy ước với `elbow` của
   `keys[].reach` (`y` xuống dương, `ra ngoài` dương về phía tay ấy nên một bộ số đúng cho hai tay; hệ thân là hướng hông,
@@ -1088,7 +1092,7 @@ vật three của món.
                          "hold": { "item": "dien-thoai", "group": "palmBox", "face": { "axis": "screen", "toward": { "cast": "khach" } } } } },
   { "t": 2,   "right": { "hold": "chen@bowl" } },              // không `at`: chỗ tay theo hành động, miệng chén ngửa (mặc định nhóm)
   { "t": 3.4, "right": { "to": "mouth", "offset": [3, 0, 0], "point": "item:rim",
-                         "hold": { "item": "chen", "group": "bowl", "face": { "axis": "rim", "toward": { "mark": "head" }, "tilt": -15 } } } },
+                         "hold": { "item": "chen", "group": "bowl", "face": { "axis": "rim", "toward": { "mark": "head" }, "tilt": -25 } } } },
   { "t": 4.5, "right": { "hold": null }, "left": { "hold": null } }
 ]
 ```
@@ -1128,7 +1132,8 @@ vật three của món.
   `fingers`, `bend` ở cùng mốc: hướng bàn tay do ý định quyết.
 - `point: "item:<mốc>"` đặt mốc ấy của món vào đích: loa vào tai, miệng chén vào mồm, ngòi bút xuống giấy, đáy chén
   xuống mặt bàn. Tay chưa cầm thì lùi về `grip`. Món đã sát mặt thì ý định nhắm `{ "mark": "head" }` (tâm đầu): hướng từ
-  món tới mốc trên mặt (`mouth`, `ear`) lật khi món chạm mốc ấy, hướng tới tâm đầu thì không.
+  món tới mốc trên mặt (`mouth`, `ear`) lật khi món chạm mốc ấy, hướng tới tâm đầu thì không. Hướng tới tâm đầu đo từ đích
+  tay (chỗ món áp), không từ gốc món: máy dài hơn nửa bề sâu đầu vẫn áp phẳng lên má.
 - Ý định xoay khuỷu được: giá xoay khuỷu khỏi hướng đã khai tăng theo bình phương (tay mang và tay phụ), nên khuỷu nhích
   dần quanh `elbow` chứ không bật sang nghiệm xa để bớt vài độ lệch của món.
 - **Cổ tay mang món đi liền mạch.** Tay mang món theo ý định và tay phụ giải từ nghiệm của mẫu trước: một chuỗi mẫu cách

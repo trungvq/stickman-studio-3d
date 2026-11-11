@@ -288,8 +288,8 @@ describe("lần cầm theo mốc (`keyed`)", () => {
   });
 
   it("mốc khoá rồi mốc không khoá: `φ` = `φ` theo mốc kéo về hướng khoá theo phần khoá, đường ngắn qua ±180", () => {
-    // khoá gần ngược khuỷu tự do: `φ` theo mốc và hướng khoá nằm hai bên ±180 ở giữa đoạn
-    const e = dirAt(free, 0, report(free, 1).phi + 170);
+    // khoá gần ngược khuỷu tự do: `φ` theo mốc và hướng khoá nằm hai bên ±180 ở giữa đoạn (lệch 150–160 với tay 67/53)
+    const e = dirAt(free, 0, report(free, 1).phi + 155);
     const rt = runtime(withElbow(HANDS, [e]), ITEMS);
     const [pa, pb] = [report(rt, 0).phi, report(rt, 1).phi];
     expect(Math.abs(wrap(pa - phiOfDir(rt, 0, e)))).toBeLessThan(1e-6);
@@ -449,7 +449,10 @@ describe("`check`: khuỷu khoá xoay quá nhanh — đo", () => {
     const s = elbowLockSnaps(rt, { characterOf });
     expect(s).toHaveLength(1);
     expect(s[0].keys).toEqual([0, null]);
-    expect(s[0].from).toBeGreaterThan(0.3);
+    // quãng lật ôm lúc trục đi qua hướng khoá (giây 0,5), xa mốc
+    expect(s[0].from).toBeGreaterThan(0.2);
+    expect(s[0].from).toBeLessThan(0.5);
+    expect(s[0].to).toBeGreaterThan(0.5);
     expect(elbowLockLine(s[0])).toMatch(/sau mốc `world.hands` cuối \(giây 0.00\)/);
   });
 

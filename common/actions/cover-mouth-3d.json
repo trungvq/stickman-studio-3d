@@ -15,32 +15,37 @@
     {
       "t": 0.25,
       "pose": {},
-      "reach": { "armRight": { "to": "chin", "offset": [16, 10, 12], "elbow": [0, 1, 0.6] } },
+      "reach": { "armRight": { "to": "chin", "offset": [16, 10, 12], "elbow": [0.6, 1, 0.8] } },
       "ease": "smooth",
       "hand": {
-        "armRight": { "pose": "flat", "w": 0.75, "palm": [-1, 0.2, 0], "fingers": [0.1, -0.6, -1] }
+        "armRight": {
+          "pose": "flat",
+          "w": 0.75,
+          "palm": [-1, 0.2, 0],
+          "fingers": [-0.2, -0.25, -1]
+        }
       }
     },
     {
       "t": 0.5,
       "pose": {},
-      "reach": { "armRight": { "to": "mouth", "offset": [9, 8, 0], "elbow": [0, 1, 0.6] } },
+      "reach": { "armRight": { "to": "mouth", "offset": [4, 14, 4], "elbow": [0.6, 1, 0.8] } },
       "ease": "smooth",
       "hand": {
-        "armRight": { "pose": "flat", "w": 1, "palm": [-1, 0.2, 0], "fingers": [0.1, -0.6, -1] }
+        "armRight": { "pose": "flat", "w": 1, "palm": [-1, 0.2, 0], "fingers": [-0.2, -0.25, -1] }
       }
     },
     {
       "t": 1,
       "pose": {},
-      "reach": { "armRight": { "to": "mouth", "offset": [9, 8, 0], "elbow": [0, 1, 0.6] } },
+      "reach": { "armRight": { "to": "mouth", "offset": [4, 14, 4], "elbow": [0.6, 1, 0.8] } },
       "ease": "linear",
       "hand": {
-        "armRight": { "pose": "flat", "w": 1, "palm": [-1, 0.2, 0], "fingers": [0.1, -0.6, -1] }
+        "armRight": { "pose": "flat", "w": 1, "palm": [-1, 0.2, 0], "fingers": [-0.2, -0.25, -1] }
       }
     }
   ],
   "events": [],
-  "note": "Che miệng một tay: tay phải từ tay buông qua dưới cằm (`chin`, 0,25 s, lòng tay đã quay sẵn như lúc che) tới áp lòng tay lên mồm (`mouth`, offset [9, 8, 0]) lúc 0,5 s rồi giữ; `flat` duỗi, lòng tay quay vào mồm, ngón chéo lên về phía má kia, khuỷu xuống-ra ngoài. Chỉ ghi `armRight`, `hand`. Nền `stand-3d`, `sit-3d` hay `seiza-3d`; mốc tính trên đầu mỗi khung nên thân cúi, đầu quay tay vẫn theo mồm. Chồng được nét mặt, `turn-head-*`, `lean-in-*`; hạ bằng blend ~0,35 về nền. Cùng họ: `cover-mouth-gasp-3d` hai tay ngạc nhiên, `cover-mouth-whisper-3d` khum bên miệng nói khẽ.",
+  "note": "Che miệng một tay: tay phải từ tay buông qua dưới cằm (`chin`, 0,25 s, lòng tay đã quay sẵn như lúc che) tới áp lòng tay lên mồm (`mouth`, offset [4, 14, 4]) lúc 0,5 s rồi giữ; `flat` duỗi, lòng tay quay vào mồm, bàn tay gần ngang, mép trên (ngón cái, ngón trỏ) dưới mũi, ngón vắt về phía má kia; khuỷu xuống, ra trước và ra ngoài. Chỉ ghi `armRight`, `hand`. Nền `stand-3d`, `sit-3d` hay `seiza-3d`; mốc tính trên đầu mỗi khung nên thân cúi, đầu quay tay vẫn theo mồm. Chồng được nét mặt, `turn-head-*`, `lean-in-*`; hạ bằng blend ~0,35 về nền. Cùng họ: `cover-mouth-gasp-3d` hai tay ngạc nhiên, `cover-mouth-whisper-3d` khum bên miệng nói khẽ.",
   "preview": { "stage": "stand" }
 }

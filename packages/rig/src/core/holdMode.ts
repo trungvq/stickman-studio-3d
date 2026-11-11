@@ -271,8 +271,9 @@ interface Seen {
   phi: Partial<Record<HandSide, number>>;
   /** Một tay của người ấy đang trong `HOLD_BLEND` (`holdBlending`) */
   blend: boolean;
-  /** Thân người cầm (three) như mốc món đọc */
+  /** Thân người cầm (three) như mốc món đọc; `Rn` khung đầu cho ý định hệ đầu */
   Rr: M3;
+  Rn: M3;
   c: ActCharacter;
   sp: ActInput;
 }
@@ -297,9 +298,9 @@ function seen(rt: SceneRuntime, id: string, item: string, t: number): Seen {
     elbow: {},
     phi: {},
     blend: holdBlending(rt, id, "R", t) || holdBlending(rt, id, "L", t),
-    Rr: holderTrunk(rt, id, t, { chars: { [id]: c } }).Rr,
     c,
     sp,
+    ...(({ Rr, Rn }) => ({ Rr, Rn }))(holderTrunk(rt, id, t, { chars: { [id]: c } })),
   };
   for (const s of ["right", "left"] as const) {
     const a = actArm(c, sp, sideSign(s));
@@ -341,20 +342,26 @@ const itemPoint = (x: NonNullable<Seen["item"]>, q: readonly number[]): V3 =>
   add3(x.P, matVec(x.R, [q[0] * x.s, q[1] * x.s, q[2] * x.s]));
 
 /**
- * Hướng món như đang vẽ: trục `+z` (`face`) và `+y` (`roll`) của khung món ra vectơ hệ thân `[tiến, y xuống, ngang]`;
- * `out` là dấu của trục ngang ở thế giới three (`-1`: ngang phải như mốc món; tay dẫn: ra ngoài phía tay ấy, `sideSign`)
+ * Hướng món như đang vẽ: trục `+z` (`face`) và `+y` (`roll`) của khung món ra vectơ hệ thân `[tiến, y xuống, ngang]` (`head`:
+ * hệ đầu, `frame: "head"`); `out` là dấu của trục ngang ở thế giới three (`-1`: ngang phải như mốc món; tay dẫn: ra ngoài
+ * phía tay ấy, `sideSign`)
  */
-function itemAxes(v: Seen, out: number) {
+function itemAxes(v: Seen, out: number, head = false) {
   const R3 = flipRows(v.item!.R);
   const body = (d: V3) => {
-    const l = trVec(v.Rr, d);
+    const l = trVec(head ? v.Rn : v.Rr, d);
     return round([l[2], -l[1], out * l[0]], r4);
   };
+  const fr = head && { frame: "head" };
   return {
-    face: { axis: [0, 0, 1], toward: body(matVec(R3, [0, 0, 1])) },
-    roll: { axis: [0, 1, 0], toward: body(matVec(R3, [0, 1, 0])) },
+    face: { axis: [0, 0, 1], toward: body(matVec(R3, [0, 0, 1])), ...fr },
+    roll: { axis: [0, 1, 0], toward: body(matVec(R3, [0, 1, 0])), ...fr },
   };
 }
+
+/** Ý định (`face`, `roll`) của chỗ cầm hay mốc món đang khai hệ đầu: phép đổi giữ hệ ấy */
+const headFramed = (x: unknown): boolean =>
+  isObj(x) && [x.face, x.roll].some((a) => isObj(a) && a.frame === "head");
 
 const TARGET = ["at", "to", "side", "offset", "point", "palm", "fingers", "bend"] as const;
 const INTENT = ["face", "up", "roll", "keep"] as const;
@@ -630,6 +637,13 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
     const x = k.k[lead];
     return isObj(x) && (x.at !== undefined || x.to !== undefined);
   });
+  /** Chỗ cầm tay dẫn có hiệu lực ở `t`, dạng object */
+  const heldAt = (t: number) => {
+    const h = holdIn(keys, lead, t);
+    return h && groupHold(h);
+  };
+  /** Mốc món của quãng đổi ở (hay gần nhất) `t` */
+  const itemMarkAt = (t: number) => (marksW.find((m) => near(m.t, t)) ?? nearest(marksW, t))?.k;
   /** Mốc tham chiếu cho chỗ đích ở `t`: `to` (mốc thân) hay `at`, và mốc món `point` */
   const refAt = (t: number): { to?: BodyMark; pt?: string } => {
     if (to === "item") {
@@ -638,7 +652,7 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
         typeof x?.point === "string" && x.point.startsWith("item:") ? x.point.slice(5) : undefined;
       return { to: x?.to as BodyMark | undefined, pt: p };
     }
-    const m = (marksW.find((m) => near(m.t, t)) ?? nearest(marksW, t))?.k;
+    const m = itemMarkAt(t);
     return {
       to: m?.to as BodyMark | undefined,
       pt: typeof m?.point === "string" ? m.point : undefined,
@@ -713,7 +727,7 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
           item,
           ...spot,
           ...(ref.pt && { point: ref.pt }),
-          ...itemAxes(v, -1),
+          ...itemAxes(v, -1, headFramed(heldAt(t))),
           ease: "auto",
         };
         const at = items.findIndex((s) => tOf(s.value.t) > t + EPS);
@@ -776,7 +790,7 @@ function plan(rt: SceneRuntime, raw: unknown, o: HoldModeOptions, to: Mode) {
         const h = holdIn(keys, lead, t) ?? fail(`tay ${viSide(lead)} không cầm ở ${t}s`);
         const lh: Obj = {
           ...pinnedHold(h, v.grasp[lead], way.pin, way.flip.lead, spec, way.high?.lead),
-          ...itemAxes(v, sideSign(lead)),
+          ...itemAxes(v, sideSign(lead), headFramed(itemMarkAt(t))),
         };
         if (partner) {
           delete lh.both;

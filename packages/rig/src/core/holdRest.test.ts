@@ -131,7 +131,8 @@ describe("mốc món `rest`", () => {
     const mark = itemAt(rt, "the", 1.7, { chars })!;
     expect(mark.rest).toBe(true);
     expect(dist(mark.P, rel.pose.P)).toBeLessThan(1e-9);
-    expect(rotDeg(mark.R, rel.pose.R)).toBeLessThan(1e-6);
+    // `acos` quanh 1 chỉ phân giải chừng 1e-6°
+    expect(rotDeg(mark.R, rel.pose.R)).toBeLessThan(1e-5);
     // B vừa gắn (tay còn đang tới): món đứng ở mốc nằm, đúng chỗ thả
     for (const t of [1.4 + 1e-4, 1.55]) {
       const d = drawnB(rt, t);

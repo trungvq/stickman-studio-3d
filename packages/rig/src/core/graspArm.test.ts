@@ -33,6 +33,8 @@ const D2R = Math.PI / 180;
 const LEFT = 1;
 const inR = armInput(T, RIGHT, shape);
 const inL = armInput(T, LEFT, shape);
+// mức nền lấn lớn nhất của tay buông thõng, đo trên rig (`fx.ca.restAllowMax` của prototype đo với tay 62/58)
+const REST_MAX = 4.82;
 
 const pt = (p: readonly number[]): V3 => [p[0] / 100, -p[1] / 100, -p[2] / 100];
 const dir = (d: readonly number[]): V3 => [d[0], -d[1], -d[2]];
@@ -66,8 +68,8 @@ describe("graspArm", () => {
       [inL, S.left],
     ] as const)
       for (let i = 0; i < 3; i++) expect(Math.abs(inp.S[i] - pt(s)[i]) * 100).toBeLessThan(0.05);
-    expect(Math.max(...inR.rest)).toBeCloseTo(fx.ca.restAllowMax, 1);
-    expect(Math.max(...inL.rest)).toBeCloseTo(fx.ca.restAllowMax, 1);
+    expect(Math.max(...inR.rest)).toBeCloseTo(REST_MAX, 1);
+    expect(Math.max(...inL.rest)).toBeCloseTo(REST_MAX, 1);
   });
 
   it("tách góc cổ tay đúng nghịch của wristTurn", () => {
@@ -102,14 +104,18 @@ describe("graspArm", () => {
     expect(x.body).toBe(0);
   });
 
-  it("ca c2 của bước 0: khung bàn tay ấy chỉ với tới bằng khuỷu gập ngược — khuỷu giữ dáng tự nhiên, cổ tay chạm giới hạn, `check` báo `wrist`", () => {
-    const { Wp, Rw } = handOf(fx.ca.c2, RIGHT);
+  it("cổ tay ca c2 của bước 0, khung bàn tay chỉ với tới bằng khuỷu gập ngược — khuỷu giữ dáng tự nhiên, cổ tay chạm giới hạn, `check` báo `wrist`", () => {
+    // khung bàn tay của cẳng tay ở khuỷu gập ngược `φ` −100, xoay sấp 60°
+    const INV = -100;
+    const { Wp, Rw: R0 } = handOf(fx.ca.c2, RIGHT);
+    const Rw = matMul(evalPhi(inR, Wp, R0, INV).fore, wristTurn(-60, 0, 0, RIGHT));
+    const inv = evalPhi(inR, Wp, Rw, INV);
+    expect(inv.inward).toBeGreaterThan(HELD_ELBOW / 2);
+    expect(inv.wrist.over).toEqual({ turn: 0, bend: 0, dev: 0 });
     const x = solvePhi(inR, Wp, Rw);
-    expect(x.inward).toBeLessThan(HELD_ELBOW);
+    expect(x.inward).toBeLessThan(0);
     expect(Math.abs(x.phi)).toBeLessThan(15);
     expect(x.wrist.over.turn + x.wrist.over.dev).toBeGreaterThan(30);
-    // khuỷu gập ngược mới với tới khung bàn tay ấy
-    expect(evalPhi(inR, Wp, Rw, fx.ca.c2.phi).inward).toBeGreaterThan(-0.1);
   });
 
   it("ngoài tầm với: khe dương, cánh tay duỗi theo soft IK về cổ tay", () => {
@@ -145,7 +151,7 @@ describe("graspArm", () => {
     const bare: ArmInput = { ...inR, rest: inR.rest.map(() => 0) };
     const b = evalPhi(bare, Wp, Rsh, x.phi).body;
     expect(b).toBeGreaterThan(1);
-    expect(b).toBeLessThanOrEqual(fx.ca.restAllowMax + 0.05);
+    expect(b).toBeLessThanOrEqual(REST_MAX + 0.05);
   });
 
   it("tay trượt (ca 5, tay trái): hai mẫu liền lệch ≤ 4°, đổi đều", () => {
@@ -164,7 +170,8 @@ describe("graspArm", () => {
       if (i > 1) expect(Math.abs(step(i) - step(i - 1))).toBeLessThanOrEqual(1.5);
       expect(chain[i].sol.terms.cont).toBeGreaterThanOrEqual(0);
     }
-    expect(chain[0].sol.terms.cont).toBe(0);
+    // mẫu đầu là chỗ chuỗi dừng (`solvePhiRest`): liền với chính nó
+    expect(chain[0].sol.terms.cont).toBeLessThan(1e-6);
     expect(phiChain(0, 0.6, at)).toEqual(chain);
     const mid = phiAt(chain, 1.5 * HOLD_SLEW_STEP);
     expect(mid).toBeCloseTo((chain[1].sol.phi + chain[2].sol.phi) / 2, 9);

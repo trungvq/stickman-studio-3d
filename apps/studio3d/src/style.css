@@ -1265,6 +1265,13 @@ button.key.diamond .keytip {
   color: var(--dim);
 }
 
+.grabhud .frames {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+  color: var(--dim);
+}
+
 .grabtag {
   position: absolute;
   z-index: 2;

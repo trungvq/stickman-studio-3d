@@ -50,12 +50,29 @@ export const IntentTargetSchema = z.union([
 ]);
 export type IntentTarget = z.infer<typeof IntentTargetSchema>;
 
-/** Trục của món (tên mốc thì là pháp tuyến của mốc, hay vectơ khung món) quay về đích, nghiêng khỏi đích `tilt` độ */
-export const AxisIntentSchema = z.strictObject({
-  axis: z.union([z.string().min(1), v3]),
-  toward: IntentTargetSchema,
-  tilt: z.number().min(-180).max(180).optional(),
-});
+/** Hệ của đích hướng (tên hướng, vectơ) của một trục ý định: `head` quay theo đầu người cầm; không khai là hệ thân */
+export const INTENT_FRAMES = ["head"] as const;
+export type IntentFrame = (typeof INTENT_FRAMES)[number];
+
+/** Đích là hướng (tên hướng hệ thân hay vectơ), thứ `frame` đổi hệ */
+export const isDirTarget = (t: IntentTarget): boolean =>
+  Array.isArray(t) || (typeof t === "string" && t !== "camera" && t !== "holderFace");
+
+/**
+ * Trục của món (tên mốc thì là pháp tuyến của mốc, hay vectơ khung món) quay về đích, nghiêng khỏi đích `tilt` độ; `frame`
+ * đặt hệ của đích hướng
+ */
+export const AxisIntentSchema = z
+  .strictObject({
+    axis: z.union([z.string().min(1), v3]),
+    toward: IntentTargetSchema,
+    tilt: z.number().min(-180).max(180).optional(),
+    frame: z.enum(INTENT_FRAMES).optional(),
+  })
+  .refine((a) => a.frame === undefined || isDirTarget(a.toward), {
+    error: "`frame` chỉ đi với `toward` là hướng (tên hướng hệ thân hay vectơ)",
+    path: ["frame"],
+  });
 export type AxisIntent = z.infer<typeof AxisIntentSchema>;
 
 const TouchSchema = z.union([z.string(), z.strictObject({ part: z.string(), max: z.number() })]);
@@ -406,10 +423,13 @@ export const gripPoint = (G: GripFrame, q: V3): V3 => add(matVec(G.R, mul(q, G.u
 /** Mốc thân của đích ý định `{ cast, mark }` hay `{ mark }`: mặc định là mặt (giữa hai mắt) */
 export const intentMark = (t: { mark?: BodyMark }): BodyMark => t.mark ?? "eye";
 
-/** Đích một trục ý định đã quy về dạng bộ giải đọc: tên, vectơ hệ thân, mốc thân của người cầm, hay điểm thế giới rig */
+/**
+ * Đích một trục ý định đã quy về dạng bộ giải đọc: tên, vectơ hệ thân (`head`: hệ đầu), mốc thân của người cầm, hay điểm
+ * thế giới rig
+ */
 export type HoldTarget =
   | { name: "camera" | "holderFace" }
-  | { v: V3 }
+  | { v: V3; head?: true }
   | { to: BodyMark; side?: "same" | "other"; offset?: V3 }
   | { at: V3 };
 

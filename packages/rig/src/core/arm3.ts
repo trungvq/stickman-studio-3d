@@ -273,7 +273,7 @@ export const SLEEVE_EASE = 1.1;
 export const sleeveGrow = (flare: number, f: number, len: readonly [number, number], s: number) =>
   (flare * Math.min(s, f * (len[0] + len[1]))) / Math.max(1e-6, f * (len[0] + len[1]));
 
-/** Góc choãi nhỏ nhất từ `SPLAY3` mà `fits` nhận, chia đôi tới `1.2` radian */
+/** Góc choãi nhỏ nhất từ `SPLAY3` mà `fits` nhận, chia đôi tới `1.2` radian: `fits` phải đơn điệu theo góc */
 function widen(fits: (splay: number) => boolean) {
   if (fits(SPLAY3)) return SPLAY3;
   let [lo, hi] = [SPLAY3, 1.2];
@@ -308,10 +308,14 @@ function clearsSkirt(
 /**
  * Gốc vai `[ngang, cao trên hông]`, nửa khoảng hai gốc chân của người 3D, đơn vị three, và góc tay choãi. Người mặc đồ
  * (`b.clad`): gốc vai ở `garmentSocket`, nắp ống tay `cladArm` ôm góc vai áo, `bicep` nở nó ra ngoài sườn áo; tay buông
- * choãi `SPLAY3` như người que, dưới nách sườn áo lùi tới cách mép trong khuỷu một `CLAD_GAP` (`room`). Ngang hông, mép
- * trong cẳng tay cách mép ngoài gốc đùi `cladThigh` ít nhất một `CLAD_GAP`: hông rộng hơn thì tay choãi thêm. Người que:
- * gốc vai trên viền thân ở độ cao `shoulderDrop`. Mặc váy dựng khối thì tay choãi thêm tới khi cẳng tay và bàn tay nằm
- * ngoài váy đứng thẳng (`skirtSide`)
+ * choãi `SPLAY3` như người que, dưới nách sườn áo lùi tới cách mép trong khuỷu một `CLAD_GAP` (`room`, cùng góc với tay
+ * nên không hở khe). Ngang hông, mép trong cẳng tay cách mép ngoài gốc đùi `cladThigh` ít nhất một `CLAD_GAP`: hông rộng
+ * hơn thì tay choãi thêm. Mặc váy dựng khối thì tay choãi thêm tới khi cẳng tay và bàn tay nằm ngoài váy đứng thẳng
+ * (`skirtSide`) dựng trên cạp đã lùi theo tay ở chính góc ấy; hình bao bắt đầu từ mép cạp, hay từ ngang khuỷu khi cạp cao
+ * hơn khuỷu, và không ra ngoài mép trong tay ở đó. Tay áo loe: mép trong tay là mép trong tay áo loe; mặc váy thì tay
+ * choãi thêm phần góc tay áo loe đòi ở ngang hông so với ống tay ôm — đếm phần loe lần thứ hai, giữ thân người mặc tay
+ * áo loe không hẹp đi vì sườn áo lùi theo tay áo loe. Mọi điều kiện đơn điệu theo góc nên góc liên tục theo số đo.
+ * Người que: gốc vai trên viền thân ở độ cao `shoulderDrop`, mặc váy thì tay choãi tới khi nét tay nằm ngoài váy
  */
 export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Build3) => {
   const hip = rig.hipHalf / 100;
@@ -373,12 +377,20 @@ export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Buil
     const room = roomAt(splay);
     if (armInner(room, 0) < hipEdge) return false;
     if (!skirt || !torso) return true;
-    // cạp liền mặt thân áo đã lùi theo tay; nửa px cạp 3D nhô ra nằm trong `CLAD_GAP`
+    // cạp liền mặt thân áo đã lùi theo tay nên không ra ngoài mép trong tay; trên khuỷu sườn áo phẳng nằm dưới bắp tay
+    // nên hình bao váy bắt đầu từ ngang khuỷu
     const { pts, depth } = cladProfile(torso, room);
     const [aW, dW] = profileAt(pts, depth, yW);
-    return clearsSkirt(room, hand, skirtSide(skirt, h, aW, dW, rig.hipHalf, thigh, knee, inset));
+    const top = Math.max(yW, at[1] + len[0] * Math.cos(splay));
+    const edge = Math.min(profileAt(pts, depth, top)[0], armInner(room, top));
+    const side = skirtSide(skirt, h, aW, dW, rig.hipHalf, thigh, knee, inset, [edge, top]);
+    return clearsSkirt(room, hand, side);
   };
-  let splay = widen(fits);
+  // thân áo lùi theo mép trong tay áo loe: mặc váy thì tay choãi thêm phần góc tay áo loe đòi ở ngang hông so với ống
+  // tay ôm — lần đếm thứ hai của phần loe, để thân người mặc tay áo loe không hẹp đi
+  const plain = [cap, k * CLAD_TAPER.arm[1], k * CLAD_TAPER.arm[2]] as const;
+  const hips = (r: ArmRoom["r"]) => (s: number) => armInner({ ...roomAt(s), r }, 0) >= hipEdge;
+  let splay = widen(fits) + (skirt && flare > 0 ? widen(hips(r)) - widen(hips(plain)) : 0);
   // bụng phệ không bị tay cắt: sườn áo không bụng đã lùi theo tay ở góc `splay`, tay choãi thêm tới khi mép trong
   // cách sườn ấy cộng phần bụng nở hai bên một `CLAD_GAP` — tay tránh phần bụng chứ không tránh cả thân áo chưa lùi
   const side = g.belly ? (g.bellySide ?? BELLY.side) * g.belly : 0;
@@ -387,7 +399,10 @@ export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Buil
     const belly = profile({ ...g, belly: 0 }, rig, inset)
       .pts.filter(([, y]) => y > at[1] + cap)
       .map(([a, y]): P2 => [Math.min(a, armSide(flat, y)) + side * bellyAt(y, h), y]);
-    splay = widen((s) => fits(s) && belly.every(([a, y]) => armSide(roomAt(s), y) >= a));
+    splay = Math.max(
+      splay,
+      widen((s) => fits(s) && belly.every(([a, y]) => armSide(roomAt(s), y) >= a)),
+    );
   }
   const room = roomAt(splay);
   return {
@@ -715,6 +730,8 @@ const shapes = new WeakMap<object, ReturnType<typeof markShape>>();
 
 /** Bán kính sọ mà `offset` của mốc trên đầu đo theo: offset nhân `Bones3.skull / (MARK_HEAD_R · SKULL3)` từng trục */
 export const MARK_HEAD_R = 0.64;
+/** Dải sát mặt của `offset` mốc trên đầu, đơn vị rig của sọ chuẩn: phần ra khỏi mặt sọ quá dải không co theo sọ */
+export const MARK_NEAR = 16;
 
 /**
  * Mốc `to` trên người thân `T` (three) cho tay bên `hand`, bên mốc `sel`; `offset` `[tiến, y, ra ngoài]` (rig, nhân
@@ -735,37 +752,39 @@ export function markAt(
   const px = (x: number, y: number, z: number): V3 => [x / 100, -y / 100, z / 100];
   let p: V3;
   let R: M3 = T.Rr;
+  // chỗ mốc trên đầu trong hệ đầu, chưa nhân `s`: pháp tuyến sọ ở mốc
+  let v: V3 = [0, 0, 0];
   switch (ref.to) {
     case "mouth":
-      p = at(H, T.Rn, S.onFace(0, S.face.offsetY + S.face.mouthGap));
+      p = at(H, T.Rn, (v = S.onFace(0, S.face.offsetY + S.face.mouthGap)));
       R = T.Rn;
       break;
     case "eye":
-      p = at(H, T.Rn, S.onFace((sd * S.face.eyeGap) / 2, S.face.offsetY));
+      p = at(H, T.Rn, (v = S.onFace((sd * S.face.eyeGap) / 2, S.face.offsetY)));
       R = T.Rn;
       break;
     case "cheek":
       p = at(
         H,
         T.Rn,
-        S.onFace(sd * (S.face.eyeGap / 2 + 6), S.face.offsetY + S.face.mouthGap * 0.55),
+        (v = S.onFace(sd * (S.face.eyeGap / 2 + 6), S.face.offsetY + S.face.mouthGap * 0.55)),
       );
       R = T.Rn;
       break;
     case "forehead":
-      p = at(H, T.Rn, S.onFace(0, S.face.offsetY - 32));
+      p = at(H, T.Rn, (v = S.onFace(0, S.face.offsetY - 32)));
       R = T.Rn;
       break;
     case "chin":
-      p = at(H, T.Rn, S.onSkull([0, -0.8, 0.6]));
+      p = at(H, T.Rn, (v = S.onSkull([0, -0.8, 0.6])));
       R = T.Rn;
       break;
     case "crown":
-      p = at(H, T.Rn, S.onSkull([0, 1, 0]));
+      p = at(H, T.Rn, (v = S.onSkull([0, 1, 0])));
       R = T.Rn;
       break;
     case "backHead":
-      p = at(H, T.Rn, S.onSkull([0, 0.1, -1]));
+      p = at(H, T.Rn, (v = S.onSkull([0, 0.1, -1])));
       R = T.Rn;
       break;
     case "head":
@@ -776,7 +795,7 @@ export function markAt(
       const E = HUMAN_HEAD.ear;
       const e = S.human ? S.ear(sd as -1 | 1) : unit([sd, E.y, E.z]);
       const out = S.human ? E.out * 1.35 : 0;
-      p = at(H, T.Rn, [(e[0] + sd * out) * S.r[0], e[1] * S.r[1], e[2] * S.r[2]]);
+      p = at(H, T.Rn, (v = [(e[0] + sd * out) * S.r[0], e[1] * S.r[1], e[2] * S.r[2]]));
       R = T.Rn;
       break;
     }
@@ -839,8 +858,19 @@ export function markAt(
   }
   const o = ref.offset;
   if (!o) return p;
-  const k = HEAD_BODY_MARKS.includes(ref.to)
-    ? B.skull.map((r, i) => r / (MARK_HEAD_R * SKULL3[i]))
-    : [1, 1, 1];
-  return add(p, mul(mv(R, [hand * o[2] * k[0], -o[1] * k[1], o[0] * k[2]]), 0.01 * s));
+  const d: V3 = [hand * o[2], -o[1], o[0]];
+  const q = HEAD_BODY_MARKS.includes(ref.to) ? headOffset(d, v, B.skull) : d;
+  return add(p, mul(mv(R, q), 0.01 * s));
+}
+
+/**
+ * `offset` `d` (hệ đầu, rig của sọ chuẩn) của mốc ở `v` trên sọ bán kính `r`: đoạn đầu của `d`, tới khi nó ra khỏi mặt sọ
+ * (theo pháp tuyến ở mốc) `MARK_NEAR`, co theo sọ từng trục; đoạn sau giữ đơn vị rig. Liền và đơn điệu theo `d`
+ */
+export function headOffset(d: V3, v: V3, r: readonly number[]): V3 {
+  const k = r.map((x, i) => x / (MARK_HEAD_R * SKULL3[i]));
+  const n = unit([v[0] / r[0] ** 2, v[1] / r[1] ** 2, v[2] / r[2] ** 2]);
+  const out = dot(d, n);
+  const near = out > MARK_NEAR ? MARK_NEAR / out : 1;
+  return [0, 1, 2].map((i) => d[i] * (near * k[i] + 1 - near)) as V3;
 }

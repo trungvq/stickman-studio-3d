@@ -11,7 +11,7 @@ import vali from "../../../../common/held/vali.json";
 import { HELD_VERSION, heldMinVersion, migrateHeldItem, parseHeldItem } from "./heldItem";
 import { heldRoles, LATHE_TOL, pourAxis, pourSpans } from "./heldRoles";
 import { place3, type M3, type V3 } from "./lens";
-import { chairRoles, deskRoles } from "./preview";
+import { CHAIR_BACK, CHAIR_BACKREST, chairRoles, deskRoles } from "./preview";
 import {
   composePlace,
   heldToItem,
@@ -574,8 +574,8 @@ describe("ghế, bàn xem thử khai vai trò", () => {
     expect(s).toMatchObject({ role: "seat", at: [3.5, 0, 0], size: [117, 96] });
     expect(b).toMatchObject({
       role: "backrest",
-      from: [-55, -24, 0],
-      to: [-55, -80, 0],
+      from: [-CHAIR_BACK, -CHAIR_BACKREST.from, 0],
+      to: [-CHAIR_BACK, -CHAIR_BACKREST.to, 0],
       width: 96,
     });
     expect(r).toMatchObject({

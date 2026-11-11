@@ -440,10 +440,15 @@ món tay đang chọn cầm (mọi lần cầm của tay ấy), rồi mỗi trac
     vectơ hệ thân, ngang ra ngoài phía tay ấy, như ＋) cho đồ theo tay, `palm` + `fingers` (vectơ hệ thân, bỏ `bend`) cho tay
     tự do. Tay theo đồ (theo mốc, hai tay) sửa mốc món `items[]` ở giây ấy: dời, xoay **món** quanh tâm nắm, hướng ghi `face`,
     `roll` trục khung món về vectơ hệ thân người cầm (ngang phải, bỏ `up`), chỗ ghi `at` hay `offset` bù tới khi tâm món ở
-    chỗ mới; bàn tay theo món. Tay phụ của `both` không có tay nắm: kéo ở tay dẫn. Tay đang hoà (`HOLD_BLEND`) mà đích ở
-    giây ấy chưa đổi được hình thì không sửa, thanh trạng thái báo. Bàn tay xoay chưa tới (khung bàn tay sau khi áp lệch
-    khung muốn quá 2° và quá một phần mười góc xoay — cổ tay chạm giới hạn, món xoay quá giới hạn) thì vẫn áp, thanh trạng thái báo "bàn
-    tay chỉ xoay được ~…° / …°" kèm khớp chạm giới hạn.
+    chỗ mới; bàn tay theo món. Lúc **Y** xoay món, HUD có **hệ hướng** `tự` · `đầu` · `thân`: hệ của vectơ `face`, `roll` ghi
+    ra. `đầu` ghi vectơ hệ đầu kèm `frame: "head"` — món quay, gật theo đầu, hợp với món áp tai, áp má; `thân` ghi hệ thân,
+    món giữ hướng khi đầu quay; `tự` (mặc định) là hệ đầu khi ý định đang sửa đã ở hệ đầu hay đích của nó là mốc trên đầu
+    (`ear`, `cheek`, `mouth`…), không thì hệ thân. ＋ ghi hướng theo cùng luật `tự`: mốc tay đồ theo tay xét `hold` đang
+    có và đích tay, mốc món xét mốc món có hiệu lực, mốc món trước và sau (đặt món ở mốc trên đầu thì hệ đầu) và đích tay.
+    Tay phụ của `both` không có tay nắm: kéo ở tay dẫn. Tay đang hoà (`HOLD_BLEND`) mà đích ở giây ấy chưa đổi được hình thì
+    không sửa, thanh trạng thái báo. Bàn tay xoay chưa tới (khung bàn tay sau khi áp lệch khung muốn quá 2° và quá một phần
+    mười góc xoay — cổ tay chạm giới hạn, món xoay quá giới hạn) thì vẫn áp, thanh trạng thái báo "bàn tay chỉ xoay được
+    ~…° / …°" kèm khớp chạm giới hạn.
   - **Vòng khuỷu**: đường tròn khuỷu quanh trục vai → cổ tay (đường xám) đi qua khuỷu đang vẽ (`handReport.ring`), tô theo
     `E(φ)` của `handReport.cost` (`evalPhi`): xanh ở chỗ rẻ nhất, đỏ từ rẻ nhất + 3 trở lên; tay tự do không có giá, vòng xám.
     Chấm trắng là khuỷu đang vẽ, tím khi khoá; nhãn cạnh khuỷu ghi `φ`, `E`. **Kéo** chấm hay bất kỳ chỗ nào trên vòng (bóng

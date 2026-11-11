@@ -38,14 +38,14 @@ const UP_ROLL = { axis: "top", toward: "up" } as const;
 const EYE = [0, -400, -900];
 const SHEET = { item: "bang-gia", group: "sheet", edge: "right", along: 0.33, thumb: "front" };
 
-function runtime(items: unknown[], hands?: unknown[]): SceneRuntime {
+function runtime(items: unknown[], hands?: unknown[], head = [0, 0, -6]): SceneRuntime {
   const r = parseScene({
     duration: 4,
     lens: { eye: EYE, yaw: 0, pitch: 0, f: 1000 },
     cast: [
       {
         id: "nguoi",
-        base: { torso: 9, head: [0, 0, -6] },
+        base: { torso: 9, head },
         world: { at: [250, 0, 506], yaw: 270, ...(hands && { hands }) },
       },
     ],
@@ -128,6 +128,40 @@ describe("mốc món: đặt, hướng, báo", () => {
     )!;
     const head = [T.out.head[0] * 100, -T.out.head[1] * 100, -T.out.head[2] * 100];
     expect(azimuths[0]).toBeCloseTo(Math.atan2(head[0] - 262, head[2] - 560), 9);
+  });
+
+  it('`frame: "head"`: vectơ `face`, `roll` đọc ở hệ đầu người cầm, món quay theo đầu; không khai là hệ thân', () => {
+    const rig = (v: readonly number[]) => [v[0], -v[1], -v[2]];
+    const head = mark({
+      face: { axis: "front", toward: [1, 0, 0], frame: "head" },
+      roll: { axis: "top", toward: "up", frame: "head" },
+    });
+    for (const pose of [
+      [0, 0, -6],
+      [0, 35, -6],
+      [0, -20, 15],
+      [10, 25, 0],
+    ]) {
+      const rt = runtime([head], undefined, pose);
+      const T = trunk3(NGUOI, sceneAt(rt, "nguoi", 0, NGUOI.rig.height, body3(NGUOI)))!;
+      const p = at(rt, 0);
+      near(axisOf(p, "front"), rig(matVec(T.Rn, [0, 0, 1])), 1e-9);
+      near(axisOf(p, "top"), rig(matVec(T.Rn, [0, 1, 0])), 1e-9);
+      const b = at(runtime([mark()], undefined, pose), 0);
+      near(axisOf(b, "front"), rig(matVec(T.Rr, [0, 0, 1])), 1e-9);
+    }
+  });
+
+  it("`frame` chỉ đi với `toward` là hướng: `holderFace`, `camera`, mốc là lỗi zod", () => {
+    for (const toward of ["holderFace", "camera", { mark: "head" }]) {
+      const r = parseScene({
+        duration: 1,
+        cast: [{ id: "nguoi", world: { at: [0, 0, 0] } }],
+        items: [mark({ face: { axis: "front", toward, frame: "head" } })],
+      });
+      expect(r.success).toBe(false);
+      expect(r.error!.message).toMatch(/`frame` chỉ đi với `toward` là hướng/);
+    }
   });
 
   it("đích trùng chỗ món là lỗi riêng, không thành suy biến 0°", () => {

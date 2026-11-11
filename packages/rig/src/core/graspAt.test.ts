@@ -94,16 +94,17 @@ type Choose = Record<
 // ca 2: prototype chọn `slant −30` với khuỷu gập ngược vào trong (φ −80, `inward` 0,52); `W_IN` đổi sang `slant 30`,
 // khuỷu ra ngoài (docs/11-nhom-cam.md § Khuỷu tự nhiên). Ca 4: prototype cầm cạnh dưới
 // ở `along` 0,75 (góc bên kia tay phải); giá góc cùng bên (`SIDE_W`) kéo về giữa cạnh. Ca 1, 3, tay trái ca 4: khuỷu theo
-// khuỷu ưu tiên (`elbowPref`) thay khuỷu dạng ra của prototype (φ 55–85); ca 3 vì thế cầm cao hơn trên cạnh, ngón nghiêng
+// khuỷu ưu tiên (`elbowPref`) thay khuỷu dạng ra của prototype (φ 55–85); ca 3 vì thế ngón nghiêng. Cổ tay đo trên rig với
+// tay 67/53 (prototype đo với tay 62/58)
 const choose = fx.ca.choose as unknown as Choose;
 const c3 = (h: Choose[string]["hands"][number]) => ({
   ...h,
-  rig: { ...h.rig, along: 0.75, slant: 30 },
-  wrist: [-53.5, 15, -5],
+  rig: { ...h.rig, slant: 30 },
+  wrist: [-47.4, 17.2, 0.1],
 });
 const CHOOSE: Choose = {
   ...choose,
-  c1: { ...choose.c1, hands: [{ ...choose.c1.hands[0], wrist: [-76.7, -10.5, -6.5] }] },
+  c1: { ...choose.c1, hands: [{ ...choose.c1.hands[0], wrist: [-76.8, -22.1, -7.6] }] },
   c3: { ...choose.c3, hands: choose.c3.hands.map(c3) },
   c2: {
     item: "c2",
@@ -112,7 +113,7 @@ const CHOOSE: Choose = {
         hand: "right",
         given: { edge: "bottom" },
         rig: { variant: "pinch", thumb: "front", along: 0.25, slant: 30 },
-        wrist: [-88.3, -17.9, -6.1],
+        wrist: [-86.8, -21.1, -7.3],
       },
     ],
   },
@@ -122,9 +123,9 @@ const CHOOSE: Choose = {
       {
         ...choose.c4.hands[0],
         rig: { ...choose.c4.hands[0].rig, along: 0.5 },
-        wrist: [-108.5, 14.1, -17.1],
+        wrist: [-106.3, 7.9, -17.8],
       },
-      { ...choose.c4.hands[1], wrist: [18.1, 27.2, -0.3] },
+      { ...choose.c4.hands[1], wrist: [14.1, 33.4, -11.7] },
     ],
   },
 };
@@ -332,7 +333,8 @@ describe("chooseMissing", () => {
   });
 
   it("mốc món sau cộng trọng số 0,5; mốc ngoài 1,5 s hay quá bốn mốc bị bỏ", () => {
-    const hold = { item: "bang-gia", group: "sheet", edge: "left" } as const;
+    // `along` khai: ở tư thế này `along` 0,5 và 0,75 gần hoà, trọng số mốc sau đổi được lựa chọn
+    const hold = { item: "bang-gia", group: "sheet", edge: "left", along: 0.5 } as const;
     const base = chooseMissing(ctx, hold, pose, RIGHT, { t0: 1 });
     const one = chooseMissing(ctx, hold, pose, RIGHT, { t0: 1, later: [{ t: 2, pose }] });
     expect(one.cost).toBeCloseTo(base.cost * 1.5 - 0.5 * devOf(base), 9);
@@ -852,9 +854,10 @@ describe("chooseMissing: vành đĩa", () => {
         .thumb;
     expect(rim(dish())).toBe("top");
     expect(rim(dish(false))).toBe("bottom");
-    // tấm 4 cạnh + đĩa 12 góc, một mặt; rồi `along` 3 × `slant` 3 quanh ứng viên tốt nhất và hai ứng viên sát (`ROOT_NEAR`)
+    // tấm 4 cạnh + đĩa 12 góc, một mặt; rồi `along` 3 × `slant` 3 quanh ứng viên tốt nhất và hai ứng viên sát (`ROOT_NEAR`);
+    // `pinch` hai mặt, không ứng viên nào sát ứng viên tốt nhất
     expect(up.candidates).toBe(16 + 9 * 3);
-    expect(at(dish(), RIGHT, { variant: "pinch" }).candidates).toBe(16 * 2 + 9 * 2);
+    expect(at(dish(), RIGHT, { variant: "pinch" }).candidates).toBe(16 * 2 + 9);
     expect(at(dish(), RIGHT, { variant: "rim", thumb: "bottom" }).choice.thumb).toBe("bottom");
     expect(at(dish(), RIGHT).choice.thumb).toBe("top");
   });

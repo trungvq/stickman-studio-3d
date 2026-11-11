@@ -465,7 +465,7 @@ function lidCut(x: number, cy: number, rx: number, ry: number, f: number): strin
 }
 
 /** Con ngươi bầu dục; `lid` khác `0` thì mi trên cắt đi phần ấy của chiều cao */
-export const chibiPupil = (x: number, cy: number, rx: number, ry: number, lid: number): FaceMark =>
+const pupil = (x: number, cy: number, rx: number, ry: number, lid: number): FaceMark =>
   lid > 0
     ? { path: lidCut(x, cy, rx, ry, lid), fill: EYE_INK }
     : { ellipse: [x, cy, rx, ry], fill: EYE_INK };
@@ -523,7 +523,7 @@ function adultEye(x: number, cy: number, s: 1 | -1, k: number, lid: number): Fac
 
 /** Kiểu mắt: thứ tự khoá là thứ tự của `EYE_KINDS`; `wide` và `bulge` có lòng trắng */
 export const EYES = {
-  open: (x, cy, s, k, _p, lid) => adultEye(x, cy, s, k, lid),
+  open: (x, cy, _s, k, _p, lid) => pupil(x, cy, R * k, R, lid),
   shut: (x, cy) => ({ line: [x - 7, cy, x + 7, cy], ...EYE_LINE }),
   // Mắt mở to hơn, lòng trắng giữa vành đen, con ngươi co còn chấm
   wide: (x, cy, _s, k, p, lid) => {
@@ -565,7 +565,10 @@ export const EYES = {
     };
   },
   // Mi trên sụp xuống: chỉ còn nửa dưới con ngươi, `lid` nghỉ sâu hơn thì theo nó
-  squint: (x, cy, s, k, _p, lid) => adultEye(x, cy, s, k, Math.max(0.5, lid)),
+  squint: (x, cy, _s, k, _p, lid) => ({
+    path: lidCut(x, cy, R * k, R, Math.max(0.5, lid)),
+    fill: EYE_INK,
+  }),
   happy: (x, cy) => ({
     path: `M ${x - 8} ${cy + 4} Q ${x} ${cy - 7} ${x + 8} ${cy + 4}`,
     ...EYE_LINE,
@@ -582,7 +585,7 @@ export const EYES = {
   wink: (x, cy, s, k, _p, lid) =>
     s === -1
       ? { path: `M ${x - 7} ${cy + 2} Q ${x} ${cy - 3} ${x + 7} ${cy + 2}`, ...EYE_LINE }
-      : adultEye(x, cy, s, k, lid),
+      : pupil(x, cy, R * k, R, lid),
   // Cười nham hiểm (ニタァ): trăng lưỡi liềm, mi dưới cong lên khoét lõm vào bầu dục, không đốm sáng
   sly: (x, cy, _s, k) => {
     const [rx, ry, y] = [R * k * 1.15, R * 1.05, cy + 0.55 * R];
@@ -594,6 +597,14 @@ export const EYES = {
   },
 } satisfies Record<string, EyeDef>;
 
+/** Mắt của đầu `human` (`EyeSides.adult`) thay cho kiểu cùng tên của `EYES`; kiểu khác dùng chung */
+const ADULT_EYES: Partial<Record<keyof typeof EYES, EyeDef>> = {
+  open: (x, cy, s, k, _p, lid) => adultEye(x, cy, s, k, lid),
+  squint: (x, cy, s, k, _p, lid) => adultEye(x, cy, s, k, Math.max(0.5, lid)),
+  wink: (x, cy, s, k, p, lid) =>
+    s === -1 ? EYES.wink(x, cy, s, k, p, lid) : adultEye(x, cy, s, k, lid),
+};
+
 /** Đầu `side` chỉ vẽ nét bên `only`; `squash` bóp ngang hình nét khi đầu quay */
 export interface FaceSides {
   only?: 1 | -1;
@@ -603,12 +614,13 @@ export interface FaceSides {
 /**
  * `pupil` bán kính con ngươi `bulge` theo `EYE_R`, chấm con ngươi `wide` theo nó; `lid` mi trên nghỉ sụp phần chiều cao
  * con ngươi (`open`, mắt mở của `wink`, `wide` và `bulge` nửa số; `squint` lấy số lớn hơn); `shine` nhân đốm sáng của
- * `eyeShine`, `0` là không có
+ * `eyeShine`, `0` là không có; `adult` vẽ mắt người lớn (`ADULT_EYES`) cho đầu `human`
  */
 export interface EyeSides extends FaceSides {
   pupil?: number;
   lid?: number;
   shine?: number;
+  adult?: boolean;
 }
 
 /** `width` nhân bề dày nét mày, `tilt` cộng vào độ nghiêng của mọi kiểu mày — dương nhấc đầu trong */
@@ -629,7 +641,7 @@ export function eyeMarks(
 ): FaceMark {
   const k = o.squash ?? (o.only ? SIDE_EYE_OVAL : 1);
   const p = o.pupil ?? WIDE_PUPIL;
-  const eye: EyeDef = EYES[kind];
+  const eye: EyeDef = (o.adult && ADULT_EYES[kind]) || EYES[kind];
   return {
     group: sidesOf(o.only).map((s) => eye(cx + (s * gap) / 2, cy, s, k, p, o.lid ?? 0)),
   };

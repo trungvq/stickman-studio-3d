@@ -165,13 +165,14 @@ describe("vạt treo hông", () => {
     expect(k[3]).toBe(0);
   });
 
-  it("tạp dề không làm tay choãi, vạt dài thì có", () => {
+  it("tạp dề không làm tay choãi, váy xoè thì có", () => {
     const rig = { stroke: 12, height: 1, shoulderHalf: 40, shoulderDrop: 0, hipHalf: 22 };
     const b = { clad: true, sleeve: 15, trouser: 17 };
     const bare = roots3({ style: "shirt" }, rig, b).splay;
     const apron = SkirtSchema.parse({ style: "apron", length: 100 });
     expect(roots3({ style: "shirt" }, rig, { ...b, skirt: apron }).splay).toBe(bare);
-    expect(roots3({ style: "shirt" }, rig, { ...b, skirt: LONG }).splay).toBeGreaterThan(bare);
+    const flared = SkirtSchema.parse({ flare: 30 });
+    expect(roots3({ style: "shirt" }, rig, { ...b, skirt: flared }).splay).toBeGreaterThan(bare);
   });
 });
 

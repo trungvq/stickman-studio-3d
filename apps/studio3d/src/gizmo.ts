@@ -9,7 +9,7 @@ import { dragHand, dragItem, lockElbow, unlockElbow, type DragResult } from "./d
 import { ElbowRing } from "./elbowRing";
 import { rigRotation, wrapDeg } from "./grab";
 import { gripWorld, type HandRow } from "./hands";
-import type { Json, KeyRef, V3 } from "./keys";
+import type { FramePick, Json, KeyRef, V3 } from "./keys";
 import type { PlusOptions } from "./plus";
 import { ReachShell } from "./reachShell";
 import { WristCone } from "./wristCone";
@@ -54,6 +54,8 @@ export class HandGrab {
   private row: HandRow | null = null;
   private rep: HandReport | null = null;
   private mode: "translate" | "rotate" = "translate";
+  /** Hệ của vectơ ý định khi xoay món: tự (`intentFrameOf`), đầu, thân */
+  private framePick: FramePick = "auto";
   private start: { p: THREE.Vector3; q: THREE.Quaternion; orbit: boolean } | null = null;
   private ringPhi: number | null = null;
   /** Chỗ bấm xuống vòng khuỷu; thả mà chưa dời quá 3 px là nhấp (nhấp đúp bỏ khoá), không khoá */
@@ -76,8 +78,12 @@ export class HandGrab {
     this.hud.hidden = this.tagCone.hidden = this.tagRing.hidden = this.tagReach.hidden = true;
     frame.append(this.hud, this.tagCone, this.tagRing, this.tagReach);
     this.hud.onclick = (e) => {
-      const m = (e.target as HTMLElement).dataset.m;
+      const { m, f } = (e.target as HTMLElement).dataset;
       if (m === "translate" || m === "rotate") this.setMode(m);
+      if (f === "auto" || f === "head" || f === "body") {
+        this.framePick = f;
+        this.hudText();
+      }
     };
     frame.addEventListener("pointerdown", this.onDown, true);
     frame.addEventListener("pointermove", this.onMove, true);
@@ -243,7 +249,14 @@ export class HandGrab {
           : "bàn tay (lòng tay) → mốc tay";
     const b = (m: "translate" | "rotate", label: string) =>
       `<button data-m="${m}" class="${this.mode === m ? "on" : ""}">${label}</button>`;
-    this.hud.innerHTML = `${b("translate", "T dời")}${b("rotate", "Y xoay")}<span>${what}</span><span class="dim">kéo vòng khuỷu: khoá · nhấp đúp vòng: bỏ khoá</span>`;
+    const f = (v: FramePick, label: string, title: string) =>
+      `<button data-f="${v}" class="${this.framePick === v ? "on" : ""}" title="${title}">${label}</button>`;
+    // xoay món ghi vectơ hướng: chọn hệ của vectơ
+    const frame =
+      this.mode === "rotate" && !this.support() && (this.itemLed() || this.rep?.mode === "hand")
+        ? `<span class="frames" title="Hệ của vectơ hướng món ghi khi xoay">hệ hướng ${f("auto", "tự", "Hệ đầu khi ý định đang ở hệ đầu hay tay tới mốc trên đầu (ear, cheek, mouth…), không thì hệ thân")}${f("head", "đầu", "frame: head — món quay, gật theo đầu")}${f("body", "thân", "Hệ thân — món giữ hướng khi đầu quay")}</span>`
+        : "";
+    this.hud.innerHTML = `${b("translate", "T dời")}${b("rotate", "Y xoay")}${frame}<span>${what}</span><span class="dim">kéo vòng khuỷu: khoá · nhấp đúp vòng: bỏ khoá</span>`;
   }
 
   setMode(m: "translate" | "rotate") {
@@ -308,6 +321,7 @@ export class HandGrab {
         c.t,
         { d, ...(R && { R }) },
         c.opts(row.id),
+        this.framePick,
       );
       return { raw: r.raw, key: r.key, say: this.said(r, c.t, `đã ${what}`) };
     });

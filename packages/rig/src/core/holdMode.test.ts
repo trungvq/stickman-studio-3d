@@ -29,7 +29,7 @@ import {
 import { parseCharacter } from "./schema";
 import fx from "./__fixtures__/nguoi-cam-bang.json";
 import bangGia from "./__fixtures__/held-v2/bang-gia.json";
-import dienThoai from "./__fixtures__/held-v2/dien-thoai.json";
+import dienThoai from "../../../../common/held/dien-thoai.json";
 import khay from "./__fixtures__/held-v2/khay.json";
 
 vi.setConfig({ testTimeout: 30_000 });
@@ -372,11 +372,10 @@ describe("đồ theo tay → tay theo đồ", () => {
 });
 
 /**
- * Cảnh: tay phải dẫn điện thoại áp tai như người thật — loa ở tai, máy dọc má về miệng, màn vào má; khuỷu khai ra trước, ra
- * ngoài, hơi xuống (người chibi tai cao hơn vai nên khuỷu chỉ xuống tới ngang vai); cổ tay trong giới hạn, tay không lấn thân.
- * Trục dài máy ngẩng dưới 30°: món đặt trước lấy đầu cao là đầu dưới (`edgeHigh`), tay dẫn lấy đầu `top`
+ * Cảnh: tay phải dẫn điện thoại áp tai như `phone-ear-3d` của bộ chung — loa ở tai, máy nằm phẳng trên má dọc đường tai –
+ * miệng, màn vào má; hướng món khai ở hệ đầu nên máy quay, gật theo đầu; khuỷu rig giải
  */
-const sceneEar = (offset = [4, 2, 2], elbow = [0.7, 0.15, 1], head = [0, 0, -6]): Raw => ({
+const sceneEar = (offset = [33, 19, 11], head = [0, 0, -6], elbow?: number[]): Raw => ({
   duration: 2,
   lens: { eye: [0, -400, -900], yaw: 0, pitch: 0, f: 1000 },
   cast: [
@@ -392,14 +391,15 @@ const sceneEar = (offset = [4, 2, 2], elbow = [0.7, 0.15, 1], head = [0, 0, -6])
             right: {
               to: "ear",
               offset,
-              point: "item:speaker",
-              elbow,
+              point: "grip",
+              ...(elbow && { elbow }),
               hold: {
                 item: "dien-thoai",
                 group: "palmBox",
-                along: 0.1,
-                tilt: 5,
-                face: { axis: "screen", toward: { mark: "head" } },
+                thumb: "right",
+                tilt: 2,
+                face: { axis: "screen", toward: [0, 0, -1], frame: "head" },
+                roll: { axis: "top", toward: [-0.9, -0.44, 0], frame: "head" },
                 touch: ["self.head"],
               },
             },
@@ -461,7 +461,8 @@ function rightArm(rt: SceneRuntime, t = 0) {
 const wrapDeg = (d: number) => ((((d + 180) % 360) + 360) % 360) - 180;
 
 describe("đồ theo tay → tay theo đồ: khoá khuỷu", () => {
-  const raw = sceneEar();
+  // `elbow` khai ra trước và xuống hơn khuỷu rig tự giải (~16° `φ`): món đặt trước dò khuỷu riêng nên phải khoá
+  const raw = sceneEar(undefined, undefined, [0.6, 0.6, 0.5]);
   const rt = build(raw);
   const r = holdToItemLed(rt, raw, { id: "nguoi", side: "right", at: 0, rebuild: build });
   const next = applyJsonPatch(raw, r.ops);
@@ -472,9 +473,7 @@ describe("đồ theo tay → tay theo đồ: khoá khuỷu", () => {
   it("mốc tay khoá khuỷu vào hướng đang vẽ; món ở mốc lệch dưới ngưỡng", () => {
     expect(r.scope.mode).toEqual({ before: "hand", after: "keyed" });
     expect(right).toMatchObject({ elbowLock: true, hold: { item: "dien-thoai" } });
-    expect(right.elbow).not.toEqual([0.7, 0.15, 1]);
-    // ý định một trục (`face`): bàn tay lăn quanh trục món cho cổ tay thoải mái trên cẳng tay của khuỷu khai, nên cổ tay
-    // trong giới hạn, không nhường
+    expect(right.elbow).not.toEqual([0.6, 0.6, 0.5]);
     expect(r.rows[0]).toMatchObject({
       elbowLock: true,
       clamped: { before: { right: [] } },
@@ -486,14 +485,22 @@ describe("đồ theo tay → tay theo đồ: khoá khuỷu", () => {
     expect(Math.abs(r.rows[0].item!.pos - Math.hypot(...sub3(a.P, b.P)))).toBeLessThan(1e-6);
   });
 
-  it("dáng áp tai tự nhiên: cổ tay trong giới hạn, tay không lấn thân, cả đồ theo tay, khoá và bỏ khoá", () => {
-    const free = structuredClone(next);
-    delete (keysOf(free)[0].right as Record<string, unknown>).elbowLock;
-    for (const x of [rt, build(next), build(free)]) {
+  it("dáng áp tai tự nhiên (không `elbow`): đổi không khoá; cổ tay xa giới hạn, tay không lấn thân ở cả hai chế độ", () => {
+    const bare = sceneEar();
+    const rb = holdToItemLed(build(bare), bare, {
+      id: "nguoi",
+      side: "right",
+      at: 0,
+      rebuild: build,
+    });
+    const keyed = applyJsonPatch(bare, rb.ops);
+    expect(rb.rows.some((x) => x.elbowLock)).toBe(false);
+    expect(rb.max.item.pos).toBeLessThan(HOLD_MODE_POS);
+    for (const x of [build(bare), build(keyed)]) {
       const arm = rightArm(x);
       expect(arm.clamped).toEqual([]);
       expect(arm.body).toBeLessThan(0.05);
-      // gập, lệch cổ tay xa giới hạn (`AIM_BEND` −60, `AIM_DEV` −30)
+      // đo được gập −38°, lệch −12°: còn ≥ 15° tới `AIM_BEND` −60 và `AIM_DEV` −30
       expect(arm.wrist[1]).toBeGreaterThan(-45);
       expect(Math.abs(arm.wrist[2])).toBeLessThan(15);
     }
@@ -518,56 +525,50 @@ describe("đồ theo tay → tay theo đồ: khoá khuỷu", () => {
     expect(back.max.item.pos).toBeLessThan(HOLD_MODE_POS);
     expect(back.max.item.angle).toBeLessThan(HOLD_MODE_ANGLE);
     const last = keysOf(applyJsonPatch(next, back.ops))[0].right as Record<string, unknown>;
-    expect(last).toMatchObject({ to: "ear", point: "item:speaker", elbowLock: true });
+    expect(last).toMatchObject({ to: "ear", point: "grip", elbowLock: true });
     expect(last.elbow).toEqual(right.elbow);
   });
 });
 
 // Trục dài máy quanh ngưỡng 30° của `edgeHigh`: dưới ngưỡng món đặt trước lấy đầu cao là đầu dưới, tay dẫn lấy đầu `top`;
-// phép đổi ghi `high` của chế độ đang vẽ vào chỗ cầm nên khung cầm trùng, món giữ chỗ cả hai chiều. Áp tai không `roll` giữ
-// trục `top` dọc đường tai – miệng, nên độ ngẩng theo đầu cúi: đầu gật −6 ngẩng 23–26°, gật 3 ngẩng 31–33°
+// phép đổi ghi `high` của chế độ đang vẽ vào chỗ cầm nên khung cầm trùng, món giữ chỗ cả hai chiều. `face`, `roll` khai hệ
+// đầu nên trục `top` ngẩng theo đầu gật, mọi `offset`: gật −20 ngẩng 15°, −6 ngẩng 29°, 0 ngẩng 35°, 14 ngẩng 49°
 describe("đồ theo tay ↔ tay theo đồ: áp tai, dải dáng tự nhiên quanh ngưỡng 30°", () => {
-  const runs = (
+  const runs = [-20, -6, 0, 14].flatMap((nod) =>
     [
-      [[0.5, 0, 0.8], -6],
-      [[0.7, 0.15, 1], -6],
-      [[0.6, 0.3, 0.8], 3],
-      [[0.9, 0.3, 1], 3],
-    ] as const
-  ).flatMap(([elbow, nod]) =>
-    [
-      [0, 2, 2],
-      [4, 2, 2],
-      [2, 0, 2],
-      [2, 2, 4],
+      [33, 19, 11],
+      [29, 19, 11],
+      [33, 19, 7],
+      [33, 23, 11],
     ].map((offset) => {
-      const raw = sceneEar(offset, [...elbow], [0, 0, nod]);
+      const raw = sceneEar(offset, [0, 0, nod]);
       const rt = build(raw);
       const r = holdToItemLed(rt, raw, { id: "nguoi", side: "right", at: 0, rebuild: build });
       const next = applyJsonPatch(raw, r.ops);
-      const mark = (next.items as { roll: { toward: number[] } }[])[0];
-      const rise = -mark.roll.toward[1] / Math.hypot(...mark.roll.toward);
+      const rise = -matVec(drawnBoard(rt, 0, false, "dien-thoai").R, [0, 1, 0])[1];
       const back = holdToHandLed(build(next), next, {
         id: "nguoi",
         side: "right",
         at: 0,
         rebuild: build,
       });
-      return { tag: `elbow ${elbow} offset ${offset} gật ${nod}`, rt, r, next, rise, back };
+      return { tag: `offset ${offset} gật ${nod}`, rt, r, next, rise, back };
     }),
   );
 
-  it("dải dáng vắt qua ngưỡng: trục `top` ngẩng 15–35°, có dáng dưới và trên 30°", () => {
+  it("dải dáng vắt qua ngưỡng: trục `top` ngẩng 14–50°, có dáng dưới và trên 30°", () => {
     for (const { rise } of runs) {
-      expect(rise).toBeGreaterThan(Math.sin(15 * (Math.PI / 180)));
-      expect(rise).toBeLessThan(Math.sin(35 * (Math.PI / 180)));
+      expect(rise).toBeGreaterThan(Math.sin(14 * (Math.PI / 180)));
+      expect(rise).toBeLessThan(Math.sin(50 * (Math.PI / 180)));
     }
     expect(runs.some((x) => x.rise < 0.5)).toBe(true);
     expect(runs.some((x) => x.rise > 0.5)).toBe(true);
   });
 
-  it("tay theo đồ: món ở mốc lệch dưới ngưỡng; cổ tay không chạm giới hạn trước và sau", () => {
+  it("tay theo đồ: mốc món giữ hệ đầu; món ở mốc lệch dưới ngưỡng; cổ tay không chạm giới hạn trước và sau", () => {
     for (const { tag, rt, r, next } of runs) {
+      const m = (next.items as { face: { frame?: string }; roll: { frame?: string } }[])[0];
+      expect([m.face.frame, m.roll.frame], tag).toEqual(["head", "head"]);
       expect(r.scope.mode, tag).toEqual({ before: "hand", after: "keyed" });
       expect(r.max.item.pos, tag).toBeLessThan(HOLD_MODE_POS);
       expect(r.max.item.angle, tag).toBeLessThan(HOLD_MODE_ANGLE);
@@ -592,8 +593,13 @@ describe("đồ theo tay ↔ tay theo đồ: áp tai, dải dáng tự nhiên qu
     }
   });
 
-  it("đồ theo tay lại: món về chỗ, cổ tay không chạm giới hạn", () => {
+  it("đồ theo tay lại: ý định giữ hệ đầu, món về chỗ, cổ tay không chạm giới hạn", () => {
     for (const { tag, next, back } of runs) {
+      type Ax = { frame?: string };
+      const h = (
+        keysOf(applyJsonPatch(next, back.ops))[0].right as { hold: { face: Ax; roll: Ax } }
+      ).hold;
+      expect([h.face.frame, h.roll.frame], tag).toEqual(["head", "head"]);
       expect(back.max.item.pos, tag).toBeLessThan(HOLD_MODE_POS);
       expect(back.max.item.angle, tag).toBeLessThan(HOLD_MODE_ANGLE);
       expect(rightArm(build(applyJsonPatch(next, back.ops))).clamped, tag).toEqual([]);
@@ -632,8 +638,8 @@ function withHigh(raw: unknown, high?: string): Raw {
 }
 
 describe("đầu cao cảnh khai (`hold.high`)", () => {
-  // trục `top` ngẩng ~24°: món đặt trước không khai lấy đầu dưới (`edgeHigh`), tay dẫn không khai lấy đầu `top`
-  const ear = sceneEar([2, 2, 2]);
+  // trục `top` ngẩng ~29°: món đặt trước không khai lấy đầu dưới (`edgeHigh`), tay dẫn không khai lấy đầu `top`
+  const ear = sceneEar();
   const r = holdToItemLed(build(ear), ear, { id: "nguoi", side: "right", at: 0, rebuild: build });
   const keyed = applyJsonPatch(ear, r.ops);
 

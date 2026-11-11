@@ -9,9 +9,12 @@ import {
   editKey,
   handShape,
   handValueAt,
+  headIntent,
   holdPickOf,
   insertHandKey,
   insertItemKey,
+  intentFrameOf,
+  intentHold,
   itemValueAt,
   keyTime,
   moveKey,
@@ -501,5 +504,36 @@ describe("mốc `at` lúc người dời (worldAtMoves)", () => {
     expect(worldAtMoves(raw(), ref("right", 1))).toBeUndefined();
     expect(worldAtMoves(raw(), ref("right", 2))).toBeUndefined();
     expect(worldAtMoves(raw(), ref("left", 3))).toBeUndefined();
+  });
+});
+
+describe("hệ của vectơ ý định khi ghi hướng món", () => {
+  const head = { item: "dien-thoai", face: { axis: [0, 0, 1], toward: [0, 0, -1], frame: "head" } };
+  const body = { item: "dien-thoai", face: { axis: [0, 0, 1], toward: [1, 0, 0] } };
+
+  it("`tự`: hệ đầu khi ý định đang ở hệ đầu hay đích tay ở mốc trên đầu; chọn tay thì theo chọn", () => {
+    expect(headIntent(head)).toBe(true);
+    expect(headIntent(body)).toBe(false);
+    expect(intentFrameOf("auto", head, false)).toBe("head");
+    expect(intentFrameOf("auto", body, true)).toBe("head");
+    expect(intentFrameOf("auto", body, false)).toBeUndefined();
+    expect(intentFrameOf("head", body, false)).toBe("head");
+    expect(intentFrameOf("body", head, true)).toBeUndefined();
+  });
+
+  it("`intentHold` ghi `frame` lên cả `face` và `roll`, hệ thân thì bỏ `frame`", () => {
+    const axes = { face: [0, 0, -1] as const, roll: [-0.9, -0.44, 0] as const };
+    const h = intentHold(head, { face: [...axes.face], roll: [...axes.roll] }, "head") as Record<
+      string,
+      Json
+    >;
+    expect(h.face).toEqual({ axis: [0, 0, 1], toward: [0, 0, -1], frame: "head" });
+    expect(h.roll).toEqual({ axis: [0, 1, 0], toward: [-0.9, -0.44, 0], frame: "head" });
+    const b = intentHold(head, { face: [...axes.face], roll: [...axes.roll] }) as Record<
+      string,
+      Record<string, Json>
+    >;
+    expect(b.face.frame).toBeUndefined();
+    expect(b.roll.frame).toBeUndefined();
   });
 });

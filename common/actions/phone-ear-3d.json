@@ -9,47 +9,101 @@
     {
       "t": 0,
       "pose": {},
-      "reach": { "armRight": { "at": [56, -100, 60], "point": "grip", "elbow": [-0.2, 1, 0.5] } },
+      "reach": {
+        "armRight": {
+          "at": [56, -100, 60],
+          "point": "grip",
+          "elbow": [-0.2, 1, 0.5]
+        }
+      },
       "ease": "smooth",
-      "hand": { "armRight": { "pose": "cup", "palm": "in", "fingers": [0.2, -1, 0] } }
+      "hand": {
+        "armRight": {
+          "pose": "cup",
+          "palm": "in",
+          "fingers": [0.2, -1, 0]
+        }
+      }
     },
     {
       "t": 0.3,
       "pose": {},
       "reach": {
-        "armRight": { "to": "ear", "offset": [16, 6, 16], "point": "grip", "elbow": [-0.2, 1, 0.5] }
+        "armRight": {
+          "to": "ear",
+          "offset": [37, 22, 25],
+          "point": "grip",
+          "elbow": [0.3, 0.8, 0.5]
+        }
       },
       "ease": "smooth",
-      "hand": { "armRight": { "pose": "cup", "palm": "in", "fingers": [-0.1, -1, 0] } }
+      "hand": {
+        "armRight": {
+          "pose": "cup",
+          "palm": [-0.4, 0.4, -0.9],
+          "fingers": [0.3, -0.9, -0.3]
+        }
+      }
     },
     {
       "t": 0.6,
       "pose": {},
       "reach": {
-        "armRight": { "to": "ear", "offset": [7, 3, 5], "point": "grip", "elbow": [-0.2, 1, 0.5] }
+        "armRight": {
+          "to": "ear",
+          "offset": [33, 19, 11],
+          "point": "grip"
+        }
       },
       "ease": "smooth",
-      "hand": { "armRight": { "pose": "cup", "palm": "in", "fingers": [-0.1, -1, 0] } }
+      "hand": {
+        "armRight": {
+          "pose": "cup",
+          "palm": [-0.4, 0.4, -0.9],
+          "fingers": [0.3, -0.9, -0.3]
+        }
+      }
     },
     {
       "t": 1,
       "pose": {},
       "reach": {
-        "armRight": { "to": "ear", "offset": [7, 3, 5], "point": "grip", "elbow": [-0.2, 1, 0.5] }
+        "armRight": {
+          "to": "ear",
+          "offset": [33, 19, 11],
+          "point": "grip"
+        }
       },
       "ease": "smooth",
-      "hand": { "armRight": { "pose": "cup", "palm": "in", "fingers": [-0.1, -1, 0] } }
+      "hand": {
+        "armRight": {
+          "pose": "cup",
+          "palm": [-0.4, 0.4, -0.9],
+          "fingers": [0.3, -0.9, -0.3]
+        }
+      }
     }
   ],
   "events": [],
-  "note": "Áp điện thoại vào tai: tay phải từ trước ngực (hệ thân [56, −100, 60]) lên cạnh tai, tâm nắm (`point: grip`) áp trước mặt ngoài tai (mốc `ear`, offset [7, 3, 5]) lúc 0,48 s, giữ; dáng `cup`, lòng tay vào đầu, ngón dựng lên. Chỉ ghi `armRight`, `hand`. Nền `stand-3d`, `sit-3d` hay đi bộ; món ở `world.hands[].hold` tay phải, như `dien-thoai@palmBox` với `face` màn về `{ mark: \"head\" }` và `touch: [\"self.head\"]`. Hạ máy bằng `phone-ear-out-3d` nối ngay sau.",
+  "note": "Áp điện thoại vào tai: tay phải từ trước ngực (hệ thân [56, −100, 60]) lên má, tâm nắm (`point: grip`) trước tai (mốc `ear`, offset [33, 19, 11]) lúc 0,48 s, giữ; khuỷu khai `elbow` ở mốc giữa đường (0,3 s) để quét liền từ sau ra trước, ở tai rig tự giải (ra trước, chếch ngoài, theo góc đầu); dáng `cup`, lòng tay vào má, ngón dựng lên. Chỉ ghi `armRight`, `hand`. Nền `stand-3d`, `sit-3d` hay đi bộ. Món ở `world.hands[].hold` tay phải: `dien-thoai@palmBox` với `thumb: \"right\"`, `tilt: 2`, `face` màn về `[0, 0, -1]` và `roll` đầu máy về `[-0.9, -0.44, 0]`, cả hai `frame: \"head\"` — máy áp phẳng lên má, loa ở tai, đáy dọc má về miệng, quay và gật theo đầu — cùng `touch: [\"self.head\"]`. Hạ máy bằng `phone-ear-out-3d` nối ngay sau.",
   "preview": {
     "stage": "stand",
     "hold": {
       "right": {
         "item": "dien-thoai",
         "group": "palmBox",
-        "face": { "axis": "screen", "toward": { "mark": "head" } },
+        "thumb": "right",
+        "tilt": 2,
+        "face": {
+          "axis": "screen",
+          "toward": [0, 0, -1],
+          "frame": "head"
+        },
+        "roll": {
+          "axis": "top",
+          "toward": [-0.9, -0.44, 0],
+          "frame": "head"
+        },
         "touch": ["self.head"]
       }
     }

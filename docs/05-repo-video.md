@@ -517,7 +517,7 @@ const gheBanh: Item = {
   parts: [/* mặt ngồi, lưng, tay vịn, chân */],
   roles: [
     { role: "seat", at: [3.5, 0, 0], size: [117, 96] },
-    { role: "backrest", from: [-55, -24, 0], to: [-60, -80, 0], width: 96 },
+    { role: "backrest", from: [-55, -24, 0], to: [-60, -110, 0], width: 96 },
     { role: "armrest", name: "phai", from: [-61, -62, -63], to: [62, -62, -63], width: 10 },
     { role: "armrest", name: "trai", from: [-61, -62, 63], to: [62, -62, 63], width: 10 },
   ],
@@ -605,7 +605,7 @@ pnpm exec stickman gen sit --scene t02-s04 --cast khach --hands fold --top left 
 | `--top right \| left` | `fold`: bàn tay phải hay trái của người nằm trên (mặc định `right`) |
 | `--table <vật \| vật#mục \| y \| y,mép gần \| none>` | Bàn (slot `table`, vai trò `tabletop`): tên vật, hay đồ ảo — `y` thế giới của mặt bàn kèm mép gần trước hông (mặc định `80`, bàn sâu `90`, rộng `220`, dày `6`, nhân `height`·`s`); `none` không kiểm bàn. Không cờ thì bàn trước mặt trong tầm (mép gần trước hông dưới `150`, mặt trên cao hơn mặt ngồi `20…90`, nhân `height`·`s`; hai bàn gần ngang nhau là lỗi): `--hands table` đặt tay lên nó, kiểu tay khác vẫn kiểm gối, đùi dưới mặt bàn |
 | `--armrest <vật \| x,y,z>` | Tay vịn (slot `armrest`, mỗi bên người đúng một mục; tay đặt lên nó khi `--hands armrest` hay `fold`, tay khác thì cờ vẫn được giải — tên vật, số sai là lỗi — và ghi vào kết quả): tên vật (không nhận `#mục`; thiếu một bên là lỗi "`ghe-don` chỉ có tay vịn bên phải"), hay đồ ảo — điểm thế giới giữa mặt trên đầu trước một tay vịn, tay kia đối xứng qua hông, dài `110`, rộng `12 · s`. Không cờ thì hai tay vịn của chính ghế |
-| `--backrest <vật \| vật#mục \| khoảng \| none>` | Lưng ghế (slot `backrest`): tên vật, hay đồ ảo — khoảng từ hông lùi tới mặt trước lưng ghế đứng (dải cao `24…80` trên mặt ngồi); `none` không tựa. Không cờ thì lưng ghế của chính ghế, sau hông |
+| `--backrest <vật \| vật#mục \| khoảng \| none>` | Lưng ghế (slot `backrest`): tên vật, hay đồ ảo — khoảng từ hông lùi tới mặt trước lưng ghế đứng (dải cao `24…110` trên mặt ngồi, `CHAIR_BACKREST`); `none` không tựa. Không cờ thì lưng ghế của chính ghế, sau hông |
 | `--footrest <vật \| vật#mục \| y \| none>` | Mặt đỡ bàn chân thay `world.floor` (slot `footrest`): tên vật, hay đồ ảo — bệ ở `y` thế giới dưới hông, `400 × 400`; `none` đặt bàn chân xuống sàn. Không cờ thì để chân của chính ghế (thấp hơn mặt ngồi). `sâu` dưới `40 · s` là thanh (ghế bar: bàn chân đặt sao cho thanh nằm dưới đế giày, giữa gót và mũi), rộng hơn là bệ |
 | `--name`, `--force`, `--dry-run` | Như `pour`; tên mặc định `sit-<cảnh>-<người>-3d` |
 
@@ -686,7 +686,7 @@ pnpm exec stickman gen sit --sheet --hands fold --arm-out 50 --angle front
 | `--legs`, `--back`, `--hands` | Danh sách `a,b` của kiểu (bỏ trống là mọi kiểu) |
 | `--depth <số,…>`, `--elbow <số,…>` | Danh sách chỗ ngồi (hông tới mép sau, mặc định của trang) và số dời khuỷu (mặc định `0`), rig ở `height` 1: mỗi số một hàng ô |
 | `--feet`, `--top`, `--arm-top`, `--arm-out`, `--arm-front` | Một giá trị cho mọi ô: bàn chân, bàn tay nằm trên của `fold`, số đo tay vịn của trang |
-| `--seat <độ cao,…>` | Mặt ngồi, rig ở `height` 1 (mặc định `87,5` — ghế của `sit-3d`); bàn cao hơn mặt ngồi `55`, mép gần trước hông `80` (`PREVIEW_DESK`), tay vịn `PREVIEW_ARMREST`, hông cách mép sau (mặt trước lưng ghế) `CHAIR_BACK` `55`, nhân `height` — mặc định trong `params` của trang |
+| `--seat <độ cao,…>` | Mặt ngồi, rig ở `height` 1 (mặc định `87,5` — ghế của `sit-3d`); bàn cao hơn mặt ngồi `55`, mép gần trước hông `80` (`PREVIEW_DESK`), tay vịn `PREVIEW_ARMREST`, hông cách mép sau (mặt trước lưng ghế) `CHAIR_BACK` `55`, lưng ghế cao hơn mặt ngồi `CHAIR_BACKREST` `24…110`, nhân `height` — mặc định trong `params` của trang |
 | `--character <tên>` | Nhân vật hai lớp (mặc định `sample-man`) |
 | `--angle front \| near \| far \| side \| back` | Góc máy quanh người (mặc định `near`, 3/4 phía tay phải) |
 | `--at <giây>` | Giây vẽ trong nhịp thở (mặc định `0`) |

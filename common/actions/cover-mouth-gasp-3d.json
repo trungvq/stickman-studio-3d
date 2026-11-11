@@ -25,12 +25,12 @@
       "pose": { "torso": -2, "head": [null, null, -3] },
       "reach": {
         "armLeft": { "at": [40, -90, 30], "elbow": [0, 1, 0.6] },
-        "armRight": { "to": "chin", "offset": [16, 10, 12], "elbow": [0, 1, 0.6] }
+        "armRight": { "to": "chin", "offset": [16, 10, 12], "elbow": [0.6, 1, 0.8] }
       },
       "ease": "smooth",
       "hand": {
         "armLeft": { "pose": "flat", "w": 0.6 },
-        "armRight": { "pose": "flat", "w": 0.7, "palm": [-1, 0.2, 0], "fingers": [0.1, -0.6, -1] }
+        "armRight": { "pose": "flat", "w": 0.7, "palm": [-1, 0.2, 0], "fingers": [-0.2, -0.25, -1] }
       }
     },
     {
@@ -39,16 +39,16 @@
       "reach": {
         "armLeft": {
           "to": "otherBack",
-          "offset": [1, 0, 0],
+          "offset": [1, 3, 0],
           "point": "palm",
-          "elbow": [0, 1, 0.6]
+          "elbow": [0.6, 1, 0.8]
         },
-        "armRight": { "to": "mouth", "offset": [9, 8, 0], "elbow": [0, 1, 0.6] }
+        "armRight": { "to": "mouth", "offset": [4, 14, 4], "elbow": [0.6, 1, 0.8] }
       },
       "ease": "smooth",
       "hand": {
-        "armLeft": { "pose": "flat", "w": 1, "palm": "back", "fingers": [0.1, -0.6, -1] },
-        "armRight": { "pose": "flat", "w": 1, "palm": [-1, 0.2, 0], "fingers": [0.1, -0.6, -1] }
+        "armLeft": { "pose": "flat", "w": 1, "palm": "back", "fingers": [-0.2, -0.25, -1] },
+        "armRight": { "pose": "flat", "w": 1, "palm": [-1, 0.2, 0], "fingers": [-0.2, -0.25, -1] }
       }
     },
     {
@@ -57,20 +57,20 @@
       "reach": {
         "armLeft": {
           "to": "otherBack",
-          "offset": [1, 0, 0],
+          "offset": [1, 3, 0],
           "point": "palm",
-          "elbow": [0, 1, 0.6]
+          "elbow": [0.6, 1, 0.8]
         },
-        "armRight": { "to": "mouth", "offset": [9, 8, 0], "elbow": [0, 1, 0.6] }
+        "armRight": { "to": "mouth", "offset": [4, 14, 4], "elbow": [0.6, 1, 0.8] }
       },
       "ease": "linear",
       "hand": {
-        "armLeft": { "pose": "flat", "w": 1, "palm": "back", "fingers": [0.1, -0.6, -1] },
-        "armRight": { "pose": "flat", "w": 1, "palm": [-1, 0.2, 0], "fingers": [0.1, -0.6, -1] }
+        "armLeft": { "pose": "flat", "w": 1, "palm": "back", "fingers": [-0.2, -0.25, -1] },
+        "armRight": { "pose": "flat", "w": 1, "palm": [-1, 0.2, 0], "fingers": [-0.2, -0.25, -1] }
       }
     }
   ],
   "events": [],
-  "note": "Che miệng hai tay vì ngạc nhiên: tay phải qua dưới cằm lên áp lòng tay lên mồm như `cover-mouth-3d` (mốc `mouth`, offset [9, 8, 0]), tay trái áp lòng lên mu tay phải (`otherBack`), lúc 0,5 s; thân ngả sau 4°, đầu ngửa 6°, rồi giữ thân 3°, đầu 4°. Ghi hai tay, `hand`, `torso` và gật của `head`. Nền `stand-3d`, ngồi thì `sit-3d`. Chồng nét mặt `face-surprised`, `face-shocked`; buông về nền blend ~0,4. Cùng họ: `cover-mouth-3d` một tay, `cover-mouth-whisper-3d` khum bên miệng nói khẽ.",
+  "note": "Che miệng hai tay vì ngạc nhiên: tay phải qua dưới cằm lên áp lòng tay lên mồm như `cover-mouth-3d` (mốc `mouth`, offset [4, 14, 4]), tay trái áp lòng lên mu tay phải (`otherBack`, thấp hơn tâm mu 3), lúc 0,5 s; hai bàn tay gần ngang, bắt chéo dưới mũi; thân ngả sau 4°, đầu ngửa 6°, rồi giữ thân 3°, đầu 4°. Ghi hai tay, `hand`, `torso` và gật của `head`. Nền `stand-3d`, ngồi thì `sit-3d`. Chồng nét mặt `face-surprised`, `face-shocked`; buông về nền blend ~0,4. Cùng họ: `cover-mouth-3d` một tay, `cover-mouth-whisper-3d` khum bên miệng nói khẽ.",
   "preview": { "stage": "stand" }
 }

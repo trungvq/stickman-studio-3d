@@ -780,8 +780,14 @@ nắp; dáng mới `claw`). Lựa chọn: hướng tiếp cận, biến thể. M
 - **Tay**: một; `both` được vì nhóm có `support: { group: "platform", place: "back" }`: tay phụ đặt lòng tay lên mặt sau (pháp tuyến
   `−front`) của máy, tay tới từ cạnh sau ngón (mục [5](#tay-phụ-both)). Hai tay ôm điện thoại trước ngực, màn về người cầm.
 - **Hướng mặc định**: `face: { axis: <front>, toward: "holderFace" }`, không có `roll`: xem màn hình trước mặt thì cảnh khai
-  `roll` và đặt máy ngang cằm ([mốc món](#mốc-món-items)). Áp tai: cùng nhóm, cùng chỗ bám, ý định màn vào má
-  (`toward: { mark: "head" }`), cảnh đặt tay cạnh tai.
+  `roll` và đặt máy ngang cằm ([mốc món](#mốc-món-items)). Áp tai: cùng nhóm, cùng chỗ bám, cảnh đặt tay cạnh tai. Dáng
+  của `phone-ear-3d` bộ chung: `thumb: "right"`, `tilt: 2` (`0` thì ngón cái mất lực đối, `3`–`4` da lún, từ `5` cổ tay chạm
+  giới hạn khi đầu quay về phía máy), màn vào má `face: { axis: "screen", toward: [0, 0, -1] }`, đầu loa ra sau và lên dọc
+  đường miệng → tai `roll: { axis: "top", toward: [-0.9, -0.44, 0] }`, cả hai `frame: "head"` ([01](01-rig.md#món-cầm-tay)),
+  tay `to: "ear"`, `offset [33, 19, 11]`, `point: "grip"`, khuỷu rig giải. Bốn nhân vật mẫu, đầu quay −30…40°, gật −20…14°:
+  màn lệch hướng vào đầu dưới 1°, trục máy lệch đường tai – miệng dưới 1°, loa cách tai dưới 2,5, cổ tay không chạm giới hạn
+  (cách từ 2,5° trở lên); quay −40° (về phía máy) thì người to chạm giới hạn lệch cổ tay, ý định nhường dưới 0,5°.
+  Hay ý định màn vào má `{ mark: "head" }` để rig giữ trục (gạch dưới).
 - **Áp tai không khai `roll`** (mọi nhóm, tay dẫn): mặt món quay vào đầu chính người cầm (`face` về `{ mark }` là `head`,
   `ear` hay `cheek`, không `side: "other"`), mốc tay đặt ở tai hay má (`to: "ear"` / `"cheek"`) và món khai `top` (đầu loa)
   thì rig giữ trục `top` dọc đường miệng → tai nhìn ngang đầu (chiếu lên mặt vuông góc trục hai tai): loa ở tai, mic về
@@ -792,8 +798,7 @@ nắp; dáng mới `claw`). Lựa chọn: hướng tiếp cận, biến thể. M
   `face` (`holdSolve`), và cộng vào `E(φ)` của từng `φ` thử trên bàn tay đã nhường ([Khuỷu tự nhiên](#khuỷu-tự-nhiên)): khuỷu
   chọn chỗ cổ tay với tới trục ấy trong giới hạn. Phần giá ấy (`earK`, tối đa `1`) còn làm `E(φ)` dốc thêm `1 + 9 · earK` lần
   khi dò khuỷu (`EAR_SETTLE_SHARP` `10`): trong khoảng hãm `HOLD_SWIVEL_SLEW` khuỷu tới đáy với tốc độ hãm rồi đứng, không
-  bò theo độ dốc thoải sau khi người đã đứng yên. Ống nghe máy bàn ở người mẫu, đầu quay −40…40°: trục lệch đường ấy ≤ 8°,
-  cổ tay trong giới hạn, mặt máy lệch hướng vào đầu ≤ 5°. Cảnh khai `roll` thì `roll` chốt độ lăn, không có giá này; cảnh
+  bò theo độ dốc thoải sau khi người đã đứng yên. Cảnh khai `roll` thì `roll` chốt độ lăn, không có giá này; cảnh
   cần ép trục máy thì khai `roll` với `toward: { mark: "mouth" }` trên trục ngược `top` (ống nghe máy bàn: `roll: { axis: [0,
   0, -1], toward: { mark: "mouth" } }`).
 
@@ -1149,7 +1154,7 @@ cap(x) = WRIST_CAP · tanh(x / WRIST_CAP)
   tay ra trước) chở theo cung ngắn nhất qua hướng tham chiếu trước-xuống `45°` — có nghĩa cả khi tay duỗi thẳng. Nâng là góc
   khỏi buông thõng, lùi là góc sau mặt phẳng trán, khép là góc qua mặt phẳng giữa.
 - **`w_body`** lấy mẫu dọc tay từ `1,5 · cap` của vai trở đi (`cap` là bán kính nắp vai, `ArmRoom.cap`). Lấn bắp tay trừ mức
-  nền của tay buông thõng ở cùng phần dọc bắp tay (đo một lần mỗi người, mỗi tư thế thân; áo có thể tới 4,4); lấn thân nhạt
+  nền của tay buông thõng ở cùng phần dọc bắp tay (đo một lần mỗi người, mỗi tư thế thân; áo có thể tới 4,8); lấn thân nhạt
   dần về `0` trong `8` px ở hai đầu dọc thân. Giá chỉ tính phần **vượt** chỗ chính cổ tay đã ở trong thân, đầu: cẳng tay được
   lấn tới mức ấy nhân phần dọc cẳng tay — khuỷu không chạy theo thứ nó không cứu được. Báo (`body`, `bodyRatio`, `bodyPart`) là
   lấn đủ.
@@ -1201,7 +1206,9 @@ cap(x) = WRIST_CAP · tanh(x / WRIST_CAP)
 - **Tất định**: lần cầm hai tay giải `φ` ở các mẫu cách `HOLD_SLEW_STEP` (`heldItem.ts`) tính từ đầu lần cầm, `φ_trước` là mẫu
   liền trước (lưới quanh nó: liền với khung trước); `φ(t)` hoà giữa hai mẫu kề. Lần cầm theo mốc giải `φ` ở từng mốc (mục
   [Lần cầm theo mốc](#lần-cầm-theo-mốc)). Mẫu đầu của một lần cầm lấy `φ_trước` là mẫu cuối của lần cầm liền trước trên cùng
-  tay (nếu có; lần cầm trước theo mốc thì `φ` của nó ở ranh giới); lần cầm đầu tiên thì bỏ số hạng. Nhớ theo runtime
+  tay (nếu có; lần cầm trước theo mốc thì `φ` của nó ở ranh giới); lần cầm đầu tiên thì mẫu đầu là chỗ chuỗi dừng khi món
+  đứng yên (`solvePhiRest`: `solvePhi` lặp, `φ_trước` là nghiệm vừa ra, tới khi lệch dưới `0,01°`, tối đa `8` lượt) — khuỷu
+  không trôi ở các mẫu đầu. Nhớ theo runtime
   (`graspRuns`, một `WeakMap<SceneRuntime, …>` trong `scene.ts`); Remotion vẽ khung nhảy cóc thì tính lại chuỗi từ đầu lần
   cầm, ra cùng số.
 - **Ngoài tầm với** (`|vai → cổ tay|` gần hay quá `l₁ + l₂`): soft IK ([01](01-rig.md#khuỷu-ưu-tiên)) — cánh tay gần thẳng về
@@ -1394,7 +1401,9 @@ Hai đường, theo lần cầm:
   mốc](#lần-cầm-theo-mốc)); nhả tay ra `hold: null` thì `sceneAt` mang một `ReachHold` chỉ có
   `was` và `released: true` (không vai trò, không món, không dáng ngón) cho tới hết quãng hoà. Từng thành phần hoà thẳng từ cũ
   sang mới (`solveActing` của `act3.ts`):
-  cổ tay `Wp` dời thẳng; bàn tay `Rw` đi đường ngắn nhất (`mixRotation`); khuỷu `φ` đi đường ngắn nhất trên vòng;
+  cổ tay `Wp` dời thẳng; bàn tay `Rw` đi đường ngắn nhất (`mixRotation`); khuỷu `φ` đi đường ngắn nhất trên vòng — `φ`
+  của tay vẽ đọc theo trục gập khuỷu của khung cẳng tay, không theo chỗ khuỷu: tay tự do buông thẳng có khuỷu nằm trên trục
+  vai → cổ tay;
   góc cổ tay (xoay, gập, lệch, sau giới hạn) và dáng ngón hoà tuyến tính. Lần cầm từ giây 0 không hoà.
 - **Tay dẫn.** Liên kết tay ↔ món hoà từ cũ sang mới (`ReachHold.from`, `mixGrip`: quay đường ngắn nhất, dời
   thẳng); ý định hoà theo. Lần cầm cũ theo món của cùng món thì bàn tay còn hoà từ nghiệm cũ (`was`), và liên kết cũ là khung
@@ -1483,7 +1492,8 @@ vá và độ lệch, không ghi gì.
   - `to` + `offset` khi mốc tay dùng `to` (mốc không có đích lấy mốc có đích gần nhất của lần cầm; mốc trên tay kia thì `at`),
     không thì `at`;
   - hướng là `face: { axis: [0, 0, 1], toward }` và `roll: { axis: [0, 1, 0], toward }`, `toward` vectơ hệ thân
-    `[tiến, y xuống, ngang phải]` — món giữ hướng dù người quay; `ease: "auto"`.
+    `[tiến, y xuống, ngang phải]` — món giữ hướng dù người quay; ý định của lần cầm ở giây ấy khai hệ đầu (`frame: "head"`)
+    thì vectơ hệ đầu kèm `frame: "head"`, món vẫn quay theo đầu; `ease: "auto"`.
 
   Mốc tay bỏ `at`, `to`, `side`, `offset`, `point`, `palm`, `fingers`, `bend` và ý định (`face`, `up`, `roll`, `keep`); giữ `elbow`
   (mốc bỏ `at` thì `elbow` quay từ thế giới về hệ thân bằng thân ở giây ấy, hướng không đổi), `ease` và mọi trường khác, cả
@@ -1492,7 +1502,8 @@ vá và độ lệch, không ghi gì.
 - **Tay theo đồ → đồ theo tay.** Mỗi mốc tay và mốc món của lần cầm thành một mốc tay có đích:
   - tâm nắm của bàn tay đang vẽ với `point: "grip"`; mốc món có `point` thì điểm ấy của món với `point: "item:<mốc>"`;
   - `to` + `offset` khi mốc món (ở giây ấy, hay gần nhất) dùng `to`, không thì `at`;
-  - `hold` nhận `face` + `roll` như trên, vectơ hệ thân với trục ngang ra ngoài phía tay ấy (như ý định tay dẫn);
+  - `hold` nhận `face` + `roll` như trên, vectơ hệ thân với trục ngang ra ngoài phía tay ấy (như ý định tay dẫn); mốc món
+    khai hướng hệ đầu thì vectơ hệ đầu kèm `frame: "head"`;
   - mốc chưa khai `elbow` nhận hướng khuỷu đang vẽ, theo hệ của đích mới (`at` thế giới, `to` hệ thân): cực khởi đầu của bộ
     giải ý định (mốc khoá khuỷu: bên dưới); `elbow` đã khai đổi hệ khi đích của mốc đổi `at` ↔ không `at`, hướng không đổi;
   - mốc tay mới có `ease: "auto"`, mốc có sẵn giữ `ease` của nó.

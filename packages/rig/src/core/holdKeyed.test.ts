@@ -318,11 +318,11 @@ describe("lần cầm một tay theo mốc", () => {
       },
       { t: 2.8, right: { hold: { ...PHONE, regrip: true, ...back } } },
     ];
-    // mốc 3,3 s gần mặt: giải lại từ đầu thì rig chọn ngón cái mặt khác (xoay món trong tay ~43°)
+    // mốc 3,3 s gần mặt: giải lại từ đầu thì rig chọn ngón cái mặt khác
     const items = [
       phone(0.5, "chest", [40, -6, 6]),
       phone(1.2, "chest", [34, 0, 10]),
-      phone(3.3, "eye", [30, 16, -12]),
+      phone(3.3, "eye", [30, 8, -6]),
     ];
     const rt = runtime(hands(), items);
     const lead = holdLinkFrame(inheritHold(rightHold(rt, 2.8 - 1e-4), NGUOI), -1).G.R;
@@ -332,6 +332,38 @@ describe("lần cầm một tay theo mốc", () => {
       expect(sol.choice.thumb).toBe(first.choice.thumb);
       expect(rotDeg(sol.frame.G.R, lead)).toBeLessThan(3);
     }
+    // mốc xa mặt hơn: lựa chọn cũ lệch cổ tay quá giới hạn ở mốc, rig giữ ngón cái mà trượt trường liên tục
+    // (`KEEP_SLIDE`); món xoay dần trong bàn tay vẽ suốt `HOLD_BLEND`, không giật ở ranh giới
+    const slideItems = [...items.slice(0, 2), phone(3.3, "eye", [30, 16, -12])];
+    const slide = runtime(hands(), slideItems);
+    const was = inheritHold(rightHold(slide, 2.8 - 1e-4), NGUOI).grasp!.choice;
+    const slid = graspAtTime(slide, "nguoi", "right", 3.3, { chars })!;
+    expect(slid.choice.thumb).toBe(first.choice.thumb);
+    expect([slid.choice.along, slid.choice.tilt]).not.toEqual([was.along, was.tilt]);
+    const kept = graspAtTime(
+      runtime(hands({ along: was.along, tilt: was.tilt }), slideItems),
+      "nguoi",
+      "right",
+      3.3,
+      { chars },
+    )!;
+    expect(kept.arm.wrist.over.dev).toBeGreaterThan(3);
+    expect(kept.cost).toBeGreaterThan(slid.cost);
+    const turn = rotDeg(slid.frame.G.R, lead);
+    expect(turn).toBeGreaterThan(5);
+    /** Món trong bàn tay vẽ ở `t` */
+    const inHand = (t: number) => {
+      const sp = poseAt(slide, t);
+      return matMul(tr(actArm(NGUOI, sp, -1)!.Rw), actHeld(NGUOI, sp).R!.R);
+    };
+    const base = inHand(2.8 - 1e-4);
+    let prev = base;
+    for (const t of times(2.8, 2.8 + HOLD_BLEND)) {
+      const cur = inHand(t);
+      expect(rotDeg(prev, cur)).toBeLessThan(0.25 * turn);
+      prev = cur;
+    }
+    expect(Math.abs(rotDeg(base, inHand(3.3)) - turn)).toBeLessThan(0.5);
     // trường cảnh khai vẫn thắng
     const other = first.choice.thumb === "left" ? "right" : "left";
     const said = runtime(hands({ thumb: other }), items);

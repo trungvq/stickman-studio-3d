@@ -167,7 +167,8 @@ describe('actJoints', () => {
     for (const [w, bicep, height, hipHalf] of [[11, 0, 1, 22], [19, 0.7, 1, 22], [19, 0, 0.65, 22], [15, 0, 1, 30]] as const) {
       const rig = { ...c.rig, height, hipHalf }, thigh = cladThigh(17, 6);
       const r = roots3(g, rig, { clad: true, sleeve: w, trouser: 17, bicep }), room = r.room!;
-      const elbow = room.at[0] + RIG.upperArm * height * Math.sin(r.splay) - room.r[1] / Math.cos(r.splay);
+      expect(room.len[0]).toBeCloseTo(RIG.upperArm * height, 9);
+      const elbow = room.at[0] + room.len[0] * Math.sin(r.splay) - room.r[1] / Math.cos(r.splay);
       expect(elbow - room.side, `${w} ${bicep} ${height}`).toBeCloseTo(CLAD_GAP, 6);
       expect(armInner(room, 0)).toBeGreaterThanOrEqual(hipHalf + thigh - 1e-6);
       if (armInner({ ...room, splay: SPLAY3 }, 0) >= hipHalf + thigh) expect(r.splay).toBe(SPLAY3);

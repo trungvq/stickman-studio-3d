@@ -237,6 +237,10 @@ export interface DrawnHand {
   mode: "free" | "hand" | "keyed" | "both";
   /** Đồ theo tay: hướng món đang vẽ, trục `+z`, `+y` của khung món ra vectơ hệ thân, ngang ra ngoài phía tay ấy */
   axes?: { face: V3; roll: V3 };
+  /** Như `axes`, vectơ hệ đầu người cầm (`frame: "head"`) */
+  headAxes?: { face: V3; roll: V3 };
+  /** Đích tay đang tới một mốc trên đầu (`ear`, `cheek`, `mouth`…) */
+  head?: boolean;
   /** Trong `HOLD_BLEND` của một ranh giới lần cầm (`holdBlending`) */
   blending: boolean;
   /** Tay phụ của `both` */
@@ -281,15 +285,38 @@ const unit = (v: readonly number[]): V3 => {
 export const holdAt = (raw: Json, id: string, side: HandSide, t: number): unknown =>
   around(raw, id, side, t).hold;
 
-/** `hold` của lần cầm đồ theo tay mang ý định là hướng món đang vẽ: chỗ cầm giữ nguyên (cùng lần cầm), ý định cũ bỏ */
-export function intentHold(hold: unknown, axes: { face: V3; roll: V3 }): Json {
+/**
+ * `hold` của lần cầm đồ theo tay mang ý định là hướng món đang vẽ: chỗ cầm giữ nguyên (cùng lần cầm), ý định cũ bỏ; `frame`
+ * `"head"` là vectơ hệ đầu
+ */
+export function intentHold(hold: unknown, axes: { face: V3; roll: V3 }, frame?: IntentFrame): Json {
   const pick = holdPickOf(hold);
   const h: Json = isObj(hold) ? structuredClone(hold) : { ...pick };
   for (const f of [...INTENT, "regrip"]) delete h[f];
-  h.face = { axis: [0, 0, 1], toward: axes.face.map(r4) };
-  h.roll = { axis: [0, 1, 0], toward: axes.roll.map(r4) };
+  const fr = frame && { frame };
+  h.face = { axis: [0, 0, 1], toward: axes.face.map(r4), ...fr };
+  h.roll = { axis: [0, 1, 0], toward: axes.roll.map(r4), ...fr };
   return h;
 }
+
+/** Hệ của vectơ ý định khi ghi hướng món đang vẽ: `auto` theo `intentFrameOf`, `body` là hệ thân */
+export type FramePick = "auto" | "head" | "body";
+export type IntentFrame = "head";
+
+/** `face` hay `roll` của `hold` / mốc món đang khai `frame: "head"` */
+export const headIntent = (m: unknown): boolean =>
+  isObj(m) && [m.face, m.roll].some((a) => isObj(a) && a.frame === "head");
+
+/**
+ * Hệ ghi vectơ ý định: `pick` khai thì theo đó; `auto` là hệ đầu khi ý định đang có (`hold`, mốc món) đã ở hệ đầu hay đích
+ * tay đang tới mốc trên đầu (`head`), không thì hệ thân
+ */
+export const intentFrameOf = (
+  pick: FramePick,
+  current: unknown,
+  head: boolean,
+): IntentFrame | undefined =>
+  pick === "head" || (pick === "auto" && (headIntent(current) || head)) ? "head" : undefined;
 
 /**
  * Giá trị mốc tay mới ở `t` như đang vẽ (nút ＋), `ease: "auto"`; `notes` nêu chỗ chỉ gần đúng; `alts` là giá trị thay thế
@@ -373,24 +400,31 @@ export function handValueAt(
   }
   // khuỷu đang vẽ làm cực khởi đầu của bộ giải ý định (mốc kề không khai `elbow`), như `holdToHandLed`
   const elbow = value.elbow ?? d.elbow?.map(r4);
-  const intent = { ...value, ...(elbow && { elbow }), hold: intentHold(hold, d.axes) };
+  const frame = intentFrameOf("auto", hold, !!d.head);
+  const axes = frame && d.headAxes ? d.headAxes : d.axes;
+  const intent = { ...value, ...(elbow && { elbow }), hold: intentHold(hold, axes, frame) };
   return { value: intent, notes, alts: [value] };
 }
 
-/** Mốc món mới (chưa có `t`): tâm hộp bao ở `at`, hướng bằng hai trục khung món về vectơ hệ thân, `ease: "auto"` */
+/**
+ * Mốc món mới (chưa có `t`): tâm hộp bao ở `at`, hướng bằng hai trục khung món về vectơ hệ thân (`frame: "head"`: hệ đầu
+ * người cầm), `ease: "auto"`
+ */
 export function itemValueAt(
   cast: string,
   item: string,
   at: readonly number[],
   face: readonly number[],
   roll: readonly number[],
+  frame?: IntentFrame,
 ): Json {
+  const fr = frame && { frame };
   return {
     cast,
     item,
     at: at.map(r2),
-    face: { axis: [0, 0, 1], toward: face.map(r4) },
-    roll: { axis: [0, 1, 0], toward: roll.map(r4) },
+    face: { axis: [0, 0, 1], toward: face.map(r4), ...fr },
+    roll: { axis: [0, 1, 0], toward: roll.map(r4), ...fr },
     ease: "auto",
   };
 }

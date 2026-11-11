@@ -37,7 +37,7 @@ import { parseScene, resolveScene, sceneAt } from "./scene";
 import { CharacterSchema, type CharacterData } from "./schema";
 import type { Pose } from "./types";
 
-/** Ba cỡ người: số đo mặc định, bụng phệ thấp vai rộng tay to, chibi đầu to */
+/** Ba cỡ người: số đo mặc định, bụng phệ thấp vai rộng tay to, người thấp tay ngắn */
 const PEOPLE: [string, CharacterData][] = [
   ["vừa", CharacterSchema.parse({ head: { form: "human" }, palette: { clad: true } })],
   [
@@ -50,7 +50,7 @@ const PEOPLE: [string, CharacterData][] = [
     }),
   ],
   [
-    "chibi",
+    "thấp",
     CharacterSchema.parse({
       rig: { height: 0.8, shoulderHalf: 34, hipHalf: 18 },
       head: { form: "human" },
@@ -153,12 +153,13 @@ describe("đích theo mốc thân", () => {
         expect(gap, `${to}/${side} ${name}`).toBeLessThan(0.5);
       }
     }
-    // chibi tay ngắn đầu to: má bên kia ngoài tầm, khe báo ra chứ không im lặng
+    // đứng thẳng, gối bên kia ngoài tầm cả ba người: khe báo ra chứ không im lặng
     const far = act({
       mask: ["armRight"],
-      keys: [{ t: 0, pose: {}, reach: { armRight: { to: "cheek", side: "other" } } }],
+      keys: [{ t: 0, pose: {}, reach: { armRight: { to: "knee", side: "other" } } }],
     });
-    expect(actAim(PEOPLE[2][1], frame(far, "đứng"))!.report.R.reach!.gap).toBeGreaterThan(2);
+    for (const [name, c] of PEOPLE)
+      expect(actAim(c, frame(far, "đứng"))!.report.R.reach!.gap, name).toBeGreaterThan(2);
   });
 
   it("đích toạ độ cũ không đổi gì: không có số hạng, `resolveActing` trả nguyên khung", () => {

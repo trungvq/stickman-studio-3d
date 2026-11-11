@@ -26,6 +26,7 @@ import {
 } from "./gen-pour.mjs";
 import { sitCellText, sitSheetCells } from "./gen-sheet.mjs";
 import {
+  ARMREST,
   LEG_STYLES,
   dangleLeg,
   shinClear,
@@ -329,7 +330,14 @@ describe("stickman gen sit", () => {
       ["sample-woman.json", `${-SEAT - 50},42`],
     ]) {
       const dir = sitSpace(sitScene(SEAT, {}, who));
-      const o = { dir, scene: "ngoi", cast: "a", back: "recline", backrest: "55", hands: "table" };
+      const o = {
+        dir,
+        scene: "ngoi",
+        cast: "a",
+        back: "recline",
+        backrest: String(rig.CHAIR_BACK),
+        hands: "table",
+      };
       const r = await genSit({ ...o, table, dryRun: true });
       planted(r);
       assert.ok(r.torso < -4, String(r.torso));
@@ -356,11 +364,18 @@ describe("stickman gen sit", () => {
   });
   it("tay trên bàn: khuỷu gập dưới ngưỡng là lỗi kèm khoảng dời, hụt tầm nhỏ không là lỗi riêng; dời theo gợi ý thì đạt", async () => {
     for (const [who, seat, near] of [
-      ["sample-man.json", SEAT, 62],
+      ["sample-man.json", SEAT, 72],
       ["sample-heavy.json", (SEAT * 0.94) / 1.06, 80],
     ]) {
       const dir = sitSpace(sitScene(seat, {}, who));
-      const o = { dir, scene: "ngoi", cast: "a", back: "recline", backrest: "55", hands: "table" };
+      const o = {
+        dir,
+        scene: "ngoi",
+        cast: "a",
+        back: "recline",
+        backrest: String(rig.CHAIR_BACK),
+        hands: "table",
+      };
       const r = await genSit({ ...o, table: `${-seat - 60},${near}`, dryRun: true });
       assert.equal(r.ok, false, r.text);
       const [bend] = byRule(r, "bend");
@@ -775,7 +790,7 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
     assert.equal(edge.level, "ok", near.text);
     assert.ok(edge.worst <= THIGH_SINK, edge.msg);
     await assert.rejects(
-      run({ seat: 93, depth: 55 }, { feet: "floor" }),
+      run({ seat: 93, depth: rig.CHAIR_BACK }, { feet: "floor" }),
       (e) =>
         e instanceof GenError &&
         /đùi phải chúi [\d.]+° dưới phương ngang, mà mép trước `ghe-thu` cách khớp hông 65.7/.test(
@@ -784,7 +799,7 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
         /--feet free/.test(e.message) &&
         /gần mép trước hơn/.test(e.message),
     );
-    const deep = await run({ seat: 93, depth: 55 });
+    const deep = await run({ seat: 93, depth: rig.CHAIR_BACK });
     assert.equal(deep.ok, true, deep.text);
     const hang = byRule(deep, "dangle");
     assert.equal(hang.length, 2, deep.text);
@@ -929,15 +944,17 @@ describe("gen sit trên ghế thử: chân theo mép trước, lòng tay theo đ
     }
   });
   it("khuỷu thử mép trong khi nghiệm đường giữa cao quá vai", async () => {
+    // độ hạ của khuỷu dưới vai khi cánh tay trên dốc đúng `ARMREST.raise`; tay vịn đặt ngay trên ngưỡng ấy ở đường giữa
+    const raise = rig.RIG.upperArm * Math.cos((ARMREST.raise * Math.PI) / 180);
     const r = await run({
       hands: "armrest",
       back: "recline",
       armrest: true,
       armOut: 50,
-      armTop: 79.79726519325078,
+      armTop: 110.8 - raise,
     });
     assert.ok(r.action, r.text);
-    assert.ok(jointsAt(r).shoulderR[1] - jointsAt(r).elbowR[1] >= 32.8);
+    assert.ok(jointsAt(r).shoulderR[1] - jointsAt(r).elbowR[1] >= raise * 1.06 - 0.1);
   });
   it("lòng tay trên đùi theo mặt trên đùi dốc, từng bên", async () => {
     const r = await run({ seat: 80, depth: 90, legs: "staggered" });

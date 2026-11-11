@@ -6,6 +6,7 @@ import {
   BODY3,
   bodyMarkAt,
   equipCharacter,
+  HEAD_BODY_MARKS,
   handReport,
   heldBase,
   holderTrunk,
@@ -45,6 +46,19 @@ const poseOf = (rt: SceneRuntime, id: string, t: number) =>
     world?: { yaw: number; hands?: { right?: { w: number }; left?: { w: number } } };
   };
 
+/** Đích tay `side` (của `world.hands` hay của hành động) đang tới một mốc trên đầu (`HEAD_BODY_MARKS`) */
+function headReach(sp: ActInput, side: HandSide): boolean {
+  const s = sp as unknown as {
+    reach?: Partial<Record<"ar" | "al", { terms?: { to?: string; k: number }[] }>>;
+    world?: { hands?: Partial<Record<HandSide, { terms?: { to?: string; k: number }[] }>> };
+  };
+  const terms = [
+    ...(s.world?.hands?.[side]?.terms ?? []),
+    ...(s.reach?.[side === "right" ? "ar" : "al"]?.terms ?? []),
+  ];
+  return terms.some((x) => x.k > 0 && !!x.to && HEAD_BODY_MARKS.includes(x.to as BodyMark));
+}
+
 /**
  * Tay `side` của `id` ở `t` (`handReport`, phần đích của `sceneAt`); đồ theo tay thì kèm hướng món đang vẽ (`axes`)
  */
@@ -61,13 +75,22 @@ export function drawnHand(
   const reach = sp.world?.hands?.[side];
   const e = sub(r.joints.elbow, r.ring.center);
   const n = Math.hypot(...e);
-  const axes =
-    r.mode === "hand" && r.run
-      ? drawnItem(rt, id, side, r.run.item, t, { char: o.char, out: side === "right" ? -1 : 1 })
+  const lead = r.mode === "hand" && r.run;
+  const axesIn = (frame?: "head") =>
+    lead
+      ? drawnItem(rt, id, side, r.run!.item, t, {
+          char: o.char,
+          out: side === "right" ? -1 : 1,
+          frame,
+        })
       : undefined;
+  const axes = axesIn();
+  const head = axesIn("head");
   return {
     mode: r.mode,
     ...(axes && { axes: { face: axes.face, roll: axes.roll } }),
+    ...(head && { headAxes: { face: head.face, roll: head.roll } }),
+    head: headReach(sp, side),
     blending: r.blending,
     support: !!r.run?.lead,
     w: reach?.w ?? 0,
@@ -134,7 +157,7 @@ export function trunkAt(rt: SceneRuntime, id: string, t: number, char?: ActChara
   const c = charAt(rt, id, t, char);
   if (!c) return undefined;
   const T = holderTrunk(rt, id, t, { chars: { [id]: c as CharacterData } });
-  return { c, Rr: T.Rr as M3, s: T.s };
+  return { c, Rr: T.Rr as M3, Rn: T.Rn as M3, s: T.s };
 }
 
 /**
@@ -194,11 +217,12 @@ export function drawnItem(
   side: HandSide,
   item: string,
   t: number,
-  o: { char?: ActCharacter; out?: number } = {},
+  o: { char?: ActCharacter; out?: number; frame?: "head" } = {},
 ): { at: V3; face: V3; roll: V3 } | undefined {
   const f = itemFrame(rt, id, side, item, t, o.char);
   if (!f) return undefined;
-  const Rr = holderTrunk(rt, id, t, { chars: { [id]: f.c } }).Rr as M3;
+  const T = holderTrunk(rt, id, t, { chars: { [id]: f.c } });
+  const Rr = (o.frame === "head" ? T.Rn : T.Rr) as M3;
   const R3 = flipRows(f.R);
   const out = o.out ?? -1;
   const body = (v: V3): V3 => {

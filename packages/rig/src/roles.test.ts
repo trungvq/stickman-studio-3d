@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { colliders } from './collide';
 import { D, dirOf, type V3 } from './core';
-import { chairRoles, deskRoles, PREVIEW_LOUNGE, PREVIEW_SEAT } from './core/preview';
+import { CHAIR_BACK, CHAIR_BACKREST, chairRoles, deskRoles, PREVIEW_LOUNGE, PREVIEW_SEAT } from './core/preview';
 import { place3 } from './core/lens';
 import { addItem, Batch, box, lathePoints, type BatchSolid, type Item } from './khoi';
 import { previewProps, previewSet } from './preview';
@@ -131,11 +131,11 @@ describe('`propOf`', () => {
     const [seat, l0, l1, l2, l3, back, p0, p1, arm, armPost] = parts;
     expect(Math.min(...ys(seat))).toBeCloseTo(-87.5);
     expect(Math.max(...ys(seat))).toBeCloseTo(-81.5);
-    expect([Math.min(...xs(seat)), Math.max(...xs(seat))]).toEqual([expect.closeTo(-55), expect.closeTo(62)]);
+    expect([Math.min(...xs(seat)), Math.max(...xs(seat))]).toEqual([expect.closeTo(-CHAIR_BACK), expect.closeTo(62)]);
     for (const l of [l0, l1, l2, l3]) expect(Math.max(...ys(l))).toBeCloseTo(0);
-    expect(Math.max(...xs(back))).toBeCloseTo(-55);
-    expect(Math.min(...xs(back))).toBeCloseTo(-61);
-    expect(Math.min(...ys(back))).toBeCloseTo(-167.5);
+    expect(Math.max(...xs(back))).toBeCloseTo(-CHAIR_BACK);
+    expect(Math.min(...xs(back))).toBeCloseTo(-CHAIR_BACK - 6);
+    expect(Math.min(...ys(back))).toBeCloseTo(-(PREVIEW_SEAT.chair + CHAIR_BACKREST.to));
     for (const p of [p0, p1]) expect(Math.max(...ys(p))).toBeCloseTo(-81.5);
     expect(Math.min(...ys(arm))).toBeCloseTo(-149.5);
     expect(Math.max(...xs(arm))).toBeCloseTo(62);
@@ -202,9 +202,9 @@ describe('ghế, bàn của Thư viện là `propOf` của mục vai trò', () =
         close(seat.front, fwd);
         const lounge = rolesOf(previewSet('armchair', { yaw, height }).group)[0];
         expect(lounge.local.map((x) => x.role)).toEqual(['seat', 'backrest', 'armrest', 'armrest']);
-        // ghế bành lùi sau `PREVIEW_LOUNGE`: lưng ghế sau hông 55 + 34
+        // ghế bành lùi sau `PREVIEW_LOUNGE`: lưng ghế sau hông `CHAIR_BACK + PREVIEW_LOUNGE`
         const back = lounge.roles[1] as { from: V3 };
-        expect(back.from[0] * fwd[0] + back.from[2] * fwd[2]).toBeCloseTo(-(55 + PREVIEW_LOUNGE) * height, 6);
+        expect(back.from[0] * fwd[0] + back.from[2] * fwd[2]).toBeCloseTo(-(CHAIR_BACK + PREVIEW_LOUNGE) * height, 6);
       });
 
   it('`previewProps` mang `roles`; khối collide của ghế có chủ', () => {

@@ -288,7 +288,7 @@ describe("sceneMotion", () => {
 
   it("áp tai, `elbow` dọc trục vai → tai: `elbowAxis`; khuỷu xuống và ra trước thì không", () => {
     // hướng tai → vai của người mẫu ở dáng này, hệ thân `[tiến, xuống, ra ngoài]`
-    const along = ear([0.04, 0.98, -0.21]);
+    const along = ear([0.02, 1, 0.09]);
     expect(along.filter((e) => e.rule === "elbowAxis").map((e) => e.hand)).toEqual(["left"]);
     expect(along.find((e) => e.rule === "elbowAxis")!.detail![0]).toBeLessThan(1);
     expect(ear([0.56, 1, 0.05]).filter((e) => e.hand === "left")).toEqual([]);

@@ -21,6 +21,7 @@ import {
   unlockElbow,
 } from "./drag";
 import { drawnHand, drawnItem, palmAt, trunkAt } from "./drawn";
+import { plusItem, plusItemFrame, PLUS_TOL } from "./plus";
 import { c, HELD, runtime, scene } from "./fixture";
 import {
   angleFrame,
@@ -244,6 +245,29 @@ describe("kéo tay nắm, vòng khuỷu (drag.ts)", () => {
       close(matVec(p2.R, a), matVec(R, matVec(p0.R, a)), 2e-3);
     expect(dist(centre(p2), movePoint(centre(p0), grip, R, [0, -5, 0]))).toBeLessThan(0.5);
     expect(r2.gap).toBeLessThan(0.5);
+  });
+
+  it("＋ mốc món ghi hướng theo luật `tự` của hệ hướng", { timeout: 120_000 }, () => {
+    const added = (r: Json) => (r.items as Json[]).find((k) => k.t === 2.5)!;
+    const frameOf = (k: Json) => [k.face, k.roll].map((a) => (a as Json).frame);
+    const plus = (j: Json) => plusItem(j, runtime(j), "a", "right", "bang-gia", 2.5, O);
+    // hai mốc kề ở ngực, hệ thân: hệ thân
+    const j = scene();
+    expect(plusItemFrame(j, "bang-gia", 2.5, false)).toBeUndefined();
+    expect(frameOf(added(plus(j).raw))).toEqual([undefined, undefined]);
+    // tay tới mốc trên đầu: hệ đầu
+    expect(plusItemFrame(j, "bang-gia", 2.5, true)).toBe("head");
+    // mốc có hiệu lực khai hệ đầu: hệ đầu, mốc mới giữ đúng hình đang vẽ
+    const head = scene();
+    (head.items as Json[])[0].roll = { axis: "top", toward: "up", frame: "head" };
+    const rh = plus(head);
+    expect(frameOf(added(rh.raw))).toEqual(["head", "head"]);
+    expect(rh.gap.item).toBeLessThan(PLUS_TOL);
+    // mốc sau đặt món ở mốc trên đầu: hệ đầu
+    const mouth = scene();
+    Object.assign((mouth.items as Json[])[1], { to: "mouth", offset: [34, 6, 4] });
+    expect(plusItemFrame(mouth, "bang-gia", 2.5, false)).toBe("head");
+    expect(frameOf(added(plus(mouth).raw))).toEqual(["head", "head"]);
   });
 
   it(

@@ -376,6 +376,9 @@ const ang = (a: V3, b: V3) =>
 /** Hướng hệ thân `[tiến, y, ra ngoài]` của tay bên `hand` ra three */
 const bodyDir = (T: Trunk3, hand: number, [f, y, o]: readonly number[]): V3 =>
   unit(mv(T.Rr, [hand * o, -y, f]));
+/** Như `bodyDir` ở hệ đầu: quay, gật, nghiêng theo đầu */
+const headDir = (T: Trunk3, hand: number, [f, y, o]: readonly number[]): V3 =>
+  unit(mv(T.Rn, [hand * o, -y, f]));
 
 /** Số bước Newton tối đa của `aimWrist` khi tinh chỉnh trong hộp giới hạn */
 const AIM_REFINE = 24;
@@ -898,8 +901,17 @@ type Solved = {
 /** Bàn tay của lần cầm đang hoà ra (`ReachHold.was`) theo khung và nhân vật */
 const wasMemo = new WeakMap<object, Map<string, WasHand | undefined>>();
 
-/** Cánh tay vẽ ra để hoà: cổ tay, khung bàn tay, khuỷu (three) và ngón */
-type ArmState = { Wp: V3; Rw: M3; El: V3; fingers: readonly number[] };
+/** Cánh tay vẽ ra để hoà: cổ tay, khung bàn tay, khuỷu (three), ngón và khung cẳng tay `Re` khi tay do `arm3` vẽ */
+type ArmState = { Wp: V3; Rw: M3; El: V3; fingers: readonly number[]; Re?: M3 };
+
+/**
+ * `φ` của cánh tay vẽ: có `Re` thì hướng khuỷu đọc theo trục gập của khuỷu, không theo chỗ khuỷu — tay duỗi thẳng có khuỷu
+ * nằm trên trục vai → cổ tay
+ */
+const statePhi = (inp: ArmInput, a: ArmState) =>
+  a.Re
+    ? phiOf(inp, a.Wp, add(inp.S, cross(mv(a.Re, [1, 0, 0]), sub(a.Wp, inp.S))))
+    : phiOf(inp, a.Wp, a.El);
 
 /**
  * Tay cầm món đặt trước hoà vào và ra trong `HOLD_BLEND` (docs/11-nhom-cam.md § Đổi lần cầm): từ nghiệm cũ — lần cầm món
@@ -936,7 +948,7 @@ function solveActing(T: Trunk3, sp: ActInput): Solved {
   const H: ActHands = { ...out.input.world!.hands };
   const drawn = (x: ActInput, side: number): ArmState => {
     const A = arm3(T, x.pose, x.world?.hands, side);
-    return { Wp: A.wr, Rw: A.Rw, El: A.elbow, fingers: A.v.slice(2) };
+    return { Wp: A.wr, Rw: A.Rw, El: A.elbow, fingers: A.v.slice(2), Re: A.Re };
   };
   for (const p of plan) {
     const a: ArmState =
@@ -946,8 +958,8 @@ function solveActing(T: Trunk3, sp: ActInput): Solved {
     const b = drawn(out.input, p.side);
     const inp = armInput(T, p.side);
     const Wp = lerp3(a.Wp, b.Wp, p.f);
-    const fa = phiOf(inp, a.Wp, a.El);
-    const fb = phiOf(inp, b.Wp, b.El);
+    const fa = statePhi(inp, a);
+    const fb = statePhi(inp, b);
     const d = ((((fb - fa + 180) % 360) + 360) % 360) - 180;
     const arm = evalPhi(inp, Wp, mixRotation(a.Rw, b.Rw, p.f), fa + d * p.f);
     // góc cổ tay hoà giữa hai đầu sau giới hạn: góc tách từ khung bàn tay nhảy khi xoay vượt ±180
@@ -1412,6 +1424,8 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
       const main = ha.face ?? ha.roll;
       if (!G || !main || !leads(ha)) return undefined;
       const origin = add(h.at, mv(h.R, G.p));
+      // tâm sọ đo từ đích tay (chỗ món áp vào): món áp đầu nằm tiếp tuyến sọ ở đó, không xoay theo tâm món
+      const onHead = anchors.reduce((p, a) => add(p, mul(sub(a.at, origin), a.k * kAll)), origin);
       const dirTo = (t: HoldTarget): V3 | undefined => {
         if ("name" in t) {
           if (t.name === "camera") return eye && sub(fromRig(eye), origin);
@@ -1419,9 +1433,12 @@ function solveCore(T: Trunk3, sp: ActInput): Solved {
           const b = markAt(T, { to: "eye", side: "other" }, side, other);
           return sub(mul(add(a, b), 0.5), origin);
         }
-        if ("v" in t) return bodyDir(T, side, t.v);
+        if ("v" in t) return t.head ? headDir(T, side, t.v) : bodyDir(T, side, t.v);
         if ("to" in t)
-          return sub(markAt(T, { to: t.to, side: t.side, offset: t.offset }, side, other), origin);
+          return sub(
+            markAt(T, { to: t.to, side: t.side, offset: t.offset }, side, other),
+            t.to === "head" ? onHead : origin,
+          );
         return sub(fromRig(t.at), origin);
       };
       const want = (x: NonNullable<HoldAim["face"]>) => {

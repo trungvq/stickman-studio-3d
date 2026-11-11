@@ -1034,7 +1034,7 @@ const FOOT_BAR = 40;
 const VIRTUAL = {
   table: { near: 80, deep: 90, wide: 220, thick: 6 },
   armrest: { back: 110, width: 12 },
-  backrest: { from: 24, to: 80, width: 200 },
+  backrest: { ...rig.CHAIR_BACKREST, width: 200 },
   footrest: { size: 400 },
 };
 

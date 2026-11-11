@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chibiShape, CHIBI, eyeShine } from "./face";
+import { chibiShape, CHIBI, EYE_KINDS, eyeMarks, eyeShine } from "./face";
 import { FACES, HEAD_SHAPE_DEFAULT, headShape, humanEar, humanHair, humanSkull, setHeadShape, withHeadShape } from "./humanHead";
 import { parseCharacter } from "./schema";
 
@@ -115,6 +115,20 @@ describe("nét mặt chibi", () => {
     expect(n(eyeShine("happy", 0, 0, 40))).toBe(0);
     expect(n(eyeShine("bulge", 0, 0, 40))).toBe(2);
     expect(n(eyeShine("wide", 0, 0, 40))).toBe(0);
+  });
+
+  it("`adult` thay `open`, `squint`, mắt mở của `wink` bằng mắt người lớn; kiểu khác như mắt chấm", () => {
+    const eyes = (k: (typeof EYE_KINDS)[number], adult?: boolean) =>
+      (eyeMarks(k, 0, 0, 40, { adult }) as { group: unknown[] }).group;
+    const adultish = ["open", "squint", "wink"];
+    for (const k of EYE_KINDS) {
+      const [dot, adult] = [eyes(k), eyes(k, true)];
+      if (!adultish.includes(k)) expect(adult).toEqual(dot);
+      else expect(adult[1]).not.toEqual(dot[1]);
+    }
+    expect(eyes("open")[0]).toMatchObject({ ellipse: expect.any(Array) });
+    expect(eyes("open", true)[0]).toMatchObject({ group: expect.any(Array) });
+    expect(eyes("wink", true)[0]).toEqual(eyes("wink")[0]);
   });
 });
 

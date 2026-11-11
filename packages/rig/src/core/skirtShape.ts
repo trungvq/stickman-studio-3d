@@ -79,7 +79,8 @@ export function profileAt(
 /**
  * Nửa rộng hình bao của váy người 3D đứng thẳng, nhìn chính diện, ở độ cao `y` (px hệ thân, gốc ở hông, y xuống), như bao
  * lồi `sculptSkirt` dựng: cạp nửa rộng `aW`, nửa sâu `dW`; vành gấu theo `skirtSpread`; hai ống đùi ở `±hip`, đùi nửa rộng
- * `r0` ở hông, `r1` ở gối, lùi nửa nét `inset`. Ngoài váy là `-Infinity`; `ys` là các độ cao gãy khúc của hình bao
+ * `r0` ở hông, `r1` ở gối, lùi nửa nét `inset`; `top` thay mép cạp `[aW, cao cạp]` làm đỉnh trên của hình bao. Ngoài váy là
+ * `-Infinity`; `ys` là các độ cao gãy khúc của hình bao
  */
 export function skirtSide(
   g: Skirt,
@@ -90,6 +91,7 @@ export function skirtSide(
   r0: number,
   r1: number,
   inset: number,
+  top?: P2,
 ) {
   const lt = RIG.thigh * height;
   const cover = skirtCover(g, height, 0, lt);
@@ -97,7 +99,7 @@ export function skirtSide(
   const yW = -g.rise * height;
   const yH = yW + g.length * height;
   const pts: P2[] = [
-    [aW, yW],
+    top ?? [aW, yW],
     [aW + skirtSpread(g, 1, aW, dW, hip + rb, rb), yH],
     [hip + ra, 0],
     [hip + rb, cover],

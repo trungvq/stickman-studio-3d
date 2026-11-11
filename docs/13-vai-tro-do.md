@@ -312,7 +312,7 @@ const gheBanh: Item = {
   parts: [/* mặt ngồi, lưng, tay vịn, chân */],
   roles: [
     { role: "seat", at: [3.5, 0, 0], size: [117, 96] },
-    { role: "backrest", from: [-55, -24, 0], to: [-60, -80, 0], width: 96 },
+    { role: "backrest", from: [-55, -24, 0], to: [-60, -110, 0], width: 96 },
     { role: "armrest", name: "phai", from: [-61, -62, -63], to: [62, -62, -63], width: 10 },
     { role: "armrest", name: "trai", from: [-61, -62, 63], to: [62, -62, 63], width: 10 },
   ],
@@ -402,7 +402,7 @@ tính riêng cho số. Mọi số dưới đây ở hệ người ngồi, nhân 
 |---|---|
 | `--table <y \| y,mép gần>` | `tabletop` bốn đỉnh ở `y` thế giới: mép gần trước hông `near` (mặc định `80`), sâu `90`, rộng `220` đối xứng qua hông, `thick` `6` |
 | `--armrest <x,y,z>` | Hai `armrest` đối xứng qua mặt dọc qua hông: `to` ở điểm ấy (và điểm đối xứng), `from` lùi `110` theo hướng tiến, `width` `12 · s` |
-| `--backrest <khoảng>` | `backrest` đứng, mặt trước sau hông ngần ấy, `from` cao hơn mặt ngồi `24`, `to` cao `80`, `width` `200` (không giới hạn ngang trong tầm thân) |
+| `--backrest <khoảng>` | `backrest` đứng, mặt trước sau hông ngần ấy, `from` cao hơn mặt ngồi `24`, `to` cao `110` (`CHAIR_BACKREST`, như ghế xem thử), `width` `200` (không giới hạn ngang trong tầm thân) |
 | `--footrest <y>` | `footrest` bệ ở độ cao `y` thế giới, tâm dưới hông, `size` `[400, 400]` (phủ mọi chỗ bàn chân với tới: mặt đỡ không giới hạn như sàn) |
 
 `--cup x,y,z` của `gen pour` là **điểm đích**, không dựng đồ ảo (slot `point`, [6.4](#64-gen-pour)).

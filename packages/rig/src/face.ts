@@ -116,7 +116,7 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
     if (human) {
       // THỬ (feat/real-head-proto): mũi là khối riêng (`noseGeometry` của human.ts), không vẽ nét mũi
       for (const side of [-1, 1] as const) {
-        const o = { only: side, squash: CHIBI.squash * rest.eyeWidth, pupil: CHIBI.pupil, lid: rest.lid, shine: rest.shine };
+        const o = { only: side, squash: CHIBI.squash * rest.eyeWidth, pupil: CHIBI.pupil, lid: rest.lid, shine: rest.shine, adult: true };
         paintAt(g, [eyeMarks(s.eyes, 0, sh.offsetY, sh.eyeGap, o), eyeShine(s.eyes, 0, sh.offsetY, sh.eyeGap, o)], CHIBI.eye * rest.eyeScale, (side * sh.eyeGap) / 2, sh.offsetY);
       }
       paint(g, [browMarks(s.brow, 0, sh.offsetY - CHIBI.brow, sh.eyeGap, brow)]);

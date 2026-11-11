@@ -10,44 +10,100 @@
       "t": 0,
       "pose": {},
       "reach": {
-        "armRight": { "to": "ear", "offset": [7, 3, 5], "point": "grip", "elbow": [-0.2, 1, 0.5] }
+        "armRight": {
+          "to": "ear",
+          "offset": [33, 19, 11],
+          "point": "grip"
+        }
       },
       "ease": "smooth",
-      "hand": { "armRight": { "pose": "cup", "palm": "in", "fingers": [-0.1, -1, 0] } }
+      "hand": {
+        "armRight": {
+          "pose": "cup",
+          "palm": [-0.4, 0.4, -0.9],
+          "fingers": [0.3, -0.9, -0.3]
+        }
+      }
     },
     {
       "t": 0.3,
       "pose": {},
       "reach": {
-        "armRight": { "to": "ear", "offset": [18, 6, 18], "point": "grip", "elbow": [-0.2, 1, 0.5] }
+        "armRight": {
+          "to": "ear",
+          "offset": [37, 22, 25],
+          "point": "grip",
+          "elbow": [0.3, 0.8, 0.5]
+        }
       },
       "ease": "smooth",
-      "hand": { "armRight": { "pose": "cup", "palm": "in", "fingers": [-0.1, -1, 0] } }
+      "hand": {
+        "armRight": {
+          "pose": "cup",
+          "palm": [-0.4, 0.4, -0.9],
+          "fingers": [0.3, -0.9, -0.3]
+        }
+      }
     },
     {
       "t": 0.65,
       "pose": {},
-      "reach": { "armRight": { "at": [60, -100, 66], "point": "grip", "elbow": [-0.2, 1, 0.6] } },
+      "reach": {
+        "armRight": {
+          "at": [60, -100, 66],
+          "point": "grip",
+          "elbow": [-0.2, 1, 0.6]
+        }
+      },
       "ease": "smooth",
-      "hand": { "armRight": { "pose": "span", "w": 1, "palm": "in" } }
+      "hand": {
+        "armRight": {
+          "pose": "span",
+          "w": 1,
+          "palm": "in"
+        }
+      }
     },
     {
       "t": 1,
       "pose": {},
-      "reach": { "armRight": { "at": [74, -72, 64], "point": "grip", "elbow": [-0.3, 1, 0.6] } },
+      "reach": {
+        "armRight": {
+          "at": [74, -72, 64],
+          "point": "grip",
+          "elbow": [-0.3, 1, 0.6]
+        }
+      },
       "ease": "smooth",
-      "hand": { "armRight": { "pose": "span", "w": 1, "palm": "in" } }
+      "hand": {
+        "armRight": {
+          "pose": "span",
+          "w": 1,
+          "palm": "in"
+        }
+      }
     }
   ],
   "events": [],
-  "note": "Bỏ điện thoại khỏi tai: từ dáng cuối của `phone-ear-3d`, tay phải đưa ra ngoài (0,24 s) rồi hạ xuống cầm máy trước bụng (hệ thân [72, −72, 58]) lúc 0,8 s, giữ. Chỉ ghi `armRight`, `hand`. Nền `stand-3d`, `sit-3d`; món như `phone-ear-3d`. Nối sau `phone-ear-3d` (blend ~0,15); muốn xem máy tiếp thì chồng `phone-use-3d`.",
+  "note": "Bỏ điện thoại khỏi tai: từ dáng cuối của `phone-ear-3d`, tay phải rời má ra ngoài (0,24 s, khuỷu khai `elbow` để quét liền về sau) rồi hạ xuống cầm máy trước bụng (hệ thân [74, −72, 64]) lúc 0,8 s, giữ. Chỉ ghi `armRight`, `hand`. Nền `stand-3d`, `sit-3d`; món như `phone-ear-3d`. Nối sau `phone-ear-3d` (blend ~0,15); muốn xem máy tiếp thì đổi `hold` sang `dien-thoai@palmBox` (màn về mặt người cầm) và chồng `phone-use-3d`.",
   "preview": {
     "stage": "stand",
     "hold": {
       "right": {
         "item": "dien-thoai",
         "group": "palmBox",
-        "face": { "axis": "screen", "toward": { "mark": "head" } },
+        "thumb": "right",
+        "tilt": 2,
+        "face": {
+          "axis": "screen",
+          "toward": [0, 0, -1],
+          "frame": "head"
+        },
+        "roll": {
+          "axis": "top",
+          "toward": [-0.9, -0.44, 0],
+          "frame": "head"
+        },
         "touch": ["self.head"]
       }
     }

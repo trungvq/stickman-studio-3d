@@ -11,10 +11,10 @@ const ROWS = [
 const APART = 195;
 const TOWARD = 20;
 const REST = [-6, 24, 0];
-const ELBOW = [0, 0.8, 1];
-const CUP = { pose: "cup", palm: [0.6, 0, -1], fingers: [0.15, -1, -0.1] };
-const CHIN = { to: "chin", offset: [14, 8, 16], elbow: ELBOW };
-const MOUTH = { to: "mouth", offset: [10, 11, 21], elbow: ELBOW };
+const ELBOW = [0.3, 1, 0.6];
+const CUP = { pose: "cup", palm: [0.6, 0, -1], fingers: [0, -1, -0.1] };
+const CHIN = { to: "chin", offset: [18, 14, 24], elbow: ELBOW };
+const MOUTH = { to: "mouth", offset: [19, 14, 26], elbow: ELBOW };
 const LEAN = 12;
 const TURN = 28;
 
@@ -32,7 +32,7 @@ await emit(
         {
           t: 0,
           pose: { [r.arm]: REST, torso: torso(0, 0), head: head(0, 0, 0) },
-          hand: { [r.arm]: { w: 0.3, turn: 0, bend: 0 } },
+          hand: { [r.arm]: { w: 0.3, turn: 20, bend: 0 } },
           ease: "smooth",
         },
         {
