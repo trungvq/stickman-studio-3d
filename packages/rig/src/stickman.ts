@@ -1146,7 +1146,7 @@ function stillFace(scale: THREE.Vector3, shape: Partial<FaceShape> = {}, state?:
   };
   const mesh = copy(f.mesh);
   for (const c of f.mesh.children) mesh.add(copy(c as THREE.Mesh));
-  return { mesh, state: s, set() {} };
+  return { mesh, state: s, blink: 0, set() {} };
 }
 
 /** Gộp mọi khối tĩnh dưới khớp `j` (không qua khớp con, trừ nét chi và nét mặt) thành một mesh mỗi vật liệu */

@@ -21,6 +21,7 @@
     "shoe": "#F6F1E7"
   },
   "face": {
+    "eyeShape": "female",
     "blush": 0.5,
     "wrinkle": {
       "kind": "light",

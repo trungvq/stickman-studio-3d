@@ -5,7 +5,7 @@ import {
   EYE_KINDS,
   EYE_R,
   eyeMarks,
-  eyeShine,
+  eyeShape,
   FACE_REST,
   faceRest,
   type FaceMark,
@@ -25,7 +25,10 @@ describe("nét mặt nghỉ của nhân vật", () => {
       const o = { squash: 0.75, pupil: 0.85 };
       const r = { ...o, lid: rest.lid, shine: rest.shine };
       expect(eyeMarks(k, 3, 10, 44, r)).toEqual(eyeMarks(k, 3, 10, 44, o));
-      expect(eyeShine(k, 3, 10, 44, r)).toEqual(eyeShine(k, 3, 10, 44, o));
+      const h = { ...o, shape: eyeShape() };
+      expect(eyeMarks(k, 3, 10, 44, { ...h, lid: rest.lid, shine: rest.shine })).toEqual(
+        eyeMarks(k, 3, 10, 44, h),
+      );
     }
     for (const k of BROW_KINDS)
       expect(browMarks(k, 3, 7, 44, { width: rest.browWidth, tilt: rest.browTilt })).toEqual(
@@ -49,14 +52,15 @@ describe("nét mặt nghỉ của nhân vật", () => {
     expect(eye("happy" as "open", 0.4)).toEqual(group(eyeMarks("happy", 0, 0, 0, { only: 1 }))[0]);
   });
 
-  it("`shine` 0 bỏ đốm sáng, lớn hơn 1 thì phóng đốm và cắt theo mắt; mi sụp đẩy đốm xuống dưới mép mi", () => {
-    expect(group(eyeShine("open", 0, 0, 40, { shine: 0 }))).toEqual([]);
-    const [base] = dots(eyeShine("open", 0, 0, 40, { only: 1 }));
-    const big = eyeShine("open", 0, 0, 40, { only: 1, shine: 1.5 });
-    expect(group(big)[0]).toHaveProperty("clip");
-    expect(dots(big)[0].ellipse[3]).toBeCloseTo(base.ellipse[3] * 1.5);
-    const [low] = dots(eyeShine("open", 0, 0, 40, { only: 1, lid: 0.4 }));
-    expect(low.ellipse[1] - low.ellipse[3]).toBeGreaterThan(-EYE_R * 0.2);
+  it("`shine` nhân đốm sáng của mắt người, `0` bỏ đốm", () => {
+    const shape = eyeShape();
+    const white = (shine: number) =>
+      dots(group(eyeMarks("open", 0, 0, 0, { only: 1, shape, shine }))[0]).filter(
+        (d) => (d as { fill?: string }).fill === "#f7f2e6",
+      );
+    expect(white(0)).toEqual([]);
+    const [base] = white(1);
+    expect(white(1.5)[0].ellipse[3]).toBeCloseTo(base.ellipse[3] * 1.5);
   });
 
   it("`browWidth` nhân bề dày, `browTilt` nhấc đầu trong của cả hai nét", () => {

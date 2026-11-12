@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_FACE } from './core/constants';
-import { blushColor, MOUTH_KINDS, mouthExtent, mouthMark, moustacheMark, moustacheTop, type FaceMark } from './core/face';
+import { blushColor, EYE_SHAPES, MOUTH_KINDS, mouthExtent, mouthMark, moustacheMark, moustacheTop, type FaceMark } from './core/face';
 import { CharacterSchema, defaultCharacter, MoustacheSchema } from './core/schema';
 import { faceRig, MOUTH_BOX, type FaceRig } from './face';
 import { fromCharacter, R, type CharacterJson } from './stickman';
@@ -70,6 +70,27 @@ describe('`FaceRig.set` và má ửng', () => {
   });
 });
 
+describe('`FaceRig.set` và chớp mắt', () => {
+  it('chỉ vẽ lại khi nấc chớp đổi, và chỉ ở kiểu mắt đang mở', () => {
+    const f = faceRig(R.head, new THREE.Vector3(1, 1, 1), {}, DEFAULT_FACE, true);
+    const v0 = version(f.mesh), m0 = version(mouthOf(f));
+    f.set(DEFAULT_FACE, 0);
+    expect(version(f.mesh)).toBe(v0);
+    f.set(DEFAULT_FACE, 0.5);
+    f.set(DEFAULT_FACE, 0.5);
+    expect(version(f.mesh)).toBe(v0 + 1);
+    expect(f.blink).toBe(0.5);
+    f.set(DEFAULT_FACE, 0);
+    expect(version(f.mesh)).toBe(v0 + 2);
+    const shut = { ...DEFAULT_FACE, eyes: 'shut' as const };
+    f.set(shut, 0);
+    f.set(shut, 0.75);
+    expect(version(f.mesh)).toBe(v0 + 3);
+    expect(f.blink).toBe(0);
+    expect(version(mouthOf(f))).toBe(m0);
+  });
+});
+
 describe('nét mặt nghỉ của nhân vật', () => {
   /** Bề dày nét mà canvas mặt nhận khi dựng nét mặt với `shape` */
   const widths = (shape: object, human = true) => {
@@ -87,12 +108,16 @@ describe('nét mặt nghỉ của nhân vật', () => {
     return seen;
   };
 
-  it('đầu `human` và đầu cầu đều vẽ mày dày theo `browWidth`', () => {
-    for (const human of [true, false]) {
-      expect(widths({}, human).has(4)).toBe(true);
-      expect(widths({}, human).has(6)).toBe(false);
-      expect(widths({ browWidth: 1.5 }, human).has(6)).toBe(true);
+  it('đầu cầu vẽ mày dày theo `browWidth`, đầu `human` nhân thêm `brow` của dáng mắt', () => {
+    expect(widths({}, false).has(4)).toBe(true);
+    expect(widths({}, false).has(6)).toBe(false);
+    expect(widths({ browWidth: 1.5 }, false).has(6)).toBe(true);
+    for (const k of ['male', 'female'] as const) {
+      const w = 4 * EYE_SHAPES[k].brow;
+      expect(widths({ eyeShape: k }).has(w)).toBe(true);
+      expect(widths({ eyeShape: k, browWidth: 1.5 }).has(1.5 * w)).toBe(true);
     }
+    expect(widths({}).has(4 * EYE_SHAPES.male.brow)).toBe(true);
   });
 });
 

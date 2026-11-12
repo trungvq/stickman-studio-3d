@@ -733,9 +733,11 @@ Răng luôn là **một dải trắng liền**, không kẻ từng chiếc — k
 `mouthExtent(kind)` trả mép trên / dưới của mỗi khẩu hình so với tâm miệng (`extent` của nó trong
 `MOUTHS`) — đây là số mà lớp mồm `MOUTH_BOX` phải phủ.
 
-Mắt là hai chấm, đổi kiểu theo nét mặt; cỡ, mi và đốm sáng nghỉ là của nhân vật ([Nét mặt riêng](#nét-mặt-riêng)):
+Kiểu mắt đổi theo nét mặt; cỡ, mi và đốm sáng nghỉ là của nhân vật ([Nét mặt riêng](#nét-mặt-riêng)). Đầu `sphere`
+vẽ mắt chấm theo bảng dưới; đầu `human` vẽ mắt người theo dáng mắt của nhân vật ([Mắt người](#mắt-người)), cùng tên
+kiểu, cùng nghĩa:
 
-| Kiểu mắt | SVG | Kích hoạt |
+| Kiểu mắt | Mắt chấm (SVG) | Kích hoạt |
 |---|---|---|
 | `open` | Chấm tròn `r6` | Mặc định |
 | `shut` | Đoạn thẳng ngắn | Chớp, nhắm tịt, nhăn mặt |
@@ -748,24 +750,93 @@ Mắt là hai chấm, đổi kiểu theo nét mặt; cỡ, mi và đốm sáng n
 | `wink` | Mắt phải nhắm cong nhẹ, mắt trái mở | Nháy mắt, ra hiệu |
 | `sly` | Trăng lưỡi liềm: mi dưới cong lên khoét lõm vào bầu dục, hai khoé nhọn, không đốm sáng (ニタァ) | Cười nham hiểm, đắc ý; đi với `smirk` / `fang` |
 
-`wide` và `bulge` có lòng trắng, dùng với mày `raised`; `wide` cùng họ chấm đặc với `open` nên là mắt
-ngạc nhiên thường ngày, `bulge` lệch hẳn khỏi nét chung, để dành cho cú sốc lớn. Mắt lim dim nghi ngờ (ジト目) là `squint`;
+`wide` và `bulge` có lòng trắng, dùng với mày `lifted` / `raised`; `wide` là mắt ngạc nhiên thường ngày (trố nhẹ),
+`bulge` là mắt trố hẳn, để dành cho cú sốc lớn. Mắt lim dim nghi ngờ (ジト目) là `squint`;
 mắt lười hay khó tính thường ngày là `face.lid` của nhân vật ([Nét mặt riêng](#nét-mặt-riêng)), không phải
 một kiểu mắt.
-
-Đầu `human` thay `open`, `squint` và mắt mở của `wink` bằng mắt người lớn (`ADULT_EYES`, `eyeMarks` với `adult`):
-hạnh nhân có lòng trắng, tròng nâu, con ngươi, mi trên dày có đuôi; `squint` là mắt ấy với mi sụp. Kiểu khác và
-đầu `sphere` vẽ đúng bảng trên.
 
 Mày `lifted` nhấc nhẹ, gần ngang; dùng cho phản ứng thoáng qua. Mày `raised`
 nhấc cao và cong rõ, dùng cho ngạc nhiên mạnh hơn.
 
 **Cả ba — khẩu hình, lông mày, kiểu mắt — vào được file hành động** qua
 `keys[].face`; xem [Đầu và nét mặt](#đầu-và-nét-mặt). Chớp mắt vu vơ thì không:
-đó là nhịp ngẫu nhiên của bên phát (scene tự chớp), hành động
-chỉ ghi cái nhắm mắt *có nghĩa*.
+bên phát tự chớp theo `t` ([Chớp mắt](#chớp-mắt)), hành động chỉ ghi cái nhắm mắt *có nghĩa*.
 
 Tâm miệng nằm dưới tâm mắt đúng `face.mouthGap` (mặc định `34`).
+
+### Mắt người
+
+Đầu `human` vẽ mắt người: hạnh nhân có lòng trắng, tròng nâu, con ngươi, đốm sáng, nét mi trên, nếp mí. Mọi số ở
+một bảng dáng mắt (`EYE_SHAPES`, `core/face.ts`) và một bảng trạng thái mi (`EYE_LIDS`); kiểu mắt nào cũng là một
+trạng thái mi đặt lên dáng mắt của nhân vật, nên nam, nữ, trẻ em, người già cùng nhắm, cùng trố, cùng cười theo
+một luật.
+
+**Dáng mắt** là `face.eyeShape` của JSON nhân vật, mặc định `male`:
+
+| `eyeShape` | Dáng |
+|---|---|
+| `male` (mặc định) | Dẹt, gần ngang; mi trên đều, không đuôi mắt, không mi dưới; tròng nhỏ, đốm sáng nhỏ; mày dày |
+| `female` | Cao hơn, khoé ngoài hơi xếch; mi nửa ngoài dày có đuôi ngắn; mi dưới nửa ngoài; tròng to, đốm sáng đủ; mày mảnh |
+| `child` | Tròn; tròng to gần kín mắt, nhiều đốm sáng; không đuôi, không mi dưới, một mí |
+| `elder` | Mi trên nặng (sụp nghỉ `hood`), khoé ngoài cụp, nếp mí rõ, mi dưới; tròng nhỏ, ít đốm sáng |
+
+`face.eye` đè từng số của dáng (`eyeShape(kind, over)`); trường bỏ trống lấy của dáng. Hai núm tính cách hay dùng là
+`tilt` và `crease`:
+
+```json
+"face": { "eyeShape": "female", "eye": { "tilt": -0.1, "crease": 0 } }
+```
+
+| Trường | Đơn vị | Nghĩa |
+|---|---|---|
+| `half` | `EYE_R` | Nửa rộng mắt |
+| `up` / `down` | `EYE_R` | Điểm điều khiển mi trên / mi dưới so với tâm mắt; mép mi đi tới chừng ba phần tư |
+| `tilt` | `EYE_R` | Khoé ngoài nhấc (xếch); âm là cụp |
+| `hood` | phần độ nhắm | Mi trên sụp nghỉ, cộng vào `face.lid` |
+| `lash` / `outer` | px | Nét mi trên cả mắt / nửa ngoài |
+| `flick` | px | Đuôi mắt ở khoé ngoài; `0` không có |
+| `lower` | px | Nét mi dưới nửa ngoài; `0` không có |
+| `crease` | `0..1` | Độ đậm nếp mí, nét mảnh song song mi trên; `0` một mí |
+| `iris` / `pupil` | `EYE_R` / phần tròng | Bán kính tròng, con ngươi |
+| `shine` | lần | Đốm sáng, nhân thêm `face.shine` |
+| `brow` | lần | Bề dày nét mày, nhân thêm `face.browWidth` |
+
+Dáng mắt không suy từ `head.face`: kiểu mặt và mí mắt là hai chuyện, người một mí đặt `eye.crease: 0`.
+
+**Trạng thái mi.** Một mắt người là mi trên đi từ chỗ mở về **đường nhắm** theo độ nhắm `close` (`0` mở, `1` nhắm).
+Đường nhắm nằm trên mi dưới, rộng đúng bằng mắt mở, cong xuống giữa hai khoé; mi dưới nhấc lên (`raise`) thì nó cong
+lên thành mắt cười. Nếp mí nhạt dần theo độ nhắm. Nhắm hẳn thì không còn lòng trắng, không nếp mí; mắt nữ nhắm thì đuôi mắt rủ xuống. Tròng và con ngươi luôn cắt
+trong hình mắt.
+
+| Kiểu mắt | Mi | Nghĩa |
+|---|---|---|
+| `open` | mở | Mặc định |
+| `shut` | `close 1` | Nhắm; cũng là khung cuối của chớp |
+| `wide` | mi trên mở `1,35` lần, con ngươi co `0,85` | Trố nhẹ: lộ lòng trắng trên tròng |
+| `bulge` | mi trên mở `1,75` lần, mi dưới hạ `0,35`, tròng `0,82`, con ngươi `0,55`, đốm sáng `0,25` | Trố mạnh: lòng trắng quanh tròng |
+| `squint` | `close 0,42`, mi dưới nhấc `0,35` | Nheo |
+| `happy` | `close 1`, mi dưới nhấc `1,5` | Cười nhắm ∩ |
+| `droopy` | `close 0,62` | Buồn ngủ, chán |
+| `wink` | mắt phải `close 1` mi dưới nhấc `0,85`, mắt trái mở mi dưới nhấc `0,2` | Nháy mắt |
+| `squeezed`, `sly` | — | Giữ nét manga `> <` và trăng lưỡi liềm của mắt chấm, cố ý: hai biểu cảm ấy không có mắt thật tương ứng |
+
+- **Mi trên xiên theo mày** (`BROW_SLANT`): mày `angry` (`1`), `furrowed` (`0,6`) hạ mi trên phía đầu trong — mắt
+  giận; `sad` (`−1`), `worried` (`−0,7`) hạ phía đầu ngoài — mắt buồn. Không có kiểu mắt riêng cho chúng.
+- **Mi sụp nghỉ** `face.lid` cộng `hood` của dáng dồn vào độ nhắm `1 − (1 − close)(1 − lid)`; `wide`, `bulge` chỉ ăn
+  nửa số (`WIDE_LID`).
+- Tâm tròng tính ở một chỗ (`irisAt`).
+
+#### Chớp mắt
+
+Scene tự chớp mắt vu vơ: `act(p, sp, t)` hỏi `blinkAt(t, seed)` của lõi. Mỗi nhịp `3,7` s một lần chớp ở chỗ băm từ số
+nhịp và `seed` của người, không ngẫu nhiên theo lần chạy: nhắm trong `2/60` s, giữ `1/60`, mở trong `4/60`
+(`BLINK`), tức ở 60 fps chừng hai khung nhắm, một khung giữ, bốn khung mở. Độ nhắm làm tròn `1/8` (`BLINK.steps`);
+`FaceRig.set(state, blink)` chỉ vẽ lại canvas mặt khi nấc ấy đổi, như má ửng.
+
+- Chớp ăn ở kiểu mắt đang mở: `open`, `wide`, `bulge`, `squint`, `droopy`, mắt mở của `wink` (`eyeBlink`); dồn vào
+  độ nhắm như `lid`. `shut`, `happy`, `squeezed`, `sly` không chớp.
+- Mắt chấm của đầu `sphere`: từ độ nhắm `0,75` vẽ `shut`, dưới đó mi trên cắt con ngươi như `lid`.
+- Người nền (`lod: "low"`) và `portrait` không chớp.
 
 ### Nếp nhăn vẽ bằng code
 
@@ -818,18 +889,18 @@ vật không khai vẽ đúng nét chung từng nét. Chọn 2–3 số cho mỗ
 |---|---|---|---|---|
 | `eyeScale` | `1` | `0,7..1,3` | Nhân cỡ mắt chibi (`CHIBI.eye`) | Đầu `human` |
 | `eyeWidth` | `1` | `0,7..1,3` | Nhân độ bóp ngang (`CHIBI.squash`): dưới `1` mắt hẹp, trên `1` mắt tròn | Đầu `human` |
-| `lid` | `0` | `0..0,6` | Mi trên nghỉ sụp, phần chiều cao con ngươi tính từ đỉnh, cắt ngang | Mọi nét mặt |
+| `lid` | `0` | `0..0,6` | Mi trên nghỉ sụp: đầu `human` dồn vào độ nhắm của mắt người, đầu cầu cắt ngang con ngươi từ đỉnh, phần chiều cao | Mọi nét mặt |
 | `shine` | `1` | `0..1,5` | Nhân đốm sáng; `0` là mắt không đốm | Đầu `human` |
 | `browWidth` | `1` | `0,5..1,8` | Nhân bề dày nét mày | Mọi nét mặt |
 | `browTilt` | `0` | `−8..8` | Cộng vào độ nghiêng của mọi kiểu mày, cùng đơn vị `tilt` của `BROWS`: dương nhấc đầu trong (hiền, rụt rè), âm hạ đầu trong (nghiêm, khó tính) | Mọi nét mặt |
 
-- **`lid` ăn ở mắt có con ngươi mở**: `open`, mắt mở của `wink`, `wide` và `bulge` (cắt cả lòng trắng, chỉ
-  nửa số — trợn là mở to hơn mắt nghỉ); `squint` lấy số lớn hơn giữa `0,5` và `lid`; mắt nhắm, `droopy`, `sly` bỏ qua.
-  Đốm sáng hạ xuống dưới mép mi và cắt theo hình mắt.
+- **`lid` ăn ở mắt đang mở**: `wide` và `bulge` chỉ nửa số — trợn là mở to hơn mắt nghỉ. Mắt người dồn nó vào độ
+  nhắm cùng `hood` của dáng ([Mắt người](#mắt-người)); mắt chấm cắt ngang `open`, mắt mở của `wink`, `wide`, `bulge`
+  (cắt cả lòng trắng), `squint` lấy số lớn hơn giữa `0,5` và `lid`; mắt nhắm, `droopy`, `sly` bỏ qua.
 - **`browTilt` cộng lên cả biểu cảm**: người rụt rè giận thì mày `angry` bớt dữ, người khó tính cười thì mày
   vẫn hơi chau. Đó là chủ ý — nét nghỉ đi theo người qua mọi nét mặt.
 - **Đầu cầu** (`head.form: "sphere"`) đọc `lid`, `browWidth`, `browTilt`; `eyeScale`, `eyeWidth`, `shine`
-  thuộc nét chibi nên chỉ đầu `human` đọc.
+  và dáng mắt (`eyeShape`, `eye`) chỉ đầu `human` đọc.
 
 Công thức mẫu cho một dàn văn phòng:
 
@@ -1494,7 +1565,7 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
 
 | Trường | Mặc định | Người 3D |
 |---|---|---|
-| `head.form` | `"sphere"` | `"human"`: đầu người — quai hàm, cằm, cổ, tai, mũi, mắt người lớn có đốm sáng, má hồng |
+| `head.form` | `"sphere"` | `"human"`: đầu người — quai hàm, cằm, cổ, tai, mũi, mắt người theo `face.eyeShape` ([Mắt người](#mắt-người)), má hồng |
 | `head.heads` | `6` | Đầu `human`: người cao bấy nhiêu đầu, kẹp `5,5..7` — [Chiều cao và cỡ đầu](#chiều-cao-và-cỡ-đầu) |
 | `head.aspect` | `0,76` | Đầu `human`: bề ngang đầu chia chiều cao đầu, kẹp `0,71..0,81` |
 | `head.face` | `"asian"` | Đầu `human`: kiểu mặt `"asian"`, `"western"` hay `"anime"`, gói mũi, đường nghiêng mặt, cằm và hàm (gạch đầu dòng "Kiểu mặt" dưới bảng) |
@@ -1557,10 +1628,7 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
 - **Nét mặt chibi nằm trên mặt nặn.** Lưới nét mặt đi qua cùng `humanSkull` nên mồm, nếp nhăn theo
   má ở mọi góc quay. `CHIBI` (`core/face.ts`) cộng vào `face` của JSON nhân vật: mắt hạ `4`, hai mắt
   giãn thêm `10` px, khoảng mồm giữ nguyên (`chibiShape`) — kính và `headFit` đọc chỗ mắt đã dời. Mỗi mắt
-  phóng `1,2` lần quanh tâm của nó, không bóp ngang (`squash` `1`); `open`, `squint`, mắt mở của `wink` là mắt
-  người lớn ([Khẩu hình và mắt](#khẩu-hình-và-mắt)), con ngươi đang mở có đốm
-  sáng (`eyeShine`) — `wide` không có, lòng trắng giữa đã là chỗ sáng; con ngươi `bulge` và chấm con ngươi
-  `wide` to hơn của người que (`pupil` `0,85` thay `0,7` lần `EYE_R`);
+  phóng `1,2` lần quanh tâm của nó, không bóp ngang (`squash` `1`), là mắt người ([Mắt người](#mắt-người));
   mồm thu `0,8`, bề ngang mồm nhân thêm `1,3` (`mouthWide`, cả ria trên lớp mồm), mày nhấc `3` px. Cỡ mắt, độ bóp và đốm sáng nhân theo [nét mặt riêng](#nét-mặt-riêng) của
   nhân vật. Má ửng theo `face.blush` của nhân vật,
   không theo dáng đầu — [Má ửng](#má-ửng).

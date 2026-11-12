@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { newCanvas, path2D } from './canvas';
 import { DEFAULT_FACE } from './core/constants';
-import { blushLevel, blushMarks, browMarks, CHIBI, chibiShape, eyeMarks, eyeShine, faceRest, mouthMark, moustacheMark, moustacheTop, wrinkleMarks, type FaceInk, type FaceMark, type FaceRest, type MoustacheSpec, type WrinkleSpec } from './core/face';
+import { blushLevel, blushMarks, browMarks, CHIBI, chibiShape, eyeBlink, eyeMarks, eyeShape, faceRest, mouthMark, moustacheMark, moustacheTop, wrinkleMarks, type FaceInk, type FaceMark, type FaceRest, type EyeShape, type EyeShapeKind, type MoustacheSpec, type WrinkleSpec } from './core/face';
 import { FACE_R, faceSurface } from './core/humanHead';
 import type { FaceState } from './core/types';
 
@@ -10,8 +10,8 @@ import type { FaceState } from './core/types';
 
 /** `face.wrinkle` của JSON nhân vật */
 export type Wrinkle = WrinkleSpec;
-/** `face` của JSON nhân vật, px của đầu cao 130; `blush` là má ửng nền `0..1`, nét mặt nghỉ theo `FACE_REST`; `beard` là râu (đã qua zod) */
-export interface FaceShape extends Partial<FaceRest> { offsetY: number; eyeGap: number; mouthGap: number; wrinkle?: Wrinkle; blush?: number; beard?: { moustache?: MoustacheSpec } }
+/** `face` của JSON nhân vật, px của đầu cao 130; `blush` là má ửng nền `0..1`, nét mặt nghỉ theo `FACE_REST`, dáng mắt người `eyeShape` với số đè `eye`; `beard` là râu (đã qua zod) */
+export interface FaceShape extends Partial<FaceRest> { offsetY: number; eyeGap: number; mouthGap: number; wrinkle?: Wrinkle; blush?: number; eyeShape?: EyeShapeKind; eye?: Partial<EyeShape>; beard?: { moustache?: MoustacheSpec } }
 
 const SHAPE: FaceShape = { offsetY: 0, eyeGap: 26, mouthGap: 34 };
 /** THỬ (feat/real-head-proto): đầu `human` có cho mồm trượt về phía máy (lật gương khi quay quá `TURN`) không */
@@ -80,21 +80,22 @@ function paint(g: Ctx, marks: FaceMark[], up: FaceInk = {}) {
 }
 
 /**
- * Nét mặt dán trên sọ: `mesh` treo vào nhóm đầu, lớp mồm là con của nó. `set` vẽ lại canvas mặt khi kiểu mắt, mày hay
- * mức ửng (`blushLevel`) đổi, canvas mồm khi khẩu hình đổi. Ngay trước khi vẽ, lớp mồm lật gương và trượt theo camera
+ * Nét mặt dán trên sọ: `mesh` treo vào nhóm đầu, lớp mồm là con của nó. `set` vẽ lại canvas mặt khi kiểu mắt, mày, nấc
+ * chớp mắt (`blink`, độ nhắm của `blinkAt`) hay mức ửng (`blushLevel`) đổi, canvas mồm khi khẩu hình đổi. Ngay trước khi vẽ, lớp mồm lật gương và trượt theo camera
  * bằng ma trận UV, không vẽ lại: camera lệch sang bên phải người quá `TURN` thì lật gương — chỉ khẩu hình lệch đổi hình —, mồm
  * lệch khỏi camera quá `CHEEK` thì trượt về phía camera.
  */
 export interface FaceRig {
   mesh: THREE.Mesh;
   state: FaceState;
-  set(state: FaceState): void;
+  blink: number;
+  set(state: FaceState, blink?: number): void;
 }
 
 /**
  * Lớp nét mặt cho sọ bán kính `r` (three), cùng tỉ lệ `scale` với khối sọ. Mặt hướng +z, `y` lên; px đầu đổi ra
  * three theo `r / FACE_R`. Lưới dời lên khỏi mặt sọ một chút để khỏi lẫn độ sâu. `human`: dán trên đầu `humanSkull`, nét
- * mặt chibi (`CHIBI`): mắt to có đốm sáng, cỡ mắt và đốm theo `FACE_REST` của `shape`. Má ửng `shape.blush` cộng `state.blush`, màu suy từ da `skin`.
+ * mặt chibi (`CHIBI`) với mắt người dáng `shape.eyeShape`, cỡ mắt và đốm theo `FACE_REST` của `shape`. Má ửng `shape.blush` cộng `state.blush`, màu suy từ da `skin`.
  * Ria mép `shape.beard.moustache` vẽ trên lớp mồm theo khẩu hình, màu bỏ trống là `hair`.
  */
 export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShape> = {}, state: FaceState = DEFAULT_FACE, human = false, skin = '#f0d9b8', hair = '#2a1c15'): FaceRig {
@@ -108,8 +109,9 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
   const mesh = face.mesh;
   mesh.add(mouth.mesh);
   const level = (s: FaceState) => blushLevel(sh.blush, s.blush);
-  const rest = faceRest(sh), brow = { width: rest.browWidth, tilt: rest.browTilt };
-  const drawFace = (s: FaceState) => {
+  const rest = faceRest(sh), look = human ? eyeShape(sh.eyeShape, sh.eye) : undefined;
+  const brow = { width: rest.browWidth * (look?.brow ?? 1), tilt: rest.browTilt };
+  const drawFace = (s: FaceState, blink: number) => {
     const g = face.begin();
     const wrinkle = sh.wrinkle && wrinkleMarks(sh.wrinkle, 0, sh.offsetY, sh.eyeGap, mouthCy);
     if (wrinkle) paint(g, [wrinkle]);
@@ -117,11 +119,11 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
     if (human) {
       // THỬ (feat/real-head-proto): mũi là khối riêng (`noseGeometry` của human.ts), không vẽ nét mũi
       for (const side of [-1, 1] as const) {
-        const o = { only: side, squash: CHIBI.squash * rest.eyeWidth, pupil: CHIBI.pupil, lid: rest.lid, shine: rest.shine, adult: true };
-        paintAt(g, [eyeMarks(s.eyes, 0, sh.offsetY, sh.eyeGap, o), eyeShine(s.eyes, 0, sh.offsetY, sh.eyeGap, o)], CHIBI.eye * rest.eyeScale, (side * sh.eyeGap) / 2, sh.offsetY);
+        const o = { only: side, squash: CHIBI.squash * rest.eyeWidth, lid: rest.lid, shine: rest.shine, shape: look, brow: s.brow, blink };
+        paintAt(g, [eyeMarks(s.eyes, 0, sh.offsetY, sh.eyeGap, o)], CHIBI.eye * rest.eyeScale, (side * sh.eyeGap) / 2, sh.offsetY);
       }
       paint(g, [browMarks(s.brow, 0, sh.offsetY - CHIBI.brow, sh.eyeGap, brow)]);
-    } else paint(g, [eyeMarks(s.eyes, 0, sh.offsetY, sh.eyeGap, { lid: rest.lid }), browMarks(s.brow, 0, sh.offsetY, sh.eyeGap, brow)]);
+    } else paint(g, [eyeMarks(s.eyes, 0, sh.offsetY, sh.eyeGap, { lid: rest.lid, blink }), browMarks(s.brow, 0, sh.offsetY, sh.eyeGap, brow)]);
     face.tex.needsUpdate = true;
   };
   const drawMouth = (s: FaceState) => {
@@ -133,11 +135,14 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
   const rig: FaceRig = {
     mesh,
     state,
-    set(s) {
-      const m = s.mouth !== rig.state.mouth, f = s.brow !== rig.state.brow || s.eyes !== rig.state.eyes || level(s) !== level(rig.state);
+    blink: 0,
+    set(s, blink = 0) {
+      const b = eyeBlink(s.eyes, blink);
+      const m = s.mouth !== rig.state.mouth, f = s.brow !== rig.state.brow || s.eyes !== rig.state.eyes || b !== rig.blink || level(s) !== level(rig.state);
       if (!m && !f) return;
       rig.state = { ...s };
-      if (f) drawFace(rig.state);
+      rig.blink = b;
+      if (f) drawFace(rig.state, b);
       if (m) drawMouth(rig.state);
     },
   };
@@ -155,7 +160,7 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
     // điểm `x` px trên lưới đọc canvas tại `f · (x − trượt)`: lật gương quanh tâm mồm rồi dời
     mouth.tex.matrix.set(f, 0, -MB.x0 / MB.w - (f * (-MB.x0 + x)) / MB.w, 0, 1, 0, 0, 0, 1);
   };
-  drawFace(state);
+  drawFace(state, 0);
   drawMouth(state);
   return rig;
 }

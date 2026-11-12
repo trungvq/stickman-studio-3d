@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { actAim, actAngles, actHand, actReach, actTwist, armFrame, needsSolve, plainActing, type ActFrame } from './core/act3';
+import { blinkAt } from './core/face';
 import type { Aim, ReachTerm } from './core/bodyMark';
 import type { V3 } from './core/lens';
 import type { BrowKind, EyeKind, MouthKind } from './core/types';
@@ -95,17 +96,9 @@ function reachArm(p: Figure, side: Side, rb: ActReach | undefined, rw: ActReach 
   shoulder.updateMatrixWorld(true);
 }
 
-const fract = (x: number) => x - Math.floor(x);
-/** Chớp mắt vu vơ: mỗi nhịp ~3,7 s một lần chớp 0,12 s ở chỗ băm từ số nhịp và `seed` */
-function blinking(t: number, seed: number) {
-  const P = 3.7, u = t + seed * 1.618, n = Math.floor(u / P);
-  const at = n * P + 0.4 + fract(Math.sin(n * 12.9898 + seed * 78.233) * 43758.5453) * (P - 1);
-  return u >= at && u < at + 0.12;
-}
-
 /**
  * Đặt người theo một khung của `sceneAt`: chỗ đứng và hướng (`world`), góc tay chân thân đầu, đích cổ tay, nét
- * mặt. `t` (giây) bật chớp mắt khi mắt đang `open`. Kênh `ar`, `lr` là tay, chân phải.
+ * mặt. `t` (giây) bật chớp mắt vu vơ (`blinkAt`) ở kiểu mắt đang mở. Kênh `ar`, `lr` là tay, chân phải.
  */
 export function act(p: Figure, sp0: Acting, t?: number) {
   p.posing = true;
@@ -174,6 +167,5 @@ function placePose(p: Figure, sp0: Acting, t?: number) {
   reachArm(p, -1, P.reach?.ar, W?.hands?.right);
   reachArm(p, 1, P.reach?.al, W?.hands?.left);
 
-  const blink = t !== undefined && sp.eyes === 'open' && blinking(t, p.seed);
-  p.face.set({ mouth: sp.mouth, brow: sp.brow, eyes: blink ? 'shut' : sp.eyes, blush: sp.blush });
+  p.face.set({ mouth: sp.mouth, brow: sp.brow, eyes: sp.eyes, blush: sp.blush }, t === undefined ? 0 : blinkAt(t, p.seed));
 }
