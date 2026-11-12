@@ -13,7 +13,7 @@ import { equipCharacter, limbWidths, wornPalette, type CharacterData, type Drape
 import { hatFit, hatMesh, hatSpec, insideHat, pinMesh, pressHair } from './core/hat';
 import { earringMesh } from './core/jewelry';
 import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, roots3, SLEEVE_EASE, sleeveGrow, THIGH_ROOT, type ActCharacter, type AimReport, type Bones3 } from './core/act3';
-import { adultEyeBox, blushLevel, chibiShape, lookStep } from './core/face';
+import { blushLevel, humanEyeBox, chibiShape, lookStep } from './core/face';
 import { wornSkirt } from './core/skirtShape';
 import { hangsFromHip, matchWrap } from './core/hem';
 import { humanNeckWidth, NECK_BEND } from './core/torso';
@@ -791,7 +791,7 @@ function stickmanBuild(o: StickmanOptions): Figure {
       // đầu `human`: tâm mắt đúng phép chiếu nét mặt (`faceSurface`), mắt kính ôm hộp mắt vẽ, càng gác lên đỉnh chân tai
       const x = eyes.eyeGap / 2 / FACE_R, y = -eyes.offsetY / FACE_R;
       eye = [Math.atan2(x, Math.sqrt(Math.max(0, 1 - x * x - y * y))) / D, asin(y)];
-      const b = adultEyeBox(faceShape), E = HUMAN_HEAD.ear;
+      const b = humanEyeBox(faceShape), E = HUMAN_HEAD.ear;
       gface = {
         box: { inner: b.inner / FACE_R, outer: b.outer / FACE_R, up: b.up / FACE_R, down: b.down / FACE_R },
         surface: humanHair,

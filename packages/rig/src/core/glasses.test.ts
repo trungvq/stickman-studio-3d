@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { adultEyeBox, FACE_R, GLASSES_PRESETS, glassesFrame, glassesPresetOf, GlassesSchema, humanHair, onSkull, withHeadShape } from "./index";
+import {
+  humanEyeBox,
+  FACE_R,
+  GLASSES_PRESETS,
+  glassesFrame,
+  glassesPresetOf,
+  GlassesSchema,
+  humanHair,
+  onSkull,
+  withHeadShape,
+} from "./index";
 
 describe("kính dựng khối", () => {
   it("nhận ra mẫu", () => {
@@ -12,8 +22,13 @@ describe("kính dựng khối", () => {
   it("đầu human: mắt kính ôm trọn mắt vẽ, tâm trước đúng chỗ mắt, càng móc xuống sau tai", () => {
     withHeadShape({ face: "anime", jaw: 0.3 }, () => {
       const g = GlassesSchema.parse({ shape: "rect" });
-      const b = adultEyeBox({ eyeScale: 0.9, eyeWidth: 1.3 });
-      const box = { inner: b.inner / FACE_R, outer: b.outer / FACE_R, up: b.up / FACE_R, down: b.down / FACE_R };
+      const b = humanEyeBox({ eyeScale: 0.9, eyeWidth: 1.3 });
+      const box = {
+        inner: b.inner / FACE_R,
+        outer: b.outer / FACE_R,
+        up: b.up / FACE_R,
+        down: b.down / FACE_R,
+      };
       const eye: [number, number] = [24, -12];
       const ear = { lon: 95, lat: -11.5, top: 0, half: 7 };
       const f = glassesFrame(g, eye, { box, surface: humanHair, ear });

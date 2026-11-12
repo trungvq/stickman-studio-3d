@@ -55,7 +55,7 @@ export interface GlassesFit {
 export type Pt4 = [number, number, number, number];
 
 /**
- * Mặt người kính ôm theo (đầu `human`): `box` hộp mắt vẽ quanh tâm mắt theo sọ đơn vị (`adultEyeBox` chia `FACE_R`) — mắt
+ * Mặt người kính ôm theo (đầu `human`): `box` hộp mắt vẽ quanh tâm mắt theo sọ đơn vị (`humanEyeBox` chia `FACE_R`) — mắt
  * kính nới ra ôm trọn mắt cách mép `EYE_MARGIN`, không nhỏ hơn `size`; `surface` đưa điểm quanh sọ cầu ra quanh mặt đầu
  * thật (`humanHair`) — tâm mắt kính đặt trước đúng chỗ nét mặt vẽ mắt, càng ôm thái dương; `ear` tai trên sọ cầu: hướng
  * tâm tai, vĩ độ đỉnh chân tai (càng gác lên đó), nửa rộng tai theo độ (móc vòng ra sau mép tai)
@@ -127,7 +127,11 @@ export function glassesFrame(g: Glasses, eye: [lon: number, lat: number], face?:
       const u = Math.min(1, k / 0.4);
       const v = u * u * (3 - 2 * u);
       const q = surface(
-        onSkull(lon0 + (eLon1 - lon0) * k, lat0 + (eLat1 - lat0) * k, r0 - 1 + (ARM_LIFT + 1 - r0) * v),
+        onSkull(
+          lon0 + (eLon1 - lon0) * k,
+          lat0 + (eLat1 - lat0) * k,
+          r0 - 1 + (ARM_LIFT + 1 - r0) * v,
+        ),
       );
       return [q[0] + fix[0] * (1 - v), q[1] + fix[1] * (1 - v), q[2] + fix[2] * (1 - v), 1 - v];
     });
@@ -136,7 +140,13 @@ export function glassesFrame(g: Glasses, eye: [lon: number, lat: number], face?:
     const drop = ear ? (ear.top - ear.lat) * 1.8 : 22;
     for (let i = 1; i <= 8; i++) {
       const v = i / 8;
-      const q = surface(onSkull(eLon1 + s * back * (ear ? Math.sin((v * Math.PI) / 2) : v), eLat1 - drop * v * v, ARM_LIFT));
+      const q = surface(
+        onSkull(
+          eLon1 + s * back * (ear ? Math.sin((v * Math.PI) / 2) : v),
+          eLat1 - drop * v * v,
+          ARM_LIFT,
+        ),
+      );
       arm.push([...q, 0]);
     }
     arms.push(arm);

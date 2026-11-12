@@ -466,7 +466,7 @@ râm), `bold` (gọng dày chữ nhật); áp mẫu là thay cả `glasses`. `gl
   sọ.
 - **Đầu `human`** (`GlassesFace`): tâm mắt kính đặt trước đúng chỗ nét mặt vẽ mắt (cùng phép
   chiếu `faceSurface` qua `humanSkull`, không phải mặt cầu), mắt kính nới ra ôm trọn hộp mắt
-  người lớn (`adultEyeBox`: theo `eyeScale`, `eyeWidth`, cả đuôi mi) cách mép `EYE_MARGIN`, không
+  (`humanEyeBox`: theo dáng mắt `eyeShape` và số đè `eye`, `eyeScale`, `eyeWidth`, cả đuôi mi) cách mép `EYE_MARGIN`, không
   nhỏ hơn `size` — mắt anime to và rộng thì mắt kính rộng theo, kính `round` thành bầu dục ngang.
   Càng ôm mặt đầu thật (`humanHair`), gác lên đỉnh chân tai rồi vòng ra sau mép tai, móc xuống
   ngang tâm tai.

@@ -1278,20 +1278,24 @@ export function faceRest(face: Partial<FaceRest> = {}): FaceRest {
 }
 
 /**
- * Hộp mắt mở người lớn của đầu `human` (`adultEye` vẽ ở `CHIBI.eye · eyeScale`, bóp ngang `CHIBI.squash · eyeWidth`) quanh
- * tâm mắt, px nét mặt: nửa rộng phía mũi `inner`, phía tai `outer` (cả đuôi mi), trên `up` (đỉnh mi trên), dưới `down`.
- * Kính dựng khối đọc để mắt kính ôm trọn mắt
+ * Hộp mắt mở của đầu `human` (dáng `eyeShape` với số đè `eye`, vẽ ở `CHIBI.eye · eyeScale`, bóp ngang
+ * `CHIBI.squash · eyeWidth`) quanh tâm mắt, px nét mặt: nửa rộng phía mũi `inner`, phía tai `outer` (cả đuôi mi), trên
+ * `up` (đỉnh mi trên hay khoé ngoài xếch), dưới `down` (cả nét mi dưới). Kính dựng khối đọc để mắt kính ôm trọn mắt
  */
-export function adultEyeBox(face: Partial<FaceRest> = {}) {
+export function humanEyeBox(
+  face: Partial<FaceRest> & { eyeShape?: EyeShapeKind; eye?: Partial<EyeShape> } = {},
+) {
   const r = faceRest(face);
+  const S = eyeShape(face.eyeShape, face.eye);
   const k = CHIBI.squash * r.eyeWidth,
     z = CHIBI.eye * r.eyeScale;
-  const rx = ADULT.rx * EYE_R * k;
+  const rx = S.half * EYE_R * k;
   return {
     inner: rx * z,
-    outer: (rx + ADULT.flick + ADULT.lash / 2) * z,
-    up: (ADULT.up * ADULT.ry * EYE_R + ADULT.lash / 2) * z,
-    down: ADULT.down * ADULT.ry * EYE_R * z,
+    outer: (rx + S.flick + S.outer / 2) * z,
+    // mép cubic tới ba phần tư điểm điều khiển
+    up: (Math.max(0.75 * S.up, S.tilt) * EYE_R + S.outer / 2) * z,
+    down: (0.75 * S.down * EYE_R + S.lower) * z,
   };
 }
 
