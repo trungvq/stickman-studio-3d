@@ -11,6 +11,8 @@ export const JAWS = {
   square: { jaw: 0.06, jawAt: 0.62, chinW: 0.6, corner: 0.06, flat: 0.1, squareLow: 3.2 },
 } as const;
 export type JawKind = keyof typeof JAWS;
+/** Hình hàm của nhân vật: một kiểu `JAWS`, hay số 0..1 pha số hàm `v` (0) sang `square` (1) của kiểu mặt */
+export type JawShape = JawKind | number;
 
 export const HUMAN_HEAD = {
   /** THỬ (feat/real-head-proto): đầu người thật, mặt góc cạnh. Bề ngang thon nhẹ từ xích đạo tới góc hàm, phần */
@@ -54,6 +56,11 @@ export const HUMAN_HEAD = {
    * không đổi
    */
   hug: { half: 0.42, p: 4, back: -0.45, nape: [-0.5, -0.75], top: -0.4, low: -0.85 },
+  /**
+   * Mép đáy sọ sau góc hàm (bề sâu từ `front` lùi tới `back`) bo mềm thêm `round` (cộng vào `corner`) ở hai bên, nhạt về
+   * giữa gáy (cos² góc tính từ sau): vách sọ dưới tai cong tròn xuống cổ thay vì gấp thành nếp chéo cùng cổ ra rãnh chữ V
+   */
+  backRound: { round: 0, front: -0.1, back: -0.35 },
   /** Nửa sau thu bề sâu còn bấy nhiêu phần: tai ngay sau đường giữa đầu, đầu nhìn ngang không dài như trứng nằm */
   backDepth: 0.9,
   /**
@@ -121,7 +128,23 @@ type JawNums = Widen<(typeof JAWS)["v"]>;
 
 /** Một kiểu mặt: số đè lên `HUMAN_HEAD` (`head`), lên từng hình hàm `JAWS` (`jaw`), lên `HUMAN_NOSE` (`nose`) */
 export interface FacePreset {
-  head?: Partial<Pick<HeadNums, "chin" | "chinFront" | "profile">>;
+  head?: Partial<
+    Pick<
+      HeadNums,
+      | "chin"
+      | "chinFront"
+      | "profile"
+      | "square"
+      | "backDepth"
+      | "nape"
+      | "jawLine"
+      | "hug"
+      | "napeDrop"
+      | "backRound"
+    >
+  >;
+  /** Cổ riêng của kiểu mặt: hàng `[y, nửa rộng, mép sau, mép trước]` như `HUMAN_NECK_ROWS`, chỗ thon nhất bằng `ofHead` bề ngang đầu */
+  neck?: { rows: readonly (readonly [number, number, number, number])[]; ofHead: number };
   jaw?: Partial<Record<JawKind, Partial<JawNums>>>;
   nose?: Partial<NoseNums>;
 }
@@ -166,20 +189,89 @@ export const FACES = {
       ala: { u: 0.72, w: 0.2, h: 0.55, v: 0.8, vh: 0.15 },
     },
   },
+  anime: {
+    head: {
+      chin: 0.107,
+      chinFront: 0,
+      square: 2.488,
+      backDepth: 0.85,
+      nape: 0.9,
+      napeDrop: { to: -0.75, drop: 0.1 },
+      jawLine: { front: 0.477, back: -0.3, rise: 0.45 },
+      hug: { half: 0.3, p: 4, back: -0.45, nape: [-0.5, -0.75], top: -0.4, low: -0.85 },
+      backRound: { round: 0.6, front: -0.1, back: -0.35 },
+      profile: [
+        { y: 0.42, h: 0.18, w: 0.6, out: 0.015 },
+        { y: 0.15, h: 0.09, w: 0.6, out: 0.01 },
+        { y: -0.04, h: 0.08, w: 0.45, out: -0.012 },
+        { y: -0.5, h: 0.06, w: 0.3, out: 0.03 },
+        { y: -0.6, h: 0.05, w: 0.28, out: 0.025 },
+        { y: -0.66, h: 0.035, w: 0.3, out: -0.015 },
+        { y: -0.74, h: 0.06, w: 0.3, out: 0.02 },
+      ],
+    },
+    jaw: {
+      v: {
+        jaw: 0.215,
+        jawAt: 0.8,
+        chinW: 0.465,
+        corner: 0.364,
+        flat: 0.267,
+        drop: 0.49,
+        squareLow: 2.05,
+      },
+      square: {
+        jaw: 0.08,
+        jawAt: 0.45,
+        chinW: 0.7,
+        corner: 0.1,
+        flat: 0.1,
+        drop: 0.45,
+        squareLow: 1.6,
+      },
+    },
+    nose: {
+      root: -1,
+      wRoot: 3,
+      wTip: 6,
+      out: 0.1,
+      tipW: 0.8,
+    },
+    neck: {
+      rows: [
+        [-0.02, 0.215, -0.15, 0.1],
+        [0.07, 0.232, -0.165, 0.115],
+        [0.13, 0.22, -0.09, 0.113],
+        [0.17, 0.18, -0.082, 0.112],
+        [0.23, 0.14, -0.08, 0.115],
+        [0.29, 0.14, -0.09, 0.118],
+        [0.35, 0.145, -0.12, 0.12],
+        [0.4, 0.15, -0.165, 0.12],
+      ],
+      ofHead: 0.36,
+    },
+  },
 } as const satisfies Record<string, FacePreset>;
 export type FaceKind = keyof typeof FACES;
 
 /** Dáng đầu `human` của một nhân vật: kiểu mặt và hình hàm */
 export interface HeadShape {
   face: FaceKind;
-  jaw: JawKind;
+  jaw: JawShape;
 }
 export const HEAD_SHAPE_DEFAULT: HeadShape = { face: "asian", jaw: "v" };
 
 /** Số sọ của dáng `s`: `HUMAN_HEAD` ← `JAWS[jaw]` ← kiểu mặt (`head`, rồi `jaw` của nó) */
 export function headNums(s: HeadShape): HeadNums {
   const F: FacePreset = FACES[s.face];
-  return { ...HUMAN_HEAD, ...JAWS[s.jaw], ...F.head, ...F.jaw?.[s.jaw] };
+  if (typeof s.jaw === "string")
+    return { ...HUMAN_HEAD, ...JAWS[s.jaw], ...F.head, ...F.jaw?.[s.jaw] };
+  const t = Math.max(0, Math.min(1, s.jaw));
+  const a = headNums({ face: s.face, jaw: "v" }),
+    b = headNums({ face: s.face, jaw: "square" });
+  const out: Record<string, unknown> = { ...a };
+  for (const k of Object.keys(JAWS.v) as (keyof JawNums)[]) out[k] = (1 - t) * a[k] + t * b[k];
+  return out as HeadNums;
 }
 
 /** Số mũi của dáng `s`: `HUMAN_NOSE` ← `nose` của kiểu mặt */
@@ -264,7 +356,9 @@ export function humanSkull(p: V3): V3 {
     -(1 + H.drop) * (1 - H.flat) +
     J.rise * smooth01(J.front, J.back, Z) -
     H.napeDrop.drop * smooth01(J.back, H.napeDrop.to, Z);
-  const yb = (y1 + bottom + Math.sqrt((y1 - bottom) ** 2 + e * e)) / 2;
+  const lat = X * X + Z * Z > 1e-9 ? (X * X) / (X * X + Z * Z) : 0;
+  const eb = e + H.backRound.round * lat * smooth01(H.backRound.front, H.backRound.back, Z);
+  const yb = (y1 + bottom + Math.sqrt((y1 - bottom) ** 2 + eb * eb)) / 2;
   const front = Math.max(0, z);
   // đường nghiêng mặt: các nét theo cao độ của cầu gốc như nét mặt dán (`faceSurface`), nên mắt, miệng nằm đúng nét
   // trọng số: mặt quay ra trước (cos kinh độ bình phương), nét ngang theo sin kinh độ
@@ -298,6 +392,7 @@ export function humanSkullGlsl(shape: HeadShape = shapeNow): string {
   const J = H.jawLine,
     N = H.nose,
     ND = H.napeDrop,
+    BR = H.backRound,
     G = H.hug;
   const relief = H.profile
     .map((r) => `${f(r.out)} * exp(-hsSq(lon / ${f(r.w)}) - hsSq((p.y - ${f(r.y)}) / ${f(r.h)}))`)
@@ -327,7 +422,9 @@ export function humanSkullGlsl(shape: HeadShape = shapeNow): string {
         float w = 1.0 + ${f(H.jaw)} * s2 - k * (u + sqrt(u * u + e * e)) / 2.0;
         float y1 = b.y * (1.0 + ${f(H.drop)} * s2);
         float bottom = ${f(-(1 + H.drop) * (1 - H.flat))} + ${f(J.rise)} * hsStep(${f(J.front)}, ${f(J.back)}, b.z) - ${f(ND.drop)} * hsStep(${f(J.back)}, ${f(ND.to)}, b.z);
-        float yb = (y1 + bottom + sqrt((y1 - bottom) * (y1 - bottom) + e * e)) / 2.0;
+        float lat = dot(b.xz, b.xz) > 1e-9 ? b.x * b.x / dot(b.xz, b.xz) : 0.0;
+        float eb = e + ${f(BR.round)} * lat * hsStep(${f(BR.front)}, ${f(BR.back)}, b.z);
+        float yb = (y1 + bottom + sqrt((y1 - bottom) * (y1 - bottom) + eb * eb)) / 2.0;
         float front = max(0.0, a.z), hz = length(p.xz);
         float fw = hz > 1e-9 ? pow(max(0.0, p.z) / hz, 2.0) : 0.0, lon = hz > 1e-9 ? p.x / hz : 0.0;
         float relief = ${relief};

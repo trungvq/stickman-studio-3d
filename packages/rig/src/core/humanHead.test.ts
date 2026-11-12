@@ -3,6 +3,7 @@ import { chibiShape, CHIBI, EYE_KINDS, eyeMarks, eyeShine } from "./face";
 import {
   FACES,
   HEAD_SHAPE_DEFAULT,
+  headNums,
   headShape,
   humanEar,
   humanHair,
@@ -18,6 +19,16 @@ const unit = (x: number, y: number, z: number): [number, number, number] => {
 };
 
 describe("đầu human", () => {
+  it("hàm số pha số hàm v sang square của kiểu mặt", () => {
+    const v = headNums({ face: "anime", jaw: "v" }),
+      sq = headNums({ face: "anime", jaw: "square" });
+    expect(headNums({ face: "anime", jaw: 0 })).toEqual(v);
+    expect(headNums({ face: "anime", jaw: 1 })).toEqual(sq);
+    const mid = headNums({ face: "anime", jaw: 0.5 });
+    expect(mid.chinW).toBeCloseTo((v.chinW + sq.chinW) / 2, 9);
+    expect(mid.nape).toBe(v.nape);
+  });
+
   const mid = (y: number) => humanSkull(unit(0, y, Math.sqrt(1 - y * y)));
 
   it("nửa trên giữ cao độ của mặt cầu: tóc và kính dựng khối ôm như đầu chibi", () => {

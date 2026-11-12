@@ -661,9 +661,9 @@ export interface StickmanOptions {
   /** `head.form` */
   headForm?: 'sphere' | 'human';
   /** THỬ: `head.jaw` */
-  headJaw?: 'v' | 'square';
+  headJaw?: 'v' | 'square' | number;
   /** THỬ: `head.face` (mặc định `asian`) */
-  headFace?: 'asian' | 'western';
+  headFace?: 'asian' | 'western' | 'anime';
   /** THỬ: `head.nose` */
   headNose?: { length?: number; out?: number };
   /** `head.heads`: đầu `human` theo số đầu */
@@ -1184,7 +1184,7 @@ export interface CharacterJson {
     garment: string; skin?: string; sleeveWidth?: number; trouserWidth?: number; limbCurve?: number; sleeveFlare?: number;
     clad?: boolean; sleeve?: string; trouser?: string; shoe?: string; shoeStyle?: ShoeKind; sole?: string; sleeveLength?: number; trouserLength?: number; bicep?: number;
   };
-  head?: { form?: 'sphere' | 'human'; jaw?: 'v' | 'square'; face?: 'asian' | 'western'; nose?: { length?: number; out?: number }; heads?: number; aspect?: number };
+  head?: { form?: 'sphere' | 'human'; jaw?: 'v' | 'square' | number; face?: 'asian' | 'western' | 'anime'; nose?: { length?: number; out?: number }; heads?: number; aspect?: number };
   face?: Partial<FaceShape>;
   pieces: {
     torso: {

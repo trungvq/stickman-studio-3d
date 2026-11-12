@@ -797,13 +797,16 @@ export const CharacterSchema = z.object({
       aspect: z.number().default(HEAD_ASPECT.def),
       /** Dáng khối đầu: `human` có quai hàm, cằm, tai, mũi. docs/01-rig.md#người-3d-mặc-đồ */
       form: z.enum(["sphere", "human"]).default("sphere"),
-      /** THỬ (feat/real-head-proto): hình hàm của đầu `human` — `v` thon thẳng từ gò má, `square` quai hàm vuông */
-      jaw: z.enum(["v", "square"]).default("v"),
+      /**
+       * THỬ (feat/real-head-proto): hình hàm của đầu `human` — `v` thon thẳng từ gò má, `square` quai hàm vuông, hay số
+       * 0..1 pha `v` (0) sang `square` (1) của kiểu mặt
+       */
+      jaw: z.union([z.enum(["v", "square"]), z.number().min(0).max(1)]).default("v"),
       /**
        * THỬ (feat/real-head-proto): kiểu mặt của đầu `human` (`FACES` của core/humanHead.ts) — gói mũi, đường nghiêng mặt,
        * cằm và hàm; `jaw`, `nose`, `aspect`, `heads` chồng lên. docs/01-rig.md#người-3d-mặc-đồ
        */
-      face: z.enum(["asian", "western"]).default("asian"),
+      face: z.enum(["asian", "western", "anime"]).default("asian"),
       /** THỬ (feat/real-head-proto): mũi khối riêng của đầu `human` — `length` nhân độ dài từ gốc giữa hai mắt tới chóp, `out` nhân độ nhô */
       nose: z
         .object({

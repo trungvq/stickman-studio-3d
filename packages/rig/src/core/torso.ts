@@ -8,6 +8,7 @@ import {
 } from "./schema";
 import type { Vec3 } from "./sphere";
 import { NECK_OF_HEAD } from "./stature";
+import { FACES, headShape, type FacePreset } from "./humanHead";
 
 export type Dims = Required<
   Omit<
@@ -202,13 +203,19 @@ export const HUMAN_NECK_ROWS: readonly (readonly [number, number, number, number
   [0.3, 0.212, -0.198, 0.15],
   [0.38, 0.222, -0.205, 0.155],
 ];
-/** Nửa rộng chỗ thon nhất của `HUMAN_NECK_ROWS` */
-const NECK_THIN = Math.min(...HUMAN_NECK_ROWS.map((r) => r[1]));
-/** Nửa rộng cổ `human` nhân bấy nhiêu cho đầu rộng `headWidth` (three): chỗ thon nhất bằng `NECK_OF_HEAD` bề ngang đầu */
-export const humanNeckWidth = (headWidth: number) => (NECK_OF_HEAD * headWidth) / (2 * NECK_THIN);
+/** Cổ của dáng đầu đang đặt (`setHeadShape`): `neck` của kiểu mặt, không có thì `HUMAN_NECK_ROWS`, `NECK_OF_HEAD` */
+const neckNow = () => {
+  const own = (FACES[headShape().face] as FacePreset).neck;
+  return own ?? { rows: HUMAN_NECK_ROWS, ofHead: NECK_OF_HEAD };
+};
+/** Nửa rộng cổ `human` nhân bấy nhiêu cho đầu rộng `headWidth` (three): chỗ thon nhất bằng `ofHead` bề ngang đầu */
+export const humanNeckWidth = (headWidth: number) => {
+  const n = neckNow();
+  return (n.ofHead * headWidth) / (2 * Math.min(...n.rows.map((r) => r[1])));
+};
 /** Hàng cổ `human` ở độ cao `y` (hệ khớp cổ, three): `[nửa rộng, mép sau, mép trước]`, nửa rộng đã nhân `k` */
 export function humanNeckAt(y: number, k = 1): [number, number, number] {
-  const R = HUMAN_NECK_ROWS;
+  const R = neckNow().rows;
   let i = 1;
   while (i < R.length - 1 && R[i][0] < y) i++;
   const [p, q] = [R[i - 1], R[i]];
@@ -225,7 +232,13 @@ export const HUMAN_RING_CLEAR = 1.5;
 const HUMAN_RING_UP = 0.2;
 /** Miệng cổ áo tối thiểu (px) của cổ `human` nửa rộng nhân `k` (`humanNeckWidth`) */
 export const humanNeckMin = (k: number) =>
-  100 * Math.max(...HUMAN_NECK_ROWS.filter((r) => r[0] < HUMAN_RING_UP).map((r) => r[1])) * k +
+  100 *
+    Math.max(
+      ...neckNow()
+        .rows.filter((r) => r[0] < HUMAN_RING_UP)
+        .map((r) => r[1]),
+    ) *
+    k +
   HUMAN_RING_CLEAR;
 /**
  * Cổ người `human` gập ở hai khớp như cổ thật khi ngửa, cúi: chân cổ ngang mép cổ áo áo phông (cao hơn khớp cổ

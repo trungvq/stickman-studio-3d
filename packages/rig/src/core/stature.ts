@@ -1,5 +1,5 @@
 import { RIG, RIG_PER_METRE } from "./constants";
-import { humanSkull, SKULL3, withHeadShape, type FaceKind, type JawKind } from "./humanHead";
+import { humanSkull, SKULL3, withHeadShape, type FaceKind, type JawShape } from "./humanHead";
 import type { V3 } from "./lens";
 
 /**
@@ -47,7 +47,7 @@ export interface HeadSpec {
   form?: "sphere" | "human";
   heads?: number;
   aspect?: number;
-  jaw?: JawKind;
+  jaw?: JawShape;
   face?: FaceKind;
 }
 

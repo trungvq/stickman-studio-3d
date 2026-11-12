@@ -1497,8 +1497,8 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
 | `head.form` | `"sphere"` | `"human"`: đầu người — quai hàm, cằm, cổ, tai, mũi, mắt người lớn có đốm sáng, má hồng |
 | `head.heads` | `6` | Đầu `human`: người cao bấy nhiêu đầu, kẹp `5,5..7` — [Chiều cao và cỡ đầu](#chiều-cao-và-cỡ-đầu) |
 | `head.aspect` | `0,76` | Đầu `human`: bề ngang đầu chia chiều cao đầu, kẹp `0,71..0,81` |
-| `head.face` | `"asian"` | Đầu `human`: kiểu mặt `"asian"` hay `"western"`, gói mũi, đường nghiêng mặt, cằm và hàm (gạch đầu dòng "Kiểu mặt" dưới bảng) |
-| `head.jaw` | `"v"` | Đầu `human` (thử): hình hàm `"v"` thon thẳng từ gò má hay `"square"` quai hàm vuông; chồng lên kiểu mặt |
+| `head.face` | `"asian"` | Đầu `human`: kiểu mặt `"asian"`, `"western"` hay `"anime"`, gói mũi, đường nghiêng mặt, cằm và hàm (gạch đầu dòng "Kiểu mặt" dưới bảng) |
+| `head.jaw` | `"v"` | Đầu `human` (thử): hình hàm `"v"` thon thẳng từ gò má, `"square"` quai hàm vuông, hay số `0..1` pha số hàm `v` (`0`) sang `square` (`1`) của kiểu mặt; chồng lên kiểu mặt |
 | `head.nose` | `{ length: 1, out: 1 }` | Đầu `human` (thử): nhân độ dài gốc → chóp (`0,6..1,5`) và độ nhô (`0..2`) của mũi kiểu mặt |
 | `rig.stature` | trống | Chiều cao người gót → đỉnh sọ, mét; khai thì `rig.height` tính từ nó |
 | `palette.clad` | `false` | Tay chân là ống màu có vỏ viền, bàn tay, giày, khối hông có mông |
@@ -1534,7 +1534,10 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
   từ cổ áo lên chân tóc. `lod` `low` không uốn lưới: cả ống theo cột cổ. Mốc `collar` vẫn ở khớp cổ (đỉnh thân).
 - **Kiểu mặt (`head.face`).** Gói số của mũi, đường nghiêng mặt và cằm, hàm (`FACES` của `core/humanHead.ts`); không
   khai là `asian` (nhân vật cũ cũng thế). `western` là đúng số gốc (`HUMAN_HEAD`, `JAWS`, `HUMAN_NOSE`). `jaw`, `nose`,
-  `aspect`, `heads` của nhân vật chồng lên kiểu mặt.
+  `aspect`, `heads` của nhân vật chồng lên kiểu mặt. `anime` theo đầu VRoid: sọ tròn nhìn ngang, cằm nhọn chữ V, quai
+  hàm nông, mép đáy sọ sau góc hàm bo tròn hai bên (`backRound`) nên sọ liền một khối xuống cổ, cổ riêng (`neck` của
+  kiểu mặt: hàng `[y, nửa rộng, mép sau, mép trước]`, chỗ thon nhất `ofHead` bề ngang đầu). `square` của `anime` là quai
+  hàm vuông hẳn; mặt nam dùng `jaw` số khoảng `0,25..0,4`, mặt nữ `0..0,15`.
 
   | Số | `western` | `asian` |
   |---|---|---|
