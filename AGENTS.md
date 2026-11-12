@@ -5,12 +5,6 @@ hành động, cảnh, `sceneAt`), người que 3D, hiệu ứng, render, MCP, C
 Studio 3D. Repo này **không chứa nhân vật, phòng hay cảnh của tập phim nào** —
 chúng ở repo của từng video, repo đó nhập bộ `@stickman3d/*` như dependency.
 
-## Nhánh `feat/khuyu` (xoá mục này trước khi squash merge)
-
-Đây là worktree `stickman-studio-3d-khuyu`, nhánh sửa khuỷu tay và làm thư viện hành động tương tác. **Đọc
-[`KHUYU.md`](KHUYU.md) trước khi làm gì**: luật nhánh (squash merge; file `KHUYU-*.md`, `khuyu-harness/` và mục này là file
-trung gian, xoá trước khi merge), kế hoạch, gốc lỗi. Tiến độ ghi ở [`KHUYU-TIEN-DO.md`](KHUYU-TIEN-DO.md) sau mỗi bước.
-
 ## Bố cục
 
 | | |
