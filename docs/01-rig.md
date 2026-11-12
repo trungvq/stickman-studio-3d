@@ -1405,6 +1405,7 @@ của lõi (`core/act3.ts`) trả đúng các khớp ấy trong toạ độ th�
 | `head` (bán kính sọ gốc `HEAD3_R`) | `0,384`, sọ bóp `SKULL3` `(1; 1,04; 0,98)` | đầu cầu không; đầu `human` nhân `headK` theo số đầu |
 | `limb` (nửa bề dày nét người que) | `0,042` | không |
 | Khớp cổ → tâm đầu `headUp` | `neck + 0,09 + head · 1,04`; đầu `human` `neck + 0,09 + cổ họng + cằm` ([Chiều cao và cỡ đầu](#chiều-cao-và-cỡ-đầu)) | đầu cầu chỉ phần `neck` |
+| Khớp cổ → chân cổ `neckBase`, đỉnh cổ `headPivot` | đầu cầu `0`; đầu `human` chân cổ `neck + 0,06` (mép cổ áo), đỉnh cổ `[headUp − 0,55 · sọ y, −0,1 · sọ z]` (`NECK_BEND`) | chân cổ chỉ phần `neck`, đỉnh cổ theo cỡ đầu |
 
 **Sáu đoạn là `lengths(height)` của lõi chia 100.** Hông người 3D lấy thẳng `world.hip`, mà `sceneAt`
 đặt hông cho bàn chân thấp nhất chạm sàn bằng `feet(pose, height)` — chân 3D phải dài đúng chừng ấy,
@@ -1523,6 +1524,14 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
   cổ áo chung vật liệu nét (`HEAD_INK`); ống cổ có khe nét xa (`inkGap` `1`) như tai và chung mã vật với da trong miệng
   cổ áo, nên chỗ cổ cắm vào đầu, vào miệng cổ áo không có nét. Ống cổ không nhận nét bóng dáng của thân áo cùng người
   (`userData.inkSkip`): chân ống lùi sau mép cổ áo một khe đổi theo dáng đầu, nét ấy thành vạch dài ngắn.
+- **Cổ người `human` gập ở hai khớp như cổ thật.** Góc `head` chia hai: chân cổ (`Bones3.neckBase`, ngang mép cổ áo)
+  quay phần `NECK_BEND.lower` (`0,35`), đỉnh cổ dưới sọ (`Bones3.headPivot`) quay phần còn lại; tâm đầu là `khớp cổ +
+  Rs·chân cổ + Ra·(đỉnh cổ − chân cổ) + Rn·(tâm sọ − đỉnh cổ)` (`Ra` là góc đầu nhân `lower`), ở cả người que three
+  (`bendNeck` dời khớp `neck`) lẫn `actJoints`. Ngửa thì cột cổ ngả nhẹ theo, đầu ngả ở đỉnh cổ; cổ thẳng, không gãy ở
+  giữa. Ống cổ: dưới chân cổ đứng theo thân; mỗi đường dọc (`NECK_COLS`) từ chân cổ tới chỗ nó chạm mặt dưới sọ lúc
+  đứng thẳng (dò bằng tia trên lưới sọ, ngập thêm `NECK_SINK`) là dây thẳng nối điểm chân (theo cột cổ) với điểm chạm
+  (theo đầu), cộng độ lồi lúc đứng thẳng; trên đó theo trọn đầu. Nên họng là một đường thẳng từ cổ áo lên cằm, gáy liền
+  từ cổ áo lên chân tóc. `lod` `low` không uốn lưới: cả ống theo cột cổ. Mốc `collar` vẫn ở khớp cổ (đỉnh thân).
 - **Kiểu mặt (`head.face`).** Gói số của mũi, đường nghiêng mặt và cằm, hàm (`FACES` của `core/humanHead.ts`); không
   khai là `asian` (nhân vật cũ cũng thế). `western` là đúng số gốc (`HUMAN_HEAD`, `JAWS`, `HUMAN_NOSE`). `jaw`, `nose`,
   `aspect`, `heads` của nhân vật chồng lên kiểu mặt.

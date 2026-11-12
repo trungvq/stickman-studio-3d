@@ -405,15 +405,17 @@ describe("lớp liên kết tay ↔ món", () => {
           const at = `${who} đầu quay ${yaw} gật ${nod}`;
           const e = phoneOnEar(c, sp);
           // màn vào đầu, trục máy dọc đường tai – miệng: hướng khai đạt (đo ≤ 0,6° ở −30…40°; quay −40° về phía máy người to
-          // chạm giới hạn lệch cổ tay −29,7 / −30, ý định nhường 0,4°, trục lệch 2,1°)
-          expect(e.inward, at).toBeLessThan(1);
-          expect(e.cheek, at).toBeLessThan(yaw >= -30 ? 1 : 3);
+          // chạm giới hạn lệch cổ tay −29,7 / −30, ý định nhường 0,4°, trục lệch 2,1°; cúi 14 quay −40…−10° người to, người
+          // nặng chạm giới hạn cổ tay, ý định nhường ≤ 2,5°, trục lệch ≤ 4°)
+          const edge = nod === 14 && yaw <= -10;
+          expect(e.inward, at).toBeLessThan(edge ? 2.5 : 1);
+          expect(e.cheek, at).toBeLessThan(edge ? 4 : yaw >= -30 ? 1 : 3);
           // loa sát tai (đo ≤ 2,4; dải sát mặt `MARK_NEAR` 16)
           expect(e.speaker, at).toBeLessThan(4);
           const arm = actArm(c, sp, -1)!;
-          expect(arm.report.hold!.err, at).toBeLessThan(1);
-          // −30…40°: cổ tay không chạm giới hạn, cách ≥ 2,5° (gập −57,5 của người to quay −30° gật 14 sát `AIM_BEND` −60)
-          if (yaw >= -30) {
+          expect(arm.report.hold!.err, at).toBeLessThan(edge ? 2.5 : 1);
+          // −30…40° trừ dải trên: cổ tay không chạm giới hạn, cách ≥ 2°
+          if (yaw >= -30 && !edge) {
             expect(arm.report.hold!.clamped, at).toEqual([]);
             const [, bend, dev] = arm.wrist;
             expect(bend, at).toBeGreaterThan(AIM_BEND[0] + 2);

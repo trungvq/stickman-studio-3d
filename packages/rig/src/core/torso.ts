@@ -228,10 +228,12 @@ export const humanNeckMin = (k: number) =>
   100 * Math.max(...HUMAN_NECK_ROWS.filter((r) => r[0] < HUMAN_RING_UP).map((r) => r[1])) * k +
   HUMAN_RING_CLEAR;
 /**
- * Ống cổ uốn (`bendNeck`): dưới mép cổ áo áo phông (cao hơn khớp cổ `bones.neck + collar`) ống đứng theo thân, lên thêm
- * `span` thì theo trọn khớp cổ, giữa hai mức chuyển êm; `rows` đoạn dọc. Đơn vị three
+ * Cổ người `human` gập ở hai khớp như cổ thật khi ngửa, cúi: chân cổ ngang mép cổ áo áo phông (cao hơn khớp cổ
+ * `bones.neck + collar`) nhận phần `lower` của góc đầu, đỉnh cổ dưới sọ (`pivot`: cao dưới tâm sọ, lùi sau tâm sọ, theo
+ * bán kính sọ) nhận phần còn lại; mỗi đường dọc của ống cổ đi thẳng từ chân cổ tới chỗ nó chạm sọ (`bendNeck`). `rows`
+ * đoạn dọc của ống. Đơn vị three
  */
-export const NECK_BEND = { collar: 0.06, span: 0.2, rows: 8 } as const;
+export const NECK_BEND = { collar: 0.06, lower: 0.35, pivot: [0.55, -0.1], rows: 20 } as const;
 /**
  * Nửa sau thân không mỏng hơn mép sau ống cổ cộng ngần này px (ở hàng mà bề sâu theo bề rộng đã tới đó): lưng phẳng
  * không kéo viền cổ áo sau gáy lọt vào trong ống cổ

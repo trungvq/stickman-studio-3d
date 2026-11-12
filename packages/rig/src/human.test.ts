@@ -237,7 +237,7 @@ describe('người 3D mặc đồ', () => {
     expect(collide([f], touched).filter((c) => c.part === 'hand')).toEqual([]);
   });
 
-  it('ống cổ uốn: ngửa, nghiêng, quay đầu thì chân ống trong cổ áo vẫn đứng theo thân, ngọn ống theo khớp cổ', () => {
+  it('ống cổ uốn: ngửa, nghiêng, quay đầu thì chân ống trong cổ áo vẫn đứng theo thân, chỗ ống chạm sọ trở lên theo khớp cổ', () => {
     const f = dressed();
     const t = f.neckTube!;
     const tube = f.neck.children.find((o) => o.userData.neckTube)!;
@@ -256,7 +256,7 @@ describe('người 3D mặc đồ', () => {
       // ngọn ống đi trọn với khớp cổ: trong hệ khớp cổ đúng lưới đứng thẳng
       const pos = t.geo.attributes.position;
       for (let i = 0; i < pos.count; i++) {
-        if (t.rest[3 * i + 1] >= t.to) expect(pos.getY(i)).toBeCloseTo(t.rest[3 * i + 1], 9);
+        if (t.rest[3 * i + 1] >= t.tops[i]) expect(pos.getY(i)).toBeCloseTo(t.rest[3 * i + 1], 9);
       }
     }
     expect(make((c) => ((c.palette.clad = true), (c.head.form = 'human')), { lod: 'low' }).neckTube).toBeUndefined();
@@ -284,7 +284,7 @@ describe('người 3D mặc đồ', () => {
     expect(ears(shortHair)).toBe(2);
     expect(ears(bob)).toBe(0);
     const H = headDims(1, { form: 'human' });
-    expect(shortHair.head.position.y).toBeCloseTo(H.up, 12);
+    expect(shortHair.neck.position.y + shortHair.head.position.y - shortHair.bones.torso).toBeCloseTo(H.up, 12);
     expect(shortHair.head.scale.toArray()).toEqual(H.k);
     expect(make().head.scale.toArray()).toEqual([1, 1, 1]);
   });

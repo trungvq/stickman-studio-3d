@@ -19,7 +19,7 @@ import { hangsFromHip, matchWrap } from './core/hem';
 import { humanNeckWidth, NECK_BEND } from './core/torso';
 import { setBluntSideburn } from './core/sculpt';
 import { humanHair, humanSkull, setHeadShape, SKULL3 } from './core/humanHead';
-import { Ankle, earGroup, handRig, humanHeadGeometry, neckGeometry, noseGeometry, pelvisGeometry, shoeMesh, type Hand } from './human';
+import { Ankle, earGroup, handRig, humanHeadGeometry, NECK_COLS, neckGeometry, noseGeometry, pelvisGeometry, shoeMesh, type Hand } from './human';
 import { SHOE_CLEAR, shoeCapsule, shoeFit, shoeTuck, type ShoeKind } from './core/shoe';
 import { handGrip } from './core/hand';
 import type { Rig } from './torso';
@@ -65,8 +65,14 @@ export interface Figure {
   /** Đồ gọi tên của người và thứ đang mặc; `dress` đổi */
   gear: Gear;
   lod: Lod;
-  /** Ống cổ người `human` (không có ở `lod` `low`): `act` gọi `bendNeck` uốn chân ống theo thân; `rest` là lưới đứng thẳng */
-  neckTube?: { geo: THREE.BufferGeometry; rest: Float32Array; from: number; to: number };
+  /**
+   * Ống cổ người `human` (không có ở `lod` `low`): `act` gọi `bendNeck` uốn theo hai khớp cổ; `rest` là lưới đứng thẳng hệ
+   * khớp cổ, `from` chân cổ (`Bones3.neckBase`), `tops` từng đỉnh: độ cao chỗ đường dọc của nó chạm sọ lúc đứng thẳng;
+   * `foot`, `tip` điểm của đường dọc ấy ở chân cổ và ở chỗ chạm sọ
+   */
+  neckTube?: { geo: THREE.BufferGeometry; rest: Float32Array; from: number; tops: Float32Array; foot: Float32Array; tip: Float32Array };
+  /** Nhóm ống cổ người `human`: `lod` `low` không uốn lưới, `bendNeck` đặt cả nhóm theo chân cổ */
+  neckCol?: THREE.Object3D;
   /** Váy dựng khối: `act` gọi `fitSkirt` dựng lại theo đùi khi đùi đổi hướng; `hip` là vạt treo ở nhóm hông */
   skirt?: { opts: Omit<SkirtOptions, 'thighs'>; group: THREE.Group; key: string; hip?: boolean };
   /** Sàn dưới người ở lần `act` gần nhất: y trong nhóm hông (px, y xuống); tạp dề nằm trên nó */
@@ -490,27 +496,97 @@ export function hangJewelry(p: Figure) {
   }
 }
 
-const qNeck = new THREE.Quaternion(), qBend = new THREE.Quaternion(), ID = new THREE.Quaternion(), vBend = new THREE.Vector3();
+const qInv = new THREE.Quaternion(), qLow = new THREE.Quaternion(), eLow = new THREE.Euler();
+const vBase = new THREE.Vector3(), vNape = new THREE.Vector3(), vShift = new THREE.Vector3(), vP = new THREE.Vector3(), vCol = new THREE.Vector3(), vHead = new THREE.Vector3(), vOff = new THREE.Vector3(), vHeadAt = new THREE.Vector3();
+const qMid = new THREE.Quaternion();
 /**
- * Ống cổ uốn theo khớp cổ: chân ống trong cổ áo (dưới `neckTube.from`) đứng theo thân, từ `to` lên theo trọn khớp cổ,
- * giữa hai mức quay dần — gật, ngửa, nghiêng, quay đầu không đẩy gáy và hai bên cổ xuyên cổ áo. `act` gọi sau khi đặt
- * khớp cổ; cảnh tự đặt khớp thì gọi sau khi đặt `neck.rotation`
+ * Cổ gập theo đầu ở hai khớp (`NECK_BEND`): chân cổ (`Bones3.neckBase`) quay phần `lower` của góc khớp cổ, đỉnh cổ
+ * (`Bones3.headPivot`) phần còn lại — dời khớp cổ cho đầu tới đúng chỗ `actJoints` tính. Ống cổ: dưới chân cổ đứng theo
+ * thân; mỗi đường dọc từ chân cổ tới chỗ nó chạm sọ (`neckTube.tops`) là dây thẳng nối điểm chân (theo cột cổ) với điểm
+ * chạm (theo đầu), cộng độ lồi lúc đứng thẳng quay dần theo; trên đó theo trọn đầu: ngửa thì họng là một đường thẳng từ cổ
+ * áo lên cằm. `act` gọi sau khi đặt khớp cổ; cảnh tự đặt khớp thì gọi sau
+ * khi đặt `neck.rotation`
  */
 export function bendNeck(p: Figure) {
+  const B = p.bones, a = NECK_BEND.lower, q = p.neck.quaternion, e = p.neck.rotation;
+  qLow.setFromEuler(eLow.set(e.x * a, e.y * a, e.z * a, e.order));
+  // hệ thân gốc ở khớp cổ: đầu = chân cổ + qLow·(đỉnh cổ − chân cổ) + q·(tâm sọ − đỉnh cổ)
+  vBase.set(0, B.neckBase, 0);
+  vNape.set(0, B.headPivot[0], B.headPivot[1]);
+  vShift.copy(vNape).sub(vBase).applyQuaternion(qLow).add(vBase).sub(vP.copy(vNape).applyQuaternion(q));
+  p.neck.position.set(0, B.torso, 0).add(vShift);
+  qInv.copy(q).invert();
   const t = p.neckTube;
-  if (!t) return;
+  if (!t) {
+    // ống cứng theo cột cổ: hệ khớp cổ = q⁻¹·(chân cổ + qLow·(v − chân cổ) − dời)
+    if (p.neckCol) {
+      p.neckCol.quaternion.copy(qInv).multiply(qLow);
+      p.neckCol.position.copy(vBase).sub(vP.copy(vBase).applyQuaternion(qLow)).sub(vShift).applyQuaternion(qInv);
+    }
+    return;
+  }
   const pos = t.geo.attributes.position as THREE.BufferAttribute, rest = t.rest;
-  qNeck.copy(p.neck.quaternion).invert();
-  const span = t.to - t.from;
+  // đầu: v ↦ chân cổ + qLow·(đỉnh cổ − chân cổ) + q·(v − đỉnh cổ); cột cổ: v ↦ chân cổ + qLow·(v − chân cổ)
+  vHeadAt.copy(vNape).sub(vBase).applyQuaternion(qLow).add(vBase);
   for (let i = 0; i < pos.count; i++) {
-    const u = Math.max(0, Math.min(1, (rest[3 * i + 1] - t.from) / span));
-    // hệ khớp cổ: chân ống quay ngược khớp cổ (đứng theo thân), ngọn giữ nguyên
-    qBend.slerpQuaternions(qNeck, ID, u * u * (3 - 2 * u));
-    vBend.fromArray(rest, 3 * i).applyQuaternion(qBend);
-    pos.setXYZ(i, vBend.x, vBend.y, vBend.z);
+    vP.fromArray(rest, 3 * i);
+    const y = vP.y, top = t.tops[i];
+    if (y >= top) vP.sub(vNape).applyQuaternion(q).add(vHeadAt);
+    else if (y > t.from) {
+      const w = (y - t.from) / (top - t.from);
+      vCol.fromArray(t.foot, 3 * i);
+      vHead.fromArray(t.tip, 3 * i);
+      // độ lồi so với dây lúc đứng thẳng, quay dần từ cột cổ sang đầu
+      vOff.copy(vCol).lerp(vHead, w).negate().add(vP).applyQuaternion(qMid.slerpQuaternions(qLow, q, w));
+      vCol.sub(vBase).applyQuaternion(qLow).add(vBase);
+      vHead.sub(vNape).applyQuaternion(q).add(vHeadAt);
+      vP.copy(vCol).lerp(vHead, w).add(vOff);
+    }
+    vP.sub(vShift).applyQuaternion(qInv);
+    pos.setXYZ(i, vP.x, vP.y, vP.z);
   }
   pos.needsUpdate = true;
   t.geo.computeVertexNormals();
+}
+
+/** Đường dọc của ống cổ ngập vào sọ ngần này (three) qua chỗ chạm: đầu ngửa không hở khe giữa cổ và mặt dưới sọ */
+const NECK_SINK = 0.025;
+/**
+ * Từng đỉnh của ống cổ: độ cao (hệ khớp cổ) chỗ đường dọc của nó chạm mặt dưới sọ lúc đứng thẳng (không chạm thì đỉnh
+ * ống), điểm của đường dọc ấy ở chân cổ `from` và ở chỗ chạm
+ */
+function neckTops(geo: THREE.BufferGeometry, skull: THREE.BufferGeometry, head: THREE.Object3D, from: number) {
+  const P = geo.attributes.position, n = P.count;
+  const tops = new Float32Array(n), foot = new Float32Array(3 * n), tip = new Float32Array(3 * n);
+  const mesh = new THREE.Mesh(skull, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }));
+  mesh.position.copy(head.position);
+  mesh.scale.copy(head.scale);
+  mesh.updateMatrixWorld(true);
+  const ray = new THREE.Raycaster(), up = new THREE.Vector3(0, 1, 0), o = new THREE.Vector3();
+  const cols = Array.from({ length: NECK_COLS }, (_, i) => Array.from({ length: n / NECK_COLS }, (_, j) => j * NECK_COLS + i));
+  const along = (c: number[], y: number, out: Float32Array, k: number) => {
+    let a = c[0];
+    for (const i of c) if (P.getY(i) <= y) a = i;
+    const b = c.find((i) => P.getY(i) > y) ?? a;
+    const u = b === a ? 0 : (y - P.getY(a)) / (P.getY(b) - P.getY(a));
+    out[3 * k] = P.getX(a) + (P.getX(b) - P.getX(a)) * u;
+    out[3 * k + 1] = y;
+    out[3 * k + 2] = P.getZ(a) + (P.getZ(b) - P.getZ(a)) * u;
+  };
+  const f = new Float32Array(3), e = new Float32Array(3);
+  for (const c of cols) {
+    along(c, from, f, 0);
+    ray.set(o.set(f[0], from, f[2]), up);
+    const hit = ray.intersectObject(mesh, false)[0];
+    const top = Math.max(from + 0.03, Math.min(hit ? hit.point.y + NECK_SINK : Infinity, P.getY(c[c.length - 1])));
+    along(c, top, e, 0);
+    for (const i of c) {
+      tops[i] = top;
+      foot.set(f, 3 * i);
+      tip.set(e, 3 * i);
+    }
+  }
+  return { tops, foot, tip };
 }
 
 export interface StickmanOptions {
@@ -676,6 +752,7 @@ function stickmanBuild(o: StickmanOptions): Figure {
   }
   const neck = joint(spine, 0, B.torso, 0);
   let neckTube: Figure['neckTube'];
+  let neckCol: THREE.Object3D | undefined;
   const skullScale = new THREE.Vector3(...SKULL3);
   // đáy sọ trên mép cổ áo (khớp cổ của lõi + `rise` 6 của áo phông); mọi thứ trên đầu dựng ở cỡ gốc `R.head` rồi phóng theo
   // cỡ đầu của người (`headDims`): sọ, nét mặt, tóc, mũ, kính, tai, mũi, bông tai, socket đầu cùng co
@@ -753,13 +830,14 @@ function stickmanBuild(o: StickmanOptions): Figure {
       N.needsUpdate = true;
     }
     tube.add(neckMesh);
+    tube.userData.neckCol = true;
+    neckCol = tube;
     // chân ống lùi sau mép cổ áo một khe đổi theo dáng đầu: nét bóng dáng của thân áo, mảng da ngực loang lên đó thành vạch
     tube.children[0].userData.inkSkip = body.skin ? [spine.children[0], body.skin] : spine.children[0];
     neck.add(tube);
     if (bend) {
       tube.userData.neckTube = true;
-      const from = B.neck + NECK_BEND.collar;
-      neckTube = { geo, rest: Float32Array.from(geo.attributes.position.array), from, to: from + NECK_BEND.span };
+      neckTube = { geo, rest: Float32Array.from(geo.attributes.position.array), from: B.neckBase, ...neckTops(geo, skull, head, B.neckBase) };
     }
   }
   const legs = { [-1]: leg(hips, -1, at.hip, B), [1]: leg(hips, 1, at.hip, B) } as Record<Side, Leg>;
@@ -833,7 +911,7 @@ function stickmanBuild(o: StickmanOptions): Figure {
   root.userData.figure = true;
   const grip = (s: Side): Vec3 => (hands ? handGrip(s, hands[s].scale, hands[s].long) : [0, -(R.limb * sleeveWidth) / 10, 0]);
   const sockets = buildSockets({ root, spine, head, arms }, fit, grip, rig);
-  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig, bones: B, splay: at.splay, body: actCharacter(o), ...(hands && { hands }), ...(neckTube && { neckTube }), ...(body.refold && lod !== 'low' && { lap: { refold: body.refold, key: '' } }) };
+  const fig: Figure = { root, hips, spine, neck, head, arms, legs, face: faceR, seed, sockets, gear: newGear(items, itemSpecs), lod, skirt: skirtRig, bones: B, splay: at.splay, body: actCharacter(o), ...(hands && { hands }), ...(neckTube && { neckTube }), ...(neckCol && { neckCol }), ...(body.refold && lod !== 'low' && { lap: { refold: body.refold, key: '' } }) };
   if (equip) dress(fig, equip);
   return fig;
 }

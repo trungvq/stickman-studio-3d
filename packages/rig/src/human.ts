@@ -295,8 +295,10 @@ export function noseGeometry(r: number, scale: THREE.Vector3, eyes: { offsetY: n
  */
 /** Nửa sau cổ `human` hẹp bớt bấy nhiêu phần ở giữa gáy, từ hàng 0,2 lên 0,38 (three, hệ khớp cổ) */
 const HUMAN_NECK_NAPE = 0.18;
+/** Số đường dọc của ống cổ: đỉnh thứ `j·NECK_COLS + i` là hàng `j`, đường dọc `i` */
+export const NECK_COLS = 32;
 export function neckGeometry(top: number, k = 1, rows = 1) {
-  const n = Math.max(rows, 12), m = 32, y0 = -0.02, y1 = top + 0.02;
+  const n = Math.max(rows, 12), m = NECK_COLS, y0 = -0.02, y1 = top + 0.02;
   const pos: number[] = [], idx: number[] = [];
   for (let j = 0; j <= n; j++) {
     const y = y0 + ((y1 - y0) * j) / n;

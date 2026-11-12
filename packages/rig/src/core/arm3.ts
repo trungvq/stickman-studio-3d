@@ -41,6 +41,7 @@ import {
   garmentOf,
   garmentShoulder,
   garmentSocket,
+  NECK_BEND,
   profile,
   type P2,
   type Rig,
@@ -60,6 +61,7 @@ import {
 export function bones3(height = 1, headSpec?: HeadSpec) {
   const L = lengths(height);
   const H = headDims(height, headSpec);
+  const human = headSpec?.form === "human";
   return {
     height,
     torso: L.torso / 100,
@@ -72,6 +74,14 @@ export function bones3(height = 1, headSpec?: HeadSpec) {
     headK: H.k,
     /** Tâm khối sọ trên khớp cổ */
     headUp: H.up,
+    /**
+     * Đầu `human` gập ở hai khớp (`NECK_BEND`): chân cổ ngang mép cổ áo, cao hơn khớp cổ bấy nhiêu, và đỉnh cổ dưới sọ
+     * `[y, z]` hệ khớp cổ; đầu cầu cả hai ở khớp cổ
+     */
+    neckBase: human ? L.neck / 100 + NECK_BEND.collar : 0,
+    headPivot: (human
+      ? [H.up - NECK_BEND.pivot[0] * H.skull[1], NECK_BEND.pivot[1] * H.skull[2]]
+      : [0, 0]) as [number, number],
     /** Bề ngang đầu */
     headWidth: H.width,
     upperArm: L.upperArm / 100,
@@ -606,7 +616,12 @@ export function trunk3(c: ActCharacter, sp: ActInput) {
   const Rn = mm(mm(Rs, ry(num(turn) * D)), mm(rx(num(nod) * D), rz(-num(tilt) * D)));
   const neck = at(hips, Rs, [0, B.torso, 0]);
   out.neck = neck;
-  out.head = at(neck, Rn, [0, B.headUp, 0]);
+  // chân cổ gập phần `NECK_BEND.lower` của góc đầu, đỉnh cổ phần còn lại (`bendNeck` của người 3D cùng công thức)
+  const a = NECK_BEND.lower;
+  const Ra = mm(mm(Rs, ry(num(turn) * a * D)), mm(rx(num(nod) * a * D), rz(-num(tilt) * a * D)));
+  const [py, pz] = B.headPivot;
+  const nape = at(at(neck, Rs, [0, B.neckBase, 0]), Ra, [0, py - B.neckBase, pz]);
+  out.head = at(nape, Rn, [0, B.headUp - py, -pz]);
   out.hip = hips;
 
   const frame: ActFrame = { point: (v) => at(root, Rr, v), dir: (v) => mv(Rr, v) };

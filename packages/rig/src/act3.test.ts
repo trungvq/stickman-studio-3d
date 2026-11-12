@@ -44,7 +44,7 @@ function drawn(p: Figure, sp: Acting): Record<ActJoint, [number, number, number]
     out[`hand${t}`] = w(p.sockets.hand[side]);
   }
   out.hip = w(p.hips);
-  out.neck = w(p.neck);
+  out.neck = w(p.spine, new THREE.Vector3(0, p.bones.torso, 0));
   out.head = w(p.head);
   return out;
 }

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { act, type Acting } from './act';
 import type { Vec3 } from './khoi';
-import { put, stickman, type Figure, type StickmanOptions } from './stickman';
+import { bendNeck, put, stickman, type Figure, type StickmanOptions } from './stickman';
 
 /** Vỏ nét cùng bề dày và màu gộp được dù là hai vật liệu khác nhau */
 function materialKey(m: THREE.Material) {
@@ -95,6 +95,7 @@ export function seatCrowd(seats: readonly Seat[], base: StickmanOptions | ((i: n
         fig.arms[sd].elbow.rotation.set(desk ? -0.7 : -1.0, 0, 0);
       }
       fig.neck.rotation.set(0.12 + wobble(i, 1) * 0.12, wobble(i, 2) * 0.5, wobble(i, 3) * 0.08, 'YXZ');
+      bendNeck(fig);
     }
     return fig;
   });

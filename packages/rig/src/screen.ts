@@ -29,7 +29,7 @@ export function landmark(p: Figure, name: Landmark, out = new THREE.Vector3()): 
     case 'root': return at(p.root);
     case 'hip': return at(p.hips);
     case 'chest': return at(p.spine, 0, p.bones.torso * 0.72, 0);
-    case 'collar': return at(p.neck);
+    case 'collar': return at(p.spine, 0, p.bones.torso, 0);
     case 'head': return at(p.head);
     case 'headTop': return at(p.head, 0, R.head * 1.04, 0);
     case 'face': return at(p.head, 0, 0, R.head * 0.98);
