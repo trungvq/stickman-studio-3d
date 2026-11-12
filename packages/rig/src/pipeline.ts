@@ -28,7 +28,10 @@ const MAX_INK = 128, MAX_RECTS = 8;
  *   `rim` lần theo 1 − n·v giữa `rimFrom` và `rimTo` (pháp tuyến hệ nhìn từ lượt pháp tuyến, nên đi theo lưới, không đặt cứng theo đầu).
  * Vật liệu `userData.ink` không bị đặt về 0 nữa: nét đen tắt bằng `inkColor`, không dùng thì đặt `inkScale` 0.
  */
-export const BARE = { inkColor: true, inkScale: 0, inkDark: 0.52, rim: 0.7, rimFrom: 0.55, rimTo: 0.97 };
+export const BARE = { inkColor: true, inkScale: 0, inkDark: 0.52, rim: 0.7, rimFrom: 0.55, rimTo: 0.97, edge: 1, edgeDark: 0.72 };
+// - `edge`, `edgeDark`: nét hậu kỳ (mép độ sâu, cạnh gấp) của vật không có nét bóng dáng (đồ đặt, vỏ phòng) vẽ bằng màu chính vật
+//   ấy làm đậm theo `edgeDark` thay cho mực tối, độ phủ nhân `edge` (0 là tắt). Nét nằm ở phía vật gần nên lấy màu điểm ảnh ấy.
+//   Người, đồ cầm (mã vật > 0) không nhận: đã có ánh viền.
 const INK_GLSL = /* glsl */ `
 uniform vec4 uInk[${MAX_INK}];
 ivec2 inkClamp(ivec2 q, vec4 r){ return clamp(q, ivec2(r.xy), ivec2(r.zw)); }
@@ -141,7 +144,7 @@ void main(){
 const POST_FRAG = /* glsl */ `
 uniform sampler2D tColor, tDepth, tNormal, tInk, tId;
 uniform vec2 uRes;
-uniform float uNear, uFar, uOutline, uThick, uPixel, uPaper, uAo, uAoRadius, uSil, uShade, uInkTone, uInkDark, uRim, uRimFrom, uRimTo;
+uniform float uNear, uFar, uOutline, uThick, uPixel, uPaper, uAo, uAoRadius, uSil, uShade, uInkTone, uInkDark, uRim, uRimFrom, uRimTo, uEdge, uEdgeDark;
 uniform vec3 uInkColor, uCelInk;
 uniform mat4 uProj, uProjInv;
 uniform vec3 uShadowTint;
@@ -153,7 +156,8 @@ float h12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx +
 float bayer2(vec2 a){ a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
 float bayer4(vec2 a){ return bayer2(0.5 * a) * 0.25 + bayer2(a); }
 // màu nét, ánh viền: màu vật đậm đi, sắc đậm thêm chút cho khỏi xám (da ra nâu da chứ không ra nâu xám)
-vec3 inkTone(vec3 c){ float m = max(max(c.r, c.g), max(c.b, 1e-3)); return c * mix(vec3(1.0), c / m, 0.45) * uInkDark; }
+vec3 toneBy(vec3 c, float k){ float m = max(max(c.r, c.g), max(c.b, 1e-3)); return c * mix(vec3(1.0), c / m, 0.45) * k; }
+vec3 inkTone(vec3 c){ return toneBy(c, uInkDark); }
 vec3 vpos(vec2 uv){ vec4 p = uProjInv * vec4(uv * 2.0 - 1.0, texture2D(tDepth, uv).r * 2.0 - 1.0, 1.0); return p.xyz / p.w; }
 // SSAO bán cầu theo pháp tuyến dựng lại từ độ sâu; hướng xoay theo ô 4×4 điểm ảnh nên tất định.
 float ssao(vec2 uv){
@@ -258,6 +262,8 @@ void main(){
       }
     }
     col = mix(col, mix(uCelInk, uInkColor, manga), ink);
+  } else if (uEdge > 0.0) {
+    if (texelFetch(tId, p, 0).r < 0.5) col = mix(col, toneBy(col, uEdgeDark), edge * uEdge);
   } else col = mix(col, col * vec3(0.2, 0.18, 0.26), edge * 0.92);
   // nét bóng dáng của vật bên dưới không loang lên đồ nhỏ nằm sát nó: dây chuyền cách thân áo chưa tới ba lần bề dày nét
   // ánh viền tối theo mép khối của vật có nét bóng dáng (mã vật > 0): mặt càng xiên khỏi máy càng đậm
@@ -546,6 +552,8 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       uRim: { value: 0 },
       uRimFrom: { value: BARE.rimFrom },
       uRimTo: { value: BARE.rimTo },
+      uEdge: { value: 0 },
+      uEdgeDark: { value: BARE.edgeDark },
       uInkColor: { value: new THREE.Color(INK) },
       uRes: { value: new THREE.Vector2() },
       uNear: { value: 0 },
@@ -647,8 +655,8 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
     },
 
     render(scene, camera, { outline = true, t = 0, grade = {}, paper = true, shade = 'paint' } = {}) {
-      // THỬ (feat/real-head-proto): vẽ không viền — tắt nét hậu kỳ, vỏ ngược, nét bóng dáng `ink`
-      outline = false;
+      // THỬ (feat/real-head-proto): vẽ không viền đen — tắt vỏ ngược, nét hậu kỳ chỉ còn khi `BARE.edge` (nét màu theo vật)
+      if (!BARE.edge) outline = false;
       scene.traverse((o) => {
         const m = (o as THREE.Mesh).isMesh ? ((o as THREE.Mesh).material as THREE.ShaderMaterial) : null;
         if (!m || Array.isArray(m)) return;
@@ -742,6 +750,8 @@ export function createPipeline(renderer: THREE.WebGLRenderer, { shadow, shadowSi
       pu.uRim.value = shade === 'paint' ? BARE.rim : 0;
       pu.uRimFrom.value = BARE.rimFrom;
       pu.uRimTo.value = BARE.rimTo;
+      pu.uEdge.value = BARE.edge;
+      pu.uEdgeDark.value = BARE.edgeDark;
       // vỏ nét ngược không phải mặt thật, vật không ghi độ sâu (kính, lớp nét mặt) không có trong độ sâu: bỏ khỏi lượt pháp tuyến
       const shells: THREE.Object3D[] = [], swapped: [THREE.Mesh, THREE.Material | THREE.Material[]][] = [];
       const slots = new Map<string, number>(), f = (camera.projectionMatrix.elements[5] * rh) / 2;
