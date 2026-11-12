@@ -584,6 +584,112 @@ export const SCULPT_PRESETS = {
       volume: 0.16,
     },
   },
+  shortMessy: {
+    label: "Xù ngắn",
+    sculpt: { style: "messy", front: 48, fringe: 12, volume: 0.1 },
+  },
+  shortSpiky: {
+    label: "Gai ngắn",
+    sculpt: {
+      style: "spiky",
+      front: 40,
+      ear: 10,
+      sideburn: 10,
+      fringe: 8,
+      volume: 0.07,
+      spike: 0.55,
+    },
+  },
+  curtain: {
+    label: "Ngôi giữa ngắn",
+    sculpt: { style: "center", part: 0, front: 50, fringe: 30, ear: 14, sideburn: 4, volume: 0.1 },
+  },
+  slickLong: {
+    label: "Vuốt ngược dài",
+    sculpt: {
+      style: "slick",
+      front: 58,
+      part: -30,
+      fringe: 10,
+      ear: 20,
+      sideburn: 8,
+      volume: 0.1,
+      length: 1.15,
+    },
+  },
+  manBun: {
+    label: "Búi đỉnh nam",
+    sculpt: { style: "bun", front: 44, part: 0, fringe: 0, volume: 0.06, tie: 82, knotSize: 0.7 },
+  },
+  ponyMan: {
+    label: "Đuôi ngựa nam",
+    sculpt: {
+      style: "pony",
+      front: 44,
+      part: 0,
+      fringe: 0,
+      volume: 0.06,
+      tie: 20,
+      tail: 0.55,
+      knotSize: 0.7,
+    },
+  },
+  wolf: {
+    label: "Xù dài",
+    sculpt: { style: "messy", front: 50, fringe: 16, volume: 0.12, length: 1.4 },
+  },
+  centerMid: {
+    label: "Ngôi giữa ngang vai",
+    sculpt: { style: "center", part: 0, front: 57, fringe: 40, volume: 0.12, length: 1.1 },
+  },
+  longSide: {
+    label: "Dài rẽ lệch",
+    sculpt: { style: "shoulder", front: 60, part: -28, fringe: 14, volume: 0.12, length: 1.65 },
+  },
+  halfUp: {
+    label: "Nửa búi nửa xoã",
+    sculpt: {
+      style: "bun",
+      front: 52,
+      part: 0,
+      fringe: 0,
+      volume: 0.08,
+      tie: 74,
+      knotSize: 0.8,
+      length: 1.45,
+    },
+  },
+  ponyHalf: {
+    label: "Nửa buộc đuôi ngựa",
+    sculpt: {
+      style: "pony",
+      front: 52,
+      part: 0,
+      fringe: 0,
+      volume: 0.08,
+      tie: 62,
+      tail: 0.8,
+      knotSize: 0.7,
+      length: 1.4,
+    },
+  },
+  ponySide: {
+    label: "Đuôi ngựa lệch",
+    sculpt: {
+      style: "pony",
+      front: 52,
+      part: 30,
+      fringe: 10,
+      volume: 0.08,
+      tie: 28,
+      tieLon: -150,
+      tail: 1.25,
+    },
+  },
+  bunLow: {
+    label: "Búi thấp",
+    sculpt: { style: "bun", front: 52, part: 0, fringe: 0, volume: 0.07, tie: 8, knotSize: 1.4 },
+  },
 } as const satisfies Record<string, { label: string; sculpt: Partial<Sculpt> }>;
 
 export type SculptPreset = keyof typeof SCULPT_PRESETS;
@@ -596,6 +702,23 @@ export function sculptPresetOf(raw: Partial<Sculpt> | undefined): SculptPreset |
     return (Object.keys(s) as (keyof Sculpt)[]).every((f) => s[f] === q[f]);
   });
 }
+
+/** Bảng màu tóc mẫu cho `pieces.hair.color`; `accent` là màu phụ `pieces.hair.accent` */
+export const HAIR_COLORS = {
+  black: { label: "Đen", color: "#1E1A18" },
+  darkBrown: { label: "Nâu đen", color: "#2A221E" },
+  brown: { label: "Nâu", color: "#4A3226" },
+  chestnut: { label: "Hạt dẻ", color: "#8B5A3C" },
+  auburn: { label: "Nâu đỏ", color: "#7E3524" },
+  ginger: { label: "Đỏ cam", color: "#B5622F" },
+  blonde: { label: "Vàng", color: "#C9A15E" },
+  platinum: { label: "Bạch kim", color: "#E2D5B5" },
+  grey: { label: "Xám", color: "#8F8B87" },
+  white: { label: "Bạc trắng", color: "#DAD6D0" },
+  saltPepper: { label: "Muối tiêu", color: "#3E3936", accent: "#9A958F" },
+} as const satisfies Record<string, { label: string; color: string; accent?: string }>;
+
+export type HairColor = keyof typeof HAIR_COLORS;
 
 /**
  * Màu phụ (`pieces.hair.accent`) phủ vỏ ở kinh độ `lon` từ chân tóc lên bấy nhiêu phần chiều cao vỏ: đủ `accentTo` từ

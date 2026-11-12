@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { SCULPT_PRESETS, chain, sculptPresetOf } from "./index";
+import { HAIR_COLORS, SCULPT_PRESETS, chain, sculptPresetOf } from "./index";
 import type { Vec3 } from "./index";
 
 const points = (d: string) =>
@@ -23,5 +23,15 @@ describe("tóc dựng khối", () => {
     expect(sculptPresetOf(undefined)).toBe("short");
     expect(sculptPresetOf(SCULPT_PRESETS.spiky.sculpt)).toBe("spiky");
     expect(sculptPresetOf({ ...SCULPT_PRESETS.spiky.sculpt, spike: 1.3 })).toBeUndefined();
+  });
+
+  it("mỗi mẫu là một bộ số riêng", () => {
+    for (const [k, p] of Object.entries(SCULPT_PRESETS)) expect(sculptPresetOf(p.sculpt)).toBe(k);
+  });
+
+  it("màu tóc mẫu là mã #RRGGBB", () => {
+    for (const c of Object.values(HAIR_COLORS))
+      for (const v of [c.color, "accent" in c ? c.accent : c.color])
+        expect(v).toMatch(/^#[0-9A-F]{6}$/);
   });
 });

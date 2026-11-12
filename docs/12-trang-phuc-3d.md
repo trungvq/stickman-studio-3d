@@ -52,6 +52,30 @@ Mặc định là tóc ngắn rẽ ngôi lệch của nam. `SCULPT_PRESETS` là 
 (ngang vai mái lệch, `style: "shoulder"`, `length` 1.35), `center` (ngôi giữa dài, `style: "center"`), `anime` (anime lởm chởm, `style: "anime"`); áp mẫu là
 thay cả `sculpt`. `sculptPresetOf` cho biết bộ số đang đúng bằng mẫu nào.
 
+Các mẫu dưới đây ghép từ kiểu sẵn có và trường chung, không có hình riêng:
+
+| Mẫu | Nhãn | Ghép từ |
+|---|---|---|
+| `shortMessy` | Xù ngắn | `messy`, `length` 0 |
+| `shortSpiky` | Gai ngắn | `spiky`, `spike` 0.55 |
+| `curtain` | Ngôi giữa ngắn | `center`, `length` 0, `fringe` 30 |
+| `slickLong` | Vuốt ngược dài | `slick`, `length` 1.15 |
+| `manBun` | Búi đỉnh nam | `bun`, `tie` 82, `knotSize` 0.7 |
+| `ponyMan` | Đuôi ngựa nam | `pony`, `tie` 20, `tail` 0.55, `knotSize` 0.7 |
+| `wolf` | Xù dài | `messy`, `length` 1.4 |
+| `centerMid` | Ngôi giữa ngang vai | `center`, `length` 1.1 |
+| `longSide` | Dài rẽ lệch | `shoulder`, `length` 1.65 |
+| `halfUp` | Nửa búi nửa xoã | `bun`, `tie` 74, `length` 1.45 — [nửa buộc nửa xoã](#nửa-buộc-nửa-xoã) |
+| `ponyHalf` | Nửa buộc đuôi ngựa | `pony`, `tie` 62, `tail` 0.8, `length` 1.4 |
+| `ponySide` | Đuôi ngựa lệch | `pony`, `tie` 28, `tieLon` −150, `tail` 1.25 |
+| `bunLow` | Búi thấp | `bun`, `tie` 8, `knotSize` 1.4 |
+
+`HAIR_COLORS` là bảng màu tóc mẫu cho `pieces.hair.color`: `black`, `darkBrown`, `brown`,
+`chestnut`, `auburn`, `ginger`, `blonde`, `platinum`, `grey`, `white`, và `saltPepper` (muối tiêu:
+nền xám đen, `accent` xám nhạt phủ hai bên và sau gáy theo [màu phụ](#màu-phụ)). Màu phụ chỉ phủ
+vỏ ôm sọ, không phủ mặt rủ: `saltPepper` dành cho tóc không rủ (`length` 0), tóc dài thì thành sọc
+ngang; màu phụ cũng không làm được ombre.
+
 - Mép vỏ ở chân tóc là một **vách** từ da lên tới vỏ, nên mép có bề dày bằng độ nổi của
   vỏ ở hàng đầu.
 - Mép mái đặt cao hơn mày `raised` khi ngước: mày nằm ở vĩ độ khoảng `16°`, nhướng thêm khoảng `7°`.
@@ -323,7 +347,13 @@ gáy), vĩ độ `tie`; không vẽ đường ngôi. Khối là ống có lướ
 `tie` 15 chứ không sát gáy, vì gốc sát gáy thì đuôi ngắn mấy cũng lòi dưới đầu.
 | `bun` (búi cao) | 52 | 0 | 0 | 0.07 | 72 | — |
 
-Búi thấp to: `bun` với `tie` quanh 5–10 và `knotSize` 1.4 — khối rủ tới ngang gáy mà còn cách cổ áo.
+Búi thấp to (mẫu `bunLow`): `bun` với `tie` quanh 5–10 và `knotSize` 1.4 — khối rủ tới ngang gáy mà còn cách cổ áo.
+
+#### Nửa buộc nửa xoã
+
+`pony` và `bun` nhận `length > 0` như mọi kiểu: khối buộc cao (`tie` 60–75, `knotSize` 0.7–0.8)
+nằm trên đỉnh sau, phần dưới rủ thành [mảng rủ](#tóc-rủ). Mẫu `halfUp` (búi) và `ponyHalf`
+(đuôi ngựa ngắn `tail` 0.8 để đuôi không chạm mặt rủ).
 
 ### Ngắn xù
 
