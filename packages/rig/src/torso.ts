@@ -3,7 +3,7 @@ import { torsoSection, type ArmRoom } from './core/act3';
 import { D } from './core/constants';
 import type { Garment } from './core/schema';
 import {
-  COLLAR_INK, COLLAR_LEAN, COLLAR_LINE, curve, TRIM, GARMENT_STYLES, garmentOf, humanNeckMin, INNER_COLLAR, innerCollarShape, innerNeckOf, lerp, lerpAt, lipOf, neckRing, profile, RIB_FRONT, spline,
+  COLLAR_INK, COLLAR_LEAN, COLLAR_LINE, curve, TRIM, GARMENT_STYLES, garmentOf, humanNeckMin, INNER_COLLAR, NAPE, innerCollarShape, innerNeckOf, lerp, lerpAt, lipOf, neckRing, profile, RIB_FRONT, spline,
   type Collar, type MarkFill, type P2, type Rig, type SP, type Surface,
 } from './core/torso';
 import { WrapSchema, type Drape, type Necklace, type Shades } from './core/schema';
@@ -119,6 +119,9 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     return [back ? 180 - lon : lon, y];
   };
   const top = (grow = 0) => yOf(g.neck + grow);
+  // đầu `human`: hàng cao nhất nửa sau đã sâu tới `NAPE` (`Surface.nape`)
+  const deepAt = depth.findIndex((d) => d >= NAPE - 0.05);
+  const nape = neckMin === undefined || deepAt < 1 ? undefined : lerp(pts[deepAt - 1][1], pts[deepAt][1], (NAPE - 0.05 - depth[deepAt - 1]) / (depth[deepAt] - depth[deepAt - 1]));
   const surf: Surface = {
     g,
     yC: pr.yC,
@@ -128,9 +131,10 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     top,
     at,
     depth: (y, back = false) => (back ? dAt : fAt)(y),
-    neck: (phi, grow = 0) => neckRing({ g, top, at }, g.neckline ?? def.neckline, phi, grow),
+    neck: (phi, grow = 0) => neckRing({ g, top, at, nape }, g.neckline ?? def.neckline, phi, grow),
     t: (tt) => pr.yS * (1 - tt),
     ...(neckMin !== undefined && { neckMin }),
+    ...(nape !== undefined && { nape }),
   };
   const solid = ([lon, y]: SP): [Vec3, Vec3] => {
     const s = Math.sin(lon * D), c = Math.cos(lon * D), half = c > 0 ? fAt : dAt;
@@ -370,7 +374,7 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
         [lerp(i[0], o[0], v), lerp(i[1], o[1], v)],
         lerp(liftIn, liftOut, v) * lerp(RIB_FRONT, 1, back),
         rib.stand * back * (1 - v) ** 2,
-        rib.lean,
+        (rib.lean ?? COLLAR_LEAN) * (1 - v) ** 2,
       );
     };
     sheet(curve(NU, (u) => curve(NV, (v) => ribAt(360 * u, v))), [0, NV], "color", rib.line, COLLAR_INK);
@@ -504,14 +508,17 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
       const rest = hang === undefined || c > 0 ? 0 : Math.max(0, spec.stand - hang) * c * c;
       const inner = s.neck(phi);
       const o = outer(phi);
-      stand.push([0, 1].map((w) => raise(inner, liftFold * w, h * w)));
-      const down = curve(NV, (v) =>
-        raise(
+      // nâng sau gáy (`COLLAR_LEAN`) theo phần dựng: chân cổ và mép lá cổ nằm trên mặt khối, không treo trên vai
+      stand.push([0, 1].map((w) => raise(inner, liftFold * w, h * w, COLLAR_LEAN * w)));
+      const down = curve(NV, (v) => {
+        const rise = rest + (h - rest) * (1 - v) ** 2;
+        return raise(
           [lerp(inner[0], o[0], v), lerp(inner[1], o[1], v)],
           lerp(liftFold, liftEdge + tipLift(phi), v),
-          rest + (h - rest) * (1 - v) ** 2,
-        ),
-      );
+          rise,
+          h > 0 ? (COLLAR_LEAN * rise) / h : 0,
+        );
+      });
       leaf.push(up > 0 ? popUp(down, solid(inner)[1], phi, up) : down);
     }
     sheet(stand, [], spec.fill ?? "color", spec.line ?? COLLAR_LINE, spec.ink ?? COLLAR_INK);

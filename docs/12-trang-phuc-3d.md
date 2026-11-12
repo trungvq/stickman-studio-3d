@@ -761,15 +761,17 @@ Không có chỏm vai: tay áo là ống `palette.sleeve*` của người mặc 
   nếp gập tới `lift[1]` ở mép ngoài; mép ngoài vểnh thêm tới `tip` ở điểm `flap[tipAt]`
   (bỏ trống là điểm cuối), nhạt dần về hai phía. Pháp tuyến lấy đạo hàm mặt cắt dọc trên
   ±4 px: mặt cắt là đường gấp khúc, lá cổ nổi cao khuếch đại chỗ nhảy bậc thành răng cưa.
-  Nửa sau cổ áo nâng lên `0.35` px mỗi px lùi sau trục (`COLLAR_LEAN`, vuốt mềm quanh trục)
-  như cổ đổ về trước: nhìn nghiêng dải cổ chéo từ gáy xuống mũi cổ.
+  Nửa sau cổ áo nâng lên `0.12` px mỗi px lùi sau trục (`COLLAR_LEAN`, vuốt mềm quanh trục)
+  như cổ đổ về trước: nhìn nghiêng dải cổ chéo từ gáy xuống mũi cổ. Độ nâng theo phần dựng: đủ ở
+  đỉnh chân cổ và nếp gập, nhạt cùng độ dựng xuống mép lá cổ; chân cổ và mép ngoài lá cổ nằm trên
+  mặt khối, nhìn nghiêng không lộ khe da giữa cổ áo và vai.
 
   | Kiểu | `stand` | `band` | `side` | `flap` | `lift` | `tip` | Màu |
   |---|---:|---:|---:|---|---|---:|---|
-  | `shirt` | 6 | 9 | 6 | `(16, neckFront + 11)` | 5 → 2 | 9 | áo |
-  | `polo` | 6 | 8 | 6 | `(16, neckFront + 9)` | 5 → 2 | 8 | áo |
-  | `suit` | 6 | 7 | 3 | `(lapel, 38)`, `(0.3 · lapel, neckFront − 8)`; vểnh ở đỉnh ve | 7 → 1.5 | 4 | áo |
-  | `blazer` | 4 | 7 | 3 | `(25, 22)`, `(19, 28)`, `(29, 33)`, `(9, neckFront − 4)`, `x` nhân `lapel / 29`; vểnh ở khấc `(29, 33)` | 5 → 1.5 | 4 | áo |
+  | `shirt` | 5 | 6 | 2 | `(11, neckFront + 8)` | 3.5 → 1.5 | 5 | áo |
+  | `polo` | 5 | 6 | 2 | `(11, neckFront + 7)` | 3.5 → 1.5 | 5 | áo |
+  | `suit` | 4.5 | 7 | 3 | `(lapel, 38)`, `(0.3 · lapel, neckFront − 8)`; vểnh ở đỉnh ve | 4 → 1.5 | 4 | áo |
+  | `blazer` | 4 | 7 | 3 | `(25, 22)`, `(19, 28)`, `(29, 33)`, `(9, neckFront − 4)`, `x` nhân `lapel / 29`; vểnh ở khấc `(29, 33)` | 3.5 → 1.5 | 4 | áo |
   | `blouse` | 2 | 6 | 3 | cánh bên: cung elip tâm `(14.5, 8)`, bán trục `6.5 × 6`, `−45°` → `165°`; nửa cánh giữa: tâm `(0, 11)`, `8 × 7`, `−35°` → `90°`; vểnh ở cánh bên | 3 → 2 | 2 | kem `#f6efe4` |
 
   `y` của `flap` tính từ chỗ viền cổ chạm mặt vát. Mép ngoài chạm trục giữa trước đáy cổ
@@ -781,14 +783,15 @@ Không có chỏm vai: tay áo là ống `palette.sleeve*` của người mặc 
   không thành nêm. Mép cổ dựng thêm `stand` px ở nửa sau; cả độ dựng lẫn độ nổi nhạt dần
   theo `sin²` về giữa ngực, độ dựng về `0`, độ nổi về `0.3` lần (`RIB_FRONT`) — mép cổ trước
   nổi cao là bị đầu che; nhạt theo `|sin|` thì mép cổ gãy nhọn ở giữa ngực. Nửa sau nâng `lean` px mỗi px lùi sau
-  trục (bỏ trống là `COLLAR_LEAN` như cổ bẻ): nhìn nghiêng mép vòng gồ lên sau gáy. Áo phông viền nằm sát quanh chân cổ,
+  trục (bỏ trống là `COLLAR_LEAN` như cổ bẻ) ở mép cổ, nhạt theo `(1 − v)²` về `0` ở mép dưới: nhìn nghiêng mép cổ gồ lên
+  sau gáy, mép dưới vẫn sát mặt vải. Áo phông và áo len viền nằm sát quanh chân cổ,
   không dựng, không nâng. `line` là nét viền, lần nét thân. Vạch gân (`ticks`) mỗi `step` độ
   quanh trục cổ, từ `0.2` tới `0.8` bề rộng vòng.
 
   | Kiểu | `width` | `stand` | `lift` | `lean` | `line` | Vạch gân |
   |---|---:|---:|---|---:|---:|---|
   | `tshirt` | 6 | 0 | 1.2 → 0.3 | 0 | 0.8 | |
-  | `sweater` | 8 | 4 | 4.5 → 0.4 | `COLLAR_LEAN` | 0.78 | mỗi 15°, nét 0.56 |
+  | `sweater` | 5 | 1.5 | 2.2 → 0.4 | 0 | 0.3 | mỗi 15°, nét 0.56 |
 
   **Da trong miệng cổ.** Người 3D mặc đồ (`palette.clad`), mọi kiểu áo, có lưới màu da phủ mặt khối từ viền cổ lên mép
   trên khối và nắp đỉnh khối, nổi `0.3` px (`NECK_SKIN`, dưới viền gân, cổ bẻ, áo trong và mảng áo): miệng cổ áo lộ da chứ
@@ -1251,10 +1254,12 @@ nổi thấp thì vỏ ấy lòi qua thành chấm mực.
 
 `inner.collar: true` dựng cổ sơ mi màu áo trong (bỏ trống `inner.color` là `accent`) nằm trong miệng cổ chữ V: miệng cổ
 riêng ôm chân ống cổ, hẹp hơn miệng cổ áo khoác `INNER_COLLAR.inset` (`2.5`) px và không rộng quá `NECK_MIN`, nên chân cổ
-sơ mi nằm trong chân cổ áo khoác; chân cổ cao `8.5` px ở nửa sau, lá cổ nửa sau rủ `5` px dọc chân cổ, không trải xuống
+sơ mi nằm trong chân cổ áo khoác; chân cổ cao `7` px ở nửa sau, nhô chừng `2.5` px (1 cm) trên nếp gập cổ áo khoác, lá cổ nửa sau rủ `5` px dọc chân cổ, không trải xuống
 thân. Phía trước hai lá cổ nhọn luồn dưới ve. Dựng bằng chính bộ dựng [cổ bẻ](#thân-áo-dựng-khối), nét viền như cổ bẻ.
 Áo trong khoét theo miệng cổ sơ mi: trong miệng cổ là da cổ. Người đầu `human` thì miệng cổ áo, cổ sơ mi nới ra quanh chân
-cổ (`humanNeckMin`), mà cổ rộng theo bề ngang đầu ([01](01-rig.md#chiều-cao-và-cỡ-đầu)).
+cổ (`humanNeckMin`), mà cổ rộng theo bề ngang đầu ([01](01-rig.md#chiều-cao-và-cỡ-đầu)). Miệng cổ nới theo bề ngang chạm
+mặt vát ở hàng cao, chỗ nửa sau thân đã thu mỏng hơn gáy; nên viền cổ nửa sau (cổ áo, cổ sơ mi, viền gân, da miệng cổ) không
+cao hơn hàng nửa sau sâu tới `NAPE` (`Surface.nape`), hạ dần theo `cos` từ giữa lưng ra hai bên — chân cổ áo ôm ngoài gáy.
 
 ```json
 "inner": { "color": "#FFF8EC", "tie": { "color": "#7E2235" }, "collar": true }

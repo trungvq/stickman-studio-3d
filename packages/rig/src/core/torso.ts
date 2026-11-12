@@ -74,6 +74,8 @@ export interface Surface {
   t: (t: number) => number;
   /** THỬ (feat/real-head-proto): miệng cổ sơ mi `inner.collar` không hẹp hơn ngần này px thay cho `NECK_MIN` (đầu `human`) */
   neckMin?: number;
+  /** Đầu `human`: viền cổ nửa sau không cao hơn hàng `y` này, chỗ nửa sau đã sâu tới `NAPE` — chân cổ áo không lọt vào gáy */
+  nape?: number;
 }
 
 /**
@@ -165,7 +167,7 @@ export const TRIM_FINE = { k: 0.3, ink: 0.5 } as const;
 /** Viền của mảng tô (nơ, dải nơ): nét `k` lần nét thân, pha màu nét về màu áo */
 export const OUTLINE = { k: 0.35, ink: 0.5 } as const;
 /** Nửa sau cổ bẻ nổi khối cao lên bấy nhiêu px mỗi px lùi sau trục thân, vuốt mềm quanh trục */
-export const COLLAR_LEAN = 0.35;
+export const COLLAR_LEAN = 0.12;
 /** Viền cổ gân nổi khối ở giữa ngực chỉ nổi bấy nhiêu lần độ nổi nửa sau, để mép cổ trước không bị đầu che */
 export const RIB_FRONT = 0.3;
 /** Đỉnh khối hẹp hơn miệng cổ áo bấy nhiêu lần, để viền cổ nằm hẳn trên mặt vát */
@@ -481,7 +483,7 @@ const tiePoly = (s: Surface, t: Tie, y0 = s.top()): P2[] => {
  * (`open`): cúc trên mở, chữ V sâu lộ da, mũi cổ cao hơn đáy chữ V
  */
 export const INNER_COLLAR = {
-  stand: 8.5,
+  stand: 7,
   fall: 5,
   lift: [2.2, 1.4],
   tip: 1,
@@ -505,7 +507,7 @@ export const innerCollarShape = (g: Garment) =>
  * kinh độ cuộn về gần `phi` cho vòng liền
  */
 export function neckRing(
-  s: Pick<Surface, "g" | "top" | "at">,
+  s: Pick<Surface, "g" | "top" | "at" | "nape">,
   shape: GarmentStyleDef["neckline"],
   phi: number,
   grow = 0,
@@ -513,9 +515,10 @@ export function neckRing(
   const g = s.g;
   const x = (g.neck + grow) * Math.sin(phi * D);
   const c = Math.cos(phi * D);
+  const back = Math.max(g.neckBack, s.nape === undefined ? 0 : s.nape - s.top());
   const dip =
     c < 0
-      ? (g.neckBack + grow) * -c
+      ? (back + grow) * -c
       : shape === "v"
         ? (g.neckFront + grow) * (1 - Math.abs(Math.sin(phi * D)))
         : shape === "square"
@@ -702,7 +705,14 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
     label: "Áo len dựng khối",
     dims: { ...TEE, hem: 2, neckFront: 12 },
     neckline: "round",
-    rib: { width: 8, stand: 4, lift: [4.5, 0.4], line: 0.3, ticks: { step: 15, k: 0.56 } },
+    rib: {
+      width: 5,
+      stand: 1.5,
+      lift: [2.2, 0.4],
+      line: 0.3,
+      lean: 0,
+      ticks: { step: 15, k: 0.56 },
+    },
     marks: (s) => [around(s.yH - 13, TRIM), ...ticks(s.yH - 12, s.yH - 1, 12, TRIM_FINE)],
   },
   suit: {
@@ -729,14 +739,14 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
     },
     // Ve áo: mép ngoài qua đỉnh ve rồi về cúc trên, vểnh ở đỉnh ve
     collar: (s) => ({
-      stand: 6,
+      stand: 4.5,
       band: 7,
       side: 3,
       flap: [
         [s.g.lapel ?? SUIT_LAPEL, s.top() + 38],
         [0.3 * (s.g.lapel ?? SUIT_LAPEL), s.top() + s.g.neckFront - 8],
       ],
-      lift: [7, 1.5],
+      lift: [4, 1.5],
       tip: 4,
       tipAt: 0,
     }),
@@ -827,7 +837,7 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
           [29 * w, s.top() + 33],
           [9 * w, s.top() + s.g.neckFront - 4],
         ],
-        lift: [5, 1.5],
+        lift: [3.5, 1.5],
         tip: 4,
         tipAt: 2,
       };
