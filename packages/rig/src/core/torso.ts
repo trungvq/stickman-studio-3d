@@ -225,7 +225,8 @@ export const HUMAN_RING_CLEAR = 1.5;
 const HUMAN_RING_UP = 0.2;
 /** Miệng cổ áo tối thiểu (px) của cổ `human` nửa rộng nhân `k` (`humanNeckWidth`) */
 export const humanNeckMin = (k: number) =>
-  100 * Math.max(...HUMAN_NECK_ROWS.filter((r) => r[0] < HUMAN_RING_UP).map((r) => r[1])) * k + HUMAN_RING_CLEAR;
+  100 * Math.max(...HUMAN_NECK_ROWS.filter((r) => r[0] < HUMAN_RING_UP).map((r) => r[1])) * k +
+  HUMAN_RING_CLEAR;
 /**
  * Ống cổ uốn (`bendNeck`): dưới mép cổ áo áo phông (cao hơn khớp cổ `bones.neck + collar`) ống đứng theo thân, lên thêm
  * `span` thì theo trọn khớp cổ, giữa hai mức chuyển êm; `rows` đoạn dọc. Đơn vị three
@@ -406,7 +407,12 @@ const around = (y: number, { k, ink }: { k: number; ink?: number }): Mark => ({
 });
 
 /** Nét dọc từ `y0` tới `y1` ở mỗi kinh độ cách nhau `step` độ */
-const ticks = (y0: number, y1: number, step: number, { k, ink }: { k: number; ink?: number }): Mark[] =>
+const ticks = (
+  y0: number,
+  y1: number,
+  step: number,
+  { k, ink }: { k: number; ink?: number },
+): Mark[] =>
   Array.from({ length: Math.round(360 / step) }, (_, i) => ({
     pts: [
       [-180 + step * i, y0],
@@ -856,7 +862,11 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
             ...OUTLINE,
           },
         ]),
-        { pts: oval(0, y + 2, 3, 4, 0, 360).map(([x, yy]) => s.at(x, yy)), fill: "accent", ...OUTLINE },
+        {
+          pts: oval(0, y + 2, 3, 4, 0, 360).map(([x, yy]) => s.at(x, yy)),
+          fill: "accent",
+          ...OUTLINE,
+        },
       ];
     },
     collar: (s) => ({

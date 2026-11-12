@@ -486,20 +486,42 @@ const BULGE = 1.5;
 
 /** THỬ (feat/real-head-proto): mắt anime người lớn — hạnh nhân, lòng trắng, tròng nâu, con ngươi, mi trên dày có đuôi */
 const IRIS = "#4a3426";
-const ADULT = { rx: 1.75, ry: 1, up: 1.6, down: 1.2, iris: [0.92, 1.1], pupil: [0.42, 0.56], lash: 3.4, flick: 2.4 };
+const ADULT = {
+  rx: 1.75,
+  ry: 1,
+  up: 1.6,
+  down: 1.2,
+  iris: [0.92, 1.1],
+  pupil: [0.42, 0.56],
+  lash: 3.4,
+  flick: 2.4,
+};
 function adultEye(x: number, cy: number, s: 1 | -1, k: number, lid: number): FaceMark {
   const A = ADULT;
-  const rx = A.rx * R * k, ry = A.ry * R;
-  const ix = x - s * rx, iy = cy + 0.12 * R, ox = x + s * rx, oy = cy - 0.08 * R;
-  const upY = cy - A.up * ry + lid * 2.2 * ry, dnY = cy + A.down * ry;
+  const rx = A.rx * R * k,
+    ry = A.ry * R;
+  const ix = x - s * rx,
+    iy = cy + 0.12 * R,
+    ox = x + s * rx,
+    oy = cy - 0.08 * R;
+  const upY = cy - A.up * ry + lid * 2.2 * ry,
+    dnY = cy + A.down * ry;
   const upper = `M ${ix} ${iy} Q ${x - s * 0.15 * rx} ${upY} ${ox} ${oy}`;
   const d = `${upper} Q ${x + s * 0.1 * rx} ${dnY} ${ix} ${iy} Z`;
   return {
     group: [
       { clip: d },
       { path: d, fill: WHITE },
-      { ellipse: [x - s * 0.05 * R, cy + 0.06 * R, A.iris[0] * R * k, A.iris[1] * R] as Quad, fill: IRIS, clipped: true },
-      { ellipse: [x - s * 0.05 * R, cy + 0.1 * R, A.pupil[0] * R * k, A.pupil[1] * R] as Quad, fill: EYE_INK, clipped: true },
+      {
+        ellipse: [x - s * 0.05 * R, cy + 0.06 * R, A.iris[0] * R * k, A.iris[1] * R] as Quad,
+        fill: IRIS,
+        clipped: true,
+      },
+      {
+        ellipse: [x - s * 0.05 * R, cy + 0.1 * R, A.pupil[0] * R * k, A.pupil[1] * R] as Quad,
+        fill: EYE_INK,
+        clipped: true,
+      },
       { path: upper, fill: "none", stroke: EYE_INK, strokeWidth: 1.6, strokeLinecap: "round" },
       {
         // nửa ngoài mi trên dày, có đuôi: điểm giữa đường cong bậc hai ở t = 0,45 tới đuôi

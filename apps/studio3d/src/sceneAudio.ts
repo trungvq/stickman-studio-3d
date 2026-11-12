@@ -62,7 +62,10 @@ function sceneRuns(data: SoundData, name: string): Run[] {
     const screen = shot.duration ?? (end === undefined ? NaN : screenTime(end - from, table));
     if (shot.scene === name) {
       const sceneTo =
-        shot.to ?? (shot.duration !== undefined ? from + sceneTime(shot.duration, table) : (whole ?? Infinity));
+        shot.to ??
+        (shot.duration !== undefined
+          ? from + sceneTime(shot.duration, table)
+          : (whole ?? Infinity));
       const part = { shot, sceneFrom: from, sceneTo };
       if (open && Math.abs(open.sceneTo - from) < EPS) {
         open.parts.push(part);
@@ -76,7 +79,8 @@ function sceneRuns(data: SoundData, name: string): Run[] {
   }
   const kept: Run[] = [];
   for (const r of [...runs].sort((a, b) => b.sceneTo - b.sceneFrom - (a.sceneTo - a.sceneFrom)))
-    if (!kept.some((k) => r.sceneFrom < k.sceneTo - EPS && k.sceneFrom < r.sceneTo - EPS)) kept.push(r);
+    if (!kept.some((k) => r.sceneFrom < k.sceneTo - EPS && k.sceneFrom < r.sceneTo - EPS))
+      kept.push(r);
   return kept.sort((a, b) => a.sceneFrom - b.sceneFrom);
 }
 
@@ -151,7 +155,9 @@ export function planCue(c: PlayCue, fileSeconds: number, t: number, speed: numbe
     const la = a - c.start;
     const lb = b - c.start;
     const stops = [la, c.fadeIn, span - c.fadeOut, lb].filter((l) => l >= la && l <= lb);
-    const gains = [...new Set(stops)].sort((x, y) => x - y).map((l) => ({ when: clock(l), v: level(l) }));
+    const gains = [...new Set(stops)]
+      .sort((x, y) => x - y)
+      .map((l) => ({ when: clock(l), v: level(l) }));
     return { when: clock(la), offset: a - iter, length: b - a, gains };
   };
   if (!c.loop) {

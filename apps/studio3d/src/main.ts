@@ -486,12 +486,18 @@ async function loadSound(name: string, marks: Record<string, number>) {
   sound.clear();
   paintSound();
   try {
-    const d = (await (await fetch(`/api/sound?name=${encodeURIComponent(name)}`)).json()) as SoundData;
+    const d = (await (
+      await fetch(`/api/sound?name=${encodeURIComponent(name)}`)
+    ).json()) as SoundData;
     if (gen !== soundGen || !d.episode) return;
-    const missing = await sound.load(sceneCues(d, name, marks), (f) => `/api/audio?file=${encodeURIComponent(f)}`);
+    const missing = await sound.load(
+      sceneCues(d, name, marks),
+      (f) => `/api/audio?file=${encodeURIComponent(f)}`,
+    );
     if (gen !== soundGen) return;
     paintSound();
-    if (missing.length) say(`thiếu ${missing.length} file tiếng: ${missing.slice(0, 3).join(", ")}`);
+    if (missing.length)
+      say(`thiếu ${missing.length} file tiếng: ${missing.slice(0, 3).join(", ")}`);
     dirty = true;
   } catch (e) {
     say(`không nạp được tiếng: ${(e as Error).message}`, true);
@@ -501,7 +507,8 @@ async function loadSound(name: string, marks: Record<string, number>) {
 /** Tiến giây phát: có tiếng thì theo đồng hồ tiếng, không thì theo thời gian khung */
 function advance(dt: number) {
   if (soundOn && sound.has) {
-    if (!sound.running || sound.speed !== lv.speed || Math.abs(t - soundT) > 0.15) sound.start(t, lv.speed);
+    if (!sound.running || sound.speed !== lv.speed || Math.abs(t - soundT) > 0.15)
+      sound.start(t, lv.speed);
     if (sound.running) {
       t = sound.time();
       soundT = t;

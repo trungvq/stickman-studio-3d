@@ -1,6 +1,14 @@
 import { D } from "./constants";
 import type { Open, Wrap } from "./schema";
-import { COLLAR_INK, COLLAR_LINE, curve, lerp, type MarkFill, type SP, type Surface } from "./torso";
+import {
+  COLLAR_INK,
+  COLLAR_LINE,
+  curve,
+  lerp,
+  type MarkFill,
+  type SP,
+  type Surface,
+} from "./torso";
 import type { Vec3 } from "./sphere";
 import type { PrintPart } from "./print";
 
@@ -265,7 +273,10 @@ export function wrapParts(b: WrapBody, w: Wrap): WrapParts {
   const yEnd = s.yH - 2;
   const NV = 4;
   // quãng đai che (`WRAP_OBI_TUCK`): cột dải cổ có giữa bề ngang nằm trong đó thì bỏ, dải tách thành từng khúc
-  const tuck = w.obi && [(-w.obi.y - w.obi.width / 2) * b.height + WRAP_OBI_TUCK, (-w.obi.y + w.obi.width / 2) * b.height - WRAP_OBI_TUCK];
+  const tuck = w.obi && [
+    (-w.obi.y - w.obi.width / 2) * b.height + WRAP_OBI_TUCK,
+    (-w.obi.y + w.obi.width / 2) * b.height - WRAP_OBI_TUCK,
+  ];
   const strip = (
     cols: ((d: number) => SP)[],
     d0: number,

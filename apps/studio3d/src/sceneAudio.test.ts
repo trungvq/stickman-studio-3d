@@ -8,7 +8,16 @@ describe("sceneCues", () => {
     const cues = sceneCues(
       data({
         shots: [
-          { scene: "a", from: 10, to: 12, duration: 2, audio: [{ file: "x.mp3", at: 0.5 }, { file: "ngoai.mp3", at: 3 }] },
+          {
+            scene: "a",
+            from: 10,
+            to: 12,
+            duration: 2,
+            audio: [
+              { file: "x.mp3", at: 0.5 },
+              { file: "ngoai.mp3", at: 3 },
+            ],
+          },
           { scene: "a", from: 12, to: 15, duration: 3, audio: [{ file: "y.mp3", volume: 0.5 }] },
         ],
       }),
@@ -23,7 +32,11 @@ describe("sceneCues", () => {
 
   it("cue khai mốc tính từ mốc của cảnh", () => {
     const cues = sceneCues(
-      data({ shots: [{ scene: "a", from: 2, to: 8, duration: 6, audio: [{ file: "x.mp3", at: "@m+0.5" }] }] }),
+      data({
+        shots: [
+          { scene: "a", from: 2, to: 8, duration: 6, audio: [{ file: "x.mp3", at: "@m+0.5" }] },
+        ],
+      }),
       "a",
       { m: 5 },
     );
@@ -79,7 +92,15 @@ const cue = (more: Partial<PlayCue>): PlayCue => ({
 describe("planCue", () => {
   it("bắt đầu nghe giữa cue thì phát từ giữa file", () => {
     expect(planCue(cue({}), 5, 12, 1)).toEqual([
-      { when: 0, offset: 2, length: 3, gains: [{ when: 0, v: 1 }, { when: 3, v: 1 }] },
+      {
+        when: 0,
+        offset: 2,
+        length: 3,
+        gains: [
+          { when: 0, v: 1 },
+          { when: 3, v: 1 },
+        ],
+      },
     ]);
   });
 

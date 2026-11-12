@@ -359,14 +359,23 @@ export function studio3dConfig({
           } catch {
             // không có package.json: giữ mặc định
           }
-          return { episode: best.name, shots: best.ep.shots, audio: best.ep.audio ?? [], durations, fps };
+          return {
+            episode: best.name,
+            shots: best.ep.shots,
+            audio: best.ep.audio ?? [],
+            durations,
+            fps,
+          };
         }),
       );
 
       // File tiếng trong `assets/audio/`, chỉ đọc
       server.middlewares.use("/api/audio", (req, res) => {
         const base = join(ROOT, "assets", "audio");
-        const file = resolve(base, new URL(req.url ?? "", "http://x").searchParams.get("file") ?? "");
+        const file = resolve(
+          base,
+          new URL(req.url ?? "", "http://x").searchParams.get("file") ?? "",
+        );
         if (!file.startsWith(base + sep) || !existsSync(file)) {
           res.statusCode = 404;
           res.end();

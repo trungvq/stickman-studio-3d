@@ -187,7 +187,8 @@ export function necklaceSolids(
   const outside = (sp: SP) => {
     const p = b.raise(sp, 0);
     if (s.neckMin === undefined) return Math.hypot(p[0], p[2] + NECK_TUBE.back * 100) >= clear;
-    const a = s.neckMin - HUMAN_RING_CLEAR + r + NECKLACE_LIFT, d = 100 * (p[2] < 0 ? -nb : nf) + r + NECKLACE_LIFT;
+    const a = s.neckMin - HUMAN_RING_CLEAR + r + NECKLACE_LIFT,
+      d = 100 * (p[2] < 0 ? -nb : nf) + r + NECKLACE_LIFT;
     return Math.hypot(p[0] / a, p[2] / d) >= 1;
   };
   // không đủ chỗ trong viền cổ thì dây vắt lên viền gân, tối đa hết bề rộng viền

@@ -92,7 +92,16 @@ export const HUMAN_HEAD = {
  * nhân trung) nửa cao `vh`; `h: 0` là không cánh
  */
 export const HUMAN_NOSE = {
-  root: 1, tip: 0.6, gap: 9, under: 5, wRoot: 4, wTip: 5.2, flare: 1, out: 0.2, bow: 1.7, sink: 0.01,
+  root: 1,
+  tip: 0.6,
+  gap: 9,
+  under: 5,
+  wRoot: 4,
+  wTip: 5.2,
+  flare: 1,
+  out: 0.2,
+  bow: 1.7,
+  sink: 0.01,
   ridge: [2.6, 1.8] as readonly [number, number],
   tipW: 1,
   ala: { u: 0.62, w: 0.22, h: 0, v: 0.8, vh: 0.14 },
@@ -100,7 +109,13 @@ export const HUMAN_NOSE = {
 export type NoseNums = typeof HUMAN_NOSE;
 
 /** Số sọ của đầu `human` mà kiểu mặt đè: hằng số `HUMAN_HEAD`, hình hàm `JAWS` */
-type Widen<T> = T extends number ? number : T extends readonly (infer U)[] ? readonly Widen<U>[] : T extends object ? { readonly [K in keyof T]: Widen<T[K]> } : T;
+type Widen<T> = T extends number
+  ? number
+  : T extends readonly (infer U)[]
+    ? readonly Widen<U>[]
+    : T extends object
+      ? { readonly [K in keyof T]: Widen<T[K]> }
+      : T;
 export type HeadNums = Widen<typeof HUMAN_HEAD>;
 type JawNums = Widen<(typeof JAWS)["v"]>;
 
@@ -139,7 +154,17 @@ export const FACES = {
       v: { jaw: 0.06, chinW: 0.58, corner: 0.1 },
       square: { jaw: 0.08, chinW: 0.66, corner: 0.09 },
     },
-    nose: { root: -1, wRoot: 5, wTip: 15, flare: 2, out: 0.17, bow: 2.4, ridge: [2.2, 1.3], tipW: 0.6, ala: { u: 0.72, w: 0.2, h: 0.55, v: 0.8, vh: 0.15 } },
+    nose: {
+      root: -1,
+      wRoot: 5,
+      wTip: 15,
+      flare: 2,
+      out: 0.17,
+      bow: 2.4,
+      ridge: [2.2, 1.3],
+      tipW: 0.6,
+      ala: { u: 0.72, w: 0.2, h: 0.55, v: 0.8, vh: 0.15 },
+    },
   },
 } as const satisfies Record<string, FacePreset>;
 export type FaceKind = keyof typeof FACES;
@@ -221,7 +246,9 @@ export function humanSkull(p: V3): V3 {
   const s0 = Math.max(0, -y);
   const n = H.square + H.squareLow * s0 * s0;
   const q = Math.pow(Math.abs(x) ** n + Math.abs(y) ** n + Math.abs(z) ** n, 1 / n) || 1;
-  const X = x / q, Y = y / q, Z = z / q;
+  const X = x / q,
+    Y = y / q,
+    Z = z / q;
   const s = Math.max(0, -Y);
   const s2 = s * s;
   const e = H.corner;
@@ -233,21 +260,30 @@ export function humanSkull(p: V3): V3 {
   // đáy cắt theo quai hàm: phẳng dưới cằm, chéo lên góc hàm, góc mềm `e`
   const J = H.jawLine;
   const y1 = Y * (1 + H.drop * s2);
-  const bottom = -(1 + H.drop) * (1 - H.flat) + J.rise * smooth01(J.front, J.back, Z) - H.napeDrop.drop * smooth01(J.back, H.napeDrop.to, Z);
+  const bottom =
+    -(1 + H.drop) * (1 - H.flat) +
+    J.rise * smooth01(J.front, J.back, Z) -
+    H.napeDrop.drop * smooth01(J.back, H.napeDrop.to, Z);
   const yb = (y1 + bottom + Math.sqrt((y1 - bottom) ** 2 + e * e)) / 2;
   const front = Math.max(0, z);
   // đường nghiêng mặt: các nét theo cao độ của cầu gốc như nét mặt dán (`faceSurface`), nên mắt, miệng nằm đúng nét
   // trọng số: mặt quay ra trước (cos kinh độ bình phương), nét ngang theo sin kinh độ
   const hz = Math.hypot(p[0], p[2]);
-  const fw = hz > 1e-9 ? (Math.max(0, p[2]) / hz) ** 2 : 0, lon = hz > 1e-9 ? p[0] / hz : 0;
+  const fw = hz > 1e-9 ? (Math.max(0, p[2]) / hz) ** 2 : 0,
+    lon = hz > 1e-9 ? p[0] / hz : 0;
   let relief = 0;
-  for (const f of H.profile) relief += f.out * Math.exp(-((lon / f.w) ** 2) - ((p[1] - f.y) / f.h) ** 2);
+  for (const f of H.profile)
+    relief += f.out * Math.exp(-((lon / f.w) ** 2) - ((p[1] - f.y) / f.h) ** 2);
   const N = H.nose;
   const bump = N.out * front * front * Math.exp(-((p[0] / N.w) ** 2) - ((p[1] - N.y) / N.h) ** 2);
-  const Zd = Z + s2 * (H.chin + H.nape * back(Z)) + H.chinFront * front * s2 * s + fw * relief + bump;
+  const Zd =
+    Z + s2 * (H.chin + H.nape * back(Z)) + H.chinFront * front * s2 * s + fw * relief + bump;
   // sọ ôm cổ sau góc hàm, dưới tai
-  const G = H.hug, xo = X * H.narrow * w, ax = Math.abs(xo);
-  const wh = smooth01(J.back, G.back, Z) * smooth01(G.nape[1], G.nape[0], Z) * smooth01(G.top, G.low, yb);
+  const G = H.hug,
+    xo = X * H.narrow * w,
+    ax = Math.abs(xo);
+  const wh =
+    smooth01(J.back, G.back, Z) * smooth01(G.nape[1], G.nape[0], Z) * smooth01(G.top, G.low, yb);
   const hx = ax + ((ax * G.half) / Math.pow(ax ** G.p + G.half ** G.p, 1 / G.p) - ax) * wh;
   return [Math.sign(xo) * hx, yb, Zd + (1 - H.backDepth) * back(Zd)];
 }
@@ -259,7 +295,10 @@ export function humanSkull(p: V3): V3 {
 export function humanSkullGlsl(shape: HeadShape = shapeNow): string {
   const H = headNums(shape);
   const f = (v: number) => (Number.isInteger(v) ? v.toFixed(1) : String(v));
-  const J = H.jawLine, N = H.nose, ND = H.napeDrop, G = H.hug;
+  const J = H.jawLine,
+    N = H.nose,
+    ND = H.napeDrop,
+    G = H.hug;
   const relief = H.profile
     .map((r) => `${f(r.out)} * exp(-hsSq(lon / ${f(r.w)}) - hsSq((p.y - ${f(r.y)}) / ${f(r.h)}))`)
     .join(" + ");

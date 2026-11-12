@@ -2194,7 +2194,9 @@ server.registerTool(
     },
   },
   guard(async ({ scene, uses, only, skip, baseline, saveBaseline, crowd }) =>
-    text(await cli.checkWorkspace({ dir: WS, scene, uses, only, skip, baseline, saveBaseline, crowd })),
+    text(
+      await cli.checkWorkspace({ dir: WS, scene, uses, only, skip, baseline, saveBaseline, crowd }),
+    ),
   ),
 );
 

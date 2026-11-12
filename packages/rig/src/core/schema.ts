@@ -802,7 +802,12 @@ export const CharacterSchema = z.object({
        */
       face: z.enum(["asian", "western"]).default("asian"),
       /** THỬ (feat/real-head-proto): mũi khối riêng của đầu `human` — `length` nhân độ dài từ gốc giữa hai mắt tới chóp, `out` nhân độ nhô */
-      nose: z.object({ length: z.number().min(0.6).max(1.5).default(1), out: z.number().min(0).max(2).default(1) }).prefault({}),
+      nose: z
+        .object({
+          length: z.number().min(0.6).max(1.5).default(1),
+          out: z.number().min(0).max(2).default(1),
+        })
+        .prefault({}),
     })
     .prefault({}),
   palette: z

@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { chibiShape, CHIBI, EYE_KINDS, eyeMarks, eyeShine } from "./face";
-import { FACES, HEAD_SHAPE_DEFAULT, headShape, humanEar, humanHair, humanSkull, setHeadShape, withHeadShape } from "./humanHead";
+import {
+  FACES,
+  HEAD_SHAPE_DEFAULT,
+  headShape,
+  humanEar,
+  humanHair,
+  humanSkull,
+  setHeadShape,
+  withHeadShape,
+} from "./humanHead";
 import { parseCharacter } from "./schema";
 
 const unit = (x: number, y: number, z: number): [number, number, number] => {
@@ -25,57 +34,74 @@ describe("đầu human", () => {
     ]) {
       // độ dốc trên và dưới xích đạo bằng nhau: không có góc gãy
       const [a, o, b] = [h, 0, -h].map((y) => humanSkull(unit(x, y, z)));
-      for (let i = 0; i < 3; i++) expect(Math.abs((a[i] - o[i]) / h - (o[i] - b[i]) / h)).toBeLessThan(0.01);
+      for (let i = 0; i < 3; i++)
+        expect(Math.abs((a[i] - o[i]) / h - (o[i] - b[i]) / h)).toBeLessThan(0.01);
     }
   });
 
   it("người thật: đường nghiêng mặt không phẳng, quai hàm chéo lên góc hàm, gáy có tóc tới cổ", () => {
     for (const face of ["western", "asian"] as const)
-    for (const jaw of ["v", "square"] as const) {
-      const old = setHeadShape({ face, jaw });
-      if (face === "western") {
-        // gờ mày nhô hơn hốc mắt, môi nhô hơn rãnh dưới môi, cằm nhô lại
-        expect(mid(0.15)[2] - mid(-0.04)[2]).toBeGreaterThan(0.04);
-        expect(mid(-0.58)[2] - mid(-0.66)[2]).toBeGreaterThan(0.03);
-        expect(mid(-0.73)[2] - mid(-0.66)[2]).toBeGreaterThan(0.03);
+      for (const jaw of ["v", "square"] as const) {
+        const old = setHeadShape({ face, jaw });
+        if (face === "western") {
+          // gờ mày nhô hơn hốc mắt, môi nhô hơn rãnh dưới môi, cằm nhô lại
+          expect(mid(0.15)[2] - mid(-0.04)[2]).toBeGreaterThan(0.04);
+          expect(mid(-0.58)[2] - mid(-0.66)[2]).toBeGreaterThan(0.03);
+          expect(mid(-0.73)[2] - mid(-0.66)[2]).toBeGreaterThan(0.03);
+        }
+        // đáy cằm thấp hơn đáy cầu một chút; dưới tai (góc hàm) cao hơn đáy cằm nhiều
+        const chin = Array.from({ length: 41 }, (_, i) => mid(-0.6 - i / 100)).reduce((a, b) =>
+          b[1] < a[1] ? b : a,
+        );
+        expect(chin[1]).toBeGreaterThan(-1.1);
+        expect(chin[1]).toBeLessThan(-0.95);
+        expect(humanSkull(unit(0.6, -0.8, -0.05))[1] - chin[1]).toBeGreaterThan(0.3);
+        // chân tóc gáy (vĩ độ −22° phía sau) xuống tới ống cổ, gáy thu vào
+        const nape = humanSkull(
+          unit(0, -Math.sin((22 * Math.PI) / 180), -Math.cos((22 * Math.PI) / 180)),
+        );
+        expect(nape[1]).toBeLessThan(-0.5);
+        expect(nape[2]).toBeGreaterThan(-0.75);
+        // nhìn ngang không dài như trứng nằm: tai ngay sau đường giữa đầu
+        const [front, back] = [mid(0.15)[2], humanSkull([0, 0, -1])[2]];
+        expect(back).toBeGreaterThan(-0.92);
+        const ear = humanEar(1)[2];
+        expect(ear).toBeLessThan((front + back) / 2);
+        expect(ear).toBeGreaterThan((front + back) / 2 - 0.2);
+        setHeadShape(old);
       }
-      // đáy cằm thấp hơn đáy cầu một chút; dưới tai (góc hàm) cao hơn đáy cằm nhiều
-      const chin = Array.from({ length: 41 }, (_, i) => mid(-0.6 - i / 100)).reduce((a, b) => (b[1] < a[1] ? b : a));
-      expect(chin[1]).toBeGreaterThan(-1.1);
-      expect(chin[1]).toBeLessThan(-0.95);
-      expect(humanSkull(unit(0.6, -0.8, -0.05))[1] - chin[1]).toBeGreaterThan(0.3);
-      // chân tóc gáy (vĩ độ −22° phía sau) xuống tới ống cổ, gáy thu vào
-      const nape = humanSkull(unit(0, -Math.sin((22 * Math.PI) / 180), -Math.cos((22 * Math.PI) / 180)));
-      expect(nape[1]).toBeLessThan(-0.5);
-      expect(nape[2]).toBeGreaterThan(-0.75);
-      // nhìn ngang không dài như trứng nằm: tai ngay sau đường giữa đầu
-      const [front, back] = [mid(0.15)[2], humanSkull([0, 0, -1])[2]];
-      expect(back).toBeGreaterThan(-0.92);
-      const ear = humanEar(1)[2];
-      expect(ear).toBeLessThan((front + back) / 2);
-      expect(ear).toBeGreaterThan((front + back) / 2 - 0.2);
-      setHeadShape(old);
-    }
   });
 
   it("kiểu mặt: mặc định `asian`; `asian` giữa mặt phẳng, cằm lùi sau môi nhiều hơn `western`", () => {
     expect(HEAD_SHAPE_DEFAULT.face).toBe("asian");
     expect(headShape().face).toBe("asian");
     expect(FACES.western).toEqual({});
-    const lip = (y0: number, y1: number) => Math.max(...Array.from({ length: 21 }, (_, i) => mid(y0 + ((y1 - y0) * i) / 20)[2]));
+    const lip = (y0: number, y1: number) =>
+      Math.max(...Array.from({ length: 21 }, (_, i) => mid(y0 + ((y1 - y0) * i) / 20)[2]));
     for (const jaw of ["v", "square"] as const) {
       // đỉnh môi (môi trên, môi dưới) và gò cằm, nhìn ngang
-      const a = withHeadShape({ face: "asian", jaw }, () => ({ lip: lip(-0.62, -0.46), chin: lip(-0.82, -0.7), brow: mid(0.15)[2] - mid(-0.04)[2] }));
-      const w = withHeadShape({ face: "western", jaw }, () => ({ lip: lip(-0.62, -0.46), chin: lip(-0.82, -0.7), brow: mid(0.15)[2] - mid(-0.04)[2] }));
+      const a = withHeadShape({ face: "asian", jaw }, () => ({
+        lip: lip(-0.62, -0.46),
+        chin: lip(-0.82, -0.7),
+        brow: mid(0.15)[2] - mid(-0.04)[2],
+      }));
+      const w = withHeadShape({ face: "western", jaw }, () => ({
+        lip: lip(-0.62, -0.46),
+        chin: lip(-0.82, -0.7),
+        brow: mid(0.15)[2] - mid(-0.04)[2],
+      }));
       // gò cằm lùi sau đỉnh môi ở `asian` rõ hơn hẳn `western`
       expect(a.lip - a.chin).toBeGreaterThan(w.lip - w.chin + 0.02);
       expect(a.brow).toBeLessThan(w.brow / 2);
       // cằm nhìn thẳng rộng hơn: bề ngang ở đáy cằm
       const wide = () => humanSkull(unit(0.25, -0.95, 0.2))[0];
-      expect(withHeadShape({ face: "asian", jaw }, wide)).toBeGreaterThan(withHeadShape({ face: "western", jaw }, wide));
+      expect(withHeadShape({ face: "asian", jaw }, wide)).toBeGreaterThan(
+        withHeadShape({ face: "western", jaw }, wide),
+      );
     }
     // hàm `v` vẫn thon hơn `square` ở mặt `asian`
-    const at = (jaw: "v" | "square") => withHeadShape({ face: "asian", jaw }, () => humanSkull(unit(0.5, -0.85, 0.2))[0]);
+    const at = (jaw: "v" | "square") =>
+      withHeadShape({ face: "asian", jaw }, () => humanSkull(unit(0.5, -0.85, 0.2))[0]);
     expect(at("v")).toBeLessThan(at("square"));
   });
 
