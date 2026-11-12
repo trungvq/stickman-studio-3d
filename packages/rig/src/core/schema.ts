@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { INK, RIG } from "./constants";
 import { FACE_REST } from "./face";
+import { DEFAULT_SHOE, SHOE_KINDS } from "./shoe";
 import { HEAD_ASPECT, HEADS, heightOfStature } from "./stature";
 
 /** Bump khi đổi hình dạng JSON nhân vật; `migrateCharacter` phải có nhánh tương ứng. */
@@ -638,6 +639,8 @@ export const PiecePaletteSchema = z.object({
   trouser: z.string().optional(),
   trouserLength: z.number().min(0).max(1).optional(),
   shoe: z.string().optional(),
+  shoeStyle: z.enum(SHOE_KINDS).optional(),
+  sole: z.string().optional(),
 });
 
 export const SKIRT_STYLES = ["cone", "wrap", "apron"] as const;
@@ -831,6 +834,10 @@ export const CharacterSchema = z.object({
       bicep: z.number().min(0).max(1).default(0),
       /** Màu giày của người 3D `clad` */
       shoe: z.string().default("#2b2623"),
+      /** Kiểu giày dép của người 3D `clad`, khoá của `SHOE_STYLES`. docs/12-trang-phuc-3d.md#giày-dép */
+      shoeStyle: z.enum(SHOE_KINDS).default(DEFAULT_SHOE),
+      /** Màu đế giày; bỏ trống là màu đế của kiểu (`SHOE_STYLES[…].soleColor`) hay màu giày sẫm lại */
+      sole: z.string().optional(),
       /** Độ cong nét chi `0..1`; `0` là hai đoạn thẳng gãy ở khuỷu, gối. docs/01-rig.md#vẽ-chi */
       limbCurve: z.number().min(0).max(1).default(1),
     })

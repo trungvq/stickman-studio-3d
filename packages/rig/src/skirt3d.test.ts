@@ -270,7 +270,10 @@ describe('váy dựng khối', () => {
                 const m = o as THREE.Mesh;
                 if (!m.isMesh || (m.material as THREE.Material).side === THREE.BackSide) continue;
                 const mp = m.geometry.attributes.position, mn = m.geometry.attributes.normal;
+                const ankle = p.legs[s].ankle, collar = (ankle?.userData.tuck?.collar as number | undefined) ?? -Infinity;
                 for (let i = 0; i < mp.count; i++) {
+                  // mút ống chân trong giày: giày che (human.test.ts giữ ống chân trong giày)
+                  if (ankle && ankle.worldToLocal(new THREE.Vector3().fromBufferAttribute(mp, i).applyMatrix4(m.matrixWorld)).y < collar) continue;
                   const v = new THREE.Vector3().fromBufferAttribute(mp, i).applyMatrix4(m.matrixWorld).applyMatrix4(inv);
                   const n = new THREE.Vector3().fromBufferAttribute(mn, i).transformDirection(m.matrixWorld).transformDirection(inv);
                   const out = beyond(v);

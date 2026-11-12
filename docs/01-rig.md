@@ -249,7 +249,7 @@ ngồi, có hay không lọn tóc) và `keys[].equip` giữa cảnh (thay áo, t
 diễn tiếp từ cùng `sceneAt`, không mang trạng thái của bản cũ. Đổi vật ở `handRight` / `handLeft` không dựng lại người:
 đồ cầm của người 3D là vật three gắn bằng `dress` (`items` hàm dựng), không phải mảnh. Thân áo 3D lấy màu `pieces.torso.color` (bỏ trống là
 `palette.garment`) nên vật thay áo đổi được màu thân. Tay áo, quần, giày (`sleeve`, `sleeveLength`, `sleeveFlare`, `trouser`,
-`trouserLength`, `shoe`) là `palette`, trừ khi thân áo đang mặc khai `pieces.torso.palette` (hay vật thay `torso` khai
+`trouserLength`, `shoe`, `shoeStyle`, `sole`) là `palette`, trừ khi thân áo đang mặc khai `pieces.torso.palette` (hay vật thay `torso` khai
 `palette`): các trường ấy đè `palette` khi áo ấy đang mặc (`wornPalette`) — polo tay ngắn thay sang yukata tay dài loe,
 ống chân cùng màu vải. Bề dày tay chân (`sleeveWidth`, `trouserWidth`) không đổi theo vật.
 
@@ -1505,7 +1505,9 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
 | `palette.sleeveLength` | `1` | Phần tay phủ màu tay áo tính từ vai, `0..1`; phần còn lại màu da. `1` có cổ tay áo, quanh `0,25` là áo ngắn tay |
 | `palette.trouser` | `#1a1a1a` | Màu quần, dưới váy là màu tất |
 | `palette.trouserLength` | `1` | Phần chân phủ màu quần tính từ hông; `0` là chân trần dưới váy |
-| `palette.shoe` | `#2b2623` | Màu giày |
+| `palette.shoe` | `#2b2623` | Màu giày, quai dép, ống ủng |
+| `palette.shoeStyle` | `"plain"` | Kiểu giày dép, khoá của `SHOE_STYLES` (`core/shoe.ts`) — [12](12-trang-phuc-3d.md#giày-dép) |
+| `palette.sole` | trống | Màu đế, khối gót; bỏ trống là màu đế của kiểu hay màu giày sẫm lại |
 | `palette.bicep` | `0` | Gốc cánh tay to thêm bấy nhiêu phần: vai, bắp tay lồi khỏi sườn áo; nam quanh `0,35`, `0,7` là vạm vỡ |
 | `palette.sleeveWidth` / `trouserWidth` | `15` / `17` | Bán kính chi `(w + rig.stroke) / 2` px — đúng `limbHalf` của lõi; bỏ trống lấy `LIMB_WIDTH.clad` (`limbWidths`), vạm vỡ quanh `19` / `22` |
 | `palette.sleeveFlare` | `0` | Tay áo loe: miệng tay áo rộng hơn cổ tay bấy nhiêu px (bán kính); bàn tay giữ cỡ theo `sleeveWidth` |
@@ -1620,12 +1622,10 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
   attach.ts), và khung `hand` của đồ cầm ở **tâm nắm** (`handGrip`), không ở mút nét: đồ căn cho người que
   lùi vào lòng bàn tay vài px.
 - **Giày ở cổ chân, hông không đổi.** `Leg.ankle` treo ở mút ống chân; đế giày nằm đúng mặt sàn ở
-  chỗ mút nét người que chạm sàn, độ cao hông vẫn `thigh + shin + limb` của khung xương. Cổ chân tự xoay mỗi
-  lần three tính ma trận: bàn chân nằm ngang trong hệ người khi ống chân lệch khỏi phương đứng dưới
-  `0,5` rad, quá thì nghiêng theo phần dư (quỳ, đá chân). Phần ống chân và ống quần dưới cổ chân ép dẹt theo phương
-  đứng của bàn chân, sâu nhất `0,6` độ sâu đế (`TUCK` của `stickman.ts`): mút tròn to hơn đế không lòi dưới giày khi nhấc chân.
-  Nửa dưới giày có mặt cắt siêu elip, gần đủ rộng tới sát đế, gót lùi đủ xa (`SHOE` của `human.ts`): mút ống
-  chân ép dẹt cùng vỏ viền nằm gọn trong giày, không lòi sau gót hay hai bên.
+  chỗ mút nét người que chạm sàn, độ cao hông vẫn `thigh + shin + limb` của khung xương — kiểu giày nào cũng thế, gót thấp
+  cũng không làm người cao lên. Cổ chân tự xoay: bàn chân nằm ngang trong hệ người khi ống chân lệch khỏi phương đứng dưới
+  `FOOT_FREE` (`0,5` rad), quá thì nghiêng theo phần dư (quỳ, đá chân). Dáng giày theo `palette.shoeStyle`, một bảng
+  `SHOE_STYLES` ở `core/shoe.ts` cho người 3D, va chạm và các bộ sinh — [12](12-trang-phuc-3d.md#giày-dép).
 - **Khối hông** là bao lồi của vành thân áo thu vào, hai khối cầu cỡ gốc đùi quanh khớp hông và hai khối
   cầu mông lùi sau, thấp hơn khớp hông (`BUTT`), trong nhóm thân, màu quần — màu váy khi có váy, trừ tạp dề. Tới nửa
   bán kính đùi dưới gấu, khối hông lùi hẳn vào trong thân áo: mông chỉ phồng ra dưới gấu, không lồi qua
@@ -2125,7 +2125,8 @@ ra đúng từng byte.
   cận trên, cận dưới theo mép trước mặt ngồi: `thighLow`, `THIGH_SINK`, sàn `THIGH_FLOOR`), chân thõng (`dangleLeg`,
   `DANGLE_MIN`), kiểu lưng (`BACK_STYLES` kèm tầm `band`, `RECLINE`), chỗ tay (`THIGH_REACH`, `THIGH_OUT`, `thighPalm`;
   khuỷu trên tay vịn `ARMREST`, `FOREARM_REST`, `HAND_DROOP`; bàn tay chồng `FOLD`); góc chân giải từ độ cao hông trên mặt
-  đỡ, đùi, ống chân của `bones3(height)` và viên nang giày (`shoeAt`, khớp `SHOE` của người 3D mặc đồ). Hông không bao giờ
+  đỡ, đùi, ống chân của `bones3(height)` và viên nang giày (`shoeAt`: `shoeCapsule` của lõi theo kiểu giày đang mang, mũi dài
+  hay ngắn). Hông không bao giờ
   dời: đế giày chạm được thì chạm, không thì chân vuông thõng, chân co, duỗi là lỗi, chân so le đổi chân không chạm sang
   vuông (`--feet floor` thì lỗi). Khuỷu trên tay vịn giải từ vai, cánh
   tay trên của `bones3` và mặt tay vịn. Mặt ngồi, lưng ghế, tay vịn, để chân, mặt bàn đọc từ vai trò của đồ

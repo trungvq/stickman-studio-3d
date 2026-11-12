@@ -1,9 +1,10 @@
 # 12 — Trang phục 3D
 
-Đồ của người 3D không cần ảnh: tóc, kính, mũ, trâm, bông tai, thân áo, đồ bám thân áo
-và váy là khối dựng thẳng từ bảng kiểu ở lõi (`SCULPT_STYLES` của `core/sculpt.ts`,
-`GLASSES_PRESETS` / `glassesFrame` của `core/glasses.ts`, `GARMENT_STYLES` của `core/torso.ts`…),
-khai ở socket của nhân vật với `src: "sculpt"`, quay theo đầu hay theo thân ở mọi góc.
+Đồ của người 3D không cần ảnh: tóc, kính, mũ, trâm, bông tai, thân áo, đồ bám thân áo,
+váy và giày là khối dựng thẳng từ bảng kiểu ở lõi (`SCULPT_STYLES` của `core/sculpt.ts`,
+`GLASSES_PRESETS` / `glassesFrame` của `core/glasses.ts`, `GARMENT_STYLES` của `core/torso.ts`,
+`SHOE_STYLES` của `core/shoe.ts`…), khai ở socket của nhân vật với `src: "sculpt"` (giày khai ở `palette`), quay
+theo đầu hay theo thân ở mọi góc.
 Người 3D đọc đủ mọi trường của bảng kiểu.
 
 ## Tóc dựng khối
@@ -1668,3 +1669,85 @@ phía trước tới chỗ rời người rồi rủ thẳng. Đứng, cúi chà
 - `rise`, `waist` như `cone`; `flare`, `pleats` bị bỏ qua.
 - Tạp dề và vạt dài quấn cùng socket `hem`: một người không mặc cả hai.
 - Mảng ngực và dây của tạp dề yếm là [yếm](#yếm) của thân áo (`garment.bib` với `band: false`).
+
+## Giày dép
+
+Người 3D mặc đồ (`palette.clad`) mang giày theo `palette.shoeStyle`, khoá của `SHOE_STYLES` (`core/shoe.ts`); màu ở
+`palette.shoe` (vỏ giày, quai dép, ống ủng) và `palette.sole` (đế, khối gót). Thân áo khai `pieces.torso.palette` thì
+đổi được cả kiểu giày theo đồ đang mặc ([01](01-rig.md#đồ-thay-được-items-và-equip)).
+
+```json
+"palette": { "clad": true, "trouser": "#3b4252", "shoe": "#2a2420", "shoeStyle": "boot" }
+```
+
+| Kiểu | Dáng |
+|---|---|
+| `plain` | Giày thường mũi tròn, đế liền màu sẫm |
+| `sneaker` | Giày thể thao: bầu, cổ cao hơn, đế dày màu sáng |
+| `derby` | Giày da mũi tròn: thon, thấp mũi |
+| `pointed` | Giày da mũi nhọn: dài, mũi thuôn |
+| `flat` | Giày búp bê: thấp, miệng giày lộ mu bàn chân, đế mỏng |
+| `pump` | Giày gót thấp: như búp bê, mũi thuôn hơn, thêm khối gót |
+| `ankleBoot` | Bốt thấp cổ: cổ bám cẳng chân một đoạn ngắn |
+| `boot` | Ủng cao cổ: ống ủng bám cẳng chân tới dưới gối, ống quần chui vào trong |
+| `sandal` | Dép hở: bàn chân hở, đế mỏng, hai quai ngang, quai cổ chân, ngón gợi hình |
+
+Giày dựng trong hệ cổ chân (`Leg.ankle`: gốc ở tâm cổ chân, y lên, z ra mũi), cỡ theo bán kính cổ chân `ra` =
+`SHOE_ANKLE` (`0,8`) nửa bề dày ống quần, nên chân to thì giày to. Đế luôn thấp hơn cổ chân đúng `LIMB3` như người que: kiểu
+nào cũng không làm người cao lên, `check`, dáng đi và `gen sit` không đổi theo kiểu.
+
+- **Lưng gót thẳng hàng ống chân.** Lưng gót lùi sau tâm cổ chân đúng bán kính ống chân ở cổ chân (`CLAD_TAPER.leg[2]`)
+  cộng `SHOE_CLEAR` (`2,2` px, vỏ viền ống chân `1,8` không lòi qua); mọi phần dài dồn ra trước thành bàn chân. Nửa rộng ở
+  gót cũng thế. Có cổ ủng thì tính từ mặt ống ủng.
+- **Mặt cắt** (`shoeForm`): dọc bàn chân từ lưng gót tới mũi, mỗi chỗ một mặt cắt nửa trên tròn, nửa dưới gần vuông (đế
+  phẳng). Nhìn từ trên: gót tròn, rộng dần tới chỗ rộng nhất `half`, khép về mũi theo `point`; nhìn nghiêng: cổ giày cao
+  `collar` ở gót, mu hạ dần tới hộp mũi `toeTop`, mũi khép tròn, mặt đế hếch `spring` ở mũi. Lưng gót là một nét đứng.
+- **Đế** là khối riêng dày `sole` px theo mặt đế, nhô khỏi vỏ giày `0,45` px.
+- **Ép ống chân trong giày** (`shoeTuck`): mỗi lần uốn chi, phần ống chân và ống phủ dưới cổ chân dồn vào trên mặt đế
+  (`bottom`), dưới cổ giày mặt sau không lùi quá mặt ống chân đứng thẳng (ống phủ thì thêm phần to hơn ống chân): bước
+  tới, ống chân ngả sau trên gót mà không xuyên qua lưng gót.
+- **Va chạm** (`shoeCapsule`): một nang dọc bàn chân, bán kính nửa hộp mũi, đáy đúng mặt đế. Ống ủng phủ quá nửa ống
+  chân thì nang ống chân theo bán kính ống ủng.
+
+| Trường `SHOE_STYLES` | Nghĩa |
+|---|---|
+| `toe` | Mũi giày trước tâm cổ chân, lần `ra` |
+| `half` | Nửa rộng chỗ bàn chân rộng nhất, lần `ra`; không nhỏ hơn `1,05` nửa rộng ở gót |
+| `toeTop` | Cao hộp mũi trên sàn, lần `ra` |
+| `collar` | Cổ giày ở lưng gót trên tâm cổ chân, lần `ra` |
+| `point` | Hình mũi nhìn từ trên: `0` tròn bầu, `1` nhọn |
+| `spring` | Mặt đế ở mũi cong lên bấy nhiêu px |
+| `sole` | Đế dày bấy nhiêu px |
+| `soleColor` | Màu đế khi `palette.sole` bỏ trống; không có thì màu giày sẫm lại |
+| `heel` | Gót: `lift` px lòng giày ở gót cao hơn sàn, khối gót liền đế lấp kín vòm |
+| `shaft` | Cổ ủng: ống bám cẳng chân `length` phần ống chân từ cổ chân lên, rộng hơn ống chân `SHOE_CLEAR` + `ease` px |
+| `cut` | Miệng giày thấp: mép giày `back` lần `ra` trên sàn ở gót, hạ tới `vamp` ở mu, đóng kín từ `at` lần `ra` trước cổ chân |
+| `open` | Dép hở: quai ngang ở các chỗ `straps` (phần dài bàn chân từ gót), quai cổ chân `ankle` |
+
+### Gót thấp
+
+Giày có `heel` nhìn như giày thường thêm một khối gót màu đế, liền đế tới chỗ lòng giày hạ về sàn nên dưới vòm không hở. Cổ chân vẫn cách sàn `LIMB3`: lòng giày ở gót nâng `lift` px,
+hạ dần qua vòm tới chỗ rộng nhất (bàn chân chúc mũi trong giày), ống chân dồn lên trên lòng giày đã nâng. Hông, gối, cổ
+chân của lõi không đổi; chỉ hình trong giày ăn gian. Không có cao gót thật.
+
+### Ủng
+
+Ống ủng (`shaft`) là ống phủ trên ống chân như ống quần, nên bám cẳng chân khi chi cong (`limbCurve`) và không xoay theo cổ
+chân. Ống ủng rộng hơn ống quần và vỏ viền của nó: quần giữ nguyên, phần chui vào ủng bị ủng che. Mút dưới ống ủng chìm
+trong bàn ủng, ép như ống chân; bàn ủng rộng ở gót theo ống ủng, chỗ cổ chân gập không hở. Ống ủng và bàn ủng chung mã nét:
+không có nét ở cổ chân.
+
+### Giày miệng thấp
+
+Giày có `cut` (búp bê, gót thấp) dựng thêm bàn chân màu da trong giày, nhỏ hơn dáng giày `SHOE_CLEAR`: lưng gót, hai bên
+gót trùng mặt ống chân. Vỏ giày bị chặn ở mép giày (`shoeCut`), bàn chân lộ trên mép ở mu và sau gót. Quần dài phủ tới cổ
+chân (`trouserLength` `1`) thì bàn chân màu quần, như tất.
+
+### Dép hở
+
+Dép hở (`open`) vẫn là khối giày, không rig ngón: bàn chân màu da (quần phủ tới cổ chân thì màu tất) nhỏ hơn dáng giày
+`SHOE_CLEAR`, mũi lùi về gốc ngón; năm ngón là năm khối bầu dục có vỏ viền riêng (`shoeToes`), ngón cái phía trong to và
+dài nhất, các ngón sau lùi dần ra ngoài, vỏ viền thành nét kẽ ngón. Đế mỏng màu đế ôm cả ngón; quai ngang màu giày ôm mu
+bàn chân, quai cổ chân là ống phủ hẹp trên ống chân ngay trên cổ giày. Bàn chân và ngón chung mã nét với chân: cổ chân
+trần không có nét.
+

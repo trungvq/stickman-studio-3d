@@ -8,30 +8,20 @@ const r1 = (v) => Math.round(v * 10) / 10;
 const r3 = (v) => Math.round(v * 1000) / 1000;
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-/** Giày người 3D mặc đồ trong khung cổ chân, theo bán kính cổ chân — khớp `SHOE`, `shoeCapsule` của `human.ts` */
-const SHOE = { heel: -1.7, toe: 3.3, top: 1.15 };
-/** Bàn chân nằm ngang tới khi ống chân lệch khỏi phương đứng quá ngần này (radian), quá thì nghiêng theo phần dư — `FOOT_FREE` của `human.ts` */
-const FOOT_FREE = 0.5;
-
-/** Bán kính cổ chân của giày (rig): `0,8` nửa bề dày ống quần như `stickman.ts` */
-const ankleR = (c) => 0.8 * rig.limbHalf(c).leg;
-
 /**
  * Viên nang giày trong hệ thân ở góc ống chân `phi` (độ, dương ra trước): hai tâm `[tiến, lên]` so với cổ chân và bán
- * kính, đơn vị rig nhân `s`. Bàn chân tự xoay về nằm ngang, ống chân chúc quá `FOOT_FREE` thì nghiêng theo phần dư
+ * kính, đơn vị rig nhân `s` — `shoeCapsule` của lõi theo kiểu giày đang mang. Bàn chân tự xoay về nằm ngang, ống chân
+ * chúc quá `FOOT_FREE` thì nghiêng theo phần dư
  */
 export function shoeAt(c, phi, s = 1) {
-  const sole = rig.BONES3.limb * 100;
-  const ra = ankleR(c);
-  const r = (SHOE.top * ra + sole) / 2;
-  const y = r - sole;
+  const [z0, z1, y, r] = rig.shoeCapsule(rig.wornPalette(c).shoeStyle, rig.limbHalf(c).leg);
   const pitch = -phi * D;
-  const th = pitch - clamp(pitch, -FOOT_FREE, FOOT_FREE);
+  const th = pitch - clamp(pitch, -rig.FOOT_FREE, rig.FOOT_FREE);
   const end = (z) => [
     s * (y * Math.sin(th) + z * Math.cos(th)),
     s * (y * Math.cos(th) - z * Math.sin(th)),
   ];
-  return { heel: end(SHOE.heel * ra + r), toe: end(SHOE.toe * ra - r), r: r * s };
+  return { heel: end(z0), toe: end(z1), r: r * s };
 }
 
 /** Đế giày thấp hơn cổ chân ngần này ở góc ống chân `phi` */

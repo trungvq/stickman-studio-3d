@@ -266,7 +266,10 @@ export function bodyCapsules(fig: Figure, parts: readonly BodyPart[] = BODY_PART
   const seg = (j: THREE.Object3D, part: BodyPart, side: Side) => {
     const m = j.children.find((c) => c.userData.limb) as THREE.Mesh | undefined;
     if (!m) return;
-    const a = j.getWorldPosition(new THREE.Vector3()), b = j.localToWorld(new THREE.Vector3(0, -m.userData.len, 0)), r = m.userData.r * k;
+    const a = j.getWorldPosition(new THREE.Vector3()), b = j.localToWorld(new THREE.Vector3(0, -m.userData.len, 0));
+    // ống ủng phủ quá nửa ống chân: nang ống chân theo ống ủng
+    const shaft = part === 'shin' ? (fig.legs[side].ankle?.userData.shaft as [number, number] | undefined) : undefined;
+    const r = Math.max(m.userData.r, shaft && shaft[0] < 0.5 ? shaft[1] : 0) * k;
     if (part === 'shin') b.addScaledVector(a.clone().sub(b).normalize(), Math.min(r, a.distanceTo(b)));
     out.push({ part, side, a, b, r });
   };

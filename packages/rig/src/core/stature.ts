@@ -12,6 +12,15 @@ import type { V3 } from "./lens";
 export const HEAD3_R = 0.384;
 /** Bề dày nửa nét chi người que: khớp hông người đứng cao hơn bàn chân ngần này */
 export const LIMB3 = 0.042;
+/**
+ * Bán kính chi người 3D mặc đồ (`palette.clad`) ở gốc, khớp giữa, ngọn, nhân bán kính chi: bắp tay to hơn cẳng tay
+ * như đùi với ống chân. Cổ tay `0,53`: bề ngang cổ tay chừng `0,75` bề ngang lòng bàn tay (`cladHand`), dày hơn lòng tay
+ * chừng `1,2` lần
+ */
+export const CLAD_TAPER = {
+  arm: [1.12, 0.88, 0.53],
+  leg: [1.35, 0.9, 0.74],
+} as const;
 /** Đáy sọ trên khớp cổ của lõi ngần này (mép cổ áo áo phông) */
 export const COLLAR3 = 0.09;
 /** Số đầu của người đầu `human` (chiều cao gót → đỉnh sọ chia chiều cao đầu cằm → đỉnh sọ): mặc định, khoảng kẹp */

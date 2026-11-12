@@ -147,6 +147,22 @@ const models = () => ({
     garment: { style: 'wrap', hem: 6, wrap: { band: 7, bandColor: '#7a2e3a', letters: { left: '楓荘' } }, badge: { wakaba: true, text: 'よし江' } },
     hair: 'curly', hairColor: '#3b2a22',
   }),
+  /** Hàng kiểu giày (`palette.shoeStyle`): quần dài, váy chân trần, quần lửng; `?demo=human-shoes` */
+  ...Object.fromEntries([
+    ['plain', { trouser: '#3b4252', shoe: '#3a2a20' }],
+    ['sneaker', { trouser: '#41587a', shoe: '#d8dde3', sole: '#f4f1ea' }],
+    ['derby', { trouser: '#2f3a33', shoe: '#5b3523' }],
+    ['pointed', { trouser: '#1f2430', shoe: '#1c1a1a' }],
+    ['flat', { trouserLength: 0, shoe: '#8a2f3a' }, true],
+    ['pump', { trouserLength: 0, shoe: '#1c1a1a' }, true],
+    ['ankleBoot', { trouser: '#34466e', shoe: '#6b4a32' }],
+    ['boot', { trouser: '#3b4252', shoe: '#2a2420' }],
+    ['sandal', { trouser: '#5e6b4a', trouserLength: 0.55, shoe: '#6b4a32' }],
+  ].map(([style, pal, skirt], i) => [`SHOE_${style}`, character(`giay-${style}`, {
+    palette: { garment: '#7893ae', sleeve: '#7893ae', shoeStyle: style, ...pal },
+    garment: { style: skirt ? 'blouse' : 'shirt', ...(skirt && { hem: -18 }) }, hair: i % 2 ? 'bob' : 'short', hairColor: '#2a1c15',
+    ...(skirt && { skirt: { color: '#3a3f4a', shape: { length: 40 } } }),
+  })])),
   /** Nam bụng phệ, polo đỏ thẫm cổ dựng ngắn tay, quần kem */
   POLO: character('polo-bung', {
     rig: { shoulderHalf: 44, hipHalf: 24 },
@@ -195,6 +211,8 @@ const models = () => ({
     hair: 'baldLight', hairColor: '#5a4a40',
   }),
 });
+
+const SHOE_STYLES_DEMO = ['plain', 'sneaker', 'derby', 'pointed', 'flat', 'pump', 'ankleBoot', 'boot', 'sandal'];
 
 const keyAction = (name, mask, keys, extra = {}) => {
   const r = parseAction({ schemaVersion: 14, name, duration: 0.6, end: 'hold', mask, keys, events: [], ...extra });
@@ -340,6 +358,17 @@ const SCENES = {
       { id: 'b6', c: HAORI, world: { path: [{ t: 0, at: [-400, 0, -300], yaw: 10 }, { t: 4, at: [100, 0, -300], yaw: 10 }] }, tracks: [track(clip('walk')), track(clip('face-calm'))] },
     ],
     props: [stool(150, 0)],
+  }),
+  // kiểu giày cạnh nhau đứng nhìn ống kính, sau lưng một hàng đứng nghiêng; phía trước hai người đi (ủng, dép) từ bên trái vào, người đi ủng ngồi ghế đẩu
+  'human-shoes': (M) => ({
+    cast: [
+      ...SHOE_STYLES_DEMO.map((k, i) => ({ id: `s${i}`, c: M[`SHOE_${k}`], world: { at: [(i - 4) * 90, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('face-calm'))] })),
+      ...['plain', 'sneaker', 'pointed', 'flat', 'pump', 'ankleBoot', 'boot', 'sandal'].map((k, i) => ({ id: `p${i}`, c: M[`SHOE_${k}`], world: { at: [(i - 3.5) * 80, 0, 300], yaw: 0 }, tracks: [track(clip('stand-3d')), track(clip('face-calm'))] })),
+      { id: 'w0', c: M.SHOE_boot, world: { path: [{ t: 0, at: [-750, 0, -250], yaw: 0 }, { t: 4, at: [-150, 0, -250], yaw: 0 }] }, tracks: [track(clip('walk')), track(clip('face-calm'))] },
+      { id: 'w1', c: M.SHOE_sandal, world: { path: [{ t: 0, at: [-800, 0, -380], yaw: 0 }, { t: 4, at: [-200, 0, -380], yaw: 0 }] }, tracks: [track(clip('walk')), track(clip('face-calm'))] },
+      { id: 'w2', c: M.SHOE_boot, world: { at: [520, -SEAT, -220], yaw: 90, sit: true, floor: 0 }, tracks: [track(clip('sit-3d')), track(clip('hands-knees-3d')), track(clip('face-calm'))] },
+    ],
+    props: [stool(520, -220)],
   }),
   'human-faces': ({ LONG, SHORT, GIRL, GLASSES, PONY }) => ({
     cast: [[LONG, 'face-shy'], [GIRL, 'face-sad'], [SHORT, 'face-shocked'], [GLASSES, 'talk-lips'], [PONY, 'face-wry']].map(([c, f], i) => ({

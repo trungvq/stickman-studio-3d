@@ -1224,14 +1224,14 @@ export async function genSit(o) {
   const B = rig.bones3(h);
   const T = B.thigh * 100 * s;
   const S = B.shin * 100 * s;
-  const ra = 0.8 * rig.limbHalf(c).leg * s;
+  const ra = rig.SHOE_ANKLE * rig.limbHalf(c).leg * s;
   // thanh để chân hẹp: thanh nằm dưới đế giày, giữa gót và mũi
   const foot =
     support.bar &&
     ((ankle, phi) => {
       const sh = shoeAt(c, phi, s);
       const mid = (support.bar[0] + support.bar[1]) / 2;
-      return mid >= ankle + sh.heel[0] && mid <= ankle + Math.min(sh.toe[0], 2 * ra);
+      return mid >= ankle + sh.heel[0] - sh.r && mid <= ankle + Math.min(sh.toe[0], 2 * ra);
     });
   const styleOf = (side) => (legs === "staggered" ? (side === tuck ? "bent" : "straight") : legs);
   /** Bên phải người (`+1`) hay trái của chân, tay `right` / `left` */
@@ -2186,7 +2186,9 @@ export async function genSit(o) {
     const { ankle, phi } = shinOf(J, tag);
     const sh = shoeAt(c, phi, s);
     const toe = support.bar ? Math.min(sh.toe[0], 2 * ra) : sh.toe[0];
-    const [heel, tip] = [sh.heel[0], toe].map((f) => fr.world([ankle[0] + f, ankle[1], ankle[2]]));
+    const [heel, tip] = [sh.heel[0] - sh.r, toe].map((f) =>
+      fr.world([ankle[0] + f, ankle[1], ankle[2]]),
+    );
     if (!support.bar) return rectHolds(r, heel) && rectHolds(r, tip);
     const [a, b] = [rectLocal(r, heel), rectLocal(r, tip)];
     return (

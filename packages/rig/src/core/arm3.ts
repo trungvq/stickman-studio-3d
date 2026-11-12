@@ -4,7 +4,7 @@ import { chibiShape } from "./face";
 import { lengths } from "./geometry";
 import { handPoint } from "./hand";
 import { faceSurface, HUMAN_HEAD, humanEar, humanSkull, SKULL3, withHeadShape } from "./humanHead";
-import { HEAD3_R, headDims, LIMB3, type HeadSpec } from "./stature";
+import { CLAD_TAPER, HEAD3_R, headDims, LIMB3, type HeadSpec } from "./stature";
 import {
   fromColumns,
   matMul as mm,
@@ -96,15 +96,7 @@ export const CLAD_GAP = 2;
 /** Tâm khối sọ trên khớp cổ (`Bones3.headUp`, `headDims`) */
 export const head3 = (B: Bones3) => B.headUp;
 
-/**
- * Bán kính chi người 3D mặc đồ (`palette.clad`) ở gốc, khớp giữa, ngọn, nhân bán kính chi: bắp tay to hơn cẳng tay
- * như đùi với ống chân. Cổ tay `0,53`: bề ngang cổ tay chừng `0,75` bề ngang lòng bàn tay (`cladHand`), dày hơn lòng tay
- * chừng `1,2` lần
- */
-export const CLAD_TAPER = {
-  arm: [1.12, 0.88, 0.53],
-  leg: [1.35, 0.9, 0.74],
-} as const;
+export { CLAD_TAPER };
 
 /** Bán kính gốc ống cánh tay của người mặc đồ, px: `limbHalf` của lõi nhân `CLAD_TAPER` */
 export const cladArm = (sleeveWidth: number, stroke: number) =>

@@ -4,6 +4,7 @@ import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { faceSurface, HUMAN_HEAD, humanEar, headShape, humanSkull, humanSkullGlsl, noseNums } from './core/humanHead';
 import { fingerVec, HAND_DOF, HAND_POSES, HAND_REST, type HandPose } from './core/hand';
 import { handSkin, skinHand, smoothNormals, type HandSkin } from './core/handMesh';
+import { FOOT_FREE, SHOE_CLEAR, shoeCut, shoeFit, shoeForm, shoeToes, type ShoeForm, type ShoeSection } from './core/shoe';
 import { humanNeckAt } from './core/torso';
 import { newCanvas } from './canvas';
 import { G } from './npr';
@@ -11,12 +12,7 @@ import { G } from './npr';
 // Khối của người 3D mặc đồ (`palette.clad`) và đầu `head.form: "human"`: đầu có quai hàm, tai, cổ; bàn tay, giày, khối
 // hông. Chỉ hình học; `stickman.ts` gắn vào khớp và tô màu. docs/01-rig.md#người-3d-mặc-đồ
 
-/** Giày trong khung cổ chân (y lên, z mũi giày), đo bằng bán kính cổ chân: gót, mũi, nửa rộng, cao trên cổ chân */
-export const SHOE = { heel: -1.7, toe: 3.3, half: 1.5, top: 1.15 };
-
 const _v = new THREE.Vector3(), _s = new THREE.Vector3(), _qk = new THREE.Quaternion(), _qb = new THREE.Quaternion(), _e = new THREE.Euler();
-/** Ống chân lệch khỏi phương đứng dưới góc này thì bàn chân vẫn nằm ngang, quá thì nghiêng theo phần dư (radian) */
-const FOOT_FREE = 0.5;
 
 /**
  * Cổ chân: tự xoay bàn chân về nằm ngang trong hệ người (`body`) mỗi lần three tính ma trận, không cần `act` gọi. Ống
@@ -289,8 +285,7 @@ export function noseGeometry(r: number, scale: THREE.Vector3, eyes: { offsetY: n
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   g.setIndex(idx);
-  g.computeVertexNormals();
-  return g;
+  return smooth(g);
 }
 
 /**
@@ -380,35 +375,119 @@ export function poseHand(h: Hand, v?: readonly number[]) {
   P.needsUpdate = N.needsUpdate = true;
 }
 
+/** Bậc siêu elip của mặt cắt giày: nửa trên tròn, nửa dưới gần vuông (đế phẳng); chỗ rộng nhất ở phần này chiều cao từ đáy */
+const SHOE_RING = { top: 2.4, bottom: 5, mid: 0.42 };
+
 /**
- * Giày trong khung cổ chân, cỡ theo bán kính cổ chân `ra`: đế phẳng cách cổ chân `sole` xuống, nửa dưới gần đủ rộng
- * tới sát đế, gót trùm mút ống chân, mũi thấp dần về trước.
+ * Khối dọc bàn chân, three hệ cổ chân: `n + 1` vòng mặt cắt `at` từ `z0` tới `z1` (dày ở hai đầu), mỗi vòng `m` đỉnh;
+ * `cut` chặn đỉnh (miệng giày thấp). Hai đầu khép thì lưới kín.
  */
-export function shoeGeometry(sole: number, ra: number) {
-  const heel = SHOE.heel * ra, toe = SHOE.toe * ra, half = SHOE.half * ra, top = SHOE.top * ra + sole;
-  const g = new THREE.SphereGeometry(1, 22, 14), p = g.attributes.position;
-  const cz = (heel + toe) / 2, rz = (toe - heel) / 2, mid = top / 2;
-  for (let i = 0; i < p.count; i++) {
-    let x = p.getX(i), z = p.getZ(i);
-    const y = p.getY(i);
-    // nửa dưới mặt cắt siêu elip bậc 4: sát đế vẫn gần đủ rộng, mút ống chân ép dẹt dưới cổ chân nằm gọn trong giày
-    const rho = Math.hypot(x, z);
-    if (y < 0 && rho > 1e-6) {
-      const k = Math.pow(1 - y ** 4, 0.25) / rho;
-      x *= k;
-      z *= k;
+function shoeLoft(z0: number, z1: number, at: (z: number) => ShoeSection, n: number, m: number, cut?: (z: number) => number) {
+  const pos: number[] = [], idx: number[] = [];
+  for (let i = 0; i <= n; i++) {
+    const z = z0 + (z1 - z0) * (0.5 - 0.5 * Math.cos((Math.PI * i) / n));
+    const { half, bottom, top } = at(z), mid = bottom + (top - bottom) * SHOE_RING.mid, c = cut ? cut(z) : Infinity;
+    for (let j = 0; j < m; j++) {
+      const a = (2 * Math.PI * j) / m, sn = Math.sin(a), cs = Math.cos(a), e = 2 / (cs >= 0 ? SHOE_RING.top : SHOE_RING.bottom);
+      const x = half * Math.sign(sn) * Math.abs(sn) ** e;
+      const y = cs >= 0 ? mid + (top - mid) * cs ** e : mid - (mid - bottom) * (-cs) ** e;
+      pos.push(x / 100, Math.min(y, c) / 100, z / 100);
     }
-    let Y = mid + y * mid * (y > 0 ? 1 - 0.45 * Math.max(0, z) : 1.05);
-    if (Y < 0.003) Y = 0.003 - (0.003 - Y) * 0.15;
-    p.setXYZ(i, x * half * (1 - 0.12 * Math.max(0, z)), Y - sole, cz + z * rz);
   }
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < m; j++) {
+      const a = i * m + j, b = i * m + ((j + 1) % m), c = a + m, d = b + m;
+      idx.push(a, d, b, a, c, d);
+    }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
   return smooth(g);
 }
 
-/** Nang va chạm của giày trong khung cổ chân: gót, mũi (z), cao độ trục, bán kính */
-export function shoeCapsule(sole: number, ra: number): [number, number, number, number] {
-  const r = (SHOE.top * ra + sole) / 2;
-  return [SHOE.heel * ra + r, SHOE.toe * ra - r, r - sole, r];
+/** Đế dưới khối `F`: theo mặt đế nhìn từ trên, dày `t` px */
+const soleLoft = (F: ShoeForm, t: number, n: number, m: number) => shoeLoft(F.back, F.tip, (z) => {
+  const p = F.plan(z);
+  return { half: p.half, bottom: p.bottom, top: p.bottom + t };
+}, n, m);
+
+/**
+ * Dải quai ôm khối `F` ở `zc` (px), rộng `w`, nổi `g` px trên mặt; hai mép chìm vào trong khối nên không cần nắp. Đáy dải
+ * nằm trong đế
+ */
+function strapLoft(F: ShoeForm, zc: number, w: number, g: number, m: number) {
+  const at = (z: number) => {
+    const d = Math.abs(z - zc) - w / 2, k = d <= 0 ? g : g - (g + 1) * Math.min(1, d / 0.4);
+    const s = F.at(z);
+    return { half: Math.max(0, s.half + k), bottom: s.bottom - 0.5, top: s.top + k };
+  };
+  return shoeLoft(zc - w / 2 - 0.4, zc + w / 2 + 0.4, at, 8, m);
+}
+
+/** Khối gót của giày có gót: dưới lòng giày ở gót, từ lưng gót tới `length`, mặt trước phẳng */
+function heelLoft(F: ShoeForm, n: number, m: number) {
+  // khối gót liền đế tới chỗ lòng giày hạ về sàn: không hở vòm
+  let z1 = F.back + 1;
+  while (z1 < F.tip && F.plan(z1).bottom > F.floor + 0.2) z1 += 0.25;
+  return shoeLoft(F.back, z1, (z) => {
+    const p = F.plan(z), f = Math.sqrt(1 - Math.max(0, (z - (z1 - 1.5)) / 1.5) ** 2);
+    return { half: p.half * 0.88 * f, bottom: F.floor, top: p.bottom + 0.5 };
+  }, n, m);
+}
+
+/** Khối của giày kiểu `kind` bên `side` (three, hệ cổ chân), nửa bề dày chân `legHalf` px. `low`: lưới thưa cho người nền */
+export interface ShoeParts {
+  /** Vỏ giày (màu giày); dép hở thì không có */
+  upper?: THREE.BufferGeometry;
+  /** Đế, khối gót (màu đế) */
+  sole: THREE.BufferGeometry;
+  heel?: THREE.BufferGeometry;
+  /** Bàn chân trong giày miệng thấp, dép hở (màu da hay màu tất); ngón của dép hở */
+  foot?: THREE.BufferGeometry;
+  toes: THREE.BufferGeometry[];
+  /** Quai dép (màu giày) */
+  straps: THREE.BufferGeometry[];
+}
+
+// ống tròn thon từ gốc `(x, y0, z0)` bán kính `r0` tới đầu `(x, y1, z1)` bán kính `r1`, hai đầu tròn
+function toeTube([x, y0, z0, y1, z1, r0, r1]: number[], low: boolean) {
+  const g = new THREE.CapsuleGeometry(1, 1, low ? 3 : 6, low ? 6 : 12), q = g.attributes.position;
+  const len = Math.hypot(y1 - y0, z1 - z0), dy = (y1 - y0) / len, dz = (z1 - z0) / len;
+  for (let i = 0; i < q.count; i++) {
+    const v = q.getY(i), s = Math.min(1, Math.max(0, v + 0.5)), k = r0 + (r1 - r0) * s;
+    const a = s * len + (v < -0.5 ? (v + 0.5) * k : v > 0.5 ? (v - 0.5) * k : 0), u = q.getZ(i) * k;
+    q.setXYZ(i, (x + q.getX(i) * k) / 100, (y0 + a * dy + u * dz) / 100, (z0 + a * dz - u * dy) / 100);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+
+/**
+ * Khối giày theo `SHOE_STYLES[kind]` của lõi: vỏ giày từ `shoeForm` (lưng gót gần thẳng hàng mặt sau ống chân), đế dày
+ * `sole` theo mặt đế, khối gót `heel`, miệng thấp `cut` lộ bàn chân, dép hở `open` (bàn chân, ngón `shoeToes`, quai).
+ * Cổ ủng `shaft` bám cẳng chân nên `stickman.ts` dựng nó trên ống chân. docs/12-trang-phuc-3d.md#giày-dép
+ */
+export function shoeMesh(kind: string, legHalf: number, side: -1 | 1, low = false): ShoeParts {
+  const { S } = shoeFit(kind, legHalf);
+  const [n, m] = low ? [14, 10] : [40, 28];
+  const out: ShoeParts = { sole: soleLoft(shoeForm(kind, legHalf, 0.45), S.sole, n, m), toes: [], straps: [] };
+  if (S.open) {
+    // bàn chân trần nhỏ hơn dáng giày `SHOE_CLEAR`: lưng gót, hai bên gót trùng mặt ống chân
+    const F = shoeForm(kind, legHalf, -SHOE_CLEAR, true);
+    out.foot = shoeLoft(F.back, F.tip, F.at, n, m);
+    for (const t of shoeToes(kind, legHalf, side)) out.toes.push(toeTube(t, low));
+    const L = F.tip - F.back;
+    for (const u of S.open.straps) out.straps.push(strapLoft(F, F.back + u * L, 0.11 * L, 0.9, m));
+  } else {
+    const F = shoeForm(kind, legHalf);
+    out.upper = shoeLoft(F.back, F.tip, F.at, n, m, S.cut && ((z) => shoeCut(kind, legHalf, z)));
+    if (S.cut) {
+      const B = shoeForm(kind, legHalf, -SHOE_CLEAR);
+      out.foot = shoeLoft(B.back, B.tip, B.at, n, m);
+    }
+  }
+  if (S.heel) out.heel = heelLoft(shoeForm(kind, legHalf), low ? 10 : 24, m);
+  return out;
 }
 
 /** Mông trong khối hông, theo bán kính gốc đùi: tâm lùi sau `back`, thấp hơn khớp hông `drop`, bán kính `r` */

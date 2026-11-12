@@ -39,6 +39,7 @@ export * from "./poses";
 export * from "./preview";
 export * from "./roles";
 export * from "./scene";
+export * from "./shoe";
 export * from "./schema";
 export {
   chain,

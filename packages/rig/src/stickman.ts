@@ -19,7 +19,8 @@ import { hangsFromHip, matchWrap } from './core/hem';
 import { humanNeckWidth, NECK_BEND } from './core/torso';
 import { setBluntSideburn } from './core/sculpt';
 import { humanHair, humanSkull, setHeadShape, SKULL3 } from './core/humanHead';
-import { Ankle, earGroup, handRig, humanHeadGeometry, neckGeometry, noseGeometry, pelvisGeometry, shoeCapsule, shoeGeometry, type Hand } from './human';
+import { Ankle, earGroup, handRig, humanHeadGeometry, neckGeometry, noseGeometry, pelvisGeometry, shoeMesh, type Hand } from './human';
+import { SHOE_CLEAR, shoeCapsule, shoeFit, shoeTuck, type ShoeKind } from './core/shoe';
 import { handGrip } from './core/hand';
 import type { Rig } from './torso';
 
@@ -229,6 +230,8 @@ function bendLimb(upper: THREE.Mesh, mid: THREE.Object3D, lower: THREE.Mesh, k: 
   let key = '';
   const P0 = new THREE.Vector3(), P1 = new THREE.Vector3(), P2 = new THREE.Vector3(), inv = new THREE.Matrix4();
   const bend = () => {
+    // bàn chân nằm ngang theo dáng đang đặt, không theo lượt vẽ trước: chỗ ép trong giày đọc hệ cổ chân
+    ankle?.updateWorldMatrix(true, false);
     P1.copy(mid.position);
     P2.set(0, -lower.userData.len, 0).applyQuaternion(mid.quaternion).add(P1);
     const now = [P1.x, P1.y, P1.z, P2.x, P2.y, P2.z, upper.userData.r, lower.userData.r, ...(ankle ? ankle.quaternion.toArray() : [])].join();
@@ -245,26 +248,39 @@ function bendLimb(upper: THREE.Mesh, mid: THREE.Object3D, lower: THREE.Mesh, k: 
   bend();
 }
 
-/** Mút ống chân dưới cổ chân sâu nhất bấy nhiêu phần độ sâu đế giày (`R.limb`): mút tròn to hơn đế không lòi dưới giày */
-const TUCK = 0.6;
 const _tk = new THREE.Matrix4(), _ti = new THREE.Matrix4(), _tv = new THREE.Vector3();
-/** Ép dẹt phần ống chân và ống phủ dưới cổ chân theo phương đứng của bàn chân (hệ `ankle`), giữ trong giày */
+/** Mặt sau ống chân dưới cổ giày lùi dần về chỗ ép trong khoảng này trên cổ giày (three) */
+const TUCK_BLEND = 0.03;
+/**
+ * Ép phần ống chân và ống phủ trong giày theo hệ `ankle` (`userData.tuck`, `shoeTuck` của lõi): dưới `y0` dồn vào khoảng
+ * `bottom..y0`, dưới cổ giày mặt sau không lùi quá `back` (ống phủ: thêm phần to hơn ống chân) — ống chân ngả ra sau lúc
+ * bước không xuyên qua lưng gót
+ */
 function tuck(lower: THREE.Mesh, ankle: THREE.Object3D) {
+  const T = ankle.userData.tuck as { bottom: number; y0: number; collar: number; back: number } | undefined;
+  if (!T) return;
   _tk.compose(ankle.position, ankle.quaternion, ONE);
   _ti.copy(_tk).invert();
-  const d = TUCK * R.limb;
-  for (const geo of [lower.geometry, ...((lower.userData.covers ?? []) as Cover[]).map((c) => c.geo)]) {
+  for (const [geo, back] of [[lower.geometry, T.back], ...((lower.userData.covers ?? []) as Cover[]).map((c) => [c.geo, T.back * c.k - (c.grow?.[1] ?? 0)])] as [THREE.BufferGeometry, number][]) {
     const pos = geo.attributes.position as THREE.BufferAttribute;
-    let low = 0;
+    let low = T.y0;
     for (let i = 0; i < pos.count; i++) low = Math.min(low, _tv.fromBufferAttribute(pos, i).applyMatrix4(_ti).y);
-    if (low >= -d) continue;
+    const k = low < T.bottom ? (T.y0 - T.bottom) / (T.y0 - low) : 1;
+    let moved = false;
     for (let i = 0; i < pos.count; i++) {
       _tv.fromBufferAttribute(pos, i).applyMatrix4(_ti);
-      if (_tv.y >= 0) continue;
-      _tv.y *= d / -low;
+      const y = _tv.y, z = _tv.z;
+      if (y < T.y0) _tv.y = T.y0 + (y - T.y0) * k;
+      if (z < back && y < T.collar + TUCK_BLEND) {
+        const u = Math.min(1, Math.max(0, (y - T.collar) / TUCK_BLEND));
+        _tv.z = z + (back - z) * (1 - u * u * (3 - 2 * u));
+      }
+      if (_tv.y === y && _tv.z === z) continue;
+      moved = true;
       _tv.applyMatrix4(_tk);
       pos.setXYZ(i, _tv.x, _tv.y, _tv.z);
     }
+    if (!moved) continue;
     pos.needsUpdate = true;
     geo.computeBoundingSphere();
     geo.computeBoundingBox();
@@ -552,10 +568,13 @@ export interface StickmanOptions {
   equip?: EquipState;
   /** `palette.clad`: tay chân là ống màu có viền, bàn tay, giày, khối hông. docs/01-rig.md#người-3d-mặc-đồ */
   clad?: boolean;
-  /** `palette.sleeve`, `palette.trouser`, `palette.shoe` */
+  /** `palette.sleeve`, `palette.trouser`, `palette.shoe`, `palette.sole` */
   sleeveColor?: string;
   trouserColor?: string;
   shoeColor?: string;
+  soleColor?: string;
+  /** `palette.shoeStyle`: kiểu giày dép, khoá của `SHOE_STYLES`. docs/12-trang-phuc-3d.md#giày-dép */
+  shoeStyle?: ShoeKind;
   /** `palette.bicep`: gốc cánh tay to thêm bấy nhiêu phần */
   bicep?: number;
   /** `palette.sleeveLength`, `palette.trouserLength`: phần chi phủ màu áo, quần từ gốc chi */
@@ -758,7 +777,8 @@ function stickmanBuild(o: StickmanOptions): Figure {
     const limbSkin = npr({ ...skin3, ink: LIMB_SIL, doubleSided: true });
     // chân trần là vật khác bàn tay: tay đặt lên đùi vẫn có nét
     const legSkin = npr({ ...skin3, ink: LIMB_SIL, doubleSided: true, group: 'leg' });
-    const { trouserColor = '#1a1a1a', shoeColor = '#2b2623', sleeveLength = 1, trouserLength = 1, sleeveFlare = 0 } = o;
+    const { trouserColor = '#1a1a1a', shoeColor = '#2b2623', shoeStyle = 'plain', sleeveLength = 1, trouserLength = 1, sleeveFlare = 0 } = o;
+    const soleColor = o.soleColor ?? shoeFit(shoeStyle, 0).S.soleColor ?? new THREE.Color(shoeColor).multiplyScalar(0.55).getStyle();
     // tay áo loe: ống phủ hở miệng nhìn được lòng trong, đĩa lót tối hơn lùi trong miệng
     const flare = sleeveFlare > 0 && { cover: cloth ? clothMaterial(LIMB_SIL, true) : npr({ color: sleeveColor, stipple: 0.05, stippleScale: 3, soft: 1, ink: LIMB_SIL, doubleSided: true }), lining: npr({ color: new THREE.Color(sleeveColor).multiplyScalar(0.45).getStyle(), stipple: 0, soft: 1, ink: LIMB_SIL }), grow: sleeveFlare / 100, gap: limbR(sleeveWidth) };
     const thigh = thighR / 100;
@@ -779,9 +799,8 @@ function stickmanBuild(o: StickmanOptions): Figure {
       const ankle = new Ankle(root);
       ankle.position.y = -B.shin;
       legs[s].knee.add(ankle);
-      const ra = limbR(trouserWidth) * 0.8;
-      ankle.add(inked(shoeGeometry(R.limb, ra), tone(shoeColor), 0.02));
-      ankle.userData.shoe = shoeCapsule(R.limb, ra);
+      const foot = trouserLength >= 0.999 ? tone(trouserColor) : legSkin;
+      footwear(ankle, seg(legs[s].knee), s, shoeStyle, limbR(trouserWidth) * 100, { shoe: tone(shoeColor), sole: tone(soleColor), foot }, seg(legs[s].hip).id, B.shin, lod === 'low');
       legs[s].ankle = ankle;
     }
   }
@@ -885,6 +904,53 @@ function pelvis(spine: THREE.Object3D, body: { profile: [number, number][]; dept
   g.userData.pelvis = true;
   g.userData.inkGap = r;
   spine.add(g);
+}
+
+/**
+ * Giày kiểu `kind` của người `clad` trên cổ chân `ankle` (`shoeMesh`), nửa bề dày chân `legHalf` px: vỏ giày, đế, gót màu
+ * đế, bàn chân và ngón của giày miệng thấp, dép hở màu `foot` chung mã nét với chân (`chain`). Cổ ủng, quai cổ chân là ống
+ * phủ trên ống chân `lower` (dài `shin`, three) nên bám cẳng chân khi chi cong. docs/12-trang-phuc-3d.md#giày-dép
+ */
+function footwear(ankle: THREE.Object3D, lower: THREE.Mesh, side: Side, kind: ShoeKind, legHalf: number, mat: { shoe: THREE.Material; sole: THREE.Material; foot: THREE.Material }, chain: number, shin: number, low: boolean) {
+  const P = shoeMesh(kind, legHalf, side, low), { S } = shoeFit(kind, legHalf);
+  let shoeChain = 0;
+  if (P.upper) {
+    const g = inked(P.upper, mat.shoe, 0.02);
+    shoeChain = g.children[0].id;
+    g.children[0].userData.inkChain = shoeChain;
+    ankle.add(g);
+  }
+  ankle.add(inked(P.sole, mat.sole, 0.02));
+  if (P.heel) ankle.add(inked(P.heel, mat.sole, 0.02));
+  for (const [geo, w] of [...(P.foot ? [[P.foot, 0.018]] : []), ...P.toes.map((t) => [t, 0.008])] as [THREE.BufferGeometry, number][]) {
+    const g = inked(geo, mat.foot, w);
+    g.children[0].userData.inkChain = chain;
+    ankle.add(g);
+  }
+  for (const st of P.straps) ankle.add(inked(st, mat.shoe, 0.014));
+  ankle.userData.shoe = shoeCapsule(kind, legHalf).map((v) => v / 100);
+  const T = shoeTuck(kind, legHalf);
+  ankle.userData.tuck = { bottom: T.bottom / 100, y0: T.y0 / 100, collar: T.collar / 100, back: T.back / 100 };
+  if (S.shaft) {
+    shinCover(lower, mat.shoe, 1 - S.shaft.length, 1, (SHOE_CLEAR + S.shaft.ease) / 100, shoeChain);
+    ankle.userData.shaft = [1 - S.shaft.length, (shoeFit(kind, legHalf).shaft) / 100];
+  }
+  if (S.open?.ankle) {
+    const y = shoeFit(kind, legHalf).ra * S.collar / 100;
+    shinCover(lower, mat.shoe, 1 - (y + 0.035) / shin, 1 - (y + 0.012) / shin, 0.009);
+  }
+}
+
+/** Ống phủ màu `mat` trên ống chân `lower` phần `u0..u1` (từ gối), rộng hơn ống chân `grow` (three), mút trên gần phẳng */
+function shinCover(lower: THREE.Mesh, mat: THREE.Material, u0: number, u1: number, grow: number, chain = 0) {
+  const geo = tube(), c = new THREE.Mesh(geo, mat);
+  c.castShadow = true;
+  if (chain) c.userData.inkChain = chain;
+  const h = new THREE.Mesh(geo, limbHull);
+  h.userData.noShadow = true;
+  c.add(h);
+  lower.parent!.add(c);
+  (lower.userData.covers ??= []).push({ geo, u0, u1, k: 1, rim: 1, flat: 0.35, grow: [grow, grow] } satisfies Cover);
 }
 
 /** Tóc phủ lên chỗ tai `at` (hệ nhóm đầu): tia từ ngoài vào tâm tai chạm vỏ tóc hay tóc rủ */
@@ -1038,7 +1104,7 @@ export interface CharacterJson {
   rig: Rig;
   palette: {
     garment: string; skin?: string; sleeveWidth?: number; trouserWidth?: number; limbCurve?: number; sleeveFlare?: number;
-    clad?: boolean; sleeve?: string; trouser?: string; shoe?: string; sleeveLength?: number; trouserLength?: number; bicep?: number;
+    clad?: boolean; sleeve?: string; trouser?: string; shoe?: string; shoeStyle?: ShoeKind; sole?: string; sleeveLength?: number; trouserLength?: number; bicep?: number;
   };
   head?: { form?: 'sphere' | 'human'; jaw?: 'v' | 'square'; face?: 'asian' | 'western'; nose?: { length?: number; out?: number }; heads?: number; aspect?: number };
   face?: Partial<FaceShape>;
@@ -1046,7 +1112,7 @@ export interface CharacterJson {
     torso: {
       garment?: Partial<Garment>; accent?: string; color?: string;
       /** Tay áo, quần, giày đi theo thân áo này, đè `palette` (`wornPalette`) */
-      palette?: { sleeve?: string; sleeveLength?: number; sleeveFlare?: number; trouser?: string; trouserLength?: number; shoe?: string };
+      palette?: { sleeve?: string; sleeveLength?: number; sleeveFlare?: number; trouser?: string; trouserLength?: number; shoe?: string; shoeStyle?: ShoeKind; sole?: string };
     };
     hem?: { src?: string; skirt?: Partial<Skirt>; color?: string };
     hair?: { sculpt?: Partial<Sculpt>; color?: string; accent?: string };
@@ -1071,7 +1137,7 @@ export function characterOptions(json: CharacterJson, opts: Partial<StickmanOpti
     // `headAcc` dựng khối chỉ có bông tai thì không cắm trâm mặc định
     ...(pc.headAcc?.src === 'sculpt' && { pin: pc.headAcc.pin ?? (pc.headAcc.earrings ? undefined : {}), earrings: pc.headAcc.earrings, pinColor: pc.headAcc.color, pinBead: pc.headAcc.accent }),
     ...(pc.neck?.src === 'sculpt' && { drape: pc.neck.drape, shades: pc.neck.shades, necklace: pc.neck.necklace, drapeColor: pc.neck.color }),
-    clad: pal.clad, sleeveColor: pal.sleeve, trouserColor: pal.trouser, shoeColor: pal.shoe, sleeveLength: pal.sleeveLength, sleeveFlare: pal.sleeveFlare, bicep: pal.bicep,
+    clad: pal.clad, sleeveColor: pal.sleeve, trouserColor: pal.trouser, shoeColor: pal.shoe, shoeStyle: pal.shoeStyle, soleColor: pal.sole, sleeveLength: pal.sleeveLength, sleeveFlare: pal.sleeveFlare, bicep: pal.bicep,
     trouserLength: pal.trouserLength, headForm: json.head?.form, headJaw: json.head?.jaw, headFace: json.head?.face, headNose: json.head?.nose, headHeads: json.head?.heads, headAspect: json.head?.aspect, ...opts,
   };
 }

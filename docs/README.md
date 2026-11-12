@@ -14,7 +14,7 @@ video chỉ tiêu thụ những gì mô tả ở đây, không viết lại.
 | [09 — Hiệu ứng](09-hieu-ung.md) | `@stickman3d/fx`: `scene.fx[]`, mười ba loại hiệu ứng thuần theo `t`, ba lớp chèn, bám người qua `anchorAt` |
 | [10 — Lớp vẽ code](10-lop-ve-code.md) | Bối cảnh vẽ bằng code, rung máy, đẩy chỗ đứng: `stickman.layers` của repo video, năm chỗ móc; `check` đo người lồng vào đồ, trên khối lớp vẽ code hay cảnh three của `stickman.world` |
 | [11 — Nhóm cầm](11-nhom-cam.md) | Cầm đồ theo nhóm hình dáng (`held/<món>.json`, `món@nhóm`): ba lớp nhóm ở rig, hình ở món, lựa chọn và ý định ở cảnh; 14 nhóm (mười chạy, bốn để sau), món đặt trước và tay dẫn, giải khuỷu và lựa chọn thiếu, ngón theo vai trò, luật `held` nhóm, chuyển đổi |
-| [12 — Trang phục 3D](12-trang-phuc-3d.md) | Tóc, kính, mũ, trâm, bông tai, thân áo, khăn, dây chuyền, mảng áo và hoạ tiết, váy, vạt quấn, tạp dề dựng khối của người 3D: trường JSON, bảng kiểu, cách khối chiếu |
+| [12 — Trang phục 3D](12-trang-phuc-3d.md) | Tóc, kính, mũ, trâm, bông tai, thân áo, khăn, dây chuyền, mảng áo và hoạ tiết, váy, vạt quấn, tạp dề, giày dép dựng khối của người 3D: trường JSON, bảng kiểu, cách khối chiếu |
 | [13 — Vai trò của đồ](13-vai-tro-do.md) | Spec: đồ khai vai trò (vật rót, vật đựng, mặt ngồi, tay vịn, lưng ghế, để chân, mặt bàn) kèm số đo; bộ sinh `stickman gen` khai vai trò cần, tìm đồ trong cảnh theo vai trò; trang soi bộ sinh của Studio 3D |
 | [14 — Đi mượt](14-di-muot.md) | Spec: một công thức đi ở rig; năm kịch bản (đi thẳng, rẽ nhẹ, rẽ 90° khi đang đi, dừng – quay 180° – đi về, vòng chữ U); số đo độ mượt và ngưỡng; dải khung dày quanh chỗ rẽ; bộ sinh `stickman gen walk` ghi `path` và clip đi vào cảnh; trang soi `walk` |
 

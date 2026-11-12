@@ -299,9 +299,12 @@ function seizaStand(duration) {
 }
 
 /** Bàn chân nằm ngang tới khi ống chân chúc quá ngần này (độ), quá thì nghiêng theo phần dư (`FOOT_FREE` của rig) */
-const FOOT_FREE = 0.5 / D;
-/** Mũi giày trước cổ chân (`SHOE.toe` × bán kính cổ chân): bàn chân nghiêng thì mũi hạ chừng này × sin phần dư */
-const TOE = 17;
+const FOOT_FREE = rig.FOOT_FREE / D;
+/** Mũi giày trước cổ chân (tâm mũi nang giày kiểu mặc định, người mặc đồ mặc định): bàn chân nghiêng thì mũi hạ chừng này × sin phần dư */
+const TOE = rig.shoeCapsule(
+  rig.DEFAULT_SHOE,
+  rig.limbHalf(rig.CharacterSchema.parse({ palette: { clad: true } })).leg,
+)[1];
 
 /** Cổ chân `[trước, cao]` thế giới trên sàn cho hông `hip`: nâng lên cho mũi giày của bàn chân nghiêng không lún sàn */
 function planted(foot, hip) {

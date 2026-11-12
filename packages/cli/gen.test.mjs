@@ -35,6 +35,7 @@ import {
   SIT_DURATION,
   THIGH_SINK,
   frameOf,
+  shoeAt,
   soleDrop,
   solveLeg,
 } from "./gen-sit.mjs";
@@ -239,6 +240,15 @@ describe("gen-sit", () => {
     assert.ok(Math.abs(soleDrop(c, -20) - soleDrop(c, 0)) < 1e-9);
     assert.ok(soleDrop(c, 42) > soleDrop(c, 0) + 1);
     assert.ok(soleDrop(c, -40) > soleDrop(c, 0));
+  });
+  it("đế giày theo kiểu giày đang mang: mũi nhọn dài thì chân duỗi mũi hạ sâu hơn mũi tròn ngắn", () => {
+    const base = worldData("/khong-co").characters["sample-man.json"];
+    const shod = (shoeStyle) => ({ ...base, palette: { ...base.palette, shoeStyle } });
+    const [long, short] = [shod("pointed"), shod("sandal")];
+    assert.ok(shoeAt(long, 0).toe[0] > shoeAt(short, 0).toe[0] + 5);
+    for (const c of [long, short])
+      assert.ok(Math.abs(soleDrop(c, 0) - rig.BONES3.limb * 100) < 1e-9);
+    assert.ok(soleDrop(long, -50) > soleDrop(short, -50) + 1);
   });
   it("chân vuông góc trên ghế cao bằng gối: đùi gần nằm ngang", () => {
     const c = worldData("/khong-co").characters["sample-man.json"];
