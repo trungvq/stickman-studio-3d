@@ -316,15 +316,29 @@ function arm(parent: THREE.Object3D, side: Side, x: number, y: number, B: Bones3
 }
 
 /**
+ * Mặt rủ trên đầu `human`: dời bằng chân nó ở chỗ rời sọ, cộng phần sọ đẩy ra theo phương ngang (quai hàm); sọ thu vào
+ * (gáy) không kéo tóc theo. docs/01-rig.md#người-3d-mặc-đồ
+ */
+function hangHair(p: Vec3): Vec3 {
+  const h = Math.hypot(p[0], p[2]) || 1;
+  const n: Vec3 = [p[0] / h, 0, p[2] / h];
+  const root = humanHair(n);
+  const bent = humanHair(p);
+  const out = Math.max(0, (bent[0] - p[0] - root[0] + n[0]) * n[0] + (bent[2] - p[2] - root[2] + n[2]) * n[2]);
+  return [p[0] + root[0] - n[0] + out * n[0], p[1] + root[1], p[2] + root[2] - n[2] + out * n[2]];
+}
+
+/**
  * Tóc dựng khối của rig (`pieces.hair.sculpt` trong JSON nhân vật), lưới hệ sọ đơn vị phóng theo khối đầu. Đầu `human`:
- * tóc dời theo sọ (`humanHair`).
+ * tóc dời theo sọ (`humanHair`), mặt rủ theo `hangHair`.
  */
 function sculptHair(head: THREE.Object3D, sculpt: Partial<Sculpt>, color: string, human: boolean, hat?: SculptHat, accent?: string) {
   const mesh = sculptMesh(sculpt, { cut: hat?.cut, accent: !!accent });
   if (human || hat?.press) {
     const press = hat?.press ?? ((p: Vec3) => p);
     const bend = (p: number[]) => (human ? humanHair(press(p as Vec3)) : press(p as Vec3));
-    for (const tris of [mesh.shell, mesh.spikes, mesh.hang]) tris.forEach((t, i) => (tris[i] = t.map(bend) as typeof t));
+    const hang = (p: number[]) => (human ? hangHair(press(p as Vec3)) : press(p as Vec3));
+    for (const tris of [mesh.shell, mesh.spikes, mesh.hang]) tris.forEach((t, i) => (tris[i] = t.map(tris === mesh.hang ? hang : bend) as typeof t));
     mesh.lines.forEach((l, i) => (mesh.lines[i] = l.map(bend) as typeof l));
   }
   // vỏ ngược đánh nhau độ sâu với sọ ngay dưới và bị vỏ tóc che ở lọn nằm sát: nét bóng dáng vẽ ở hậu kỳ
@@ -333,7 +347,7 @@ function sculptHair(head: THREE.Object3D, sculpt: Partial<Sculpt>, color: string
   const [c0, c1] = [new THREE.Color(color), new THREE.Color(accent ?? color)];
   for (const tris of [mesh.shell, mesh.spikes, mesh.hang]) {
     if (!tris.length) continue;
-    const tone = accent ? tris.map((_, i) => (tris === mesh.shell && mesh.tone?.[i] ? c1 : c0)) : undefined;
+    const tone = accent ? tris.map((_, i) => ((tris === mesh.shell ? mesh.tone : tris === mesh.hang ? mesh.hangTone : undefined)?.[i] ? c1 : c0)) : undefined;
     const g = new THREE.Group(), m = new THREE.Mesh(skullGeometry(tris, tone), mat);
     m.castShadow = true;
     m.userData.hair = tris === mesh.shell ? 'shell' : tris === mesh.spikes ? 'spikes' : 'hang';

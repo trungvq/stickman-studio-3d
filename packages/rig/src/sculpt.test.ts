@@ -128,3 +128,31 @@ describe('hói chữ M (`recede`) với mọi kiểu', () => {
     }
   }, 30_000);
 });
+
+describe('tóc rủ', () => {
+  it('đầu `human`: mặt rủ sau gáy buông thẳng, không kéo vào cổ', () => {
+    for (const k of ['shoulder', 'center', 'bob', 'longSide'] as const) {
+      const r = parseCharacter({ name: 'rui', head: { form: 'human' }, pieces: { hair: { src: 'sculpt', color: '#2A221E', sculpt: SCULPT_PRESETS[k].sculpt } } });
+      expect(r.success).toBe(true);
+      const fig = fromCharacter(r.data as unknown as CharacterJson);
+      const pos = (hair: string) => {
+        let a: ArrayLike<number> = [];
+        fig.head.traverse((o) => o.userData.hair === hair && (a = (o as unknown as { geometry: { attributes: { position: { array: ArrayLike<number> } } } }).geometry.attributes.position.array));
+        return Array.from({ length: a.length / 3 }, (_, i) => [a[i * 3], a[i * 3 + 1], a[i * 3 + 2]]);
+      };
+      const shell = pos('shell');
+      const R = Math.max(...shell.map((p) => Math.abs(p[0])));
+      const back = Math.min(...shell.map((p) => p[2]));
+      const nape = pos('hang').filter(([x, y, z]) => Math.abs(x) < 0.1 * R && z < 0 && y < -0.3 * R);
+      expect(nape.length, k).toBeGreaterThan(0);
+      for (const p of nape) expect(p[2], k).toBeLessThan(back * 0.9);
+    }
+  });
+
+  it('màu phụ phủ cả mặt rủ của cột có màu phụ', () => {
+    const m = sculptMesh(SCULPT_PRESETS.longSide.sculpt, { accent: true });
+    expect(m.hangTone).toHaveLength(m.hang.length);
+    expect(m.hangTone!.some(Boolean)).toBe(true);
+    expect(sculptMesh(SCULPT_PRESETS.longSide.sculpt).hangTone).toBeUndefined();
+  });
+});

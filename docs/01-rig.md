@@ -1551,7 +1551,9 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
   nhân vật. Má ửng theo `face.blush` của nhân vật,
   không theo dáng đầu — [Má ửng](#má-ửng).
 - **Tóc dựng khối dời theo sọ.** Mỗi đỉnh tóc dời đúng bằng điểm sọ bên dưới nó (`humanHair`): tóc
-  giữ bề dày, gáy thu thì tóc gáy thu theo, tóc rủ không xuyên quai hàm. Kính và `headFit` đọc nửa
+  giữ bề dày, gáy thu thì tóc gáy thu theo. Mặt rủ thì dời bằng chân nó ở chỗ rời sọ (hướng ngang qua
+  đỉnh), cộng phần sọ đẩy ra theo phương ngang: tóc rủ không xuyên quai hàm, mà sau gáy vẫn buông thẳng
+  chứ không bị kéo vào cổ. Kính và `headFit` đọc nửa
   trên nên như đầu cầu. Tai ẩn khi tóc phủ chỗ tai (tia từ ngoài vào tâm tai chạm vỏ tóc hay tóc rủ).
   [Mũ dựng khối](12-trang-phuc-3d.md#mũ-dựng-khối), [trâm cài búi](12-trang-phuc-3d.md#trâm-cài-búi) và
   [bông tai](12-trang-phuc-3d.md#bông-tai) chỉ có ở người 3D; bông tai bám dái tai, tóc phủ tai thì che nó.

@@ -79,6 +79,8 @@ export interface SculptMesh {
   shell: Vec3[][];
   /** Tam giác `shell` thứ `i` thuộc vùng màu phụ; chỉ có khi hỏi `accent` */
   tone?: boolean[];
+  /** Như `tone`, cho tam giác `hang`: cột có màu phụ thì cả mặt rủ màu phụ */
+  hangTone?: boolean[];
   spikes: Vec3[][];
   hang: Vec3[][];
   lines: Vec3[][];
@@ -200,6 +202,7 @@ export function sculptMesh(raw: Partial<Sculpt>, { cut, accent = false }: { cut?
       });
     };
     const hung = cols.map((c) => (c.hang ? { outer: sheet(c.shell[0], c.lon), inner: sheet(c.skin, c.lon) } : undefined));
+    const hangTone: boolean[] = [];
     for (let i = 0; i < NT; i++) {
       const [A, B] = [hung[i], hung[i + 1]];
       if (A && B) {
@@ -212,7 +215,10 @@ export function sculptMesh(raw: Partial<Sculpt>, { cut, accent = false }: { cut?
       }
       const E = A && !B ? A : B && !A ? B : undefined;
       if (E) for (let k = 0; k < NK; k++) quad(out.hang, [E.inner[k], E.outer[k], E.outer[k + 1], E.inner[k + 1]]);
+      const lit = cols[i].f > 0 || cols[i + 1].f > 0;
+      while (hangTone.length < out.hang.length) hangTone.push(lit);
     }
+    if (accent) out.hangTone = hangTone;
   }
 
   hairLines(s, out.lines);

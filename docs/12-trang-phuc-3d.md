@@ -72,9 +72,8 @@ Các mẫu dưới đây ghép từ kiểu sẵn có và trường chung, không
 
 `HAIR_COLORS` là bảng màu tóc mẫu cho `pieces.hair.color`: `black`, `darkBrown`, `brown`,
 `chestnut`, `auburn`, `ginger`, `blonde`, `platinum`, `grey`, `white`, và `saltPepper` (muối tiêu:
-nền xám đen, `accent` xám nhạt phủ hai bên và sau gáy theo [màu phụ](#màu-phụ)). Màu phụ chỉ phủ
-vỏ ôm sọ, không phủ mặt rủ: `saltPepper` dành cho tóc không rủ (`length` 0), tóc dài thì thành sọc
-ngang; màu phụ cũng không làm được ombre.
+nền xám đen, `accent` xám nhạt phủ hai bên và sau gáy theo [màu phụ](#màu-phụ); tóc dài thì cả mặt rủ
+bạc).
 
 - Mép vỏ ở chân tóc là một **vách** từ da lên tới vỏ, nên mép có bề dày bằng độ nổi của
   vỏ ở hàng đầu.
@@ -428,7 +427,10 @@ trán và mái giữ màu chính.
   trên, nên ranh giới là đường trơn chạy song song chân tóc, không bậc thang. Không có thì lưới y như
   thường.
 - Hai màu là một vật liệu màu theo đỉnh (`npr({ tint })`, thuộc tính `tint` của lưới): nét bóng dáng
-  hậu kỳ coi cả tóc là một vật, chỗ giáp hai màu không có nét. Lọn, búi và mặt rủ giữ màu chính.
+  hậu kỳ coi cả tóc là một vật, chỗ giáp hai màu không có nét. Lọn, búi và đuôi ngựa giữ màu chính.
+- Tóc rủ: mặt rủ là phần dưới của tóc, nên cột rủ nào có màu phụ (`accentAt > 0`) thì cả mặt rủ của cột
+  ấy màu phụ, nối liền vùng màu phụ trên vỏ. Muối tiêu tóc dài thành đỉnh màu chính, phần dưới bạc; màu
+  phụ sáng hơn màu chính là ombre.
 
 ## Kính dựng khối
 
