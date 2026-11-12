@@ -335,7 +335,8 @@ describe('mảng áo, hoạ tiết, áo trong', () => {
 
   it('kẻ ô có ô chéo màu riêng, chấm bi là nhiều mảnh tròn', () => {
     const check = mesh({ style: 'shirt', panels: [{ pattern: { kind: 'check', color: '#c23b3b', cross: '#7a1f1f' } }] });
-    expect(new Set(check.fills.filter((f) => f.decal).map((f) => f.fill))).toEqual(new Set(['#c23b3b', '#7a1f1f']));
+    // bỏ nét nhạt (`ink`, nẹp sơ mi): cũng là dải dán nhưng không thuộc hoạ tiết
+    expect(new Set(check.fills.filter((f) => f.decal && f.ink === undefined).map((f) => f.fill))).toEqual(new Set(['#c23b3b', '#7a1f1f']));
     const dots = mesh({ style: 'tshirt', panels: [{ side: 'front', pts: [[-20, 100], [20, 100], [20, 40], [-20, 40]], pattern: { kind: 'dots', width: 4, gap: 4 } }] });
     const tris = dots.fills.find((f) => f.decal)!.tris.length / 3;
     expect(tris).toBeGreaterThan(12 * 20);
@@ -376,9 +377,11 @@ describe('mảng áo, hoạ tiết, áo trong', () => {
   it('`inner` đổi màu áo trong, thêm và bỏ cà vạt', () => {
     const police = mesh({ style: 'blazer', inner: { color: '#A9C8E8', tie: { color: '#1A2236' } } });
     expect(police.fills.map((f) => f.fill)).toEqual(expect.arrayContaining(['#A9C8E8', '#1A2236']));
-    expect(mesh({ style: 'suit' }).fills.map((f) => f.fill)).toEqual(['line']);
-    expect(mesh({ style: 'suit', inner: { color: '#ffffff' } }).fills.map((f) => f.fill)).toEqual(['#ffffff', 'line']);
-    expect(mesh({ style: 'suit', inner: { tie: false } }).fills).toHaveLength(0);
+    // bỏ nét nhạt (`ink`: nẹp, gấu vest): cũng là mảng tô nhưng không thuộc áo trong
+    const solid = (t: TorsoMesh) => t.fills.filter((f) => f.ink === undefined);
+    expect(solid(mesh({ style: 'suit' })).map((f) => f.fill)).toEqual(['line']);
+    expect(solid(mesh({ style: 'suit', inner: { color: '#ffffff' } })).map((f) => f.fill)).toEqual(['#ffffff', 'line']);
+    expect(solid(mesh({ style: 'suit', inner: { tie: false } }))).toHaveLength(0);
     const tie = (t: Record<string, unknown>) => mesh({ style: 'suit', inner: { tie: t } }).fills[0].pts;
     const width = (pts: number[][]) => Math.max(...pts.map((p) => p[0])) - Math.min(...pts.map((p) => p[0]));
     expect(width(tie({ width: 1.5 }))).toBeGreaterThan(width(tie({})) * 1.3);

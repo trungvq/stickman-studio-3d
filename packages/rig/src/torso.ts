@@ -3,7 +3,7 @@ import { torsoSection, type ArmRoom } from './core/act3';
 import { D } from './core/constants';
 import type { Garment } from './core/schema';
 import {
-  COLLAR_LEAN, COLLAR_LINE, curve, GARMENT_STYLES, garmentOf, humanNeckMin, INNER_COLLAR, innerCollarShape, innerNeckOf, lerp, lerpAt, lipOf, neckRing, profile, RIB_FRONT, spline,
+  COLLAR_INK, COLLAR_LEAN, COLLAR_LINE, curve, TRIM, GARMENT_STYLES, garmentOf, humanNeckMin, INNER_COLLAR, innerCollarShape, innerNeckOf, lerp, lerpAt, lipOf, neckRing, profile, RIB_FRONT, spline,
   type Collar, type MarkFill, type P2, type Rig, type SP, type Surface,
 } from './core/torso';
 import { WrapSchema, type Drape, type Necklace, type Shades } from './core/schema';
@@ -28,7 +28,7 @@ export interface TorsoMesh {
   /** Nửa bề sâu nửa trước từng hàng: từ mép trên dốc dài tới ngang ngực, cộng bụng phệ (`garment.belly`) */
   front: number[];
   /** Nét trên mặt khối, `k` lần nét thân */
-  lines: { pts: Vec3[]; k: number }[];
+  lines: { pts: Vec3[]; k: number; ink?: number }[];
   /**
    * Mảng tô trên mặt khối: điểm 3D và chỉ số tam giác, cạnh không dài quá `FILL_EDGE` px. `decal`: mảng áo
    * (`garment.panels`), vẽ như hình in — không ghi độ sâu, không vào nét bóng dáng của thân, lớp trên vẽ sau theo `lift`.
@@ -38,7 +38,7 @@ export interface TorsoMesh {
   fills: { pts: Vec3[]; tris: number[]; fill: MarkFill; decal?: { lift: number; normals: Vec3[] }; skin?: boolean; ink?: number; neck?: boolean }[];
   dots: { p: Vec3; k: number }[];
   /** Tấm nổi khối (cổ bẻ, viền gân, mũ trùm, dải cổ chéo): lưới cột × hàng, hàng `rims` có nét viền */
-  sheets: { grid: Vec3[][]; rims: number[]; color: MarkFill; line: number }[];
+  sheets: { grid: Vec3[][]; rims: number[]; color: MarkFill; line: number; ink?: number }[];
   /**
    * Khối kín (đai, dây buộc, khoá, nút đai): tam giác quấn ra ngoài trong hệ thân `y` xuống. Có `ink` là đồ nhỏ (trang sức):
    * vỏ viền dày bấy nhiêu px, không nét hậu kỳ (`userData.noEdge`)
@@ -321,7 +321,8 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     }
     const pts = dense(m.pts, m.closed || !!m.fill);
     if (m.fill) out.fills.push({ ...fillMesh(pts, m.lift), fill: m.fill });
-    if (m.k > 0) out.lines.push({ pts: pts.map((p) => onTorso(p)), k: m.k });
+    // viền mảng tô nhạt (`ink`): ống nét pha màu nét về màu áo
+    if (m.k > 0) out.lines.push({ pts: pts.map((p) => onTorso(p)), k: m.k, ...(m.ink !== undefined && m.ink < 1 && { ink: m.ink }) });
   }
   // mảng cùng màu cùng độ nổi gộp một lưới: hoạ tiết là hàng trăm mảnh nhỏ
   const merged = new Map<string, TorsoMesh['fills'][number]>();
@@ -351,12 +352,13 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     }
   }
   out.fills.push(...merged.values());
-  for (const l of panels.lines) out.lines.push({ pts: l.pts.map((p) => onTorso(p, l.lift)), k: l.k });
+  // viền mảng áo pha màu nét về màu áo như nẹp (`TRIM.ink`): túi, mảng áo trong khỏi viền đen dày
+  for (const l of panels.lines) out.lines.push({ pts: l.pts.map((p) => onTorso(p, l.lift)), k: l.k, ink: TRIM.ink });
 
   const NU = 144;
   const NV = 6;
-  const sheet = (grid: Vec3[][], rims: number[], color: MarkFill, line: number) =>
-    out.sheets.push({ grid, rims, color, line });
+  const sheet = (grid: Vec3[][], rims: number[], color: MarkFill, line: number, ink?: number) =>
+    out.sheets.push({ grid, rims: line > 0 ? rims : [], color, line, ...(ink !== undefined && ink < 1 && { ink }) });
 
   const rib = def.rib;
   if (rib) {
@@ -371,7 +373,7 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
         rib.lean,
       );
     };
-    sheet(curve(NU, (u) => curve(NV, (v) => ribAt(360 * u, v))), [0, NV], "color", rib.line);
+    sheet(curve(NU, (u) => curve(NV, (v) => ribAt(360 * u, v))), [0, NV], "color", rib.line, COLLAR_INK);
   }
 
   // miệng cổ của người mặc đồ lộ da: mặt khối từ viền cổ lên đỉnh và nắp đỉnh khối, dưới viền gân, cổ bẻ, áo trong
@@ -512,8 +514,8 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
       );
       leaf.push(up > 0 ? popUp(down, solid(inner)[1], phi, up) : down);
     }
-    sheet(stand, [], spec.fill ?? "color", COLLAR_LINE);
-    sheet(leaf, [0, NV], spec.fill ?? "color", COLLAR_LINE);
+    sheet(stand, [], spec.fill ?? "color", spec.line ?? COLLAR_LINE, spec.ink ?? COLLAR_INK);
+    sheet(leaf, [0, NV], spec.fill ?? "color", spec.line ?? COLLAR_LINE, spec.ink ?? COLLAR_INK);
   };
 
   const spec = def.collar?.(surf);

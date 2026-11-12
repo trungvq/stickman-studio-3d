@@ -238,6 +238,8 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
   const matOf = (fill: MarkFill, soft = 1) => npr({ color: colorOf(fill, pal), stipple: 0.05, stippleScale: 3, soft });
   const inkMat = clothLineMat(ink, color);
   const lineR = (k: number) => clothLineR(rig, k);
+  /** Nét đã khai độ đậm riêng (`ink`: cổ, nẹp, viền gân, viền mảng) giữ bề dày và màu pha về mực đã chỉnh, không theo `CLOTH_LINE` */
+  const tunedR = (k: number) => (k * rig.stroke * U) / 2;
   const geos = new Set<THREE.BufferGeometry>();
   const add = (m: THREE.Mesh) => (geos.add(m.geometry), spine.add(m));
   const tube = (pts: Vec3[], r: number, mat: THREE.Material, closed = false) => add(tubeMesh(pts, r, mat, closed));
@@ -307,10 +309,19 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
     add(dm);
   }
   if (neckFill && skinFill) neckFill.userData.inkSkip = [m, skinFill];
+  // nét nhạt (`ink`): pha màu nét về màu áo, một vật liệu cho mỗi độ đậm
+  const tints = new Map<number, THREE.Material>();
+  const tintMat = (k?: number) => {
+    if (k === undefined) return inkMat;
+    if (!tints.has(k)) tints.set(k, npr({ color: new THREE.Color(color).lerp(new THREE.Color(ink), k).getStyle(), stipple: 0 }));
+    return tints.get(k)!;
+  };
   for (const l of t.lines) {
+    const lineMat = tintMat(l.ink);
+    const r = l.ink === undefined ? lineR(l.k) : tunedR(l.k);
     const closed = l.pts.length > 40 && v3(l.pts[0]).distanceTo(v3(l.pts[l.pts.length - 1])) < 0.02;
     if (l.pts.every(shown)) {
-      tube(closed ? l.pts.slice(0, -1) : l.pts, lineR(l.k), inkMat, closed);
+      tube(closed ? l.pts.slice(0, -1) : l.pts, r, lineMat, closed);
       continue;
     }
     // nét chui vào váy: giữ từng khúc còn trên cạp
@@ -318,11 +329,11 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
     for (const p of l.pts) {
       if (shown(p)) run.push(p);
       else {
-        if (run.length > 1) tube(run, lineR(l.k), inkMat);
+        if (run.length > 1) tube(run, r, lineMat);
         run = [];
       }
     }
-    if (run.length > 1) tube(run, lineR(l.k), inkMat);
+    if (run.length > 1) tube(run, r, lineMat);
   }
   for (const d of t.dots) {
     if (!shown(d.p)) continue;
@@ -334,8 +345,12 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
     const sm = new THREE.Mesh(sheetGeometry(s.grid), npr({ color: colorOf(s.color, pal), stipple: 0.04, soft: 1, doubleSided: true }));
     sm.castShadow = true;
     add(sm);
-    const rimMat = sameColor(colorOf(s.color, pal), color) ? inkMat : clothLineMat(ink, colorOf(s.color, pal));
-    for (const r of s.rims) tube(s.grid.map((col) => col[r]), lineR(s.line), rimMat);
+    const under = colorOf(s.color, pal);
+    const tuned = s.ink !== undefined;
+    const rimMat = tuned
+      ? npr({ color: new THREE.Color(under).lerp(new THREE.Color(ink), s.ink!).getStyle(), stipple: 0 })
+      : sameColor(under, color) ? inkMat : clothLineMat(ink, under);
+    for (const r of s.rims) tube(s.grid.map((col) => col[r]), tuned ? tunedR(s.line) : lineR(s.line), rimMat);
   }
   for (const s of t.solids) {
     if (!s.pts.some(shown)) continue;

@@ -1,6 +1,6 @@
 import { D } from "./constants";
 import type { Open, Wrap } from "./schema";
-import { COLLAR_LINE, curve, lerp, type MarkFill, type SP, type Surface } from "./torso";
+import { COLLAR_INK, COLLAR_LINE, curve, lerp, type MarkFill, type SP, type Surface } from "./torso";
 import type { Vec3 } from "./sphere";
 import type { PrintPart } from "./print";
 
@@ -9,6 +9,11 @@ export const WRAP_LIFT = [2.4, 1.4] as const;
 export const WRAP_UNDER_LIFT = 1.6;
 /** Da trong miệng cổ nổi khỏi mặt khối bấy nhiêu px */
 export const WRAP_SKIN_LIFT = 1;
+/**
+ * Dải cổ, cổ lót dưới đai bị cắt, chừa lấn vào trong đai bấy nhiêu px ở mỗi mép: đai chỉ nổi `lift` px, dải cổ nổi
+ * `WRAP_LIFT` cộng ống viền nên chạy tiếp dưới đai thì xuyên lên mặt đai thành vạch đen
+ */
+export const WRAP_OBI_TUCK = 2;
 /** Mép vạt trên bẻ từ đường chéo sang thẳng đứng trong khoảng bấy nhiêu px */
 export const WRAP_BEND = 14;
 /** Áo trong lộ giữa hai vạt mở nổi khỏi mặt khối bấy nhiêu px */
@@ -30,7 +35,7 @@ export interface WrapBody {
 
 export interface WrapParts {
   /** Tấm lưới cột × hàng, hàng `rims` có nét viền */
-  sheets: { grid: Vec3[][]; rims: number[]; color: MarkFill; line: number }[];
+  sheets: { grid: Vec3[][]; rims: number[]; color: MarkFill; line: number; ink?: number }[];
   /** Khối kín: điểm, chỉ số tam giác quấn ra ngoài (hệ thân, `y` xuống) */
   solids: { pts: Vec3[]; tris: number[]; color: MarkFill }[];
   /** Chữ trên dải cổ */
@@ -259,6 +264,8 @@ export function wrapParts(b: WrapBody, w: Wrap): WrapParts {
   const out: WrapParts = { sheets: [], solids: [], prints: [] };
   const yEnd = s.yH - 2;
   const NV = 4;
+  // quãng đai che (`WRAP_OBI_TUCK`): cột dải cổ có giữa bề ngang nằm trong đó thì bỏ, dải tách thành từng khúc
+  const tuck = w.obi && [(-w.obi.y - w.obi.width / 2) * b.height + WRAP_OBI_TUCK, (-w.obi.y + w.obi.width / 2) * b.height - WRAP_OBI_TUCK];
   const strip = (
     cols: ((d: number) => SP)[],
     d0: number,
@@ -266,13 +273,22 @@ export function wrapParts(b: WrapBody, w: Wrap): WrapParts {
     lift: (v: number) => number,
     color: MarkFill,
     rims: number[],
-  ) =>
-    out.sheets.push({
-      grid: cols.map((col) => curve(NV, (v) => b.raise(col(lerp(d0, d1, v)), lift(v)))),
-      rims,
-      color,
-      line: COLLAR_LINE,
-    });
+  ) => {
+    const runs: ((d: number) => SP)[][] = [[]];
+    for (const col of cols) {
+      const y = col(lerp(d0, d1, 0.5))[1];
+      if (tuck && y > tuck[0] && y < tuck[1]) runs.push([]);
+      else runs[runs.length - 1].push(col);
+    }
+    for (const run of runs.filter((r) => r.length > 1))
+      out.sheets.push({
+        grid: run.map((col) => curve(NV, (v) => b.raise(col(lerp(d0, d1, v)), lift(v)))),
+        rims,
+        color,
+        line: COLLAR_LINE,
+        ink: COLLAR_INK,
+      });
+  };
   const bandLift = (v: number) => lerp(WRAP_LIFT[0], WRAP_LIFT[1], v);
   const bandColor = (w.bandColor ?? "color") as MarkFill;
   /** Da trong miệng cổ: từ `front` (nửa trước, kinh độ `90` về `−90`) và cả vòng trên viền cổ quanh gáy lên tới mép trên khối */

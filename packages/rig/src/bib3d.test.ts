@@ -50,7 +50,8 @@ describe('yếm', () => {
     expect(under(plain.dots.map((d) => d.p[1]))).toBeGreaterThan(0);
     expect(under(worn.dots.map((d) => d.p[1]))).toBe(0);
     expect(worn.dots.length).toBeGreaterThan(0);
-    const frontLow = (t: typeof plain) => t.lines.flatMap((l) => l.pts).filter((p) => p[2] > 0 && Math.abs(p[0]) < 5 && p[1] > -bib.top + 2 && p[1] < -bib.waist - 1).length;
+    // nẹp sơ mi là nét nhạt (`Mark.ink`): dải dán trong `fills`, không phải ống trong `lines`
+    const frontLow = (t: typeof plain) => [...t.lines.flatMap((l) => l.pts), ...t.fills.filter((f) => f.ink !== undefined).flatMap((f) => f.pts)].filter((p) => p[2] > 0 && Math.abs(p[0]) < 5 && p[1] > -bib.top + 2 && p[1] < -bib.waist - 1).length;
     expect(frontLow(plain)).toBeGreaterThan(0);
     expect(frontLow(worn)).toBe(0);
   });

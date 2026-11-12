@@ -95,6 +95,10 @@ export interface Collar {
   fill?: MarkFill;
   /** Chân cổ giữa ngực cao bằng bấy nhiêu phần `stand` (cổ cài kín); bỏ trống là `0`, cổ mở */
   closed?: number;
+  /** Nét viền mép lá cổ, lần nét thân; bỏ trống là `COLLAR_LINE`, `0` là không viền */
+  line?: number;
+  /** Màu nét viền: `1` màu nét (bỏ trống), `0` màu lá cổ, giữa là pha hai màu */
+  ink?: number;
 }
 
 /** Viền cổ gân nổi khối: vòng vải có bề dày quanh viền cổ, từ mép cổ xuống viền cổ nở rộng `width` */
@@ -104,7 +108,7 @@ interface Rib {
   stand: number;
   /** Vòng nổi khỏi mặt khối bấy nhiêu px ở mép cổ và ở mép dưới, nửa sau; phía trước nhạt về `RIB_FRONT` lần */
   lift: [inner: number, outer: number];
-  /** Nét viền, lần nét thân */
+  /** Nét viền, lần nét thân; màu nét pha `COLLAR_INK` */
   line: number;
   /** Nửa sau nâng lên bấy nhiêu px mỗi px lùi sau trục thân; bỏ trống là `COLLAR_LEAN` */
   lean?: number;
@@ -147,8 +151,18 @@ interface GarmentStyleDef {
   lapel?: number;
 }
 
-/** Nét viền cổ bẻ nổi khối, lần nét thân */
-export const COLLAR_LINE = 0.6;
+/**
+ * Nét viền cổ bẻ, ve, dải cổ chéo, viền cổ gân nổi khối, lần nét thân, và độ đậm màu nét (`1` màu nét, `0` màu áo): mảnh
+ * và pha về màu áo cho áo sáng khỏi viền đen dày, áo tối gần như không đổi
+ */
+export const COLLAR_LINE = 0.25;
+export const COLLAR_INK = 0.4;
+/** Nét nẹp, đường may, gấu (dải dán nhạt, `Mark.ink`): `k` lần nét thân, độ đậm màu nét */
+export const TRIM = { k: 0.4, ink: 0.6 } as const;
+/** Vạch gân gấu, nếp xếp: mảnh và nhạt hơn `TRIM` */
+export const TRIM_FINE = { k: 0.3, ink: 0.5 } as const;
+/** Viền của mảng tô (nơ, dải nơ): nét `k` lần nét thân, pha màu nét về màu áo */
+export const OUTLINE = { k: 0.35, ink: 0.5 } as const;
 /** Nửa sau cổ bẻ nổi khối cao lên bấy nhiêu px mỗi px lùi sau trục thân, vuốt mềm quanh trục */
 export const COLLAR_LEAN = 0.35;
 /** Viền cổ gân nổi khối ở giữa ngực chỉ nổi bấy nhiêu lần độ nổi nửa sau, để mép cổ trước không bị đầu che */
@@ -355,6 +369,9 @@ const oval = (cx: number, cy: number, rx: number, ry: number, a0: number, a1: nu
     return [cx + rx * Math.cos(t), cy + ry * Math.sin(t)];
   });
 
+/** THỬ: lá cổ sơ mi — bề rộng sau gáy, độ hạ hai bên, mũi cổ, nét viền (lần nét thân) và độ đậm màu nét */
+export const SHIRT_COLLAR = { band: 6, side: 2, tipX: 11, tipY: 8, line: 0.15, ink: 0.2 };
+
 /** Số của áo phông: các áo khác theo cùng dáng, đè vài số */
 const TEE: Dims = {
   ease: 11,
@@ -381,20 +398,22 @@ export const CLOTH = 2;
 const BODY: Dims = { ...TEE, ease: TEE.ease - CLOTH, hem: -4, neck: 17, neckFront: 0 };
 
 /** Đường quanh khối ở độ cao `y` */
-const around = (y: number, k: number): Mark => ({
+const around = (y: number, { k, ink }: { k: number; ink?: number }): Mark => ({
   pts: curve(72, (u): SP => [-180 + 360 * u, y]),
   k,
+  ink,
   graze: 0.05,
 });
 
 /** Nét dọc từ `y0` tới `y1` ở mỗi kinh độ cách nhau `step` độ */
-const ticks = (y0: number, y1: number, step: number, k: number): Mark[] =>
+const ticks = (y0: number, y1: number, step: number, { k, ink }: { k: number; ink?: number }): Mark[] =>
   Array.from({ length: Math.round(360 / step) }, (_, i) => ({
     pts: [
       [-180 + step * i, y0],
       [-180 + step * i, y1],
     ],
     k,
+    ink,
     graze: 0.3,
   }));
 
@@ -611,55 +630,59 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
     },
     neckline: "round",
     marks: () => [],
-    rib: { width: 6, stand: 0, lift: [1.2, 0.3], line: 0.8, lean: 0 },
+    rib: { width: 6, stand: 0, lift: [1.2, 0.3], line: 0.3, lean: 0 },
   },
   shirt: {
     label: "Sơ mi dựng khối",
-    dims: { ...TEE, hem: 5, neckFront: 10 },
+    dims: { ...TEE, hem: 5, neck: 17, neckFront: 10 },
     neckline: "v",
     marks: (s) => {
       const [yA, ...buttons] = placket(s, [0, 0.2, 0.52, 0.84]);
       return [
-        { pts: [s.at(-1.5, yA), s.at(-1.5, s.yH - 1)], k: 0.45 },
+        { pts: [s.at(-1.5, yA), s.at(-1.5, s.yH - 1)], ...TRIM },
         ...buttons.map((y) => ({ pts: [s.at(1.5, y)], k: 0.9, dot: true })),
       ];
     },
+    // Lá cổ ôm sát cổ: `side` là độ hạ theo mặt vát vai thoải, mỗi px hạ ra ngang ~2,5 px, `6` cũ trải lá cổ tới mép vai
     collar: (s) => ({
-      stand: 6,
-      band: 9,
-      side: 6,
-      flap: [[17, s.top() + s.g.neckFront + 11]],
-      lift: [5, 2],
-      tip: 9,
+      stand: 5,
+      band: SHIRT_COLLAR.band,
+      side: SHIRT_COLLAR.side,
+      flap: [[SHIRT_COLLAR.tipX, s.top() + s.g.neckFront + SHIRT_COLLAR.tipY]],
+      lift: [3.5, 1.5],
+      tip: 5,
+      line: SHIRT_COLLAR.line,
+      ink: SHIRT_COLLAR.ink,
     }),
   },
   polo: {
     label: "Áo polo dựng khối",
-    dims: { ...TEE, hem: 3.5, neckFront: 9 },
+    dims: { ...TEE, hem: 3.5, neck: 17, neckFront: 9 },
     neckline: "v",
     marks: (s) => {
       const yA = s.top() + s.g.neckFront;
       const yB = yA + 30;
       return [
-        { pts: [s.at(-5, yA), s.at(-5, yB), s.at(5, yB), s.at(5, yA)], k: 0.45 },
+        { pts: [s.at(-5, yA), s.at(-5, yB), s.at(5, yB), s.at(5, yA)], ...TRIM },
         { pts: [s.at(0, yA + 16)], k: 0.9, dot: true },
       ];
     },
+    // như cổ sơ mi: lá cổ ôm sát cổ, `side` nhỏ vì vai thoải trải độ hạ ra ngang
     collar: (s) => ({
-      stand: 6,
-      band: 8,
-      side: 6,
-      flap: [[16, s.top() + s.g.neckFront + 9]],
-      lift: [5, 2],
-      tip: 8,
+      stand: 5,
+      band: 6,
+      side: 2,
+      flap: [[11, s.top() + s.g.neckFront + 7]],
+      lift: [3.5, 1.5],
+      tip: 5,
     }),
   },
   sweater: {
     label: "Áo len dựng khối",
     dims: { ...TEE, hem: 2, neckFront: 12 },
     neckline: "round",
-    rib: { width: 8, stand: 4, lift: [4.5, 0.4], line: 0.78, ticks: { step: 15, k: 0.56 } },
-    marks: (s) => [around(s.yH - 13, 0.78), ...ticks(s.yH - 12, s.yH - 1, 12, 0.56)],
+    rib: { width: 8, stand: 4, lift: [4.5, 0.4], line: 0.3, ticks: { step: 15, k: 0.56 } },
+    marks: (s) => [around(s.yH - 13, TRIM), ...ticks(s.yH - 12, s.yH - 1, 12, TRIM_FINE)],
   },
   suit: {
     label: "Vest dựng khối",
@@ -671,14 +694,14 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
       const [yA, ...buttons] = placket(s, [0, 0.26, 0.6]);
       return [
         ...innerMarks(s),
-        { pts: [s.at(0, yA), s.at(-1, yA + 20), s.at(0, s.yH - 9)], k: 0.45 },
+        { pts: [s.at(0, yA), s.at(-1, yA + 20), s.at(0, s.yH - 9)], ...TRIM },
         // Hai vạt trước bo tròn ở gấu
         ...SIDES.map((d) => ({
           pts: curve(6, (u): [number, number] => [
             d * 9 * (1 - Math.cos((u * Math.PI) / 2)),
             s.yH - 9 + 8 * Math.sin((u * Math.PI) / 2),
           ]).map(([x, y]) => s.at(x, y)),
-          k: 0.45,
+          ...TRIM,
         })),
         ...buttons.map((y) => ({ pts: [s.at(3.5, y)], k: 0.9, dot: true })),
       ];
@@ -740,7 +763,7 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
           pts: [s.at(d * 14, yP), s.at(d * 21, yP + 14), s.at(d * 30, yB - 2)],
           k: 0.67,
         })),
-        around(yB, 1),
+        around(yB, { k: 1 }),
         ...SIDES.flatMap((d): Mark[] => [
           { pts: [s.at(d * 10, top + 13), s.at(d * 10, top + 42)], k: 0.67 },
           {
@@ -768,7 +791,7 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
       ...placket(s, [0.38, 0.75]).map((y) => ({ pts: [s.at(18, y)], dot: true, k: 1.05 })),
       ...SIDES.map((d) => ({
         pts: [s.at(d * 25, placket(s, [0.62])[0]), s.at(d * 37, placket(s, [0.54])[0])],
-        k: 0.5,
+        ...TRIM,
       })),
     ],
     collar: (s) => {
@@ -794,23 +817,23 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
     dims: { ...TEE, ease: 12, waist: 3, hem: 6, neck: SUIT_NECK, neckFront: 52 },
     neckline: "v",
     shoulderFit: true,
-    rib: { width: 5, stand: 2, lift: [2, 0.5], line: 0.55 },
+    rib: { width: 5, stand: 2, lift: [2, 0.5], line: 0.25 },
     marks: (s) => [
       ...innerMarks(s, "accent"),
-      { pts: [s.at(-3, s.top() + s.g.neckFront), s.at(-3, s.yH - 2)], k: 0.45 },
+      { pts: [s.at(-3, s.top() + s.g.neckFront), s.at(-3, s.yH - 2)], ...TRIM },
       ...placket(s, [0.2, 0.5, 0.8]).map((y) => ({ pts: [s.at(3, y)], dot: true, k: 0.85 })),
-      around(s.yH - 9, 0.5),
-      ...ticks(s.yH - 8, s.yH - 2, 22, 0.35),
+      around(s.yH - 9, TRIM),
+      ...ticks(s.yH - 8, s.yH - 2, 22, TRIM_FINE),
     ],
   },
   bowShirt: {
     label: "Sơ mi cổ nơ dựng khối",
-    dims: { ...TEE, ease: 8, waist: 5, hem: 3, neckFront: 17 },
+    dims: { ...TEE, ease: 8, waist: 5, hem: 3, neck: 17, neckFront: 17 },
     neckline: "v",
     marks: (s) => {
       const y = s.top() + s.g.neckFront + 2;
       return [
-        { pts: [s.at(0, y + 30), s.at(0, s.yH - 2)], k: 0.4 },
+        { pts: [s.at(0, y + 30), s.at(0, s.yH - 2)], ...TRIM },
         ...SIDES.flatMap((d): Mark[] => [
           {
             pts: [
@@ -820,7 +843,7 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
               [d * 7, y + 8],
             ].map(([x, yy]) => s.at(x, yy)),
             fill: "accent",
-            k: 0.45,
+            ...OUTLINE,
           },
           {
             pts: [
@@ -830,17 +853,17 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
               [d * 5, y + 29],
             ].map(([x, yy]) => s.at(x, yy)),
             fill: "accent",
-            k: 0.4,
+            ...OUTLINE,
           },
         ]),
-        { pts: oval(0, y + 2, 3, 4, 0, 360).map(([x, yy]) => s.at(x, yy)), fill: "accent", k: 0.5 },
+        { pts: oval(0, y + 2, 3, 4, 0, 360).map(([x, yy]) => s.at(x, yy)), fill: "accent", ...OUTLINE },
       ];
     },
     collar: (s) => ({
       stand: 4,
       band: 5,
-      side: 4,
-      flap: [[12, s.top() + 22]],
+      side: 2,
+      flap: [[10, s.top() + 20]],
       lift: [3, 1],
       tip: 3,
     }),
@@ -849,15 +872,15 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
     label: "Áo cổ vuông eo cao dựng khối",
     dims: { ...TEE, ease: 9, waist: 10, fit: 1, hem: 9, neck: 23, neckFront: 19 },
     neckline: "square",
-    rib: { width: 3, stand: 1, lift: [1, 0.3], line: 0.5 },
+    rib: { width: 3, stand: 1, lift: [1, 0.3], line: 0.25 },
     marks: (s) => [
-      around(s.t(0.58), 0.5),
+      around(s.t(0.58), TRIM),
       ...[-55, 0, 55, 125, 180, -125].map((lon) => ({
         pts: [
           [lon, s.t(0.66)],
           [lon, s.yH - 3],
         ] as SP[],
-        k: 0.35,
+        ...TRIM_FINE,
         graze: 0.3,
       })),
     ],
@@ -872,13 +895,13 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
       const yb = top + 42;
       const onFront = (pts: [number, number][]) => pts.map(([x, y]) => s.at(x, y));
       return [
-        around(seam, 0.5),
+        around(seam, TRIM),
         ...[0, 38, -38, 76, -76, 114, -114, 152, -152].map((lon) => ({
           pts: [
             [lon, seam + 5],
             [lon, s.yH - 1],
           ] as SP[],
-          k: 0.4,
+          ...TRIM_FINE,
           graze: 0.3,
         })),
         ...SIDES.map((d) => ({
@@ -889,14 +912,14 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
             [0, yb + 4],
           ]),
           fill: "accent" as const,
-          k: 0.4,
+          ...OUTLINE,
         })),
         ...SIDES.map((d) => ({
           pts: onFront(oval(d * 8.5, yb, 7.5, 6.5, 0, 360)),
           fill: "accent" as const,
-          k: 0.45,
+          ...OUTLINE,
         })),
-        { pts: onFront(oval(0, yb, 3.5, 4.5, 0, 360)), fill: "accent", k: 0.45 },
+        { pts: onFront(oval(0, yb, 3.5, 4.5, 0, 360)), fill: "accent", ...OUTLINE },
       ];
     },
     // Lá sen ba cánh: mỗi bên một cánh ở bên cổ và nửa cánh giữa, hai nửa gặp nhau ở trục giữa
