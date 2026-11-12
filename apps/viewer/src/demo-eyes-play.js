@@ -39,7 +39,7 @@ const SPANS = [
 ];
 
 /** Giây bắt đầu các cái chớp; cột sau chớp muộn hơn một chút như người thật không chớp cùng lúc */
-const BLINKS = [0.7, 1.75, 6.9, 14.85, 15.15, 15.7];
+const BLINKS = [0.7, 1.75, 6.3, 14.85, 15.15, 15.7];
 const LAG = [0, 0.07, 0.03, 0.11];
 
 /** Độ nhắm của một cái chớp bắt đầu ở `d = 0`: cùng nhịp và nấc với `blinkAt` của lõi */
