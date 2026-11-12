@@ -71,10 +71,8 @@ describe("dáng mồm người", () => {
     expect(elder.fold).toBeGreaterThan(0);
   });
 
-  it("bỏ trống `mouthShape` thì theo dáng mắt, không thì `male`; số đè thắng", () => {
-    expect(mouthShape(undefined, {}, "female")).toEqual(MOUTH_SHAPES.female);
-    expect(mouthShape(undefined, {}, "nope")).toEqual(MOUTH_SHAPES.male);
-    expect(mouthShape("child", {}, "female")).toEqual(MOUTH_SHAPES.child);
+  it("số đè thắng số của dáng", () => {
+    expect(mouthShape("child")).toEqual(MOUTH_SHAPES.child);
     expect(mouthShape("elder", { fold: 0 }).fold).toBe(0);
   });
 

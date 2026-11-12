@@ -69,7 +69,7 @@ export function mouthsPlayDemo() {
   const heads = [];
   for (const [r, turn] of [[0, 0], [1, TURN]])
     ROWS.forEach((row, c) => {
-      const f = figureOf(row, c);
+      const f = figureOf(row, c, { mouthShape: row.eyeShape });
       f.root.position.set(x0 + c * DX, -r * DY, 0);
       f.root.rotation.y = (turn * Math.PI) / 180;
       headOnly(f);

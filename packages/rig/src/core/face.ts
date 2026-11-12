@@ -562,18 +562,10 @@ export const MOUTH_SHAPE_KINDS = Object.keys(MOUTH_SHAPES) as [MouthShapeKind, .
 /** Tên trường của `MouthShape`, cho `face.mouth` của JSON nhân vật */
 export const MOUTH_SHAPE_FIELDS = Object.keys(MOUTH_SHAPES.male) as (keyof MouthShape)[];
 
-/**
- * Dáng mồm `kind` với các số của `over` đè lên; bỏ trống `kind` thì theo dáng mắt `eye` khi nó cũng là một dáng mồm,
- * không thì `male`
- */
-export function mouthShape(
-  kind?: MouthShapeKind,
-  over: Partial<MouthShape> = {},
-  eye?: string,
-): MouthShape {
-  const k = kind ?? (eye && eye in MOUTH_SHAPES ? (eye as MouthShapeKind) : "male");
+/** Dáng mồm `kind` với các số của `over` đè lên */
+export function mouthShape(kind: MouthShapeKind, over: Partial<MouthShape> = {}): MouthShape {
   const own = Object.entries(over).filter(([, v]) => Number.isFinite(v));
-  return { ...MOUTH_SHAPES[k], ...Object.fromEntries(own) };
+  return { ...MOUTH_SHAPES[kind], ...Object.fromEntries(own) };
 }
 
 /**

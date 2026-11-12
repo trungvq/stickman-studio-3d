@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { figureOf, HEAD_Y, headOnly, label, ROWS } from './demo-eyes.js';
 
-// Bảng mồm người (`?demo=mouths-human`): đầu `human` không thân, mỗi hàng một dáng mồm (`face.mouthShape`, theo dáng
-// mắt: nam, nữ, trẻ em, người già), mỗi cột một khẩu hình. `?set=talk` (mặc định) là khẩu hình nói, `?set=expr` là biểu
+// Bảng mồm người (`?demo=mouths-human`): đầu `human` không thân, mỗi hàng một dáng mồm (khai
+// `face.mouthShape` cùng tên dáng mắt: nam, nữ, trẻ em, người già), mỗi cột một khẩu hình. `?set=talk` (mặc định) là khẩu hình nói, `?set=expr` là biểu
 // cảm và bốn ký hiệu manga; `?turn=độ` xoay từng đầu tại chỗ.
 
 const DX = 0.9;
@@ -53,7 +53,7 @@ export function mouthsHumanDemo(q) {
   const x0 = -((cols.length - 1) / 2) * DX;
   ROWS.forEach((row, r) => {
     cols.forEach(([text, mouth, eyes = 'open', brow = 'neutral'], c) => {
-      const f = figureOf(row, r * cols.length + c);
+      const f = figureOf(row, r * cols.length + c, { mouthShape: row.eyeShape });
       f.root.position.set(x0 + c * DX, -r * DY, 0);
       f.root.rotation.y = turn;
       f.face.set({ mouth, brow, eyes });

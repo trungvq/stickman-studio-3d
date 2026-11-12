@@ -887,8 +887,8 @@ export const CharacterSchema = z.object({
       eyeShape: z.enum(EYE_SHAPE_KINDS).default("male"),
       eye: EyeOverSchema.optional(),
       /**
-       * Dáng mồm người của đầu `human`, khoá của `MOUTH_SHAPES`; bỏ trống là theo `eyeShape`. `mouth` đè từng số của
-       * dáng. docs/01-rig.md#mồm-người
+       * Dáng mồm người của đầu `human`, khoá của `MOUTH_SHAPES`; bỏ trống là mồm chibi. `mouth` đè từng số của dáng.
+       * docs/01-rig.md#mồm-người
        */
       mouthShape: z.enum(MOUTH_SHAPE_KINDS).optional(),
       mouth: MouthOverSchema.optional(),

@@ -636,8 +636,9 @@ Không cần viseme thật. Cảm xúc chọn một **bộ** khẩu hình, mỗi
 cắn, há vừa, há to, tròn. Khi nói, miệng xoay chủ yếu giữa răng cắn và há vừa, há to ở tiếng
 nhấn, tròn ở nguyên âm tròn môi, khép khi nghỉ từ 0,2 s.
 
-Đầu `sphere` vẽ khẩu hình theo lối sticker chibi dưới đây; đầu `human` vẽ mồm người cùng tên kiểu, cùng nghĩa
-([Mồm người](#mồm-người)), trừ bốn ký hiệu manga `pain`, `puffed`, `fang`, `wry` giữ nét của bảng này.
+Mọi đầu vẽ khẩu hình theo lối sticker chibi dưới đây. Nhân vật đầu `human` khai `face.mouthShape` thì vẽ mồm người
+cùng tên kiểu, cùng nghĩa ([Mồm người](#mồm-người)), trừ bốn ký hiệu manga `pain`, `puffed`, `fang`, `wry` giữ nét
+của bảng này.
 
 Khẩu hình chibi: miệng mở là **chữ D** đối xứng — mép trên gần phẳng, đáy tròn —,
 khoang đỏ nâu `#7a2b22`, dải răng trên `#f7f2e6` bám mép trên, lưỡi `#d0675a` nhô lên từ đáy ở miệng há
@@ -703,8 +704,8 @@ Bộ khẩu hình theo cảm xúc (`--mood` của `lipsync`):
 | `sad` | `frown` | `talkSadA` | `talkSadB` | `talkSadB` | `o`, `talkO` |
 | `angry` | `frown` | `grit` | `talkAngryA` | `talkAngryB` | `o`, `talkO` |
 
-**Theo nguyên âm.** Đầu `human` có đủ khẩu hình cho từng nguyên âm, dùng thay năm vai trên khi muốn nhép sát
-lời: あ `talkA` (tiếng nhấn `talkB`), い `talkI`, う `talkU`, え `talkE`, お `talkO`, ん và âm môi m / b / p `talkM`,
+**Theo nguyên âm.** Có đủ khẩu hình cho từng nguyên âm, dùng thay năm vai trên khi muốn nhép sát lời (hợp nhất với
+mồm người): あ `talkA` (tiếng nhấn `talkB`), い `talkI`, う `talkU`, え `talkE`, お `talkO`, ん và âm môi m / b / p `talkM`,
 nghỉ `closed`. Năm vai cũ vẫn chạy trên mồm người: `talkTeeth` gần い, `talkSadA/B` là nói thường khoé hơi trễ.
 
 **Chữ D (`talkTeeth`, `talkA`, `talkB`) đọc ra miệng cười**, kể cả khi mắt mày nghiêm, nên mặc định
@@ -779,17 +780,17 @@ Tâm miệng nằm dưới tâm mắt đúng `face.mouthGap` (mặc định `34`
 
 ### Mồm người
 
-Đầu `human` vẽ mồm người: đường môi mảnh thon hai đầu khi ngậm; há thì khoang nâu đỏ không viền, chỉ mép môi trên
+Nhân vật đầu `human` khai `face.mouthShape` thì vẽ mồm người; bỏ trống là mồm chibi như đầu `sphere`. Mồm người: đường môi mảnh thon hai đầu khi ngậm; há thì khoang nâu đỏ không viền, chỉ mép môi trên
 là nét mực mảnh dày ở giữa, nhọn ra khoé, mép dưới gợn nhạt; răng trên / dưới là dải trắng bám mép, nhạt dần ra khoé;
 lưỡi ở đáy khi há to. Mọi số ở một bảng dáng mồm (`MOUTH_SHAPES`, `core/face.ts`) và một bảng khẩu hình (`MOUTH_POSES`);
 khẩu hình nào cũng là một bộ số chung đặt lên dáng mồm của nhân vật, như kiểu mắt là trạng thái mi đặt lên dáng mắt.
 
-**Dáng mồm** là `face.mouthShape` của JSON nhân vật; bỏ trống thì theo `face.eyeShape` (cùng bốn tên), nên nhân vật đã
-khai dáng mắt không phải khai thêm. `face.mouth` đè từng số của dáng (`mouthShape(kind, over, eyeShape)`).
+**Dáng mồm** là `face.mouthShape` của JSON nhân vật, không suy từ `face.eyeShape`. `face.mouth` đè từng số của dáng
+(`mouthShape(kind, over)`), chỉ ăn khi có `face.mouthShape`.
 
 | `mouthShape` | Dáng |
 |---|---|
-| `male` (mặc định) | Nét môi mảnh, gần như không thấy môi dưới — chỉ một vệt bóng mờ dưới nó |
+| `male` | Nét môi mảnh, gần như không thấy môi dưới — chỉ một vệt bóng mờ dưới nó |
 | `female` | Hẹp hơn; vệt môi dưới nhạt và chút màu môi, không viền |
 | `child` | Nhỏ, chỗ hở tròn |
 | `elder` | Khoé trễ nghỉ, nếp ngắn xuôi xuống ở hai khoé, há ít hơn |
@@ -1057,7 +1058,7 @@ Phản diện vẫn cùng rig: dữ là ở vài nét — mi sụp không đốm
 `face.beard.moustache` là ria mép của người 3D: một dải màu thon hai đầu vẽ trên **lớp mồm** (`MOUTH_BOX`), ngay trên
 mép trên của khẩu hình đang dùng. Mồm há (`talkB`, `wide`, `shout`) thì ria nhích lên theo `mouthExtent(kind).top`; lớp
 mồm trượt về phía camera, lật gương khi quay mặt thì ria đi cùng, nên nhìn 3/4, nghiêng vẫn nằm trên môi. px của đầu cao
-130 như nét mặt; đầu `human` phóng ria theo `CHIBI.mouth` (bề ngang `mouthWide`) và đặt nó trên mép trên của mồm người
+130 như nét mặt; đầu `human` phóng ria theo `CHIBI.mouth` (bề ngang `mouthWide`); có mồm người thì đặt ria trên mép trên của nó
 (`humanMouthTop` nhân độ nén dọc của mồm, kể cả màu môi trên và nếp mím), nên ria bám theo cả nấc chuyển khẩu hình.
 
 ```json
@@ -1766,8 +1767,8 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
   má ở mọi góc quay. `CHIBI` (`core/face.ts`) cộng vào `face` của JSON nhân vật: mắt hạ `4`, hai mắt
   giãn thêm `10` px, khoảng mồm giữ nguyên (`chibiShape`) — kính và `headFit` đọc chỗ mắt đã dời. Mỗi mắt
   phóng `1,2` lần quanh tâm của nó, không bóp ngang (`squash` `1`), là mắt người ([Mắt người](#mắt-người));
-  mồm là mồm người ([Mồm người](#mồm-người)); ký hiệu manga của mồm thu `0,8`, bề ngang nhân thêm `1,3` (`mouthWide`,
-  cả ria trên lớp mồm), mày nhấc `3` px. Cỡ mắt, độ bóp và đốm sáng nhân theo [nét mặt riêng](#nét-mặt-riêng) của
+  mồm chibi thu `0,8`, bề ngang nhân thêm `1,3` (`mouthWide`, cả ria trên lớp mồm); khai `face.mouthShape` thì là
+  mồm người ([Mồm người](#mồm-người)), ký hiệu manga vẫn theo cỡ ấy, mày nhấc `3` px. Cỡ mắt, độ bóp và đốm sáng nhân theo [nét mặt riêng](#nét-mặt-riêng) của
   nhân vật. Má ửng theo `face.blush` của nhân vật,
   không theo dáng đầu — [Má ửng](#má-ửng).
 - **Tóc dựng khối dời theo sọ.** Mỗi đỉnh tóc dời đúng bằng điểm sọ bên dưới nó (`humanHair`): tóc

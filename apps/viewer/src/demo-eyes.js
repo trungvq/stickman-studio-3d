@@ -37,12 +37,12 @@ const COLS = [
   ['sly', 'sly', 'flat', 'smirk', 0],
 ];
 
-export function figureOf(row, seed) {
+export function figureOf(row, seed, face = {}) {
   const r = parseCharacter({
     name: `mat-${row.eyeShape}`,
     head: { form: 'human' },
     palette: { skin: '#f8e3c8', line: '#1c1c1e' },
-    face: { eyeShape: row.eyeShape, ...(row.blush && { blush: row.blush }), ...(row.wrinkle && { wrinkle: { kind: row.wrinkle } }) },
+    face: { eyeShape: row.eyeShape, ...(row.blush && { blush: row.blush }), ...(row.wrinkle && { wrinkle: { kind: row.wrinkle } }), ...face },
     pieces: {
       hair: { src: 'sculpt', color: row.hairColor, sculpt: SCULPT_PRESETS[row.hair].sculpt },
     },
