@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { Sculpt } from './core/schema';
-import { SCULPT_PRESETS, SCULPT_STYLES } from './core/sculpt';
+import { parseCharacter, SculptSchema, type Sculpt } from './core/schema';
+import { rootLat, SCULPT_PRESETS, SCULPT_STYLES } from './core/sculpt';
 import { sculptMesh } from './sculpt';
+import { fromCharacter, type CharacterJson } from './stickman';
 
 /** Đổi mọi số của một trường; trường chữ hay cờ thì bỏ hẳn */
 const nudge = (v: unknown): unknown => (typeof v === 'number' ? v * 1.5 + 0.1 : Array.isArray(v) ? v.map(nudge) : undefined);
@@ -93,4 +94,37 @@ describe('trường JSON của tóc', () => {
     expect(sculptMesh(P.bun.sculpt, { cut: () => true }).spikes).toEqual([]);
     expect(sculptMesh({ ...P.neat.sculpt, ahoge: 1 }, { cut: () => true }).spikes).toEqual([]);
   });
+});
+
+describe('hói chữ M (`recede`) với mọi kiểu', () => {
+  const styles = Object.keys(SCULPT_STYLES) as Sculpt['style'][];
+  const presetOf = (style: Sculpt['style']): Partial<Sculpt> => Object.values(SCULPT_PRESETS).map((p): Partial<Sculpt> => p.sculpt).find((p) => p.style === style) ?? { style };
+  const D = Math.PI / 180;
+  for (const style of styles)
+    it(`${style}: mọi đỉnh hữu hạn, nét ngôi không xuống chỗ hói`, () => {
+      for (const base of [presetOf(style), { style, part: 28, fringe: 6, volume: 0.09, front: 48 }])
+        for (const recede of [8, 14, 20])
+          for (const recedeAt of [30, 42, 55]) {
+            const sculpt = { ...base, style, recede, recedeAt };
+            const m = sculptMesh(sculpt);
+            const all = [m.shell, m.spikes, m.hang, m.lines].flat(2);
+            expect(all.every((p) => p.every(Number.isFinite)), JSON.stringify(sculpt)).toBe(true);
+            const s = SculptSchema.parse(sculpt);
+            const bare = m.lines.flat().filter(([x, y, z]) => Math.asin(y / Math.hypot(x, y, z)) / D < rootLat(s, Math.atan2(x, z) / D) - 3);
+            expect(bare, JSON.stringify(sculpt)).toEqual([]);
+          }
+    });
+  it('người đầu `human` dựng được với mọi kiểu tóc có `recede`', () => {
+    for (const style of styles) {
+      const r = parseCharacter({
+        name: 'hoi',
+        rig: { stature: 1.7, shoulderHalf: 44 },
+        head: { form: 'human' },
+        palette: { clad: true },
+        pieces: { hair: { src: 'sculpt', color: '#2A221E', sculpt: { ...presetOf(style), style, part: 28, fringe: 6, volume: 0.09, front: 48, recede: 14, recedeAt: 42 } } },
+      });
+      expect(r.success).toBe(true);
+      expect(() => fromCharacter(r.data as unknown as CharacterJson), style).not.toThrow();
+    }
+  }, 30_000);
 });

@@ -1,7 +1,7 @@
 import { D, SCULPT_DEPTH, SCULPT_FLARE, SCULPT_HANG_FROM, SCULPT_TEMPLE, SCULPT_TUCK } from './core/constants';
 import { SculptSchema, type Sculpt } from './core/schema';
 import {
-  accentAt, ahogeRings, bangAt, BUN_SEG, cross, CROWN_EASE, crownLat, curlCenters, dot, fromPart, hairline, HANG_EASE, hash, KNOT_RING_3D, knotEast, knotFrame, lockRings, NJ, NK, NT, partPlane, PONY_SEG, RING, rootLat, rowEase, sculptSpikes, SCULPT_STYLES, shellLift, spikeRings, step,
+  accentAt, ahogeRings, bangAt, BUN_SEG, cross, CROWN_EASE, crownLat, curlCenters, dot, fromPart, hairline, HANG_EASE, hash, KNOT_RING_3D, knotEast, knotFrame, lockRings, NJ, NK, NT, partPlane, PONY_SEG, recession, RING, rootLat, rowEase, sculptSpikes, SCULPT_STYLES, shellLift, spikeRings, step,
 } from './core/sculpt';
 import { onSkull, type Vec3 } from './core/sphere';
 
@@ -34,13 +34,16 @@ function hairLines(s: Sculpt, lines: Vec3[][]) {
   const vert: Vec3 = [0, 1, 0];
   const ahead: Vec3 = [-n[2] * side, 0, Math.abs(n[0])];
   if (def.crease && !def.fringe) {
-    const a0 = Math.asin(Math.sin(from * D) / r0) / D;
-    trace(Array.from({ length: 17 }, (_, k) => {
-      const a = (a0 + ((100 - a0) * k) / 16) * D;
-      return lift(n.map((v, d) => v * c + r0 * (ahead[d] * Math.cos(a) + vert[d] * Math.sin(a))) as Vec3);
-    }));
-  } else if (!def.jag && !def.fringe && !def.crease && !def.crown && !def.pony && !def.bun)
-    trace(Array.from({ length: 9 }, (_, k) => onShell(s.part - side * 3 * (k / 8), from + ((62 - from) * k) / 8)));
+    const ring = (a: number) => n.map((v, d) => v * c + r0 * (ahead[d] * Math.cos(a * D) + vert[d] * Math.sin(a * D))) as Vec3;
+    const bare = ([x, y, z]: Vec3) => Math.asin(y) / D < hairline(s, Math.atan2(x, z) / D) - 2;
+    let a0 = Math.asin(Math.min(1, Math.sin(from * D) / r0)) / D;
+    // chân tóc lùi (`recede`) có thể cao hơn đỉnh vòng ngôi: đi tiếp trên vòng tới chỗ gặp chân tóc
+    if (s.recede) while (a0 < 100 && bare(ring(a0))) a0 += 1;
+    if (a0 < 100) trace(Array.from({ length: 17 }, (_, k) => lift(ring(a0 + ((100 - a0) * k) / 16))));
+  } else if (!def.jag && !def.fringe && !def.crease && !def.crown && !def.pony && !def.bun) {
+    const to = 62 + recession(s, s.part);
+    trace(Array.from({ length: 9 }, (_, k) => onShell(s.part - side * 3 * (k / 8), from + ((to - from) * k) / 8)));
+  }
   if (def.cut) {
     const [at, , , rise = 12] = def.cut;
     const lon = s.part - side * (at + 1);

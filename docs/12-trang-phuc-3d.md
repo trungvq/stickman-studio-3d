@@ -381,7 +381,9 @@ Ba kiểu tóc nam ngắn, mái `flat` nên không hõm thái dương và không
 mọi kiểu, kể cả `slick`. Từ giữa trán chân tóc lùi theo `sin` của kinh độ tới đủ `recede` ở
 `±recedeAt`, nên giữa trán còn mũi nhọn; quá đó về lại chân tóc thường trong `1.1·recedeAt` độ kinh,
 trước tai không đổi. Lọn gai, lọn vuốt và lọn dẹt của bảng kiểu dời chân lên theo (`recededLat`):
-sát chân tóc dời đủ, lên tới đỉnh thì không dời, nên lọn không mọc trên chỗ hói.
+sát chân tóc dời đủ, lên tới đỉnh thì không dời, nên lọn không mọc trên chỗ hói. Nét ngôi bắt đầu ở
+chân tóc đã lùi; lọn dẹt chạy ngang trán (mái chải của `neat`) vẫn đi hết chiều dài, phần ngọn nằm sát da
+dưới chân tóc chứ không lơ lửng.
 
 Vuốt ngược hói chữ M: mẫu `slick` cộng `recede` 16, hạ `front` còn 54 cho mũi giữa trán rõ hơn.
 
