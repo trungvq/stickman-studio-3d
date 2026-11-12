@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { newCanvas, path2D } from './canvas';
 import { DEFAULT_FACE } from './core/constants';
-import { blushLevel, blushMarks, browMarks, CHIBI, chibiShape, eyeBlink, eyeMarks, eyeShape, faceRest, lookStep, mouthMark, moustacheMark, moustacheTop, wrinkleMarks, type FaceInk, type FaceMark, type FaceRest, type EyeShape, type EyeShapeKind, type Look, type MoustacheSpec, type WrinkleSpec } from './core/face';
+import { blushLevel, blushMarks, browMarks, CHIBI, chibiShape, EYE_R, eyeBlink, eyeMarks, eyeShape, faceRest, lookStep, mouthMark, moustacheMark, moustacheTop, wrinkleMarks, type FaceInk, type FaceMark, type FaceRest, type EyeShape, type EyeShapeKind, type Look, type MoustacheSpec, type WrinkleSpec } from './core/face';
 import { FACE_R, faceSurface } from './core/humanHead';
 import type { FaceState } from './core/types';
 
@@ -110,10 +110,11 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
   mesh.add(mouth.mesh);
   const level = (s: FaceState) => blushLevel(sh.blush, s.blush);
   const rest = faceRest(sh), look = human ? eyeShape(sh.eyeShape, sh.eye) : undefined;
-  const brow = { width: rest.browWidth * (look?.brow ?? 1), tilt: rest.browTilt };
+  const brow = { width: rest.browWidth * (look?.brow ?? 1), tilt: rest.browTilt, human };
+  const eyeHalf = look && look.half * EYE_R * CHIBI.eye * rest.eyeScale * CHIBI.squash * rest.eyeWidth;
   const drawFace = (s: FaceState, blink: number, gaze: Look) => {
     const g = face.begin();
-    const wrinkle = sh.wrinkle && wrinkleMarks(sh.wrinkle, 0, sh.offsetY, sh.eyeGap, mouthCy);
+    const wrinkle = sh.wrinkle && wrinkleMarks(sh.wrinkle, 0, sh.offsetY, sh.eyeGap, mouthCy, 65, 1, eyeHalf);
     if (wrinkle) paint(g, [wrinkle]);
     paint(g, [blushMarks(0, sh.offsetY, sh.eyeGap, skin, level(s))]);
     if (human) {

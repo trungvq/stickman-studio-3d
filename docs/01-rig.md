@@ -776,7 +776,7 @@ một luật.
 | `eyeShape` | Dáng |
 |---|---|
 | `male` (mặc định) | Dẹt, gần ngang; mi trên đều, không đuôi mắt, không mi dưới; tròng nhỏ, đốm sáng nhỏ; mày dày |
-| `female` | Cao hơn, khoé ngoài hơi xếch; mi nửa ngoài dày có đuôi ngắn; mi dưới nửa ngoài; tròng to, đốm sáng đủ; mày mảnh |
+| `female` | Cao hơn, khoé ngoài hơi xếch; mi dày dần ra khoé ngoài, đuôi ngắn; mi dưới mảnh, nhạt ở nửa ngoài; tròng to, đốm sáng đủ; mày mảnh |
 | `child` | Tròn; tròng to gần kín mắt, nhiều đốm sáng; không đuôi, không mi dưới, một mí |
 | `elder` | Mi trên nặng (sụp nghỉ `hood`), khoé ngoài cụp, nếp mí rõ, mi dưới; tròng nhỏ, ít đốm sáng |
 
@@ -793,9 +793,9 @@ một luật.
 | `up` / `down` | `EYE_R` | Điểm điều khiển mi trên / mi dưới so với tâm mắt; mép mi đi tới chừng ba phần tư |
 | `tilt` | `EYE_R` | Khoé ngoài nhấc (xếch); âm là cụp |
 | `hood` | phần độ nhắm | Mi trên sụp nghỉ, cộng vào `face.lid` |
-| `lash` / `outer` | px | Nét mi trên cả mắt / nửa ngoài |
-| `flick` | px | Đuôi mắt ở khoé ngoài; `0` không có |
-| `lower` | px | Nét mi dưới nửa ngoài; `0` không có |
+| `lash` / `outer` | px | Nét mi trên cả mắt / ở khoé ngoài, dày dần từ chừng ba phần mười mi (`TAPER`) |
+| `flick` | px | Đuôi mắt ở khoé ngoài, chĩa ra ngoài hơi lên; `0` không có |
+| `lower` | px | Nét mi dưới, nhạt (`LOWER`), từ giữa tới trước khoé ngoài — không chạm đuôi mắt; `0` không có |
 | `crease` | `0..1` | Độ đậm nếp mí, nét mảnh song song mi trên; `0` một mí |
 | `iris` / `pupil` | `EYE_R` / phần tròng | Bán kính tròng, con ngươi |
 | `shine` | lần | Đốm sáng, nhân thêm `face.shine` |
@@ -804,9 +804,13 @@ một luật.
 Dáng mắt không suy từ `head.face`: kiểu mặt và mí mắt là hai chuyện, người một mí đặt `eye.crease: 0`.
 
 **Trạng thái mi.** Một mắt người là mi trên đi từ chỗ mở về **đường nhắm** theo độ nhắm `close` (`0` mở, `1` nhắm).
-Đường nhắm nằm trên mi dưới, rộng đúng bằng mắt mở, cong xuống giữa hai khoé; mi dưới nhấc lên (`raise`) thì nó cong
-lên thành mắt cười. Nếp mí nhạt dần theo độ nhắm. Nhắm hẳn thì không còn lòng trắng, không nếp mí; mắt nữ nhắm thì đuôi mắt rủ xuống. Tròng và con ngươi luôn cắt
-trong hình mắt.
+Đường nhắm nằm trên mi dưới, rộng đúng bằng mắt mở, cong xuống giữa hai khoé, võng tối đa `SAG` (`0,5` `EYE_R`) dưới
+tâm; mi dưới nhấc lên (`raise`) thì nó cong lên thành mắt cười. Mi trên đi về đường nhắm nhanh trước chậm sau
+(`EASE`, `1 − (1 − close)^1,5`), nên mi đổi chiều cong dần qua các nấc chớp chứ không lật một lần ở khung nhắm. Khoé
+ngoài xếch hay cụp về ngang tâm theo `close²`, đường nhắm không vểnh sừng ở đuôi. Nếp mí nhạt dần theo độ nhắm; đốm
+sáng tắt dần từ độ nhắm `0,35` tới `0,6`. Nhắm hẳn thì không còn lòng trắng, không nếp mí. Đuôi mắt ngắn lại `1 − 0,6
+close` và rủ xuống khi nhắm; mắt mở to (`open` trên `1`) thì đuôi mắt và mi dưới mờ dần, hết ở `open 1,6`. Tròng và
+con ngươi luôn cắt trong hình mắt.
 
 | Kiểu mắt | Mi | Nghĩa |
 |---|---|---|
@@ -822,6 +826,8 @@ trong hình mắt.
 
 - **Mi trên xiên theo mày** (`BROW_SLANT`): mày `angry` (`1`), `furrowed` (`0,6`) hạ mi trên phía đầu trong — mắt
   giận; `sad` (`−1`), `worried` (`−0,7`) hạ phía đầu ngoài — mắt buồn. Không có kiểu mắt riêng cho chúng.
+- **Mày nghỉ của đầu người** (`HUMAN_BROWS`): `neutral` ngang, cung nhẹ (`tilt 0`, `arch −1,5`) — mắt người lộ tròng, mày
+  nhấc đầu trong `+2` đã đọc ra lo. Kiểu mày khác và đầu `sphere` giữ bảng [Lông mày](#lông-mày).
 - **Mi sụp nghỉ** `face.lid` cộng `hood` của dáng dồn vào độ nhắm `1 − (1 − close)(1 − lid)`; `wide`, `bulge` chỉ ăn
   nửa số (`WIDE_LID`).
 - Tâm tròng tính ở một chỗ (`irisAt`), cả khi mắt liếc ([Hướng nhìn](#hướng-nhìn)).
@@ -873,6 +879,8 @@ mặt **ngay trên da đầu**, dưới mắt / mày / mồm, cùng hệ toạ �
 
 Ràng buộc hình:
 
+- **Đầu `human`: chân chim bắt đầu ngoài khoé ngoài của mắt người** (`eyeHalf` của `wrinkleMarks`), cách `CROW.gap`,
+  ngắn và mảnh theo `CROW` — dính vào khoé thì cắt đường mi khi nhắm hay nheo thành dấu X.
 - **Chân chim để nằm ngang thì thành ria mèo.** Nan quạt phải xoè xuống
   (`light` `12°`/`38°`, `deep` `−6°`/`18°`/`42°`) và ngắn — dài quá là râu mèo,
   không phải nếp nhăn.
@@ -988,7 +996,7 @@ nhân vật: nó là biểu cảm, tức chuyển động, không phải hình d
 
 | Mày | tilt | Đọc ra |
 |---|---:|---|
-| `neutral` | +2 | Mặc định, gần như ngang |
+| `neutral` | +2 | Mặc định, gần như ngang; đầu `human` `0` ([Mắt người](#mắt-người)) |
 | `flat` | 0 | Lì, vô cảm |
 | `furrowed` | −4 | Đầu trong hơi chúi xuống — cau mày, không vừa ý |
 | `angry` | −7 | Đầu trong chúi xuống giữa — tức, gồng |

@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   BLINK,
   blinkAt,
+  BROW_KINDS,
+  BROWS,
+  browMarks,
+  HUMAN_BROWS,
+  wrinkleMarks,
   EYE_LIDS,
   EYE_SHAPE_FIELDS,
   EYE_SHAPE_KINDS,
@@ -83,7 +88,7 @@ describe("mi của mắt người", () => {
       expect(eyeBlink(k, 0.5), k).toBe(0.5);
   });
 
-  it("mắt nhắm rộng bằng mắt mở, đường nhắm thấp hơn khoé (cong xuống); `happy` cong lên; nhắm hẳn không còn lòng trắng", () => {
+  it("mắt nhắm rộng bằng mắt mở, khoé ngoài về ngang tâm, đường nhắm thấp hơn khoé (cong xuống); `happy` cong lên; nhắm hẳn không còn lòng trắng", () => {
     for (const k of EYE_SHAPE_KINDS) {
       const shape = EYE_SHAPES[k];
       const at = (kind: keyof typeof EYE_LIDS) =>
@@ -92,7 +97,8 @@ describe("mi của mắt người", () => {
       const a = nums(upperOf(open, shape.lash).path);
       const b = nums(upperOf(shut, shape.lash).path);
       const c = nums(upperOf(happy, shape.lash).path);
-      expect([b[0], b[1], b[6], b[7]], k).toEqual([a[0], a[1], a[6], a[7]]);
+      expect([b[0], b[1], b[6]], k).toEqual([a[0], a[1], a[6]]);
+      expect(b[7], k).toBe(0);
       expect(Math.min(b[3], b[5]), k).toBeGreaterThan(Math.max(b[1], b[7]));
       expect(Math.max(c[3], c[5]), k).toBeLessThan(Math.min(c[1], c[7]));
       for (const m of [...shut, ...happy]) expect("clip" in m, k).toBe(false);
@@ -104,6 +110,29 @@ describe("mi của mắt người", () => {
       for (const k of EYE_SHAPE_KINDS)
         for (const m of one(eyeMarks(kind, 0, 0, 0, { only: 1, shape: EYE_SHAPES[k] })))
           if ("ellipse" in m) expect(m.clipped, `${kind} ${k}`).toBe(true);
+  });
+});
+
+describe("mày và nếp nhăn của đầu người", () => {
+  it("`human` lấy `HUMAN_BROWS`, kiểu khác và đầu `sphere` giữ `BROWS`", () => {
+    expect(HUMAN_BROWS.neutral!.tilt).toBe(0);
+    expect(BROWS.neutral.tilt).toBeGreaterThan(0);
+    for (const k of BROW_KINDS) {
+      const h = browMarks(k, 0, 0, 40, { human: true });
+      if (k in HUMAN_BROWS) expect(h, k).not.toEqual(browMarks(k, 0, 0, 40));
+      else expect(h, k).toEqual(browMarks(k, 0, 0, 40));
+      expect(browMarks(k, 0, 0, 40, { human: false }), k).toEqual(browMarks(k, 0, 0, 40));
+    }
+  });
+
+  it("chân chim của mắt người bắt đầu ngoài khoé ngoài", () => {
+    const spec = { kind: "light" as const, color: "#000", width: 1, dy: 0 };
+    const feet = (eyeHalf?: number) =>
+      group(group(wrinkleMarks(spec, 0, 0, 36, 34, 65, 1, eyeHalf)!)[2]).map((m) =>
+        "line" in m ? m.line[0] : NaN,
+      );
+    expect(feet()).toEqual([25, 25]);
+    for (const x of feet(11.5)) expect(x).toBeGreaterThan(18 + 11.5);
   });
 });
 
