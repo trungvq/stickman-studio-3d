@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { INK, RIG } from "./constants";
-import { EYE_SHAPE_FIELDS, EYE_SHAPE_KINDS, FACE_REST, type EyeShape } from "./face";
+import {
+  EYE_SHAPE_FIELDS,
+  EYE_SHAPE_KINDS,
+  FACE_REST,
+  MOUTH_SHAPE_FIELDS,
+  MOUTH_SHAPE_KINDS,
+  type EyeShape,
+  type MouthShape,
+} from "./face";
 import { DEFAULT_SHOE, SHOE_KINDS } from "./shoe";
 import { HEAD_ASPECT, HEADS, heightOfStature } from "./stature";
 
@@ -767,6 +775,14 @@ const EyeOverSchema = z.object(
   >,
 );
 
+/** Số đè lên dáng mồm `face.mouthShape`, trường nào bỏ trống lấy của dáng. docs/01-rig.md#mồm-người */
+const MouthOverSchema = z.object(
+  Object.fromEntries(MOUTH_SHAPE_FIELDS.map((k) => [k, z.number().optional()])) as Record<
+    keyof MouthShape,
+    z.ZodOptional<z.ZodNumber>
+  >,
+);
+
 export const CharacterSchema = z.object({
   schemaVersion: z
     .literal(CHARACTER_VERSION, {
@@ -870,6 +886,12 @@ export const CharacterSchema = z.object({
       /** Dáng mắt người của đầu `human`, khoá của `EYE_SHAPES`; `eye` đè từng số của dáng. docs/01-rig.md#mắt-người */
       eyeShape: z.enum(EYE_SHAPE_KINDS).default("male"),
       eye: EyeOverSchema.optional(),
+      /**
+       * Dáng mồm người của đầu `human`, khoá của `MOUTH_SHAPES`; bỏ trống là theo `eyeShape`. `mouth` đè từng số của
+       * dáng. docs/01-rig.md#mồm-người
+       */
+      mouthShape: z.enum(MOUTH_SHAPE_KINDS).optional(),
+      mouth: MouthOverSchema.optional(),
       /** Râu trên mặt của người 3D, màu bỏ trống là màu tóc. docs/01-rig.md#ria-mép */
       beard: BeardSchema.optional(),
       wrinkle: z

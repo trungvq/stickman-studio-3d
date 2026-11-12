@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { POSE_NAMES, POSES } from "./poses";
 import { DEFAULT_FACE } from "./constants";
-import { BROW_KINDS, EYE_KINDS, MOUTH_KINDS } from "./face";
+import { BROW_KINDS, EYE_KINDS, MOUTH_KINDS, MOUTH_MIX } from "./face";
 import type {
   FaceState,
   HeadPose,
@@ -814,6 +814,28 @@ function sampleWith<T>(
   return cubic(p0 && s[p0.w].v, s[i].v, s[j].v, p3 && s[p3.w].v, p0?.h ?? 1, span, p3?.h ?? 1, f);
 }
 
+/** Khẩu hình đang chuyển tại pha `u`: mốc khẩu hình gần nhất trước `u` đổi khác mốc trước nó chưa quá `MOUTH_MIX.secs` */
+function mouthTweenAt(a: ActionData, u: number, secs: number): FaceState["mouthTween"] {
+  const s = a.keys!.flatMap((k) => {
+    const v = keyFace(k).mouth;
+    return v === undefined ? [] : [{ t: k.t, v }];
+  });
+  if (s.length < 2) return undefined;
+  const wrap = a.end !== "hold";
+  let i = -1;
+  for (let k = 0; k < s.length; k++) if (s[k].t <= u) i = k;
+  let since = i < 0 ? u + 1 - s[s.length - 1].t : u - s[i].t;
+  if (i < 0) {
+    if (!wrap) return undefined;
+    i = s.length - 1;
+  }
+  const j = i > 0 ? i - 1 : wrap ? s.length - 1 : -1;
+  if (j < 0 || j === i || s[j].v === s[i].v) return undefined;
+  since *= secs;
+  if (!(since < MOUTH_MIX.secs) || !(since >= 0)) return undefined;
+  return { from: s[j].v, to: s[i].v, f: since / MOUTH_MIX.secs };
+}
+
 /** Giá trị không nội suy được tại pha `u`: mốc gần nhất *trước* `u` có nhắc tới nó. */
 function sampleStep<T>(
   a: ActionData,
@@ -831,8 +853,12 @@ function sampleStep<T>(
   return cur.v;
 }
 
-/** Nét mặt mà hành động ghi tại pha `t`; kênh `face`, ngoài mặt nạ thì bỏ trống. Kiểu nét bậc thang, `blush`, `look` nội suy. */
-export function actionFace(a: ActionData, t: number): Partial<FaceState> {
+/**
+ * Nét mặt mà hành động ghi tại pha `t`; kênh `face`, ngoài mặt nạ thì bỏ trống. Kiểu nét bậc thang, `blush`, `look` nội
+ * suy. Khẩu hình vừa đổi chưa quá `MOUTH_MIX.secs` giây thì kèm `mouthTween` từ khẩu hình trước; một vòng hành động dài
+ * `secs` giây (mặc định `duration`).
+ */
+export function actionFace(a: ActionData, t: number, secs = a.duration): Partial<FaceState> {
   if (!a.keys || !actionMask(a).includes("face")) return {};
   const u = phaseOf(a, t);
   const o: Partial<FaceState> = {};
@@ -840,6 +866,8 @@ export function actionFace(a: ActionData, t: number): Partial<FaceState> {
     const v = sampleStep(a, (k) => keyFace(k)[f], u);
     if (v !== undefined) Object.assign(o, { [f]: v });
   }
+  const tween = mouthTweenAt(a, u, secs);
+  if (tween) o.mouthTween = tween;
   const blush = sampleWith(
     a,
     (k) => keyFace(k).blush,
@@ -1014,8 +1042,13 @@ export const actionEvents = (a: ActionData): ActionEvent[] =>
   [...a.events].sort((x, y) => x.t - y.t);
 
 /** Ghép nét mặt như `composePose`; hành động không ghi thì để `DEFAULT_FACE`. */
-export const composeFace = (...parts: Partial<FaceState>[]): FaceState =>
-  Object.assign({}, DEFAULT_FACE, ...parts) as FaceState;
+export function composeFace(...parts: Partial<FaceState>[]): FaceState {
+  const o = Object.assign({}, DEFAULT_FACE, ...parts) as FaceState;
+  // lớp trên ghi khẩu hình mà không chuyển thì lần chuyển của lớp dưới hết nghĩa
+  const top = [...parts].reverse().find((p) => p.mouth !== undefined);
+  if (o.mouthTween && top?.mouthTween !== o.mouthTween) delete o.mouthTween;
+  return o;
+}
 
 /** Như `actionPose` nhưng giữ tên kênh của JSON. */
 export function actionDelta(a: ActionData, t: number): PoseDelta {

@@ -1063,7 +1063,7 @@ function phasePose(c: Clip, u: number): Partial<Pose> {
 /** Nét mặt clip ghi lúc `time`; clip soi gương nhìn sang phía kia */
 function clipFace(c: Clip, time: number, clock?: Clock): Partial<FaceState> {
   if (!c.action || !inMask(c, "face")) return {};
-  const f = actionFace(c.action, phaseAt(c, time, clock));
+  const f = actionFace(c.action, phaseAt(c, time, clock), c.cycle);
   if (c.mirror && f.look) f.look = [-f.look[0], f.look[1]];
   return f;
 }

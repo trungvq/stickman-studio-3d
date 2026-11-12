@@ -71,12 +71,14 @@ trên gốc đùi `cladThigh`, không trên `limbHalf`, nên `sceneAt` phải nh
 
 **Khẩu hình mới phải khai đúng mép trên / dưới ở `extent` trong `MOUTHS`** (`core/face.ts`):
 lớp mồm của người 3D (`MOUTH_BOX`) phải phủ hết `extent` của mọi khẩu hình, không thì mồm bị cắt
-mép — `face.test.ts` giữ hai bên khớp. Xem [01](01-rig.md#khẩu-hình-và-mắt).
+mép — `face.test.ts` giữ hai bên khớp. Khẩu hình mới cũng cần một dòng bộ số ở `MOUTH_POSES` cho mồm người của đầu
+`human`, trừ khi nó là ký hiệu manga có chủ ý (`mouths.test.ts` liệt kê đúng bốn ký hiệu ấy). Xem
+[01](01-rig.md#khẩu-hình-và-mắt), [Mồm người](01-rig.md#mồm-người).
 
 **Nét mặt là kênh `face` riêng trong `mask`, không phải góc đầu.** Kênh `head` là ba góc
 `[nghiêng, lắc, gật]`. Khẩu hình, lông mày và kiểu mắt khai ở `keys[].face`, lấy mẫu kiểu
 bậc thang như `equip`, không nội suy — đổi nét mặt không đụng góc đầu của hành động đang
-chạy. Riêng `keys[].face.blush` và `keys[].face.look` là số, nội suy như góc; `blush` cộng vào `face.blush` của nhân vật.
+chạy; mồm người chuyển qua vài nấc ngay sau mốc đổi (`mouthTween`), vẫn thuần theo `t`. Riêng `keys[].face.blush` và `keys[].face.look` là số, nội suy như góc; `blush` cộng vào `face.blush` của nhân vật.
 Xem [01](01-rig.md#đầu-và-nét-mặt).
 
 **Sải chân khi đi suy từ bàn chân, không dời hông riêng.** Chân bám đất dịch bao nhiêu so với hông

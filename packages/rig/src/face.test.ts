@@ -17,10 +17,10 @@ describe('khẩu hình chibi', () => {
   it('miệng há nào cũng có răng trên khoang sẫm; lưỡi chỉ ở miệng há to; miệng nét không tô', () => {
     const has = (c: string) => MOUTH_KINDS.filter((k) => fills(mouthMark(k, 0, 0)).includes(c));
     const cavity = has('#7a2b22');
-    expect(cavity).toEqual(['talkA', 'talkB', 'talkO', 'talkSadB', 'talkAngryA', 'talkAngryB', 'grin', 'wryOpen', 'fang', 'o', 'wide', 'shout']);
-    expect(has('#f7f2e6')).toEqual(MOUTH_KINDS.filter((k) => cavity.includes(k) || ['talkTeeth', 'talkSadA', 'grit'].includes(k)));
+    expect(cavity).toEqual(['talkA', 'talkB', 'talkO', 'talkSadB', 'talkAngryA', 'talkAngryB', 'grin', 'wryOpen', 'fang', 'o', 'wide', 'shout', 'talkU', 'talkE']);
+    expect(has('#f7f2e6')).toEqual(MOUTH_KINDS.filter((k) => cavity.includes(k) || ['talkTeeth', 'talkSadA', 'grit', 'talkI'].includes(k)));
     expect(has('#d0675a')).toEqual(['talkB', 'talkO', 'wryOpen', 'wide', 'shout']);
-    for (const k of ['closed', 'smile', 'frown', 'pain', 'wry', 'pursed', 'puffed', 'meh', 'smirk'] as const) expect(new Set(fills(mouthMark(k, 0, 0))), k).toEqual(new Set(['none']));
+    for (const k of ['closed', 'smile', 'frown', 'pain', 'wry', 'pursed', 'puffed', 'meh', 'smirk', 'talkM', 'pout'] as const) expect(new Set(fills(mouthMark(k, 0, 0))), k).toEqual(new Set(['none']));
   });
 
   it('lớp mồm phủ mép trên / dưới của mọi khẩu hình', () => {

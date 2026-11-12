@@ -13,7 +13,7 @@ import { equipCharacter, limbWidths, wornPalette, type CharacterData, type Drape
 import { hatFit, hatMesh, hatSpec, insideHat, pinMesh, pressHair } from './core/hat';
 import { earringMesh } from './core/jewelry';
 import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, roots3, SLEEVE_EASE, sleeveGrow, THIGH_ROOT, type ActCharacter, type AimReport, type Bones3 } from './core/act3';
-import { blushLevel, humanEyeBox, chibiShape, lookStep } from './core/face';
+import { blushLevel, humanEyeBox, chibiShape, lookStep, mouthStep } from './core/face';
 import { wornSkirt } from './core/skirtShape';
 import { hangsFromHip, matchWrap } from './core/hem';
 import { humanNeckWidth, NECK_BEND } from './core/torso';
@@ -1134,7 +1134,8 @@ const stillFaces = new Map<string, FaceRig>();
 /** Nét mặt dùng chung cho người nền: một cặp texture mặt và mồm cho mọi người cùng dáng mặt, nét, mức ửng, hướng nhìn và màu da; `set` không đổi gì, mồm không lật */
 function stillFace(scale: THREE.Vector3, shape: Partial<FaceShape> = {}, state?: Partial<FaceState>, human = false, skin?: string, hair?: string): FaceRig {
   const s = { ...DEFAULT_FACE, ...state }, { blush, ...rest } = shape, lv = blushLevel(blush, s.blush);
-  const key = JSON.stringify([rest, s.mouth, s.brow, s.eyes, lv, lookStep(s.look), human, skin, rest.beard && hair]);
+  const tw = s.mouthTween && [s.mouthTween.from, s.mouthTween.to, mouthStep(s.mouthTween.f)];
+  const key = JSON.stringify([rest, s.mouth, tw, s.brow, s.eyes, lv, lookStep(s.look), human, skin, rest.beard && hair]);
   let f = stillFaces.get(key);
   if (!f) stillFaces.set(key, (f = faceRig(R.head, scale, { ...rest, blush: lv }, { ...s, blush: 0 }, human, skin, hair)));
   const copy = (m: THREE.Mesh) => {

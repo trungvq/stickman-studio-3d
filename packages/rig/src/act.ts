@@ -60,6 +60,8 @@ export interface Acting {
   blush?: number;
   /** Hướng nhìn `[ngang, dọc]` `-1..1`: ngang dương về bên trái người, dọc dương xuống */
   look?: readonly [number, number];
+  /** Khẩu hình đang chuyển (`FaceState.mouthTween`): mồm người đi từ `from` sang `to` */
+  mouthTween?: { from: MouthKind; to: MouthKind; f: number };
 }
 
 const D = Math.PI / 180;
@@ -169,5 +171,5 @@ function placePose(p: Figure, sp0: Acting, t?: number) {
   reachArm(p, -1, P.reach?.ar, W?.hands?.right);
   reachArm(p, 1, P.reach?.al, W?.hands?.left);
 
-  p.face.set({ mouth: sp.mouth, brow: sp.brow, eyes: sp.eyes, blush: sp.blush, look: sp.look }, t === undefined ? 0 : blinkAt(t, p.seed));
+  p.face.set({ mouth: sp.mouth, brow: sp.brow, eyes: sp.eyes, blush: sp.blush, look: sp.look, mouthTween: sp.mouthTween }, t === undefined ? 0 : blinkAt(t, p.seed));
 }

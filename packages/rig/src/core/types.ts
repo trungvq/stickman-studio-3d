@@ -155,6 +155,11 @@ export interface FaceState {
    * đầu dương), dọc dương nhìn xuống (như gật); nội suy giữa các mốc, bỏ trống là nhìn thẳng
    */
   look?: readonly [number, number];
+  /**
+   * Đang chuyển khẩu hình: mồm người đi từ `from` sang `to` (là `mouth` hay khẩu hình sắp tới), đã đi `f` `0..1`
+   * (`MOUTH_MIX`); bỏ trống là đứng yên ở `mouth`. Đầu `sphere` chỉ đọc `mouth`.
+   */
+  mouthTween?: { from: MouthKind; to: MouthKind; f: number };
 }
 
 /** Nếp nhăn: dấu hiệu tuổi tác, vẽ bằng code cùng hệ toạ độ với mắt và mồm */
