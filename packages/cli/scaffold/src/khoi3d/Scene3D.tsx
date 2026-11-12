@@ -44,6 +44,9 @@ export const Scene3D = ({
     [scene, given],
   );
 
+  // giây đang hiện: sân khấu dựng xong (bất đồng bộ) thì vẽ đúng khung lúc ấy, không dựng lại sân khấu mỗi khi `t` đổi
+  const tNow = useRef(t);
+
   const draw = (t: number) => world.current?.stage.draw(t, world.current.world.view(t));
 
   useLayoutEffect(() => {
@@ -59,7 +62,7 @@ export const Scene3D = ({
       if (dead) return w.stage.dispose();
       host.current!.prepend(w.stage.canvas);
       world.current = w;
-      draw(t);
+      draw(tNow.current);
       // StrictMode chạy effect hai lần: chỉ nhả lần đầu
       if (!released.current) {
         continueRender(wait);
@@ -72,9 +75,12 @@ export const Scene3D = ({
       world.current?.stage.canvas.remove();
       world.current = null;
     };
-  }, [rt, set, still, extra, wear, lens, grade, width, height]);
+  }, [scene, rt, set, still, extra, wear, lens, grade, width, height, wait]);
 
-  useLayoutEffect(() => void draw(t), [t]);
+  useLayoutEffect(() => {
+    tNow.current = t;
+    draw(t);
+  }, [t]);
 
   // `<div>` trần, không `<AbsoluteFill>`: trong Studio nó nhận `children = ""` khi đọc xong mã nguồn và React xoá canvas gắn tay
   return <div ref={host} style={{ position: "absolute", inset: 0 }} />;
