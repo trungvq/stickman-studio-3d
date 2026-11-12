@@ -8,9 +8,9 @@ import * as THREE from 'three';
 const DX = 0.9;
 const DY = 1.05;
 /** Tâm đầu hàng trên cùng (three): đầu người cao 1 đứng thẳng */
-const HEAD_Y = 3.45;
+export const HEAD_Y = 3.45;
 
-const ROWS = [
+export const ROWS = [
   { name: 'nam', eyeShape: 'male', hair: 'short', hairColor: '#2a1c15' },
   { name: 'nữ', eyeShape: 'female', hair: 'bob', hairColor: '#3b3038', blush: 0.3 },
   { name: 'trẻ em', eyeShape: 'child', hair: 'anime', hairColor: '#33333a', blush: 0.4 },
@@ -37,7 +37,7 @@ const COLS = [
   ['sly', 'sly', 'flat', 'smirk', 0],
 ];
 
-function figureOf(row, seed) {
+export function figureOf(row, seed) {
   const r = parseCharacter({
     name: `mat-${row.eyeShape}`,
     head: { form: 'human' },
@@ -52,7 +52,7 @@ function figureOf(row, seed) {
 }
 
 /** Chỉ giữ nét dưới nhóm đầu */
-function headOnly(f) {
+export function headOnly(f) {
   f.root.updateMatrixWorld(true);
   f.root.traverse((o) => {
     if (!o.isMesh && !o.isLine) return;
@@ -63,7 +63,7 @@ function headOnly(f) {
 }
 
 /** Nhãn chữ trên một tấm phẳng rộng `w` (three), chữ đen trên nền trong suốt */
-function label(text, w, align = 'center') {
+export function label(text, w, align = 'center') {
   const c = document.createElement('canvas');
   c.width = 512;
   c.height = 96;

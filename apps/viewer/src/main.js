@@ -12,6 +12,7 @@ import { handAimDemo } from './demo-hand-aim.js';
 import { carryDemo } from './demo-carry.js';
 import { elbowsDemo } from './demo-elbows.js';
 import { eyesDemo } from './demo-eyes.js';
+import { eyesPlayDemo } from './demo-eyes-play.js';
 import { createMarks } from './marks.js';
 
 const AA_LABEL = { off: 'Tắt', 'ss1.5': '1,5×', ss2: '2×' };
@@ -86,10 +87,10 @@ const MOUTHS = ['talkA', 'talkTeeth', 'talkB', 'talkTeeth', 'talkA', 'o'];
 
 /** Cảnh diễn hành động `?demo=`; không có cảnh ấy thì trả `undefined` */
 function setupDemo(name) {
-  const own = { hold: holdDemo, light: lightDemo, room: roomDemo, stages: () => stagesDemo(host), decal: decalDemo, police: policeDemo, 'hand-aim': handAimDemo, carry: carryDemo, elbows: elbowsDemo, eyes: eyesDemo };
+  const own = { hold: holdDemo, light: lightDemo, room: roomDemo, stages: () => stagesDemo(host), decal: decalDemo, police: policeDemo, 'hand-aim': handAimDemo, carry: carryDemo, elbows: elbowsDemo, eyes: eyesDemo, 'eyes-play': eyesPlayDemo };
   for (const k of ['human', 'human-row', 'human-faces', 'human-bench', 'human-wrap', 'human-wrap-act', 'human-coat', 'human-coat-act', 'human-extra', 'human-extra-act', 'human-extra-move', 'human-extra-equip', 'human-shoes']) own[k] = () => humanDemo(k);
   const d = own[name] ? own[name](q) : name && demo(name);
-  if (['light', 'room', 'decal', 'police', 'eyes'].includes(name)) ground.visible = false;
+  if (['light', 'room', 'decal', 'police', 'eyes', 'eyes-play'].includes(name)) ground.visible = false;
   if (!d) return undefined;
   if (d.objects.length) scene.add(...d.objects);
   return d;
