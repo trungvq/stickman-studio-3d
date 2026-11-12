@@ -461,9 +461,15 @@ râm), `bold` (gọng dày chữ nhật); áp mẫu là thay cả `glasses`. `gl
 - Tâm mắt đọc từ `face.eyeGap` / `face.offsetY` như nét mặt; mắt kính theo mắt của
   từng nhân vật. Mỗi mắt kính là một mặt phẳng ngả về phía tai `WRAP` độ, nên lắc mạnh
   thì mắt kính xa bóp lại còn mắt kính gần vẫn mở.
-- Càng rời mép ngoài mắt kính ở `HINGE` nửa chiều cao, về sát sọ trong 40% đầu, ôm
+- Càng rời mép ngoài mắt kính cao `HINGE · size` trên tâm, về sát sọ trong 40% đầu, ôm
   thái dương tới tai ở kinh độ `EAR` rồi móc xuống sau tai. Càng nổi `ARM_LIFT` khỏi
   sọ.
+- **Đầu `human`** (`GlassesFace`): tâm mắt kính đặt trước đúng chỗ nét mặt vẽ mắt (cùng phép
+  chiếu `faceSurface` qua `humanSkull`, không phải mặt cầu), mắt kính nới ra ôm trọn hộp mắt
+  người lớn (`adultEyeBox`: theo `eyeScale`, `eyeWidth`, cả đuôi mi) cách mép `EYE_MARGIN`, không
+  nhỏ hơn `size` — mắt anime to và rộng thì mắt kính rộng theo, kính `round` thành bầu dục ngang.
+  Càng ôm mặt đầu thật (`humanHair`), gác lên đỉnh chân tai rồi vòng ra sau mép tai, móc xuống
+  ngang tâm tai.
 
 `glassesFrame` (`core/glasses.ts`) dựng gọng, `glassesMesh` (`glasses.ts`) ra khối của người 3D.
 

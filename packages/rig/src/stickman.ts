@@ -13,12 +13,13 @@ import { equipCharacter, limbWidths, wornPalette, type CharacterData, type Drape
 import { hatFit, hatMesh, hatSpec, insideHat, pinMesh, pressHair } from './core/hat';
 import { earringMesh } from './core/jewelry';
 import { BONES3, bones3, CLAD_TAPER, cladHand, cladThigh, roots3, SLEEVE_EASE, sleeveGrow, THIGH_ROOT, type ActCharacter, type AimReport, type Bones3 } from './core/act3';
-import { blushLevel, chibiShape } from './core/face';
+import { adultEyeBox, blushLevel, chibiShape } from './core/face';
 import { wornSkirt } from './core/skirtShape';
 import { hangsFromHip, matchWrap } from './core/hem';
 import { humanNeckWidth, NECK_BEND } from './core/torso';
 import { setBluntSideburn } from './core/sculpt';
-import { humanHair, humanSkull, setHeadShape, SKULL3 } from './core/humanHead';
+import { FACE_R, HUMAN_HEAD, humanHair, humanSkull, setHeadShape, SKULL3 } from './core/humanHead';
+import type { GlassesFace } from './core/glasses';
 import { Ankle, earGroup, handRig, humanHeadGeometry, NECK_COLS, neckGeometry, noseGeometry, pelvisGeometry, shoeMesh, type Hand } from './human';
 import { SHOE_CLEAR, shoeCapsule, shoeFit, shoeTuck, type ShoeKind } from './core/shoe';
 import { handGrip } from './core/hand';
@@ -783,8 +784,21 @@ function stickmanBuild(o: StickmanOptions): Figure {
   const faceR = lod === 'low' ? stillFace(skullScale, faceShape, face, human, skin, hairColor) : faceRig(R.head, skullScale, faceShape, { ...DEFAULT_FACE, ...face }, human, skin, hairColor);
   head.add(faceR.mesh);
   if (glasses) {
-    const asin = (v: number) => (Math.asin(Math.max(-1, Math.min(1, v / 65))) * 180) / Math.PI;
-    const g = glassesMesh(glasses === true ? {} : glasses, { eye: [asin(eyes.eyeGap / 2), -asin(eyes.offsetY)], color: glassesColor ?? color, line: INK, stroke: rig.stroke });
+    const asin = (v: number) => Math.asin(Math.max(-1, Math.min(1, v))) / D;
+    let eye: [number, number] = [asin(eyes.eyeGap / 2 / FACE_R), -asin(eyes.offsetY / FACE_R)];
+    let gface: GlassesFace | undefined;
+    if (human) {
+      // đầu `human`: tâm mắt đúng phép chiếu nét mặt (`faceSurface`), mắt kính ôm hộp mắt vẽ, càng gác lên đỉnh chân tai
+      const x = eyes.eyeGap / 2 / FACE_R, y = -eyes.offsetY / FACE_R;
+      eye = [Math.atan2(x, Math.sqrt(Math.max(0, 1 - x * x - y * y))) / D, asin(y)];
+      const b = adultEyeBox(faceShape), E = HUMAN_HEAD.ear;
+      gface = {
+        box: { inner: b.inner / FACE_R, outer: b.outer / FACE_R, up: b.up / FACE_R, down: b.down / FACE_R },
+        surface: humanHair,
+        ear: { lon: Math.atan2(Math.sqrt(1 - E.y * E.y - E.z * E.z), E.z) / D, lat: asin(E.y), top: asin(E.y + (0.85 * E.h) / skullScale.y), half: asin(E.w) },
+      };
+    }
+    const g = glassesMesh(glasses === true ? {} : glasses, { eye, face: gface, color: glassesColor ?? color, line: INK, stroke: rig.stroke });
     g.scale.copy(skullScale).multiplyScalar(R.head);
     head.add(g);
   }

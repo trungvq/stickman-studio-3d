@@ -826,6 +826,24 @@ export function faceRest(face: Partial<FaceRest> = {}): FaceRest {
   return Object.fromEntries(keys.map((k) => [k, face[k] ?? FACE_REST[k].def])) as FaceRest;
 }
 
+/**
+ * Hộp mắt mở người lớn của đầu `human` (`adultEye` vẽ ở `CHIBI.eye · eyeScale`, bóp ngang `CHIBI.squash · eyeWidth`) quanh
+ * tâm mắt, px nét mặt: nửa rộng phía mũi `inner`, phía tai `outer` (cả đuôi mi), trên `up` (đỉnh mi trên), dưới `down`.
+ * Kính dựng khối đọc để mắt kính ôm trọn mắt
+ */
+export function adultEyeBox(face: Partial<FaceRest> = {}) {
+  const r = faceRest(face);
+  const k = CHIBI.squash * r.eyeWidth,
+    z = CHIBI.eye * r.eyeScale;
+  const rx = ADULT.rx * EYE_R * k;
+  return {
+    inner: rx * z,
+    outer: (rx + ADULT.flick + ADULT.lash / 2) * z,
+    up: (ADULT.up * ADULT.ry * EYE_R + ADULT.lash / 2) * z,
+    down: ADULT.down * ADULT.ry * EYE_R * z,
+  };
+}
+
 /** `face` của JSON nhân vật dời theo `CHIBI.shift` */
 export function chibiShape<T extends { offsetY: number; eyeGap: number; mouthGap: number }>(
   s: T,

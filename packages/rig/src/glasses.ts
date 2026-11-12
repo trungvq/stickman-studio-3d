@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { npr } from './npr';
 import { GlassesSchema, type Glasses } from './core/schema';
-import { glassesFrame, type Pt4 } from './core/glasses';
+import { glassesFrame, type GlassesFace, type Pt4 } from './core/glasses';
 
 export const GLASSES_DEFAULT: Glasses = GlassesSchema.parse({});
 
@@ -9,18 +9,18 @@ type Vec3 = [number, number, number];
 const v3 = (p: Pt4): Vec3 => [p[0], p[1], p[2]];
 
 /** Đường gọng kính trên sọ đơn vị (y lên, z ra trước mặt): `lenses` hai vòng mắt kính, `arms` hai càng, `bridge` cầu */
-export function glassesLines(raw: Partial<Glasses> | undefined, eye: [lon: number, lat: number]) {
+export function glassesLines(raw: Partial<Glasses> | undefined, eye: [lon: number, lat: number], face?: GlassesFace) {
   const g = GlassesSchema.parse(raw ?? {});
-  const f = glassesFrame(g, eye);
+  const f = glassesFrame(g, eye, face);
   return { lenses: f.lenses.map((l) => l.map(v3)), arms: f.arms.map((a) => a.map(v3)), bridge: f.bridge.map(v3), tint: g.tint, thick: g.thick };
 }
 
 /**
  * Kính dựng khối trong hệ sọ đơn vị: gọng một màu không viền mực, nét dày `stroke · thick` px của đầu cao 130. Kính
- * râm tô mắt kính `color`, gọng màu nét `line`. Người gọi phóng nhóm theo khối đầu.
+ * râm tô mắt kính `color`, gọng màu nét `line`; `face` cho đầu `human` (`GlassesFace`). Người gọi phóng nhóm theo khối đầu.
  */
-export function glassesMesh(raw: Partial<Glasses> | undefined, { eye, color, line, stroke }: { eye: [number, number]; color: string; line: string; stroke: number }) {
-  const L = glassesLines(raw, eye);
+export function glassesMesh(raw: Partial<Glasses> | undefined, { eye, face, color, line, stroke }: { eye: [number, number]; face?: GlassesFace; color: string; line: string; stroke: number }) {
+  const L = glassesLines(raw, eye, face);
   const group = new THREE.Group();
   const r = (stroke * L.thick) / 2 / 65;
   const frame = npr({ color: L.tint ? line : color, stipple: 0 });
