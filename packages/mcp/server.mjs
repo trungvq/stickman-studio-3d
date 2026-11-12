@@ -577,7 +577,7 @@ server.registerTool(
         "face.eyeScale, eyeWidth, lid, shine, browWidth, browTilt (mặc định và khoảng ở faceRest) là nét mặt nghỉ riêng của nhân vật: mọi người dùng chung bộ nét mặt, mỗi người khác nhau ở 2–3 số này. eyeScale nhân cỡ mắt, eyeWidth nhân bề ngang (<1 hẹp, >1 tròn), shine nhân đốm sáng (0 là mắt không đốm, lạnh): ba số này chỉ đầu human của người 3D đọc. lid là mi trên sụp nghỉ (0.4 lười, 0.15–0.25 nghiêm, nham hiểm): đầu human dồn nó vào độ nhắm của mắt người (wide, bulge nửa số), đầu sphere cắt ngang con ngươi ở mắt open, mắt mở của wink, wide và bulge (nhẹ hơn), squint lấy số lớn hơn; browWidth nhân bề dày mày; browTilt cộng vào độ nghiêng mọi kiểu mày, dương nhấc đầu trong (hiền, rụt rè), âm hạ đầu trong (nghiêm, khó tính). Ba số sau mọi nét mặt đọc. Phản diện vẫn cùng rig: lid 0.25, shine 0.5 kèm miệng smirk / fang, mắt sly; quát mắng là miệng shout. Ngạc nhiên thường là mắt wide (trố nhẹ), mắt trố bulge (lòng trắng quanh tròng) để dành cho cú sốc lớn.",
       eyeShapes: rig.EYE_SHAPES,
       eyeShapeNote:
-        "face.eyeShape (male mặc định | female | child | elder) là dáng mắt người của đầu human: nam phẳng ngang, mi đều, không đuôi mắt, không mi dưới; nữ cao hơn, khoé ngoài hơi xếch, mi ngoài dày có đuôi ngắn, mi dưới nửa ngoài; trẻ em tròn, tròng to, nhiều đốm sáng; người già mi trên nặng, khoé ngoài cụp, nếp mí rõ. face.eye đè từng số của dáng (tilt: khoé ngoài nhấc, âm là cụp; crease: nếp mí 0..1, 0 là một mí; bảng ở eyeShapes). Kiểu mắt (eyes) dùng chung cho mọi dáng; mi trên tự xiên theo mày angry/furrowed (hạ đầu trong) và sad/worried (hạ đầu ngoài); squeezed, sly giữ nét manga. Scene tự chớp mắt ở kiểu mắt đang mở; hành động chỉ ghi cái nhắm có nghĩa (shut, happy).",
+        "face.eyeShape (male mặc định | female | child | elder) là dáng mắt người của đầu human: nam phẳng ngang, mi đều, không đuôi mắt, không mi dưới; nữ cao hơn, khoé ngoài hơi xếch, mi ngoài dày có đuôi ngắn, mi dưới nửa ngoài; trẻ em tròn, tròng to, nhiều đốm sáng; người già mi trên nặng, khoé ngoài cụp, nếp mí rõ. face.eye đè từng số của dáng (tilt: khoé ngoài nhấc, âm là cụp; crease: nếp mí 0..1, 0 là một mí; bảng ở eyeShapes). Kiểu mắt (eyes) dùng chung cho mọi dáng; mi trên tự xiên theo mày angry/furrowed (hạ đầu trong) và sad/worried (hạ đầu ngoài); squeezed, sly giữ nét manga. Scene tự chớp mắt ở kiểu mắt đang mở; hành động chỉ ghi cái nhắm có nghĩa (shut, happy). keys[].face.look [ngang, dọc] (mỗi số -1..1, bỏ trống là nhìn thẳng) là hướng nhìn: ngang dương về bên trái người (như lắc đầu dương), dọc dương nhìn xuống (như gật); nội suy như góc, clip mirror đảo số ngang; mắt người dời tròng trong hình mắt, nhìn xuống mi trên sụp nhẹ; mask phải có face — docs 01-rig#hướng-nhìn.",
       mouth: rig.MOUTH_KINDS,
       brow: rig.BROW_KINDS,
       eyes: rig.EYE_KINDS,
@@ -1188,7 +1188,7 @@ server.registerTool(
           scale: +at.scale.toFixed(3),
           flip: at.flip,
           pose: at.pose,
-          face: { mouth: at.mouth, brow: at.brow, eyes: at.eyes, blush: at.blush },
+          face: { mouth: at.mouth, brow: at.brow, eyes: at.eyes, blush: at.blush, look: at.look },
           shoulderRight: pt("shoulderRight"),
           shoulderLeft: pt("shoulderLeft"),
           elbowRight: pt("elbowRight"),

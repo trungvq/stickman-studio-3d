@@ -76,7 +76,7 @@ mép — `face.test.ts` giữ hai bên khớp. Xem [01](01-rig.md#khẩu-hình-v
 **Nét mặt là kênh `face` riêng trong `mask`, không phải góc đầu.** Kênh `head` là ba góc
 `[nghiêng, lắc, gật]`. Khẩu hình, lông mày và kiểu mắt khai ở `keys[].face`, lấy mẫu kiểu
 bậc thang như `equip`, không nội suy — đổi nét mặt không đụng góc đầu của hành động đang
-chạy. Riêng `keys[].face.blush` là số, nội suy như góc và cộng vào `face.blush` của nhân vật.
+chạy. Riêng `keys[].face.blush` và `keys[].face.look` là số, nội suy như góc; `blush` cộng vào `face.blush` của nhân vật.
 Xem [01](01-rig.md#đầu-và-nét-mặt).
 
 **Sải chân khi đi suy từ bàn chân, không dời hông riêng.** Chân bám đất dịch bao nhiêu so với hông

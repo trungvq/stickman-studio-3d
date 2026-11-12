@@ -53,7 +53,7 @@ import {
 import { DEFAULT_IDLE, idlePose } from "./idle";
 import { DEFAULT_WALK, WALK_CYCLE_SECONDS, walkPose } from "./walk";
 /** Bump khi đổi hình dạng JSON hành động; `migrateAction` phải có nhánh tương ứng. */
-export const ACTION_VERSION = 21;
+export const ACTION_VERSION = 22;
 
 /** Kênh khớp: thứ có số trong `Pose`; `stretch` là hệ số dài chi, không phải góc */
 export const JOINT_CHANNELS = [
@@ -236,13 +236,15 @@ export const deltaPose = (d: PoseDelta): Partial<Pose> => {
   return o;
 };
 
-/** Nét mặt kể từ mốc này, kênh `face`: kiểu nét không nội suy, `blush` nội suy như góc */
+/** Nét mặt kể từ mốc này, kênh `face`: kiểu nét không nội suy, `blush` và `look` nội suy như góc */
 const FaceSchema = z.object({
   mouth: z.enum(MOUTH_KINDS).optional(),
   brow: z.enum(BROW_KINDS).optional(),
   eyes: z.enum(EYE_KINDS).optional(),
   /** Má ửng `0..1` cộng vào `face.blush` của nhân vật, kẹp ở `1` */
   blush: z.number().min(0).max(1).optional(),
+  /** Hướng nhìn `[ngang, dọc]` trong `-1..1`: ngang dương về bên trái người, dọc dương nhìn xuống */
+  look: z.tuple([z.number().min(-1).max(1), z.number().min(-1).max(1)]).optional(),
 });
 
 /** Tên dáng tay: có sẵn (`HAND_POSE_KINDS`) hay tên file `hands/<tên>.json` của thư viện, `resolveScene` tra */
@@ -520,6 +522,7 @@ export function migrateAction(json: unknown): unknown {
   // v17 → v18 thêm số xoắn vai của tay, `keys[].hand` và kênh `hand`; thiếu là `0` và bàn tay thả lỏng, không phải viết gì
   // v18 → v19 `keys[].reach` nhận mốc thân (`to`) và điểm bàn tay (`point`), `keys[].hand` nhận `palm` / `fingers`, sáu dáng tay mới; file cũ không dùng, không phải viết gì
   // v19 → v20 thêm `ease: "auto"`, `ease: "bezier"` và `keys[].bezier`; file cũ không dùng, không phải viết gì
+  // v21 → v22 thêm `keys[].face.look`; thiếu là mắt nhìn thẳng, không phải viết gì
   // v4 → v5 tay thành ba số; file cũ cầm đồ thẳng trục cẳng tay, tức cổ tay 0
   if (from < 5)
     for (const k of (o.keys ?? []) as Record<string, unknown>[]) {
@@ -828,7 +831,7 @@ function sampleStep<T>(
   return cur.v;
 }
 
-/** Nét mặt mà hành động ghi tại pha `t`; kênh `face`, ngoài mặt nạ thì bỏ trống. Kiểu nét bậc thang, `blush` nội suy. */
+/** Nét mặt mà hành động ghi tại pha `t`; kênh `face`, ngoài mặt nạ thì bỏ trống. Kiểu nét bậc thang, `blush`, `look` nội suy. */
 export function actionFace(a: ActionData, t: number): Partial<FaceState> {
   if (!a.keys || !actionMask(a).includes("face")) return {};
   const u = phaseOf(a, t);
@@ -845,6 +848,16 @@ export function actionFace(a: ActionData, t: number): Partial<FaceState> {
     hermite,
   );
   if (blush !== undefined) o.blush = blush;
+  const look = [0, 1].map((i) =>
+    sampleWith(
+      a,
+      (k) => keyFace(k).look?.[i],
+      u,
+      (x, y, f) => x + (y - x) * f,
+      hermite,
+    ),
+  );
+  if (look[0] !== undefined && look[1] !== undefined) o.look = [look[0], look[1]];
   return o;
 }
 

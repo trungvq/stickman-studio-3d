@@ -58,6 +58,8 @@ export interface Acting {
   eyes: EyeKind;
   /** Má ửng thêm `0..1`, cộng vào `face.blush` của nhân vật */
   blush?: number;
+  /** Hướng nhìn `[ngang, dọc]` `-1..1`: ngang dương về bên trái người, dọc dương xuống */
+  look?: readonly [number, number];
 }
 
 const D = Math.PI / 180;
@@ -98,7 +100,7 @@ function reachArm(p: Figure, side: Side, rb: ActReach | undefined, rw: ActReach 
 
 /**
  * Đặt người theo một khung của `sceneAt`: chỗ đứng và hướng (`world`), góc tay chân thân đầu, đích cổ tay, nét
- * mặt. `t` (giây) bật chớp mắt vu vơ (`blinkAt`) ở kiểu mắt đang mở. Kênh `ar`, `lr` là tay, chân phải.
+ * mặt và hướng nhìn. `t` (giây) bật chớp mắt vu vơ (`blinkAt`) ở kiểu mắt đang mở. Kênh `ar`, `lr` là tay, chân phải.
  */
 export function act(p: Figure, sp0: Acting, t?: number) {
   p.posing = true;
@@ -167,5 +169,5 @@ function placePose(p: Figure, sp0: Acting, t?: number) {
   reachArm(p, -1, P.reach?.ar, W?.hands?.right);
   reachArm(p, 1, P.reach?.al, W?.hands?.left);
 
-  p.face.set({ mouth: sp.mouth, brow: sp.brow, eyes: sp.eyes, blush: sp.blush }, t === undefined ? 0 : blinkAt(t, p.seed));
+  p.face.set({ mouth: sp.mouth, brow: sp.brow, eyes: sp.eyes, blush: sp.blush, look: sp.look }, t === undefined ? 0 : blinkAt(t, p.seed));
 }

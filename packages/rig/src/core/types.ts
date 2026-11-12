@@ -150,6 +150,11 @@ export interface FaceState {
   eyes: EyeKind;
   /** Má ửng `0..1` cộng thêm vào `face.blush` của nhân vật; nội suy giữa các mốc, bỏ trống là `0` */
   blush?: number;
+  /**
+   * Hướng nhìn `[ngang, dọc]` của mắt, mỗi số `-1..1` là phần quãng tròng đi được: ngang dương về bên trái người (như lắc
+   * đầu dương), dọc dương nhìn xuống (như gật); nội suy giữa các mốc, bỏ trống là nhìn thẳng
+   */
+  look?: readonly [number, number];
 }
 
 /** Nếp nhăn: dấu hiệu tuổi tác, vẽ bằng code cùng hệ toạ độ với mắt và mồm */

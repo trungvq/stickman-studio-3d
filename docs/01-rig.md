@@ -318,7 +318,7 @@ hai, hoặc không có cái nào, là lỗi schema.
 | `keys[].reach` | Đích cổ tay hệ thân cho `armRight` / `armLeft`: `{ "at": [tiến, y, ra ngoài], "elbow"?: [...] }`. Người 3D giải IK hai đoạn; mốc không ghi góc kênh ấy thì kênh nhận góc suy từ đích — [Đích bàn tay](#đích-bàn-tay) |
 | `keys[].ease` | Áp cho đoạn **từ mốc này tới mốc sau**, mặc định `linear`: `linear` đều; `smooth` chậm vào chậm ra (`smoothstep`, cùng đường với đoạn hoà) — vận tốc về `0` ở mọi mốc nên mốc giữa nhìn khựng; `auto` bậc ba đơn điệu, liền vận tốc qua mốc giữa của chuỗi mốc `auto`, không vọt; `bezier` theo `keys[].bezier`; `spring` vọt qua rồi nảy về. Xem [Đường giữa hai mốc](#đường-giữa-hai-mốc) |
 | `keys[].bezier` | `[x1, y1, x2, y2]` của `cubic-bezier` CSS, bốn số trong `[0, 1]` nên không vọt; chỉ ăn khi `ease: "bezier"`, bỏ trống là `[0.42, 0, 0.58, 1]` |
-| `keys[].face` | Nét mặt kể từ mốc này: `{ "mouth": …, "brow": …, "eyes": …, "blush": … }`, khai trường nào thì ghi trường đó. Ba kiểu nét **không nội suy**, `blush` (`0..1`) nội suy như góc — [Má ửng](#má-ửng); chỉ ăn khi `face` nằm trong `mask` — xem [Đầu và nét mặt](#đầu-và-nét-mặt) |
+| `keys[].face` | Nét mặt kể từ mốc này: `{ "mouth": …, "brow": …, "eyes": …, "blush": …, "look": [ngang, dọc] }`, khai trường nào thì ghi trường đó. Ba kiểu nét **không nội suy**, `blush` (`0..1`) và `look` (hai số `-1..1`) nội suy như góc — [Má ửng](#má-ửng), [Hướng nhìn](#hướng-nhìn); chỉ ăn khi `face` nằm trong `mask` — xem [Đầu và nét mặt](#đầu-và-nét-mặt) |
 | `keys[].hand` | Bàn tay người 3D kể từ mốc này theo kênh tay: `{ "armRight": "point", "armLeft": { "pose": "fist", "w": 0.5, "turn": 80, "bend": -10 } }` — một dáng có sẵn hay của thư viện `hands/` (bỏ trống `pose` là dáng nghỉ, [Dáng tay có tên](#dáng-tay-có-tên)), xoay cẳng tay, gập cổ tay, **nội suy** như góc; chỉ ăn khi `hand` nằm trong `mask` — [Bàn tay](#bàn-tay) |
 | `keys[].equip` | Đổi đồ kể từ mốc này: `{ "crown": "hat", "handLeft": null }`. **Công tắc**, không nội suy, không hoà và **không đi qua `mask`** — xem [Đổi đồ giữa chừng](#đổi-đồ-giữa-chừng) |
 | `events[]` | Mốc `{ name, t }` đặt tên cho một pha va chạm; không ghi khớp nào — xem [Mốc sự kiện](#mốc-sự-kiện) |
@@ -361,7 +361,7 @@ tên là mỗi lần rig chỉnh `idle`, mọi hành động cũ đổi hình m�
 - **Góc đầu từng góc một.** Chuỗi của mỗi góc `head` chỉ gồm các mốc ghi số ở góc ấy; mốc `null` không
   thuộc chuỗi.
 - **Kiểu không phải số lùi về `smoothstep`**: đích cổ tay (`keys[].reach`, cả hoà số hạng) và lòng tay
-  theo ý định (`palm` / `fingers`). Góc (kể cả góc suy từ đích), `stretch`, `blush`,
+  theo ý định (`palm` / `fingers`). Góc (kể cả góc suy từ đích), `stretch`, `blush`, `look`,
   và số bàn tay (`keys[].hand`) đi đường bậc ba.
 
 `auto` chậm lại trước mốc cuối chuỗi: đoạn lao vào mốc va chạm (rìu chạm gỗ, tay đập bàn) dùng
@@ -385,9 +385,9 @@ nên đi theo như một mặt thật. Mốc mặt của `anchorAt` thì đi đ�
 phải góc đầu. Hành động chỉ đổi mặt tự thêm `face` vào `mask` và không đụng
 `head`, nên nhép miệng chồng lên một hành động đang gật đầu là giữ nguyên cái
 gật. `composeFace` đè theo từng trường; không khai thì dùng `DEFAULT_FACE`. Trong
-đoạn hoà, `blendFace` đổi kiểu nét ở giữa đoạn. Riêng `blush` là số: nội suy giữa
+đoạn hoà, `blendFace` đổi kiểu nét ở giữa đoạn. Riêng `blush` và `look` là số: nội suy giữa
 hai mốc gần nhất có ghi nó (theo `ease` như góc), hoà thẳng suốt đoạn hoà (bên không
-ghi là `0`), và track không ghi `blush` thì không xoá má của track dưới.
+ghi là `0`, nhìn thẳng), và track không ghi chúng thì không xoá má hay hướng nhìn của track dưới.
 
 `mask: ["head"]` chiếm góc đầu mà không đụng nét mặt; `mask: ["face"]` thì ngược
 lại; `clips[].mask` ở scene thu hẹp được từng kênh một. Nhả track mặt sau khi clip
@@ -759,7 +759,7 @@ Mày `lifted` nhấc nhẹ, gần ngang; dùng cho phản ứng thoáng qua. Mà
 nhấc cao và cong rõ, dùng cho ngạc nhiên mạnh hơn.
 
 **Cả ba — khẩu hình, lông mày, kiểu mắt — vào được file hành động** qua
-`keys[].face`; xem [Đầu và nét mặt](#đầu-và-nét-mặt). Chớp mắt vu vơ thì không:
+`keys[].face`, cùng hướng nhìn `look` ([Hướng nhìn](#hướng-nhìn)); xem [Đầu và nét mặt](#đầu-và-nét-mặt). Chớp mắt vu vơ thì không:
 bên phát tự chớp theo `t` ([Chớp mắt](#chớp-mắt)), hành động chỉ ghi cái nhắm mắt *có nghĩa*.
 
 Tâm miệng nằm dưới tâm mắt đúng `face.mouthGap` (mặc định `34`).
@@ -824,7 +824,7 @@ trong hình mắt.
   giận; `sad` (`−1`), `worried` (`−0,7`) hạ phía đầu ngoài — mắt buồn. Không có kiểu mắt riêng cho chúng.
 - **Mi sụp nghỉ** `face.lid` cộng `hood` của dáng dồn vào độ nhắm `1 − (1 − close)(1 − lid)`; `wide`, `bulge` chỉ ăn
   nửa số (`WIDE_LID`).
-- Tâm tròng tính ở một chỗ (`irisAt`).
+- Tâm tròng tính ở một chỗ (`irisAt`), cả khi mắt liếc ([Hướng nhìn](#hướng-nhìn)).
 
 #### Chớp mắt
 
@@ -837,6 +837,29 @@ nhịp và `seed` của người, không ngẫu nhiên theo lần chạy: nhắm
   độ nhắm như `lid`. `shut`, `happy`, `squeezed`, `sly` không chớp.
 - Mắt chấm của đầu `sphere`: từ độ nhắm `0,75` vẽ `shut`, dưới đó mi trên cắt con ngươi như `lid`.
 - Người nền (`lod: "low"`) và `portrait` không chớp.
+
+#### Hướng nhìn
+
+`keys[].face.look` là `[ngang, dọc]`, mỗi số `-1..1` là phần quãng tròng đi được tối đa; bỏ trống là nhìn thẳng. Dấu
+theo người như góc đầu: **ngang dương về bên trái người** (phía `lắc` dương), **dọc dương nhìn xuống** (phía `gật`
+dương). Liếc theo người khác thì đặt cùng dấu với cái lắc đầu sẽ quay về phía ấy.
+
+```json
+{ "t": 0.4, "face": { "look": [0.8, 0] } }
+```
+
+- **Nội suy như góc** giữa các mốc có ghi nó, hoà thẳng qua chỗ nối, track không ghi thì giữ hướng nhìn của track
+  dưới ([Đầu và nét mặt](#đầu-và-nét-mặt)). Clip `mirror` đảo dấu số ngang ([03](03-scene.md#soi-gương)).
+- **Mắt người**: tròng, con ngươi và đốm sáng dời cùng nhau, `LOOK.x` (`0,42`) lần nửa rộng mắt sang ngang, `LOOK.y`
+  (`0,45`) `EYE_R` xuống; nhìn lên đi `LOOK.y` lần chỗ hở dưới mi trên (`up` của dáng nhân phần mi còn mở), nên mắt
+  hẹp, mắt sụp mi hay đang nheo không lùa con ngươi vào mi. Tròng vẫn cắt trong hình mắt (`irisAt` là chỗ duy nhất tính
+  tâm tròng). Nhìn xuống mi trên sụp thêm `LOOK.down` (`0,3`) phần độ nhắm, nhìn lên mi trên mở thêm `LOOK.up`
+  (`0,15`) lần — mắt nhắm vẫn nhắm.
+- **Mắt chấm của đầu `sphere`**: `open`, `squint`, mắt mở của `wink` dời cả chấm `0,22` `EYE_R`; `wide` dời chấm con ngươi
+  `0,38`, `bulge` dời con ngươi `0,6` trong lòng trắng. Kiểu mắt khác đứng yên.
+- **Nhìn chéo kéo về vòng tròn đơn vị** (`lookStep`): `[1, 1]` đi như `[0,71, 0,71]`, tròng không lùa vào khoé.
+- **Vẽ lại theo nấc.** `lookStep` làm tròn mỗi số về `1 / LOOK.steps` (`1/10`); `FaceRig.set` chỉ vẽ lại canvas mặt
+  khi nấc ấy đổi, như chớp và má ửng. Người nền dùng chung texture theo cả nấc hướng nhìn.
 
 ### Nếp nhăn vẽ bằng code
 

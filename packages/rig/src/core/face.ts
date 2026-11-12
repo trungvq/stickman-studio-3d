@@ -472,9 +472,17 @@ const pupil = (x: number, cy: number, rx: number, ry: number, lid: number): Face
 
 /**
  * Một mắt tâm `(x, cy)`, bên `s` (`-1` trái hình), hình tròn bóp ngang còn `k`, con ngươi `wide` / `bulge` bán kính
- * `p · R`, mi trên nghỉ sụp `lid` phần chiều cao
+ * `p · R`, mi trên nghỉ sụp `lid` phần chiều cao, hướng nhìn `look` (`lookStep`)
  */
-type EyeDef = (x: number, cy: number, s: 1 | -1, k: number, p: number, lid: number) => FaceMark;
+type EyeDef = (
+  x: number,
+  cy: number,
+  s: 1 | -1,
+  k: number,
+  p: number,
+  lid: number,
+  look: Look,
+) => FaceMark;
 const R = EYE_R;
 const WIDE_PUPIL = 0.7;
 /** Mắt trợn mở to hơn mắt nghỉ: mi sụp `lid` chỉ cắt bấy nhiêu phần ấy */
@@ -484,27 +492,71 @@ const WIDE = { r: 1.35, white: 0.55, dot: 0.45 };
 /** Bán kính lòng trắng `bulge` theo `R` */
 const BULGE = 1.5;
 
+/** Hướng nhìn đã làm tròn (`lookStep`): `[ngang, dọc]`, ngang dương về bên trái người (`+x`), dọc dương xuống */
+export type Look = readonly [number, number];
+const CENTER: Look = [0, 0];
+
+/**
+ * Hướng nhìn của mắt: tròng mắt người đi tối đa `x` lần nửa rộng mắt sang ngang, `y` `EYE_R` xuống và `y` lần chỗ hở dưới
+ * mi trên lên (`irisAt`); nhìn xuống mi trên sụp thêm `down` phần độ nhắm, nhìn lên mi trên mở thêm `up` lần. `lookStep`
+ * làm tròn về `1 / steps`.
+ * docs/01-rig.md#hướng-nhìn
+ */
+export const LOOK = { x: 0.42, y: 0.45, down: 0.3, up: 0.15, steps: 10 } as const;
+
+/** Quãng đi của mắt đầu `sphere` theo `R`: chấm đen cả mắt (`open`, `squint`, `wink`), con ngươi `wide`, `bulge` */
+const DOT_LOOK = { dot: 0.22, wide: 0.38, bulge: 0.6 };
+
+/**
+ * Hướng nhìn `look` của nét mặt đem vẽ: kéo về trong vòng tròn đơn vị (nhìn chéo không lùa tròng vào khoé), làm tròn
+ * `1 / LOOK.steps`; bỏ trống là `[0, 0]`
+ */
+export function lookStep(look?: readonly number[]): Look {
+  const [x, y] = [look?.[0], look?.[1]].map((v) => (Number.isFinite(v) ? (v as number) : 0));
+  const m = Math.max(1, Math.hypot(x, y));
+  const q = (v: number) => Math.round((v / m) * LOOK.steps) / LOOK.steps || 0;
+  return [q(x), q(y)];
+}
+
+/** Dời của mắt đầu `sphere` nhìn `l`, quãng `travel · R`, ngang bóp `k` */
+const dotLook = (l: Look, k: number, travel: number): P => [
+  l[0] * travel * R * k,
+  l[1] * travel * R,
+];
+
+/** Mắt chấm của đầu `sphere`, dời theo hướng nhìn `l` */
+function dotEye(x: number, cy: number, k: number, lid: number, l: Look): FaceMark {
+  const [dx, dy] = dotLook(l, k, DOT_LOOK.dot);
+  return pupil(x + dx, cy + dy, R * k, R, lid);
+}
+
 /** Kiểu mắt: thứ tự khoá là thứ tự của `EYE_KINDS`; `wide` và `bulge` có lòng trắng */
 export const EYES = {
-  open: (x, cy, _s, k, _p, lid) => pupil(x, cy, R * k, R, lid),
+  open: (x, cy, _s, k, _p, lid, l) => dotEye(x, cy, k, lid, l),
   shut: (x, cy) => ({ line: [x - 7, cy, x + 7, cy], ...EYE_LINE }),
   // Mắt mở to hơn, lòng trắng giữa vành đen, con ngươi co còn chấm
-  wide: (x, cy, _s, k, p, lid) => {
+  wide: (x, cy, _s, k, p, lid, l) => {
     const [rx, ry] = [R * WIDE.r * k, R * WIDE.r];
     const d = lidCut(x, cy, rx, ry, lid * WIDE_LID);
     const w = WIDE.white;
+    const [dx, dy] = dotLook(l, k, DOT_LOOK.wide);
     return {
       group: [
         { clip: d },
         { path: d, fill: EYE_INK },
         { ellipse: [x, cy, rx * w, ry * w], fill: WHITE, clipped: true },
-        { ellipse: [x, cy, WIDE.dot * p * R * k, WIDE.dot * p * R], fill: EYE_INK, clipped: true },
+        {
+          ellipse: [x + dx, cy + dy, WIDE.dot * p * R * k, WIDE.dot * p * R],
+          fill: EYE_INK,
+          clipped: true,
+        },
       ],
     };
   },
   // Mắt trố: lòng trắng to viền mảnh, con ngươi giữa
-  bulge: (x, cy, _s, k, p, lid) => {
-    const iris = { ellipse: [x, cy, R * p * k, R * p] as Quad, fill: EYE_INK };
+  bulge: (x, cy, _s, k, p, lid, l) => {
+    const [dx, dy] = dotLook(l, k, DOT_LOOK.bulge);
+    const iris = { ellipse: [x + dx, cy + dy, R * p * k, R * p] as Quad, fill: EYE_INK };
     if (!(lid > 0))
       return {
         group: [
@@ -528,10 +580,10 @@ export const EYES = {
     };
   },
   // Mi trên sụp xuống: chỉ còn nửa dưới con ngươi, `lid` nghỉ sâu hơn thì theo nó
-  squint: (x, cy, _s, k, _p, lid) => ({
-    path: lidCut(x, cy, R * k, R, Math.max(0.5, lid)),
-    fill: EYE_INK,
-  }),
+  squint: (x, cy, _s, k, _p, lid, l) => {
+    const [dx, dy] = dotLook(l, k, DOT_LOOK.dot);
+    return { path: lidCut(x + dx, cy + dy, R * k, R, Math.max(0.5, lid)), fill: EYE_INK };
+  },
   happy: (x, cy) => ({
     path: `M ${x - 8} ${cy + 4} Q ${x} ${cy - 7} ${x + 8} ${cy + 4}`,
     ...EYE_LINE,
@@ -545,10 +597,10 @@ export const EYES = {
     path: `M ${x - s * 7} ${cy - 3} Q ${x} ${cy} ${x + s * 7} ${cy + 3} Q ${x} ${cy + 10} ${x - s * 7} ${cy - 3} Z`,
     fill: EYE_INK,
   }),
-  wink: (x, cy, s, k, _p, lid) =>
+  wink: (x, cy, s, k, _p, lid, l) =>
     s === -1
       ? { path: `M ${x - 7} ${cy + 2} Q ${x} ${cy - 3} ${x + 7} ${cy + 2}`, ...EYE_LINE }
-      : pupil(x, cy, R * k, R, lid),
+      : dotEye(x, cy, k, lid, l),
   // Cười nham hiểm (ニタァ): trăng lưỡi liềm, mi dưới cong lên khoét lõm vào bầu dục, không đốm sáng
   sly: (x, cy, _s, k) => {
     const [rx, ry, y] = [R * k * 1.15, R * 1.05, cy + 0.55 * R];
@@ -758,7 +810,7 @@ export function blinkAt(t: number, seed = 0): number {
 
 /**
  * Mi của mắt người kiểu `kind` bên `s`: mi sụp nghỉ `rest` (mắt mở to chỉ ăn `WIDE_LID` phần) và chớp `blink` dồn vào
- * độ nhắm, mày `brow` xiên mi trên (`BROW_SLANT`)
+ * độ nhắm, mày `brow` xiên mi trên (`BROW_SLANT`), nhìn dọc `gaze` (dương xuống) hạ hay nâng mi trên (`LOOK`)
  */
 export function eyeLids(
   kind: keyof typeof EYE_LIDS,
@@ -766,11 +818,14 @@ export function eyeLids(
   rest = 0,
   blink = 0,
   brow?: BrowKind,
+  gaze = 0,
 ): EyeLids {
   const st: EyeLids = { ...LIDS, ...(kind === "wink" ? WINK[s] : EYE_LIDS[kind]) };
   const r = clamp01(rest) * (st.open > 1 ? WIDE_LID : 1);
-  const close = st.close >= 1 ? 1 : 1 - (1 - st.close) * (1 - r) * (1 - clamp01(blink));
-  return { ...st, close, slant: st.slant + ((brow && BROW_SLANT[brow]) ?? 0) };
+  const down = 1 - LOOK.down * clamp01(gaze);
+  const close = st.close >= 1 ? 1 : 1 - (1 - st.close) * (1 - r) * (1 - clamp01(blink)) * down;
+  const open = st.open * (1 + LOOK.up * clamp01(-gaze));
+  return { ...st, close, open, slant: st.slant + ((brow && BROW_SLANT[brow]) ?? 0) };
 }
 
 type P = [number, number];
@@ -789,12 +844,29 @@ function tail(a: P, b: P, c: P, d: P, t0: number): [P, P, P, P] {
 }
 const curve = (c: [P, P, P, P]) => `M ${pt(c[0])} C ${pt(c[1])} ${pt(c[2])} ${pt(c[3])}`;
 
-/** Tâm tròng mắt người tâm `(x, cy)` bên `s`: mọi chỗ cần tâm tròng đọc ở đây */
-const irisAt = (x: number, cy: number, s: 1 | -1): P => [x - s * 0.06 * R, cy + 0.08 * R];
+/**
+ * Tâm tròng mắt người tâm `(x, cy)` bên `s`, bóp ngang `k`, dáng `S`, mi `L`, nhìn `l`: mọi chỗ cần tâm tròng đọc ở đây.
+ * Nhìn lên đi theo chỗ hở dưới mi trên (`S.up`, độ nhắm), con ngươi không lẩn hết vào mi.
+ */
+function irisAt(
+  x: number,
+  cy: number,
+  s: 1 | -1,
+  k: number,
+  S: EyeShape,
+  L: EyeLids,
+  l: Look = CENTER,
+): P {
+  const up = l[1] < 0 ? S.up * (1 - clamp01(L.close)) : 1;
+  return [
+    x - s * 0.06 * R + l[0] * LOOK.x * S.half * R * k,
+    cy + 0.08 * R + l[1] * LOOK.y * R * up,
+  ];
+}
 
 /**
- * Mắt người tâm `(x, cy)` bên `s`, bóp ngang `k`, dáng `S`, mi `L`, đốm sáng nhân `shine`. Mi trên đi từ chỗ mở về
- * đường nhắm nằm trên mi dưới (`close`), đường nhắm rộng bằng mắt mở; nhắm hẳn thì không còn lòng trắng.
+ * Mắt người tâm `(x, cy)` bên `s`, bóp ngang `k`, dáng `S`, mi `L`, đốm sáng nhân `shine`, nhìn `look`. Mi trên đi từ
+ * chỗ mở về đường nhắm nằm trên mi dưới (`close`), đường nhắm rộng bằng mắt mở; nhắm hẳn thì không còn lòng trắng.
  */
 function humanEye(
   x: number,
@@ -804,6 +876,7 @@ function humanEye(
   S: EyeShape,
   L: EyeLids,
   shine: number,
+  look: Look,
 ): FaceMark {
   const f = clamp01(L.close);
   const up = S.up * R;
@@ -846,7 +919,7 @@ function humanEye(
   if (f < 1) {
     const ir = S.iris * R * L.iris;
     const pr = ir * S.pupil * L.pupil;
-    const [ix, iy] = irisAt(x, cy, s);
+    const [ix, iy] = irisAt(x, cy, s, k, S, L, look);
     const sh = 0.3 * ir * S.shine * L.shine * shine;
     out.push(
       { clip: d },
@@ -884,7 +957,8 @@ function humanEye(
 /**
  * `pupil` bán kính con ngươi `bulge` theo `EYE_R`, chấm con ngươi `wide` theo nó; `lid` mi trên nghỉ sụp phần độ nhắm
  * (`wide`, `bulge` nửa số); `blink` độ nhắm của chớp mắt (`blinkAt`). `shape` có thì vẽ mắt người của đầu `human`
- * (`EYE_LIDS`) với mi trên xiên theo mày `brow`, đốm sáng nhân `shine`.
+ * (`EYE_LIDS`) với mi trên xiên theo mày `brow`, đốm sáng nhân `shine`. `look` (`lookStep`) dời tròng, hay chấm mắt
+ * của đầu `sphere`.
  */
 export interface EyeSides extends FaceSides {
   pupil?: number;
@@ -893,6 +967,7 @@ export interface EyeSides extends FaceSides {
   blink?: number;
   shape?: EyeShape;
   brow?: BrowKind;
+  look?: Look;
 }
 
 /** Bề dày nét mày, độ nghiêng cộng vào mọi kiểu mày — dương nhấc đầu trong */
@@ -919,15 +994,16 @@ export function eyeMarks(
   const lid = o.lid ?? 0;
   const b = eyeBlink(kind, o.blink ?? 0);
   const S = o.shape;
+  const l = o.look ?? CENTER;
   return {
     group: sidesOf(o.only).map((s) => {
       const x = cx + (s * gap) / 2;
       if (S && kind in EYE_LIDS) {
-        const L = eyeLids(kind as keyof typeof EYE_LIDS, s, lid + S.hood, b, o.brow);
-        return humanEye(x, cy, s, k, S, L, o.shine ?? 1);
+        const L = eyeLids(kind as keyof typeof EYE_LIDS, s, lid + S.hood, b, o.brow, l[1]);
+        return humanEye(x, cy, s, k, S, L, o.shine ?? 1, l);
       }
       if (b >= DOT_BLINK && !(kind === "wink" && s === -1)) return EYES.shut(x, cy);
-      return EYES[kind](x, cy, s, k, p, Math.max(lid, b));
+      return EYES[kind](x, cy, s, k, p, Math.max(lid, b), l);
     }),
   };
 }

@@ -141,7 +141,7 @@ const gap = (a: readonly number[], b: readonly number[]) =>
 
 /**
  * Kiểu nét mặt không nội suy được: đổi ở giữa đoạn hoà. Khẩu hình đọc ra là tức thì, nên đổi
- * sớm hay muộn nửa đoạn đều không ai thấy sai. `blush` hoà thẳng suốt đoạn, bên không ghi là `0`.
+ * sớm hay muộn nửa đoạn đều không ai thấy sai. `blush` và `look` hoà thẳng suốt đoạn, bên không ghi là `0` (nhìn thẳng).
  */
 export function blendFace(
   from: Partial<FaceState>,
@@ -153,6 +153,11 @@ export function blendFace(
   else {
     const a = from.blush ?? 0;
     o.blush = a + ((to.blush ?? 0) - a) * f;
+  }
+  if (from.look === undefined && to.look === undefined) delete o.look;
+  else {
+    const [a, b] = [from.look ?? [0, 0], to.look ?? [0, 0]];
+    o.look = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
   }
   return o;
 }

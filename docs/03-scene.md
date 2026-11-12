@@ -214,7 +214,7 @@ clip, không phụ thuộc frame đang vẽ — mà tính đệ quy mỗi frame 
 ra một tầng nữa.
 
 `face` chạy cùng cấu trúc nhưng khác phép hoà: kiểu nét mặt không nội suy được, đổi ở giữa
-chỗ nối — xem `blend.ts`. Riêng má ửng (`blush`) là số nên hoà thẳng suốt chỗ nối. Bàn tay người 3D
+chỗ nối — xem `blend.ts`. Riêng má ửng (`blush`) và hướng nhìn (`look`) là số nên hoà thẳng suốt chỗ nối. Bàn tay người 3D
 (`pose.hand`, kênh `hand`) đi cùng tư thế: hoà trên góc khớp suốt chỗ nối, bên không ghi lấy bàn tay
 của track dưới — [01](01-rig.md#bàn-tay).
 
@@ -862,7 +862,7 @@ làm động tác; động tác một tay có bản tay phải và bản tay tr�
 
 - **Diễn bằng tay kia: `mirror: true` trên clip.** Clip soi gương đổi phải ↔ trái mọi kênh và phần đi kèm — góc tay chân,
   `stretch`, `reach`, mốc bàn tay (dáng, xoay, hướng lòng tay), socket bàn tay trong `equip` của clip — và đảo dấu `lean`,
-  lắc và nghiêng đầu. `mask` của clip vẫn gọi tên theo kênh của hành động: clip `chong-nanh-phai-3d` với `mirror: true` và
+  lắc và nghiêng đầu, số ngang của hướng nhìn (`face.look`). `mask` của clip vẫn gọi tên theo kênh của hành động: clip `chong-nanh-phai-3d` với `mirror: true` và
   `mask: ["armRight"]` chống nạnh tay trái. Clip khác trên cùng người không bị ảnh hưởng.
 
 ```jsonc

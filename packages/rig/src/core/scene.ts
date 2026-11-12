@@ -1060,8 +1060,13 @@ function phasePose(c: Clip, u: number): Partial<Pose> {
   return p;
 }
 
-const clipFace = (c: Clip, time: number, clock?: Clock): Partial<FaceState> =>
-  c.action && inMask(c, "face") ? actionFace(c.action, phaseAt(c, time, clock)) : {};
+/** Nét mặt clip ghi lúc `time`; clip soi gương nhìn sang phía kia */
+function clipFace(c: Clip, time: number, clock?: Clock): Partial<FaceState> {
+  if (!c.action || !inMask(c, "face")) return {};
+  const f = actionFace(c.action, phaseAt(c, time, clock));
+  if (c.mirror && f.look) f.look = [-f.look[0], f.look[1]];
+  return f;
+}
 
 /**
  * Đổi đồ không đi qua `mask`: nó không phải khớp, thu hẹp `mask` không đụng tới nó.

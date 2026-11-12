@@ -91,6 +91,26 @@ describe('`FaceRig.set` và chớp mắt', () => {
   });
 });
 
+describe('`FaceRig.set` và hướng nhìn', () => {
+  it('chỉ vẽ lại khi hướng nhìn qua nấc khác của `lookStep`; bỏ trống như nhìn thẳng', () => {
+    for (const human of [true, false]) {
+      const f = faceRig(R.head, new THREE.Vector3(1, 1, 1), {}, DEFAULT_FACE, human);
+      const v0 = version(f.mesh), m0 = version(mouthOf(f));
+      f.set({ ...DEFAULT_FACE, look: [0.02, -0.03] });
+      expect(version(f.mesh)).toBe(v0);
+      f.set({ ...DEFAULT_FACE, look: [0.5, 0] });
+      expect(version(f.mesh)).toBe(v0 + 1);
+      f.set({ ...DEFAULT_FACE, look: [0.52, 0.01] });
+      expect(version(f.mesh)).toBe(v0 + 1);
+      f.set({ ...DEFAULT_FACE, look: [0.5, 0.3] });
+      expect(version(f.mesh)).toBe(v0 + 2);
+      f.set(DEFAULT_FACE);
+      expect(version(f.mesh)).toBe(v0 + 3);
+      expect(version(mouthOf(f))).toBe(m0);
+    }
+  });
+});
+
 describe('nét mặt nghỉ của nhân vật', () => {
   /** Bề dày nét mà canvas mặt nhận khi dựng nét mặt với `shape` */
   const widths = (shape: object, human = true) => {
