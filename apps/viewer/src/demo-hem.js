@@ -7,11 +7,12 @@ import { ACTIONS } from './demos.js';
 
 const SPACING = 150;
 
-function character(name, { rig, palette, garment, hair, hairColor, hem }) {
+function character(name, { rig, palette, garment, hair, hairColor, hem, eyeShape }) {
   const r = parseCharacter({
     name,
     ...(rig && { rig }),
     head: { form: 'human' },
+    ...(eyeShape && { face: { eyeShape } }),
     palette: { skin: '#f8e3c8', line: '#1c1c1e', clad: true, ...palette },
     pieces: {
       torso: { src: 'sculpt', garment },
@@ -27,7 +28,7 @@ const models = () => [
   character('vat-dai-nu', {
     palette: { garment: '#2B3A67', sleeve: '#2B3A67', trouser: '#2B3A67', shoe: '#F3EBDD' },
     garment: { style: 'wrap', hem: -36, neckBack: 8, wrap: { band: 5, under: 3, underColor: '#FFF8EC', obi: { color: '#EFE4CF', y: 56, width: 34, cord: 3, cordColor: '#D9573B', clasp: 7, knot: 'taiko' } } },
-    hair: 'bun', hairColor: '#2E2420',
+    hair: 'bun', hairColor: '#2E2420', eyeShape: 'female',
     hem: { color: '#2B3A67', skirt: { style: 'wrap', rise: 46, length: 211, flare: -4, pleats: 0 } },
   }),
   character('vat-bap-chan', {
@@ -38,7 +39,7 @@ const models = () => [
   }),
   character('tap-de-kem', {
     palette: { garment: '#5C7A6E', sleeve: '#5C7A6E', trouser: '#5C7A6E', shoe: '#3a2a20' },
-    garment: { style: 'wrap' }, hair: 'curly', hairColor: '#3b2a22',
+    garment: { style: 'wrap' }, hair: 'curly', hairColor: '#3b2a22', eyeShape: 'female',
     hem: { color: '#F3EBDD', skirt: { style: 'apron', length: 100, apron: { tieColor: '#D9573B' } } },
   }),
   character('tap-de-cham', {

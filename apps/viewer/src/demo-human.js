@@ -9,13 +9,13 @@ import { SAMPLE_ITEMS } from './demo-hold.js';
 const STICK = new URLSearchParams(location.search).has('stick');
 
 /** JSON nhân vật mẫu: số đo để trống lấy mặc định của schema, `rig` và `palette` đè lên */
-function character(name, { rig, palette, face, garment, accent, hair, hairColor, skirt, glasses, neck, items }) {
+function character(name, { rig, palette, face, eyeShape, garment, accent, hair, hairColor, skirt, glasses, neck, items }) {
   const json = {
     name,
     ...(rig && { rig }),
     head: { form: 'human' },
     palette: { skin: '#f8e3c8', line: '#1c1c1e', clad: true, ...palette },
-    ...(face && { face }),
+    ...((face || eyeShape) && { face: { ...face, ...(eyeShape && { eyeShape }) } }),
     pieces: {
       torso: { src: 'sculpt', garment, ...(accent && { accent }) },
       hair: { src: 'sculpt', color: hairColor, sculpt: SCULPT_PRESETS[hair].sculpt },
@@ -49,6 +49,7 @@ const models = () => ({
   }),
   /** Nữ blouse tay lỡ, váy xếp ly, chân trần, giày đỏ nâu, má ửng; dáng quả lê: đùi đầy, hông rộng hơn vai */
   GIRL: character('vay', {
+    eyeShape: 'female',
     palette: { garment: '#7893ae', sleeve: '#7893ae', sleeveLength: 0.45, trouserLength: 0, shoe: '#7a3b2e', trouserWidth: 21 },
     face: { blush: 0.5 },
     garment: { style: 'blouse', hem: -18, bust: 6 }, hair: 'bob', hairColor: '#3b3038',
@@ -62,6 +63,7 @@ const models = () => ({
   }),
   /** Nữ tóc đuôi ngựa, áo len, quần dài, da nâu, má ửng; mảnh: thấp hơn, vai và hông hẹp, tay chân thon */
   PONY: character('duoi-ngua', {
+    eyeShape: 'female',
     rig: { height: 0.94, shoulderHalf: 34, hipHalf: 18 },
     palette: { skin: '#9a6648', garment: '#e0b23a', sleeve: '#e0b23a', trouser: '#34466e', sleeveWidth: 12, trouserWidth: 14 },
     face: { blush: 0.6 },
@@ -69,12 +71,14 @@ const models = () => ({
   }),
   /** Nữ áo len, váy, chân trần cùng màu da với tay */
   KNIT: character('len-vay', {
+    eyeShape: 'female',
     palette: { garment: '#d8692f', sleeve: '#d8692f', trouserLength: 0, shoe: '#4a2c20', trouserWidth: 17 },
     garment: { style: 'sweater' }, hair: 'bob', hairColor: '#3b2a22',
     skirt: { color: '#4a3530', shape: {} },
   }),
   /** Nữ áo cổ chéo thân trên cổ lót kem, đai cao bản rộng có dây, khoá và nút hộp sau lưng, cổ sau hạ; váy thẳng dài thay vạt dưới */
   KIMONO: character('co-cheo-nu', {
+    eyeShape: 'female',
     rig: { shoulderHalf: 36, hipHalf: 22 },
     palette: { garment: '#2b3a67', sleeve: '#2b3a67', sleeveWidth: 17, trouser: '#2b3a67', shoe: '#fff8ec', trouserWidth: 17 },
     garment: { style: 'wrap', hem: -36, neckBack: 8, bust: 5, wrap: { band: 5, under: 3, underColor: '#fff8ec', obi: { color: '#efe4cf', y: 56, width: 34, cord: 3, cordColor: '#d9573b', clasp: 7, claspColor: '#d9573b', knot: 'taiko' } } },
@@ -89,6 +93,7 @@ const models = () => ({
   }),
   /** Áo làm việc cổ chéo tới hông, không đai, quần cùng màu */
   WORK: character('co-cheo-lam', {
+    eyeShape: 'female',
     rig: { height: 0.95, shoulderHalf: 36, hipHalf: 21 },
     palette: { garment: '#e39a9a', sleeve: '#e39a9a', trouser: '#e39a9a', shoe: '#5e3f2c' },
     garment: { style: 'wrap', hem: 6 }, hair: 'curly', hairColor: '#3b2a22',
@@ -113,6 +118,7 @@ const models = () => ({
   }),
   /** Như trên, chữ dọc bên phải, chữ to sau lưng, thẻ tên không dấu */
   HAPPI_B: character('vat-mo-chu', {
+    eyeShape: 'female',
     rig: { height: 0.95, shoulderHalf: 36, hipHalf: 21 },
     palette: { garment: '#2b3a67', sleeve: '#2b3a67', sleeveWidth: 14, trouser: '#2b3a67', shoe: '#5e3f2c' },
     accent: '#fff8ec',
@@ -126,6 +132,7 @@ const models = () => ({
   }),
   /** Áo khoác vạt mở tới giữa đùi khoác ngoài áo cổ chéo: cổ lót kem giao trong khe, đai lộ giữa khe, dây buộc trước ngực; váy thẳng từ dưới gấu áo khoác */
   HAORI: character('vat-mo-dai', {
+    eyeShape: 'female',
     rig: { height: 0.92, shoulderHalf: 36, hipHalf: 22 },
     palette: { garment: '#7a4e33', sleeve: '#7a4e33', sleeveWidth: 18, trouser: '#5b2a4a', shoe: '#fff8ec', trouserWidth: 17 },
     accent: '#5b2a4a',
@@ -142,6 +149,7 @@ const models = () => ({
     garment: { style: 'shirt', badge: { text: '田辺', color: '#ffffff', edge: '#2b3a67' } }, hair: 'short', hairColor: '#2a1c15',
   }),
   WRAP_TAG: character('co-cheo-the', {
+    eyeShape: 'female',
     rig: { height: 0.95, shoulderHalf: 36, hipHalf: 21 },
     palette: { garment: '#e39a9a', sleeve: '#e39a9a', trouser: '#e39a9a', shoe: '#5e3f2c' },
     garment: { style: 'wrap', hem: 6, wrap: { band: 7, bandColor: '#7a2e3a', letters: { left: '楓荘' } }, badge: { wakaba: true, text: 'よし江' } },
@@ -162,7 +170,7 @@ const models = () => ({
     ['zori', { trouser: '#3b4252', trouserLength: 0.6, shoe: '#7a2335' }],
   ].map(([style, pal, skirt], i) => [`SHOE_${style}`, character(`giay-${style}`, {
     palette: { garment: '#7893ae', sleeve: '#7893ae', shoeStyle: style, ...pal },
-    garment: { style: skirt ? 'blouse' : 'shirt', ...(skirt && { hem: -18 }) }, hair: i % 2 ? 'bob' : 'short', hairColor: '#2a1c15',
+    garment: { style: skirt ? 'blouse' : 'shirt', ...(skirt && { hem: -18 }) }, hair: i % 2 ? 'bob' : 'short', hairColor: '#2a1c15', ...(i % 2 && { eyeShape: 'female' }),
     ...(skirt && { skirt: { color: '#3a3f4a', shape: { length: 40 } } }),
   })])),
   /** Nam bụng phệ, polo đỏ thẫm cổ dựng ngắn tay, quần kem */

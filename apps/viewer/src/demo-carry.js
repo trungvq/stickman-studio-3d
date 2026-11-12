@@ -14,6 +14,7 @@ function character(name, { palette, garment, hair, hairColor, skirt }) {
   const r = parseCharacter({
     name,
     head: { form: 'human' },
+    face: { eyeShape: 'female' },
     palette: { skin: '#f8e3c8', line: '#1c1c1e', clad: true, ...palette },
     pieces: {
       torso: { src: 'sculpt', garment },

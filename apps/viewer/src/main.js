@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { AA, createStage, npr, PALETTES, setPalette, skyDome, stickman } from '@stickman3d/rig';
+import { AA, blinkAt, createStage, npr, PALETTES, setPalette, skyDome, stickman } from '@stickman3d/rig';
 import { GRADES, lightDemo } from './demo-light.js';
 import { BOY, demo, GIRL } from './demos.js';
 import { holdDemo } from './demo-hold.js';
@@ -11,6 +11,7 @@ import { humanDemo } from './demo-human.js';
 import { handAimDemo } from './demo-hand-aim.js';
 import { carryDemo } from './demo-carry.js';
 import { elbowsDemo } from './demo-elbows.js';
+import { eyesDemo } from './demo-eyes.js';
 import { createMarks } from './marks.js';
 
 const AA_LABEL = { off: 'Tắt', 'ss1.5': '1,5×', ss2: '2×' };
@@ -74,10 +75,9 @@ function setupCast() {
     boy.head.rotation.y = 0.15 - talkG * 0.1;
     girl.head.rotation.y = -0.15 + talkA * 0.1;
     // chớp mắt, nhép miệng khi nói
-    for (const [who, off, talk] of [[boy, 1.7, talkA], [girl, 0, talkG]]) {
-      const shut = pulse(t + off, 4.3, 0, 0.16) > 0;
+    for (const [who, seed, talk] of [[boy, 1, talkA], [girl, 0, talkG]]) {
       const mouth = talk > 0.05 ? MOUTHS[Math.floor(t / 0.13) % MOUTHS.length] : 'closed';
-      who.face.set({ ...who.face.state, eyes: shut ? 'shut' : 'open', mouth });
+      who.face.set({ ...who.face.state, eyes: 'open', mouth }, blinkAt(t, seed));
     }
   };
 }
@@ -86,10 +86,10 @@ const MOUTHS = ['talkA', 'talkTeeth', 'talkB', 'talkTeeth', 'talkA', 'o'];
 
 /** Cảnh diễn hành động `?demo=`; không có cảnh ấy thì trả `undefined` */
 function setupDemo(name) {
-  const own = { hold: holdDemo, light: lightDemo, room: roomDemo, stages: () => stagesDemo(host), decal: decalDemo, police: policeDemo, 'hand-aim': handAimDemo, carry: carryDemo, elbows: elbowsDemo };
+  const own = { hold: holdDemo, light: lightDemo, room: roomDemo, stages: () => stagesDemo(host), decal: decalDemo, police: policeDemo, 'hand-aim': handAimDemo, carry: carryDemo, elbows: elbowsDemo, eyes: eyesDemo };
   for (const k of ['human', 'human-row', 'human-faces', 'human-bench', 'human-wrap', 'human-wrap-act', 'human-coat', 'human-coat-act', 'human-extra', 'human-extra-act', 'human-extra-move', 'human-extra-equip', 'human-shoes']) own[k] = () => humanDemo(k);
   const d = own[name] ? own[name](q) : name && demo(name);
-  if (['light', 'room', 'decal', 'police'].includes(name)) ground.visible = false;
+  if (['light', 'room', 'decal', 'police', 'eyes'].includes(name)) ground.visible = false;
   if (!d) return undefined;
   if (d.objects.length) scene.add(...d.objects);
   return d;

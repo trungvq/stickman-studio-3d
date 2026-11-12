@@ -9,11 +9,12 @@ import { ACTIONS } from './demos.js';
 /** Mặt ghế cao bằng gối người `height = 1` */
 const SEAT = 87.5;
 
-function character(name, { rig, palette, garment, hair, hairColor }) {
+function character(name, { rig, palette, garment, hair, hairColor, eyeShape }) {
   const r = parseCharacter({
     name,
     ...(rig && { rig }),
     head: { form: 'human' },
+    ...(eyeShape && { face: { eyeShape } }),
     palette: { skin: '#f8e3c8', line: '#1c1c1e', clad: true, ...palette },
     pieces: {
       torso: { src: 'sculpt', garment },
@@ -35,7 +36,7 @@ const models = () => [
   character('chibi', {
     rig: { height: 0.8, shoulderHalf: 34, hipHalf: 18 },
     palette: { garment: '#e0b23a', sleeve: '#e0b23a', trouser: '#34466e', sleeveWidth: 13, trouserWidth: 14 },
-    garment: { style: 'sweater', hem: -10 }, hair: 'bob', hairColor: '#3b2a22',
+    garment: { style: 'sweater', hem: -10 }, hair: 'bob', hairColor: '#3b2a22', eyeShape: 'female',
   }),
 ];
 

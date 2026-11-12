@@ -10,14 +10,14 @@ const SPACING = 1.4;
 
 const P = SCULPT_PRESETS;
 const HEADS = [
-  { name: 'bui-cao', hair: { color: '#2E2420', sculpt: { ...P.bun.sculpt } }, garment: '#2B3A67' },
+  { name: 'bui-cao', female: true, hair: { color: '#2E2420', sculpt: { ...P.bun.sculpt } }, garment: '#2B3A67' },
   {
-    name: 'bui-lech-tram',
+    name: 'bui-lech-tram', female: true,
     hair: { color: '#2E2420', sculpt: { ...P.bun.sculpt, tie: 4, tieLon: -140 } },
     headAcc: { src: 'sculpt', color: '#3A2A22', accent: '#D9573B', pin: { angle: 35 } },
     garment: '#C68B2C',
   },
-  { name: 'bui-thap-to', hair: { color: '#D8CFC4', sculpt: { ...P.bun.sculpt, tie: 8, knotSize: 1.4 } }, garment: '#5B2A4A' },
+  { name: 'bui-thap-to', female: true, hair: { color: '#D8CFC4', sculpt: { ...P.bun.sculpt, tie: 8, knotSize: 1.4 } }, garment: '#5B2A4A' },
   {
     name: 'ngoi-lech-vong',
     hair: { color: '#3A2A22', sculpt: { ...P.neat.sculpt, part: 25, fringe: 12, bang: 14, bangTo: -40, ahoge: 1 } },
@@ -37,15 +37,16 @@ const POLICE = { src: 'sculpt', color: '#1e2638', hat: { shape: 'peaked' } };
 const TRAFFIC = { src: 'sculpt', color: '#f4f2ec', hat: { shape: 'peaked', strapColor: '#f4f2ec' } };
 const CAPS = [
   { name: 'canh-sat-ngan', hair: { color: '#2A1E18', sculpt: { ...P.short.sculpt } }, crown: POLICE, garment: '#2a3550' },
-  { name: 'canh-sat-dai', hair: { color: '#3A2A22', sculpt: { ...P.shoulder.sculpt } }, crown: POLICE, garment: '#2a3550' },
+  { name: 'canh-sat-dai', female: true, hair: { color: '#3A2A22', sculpt: { ...P.shoulder.sculpt } }, crown: POLICE, garment: '#2a3550' },
   { name: 'giao-thong-ngan', hair: { color: '#2A1E18', sculpt: { ...P.buzz.sculpt } }, crown: TRAFFIC, garment: '#2a3550' },
-  { name: 'giao-thong-duoi', hair: { color: '#2E2420', sculpt: { ...P.ponyLow.sculpt } }, crown: TRAFFIC, garment: '#2a3550' },
+  { name: 'giao-thong-duoi', female: true, hair: { color: '#2E2420', sculpt: { ...P.ponyLow.sculpt } }, crown: TRAFFIC, garment: '#2a3550' },
 ];
 
-function figureOf({ name, hair, crown, headAcc, garment }, seed) {
+function figureOf({ name, hair, crown, headAcc, garment, female }, seed) {
   const r = parseCharacter({
     name,
     head: { form: 'human' },
+    ...(female && { face: { eyeShape: 'female' } }),
     palette: { garment, skin: '#f8e3c8', line: '#1c1c1e', clad: true, sleeve: garment, trouser: '#3b4252' },
     pieces: {
       torso: { src: 'sculpt', garment: { style: 'shirt' } },

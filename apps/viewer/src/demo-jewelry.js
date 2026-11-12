@@ -41,7 +41,7 @@ function figureOf({ name, hair, hairColor, garment, color, skirt, necklace, earr
   const r = parseCharacter({
     name,
     head: { form: 'human' },
-    face: { blush: 0.3 },
+    face: { blush: 0.3, eyeShape: 'female' },
     palette: { garment: color, skin: '#f8e3c8', line: '#1c1c1e', clad: true, sleeve: color, sleeveLength: 0.3, trouser: '#3b4252', trouserLength: skirt ? 0 : 1, shoe: '#2b2623' },
     pieces: {
       torso: { src: 'sculpt', garment },
