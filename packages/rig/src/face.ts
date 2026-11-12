@@ -42,10 +42,11 @@ function shape(m: FaceMark): Path2D {
 }
 
 /** Vẽ `marks` phóng `k` lần quanh `(cx, cy)`, bề dày nét phóng theo */
-function paintAt(g: Ctx, marks: FaceMark[], k: number, cx: number, cy: number) {
+/** Vẽ `marks` phóng `k` quanh `(cx, cy)`; `wide` nhân thêm bề ngang */
+function paintAt(g: Ctx, marks: FaceMark[], k: number, cx: number, cy: number, wide = 1) {
   g.save();
   g.translate(cx, cy);
-  g.scale(k, k);
+  g.scale(k * wide, k);
   g.translate(-cx, -cy);
   paint(g, marks);
   g.restore();
@@ -126,7 +127,7 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
   const drawMouth = (s: FaceState) => {
     const marks = [mouthMark(s.mouth, 0, mouthCy)];
     if (tash) marks.push(moustacheMark(tash, s.mouth, 0, mouthCy, tash.color ?? hair));
-    paintAt(mouth.begin(), marks, mk, 0, mouthCy);
+    paintAt(mouth.begin(), marks, mk, 0, mouthCy, human ? CHIBI.mouthWide : 1);
     mouth.tex.needsUpdate = true;
   };
   const rig: FaceRig = {

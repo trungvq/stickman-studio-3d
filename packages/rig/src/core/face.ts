@@ -765,7 +765,7 @@ export function wrinkleMarks(
 /**
  * Nét mặt chibi của đầu `human` trên người 3D: mắt hạ `offsetY`, giãn `eyeGap`, mồm gần mắt `mouthGap` (cộng vào
  * `face` của JSON nhân vật); nét mắt phóng `eye` quanh tâm mắt và bóp ngang `squash` thành bầu dục đứng, con ngươi
- * `bulge` bán kính `pupil · EYE_R`, mồm phóng `mouth`, mày nhấc `brow` px. `FACE_REST` của nhân vật chỉnh `eye`,
+ * `bulge` bán kính `pupil · EYE_R`, mồm phóng `mouth`, bề ngang mồm nhân thêm `mouthWide`, mày nhấc `brow` px. `FACE_REST` của nhân vật chỉnh `eye`,
  * `squash` và đốm sáng. docs/01-rig.md#người-3d-mặc-đồ
  */
 export const CHIBI = {
@@ -775,6 +775,9 @@ export const CHIBI = {
   squash: 1,
   pupil: 0.85,
   mouth: 0.8,
+  // THỬ (feat/real-head-proto): đầu dài theo số đầu, mồm cùng cỡ px đọc hẹp (bề ngang / chiều cao đầu 0,13 → 0,10): nới
+  // riêng bề ngang mồm (cả ria trên lớp mồm), chiều cao khẩu hình giữ `mouth`
+  mouthWide: 1.3,
   brow: 3,
 } as const;
 

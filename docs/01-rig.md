@@ -1547,7 +1547,7 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
   người lớn ([Khẩu hình và mắt](#khẩu-hình-và-mắt)), con ngươi đang mở có đốm
   sáng (`eyeShine`) — `wide` không có, lòng trắng giữa đã là chỗ sáng; con ngươi `bulge` và chấm con ngươi
   `wide` to hơn của người que (`pupil` `0,85` thay `0,7` lần `EYE_R`);
-  mồm thu `0,8`, mày nhấc `3` px. Cỡ mắt, độ bóp và đốm sáng nhân theo [nét mặt riêng](#nét-mặt-riêng) của
+  mồm thu `0,8`, bề ngang mồm nhân thêm `1,3` (`mouthWide`, cả ria trên lớp mồm), mày nhấc `3` px. Cỡ mắt, độ bóp và đốm sáng nhân theo [nét mặt riêng](#nét-mặt-riêng) của
   nhân vật. Má ửng theo `face.blush` của nhân vật,
   không theo dáng đầu — [Má ửng](#má-ửng).
 - **Tóc dựng khối dời theo sọ.** Mỗi đỉnh tóc dời đúng bằng điểm sọ bên dưới nó (`humanHair`): tóc
