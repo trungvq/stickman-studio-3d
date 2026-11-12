@@ -424,6 +424,36 @@ function strapLoft(F: ShoeForm, zc: number, w: number, g: number, m: number) {
   return shoeLoft(zc - w / 2 - 0.4, zc + w / 2 + 0.4, at, 8, m);
 }
 
+/** Mặt trên khối `F` ở `(x, z)` px: nghịch của vòng `SHOE_RING` */
+function shoeTop(F: ShoeForm, x: number, z: number) {
+  const { half, bottom, top } = F.at(Math.min(Math.max(z, F.back), F.tip)), mid = bottom + (top - bottom) * SHOE_RING.mid;
+  if (half <= 0) return bottom;
+  const sn = Math.min(1, Math.abs(x) / half) ** (SHOE_RING.top / 2), cs = Math.sqrt(1 - sn * sn);
+  return mid + (top - mid) * cs ** (2 / SHOE_RING.top);
+}
+
+/**
+ * Quai xỏ ngón chữ Y trên bàn chân `F`: cọc ở khe ngón `(x, z)` cắm xuống đế `sole`, hai dải bám mặt bàn chân về hai bên
+ * ở `zs` rồi xuống đế; ống tròn bán kính `r`, nổi `g` px trên mặt
+ */
+function thongLoft(F: ShoeForm, [x, z]: number[], zs: number, sole: number, low: boolean) {
+  const r = 0.8, g = 0.6;
+  const top = Math.max(shoeTop(F, x, z), sole + 1.5) + g;
+  const P = (px: number, py: number, pz: number) => new THREE.Vector3(px / 100, py / 100, pz / 100);
+  const tubes: THREE.Curve<THREE.Vector3>[] = [new THREE.LineCurve3(P(x, sole - 0.4, z), P(x, top, z))];
+  for (const k of [-1, 1]) {
+    const pts = [P(x, top, z)], hs = F.at(zs).half;
+    for (let i = 1; i <= 8; i++) {
+      const t = i / 8, pz = z + (zs - z) * t, px = x + (k * (hs - 0.3) - x) * t * (2 - t);
+      pts.push(P(px, shoeTop(F, px, pz) + g, pz));
+    }
+    const mid = F.at(zs).bottom + (F.at(zs).top - F.at(zs).bottom) * SHOE_RING.mid;
+    pts.push(P(k * (hs + g * 0.6), mid, zs), P(k * (hs + g * 0.2), sole - 0.4, zs));
+    tubes.push(new THREE.CatmullRomCurve3(pts));
+  }
+  return tubes.map((c) => smooth(new THREE.TubeGeometry(c, low ? 8 : 24, r / 100, low ? 5 : 8, false)));
+}
+
 /** Khối gót của giày có gót: dưới lòng giày ở gót, từ lưng gót tới `length`, mặt trước phẳng */
 function heelLoft(F: ShoeForm, n: number, m: number) {
   // khối gót liền đế tới chỗ lòng giày hạ về sàn: không hở vòm
@@ -478,6 +508,10 @@ export function shoeMesh(kind: string, legHalf: number, side: -1 | 1, low = fals
     for (const t of shoeToes(kind, legHalf, side)) out.toes.push(toeTube(t, low));
     const L = F.tip - F.back;
     for (const u of S.open.straps) out.straps.push(strapLoft(F, F.back + u * L, 0.11 * L, 0.9, m));
+    if (S.open.thong !== undefined) {
+      const [a, b] = shoeToes(kind, legHalf, side);
+      out.straps.push(...thongLoft(F, [(a[0] + b[0]) / 2, (a[2] + a[4]) / 2], F.back + S.open.thong * L, F.floor + S.sole, low));
+    }
   } else {
     const F = shoeForm(kind, legHalf);
     out.upper = shoeLoft(F.back, F.tip, F.at, n, m, S.cut && ((z) => shoeCut(kind, legHalf, z)));

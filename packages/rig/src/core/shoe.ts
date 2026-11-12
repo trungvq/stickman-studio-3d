@@ -37,8 +37,8 @@ export interface ShoeStyle {
   shaft?: { length: number; ease: number };
   /** Miệng giày thấp lộ mu bàn chân: mép giày cao `back` (trên sàn) ở lưng gót, hạ tới `vamp` ở mu, đóng kín từ `at` (trước cổ chân) */
   cut?: { back: number; vamp: number; at: number };
-  /** Dép hở: bàn chân màu da (hay màu tất), quai ngang ở các chỗ `straps` (phần dài bàn chân từ gót), quai cổ chân, ngón gợi hình */
-  open?: { straps: readonly number[]; ankle: boolean };
+  /** Dép hở: bàn chân màu da (hay màu tất), quai ngang ở các chỗ `straps` (phần dài bàn chân từ gót), quai cổ chân, quai xỏ ngón chữ Y bám hai bên bàn chân ở chỗ `thong`, ngón gợi hình */
+  open?: { straps: readonly number[]; ankle: boolean; thong?: number };
 }
 
 /**
@@ -126,6 +126,29 @@ export const SHOE_STYLES = {
     spring: 0,
     sole: 1.6,
     open: { straps: [0.5, 0.74], ankle: true },
+  },
+  /** Dép tông: đế mỏng, quai xỏ ngón chữ Y từ khe ngón cái ra hai bên bàn chân */
+  flipFlop: {
+    toe: 3.1,
+    half: 1.34,
+    toeTop: 0.85,
+    collar: 0.95,
+    point: 0,
+    spring: 0.3,
+    sole: 1.1,
+    open: { straps: [], ankle: false, thong: 0.5 },
+  },
+  /** Dép zori: đế dày phẳng màu cói, quai xỏ ngón */
+  zori: {
+    toe: 3.0,
+    half: 1.4,
+    toeTop: 0.85,
+    collar: 0.95,
+    point: 0,
+    spring: 0,
+    sole: 2.2,
+    soleColor: "#d9c89a",
+    open: { straps: [], ankle: false, thong: 0.48 },
   },
 } as const satisfies Record<string, ShoeStyle>;
 

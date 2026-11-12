@@ -158,6 +158,8 @@ const models = () => ({
     ['ankleBoot', { trouser: '#34466e', shoe: '#6b4a32' }],
     ['boot', { trouser: '#3b4252', shoe: '#2a2420' }],
     ['sandal', { trouser: '#5e6b4a', trouserLength: 0.55, shoe: '#6b4a32' }],
+    ['flipFlop', { trouser: '#4a6b8a', trouserLength: 0.45, shoe: '#2f7f9f' }],
+    ['zori', { trouser: '#3b4252', trouserLength: 0.6, shoe: '#7a2335' }],
   ].map(([style, pal, skirt], i) => [`SHOE_${style}`, character(`giay-${style}`, {
     palette: { garment: '#7893ae', sleeve: '#7893ae', shoeStyle: style, ...pal },
     garment: { style: skirt ? 'blouse' : 'shirt', ...(skirt && { hem: -18 }) }, hair: i % 2 ? 'bob' : 'short', hairColor: '#2a1c15',
@@ -212,7 +214,7 @@ const models = () => ({
   }),
 });
 
-const SHOE_STYLES_DEMO = ['plain', 'sneaker', 'derby', 'pointed', 'flat', 'pump', 'ankleBoot', 'boot', 'sandal'];
+const SHOE_STYLES_DEMO = ['plain', 'sneaker', 'derby', 'pointed', 'flat', 'pump', 'ankleBoot', 'boot', 'sandal', 'flipFlop', 'zori'];
 
 const keyAction = (name, mask, keys, extra = {}) => {
   const r = parseAction({ schemaVersion: 14, name, duration: 0.6, end: 'hold', mask, keys, events: [], ...extra });
@@ -363,7 +365,7 @@ const SCENES = {
   'human-shoes': (M) => ({
     cast: [
       ...SHOE_STYLES_DEMO.map((k, i) => ({ id: `s${i}`, c: M[`SHOE_${k}`], world: { at: [(i - 4) * 90, 0, 0], yaw: 90 }, tracks: [track(clip('stand-3d')), track(clip('face-calm'))] })),
-      ...['plain', 'sneaker', 'pointed', 'flat', 'pump', 'ankleBoot', 'boot', 'sandal'].map((k, i) => ({ id: `p${i}`, c: M[`SHOE_${k}`], world: { at: [(i - 3.5) * 80, 0, 300], yaw: 0 }, tracks: [track(clip('stand-3d')), track(clip('face-calm'))] })),
+      ...['plain', 'sneaker', 'pointed', 'flat', 'pump', 'ankleBoot', 'boot', 'sandal', 'flipFlop', 'zori'].map((k, i) => ({ id: `p${i}`, c: M[`SHOE_${k}`], world: { at: [(i - 3.5) * 80, 0, 300], yaw: 0 }, tracks: [track(clip('stand-3d')), track(clip('face-calm'))] })),
       { id: 'w0', c: M.SHOE_boot, world: { path: [{ t: 0, at: [-750, 0, -250], yaw: 0 }, { t: 4, at: [-150, 0, -250], yaw: 0 }] }, tracks: [track(clip('walk')), track(clip('face-calm'))] },
       { id: 'w1', c: M.SHOE_sandal, world: { path: [{ t: 0, at: [-800, 0, -380], yaw: 0 }, { t: 4, at: [-200, 0, -380], yaw: 0 }] }, tracks: [track(clip('walk')), track(clip('face-calm'))] },
       { id: 'w2', c: M.SHOE_boot, world: { at: [520, -SEAT, -220], yaw: 90, sit: true, floor: 0 }, tracks: [track(clip('sit-3d')), track(clip('hands-knees-3d')), track(clip('face-calm'))] },

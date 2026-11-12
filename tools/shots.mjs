@@ -113,6 +113,7 @@ const SHOTS = [
   ['giay-gan', 'demo=human-shoes&t=0&az=60&el=14&look=0.45,0.3,0&dist=4.5'],
   ['giay-gan-sau', 'demo=human-shoes&t=0&az=150&el=14&look=0.45,0.3,0&dist=4.5'],
   ['giay-dep', 'demo=human-shoes&t=0&az=30&el=25&look=3.6,0.15,0&dist=1.6'],
+  ['giay-xo-ngon', 'demo=human-shoes&t=0&az=30&el=28&look=4.95,0.15,0&dist=2.6'],
   ['giay-di', 'demo=human-shoes&t=2.2&az=0&el=4&look=-3.9,0.8,3.1&dist=7'],
   ['giay-di-34', 'demo=human-shoes&t=2.45&az=40&el=8&look=-3.5,0.5,3.1&dist=6'],
   ['giay-ngoi-nghieng', 'demo=human-shoes&t=1&az=0&el=4&look=5.6,0.6,2.2&dist=4.5'],
