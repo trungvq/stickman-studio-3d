@@ -795,7 +795,7 @@ một luật.
 | `hood` | phần độ nhắm | Mi trên sụp nghỉ, cộng vào `face.lid` |
 | `lash` / `outer` | px | Nét mi trên cả mắt / ở khoé ngoài, dày dần từ chừng ba phần mười mi (`TAPER`) |
 | `flick` | px | Đuôi mắt ở khoé ngoài, chĩa ra ngoài hơi lên; `0` không có |
-| `lower` | px | Nét mi dưới, nhạt (`LOWER`), từ giữa tới trước khoé ngoài — không chạm đuôi mắt; `0` không có |
+| `lower` | px | Nét mi dưới, nhạt (`LOWER`), từ giữa tới trước khoé ngoài — không chạm đuôi mắt; nằm hẳn ngoài mép dưới, trên da, nên tròng liếc qua không cắt nó; `0` không có |
 | `crease` | `0..1` | Độ đậm nếp mí, nét mảnh song song mi trên; `0` một mí |
 | `iris` / `pupil` | `EYE_R` / phần tròng | Bán kính tròng, con ngươi |
 | `shine` | lần | Đốm sáng, nhân thêm `face.shine` |
@@ -817,7 +817,7 @@ con ngươi luôn cắt trong hình mắt.
 | `open` | mở | Mặc định |
 | `shut` | `close 1` | Nhắm; cũng là khung cuối của chớp |
 | `wide` | mi trên mở `1,35` lần, con ngươi co `0,85` | Trố nhẹ: lộ lòng trắng trên tròng |
-| `bulge` | mi trên mở `1,75` lần, mi dưới hạ `0,35`, tròng `0,82`, con ngươi `0,55`, đốm sáng `0,25` | Trố mạnh: lòng trắng quanh tròng |
+| `bulge` | mi trên mở `1,75` lần, mi dưới hạ `0,35` (đáy tròn: điểm điều khiển mi dưới dãn ra khoé theo `drop`), tròng `0,82`, con ngươi `0,55`, đốm sáng `0,25` | Trố mạnh: lòng trắng quanh tròng |
 | `squint` | `close 0,42`, mi dưới nhấc `0,35` | Nheo |
 | `happy` | `close 1`, mi dưới nhấc `1,5` | Cười nhắm ∩ |
 | `droopy` | `close 0,62` | Buồn ngủ, chán |
@@ -838,6 +838,10 @@ Scene tự chớp mắt vu vơ: `act(p, sp, t)` hỏi `blinkAt(t, seed)` của l
 nhịp và `seed` của người, không ngẫu nhiên theo lần chạy: nhắm trong `2/60` s, giữ `1/60`, mở trong `4/60`
 (`BLINK`), tức ở 60 fps chừng hai khung nhắm, một khung giữ, bốn khung mở. Độ nhắm làm tròn `1/8` (`BLINK.steps`);
 `FaceRig.set(state, blink)` chỉ vẽ lại canvas mặt khi nấc ấy đổi, như má ửng.
+
+- **Mắt người: nấc chớp dưới `1` chỉ dồn tới `BLINK_REACH` (`0,84`) phần độ nhắm.** Nét mi trên che kín khe từ độ nhắm
+  chừng `0,8`, nên không co thì nấc `7/8` đã trông như `shut`; co lại thì mỗi nấc khép đều một quãng, nấc `7/8` còn khe
+  tối mảnh (chừng một phần tám chỗ hở), nấc `1` nhắm hẳn.
 
 - Chớp ăn ở kiểu mắt đang mở: `open`, `wide`, `bulge`, `squint`, `droopy`, mắt mở của `wink` (`eyeBlink`); dồn vào
   độ nhắm như `lid`. `shut`, `happy`, `squeezed`, `sly` không chớp.
@@ -879,11 +883,12 @@ mặt **ngay trên da đầu**, dưới mắt / mày / mồm, cùng hệ toạ �
 
 Ràng buộc hình:
 
-- **Đầu `human`: chân chim bắt đầu ngoài khoé ngoài của mắt người** (`eyeHalf` của `wrinkleMarks`), cách `CROW.gap`,
-  ngắn và mảnh theo `CROW` — dính vào khoé thì cắt đường mi khi nhắm hay nheo thành dấu X.
-- **Chân chim để nằm ngang thì thành ria mèo.** Nan quạt phải xoè xuống
-  (`light` `12°`/`38°`, `deep` `−6°`/`18°`/`42°`) và ngắn — dài quá là râu mèo,
-  không phải nếp nhăn.
+- **Đầu `human`: chân chim là các nét rời, mảnh, bắt đầu cách khoé ngoài của mắt người một quãng** (`eyeHalf` của
+  `wrinkleMarks`, `CROW.gap` `3,5` px): mỗi nét một gốc riêng xếp chéo xuống, xoè `18°`/`36°` (`deep` thêm `54°`), dày
+  `0,4` nét nếp nhăn. Chung gốc thì hai nét thành chạc cây, nối với nét mi thành đuôi mũi tên `—<`; dính vào khoé thì
+  cắt đường mi khi nhắm hay nheo.
+- **Chân chim để nằm ngang thì thành ria mèo.** Nan quạt phải xoè xuống và ngắn — dài quá là râu mèo, không phải nếp
+  nhăn. Đầu `sphere` giữ nan quạt chung gốc ngoài mắt chấm (`light` `12°`/`38°`, `deep` `−6°`/`18°`/`42°`).
 - Pháp lệnh phải **xoè ra ngoài rồi mới xuống**, không thì thành hai dấu ngoặc
   ôm sát mồm.
 

@@ -809,8 +809,14 @@ export function blinkAt(t: number, seed = 0): number {
 }
 
 /**
- * Mi của mắt người kiểu `kind` bên `s`: mi sụp nghỉ `rest` (mắt mở to chỉ ăn `WIDE_LID` phần) và chớp `blink` dồn vào
- * độ nhắm, mày `brow` xiên mi trên (`BROW_SLANT`), nhìn dọc `gaze` (dương xuống) hạ hay nâng mi trên (`LOOK`)
+ * Chớp chưa nhắm hẳn chỉ dồn tới bấy nhiêu phần độ nhắm của mắt người: nét mi trên che kín khe từ độ nhắm chừng `0,8`,
+ * nên nấc `7/8` vẫn còn khe mảnh
+ */
+const BLINK_REACH = 0.84;
+
+/**
+ * Mi của mắt người kiểu `kind` bên `s`: mi sụp nghỉ `rest` (mắt mở to chỉ ăn `WIDE_LID` phần) và chớp `blink` (co theo
+ * `BLINK_REACH`) dồn vào độ nhắm, mày `brow` xiên mi trên (`BROW_SLANT`), nhìn dọc `gaze` (dương xuống) hạ hay nâng mi trên (`LOOK`)
  */
 export function eyeLids(
   kind: keyof typeof EYE_LIDS,
@@ -823,7 +829,8 @@ export function eyeLids(
   const st: EyeLids = { ...LIDS, ...(kind === "wink" ? WINK[s] : EYE_LIDS[kind]) };
   const r = clamp01(rest) * (st.open > 1 ? WIDE_LID : 1);
   const down = 1 - LOOK.down * clamp01(gaze);
-  const close = st.close >= 1 ? 1 : 1 - (1 - st.close) * (1 - r) * (1 - clamp01(blink)) * down;
+  const b = blink >= 1 ? 1 : BLINK_REACH * clamp01(blink);
+  const close = st.close >= 1 ? 1 : 1 - (1 - st.close) * (1 - r) * (1 - b) * down;
   const open = st.open * (1 + LOOK.up * clamp01(-gaze));
   return { ...st, close, open, slant: st.slant + ((brow && BROW_SLANT[brow]) ?? 0) };
 }
@@ -939,7 +946,9 @@ function humanEye(
     [X(0.45), lerp(o2, line, g)],
     outer,
   ];
-  const D: [P, P, P, P] = [outer, [X(0.4), low], [X(-0.4), low], inner];
+  // mi dưới hạ (`drop`) thì điểm điều khiển dãn ra hai khoé: đáy tròn, không nhọn thành quả chanh
+  const sp = 0.4 + L.drop;
+  const D: [P, P, P, P] = [outer, [X(sp), low], [X(-sp), low], inner];
   const upper = curve(U);
   const d = `${upper} C ${pt(D[1])} ${pt(D[2])} ${pt(D[3])} Z`;
   const ink = { fill: "none", stroke: EYE_INK, strokeLinecap: "round" } as const;
@@ -987,9 +996,11 @@ function humanEye(
         : []),
     );
     const a = +(LOWER.alpha * wide).toFixed(3);
+    // nét nằm hẳn ngoài mép dưới, trên da: đè lên tròng thì tối trên tối, như bị tròng cắt khi liếc
+    const lash = part([D[3], D[2], D[1], D[0]], LOWER.from, lerp(LOWER.from, LOWER.to, wide));
     if (S.lower > 0 && a > 0)
       out.push({
-        path: curve(part([D[3], D[2], D[1], D[0]], LOWER.from, lerp(LOWER.from, LOWER.to, wide))),
+        path: curve(lash.map(([px, py]) => [px, py + S.lower / 2]) as [P, P, P, P]),
         ...ink,
         stroke: `rgba(34, 32, 29, ${a})`,
         strokeWidth: S.lower,
@@ -1122,8 +1133,21 @@ export function browMarks(
   };
 }
 
-/** Chân chim của mắt người: cách khoé ngoài `gap` px, dài `len`, dày `width` lần nét nếp nhăn */
-const CROW = { gap: 1.5, len: 0.65, width: 0.65 };
+/**
+ * Chân chim của mắt người: mỗi nét `[dời x, dời y, góc]` (px, độ) từ khoé ngoài cộng `gap` px, cao `y` px dưới tâm mắt;
+ * dài `len` px, dày `width` lần nét nếp nhăn. `light` lấy hai nét đầu, `deep` cả ba.
+ */
+const CROW = {
+  gap: 3.5,
+  y: 1,
+  len: 3.6,
+  width: 0.4,
+  lines: [
+    [0.4, -1.2, 18],
+    [0, 1.4, 36],
+    [-0.8, 4, 54],
+  ],
+} as const;
 
 export interface WrinkleSpec {
   kind: WrinkleKind;
@@ -1136,7 +1160,7 @@ export interface WrinkleSpec {
  * Nếp nhăn quanh tâm mắt `(cx, cy)`: nếp trán, chân chim, `deep` thêm túi mắt và pháp lệnh tới
  * mồm ở `mouthCy`. `r` bán kính đầu, `squeeze` hệ số hẹp khi lắc — nhân vào mọi bề ngang, không thì
  * nếp trán thò ra ngoài viền đầu lúc quay mặt. `eyeHalf` (mắt người, px từ tâm tới khoé ngoài) có thì chân chim
- * cách khoé ngoài `CROW.gap`, ngắn và mảnh theo `CROW`. Nét ở thuộc tính nhóm.
+ * là các nét rời của `CROW`, bắt đầu cách khoé ngoài một quãng. Nét ở thuộc tính nhóm.
  */
 export function wrinkleMarks(
   wrinkle: WrinkleSpec,
@@ -1154,11 +1178,32 @@ export function wrinkleMarks(
   const deep = wrinkle.kind === "deep";
   const y = cy + dy;
   const X = (v: number) => cx + v * squeeze;
-  const human = eyeHalf !== undefined;
-  const eye = gap / 2 + (human ? eyeHalf + CROW.gap * k : 7 * k);
-  const len = 8.5 * k * (human ? CROW.len : 1);
-  const crow = human ? { strokeWidth: 2.6 * k * CROW.width } : {};
+  const eye = gap / 2 + 7 * k;
+  const len = 8.5 * k;
   const w = 34 * k * width;
+  // nét từ `x0` px ngoài tâm mặt bên `s`, chĩa ra ngoài, góc `a` độ dương xuống
+  const ray = (s: 1 | -1, x0: number, y0: number, a: number, l: number, ink = {}) => {
+    const rad = (a * Math.PI) / 180;
+    return {
+      line: [X(s * x0), y0, X(s * (x0 + l * Math.cos(rad))), y0 + l * Math.sin(rad)] as Quad,
+      ...ink,
+    };
+  };
+  const crow = (s: 1 | -1): FaceMark[] =>
+    eyeHalf === undefined
+      ? (deep ? [-6, 18, 42] : [12, 38]).map((a) => ray(s, eye, y + 2 * k, a, len))
+      : CROW.lines
+          .slice(0, deep ? 3 : 2)
+          .map(([dx, dy, a]) =>
+            ray(
+              s,
+              gap / 2 + eyeHalf + (CROW.gap + dx) * k,
+              y + (CROW.y + dy) * k,
+              a,
+              CROW.len * k,
+              { strokeWidth: 2.6 * k * CROW.width },
+            ),
+          );
   return {
     fill: "none",
     stroke: color,
@@ -1172,18 +1217,7 @@ export function wrinkleMarks(
       ...([-1, 1] as const).map((s) => ({
         group: [
           // Chân chim: nan quạt ngắn từ đuôi mắt, xoè xuống — để ngang thành ria mèo
-          ...(deep ? [-6, 18, 42] : [12, 38]).map((a) => {
-            const rad = (a * Math.PI) / 180;
-            return {
-              line: [
-                X(s * eye),
-                y + 2 * k,
-                X(s * (eye + len * Math.cos(rad))),
-                y + 2 * k + len * Math.sin(rad),
-              ] as Quad,
-              ...crow,
-            };
-          }),
+          ...crow(s),
           ...(deep
             ? [
                 // Túi dưới mắt

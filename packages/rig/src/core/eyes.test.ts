@@ -69,7 +69,9 @@ describe("mi của mắt người", () => {
     expect(eyeLids("open", 1, 0, 1).close).toBe(1);
     expect(eyeLids("open", 1, 0.4).close).toBeCloseTo(0.4);
     expect(eyeLids("wide", 1, 0.4).close).toBeCloseTo(0.2);
-    expect(eyeLids("squint", 1, 0, 0.5).close).toBeCloseTo(1 - 0.58 * 0.5);
+    expect(eyeLids("squint", 1, 0, 0.5).close).toBeCloseTo(1 - 0.58 * (1 - 0.84 * 0.5));
+    // nấc chớp chưa nhắm hẳn còn khe dưới nét mi trên
+    expect(eyeLids("open", 1, 0, 7 / 8).close).toBeLessThan(0.75);
     expect(eyeLids("wink", -1).close).toBe(1);
     expect(eyeLids("wink", 1).close).toBe(0);
   });
@@ -132,7 +134,24 @@ describe("mày và nếp nhăn của đầu người", () => {
         "line" in m ? m.line[0] : NaN,
       );
     expect(feet()).toEqual([25, 25]);
-    for (const x of feet(11.5)) expect(x).toBeGreaterThan(18 + 11.5);
+    for (const x of feet(11.5)) expect(x).toBeGreaterThan(18 + 11.5 + 2);
+  });
+
+  it("chân chim của mắt người là các nét rời, không chung gốc", () => {
+    for (const kind of ["light", "deep"] as const) {
+      const spec = { kind, color: "#000", width: 1, dy: 0 };
+      const lines = group(
+        group(wrinkleMarks(spec, 0, 0, 36, 34, 65, 1, 11.5)!)[kind === "deep" ? 3 : 2],
+      )
+        .filter((m) => "line" in m)
+        .map((m) => ("line" in m ? m.line : [0, 0, 0, 0]));
+      expect(lines.length).toBe(kind === "deep" ? 3 : 2);
+      for (let i = 1; i < lines.length; i++) {
+        const [a, b] = [lines[i - 1], lines[i]];
+        expect(Math.hypot(a[0] - b[0], a[1] - b[1])).toBeGreaterThan(2);
+        expect(Math.hypot(a[2] - b[2], a[3] - b[3])).toBeGreaterThan(2);
+      }
+    }
   });
 });
 
