@@ -70,7 +70,7 @@ function lookAt(t) {
 }
 
 /** Tấm chữ đổi được rộng `w`, cao `h` (three): canvas vẽ lại khi chữ đổi, chữ thu nhỏ cho vừa bề ngang */
-function textPlane(w, h, align = 'center', color = '#1c1c1e') {
+export function textPlane(w, h, align = 'center', color = '#1c1c1e') {
   const c = document.createElement('canvas');
   c.width = 2048;
   c.height = Math.round((2048 * h) / w);
