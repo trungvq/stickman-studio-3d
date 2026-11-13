@@ -939,7 +939,7 @@ con ngươi luôn cắt trong hình mắt.
 | `shut` | `close 1` | Nhắm; cũng là khung cuối của chớp |
 | `wide` | mi trên mở `1,35` lần, con ngươi co `0,85` | Trố nhẹ: lộ lòng trắng trên tròng |
 | `bulge` | mi trên mở `1,75` lần, mi dưới hạ `0,35` (đáy tròn: điểm điều khiển mi dưới dãn ra khoé theo `drop`), tròng `0,82`, con ngươi `0,55`, đốm sáng `0,25` | Trố mạnh: lòng trắng quanh tròng |
-| `squint` | `close 0,42`, mi dưới nhấc `0,35` | Nheo |
+| `squint` | `close 0,25`, mi dưới nhấc `0,2`; mi sụp nghỉ lấy số lớn hơn chứ không cộng chồng | Nheo: còn thấy tròng |
 | `happy` | `close 1`, mi dưới nhấc `1,5` | Cười nhắm ∩ |
 | `droopy` | `close 0,62` | Buồn ngủ, chán |
 | `wink` | mắt phải `close 1` mi dưới nhấc `0,85`, mắt trái mở mi dưới nhấc `0,2` | Nháy mắt |
@@ -950,7 +950,8 @@ con ngươi luôn cắt trong hình mắt.
 - **Mày nghỉ của đầu người** (`HUMAN_BROWS`): `neutral` ngang, cung nhẹ (`tilt 0`, `arch −1,5`) — mắt người lộ tròng, mày
   nhấc đầu trong `+2` đã đọc ra lo. Kiểu mày khác và đầu `sphere` giữ bảng [Lông mày](#lông-mày).
 - **Mi sụp nghỉ** `face.lid` cộng `hood` của dáng dồn vào độ nhắm `1 − (1 − close)(1 − lid)`; `wide`, `bulge` chỉ ăn
-  nửa số (`WIDE_LID`).
+  nửa số (`WIDE_LID`). `squint` tự hạ mi tới mức riêng nên lấy số lớn hơn giữa `close` và mi sụp (`OWN_LID`): cộng
+  chồng thì người mí sụp, mày cau nheo thành một vạch, mất tròng.
 - Tâm tròng tính ở một chỗ (`irisAt`), cả khi mắt liếc ([Hướng nhìn](#hướng-nhìn)).
 
 #### Chớp mắt
@@ -1052,7 +1053,7 @@ vật không khai vẽ đúng nét chung từng nét. Chọn 2–3 số cho mỗ
 | `browTilt` | `0` | `−8..8` | Cộng vào độ nghiêng của mọi kiểu mày, cùng đơn vị `tilt` của `BROWS`: dương nhấc đầu trong (hiền, rụt rè), âm hạ đầu trong (nghiêm, khó tính) | Mọi nét mặt |
 
 - **`lid` ăn ở mắt đang mở**: `wide` và `bulge` chỉ nửa số — trợn là mở to hơn mắt nghỉ. Mắt người dồn nó vào độ
-  nhắm cùng `hood` của dáng ([Mắt người](#mắt-người)); mắt chấm cắt ngang `open`, mắt mở của `wink`, `wide`, `bulge`
+  nhắm cùng `hood` của dáng ([Mắt người](#mắt-người)), `squint` lấy số lớn hơn; mắt chấm cắt ngang `open`, mắt mở của `wink`, `wide`, `bulge`
   (cắt cả lòng trắng), `squint` lấy số lớn hơn giữa `0,5` và `lid`; mắt nhắm, `droopy`, `sly` bỏ qua.
 - **`browTilt` cộng lên cả biểu cảm**: người rụt rè giận thì mày `angry` bớt dữ, người khó tính cười thì mày
   vẫn hơi chau. Đó là chủ ý — nét nghỉ đi theo người qua mọi nét mặt.

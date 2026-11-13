@@ -69,7 +69,11 @@ describe("mi của mắt người", () => {
     expect(eyeLids("open", 1, 0, 1).close).toBe(1);
     expect(eyeLids("open", 1, 0.4).close).toBeCloseTo(0.4);
     expect(eyeLids("wide", 1, 0.4).close).toBeCloseTo(0.2);
-    expect(eyeLids("squint", 1, 0, 0.5).close).toBeCloseTo(1 - 0.58 * (1 - 0.84 * 0.5));
+    expect(eyeLids("squint", 1, 0, 0.5).close).toBeCloseTo(1 - 0.75 * (1 - 0.84 * 0.5));
+    // mắt nheo tự hạ mi tới mức riêng: mi sụp nghỉ lấy số lớn hơn chứ không cộng chồng
+    expect(eyeLids("squint", 1, 0.22).close).toBeCloseTo(0.25);
+    expect(eyeLids("squint", 1, 0.4).close).toBeCloseTo(0.4);
+    expect(eyeLids("open", 1, 0.22).close).toBeCloseTo(0.22);
     // nấc chớp chưa nhắm hẳn còn khe dưới nét mi trên
     expect(eyeLids("open", 1, 0, 7 / 8).close).toBeLessThan(0.75);
     expect(eyeLids("wink", -1).close).toBe(1);

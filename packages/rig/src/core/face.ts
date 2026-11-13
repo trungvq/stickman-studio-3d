@@ -1367,11 +1367,17 @@ export const EYE_LIDS = {
   shut: { close: 1 },
   wide: { open: 1.35, pupil: 0.85 },
   bulge: { open: 1.75, drop: 0.35, iris: 0.82, pupil: 0.55, shine: 0.25 },
-  squint: { close: 0.42, raise: 0.35 },
+  squint: { close: 0.25, raise: 0.2 },
   happy: { close: 1, raise: 1.5 },
   droopy: { close: 0.62 },
   wink: {},
 } satisfies Partial<Record<EyeKind, Partial<EyeLids>>>;
+
+/**
+ * Kiểu mắt tự hạ mi tới một mức riêng: mi sụp nghỉ không cộng chồng lên mức ấy mà lấy số lớn hơn. Cộng chồng thì mắt
+ * nheo của người mí sụp, mày cau khép thành một vạch, mất tròng.
+ */
+const OWN_LID: ReadonlySet<keyof typeof EYE_LIDS> = new Set(["squint"]);
 
 /** `wink`: bên `-1` nhắm cười, bên kia mở với mi dưới nhấc nhẹ */
 const WINK: Record<1 | -1, Partial<EyeLids>> = {
@@ -1443,7 +1449,8 @@ export function eyeLids(
   const r = clamp01(rest) * (st.open > 1 ? WIDE_LID : 1);
   const down = 1 - LOOK.down * clamp01(gaze);
   const b = blink >= 1 ? 1 : BLINK_REACH * clamp01(blink);
-  const close = st.close >= 1 ? 1 : 1 - (1 - st.close) * (1 - r) * (1 - b) * down;
+  const lid = OWN_LID.has(kind) ? 1 - Math.max(st.close, r) : (1 - st.close) * (1 - r);
+  const close = st.close >= 1 ? 1 : 1 - lid * (1 - b) * down;
   const open = st.open * (1 + LOOK.up * clamp01(-gaze));
   return { ...st, close, open, slant: st.slant + ((brow && BROW_SLANT[brow]) ?? 0) };
 }
