@@ -448,6 +448,57 @@ export function humanHair([x, y, z]: V3): V3 {
   return [x + h[0] - d[0], y + h[1] - d[1], z + h[2] - d[2]];
 }
 
+/** Bề dày theo pháp tuyến mà `humanShell` giữ cho vỏ tóc không vượt mức này (sọ đơn vị): khối dày như afro không bị đẩy */
+export const HAIR_CLEAR_CAP = 0.1;
+
+/** `humanShell` tắt dần lực đẩy khi cos góc giữa pháp tuyến và bán kính xuống từ mức sau về mức trước */
+export const HAIR_CLEAR_FOLD = [0.15, 0.3] as const;
+
+/** Pháp tuyến ra ngoài của mặt đầu `human` tại điểm `humanSkull(d)`, `d` trên cầu đơn vị */
+export function humanSkullNormal(d: V3): V3 {
+  const a: V3 = Math.abs(d[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+  const u = unit3(cross3(a, d));
+  const w = cross3(d, u);
+  const e = 1e-4;
+  const at = (x: number, y: number) =>
+    humanSkull(unit3([0, 1, 2].map((i) => d[i] + u[i] * x + w[i] * y) as V3));
+  const [p, q, r, s] = [at(e, 0), at(-e, 0), at(0, e), at(0, -e)];
+  const n = unit3(
+    cross3([p[0] - q[0], p[1] - q[1], p[2] - q[2]], [r[0] - s[0], r[1] - s[1], r[2] - s[2]]),
+  );
+  return n[0] * d[0] + n[1] * d[1] + n[2] * d[2] < 0 ? [-n[0], -n[1], -n[2]] : n;
+}
+
+/**
+ * Điểm `p` của vỏ tóc (sọ đơn vị) trên đầu `human`: dời như `humanHair`, rồi chỗ mặt đầu nghiêng so với bán kính (gáy dưới tai)
+ * đẩy ra theo pháp tuyến cho bề dày theo pháp tuyến đủ bằng độ nhấc (tới `HAIR_CLEAR_CAP`): nhấc theo bán kính thì vỏ mỏng
+ * đi ở đó và mặt tam giác lẹm vào sọ
+ */
+export function humanShell(p: V3): V3 {
+  const at = humanHair(p);
+  const r = Math.hypot(p[0], p[1], p[2]);
+  const lift = r - 1;
+  if (lift <= 0) return at;
+  const d: V3 = [p[0] / r, p[1] / r, p[2] / r];
+  const n = humanSkullNormal(d);
+  const nd = n[0] * d[0] + n[1] * d[1] + n[2] * d[2];
+  // mặt gần song song bán kính là chỗ đáy sọ gập lên (pháp tuyến lật), đẩy ở đó là đâm vào sọ
+  const short =
+    (Math.min(lift, HAIR_CLEAR_CAP) - lift * nd) *
+    smooth01(HAIR_CLEAR_FOLD[0], HAIR_CLEAR_FOLD[1], nd);
+  return short > 0 ? [at[0] + n[0] * short, at[1] + n[1] * short, at[2] + n[2] * short] : at;
+}
+
+const cross3 = (a: V3, b: V3): V3 => [
+  a[1] * b[2] - a[2] * b[1],
+  a[2] * b[0] - a[0] * b[2],
+  a[0] * b[1] - a[1] * b[0],
+];
+const unit3 = (v: V3): V3 => {
+  const k = Math.hypot(v[0], v[1], v[2]) || 1;
+  return [v[0] / k, v[1] / k, v[2] / k];
+};
+
 /** Tâm tai bên `side` (`-1` bên phải người, −x) trên đầu `human`, sọ đơn vị */
 export function humanEar(side: -1 | 1): V3 {
   const { y, z } = HUMAN_HEAD.ear;

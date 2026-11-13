@@ -18,7 +18,7 @@ import { wornSkirt } from './core/skirtShape';
 import { hangsFromHip, matchWrap } from './core/hem';
 import { humanNeckWidth, NECK_BEND } from './core/torso';
 import { setBluntSideburn } from './core/sculpt';
-import { FACE_R, HUMAN_HEAD, humanHair, humanSkull, setHeadShape, SKULL3 } from './core/humanHead';
+import { FACE_R, HUMAN_HEAD, humanHair, humanShell, humanSkull, setHeadShape, SKULL3 } from './core/humanHead';
 import type { GlassesFace } from './core/glasses';
 import { Ankle, earGroup, handRig, humanHeadGeometry, NECK_COLS, neckGeometry, noseGeometry, pelvisGeometry, shoeMesh, type Hand } from './human';
 import { SHOE_CLEAR, shoeCapsule, shoeFit, shoeTuck, type ShoeKind } from './core/shoe';
@@ -383,16 +383,17 @@ function hangHair(p: Vec3): Vec3 {
 
 /**
  * Tóc dựng khối của rig (`pieces.hair.sculpt` trong JSON nhân vật), lưới hệ sọ đơn vị phóng theo khối đầu. Đầu `human`:
- * tóc dời theo sọ (`humanHair`), mặt rủ theo `hangHair`.
+ * vỏ và nét trên vỏ dời theo sọ giữ bề dày (`humanShell`), lọn và búi theo `humanHair`, mặt rủ theo `hangHair`.
  */
 function sculptHair(head: THREE.Object3D, sculpt: Partial<Sculpt>, color: string, human: boolean, hat?: SculptHat, accent?: string) {
   const mesh = sculptMesh(sculpt, { cut: hat?.cut, accent: !!accent });
   if (human || hat?.press) {
     const press = hat?.press ?? ((p: Vec3) => p);
     const bend = (p: number[]) => (human ? humanHair(press(p as Vec3)) : press(p as Vec3));
+    const shell = (p: number[]) => (human ? humanShell(press(p as Vec3)) : press(p as Vec3));
     const hang = (p: number[]) => (human ? hangHair(press(p as Vec3)) : press(p as Vec3));
-    for (const tris of [mesh.shell, mesh.spikes, mesh.hang]) tris.forEach((t, i) => (tris[i] = t.map(tris === mesh.hang ? hang : bend) as typeof t));
-    mesh.lines.forEach((l, i) => (mesh.lines[i] = l.map(bend) as typeof l));
+    for (const tris of [mesh.shell, mesh.spikes, mesh.hang]) tris.forEach((t, i) => (tris[i] = t.map(tris === mesh.hang ? hang : tris === mesh.shell ? shell : bend) as typeof t));
+    mesh.lines.forEach((l, i) => (mesh.lines[i] = l.map(shell) as typeof l));
   }
   // vỏ ngược đánh nhau độ sâu với sọ ngay dưới và bị vỏ tóc che ở lọn nằm sát: nét bóng dáng vẽ ở hậu kỳ
   // màu phụ: một vật liệu màu theo đỉnh, nên chỗ giáp hai màu không có nét như hai vật

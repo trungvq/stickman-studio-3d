@@ -71,6 +71,10 @@ function hairLines(s: Sculpt, lines: Vec3[][]) {
   }
 }
 
+/** Hàng của vỏ đếm từ chân tóc (`NJ` hàng tới đỉnh), `SHELL_FINE` hàng đầu chia đôi: đầu `human` gập ở gáy ngay trên chân tóc, hàng thưa thì mặt tam giác lẹm vào sọ */
+const SHELL_FINE = 4;
+const SHELL_ROWS = [...Array.from({ length: 2 * SHELL_FINE }, (_, k) => k / 2), ...Array.from({ length: NJ - SHELL_FINE + 1 }, (_, k) => SHELL_FINE + k)];
+
 /**
  * Lưới tóc trong hệ sọ đơn vị (y lên, z ra trước mặt), đầu thẳng: `shell` vỏ và vách chân tóc, `spikes` lọn gai,
  * đuôi ngựa và búi, `hang` mặt rủ, mỗi phần là dãy tam giác; `lines` nét trên mặt vỏ (ngôi, nét cắt, khe búp xoăn).
@@ -130,7 +134,7 @@ export function sculptMesh(raw: Partial<Sculpt>, { cut, accent = false }: { cut?
       def.crown ? step(0, CROWN_EASE, lat - low) * step(0, CROWN_EASE, high - lat) : rowEase(j, s.style);
     const shell: Vec3[] = [];
     const f = accent ? accentAt(s, lon) : 0;
-    for (let j = 0; j <= NJ; j++) {
+    for (const j of SHELL_ROWS) {
       const u = !accent ? j / NJ : j <= band ? (f * j) / band : f + ((1 - f) * (j - band)) / (NJ - band);
       const lat = accent ? low + (high - low) * u : low + ((high - low) * j) / NJ;
       shell.push(temple(onSkull(lon, lat, shellLift(s, lon, lat, rowE(lat, accent ? u * NJ : j), base)), lat));
@@ -147,13 +151,13 @@ export function sculptMesh(raw: Partial<Sculpt>, { cut, accent = false }: { cut?
     const [A, B] = [cols[i], cols[i + 1]];
     if (!clad(i)) continue;
     const lit = A.f > 0 || B.f > 0;
-    for (let j = 0; j < NJ; j++) {
-      quad(out.shell, [A.shell[j], B.shell[j], B.shell[j + 1], A.shell[j + 1]]);
-      mark(lit && j < band);
+    for (let k = 0; k + 1 < SHELL_ROWS.length; k++) {
+      quad(out.shell, [A.shell[k], B.shell[k], B.shell[k + 1], A.shell[k + 1]]);
+      mark(lit && SHELL_ROWS[k] < band);
     }
     if (!(A.hang && B.hang)) quad(out.shell, [A.skin, A.shell[0], B.shell[0], B.skin]);
     mark(lit);
-    if (def.crown) quad(out.shell, [A.top, A.shell[NJ], B.shell[NJ], B.top]);
+    if (def.crown) quad(out.shell, [A.top, A.shell[SHELL_ROWS.length - 1], B.shell[SHELL_ROWS.length - 1], B.top]);
     mark(false);
   }
   if (accent) out.tone = tone;

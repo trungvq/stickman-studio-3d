@@ -7,7 +7,9 @@ import {
   headShape,
   humanEar,
   humanHair,
+  humanShell,
   humanSkull,
+  humanSkullNormal,
   setHeadShape,
   withHeadShape,
 } from "./humanHead";
@@ -122,6 +124,30 @@ describe("đầu human", () => {
       const skull = humanSkull(d);
       hair.forEach((v, i) => expect(v - skull[i]).toBeCloseTo(0.08 * d[i], 12));
     }
+  });
+
+  it("vỏ tóc giữ bề dày theo pháp tuyến ở gáy dưới tai, đỉnh đầu như `humanHair`", () => {
+    const D = Math.PI / 180;
+    const at = (lon: number, lat: number) =>
+      unit(
+        Math.cos(lat * D) * Math.sin(lon * D),
+        Math.sin(lat * D),
+        Math.cos(lat * D) * Math.cos(lon * D),
+      );
+    for (const face of ["anime", "asian"] as const)
+      withHeadShape({ face }, () => {
+        for (const lon of [-133, 133]) {
+          const d = at(lon, -18);
+          const n = humanSkullNormal(d);
+          expect(n[0] * d[0] + n[1] * d[1] + n[2] * d[2]).toBeLessThan(0.9);
+          const h = humanSkull(d);
+          const p = humanShell([d[0] * 1.021, d[1] * 1.021, d[2] * 1.021]);
+          const clear = (p[0] - h[0]) * n[0] + (p[1] - h[1]) * n[1] + (p[2] - h[2]) * n[2];
+          expect(clear).toBeGreaterThan(0.021 * 0.97);
+        }
+        const top = at(20, 70).map((v) => v * 1.05) as [number, number, number];
+        humanShell(top).forEach((v, i) => expect(v).toBeCloseTo(humanHair(top)[i], 3));
+      });
   });
 
   it("tai hai bên đối xứng, nằm trên má sau tâm sọ", () => {

@@ -1793,8 +1793,12 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
   mồm anime ([Mồm anime](#mồm-anime)), mày nhấc `3` px. Cỡ mắt, độ bóp và đốm sáng nhân theo [nét mặt riêng](#nét-mặt-riêng) của
   nhân vật. Má ửng theo `face.blush` của nhân vật,
   không theo dáng đầu — [Má ửng](#má-ửng).
-- **Tóc dựng khối dời theo sọ.** Mỗi đỉnh tóc dời đúng bằng điểm sọ bên dưới nó (`humanHair`): tóc
-  giữ bề dày, gáy thu thì tóc gáy thu theo. Mặt rủ thì dời bằng chân nó ở chỗ rời sọ (hướng ngang qua
+- **Tóc dựng khối dời theo sọ.** Mỗi đỉnh tóc dời đúng bằng điểm sọ bên dưới nó (`humanHair`): gáy
+  thu thì tóc gáy thu theo. Vỏ tóc và nét trên vỏ đi qua `humanShell`: chỗ mặt đầu nghiêng so với bán
+  kính (gáy dưới tai) đỉnh vỏ đẩy thêm theo pháp tuyến cho bề dày theo pháp tuyến bằng độ nhấc, tới
+  `HAIR_CLEAR_CAP`; mặt gần song song bán kính (đáy sọ gập lên, `HAIR_CLEAR_FOLD`) thì không đẩy. Bốn hàng
+  vỏ sát chân tóc chia đôi (`SHELL_FINE`): khúc gập ở gáy nằm ngay trên chân tóc, mặt tam giác thưa lẹm vào
+  sọ thành vệt da. Lọn, búi, đuôi ngựa giữ `humanHair`. Mặt rủ thì dời bằng chân nó ở chỗ rời sọ (hướng ngang qua
   đỉnh), cộng phần sọ đẩy ra theo phương ngang: tóc rủ không xuyên quai hàm, mà sau gáy vẫn buông thẳng
   chứ không bị kéo vào cổ. Kính và `headFit` đọc nửa
   trên nên như đầu cầu. Tai ẩn khi tóc phủ chỗ tai (tia từ ngoài vào tâm tai chạm vỏ tóc hay tóc rủ).
