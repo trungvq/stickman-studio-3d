@@ -97,6 +97,14 @@ describe('áo cổ chéo dựng khối', () => {
     }
   });
 
+  it('da trong miệng cổ là một tấm `neck`, cổ chéo hay vạt mở', () => {
+    for (const w of [full, { band: 8, open: { gap: 10 } }]) {
+      const skin = mesh(w).sheets.filter((s) => s.color === 'skin');
+      expect(skin.length).toBe(1);
+      expect(skin[0].neck).toBe(true);
+    }
+  });
+
   it('khối đai, dây, khoá, nút kín và quấn ra ngoài', () => {
     for (const knot of OBI_KNOTS) {
       const t = mesh({ ...full, obi: { ...full.obi, knot } });

@@ -124,6 +124,30 @@ function bodyGeometry(profile: [number, number][], depth: number[], cut?: number
 }
 
 /** Lưới tấm cột × hàng thành mesh hai mặt. */
+/**
+ * Quấn tam giác của tấm ra ngoài thân (ra trước, ra sau, lên trên): vật liệu hai mặt lật pháp tuyến theo mặt nhìn thấy, pháp
+ * tuyến toả từ trục cổ của người `human` mà gặp mặt quấn vào trong thì lật vào trong và tấm tối đi
+ */
+function windOut(g: THREE.BufferGeometry) {
+  const P = g.attributes.position, idx = g.index!;
+  const [a, b, c, n, o] = [0, 0, 0, 0, 0].map(() => new THREE.Vector3());
+  let sum = 0;
+  for (let i = 0; i < idx.count; i += 3) {
+    a.fromBufferAttribute(P, idx.getX(i));
+    b.fromBufferAttribute(P, idx.getX(i + 1));
+    c.fromBufferAttribute(P, idx.getX(i + 2));
+    n.subVectors(b, a).cross(o.subVectors(c, a));
+    o.addVectors(a, b).add(c).setY(0).normalize();
+    sum += n.dot(o.setY(1));
+  }
+  if (sum >= 0) return g;
+  const arr = idx.array as Uint16Array | Uint32Array;
+  for (let i = 0; i < arr.length; i += 3) [arr[i + 1], arr[i + 2]] = [arr[i + 2], arr[i + 1]];
+  idx.needsUpdate = true;
+  g.computeVertexNormals();
+  return g;
+}
+
 function sheetGeometry(grid: Vec3[][]) {
   const rows = grid[0].length;
   const pos = grid.flatMap((col) => col.flatMap((p) => v3(p).toArray()));
@@ -342,6 +366,15 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
   }
   for (const s of t.sheets) {
     if (!s.grid.some((col) => col.some(shown))) continue;
+    if (s.neck && skin) {
+      const sm = new THREE.Mesh(windOut(sheetGeometry(s.grid)), npr({ ...skinLook(skin), doubleSided: true }));
+      sm.userData.noShadow = true;
+      sm.userData.noCollide = true;
+      sm.userData.inkSkip = skinFill ? [m, skinFill] : m;
+      sm.userData.neckFill = true;
+      add(sm);
+      continue;
+    }
     const sm = new THREE.Mesh(sheetGeometry(s.grid), npr({ color: colorOf(s.color, pal), stipple: 0.04, soft: 1, doubleSided: true }));
     sm.castShadow = true;
     add(sm);

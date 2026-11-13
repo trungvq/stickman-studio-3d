@@ -42,8 +42,15 @@ export interface WrapBody {
 }
 
 export interface WrapParts {
-  /** Tấm lưới cột × hàng, hàng `rims` có nét viền */
-  sheets: { grid: Vec3[][]; rims: number[]; color: MarkFill; line: number; ink?: number }[];
+  /** Tấm lưới cột × hàng, hàng `rims` có nét viền; `neck` là da trong miệng cổ */
+  sheets: {
+    grid: Vec3[][];
+    rims: number[];
+    color: MarkFill;
+    line: number;
+    ink?: number;
+    neck?: true;
+  }[];
   /** Khối kín: điểm, chỉ số tam giác quấn ra ngoài (hệ thân, `y` xuống) */
   solids: { pts: Vec3[]; tris: number[]; color: MarkFill }[];
   /** Chữ trên dải cổ */
@@ -321,6 +328,7 @@ export function wrapParts(b: WrapBody, w: Wrap): WrapParts {
       rims: [],
       color: "skin",
       line: 0,
+      neck: true,
     });
   };
   /** Chữ dọc trên dải cổ bên `k` (`1` trái người mặc), `at(y, d)` là điểm cách mép vạt `d` px */

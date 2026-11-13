@@ -37,8 +37,11 @@ export interface TorsoMesh {
    */
   fills: { pts: Vec3[]; tris: number[]; fill: MarkFill; decal?: { lift: number; normals: Vec3[] }; skin?: boolean; ink?: number; neck?: boolean }[];
   dots: { p: Vec3; k: number }[];
-  /** Tấm nổi khối (cổ bẻ, viền gân, mũ trùm, dải cổ chéo): lưới cột × hàng, hàng `rims` có nét viền */
-  sheets: { grid: Vec3[][]; rims: number[]; color: MarkFill; line: number; ink?: number }[];
+  /**
+   * Tấm nổi khối (cổ bẻ, viền gân, mũ trùm, dải cổ chéo): lưới cột × hàng, hàng `rims` có nét viền. `neck`: da trong miệng
+   * cổ (cổ chéo), dựng như `fills[].neck`
+   */
+  sheets: { grid: Vec3[][]; rims: number[]; color: MarkFill; line: number; ink?: number; neck?: true }[];
   /**
    * Khối kín (đai, dây buộc, khoá, nút đai): tam giác quấn ra ngoài trong hệ thân `y` xuống. Có `ink` là đồ nhỏ (trang sức):
    * vỏ viền dày bấy nhiêu px, không nét hậu kỳ (`userData.noEdge`)

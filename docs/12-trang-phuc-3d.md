@@ -865,7 +865,9 @@ Số khác áo phông: `ease: 10`, `fit: 0.85`, `waist: 2`, `hem: 5`, `neck: 18`
 - **Da trong miệng cổ** là tấm lưới màu da nhân vật nổi `1` px, từ mép vạt lên tới mép trên khối:
   phía trước là chữ V, quanh gáy là dải trên viền cổ. Hàng lưới dày (`33` hàng): mặt cắt dọc gãy
   khúc ở mép mặt vát, hàng thưa thì dây cung chui xuống dưới mặt khối và nét bóng dáng của thân lòi
-  qua thành vệt.
+  qua thành vệt. Người 3D dựng tấm này như da trong miệng cổ của thân (`neck` của tấm): vật liệu ống cổ, không đổ bóng;
+  người `human` thì chung vật liệu nét, mã vật với ống cổ và pháp tuyến nằm ngang toả từ trục cổ như mặt cổ, nên phần da
+  phủ trên vai không hứng đèn sáng hơn cổ thành vòng quanh chân cổ.
 - **Đai** (帯) là khối vòng kín ôm thân, tâm cao hơn hông `y · rig.height`, bản rộng
   `width · rig.height`. Tiết diện ngang là ellipse nửa rộng, nửa sâu lớn nhất của khối trong bản
   đai cộng `lift` (đai là trụ, không theo eo lõm), tiết diện dọc là chữ nhật bo góc từ `2` px trong
