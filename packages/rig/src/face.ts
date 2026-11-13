@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { newCanvas, path2D } from './canvas';
 import { DEFAULT_FACE } from './core/constants';
-import { blushLevel, blushMarks, browMarks, CHIBI, chibiShape, EYE_R, eyeBlink, eyeMarks, eyeShape, faceRest, humanMouthMarks, humanMouthTop, lookStep, mouthMark, mouthPose, mouthShape, mouthStep, moustacheMark, moustacheTop, wrinkleMarks, type FaceInk, type FaceMark, type FaceRest, type EyeShape, type EyeShapeKind, type Look, type MouthShape, type MouthShapeKind, type MoustacheSpec, type WrinkleSpec } from './core/face';
+import { blushLevel, blushMarks, browMarks, CHIBI, chibiShape, EYE_R, eyeBlink, eyeMarks, eyeShape, faceRest, humanMouthGlyph, humanMouthMarks, humanMouthTop, lookStep, mouthMark, mouthPose, mouthShape, mouthStep, moustacheMark, moustacheTop, wrinkleMarks, type FaceInk, type FaceMark, type FaceRest, type EyeShape, type EyeShapeKind, type Look, type MouthShape, type MouthShapeKind, type MoustacheSpec, type WrinkleSpec } from './core/face';
 import { FACE_R, faceSurface } from './core/humanHead';
 import type { FaceState } from './core/types';
 
@@ -10,7 +10,7 @@ import type { FaceState } from './core/types';
 
 /** `face.wrinkle` của JSON nhân vật */
 export type Wrinkle = WrinkleSpec;
-/** `face` của JSON nhân vật, px của đầu cao 130; `blush` là má ửng nền `0..1`, nét mặt nghỉ theo `FACE_REST`, dáng mắt người `eyeShape` với số đè `eye`, dáng mồm người `mouthShape` với số đè `mouth`; `beard` là râu (đã qua zod) */
+/** `face` của JSON nhân vật, px của đầu cao 130; `blush` là má ửng nền `0..1`, nét mặt nghỉ theo `FACE_REST`, dáng mắt người `eyeShape` với số đè `eye`, dáng mồm anime `mouthShape` với số đè `mouth`; `beard` là râu (đã qua zod) */
 export interface FaceShape extends Partial<FaceRest> { offsetY: number; eyeGap: number; mouthGap: number; wrinkle?: Wrinkle; blush?: number; eyeShape?: EyeShapeKind; eye?: Partial<EyeShape>; mouthShape?: MouthShapeKind; mouth?: Partial<MouthShape>; beard?: { moustache?: MoustacheSpec } }
 
 const SHAPE: FaceShape = { offsetY: 0, eyeGap: 26, mouthGap: 34 };
@@ -95,7 +95,7 @@ export interface FaceRig {
 /**
  * Lớp nét mặt cho sọ bán kính `r` (three), cùng tỉ lệ `scale` với khối sọ. Mặt hướng +z, `y` lên; px đầu đổi ra
  * three theo `r / FACE_R`. Lưới dời lên khỏi mặt sọ một chút để khỏi lẫn độ sâu. `human`: dán trên đầu `humanSkull`, nét
- * mặt chibi (`CHIBI`) với mắt người dáng `shape.eyeShape`, cỡ mắt và đốm theo `FACE_REST` của `shape`, mồm người dáng `shape.mouthShape` chuyển qua các nấc của `state.mouthTween` (bỏ trống là mồm chibi). Má ửng `shape.blush` cộng `state.blush`, màu suy từ da `skin`.
+ * mặt chibi (`CHIBI`) với mắt người dáng `shape.eyeShape`, cỡ mắt và đốm theo `FACE_REST` của `shape`, mồm anime dáng `shape.mouthShape` chuyển qua các nấc của `state.mouthTween` (bỏ trống là mồm chibi). Má ửng `shape.blush` cộng `state.blush`, màu suy từ da `skin`.
  * Ria mép `shape.beard.moustache` vẽ trên lớp mồm theo khẩu hình, màu bỏ trống là `hair`.
  */
 export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShape> = {}, state: FaceState = DEFAULT_FACE, human = false, skin = '#f0d9b8', hair = '#2a1c15'): FaceRig {
@@ -131,14 +131,17 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
   const v = lips ? mouthSquash(r, scale, mouthCy) : 1;
   const drawMouth = (s: FaceState) => {
     const g = mouth.begin(), pose = lips && mouthPose(s.mouth, s.mouthTween);
-    // mồm người nén dọc `v` cho đúng tỉ lệ khi dán lên mặt; ký hiệu manga và ria phóng theo `CHIBI`
-    if (pose) paintAt(g, [humanMouthMarks(lips!, pose, 0, mouthCy, skin)], v, 0, mouthCy, 1 / v);
-    const marks = pose ? [] : [mouthMark(s.mouth, 0, mouthCy)];
-    if (tash) marks.push(moustacheMark(tash, pose ? (humanMouthTop(lips!, pose) * v) / mk : s.mouth, 0, mouthCy, tash.color ?? hair));
+    // mồm anime nén dọc `v` cho đúng tỉ lệ khi dán lên mặt (cả nét riêng); mồm chibi và ria phóng theo `CHIBI`
+    const glyph = lips && !pose ? humanMouthGlyph(s.mouth, lips, 0, mouthCy) : undefined;
+    if (pose) paintAt(g, [humanMouthMarks(lips!, pose, 0, mouthCy)], v, 0, mouthCy, 1 / v);
+    else if (glyph) paintAt(g, [glyph], v, 0, mouthCy, 1 / v);
+    const marks = pose || glyph ? [] : [mouthMark(s.mouth, 0, mouthCy)];
+    const top = pose ? humanMouthTop(lips!, pose) : glyph ? -6 : undefined;
+    if (tash) marks.push(moustacheMark(tash, top !== undefined ? (top * v) / mk : s.mouth, 0, mouthCy, tash.color ?? hair));
     paintAt(g, marks, mk, 0, mouthCy, human ? CHIBI.mouthWide : 1);
     mouth.tex.needsUpdate = true;
   };
-  /** Khoá vẽ lại của canvas mồm: khẩu hình, hay lần chuyển ở nấc `mouthStep` (chỉ mồm người) */
+  /** Khoá vẽ lại của canvas mồm: khẩu hình, hay lần chuyển ở nấc `mouthStep` (chỉ mồm anime) */
   const mouthKey = (s: FaceState) => {
     const tw = lips && s.mouthTween;
     return tw && tw.from !== tw.to ? `${tw.from}>${tw.to}@${mouthStep(tw.f)}` : s.mouth;
@@ -180,7 +183,7 @@ export function faceRig(r: number, scale: THREE.Vector3, shape: Partial<FaceShap
 
 /**
  * Mặt người dài hơn mặt cầu nên lớp nét mặt giãn dọc ở vùng mồm: một px dọc quanh tâm mồm `cy` dài bấy nhiêu lần px ngang
- * trên hình nhìn thẳng (đã nhân tỉ lệ sọ `scale`). Mồm người nén dọc theo nghịch đảo của nó.
+ * trên hình nhìn thẳng (đã nhân tỉ lệ sọ `scale`). Mồm anime nén dọc theo nghịch đảo của nó.
  */
 function mouthSquash(r: number, scale: THREE.Vector3, cy: number) {
   const d = 0.5, [x0, y0] = faceSurface(0, cy, r, true), [x1] = faceSurface(d, cy, r, true), [, y1] = faceSurface(0, cy + d, r, true);

@@ -4,7 +4,7 @@ import { figureOf, HEAD_Y, headOnly, ROWS } from './demo-eyes.js';
 import { textPlane } from './demo-eyes-play.js';
 import { SETS } from './demo-mouths-human.js';
 
-// Mồm người diễn theo `t` (`?demo=mouths-play`): bốn dáng mồm nhìn thẳng và quay 3/4 nói 「こんにちは、みなさん。げんきですか？」
+// Mồm anime diễn theo `t` (`?demo=mouths-play`): bốn dáng mồm nhìn thẳng và quay 3/4 nói 「こんにちは、みなさん。げんきですか？」
 // theo nguyên âm (あ talkA, い talkI, う talkU, え talkE, お talkO, ん và âm môi talkM, tiếng nhấn talkB), rồi lần lượt
 // qua các biểu cảm. Khẩu hình đi qua một hành động thật (`actionFace`), nên chỗ đổi khẩu hình có các nấc chuyển
 // `MOUTH_MIX`. Khung ống kính: `az=0&el=0&look=-0.25,3.2,0&dist=5.6`.

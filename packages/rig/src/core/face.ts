@@ -217,6 +217,17 @@ const cheek = (cx: number, cy: number, x: number, s: 1 | -1): FaceMark => ({
   ...THIN,
 });
 
+/** Chữ `3` của môi chu (thổi, huýt sáo) */
+function chibiThree(): MouthDef {
+  return {
+    extent: { top: -7, bottom: 7 },
+    marks: (cx, cy) => ({
+      path: `M ${cx - 2} ${cy - 6} Q ${cx + 4} ${cy - 6} ${cx + 3} ${cy - 2} Q ${cx + 2} ${cy} ${cx - 1} ${cy} Q ${cx + 2} ${cy} ${cx + 3} ${cy + 2} Q ${cx + 4} ${cy + 6} ${cx - 2} ${cy + 6}`,
+      ...LINE,
+    }),
+  };
+}
+
 /** Khẩu hình: thứ tự khoá là thứ tự của `MOUTH_KINDS` */
 export const MOUTHS = {
   closed: {
@@ -407,6 +418,57 @@ export const MOUTHS = {
       ],
     }),
   },
+  // kiểu thêm cho mồm anime (9.2); mồm chibi vẽ phỏng theo
+  laugh: talk(13, -4.5, 8, -3, 4),
+  beam: {
+    extent: { top: -5, bottom: 15 },
+    marks: (cx, cy) => {
+      const w = 18;
+      const d = `M ${cx - w} ${cy - 5} Q ${cx} ${cy + 25} ${cx + w} ${cy - 5} Z`;
+      return {
+        group: [
+          { clip: d },
+          { path: d, fill: CAVITY },
+          { ellipse: [cx, cy + 12, 9, 5], fill: TONGUE, clipped: true },
+          { rect: [cx - w, cy - 7, w * 2, 9], fill: TOOTH, clipped: true },
+          { path: d, ...RIM },
+        ],
+      };
+    },
+  },
+  wobble: {
+    extent: { top: -4, bottom: 4 },
+    marks: (cx, cy) => ({
+      path: `M ${cx - 11} ${cy + 3} C ${cx - 8} ${cy - 3} ${cx - 5} ${cy - 3} ${cx - 2} ${cy} C ${cx + 1} ${cy + 2} ${cx + 4} ${cy - 4} ${cx + 11} ${cy + 3}`,
+      ...LINE,
+    }),
+  },
+  cry: sad(true),
+  wail: oval(12, 13, 2, -3, 6),
+  gasp: oval(13, 12, 1, -3, 6),
+  scared: sad(false),
+  sigh: oval(4.5, 4, 1, -3, 0),
+  yawn: oval(10, 15, 3, -3, 7),
+  blow: chibiThree(),
+  whistle: chibiThree(),
+  chew: {
+    extent: { top: -2, bottom: 2 },
+    marks: (cx, cy) => ({
+      group: [
+        { path: `M ${cx - 10} ${cy} Q ${cx} ${cy + 1.5} ${cx + 9} ${cy - 0.5}`, ...LINE },
+        cheek(cx, cy, 12, 1),
+      ],
+    }),
+  },
+  lick: {
+    extent: { top: -3, bottom: 10 },
+    marks: (cx, cy) => ({
+      group: [
+        { ellipse: [cx + 5, cy + 5, 4, 4.5], ...RIM, fill: TONGUE },
+        { path: `M ${cx - 13} ${cy - 3} Q ${cx} ${cy + 11} ${cx + 13} ${cy - 3}`, ...LINE },
+      ],
+    }),
+  },
 } satisfies Record<string, MouthDef>;
 
 /** Nét mồm tâm `(cx, cy)` */
@@ -437,7 +499,7 @@ const MOUSTACHE_STEPS = 10;
 /**
  * Ria mép trên khẩu hình `kind` tâm `(cx, cy)`: dải nửa rộng `width`, dày `thick` ở giữa, thon về hai đầu còn `taper`
  * lần; đường giữa dải cong parabol, hai đầu thấp hơn giữa `droop`; mép dưới ở giữa cách mép trên của khẩu hình `gap` —
- * mồm há thì ria nhích lên theo. `kind` là số thì đó là mép trên của mồm (mồm người, `humanMouthTop`). `part` hở giữa
+ * mồm há thì ria nhích lên theo. `kind` là số thì đó là mép trên của mồm (mồm anime, `humanMouthTop`). `part` hở giữa
  * nhân trung bấy nhiêu px. Tô `color`, viền mực `line`.
  * docs/01-rig.md#ria-mép
  */
@@ -477,10 +539,10 @@ export function moustacheTop(m: MoustacheSpec) {
 }
 
 /**
- * Dáng mồm người của đầu `human`, px nét mặt: nửa rộng lúc nghỉ `half`; đường môi ngậm dày `line` ở giữa; há hết cỡ cao
- * `open`; độ tròn chỗ hở `round` (`0` dẹt nhọn khoé, `1` bầu dục); khoé lên xuống hết cỡ `lift`, trễ nghỉ `droop`; dải
- * răng cao `teeth`. Màu môi `tint` (`0` không), môi trên / dưới dày `upper` / `lower`; bóng dưới môi dưới đậm `under`;
- * nếp ở khoé dài `fold` (`0` không). docs/01-rig.md#mồm-người
+ * Dáng mồm anime của đầu `human`, px nhìn thấy: nửa rộng nét ngậm `half`; nét ngậm dày `line`; há hết cỡ cao `open`;
+ * khoang tròn thêm `round` (`0..1`, cộng vào `round` của khẩu hình); khoé lên xuống hết cỡ `lift` (`corner ±1`), trễ lúc
+ * nghỉ `droop`; dải răng cao `teeth`. Màu môi `tint` (`0` không): nét và viền ngả về đỏ môi; nếp ở khoé dài `fold`
+ * (`0` không). docs/01-rig.md#mồm-anime
  */
 export interface MouthShape {
   half: number;
@@ -491,69 +553,54 @@ export interface MouthShape {
   droop: number;
   teeth: number;
   tint: number;
-  upper: number;
-  lower: number;
-  under: number;
   fold: number;
 }
 
-/** Bảng dáng mồm người: thứ tự khoá là thứ tự của `MOUTH_SHAPE_KINDS` */
+/** Bảng dáng mồm anime: thứ tự khoá là thứ tự của `MOUTH_SHAPE_KINDS` */
 export const MOUTH_SHAPES = {
   male: {
-    half: 13.5,
-    line: 1.6,
-    open: 22,
+    half: 14,
+    line: 2.3,
+    open: 32,
     round: 0,
-    lift: 4.4,
+    lift: 4.2,
     droop: 0,
-    teeth: 4.6,
+    teeth: 5.5,
     tint: 0,
-    upper: 0,
-    lower: 0,
-    under: 0.12,
     fold: 0,
   },
   female: {
-    half: 12,
-    line: 1.3,
-    open: 20,
+    half: 12.5,
+    line: 2.1,
+    open: 29,
     round: 0.1,
-    lift: 4.2,
+    lift: 4,
     droop: 0,
-    teeth: 4.2,
-    tint: 0.5,
-    upper: 1.4,
-    lower: 3,
-    under: 0,
+    teeth: 5,
+    tint: 0.55,
     fold: 0,
   },
   child: {
-    half: 9.5,
-    line: 1.4,
-    open: 19,
-    round: 0.45,
+    half: 11,
+    line: 2.1,
+    open: 28,
+    round: 0.3,
     lift: 3.6,
     droop: 0,
-    teeth: 3.8,
-    tint: 0,
-    upper: 0,
-    lower: 0,
-    under: 0.1,
+    teeth: 4.5,
+    tint: 0.2,
     fold: 0,
   },
   elder: {
-    half: 13.5,
-    line: 1.4,
-    open: 19,
+    half: 14,
+    line: 2.1,
+    open: 27,
     round: 0,
-    lift: 3.6,
+    lift: 3.4,
     droop: 2,
-    teeth: 4.2,
+    teeth: 4.8,
     tint: 0,
-    upper: 0,
-    lower: 0,
-    under: 0.15,
-    fold: 4,
+    fold: 4.5,
   },
 } satisfies Record<string, MouthShape>;
 
@@ -569,73 +616,166 @@ export function mouthShape(kind: MouthShapeKind, over: Partial<MouthShape> = {})
 }
 
 /**
- * Khẩu hình người là một bộ số chung mọi dáng mồm: độ há `open` (`0..1` của `open` của dáng), bề ngang `wide` lần, khoé
- * `corner` (`1` lên hết `lift`, âm là xuống), chu môi `pucker` `0..1` (hẹp và tròn), lộ răng trên / dưới `upper` /
- * `lower` `0..1`, nhếch khoé `+x` `skew`, mím `press` `0..1`, bĩu `pout` `0..1`
+ * Khẩu hình anime là một bộ số chung mọi dáng mồm: độ há `open` (`0..1` của `open` của dáng), bề ngang `wide` lần `half`,
+ * khoé `corner` (`1` lên hết `lift`, âm là xuống), phần độ há nằm trên đường khoé `up` (`0` chữ D đáy tròn, `1` chữ D
+ * úp — mếu), khoang tròn `round` (`0` thấu kính nhọn khoé, `1` bầu dục hay hộp bo), đáy nở `flare` (hình thang của quát,
+ * hét), cả khối hạ xuống `drop` phần độ há (chữ D úp to: mép trên vòm mà không chạm mũi), eo giữa `pinch` (hai đầu bè
+ * hơn giữa — nghiến), răng trên / dưới `upper` / `lower` (`0..1` của `teeth`, mép răng phẳng, chỉ vẽ khi chỗ hở từ
+ * `TEETH_MIN`), lưỡi `tongue` `0..1`, gợn sóng `wave` (mếu, run, nhăn), nhếch khoé `+x` `skew`, mím `press` `0..1`, răng
+ * nanh `fang` `0..1`
  */
 export interface MouthPose {
   open: number;
   wide: number;
   corner: number;
-  pucker: number;
+  up: number;
+  round: number;
+  flare: number;
+  drop: number;
+  pinch: number;
   upper: number;
   lower: number;
+  tongue: number;
+  wave: number;
   skew: number;
   press: number;
-  pout: number;
+  fang: number;
 }
 
 const MOUTH_REST: MouthPose = {
   open: 0,
   wide: 1,
   corner: 0,
-  pucker: 0,
+  up: 0.3,
+  round: 0.5,
+  flare: 0,
+  drop: 0,
+  pinch: 0,
   upper: 0,
   lower: 0,
+  tongue: 0,
+  wave: 0,
   skew: 0,
   press: 0,
-  pout: 0,
+  fang: 0,
 };
 
 /**
- * Khẩu hình vẽ bằng mồm người trên đầu `human`; `pain`, `puffed`, `fang`, `wry` không có ở đây, giữ ký hiệu manga của
- * `MOUTHS`
+ * Khẩu hình vẽ bằng mồm anime trên đầu khai `face.mouthShape`. Kiểu không có ở đây là nét vẽ riêng (`MOUTH_GLYPHS`).
+ * Nhóm theo bảng tham chiếu: cơ bản, nói theo nguyên âm, cười, buồn, giận, ngạc nhiên.
  */
 export const MOUTH_POSES = {
+  // cơ bản — răng chỉ có ở cười lớn, rạng rỡ, nghiến, quát, hét như bảng tham chiếu
   closed: {},
-  parted: { open: 0.12, wide: 0.85 },
-  talkTeeth: { open: 0.34, wide: 1.06, upper: 1, lower: 1 },
-  talkA: { open: 0.55, upper: 0.7 },
-  talkB: { open: 0.8, wide: 1.05, upper: 0.75 },
-  talkO: { open: 0.6, pucker: 0.6, upper: 0.4 },
-  talkSadA: { open: 0.3, corner: -0.45, upper: 0.7 },
-  talkSadB: { open: 0.5, corner: -0.45, upper: 0.7 },
-  talkAngryA: { open: 0.38, wide: 1.08, corner: -0.55, upper: 1, lower: 0.7 },
-  talkAngryB: { open: 0.72, wide: 1.12, corner: -0.6, upper: 1, lower: 0.35 },
-  smile: { wide: 1.08, corner: 1 },
-  frown: { wide: 0.95, corner: -1 },
-  grit: { open: 0.46, wide: 1.25, corner: -0.7, upper: 1, lower: 1 },
-  grin: { open: 0.55, wide: 1.2, corner: 1, upper: 1 },
-  wryOpen: { open: 0.42, corner: 0.15, upper: 0.85, skew: 0.7 },
-  pursed: { wide: 0.92, skew: 0.25, press: 1 },
-  meh: { corner: -0.15, skew: 0.35 },
-  smirk: { wide: 0.95, corner: 0.05, skew: 1 },
-  o: { open: 0.5, pucker: 0.85, upper: 0.3 },
-  wide: { open: 0.75, pucker: 0.45, upper: 0.5 },
-  shout: { open: 1, wide: 1.3, corner: -0.45, upper: 0.9, lower: 0.3 },
-  talkI: { open: 0.3, wide: 1.12, corner: 0.2, upper: 1, lower: 1 },
-  talkU: { open: 0.18, pucker: 0.9, upper: 0.3 },
-  talkE: { open: 0.4, wide: 1.08, upper: 0.85, lower: 0.35 },
-  talkM: { press: 0.6 },
-  pout: { wide: 0.86, corner: -0.55, press: 0.3, pout: 1 },
+  parted: { open: 0.25, wide: 0.6, up: 0.45, round: 1 },
+  talkM: { wide: 1, press: 0.7 },
+  // nói
+  talkA: { open: 0.44, wide: 0.96, up: 0.45, round: 0.85, tongue: 0.7 },
+  talkB: { open: 0.85, wide: 1.25, up: 0.4, round: 0.85, tongue: 0.8 },
+  talkI: { open: 0.22, wide: 1, corner: 0.1, up: 0.4, round: 0.7, tongue: 0.3 },
+  talkU: { open: 0.25, wide: 0.2, up: 0.45, round: 1, tongue: 0.3 },
+  talkE: { open: 0.34, wide: 0.93, up: 0.4, round: 0.7, tongue: 0.5 },
+  talkO: { open: 0.6, wide: 0.57, up: 0.45, round: 1, tongue: 0.6 },
+  talkTeeth: { open: 0.28, wide: 0.86, corner: 0.2, up: 0, round: 0.75, tongue: 0.5 },
+  talkSadA: { open: 0.3, wide: 1, corner: -0.1, up: 0.9, drop: 0.3, round: 0.8, tongue: 0.6 },
+  talkSadB: { open: 0.45, wide: 1.14, corner: -0.1, up: 0.9, drop: 0.3, round: 0.8, tongue: 0.7 },
+  talkAngryA: {
+    open: 0.56,
+    wide: 1.07,
+    corner: -0.1,
+    up: 0.8,
+    drop: 0.35,
+    round: 0.7,
+    flare: 0.15,
+    upper: 0.9,
+    tongue: 0.7,
+  },
+  talkAngryB: {
+    open: 0.8,
+    wide: 1.3,
+    corner: -0.1,
+    up: 0.75,
+    drop: 0.4,
+    round: 0.7,
+    flare: 0.2,
+    upper: 0.9,
+    lower: 0.3,
+    tongue: 0.8,
+  },
+  // cười
+  smile: { wide: 1.35, corner: 1 },
+  smirk: { wide: 1.3, corner: 0.05, skew: 1 },
+  laugh: { open: 0.5, wide: 1.15, corner: 0.1, up: 0, round: 0.8, tongue: 0.9 },
+  grin: { open: 0.7, wide: 1.45, corner: 0.1, up: 0, round: 0.75, upper: 0.9, tongue: 0.8 },
+  beam: { open: 0.82, wide: 1.75, corner: 0.15, up: 0, round: 0.75, upper: 1, tongue: 0.8 },
+  wryOpen: { open: 0.45, wide: 1.2, corner: 0.2, up: 0.1, round: 0.7, tongue: 0.6, skew: 0.6 },
+  fang: {
+    open: 0.4,
+    wide: 1.1,
+    corner: 0.4,
+    up: 0.05,
+    round: 0.7,
+    tongue: 0.6,
+    skew: 0.4,
+    fang: 1,
+  },
+  // buồn
+  frown: { wide: 0.93, corner: -1 },
+  wobble: { wide: 1.05, corner: -0.3, wave: 1 },
+  cry: { open: 0.6, wide: 1.32, corner: -0.1, up: 0.9, drop: 0.4, round: 0.8, tongue: 0.7 },
+  wail: { open: 0.85, wide: 1.7, up: 0.5, drop: 0.2, round: 1, pinch: 0.5, tongue: 0.8 },
+  // giận
+  meh: { wide: 1.1, corner: -0.1, skew: 0.35 },
+  pursed: { wide: 0.85, skew: 0.25, press: 1 },
+  grit: { open: 0.6, wide: 1.46, round: 1, pinch: 0.15, upper: 1, lower: 1 },
+  shout: {
+    open: 0.88,
+    wide: 1.82,
+    corner: -0.1,
+    up: 0.85,
+    drop: 0.45,
+    round: 0.7,
+    flare: 0.2,
+    upper: 0.9,
+    lower: 0.5,
+    tongue: 0.8,
+  },
+  pain: { wide: 1.15, wave: 1 },
+  wry: { wide: 1.1, skew: 0.4, wave: 0.8 },
+  // ngạc nhiên, sợ
+  o: { open: 0.56, wide: 0.64, up: 0.45, round: 1, tongue: 0.5 },
+  wide: { open: 0.8, wide: 1.14, up: 0.45, round: 0.85, tongue: 0.8 },
+  gasp: {
+    open: 0.88,
+    wide: 1.64,
+    corner: -0.1,
+    up: 0.8,
+    drop: 0.4,
+    round: 0.6,
+    flare: 0.3,
+    tongue: 0.8,
+  },
+  scared: {
+    open: 0.44,
+    wide: 1.82,
+    corner: -0.1,
+    up: 0.6,
+    drop: 0.3,
+    round: 0.8,
+    tongue: 0.6,
+    wave: 0.9,
+  },
+  // khác
+  sigh: { open: 0.38, wide: 0.54, up: 0.45, round: 1, tongue: 0.4 },
+  yawn: { open: 1, wide: 1, up: 0.4, drop: 0.15, round: 1, tongue: 0.8 },
 } satisfies Partial<Record<MouthKind, Partial<MouthPose>>>;
 
-/** Khẩu hình `kind` có mồm người không (`MOUTH_POSES`); không thì giữ ký hiệu manga */
+/** Khẩu hình `kind` có bộ số mồm anime không (`MOUTH_POSES`); không thì là nét riêng (`MOUTH_GLYPHS`) */
 export const humanMouthKind = (kind: MouthKind): kind is keyof typeof MOUTH_POSES =>
   kind in MOUTH_POSES;
 
 /**
- * Chuyển giữa hai khẩu hình: mồm người đi từ khẩu hình cũ sang mới trong `secs` giây kể từ mốc đổi, phần đã đi làm tròn
+ * Chuyển giữa hai khẩu hình: mồm anime đi từ khẩu hình cũ sang mới trong `secs` giây kể từ mốc đổi, phần đã đi làm tròn
  * `1 / steps` — canvas mồm chỉ vẽ lại khi nấc đổi
  */
 export const MOUTH_MIX = { secs: 0.07, steps: 4 } as const;
@@ -644,8 +784,8 @@ export const MOUTH_MIX = { secs: 0.07, steps: 4 } as const;
 export const mouthStep = (f: number) => Math.round(clamp01(f) * MOUTH_MIX.steps) / MOUTH_MIX.steps;
 
 /**
- * Bộ số khẩu hình đem vẽ: `mouth`, hay giữa `tween.from` và `tween.to` ở nấc `mouthStep(tween.f)`. Một bên là ký hiệu
- * manga thì không có bộ số (`undefined`), mồm vẽ kiểu `mouth`.
+ * Bộ số khẩu hình đem vẽ: `mouth`, hay giữa `tween.from` và `tween.to` ở nấc `mouthStep(tween.f)`. Một bên là nét riêng
+ * thì không có bộ số (`undefined`), mồm vẽ kiểu `mouth`.
  */
 export function mouthPose(
   mouth: MouthKind,
@@ -661,200 +801,269 @@ export function mouthPose(
   return Object.fromEntries(keys.map((k) => [k, lerp(a[k], b[k], f)])) as unknown as MouthPose;
 }
 
-/** Mép dưới khoang mồm người cách tâm mồm tối đa bấy nhiêu px: mồm há hết cỡ không tràn xuống cằm */
-export const MOUTH_LIMIT = 16;
-/** Số đoạn mỗi nửa mép mồm người */
-const LIP_STEPS = 12;
-/** Phần độ há nằm trên đường giữa: hàm dưới đi nhiều hơn môi trên; chu môi thì tròn đều quanh tâm */
-const LIP_UP = { flat: 0.24, round: 0.4 };
-const SEAM_INK = "rgba(92, 30, 25, 0.85)";
-/** Răng mồm người: rộng bằng phần `width` khoang, khe giữa hai hàm ít nhất `gap` px hay phần `gapF` độ há */
-const TEETH = { width: 0.82, gap: 1.2, gapF: 0.3 } as const;
-const THROAT = "#5c1e19";
-const LIP_TONGUE = "#c8605a";
-/** Đỏ môi mà màu da ngả về, phần ngả `mix` */
-const LIP = { red: [190, 70, 74], mix: 0.45 } as const;
+/** Mép dưới khoang mồm anime cách tâm mồm tối đa bấy nhiêu px: mồm há hết cỡ không tràn xuống cằm */
+export const MOUTH_LIMIT = 30;
+/** Chỗ hở giữa hai mép (px) dưới mức này thì không vẽ răng: mồm há nhỏ không lộ răng, kể cả lúc chuyển khẩu hình */
+const TEETH_MIN = 8;
+/** Số đoạn mỗi nửa mép mồm */
+const LIP_STEPS = 16;
+/** Màu mồm anime: nét ngậm, viền khoang, khoang, lưỡi, răng (mép răng là viền mảnh) */
+const ANIME = {
+  ink: "#4a2a24",
+  rim: "#7a3029",
+  cavity: "#b9534b",
+  tongue: "#ee9488",
+  tooth: "#fbf7f1",
+  /** Viền khoang dày bằng phần này của `line` */
+  rimF: 0.5,
+  /** Gợn sóng: số nửa chu kỳ trên cả bề ngang, biên độ px ở `wave 1` */
+  waves: 3,
+  waveAmp: 2,
+  /** Khoé nhấc sẵn bấy nhiêu px: mặt cong làm nét ngang dán lên võng xuống hai đầu, bù cho nét ngậm thẳng */
+  bow: 2,
+} as const;
+/** Đỏ môi mà nét ngả về theo `tint` */
+const LIP = { red: [176, 64, 66], mix: 0.75 } as const;
 
-const smoothstep = (a: number, b: number, v: number) => {
-  const x = clamp01((v - a) / (b - a));
-  return x * x * (3 - 2 * x);
-};
 const poly = (ps: P[]) => ps.map((p, i) => `${i ? "L" : "M"} ${pt(p)}`).join(" ");
 /** Dải giữa hai đường cùng số điểm `a`, `b` (cùng chiều) */
 const band = (a: P[], b: P[]) => `${poly(a)} L ${poly([...b].reverse()).slice(2)} Z`;
-const inkA = (a: number) => `rgba(58, 38, 32, ${+a.toFixed(3)})`;
+const mixHex = (a: string, b: readonly number[], f: number) =>
+  `rgb(${hexRgb(a)
+    .map((v, i) => Math.round(lerp(v, b[i], f)))
+    .join(", ")})`;
 
-/** Hai mép môi của mồm người (`humanMouthMarks`): mép trên `up`, mép dưới `down` lấy mẫu theo `us`, bề dày nét môi `line` */
-function lipGeometry(S: MouthShape, P: MouthPose, cx: number, cy: number) {
-  const puck = clamp01(P.pucker);
-  const w = S.half * P.wide * (1 - 0.42 * puck) * (1 - 0.12 * P.pout);
-  const upF = lerp(LIP_UP.flat, LIP_UP.round, puck);
-  const h = Math.min(clamp01(P.open) * S.open * (1 - 0.15 * puck), MOUTH_LIMIT / (1 - upF));
+/** Hai mép mồm anime (`humanMouthMarks`): mép trên `top`, mép dưới `bot` lấy mẫu theo `us`, đường khoé `mid` */
+function mouthGeometry(S: MouthShape, P: MouthPose, cx: number, cy: number) {
+  const w = S.half * P.wide * (1 - 0.15 * clamp01(P.press));
+  const h = clamp01(P.open) * S.open;
+  const a = clamp01(P.up);
   const lift = S.lift * P.corner - S.droop * (1 - clamp01(P.corner));
   const sk = P.skew;
-  const round = clamp01(Math.max(S.round, puck) + 0.3 * smoothstep(0.55, 1, P.open));
+  const pw = lerp(1, 0.32, clamp01(P.round + S.round));
   const us = Array.from({ length: 2 * LIP_STEPS + 1 }, (_, i) => -1 + i / LIP_STEPS);
-  const X = (u: number) => cx + u * w * (1 + (u > 0 ? 0.1 : -0.04) * sk);
+  const wave = (u: number) =>
+    P.wave * ANIME.waveAmp * Math.sin(((u + 1) / 2) * ANIME.waves * Math.PI) * (1 - u * u) ** 0.3;
   // nhếch nhấc riêng nửa `+x`, nửa kia trễ nhẹ
-  const midY = (u: number) => cy - lift * u * u - sk * S.lift * (u > 0 ? 1.5 : -0.25) * u * u;
-  const gapAt = (u: number) => (1 - u * u) ** lerp(0.85, 0.5, round);
-  const up = us.map((u) => [X(u), midY(u) - upF * h * gapAt(u)] as P);
-  const down = us.map(
-    (u) => [X(u), Math.min(midY(u) + (1 - upF) * h * gapAt(u), cy + MOUTH_LIMIT)] as P,
+  const drop = clamp01(P.drop) * h;
+  const midY = (u: number) =>
+    cy + drop - (lift + ANIME.bow) * u * u - sk * S.lift * (u > 0 ? 1.2 : -0.2) * u * u + wave(u);
+  const g = (u: number) => (1 - u * u) ** pw * (1 - clamp01(P.pinch) * (1 - u * u));
+  const X = (u: number, f = 0) => cx + u * w * (1 + 0.08 * sk * Math.sign(u)) * (1 + f);
+  const mid = us.map((u) => [X(u), midY(u)] as P);
+  const top = us.map((u) => [X(u), midY(u) - a * h * g(u)] as P);
+  // đáy nở `flare`: mép dưới phình ra ngoài ở giữa hai nửa, thành hình thang bo
+  const bot = us.map(
+    (u) =>
+      [
+        X(u, P.flare * Math.sin(Math.PI * Math.abs(u)) * 0.5),
+        Math.min(midY(u) + (1 - a) * h * g(u), cy + MOUTH_LIMIT),
+      ] as P,
   );
-  const line = S.line * (1 + 0.5 * P.press);
-  const tint = S.tint * (1 - 0.8 * P.press);
-  const taper = (u: number, p = 0.6) => (1 - u * u) ** p;
-  return { w, h, us, up, down, line, tint, taper };
+  return { w, h, us, mid, top, bot };
 }
 
+/** Nét của mồm anime: màu nét theo `tint` của dáng */
+const inkOf = (S: MouthShape) =>
+  S.tint > 0 ? mixHex(ANIME.ink, LIP.red, S.tint * LIP.mix) : ANIME.ink;
+
 /**
- * Mồm người tâm `(cx, cy)` dáng `S` ở khẩu hình `P`, da `skin`: đường giữa đi qua hai khoé lên xuống theo `u²` (`u` từ
- * `-1` ở khoé `−x` tới `1`), chỗ hở `(1 − u²)^…` dẹt hay tròn theo `round`. Không viền quanh khoang: chỉ mép môi trên là
- * nét mực thon hai đầu; khoang nâu đỏ, răng trên / dưới là dải bám mép, nhạt dần ra khoé, chỉ hiện khi đủ há; lưỡi khi há
- * to. docs/01-rig.md#mồm-người
+ * Mồm anime tâm `(cx, cy)` dáng `S` ở khẩu hình `P`: ngậm là một nét thon nhẹ hai đầu; há là khoang đỏ nâu viền mảnh, lưỡi
+ * hồng ở đáy, răng là dải trắng mép phẳng — chỉ có ở khẩu hình khai `upper` / `lower`; hai hàm cùng kín khoang (`grit`)
+ * thì là khối răng có vạch giữa. docs/01-rig.md#mồm-anime
  */
-export function humanMouthMarks(
-  S: MouthShape,
-  P: MouthPose,
-  cx: number,
-  cy: number,
-  skin = "#f0d9b8",
-): FaceMark {
-  const { w, h, us, up, down, line, tint, taper } = lipGeometry(S, P, cx, cy);
-  const along = (ps: P[], d: (u: number) => number) =>
-    ps.map(([x, y], i) => [x, y + d(us[i])] as P);
-  const bot = Math.max(...down.map((p) => p[1]));
+export function humanMouthMarks(S: MouthShape, P: MouthPose, cx: number, cy: number): FaceMark {
+  const { w, h, us, mid, top, bot } = mouthGeometry(S, P, cx, cy);
+  const ink = inkOf(S);
   const out: FaceMark[] = [];
-  if (tint > 0) {
-    const lip = hexRgb(skin).map((v, i) => Math.round(lerp(v, LIP.red[i], LIP.mix)));
-    const col = (a: number) => `rgba(${lip.join(", ")}, ${+a.toFixed(3)})`;
-    // môi dưới là vệt nhạt dưới mép dưới, môi trên chút màu; không viền
-    const lw = S.lower * (1 + 0.5 * P.pout) * (1 - 0.6 * P.press);
-    const uw = S.upper * (1 - 0.6 * P.press);
-    out.push(
-      {
-        path: band(
-          down,
-          along(down, (u) => lw * taper(u, 0.8)),
-        ),
-        fill: col(tint),
-      },
-      {
-        path: band(
-          up,
-          along(up, (u) => -uw * taper(u, 1.2)),
-        ),
-        fill: col(0.7 * tint),
-      },
-    );
-  }
-  if (P.pout > 0) {
-    // bĩu: môi dưới trề ra, vệt sẫm hình thấu kính ngay dưới đường môi
-    const [hw, y0] = [0.62 * w, bot + 0.6];
-    const y1 = y0 + 3.6 * P.pout;
+  if (h < 0.9) {
+    const line = S.line * (1 + 0.6 * clamp01(P.press));
+    const t = (u: number) => (line / 2) * (1 - u * u) ** 0.22;
     out.push({
-      path: `M ${pt([cx - hw, y0])} Q ${pt([cx, 2 * y1 - y0 - 0.6 * (y1 - y0)])} ${pt([cx + hw, y0])} Q ${pt([cx, y0 + 0.4])} ${pt([cx - hw, y0])} Z`,
-      fill: inkA(0.3 * P.pout),
+      path: band(
+        mid.map(([x, y], i) => [x, y - t(us[i])] as P),
+        mid.map(([x, y], i) => [x, y + t(us[i])] as P),
+      ),
+      fill: ink,
     });
-  }
-  if (S.under > 0) {
-    // bóng dưới môi dưới: vệt ngắn mờ, nam gần như chỉ có nó thay môi dưới
-    const y = bot + 2.6 + 0.6 * S.lower + 2 * P.pout;
-    const hw = 0.34 * w;
-    out.push({
-      path: `M ${pt([cx - hw, y - 0.3])} Q ${pt([cx, y + 0.9])} ${pt([cx + hw, y - 0.3])}`,
-      fill: "none",
-      stroke: inkA(S.under),
-      strokeWidth: 1.1,
-      strokeLinecap: "round",
-    });
-  }
-  if (h > 0.6) {
-    const d = band(up, down);
-    const g = smoothstep(1.2, 3.5, h);
-    let tu = clamp01(P.upper) * S.teeth * g;
-    let tl = clamp01(P.lower) * S.teeth * 0.7 * g;
-    // hai hàm răng luôn chừa khe tối ở giữa, răng hẹp hơn khoang: nhìn xa vẫn thấy khoé tối
-    const room = Math.max(0, h - Math.max(TEETH.gap, TEETH.gapF * h));
-    if (tl > 0 && tu + tl > room) [tu, tl] = [(tu * room) / (tu + tl), (tl * room) / (tu + tl)];
-    const narrow = (ps: P[]) => ps.map(([x, y]) => [cx + (x - cx) * TEETH.width, y] as P);
-    const tongue = smoothstep(0.55, 0.95, P.open);
-    const inner: FaceMark[] = [{ ellipse: [cx, cy + 0.15 * h, 0.5 * w, 0.28 * h], fill: THROAT }];
-    if (tongue > 0)
-      inner.push({ ellipse: [cx, bot + 0.6, 0.5 * w, 0.3 * h * tongue], fill: LIP_TONGUE });
-    if (tl > 0)
+  } else {
+    const d = band(top, bot);
+    const yTop = Math.min(...top.map((p) => p[1]));
+    const yBot = Math.max(...bot.map((p) => p[1]));
+    const topMid = top[LIP_STEPS][1];
+    const botMid = bot[LIP_STEPS][1];
+    const span = botMid - topMid;
+    const teeth = span >= TEETH_MIN ? 1 : 0;
+    const tu = clamp01(P.upper) * S.teeth * teeth;
+    const tl = clamp01(P.lower) * S.teeth * 0.75 * teeth;
+    const inner: FaceMark[] = [];
+    if (P.tongue > 0)
       inner.push({
-        path: band(narrow(along(down, () => 2)), narrow(along(down, (u) => -tl * taper(u, 0.7)))),
-        fill: TOOTH,
+        ellipse: [cx, botMid + 0.1 * span, 0.7 * w, 0.5 * span * clamp01(P.tongue)],
+        fill: ANIME.tongue,
       });
-    if (tu > 0) {
-      const edge = narrow(along(up, (u) => tu * taper(u, 0.35)));
+    const rim = { fill: "none", stroke: ANIME.rim, strokeWidth: ANIME.rimF * S.line } as const;
+    if (teeth && P.upper >= 1 && P.lower >= 1) {
+      // nghiến: hai hàm kín khoang, vạch giữa chia hàm
+      const yS = topMid + (span * tu) / (tu + tl);
+      inner.push(
+        { rect: [cx - 2 * w, yTop - 2, 4 * w, yBot - yTop + 4], fill: ANIME.tooth },
+        { path: `M ${pt([cx - 2 * w, yS])} L ${pt([cx + 2 * w, yS])}`, ...rim },
+      );
+    } else {
+      // răng là dải lưỡi liềm bám mép trên / dưới, dày nhất ở giữa, mỏng dần ra khoé (như bảng tham chiếu)
+      const crescent = (edge: P[], t: number, s: 1 | -1) =>
+        band(
+          edge.map(([x, y]) => [x, y - 2 * s] as P),
+          edge.map(([x, y], i) => [x, y + s * t * (1 - us[i] * us[i]) ** 0.6] as P),
+        );
+      if (tu > 0.5)
+        inner.push({ path: crescent(top, Math.min(tu, 0.6 * span), 1), fill: ANIME.tooth });
+      if (tl > 0.5)
+        inner.push({ path: crescent(bot, Math.min(tl, 0.35 * span), -1), fill: ANIME.tooth });
+    }
+    if (P.fang > 0) {
+      // răng nanh (八重歯) từ mép trên gần khoé `+x`
+      const i = Math.round(LIP_STEPS * 1.55);
+      const [x, y] = top[i];
+      const fh = 0.45 * span * clamp01(P.fang);
       inner.push({
-        path: band(narrow(along(up, () => -2)), edge),
-        fill: TOOTH,
+        path: `M ${pt([x - 2.2, y - 1])} L ${pt([x + 1.6, y - 1])} L ${pt([x - 0.5, y + fh])} Z`,
+        fill: ANIME.tooth,
       });
-      if (tl > 0)
-        inner.push({ path: poly(edge), fill: "none", stroke: SEAM_INK, strokeWidth: 0.8 });
     }
     out.push(
       { clip: d },
-      { path: d, fill: CAVITY },
+      { path: d, fill: ANIME.cavity },
       { group: inner, clipped: true },
-      {
-        path: band(
-          along(up, (u) => -0.8 * line * taper(u)),
-          up,
-        ),
-        fill: MOUTH_INK,
-      },
-      {
-        path: band(
-          down,
-          along(down, (u) => 0.5 * line * taper(u, 2)),
-        ),
-        fill: inkA(0.5),
-      },
+      { path: d, ...rim, stroke: S.tint > 0 ? ink : ANIME.rim, strokeLinejoin: "round" },
     );
-  } else
-    out.push({
-      path: band(
-        along(up, (u) => (-line / 2) * taper(u)),
-        along(up, (u) => (line / 2) * taper(u)),
-      ),
-      fill: MOUTH_INK,
-    });
-  const ticks: FaceMark[] = [];
-  for (const [s, [x, y]] of [
-    [-1, up[0]],
-    [1, up[2 * LIP_STEPS]],
-  ] as const) {
-    // mím: nếp nhỏ ôm hai khoé
-    if (P.press > 0.05)
-      ticks.push({
-        path: `M ${pt([x + s * 0.8, y - 1.4])} Q ${pt([x + s * 1.9, y])} ${pt([x + s * 0.8, y + 1.4])}`,
-        stroke: inkA(0.5 * P.press),
-      });
-    // người già: nếp ngắn từ khoé xuôi xuống
-    if (S.fold > 0)
-      ticks.push({
-        path: `M ${pt([x + s * 0.9, y + 1.2])} Q ${pt([x + s * 1.5, y + 0.5 * S.fold + 1.2])} ${pt([x + s * 1.1, y + S.fold + 1.2])}`,
-        stroke: inkA(0.24),
-      });
   }
-  if (ticks.length)
-    out.push({ group: ticks, fill: "none", strokeWidth: 0.9, strokeLinecap: "round" });
+  if (S.fold > 0) {
+    // người già: nếp ngắn từ khoé xuôi xuống
+    const ticks: FaceMark[] = [];
+    for (const [s, [x, y]] of [
+      [-1, mid[0]],
+      [1, mid[2 * LIP_STEPS]],
+    ] as const)
+      ticks.push({
+        path: `M ${pt([x + s * 1.2, y + 1])} Q ${pt([x + s * 1.9, y + 0.5 * S.fold + 1])} ${pt([x + s * 1.4, y + S.fold + 1])}`,
+      });
+    out.push({
+      group: ticks,
+      fill: "none",
+      stroke: "rgba(74, 42, 36, 0.35)",
+      strokeWidth: 0.9,
+      strokeLinecap: "round",
+    });
+  }
   return { group: out };
 }
 
-/** Mép trên của mồm người (px so với tâm, âm là trên) ở khẩu hình `P` dáng `S`: chỗ ria mép bám */
+/** Mép trên của mồm anime (px so với tâm, âm là trên) ở khẩu hình `P` dáng `S`: chỗ ria mép bám */
 export function humanMouthTop(S: MouthShape, P: MouthPose): number {
-  const { h, us, up, line, tint, taper } = lipGeometry(S, P, 0, 0);
-  const ink = h > 0.6 ? 0.8 * line : line / 2;
-  const lip = tint > 0 ? S.upper * (1 - 0.6 * P.press) : 0;
-  // nếp mím ôm khoé nhô lên trên khoé
-  const ends = P.press > 0.05 ? [up[0][1] - 1.4, up[up.length - 1][1] - 1.4] : [];
-  return Math.min(...up.map(([, y], i) => y - Math.max(ink, lip) * taper(us[i])), ...ends);
+  const { h, top, mid } = mouthGeometry(S, P, 0, 0);
+  const ink = h < 0.9 ? (S.line * (1 + 0.6 * clamp01(P.press))) / 2 : (ANIME.rimF * S.line) / 2;
+  return Math.min(...(h < 0.9 ? mid : top).map(([, y]) => y)) - ink;
+}
+
+/**
+ * Nét riêng của mồm anime cho khẩu hình không có bộ số: chu môi thổi / huýt (chữ `3`), nhai (nét ngắn, má phồng một
+ * bên), liếm (cười, lưỡi thè ở khoé), bĩu, phồng má. Cùng màu, cùng bề dày nét với mồm anime của dáng `S`.
+ */
+export const MOUTH_GLYPHS: Partial<
+  Record<MouthKind, (S: MouthShape, cx: number, cy: number) => FaceMark>
+> = {
+  blow: (S, cx, cy) => three(S, cx, cy),
+  whistle: (S, cx, cy) => three(S, cx, cy),
+  chew: (S, cx, cy) => ({
+    group: [
+      {
+        path: `M ${cx - 0.55 * S.half} ${cy + 0.5} Q ${cx} ${cy + 1.6} ${cx + 0.5 * S.half} ${cy - 0.4}`,
+        ...glyphInk(S),
+      },
+      {
+        path: `M ${cx + 0.7 * S.half} ${cy - 4} Q ${cx + 0.7 * S.half + 3.6} ${cy} ${cx + 0.7 * S.half} ${cy + 4}`,
+        ...glyphInk(S, 0.75),
+      },
+    ],
+  }),
+  lick: (S, cx, cy) => {
+    const w = 0.9 * S.half;
+    const tx = cx + 0.45 * w;
+    return {
+      group: [
+        {
+          path: `M ${tx - 2.6} ${cy + 1.6} Q ${tx - 2.2} ${cy + 7} ${tx + 1} ${cy + 6.5} Q ${tx + 3.6} ${cy + 6} ${tx + 3} ${cy + 1}`,
+          fill: ANIME.tongue,
+          stroke: ANIME.rim,
+          strokeWidth: ANIME.rimF * S.line,
+          strokeLinejoin: "round",
+        },
+        {
+          path: `M ${cx - w} ${cy - S.lift} Q ${cx} ${cy + S.lift + 1} ${cx + w} ${cy - S.lift}`,
+          ...glyphInk(S),
+        },
+      ],
+    };
+  },
+  pout: (S, cx, cy) => ({
+    group: [
+      {
+        path: `M ${cx - 0.6 * S.half} ${cy + 2} Q ${cx} ${cy - 2} ${cx + 0.6 * S.half} ${cy + 2}`,
+        ...glyphInk(S),
+      },
+      {
+        path: `M ${cx - 0.35 * S.half} ${cy + 4.5} Q ${cx} ${cy + 6.5} ${cx + 0.35 * S.half} ${cy + 4.5}`,
+        ...glyphInk(S, 0.7),
+      },
+    ],
+  }),
+  puffed: (S, cx, cy) => ({
+    group: [
+      {
+        path: `M ${cx - 0.4 * S.half} ${cy} Q ${cx} ${cy + 1.2} ${cx + 0.4 * S.half} ${cy}`,
+        ...glyphInk(S),
+      },
+      {
+        path: `M ${cx - 0.85 * S.half} ${cy - 4} Q ${cx - 0.85 * S.half - 3.4} ${cy} ${cx - 0.85 * S.half} ${cy + 4}`,
+        ...glyphInk(S, 0.75),
+      },
+      {
+        path: `M ${cx + 0.85 * S.half} ${cy - 4} Q ${cx + 0.85 * S.half + 3.4} ${cy} ${cx + 0.85 * S.half} ${cy + 4}`,
+        ...glyphInk(S, 0.75),
+      },
+    ],
+  }),
+};
+
+function glyphInk(S: MouthShape, k = 1) {
+  return {
+    fill: "none",
+    stroke: inkOf(S),
+    strokeWidth: S.line * k,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+  } as const;
+}
+
+/** Chữ `3` của môi chu khi thổi, huýt sáo */
+function three(S: MouthShape, cx: number, cy: number): FaceMark {
+  const r = 0.25 * S.half;
+  return {
+    path: `M ${cx - 1.6} ${cy - 2 * r} Q ${cx + 2.6} ${cy - 2 * r} ${cx + 1.8} ${cy - r * 0.6} Q ${cx + 1.2} ${cy} ${cx - 0.6} ${cy} Q ${cx + 1.2} ${cy} ${cx + 1.8} ${cy + r * 0.6} Q ${cx + 2.6} ${cy + 2 * r} ${cx - 1.6} ${cy + 2 * r}`,
+    ...glyphInk(S),
+  };
+}
+
+/** Nét riêng của khẩu hình `kind` ở mồm anime dáng `S`, không có thì `undefined` (mồm vẽ kiểu chibi) */
+export function humanMouthGlyph(
+  kind: MouthKind,
+  S: MouthShape,
+  cx: number,
+  cy: number,
+): FaceMark | undefined {
+  return MOUTH_GLYPHS[kind]?.(S, cx, cy);
 }
 
 const EYE_LINE = { fill: "none", stroke: EYE_INK, strokeWidth: 4, strokeLinecap: "round" } as const;

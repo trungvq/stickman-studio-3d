@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { figureOf, HEAD_Y, headOnly, label, ROWS } from './demo-eyes.js';
 
-// Bảng mồm người (`?demo=mouths-human`): đầu `human` không thân, mỗi hàng một dáng mồm (khai
+// Bảng mồm anime (`?demo=mouths-human`): đầu `human` không thân, mỗi hàng một dáng mồm (khai
 // `face.mouthShape` cùng tên dáng mắt: nam, nữ, trẻ em, người già), mỗi cột một khẩu hình. `?set=talk` (mặc định) là khẩu hình nói, `?set=expr` là biểu
-// cảm và bốn ký hiệu manga; `?turn=độ` xoay từng đầu tại chỗ.
+// cảm, ✱ là nét riêng (`MOUTH_GLYPHS`); `?turn=độ` xoay từng đầu tại chỗ.
 
 const DX = 0.9;
 const DY = 1.05;
@@ -28,21 +28,33 @@ export const SETS = {
   ],
   expr: [
     ['cười smile', 'smile', 'open', 'neutral'],
-    ['lộ răng grin', 'grin', 'happy', 'neutral'],
-    ['mím pursed', 'pursed', 'open', 'furrowed'],
-    ['bĩu pout', 'pout', 'open', 'sad'],
-    ['sốc wide', 'wide', 'wide', 'raised'],
-    ['hét shout', 'shout', 'open', 'angry'],
-    ['đau grit', 'grit', 'squint', 'furrowed'],
+    ['cười vừa laugh', 'laugh', 'happy', 'neutral'],
+    ['cười lớn grin', 'grin', 'happy', 'neutral'],
+    ['rạng rỡ beam', 'beam', 'happy', 'raised'],
     ['nhếch smirk', 'smirk', 'squint', 'flat'],
-    ['frown', 'frown', 'open', 'sad'],
-    ['meh', 'meh', 'squint', 'flat'],
     ['wryOpen', 'wryOpen', 'happy', 'sad'],
+    ['nanh fang', 'fang', 'sly', 'flat'],
+    ['frown', 'frown', 'open', 'sad'],
+    ['mếu wobble', 'wobble', 'open', 'sad'],
+    ['khóc cry', 'cry', 'squeezed', 'sad'],
+    ['khóc lớn wail', 'wail', 'squeezed', 'sad'],
+    ['meh', 'meh', 'squint', 'flat'],
+    ['mím pursed', 'pursed', 'open', 'furrowed'],
+    ['nghiến grit', 'grit', 'squint', 'angry'],
+    ['hét shout', 'shout', 'open', 'angry'],
+    ['đau pain', 'pain', 'squeezed', 'furrowed'],
+    ['wry', 'wry', 'open', 'sad'],
     ['o', 'o', 'wide', 'lifted'],
-    ['pain ✱', 'pain', 'squeezed', 'furrowed'],
-    ['puffed ✱', 'puffed', 'open', 'neutral'],
-    ['fang ✱', 'fang', 'sly', 'flat'],
-    ['wry ✱', 'wry', 'open', 'sad'],
+    ['sốc wide', 'wide', 'wide', 'raised'],
+    ['há hoảng gasp', 'gasp', 'wide', 'raised'],
+    ['hoảng hốt scared', 'scared', 'wide', 'sad'],
+    ['thở dài sigh', 'sigh', 'shut', 'sad'],
+    ['ngáp yawn', 'yawn', 'shut', 'neutral'],
+    ['bĩu pout ✱', 'pout', 'open', 'sad'],
+    ['phồng puffed ✱', 'puffed', 'open', 'neutral'],
+    ['thổi blow ✱', 'blow', 'open', 'neutral'],
+    ['nhai chew ✱', 'chew', 'open', 'neutral'],
+    ['liếm lick ✱', 'lick', 'happy', 'neutral'],
   ],
 };
 

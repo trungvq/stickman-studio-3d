@@ -60,7 +60,7 @@ export interface Acting {
   blush?: number;
   /** Hướng nhìn `[ngang, dọc]` `-1..1`: ngang dương về bên trái người, dọc dương xuống */
   look?: readonly [number, number];
-  /** Khẩu hình đang chuyển (`FaceState.mouthTween`): mồm người đi từ `from` sang `to` */
+  /** Khẩu hình đang chuyển (`FaceState.mouthTween`): mồm anime đi từ `from` sang `to` */
   mouthTween?: { from: MouthKind; to: MouthKind; f: number };
 }
 

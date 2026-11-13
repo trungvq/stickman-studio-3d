@@ -156,7 +156,7 @@ export interface FaceState {
    */
   look?: readonly [number, number];
   /**
-   * Đang chuyển khẩu hình: mồm người đi từ `from` sang `to` (là `mouth` hay khẩu hình sắp tới), đã đi `f` `0..1`
+   * Đang chuyển khẩu hình: mồm anime đi từ `from` sang `to` (là `mouth` hay khẩu hình sắp tới), đã đi `f` `0..1`
    * (`MOUTH_MIX`); bỏ trống là đứng yên ở `mouth`. Đầu `sphere` chỉ đọc `mouth`.
    */
   mouthTween?: { from: MouthKind; to: MouthKind; f: number };

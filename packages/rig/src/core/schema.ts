@@ -775,7 +775,7 @@ const EyeOverSchema = z.object(
   >,
 );
 
-/** Số đè lên dáng mồm `face.mouthShape`, trường nào bỏ trống lấy của dáng. docs/01-rig.md#mồm-người */
+/** Số đè lên dáng mồm `face.mouthShape`, trường nào bỏ trống lấy của dáng. docs/01-rig.md#mồm-anime */
 const MouthOverSchema = z.object(
   Object.fromEntries(MOUTH_SHAPE_FIELDS.map((k) => [k, z.number().optional()])) as Record<
     keyof MouthShape,
@@ -887,8 +887,8 @@ export const CharacterSchema = z.object({
       eyeShape: z.enum(EYE_SHAPE_KINDS).default("male"),
       eye: EyeOverSchema.optional(),
       /**
-       * Dáng mồm người của đầu `human`, khoá của `MOUTH_SHAPES`; bỏ trống là mồm chibi. `mouth` đè từng số của dáng.
-       * docs/01-rig.md#mồm-người
+       * Dáng mồm anime của đầu `human`, khoá của `MOUTH_SHAPES`; bỏ trống là mồm chibi. `mouth` đè từng số của dáng.
+       * docs/01-rig.md#mồm-anime
        */
       mouthShape: z.enum(MOUTH_SHAPE_KINDS).optional(),
       mouth: MouthOverSchema.optional(),
