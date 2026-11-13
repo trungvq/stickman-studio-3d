@@ -69,8 +69,12 @@ export const SKIRT_REACH = 0.7;
 export const SKIRT_FALL = 0.5;
 /** Vạt dài, tạp dề: đùi lệch phương đứng dưới góc đầu (độ) thì vạt phủ đủ ống chân, quá góc sau thì chỉ tới gối */
 export const HEM_HANG = [35, 70] as const;
-/** Tạp dề nằm cách mặt người và đồ bên dưới bấy nhiêu px */
-export const APRON_LIFT = 5;
+/** Tạp dề nằm cách mặt thân áo, khối hông bấy nhiêu px: trên dải cổ áo cổ chéo (`WRAP_LIFT`) cộng nét viền */
+export const APRON_LIFT = 3.5;
+/** Tạp dề nằm cách mặt ống quần (hay chân) bấy nhiêu px: không nở `SKIRT_EASE` như váy, nên tấm buông sát đùi */
+export const APRON_LEG = 2.5;
+/** Tạp dề quỳ: ống chân trong khối cắt nở dần tới bấy nhiêu px theo `kneelOn`, gối tròn đều nên tấm nằm đều trên sàn */
+export const APRON_KNEEL_EASE = 9;
 /** Dây cạp tạp dề bản dẹt: ôm thân cách bấy nhiêu px, dày bấy nhiêu px (cao là `apron.band`) */
 export const APRON_BAND = [0.3, 1.2] as const;
 /**

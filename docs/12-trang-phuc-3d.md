@@ -1644,7 +1644,9 @@ Quãng một chu kỳ đổi theo `hip`, `knee`, `stance` — đo bằng `action
 ```
 
 Mỗi cột của tấm là một đường vải buông từ dây cạp phủ qua mặt người (`drape`): cắt dọc khối gồm thân áo dưới cạp,
-khối hông và hai ống chân (như [vạt dài quấn](#vạt-dài-quấn), nở thêm `APRON_LIFT` `5` px), vải đi từ dây cạp vòng
+khối hông và hai ống chân (như [vạt dài quấn](#vạt-dài-quấn); thân áo và khối hông nở `APRON_LIFT` `3,5` px, ống chân chỉ
+nở `APRON_LEG` `2,5` px quanh ống quần, không nở `SKIRT_EASE` như váy, nên tấm buông sát đùi; quỳ thì ống chân nở dần
+tới `APRON_KNEEL_EASE` `9` px), vải đi từ dây cạp vòng
 phía trước tới chỗ rời người rồi rủ thẳng. Đứng, cúi chào thì tấm rủ thẳng từ dây cạp trước hai đùi; bước thì gối trước
 đẩy tấm ra; ngồi ghế thì tấm nằm trên đùi và dừng ở gối — phần rủ tự do dưới chỗ rời người nhân `hemHang` của góc đùi.
 `length` là chiều dài tấm đo dọc vải; mép dưới thẳng khi đứng. Mép trái, gấu, mép phải là một nét liền.
@@ -1664,14 +1666,16 @@ phía trước tới chỗ rời người rồi rủ thẳng. Đứng, cúi chà
 
 | Trường `skirt.apron` | Mặc định | Nghĩa |
 |---|---:|---|
-| `width` | 38 | Nửa rộng tấm, không quá nửa rộng cạp |
+| `width` | 38 | Nửa rộng tấm, không quá nửa rộng cạp; người hông hẹp (`rig.hipHalf` dưới `30`) thì khai nhỏ hơn, cỡ `hipHalf + 6`, không thì hai mép tấm chìa ra ngoài chân, nhìn chéo thấy tấm rời người |
 | `band` | 5 | Dây cạp bản dẹt cao bấy nhiêu px (dày `APRON_BAND` `1,2` px), vòng quanh cạp ở `rise`: ôm thân cách `0,3` px, phía trước chỗ tấm che thì nổi qua mép trên tấm (`APRON_LIFT`) rồi hạ dần về sát thân ở hai mép tấm; nơ sát lưng ngoài dây; `0` là không có |
 | `tieColor` | màu tấm | Màu dây cạp và nơ |
 | `bow` | 13 | Mỗi cánh nơ sau lưng dài bấy nhiêu px: hai cánh, nút, hai đuôi ngắn chĩa xuống (`apronBow`), khối cứng không rủ; `0` là không nơ |
 
 | Hằng số | Giá trị | Nghĩa |
 |---|---:|---|
-| `APRON_LIFT` | 5 | Tấm cách mặt người và đồ bên dưới bấy nhiêu px |
+| `APRON_LIFT` | 3.5 | Tấm cách mặt thân áo, khối hông bấy nhiêu px: trên dải cổ áo cổ chéo (`WRAP_LIFT` `2,4`) cộng nét viền |
+| `APRON_LEG` | 2.5 | Tấm cách mặt ống quần (hay chân) bấy nhiêu px khi đứng, đi, cúi chào |
+| `APRON_KNEEL_EASE` | 9 | Quỳ: ống chân trong khối cắt nở dần tới bấy nhiêu px theo `kneelOn`, gối tròn đều nên tấm nằm đều trên sàn |
 | `APRON_FLOOR` | `[1, 8, 20]` | Chạm sàn: nằm trên sàn bấy nhiêu px, góc gập bo bán kính bấy nhiêu px, trải trên sàn không quá bấy nhiêu px |
 | `APRON_KNEEL` | `[10, 30]` | Đáy gối cách sàn dưới số đầu (px) thì buông đủ dài như lúc đứng, quá số sau thì như ngồi ghế |
 

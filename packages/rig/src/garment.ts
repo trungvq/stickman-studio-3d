@@ -5,7 +5,7 @@ import { hullMaterial, npr, surface } from './npr';
 import { canvasTexture } from './decal';
 import { path2D } from './canvas';
 import { WAKABA, type PrintArt, type PrintPart } from './core/print';
-import { APRON_BAND, APRON_FLOOR, APRON_LIFT, D, RIG, SKIRT_EASE, TORSO_DEPTH } from './core/constants';
+import { APRON_BAND, APRON_FLOOR, APRON_KNEEL_EASE, APRON_LEG, APRON_LIFT, D, RIG, SKIRT_EASE, TORSO_DEPTH } from './core/constants';
 import { apronBow, apronOf, drape, drapeAt, drapeFloor, drapeLength, hemHang, hemReach, kneelOn, sectionFront, wrapHemEdge, wrapHemOf } from './core/hem';
 import type { Garment, Skirt } from './core/schema';
 import { profileAt, skirtCover, skirtFall, skirtSpread, skirtTube } from './core/skirtShape';
@@ -619,9 +619,10 @@ function lapRings(leg: HemLeg, cover: number, [ra, rb]: readonly [number, number
 /**
  * Điểm bao của vạt treo hông trong hệ hông (px, y xuống): vành cạp và thân áo dưới cạp, khối hông (theo nhóm thân), hai
  * ống chân tới tầm vạt phủ (`hemReach`); `wrap` bỏ phần khối hông, ống chân cao hơn cạp mà còn trong thân áo. `lift` nở mọi
- * khối thêm bấy nhiêu px. Trả cả cạp (hệ thân) và hàm đổi hệ thân → hệ hông
+ * khối thêm bấy nhiêu px; ống chân nở `SKIRT_EASE + lift`, riêng tạp dề nở `legLift`, quỳ (`kneel`) thì dần tới
+ * `APRON_KNEEL_EASE`. Trả cả cạp (hệ thân) và hàm đổi hệ thân → hệ hông
  */
-function hipHull(o: Omit<SkirtOptions, 'thighs'>, pose: HemPose, lift: number, kneel = 0) {
+function hipHull(o: Omit<SkirtOptions, 'thighs'>, pose: HemPose, lift: number, kneel = 0, legLift?: number) {
   const { skirt: g, rig, body, legW } = o;
   const h = rig.height, inset = rig.stroke / 2;
   const yW = -g.rise * h;
@@ -657,7 +658,7 @@ function hipHull(o: Omit<SkirtOptions, 'thighs'>, pose: HemPose, lift: number, k
     }
   const lt = RIG.thigh * h, ls = RIG.shin * h;
   const [r0, r1, r2] = o.legR ?? [legW / 2, legW / 2, legW / 2];
-  const ease = SKIRT_EASE + lift;
+  const ease = legLift === undefined ? SKIRT_EASE + lift : legLift + (APRON_KNEEL_EASE - legLift) * kneel;
   let hang = 0;
   const tube = (c: Vec3[], u1: number, ra: number, rb: number) => (tubeRings(pts, c, u1, ra, rb, ease, 6), bez3(c, u1));
   const ends = pose.legs.map((leg) => {
@@ -733,7 +734,7 @@ export function sculptHipHem(hips: THREE.Object3D, o: Omit<SkirtOptions, 'thighs
     const lift = APRON_LIFT;
     // quỳ thì vải buông qua gối xuống sàn như lúc đứng
     const kneel = pose.floor === undefined ? 0 : kneelOn(pose.legs, pose.floor, (o.legR ?? [o.legW / 2, o.legW / 2])[1]);
-    const hh = hipHull(o, pose, lift, kneel);
+    const hh = hipHull(o, pose, lift, kneel, APRON_LEG);
     const { tris } = hullOf(hh.pts);
     const a = apronOf(g);
     const wa = hh.aW + lift, da = hh.dW + lift;
