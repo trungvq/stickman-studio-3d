@@ -93,9 +93,7 @@ const data = worldData(root);
 const has = (n) => Object.hasOwn(data.actions, n);
 const esc = (s) => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
 const glob = (p) => new RegExp(`^${p.split("*").map(esc).join(".*")}$`);
-const human = Object.keys(data.actions)
-  .filter((n) => rig.actionKind(data.actions[n]) === "character")
-  .sort();
+const human = Object.keys(data.actions).sort();
 const actions = hdXin
   ? hdXin.flatMap((p) => {
       const hit = human.filter((n) => glob(p).test(n));
