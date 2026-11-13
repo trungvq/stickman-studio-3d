@@ -27,8 +27,19 @@ export interface Fingers {
  */
 export const THUMB_ROLL = [-15, 45] as const;
 
-/** Dáng nghỉ: ngón cong nhẹ, ngón cái khép sát ngón trỏ — bàn tay không ai đặt dáng, và gốc mà `w` hoà từ đó. Không soạn được */
+/**
+ * Dáng nghỉ: bàn tay buông thả lỏng khum tự nhiên — ngón cong dần từ trỏ tới út, ngón cái khép sát ngón trỏ — bàn tay không
+ * ai đặt dáng, và gốc mà `w` hoà từ đó. Không soạn được
+ */
 export const HAND_RELAXED: Fingers = {
+  thumb: [12, 18, 6, 12],
+  index: [20, 28],
+  fingers: [28, 38],
+  spread: 2,
+};
+
+/** Dáng đo chiều dài bàn tay (`handDims` `L`): ngón gần duỗi, ngón cái khép sát ngón trỏ */
+export const HAND_MEASURE: Fingers = {
   thumb: [11, 16, 4, 8],
   index: [8, 10],
   fingers: [10, 14],

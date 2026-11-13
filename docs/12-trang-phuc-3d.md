@@ -885,7 +885,8 @@ Số khác áo phông: `ease: 10`, `fit: 0.85`, `waist: 2`, `hem: 5`, `neck: 18`
   Người ngồi: dải cổ, đai và vạt gập theo đùi cùng khối thân (`lapFold`).
 - Tay áo là ống `palette.sleeve*` của người mặc đồ. Tay áo rộng dần về cổ tay của kimono, yukata là
   `palette.sleeveFlare` ([01](01-rig.md#người-3d-mặc-đồ)): ống tay áo phủ ngoài tay, miệng mở, bàn tay giữ cỡ
-  theo `sleeveWidth`. `sleeveWidth` lớn thì cả tay lẫn bàn tay to theo. Không có vạt tay rủ (袂).
+  theo `sleeveWidth`; mặt trong ép phẳng vào thân, phần loe ra trước, sau và ngoài, nên tay buông sát sườn như tay áo
+  ôm. `sleeveWidth` lớn thì cả tay lẫn bàn tay to theo. Không có vạt tay rủ (袂).
 
 | Trường của `wrap` | Mặc định | Nghĩa |
 |---|---:|---|

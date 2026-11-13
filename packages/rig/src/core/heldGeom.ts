@@ -1,4 +1,4 @@
-import { HAND_BONES, HAND_REST, handFrames, handVec, type HandFrame } from "./hand";
+import { fingerVec, HAND_BONES, HAND_MEASURE, handFrames, handVec, type HandFrame } from "./hand";
 import { heldDistance } from "./heldFit";
 import type { HeldItemSpec, HeldSeats, HeldShape } from "./heldItem";
 import { add3, cross3, dot3, scale3, sub3, type V3 } from "./lens";
@@ -1229,7 +1229,7 @@ export function handDims(k: number, long = k): HandDims {
   const hit = DIMS.get(key);
   if (hit) return hit;
   const open = handFrames(handVec("open"), -1, k, long);
-  const rest = handFrames(HAND_REST, -1, k, long);
+  const rest = handFrames([0, 0, ...fingerVec(HAND_MEASURE)], -1, k, long);
   const d: HandDims = {
     W: 2 * HAND_BONES.palm.half[1] * k * 100,
     A: len3(sub3(tip(open.thumb1), tip(open.index1))) * 100,

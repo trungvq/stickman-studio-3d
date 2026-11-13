@@ -1254,7 +1254,8 @@ Ba góc quay tay của người 3D quanh chính nó, cho vẫy tay, ngửa tay, 
 
 Người 3D mặc đồ (`palette.clad`) có bàn tay năm ngón tròn mập kiểu hoạt hình: lòng bàn tay, ngón cái, trỏ, giữa, áp
 út, út, mỗi ngón hai đốt. Khung xương (`HAND_BONES`, `HAND_FINGERS`, `handFrames`), dáng có tên (`HAND_POSES`), dáng nghỉ
-(`HAND_RELAXED`) và tâm nắm (`handGrip`) ở `core/hand.ts`; mặt da bàn tay và nang va chạm (`handCapsules`,
+(`HAND_RELAXED`: bàn tay buông thả lỏng khum tự nhiên, trỏ gập `20°`/`28°`, giữa – út `28°`/`38°` cộng độ cuộn thêm của áp
+út, út) và tâm nắm (`handGrip`) ở `core/hand.ts`; mặt da bàn tay và nang va chạm (`handCapsules`,
 `fitCapsules`) ở `core/handMesh.ts`. Hành động chỉ chọn dáng cơ bản, không soạn từng ngón:
 
 | Dáng | Ngón |
@@ -1837,10 +1838,10 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
   cạp xuống gấu và ống đùi. Váy xoè hơn thì tay choãi hơn — người mặc đồ choãi chừng `6°` với váy thẳng, `10,5°` với
   `flare` `12`, `18°` với `30`; người que `4,6°`, `6°` và `14°`. Mọi điều kiện đơn điệu theo góc nên góc choãi liên tục
   theo số đo: nhích chiều cao, cạp, độ xoè thì tay chỉ nhích theo.
-  Tay áo loe: mép trong tay buông là mép trong tay áo loe, sườn áo lùi theo nó nên thân hẹp hơn người cùng số đo mặc
-  tay áo ôm. Mặc váy thì tay choãi thêm đúng phần góc tay áo loe đòi ở ngang hông so với ống tay ôm. Các phép thử trên đã
-  đo bằng tay áo loe, nên phần loe được tính lần thứ hai — cố ý, để thân người mặc tay áo loe không hẹp đi: kimono mẫu
-  choãi chừng `22,6°`, nửa ngang ngực `33,9` px; chỉ với các phép thử thì `16°` và `27,8` px.
+  Vạt treo hông (`skirt.style` `wrap`) nở ống chân `SKIRT_EASE` không lùi nửa nét, hình bao của nó cũng thế.
+  Tay áo loe: mặt trong ép phẳng vào thân ([Tay áo loe](#người-3d-mặc-đồ)), nên mép trong tay buông là ống tay áo chưa
+  loe (`SLEEVE_EASE` lần ống tay) — tay choãi gần như người mặc tay áo ôm, thân không hẹp đi: kimono mẫu choãi chừng
+  `11,5°` (tay áo ôm `11,2°`).
 - **Chi thon và phủ màu.** Ống chi thon theo bán kính (`CLAD_TAPER`): vai `1,12` → khuỷu `0,88` → cổ
   tay `0,53` — bắp tay to hơn cẳng tay; cổ tay ngang chừng `0,75` lòng bàn tay, dày hơn lòng tay chừng `1,2`
   lần —, hông `1,35` → gối `0,9` → cổ chân `0,74`. Phủ hết thì ống tô màu áo, quần; phủ một phần thì ống da và một ống phủ to hơn `1,1` lần từ
@@ -1852,8 +1853,11 @@ hông. Không khai thì người 3D là người que, từng điểm ảnh.
   bán kính `SLEEVE_EASE` (`1,1`) lần ống tay cộng phần loe tăng đều theo chiều dài tay từ `0` ở vai tới `sleeveFlare` ở
   miệng (`sleeveGrow`). Miệng hở: ống vẽ cả mặt trong, đĩa lót tối hơn màu tay áo (`0,45` lần) lùi trong miệng chừng
   2 px, cổ tay và bàn tay chui ra từ giữa; không có cổ tay áo. Bàn tay theo `sleeveWidth`, không theo bề ngang tay áo.
-  `roots3` đặt tay bằng bán kính ống tay áo ở khuỷu, miệng tay: tay áo rộng thì sườn áo lùi và tay choãi theo, như tay
-  to; mặc váy thì tay choãi thêm phần góc của tay áo loe ([Tay buông thẳng](#người-3d-mặc-đồ)). Va chạm (`collide`) vẫn là ống tay, không đo tay áo; không có vạt tay rủ (袂).
+  **Mặt trong ép phẳng vào thân** như vải tay áo buông áp sườn: ở mỗi vành, nửa quay về trục thân (`−side`
+  của x hệ thân, chiếu lên mặt vành) thành nửa elip, bán trục phía thân chỉ tới ống tay áo chưa loe; phía trước, sau và
+  ngoài loe đủ. Ép theo độ vuông góc của phía thân với ống: tay buông ép hết, cẳng tay chĩa ngang vào bụng gần như không
+  ép. Đĩa lót miệng ép theo cùng vành. `roots3` đặt tay bằng ống tay áo chưa loe ở khuỷu, miệng tay ([Tay buông
+  thẳng](#người-3d-mặc-đồ)). Va chạm (`collide`) vẫn là ống tay, không đo tay áo; không có vạt tay rủ (袂).
 - **Bàn tay có khớp.** Một mặt da liền năm ngón trên khung xương lòng bàn tay và năm ngón; dáng tay là góc khớp —
   [Bàn tay](#bàn-tay). Lòng bàn tay quay về phía thân, ngón cái ra trước, cỡ
   theo `sleeveWidth` (`handScale` của `0,8` nửa bề dày tay), không theo ống cổ tay `CLAD_TAPER`. Bàn tay xoè dài không
@@ -2177,7 +2181,7 @@ Xem, chọn và đọc tên: [Xem và chọn](#xem-và-chọn), [Tên và hậu 
 | `walk-short`, `run-3d` | Chu kỳ đi `walkCycle` đọc ở `side`, chỉ khác `params`, sinh bởi `tools/actions/walk.mjs`: `walk-short` sải ngắn cho vạt dài quấn, váy dài ôm (đùi `14°`, chu kỳ `1 s`, `140` đơn vị rig mỗi chu kỳ — [12](12-trang-phuc-3d.md#vạt-dài-quấn)); `run-3d` chạy (đùi `26°`, gối `90°`, khuỷu gập `110°` đánh sát sườn, thân ngả `16°`, chu kỳ `0,38 s`, `277` đơn vị rig) — đùi vung quá `26°` hay `stance` dưới `0,55` (có pha bay) thì mũi giày người 3D lún sàn lúc chạm đất, nên chạy nhanh bằng nhịp ngắn và luôn có chân trụ. |
 | `steps-3d`, `steps-back-3d` | Tiến / lùi hai bước ngắn rồi khép chân, mặt giữ hướng, `1,1 s` rồi giữ, quãng `80` đơn vị rig ở `height` 1; người đi `world.path` đúng quãng ấy, vào clip và thả về nền (clip rỗng ngay khi `path` dừng) đều blend `~0,1`. Chỉ ghi chân, thân; sinh bởi `tools/actions/steps.mjs` |
 | `sit-3d` | Ngồi: đùi ngang, ống chân thõng, tay buông; ghép với người ngồi (`world.sit`) trên mặt ngồi cao bằng gối; ghế khác cao, người khác cỡ, tựa lưng ghế, tay trên bàn hay tay vịn thì `stickman gen sit` ([Bộ sinh chung](#bộ-sinh-chung)) |
-| `arms-on-table-3d` | Đặt tay lên bàn: đích cổ tay hệ thân `[100, −56, 22]`, thân cúi `5`, bàn tay dáng nghỉ úp (`turn` `20`, `bend` `0`) nằm trên mặt bàn. Bàn khác cao thì scene đặt `world.hands` |
+| `arms-on-table-3d` | Đặt tay lên bàn: đích cổ tay hệ thân `[100, −56, 22]`, thân cúi `5`, bàn tay `cup` úp (`turn` `20`, `bend` `0`) nằm trên mặt bàn. Bàn khác cao thì scene đặt `world.hands` |
 | `type-3d` | Gõ phím, chồng lên `sit-3d` (`stage: desk`): cổ tay trên bàn phím `[105, −60…−65, ~32]`, hai tay so le, bàn tay úp ngón cong nhẹ (`turn` `70`, `bend` `−20`), thân cúi `8` |
 | `bow-3d` | お辞儀: thân cúi `38°` trong mặt phẳng dọc, tay dọc thân, giữ rồi đứng lên; một lượt `2,6 s`, lặp được |
 | `bow-15-3d`, `bow-30-3d`, `bow-45-3d` | Cúi chào một lần chỉ bằng thân, đầu: thân cúi `15 / 30 / 45°`, đầu gật thêm `6 / 5 / 3°`, xuống `0,3 / 0,4 / 0,55 s`, giữ `0,4 / 0,5 / 1,2 s`, đứng lên rồi giữ. Chỉ ghi `torso`, `head`, nên chồng được lên tay đang bưng khay, cầm món: đích tay hệ thân đứng yên khi thân cúi, nên `15°` chồng được lên tay sát eo, `30°` cần cổ tay ra trước `~65`, `45°` đổ lên cẳng tay |

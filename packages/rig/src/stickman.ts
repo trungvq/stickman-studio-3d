@@ -151,30 +151,48 @@ const bezTangent = (c: THREE.Vector3[], u: number, out: THREE.Vector3) => {
 };
 const _d = new THREE.Vector3(), _c = new THREE.Vector3(), _t = new THREE.Vector3(), _n = new THREE.Vector3(), _b = new THREE.Vector3(), _r = new THREE.Vector3();
 
-const _e = new THREE.Vector3();
+const _e = new THREE.Vector3(), _h = new THREE.Vector3();
+/**
+ * Tay áo loe ép phẳng phía thân: `m` hướng vào trục thân, đơn vị, ở hệ của ống; phía ấy bán kính chỉ tới
+ * `b0` → `b1` (ống chưa loe), phía kia loe đủ
+ */
+interface Hug { m: THREE.Vector3; b0: number; b1: number }
 /**
  * Dựng ống theo đường cong `c`: cả đoạn, hay phần `u0..u1` (ống tay áo, cổ tay áo), bán kính `r0` → `r1`; mút cuối nở
  * `rim` lần, hai mút tròn dẹt theo `flat0`, `flat1` (`1` là nửa cầu); `open` thì mút cuối hở (miệng tay áo loe).
  */
-function fillTube(geo: THREE.BufferGeometry, c: THREE.Vector3[], r0: number, r1 = r0, u0 = 0, u1 = 1, rim = 1, flat0 = 1, flat1 = 1, open = false) {
+function fillTube(geo: THREE.BufferGeometry, c: THREE.Vector3[], r0: number, r1 = r0, u0 = 0, u1 = 1, rim = 1, flat0 = 1, flat1 = 1, open = false, hug?: Hug) {
   const [cap, m, n] = geo.userData.limb as Quality['limb'];
   const pos = geo.attributes.position as THREE.BufferAttribute, nor = geo.attributes.normal as THREE.BufferAttribute;
   let k = 0;
-  const ring = (center: THREE.Vector3, along: number, rad: number, lean: number) => {
+  const ring = (center: THREE.Vector3, along: number, rad: number, lean: number, q = 1) => {
+    // nửa phía thân ép thành nửa elip: bán trục phía thân `q` lần bán kính, theo độ vuông góc của phía thân với ống
+    let e = 1;
+    if (hug && q < 1) {
+      _h.copy(hug.m).addScaledVector(_t, -hug.m.dot(_t));
+      const w = _h.length();
+      if (w > 1e-6) {
+        _h.multiplyScalar(1 / w);
+        e = 1 - (1 - q) * w;
+      }
+    }
     for (let j = 0; j < m; j++, k++) {
       const a = (j / m) * Math.PI * 2;
       _r.copy(_n).multiplyScalar(Math.cos(a)).addScaledVector(_b, Math.sin(a));
-      pos.setXYZ(k, center.x + _r.x * rad, center.y + _r.y * rad, center.z + _r.z * rad);
+      const cm = e < 1 ? Math.max(0, _r.dot(_h)) : 0;
+      pos.setXYZ(k, center.x + (_r.x - _h.x * cm * (1 - e)) * rad, center.y + (_r.y - _h.y * cm * (1 - e)) * rad, center.z + (_r.z - _h.z * cm * (1 - e)) * rad);
+      if (cm > 0) _r.addScaledVector(_h, cm * (1 / e - 1)).normalize();
       _r.multiplyScalar(lean).addScaledVector(_t, along);
       nor.setXYZ(k, _r.x, _r.y, _r.z);
     }
   };
+  const q0 = hug ? Math.min(1, hug.b0 / Math.max(1e-9, r0)) : 1, q1 = hug ? Math.min(1, hug.b1 / Math.max(1e-9, r1)) : 1;
   bezTangent(c, u0, _t);
   _n.set(Math.abs(_t.x) < 0.9 ? 1 : 0, 0, Math.abs(_t.x) < 0.9 ? 0 : 1).addScaledVector(_t, -(Math.abs(_t.x) < 0.9 ? _t.x : _t.z)).normalize();
   _b.crossVectors(_t, _n);
   for (let i = 0; i < cap; i++) {
     const f = (i / cap) * (Math.PI / 2);
-    ring(_c.copy(u0 === 0 ? c[0] : bez(c, u0, _e)).addScaledVector(_t, -r0 * flat0 * Math.cos(f)), -Math.cos(f), r0 * Math.sin(f), Math.sin(f));
+    ring(_c.copy(u0 === 0 ? c[0] : bez(c, u0, _e)).addScaledVector(_t, -r0 * flat0 * Math.cos(f)), -Math.cos(f), r0 * Math.sin(f), Math.sin(f), q0);
   }
   for (let i = 0; i <= n; i++) {
     const u = u0 + ((u1 - u0) * i) / n;
@@ -182,12 +200,13 @@ function fillTube(geo: THREE.BufferGeometry, c: THREE.Vector3[], r0: number, r1 
     // khung chuyển song song: pháp tuyến không xoắn theo đường cong
     _n.addScaledVector(_t, -_n.dot(_t)).normalize();
     _b.crossVectors(_t, _n);
-    ring(bez(c, u, _c), 0, (r0 + ((r1 - r0) * i) / n) * (i === n ? rim : 1), 1);
+    const rad = r0 + ((r1 - r0) * i) / n;
+    ring(bez(c, u, _c), 0, rad * (i === n ? rim : 1), 1, hug ? Math.min(1, (hug.b0 + ((hug.b1 - hug.b0) * i) / n) / Math.max(1e-9, rad)) : 1);
   }
   const re = r1 * rim;
   for (let i = cap - 1; i >= 0; i--) {
     const f = open ? Math.PI / 2 : (i / cap) * (Math.PI / 2);
-    ring(_c.copy(u1 === 1 ? c[3] : bez(c, u1, _e)).addScaledVector(_t, re * flat1 * Math.cos(f)), Math.cos(f), re * Math.sin(f), Math.sin(f));
+    ring(_c.copy(u1 === 1 ? c[3] : bez(c, u1, _e)).addScaledVector(_t, re * flat1 * Math.cos(f)), Math.cos(f), re * Math.sin(f), Math.sin(f), q1);
   }
   pos.needsUpdate = nor.needsUpdate = true;
   geo.computeBoundingSphere();
@@ -209,7 +228,7 @@ const ONE = new THREE.Vector3(1, 1, 1);
  * Ống phủ trên đoạn chi của người `clad`: phần `u0..u1`, to hơn ống chi `k` lần cộng `grow` (three, ở `u0`, `u1`), mút cuối
  * nở `rim`, dẹt `flat`; `open` thì mút cuối hở. `disk` là đĩa lót miệng tay áo loe thay cho ống, lùi vào trong miệng bấy nhiêu
  */
-interface Cover { geo: THREE.BufferGeometry; u0: number; u1: number; k: number; rim: number; flat: number; grow?: [number, number]; open?: boolean; disk?: number }
+interface Cover { geo: THREE.BufferGeometry; u0: number; u1: number; k: number; rim: number; flat: number; grow?: [number, number]; open?: boolean; disk?: number; hug?: boolean }
 
 /**
  * Ống của một đoạn chi theo đường cong `c`: ống chính (`userData.taper` nhân bán kính hai mút, `userData.root` độ tròn mút
@@ -223,16 +242,19 @@ function tubes(m: THREE.Mesh, c: THREE.Vector3[]) {
   for (const v of (m.userData.covers ?? []) as Cover[]) {
     const [g0, g1] = v.grow ?? [0, 0];
     const ra = (a + (b - a) * v.u0) * v.k + g0, rb = (a + (b - a) * v.u1) * v.k + g1;
+    const medial = m.userData.medial as THREE.Vector3 | undefined;
+    const hug = v.hug && medial ? { m: medial, b0: ra - g0, b1: rb - g1 } : undefined;
     if (v.disk !== undefined) {
       const u = Math.max(v.u0, v.u1 - v.disk / m.userData.len);
-      fillTube(v.geo, c, rb * 0.97, rb * 0.97, u, u, 1, 0, 0);
-    } else fillTube(v.geo, c, ra, rb, v.u0, v.u1, v.rim, v.u0 > 0 ? v.flat : root, v.u1 < 1 ? v.flat : 1, v.open);
+      fillTube(v.geo, c, rb * 0.97, rb * 0.97, u, u, 1, 0, 0, false, hug && { m: medial!, b0: hug.b1 * 0.97, b1: hug.b1 * 0.97 });
+    } else fillTube(v.geo, c, ra, rb, v.u0, v.u1, v.rim, v.u0 > 0 ? v.flat : root, v.u1 < 1 ? v.flat : 1, v.open, hug);
   }
 }
 /**
  * Uốn hai đoạn chi như `limbCurves` của lõi: hai đoạn Bézier bậc ba qua gốc, khớp giữa, đầu chi; tiếp tuyến ở khớp
  * giữa song song gốc → đầu chi, `k` là `limbCurve`. Đặt vào `userData.bend` của hai đoạn; pipeline gọi trước mỗi lượt vẽ.
  */
+const _q = new THREE.Quaternion(), _qm = new THREE.Quaternion();
 function bendLimb(upper: THREE.Mesh, mid: THREE.Object3D, lower: THREE.Mesh, k: number, ankle?: THREE.Object3D) {
   let key = '';
   const P0 = new THREE.Vector3(), P1 = new THREE.Vector3(), P2 = new THREE.Vector3(), inv = new THREE.Matrix4();
@@ -241,7 +263,15 @@ function bendLimb(upper: THREE.Mesh, mid: THREE.Object3D, lower: THREE.Mesh, k: 
     ankle?.updateWorldMatrix(true, false);
     P1.copy(mid.position);
     P2.set(0, -lower.userData.len, 0).applyQuaternion(mid.quaternion).add(P1);
-    const now = [P1.x, P1.y, P1.z, P2.x, P2.y, P2.z, upper.userData.r, lower.userData.r, ...(ankle ? ankle.quaternion.toArray() : [])].join();
+    const side = upper.userData.side as Side | undefined;
+    if (side) {
+      // phía thân ở hệ vai, hệ khuỷu: vai cắm thẳng vào nhóm thân, trục thân về phía `-side` của x
+      _q.copy(upper.parent!.quaternion).invert();
+      ((upper.userData.medial as THREE.Vector3 | undefined) ?? (upper.userData.medial = new THREE.Vector3())).set(-side, 0, 0).applyQuaternion(_q);
+      _q.premultiply(_qm.copy(mid.quaternion).invert());
+      ((lower.userData.medial as THREE.Vector3 | undefined) ?? (lower.userData.medial = new THREE.Vector3())).set(-side, 0, 0).applyQuaternion(_q);
+    }
+    const now = [P1.x, P1.y, P1.z, P2.x, P2.y, P2.z, upper.userData.r, lower.userData.r, ...(ankle ? ankle.quaternion.toArray() : []), ...(side ? [...upper.parent!.quaternion.toArray(), ...mid.quaternion.toArray()] : [])].join();
     if (now === key) return;
     key = now;
     const f = k / 6;
@@ -878,6 +908,8 @@ function stickmanBuild(o: StickmanOptions): Figure {
     const legTaper = [thigh / limbR(trouserWidth), CLAD_TAPER.leg[1], CLAD_TAPER.leg[2]] as const;
     hands = {} as Record<Side, Hand>;
     for (const s of SIDES) {
+      // tay áo loe ép phẳng phía thân: `bendLimb` đặt hướng vào trục thân ở hệ vai, khuỷu
+      if (flare) seg(arms[s].shoulder).userData.side = s;
       cladLimb(seg(arms[s].shoulder), seg(arms[s].elbow), [B.upperArm, B.foreArm], [CLAD_TAPER.arm[0] * (1 + bicep), CLAD_TAPER.arm[1], CLAD_TAPER.arm[2]], cloth ?? tone(sleeveColor), limbSkin, sleeveLength, true, flare || undefined, cloth && sleeveColor);
       cladLimb(seg(legs[s].hip), seg(legs[s].knee), [B.thigh, B.shin], legTaper, tone(trouserColor), legSkin, trouserLength, false);
       const { k, long } = cladHand(sleeveWidth, rig.stroke, B.foreArm * 100);
@@ -976,9 +1008,9 @@ function cladLimb(upper: THREE.Mesh, lower: THREE.Mesh, [L1, L2]: [number, numbe
     const k = SLEEVE_EASE;
     const end = d < L1 ? upper : lower;
     const uEnd = d < L1 ? d / L1 : Math.min(1, (d - L1) / L2);
-    add(upper, 0, Math.min(1, d / L1), 1, 1, { k, grow: [0, g(Math.min(d, L1))], open: d < L1 }, flare.cover);
-    if (d >= L1) add(lower, 0, uEnd, 1, 1, { k, grow: [g(L1), g(d)], open: true }, flare.cover);
-    add(end, 0, uEnd, 1, 0, { k, grow: [0, g(d)], disk: 0.02 }, flare.lining, false);
+    add(upper, 0, Math.min(1, d / L1), 1, 1, { k, grow: [0, g(Math.min(d, L1))], open: d < L1, hug: true }, flare.cover);
+    if (d >= L1) add(lower, 0, uEnd, 1, 1, { k, grow: [g(L1), g(d)], open: true, hug: true }, flare.cover);
+    add(end, 0, uEnd, 1, 0, { k, grow: [0, g(d)], disk: 0.02, hug: true }, flare.lining, false);
   } else if (full) {
     if (cuff) add(lower, 0.84, 1, 1, 0.3);
   } else if (d > 0.02) {

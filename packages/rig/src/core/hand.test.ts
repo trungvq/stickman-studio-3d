@@ -135,9 +135,11 @@ describe("bảng dáng tay", () => {
       expect(reach(vec("fist"), f)).toBeLessThan(0.12);
     for (const f of ["index1", "middle1"] as const)
       expect(reach(vec("open"), f)).toBeGreaterThan(0.165);
-    // dáng nghỉ: ngón cong nhẹ, ngón cái khép sát cạnh ngón trỏ (không hở chữ C)
+    // dáng nghỉ: ngón khum vừa, không duỗi như `open`, không cuộn như nắm; ngón cái khép sát cạnh ngón trỏ (không hở chữ C)
     const r = vec("rest");
-    expect(reach(r, "index1")).toBeGreaterThan(0.165);
+    expect(reach(r, "index1")).toBeGreaterThan(0.15);
+    expect(reach(r, "index1")).toBeLessThan(reach(vec("open"), "index1") - 0.003);
+    expect(reach(r, "middle1")).toBeLessThan(reach(vec("open"), "middle1") - 0.006);
     expect(dist(tipOf(r, "thumb1"), tipOf(r, "index1"))).toBeLessThan(0.1);
     // ngón cái dài như tay người: khép sát thì đầu ngón cái vượt khớp gốc ngón trỏ, tới gần giữa đốt gốc
     for (const p of ["rest", "cup", "flat"] as const)

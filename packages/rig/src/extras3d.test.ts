@@ -164,11 +164,42 @@ describe('tay áo loe', () => {
     expect(Math.max(w.x, w.z) * 100).toBeGreaterThan(2 * (wrist * SLEEVE_EASE + 12) - 1);
   });
 
-  it('tay buông choãi theo bề ngang ống tay áo', () => {
+  it('tay buông đặt theo ống tay áo chưa loe: choãi gần như tay áo ôm', () => {
     const a = roots3({ style: 'wrap' }, rig, build);
     const b = roots3({ style: 'wrap' }, rig, { ...build, flare: 14 });
-    expect(b.room!.r[2]).toBeGreaterThan(a.room!.r[2] + 14);
+    expect(b.room!.r[2]).toBeCloseTo(a.room!.r[2] * SLEEVE_EASE, 9);
     expect(b.splay).toBeGreaterThanOrEqual(a.splay);
+    expect(b.splay - a.splay).toBeLessThan(0.01);
+  });
+
+  it('mặt trong tay áo loe ép phẳng vào thân, phần loe ra trước, sau và ngoài', () => {
+    const f = dressed((c) => {
+      c.palette.sleeveWidth = 15;
+      c.palette.sleeveFlare = 12;
+    });
+    act(f, stand(), 0);
+    f.root.updateMatrixWorld(true);
+    for (const s of [-1, 1] as const) {
+      const fore = f.arms[s].elbow.children.find((m) => m.userData.limb) as THREE.Mesh;
+      fore.userData.bend();
+      const cover = f.arms[s].elbow.children.find((m) => (m as THREE.Mesh).isMesh && !m.userData.limb) as THREE.Mesh;
+      const W = f.spine.worldToLocal(f.arms[s].wrist.getWorldPosition(new THREE.Vector3()));
+      const pos = cover.geometry.attributes.position;
+      const v = new THREE.Vector3();
+      let [inner, outer] = [0, 0];
+      for (let i = 0; i < pos.count; i++) {
+        v.fromBufferAttribute(pos, i);
+        f.arms[s].elbow.localToWorld(v);
+        f.spine.worldToLocal(v);
+        // gần miệng tay áo, cao hơn cổ tay dưới 3 px
+        if (v.y - W.y > 0.03) continue;
+        const dx = (v.x - W.x) * s * 100;
+        [inner, outer] = [Math.max(inner, -dx), Math.max(outer, dx)];
+      }
+      const wrist = (cladArm(15, rig.stroke) / CLAD_TAPER.arm[0]) * CLAD_TAPER.arm[2];
+      expect(inner, `tay ${s}`).toBeLessThan(wrist * SLEEVE_EASE + 1);
+      expect(outer, `tay ${s}`).toBeGreaterThan(wrist * SLEEVE_EASE + 10);
+    }
   });
 });
 

@@ -362,7 +362,7 @@ cỡ (`handDims(k, long)`) từ `HAND_BONES` và `handFrames` (`hand.ts:159`, `:
 |---|---|---|
 | `W` | Bề ngang lòng bàn tay (`2 · palm.half[1] · k`) | 8,4 · k |
 | `A` | Khe đầu ngón cái – đầu ngón trỏ ở dáng `open` | 9,76 · k |
-| `L` | Cổ tay tới đầu ngón trỏ, dáng nghỉ | 17,9 · long |
+| `L` | Cổ tay tới đầu ngón trỏ, ngón gần duỗi (`HAND_MEASURE`) | 17,9 · long |
 
 Bàn tay không nhân theo chiều cao người. Hai người có tay nhỏ nhất và lớn nhất trong repo video có `k 1,75` / `long 1,545` và `k 2` / `long 1,813`: `W` từ 14,7 tới 16,8. `bang-cam` xếp người theo `k · height` (1,61 / 2,16), không phải cỡ tay.
 

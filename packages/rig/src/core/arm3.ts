@@ -314,9 +314,9 @@ function clearsSkirt(
  * nên không hở khe). Ngang hông, mép trong cẳng tay cách mép ngoài gốc đùi `cladThigh` ít nhất một `CLAD_GAP`: hông rộng
  * hơn thì tay choãi thêm. Mặc váy dựng khối thì tay choãi thêm tới khi cẳng tay và bàn tay nằm ngoài váy đứng thẳng
  * (`skirtSide`) dựng trên cạp đã lùi theo tay ở chính góc ấy; hình bao bắt đầu từ mép cạp, hay từ ngang khuỷu khi cạp cao
- * hơn khuỷu, và không ra ngoài mép trong tay ở đó. Tay áo loe: mép trong tay là mép trong tay áo loe; mặc váy thì tay
- * choãi thêm phần góc tay áo loe đòi ở ngang hông so với ống tay ôm — đếm phần loe lần thứ hai, giữ thân người mặc tay
- * áo loe không hẹp đi vì sườn áo lùi theo tay áo loe. Mọi điều kiện đơn điệu theo góc nên góc liên tục theo số đo.
+ * hơn khuỷu, và không ra ngoài mép trong tay ở đó. Tay áo loe: mặt trong ép phẳng vào thân, mép trong tay
+ * là ống tay áo chưa loe (`SLEEVE_EASE` lần ống tay), phần loe chỉ ra trước, sau và ngoài. Mọi điều kiện đơn điệu theo
+ * góc nên góc liên tục theo số đo.
  * Người que: gốc vai trên viền thân ở độ cao `shoulderDrop`, mặc váy thì tay choãi tới khi nét tay nằm ngoài váy
  */
 export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Build3) => {
@@ -354,17 +354,12 @@ export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Buil
   const at = garmentSocket(garment, rig, arm, cap);
   const k = arm / CLAD_TAPER.arm[0];
   const flare = b.flare ?? 0;
-  const f = b.sleeveLength ?? 1;
-  // tay áo loe nằm ngoài tay: mép trong tay buông là mép trong ống tay áo, tới miệng tay
-  const r = (
-    flare > 0
-      ? [
-          cap,
-          k * CLAD_TAPER.arm[1] * SLEEVE_EASE + sleeveGrow(flare, f, len, len[0]),
-          k * CLAD_TAPER.arm[2] * SLEEVE_EASE + sleeveGrow(flare, f, len, len[0] + len[1]),
-        ]
-      : [cap, k * CLAD_TAPER.arm[1], k * CLAD_TAPER.arm[2]]
-  ) as readonly [number, number, number];
+  // tay áo loe ép phẳng mặt trong vào thân: mép trong tay buông là ống tay áo chưa loe
+  const r = [
+    cap,
+    k * CLAD_TAPER.arm[1] * (flare > 0 ? SLEEVE_EASE : 1),
+    k * CLAD_TAPER.arm[2] * (flare > 0 ? SLEEVE_EASE : 1),
+  ] as const;
   const g = garmentOf(garment, true, rig);
   const hipEdge = rig.hipHalf + thigh;
   const hand = cladHand(b.sleeve, rig.stroke, len[1]).length;
@@ -385,14 +380,21 @@ export const roots3 = (garment: Partial<Garment> | undefined, rig: Rig, b?: Buil
     const [aW, dW] = profileAt(pts, depth, yW);
     const top = Math.max(yW, at[1] + len[0] * Math.cos(splay));
     const edge = Math.min(profileAt(pts, depth, top)[0], armInner(room, top));
-    const side = skirtSide(skirt, h, aW, dW, rig.hipHalf, thigh, knee, inset, [edge, top]);
+    // vạt treo hông (`wrap`) nở ống chân `SKIRT_EASE` không lùi nửa nét (`hipHull`)
+    const side = skirtSide(
+      skirt,
+      h,
+      aW,
+      dW,
+      rig.hipHalf,
+      thigh,
+      knee,
+      skirt.style === "wrap" ? 0 : inset,
+      [edge, top],
+    );
     return clearsSkirt(room, hand, side);
   };
-  // thân áo lùi theo mép trong tay áo loe: mặc váy thì tay choãi thêm phần góc tay áo loe đòi ở ngang hông so với ống
-  // tay ôm — lần đếm thứ hai của phần loe, để thân người mặc tay áo loe không hẹp đi
-  const plain = [cap, k * CLAD_TAPER.arm[1], k * CLAD_TAPER.arm[2]] as const;
-  const hips = (r: ArmRoom["r"]) => (s: number) => armInner({ ...roomAt(s), r }, 0) >= hipEdge;
-  let splay = widen(fits) + (skirt && flare > 0 ? widen(hips(r)) - widen(hips(plain)) : 0);
+  let splay = widen(fits);
   // bụng phệ không bị tay cắt: sườn áo không bụng đã lùi theo tay ở góc `splay`, tay choãi thêm tới khi mép trong
   // cách sườn ấy cộng phần bụng nở hai bên một `CLAD_GAP` — tay tránh phần bụng chứ không tránh cả thân áo chưa lùi
   const side = g.belly ? (g.bellySide ?? BELLY.side) * g.belly : 0;

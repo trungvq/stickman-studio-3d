@@ -13,11 +13,14 @@
         "armLeft": { "at": [100, -56, 22], "elbow": [-0.3, 0.3, 1] },
         "armRight": { "at": [100, -56, 22], "elbow": [-0.3, 0.3, 1] }
       },
-      "hand": { "armLeft": { "turn": 20, "bend": 0 }, "armRight": { "turn": 20, "bend": 0 } },
+      "hand": {
+        "armLeft": { "pose": "cup", "turn": 20, "bend": 0 },
+        "armRight": { "pose": "cup", "turn": 20, "bend": 0 }
+      },
       "ease": "linear"
     }
   ],
   "events": [],
-  "note": "Hai tay đặt trên bàn trước mặt người ngồi: đích cổ tay hệ thân [100, −56, 22], khuỷu ra ngoài, thân cúi 5, bàn tay nghỉ úp; giữ. Ghi hai tay, thân, bàn tay. Nền `sit-3d` với `world.sit`, mặt bàn cao hơn mặt ngồi ~55 (đơn vị rig ở `height` 1), mép gần trước hông ~80; bàn khác cao thì đặt `world.hands`. Chồng đầu, nét mặt lên trên; gõ phím là `type-3d`.",
+  "note": "Hai tay đặt trên bàn trước mặt người ngồi: đích cổ tay hệ thân [100, −56, 22], khuỷu ra ngoài, thân cúi 5, bàn tay `cup` úp (ngón gần duỗi nằm trên mặt bàn); giữ. Ghi hai tay, thân, bàn tay. Nền `sit-3d` với `world.sit`, mặt bàn cao hơn mặt ngồi ~55 (đơn vị rig ở `height` 1), mép gần trước hông ~80; bàn khác cao thì đặt `world.hands`. Chồng đầu, nét mặt lên trên; gõ phím là `type-3d`.",
   "preview": { "stage": "desk" }
 }
