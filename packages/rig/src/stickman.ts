@@ -444,9 +444,9 @@ interface SculptHat { cut: (p: Vec3) => boolean; press?: (p: Vec3) => Vec3 }
  * Mũ dựng khối (`pieces.crown.hat`) ôm sọ và vỏ tóc `hair`; trả vùng trong lòng mũ và phép ép tóc.
  * docs/12-trang-phuc-3d.md#mũ-dựng-khối
  */
-function sculptHat(head: THREE.Object3D, hat: Partial<Hat>, hair: Partial<Sculpt> | undefined, color: string): SculptHat {
+function sculptHat(head: THREE.Object3D, hat: Partial<Hat>, hair: Partial<Sculpt> | undefined, color: string, human: boolean): SculptHat {
   const h = hatSpec(hat);
-  const fit = hatFit(h, hair);
+  const fit = hatFit(h, hair, human);
   const m = hatMesh(h, fit);
   // một vật liệu màu theo tam giác: chỗ giáp hai phần không có nét như hai vật, nên quai và huy hiệu nổi sát băng không bị
   // nét bóng dáng của băng phủ; khe sâu `inkGap` cho mép lưỡi trai, chóp loe vẫn có nét
@@ -833,7 +833,7 @@ function stickmanBuild(o: StickmanOptions): Figure {
     g.scale.copy(skullScale).multiplyScalar(R.head);
     head.add(g);
   }
-  const hat = o.hat ? sculptHat(head, o.hat, hair, o.hatColor ?? color) : undefined;
+  const hat = o.hat ? sculptHat(head, o.hat, hair, o.hatColor ?? color, human) : undefined;
   if (hair) sculptHair(head, hair, hairColor, human, hat, o.hairAccent);
   if (o.pin) sculptPin(head, o.pin, hair, human, o.pinColor ?? '#3a2a22', o.pinBead ?? o.pinColor ?? '#3a2a22');
   if (o.earrings) sculptEarrings(head, o.earrings, human);

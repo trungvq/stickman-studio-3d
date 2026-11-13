@@ -21,6 +21,7 @@ import {
   shellLift,
   step,
 } from "./sculpt";
+import { humanShell, humanSkull } from "./humanHead";
 import { onSkull, type Vec3 } from "./sphere";
 
 const unit = (v: Vec3): Vec3 => {
@@ -78,9 +79,16 @@ export function shellAt(s: Sculpt, lon: number, lat: number) {
  * `back` ở gáy; thân là ống elip nhỏ nhất cùng tâm ôm mọi điểm của sọ và vỏ tóc trên miệng, nở thêm `ease`; cao ít nhất
  * tới trên đỉnh tóc `ease`. docs/12-trang-phuc-3d.md#mũ-dựng-khối
  */
-export function hatFit(raw: Partial<Hat> | undefined, hair?: Partial<Sculpt>): HatFit {
+export function hatFit(
+  raw: Partial<Hat> | undefined,
+  hair?: Partial<Sculpt>,
+  human = false,
+): HatFit {
   const h = hatSpec(raw);
   const s = hair && SculptSchema.parse(hair);
+  // đầu `human`: đo cả mặt đầu thật (trán nhô hơn cầu ở giữa, không thì trán xuyên băng và chân lưỡi trai) lẫn sọ cầu
+  // (thái dương thon hơn cầu: chỉ đo mặt thật thì mũ hẹp lại, đổi dáng mũ đã căn)
+  const surf = (p: Vec3): Vec3[] => (human ? [p, humanShell(p) as Vec3] : [p]);
   const F = onSkull(0, h.front);
   const fwd = unit(add(F, [onSkull(180, h.back), -1]));
   const n = cross(fwd, [1, 0, 0]);
@@ -88,9 +96,10 @@ export function hatFit(raw: Partial<Hat> | undefined, hair?: Partial<Sculpt>): H
   const pts: [x: number, z: number, up: number][] = [];
   for (let lon = -180; lon < 180; lon += FIT_STEP)
     for (let lat = -60; lat <= 90; lat += FIT_STEP / 2) {
-      const p = onSkull(lon, lat, s ? shellAt(s, lon, lat) : 0);
-      const up = dot(n, p) - d;
-      if (up >= -FIT_BAND) pts.push([p[0], dot(fwd, p), up]);
+      for (const p of surf(onSkull(lon, lat, s ? shellAt(s, lon, lat) : 0))) {
+        const up = dot(n, p) - d;
+        if (up >= -FIT_BAND) pts.push([p[0], dot(fwd, p), up]);
+      }
     }
   const zs = pts.map(([, z]) => z);
   const zc = (Math.max(...zs) + Math.min(...zs)) / 2;
@@ -99,7 +108,11 @@ export function hatFit(raw: Partial<Hat> | undefined, hair?: Partial<Sculpt>): H
   const k = Math.max(...pts.map(([x, z]) => Math.hypot(x / a0, (z - zc) / b0)));
   const top = Math.max(...pts.map(([, , up]) => up));
   // đỉnh sọ trên miệng: mũ ép tóc tới đâu cũng không thấp hơn nó
-  const skull = Math.max(...SKULL_TOP.map((p) => dot(n, p) - d));
+  const skull = Math.max(
+    ...SKULL_TOP.flatMap((p) =>
+      (human ? [p, humanSkull(p) as Vec3] : [p]).map((q) => dot(n, q) - d),
+    ),
+  );
   const room = Math.max(h.ease, 0.02) + h.round * 0.3;
   const need = top + room;
   const floor = Math.max(h.height, skull + room);
@@ -153,6 +166,8 @@ const BRIM_ROWS = 4;
 const BRIM_THICK = 0.035;
 const BRIM_INSET = 0.04;
 const BRIM_SIDE = 0.03;
+/** Mặt trên lưỡi trai gặp vách mũ cao hơn mép dưới băng bấy nhiêu lần bán kính: khớp kín, không khe */
+const BRIM_SEAT = 0.006;
 /** Dây quai và nút: nổi khỏi băng, nửa góc tới nút (độ), bán kính nút; tâm dây ở bấy nhiêu phần chiều cao băng */
 const STRAP_LIFT = 0.012;
 const STRAP_SPAN = 92;
@@ -280,17 +295,22 @@ export function hatMesh(raw: Partial<Hat> | undefined, fit: HatFit): HatMesh {
 function brimMesh(list: Vec3[][], { n, fwd, base, a, b }: HatFit, brim: number, droop: number) {
   const x: Vec3 = [1, 0, 0];
   const d = (droop * Math.PI) / 180;
+  // chân lùi vào ống `BRIM_INSET` rồi chúc `droop`: mặt trên ra tới vách mũ đã tụt dưới miệng chừng ấy, hở khe nhìn thấu
+  // vào lòng mũ; nâng cả lưỡi trai cho mặt trên gặp vách trên mép băng `BRIM_SEAT`
+  const lift = BRIM_INSET * Math.max(a, b) * Math.tan(Math.max(0, d)) + BRIM_SEAT;
   const top: Vec3[][] = [];
   const bot: Vec3[][] = [];
   for (let i = 0; i <= BRIM_COLS; i++) {
     const f = -Math.PI / 2 + (i / BRIM_COLS) * Math.PI;
     const inner = add(
       base,
+      [n, lift],
       [x, a * (1 - BRIM_INSET) * Math.sin(f)],
       [fwd, b * (1 - BRIM_INSET) * Math.cos(f)],
     );
     const outer = add(
       base,
+      [n, lift],
       [x, a * (1 + BRIM_SIDE) * Math.sin(f)],
       [fwd, (b + brim) * Math.cos(f)],
     );

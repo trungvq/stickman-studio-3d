@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { hatFit, hatMesh, hatSpec, insideHat, pinMesh, pressHair, shellAt } from "./hat";
 import { HAT_SHAPE_DEFAULTS, HatSchema, SculptSchema, type Hat, type Sculpt } from "./schema";
 import { accentAt, ahogeRings, hairline, knotFrame, SCULPT_PRESETS } from "./sculpt";
+import { humanSkull, setHeadShape } from "./humanHead";
 import { onSkull, type Vec3 } from "./sphere";
 
 const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -271,5 +272,45 @@ describe("trâm cài búi", () => {
     const bead = mid(m.bead);
     expect(Math.hypot(...sub(bead, k.center))).toBeGreaterThan(k.radius);
     expect(dot(sub(bead, k.center), k.n)).toBeGreaterThan(0);
+  });
+});
+
+describe("mũ trên đầu human", () => {
+  const police = { shape: "peaked" } as const;
+  const hair = SCULPT_PRESETS.short.sculpt;
+  const at = (fit: ReturnType<typeof hatFit>, p: Vec3) => {
+    const rel = sub(p, fit.base);
+    return { up: dot(rel, fit.n), r: Math.hypot(rel[0] / fit.a, dot(rel, fit.fwd) / fit.b) };
+  };
+  for (const face of ["asian", "western", "anime"] as const) {
+    it(`${face}: trán nhô hơn cầu vẫn nằm trong ống quanh miệng mũ, bề ngang giữ như sọ cầu`, () => {
+      const sphere = hatFit(police, hair);
+      const prev = setHeadShape({ face, jaw: 0.3 });
+      try {
+        const fit = hatFit(police, hair, true);
+        for (let lon = -40; lon <= 40; lon += 5)
+          for (let lat = 0; lat <= 60; lat += 2) {
+            const { up, r } = at(fit, humanSkull(onSkull(lon, lat)) as Vec3);
+            if (up >= 0) expect(r).toBeLessThanOrEqual(1 + 1e-9);
+          }
+        expect(fit.a).toBeGreaterThanOrEqual(sphere.a - 0.01);
+      } finally {
+        setHeadShape(prev);
+      }
+    });
+  }
+  it("mặt trên lưỡi trai gặp vách mũ trên mép dưới băng: không hở khe", () => {
+    const fit = hatFit(police, hair);
+    const m = hatMesh(police, fit);
+    // mặt trên lưỡi trai ở giữa trán: nội suy giữa hai hàng đỉnh kẹp vách ống (r = 1), không thấp hơn miệng mũ
+    const pts = m.brim
+      .flat()
+      .filter((p) => Math.abs(p[0]) < 1e-6 && dot(p, fit.fwd) > 0)
+      .map((p) => at(fit, p));
+    // mỗi phía vách, đỉnh cao nhất là đỉnh mặt trên gần vách nhất (lưỡi trai chúc dần ra mép)
+    const side = (inside: boolean) =>
+      pts.filter(({ r }) => r <= 1 === inside).reduce((a, b) => (b.up > a.up ? b : a));
+    const [p, q] = [side(true), side(false)];
+    expect(p.up + ((q.up - p.up) * (1 - p.r)) / (q.r - p.r)).toBeGreaterThan(0);
   });
 });

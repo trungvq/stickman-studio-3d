@@ -517,15 +517,18 @@ dáng (`HAT_SHAPE_DEFAULTS`, đọc qua `hatSpec`).
 
 - **Cỡ mũ đo trên đầu** (`hatFit`): lấy mẫu sọ và vỏ tóc (`shellAt`, như hàng vỏ khi đầu thẳng) mỗi
   `3°`, giữ điểm trên miệng mũ (và dải `0.03` dưới nó). Thân là ống elip cùng tâm nhỏ nhất ôm mọi điểm
-  ấy, nở thêm `ease`: đầu đinh thì mũ ôm sát, tóc bồng thì mũ to theo. `press: 0` thì thân cao ít nhất tới trên đỉnh
+  ấy, nở thêm `ease`: đầu đinh thì mũ ôm sát, tóc bồng thì mũ to theo. Đầu `human` lấy mẫu cả sọ cầu lẫn mặt đầu thật
+  (`humanShell`): trán nhô hơn cầu ở giữa nên ống nới theo, không thì trán xuyên băng và chân lưỡi trai thành khe nhìn
+  thấu; thái dương thon hơn cầu thì giữ bề ngang của cầu. `press: 0` thì thân cao ít nhất tới trên đỉnh
   tóc `ease` cộng một phần bo, nên đỉnh mũ không cắt tóc. Băng của `peaked` là chính ống ấy; chóp loe ra ngoài nó.
 - **Tóc dưới mũ không lòi ra**: vỏ tóc nằm trong ống nên mũ che; lọn gai, lọn dẹt, lọn vểnh, búi, đuôi
   ngựa có chân trong lòng mũ (`insideHat`) bị bỏ cả khối (`sculptMesh` nhận `cut`). Phần tóc dưới miệng
   mũ — mai, gáy — vẫn hiện.
 - **Lưỡi trai của `peaked`** là tấm dày hình lưỡi liềm: mép trong theo miệng mũ nửa trước (hai đầu ngang
-  thái dương), mép ngoài nửa elip chìa `brim`, mỗi điểm chúc `droop` quanh chân của nó trên miệng mũ. Nó gắn
-  vào khối đầu như cả mũ nên gật, lắc đầu không xuyên mặt; phần chìa ra luôn nằm ngoài sọ (miệng mũ ở nửa trên,
-  nơi đầu `human` trùng mặt cầu).
+  thái dương), mép ngoài nửa elip chìa `brim`, mỗi điểm chúc `droop` quanh chân của nó trên miệng mũ. Cả tấm nâng
+  lên vừa đủ cho mặt trên gặp vách băng trên mép dưới băng (`BRIM_SEAT`): chân lùi vào ống rồi chúc xuống nên không nâng
+  thì mặt trên ra tới vách đã tụt dưới miệng, hở một khe mảnh. Nó gắn
+  vào khối đầu như cả mũ nên gật, lắc đầu không xuyên mặt; phần chìa ra luôn nằm ngoài sọ.
 - **Nét mực**: mũ là vật riêng có nét bóng dáng hậu kỳ dày `0.03` (`npr({ ink })`), nên miệng mũ có nét
   rõ trên trán, mũ trắng trên áo trắng vẫn tách khối. Nếp gấp là ống mực mảnh nổi nhẹ khỏi thân; `peaked`
   có thêm một vòng ở đường nối băng với chóp. Các phần của `peaked` là một vật liệu tô màu theo tam giác
@@ -535,7 +538,7 @@ dáng (`HAT_SHAPE_DEFAULTS`, đọc qua `hatSpec`).
   `crown` của đồ gắn và nhãn bám đỉnh đầu nằm trên mũ.
 - `hatMesh` ra tam giác từng phần (`tris` thân, `band`, `seat` đế huy hiệu, `brim`, `strap`, `badge`, `weave` /
   `brimWeave` vòng vân rơm) và vòng nét ở hệ sọ đơn vị; người 3D phóng theo khối đầu như tóc. Mũ không dời theo `humanHair`: miệng mũ nằm ở nửa
-  trên sọ, nơi đầu `human` trùng mặt cầu.
+  trên sọ; chỗ đầu `human` nhô hơn cầu (giữa trán) thì ống mũ đã nới theo lúc đo (`hatFit(…, human)`).
 - Màu thân là `pieces.crown.color`, bỏ trống thì lấy màu áo.
 
 Cảnh sát đồn khu vực (地域警察官), mũ mùa đông: thân cùng màu áo đông 濃紺 ("xanh than đậm"), băng, quai,
