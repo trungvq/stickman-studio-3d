@@ -1619,10 +1619,11 @@ hai ống chân cong đúng như chân người 3D vẽ (`palette.limbCurve`) t�
 - **Cạp thấp hơn hông** (`rise` âm, cạp giấu dưới áo khoác dài): điểm khối hông và ống chân cao hơn cạp mà còn trong
   thân áo nở `SKIRT_EASE` không vào bao, nên vạt không lên trên cạp nằm sát dưới mặt áo. Ngồi thì phần đùi chĩa ra
   khỏi thân áo vẫn vào bao: vạt phủ lòng. Thân áo dài quá cạp, kể cả áo khoác vạt mở, dừng ở cạp trong vạt như `cone`.
-- **Thân áo dừng trong đai.** Vành thân áo dưới cạp vẫn vào bao vạt: thân áo dài quá cạp (`hem` lớn hơn `−rise`) làm mặt vạt
-  ngay dưới đai gần dựng đứng, song song tia đèn trần, bóng đèn chính rơi lên đó kéo từng ô bản đồ bóng thành vệt sáng
-  răng cưa nháy theo từng khung khi người nhích. Vạt dài quấn phối thân áo `hem` dừng trong đai: yukata `-20` với `rise`
-  `27`. Áo khoác dài trùm vạt (`hem` dương) còn vệt ấy quanh hông lúc quỳ, cúi.
+- **Pháp tuyến bỏ nắp cạp.** Khối lồi của vạt (và của váy `cone`) có nắp nằm ngang ở cạp, luôn nằm trong thân áo; pháp
+  tuyến đỉnh tính không có nắp ấy. Pha trơn cả nắp thì đỉnh vòng cạp ngửa lên, pha xuống dọc tam giác dài thành vệt nhọn
+  sáng ngay dưới đai, và vì bao dựng lại mỗi khung, vệt nháy khi người nhích; thân áo dài quá cạp (`hem` lớn hơn `−rise`)
+  góp thêm vòng điểm vào bao làm vệt nặng hơn. Từ 9.2.7 thân áo dài quá cạp không còn gây vệt; yukata đứng vẫn phối
+  `hem` `-20` (thân áo dừng trong đai) cho gọn khối.
 - Tay buông choãi tới khi nằm ngoài vạt đứng thẳng, như `cone` (`skirtSide`, [01](01-rig.md#người-3d-mặc-đồ)).
 
 Dáng hay dùng, người mặc đồ, `rig.height = 1`, `rise` `27`:

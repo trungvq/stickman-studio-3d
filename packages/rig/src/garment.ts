@@ -417,6 +417,42 @@ export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent
  */
 export interface SkirtOptions { skirt: Skirt; rig: Rig; color: string; ink: string; thighs: { hip: Vec3; dir: Vec3 }[]; legW: number; knee?: number; legR?: readonly [number, number, number]; body?: { profile: [number, number][]; depth: number[] }; seat?: ArrayLike<number>; curve?: number; legs?: HemLeg[] }
 
+/** Đỉnh cách mặt cạp dưới mức này (px) là đỉnh vòng cạp của khối váy lồi */
+const WAIST_EPS = 0.05;
+
+/**
+ * Pháp tuyến đỉnh của khối váy lồi, không tính nắp cạp (tam giác có cả ba đỉnh trên mặt cạp, `onWaist`). Nắp nằm ngang và rất
+ * rộng, pha trơn cùng thân váy thì đỉnh vòng cạp ngửa lên, pha xuống dọc tam giác dài tới gấu thành vệt nhọn sáng dưới cạp
+ * (obi); bao dựng lại mỗi khung theo dáng nên cách chia tam giác đổi và vệt nháy. Nắp luôn nằm trong thân áo, đỉnh của nó
+ * mang pháp tuyến thân váy cũng không lộ.
+ */
+function hullNormals(geo: THREE.BufferGeometry, onWaist: (p: THREE.Vector3) => boolean) {
+  geo.computeVertexNormals();
+  const pos = geo.attributes.position, idx = geo.index!;
+  const sum = new Float32Array(pos.count * 3);
+  const [a, b, c, ab, cb] = [0, 0, 0, 0, 0].map(() => new THREE.Vector3());
+  for (let i = 0; i < idx.count; i += 3) {
+    const v = [idx.getX(i), idx.getX(i + 1), idx.getX(i + 2)];
+    a.fromBufferAttribute(pos, v[0]);
+    b.fromBufferAttribute(pos, v[1]);
+    c.fromBufferAttribute(pos, v[2]);
+    if (onWaist(a) && onWaist(b) && onWaist(c)) continue;
+    // như `computeVertexNormals`: tích có hướng chưa chuẩn hoá, mặt rộng nặng hơn
+    cb.subVectors(c, b).cross(ab.subVectors(a, b));
+    for (const k of v) {
+      sum[3 * k] += cb.x;
+      sum[3 * k + 1] += cb.y;
+      sum[3 * k + 2] += cb.z;
+    }
+  }
+  const nrm = geo.attributes.normal as THREE.BufferAttribute;
+  for (let k = 0; k < pos.count; k++) {
+    const l = Math.hypot(sum[3 * k], sum[3 * k + 1], sum[3 * k + 2]);
+    if (l > 0) nrm.setXYZ(k, sum[3 * k] / l, sum[3 * k + 1] / l, sum[3 * k + 2] / l);
+  }
+  nrm.needsUpdate = true;
+}
+
 /**
  * Váy dựng khối của rig (`pieces.hem.skirt`): bao lồi của vành cạp, vành gấu và hai ống đùi tới tầm váy
  * phủ; ống đùi thon theo đùi từ hông tới gối. `thighs` là hông và hướng đùi trong
@@ -481,7 +517,7 @@ export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thi
   geo.deleteAttribute('normal');
   geo.deleteAttribute('uv');
   geo = mergeVertices(geo);
-  geo.computeVertexNormals();
+  hullNormals(geo, (p) => Math.abs(-p.y / U - yW) < WAIST_EPS);
   const m = new THREE.Mesh(geo, npr({ color, stipple: 0.05, soft: 1 }));
   m.castShadow = true;
   group.add(m);
@@ -777,6 +813,8 @@ export function sculptHipHem(hips: THREE.Object3D, o: Omit<SkirtOptions, 'thighs
     }
   }
   const { geo, tris } = hullOf(hh.pts);
+  const back = pose.spine.clone().invert(), q = new THREE.Vector3();
+  hullNormals(geo, (p) => Math.abs(-q.copy(p).applyMatrix4(back).y / U - hh.yW) < WAIST_EPS);
   const m = new THREE.Mesh(geo, npr({ color, stipple: 0.05, soft: 1 }));
   m.castShadow = true;
   group.add(m);
