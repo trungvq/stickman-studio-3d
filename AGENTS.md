@@ -148,6 +148,10 @@ nhập tay `createPipeline({ shadow })` thì phải ôm hết vùng có bóng.
 pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build
 ```
 
+`pnpm test` không chạy `packages/cli/gen.test.mjs`. Bộ test sinh hành động rót và ngồi này chạy
+bằng `pnpm test:gen` ở gốc repo. **Chỉ chạy khi chủ dự án yêu cầu hoặc xác nhận rõ**, kể cả khi
+sửa bộ sinh hay chuẩn bị phát hành thay đổi liên quan; báo trước thời gian và mức tải CPU.
+
 **`pnpm shots` chỉ chạy khi chủ dự án cho phép** — nó chậm. Đụng tới hình 3D (`packages/rig/src/*.ts`,
 hình học ở `core/`, `apps/viewer`) thì hỏi trước; được phép thì chụp cả bản trước thay đổi, ghép bằng
 `--vs`, `--only` các khung liên quan khi sửa một vùng hẹp, rồi **mở tờ gộp `tmp/shots/<tên>.png` và

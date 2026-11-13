@@ -27,6 +27,7 @@ Mở terminal mới hoặc nạp lại file shell theo dòng bộ cài in ra, r�
 pnpm install
 pnpm dev        # tsup --watch cho rig, fx; vite cho app xem thử và Studio 3D
 pnpm typecheck && pnpm lint && pnpm format:check && pnpm test
+pnpm test:gen   # bộ test sinh hành động rót và ngồi; chỉ chạy khi chủ dự án cho phép
 pnpm shots      # chụp app xem thử ra tmp/shots/
 pnpm bench      # đo ms/khung ở 1920×1080
 ```

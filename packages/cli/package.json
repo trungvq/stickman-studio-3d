@@ -32,7 +32,8 @@
   },
   "scripts": {
     "typecheck": "echo skip",
-    "test": "node --test args.test.mjs gen.test.mjs upgrade.test.mjs clash.test.mjs snap.test.mjs palm.test.mjs groups.test.mjs sweep.test.mjs scope.test.mjs held.test.mjs migrate.test.mjs migrate-elbow.test.mjs rawjson.test.mjs roles.test.mjs studio3d.test.mjs walk.test.mjs",
+    "test": "node --test args.test.mjs upgrade.test.mjs clash.test.mjs snap.test.mjs palm.test.mjs groups.test.mjs sweep.test.mjs scope.test.mjs held.test.mjs migrate.test.mjs migrate-elbow.test.mjs rawjson.test.mjs roles.test.mjs studio3d.test.mjs walk.test.mjs",
+    "test:gen": "node --test gen.test.mjs",
     "build": "echo skip",
     "prepack": "node prepack.mjs",
     "postpack": "node prepack.mjs --clean"
