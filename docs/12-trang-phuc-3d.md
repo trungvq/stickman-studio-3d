@@ -1259,7 +1259,8 @@ nổi thấp thì vỏ ấy lòi qua thành chấm mực.
 `inner.collar: true` dựng cổ sơ mi màu áo trong (bỏ trống `inner.color` là `accent`) nằm trong miệng cổ chữ V: miệng cổ
 riêng ôm chân ống cổ, hẹp hơn miệng cổ áo khoác `INNER_COLLAR.inset` (`2.5`) px và không rộng quá `NECK_MIN`, nên chân cổ
 sơ mi nằm trong chân cổ áo khoác; chân cổ cao `7` px ở nửa sau, nhô chừng `2.5` px (1 cm) trên nếp gập cổ áo khoác, lá cổ nửa sau rủ `5` px dọc chân cổ, không trải xuống
-thân. Phía trước hai lá cổ nhọn luồn dưới ve. Dựng bằng chính bộ dựng [cổ bẻ](#thân-áo-dựng-khối), nét viền như cổ bẻ.
+thân. Phía trước hai lá cổ nhọn luồn dưới ve. Dựng bằng chính bộ dựng [cổ bẻ](#thân-áo-dựng-khối) nhưng không ống viền mép
+(`line: 0`): trên sơ mi sáng, ống viền pha màu nét đọc thành đường viền may nổi; mép cổ chỉ còn nét mực hậu kỳ.
 Áo trong khoét theo miệng cổ sơ mi: trong miệng cổ là da cổ. Người đầu `human` thì miệng cổ áo, cổ sơ mi nới ra quanh chân
 cổ (`humanNeckMin`), mà cổ rộng theo bề ngang đầu ([01](01-rig.md#chiều-cao-và-cỡ-đầu)). Miệng cổ nới theo bề ngang chạm
 mặt vát ở hàng cao, chỗ nửa sau thân đã thu mỏng hơn gáy; nên viền cổ nửa sau (cổ áo, cổ sơ mi, viền gân, da miệng cổ) không

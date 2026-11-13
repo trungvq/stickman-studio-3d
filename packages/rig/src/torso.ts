@@ -542,6 +542,8 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
         tip: C.tip,
         closed: shape.closed,
         fill: g.inner.color ?? 'accent',
+        // không ống viền mép: trên sơ mi sáng ống viền pha màu nét đọc thành đường viền may nổi; mép cổ chỉ còn nét hậu kỳ
+        line: 0,
       },
       shirt,
       0,
