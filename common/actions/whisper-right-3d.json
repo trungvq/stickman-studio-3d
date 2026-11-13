@@ -1,46 +1,46 @@
 {
-  "schemaVersion": 21,
+  "schemaVersion": 22,
   "name": "whisper-right-3d",
   "duration": 1,
   "end": "hold",
-  "mask": ["armRight", "hand", "torso", "head"],
+  "mask": ["armLeft", "hand", "torso", "head"],
   "authoredAt": "side",
   "keys": [
     {
       "t": 0,
-      "pose": { "armRight": [-6, 24, 0], "torso": [0, 0], "head": [0, 0, 0] },
+      "pose": { "armLeft": [-6, 24, 0], "torso": [0, 0], "head": [0, 0, 0] },
       "ease": "smooth",
-      "hand": { "armRight": { "w": 0.3, "turn": 20, "bend": 0 } }
+      "hand": { "armLeft": { "w": 0.3, "turn": 20, "bend": 0 } }
     },
     {
       "t": 0.25,
       "pose": { "torso": [3, -6] },
-      "reach": { "armRight": { "to": "chin", "offset": [18, 14, 24], "elbow": [0.3, 1, 0.6] } },
+      "reach": { "armLeft": { "to": "chin", "offset": [18, 14, 24], "elbow": [0.3, 1, 0.6] } },
       "ease": "smooth",
       "hand": {
-        "armRight": { "pose": "cup", "w": 0.5, "palm": [0.6, 0, -1], "fingers": [0, -1, -0.1] }
+        "armLeft": { "pose": "cup", "w": 0.5, "palm": [0.6, 0, -1], "fingers": [0, -1, -0.1] }
       }
     },
     {
       "t": 0.5,
       "pose": { "torso": [6, -12], "head": [-12, -28, 6] },
-      "reach": { "armRight": { "to": "mouth", "offset": [19, 14, 26], "elbow": [0.3, 1, 0.6] } },
+      "reach": { "armLeft": { "to": "mouth", "offset": [19, 14, 26], "elbow": [0.3, 1, 0.6] } },
       "ease": "smooth",
       "hand": {
-        "armRight": { "pose": "cup", "w": 0.65, "palm": [0.6, 0, -1], "fingers": [0, -1, -0.1] }
+        "armLeft": { "pose": "cup", "w": 0.65, "palm": [-0.3, 0, -1], "fingers": [0, -1, -0.1] }
       }
     },
     {
       "t": 1,
       "pose": { "torso": [6, -12], "head": [-12, -28, 6] },
-      "reach": { "armRight": { "to": "mouth", "offset": [19, 14, 26], "elbow": [0.3, 1, 0.6] } },
+      "reach": { "armLeft": { "to": "mouth", "offset": [19, 14, 26], "elbow": [0.3, 1, 0.6] } },
       "ease": "linear",
       "hand": {
-        "armRight": { "pose": "cup", "w": 0.65, "palm": [0.6, 0, -1], "fingers": [0, -1, -0.1] }
+        "armLeft": { "pose": "cup", "w": 0.65, "palm": [-0.3, 0, -1], "fingers": [0, -1, -0.1] }
       }
     }
   ],
   "events": [],
-  "note": "Ghé sang người đứng ngang hàng phía tay phải thì thầm: thân cúi 6°, nghiêng 12° về phía ấy, đầu nghiêng 12°, quay 28° về phía ấy, gật 6°; tay phải qua dưới cằm lên khum cạnh khoé miệng phía ấy (mốc `mouth`, offset [19, 14, 26]), `cup` lòng tay quay vào và ra trước. Tới lúc 0,5 s rồi giữ. Chỉ ghi tay phải, `hand`, `torso`, `head`. Nền `stand-3d` hay `seiza-3d`; người nghe đứng phía tay phải, hai hông cách ~195 ở `height` 1 (gần hơn thì hai đầu chibi lồng nhau khi nghiêng), quay về người nói (`turn-head-35-*` hay xoay người). Người nghe phía kia thì `whisper-left-3d`; buông bằng clip nền mask [armRight, torso, head] blend ~0,4. Sinh bằng `tools/actions/whisper.mjs`.",
+  "note": "Ghé sang người đứng ngang hàng phía tay phải thì thầm: thân cúi 6°, nghiêng 12° về phía ấy, đầu nghiêng 12°, quay 28° về phía ấy, gật 6°; tay trái (phía xa người nghe) qua dưới cằm lên khum cạnh khoé miệng bên trái (mốc `mouth`, offset [19, 14, 26]), `cup` lòng tay quay vào phía người nghe, bàn tay dựng gần dọc theo hướng mặt như vách chắn tiếng khỏi phía kia (chếch ra trước thì tay úp vào trước mặt). Tới lúc 0,5 s rồi giữ. Chỉ ghi tay trái, `hand`, `torso`, `head`. Nền `stand-3d` hay `seiza-3d`; người nghe đứng phía tay phải, hai hông cách ~195 ở `height` 1 (gần hơn thì hai đầu chibi lồng nhau khi nghiêng), quay về người nói (`turn-head-35-*` hay xoay người). Người nghe phía kia thì `whisper-left-3d`; buông bằng clip nền mask [armLeft, torso, head] blend ~0,4. Sinh bằng `tools/actions/whisper.mjs`.",
   "preview": { "stage": "stand", "partner": { "at": [0, 195], "yaw": 70 } }
 }
