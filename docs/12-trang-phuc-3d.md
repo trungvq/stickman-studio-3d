@@ -924,7 +924,7 @@ Bộ số hay dùng, `rig.height = 1`:
 | Áo làm việc tới hông | `{ "style": "wrap" }` | Không đai, quần cùng màu |
 | Áo bếp tới hông | `{ "style": "wrap", "hem": 8 }` | Cổ cùng màu; tay xắn: `palette.sleeveLength` `0.5` |
 | Yukata ngồi tới đùi | `{ "style": "wrap", "hem": 40, "wrap": { "bandColor": "…", "obi": { "y": 14, "width": 14, "lift": 3, "knot": "kai" } } }` | Đai thấp bản hẹp; ống chân cùng màu vải: `palette.trouser` (yukata là vật thay áo thì khai ở `torso.palette`, xem dưới) |
-| Yukata đứng | `{ "style": "wrap", "hem": 5, "wrap": { "bandColor": "…", "obi": { "y": 30, "width": 16, "lift": 3, "knot": "kai" } } }` | Phối [vạt dài quấn](#vạt-dài-quấn) `rise` `27`: đai che chỗ nối; tay loe `palette.sleeveFlare` `12` |
+| Yukata đứng | `{ "style": "wrap", "hem": -20, "wrap": { "bandColor": "…", "obi": { "y": 30, "width": 16, "lift": 3, "knot": "kai" } } }` | Phối [vạt dài quấn](#vạt-dài-quấn) `rise` `27`: đai che chỗ nối; tay loe `palette.sleeveFlare` `12` |
 
 Khách đổi đồ Tây sang yukata của quán là vật thay `torso` (và `hem`) trong `items`; tay áo dài loe, ống chân cùng màu
 vải là của bộ yukata nên khai ở `palette` của thân áo ấy, đè `palette` nhân vật khi đang mặc
@@ -1619,6 +1619,10 @@ hai ống chân cong đúng như chân người 3D vẽ (`palette.limbCurve`) t�
 - **Cạp thấp hơn hông** (`rise` âm, cạp giấu dưới áo khoác dài): điểm khối hông và ống chân cao hơn cạp mà còn trong
   thân áo nở `SKIRT_EASE` không vào bao, nên vạt không lên trên cạp nằm sát dưới mặt áo. Ngồi thì phần đùi chĩa ra
   khỏi thân áo vẫn vào bao: vạt phủ lòng. Thân áo dài quá cạp, kể cả áo khoác vạt mở, dừng ở cạp trong vạt như `cone`.
+- **Thân áo dừng trong đai.** Vành thân áo dưới cạp vẫn vào bao vạt: thân áo dài quá cạp (`hem` lớn hơn `−rise`) làm mặt vạt
+  ngay dưới đai gần dựng đứng, song song tia đèn trần, bóng đèn chính rơi lên đó kéo từng ô bản đồ bóng thành vệt sáng
+  răng cưa nháy theo từng khung khi người nhích. Vạt dài quấn phối thân áo `hem` dừng trong đai: yukata `-20` với `rise`
+  `27`. Áo khoác dài trùm vạt (`hem` dương) còn vệt ấy quanh hông lúc quỳ, cúi.
 - Tay buông choãi tới khi nằm ngoài vạt đứng thẳng, như `cone` (`skirtSide`, [01](01-rig.md#người-3d-mặc-đồ)).
 
 Dáng hay dùng, người mặc đồ, `rig.height = 1`, `rise` `27`:
