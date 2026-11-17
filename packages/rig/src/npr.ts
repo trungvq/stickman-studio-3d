@@ -99,6 +99,9 @@ uniform mat4 uSpotMatrix[${MAX_LAMP_SHADOWS}];
 uniform vec3 uSpotInfo[${MAX_LAMP_SHADOWS}];
 #define CEL (abs(uShade - 1.0) < 0.5)
 #define MANGA (uShade > 1.5)
+// Da flat (FLAT_KEY) nhận đèn cục bộ một mức đều, nhẹ hơn bậc thấp 0,4 của vải để da không ngả vàng
+#define LAMP_FLAT 0.35
+#define LAMP_KNEE 0.8
 ${POISSON}
 ${NOISE}
 float hash12(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
@@ -255,19 +258,35 @@ vec3 nprShade(vec3 base, vec3 N, vec3 wp, float stipple, float scale, float soft
     bright = step(0.35, sl + (noise - 0.5) * 0.2 * step(uShade, 0.5));
     c = mix(c, max(c, base * uSunColor), bright);
   }
+  vec3 lampAdd = vec3(0.0);
   for (int i = 0; i < ${MAX_LAMPS}; i++) {
     if (float(i) >= uLampCount) break;
     vec3 d = uLampPos[i] - wp;
     float r = length(d);
     vec3 l = d / r;
     vec4 cn = uLampCone[i];
-    float k = max(dot(N, l), 0.0) * smoothstep(cn.x, cn.y, dot(-l, uLampDir[i])) * (1.0 - smoothstep(cn.z * 0.7, cn.z, r));
+    float reach = smoothstep(cn.x, cn.y, dot(-l, uLampDir[i])) * (1.0 - smoothstep(cn.z * 0.7, cn.z, r));
+    #ifdef FLAT_KEY
+    // da: ấm lên đều theo nón và tầm đèn, không theo hướng mặt, không bóng đổ, không bậc — mặt cong không bị vạch chéo
+    float k = reach;
+    if (k <= 0.0) continue;
+    lampAdd += base * uLampColor[i] * (LAMP_FLAT * k);
+    #else
+    float k = max(dot(N, l), 0.0) * reach;
     if (k <= 0.0) continue;
     if (cn.w > 0.5) k *= spotShadowIn(uSpotMap1, uSpotMatrix[1], uSpotInfo[1], wp, N, R);
     else if (cn.w > -0.5) k *= spotShadowIn(uSpotMap0, uSpotMatrix[0], uSpotInfo[0], wp, N, R);
-    c += base * uLampColor[i] * (0.4 * smoothstep(0.14, 0.18, k) + 0.45 * smoothstep(0.48, 0.52, k));
+    lampAdd += base * uLampColor[i] * (0.4 * smoothstep(0.14, 0.18, k) + 0.45 * smoothstep(0.48, 0.52, k));
+    #endif
     bright = max(bright, smoothstep(0.14, 0.18, k) * step(0.05, max(uLampColor[i].r, max(uLampColor[i].g, uLampColor[i].b))));
   }
+  // đồ gần trắng (áo trắng, khăn bàn) dưới đèn cục bộ: cả ba kênh chạm trần là cháy thành mảng phẳng, mất dải. Phần trên
+  // ngưỡng LAMP_KNEE tăng chậm dần tới 1, không tối hơn màu trước khi có đèn. Đồ màu đậm (tường cam) chỉ một kênh chạm
+  // trần, vẫn còn dải, nên cộng nguyên như cũ: nén cả nó thì kênh đỏ lùi một mình và màu ngả vàng
+  vec3 lx = c + lampAdd;
+  vec3 lk = LAMP_KNEE + (1.0 - LAMP_KNEE) * (1.0 - exp(-(lx - LAMP_KNEE) / (1.0 - LAMP_KNEE)));
+  float white = smoothstep(0.7, 0.85, min(base.r, min(base.g, base.b)));
+  c = max(c, mix(lx, mix(lx, lk, step(LAMP_KNEE, lx)), white));
   if (MANGA) {
     // chấm là tông tối cùng sắc của chính màu ấy; đèn cục bộ và nắng xoá chấm
     vec3 h = rgb2hsv(c);
@@ -360,7 +379,7 @@ export interface NprOptions {
   doubleSided?: boolean;
   /** Mặt đứng nhận ánh xiên của đèn tấm trần dưới vật nhô (`CeilingLight.spread`): vỏ phòng, đồ đạc (`Batch` bật sẵn); người tắt */
   spread?: boolean;
-  /** Không nhận dải tối và bóng đổ của đèn chính, chỉ sáng đều theo cường độ đèn: da mặt người */
+  /** Không nhận dải tối và bóng đổ của đèn chính, chỉ sáng đều theo cường độ đèn; đèn cục bộ cũng chỉ ấm lên đều theo nón và tầm (`LAMP_FLAT`): da mặt người */
   flat?: boolean;
   /** Nét bóng dáng dày bao nhiêu (three) — hậu kỳ dò từ mặt nạ vật thay vỏ ngược, cho khối hở nằm sát khối khác như tóc */
   ink?: number;
