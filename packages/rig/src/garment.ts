@@ -20,7 +20,7 @@ const v3 = ([x, y, z]: Vec3) => new THREE.Vector3(x * U, -y * U, z * U);
 /** Khối thân áo thò xuống dưới cạp váy bấy nhiêu px, trong váy */
 const TUCK_DEPTH = 1;
 
-interface Palette { color: string; accent?: string; ink: string; skin?: string }
+interface Palette { color: string; accent?: string; ink: string; skin?: string; trouser?: string }
 
 /** Tham số vật liệu da của người 3D: thân trần, mảng da trên thân áo và tay chân trần cùng tham số là cùng một vật liệu, chỗ nối không có nét */
 export const skinLook = (color: string) => ({ color, stipple: 0.035, stippleScale: 4, soft: 1, flat: true });
@@ -61,9 +61,10 @@ export function paint(geo: THREE.BufferGeometry, color: string) {
   geo.setAttribute('tint', new THREE.BufferAttribute(a, 3));
 }
 
-function colorOf(fill: MarkFill, { color, accent, ink, skin }: Palette): string {
+function colorOf(fill: MarkFill, { color, accent, ink, skin, trouser }: Palette): string {
   if (fill === 'color') return color;
   if (fill === 'skin') return skin ?? '#f0d9b8';
+  if (fill === 'trouser') return trouser ?? ink;
   if (fill === 'line') return ink;
   if (fill === 'accent') return accent ?? new THREE.Color(color).multiplyScalar(0.7).getStyle();
   return fill;
@@ -254,11 +255,12 @@ function printMesh(p: PrintPart, ink: string) {
  * áo có thêm nét bóng dáng hậu kỳ bề dày ấy (`npr({ ink })`). `lap`: người ngồi, vạt dưới hông gập lên đùi (`lapFold`); có
  * `lap.fold` thì trả thêm `refold` gập lại theo hướng đùi mới. `neck`: khăn vắt vai, kính gài nẹp, dây chuyền, khối kín cùng thân áo.
  * `cloth`: thân áo (và khối kín màu áo) dùng vật liệu vải chung với tay áo khác màu (`clothMaterial`), thay vật liệu nét `sil`.
- * `human`: người đầu `human`, nửa rộng cổ nhân bấy nhiêu (`humanNeckWidth`): miệng cổ áo nới theo (`torsoMesh`).
+ * `human`: người đầu `human`, nửa rộng cổ nhân bấy nhiêu (`humanNeckWidth`): miệng cổ áo nới theo (`torsoMesh`). `trouser`: màu quần
+ * (mảng `trouser`) lộ trong khe áo phanh vạt.
  */
-export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, skin, arm, tuck = Infinity, sil, lap, neck, cloth, human }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom; tuck?: number; sil?: number; lap?: Lap; neck?: NeckWear; cloth?: THREE.Material; human?: number } & Palette) {
+export function sculptTorso(spine: THREE.Object3D, { garment, rig, color, accent, ink, skin, trouser, arm, tuck = Infinity, sil, lap, neck, cloth, human }: { garment?: Partial<Garment>; rig: Rig; arm?: ArmRoom; tuck?: number; sil?: number; lap?: Lap; neck?: NeckWear; cloth?: THREE.Material; human?: number } & Palette) {
   const t = torsoMesh(garment, rig, arm, neck, human);
-  const pal = { color, accent, ink, skin };
+  const pal = { color, accent, ink, skin, trouser };
   const matOf = (fill: MarkFill, soft = 1) => npr({ color: colorOf(fill, pal), stipple: 0.05, stippleScale: 3, soft });
   const inkMat = clothLineMat(ink, color);
   const lineR = (k: number) => clothLineR(rig, k);

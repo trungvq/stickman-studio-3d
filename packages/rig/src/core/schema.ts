@@ -274,6 +274,7 @@ export const GARMENT_STYLE_NAMES = [
   "blouse",
   "blazer",
   "cardigan",
+  "jumper",
   "bowShirt",
   "squareNeck",
   "wrap",
@@ -475,9 +476,9 @@ export const TieSchema = z.object({
   line: z.number().min(0).default(0),
 });
 
-/** Áo trong lộ ở miệng cổ chữ V của `blazer`, `cardigan`, `suit`. docs/12-trang-phuc-3d.md#áo-trong-và-cà-vạt */
+/** Áo trong lộ ở miệng cổ chữ V của `blazer`, `cardigan`, `jumper`, `suit`. docs/12-trang-phuc-3d.md#áo-trong-và-cà-vạt */
 export const InnerSchema = z.object({
-  /** Màu áo trong; bỏ trống là `accent` (blazer, cardigan) hay không có (suit) */
+  /** Màu áo trong; bỏ trống là `accent` (blazer, cardigan, jumper) hay không có (suit) */
   color: MarkFillSchema.optional(),
   /** Nét viền áo trong, lần nét thân */
   line: z.number().min(0).default(0),
@@ -583,7 +584,7 @@ export const BibSchema = z.object({
 });
 
 export const GarmentSchema = z.object({
-  /** Kiểu áo trong `GARMENT_STYLES`: `bare` ngực trần, `tshirt` áo phông cổ tròn, `shirt` sơ mi, `polo`, `sweater` áo len, `suit` vest, `hoodie`, `blouse` cổ lá sen, `wrap` cổ chéo */
+  /** Kiểu áo trong `GARMENT_STYLES`: `bare` ngực trần, `tshirt` áo phông cổ tròn, `shirt` sơ mi, `polo`, `sweater` áo len, `suit` vest, `hoodie`, `blouse` cổ lá sen, `jumper` áo khoác khoá kéo cổ bẻ, `wrap` cổ chéo */
   style: z.enum(GARMENT_STYLE_NAMES).default("tshirt"),
   /** Vải rộng hơn thân bấy nhiêu, mỗi bên */
   ease: z.number().optional(),
@@ -595,11 +596,11 @@ export const GarmentSchema = z.object({
   hem: z.number().optional(),
   /** Mép trên của khối cao hơn khớp cổ bấy nhiêu; âm là thấp hơn */
   rise: z.number().optional(),
-  /** Nửa rộng miệng cổ áo; áo khoác cổ V (`suit`, `blazer`, `cardigan`) đo ở vai chuẩn, co giãn theo vai người mặc */
+  /** Nửa rộng miệng cổ áo; áo khoác cổ V (`suit`, `blazer`, `cardigan`, `jumper`) đo ở vai chuẩn, co giãn theo vai người mặc */
   neck: z.number().optional(),
-  /** Nửa rộng ve áo ở đỉnh ve (`suit`, `blazer`), đo ở vai chuẩn, co giãn theo vai người mặc; kiểu khác bỏ qua */
+  /** Nửa rộng ve áo ở đỉnh ve (`suit`, `blazer`) hay ở mũi cổ (`jumper`), đo ở vai chuẩn, co giãn theo vai người mặc; kiểu khác bỏ qua */
   lapel: z.number().positive().optional(),
-  /** Cổ áo phía trước, phía sau thấp hơn chỗ chạm hai bên bấy nhiêu, đo trên mặt khối; âm là cao hơn */
+  /** Cổ áo phía trước, phía sau thấp hơn chỗ chạm hai bên bấy nhiêu, đo trên mặt khối; âm là cao hơn. `jumper`: chỗ khoá kéo dừng */
   neckFront: z.number().optional(),
   neckBack: z.number().optional(),
   /** Vát vai hạ bấy nhiêu px mỗi px ra ngang */
@@ -616,8 +617,10 @@ export const GarmentSchema = z.object({
   marks: z.boolean().optional(),
   /** Mảng màu kín, hoạ tiết, chỗ khoét lộ da (`fill: "skin"`); chỉ người 3D. docs/12-trang-phuc-3d.md#mảng-áo-và-hoạ-tiết */
   panels: z.array(PanelSchema).optional(),
-  /** Áo trong và cà vạt ở miệng cổ chữ V của `blazer`, `cardigan`, `suit` */
+  /** Áo trong và cà vạt ở miệng cổ chữ V của `blazer`, `cardigan`, `jumper`, `suit`; áo phanh vạt (`open`) thì cả khe giữa hai vạt */
   inner: InnerSchema.optional(),
+  /** Áo khoác phanh vạt (`suit`, `blazer`): khe giữa hai mép vạt ở gấu rộng bấy nhiêu px, áo trong lộ từ cổ tới gấu; kiểu khác bỏ qua. docs/12-trang-phuc-3d.md#áo-khoác-phanh-vạt */
+  open: z.number().positive().optional(),
   /** Yếm mặc ngoài thân áo; chỉ người 3D. docs/12-trang-phuc-3d.md#yếm */
   bib: BibSchema.optional(),
   /** Kiểu `wrap`: cổ chéo, dải cổ, đai; kiểu khác bỏ qua */

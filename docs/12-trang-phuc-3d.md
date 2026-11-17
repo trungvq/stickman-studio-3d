@@ -686,7 +686,7 @@ thân. `torsoMesh` (`torso.ts`) dựng khối từ bảng kiểu và hàm của 
 | `waist` | 4 | 4 | 4 | 4 | 4 | 4 | 4 | 10 | Eo co vào bấy nhiêu px mỗi bên |
 | `hem` | −4 | 1 | 5 | 3.5 | 2 | 10 | 5.5 | 8 | Gấu thấp hơn hông bấy nhiêu px, nhân `rig.height`; giữa gấu còn võng thêm |
 | `rise` | 6 | 6 | 6 | 6 | 6 | 6 | 6 | 6 | Mép trên của khối cao hơn khớp cổ bấy nhiêu px; áo có cổ đứng quanh cổ |
-| `neck` | 17 | 20 | 20 | 20 | 20 | 18 | 20 | 19 | Nửa rộng miệng cổ áo, chỗ viền cổ chạm mặt vát hai bên; `suit`, `blazer`, `cardigan` đo ở vai chuẩn ([theo vai](#áo-khoác-cổ-v-theo-vai)) |
+| `neck` | 17 | 20 | 20 | 20 | 20 | 18 | 20 | 19 | Nửa rộng miệng cổ áo, chỗ viền cổ chạm mặt vát hai bên; `suit`, `blazer`, `cardigan`, `jumper` đo ở vai chuẩn ([theo vai](#áo-khoác-cổ-v-theo-vai)) |
 | `neckFront` | 0 | 7 | 10 | 9 | 12 | 76 | 8 | 8 | Viền cổ trước thấp hơn chỗ chạm hai bên bấy nhiêu px trên mặt khối; âm là cao hơn |
 | `neckBack` | 0 | 0 | 0 | 0 | 0 | 0 | 8 | 0 | Như `neckFront`, phía sau |
 | `slope` | 0.6 | 0.6 | 0.6 | 0.6 | 0.6 | 0.6 | 0.7 | 0.6 | Vát vai hạ bấy nhiêu px mỗi px ra ngang |
@@ -702,8 +702,8 @@ nhau. Kiểu khác (`blazer` `ease` `8`, `cardigan` `12`…) là áo rộng, ch�
 Trường bỏ trống lấy số của kiểu ở bảng `GARMENT_STYLES`; `garmentOf` trả bộ số đã đủ. `collarUp` ([cổ dựng](#cổ-dựng)), `belly`
 ([bụng phệ](#bụng-phệ)) và `bust` ([ngực nở](#ngực-nở)) không thuộc bảng kiểu: bỏ trống là `0` ở mọi kiểu. `neckline`, `marks`
 ([dáng cổ và đặc điểm của kiểu](#dáng-cổ-và-đặc-điểm-của-kiểu)), `panels` ([mảng áo và hoạ tiết](#mảng-áo-và-hoạ-tiết)) và
-`inner` ([áo trong và cà vạt](#áo-trong-và-cà-vạt)), `bib` ([yếm](#yếm)), `lapel` ([áo khoác cổ V theo vai](#áo-khoác-cổ-v-theo-vai))
-cũng không thuộc bảng kiểu.
+`inner` ([áo trong và cà vạt](#áo-trong-và-cà-vạt)), `open` ([áo khoác phanh vạt](#áo-khoác-phanh-vạt)), `bib` ([yếm](#yếm)),
+`lapel` ([áo khoác cổ V theo vai](#áo-khoác-cổ-v-theo-vai)) cũng không thuộc bảng kiểu.
 Kiểu mang cả những đặc điểm không có số, đặt theo số đo đã đủ nên đè `neck`, `hem`… thì
 chúng đi theo:
 
@@ -714,22 +714,23 @@ chúng đi theo:
 | `shirt` sơ mi | V, cổ bẻ nổi khối | Lá cổ nhọn, nẹp chạy tới gấu, ba cúc |
 | `polo` áo polo | V, cổ bẻ nổi khối | Lá cổ ngắn hơn, nẹp ngắn khép đáy, một cúc |
 | `sweater` áo len | U, gân nổi khối có vạch | Bo gấu 13 px có vạch quanh khối |
-| `suit` vest cà vạt | V sâu, ve áo nổi khối | Cà vạt màu nét dài quá đáy cổ, cắt theo chữ V như luồn dưới vạt; không áo trong (thân áo lộ giữa hai ve) trừ khi khai `inner.color`; nẹp, hai cúc, hai vạt bo ở gấu; sau lưng là dải cổ |
+| `suit` vest cà vạt | V sâu, ve áo nổi khối | Cà vạt màu nét dài quá đáy cổ, cắt theo chữ V như luồn dưới vạt; không áo trong (thân áo lộ giữa hai ve) trừ khi khai `inner.color`; nẹp, hai cúc, hai vạt bo ở gấu; sau lưng là dải cổ; có `open` thì phanh vạt — [Áo khoác phanh vạt](#áo-khoác-phanh-vạt) |
 | `hoodie` | V, mũ trùm nổi khối | Dây rút mọc từ mép mũ, túi trước, bo gấu 12 px |
 | `blouse` cổ lá sen | U, lá sen nổi khối | Lá sen ba cánh màu kem cố định `#f6efe4`, nơ màu nhấn, đường eo, nếp vạt quanh khối |
 | `wrap` cổ chéo | Chéo vạt trái đè vạt phải, dải cổ nổi khối | Cổ lót, đai, dây buộc, khoá và nút đai — [Áo cổ chéo](#áo-cổ-chéo); có `wrap.open` thì hai vạt mở — [Áo khoác vạt mở](#áo-khoác-vạt-mở) |
+| `jumper` áo khoác khoá kéo | V tới chỗ khoá dừng, cổ bẻ nổi khối có khấc | Khoá kéo từ đáy chữ V xuống gấu, đầu khoá và tab kéo ở chỗ dừng, áo trong màu `accent`, hai túi chéo, bo gấu — [Áo jumper khoá kéo](#áo-jumper-khoá-kéo) |
 
 Bốn kiểu áo nữ dùng cùng khối thân và bộ chỉnh:
 
 | Kiểu | Số khác áo phông | Đặc điểm |
 |---|---|---|
-| `blazer` | `ease: 8`, `waist: 11`, `fit: 0.85`, `hem: 0`, `neck: 18`, `neckFront: 73` | Ve gập có khấc, áo trong màu `accent`, hai cúc lệch bên, túi ngang |
+| `blazer` | `ease: 8`, `waist: 11`, `fit: 0.85`, `hem: 0`, `neck: 18`, `neckFront: 73` | Ve gập có khấc, áo trong màu `accent`, hai cúc lệch bên, túi ngang; có `open` thì phanh vạt — [Áo khoác phanh vạt](#áo-khoác-phanh-vạt) |
 | `cardigan` | `ease: 12`, `waist: 3`, `hem: 6`, `neck: 18`, `neckFront: 52` | Cổ V viền gân, áo trong màu `accent`, ba cúc, bo gấu |
 | `bowShirt` | `ease: 8`, `waist: 5`, `hem: 3`, `neckFront: 17` | Cổ bẻ nhỏ, nơ màu `accent` với hai dải rủ, nẹp giữa |
 | `squareNeck` | `ease: 9`, `waist: 10`, `fit: 1`, `hem: 9`, `neck: 23`, `neckFront: 19` | Cổ vuông bo nhẹ, đường eo cao, vạt xòe với nếp lớn |
 
 Áo trong, nơ, cúc và túi chiếu trên mặt khối, khuất khi quay lưng; ve và viền cổ
-có bề dày riêng. `accent` của blazer và cardigan là màu áo trong. Áo trong phủ cả miệng
+có bề dày riêng. `accent` của blazer, cardigan và jumper là màu áo trong. Áo trong phủ cả miệng
 cổ chữ V từ mép trên khối tới đáy chữ V, liền viền cổ, không viền, không trải xuống vạt bụng
 ([áo trong và cà vạt](#áo-trong-và-cà-vạt)); cúc và túi đặt theo khoảng từ đáy
 cổ tới gấu. Bộ phối váy ngắn dùng `garment.hem: -18` để áo dừng ở eo, trên cạp của
@@ -775,6 +776,7 @@ Không có chỏm vai: tay áo là ống `palette.sleeve*` của người mặc 
   | `polo` | 5 | 6 | 2 | `(11, neckFront + 7)` | 3.5 → 1.5 | 5 | áo |
   | `suit` | 4.5 | 7 | 3 | `(lapel, 38)`, `(0.3 · lapel, neckFront − 8)`; vểnh ở đỉnh ve | 4 → 1.5 | 4 | áo |
   | `blazer` | 4 | 7 | 3 | `(25, 22)`, `(19, 28)`, `(29, 33)`, `(9, neckFront − 4)`, `x` nhân `lapel / 29`; vểnh ở khấc `(29, 33)` | 3.5 → 1.5 | 4 | áo |
+  | `jumper` | 4 | 8 | 3 | `(lapel, 8 + 0.4 · neckFront)`, `(0.55 · lapel, 5 + 0.4 · neckFront)`; vểnh ở mũi cổ | 3.5 → 1.5 | 3 | áo |
   | `blouse` | 2 | 6 | 3 | cánh bên: cung elip tâm `(14.5, 8)`, bán trục `6.5 × 6`, `−45°` → `165°`; nửa cánh giữa: tâm `(0, 11)`, `8 × 7`, `−35°` → `90°`; vểnh ở cánh bên | 3 → 2 | 2 | kem `#f6efe4` |
 
   `y` của `flap` tính từ chỗ viền cổ chạm mặt vát. Mép ngoài chạm trục giữa trước đáy cổ
@@ -941,7 +943,7 @@ vải là của bộ yukata nên khai ở `palette` của thân áo ấy, đè `
 ### Cổ dựng
 
 `garment.collarUp` (`0..1`, mặc định `0`) dựng lá cổ bẻ lên ôm gáy — polo, sơ mi dựng cổ. Có ở mọi kiểu có cổ bẻ
-nổi khối (`shirt`, `polo`, `bowShirt`, `suit`, `blazer`, `blouse`).
+nổi khối (`shirt`, `polo`, `bowShirt`, `suit`, `blazer`, `jumper`, `blouse`).
 
 ```json
 "garment": { "style": "polo", "collarUp": 1 }
@@ -1232,10 +1234,11 @@ false }` là thân ôm không cổ áo.
 
 ### Áo trong và cà vạt
 
-`garment.inner` chỉnh áo trong lộ giữa hai vạt cổ chữ V và cà vạt của `blazer`, `cardigan`, `suit`. Áo trong phủ cả miệng cổ
+`garment.inner` chỉnh áo trong lộ giữa hai vạt cổ chữ V và cà vạt của `blazer`, `cardigan`, `jumper`, `suit`. Áo trong phủ cả miệng cổ
 chữ V, từ mép trên khối xuống đáy chữ V, liền viền cổ: không có dải màu áo khoác giữa viền cổ và áo trong. Cà vạt có nút sát
 viền cổ, bản rộng dần, cắt theo chữ V như luồn dưới vạt nên phần dưới đáy chữ V khuất; đáy chữ V là chỗ cài cúc trên của
-áo khoác. Chỉ người 3D nổi chúng khỏi mặt khối (áo trong `1` px, cà vạt `1.05` px): vỏ viền cổ người cắm xiên qua mặt vát,
+áo khoác. Áo khoác phanh vạt (`open`) thì áo trong, cà vạt lộ tiếp xuống khe giữa hai vạt — [áo khoác phanh
+vạt](#áo-khoác-phanh-vạt). Chỉ người 3D nổi chúng khỏi mặt khối (áo trong `1` px, cà vạt `1.05` px): vỏ viền cổ người cắm xiên qua mặt vát,
 nổi thấp thì vỏ ấy lòi qua thành chấm mực.
 
 ```json
@@ -1244,9 +1247,9 @@ nổi thấp thì vỏ ấy lòi qua thành chấm mực.
 
 | Trường của `inner` | Mặc định | Nghĩa |
 |---|---:|---|
-| `color` | `accent` (blazer, cardigan), không có (suit) | Màu áo trong; màu tô như mảng áo: `color`, `line`, `accent`, `skin` hay mã màu |
+| `color` | `accent` (blazer, cardigan, jumper), không có (suit) | Màu áo trong; màu tô như mảng áo: `color`, `line`, `accent`, `skin` hay mã màu |
 | `line` | 0 | Nét viền áo trong, lần nét thân |
-| `tie` | không có (blazer, cardigan), cà vạt màu nét (suit) | Cà vạt; `false` bỏ cà vạt của suit |
+| `tie` | không có (blazer, cardigan, jumper), cà vạt màu nét (suit) | Cà vạt; `false` bỏ cà vạt của suit |
 | `collar` | `false` | Cổ sơ mi nổi khối ([cổ sơ mi](#cổ-sơ-mi-dưới-áo-khoác)) |
 
 | Trường của `inner.tie` | Mặc định | Nghĩa |
@@ -1277,7 +1280,7 @@ cao hơn hàng nửa sau sâu tới `NAPE` (`Surface.nape`), hạ dần theo `co
 | `tie` cài kín | 6 | `0.8` lần chân cổ sau | `(12.5, 13)` | Có cà vạt: nút cà vạt bắt đầu `2` px trên đáy chữ V, giữa hai mũi cổ, mũi cà vạt giữ ở `length` |
 | `open` mở cúc trên | 16 | `0` | `(13.5, −6)` | Không cà vạt: chữ V sâu lộ da, mũi cổ cao hơn đáy chữ V |
 
-Chỉ áo khoác cổ V (`suit`, `blazer`, `cardigan`) dựng nó; kiểu khác bỏ qua. Đừng vẽ cổ sơ mi bằng [mảng áo](#mảng-áo-và-hoạ-tiết):
+Chỉ áo khoác cổ V (`suit`, `blazer`, `cardigan`, `jumper`) dựng nó; kiểu khác bỏ qua. Đừng vẽ cổ sơ mi bằng [mảng áo](#mảng-áo-và-hoạ-tiết):
 mảng là hình in, không có chân cổ, và không khớp nút cà vạt khi người quay.
 
 **Gilê ngoài sơ mi** (sommelier, bồi bàn, bartender) không có kiểu riêng: thân áo không tay là thân áo dựng khối màu gilê,
@@ -1313,9 +1316,85 @@ Lưng gilê thật là vải lót khác màu: thêm mảng `side: "back"` cả l
 
 Thêm cặp cúc ở `y` `96`, `78`… cho đủ hàng.
 
+### Áo jumper khoá kéo
+
+`style: "jumper"` là áo khoác khoá kéo cổ bẻ (ジャンパー của đàn ông trung niên): mặt trước đóng bằng khoá kéo, trên chỗ
+khoá dừng hai vạt mở chữ V lộ áo trong, lá cổ áo khoác bẻ nằm trên vai và ngực trên. Là áo khoác cổ V như `suit`,
+`blazer`, `cardigan`: miệng cổ và mũi cổ co theo vai ([theo vai](#áo-khoác-cổ-v-theo-vai)), áo trong, cổ sơ mi, cà vạt khai ở
+`inner` ([áo trong và cà vạt](#áo-trong-và-cà-vạt)).
+
+```json
+"torso": { "src": "sculpt", "color": "#766A5C",
+  "garment": { "style": "jumper", "neckFront": 40, "inner": { "color": "#EDE6D6", "collar": true } } }
+```
+
+- **Chỗ khoá dừng là đáy chữ V**: `neckFront` (mặc định `40`, ngang ngực trên) là khoá dừng thấp hơn chỗ viền cổ chạm mặt
+  vát bấy nhiêu px. Khoá kéo kín tới cổ là `neckFront` nhỏ (`6`): lá cổ gập quanh cổ như cổ sơ mi, miệng cổ còn lại là áo
+  trong màu `accent` (bỏ trống là màu áo tối đi); khoá kín thì đừng khai `inner.collar`.
+- **Khoá kéo** là nét răng khoá (`ZIP.line`: nét `0.5` lần nét thân, độ đậm `0.65`) thẳng giữa trục từ đáy chữ V xuống gấu,
+  qua cả bo gấu. **Đầu khoá** là mảng màu nét cao `ZIP.slider` (`4`) px, nửa rộng `2.2` px trùm đáy chữ V; **tab kéo**
+  treo dưới đầu khoá dài `ZIP.tab` (`7`) px, nửa rộng `1.5` px. Đầu khoá, tab nổi `ZIP.lift` (`1.3`) px, trên áo trong.
+- **Cổ bẻ nổi khối**: chân cổ `4` px, lá cổ sau lưng rộng `8` px; phía trước lá cổ chạy tới mũi cổ nhọn `(lapel, 8 + 0.4 ·
+  neckFront)`, khấc vào `(0.55 · lapel, 5 + 0.4 · neckFront)` rồi thẳng về đáy chữ V — đoạn dưới khấc là ve hẹp của hai vạt
+  mở. Mũi cổ hạ theo `neckFront`, nên khoá kéo kín thì lá cổ thành cổ bẻ quanh cổ. `lapel` (mặc định `20`, px ở vai chuẩn)
+  là nửa rộng mũi cổ; `collarUp` dựng lá cổ như mọi cổ bẻ.
+- **Bo gấu** `11` px: vòng quanh khối và vạch gân mỗi `12` độ. Hai **túi chéo** dưới ngực từ `x = 21` (`0.52` thân từ vành
+  vai) xuống `x = 30` (`0.78`).
+
+| Số khác áo phông | Ghi chú |
+|---|---|
+| `ease: 13`, `waist: 2`, `fit: 0.6`, `hem: 5`, `neck: 18`, `neckFront: 40` | Áo rộng, eo gần thẳng, gấu thu về hông như áo có bo gấu |
+
+Áo trong là mảng phủ miệng cổ chữ V như `blazer`; tay áo là ống `palette.sleeve*` cùng màu thân.
+
+### Áo khoác phanh vạt
+
+`garment.open` (px) là `suit`, `blazer` mặc không cài cúc: dưới ve hai mép vạt buông gần thẳng xuống gấu, chừa khe lộ áo trong
+suốt từ cổ tới gấu. Ve, khấc, cổ áo khoác, túi như áo cài; kiểu khác bỏ qua `open`.
+
+```json
+"torso": { "src": "sculpt", "color": "#857452", "garment": { "style": "blazer", "ease": 12, "open": 18,
+  "inner": { "color": "#C3D5EA", "collar": true } } }
+```
+
+- **Mép vạt** (`openEdge`): miệng cổ chữ V không khép ở trục mà dừng ở đáy chữ V (`neckFront`, chỗ ve gập hết) cách trục
+  `OPEN_FRONT.brk` px (`3`, không quá `open / 2`); ve thon về đó. Từ đáy chữ V mép vạt đi thẳng ra tới nửa khe `open / 2`
+  ở `round` (`8`) px trên gấu, rồi bo ra thêm `round` px tới gấu như vạt vest bo tròn. Vòng cổ áo `0 → 360` độ mở ở giữa trước:
+  `0` là đầu vạt `+x`, `360` đầu vạt `−x` (`frontSide`).
+- **Dải mép vạt** rộng `edge` (`4`) px từ mép vào thân vạt, nổi `1.6` px ở mép nhạt về `0.2`, màu áo, từ đáy chữ V xuống gấu;
+  nét mép như mép ve, dừng ở cạp quần (dưới đó người ngồi ép vạt xuống đùi, ống nét lòi qua mặt đùi).
+- **Trong khe**, tấm nổi `1` px, mỗi hàng một độ cao trải hết bề ngang khe, lấn dưới dải mép vạt một px: áo trong (`inner.color`,
+  bỏ trống là `accent`) từ đáy chữ V tới cạp quần ở `OPEN_FRONT.waist` (`0.2`) quãng từ hông lên vành vai — sơ mi sơ vin;
+  thắt lưng màu nét rộng `belt` (`3`) px nổi `1.3`; dưới là quần màu `palette.trouser` (người mặc váy: màu váy) tới gấu. Phần
+  áo trong trên đáy chữ V là mảng phủ miệng cổ như áo cài.
+- **Cổ sơ mi** (`inner.collar`) thì thêm nẹp sơ mi rộng `placket` (`5`) px giữa khe, hai nét mảnh (`0.2` lần nét thân, độ
+  đậm `0.35`) từ đáy chữ V cổ sơ mi tới cạp, cúc tròn màu áo trong bán kính `1.1` px viền mảnh, cách nhau `button` (`14`) px.
+  Có cà vạt thì nẹp, cúc bắt đầu dưới mũi cà vạt.
+- **Cà vạt** buông hết chiều dài `length` trong khe, hai mép vạt che hai bên; nổi trên áo trong `0.3` px.
+- **Cúc áo khoác** chỉ còn trên vạt `+x`, cách mép vạt `knob` (`5`) px, cùng độ cao như áo cài.
+- Người ngồi: tấm trong khe, dải mép vạt gập theo đùi cùng khối thân (`lapFold`). Áo tới hông (`hem` dưới `LAP_FLAP`) thì nửa
+  trước dưới chỗ gập dồn lên đường gập, thắt lưng và quần nằm trong chỗ dồn ấy; áo dài trải vạt lên đùi thì quần là dải giữa
+  hai vạt trên đùi.
+
+| Trường | Mặc định | Nghĩa |
+|---|---:|---|
+| `open` | không có (cài) | Khe giữa hai mép vạt ở chỗ buông thẳng, trên gấu `round` px, rộng bấy nhiêu px |
+
+| `OPEN_FRONT` | Số | Nghĩa |
+|---|---:|---|
+| `brk` | 3 | Nửa khe ở đáy chữ V |
+| `round` | 8 | Mép vạt bo ra ở gấu |
+| `edge`, `lift` | 4; 1.6 → 0.2 | Dải mép vạt rộng, nổi ở mép → mé trong |
+| `waist` | 0.2 | Cạp quần cao hơn hông bấy nhiêu quãng hông → vành vai |
+| `belt`, `beltLift` | 3; 1.3 | Thắt lưng rộng, nổi |
+| `placket`, `placketLift`, `placketLine` | 5; 1.15; `0.2`, `0.35` | Nẹp sơ mi rộng, nổi, nét và độ đậm |
+| `dot`, `button` | 1.1; 14 | Cúc sơ mi bán kính, khoảng cách |
+| `tieLift` | 0.3 | Cà vạt nổi trên áo trong |
+| `knob` | 5 | Cúc áo khoác cách mép vạt |
+
 ### Áo khoác cổ V theo vai
 
-`suit`, `blazer`, `cardigan` là áo khoác mở cổ V: miệng cổ (`neck`) và ve (`lapel`) đo ở **vai chuẩn** — `rig.shoulderHalf`
+`suit`, `blazer`, `cardigan`, `jumper` là áo khoác mở cổ V: miệng cổ (`neck`) và ve (`lapel`) đo ở **vai chuẩn** — `rig.shoulderHalf`
 `40` (`SHOULDER_REF`) cộng `ease` mặc định của kiểu — rồi nhân theo nửa rộng vai áo của người mặc:
 
 ```
@@ -1330,9 +1409,9 @@ vai chuẩn. Miệng cổ không hẹp hơn `NECK_MIN` (chân ống cổ ngườ
 
 | Trường | Mặc định | Nghĩa |
 |---|---:|---|
-| `lapel` | `21` (`suit`), `25` (`blazer`) | Nửa rộng ve ở đỉnh ve (`suit`) hay ở khấc (`blazer`), px ở vai chuẩn; mọi điểm khác của mép ve co theo cùng tỉ lệ. Kiểu khác bỏ qua |
+| `lapel` | `21` (`suit`), `25` (`blazer`), `20` (`jumper`) | Nửa rộng ve ở đỉnh ve (`suit`), ở khấc (`blazer`) hay ở mũi cổ (`jumper`), px ở vai chuẩn; mọi điểm khác của mép ve co theo cùng tỉ lệ. Kiểu khác bỏ qua |
 
-Lá cổ hai bên cổ (`side` của [cổ bẻ](#thân-áo-dựng-khối)) ở `suit`, `blazer` chỉ `3` px: trên vai thoải của người
+Lá cổ hai bên cổ (`side` của [cổ bẻ](#thân-áo-dựng-khối)) ở `suit`, `blazer`, `jumper` chỉ `3` px: trên vai thoải của người
 mặc đồ (`cladSlope`) mỗi px hạ xuống là hơn hai px ra ngang, lá cổ bên cổ rộng thì mép ve ở vai chìa ra tận gốc tay.
 
 ### Mảng áo và hoạ tiết

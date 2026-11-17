@@ -25,6 +25,7 @@ export type Dims = Required<
     | "marks"
     | "panels"
     | "inner"
+    | "open"
     | "bib"
     | "lapel"
   >
@@ -34,8 +35,11 @@ export type P2 = [number, number];
 /** Điểm trên mặt khối: kinh độ, độ (`0` giữa ngực, dương về `+x`, `180` giữa lưng), và `y` của nhóm thân */
 export type SP = [lon: number, y: number];
 
-/** Màu tô của mảng: màu áo, màu nét, màu nhấn (`accent` của mảnh, bỏ trống là màu áo tối đi), màu da (chỉ người 3D) hay một mã màu cố định */
-export type MarkFill = "color" | "line" | "accent" | "skin" | `#${string}`;
+/**
+ * Màu tô của mảng: màu áo, màu nét, màu nhấn (`accent` của mảnh, bỏ trống là màu áo tối đi), màu da, màu quần (chỉ người
+ * 3D) hay một mã màu cố định
+ */
+export type MarkFill = "color" | "line" | "accent" | "skin" | "trouser" | `#${string}`;
 
 /**
  * Một đặc điểm trên mặt khối. `pts` không `fill` là nét, `closed` thì khép vòng; có `fill` là mảng
@@ -152,6 +156,8 @@ interface GarmentStyleDef {
   shoulderFit?: boolean;
   /** Nửa rộng ve ở đỉnh ve mặc định, px ở vai chuẩn; `collar` đọc `g.lapel` đã co giãn */
   lapel?: number;
+  /** Mặc phanh vạt được (`garment.open`); kiểu khác bỏ qua trường ấy */
+  opens?: boolean;
 }
 
 /**
@@ -354,7 +360,7 @@ export const spline = (nodes: [number, number][], x: number) => {
  */
 export const lipOf = (s: Surface, drop: number, flap: [x: number, y: number][]): P2[] => {
   const ySide = s.top() + drop;
-  const edge: P2[] = [[s.a(ySide), ySide], ...flap, [0, s.top() + s.g.neckFront]];
+  const edge: P2[] = [[s.a(ySide), ySide], ...flap, [openBreak(s.g), s.top() + s.g.neckFront]];
   // Lấy mẫu dày trên hình phẳng: chèn điểm theo kinh độ thì đoạn sát bên cổ phồng ra ngoài mặt khối
   return [
     edge[0],
@@ -366,19 +372,92 @@ export const lipOf = (s: Surface, drop: number, flap: [x: number, y: number][]):
   ];
 };
 
+/** Phần polygon trên hình phẳng có `inside ≥ 0` */
+const clip = (poly: P2[], inside: (p: P2) => number) =>
+  poly.flatMap((p, i) => {
+    const q = poly[(i + 1) % poly.length];
+    const [a, b] = [inside(p), inside(q)];
+    const out: P2[] = a >= 0 ? [p] : [];
+    if (a >= 0 !== b >= 0) out.push([lerp(p[0], q[0], a / (a - b)), lerp(p[1], q[1], a / (a - b))]);
+    return out;
+  });
+
+/** Phần polygon trên hình phẳng nằm giữa hai mép `half(y)`: `|x| ≤ half(y)` */
+const within = (poly: P2[], half: (y: number) => number) =>
+  SIDES.reduce((pts, d) => clip(pts, ([x, y]) => half(y) - d * x), poly);
+
+/** Nửa rộng miệng cổ chữ V ở độ cao `y`: từ `neck` ở chỗ viền cổ chạm mặt vát tới đáy chữ V cách trục `openBreak` */
+const vHalf = (s: Surface) => {
+  const b = openBreak(s.g);
+  return (y: number) => b + (s.g.neck - b) * (1 - (y - s.top()) / s.g.neckFront);
+};
+
 /** Phần polygon trên hình phẳng nằm trong miệng cổ chữ V */
-const inV = (s: Surface, poly: P2[]) =>
-  SIDES.reduce((pts, d) => {
-    const inside = ([x, y]: P2) => s.g.neck * (1 - (y - s.top()) / s.g.neckFront) - d * x;
-    return pts.flatMap((p, i) => {
-      const q = pts[(i + 1) % pts.length];
-      const [a, b] = [inside(p), inside(q)];
-      const out: P2[] = a >= 0 ? [p] : [];
-      if (a >= 0 !== b >= 0)
-        out.push([lerp(p[0], q[0], a / (a - b)), lerp(p[1], q[1], a / (a - b))]);
-      return out;
-    });
-  }, poly);
+const inV = (s: Surface, poly: P2[]) => within(poly, vHalf(s));
+
+/**
+ * Áo khoác phanh vạt (`garment.open`): hai mép vạt tới đáy chữ V cách trục `brk` px, buông thẳng tới nửa khe cách gấu
+ * `round` px rồi bo ra thêm `round` px tới gấu. Mép vạt là dải nổi rộng `edge` px, nổi `lift[0]` px ở mép, `lift[1]` ở mé
+ * trong. Áo trong nổi `INNER_LIFT`, sơ vin ở cạp cao hơn hông `waist` phần từ hông lên vành vai; thắt lưng màu nét rộng
+ * `belt` px nổi `beltLift`; dưới là quần. Áo trong có cổ sơ mi thì nẹp sơ mi rộng `placket` px nổi `placketLift`, viền
+ * `placketLine`, cúc bán kính `dot` px cách nhau `button` px. Cà vạt nổi trên áo trong `tieLift` px. Cúc áo khoác cách mép vạt `knob` px trên vạt `+x`
+ */
+export const OPEN_FRONT = {
+  brk: 3,
+  round: 8,
+  edge: 4,
+  lift: [1.6, 0.2],
+  waist: 0.2,
+  belt: 3,
+  beltLift: 1.3,
+  placket: 5,
+  placketLift: 1.15,
+  placketLine: { k: 0.2, ink: 0.35 },
+  tieLift: 0.3,
+  dot: 1.1,
+  button: 14,
+  knob: 5,
+} as const;
+
+/** Nửa khe ở đáy chữ V của áo phanh vạt; áo cài là `0` */
+export const openBreak = (g: Pick<Garment, "open">) =>
+  g.open ? Math.min(OPEN_FRONT.brk, g.open / 2) : 0;
+
+/**
+ * Mép vạt trái người mặc (`+x`) của áo phanh vạt trên hình phẳng, `x` theo `y`: trên đáy chữ V là cạnh chữ V, dưới thì
+ * buông thẳng tới nửa khe `open / 2` rồi bo ra ở gấu; vạt phải đối xứng. Áo cài thì không có
+ */
+export function openEdge(s: Surface): ((y: number) => number) | undefined {
+  if (!s.g.open) return undefined;
+  const half = s.g.open / 2;
+  const b = openBreak(s.g);
+  const v = vHalf(s);
+  const yV = s.top() + s.g.neckFront;
+  const r = Math.max(0, Math.min(OPEN_FRONT.round, (s.yH - yV) / 2));
+  const yR = s.yH - r;
+  return (y) => {
+    if (y <= yV) return v(y);
+    if (y <= yR) return lerp(b, half, (y - yV) / (yR - yV || 1));
+    const u = Math.min(1, (y - yR) / (r || 1));
+    return half + r * (1 - Math.sqrt(1 - u * u));
+  };
+}
+
+/** Cúc áo khoác của áo phanh vạt ở độ cao `y`: trên vạt `+x`, cách mép vạt `knob` px */
+const openKnob = (s: Surface, edge: (y: number) => number, y: number, k: number): Mark => ({
+  pts: [s.at(edge(y) + OPEN_FRONT.knob, y)],
+  dot: true,
+  k,
+});
+
+/**
+ * Bên của điểm góc `phi` quanh trục cổ, nửa trước: `1` là `+x`. Giữa trước `phi = 0` là `+x`, `360` là `−x` — vòng
+ * cổ áo `0 → 360` mở ở giữa trước, hai đầu tách sang hai mép vạt áo phanh vạt
+ */
+export const frontSide = (phi: number) => {
+  const sn = Math.sin(phi * D);
+  return Math.abs(sn) > 1e-9 ? Math.sign(sn) : phi < 180 ? 1 : -1;
+};
 
 /** Cung elip tâm `(cx, cy)` từ góc `a0` tới `a1`, độ, trên hình phẳng */
 const oval = (cx: number, cy: number, rx: number, ry: number, a0: number, a1: number) =>
@@ -513,8 +592,10 @@ export function neckRing(
   grow = 0,
 ): SP {
   const g = s.g;
-  const x = (g.neck + grow) * Math.sin(phi * D);
   const c = Math.cos(phi * D);
+  const sn = Math.sin(phi * D);
+  const b = shape === "v" && c > 0 ? openBreak(g) : 0;
+  const x = b ? frontSide(phi) * (b + (g.neck + grow - b) * Math.abs(sn)) : (g.neck + grow) * sn;
   const back = Math.max(g.neckBack, s.nape === undefined ? 0 : s.nape - s.top());
   const dip =
     c < 0
@@ -534,7 +615,14 @@ export const innerNeckOf = (s: Surface): Surface => {
   const grow = neck - s.g.neck;
   const shirt: Surface = {
     ...s,
-    g: { ...s.g, neck, neckFront: innerCollarShape(s.g).front, neckBack: 0, neckline: "v" },
+    g: {
+      ...s.g,
+      neck,
+      neckFront: innerCollarShape(s.g).front,
+      neckBack: 0,
+      neckline: "v",
+      open: undefined,
+    },
     top: (more = 0) => s.top(grow + more),
     neck: (phi, more = 0) => neckRing(shirt, "v", phi, more),
   };
@@ -542,7 +630,7 @@ export const innerNeckOf = (s: Surface): Surface => {
 };
 
 /** Áo trong nổi bấy nhiêu px ở người 3D: vỏ viền cổ người cắm xiên qua mặt vát, áo trong nổi thấp thì vỏ ấy lòi qua thành chấm mực */
-const INNER_LIFT = 1;
+export const INNER_LIFT = 1;
 
 /**
  * Áo trong lộ giữa hai vạt cổ chữ V (`garment.inner`): phủ cả miệng cổ từ mép trên khối tới đáy chữ V, liền viền cổ;
@@ -554,6 +642,8 @@ function innerMarks(s: Surface, fill?: MarkFill): Mark[] {
   const color = inner?.color ?? fill;
   // có cổ sơ mi thì áo trong khoét theo miệng cổ sơ mi: trong miệng cổ là da
   const shirt = inner?.collar ? innerNeckOf(s) : undefined;
+  const yV = s.top() + s.g.neckFront;
+  const edge = openEdge(s);
   if (color) {
     const w = 3 * s.g.neck;
     const cut: P2[] = shirt
@@ -565,8 +655,15 @@ function innerMarks(s: Surface, fill?: MarkFill): Mark[] {
           [shirt.g.neck, s.yC],
         ]
       : [];
+    // áo phanh vạt: đáy chữ V cụt ở `openBreak`, khe dưới đó là tấm của `openParts`
+    const bottom: P2[] = edge
+      ? [
+          [w, yV],
+          [-w, yV],
+        ]
+      : [[0, yV]];
     out.push({
-      pts: onPlane(s, inV(s, [[-w, s.yC], ...cut, [w, s.yC], [0, s.top() + s.g.neckFront]])),
+      pts: onPlane(s, inV(s, [[-w, s.yC], ...cut, [w, s.yC], ...bottom])),
       fill: color,
       k: inner?.line ?? 0,
       lift: INNER_LIFT,
@@ -576,12 +673,28 @@ function innerMarks(s: Surface, fill?: MarkFill): Mark[] {
   if (t) {
     const spec = { width: 1, length: 102, line: 0, ...t };
     const y0 = shirt && shirt.top() + shirt.g.neckFront - INNER_COLLAR.knot;
-    out.push({
-      pts: onPlane(s, inV(s, tiePoly(s, spec, y0))),
-      fill: spec.color ?? "line",
-      k: spec.line,
-      lift: INNER_LIFT + 0.05,
-    });
+    const poly = tiePoly(s, spec, y0);
+    // áo phanh vạt: cà vạt buông hết trong khe, mép vạt che hai bên; nổi cao hơn vì đoạn trong khe nằm trên tấm áo trong
+    // của khe (`openParts`), lưới khác nên sát quá thì áo trong lấm tấm qua cà vạt
+    const parts = edge
+      ? [
+          inV(
+            s,
+            clip(poly, ([, y]) => yV - y),
+          ),
+          within(
+            clip(poly, ([, y]) => y - yV + 1),
+            edge,
+          ),
+        ]
+      : [inV(s, poly)];
+    for (const pts of parts.filter((p) => p.length > 2))
+      out.push({
+        pts: onPlane(s, pts),
+        fill: spec.color ?? "line",
+        k: spec.line,
+        lift: INNER_LIFT + (edge ? OPEN_FRONT.tieLift : 0.05),
+      });
   }
   return out;
 }
@@ -592,6 +705,20 @@ const COLLAR_CREAM = "#f6efe4";
 const SUIT_NECK = 18;
 const SUIT_LAPEL = 21;
 const BLAZER_LAPEL = 25;
+const JUMPER_COLLAR = 20;
+
+/**
+ * Khoá kéo của `jumper`: nét răng khoá từ đáy chữ V xuống gấu; đầu khoá ở đáy chữ V cao `slider` px, nửa rộng `half`;
+ * tab kéo treo dưới đầu khoá dài `tab` px, nửa rộng `tabHalf`; đầu khoá, tab nổi `lift` px trên áo trong
+ */
+export const ZIP = {
+  line: { k: 0.5, ink: 0.65 },
+  slider: 4,
+  half: 2.2,
+  tab: 7,
+  tabHalf: 1.5,
+  lift: 1.3,
+} as const;
 
 /** Nét ngực, lưng của thân trần: mảnh và nhạt, chỉ gợi khối */
 const BARE_LINE = 0.5;
@@ -721,8 +848,12 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
     neckline: "v",
     shoulderFit: true,
     lapel: SUIT_LAPEL,
+    opens: true,
     marks: (s) => {
       const [yA, ...buttons] = placket(s, [0, 0.26, 0.6]);
+      const edge = openEdge(s);
+      if (edge)
+        return [...innerMarks(s, "accent"), ...buttons.map((y) => openKnob(s, edge, y, 0.9))];
       return [
         ...innerMarks(s),
         { pts: [s.at(0, yA), s.at(-1, yA + 20), s.at(0, s.yH - 9)], ...TRIM },
@@ -817,9 +948,13 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
     neckline: "v",
     shoulderFit: true,
     lapel: BLAZER_LAPEL,
+    opens: true,
     marks: (s) => [
       ...innerMarks(s, "accent"),
-      ...placket(s, [0.38, 0.75]).map((y) => ({ pts: [s.at(18, y)], dot: true, k: 1.05 })),
+      ...placket(s, [0.38, 0.75]).map((y) => {
+        const edge = openEdge(s);
+        return edge ? openKnob(s, edge, y, 1.05) : { pts: [s.at(18, y)], dot: true, k: 1.05 };
+      }),
       ...SIDES.map((d) => ({
         pts: [s.at(d * 25, placket(s, [0.62])[0]), s.at(d * 37, placket(s, [0.54])[0])],
         ...TRIM,
@@ -856,6 +991,51 @@ export const GARMENT_STYLES: Record<GarmentStyle, GarmentStyleDef> = {
       around(s.yH - 9, TRIM),
       ...ticks(s.yH - 8, s.yH - 2, 22, TRIM_FINE),
     ],
+  },
+  jumper: {
+    label: "Áo jumper khoá kéo cổ bẻ dựng khối",
+    dims: { ...TEE, ease: 13, waist: 2, fit: 0.6, hem: 5, neck: SUIT_NECK, neckFront: 40 },
+    neckline: "v",
+    shoulderFit: true,
+    lapel: JUMPER_COLLAR,
+    marks: (s) => {
+      const yA = s.top() + s.g.neckFront;
+      const yB = s.yH - 11;
+      const pill = (x: number, y0: number, y1: number): SP[] =>
+        oval(0, (y0 + y1) / 2, x, (y1 - y0) / 2, 0, 360).map(([px, py]) => s.at(px, py));
+      return [
+        ...innerMarks(s, "accent"),
+        { pts: [s.at(0, yA), s.at(0, s.yH - 1)], ...ZIP.line },
+        // túi chéo hai bên dưới ngực
+        ...SIDES.map((d) => ({ pts: [s.at(d * 21, s.t(0.52)), s.at(d * 30, s.t(0.78))], ...TRIM })),
+        around(yB, TRIM),
+        ...ticks(yB + 1, s.yH - 2, 12, TRIM_FINE),
+        { pts: pill(ZIP.half, yA - 1, yA - 1 + ZIP.slider), fill: "line", k: 0, lift: ZIP.lift },
+        {
+          pts: pill(ZIP.tabHalf, yA + ZIP.slider - 2, yA + ZIP.slider - 2 + ZIP.tab),
+          fill: "line",
+          k: 0,
+          lift: ZIP.lift + 0.05,
+        },
+      ];
+    },
+    // Lá cổ mũi nhọn trải trên ngực trên, khấc ở chân mũi cổ, dưới khấc là ve hẹp của hai vạt mở xuống đáy chữ V
+    collar: (s) => {
+      const L = s.g.lapel ?? JUMPER_COLLAR;
+      const y = s.top() + 8 + 0.4 * s.g.neckFront;
+      return {
+        stand: 4,
+        band: 8,
+        side: 3,
+        flap: [
+          [L, y],
+          [0.55 * L, y - 3],
+        ],
+        lift: [3.5, 1.5],
+        tip: 3,
+        tipAt: 0,
+      };
+    },
   },
   bowShirt: {
     label: "Sơ mi cổ nơ dựng khối",
@@ -995,6 +1175,7 @@ export function garmentOf(
   const dims = { ...def.dims };
   for (const k of Object.keys(dims) as (keyof Dims)[]) if (g[k] !== undefined) dims[k] = g[k];
   if (clad) dims.slope = dims.cladSlope;
+  if (!def.opens) delete g.open;
   if (!def.shoulderFit) return { ...g, ...dims };
   const k = rig ? (rig.shoulderHalf + dims.ease) / (SHOULDER_REF + def.dims.ease) : 1;
   dims.neck = Math.max(Math.min(NECK_MIN, dims.neck), dims.neck * k);

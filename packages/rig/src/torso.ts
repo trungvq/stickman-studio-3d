@@ -3,13 +3,14 @@ import { torsoSection, type ArmRoom } from './core/act3';
 import { D } from './core/constants';
 import type { Garment } from './core/schema';
 import {
-  COLLAR_INK, COLLAR_LEAN, COLLAR_LINE, curve, TRIM, GARMENT_STYLES, garmentOf, humanNeckMin, INNER_COLLAR, NAPE, innerCollarShape, innerNeckOf, lerp, lerpAt, lipOf, neckRing, profile, RIB_FRONT, spline,
+  COLLAR_INK, COLLAR_LEAN, COLLAR_LINE, curve, TRIM, GARMENT_STYLES, frontSide, garmentOf, humanNeckMin, INNER_COLLAR, NAPE, innerCollarShape, innerNeckOf, lerp, lerpAt, lipOf, neckRing, openBreak, profile, RIB_FRONT, spline,
   type Collar, type MarkFill, type P2, type Rig, type SP, type Surface,
 } from './core/torso';
 import { WrapSchema, type Drape, type Necklace, type Shades } from './core/schema';
 import { drapeSolid, shadesSolids } from './core/drape';
 import { necklaceSolids } from './core/jewelry';
 import { wrapParts, type WrapBody } from './core/wrap';
+import { openParts } from './core/open';
 import { printParts, type PrintPart } from './core/print';
 import { bibCovers } from './core/bib';
 import { clipHalf, panelParts } from './core/panel';
@@ -457,6 +458,11 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
     out.prints.push(...w.prints);
   }
   out.prints.push(...printParts(body, g));
+  if (g.open) {
+    const o = openParts(body, g.inner?.color ?? 'accent');
+    out.sheets.push(...o.sheets);
+    out.solids.push(...o.solids);
+  }
 
   if (neck?.drape) {
     const d = drapeSolid({ s: surf, depth: dAt, front: fAt, height: rig.height, ...(arm && { shoulder: { at: arm.at, r: arm.cap } }) }, neck.drape);
@@ -484,7 +490,7 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
       Math.cos(phi * D) > 0 ? 1 - Math.asin(Math.abs(Math.sin(phi * D))) / (Math.PI / 2) : undefined;
     const [fx, fy] = spec.flap[spec.tipAt ?? spec.flap.length - 1];
     const tipT = lens[lip.findIndex(([x, y]) => Math.hypot(x - fx, y - fy) < 1e-6)] / lens[lens.length - 1];
-    const onAxis = lens[lip.findIndex(([x]) => x < 1e-6)] / lens[lens.length - 1];
+    const onAxis = lens[lip.findIndex(([x]) => x < openBreak(s.g) + 1e-6)] / lens[lens.length - 1];
     const tipLift = (phi: number) => {
       const t = frontAt(phi);
       return t === undefined ? 0 : spec.tip * Math.exp(-(((t - tipT) / 0.25) ** 2));
@@ -496,9 +502,8 @@ export function torsoMesh(raw: Partial<Garment> | undefined, rig: Rig, arm?: Arm
         const [l, y] = s.neck(phi);
         return [l, y + (hang === undefined ? spec.side + (spec.band - spec.side) * c * c : spec.side * (1 - c * c))];
       }
-      const sn = Math.sin(phi * D);
       const [x, y] = along(Math.min(t, onAxis));
-      const [l] = at(Math.sign(sn) * x, y);
+      const [l] = at(frontSide(phi) * x, y);
       return [l + 360 * Math.round((phi - l) / 360), y];
     };
     const [liftFold, liftEdge] = spec.lift;

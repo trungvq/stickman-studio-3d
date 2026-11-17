@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { BadgeSchema, defaultCharacter, GarmentSchema, LettersSchema, OBI_KNOTS, ObiSchema, OpenSchema, PanelSchema, PatternSchema, PRINT_SHAPE_NAMES, PrintSchema, WrapSchema } from './core/schema';
 import { flattenPath, PANEL_LIFT } from './core/panel';
 import { TORSO_DEPTH } from './core/constants';
-import { CHEST, CLOTH, GARMENT_STYLES, garmentOf, garmentShoulder, lerpAt, NECK_MIN, profile, SHOULDER_REF, type Surface } from './core/torso';
+import { CHEST, CLOTH, GARMENT_STYLES, garmentOf, garmentShoulder, lerpAt, NECK_MIN, OPEN_FRONT, openBreak, profile, SHOULDER_REF, ZIP, type Surface } from './core/torso';
 import { cladProfile, cladThigh, roots3, THIGH_CLEAR } from './core/act3';
 import { signedVolume, wrapEdge } from './core/wrap';
 import { PRINT_SHAPES, WAKABA } from './core/print';
@@ -372,8 +372,8 @@ describe('mảng áo, hoạ tiết, áo trong', () => {
     expect(cut.lines.length).toBeGreaterThan(whole.lines.length);
   });
 
-  it('áo trong blazer, cardigan liền từ mép trên khối; viền tắt mặc định', () => {
-    for (const style of ['blazer', 'cardigan'] as const) {
+  it('áo trong blazer, cardigan, jumper liền từ mép trên khối; viền tắt mặc định', () => {
+    for (const style of ['blazer', 'cardigan', 'jumper'] as const) {
       const t = mesh({ style });
       const inner = t.fills.find((f) => f.fill === 'accent')!;
       expect(Math.min(...inner.pts.map((p) => p[1])), style).toBeLessThan(t.profile[0][1] + 1);
@@ -533,7 +533,7 @@ describe('dáng thân chung của thân trần và áo', () => {
 
 describe('áo khoác cổ V co theo vai', () => {
   const base = defaultCharacter().rig;
-  const JACKETS = ['suit', 'blazer', 'cardigan'] as const;
+  const JACKETS = ['suit', 'blazer', 'cardigan', 'jumper'] as const;
 
   it('miệng cổ và ve co giãn theo nửa rộng vai áo so với vai chuẩn; kiểu khác giữ số', () => {
     for (const style of JACKETS) {
@@ -556,8 +556,8 @@ describe('áo khoác cổ V co theo vai', () => {
       expect(garmentOf({ style }, true, { shoulderHalf: 30 }).neck, style).toBe(GARMENT_STYLES[style].dims.neck);
   });
 
-  it('lá cổ, ve suit và blazer nằm trong bề ngang vai áo ở mọi cỡ vai, không chìa ra gốc tay', () => {
-    for (const style of ['suit', 'blazer'] as const)
+  it('lá cổ, ve suit, blazer, jumper nằm trong bề ngang vai áo ở mọi cỡ vai, không chìa ra gốc tay', () => {
+    for (const style of ['suit', 'blazer', 'jumper'] as const)
       for (const shoulderHalf of [31, 36, 40, 46])
         for (const ease of [undefined, 8]) {
           const rig = { ...base, shoulderHalf };
@@ -567,5 +567,117 @@ describe('áo khoác cổ V co theo vai', () => {
           const wide = Math.max(...leaf.map((p) => Math.abs(p[0])));
           expect(wide / garmentShoulder(g, rig, true), `${style} ${shoulderHalf} ${ease}`).toBeLessThan(0.85);
         }
+  });
+});
+
+describe('áo jumper khoá kéo cổ bẻ', () => {
+  const { rig } = defaultCharacter();
+  const mesh = (g: Record<string, unknown> = {}) => torsoMesh(GarmentSchema.parse({ style: 'jumper', ...g }), rig);
+  const zip = (t: TorsoMesh) => t.fills.find((f) => f.ink === ZIP.line.ink)!.pts;
+  const pull = (t: TorsoMesh) => t.fills.filter((f) => f.fill === 'line' && !f.decal);
+  const ys = (pts: number[][]) => pts.map((p) => p[1]);
+
+  it('khoá kéo từ đáy chữ V xuống gấu giữa ngực; đầu khoá, tab ở chỗ dừng theo `neckFront`', () => {
+    for (const neckFront of [6, 40, 55]) {
+      const t = mesh({ neckFront });
+      const z = zip(t);
+      expect(Math.max(...z.map((p) => Math.abs(p[0]))), `${neckFront}`).toBeLessThan(ZIP.line.k * rig.stroke);
+      expect(Math.max(...ys(z)), `${neckFront}`).toBeGreaterThan(t.profile[t.profile.length - 1][1] - 3);
+      const [slider, tab] = pull(t);
+      // đầu khoá trùm chỗ khoá dừng
+      expect(Math.min(...ys(slider.pts)), `${neckFront}`).toBeLessThan(Math.min(...ys(z)));
+      expect(Math.max(...ys(slider.pts)), `${neckFront}`).toBeGreaterThan(Math.min(...ys(z)));
+      expect(Math.max(...ys(tab.pts)), `${neckFront}`).toBeGreaterThan(Math.max(...ys(slider.pts)));
+      expect(Math.min(...slider.pts.map((p) => p[2])), `${neckFront}`).toBeGreaterThan(0);
+    }
+    const stop = (t: TorsoMesh) => Math.min(...ys(zip(t)));
+    expect(stop(mesh({ neckFront: 55 })) - stop(mesh({ neckFront: 40 }))).toBeCloseTo(15, 0);
+  });
+
+  it('cổ bẻ nổi khối, mũi cổ theo `lapel`; áo trong, cổ sơ mi, cà vạt như áo khoác cổ V; bo gấu, túi chéo', () => {
+    const t = mesh();
+    expect(t.sheets).toHaveLength(2);
+    const tip = (m: TorsoMesh) => Math.max(...m.sheets[1].grid.flat().filter((p) => p[2] > 0).map((p) => Math.abs(p[0])));
+    expect(tip(mesh({ lapel: 26 }))).toBeGreaterThan(tip(t) + 3);
+    const shirt = mesh({ inner: { color: '#EDE6D6', collar: true } });
+    expect(shirt.sheets.filter((s) => s.color === '#EDE6D6')).toHaveLength(2);
+    expect(shirt.fills.some((f) => f.fill === '#EDE6D6')).toBe(true);
+    expect(mesh({ inner: { tie: { color: '#3A3230' } } }).fills.some((f) => f.fill === '#3A3230')).toBe(true);
+    // bo gấu: vòng quanh khối và vạch gân, kể cả sau lưng
+    expect(t.fills.some((f) => f.ink !== undefined && f.pts.some((p) => p[2] < -10) && Math.min(...ys(f.pts)) > t.profile[t.profile.length - 1][1] - 14)).toBe(true);
+  });
+});
+
+describe('áo khoác phanh vạt', () => {
+  const { rig } = defaultCharacter();
+  const SHIRT = '#C3D5EA';
+  const mesh = (g: Record<string, unknown>) => torsoMesh(GarmentSchema.parse(g), rig);
+  const ys = (pts: number[][]) => pts.map((p) => p[1]);
+  const sheetsOf = (t: TorsoMesh, color: string) => t.sheets.filter((s) => s.color === color);
+
+  it('chỉ suit, blazer nhận `open`; kiểu khác bỏ qua', () => {
+    for (const style of ['suit', 'blazer'] as const) expect(garmentOf({ style, open: 18 }).open, style).toBe(18);
+    for (const style of ['cardigan', 'jumper', 'shirt', 'tshirt'] as const) {
+      expect(garmentOf({ style, open: 18 }).open, style).toBeUndefined();
+      expect(mesh({ style, open: 18 }).sheets.length, style).toBe(mesh({ style }).sheets.length);
+    }
+  });
+
+  it('khe từ đáy chữ V xuống gấu: áo trong tới cạp, thắt lưng, quần; dải mép vạt rộng dần tới nửa khe rồi bo ở gấu', () => {
+    for (const style of ['suit', 'blazer'] as const)
+      for (const open of [10, 24]) {
+        const t = mesh({ style, open, inner: { color: SHIRT } });
+        const hem = t.profile[t.profile.length - 1][1];
+        const [shirt] = sheetsOf(t, SHIRT);
+        const [belt] = sheetsOf(t, 'line');
+        const [trouser] = sheetsOf(t, 'trouser');
+        const tag = `${style} ${open}`;
+        expect(Math.max(...ys(shirt.grid.flat())), tag).toBeLessThan(Math.min(...ys(trouser.grid.flat())) + 1);
+        expect(Math.max(...ys(trouser.grid.flat())), tag).toBeGreaterThan(hem - 1);
+        expect(Math.min(...ys(belt.grid.flat())), tag).toBeGreaterThan(Math.max(...ys(shirt.grid.flat())) - 1);
+        // áo trong của khe nổi trên mặt khối, phủ trục giữa
+        expect(Math.min(...shirt.grid.flat().map((p) => p[2])), tag).toBeGreaterThan(0);
+        // dải mép vạt hai bên, nét ở mép
+        const strips = t.sheets.filter((s) => s.color === 'color' && s.grid[0].length === 4);
+        expect(strips.length, tag).toBe(4);
+        const edgeX = strips.filter((s) => s.rims.length === 0).map((s) => Math.abs(s.grid[s.grid.length - 1][0][0]));
+        for (const x of edgeX) {
+          expect(x, tag).toBeGreaterThan(open / 2 + 1);
+          expect(x, tag).toBeLessThan(open / 2 + OPEN_FRONT.round + 0.5);
+        }
+        const top = strips.find((s) => s.rims.length && s.grid[0][0][0] > 0)!.grid[0][0];
+        expect(top[0], tag).toBeCloseTo(openBreak({ open }), 0);
+      }
+  });
+
+  it('ve tới đáy chữ V cách trục `openBreak`, hai đầu lá cổ tách hai bên; cúc áo khoác chỉ trên vạt `+x`', () => {
+    for (const style of ['suit', 'blazer'] as const) {
+      const t = mesh({ style, open: 18 });
+      const leaf = t.sheets.find((s) => s.rims.length === 2 && s.color === 'color')!;
+      const [first, last] = [leaf.grid[0], leaf.grid[leaf.grid.length - 1]];
+      for (const p of [first[0], first[first.length - 1]]) expect(p[0], style).toBeCloseTo(openBreak({ open: 18 }), 0);
+      for (const p of [last[0], last[last.length - 1]]) expect(p[0], style).toBeCloseTo(-openBreak({ open: 18 }), 0);
+      const closed = mesh({ style });
+      expect(t.dots.length, style).toBe(closed.dots.length);
+      expect(Math.min(...t.dots.map((d) => d.p[0])), style).toBeGreaterThan(openBreak({ open: 18 }) + OPEN_FRONT.knob - 0.5);
+    }
+  });
+
+  it('cổ sơ mi thì nẹp và cúc giữa khe, dưới mũi cà vạt; cà vạt buông qua đáy chữ V', () => {
+    const t = mesh({ style: 'blazer', open: 18, inner: { color: SHIRT, collar: true } });
+    const placket = t.sheets.find((s) => s.color === SHIRT && s.rims.length === 2);
+    expect(placket).toBeDefined();
+    expect(t.solids.filter((s) => s.color === SHIRT).length).toBeGreaterThan(2);
+    expect(mesh({ style: 'blazer', open: 18, inner: { color: SHIRT } }).sheets.some((s) => s.color === SHIRT && s.rims.length === 2)).toBe(false);
+    const tied = mesh({ style: 'suit', open: 18, inner: { color: SHIRT, collar: true, tie: { color: '#7A2E2E' } } });
+    const tie = tied.fills.filter((f) => f.fill === '#7A2E2E');
+    const closedTie = mesh({ style: 'suit', inner: { color: SHIRT, collar: true, tie: { color: '#7A2E2E' } } }).fills.filter((f) => f.fill === '#7A2E2E');
+    const low = (fs: typeof tie) => Math.max(...fs.flatMap((f) => ys(f.pts)));
+    expect(low(tie)).toBeGreaterThan(low(closedTie) + 20);
+    // cà vạt dài tới gần cạp: nẹp chỉ còn đoạn dưới mũi cà vạt, ngắn quá thì bỏ
+    const short = mesh({ style: 'suit', open: 18, inner: { color: SHIRT, collar: true, tie: { color: '#7A2E2E', length: 60 } } });
+    const tiedPlacket = short.sheets.find((s) => s.color === SHIRT && s.rims.length === 2)!;
+    const shortTie = short.fills.filter((f) => f.fill === '#7A2E2E');
+    expect(Math.min(...ys(tiedPlacket.grid.flat()))).toBeGreaterThan(low(shortTie));
   });
 });
