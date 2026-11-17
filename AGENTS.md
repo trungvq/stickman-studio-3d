@@ -142,7 +142,9 @@ nhập tay `createPipeline({ shadow })` thì phải ôm hết vùng có bóng.
   chuỗi ấy nằm luôn trong dòng lệnh của chính shell đang chạy, nó bắt trúng chính nó (vòng chờ không thoát, `pkill`
   giết luôn shell, exit 144).
 
-## Kiểm tra trước khi bảo là xong
+## Kiểm tra khi nâng version
+
+Chỉ chạy lúc nâng version ([README](README.md#phát-hành-một-version)), không chạy sau từng sửa hay trước commit:
 
 ```bash
 pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build
