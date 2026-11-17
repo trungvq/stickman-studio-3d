@@ -1271,7 +1271,7 @@ export const EYE_SHAPES = {
     iris: 0.82,
     pupil: 0.48,
     shine: 0.55,
-    brow: 1.45,
+    brow: 1.2,
   },
   female: {
     half: 1.65,
