@@ -373,6 +373,40 @@ describe("check: người lồng vào vật trên cảnh three (`stickman.world`
   });
 });
 
+describe("check --cast, --from, --to trên nhóm `clash`", () => {
+  it("chỉ quãng: lấn ngoài quãng thì im, trong quãng ra đúng dòng của lượt cả cảnh", async () => {
+    const dir = worldspace();
+    const run = (o) => checkWorkspace({ only: "clash", dir, scene: "^cam$", ...o });
+    const wide = clashes(await run()).map((p) => p.msg);
+    assert.equal(wide.length, 1, JSON.stringify(wide));
+    assert.deepEqual(clashes(await run({ from: 0, to: 0.3 })), []);
+    assert.deepEqual(
+      clashes(await run({ from: 0.6, to: 0.8 })).map((p) => p.msg),
+      wide,
+    );
+  });
+
+  it("chỉ người: vật lấn người khác thì im, cặp hai người giữ khi một trong hai được chọn", async () => {
+    const dir = worldspace();
+    // `hong` ném từ giây 1: đo tới 0,7
+    const run = async (cast) =>
+      clashes(await checkWorkspace({ only: "clash", dir, scene: "^hong$", to: 0.7, cast })).map(
+        (p) => p.msg,
+      );
+    const wide = await run();
+    const pair = wide.filter((m) => / — a\.\w+ ↔ b\.\w+ lấn /.test(m));
+    const so = wide.filter((m) => / — a\.foreArmR ↔ so lấn /.test(m));
+    assert.ok(pair.length > 0 && so.length === 1, JSON.stringify(wide, null, 2));
+    const b = await run("b");
+    assert.deepEqual(
+      b,
+      wide.filter((m) => / ↔ b\./.test(m) || / — b\./.test(m)),
+    );
+    assert.ok(pair.every((m) => b.includes(m)) && !b.includes(so[0]));
+    assert.ok((await run("a")).includes(so[0]));
+  });
+});
+
 describe("checkScenes: `check` trên cảnh dựng tạm", () => {
   it("đo `clash` trên cảnh three của `spec` (cảnh xem thử có ghế), không có `spec` thì đi `worldOf` của repo", async () => {
     const dir = worldspace();

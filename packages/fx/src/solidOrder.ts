@@ -133,7 +133,14 @@ export function solidClashes(
     tol = 0,
     view,
     viewLens = lens,
-  }: { tol?: number; view?: { x: number; y: number; w: number; h: number }; viewLens?: Lens } = {},
+    ids,
+  }: {
+    tol?: number;
+    view?: { x: number; y: number; w: number; h: number };
+    viewLens?: Lens;
+    /** Chỉ đo phần người của những người này (với đồ, và cặp có ít nhất một người ấy); bỏ trống là mọi người */
+    ids?: ReadonlySet<string>;
+  } = {},
 ): SolidClash[] {
   const frame: Solid["box"] | undefined = view && [
     view.x,
@@ -161,7 +168,9 @@ export function solidClashes(
     const lim = touchLimits(it, tol);
     const near = segs
       .map((g) => ({ g, max: lim(g) }))
-      .filter(({ g, max }) => max < Infinity && overlap(pad(b.box), g.s.box));
+      .filter(
+        ({ g, max }) => max < Infinity && (!ids || ids.has(g.id)) && overlap(pad(b.box), g.s.box),
+      );
     for (const s of b.ss) {
       let box = aabbs.get(s);
       if (!box) aabbs.set(s, (box = aabb(s.v)));
@@ -178,7 +187,8 @@ export function solidClashes(
   for (let i = 0; i < segs.length; i++)
     for (let j = i + 1; j < segs.length; j++) {
       const [a, b] = [segs[i], segs[j]];
-      if (a.id === b.id || boxOverlap(boxes.get(a)!, boxes.get(b)!) <= tol) continue;
+      if (a.id === b.id || (ids && !ids.has(a.id) && !ids.has(b.id))) continue;
+      if (boxOverlap(boxes.get(a)!, boxes.get(b)!) <= tol) continue;
       if (!inseparable(a.s, b.s, lens)) continue;
       const depth = penetration(shape(a), shape(b));
       if (depth > tol)

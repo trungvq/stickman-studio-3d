@@ -1245,9 +1245,10 @@ export function worldScene(world, data, rel) {
 
 /**
  * Các giây cảnh để đo người 3D: mỗi `every` giây, chia đôi quãng nào có đỉnh khối người dời quá
- * `CLASH_MOVE` (tới một khung `1/30 s`). Trả kèm `sceneBodies` của từng giây
+ * `CLASH_MOVE` (tới một khung `1/30 s`). `window` `[từ, tới]`: chỉ các mốc lưới `every` phủ quãng ấy (cùng giây như lượt cả
+ * cảnh). Trả kèm `sceneBodies` của từng giây
  */
-export function sceneSamples(rt, { characterOf, every = CLASH_EVERY }) {
+export function sceneSamples(rt, { characterOf, every = CLASH_EVERY, window }) {
   const built = new Map();
   const bodies = (t) => {
     const people = FX.sceneBodies(rt, t, { characterOf });
@@ -1269,7 +1270,8 @@ export function sceneSamples(rt, { characterOf, every = CLASH_EVERY }) {
     }
     return m;
   };
-  const times = [0];
+  const i0 = window ? Math.max(0, Math.floor(window[0] / every + 1e-9)) : 0;
+  const times = [i0 ? +(i0 * every).toFixed(3) : 0];
   const split = (t0, b0, t1, b1) => {
     if (t1 - t0 > 1 / 30 + 1e-9 && moved(b0, b1) > CLASH_MOVE) {
       const tm = (t0 + t1) / 2;
@@ -1278,8 +1280,12 @@ export function sceneSamples(rt, { characterOf, every = CLASH_EVERY }) {
       split(tm, bm, t1, b1);
     } else times.push(t1);
   };
-  let b0 = bodies(0);
-  for (let i = 1; i * every <= rt.duration + 1e-9; i++) {
+  let b0 = bodies(times[0]);
+  for (
+    let i = i0 + 1;
+    i * every <= rt.duration + 1e-9 && (!window || (i - 1) * every < window[1] - 1e-9);
+    i++
+  ) {
     const t1 = +(i * every).toFixed(3);
     const b1 = bodies(t1);
     split(times.at(-1), b0, t1, b1);
@@ -1318,6 +1324,7 @@ function tally(times, at, line) {
         key: c.key,
         measure: c.depth,
         t: runs[0][0],
+        runs,
         ...(floor && { floor: true }),
       };
     });
@@ -1334,11 +1341,13 @@ const shown = (o) => {
  * `who` là `người.bộ phận[R|L]` như `touch`. Trả kèm khung bao từng vật (`boxes`, theo vật three sinh
  * ra nó). docs/10-lop-ve-code.md#đo-trên-cảnh-three
  */
-function worldAt(rt, t, { world, tol, unknown }) {
+function worldAt(rt, t, { world, tol, unknown, ids }) {
   const { scene, collide, colliders, U } = world;
   const posed = scene.pose(t) ?? {};
   const figures = Object.fromEntries(
-    Object.entries(posed).filter(([, f]) => f?.root && shown(f.root)),
+    Object.entries(posed).filter(
+      ([id, f]) => f?.root && shown(f.root) && (!ids || ids.includes(id)),
+    ),
   );
   scene.root.updateMatrixWorld(true);
   const cols = colliders(scene.root);
@@ -1524,14 +1533,14 @@ function worldMoved(a, b, U) {
  * khung `1/30 s`) — đồ bay qua người giữa hai mẫu vẫn bị bắt. `pose(t)` hay `collide` ném thì dừng đo
  * cảnh three của cảnh, ghi lỗi vào `error`. Trả các giây đã đo và chỗ lấn của từng giây
  */
-function worldSamples(rt, times, { world, tol }) {
+function worldSamples(rt, times, { world, tol, ids }) {
   const at = new Map();
   const unknown = new Map();
   let error = null;
   const measure = (t) => {
     if (error) return null;
     try {
-      const m = worldAt(rt, t, { world, tol, unknown: (e, name) => unknown.set(e, name) });
+      const m = worldAt(rt, t, { world, tol, ids, unknown: (e, name) => unknown.set(e, name) });
       at.set(t, m.hits);
       return m;
     } catch (e) {
@@ -1580,7 +1589,10 @@ function dropNamed(unknown, root) {
  */
 export const sceneClashProblems = (rt, opts) => clashRows(rt, opts).map((r) => r.msg);
 
-/** `sceneClashProblems` kèm khoá ổn định và độ lấn từng dòng (`{ msg, key, measure }`) cho baseline */
+/**
+ * `sceneClashProblems` kèm khoá ổn định, độ lấn và các quãng giây từng dòng (`{ msg, key, measure, runs }`) cho baseline.
+ * `ids`: chỉ chỗ lấn của những người này (cặp người: một trong hai), người khác vẫn là vật cản
+ */
 function clashRows(
   rt,
   {
@@ -1592,10 +1604,11 @@ function clashRows(
     samples,
     world,
     onWorld,
+    ids,
   },
 ) {
   const { times: base, built } = samples ?? sceneSamples(rt, { characterOf, every });
-  const w = world && worldSamples(rt, base, { world, tol });
+  const w = world && worldSamples(rt, base, { world, tol, ids });
   if (w) onWorld?.({ error: w.error, unknown: w.unknown });
   // `sceneClashes` sắp sâu trước: mỗi cặp (phần người, món) lấy mảnh lấn sâu nhất của khung. Món
   // gộp theo `name`: lớp ẩn bớt món thì chỉ số trong mảng `solids` dời giữa chừng
@@ -1606,6 +1619,7 @@ function clashRows(
       tol,
       self,
       people: built.get(t),
+      ids,
     }).map((c) => ({
       ...c,
       key: c.other
@@ -1651,14 +1665,29 @@ function itemClashRows(
  * Người 3D trượt trên sàn, khởi hành giật, dừng giật, thân quay gắt, clip đi hoà vào khi `path` đã chạy, `yaw` mốc lệch
  * hướng đi: hợp lệ, chỉ nhìn là thấy — docs/03-scene.md#check-cho-người-3d
  */
-const moveProblems = (rt) => [
-  ...rig.sceneSlideProblems(rt),
-  ...rig.sceneLaunchProblems(rt),
-  ...rig.sceneStopProblems(rt),
-  ...rig.sceneTurnProblems(rt),
-  ...(rig.sceneWalkInProblems?.(rt) ?? []),
-  ...(rig.sceneWalkYawProblems?.(rt) ?? []),
+const moveProblems = (rt, o = {}) => [
+  ...rig.sceneSlideProblems(rt, o),
+  ...rig.sceneLaunchProblems(rt, o),
+  ...rig.sceneStopProblems(rt, o),
+  ...rig.sceneTurnProblems(rt, o),
+  ...(rig.sceneWalkInProblems?.(rt, o) ?? []),
+  ...(rig.sceneWalkYawProblems?.(rt, o) ?? []),
 ];
+
+/** Quãng giây đầu tiên một dòng chữ ghi (`giây a` hay `giây a–b`), `null` khi không ghi giây nào */
+export function lineSpan(msg) {
+  const m = /giây (\d+(?:\.\d+)?)(?:–(\d+(?:\.\d+)?))?/.exec(msg);
+  return m ? [Number(m[1]), Number(m[2] ?? m[1])] : null;
+}
+
+/**
+ * Lề quanh quãng `--from`/`--to` mà `move` lấy mẫu thêm (giây), để luật cần ngữ cảnh trước sau đo như lượt cả cảnh:
+ * `motion` cho giật (nền ±2 khung, gộp 3 khung), khuỷu rung (cửa sổ `0,5 s`), tay duỗi liền, khuỷu khoá; `path` cho thân
+ * quay đi rồi quay lại (`1,5 s` mỗi cú, đỉnh gộp từ mẫu đầu) và trượt (cửa sổ `0,4 s` nối nhau, chân trụ suy từ mẫu
+ * trước). `held` lấy lề `hold` + một nhịp mẫu; `clash`, `roles` đo từng mẫu lưới nên chỉ lấy mốc lưới phủ quãng —
+ * docs/05-repo-video.md#đo-hẹp
+ */
+export const NARROW_PAD = { motion: 1, path: 3 };
 
 /**
  * Nhóm luật của `check`, xếp theo thứ nó cần dựng: `ref` chỉ đọc JSON, `move` đo khớp người theo runtime (chiếu
@@ -1735,7 +1764,7 @@ export const CHECK_TIMES = {
  * Luật đồ cầm tay của một cảnh (`sceneHeld` của rig) trên cảnh three `on` đã dựng (`worldScene`). `quiet`: lượt đo người
  * lồng vào vật đã báo cảnh three ném lỗi, không báo lại
  */
-export function heldRows(ctx, rt, on, warn, quiet, onPosed) {
+export function heldRows(ctx, rt, on, warn, quiet, onPosed, narrow = {}) {
   let thrown = quiet;
   const onError = (t, e) => {
     if (!thrown)
@@ -1750,11 +1779,19 @@ export function heldRows(ctx, rt, on, warn, quiet, onPosed) {
   let issues;
   try {
     // `gripDeclared`: `grip` khai ở `package.json` thay ngưỡng theo nhóm của chỗ cầm nhóm
-    issues = rig.sceneHeld(rt, { ...ctx.held, frame, ...(items && { items }) });
+    issues = rig.sceneHeld(rt, {
+      ...ctx.held,
+      frame,
+      ...(items && { items }),
+      ...(narrow.ids && { ids: narrow.ids }),
+      ...(narrow.window && { window: narrow.window }),
+    });
   } catch (e) {
     return warn(`không đo được đồ cầm tay — ${e.message}`);
   }
+  const inSpan = narrow.hits ?? (() => true);
   for (const s of issues) {
+    if (!(s.runs ?? [[s.t, s.t]]).some(([a, b]) => inSpan(a, b))) continue;
     warn(rig.heldLine(s), {
       key: `held:${s.rule}|${s.id}|${s.hand}|${s.item}`,
       measure: s.worst,
@@ -1765,19 +1802,20 @@ export function heldRows(ctx, rt, on, warn, quiet, onPosed) {
   // Cảnh khai `hold` món mà `extra` không `provide`
   if (items && rig.heldUnprovided)
     for (const u of rig.heldUnprovided(rt, on.scene.cast.provided()))
-      warn(rig.heldUnprovidedLine(u), { key: `held:provide|${u.id}|${u.item}` });
+      if ((!narrow.ids || narrow.ids.includes(u.id)) && inSpan(u.t, Infinity))
+        warn(rig.heldUnprovidedLine(u), { key: `held:provide|${u.id}|${u.item}` });
 }
 
 /**
  * Các lần cầm còn đi đường cũ (`legacyHolds` của bản rig cảnh three `world` nạp) gom qua các giây đã đặt cảnh: `add(posed)`
  * cho mỗi tư thế, `line()` một dòng cho cả cảnh hay `null`
  */
-function legacyCollector(world) {
+function legacyCollector(world, ids) {
   const seen = new Map();
   return {
     add(posed) {
       for (const [id, f] of Object.entries(posed ?? {}))
-        if (f?.root)
+        if (f?.root && (!ids || ids.includes(id)))
           for (const l of world.legacyHolds?.(f, id) ?? [])
             if (!seen.has(`${l.id}|${l.hand}|${l.item}`))
               seen.set(`${l.id}|${l.hand}|${l.item}`, l);
@@ -1797,7 +1835,7 @@ const ROLES_EVERY = 1;
  * hạn (lỗi), vai trò lệch hình so với khối cùng chủ (cảnh báo), người ngồi lệch mặt ngồi (cảnh báo). Rig của repo chưa có
  * `rolesOf` thì bỏ qua. Mỗi khoá một dòng, giữ giây nặng nhất
  */
-function roleRows(ctx, rt, on, warn) {
+function roleRows(ctx, rt, on, warn, narrow = {}) {
   const R = on.rig;
   if (typeof R?.rolesOf !== "function") return;
   // cảnh không vật nào khai vai trò (kể cả nhánh đang ẩn): không đặt cảnh từng giây
@@ -1811,11 +1849,14 @@ function roleRows(ctx, rt, on, warn) {
     const was = found.get(key);
     if (!was || measure > was.measure) found.set(key, { measure, make, t: was?.t ?? t });
   };
-  const last = rt.duration;
-  for (let t = 0; t <= last + 1e-9; t = +(t + CLASH_EVERY).toFixed(4)) {
+  const span = narrow.span;
+  const last = span ? Math.min(rt.duration, span[1]) : rt.duration;
+  const first = span ? +(Math.ceil(span[0] / CLASH_EVERY - 1e-9) * CLASH_EVERY).toFixed(4) : 0;
+  for (let t = first; t <= last + 1e-9; t = +(t + CLASH_EVERY).toFixed(4)) {
     const full =
       Math.abs(t / ROLES_EVERY - Math.round(t / ROLES_EVERY)) < 1e-6 ||
-      t + CLASH_EVERY > last + 1e-9;
+      t + CLASH_EVERY > last + 1e-9 ||
+      (!!span && t === first);
     let props;
     let cols;
     try {
@@ -1831,7 +1872,8 @@ function roleRows(ctx, rt, on, warn) {
     }
     if (!props.length) continue;
     const r = rolesAt(props, { cols, U: on.U, rt, t });
-    if (full) {
+    // vai trò của vật không thuộc người nào: lượt `--cast` không báo
+    if (full && !narrow.ids) {
       for (const e of r.errors) {
         const msg = `${ctx.worldRel} → vật \`${e.prop.name}\`: ${e.line}`;
         keep(`roles:zod|${e.prop.name}|${e.line}`, 0, () => [msg, { error: true }], t);
@@ -1842,12 +1884,13 @@ function roleRows(ctx, rt, on, warn) {
       }
     }
     for (const k of r.seated)
-      keep(
-        `roles:seat|${k.id}|${entryName(k.prop, k.role)}`,
-        Math.abs(k.dy),
-        () => [seatedLine(k), {}],
-        t,
-      );
+      if (!narrow.ids || narrow.ids.includes(k.id))
+        keep(
+          `roles:seat|${k.id}|${entryName(k.prop, k.role)}`,
+          Math.abs(k.dy),
+          () => [seatedLine(k), {}],
+          t,
+        );
   }
   for (const [key, { measure, make, t }] of found) {
     const [msg, extra] = make();
@@ -1878,6 +1921,14 @@ function deepScene(ctx, name) {
   const data = scenesByName[name];
   const rt = data && lap(time, "runtime", () => sceneRuntime(name));
   if (!rt) return out;
+  // Lượt hẹp (`--cast`, `--from`/`--to`): chỉ người `ids`, chỉ quãng `span`; mỗi nhóm lấy mẫu thêm lề của nó rồi chỉ báo
+  // dòng có quãng giao `span` — docs/05-repo-video.md#đo-hẹp
+  const narrow = ctx.narrow?.[name];
+  const ids = narrow?.ids ?? undefined;
+  const span = narrow?.from !== undefined ? [narrow.from, narrow.to] : undefined;
+  const padded = (pad) =>
+    span && [Math.max(0, span[0] - pad), Math.min(rt.duration, span[1] + pad)];
+  const hits = (a, b) => !span || (b >= span[0] - 1e-6 && a <= span[1] + 1e-6);
   const file = `scenes/${name}.json`;
   const row = (group, msg, { key, ...extra } = {}) => ({
     msg: `${file}: ${msg}`,
@@ -1888,7 +1939,11 @@ function deepScene(ctx, name) {
   if (has("move"))
     lap(time, "move", () => {
       try {
-        for (const problem of moveProblems(rt)) out.move.push(row("move", problem));
+        const pick = { ...(ids && { ids }), ...(span && { window: padded(NARROW_PAD.path) }) };
+        for (const problem of moveProblems(rt, pick)) {
+          const at = span && lineSpan(problem);
+          if (!at || hits(...at)) out.move.push(row("move", problem));
+        }
       } catch (e) {
         out.move.push(row("move", e.message, { error: true }));
       }
@@ -1945,18 +2000,26 @@ function deepScene(ctx, name) {
       };
       let rows;
       try {
-        const samples = sceneSamples(rt, { characterOf });
+        const samples = sceneSamples(rt, { characterOf, ...(span && { window: span }) });
         rows = [
-          ...clashRows(rt, { characterOf, codeLayers, tol, self, samples, world: on, onWorld }).map(
-            (r) => ({ ...r, key: `người|${r.key}` }),
-          ),
-          ...(ratio === false
+          ...clashRows(rt, {
+            characterOf,
+            codeLayers,
+            tol,
+            self,
+            samples,
+            world: on,
+            onWorld,
+            ids,
+          }).map((r) => ({ ...r, key: `người|${r.key}` })),
+          // đồ lồng vào đồ không thuộc người nào: lượt `--cast` không đo
+          ...(ratio === false || ids
             ? []
             : itemClashRows(rt, { characterOf, codeLayers, tol, ratio, samples }).map((r) => ({
                 ...r,
                 key: `đồ|${r.key}`,
               }))),
-        ];
+        ].filter((r) => r.runs.some(([a, b]) => hits(a, b)));
       } catch (e) {
         return warn("clash", `không đo được người 3D với đồ khối — ${e.message}`);
       }
@@ -1969,7 +2032,7 @@ function deepScene(ctx, name) {
         });
     });
   // Đồ cầm tay: dáng, ngón xuyên đồ, độ ôm, món xoay, món trôi, món nhảy, tay phụ — docs/03-scene.md#đồ-cầm-tay
-  const legacy = doLegacy && on ? legacyCollector(on) : null;
+  const legacy = doLegacy && on ? legacyCollector(on, ids) : null;
   if (doHeld && on)
     lap(time, "held", () =>
       heldRows(
@@ -1979,13 +2042,22 @@ function deepScene(ctx, name) {
         (msg, extra) => warn("held", msg, extra),
         doClash,
         legacy && ((posed) => legacy.add(posed)),
+        narrow && {
+          ids,
+          window: padded((held.hold ?? rig.HELD_HOLD) + rig.HELD_EVERY),
+          hits,
+        },
       ),
     );
   // Đồ cầm còn đi đường cũ: một dòng cho cả cảnh; đi cùng `held` thì đọc chung các tư thế ấy
   if (legacy)
     lap(time, "legacy", () => {
       if (!doHeld)
-        for (let t = 0; t <= rt.duration + 1e-9; t += rig.HELD_EVERY) {
+        for (
+          let t = span ? Math.ceil(span[0] / rig.HELD_EVERY - 1e-9) * rig.HELD_EVERY : 0;
+          t <= (span ? span[1] : rt.duration) + 1e-9;
+          t += rig.HELD_EVERY
+        ) {
           let posed;
           try {
             posed = on.scene.pose(+t.toFixed(4));
@@ -1999,19 +2071,27 @@ function deepScene(ctx, name) {
     });
   // Vai trò của đồ của cảnh: zod, phép đặt, lệch hình so với khối cùng chủ, người ngồi lệch mặt ngồi — docs/13 mục 7
   if (doRoles && on)
-    lap(time, "roles", () => roleRows(ctx, rt, on, (msg, extra) => warn("roles", msg, extra)));
+    lap(time, "roles", () =>
+      roleRows(ctx, rt, on, (msg, extra) => warn("roles", msg, extra), { ids, span }),
+    );
   if (has("move") && !snap.error && !snap.off)
     lap(time, "move", () => {
       const characterOf = (m) =>
         m.character ? charactersByName[m.character] : rig.defaultCharacter();
       try {
+        const pick = {
+          ...(ids && { ids }),
+          ...(span && { window: padded(NARROW_PAD.motion) }),
+        };
         const motion = rig.sceneMotion(rt, {
           characterOf,
           ...snap,
           spans: spans[name],
           elbows: true,
+          ...pick,
         });
-        for (const s of motion.snaps)
+        const fps = snap.fps ?? rig.SNAP_FPS;
+        for (const s of motion.snaps.filter((s) => hits(s.t - 1 / fps, s.t)))
           out.snap.push(
             row("move", rig.snapLine(s), {
               key: `snap|${s.id}|${s.joint}`,
@@ -2020,7 +2100,7 @@ function deepScene(ctx, name) {
             }),
           );
         // khuỷu rung, lật, gập ngược, bàn tay lật, tầm với — docs/03-scene.md#khuỷu-và-cổ-tay-trên-hình
-        for (const s of motion.elbows)
+        for (const s of motion.elbows.filter((s) => hits(s.from, s.to)))
           out.snap.push(
             row("move", rig.elbowLine(s), {
               key: `elbow|${s.id}|${s.hand}|${s.rule}`,
@@ -2028,7 +2108,9 @@ function deepScene(ctx, name) {
             }),
           );
         // khuỷu khoá xoay quá nhanh: rig không hãm tốc độ xoay của nó — docs/03-scene.md#giật-trên-hình
-        for (const s of rig.elbowLockSnaps(rt, { characterOf, spans: spans[name] }))
+        for (const s of rig
+          .elbowLockSnaps(rt, { characterOf, spans: spans[name], ...pick })
+          .filter((s) => hits(s.from, s.to)))
           out.snap.push(
             row("move", rig.elbowLockLine(s), {
               key: `snap|${s.id}|elbowLock|${s.hand}`,
@@ -2201,7 +2283,7 @@ async function deepScenes(root, names, ctx, jobs = checkJobs(names.length), time
   const out = new Map();
   const n = Math.min(jobs, names.length);
   if (n > 1) {
-    const { clash, snap, spans, held, groups, dropCrowd } = ctx;
+    const { clash, snap, spans, held, groups, dropCrowd, narrow } = ctx;
     // cảnh nặng (dài, đông người) đi trước để không cảnh nào kéo đuôi
     const weight = (name) => {
       const d = ctx.scenesByName[name];
@@ -2214,7 +2296,7 @@ async function deepScenes(root, names, ctx, jobs = checkJobs(names.length), time
         () =>
           new Promise((done) => {
             const w = new Worker(new URL("./check-worker.mjs", import.meta.url), {
-              workerData: { dir: root, names, clash, snap, spans, held, groups, dropCrowd },
+              workerData: { dir: root, names, clash, snap, spans, held, groups, dropCrowd, narrow },
             });
             const next = () => {
               const name = queue.shift();
@@ -2270,13 +2352,17 @@ const CHECK_VALUE_FLAGS = {
   only: "only",
   skip: "skip",
   uses: "uses",
+  cast: "cast",
+  from: "from",
+  to: "to",
   baseline: "baseline",
   "save-baseline": "saveBaseline",
 };
 
 /**
- * Tham số `stickman check` từ dòng lệnh (các cờ sau tên lệnh): `{ scene, jobs, only, skip, uses, baseline, saveBaseline,
- * time, crowd }`; `--held` là tên tắt của `--only held`, `--only` / `--skip` / `--uses` lặp thì cộng dồn. Sai thì `{ error }`
+ * Tham số `stickman check` từ dòng lệnh (các cờ sau tên lệnh): `{ scene, jobs, only, skip, uses, cast, from, to, baseline,
+ * saveBaseline, time, crowd }`; `--held` là tên tắt của `--only held`, `--only` / `--skip` / `--uses` / `--cast` lặp thì
+ * cộng dồn; `--from` / `--to` giữ chuỗi (giây hay `@mốc±s`, giải theo cảnh ở `checkWorkspace`). Sai thì `{ error }`
  */
 export function parseCheckArgs(args) {
   const out = {};
@@ -2291,7 +2377,7 @@ export function parseCheckArgs(args) {
       if (v === undefined || v.startsWith("--")) return { error: `--${flag} cần một giá trị` };
       i++;
       const key = CHECK_VALUE_FLAGS[flag];
-      if (key === "only" || key === "skip" || key === "uses") {
+      if (key === "only" || key === "skip" || key === "uses" || key === "cast") {
         const list = nameList(v);
         if (!list.length) return { error: `--${flag} cần ít nhất một tên` };
         out[key] = [...(out[key] ?? []), ...list];
@@ -2499,7 +2585,9 @@ function readBaseline(path) {
  * thứ nó cần — docs/05-repo-video.md#nhóm-luật. `baseline` (file JSON, đường tính từ `dir`) chỉ trả lỗi và cảnh báo mới
  * hay nặng hơn file ấy, `saveBaseline` ghi cảnh báo lượt này vào file — docs/05-repo-video.md#baseline. `jobs` là số
  * luồng đo sâu các cảnh, mặc định theo số nhân và RAM trống (`checkJobs`). `time` trả về là ms từng phần (`CHECK_TIMES`)
- * cộng dồn mọi cảnh và mọi luồng, `wall` là ms cả lượt
+ * cộng dồn mọi cảnh và mọi luồng, `wall` là ms cả lượt. `cast` (id trong `cast[]`, mảng hay phẩy ngăn), `from` / `to`
+ * (giây hay `@mốc±s`, chỉ một cảnh) thu lượt đo sâu về những người ấy, quãng ấy; trả kèm `narrow` —
+ * docs/05-repo-video.md#đo-hẹp
  */
 export async function checkWorkspace({
   dir = ".",
@@ -2508,6 +2596,9 @@ export async function checkWorkspace({
   only,
   skip,
   uses,
+  cast,
+  from,
+  to,
   baseline,
   saveBaseline,
   crowd,
@@ -2538,13 +2629,31 @@ export async function checkWorkspace({
   }
   const usesNames = nameList(uses).map((n) => n.replace(/\.json$/, ""));
   const focusing = !!focus || usesNames.length > 0;
-  const inFocus = (name, data) =>
+  // Lượt hẹp — docs/05-repo-video.md#đo-hẹp
+  const castIds = nameList(cast);
+  const given = (v) => v !== undefined && v !== null && v !== "";
+  const timed = given(from) || given(to);
+  const narrowing = castIds.length > 0 || timed;
+  if (narrowing && !focusing)
+    return fail("--cast, --from, --to chỉ đi cùng --scene (hay --uses) chọn cảnh");
+  if (narrowing && saveBaseline)
+    return fail(
+      "--save-baseline không đi chung --cast, --from, --to: mục baseline khoá theo cảnh, luật, người chứ không theo giây, lượt hẹp không biết mục cũ nào nằm ngoài phần đã đo — ghi baseline bằng lượt cả cảnh (--baseline thì được)",
+    );
+  const matches = (name, data) =>
     (!focus || focus.test(name)) &&
     (!usesNames.length ||
       (() => {
         const used = sceneUses(data);
         return usesNames.some((n) => used.has(n));
       })());
+  // `--cast`: cảnh khớp mà không có người nào trong `--cast` thì không soi
+  const matched = new Set();
+  const inFocus = (name, data) => {
+    if (!matches(name, data)) return false;
+    matched.add(name);
+    return !castIds.length || data.cast.some((c) => castIds.includes(c.id));
+  };
   // Cảnh, tập hay lớp đang soi: khớp `stickman.frozen` thì nó vẫn được nạp cho tham chiếu chéo,
   // chỉ thôi kêu
   const frozen = frozenOf(root);
@@ -2781,6 +2890,63 @@ export async function checkWorkspace({
   }
   owner = null;
   addTimes(times, inner);
+
+  /** Phạm vi hẹp từng cảnh đang soi: `{ ids?, from?, to? }` (giây đã giải); `null` là lượt thường */
+  let narrow = null;
+  if (narrowing && matched.size) {
+    const where = [...matched];
+    const castOf = (n) => scenesByName[n].cast;
+    const missing = castIds.filter((id) => !where.some((n) => castOf(n).some((c) => c.id === id)));
+    if (missing.length)
+      return fail(
+        `--cast: không có ${missing.map((id) => `\`${id}\``).join(", ")} trong \`cast\` của cảnh nào khớp (${where.join(", ")})`,
+      );
+    if (!crowd)
+      for (const id of castIds) {
+        const own = where.flatMap((n) => castOf(n).filter((c) => c.id === id));
+        if (own.every((c) => c.crowd))
+          return fail(`--cast: \`${id}\` là người nền (\`cast[].crowd\`) — thêm --crowd để đo`);
+      }
+    let span = {};
+    if (timed) {
+      if (focused.size !== 1)
+        return fail(
+          `--from, --to chỉ đi cùng một cảnh, đang khớp ${focused.size}: ${[...focused].join(", ")}`,
+        );
+      const [name] = focused;
+      const data = scenesByName[name];
+      const dur = runtimes.get(name)?.duration ?? data.duration;
+      const at = (v, flag) => {
+        const raw = String(v).trim();
+        if (/^\d+(?:\.\d+)?$/.test(raw)) return Number(raw);
+        try {
+          return rig.markTime(raw, data.marks ?? {}, flag);
+        } catch (e) {
+          throw new Error(`--${flag}: ${e.message.replace(/^scene: (from|to): /, "")}`);
+        }
+      };
+      let a;
+      let b;
+      try {
+        a = given(from) ? at(from, "from") : 0;
+        b = given(to) ? Math.min(at(to, "to"), dur) : dur;
+      } catch (e) {
+        return fail(e.message);
+      }
+      if (!(a < dur))
+        return fail(`--from ${+a.toFixed(3)} không trước cuối cảnh ${name} (${dur} s)`);
+      if (!(a <= b)) return fail(`--from ${+a.toFixed(3)} sau --to ${+b.toFixed(3)}`);
+      span = { from: a, to: b };
+    }
+    narrow = Object.fromEntries(
+      [...focused].map((n) => {
+        const ids = castIds.filter((id) =>
+          castOf(n).some((c) => c.id === id && (crowd || !c.crowd)),
+        );
+        return [n, { ...(castIds.length && { ids }), ...span }];
+      }),
+    );
+  }
   times.load =
     (times.load ?? 0) +
     performance.now() -
@@ -2976,7 +3142,7 @@ export async function checkWorkspace({
     }
     return deepRuntimes.get(name);
   };
-  const opts = { clash, snap, spans, held, groups, dropCrowd };
+  const opts = { clash, snap, spans, held, groups, dropCrowd, narrow };
   const results = deep.length
     ? await deepScenes(
         root,
@@ -3030,7 +3196,8 @@ export async function checkWorkspace({
         entries = undefined;
       }
       if (entries !== undefined) {
-        const cmp = compareBaseline(rows, entries ?? [], inScope);
+        // lượt hẹp không biết mục cũ nào nằm trong phần đã đo: không kể mục nào là đã hết
+        const cmp = compareBaseline(rows, entries ?? [], narrow ? () => false : inScope);
         const now = new Map(baselineEntries(rows).map((e) => [e.key, e]));
         const tag = new Map();
         for (const r of rows) {
@@ -3076,6 +3243,14 @@ export async function checkWorkspace({
     return {
       ...out,
       groups,
+      ...(narrowing && {
+        narrow: {
+          ...(castIds.length && { cast: castIds }),
+          ...(narrow && Object.values(narrow)[0]?.from !== undefined
+            ? { from: Object.values(narrow)[0].from, to: Object.values(narrow)[0].to }
+            : {}),
+        },
+      }),
       ...base,
       time: Object.fromEntries(
         Object.keys(CHECK_TIMES)

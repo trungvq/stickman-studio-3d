@@ -2161,7 +2161,7 @@ server.registerTool(
   "check",
   {
     description:
-      "Soi workspace: version đã pin so với @stickman3d/rig đang cài, JSON hỏng, lớp vẽ code gói được không và `scenes` của nó có trỏ đúng tên cảnh, và công cụ ngoài (rsvg-convert / ffmpeg / ffprobe / magick) thiếu trên PATH. Soi cả workspace chậm: sửa xong một cảnh thì truyền `scene` — chỉ soi cảnh khớp (cảnh báo của chúng, kèm mọi lỗi), bỏ tập, tiếng, git. Sửa gì thì chỉ chạy nhóm luật của thứ ấy (`only`): chỗ đứng, path → move; tay → move (+held nếu đang cầm); đồ cầm, chỗ cầm, `held/` → held (+ref khi sửa `held/<món>.json`); bối cảnh, đồ khối → clash (+roles khi sửa vai trò `Item.roles` / `withRoles`: zod, vai trò lệch hình khối cùng vật, người ngồi lệch mặt ngồi); hành động chung → `uses` tên ấy + ref,move,held. Nhóm `legacy` kể đồ cầm còn đi đường cũ (`hold` không có chỗ cầm nhóm), bỏ bằng `skip`. Nhóm `clash` (người lồng vào đồ, tay xuyên thân) chỉ chạy khi gọi tên trong `only`. Nhóm không chạy thì không dựng thứ nó cần. Cuối lô thì đủ nhóm trên các cảnh vừa đổi với `baseline` để chỉ thấy cảnh báo mới; cả workspace chỉ ở cuối tập hay sau khi nâng rig. Kết quả kèm `time` (ms từng nhóm, cộng dồn mọi luồng).",
+      "Soi workspace: version đã pin so với @stickman3d/rig đang cài, JSON hỏng, lớp vẽ code gói được không và `scenes` của nó có trỏ đúng tên cảnh, và công cụ ngoài (rsvg-convert / ffmpeg / ffprobe / magick) thiếu trên PATH. Soi cả workspace chậm: sửa xong một cảnh thì truyền `scene` — chỉ soi cảnh khớp (cảnh báo của chúng, kèm mọi lỗi), bỏ tập, tiếng, git. Sửa gì thì chỉ chạy nhóm luật của thứ ấy (`only`): chỗ đứng, path → move; tay → move (+held nếu đang cầm); đồ cầm, chỗ cầm, `held/` → held (+ref khi sửa `held/<món>.json`); bối cảnh, đồ khối → clash (+roles khi sửa vai trò `Item.roles` / `withRoles`: zod, vai trò lệch hình khối cùng vật, người ngồi lệch mặt ngồi); hành động chung → `uses` tên ấy + ref,move,held. Nhóm `legacy` kể đồ cầm còn đi đường cũ (`hold` không có chỗ cầm nhóm), bỏ bằng `skip`. Nhóm `clash` (người lồng vào đồ, tay xuyên thân) chỉ chạy khi gọi tên trong `only`. Nhóm không chạy thì không dựng thứ nó cần. Sửa nhỏ một người trên cảnh đông (vài mốc `world.hands`) thì thu thêm về người ấy, quãng ấy: `cast`, `from`, `to` — chỉ người, quãng ấy được lấy mẫu và đo, không chỉ in ít dòng hơn; không đi cùng `saveBaseline`. Cuối lô thì đủ nhóm trên các cảnh vừa đổi với `baseline` để chỉ thấy cảnh báo mới; cả workspace chỉ ở cuối tập hay sau khi nâng rig. Kết quả kèm `time` (ms từng nhóm, cộng dồn mọi luồng).",
     inputSchema: {
       scene: z
         .string()
@@ -2199,11 +2199,39 @@ server.registerTool(
         .boolean()
         .optional()
         .describe("Đo cả người nền (`cast[].crowd`); mặc định bỏ qua, dùng ở lượt cuối lô"),
+      cast: z
+        .union([z.string(), z.array(z.string())])
+        .optional()
+        .describe(
+          "Chỉ đo những người này (`cast[].id`, phẩy ngăn hay mảng) ở các nhóm đo sâu; người khác vẫn dựng và là vật cản, dòng cặp hai người giữ khi một trong hai được chọn. Cần `scene` (hay `uses`); id không có trong cảnh khớp nào là lỗi",
+        ),
+      from: z
+        .union([z.number(), z.string()])
+        .optional()
+        .describe(
+          "Chỉ đo từ giây này (số hay `@mốc` / `@mốc+0.4` theo `scene.marks`); chỉ một cảnh. Mỗi nhóm lấy mẫu thêm lề cho luật cần ngữ cảnh rồi chỉ trả dòng giao quãng",
+        ),
+      to: z
+        .union([z.number(), z.string()])
+        .optional()
+        .describe("Chỉ đo tới giây này (như `from`); bỏ trống là cuối cảnh"),
     },
   },
-  guard(async ({ scene, uses, only, skip, baseline, saveBaseline, crowd }) =>
+  guard(async ({ scene, uses, only, skip, baseline, saveBaseline, crowd, cast, from, to }) =>
     text(
-      await cli.checkWorkspace({ dir: WS, scene, uses, only, skip, baseline, saveBaseline, crowd }),
+      await cli.checkWorkspace({
+        dir: WS,
+        scene,
+        uses,
+        only,
+        skip,
+        baseline,
+        saveBaseline,
+        crowd,
+        cast,
+        from,
+        to,
+      }),
     ),
   ),
 );

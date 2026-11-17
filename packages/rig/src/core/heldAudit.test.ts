@@ -196,6 +196,51 @@ describe("sceneHeld: luật trên cả cảnh", () => {
   });
 });
 
+describe("sceneHeld: chỉ người `ids`, chỉ quãng `window` (`check --cast/--from/--to`)", () => {
+  const r = parseScene({
+    duration: 3,
+    lens: { eye: [0, -300, -900], yaw: 0, pitch: 10, f: 800, cx: 0, cy: 0 },
+    cast: ["a", "b"].map((id) => ({ id, world: { at: [0, 0, 0] }, tracks: [] })),
+  });
+  if (!r.success) throw new Error(r.error.message);
+  const rt = resolveScene(r.data, {});
+  const bad = (id: string) => sample({ id, acted: handVec("pinch") });
+
+  it("bàn tay người không chọn không đo; quãng ngoài `window` không lấy mẫu", () => {
+    const asked: number[] = [];
+    const frame = (t: number) => (asked.push(t), [bad("a"), bad("b")]);
+    expect(sceneHeld(rt, { frame }).map((i) => i.id)).toEqual(["a", "b"]);
+    asked.length = 0;
+    const one = sceneHeld(rt, { frame, ids: ["b"], window: [1, 1.5] });
+    expect(one.map((i) => i.id)).toEqual(["b"]);
+    expect(one[0].runs).toEqual([[1, 1.5]]);
+    expect(Math.min(...asked)).toBe(1);
+    expect(Math.max(...asked)).toBe(1.5);
+  });
+
+  it("món trôi vẫn so với mẫu đầu của lần cầm khai `hold` từ trước quãng", () => {
+    const turn = (deg: number): HeldHand["rel"]["q"] => {
+      const a = (deg * Math.PI) / 360;
+      return [0, Math.sin(a), 0, Math.cos(a)];
+    };
+    const held = {
+      ...rt,
+      cast: rt.cast.map((m) =>
+        m.id === "a"
+          ? { ...m, world: { ...m.world, hands: [{ t: 0.2, right: { hold: "chen" } }] } }
+          : m,
+      ),
+    } as typeof rt;
+    const frame = (t: number) =>
+      t >= 0.2 ? [sample({ rel: { p: [0, -8, 0], q: turn((t - 0.2) * 20) } })] : [];
+    const whole = sceneHeld(held, { frame });
+    const part = sceneHeld(held, { frame, window: [2.4, 2.8] });
+    expect(part.map((i) => i.rule)).toEqual(["drift"]);
+    expect(part[0].drift!.from).toBe(whole[0].drift!.from);
+    expect(part[0].drift!.from).toBeCloseTo(0.2);
+  });
+});
+
 describe("đồ cầm theo `world.hands`", () => {
   const rigid = (o: Partial<HeldHand> = {}) =>
     sample({

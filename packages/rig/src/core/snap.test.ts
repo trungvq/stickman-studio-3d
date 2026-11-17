@@ -7,9 +7,12 @@ import {
   parseAction,
   parseScene,
   resolveScene,
+  sceneMotion,
   sceneSideProblems,
   sceneSnaps,
+  sceneTurnProblems,
   type ActionData,
+  type CastMember,
 } from "./index";
 
 const action = (json: unknown): ActionData => {
@@ -352,5 +355,87 @@ describe("sceneSnaps", () => {
       ],
     });
     expect(snaps(rt)).toEqual([]);
+  });
+});
+
+describe("sceneMotion: chỉ người `ids`, chỉ quãng `window` (`check --cast/--from/--to`)", () => {
+  /** Hai người cắt cứng sang `raise`: `a` ở giây 1, `b` ở giây 2 */
+  const two = scene({
+    lens: LENS,
+    cast: ["a", "b"].map((id, i) => ({
+      id,
+      world: { at: [i * 120 - 60, 0, 0], yaw: 155 },
+      tracks: [
+        {
+          clips: [
+            { action: "stand-3d", start: 0 },
+            { action: "raise", start: 1 + i, blend: 0 },
+          ],
+        },
+      ],
+    })),
+  });
+  const of = (o: { ids?: string[]; window?: [number, number] } = {}) => {
+    const asked: string[] = [];
+    const characterOf = (m: CastMember) => (asked.push(m.id), defaultCharacter());
+    const r = sceneMotion(two, { characterOf, elbows: true, ...o });
+    return { snaps: r.snaps.map((s) => [s.id, s.t, s.joint, s.px]), asked };
+  };
+
+  it("người không chọn không được giải tư thế; người được chọn ra đúng như lượt cả cảnh", () => {
+    const all = of();
+    expect(all.snaps.map((s) => s[0])).toEqual(["a", "b"]);
+    const b = of({ ids: ["b"] });
+    expect(b.asked).toEqual(["b"]);
+    expect(b.snaps).toEqual(all.snaps.filter((s) => s[0] === "b"));
+  });
+
+  it("quãng không chứa cú cắt thì im; quãng có lề chứa nó thì ra đúng cú ấy", () => {
+    const all = of();
+    expect(of({ window: [0, 0.8] }).snaps).toEqual([]);
+    expect(of({ window: [0.5, 1.5] }).snaps).toEqual(all.snaps.filter((s) => s[0] === "a"));
+    expect(of({ window: [1.5, 2.5], ids: ["b"] }).snaps).toEqual(
+      all.snaps.filter((s) => s[0] === "b"),
+    );
+  });
+
+  it("thân quay chỉ lấy mẫu trong `window`: cú quay trong quãng ra đúng dòng của lượt cả cảnh", () => {
+    const rt = scene({
+      duration: 6,
+      lens: LENS,
+      cast: [
+        {
+          id: "q",
+          world: {
+            path: [
+              { t: 0, at: [0, 0, 0], yaw: 0 },
+              { t: 4, at: [0, 0, 0], yaw: 0 },
+              { t: 4.1, at: [0, 0, 0], yaw: 120 },
+            ],
+          },
+          tracks: [{ clips: [{ action: "stand-3d", start: 0 }] }],
+        },
+      ],
+    });
+    const all = sceneTurnProblems(rt);
+    expect(all.length).toBeGreaterThan(0);
+    expect(sceneTurnProblems(rt, { window: [0, 3] })).toEqual([]);
+    expect(sceneTurnProblems(rt, { window: [1, 6] })).toEqual(all);
+  });
+
+  it("luật thân quay, trượt… chỉ đo người `ids`", () => {
+    const asked = (ids?: string[]) => {
+      const seen = new Set<string>();
+      const rt = {
+        ...two,
+        heights: new Proxy(two.heights, {
+          get: (o, k) => (typeof k === "string" && seen.add(k), Reflect.get(o, k)),
+        }),
+      };
+      sceneTurnProblems(rt, ids ? { ids } : {});
+      return [...seen].filter((k) => k === "a" || k === "b").sort();
+    };
+    expect(asked()).toEqual(["a", "b"]);
+    expect(asked(["a"])).toEqual(["a"]);
   });
 });

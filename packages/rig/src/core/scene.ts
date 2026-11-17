@@ -1788,6 +1788,30 @@ export const bgOrder = (bg: SceneData["bg"]): BgLayerData[] =>
     .sort((p, q) => p.z - q.z)
     .map((p) => p.b);
 
+/** Phần cảnh luật `move` đo — `check --cast`, `--from/--to` */
+export interface CastPick {
+  /** Chỉ đo những người này (`cast[].id`); bỏ trống là mọi người */
+  ids?: readonly string[];
+  /**
+   * Trượt, thân quay chỉ lấy mẫu trong quãng giây này (người gọi cộng lề cho cửa sổ của luật); luật khác vẫn đo cả cảnh.
+   * Bỏ trống là cả cảnh
+   */
+  window?: readonly [number, number];
+}
+
+/** Chỉ số mẫu đầu, cuối của lưới `n` bước trên cảnh `rt` phủ `window`; `align` làm tròn chỉ số đầu xuống bội của nó */
+const sampleRange = (rt: SceneRuntime, n: number, window?: readonly [number, number], align = 1) =>
+  window
+    ? [
+        Math.floor(Math.max(0, Math.floor((window[0] / rt.duration) * n)) / align) * align,
+        Math.min(n, Math.ceil((window[1] / rt.duration) * n)),
+      ]
+    : [0, n];
+
+/** Người của `rt` mà `o.ids` chọn, giữ thứ tự `cast` */
+const castIn = (rt: SceneRuntime, o: CastPick) =>
+  o.ids ? rt.cast.filter((m) => o.ids!.includes(m.id)) : rt.cast;
+
 /** Cửa sổ đo trượt chân (giây); chân chịu lực dịch quá nửa quãng hông đi trong cửa sổ là trượt */
 const SLIDE_WINDOW = 0.4;
 /** Trượt dưới ngần này (đơn vị rig một cửa sổ) thì mắt không thấy, kể cả thân đứng yên */
@@ -1796,8 +1820,8 @@ const SLIDE_MIN = 8;
 /**
  * Người 3D trượt trên sàn hay không tới mốc dừng của `path`. docs/03-scene.md#check-cho-người-3d
  */
-export function sceneSlideProblems(rt: SceneRuntime): string[] {
-  return rt.cast.flatMap((m) => worldSlideProblems(rt, m));
+export function sceneSlideProblems(rt: SceneRuntime, o: CastPick = {}): string[] {
+  return castIn(rt, o).flatMap((m) => worldSlideProblems(rt, m, o.window));
 }
 
 /** Mốc dừng trượt khỏi `at` quá ngần này (đơn vị rig) là người không tới được chỗ khai */
@@ -1813,7 +1837,11 @@ const STALL_MIN = 0.25;
  * lỗi của `path`: mốc dừng (đứng yên sau nó, ngồi sau nó, hay mốc cuối) mà hông không tới, và clip
  * có sải chân chạy khi `path` đứng yên.
  */
-function worldSlideProblems(rt: SceneRuntime, m: CastMember): string[] {
+function worldSlideProblems(
+  rt: SceneRuntime,
+  m: CastMember,
+  window?: readonly [number, number],
+): string[] {
   const w = m.world;
   const h = rt.heights[m.id] ?? 1;
   const dims = rt.bodies[m.id] ?? BODY3;
@@ -1827,10 +1855,12 @@ function worldSlideProblems(rt: SceneRuntime, m: CastMember): string[] {
   let prev: { ft: V3[]; fwd: number[]; hip: V3 } | undefined;
   let bearing: number[] = [];
   let slip: [number, number] = [0, 0];
-  let from = 0;
+  // cửa sổ đo nối nhau từ mẫu đầu: mẫu đầu của `window` làm tròn xuống bội `per` như lượt cả cảnh
+  const [k0, k1] = sampleRange(rt, n, window, per);
+  let from = k0;
   let hip0: V3 | undefined;
   let slid = false;
-  for (let k = 0; k <= n && !slid; k++) {
+  for (let k = k0; k <= k1 && !slid; k++) {
     const t = k * dt;
     const sp = sceneAt(rt, m.id, t, h);
     const wd = sp.world as World;
@@ -1933,20 +1963,24 @@ const TURN_BACK_SPAN = 1.5;
  * chứ không chỉ mốc `yaw` khai. Mỗi cú một dòng. Kèm cú quay tại chỗ khai `steps` ít tới mức một
  * nhịp quá `TURN_STEP_MAX`. docs/03-scene.md#check-cho-người-3d
  */
-export function sceneTurnProblems(rt: SceneRuntime): string[] {
+export function sceneTurnProblems(rt: SceneRuntime, o: CastPick = {}): string[] {
   if (!rt.lens) return [];
   const bad: string[] = [];
   const n = Math.max(1, Math.round(rt.duration / TURN_STEP));
-  for (const m of rt.cast) {
+  const [lo, hi] = sampleRange(rt, n, o.window);
+  for (const m of castIn(rt, o)) {
     const h = rt.heights[m.id] ?? 1;
     const ts: number[] = [];
     const ys: number[] = [];
-    for (let k = 0; k <= n; k++) {
+    for (let k = lo; k <= hi; k++) {
       const t = (k * rt.duration) / n;
       const y = sceneAt(rt, m.id, t, h).world!.yaw / D;
+      const i = ts.length;
       ts.push(t);
-      ys.push(k ? ys[k - 1] + wrap180(y - ys[k - 1]) : y);
+      ys.push(i ? ys[i - 1] + wrap180(y - ys[i - 1]) : y);
     }
+    // chỉ số mẫu cuối (`window` thu lưới lại)
+    const N = ts.length - 1;
     const sec = (t: number) => t.toFixed(2);
     // quay giật: các khung liền nhau vượt tốc, một dòng một quãng
     let jerk: { from: number; to: number; rate: number } | undefined;
@@ -1967,7 +2001,7 @@ export function sceneTurnProblems(rt: SceneRuntime): string[] {
       );
       jerk = undefined;
     };
-    for (let k = 1; k <= n; k++) {
+    for (let k = 1; k <= N; k++) {
       const rate = Math.abs(ys[k] - ys[k - 1]) / (ts[k] - ts[k - 1]);
       if (rate <= TURN_JERK) {
         flushJerk();
@@ -1980,12 +2014,12 @@ export function sceneTurnProblems(rt: SceneRuntime): string[] {
     flushJerk();
     // quay đi rồi quay lại: đỉnh của hướng thân với hai chân dốc ngược chiều
     const peaks: number[] = [0];
-    for (let k = 1; k < n; k++) {
+    for (let k = 1; k < N; k++) {
       const a = ys[k] - ys[k - 1];
       const b = ys[k + 1] - ys[k];
       if (a * b < 0 || (a !== 0 && b === 0)) peaks.push(k);
     }
-    peaks.push(n);
+    peaks.push(N);
     let i = 0;
     while (i + 2 < peaks.length) {
       // gộp các đỉnh nhỏ: tìm đỉnh xa nhất trong khung thời gian tính từ đỉnh `i`
@@ -2001,7 +2035,7 @@ export function sceneTurnProblems(rt: SceneRuntime): string[] {
       }
       const kb = peaks[best];
       let back = -1;
-      for (let k = kb; k <= n && ts[k] - ts[k0] <= TURN_BACK_SPAN; k++)
+      for (let k = kb; k <= N && ts[k] - ts[k0] <= TURN_BACK_SPAN; k++)
         if ((ys[kb] - ys[k]) * Math.sign(out) >= Math.abs(out) / 2) {
           back = k;
           break;
@@ -2050,12 +2084,12 @@ const LAUNCH_OVER = 0.25;
  * tính đỉnh `1,5` lần) quá `LAUNCH_OVER`. Đo hông vẽ ra từng khung `1/60 s`; quãng có mốc ngồi
  * không đo. docs/03-scene.md#check-cho-người-3d
  */
-export function sceneLaunchProblems(rt: SceneRuntime): string[] {
+export function sceneLaunchProblems(rt: SceneRuntime, o: CastPick = {}): string[] {
   if (!rt.lens) return [];
   const bad: string[] = [];
   const n = Math.max(1, Math.round(rt.duration / TURN_STEP));
   const dt = rt.duration / n;
-  for (const m of rt.cast) {
+  for (const m of castIn(rt, o)) {
     const w = m.world;
     if (!w?.path) continue;
     const h = rt.heights[m.id] ?? 1;
@@ -2147,11 +2181,11 @@ const STOP_PAST = 8;
  * vẽ ra từng khung `1/60 s`, không trước giữa quãng tới; mốc ngồi và mốc ngay trước mốc ngồi không đo. Hụt mốc là
  * `sceneSlideProblems`. docs/03-scene.md#check-cho-người-3d
  */
-export function sceneStopProblems(rt: SceneRuntime): string[] {
+export function sceneStopProblems(rt: SceneRuntime, o: CastPick = {}): string[] {
   if (!rt.lens) return [];
   const bad: string[] = [];
   const dt = TURN_STEP;
-  for (const m of rt.cast) {
+  for (const m of castIn(rt, o)) {
     const w = m.world;
     if (!w?.path) continue;
     const h = rt.heights[m.id] ?? 1;
@@ -2226,10 +2260,10 @@ function walkInLive(rt: SceneRuntime, id: string, track: number, clip: number, c
  * theo `path`. Chỉ xét từ lúc clip lái chân (`legSourceAt`); khởi hành từ đứng (`path` đứng yên trước đó) và quay rồi đi không
  * báo. docs/03-scene.md#check-cho-người-3d
  */
-export function sceneWalkInProblems(rt: SceneRuntime): string[] {
+export function sceneWalkInProblems(rt: SceneRuntime, o: CastPick = {}): string[] {
   if (!rt.lens) return [];
   const bad: string[] = [];
-  for (const m of rt.cast) {
+  for (const m of castIn(rt, o)) {
     const w = m.world;
     if (!w?.path) continue;
     const keys = keysOf(w);
@@ -2265,10 +2299,10 @@ const WALK_YAW_LEG = 100;
  * nhạt dần khi hướng tới lệch `yaw` khai (`STEER_BACK`), nhịp chân tụt, hông bỏ `path` rồi lao theo. Mốc cuối của cú quay
  * tại chỗ là việc của `sceneLaunchProblems`. docs/03-scene.md#check-cho-người-3d
  */
-export function sceneWalkYawProblems(rt: SceneRuntime): string[] {
+export function sceneWalkYawProblems(rt: SceneRuntime, o: CastPick = {}): string[] {
   if (!rt.lens) return [];
   const bad: string[] = [];
-  for (const m of rt.cast) {
+  for (const m of castIn(rt, o)) {
     const keys = m.world?.path;
     if (!keys) continue;
     const short = WALK_YAW_LEG * m.world.s;

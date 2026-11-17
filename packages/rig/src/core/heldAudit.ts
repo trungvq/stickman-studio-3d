@@ -616,6 +616,13 @@ export interface HeldOptions {
   oppose?: number;
   hold?: number;
   every?: number;
+  /** Chỉ đo bàn tay của những người này (`cast[].id`); bỏ trống là mọi người — `check --cast` */
+  ids?: readonly string[];
+  /**
+   * Chỉ lấy mẫu trong quãng giây này, người gọi tự cộng lề `hold`: món trôi vẫn so với mẫu đầu của lần cầm (`world.hands`
+   * khai `hold` từ trước quãng thì đặt thêm cảnh ở giây ấy) — `check --from/--to`
+   */
+  window?: readonly [number, number];
 }
 
 export interface HeldIssue {
@@ -877,7 +884,12 @@ export function carryHits(
  * Mốc món nằm (`items[].rest`): ở chính giây mốc, bàn tay của người cầm (`cast` của mốc) đang mang món mà da xuống dưới mặt
  * ngang qua điểm thấp nhất của món quá `rest` (`HeldHand.under`). docs/11-nhom-cam.md mục 7
  */
-function heldRests(rt: SceneRuntime, o: HeldOptions, seen: (t: number, at: V3) => boolean) {
+function heldRests(
+  rt: SceneRuntime,
+  o: HeldOptions,
+  seen: (t: number, at: V3) => boolean,
+  keep: (t: number, id: string) => boolean = () => true,
+) {
   const max = o.rest ?? HELD_REST;
   const out: {
     rule: HeldRule;
@@ -889,7 +901,7 @@ function heldRests(rt: SceneRuntime, o: HeldOptions, seen: (t: number, at: V3) =
     last: number;
   }[] = [];
   for (const k of rt.items ?? []) {
-    if (!k.rest) continue;
+    if (!k.rest || !keep(k.t, k.cast)) continue;
     for (const s of o.frame(k.t) ?? []) {
       if (isHeldCarry(s) || s.id !== k.cast || s.item !== k.item || s.under === undefined) continue;
       if (s.under > max && seen(k.t, s.at))
@@ -904,6 +916,7 @@ function heldJumps(
   o: HeldOptions,
   items: NonNullable<HeldOptions["items"]>,
   seen: (t: number, at: V3) => boolean,
+  keep: (t: number, ids?: string[]) => boolean = () => true,
 ) {
   const marks = new Set<number>();
   for (const m of rt.cast)
@@ -927,6 +940,7 @@ function heldJumps(
     jump: NonNullable<HeldIssue["jump"]>;
   }[] = [];
   for (const tc of [...marks].sort((a, b) => a - b)) {
+    if (!keep(tc)) continue;
     const [ta, tb] = [tc - HELD_JUMP_EPS, tc + HELD_JUMP_EPS];
     const before = new Map(items(ta).map((x) => [x.obj, x]));
     for (const b of items(tb)) {
@@ -944,6 +958,13 @@ function heldJumps(
             ? "regrip"
             : "swap";
       const who = (hb ?? ha)!;
+      if (
+        !keep(
+          tc,
+          [ha?.id, hb?.id].filter((x): x is string => !!x),
+        )
+      )
+        continue;
       const at = hb ? tb : ta;
       const s = o.frame(at)?.find((h) => h.obj === b.obj && h.id === who.id && h.hand === who.hand);
       if (!s || !seen(at, s.at)) continue;
@@ -964,6 +985,35 @@ function heldJumps(
 }
 
 /**
+ * Giây lưới `every` của mẫu đầu từng lần cầm `world.hands` (`hold` khai, giữ tới mốc đổi `hold`) còn chạy ở giây `t0` mà bắt
+ * đầu trước `t0`, của người `picked`
+ */
+function holdSeeds(
+  rt: SceneRuntime,
+  t0: number,
+  every: number,
+  picked: (id: string) => boolean,
+): number[] {
+  const out = new Set<number>();
+  for (const m of rt.cast) {
+    if (!picked(m.id)) continue;
+    for (const hand of ["right", "left"] as const) {
+      const ks = (m.world?.hands ?? []).filter(
+        (k) => k[hand]?.hold !== undefined && k.t <= t0 + 1e-9,
+      );
+      const last = ks.at(-1)?.[hand]?.hold;
+      if (last === undefined || last === null) continue;
+      const cur = JSON.stringify(last);
+      let i = ks.length - 1;
+      while (i > 0 && JSON.stringify(ks[i - 1][hand]!.hold) === cur) i--;
+      const t = +(Math.ceil(ks[i].t / every - 1e-6) * every).toFixed(4);
+      if (t < t0 - 1e-9) out.add(t);
+    }
+  }
+  return [...out].sort((a, b) => a - b);
+}
+
+/**
  * Đồ cầm tay sai trên cả cảnh: lấy mẫu mỗi `every` giây số đo của `frame`, báo quãng từ `hold` giây trở lên mà một bàn tay
  * phạm một luật (`heldHits`), và lần cầm nào món trôi trong khung bàn tay quá `drift` / `turn`. Bỏ bàn tay ngoài khung
  * camera. Mỗi người, mỗi tay, mỗi món, mỗi luật một mục. docs/03-scene.md#đồ-cầm-tay
@@ -972,7 +1022,13 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
   const every = o.every ?? HELD_EVERY;
   const hold = o.hold ?? HELD_HOLD;
   const n = Math.floor(rt.duration / every + 1e-6);
-  const times = Array.from({ length: n + 1 }, (_, i) => +(i * every).toFixed(4));
+  const W = o.window;
+  const picked = (id: string) => !o.ids || o.ids.includes(id);
+  const times = Array.from({ length: n + 1 }, (_, i) => +(i * every).toFixed(4)).filter(
+    (t) => !W || (t >= W[0] - 1e-9 && t <= W[1] + 1e-9),
+  );
+  // mẫu đầu của lần cầm `world.hands` đang chạy ở đầu `window`: mốc món trôi so với nó
+  const seeds = W && times.length ? holdSeeds(rt, times[0], every, picked) : [];
   type Run = {
     rule: HeldRule;
     s: HeldSample;
@@ -1016,10 +1072,15 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
     const [x, y] = project(L, at);
     return !(x < view.x || x > view.x + view.w || y < view.y || y > view.y + view.h);
   };
+  for (const t of seeds)
+    for (const s of o.frame(t) ?? [])
+      if (picked(s.id) && !isHeldCarry(s) && !firsts.has(`${s.id}|${s.hand}`))
+        firsts.set(`${s.id}|${s.hand}`, { key: s.key, s, t });
   times.forEach((t, i) => {
     const seen = new Set<string>();
     const held = new Set<string>();
     for (const s of o.frame(t) ?? []) {
+      if (!picked(s.id)) continue;
       const who = `${s.id}|${s.hand}`;
       held.add(who);
       const g = firsts.get(who);
@@ -1065,8 +1126,12 @@ export function sceneHeld(rt: SceneRuntime, o: HeldOptions): HeldIssue[] {
     for (const k of [...open.keys()]) if (!seen.has(k)) close(k);
   });
   for (const k of [...open.keys()]) close(k);
-  done.push(...heldRests(rt, o, inView));
-  if (o.items) done.push(...heldJumps(rt, o, o.items, inView));
+  const inWindow = (t: number) => !W || (t >= W[0] - 1e-9 && t <= W[1] + 1e-9);
+  done.push(...heldRests(rt, o, inView, (t, id) => inWindow(t) && picked(id)));
+  if (o.items)
+    done.push(
+      ...heldJumps(rt, o, o.items, inView, (tc, ids) => inWindow(tc) && (!ids || ids.some(picked))),
+    );
   const merged = new Map<string, HeldIssue>();
   for (const r of done.sort((a, b) => a.from - b.from)) {
     const k = `${r.s.id}|${r.s.hand}|${r.s.item}|${r.rule}`;

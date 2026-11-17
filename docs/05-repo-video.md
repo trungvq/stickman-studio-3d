@@ -139,6 +139,7 @@ chúng; không cờ nào là mọi nhóm trừ `clash`. **`clash` chỉ chạy k
 của `check` mà đo người trên ống chi trần (không theo quần áo vẽ ra) và không đo đồ với đồ của cảnh three. Tên sai là lỗi kèm danh sách nhóm. `--held` là tên tắt của `--only held`. MCP:
 `check({ only, skip })`. Nhóm không chạy thì thứ chỉ nó cần không dựng — không gói module cảnh three, không dựng cảnh
 three của từng cảnh, không lấy mẫu khối người, không mở luồng phụ — nên lượt hẹp nhanh thật chứ không chỉ in ít dòng hơn.
+`--cast`, `--from`, `--to` thu tiếp theo người và giây ([Đo hẹp](#đo-hẹp)).
 
 Người nền (`cast[].crowd`) mặc định không đo ở các nhóm đo sâu; `--crowd` đo đủ ([03](03-scene.md#người-nền)).
 
@@ -170,6 +171,7 @@ Sửa gì chạy nhóm nào:
 |---|---|
 | Chỗ đứng, đường đi (`world.at`, `path`) | `move` |
 | Tay (`world.hands`, `reach`, dáng tay, `hands/<tên>.json`) | `move` (+`held` nếu tay đang cầm) |
+| Vài mốc của một người trên cảnh đông | nhóm như trên, thêm `--cast <id> --from … --to …` ([Đo hẹp](#đo-hẹp)) |
 | Đồ cầm trong cảnh (`world.hands[].hold`, ý định, `point: item:`), `cast.provide` | `held` |
 | Món cầm tay: mốc, hình va chạm, phần (`held/<món>.json`) | `ref,held` trên mọi cảnh có món ấy (`--scene`); repo tự kiểm hình khớp lưới |
 | Thời gian, retime, audio | `move` + lượt toàn bộ cho `episode` |
@@ -190,6 +192,48 @@ pnpm exec stickman check --uses ngoi-nga-3d --only ref,move,held
 cảnh three, nạp luồng phụ, dựng cảnh three — cộng dồn trên mọi cảnh và mọi luồng (nên tổng lớn hơn thời gian đồng hồ
 khi chạy nhiều luồng), kèm thời gian đồng hồ của cả lượt. MCP luôn trả `time` (ms từng phần) và `wall`.
 
+### Đo hẹp
+
+Sửa vài mốc của một người trên cảnh đông thì đo đúng người ấy, đúng quãng ấy:
+
+```bash
+pnpm exec stickman check --scene '^t06-s023-thai-vit$' --cast samejima --from 38 --to 39 --only move
+pnpm exec stickman check --scene '^t01-s004-chao$' --cast yota --from @chao --to @chao+1.5 --only move,held
+```
+
+MCP: `check({ scene, cast, from, to })`, kết quả kèm `narrow`.
+
+- `--cast <id,…>` (id trong `cast[]`): các nhóm đo sâu chỉ đo những người này. Người khác vẫn dựng trong cảnh three và
+  vẫn là vật cản của `clash`, nhưng không ra dòng riêng; dòng cặp hai người (người lồng vào người, món nhảy khi trao tay)
+  giữ khi một trong hai được chọn. Dòng không thuộc người nào — `roles` hỏng zod, vai trò lệch hình, đồ lồng vào đồ —
+  không có ở lượt `--cast`. `--scene` khớp nhiều cảnh thì áp cho từng cảnh có người ấy, cảnh không có ai trong `--cast`
+  thì không soi; id không có trong cảnh khớp nào là lỗi; người nền (`cast[].crowd`) cần thêm `--crowd`.
+- `--from` / `--to` (giây, hay `@mốc` / `@mốc+0.4` theo `scene.marks` như `scene_probe`): chỉ đo quãng ấy, bỏ một đầu là
+  đầu hay cuối cảnh. Chỉ đi cùng **một** cảnh — giây và mốc là của từng cảnh. Quãng ngược, bắt đầu từ cuối cảnh trở đi,
+  mốc không có là lỗi.
+
+Ba cờ cần `--scene` (hay `--uses`); `ref` chạy như mọi lượt `--scene`, `episode` không chạy (như mọi lượt `--scene`).
+
+Lượt hẹp nhanh thật: người không chọn không được giải tư thế ở các luật theo người, khung ngoài quãng cộng lề không lấy
+mẫu. Mỗi nhóm lấy thêm lề cho luật cần ngữ cảnh rồi chỉ báo dòng có quãng giây giao quãng đã chọn:
+
+| Nhóm | Lề lấy mẫu | Ghi chú |
+|---|---|---|
+| `move`: giật, khuỷu và cổ tay trên hình, khuỷu khoá | `1 s` mỗi đầu (nền ±2 khung, gộp 3 khung, khuỷu rung `0,5 s`, tay duỗi liền `0,3 s`) | dòng có quãng dài quá lề bị cắt ở mép lề: giây và số đo của nó có thể khác lượt cả cảnh |
+| `move`: trượt, thân quay | `3 s` mỗi đầu (cú quay đi rồi quay lại trong `1,5 s`, cửa sổ trượt `0,4 s` nối nhau, chân trụ suy từ mẫu trước) | dòng lọc theo giây nó ghi; trượt chỉ báo cú đầu của mỗi người trong phần đã lấy mẫu, nên lượt hẹp có thể ra cú trượt mà lượt cả cảnh giấu sau cú đầu |
+| `move`: không tới mốc dừng, khởi hành, dừng, clip đi hoà vào, `yaw` mốc | cả cảnh, chỉ người được chọn | chỉ đo quanh mốc `path`, rẻ; dòng lọc theo giây nó ghi |
+| `held` | `hold` + `0,1 s` | món trôi vẫn so với mẫu đầu của lần cầm `world.hands` khai `hold` trước quãng (đặt cảnh thêm ở giây ấy) |
+| `legacy` | không | một dòng cho người, quãng đã chọn |
+| `roles` | không | mốc `0,25 s` trong quãng; người ngồi lệch mặt ngồi chỉ của người được chọn |
+| `clash` | mốc lưới `0,25 s` phủ quãng | cùng mẫu, cùng chia nhỏ như lượt cả cảnh; khối người khác vẫn dựng để đo cặp người |
+
+Cảnh three vẫn dựng nguyên một lần cho cả cảnh (ống kính vẽ ra, đồ cầm, vật cản) — `worldOf` của repo không biết lượt
+hẹp —, nên trên cảnh đông nó là phần lớn thời gian còn lại (`--time`, dòng `dựng cảnh three`).
+
+`--baseline` đi cùng được: dòng mới, nặng hơn so như thường, nhưng lượt hẹp không kể mục nào là **đã hết** — mục baseline
+khoá theo cảnh, luật, người chứ không theo giây, nên không biết mục cũ nào nằm ngoài phần đã đo. `--save-baseline` đi
+cùng ba cờ này là lỗi, không ghi gì: baseline ghi bằng lượt cả cảnh.
+
 ### Baseline
 
 `--save-baseline <file>` ghi cảnh báo của lượt này ra JSON. `--baseline <file>` so lượt này với file ấy và chỉ in cảnh
@@ -207,7 +251,7 @@ lớn nhất.
 **Nặng hơn** khi thêm dòng cùng khoá, hay số đo chính (độ lấn, góc, khe, px nhảy, độ lún, quãng trượt, độ cụt) gấp từ
 `1,25` lần bản cũ **và** hơn từ `1` đơn vị của số đo ấy — dưới ngưỡng ấy là dao động do sửa cảnh khác, không phải lỗi
 mới. **Đã hết** chỉ tính trong phạm vi lượt chạy: mục của cảnh đã soi và nhóm đã chạy; mục không gắn cảnh (file hành
-động, lớp vẽ code, tập, git) chỉ ở lượt toàn bộ. Lỗi không vào baseline: lỗi là thứ chặn, không phải nợ để dành.
+động, lớp vẽ code, tập, git) chỉ ở lượt toàn bộ; lượt hẹp (`--cast`, `--from`, `--to`) không kể mục nào ([Đo hẹp](#đo-hẹp)). Lỗi không vào baseline: lỗi là thứ chặn, không phải nợ để dành.
 
 Ghi thì gộp: mục trong phạm vi lượt chạy thay bằng mục của lượt này, mục ngoài phạm vi (cảnh không soi, nhóm không chạy)
 giữ nguyên — soi từng phần vẫn giữ baseline đủ. Xếp theo cảnh (mục không gắn cảnh trước), nhóm, khoá; chạy lại mà không

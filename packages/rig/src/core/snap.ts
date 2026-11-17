@@ -230,6 +230,13 @@ export interface SnapOptions {
   spans?: [number, number][];
   /** Đo cả khuỷu và cổ tay trên cùng các mẫu (`sceneMotion`): rung, lật, gập ngược, tầm với */
   elbows?: boolean;
+  /** Chỉ đo những người này (`cast[].id`); bỏ trống là mọi người — `check --cast` */
+  ids?: readonly string[];
+  /**
+   * Chỉ lấy mẫu trong quãng giây này, người gọi tự cộng lề cho cửa sổ của luật: khung ngoài quãng không giải tư thế, như
+   * ngoài `spans`, và mép quãng là chỗ cắt — `check --from/--to`
+   */
+  window?: readonly [number, number];
 }
 
 /** Một cú giật trên hình: khớp nhảy nhiều nhất, cỡ nhảy và nền (pixel video), giây khung sau cú nhảy */
@@ -587,19 +594,34 @@ const lensStep = (a: Lens | undefined, b: Lens | undefined): number[] =>
  * góc máy khác, hình đổi cả khung — cắt từ máy đứng sang máy đang chạy, hai lần đổi bậc liền nhau cũng vậy. Ống kính chạy
  * liền (lia, dời theo người) đổi đều mọi khung, không là cắt
  */
-export function lensCuts(rt: SceneRuntime, n: number, fps: number): boolean[] {
+export function lensCuts(
+  rt: SceneRuntime,
+  n: number,
+  fps: number,
+  range?: readonly [number, number],
+): boolean[] {
   const out = new Array<boolean>(n + 1).fill(false);
   if (!rt.lensAt) return out;
   const W = LENS_CUT_SPAN;
-  const L = Array.from({ length: n + 2 * W + 1 }, (_, k) => lensAt(rt, Math.max(0, (k - W) / fps)));
-  // `d[i + W - 1]`: cặp `i − 1 → i`
-  const d = Array.from({ length: n + 2 * W }, (_, k) => lensStep(L[k], L[k + 1]));
-  for (let i = 1; i <= n; i++) {
+  // `lens(k)`: khung `k − W`; `step(k)`: cặp `k − W → k − W + 1`. Chỉ tính phần `range` (chỉ số khung) cần
+  const L = new Map<number, Lens | undefined>();
+  const lens = (k: number) => {
+    if (!L.has(k)) L.set(k, lensAt(rt, Math.max(0, (k - W) / fps)));
+    return L.get(k);
+  };
+  const D = new Map<number, number[]>();
+  const step = (k: number) => {
+    let v = D.get(k);
+    if (!v) D.set(k, (v = lensStep(lens(k), lens(k + 1))));
+    return v;
+  };
+  const [lo, hi] = range ? [Math.max(1, range[0]), Math.min(n, range[1])] : [1, n];
+  for (let i = lo; i <= hi; i++) {
     const k = i + W - 1;
-    out[i] = d[k].some((v, c) => {
+    out[i] = step(k).some((v, c) => {
       if (!(v > 1e-9)) return false;
       const near: number[] = [];
-      for (let j = k - W; j <= k + W; j++) if (j !== k) near.push(d[j][c]);
+      for (let j = k - W; j <= k + W; j++) if (j !== k) near.push(step(j)[c]);
       return v > LENS_CUT_K * median(near);
     });
   }
@@ -630,16 +652,28 @@ export function sceneMotion(
   const px = o.px ?? SNAP_PX;
   const K = o.k ?? SNAP_K;
   const n = Math.floor(rt.duration * fps + 1e-6);
-  const cams = Array.from({ length: n + 1 }, (_, i) => cameraAt(rt, i / fps));
+  const W = o.window;
+  // khung đọc được: trong `window` (cộng một khung mỗi đầu cho cặp khung ở mép)
+  const [lo, hi] = W
+    ? [Math.max(0, Math.floor(W[0] * fps) - 1), Math.min(n, Math.ceil(W[1] * fps) + 1)]
+    : [0, n];
+  const cams = Array.from({ length: n + 1 }, (_, i) =>
+    i >= lo && i <= hi ? cameraAt(rt, i / fps) : undefined,
+  );
   const video = rt.frame.video.w;
   // cặp khung vắt qua chỗ cắt (hai đầu shot, mốc camera `cut`, ống kính đổi bậc) không phải giật: hình đổi cả khung
-  const spans = o.spans?.length ? o.spans : [[0, rt.duration] as [number, number]];
+  const whole = o.spans?.length ? o.spans : [[0, rt.duration] as [number, number]];
+  const spans = W
+    ? whole.flatMap(([a, b]): [number, number][] =>
+        Math.max(a, W[0]) < Math.min(b, W[1]) ? [[Math.max(a, W[0]), Math.min(b, W[1])]] : [],
+      )
+    : whole;
   const cuts = [
     ...spans.flat(),
     ...rt.camera.filter((k, j) => j > 0 && k.move === "cut").map((k) => k.t),
   ];
   const E = 1e-6;
-  const lensCut = lensCuts(rt, n, fps);
+  const lensCut = lensCuts(rt, n, fps, [lo, hi]);
   const shown = Array.from({ length: n + 1 }, (_, i) => {
     const [t0, t1] = [(i - 1) / fps, i / fps];
     return (
@@ -652,6 +686,7 @@ export function sceneMotion(
   const out: Snap[] = [];
   const elbows: ElbowIssue[] = [];
   for (const m of rt.cast) {
+    if (o.ids && !o.ids.includes(m.id)) continue;
     const base = o.characterOf(m);
     if (!base) continue;
     const c = base;
@@ -677,7 +712,7 @@ export function sceneMotion(
       for (let i = 1; i <= n; i++) {
         const [p, q] = [S[i - 1], S[i]];
         if (!shown[i] || !p.pts || !q.pts) continue;
-        const v = cams[i].view;
+        const v = cams[i]!.view;
         const [x, y] = q.pts[j];
         const mx = v.w * 0.05;
         on[i] = +(
@@ -716,7 +751,7 @@ export function sceneMotion(
       if (!group.length) return;
       const top = group.reduce((x, y) => (y.d > x.d ? y : x));
       const [p, q] = [S[top.i - 1], S[top.i]];
-      const v = cams[top.i].view;
+      const v = cams[top.i]!.view;
       const hipPx =
         p.hip && q.hip ? Math.hypot(q.hip[0] - p.hip[0], q.hip[1] - p.hip[1]) * (video / v.w) : 0;
       const why = causesOf(m, {
@@ -843,13 +878,15 @@ function swivelSigned(a: Joints3, b: Joints3): number {
  */
 export function elbowLockSnaps(
   rt: SceneRuntime,
-  o: Pick<SnapOptions, "characterOf" | "spans">,
+  o: Pick<SnapOptions, "characterOf" | "spans" | "ids" | "window">,
 ): ElbowLockSnap[] {
   const out: ElbowLockSnap[] = [];
   const E = 1e-6;
   const shown = (t0: number, t1: number) =>
     !o.spans?.length || o.spans.some(([a, b]) => t0 >= a - E && t1 <= b + E);
+  const W = o.window;
   for (const m of rt.cast) {
+    if (o.ids && !o.ids.includes(m.id)) continue;
     const keys = m.world?.hands;
     if (!keys?.some((k) => k.right?.elbowLock || k.left?.elbowLock)) continue;
     const base = o.characterOf(m);
@@ -888,10 +925,16 @@ export function elbowLockSnaps(
       for (const span of spans) {
         const n = Math.max(1, Math.ceil((span.to - span.from) / HOLD_SLEW_STEP - 1e-9));
         const dt = (span.to - span.from) / n;
-        let prev = armAt(span.from);
+        // `null`: chưa đặt — bước đầu trong `window`
+        let prev: ReturnType<typeof armAt> | null = W ? null : armAt(span.from);
         let cur: ElbowLockSnap | undefined;
         for (let i = 1; i <= n; i++) {
           const [t0, t1] = [span.from + (i - 1) * dt, span.from + i * dt];
+          if (W && (t1 < W[0] - E || t0 > W[1] + E)) {
+            prev = null;
+            continue;
+          }
+          if (prev === null) prev = armAt(t0);
           const a = armAt(t1);
           const deg = prev && a ? (swivel(prev, a) * HOLD_SLEW_STEP) / dt : 0;
           prev = a;

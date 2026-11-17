@@ -125,10 +125,16 @@ export function sceneClashes(
     all = false,
     people: built,
     self = PIERCE_TOL,
+    ids,
   }: Pick<SceneWorldProps, "codeLayers" | "url"> & {
     characterOf: CharacterOf;
     tol?: number;
     all?: boolean;
+    /**
+     * Chỉ đo những người này (`cast[].id`): chỗ lấn của họ với đồ, tay xuyên thân của họ, cặp người có ít nhất một người
+     * ấy; người khác vẫn là vật cản. Bỏ trống là mọi người — `check --cast`
+     */
+    ids?: readonly string[];
     /** Ngưỡng tay xuyên thân mình (`armPierce`), `false` là không đo */
     self?: number | false;
     /** `sceneBodies` của chính giây ấy, khỏi dựng lại */
@@ -162,11 +168,18 @@ export function sceneClashes(
         Math.min(...q.map((v) => v[1])) <= frame[3]
       );
     });
+  const only = ids && new Set(ids);
   return [
-    ...solidClashes(lens, furniture, people, { tol, view, viewLens }),
+    ...solidClashes(lens, furniture, people, { tol, view, viewLens, ids: only }),
     ...(self === false
       ? []
-      : selfClashes(rt, t, new Set(people.filter(inView).map((p) => p.id)), characterOf, self)),
+      : selfClashes(
+          rt,
+          t,
+          new Set(people.filter((p) => (!only || only.has(p.id)) && inView(p)).map((p) => p.id)),
+          characterOf,
+          self,
+        )),
   ]
     .sort((a, b) => b.depth - a.depth)
     .map((c) => (c.item === undefined ? c : { ...c, name: furniture[c.item].name }));

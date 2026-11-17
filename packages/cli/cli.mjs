@@ -44,6 +44,12 @@ const USAGE = `stickman <lệnh> [thư mục]
                 bỏ tập, tiếng, git — nhanh, dùng sau khi sửa một cảnh
                 --uses <tên,…> chỉ soi cảnh dùng hành động, nhân vật ấy
                 (đi chung --scene thì lấy cảnh khớp cả hai)
+                --cast <id,…> chỉ đo những người này (cast[].id) ở các nhóm đo sâu; người khác vẫn dựng,
+                vẫn là vật cản, dòng cặp hai người giữ khi một trong hai được chọn; cảnh khớp mà
+                không có người nào ấy thì bỏ; id không có trong cảnh khớp nào là lỗi
+                --from <giây | @mốc±s> / --to <…> chỉ đo quãng ấy (bỏ một đầu là đầu, cuối cảnh), chỉ một
+                cảnh; mỗi nhóm lấy mẫu thêm lề cho luật cần ngữ cảnh rồi chỉ báo dòng giao quãng.
+                Ba cờ này cần --scene hay --uses, không đi cùng --save-baseline
                 --only <nhóm,…> / --skip <nhóm,…> chọn nhóm luật: ref (JSON, tham chiếu),
                 move (trượt, thân quay, giật, khuỷu), held (đồ cầm), legacy (đồ cầm còn
                 đi đường cũ), roles (vai trò của đồ cảnh: zod, lệch hình, người ngồi lệch
@@ -222,6 +228,9 @@ else if (parsed.error) {
         ? `\nchỉ chạy nhóm: ${r.groups.join(", ")}`
         : "") +
       (r.scenes ? `\nchỉ soi ${r.scenes.length} cảnh: ${r.scenes.join(", ")}` : "") +
+      (r.narrow
+        ? `\nchỉ đo${r.narrow.cast ? ` người: ${r.narrow.cast.join(", ")}` : ""}${r.narrow.from !== undefined ? `${r.narrow.cast ? ";" : ""} giây ${r.narrow.from.toFixed(2)}–${r.narrow.to.toFixed(2)}` : ""}`
+        : "") +
       (r.crowdSkipped ? `\nbỏ qua ${r.crowdSkipped} người nền (đo đủ: --crowd)` : ""),
   );
   if (o.time && r.time) {
@@ -251,7 +260,8 @@ else if (parsed.error) {
       ? `${errors.length} lỗi, ${warnings.length} cảnh báo.`
       : "Không thấy vấn đề gì.") +
       (b
-        ? ` So với ${b.file}${b.missing ? " (chưa có file, mọi cảnh báo là mới)" : ""}: ${b.fresh} mới, ${b.worse} nặng hơn, ${b.gone.length} đã hết.`
+        ? ` So với ${b.file}${b.missing ? " (chưa có file, mọi cảnh báo là mới)" : ""}: ${b.fresh} mới, ${b.worse} nặng hơn` +
+          (r.narrow ? " (lượt hẹp không kể mục đã hết)." : `, ${b.gone.length} đã hết.`)
         : "") +
       (r.saved ? ` Đã ghi ${r.saved.warnings} cảnh báo vào ${r.saved.file}.` : "") +
       (r.frozen ? ` Bỏ qua ${r.frozen} của cảnh, tập, lớp khớp stickman.frozen.` : ""),
