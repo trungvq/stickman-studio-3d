@@ -486,6 +486,35 @@ function hullNormals(geo: THREE.BufferGeometry, onWaist: (p: THREE.Vector3) => b
   nrm.needsUpdate = true;
 }
 
+/** Đỉnh khối váy nhô khỏi mặt nón cạp → gấu dưới mức này (px) mang pháp tuyến mặt nón, từ mức này tới mức sau trộn dần sang
+ * pháp tuyến khối lồi */
+const CONE_SNAP = [1.5, 5] as const;
+
+/**
+ * Đỉnh nằm sát mặt nón cụt elip từ vòng cạp (`aW`, `dW` ở `yW`) tới vòng gấu (nở thêm `spread` ở `yH`) lấy pháp tuyến của mặt
+ * nón (px, y xuống). Bao lồi bám cả gối, ống chân nhô sát mặt váy và dựng lại mỗi khung theo dáng: pháp tuyến đỉnh của nó lệch
+ * theo cách chia tam giác, đèn cục bộ cắt bậc gắt trên đó thành răng cưa từ gấu đi lên và nháy khi người đung đưa. Chỗ chân nhô
+ * hẳn ra (ngồi, bước dài) giữ pháp tuyến khối lồi.
+ */
+function coneNormals(geo: THREE.BufferGeometry, yW: number, yH: number, aW: number, dW: number, spread: number) {
+  const pos = geo.attributes.position, nrm = geo.attributes.normal as THREE.BufferAttribute;
+  const span = yH - yW, s = spread / span, n = new THREE.Vector3(), h = new THREE.Vector3();
+  for (let k = 0; k < pos.count; k++) {
+    const x = pos.getX(k) / U, y = -pos.getY(k) / U, z = pos.getZ(k) / U;
+    const u = (y - yW) / span;
+    if (u < -0.01 || u > 1.01) continue;
+    const A = aW + spread * u, D = dW + spread * u;
+    const out = (Math.hypot(x / A, z / D) - 1) * Math.min(A, D);
+    const w = 1 - THREE.MathUtils.smoothstep(Math.abs(out), CONE_SNAP[0], CONE_SNAP[1]);
+    if (w <= 0) continue;
+    // gradient của (x/A)² + (z/D)² theo x, y, z; A, D nở tuyến tính theo y — đổi sang three (y lên)
+    n.set(x / (A * A), (x * x / (A * A * A) + z * z / (D * D * D)) * s, z / (D * D)).normalize();
+    h.fromBufferAttribute(nrm, k).lerp(n, w).normalize();
+    nrm.setXYZ(k, h.x, h.y, h.z);
+  }
+  nrm.needsUpdate = true;
+}
+
 /**
  * Váy dựng khối của rig (`pieces.hem.skirt`): bao lồi của vành cạp, vành gấu và hai ống đùi tới tầm váy
  * phủ; ống đùi thon theo đùi từ hông tới gối. `thighs` là hông và hướng đùi trong
@@ -551,6 +580,7 @@ export function sculptSkirt(spine: THREE.Object3D, { skirt, rig, color, ink, thi
   geo.deleteAttribute('uv');
   geo = mergeVertices(geo);
   hullNormals(geo, (p) => Math.abs(-p.y / U - yW) < WAIST_EPS);
+  if (hang > 0.05) coneNormals(geo, yW, yH, aW, dW, spread);
   const m = new THREE.Mesh(geo, npr({ color, stipple: 0.05, soft: 1 }));
   m.castShadow = true;
   group.add(m);

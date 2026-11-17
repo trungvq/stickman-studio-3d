@@ -1561,6 +1561,11 @@ không lòi qua mặt váy.
   (`LAP_SEAT`): đứng, đi không đổi, ngồi xuống không nhảy hình.
 - **Nếp** là đoạn thẳng trên mặt nón từ `0.3` tới `0.9` quãng cạp–gấu, ở kinh độ giữa hai
   nếp chia đều. Vành gấu co hết (đùi ngang) thì không còn nếp; lòng váy lúc ngồi trơn.
+- **Pháp tuyến theo mặt nón.** Váy buông (còn vành gấu) thì đỉnh của bao nằm cách mặt nón cụt cạp–gấu dưới `1,5` px
+  mang pháp tuyến của mặt nón, từ `1,5` tới `5` px trộn dần sang pháp tuyến bao, xa hơn giữ pháp tuyến bao
+  (`CONE_SNAP`). Bao bám cả gối, ống chân nhô sát mặt váy và dựng lại mỗi khung: pháp tuyến bao lệch theo cách chia tam
+  giác, đèn cục bộ cắt bậc trên đó thành răng cưa từ gấu đi lên, nháy khi người đung đưa. Gối nhô hẳn lúc bước, lòng
+  váy lúc ngồi vẫn có khối theo pháp tuyến bao.
 - Cắm được vào vật (`items`), đổi bằng `equip` như mọi `hem`.
 - **Tay buông nằm ngoài váy.** Người 3D đứng nghỉ choãi tay thêm tới khi cẳng tay và bàn tay cách hình bao
   váy một `CLAD_GAP` (`roots3`, [01](01-rig.md#người-3d-mặc-đồ)); hình bao dựng trên cạp đã lùi theo tay, như váy 3D,
