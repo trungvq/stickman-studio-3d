@@ -3599,7 +3599,10 @@ export async function genBoard(o) {
   const soleEnds = (sp, leg, ankle) => {
     const F = frameOf(sp.world.hip, sp.world.yaw);
     const sh = shoeAt(c, shinPhi(leg), s);
-    return { sh, ends: [sh.heel, sh.toe].map((q) => add(ankle, [F.F[0] * q[0], -q[1], F.F[2] * q[0]])) };
+    return {
+      sh,
+      ends: [sh.heel, sh.toe].map((q) => add(ankle, [F.F[0] * q[0], -q[1], F.F[2] * q[0]])),
+    };
   };
 
   // chỗ đứng: đế giày đứng ngoài mép ngoài ngưỡng `HEEL_GAP`, đầu ngoài mặt khung trên; hông đứng đo trên cảnh tạm
@@ -3774,7 +3777,11 @@ export async function genBoard(o) {
   const innerRest = [A0[innerLeg][0], ground - soleDrop(c, 0, s), A0[innerLeg][2]];
   const shinWorst = () => {
     let worst = Infinity;
-    for (let tau = SHIN_SILL.from * T1; tau <= T1 + SHIN_SILL.until * T2 + 1e-9; tau += BOARD_STEP / 2) {
+    for (
+      let tau = SHIN_SILL.from * T1;
+      tau <= T1 + SHIN_SILL.until * T2 + 1e-9;
+      tau += BOARD_STEP / 2
+    ) {
       const sp = spAt(rtA0, tOf(Math.min(T - 1e-3, Math.max(1e-3, tau))));
       const r = solveLegs(sp, { [outerLeg]: outerRest, [innerLeg]: innerRest });
       worst = Math.min(worst, shinGap(sp, r.legs));
@@ -3782,7 +3789,11 @@ export async function genBoard(o) {
     return worst;
   };
   let shinClear = shinWorst();
-  for (let n = fr.local(E).n + SHIN_SILL.step * hs; shinClear < SHIN_SILL.gap * s && n <= landEdge + 1e-9; n += SHIN_SILL.step * hs) {
+  for (
+    let n = fr.local(E).n + SHIN_SILL.step * hs;
+    shinClear < SHIN_SILL.gap * s && n <= landEdge + 1e-9;
+    n += SHIN_SILL.step * hs
+  ) {
     E = fr.world(inL.u, n, seat.at[1]);
     keys = keysFor(Hs, hipStand);
     rtA0 = runtimeWith("sau khi đặt mốc");
@@ -3938,13 +3949,19 @@ export async function genBoard(o) {
   // nắm khung khi vai với tới suốt quãng nắm; không thì lòng tay đặt lên đùi cùng bên
   const armLen = (rig.lengths(h).upperArm + rig.lengths(h).foreArm) * s;
   const onRail = plan
-    .filter((p) => p.tau >= DOOR_GRIP.approach[1] * T1 - 1e-9 && p.tau <= DOOR_GRIP.release[0] * T1 + 1e-9)
+    .filter(
+      (p) =>
+        p.tau >= DOOR_GRIP.approach[1] * T1 - 1e-9 && p.tau <= DOOR_GRIP.release[0] * T1 + 1e-9,
+    )
     .every((p) => {
       const J = rig.actJoints(c, {
         ...p.sp,
         pose: { ...p.sp.pose, lr: p.legs.right, ll: p.legs.left, torso: p.lean },
       });
-      return len(sub(J[gripArm === "armRight" ? "shoulderR" : "shoulderL"], rail)) <= DOOR_GRIP.reach * armLen;
+      return (
+        len(sub(J[gripArm === "armRight" ? "shoulderR" : "shoulderL"], rail)) <=
+        DOOR_GRIP.reach * armLen
+      );
     });
   const armStand = { armRight: STAND_ARMS, armLeft: STAND_ARMS };
   // lòng tay lúc đứng buông tay: tay đi từ đó theo đường thẳng (đích thế giới), khỏi lật khuỷu khi hoà góc sang đích
@@ -3968,7 +3985,12 @@ export async function genBoard(o) {
   const restSide = restArm === "armRight" ? "R" : "L";
   const restPalm0 = palm0(restArm);
   const markOf = (m) => (p) =>
-    rig.bodyMarkAt(c, { ...p.sp, pose: { ...p.sp.pose, lr: p.legs.right, ll: p.legs.left, torso: p.lean } }, m, restSide);
+    rig.bodyMarkAt(
+      c,
+      { ...p.sp, pose: { ...p.sp.pose, lr: p.legs.right, ll: p.legs.left, torso: p.lean } },
+      m,
+      restSide,
+    );
   const restSeq = [
     [0, () => restPalm0, null],
     [HAND_BLEND, markOf(OUTER_HAND.side), null],

@@ -219,7 +219,8 @@ export function legAngles(target, lat, l1, l2) {
 export const span01 = (x, [a, b]) => clamp((x - a) / (b - a), 0, 1);
 
 /** Mức nhấc (`0 … 1`) của một bước ở phần `k` của quãng bước: lên hết lúc `STEP.lift[0]`, hạ từ `STEP.lift[1]` */
-export const stepBump = (k) => Math.min(window01(k, 0, STEP.lift[0]), 1 - window01(k, STEP.lift[1], 1));
+export const stepBump = (k) =>
+  Math.min(window01(k, 0, STEP.lift[0]), 1 - window01(k, STEP.lift[1], 1));
 
 /**
  * Điểm đỡ của một bàn chân bước từ `a` tới `b` (thế giới, y xuống) ở phần `k` của quãng bước: đi ngang theo `STEP.move`,

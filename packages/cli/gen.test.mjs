@@ -24,7 +24,15 @@ import {
   pourHold,
   pourerOf,
 } from "./gen-pour.mjs";
-import { doorFrame, legAngles, liftProfile, stepBump, stepFoot, STEP, yawOfDir } from "./gen-board.mjs";
+import {
+  doorFrame,
+  legAngles,
+  liftProfile,
+  stepBump,
+  stepFoot,
+  STEP,
+  yawOfDir,
+} from "./gen-board.mjs";
 import { sitCellText, sitSheetCells } from "./gen-sheet.mjs";
 import {
   ARMREST,
